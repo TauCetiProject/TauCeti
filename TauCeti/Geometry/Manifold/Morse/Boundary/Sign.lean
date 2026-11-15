@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Basic
-public import TauCeti.Geometry.Manifold.Morse.Stable.Frame
+public import TauCeti.Geometry.Manifold.Morse.Stable.ChartChange
 public import TauCeti.LinearAlgebra.Orientation.Prod
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.LinearAlgebra.Ray
@@ -42,10 +42,19 @@ lift of a positive basis of `Vq` is a positive basis of `T_y W^u(p)`. This is th
 decomposition `T W^u(p) = ℝ (-X) ⊕ T W^u(q)` of the orientation conventions for the Morse complex,
 with `T W^u(q)` standing for the normal space of `W^s(q)`.
 
-The orientation data are recorded in the coordinates of the chosen Morse charts. A Morse chart
-identifies its space of coordinates of negative weight with the tangent space of the unstable
-manifold at the critical point; comparing the signs obtained from two Morse charts inducing the
-same orientation there is not done in this file.
+The orientation data are recorded in the coordinates of the chosen Morse charts, but the signs
+do not depend on these charts. If `X` is also linear in Morse charts `φp'` at `p` and `φq'` at `q`,
+the transitions of negative coordinates `TauCeti.MorseChart.negativeTransitionEquiv` carry `Vp` to
+`Vp'` and `Vq` to `Vq'` compatibly with the unstable frames and the normal coordinates
+(`TauCeti.Geometry.Manifold.Morse.Stable.ChartChange`). So the comparison map of the new charts is
+that of the old ones, conjugated by these isomorphisms
+(`TauCeti.IsAdaptedPseudoGradient.trajectoryComparison_negativeTransition`), and transporting
+`op` and `oq` along them gives the same signs
+(`TauCeti.IsAdaptedPseudoGradient.trajectorySign_map_negativeTransitionEquiv`) and the same signed
+counts (`TauCeti.IsAdaptedPseudoGradient.signedTrajectoryCount_map_negativeTransitionEquiv`). At
+the critical point itself the two unstable frames also differ by the transition, so `op` and its
+transport orient the tangent space of `W^u(p)` at `p` in the same way: the signs depend only on
+these orientations of the unstable manifolds, not on the charts in which they are recorded.
 
 The sign does not change when the point moves along the flow
 (`TauCeti.IsAdaptedPseudoGradient.trajectorySign_flow`), so it is the sign of the unparametrized
@@ -78,6 +87,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `trajectorySign_flow`: the sign is constant along each trajectory.
 * `trajectorySign_neg_left`, `trajectorySign_neg_right`: reversing an orientation reverses the
   signs.
+* `trajectorySign_map_negativeTransitionEquiv`, `signedTrajectoryCount_map_negativeTransitionEquiv`:
+  the signs and the signed count do not change when the orientations are transported to other
+  Morse charts in which `X` is linear.
 * `intCast_signedTrajectoryCount`,
   `IsMorseSmale.morseBoundaryCoeff_eq_intCast_signedTrajectoryCount`: the signed count reduces
   modulo two to the number of trajectories, the coefficient of the mod-two Morse boundary.
@@ -452,6 +464,94 @@ theorem IsMorseSmale.morseBoundaryCoeff_eq_intCast_signedTrajectoryCount
     hMS.morseBoundaryCoeff hf p q = (hX.signedTrajectoryCount φp φq op oq hpq : ZMod 2) := by
   rw [hMS.morseBoundaryCoeff_eq_ncard hf hpq,
     intCast_signedTrajectoryCount hφp hφq hMS hf]
+
+section ChartChange
+
+variable {φp' : MorseChart E f p} {φq' : MorseChart E f q}
+  (hφp' : ∀ y ∈ φp'.toChart.source,
+    φp'.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp'.toChart y (X y)) =
+      fun i ↦ -(φp'.weight i * φp'.coord (φp'.toChart y) i))
+  (hφq' : ∀ y ∈ φq'.toChart.source,
+    φq'.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq'.toChart y (X y)) =
+      fun i ↦ -(φq'.weight i * φq'.coord (φq'.toChart y) i))
+include hφp' hφq'
+
+/-- **The comparison map under a change of Morse charts.** Let `X` be linear in the Morse charts
+`φp`, `φp'` at `p` and `φq`, `φq'` at `q`. At a point of a trajectory from `p` to `q`, the
+comparison map of `φp'` and `φq'` on the transition of `v` has the same first component as the
+comparison map of `φp` and `φq` on `v`, and the transition of its second component. -/
+theorem trajectoryComparison_negativeTransition (hf : IsMorse 𝓘(ℝ, E) f) {y : M}
+    (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) (v : {i // φp.weight i < 0} → ℝ) :
+    hX.trajectoryComparison φp' φq' y (φp.negativeTransition φp' v) =
+      ((hX.trajectoryComparison φp φq y v).1,
+        φq.negativeTransition φq' (hX.trajectoryComparison φp φq y v).2) := by
+  rw [trajectoryComparison_apply, trajectoryComparison_apply,
+    unstableFrame_negativeTransition hφp hφp' hf hy.1,
+    stableNormal_eq_negativeTransition hφq hφq' hy.2]
+
+/-- **The sign of a trajectory does not depend on the Morse charts.** Let `X` be linear in the
+Morse charts `φp`, `φp'` at `p` and `φq`, `φq'` at `q`. Transporting the orientations `op` and
+`oq` of the spaces of coordinates of negative weight of `φp` and `φq` to `φp'` and `φq'` along the
+transitions of negative coordinates does not change the sign of any trajectory from `p` to `q`.
+Since the unstable frames of the two charts at a critical point also differ by this transition, the
+sign depends only on the orientations that `op` and `oq` induce on the unstable manifolds, and not
+on the Morse charts in which they are recorded. -/
+theorem trajectorySign_map_negativeTransitionEquiv (hf : IsMorse 𝓘(ℝ, E) f) {y : M}
+    (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
+    hX.trajectorySign φp' φq' (Orientation.map _ (φp.negativeTransitionEquiv φp') op)
+        (Orientation.map _ (φq.negativeTransitionEquiv φq') oq) hpq y =
+      hX.trajectorySign φp φq op oq hpq y := by
+  set A := φp.negativeTransitionEquiv φp'
+  set P := (LinearEquiv.refl ℝ ℝ).prodCongr (φq.negativeTransitionEquiv φq')
+  -- The comparison map of the new charts is that of the old ones, conjugated by `A` and `P`.
+  have hfun : ⇑(hX.trajectoryComparison φp' φq' y) =
+      P ∘ hX.trajectoryComparison φp φq y ∘ A.symm := by
+    funext w
+    obtain ⟨v, rfl⟩ := A.surjective w
+    rw [comp_apply, comp_apply, A.symm_apply_apply, MorseChart.negativeTransitionEquiv_apply,
+      trajectoryComparison_negativeTransition hφp hφq hφp' hφq' hf hy]
+    simp only [P, LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply,
+      MorseChart.negativeTransitionEquiv_apply]
+  have htarget : φq'.trajectoryTargetOrientation
+      (Orientation.map _ (φq.negativeTransitionEquiv φq') oq) hpq =
+        Orientation.map _ P (φq.trajectoryTargetOrientation oq hpq) := by
+    rw [MorseChart.trajectoryTargetOrientation_def, MorseChart.trajectoryTargetOrientation_def,
+      Orientation.map_reindex, Orientation.map_prod, Orientation.map_refl]
+    -- The two sides differ only in the proofs of the dimension equalities.
+    rfl
+  by_cases h : Bijective (hX.trajectoryComparison φp φq y)
+  · have h' : Bijective (hX.trajectoryComparison φp' φq' y) := by
+      rw [hfun]
+      exact P.bijective.comp (h.comp A.symm.bijective)
+    have he : LinearEquiv.ofBijective (hX.trajectoryComparison φp' φq' y).toLinearMap h' =
+        A.symm.trans ((LinearEquiv.ofBijective _ h).trans P) :=
+      LinearEquiv.ext fun w ↦ (LinearEquiv.ofBijective_apply _ w).trans (congrFun hfun w)
+    rw [trajectorySign_of_bijective h, trajectorySign_of_bijective h', htarget, he,
+      Orientation.map_trans, Orientation.map_trans, ← Orientation.map_symm, Equiv.symm_apply_apply,
+      (Orientation.map _ P).injective.eq_iff]
+  · have h' : ¬Bijective (hX.trajectoryComparison φp' φq' y) := fun h' ↦ h <| by
+      have : ⇑(hX.trajectoryComparison φp φq y) =
+          P.symm ∘ hX.trajectoryComparison φp' φq' y ∘ A := by
+        rw [hfun]
+        funext v
+        simp
+      rw [this]
+      exact P.symm.bijective.comp (h'.comp A.bijective)
+    rw [trajectorySign_of_not_bijective h, trajectorySign_of_not_bijective h']
+
+/-- **The signed count does not depend on the Morse charts.** Transporting the orientations along
+the transitions of negative coordinates between Morse charts in which `X` is linear does not change
+the number of trajectories from `p` to `q` counted with signs. -/
+theorem signedTrajectoryCount_map_negativeTransitionEquiv (hf : IsMorse 𝓘(ℝ, E) f) :
+    hX.signedTrajectoryCount φp' φq' (Orientation.map _ (φp.negativeTransitionEquiv φp') op)
+        (Orientation.map _ (φq.negativeTransitionEquiv φq') oq) hpq =
+      hX.signedTrajectoryCount φp φq op oq hpq := by
+  rw [signedTrajectoryCount_def, signedTrajectoryCount_def]
+  refine finsum_mem_congr rfl fun y hy ↦ ?_
+  rw [mem_morseTrajectorySlice] at hy
+  exact trajectorySign_map_negativeTransitionEquiv hφp hφq hφp' hφq' hf ⟨hy.1, hy.2.1⟩
+
+end ChartChange
 
 end IsAdaptedPseudoGradient
 
