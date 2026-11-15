@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.Dagger.Noetherian
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
+import TauCeti.RingTheory.Ideal.KrullIntersection
+import TauCeti.RingTheory.Ideal.Quotient.Integral
 import TauCeti.RingTheory.Ideal.Quotient.Radical
 
 /-!
@@ -41,6 +43,10 @@ This is the algebraic normalisation used to study residue fields and morphisms o
   `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_of_isMaximal_radical` and
   `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_pow_of_isMaximal_radical`: the same finiteness
   for dagger algebras, which are finite over a Monsky–Washnitzer algebra through a presentation.
+* `TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_forall_isMaximal_isIntegral` and
+  `TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isDaggerAlgebra`: `K`-algebra homomorphisms from
+  `K⟨X⟩†` into a noetherian `K`-algebra with integral maximal-ideal quotients (in particular any
+  dagger algebra) are determined by the coordinate variables, with no continuity assumed.
 
 ## References
 
@@ -226,5 +232,40 @@ theorem finite_quotient_pow_of_isMaximal_radical (q : Ideal A) [q.radical.IsMaxi
     exact finite_quotient_of_isMaximal_radical K _
 
 end IsDaggerAlgebra
+
+/-- **Homomorphisms from `W_σ` separated by integral maximal quotients are determined by the
+variables.** If `R` is a noetherian `K`-algebra whose residue fields `R ⧸ m` at maximal ideals are
+integral over `K`, then two `K`-algebra homomorphisms `W_σ →ₐ[K] R` agreeing on every coordinate
+variable are equal. No continuity or norm on `R` is assumed. -/
+theorem washnitzerAlgebra.algHom_ext_of_forall_isMaximal_isIntegral {σ : Type*} [Finite σ]
+    {R : Type*} [CommRing R] [Algebra K R] [IsNoetherianRing R]
+    (hint : ∀ (m : Ideal R) [m.IsMaximal], Algebra.IsIntegral K (R ⧸ m))
+    {φ ψ : W σ →ₐ[K] R} (h : ∀ i, φ (washnitzerAlgebra.X σ K i) = ψ (washnitzerAlgebra.X σ K i)) :
+    φ = ψ := by
+  ext f
+  suffices φ f - ψ f ∈ (⊥ : Ideal R) from sub_eq_zero.mp this
+  rw [← Ideal.iInf_isMaximal_pow_eq_bot]
+  simp only [Ideal.mem_iInf]
+  intro m hm k _
+  have : Algebra.IsIntegral K (R ⧸ m) := @hint m hm
+  have : Algebra.IsIntegral K (R ⧸ m ^ k) :=
+    ⟨fun y ↦ by
+      obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
+      exact isIntegral_quotient_pow_of_isIntegral_quotient (Algebra.IsIntegral.isIntegral _) k⟩
+  let q := Ideal.Quotient.mkₐ K (m ^ k)
+  have hq : q.comp φ = q.comp ψ := algHom_ext_of_isIntegral fun i ↦ by simp [h i]
+  exact Ideal.Quotient.eq_zero_iff_mem.mp
+    (by simpa [q, map_sub] using sub_eq_zero.mpr (AlgHom.congr_fun hq f))
+
+/-- **`K`-algebra homomorphisms from `W_σ` into a dagger algebra are determined by the
+variables**, with no continuity assumed. -/
+theorem washnitzerAlgebra.algHom_ext_of_isDaggerAlgebra {σ : Type*} [Finite σ]
+    {R : Type*} [CommRing R] [Algebra K R] [IsDaggerAlgebra K R]
+    {φ ψ : W σ →ₐ[K] R} (h : ∀ i, φ (washnitzerAlgebra.X σ K i) = ψ (washnitzerAlgebra.X σ K i)) :
+    φ = ψ := by
+  have := IsDaggerAlgebra.isNoetherianRing (K := K) (A := R)
+  refine algHom_ext_of_forall_isMaximal_isIntegral (fun m _ ↦ ?_) h
+  have := IsDaggerAlgebra.finite_quotient_of_isMaximal K m
+  exact Algebra.IsIntegral.of_finite K _
 
 end TauCeti.Dagger

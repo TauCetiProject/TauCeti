@@ -51,8 +51,6 @@ identifies the completion of `W_σ` with `T_σ`
 
 ## Main results
 
-* `TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isDaggerAlgebra`: `K`-algebra maps out of `W_σ`
-  into a dagger algebra are determined by the coordinate variables.
 * `TauCeti.Dagger.completion_algHom_ext_of_isAffinoidAlgebra` and
   `TauCeti.Dagger.existsUnique_algHom_completion`: every `K`-algebra map `A →ₐ[K] S` into an
   affinoid algebra factors uniquely through `toCompletion K A`.
@@ -61,7 +59,6 @@ identifies the completion of `W_σ` with `T_σ`
   `TauCeti.Dagger.continuous_completionMap`: uniqueness, functoriality, and continuity of
   `completionMap`.
 * `TauCeti.Dagger.supSeminorm_toCompletion`, `TauCeti.Dagger.IsDaggerAlgebra.supSeminorm_map_le`,
-  `TauCeti.Dagger.IsDaggerAlgebra.supSeminorm_algEquiv`,
   `TauCeti.Dagger.IsDaggerAlgebra.supSeminorm_eq_zero_iff`,
   `TauCeti.Dagger.IsDaggerAlgebra.isReduced_iff_supSeminorm_eq_zero`: the completion map preserves
   `supSeminorm`, morphisms of dagger algebras contract it, and its kernel is the nilradical.
@@ -83,26 +80,6 @@ public section
 namespace TauCeti.Dagger
 
 open _root_.MvPowerSeries
-
-section AlgHomExt
-
-namespace washnitzerAlgebra
-
-variable {K σ : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] [Finite σ]
-
-/-- **`K`-algebra homomorphisms from `W_σ` into a dagger algebra are determined by the
-variables**, with no continuity assumed. -/
-theorem algHom_ext_of_isDaggerAlgebra {R : Type*} [CommRing R] [Algebra K R]
-    [IsDaggerAlgebra K R] {φ ψ : washnitzerAlgebra σ K →ₐ[K] R}
-    (h : ∀ i, φ (X σ K i) = ψ (X σ K i)) : φ = ψ := by
-  have := IsDaggerAlgebra.isNoetherianRing (K := K) (A := R)
-  refine algHom_ext_of_isNoetherianRing (fun m _ ↦ ?_) h
-  have := IsDaggerAlgebra.finite_quotient_of_isMaximal K m
-  exact Algebra.IsIntegral.of_finite K _
-
-end washnitzerAlgebra
-
-end AlgHomExt
 
 section CompletionLift
 
@@ -248,6 +225,22 @@ theorem completionAlgEquivOfAlgEquiv_apply (e : A ≃ₐ[K] B) (x : completion K
 @[simp]
 theorem completionAlgEquivOfAlgEquiv_symm (e : A ≃ₐ[K] B) :
     (completionAlgEquivOfAlgEquiv e).symm = completionAlgEquivOfAlgEquiv e.symm := (rfl)
+
+/-- `completionAlgEquivOfAlgEquiv` sends `AlgEquiv.refl` to `AlgEquiv.refl`. -/
+@[simp]
+theorem completionAlgEquivOfAlgEquiv_refl :
+    completionAlgEquivOfAlgEquiv (AlgEquiv.refl : A ≃ₐ[K] A) = AlgEquiv.refl := by
+  ext x
+  simp
+
+/-- `completionAlgEquivOfAlgEquiv` respects composition of `K`-algebra isomorphisms. -/
+@[simp]
+theorem completionAlgEquivOfAlgEquiv_trans (e₁ : A ≃ₐ[K] B) (e₂ : B ≃ₐ[K] C) :
+    completionAlgEquivOfAlgEquiv (e₁.trans e₂) =
+      (completionAlgEquivOfAlgEquiv e₁).trans (completionAlgEquivOfAlgEquiv e₂) := by
+  ext x
+  have h : (e₁.trans e₂).toAlgHom = e₂.toAlgHom.comp e₁.toAlgHom := rfl
+  simp [h]
 
 /-- A `K`-algebra isomorphism of dagger algebras induces a topological `K`-algebra isomorphism of
 their completions. -/
@@ -480,13 +473,6 @@ theorem supSeminorm_map_le (φ : A →ₐ[K] B) (a : A) :
     ← supSeminorm_toCompletion (K := K) (A := A)]
   exact (isAffinoidAlgebra_completion (K := K) (A := A)).supSeminorm_map_le
     (isAffinoidAlgebra_completion (K := K) (A := B)) (completionMap φ) _
-
-/-- Algebra isomorphisms of dagger algebras preserve the supremum seminorm. -/
-@[simp]
-theorem supSeminorm_algEquiv (e : A ≃ₐ[K] B) (a : A) :
-    supSeminorm K (e a) = supSeminorm K a :=
-  le_antisymm (supSeminorm_map_le e.toAlgHom a)
-    (by simpa using supSeminorm_map_le e.symm.toAlgHom (e a))
 
 /-- **The kernel of the supremum seminorm on a dagger algebra is the nilradical**: `|a|sup = 0`
 if and only if `a` is nilpotent, since `toCompletion` is injective and preserves `supSeminorm`. -/

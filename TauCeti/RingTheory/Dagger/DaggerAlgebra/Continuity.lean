@@ -35,7 +35,7 @@ dagger algebras:
   algebras (`TauCeti.IsAffinoidAlgebra.continuous_algHom`).
 * **Canonical topology and presentation independence**
   (`TauCeti.Dagger.washnitzerAlgebra.presentationContinuousAlgEquiv`,
-  `TauCeti.Dagger.IsDaggerAlgebra.presentationResidueContinuousAlgEquiv`,
+  `TauCeti.Dagger.presentationResidueContinuousAlgEquiv`,
   `TauCeti.Dagger.IsDaggerAlgebra.toContinuousAlgEquiv`): all Monsky–Washnitzer presentations
   `π : W_σ ↠ A` induce Lipschitz-equivalent residue norms and hence the same topology on `A`. Every
   surjective morphism `φ : A →ₐ[K] B` of dagger algebras is an open quotient map
@@ -45,9 +45,10 @@ dagger algebras:
 * **Power-bounded and topologically nilpotent elements**
   (`TauCeti.Dagger.IsDaggerAlgebra.isPowerBounded_iff_supSeminorm_le_one`,
   `TauCeti.Dagger.IsDaggerAlgebra.isTopologicallyNilpotent_iff_supSeminorm_lt_one`): in the
-  canonical topology on `A`, the power-bounded elements are `{a | |a|sup ≤ 1}` and the topologically
-  nilpotent elements are `{a | |a|sup < 1}`, both preserved by arbitrary `K`-algebra homomorphisms
-  of dagger algebras.
+  canonical topology on `A`, the power-bounded elements are `{a | |a|sup ≤ 1}` (preserved by
+  arbitrary `K`-algebra homomorphisms via `TauCeti.Dagger.IsDaggerAlgebra.isPowerBounded_map`) and
+  the topologically nilpotent elements are `{a | |a|sup < 1}` (preserved via automatic continuity
+  and `IsTopologicallyNilpotent.map`).
 
 ## Main definitions
 
@@ -55,7 +56,7 @@ dagger algebras:
   `K`-algebra isomorphism `(W_σ ⧸ ker π₁) ≃A[K] (W_τ ⧸ ker π₂)` between any two overconvergent
   presentations of the same `K`-algebra.
 * `TauCeti.Dagger.residueContinuousAlgEquiv`,
-  `TauCeti.Dagger.IsDaggerAlgebra.presentationResidueContinuousAlgEquiv`: topological `K`-algebra
+  `TauCeti.Dagger.presentationResidueContinuousAlgEquiv`: topological `K`-algebra
   comparisons between `(A, residueNormedCommRing K A)` and `W_σ ⧸ ker π` for any presentation
   `π : W_σ ↠ A`.
 * `TauCeti.Dagger.IsDaggerAlgebra.toContinuousAlgEquiv`: upgrades an algebraic isomorphism
@@ -158,6 +159,15 @@ theorem toAlgEquiv_quotientContinuousAlgEquivOfAlgEquiv {I : Ideal (W σ)} {J : 
     (e : (W σ ⧸ I) ≃ₐ[K] (W τ ⧸ J)) :
     (quotientContinuousAlgEquivOfAlgEquiv e).toAlgEquiv = e := (rfl)
 
+/-- `quotientContinuousAlgEquivOfAlgEquiv` commutes with `.symm`. -/
+@[simp]
+theorem quotientContinuousAlgEquivOfAlgEquiv_symm {I : Ideal (W σ)} {J : Ideal (W τ)}
+    (e : (W σ ⧸ I) ≃ₐ[K] (W τ ⧸ J)) :
+    (quotientContinuousAlgEquivOfAlgEquiv e).symm =
+      quotientContinuousAlgEquivOfAlgEquiv e.symm := by
+  ext x
+  exact (quotientContinuousAlgEquivOfAlgEquiv e).symm_apply_eq.mpr (by simp)
+
 /-- **Presentation independence of the residue-norm topology.** Two Monsky–Washnitzer presentations
 `π₁ : W_σ ↠ C` and `π₂ : W_τ ↠ C` of the same `K`-algebra give residue algebras whose quotient Gauss
 norms define the same topology: the canonical `K`-algebra isomorphism compatible with both
@@ -192,6 +202,17 @@ theorem kerLiftAlg_presentationContinuousAlgEquiv {C : Type*} [CommRing C] [Alge
   obtain ⟨g, hg⟩ := hπ₂ (π₁ f)
   rw [presentationContinuousAlgEquiv_mk π₁ hπ₁ π₂ hπ₂ hg]
   simpa using hg
+
+/-- Swapping the two presentations in `presentationContinuousAlgEquiv` yields the inverse
+homeomorphism. -/
+@[simp]
+theorem presentationContinuousAlgEquiv_symm {C : Type*} [CommRing C] [Algebra K C]
+    (π₁ : W σ →ₐ[K] C) (hπ₁ : Function.Surjective π₁)
+    (π₂ : W τ →ₐ[K] C) (hπ₂ : Function.Surjective π₂) :
+    (presentationContinuousAlgEquiv π₁ hπ₁ π₂ hπ₂).symm =
+      presentationContinuousAlgEquiv π₂ hπ₂ π₁ hπ₁ := by
+  ext x
+  simp [presentationContinuousAlgEquiv]
 
 /-- **Equivalence of residue norms across presentations.** For any two Monsky–Washnitzer
 presentations of the same `K`-algebra, the induced quotient Gauss norms bound each other up to
@@ -285,12 +306,55 @@ theorem residueContinuousAlgEquiv_symm_mk
 
 end ResidueEquiv
 
-namespace IsDaggerAlgebra
+section PresentationResidue
+
+variable {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+
+/-- For any surjective presentation `π : W_σ →ₐ[K] A` of a dagger algebra, the first isomorphism
+theorem `(W_σ ⧸ ker π) ≃ₐ[K] A` is a topological `K`-algebra isomorphism between the quotient Gauss
+norm of `π` and `residueNormedCommRing K A`. -/
+noncomputable def presentationResidueContinuousAlgEquiv {σ : Type*} [Finite σ]
+    (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π) :
+    letI := residueNormedCommRing K A
+    (washnitzerAlgebra σ K ⧸ RingHom.ker π) ≃A[K] A :=
+  letI := residueNormedCommRing K A
+  (washnitzerAlgebra.presentationContinuousAlgEquiv π hπ
+    (presentation K A) (presentation_surjective K A)).trans
+    (residueContinuousAlgEquiv K A).symm
+
+/-- `presentationResidueContinuousAlgEquiv π hπ` sends the class of `f` to `π f`. -/
+@[simp↓]
+theorem presentationResidueContinuousAlgEquiv_mk {σ : Type*} [Finite σ]
+    (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π)
+    (f : washnitzerAlgebra σ K) :
+    letI := residueNormedCommRing K A
+    presentationResidueContinuousAlgEquiv π hπ (Ideal.Quotient.mk _ f) = π f := by
+  let := residueNormedCommRing K A
+  obtain ⟨g, hg⟩ := presentation_surjective K A (π f)
+  simp [presentationResidueContinuousAlgEquiv,
+    washnitzerAlgebra.presentationContinuousAlgEquiv_mk π hπ
+      (presentation K A) (presentation_surjective K A) hg, hg]
+
+/-- The inverse of `presentationResidueContinuousAlgEquiv π hπ` sends `π f` to the quotient class
+of `f`. -/
+@[simp↓]
+theorem presentationResidueContinuousAlgEquiv_symm_apply {σ : Type*} [Finite σ]
+    (π : washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π)
+    (f : washnitzerAlgebra σ K) :
+    letI := residueNormedCommRing K A
+    (presentationResidueContinuousAlgEquiv π hπ).symm (π f) = Ideal.Quotient.mk _ f :=
+  letI := residueNormedCommRing K A
+  (presentationResidueContinuousAlgEquiv π hπ).symm_apply_eq.mpr
+    (presentationResidueContinuousAlgEquiv_mk π hπ f).symm
+
+end PresentationResidue
 
 section Morphisms
 
 variable {A B : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
   [CommRing B] [Algebra K B] [IsDaggerAlgebra K B]
+
+namespace IsDaggerAlgebra
 
 /-- Every `K`-algebra homomorphism from a dagger algebra (with its residue norm) into a completely
 normed affinoid algebra is continuous. -/
@@ -381,43 +445,6 @@ theorem toContinuousAlgEquiv_symm (e : A ≃ₐ[K] B) :
   ext b
   exact (toContinuousAlgEquiv e).symm_apply_eq.mpr (by simp)
 
-/-- For any surjective presentation `π : W_σ →ₐ[K] A` of a dagger algebra, the first isomorphism
-theorem `(W_σ ⧸ ker π) ≃ₐ[K] A` is a topological `K`-algebra isomorphism between the quotient Gauss
-norm of `π` and `residueNormedCommRing K A`. -/
-noncomputable def presentationResidueContinuousAlgEquiv {σ : Type*} [Finite σ]
-    (π : Dagger.washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π) :
-    letI := residueNormedCommRing K A
-    (Dagger.washnitzerAlgebra σ K ⧸ RingHom.ker π) ≃A[K] A :=
-  letI := residueNormedCommRing K A
-  (Dagger.washnitzerAlgebra.presentationContinuousAlgEquiv π hπ
-    (presentation K A) (presentation_surjective K A)).trans
-    (residueContinuousAlgEquiv K A).symm
-
-/-- `presentationResidueContinuousAlgEquiv π hπ` sends the class of `f` to `π f`. -/
-@[simp↓]
-theorem presentationResidueContinuousAlgEquiv_mk {σ : Type*} [Finite σ]
-    (π : Dagger.washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π)
-    (f : Dagger.washnitzerAlgebra σ K) :
-    letI := residueNormedCommRing K A
-    presentationResidueContinuousAlgEquiv π hπ (Ideal.Quotient.mk _ f) = π f := by
-  let := residueNormedCommRing K A
-  obtain ⟨g, hg⟩ := presentation_surjective K A (π f)
-  simp [presentationResidueContinuousAlgEquiv,
-    Dagger.washnitzerAlgebra.presentationContinuousAlgEquiv_mk π hπ
-      (presentation K A) (presentation_surjective K A) hg, hg]
-
-/-- The inverse of `presentationResidueContinuousAlgEquiv π hπ` sends `π f` to the quotient class
-of `f`. -/
-@[simp↓]
-theorem presentationResidueContinuousAlgEquiv_symm_apply {σ : Type*} [Finite σ]
-    (π : Dagger.washnitzerAlgebra σ K →ₐ[K] A) (hπ : Function.Surjective π)
-    (f : Dagger.washnitzerAlgebra σ K) :
-    letI := residueNormedCommRing K A
-    (presentationResidueContinuousAlgEquiv π hπ).symm (π f) = Ideal.Quotient.mk _ f :=
-  letI := residueNormedCommRing K A
-  (presentationResidueContinuousAlgEquiv π hπ).symm_apply_eq.mpr
-    (presentationResidueContinuousAlgEquiv_mk π hπ f).symm
-
 /-- Every surjective `K`-algebra homomorphism `π : W_σ →ₐ[K] A` from a Monsky–Washnitzer algebra
 onto a dagger algebra is an open quotient map for the Gauss norm on `W_σ` and the residue norm on
 `A`. -/
@@ -433,13 +460,18 @@ theorem isOpenQuotientMap_of_surjective_washnitzerAlgebra {σ : Type*} [Finite �
   rw [← hcomp]
   exact he.comp (QuotientRing.isOpenQuotientMap_mk (RingHom.ker π))
 
+end IsDaggerAlgebra
+
 /-- The chosen minimal presentation `presentation K A : W_n →ₐ[K] A` is an open quotient map onto
 `(A, residueNormedCommRing K A)`. -/
 theorem isOpenQuotientMap_presentation (K A : Type*) [NontriviallyNormedField K]
     [IsUltrametricDist K] [CompleteSpace K] [CommRing A] [Algebra K A] [IsDaggerAlgebra K A] :
     letI := residueNormedCommRing K A
     IsOpenQuotientMap (presentation K A) :=
-  isOpenQuotientMap_of_surjective_washnitzerAlgebra (presentation K A) (presentation_surjective K A)
+  IsDaggerAlgebra.isOpenQuotientMap_of_surjective_washnitzerAlgebra
+    (presentation K A) (presentation_surjective K A)
+
+namespace IsDaggerAlgebra
 
 /-- **Every ideal of a dagger algebra is closed** in its canonical residue-norm topology. -/
 theorem isClosed_ideal (J : Ideal A) :
@@ -513,15 +545,13 @@ theorem toAlgEquiv_quotientKerContinuousAlgEquiv (φ : A →ₐ[K] B) (hφ : Fun
   letI := residueNormedCommRing K B
   (rfl)
 
-end Morphisms
-
 end IsDaggerAlgebra
+
+end Morphisms
 
 end DaggerTopology
 
 section PowerBounded
-
-namespace IsDaggerAlgebra
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   {A B : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
@@ -529,7 +559,6 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
 
 /-- An element of a dagger algebra is power-bounded in the residue-norm topology iff its image in
 `completion K A` is power-bounded. -/
-@[simp↓]
 theorem isPowerBounded_toCompletion_iff (a : A) :
     letI := residueNormedCommRing K A
     Huber.IsPowerBounded (toCompletion K A a) ↔ Huber.IsPowerBounded a := by
@@ -545,7 +574,6 @@ theorem isPowerBounded_toCompletion_iff (a : A) :
 
 /-- An element of a dagger algebra is topologically nilpotent in the residue-norm topology iff its
 image in `completion K A` is topologically nilpotent. -/
-@[simp↓]
 theorem isTopologicallyNilpotent_toCompletion_iff (a : A) :
     letI := residueNormedCommRing K A
     IsTopologicallyNilpotent (toCompletion K A a) ↔ IsTopologicallyNilpotent a := by
@@ -556,6 +584,8 @@ theorem isTopologicallyNilpotent_toCompletion_iff (a : A) :
   unfold IsTopologicallyNilpotent
   rw [hfun, ← map_zero (toCompletion K A),
     (isometry_toCompletion K A).isEmbedding.isInducing.tendsto_nhds_iff]
+
+namespace IsDaggerAlgebra
 
 /-- **The supremum seminorm is bounded by the residue norm** on a dagger algebra:
 `|a|sup ≤ ‖a‖`. -/
