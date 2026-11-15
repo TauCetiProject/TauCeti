@@ -54,6 +54,7 @@ its degree alone.
   factor has degree zero.
 * `TauCeti.IsDGAlgebra.map_one_eq_zero` and `TauCeti.IsDGAlgebra.map_algebraMap`: the differential
   annihilates the unit and, more generally, the image of the ground ring.
+* `TauCeti.IsDGAlgebra.neg`: the negative of a differential is a differential.
 * `TauCeti.isNonUnitalDGAlgebra_zero` and `TauCeti.isDGAlgebra_zero`: a graded algebra with zero
   differential is a differential graded algebra.
 * `TauCeti.isDGAlgebra_trivialGrading`: in particular, the ground ring, trivially graded with zero
@@ -230,6 +231,13 @@ theorem map_one_eq_zero (h : IsDGAlgebra 𝒜 d) : d 1 = 0 :=
 /-- The differential of a differential graded algebra annihilates the image of the ground ring. -/
 theorem map_algebraMap (h : IsDGAlgebra 𝒜 d) (r : R) : d (algebraMap R A r) = 0 :=
   map_algebraMap_of_leibniz h.leibniz r
+
+/-- The negative of the differential of a differential graded algebra is again a differential. -/
+theorem neg (h : IsDGAlgebra 𝒜 d) : IsDGAlgebra 𝒜 (-d) where
+  map_mem ha := Submodule.neg_mem _ (h.map_mem ha)
+  sq_zero a := by rw [LinearMap.neg_apply, LinearMap.neg_apply, map_neg, h.sq_zero, neg_neg]
+  leibniz ha b := by
+    simp only [LinearMap.neg_apply, h.leibniz ha, neg_add, neg_mul, mul_neg, smul_neg]
 
 end IsDGAlgebra
 
