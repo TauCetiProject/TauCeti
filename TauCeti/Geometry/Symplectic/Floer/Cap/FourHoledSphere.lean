@@ -383,6 +383,48 @@ theorem pantsGlue_pantsGlue_eq_of_comp_transAssoc_eq
   (pantsGlue_pantsGlue_left P P' q₁ q₂ q₃).trans
     (glue₃_eq_pantsGlue_pantsGlue_right _ Q Q' h q₁ q₂ q₃)
 
+/-- Changing the first input cap class changes the cap class glued along a four-holed sphere by
+the same class. -/
+@[simp]
+theorem glue₃_vsub_glue₃_left
+    (W : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨(γ₁.trans γ₂).trans γ₃⟩)
+    (q₁' q₁ : SphericalCapClass ω c γ₁) (q₂ : SphericalCapClass ω c γ₂)
+    (q₃ : SphericalCapClass ω c γ₃) :
+    glue₃ W q₁' q₂ q₃ -ᵥ glue₃ W q₁ q₂ q₃ = q₁' -ᵥ q₁ := by
+  induction q₁' using induction_on with | h D₁' =>
+  induction q₁ using induction_on with | h D₁ =>
+  induction q₂ using induction_on with | h D₂ =>
+  induction q₃ using induction_on with
+  | h D₃ => rw [glue₃_mk, glue₃_mk, mk_vsub_mk, mk_vsub_mk, RawCap.glue₃_vsub_glue₃_left]
+
+/-- Changing the second input cap class changes the cap class glued along a four-holed sphere by
+the same class. -/
+@[simp]
+theorem glue₃_vsub_glue₃_middle
+    (W : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨(γ₁.trans γ₂).trans γ₃⟩)
+    (q₁ : SphericalCapClass ω c γ₁) (q₂' q₂ : SphericalCapClass ω c γ₂)
+    (q₃ : SphericalCapClass ω c γ₃) :
+    glue₃ W q₁ q₂' q₃ -ᵥ glue₃ W q₁ q₂ q₃ = q₂' -ᵥ q₂ := by
+  induction q₁ using induction_on with | h D₁ =>
+  induction q₂' using induction_on with | h D₂' =>
+  induction q₂ using induction_on with | h D₂ =>
+  induction q₃ using induction_on with
+  | h D₃ => rw [glue₃_mk, glue₃_mk, mk_vsub_mk, mk_vsub_mk, RawCap.glue₃_vsub_glue₃_middle]
+
+/-- Changing the third input cap class changes the cap class glued along a four-holed sphere by
+the same class. -/
+@[simp]
+theorem glue₃_vsub_glue₃_right
+    (W : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨(γ₁.trans γ₂).trans γ₃⟩)
+    (q₁ : SphericalCapClass ω c γ₁) (q₂ : SphericalCapClass ω c γ₂)
+    (q₃' q₃ : SphericalCapClass ω c γ₃) :
+    glue₃ W q₁ q₂ q₃' -ᵥ glue₃ W q₁ q₂ q₃ = q₃' -ᵥ q₃ := by
+  induction q₁ using induction_on with | h D₁ =>
+  induction q₂ using induction_on with | h D₂ =>
+  induction q₃' using induction_on with | h D₃' =>
+  induction q₃ using induction_on with
+  | h D₃ => rw [glue₃_mk, glue₃_mk, mk_vsub_mk, mk_vsub_mk, RawCap.glue₃_vsub_glue₃_right]
+
 variable [PathConnectedSpace X]
 
 /-- **Gluing cap classes along a four-holed sphere is equivariant in the first input**. -/
