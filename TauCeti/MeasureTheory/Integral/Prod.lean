@@ -42,6 +42,9 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   σ-algebra (`MeasureTheory.isPiSystem_prod`, `MeasureTheory.generateFrom_prod`), so this is the
   general `TauCeti.setIntegral_eq_zero_of_isPiSystem` instantiated at that π-system; the only work
   left here is extracting the whole-space hypothesis from the rectangle `univ ×ˢ univ`.
+* `TauCeti.integral_setIntegral_Ioi_dist_smul_eq_integral_smul_setIntegral_ball` slices a radial
+  weight `∫_{dist y c}^∞ ϕ` into balls: it integrates against `g` as `ϕ` integrates against the
+  ball integrals of `g`.
 * `TauCeti.integrable_and_integral_prod_le` deduces product-measure integrability and an integral
   bound for an a.e.-nonnegative kernel from a.e. slice integrability and an integrable slice
   majorant.
@@ -275,5 +278,52 @@ theorem integrable_and_integral_prod_le [SFinite μ] [SFinite ν] {G : α × β 
     exact h.2
   exact ⟨hG_int, (integral_prod G hG_int).trans_le
     (integral_mono_ae hG_int.integral_prod_left hH_int (hslice.mono fun _ h ↦ h.2))⟩
+
+/-- **Slicing a radial weight into balls.** If `ϕ` is integrable and vanishes from `R` on, and `g`
+is integrable on `ball c R`, then the weight `∫_{dist y c}^∞ ϕ` integrates against `g` as `ϕ`
+integrates against the ball integrals of `g`:
+
+`∫ (∫_{dist y c}^∞ ϕ) g(y) dμ(y) = ∫ ϕ(s) (∫_{ball c s} g dμ) ds`. -/
+theorem integral_setIntegral_Ioi_dist_smul_eq_integral_smul_setIntegral_ball [SFinite μ]
+    [PseudoMetricSpace α] [OpensMeasurableSpace α] [CompleteSpace E] (c : α) {R : ℝ}
+    {ϕ : ℝ → ℝ} {g : α → E} (hϕ : Integrable ϕ) (hϕR : ∀ t, R ≤ t → ϕ t = 0)
+    (hg : IntegrableOn g (Metric.ball c R) μ) :
+    ∫ y, (∫ s in Ioi (dist y c), ϕ s) • g y ∂μ = ∫ s, ϕ s • ∫ y in Metric.ball c s, g y ∂μ := by
+  set S : Set (ℝ × α) := {p | dist p.2 c < p.1}
+  have hS : MeasurableSet S :=
+    (isOpen_lt (continuous_snd.dist continuous_const) continuous_fst).measurableSet
+  set gR := (Metric.ball c R).indicator g
+  have hgR : Integrable gR μ := (integrable_indicator_iff measurableSet_ball).2 hg
+  have hint : Integrable (S.indicator fun p ↦ ϕ p.1 • gR p.2) ((volume : Measure ℝ).prod μ) :=
+    (hϕ.smul_prod hgR).indicator hS
+  -- On `S`, a nonzero value of `ϕ` forces `dist y c < s < R`, so `gR` may replace `g`.
+  have hpt (s : ℝ) (y : α) :
+      S.indicator (fun p ↦ ϕ p.1 • gR p.2) (s, y) = (Ioi (dist y c)).indicator ϕ s • g y := by
+    by_cases hys : dist y c < s
+    · have hmem : (s, y) ∈ S := hys
+      rw [indicator_of_mem hmem, indicator_of_mem (mem_Ioi.2 hys)]
+      by_cases hsR : s < R
+      · rw [show gR y = g y from indicator_of_mem (Metric.mem_ball.2 (hys.trans hsR)) g]
+      · simp [hϕR s (not_lt.1 hsR)]
+    · have hmem : (s, y) ∉ S := hys
+      rw [indicator_of_notMem hmem, indicator_of_notMem (mt mem_Ioi.1 hys), zero_smul]
+  have hswap := integral_integral_swap (μ := volume) (ν := μ)
+    (f := fun (s : ℝ) (y : α) ↦ S.indicator (fun p ↦ ϕ p.1 • gR p.2) (s, y)) hint
+  simp only [hpt] at hswap
+  calc ∫ y, (∫ s in Ioi (dist y c), ϕ s) • g y ∂μ
+      = ∫ y, (∫ s, (Ioi (dist y c)).indicator ϕ s • g y) ∂μ := by
+        refine integral_congr_ae (Filter.Eventually.of_forall fun y ↦ ?_)
+        simp only [integral_smul_const, integral_indicator measurableSet_Ioi]
+    _ = ∫ s, ∫ y, (Ioi (dist y c)).indicator ϕ s • g y ∂μ := hswap.symm
+    _ = ∫ s, ϕ s • ∫ y in Metric.ball c s, g y ∂μ := by
+        refine integral_congr_ae (Filter.Eventually.of_forall fun s ↦ ?_)
+        dsimp only
+        rw [← integral_smul, ← integral_indicator measurableSet_ball]
+        refine integral_congr_ae (Filter.Eventually.of_forall fun y ↦ ?_)
+        dsimp only
+        by_cases hys : dist y c < s
+        · rw [indicator_of_mem (mem_Ioi.2 hys), indicator_of_mem (Metric.mem_ball.2 hys)]
+        · rw [indicator_of_notMem (mt mem_Ioi.1 hys),
+            indicator_of_notMem (mt Metric.mem_ball.1 hys), zero_smul]
 
 end TauCeti

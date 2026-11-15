@@ -64,6 +64,8 @@ For a continuous linear equivalence `L` and a scale `t`, the rescaled coordinate
   set in a nontrivial space.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero`: the same agreement at nonzero
   radius, including trivial spaces.
+* `MeasureTheory.Integrable.continuous_setIntegral_ball`: the integral of an integrable function
+  over `ball c r` is continuous in `r`.
 * `MeasureTheory.Measure.ae_eq_closedBall_of_subset_of_measure_eq`: a set inside a closed ball,
   with the measure of a closed ball of the same radius, agrees with it up to a null set.
 * `MeasureTheory.Measure.addHaar_ball_lt_addHaar_ball_iff`: concentric balls are ordered by
@@ -246,6 +248,26 @@ theorem addHaar_closedBall_ae_eq_ball
   (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
     (mu.addHaar_closedBall_eq_addHaar_ball x r).le
     measurableSet_ball.nullMeasurableSet measure_closedBall_lt_top.ne).symm
+
+/-- The integrals of an integrable function over the balls `ball c r` depend continuously on the
+radius `r`, since every sphere is null in a nontrivial finite-dimensional space. -/
+theorem _root_.MeasureTheory.Integrable.continuous_setIntegral_ball
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {mu : Measure E} [mu.IsAddHaarMeasure] {f : E → F} (hf : Integrable f mu) (c : E) :
+    Continuous fun r ↦ ∫ y in ball c r, f y ∂mu := by
+  simp_rw [← integral_indicator measurableSet_ball]
+  refine continuous_iff_continuousAt.2 fun r₀ ↦ continuousAt_of_dominated (bound := (‖f ·‖))
+    (Filter.Eventually.of_forall fun r ↦ (hf.indicator measurableSet_ball).aestronglyMeasurable)
+    (Filter.Eventually.of_forall fun r ↦ Filter.Eventually.of_forall fun y ↦
+      norm_indicator_le_norm_self f y) hf.norm ?_
+  -- Off the null sphere `sphere c r₀`, the indicator of `ball c r` is locally constant in `r`.
+  filter_upwards [measure_eq_zero_iff_ae_notMem.1 (mu.addHaar_sphere c r₀)] with y hy
+  rcases lt_or_gt_of_ne (fun h ↦ hy (mem_sphere.2 h) : dist y c ≠ r₀) with h | h
+  · exact continuousAt_const.congr ((eventually_gt_nhds h).mono fun r hr ↦
+      (Set.indicator_of_mem (mem_ball.2 hr) f).symm)
+  · exact continuousAt_const.congr ((eventually_lt_nhds h).mono fun r hr ↦
+      (Set.indicator_of_notMem (fun hy ↦ (mem_ball.1 hy).not_ge hr.le) f).symm)
 
 /-- At nonzero radius, closed and open balls agree up to a null set even in a trivial space. -/
 theorem addHaar_closedBall_ae_eq_ball_of_ne_zero

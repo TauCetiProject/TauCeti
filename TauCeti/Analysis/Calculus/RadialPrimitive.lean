@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Topology.Instances.Real.TSupport
 
 /-!
@@ -30,7 +31,7 @@ Likewise a continuous compactly supported `ϕ` supported in `(0, ∞)` is `-H'` 
 * `TauCeti.exists_contDiff_eq_pow_mul_deriv`: every smooth `ψ` supported in `(0, R)` is
   `s ↦ s ^ n ρ' (s ^ 2)` for a smooth `ρ` vanishing for large arguments, nonpositive when `ψ` is
   nonnegative.
-* `TauCeti.exists_contDiff_deriv_eq_neg_of_tsupport_subset_Ioi`: the tail integral
+* `Continuous.exists_contDiff_deriv_eq_neg_of_tsupport_subset_Ioi`: the tail integral
   `H t = ∫_t^∞ ϕ` of a continuous compactly supported `ϕ` supported in `(0, ∞)` is a `C¹`
   primitive of `-ϕ`, constant near `0` and vanishing far out.
 -/
@@ -106,42 +107,25 @@ lemma exists_contDiff_eq_pow_mul_deriv (n : ℕ) (hR : 0 < R) {ψ : ℝ → ℝ}
 
 /-- A primitive `H` of `-ϕ` for a continuous compactly supported `ϕ` supported in `(0, ∞)`,
 constant near `0` and vanishing far out: `H t = ∫ s in Ioi t, ϕ s`. -/
-theorem exists_contDiff_deriv_eq_neg_of_tsupport_subset_Ioi {ϕ : ℝ → ℝ} (hϕc : Continuous ϕ)
-    (hc : HasCompactSupport ϕ) (hϕ : tsupport ϕ ⊆ Ioi 0) :
+theorem _root_.Continuous.exists_contDiff_deriv_eq_neg_of_tsupport_subset_Ioi {ϕ : ℝ → ℝ}
+    (hϕc : Continuous ϕ) (hc : HasCompactSupport ϕ) (hϕ : tsupport ϕ ⊆ Ioi 0) :
     ∃ H : ℝ → ℝ, ContDiff ℝ 1 H ∧ (∀ t, deriv H t = -ϕ t) ∧ (∀ᶠ t in 𝓝 0, H t = H 0) ∧
       (∃ R, ∀ t, R ≤ t → H t = 0) ∧ ∀ t, H t = ∫ s in Ioi t, ϕ s := by
   obtain ⟨ε, hε, R, hlow, hhigh⟩ := hc.exists_pos_forall_eq_zero_of_tsupport_subset_Ioi hϕ
-  set H : ℝ → ℝ := fun t ↦ ∫ s in t..R, ϕ s with hHdef
-  have hderiv (t : ℝ) : HasDerivAt H (-ϕ t) t :=
-    intervalIntegral.integral_hasDerivAt_left (hϕc.intervalIntegrable _ _)
-      (hϕc.stronglyMeasurableAtFilter _ _) hϕc.continuousAt
-  have hd : deriv H = fun t ↦ -ϕ t := funext fun t ↦ (hderiv t).deriv
-  have hzero (t : ℝ) (ht : R ≤ t) : H t = 0 := by
-    simp only [hHdef]
-    rw [intervalIntegral.integral_symm, neg_eq_zero]
-    refine intervalIntegral.integral_zero_ae (Eventually.of_forall fun s hs ↦ hhigh s ?_)
-    rw [uIoc_of_le ht] at hs
-    exact hs.1.le
-  refine ⟨H, contDiff_one_iff_deriv.2 ⟨fun t ↦ (hderiv t).differentiableAt, ?_⟩,
-    fun t ↦ (hderiv t).deriv, ?_, ⟨R, hzero⟩, fun t ↦ ?_⟩
-  · rw [hd]; exact hϕc.neg
+  have hderiv (t : ℝ) : HasDerivAt (fun u ↦ ∫ s in Ioi u, ϕ s) (-ϕ t) t :=
+    (hϕc.integrable_of_hasCompactSupport hc).integrableOn.hasDerivAt_integral_Ioi
+      hϕc.continuousAt (sub_lt_self t zero_lt_one)
+  -- Below `ε` the tail integral is the whole integral of `ϕ`.
+  have hlowI (t : ℝ) (ht : t < ε) : ∫ s in Ioi t, ϕ s = ∫ s, ϕ s :=
+    setIntegral_eq_integral_of_forall_compl_eq_zero fun s hs ↦
+      hlow s ((not_lt.1 hs).trans_lt ht)
+  refine ⟨_, contDiff_one_iff_deriv.2 ⟨fun t ↦ (hderiv t).differentiableAt, ?_⟩,
+    fun t ↦ (hderiv t).deriv, ?_, ⟨R, fun t ht ↦ ?_⟩, fun t ↦ rfl⟩
+  · rw [show deriv (fun u ↦ ∫ s in Ioi u, ϕ s) = fun t ↦ -ϕ t from
+      funext fun t ↦ (hderiv t).deriv]
+    exact hϕc.neg
   · filter_upwards [Iio_mem_nhds hε] with t ht
-    simp only [hHdef]
-    rw [← intervalIntegral.integral_add_adjacent_intervals (b := 0)
-      (hϕc.intervalIntegrable _ _) (hϕc.intervalIntegrable _ _)]
-    have h0 : ∫ s in t..0, ϕ s = 0 := by
-      refine intervalIntegral.integral_zero_ae (Eventually.of_forall fun s hs ↦ hlow s ?_)
-      rcases le_total t 0 with h | h
-      · rw [uIoc_of_le h] at hs; linarith [hs.2, mem_Iio.1 ht]
-      · rw [uIoc_of_ge h] at hs; linarith [hs.2, mem_Iio.1 ht]
-    rw [h0, zero_add]
-  · rcases le_total t R with htR | htR
-    · simp only [hHdef]
-      rw [intervalIntegral.integral_of_le htR]
-      refine (setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_Ioi
-        Ioc_subset_Ioi_self fun s hs ↦ hhigh s ?_).symm
-      exact le_of_lt (not_le.1 fun h ↦ hs.2 ⟨hs.1, h⟩)
-    · rw [hzero t htR, setIntegral_eq_zero_of_forall_eq_zero fun s hs ↦
-        hhigh s (htR.trans (le_of_lt hs))]
+    rw [hlowI t ht, hlowI 0 hε]
+  · exact setIntegral_eq_zero_of_forall_eq_zero fun s hs ↦ hhigh s (ht.trans (le_of_lt hs))
 
 end TauCeti

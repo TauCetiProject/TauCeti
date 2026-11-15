@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.ComplexStructure
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The Hermitian part of a two-form and its extreme eigenvalues in dimension four
@@ -56,6 +57,8 @@ that the orientation is the complex one.
 In the namespace `TauCeti.AlmostComplexStructure`:
 
 * `hermitianForm_apply_self`: `B(v, v) = F(v, J v)`.
+* `Continuous.hermitianForm_apply`, `ContinuousOn.hermitianForm_apply`: `B(v, w)` depends
+  continuously on `F`, `v` and `w`.
 * `hermitianForm_kahlerForm`: the Hermitian part of `ω` is the inner product.
 * `twoVectorContraction_apply_apply_of_lieMap_eq_zero`, `hermitianForm_apply_of_lieMap_eq_zero`:
   for an orthogonal `J` and a `J`-invariant `η`, the contraction by `η` commutes with `J` and
@@ -120,6 +123,32 @@ theorem hermitianForm_apply_self (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 
   simp only [LinearMap.comp_apply, LinearMap.BilinMap.toQuadraticMapLinearMap_apply,
     LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.compRight_apply, LinearMap.coe_mk,
     AddHom.coe_mk, LinearMap.compl₂_apply, innerₗ_apply_apply, inner_twoVectorContraction_apply]
+
+/-- The Hermitian part `B(v, w)` of `F` depends continuously on `F`, `v` and `w`. -/
+@[fun_prop]
+theorem _root_.ContinuousOn.hermitianForm_apply {X : Type*} [TopologicalSpace X]
+    {J : AlmostComplexStructure V} {F : X → ⋀[ℝ]^2 V} {u w : X → V} {s : Set X}
+    (hF : ContinuousOn F s) (hu : ContinuousOn u s) (hw : ContinuousOn w s) :
+    ContinuousOn (fun y ↦ J.hermitianForm (F y) (u y) (w y)) s := by
+  have hι : Continuous fun p : Fin 2 → V ↦ ιMulti ℝ 2 p :=
+    (ιMulti ℝ 2 (M := V)).toMultilinearMap.continuous_of_finiteDimensional
+  have hJ : Continuous J := J.toLinearMap.continuous_of_finiteDimensional
+  have hpair {a b : X → V} (ha : ContinuousOn a s) (hb : ContinuousOn b s) :
+      ContinuousOn (fun y ↦ ιMulti ℝ 2 ![a y, J (b y)]) s :=
+    hι.comp_continuousOn (continuousOn_pi.2 fun i ↦ by
+      fin_cases i
+      · exact ha
+      · exact hJ.comp_continuousOn hb)
+  exact (((hF.inner (hpair hu hw)).add (hF.inner (hpair hw hu))).div_const 2).congr
+    fun y _ ↦ TauCeti.AlmostComplexStructure.hermitianForm_apply J (F y) (u y) (w y)
+
+/-- The Hermitian part `B(v, w)` of `F` depends continuously on `F`, `v` and `w`. -/
+@[fun_prop]
+theorem _root_.Continuous.hermitianForm_apply {X : Type*} [TopologicalSpace X]
+    {J : AlmostComplexStructure V} {F : X → ⋀[ℝ]^2 V} {u w : X → V} (hF : Continuous F)
+    (hu : Continuous u) (hw : Continuous w) :
+    Continuous fun y ↦ J.hermitianForm (F y) (u y) (w y) :=
+  continuousOn_univ.1 (hF.continuousOn.hermitianForm_apply hu.continuousOn hw.continuousOn)
 
 omit [FiniteDimensional ℝ V] in
 /-- The Hermitian part of a two-form is symmetric. -/
