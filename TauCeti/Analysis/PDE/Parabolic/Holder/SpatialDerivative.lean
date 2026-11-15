@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Linear
+import TauCeti.Analysis.Normed.Module.Multilinear.Curry
 
 /-!
 # Spatial differentiation in the parabolic Hölder scale
@@ -61,58 +62,30 @@ noncomputable section
 
 namespace TauCeti.ParabolicCkHolderSpace
 
-open Set ParabolicSpaceTime
+open Set ParabolicSpaceTime ContinuousMultilinearMap
 open scoped ENNReal NNReal BoundedContinuousFunction
 
 variable {k : ℕ} {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ} {hab : a < b}
 
-variable (F) in
-/-- Evaluation of an `(m + 1)`-linear map with `h` in the last argument, as a continuous linear
-map to `m`-linear maps. -/
-private def snocL (m : ℕ) (h : E) : (E [×(m + 1)]→L[ℝ] F) →L[ℝ] (E [×m]→L[ℝ] F) :=
-  ContinuousLinearMap.compContinuousMultilinearMapL ℝ (fun _ : Fin m ↦ E) (E →L[ℝ] F) F
-      (ContinuousLinearMap.apply ℝ F h) ∘L
-    ((continuousMultilinearCurryRightEquiv' ℝ m E F).toContinuousLinearEquiv :
-      (E [×(m + 1)]→L[ℝ] F) →L[ℝ] (E [×m]→L[ℝ] E →L[ℝ] F))
-
-private theorem snocL_apply (m : ℕ) (h : E) (M : E [×(m + 1)]→L[ℝ] F) (v : Fin m → E) :
-    snocL F m h M v = M (Fin.snoc v h) := by
-  simp [snocL]
-
-private theorem norm_snocL_le (m : ℕ) (h : E) : ‖snocL F m h‖ ≤ ‖h‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg h) fun M ↦ ?_
-  refine ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun v ↦ ?_
-  rw [snocL_apply]
-  refine (M.le_opNorm _).trans_eq ?_
-  rw [Fin.prod_univ_castSucc, Fin.snoc_last]
-  simp only [Fin.snoc_castSucc]
-  ring
-
-/-- Evaluation in the last argument commutes with fixing the first argument. -/
-private theorem snocL_comp_curryLeft (m : ℕ) (h : E) (M : E [×(m + 2)]→L[ℝ] F) :
-    (snocL F m h).comp M.curryLeft = (snocL F (m + 1) h M).curryLeft := by
-  ext v w
-  simp [snocL_apply, Fin.cons_snoc_eq_snoc_cons]
-
 /-- The fields of the directional derivative: the fields of `u` with one more spatial
 derivative, in the direction `h` in the last argument. -/
 private def lineDerivField (h : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab) (r m : ℕ) :
     slab (E := E) a b →ᵇ (E [×m]→L[ℝ] F) :=
-  (snocL F m h).compLeftContinuousBounded _ (mixedDerivL r (m + 1) f)
+  (applyLastL ℝ F m h).compLeftContinuousBounded _ (mixedDerivL r (m + 1) f)
 
 private theorem lineDerivField_apply (h : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
     (r m : ℕ) (p : slab (E := E) a b) :
-    lineDerivField h f r m p = snocL F m h (mixedDerivL r (m + 1) f p) :=
+    lineDerivField h f r m p = applyLastL ℝ F m h (mixedDerivL r (m + 1) f p) :=
   rfl
 
-/-- The fields of `u` with one more spatial derivative compose with `snocL` into Hölder maps
-with the constant multiplied by `‖h‖`. -/
-private theorem holderWith_snocL_comp {X : Type*} [PseudoEMetricSpace X] {C r : ℝ≥0} (m : ℕ)
-    (h : E) {g : X → E [×(m + 1)]→L[ℝ] F} (hg : HolderWith C r g) :
-    HolderWith (‖h‖₊ * C) r fun x ↦ snocL F m h (g x) := by
-  have hL : LipschitzWith ‖h‖₊ (snocL F m h) :=
-    (snocL F m h).lipschitzWith.weaken (by exact_mod_cast norm_snocL_le m h)
+/-- The fields of `u` with one more spatial derivative compose with `applyLastL` into Hölder
+maps with the constant multiplied by `‖h‖`. -/
+private theorem holderWith_applyLastL_comp {X : Type*} [PseudoEMetricSpace X] {C r : ℝ≥0}
+    (m : ℕ) (h : E) {g : X → E [×(m + 1)]→L[ℝ] F} (hg : HolderWith C r g) :
+    HolderWith (‖h‖₊ * C) r fun x ↦ applyLastL ℝ F m h (g x) := by
+  have hL : LipschitzWith ‖h‖₊ (applyLastL ℝ F m h) :=
+    (applyLastL ℝ F m h).lipschitzWith.weaken (by exact_mod_cast norm_applyLastL_le m h)
   simpa only [NNReal.coe_one, NNReal.rpow_one, one_mul, Function.comp_def] using
     (holderWith_one.2 hL).comp hg
 
@@ -120,26 +93,26 @@ private def lineDeriv (h : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab) :
     ParabolicCkHolderSpace k α E F hab :=
   mk (lineDerivField h f)
     (fun r m hrm t x ↦ by
-      have H := (snocL F m h).hasFDerivAt.comp x
+      have H := (applyLastL ℝ F m h).hasFDerivAt.comp x
         (hasFDerivAt_mixedDerivL f (r := r) (m := m + 1) (by omega) t x)
-      rw [snocL_comp_curryLeft] at H
+      rw [applyLastL_comp_curryLeft] at H
       simpa only [Function.comp_def, lineDerivField_apply] using H)
     (fun r m hrm x t ↦ by
-      have H := HasFDerivAt.comp_hasDerivWithinAt (t : ℝ) (snocL F m h).hasFDerivAt
+      have H := HasFDerivAt.comp_hasDerivWithinAt (t : ℝ) (applyLastL ℝ F m h).hasFDerivAt
         (hasDerivWithinAt_mixedDerivL f (r := r) (m := m + 1) (by omega) x t)
       simpa only [ParabolicC2HolderSpace.timeExtension_def, Function.comp_def,
         lineDerivField_apply] using H)
     (fun r m hrm ↦ ⟨‖h‖₊ * ‖timeSliceL r (m + 1) f‖₊, fun x ↦ by
       have hnorm : ‖timeSliceL r (m + 1) f x‖₊ ≤ ‖timeSliceL r (m + 1) f‖₊ := by
         exact_mod_cast lp.norm_apply_le_norm ENNReal.top_ne_zero (timeSliceL r (m + 1) f) x
-      have H := holderWith_snocL_comp m h
+      have H := holderWith_applyLastL_comp m h
         ((timeSliceL r (m + 1) f x).holderWith_nnnorm.mono hnorm)
       intro t s
       simpa only [lineDerivField_apply, timeSliceL_apply f (r := r) (m := m + 1) (by omega)]
         using H t s⟩)
     (fun r m hrm ↦ by
       obtain ⟨C, hC⟩ := memHolder_mixedDerivL f (r := r) (m := m + 1) (by omega)
-      exact (holderWith_snocL_comp m h hC).memHolder)
+      exact (holderWith_applyLastL_comp m h hC).memHolder)
 
 private theorem mixedDerivL_lineDeriv (h : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
     (r m : ℕ) : mixedDerivL r m (lineDeriv h f) = lineDerivField h f r m := by
@@ -152,7 +125,7 @@ private theorem mixedDerivL_lineDeriv (h : E) (f : ParabolicCkHolderSpace (k + 1
 private theorem mixedDerivHolderL_lineDeriv (h : E)
     (f : ParabolicCkHolderSpace (k + 1) α E F hab) (r m : ℕ) :
     mixedDerivHolderL r m (lineDeriv h f) =
-      HolderSpace.compLeftL (snocL F m h) (mixedDerivHolderL r (m + 1) f) := by
+      HolderSpace.compLeftL (applyLastL ℝ F m h) (mixedDerivHolderL r (m + 1) f) := by
   refine HolderSpace.ext fun p ↦ ?_
   by_cases hrm : 2 * r + m = k
   · have H := congrArg (fun g ↦ g p)
@@ -167,7 +140,7 @@ private theorem mixedDerivHolderL_lineDeriv (h : E)
 
 private theorem timeSliceL_lineDeriv (h : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
     (r m : ℕ) (x : E) : timeSliceL r m (lineDeriv h f) x =
-      HolderSpace.compLeftL (snocL F m h) (timeSliceL r (m + 1) f x) := by
+      HolderSpace.compLeftL (applyLastL ℝ F m h) (timeSliceL r (m + 1) f x) := by
   refine HolderSpace.ext fun t ↦ ?_
   by_cases hrm : 2 * r + m + 1 = k
   · rw [timeSliceL_apply _ hrm, mixedDerivL_lineDeriv, lineDerivField_apply,
@@ -192,17 +165,17 @@ private theorem norm_lineDeriv_le (h : E) (f : ParabolicCkHolderSpace (k + 1) α
     · rw [mixedDerivL_lineDeriv]
       refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun q ↦ ?_
       rw [lineDerivField_apply]
-      exact (snocL F p.2 h).le_of_opNorm_le_of_le (norm_snocL_le p.2 h)
+      exact (applyLastL ℝ F p.2 h).le_of_opNorm_le_of_le (norm_applyLastL_le p.2 h)
         (BoundedContinuousFunction.norm_coe_le_norm _ q)
     · refine lp.norm_le_of_forall_le (by positivity) fun x ↦ ?_
       rw [timeSliceL_lineDeriv]
-      exact ((HolderSpace.compLeftL (snocL F p.2 h)).le_opNorm _).trans
-        (mul_le_mul ((HolderSpace.norm_compLeftL_le _).trans (norm_snocL_le p.2 h))
+      exact ((HolderSpace.compLeftL (applyLastL ℝ F p.2 h)).le_opNorm _).trans
+        (mul_le_mul ((HolderSpace.norm_compLeftL_le _).trans (norm_applyLastL_le p.2 h))
           (lp.norm_apply_le_norm ENNReal.top_ne_zero _ x) (norm_nonneg _) (norm_nonneg h))
     · rw [mixedDerivHolderL_lineDeriv]
-      exact ((HolderSpace.compLeftL (snocL F p.2 h)).le_opNorm _).trans
+      exact ((HolderSpace.compLeftL (applyLastL ℝ F p.2 h)).le_opNorm _).trans
         (mul_le_mul_of_nonneg_right ((HolderSpace.norm_compLeftL_le _).trans
-          (norm_snocL_le p.2 h)) (norm_nonneg _))
+          (norm_applyLastL_le p.2 h)) (norm_nonneg _))
   · intro p _ _
     positivity
 
@@ -211,7 +184,7 @@ private theorem lineDeriv_apply (h : E) (f : ParabolicCkHolderSpace (k + 1) α E
   have hv : (Fin.snoc 0 h : Fin (0 + 1) → E) = fun _ ↦ h :=
     funext fun i ↦ by rw [Fin.fin_one_eq_zero i, ← Fin.last_zero, Fin.snoc_last]
   rw [← mixedDerivL_zero_zero_apply (lineDeriv h f) p 0, mixedDerivL_lineDeriv,
-    lineDerivField_apply, snocL_apply, hv]
+    lineDerivField_apply, applyLastL_apply, hv]
 
 /-- **Spatial differentiation** in the direction `h`, `u ↦ ∂_h u = D_x u · h`, from
 `C_{par,b}^{k+1+α}` to `C_{par,b}^{k+α}` on the same closed slab. It lowers the parabolic order by
@@ -238,7 +211,8 @@ direction `h` in the last argument. -/
 theorem mixedDerivL_spatialLineDerivL (h : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
     (r m : ℕ) (p : slab (E := E) a b) (v : Fin m → E) :
     mixedDerivL r m (spatialLineDerivL h f) p v = mixedDerivL r (m + 1) f p (Fin.snoc v h) := by
-  rw [spatialLineDerivL_eq_lineDeriv, mixedDerivL_lineDeriv, lineDerivField_apply, snocL_apply]
+  rw [spatialLineDerivL_eq_lineDeriv, mixedDerivL_lineDeriv, lineDerivField_apply,
+    applyLastL_apply]
 
 /-- The top-order parabolic Hölder fields of `∂_h u` are those of `u` with one more spatial
 derivative, in the direction `h` in the last argument. -/
@@ -249,7 +223,7 @@ theorem mixedDerivHolderL_spatialLineDerivL (h : E)
     mixedDerivHolderL r m (spatialLineDerivL h f) p v =
       mixedDerivHolderL r (m + 1) f p (Fin.snoc v h) := by
   rw [spatialLineDerivL_eq_lineDeriv, mixedDerivHolderL_lineDeriv, HolderSpace.compLeftL_apply,
-    snocL_apply]
+    applyLastL_apply]
 
 /-- The uniformly Hölder time slices of `∂_h u` are those of `u` with one more spatial
 derivative, in the direction `h` in the last argument. -/
@@ -258,7 +232,7 @@ theorem timeSliceL_spatialLineDerivL (h : E) (f : ParabolicCkHolderSpace (k + 1)
     (r m : ℕ) (x : E) (t : Icc a b) (v : Fin m → E) :
     timeSliceL r m (spatialLineDerivL h f) x t v = timeSliceL r (m + 1) f x t (Fin.snoc v h) := by
   rw [spatialLineDerivL_eq_lineDeriv, timeSliceL_lineDeriv, HolderSpace.compLeftL_apply,
-    snocL_apply]
+    applyLastL_apply]
 
 /-- The value of `∂_h u` is the first spatial derivative field of `u` on the constant tuple
 `h`. -/
