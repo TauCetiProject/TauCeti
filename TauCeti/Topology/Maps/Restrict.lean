@@ -39,9 +39,8 @@ within-neighbourhood filter `𝓝[s] x` is the pullback along `f` of `𝓝 (f x)
 theorem nhdsWithin_eq_comap_inf_principal_of_domRestrict (hf : IsInducing (s.domRestrict f))
     {x : X} (hx : x ∈ s) :
     𝓝[s] x = comap f (𝓝 (f x)) ⊓ 𝓟 s := by
-  rw [nhdsWithin_eq_map_subtype_coe hx, hf.nhds_eq_comap, domRestrict_eq, ← comap_comap,
-    map_comap_setCoe_val]
-  rfl
+  rw [nhdsWithin_eq_map_subtype_coe hx, hf.nhds_eq_comap, domRestrict_eq, Function.comp_apply,
+    ← comap_comap, map_comap_setCoe_val]
 
 /-- If `f` restricts to a topologically inducing map on `s`, then at `x ∈ s` the
 within-neighbourhoods `W ∈ 𝓝[s] x` are precisely the sets containing `{y ∈ s | f y ∈ V}` for some

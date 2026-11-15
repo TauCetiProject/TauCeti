@@ -61,9 +61,10 @@ apply to all three ends.
   `TauCeti.Floer.mdifferentiableAt_pairOfPantsPerturbation_target`: for `C¹` Hamiltonians on a
   manifold, the components of the perturbation are differentiable at points of `S` in the domain
   and in the target point separately.
-* `TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, `TauCeti.Floer.re_endCoord_endChart`:
-  the end chart sends the part `±s > 0` of the end into `S` and preserves the longitudinal
-  coordinate.
+* `TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`,
+  `TauCeti.Floer.endChart_endSign_mul_mem_thricePuncturedSphereReal`,
+  `TauCeti.Floer.re_endCoord_endChart`: the end chart sends the part `±s > 0` of the end into `S`
+  and preserves the longitudinal coordinate.
 * `TauCeti.Floer.injOn_endChart`, `TauCeti.Floer.det_fderiv_endChart_nonneg`,
   `TauCeti.Floer.det_fderiv_endChart_pos`: the end chart is injective on the strip, preserves
   orientation and is a local diffeomorphism.
@@ -322,6 +323,11 @@ theorem endChart_mem_thricePuncturedSphereReal {q : Puncture} {z : ℝ × ℝ}
     endChart q z ∈ thricePuncturedSphereReal := by
   rw [mem_thricePuncturedSphereReal_iff, equivRealProdCLM_symm_endChart]
   exact cylindricalEndLift_ne_zero_and_ne_one q (by simpa using hz)
+
+/-- At positive signed height `s > 0`, the circle `t ↦ φ_q(±s, t)` of the end `q` lies in `S`. -/
+theorem endChart_endSign_mul_mem_thricePuncturedSphereReal {q : Puncture} {s : ℝ} (hs : 0 < s)
+    (t : ℝ) : endChart q (q.endSign * s, t) ∈ thricePuncturedSphereReal :=
+  endChart_mem_thricePuncturedSphereReal (by simpa [← mul_assoc] using hs)
 
 /-- The part `±s > 1/2`, `t ∈ [-1/2, 1/2)` of the end `q` in its cylinder coordinates. It
 contains the support of the curvature of the end, and the end lift is injective on it. -/

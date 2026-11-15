@@ -64,22 +64,17 @@ The proof transports the problem to `F`, where the vector-space theory applies.
 * Since `d e` is injective, `x` is differentiable with velocity `X_{H_t}(x)`
   (`ContinuousAt.hasMFDerivAt_of_hasDerivAt_comp`), so `x` is a `1`-periodic orbit.
 
-When the derivative `d(e ∘ u)` is bounded on the half-cylinder and the `1`-periodic orbits in `K`
-that arise as sequential uniform limits of the slice loops are isolated from each other at `t = 0`,
-the ω-limit set of the loops in `e(K)` is connected and discrete
-(`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop`), so the loops `t ↦ u(s, t)` converge
-as `s → ∞` along the whole half-cylinder to a single `1`-periodic orbit
-(`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated`). For a
-`C²` Hamiltonian on a Hausdorff boundaryless manifold, nondegeneracy of those cluster-point
-`1`-periodic orbits as fixed points of the time-one map supplies this isolation
-(`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact`, and
-`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer` on a compact
-manifold). In particular, when a slice loop at some `s > a` is contractible, every uniform
-cluster-point orbit is contractible
-(`TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi`), so nondegeneracy is required
-only on `contractiblePeriodicSolutions` and the limit orbit is contractible (`IsNondegenerate`
-theorems `exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact`
-and `exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer`).
+When `d(e ∘ u)` is bounded on the half-cylinder and sequential uniform cluster-point `1`-periodic
+orbits in `K` are isolated at `t = 0`, the ω-limit set in `e(K)` is connected and discrete
+(`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop`), giving convergence as `s → ∞`
+(`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated`). For
+`C²` `H` on Hausdorff boundaryless `M`, nondegeneracy of the time-one fixed points gives isolation
+(`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact`,
+`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer`), and in the
+contractible sector (`TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi`,
+`IsNondegenerate` theorems
+`exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact` and
+`exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer`).
 
 ## References
 
@@ -332,8 +327,7 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_f
     (hHper : Periodic H 1) (he : ContMDiff I 𝓘(ℝ, F) 1 e) {K : Set M} (hK : IsCompact K)
     (he_inj : InjOn e K) (hde : ∀ p ∈ K, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M} {a : ℝ}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u (Ioi a ×ˢ univ))
-    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
-    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1) (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
     {C : ℝ} (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ (e ∘ u) z‖ ≤ C)
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
     (hJc : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v,
@@ -417,8 +411,7 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_f
     (hHper : Periodic H 1) (he : ContMDiff I 𝓘(ℝ, F) 1 e) {K : Set M} (hK : IsCompact K)
     (he_inj : InjOn e K) (hde : ∀ p ∈ K, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M} {a : ℝ}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u (Ioi a ×ˢ univ))
-    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
-    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1) (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
     {C : ℝ} (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ (e ∘ u) z‖ ≤ C)
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
     (hJc : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v,
@@ -472,25 +465,19 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_f
         (timeDependentFlowOf (fun t ↦ ω.hamiltonianVectorField (H t)) 0 1) (x 0)) :
     ∃ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
       TendstoUniformly (fun s t ↦ e (u (s, t))) (e ∘ x) atTop ∧
-      ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) := by
-  obtain ⟨x, hx, -, h⟩ :=
-    hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact hH hHper he
-      isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu hper (fun _ _ _ ↦ mem_univ _) hC J hc hJc
-      hfloer hE fun x hx _ ↦ hnd x hx
-  exact ⟨x, hx, h⟩
+      ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) :=
+  (hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact hH hHper he
+    isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu hper (fun _ _ _ ↦ mem_univ _) hC J hc hJc
+    hfloer hE fun x hx _ ↦ hnd x hx).imp fun _ ⟨hx, _, h⟩ ↦ ⟨hx, h⟩
 
 namespace IsNondegenerate
 
 /-- **Convergence along a contractible Floer half-cylinder to a nondegenerate contractible orbit.**
-Let `ω` be a nondegenerate two-form on a Hausdorff boundaryless manifold `M`, `H` a `C²`
-Hamiltonian, `1`-periodic in time, and let `u` be `C¹` on `s > a`, with `1`-periodic loops in a
-compact set `K`, solving the Floer equation on `(a, ∞) × [0, 1]` with finite energy for uniformly
-tame almost complex structures measured through `e : M → F`. Suppose that `d(e ∘ u)` is bounded on
-`s > a`, that some slice loop `t ↦ u(s, t)` with `s > a` is contractible, and that every
-contractible `1`-periodic orbit `x` of `X_{H_t}` in `K` starts at a nondegenerate fixed point of
-the time-one map; noncontractible periodic orbits may be degenerate. Then the loops `t ↦ u(s, t)`
-converge as `s → ∞` to a single contractible `1`-periodic orbit `x` in `K`, pointwise in `M` and
-uniformly after applying `e`. -/
+Under the hypotheses of
+`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact`, if
+some slice loop `t ↦ u(s, t)` (`s > a`) is contractible in `M` and every contractible `1`-periodic
+orbit of `X_{H_t}` in `K` is nondegenerate (noncontractible periodic orbits may be degenerate),
+then `t ↦ u(s, t)` converges as `s → ∞` to a single contractible `1`-periodic orbit `x` in `K`. -/
 theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact
     [T2Space M] [BoundarylessManifold I M]
     (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 2 (uncurry H))
@@ -551,12 +538,10 @@ theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer
         (timeDependentFlowOf (fun t ↦ ω.hamiltonianVectorField (H t)) 0 1) (x 0)) :
     ∃ x ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
       TendstoUniformly (fun s t ↦ e (u (s, t))) (e ∘ x) atTop ∧
-      ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) := by
-  obtain ⟨x, hx, -, h⟩ :=
-    hω.exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact hH
-      hHper he isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu hper (fun _ _ _ ↦ mem_univ _) hnull
-      hC J hc hJc hfloer hE fun x hx _ ↦ hnd x hx
-  exact ⟨x, hx, h⟩
+      ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) :=
+  (hω.exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact hH
+    hHper he isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu hper (fun _ _ _ ↦ mem_univ _) hnull
+    hC J hc hJc hfloer hE fun x hx _ ↦ hnd x hx).imp fun _ ⟨hx, _, h⟩ ↦ ⟨hx, h⟩
 
 end IsNondegenerate
 

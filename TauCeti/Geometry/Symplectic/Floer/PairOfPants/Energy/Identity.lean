@@ -611,7 +611,7 @@ private theorem integral_image_endChart_boundaryForm (ω : SymplecticForm V)
       dsimp only
       rw [integral_neg, integral_const_mul,
         integral_Ico_eq_hamiltonianAction ω hH hHc hu
-          (by linarith [show 1 / 2 < q.endSign * s from hs])]
+          (by linarith [Set.mem_ofPred.1 hs])]
       ring)
     fun s hs ↦ by
       have : q.endSign * s ≤ 1 / 2 := not_lt.1 hs

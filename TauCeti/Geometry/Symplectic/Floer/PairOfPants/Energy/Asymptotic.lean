@@ -136,16 +136,14 @@ theorem tendsto_intervalIntegral_endChart_of_isCompact {ι M E : Type*} {l : Fil
       Tendsto (fun i ↦ u (endChart q (q.endSign * σ i, t))) l (𝓝 (y t))) :
     Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, H t (u (endChart q (q.endSign * σ i, t)))) l
       (𝓝 (∫ t in (0 : ℝ)..1, H t (y t))) := by
-  have hmem {s : ℝ} (hs : 0 < s) (t : ℝ) :
-      endChart q (q.endSign * s, t) ∈ thricePuncturedSphereReal :=
-    endChart_mem_thricePuncturedSphereReal (by simpa [← mul_assoc] using hs)
   refine tendsto_intervalIntegral_comp_of_tendsto (Φ := uncurry H)
     (y := fun i t ↦ u (endChart q (q.endSign * σ i, t))) hHc hB
     ((hσ.eventually_gt_atTop 0).mono fun i hi ↦ ?_)
-    ((hσ.eventually_gt_atTop 0).mono fun i hi t _ ↦ huB _ (hmem hi t))
+    ((hσ.eventually_gt_atTop 0).mono fun i hi t _ ↦
+      huB _ (endChart_endSign_mul_mem_thricePuncturedSphereReal hi t))
     (by rwa [uIcc_of_le zero_le_one])
   exact (hu.comp_continuous ((contDiff_endChart q 0).continuous.comp (by fun_prop))
-    (hmem hi)).continuousOn
+    (endChart_endSign_mul_mem_thricePuncturedSphereReal hi)).continuousOn
 
 end Floer
 
