@@ -525,6 +525,15 @@ theorem inner_eq_tsum (a b : CircleSobolev s F) :
     inner ℂ a b = ∑' n, (weight (2 * s) n : ℂ) * inner ℂ (a.coeff n) (b.coeff n) :=
   (hasSum_inner a b).tsum_eq.symm
 
+/-- The real Hilbert structure of `H^s`, the real part of its complex inner product. Operators
+with real-linear coefficients, such as the linearized Hamiltonian operators on loops, are
+symmetric only for this inner product. -/
+noncomputable instance instInnerProductSpaceReal : InnerProductSpace ℝ (CircleSobolev s F) :=
+  InnerProductSpace.complexToReal
+
+theorem real_inner_eq_re_inner (a b : CircleSobolev s F) : inner ℝ a b = (inner ℂ a b).re :=
+  (rfl)
+
 end Inner
 
 /-! ### Fourier monomials and density of trigonometric polynomials -/

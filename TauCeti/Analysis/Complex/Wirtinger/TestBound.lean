@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.Mollification
 public import TauCeti.Analysis.Complex.Wirtinger.InteriorEstimate
 public import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Topology.MetricSpace.Thickening
@@ -128,7 +129,6 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
           C * ‖v‖ₑ * (eLpNorm f p (volume.restrict U) + eLpNorm u p (volume.restrict U)) *
             eLpNorm (φ : ℂ → ℝ) q volume := by
   have : Fact (1 ≤ p) := ⟨hp.le⟩
-  have : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le q p⟩
   obtain ⟨R, hR, hRU⟩ := hK.exists_cthickening_subset_open U.isOpen hKU
   let δ := R / 4
   have hδ : 0 < δ := by positivity
@@ -181,8 +181,7 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
     have hψ := ψ.continuous.memLp_of_hasCompactSupport ψ.hasCompactSupport
       (p := q) (μ := (volume : Measure ℂ))
     simpa only [ψ, TestFunction.coe_lineDerivCLM] using hψ
-  have hlim := tendsto_integral_smul_normed_convolution hp_top
-    hρ hψ hu₀
+  have hlim := tendsto_integral_smul_normed_convolution hρ hψ hu₀
   have hnormlim := (continuous_eNorm.tendsto _).comp hlim
   have hfinal := le_of_tendsto hnormlim (Filter.Eventually.of_forall htest)
   have heq : (∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • u₀ z) =
@@ -216,7 +215,6 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
           C * ‖v‖ₑ * (eLpNorm f p (volume.restrict U) + eLpNorm u r (volume.restrict U)) *
             eLpNorm (φ : ℂ → ℝ) q volume := by
   have : Fact (1 ≤ p) := ⟨hp.le⟩
-  have : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le q p⟩
   obtain ⟨R, hR, hRU⟩ := hK.exists_cthickening_subset_open U.isOpen hKU
   let W : Opens ℂ := ⟨thickening R K, isOpen_thickening⟩
   have hKW : K ⊆ W := self_subset_thickening hR K
@@ -226,10 +224,8 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
       ((measure_mono (thickening_subset_cthickening R K)).trans_lt
         hK.cthickening.measure_lt_top).ne
   have hp0 : p ≠ 0 := (zero_lt_one.trans hp).ne'
-  have hexp : 0 ≤ 1 / p.toReal - 1 / r.toReal := by
-    simp only [one_div, ← ENNReal.toReal_inv]
-    exact sub_nonneg.2 (ENNReal.toReal_mono (by simpa using hp0)
-      (ENNReal.inv_le_inv.mpr hpr))
+  have hexp : 0 ≤ 1 / p.toReal - 1 / r.toReal :=
+    ENNReal.one_div_toReal_sub_one_div_toReal_nonneg hp0 hpr
   have hfinite : (volume.restrict (W : Set ℂ)) univ ^ (1 / p.toReal - 1 / r.toReal) ≠ ⊤ :=
     ENNReal.rpow_ne_top_of_nonneg hexp (measure_ne_top _ _)
   let A := ((volume.restrict (W : Set ℂ)) univ ^ (1 / p.toReal - 1 / r.toReal)).toNNReal

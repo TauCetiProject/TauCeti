@@ -264,8 +264,6 @@ theorem setIntegral_sq_mul_max_sub_sq_le_of_caccioppoli {q : ℝ≥0∞} (hq : 2
           max (W1p.value u x - k) 0 ^ 2 ∂mu) / (l - k) ^ 2) ^ (1 - 2 / q.toReal) := by
   set T := tsupport ψ
   set I := ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ T, max (W1p.value u x - k) 0 ^ 2 ∂mu
-  have hmeasO := Omega.isOpen.measurableSet
-  have hT : MeasurableSet T := (isClosed_tsupport ψ).measurableSet
   have hTfin : mu T ≠ (∞ : ℝ≥0∞) := hcpt.measure_lt_top.ne
   obtain ⟨z, hz, hgradz, hz2, hvA⟩ :=
     exists_mem_w1p0Submodule_norm_gradient_sq_le_of_caccioppoli hkl hwLp hψ hcpt hts hG hA hcacc
@@ -277,7 +275,7 @@ theorem setIntegral_sq_mul_max_sub_sq_le_of_caccioppoli {q : ℝ≥0∞} (hq : 2
   -- Chebyshev: on `{u > l}`, the lower truncation `(u - k)⁺` is at least `l - k`.
   have hcheb : mu.real ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A') ≤ I / (l - k) ^ 2 := by
     rw [← inter_assoc]
-    exact MeasureTheory.measureReal_inter_lt_le_setIntegral_max_sub_sq_div (hmeasO.inter hT) hkl
+    exact MeasureTheory.measureReal_inter_lt_le_setIntegral_max_sub_sq_div hkl
       (IntegrableOn.mono_set hwLp.integrable_sq inter_subset_left)
   rw [integral_congr_ae (hz2.mono fun x hx => hx.symm)]
   refine hsob.trans ?_
@@ -505,10 +503,12 @@ private theorem setIntegral_ball_max_sub_sq_succ_le {q : ℝ≥0∞} (hq : 2 ≤
   -- The left-hand side is below the cutoff integral, since `ψ = 1` on the smaller ball.
   have hlhs : ∫ x in Metric.ball x₀ r₁, max (W1p.value u x - l) 0 ^ 2 ∂mu ≤
       ∫ x in Omega, ψ x ^ 2 * max (W1p.value u x - l) 0 ^ 2 ∂mu :=
-    MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_eqOn (hint l (hk0.trans hkl.le))
-      (ae_of_all _ fun x => hnn l x) hψ.continuous.aestronglyMeasurable
-      (ae_of_all _ fun x => hψ01 (mem_range_self x)) measurableSet_ball
-      (hψ1.mono Metric.ball_subset_closedBall)
+    MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_ae_sq_eq_one (hint l (hk0.trans hkl.le))
+      (ae_of_all _ fun x => hnn l x) (hψ.continuous.pow 2).aestronglyMeasurable
+      (ae_of_all _ fun x => abs_le.2 ⟨by linarith [(hψ01 (mem_range_self x)).1],
+        (hψ01 (mem_range_self x)).2⟩)
+      (ae_restrict_of_forall_mem measurableSet_ball fun x hx => by
+        simp [hψ1 (Metric.ball_subset_closedBall hx)])
       ((Metric.ball_subset_ball (hr₁ρ.trans hρr₀).le).trans
         ((Metric.ball_subset_ball hr₀R).trans hball))
   -- The integral over `Ω ∩ supp ψ` is below `Y`.
@@ -547,7 +547,6 @@ private theorem ae_value_le_of_setIntegral_le {q : ℝ≥0∞} (hq : 2 ≤ q) {S
     (hball : Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι))) {K : ℝ} (hK : 0 < K)
     {α : ℝ} (hα : α = 1 - 2 / q.toReal) (hα0 : 0 < α) {E : ℝ}
     (hE : 2 * (64 * c ^ 2 * (1 + A) + B * R ^ 2) * S ^ 2 ≤ E)
-    (hC : 0 < E * 4 ^ α * (R ^ 2)⁻¹ * (K ^ 2) ^ (-α))
     (hY0 : ∫ x in Metric.ball x₀ R, max (W1p.value u x - k₀) 0 ^ 2 ∂mu ≤
       (E * 4 ^ α * (R ^ 2)⁻¹ * (K ^ 2) ^ (-α)) ^ (-α⁻¹) * (4 * 4 ^ α) ^ (-(α ^ 2)⁻¹)) :
     ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)), W1p.value u x ≤ k₀ + K := by
@@ -572,7 +571,7 @@ private theorem ae_value_le_of_setIntegral_le {q : ℝ≥0∞} (hq : 2 ≤ q) {S
       j).trans ?_
     gcongr
   have hlim := tendsto_atTop_zero_of_le_mul_pow_mul_rpow (Y := Y)
-    (fun j => integral_nonneg (hnn _)) hC hb hα0 (hY0'.trans_le hY0) hrec
+    (fun j => integral_nonneg (hnn _)) hb hα0 (hY0'.trans_le hY0) hrec
   -- The truncation at level `k₀ + K` on the half ball is below every term of the sequence.
   have hhalf : Metric.ball x₀ (R / 2) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
     (Metric.ball_subset_ball (by linarith)).trans hball
@@ -702,7 +701,6 @@ private theorem exists_ae_value_le_add_mul_rpow_mul_rpow_mul_rpow_mul_sqrt_setIn
   have hE₁ : E₁ = F * M * (S : ℝ) ^ 2 := by
     simp only [E₁, E, F]
     ring
-  have hE₁0 : 0 < E₁ := hE₁ ▸ by positivity
   set Y₀ := ∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu
   have hY₀ : 0 ≤ Y₀ := integral_nonneg fun x => by positivity
   rcases hY₀.eq_or_lt with hzero | hpos
@@ -716,7 +714,7 @@ private theorem exists_ae_value_le_add_mul_rpow_mul_rpow_mul_rpow_mul_sqrt_setIn
   · set K := √(F ^ α⁻¹ * b ^ (α ^ 2)⁻¹) * M ^ (2 * α)⁻¹ * (S : ℝ) ^ α⁻¹ * R ^ (-α⁻¹) * √Y₀
     have hK : 0 < K := by positivity
     refine ae_value_le_of_setIntegral_le hq.le hS hwLp hA hB hcacc hc' hR hball hK hα hα0 hE
-      (mul_pos (mul_pos hE₁0 (by positivity)) (by positivity)) (le_of_eq ?_)
+      (le_of_eq ?_)
     -- `K` was chosen to make `Y₀` exactly the threshold. The `change` only folds the recursion
     -- constant back into the abbreviations `E₁` and `b`, which `set` does not do for new goals.
     change Y₀ = (E₁ * (R ^ 2)⁻¹ * (K ^ 2) ^ (-α)) ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)

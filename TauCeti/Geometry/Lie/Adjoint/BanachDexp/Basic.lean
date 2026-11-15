@@ -26,11 +26,6 @@ factor in the differential of a Lie-group exponential.
 * `TauCeti.Lie.commute_continuousCommutator_banachDexpFactor`: the factor commutes with `ad x`.
 * `TauCeti.Lie.continuousCommutator_banachDexpFactor_apply`: its concrete conjugation form.
 * `TauCeti.Lie.banachDexpFactor_continuousCommutator_apply`: the symmetric pointwise form.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The conjugation formulas".
 -/
 
 public section

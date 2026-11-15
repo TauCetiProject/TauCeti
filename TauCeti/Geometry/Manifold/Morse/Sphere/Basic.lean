@@ -53,6 +53,7 @@ multiple of `x`.
   `TauCeti.manifoldMorseIndex_sphereHeight_neg`: the north pole has index `n` and the south pole
   has index `0`.
 * `TauCeti.criticalPoints_sphereHeight`: the critical points of the height function are the poles.
+* `TauCeti.isRegularValue_sphereHeight`: every value other than `±1` is a regular value.
 * `TauCeti.ncard_setOf_sphereHeight_eq_zero`: the equator of the circle has two points.
 * `TauCeti.infinite_setOf_sphereHeight_eq_zero`: the equator of a sphere of dimension at least `2`
   is infinite.
@@ -87,6 +88,13 @@ def stereographicHeight (w : F) : ℝ :=
 theorem stereographicHeight_apply (w : F) :
     stereographicHeight w = (4 - ‖w‖ ^ 2) / (‖w‖ ^ 2 + 4) :=
   (rfl)
+
+/-- The chart height function decreases with the norm of the chart coordinate. -/
+theorem stereographicHeight_le_stereographicHeight {u w : F} (h : ‖u‖ ≤ ‖w‖) :
+    stereographicHeight w ≤ stereographicHeight u := by
+  rw [stereographicHeight_apply, stereographicHeight_apply,
+    div_le_div_iff₀ (by positivity) (by positivity)]
+  nlinarith [pow_le_pow_left₀ (norm_nonneg u) h 2]
 
 variable [InnerProductSpace ℝ F]
 
@@ -339,6 +347,20 @@ theorem sphereHeight_comp_extChartAt_symm (v : sphere (0 : E) 1) :
     sphereHeight v ∘ (extChartAt (𝓡 n) v).symm = stereographicHeight := by
   rw [extChartAt_coe_symm, modelWithCornersSelf_coe_symm, comp_id, sphereHeight_comp_chartAt_symm]
 
+omit [Fact (finrank ℝ E = n + 1)] in
+/-- Under the stereographic projection from the north pole `v`, the height function in the
+direction `v` is `-stereographicHeight`. -/
+theorem sphereHeight_stereographic_symm_apply (v : sphere (0 : E) 1) (w : (ℝ ∙ (v : E))ᗮ) :
+    sphereHeight v ((stereographic (norm_eq_of_mem_sphere v)).symm w) = -stereographicHeight w := by
+  have hw : ⟪(w : E), (v : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 w.2
+  have hv : ⟪(v : E), (v : E)⟫ = 1 := by simp [norm_eq_of_mem_sphere]
+  have h4 : ‖w‖ ^ 2 + 4 ≠ 0 := by positivity
+  rw [sphereHeight_apply, stereographicHeight_apply]
+  simp only [coe_stereographic_symm_apply, inner_smul_left, inner_add_left, hw, hv,
+    RCLike.conj_to_real]
+  field_simp
+  ring
+
 /-- The north pole is a nondegenerate critical point of the height function. -/
 theorem isManifoldNondegenerateCriticalPoint_sphereHeight_self (v : sphere (0 : E) 1) :
     IsManifoldNondegenerateCriticalPoint (𝓡 n) (sphereHeight v) v := by
@@ -391,6 +413,16 @@ theorem criticalPoints_sphereHeight (v : sphere (0 : E) 1) :
     criticalPoints (𝓡 n) (sphereHeight v) = {v, -v} := by
   ext x
   simp
+
+/-- **Every level of the height except the poles is regular.** The only critical points of the
+height function are the poles, where its values are `1` and `-1`. -/
+theorem isRegularValue_sphereHeight (v : sphere (0 : E) 1) {c : ℝ} (hc₁ : c ≠ 1) (hc₂ : c ≠ -1) :
+    IsRegularValue (𝓡 n) 𝓘(ℝ) (sphereHeight v) c := by
+  refine isRegularValue_iff.2 fun x hx ↦ ?_
+  rw [isRegularPoint_iff_mvfderiv_ne_zero, Ne, mvfderiv_sphereHeight_eq_zero_iff]
+  rintro (rfl | rfl)
+  · exact hc₁ (hx.symm.trans (sphereHeight_self x))
+  · exact hc₂ (hx.symm.trans (sphereHeight_neg_self v))
 
 omit [Fact (finrank ℝ E = n + 1)] in
 /-- **The equator of the circle has two points.** In a two-dimensional real inner product space,

@@ -13,6 +13,7 @@ import TauCeti.Analysis.Normed.Module.WeakSpace.Approximation
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
 import TauCeti.MeasureTheory.Function.L1Space.HasFiniteIntegral
+import TauCeti.MeasureTheory.Function.Lp.Exponent
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.UniformConvex
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -98,7 +99,7 @@ theorem isCompact_closure_toWeakSpace_of_uniformIntegrable {A : Set (Lp 𝕜 1 �
   refine TauCeti.isCompact_closure_toWeakSpace_of_forall_exists_isCompact fun ε hε ↦ ?_
   obtain ⟨C, hC⟩ := hA.spec one_ne_zero ENNReal.one_ne_top (ENNReal.ofReal_pos.2 hε)
   set R : ℝ := measureUnivNNReal μ ^ (2 : ℝ≥0∞).toReal⁻¹ * C
-  set ι : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 1 μ := Measure.LpToL1CLM μ 2
+  set ι : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 1 μ := Lp.ofExponentLEL 𝕜 𝕜 one_le_two
   refine ⟨ι '' closedBall 0 R, ?_, fun f hf ↦ ?_⟩
   · -- The image of a ball of the reflexive space `L²` is weakly compact.
     have hcomp : toWeakSpace 𝕜 (Lp 𝕜 1 μ) ∘ ι = WeakSpace.map ι ∘ toWeakSpace 𝕜 (Lp 𝕜 2 μ) :=
@@ -124,9 +125,8 @@ theorem isCompact_closure_toWeakSpace_of_uniformIntegrable {A : Set (Lp 𝕜 1 �
     · rw [mem_closedBall_zero_iff]
       exact Lp.norm_le_of_ae_bound C.coe_nonneg (hg.coeFn_toLp.mono fun x hx ↦ hx ▸ hgC x)
     · have hae : ⇑(f - ι (hg.toLp g)) =ᵐ[μ] s.indicator f := by
-        filter_upwards [Lp.coeFn_sub f (ι (hg.toLp g)),
-          Measure.LpToL1CLM_coeFn (𝕜 := 𝕜) μ 2 (hg.toLp g), hg.coeFn_toLp] with x h₁ h₂ h₃
-        rw [h₁, Pi.sub_apply, h₂, h₃]
+        filter_upwards [Lp.coeFn_sub f (ι (hg.toLp g)), hg.coeFn_toLp] with x h₁ h₃
+        simp only [h₁, Pi.sub_apply, ι, Lp.coeFn_ofExponentLEL, h₃]
         simp [g, indicator_compl]
       rw [Lp.norm_def, eLpNorm_congr_ae hae]
       exact ENNReal.toReal_le_of_le_ofReal hε.le (hC ⟨f, hf⟩)

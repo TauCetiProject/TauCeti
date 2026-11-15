@@ -25,7 +25,8 @@ up to the length of a primitive-recursively computed list stays primitive recurs
 Repeating an element and enumerating the sections of a list of lists (`List.sections`, all
 ways of choosing one entry from each list) are primitive recursive. Together they enumerate
 the tuples of a given length over a finite list of choices, which is the search space of
-bounded exhaustive searches.
+bounded exhaustive searches. The product of two lists (`l₁ ×ˢ l₂`) and, when addition is
+primitive recursive, the sum of a list are primitive recursive as well.
 -/
 
 public section
@@ -63,6 +64,19 @@ theorem list_sections : Primrec (List.sections : List (List α) → List (List �
       (list_cons.comp snd (snd.comp fst)).to₂).to₂).to₂
   exact (list_foldr .id (const [[]]) step).of_eq fun L => by
     induction L <;> simp_all [List.sections]
+
+/-- The product `l₁ ×ˢ l₂` of two lists, all pairs of an entry of `l₁` and an entry of `l₂`, is
+primitive recursive. -/
+theorem list_product {β : Type*} [Primcodable β] :
+    Primrec₂ ((· ×ˢ ·) : List α → List β → List (α × β)) :=
+  (list_flatMap fst (list_map (snd.comp fst) (pair (snd.comp fst) snd).to₂).to₂).to₂.of_eq
+    fun _ _ => rfl
+
+/-- The sum of a list is primitive recursive when addition is. -/
+theorem list_sum [Add α] [Zero α] (hadd : Primrec₂ ((· + ·) : α → α → α)) :
+    Primrec (List.sum : List α → α) :=
+  (list_foldr .id (const 0) (hadd.comp (fst.comp snd) (snd.comp snd)).to₂).of_eq fun l => by
+    induction l <;> simp_all
 
 end Primrec
 

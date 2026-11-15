@@ -277,7 +277,7 @@ theorem zigzagBacktrackCochain_mul_zigzagBacktrackCochain_eq_zero
 
 section Twist
 
-variable {𝒢 : InternalGrading k (nonisolatedZigzagQuotient k G)}
+variable {𝒢 : InternalGrading k (nonisolatedZigzagQuotient k G) ℤ}
   (h𝒢 : 𝒢.piece = zigzagIntegerGrade k G)
 include h𝒢
 

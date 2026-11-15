@@ -151,7 +151,7 @@ theorem decompose_mem_augmentationIdeal (ε : 𝒜.Augmentation) (x : ε.augment
 /-- The internal grading on the reduced augmentation ideal obtained by intersecting it with each
 homogeneous piece of the original algebra. -/
 noncomputable def reducedGrading (ε : 𝒜.Augmentation) :
-    InternalGrading R ε.augmentationIdeal :=
+    InternalGrading R ε.augmentationIdeal ℤ :=
   𝒜.grading.submodule ε.augmentationIdeal fun p x hx ↦
     ε.decompose_mem_augmentationIdeal ⟨x, hx⟩ p
 
