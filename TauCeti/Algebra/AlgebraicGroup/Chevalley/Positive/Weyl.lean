@@ -122,7 +122,7 @@ theorem map_inversionSubgroup_conj_le_negativePoints (n : D.weylSubgroup K) :
   refine iSup₂_le fun γ hγ => ?_
   rintro _ ⟨u, rfl⟩
   apply D.rootSubgroupPoints_mem_negativePoints K _ u
-  rw [negRoots_eq_compl, t.posRoots_rationalRootSystem ht, ← negRoots_eq_compl]
+  rw [← compl_posRoots, t.posRoots_rationalRootSystem ht, compl_posRoots]
   exact mapsTo_inversions_negRoots _ _ _ hγ
 
 /-- The inversion subgroup is disjoint from the points whose conjugate by `n` lies in the
