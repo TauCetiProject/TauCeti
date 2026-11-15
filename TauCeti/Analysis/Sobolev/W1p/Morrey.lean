@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Density
 
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.Sobolev.Morrey
+import TauCeti.Analysis.Sobolev.Morrey.Basic
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -71,7 +71,7 @@ gradient in `W^{1,p}(ℝⁿ)`. -/
 private theorem eLpNorm_fderiv_testFunction_eq (phi : 𝓓((⊤ : Opens E), ℝ)) :
     eLpNorm (fderiv ℝ (phi : E → ℝ)) p mu =
       ‖W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ (p : ℝ≥0∞) phi)‖ₑ := by
-  rw [W1p.gradient_ofTestFunctionₗ, Lp.enorm_def]
+  rw [W1p.gradient_ofTestFunctionₗ, Lp.eNorm_def]
   refine Eq.trans ?_ (eLpNorm_congr_ae
     (Filter.EventuallyEq.symm (gradientTestFunctionLp_apply_ae (mu := mu) (p : ℝ≥0∞) phi)))
   rw [Opens.coe_top, Measure.restrict_univ]
@@ -104,7 +104,6 @@ theorem W1p.exists_holderWith_ae_eq_value (hp : (finrank ℝ E : ℝ≥0) < p)
   set T := W1p.ofTestFunctionₗ mu ⊤ (p : ℝ≥0∞)
   have htop : mu.restrict ((⊤ : Opens E) : Set E) = mu := by
     simp only [Opens.coe_top, Measure.restrict_univ]
-  have hα : 0 < α := tsub_pos_of_lt ((div_lt_one (zero_le.trans_lt hp)).2 hp)
   -- Morrey's inequality for a single test function, with its Sobolev gradient norm.
   have hmorrey (phi : 𝓓((⊤ : Opens E), ℝ)) (x y : E) :
       edist (phi x) (phi y) ≤
@@ -112,9 +111,9 @@ theorem W1p.exists_holderWith_ae_eq_value (hp : (finrank ℝ E : ℝ≥0) < p)
     have hphi : ContDiff ℝ 1 (phi : E → ℝ) := phi.contDiff.of_le (by simp)
     have hfin : eLpNorm (fderiv ℝ (phi : E → ℝ)) p mu ≠ ∞ := by
       rw [eLpNorm_fderiv_testFunction_eq]
-      exact enorm_ne_top
+      exact eNorm_ne_top
     have h := holderWith_of_contDiff_of_finrank_lt (μ := mu) hphi hp hfin x y
-    rwa [eLpNorm_fderiv_testFunction_eq, toNNReal_enorm] at h
+    rwa [eLpNorm_fderiv_testFunction_eq, toNNReal_eNorm] at h
   -- Approximate `u` by test functions.
   obtain ⟨v, hvmem, hvlim⟩ := mem_closure_iff_seq_limit.1
     (W1p.denseRange_ofTestFunctionₗ_top (mu := mu) ENNReal.coe_ne_top u)
@@ -139,14 +138,14 @@ theorem W1p.exists_holderWith_ae_eq_value (hp : (finrank ℝ E : ℝ≥0) < p)
     have hG : Tendsto (fun k => W1p.gradient (T (phi (ns k)))) atTop (𝓝 (W1p.gradient u)) := by
       simpa only [Function.comp_def, W1p.gradientL_apply] using
         (W1p.gradientL.continuous.tendsto u).comp (hlim.comp hmono.tendsto_atTop)
-    exact ENNReal.tendsto_coe.2 (tendsto_const_nhds.mul ((continuous_nnnorm.tendsto _).comp hG))
+    exact ENNReal.tendsto_coe.2 (tendsto_const_nhds.mul ((continuous_nnNorm.tendsto _).comp hG))
   have hholder : HolderOnWith (C * ‖W1p.gradient u‖₊) α (W1p.value u) A := by
     intro x hx y hy
     have hd : edist x y ^ (α : ℝ) ≠ ∞ :=
       ENNReal.rpow_ne_top_of_nonneg (NNReal.coe_nonneg _) (edist_ne_top x y)
     exact le_of_tendsto_of_tendsto' (hx.edist hy) (ENNReal.Tendsto.mul_const hgrad (Or.inr hd))
       fun k => hmorrey (phi (ns k)) x y
-  obtain ⟨g, hg, hgA⟩ := hholder.extend_of_dense hα (mu.dense_of_ae hA)
+  obtain ⟨g, hg, hgA⟩ := hholder.extend_of_dense (mu.dense_of_ae hA)
   refine ⟨g, hg, ?_⟩
   filter_upwards [hA] with x hx using hgA hx
 

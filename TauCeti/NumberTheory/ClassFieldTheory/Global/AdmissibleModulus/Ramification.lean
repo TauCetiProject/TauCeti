@@ -178,15 +178,15 @@ theorem ofAdicCompletion_mem_range_ideleClassNormMap_fixedField_iff (H : Subgrou
           (HeightOneSpectrum.decompositionEquiv v w).symm.toMonoidHom))) := by
   have := IsAbelianGalois.tower_bot K (fixedField H) L
   have := HeightOneSpectrum.isAbelianGalois_adicCompletion v w
-  obtain ⟨ρ, hρ⟩ : ∃ ρ, Abelianization.of ρ =
+  obtain ⟨ρ, hρ⟩ : ∃ ρ, Group.Abelianization.of ρ =
       normResidue (v.adicCompletion K) (w.adicCompletion L) u :=
     QuotientGroup.mk_surjective _
   -- Both sides say that the local Artin symbol of `u`, an element of the decomposition group of
   -- `w`, lies in `H`.
   rw [mem_normGroup_fixedField_iff _ hρ, ← globalArtinMap_eq_zero_iff K _ IsSepClosed.lift,
     globalArtinMap_local, ofMul_eq_zero, ← localArtinAt_comp v (fixedField H).val,
-    MonoidHom.comp_apply, localArtinAt_eq_map_normResidue v w, ← hρ, Abelianization.map_of,
-    Abelianization.map_of, IntermediateField.restrictNormalHom_val,
+    MonoidHom.comp_apply, localArtinAt_eq_map_normResidue v w, ← hρ, Group.Abelianization.map_of,
+    Group.Abelianization.map_of, IntermediateField.restrictNormalHom_val,
     abelianization_of_restrictNormalHom_fixedField_eq_one_iff, Subgroup.mem_comap]
 
 /-- **The conductor of a subextension at a finite place.** Let `L/K` be abelian, `H` a subgroup

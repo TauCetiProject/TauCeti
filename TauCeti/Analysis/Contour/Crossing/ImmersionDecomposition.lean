@@ -112,7 +112,7 @@ private theorem exists_exitCapWindows_data {γ : ℝ → ℂ} {a b : ℝ} {s : �
   exact ⟨δ, ε, L_R, L_L, hδ, hε, hendpoints, hseparated, hγ_window, hεends, hcrossing_inside,
     fun t ht => ⟨hL_R t ht, hL_L t ht, h_R t ht, h_L t ht⟩, fun t ht W hW =>
       hW ▸ hspec t ht δ hδ (hδR t ht) (by linarith [(hendpoints t ht).1])
-        (by linarith [(hendpoints t ht).2]) (hunique t ht) ε hε (hεends t ht).1
+        (by linarith [(hendpoints t ht).2]) ε hε (hεends t ht).1
         (hεends t ht).2⟩
 
 /-- **Geometry of the exit windows.** The windows of `TauCeti.Contour.exitCapWindows` built from
@@ -220,7 +220,8 @@ theorem IsPwC1ImmersionOn.exists_crossingDecomposition
   have hεR : ∀ t ∈ T, ε ≤ ‖γ (t + δ) - s‖ := fun t ht => (hεends t ht).2
   have hregular : IsPiecewiseC1On (exciseCrossings γ s windows) a b :=
     h_imm.isPiecewiseC1On.exciseCrossings
-      (pairwise_disjoint_interval_of_pairwise_upper_lt_lower hordered) hinside
+      (pairwise_disjoint_interval_of_pairwise_upper_lt_lower hordered)
+      (fun W hW => (hinside W hW).2.1)
       (fun W hW => eq_circleMap_startAngle_of_mem_exitCapWindows hδ.le hε.le
         (fun t ht => (hγ_window t ht).mono (Icc_subset_Icc le_rfl (by linarith)))
         hat hεL hW)

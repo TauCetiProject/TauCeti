@@ -225,8 +225,8 @@ theorem contMDiff_totalSpaceMap_neg {a : CoordinateHom Z W}
     (ha : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n a.totalSpaceMap) :
     ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n (-a).totalSpaceMap := by
   intro p₀
-  have ha₀ := (Bundle.contMDiffAt_totalSpace.1 (ha p₀)).2
-  rw [Bundle.contMDiffAt_totalSpace]
+  have ha₀ := (Bundle.contMDiffAt_totalSpace_iff.1 (ha p₀)).2
+  rw [Bundle.contMDiffAt_totalSpace_iff]
   simp only [totalSpaceMap_proj] at ha₀ ⊢
   refine ⟨(contMDiff_proj Z.Fiber).contMDiffAt, ?_⟩
   refine (contDiff_neg.comp_contMDiffAt ha₀).congr_of_eventuallyEq

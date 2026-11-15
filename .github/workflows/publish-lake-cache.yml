@@ -42,7 +42,7 @@ jobs:
     # A NEW ephemeral runner for this job, separate from the candidate sandbox.
     # Direct labels request no privileged container, cache volume, git mirror or tool cache.
     # Staging uses reserved disposable control guests; other publishers retain their cloud route.
-    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || fromJSON(format('["nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || 'ubuntu-24.04' }}
     timeout-minutes: 15
     outputs:
       published: ${{ steps.result.outputs.published }}
@@ -83,10 +83,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@5d49641d46901054a68f78d900cbcb968b8538db
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 5d49641d46901054a68f78d900cbcb968b8538db
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: publisher-tools
 
       - name: Download the staged oleans

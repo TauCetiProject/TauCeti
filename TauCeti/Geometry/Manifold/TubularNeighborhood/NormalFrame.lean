@@ -19,8 +19,8 @@ bundle before any vector-bundle structure on that family has been installed.
 
 The normal bundle is the one used in the Euclidean tubular-neighbourhood theorem. As in
 `ContDiffAt.starProjection_orthogonal_range`, the pointwise normal-projection result allows a
-complete, possibly infinite-dimensional ambient space. Neither compactness nor injectivity of
-the underlying map is required.
+possibly infinite-dimensional ambient space, which need not be complete. Neither compactness nor
+injectivity of the underlying map is required.
 
 ## References
 
@@ -41,10 +41,6 @@ variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {n : WithTop ℕ∞} [IsManifold I (n + 1) M] {f : M → V}
-
-section Projection
-
-variable [CompleteSpace V]
 
 /-- Orthogonal projection onto the normal fibre of a `C^(n+1)` map is `C^n` at every point
 where its differential is injective. -/
@@ -81,8 +77,6 @@ theorem contMDiff_normalSubspace_starProjection
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) :
     ContMDiff I 𝓘(ℝ, V →L[ℝ] V) n (fun x => (normalSubspace I f x).starProjection) :=
   fun x => contMDiffAt_normalSubspace_starProjection (hf x) (himm x)
-
-end Projection
 
 variable [FiniteDimensional ℝ V]
 

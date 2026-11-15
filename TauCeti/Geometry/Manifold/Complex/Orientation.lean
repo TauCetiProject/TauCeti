@@ -194,10 +194,8 @@ theorem _root_.OpenPartialHomeomorph.orientationPreservingOn_of_differentiableOn
     (he : DifferentiableOn ℂ e e.source) (he' : DifferentiableOn ℂ e.symm e.target) :
     OrientationPreservingOn 𝓘(ℝ, E) e e.source := by
   refine (orientationPreservingOn_iff_det_fderiv_ne_zero e.open_source he).2 fun x hx ↦ ?_
-  obtain ⟨A, hA⟩ := e.isInvertible_fderiv hx (he.differentiableAt (e.open_source.mem_nhds hx))
+  exact e.det_fderiv_ne_zero hx (he.differentiableAt (e.open_source.mem_nhds hx))
     (he'.differentiableAt (e.open_target.mem_nhds (e.map_source hx)))
-  rw [← hA]
-  exact A.toLinearEquiv.isUnit_det'.ne_zero
 
 /-- Holomorphic coordinate changes preserve orientation: for `n ≠ 0`, the `C^n` groupoid of the
 complex model `𝓘(ℂ, E)` is contained in the orientation-preserving groupoid of the underlying real

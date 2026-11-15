@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Order.GroupWithZero.Canonical
+public import Mathlib.Order.Filter.AtTopBot.Defs
 import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
 import Mathlib.Algebra.BigOperators.GroupWithZero.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
@@ -31,6 +32,8 @@ prime.
 * `TauCeti.two_dvd_log_of_prod_eq_sq`: in a weighted product of values equal to a square, a
   factor of weight `1` has even logarithm once all the other factors are nonzero with even
   logarithm.
+* `TauCeti.eventually_lt_exp_pow`: every value lies below `exp m ^ n` for all large `m`, when
+  `n ≠ 0`.
 
 ## Provenance
 
@@ -110,5 +113,17 @@ theorem two_dvd_log_of_prod_eq_sq {x : I → ℤᵐ⁰} {e : I → ℕ} {c : ℤ
     pow_ne_zero _ (hx i (Finset.mem_of_mem_erase hi) (Finset.ne_of_mem_erase hi))
   rw [← Finset.mul_prod_erase _ _ hi₀s, he, pow_one, hD, ← eq_div_iff hD0, ← div_pow] at hprod
   exact two_dvd_log_iff.mpr ⟨_, hprod⟩
+
+/-- **The powers of `exp m` are unbounded**: for `n ≠ 0`, every element of `ℤᵐ⁰` lies below
+`exp m ^ n` for all large natural numbers `m`. -/
+theorem eventually_lt_exp_pow (R : ℤᵐ⁰) {n : ℕ} (hn : n ≠ 0) :
+    ∀ᶠ m : ℕ in Filter.atTop, R < exp (m : ℤ) ^ n := by
+  obtain rfl | hR := eq_or_ne R 0
+  · exact Filter.Eventually.of_forall fun _ ↦ pow_pos (zero_lt_iff.mpr exp_ne_zero) n
+  filter_upwards [Filter.eventually_gt_atTop (log R).toNat] with m hm
+  -- `R = exp (log R) < exp m ≤ exp m ^ n`
+  refine lt_of_lt_of_le ?_ (le_self_pow (one_le_exp_iff.mpr (Int.natCast_nonneg m)) hn)
+  rw [← exp_log hR, exp_lt_exp]
+  omega
 
 end TauCeti

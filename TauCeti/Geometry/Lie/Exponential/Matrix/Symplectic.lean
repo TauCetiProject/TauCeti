@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import TauCeti.Algebra.Lie.Symplectic.Basic
+public import TauCeti.Analysis.Matrix.Exponential.Log
 public import TauCeti.Geometry.Lie.Exponential.OneParameter
 
 /-!
@@ -36,6 +37,8 @@ exponential of an element of `sp` lands in the special linear group as well.
 * `Matrix.det_exp_eq_one_of_mem_sp`: that exponential has determinant one.
 * `Matrix.forall_exp_smul_mem_symplecticGroup_iff_mem_sp`: a matrix generates a one-parameter
   subgroup of the symplectic group exactly when it lies in the symplectic Lie algebra.
+* `Matrix.IsHermitian.exp_mem_symplecticGroup_iff`: a Hermitian matrix has symplectic exponential
+  exactly when it lies in the symplectic Lie algebra.
 -/
 
 public section
@@ -92,5 +95,22 @@ theorem forall_exp_smul_mem_symplecticGroup_iff_mem_sp (A : Matrix (l ⊕ l) (l 
   · intro hA t
     exact exp_mem_symplecticGroup_of_mem_sp (t • A)
       (((LieAlgebra.Symplectic.sp l 𝕜).toSubmodule.restrictScalars ℝ).smul_mem t hA)
+
+/-- **A Hermitian matrix has symplectic exponential exactly when it lies in the symplectic Lie
+algebra**: by injectivity of the exponential on Hermitian matrices, the symplectic condition
+`exp Xᵀ = (exp X)ᵀ = J (exp X)⁻¹ J⁻¹ = exp (J (-X) J⁻¹)` forces `Xᵀ = J (-X) J⁻¹`. Over `ℝ` this
+says a symmetric matrix has exponential in `Sp(2n, ℝ)` exactly when it lies in `𝔰𝔭(2n, ℝ)`. -/
+theorem IsHermitian.exp_mem_symplecticGroup_iff {X : Matrix (l ⊕ l) (l ⊕ l) 𝕜}
+    (hX : X.IsHermitian) :
+    NormedSpace.exp X ∈ symplecticGroup l 𝕜 ↔ X ∈ LieAlgebra.Symplectic.sp l 𝕜 := by
+  refine ⟨fun h ↦ ?_, exp_mem_symplecticGroup_of_mem_sp X⟩
+  -- `J (-X) J⁻¹ = J (-X) Jᴴ` is Hermitian, as `J` is unitary.
+  have hJX : (J l 𝕜 * (-X) * (J l 𝕜)⁻¹).IsHermitian := by
+    have h := isHermitian_mul_mul_conjTranspose (J l 𝕜) hX.neg
+    rwa [← star_eq_conjTranspose, star_J, ← J_inv] at h
+  rw [LieAlgebra.Symplectic.mem_sp_iff_transpose_eq_J_conj_neg, ← hX.transpose.exp_eq_exp_iff hJX]
+  calc NormedSpace.exp Xᵀ = (NormedSpace.exp X)ᵀ := exp_transpose X
+    _ = J l 𝕜 * (NormedSpace.exp X)⁻¹ * (J l 𝕜)⁻¹ := SymplecticGroup.transpose_eq_J_conj_inv h
+    _ = NormedSpace.exp (J l 𝕜 * (-X) * (J l 𝕜)⁻¹) := by rw [exp_conj _ _ (isUnit_J l 𝕜), exp_neg]
 
 end Matrix

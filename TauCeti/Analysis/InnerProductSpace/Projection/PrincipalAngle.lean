@@ -357,7 +357,7 @@ theorem sin_principalAngles (i : ℕ) : Real.sin (U.principalAngles V i) = U.pri
 /-- The largest principal sine from `U` to `V` is the directed gap `‖P_{Vᗮ} P_U‖`. -/
 theorem principalSines_zero : U.principalSines V 0 = U.directedProjectionGap V := by
   rw [principalSines_def, ← ContinuousLinearMap.singularValue_eq_linearMap_singularValues,
-    ContinuousLinearMap.singularValue_zero, coe_nnnorm, norm_sinThetaMap]
+    ContinuousLinearMap.singularValue_zero, coe_nnNorm, norm_sinThetaMap]
 
 /-- All principal sines from `U` to `V` are below `c` exactly when the largest one, the directed
 gap `‖P_{Vᗮ} P_U‖`, is. -/
@@ -496,12 +496,6 @@ theorem principalSines_comm (h : finrank 𝕜 U = finrank 𝕜 V) :
   -- matches that of `V ⊓ Uᗮ` when `dim U = dim V`.
   refine Finsupp.eq_of_antitone_of_ncard_eq (principalSines_antitone U V)
     (principalSines_antitone V U) fun s hs ↦ ?_
-  rcases hs.lt_or_gt with hs | hs
-  · -- No principal sine is negative.
-    have hempty (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] :
-        {i | U.principalSines V i = s} = ∅ :=
-      Set.eq_empty_of_forall_notMem fun i hi ↦ (principalSines_nonneg U V i).not_gt (hi ▸ hs)
-    rw [hempty U V, hempty V U]
   rw [principalSines_def, principalSines_def, LinearMap.ncard_ofPred_singularValues_eq _ hs,
     LinearMap.ncard_ofPred_singularValues_eq _ hs]
   have ht₀ : ((s ^ 2 : ℝ) : 𝕜) ≠ 0 := by exact_mod_cast (pow_pos hs 2).ne'

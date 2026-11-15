@@ -118,11 +118,11 @@ theorem inv_conjExponent_eq_of_inv_eq (hs₀ : 1 ≤ s₀) (hs₁ : 1 ≤ s₁)
           ofReal_sub_add_ofReal hθ.1 hθ.2, ENNReal.ofReal_one]
     _ = _ := by rw [hs]; ring
 
-/-- Let `p ≤ q` with `1 ≤ q < ∞`, and let `ν < ∞` with `1/p - 1/q < ν`. Then `q` is interpolated
+/-- Let `p ≤ q` with `1 ≤ q < ∞`, and let `ν` with `1/p - 1/q < ν`. Then `q` is interpolated
 between `p` and a larger finite exponent still in this range: there are a finite `s ≥ 1` with
 `1/p - 1/s < ν` and `0 ≤ θ < 1` with `1/q = (1 - θ)/p + θ/s`. With `ν = 1/n` this chooses the
 auxiliary exponent for compactness of subcritical Sobolev embeddings by interpolation. -/
-theorem exists_inv_eq_of_inv_lt_inv_add {p q ν : ℝ≥0∞} (hq₁ : 1 ≤ q) (hq : q ≠ ∞) (hν : ν ≠ ∞)
+theorem exists_inv_eq_of_inv_lt_inv_add {p q ν : ℝ≥0∞} (hq₁ : 1 ≤ q) (hq : q ≠ ∞)
     (hpq : p ≤ q) (h : p⁻¹ < q⁻¹ + ν) :
     ∃ s : ℝ≥0∞, ∃ θ : ℝ, 1 ≤ s ∧ s ≠ ∞ ∧ p⁻¹ < s⁻¹ + ν ∧ 0 ≤ θ ∧ θ < 1 ∧
       q⁻¹ = ENNReal.ofReal (1 - θ) * p⁻¹ + ENNReal.ofReal θ * s⁻¹ := by
@@ -132,6 +132,12 @@ theorem exists_inv_eq_of_inv_lt_inv_add {p q ν : ℝ≥0∞} (hq₁ : 1 ≤ q) 
   have hp₀ : p ≠ 0 := by
     rintro rfl
     simp at h
+  wlog hν : ν ≠ ∞ generalizing ν
+  · have hp' : p⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hp₀
+    have hq' : q⁻¹ ≠ 0 := (ENNReal.inv_pos.2 hq).ne'
+    obtain ⟨s, θ, hs₁, hs, -, hθ₀, hθ₁, hsθ⟩ :=
+      this (ν := p⁻¹) (add_comm p⁻¹ q⁻¹ ▸ ENNReal.lt_add_right hp' hq') hp'
+    exact ⟨s, θ, hs₁, hs, by rw [not_not.1 hν, add_top]; exact hp'.lt_top, hθ₀, hθ₁, hsθ⟩
   -- Work with the real reciprocals `a = 1/p`, `b = 1/q` and `ν`.
   have hinv {r : ℝ≥0∞} (hr : r ≠ 0) (hr' : r ≠ ∞) : r⁻¹ = ENNReal.ofReal r.toReal⁻¹ := by
     rw [ENNReal.ofReal_inv_of_pos (ENNReal.toReal_pos hr hr'), ENNReal.ofReal_toReal hr']

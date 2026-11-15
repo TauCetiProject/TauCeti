@@ -27,7 +27,7 @@ is compared with the cup product of Kummer classes.
 The degree is controlled by the radicand: `s ^ d` lies in `K`, so `b = (s ^ d) ^ (n / d)` is an
 `(n / d)`-th power in `K`. Hence if `b` is not a `p`-th power in `K` for any prime `p` dividing
 `n`, then `[L : K] = n` and `Xⁿ - b` is irreducible. Mathlib proves this irreducibility criterion
-for odd `n` without roots of unity (`X_pow_sub_C_irreducible_iff_forall_prime_of_odd`); for even
+for odd `n` without roots of unity (`irreducible_X_pow_sub_C_iff_forall_prime_of_odd`); for even
 `n` it fails in general (`X⁴ + 4` is reducible over `ℚ`), and a primitive `n`-th root of unity in
 `K` is what restores it. Together with Mathlib's `autEquivZmod`, this makes `L/K` cyclic of order
 `n` with `Gal(L/K)` acting on `s` through the `n`-th roots of unity: Kummer extensions in the
@@ -141,7 +141,7 @@ private theorem exists_injective_monoidHom_apply_div_self (hs0 : s ≠ 0)
   refine ⟨ψ, fun σ τ h ↦ ?_, hψ⟩
   have h' : σ s = τ s := by
     have := congrArg Units.val h
-    rwa [hψ, hψ, div_left_inj' hs0] at this
+    rwa [hψ, hψ, div_left_inj₀ hs0] at this
   have htop : Algebra.adjoin K {s} = ⊤ := by
     rw [← IntermediateField.adjoin_simple_toSubalgebra_of_isAlgebraic
       (IsIntegral.of_pow (NeZero.pos n) (hs ▸ isIntegral_algebraMap)).isAlgebraic, hgen,

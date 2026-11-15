@@ -166,6 +166,13 @@ theorem dehomogenize_injOn (i : Fin (n + 1)) (d : ℕ) :
       ← coeff_dehomogenize_of_isHomogeneous hq i hs, h]
   · rw [hp.coeff_eq_zero hs, hq.coeff_eq_zero hs]
 
+/-- Dehomogenizing a nonzero homogeneous polynomial in any standard affine chart produces a nonzero
+polynomial. -/
+theorem dehomogenize_ne_zero_of_isHomogeneous {d : ℕ} (i : Fin (n + 1))
+    {p : MvPolynomial (Fin (n + 1)) R} (hp : p.IsHomogeneous d) (hne : p ≠ 0) :
+    dehomogenize i p ≠ 0 := fun hzero ↦
+  hne <| dehomogenize_injOn i d hp (isHomogeneous_zero _ _ _) (by simpa using hzero)
+
 /-- **Homogenization**: every polynomial `p` in `n` variables of total degree at most `N` is the
 equation in the `i`-th standard affine chart of a homogeneous polynomial of degree `N` in `n + 1`
 variables, obtained by padding each homogeneous component of `p` with a power of `X_i`. -/
@@ -283,7 +290,7 @@ theorem eval_dehomogenize_div (i : Fin (n + 1))
     (b : Fin (n + 1) → k) (hi : b i ≠ 0) :
     eval (fun j ↦ b (i.succAbove j) / b i) (dehomogenize i p) =
       (b i)⁻¹ ^ d * eval b p := by
-  rw [eval_dehomogenize, Fin.insertNth_one_div_eq_inv_smul i b hi, hp.eval_smul, smul_eq_mul]
+  rw [eval_dehomogenize, Fin.insertNth_one_div_eq_inv_smul i b hi, hp.eval_smul]
 
 /-- Over a semifield, a nonzero homogeneous coordinate can be normalized to one without
 changing whether the gradient vanishes. The derivatives of the affine equation are
