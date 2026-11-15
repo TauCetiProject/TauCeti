@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.SquareClasses
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Uniformizer
 public import TauCeti.NumberTheory.LocalField.Squares
-public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import Mathlib.Data.Set.Card
 
@@ -21,7 +21,11 @@ they are congruent modulo `(2)`, or equivalently modulo the `v_K(2)`-th power of
 maximal ideal. This separates the parameters in the finite residue quotient used to
 count the unit norm classes, including in residue characteristic two.
 `ncard_range_uniformizerNormSquareClass` computes their number as `q ^ v_K(2)`, and
-`mem_range_uniformizerNormSquareClass_iff` identifies the counted range with unit norms.
+`mem_range_uniformizerNormSquareClass_iff` identifies the counted range with unit norms, so for any
+uniformizer `a` the subgroup `unitQuadraticNormSquareClasses (a : K)` has cardinality `q ^ v_K(2)`
+and index two in `unitSquareClasses K`
+(`natCard_unitQuadraticNormSquareClasses_of_isUniformizer`,
+`relIndex_unitQuadraticNormSquareClasses_of_isUniformizer`).
 
 The proof uses the sharp local square theorem and the obstruction to a square differing
 from one to odd order below `2 v_K(2)`.
@@ -254,5 +258,41 @@ theorem ncard_range_uniformizerNormSquareClass (h2 : (2 : K) ≠ 0)
     exact ⟨q t, (hf t (r (q t))).mpr (hqr (q t))⟩
   rw [← hrange, Set.ncard_range_of_injective hinj]
   exact IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow _
+
+/-- For an irreducible `π ∈ 𝒪[K]`, the carrier of `unitQuadraticNormSquareClasses (π : K)` is the
+range of `uniformizerNormSquareClass K hπ`. -/
+theorem coe_unitQuadraticNormSquareClasses_irreducible {π : 𝒪[K]} (hπ : Irreducible π) :
+    (unitQuadraticNormSquareClasses (π : K) : Set (MultiplicativeSquareClassGroup K)) =
+      Set.range (uniformizerNormSquareClass K hπ) := by
+  ext c
+  rw [SetLike.mem_coe, mem_unitQuadraticNormSquareClasses_iff,
+    mem_range_uniformizerNormSquareClass_iff]
+  exact ⟨fun ⟨b, hb, hv, hc⟩ ↦ ⟨b, hv, hb, hc⟩, fun ⟨b, hv, hb, hc⟩ ↦ ⟨b, hb, hv, hc⟩⟩
+
+/-- For a uniformizer `a` of `K` with `2 ≠ 0`, `unitQuadraticNormSquareClasses (a : K)` has
+cardinality `#𝓀[K] ^ v_K(2)`. -/
+theorem natCard_unitQuadraticNormSquareClasses_of_isUniformizer (h2 : (2 : K) ≠ 0)
+    {a : Kˣ} (ha : IsUniformizer K a) :
+    Nat.card (unitQuadraticNormSquareClasses (a : K)) =
+      Nat.card 𝓀[K] ^ natCastValuation K 2 h2 := by
+  obtain ⟨π, hπ, hπa⟩ := (isUniformizer_iff_exists_irreducible K a).mp ha
+  rw [← hπa]
+  calc Nat.card (unitQuadraticNormSquareClasses (π : K))
+      = (unitQuadraticNormSquareClasses (π : K) : Set (MultiplicativeSquareClassGroup K)).ncard :=
+        Nat.card_coe_set_eq _
+    _ = Nat.card 𝓀[K] ^ natCastValuation K 2 h2 := by
+        rw [coe_unitQuadraticNormSquareClasses_irreducible hπ,
+          ncard_range_uniformizerNormSquareClass h2 hπ]
+
+/-- For a uniformizer `a` of `K` with `2 ≠ 0`, `unitQuadraticNormSquareClasses (a : K)` has index
+two inside `unitSquareClasses K`. -/
+theorem relIndex_unitQuadraticNormSquareClasses_of_isUniformizer (h2 : (2 : K) ≠ 0)
+    {a : Kˣ} (ha : IsUniformizer K a) :
+    (unitQuadraticNormSquareClasses (a : K)).relIndex (unitSquareClasses K) = 2 := by
+  have hmul := (unitQuadraticNormSquareClasses (a : K)).relIndex_mul_card (unitSquareClasses K)
+  rw [inf_of_le_left (unitQuadraticNormSquareClasses_le_unitSquareClasses _),
+    natCard_unitQuadraticNormSquareClasses_of_isUniformizer h2 ha,
+    card_unitSquareClasses K h2] at hmul
+  exact Nat.eq_of_mul_eq_mul_right (pow_pos Nat.card_pos _) hmul
 
 end TauCeti

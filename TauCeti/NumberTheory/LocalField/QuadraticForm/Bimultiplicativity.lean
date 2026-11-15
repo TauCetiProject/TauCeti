@@ -8,12 +8,8 @@ module
 public import TauCeti.NumberTheory.HilbertSymbol.NormSubgroup
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 
-import TauCeti.Algebra.Group.Units.Basic
-import TauCeti.NumberTheory.HilbertSymbol.SquareClassIndex
-import TauCeti.NumberTheory.LocalField.FiniteExtension.SquareClass
 import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.DirectIndex
 import TauCeti.NumberTheory.LocalField.QuadraticForm.UnramifiedClass
-import TauCeti.NumberTheory.LocalField.Squares
 
 /-!
 # The index theorem for quadratic norms, and bimultiplicativity of the local Hilbert symbol
@@ -22,15 +18,14 @@ Let `K` be a nonarchimedean local field with `2 ≠ 0`, in any residue character
 from `K(√a)`, that is the subgroup `N` of `Kˣ` consisting of the `b` of the form `x² - a y²` with
 `x, y ∈ K`, form a subgroup of index two in `Kˣ` for every nonsquare radicand `a`.
 
-For odd-valuation radicands the index is computed directly from the base field's unit norm
-families by `TauCeti.quadraticNormSubgroup_index_eq_two_of_odd`. For the remaining radicands,
-the index is computed by counting square classes in a quadratic extension, uniformly in the
-residue characteristic and quadratic defect. For `L = K(√a)`,
-`TauCeti.two_mul_index_quadraticNormSubgroup_mul_card_squareClass` gives
-`2 · (Kˣ : N) · #(Lˣ/(Lˣ)²) = #(Kˣ/(Kˣ)²)²` over any field with `2 ≠ 0`. Over a local field
-`#(Kˣ/(Kˣ)²) = 4 q^{v_K(2)}`, with `q = #𝓀[K]`, and since `[L : K] = 2`,
-`TauCeti.card_squareClass_eq_four_mul_pow_finrank` gives `#(Lˣ/(Lˣ)²) = 4 q^{2 v_K(2)}`. Hence
-`(Kˣ : N) = 2`.
+The index is computed directly in the base field across all regimes of the quadratic defect by
+`TauCeti.quadraticNormSubgroup_index_eq_two_iff` (in
+`TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.DirectIndex`): factoring `[Kˣ : N]` along
+`normalizedValuation K` into its valuation-image index and its unit-norm index inside `U(K, 0)`
+gives `2 · 1 = 2` for even defect exponent (unramified extensions, where `v_K(N) = 2ℤ` and all
+units are norms) and `1 · 2 = 2` for odd defect exponent (both odd-valuation uniformizer norm
+families and even-valuation Eisenstein unit-defect norm families, where `v_K(N) = ℤ` and the unit
+norms span `#𝓀[K] ^ v_K(2)` of the `2 · #𝓀[K] ^ v_K(2)` unit square classes).
 
 The sign indicator of an index-two subgroup is a character, so the local Hilbert symbol is
 bimultiplicative in both arguments. The same index theorem gives nondegeneracy, and there that step
@@ -81,18 +76,8 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 /-- **The norm index of a nonsquare radicand.** If `2 ≠ 0` in `K`, the norms from `K(√a)` form
 a subgroup of index two in `Kˣ` for every `a` that is not a square. -/
 theorem quadraticNormSubgroup_index_eq_two_of_not_isSquare (h2 : (2 : K) ≠ 0) {a : Kˣ}
-    (ha : ¬IsSquare a) : (quadraticNormSubgroup (a : K)).index = 2 := by
-  by_cases hodd : Odd (normalizedValuation K a).toAdd
-  · exact quadraticNormSubgroup_index_eq_two_of_odd h2 hodd
-  have : Fact (¬IsSquare (a : K)) := ⟨Units.isSquare_coe_iff.not.mpr ha⟩
-  have h := two_mul_index_quadraticNormSubgroup_mul_card_squareClass a h2
-  rw [card_squareClass_eq_four_mul_pow_finrank h2, QuadraticAlgebra.finrank_eq_two,
-    card_squareClass h2] at h
-  -- `h` reads `2 · (Kˣ : N) · 4 Q² = (4 Q)²` with `Q = q ^ v_K(2) > 0`.
-  have hq : 0 < Nat.card 𝓀[K] := Nat.card_pos
-  have hQ : 0 < 8 * (Nat.card 𝓀[K] ^ natCastValuation K 2 h2) ^ 2 := by positivity
-  refine Nat.eq_of_mul_eq_mul_right hQ ?_
-  linear_combination h
+    (ha : ¬IsSquare a) : (quadraticNormSubgroup (a : K)).index = 2 :=
+  (quadraticNormSubgroup_index_eq_two_iff h2).mpr ha
 
 /-- **Bimultiplicativity of the local Hilbert symbol in the second argument.** If `2 ≠ 0` in `K`,
 then `(a, bc)_K = (a, b)_K (a, c)_K` for every `a`, `b` and `c`. -/

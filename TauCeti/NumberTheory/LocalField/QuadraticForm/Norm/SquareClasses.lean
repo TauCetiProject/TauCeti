@@ -62,12 +62,68 @@ theorem unitQuadraticNormSquareClasses_le_unitSquareClasses (a : K) :
   rintro _ ⟨_, ⟨_, u, rfl⟩, rfl⟩
   exact (mem_unitSquareClasses_iff K _).mpr ⟨u, (squareClassHom_apply _).symm⟩
 
+/-- Rescaling the radicand by a square does not change the unit-norm square-class subgroup. -/
+@[simp]
+theorem unitQuadraticNormSquareClasses_mul_sq (a : K) (c : Kˣ) :
+    unitQuadraticNormSquareClasses (a * (c : K) ^ 2) = unitQuadraticNormSquareClasses a := by
+  simp [unitQuadraticNormSquareClasses]
+
+/-- Radicands in the same square class have the same unit-norm square-class subgroup. -/
+theorem unitQuadraticNormSquareClasses_eq_of_isSquare_mul {a Δ : Kˣ} (h : IsSquare (a * Δ)) :
+    unitQuadraticNormSquareClasses (a : K) = unitQuadraticNormSquareClasses (Δ : K) := by
+  rw [unitQuadraticNormSquareClasses, unitQuadraticNormSquareClasses,
+    quadraticNormSubgroup_eq_of_isSquare_mul h]
+
+/-- Every unit square class of `K` is represented by a valuation-one norm from `K[√a]` if and only
+if every unit of valuation one in `Kˣ` lies in `quadraticNormSubgroup a`. -/
+theorem unitQuadraticNormSquareClasses_eq_unitSquareClasses_iff (a : K) :
+    unitQuadraticNormSquareClasses a = unitSquareClasses K ↔
+      ∀ b : Kˣ, valuation K (b : K) = 1 → b ∈ quadraticNormSubgroup a := by
+  constructor
+  · intro heq b hbv
+    let u : 𝒪[K]ˣ :=
+      ((Valuation.integer.integers (valuation K)).isUnit_of_one' (x := ⟨(b : K), hbv.le⟩) hbv).unit
+    have hub : Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u = b := by ext; simp [u]
+    have hq : squareClassHom b ∈ unitQuadraticNormSquareClasses a := by
+      rw [heq]
+      exact (mem_unitSquareClasses_iff K _).mpr ⟨u, hub.symm ▸ (squareClassHom_apply b).symm⟩
+    obtain ⟨b', hb', -, hb'q⟩ := (mem_unitQuadraticNormSquareClasses_iff a _).mp hq
+    have hsq : b'⁻¹ * b ∈ Subgroup.square Kˣ := by
+      rwa [← QuotientGroup.eq, ← squareClassHom_apply, ← squareClassHom_apply]
+    simpa only [mul_inv_cancel_left] using
+      (quadraticNormSubgroup a).mul_mem hb' (square_le_quadraticNormSubgroup a hsq)
+  · intro hall
+    refine le_antisymm (unitQuadraticNormSquareClasses_le_unitSquareClasses a) fun q hq ↦ ?_
+    obtain ⟨u, rfl⟩ := (mem_unitSquareClasses_iff K q).mp hq
+    let b := Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u
+    have hbv : valuation K (b : K) = 1 :=
+      (Valuation.integer.integers (valuation K)).valuation_unit u
+    exact (mem_unitQuadraticNormSquareClasses_iff a _).mpr
+      ⟨b, hall b hbv, hbv, squareClassHom_apply b⟩
+
+/-- When `2` is invertible in `K` and `a : Kˣ` is a square, `unitQuadraticNormSquareClasses (a : K)`
+is all of `unitSquareClasses K`. -/
+theorem unitQuadraticNormSquareClasses_eq_unitSquareClasses_of_isSquare [Invertible (2 : K)]
+    {a : Kˣ} (ha : IsSquare a) :
+    unitQuadraticNormSquareClasses (a : K) = unitSquareClasses K :=
+  (unitQuadraticNormSquareClasses_eq_unitSquareClasses_iff (a : K)).mpr fun b _ ↦
+    quadraticNormSubgroup_eq_top_of_isSquare ha ▸ Subgroup.mem_top b
+
 end ValuedField
 
 section LocalField
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
+
+/-- Over a nonarchimedean local field, `unitQuadraticNormSquareClasses a` is all of
+`unitSquareClasses K` if and only if `U(K, 0) ≤ quadraticNormSubgroup a`. -/
+theorem unitQuadraticNormSquareClasses_eq_unitSquareClasses_iff_unitFiltration_le (a : K) :
+    unitQuadraticNormSquareClasses a = unitSquareClasses K ↔
+      unitFiltration K 0 ≤ quadraticNormSubgroup a := by
+  rw [unitQuadraticNormSquareClasses_eq_unitSquareClasses_iff]
+  exact ⟨fun h b hb ↦ h b ((mem_unitFiltration_zero b).mp hb),
+    fun h b hb ↦ h ((mem_unitFiltration_zero b).mpr hb)⟩
 
 /-- Over a nonarchimedean local field, the index of `unitQuadraticNormSquareClasses a` inside
 `unitSquareClasses K` equals the index of the valuation-one quadratic norms inside `U(K, 0)`. -/
