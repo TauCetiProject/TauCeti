@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Spectra.SymmetricSpectrum
+public import Mathlib.CategoryTheory.Adjunction.Limits
+public import TauCeti.AlgebraicTopology.Spectra.Free
 public import TauCeti.CategoryTheory.Monoidal.Mod.Limits
 
 /-!
@@ -16,12 +17,12 @@ forgetful functor from sphere modules creates limits, so the native category of 
 spectra has all small limits, with its sphere action induced by the universal property.
 `SymmetricSpectrum.isLimitOfLevelwise` recognizes limiting cones by their levels.
 
-For a level `n`, compose `Mod.forget SymmetricSequence.sphere`, the functor of
-`DayFunctor.equiv FiniteBijection PointedSSet`, and
-`(evaluation FiniteBijection PointedSSet).obj (FiniteBijection.mk n)`.
-This composite preserves limits. Mathlib's `preservesLimitIso` identifies the level of a
-spectral limit with the limit of its levels; `preservesLimitIso_hom_π` and
-`preservesLimitIso_inv_π` identify its projections. These are strict categorical limits.
+Level evaluation `SymmetricSpectrum.evaluation n` is a right adjoint
+(`SymmetricSpectrum.freeEvaluationAdjunction`) and so preserves limits of every size
+(`SymmetricSpectrum.evaluation_preservesLimitsOfSize`). Mathlib's `preservesLimitIso`
+identifies the level of a spectral limit with the limit of its levels;
+`preservesLimitIso_hom_π` and `preservesLimitIso_inv_π` identify its projections. These are
+strict categorical limits.
 
 The construction uses Mathlib's `DayFunctor.equiv`, functor-category limits, and the generic
 limit creation theorem for module objects.
@@ -40,12 +41,17 @@ open CategoryTheory MonoidalCategory Limits
 
 namespace TauCeti
 
+/-- Level evaluation of symmetric spectra preserves limits of every size. -/
+instance SymmetricSpectrum.evaluation_preservesLimitsOfSize (n : ℕ) :
+    PreservesLimitsOfSize.{v, w} (evaluation n) :=
+  (freeEvaluationAdjunction n).rightAdjoint_preservesLimits
+
 /-- A cone of symmetric spectra is limiting if its cone of pointed simplicial sets is
 limiting at every level. In particular, the limiting maps respect the sphere action. -/
 noncomputable def SymmetricSpectrum.isLimitOfLevelwise {J : Type w} [Category.{v} J]
     {F : J ⥤ SymmetricSpectrum} (c : Cone F)
     (h : ∀ n : ℕ, IsLimit
-      (((evaluation FiniteBijection PointedSSet).obj (FiniteBijection.mk n)).mapCone
+      (((CategoryTheory.evaluation FiniteBijection PointedSSet).obj (FiniteBijection.mk n)).mapCone
         ((DayFunctor.equiv FiniteBijection PointedSSet).functor.mapCone
           ((Mod.forget SymmetricSequence.sphere).mapCone c)))) : IsLimit c := by
   apply isLimitOfReflects (Mod.forget SymmetricSequence.sphere)
