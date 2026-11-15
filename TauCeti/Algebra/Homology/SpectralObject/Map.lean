@@ -17,7 +17,9 @@ functorial in `φ` (`EMap_id`, `EMap_comp`, `cyclesMapOfHom_id`, `cyclesMapOfHom
 compatible with the projections `πE`, the maps `toCycles`, the
 functoriality maps `X.map` in the indices, and the differentials `X.d`
 (`CategoryTheory.Abelian.SpectralObject.d_EMap`). These are the ingredients of the morphism of
-spectral sequences induced by `φ`.
+spectral sequences induced by `φ`. On `E^n(𝟙, f, 𝟙)`, which Mathlib identifies with `H^n(f)`, the
+map `EMap φ` is the component of `φ` at `f`
+(`CategoryTheory.Abelian.SpectralObject.EMap_comp_EIsoH_hom`).
 
 ## Main definitions
 
@@ -146,6 +148,16 @@ lemma map_EMap (α : mk₃ f₁ f₂ f₃ ⟶ mk₃ f₁' f₂' f₃') :
     ShortComplex.homologyMap_comp]
   -- `X.E f₁ f₂ f₃ …` is by definition `(X.shortComplex f₁ f₂ f₃ …).homology`
   rfl
+
+/-- **The maps `EMap` on `E^n(𝟙, f, 𝟙)` are the maps on `H^n(f)`.** Under Mathlib's
+identification `EIsoH` of `E^n(𝟙 i, f, 𝟙 j)` with `H^n(f)`, the map `EMap φ` induced by a morphism
+of spectral objects is the component of `φ` at `f`. -/
+@[reassoc]
+lemma EMap_comp_EIsoH_hom (f : i ⟶ j) :
+    EMap φ (𝟙 i) f (𝟙 j) n₀ n₁ n₂ hn₁ hn₂ ≫ (Y.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom =
+      (X.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom ≫ (φ.hom n₁).app (mk₁ f) :=
+  (ShortComplex.LeftHomologyMapData.ofZeros
+    (shortComplexMapOfHom φ (𝟙 i) f (𝟙 j) n₀ n₁ n₂ hn₁ hn₂) ..).homologyMap_comm
 
 end E
 

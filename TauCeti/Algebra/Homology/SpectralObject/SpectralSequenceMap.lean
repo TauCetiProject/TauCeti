@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SpectralObject.Map
+public import Mathlib.Algebra.Homology.SpectralObject.FirstPage
 public import Mathlib.Algebra.Homology.SpectralObject.SpectralSequence
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.LeftHomology
@@ -38,6 +39,9 @@ which is functorial in `φ`.
   next page.
 * `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_id`,
   `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_comp`: functoriality.
+* `spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom`: on the first page,
+  identified with the objects `H^n(f)` by `spectralSequenceFirstPageXIso`, the morphism of
+  spectral sequences is given by the components of `φ`.
 
 ## Implementation notes
 
@@ -274,5 +278,22 @@ lemma spectralSequenceMap_comp :
     spectralSequenceMap data (φ ≫ ψ) = spectralSequenceMap data φ ≫ spectralSequenceMap data ψ := by
   ext r hr : 2
   simp
+
+/-- **The morphism of spectral sequences on the first page.** When the objects of the first page
+are computed as objects `H^n(f)` (`spectralSequenceFirstPageXIso`), the morphism of spectral
+sequences induced by `φ` is given on them by the components of `φ`. -/
+@[reassoc]
+lemma spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom
+    [data.HasFirstPageComputation] (pq : κ) (i₁ i₂ : ι) (hi₁ : i₁ = data.i₁ pq)
+    (hi₂ : i₂ = data.i₂ pq) (n : ℤ) (hn : n = data.deg pq) :
+    spectralSequencePageXMap data φ r₀ le_rfl pq ≫
+        (Y.spectralSequenceFirstPageXIso data pq i₁ i₂ hi₁ hi₂ n hn).hom =
+      (X.spectralSequenceFirstPageXIso data pq i₁ i₂ hi₁ hi₂ n hn).hom ≫
+        (φ.hom n).app (mk₁ (homOfLE (data.le₁₂' pq hi₁ hi₂))) := by
+  rw [spectralSequenceFirstPageXIso_hom _ _ _ _ _ _ _ (n - 1) n (n + 1) hn,
+    spectralSequenceFirstPageXIso_hom _ _ _ _ _ _ _ (n - 1) n (n + 1) hn,
+    Category.assoc, ← EMap_comp_EIsoH_hom, ← spectralSequencePageXIso_hom_comp_EMap_assoc]
+  -- The page isomorphisms present `E^n(𝟙, f, 𝟙)` with the identities written as `homOfLE`.
+  simp only [homOfLE_refl]
 
 end CategoryTheory.Abelian.SpectralObject
