@@ -321,13 +321,19 @@ instance isFiniteRelIndex_range_powMonoidHom_of_hasEnoughRootsOfUnity {n : ℕ} 
     (powMonoidHom n : Kˣ →* Kˣ).range.IsFiniteRelIndex B :=
   Subgroup.isFiniteRelIndex_of_finiteIndex
 
-/-- When `K` contains the `n`-th roots of unity (`n ≠ 0`), the group `Kˣ ⧸ (Kˣ)ⁿ` of `n`-th power
-classes is finite. -/
-instance finite_powerClassQuotient_units_of_hasEnoughRootsOfUnity {n : ℕ} [NeZero n]
+/-- When `K` contains the `n`-th roots of unity (`n ≠ 0`), `powerSubgroup Kˣ n` has finite index in
+`Kˣ`. -/
+instance finiteIndex_powerSubgroup_units_of_hasEnoughRootsOfUnity {n : ℕ} [NeZero n]
     [HasEnoughRootsOfUnity K n] :
-    Finite (powerClassQuotient Kˣ n) :=
-  have : NeZero (n : K) := (HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n).choose_spec.neZero'
-  inferInstance
+    (powerSubgroup Kˣ n).FiniteIndex :=
+  powerSubgroup_eq_range_powMonoidHom Kˣ n ▸ inferInstance
+
+/-- When `K` contains the `n`-th roots of unity (`n ≠ 0`), every subgroup `B ≤ Kˣ` has finite
+relative index over `B ∩ powerSubgroup Kˣ n`. -/
+instance isFiniteRelIndex_powerSubgroup_units_of_hasEnoughRootsOfUnity {n : ℕ} [NeZero n]
+    [HasEnoughRootsOfUnity K n] (B : Subgroup Kˣ) :
+    (powerSubgroup Kˣ n).IsFiniteRelIndex B :=
+  Subgroup.isFiniteRelIndex_of_finiteIndex
 
 /-- **The number of `n`-th power classes away from the residue characteristic.** For `n`
 invertible in `𝒪[K]`, the quotient `Kˣ ⧸ (Kˣ)ⁿ` has `n · #μ_n(K)` elements, where `μ_n(K)` is the

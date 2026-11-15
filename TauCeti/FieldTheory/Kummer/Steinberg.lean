@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import TauCeti.RingTheory.Norm.Units
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.FieldTheory.Kummer.Cyclic
 
 /-!
@@ -22,10 +23,10 @@ roots `ζ ^ i · s` (`0 ≤ i < n`) of `Xⁿ - b`. Evaluating the linear factori
 
 `N_{L/K} (∏_{r = 0}^{n / [L : K] - 1} (x - ζ ^ r · s)) = xⁿ - b`.
 
-Taking `x = 1` gives `1 - b ∈ N_{L/K}(Lˣ)` whenever `1 - b ≠ 0`; equivalently, if `u, a ∈ Kˣ`
-satisfy `u + a = 1`, then `u ∈ N_{L/K}(Lˣ)` for `L = K(ⁿ√a)`. Over a nonarchimedean local field,
-combining this norm identity with the Artin norm criterion for the norm-residue symbol yields the
-Steinberg relation `(u, a) = 1` for `u + a = 1`.
+Taking `x = 1` gives `1 - b ∈ N_{L/K}(Lˣ)` whenever `1 - b ≠ 0`; equivalently, if `u ∈ Kˣ` and
+`a ∈ K` satisfy `(u : K) + a = 1`, then `u ∈ N_{L/K}(Lˣ)` for `L = K(ⁿ√a)`. Over a nonarchimedean
+local field, combining this norm identity with the Artin norm criterion for the norm-residue symbol
+yields the Steinberg relation `(u, a) = 1` for `u + a = 1`.
 
 Compare `TauCeti.FieldTheory.GaloisCohomology.Steinberg`, which proves the cohomological Steinberg
 relation `(u) ⌣ (a) = 0` over an arbitrary field with `n` invertible (without `n`-th roots of unity
@@ -35,15 +36,15 @@ splitting field `L = K(ⁿ√a)`, so the product of norms lands in the single ex
 
 ## Main results
 
-* `TauCeti.norm_prod_algebraMap_sub_mul_eq_pow_sub`: for `L = K(s)` with `sⁿ = b` and a primitive
-  `n`-th root of unity `ζ ∈ K`, the norm of `∏_{r < n / [L : K]} (x - ζ ^ r · s)` from `L` to `K`
-  is `xⁿ - b`.
-* `TauCeti.pow_sub_mem_normGroup_of_pow_eq`: a unit `u ∈ Kˣ` of the form `xⁿ - b` lies in
+* `IsPrimitiveRoot.norm_prod_algebraMap_sub_mul_eq_pow_sub`: for `L = K(s)` with `sⁿ = b` and a
+  primitive `n`-th root of unity `ζ ∈ K`, the norm of `∏_{r < n / [L : K]} (x - ζ ^ r · s)` from `L`
+  to `K` is `xⁿ - b`.
+* `TauCeti.mem_normGroup_of_eq_pow_sub_of_pow_eq`: a unit `u ∈ Kˣ` of the form `xⁿ - b` lies in
   `normGroup K L`.
-* `TauCeti.mem_normGroup_of_add_eq_one_of_pow_eq`: if `u, a ∈ Kˣ` satisfy `u + a = 1` and
-  `L = K(s)` with `sⁿ = a`, then `u ∈ normGroup K L`.
-* `TauCeti.unitsMk0_one_sub_mem_normGroup_of_pow_eq`: for `a ∈ Kˣ` with `a ≠ 1` and `L = K(s)` with
-  `sⁿ = a`, the unit `1 - a` lies in `normGroup K L`.
+* `TauCeti.mem_normGroup_of_add_eq_one_of_pow_eq`: if `u ∈ Kˣ` and `a ∈ K` satisfy `(u : K) + a = 1`
+  and `L = K(s)` with `sⁿ = a`, then `u ∈ normGroup K L`.
+* `TauCeti.unitsMk0_one_sub_mem_normGroup_of_pow_eq`: for `a ∈ K` with `1 - a ≠ 0` and `L = K(s)`
+  with `sⁿ = a`, the unit `1 - a` lies in `normGroup K L`.
 
 ## References
 
@@ -62,8 +63,8 @@ namespace TauCeti
 root of unity `ζ`, and let `L = K(s)` with `sⁿ = b` (`b ∈ K`). For every `x ∈ K`, the norm from `L`
 to `K` of `∏_{r < n / [L : K]} (x - ζ ^ r · s)` equals `xⁿ - b`. The binomial `Xⁿ - b` need not be
 irreducible, and `b` may be zero. -/
-theorem norm_prod_algebraMap_sub_mul_eq_pow_sub {K L : Type*} [Field K] [Field L] [Algebra K L]
-    {n : ℕ} [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n) {b : K} {s : L}
+theorem _root_.IsPrimitiveRoot.norm_prod_algebraMap_sub_mul_eq_pow_sub {K L : Type*} [Field K]
+    [Field L] [Algebra K L] {n : ℕ} [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n) {b : K} {s : L}
     (hs : s ^ n = algebraMap K L b) (hgen : K⟮s⟯ = ⊤) (x : K) :
     Algebra.norm K (∏ r ∈ Finset.range (n / finrank K L),
         (algebraMap K L x - algebraMap K L (ζ ^ r) * s)) =
@@ -75,7 +76,6 @@ theorem norm_prod_algebraMap_sub_mul_eq_pow_sub {K L : Type*} [Field K] [Field L
   obtain ⟨g, hg, hdvd, hgs⟩ := exists_forall_mem_zpowers_apply_eq hζ hs hgen
   set d := finrank K L
   set m := n / d
-  have hdm : d * m = n := (mul_comm d m).trans (Nat.div_mul_cancel hdvd)
   have hcard : Nat.card (L ≃ₐ[K] L) = d := IsGalois.card_aut_eq_finrank K L
   have hord : orderOf g = d := (orderOf_eq_card_of_forall_mem_zpowers hg).trans hcard
   have hgp (q : ℕ) : (g ^ q) s = algebraMap K L (ζ ^ (m * q)) * s := by
@@ -87,39 +87,26 @@ theorem norm_prod_algebraMap_sub_mul_eq_pow_sub {K L : Type*} [Field K] [Field L
   -- On each coset representative `ζ ^ r · s`, the norm is the product over `Gal(L/K) = ⟨g⟩`.
   have hnorm (r : ℕ) :
       algebraMap K L (Algebra.norm K (algebraMap K L x - algebraMap K L (ζ ^ r) * s)) =
-        ∏ q ∈ Finset.range d, (algebraMap K L x - algebraMap K L (ζ ^ (r + m * q)) * s) := by
+        ∏ q ∈ Finset.range d, (algebraMap K L x - algebraMap K L (ζ ^ (m * q + r)) * s) := by
     rw [Algebra.norm_eq_prod_automorphisms, ← IsCyclic.image_range_card hg, hcard,
       Finset.prod_image (by simpa [hord] using pow_injOn_Iio_orderOf (x := g))]
     refine Finset.prod_congr rfl fun q _ ↦ ?_
     rw [map_sub, map_mul, AlgEquiv.commutes, AlgEquiv.commutes, hgp, ← mul_assoc, ← map_mul,
-      ← pow_add]
+      ← pow_add, add_comm]
   apply (algebraMap K L).injective
-  rw [map_prod, map_prod, Finset.prod_congr rfl fun r _ ↦ hnorm r]
-  -- Reindex `(r, q) ∈ Fin m × Fin d` as `r + m * q ∈ Fin n` and evaluate `Xⁿ - b` at `x`.
-  have hprod :
-      (∏ r ∈ Finset.range m, ∏ q ∈ Finset.range d,
-          (algebraMap K L x - algebraMap K L (ζ ^ (r + m * q)) * s)) =
-        ∏ i ∈ Finset.range n, (algebraMap K L x - algebraMap K L (ζ ^ i) * s) := by
-    let f (i : ℕ) : L := algebraMap K L x - algebraMap K L (ζ ^ i) * s
-    calc
-      (∏ r ∈ Finset.range m, ∏ q ∈ Finset.range d, f (r + m * q))
-          = ∏ q : Fin d, ∏ r : Fin m, f (r + m * q) := by
-            rw [Finset.prod_comm, ← Fin.prod_univ_eq_prod_range]
-            exact Finset.prod_congr rfl fun q _ ↦ (Fin.prod_univ_eq_prod_range _ m).symm
-      _ = ∏ i : Fin (d * m), f i := by
-            rw [← Fintype.prod_prod_type (f := fun p : Fin d × Fin m ↦ f (p.2 + m * p.1)),
-              ← finProdFinEquiv.prod_comp]
-            rfl
-      _ = ∏ i ∈ Finset.range n, f i := by rw [Fin.prod_univ_eq_prod_range, hdm]
+  rw [map_prod, map_prod, Finset.prod_congr rfl fun r _ ↦ hnorm r, Finset.prod_comm,
+    ← Finset.prod_range_mul_eq_prod_prod
+      (fun i ↦ algebraMap K L x - algebraMap K L (ζ ^ i) * s) m d,
+    Nat.div_mul_cancel hdvd]
   have heval := congrArg (Polynomial.eval (algebraMap K L x))
     (X_pow_sub_C_eq_prod (hζ.map_of_injective (algebraMap K L).injective) (NeZero.pos n) hs)
   simp only [eval_sub, eval_pow, eval_X, eval_C, eval_prod, ← map_pow] at heval
-  rw [hprod, ← heval, map_sub, map_pow]
+  rw [← heval, map_sub, map_pow]
 
 /-- **Norm membership for `xⁿ - b` in a radical extension.** Let `K` be a field containing the
 `n`-th roots of unity and `L = K(s)` a finite extension with `sⁿ = b` (`b ∈ K`). Every unit
 `u ∈ Kˣ` with `(u : K) = x ^ n - b` (`x ∈ K`) is a norm from `L`. -/
-theorem pow_sub_mem_normGroup_of_pow_eq {K L : Type*} [Field K] [Field L] [Algebra K L]
+theorem mem_normGroup_of_eq_pow_sub_of_pow_eq {K L : Type*} [Field K] [Field L] [Algebra K L]
     [FiniteDimensional K L] {n : ℕ} [HasEnoughRootsOfUnity K n] {x b : K} {u : Kˣ}
     (hu : (u : K) = x ^ n - b) {s : L} (hs : s ^ n = algebraMap K L b) (hgen : K⟮s⟯ = ⊤) :
     u ∈ normGroup K L := by
@@ -128,7 +115,7 @@ theorem pow_sub_mem_normGroup_of_pow_eq {K L : Type*} [Field K] [Field L] [Algeb
     rw [pow_zero, eq_comm, map_eq_one_iff _ (algebraMap K L).injective] at hs
     exact u.ne_zero (by rw [hu, pow_zero, hs, sub_self])⟩
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
-  have hnorm := norm_prod_algebraMap_sub_mul_eq_pow_sub hζ hs hgen x
+  have hnorm := hζ.norm_prod_algebraMap_sub_mul_eq_pow_sub hs hgen x
   rw [← hu] at hnorm
   have hy0 : ∏ r ∈ Finset.range (n / finrank K L),
       (algebraMap K L x - algebraMap K L (ζ ^ r) * s) ≠ 0 := by
@@ -144,14 +131,14 @@ theorem mem_normGroup_of_add_eq_one_of_pow_eq {K L : Type*} [Field K] [Field L] 
     [FiniteDimensional K L] {n : ℕ} [HasEnoughRootsOfUnity K n] {u : Kˣ} {a : K}
     (hua : (u : K) + a = 1) {s : L} (hs : s ^ n = algebraMap K L a) (hgen : K⟮s⟯ = ⊤) :
     u ∈ normGroup K L :=
-  pow_sub_mem_normGroup_of_pow_eq (x := 1) (by rw [one_pow]; linear_combination hua) hs hgen
+  mem_normGroup_of_eq_pow_sub_of_pow_eq (x := 1) (by rw [one_pow]; linear_combination hua) hs hgen
 
-/-- For `a ∈ K` with `a ≠ 1` over a field `K` containing the `n`-th roots of unity, the unit `1 - a`
-is a norm from `L = K(s)` whenever `sⁿ = a`. -/
+/-- For `a ∈ K` with `1 - a ≠ 0` over a field `K` containing the `n`-th roots of unity, the unit
+`1 - a` is a norm from `L = K(s)` whenever `sⁿ = a`. -/
 theorem unitsMk0_one_sub_mem_normGroup_of_pow_eq {K L : Type*} [Field K] [Field L] [Algebra K L]
-    [FiniteDimensional K L] {n : ℕ} [HasEnoughRootsOfUnity K n] {a : K} (ha : a ≠ 1)
+    [FiniteDimensional K L] {n : ℕ} [HasEnoughRootsOfUnity K n] {a : K} (ha : 1 - a ≠ 0)
     {s : L} (hs : s ^ n = algebraMap K L a) (hgen : K⟮s⟯ = ⊤) :
-    Units.mk0 (1 - a) (sub_ne_zero.2 ha.symm) ∈ normGroup K L :=
+    Units.mk0 (1 - a) ha ∈ normGroup K L :=
   mem_normGroup_of_add_eq_one_of_pow_eq (by simp) hs hgen
 
 end TauCeti
