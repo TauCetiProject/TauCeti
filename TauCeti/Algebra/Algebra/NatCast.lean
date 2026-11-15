@@ -92,7 +92,7 @@ theorem natCast_add_one_mul_algebraMap_inv_smul {R A : Type*} [CommSemiring R] [
     ((k : A) + 1) * (algebraMap ℚ R ((k : ℚ) + 1)⁻¹ • a) = a := by
   have h := natCast_mul_algebraMap_inv (K := R) k.succ_ne_zero
   push_cast at h
-  rw [Algebra.smul_def, ← mul_assoc, show ((k : A) + 1) = algebraMap R A ((k : R) + 1) by simp,
-    ← map_mul, h, map_one, one_mul]
+  have hcast : (k : A) + 1 = algebraMap R A ((k : R) + 1) := by simp
+  rw [Algebra.smul_def, ← mul_assoc, hcast, ← map_mul, h, map_one, one_mul]
 
 end TauCeti

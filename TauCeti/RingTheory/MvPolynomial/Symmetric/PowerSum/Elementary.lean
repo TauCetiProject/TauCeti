@@ -72,9 +72,10 @@ theorem mul_esymm_succ_eq_sum (σ : Type*) [Fintype σ] (R : Type*) [CommRing R]
   refine sum_congr rfl fun x hx => ?_
   rw [mem_antidiagonal] at hx
   subst hx
-  simp only [show x.1 < x.1 + x.2 + 1 by omega, ↓reduceIte]
-  rw [← mul_assoc, ← mul_assoc, ← pow_add,
-    show x.1 + x.2 + 1 + 1 + x.1 = x.2 + 2 * (x.1 + 1) by ring, pow_add, pow_mul]
+  have hlt : x.1 < x.1 + x.2 + 1 := by omega
+  have hexp : x.1 + x.2 + 1 + 1 + x.1 = x.2 + 2 * (x.1 + 1) := by ring
+  simp only [hlt, ↓reduceIte]
+  rw [← mul_assoc, ← mul_assoc, ← pow_add, hexp, pow_add, pow_mul]
   simp
 
 section
