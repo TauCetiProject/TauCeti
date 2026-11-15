@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Integral.L2
-public import TauCeti.Probability.Process.Predictable.Map
 import TauCeti.Probability.Process.ElementaryDensity
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 
@@ -20,7 +19,7 @@ It is an equality of L² classes, not a claim about simultaneous-time representa
 
 Brownian increment independence is required relative to both filtrations: measurability
 of a sample map alone does not preserve Brownian motion in a larger source filtration.
-The pullbacks are Mathlib's native `Lp.compMeasurePreservingₗᵢ`; no new integrand
+The pullbacks are Mathlib's native `Lp.compMeasurePreserving`; no new integrand
 carrier or integral is introduced. The comparison follows from the existing rectangle
 formula and density, and includes zero horizons and arbitrary predictable L² classes.
 
@@ -55,9 +54,9 @@ theorem l2Integral_compMeasurePreserving
     letI : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
     letI : MeasurableSpace (ℝ≥0 × Ω') := 𝒢.predictable
     hB.l2Integral T
-        (Lp.compMeasurePreservingₗᵢ ℝ (Prod.map id f)
+        (Lp.compMeasurePreserving (Prod.map id f)
           (ℱ.measurePreserving_prodMap_predictableMeasure 𝒢 hf hℱ T) H) =
-      Lp.compMeasurePreservingₗᵢ ℝ f hf (hW.l2Integral T H) := by
+      Lp.compMeasurePreserving f hf (hW.l2Integral T H) := by
   let := hB.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
