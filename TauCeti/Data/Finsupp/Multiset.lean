@@ -106,9 +106,8 @@ namespace Multiset
 
 /-- The finitely supported function of `k` copies of `i` is `single i k`. -/
 @[simp]
-theorem toFinsupp_replicate {α : Type*} (k : ℕ) (i : α) :
+theorem toFinsupp_replicate {α : Type*} [DecidableEq α] (k : ℕ) (i : α) :
     toFinsupp (replicate k i) = Finsupp.single i k := by
-  classical
   ext a
   rw [toFinsupp_apply, count_replicate, Finsupp.single_apply]
 
