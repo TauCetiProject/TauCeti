@@ -14,7 +14,9 @@ public import Mathlib.LinearAlgebra.Dimension.Finite
 # Singular homology of contractible spaces
 
 A contractible space has the singular homology of a point: its homology vanishes in every positive
-degree, and its reduced homology vanishes in every degree. Consequently, the reduced connecting
+degree, and its reduced homology vanishes in every degree. Every map between contractible spaces
+therefore induces an isomorphism on singular homology
+(`TauCeti.isIso_singularHomologyFunctor_map_of_contractibleSpace`). Likewise, the reduced connecting
 morphism of a pair is an isomorphism whenever its ambient space is contractible. For
 `TauCeti.diskBoundaryPair n`, this identifies the relative homology of a disk modulo its boundary
 with the reduced homology of the boundary sphere.  Dually, the quotient map
@@ -68,6 +70,17 @@ theorem isZero_singularHomologyFunctor_of_contractibleSpace (X : TopCat.{w})
       H.symm R n
   rw [IsZero.iff_id_eq_zero, ← hid, CategoryTheory.Functor.map_comp, hpt.eq_of_src
     (((singularHomologyFunctor C n).obj R).map s) 0, comp_zero]
+
+/-- **A map between contractible spaces induces an isomorphism on singular homology.** In degree
+zero it intertwines the augmentations, which are isomorphisms; in positive degrees both groups
+vanish. -/
+instance isIso_singularHomologyFunctor_map_of_contractibleSpace {X Y : TopCat.{w}}
+    [ContractibleSpace X] [ContractibleSpace Y] (f : X ⟶ Y) (n : ℕ) :
+    IsIso (((singularHomologyFunctor C n).obj R).map f) := by
+  rcases n with _ | n
+  · exact IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε R f)
+  · exact (isZero_singularHomologyFunctor_of_contractibleSpace R X n.succ_ne_zero).isIso
+      (isZero_singularHomologyFunctor_of_contractibleSpace R Y n.succ_ne_zero) _
 
 variable [HasKernels C]
 
