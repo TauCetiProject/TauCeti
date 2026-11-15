@@ -111,28 +111,28 @@ variable {k G V : Type*} [CommRing k] [Monoid G] [AddCommGroup V] [Module k V]
 @[simp]
 theorem Coinvariants.mk_asAlgebraHom (r : MonoidAlgebra k G) (v : V) :
     Coinvariants.mk ρ (ρ.asAlgebraHom r v) =
-      TauCeti.MonoidAlgebra.augmentation k G r • Coinvariants.mk ρ v := by
+      MonoidAlgebra.augmentation k G r • Coinvariants.mk ρ v := by
   induction r using MonoidAlgebra.induction_linear with
   | zero => simp
   | add r s hr hs => simp only [map_add, LinearMap.add_apply, add_smul, hr, hs]
   | single g a =>
     simp only [asAlgebraHom_single, LinearMap.smul_apply, map_smul,
-      Coinvariants.mk_self_apply, TauCeti.MonoidAlgebra.augmentation_single]
+      Coinvariants.mk_self_apply, MonoidAlgebra.augmentation_single]
 
 /-- The coinvariant kernel is the augmentation ideal times the associated monoid-algebra
 module, transported back to the representation by `asModuleEquiv`. -/
 theorem coinvariantsKer_eq_map_ker_augmentation_smul_top :
     Coinvariants.ker ρ =
-      ((RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G) •
+      ((RingHom.ker (MonoidAlgebra.augmentation k G) •
         (⊤ : Submodule (MonoidAlgebra k G) ρ.asModule)).restrictScalars k).map
           ρ.asModuleEquiv.toLinearMap := by
   apply le_antisymm
   · rw [Coinvariants.ker, Submodule.span_le]
     rintro _ ⟨⟨g, v⟩, rfl⟩
     have hgen : single g (1 : k) - 1 ∈
-        RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G) := by simp [RingHom.mem_ker]
+        RingHom.ker (MonoidAlgebra.augmentation k G) := by simp [RingHom.mem_ker]
     have hmem : (single g (1 : k) - 1) • ρ.asModuleEquiv.symm v ∈
-        RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G) •
+        RingHom.ker (MonoidAlgebra.augmentation k G) •
           (⊤ : Submodule (MonoidAlgebra k G) ρ.asModule) :=
       Submodule.smul_mem_smul hgen Submodule.mem_top
     refine Submodule.mem_map.2 ⟨_, hmem, ?_⟩
@@ -142,7 +142,7 @@ theorem coinvariantsKer_eq_map_ker_augmentation_smul_top :
     intro x hx
     apply (Coinvariants.mk_eq_zero ρ).1
     refine Submodule.smul_induction_on
-      (I := RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G))
+      (I := RingHom.ker (MonoidAlgebra.augmentation k G))
       (N := (⊤ : Submodule (MonoidAlgebra k G) ρ.asModule))
       (p := fun v : ρ.asModule ↦ Coinvariants.mk ρ (ρ.asModuleEquiv v) = 0) hx
       (fun r hr v _ ↦ ?_) (fun x y hx hy ↦ ?_)
@@ -153,7 +153,7 @@ theorem coinvariantsKer_eq_map_ker_augmentation_smul_top :
 in the augmentation ideal times the module. -/
 theorem mem_coinvariantsKer_iff_mem_ker_augmentation_smul_top {v : V} :
     v ∈ Coinvariants.ker ρ ↔
-      ρ.asModuleEquiv.symm v ∈ RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G) •
+      ρ.asModuleEquiv.symm v ∈ RingHom.ker (MonoidAlgebra.augmentation k G) •
         (⊤ : Submodule (MonoidAlgebra k G) ρ.asModule) := by
   rw [coinvariantsKer_eq_map_ker_augmentation_smul_top, Submodule.mem_map_equiv]
   rfl
