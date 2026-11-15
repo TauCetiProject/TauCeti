@@ -428,6 +428,63 @@ theorem W1p.gradient_sub (u v : W1p mu Omega p) :
     W1p.gradient (u - v) = W1p.gradient u - W1p.gradient v :=
   map_sub W1p.gradientL u v
 
+/-- The weak gradient of zero is zero. -/
+@[simp]
+theorem W1p.gradient_zero : W1p.gradient (0 : W1p mu Omega p) = 0 :=
+  map_zero W1p.gradientL
+
+/-- The weak gradient of a scalar multiple is the scalar multiple of the weak gradient. -/
+@[simp]
+theorem W1p.gradient_smul {S : Type*} [SMul S (W1p mu Omega p)]
+    [SMul S (Lp E p (mu.restrict Omega))]
+    [LinearMap.CompatibleSMul (W1p mu Omega p) (Lp E p (mu.restrict Omega)) S ℝ]
+    (c : S) (u : W1p mu Omega p) :
+    W1p.gradient (c • u) = c • W1p.gradient u :=
+  W1p.gradientL.map_smul_of_tower c u
+
+/-- The weak gradient of a finite sum is the sum of the weak gradients. -/
+@[simp]
+theorem W1p.gradient_sum {ι : Type*} (s : Finset ι) (u : ι → W1p mu Omega p) :
+    W1p.gradient (∑ j ∈ s, u j) = ∑ j ∈ s, W1p.gradient (u j) :=
+  map_sum W1p.gradientL u s
+
+/-- The value component of zero is zero. -/
+@[simp]
+theorem W1p.value_zero : W1p.value (0 : W1p mu Omega p) = 0 :=
+  map_zero W1p.valueL
+
+/-- The value component of a sum is the sum of the value components. -/
+@[simp]
+theorem W1p.value_add (u v : W1p mu Omega p) :
+    W1p.value (u + v) = W1p.value u + W1p.value v :=
+  map_add W1p.valueL u v
+
+/-- The value component of a negation is the negation of the value component. -/
+@[simp]
+theorem W1p.value_neg (u : W1p mu Omega p) : W1p.value (-u) = -W1p.value u :=
+  map_neg W1p.valueL u
+
+/-- The value component of a difference is the difference of the value components. -/
+@[simp]
+theorem W1p.value_sub (u v : W1p mu Omega p) :
+    W1p.value (u - v) = W1p.value u - W1p.value v :=
+  map_sub W1p.valueL u v
+
+/-- The value component of a scalar multiple is the scalar multiple of the value component. -/
+@[simp]
+theorem W1p.value_smul {S : Type*} [SMul S (W1p mu Omega p)]
+    [SMul S (Lp ℝ p (mu.restrict Omega))]
+    [LinearMap.CompatibleSMul (W1p mu Omega p) (Lp ℝ p (mu.restrict Omega)) S ℝ]
+    (c : S) (u : W1p mu Omega p) :
+    W1p.value (c • u) = c • W1p.value u :=
+  W1p.valueL.map_smul_of_tower c u
+
+/-- The value component of a finite sum is the sum of the value components. -/
+@[simp]
+theorem W1p.value_sum {ι : Type*} (s : Finset ι) (u : ι → W1p mu Omega p) :
+    W1p.value (∑ j ∈ s, u j) = ∑ j ∈ s, W1p.value (u j) :=
+  map_sum W1p.valueL u s
+
 /-- `W1p.valueL` is the ambient jet projection precomposed with the inclusion, so the Sobolev
 value component *is* the value component of the underlying ambient jet. -/
 theorem W1p.value_coe (u : W1p mu Omega p) :
@@ -448,10 +505,8 @@ theorem W1p.memLp_value (u : W1p mu ⊤ p) : MemLp (W1p.value u : E → ℝ) p m
 /-- The value of a finite sum of Sobolev functions is almost everywhere the sum of their values. -/
 theorem W1p.value_finsetSum_ae {ι : Type*} (s : Finset ι) (u : ι → W1p mu Omega p) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value (∑ j ∈ s, u j) x = ∑ j ∈ s, W1p.value (u j) x := by
-  have h : W1p.value (∑ j ∈ s, u j) = ∑ j ∈ s, W1p.value (u j) := by
-    simp only [← W1p.valueL_apply, map_sum]
   filter_upwards [Lp.coeFn_fun_finsetSum s fun j => W1p.value (u j)] with x hx
-  rw [h, hx]
+  rw [W1p.value_sum, hx]
 
 /-- The value of the negation of a Sobolev function is almost everywhere the negation of its
 value. -/
@@ -979,59 +1034,29 @@ theorem W1p.gradient_ofExponentLE_ae (hpq : p ≤ q) (u : W1p mu Omega q) :
     Sobolev1JetLp.gradient_apply_ae (u : Sobolev1JetLp mu Omega q)] with x hp hq
   rw [hp, hq]
 
-/-- Coercion of `W1p.ofExponentLE` to the ambient jet space preserves zero. -/
-theorem W1p.coe_ofExponentLE_zero (hpq : p ≤ q) :
-    (W1p.ofExponentLE hpq (0 : W1p mu Omega q) : Sobolev1JetLp mu Omega p) = 0 :=
-  Subtype.ext rfl
-
 /-- Lowering the exponent sends zero to zero. -/
 @[simp]
 theorem W1p.ofExponentLE_zero (hpq : p ≤ q) :
     W1p.ofExponentLE hpq (0 : W1p mu Omega q) = 0 :=
-  Subtype.ext (W1p.coe_ofExponentLE_zero hpq)
-
-/-- Coercion of `W1p.ofExponentLE` to the ambient jet space preserves addition. -/
-theorem W1p.coe_ofExponentLE_add (hpq : p ≤ q) (u v : W1p mu Omega q) :
-    (W1p.ofExponentLE hpq (u + v) : Sobolev1JetLp mu Omega p) =
-      (W1p.ofExponentLE hpq u : Sobolev1JetLp mu Omega p) +
-        (W1p.ofExponentLE hpq v : Sobolev1JetLp mu Omega p) :=
-  Subtype.ext rfl
+  Subtype.ext (Subtype.ext rfl)
 
 /-- Lowering the exponent preserves addition. -/
 @[simp]
 theorem W1p.ofExponentLE_add (hpq : p ≤ q) (u v : W1p mu Omega q) :
     W1p.ofExponentLE hpq (u + v) = W1p.ofExponentLE hpq u + W1p.ofExponentLE hpq v :=
-  Subtype.ext (W1p.coe_ofExponentLE_add hpq u v)
-
-/-- Coercion of `W1p.ofExponentLE` to the ambient jet space preserves real scalar multiplication. -/
-theorem W1p.coe_ofExponentLE_smul (hpq : p ≤ q) (c : ℝ) (u : W1p mu Omega q) :
-    (W1p.ofExponentLE hpq (c • u) : Sobolev1JetLp mu Omega p) =
-      c • (W1p.ofExponentLE hpq u : Sobolev1JetLp mu Omega p) :=
-  Subtype.ext rfl
+  Subtype.ext (Subtype.ext rfl)
 
 /-- Lowering the exponent preserves real scalar multiplication. -/
 @[simp]
 theorem W1p.ofExponentLE_smul (hpq : p ≤ q) (c : ℝ) (u : W1p mu Omega q) :
     W1p.ofExponentLE hpq (c • u) = c • W1p.ofExponentLE hpq u :=
-  Subtype.ext (W1p.coe_ofExponentLE_smul hpq c u)
-
-/-- Coercion of `W1p.ofExponentLE` to the ambient jet space at equal exponents is the identity. -/
-theorem W1p.coe_ofExponentLE_self (u : W1p mu Omega p) :
-    (W1p.ofExponentLE (le_refl p) u : Sobolev1JetLp mu Omega p) = u :=
-  Subtype.ext rfl
+  Subtype.ext (Subtype.ext rfl)
 
 /-- Lowering the exponent from `p` to itself is the identity. -/
 @[simp]
 theorem W1p.ofExponentLE_self (u : W1p mu Omega p) :
     W1p.ofExponentLE (le_refl p) u = u :=
-  Subtype.ext (W1p.coe_ofExponentLE_self u)
-
-/-- Coercions of composed ambient exponent inclusions compose transitively. -/
-theorem W1p.coe_ofExponentLE_ofExponentLE {r : ENNReal} [Fact (1 ≤ r)]
-    (hpq : p ≤ q) (hqr : q ≤ r) (u : W1p mu Omega r) :
-    (W1p.ofExponentLE hpq (W1p.ofExponentLE hqr u) : Sobolev1JetLp mu Omega p) =
-      (W1p.ofExponentLE (hpq.trans hqr) u : Sobolev1JetLp mu Omega p) :=
-  Subtype.ext rfl
+  Subtype.ext (Subtype.ext rfl)
 
 /-- Exponent inclusions compose transitively. -/
 @[simp]
@@ -1039,7 +1064,7 @@ theorem W1p.ofExponentLE_ofExponentLE {r : ENNReal} [Fact (1 ≤ r)]
     (hpq : p ≤ q) (hqr : q ≤ r) (u : W1p mu Omega r) :
     W1p.ofExponentLE hpq (W1p.ofExponentLE hqr u) =
       W1p.ofExponentLE (hpq.trans hqr) u :=
-  Subtype.ext (W1p.coe_ofExponentLE_ofExponentLE hpq hqr u)
+  Subtype.ext (Subtype.ext rfl)
 
 /-- On a domain of finite measure, the continuous inclusion `W^{1,q}(Ω) → W^{1,p}(Ω)` for
 `p ≤ q`, with norm at most `μ(Ω) ^ (1/p - 1/q)`; it does not change the value or the weak gradient
