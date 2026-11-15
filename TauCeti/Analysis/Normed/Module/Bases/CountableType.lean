@@ -175,10 +175,10 @@ theorem exists_basis_isTOrthogonalFamily [FiniteDimensional K E] {t : ℝ≥0} (
 /-- **Almost-norming functionals in finite dimensions**: over a complete nontrivially normed field,
 for every nonzero vector `x` of a finite-dimensional ultrametric normed space `E` and every `c > 1`,
 there is a continuous linear functional `φ : StrongDual K E` with `φ x = 1` and
-`‖φ y‖ * ‖x‖ ≤ c * ‖y‖` for every `y`. -/
+`‖φ‖ ≤ c * ‖x‖⁻¹`. -/
 theorem exists_strongDual_apply_eq_one_of_finiteDimensional [FiniteDimensional K E] {x : E}
     (hx : x ≠ 0) {c : ℝ} (hc : 1 < c) :
-    ∃ φ : StrongDual K E, φ x = 1 ∧ ∀ y : E, ‖φ y‖ * ‖x‖ ≤ c * ‖y‖ := by
+    ∃ φ : StrongDual K E, φ x = 1 ∧ ‖φ‖ ≤ c * ‖x‖⁻¹ := by
   have hc0 : 0 < c := zero_lt_one.trans hc
   obtain ⟨t, hct, ht1⟩ : ∃ t : ℝ≥0, c⁻¹ < (t : ℝ) ∧ t < 1 := by
     obtain ⟨t, h₁, h₂⟩ := exists_between (inv_lt_one_of_one_lt₀ hc)
@@ -202,7 +202,9 @@ theorem exists_strongDual_apply_eq_one_of_finiteDimensional [FiniteDimensional K
     intro h0
     exact (norm_pos_iff.2 hx).not_ge (hxle.trans_eq (by simp [h0]))
   let φ : StrongDual K E := (b.repr x i)⁻¹ • (b.coord i).toContinuousLinearMap
-  refine ⟨φ, by simp [φ, inv_mul_cancel₀ hxi], fun y ↦ ?_⟩
+  refine ⟨φ, by simp [φ, inv_mul_cancel₀ hxi],
+    φ.opNorm_le_bound (mul_nonneg hc0.le (inv_nonneg.2 (norm_nonneg x))) fun y ↦ ?_⟩
+  rw [mul_comm c ‖x‖⁻¹, mul_assoc, le_inv_mul_iff₀ (norm_pos_iff.2 hx), mul_comm ‖x‖]
   have hby := hb.mul_norm_smul_le (Finset.mem_univ i) (b.repr y)
   rw [b.sum_repr, norm_smul] at hby
   calc ‖φ y‖ * ‖x‖ = ‖b.repr y i‖ * (‖b.repr x i‖⁻¹ * ‖x‖) := by
@@ -221,11 +223,11 @@ theorem exists_strongDual_apply_eq_one_of_finiteDimensional [FiniteDimensional K
 /-- **Almost-contractive projections onto closed subspaces of finite codimension**: over a complete
 nontrivially normed field, for every closed subspace `D` of an ultrametric normed space `E` with
 `E ⧸ D` finite-dimensional and every `c > 1`, there is a continuous linear projection
-`p : E →L[K] D` (`p x = x` for `x ∈ D`) with `‖(p x : E)‖ ≤ c * ‖x‖` for every `x`. -/
+`p : E →L[K] D` (`p x = x` for `x ∈ D`) with `‖p‖ ≤ c`. -/
 theorem _root_.Submodule.exists_projection_norm_le_of_finiteDimensional_quotient
     (D : Submodule K E) (hD : IsClosed (D : Set E)) [FiniteDimensional K (E ⧸ D)] {c : ℝ}
     (hc : 1 < c) :
-    ∃ p : E →L[K] D, (∀ x : D, p x = x) ∧ ∀ x : E, ‖(p x : E)‖ ≤ c * ‖x‖ := by
+    ∃ p : E →L[K] D, (∀ x : D, p x = x) ∧ ‖p‖ ≤ c := by
   have hc0 : 0 < c := zero_lt_one.trans hc
   obtain ⟨t, hct, ht⟩ : ∃ t : ℝ≥0, (c⁻¹ : ℝ) < t ∧ t < 1 := by
     obtain ⟨t, h₁, h₂⟩ := exists_between (inv_lt_one_of_one_lt₀ hc)
@@ -256,11 +258,12 @@ theorem _root_.Submodule.exists_projection_norm_le_of_finiteDimensional_quotient
     rw [sub_apply, ContinuousLinearMap.id_apply,
       ← Submodule.Quotient.mk_eq_zero, ← mkQ_apply, map_sub]
     simp [s, s₀, hy, b.sum_repr]
-  refine ⟨(ContinuousLinearMap.id K E - s).codRestrict D hmem, fun x ↦ Subtype.ext ?_, fun x ↦ ?_⟩
+  let p : E →L[K] D := (ContinuousLinearMap.id K E - s).codRestrict D hmem
+  refine ⟨p, fun x ↦ Subtype.ext ?_, p.opNorm_le_bound hc0.le fun x ↦ ?_⟩
   · have hx0 : D.mkQL x = 0 := LinearMap.mem_ker.1 (by simp)
-    simp [s, hx0]
-  · calc ‖(((ContinuousLinearMap.id K E - s).codRestrict D hmem x : D) : E)‖
-        = ‖x + -s x‖ := by simp [sub_eq_add_neg]
+    simp [p, s, hx0]
+  · calc ‖p x‖
+        = ‖x + -s x‖ := by simp [p, sub_eq_add_neg]
       _ ≤ max ‖x‖ ‖-s x‖ := IsUltrametricDist.norm_add_le_max x (-s x)
       _ = max ‖x‖ ‖s x‖ := by rw [norm_neg]
       _ ≤ c * ‖x‖ := max_le (le_mul_of_one_le_left (norm_nonneg x) hc.le) <|
@@ -271,10 +274,10 @@ theorem _root_.Submodule.exists_projection_norm_le_of_finiteDimensional_quotient
 /-- **Almost-contractive projections in finite dimensions**: over a complete nontrivially normed
 field, for every subspace `D` of a finite-dimensional ultrametric normed space `E` and every
 `c > 1`, there is a continuous linear projection `p : E →L[K] D` (`p x = x` for `x ∈ D`) with
-`‖(p x : E)‖ ≤ c * ‖x‖` for every `x`. -/
+`‖p‖ ≤ c`. -/
 theorem _root_.Submodule.exists_projection_norm_le [FiniteDimensional K E] (D : Submodule K E)
     {c : ℝ} (hc : 1 < c) :
-    ∃ p : E →L[K] D, (∀ x : D, p x = x) ∧ ∀ x : E, ‖(p x : E)‖ ≤ c * ‖x‖ :=
+    ∃ p : E →L[K] D, (∀ x : D, p x = x) ∧ ‖p‖ ≤ c :=
   D.exists_projection_norm_le_of_finiteDimensional_quotient D.isClosed_of_finiteDimensional hc
 
 /-- **`t`-orthogonal bases of infinite-dimensional spaces of countable type**: over a complete

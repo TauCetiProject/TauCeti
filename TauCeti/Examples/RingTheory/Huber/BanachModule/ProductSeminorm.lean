@@ -103,7 +103,18 @@ example {K W : Type*} [SeminormedCommRing K] [IsBoundedSMul K K]
     CompletedTensor.productNorm K (Fin 0 → K) W z = 0 :=
   (CompletedTensor.denseRange_toCompletion K (Fin 0 → K) W).induction_on z
     (isClosed_eq CompletedTensor.continuous_productNorm continuous_const) fun u ↦ by
-      rw [Subsingleton.elim u 0, map_zero, CompletedTensor.productNorm_zero]
+      rw [Subsingleton.elim u 0, map_zero, map_zero]
+
+/-- Under a non-contractive bounded scalar action on `V`, `productNormOfUniformContinuous` extends
+`productSeminorm` across `toCompletion` as an ultrametric additive group seminorm. -/
+example {A V W : Type*} [SeminormedCommRing A]
+    [SeminormedAddCommGroup V] [Module A V]
+    [SeminormedAddCommGroup W] [Module A W]
+    (hV : ∃ C : NNReal, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖) (v : V) (w : W) :
+    CompletedTensor.productNormOfUniformContinuous
+        (uniformContinuous_productSeminorm_of_norm_smul_le hV)
+        (CompletedTensor.tmul A V W v w) ≤ ‖v‖ * ‖w‖ :=
+  CompletedTensor.productNormOfUniformContinuous_tmul_le _ v w
 
 /-- For a scalar first factor over a complete nontrivially normed ultrametric field `L` and an
 ultrametric normed `L`-space `W`, `|a ⊗ w| = ‖a‖ * ‖w‖` on the completion. -/

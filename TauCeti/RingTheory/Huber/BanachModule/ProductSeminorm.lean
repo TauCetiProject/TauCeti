@@ -33,16 +33,19 @@ balls `{u | productSeminorm A V W u < r}` (`r > 0`) form a neighbourhood basis o
 `banachTensorTopology A V W` (`TauCeti.Huber.hasBasis_banachTensorTopology`), and the two
 uniformities coincide.
 
-Extending `productSeminorm A V W` across `CompletedTensor.toCompletion` gives
-`TauCeti.Huber.BanachModule.CompletedTensor.productNorm A V W : CompletedTensor A V W → ℝ`. Keeping
-`productNorm` unbundled lets its term take no scalar-action proof arguments, so contractive and
-merely bounded actions share the same notation; when `A` is Tate and both actions are bounded,
-`productNorm` is definite (`productNorm_eq_zero_iff`), its positive-radius balls form a
-neighbourhood basis of `0` on `V ⊗̂_A W` (`hasBasis_nhds_zero_productNorm`), and
-`productAddGroupNorm` / `productNormedAddCommGroup` bundle it as a compatible `AddGroupNorm` and
-`NormedAddCommGroup` retaining the completion uniformity definitionally (following the pattern of
-`TauCeti.adaptedNorm`, `TauCeti.adaptedAddGroupNorm` and `TauCeti.adaptedNormedAddCommGroup`).
-The finite-presentation `sInf` setup parallels `TensorProduct.projectiveSeminorm` in
+Whenever `productSeminorm A V W` is uniformly continuous for `banachTensorUniformSpace A V W`,
+extending it across `CompletedTensor.toCompletion` gives the additive group seminorm
+`TauCeti.Huber.BanachModule.CompletedTensor.productNormOfUniformContinuous`, specialised under a
+contractive scalar action on `V` to `TauCeti.Huber.BanachModule.CompletedTensor.productNorm A V W`.
+When `A` is Tate and both actions are bounded, this extension separates points
+(`productNorm_eq_zero_iff`), its positive-radius balls form a neighbourhood basis of `0` on
+`V ⊗̂_A W` (`hasBasis_nhds_zero_productNorm`), and `productAddGroupNorm` /
+`productNormedAddCommGroup` (together with `productAddGroupNormOfNormSmulLe` /
+`productNormedAddCommGroupOfNormSmulLe` for non-contractive bounded actions) bundle it as a
+compatible `AddGroupNorm` and `NormedAddCommGroup` retaining the completion uniformity
+definitionally (following the pattern of `TauCeti.Huber.tateNorm`, `TauCeti.Huber.tateRingNorm` and
+`TauCeti.Huber.tateNormedCommRing`). The finite-presentation `sInf` setup parallels
+`TensorProduct.projectiveSeminorm` in
 `TauCeti.Analysis.Normed.Module.TensorProduct.ProjectiveSeminorm`, with `Finset.sup` in `ℝ≥0`
 replacing `Finset.sum`.
 
@@ -60,13 +63,16 @@ preserves distances (`CompletedTensor.productNorm_unitVector`).
 
 * `TauCeti.Huber.BanachModule.productSeminorm A V W`: the nonarchimedean product seminorm on
   `V ⊗[A] W`.
-* `TauCeti.Huber.BanachModule.CompletedTensor.productNorm A V W`: the continuous extension of
-  `productSeminorm A V W` to `CompletedTensor A V W`.
-* `TauCeti.Huber.BanachModule.CompletedTensor.productAddGroupNorm`: `productNorm` bundled as an
-  `AddGroupNorm` over a Tate ring.
-* `TauCeti.Huber.BanachModule.CompletedTensor.productNormedAddCommGroup`: the compatible
-  `NormedAddCommGroup` structure on `CompletedTensor A V W` retaining its uniformity
-  definitionally.
+* `TauCeti.Huber.BanachModule.CompletedTensor.productNormOfUniformContinuous`: the continuous
+  extension of `productSeminorm A V W` to `CompletedTensor A V W` from uniform continuity, as an
+  `AddGroupSeminorm`.
+* `TauCeti.Huber.BanachModule.CompletedTensor.productNorm A V W`: `productNormOfUniformContinuous`
+  for a contractive scalar action on `V`.
+* `TauCeti.Huber.BanachModule.CompletedTensor.productAddGroupNormOfNormSmulLe` and
+  `productAddGroupNorm`: the completed product norm bundled as an `AddGroupNorm` over a Tate ring.
+* `TauCeti.Huber.BanachModule.CompletedTensor.productNormedAddCommGroupOfNormSmulLe` and
+  `productNormedAddCommGroup`: the compatible `NormedAddCommGroup` structure on
+  `CompletedTensor A V W` retaining its uniformity definitionally.
 
 ## Main results
 
@@ -78,9 +84,10 @@ preserves distances (`CompletedTensor.productNorm_unitVector`).
 * `TauCeti.Huber.hasBasis_banachTensorTopology_of_norm_smul_le` and
   `TauCeti.Huber.hasBasis_banachTensorTopology`: positive-radius balls of `productSeminorm` form a
   neighbourhood basis of `0` in `banachTensorTopology A V W` over a Tate seminormed ring.
-* `TauCeti.Huber.BanachModule.CompletedTensor.productNorm_toCompletion`,
-  `productNorm_add_le_max`, `productNorm_smul`, `hasBasis_nhds_zero_productNorm`,
-  `productNorm_eq_zero_iff`: structure of the completed product norm.
+* `TauCeti.Huber.BanachModule.CompletedTensor.productNormOfUniformContinuous_toCompletion`,
+  `productNorm_toCompletion`, `productNorm_add_le_max`, `productNorm_smul`,
+  `hasBasis_nhds_zero_productNorm`, `productNorm_eq_zero_iff`: structure of the completed product
+  norm.
 * `TauCeti.Huber.BanachModule.norm_lid_map_le_productSeminorm`, `productSeminorm_tmul`,
   `productSeminorm_eq_zero_iff`, `CompletedTensor.toCompletion_injective`,
   `CompletedTensor.productNorm_tmul`, `CompletedTensor.productNorm_unitVector`: contraction bound,
@@ -692,14 +699,231 @@ local instance {A V W : Type*} [CommRing A] [TopologicalSpace A]
 
 section Extension
 
-variable (A V W : Type*) [CommRing A] [TopologicalSpace A]
+variable {A V W : Type*} [CommRing A] [TopologicalSpace A]
   [SeminormedAddCommGroup V] [Module A V]
   [SeminormedAddCommGroup W] [Module A W]
 
-/-- **The completed product norm** on `V ⊗̂_A W`: the continuous extension of
-`BanachModule.productSeminorm A V W` across `CompletedTensor.toCompletion`. -/
-noncomputable def productNorm : CompletedTensor A V W → ℝ :=
-  Completion.extension (productSeminorm A V W) ∘ equivCompletion A V W
+private theorem extension_toCompletion
+    (h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance] (productSeminorm A V W))
+    (u : V ⊗[A] W) :
+    (Completion.extension (productSeminorm A V W) ∘ equivCompletion A V W)
+        (toCompletion A V W u) =
+      productSeminorm A V W u := by
+  simp only [Function.comp_apply, equivCompletion_toCompletion]
+  exact Completion.extension_coe h u
+
+private theorem continuous_extension_comp :
+    Continuous (Completion.extension (productSeminorm A V W) ∘ equivCompletion A V W) :=
+  (Completion.uniformContinuous_extension.comp
+    (equivCompletion A V W).toContinuousLinearMap.uniformContinuous).continuous
+
+private theorem extension_nonneg
+    (h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance] (productSeminorm A V W))
+    (z : CompletedTensor A V W) :
+    0 ≤ (Completion.extension (productSeminorm A V W) ∘ equivCompletion A V W) z :=
+  (denseRange_toCompletion A V W).induction_on z
+    (isClosed_le continuous_const continuous_extension_comp) fun u ↦ by
+      rw [extension_toCompletion h]
+      exact apply_nonneg _ u
+
+private theorem extension_zero
+    (h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance]
+      (productSeminorm A V W)) :
+    (Completion.extension (productSeminorm A V W) ∘ equivCompletion A V W) 0 = 0 := by
+  simpa using extension_toCompletion h (0 : V ⊗[A] W)
+
+private theorem extension_neg
+    (h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance] (productSeminorm A V W))
+    (z : CompletedTensor A V W) :
+    (Completion.extension (productSeminorm A V W) ∘ equivCompletion A V W) (-z) =
+      (Completion.extension (productSeminorm A V W) ∘ equivCompletion A V W) z :=
+  (denseRange_toCompletion A V W).induction_on z
+    (isClosed_eq (continuous_extension_comp.comp continuous_neg) continuous_extension_comp)
+    fun u ↦ by
+      rw [← map_neg, extension_toCompletion h, extension_toCompletion h, map_neg_eq_map]
+
+private theorem extension_add_le_max
+    (h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance] (productSeminorm A V W))
+    (z₁ z₂ : CompletedTensor A V W) :
+    (Completion.extension (productSeminorm A V W) ∘ equivCompletion A V W) (z₁ + z₂) ≤
+      max ((Completion.extension (productSeminorm A V W) ∘ equivCompletion A V W) z₁)
+        ((Completion.extension (productSeminorm A V W) ∘ equivCompletion A V W) z₂) := by
+  refine (denseRange_toCompletion A V W).induction_on₂
+    (p := fun z₁ z₂ ↦
+      (Completion.extension (productSeminorm A V W) ∘ equivCompletion A V W) (z₁ + z₂) ≤
+        max ((Completion.extension (productSeminorm A V W) ∘ equivCompletion A V W) z₁)
+          ((Completion.extension (productSeminorm A V W) ∘ equivCompletion A V W) z₂))
+    ?_ (fun u₁ u₂ ↦ ?_) z₁ z₂
+  · exact isClosed_le (continuous_extension_comp.comp continuous_add)
+      ((continuous_extension_comp.comp continuous_fst).max
+        (continuous_extension_comp.comp continuous_snd))
+  · rw [← map_add, extension_toCompletion h, extension_toCompletion h, extension_toCompletion h]
+    exact productSeminorm_add_le_max u₁ u₂
+
+/-- **The completed product norm from uniform continuity**: when `productSeminorm A V W` is
+uniformly continuous for `banachTensorUniformSpace A V W`, its continuous extension across
+`CompletedTensor.toCompletion` is an additive group seminorm on `CompletedTensor A V W`. -/
+noncomputable def productNormOfUniformContinuous
+    (h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance]
+      (productSeminorm A V W)) :
+    AddGroupSeminorm (CompletedTensor A V W) where
+  toFun := Completion.extension (productSeminorm A V W) ∘ equivCompletion A V W
+  map_zero' := extension_zero h
+  add_le' z₁ z₂ := (extension_add_le_max h z₁ z₂).trans <|
+    max_le_add_of_nonneg (extension_nonneg h z₁) (extension_nonneg h z₂)
+  neg' := extension_neg h
+
+/-- `productNormOfUniformContinuous h` extends `productSeminorm A V W` across `toCompletion`. -/
+@[simp]
+theorem productNormOfUniformContinuous_toCompletion
+    (h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance] (productSeminorm A V W))
+    (u : V ⊗[A] W) :
+    productNormOfUniformContinuous h (toCompletion A V W u) = productSeminorm A V W u :=
+  extension_toCompletion h u
+
+/-- `productNormOfUniformContinuous h` is uniformly continuous. -/
+theorem uniformContinuous_productNormOfUniformContinuous
+    (h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance]
+      (productSeminorm A V W)) :
+    UniformContinuous (productNormOfUniformContinuous h) :=
+  Completion.uniformContinuous_extension.comp
+    (equivCompletion A V W).toContinuousLinearMap.uniformContinuous
+
+/-- `productNormOfUniformContinuous h` is continuous. -/
+theorem continuous_productNormOfUniformContinuous
+    (h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance]
+      (productSeminorm A V W)) :
+    Continuous (productNormOfUniformContinuous h) :=
+  (uniformContinuous_productNormOfUniformContinuous h).continuous
+
+/-- **Ultrametric inequality** for `productNormOfUniformContinuous`. -/
+theorem productNormOfUniformContinuous_add_le_max
+    (h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance] (productSeminorm A V W))
+    (z₁ z₂ : CompletedTensor A V W) :
+    productNormOfUniformContinuous h (z₁ + z₂) ≤
+      max (productNormOfUniformContinuous h z₁) (productNormOfUniformContinuous h z₂) :=
+  extension_add_le_max h z₁ z₂
+
+/-- `productNormOfUniformContinuous h` is a nonarchimedean additive group seminorm. -/
+theorem isNonarchimedean_productNormOfUniformContinuous
+    (h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance]
+      (productSeminorm A V W)) :
+    IsNonarchimedean (productNormOfUniformContinuous h) :=
+  productNormOfUniformContinuous_add_le_max h
+
+/-- Ultrametric bound for differences under `productNormOfUniformContinuous`. -/
+theorem productNormOfUniformContinuous_sub_le_max
+    (h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance] (productSeminorm A V W))
+    (z₁ z₂ : CompletedTensor A V W) :
+    productNormOfUniformContinuous h (z₁ - z₂) ≤
+      max (productNormOfUniformContinuous h z₁) (productNormOfUniformContinuous h z₂) := by
+  simpa [sub_eq_add_neg] using productNormOfUniformContinuous_add_le_max h z₁ (-z₂)
+
+/-- Elementary-tensor bound for `productNormOfUniformContinuous`. -/
+theorem productNormOfUniformContinuous_tmul_le
+    (h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance] (productSeminorm A V W))
+    (v : V) (w : W) :
+    productNormOfUniformContinuous h (tmul A V W v w) ≤ ‖v‖ * ‖w‖ := by
+  rw [← toCompletion_tmul, productNormOfUniformContinuous_toCompletion]
+  exact productSeminorm_tmul_le v w
+
+/-- **Universal bound on the completion.** For an `A`-bilinear map `β : V →ₗ[A] W →ₗ[A] M` into a
+complete ultrametric normed `A`-module with continuous action, bounded by `C * ‖v‖ * ‖w‖`
+(`0 ≤ C`), the induced map `lift β` satisfies
+`‖lift β _ z‖ ≤ C * productNormOfUniformContinuous h z`. -/
+theorem norm_lift_le_mul_productNormOfUniformContinuous
+    (h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance] (productSeminorm A V W))
+    {M : Type*} [NormedAddCommGroup M] [IsUltrametricDist M] [CompleteSpace M]
+    [Module A M] [ContinuousSMul A M] (β : V →ₗ[A] W →ₗ[A] M)
+    (hβ : Continuous fun p : V × W ↦ β p.1 p.2) {C : ℝ} (hC : 0 ≤ C)
+    (hb : ∀ v w, ‖β v w‖ ≤ C * ‖v‖ * ‖w‖) (z : CompletedTensor A V W) :
+    ‖lift β hβ z‖ ≤ C * productNormOfUniformContinuous h z :=
+  (denseRange_toCompletion A V W).induction_on z
+    (isClosed_le (continuous_norm.comp (lift β hβ).continuous)
+      (continuous_const.mul (continuous_productNormOfUniformContinuous h))) fun u ↦ by
+      rw [lift_toCompletion, productNormOfUniformContinuous_toCompletion]
+      exact norm_lift_le_mul_productSeminorm β hC hb u
+
+private theorem map_toCompletion {A V W V' W' : Type*} [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A]
+    [AddCommGroup V] [Module A V] [TopologicalSpace V]
+    [AddCommGroup W] [Module A W] [TopologicalSpace W]
+    [AddCommGroup V'] [Module A V'] [TopologicalSpace V']
+    [AddCommGroup W'] [Module A W'] [TopologicalSpace W']
+    (f : V →L[A] V') (g : W →L[A] W') (u : V ⊗[A] W) :
+    map f g (toCompletion A V W u) =
+      toCompletion A V' W' (TensorProduct.map f.toLinearMap g.toLinearMap u) := by
+  induction u using TensorProduct.inductionOn with
+  | tmul v w => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- Functoriality bound for `productNormOfUniformContinuous` under bounded continuous `A`-linear
+maps. -/
+theorem productNormOfUniformContinuous_map_le [IsTopologicalRing A] {V' W' : Type*}
+    [SeminormedAddCommGroup V'] [Module A V'] [SeminormedAddCommGroup W'] [Module A W']
+    (h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance] (productSeminorm A V W))
+    (h' : UniformContinuous[banachTensorUniformSpace A V' W', inferInstance]
+      (productSeminorm A V' W'))
+    (f : V →L[A] V') (g : W →L[A] W') {C₁ C₂ : ℝ}
+    (hC₁ : 0 ≤ C₁) (hf : ∀ v, ‖f v‖ ≤ C₁ * ‖v‖) (hC₂ : 0 ≤ C₂) (hg : ∀ w, ‖g w‖ ≤ C₂ * ‖w‖)
+    (z : CompletedTensor A V W) :
+    productNormOfUniformContinuous h' (map f g z) ≤
+      C₁ * C₂ * productNormOfUniformContinuous h z :=
+  (denseRange_toCompletion A V W).induction_on z
+    (isClosed_le ((continuous_productNormOfUniformContinuous h').comp (map f g).continuous)
+      (continuous_const.mul (continuous_productNormOfUniformContinuous h))) fun u ↦ by
+      rw [map_toCompletion, productNormOfUniformContinuous_toCompletion,
+        productNormOfUniformContinuous_toCompletion]
+      exact productSeminorm_map_le f.toLinearMap g.toLinearMap hC₁ hf hC₂ hg u
+
+/-- Whenever `banachTensorUniformSpace A V W` coincides with the uniformity of
+`productSeminorm A V W`, the positive-radius open balls of `productNormOfUniformContinuous h` form a
+neighbourhood basis of `0` in `CompletedTensor A V W`. -/
+theorem hasBasis_nhds_zero_productNormOfUniformContinuous
+    (hu : banachTensorUniformSpace A V W =
+      (productSeminorm A V W).toSeminormedAddCommGroup.toUniformSpace)
+    {h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance]
+      (productSeminorm A V W)} :
+    (𝓝 (0 : CompletedTensor A V W)).HasBasis (0 < ·)
+      (fun r ↦ {z | productNormOfUniformContinuous h z < r}) := by
+  have hb_gen : ∀ (u : UniformSpace (V ⊗[A] W)),
+      u = (productSeminorm A V W).toSeminormedAddCommGroup.toUniformSpace →
+      (@nhds (@Completion (V ⊗[A] W) u)
+          (@UniformSpace.toTopologicalSpace _ (@Completion.uniformSpace _ u))
+          (@Completion.coe' (V ⊗[A] W) u 0)).HasBasis (0 < ·)
+        (fun r ↦ {z | @Completion.extension (V ⊗[A] W) u ℝ _ (productSeminorm A V W) z < r}) := by
+    rintro _ rfl
+    let _ : SeminormedAddCommGroup (V ⊗[A] W) := (productSeminorm A V W).toSeminormedAddCommGroup
+    exact NormedAddGroup.nhds_zero_basis_norm_lt
+  have hb := hb_gen (banachTensorUniformSpace A V W) hu
+  have heq : 𝓝 (0 : CompletedTensor A V W) =
+      Filter.comap (equivCompletion A V W) (𝓝 (0 : Completion (V ⊗[A] W))) := by
+    simpa using (equivCompletion A V W).toHomeomorph.isInducing.nhds_eq_comap 0
+  rw [heq]
+  exact hb.comap (equivCompletion A V W)
+
+/-- Whenever `banachTensorUniformSpace A V W` coincides with the uniformity of
+`productSeminorm A V W`, `productNormOfUniformContinuous h` vanishes only at `0`. -/
+theorem productNormOfUniformContinuous_eq_zero_iff
+    (hu : banachTensorUniformSpace A V W =
+      (productSeminorm A V W).toSeminormedAddCommGroup.toUniformSpace)
+    {h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance]
+      (productSeminorm A V W)}
+    {z : CompletedTensor A V W} :
+    productNormOfUniformContinuous h z = 0 ↔ z = 0 := by
+  have hdef_gen : ∀ (u : UniformSpace (V ⊗[A] W)),
+      u = (productSeminorm A V W).toSeminormedAddCommGroup.toUniformSpace →
+      ∀ w : @Completion (V ⊗[A] W) u,
+        @Completion.extension (V ⊗[A] W) u ℝ _ (productSeminorm A V W) w = 0 ↔
+          w = @Completion.coe' (V ⊗[A] W) u 0 := by
+    rintro _ rfl
+    let inst : SeminormedAddCommGroup (V ⊗[A] W) :=
+      (productSeminorm A V W).toSeminormedAddCommGroup
+    exact fun w ↦ @norm_eq_zero (@Completion (V ⊗[A] W) inst.toUniformSpace) inferInstance w
+  have hdef := hdef_gen (banachTensorUniformSpace A V W) hu (equivCompletion A V W z)
+  change (Completion.extension (productSeminorm A V W) ∘ equivCompletion A V W) z = 0 ↔ z = 0
+  simpa only [Function.comp_apply, UniformSpace.Completion.coe_zero,
+    map_eq_zero_iff _ (equivCompletion A V W).injective] using hdef
 
 end Extension
 
@@ -709,163 +933,79 @@ variable {A V W : Type*} [SeminormedCommRing A]
   [SeminormedAddCommGroup V] [Module A V]
   [SeminormedAddCommGroup W] [Module A W]
 
-/-- On the image of `V ⊗[A] W`, `productNorm` agrees with `productSeminorm` whenever the scalar
-action on `V` is bounded. -/
-theorem productNorm_toCompletion_of_norm_smul_le
-    (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖) (u : V ⊗[A] W) :
-    productNorm A V W (toCompletion A V W u) = productSeminorm A V W u := by
-  simp only [productNorm, Function.comp_apply, equivCompletion_toCompletion]
-  exact Completion.extension_coe (uniformContinuous_productSeminorm_of_norm_smul_le hV) u
+/-- Scalar-action bound for `productNormOfUniformContinuous` under `‖a • v‖ ≤ C * ‖a‖ * ‖v‖`. -/
+theorem productNormOfUniformContinuous_smul_le_of_norm_smul_le {C : ℝ≥0}
+    (hV : ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖)
+    {h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance]
+      (productSeminorm A V W)}
+    (a : A) (z : CompletedTensor A V W) :
+    productNormOfUniformContinuous h (a • z) ≤
+      C * ‖a‖ * productNormOfUniformContinuous h z :=
+  (denseRange_toCompletion A V W).induction_on z
+    (isClosed_le ((continuous_productNormOfUniformContinuous h).comp (continuous_const_smul a))
+      (continuous_const.mul (continuous_productNormOfUniformContinuous h))) fun u ↦ by
+      rw [← map_smul, productNormOfUniformContinuous_toCompletion,
+        productNormOfUniformContinuous_toCompletion]
+      exact productSeminorm_smul_le_of_norm_smul_le hV a u
+
+variable (A V W) in
+/-- **The completed product norm** on `V ⊗̂_A W` under a contractive scalar action on `V`: the
+continuous extension of `BanachModule.productSeminorm A V W` across `CompletedTensor.toCompletion`,
+as an additive group seminorm. -/
+noncomputable def productNorm [IsBoundedSMul A V] :
+    AddGroupSeminorm (CompletedTensor A V W) :=
+  productNormOfUniformContinuous uniformContinuous_productSeminorm
+
+/-- `productNorm A V W` agrees with `productNormOfUniformContinuous h` for any uniform-continuity
+witness `h`. -/
+theorem productNorm_eq_productNormOfUniformContinuous [IsBoundedSMul A V]
+    (h : UniformContinuous[banachTensorUniformSpace A V W, inferInstance]
+      (productSeminorm A V W)) :
+    productNorm A V W = productNormOfUniformContinuous h :=
+  (rfl)
 
 /-- On the image of `V ⊗[A] W`, `productNorm` agrees with `productSeminorm`. -/
 @[simp]
 theorem productNorm_toCompletion [IsBoundedSMul A V] (u : V ⊗[A] W) :
     productNorm A V W (toCompletion A V W u) = productSeminorm A V W u :=
-  productNorm_toCompletion_of_norm_smul_le ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩ u
+  productNormOfUniformContinuous_toCompletion _ u
 
 /-- `productNorm A V W` is uniformly continuous. -/
-theorem uniformContinuous_productNorm : UniformContinuous (productNorm A V W) :=
-  Completion.uniformContinuous_extension.comp
-    (equivCompletion A V W).toContinuousLinearMap.uniformContinuous
+theorem uniformContinuous_productNorm [IsBoundedSMul A V] :
+    UniformContinuous (productNorm A V W) :=
+  uniformContinuous_productNormOfUniformContinuous _
 
 /-- `productNorm A V W` is continuous. -/
-theorem continuous_productNorm : Continuous (productNorm A V W) :=
-  uniformContinuous_productNorm.continuous
-
-/-- `productNorm A V W` is nonnegative under a bounded scalar action on `V`. -/
-theorem productNorm_nonneg_of_norm_smul_le
-    (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖)
-    (z : CompletedTensor A V W) : 0 ≤ productNorm A V W z :=
-  (denseRange_toCompletion A V W).induction_on z
-    (isClosed_le continuous_const continuous_productNorm) fun u ↦ by
-      rw [productNorm_toCompletion_of_norm_smul_le hV]
-      exact apply_nonneg _ u
-
-/-- `productNorm A V W` is nonnegative. -/
-theorem productNorm_nonneg [IsBoundedSMul A V] (z : CompletedTensor A V W) :
-    0 ≤ productNorm A V W z :=
-  productNorm_nonneg_of_norm_smul_le ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩ z
-
-/-- `productNorm A V W` vanishes at `0` under a bounded scalar action on `V`. -/
-theorem productNorm_zero_of_norm_smul_le
-    (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖) :
-    productNorm A V W 0 = 0 := by
-  simpa using productNorm_toCompletion_of_norm_smul_le (W := W) hV 0
-
-/-- `productNorm A V W` vanishes at `0`. -/
-@[simp]
-theorem productNorm_zero [IsBoundedSMul A V] : productNorm A V W 0 = 0 :=
-  productNorm_zero_of_norm_smul_le ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩
-
-/-- `productNorm A V W` is invariant under negation under a bounded scalar action on `V`. -/
-theorem productNorm_neg_of_norm_smul_le
-    (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖)
-    (z : CompletedTensor A V W) :
-    productNorm A V W (-z) = productNorm A V W z :=
-  (denseRange_toCompletion A V W).induction_on z
-    (isClosed_eq (continuous_productNorm.comp continuous_neg) continuous_productNorm) fun u ↦ by
-      rw [← map_neg, productNorm_toCompletion_of_norm_smul_le hV,
-        productNorm_toCompletion_of_norm_smul_le hV, map_neg_eq_map]
-
-/-- `productNorm A V W` is invariant under negation. -/
-@[simp]
-theorem productNorm_neg [IsBoundedSMul A V] (z : CompletedTensor A V W) :
-    productNorm A V W (-z) = productNorm A V W z :=
-  productNorm_neg_of_norm_smul_le ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩ z
-
-/-- **Ultrametric inequality** for `productNorm` under a bounded scalar action on `V`. -/
-theorem productNorm_add_le_max_of_norm_smul_le
-    (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖)
-    (z₁ z₂ : CompletedTensor A V W) :
-    productNorm A V W (z₁ + z₂) ≤ max (productNorm A V W z₁) (productNorm A V W z₂) := by
-  refine (denseRange_toCompletion A V W).induction_on₂
-    (p := fun z₁ z₂ ↦
-      productNorm A V W (z₁ + z₂) ≤ max (productNorm A V W z₁) (productNorm A V W z₂))
-    ?_ (fun u₁ u₂ ↦ ?_) z₁ z₂
-  · exact isClosed_le (continuous_productNorm.comp continuous_add)
-      ((continuous_productNorm.comp continuous_fst).max
-        (continuous_productNorm.comp continuous_snd))
-  · rw [← map_add, productNorm_toCompletion_of_norm_smul_le hV,
-      productNorm_toCompletion_of_norm_smul_le hV,
-      productNorm_toCompletion_of_norm_smul_le hV]
-    exact productSeminorm_add_le_max u₁ u₂
+theorem continuous_productNorm [IsBoundedSMul A V] : Continuous (productNorm A V W) :=
+  continuous_productNormOfUniformContinuous _
 
 /-- **Ultrametric inequality** for `productNorm`. -/
 theorem productNorm_add_le_max [IsBoundedSMul A V] (z₁ z₂ : CompletedTensor A V W) :
     productNorm A V W (z₁ + z₂) ≤ max (productNorm A V W z₁) (productNorm A V W z₂) :=
-  productNorm_add_le_max_of_norm_smul_le ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩ z₁ z₂
+  productNormOfUniformContinuous_add_le_max _ z₁ z₂
 
-/-- Triangle inequality for `productNorm` under a bounded scalar action on `V`. -/
-theorem productNorm_add_le_of_norm_smul_le
-    (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖)
-    (z₁ z₂ : CompletedTensor A V W) :
-    productNorm A V W (z₁ + z₂) ≤ productNorm A V W z₁ + productNorm A V W z₂ :=
-  (productNorm_add_le_max_of_norm_smul_le hV z₁ z₂).trans <|
-    max_le_add_of_nonneg (productNorm_nonneg_of_norm_smul_le hV z₁)
-      (productNorm_nonneg_of_norm_smul_le hV z₂)
-
-/-- Triangle inequality for `productNorm`. -/
-theorem productNorm_add_le [IsBoundedSMul A V] (z₁ z₂ : CompletedTensor A V W) :
-    productNorm A V W (z₁ + z₂) ≤ productNorm A V W z₁ + productNorm A V W z₂ :=
-  productNorm_add_le_of_norm_smul_le ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩ z₁ z₂
-
-/-- Ultrametric bound for differences under `productNorm` under a bounded scalar action on `V`. -/
-theorem productNorm_sub_le_max_of_norm_smul_le
-    (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖)
-    (z₁ z₂ : CompletedTensor A V W) :
-    productNorm A V W (z₁ - z₂) ≤ max (productNorm A V W z₁) (productNorm A V W z₂) := by
-  simpa [sub_eq_add_neg, productNorm_neg_of_norm_smul_le hV] using
-    productNorm_add_le_max_of_norm_smul_le hV z₁ (-z₂)
+/-- `productNorm A V W` is a nonarchimedean additive group seminorm. -/
+theorem isNonarchimedean_productNorm [IsBoundedSMul A V] :
+    IsNonarchimedean (productNorm A V W) :=
+  isNonarchimedean_productNormOfUniformContinuous _
 
 /-- Ultrametric bound for differences under `productNorm`. -/
 theorem productNorm_sub_le_max [IsBoundedSMul A V] (z₁ z₂ : CompletedTensor A V W) :
     productNorm A V W (z₁ - z₂) ≤ max (productNorm A V W z₁) (productNorm A V W z₂) :=
-  productNorm_sub_le_max_of_norm_smul_le ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩ z₁ z₂
-
-/-- Elementary-tensor bound for `productNorm` under a bounded scalar action on `V`. -/
-theorem productNorm_tmul_le_of_norm_smul_le
-    (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖) (v : V) (w : W) :
-    productNorm A V W (tmul A V W v w) ≤ ‖v‖ * ‖w‖ := by
-  rw [← toCompletion_tmul, productNorm_toCompletion_of_norm_smul_le hV]
-  exact productSeminorm_tmul_le v w
+  productNormOfUniformContinuous_sub_le_max _ z₁ z₂
 
 /-- Elementary-tensor bound for `productNorm`. -/
 theorem productNorm_tmul_le [IsBoundedSMul A V] (v : V) (w : W) :
     productNorm A V W (tmul A V W v w) ≤ ‖v‖ * ‖w‖ :=
-  productNorm_tmul_le_of_norm_smul_le ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩ v w
-
-/-- Scalar-action bound for `productNorm` under `‖a • v‖ ≤ C * ‖a‖ * ‖v‖`. -/
-theorem productNorm_smul_le_of_norm_smul_le {C : ℝ≥0}
-    (hV : ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖) (a : A) (z : CompletedTensor A V W) :
-    productNorm A V W (a • z) ≤ C * ‖a‖ * productNorm A V W z :=
-  (denseRange_toCompletion A V W).induction_on z
-    (isClosed_le (continuous_productNorm.comp (continuous_const_smul a))
-      (continuous_const.mul continuous_productNorm)) fun u ↦ by
-      rw [← map_smul, productNorm_toCompletion_of_norm_smul_le ⟨C, hV⟩,
-        productNorm_toCompletion_of_norm_smul_le ⟨C, hV⟩]
-      exact productSeminorm_smul_le_of_norm_smul_le hV a u
+  productNormOfUniformContinuous_tmul_le _ v w
 
 /-- Scalar-action bound for `productNorm` under a contractive scalar action on `V`. -/
 theorem productNorm_smul_le [IsBoundedSMul A V] (a : A) (z : CompletedTensor A V W) :
     productNorm A V W (a • z) ≤ ‖a‖ * productNorm A V W z := by
-  simpa using productNorm_smul_le_of_norm_smul_le (C := 1)
-    (fun r v ↦ by simpa using norm_smul_le r v) a z
-
-/-- **Universal bound on the completion.** For an `A`-bilinear map `β : V →ₗ[A] W →ₗ[A] M` into a
-complete ultrametric normed `A`-module with continuous action, bounded by `C * ‖v‖ * ‖w‖`
-(`0 ≤ C`), the induced map `lift β` satisfies `‖lift β _ z‖ ≤ C * productNorm A V W z`. -/
-theorem norm_lift_le_mul_productNorm_of_norm_smul_le
-    (hV : ∃ C₀ : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C₀ * ‖a‖ * ‖v‖)
-    {M : Type*} [NormedAddCommGroup M] [IsUltrametricDist M] [CompleteSpace M]
-    [Module A M] [ContinuousSMul A M] (β : V →ₗ[A] W →ₗ[A] M)
-    (hβ : Continuous fun p : V × W ↦ β p.1 p.2) {C : ℝ} (hC : 0 ≤ C)
-    (h : ∀ v w, ‖β v w‖ ≤ C * ‖v‖ * ‖w‖) (z : CompletedTensor A V W) :
-    ‖lift β hβ z‖ ≤ C * productNorm A V W z :=
-  (denseRange_toCompletion A V W).induction_on z
-    (isClosed_le (continuous_norm.comp (lift β hβ).continuous)
-      (continuous_const.mul continuous_productNorm)) fun u ↦ by
-      rw [lift_toCompletion, productNorm_toCompletion_of_norm_smul_le hV]
-      exact norm_lift_le_mul_productSeminorm β hC h u
+  simpa [productNorm] using
+    productNormOfUniformContinuous_smul_le_of_norm_smul_le (C := 1)
+      (h := uniformContinuous_productSeminorm)
+      (fun r v ↦ by simpa using norm_smul_le r v) a z
 
 /-- **Universal bound on the completion** under a contractive scalar action on `V`. -/
 theorem norm_lift_le_mul_productNorm [IsBoundedSMul A V]
@@ -874,35 +1014,7 @@ theorem norm_lift_le_mul_productNorm [IsBoundedSMul A V]
     (hβ : Continuous fun p : V × W ↦ β p.1 p.2) {C : ℝ} (hC : 0 ≤ C)
     (h : ∀ v w, ‖β v w‖ ≤ C * ‖v‖ * ‖w‖) (z : CompletedTensor A V W) :
     ‖lift β hβ z‖ ≤ C * productNorm A V W z :=
-  norm_lift_le_mul_productNorm_of_norm_smul_le
-    ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩ β hβ hC h z
-
-/-- `CompletedTensor.map` extends `TensorProduct.map` across `toCompletion`. -/
-@[simp]
-theorem map_toCompletion {V' W' : Type*} [SeminormedAddCommGroup V'] [Module A V']
-    [SeminormedAddCommGroup W'] [Module A W'] (f : V →L[A] V') (g : W →L[A] W')
-    (u : V ⊗[A] W) :
-    map f g (toCompletion A V W u) =
-      toCompletion A V' W' (TensorProduct.map f.toLinearMap g.toLinearMap u) := by
-  induction u using TensorProduct.inductionOn with
-  | tmul v w => simp
-  | add x y hx hy => simp only [map_add, hx, hy]
-
-/-- Functoriality bound for `productNorm` under bounded continuous `A`-linear maps. -/
-theorem productNorm_map_le_of_norm_smul_le {V' W' : Type*}
-    [SeminormedAddCommGroup V'] [Module A V'] [SeminormedAddCommGroup W'] [Module A W']
-    (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖)
-    (hV' : ∃ C : ℝ≥0, ∀ (a : A) (v : V'), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖)
-    (f : V →L[A] V') (g : W →L[A] W') {C₁ C₂ : ℝ}
-    (hC₁ : 0 ≤ C₁) (hf : ∀ v, ‖f v‖ ≤ C₁ * ‖v‖) (hC₂ : 0 ≤ C₂) (hg : ∀ w, ‖g w‖ ≤ C₂ * ‖w‖)
-    (z : CompletedTensor A V W) :
-    productNorm A V' W' (map f g z) ≤ C₁ * C₂ * productNorm A V W z :=
-  (denseRange_toCompletion A V W).induction_on z
-    (isClosed_le (continuous_productNorm.comp (map f g).continuous)
-      (continuous_const.mul continuous_productNorm)) fun u ↦ by
-      rw [map_toCompletion, productNorm_toCompletion_of_norm_smul_le hV',
-        productNorm_toCompletion_of_norm_smul_le hV]
-      exact productSeminorm_map_le f.toLinearMap g.toLinearMap hC₁ hf hC₂ hg u
+  norm_lift_le_mul_productNormOfUniformContinuous _ β hβ hC h z
 
 /-- Functoriality bound for `productNorm` under contractive scalar actions on `V` and `V'`. -/
 theorem productNorm_map_le {V' W' : Type*}
@@ -912,14 +1024,12 @@ theorem productNorm_map_le {V' W' : Type*}
     (hC₁ : 0 ≤ C₁) (hf : ∀ v, ‖f v‖ ≤ C₁ * ‖v‖) (hC₂ : 0 ≤ C₂) (hg : ∀ w, ‖g w‖ ≤ C₂ * ‖w‖)
     (z : CompletedTensor A V W) :
     productNorm A V' W' (map f g z) ≤ C₁ * C₂ * productNorm A V W z :=
-  productNorm_map_le_of_norm_smul_le
-    ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩
-    ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩ f g hC₁ hf hC₂ hg z
+  productNormOfUniformContinuous_map_le _ _ f g hC₁ hf hC₂ hg z
 
-/-- On `A ⊗̂_A W` with `‖1‖ = 1` and complete ultrametric normed `W` with contractive `A`-action,
-`productNorm` is the norm of the image under `CompletedTensor.lid A W`. -/
+/-- On `A ⊗̂_A M` with `‖1‖ = 1` and complete ultrametric normed `M` with contractive `A`-action,
+`productNorm` is the norm of the image under `CompletedTensor.lid A M`. -/
 @[simp]
-theorem productNorm_eq_norm_lid [NormOneClass A]
+theorem productNorm_eq_norm_lid [NormOneClass A] [IsBoundedSMul A A]
     {M : Type*} [NormedAddCommGroup M] [IsUltrametricDist M] [CompleteSpace M]
     [Module A M] [IsBoundedSMul A M] (z : CompletedTensor A A M) :
     productNorm A A M z = ‖lid A M z‖ :=
@@ -958,29 +1068,15 @@ variable {A V W : Type*} [SeminormedCommRing A] [NormedRing.IsTate A]
   [SeminormedAddCommGroup W] [Module A W]
 
 /-- **Neighbourhood basis on the completion.** Over a Tate seminormed commutative ring `A` with
-bounded scalar actions on `V` and `W`, the positive-radius open balls of `productNorm A V W` form a
-neighbourhood basis of `0` in `CompletedTensor A V W`. -/
-theorem hasBasis_nhds_zero_productNorm_of_norm_smul_le
-    (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖)
+contractive action on `V` and bounded action on `W`, the positive-radius open balls of
+`productNorm A V W` form a neighbourhood basis of `0` in `CompletedTensor A V W`. -/
+theorem hasBasis_nhds_zero_productNorm_of_norm_smul_le [IsBoundedSMul A V]
     (hW : ∃ C : ℝ≥0, ∀ (a : A) (w : W), ‖a • w‖ ≤ C * ‖a‖ * ‖w‖) :
     (𝓝 (0 : CompletedTensor A V W)).HasBasis (0 < ·)
-      (fun r ↦ {z | productNorm A V W z < r}) := by
-  have hb_gen : ∀ (u : UniformSpace (V ⊗[A] W)),
-      u = (productSeminorm A V W).toSeminormedAddCommGroup.toUniformSpace →
-      (@nhds (@Completion (V ⊗[A] W) u)
-          (@UniformSpace.toTopologicalSpace _ (@Completion.uniformSpace _ u))
-          (@Completion.coe' (V ⊗[A] W) u 0)).HasBasis (0 < ·)
-        (fun r ↦ {z | @Completion.extension (V ⊗[A] W) u ℝ _ (productSeminorm A V W) z < r}) := by
-    rintro _ rfl
-    let _ : SeminormedAddCommGroup (V ⊗[A] W) := (productSeminorm A V W).toSeminormedAddCommGroup
-    exact NormedAddGroup.nhds_zero_basis_norm_lt
-  have hb := hb_gen (banachTensorUniformSpace A V W)
-    (banachTensorUniformSpace_eq_productSeminorm_of_norm_smul_le hV hW)
-  have heq : 𝓝 (0 : CompletedTensor A V W) =
-      Filter.comap (equivCompletion A V W) (𝓝 (0 : Completion (V ⊗[A] W))) := by
-    simpa using (equivCompletion A V W).toHomeomorph.isInducing.nhds_eq_comap 0
-  rw [heq]
-  exact hb.comap (equivCompletion A V W)
+      (fun r ↦ {z | productNorm A V W z < r}) :=
+  hasBasis_nhds_zero_productNormOfUniformContinuous
+    (banachTensorUniformSpace_eq_productSeminorm_of_norm_smul_le
+      ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩ hW)
 
 variable (A V W) in
 /-- **Neighbourhood basis on the completion** under contractive scalar actions. -/
@@ -988,51 +1084,35 @@ theorem hasBasis_nhds_zero_productNorm [IsBoundedSMul A V] [IsBoundedSMul A W] :
     (𝓝 (0 : CompletedTensor A V W)).HasBasis (0 < ·)
       (fun r ↦ {z | productNorm A V W z < r}) :=
   hasBasis_nhds_zero_productNorm_of_norm_smul_le
-    ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩
     ⟨1, fun a w ↦ by simpa using norm_smul_le a w⟩
 
-/-- **Definiteness of `productNorm`** over a Tate seminormed commutative ring with bounded scalar
-actions. -/
-theorem productNorm_eq_zero_iff_of_norm_smul_le
-    (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖)
+/-- **Definiteness of `productNorm`** over a Tate seminormed commutative ring with contractive
+action on `V` and bounded action on `W`. -/
+theorem productNorm_eq_zero_iff_of_norm_smul_le [IsBoundedSMul A V]
     (hW : ∃ C : ℝ≥0, ∀ (a : A) (w : W), ‖a • w‖ ≤ C * ‖a‖ * ‖w‖)
     {z : CompletedTensor A V W} :
-    productNorm A V W z = 0 ↔ z = 0 := by
-  have hdef_gen : ∀ (u : UniformSpace (V ⊗[A] W)),
-      u = (productSeminorm A V W).toSeminormedAddCommGroup.toUniformSpace →
-      ∀ w : @Completion (V ⊗[A] W) u,
-        @Completion.extension (V ⊗[A] W) u ℝ _ (productSeminorm A V W) w = 0 ↔
-          w = @Completion.coe' (V ⊗[A] W) u 0 := by
-    rintro _ rfl
-    let inst : SeminormedAddCommGroup (V ⊗[A] W) :=
-      (productSeminorm A V W).toSeminormedAddCommGroup
-    exact fun w ↦ @norm_eq_zero (@Completion (V ⊗[A] W) inst.toUniformSpace) inferInstance w
-  have hdef := hdef_gen (banachTensorUniformSpace A V W)
-    (banachTensorUniformSpace_eq_productSeminorm_of_norm_smul_le hV hW)
-    (equivCompletion A V W z)
-  simpa only [productNorm, Function.comp_apply, UniformSpace.Completion.coe_zero,
-    map_eq_zero_iff _ (equivCompletion A V W).injective] using hdef
+    productNorm A V W z = 0 ↔ z = 0 :=
+  productNormOfUniformContinuous_eq_zero_iff
+    (banachTensorUniformSpace_eq_productSeminorm_of_norm_smul_le
+      ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩ hW)
 
 /-- **Definiteness of `productNorm`** under contractive scalar actions. -/
 @[simp]
 theorem productNorm_eq_zero_iff [IsBoundedSMul A V] [IsBoundedSMul A W]
     {z : CompletedTensor A V W} :
     productNorm A V W z = 0 ↔ z = 0 :=
-  productNorm_eq_zero_iff_of_norm_smul_le
-    ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩
-    ⟨1, fun a w ↦ by simpa using norm_smul_le a w⟩
+  productNorm_eq_zero_iff_of_norm_smul_le ⟨1, fun a w ↦ by simpa using norm_smul_le a w⟩
 
-/-- `productNorm A V W` bundled as an `AddGroupNorm` under bounded scalar actions over a Tate
+/-- The completed product norm bundled as an `AddGroupNorm` under bounded scalar actions over a Tate
 seminormed commutative ring. -/
 noncomputable def productAddGroupNormOfNormSmulLe
     (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖)
     (hW : ∃ C : ℝ≥0, ∀ (a : A) (w : W), ‖a • w‖ ≤ C * ‖a‖ * ‖w‖) :
-    AddGroupNorm (CompletedTensor A V W) where
-  toFun := productNorm A V W
-  map_zero' := productNorm_zero_of_norm_smul_le hV
-  add_le' := productNorm_add_le_of_norm_smul_le hV
-  neg' := productNorm_neg_of_norm_smul_le hV
-  eq_zero_of_map_eq_zero' _ hz := (productNorm_eq_zero_iff_of_norm_smul_le hV hW).mp hz
+    AddGroupNorm (CompletedTensor A V W) :=
+  { productNormOfUniformContinuous (uniformContinuous_productSeminorm_of_norm_smul_le hV) with
+    eq_zero_of_map_eq_zero' := fun _ hz ↦
+      (productNormOfUniformContinuous_eq_zero_iff
+        (banachTensorUniformSpace_eq_productSeminorm_of_norm_smul_le hV hW)).mp hz }
 
 /-- Evaluation of `productAddGroupNormOfNormSmulLe`. -/
 @[simp]
@@ -1040,7 +1120,9 @@ theorem productAddGroupNormOfNormSmulLe_apply
     (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖)
     (hW : ∃ C : ℝ≥0, ∀ (a : A) (w : W), ‖a • w‖ ≤ C * ‖a‖ * ‖w‖)
     (z : CompletedTensor A V W) :
-    productAddGroupNormOfNormSmulLe hV hW z = productNorm A V W z :=
+    productAddGroupNormOfNormSmulLe hV hW z =
+      productNormOfUniformContinuous
+        (uniformContinuous_productSeminorm_of_norm_smul_le hV) z :=
   (rfl)
 
 variable (A V W) in
@@ -1070,7 +1152,10 @@ theorem uniformity_eq_productAddGroupNormOfNormSmulLe
   let N := productAddGroupNormOfNormSmulLe hV hW
   let u₁ : UniformSpace (CompletedTensor A V W) := inferInstance
   have hu₁ : @IsUniformAddGroup (CompletedTensor A V W) u₁ _ := inferInstance
-  have hb₁ := hasBasis_nhds_zero_productNorm_of_norm_smul_le hV hW
+  have hb₁ : (𝓝 (0 : CompletedTensor A V W)).HasBasis (0 < ·) (fun r ↦ {z | N z < r}) :=
+    hasBasis_nhds_zero_productNormOfUniformContinuous
+      (h := uniformContinuous_productSeminorm_of_norm_smul_le hV)
+      (banachTensorUniformSpace_eq_productSeminorm_of_norm_smul_le hV hW)
   let _ : NormedAddCommGroup (CompletedTensor A V W) := N.toNormedAddCommGroup
   have hu : u₁ = N.toNormedAddCommGroup.toUniformSpace :=
     IsUniformAddGroup.ext hu₁ inferInstance
@@ -1087,8 +1172,8 @@ theorem uniformity_eq_productAddGroupNorm [IsBoundedSMul A V] [IsBoundedSMul A W
     ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩
     ⟨1, fun a w ↦ by simpa using norm_smul_le a w⟩
 
-/-- Compatible `NormedAddCommGroup` structure on `CompletedTensor A V W` whose norm is
-`productNorm A V W` and whose uniformity and topology are definitionally the existing ones. -/
+/-- Compatible `NormedAddCommGroup` structure on `CompletedTensor A V W` under bounded scalar
+actions, retaining its additive group, uniformity and topology definitionally. -/
 noncomputable abbrev productNormedAddCommGroupOfNormSmulLe
     (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖)
     (hW : ∃ C : ℝ≥0, ∀ (a : A) (w : W), ‖a • w‖ ≤ C * ‖a‖ * ‖w‖) :
@@ -1098,14 +1183,75 @@ noncomputable abbrev productNormedAddCommGroupOfNormSmulLe
     toMetricSpace := N.toNormedAddCommGroup.toMetricSpace.replaceUniformity
       (uniformity_eq_productAddGroupNormOfNormSmulLe hV hW) }
 
+/-- The norm of `productNormedAddCommGroupOfNormSmulLe` is `productNormOfUniformContinuous`. -/
+@[simp]
+theorem norm_productNormedAddCommGroupOfNormSmulLe
+    (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖)
+    (hW : ∃ C : ℝ≥0, ∀ (a : A) (w : W), ‖a • w‖ ≤ C * ‖a‖ * ‖w‖)
+    (z : CompletedTensor A V W) :
+    @norm _ (productNormedAddCommGroupOfNormSmulLe hV hW).toNorm z =
+      productNormOfUniformContinuous
+        (uniformContinuous_productSeminorm_of_norm_smul_le hV) z :=
+  (rfl)
+
+/-- `productNormedAddCommGroupOfNormSmulLe` retains the completion uniformity. -/
+@[simp]
+theorem uniformSpace_productNormedAddCommGroupOfNormSmulLe
+    (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖)
+    (hW : ∃ C : ℝ≥0, ∀ (a : A) (w : W), ‖a • w‖ ≤ C * ‖a‖ * ‖w‖) :
+    (productNormedAddCommGroupOfNormSmulLe hV hW).toUniformSpace =
+      (inferInstance : UniformSpace (CompletedTensor A V W)) :=
+  (rfl)
+
+/-- `productNormedAddCommGroupOfNormSmulLe` defines an ultrametric distance. -/
+theorem isUltrametricDist_productNormedAddCommGroupOfNormSmulLe
+    (hV : ∃ C : ℝ≥0, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖)
+    (hW : ∃ C : ℝ≥0, ∀ (a : A) (w : W), ‖a • w‖ ≤ C * ‖a‖ * ‖w‖) :
+    letI := productNormedAddCommGroupOfNormSmulLe hV hW
+    IsUltrametricDist (CompletedTensor A V W) := by
+  have h := isNonarchimedean_productNormOfUniformContinuous
+    (W := W) (uniformContinuous_productSeminorm_of_norm_smul_le hV)
+  let := productNormedAddCommGroupOfNormSmulLe hV hW
+  exact IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm h
+
 variable (A V W) in
 /-- Compatible `NormedAddCommGroup` structure on `CompletedTensor A V W` under contractive scalar
-actions, retaining its uniformity and topology definitionally. -/
+actions, retaining its additive group, uniformity and topology definitionally. -/
 noncomputable abbrev productNormedAddCommGroup [IsBoundedSMul A V] [IsBoundedSMul A W] :
     NormedAddCommGroup (CompletedTensor A V W) :=
-  productNormedAddCommGroupOfNormSmulLe
-    ⟨1, fun a v ↦ by simpa using norm_smul_le a v⟩
-    ⟨1, fun a w ↦ by simpa using norm_smul_le a w⟩
+  let N := productAddGroupNorm A V W
+  { N.toNormedAddCommGroup with
+    toMetricSpace := N.toNormedAddCommGroup.toMetricSpace.replaceUniformity
+      (uniformity_eq_productAddGroupNorm A V W) }
+
+/-- The norm of `productNormedAddCommGroup` is `productNorm A V W`. -/
+@[simp]
+theorem norm_productNormedAddCommGroup [IsBoundedSMul A V] [IsBoundedSMul A W]
+    (z : CompletedTensor A V W) :
+    @norm _ (productNormedAddCommGroup A V W).toNorm z = productNorm A V W z :=
+  (rfl)
+
+/-- `productNormedAddCommGroup` retains the completion uniformity. -/
+@[simp]
+theorem uniformSpace_productNormedAddCommGroup [IsBoundedSMul A V] [IsBoundedSMul A W] :
+    (productNormedAddCommGroup A V W).toUniformSpace =
+      (inferInstance : UniformSpace (CompletedTensor A V W)) :=
+  (rfl)
+
+/-- `productNormedAddCommGroup` defines an ultrametric distance. -/
+theorem isUltrametricDist_productNormedAddCommGroup [IsBoundedSMul A V] [IsBoundedSMul A W] :
+    letI := productNormedAddCommGroup A V W
+    IsUltrametricDist (CompletedTensor A V W) := by
+  have h := isNonarchimedean_productNorm (A := A) (V := V) (W := W)
+  let := productNormedAddCommGroup A V W
+  exact IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm h
+
+/-- Under `productNormedAddCommGroup`, the scalar action of `A` is contractive. -/
+theorem isBoundedSMul_productNormedAddCommGroup [IsBoundedSMul A V] [IsBoundedSMul A W] :
+    letI := productNormedAddCommGroup A V W
+    IsBoundedSMul A (CompletedTensor A V W) := by
+  let := productNormedAddCommGroup A V W
+  exact IsBoundedSMul.of_norm_smul_le (productNorm_smul_le (A := A) (V := V) (W := W))
 
 end IsTate
 
@@ -1143,9 +1289,11 @@ private theorem exists_linearMap_comp_subtype_eq_of_finite (E₀ : Submodule L V
   · have hxE' : x ∈ E' := Submodule.mem_sup_right (Submodule.subset_span hxS)
     have hπx : π x = ⟨x, hxE'⟩ := LinearMap.congr_fun hπ ⟨x, hxE'⟩
     have hnorm_e : ‖e (p ⟨x, hxE'⟩)‖ = ‖(p ⟨x, hxE'⟩ : E')‖ := rfl
+    have hpx : ‖(p ⟨x, hxE'⟩ : E')‖ ≤ c * ‖x‖ :=
+      (p.le_opNorm ⟨x, hxE'⟩).trans (mul_le_mul_of_nonneg_right hp_norm (norm_nonneg x))
     calc ‖ψ x‖ = ‖φ₀ (e (p ⟨x, hxE'⟩))‖ := by simp [ψ, hπx]
       _ ≤ ‖φ₀‖ * ‖(p ⟨x, hxE'⟩ : E')‖ := hnorm_e ▸ φ₀.le_opNorm _
-      _ ≤ ‖φ₀‖ * (c * ‖x‖) := mul_le_mul_of_nonneg_left (hp_norm ⟨x, hxE'⟩) (norm_nonneg φ₀)
+      _ ≤ ‖φ₀‖ * (c * ‖x‖) := mul_le_mul_of_nonneg_left hpx (norm_nonneg φ₀)
       _ = c * ‖φ₀‖ * ‖x‖ := by ring
 
 private theorem norm_lid_map_le_mul_productSeminorm_of_one_lt (E₀ : Submodule L V)
@@ -1217,10 +1365,7 @@ theorem productSeminorm_tmul (v : V) (w : W) :
   have hv₀ : v₀ ≠ 0 := fun h0 ↦ hv (congrArg Subtype.val h0)
   obtain ⟨φ₀, hφ₀v, hφ₀⟩ :=
     TauCeti.exists_strongDual_apply_eq_one_of_finiteDimensional (K := L) hv₀ hc
-  have hφ₀_norm : ‖φ₀‖ ≤ c / ‖v‖ :=
-    φ₀.opNorm_le_bound (div_nonneg (zero_lt_one.trans hc).le (norm_nonneg v)) fun x ↦ by
-      rw [div_mul_eq_mul_div, le_div_iff₀ (norm_pos_iff.mpr hv)]
-      exact hφ₀ x
+  have hφ₀_norm : ‖φ₀‖ ≤ c / ‖v‖ := by simpa [v₀, div_eq_mul_inv] using hφ₀
   have hle : ‖w‖ ≤ ‖φ₀‖ * P := by
     simpa [P, v₀, hφ₀v] using norm_lid_map_le_productSeminorm E₀ φ₀ (v₀ ⊗ₜ[L] w)
   have hvw : ‖v‖ * ‖w‖ ≤ c * P := by
@@ -1275,7 +1420,7 @@ variable (L V W) in
 theorem toCompletion_injective : Function.Injective (toCompletion L V W) :=
   (injective_iff_map_eq_zero (toCompletion L V W)).mpr fun u hu ↦ by
     have h0 : productSeminorm L V W u = 0 := by
-      rw [← productNorm_toCompletion, hu, productNorm_zero]
+      rw [← productNorm_toCompletion, hu, map_zero]
     exact productSeminorm_eq_zero_iff.mp h0
 
 /-- Equality after `toCompletion L V W` over a complete nonarchimedean field reduces to equality in
