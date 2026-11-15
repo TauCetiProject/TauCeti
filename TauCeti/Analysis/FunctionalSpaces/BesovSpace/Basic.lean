@@ -1034,11 +1034,7 @@ private theorem exists_norm_toBesovSpace_of_bump_le (φ' : ContDiffBump (0 : E))
   obtain ⟨f', hf', hle⟩ := hKL u.block fun k ↦ (coe_block u k).symm
   -- The weighted block norms of `u`, and their window sums, as elements of `ℓ^q`.
   obtain ⟨b, hbj, hb⟩ := exists_lp_eq_rpow_mul_norm_block_and_norm_le u
-  set w : lp (fun _ : ℕ ↦ ℝ) q :=
-    ⟨fun j ↦ ∑ k ∈ Finset.Ico (j - L) (j + L), b k, (lp.memℓp b).sum_Ico_sub_add L⟩
-  -- The entries of the anonymous `lp` element `w` are its defining sequence by definition: `lp`
-  -- coerces through `Subtype.val` and has no lemma evaluating an anonymous constructor.
-  have hw (j : ℕ) : w j = ∑ k ∈ Finset.Ico (j - L) (j + L), b k := rfl
+  obtain ⟨w, hw, hwn⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le b L
   obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq f' (K • w) hf'
     fun j ↦ by
       rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hw]
@@ -1046,9 +1042,7 @@ private theorem exists_norm_toBesovSpace_of_bump_le (φ' : ContDiffBump (0 : E))
   rw [← ext (hv.trans (MemBesov.toDistr_toBesovSpace _).symm)]
   calc ‖v‖ ≤ ‖K • w‖ := hvn
     _ = K * ‖w‖ := by rw [norm_smul, Real.norm_of_nonneg hK]
-    _ ≤ K * (2 * L * ‖b‖) := by
-        gcongr
-        exact lp.norm_le_of_forall_eq_sum_Ico_sub_add L fun _ ↦ rfl
+    _ ≤ K * (2 * L * ‖b‖) := by gcongr
     _ ≤ K * (2 * L) * ‖u‖ := by rw [mul_assoc K]; gcongr
 
 variable (F) in

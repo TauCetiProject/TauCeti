@@ -594,21 +594,11 @@ private theorem rpow_mul_norm_block_smul_sum_block_le {α β : ℝ} {p₁ p₂ r
   have hv : 2 ^ (β * j) * ‖∑ k ∈ Finset.Icc (j - N) (j + N), v.block k‖ ≤
       2 ^ (|β| * (N + 1 : ℕ)) *
         ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), 2 ^ (β * k) * ‖v.block k‖ := by
-    calc 2 ^ (β * j) * ‖∑ k ∈ Finset.Icc (j - N) (j + N), v.block k‖
-        ≤ ∑ k ∈ Finset.Icc (j - N) (j + N), 2 ^ (β * j) * ‖v.block k‖ := by
-          rw [← Finset.mul_sum]
-          gcongr
-          exact norm_sum_le _ _
-      _ ≤ ∑ k ∈ Finset.Icc (j - N) (j + N),
-            2 ^ (|β| * (N + 1 : ℕ)) * (2 ^ (β * k) * ‖v.block k‖) :=
-          Finset.sum_le_sum fun k hk ↦ by
-            rw [← mul_assoc]
-            gcongr
-            exact Real.rpow_mul_natCast_le_of_mem_Ico' one_le_two β (hsub hk)
-      _ ≤ ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)),
-            2 ^ (|β| * (N + 1 : ℕ)) * (2 ^ (β * k) * ‖v.block k‖) :=
-          Finset.sum_le_sum_of_subset_of_nonneg hsub fun _ _ _ ↦ by positivity
-      _ = _ := by rw [Finset.mul_sum]
+    -- Extend the sum over `Icc (j - N) (j + N)` by zero to the window `Ico (j - L) (j + L)`.
+    rw [← Finset.inter_eq_right.2 hsub, ← Finset.sum_ite_mem]
+    refine (TauCeti.two_rpow_mul_norm_sum_Ico_le β (C := 1) (x := v.block)
+      (fun k ↦ by split_ifs <;> simp) j (N + 1)).trans_eq ?_
+    rw [max_eq_left zero_le_one, one_mul]
   calc 2 ^ ((α + β) * j) *
         ‖(u.block j • ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k : Lp F r (volume : Measure E))‖
       ≤ 2 ^ (α * j) * ‖u.block j‖ *
@@ -639,10 +629,7 @@ theorem exists_hasSum_block_smul_sum_block_and_norm_le {α β : ℝ} (hαβ : 0 
     fun {p₁ p₂ r q q₁} _ _ _ _ _ _ u v ↦ ?_⟩
   obtain ⟨c, hc, hcv⟩ := exists_lp_eq_rpow_mul_norm_block_and_norm_le v
   -- The window sums of the weighted block norms of `v`, as an element of `ℓ^q`.
-  set W : lp (fun _ : ℕ ↦ ℝ) q :=
-    ⟨fun j ↦ ∑ k ∈ Finset.Ico (j - L) (j + L), c k, (lp.memℓp c).sum_Ico_sub_add L⟩
-  -- The entries of the anonymous `lp` element `W` are its defining sequence by definition.
-  have hW (j : ℕ) : W j = ∑ k ∈ Finset.Ico (j - L) (j + L), c k := rfl
+  obtain ⟨W, hW, hWn⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le c L
   obtain ⟨w, hw, hwn⟩ := hCw _ ((‖u‖ * 2 ^ (|β| * L)) • W)
     (fun j ↦ isVanishingOn_fourier_block_smul_sum_block N j
       (fun k hk ↦ (Finset.mem_Icc.1 hk).2) u v) fun j ↦ by
@@ -654,7 +641,7 @@ theorem exists_hasSum_block_smul_sum_block_and_norm_le {α β : ℝ} (hαβ : 0 
   calc C * ‖(‖u‖ * 2 ^ (|β| * L)) • W‖ ≤ C * (‖u‖ * 2 ^ (|β| * L) * (2 * L * ‖v‖)) := by
         rw [norm_smul, Real.norm_of_nonneg (by positivity)]
         gcongr
-        exact (lp.norm_le_of_forall_eq_sum_Ico_sub_add L hW).trans (by gcongr)
+        exact hWn.trans (by gcongr)
     _ = C * 2 ^ (|β| * L) * (2 * L) * ‖u‖ * ‖v‖ := by ring
 
 end Estimates
