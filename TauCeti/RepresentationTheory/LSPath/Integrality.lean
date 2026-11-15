@@ -119,9 +119,6 @@ theorem minHeight_le_duration_mul_dir_zero (π : LSPath P b lam) (f : M →+ V)
     map_smul, smul_eq_mul] using
     PLPath.listMinHeight_le_apply_sum_take (f := F) ((π.timed 𝕜 f).map Prod.snd) 1
 
-variable [P.flip.IsReduced]
-
-omit [P.flip.IsReduced] in
 /-- The endpoint of an LS path has integral value under every height form agreeing with an
 integral linear form on the weight lattice. -/
 theorem exists_apply_endpoint_eq_intCast (π : LSPath P b lam)
@@ -137,7 +134,6 @@ theorem exists_apply_endpoint_eq_intCast (π : LSPath P b lam)
     (l := (π.timed 𝕜 f).map Prod.snd), hlen, π.apply_sum_take f F g hF _ le_rfl,
     hz, Rat.cast_intCast]
 
-omit [P.flip.IsReduced] in
 /-- The minimum height of the realization of an LS path is the least vertex height of its
 encoding. -/
 private theorem minHeight_eq_of_isLeast (π : LSPath P b lam) (f : M →+ V)

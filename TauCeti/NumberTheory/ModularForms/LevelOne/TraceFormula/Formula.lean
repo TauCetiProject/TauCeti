@@ -219,7 +219,7 @@ private lemma sum_split_trace_mul_dickson (n w : ℕ) (hw : Even w) (p : ℕ × 
   rw [Finset.sum_congr rfl (fun t _ ↦ hind t), Finset.sum_add_distrib]
   simp only [Finset.sum_ite_eq', hmem, hmem', ite_true]
   have hPneg (t : ℤ) : P (-t) = P t := by
-    simpa only [P, Int.cast_neg] using dickson_eval_neg_of_even 2 (n : ℚ) (t : ℚ) hw
+    simp only [P, Int.cast_neg, dickson_eval_neg, hw.neg_one_pow, one_mul]
   rw [hPneg]
   have hm' : (p.2 : ℚ) * p.1 = n := by exact_mod_cast (mul_comm _ _).trans hm
   have hroot := dickson_two_eval_add_mul_sub hm' w
@@ -239,7 +239,7 @@ private lemma sum_fibreWeight (n : ℕ) (hn : 0 < n) (w : ℕ) (hw : Even w) :
   let I := Finset.Icc (-4 * (n : ℤ)) (4 * n)
   let P (t : ℤ) : ℚ := (dickson 2 (n : ℚ) w).eval t
   have hPneg (t : ℤ) : P (-t) = P t := by
-    simpa only [P, Int.cast_neg] using dickson_eval_neg_of_even 2 (n : ℚ) (t : ℚ) hw
+    simp only [P, Int.cast_neg, dickson_eval_neg, hw.neg_one_pow, one_mul]
   let s := n.divisorsAntidiagonal.filter (fun p ↦ p.1 < p.2)
   have hneg : ∑ t ∈ I, fibreWeight (-t) n * P t = ∑ t ∈ I, fibreWeight t n * P t := by
     apply Finset.sum_bij (fun t _ ↦ -t)

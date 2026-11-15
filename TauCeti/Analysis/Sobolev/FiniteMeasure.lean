@@ -96,17 +96,17 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (hu : ContDiff ℝ 
   -- The pointwise potential bound `‖u x‖ ≤ (n ω)⁻¹ V x`.
   have hpt : ∀ x, ‖u x‖ₑ ≤ ENNReal.ofReal ((n * ω)⁻¹) * ‖V x‖ₑ := fun x => by
     refine (enorm_le_lintegral_enorm_fderiv_mul_enorm_sub_rpow (μ := μ) hu h2u x).trans_eq ?_
-    rw [enorm_eq_self, ← setLIntegral_eq_of_support_subset (s := Ω)]
+    rw [eNorm_eq_self, ← setLIntegral_eq_of_support_subset (s := Ω)]
     · congr 1
       refine lintegral_congr fun y => ?_
       rw [mul_comm, show (n : ℝ) * ((n : ℝ)⁻¹ - 1) = 1 - n by field_simp]
     · intro y hy
       by_contra hyΩ
       rw [mem_support, fderiv_of_notMem_tsupport ℝ fun h => hyΩ (hsupp h)] at hy
-      simp [enorm_eq_nnnorm] at hy
+      simp [eNorm_eq_nnNorm] at hy
   -- The `Lᵖ`-`L^q` bound for the potential, with `κ = 1/n`.
   have hpot := eLpNorm_setLIntegral_enorm_sub_rpow_mul_le (μ := μ) (p := p) (q := q)
-    (κ := (n : ℝ)⁻¹) hp hpq hδ hδn (inv_le_one_of_one_le₀ hn) hΩ hcont.enorm.aemeasurable
+    (κ := (n : ℝ)⁻¹) hp hpq hδ hδn (inv_le_one_of_one_le₀ hn) hΩ hcont.eNorm.aemeasurable
   rw [← eLpNorm_restrict_eq_of_support_subset hu.continuous.aestronglyMeasurable
     ((subset_tsupport _).trans hsupp)]
   calc
@@ -118,7 +118,7 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (hu : ContDiff ℝ 
       refine (mul_le_mul_right hpot _).trans_eq ?_
       have hω' : ω ^ (1 - (n : ℝ)⁻¹) = ω * ω ^ (-(n : ℝ)⁻¹) := by
         rw [sub_eq_add_neg, Real.rpow_add hω, Real.rpow_one]
-      rw [hω', eLpNorm_enorm _ hcont.aestronglyMeasurable,
+      rw [hω', eLpNorm_eNorm _ hcont.aestronglyMeasurable,
         eLpNorm_restrict_eq_of_support_subset hcont.aestronglyMeasurable
           ((support_fderiv_subset ℝ).trans hsupp),
         ← mul_assoc, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity)]
@@ -305,7 +305,7 @@ theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
         ENNReal.ofNat_ne_top hOmega h2t (δ := 2⁻¹ - (t : ℝ)⁻¹) (by rw [ENNReal.toReal_ofNat])
         hτn v.2⟩
   have hmemt : ∀ v : W1p0 mu Omega 2, MemLp (W1p.value (v : W1p mu Omega 2)) t ν := fun v =>
-    (hS v).trans_lt (ENNReal.mul_lt_top hSfin.lt_top enorm_lt_top)
+    (hS v).trans_lt (ENNReal.mul_lt_top hSfin.lt_top eNorm_lt_top)
   -- Hölder's inequality: `f v` is integrable and `|∫_Ω f v| ≤ ‖f‖_{Lʳ} ‖v‖_{Lᵗ} |Ω|^{...}`.
   have hq1 : (1 : ℝ≥0∞) ≤ ((r : ℝ≥0∞)⁻¹ + (t : ℝ≥0∞)⁻¹)⁻¹ := by
     have hle : ((r⁻¹ + t⁻¹ : ℝ≥0) : ℝ) ≤ 1 := by push_cast; exact hrt
@@ -322,8 +322,8 @@ theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
     (by exact_mod_cast zero_lt_one.trans hr) (by exact_mod_cast ht0) hrt hf (hmemt v)
     (measure_ne_top ν univ) (Filter.Eventually.of_forall fun x hx => absurd (mem_univ x) hx)
   have hsob : (eLpNorm (W1p.value (v : W1p mu Omega 2)) t ν).toReal ≤ S.toReal * ‖v‖ := by
-    have := ENNReal.toReal_mono (ENNReal.mul_ne_top hSfin enorm_ne_top) (hS v)
-    rw [ENNReal.toReal_mul, toReal_enorm] at this
+    have := ENNReal.toReal_mono (ENNReal.mul_ne_top hSfin eNorm_ne_top) (hS v)
+    rw [ENNReal.toReal_mul, toReal_eNorm] at this
     exact this.trans (mul_le_mul_of_nonneg_left (W1p.norm_gradient_le _) ENNReal.toReal_nonneg)
   refine hhol.trans ?_
   calc (eLpNorm f r ν).toReal * (eLpNorm (W1p.value (v : W1p mu Omega 2)) t ν).toReal *

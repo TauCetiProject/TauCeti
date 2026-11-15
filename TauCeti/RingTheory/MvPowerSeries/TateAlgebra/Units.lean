@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 /-!
 # Units of restricted power series
 
-Let `R` be a complete ultrametric normed ring with `‖1‖ = 1`, and let `c` be positive polyradii.
+Let `R` be a complete ultrametric normed ring, and let `c` be positive polyradii.
 A restricted series `f ∈ R{X/c}` close to a constant `a` that is a multiplicative unit of `R`
 (`TauCeti.IsNormMulUnit`), in the sense that `‖f - a‖ < ‖a‖` for the Gauss norm, factors as
 
@@ -77,11 +77,8 @@ private theorem codRestrict_C_eq (a : R) :
 
 variable [∀ i, Fact (0 < c i)]
 
-section NormOne
+section Complete
 
-variable [NormOneClass R]
-
-omit [NormOneClass R] in
 /-- Constant series preserve multiplicative units, since taking constant series is a
 norm-preserving ring homomorphism. -/
 theorem isNormMulUnit_C {u : R} (hu : IsNormMulUnit u) :
@@ -91,7 +88,6 @@ theorem isNormMulUnit_C {u : R} (hu : IsNormMulUnit u) :
 
 variable [CompleteSpace R]
 
-omit [NormOneClass R] in
 /-- **Neumann series criterion.** Over a complete ultrametric ring, a restricted series
 whose distance from a constant multiplicative unit `a` is less than `‖a‖` is a multiplicative
 unit. -/
@@ -100,7 +96,6 @@ theorem isNormMulUnit_of_norm_sub_C_lt {a : R} (ha : IsNormMulUnit a)
     IsNormMulUnit f :=
   (isNormMulUnit_C ha).of_norm_sub_lt (by rwa [norm_C])
 
-omit [NormOneClass R] in
 /-- **The Neumann series of the inverse.** If `‖f - a‖ < ‖a‖` for a constant multiplicative unit
 `a`, then `x = a⁻¹ * (a - f)` has norm less than one and `f⁻¹ = ∑ₙ xⁿ * a⁻¹`. -/
 theorem hasSum_inverse_of_norm_sub_C_lt {a : Rˣ} (ha : IsNormMulUnit (a : R))
@@ -121,7 +116,6 @@ theorem hasSum_inverse_of_norm_sub_C_lt {a : Rˣ} (ha : IsNormMulUnit (a : R))
     (by rwa [hA, norm_C])
   rwa [hA, hA'] at h
 
-omit [NormOneClass R] in
 /-- If `‖f - a‖ < ‖a‖` for a constant multiplicative unit `a`, then the inverse of `f` has norm
 `‖a‖⁻¹`. -/
 theorem norm_inverse_of_norm_sub_C_lt {a : R} (ha : IsNormMulUnit a)
@@ -129,7 +123,7 @@ theorem norm_inverse_of_norm_sub_C_lt {a : R} (ha : IsNormMulUnit a)
     ‖Ring.inverse f‖ = ‖a‖⁻¹ := by
   rw [(isNormMulUnit_C ha).norm_inverse_of_norm_sub_lt (by rwa [norm_C]), norm_C]
 
-/-- **Dominant constant coefficient.** Over a complete ultrametric norm-one ring, a restricted
+/-- **Dominant constant coefficient.** Over a complete ultrametric ring, a restricted
 series whose constant coefficient is a multiplicative unit strictly dominating the weighted norm
 of every other coefficient is a multiplicative unit. -/
 theorem isNormMulUnit_of_norm_coeff_mul_prod_lt {f : IsRestricted.subring (R := R) c}
@@ -138,8 +132,13 @@ theorem isNormMulUnit_of_norm_coeff_mul_prod_lt {f : IsRestricted.subring (R := 
       ‖constantCoeff (f : MvPowerSeries σ R)‖) :
     IsNormMulUnit f := by
   classical
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · have : Subsingleton (IsRestricted.subring (R := R) c) :=
+      ⟨fun x y ↦ Subtype.ext (MvPowerSeries.ext fun _ ↦ Subsingleton.elim _ _)⟩
+    rw [isNormMulUnit_iff]
+    exact ⟨isUnit_of_subsingleton f, fun x ↦ by
+      rw [Subsingleton.elim x 0, mul_zero, norm_zero, mul_zero]⟩
   set a := constantCoeff (f : MvPowerSeries σ R)
-  have : Nontrivial R := NormOneClass.nontrivial
   have hf0 : f ≠ 0 := by
     rintro rfl
     exact h0.isUnit.ne_zero (by simp [a])
@@ -162,7 +161,7 @@ theorem isNormMulUnit_of_norm_coeff_mul_prod_lt {f : IsRestricted.subring (R := 
   · rw [sub_zero]
     exact hε t (hfa ▸ h t ht)
 
-end NormOne
+end Complete
 
 section NormMulClass
 
@@ -202,7 +201,6 @@ theorem isUnit_iff_isUnit_constantCoeff_and_norm_coeff_mul_prod_lt [CompleteSpac
     IsUnit f ↔ IsUnit (constantCoeff (f : MvPowerSeries σ R)) ∧
       ∀ t ≠ 0, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) <
         ‖constantCoeff (f : MvPowerSeries σ R)‖ := by
-  have := NormMulClass.toNormOneClass (α := R)
   refine ⟨fun hf ↦ ⟨(hf.map (IsRestricted.subring (R := R) c).subtype).map _,
     fun t ht ↦ norm_coeff_mul_prod_lt_of_isUnit hf ht⟩, fun ⟨h0, h⟩ ↦ ?_⟩
   exact (isNormMulUnit_of_norm_coeff_mul_prod_lt ((isNormMulUnit_iff_isUnit _).mpr h0) h).isUnit

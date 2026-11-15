@@ -9,6 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.BoundedVariation.Approximation
+import TauCeti.Analysis.BoundedVariation.Countable
 import TauCeti.Analysis.InnerProductSpace.OrthogonalLine
 import TauCeti.Analysis.Sobolev.WeakDeriv.Slicing
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -70,6 +71,11 @@ on each such line (`TauCeti.totalVariationOn_le_liminf`) and Fatou's lemma concl
 
 ## Main results
 
+* `TauCeti.aemeasurable_totalVariationOn_line`: the variation of line restrictions of an
+  integrable function is a.e. measurable in the transverse parameter.
+* `TauCeti.aemeasurable_perimeter_lineSection`: the perimeters of line sections of a
+  finite-volume null-measurable set are a.e. measurable in the transverse parameter, without
+  assuming finite ambient perimeter.
 * `ContDiff.lintegral_totalVariationOn_line_eq`: for `C¹` functions the line variations integrate
   to `∫_E |∂_e w|`.
 * `TauCeti.lintegral_totalVariationOn_line_le`: the slicing inequality for integrable functions.
@@ -117,7 +123,7 @@ private theorem totalVariationOn_line_eq_lintegral {w : E → ℝ} (hw : ContDif
     simpa using ((hasDerivAt_id t).smul_const e).const_add y
   have hd := ((hw.differentiable one_ne_zero (y + t • e)).hasFDerivAt.comp_hasDerivAt t hl).deriv
   rw [← hd]
-  simp only [enorm_eq_nnnorm, ENNReal.coe_inj]
+  simp only [eNorm_eq_nnNorm, ENNReal.coe_inj]
   exact NNReal.eq (norm_deriv_eq_norm_fderiv (f := fun s : ℝ => w (y + s • e))).symm
 
 end TauCeti
@@ -131,7 +137,7 @@ theorem ContDiff.lintegral_totalVariationOn_line_eq {w : E → ℝ} (hw : ContDi
       ∫⁻ x, ‖fderiv ℝ w x e‖ₑ := by
   simp_rw [TauCeti.totalVariationOn_line_eq_lintegral hw]
   exact (TauCeti.lintegral_eq_lintegral_lintegral_line e he
-    ((hw.continuous_fderiv one_ne_zero).clm_apply continuous_const).enorm.aemeasurable).symm
+    ((hw.continuous_fderiv one_ne_zero).clm_apply continuous_const).eNorm.aemeasurable).symm
 
 namespace TauCeti
 
@@ -175,7 +181,7 @@ private theorem lintegral_mul_totalVariationOn_line_add_le_of_contDiff {w : E �
     rw [totalVariationOn_line_eq_lintegral hw, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
     refine lintegral_congr fun t => ?_
     simp only [F, L, orthogonalLineEquiv_apply]
-    rw [ENNReal.ofReal_mul (Real.sqrt_nonneg _), Real.enorm_eq_ofReal_abs]
+    rw [ENNReal.ofReal_mul (Real.sqrt_nonneg _), Real.eNorm_eq_ofReal_abs]
   have h₂ : ∫ y : (ℝ ∙ e)ᗮ, divergenceCLM φ y * ∫ t : ℝ, w ((y : E) + t • e) =
       ∫ p, G p ∂(volume.prod volume) := by
     rw [integral_divergence_mul_integral_line_eq hw hwc e he φ, integral_neg]
@@ -203,7 +209,7 @@ private theorem exists_aemeasurable_totalVariationOn_line_le {u : E → ℝ} (hu
     hu.exists_contDiff_hasCompactSupport_strict_approximation (μ := volume)
   have hw1 (n : ℕ) : ContDiff ℝ 1 (w n) := (hw n).1.of_le (by simp)
   obtain ⟨σ, hσ, hFlim⟩ := exists_strictMono_ae_tendsto_lintegral_line e he
-    (fun n => ((hw n).1.continuous.aestronglyMeasurable.sub hu.aestronglyMeasurable).enorm) hL1
+    (fun n => ((hw n).1.continuous.aestronglyMeasurable.sub hu.aestronglyMeasurable).eNorm) hL1
   -- Almost every line restriction of `u` is integrable, by Fubini's theorem.
   have hline : ∀ᵐ y : (ℝ ∙ e)ᗮ, Integrable (fun t : ℝ => u ((y : E) + t • e)) := by
     simpa only [Function.comp_def, orthogonalLineEquiv_apply] using
@@ -214,7 +220,7 @@ private theorem exists_aemeasurable_totalVariationOn_line_le {u : E → ℝ} (hu
   have hVm (j : ℕ) : AEMeasurable (V j) := by
     simp_rw [V, totalVariationOn_line_eq_lintegral (hw1 _)]
     exact aemeasurable_lintegral_line e he
-      (((hw1 _).continuous_fderiv one_ne_zero).clm_apply continuous_const).enorm.aemeasurable
+      (((hw1 _).continuous_fderiv one_ne_zero).clm_apply continuous_const).eNorm.aemeasurable
   -- The transverse weight `√(1 - ‖φ‖²)`.
   set c : (ℝ ∙ e)ᗮ → ℝ≥0∞ := fun y => ENNReal.ofReal √(1 - ‖φ y‖ ^ 2)
   have hcm : AEMeasurable c := (ENNReal.continuous_ofReal.comp (Real.continuous_sqrt.comp
@@ -315,6 +321,25 @@ private theorem indicator_one_line (s : Set E) (y e : E) :
 private theorem integrable_indicator_one {s : Set E} (hs : NullMeasurableSet s)
     (hfin : volume s ≠ ∞) : Integrable (s.indicator (1 : E → ℝ)) :=
   (integrableOn_const hfin).integrable_indicator₀ hs
+
+/-- The variation of the restrictions of an integrable function to parallel lines is a.e.
+measurable in the transverse coordinate, even if the ambient variation is infinite. -/
+theorem aemeasurable_totalVariationOn_line {u : E → ℝ} (hu : Integrable u)
+    (e : E) (he : ‖e‖ = 1) :
+    AEMeasurable (fun y : (ℝ ∙ e)ᗮ ↦
+      totalVariationOn volume ⊤ (fun t : ℝ ↦ u ((y : E) + t • e))) volume := by
+  have hint := (measurePreserving_orthogonalLineEquiv e he).integrable_comp_of_integrable hu
+  simpa only [Function.comp_apply, orthogonalLineEquiv_apply] using
+    aemeasurable_totalVariationOn (μ := volume) ⊤ hint.aestronglyMeasurable hint.prod_right_ae
+
+/-- Perimeters of parallel sections of a null-measurable finite-volume set are a.e. measurable
+in the transverse coordinate. Infinite perimeters are allowed. -/
+theorem aemeasurable_perimeter_lineSection {s : Set E} (hs : NullMeasurableSet s volume)
+    (hfin : volume s ≠ ∞) (e : E) (he : ‖e‖ = 1) :
+    AEMeasurable (fun y : (ℝ ∙ e)ᗮ ↦
+      perimeter volume ⊤ {t : ℝ | (y : E) + t • e ∈ s}) volume := by
+  simp_rw [perimeter_def, ← indicator_one_line]
+  exact aemeasurable_totalVariationOn_line (integrable_indicator_one hs hfin) e he
 
 /-- **The slicing inequality for perimeter.** For a null-measurable set `s` of finite volume and
 a unit vector `e`, the perimeters in `ℝ` of the line sections `{t | y + t • e ∈ s}` integrate,

@@ -83,7 +83,7 @@ theorem memLp_truncatedCauchyKernel {q : ENNReal} (hq : q < 2) (R : ℝ) :
   have hqreal : q.toReal < 2 := by
     exact_mod_cast (ENNReal.toReal_lt_toReal hqt (by simp)).2 hq
   refine (integrable_norm_rpow_iff hm hq0 hqt).1 ?_
-  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball (0 : ℂ) R)]
+  rw [volume.restrict_closedBall_eq_restrict_ball (0 : ℂ) R]
   simpa only [IntegrableOn, norm_inv, Real.inv_rpow (norm_nonneg _),
     ← Real.rpow_neg (norm_nonneg _)] using
     (integrableOn_norm_rpow_ball (mu := volume) (E := ℂ) (s := -q.toReal) (R := R)
@@ -92,7 +92,7 @@ theorem memLp_truncatedCauchyKernel {q : ENNReal} (hq : q < 2) (R : ℝ) :
 /-- The inverse-distance integral over a disk centered at its pole is `2πR`. -/
 theorem integral_norm_sub_inv_closedBall {R : ℝ} (hR : 0 ≤ R) (w : ℂ) :
     (∫ z in closedBall w R, ‖z - w‖⁻¹) = 2 * Real.pi * R := by
-  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball w R)]
+  rw [volume.restrict_closedBall_eq_restrict_ball w R]
   have h := TauCeti.integral_norm_sub_rpow_ball (mu := volume) (s := -1) (by simp) hR w
   norm_num [Complex.finrank_real_complex, measureReal_def, Complex.volume_ball] at h
   simpa only [Real.rpow_neg_one, norm_sub_rev, Real.rpow_one, div_one] using h
@@ -114,7 +114,7 @@ theorem integral_norm_sub_inv_closedBall_le_add {w c : ℂ} {r R : ℝ} (hr : 0 
         apply setIntegral_mono_set
           (by simpa only [IntegrableOn, norm_inv, norm_sub_rev] using hi.norm)
           (Eventually.of_forall fun _ ↦ inv_nonneg.mpr (norm_nonneg _))
-        exact hsub.eventuallyLE
+        exact hsub.eventuallySubset
     _ = 2 * Real.pi * (r + R) := integral_norm_sub_inv_closedBall (add_nonneg hr hR) w
 
 /-- A pole in a disk of radius `R` contributes at most `4πR` to its inverse-distance integral. -/
@@ -141,7 +141,7 @@ theorem setLIntegral_enorm_sub_inv_le (s : Set ℂ) (z : ℂ) :
       ((Complex.locallyIntegrable_sub_inv z).integrableOn_isCompact
         (isCompact_closedBall z 1)).neg.congr_fun
           (fun w _ ↦ by rw [Pi.neg_apply, ← inv_neg, neg_sub]) measurableSet_closedBall
-    rw [← ofReal_integral_norm_eq_lintegral_enorm hi]
+    rw [← ofReal_integral_norm_eq_lintegral_eNorm hi]
     simp_rw [norm_inv]
     rw [integral_norm_sub_inv_closedBall zero_le_one, mul_one]
   calc ∫⁻ w in s, ‖(w - z)⁻¹‖ₑ

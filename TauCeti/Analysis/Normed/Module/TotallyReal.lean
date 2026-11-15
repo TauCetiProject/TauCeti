@@ -49,7 +49,7 @@ theorem exists_pos_isMaximalTotallyReal_range_of_isCompact
     ∃ ε > 0, ∀ p ∈ s, ∀ (B : F →L[𝕜] E) (K : E →L[𝕜] E),
       ‖B - p.1‖ < ε → ‖K - p.2‖ < ε →
         IsMaximalTotallyReal K.toLinearMap B.range := by
-  let _ := FiniteDimensional.complete 𝕜 F
+  let _ := FiniteDimensional.completeSpace 𝕜 F
   let D : ((F →L[𝕜] E) × (E →L[𝕜] E)) → (F × F →L[𝕜] E) :=
     fun p => p.1.coprod (p.2.comp p.1)
   have hD : Continuous D := by

@@ -78,7 +78,7 @@ variable [CharZero K]
 @[simp] theorem leadingCoeff_lenstraPolynomial (α : K) :
     (lenstraPolynomial α).leadingCoeff = 1 / 7 := by
   rw [leadingCoeff, natDegree_lenstraPolynomial]
-  simp [lenstraPolynomial, coeff_add, coeff_sub, coeff_C_mul, coeff_X_pow]
+  simp [lenstraPolynomial, coeff_C_mul, coeff_X_pow]
 
 /-- Characterization by the derivative and the normalization at zero. -/
 theorem _root_.Polynomial.eq_lenstraPolynomial_iff (p : K[X]) (α : K) :
