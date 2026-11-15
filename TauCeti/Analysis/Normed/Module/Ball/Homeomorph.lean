@@ -40,6 +40,8 @@ valued in the closed unit ball.
   statements read pointwise on norms, for the homeomorphism and its inverse.
 * `TauCeti.isOpenEmbedding_inclusion_comp_unitBall`: `E` embeds openly in its closed unit ball.
 * `Homeomorph.unitBall_symm_apply_coe`: the inverse radial map in explicit coordinates.
+* `OpenPartialHomeomorph.univBall_zero_symm_apply`: the inverse `y ↦ y / √(r² - ‖y‖²)` of the
+  radial map onto the ball of radius `r`, in explicit coordinates.
 * `TauCeti.cubeHomeomorphClosedBall`: the cube `I^N` is the closed unit ball of the sup norm on
   `N → ℝ`, through `t ↦ 2 * t - 1` in every coordinate.
 * `TauCeti.nonempty_homeomorph_cube_closedBall`: the closed unit ball of a real normed space of
@@ -70,6 +72,26 @@ theorem Homeomorph.unitBall_symm_apply_coe (y : ball (0 : W) 1) :
     ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
       (OpenPartialHomeomorph.univUnitBall (E := W)) y).trans
       (OpenPartialHomeomorph.univUnitBall_symm_apply y.1))
+
+/-- The inverse of `OpenPartialHomeomorph.univBall 0 r`, from the open ball of radius `r > 0` onto
+the space, in explicit radial coordinates: `y ↦ y / √(r² - ‖y‖²)`. Off the open ball both sides
+vanish. -/
+theorem OpenPartialHomeomorph.univBall_zero_symm_apply {r : ℝ} (hr : 0 < r) (y : W) :
+    (univBall (0 : W) r).symm y = (√(r ^ 2 - ‖y‖ ^ 2))⁻¹ • y := by
+  have h : √(r ^ 2 - ‖y‖ ^ 2) = r * √(1 - ‖r⁻¹ • y‖ ^ 2) := by
+    calc √(r ^ 2 - ‖y‖ ^ 2) = √(r ^ 2 * (1 - ‖r⁻¹ • y‖ ^ 2)) := by
+          rw [norm_smul, mul_pow, norm_inv, Real.norm_of_nonneg hr.le]
+          congr 1
+          field_simp
+      _ = r * √(1 - ‖r⁻¹ • y‖ ^ 2) := by
+          rw [Real.sqrt_mul (sq_nonneg r), Real.sqrt_sq hr.le]
+  -- For `r > 0`, `univBall 0 r` is `univUnitBall` followed by `x ↦ r • x`, by definition.
+  have hsymm :
+      (univBall (0 : W) r).symm y = univUnitBall.symm ((unitBallBall (0 : W) r hr).symm y) := by
+    simp only [univBall, hr, ↓reduceDIte]
+    rfl
+  rw [hsymm, univUnitBall_symm_apply, unitBallBall_symm_apply, vsub_eq_sub, sub_zero, h, mul_inv,
+    smul_smul, mul_comm]
 
 namespace ContinuousLinearEquiv
 
