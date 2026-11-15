@@ -9,11 +9,14 @@ public import Mathlib.Analysis.Normed.Module.Completion
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.Analysis.Normed.Group.ControlledClosure
 public import Mathlib.Analysis.Normed.Group.HomCompletion
+public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import TauCeti.Analysis.Normed.Group.BallSphere
 public import TauCeti.Analysis.Normed.Operator.Basic
+public import TauCeti.Topology.Algebra.LinearMapCompletion
+import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 
 /-!
-# Operator norms of bounded maps extended to completions
+# Operator norms and finite-rank approximation of bounded maps extended to completions
 
 A bounded semilinear map `f : E →SL[σ₁₂] F` between seminormed spaces extends to the bounded
 map `f.completion` between the completions, and, when `F` is complete and Hausdorff, to the
@@ -33,6 +36,13 @@ one with this lifting property maps each open ball about `0` onto the open ball 
 (`ContinuousLinearMap.image_ball_eq_ball`), so by `ContinuousLinearMap.norm_completion` its
 extension to the completions has the same property.
 
+Over a complete scalar field `𝕜`, finite-rank bounds and finite-rank approximants also transfer
+between `(E →L[𝕜] F)` and `(Completion E →L[𝕜] Completion F)`: if `R.rank ≤ n`, the image of
+`LinearMap.range R` in `Completion F` is finite-dimensional and hence closed, giving
+`R.completion.rank ≤ n`; conversely, applying `ContinuousLinearMap.denseRange_comp` to the
+inclusion of the finite-dimensional range of `R'` approximates `R'` arbitrarily closely in operator
+norm by `R.completion` with `R.rank ≤ n`.
+
 ## Main results
 
 * `ContinuousLinearMap.norm_completion`: `‖f.completion‖ = ‖f‖`.
@@ -42,6 +52,11 @@ extension to the completions has the same property.
 * `ContinuousLinearMap.ball_subset_image_completion_ball` and
   `ContinuousLinearMap.image_completion_ball`: the extension of a metric quotient map to the
   completions is a metric quotient map.
+* `ContinuousLinearMap.rank_completion_le_of_le`: over a complete scalar field,
+  `R.rank ≤ n → R.completion.rank ≤ n`.
+* `ContinuousLinearMap.exists_rank_le_norm_completion_sub_lt`: over a complete scalar field,
+  operators `R.completion` with `R.rank ≤ n` are operator-norm dense in operators of rank at most
+  `n` between the completions.
 * `LinearIsometryEquiv.completion`: the extension of a linear isometric equivalence to the
   completions.
 * `LinearIsometryEquiv.toLinearIsometry_completion`: as a linear isometry, it is
@@ -138,6 +153,70 @@ not change its operator `ℝ≥0∞`-norm. -/
 theorem eNorm_toComplL_comp (f : E →SL[σ₁₂] F) :
     ‖(Completion.toComplL : F →L[𝕜₂] Completion F) ∘SL f‖ₑ = ‖f‖ₑ := by
   rw [← ofReal_norm, ← ofReal_norm, norm_toComplL_comp]
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Over a complete scalar field, extending a bounded linear map of rank at most `n` to the
+completions preserves the rank bound `n`: the image of its range in `Completion F` is
+finite-dimensional, hence closed. -/
+theorem rank_completion_le_of_le {R : E →L[𝕜] F} {n : ℕ} (hR : R.rank ≤ n) :
+    R.completion.rank ≤ n := by
+  let V : Submodule 𝕜 (Completion F) :=
+    (LinearMap.range (R : E →ₗ[𝕜] F)).map (Completion.toComplL : F →L[𝕜] Completion F).toLinearMap
+  have : FiniteDimensional 𝕜 (LinearMap.range (R : E →ₗ[𝕜] F)) :=
+    Module.rank_lt_aleph0_iff.mp (hR.trans_lt Cardinal.natCast_lt_aleph0)
+  have hrange : LinearMap.range (R.completion : Completion E →ₗ[𝕜] Completion F) ≤ V := by
+    rintro _ ⟨x, rfl⟩
+    induction x using Completion.induction_on with
+    | hp => exact V.isClosed_of_finiteDimensional.preimage R.completion.continuous
+    | ih x =>
+      rw [coe_coe, completion_apply_coe]
+      exact Submodule.mem_map_of_mem (LinearMap.mem_range_self _ x)
+  exact (Submodule.rank_mono hrange).trans ((rank_map_le _ _).trans hR)
+
+/-- Over a complete scalar field, every bounded linear map `R'` of rank at most `n` between the
+completions can be approximated within any `ε > 0` in operator norm by the completion of a bounded
+linear map `R : E →L[𝕜] F` of rank at most `n`. -/
+theorem exists_rank_le_norm_completion_sub_lt
+    {R' : Completion E →L[𝕜] Completion F} {n : ℕ} (hR' : R'.rank ≤ n) {ε : ℝ} (hε : 0 < ε) :
+    ∃ R : E →L[𝕜] F, R.rank ≤ n ∧ ‖R.completion - R'‖ < ε := by
+  let W : Submodule 𝕜 (Completion F) := LinearMap.range (R' : Completion E →ₗ[𝕜] Completion F)
+  have : FiniteDimensional 𝕜 W :=
+    Module.rank_lt_aleph0_iff.mp (hR'.trans_lt Cardinal.natCast_lt_aleph0)
+  let R'₀ : Completion E →L[𝕜] W := R'.codRestrict W (LinearMap.mem_range_self _)
+  have hdense : DenseRange (Completion.toComplL : F →L[𝕜] Completion F) :=
+    Completion.denseRange_coe
+  obtain ⟨L, hL⟩ := Metric.denseRange_iff.mp (denseRange_comp hdense) W.subtypeL
+    (ε / (‖R'‖ + 1)) (div_pos hε (by positivity))
+  let R : E →L[𝕜] F := L ∘L R'₀ ∘L (Completion.toComplL : E →L[𝕜] Completion E)
+  have hR_rank : R.rank ≤ n :=
+    (LinearMap.rank_comp_le_left _ _).trans ((LinearMap.rank_le_domain L.toLinearMap).trans hR')
+  have hR_compl : R.completion = ((Completion.toComplL : F →L[𝕜] Completion F) ∘L L) ∘L R'₀ := by
+    ext x
+    induction x using Completion.induction_on with
+    | hp => exact isClosed_eq R.completion.continuous (by fun_prop)
+    | ih x => simp [R]
+  have hR'_eq : R' = W.subtypeL ∘L R'₀ := by
+    ext x
+    simp [R'₀]
+  have hR'₀ : ‖R'₀‖ ≤ ‖R'‖ := opNorm_le_bound _ (norm_nonneg _) fun x ↦ R'.le_opNorm x
+  refine ⟨R, hR_rank, ?_⟩
+  rw [hR_compl, hR'_eq, ← sub_comp]
+  calc ‖((Completion.toComplL : F →L[𝕜] Completion F) ∘L L - W.subtypeL) ∘L R'₀‖
+      ≤ ‖(Completion.toComplL : F →L[𝕜] Completion F) ∘L L - W.subtypeL‖ * ‖R'₀‖ :=
+        opNorm_comp_le _ _
+    _ ≤ (ε / (‖R'‖ + 1)) * ‖R'‖ := by
+        rw [dist_comm, dist_eq_norm _ W.subtypeL] at hL
+        gcongr
+    _ < (ε / (‖R'‖ + 1)) * (‖R'‖ + 1) :=
+        mul_lt_mul_of_pos_left (lt_add_one _) (div_pos hε (by positivity))
+    _ = ε := div_mul_cancel₀ ε (by positivity)
 
 end ContinuousLinearMap
 

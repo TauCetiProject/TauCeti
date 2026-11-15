@@ -9,17 +9,40 @@ public import Mathlib.Topology.Algebra.LinearMapCompletion
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
 /-!
-# Completion of continuous semilinear equivalences
+# Completion of continuous semilinear maps and equivalences
+
+Subtraction of continuous semilinear maps between uniform modules commutes with extension to the
+separated completions (`ContinuousLinearMap.completion_sub`).
 
 A continuous semilinear equivalence of uniform additive groups extends to their separated
-completions. The construction completes its forward and inverse continuous semilinear maps
-using Mathlib's `ContinuousLinearMap.completion`. No separation or completeness assumption on
-the original spaces is needed.
+completions (`ContinuousLinearEquiv.completion`). The construction completes its forward and
+inverse continuous semilinear maps using Mathlib's `ContinuousLinearMap.completion`. No separation
+or completeness assumption on the original spaces is needed.
 -/
 
 public section
 
 open UniformSpace
+
+namespace ContinuousLinearMap
+
+variable {R S E F : Type*} [Ring R] [Ring S]
+  [AddCommGroup E] [UniformSpace E] [IsUniformAddGroup E]
+  [AddCommGroup F] [UniformSpace F] [IsUniformAddGroup F]
+  [Module R E] [UniformContinuousConstSMul R E]
+  [Module S F] [UniformContinuousConstSMul S F]
+  {σ : R →+* S}
+
+/-- Completing a difference of continuous semilinear maps is the difference of their
+completions. -/
+@[simp]
+theorem completion_sub (f g : E →SL[σ] F) : (f - g).completion = f.completion - g.completion := by
+  ext x
+  induction x using Completion.induction_on with
+  | hp => exact isClosed_eq (f - g).completion.continuous (f.completion - g.completion).continuous
+  | ih x => simp [← Completion.coe_sub]
+
+end ContinuousLinearMap
 
 namespace ContinuousLinearEquiv
 

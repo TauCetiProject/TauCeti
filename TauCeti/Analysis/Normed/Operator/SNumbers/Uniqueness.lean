@@ -13,6 +13,8 @@ public import TauCeti.Analysis.Normed.Operator.SNumbers.Kolmogorov
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Compact
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Completion
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
+import TauCeti.Analysis.InnerProductSpace.Gram.Factor
+import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 
 /-!
 # Uniqueness of s-number sequences on inner product spaces
@@ -30,10 +32,10 @@ together with its operator-level and spectral consequences:
   `T.completion` preserves `aₙ(T)` (`ContinuousLinearMap.singularValue_completion`); the converse
   min–max localization on the complete space `Completion H₁`
   (`TauCeti.HasMinMaxLowerBound.of_completeSpace`) supplies an `(n + 1)`-dimensional subspace on
-  which `T.completion` is `s`-coercive for some `s > c`, perturbing an orthonormal basis into the
-  dense subspace `H₁` and rescaling gives a contraction `A` on which `T` remains `c`-coercive, and
-  `B` projects orthogonally in `Completion H₂` onto the `(n + 1)`-dimensional image of `T ∘L A`
-  before applying `(c : 𝕜) • (T ∘L A)⁻¹`.
+  which `T.completion` is `s`-coercive for some `s > c`, approximating an isometric embedding into
+  `H₁` via `ContinuousLinearMap.denseRange_comp` and rescaling gives a contraction `A` on which `T`
+  remains `c`-coercive, and Douglas factorization (`ContinuousLinearMap.factorThru`) in
+  `Completion H₂` constructs the contraction `B`.
 * **Uniqueness of s-number sequences** (`TauCeti.SNumbers.IsSNumberSequence.eq_singularValue`).
   Every s-number sequence `s` satisfies `s T n ≤ aₙ(T)` on all normed spaces
   (`TauCeti.SNumbers.IsSNumberSequence.le_singularValue`); conversely, for any `c < aₙ(T)` the
@@ -45,17 +47,20 @@ together with its operator-level and spectral consequences:
 * **Multi-universe specializations** (`ContinuousLinearMap.gelfandNumber_eq_singularValue`,
   `ContinuousLinearMap.kolmogorovNumber_eq_singularValue`,
   `ContinuousLinearMap.bernsteinNumber_eq_singularValue`). Because `SNumberFamily 𝕜` lives in the
-  scalar field's universe, we also record the equality of Gelfand, Kolmogorov, and Bernstein
-  numbers with approximation numbers across independent universes and seminormed inner product
-  spaces.
+  scalar field's universe, we also record across independent universes that Gelfand numbers equal
+  approximation numbers from any seminormed inner product space into any seminormed space,
+  Kolmogorov numbers equal approximation numbers from any seminormed space into any seminormed
+  inner product space, and Bernstein numbers equal approximation numbers from any normed inner
+  product space into any seminormed inner product space.
 * **Finite-dimensional singular values and compactness**
   (`TauCeti.SNumbers.IsSNumberSequence.eq_linearMap_singularValues`,
   `TauCeti.SNumbers.IsSNumberSequence.tendsto_of_isCompactOperator`,
   `TauCeti.SNumbers.IsSNumberSequence.isCompactOperator_iff_tendsto`). Combining uniqueness with
   the Eckart–Young theorem identifies `(s T n : ℝ)` with `(T : H₁ →ₗ[𝕜] H₂).singularValues n` in
-  finite dimension, and combining it with
+  finite dimension, `IsCompactOperator.tendsto_singularValue` forces `s T n → 0` for compact
+  operators from normed spaces into inner product spaces, and
   `ContinuousLinearMap.isCompactOperator_iff_tendsto_singularValue` characterizes compact operators
-  into complete inner product spaces by `s T n → 0`.
+  from inner product spaces into complete inner product spaces by `s T n → 0`.
 
 ## References
 
@@ -75,32 +80,6 @@ open scoped NNReal Topology
 namespace ContinuousLinearMap
 
 section Seminormed
-
-variable {𝕜 H₁ : Type*} [RCLike 𝕜] [SeminormedAddCommGroup H₁] [InnerProductSpace 𝕜 H₁] in
-/-- Perturbation estimate for approximating a finite family `u` in `Completion H₁` within `δ` by
-vectors `v` in `H₁`, evaluated on `EuclideanSpace 𝕜 (Fin m)`. -/
-private theorem norm_coe_sum_proj_sub_le {m : ℕ} (u : Fin m → Completion H₁) (v : Fin m → H₁)
-    {δ : ℝ} (huv : ∀ i, ‖(v i : Completion H₁) - u i‖ ≤ δ) (z : EuclideanSpace 𝕜 (Fin m)) :
-    ‖(((∑ i, (EuclideanSpace.proj i).smulRight (v i)) z : H₁) : Completion H₁) -
-        ∑ i, z i • u i‖ ≤ (m : ℝ) * δ * ‖z‖ := by
-  have heq : (((∑ i, (EuclideanSpace.proj i).smulRight (v i)) z : H₁) : Completion H₁) -
-      ∑ i, z i • u i = ∑ i, z i • ((v i : Completion H₁) - u i) := by
-    have hsum : ((∑ i, (EuclideanSpace.proj i).smulRight (v i)) z : H₁) = ∑ i, z i • v i := by simp
-    have hcoe : ((∑ i, z i • v i : H₁) : Completion H₁) = ∑ i, z i • (v i : Completion H₁) :=
-      (map_sum (Completion.toCompl : H₁ →+ Completion H₁) (fun i ↦ z i • v i) Finset.univ).trans
-        (Finset.sum_congr rfl fun i _ ↦ Completion.coe_smul (z i) (v i))
-    rw [hsum, hcoe, ← Finset.sum_sub_distrib]
-    simp_rw [← smul_sub]
-  rw [heq]
-  calc ‖∑ i, z i • ((v i : Completion H₁) - u i)‖
-      ≤ ∑ i, ‖z i • ((v i : Completion H₁) - u i)‖ := norm_sum_le _ _
-    _ ≤ ∑ _i : Fin m, ‖z‖ * δ := by
-        refine Finset.sum_le_sum fun i _ ↦ ?_
-        rw [norm_smul]
-        exact mul_le_mul (PiLp.norm_apply_le z i) (huv i) (norm_nonneg _) (norm_nonneg z)
-    _ = (m : ℝ) * δ * ‖z‖ := by
-        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-        ring
 
 variable {𝕜 H₁ H₂ : Type*} [RCLike 𝕜]
   [SeminormedAddCommGroup H₁] [InnerProductSpace 𝕜 H₁]
@@ -157,33 +136,26 @@ private theorem exists_norm_le_one_coercive (T : H₁ →L[𝕜] H₂) (n : ℕ)
   let b : OrthonormalBasis (Fin (n + 1)) 𝕜 U := (stdOrthonormalBasis 𝕜 U).reindex (finCongr hU)
   let eU : EuclideanSpace 𝕜 (Fin (n + 1)) ≃ₗᵢ[𝕜] U :=
     (EuclideanSpace.basisFun (Fin (n + 1)) 𝕜).equiv b (.refl _)
-  set D : ℝ := 2 * (c + ‖T‖ + 1) * ((n + 1 : ℕ) : ℝ)
-  have hD : 0 < D := by dsimp only [D]; positivity
-  set δ : ℝ := (s - c) / D
-  have hδ : 0 < δ := div_pos (sub_pos.mpr hcs) hD
-  choose v hv using fun i : Fin (n + 1) ↦
-    Metric.denseRange_iff.mp Completion.denseRange_coe (b i : Completion H₁) δ hδ
-  have hv' (i : Fin (n + 1)) : ‖(v i : Completion H₁) - (b i : Completion H₁)‖ ≤ δ := by
-    rw [← dist_eq_norm, dist_comm]
-    exact (hv i).le
-  set η : ℝ := ((n + 1 : ℕ) : ℝ) * δ
-  have hη : 0 ≤ η := mul_nonneg (Nat.cast_nonneg _) hδ.le
+  let G : EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] Completion H₁ :=
+    U.subtypeL ∘L eU.toLinearIsometry.toContinuousLinearMap
+  set η : ℝ := (s - c) / (2 * (c + ‖T‖ + 1))
+  have hη_pos : 0 < η := div_pos (sub_pos.mpr hcs) (by positivity)
+  have hdense : DenseRange (Completion.toComplL : H₁ →L[𝕜] Completion H₁) :=
+    Completion.denseRange_coe
+  obtain ⟨A₀, hA₀⟩ := Metric.denseRange_iff.mp (denseRange_comp hdense) G η hη_pos
   have hsc : (c + ‖T‖) * η ≤ s - c := by
     have h1 : (c + ‖T‖ + 1) * η = (s - c) / 2 := by
-      dsimp only [η, δ, D]
-      field_simp [hD.ne']
+      dsimp only [η]
+      field_simp [show (2 * (c + ‖T‖ + 1) : ℝ) ≠ 0 by positivity]
     nlinarith [norm_nonneg T]
-  refine ⟨_, rescale_coercive_of_approx T (∑ i, (EuclideanSpace.proj i).smulRight (v i))
-    (fun z ↦ (eU z : Completion H₁)) hη hsc
-    (fun z ↦ by rw [Submodule.norm_coe, eU.norm_map])
-    (fun z ↦ by simpa only [Submodule.norm_coe, eU.norm_map] using hws (eU z) (eU z).2)
+  have hG_norm (z : EuclideanSpace 𝕜 (Fin (n + 1))) : ‖G z‖ = ‖z‖ :=
+    (Submodule.norm_coe (eU z)).trans (eU.norm_map z)
+  refine ⟨_, rescale_coercive_of_approx T A₀ G hη_pos.le hsc hG_norm
+    (fun z ↦ by rw [← hG_norm]; exact hws (eU z) (eU z).2)
     fun z ↦ ?_⟩
-  have heU : (eU z : Completion H₁) = ∑ i, z i • (b i : Completion H₁) :=
-    (congrArg U.subtype (OrthonormalBasis.equiv_apply_euclideanSpace b z)).trans
-      ((map_sum U.subtype (fun i ↦ z i • b i) Finset.univ).trans
-        (Finset.sum_congr rfl fun i _ ↦ U.subtype.map_smul (z i) (b i)))
-  simpa only [η, heU] using
-    norm_coe_sum_proj_sub_le (fun i ↦ (b i : Completion H₁)) v hv' z
+  rw [dist_comm, dist_eq_norm] at hA₀
+  exact (((Completion.toComplL : H₁ →L[𝕜] Completion H₁) ∘L A₀ - G).le_opNorm z).trans
+    (mul_le_mul_of_nonneg_right hA₀.le (norm_nonneg z))
 
 /-- **Scalar factorization through Euclidean space.** For a bounded linear map `T : H₁ →L[𝕜] H₂`
 between seminormed inner product spaces over `ℝ` or `ℂ` and every `0 ≤ c < aₙ(T)`, the scaled
@@ -195,37 +167,23 @@ theorem exists_comp_comp_eq_smul_id (T : H₁ →L[𝕜] H₂) (n : ℕ) {c : �
       (B : H₂ →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1))),
       ‖A‖ ≤ 1 ∧ ‖B‖ ≤ 1 ∧
         B ∘L T ∘L A = (c : 𝕜) • ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1))) := by
-  rcases hc₀.eq_or_lt with rfl | hc_pos
-  · exact ⟨0, 0, by simp, by simp, by ext; simp⟩
-  obtain ⟨A, hA, hTA⟩ := T.exists_norm_le_one_coercive n hc_pos.le hc
+  obtain ⟨A, hA, hTA⟩ := T.exists_norm_le_one_coercive n hc₀ hc
+  let T₀ : EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1)) :=
+    (c : 𝕜) • ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))
   let S : EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] Completion H₂ :=
     (Completion.toComplL : H₂ →L[𝕜] Completion H₂) ∘L T ∘L A
-  have hS_inj : Function.Injective S.toLinearMap :=
-    (injective_iff_map_eq_zero _).mpr fun z hz ↦ norm_le_zero_iff.mp <| by
-      have h0 : ‖T (A z)‖ = 0 := by simpa [S] using congrArg norm hz
-      exact nonpos_of_mul_nonpos_right ((hTA z).trans_eq h0) hc_pos
-  let W : Submodule 𝕜 (Completion H₂) := LinearMap.range S.toLinearMap
-  let e : EuclideanSpace 𝕜 (Fin (n + 1)) ≃ₗ[𝕜] W := LinearEquiv.ofInjective S.toLinearMap hS_inj
+  have hbound (z : EuclideanSpace 𝕜 (Fin (n + 1))) : ‖T₀ z‖ ≤ 1 * ‖S z‖ := by
+    simpa [T₀, S, norm_smul, abs_of_nonneg hc₀] using hTA z
   let B : H₂ →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1)) :=
-    ((c : 𝕜) • e.symm.toLinearMap.toContinuousLinearMap) ∘L W.orthogonalProjectionOnto ∘L
-      (Completion.toComplL : H₂ →L[𝕜] Completion H₂)
-  refine ⟨A, B, hA, opNorm_le_bound B zero_le_one fun y ↦ ?_, ContinuousLinearMap.ext fun z ↦ ?_⟩
-  · set w : W := W.orthogonalProjectionOnto (y : Completion H₂)
-    set z : EuclideanSpace 𝕜 (Fin (n + 1)) := e.symm w
-    have hSz : S z = (w : Completion H₂) := LinearEquiv.ofInjective_symm_apply S.toLinearMap w
-    have hcz : c * ‖z‖ ≤ ‖y‖ := by
-      calc c * ‖z‖ ≤ ‖T (A z)‖ := hTA z
-        _ = ‖S z‖ := by simp [S]
-        _ = ‖W.starProjection (y : Completion H₂)‖ := by
-            rw [hSz, Submodule.coe_orthogonalProjectionOnto_apply]
-        _ ≤ ‖(y : Completion H₂)‖ := W.norm_starProjection_apply_le _
-        _ = ‖y‖ := Completion.norm_coe y
-    simpa [B, w, z, norm_smul, RCLike.norm_ofReal, abs_of_pos hc_pos] using hcz
-  · have hmem : (T (A z) : Completion H₂) ∈ W := LinearMap.mem_range_self S.toLinearMap z
-    have hproj : W.orthogonalProjectionOnto (T (A z) : Completion H₂) = e z :=
-      Subtype.ext <| (Submodule.coe_orthogonalProjectionOnto_apply W _).trans
-        (Submodule.starProjection_eq_self_iff.mpr hmem)
-    simp [B, hproj]
+    (T₀.factorThru S) ∘L (Completion.toComplL : H₂ →L[𝕜] Completion H₂)
+  have hB : ‖B‖ ≤ 1 := by
+    refine (opNorm_comp_le _ _).trans ?_
+    exact (mul_le_of_le_one_right (norm_nonneg _)
+      (Completion.toComplₗᵢ : H₂ →ₗᵢ[𝕜] Completion H₂).norm_toContinuousLinearMap_le).trans
+        (norm_factorThru_le zero_le_one hbound)
+  refine ⟨A, B, hA, hB, ?_⟩
+  calc B ∘L T ∘L A = (T₀.factorThru S) ∘L S := by simp only [B, S, comp_assoc]
+    _ = T₀ := factorThru_comp ⟨1, hbound⟩
 
 /-- Common lower-bound step deducing `aₙ(T) ≤ a` from scalar factorizations of `α • id` on
 `EuclideanSpace 𝕜 (Fin (n + 1))` through `T`. -/
@@ -244,41 +202,109 @@ private theorem singularValue_le_of_smul_id_le (T : H₁ →L[𝕜] H₂) (n : �
   exact hac.not_ge
     (hc_norm ▸ h ((c : ℝ) : 𝕜) A B (by exact_mod_cast hA) (by exact_mod_cast hB) hfac)
 
-/-- Between seminormed inner product spaces over `ℝ` or `ℂ`, the Gelfand numbers coincide with the
-approximation numbers across arbitrary universes. -/
-theorem gelfandNumber_eq_singularValue (T : H₁ →L[𝕜] H₂) (n : ℕ) :
+end Seminormed
+
+section Gelfand
+
+variable {𝕜 H₁ F : Type*} [RCLike 𝕜]
+  [SeminormedAddCommGroup H₁] [InnerProductSpace 𝕜 H₁]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+omit [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] in
+/-- Mapping a submodule `M` of codimension at most `n` into `Completion H₁` leaves an orthogonal
+complement of dimension at most `n`: the orthogonal projection onto `M₀ᗮ` descends to `H₁ ⧸ M`
+with dense, finite-dimensional, hence closed range. -/
+private theorem rank_orthogonal_map_toComplL_le {M : Submodule 𝕜 H₁} {n : ℕ}
+    (hM : Module.rank 𝕜 (H₁ ⧸ M) ≤ n) :
+    Module.rank 𝕜 (M.map (Completion.toComplL : H₁ →L[𝕜] Completion H₁).toLinearMap)ᗮ ≤ n := by
+  let j : H₁ →L[𝕜] Completion H₁ := Completion.toComplL
+  let M₀ : Submodule 𝕜 (Completion H₁) := M.map j.toLinearMap
+  let φ : H₁ →L[𝕜] M₀ᗮ := M₀ᗮ.orthogonalProjectionOnto ∘L j
+  have hker : M ≤ LinearMap.ker φ.toLinearMap := fun x hx ↦
+    LinearMap.mem_ker.mpr <| M₀ᗮ.orthogonalProjectionOnto_eq_zero_iff.mpr
+      (M₀.le_orthogonal_orthogonal (Submodule.mem_map_of_mem hx))
+  let ψ : (H₁ ⧸ M) →ₗ[𝕜] M₀ᗮ := M.liftQ φ.toLinearMap hker
+  have hrange_le : Module.rank 𝕜 (LinearMap.range φ.toLinearMap) ≤ n := by
+    rw [← M.liftQ_mkQ φ.toLinearMap hker]
+    exact (LinearMap.rank_comp_le_left M.mkQ ψ).trans ((LinearMap.rank_le_domain ψ).trans hM)
+  have : FiniteDimensional 𝕜 (LinearMap.range φ.toLinearMap) :=
+    Module.rank_lt_aleph0_iff.mp (hrange_le.trans_lt Cardinal.natCast_lt_aleph0)
+  have hsurj : Function.Surjective M₀ᗮ.orthogonalProjectionOnto :=
+    fun y ↦ ⟨y, M₀ᗮ.orthogonalProjectionOnto_mem_subspace_eq_self y⟩
+  have hdense : DenseRange φ :=
+    hsurj.denseRange.comp Completion.denseRange_coe M₀ᗮ.orthogonalProjectionOnto.continuous
+  have htop : LinearMap.range φ.toLinearMap = ⊤ :=
+    SetLike.coe_injective <|
+      (LinearMap.range φ.toLinearMap).isClosed_of_finiteDimensional.closure_eq.symm.trans
+        hdense.closure_range
+  rwa [← rank_top, ← htop]
+
+/-- From a seminormed inner product space into an arbitrary seminormed space over `ℝ` or `ℂ`, the
+Gelfand numbers coincide with the approximation numbers across arbitrary universes. -/
+theorem gelfandNumber_eq_singularValue (T : H₁ →L[𝕜] F) (n : ℕ) :
     T.gelfandNumber n = T.singularValue n := by
   refine le_antisymm (le_singularValue_iff.mpr fun R hR ↦ ?_)
-    (T.singularValue_le_of_smul_id_le n fun α A B hA hB hfac ↦ ?_)
+    (le_gelfandNumber_iff.mpr fun M _ hM ↦ ?_)
   · simpa [gelfandNumber_eq_zero_of_rank_le hR] using R.gelfandNumber_add_le (T - R) n
-  · have hg := TauCeti.SNumbers.isStrictSNumberSequence_gelfand (𝕜 := 𝕜).toIsSNumberSequence
-    calc ‖α‖₊
-        = TauCeti.SNumbers.gelfand
-            (α • ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))) n := by
-          rw [hg.smul, hg.normalize, mul_one]
-      _ = (B ∘L T ∘L A).gelfandNumber n := by rw [hfac, TauCeti.SNumbers.gelfand_apply]
-      _ ≤ ‖B‖₊ * T.gelfandNumber n * ‖A‖₊ := B.gelfandNumber_comp_comp_le T A n
-      _ ≤ 1 * T.gelfandNumber n * 1 := by gcongr
-      _ = T.gelfandNumber n := by simp
+  · let M₀ : Submodule 𝕜 (Completion H₁) :=
+      M.map (Completion.toComplL : H₁ →L[𝕜] Completion H₁).toLinearMap
+    calc T.singularValue n
+        = T.completion.singularValue n := (T.singularValue_completion n).symm
+      _ ≤ ‖T.completion ∘L M₀ᗮᗮ.subtypeL‖₊ :=
+          T.completion.singularValue_le_nnnorm_comp_orthogonal (rank_orthogonal_map_toComplL_le hM)
+      _ = ‖T.completion ∘L M₀.topologicalClosure.subtypeL‖₊ := by
+          rw [M₀.orthogonal_orthogonal_eq_closure]
+      _ = ‖T.completion ∘L M₀.subtypeL‖₊ :=
+          T.completion.nnnorm_comp_subtypeL_topologicalClosure M₀
+      _ ≤ ‖T ∘L M.subtypeL‖₊ := by
+          rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm]
+          refine opNorm_le_bound _ (norm_nonneg _) fun y ↦ ?_
+          rcases y with ⟨_, m, hm, rfl⟩
+          simpa only [comp_apply, Submodule.coe_subtypeL, Submodule.coe_subtype, coe_coe,
+            Completion.coe_toComplL, completion_apply_coe, Completion.norm_coe,
+            ← Submodule.norm_coe] using (T ∘L M.subtypeL).le_opNorm ⟨m, hm⟩
 
-/-- Between seminormed inner product spaces over `ℝ` or `ℂ`, the Kolmogorov numbers coincide with
-the approximation numbers across arbitrary universes. -/
-theorem kolmogorovNumber_eq_singularValue (T : H₁ →L[𝕜] H₂) (n : ℕ) :
+end Gelfand
+
+section Kolmogorov
+
+variable {𝕜 E H₂ : Type*} [RCLike 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup H₂] [InnerProductSpace 𝕜 H₂]
+
+/-- From an arbitrary seminormed space into a seminormed inner product space over `ℝ` or `ℂ`, the
+Kolmogorov numbers coincide with the approximation numbers across arbitrary universes. -/
+theorem kolmogorovNumber_eq_singularValue (T : E →L[𝕜] H₂) (n : ℕ) :
     T.kolmogorovNumber n = T.singularValue n := by
   refine le_antisymm (le_singularValue_iff.mpr fun R hR ↦ ?_)
-    (T.singularValue_le_of_smul_id_le n fun α A B hA hB hfac ↦ ?_)
+    (le_kolmogorovNumber_iff.mpr fun V hV ↦ ?_)
   · simpa [kolmogorovNumber_eq_zero_of_rank_le hR] using R.kolmogorovNumber_add_le (T - R) n
-  · have hk := TauCeti.SNumbers.isSNumberSequence_kolmogorov (𝕜 := 𝕜)
-    calc ‖α‖₊
-        = TauCeti.SNumbers.kolmogorov
-            (α • ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))) n := by
-          rw [hk.smul, hk.normalize, mul_one]
-      _ = (B ∘L T ∘L A).kolmogorovNumber n := by rw [hfac, TauCeti.SNumbers.kolmogorov_apply]
-      _ ≤ ‖B‖₊ * T.kolmogorovNumber n * ‖A‖₊ := B.kolmogorovNumber_comp_comp_le T A n
-      _ ≤ 1 * T.kolmogorovNumber n * 1 := by gcongr
-      _ = T.kolmogorovNumber n := by simp
+  · let j : H₂ →L[𝕜] Completion H₂ := Completion.toComplL
+    let T' : E →L[𝕜] Completion H₂ := j ∘L T
+    let W : Submodule 𝕜 (Completion H₂) := V.map j.toLinearMap
+    have hW : Module.rank 𝕜 W ≤ n := (rank_map_le _ _).trans hV
+    have : FiniteDimensional 𝕜 W :=
+      Module.rank_lt_aleph0_iff.mp (hW.trans_lt Cardinal.natCast_lt_aleph0)
+    let R' : E →L[𝕜] Completion H₂ := W.starProjection ∘L T'
+    have hR' : R'.rank ≤ n := by
+      refine (LinearMap.rank_comp_le_left _ _).trans ?_
+      rwa [LinearMap.rank, Submodule.range_starProjection]
+    rw [← T.singularValue_toComplL_comp]
+    refine (T'.singularValue_le_nnnorm_sub hR').trans ?_
+    rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm]
+    refine opNorm_le_bound _ (norm_nonneg _) fun x ↦ ?_
+    calc ‖(T' - R') x‖
+        = dist (T' x) (W.starProjection (T' x)) := by rw [sub_apply, dist_eq_norm]; rfl
+      _ = Metric.infDist (T' x) (W : Set (Completion H₂)) :=
+          Submodule.dist_starProjection_eq_infDist W (T' x)
+      _ ≤ Metric.infDist (T x) (V : Set H₂) :=
+          (Metric.le_infDist ⟨0, V.zero_mem⟩).mpr fun v hv ↦
+            (Metric.infDist_le_dist_of_mem (Submodule.mem_map_of_mem hv)).trans_eq
+              (Completion.dist_eq (T x) v)
+      _ = ‖(V.mkQL ∘L T) x‖ := by rw [comp_apply, V.norm_mkQL_apply]
+      _ ≤ ‖V.mkQL ∘L T‖ * ‖x‖ := (V.mkQL ∘L T).le_opNorm x
 
-end Seminormed
+end Kolmogorov
 
 section NormedSource
 
@@ -355,15 +381,16 @@ theorem IsSNumberSequence.eq_linearMap_singularValues {s : SNumberFamily 𝕜}
     (s T n : ℝ) = (T : H₁ →ₗ[𝕜] H₂).singularValues n := by
   rw [hs.eq_singularValue, T.singularValue_eq_linearMap_singularValues]
 
-/-- For a compact operator between inner product spaces, every s-number sequence tends to zero.
-Neither space need be complete. -/
+/-- For a compact operator from a normed space into an inner product space, every s-number sequence
+tends to zero. Neither space need be complete. -/
 theorem IsSNumberSequence.tendsto_of_isCompactOperator {s : SNumberFamily 𝕜}
     (hs : IsSNumberSequence s)
-    {H₁ H₂ : Type u} [NormedAddCommGroup H₁] [InnerProductSpace 𝕜 H₁]
+    {X H₂ : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
     [NormedAddCommGroup H₂] [InnerProductSpace 𝕜 H₂]
-    {T : H₁ →L[𝕜] H₂} (hT : IsCompactOperator T) :
-    Tendsto (s T) atTop (𝓝 0) := by
-  simpa only [funext (hs.eq_singularValue T)] using hT.tendsto_singularValue
+    {T : X →L[𝕜] H₂} (hT : IsCompactOperator T) :
+    Tendsto (s T) atTop (𝓝 0) :=
+  tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hT.tendsto_singularValue
+    (fun _ ↦ zero_le) (hs.le_singularValue T)
 
 /-- **Compactness criterion on Hilbert spaces.** A bounded operator from an inner product space
 into a complete inner product space is compact if and only if its s-numbers tend to zero, for any
