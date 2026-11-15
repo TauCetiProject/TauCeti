@@ -204,7 +204,8 @@ def oneDimBoundaryToSupportedModuleH (U : Opens ℝ) :
 
 /-- The class of a holomorphic function `f` on `ℂ ∖ ℝ` is the connecting image of any section of
 the structure sheaf over `W(U) ∖ ℝ = ℂ ∖ ℝ` with the same values as `f`. -/
-theorem oneDimBoundaryToSupportedModuleH_mk (U : Opens ℝ) (f : holomorphicSections nonRealOpen)
+theorem oneDimBoundaryToSupportedModuleH_mk_of_forall_apply_eq (U : Opens ℝ)
+    (f : holomorphicSections nonRealOpen)
     (s : (holomorphicStructureSheafModules 𝓘(ℂ) ℂ).obj.obj
       (op (complexNeighborhood U ⊓ realAxis.compl)))
     (hs : ∀ x, s x = (f : ℂ → ℂ) x) :
@@ -213,6 +214,19 @@ theorem oneDimBoundaryToSupportedModuleH_mk (U : Opens ℝ) (f : holomorphicSect
         (complexNeighborhood U) s :=
   congrArg _ (holomorphicStructureSheafModules.ext fun x ↦
     (nonRealSectionsEquiv_apply U f x).trans (hs x).symm)
+
+/-- The class of a holomorphic function `f` on `ℂ ∖ ℝ` is the connecting image of `f`, viewed as a
+section of the structure sheaf over `ℂ ∖ ℝ` and restricted to `W(U) ∖ ℝ = ℂ ∖ ℝ`. -/
+@[simp]
+theorem oneDimBoundaryToSupportedModuleH_mk (U : Opens ℝ) (f : holomorphicSections nonRealOpen) :
+    oneDimBoundaryToSupportedModuleH U (Submodule.Quotient.mk f) =
+      (holomorphicStructureSheafModules 𝓘(ℂ) ℂ).supportedModuleHSectionsδ realAxis
+        (complexNeighborhood U) ((holomorphicStructureSheafModules 𝓘(ℂ) ℂ).obj.map
+          (homOfLE (complexNeighborhood_inf_compl_realAxis U).le).op
+          (holomorphicSectionsEquiv nonRealOpen f)) :=
+  oneDimBoundaryToSupportedModuleH_mk_of_forall_apply_eq U f _ fun x ↦
+    (holomorphicStructureSheafModules.map_apply 𝓘(ℂ) ℂ _ _ x).trans
+      (holomorphicSectionsEquiv_apply f _)
 
 /-- The map from one-dimensional hyperfunctions to local cohomology is injective. -/
 theorem oneDimBoundaryToSupportedModuleH_injective (U : Opens ℝ) :
@@ -245,10 +259,10 @@ theorem supportedModuleHPresheaf_map_oneDimBoundaryToSupportedModuleH {U V : Ope
   | H f =>
     -- the values of sections are compared explicitly, since the coercion of sections over
     -- `Opens ℂ` to functions is not unfolded by `simp`
-    rw [oneDimBoundaryRestrict_mk, oneDimBoundaryToSupportedModuleH_mk V f _
-        (nonRealSectionsEquiv_apply V f),
+    rw [oneDimBoundaryRestrict_mk,
+      oneDimBoundaryToSupportedModuleH_mk_of_forall_apply_eq V f _ (nonRealSectionsEquiv_apply V f),
       CategoryTheory.Sheaf.supportedModuleHPresheaf_map_supportedModuleHSectionsδ,
-      oneDimBoundaryToSupportedModuleH_mk U f _ fun x ↦
+      oneDimBoundaryToSupportedModuleH_mk_of_forall_apply_eq U f _ fun x ↦
         (holomorphicStructureSheafModules.map_apply 𝓘(ℂ) ℂ _ _ x).trans
           (nonRealSectionsEquiv_apply V f _)]
 
