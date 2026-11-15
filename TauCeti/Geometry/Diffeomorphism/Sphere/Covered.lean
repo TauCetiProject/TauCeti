@@ -6,15 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Sphere
-public import TauCeti.Analysis.Complex.Circle
-public import TauCeti.Analysis.InnerProductSpace.PlaneRotation
 public import TauCeti.Geometry.Diffeomorphism.Covered
 public import TauCeti.Geometry.Diffeomorphism.Sphere
-public import TauCeti.Geometry.Manifold.Degree.SphereRotation
 public import TauCeti.Geometry.Sphere.Connected
 public import TauCeti.Topology.Grassmannian.SphereBundle.Exact
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 import TauCeti.Geometry.Diffeomorphism.Degree
+import TauCeti.Geometry.Diffeomorphism.Sphere.RotationFamily
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HomotopyGroup
 
 /-!
@@ -55,18 +53,14 @@ along it.
 
 For any `(m + 2)`-dimensional real inner product space `E` and base point `p ∈ Sᵐ⁺¹ ⊆ E`, each unit
 vector `v ∈ p^⊥` and angle `z ∈ S¹` define the plane rotation of `E` in `span{p, v}` by `z`
-(`LinearIsometry.planeRotation`), restricting to a continuous family of diffeomorphisms
-`TauCeti.sphereRotationDiffFamily : Sᵐ × S¹ → Diff(Sᵐ⁺¹)`. Evaluating at `p` recovers the sphere
-rotation family `(v, z) ↦ Re z • p + Im z • v` (`TauCeti.sphereRotationFamily`), whose degree at
-every point `q ≠ ±p` is `1 + (-1)ᵐ` (`Orientation.degreeAtRegularValue_sphereRotationFamily`).
-By `TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_of_isRegularValue`, `Sᵐ⁺¹` is
+(`LinearIsometry.planeRotation`), restricting to the continuous family of diffeomorphisms
+`TauCeti.sphereRotationDiff p r : Sᵐ × S¹ → Diff^r(Sᵐ⁺¹)`. Evaluating at `p` recovers the sphere
+rotation family `(v, z) ↦ Re z • p + Im z • v` (`TauCeti.sphereRotationFamily`,
+`TauCeti.evalAt_comp_sphereRotationDiff`), whose degree at every point `q ≠ ±p` is `1 + (-1)ᵐ`
+(`Orientation.degreeAtRegularValue_sphereRotationFamily`). By
+`TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_of_isRegularValue`, `Sᵐ⁺¹` is
 `(1 + (-1)ᵐ)`-covered by diffeomorphisms unconditionally; when `m` is even (so `m + 1` is odd),
 every odd-dimensional sphere `Sᵐ⁺¹` is `2`-covered by diffeomorphisms with no homotopy-group input.
-
-## Main definitions
-
-* `TauCeti.sphereRotationDiffFamily m r p`: the continuous family `Sᵐ × S¹ → Diff^r(Sᵐ⁺¹)` of
-  plane rotations centred at `p`.
 
 ## Main results
 
@@ -335,75 +329,6 @@ theorem exists_isCoveredByDiffeomorphisms_sphere_three
 
 end HomologicalOrientation
 
-section RotationFamily
-
-open scoped RealInnerProductSpace
-
-attribute [local instance] finrank_real_complex_fact'
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  (m : ℕ) [Fact (finrank ℝ E = m + 1 + 1)]
-
-/-- The **rotation family of diffeomorphisms** of the unit sphere `Sᵐ⁺¹ ⊆ E` centred at `p`: each
-`(v, z) ∈ Sᵐ × S¹`, with `v ∈ p^⊥`, rotates the oriented plane spanned by `(p, v)` by `z`
-(`LinearIsometry.planeRotation`) while fixing `{p, v}^⊥`, and restricts to a `C^r` diffeomorphism
-of `Sᵐ⁺¹`. Evaluating at `p` recovers `TauCeti.sphereRotationFamily p`. -/
-def sphereRotationDiffFamily (r : ℕ∞ω) (p : sphere (0 : E) 1) :
-    C(sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1,
-      Diff (𝓡 (m + 1)) (sphere (0 : E) 1) r) where
-  toFun x := LinearIsometryEquiv.unitSphereDiffHom r
-    ((LinearIsometry.ofOrthonormalPair (norm_eq_of_mem_sphere p)
-      ((Submodule.norm_coe _).trans (norm_eq_of_mem_sphere x.1))
-      (Submodule.mem_orthogonal_singleton_iff_inner_right.1 x.1.1.2)).planeRotation
-        (Circle.homeomorphSphere.symm x.2))
-  continuous_toFun := by
-    refine Diffeomorph.continuous_weakWhitney_iff.mpr ?_
-    have hι : Continuous fun x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦
-        (LinearIsometry.ofOrthonormalPair (norm_eq_of_mem_sphere p)
-          ((Submodule.norm_coe _).trans (norm_eq_of_mem_sphere x.1))
-          (Submodule.mem_orthogonal_singleton_iff_inner_right.1
-            x.1.1.2)).toContinuousLinearMap :=
-      continuous_const.ofOrthonormalPair_toContinuousLinearMap
-        (continuous_subtype_val.comp (continuous_subtype_val.comp continuous_fst)) _ _ _
-    have hc : Continuous fun x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦
-        Circle.homeomorphSphere.symm x.2 :=
-      Circle.homeomorphSphere.symm.continuous.comp continuous_snd
-    simpa only [LinearIsometryEquiv.unitSphereDiffHom_apply] using
-      (hι.planeRotation_toContinuousLinearMap hc).toContMDiffMap_unitSphereDiffeomorph
-
-/-- In the ambient space `E`, `sphereRotationDiffFamily m r p x` acts as the plane rotation in
-`span{p, x.1}` by `x.2`. -/
-@[simp]
-theorem coe_sphereRotationDiffFamily_apply (r : ℕ∞ω) (p : sphere (0 : E) 1)
-    (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) (y : sphere (0 : E) 1) :
-    ((sphereRotationDiffFamily m r p x y : sphere (0 : E) 1) : E) =
-      (LinearIsometry.ofOrthonormalPair (norm_eq_of_mem_sphere p)
-        ((Submodule.norm_coe _).trans (norm_eq_of_mem_sphere x.1))
-        (Submodule.mem_orthogonal_singleton_iff_inner_right.1 x.1.1.2)).planeRotation
-          (Circle.homeomorphSphere.symm x.2) y := by
-  simp [sphereRotationDiffFamily]
-
-/-- Evaluating `sphereRotationDiffFamily m r p` at the centre `p` gives `sphereRotationFamily p`. -/
-@[simp]
-theorem sphereRotationDiffFamily_apply_self (r : ℕ∞ω) (p : sphere (0 : E) 1)
-    (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) :
-    sphereRotationDiffFamily m r p x p = sphereRotationFamily p x := by
-  apply Subtype.ext
-  rw [coe_sphereRotationDiffFamily_apply, LinearIsometry.planeRotation_ofOrthonormalPair_apply_left]
-  simp
-
-/-- Composing `sphereRotationDiffFamily m r p` with evaluation at `p` is the continuous map
-underlying `sphereRotationFamily p`. -/
-@[simp]
-theorem evalAt_comp_sphereRotationDiffFamily (r : ℕ∞ω) (p : sphere (0 : E) 1) :
-    (Diffeomorph.evalAt (I := 𝓡 (m + 1)) (J := 𝓡 (m + 1)) p).comp
-        (sphereRotationDiffFamily m r p) =
-      ⟨sphereRotationFamily p, (contMDiff_sphereRotationFamily (m := m) p).continuous⟩ := by
-  ext x : 1
-  simp
-
-end RotationFamily
-
 namespace HomologicalOrientation
 
 section RotationFamily
@@ -441,12 +366,12 @@ theorem isCoveredByDiffeomorphisms_sphere_one_add_neg_one_pow
   have hqnx₀ : q ≠ -x₀ := fun h ↦ by simp [h] at hxq
   have hreg : IsRegularValue ((𝓡 m).prod (𝓡 1)) (𝓡 (m + 1))
       ((Diffeomorph.evalAt (I := 𝓡 (m + 1)) (J := 𝓡 (m + 1)) x₀).comp
-        (sphereRotationDiffFamily m r x₀)) q := by
-    rw [evalAt_comp_sphereRotationDiffFamily]
+        (sphereRotationDiff (n := m + 1) x₀ r)) q := by
+    rw [evalAt_comp_sphereRotationDiff]
     exact isRegularValue_sphereRotationFamily x₀ hqx₀ hqnx₀
   have hcov := o.isCoveredByDiffeomorphisms_of_isRegularValue finrank_euclideanSpace_fin r oP
-    oE.sphereOrientation (sphereRotationDiffFamily m r x₀) hreg
-  rwa [evalAt_comp_sphereRotationDiffFamily, ContinuousMap.coe_mk,
+    oE.sphereOrientation (sphereRotationDiff (n := m + 1) x₀ r) hreg
+  rwa [evalAt_comp_sphereRotationDiff, ContinuousMap.coe_mk,
     oE.degreeAtRegularValue_sphereRotationFamily x₀ hqx₀ hqnx₀] at hcov
 
 /-- **Odd-dimensional spheres are `2`-covered by diffeomorphisms** (the second, unconditional proof
