@@ -61,8 +61,13 @@ than `r`; differentiating it `r` more times gives a differential equation.
   multiples of all its derivatives lie in a finitely generated `k[X]`-submodule.
 * `PowerSeries.isDFinite_iff_pRecursive`: `f` is D-finite iff its coefficient sequence is
   P-recursive, that is, satisfies a linear recurrence with coefficients in `k[X]`.
-* `PowerSeries.IsDFinite.add`, `PowerSeries.IsDFinite.mul`, `PowerSeries.IsDFinite.derivative`:
-  closure under sums, products and differentiation (with `neg`, `sub` and `iterate_derivative`).
+* `PowerSeries.IsDFinite.add`, `PowerSeries.IsDFinite.mul`, `PowerSeries.IsDFinite.derivative`,
+  `PowerSeries.IsDFinite.smul`: closure under sums, products, differentiation and scalar
+  multiplication (with `neg`, `sub` and `iterate_derivative`).
+* `PowerSeries.isDFinite_derivative_iff`, `PowerSeries.IsDFinite.rescale`,
+  `PowerSeries.IsDFinite.map`, `PowerSeries.isDFinite_mk_coeff_add_iff`,
+  `PowerSeries.isDFinite_one_sub_X_mul_iff`: closure under integration, rescaling by `k`,
+  compatible ring homomorphisms, coefficient shifts and division by `1 - X`.
 * `PowerSeries.IsDFinite.tower_top`: D-finiteness over `k` implies D-finiteness over every field
   `k'` between `k` and `K`.
 * `PowerSeries.isDFinite_polynomial`, `PowerSeries.isDFinite_algebraMap`,
@@ -294,6 +299,17 @@ theorem tower_top {k' : Type*} [Field k'] [Algebra k k'] [Algebra k' K]
   exact (Polynomial.map_ne_zero_iff (algebraMap k k').injective).mpr hp
 
 end IsDFinite
+
+/-- Formal differentiation preserves and reflects D-finiteness over `k`. -/
+@[simp]
+theorem isDFinite_derivative_iff {f : K⟦X⟧} :
+    IsDFinite k (d⁄dX f) ↔ IsDFinite k f := by
+  refine ⟨fun ⟨n, p, hp, h⟩ ↦ ⟨n + 1, Fin.cons (α := fun _ ↦ k[X]) 0 p, ?_, ?_⟩,
+    IsDFinite.derivative⟩
+  · rw [← Fin.succ_last, Fin.cons_succ]
+    exact hp
+  · rw [Fin.sum_univ_succ, Fin.cons_zero, zero_smul, zero_add]
+    simpa only [Fin.cons_succ, Fin.val_succ, Function.iterate_succ_apply] using h
 
 /-! ### Examples -/
 
@@ -625,5 +641,138 @@ theorem isDFinite_mk_pow (a : k) : IsDFinite k (mk fun n ↦ algebraMap k K a ^ 
       Nat.zero_mod, add_zero, neg_mul, Matrix.cons_val_one, Matrix.cons_val_fin_one,
       Polynomial.eval_one, map_one, Nat.mod_succ, pow_succ, one_mul]
     ring⟩
+
+/-- Scalar multiplication by any element of `K` preserves D-finiteness over `k`. -/
+protected theorem IsDFinite.smul {f : K⟦X⟧} (hf : IsDFinite k f) (c : K) :
+    IsDFinite k (c • f) := by
+  have h : c • f = (Polynomial.C c : K⟦X⟧) * f := by
+    ext n
+    simp [Polynomial.coe_C]
+  rw [h]
+  exact (isDFinite_polynomial k (Polynomial.C c)).mul hf
+
+/-- Dropping the constant term and dividing by `X` preserves and reflects D-finiteness. -/
+@[simp]
+theorem isDFinite_mk_coeff_add_one_iff {f : K⟦X⟧} :
+    IsDFinite k (mk fun n ↦ coeff (n + 1) f) ↔ IsDFinite k f := by
+  refine ⟨fun hg ↦ ?_, fun hf ↦ ?_⟩
+  · have hdecomp : f = (Polynomial.C (coeff 0 f) : K⟦X⟧) +
+        ((Polynomial.X : K[X]) : K⟦X⟧) * mk fun n ↦ coeff (n + 1) f := by
+      ext n
+      cases n <;> simp [Polynomial.coe_C, Polynomial.coe_X]
+    rw [hdecomp]
+    exact (isDFinite_polynomial k _).add ((isDFinite_polynomial k _).mul hg)
+  · obtain ⟨r, q, hq, h⟩ := isDFinite_iff_pRecursive.mp hf
+    refine isDFinite_iff_pRecursive.mpr ⟨r, fun i ↦ Polynomial.taylor 1 (q i), ?_, fun n ↦ ?_⟩
+    · intro h0
+      have hlead := congrArg (fun p : k[X] ↦ p.coeff (q (Fin.last r)).natDegree) h0
+      rw [Polynomial.coeff_taylor_natDegree, Polynomial.coeff_zero] at hlead
+      exact hq (Polynomial.leadingCoeff_eq_zero.mp hlead)
+    · have hn := h (n + 1)
+      convert hn using 1
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [Polynomial.taylor_eval, coeff_mk, Nat.cast_add, Nat.cast_one, add_comm (n : k) 1]
+      exact congrArg (fun m ↦ _ • coeff m f) (by omega)
+
+/-- Shifting the coefficient sequence by `m` preserves and reflects D-finiteness. -/
+@[simp]
+theorem isDFinite_mk_coeff_add_iff {f : K⟦X⟧} (m : ℕ) :
+    IsDFinite k (mk fun n ↦ coeff (n + m) f) ↔ IsDFinite k f := by
+  induction m with
+  | zero =>
+    have h0 : (mk fun n ↦ coeff (n + 0) f) = f := by ext n; simp
+    rw [h0]
+  | succ m ih =>
+    have hsucc : (mk fun n ↦ coeff (n + (m + 1)) f) =
+        mk fun n ↦ coeff (n + 1) (mk fun l ↦ coeff (l + m) f) := by
+      ext n
+      simp [Nat.add_assoc, Nat.add_comm 1 m]
+    rw [hsucc, isDFinite_mk_coeff_add_one_iff, ih]
+
+/-- Shifting the coefficient sequence of a D-finite series by `m` gives a D-finite series. -/
+protected theorem IsDFinite.mk_coeff_add {f : K⟦X⟧} (hf : IsDFinite k f) (m : ℕ) :
+    IsDFinite k (mk fun n ↦ coeff (n + m) f) :=
+  (isDFinite_mk_coeff_add_iff m).mpr hf
+
+/-- Rescaling the variable by an element `c ∈ k` preserves D-finiteness over `k`. -/
+protected theorem IsDFinite.rescale {f : K⟦X⟧} (hf : IsDFinite k f) (c : k) :
+    IsDFinite k (rescale (algebraMap k K c) f) := by
+  obtain ⟨r, q, hq, h⟩ := isDFinite_iff_pRecursive.mp hf
+  refine isDFinite_iff_pRecursive.mpr
+    ⟨r, fun i ↦ Polynomial.C (c ^ (r - (i : ℕ))) * q i, ?_, fun n ↦ ?_⟩
+  · simpa using hq
+  · calc ∑ i : Fin (r + 1), (Polynomial.C (c ^ (r - (i : ℕ))) * q i).eval (n : k) •
+          coeff (n + i) (rescale (algebraMap k K c) f)
+        = ∑ i : Fin (r + 1), (c ^ (n + r)) • ((q i).eval (n : k) • coeff (n + i) f) := by
+          refine Finset.sum_congr rfl fun i _ ↦ ?_
+          have hi := i.isLt
+          have hexp : r - (i : ℕ) + (n + (i : ℕ)) = n + r := by omega
+          rw [Polynomial.eval_mul, Polynomial.eval_C, coeff_rescale, ← map_pow,
+            ← Algebra.smul_def, smul_smul, smul_smul]
+          exact congrArg (· • coeff (n + i) f) (by rw [mul_right_comm, ← pow_add, hexp])
+      _ = (c ^ (n + r)) • ∑ i : Fin (r + 1), (q i).eval (n : k) • coeff (n + i) f := by
+          rw [← Finset.smul_sum]
+      _ = 0 := by rw [h n, smul_zero]
+
+/-- Applying a ring homomorphism `σ : K →+* K'` compatible with `σ₀ : k →+* k'` preserves
+D-finiteness. -/
+protected theorem IsDFinite.map {k' K' : Type*} [Field k'] [CommRing K'] [Algebra k' K']
+    {f : K⟦X⟧} (hf : IsDFinite k f) (σ₀ : k →+* k') (σ : K →+* K')
+    (hσ : ∀ x, σ (algebraMap k K x) = algebraMap k' K' (σ₀ x)) :
+    IsDFinite k' (map σ f) := by
+  obtain ⟨r, q, hq, h⟩ := isDFinite_iff_pRecursive.mp hf
+  refine isDFinite_iff_pRecursive.mpr ⟨r, fun i ↦ (q i).map σ₀,
+    (Polynomial.map_ne_zero_iff σ₀.injective).mpr hq, fun n ↦ ?_⟩
+  have hn := congrArg σ (h n)
+  rw [_root_.map_zero, map_sum] at hn
+  rw [← hn]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have heval : Polynomial.eval₂ σ₀ (σ₀ (n : k)) (q i) = σ₀ ((q i).eval (n : k)) := by simp
+  rw [Polynomial.eval_map, ← _root_.map_natCast σ₀ n, heval, coeff_map, Algebra.smul_def,
+    Algebra.smul_def, _root_.map_mul, hσ]
+
+/-- Multiplying by `1 - X` preserves and reflects D-finiteness over `k`. -/
+@[simp]
+theorem isDFinite_one_sub_X_mul_iff {f : K⟦X⟧} :
+    IsDFinite k ((1 - X) * f) ↔ IsDFinite k f := by
+  refine ⟨fun hg ↦ ?_, fun hf ↦ ?_⟩
+  · have hg₁ : IsDFinite k (mk fun m ↦ coeff (m + 1) f - coeff m f) := by
+      have hcoeff : (mk fun m ↦ coeff (m + 1) ((1 - X) * f)) =
+          mk fun m ↦ coeff (m + 1) f - coeff m f := by
+        ext m
+        simp [sub_mul]
+      exact hcoeff ▸ isDFinite_mk_coeff_add_one_iff.mpr hg
+    obtain ⟨r, q, hq, h⟩ := isDFinite_iff_pRecursive.mp hg₁
+    let qPos : Fin (r + 2) → k[X] := Fin.cons (α := fun _ ↦ k[X]) 0 q
+    let qNeg : Fin (r + 2) → k[X] := Fin.snoc (α := fun _ ↦ k[X]) q 0
+    refine isDFinite_iff_pRecursive.mpr ⟨r + 1, qPos - qNeg, ?_, fun n ↦ ?_⟩
+    · have hpos : qPos (Fin.last (r + 1)) = q (Fin.last r) :=
+        Fin.cons_succ (α := fun _ ↦ k[X]) 0 q (Fin.last r)
+      have hneg : qNeg (Fin.last (r + 1)) = 0 := Fin.snoc_last (α := fun _ ↦ k[X]) 0 q
+      rw [Pi.sub_apply, hpos, hneg, sub_zero]
+      exact hq
+    · have hsumPos : ∑ j : Fin (r + 2), (qPos j).eval (n : k) • coeff (n + j) f =
+          ∑ i : Fin (r + 1), (q i).eval (n : k) • coeff (n + i + 1) f := by
+        simp only [qPos, Fin.sum_univ_succ, Fin.cons_zero, Polynomial.eval_zero, zero_smul,
+          zero_add, Fin.cons_succ, Fin.val_succ, Nat.add_assoc]
+      have hsumNeg : ∑ j : Fin (r + 2), (qNeg j).eval (n : k) • coeff (n + j) f =
+          ∑ i : Fin (r + 1), (q i).eval (n : k) • coeff (n + i) f := by
+        simp only [qNeg, Fin.sum_univ_castSucc, Fin.snoc_last, Polynomial.eval_zero, zero_smul,
+          add_zero, Fin.snoc_castSucc, Fin.val_castSucc]
+      calc ∑ j : Fin (r + 2), ((qPos - qNeg) j).eval (n : k) • coeff (n + j) f
+          = (∑ j : Fin (r + 2), (qPos j).eval (n : k) • coeff (n + j) f) -
+              ∑ j : Fin (r + 2), (qNeg j).eval (n : k) • coeff (n + j) f := by
+            rw [← Finset.sum_sub_distrib]
+            refine Finset.sum_congr rfl fun j _ ↦ ?_
+            rw [Pi.sub_apply, Polynomial.eval_sub, sub_smul]
+        _ = ∑ i : Fin (r + 1), (q i).eval (n : k) • coeff (n + i)
+              (mk fun m ↦ coeff (m + 1) f - coeff m f) := by
+            rw [hsumPos, hsumNeg, ← Finset.sum_sub_distrib]
+            refine Finset.sum_congr rfl fun i _ ↦ ?_
+            rw [coeff_mk, smul_sub]
+        _ = 0 := h n
+  · have h1X : (1 - X : K⟦X⟧) = ((1 - Polynomial.X : K[X]) : K⟦X⟧) := by simp
+    rw [h1X]
+    exact (isDFinite_polynomial k _).mul hf
 
 end PowerSeries
