@@ -80,17 +80,6 @@ variable {K L M I : CurvedDGRightModuleCat.{u, u, u} h}
     ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)
   (hfg : f ≫ g = 0)
 
-/-- The differential on the three components of a totalization. -/
-private theorem totalization_differential (x : K) (y : L) (z : M) :
-    (cone (coneDesc f g hfg)).differential ((x, y), z) =
-      ((K.differential x, -closedHom f x - L.differential y),
-        closedHom g y + M.differential z) := by
-  rw [cone_differential_apply, cone_differential_apply, closedHom_coneDesc]
-  -- Cone carriers have componentwise product operations; expose their projections here.
-  change ((- -K.differential x, -(closedHom f x + L.differential y)),
-    closedHom g y + M.differential z) = _
-  simp only [neg_neg, neg_add, sub_eq_add_neg]
-
 /-- The three homogeneous components of a closed map out of a totalization. -/
 private theorem totalization_map_components
     (φ : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cone (coneDesc f g hfg)) ⟶
@@ -132,14 +121,14 @@ private theorem totalization_map_components
       exact ⟨⟨Submodule.zero_mem _, hx⟩, Submodule.zero_mem _⟩)
   refine ⟨⟨a, ha⟩, ⟨b, hb⟩, c, hsplit, fun x ↦ ?_, fun y ↦ ?_⟩
   · have hd := differential_closedHom φ ((x, 0), 0)
-    rw [totalization_differential] at hd
+    rw [cone_coneDesc_differential_apply] at hd
     rw [ha_apply]
     exact hd.trans (by
       simp only [map_zero, sub_zero, add_zero]
       rw [hsplit, map_neg, map_zero, add_zero]
       exact (sub_eq_add_neg _ _).symm)
   · have hd := differential_closedHom φ ((0, y), 0)
-    rw [totalization_differential] at hd
+    rw [cone_coneDesc_differential_apply] at hd
     rw [hb_apply]
     exact hd.trans (by
       simp only [map_zero, neg_zero, zero_sub, add_zero]
@@ -232,7 +221,7 @@ private theorem totalization_map_eq_zero
   rw [← (dgClosedToHomotopy R).map_zero, quotient_map_eq_iff_exists_homotopy]
   refine ⟨⟨H, hH_mem⟩, fun x ↦ ?_⟩
   rcases x with ⟨⟨x, y⟩, z⟩
-  rw [closedHom_zero, LinearMap.zero_apply, sub_zero, hH, totalization_differential, hH,
+  rw [closedHom_zero, LinearMap.zero_apply, sub_zero, hH, cone_coneDesc_differential_apply, hH,
     hsplit]
   simp only [map_neg, map_add, map_sub, neg_sub, he, hv']
   rw [← hdv z]
