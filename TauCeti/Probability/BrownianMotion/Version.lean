@@ -12,10 +12,13 @@ import TauCeti.Probability.Process.Version
 /-!
 # Everywhere-continuous measurable versions of Brownian motion
 
-`ProbabilityTheory.IsBrownianReal.exists_stronglyMeasurable_continuous_indist` constructs an
-indistinguishable Brownian version of any `IsBrownianReal` process whose fixed-time evaluations are
-strongly measurable everywhere, whose sample paths are continuous on every outcome, and which
-vanishes at time `0` on every outcome, without completeness of the ambient measurable space.
+`ProbabilityTheory.IsBrownianReal` assumes only almost-sure path continuity and `B 0 =ᵐ[P] 0`,
+without coordinatewise `StronglyMeasurable (B t)` or completeness of the ambient measurable space.
+To construct `MeasureTheory.Filtration.natural` and transfer raw-filtration stopping and pathwise
+hitting-time results back to `B` (`ProbabilityTheory.IsBrownianReal.congr_indist`),
+`ProbabilityTheory.IsBrownianReal.exists_stronglyMeasurable_continuous_indist` builds an
+indistinguishable Brownian version that is strongly measurable at every time, continuous on every
+outcome, and zero at time `0` on every outcome.
 -/
 
 public section

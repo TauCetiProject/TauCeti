@@ -44,8 +44,7 @@ In a ring of characteristic zero without zero divisors, `a + k * b` vanishes for
 numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large `k`
 (`TauCeti.eventually_add_mul_eq_zero_iff`): it vanishes for at most one `k` unless `b = 0`. In an
 Archimedean ordered semiring, truncating a finite `WithTop` element at natural casts eventually
-stabilizes (`WithTop.eventually_min_natCast_eq`) and unwraps monotonically via `WithTop.untopA`
-(`WithTop.monotone_untopA_min_coe`, `WithTop.monotone_untopA_min_natCast`).
+stabilizes (`WithTop.eventually_min_natCast_eq`).
 -/
 
 public section
@@ -174,18 +173,5 @@ theorem eventually_min_natCast_eq {ι : Type*} [Semiring ι] [LinearOrder ι] [I
     obtain ⟨N, hN⟩ := exists_nat_ge s
     filter_upwards [eventually_ge_atTop N] with n hn
     exact min_eq_right (WithTop.coe_le_coe.mpr (hN.trans (Nat.mono_cast hn)))
-
-/-- Unwrapping the truncation `min (s : WithTop ι) τ` via `WithTop.untopA` is monotone in `s`. -/
-theorem monotone_untopA_min_coe {ι : Type*} [LinearOrder ι] [Nonempty ι] (τ : WithTop ι) :
-    Monotone fun s : ι ↦ (min (s : WithTop ι) τ).untopA :=
-  fun _ _ hst ↦ WithTop.untopA_mono (ne_top_of_le_ne_top WithTop.coe_ne_top (min_le_left _ _))
-    (min_le_min_right τ (WithTop.coe_le_coe.mpr hst))
-
-/-- Unwrapping the truncation `min (n : ι) τ` via `WithTop.untopA` is monotone in `n`. -/
-theorem monotone_untopA_min_natCast {ι : Type*} [AddMonoidWithOne ι] [LinearOrder ι]
-    [AddLeftMono ι] [ZeroLEOneClass ι] (τ : WithTop ι) :
-    Monotone fun n : ℕ ↦ (min ((n : ι) : WithTop ι) τ).untopA :=
-  have : Nonempty ι := ⟨0⟩
-  τ.monotone_untopA_min_coe.comp Nat.mono_cast
 
 end WithTop

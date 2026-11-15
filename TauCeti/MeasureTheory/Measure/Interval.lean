@@ -46,15 +46,15 @@ longer windows linearly in their length, and so makes the measure locally finite
   `μ.real (Ioi x)` of the open right tail of a measure tends to `0` (infinite right tails have
   real mass `0` by convention), also after weighting by `x ^ α` for `α ≤ 0`.
 * `MeasureTheory.Measure.map_neg_real_Ioi`: the right tail of a reflected measure is its left tail.
-* `MeasureTheory.Measure.measure_Iic_neg_eq_measure_Ici`,
-  `MeasureTheory.Measure.measure_Iio_neg_eq_measure_Ioi`,
-  `MeasureTheory.Measure.measure_Iic_eq_measure_Ioi_neg`,
-  `MeasureTheory.Measure.measureReal_Iic_eq_measureReal_Ioi_neg`: a negation-invariant measure on
-  an ordered additive group assigns equal measure to opposite half-lines, hence gives `Ici 0` mass
-  at least `2⁻¹` (`MeasureTheory.Measure.inv_two_le_measure_Ici_zero`), `Ioi 0` mass at most `2⁻¹`
-  (`MeasureTheory.Measure.measure_Ioi_zero_le_inv_two`), and both half-lines mass `2⁻¹` when `{0}`
-  is null (`MeasureTheory.Measure.measure_Ioi_zero_eq_inv_two`,
-  `MeasureTheory.Measure.measure_Ici_zero_eq_inv_two`).
+* `MeasureTheory.Measure.measure_Iic_neg_eq_measure_Ici`, `measure_Iio_neg_eq_measure_Ioi`,
+  `measure_Iic_eq_measure_Ioi_neg`, `measureReal_Iic_eq_measureReal_Ioi_neg`: a negation-invariant
+  measure on an ordered additive group assigns equal measure to opposite half-lines (and to `Iic x`
+  and `Ioi (-x)` when `μ {-x} = 0`). For a negation-invariant probability measure on a linearly
+  ordered additive group, `Ici 0` and `Iic 0` have measure at least `2⁻¹`, `Ioi 0` and `Iio 0` have
+  measure at most `2⁻¹`, and all four have measure `2⁻¹` when `μ {0} = 0`
+  (`inv_two_le_measure_Ici_zero`, `inv_two_le_measure_Iic_zero`, `measure_Ioi_zero_le_inv_two`,
+  `measure_Iio_zero_le_inv_two`, `measure_Ioi_zero_eq_inv_two`, `measure_Iio_zero_eq_inv_two`,
+  `measure_Ici_zero_eq_inv_two`, `measure_Iic_zero_eq_inv_two`).
 * `MeasureTheory.Measure.measure_Icc_add_natCast_le`,
   `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Icc_add_one_le`: a measure on `ℝ`
   whose unit windows `[a, a + 1]` have mass at most `C` gives `[a, a + n]` mass at most
@@ -105,14 +105,17 @@ measure at least `2⁻¹`. -/
 theorem inv_two_le_measure_Ici_zero [LinearOrder α] [IsOrderedAddMonoid α] (μ : Measure α)
     [IsProbabilityMeasure μ] [μ.IsNegInvariant] : (2⁻¹ : ℝ≥0∞) ≤ μ (Ici 0) := by
   have hneg : μ (Iic 0) = μ (Ici 0) := by simpa [neg_zero] using μ.measure_Iic_neg_eq_measure_Ici 0
-  have h1 : (1 : ℝ≥0∞) ≤ 2 * μ (Ici 0) := calc
-    (1 : ℝ≥0∞) = μ (Iic 0 ∪ Ici 0) := by rw [Iic_union_Ici, measure_univ]
-    _ ≤ μ (Iic 0) + μ (Ici 0) := measure_union_le _ _
-    _ = 2 * μ (Ici 0) := by rw [hneg, two_mul]
-  calc (2⁻¹ : ℝ≥0∞) = 2⁻¹ * 1 := (mul_one _).symm
-    _ ≤ 2⁻¹ * (2 * μ (Ici 0)) := mul_le_mul_of_nonneg_left h1 bot_le
-    _ = μ (Ici 0) := by
-        rw [← mul_assoc, ENNReal.inv_mul_cancel two_ne_zero ENNReal.ofNat_ne_top, one_mul]
+  have h1 : (1 : ℝ≥0∞) ≤ 2 * μ (Ici 0) := by
+    simpa only [Iic_union_Ici, measure_univ, hneg, two_mul] using
+      measure_union_le (μ := μ) (Iic 0) (Ici 0)
+  simpa [ENNReal.inv_mul_cancel two_ne_zero ENNReal.ofNat_ne_top, ← mul_assoc] using
+    mul_le_mul_of_nonneg_left h1 (bot_le : (0 : ℝ≥0∞) ≤ 2⁻¹)
+
+/-- A negation-invariant probability measure on a linearly ordered additive group gives `Iic 0`
+measure at least `2⁻¹`. -/
+theorem inv_two_le_measure_Iic_zero [LinearOrder α] [IsOrderedAddMonoid α] (μ : Measure α)
+    [IsProbabilityMeasure μ] [μ.IsNegInvariant] : (2⁻¹ : ℝ≥0∞) ≤ μ (Iic 0) := by
+  rw [← neg_zero, μ.measure_Iic_neg_eq_measure_Ici]; exact μ.inv_two_le_measure_Ici_zero
 
 /-- A negation-invariant probability measure on a linearly ordered additive group with measurable
 open rays gives `Ioi 0` measure at most `2⁻¹`. -/
@@ -122,27 +125,47 @@ theorem measure_Ioi_zero_le_inv_two [LinearOrder α] [IsOrderedAddMonoid α] [To
   have hneg : μ (Iio 0) = μ (Ioi 0) := by simpa [neg_zero] using μ.measure_Iio_neg_eq_measure_Ioi 0
   have hdisj : Disjoint (Iio (0 : α)) (Ioi 0) :=
     disjoint_left.mpr fun _ (hx₁ : _ < 0) (hx₂ : 0 < _) ↦ (hx₁.trans hx₂).false
-  have h2 : 2 * μ (Ioi 0) ≤ 1 := calc
-    2 * μ (Ioi 0) = μ (Iio 0) + μ (Ioi 0) := by rw [hneg, two_mul]
-    _ = μ (Iio 0 ∪ Ioi 0) := (measure_union hdisj measurableSet_Ioi).symm
-    _ ≤ 1 := (measure_mono (subset_univ _)).trans_eq measure_univ
-  calc μ (Ioi 0) = 2⁻¹ * (2 * μ (Ioi 0)) := by
-        rw [← mul_assoc, ENNReal.inv_mul_cancel two_ne_zero ENNReal.ofNat_ne_top, one_mul]
-    _ ≤ 2⁻¹ * 1 := mul_le_mul_of_nonneg_left h2 bot_le
-    _ = 2⁻¹ := mul_one _
+  have h2 : 2 * μ (Ioi 0) ≤ 1 := by
+    rw [two_mul]; nth_rw 1 [← hneg]; rw [← measure_union hdisj measurableSet_Ioi]
+    exact (measure_mono (subset_univ _)).trans_eq measure_univ
+  simpa [ENNReal.inv_mul_cancel two_ne_zero ENNReal.ofNat_ne_top, ← mul_assoc] using
+    mul_le_mul_of_nonneg_left h2 (bot_le : (0 : ℝ≥0∞) ≤ 2⁻¹)
 
-/-- A negation-invariant probability measure with `μ {0} = 0` gives `Ioi 0` measure `2⁻¹`. -/
+/-- A negation-invariant probability measure on a linearly ordered additive group with measurable
+open rays gives `Iio 0` measure at most `2⁻¹`. -/
+theorem measure_Iio_zero_le_inv_two [LinearOrder α] [IsOrderedAddMonoid α] [TopologicalSpace α]
+    [ClosedIicTopology α] [OpensMeasurableSpace α] (μ : Measure α) [IsProbabilityMeasure μ]
+    [μ.IsNegInvariant] : μ (Iio 0) ≤ 2⁻¹ := by
+  rw [← neg_zero, μ.measure_Iio_neg_eq_measure_Ioi]; exact μ.measure_Ioi_zero_le_inv_two
+
+/-- A negation-invariant probability measure on a linearly ordered additive group with `μ {0} = 0`
+gives `Ioi 0` measure `2⁻¹`. -/
 theorem measure_Ioi_zero_eq_inv_two [LinearOrder α] [IsOrderedAddMonoid α] [TopologicalSpace α]
     [ClosedIicTopology α] [OpensMeasurableSpace α] (μ : Measure α) [IsProbabilityMeasure μ]
     [μ.IsNegInvariant] (h0 : μ {0} = 0) : μ (Ioi 0) = 2⁻¹ :=
   le_antisymm μ.measure_Ioi_zero_le_inv_two
     (measure_congr (Ioi_ae_eq_Ici' h0) ▸ μ.inv_two_le_measure_Ici_zero)
 
-/-- A negation-invariant probability measure with `μ {0} = 0` gives `Ici 0` measure `2⁻¹`. -/
+/-- A negation-invariant probability measure on a linearly ordered additive group with `μ {0} = 0`
+gives `Iio 0` measure `2⁻¹`. -/
+theorem measure_Iio_zero_eq_inv_two [LinearOrder α] [IsOrderedAddMonoid α] [TopologicalSpace α]
+    [ClosedIicTopology α] [OpensMeasurableSpace α] (μ : Measure α) [IsProbabilityMeasure μ]
+    [μ.IsNegInvariant] (h0 : μ {0} = 0) : μ (Iio 0) = 2⁻¹ := by
+  rw [← neg_zero, μ.measure_Iio_neg_eq_measure_Ioi]; exact μ.measure_Ioi_zero_eq_inv_two h0
+
+/-- A negation-invariant probability measure on a linearly ordered additive group with `μ {0} = 0`
+gives `Ici 0` measure `2⁻¹`. -/
 theorem measure_Ici_zero_eq_inv_two [LinearOrder α] [IsOrderedAddMonoid α] [TopologicalSpace α]
     [ClosedIicTopology α] [OpensMeasurableSpace α] (μ : Measure α) [IsProbabilityMeasure μ]
     [μ.IsNegInvariant] (h0 : μ {0} = 0) : μ (Ici 0) = 2⁻¹ :=
   (measure_congr (Ioi_ae_eq_Ici' h0)).symm.trans (μ.measure_Ioi_zero_eq_inv_two h0)
+
+/-- A negation-invariant probability measure on a linearly ordered additive group with `μ {0} = 0`
+gives `Iic 0` measure `2⁻¹`. -/
+theorem measure_Iic_zero_eq_inv_two [LinearOrder α] [IsOrderedAddMonoid α] [TopologicalSpace α]
+    [ClosedIicTopology α] [OpensMeasurableSpace α] (μ : Measure α) [IsProbabilityMeasure μ]
+    [μ.IsNegInvariant] (h0 : μ {0} = 0) : μ (Iic 0) = 2⁻¹ := by
+  rw [← neg_zero, μ.measure_Iic_neg_eq_measure_Ici]; exact μ.measure_Ici_zero_eq_inv_two h0
 
 end NegInvariant
 

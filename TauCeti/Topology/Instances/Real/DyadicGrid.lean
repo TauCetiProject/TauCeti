@@ -138,39 +138,44 @@ theorem nnrealDyadicPoint_def (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) :
 
 /-- Each level-`n` dyadic grid on `[0, t]` is monotone in the grid index. -/
 theorem monotone_nnrealDyadicPoint (t : ℝ≥0) (n : ℕ) : Monotone (nnrealDyadicPoint t n) :=
-  fun _ _ hij ↦ NNReal.coe_le_coe.mp (by
-    simp only [coe_nnrealDyadicPoint]; exact mul_le_mul_of_nonneg_right (by exact_mod_cast hij)
-      (by positivity))
+  fun _ _ hij ↦ NNReal.coe_le_coe.mp <| by
+    simpa only [coe_nnrealDyadicPoint] using mul_le_mul_of_nonneg_right
+      (by exact_mod_cast hij) (by positivity)
 
 /-- For positive horizon `t ≠ 0`, each level-`n` dyadic grid on `[0, t]` is strictly monotone. -/
 theorem strictMono_nnrealDyadicPoint {t : ℝ≥0} (ht : t ≠ 0) (n : ℕ) :
-    StrictMono (nnrealDyadicPoint t n) := fun _ _ hij ↦ NNReal.coe_lt_coe.mp (by
+    StrictMono (nnrealDyadicPoint t n) := fun _ _ hij ↦ NNReal.coe_lt_coe.mp <| by
   have : (0 : ℝ) < t := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr ht)
-  simp only [coe_nnrealDyadicPoint]; exact mul_lt_mul_of_pos_right (by exact_mod_cast hij)
-    (by positivity))
+  simpa only [coe_nnrealDyadicPoint] using mul_lt_mul_of_pos_right
+    (by exact_mod_cast hij) (by positivity)
 
 /-- Every point of the `ℝ≥0` dyadic grid on `[0, t]` is at most `t`. -/
 theorem nnrealDyadicPoint_le (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) :
     nnrealDyadicPoint t n k ≤ t := NNReal.coe_le_coe.mp (dyadicPoint t.coe_nonneg n k).2.2
 
 /-- Every point of the level-`m` dyadic grid on `[0, t]` belongs to every finer grid `n ≥ m`. -/
-theorem exists_nnrealDyadicPoint_eq_of_le (t : ℝ≥0) {m n : ℕ} (k : Fin (2 ^ m + 1))
-    (hmn : m ≤ n) : ∃ j, nnrealDyadicPoint t m k = nnrealDyadicPoint t n j :=
+theorem exists_nnrealDyadicPoint_eq_of_le (t : ℝ≥0) {m n : ℕ} (k : Fin (2 ^ m + 1)) (hmn : m ≤ n) :
+    ∃ j, nnrealDyadicPoint t m k = nnrealDyadicPoint t n j :=
   let ⟨j, hj⟩ := exists_dyadicPoint_eq_of_le t.coe_nonneg k hmn
-  ⟨j, by simp only [nnrealDyadicPoint, hj]⟩
+  ⟨j, by simp [nnrealDyadicPoint, hj]⟩
 
 /-- Consecutive points of the level-`n` dyadic grid on `[0, t]` differ by `t / 2 ^ n` in `ℝ≥0`. -/
-theorem nnrealDyadicPoint_succ_sub_castSucc (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n)) :
+@[simp] theorem nnrealDyadicPoint_succ_sub_castSucc (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n)) :
     nnrealDyadicPoint t n k.succ - nnrealDyadicPoint t n k.castSucc = t / 2 ^ n := by
   ext; rw [NNReal.coe_sub (monotone_nnrealDyadicPoint t n k.castSucc_le_succ)]
-  simp only [coe_nnrealDyadicPoint, Fin.val_succ, Fin.val_castSucc, NNReal.coe_div,
-    NNReal.coe_pow, NNReal.coe_ofNat]; push_cast; ring
+  simp only [coe_nnrealDyadicPoint, Fin.val_succ, Fin.val_castSucc, NNReal.coe_div, NNReal.coe_pow,
+    NNReal.coe_ofNat]; push_cast; ring
 
 /-- Consecutive points of the level-`n` dyadic grid on `[0, t]` are at distance `t / 2 ^ n`. -/
-theorem dist_nnrealDyadicPoint_succ (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n)) :
+@[simp] theorem dist_nnrealDyadicPoint_succ (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n)) :
     dist (nnrealDyadicPoint t n k.succ) (nnrealDyadicPoint t n k.castSucc) = (t : ℝ) / 2 ^ n := by
   rw [NNReal.dist_eq, ← NNReal.coe_sub (monotone_nnrealDyadicPoint t n k.castSucc_le_succ),
     nnrealDyadicPoint_succ_sub_castSucc, abs_of_nonneg (NNReal.coe_nonneg _)]; simp
+
+/-- Forward-indexed distance between consecutive points of the level-`n` dyadic grid on `[0, t]`. -/
+@[simp] theorem dist_nnrealDyadicPoint_castSucc_succ (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n)) :
+    dist (nnrealDyadicPoint t n k.castSucc) (nnrealDyadicPoint t n k.succ) = (t : ℝ) / 2 ^ n :=
+  (dist_comm _ _).trans (dist_nnrealDyadicPoint_succ t n k)
 
 /-- Any open set of `ℝ≥0` meeting `[0, t]` contains a dyadic grid point on `[0, t]`. -/
 theorem exists_nnrealDyadicPoint_mem_open {t s : ℝ≥0} (hst : s ≤ t) {U : Set ℝ≥0} (hU : IsOpen U)

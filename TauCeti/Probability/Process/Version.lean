@@ -32,9 +32,9 @@ variable {ι Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   [TopologicalSpace ι] [SeparableSpace ι] [FrechetUrysohnSpace ι]
   [TopologicalSpace E] [PseudoMetrizableSpace E]
 
-private theorem exists_stronglyMeasurable_continuous_indist_aux [Nonempty ι]
-    {X : ι → Ω → E} (hX : ∀ t, AEStronglyMeasurable (X t) P)
-    (hc : ∀ᵐ ω ∂P, Continuous (X · ω)) (e₀ : E) {q : Ω → Prop} (hq : ∀ᵐ ω ∂P, q ω) :
+private theorem exists_stronglyMeasurable_continuous_indist_aux [Nonempty ι] {X : ι → Ω → E}
+    (hX : ∀ t, AEStronglyMeasurable (X t) P) (hc : ∀ᵐ ω ∂P, Continuous (X · ω)) (e₀ : E)
+    {q : Ω → Prop} (hq : ∀ᵐ ω ∂P, q ω) :
     ∃ Y : ι → Ω → E, (∀ t, StronglyMeasurable (Y t)) ∧ (∀ ω, Continuous (Y · ω)) ∧
       (∀ ω, (q ω ∧ ∀ t, Y t ω = X t ω) ∨ ∀ t, Y t ω = e₀) ∧ Y ≡ᵐ[P] X := by
   classical
@@ -48,25 +48,23 @@ private theorem exists_stronglyMeasurable_continuous_indist_aux [Nonempty ι]
   let N : Set Ω := toMeasurable P Gᶜ
   have hN_null : P N = 0 := by
     rw [measure_toMeasurable, ← mem_ae_iff]
-    filter_upwards [hc, hq, ae_all_iff.mpr fun k ↦ (hX (d k)).ae_eq_mk.symm] with _ h₁ h₂ h₃
-    exact ⟨h₁, h₂, h₃⟩
-  have hωG' {ω : Ω} (hω : ω ∉ N) : ω ∈ G := by
-    by_contra hnot; exact hω (subset_toMeasurable P Gᶜ hnot)
+    exact (hc.and (hq.and (ae_all_iff.mpr fun k ↦ (hX (d k)).ae_eq_mk.symm))).mono fun _ ↦ id
+  have hωG' {ω : Ω} (hω : ω ∉ N) : ω ∈ G :=
+    Classical.not_not.mp fun h ↦ hω (subset_toMeasurable P Gᶜ h)
   let Y (t : ι) (ω : Ω) : E := if ω ∈ N then e₀ else X t ω
   have hY_eq {ω : Ω} (hω : ω ∉ N) (t : ι) : Y t ω = X t ω := ite_eq_right hω
-  refine ⟨Y, fun t ↦ ?_, fun ω ↦ ?_, fun ω ↦ ?_,
+  refine ⟨Y, fun t ↦ ?_, fun ω ↦ if hω : ω ∈ N then by simpa [Y, hω] using continuous_const
+      else by simpa only [funext (hY_eq hω)] using (hωG' hω).1,
+    fun ω ↦ if hω : ω ∈ N then .inr fun _ ↦ ite_eq_left hω else .inl ⟨(hωG' hω).2.1, hY_eq hω⟩,
     eventually_of_mem (compl_mem_ae_iff.mpr hN_null) fun _ ↦ hY_eq⟩
-  · refine _root_.stronglyMeasurable_of_tendsto atTop
-      (f := fun n ω ↦ if ω ∈ N then e₀ else M (seq t n) ω) (fun n ↦ stronglyMeasurable_const.ite
-        (measurableSet_toMeasurable P Gᶜ) (hX (d (seq t n))).stronglyMeasurable_mk)
-      (tendsto_pi_nhds.mpr fun ω ↦ ?_)
-    by_cases hω : ω ∈ N
-    · simp only [Y, ite_eq_left hω, tendsto_const_nhds]
-    · simp only [Y, ite_eq_right hω]
-      simpa only [Function.comp_def, (hωG' hω).2.2] using ((hωG' hω).1.tendsto t).comp (hseq t)
-  · exact if hω : ω ∈ N then by simpa only [Y, ite_eq_left hω] using continuous_const
-      else by simpa only [funext (hY_eq hω)] using (hωG' hω).1
-  · exact if hω : ω ∈ N then Or.inr fun _ ↦ ite_eq_left hω else Or.inl ⟨(hωG' hω).2.1, hY_eq hω⟩
+  refine _root_.stronglyMeasurable_of_tendsto atTop
+    (f := fun n ω ↦ if ω ∈ N then e₀ else M (seq t n) ω) (fun n ↦ stronglyMeasurable_const.ite
+      (measurableSet_toMeasurable P Gᶜ) (hX (d (seq t n))).stronglyMeasurable_mk)
+    (tendsto_pi_nhds.mpr fun ω ↦ ?_)
+  by_cases hω : ω ∈ N
+  · simp only [Y, ite_eq_left hω, tendsto_const_nhds]
+  · simp only [Y, ite_eq_right hω]
+    simpa only [Function.comp_def, (hωG' hω).2.2] using ((hωG' hω).1.tendsto t).comp (hseq t)
 
 /-- An almost-surely continuous process with almost everywhere strongly measurable fixed-time
 evaluations has an indistinguishable version whose fixed-time evaluations are strongly measurable
@@ -87,10 +85,9 @@ theorem exists_stronglyMeasurable_continuous_indist {X : ι → Ω → E}
 that almost surely takes `e₀` at `t₀` has an indistinguishable version that is strongly measurable
 at every time, continuous on every path, and equal to `e₀` at `t₀` on every path. -/
 theorem exists_stronglyMeasurable_continuous_eval_eq_indist {X : ι → Ω → E}
-    (hX : ∀ t, AEStronglyMeasurable (X t) P) (hc : ∀ᵐ ω ∂P, Continuous (X · ω))
-    (t₀ : ι) (e₀ : E) (h0 : ∀ᵐ ω ∂P, X t₀ ω = e₀) :
-    ∃ Y : ι → Ω → E, (∀ t, StronglyMeasurable (Y t)) ∧ (∀ ω, Continuous (Y · ω)) ∧
-      (∀ ω, Y t₀ ω = e₀) ∧ Y ≡ᵐ[P] X := by
+    (hX : ∀ t, AEStronglyMeasurable (X t) P) (hc : ∀ᵐ ω ∂P, Continuous (X · ω)) (t₀ : ι) (e₀ : E)
+    (h0 : ∀ᵐ ω ∂P, X t₀ ω = e₀) : ∃ Y : ι → Ω → E, (∀ t, StronglyMeasurable (Y t)) ∧
+      (∀ ω, Continuous (Y · ω)) ∧ (∀ ω, Y t₀ ω = e₀) ∧ Y ≡ᵐ[P] X := by
   have : Nonempty ι := ⟨t₀⟩
   obtain ⟨Y, hYm, hYc, hYq, hYX⟩ := exists_stronglyMeasurable_continuous_indist_aux hX hc e₀ h0
   exact ⟨Y, hYm, hYc, fun ω ↦ (hYq ω).elim (fun h ↦ (h.2 t₀).trans h.1) (· t₀), hYX⟩

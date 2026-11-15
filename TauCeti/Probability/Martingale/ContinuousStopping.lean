@@ -11,7 +11,6 @@ public import TauCeti.Probability.Martingale.LpLimit
 public import TauCeti.MeasureTheory.Function.ConditionalExpectation.UniformIntegrable
 public import TauCeti.Probability.Process.StoppingApproximation
 import TauCeti.Probability.Process.Progressive
-import TauCeti.Probability.Process.Stopping
 
 /-!
 # Stopping right-continuous martingales on raw filtrations

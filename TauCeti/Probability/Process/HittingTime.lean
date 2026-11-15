@@ -149,8 +149,8 @@ theorem Continuous.hittingAfter_singleton_eq_Ici {a : ι} {C : β} (hX : Continu
   | coe t =>
     obtain ⟨u, hu, hus⟩ := (isClosed_Ici.hittingAfter_le_iff hX).mp ht.le
     obtain ⟨v, hv, hvC⟩ := intermediate_value_Icc hu.1 hX.continuousOn ⟨hstart, hus⟩
-    exact (MeasureTheory.hittingAfter_le_of_mem hv.1 hvC).trans
-      (WithTop.coe_le_coe.mpr (hv.2.trans hu.2))
+    exact (MeasureTheory.hittingAfter_le_of_mem hv.1 hvC).trans (WithTop.coe_le_coe.mpr
+      (hv.2.trans hu.2))
 
 /-- A continuous ordered-valued path starting at or above `C` hits `{C}` at the same time as
 `(-∞, C]`. -/
@@ -194,11 +194,11 @@ theorem hittingAfter_union_apply (X : ι → Ω → E) (s₁ s₂ : Set E) (a : 
     (hittingAfter_apply_anti X a ω subset_union_right)) (le_of_forall_gt fun b hb ↦ ?_)
   cases b with
   | top =>
-    rw [lt_top_iff_ne_top]; intro htop
-    rw [min_eq_top, hittingAfter_eq_top_iff, hittingAfter_eq_top_iff] at htop
+    rw [lt_top_iff_ne_top]; intro htop; rw [min_eq_top] at htop
+    rw [hittingAfter_eq_top_iff, hittingAfter_eq_top_iff] at htop
     exact hb.ne_top (hittingAfter_eq_top_iff.mpr fun j hj h ↦ h.elim (htop.1 j hj) (htop.2 j hj))
   | coe d =>
-    obtain ⟨j, hj, h | h⟩ := hittingAfter_lt_iff.mp hb
+    rcases hittingAfter_lt_iff.mp hb with ⟨j, hj, h | h⟩
     · exact min_lt_iff.mpr (.inl (hittingAfter_lt_iff.mpr ⟨j, hj, h⟩))
     · exact min_lt_iff.mpr (.inr (hittingAfter_lt_iff.mpr ⟨j, hj, h⟩))
 

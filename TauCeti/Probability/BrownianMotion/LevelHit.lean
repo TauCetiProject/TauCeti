@@ -23,17 +23,22 @@ import TauCeti.Probability.Process.HittingTime.Countable
 /-!
 # One-dimensional Brownian level-hitting times and Laplace transforms
 
-For a real Brownian motion `B`, `x : ℝ`, and `τ_a := hittingAfter (fun t ω ↦ x + B t ω) {a} 0`:
+This file establishes open/closed half-line hit equivalence, level recurrence, finite exit from
+proper subsets, and explicit hitting-time distributions and Laplace transforms directly on native
+`ProbabilityTheory.IsBrownianReal` (unwrapping finite hitting times via `WithTop.untopA` without
+filtration or completeness hypotheses). For `B` a real Brownian motion, `x : ℝ`, and
+`τ_a := hittingAfter (fun t ω ↦ x + B t ω) {a} 0`:
 * `ProbabilityTheory.IsBrownianReal.hittingAfter_Ioi_ae_eq_Ici` and `hittingAfter_Iio_ae_eq_Iic`
   identify open and closed half-line hitting times almost surely.
-* `ProbabilityTheory.IsBrownianReal.measure_hittingAfter_singleton_le` and
-  `measureReal_hittingAfter_singleton_le` give `P {ω | τ_a ω ≤ t} = 2 * P {ω | |a - x| ≤ B t ω}`
-  (`erfc (|a - x| / √(2 * t))` for `t ≠ 0`), implying `τ_a ω ≠ ⊤` a.s.
-  (`ae_hittingAfter_singleton_ne_top`) and finite exit from any `A ≠ univ`
-  (`ae_hittingAfter_compl_ne_top`).
-* `ProbabilityTheory.IsBrownianReal.hasLaw_hittingAfter_singleton` and
-  `integral_exp_neg_mul_hittingAfter_singleton` establish the Lévy law `levyMeasure 0 ((a - x) ^ 2)`
-  and Laplace transform `exp (-√(2 * θ) * |a - x|)`.
+* `ProbabilityTheory.IsBrownianReal.measure_hittingAfter_singleton_le` gives
+  `P {ω | τ_a ω ≤ t} = 2 * P {ω | |a - x| ≤ B t ω}` for `x ≠ a`, while
+  `measureReal_hittingAfter_singleton_le` gives `erfc (|a - x| / √(2 * t))` for all `x, a : ℝ` and
+  `t ≠ 0`; this yields `τ_a ω ≠ ⊤` a.s. (`ae_hittingAfter_singleton_ne_top`) and finite exit from
+  any `A ≠ univ` (`ae_hittingAfter_compl_ne_top`).
+* `ProbabilityTheory.IsBrownianReal.hasLaw_hittingAfter_singleton` establishes the Lévy law
+  `levyMeasure 0 ((a - x) ^ 2)` for `x ≠ a` (`Measure.dirac 0` at `x = a` via
+  `hasLaw_hittingAfter_singleton_self`), and `integral_exp_neg_mul_hittingAfter_singleton` proves
+  the Laplace transform `exp (-√(2 * θ) * |a - x|)` for `θ ≥ 0`.
 
 ## References
 * Ioannis Karatzas and Steven E. Shreve, *Brownian Motion and Stochastic Calculus*, 2nd ed., §2.8.
@@ -48,8 +53,7 @@ namespace TauCeti.Probability
 
 private theorem hittingAfter_Ioi_ae_eq_Ici_of_pos {Ω : Type*} {mΩ : MeasurableSpace Ω}
     {P : Measure Ω} {W : ℝ≥0 → Ω → ℝ} (hW : IsBrownianReal W P)
-    (hWm : ∀ t, StronglyMeasurable (W t)) (hWc : ∀ ω, Continuous (W · ω))
-    (hW0 : ∀ ω, W 0 ω = 0) {a : ℝ} (ha : 0 < a) :
+    (hWm : ∀ t, StronglyMeasurable (W t)) (hWc : ∀ ω, Continuous (W · ω)) {a : ℝ} (ha : 0 < a) :
     hittingAfter W (Ioi a) 0 =ᵐ[P] hittingAfter W (Ici a) 0 := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   let τ₁ := hittingAfter W (Ici a) 0; let τ₂ := hittingAfter W (Ioi a) 0
@@ -58,18 +62,12 @@ private theorem hittingAfter_Ioi_ae_eq_Ici_of_pos {Ω : Type*} {mΩ : Measurable
   have hstep (t : ℝ≥0) : ∀ᵐ ω ∂P, τ₁ ω ≤ t → τ₂ ω ≤ t := by
     have hST : {ω | τ₂ ω ≤ t} ⊆ {ω | τ₁ ω ≤ t} :=
       fun ω hω ↦ (hittingAfter_apply_anti W 0 ω Ioi_subset_Ici_self).trans hω
-    have hWt_eq : P {ω | a ≤ W t ω} = P {ω | a < W t ω} := by
-      rcases eq_or_ne t 0 with rfl | ht0
-      · rw [show {ω | a ≤ W 0 ω} = ∅ by ext ω; simp [hW0 ω, ha.not_ge],
-          show {ω | a < W 0 ω} = ∅ by ext ω; simp [hW0 ω, ha.not_gt]]
-      · have := nullSingletonClass_gaussianReal (μ := 0) ht0
-        exact ((hW.hasLaw_eval t).measure_eq (p := (· ∈ Ici a)) measurableSet_Ici).trans
-          ((measure_congr Ioi_ae_eq_Ici.symm).trans
-            ((hW.hasLaw_eval t).measure_eq (p := (· ∈ Ioi a)) measurableSet_Ioi).symm)
     have hle : P {ω | τ₁ ω ≤ t} ≤ P {ω | τ₂ ω ≤ t} := by
       rw [show {ω | τ₁ ω ≤ t} = {ω | ∃ s ≤ t, a ≤ W s ω} by
           ext ω; simp only [τ₁, mem_ofPred_eq]; rw [isClosed_Ici.hittingAfter_le_iff (hWc ω)]; simp,
-        hW.measure_exists_le_ge t ha, hWt_eq, ← hW.measure_exists_le_gt t ha.le]
+        hW.measure_exists_le_ge t ha,
+        hW.toIsPreBrownianReal.measure_eval_ge_eq_measure_eval_gt (.inr ha.ne'),
+        ← hW.measure_exists_le_gt t ha.le]
       exact measure_mono fun ω ⟨s, hst, hs⟩ ↦
         (hittingAfter_le_of_mem bot_le hs).trans (WithTop.coe_le_coe.mpr hst)
     exact ((ae_eq_of_subset_of_measure_ge hST hle (measurableSet_Iic.preimage
@@ -101,8 +99,8 @@ theorem aemeasurable_hittingAfter_of_isClosed (hB : IsBrownianReal B P) {s : Set
 
 /-- First entrance of a real Brownian motion from any starting time `u` into any open set is
 almost-everywhere measurable, without assuming completeness of the ambient measurable space. -/
-theorem aemeasurable_hittingAfter_of_isOpen (hB : IsBrownianReal B P) {s : Set ℝ}
-    (hs : IsOpen s) (u : ℝ≥0) : AEMeasurable (hittingAfter B s u) P :=
+theorem aemeasurable_hittingAfter_of_isOpen (hB : IsBrownianReal B P) {s : Set ℝ} (hs : IsOpen s)
+    (u : ℝ≥0) : AEMeasurable (hittingAfter B s u) P :=
   MeasureTheory.aemeasurable_hittingAfter_of_isOpen
     (fun t ↦ (hB.integrable_eval t).aemeasurable) hB.cont hs u
 
@@ -119,7 +117,7 @@ theorem hittingAfter_Ioi_ae_eq_Ici (hB : IsBrownianReal B P) (a : ℝ) :
         (le_antisymm (hittingAfter_le_of_mem le_rfl (by simpa [hW0 ω] using ha.le)) bot_le).symm
   · exact hW.hittingAfter_Ioi_zero_ae_eq_zero.mono fun ω hω ↦ hω.trans
       (le_antisymm (hittingAfter_le_of_mem le_rfl (by simp [hW0 ω])) bot_le).symm
-  · exact hittingAfter_Ioi_ae_eq_Ici_of_pos hW hWm hWc hW0 ha
+  · exact hittingAfter_Ioi_ae_eq_Ici_of_pos hW hWm hWc ha
 
 /-- **Immediate downward level crossing**: for every real threshold `a`, a real Brownian motion
 enters `(-∞, a)` at the same time it enters `(-∞, a]` almost surely. -/
@@ -140,10 +138,8 @@ theorem hittingAfter_singleton_ae_eq_Ici (hB : IsBrownianReal B P) {x a : ℝ} (
     hittingAfter (fun t ω ↦ x + B t ω) {a} 0 =ᵐ[P]
       hittingAfter (fun t ω ↦ x + B t ω) (Ici a) 0 := by
   obtain ⟨W, _, hWc, hW0, _, hWB⟩ := hB.exists_stronglyMeasurable_continuous_indist
-  have hW_eq : hittingAfter (fun t ω ↦ x + W t ω) {a} 0 =
-      hittingAfter (fun t ω ↦ x + W t ω) (Ici a) 0 := funext fun ω ↦
-    Continuous.hittingAfter_singleton_eq_Ici ((continuous_const_add x).comp (hWc ω))
-      (by simpa [hW0 ω] using hxa)
+  have hW_eq := funext fun ω ↦ ((continuous_const_add x).comp (hWc ω)).hittingAfter_singleton_eq_Ici
+    (X := fun t ω ↦ x + W t ω) (a := 0) (C := a) (by simpa [hW0 ω] using hxa)
   exact ((hWB.symm.fun_comp (x + ·)).hittingAfter_ae_eq {a} 0).trans
     (hW_eq ▸ (hWB.fun_comp (x + ·)).hittingAfter_ae_eq (Ici a) 0)
 
@@ -152,10 +148,8 @@ theorem hittingAfter_singleton_ae_eq_Iic (hB : IsBrownianReal B P) {x a : ℝ} (
     hittingAfter (fun t ω ↦ x + B t ω) {a} 0 =ᵐ[P]
       hittingAfter (fun t ω ↦ x + B t ω) (Iic a) 0 := by
   obtain ⟨W, _, hWc, hW0, _, hWB⟩ := hB.exists_stronglyMeasurable_continuous_indist
-  have hW_eq : hittingAfter (fun t ω ↦ x + W t ω) {a} 0 =
-      hittingAfter (fun t ω ↦ x + W t ω) (Iic a) 0 := funext fun ω ↦
-    Continuous.hittingAfter_singleton_eq_Iic ((continuous_const_add x).comp (hWc ω))
-      (by simpa [hW0 ω] using hax)
+  have hW_eq := funext fun ω ↦ ((continuous_const_add x).comp (hWc ω)).hittingAfter_singleton_eq_Iic
+    (X := fun t ω ↦ x + W t ω) (a := 0) (C := a) (by simpa [hW0 ω] using hax)
   exact ((hWB.symm.fun_comp (x + ·)).hittingAfter_ae_eq {a} 0).trans
     (hW_eq ▸ (hWB.fun_comp (x + ·)).hittingAfter_ae_eq (Iic a) 0)
 
@@ -166,22 +160,19 @@ private theorem measure_hittingAfter_singleton_le_of_lt (hB : IsBrownianReal B P
   have hsub : 0 < a - x := sub_pos.mpr hxa
   have hτ : hittingAfter (fun s ω ↦ x + B s ω) {a} 0 =ᵐ[P] hittingAfter W (Ici (a - x)) 0 := by
     refine (hB.hittingAfter_singleton_ae_eq_Ici hxa.le).trans ?_
-    rw [hittingAfter_comp (x + ·), preimage_const_add_Ici]
-    exact hWB.symm.hittingAfter_ae_eq _ 0
+    rw [hittingAfter_comp (x + ·), preimage_const_add_Ici]; exact hWB.symm.hittingAfter_ae_eq _ 0
   rw [measure_congr (t := {ω | ∃ s ≤ t, a - x ≤ W s ω}) (eventuallyEqSet_iff.mpr (hτ.mono
-      fun ω hω ↦ by
-        simp only [mem_ofPred_eq, hω]; rw [isClosed_Ici.hittingAfter_le_iff (hWc ω)]; simp)),
-    hW.measure_exists_le_ge t hsub,
-    measure_congr (s := {ω | a - x ≤ W t ω}) (t := {ω | |a - x| ≤ B t ω})
-      (eventuallyEqSet_iff.mpr ((hWB.ae_eq_eval t).mono fun _ hω ↦ by
-        simp only [mem_ofPred_eq, hω, abs_of_pos hsub]))]
+      fun ω hω ↦ by simp only [mem_ofPred_eq, hω]; rw [isClosed_Ici.hittingAfter_le_iff (hWc ω)]
+                    simp)), hW.measure_exists_le_ge t hsub,
+    measure_congr (s := {ω | a - x ≤ W t ω}) (t := {ω | |a - x| ≤ B t ω}) (eventuallyEqSet_iff.mpr
+      ((hWB.ae_eq_eval t).mono fun _ hω ↦ by simp only [mem_ofPred_eq, hω, abs_of_pos hsub]))]
 
 /-- **Reflection formula for the Brownian level-hitting time**: for `x ≠ a` and `t ≥ 0`
 (including `t = 0`, where both sides vanish), the probability that `x + B` hits `a` by time `t`
 equals `2 * P {ω | |a - x| ≤ B t ω}`. -/
 theorem measure_hittingAfter_singleton_le (hB : IsBrownianReal B P) {x a : ℝ} (hx : x ≠ a)
-    (t : ℝ≥0) :
-    P {ω | hittingAfter (fun s ω ↦ x + B s ω) {a} 0 ω ≤ t} = 2 * P {ω | |a - x| ≤ B t ω} := by
+    (t : ℝ≥0) : P {ω | hittingAfter (fun s ω ↦ x + B s ω) {a} 0 ω ≤ t} =
+      2 * P {ω | |a - x| ≤ B t ω} := by
   rcases hx.lt_or_gt with hxa | hax
   · exact measure_hittingAfter_singleton_le_of_lt hB hxa t
   · have hneg := measure_hittingAfter_singleton_le_of_lt hB.neg (neg_lt_neg hax) t
@@ -189,32 +180,31 @@ theorem measure_hittingAfter_singleton_le (hB : IsBrownianReal B P) {x a : ℝ} 
         hittingAfter (fun s ω ↦ x + B s ω) {a} 0 := by
       rw [show (fun s ω ↦ -x + (-B) s ω) = -(fun s ω ↦ x + B s ω) by ext; simp [add_comm],
         hittingAfter_neg, Set.neg_preimage, Set.neg_singleton, neg_neg]
-    have hlaw : P {ω | |a - x| ≤ (-B) t ω} = P {ω | |a - x| ≤ B t ω} :=
-      ((hB.neg.hasLaw_eval t).measure_eq (p := (|a - x| ≤ ·)) measurableSet_Ici).trans
-        ((hB.hasLaw_eval t).measure_eq (p := (|a - x| ≤ ·)) measurableSet_Ici).symm
-    rwa [hτ, neg_sub_neg, abs_sub_comm, hlaw] at hneg
+    rwa [hτ, neg_sub_neg, abs_sub_comm, ((hB.neg.hasLaw_eval t).measure_eq (p := (|a - x| ≤ ·))
+      measurableSet_Ici).trans ((hB.hasLaw_eval t).measure_eq (p := (|a - x| ≤ ·))
+        measurableSet_Ici).symm] at hneg
 
 /-- Real-valued complementary-error-function formula for the Brownian level-hitting cumulative
-distribution function at positive time `t ≠ 0` when `x ≠ a`. -/
-theorem measureReal_hittingAfter_singleton_le (hB : IsBrownianReal B P) {x a : ℝ} (hx : x ≠ a)
-    {t : ℝ≥0} (ht : t ≠ 0) :
-    P.real {ω | hittingAfter (fun s ω ↦ x + B s ω) {a} 0 ω ≤ t} =
+distribution function at positive time `t ≠ 0` for all `x, a : ℝ`. -/
+theorem measureReal_hittingAfter_singleton_le (hB : IsBrownianReal B P) (x a : ℝ) {t : ℝ≥0}
+    (ht : t ≠ 0) : P.real {ω | hittingAfter (fun s ω ↦ x + B s ω) {a} 0 ω ≤ t} =
       TauCeti.Real.erfc (|a - x| / √(2 * (t : ℝ))) := by
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
-  have := nullSingletonClass_gaussianReal (μ := 0) ht
-  have hlaw : P {ω | |a - x| ≤ B t ω} = gaussianReal 0 t (Ioi |a - x|) :=
-    ((hB.hasLaw_eval t).measure_eq (p := (|a - x| ≤ ·)) measurableSet_Ici).trans
-      (measure_congr (μ := gaussianReal 0 t) (Ioi_ae_eq_Ici (a := |a - x|)).symm)
-  rw [measureReal_def, hB.measure_hittingAfter_singleton_le hx t, hlaw, ENNReal.toReal_mul,
-    ENNReal.toReal_ofNat, ← measureReal_def, measureReal_Ioi_gaussianReal 0 ht |a - x|, sub_zero]
-  ring
+  rcases eq_or_ne x a with rfl | hx
+  · have huniv : ({ω | hittingAfter (fun s ω ↦ x + B s ω) {x} 0 ω ≤ t} : Set Ω) =ᵐ[P] univ :=
+      eventuallyEqSet_univ.mpr ((hB.hittingAfter_singleton_self_ae_eq_zero x).mono fun _ hω ↦
+        (hω.trans rfl).trans_le (bot_le : (0 : WithTop ℝ≥0) ≤ t))
+    rw [measureReal_congr huniv]; simp [TauCeti.Real.erfc_zero]
+  · rw [measureReal_def, hB.measure_hittingAfter_singleton_le hx t,
+      hB.toIsPreBrownianReal.measure_eval_ge_eq_measure_eval_gt (.inl ht),
+      (hB.hasLaw_eval t).measure_eq (p := (|a - x| < ·)) measurableSet_Ioi, Ioi_def,
+      ENNReal.toReal_mul, ENNReal.toReal_ofNat, ← measureReal_def,
+      measureReal_Ioi_gaussianReal 0 ht |a - x|, sub_zero]; ring
 
 /-- **One-dimensional Brownian recurrence of levels**: starting from any `x : ℝ`, the path
 `t ↦ x + B t ω` hits every real level `a` in finite time almost surely. -/
 theorem ae_hittingAfter_singleton_ne_top (hB : IsBrownianReal B P) (x a : ℝ) :
     ∀ᵐ ω ∂P, hittingAfter (fun t ω ↦ x + B t ω) {a} 0 ω ≠ ⊤ := by
-  rcases eq_or_ne x a with rfl | hx
-  · exact (hB.hittingAfter_singleton_self_ae_eq_zero x).mono fun _ hω ↦ by simp [hω]
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
   obtain ⟨W, hWm, hWc, _, hW, hWB⟩ := hB.exists_stronglyMeasurable_continuous_indist
   let τ := hittingAfter (fun t ω ↦ x + W t ω) {a} 0
@@ -232,7 +222,7 @@ theorem ae_hittingAfter_singleton_ne_top (hB : IsBrownianReal B P) (x a : ℝ) :
       (s₂ := {ω | τ ω ≤ (((n : ℝ≥0) + 1 : ℝ≥0) : WithTop ℝ≥0)}ᶜ)
       fun ω h ↦ by simp only [mem_compl_iff, mem_ofPred_eq] at h ⊢; simp [h]).trans_eq ?_
     rw [probReal_compl_eq_one_sub (measurableSet_le hτ_meas measurable_const),
-      hW.measureReal_hittingAfter_singleton_le hx (Nat.cast_add_one_ne_zero n)]
+      hW.measureReal_hittingAfter_singleton_le x a (Nat.cast_add_one_ne_zero n)]
     push_cast; rfl) measureReal_nonneg
   have hW_ae : ∀ᵐ ω ∂P, τ ω ≠ ⊤ := by
     rw [ae_iff]; simp only [Classical.not_not]
@@ -256,8 +246,7 @@ theorem hasLaw_hittingAfter_singleton (hB : IsBrownianReal B P) {x a : ℝ} (hx 
   have hc : 0 < (a - x) ^ 2 := sq_pos_of_ne_zero (sub_ne_zero.mpr hx.symm)
   have := isProbabilityMeasure_levyMeasure hc 0
   obtain ⟨W, hWm, hWc, hW0, hW, hWB⟩ := hB.exists_stronglyMeasurable_continuous_indist
-  let τ := hittingAfter (fun t ω ↦ x + W t ω) {a} 0
-  let X : Ω → ℝ := fun ω ↦ ((τ ω).untopA : ℝ)
+  let τ := hittingAfter (fun t ω ↦ x + W t ω) {a} 0; let X : Ω → ℝ := fun ω ↦ ((τ ω).untopA : ℝ)
   have hX_meas : Measurable X := measurable_subtype_coe.comp
     (measurable_hittingAfter_of_isClosed (fun t ↦ (measurable_const_add x).comp (hWm t).measurable)
       (fun ω ↦ (continuous_const_add x).comp (hWc ω)) isClosed_singleton 0).untopA
@@ -283,7 +272,7 @@ theorem hasLaw_hittingAfter_singleton (hB : IsBrownianReal B P) {x a : ℝ} (hx 
         NNReal.coe_zero]
   · rw [ite_eq_right hu]; lift u to ℝ≥0 using (not_le.mp hu).le with t
     rw [measureReal_congr (hae t),
-      hW.measureReal_hittingAfter_singleton_le hx fun h0 ↦ hu (by simp [h0])]
+      hW.measureReal_hittingAfter_singleton_le x a fun h0 ↦ hu (by simp [h0])]
     congr 1; rw [sub_zero, Real.sqrt_div (sq_nonneg _), Real.sqrt_sq_eq_abs]
 
 /-- At `a = x`, the level-hitting time `(hittingAfter (fun t ω ↦ x + B t ω) {x} 0 ω).untopA`
@@ -297,10 +286,9 @@ theorem hasLaw_hittingAfter_singleton_self (hB : IsBrownianReal B P) (x : ℝ) :
 /-- **Laplace transform of the Brownian level-hitting time**: for all `x, a : ℝ` and `θ ≥ 0`
 (including `θ = 0` and `x = a`), `∫ ω, exp (-θ * (τ_a ω).untopA) ∂P = exp (-√(2 * θ) * |a - x|)`.
 -/
-theorem integral_exp_neg_mul_hittingAfter_singleton (hB : IsBrownianReal B P) (x a : ℝ)
-    {θ : ℝ} (hθ : 0 ≤ θ) :
-    ∫ ω, Real.exp (-θ * ((hittingAfter (fun t ω ↦ x + B t ω) {a} 0 ω).untopA : ℝ)) ∂P =
-      Real.exp (-√(2 * θ) * |a - x|) := by
+theorem integral_exp_neg_mul_hittingAfter_singleton (hB : IsBrownianReal B P) (x a : ℝ) {θ : ℝ}
+    (hθ : 0 ≤ θ) : ∫ ω, Real.exp (-θ * ((hittingAfter (fun t ω ↦ x + B t ω) {a} 0 ω).untopA : ℝ))
+      ∂P = Real.exp (-√(2 * θ) * |a - x|) := by
   rcases eq_or_ne x a with rfl | hx
   · simpa [mgf] using mgf_dirac (hB.hasLaw_hittingAfter_singleton_self x) (-θ)
   · refine (mgf_of_hasLaw_levyMeasure (sq_pos_of_ne_zero (sub_ne_zero.mpr hx.symm))

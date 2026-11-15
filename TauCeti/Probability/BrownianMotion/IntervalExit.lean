@@ -11,6 +11,7 @@ import Mathlib.Algebra.Order.Group.Pointwise.Interval
 import Mathlib.MeasureTheory.Constructions.BorelSpace.WithTop
 import Mathlib.Probability.Process.Stopping
 import TauCeti.Order.Filter.AtTopBot
+import TauCeti.Order.WithBot
 import TauCeti.Probability.BrownianMotion.LevelHit
 import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.BrownianMotion.Version
@@ -21,14 +22,17 @@ import TauCeti.Probability.Process.Stopping
 /-!
 # One-dimensional Brownian exit from bounded open intervals
 
-For a real Brownian motion `B`, `x : ℝ`, and `τ := hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0`,
-immediate boundary crossing and bounded optional sampling of `W` and `W² - t` give:
+This file solves the one-dimensional Dirichlet exit-probability and Poisson mean exit-time problems
+on bounded open intervals `(a, b)` directly for native `ProbabilityTheory.IsBrownianReal`
+(unwrapping finite exit times via `WithTop.untopA`, without filtration or completeness hypotheses).
+For `B` a real Brownian motion, `x : ℝ`, and `τ := hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0`:
 * `ProbabilityTheory.IsBrownianReal.hittingAfter_compl_Icc_ae_eq_compl_Ioo`: exit times from
   `[a, b]` and `(a, b)` agree almost surely.
-* `ProbabilityTheory.IsBrownianReal.ae_eval_hittingAfter_compl_Ioo_eq_or_eq` and
-  `measureReal_eval_hittingAfter_compl_Ioo_eq_{right,left}`: for `a < b` and `x ∈ [a, b]`,
-  `x + B (τ ω).untopA ω ∈ {a, b}` a.s. with exit probabilities `(x - a) / (b - a)` and
-  `(b - x) / (b - a)`.
+* `ProbabilityTheory.IsBrownianReal.aemeasurable_eval_hittingAfter_compl_Ioo`,
+  `ae_eval_hittingAfter_compl_Ioo_eq_or_eq`,
+  `measureReal_eval_hittingAfter_compl_Ioo_eq_{right,left}`, and
+  `hasLaw_eval_hittingAfter_compl_Ioo`: for `a < b` and `x ∈ [a, b]`, `x + B (τ ω).untopA ω` has law
+  `((b - x) / (b - a)) • δ_a + ((x - a) / (b - a)) • δ_b`.
 * `ProbabilityTheory.IsBrownianReal.integrable_hittingAfter_compl_Ioo` and
   `integral_hittingAfter_compl_Ioo`: `E[(τ ω).untopA] = max 0 ((x - a) * (b - x))` for `a ≤ b`.
 
@@ -41,17 +45,19 @@ public section
 open MeasureTheory ProbabilityTheory Filter Set
 open scoped NNReal ENNReal Topology Pointwise
 
+/-- A real Brownian motion started at `x` exits every open interval `(a, b)` in finite time almost
+surely. -/
+theorem ProbabilityTheory.IsBrownianReal.ae_hittingAfter_compl_Ioo_ne_top {Ω : Type*}
+    [MeasurableSpace Ω] {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ} (hB : IsBrownianReal B P) (x a b : ℝ) :
+    ∀ᵐ ω ∂P, hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 ω ≠ ⊤ :=
+  hB.ae_hittingAfter_compl_ne_top x fun h ↦ (h ▸ mem_univ a : a ∈ Ioo a b).1.false
+
 namespace TauCeti.Probability
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {W : ℝ≥0 → Ω → ℝ}
 
-private theorem ae_intervalExit_ne_top (hW : IsBrownianReal W P) (x a b : ℝ) :
-    ∀ᵐ ω ∂P, hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0 ω ≠ ⊤ :=
-  hW.ae_hittingAfter_compl_ne_top x fun h ↦ (h ▸ mem_univ a : a ∈ Ioo a b).1.false
-
 private theorem isStoppingTime_intervalExit (hWm : ∀ t, StronglyMeasurable (W t))
-    (hWc : ∀ ω, Continuous (W · ω)) (x a b : ℝ) :
-    IsStoppingTime (Filtration.natural W hWm)
+    (hWc : ∀ ω, Continuous (W · ω)) (x a b : ℝ) : IsStoppingTime (Filtration.natural W hWm)
       (hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0) := by
   rw [hittingAfter_comp (x + ·), preimage_compl, preimage_const_add_Ioo]
   exact (Filtration.stronglyAdapted_natural hWm).adapted.isStoppingTime_hittingAfter_compl_of_isOpen
@@ -83,15 +89,6 @@ private theorem sq_stoppedProcess_le_of_mem_Icc (hWc : ∀ ω, Continuous (W · 
   have hn := norm_stoppedProcess_le_of_mem_Icc hWc hW0 hx T ω; rw [Real.norm_eq_abs] at hn
   exact sq_le_sq.mpr (by rwa [abs_of_nonneg (le_max_of_le_left (abs_nonneg _))])
 
-private theorem norm_stoppedValue_le_of_mem_Icc (hWc : ∀ ω, Continuous (W · ω))
-    (hW0 : ∀ ω, W 0 ω = 0) {x a b : ℝ} (hx : x ∈ Icc a b)
-    {ω : Ω} (hfin : hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0 ω ≠ ⊤) :
-    ‖stoppedValue W (hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0) ω‖ ≤ max |a - x| |b - x| := by
-  cases hτ : hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0 ω with
-  | top => exact absurd hτ hfin
-  | coe s => simpa only [stoppedProcess_eq_stoppedValue_apply, stoppedValue, hτ, min_self] using
-      norm_stoppedProcess_le_of_mem_Icc hWc hW0 hx s ω
-
 private theorem martingale_stoppedProcess_intervalExit (hW : IsBrownianReal W P)
     (hWm : ∀ t, StronglyMeasurable (W t)) (hWc : ∀ ω, Continuous (W · ω)) (x a b : ℝ) :
     Martingale (stoppedProcess W (hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0))
@@ -101,9 +98,8 @@ private theorem martingale_stoppedProcess_intervalExit (hW : IsBrownianReal W P)
     |>.stoppedProcess_of_continuous hWc (isStoppingTime_intervalExit hWm hWc x a b)
 
 private theorem integral_min_intervalExit_eq_integral_sq (hW : IsBrownianReal W P)
-    (hWm : ∀ t, StronglyMeasurable (W t)) (hWc : ∀ ω, Continuous (W · ω))
-    (hW0 : ∀ ω, W 0 ω = 0) (x a b : ℝ) (T : ℝ≥0) :
-    ∫ ω, ((min (T : WithTop ℝ≥0)
+    (hWm : ∀ t, StronglyMeasurable (W t)) (hWc : ∀ ω, Continuous (W · ω)) (hW0 : ∀ ω, W 0 ω = 0)
+    (x a b : ℝ) (T : ℝ≥0) : ∫ ω, ((min (T : WithTop ℝ≥0)
         (hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0 ω)).untopA : ℝ) ∂P =
       ∫ ω, stoppedProcess W (hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0) T ω ^ 2 ∂P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
@@ -121,17 +117,16 @@ private theorem integral_min_intervalExit_eq_integral_sq (hW : IsBrownianReal W 
       (.of_forall fun ω ↦ by simp [hW0 ω]) hτ T, zero_add]
 
 private theorem integral_stoppedValue_intervalExit_eq_zero (hW : IsBrownianReal W P)
-    (hWm : ∀ t, StronglyMeasurable (W t)) (hWc : ∀ ω, Continuous (W · ω))
-    (hW0 : ∀ ω, W 0 ω = 0) {x a b : ℝ} (hx : x ∈ Icc a b) :
+    (hWm : ∀ t, StronglyMeasurable (W t)) (hWc : ∀ ω, Continuous (W · ω)) (hW0 : ∀ ω, W 0 ω = 0)
+    {x a b : ℝ} (hx : x ∈ Icc a b) :
     ∫ ω, stoppedValue W (hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0) ω ∂P = 0 := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   let τ := hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0
   have hstop := martingale_stoppedProcess_intervalExit hW hWm hWc x a b
   refine tendsto_nhds_unique (tendsto_integral_of_dominated_convergence (f := stoppedValue W τ)
     (fun _ ↦ max |a - x| |b - x|) (fun n : ℕ ↦ (hstop.integrable (n : ℝ≥0)).aestronglyMeasurable)
-    (integrable_const _)
-    (fun n ↦ .of_forall (norm_stoppedProcess_le_of_mem_Icc hWc hW0 hx (n : ℝ≥0)))
-    ((ae_intervalExit_ne_top hW x a b).mono fun ω hfin ↦ tendsto_nhds_of_eventually_eq
+    (integrable_const _) (fun n ↦ .of_forall (norm_stoppedProcess_le_of_mem_Icc hWc hW0 hx _))
+    ((hW.ae_hittingAfter_compl_Ioo_ne_top x a b).mono fun ω hfin ↦ tendsto_nhds_of_eventually_eq
       ((WithTop.eventually_min_natCast_eq hfin).mono fun _ hn ↦ by
         simp only [stoppedProcess_eq_stoppedValue_apply, stoppedValue, τ, hn])))
     ((tendsto_const_nhds (x := (0 : ℝ))).congr fun n ↦
@@ -140,21 +135,20 @@ private theorem integral_stoppedValue_intervalExit_eq_zero (hW : IsBrownianReal 
         (isStoppingTime_intervalExit hWm hWc x a b) (n : ℝ≥0)).symm)
 
 private theorem integrable_intervalExit_of_mem_Icc (hW : IsBrownianReal W P)
-    (hWm : ∀ t, StronglyMeasurable (W t)) (hWc : ∀ ω, Continuous (W · ω))
-    (hW0 : ∀ ω, W 0 ω = 0) {x a b : ℝ} (hx : x ∈ Icc a b) :
+    (hWm : ∀ t, StronglyMeasurable (W t)) (hWc : ∀ ω, Continuous (W · ω)) (hW0 : ∀ ω, W 0 ω = 0)
+    {x a b : ℝ} (hx : x ∈ Icc a b) :
     Integrable (fun ω ↦ ((hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0 ω).untopA : ℝ)) P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  let τ := hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0
-  let C : ℝ := max |a - x| |b - x|
+  let τ := hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0; let C : ℝ := max |a - x| |b - x|
   have hτ_meas := measurable_intervalExit hWm hWc x a b
   let u (n : ℕ) : Ω → ℝ := fun ω ↦ ((min ((n : ℝ≥0) : WithTop ℝ≥0) (τ ω)).untopA : ℝ)
   have hlin_tend := lintegral_tendsto_of_tendsto_of_monotone
     (f := fun n ω ↦ ENNReal.ofReal (u n ω)) (F := fun ω ↦ ENNReal.ofReal ((τ ω).untopA : ℝ))
     (fun _ ↦ ((measurable_subtype_coe.comp
       (measurable_const.min hτ_meas).untopA).ennreal_ofReal).aemeasurable)
-    (.of_forall fun ω _ _ hmn ↦
-      ENNReal.ofReal_le_ofReal (NNReal.coe_le_coe.mpr ((τ ω).monotone_untopA_min_natCast hmn)))
-    ((ae_intervalExit_ne_top hW x a b).mono fun ω hfin ↦ tendsto_nhds_of_eventually_eq
+    (.of_forall fun ω _ _ hmn ↦ ENNReal.ofReal_le_ofReal
+      (NNReal.coe_le_coe.mpr ((τ ω).monotone_untopA_min_coe (Nat.mono_cast hmn))))
+    ((hW.ae_hittingAfter_compl_Ioo_ne_top x a b).mono fun ω hfin ↦ tendsto_nhds_of_eventually_eq
       ((WithTop.eventually_min_natCast_eq hfin).mono fun _ hn ↦ by dsimp only [u, τ]; rw [hn]))
   have hstop := martingale_stoppedProcess_intervalExit hW hWm hWc x a b
   have hlin_le (n : ℕ) : ∫⁻ ω, ENNReal.ofReal (u n ω) ∂P ≤ ENNReal.ofReal (C ^ 2) := by
@@ -176,32 +170,34 @@ private theorem measurable_stoppedValue_intervalExit (hWm : ∀ t, StronglyMeasu
     (hWc : ∀ ω, Continuous (W · ω)) (x a b : ℝ) :
     Measurable (stoppedValue W (hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0)) :=
   have hτ := isStoppingTime_intervalExit hWm hWc x a b
-  (measurable_stoppedValue
-    ((Filtration.stronglyAdapted_natural hWm).isStronglyProgressive_of_continuous hWc) hτ).mono
-    hτ.measurableSpace_le le_rfl
+  (measurable_stoppedValue ((Filtration.stronglyAdapted_natural hWm)
+    |>.isStronglyProgressive_of_continuous hWc) hτ).mono hτ.measurableSpace_le le_rfl
 
 private theorem integrable_stoppedValue_intervalExit (hW : IsBrownianReal W P)
-    (hWm : ∀ t, StronglyMeasurable (W t)) (hWc : ∀ ω, Continuous (W · ω))
-    (hW0 : ∀ ω, W 0 ω = 0) {x a b : ℝ} (hx : x ∈ Icc a b) :
-    Integrable (stoppedValue W (hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0)) P :=
+    (hWm : ∀ t, StronglyMeasurable (W t)) (hWc : ∀ ω, Continuous (W · ω)) (hW0 : ∀ ω, W 0 ω = 0)
+    {x a b : ℝ} (hx : x ∈ Icc a b) :
+    Integrable (stoppedValue W (hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0)) P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  .of_bound (measurable_stoppedValue_intervalExit hWm hWc x a b).aestronglyMeasurable
-    (max |a - x| |b - x|) ((ae_intervalExit_ne_top hW x a b).mono fun _ ↦
-      norm_stoppedValue_le_of_mem_Icc hWc hW0 hx)
+  refine .of_bound (measurable_stoppedValue_intervalExit hWm hWc x a b).aestronglyMeasurable
+    (max |a - x| |b - x|) ((hW.ae_hittingAfter_compl_Ioo_ne_top x a b).mono fun ω hfin ↦ ?_)
+  cases hτ : hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0 ω with
+  | top => exact absurd hτ hfin
+  | coe s => simpa only [stoppedProcess_eq_stoppedValue_apply, stoppedValue, hτ, min_self] using
+      norm_stoppedProcess_le_of_mem_Icc hWc hW0 hx s ω
 
 private theorem integral_intervalExit_eq_of_mem_Icc (hW : IsBrownianReal W P)
-    (hWm : ∀ t, StronglyMeasurable (W t)) (hWc : ∀ ω, Continuous (W · ω))
-    (hW0 : ∀ ω, W 0 ω = 0) {x a b : ℝ} (hx : x ∈ Icc a b) :
+    (hWm : ∀ t, StronglyMeasurable (W t)) (hWc : ∀ ω, Continuous (W · ω)) (hW0 : ∀ ω, W 0 ω = 0)
+    {x a b : ℝ} (hx : x ∈ Icc a b) :
     ∫ ω, ((hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0 ω).untopA : ℝ) ∂P =
       (x - a) * (b - x) := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   let τ := hittingAfter (fun t ω ↦ x + W t ω) (Ioo a b)ᶜ 0
   have hτ_meas := measurable_intervalExit hWm hWc x a b
-  have hfin_ae := ae_intervalExit_ne_top hW x a b
+  have hfin_ae := hW.ae_hittingAfter_compl_Ioo_ne_top x a b
   have hlim_u := integral_tendsto_of_tendsto_of_monotone
     (fun n ↦ integrable_untopA_const_min hτ_meas.aemeasurable (n : ℝ≥0))
     (integrable_intervalExit_of_mem_Icc hW hWm hWc hW0 hx)
-    (.of_forall fun ω ↦ NNReal.coe_mono.comp (τ ω).monotone_untopA_min_natCast)
+    (.of_forall fun ω ↦ NNReal.coe_mono.comp ((τ ω).monotone_untopA_min_coe.comp Nat.mono_cast))
     (hfin_ae.mono fun ω hfin ↦ tendsto_nhds_of_eventually_eq
       ((WithTop.eventually_min_natCast_eq hfin).mono fun _ hn ↦ by rw [hn]))
   have hstop := martingale_stoppedProcess_intervalExit hW hWm hWc x a b
@@ -238,12 +234,6 @@ open TauCeti.Probability
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
 
-/-- A real Brownian motion started at `x` exits every open interval `(a, b)` in finite time almost
-surely. -/
-theorem ae_hittingAfter_compl_Ioo_ne_top (hB : IsBrownianReal B P) (x a b : ℝ) :
-    ∀ᵐ ω ∂P, hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 ω ≠ ⊤ :=
-  ae_intervalExit_ne_top hB x a b
-
 /-- **Open- versus closed-interval exit for Brownian motion**: for all `x, a, b : ℝ`, the first
 exit time of `x + B` from `[a, b]` agrees almost surely with its first exit time from `(a, b)`. -/
 theorem hittingAfter_compl_Icc_ae_eq_compl_Ioo (hB : IsBrownianReal B P) (x a b : ℝ) :
@@ -264,15 +254,23 @@ theorem hittingAfter_compl_Ioo_ae_eq_zero_of_notMem (hB : IsBrownianReal B P) {x
     (hx : x ∉ Ioo a b) : hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 =ᵐ[P] 0 := by
   obtain ⟨W, _, _, hW0, _, hWB⟩ := hB.exists_stronglyMeasurable_continuous_indist
   exact ((hWB.symm.fun_comp (x + ·)).hittingAfter_ae_eq (Ioo a b)ᶜ 0).trans (.of_forall fun ω ↦
-    le_antisymm (hittingAfter_le_of_mem le_rfl
-      (by simpa only [hW0 ω, add_zero, mem_compl_iff] using hx)) bot_le)
+    le_antisymm (hittingAfter_le_of_mem le_rfl (by simpa [hW0 ω] using hx)) bot_le)
+
+/-- Evaluating `B` at `(hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 ω).untopA` is almost
+everywhere measurable, without assuming completeness of the ambient measurable space. -/
+theorem aemeasurable_eval_hittingAfter_compl_Ioo (hB : IsBrownianReal B P) (x a b : ℝ) :
+    AEMeasurable (fun ω ↦ B (hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 ω).untopA ω) P := by
+  obtain ⟨W, hWm, hWc, _, _, hWB⟩ := hB.exists_stronglyMeasurable_continuous_indist
+  exact (measurable_stoppedValue_intervalExit hWm hWc x a b).aemeasurable.congr
+    ((hWB.and ((hWB.fun_comp (x + ·)).hittingAfter_ae_eq (Ioo a b)ᶜ 0)).mono
+      fun _ ⟨hω, hτ⟩ ↦ by simp only [stoppedValue, hτ, hω])
 
 /-- Starting from `x ∈ [a, b]`, the position of `x + B` at its first exit from `(a, b)` equals
 either `a` or `b` almost surely. -/
 theorem ae_eval_hittingAfter_compl_Ioo_eq_or_eq (hB : IsBrownianReal B P) {x a b : ℝ}
-    (hx : x ∈ Icc a b) :
-    ∀ᵐ ω ∂P, x + B (hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 ω).untopA ω = a ∨
-      x + B (hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 ω).untopA ω = b := by
+    (hx : x ∈ Icc a b) : ∀ᵐ ω ∂P,
+      x + B (hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 ω).untopA ω = a ∨
+        x + B (hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 ω).untopA ω = b := by
   obtain ⟨W, _, hWc, hW0, hW, hWB⟩ := hB.exists_stronglyMeasurable_continuous_indist
   filter_upwards [hWB, (hWB.fun_comp (x + ·)).hittingAfter_ae_eq (Ioo a b)ᶜ 0,
     hW.ae_hittingAfter_compl_Ioo_ne_top x a b] with ω hω hτ hfin
@@ -282,8 +280,8 @@ theorem ae_eval_hittingAfter_compl_Ioo_eq_or_eq (hB : IsBrownianReal B P) {x a b
 
 /-- **Brownian gambler's ruin (upper exit probability)**: for `a < b` and `x ∈ [a, b]`, the
 probability that `x + B` exits `(a, b)` through `b` equals `(x - a) / (b - a)`. -/
-theorem measureReal_eval_hittingAfter_compl_Ioo_eq_right (hB : IsBrownianReal B P)
-    {x a b : ℝ} (hab : a < b) (hx : x ∈ Icc a b) :
+theorem measureReal_eval_hittingAfter_compl_Ioo_eq_right (hB : IsBrownianReal B P) {x a b : ℝ}
+    (hab : a < b) (hx : x ∈ Icc a b) :
     P.real {ω | x + B (hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 ω).untopA ω = b} =
       (x - a) / (b - a) := by
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
@@ -292,27 +290,25 @@ theorem measureReal_eval_hittingAfter_compl_Ioo_eq_right (hB : IsBrownianReal B 
   have hZ_meas : Measurable Z :=
     (measurable_const_add x).comp (measurable_stoppedValue_intervalExit hWm hWc x a b)
   have hset_ae : {ω | x + B (hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 ω).untopA ω = b}
-      =ᵐ[P] Z ⁻¹' {b} := by
-    filter_upwards [hWB, (hWB.fun_comp (x + ·)).hittingAfter_ae_eq (Ioo a b)ᶜ 0] with _ hω hτ
-    simp only [mem_preimage, mem_singleton_iff, Z, stoppedValue, ← hτ, hω]
+      =ᵐ[P] Z ⁻¹' {b} := eventuallyEqSet_iff.mpr <|
+    (hWB.and ((hWB.fun_comp (x + ·)).hittingAfter_ae_eq (Ioo a b)ᶜ 0)).mono fun _ ⟨hω, hτ⟩ ↦ by
+      simp only [mem_ofPred_eq, mem_preimage, mem_singleton_iff, Z, stoppedValue, hτ, hω]
   have hind_eq : (fun ω ↦ Z ω - a) =ᵐ[P] fun ω ↦ (b - a) * (Z ⁻¹' {b}).indicator 1 ω := by
     filter_upwards [hW.ae_eval_hittingAfter_compl_Ioo_eq_or_eq hx] with ω hω
-    rcases hω with hZa | hZb
-    · rw [indicator_of_notMem (fun h ↦ hab.ne (hZa.symm.trans h)), mul_zero]
-      exact sub_eq_zero.mpr hZa
+    dsimp only [Z, stoppedValue]; rcases hω with hZa | hZb
+    · rw [indicator_of_notMem (fun h ↦ hab.ne (hZa.symm.trans h)), mul_zero, sub_eq_zero.mpr hZa]
     · rw [indicator_of_mem hZb, Pi.one_apply, mul_one]; exact congrArg (· - a) hZb
   have hint := integral_congr_ae hind_eq
-  have hlhs : ∫ ω, (Z ω - a) ∂P = x - a := by
-    rw [show (fun ω ↦ Z ω - a) = fun ω ↦ (x - a) + stoppedValue W _ ω by ext; simp [Z]; ring,
-      integral_add (integrable_const _) (integrable_stoppedValue_intervalExit hW hWm hWc hW0 hx)]
-    simp [integral_stoppedValue_intervalExit_eq_zero hW hWm hWc hW0 hx]
-  rw [integral_const_mul, integral_indicator_one (hZ_meas (measurableSet_singleton b)),
-    hlhs] at hint
+  rw [show (fun ω ↦ Z ω - a) = fun ω ↦ (x - a) + stoppedValue W _ ω by ext; simp [Z]; ring,
+    integral_add (integrable_const _) (integrable_stoppedValue_intervalExit hW hWm hWc hW0 hx),
+    integral_const, probReal_univ, one_smul,
+    integral_stoppedValue_intervalExit_eq_zero hW hWm hWc hW0 hx, add_zero, integral_const_mul,
+    integral_indicator_one (hZ_meas (measurableSet_singleton b))] at hint
   rw [measureReal_congr hset_ae, eq_div_iff (sub_ne_zero.mpr hab.ne'), mul_comm]; linarith
 
 /-- `ℝ≥0∞`-valued upper exit probability for Brownian motion on `(a, b)`. -/
-theorem measure_eval_hittingAfter_compl_Ioo_eq_right (hB : IsBrownianReal B P)
-    {x a b : ℝ} (hab : a < b) (hx : x ∈ Icc a b) :
+theorem measure_eval_hittingAfter_compl_Ioo_eq_right (hB : IsBrownianReal B P) {x a b : ℝ}
+    (hab : a < b) (hx : x ∈ Icc a b) :
     P {ω | x + B (hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 ω).untopA ω = b} =
       ENNReal.ofReal ((x - a) / (b - a)) := by
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
@@ -321,8 +317,8 @@ theorem measure_eval_hittingAfter_compl_Ioo_eq_right (hB : IsBrownianReal B P)
 
 /-- **Brownian gambler's ruin (lower exit probability)**: for `a < b` and `x ∈ [a, b]`, the
 probability that `x + B` exits `(a, b)` through `a` equals `(b - x) / (b - a)`. -/
-theorem measureReal_eval_hittingAfter_compl_Ioo_eq_left (hB : IsBrownianReal B P)
-    {x a b : ℝ} (hab : a < b) (hx : x ∈ Icc a b) :
+theorem measureReal_eval_hittingAfter_compl_Ioo_eq_left (hB : IsBrownianReal B P) {x a b : ℝ}
+    (hab : a < b) (hx : x ∈ Icc a b) :
     P.real {ω | x + B (hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 ω).untopA ω = a} =
       (b - x) / (b - a) := by
   have hneg := hB.neg.measureReal_eval_hittingAfter_compl_Ioo_eq_right (neg_lt_neg hab)
@@ -338,13 +334,31 @@ theorem measureReal_eval_hittingAfter_compl_Ioo_eq_left (hB : IsBrownianReal B P
   exact hneg.trans (by ring)
 
 /-- `ℝ≥0∞`-valued lower exit probability for Brownian motion on `(a, b)`. -/
-theorem measure_eval_hittingAfter_compl_Ioo_eq_left (hB : IsBrownianReal B P)
-    {x a b : ℝ} (hab : a < b) (hx : x ∈ Icc a b) :
+theorem measure_eval_hittingAfter_compl_Ioo_eq_left (hB : IsBrownianReal B P) {x a b : ℝ}
+    (hab : a < b) (hx : x ∈ Icc a b) :
     P {ω | x + B (hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 ω).untopA ω = a} =
       ENNReal.ofReal ((b - x) / (b - a)) := by
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
   rw [← ENNReal.ofReal_toReal (measure_ne_top P _), ← measureReal_def,
     hB.measureReal_eval_hittingAfter_compl_Ioo_eq_left hab hx]
+
+/-- **Exit-position law of Brownian motion on `(a, b)`**: for `a < b` and `x ∈ [a, b]`, the exit
+position `x + B (hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 ω).untopA ω` has the two-point
+law `((b - x) / (b - a)) • δ_a + ((x - a) / (b - a)) • δ_b`. -/
+theorem hasLaw_eval_hittingAfter_compl_Ioo (hB : IsBrownianReal B P) {x a b : ℝ} (hab : a < b)
+    (hx : x ∈ Icc a b) :
+    HasLaw (fun ω ↦ x + B (hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 ω).untopA ω)
+      (ENNReal.ofReal ((b - x) / (b - a)) • Measure.dirac a +
+        ENNReal.ofReal ((x - a) / (b - a)) • Measure.dirac b) P := by
+  have hm := (hB.aemeasurable_eval_hittingAfter_compl_Ioo x a b).const_add x
+  refine ⟨hm, ?_⟩
+  rw [(Measure.ae_eq_or_eq_iff_eq_dirac_add_dirac (μ := P.map _) hab.ne).mp
+      ((ae_map_iff hm ((measurableSet_singleton a).union (measurableSet_singleton b))).mpr
+        (hB.ae_eval_hittingAfter_compl_Ioo_eq_or_eq hx)),
+    Measure.map_apply₀ hm (measurableSet_singleton a).nullMeasurableSet,
+    Measure.map_apply₀ hm (measurableSet_singleton b).nullMeasurableSet]
+  exact congrArg₂ (· + ·) (congrArg (· • _) (hB.measure_eval_hittingAfter_compl_Ioo_eq_left hab hx))
+    (congrArg (· • _) (hB.measure_eval_hittingAfter_compl_Ioo_eq_right hab hx))
 
 /-- The first exit time `(hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 ω).untopA` of `x + B`
 from any open interval `(a, b)` is integrable. -/
@@ -370,13 +384,13 @@ theorem integral_hittingAfter_compl_Ioo (hB : IsBrownianReal B P) (x : ℝ) {a b
         fun _ hω ↦ congrArg (fun q : WithTop ℝ≥0 ↦ (q.untopA : ℝ)) hω),
       integral_intervalExit_eq_of_mem_Icc hW hWm hWc hW0 (Ioo_subset_Icc_self hx),
       max_eq_right (mul_nonneg (sub_nonneg.mpr hx.1.le) (sub_nonneg.mpr hx.2.le))]
-  · have hnonpos : (x - a) * (b - x) ≤ 0 := (le_or_gt x a).elim
+  · have hnp : (x - a) * (b - x) ≤ 0 := (le_or_gt x a).elim
       (fun h ↦ mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.mpr h) (sub_nonneg.mpr (h.trans hab)))
-      (fun h ↦ mul_nonpos_of_nonneg_of_nonpos (sub_nonneg.mpr h.le)
-        (sub_nonpos.mpr (not_lt.mp fun hxb ↦ hx ⟨h, hxb⟩)))
+      fun h ↦ mul_nonpos_of_nonneg_of_nonpos (sub_nonneg.mpr h.le)
+        (sub_nonpos.mpr (not_lt.mp fun hxb ↦ hx ⟨h, hxb⟩))
     rw [integral_congr_ae (g := fun _ ↦ (0 : ℝ))
       ((hB.hittingAfter_compl_Ioo_ae_eq_zero_of_notMem hx).mono fun _ hω ↦ by simp [hω]),
-      integral_zero, max_eq_left hnonpos]
+      integral_zero, max_eq_left hnp]
 
 /-- **Mean exit time of Brownian motion from `(-K, K)`**: for `K ≥ 0` and all `x : ℝ`,
 `∫ ω, ((hittingAfter (fun t ω ↦ x + B t ω) (Ioo (-K) K)ᶜ 0 ω).untopA : ℝ) ∂P =`
