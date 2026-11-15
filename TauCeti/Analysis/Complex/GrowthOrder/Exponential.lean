@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 Matteo Cipollina and The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: OpenAI Codex
+Authors: Matteo Cipollina, OpenAI Codex
 -/
 module
 
@@ -43,6 +43,10 @@ zeros, comparison with a canonical product additionally requires a growth bound 
 ## References
 
 * H. Davenport, *Multiplicative Number Theory*, 3rd ed., Chapter 11.
+* Matteo Cipollina, PNT+, [ExpPoly.lean](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/e1ed50ef52b80922d0cf26293cdc74b84039b5d6/PrimeNumberTheoremAnd/Mathlib/Analysis/Complex/ExpPoly.lean)
+  and [ExpPoly/Growth.lean](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/e1ed50ef52b80922d0cf26293cdc74b84039b5d6/PrimeNumberTheoremAnd/Mathlib/Analysis/Complex/ExpPoly/Growth.lean).
+  The polynomial-exponent extraction and natural-degree growth criterion adapt the statements
+  of `zero_free_polynomial_growth_is_exp_poly` and `natDegree_le_floor_of_growth_exp_eval`.
 -/
 
 public section
