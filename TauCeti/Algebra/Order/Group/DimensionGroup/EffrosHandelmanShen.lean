@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Group.Int
 public import Mathlib.Basic.Countable.Defs
 public import TauCeti.Algebra.Order.Group.DimensionGroup.Basic
 
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.Order.Group.Basic
 import Mathlib.Basic.Countable.Basic
 import Mathlib.Data.Fintype.BigOperators
@@ -36,14 +36,14 @@ elements of a countable exhaustion of `G⁺` builds a `SimplicialPresentation G`
 
 * `TauCeti.bondIter` : Composite bonding homomorphism from stage `n` to stage `n + k` in a
   sequential system of simplicial groups.
-* `TauCeti.SimplicialPresentation G` : Presentation of `G` as a sequential positive inductive
-  limit of simplicial groups `Fin (rank n) → ℤ`.
+* `TauCeti.SimplicialPresentation G` : Presentation of a partially ordered abelian group `G` as a
+  sequential positive inductive limit of simplicial groups `Fin (rank n) → ℤ`.
 
 ## Main results
 
 * `TauCeti.SimplicialPresentation.isDimensionGroup` and
-  `TauCeti.SimplicialPresentation.countable` : Any group admitting a `SimplicialPresentation` is a
-  countable dimension group.
+  `TauCeti.SimplicialPresentation.countable` : Any partially ordered abelian group admitting a
+  `SimplicialPresentation` is a countable dimension group.
 * `TauCeti.exists_monotone_factorization_of_map_eq_zero` and
   `TauCeti.exists_monotone_factorization_finset` : Shen's triangle lemma for single elements and
   finite subsets of the kernel of a positive map from `Fin r → ℤ`.
@@ -137,7 +137,8 @@ theorem bondIter_le_of_le {rank : ℕ → ℕ}
 inductive limit of simplicial groups `(ℤ^{rₙ}, ℕ^{rₙ})`: positive bonding maps (not required to
 be injective), compatible positive maps into `G` whose images exhaust `G` and whose images of
 the positive cones exhaust `G⁺`, and whose kernels are the eventual kernels of the system. -/
-structure SimplicialPresentation (G : Type*) [AddCommGroup G] [PartialOrder G] where
+structure SimplicialPresentation (G : Type*) [AddCommGroup G] [PartialOrder G]
+    [IsOrderedAddMonoid G] where
   /-- The rank of the simplicial group at stage `n`. -/
   rank : ℕ → ℕ
   /-- The bonding map from stage `n` to stage `n + 1`. -/
@@ -153,9 +154,7 @@ structure SimplicialPresentation (G : Type*) [AddCommGroup G] [PartialOrder G] w
 
 namespace SimplicialPresentation
 
-section Basic
-
-variable {G : Type*} [AddCommGroup G] [PartialOrder G]
+variable {G : Type*} [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
 
 /-- Applying `bond n` followed by `toLimit (n + 1)` recovers `toLimit n`. -/
 @[simp]
@@ -211,7 +210,7 @@ theorem exists_nonneg_toLimit_of_le (P : SimplicialPresentation G) {m n : ℕ} (
   exact ⟨bondIter P.bond m d x, by simpa using P.bondIter_mono m d hx0,
     P.toLimit_bondIter_apply m d x⟩
 
-/-- Any group admitting a `SimplicialPresentation` is countable. -/
+/-- Every partially ordered abelian group admitting a `SimplicialPresentation` is countable. -/
 theorem countable (P : SimplicialPresentation G) : Countable G := by
   let f : (Σ n : ℕ, Fin (P.rank n) → ℤ) → G := fun p => P.toLimit p.1 p.2
   have hf : Function.Surjective f := fun g =>
@@ -219,8 +218,8 @@ theorem countable (P : SimplicialPresentation G) : Countable G := by
     ⟨⟨n, x⟩, hx⟩
   exact hf.countable
 
-/-- Every group admitting a `SimplicialPresentation` is directed. -/
-theorem isDirected (P : SimplicialPresentation G) : IsDirected G (· ≤ ·) := by
+/-- Every partially ordered abelian group admitting a `SimplicialPresentation` is directed. -/
+theorem isDirectedOrder (P : SimplicialPresentation G) : IsDirectedOrder G := by
   refine ⟨fun a b => ?_⟩
   obtain ⟨n₁, x₁, hx₁⟩ := P.exhausts a
   obtain ⟨n₂, x₂, hx₂⟩ := P.exhausts b
@@ -229,9 +228,9 @@ theorem isDirected (P : SimplicialPresentation G) : IsDirected G (· ≤ ·) := 
   exact ⟨P.toLimit (max n₁ n₂) (y₁ ⊔ y₂),
     P.toLimit_mono _ le_sup_left, P.toLimit_mono _ le_sup_right⟩
 
-/-- Every group admitting a `SimplicialPresentation` is unperforated. -/
+/-- Every partially ordered abelian group admitting a `SimplicialPresentation` is unperforated. -/
 theorem isUnperforated (P : SimplicialPresentation G) : IsUnperforated G := by
-  rw [isUnperforated_def]
+  rw [isUnperforated_iff]
   intro m hm g hg
   obtain ⟨n₁, x₁, hx₁⟩ := P.exhausts g
   obtain ⟨n₂, z₁, hz₁0, hz₁⟩ := P.exhausts_pos (m • g) hg
@@ -244,15 +243,9 @@ theorem isUnperforated (P : SimplicialPresentation G) : IsUnperforated G := by
   rw [map_sub, map_nsmul, sub_eq_zero] at hk
   have hmk : 0 ≤ m • bondIter P.bond N k x := by rw [hk]; simpa using P.bondIter_mono N k hz0
   have hx0 : 0 ≤ bondIter P.bond N k x :=
-    (isDimensionGroup_pi_int _).isUnperforated.nonneg_of_nsmul_nonneg hm.ne' hmk
+    (IsUnperforated.pi fun _ => .of_linearOrder).nonneg_of_nsmul_nonneg hm hmk
   rw [← hx, ← P.toLimit_bondIter_apply N k x]
   simpa using P.toLimit_mono (N + k) hx0
-
-end Basic
-
-section OrderedGroup
-
-variable {G : Type*} [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
 
 /-- Order lifting along a `SimplicialPresentation`: if `P.toLimit n x ≤ P.toLimit n y`, then
 `bondIter P.bond n k x ≤ bondIter P.bond n k y` at some later stage `n + k`. -/
@@ -289,9 +282,10 @@ theorem exists_bondIter_le (P : SimplicialPresentation G) (n : ℕ)
     rw [hk]
     simpa using P.bondIter_mono (m + d) k hz'0
 
-/-- Every group admitting a `SimplicialPresentation` satisfies Riesz interpolation. -/
+/-- Every partially ordered abelian group admitting a `SimplicialPresentation` satisfies Riesz
+interpolation. -/
 theorem hasRieszInterpolation (P : SimplicialPresentation G) : HasRieszInterpolation G := by
-  rw [hasRieszInterpolation_def]
+  rw [hasRieszInterpolation_iff]
   intro a₁ a₂ b₁ b₂ h₁₁ h₁₂ h₂₁ h₂₂
   obtain ⟨n₁, x₁₀, hx₁₀⟩ := P.exhausts a₁
   obtain ⟨n₂, x₂₀, hx₂₀⟩ := P.exhausts a₂
@@ -312,7 +306,7 @@ theorem hasRieszInterpolation (P : SimplicialPresentation G) : HasRieszInterpola
   obtain ⟨k₂₂, hk₂₂⟩ := P.exists_bondIter_le N h₂₂
   let K := max (max k₁₁ k₁₂) (max k₂₁ k₂₂)
   obtain ⟨z, hz₁, hz₂, hz₃, hz₄⟩ :=
-    (isDimensionGroup_pi_int (Fin (P.rank (N + K)))).hasRieszInterpolation.exists_between
+    (HasRieszInterpolation.pi fun _ : Fin (P.rank (N + K)) => .of_semilatticeSup).exists_ge_ge_le_le
       (P.bondIter_le_of_le N (K := K) (le_max_of_le_left (le_max_left k₁₁ k₁₂)) hk₁₁)
       (P.bondIter_le_of_le N (K := K) (le_max_of_le_left (le_max_right k₁₁ k₁₂)) hk₁₂)
       (P.bondIter_le_of_le N (K := K) (le_max_of_le_right (le_max_left k₂₁ k₂₂)) hk₂₁)
@@ -323,11 +317,10 @@ theorem hasRieszInterpolation (P : SimplicialPresentation G) : HasRieszInterpola
     (P.toLimit_mono (N + K) hz₃).trans_eq (P.toLimit_bondIter_apply N K y₁),
     (P.toLimit_mono (N + K) hz₄).trans_eq (P.toLimit_bondIter_apply N K y₂)⟩
 
-/-- Every group admitting a `SimplicialPresentation` is a dimension group. -/
+/-- Every partially ordered abelian group admitting a `SimplicialPresentation` is a dimension
+group. -/
 theorem isDimensionGroup (P : SimplicialPresentation G) : IsDimensionGroup G :=
-  IsDimensionGroup.mk P.isDirected P.isUnperforated P.hasRieszInterpolation
-
-end OrderedGroup
+  ⟨P.isDirectedOrder, P.isUnperforated, P.hasRieszInterpolation⟩
 
 end SimplicialPresentation
 
@@ -365,11 +358,11 @@ private theorem exists_shen_decomp (hu : IsUnperforated G) (hr : HasRieszInterpo
     refine Finset.sum_le_sum fun j _ => zsmul_le_zsmul_left (hw j) ?_
     have := hbound j
     omega
-  have hMle : M • w k₀ ≤ M • ∑ j ∈ Ineg, w j := by
-    rw [← natCast_zsmul, ← natCast_zsmul]
+  have hle : w k₀ ≤ ∑ j ∈ Ineg, w j := by
+    rw [← sub_nonneg, ← hu.nsmul_nonneg_iff hM.ne', nsmul_sub, sub_nonneg,
+      ← natCast_zsmul, ← natCast_zsmul]
     exact (le_add_of_nonneg_right hpos).trans (heq.trans_le hneg_le)
-  exact hr.exists_finset_sum_eq_of_le_sum (fun j _ => hw j) (hw k₀)
-    ((hu.nsmul_le_nsmul_iff_right hM.ne').mp hMle)
+  exact hr.exists_decomposition_sum Ineg (fun j _ => hw j) (hw k₀) hle
 
 private abbrev ShenIndex {r : ℕ} (x : Fin r → ℤ) (k₀ : Fin r) : Type :=
   {i : Fin r // i ∈ (Finset.univ.filter (fun i => 0 ≤ x i)).erase k₀} ⊕
@@ -909,7 +902,7 @@ theorem IsDimensionGroup.nonempty_simplicialPresentation (hd : IsDimensionGroup 
       DFunLike.congr_fun (stageSeq_toLimit_comp_bondIter hd posEnum hpos enumZVec m k) x⟩
   have hexhausts : ∀ g : G, ∃ n x, (S n).toLimit x = g := by
     intro g
-    obtain ⟨u, hu0, hgu⟩ := hd.isDirected.directed 0 g
+    obtain ⟨u, hu0, hgu⟩ := hd.isDirectedOrder.directed 0 g
     obtain ⟨n₁, x₁, _, hx₁⟩ := hexhausts_pos u hu0
     obtain ⟨n₂, x₂, _, hx₂⟩ := hexhausts_pos (u - g) (sub_nonneg.mpr hgu)
     obtain ⟨y₁, hy₁⟩ := hpush (le_max_left n₁ n₂) ⟨x₁, hx₁⟩
