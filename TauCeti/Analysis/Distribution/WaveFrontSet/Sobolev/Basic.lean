@@ -166,12 +166,8 @@ theorem isOpen_diff_sobolevWaveFrontSet (s : ℝ) (T : 𝓓'(Ω, ℂ)) :
 theorem IsMicrolocallySobolevAt.mono {s t : ℝ} {T : 𝓓'(Ω, ℂ)} {x ξ : E}
     (h : T.IsMicrolocallySobolevAt s x ξ) (hts : t ≤ s) : T.IsMicrolocallySobolevAt t x ξ := by
   obtain ⟨φ, hφ, Γ, hΓ, hξ, hcone, hL⟩ := h
-  refine ⟨φ, hφ, Γ, hΓ, hξ, hcone, hL.mono (aestronglyMeasurable_weight_smul_localFourier t T φ _)
-    (.of_forall fun η ↦ ?_)⟩
-  rw [norm_smul, norm_smul, Real.norm_of_nonneg (by positivity),
-    Real.norm_of_nonneg (by positivity)]
-  gcongr
-  · nlinarith [sq_nonneg ‖η‖]
+  exact ⟨φ, hφ, Γ, hΓ, hξ, hcone,
+    hL.one_add_norm_sq_rpow_smul_mono (T.continuous_localFourier φ).aestronglyMeasurable hts⟩
 
 /-- The `H^s` wave front set grows with `s`. -/
 theorem sobolevWaveFrontSet_mono {s t : ℝ} (hts : t ≤ s) (T : 𝓓'(Ω, ℂ)) :

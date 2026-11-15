@@ -61,6 +61,12 @@ induction starts from the polynomial growth of the localized Fourier transform, 
 
 ## Main results
 
+* `TauCeti.exists_cone_le_norm_constCoeffPrincipalSymbol`: at a noncharacteristic `ξ`, the
+  principal symbol is bounded below by `c₀ ‖η‖ ^ M` on an open cone around `ξ`.
+* `TauCeti.exists_mul_one_add_norm_pow_le_norm_sum_mul_prod`: on such a cone the full symbol is
+  bounded below by a multiple of `(1 + ‖η‖) ^ M` outside a ball.
+* `TauCeti.constCoeffPrincipalSymbol_laplacian`: the principal symbol of the Laplacian is
+  `‖ξ‖ ^ 2`.
 * `Distribution.IsMicrolocallySmoothAt.of_sum_smul_iteratedLineDerivOp`: if `P T` is
   microlocally smooth at `(x, ξ)` and `σ_M(P)(ξ) ≠ 0`, then `T` is microlocally smooth there.
 * `Distribution.waveFrontSet_subset_waveFrontSet_sum_smul_iteratedLineDerivOp_union`:
@@ -187,27 +193,19 @@ theorem exists_cone_le_norm_constCoeffPrincipalSymbol {ι : Type*} {s : Finset �
       Real.norm_of_nonneg ht.le, norm_smul, Real.norm_of_nonneg ht.le, mul_pow, mul_left_comm]
     exact mul_lt_mul_of_pos_left hη (pow_pos ht M)
 
-end TauCeti
+/-- The principal symbol of order `2` of the Laplacian `∑ i, ∂_{b i} ∂_{b i}`, for an
+orthonormal basis `b`, is `‖ξ‖ ^ 2`. -/
+theorem constCoeffPrincipalSymbol_laplacian {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
+    (ξ : E) :
+    constCoeffPrincipalSymbol Finset.univ (fun _ ↦ 1) (k := fun _ ↦ 2) (fun i ↦ ![b i, b i]) 2 ξ =
+      ((‖ξ‖ ^ 2 : ℝ) : ℂ) := by
+  have hsum : ∑ i, ⟪b i, ξ⟫ * ⟪b i, ξ⟫ = ‖ξ‖ ^ 2 := by
+    rw [← real_inner_self_eq_norm_sq, ← b.sum_inner_mul_inner ξ ξ]
+    exact Finset.sum_congr rfl fun i _ ↦ by rw [real_inner_comm]
+  rw [← hsum]
+  simp [constCoeffPrincipalSymbol, Fin.prod_univ_two]
 
-namespace Distribution
-
-open TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Ω : Opens E}
-
-/-! ### Polynomial bounds for the symbol -/
-
-/-- The factor `2πi ⟪v, η⟫` contributed by a derivative `∂_v` is bounded by
-`2π ‖v‖ (1 + ‖η‖)`. -/
-private theorem norm_two_pi_I_inner_le (v η : E) :
-    ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ ≤ 2 * π * ‖v‖ * (1 + ‖η‖) := by
-  calc ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ = 2 * π * |⟪v, η⟫| := by
-        simp [abs_of_pos Real.pi_pos]
-    _ ≤ 2 * π * (‖v‖ * (1 + ‖η‖)) := by
-        gcongr
-        exact (abs_real_inner_le_norm v η).trans
-          (mul_le_mul_of_nonneg_left (le_add_of_nonneg_left zero_le_one) (norm_nonneg v))
-    _ = 2 * π * ‖v‖ * (1 + ‖η‖) := by ring
+/-! ### The full symbol -/
 
 /-- The symbol of `∂^m` in the frequency variable of the localized Fourier transform is
 `(2πi) ^ r` times the product of the inner products. -/
@@ -241,10 +239,12 @@ private theorem norm_sum_filter_ne_mul_le {ι : Type*} {s : Finset ι} {c : ι �
 
 /-- **The full symbol is elliptic at large frequencies.** If all orders are at most `M` and the
 principal symbol is bounded below by `c₀ ‖η‖ ^ M` on `Γ`, then the full symbol
-`∑ i ∈ s, c i ∏ₗ 2πi ⟪m i l, η⟫` is bounded below by a multiple of `(1 + ‖η‖) ^ M` on `Γ` outside a
+`∑ i ∈ s, c i ∏ₗ 2πi ⟪m i l, η⟫` of `P = ∑ i ∈ s, c i ∂^(m i)`, in the frequency variable of
+Mathlib's Fourier transform, is bounded below by a multiple of `(1 + ‖η‖) ^ M` on `Γ` outside a
 ball: the terms of lower order are smaller by a factor `‖η‖`. -/
-private theorem exists_le_norm_symbol {ι : Type*} {s : Finset ι} {c : ι → ℂ} {k : ι → ℕ}
-    {m : ∀ i, Fin (k i) → E} {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M) {Γ : Set E} {c₀ : ℝ} (hc₀ : 0 < c₀)
+theorem exists_mul_one_add_norm_pow_le_norm_sum_mul_prod {ι : Type*} {s : Finset ι} {c : ι → ℂ}
+    {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M) {Γ : Set E} {c₀ : ℝ}
+    (hc₀ : 0 < c₀)
     (hΓ : ∀ η ∈ Γ, c₀ * ‖η‖ ^ M ≤ ‖constCoeffPrincipalSymbol s c m M η‖) :
     ∃ R c' : ℝ, 0 < c' ∧ ∀ η ∈ Γ, R ≤ ‖η‖ →
       c' * (1 + ‖η‖) ^ M ≤ ‖∑ i ∈ s, c i * ∏ l, (2 * π * I * ⟪m i l, η⟫ : ℂ)‖ := by
@@ -291,6 +291,28 @@ private theorem exists_le_norm_symbol {ι : Type*} {s : Finset ι} {c : ι → �
     _ ≤ _ := by
         rw [sub_le_iff_le_add]
         exact htop'.trans (norm_le_add_norm_add _ _)
+
+end TauCeti
+
+namespace Distribution
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Ω : Opens E}
+
+/-! ### Polynomial bounds for the symbol -/
+
+/-- The factor `2πi ⟪v, η⟫` contributed by a derivative `∂_v` is bounded by
+`2π ‖v‖ (1 + ‖η‖)`. -/
+private theorem norm_two_pi_I_inner_le (v η : E) :
+    ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ ≤ 2 * π * ‖v‖ * (1 + ‖η‖) := by
+  calc ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ = 2 * π * |⟪v, η⟫| := by
+        simp [abs_of_pos Real.pi_pos]
+    _ ≤ 2 * π * (‖v‖ * (1 + ‖η‖)) := by
+        gcongr
+        exact (abs_real_inner_le_norm v η).trans
+          (mul_le_mul_of_nonneg_left (le_add_of_nonneg_left zero_le_one) (norm_nonneg v))
+    _ = 2 * π * ‖v‖ * (1 + ‖η‖) := by ring
 
 /-! ### Transfer of decay through derivatives -/
 
@@ -491,7 +513,7 @@ theorem IsMicrolocallySmoothAt.of_sum_smul_iteratedLineDerivOp {ι : Type*} {s :
     exact φ.tsupport_subset (subset_tsupport _ hφ)
   obtain ⟨U, hU, Γ₁, hΓ₁, hξ₁, hcone₁, hdecay⟩ := hP.exists_nhds_cone
   obtain ⟨Γ₂, hΓ₂, hξ₂, hcone₂, c₀, hc₀, hell⟩ := exists_cone_le_norm_constCoeffPrincipalSymbol hξ
-  obtain ⟨R, c', hc', hp⟩ := exists_le_norm_symbol hk hc₀ hell
+  obtain ⟨R, c', hc', hp⟩ := exists_mul_one_add_norm_pow_le_norm_sum_mul_prod hk hc₀ hell
   -- A compact neighbourhood `K` of `x` on which `P T` is microlocally smooth along `Γ₁`.
   obtain ⟨K, hKx, hKsub, hKc⟩ := local_compact_nhds (inter_mem hU (Ω.isOpen.mem_nhds hx))
   obtain ⟨k₀, hk₀⟩ := exists_forall_norm_localFourier_le T (K := ⟨K, hKc⟩)
@@ -577,14 +599,7 @@ theorem waveFrontSet_laplacianCLM (T : 𝓓'(Ω, ℂ)) :
     (k := fun _ ↦ 2) (fun i ↦ ![b i, b i]) (M := 2) (fun _ _ ↦ le_rfl) (fun ξ hξ ↦ ?_) T
   · simpa [laplacianCLM_eq_sum b, iteratedLineDerivOp_succ_left, iteratedLineDerivOp_one, Fin.tail]
       using h
-  have hsum : ∑ i, ⟪b i, ξ⟫ * ⟪b i, ξ⟫ = ‖ξ‖ ^ 2 := by
-    rw [← real_inner_self_eq_norm_sq, ← b.sum_inner_mul_inner ξ ξ]
-    exact Finset.sum_congr rfl fun i _ ↦ by rw [real_inner_comm]
-  have hval : constCoeffPrincipalSymbol Finset.univ (fun _ ↦ 1) (fun i ↦ ![b i, b i]) 2 ξ =
-      ((‖ξ‖ ^ 2 : ℝ) : ℂ) := by
-    rw [← hsum]
-    simp [constCoeffPrincipalSymbol, Fin.prod_univ_two]
-  rw [hval]
+  rw [constCoeffPrincipalSymbol_laplacian]
   exact_mod_cast (pow_pos (norm_pos_iff.2 hξ) 2).ne'
 
 /-- **Elliptic regularity for the Laplacian.** `Δ T` and `T` have the same singular support. -/

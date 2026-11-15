@@ -55,6 +55,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   `⟨x⟩ ^ (-k) ≤ ‖x‖ ^ (-k)`.
 * `TauCeti.one_add_mul_norm_pow_le`: the linear weight `(1 + c ‖x‖) ^ i` is at most
   `(1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`.
+* `MeasureTheory.MemLp.one_add_norm_sq_rpow_smul_mono`: lowering the order of a Japanese
+  bracket weight preserves `p`-integrability.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
 * `TauCeti.integrable_add_norm_rpow_neg`, `TauCeti.integral_add_norm_rpow_neg`: integrability
@@ -130,6 +132,21 @@ theorem one_add_mul_norm_pow_le {E : Type*} [NormedAddCommGroup E] {c : ℝ} (hc
   exact pow_le_pow_left₀ (by positivity) hle i
 
 variable {V : Type*} [NormedAddCommGroup V] [MeasurableSpace V] [BorelSpace V]
+
+/-- Lowering the order of a Japanese bracket weight preserves `p`-integrability: if
+`x ↦ (1 + ‖x‖ ^ 2) ^ (s / 2) • f x` lies in `Lᵖ(μ)` and `t ≤ s`, then so does
+`x ↦ (1 + ‖x‖ ^ 2) ^ (t / 2) • f x`. -/
+theorem _root_.MeasureTheory.MemLp.one_add_norm_sq_rpow_smul_mono {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure V} {p : ENNReal} {f : V → F} {s t : ℝ}
+    (h : MemLp (fun x ↦ (1 + ‖x‖ ^ 2) ^ (s / 2) • f x) p μ) (hf : AEStronglyMeasurable f μ)
+    (hts : t ≤ s) : MemLp (fun x ↦ (1 + ‖x‖ ^ 2) ^ (t / 2) • f x) p μ :=
+  h.mono ((((continuous_const.add (continuous_norm.pow 2)).rpow_const fun x ↦
+      Or.inl (by positivity : (0 : ℝ) < 1 + ‖x‖ ^ 2).ne').aestronglyMeasurable).smul hf)
+    (.of_forall fun x ↦ by
+      rw [norm_smul, norm_smul, Real.norm_of_nonneg (by positivity),
+        Real.norm_of_nonneg (by positivity)]
+      gcongr
+      nlinarith [sq_nonneg ‖x‖])
 
 section Integrability
 
