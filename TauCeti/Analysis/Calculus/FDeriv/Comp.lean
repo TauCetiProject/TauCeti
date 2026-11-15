@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Congr
 public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
+import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Tactic.Abel
 
 /-!
@@ -35,6 +36,10 @@ precomposition with the derivative of that map.
   `ContinuousLinearMap.fderiv_comp_left_of_leftInverse`: the chain rule for precomposition with a
   split surjection and postcomposition with a split injection, with no differentiability
   assumption.
+* `ContinuousLinearMap.hasFDerivAt_comp_left_iff_of_isEmbedding`,
+  `ContinuousLinearMap.comp_comp_eq_of_hasFDerivAt_comp_left`: postcomposition with an embedding
+  `Φ` turns the derivatives of `k` into those of `Φ ∘ k`, and every derivative of `Φ ∘ k` arises
+  this way when `Φ` is a split injection.
 * `TauCeti.fderiv_comp_add_smul`: the derivative of `w ↦ f (c + a • w)` is `a` times that of `f`
   at `c + a • w`.
 -/
@@ -129,6 +134,27 @@ theorem _root_.ContinuousLinearMap.fderiv_comp_left_of_leftInverse {X : Type*}
       exact Ψ.differentiableAt.comp y hd')
     rw [fderiv_zero_of_not_differentiableAt hnd, fderiv_zero_of_not_differentiableAt hd]
     simp
+
+/-- For a continuous linear map `Φ` that is an embedding, `Φ ∘ k` has derivative `Φ ∘ k'` at `y`
+exactly when `k` has derivative `k'` at `y`. -/
+theorem _root_.ContinuousLinearMap.hasFDerivAt_comp_left_iff_of_isEmbedding {X : Type*}
+    [NormedAddCommGroup X] [NormedSpace 𝕜 X] (Φ : E →L[𝕜] F) (hΦ : Topology.IsEmbedding Φ)
+    {k : X → E} {k' : X →L[𝕜] E} {y : X} :
+    HasFDerivAt (Φ ∘ k) (Φ.comp k') y ↔ HasFDerivAt k k' y :=
+  ⟨fun h ↦ HasFDerivAt.of_comp_of_isEmbedding (hΦ.isInducing.continuousAt_iff.mpr h.continuousAt)
+    Φ.hasFDerivAt hΦ h .rfl, fun h ↦ Φ.hasFDerivAt.comp y h⟩
+
+/-- For a continuous linear map `Φ` with a continuous linear left inverse `Ψ`, every derivative
+`D` of `Φ ∘ k` takes values in the range of `Φ`: it is `Φ` composed with the derivative `Ψ ∘ D`
+of `k`. -/
+theorem _root_.ContinuousLinearMap.comp_comp_eq_of_hasFDerivAt_comp_left {X : Type*}
+    [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    (Φ : E →L[𝕜] F) (Ψ : F →L[𝕜] E) (hΨΦ : Function.LeftInverse Ψ Φ) {k : X → E}
+    {D : X →L[𝕜] F} {y : X} (hD : HasFDerivAt (Φ ∘ k) D y) : Φ.comp (Ψ.comp D) = D := by
+  have hk : Ψ ∘ (Φ ∘ k) = k := funext fun u ↦ hΨΦ (k u)
+  have h : HasFDerivAt k (Ψ.comp D) y := by simpa only [hk] using Ψ.hasFDerivAt.comp y hD
+  exact ((Φ.hasFDerivAt_comp_left_iff_of_isEmbedding
+    (.of_leftInverse hΨΦ (map_continuous Ψ) (map_continuous Φ))).mpr h).unique hD
 
 end TauCeti
 
