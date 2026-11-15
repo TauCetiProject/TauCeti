@@ -70,13 +70,6 @@ theorem multiplierApproximatelyUnitarilyEquivalent_iff_coeHom (φ ψ : A →⋆�
         ((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ψ) :=
   Iff.rfl
 
-/-- Conjugation by a unitary multiplier, measured in the multiplier algebra or in `B`. -/
-private theorem norm_mul_coe_mul_star_sub_coe (u : unitary 𝓜(ℂ, B)) (b c : B) :
-    ‖(u : 𝓜(ℂ, B)) * (b : 𝓜(ℂ, B)) * star (u : 𝓜(ℂ, B)) - (c : 𝓜(ℂ, B))‖ =
-      ‖DoubleCentralizer.conjStarAlgAut u b - c‖ := by
-  rw [← DoubleCentralizer.coe_conjStarAlgAut_apply, ← DoubleCentralizer.coe_sub,
-    DoubleCentralizer.norm_coe]
-
 /-- Finite-set characterization of the multiplier-unitary relation, with the conjugates computed
 in `B`. -/
 theorem multiplierApproximatelyUnitarilyEquivalent_iff (φ ψ : A →⋆ₙₐ[ℂ] B) :
@@ -86,7 +79,7 @@ theorem multiplierApproximatelyUnitarilyEquivalent_iff (φ ψ : A →⋆ₙₐ[�
           ‖DoubleCentralizer.conjStarAlgAut u (φ a) - ψ a‖ < ε := by
   simp only [multiplierApproximatelyUnitarilyEquivalent_iff_coeHom,
     approximatelyUnitarilyEquivalent_def, NonUnitalStarAlgHom.comp_apply,
-    DoubleCentralizer.coeHom_apply, norm_mul_coe_mul_star_sub_coe]
+    DoubleCentralizer.coeHom_apply, DoubleCentralizer.norm_mul_coe_mul_star_sub_coe]
 
 namespace MultiplierApproximatelyUnitarilyEquivalent
 
@@ -140,10 +133,9 @@ theorem postcomp (h : MultiplierApproximatelyUnitarilyEquivalent φ ψ) (ρ : B 
       (DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ρ := by
     refine NonUnitalStarAlgHom.ext fun b ↦ ?_
     simp
-  have h' := ApproximatelyUnitarilyEquivalent.postcomp h
-    (((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ρ).extendToMultiplier hρ)
-  rwa [← NonUnitalStarAlgHom.comp_assoc, ← NonUnitalStarAlgHom.comp_assoc, hcomp,
-    NonUnitalStarAlgHom.comp_assoc, NonUnitalStarAlgHom.comp_assoc] at h'
+  simpa only [multiplierApproximatelyUnitarilyEquivalent_iff_coeHom,
+    NonUnitalStarAlgHom.comp_assoc] using
+    ApproximatelyUnitarilyEquivalent.postcomp_of_comp_eq h _ hcomp
 
 /-- Maps related by the multiplier-unitary relation have the same pointwise norm. -/
 theorem norm_eq (h : MultiplierApproximatelyUnitarilyEquivalent φ ψ) (a : A) :
@@ -154,19 +146,10 @@ theorem norm_eq (h : MultiplierApproximatelyUnitarilyEquivalent φ ψ) (a : A) :
 /-- The multiplier-unitary relation preserves injectivity. -/
 theorem injective_iff (h : MultiplierApproximatelyUnitarilyEquivalent φ ψ) :
     Function.Injective φ ↔ Function.Injective ψ := by
-  rw [injective_iff_map_eq_zero φ, injective_iff_map_eq_zero ψ]
-  exact forall_congr' fun a ↦ by rw [← norm_eq_zero (a := φ a),
-    ← norm_eq_zero (a := ψ a), h.norm_eq]
-
-/-- Convergence of conjugates in `B` is convergence of their images in `𝓜(ℂ, B)`. -/
-private theorem tendsto_conj_iff {ι : Type*} {l : Filter ι} (u : ι → unitary 𝓜(ℂ, B))
-    (b c : B) :
-    Tendsto (fun i ↦ (u i : 𝓜(ℂ, B)) * (b : 𝓜(ℂ, B)) * star (u i : 𝓜(ℂ, B))) l
-        (𝓝 (c : 𝓜(ℂ, B))) ↔
-      Tendsto (fun i ↦ DoubleCentralizer.conjStarAlgAut (u i) b) l (𝓝 c) := by
-  simp only [← DoubleCentralizer.coe_conjStarAlgAut_apply]
-  exact (DoubleCentralizer.isometry_coe (𝕜 := ℂ)).isUniformInducing.isInducing
-    |>.tendsto_nhds_iff.symm
+  have hi : Function.Injective (DoubleCentralizer.coeHom (𝕜 := ℂ) (A := B)) :=
+    DoubleCentralizer.coe_injective
+  simpa only [NonUnitalStarAlgHom.coe_comp, hi.of_comp_iff] using
+    ApproximatelyUnitarilyEquivalent.injective_iff h
 
 /-- A net of unitary multipliers whose conjugates of `φ` converge pointwise to `ψ` gives the
 multiplier-unitary relation. The filter must be nontrivial; no separability is needed. -/
@@ -175,7 +158,7 @@ theorem of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] (u : ι → unitary �
     MultiplierApproximatelyUnitarilyEquivalent φ ψ :=
   ApproximatelyUnitarilyEquivalent.of_tendsto u fun a ↦ by
     simpa only [NonUnitalStarAlgHom.comp_apply, DoubleCentralizer.coeHom_apply,
-      tendsto_conj_iff] using h a
+      ← DoubleCentralizer.coe_conjStarAlgAut_apply, DoubleCentralizer.tendsto_coe_iff] using h a
 
 /-- For a separable source, the multiplier-unitary relation is equivalent to pointwise
 convergence of conjugates along a sequence of unitary multipliers. -/
@@ -185,7 +168,8 @@ theorem iff_exists_unitary_seq [TopologicalSpace.SeparableSpace A] :
         Tendsto (fun n ↦ DoubleCentralizer.conjStarAlgAut (u n) (φ a)) atTop (𝓝 (ψ a)) := by
   simp only [multiplierApproximatelyUnitarilyEquivalent_iff_coeHom,
     ApproximatelyUnitarilyEquivalent.iff_exists_unitary_seq, NonUnitalStarAlgHom.comp_apply,
-    DoubleCentralizer.coeHom_apply, tendsto_conj_iff]
+    DoubleCentralizer.coeHom_apply, ← DoubleCentralizer.coe_conjStarAlgAut_apply,
+    DoubleCentralizer.tendsto_coe_iff]
 
 /-- The relation implemented by unitaries of the minimal unitization `Unitization ℂ B`, that is
 the target-unitary relation for the composites with `B → Unitization ℂ B`, implies the
@@ -199,9 +183,7 @@ theorem of_unitization
       DoubleCentralizer.coeHom (𝕜 := ℂ) := by
     rw [← Unitization.starLift_symm_apply]
     exact Unitization.starLift.symm_apply_apply _
-  have h' := ApproximatelyUnitarilyEquivalent.postcomp h
-    (Unitization.starLift (DoubleCentralizer.coeHom (𝕜 := ℂ) (A := B)))
-  rwa [← NonUnitalStarAlgHom.comp_assoc, ← NonUnitalStarAlgHom.comp_assoc, hcomp] at h'
+  exact ApproximatelyUnitarilyEquivalent.postcomp_of_comp_eq h _ hcomp
 
 end MultiplierApproximatelyUnitarilyEquivalent
 
@@ -211,19 +193,16 @@ to its multiplier algebra. -/
 theorem multiplierApproximatelyUnitarilyEquivalent_iff_approximatelyUnitarilyEquivalent
     {B : Type*} [CStarAlgebra B] {φ ψ : A →⋆ₙₐ[ℂ] B} :
     MultiplierApproximatelyUnitarilyEquivalent φ ψ ↔ ApproximatelyUnitarilyEquivalent φ ψ := by
-  let e := DoubleCentralizer.coeStarAlgEquiv ℂ B
-  have he : e.toStarAlgHom.toNonUnitalStarAlgHom = DoubleCentralizer.coeHom (𝕜 := ℂ) :=
-    NonUnitalStarAlgHom.ext fun b ↦ by simp [e]
-  have hes : e.symm.toStarAlgHom.toNonUnitalStarAlgHom.comp (DoubleCentralizer.coeHom (𝕜 := ℂ)) =
-      NonUnitalStarAlgHom.id ℂ B :=
-    NonUnitalStarAlgHom.ext fun b ↦ by simp [e]
   rw [multiplierApproximatelyUnitarilyEquivalent_iff_coeHom]
   constructor
   · intro h
-    have h' := ApproximatelyUnitarilyEquivalent.postcomp h e.symm.toStarAlgHom
-    rwa [← NonUnitalStarAlgHom.comp_assoc, ← NonUnitalStarAlgHom.comp_assoc, hes,
-      NonUnitalStarAlgHom.id_comp, NonUnitalStarAlgHom.id_comp] at h'
+    simpa only [NonUnitalStarAlgHom.id_comp] using
+      ApproximatelyUnitarilyEquivalent.postcomp_of_comp_eq (κ := NonUnitalStarAlgHom.id ℂ B) h
+        (DoubleCentralizer.coeStarAlgEquiv ℂ B).symm.toStarAlgHom (by simp)
   · intro h
-    simpa only [he] using ApproximatelyUnitarilyEquivalent.postcomp h e.toStarAlgHom
+    simpa only [StarAlgEquiv.toNonUnitalStarAlgHom_toStarAlgHom,
+      DoubleCentralizer.coeStarAlgEquiv_toNonUnitalStarAlgHom] using
+      ApproximatelyUnitarilyEquivalent.postcomp h
+        (DoubleCentralizer.coeStarAlgEquiv ℂ B).toStarAlgHom
 
 end TauCeti

@@ -160,33 +160,6 @@ variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedA
 theorem coe_one : ((1 : A) : 𝓜(𝕜, A)) = 1 :=
   ext_fst_snd (fun _ => by simp) (fun _ => by simp)
 
-/-- In a unital algebra, every multiplier is the image of its left centralizer evaluated at
-`1`. -/
-@[simp]
-theorem coe_fst_one (m : 𝓜(𝕜, A)) : ((m.fst 1 : A) : 𝓜(𝕜, A)) = m := by
-  have hsnd (x : A) : m.snd x = x * m.fst 1 := by simpa using m.central x 1
-  have hfst (x : A) : m.fst x = m.fst 1 * x := by simpa [hsnd] using (m.central 1 x).symm
-  exact ext_fst_snd (fun x => by simp [hfst x]) (fun x => by simp [hsnd x])
-
-variable [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A] [NormedStarGroup A]
-
-variable (𝕜 A) in
-/-- A unital normed star algebra is star-isomorphic to its multiplier algebra through the
-canonical inclusion; the inverse evaluates the left centralizer at `1`. -/
-noncomputable def coeStarAlgEquiv : A ≃⋆ₐ[𝕜] 𝓜(𝕜, A) where
-  __ := (coeHom : A →⋆ₙₐ[𝕜] 𝓜(𝕜, A))
-  invFun m := m.fst 1
-  left_inv a := by simp
-  right_inv := coe_fst_one
-
-@[simp]
-theorem coeStarAlgEquiv_apply (a : A) : coeStarAlgEquiv 𝕜 A a = (a : 𝓜(𝕜, A)) :=
-  (rfl)
-
-@[simp]
-theorem coeStarAlgEquiv_symm_apply (m : 𝓜(𝕜, A)) : (coeStarAlgEquiv 𝕜 A).symm m = m.fst 1 :=
-  (rfl)
-
 end Unital
 
 section FaithfulMulOpposite
@@ -215,6 +188,51 @@ theorem coe_inj {a b : A} : (a : 𝓜(𝕜, A)) = b ↔ a = b :=
   coe_injective.eq_iff
 
 end FaithfulMulOpposite
+
+section UnitalEquiv
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
+
+/-- In a unital algebra, every multiplier is the image of its left centralizer evaluated at
+`1`. -/
+@[simp]
+theorem coe_fst_one (m : 𝓜(𝕜, A)) : ((m.fst 1 : A) : 𝓜(𝕜, A)) = m := by
+  rw [← mul_coe_eq_coe_fst, coe_one, mul_one]
+
+variable [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A] [NormedStarGroup A]
+
+variable (𝕜 A) in
+/-- A unital normed star algebra is star-isomorphic to its multiplier algebra through the
+canonical inclusion; the inverse evaluates the left centralizer at `1`. -/
+noncomputable def coeStarAlgEquiv : A ≃⋆ₐ[𝕜] 𝓜(𝕜, A) where
+  __ := (coeHom : A →⋆ₙₐ[𝕜] 𝓜(𝕜, A))
+  invFun m := m.fst 1
+  left_inv a := by simp
+  right_inv := coe_fst_one
+
+@[simp]
+theorem coeStarAlgEquiv_apply (a : A) : coeStarAlgEquiv 𝕜 A a = (a : 𝓜(𝕜, A)) :=
+  (rfl)
+
+@[simp]
+theorem coeStarAlgEquiv_symm_apply (m : 𝓜(𝕜, A)) : (coeStarAlgEquiv 𝕜 A).symm m = m.fst 1 :=
+  (rfl)
+
+/-- The star isomorphism `coeStarAlgEquiv`, as a nonunital star homomorphism, is the canonical
+inclusion `coeHom`. -/
+@[simp]
+theorem coeStarAlgEquiv_toNonUnitalStarAlgHom :
+    (coeStarAlgEquiv 𝕜 A).toNonUnitalStarAlgHom = coeHom :=
+  NonUnitalStarAlgHom.ext fun _ ↦ rfl
+
+/-- The inverse of `coeStarAlgEquiv` undoes the canonical inclusion `coeHom`. -/
+@[simp]
+theorem coeStarAlgEquiv_symm_comp_coeHom :
+    (coeStarAlgEquiv 𝕜 A).symm.toNonUnitalStarAlgHom.comp coeHom =
+      NonUnitalStarAlgHom.id 𝕜 A :=
+  NonUnitalStarAlgHom.ext fun a ↦ by simp
+
+end UnitalEquiv
 
 section Faithful
 
