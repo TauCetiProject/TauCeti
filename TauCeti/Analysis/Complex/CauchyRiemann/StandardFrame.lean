@@ -216,6 +216,15 @@ theorem fderiv_add_apply_fderiv_add_apply_eq_apply_frameCoeff {η : ℂ → V}
   abel
 
 omit [CompleteSpace V] in
+/-- The derivative part `∂ₛΦ + J ∂ₜΦ` of the coefficient `C'` is continuous where `J` and `DΦ`
+are. -/
+private theorem continuousWithinAt_frameCoeffAux {s : Set ℂ} (hJ : ContinuousWithinAt J s z)
+    (hDΦ : ContinuousWithinAt DΦ s z) :
+    ContinuousWithinAt (fun z ↦ DΦ z 1 + J z ∘L DΦ z I) s z :=
+  (hDΦ.clm_apply continuousWithinAt_const).add
+    (hJ.clm_comp (hDΦ.clm_apply continuousWithinAt_const))
+
+omit [CompleteSpace V] in
 /-- **Measurability of the coefficient.** On a measurable set where `J`, `Φ`, its pointwise
 inverse and `DΦ` are continuous and `C` is measurable, `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)` is
 measurable. -/
@@ -224,8 +233,8 @@ theorem aestronglyMeasurable_frameCoeff {U : Set ℂ} (hU : MeasurableSet U)
     (hΨ : ContinuousOn (fun z ↦ Ring.inverse (Φ z)) U) (hDΦ : ContinuousOn DΦ U)
     (hC : AEStronglyMeasurable C (volume.restrict U)) :
     AEStronglyMeasurable (frameCoeff J C Φ DΦ) (volume.restrict U) := by
-  have hA : ContinuousOn (fun z ↦ DΦ z 1 + J z ∘L DΦ z I) U :=
-    (hDΦ.clm_apply continuousOn_const).add (hJ.clm_comp (hDΦ.clm_apply continuousOn_const))
+  have hA : ContinuousOn (fun z ↦ DΦ z 1 + J z ∘L DΦ z I) U := fun z hz ↦
+    continuousWithinAt_frameCoeffAux (hJ z hz) (hDΦ z hz)
   rw [show frameCoeff J C Φ DΦ = fun z ↦ compL ℝ V V V (Ring.inverse (Φ z))
       ((DΦ z 1 + J z ∘L DΦ z I) + compL ℝ V V V (C z) (Φ z)) from funext fun z ↦ frameCoeff_def]
   exact (compL ℝ V V V).aestronglyMeasurable_comp₂ (hΨ.aestronglyMeasurable hU)
@@ -233,19 +242,16 @@ theorem aestronglyMeasurable_frameCoeff {U : Set ℂ} (hU : MeasurableSet U)
       ((compL ℝ V V V).aestronglyMeasurable_comp₂ hC (hΦ.aestronglyMeasurable hU)))
 
 omit [CompleteSpace V] in
-/-- **Local boundedness of the coefficient.** Near a point `z` of an open set where `J`, `Φ`, its
-pointwise inverse and `DΦ` are continuous, `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)` is bounded if `C`
-is. -/
-theorem exists_eventually_norm_frameCoeff_le {U : Set ℂ} (hU : IsOpen U) (hz : z ∈ U)
-    (hJ : ContinuousOn J U) (hΦ : ContinuousOn Φ U)
-    (hΨ : ContinuousOn (fun z ↦ Ring.inverse (Φ z)) U) (hDΦ : ContinuousOn DΦ U)
+/-- **Local boundedness of the coefficient.** Near a point `z` where `J`, `Φ`, its pointwise
+inverse and `DΦ` are continuous, `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)` is bounded if `C` is. -/
+theorem exists_eventually_norm_frameCoeff_le (hJ : ContinuousAt J z) (hΦ : ContinuousAt Φ z)
+    (hΨ : ContinuousAt (fun z ↦ Ring.inverse (Φ z)) z) (hDΦ : ContinuousAt DΦ z)
     (hC : ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M) : ∃ M, ∀ᶠ w in 𝓝 z, ‖frameCoeff J C Φ DΦ w‖ ≤ M := by
-  have hA : ContinuousOn (fun z ↦ DΦ z 1 + J z ∘L DΦ z I) U :=
-    (hDΦ.clm_apply continuousOn_const).add (hJ.clm_comp (hDΦ.clm_apply continuousOn_const))
+  have hA : ContinuousAt (fun z ↦ DΦ z 1 + J z ∘L DΦ z I) z := (continuousWithinAt_univ _ _).1 <|
+    continuousWithinAt_frameCoeffAux hJ.continuousWithinAt hDΦ.continuousWithinAt
   -- A family continuous at `z` is eventually bounded by its norm at `z` plus one.
-  have hle {f : ℂ → V →L[ℝ] V} (hf : ContinuousOn f U) : ∀ᶠ w in 𝓝 z, ‖f w‖ ≤ ‖f z‖ + 1 :=
-    ((hf.continuousAt (hU.mem_nhds hz)).norm.eventually (gt_mem_nhds (lt_add_one _))).mono
-      fun _ h ↦ h.le
+  have hle {f : ℂ → V →L[ℝ] V} (hf : ContinuousAt f z) : ∀ᶠ w in 𝓝 z, ‖f w‖ ≤ ‖f z‖ + 1 :=
+    (hf.norm.eventually (gt_mem_nhds (lt_add_one _))).mono fun _ h ↦ h.le
   obtain ⟨M, hM⟩ := hC
   refine ⟨(‖Ring.inverse (Φ z)‖ + 1) * ((‖DΦ z 1 + J z ∘L DΦ z I‖ + 1) + M * (‖Φ z‖ + 1)), ?_⟩
   filter_upwards [hle hΨ, hle hA, hle hΦ, hM] with w hΨw hAw hΦw hCw

@@ -65,16 +65,22 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {ω : SymplecticForm V} {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
   {u ξ : ℝ × ℝ → V} {Ω : Set (ℝ × ℝ)}
 
-/-- In the complex coordinate `z = Complex.equivRealProdCLM w`, a solution of `D_u ξ = 0` solves
-the linear Cauchy–Riemann equation for the structure `J(z, u z)` and the coefficient
-`floerLinearizationCoeff`, with the regularity the variable-structure theorems ask for. -/
+/-- In the complex coordinate `z = Complex.equivRealProdCLM w`, a solution of `D_u ξ = 0` on a
+connected open set `Ω` solves the linear Cauchy–Riemann equation for the structure `J(z, u z)` and
+the coefficient `floerLinearizationCoeff` on the connected open set `e ⁻¹' Ω`, with the regularity
+the variable-structure theorems ask for. -/
 private theorem floerLinearization_eq_zero_complexCoordinate (hΩ : IsOpen Ω)
+    (hΩc : IsPreconnected Ω)
     (hJ : ∀ z ∈ Ω, ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1 p.2) (z, u z))
+    (hJJ : ∀ z ∈ Ω, J z (u z) ∘L J z (u z) = -ContinuousLinearMap.id ℝ V)
     (hKs : ∀ z ∈ Ω, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
     (hKt : ∀ z ∈ Ω, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiffOn ℝ 1 u Ω)
     (hξ : ContDiffOn ℝ 1 ξ Ω) (hD : ∀ z ∈ Ω, ω.floerLinearization J Ks Kt u ξ z = 0) :
     let e := Complex.equivRealProdCLM
-    ContDiffOn ℝ 1 (fun w ↦ J (e w) (u (e w))) (e ⁻¹' Ω) ∧ ContDiffOn ℝ 1 (ξ ∘ e) (e ⁻¹' Ω) ∧
+    IsOpen (e ⁻¹' Ω) ∧ IsPreconnected (e ⁻¹' Ω) ∧
+      ContDiffOn ℝ 1 (fun w ↦ J (e w) (u (e w))) (e ⁻¹' Ω) ∧
+      (∀ w ∈ e ⁻¹' Ω, J (e w) (u (e w)) ∘L J (e w) (u (e w)) = -ContinuousLinearMap.id ℝ V) ∧
+      ContDiffOn ℝ 1 (ξ ∘ e) (e ⁻¹' Ω) ∧
       AEStronglyMeasurable (fun w ↦ ω.floerLinearizationCoeff J Ks Kt u (e w))
         (volume.restrict (e ⁻¹' Ω)) ∧
       (∀ w ∈ e ⁻¹' Ω, ∃ M, ∀ᶠ w' in 𝓝 w, ‖ω.floerLinearizationCoeff J Ks Kt u (e w')‖ ≤ M) ∧
@@ -86,7 +92,8 @@ private theorem floerLinearization_eq_zero_complexCoordinate (hΩ : IsOpen Ω)
     (ω.continuousOn_floerLinearizationCoeff hJ hKs hKt
       fun z hz ↦ hu.contDiffAt (hΩ.mem_nhds hz)).comp e.continuous.continuousOn
       (mapsTo_preimage _ _)
-  refine ⟨fun w hw ↦ ?_, hξ.comp_continuousLinearMap (e : ℂ →L[ℝ] ℝ × ℝ),
+  refine ⟨hΩ', (e.toHomeomorph.isPreconnected_preimage).2 hΩc, fun w hw ↦ ?_,
+    fun w hw ↦ hJJ (e w) hw, hξ.comp_continuousLinearMap (e : ℂ →L[ℝ] ℝ × ℝ),
     hC.aestronglyMeasurable hΩ'.measurableSet, fun w hw ↦ ?_, fun w hw ↦ ?_⟩
   · have hgraph : ContDiffAt ℝ 1 (fun w ↦ (e w, u (e w))) w :=
       e.contDiff.contDiffAt.prodMk
@@ -97,6 +104,13 @@ private theorem floerLinearization_eq_zero_complexCoordinate (hΩ : IsOpen Ω)
   · rw [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I, comp_apply,
       ← floerLinearization_eq_add]
     exact hD (e w) hw
+
+omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
+/-- A map vanishing on `Ω` in the complex coordinate `Complex.equivRealProdCLM` vanishes on `Ω`. -/
+private theorem eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM
+    (h : EqOn (ξ ∘ Complex.equivRealProdCLM) 0 (Complex.equivRealProdCLM ⁻¹' Ω)) :
+    EqOn ξ 0 Ω := fun z hz ↦ by
+  simpa using h (show Complex.equivRealProdCLM.symm z ∈ _ by simpa using hz)
 
 /-- **Unique continuation for the linearized Floer operator.** Let `J` be `C¹` and the
 Hamiltonians `K_s`, `K_t` be `C²` near the graph of a `C¹` map `u` over a connected open set
@@ -111,17 +125,14 @@ theorem eqOn_zero_of_floerLinearization_eq_zero_of_eqOn_zero (hΩ : IsOpen Ω)
     (hξ : ContDiffOn ℝ 1 ξ Ω) (hD : ∀ z ∈ Ω, ω.floerLinearization J Ks Kt u ξ z = 0)
     {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hUne : U.Nonempty) (hUΩ : U ⊆ Ω) (h₀ : EqOn ξ 0 U) :
     EqOn ξ 0 Ω := by
-  obtain ⟨hJ', hξ', hCm, hCb, heq⟩ :=
-    floerLinearization_eq_zero_complexCoordinate hΩ hJ hKs hKt hu hξ hD
+  obtain ⟨hΩ', hΩc', hJ', hJJ', hξ', hCm, hCb, heq⟩ :=
+    floerLinearization_eq_zero_complexCoordinate hΩ hΩc hJ hJJ hKs hKt hu hξ hD
   set e := Complex.equivRealProdCLM
   obtain ⟨z₁, hz₁⟩ := hUne
-  have h := eqOn_zero_of_contDiffOn_of_eqOn_zero_of_complexStructure
-    (hΩ.preimage e.continuous) ((e.toHomeomorph.isPreconnected_preimage).2 hΩc) hJ'
-    (fun w hw ↦ hJJ (e w) hw) hξ' hCm hCb heq (hU.preimage e.continuous)
-    ⟨e.symm z₁, by rwa [mem_preimage, e.apply_symm_apply]⟩ (preimage_mono hUΩ) fun w hw ↦ h₀ hw
-  intro z hz
-  simpa only [comp_apply, e.apply_symm_apply, Pi.zero_apply] using
-    h (show e.symm z ∈ e ⁻¹' Ω by rwa [mem_preimage, e.apply_symm_apply])
+  exact eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM <|
+    eqOn_zero_of_contDiffOn_of_eqOn_zero_of_complexStructure hΩ' hΩc' hJ' hJJ' hξ' hCm hCb heq
+      (hU.preimage e.continuous) ⟨e.symm z₁, by simpa using hz₁⟩ (preimage_mono hUΩ)
+      fun w hw ↦ h₀ hw
 
 /-- **Unique continuation from a zero of infinite order for the linearized Floer operator.** Let
 `J` be `C¹` and the Hamiltonians `K_s`, `K_t` be `C²` near the graph of a `C¹` map `u` over a
@@ -137,25 +148,21 @@ theorem eqOn_zero_of_floerLinearization_eq_zero_of_forall_isBigO (hΩ : IsOpen �
     (hξ : ContDiffOn ℝ 1 ξ Ω) (hD : ∀ z ∈ Ω, ω.floerLinearization J Ks Kt u ξ z = 0)
     {z₀ : ℝ × ℝ} (hz₀ : z₀ ∈ Ω) (h₀ : ∀ n : ℕ, ξ =O[𝓝 z₀] fun z ↦ ‖z - z₀‖ ^ n) :
     EqOn ξ 0 Ω := by
-  obtain ⟨hJ', hξ', hCm, hCb, heq⟩ :=
-    floerLinearization_eq_zero_complexCoordinate hΩ hJ hKs hKt hu hξ hD
+  obtain ⟨hΩ', hΩc', hJ', hJJ', hξ', hCm, hCb, heq⟩ :=
+    floerLinearization_eq_zero_complexCoordinate hΩ hΩc hJ hJJ hKs hKt hu hξ hD
   set e := Complex.equivRealProdCLM
   -- In the complex coordinate the vanishing order is measured by `‖e w - e w₀‖ ≤ ‖e‖ ‖w - w₀‖`.
   have hO (n : ℕ) : (ξ ∘ e) =O[𝓝 (e.symm z₀)] fun w ↦ (w - e.symm z₀) ^ n := by
     have h := (h₀ n).comp_tendsto
       ((e.continuous.tendsto (e.symm z₀)).trans_eq (by rw [e.apply_symm_apply]))
     refine h.trans (IsBigO.of_bound (‖(e : ℂ →L[ℝ] ℝ × ℝ)‖ ^ n) (Eventually.of_forall fun w ↦ ?_))
-    rw [comp_apply, norm_pow, norm_norm, norm_pow, ← mul_pow,
-      ← e.apply_symm_apply z₀, ← map_sub, e.apply_symm_apply]
+    have hw : e w - z₀ = e (w - e.symm z₀) := by simp
+    simp only [comp_apply, hw, norm_pow, norm_norm, ← mul_pow]
     gcongr
     exact (e : ℂ →L[ℝ] ℝ × ℝ).le_opNorm _
-  have h := eqOn_zero_of_contDiffOn_of_forall_isBigO_of_complexStructure
-    (hΩ.preimage e.continuous) ((e.toHomeomorph.isPreconnected_preimage).2 hΩc) hJ'
-    (fun w hw ↦ hJJ (e w) hw) hξ' hCm hCb heq
-    (show e.symm z₀ ∈ e ⁻¹' Ω by rwa [mem_preimage, e.apply_symm_apply]) hO
-  intro z hz
-  simpa only [comp_apply, e.apply_symm_apply, Pi.zero_apply] using
-    h (show e.symm z ∈ e ⁻¹' Ω by rwa [mem_preimage, e.apply_symm_apply])
+  exact eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM <|
+    eqOn_zero_of_contDiffOn_of_forall_isBigO_of_complexStructure hΩ' hΩc' hJ' hJJ' hξ' hCm hCb
+      heq (show e.symm z₀ ∈ e ⁻¹' Ω by rwa [mem_preimage, e.apply_symm_apply]) hO
 
 /-- **Isolated zeros of solutions of the linearized Floer operator.** Let `J` be `C¹` and the
 Hamiltonians `K_s`, `K_t` be `C²` near the graph of a `C¹` map `u` over a connected open set
@@ -169,15 +176,12 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_floerLinearization_eq_zero (hΩ : 
     (hKt : ∀ z ∈ Ω, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiffOn ℝ 1 u Ω)
     (hξ : ContDiffOn ℝ 1 ξ Ω) (hD : ∀ z ∈ Ω, ω.floerLinearization J Ks Kt u ξ z = 0)
     (hne : ∃ z ∈ Ω, ξ z ≠ 0) : {z | ξ z ≠ 0} ∈ codiscreteWithin Ω := by
-  obtain ⟨hJ', hξ', hCm, hCb, heq⟩ :=
-    floerLinearization_eq_zero_complexCoordinate hΩ hJ hKs hKt hu hξ hD
+  obtain ⟨hΩ', hΩc', hJ', hJJ', hξ', hCm, hCb, heq⟩ :=
+    floerLinearization_eq_zero_complexCoordinate hΩ hΩc hJ hJJ hKs hKt hu hξ hD
   set e := Complex.equivRealProdCLM
   obtain ⟨z₁, hz₁, hξz₁⟩ := hne
-  have h := setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_complexStructure
-    (hΩ.preimage e.continuous) ((e.toHomeomorph.isPreconnected_preimage).2 hΩc) hJ'
-    (fun w hw ↦ hJJ (e w) hw) hξ' hCm hCb heq
-    ⟨e.symm z₁, by rwa [mem_preimage, e.apply_symm_apply],
-      by rwa [comp_apply, e.apply_symm_apply]⟩
+  have h := setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_complexStructure hΩ' hΩc' hJ'
+    hJJ' hξ' hCm hCb heq ⟨e.symm z₁, by simpa using hz₁, by simpa using hξz₁⟩
   -- Transport the codiscrete set back along the homeomorphism `e`.
   have := (e.toHomeomorph.isEmbedding.image_mem_codiscreteWithin
     (s := e ⁻¹' {z | ξ z ≠ 0}) (t := e ⁻¹' Ω)).2 h

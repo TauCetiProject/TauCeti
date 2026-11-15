@@ -97,15 +97,14 @@ theorem hasSimilarityFactorizationAt_of_contDiffOn_of_complexStructure (hΩ : Is
   have hΨ : ContDiffOn ℝ 1 (fun z ↦ Ring.inverse (Φ z)) B := fun z hz ↦ by
     obtain ⟨v, hv⟩ := hunit z hz
     exact (hv ▸ contDiffAt_ringInverse ℝ v).comp_contDiffWithinAt z ((hΦ z (hrΩ hz)).mono hrΩ)
-  have hinj (z : ℂ) (hz : z ∈ B) : Injective (Φ z) := fun v w hvw ↦ by
-    simpa using congr($(Ring.inverse_mul_cancel _ (hunit z hz)) v).symm.trans
-      (congr(Ring.inverse (Φ z) $hvw).trans congr($(Ring.inverse_mul_cancel _ (hunit z hz)) w))
+  have hinj (z : ℂ) (hz : z ∈ B) : Injective (Φ z) :=
+    LeftInverse.injective (ContinuousLinearMap.ringInverse_apply_apply (hunit z hz))
   -- `η = Φ⁻¹ ξ` is `C¹` on the disc, `ξ = Φ η` there, and `η` solves the equation for the
   -- constant structure `i` with the coefficient `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)`.
   set η : ℂ → V := fun z ↦ Ring.inverse (Φ z) (ξ z)
   have hη : ContDiffOn ℝ 1 η B := hΨ.clm_apply (hξ.mono hrΩ)
-  have hξη : EqOn ξ (fun z ↦ Φ z (η z)) B := fun z hz ↦ by
-    simpa using congr($(Ring.mul_inverse_cancel _ (hunit z hz)) (ξ z)).symm
+  have hξη : EqOn ξ (fun z ↦ Φ z (η z)) B := fun z hz ↦
+    (ContinuousLinearMap.apply_ringInverse_apply (hunit z hz) (ξ z)).symm
   have heqη (z : ℂ) (hz : z ∈ B) :
       fderiv ℝ η z 1 + I • fderiv ℝ η z I + frameCoeff J C Φ (fderiv ℝ Φ) z (η z) = 0 := by
     refine hinj z hz ?_
@@ -120,8 +119,10 @@ theorem hasSimilarityFactorizationAt_of_contDiffOn_of_complexStructure (hΩ : Is
       (aestronglyMeasurable_frameCoeff measurableSet_ball (hJ.continuousOn.mono hrΩ)
         (hΦ.continuousOn.mono hrΩ) hΨ.continuousOn hDΦ
         (hCm.mono_measure (Measure.restrict_mono hrΩ le_rfl)))
-      (fun z hz ↦ exists_eventually_norm_frameCoeff_le isOpen_ball hz (hJ.continuousOn.mono hrΩ)
-        (hΦ.continuousOn.mono hrΩ) hΨ.continuousOn hDΦ (hCb z (hrΩ hz)))
+      (fun z hz ↦ have hzB := isOpen_ball.mem_nhds hz
+        exists_eventually_norm_frameCoeff_le (hJ.continuousOn.continuousAt (hΩ.mem_nhds (hrΩ hz)))
+          (hΦ.continuousOn.continuousAt (hΩ.mem_nhds (hrΩ hz))) (hΨ.continuousOn.continuousAt hzB)
+          (hDΦ.continuousAt hzB) (hCb z (hrΩ hz)))
       heqη (mem_ball_self hr)).clm_apply (hΦ.continuousOn.continuousAt (hΩ.mem_nhds hz₀))
       (hunit z₀ (mem_ball_self hr))
   refine hasSimilarityFactorizationAt_iff.2 ⟨Φ', σ, hΦ', hΦ'₀, hσ, ?_⟩
