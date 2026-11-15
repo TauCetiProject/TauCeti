@@ -54,7 +54,25 @@ theorem toLinearMap_flip_mul_eq_mulRight (x : R) :
   ext y
   simp
 
+/-- Every subsingleton seminormed algebra is trivially regular, since both the algebra and its
+bounded endomorphism ring are subsingletons. -/
+instance _root_.RegularNormedAlgebra.of_subsingleton [Subsingleton R] :
+    RegularNormedAlgebra 𝕜 R where
+  isometry_mul' := AddMonoidHomClass.isometry_of_norm _ fun x ↦ by
+    simp [Subsingleton.elim x 0, Subsingleton.elim (mul 𝕜 R 0) 0]
+
 end NonUnital
+
+variable (𝕜) in
+/-- In a regular normed algebra, left multiplication is faithful, so any left identity is
+automatically a two-sided identity without assuming an involution. -/
+theorem _root_.RegularNormedAlgebra.exists_left_identity_iff [NonUnitalNormedRing R]
+    [NormedSpace 𝕜 R] [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R] [RegularNormedAlgebra 𝕜 R] :
+    (∃ e : R, ∀ b : R, e * b = b) ↔ ∃ e : R, ∀ b : R, e * b = b ∧ b * e = b := by
+  refine ⟨fun ⟨e, he⟩ ↦ ⟨e, fun b ↦ ⟨he b, ?_⟩⟩, fun ⟨e, he⟩ ↦ ⟨e, fun b ↦ (he b).1⟩⟩
+  apply (isometry_mul 𝕜 R).injective
+  ext c
+  simp [mul_assoc, he c]
 
 section Unital
 

@@ -34,6 +34,8 @@ equivalence of complex vector spaces is real-linear.
 
 * `StarMemClass.mul_mem_right_of_mul_mem_left`: left absorption implies right absorption on
   star-closed subsets.
+* `TauCeti.exists_left_identity_iff` and `TauCeti.exists_right_identity_iff`: in a magma with an
+  antimultiplicative involution, a one-sided identity is self-adjoint and hence two-sided.
 * `TauCeti.eq_zero_of_forall_star_mul_mul_eq_zero`: if `star d * X * c = 0` for all `c` and
   `d`, then `X = 0`.
 * `TauCeti.faithfulSMul_mulOpposite_of_isProperStar`: if `c * x = c * y` for all `c`, then
@@ -56,6 +58,28 @@ theorem StarMemClass.mul_mem_right_of_mul_mem_left {S A : Type*} [Mul A] [StarMu
   simpa only [star_mul, star_star] using star_mem (hmul (star a) (star x) (star_mem hx))
 
 namespace TauCeti
+
+/-- In a magma with an antimultiplicative involution, a left identity is self-adjoint and
+therefore a two-sided identity. -/
+theorem exists_left_identity_iff {A : Type*} [Mul A] [StarMul A] :
+    (∃ e : A, ∀ b : A, e * b = b) ↔ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b := by
+  refine ⟨?_, fun ⟨e, he⟩ ↦ ⟨e, fun b ↦ (he b).1⟩⟩
+  rintro ⟨e, hleft⟩
+  have hright (b : A) : b * star e = b := by
+    simpa only [star_mul, star_star] using congrArg star (hleft (star b))
+  have heStar : e = star e := (hright e).symm.trans (hleft (star e))
+  exact ⟨e, fun b ↦ ⟨hleft b, heStar ▸ hright b⟩⟩
+
+/-- In a magma with an antimultiplicative involution, a right identity is self-adjoint and
+therefore a two-sided identity. -/
+theorem exists_right_identity_iff {A : Type*} [Mul A] [StarMul A] :
+    (∃ e : A, ∀ b : A, b * e = b) ↔ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b := by
+  refine ⟨?_, fun ⟨e, he⟩ ↦ ⟨e, fun b ↦ (he b).2⟩⟩
+  rintro ⟨e, hright⟩
+  have hleft (b : A) : star e * b = b := by
+    simpa only [star_mul, star_star] using congrArg star (hright (star b))
+  have heStar : e = star e := (hleft e).symm.trans (hright (star e))
+  exact ⟨e, fun b ↦ ⟨heStar ▸ hleft b, hright b⟩⟩
 
 variable {R : Type*} [NonUnitalSemiring R] [StarRing R] [IsProperStar R]
 
