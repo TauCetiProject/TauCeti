@@ -29,7 +29,11 @@ zero (`TauCeti.Wkp.tendsto_eLpNorm_smoothField_sub`). For a `W^{2,p}(Ω)` functi
 representative `ū`, a single mollification is then a smooth function close to `ū` uniformly on a
 given compact subset `K` of `Ω` and with Hessian close to the weak Hessian in `Lᵖ(K)`
 (`TauCeti.Wkp.exists_contDiff_abs_sub_le_and_eLpNorm_fderiv_gradient_sub_le`). This is how
-estimates for classical solutions of second-order equations pass to strong solutions.
+estimates for classical solutions of second-order equations pass to strong solutions. For
+restrictions of test functions from a larger open set, `TauCeti.Wkp.restrictTestFunctionClosure`
+packages their Sobolev-norm closure as a submodule and
+`TauCeti.Wkp.range_restrictL_ofTestFunctionₗ_top` identifies the range of restricted whole-space
+test functions with smooth compactly supported representatives.
 
 ## References
 
@@ -142,6 +146,41 @@ theorem value_restrictL_ofTestFunctionₗ_ae (hU : U ≤ Omega) (k : ℕ) (phi :
   filter_upwards [value_restrictL_ae hU k (ofTestFunctionₗ (mu := mu) (p := p) k phi),
     (testFunctionLp_apply_ae (mu := mu) p phi).filter_mono hmono] with x h1 h2
   rw [h1, value_ofTestFunctionₗ, h2]
+
+/-- An element of `W^{k,p}(Ω)` is the restriction of a test function on the whole space if and only
+if its value is represented almost everywhere on `Ω` by a smooth compactly supported function on
+`E`. -/
+theorem range_restrictL_ofTestFunctionₗ_top (k : ℕ) :
+    (range fun psi : 𝓓((⊤ : Opens E), ℝ) =>
+      restrictL (le_top : Omega ≤ ⊤) k (ofTestFunctionₗ (mu := mu) (p := p) k psi)) =
+    {u : Wkp mu Omega p k | ∃ f : E → ℝ, ContDiff ℝ (⊤ : ℕ∞) f ∧ HasCompactSupport f ∧
+      (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f} := by
+  ext u
+  constructor
+  · rintro ⟨psi, rfl⟩
+    exact ⟨psi, psi.contDiff, psi.hasCompactSupport,
+      value_restrictL_ofTestFunctionₗ_ae (le_top : Omega ≤ ⊤) k psi⟩
+  · rintro ⟨f, hf, hsupp, hu⟩
+    let psi : 𝓓((⊤ : Opens E), ℝ) := ⟨f, hf, hsupp, subset_univ _⟩
+    exact ⟨psi, ext k (Lp.ext
+      ((value_restrictL_ofTestFunctionₗ_ae (le_top : Omega ≤ ⊤) k psi).trans hu.symm))⟩
+
+/-- The closure in `W^{k,p}(U)` of the restrictions to `U` of test functions on `Ω`, as an
+`ℝ`-submodule of `W^{k,p}(U)`. -/
+def restrictTestFunctionClosure (mu : Measure E) [mu.IsAddHaarMeasure] {Omega U : Opens E}
+    (hU : U ≤ Omega) (p : ENNReal) [Fact (1 ≤ p)] (k : ℕ) : Submodule ℝ (Wkp mu U p k) :=
+  (LinearMap.range ((restrictL hU k).toLinearMap ∘ₗ
+    ofTestFunctionₗ (mu := mu) (p := p) k)).topologicalClosure
+
+/-- Membership in `TauCeti.Wkp.restrictTestFunctionClosure` is membership in the Sobolev-norm
+closure of the restrictions to `U` of test functions on `Ω`. -/
+theorem mem_restrictTestFunctionClosure_iff (hU : U ≤ Omega) {k : ℕ} {u : Wkp mu U p k} :
+    u ∈ restrictTestFunctionClosure mu hU p k ↔
+      u ∈ closure (range fun psi : 𝓓(Omega, ℝ) =>
+        restrictL hU k (ofTestFunctionₗ (mu := mu) (p := p) k psi)) := by
+  rw [restrictTestFunctionClosure, ← SetLike.mem_coe, Submodule.topologicalClosure_coe,
+    LinearMap.coe_range]
+  simp only [LinearMap.coe_comp, ContinuousLinearMap.coe_coe, Function.comp_def]
 
 private theorem value_restrict_localTest (hp : p ≠ ∞) (hU : U ≤ Omega)
     (chi : 𝓓(Omega, ℝ)) (hchi : ∀ x ∈ U, chi x = 1)
