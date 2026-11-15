@@ -42,7 +42,10 @@ This is the form in which mean oscillation estimates become `Lᵖ` estimates. In
 theory of elliptic equations with coefficients of vanishing mean oscillation, one bounds the mean
 oscillation of `D²u` on each small ball by comparison with a constant-coefficient equation; the
 Fefferman–Stein inequality, together with the Hardy–Littlewood maximal inequality, turns these
-pointwise bounds on `(D²u)^#` into the estimate of `‖D²u‖_p`.
+pointwise bounds on `(D²u)^#` into the estimate of `‖D²u‖_p`. The file packages this step for
+pointwise bounds of `f^#` by the `L^q` maximal function `(M(‖g‖^q))^{1/q}` of another function,
+turning them into `Lᵖ` bounds of `f` by `g`
+(`TauCeti.eLpNorm_le_mul_eLpNorm_of_sharpMaximalFunction_le`).
 
 ## The argument
 
@@ -89,6 +92,10 @@ Calderón–Zygmund cubes at height `t`.
   `EuclideanSpace ℝ ι`, for the sharp maximal function over Euclidean balls. The coordinate map to
   `ι → ℝ` preserves volume and sends each sup-distance ball into a Euclidean ball of comparable
   volume, so the oscillation over the former is controlled by the oscillation over the latter.
+* `TauCeti.lintegral_enorm_rpow_le_of_sharpMaximalFunction_le` and
+  `TauCeti.eLpNorm_le_mul_eLpNorm_of_sharpMaximalFunction_le`: integrating a pointwise sharp
+  function estimate `f^# ≤ c (M(‖g‖^q))^{1/q}` to `‖f‖_p ≲ c ‖g‖_p` for `0 < q < p`, by the
+  Fefferman–Stein inequality and the maximal inequality in `L^{p/q}`.
 
 ## References
 

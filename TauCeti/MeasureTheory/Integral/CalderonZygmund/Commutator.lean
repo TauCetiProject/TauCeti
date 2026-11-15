@@ -27,8 +27,9 @@ Coifman, Rochberg and Weiss proved that `[b, T]` is bounded on `Lᵖ` for `1 < p
 equations whose coefficients have vanishing mean oscillation: freezing a coefficient `a` at a
 point leaves an error that is a commutator `[a, T]` of a Calderón–Zygmund operator with `a`.
 
-This file proves that theorem by Janson's method. Its first step is the pointwise estimate, for
-`1 < q < ∞`,
+This file proves the estimate `‖[b, T] f‖_p ≤ C ‖b‖_{BMO} ‖f‖_p` of that theorem for `f ∈ L²` with
+`b f ∈ L²`, assuming `T` is bounded in the `Lᵖ` norm, by Janson's method. Its first step is the
+pointwise estimate, for `1 < q < ∞`,
 
 `([b, T] f)^# x ≤ C ‖b‖_{BMO} ((M(‖T f‖^q) x)^{1/q} + (M(‖f‖^q) x)^{1/q})`
 

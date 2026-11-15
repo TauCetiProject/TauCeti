@@ -148,6 +148,8 @@ and letting the truncations increase to `F` gives the bound for `∫⁻ F ^ q`.
 * `TauCeti.lintegral_rpow_maximalFunction_le`, `TauCeti.eLpNorm_maximalFunction_le`: the
   **strong type `(p, p)` maximal inequality** for `1 < p < ∞`, with the explicit constant
   `TauCeti.maximalFunctionConst`.
+* `TauCeti.lintegral_maximalFunction_rpow_inv_rpow_le`: the `Lᵖ` bound for the `L^q` maximal
+  function `(M(‖h‖^q))^{1/q}` when `0 < q < p`, from the strong type `(p/q, p/q)` inequality.
 * `TauCeti.lintegral_rpow_le_of_sq_le_maximalFunction`: integrating a pointwise bound of `g²` by
   three maximal functions, as in the sharp function method.
 * `TauCeti.mul_setLIntegral_lt_maximalFunction_le`,
