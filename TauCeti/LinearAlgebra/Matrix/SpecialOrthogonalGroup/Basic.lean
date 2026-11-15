@@ -48,6 +48,11 @@ theorem coe_map (f : R →+* S) (M : specialOrthogonalGroup n R) :
     (map f M : Matrix n n S) = M.1.map f :=
   (rfl)
 
+/-- Mapping coefficients along an injective ring homomorphism is injective. -/
+theorem map_injective {f : R →+* S} (hf : Function.Injective f) :
+    Function.Injective (map (n := n) f) := fun _ _ h ↦
+  Subtype.ext (Matrix.map_injective hf (congrArg Subtype.val h))
+
 /-- A coefficient-ring map acts entrywise on special orthogonal matrices. -/
 theorem map_apply (f : R →+* S) (M : specialOrthogonalGroup n R) (i j : n) :
     (map f M : Matrix n n S) i j = f ((M : Matrix n n R) i j) :=
