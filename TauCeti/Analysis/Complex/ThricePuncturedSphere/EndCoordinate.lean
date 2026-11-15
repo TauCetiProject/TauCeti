@@ -817,25 +817,10 @@ theorem eventually_notMem_truncation {c : ℂ} (hc : c = 0 ∨ c = 1) (R₀ : �
 /-- An open set on which the signed longitudinal coordinate `±s` of every end is at most `R` lies
 in the truncation `S_R`: it avoids the poles `0` and `1`, near which some `±s` exceeds `R`. -/
 theorem subset_truncation_of_isOpen {U : Set ℂ} (hU : IsOpen U) {R : ℝ}
-    (h : ∀ w ∈ U, ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R) : U ⊆ truncation R := by
-  intro c hc
-  by_contra hcR
-  have h01 : c = 0 ∨ c = 1 := by
-    by_contra! hne
-    exact hcR (mem_truncation.2 ⟨hne.1, hne.2, h c hc⟩)
-  -- Points of `U` near the pole `c` other than `c` lie in `S` and outside `S_R`.
-  have hev : ∀ᶠ w in 𝓝 c, w ∉ truncation R :=
-    ((continuous_id.prodMk continuous_const).tendsto c).eventually
-      (eventually_notMem_truncation h01 R)
-  have hne : ∀ᶠ w in 𝓝[≠] c, w ≠ 0 ∧ w ≠ 1 := by
-    rcases h01 with rfl | rfl
-    · exact (eventually_mem_nhdsWithin (a := (0 : ℂ))).and
-        (nhdsWithin_le_nhds (eventually_ne_nhds zero_ne_one))
-    · exact Filter.Eventually.and (nhdsWithin_le_nhds (eventually_ne_nhds one_ne_zero))
-        (eventually_mem_nhdsWithin (a := (1 : ℂ)))
-  have hUc : ∀ᶠ w in 𝓝 c, w ∈ U := hU.mem_nhds hc
-  obtain ⟨w, hw, hwU, hwR⟩ := (hne.and (nhdsWithin_le_nhds (hUc.and hev))).exists
-  exact hwR (mem_truncation.2 ⟨hw.1, hw.2, h w hwU⟩)
+    (h : ∀ w ∈ U, ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R) : U ⊆ truncation R :=
+  (((dense_compl_singleton (0 : ℂ)).sdiff_singleton 1).open_subset_closure_inter hU).trans <|
+    closure_minimal (fun w ⟨hwU, hw₀, hw₁⟩ ↦ mem_truncation.2 ⟨hw₀, hw₁, h w hwU⟩)
+      (isCompact_truncation R).isClosed
 
 /-- The truncations exhaust the thrice-punctured sphere `S = ℂ ∖ {0, 1}`. -/
 theorem iUnion_truncation : ⋃ R, truncation R = {w : ℂ | w ≠ 0 ∧ w ≠ 1} := by

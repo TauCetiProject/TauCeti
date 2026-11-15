@@ -13,31 +13,36 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
 
 Transversality for the pair-of-pants product perturbs the canonical datum
 `K = TauCeti.Floer.pairOfPantsPerturbation H` on `S = ℂ ∖ {0, 1}` by Hamiltonian one-forms
-`δ = δ_s ds + δ_t dt` supported in a compact set `D` of the core, the region where the signed
-longitudinal coordinate of every end is at most `1` and `K` vanishes. Such a perturbation leaves
-the ends untouched, so the perturbed datum is still `H_q(t) dt` far out on each end `q`, and the
-energy identity for data cylindrical on the ends
+`δ = δ_s ds + δ_t dt` supported in a compact set `D` in the interior of the core: `D` lies in an
+open set `U` on which the signed longitudinal coordinate of every end is at most `1`, so that `K`
+vanishes on `U`. Such a perturbation leaves the ends untouched, so the perturbed datum is still
+`H_q(t) dt` far out on each end `q`, and the energy identity for data cylindrical on the ends
 (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_of_eq_smul_endAngularForm`) applies:
 
 `∫_S E = ∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, x_q(t)) dt - ∫_S R_{K + δ}(u)`
 
 for a map `u` into a finite-dimensional manifold with a nondegenerate two-form, such as a closed
-symplectic manifold, whose end loops converge to loops `x_q`. Since `K` vanishes on a
-neighbourhood of `D`, the curvature `R_{K + δ}` is `R_K + R_δ` without mixed Poisson-bracket
-terms, and both are integrable.
+symplectic manifold, whose end loops converge to loops `x_q`. Since `K` vanishes on the
+neighbourhood `U` of `D`, the curvature `R_{K + δ}` is `R_K + R_δ` without mixed Poisson-bracket
+terms, and both are integrable. When the energy density is nonnegative, as for solutions of the
+Floer equation with tamed almost complex structures, it is moreover integrable without further
+assumption.
 
-For a compact family `δ_p` of such core perturbations the curvature allowance of
-`TauCeti.Geometry.Symplectic.Floer.PairOfPants.CompactCore` is uniform, so the energy of a map
-differs from its topological part by at most `B₀ + B₁ + B_∞ + C`, with `C` independent of `p` and
-of the map. For solutions of the Floer equation with tamed almost complex structures, whose energy
-is nonnegative, this bounds the topological part below uniformly over the family. These are the
-energy bounds over compact parameter windows that the compactness of the perturbed problems,
+For a compact family `δ_p` of such core perturbations, `p ∈ A`, and a compact target window
+`Q ⊆ M`, the curvature allowance of `TauCeti.Geometry.Symplectic.Floer.PairOfPants.CompactCore` is
+uniform, so the energy of a map sending `D` into `Q` differs from its topological part by at most
+`B₀ + B₁ + B_∞ + C`, with `C` depending on `A` and `Q` but independent of `p ∈ A` and of the map.
+For solutions of the Floer equation with tamed almost complex structures, whose energy is
+nonnegative, this bounds the topological part below uniformly over the family. These are the energy
+bounds over compact parameter and target windows that the compactness of the perturbed problems,
 used for transversality with localized Hamiltonian variations, rests on.
 
 ## Main results
 
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_add`: the
   energy identity for the pair-of-pants datum with a core perturbation.
+* `SmoothTwoForm.IsNondegenerate.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_add`: a
+  nonnegative energy density for a core perturbation is integrable.
 * `IsNondegenerate.exists_abs_integral_floerEnergyDensity_pairOfPantsPerturbation_add_sub_le`, in
   the namespace `SmoothTwoForm`: the energy bound, uniform over a compact family of core
   perturbations.
@@ -65,6 +70,73 @@ open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
   [IsManifold I ⊤ M] {ω : SmoothTwoForm I M} {H : Puncture → ℝ → M → ℝ} {B : Puncture → ℝ}
+
+/-- The core-perturbed datum `K + δ`, as a one-form on `ℂ` with components `K_s + δ_s` and
+`K_t + δ_t`, satisfies the hypotheses of the energy identity for data cylindrical on the ends: it
+is `C¹` on `S × M` and `H_q(t) dt` beyond the height `2` on each end `q`, its curvature along `u`
+is integrable, and the end-loop integrals of the Hamiltonians along `u` converge. -/
+private theorem IsNondegenerate.pairOfPantsPerturbation_add_aux
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    (hB : ∀ q t x, |H q t x| ≤ B q) {δs δt : ℝ × ℝ → M → ℝ}
+    (hδs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δs))
+    (hδt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δt)) {D U : Set (ℝ × ℝ)}
+    (hD : IsCompact D) (hU : IsOpen U) (hDU : D ⊆ U)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture,
+      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ 1)
+    (hs : ∀ z ∉ D, δs z = 0) (ht : ∀ z ∉ D, δt z = 0) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {x : Puncture → ℝ → M}
+    (hx : ∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x q t)))
+    {K : ℂ → M → ℂ →L[ℝ] ℝ} (hKdef : K = fun w y ↦ pairOfPantsPerturbation H w y +
+      (δs (Complex.equivRealProdCLM w) y • Complex.reCLM +
+        δt (Complex.equivRealProdCLM w) y • Complex.imCLM)) :
+    ((fun z y ↦ K (Complex.equivRealProdCLM.symm z) y 1) =
+      fun z y ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) y 1 + δs z y) ∧
+    ((fun z y ↦ K (Complex.equivRealProdCLM.symm z) y Complex.I) =
+      fun z y ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) y Complex.I +
+        δt z y) ∧
+    (∀ (w : ThricePuncturedSphere) y, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), y)) ∧
+    (∀ q w y, 2 ≤ q.endSign * (q.endCoord w).re →
+      K w y = H q (q.endCoord w).im y • q.endAngularForm w) ∧
+    Integrable (fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) ∧
+    ∀ q, Tendsto (fun σ ↦ ∫ t in (0 : ℝ)..1, H q t (u (endChart q (q.endSign * σ, t))))
+      atTop (𝓝 (∫ t in (0 : ℝ)..1, H q t (x q t))) := by
+  have hKs : (fun z y ↦ K (Complex.equivRealProdCLM.symm z) y 1) =
+      fun z y ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) y 1 + δs z y := by
+    funext z y
+    simp [hKdef]
+  have hKt : (fun z y ↦ K (Complex.equivRealProdCLM.symm z) y Complex.I) =
+      fun z y ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) y Complex.I +
+        δt z y := by
+    funext z y
+    simp [hKdef]
+  refine ⟨hKs, hKt, fun w y ↦ ?_, fun q w y hw ↦ ?_, ?_, fun q ↦ ?_⟩
+  · -- The datum is `C¹` on `S × M`.
+    have he : ContMDiff (𝓘(ℝ, ℂ).prod I) (𝓘(ℝ, ℝ × ℝ).prod I) 1
+        (fun p : ℂ × M ↦ (Complex.equivRealProdCLM p.1, p.2)) :=
+      (Complex.equivRealProdCLM.contDiff.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd
+    subst hKdef
+    exact (contMDiffAt_pairOfPantsPerturbation hH hHs w y).add
+      (((hδs.comp he).contMDiffAt.smul contMDiffAt_const).add
+        ((hδt.comp he).contMDiffAt.smul contMDiffAt_const))
+  · -- Beyond the height `2` on each end the core perturbation vanishes, so `K + δ` is `H_q dt`.
+    have hwD : Complex.equivRealProdCLM w ∉ D := fun hwD ↦ by
+      have := hcore _ (hDU hwD) q
+      rw [ContinuousLinearEquiv.symm_apply_apply] at this
+      linarith
+    simp only [hKdef, congrFun (hs _ hwD) y, congrFun (ht _ hwD) y, Pi.zero_apply, zero_smul,
+      add_zero, pairOfPantsPerturbation_eq_smul_endAngularForm hw]
+  · -- The curvature of `K + δ` is integrable.
+    have hR := hω.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_add hH hHs hδs hδt hD
+      hU hDU hcore hs ht hu.continuousOn
+    rwa [← hKs, ← hKt, IntegrableOn,
+      Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal] at hR
+  · simpa only [endChart_apply, Complex.equivRealProdCLM_symm_apply] using
+      tendsto_intervalIntegral_endLoop (fun q ↦ (hHs q).continuous) hB hu.continuousOn (hx q)
 
 /-- **The energy identity on the pair of pants with a core perturbation, for a manifold target.**
 Let `K` be the pair-of-pants perturbation of bounded period-one `C¹` Hamiltonians `H_q` on a
@@ -113,47 +185,54 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_add
   -- The perturbed datum as a one-form on `ℂ`, with components `K_s + δ_s` and `K_t + δ_t`.
   set K : ℂ → M → ℂ →L[ℝ] ℝ := fun w y ↦ pairOfPantsPerturbation H w y +
     (δs (Complex.equivRealProdCLM w) y • Complex.reCLM +
-      δt (Complex.equivRealProdCLM w) y • Complex.imCLM)
-  have hKs : (fun z y ↦ K (Complex.equivRealProdCLM.symm z) y 1) =
-      fun z y ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) y 1 + δs z y := by
-    funext z y
-    simp [K]
-  have hKt : (fun z y ↦ K (Complex.equivRealProdCLM.symm z) y Complex.I) =
-      fun z y ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) y Complex.I +
-        δt z y := by
-    funext z y
-    simp [K]
-  -- The datum is `C¹` on `S × M`.
-  have hK (w : ThricePuncturedSphere) (y : M) : ContMDiffAt (𝓘(ℝ, ℂ).prod I)
-      𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), y) := by
-    have he : ContMDiff (𝓘(ℝ, ℂ).prod I) (𝓘(ℝ, ℝ × ℝ).prod I) 1
-        (fun p : ℂ × M ↦ (Complex.equivRealProdCLM p.1, p.2)) :=
-      (Complex.equivRealProdCLM.contDiff.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd
-    exact (contMDiffAt_pairOfPantsPerturbation hH hHs w y).add
-      (((hδs.comp he).contMDiffAt.smul contMDiffAt_const).add
-        ((hδt.comp he).contMDiffAt.smul contMDiffAt_const))
-  -- Beyond the height `2` on each end the core perturbation vanishes, so `K + δ` is `H_q dt`.
-  have hKH (q : Puncture) (w : ℂ) (y : M) (hw : 2 ≤ q.endSign * (q.endCoord w).re) :
-      K w y = H q (q.endCoord w).im y • q.endAngularForm w := by
-    have hwD : Complex.equivRealProdCLM w ∉ D := fun hwD ↦ by
-      have := hcore _ (hDU hwD) q
-      rw [ContinuousLinearEquiv.symm_apply_apply] at this
-      linarith
-    simp only [K, congrFun (hs _ hwD) y, congrFun (ht _ hwD) y, Pi.zero_apply, zero_smul,
-      add_zero, pairOfPantsPerturbation_eq_smul_endAngularForm hw]
-  -- The curvature of `K + δ` is integrable.
+      δt (Complex.equivRealProdCLM w) y • Complex.imCLM) with hKdef
+  obtain ⟨hKs, hKt, hK, hKH, hR, hh⟩ := hω.pairOfPantsPerturbation_add_aux hH hHs hB hδs hδt hD hU
+    hDU hcore hs ht hu hx hKdef
   have hS : volume.restrict thricePuncturedSphereReal = volume :=
     Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal
-  have hR := hω.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_add hH hHs hδs hδt hD hU
-    hDU hcore hs ht hu.continuousOn
-  rw [← hKs, ← hKt] at hR
-  rw [IntegrableOn, hS] at hE hA hR
+  rw [IntegrableOn, hS] at hE hA
   have h := hω.integral_floerEnergyDensity_of_eq_smul_endAngularForm hK hKH hH hu
-    (by rw [hKs, hKt]; exact hE) hA hR fun q ↦ by
-      simpa only [endChart_apply, Complex.equivRealProdCLM_symm_apply] using
-        tendsto_intervalIntegral_endLoop (fun q ↦ (hHs q).continuous) hB hu.continuousOn (hx q)
+    (by rw [hKs, hKt]; exact hE) hA hR hh
   rw [hKs, hKt] at h
   simpa only [hS] using h
+
+/-- **A nonnegative energy density is integrable, for core perturbations.** Under the hypotheses of
+`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_add`, suppose
+that the Floer energy density of `u` for `K + δ` is nonnegative on `S`, as it is for a solution of
+the Floer equation with tamed almost complex structures. Then no integrability of the energy
+density needs to be assumed: it is integrable over `S`, so the energy identity applies to it. -/
+theorem IsNondegenerate.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_add
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    (hB : ∀ q t x, |H q t x| ≤ B q) {δs δt : ℝ × ℝ → M → ℝ}
+    (hδs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δs))
+    (hδt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δt)) {D U : Set (ℝ × ℝ)}
+    (hD : IsCompact D) (hU : IsOpen U) (hDU : D ⊆ U)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture,
+      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ 1)
+    (hs : ∀ z ∉ D, δs z = 0) (ht : ∀ z ∉ D, δt z = 0) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {x : Puncture → ℝ → M}
+    (hx : ∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x q t)))
+    (he : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ ω.floerEnergyDensity
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1 + δs z x)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I +
+        δt z x) u z)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal) :
+    IntegrableOn (ω.floerEnergyDensity
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1 + δs z x)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I +
+        δt z x) u) thricePuncturedSphereReal := by
+  set K : ℂ → M → ℂ →L[ℝ] ℝ := fun w y ↦ pairOfPantsPerturbation H w y +
+    (δs (Complex.equivRealProdCLM w) y • Complex.reCLM +
+      δt (Complex.equivRealProdCLM w) y • Complex.imCLM) with hKdef
+  obtain ⟨hKs, hKt, hK, hKH, hR, hh⟩ := hω.pairOfPantsPerturbation_add_aux hH hHs hB hδs hδt hD hU
+    hDU hcore hs ht hu hx hKdef
+  rw [IntegrableOn, Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal] at hA ⊢
+  rw [← hKs, ← hKt] at he ⊢
+  exact hω.integrable_floerEnergyDensity_of_eq_smul_endAngularForm hK hKH hH hu he hA hR hh
 
 variable {E' G' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace G']
   {J : ModelWithCorners ℝ E' G'} [TopologicalSpace N] [ChartedSpace G' N] [IsManifold J 1 N]
@@ -220,10 +299,10 @@ target.** Under the hypotheses of
 `IsNondegenerate.exists_abs_integral_floerEnergyDensity_pairOfPantsPerturbation_add_sub_le` there
 is a constant `C ≥ 0` such that, for every `p ∈ A`, every solution `u` of the Floer equation
 `(du - X_{K + δ_p})^{0,1} = 0` on `S` for almost complex structures tamed by the two-form, as in
-that theorem, has symplectic area plus Hamiltonian terms at its asymptotic orbits at least
-`-(B₀ + B₁ + B_∞ + C)`. Once the area is expressed through the actions of capped orbits and the
-class of `u`, this becomes a lower bound on the valuations of the output monomials, uniform over
-the family. -/
+that theorem but with no integrability assumed of its energy density, has symplectic area plus
+Hamiltonian terms at its asymptotic orbits at least `-(B₀ + B₁ + B_∞ + C)`. Once the area is
+expressed through the actions of capped orbits and the class of `u`, this becomes a lower bound on
+the valuations of the output monomials, uniform over the family. -/
 theorem IsNondegenerate.exists_neg_sum_add_le_integral_add_sum_of_pairOfPantsPerturbation_add
     (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
@@ -241,10 +320,6 @@ theorem IsNondegenerate.exists_neg_sum_add_le_integral_add_sum_of_pairOfPantsPer
       ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal → (∀ z ∈ D, u z ∈ Q) →
       ∀ x : Puncture → ℝ → M, (∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
         (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x q t))) →
-      IntegrableOn (ω.floerEnergyDensity
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1 + δs p z x)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I +
-          δt p z x) u) thricePuncturedSphereReal →
       IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal →
@@ -265,9 +340,17 @@ theorem IsNondegenerate.exists_neg_sum_add_le_integral_add_sum_of_pairOfPantsPer
   obtain ⟨C, hC, hbound⟩ :=
     hω.exists_abs_integral_floerEnergyDensity_pairOfPantsPerturbation_add_sub_le hH hHs hB hδs
       hδt hA hD hQ hU hDU hcore hs ht
-  refine ⟨C, hC, fun p hp u hu huQ x hx hE harea Jz hJ hfloer ↦ ?_⟩
-  have hpos := setIntegral_nonneg (μ := volume) isOpen_thricePuncturedSphereReal.measurableSet
-    fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
+  refine ⟨C, hC, fun p hp u hu huQ x hx harea Jz hJ hfloer ↦ ?_⟩
+  have hι : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) ((J.prod 𝓘(ℝ, ℝ × ℝ)).prod I) 1
+      (fun r : (ℝ × ℝ) × M ↦ ((p, r.1), r.2)) :=
+    (contMDiff_const.prodMk contMDiff_fst).prodMk contMDiff_snd
+  -- The energy density of a solution is nonnegative, hence integrable.
+  have he (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) :=
+    floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
+  have hE := hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_add (δs := δs p)
+    (δt := δt p) hH hHs hB (hδs.comp hι) (hδt.comp hι) hD hU hDU hcore (hs p hp) (ht p hp) hu hx he
+    harea
+  have hpos := setIntegral_nonneg (μ := volume) isOpen_thricePuncturedSphereReal.measurableSet he
   have h := abs_le.1 (hbound p hp u hu huQ x hx hE harea)
   linarith [h.2]
 
