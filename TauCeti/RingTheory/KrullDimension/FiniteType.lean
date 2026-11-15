@@ -246,8 +246,6 @@ theorem ringKrullDim_eq_toNat_trdeg_of_isFractionRing (A K : Type*) [CommRing A]
     [Algebra.FiniteType k A] [Field K] [Algebra A K] [Algebra k K] [IsScalarTower k A K]
     [IsFractionRing A K] : ringKrullDim A = (Algebra.trdeg k K).toNat := by
   have : IsDomain A := (IsFractionRing.injective A K).isDomain (algebraMap A K)
-  have : FaithfulSMul A K :=
-    (faithfulSMul_iff_algebraMap_injective _ _).2 (IsFractionRing.injective _ _)
   have := IsLocalization.isAlgebraic K (nonZeroDivisors A)
   have h := lift_trdeg_add_eq k A K
   rw [trdeg_eq_zero (R := A) (A := K), Cardinal.lift_zero, add_zero] at h
@@ -425,7 +423,6 @@ theorem _root_.Ideal.height_add_ringKrullDim_quotient_of_finiteType {A : Type*} 
   -- Pass to the domain `A ⧸ I`, for `I` the nilradical, which has the same primes.
   let I : Ideal A := nilradical A
   have : I.IsPrime := PrimeSpectrum.irreducibleSpace_iff_isPrime_nilradical.mp inferInstance
-  have : IsDomain (A ⧸ I) := (Ideal.Quotient.isDomain_iff_prime I).mpr this
   have hIp : I ≤ p := nilradical_le_prime p
   have : (p.map (Ideal.Quotient.mk I)).IsPrime := Ideal.isPrime_map_quotientMk_of_isPrime hIp
   rw [← Ideal.height_map_quotientMk_nilradical p, ← ringKrullDim_quotient_nilradical A,

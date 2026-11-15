@@ -10,354 +10,541 @@ public import TauCeti.Algebra.Homology.AInfinity.Algebra.DG
 public import TauCeti.Algebra.Homology.DG.Coalgebra.Cobar.TwistingCochain
 
 /-!
-# Twisting cochains and the bar--cobar adjunction for `A∞` algebras
+# `A∞` morphisms into DG algebras and the universal property of `Ω Tᶜ(sA)`
 
-For a nonunital differential graded algebra `(B, d_B)`, all `A∞` operations in arity at least three
-vanish, so evaluating `B.taylor` on `coalgHom R f` reduces to `d_B ∘ f` plus binary multiplication
-along reduced deconcatenation twisted by `σ_B = (InternalGrading.ofDecomposition ℬ).koszulTwist 1`.
-Postcomposing suspended Taylor maps with `σ_B` gives `AInfinityAlgebra.barTwistingCochainEquiv`
-identifying `A∞` morphisms `A ⟶ B` with degree-one twisting cochains `Tᶜ(sA) →ₗ[R] B`.
+Let `A` be a nonunital `A∞` algebra, whose reduced bar construction `Tᶜ(sA)` is a noncounital
+differential graded coalgebra (`TauCeti.AInfinityAlgebra.isNonCounitalDGCoalgebra_bar`), and let
+`D` be a nonunital differential graded algebra, regarded as an `A∞` algebra with `m₁ = d`, `m₂` the
+product and no higher operations.  The suspended Taylor components of an `A∞` morphism `f : A ⟶ D`
+form a linear map `f : Tᶜ(sA) ⟶ D` raising the degree by one, and its component equation reads
 
-When `B` is unital, combining this with `cobarTwistingCochainEquiv` yields the **bar--cobar
-adjunction** `AInfinityAlgebra.cobarDGAlgHomEquiv : DGAlgHom (Ω Tᶜ(sA)) B ≃ AInfinityHom A B`, the
-universal morphism `AInfinityAlgebra.toCobar : A ⟶ Ω Tᶜ(sA)`, and functoriality
-`AInfinityHom.cobarMap`.
+`d (f z) + ∑ σ (f z') * f z'' = f (b z)`   for `Δ z = ∑ z' ⊗ z''`,
+
+where `b` is the bar differential, `Δ` is reduced deconcatenation, and `σ : x ↦ (-1) ^ |x| x` is
+the Koszul twist of `D`.  This is the twisting-cochain equation of
+`TauCeti.IsTwistingCochain` after a change of sign: `τ = σ ∘ f`, that is
+`τ z = (-1) ^ (|z| + 1) f z` for `z` of degree `|z|` in `Tᶜ(sA)`, satisfies
+`d τ + τ b + μ (τ ⊗ τ) Δ = 0`.  The sign comes from comparing the suspension sign of `m₂`, carried
+by the Koszul twist of the left factor, with the Koszul sign of the tensor product of two
+degree-one maps in the twisting equation.  Hence `A∞` morphisms `A ⟶ D` into any nonunital DG
+algebra are the twisting cochains `Tᶜ(sA) ⟶ D` (`TauCeti.AInfinityAlgebra.homTwistingCochainEquiv`),
+naturally in both `A` and `D`.
+
+When `D` is unital, composing with the cobar universal property
+`TauCeti.IsNonCounitalDGCoalgebra.cobarTwistingCochainEquiv`, `A∞` morphisms `A ⟶ D` correspond to
+DG algebra maps `Ω Tᶜ(sA) ⟶ D` (`TauCeti.AInfinityAlgebra.cobarBarHomEquiv`).  The identity of
+`Ω Tᶜ(sA)` corresponds to the canonical `A∞` morphism `A ⟶ Ω Tᶜ(sA)`
+(`TauCeti.AInfinityAlgebra.toCobarBar`), whose Taylor components are `z ↦ (-1) ^ |z| s⁻¹ z`, and
+every `A∞` morphism from `A` to a DG algebra factors uniquely through it by a DG algebra map
+(`TauCeti.AInfinityAlgebra.bijective_comp_toCobarBar`).  Applying `cobarMap` to the induced bar
+coalgebra map makes `Ω Tᶜ(s-)` functorial (`TauCeti.AInfinityHom.cobarBarMap`) and renders the
+adjunction natural in both variables.  Since `Tᶜ(sA)` is the coaugmentation
+coideal of the bar construction of the augmented algebra `R ⊕ A`, the DG algebra `Ω Tᶜ(sA)` is the
+enveloping DG algebra `Ω B (R ⊕ A)`, and this is its universal property among nonunital `A∞`
+morphisms out of `A`.  It holds over any commutative ring: no conilpotence, flatness or field
+hypothesis is involved.
+
+## Main definitions
+
+* `TauCeti.AInfinityAlgebra.homTwistingCochainEquiv`: `A∞` morphisms into a nonunital DG algebra
+  are the twisting cochains on the bar construction.
+* `TauCeti.IsTwistingCochain.toAInfinityHom`: the `A∞` morphism of a bar twisting cochain.
+* `TauCeti.AInfinityAlgebra.cobarBarHomEquiv`: `A∞` morphisms into a DG algebra are the DG
+  algebra maps out of the cobar construction of the bar construction.
+* `TauCeti.AInfinityAlgebra.toCobarBar`: the canonical `A∞` morphism `A ⟶ Ω Tᶜ(sA)`.
+* `TauCeti.AInfinityHom.cobarBarMap`: functoriality `Ω Tᶜ(sA) ⟶ Ω Tᶜ(sA')` along `A∞` morphisms.
+
+## Main results
+
+* `TauCeti.AInfinityHom.isTwistingCochain_koszulTwist_comp_taylor`: postcomposing the Taylor map of
+  an `A∞` morphism into a nonunital DG algebra with the Koszul twist gives a twisting cochain.
+* `TauCeti.AInfinityAlgebra.taylor_toCobarBar`: the Taylor components of the canonical morphism.
+* `TauCeti.AInfinityAlgebra.cobarBarHomEquiv_symm_apply`: the `A∞` morphism of a DG algebra map
+  `Ω Tᶜ(sA) ⟶ D` is that map composed with the canonical morphism.
+* `TauCeti.AInfinityAlgebra.bijective_comp_toCobarBar`: **the universal property of `Ω Tᶜ(sA)`**.
+* `TauCeti.AInfinityHom.cobarBarMap_comp_toCobarBar`: naturality of `toCobarBar` with respect to
+  `cobarBarMap`.
 
 ## References
 
-* J.-L. Loday and B. Vallette, *Algebraic Operads*, Section 2.2.
-* B. Keller, *A-infinity algebras, modules and functor categories*, Section 4.
-* B. Keller, *Introduction to A-infinity algebras and modules*, Sections 3.4 and 3.6.
+* B. Keller, *A-infinity algebras, modules and functor categories*, Contemporary Mathematics 406
+  (2006), Section 4, for twisting cochains, the bar--cobar adjunction and the enveloping
+  differential graded algebra `Ω B A` of an augmented `A∞` algebra.
+* B. Keller, *Introduction to A-infinity algebras and modules*, Homology, Homotopy and
+  Applications 3 (2001), Sections 3.4 and 3.6.
+* J.-L. Loday and B. Vallette, *Algebraic Operads*, Grundlehren der mathematischen Wissenschaften
+  346, Springer (2012), Section 2.2, for twisting morphisms and the bar--cobar adjunction.
 -/
 
 public section
 
-namespace TauCeti
+open scoped TensorProduct
 
-open TensorProduct TensorAlgebra ReducedTensorWords
+namespace TauCeti.AInfinityAlgebra
 
-universe uR uA uA' uA'' uB uC
+universe uR uA uA' uA'' uD uE
 
-section Common
+private theorem koszulTwist_comp_koszulTwist_comp {R : Type uR} {A : Type uA} {D : Type uD}
+    [CommRing R] [AddCommGroup A] [Module R A] [AddCommGroup D] [Module R D]
+    {𝒟 : ℤ → Submodule R D} [DirectSum.Decomposition 𝒟] (g : ReducedTensorWords R A →ₗ[R] D) :
+    (InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ
+      (InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ g = g := by
+  rw [← LinearMap.comp_assoc, InternalGrading.koszulTwist_comp_self, LinearMap.id_comp]
 
-variable {R : Type uR} {A : Type uA} {A' : Type uA'} {A'' : Type uA''} {B : Type uB} {C : Type uC}
-  [CommRing R] [AddCommGroup A] [Module R A] [AddCommGroup A'] [Module R A']
-  [AddCommGroup A''] [Module R A'']
+section NonUnital
 
-section TwistingCochain
+variable {R : Type uR} {A : Type uA} {D : Type uD} [CommRing R] [AddCommGroup A] [Module R A]
+  [NonUnitalRing D] [Module R D] [IsScalarTower R D D] [SMulCommClass R D D]
+  {𝒟 : ℤ → Submodule R D} [SetLike.GradedMul 𝒟] [DirectSum.Decomposition 𝒟] {d : D →ₗ[R] D}
+  (𝒜 : AInfinityAlgebra R A) (hD : IsNonUnitalDGAlgebra 𝒟 d)
 
-variable [NonUnitalRing B] [Module R B] [IsScalarTower R B B] [SMulCommClass R B B]
-  {ℬ : ℤ → Submodule R B} [SetLike.GradedMul ℬ] [DirectSum.Decomposition ℬ] {dB : B →ₗ[R] B}
-  [NonUnitalRing C] [Module R C] [IsScalarTower R C C] [SMulCommClass R C C]
-  {𝒞 : ℤ → Submodule R C} [SetLike.GradedMul 𝒞] [DirectSum.Decomposition 𝒞] {dC : C →ₗ[R] C}
+/-! ### `A∞` morphisms into a DG algebra as twisting cochains -/
 
-private theorem isHomogeneous_suspended_iff {𝒜 : AInfinityAlgebra R A}
-    (hB : IsNonUnitalDGAlgebra ℬ dB) {f : ReducedTensorWords R A →ₗ[R] B} :
-    LinearMap.IsHomogeneous f (gradedPiece (𝒜.grading.shift 1))
-        (hB.toAInfinityAlgebra.grading.shift 1).piece 0 ↔
-      LinearMap.IsHomogeneous f (grading (𝒜.grading.shift 1)).piece ℬ 1 := by
-  simp only [LinearMap.isHomogeneous_def, grading_piece, add_zero, hB.toAInfinityAlgebra_grading,
-    InternalGrading.shift_piece, InternalGrading.ofDecomposition_piece]
+/-- The Taylor map of a DG algebra after the Taylor expansion of `g`: the differential of `g` plus
+the product of the two halves of each cut, the left one twisted. -/
+private theorem taylor_coalgHom_apply (g : ReducedTensorWords R A →ₗ[R] D)
+    (z : ReducedTensorWords R A) :
+    hD.toAInfinityAlgebra.taylor (ReducedTensorWords.coalgHom R g z) =
+      d (g z) + LinearMap.mul' R D (TensorProduct.map
+        ((InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ g) g
+          (ReducedTensorWords.deconcatenation R A z)) := by
+  rw [IsNonUnitalDGAlgebra.toAInfinityAlgebra_taylor, LinearMap.add_apply, LinearMap.comp_apply,
+    ← LinearMap.comp_apply (ReducedTensorWords.letter R D), ReducedTensorWords.letter_comp_coalgHom,
+    LinearMap.comp_apply, LinearMap.comp_apply,
+    (ReducedTensorWords.isCoalgHom_coalgHom g).deconcatenation_apply, TensorProduct.map_map,
+    LinearMap.comp_assoc, ReducedTensorWords.letter_comp_coalgHom]
 
-private theorem twistingEquation_eq_neg_koszulTwist (𝒜 : AInfinityAlgebra R A)
-    (hB : IsNonUnitalDGAlgebra ℬ dB) {f : ReducedTensorWords R A →ₗ[R] B}
-    (hf : LinearMap.IsHomogeneous f (grading (𝒜.grading.shift 1)).piece ℬ 1)
-    (w : ReducedTensorWords R A) :
-    let σB := (InternalGrading.ofDecomposition ℬ).koszulTwist 1
-    dB ((σB ∘ₗ f) w) + (σB ∘ₗ f) (𝒜.barDifferential w) +
-        LinearMap.mul' R B (TensorProduct.map
-          ((σB ∘ₗ f) ∘ₗ (grading (𝒜.grading.shift 1)).koszulTwist 1) (σB ∘ₗ f)
-          (deconcatenation R A w)) =
-      -σB (hB.toAInfinityAlgebra.taylor (coalgHom R f w) - f (𝒜.barDifferential w)) := by
-  intro σB; have hf' : LinearMap.IsHomogeneous f (grading (𝒜.grading.shift 1)).piece
-      (InternalGrading.ofDecomposition ℬ).piece 1 := by rwa [InternalGrading.ofDecomposition_piece]
-  have hτtwist : (σB ∘ₗ f) ∘ₗ (grading (𝒜.grading.shift 1)).koszulTwist 1 = -f :=
-    LinearMap.ext fun u ↦ by
-      simpa [σB, InternalGrading.koszulTwist_koszulTwist] using
-        (congrArg (fun y ↦ -σB y) (hf'.koszulTwist_apply 1 u)).symm
-  have hquad : ∀ z : ReducedTensorWords R A ⊗[R] ReducedTensorWords R A,
-      σB (LinearMap.mul' R B (TensorProduct.map (σB ∘ₗ f) f z)) =
-        -LinearMap.mul' R B (TensorProduct.map
-          ((σB ∘ₗ f) ∘ₗ (grading (𝒜.grading.shift 1)).koszulTwist 1) (σB ∘ₗ f) z) := by
-    rw [hτtwist]; intro z; induction z using TensorProduct.inductionOn with
-    | tmul u v => simp [σB, InternalGrading.koszulTwist_ofDecomposition_mul,
-        InternalGrading.koszulTwist_koszulTwist]
-    | add _ _ hx hy => simp only [map_add, neg_add, hx, hy]
-  rw [hB.toAInfinityAlgebra_taylor_coalgHom, map_sub, map_add, hB.koszulTwist_map (f w), hquad]
-  dsimp only [σB, LinearMap.comp_apply]; abel
+/-- Suspended Taylor components into a DG algebra raise the unsuspended degree by one, so they
+anticommute with the Koszul twists. -/
+private theorem apply_koszulTwist (g : ReducedTensorWords R A →ₗ[R] D)
+    (hg : LinearMap.IsHomogeneous g (ReducedTensorWords.gradedPiece (𝒜.grading.shift 1))
+      (hD.toAInfinityAlgebra.grading.shift 1).piece 0)
+    (z : ReducedTensorWords R A) :
+    g ((ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1 z) =
+      -(InternalGrading.ofDecomposition 𝒟).koszulTwist 1 (g z) := by
+  rw [← ReducedTensorWords.grading_piece] at hg
+  have h := hg.koszulTwist_apply 1 z
+  rw [InternalGrading.koszulTwist_one_shift_one, IsNonUnitalDGAlgebra.toAInfinityAlgebra_grading]
+    at h
+  simpa using h.symm
+
+/-- The Koszul twist of the twisting-cochain expression of `σ ∘ g` is minus the defect of the
+component equation of `g`. -/
+private theorem koszulTwist_twistingSum (g : ReducedTensorWords R A →ₗ[R] D)
+    (hg : ∀ z, g ((ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1 z) =
+      -(InternalGrading.ofDecomposition 𝒟).koszulTwist 1 (g z))
+    (z : ReducedTensorWords R A) :
+    (InternalGrading.ofDecomposition 𝒟).koszulTwist 1
+        (d (((InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ g) z) +
+          ((InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ g) (𝒜.barDifferential z) +
+          LinearMap.mul' R D (TensorProduct.map
+            (((InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ g) ∘ₗ
+              (ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1)
+            ((InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ g)
+            (ReducedTensorWords.deconcatenation R A z))) =
+      g (𝒜.barDifferential z) - hD.toAInfinityAlgebra.taylor
+        (ReducedTensorWords.coalgHom R g z) := by
+  have hq (w : ReducedTensorWords R A ⊗[R] ReducedTensorWords R A) :
+      (InternalGrading.ofDecomposition 𝒟).koszulTwist 1 (LinearMap.mul' R D (TensorProduct.map
+          (((InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ g) ∘ₗ
+            (ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1)
+          ((InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ g) w)) =
+        -LinearMap.mul' R D
+          (TensorProduct.map ((InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ g) g w) := by
+    induction w using TensorProduct.inductionOn with
+    | tmul x y =>
+      simp only [TensorProduct.map_tmul, LinearMap.comp_apply, LinearMap.mul'_apply, hg,
+        InternalGrading.koszulTwist_ofDecomposition_mul, InternalGrading.koszulTwist_koszulTwist,
+        map_neg, neg_mul]
+    | add x y hx hy => simp only [map_add, hx, hy, neg_add]
+  rw [taylor_coalgHom_apply hD, map_add, map_add, hq, LinearMap.comp_apply, LinearMap.comp_apply,
+    InternalGrading.koszulTwist_koszulTwist, hD.koszulTwist_map,
+    InternalGrading.koszulTwist_koszulTwist]
+  abel
+
+/-- `σ ∘ g` raises the degree by one exactly when `g` has degree zero for the suspended
+gradings. -/
+private theorem isHomogeneous_koszulTwist_comp_iff (g : ReducedTensorWords R A →ₗ[R] D) :
+    LinearMap.IsHomogeneous ((InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ g)
+        (ReducedTensorWords.grading (𝒜.grading.shift 1)).piece 𝒟 1 ↔
+      LinearMap.IsHomogeneous g (ReducedTensorWords.gradedPiece (𝒜.grading.shift 1))
+        (hD.toAInfinityAlgebra.grading.shift 1).piece 0 := by
+  have hσ {x : D} {k : ℤ} : (InternalGrading.ofDecomposition 𝒟).koszulTwist 1 x ∈ 𝒟 k ↔ x ∈ 𝒟 k :=
+    ⟨fun h ↦ by simpa using InternalGrading.koszulTwist_mem_ofDecomposition 𝒟 h 1,
+      fun h ↦ InternalGrading.koszulTwist_mem_ofDecomposition 𝒟 h 1⟩
+  simp only [LinearMap.isHomogeneous_def, ReducedTensorWords.grading_piece,
+    InternalGrading.shift_piece, IsNonUnitalDGAlgebra.toAInfinityAlgebra_grading,
+    InternalGrading.ofDecomposition_piece, LinearMap.comp_apply, add_zero, hσ]
+
+/-- For suspended Taylor components `g` of degree zero, `σ ∘ g` is a twisting cochain exactly when
+`g` satisfies the component equation of an `A∞` morphism. -/
+private theorem isTwistingCochain_koszulTwist_comp_iff (g : ReducedTensorWords R A →ₗ[R] D)
+    (hg : LinearMap.IsHomogeneous g (ReducedTensorWords.gradedPiece (𝒜.grading.shift 1))
+      (hD.toAInfinityAlgebra.grading.shift 1).piece 0) :
+    IsTwistingCochain (ReducedTensorWords.grading (𝒜.grading.shift 1))
+        (ReducedTensorWords.deconcatenation R A) 𝒜.barDifferential 𝒟 d
+        ((InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ g) ↔
+      hD.toAInfinityAlgebra.taylor ∘ₗ ReducedTensorWords.coalgHom R g =
+        g ∘ₗ 𝒜.barDifferential := by
+  have key := koszulTwist_twistingSum 𝒜 hD g (apply_koszulTwist 𝒜 hD g hg)
+  constructor
+  · refine fun h ↦ LinearMap.ext fun z ↦ ?_
+    have hz := key z
+    rw [h.equation z, map_zero, eq_comm, sub_eq_zero] at hz
+    exact hz.symm
+  · refine fun h ↦ ⟨(isHomogeneous_koszulTwist_comp_iff 𝒜 hD g).2 hg, fun z ↦ ?_⟩
+    have hz := congrArg ((InternalGrading.ofDecomposition 𝒟).koszulTwist 1) (key z)
+    rwa [← LinearMap.comp_apply (hD.toAInfinityAlgebra.taylor), h,
+      LinearMap.comp_apply g, sub_self, map_zero, InternalGrading.koszulTwist_koszulTwist] at hz
+
+/-- **`A∞` morphisms into a nonunital DG algebra are the twisting cochains on the bar
+construction.**  An `A∞` morphism `f : A ⟶ D` corresponds to the twisting cochain
+`σ ∘ f : Tᶜ(sA) ⟶ D`, its suspended Taylor components followed by the Koszul twist
+`σ : x ↦ (-1) ^ |x| x` of `D`. -/
+noncomputable def homTwistingCochainEquiv :
+    AInfinityHom 𝒜 hD.toAInfinityAlgebra ≃
+      {τ : ReducedTensorWords R A →ₗ[R] D // IsTwistingCochain
+        (ReducedTensorWords.grading (𝒜.grading.shift 1)) (ReducedTensorWords.deconcatenation R A)
+        𝒜.barDifferential 𝒟 d τ} where
+  toFun f := ⟨(InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ f.taylor,
+    (isTwistingCochain_koszulTwist_comp_iff 𝒜 hD _ f.isHomogeneous_taylor).2 <| by
+      rw [← f.barMap_eq_coalgHom]
+      exact f.taylor_comp_barMap⟩
+  invFun τ :=
+    have hτ := (isHomogeneous_koszulTwist_comp_iff 𝒜 hD
+      ((InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ τ.val)).1 <| by
+        rw [koszulTwist_comp_koszulTwist_comp]
+        exact τ.property.isHomogeneous
+    AInfinityHom.ofTaylor ((InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ τ.val) hτ <|
+      (isTwistingCochain_koszulTwist_comp_iff 𝒜 hD _ hτ).1 <| by
+        rw [koszulTwist_comp_koszulTwist_comp]
+        exact τ.property
+  left_inv f := AInfinityHom.ext <| by
+    rw [AInfinityHom.taylor_ofTaylor, koszulTwist_comp_koszulTwist_comp]
+  right_inv τ := Subtype.ext <| by
+    simp only [AInfinityHom.taylor_ofTaylor, koszulTwist_comp_koszulTwist_comp]
+
+/-- The twisting cochain of an `A∞` morphism is its Taylor map followed by the Koszul twist. -/
+@[simp]
+theorem homTwistingCochainEquiv_apply
+    (f : AInfinityHom 𝒜 hD.toAInfinityAlgebra) (z : ReducedTensorWords R A) :
+    (homTwistingCochainEquiv 𝒜 hD f).val z =
+      (InternalGrading.ofDecomposition 𝒟).koszulTwist 1 (f.taylor z) := (rfl)
+
+/-- The Taylor map of the `A∞` morphism of a twisting cochain is the twisting cochain followed by
+the Koszul twist. -/
+@[simp]
+theorem taylor_homTwistingCochainEquiv_symm (τ : {τ : ReducedTensorWords R A →ₗ[R] D //
+    IsTwistingCochain (ReducedTensorWords.grading (𝒜.grading.shift 1))
+      (ReducedTensorWords.deconcatenation R A) 𝒜.barDifferential 𝒟 d τ}) :
+    ((homTwistingCochainEquiv 𝒜 hD).symm τ).taylor =
+      (InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ τ.val := by
+  simp only [homTwistingCochainEquiv, Equiv.coe_fn_symm_mk, AInfinityHom.taylor_ofTaylor]
+
+/-- The linear part of `(homTwistingCochainEquiv 𝒜 hD).symm` restricts the twisted cochain to
+`A`. -/
+@[simp]
+theorem linearPart_homTwistingCochainEquiv_symm (τ : {τ : ReducedTensorWords R A →ₗ[R] D //
+    IsTwistingCochain (ReducedTensorWords.grading (𝒜.grading.shift 1))
+      (ReducedTensorWords.deconcatenation R A) 𝒜.barDifferential 𝒟 d τ}) :
+    ((homTwistingCochainEquiv 𝒜 hD).symm τ).linearPart =
+      (InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ τ.val ∘ₗ
+        ReducedTensorWords.ofLetter R A :=
+  LinearMap.ext fun _ ↦ by simp
 
 /-- Composing the Taylor map of an `A∞` morphism into a nonunital DG algebra with the degree-one
 Koszul twist gives a twisting cochain on the reduced bar coalgebra. -/
-theorem AInfinityHom.isTwistingCochain_koszulTwist_comp_taylor {𝒜 : AInfinityAlgebra R A}
-    {hB : IsNonUnitalDGAlgebra ℬ dB} (g : AInfinityHom 𝒜 hB.toAInfinityAlgebra) :
-    IsTwistingCochain (grading (𝒜.grading.shift 1)) (deconcatenation R A) 𝒜.barDifferential ℬ dB
-      ((InternalGrading.ofDecomposition ℬ).koszulTwist 1 ∘ₗ g.taylor) where
-  isHomogeneous := by
-    simpa using (InternalGrading.isHomogeneous_koszulTwist_ofDecomposition ℬ 1).comp
-      ((isHomogeneous_suspended_iff hB).1 g.isHomogeneous_taylor)
-  equation w := by
-    rw [twistingEquation_eq_neg_koszulTwist 𝒜 hB
-      ((isHomogeneous_suspended_iff hB).1 g.isHomogeneous_taylor) w]
-    have hcomp := LinearMap.congr_fun g.taylor_comp_barMap w
-    rw [g.barMap_eq_coalgHom] at hcomp; simp only [LinearMap.comp_apply] at hcomp
-    rw [hcomp, sub_self, map_zero, neg_zero]
+theorem _root_.TauCeti.AInfinityHom.isTwistingCochain_koszulTwist_comp_taylor
+    {𝒜 : AInfinityAlgebra R A} {hD : IsNonUnitalDGAlgebra 𝒟 d}
+    (f : AInfinityHom 𝒜 hD.toAInfinityAlgebra) :
+    IsTwistingCochain (ReducedTensorWords.grading (𝒜.grading.shift 1))
+      (ReducedTensorWords.deconcatenation R A) 𝒜.barDifferential 𝒟 d
+      ((InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ f.taylor) :=
+  (homTwistingCochainEquiv 𝒜 hD f).property
 
-/-- A twisting cochain from the reduced bar coalgebra of `𝒜` to a nonunital DG algebra `(B, d_B)`
-induces an `A∞` morphism `𝒜 ⟶ B` whose Taylor map is
-`(InternalGrading.ofDecomposition ℬ).koszulTwist 1 ∘ₗ τ`. -/
-noncomputable def IsTwistingCochain.toAInfinityHom {𝒜 : AInfinityAlgebra R A}
-    (hB : IsNonUnitalDGAlgebra ℬ dB) {τ : ReducedTensorWords R A →ₗ[R] B}
-    (hτ : IsTwistingCochain (grading (𝒜.grading.shift 1)) (deconcatenation R A)
-      𝒜.barDifferential ℬ dB τ) : AInfinityHom 𝒜 hB.toAInfinityAlgebra :=
-  have hστ : LinearMap.IsHomogeneous ((InternalGrading.ofDecomposition ℬ).koszulTwist 1 ∘ₗ τ)
-      (grading (𝒜.grading.shift 1)).piece ℬ 1 := by
-    simpa using (InternalGrading.isHomogeneous_koszulTwist_ofDecomposition ℬ 1).comp
-      hτ.isHomogeneous
-  AInfinityHom.ofTaylor ((InternalGrading.ofDecomposition ℬ).koszulTwist 1 ∘ₗ τ)
-    ((isHomogeneous_suspended_iff hB).2 hστ)
-    (LinearMap.ext fun w ↦ by
-      have hσf : (InternalGrading.ofDecomposition ℬ).koszulTwist 1 ∘ₗ
-          ((InternalGrading.ofDecomposition ℬ).koszulTwist 1 ∘ₗ τ) = τ := by
-        rw [← LinearMap.comp_assoc, InternalGrading.koszulTwist_comp_self, LinearMap.id_comp]
-      have heq := twistingEquation_eq_neg_koszulTwist 𝒜 hB hστ w
-      dsimp only at heq; rw [hσf, hτ.equation w] at heq
-      simpa only [map_neg, map_zero, InternalGrading.koszulTwist_koszulTwist, neg_eq_zero,
-        sub_eq_zero, LinearMap.comp_apply] using
-        congrArg ((InternalGrading.ofDecomposition ℬ).koszulTwist 1) heq.symm)
+/-- A twisting cochain from the reduced bar coalgebra of `𝒜` to a nonunital DG algebra `(D, d)`
+induces an `A∞` morphism `𝒜 ⟶ D`. -/
+noncomputable def _root_.TauCeti.IsTwistingCochain.toAInfinityHom {𝒜 : AInfinityAlgebra R A}
+    (hD : IsNonUnitalDGAlgebra 𝒟 d) {τ : ReducedTensorWords R A →ₗ[R] D}
+    (hτ : IsTwistingCochain (ReducedTensorWords.grading (𝒜.grading.shift 1))
+      (ReducedTensorWords.deconcatenation R A) 𝒜.barDifferential 𝒟 d τ) :
+    AInfinityHom 𝒜 hD.toAInfinityAlgebra :=
+  (homTwistingCochainEquiv 𝒜 hD).symm ⟨τ, hτ⟩
 
 /-- The Taylor map of `IsTwistingCochain.toAInfinityHom` is the Koszul-twisted cochain. -/
-@[simp] theorem IsTwistingCochain.taylor_toAInfinityHom {𝒜 : AInfinityAlgebra R A}
-    (hB : IsNonUnitalDGAlgebra ℬ dB) {τ : ReducedTensorWords R A →ₗ[R] B}
-    (hτ : IsTwistingCochain (grading (𝒜.grading.shift 1)) (deconcatenation R A)
-      𝒜.barDifferential ℬ dB τ) :
-    (hτ.toAInfinityHom hB).taylor = (InternalGrading.ofDecomposition ℬ).koszulTwist 1 ∘ₗ τ :=
-  AInfinityHom.taylor_ofTaylor _ _ _
+@[simp]
+theorem _root_.TauCeti.IsTwistingCochain.taylor_toAInfinityHom {𝒜 : AInfinityAlgebra R A}
+    (hD : IsNonUnitalDGAlgebra 𝒟 d) {τ : ReducedTensorWords R A →ₗ[R] D}
+    (hτ : IsTwistingCochain (ReducedTensorWords.grading (𝒜.grading.shift 1))
+      (ReducedTensorWords.deconcatenation R A) 𝒜.barDifferential 𝒟 d τ) :
+    (hτ.toAInfinityHom hD).taylor = (InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ τ :=
+  taylor_homTwistingCochainEquiv_symm 𝒜 hD ⟨τ, hτ⟩
 
 /-- `IsTwistingCochain.toAInfinityHom` has linear part restricting the twisted cochain to `A`. -/
-@[simp] theorem IsTwistingCochain.linearPart_toAInfinityHom {𝒜 : AInfinityAlgebra R A}
-    (hB : IsNonUnitalDGAlgebra ℬ dB) {τ : ReducedTensorWords R A →ₗ[R] B}
-    (hτ : IsTwistingCochain (grading (𝒜.grading.shift 1)) (deconcatenation R A)
-      𝒜.barDifferential ℬ dB τ) :
-    (hτ.toAInfinityHom hB).linearPart =
-      (InternalGrading.ofDecomposition ℬ).koszulTwist 1 ∘ₗ τ ∘ₗ ofLetter R A :=
-  LinearMap.ext fun _ ↦ by simp
-
-namespace AInfinityAlgebra
-
-/-- **`A∞` morphisms into a nonunital DG algebra correspond bijectively to twisting cochains** on
-the reduced bar coalgebra, via postcomposition of Taylor maps with the degree-one Koszul twist
-`(InternalGrading.ofDecomposition ℬ).koszulTwist 1`. -/
-noncomputable def barTwistingCochainEquiv (𝒜 : AInfinityAlgebra R A)
-    (hB : IsNonUnitalDGAlgebra ℬ dB) :
-    AInfinityHom 𝒜 hB.toAInfinityAlgebra ≃
-      {τ : ReducedTensorWords R A →ₗ[R] B //
-        IsTwistingCochain (ReducedTensorWords.grading (𝒜.grading.shift 1)) (deconcatenation R A)
-          𝒜.barDifferential ℬ dB τ} where
-  toFun g := ⟨(InternalGrading.ofDecomposition ℬ).koszulTwist 1 ∘ₗ g.taylor,
-    g.isTwistingCochain_koszulTwist_comp_taylor⟩
-  invFun τ := τ.property.toAInfinityHom hB
-  left_inv g := AInfinityHom.ext <| by
-    simp [← LinearMap.comp_assoc, InternalGrading.koszulTwist_comp_self]
-  right_inv τ := Subtype.ext <| by
-    simp [← LinearMap.comp_assoc, InternalGrading.koszulTwist_comp_self]
-
-@[simp] theorem barTwistingCochainEquiv_apply (𝒜 : AInfinityAlgebra R A)
-    (hB : IsNonUnitalDGAlgebra ℬ dB) (g : AInfinityHom 𝒜 hB.toAInfinityAlgebra) :
-    (𝒜.barTwistingCochainEquiv hB g).val =
-      (InternalGrading.ofDecomposition ℬ).koszulTwist 1 ∘ₗ g.taylor := (rfl)
-
-@[simp] theorem taylor_barTwistingCochainEquiv_symm (𝒜 : AInfinityAlgebra R A)
-    (hB : IsNonUnitalDGAlgebra ℬ dB) (τ) :
-    ((𝒜.barTwistingCochainEquiv hB).symm τ).taylor =
-      (InternalGrading.ofDecomposition ℬ).koszulTwist 1 ∘ₗ τ.val :=
-  τ.property.taylor_toAInfinityHom hB
-
-/-- The linear part of `(barTwistingCochainEquiv).symm` restricts the twisted cochain to `A`. -/
-@[simp] theorem linearPart_barTwistingCochainEquiv_symm (𝒜 : AInfinityAlgebra R A)
-    (hB : IsNonUnitalDGAlgebra ℬ dB) (τ) :
-    ((𝒜.barTwistingCochainEquiv hB).symm τ).linearPart =
-      (InternalGrading.ofDecomposition ℬ).koszulTwist 1 ∘ₗ τ.val ∘ₗ ofLetter R A :=
-  τ.property.linearPart_toAInfinityHom hB
+@[simp]
+theorem _root_.TauCeti.IsTwistingCochain.linearPart_toAInfinityHom {𝒜 : AInfinityAlgebra R A}
+    (hD : IsNonUnitalDGAlgebra 𝒟 d) {τ : ReducedTensorWords R A →ₗ[R] D}
+    (hτ : IsTwistingCochain (ReducedTensorWords.grading (𝒜.grading.shift 1))
+      (ReducedTensorWords.deconcatenation R A) 𝒜.barDifferential 𝒟 d τ) :
+    (hτ.toAInfinityHom hD).linearPart =
+      (InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ τ ∘ₗ
+        ReducedTensorWords.ofLetter R A :=
+  linearPart_homTwistingCochainEquiv_symm 𝒜 hD ⟨τ, hτ⟩
 
 /-- Precomposing an `A∞` morphism with `k : A' ⟶ A` pulls back its bar twisting cochain along
 `k.barMap`. -/
-theorem barTwistingCochainEquiv_comp_right {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
-    (hB : IsNonUnitalDGAlgebra ℬ dB) (g : AInfinityHom 𝒜 hB.toAInfinityAlgebra)
-    (k : AInfinityHom 𝒜' 𝒜) :
-    (𝒜'.barTwistingCochainEquiv hB (g.comp k)).val =
-      (𝒜.barTwistingCochainEquiv hB g).val ∘ₗ k.barMap := by
-  rw [barTwistingCochainEquiv_apply, barTwistingCochainEquiv_apply, AInfinityHom.taylor_comp,
-    LinearMap.comp_assoc]
+theorem homTwistingCochainEquiv_comp_right {A' : Type uA'} [AddCommGroup A'] [Module R A']
+    {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'} (hD : IsNonUnitalDGAlgebra 𝒟 d)
+    (g : AInfinityHom 𝒜 hD.toAInfinityAlgebra) (k : AInfinityHom 𝒜' 𝒜) :
+    (homTwistingCochainEquiv 𝒜' hD (g.comp k)).val =
+      (homTwistingCochainEquiv 𝒜 hD g).val ∘ₗ k.barMap :=
+  LinearMap.ext fun _ ↦ by simp [AInfinityHom.taylor_comp]
 
-/-- Postcomposing an `A∞` morphism with a nonunital DG algebra morphism `ψ : B ⟶ C` pushes forward
+/-- Postcomposing an `A∞` morphism with a nonunital DG algebra morphism `ψ : D ⟶ E` pushes forward
 its bar twisting cochain by `ψ`. -/
-theorem barTwistingCochainEquiv_comp_left (𝒜 : AInfinityAlgebra R A)
-    {hB : IsNonUnitalDGAlgebra ℬ dB} {hC : IsNonUnitalDGAlgebra 𝒞 dC}
-    (ψ : NonUnitalDGAlgHom hB hC) (g : AInfinityHom 𝒜 hB.toAInfinityAlgebra) :
-    (𝒜.barTwistingCochainEquiv hC (ψ.toAInfinityStrictHom.toAInfinityHom.comp g)).val =
-      ψ.toAInfinityStrictHom.toLinearMap ∘ₗ (𝒜.barTwistingCochainEquiv hB g).val := by
+theorem homTwistingCochainEquiv_comp_left {E : Type uE} [NonUnitalRing E] [Module R E]
+    [IsScalarTower R E E] [SMulCommClass R E E] {ℰ : ℤ → Submodule R E} [SetLike.GradedMul ℰ]
+    [DirectSum.Decomposition ℰ] {dE : E →ₗ[R] E} {hD : IsNonUnitalDGAlgebra 𝒟 d}
+    {hE : IsNonUnitalDGAlgebra ℰ dE} (ψ : NonUnitalDGAlgHom hD hE)
+    (g : AInfinityHom 𝒜 hD.toAInfinityAlgebra) :
+    (homTwistingCochainEquiv 𝒜 hE (ψ.toAInfinityStrictHom.toAInfinityHom.comp g)).val =
+      ψ.toAInfinityStrictHom.toLinearMap ∘ₗ (homTwistingCochainEquiv 𝒜 hD g).val := by
   have hhom : LinearMap.IsHomogeneous ψ.toAInfinityStrictHom.toLinearMap
-      (InternalGrading.ofDecomposition ℬ).piece (InternalGrading.ofDecomposition 𝒞).piece 0 := by
-    simpa only [hB.toAInfinityAlgebra_grading, hC.toAInfinityAlgebra_grading] using
+      (InternalGrading.ofDecomposition 𝒟).piece (InternalGrading.ofDecomposition ℰ).piece 0 := by
+    simpa only [hD.toAInfinityAlgebra_grading, hE.toAInfinityAlgebra_grading] using
       ψ.toAInfinityStrictHom.isHomogeneous
   refine LinearMap.ext fun w ↦ ?_
   have htw := hhom.koszulTwist_apply 1 (g.taylor w)
   simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul] at htw
-  simp only [barTwistingCochainEquiv_apply, AInfinityStrictHom.taylor_toAInfinityHom_comp,
+  simp only [homTwistingCochainEquiv_apply, AInfinityStrictHom.taylor_toAInfinityHom_comp,
     LinearMap.comp_apply, htw]
 
-end AInfinityAlgebra
-end TwistingCochain
+end NonUnital
 
-section CobarAdjunction
+/-! ### The universal property of `Ω Tᶜ(sA)` -/
 
-variable [Ring B] [Algebra R B] {ℬ : ℤ → Submodule R B} [GradedAlgebra ℬ] {dB : B →ₗ[R] B}
-  [Ring C] [Algebra R C] {𝒞 : ℤ → Submodule R C} [GradedAlgebra 𝒞] {dC : C →ₗ[R] C}
+section Unital
 
-namespace AInfinityAlgebra
+variable {R : Type uR} {A : Type uA} {D : Type uD} [CommRing R] [AddCommGroup A] [Module R A]
+  [Ring D] [Algebra R D] {𝒟 : ℤ → Submodule R D} [GradedAlgebra 𝒟] {d : D →ₗ[R] D}
+  (𝒜 : AInfinityAlgebra R A) (hD : IsDGAlgebra 𝒟 d)
 
-/-- The **bar--cobar adjunction** between `A∞` algebras and unital differential graded algebras:
-DG algebra morphisms `Ω Tᶜ(sA) ⟶ B` correspond bijectively to `A∞` morphisms `A ⟶ B`. -/
-noncomputable def cobarDGAlgHomEquiv (𝒜 : AInfinityAlgebra R A) (hB : IsDGAlgebra ℬ dB) :
-    DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hB ≃
-      AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra :=
-  (𝒜.isNonCounitalDGCoalgebra_bar.cobarTwistingCochainEquiv hB).trans
-    (𝒜.barTwistingCochainEquiv hB.toIsNonUnitalDGAlgebra).symm
+/-- **`A∞` morphisms into a DG algebra are the DG algebra maps out of `Ω Tᶜ(sA)`.**  An `A∞`
+morphism `f : A ⟶ D` corresponds to the DG algebra map sending the desuspended generator `s⁻¹ z`
+to `-σ (f z)` (`cobarBarHomEquiv_apply_ι`). -/
+noncomputable def cobarBarHomEquiv :
+    AInfinityHom 𝒜 hD.toIsNonUnitalDGAlgebra.toAInfinityAlgebra ≃
+      DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hD :=
+  (homTwistingCochainEquiv 𝒜 hD.toIsNonUnitalDGAlgebra).trans
+    (𝒜.isNonCounitalDGCoalgebra_bar.cobarTwistingCochainEquiv hD).symm
 
-@[simp] theorem taylor_cobarDGAlgHomEquiv (𝒜 : AInfinityAlgebra R A) (hB : IsDGAlgebra ℬ dB)
-    (φ : DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hB)
-    (w : ReducedTensorWords R A) :
-    (𝒜.cobarDGAlgHomEquiv hB φ).taylor w =
-      -(InternalGrading.ofDecomposition ℬ).koszulTwist 1 (φ (ι R w)) := by
-  simp [cobarDGAlgHomEquiv]
+/-- The DG algebra map of an `A∞` morphism `f` sends `s⁻¹ z` to `-σ (f z)`. -/
+@[simp]
+theorem cobarBarHomEquiv_apply_ι
+    (f : AInfinityHom 𝒜 hD.toIsNonUnitalDGAlgebra.toAInfinityAlgebra) (z : ReducedTensorWords R A) :
+    cobarBarHomEquiv 𝒜 hD f (TensorAlgebra.ι R z) =
+      -(InternalGrading.ofDecomposition 𝒟).koszulTwist 1 (f.taylor z) := by
+  simp [cobarBarHomEquiv]
 
-/-- The linear part of `cobarDGAlgHomEquiv` negates the Koszul-twisted action on letters. -/
-@[simp] theorem linearPart_cobarDGAlgHomEquiv (𝒜 : AInfinityAlgebra R A) (hB : IsDGAlgebra ℬ dB)
-    (φ : DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hB) :
-    (𝒜.cobarDGAlgHomEquiv hB φ).linearPart =
-      -((InternalGrading.ofDecomposition ℬ).koszulTwist 1 ∘ₗ
-        (φ : TensorAlgebra R (ReducedTensorWords R A) →ₗ[R] B) ∘ₗ ι R ∘ₗ ofLetter R A) :=
+/-- The Taylor map of the `A∞` morphism of a DG algebra map `φ : Ω Tᶜ(sA) ⟶ D` is
+`z ↦ -σ (φ (s⁻¹ z))`. -/
+@[simp]
+theorem taylor_cobarBarHomEquiv_symm
+    (φ : DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hD) :
+    ((cobarBarHomEquiv 𝒜 hD).symm φ).taylor =
+      -((InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ
+        (φ : TensorAlgebra R (ReducedTensorWords R A) →ₗ[R] D) ∘ₗ TensorAlgebra.ι R) := by
+  ext z
+  simp [cobarBarHomEquiv]
+
+/-- The linear part of `(cobarBarHomEquiv 𝒜 hD).symm φ` negates the Koszul-twisted action of `φ` on
+single-letter generators. -/
+@[simp]
+theorem linearPart_cobarBarHomEquiv_symm
+    (φ : DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hD) :
+    ((cobarBarHomEquiv 𝒜 hD).symm φ).linearPart =
+      -((InternalGrading.ofDecomposition 𝒟).koszulTwist 1 ∘ₗ
+        (φ : TensorAlgebra R (ReducedTensorWords R A) →ₗ[R] D) ∘ₗ TensorAlgebra.ι R ∘ₗ
+          ReducedTensorWords.ofLetter R A) :=
   LinearMap.ext fun _ ↦ by simp
 
-@[simp] theorem cobarDGAlgHomEquiv_symm_apply_ι (𝒜 : AInfinityAlgebra R A) (hB : IsDGAlgebra ℬ dB)
-    (g : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra)
-    (w : ReducedTensorWords R A) :
-    (𝒜.cobarDGAlgHomEquiv hB).symm g (ι R w) =
-      -(InternalGrading.ofDecomposition ℬ).koszulTwist 1 (g.taylor w) := by
-  simp [cobarDGAlgHomEquiv]
-
-/-- The bar--cobar adjunction is natural in its target DG algebra. -/
-@[simp] theorem cobarDGAlgHomEquiv_comp (𝒜 : AInfinityAlgebra R A) {hB : IsDGAlgebra ℬ dB}
-    {hC : IsDGAlgebra 𝒞 dC} (ψ : DGAlgHom hB hC)
-    (φ : DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hB) :
-    𝒜.cobarDGAlgHomEquiv hC (ψ.comp φ) =
-      ψ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp
-        (𝒜.cobarDGAlgHomEquiv hB φ) := by
-  refine (𝒜.barTwistingCochainEquiv hC.toIsNonUnitalDGAlgebra).injective (Subtype.ext ?_)
-  rw [barTwistingCochainEquiv_comp_left]
-  simp only [cobarDGAlgHomEquiv, Equiv.trans_apply, Equiv.apply_symm_apply,
-    IsNonCounitalDGCoalgebra.cobarTwistingCochainEquiv_comp]
-  exact LinearMap.ext fun _ ↦ by simp
-
-/-- The **universal `A∞` morphism** `A ⟶ Ω Tᶜ(sA)` corresponding under the bar--cobar adjunction
-to the identity DG algebra morphism of `Ω Tᶜ(sA)`. -/
-noncomputable def toCobar (𝒜 : AInfinityAlgebra R A) :
+/-- The canonical `A∞` morphism `A ⟶ Ω Tᶜ(sA)`, corresponding to the identity of `Ω Tᶜ(sA)`
+under `cobarBarHomEquiv`. -/
+noncomputable def toCobarBar :
     AInfinityHom 𝒜 (IsDGAlgebra.toIsNonUnitalDGAlgebra
       𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential).toAInfinityAlgebra :=
-  𝒜.cobarDGAlgHomEquiv _ (DGAlgHom.id _)
+  (cobarBarHomEquiv 𝒜 _).symm (DGAlgHom.id _)
 
-@[simp] theorem cobarDGAlgHomEquiv_id (𝒜 : AInfinityAlgebra R A) :
-    𝒜.cobarDGAlgHomEquiv _ (DGAlgHom.id _) = 𝒜.toCobar := (rfl)
+/-- The canonical morphism `A ⟶ Ω Tᶜ(sA)` corresponds to the identity of `Ω Tᶜ(sA)`. -/
+@[simp]
+theorem cobarBarHomEquiv_toCobarBar :
+    cobarBarHomEquiv 𝒜 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential
+      𝒜.toCobarBar = DGAlgHom.id _ :=
+  Equiv.apply_symm_apply _ _
 
-@[simp] theorem cobarDGAlgHomEquiv_symm_toCobar (𝒜 : AInfinityAlgebra R A) :
-    (𝒜.cobarDGAlgHomEquiv _).symm 𝒜.toCobar = DGAlgHom.id _ :=
-  (𝒜.cobarDGAlgHomEquiv _).symm_apply_apply _
+/-- Under `(cobarBarHomEquiv 𝒜 _).symm`, the identity of `Ω Tᶜ(sA)` maps to `𝒜.toCobarBar`. -/
+@[simp]
+theorem cobarBarHomEquiv_symm_id :
+    (cobarBarHomEquiv 𝒜 _).symm (DGAlgHom.id _) = 𝒜.toCobarBar := (rfl)
 
-/-- The Taylor map of `𝒜.toCobar` sends a bar word to the generator of its Koszul-twisted word. -/
-@[simp] theorem taylor_toCobar (𝒜 : AInfinityAlgebra R A) (w : ReducedTensorWords R A) :
-    𝒜.toCobar.taylor w =
-      ι R ((ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1 w) := by
-  rw [toCobar, taylor_cobarDGAlgHomEquiv, DGAlgHom.id_apply, koszulTwist_tensorAlgebraPiece_ι,
-    InternalGrading.koszulTwist_shift]; simp
+/-- The Taylor components of the canonical morphism `A ⟶ Ω Tᶜ(sA)` are
+`z ↦ (-1) ^ |z| s⁻¹ z`. -/
+@[simp]
+theorem taylor_toCobarBar :
+    𝒜.toCobarBar.taylor =
+      TensorAlgebra.ι R ∘ₗ (ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1 := by
+  rw [toCobarBar, taylor_cobarBarHomEquiv_symm]
+  ext z
+  simp [InternalGrading.koszulTwist_shift]
 
-/-- The linear part of `𝒜.toCobar` sends `a : A` to `-ι (ofLetter (koszulTwist 1 a))`. -/
-@[simp] theorem linearPart_toCobar (𝒜 : AInfinityAlgebra R A) :
-    𝒜.toCobar.linearPart = -(ι R ∘ₗ ofLetter R A ∘ₗ 𝒜.grading.koszulTwist 1) :=
-  LinearMap.ext fun _ ↦ by simp [koszulTwist_grading, InternalGrading.koszulTwist_one_shift_one]
+/-- The linear part of `𝒜.toCobarBar` sends `a : A` to `-ι (ofLetter (koszulTwist 1 a))`. -/
+@[simp]
+theorem linearPart_toCobarBar :
+    𝒜.toCobarBar.linearPart =
+      -(TensorAlgebra.ι R ∘ₗ ReducedTensorWords.ofLetter R A ∘ₗ 𝒜.grading.koszulTwist 1) :=
+  LinearMap.ext fun _ ↦ by
+    simp [ReducedTensorWords.koszulTwist_grading, InternalGrading.koszulTwist_one_shift_one]
 
-/-- Every `A∞` morphism corresponding to `φ : Ω Tᶜ(sA) ⟶ B` factors as `φ` after `𝒜.toCobar`. -/
-theorem cobarDGAlgHomEquiv_eq_comp_toCobar (𝒜 : AInfinityAlgebra R A) (hB : IsDGAlgebra ℬ dB)
-    (φ : DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hB) :
-    𝒜.cobarDGAlgHomEquiv hB φ =
-      φ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp 𝒜.toCobar := by
-  simpa only [DGAlgHom.comp_id, cobarDGAlgHomEquiv_id] using
-    𝒜.cobarDGAlgHomEquiv_comp φ (DGAlgHom.id _)
+/-- The `A∞` morphism of a DG algebra map `φ : Ω Tᶜ(sA) ⟶ D` is `φ` composed with the canonical
+morphism `A ⟶ Ω Tᶜ(sA)`. -/
+theorem cobarBarHomEquiv_symm_apply
+    (φ : DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hD) :
+    (cobarBarHomEquiv 𝒜 hD).symm φ =
+      φ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp 𝒜.toCobarBar := by
+  refine AInfinityHom.ext (LinearMap.ext fun z ↦ ?_)
+  -- `φ` preserves degrees, so it commutes with the Koszul twists.
+  have h : (InternalGrading.ofDecomposition 𝒟).koszulTwist 1 (φ (TensorAlgebra.ι R z)) =
+      -φ (TensorAlgebra.ι R
+        ((ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1 z)) := by
+    simpa [InternalGrading.koszulTwist_shift] using
+      φ.toNonUnitalDGAlgHom.toAInfinityStrictHom.isHomogeneous.koszulTwist_apply 1
+        (TensorAlgebra.ι R z)
+  rw [AInfinityStrictHom.taylor_toAInfinityHom_comp, taylor_toCobarBar,
+    taylor_cobarBarHomEquiv_symm]
+  simp [h]
 
-/-- Universal factorization characterization: `φ : Ω Tᶜ(sA) ⟶ B` is the DG algebra lift of
-`g : A ⟶ B` if and only if `φ ∘ 𝒜.toCobar = g`. -/
-theorem eq_cobarDGAlgHomEquiv_symm_iff (𝒜 : AInfinityAlgebra R A) (hB : IsDGAlgebra ℬ dB)
-    (φ : DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hB)
-    (g : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra) :
-    φ = (𝒜.cobarDGAlgHomEquiv hB).symm g ↔
-      φ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp 𝒜.toCobar = g := by
-  rw [Equiv.eq_symm_apply, cobarDGAlgHomEquiv_eq_comp_toCobar]
+/-- **The universal property of `Ω Tᶜ(sA)`**: every `A∞` morphism from `A` to a DG algebra `D` is
+the composite of the canonical morphism `A ⟶ Ω Tᶜ(sA)` with exactly one DG algebra map
+`Ω Tᶜ(sA) ⟶ D`. -/
+theorem bijective_comp_toCobarBar :
+    Function.Bijective fun φ : DGAlgHom
+        𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hD ↦
+      φ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp 𝒜.toCobarBar := by
+  convert (cobarBarHomEquiv 𝒜 hD).symm.bijective using 1
+  funext φ
+  exact (cobarBarHomEquiv_symm_apply 𝒜 hD φ).symm
 
-end AInfinityAlgebra
+/-- Universal factorization characterization: `φ : Ω Tᶜ(sA) ⟶ D` is the DG algebra lift of
+`g : A ⟶ D` if and only if `φ ∘ 𝒜.toCobarBar = g`. -/
+theorem eq_cobarBarHomEquiv_iff
+    (φ : DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hD)
+    (g : AInfinityHom 𝒜 hD.toIsNonUnitalDGAlgebra.toAInfinityAlgebra) :
+    φ = cobarBarHomEquiv 𝒜 hD g ↔
+      φ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp 𝒜.toCobarBar = g := by
+  rw [← Equiv.symm_apply_eq, cobarBarHomEquiv_symm_apply]
 
-namespace AInfinityHom
+variable {E : Type uE} [Ring E] [Algebra R E] {ℰ : ℤ → Submodule R E} [GradedAlgebra ℰ]
+  {dE : E →ₗ[R] E}
+
+/-- The bar--cobar correspondence commutes with postcomposition by a DG algebra morphism. -/
+@[simp]
+theorem cobarBarHomEquiv_comp_left {hD : IsDGAlgebra 𝒟 d} {hE : IsDGAlgebra ℰ dE}
+    (ψ : DGAlgHom hD hE) (g : AInfinityHom 𝒜 hD.toIsNonUnitalDGAlgebra.toAInfinityAlgebra) :
+    cobarBarHomEquiv 𝒜 hE (ψ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp g) =
+      ψ.comp (cobarBarHomEquiv 𝒜 hD g) := by
+  refine (𝒜.isNonCounitalDGCoalgebra_bar.cobarTwistingCochainEquiv hE).injective (Subtype.ext ?_)
+  rw [IsNonCounitalDGCoalgebra.cobarTwistingCochainEquiv_comp]
+  simp only [cobarBarHomEquiv, Equiv.trans_apply, Equiv.apply_symm_apply]
+  rw [homTwistingCochainEquiv_comp_left]
+  exact LinearMap.ext fun _ ↦ by simp
+
+/-- The inverse bar--cobar correspondence is natural in its target DG algebra. -/
+@[simp]
+theorem cobarBarHomEquiv_symm_comp {hD : IsDGAlgebra 𝒟 d} {hE : IsDGAlgebra ℰ dE}
+    (ψ : DGAlgHom hD hE)
+    (φ : DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hD) :
+    (cobarBarHomEquiv 𝒜 hE).symm (ψ.comp φ) =
+      ψ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp
+        ((cobarBarHomEquiv 𝒜 hD).symm φ) :=
+  (Equiv.symm_apply_eq _).2 (by simp)
+
+end Unital
+
+end TauCeti.AInfinityAlgebra
+
+namespace TauCeti.AInfinityHom
+
+universe uR uA uA' uA'' uD
+
+variable {R : Type uR} {A : Type uA} {A' : Type uA'} {A'' : Type uA''} {D : Type uD}
+  [CommRing R] [AddCommGroup A] [Module R A] [AddCommGroup A'] [Module R A']
+  [AddCommGroup A''] [Module R A''] [Ring D] [Algebra R D] {𝒟 : ℤ → Submodule R D}
+  [GradedAlgebra 𝒟] {d : D →ₗ[R] D}
 
 private theorem isHomogeneous_barMap_grading {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
     (k : AInfinityHom 𝒜 𝒜') :
-    LinearMap.IsHomogeneous k.barMap (grading (𝒜.grading.shift 1)).piece
-      (grading (𝒜'.grading.shift 1)).piece 0 := by
-  simpa only [grading_piece] using k.isHomogeneous_barMap
+    LinearMap.IsHomogeneous k.barMap (ReducedTensorWords.grading (𝒜.grading.shift 1)).piece
+      (ReducedTensorWords.grading (𝒜'.grading.shift 1)).piece 0 := by
+  simpa only [ReducedTensorWords.grading_piece] using k.isHomogeneous_barMap
 
-/-- An `A∞` morphism `k : A ⟶ A'` induces a DG algebra morphism `Ω Tᶜ(sA) ⟶ Ω Tᶜ(sA')` on cobar
-constructions, sending `ι w` to `ι (k.barMap w)`. -/
-noncomputable def cobarMap {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
+/-- An `A∞` morphism `k : A ⟶ A'` induces a DG algebra morphism `Ω Tᶜ(sA) ⟶ Ω Tᶜ(sA')` on
+cobar-bar constructions, sending `ι w` to `ι (k.barMap w)`. -/
+noncomputable def cobarBarMap {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
     (k : AInfinityHom 𝒜 𝒜') :
     DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential
       𝒜'.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential :=
   𝒜.isNonCounitalDGCoalgebra_bar.cobarMap 𝒜'.isNonCounitalDGCoalgebra_bar k.barMap
-    k.isHomogeneous_barMap_grading (isCoalgHom_iff.1 k.isCoalgHom_barMap)
+    k.isHomogeneous_barMap_grading (ReducedTensorWords.isCoalgHom_iff.1 k.isCoalgHom_barMap)
     k.barDifferential_comp_barMap
 
-@[simp] theorem cobarMap_ι {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
+/-- `cobarBarMap` sends a desuspended bar generator `ι w` to `ι (k.barMap w)`. -/
+@[simp]
+theorem cobarBarMap_ι {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
     (k : AInfinityHom 𝒜 𝒜') (w : ReducedTensorWords R A) :
-    k.cobarMap (ι R w) = ι R (k.barMap w) :=
+    k.cobarBarMap (TensorAlgebra.ι R w) = TensorAlgebra.ι R (k.barMap w) :=
   𝒜.isNonCounitalDGCoalgebra_bar.cobarMap_ι _ _ _ _ _ w
 
-@[simp] theorem cobarMap_id (𝒜 : AInfinityAlgebra R A) :
-    (AInfinityHom.id 𝒜).cobarMap =
+/-- The identity `A∞` morphism induces the identity DG algebra morphism on `Ω Tᶜ(sA)`. -/
+@[simp]
+theorem cobarBarMap_id (𝒜 : AInfinityAlgebra R A) :
+    (AInfinityHom.id 𝒜).cobarBarMap =
       DGAlgHom.id 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential :=
   𝒜.isNonCounitalDGCoalgebra_bar.cobarHom_ext _ fun _ ↦ by simp
 
-@[simp] theorem cobarMap_comp {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
+/-- `cobarBarMap` preserves composition of `A∞` morphisms. -/
+@[simp]
+theorem cobarBarMap_comp {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
     {𝒜'' : AInfinityAlgebra R A''} (k₂ : AInfinityHom 𝒜' 𝒜'') (k₁ : AInfinityHom 𝒜 𝒜') :
-    (k₂.comp k₁).cobarMap = k₂.cobarMap.comp k₁.cobarMap :=
+    (k₂.comp k₁).cobarBarMap = k₂.cobarBarMap.comp k₁.cobarBarMap :=
   𝒜.isNonCounitalDGCoalgebra_bar.cobarHom_ext _ fun _ ↦ by simp
 
-/-- The bar--cobar adjunction is natural in its source `A∞` algebra along `cobarMap`. -/
-theorem cobarDGAlgHomEquiv_comp_cobarMap {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
-    (hB : IsDGAlgebra ℬ dB) (k : AInfinityHom 𝒜' 𝒜)
-    (φ : DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hB) :
-    𝒜'.cobarDGAlgHomEquiv hB (φ.comp k.cobarMap) = (𝒜.cobarDGAlgHomEquiv hB φ).comp k := by
-  refine (𝒜'.barTwistingCochainEquiv hB.toIsNonUnitalDGAlgebra).injective (Subtype.ext ?_)
-  rw [AInfinityAlgebra.barTwistingCochainEquiv_comp_right]
-  simp only [AInfinityAlgebra.cobarDGAlgHomEquiv, Equiv.trans_apply, Equiv.apply_symm_apply,
-    cobarMap, IsNonCounitalDGCoalgebra.cobarTwistingCochainEquiv_comp_cobarMap]
-
-/-- The universal `A∞` morphism `toCobar` is natural with respect to `AInfinityHom.cobarMap`. -/
-theorem cobarMap_comp_toCobar {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
+/-- Precomposing `g : A ⟶ D` with `k : A' ⟶ A` precomposes its cobar lift with `k.cobarBarMap`. -/
+theorem cobarBarHomEquiv_comp_right {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
+    (hD : IsDGAlgebra 𝒟 d) (g : AInfinityHom 𝒜 hD.toIsNonUnitalDGAlgebra.toAInfinityAlgebra)
     (k : AInfinityHom 𝒜' 𝒜) :
-    k.cobarMap.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp 𝒜'.toCobar =
-      𝒜.toCobar.comp k := by
-  rw [← AInfinityAlgebra.cobarDGAlgHomEquiv_eq_comp_toCobar
-      (hB := 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential),
-    ← DGAlgHom.id_comp k.cobarMap, cobarDGAlgHomEquiv_comp_cobarMap,
-    AInfinityAlgebra.cobarDGAlgHomEquiv_id]
+    𝒜'.cobarBarHomEquiv hD (g.comp k) = (𝒜.cobarBarHomEquiv hD g).comp k.cobarBarMap := by
+  refine (𝒜'.isNonCounitalDGCoalgebra_bar.cobarTwistingCochainEquiv hD).injective (Subtype.ext ?_)
+  simp only [AInfinityAlgebra.cobarBarHomEquiv, Equiv.trans_apply, Equiv.apply_symm_apply,
+    cobarBarMap, IsNonCounitalDGCoalgebra.cobarTwistingCochainEquiv_comp_cobarMap]
+  exact AInfinityAlgebra.homTwistingCochainEquiv_comp_right hD.toIsNonUnitalDGAlgebra g k
 
-end AInfinityHom
-end CobarAdjunction
-end Common
-end TauCeti
+/-- The inverse bar--cobar correspondence is natural in its source `A∞` algebra along
+`cobarBarMap`. -/
+theorem cobarBarHomEquiv_symm_comp_cobarBarMap {𝒜 : AInfinityAlgebra R A}
+    {𝒜' : AInfinityAlgebra R A'} (hD : IsDGAlgebra 𝒟 d) (k : AInfinityHom 𝒜' 𝒜)
+    (φ : DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hD) :
+    (𝒜'.cobarBarHomEquiv hD).symm (φ.comp k.cobarBarMap) =
+      ((𝒜.cobarBarHomEquiv hD).symm φ).comp k :=
+  (Equiv.symm_apply_eq _).2 (by simp [cobarBarHomEquiv_comp_right])
+
+/-- The canonical `A∞` morphism `toCobarBar` is natural with respect to `cobarBarMap`. -/
+theorem cobarBarMap_comp_toCobarBar {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
+    (k : AInfinityHom 𝒜' 𝒜) :
+    k.cobarBarMap.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp 𝒜'.toCobarBar =
+      𝒜.toCobarBar.comp k := by
+  rw [← AInfinityAlgebra.cobarBarHomEquiv_symm_apply
+      (hD := 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential),
+    ← DGAlgHom.id_comp k.cobarBarMap, cobarBarHomEquiv_symm_comp_cobarBarMap,
+    AInfinityAlgebra.cobarBarHomEquiv_symm_id]
+
+end TauCeti.AInfinityHom

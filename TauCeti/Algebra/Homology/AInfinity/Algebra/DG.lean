@@ -42,6 +42,8 @@ vanish.
 * `TauCeti.IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_one_apply`,
   `toAInfinityAlgebra_m_two_apply`, and `toAInfinityAlgebra_m_of_three_le`: its operations are the
   differential, the product, and zero.
+* `TauCeti.IsNonUnitalDGAlgebra.toAInfinityAlgebra_taylor`: its Taylor map is the differential on
+  single letters and the signed product on two-letter words.
 * `TauCeti.IsDGAlgebra.strictUnit_one`: the unit of a DG algebra is a strict unit.
 * `TauCeti.AInfinityAlgebra.isNonUnitalDGAlgebra_differential` and
   `TauCeti.AInfinityAlgebra.isDGAlgebra_differential`: the unary operation of an `A∞` algebra
@@ -196,56 +198,19 @@ theorem toAInfinityAlgebra_mul (h : IsNonUnitalDGAlgebra 𝒜 d) :
   ext x y
   simp
 
-/-- The Taylor map of `h.toAInfinityAlgebra` evaluates to `d` on single letters. -/
-theorem toAInfinityAlgebra_taylor_ofLetter (h : IsNonUnitalDGAlgebra 𝒜 d) (x : A) :
-    h.toAInfinityAlgebra.taylor (ReducedTensorWords.ofLetter R A x) = d x := by
-  rw [AInfinityAlgebra.taylor_ofLetter, h.toAInfinityAlgebra_m_one_apply, Matrix.cons_val_zero]
-
-/-- On two-letter words, `h.toAInfinityAlgebra.taylor` is Koszul-twisted multiplication. -/
-theorem toAInfinityAlgebra_taylor_of_two (h : IsNonUnitalDGAlgebra 𝒜 d) (x y : A) :
-    h.toAInfinityAlgebra.taylor
-        (ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![x, y])) =
-      (InternalGrading.ofDecomposition 𝒜).koszulTwist 1 x * y := by
-  rw [AInfinityAlgebra.taylor_of_two, h.toAInfinityAlgebra_grading,
-    h.toAInfinityAlgebra_m_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_zero]
-
-/-- `h.toAInfinityAlgebra.taylor` vanishes on words of length at least three. -/
-@[simp] theorem toAInfinityAlgebra_taylor_prepend_prepend (h : IsNonUnitalDGAlgebra 𝒜 d)
-    (x y : A) (w : ReducedTensorWords R A) :
-    h.toAInfinityAlgebra.taylor
-      (ReducedTensorWords.prepend R A x (ReducedTensorWords.prepend R A y w)) = 0 := by
-  refine LinearMap.congr_fun (f := h.toAInfinityAlgebra.taylor ∘ₗ
-    ReducedTensorWords.prepend R A x ∘ₗ ReducedTensorWords.prepend R A y) (g := 0) ?_ w
-  refine ReducedTensorWords.linearMap_ext R A fun k _ ↦ ?_
-  simp only [LinearMap.comp_apply, LinearMap.zero_apply]
-  rw [ReducedTensorWords.prepend_of_tprod, ReducedTensorWords.prepend_of_tprod,
-    AInfinityAlgebra.taylor_of_tprod,
-    h.toAInfinityAlgebra_m_of_three_le (by have := k.2; dsimp only; omega), zero_apply]
-
-/-- Evaluating `h.toAInfinityAlgebra.taylor` on `coalgHom R f` keeps only the differential term and
-the two-block deconcatenation product. -/
-theorem toAInfinityAlgebra_taylor_coalgHom {M : Type*} [AddCommGroup M] [Module R M]
-    (h : IsNonUnitalDGAlgebra 𝒜 d) (f : ReducedTensorWords R M →ₗ[R] A)
-    (w : ReducedTensorWords R M) :
-    h.toAInfinityAlgebra.taylor (ReducedTensorWords.coalgHom R f w) =
-      d (f w) + LinearMap.mul' R A (TensorProduct.map
-        ((InternalGrading.ofDecomposition 𝒜).koszulTwist 1 ∘ₗ f) f
-        (ReducedTensorWords.deconcatenation R M w)) := by
-  let σA := (InternalGrading.ofDecomposition 𝒜).koszulTwist 1
-  refine LinearMap.congr_fun (f := h.toAInfinityAlgebra.taylor ∘ₗ ReducedTensorWords.coalgHom R f)
-    (g := d ∘ₗ f + LinearMap.mul' R A ∘ₗ
-      TensorProduct.map (σA ∘ₗ f) f ∘ₗ ReducedTensorWords.deconcatenation R M) ?_ w
-  refine ReducedTensorWords.linearMap_ext R M fun n x ↦ ?_
-  simp only [LinearMap.comp_apply, LinearMap.add_apply,
-    ReducedTensorWords.of_tprod_eq_subword R n.2]
-  rw [ReducedTensorWords.coalgHom_subword, map_add, h.toAInfinityAlgebra_taylor_ofLetter,
-    _root_.map_sum, ReducedTensorWords.map_deconcatenation_subword, _root_.map_sum]
-  congr 1; refine Finset.sum_congr rfl fun c _ ↦ ?_
-  rw [ReducedTensorWords.coalgHom_subword, map_add, map_add, _root_.map_sum, _root_.map_sum,
-    Finset.sum_eq_zero fun _ _ ↦ h.toAInfinityAlgebra_taylor_prepend_prepend _ _ _,
-    add_zero, ReducedTensorWords.prepend_ofLetter, h.toAInfinityAlgebra_taylor_of_two,
-    LinearMap.mul'_apply, LinearMap.comp_apply]
+/-- The Taylor map of the `A∞` algebra of a nonunital DG algebra: the differential on single
+letters, and the product on two-letter words, with the Koszul twist `a ↦ (-1) ^ |a| a` of the left
+letter carrying the suspension sign. -/
+theorem toAInfinityAlgebra_taylor (h : IsNonUnitalDGAlgebra 𝒜 d) :
+    h.toAInfinityAlgebra.taylor = d ∘ₗ ReducedTensorWords.letter R A +
+      LinearMap.mul' R A ∘ₗ
+        TensorProduct.map
+          ((InternalGrading.ofDecomposition 𝒜).koszulTwist 1 ∘ₗ ReducedTensorWords.letter R A)
+          (ReducedTensorWords.letter R A) ∘ₗ ReducedTensorWords.deconcatenation R A := by
+  have hμ : TensorProduct.lift (LinearMap.mul R A) = LinearMap.mul' R A :=
+    TensorProduct.ext' fun _ _ ↦ by simp
+  rw [h.toAInfinityAlgebra.taylor_eq_of_m_eq_zero fun _ ↦ h.toAInfinityAlgebra_m_of_three_le,
+    toAInfinityAlgebra_differential, toAInfinityAlgebra_mul, toAInfinityAlgebra_grading, hμ]
 
 end IsNonUnitalDGAlgebra
 
