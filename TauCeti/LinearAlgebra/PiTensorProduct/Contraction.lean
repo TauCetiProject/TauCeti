@@ -42,7 +42,7 @@ variable {R : Type u} [CommSemiring R] {M : Type v} [AddCommMonoid M] [Module R 
 
 private noncomputable def contractTensorPairMultilinear (B : LinearMap.BilinForm R M)
     (i j : ι) (hij : i ≠ j) :
-    MultilinearMap R (fun _ : ι => M) (⨂[R] _ : {a : ι // a ≠ i ∧ a ≠ j}, M) := by
+    MultilinearMap (RingHom.id R) (fun _ : ι => M) (⨂[R] _ : {a : ι // a ≠ i ∧ a ≠ j}, M) := by
   classical
   refine MultilinearMap.mk'
     (fun v => B (v i) (v j) •

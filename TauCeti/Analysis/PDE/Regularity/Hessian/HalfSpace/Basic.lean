@@ -318,7 +318,8 @@ private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
       hcν, inner_smul_right, hinner]
   refine ⟨e, c, hee, he, fun a => ?_⟩
   ext y
-  simp only [mem_preimage, SetLike.mem_coe, mem_normalHalfSpace, hfst, div_lt_iff₀' hc]
+  simp only [mem_preimage, SetLike.mem_coe, mem_normalHalfSpace, ← WithLp.ofLp_fst, hfst,
+    div_lt_iff₀' hc]
 
 /-- **The Calderón–Zygmund estimate on a half-space, for constant coefficients.** Let
 `1 < p < ∞`. There is a constant `C` such that for every operator `A` on `ℝ × E` with
@@ -350,7 +351,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_normalHa
   -- `{a / c < x.fst}` onto `{a < x.fst}` and turns the equation into Poisson's equation.
   obtain ⟨e, c, hee, he, hH⟩ := exists_continuousLinearEquiv_preimage_normalHalfSpace hlam hA
   obtain ⟨v, -, hD, h0⟩ := Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hp_top e (hH a) u
-  refine Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp e hee hlam he (hH a) hD ?_
+  refine Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp e hee he (hH a) hD ?_
     fun g hg => hC (a / c) v g (h0 hu) hg
   filter_upwards [hf, Wkp.adjoint_iteratedGradient_one_ae_eq u] with x h1 h2
   rw [A.traceCLM_symmPart_comp _ h2, h1]

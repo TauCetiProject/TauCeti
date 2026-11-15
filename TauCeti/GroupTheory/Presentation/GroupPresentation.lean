@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 public import Mathlib.GroupTheory.PresentedGroup
+public import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
 public import TauCeti.GroupTheory.Presentation.Relator
 
 /-!
@@ -149,12 +149,6 @@ def relatorsCyclicallyReduced (P : GroupPresentation) : Prop :=
 theorem relatorsCyclicallyReduced_iff (P : GroupPresentation) :
     P.relatorsCyclicallyReduced ↔ ∀ w ∈ P.relators, FreeGroup.IsCyclicallyReduced w :=
   Iff.rfl
-
-/-- A word is cyclically reduced exactly when free reduction leaves it alone and its last letter
-does not cancel against its first, and both halves of that are decidable. -/
-instance {α : Type*} [DecidableEq α] (w : PresentationWord α) :
-    Decidable (FreeGroup.IsCyclicallyReduced w) :=
-  decidable_of_iff _ (and_congr_left' FreeGroup.isReduced_iff_reduce_eq).symm
 
 instance (P : GroupPresentation) : Decidable P.relatorsCyclicallyReduced :=
   decidable_of_iff _ (relatorsCyclicallyReduced_iff P).symm

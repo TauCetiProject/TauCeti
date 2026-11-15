@@ -266,7 +266,6 @@ variable (h : ∀ (X Y : C) (d : ℤ), d < 0 → Subsingleton (DGHom R d X Y))
 include h
 
 /-- When the Hom complexes vanish in negative degrees, a simplex is determined by its edges. -/
-@[simp]
 theorem ofComposableArrows_toComposableArrows (h₁ : ∀ X Y : C, Subsingleton (DGHom R (-1) X Y))
     (x : Simplex R C n) : ofComposableArrows (x.toComposableArrows h₁) = x := by
   refine ext rfl fun i j S d hij hS hd ↦ heq_of_eq ?_

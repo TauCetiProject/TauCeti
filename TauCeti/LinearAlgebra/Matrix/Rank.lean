@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Data.Matrix.ColumnRowPartitioned
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 
 /-!
 # Matrix rank
@@ -28,12 +29,17 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 
 * `Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero`: over an integral domain, the
   rows are linearly independent exactly when some maximal minor is nonzero.
+* `Matrix.linearIndependent_row_of_map`: row independence over a domain lifts along every ring
+  homomorphism of domains, such as a reduction `ℤ → ZMod ℓ`.
 * `Matrix.le_rank_iff_exists_det_submatrix_ne_zero` and
   `Matrix.rank_le_iff_forall_det_submatrix_eq_zero`: over a field, the rank is at least `p`
   exactly when some `p × p` minor is nonzero, and at most `p` exactly when every
   `(p + 1) × (p + 1)` minor vanishes.
 * `Matrix.finrank_ker_mulVecLin_of_linearIndependent_rows`: the kernel dimension of a matrix
   over a field with independent rows.
+* `Matrix.ker_mulVecLin_eq_span_of_dotProduct_eq_zero`: for an independent family `x` orthogonal
+  to the independent rows of a matrix `A`, with complementary sizes, the kernel of `A` is the span
+  of `x`.
 * `Matrix.rank_map`: the rank is unchanged by a homomorphism of fields applied to the entries.
 * `Matrix.linearIndependent_map_algebraMap_row_iff`: row independence is unchanged by a faithful
   scalar extension to a domain.
@@ -117,8 +123,23 @@ theorem linearIndependent_row_iff_exists_det_submatrix_ne_zero [CommRing R] [IsD
   let K := FractionRing R
   rw [← linearIndependent_map_algebraMap_row_iff (S := K),
     linearIndependent_row_iff_exists_det_submatrix_ne_zero_of_field]
-  simp only [submatrix_map, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
-    map_ne_zero_iff _ (IsFractionRing.injective R K)]
+  simp only [det_submatrix_map_ne_zero_iff (IsFractionRing.injective R K)]
+
+omit [Fintype m] [DecidableEq m] in
+/-- **Row independence lifts along a ring homomorphism of domains.** If the rows of `A.map f` are
+linearly independent over `S`, then the rows of `A` are linearly independent over `R`, for every
+ring homomorphism `f`, injective or not (for instance the reduction `ℤ → ZMod ℓ`): a nonzero
+maximal minor of `A.map f` lifts to a nonzero maximal minor of `A` on the same columns.
+`Matrix.linearIndependent_map_algebraMap_row_iff` is the converse for a faithful scalar extension
+to a domain. -/
+theorem linearIndependent_row_of_map {S : Type*} [Finite m] [CommRing R] [IsDomain R]
+    [CommRing S] [IsDomain S] (f : R →+* S) {A : Matrix m n R}
+    (h : LinearIndependent S (A.map f).row) : LinearIndependent R A.row := by
+  have := Fintype.ofFinite m
+  classical
+  obtain ⟨e, he⟩ := linearIndependent_row_iff_exists_det_submatrix_ne_zero.1 h
+  exact linearIndependent_row_iff_exists_det_submatrix_ne_zero.2
+    ⟨e, det_submatrix_ne_zero_of_map f he⟩
 
 omit [Fintype m] [DecidableEq m] [Finite n] in
 /-- **Rank and minors.** Over a field, a matrix has rank at least `p` exactly when one of its
@@ -159,8 +180,7 @@ its entries, since the images of its minors are the minors of its image. -/
 theorem rank_map {K L : Type*} [Field K] [Field L] [Finite m] [Fintype n] (A : Matrix m n K)
     (φ : K →+* L) : (A.map φ).rank = A.rank :=
   eq_of_forall_le_iff fun p ↦ by
-    simp only [le_rank_iff_exists_det_submatrix_ne_zero, submatrix_map, ← RingHom.mapMatrix_apply,
-      ← RingHom.map_det, map_ne_zero]
+    simp only [le_rank_iff_exists_det_submatrix_ne_zero, det_submatrix_map_ne_zero_iff φ.injective]
 
 omit [Fintype m] [DecidableEq m] in
 /-- The rows of an integer matrix are linearly independent over `ℚ` exactly when they are linearly
@@ -180,6 +200,24 @@ theorem finrank_ker_mulVecLin_of_linearIndependent_rows {K m ι : Type*} [Field 
     Module.finrank K (LinearMap.ker A.mulVecLin) = Fintype.card ι - Fintype.card m := by
   have h := A.mulVecLin.finrank_range_add_finrank_ker
   rw [← rank, hA.rank_matrix, Module.finrank_fintype_fun_eq_card] at h
+  omega
+
+/-- Let `x : m → ι → K` be a linearly independent family of vectors, and `A` a matrix with
+linearly independent rows, with `#m + #n = #ι` where `n` indexes the rows of `A`, such that every
+`x i` has dot product zero with every row of `A`. Then the kernel of `A` is the span of `x`. -/
+theorem ker_mulVecLin_eq_span_of_dotProduct_eq_zero {K ι m n : Type*} [Field K] [Fintype ι]
+    [Fintype m] [Fintype n] (hmn : Fintype.card m + Fintype.card n = Fintype.card ι)
+    {x : m → ι → K} {A : Matrix n ι K} (hx : LinearIndependent K x)
+    (hA : LinearIndependent K A.row) (hxA : ∀ i j, x i ⬝ᵥ A.row j = 0) :
+    LinearMap.ker A.mulVecLin = Submodule.span K (Set.range x) := by
+  have hle : Submodule.span K (Set.range x) ≤ LinearMap.ker A.mulVecLin := by
+    rw [Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    rw [SetLike.mem_coe, LinearMap.mem_ker, mulVecLin_apply]
+    ext j
+    simp [mulVec_apply, dotProduct_comm, hxA]
+  refine (Submodule.eq_of_le_of_finrank_eq hle ?_).symm
+  rw [finrank_span_eq_card hx, finrank_ker_mulVecLin_of_linearIndependent_rows hA]
   omega
 
 end KernelDimension

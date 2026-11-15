@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.Real.Lemmas
+public import TauCeti.Topology.Instances.Real.IcoScale
 import Mathlib.Tactic.NormNum
 import Mathlib.Topology.LocalAtTarget
 
@@ -116,15 +117,18 @@ theorem scale (r : ℝ) (hr : r ∈ Ioc (0 : ℝ) 1) :
     IsCollar f (c ∘ Prod.map id fun t : Ico (0 : ℝ) 1 =>
       ⟨r * t, mul_nonneg hr.1.le t.2.1,
         (mul_le_of_le_one_left t.2.1 hr.2).trans_lt t.2.2⟩) := by
-  refine h.reparam_isOpenEmbedding ⟨.of_comp (by fun_prop) continuous_subtype_val
-    ((Homeomorph.mulLeft₀ r hr.1.ne').isEmbedding.comp .subtypeVal), ?_⟩ (Subtype.ext (mul_zero r))
-  -- The range of `t ↦ r * t` is the open set of depths below `r`.
-  convert (isOpen_Iio (a := r)).preimage continuous_subtype_val
-  ext y
-  refine ⟨?_, fun hy => ⟨⟨y / r, div_nonneg y.2.1 hr.1.le, (div_lt_one hr.1).2 hy⟩,
-    Subtype.ext (mul_div_cancel₀ _ hr.1.ne')⟩⟩
-  rintro ⟨t, rfl⟩
-  exact mul_lt_of_lt_one_right hr.1 t.2.2
+  -- `t ↦ r * t` is the scaling `[0, 1) ≃ₜ [0, r)` followed by the inclusion of the open set
+  -- `[0, r)` of depths below `r`.
+  have hincl :
+      IsOpenEmbedding (inclusion (Ico_subset_Ico_right hr.2 : Ico (0 : ℝ) r ⊆ Ico 0 1)) := by
+    refine ⟨.inclusion _, ?_⟩
+    rw [range_inclusion]
+    convert (isOpen_Iio (a := r)).preimage continuous_subtype_val using 1
+    ext y
+    exact and_iff_right y.2.1
+  refine h.reparam_isOpenEmbedding ?_ (Subtype.ext (mul_zero r))
+  convert hincl.comp (icoScale hr.1).isOpenEmbedding with t
+  exact Subtype.ext (coe_icoScale hr.1 t).symm
 
 /-- Reparametrizing the boundary of a collar by a homeomorphism preserves it. -/
 theorem comp_homeomorph (e : P ≃ₜ N) :

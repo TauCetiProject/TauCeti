@@ -118,29 +118,7 @@ theorem IsPrimitiveGenerator.unique {ρ : ToricRay σ} {v w : N} (hi : IsIntegra
   have hwρ : i w ∈ ρ.toPointedCone := hw.mem
   rw [hρeq] at hwρ
   obtain ⟨a, ha, haw⟩ := PointedCone.mem_hull_singleton.mp hwρ
-  obtain ⟨f, hfv⟩ := isPrimitive_def.mp hv.isPrimitive
-  let g : V →ₗ[ℝ] ℝ := hi.extend (Int.castAddHom ℝ) f.toAddMonoidHom
-  have hg (x : N) : g (i x) = (f x : ℝ) := by
-    have hcast (z : ℤ) : (Int.castAddHom ℝ) z = (z : ℝ) := rfl
-    have hcoe : f.toAddMonoidHom x = f x := rfl
-    simpa only [g, hcast, hcoe] using
-      hi.extend_apply (Int.castAddHom ℝ) f.toAddMonoidHom x
-  have haInt : a = (f w : ℝ) := by
-    have h := congrArg g haw
-    rw [map_smul, hg, hg, hfv, Int.cast_one, smul_eq_mul, mul_one] at h
-    exact h
-  let k := f w
-  have hk0 : 0 ≤ k := by exact_mod_cast haInt ▸ ha
-  let m := k.toNat
-  have hmk : (m : ℤ) = k := Int.toNat_of_nonneg hk0
-  have ham : a = (m : ℝ) := by
-    calc
-      a = (k : ℝ) := haInt
-      _ = (m : ℝ) := by exact_mod_cast hmk.symm
-  have hwv : w = m • v := by
-    apply hi.injective
-    rw [map_nsmul, ← Nat.cast_smul_eq_nsmul ℝ, ← ham, haw]
-  exact (hwv.trans (by rw [hw.isPrimitive.eq_one_of_eq_nsmul hwv, one_nsmul])).symm
+  exact (hi.eq_of_isPrimitive_of_eq_smul hv.isPrimitive hw.isPrimitive ha haw.symm).symm
 
 namespace IsToricCone
 

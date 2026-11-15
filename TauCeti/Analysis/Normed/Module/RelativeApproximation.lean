@@ -12,10 +12,11 @@ public import TauCeti.Analysis.Normed.Group.RelativeApproximation
 # Maps within relative error of a linear map on a finite-dimensional space
 
 On a finite-dimensional normed space over a complete nontrivially normed field, an injective
-linear map is antilipschitz. Hence a map within relative error `δ < 1` of an injective linear map
-on a set `p` is antilipschitz on `p`
-(`TauCeti.exists_antilipschitzWith_domRestrict_of_approx`). This is the lower bi-Lipschitz bound
-on the pieces of the decomposition of a differentiable map with injective derivative.
+linear map is antilipschitz. Hence, by the explicit bound `AntilipschitzWith.domRestrict_of_approx`
+for antilipschitz additive maps, a map within relative error `δ < 1` of an injective linear map
+on a set `p` is antilipschitz on `p` (`TauCeti.exists_antilipschitzWith_domRestrict_of_approx`).
+This is the lower bi-Lipschitz bound on the pieces of the decomposition of a differentiable map
+with injective derivative.
 -/
 
 public section
@@ -37,17 +38,8 @@ theorem exists_antilipschitzWith_domRestrict_of_approx {𝕜 U V 𝓕 : Type*}
   rcases p.eq_empty_or_nonempty with rfl | hp
   · exact ⟨1, fun x ↦ x.2.elim⟩
   obtain ⟨c, -, hAc⟩ := (A : U →ₗ[𝕜] V).injective_iff_antilipschitz.mp (hA hp)
-  have hδ' : 0 < 1 - δ := sub_pos.2 hδ
-  refine ⟨c * (Real.toNNReal (1 - δ))⁻¹, AntilipschitzWith.of_le_mul_dist fun x y ↦ ?_⟩
-  have hxy : ‖(x : U) - y‖ ≤ c * ‖A x - A y‖ := by
-    simpa [map_sub] using hAc.le_mul_dist (x - y : U) 0
-  have h := one_sub_mul_norm_sub_le_norm_sub happ x.2 y.2
-  simp only [Subtype.dist_eq, domRestrict_apply, dist_eq_norm, NNReal.coe_mul, NNReal.coe_inv,
-    Real.coe_toNNReal _ hδ'.le]
-  calc ‖(x : U) - y‖ ≤ c * ‖A x - A y‖ := hxy
-    _ ≤ c * ((1 - δ)⁻¹ * ‖f x - f y‖) := by
-        gcongr
-        rwa [le_inv_mul_iff₀ hδ']
-    _ = c * (1 - δ)⁻¹ * ‖f x - f y‖ := by ring
+  -- `hAc` is stated for the coercion of `A` to a linear map; transport it to `A` itself.
+  rw [LinearMap.coe_ofClass] at hAc
+  exact ⟨_, hAc.domRestrict_of_approx hδ happ⟩
 
 end TauCeti

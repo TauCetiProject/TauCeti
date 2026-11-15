@@ -200,6 +200,7 @@ theorem orthogonalCupCapAt_tprod {i j : Fin d} (hij : i ≠ j) (v : Fin d → (F
     conv_lhs => rw [(PiTensorProduct.tprod k).map_update_smul, Function.update_comm hij,
       (PiTensorProduct.tprod k).map_update_smul, Function.update_comm (Ne.symm hij)]
     rw [smul_smul, mul_comm]
+    simp only [RingHom.id_apply]
   rw [orthogonalCupCapAt]
   simp only [LinearMap.sum_apply]
   rw [Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun c _ =>
@@ -225,6 +226,7 @@ theorem orthogonalCupCapAt_self_tprod (i : Fin d) (v : Fin d → (Fin n → k)) 
     intro a c
     rw [orthogonalCupCapAt_map_tprod, Function.update_idem,
       (PiTensorProduct.tprod k).map_update_smul]
+    simp only [RingHom.id_apply]
   rw [orthogonalCupCapAt]
   simp only [LinearMap.sum_apply]
   rw [Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun c _ => key a c, Finset.sum_comm,

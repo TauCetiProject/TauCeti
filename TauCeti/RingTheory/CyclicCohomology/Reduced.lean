@@ -68,8 +68,8 @@ def scalarCyclicRestriction (n : ℕ) :
 theorem scalarCyclicRestriction_apply (n : ℕ) (phi : cyclicCochains R A M n)
     (a : Fin (n + 1) → R) :
     (scalarCyclicRestriction R A M n phi :
-        MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M) a =
-      (phi : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M)
+        MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) a =
+      (phi : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M)
         (fun i ↦ algebraMap R A (a i)) := by
   simp only [scalarCyclicRestriction, coe_cyclicCochainsMap_apply,
     MultilinearMap.compLinearMap_apply]
@@ -90,7 +90,7 @@ scalars. -/
 @[simp]
 theorem mem_reducedCyclicCochains_iff_forall {n : ℕ} {phi : cyclicCochains R A M n} :
     phi ∈ reducedCyclicCochains R A M n ↔ ∀ a : Fin (n + 1) → R,
-      (phi : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M)
+      (phi : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M)
         (fun i ↦ algebraMap R A (a i)) = 0 := by
   rw [mem_reducedCyclicCochains_iff, Subtype.ext_iff, MultilinearMap.ext_iff]
   simp

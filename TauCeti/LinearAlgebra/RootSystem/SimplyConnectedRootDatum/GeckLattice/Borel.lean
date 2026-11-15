@@ -317,7 +317,7 @@ theorem isSolvable_geckTorusSubsystemSubgroup_of_subset_range_inl
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)
     (t.isCartanWeightVector_geckCoordinateBasisFin ht) (t.rootGeneratorWeight ht)
     (fun i _ j => t.lie_lieBasis_h_rootGenerator ht i j) (CommAlgCat.of ℤ A)
-    (IsNilpotent.to_isSolvable
+    (Group.IsNilpotent.to_isSolvable
       (h := t.isNilpotent_geckSubsystemSubgroup_of_subset_range_inl ht hS A))
 
 /-- **The Borel-type subgroup of the pinned Geck carrier on points is solvable.** -/

@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Basic
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.GlobalSections
-public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Locality

@@ -49,6 +49,8 @@ removable singularity theorem.
   a height `A ≥ 0`, as on a horodisc, has a q-extension which recovers it there and depends only
   on its values there; if it is moreover holomorphic above that height and bounded at `i∞`, the
   q-extension is holomorphic on the disc of radius `exp (-2 * π * A / w)`, including at `q = 0`.
+* `TauCeti.UpperHalfPlane.differentiableAt_cuspFunction_qParam_of_lt_im`: the pointwise form
+  away from `q = 0`, at a point above the height at which the function is holomorphic.
 
 ## References
 
@@ -148,6 +150,29 @@ theorem eqOn_cuspFunction_of_lt_im {f g : ℍ → ℂ} {w A : ℝ} (hw : 0 < w)
   rw [Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne,
     Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne]
   exact congrArg lim (Filter.map_congr heq)
+
+/-- **The q-extension of a function periodic above a height is holomorphic at the q-parameter of
+every point above that height at which the function is holomorphic.** -/
+theorem differentiableAt_cuspFunction_qParam_of_lt_im {f : ℍ → ℂ} {w A : ℝ} (hw : 0 < w)
+    (hper : ∀ z : ℍ, A < z.im → f (w +ᵥ z) = f z) {z : ℍ} (hz : A < z.im)
+    (hf : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f z) :
+    DifferentiableAt ℂ (Function.Periodic.cuspFunction w (f ∘ ofComplex)) (𝔢 w z) := by
+  -- cut `f` off below height `A`: the result is periodic everywhere and has the same q-extension
+  set g : ℍ → ℂ := fun z ↦ if A < z.im then f z else 0 with hg
+  have hfg (z : ℍ) (hz : A < z.im) : f z = g z := by simp [hg, hz]
+  have hgper : Periodic (g ∘ ofComplex) w := UpperHalfPlane.periodic_comp_ofComplex fun z ↦ by
+    by_cases hz : A < z.im
+    · rw [← hfg _ (by rwa [vadd_im]), ← hfg _ hz, hper _ hz]
+    · simp [hg, vadd_im, hz]
+  have hgz : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) g z := hf.congr_of_eventuallyEq <| by
+    filter_upwards [(isOpen_lt continuous_const UpperHalfPlane.continuous_im).mem_nhds hz]
+      with z' hz'
+    exact (hfg z' hz').symm
+  have hq : 𝔢 w z ∈ Metric.ball (0 : ℂ) (Real.exp (-2 * Real.pi * A / w)) := by
+    rwa [mem_ball_zero_iff, Function.Periodic.norm_qParam_lt_iff hw]
+  refine (Function.Periodic.differentiableAt_cuspFunction hw.ne' hgper ?_).congr_of_eventuallyEq
+    ((eqOn_cuspFunction_of_lt_im hw hfg).eventuallyEq_of_mem (Metric.isOpen_ball.mem_nhds hq))
+  simpa using _root_.UpperHalfPlane.mdifferentiableAt_iff.mp hgz
 
 /-- **The q-extension of a function periodic and holomorphic above a height.** If `f` is periodic
 of period `w > 0` and holomorphic above a height `A ≥ 0`, and bounded at `i∞`, then its q-extension
@@ -274,6 +299,19 @@ values as the height tends to infinity. -/
 theorem tendsto_qParam_atImInfty {w : ℝ} (hw : 0 < w) :
     Tendsto (fun z : ℍ ↦ 𝔢 w z) atImInfty (𝓝[≠] 0) :=
   (Function.Periodic.qParam_tendsto hw).comp tendsto_coe_atImInfty
+
+/-- The q-parameter of positive width, as a function on `ℍ`, maps the filter at `i∞` onto the
+punctured neighbourhood of zero. -/
+theorem map_qParam_atImInfty {w : ℝ} (hw : 0 < w) :
+    Filter.map (fun z : ℍ ↦ 𝔢 w z) atImInfty = 𝓝[≠] 0 := by
+  refine le_antisymm (tendsto_qParam_atImInfty hw) fun s hs ↦ ?_
+  obtain ⟨A, hA⟩ := (atImInfty_mem _).mp (mem_map.mp hs)
+  filter_upwards [(Function.Periodic.invQParam_tendsto hw).eventually
+      (preimage_mem_comap (Ici_mem_atTop (max A 1))), self_mem_nhdsWithin] with q hq hq0
+  have him : 0 < (Function.Periodic.invQParam w q).im :=
+    zero_lt_one.trans_le ((le_max_right _ _).trans hq)
+  have hqq := hA ⟨_, him⟩ ((le_max_left _ _).trans hq)
+  rwa [Set.mem_preimage, Function.Periodic.qParam_right_inv hw.ne' hq0] at hqq
 
 /-- The q-parameter tends to zero through nonzero values as the height tends to infinity. -/
 theorem tendsto_qParamPuncturedUnitDisc (w : ℝ) (hw : 0 < w) :

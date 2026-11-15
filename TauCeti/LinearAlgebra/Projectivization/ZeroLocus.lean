@@ -100,7 +100,7 @@ theorem complexProjectiveZeroLocus_mk_iff {p : ι → MvPolynomial (Fin N) ℂ} 
     Projectivization.mk ℂ v hv ∈ complexProjectiveZeroLocus p ↔ ∀ i, eval v (p i) = 0 := by
   rw [complexProjectiveZeroLocus_mk_iff_forall_smul]
   refine forall_congr' fun i ↦ ⟨fun h ↦ by simpa using h 1, fun h c ↦ ?_⟩
-  rw [(hp i).eval_smul, h, smul_zero]
+  rw [(hp i).eval_smul, h, mul_zero]
 
 /-- For homogeneous equations, membership in the zero locus can be tested on the chosen
 representative `L.rep`. -/

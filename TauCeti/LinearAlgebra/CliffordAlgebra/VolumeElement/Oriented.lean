@@ -61,7 +61,8 @@ minus the chirality element `CliffordAlgebra.chirality` of
 * `CliffordAlgebra.volumeElement_mul_eq_involute_mul`: in even dimension the raw volume
   intertwines the grade involution.
 * `CliffordAlgebra.volumeElement_mul_self`: for `Q v = -‖v‖²` it squares to
-  `(-1) ^ ⌊(n + 1) / 2⌋`.
+  `(-1) ^ ⌊(n + 1) / 2⌋`, while for the zero form in positive dimension it squares to zero
+  (`CliffordAlgebra.volumeElement_mul_self_of_forall_eq_zero`).
 * `CliffordAlgebra.algebraMap_add_smul_volumeElement_inj`: in positive dimension, `r + s · vol`
   determines `r` and `s`. When the volume element squares to `-1`, for instance for an oriented
   plane with `Q v = -‖v‖²`, the elements `r + s · vol` multiply as the complex numbers `r + s i`
@@ -266,6 +267,15 @@ theorem volumeElement_mul_self (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
   rw [Finset.card_univ, Fintype.card_fin, Nat.neg_one_pow_choose_two] at h
   rcases volumeElement_eq_basis_or_eq_neg (Q := Q) o (frame V n) with h' | h' <;>
     simp only [h', neg_mul_neg, h]
+
+/-- For the zero quadratic form the volume element squares to zero in positive dimension, in
+contrast to `CliffordAlgebra.volumeElement_mul_self`. -/
+theorem volumeElement_mul_self_of_forall_eq_zero (hn : n ≠ 0) (hQ : ∀ v, Q v = 0) :
+    volumeElement Q o * volumeElement Q o = 0 := by
+  obtain ⟨l, c, hl, hln, -, h⟩ := exists_volumeElement_eq_smul_prod (Q := Q) o
+  obtain ⟨a, l, rfl⟩ := List.exists_cons_of_length_pos (hln ▸ Nat.pos_of_ne_zero hn)
+  rw [h, smul_mul_smul_comm, prod_map_ι_sq_scalar hl]
+  simp [hQ]
 
 /-- **The coordinates of `r + s · vol`**: in positive dimension, the scalar `r` and the volume
 coefficient `s` of `r + s · vol` are determined by the element. -/

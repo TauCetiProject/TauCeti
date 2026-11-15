@@ -68,6 +68,7 @@ range, so the value is a `dite` rather than a plain application.
   interacts with the cyclic successor and predecessor.
 * `Fin.castSucc_last_add_one`: adding one to the penultimate index gives the last index.
 * `Fin.zero_sub_one_eq_last`: subtracting one from `0` gives the last index.
+* `Fin.succ_sub_one_eq_castSucc`: subtracting one from `i.succ` gives `i.castSucc`.
 * `Fin.eq_castSucc_last_or_eq_last`: an index `≥ n` of `Fin (n + 2)` is the penultimate or the
   last one.
 * `Fin.exists_succ_succ_eq`: the indices `> 1` of `Fin (n + 2)` are the double successors.
@@ -135,8 +136,10 @@ range, so the value is a `dite` rather than a plain application.
   read off the value.
 * `TauCeti.sum_ite_val_add`: a sum against the indicator of `b = k + j` picks out the summand at
   `b - j`, or vanishes when there is no such index.
+* `TauCeti.finSigmaFinEquiv_lt_finSigmaFinEquiv_iff`: listing blocks consecutively orders their
+  entries lexicographically.
 * `TauCeti.exists_foldl_eq_of_parent`: a decreasing parent table gives paths from its root.
-* `TauCeti.not_mem_Ioo_castSucc_succ`: a monotone `Fin` family has no value strictly between
+* `TauCeti.notMem_Ioo_castSucc_succ`: a monotone `Fin` family has no value strictly between
   consecutive entries.
 * `Fin.exists_succ_lt_lt_castSucc`: a `Fin` family in a linear order that starts above a level,
   ends below it and never equals it drops below the level at some step.
@@ -149,8 +152,6 @@ range, so the value is a `dite` rather than a plain application.
 -/
 
 public section
-
-open scoped BigOperators
 
 namespace Finset
 
@@ -298,7 +299,7 @@ theorem prod_univ_eq_prod_castLE_mul {M : Type*} [CommMonoid M] {n : ℕ} (i : F
     simp [← Finset.coe_inj, Set.Iio_def]
   rw [← Finset.prod_subset (Finset.subset_univ (Finset.Iic i))
       fun j _ hj => hf j (by simpa using hj),
-    ← Finset.Iio_insert, Finset.prod_insert Finset.notMem_Iio_self, mul_comm, ← hIio,
+    ← Finset.insert_Iio, Finset.prod_insert Finset.notMem_Iio_self, mul_comm, ← hIio,
     Finset.prod_map]
   simp only [castLEEmb_apply]
 
@@ -543,6 +544,11 @@ theorem castSucc_sub_one_of_ne_zero {n : ℕ} {i : Fin (n + 1)} (hi : i ≠ 0) :
 /-- Subtracting one from `0` gives the last index. -/
 theorem zero_sub_one_eq_last {n : ℕ} : (0 : Fin (n + 1)) - 1 = last n :=
   (eq_sub_of_add_eq (last_add_one n)).symm
+
+/-- Subtracting one from a successor gives the corresponding `Fin.castSucc`. -/
+@[simp]
+theorem succ_sub_one_eq_castSucc {n : ℕ} (i : Fin n) : i.succ - 1 = castSucc i :=
+  (eq_sub_of_add_eq coeSucc_eq_succ).symm
 
 /-- The last index of `Fin (n + 1)` is not `0` when `n ≠ 0`. -/
 theorem last_ne_zero {n : ℕ} (hn : n ≠ 0) : last n ≠ (0 : Fin (n + 1)) :=
@@ -837,7 +843,7 @@ theorem exists_foldl_eq_of_parent {n : ℕ} {J : Type*}
 open Set
 
 /-- No value of a monotone `Fin` family lies strictly between consecutive entries. -/
-theorem not_mem_Ioo_castSucc_succ {β : Type*} [Preorder β] {n : ℕ} (a : Fin (n + 1) → β)
+theorem notMem_Ioo_castSucc_succ {β : Type*} [Preorder β] {n : ℕ} (a : Fin (n + 1) → β)
     (ha : Monotone a) (i : Fin n) (k : Fin (n + 1)) :
     a k ∉ Set.Ioo (a i.castSucc) (a i.succ) := by
   intro hk
@@ -1029,6 +1035,38 @@ theorem sum_ite_val_add {M : Type*} [AddCommMonoid M] {n : ℕ} (f : Fin n → M
     intro k _
     have := k.isLt
     exact ite_eq_right (by omega)
+
+open _root_.Finset in
+/-- Listing blocks of sizes `d 0, …, d (k - 1)` consecutively, `finSigmaFinEquiv` orders the
+entries lexicographically: first by block, then by position within the block. -/
+theorem finSigmaFinEquiv_lt_finSigmaFinEquiv_iff {k : ℕ} {d : Fin k → ℕ}
+    {x y : (i : Fin k) × Fin (d i)} :
+    finSigmaFinEquiv x < finSigmaFinEquiv y ↔ x.1 < y.1 ∨ x.1 = y.1 ∧ (x.2 : ℕ) < y.2 := by
+  -- The offset of block `i` is the sum of the sizes of the blocks before it.
+  set s : Fin k → ℕ := fun i ↦ ∑ j : Fin i, d (Fin.castLE i.2.le j) with hs
+  have hoff (i j : Fin k) (h : i < j) : s i + d i ≤ s j := by
+    set F : ℕ → ℕ := fun l ↦ if h : l < k then d ⟨l, h⟩ else 0
+    have hF (i : Fin k) : s i = ∑ l ∈ range i, F l := by
+      rw [hs, ← Fin.sum_univ_eq_sum_range]
+      refine Fintype.sum_congr _ _ fun l ↦ ?_
+      simp [F, l.2.trans i.2, Fin.castLE]
+    have hFi : F i = d i := by simp [F]
+    rw [hF, hF, ← hFi, ← sum_range_succ, ← sum_range_add_sum_Ico F (Fin.lt_def.1 h)]
+    exact Nat.le_add_right _ _
+  have hval (x : (i : Fin k) × Fin (d i)) : (finSigmaFinEquiv x : ℕ) = s x.1 + x.2 :=
+    finSigmaFinEquiv_apply x
+  rw [Fin.lt_def, hval, hval]
+  rcases x with ⟨i, a⟩
+  rcases y with ⟨j, c⟩
+  dsimp only
+  rcases lt_trichotomy i j with h | rfl | h
+  · have := hoff i j h
+    simp only [h, true_or, iff_true]
+    omega
+  · simp
+  · have := hoff j i h
+    simp only [h.not_gt, h.ne', false_and, or_self, iff_false, not_lt]
+    omega
 
 /-! ### Cyclic index arithmetic in `Fin 3` -/
 
