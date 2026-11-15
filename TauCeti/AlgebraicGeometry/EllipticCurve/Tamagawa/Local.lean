@@ -27,7 +27,8 @@ trivial, so the index is `1`, while `c₁₁ = 2`. This is why `WeierstrassCurve
 applies it to the completed field.
 
 The definition uses `WeierstrassCurve.minimal` and
-`WeierstrassCurve.Affine.nonsingularReduction`; `tamagawaNumber_eq_index_of_isMinimal_smul`
+`WeierstrassCurve.Affine.nonsingularReduction`, so equivalent valuations give the same value
+(`tamagawaNumber_congr`); `tamagawaNumber_eq_index_of_isMinimal_smul`
 is the interface for computations on any minimal equation. As with `AddSubgroup.index`, the value
 is zero if the index is infinite; `tamagawaNumber_pos` excludes that case under the Henselian and
 perfect-residue-field hypotheses. These numbers are the finite-place factors in the arithmetic
@@ -63,6 +64,30 @@ open scoped Classical in
 theorem tamagawaNumber_def : E.tamagawaNumber v =
     ((E.minimal v.valuationSubring).toAffine.nonsingularReduction v).index := by
   classical
+  rfl
+
+/-- Equivalent valuations have the same valuation ring and hence the same Tamagawa number. -/
+theorem tamagawaNumber_congr {Γ₀' : Type*} [LinearOrderedCommGroupWithZero Γ₀']
+    {v' : Valuation F Γ₀'} [IsDiscreteValuationRing v'.valuationSubring] (h : v.IsEquiv v') :
+    E.tamagawaNumber v = E.tamagawaNumber v' := by
+  classical
+  have hmin : E.minimal v.valuationSubring = E.minimal v'.valuationSubring := by
+    have key (A B : ValuationSubring F) (hAB : A = B)
+        [hA : IsDiscreteValuationRing A] [hB : IsDiscreteValuationRing B] :
+        E.minimal A = E.minimal B := by
+      subst hAB
+      cases Subsingleton.elim hA hB
+      rfl
+    exact key _ _ ((Valuation.isEquiv_iff_valuationSubring v v').1 h)
+  have : IsIntegral v'.valuationSubring (E.minimal v.valuationSubring) := hmin ▸ inferInstance
+  rw [tamagawaNumber_def, tamagawaNumber_def, Affine.nonsingularReduction_congr _ h]
+  suffices ∀ (W : WeierstrassCurve F) [IsIntegral v'.valuationSubring W],
+      W = E.minimal v'.valuationSubring →
+        (W.toAffine.nonsingularReduction v').index =
+          ((E.minimal v'.valuationSubring).toAffine.nonsingularReduction v').index from
+    this (E.minimal v.valuationSubring) hmin
+  rintro _ hI rfl
+  cases Subsingleton.elim hI inferInstance
   rfl
 
 variable [E.IsElliptic]

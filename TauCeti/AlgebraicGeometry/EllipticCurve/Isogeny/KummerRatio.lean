@@ -81,4 +81,26 @@ theorem kummerRatio_id (W : WeierstrassCurve.Affine F) [W.IsElliptic] :
     AddMonoidHom.range_eq_top.mpr Function.surjective_id
   simp [kummerRatio_def, ← Hom.id_def, Hom.id_pointMapHom, hrange]
 
+/-- An isomorphism of elliptic curves has Kummer ratio one, without any finite-index hypothesis. -/
+theorem kummerRatio_eq_one_of_comp_eq_id {φ : Isogeny W₁ W₂} {ψ : Isogeny W₂ W₁}
+    (hψφ : ψ.comp φ = Isogeny.id W₁) (hφψ : φ.comp ψ = Isogeny.id W₂) :
+    φ.kummerRatio = 1 := by
+  classical
+  have hcomp₁ : (Hom.ofIsogeny ψ).pointMapHom.comp (Hom.ofIsogeny φ).pointMapHom =
+      AddMonoidHom.id W₁.Point := by
+    rw [← Hom.comp_pointMapHom, Hom.ofIsogeny_comp_ofIsogeny, hψφ, ← Hom.id_def,
+      Hom.id_pointMapHom]
+  have hcomp₂ : (Hom.ofIsogeny φ).pointMapHom.comp (Hom.ofIsogeny ψ).pointMapHom =
+      AddMonoidHom.id W₂.Point := by
+    rw [← Hom.comp_pointMapHom, Hom.ofIsogeny_comp_ofIsogeny, hφψ, ← Hom.id_def,
+      Hom.id_pointMapHom]
+  have hrange : (Hom.ofIsogeny φ).pointMapHom.range = ⊤ :=
+    AddMonoidHom.range_eq_top.mpr fun Q ↦
+      ⟨(Hom.ofIsogeny ψ).pointMapHom Q, DFunLike.congr_fun hcomp₂ Q⟩
+  have hker : (Hom.ofIsogeny φ).pointMapHom.ker = ⊥ :=
+    (AddMonoidHom.ker_eq_bot_iff _).mpr fun P₁ P₂ hP ↦
+      (DFunLike.congr_fun hcomp₁ P₁).symm.trans
+        ((congrArg (Hom.ofIsogeny ψ).pointMapHom hP).trans (DFunLike.congr_fun hcomp₁ P₂))
+  simp [kummerRatio_def, hrange, hker]
+
 end TauCeti.Isogeny
