@@ -40,9 +40,10 @@ complex structure `(δa, δx, δy) ↦ (i δa, -δy, δx)` of `ℂ × W × W` to
 (`TauCeti.isComplexLinear_frameChartDeriv`, and
 `TauCeti.IsJHolomorphicAt.isComplexLinearMap_frameChartDeriv` for a curve which is
 J-holomorphic in the sense of `TauCeti.IsJHolomorphicAt`): in the chart, `J` is the standard
-structure along the straightened curve. When the derivative is bijective, `Φ` is a local
-homeomorphism near `(a, 0, 0)` (`TauCeti.exists_openPartialHomeomorph_frameChart`), and it is
-`C^n` when `u` and `J ∘ u` are (`TauCeti.contDiffAt_frameChart`).
+structure along the straightened curve. When `u` and `J ∘ u` are strictly differentiable at `a`,
+`V` and `W` are complete, and the derivative is bijective, `Φ` is a local homeomorphism near
+`(a, 0, 0)` (`TauCeti.exists_openPartialHomeomorph_frameChart`), and it is `C^n` when `u` and
+`J ∘ u` are (`TauCeti.contDiffAt_frameChart`).
 
 A frame making the derivative bijective exists whenever `du(a)` is nonzero
 (`TauCeti.exists_bijective_frameChartDeriv`). Since `du(a)` is complex linear, its image is the
@@ -70,8 +71,8 @@ compare two J-holomorphic curves through a common point and factor one through t
   `TauCeti.IsJHolomorphicAt.isComplexLinearMap_frameChartDeriv`: along `ℂ × {0}` the chart pulls
   `J` back to the standard complex structure.
 * `TauCeti.exists_bijective_frameChartDeriv`: a frame making the derivative bijective exists.
-* `TauCeti.exists_openPartialHomeomorph_frameChart`: the chart is a local homeomorphism near
-  `(a, 0, 0)`.
+* `TauCeti.exists_openPartialHomeomorph_frameChart`: for complete `V` and `W`, the chart is a local
+  homeomorphism near `(a, 0, 0)` when its derivative there is bijective.
 
 ## References
 
@@ -90,9 +91,10 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-- The **frame chart** of a curve `u : ℂ → V` for a family of endomorphisms `J` and a frame
 `N : W → V`: `Φ(a, x, y) = u(a) + N x + J(u(a)) (N y)`. It sends `ℂ × {0}` onto the curve. When
-its linear model `frameChartDeriv` at `(a, 0, 0)` is bijective, the chart is a local homeomorphism
-near `(a, 0, 0)`; along `ℂ × {0}` its derivative carries the standard structure to `J(u(a))` when
-`J(u(a))² = -1` and `du(a)` is complex linear. -/
+`u` and `J ∘ u` are strictly differentiable at `a`, `V` and `W` are complete, and the linear model
+`frameChartDeriv (du(a)) (J (u a)) N` is bijective, the chart is a local homeomorphism near
+`(a, 0, 0)` (`exists_openPartialHomeomorph_frameChart`); along `ℂ × {0}` its derivative carries
+the standard structure to `J(u(a))` when `J(u(a))² = -1` and `du(a)` is complex linear. -/
 def frameChart (J : V → V →L[ℝ] V) (u : ℂ → V) (N : W →L[ℝ] V) (w : ℂ × W × W) : V :=
   u w.1 + N w.2.1 + J (u w.1) (N w.2.2)
 
