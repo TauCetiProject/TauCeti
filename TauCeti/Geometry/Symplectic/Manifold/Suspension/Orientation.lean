@@ -226,13 +226,13 @@ theorem integralTopForm_mpullback_suspensionForm_of_orbitTorus_comp_eq
 
 /-- **A horizontal curve is a multiple of its orbit torus.** Let `u = τ ∘ v` for the orbit torus
 `τ` of a point of period `d` and a local diffeomorphism `v : C → (ℝ / ℤ) × (ℝ / dℤ)` from a compact
-Hausdorff boundaryless surface that preserves orientation at every point, for the product of the
+Hausdorff surface that preserves orientation at every point, for the product of the
 positive orientations of the two circles. Then for every point `p` of the torus, `u` integrates
 every two-form `β` on `X_φ` whose pullback `τ^* β` is integrable as `|v⁻¹(p)|` times the orbit
 torus does: `∫_C u^* β = |v⁻¹(p)| ∫ τ^* β`. Here `|v⁻¹(p)|` is the degree of `v`, so it does not
 depend on `p`. -/
 theorem integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq [CompactSpace C]
-    [T2Space C] [BoundarylessManifold I' C] (hv : IsLocalDiffeomorph I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v)
+    [T2Space C] (hv : IsLocalDiffeomorph I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v)
     (hτv : orbitTorus φ h ∘ v = u)
     (hor : ∀ c, Manifold.Orientation.IsOrientationPreservingAt o
       ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) v c)
@@ -243,17 +243,19 @@ theorem integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq [CompactSpa
       (v ⁻¹' {p}).ncard * integralTopForm
         ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ)))
         (mpullback (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (orbitTorus φ h) β) := by
+  -- `C` is boundaryless, since `v` is a local diffeomorphism into the boundaryless torus.
+  have := hv.boundarylessManifold (by simp)
   rw [← hτv, mpullback_comp (hv.contMDiff.mdifferentiable (by simp))
     ((contMDiff_orbitTorus h).mdifferentiable (by simp)),
     hv.integralTopForm_mpullback_eq_ncard_mul o _ (by simp) hor p hβ]
 
 /-- **The `Ω`-area of a horizontal curve covering its orbit torus.** Let `u = τ ∘ v` for the orbit
 torus `τ` of a point of period `d` and a local diffeomorphism `v : C → (ℝ / ℤ) × (ℝ / dℤ)` from a
-compact Hausdorff boundaryless surface that preserves orientation at every point, for the product of
-the positive orientations of the two circles. Then for every point `p` of the torus the suspension
+compact Hausdorff surface that preserves orientation at every point, for the product of the
+positive orientations of the two circles. Then for every point `p` of the torus the suspension
 form `Ω = ds ∧ dt + σ_v` integrates to `|v⁻¹(p)| d` over `C`. -/
 theorem integralTopForm_mpullback_suspensionForm_eq_ncard_mul_of_orbitTorus_comp_eq
-    [CompactSpace C] [T2Space C] [BoundarylessManifold I' C]
+    [CompactSpace C] [T2Space C]
     (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
     (hv : IsLocalDiffeomorph I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v) (hτv : orbitTorus φ h ∘ v = u)
     (hor : ∀ c, Manifold.Orientation.IsOrientationPreservingAt o

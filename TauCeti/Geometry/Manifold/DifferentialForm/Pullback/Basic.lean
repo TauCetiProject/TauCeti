@@ -362,6 +362,14 @@ theorem mpullback_sub [IsTopologicalAddGroup F] (f : M → M') (ω η : RoughFor
   ext v
   simp only [mpullback_apply, Pi.sub_apply, ContinuousAlternatingMap.sub_apply]
 
+/-- Pullback commutes with finite sums. -/
+@[simp]
+theorem mpullback_sum [ContinuousAdd F] (f : M → M') {ι : Type*} (s : Finset ι)
+    (ω : ι → RoughForm I' M' F k) :
+    mpullback I I' f (∑ i ∈ s, ω i) = ∑ i ∈ s, mpullback I I' f (ω i) :=
+  map_sum (⟨⟨mpullback I I' f, mpullback_zero f⟩, mpullback_add f⟩ :
+    RoughForm I' M' F k →+ RoughForm I M F k) ω s
+
 /-- Within-set pullback respects scalar multiplication of the coefficients, by any scalars
 acting continuously on the coefficient space and commuting with the real action. -/
 @[simp]

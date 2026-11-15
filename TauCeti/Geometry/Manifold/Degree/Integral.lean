@@ -222,6 +222,18 @@ private theorem integralTopForm_sheet [T2Space M]
     exact e.integralTopForm_of_eq_mpullback_of_isOrientationReversingAt hfe
       (fun z hz ↦ orientationSign_eq_neg_one_iff.mp ((hsgn z hz).trans h)) hφ hφt hψs hψφ
 
+omit [FiniteDimensional ℝ E] [IsManifold I 1 M] in
+/-- The part of a form on a sheet `U` vanishes off `U`. -/
+private theorem indicator_smul_of_notMem {U : Set M} {ψ : RoughForm I M ℝ k} {z : M}
+    (hz : z ∉ U) : U.indicator (fun _ ↦ (1 : ℝ)) z • ψ z = 0 := by
+  simp only [indicator_of_notMem hz, zero_smul]
+
+omit [FiniteDimensional ℝ E] [IsManifold I 1 M] in
+/-- The part of a form on a sheet `U` agrees with the form on `U`. -/
+private theorem indicator_smul_of_mem {U : Set M} {ψ : RoughForm I M ℝ k} {z : M} (hz : z ∈ U) :
+    U.indicator (fun _ ↦ (1 : ℝ)) z • ψ z = ψ z := by
+  simp only [indicator_of_mem hz, one_smul]
+
 omit [FiniteDimensional ℝ E] [IsManifold I 1 M] [FiniteDimensional ℝ E'] [IsManifold J 1 N] in
 /-- **The sheets decompose the pullback.** If the preimage of `V` is covered by pairwise disjoint
 sheets, the pullback of a form supported in `V` is the sum of its parts on the sheets. -/
@@ -274,8 +286,7 @@ private theorem exists_mem_nhds_integrableTopForm [CompactSpace M] [T2Space M] [
   obtain ⟨b⟩ := nonempty_basis_of_integrableTopForm hdim hφ
   rw [mpullback_eq_sum_indicator_smul e hdisj hVs hφV]
   exact IntegrableTopForm.sum b _ Finset.univ fun x _ ↦ integrableTopForm_sheet hdim hf (e x)
-    (hfe x) hφ (hφV.trans (hVt x)) (fun z hz ↦ by simp only [indicator_of_notMem hz, zero_smul])
-    fun z hz ↦ by simp only [indicator_of_mem hz, one_smul]
+    (hfe x) hφ (hφV.trans (hVt x)) (fun _ ↦ indicator_smul_of_notMem) fun _ ↦ indicator_smul_of_mem
 
 /-- The integral formula near a regular value, together with the integrability of the pullback:
 `y` has a neighbourhood `V` such that for every integrable top form `φ` supported in `V`, the
@@ -292,26 +303,22 @@ private theorem exists_mem_nhds_integrableTopForm_and_integralTopForm [CompactSp
   -- Split `f^*φ` into its parts on the sheets of the stack of records over `y`, change variables
   -- on each sheet according to the orientation sign there, and sum.
   have hdim := o.card_eq.symm.trans o'.card_eq
+  obtain ⟨V₀, hV₀, hint₀⟩ := exists_mem_nhds_integrableTopForm (k := k) hdim hf hy
   set s := (hy.finite_preimage hdim hf.continuous).toFinset
   have hs (x : M) : x ∈ s ↔ f x = y := by simp [s]
   obtain ⟨e, -, hfe, hsgn, hdisj, V, hV, hVt, hVs⟩ :=
     exists_stack_of_records_orientationSign o o' hf hy s hs
-  refine ⟨V, hV, fun φ hφ hφV ↦ ?_⟩
-  have hψ0 (x : s) (z : M) (hz : z ∉ (e x).source) :
-      (e x).source.indicator (fun _ ↦ (1 : ℝ)) z • mpullback I J f φ z = 0 := by
-    simp only [indicator_of_notMem hz, zero_smul]
-  have hψφ (x : s) (z : M) (hz : z ∈ (e x).source) :
-      (e x).source.indicator (fun _ ↦ (1 : ℝ)) z • mpullback I J f φ z = mpullback I J f φ z := by
-    simp only [indicator_of_mem hz, one_smul]
+  refine ⟨V ∩ V₀, inter_mem hV hV₀, fun φ hφ hφV ↦
+    ⟨hint₀ φ hφ (hφV.trans inter_subset_right), ?_⟩⟩
+  replace hφV := hφV.trans inter_subset_left
   have hint (x : s) := integrableTopForm_sheet hdim hf (e x) (hfe x) hφ (hφV.trans (hVt x))
-    (hψ0 x) (hψφ x)
-  let b := Module.finBasisOfFinrankEq ℝ E (by simpa using o.card_eq.symm)
-  rw [mpullback_eq_sum_indicator_smul e hdisj hVs hφV]
-  refine ⟨IntegrableTopForm.sum b _ Finset.univ fun x _ ↦ hint x, ?_⟩
-  rw [integralTopForm_sum o _ Finset.univ fun x _ ↦ hint x, degreeAtRegularValue_eq_sum hs,
+    (fun _ ↦ indicator_smul_of_notMem) fun _ ↦ indicator_smul_of_mem
+  rw [mpullback_eq_sum_indicator_smul e hdisj hVs hφV,
+    integralTopForm_sum o _ Finset.univ fun x _ ↦ hint x, degreeAtRegularValue_eq_sum hs,
     Int.cast_sum, Finset.sum_mul, ← Finset.sum_coe_sort s]
   exact Finset.sum_congr rfl fun x _ ↦ integralTopForm_sheet o o' (e x) (hfe x)
-    (hy.isRegularPoint ((hs x).mp x.2)) (hsgn x) hφ (hφV.trans (hVt x)) (hψ0 x) (hψφ x)
+    (hy.isRegularPoint ((hs x).mp x.2)) (hsgn x) hφ (hφV.trans (hVt x))
+    (fun _ ↦ indicator_smul_of_notMem) fun _ ↦ indicator_smul_of_mem
 
 /-- **The integral formula for the degree near a regular value.** Let `f : M → N` be a `C¹` map
 from a compact Hausdorff boundaryless manifold to a Hausdorff manifold of the same dimension,
@@ -363,12 +370,11 @@ theorem eventually_isRegularValue_and_degreeAtRegularValue_eq [CompactSpace M] [
   -- The orientation sign at `(e x).symm y'` is the nonzero sign at `x`, so it is a regular point.
   have hsign (x : s) : orientationSign o o' f ((e x).symm y') = orientationSign o o' f x :=
     hsgn x _ (hzs x)
-  have hreg (x : s) : IsRegularPoint I J f ((e x).symm y') := by
-    rw [isRegularPoint_iff_isInvertible_mfderiv (o.card_eq.symm.trans o'.card_eq),
-      ← not_not (a := (mfderiv I J f _).IsInvertible), ← orientationSign_eq_zero_iff (o := o)
-      (o' := o'), hsign]
-    rcases orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint (o := o) (o' := o')
-      (hy.isRegularPoint ((hs x).mp x.2)) with h | h <;> simp [h]
+  have hreg (x : s) : IsRegularPoint I J f ((e x).symm y') :=
+    isRegularPoint_of_orientationSign_ne_zero (o := o) (o' := o') <| by
+      rw [hsign]
+      rcases orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint (o := o) (o' := o')
+        (hy.isRegularPoint ((hs x).mp x.2)) with h | h <;> simp [h]
   have hmem (w : M) : w ∈ Finset.univ.image (fun x : s ↦ (e x).symm y') ↔ f w = y' := by
     simp only [Finset.mem_image, Finset.mem_univ, true_and]
     exact ⟨fun ⟨x, hx⟩ ↦ hx ▸ hfz x, hfib w⟩
@@ -432,13 +438,6 @@ private theorem exists_eq_sum_tsupport_subset [T2Space N] {φ : RoughForm J N �
     fun i ↦ (tsupport_smul_subset_left _ _).trans ((hρ i).trans interior_subset), ?_⟩
   exact (φ.eq_sum_fun_smul (fun i : t ↦ ρ i) fun y hy ↦ by
     rw [← finsum_eq_sum_of_fintype]; exact ρ.sum_eq_one hy).trans (Finset.sum_fn _ _).symm
-
-omit [FiniteDimensional ℝ E] [IsManifold I 1 M] [FiniteDimensional ℝ E'] [IsManifold J 1 N] in
-/-- Pullback along `f` commutes with finite sums. -/
-private theorem mpullback_sum {f : M → N} {ι : Type*} (s : Finset ι)
-    (φ : ι → RoughForm J N ℝ k) :
-    mpullback I J f (∑ i ∈ s, φ i) = ∑ i ∈ s, mpullback I J f (φ i) :=
-  map_sum (AddMonoidHom.mk' (mpullback I J f) (mpullback_add f)) _ _
 
 /-- **Integrability of pullbacks of top forms supported in regular values.** Let `f : M → N` be a
 `C¹` map from a compact Hausdorff boundaryless manifold to a Hausdorff manifold of the same

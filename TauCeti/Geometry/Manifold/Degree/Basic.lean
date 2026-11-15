@@ -158,8 +158,7 @@ theorem degreeAtRegularValue_eq_ncard (ho : ∀ x, f x = y → IsOrientationPres
       rw [inter_eq_left.mpr fun x hx ↦ ?_]
       · exact h
       · simp [orientationSign_of_isOrientationPreservingAt (ho x hx)]
-    rw [h0, Set.Infinite.ncard h]
-    rfl
+    rw [h0, Set.Infinite.ncard h, Nat.cast_zero]
 
 /-- Over a regular value, the degree has the parity of the number of preimages: every orientation
 sign is `1` or `-1`. For an infinite fibre both sides are `0` by the `finsum` and `ncard`
