@@ -17,6 +17,7 @@ import Mathlib.Analysis.Convex.Contractible
 import TauCeti.Analysis.Calculus.Morse.OneDimensional
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Geometry.Manifold.Morse.Bott.Slice
+import TauCeti.LinearAlgebra.ExtendByZero
 
 /-!
 # Crossing a critical hyperplane of real projective space
@@ -33,9 +34,8 @@ point `[e_N]`, where `f` takes its minimum `0`, together with the hyperplane `{v
 copy of `ℝℙᴺ⁻¹`, on which `f` attains its maximum `1`
 (`TauCeti.projectiveHyperplaneMomentFunction_eq_one_iff`).
 
-The function is Morse–Bott. Write `ℝℙᴺ⁺¹` for the ambient space, so that the hyperplane is the
-image of `ℝℙᴺ` under the smooth embedding `[v] ↦ [v : 0]`
-(`TauCeti.projectiveHyperplaneEmbedding`, an instance of the closed embedding
+The function is Morse–Bott. For `N ≥ 1` the hyperplane is the image of `ℝℙᴺ⁻¹` under the smooth
+embedding `[v] ↦ [v : 0]` (`TauCeti.projectiveHyperplaneEmbedding`, an instance of the embedding
 `Projectivization.isSmoothEmbedding_map` of a linear inclusion). Along the line `t ↦ [v : t]`
 through a point of the hyperplane the function is `t ↦ 1 - t² / (‖v‖₂² + t²)`, whose second
 derivative `-2 / ‖v‖₂²` at `t = 0` is negative. Since the hyperplane has codimension one, this line
@@ -43,12 +43,13 @@ is transverse to it, so the Hessian is nondegenerate in the normal direction
 (`TauCeti.isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding`) and the Morse index
 is `1` at every point of the hyperplane
 (`TauCeti.manifoldMorseIndex_projectiveHyperplaneMomentFunction_of_notMem_affineOpen`). The
-minimum `[e_{N+1}]` is a nondegenerate critical point, so the hyperplane and the minimum, embedded
-as copies of `ℝℙᴺ` and of the point `ℝℙ⁰`, form a Morse–Bott family
-(`TauCeti.isMorseBottFamily_projectiveHyperplaneMomentFunction`). The negative normal bundle of
-the hyperplane is its normal line bundle in `ℝℙᴺ⁺¹`, the tautological line bundle of `ℝℙᴺ`; for
-`N = 1` it is the Möbius line over the circle `ℝℙ¹`. This identification is background here and
-is not formalized in this file.
+minimum `[e_N]` is a nondegenerate critical point, so the hyperplane and the minimum, embedded
+as copies of `ℝℙᴺ⁻¹` and of the point `ℝℙ⁰`, form a Morse–Bott family
+(`TauCeti.isMorseBottFamily_projectiveHyperplaneMomentFunction`). Since `ℝℙᴺ⁻¹` needs `N ≥ 1`, these
+declarations are stated with ambient space `ℝℙᴺ⁺¹`, that is, with `N + 1` in place of `N`. The
+negative normal bundle of the hyperplane is its normal line bundle in `ℝℙᴺ`, the tautological line
+bundle of `ℝℙᴺ⁻¹`; for `N = 2` it is the Möbius line over the circle `ℝℙ¹`. This identification is
+background here and is not formalized in this file.
 
 Below the top level, every sublevel `{f ≤ c}` with `0 ≤ c < 1` lies in the affine chart where
 `v_N ≠ 0`, and in that chart it is the ball `{z | ‖z‖₂² / (1 + ‖z‖₂²) ≤ c}`, so it is contractible
@@ -77,8 +78,8 @@ so the integral formula cannot be stated with untwisted coefficients.
   `[e_N]` together with the hyperplane `{v_N = 0}`.
 * `TauCeti.projectiveHyperplaneMomentFunction_eq_one_iff`: the hyperplane is the level set
   `f⁻¹(1)`.
-* `TauCeti.range_projectiveHyperplaneEmbedding`: the embedding `[v] ↦ [v : 0]` of `ℝℙᴺ` into
-  `ℝℙᴺ⁺¹` has image the hyperplane.
+* `TauCeti.range_projectiveHyperplaneEmbedding`: the embedding `[v] ↦ [v : 0]` of `ℝℙᴺ⁻¹` into
+  `ℝℙᴺ` has image the hyperplane.
 * `TauCeti.isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding`: the hyperplane is a
   Morse–Bott critical submanifold.
 * `TauCeti.manifoldMorseIndex_projectiveHyperplaneMomentFunction_of_notMem_affineOpen`: the Morse
@@ -201,7 +202,13 @@ theorem criticalPoints_projectiveHyperplaneMomentFunction :
     · exact .inl (by simpa [hj, mk_mem_affineOpen_iff] using hx)
     · exact .inr (by simp [hj])
 
-/-! ### The critical components -/
+/-! ### The critical components
+
+The statements in this section are indexed by `N + 1`: the ambient space is
+`ℝℙᴺ⁺¹ = ℙ ℝ (Fin (N + 2) → ℝ)`, with moment function `projectiveHyperplaneMomentFunction (N + 1)`,
+critical hyperplane `{v_{N+1} = 0}`, a copy of `ℝℙᴺ`, and minimum `[e_{N+1}]`. The circle `ℝℙ¹` in
+`ℝℙ²`, which is the case `N = 2` in the module docstring, is the case `N = 1` here.
+-/
 
 section Components
 
@@ -212,14 +219,13 @@ private noncomputable def hyperplaneCoord : (Fin (N + 1) → ℝ) →ₗ[ℝ] Fi
 
 private theorem hyperplaneCoord_apply (v : Fin (N + 1) → ℝ) :
     hyperplaneCoord v = Fin.snoc v 0 := by
-  ext j
-  induction j using Fin.lastCases with
-  | last =>
-    rw [Fin.snoc_last, hyperplaneCoord, Function.ExtendByZero.linearMap_apply,
-      Function.extend_apply' _ _ _ fun ⟨a, ha⟩ ↦ Fin.castSucc_ne_last a ha, Pi.zero_apply]
-  | cast j =>
-    rw [Fin.snoc_castSucc, hyperplaneCoord, Function.ExtendByZero.linearMap_apply,
-      (Fin.castSucc_injective _).extend_apply]
+  rw [← Fin.snoc_init_self (hyperplaneCoord v), hyperplaneCoord,
+    Function.ExtendByZero.init_linearMap_castSucc, Function.ExtendByZero.linearMap_castSucc_last]
+
+/-- Appending a coordinate to a nonzero vector gives a nonzero vector. -/
+private theorem snoc_ne_zero {v : Fin (N + 1) → ℝ} (hv : v ≠ 0) (t : ℝ) :
+    (Fin.snoc v t : Fin (N + 2) → ℝ) ≠ 0 := fun h ↦
+  hv (funext fun j ↦ by simpa using congrFun h j.castSucc)
 
 private theorem injective_hyperplaneCoord : Function.Injective (hyperplaneCoord (N := N)) :=
   Function.extend_injective (Fin.castSucc_injective _) 0
@@ -236,7 +242,8 @@ noncomputable def projectiveHyperplaneEmbedding :
 @[simp]
 theorem projectiveHyperplaneEmbedding_mk (v : Fin (N + 1) → ℝ) (hv : v ≠ 0) :
     projectiveHyperplaneEmbedding N (mk ℝ v hv) =
-      mk ℝ (Fin.snoc v 0) fun h ↦ hv (funext fun j ↦ by simpa using congrFun h j.castSucc) := by
+      -- A `by` block keeps the private `snoc_ne_zero` out of this public statement.
+      mk ℝ (Fin.snoc v 0) (by exact snoc_ne_zero hv 0) := by
   rw [projectiveHyperplaneEmbedding, SmoothEmbedding.ofIsSmoothEmbedding_apply, map_mk]
   simp only [hyperplaneCoord_apply]
 
@@ -268,24 +275,26 @@ private theorem projectiveHyperplaneMomentFunction_mk_snoc (v : Fin (N + 1) → 
   rw [projectiveHyperplaneMomentFunction_mk, Fin.snoc_last, Fin.sum_univ_castSucc]
   simp only [Fin.snoc_castSucc, Fin.snoc_last]
 
+/-- The derivative of `t ↦ 1 - t² / (a + t²)` is `t ↦ -2at / (a + t²)²`. -/
+private theorem hasDerivAt_one_sub_sq_div_add_sq {a : ℝ} (ha : 0 < a) (t : ℝ) :
+    HasDerivAt (fun t : ℝ ↦ 1 - t ^ 2 / (a + t ^ 2)) (-(2 * a * t / (a + t ^ 2) ^ 2)) t := by
+  have hne : a + t ^ 2 ≠ 0 := by positivity
+  convert (HasDerivAt.div (hasDerivAt_pow 2 t) ((hasDerivAt_pow 2 t).const_add a) hne).const_sub
+    1 using 1
+  field_simp
+  ring
+
 /-- The second derivative at `0` of `t ↦ 1 - t² / (a + t²)` is `-2 / a`. -/
 private theorem iteratedDeriv_two_one_sub_sq_div_add_sq {a : ℝ} (ha : 0 < a) :
     iteratedDeriv 2 (fun t : ℝ ↦ 1 - t ^ 2 / (a + t ^ 2)) 0 = -2 / a := by
-  have h₁ (t : ℝ) : HasDerivAt (fun t : ℝ ↦ 1 - t ^ 2 / (a + t ^ 2))
-      (-(2 * a * t / (a + t ^ 2) ^ 2)) t := by
-    have hne : a + t ^ 2 ≠ 0 := by positivity
-    convert (HasDerivAt.div (hasDerivAt_pow 2 t) ((hasDerivAt_pow 2 t).const_add a) hne).const_sub
-      1 using 1
-    field_simp
-    ring
   have h₂ : HasDerivAt (fun t : ℝ ↦ -(2 * a * t / (a + t ^ 2) ^ 2)) (-2 / a) 0 := by
     convert (HasDerivAt.div ((hasDerivAt_id (0 : ℝ)).const_mul (2 * a))
       (((hasDerivAt_pow 2 (0 : ℝ)).const_add a).fun_pow 2) (by simp [ha.ne'])).neg using 1
     · ext t
       simp
-    · simp
-      field_simp
-  rw [iteratedDeriv_succ, iteratedDeriv_one, funext fun t ↦ (h₁ t).deriv]
+    · simp [field]
+  rw [iteratedDeriv_succ, iteratedDeriv_one,
+    funext fun t ↦ (hasDerivAt_one_sub_sq_div_add_sq ha t).deriv]
   exact h₂.deriv
 
 /-- Through a point `[v : 0]` of the critical hyperplane the line `t ↦ [v : t]` is a smooth curve,
@@ -298,17 +307,12 @@ private theorem exists_slice_projectiveHyperplaneEmbedding (s : ℙ ℝ (Fin (N 
       deriv (projectiveHyperplaneMomentFunction (N + 1) ∘ φ) 0 = 0 ∧
       iteratedDeriv 2 (projectiveHyperplaneMomentFunction (N + 1) ∘ φ) 0 < 0 := by
   induction s using Projectivization.ind with | h v hv =>
-  have hF (t : ℝ) : (Fin.snoc v t : Fin (N + 2) → ℝ) ≠ 0 := fun h ↦
-    hv (funext fun j ↦ by simpa using congrFun h j.castSucc)
+  have hF := snoc_ne_zero hv
   -- In homogeneous coordinates the curve is the affine line `t ↦ (v, 0) + t • e_{N+1}`.
   have hsnoc : (fun t : ℝ ↦ (Fin.snoc v t : Fin (N + 2) → ℝ)) =
       fun t ↦ Fin.snoc v 0 + t • Pi.single (Fin.last (N + 1)) 1 := by
     ext t j
-    induction j using Fin.lastCases with
-    | last => rw [Fin.snoc_last, Pi.add_apply, Fin.snoc_last, Pi.smul_apply, Pi.single_eq_same,
-        smul_eq_mul, mul_one, zero_add]
-    | cast j => rw [Fin.snoc_castSucc, Pi.add_apply, Fin.snoc_castSucc, Pi.smul_apply,
-        Pi.single_eq_of_ne (Fin.castSucc_ne_last j), smul_zero, add_zero]
+    induction j using Fin.lastCases <;> simp [Fin.castSucc_ne_last]
   set a := ∑ j, v j ^ 2
   have ha : 0 < a := lt_of_le_of_ne (Finset.sum_nonneg fun j _ ↦ sq_nonneg (v j))
     (Ne.symm (sum_sq_ne_zero (N := N) hv))
@@ -326,10 +330,8 @@ private theorem exists_slice_projectiveHyperplaneEmbedding (s : ℙ ℝ (Fin (N 
     exact (contDiff_const.add (contDiff_id.smul contDiff_const)).contMDiff.contMDiffAt
   · rw [hcomp]
     exact hsmooth.contDiffAt
-  · rw [hcomp]
-    have h := (HasDerivAt.div (hasDerivAt_pow 2 (0 : ℝ)) ((hasDerivAt_pow 2 (0 : ℝ)).const_add a)
-      (by positivity)).const_sub 1
-    simpa using h.deriv
+  · rw [hcomp, (hasDerivAt_one_sub_sq_div_add_sq ha 0).deriv]
+    simp
   · rw [hcomp, iteratedDeriv_two_one_sub_sq_div_add_sq ha]
     exact div_neg_of_neg_of_pos (by norm_num) ha
 
@@ -476,14 +478,15 @@ theorem isMorseBottFamily_projectiveHyperplaneMomentFunction :
     have hmin : range (projectiveMinimumEmbedding N) ⊆ affineOpen (Fin.last (N + 1)) := by
       rintro _ ⟨x, rfl⟩
       simp [mk_mem_affineOpen_iff]
-    intro b b' hbb'
-    cases b <;> cases b' <;> simp only [ne_eq, not_true_eq_false] at hbb' <;>
-      simp only [Function.onFun, projectiveHyperplaneCriticalComponent_true,
-        projectiveHyperplaneCriticalComponent_false]
-    · rw [range_projectiveHyperplaneEmbedding]
+    have hdisj : Disjoint (range (projectiveMinimumEmbedding N))
+        (range (projectiveHyperplaneEmbedding N)) := by
+      rw [range_projectiveHyperplaneEmbedding]
       exact disjoint_compl_right.mono_left hmin
-    · rw [range_projectiveHyperplaneEmbedding]
-      exact (disjoint_compl_right.mono_left hmin).symm
+    rintro (_ | _) (_ | _) h
+    · exact (h rfl).elim
+    · exact hdisj
+    · exact hdisj.symm
+    · exact (h rfl).elim
   · intro x hx
     rw [criticalPoints_projectiveHyperplaneMomentFunction] at hx
     rcases hx with rfl | hx
