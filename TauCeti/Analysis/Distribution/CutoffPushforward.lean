@@ -27,7 +27,8 @@ where `χ Φ^*` is the pullback with cutoff `TestFunction.cutoffPullbackCLM`, de
 * `Φ_# T` does not depend on the cutoff: only the germ of `χ` along the support of `T` matters;
 * when `Φ` is proper, `Φ_# T` is the pushforward `T ∘ Φ^*`;
 * `∂ (Φ_# T) = Φ_# (∂ T)`, where `∂ T = T ∘ d`;
-* the support of `Φ_# T` lies in the image under `Φ` of the support of `T`;
+* the support of `Φ_# T` lies in the image under `Φ` of the support of `T`, and for a proper `Φ`
+  the support of `T ∘ Φ^*` lies in the closure of that image;
 * if `|χ| ≤ 1` and `‖DΦ‖ ≤ L` on the support of `χ`, then `M(Φ_# T) ≤ L ^ k M(T)`;
 * functoriality: `(Ψ ∘ Φ)_# T = Ψ_# (Φ_# T)`.
 
@@ -39,6 +40,8 @@ where `χ Φ^*` is the pullback with cutoff `TestFunction.cutoffPullbackCLM`, de
 * `ContinuousLinearMap.comp_cutoffPullbackCLM_comp_extDerivCLM`: `∂ (Φ_# T) = Φ_# (∂ T)`.
 * `ContinuousLinearMap.comp_cutoffPullbackCLM_comp_cutoffPullbackCLM`: functoriality.
 * `Distribution.dsupport_comp_cutoffPullbackCLM_subset`: `spt (Φ_# T) ⊆ Φ (tsupport χ ∩ spt T)`.
+* `Distribution.dsupport_comp_pullbackCLM_subset`: for a proper map `Φ`,
+  `spt (Φ_# T) ⊆ closure (Φ (Ω ∩ spt T))`.
 * `Distribution.mass_comp_cutoffPullbackCLM_le`: `M(Φ_# T) ≤ L ^ k M(T)`.
 
 ## References
@@ -143,6 +146,22 @@ theorem dsupport_comp_cutoffPullbackCLM_subset [FiniteDimensional ℝ E] [AddCom
       hω (tsupport_cutoffPullbackCLM_subset ω hx).2 ⟨x, ⟨(tsupport_cutoffPullbackCLM_subset ω hx).1,
         hxT⟩, rfl⟩
   have h := (hvan.disjoint_dsupport hS.isClosed.isOpen_compl).subset_compl_left
+  rwa [compl_compl] at h
+
+/-- **The support of a proper pushforward**: if `Φ` is proper from `Ω` to `Ω'`, the support of
+`Φ_# T = T ∘ Φ^*` lies in the closure of the image under `Φ` of the support of `T` in `Ω`. -/
+theorem dsupport_comp_pullbackCLM_subset [FiniteDimensional ℝ E] [AddCommMonoid V]
+    [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V] [AddMonoidHomClass 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V]
+    (T : 𝓕) {hΦp : ∀ K : Set E', IsCompact K → K ⊆ Ω' → IsCompact ((Ω : Set E) ∩ Φ ⁻¹' K)} :
+    dsupport (T ∘ (pullbackCLM Φ hΦ hΦp : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) ⊆
+      closure (Φ '' ((Ω : Set E) ∩ dsupport T)) := by
+  -- A test form supported off this closure pulls back to a test form supported off `spt T`.
+  have hvan : IsVanishingOn (T ∘ (pullbackCLM Φ hΦ hΦp : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _))
+      (closure (Φ '' ((Ω : Set E) ∩ dsupport T)))ᶜ := fun ω hω ↦
+    map_eq_zero_of_disjoint_dsupport T <| disjoint_left.2 fun x hx hxT ↦
+      hω (tsupport_pullbackCLM_subset ω hx).2 <| subset_closure
+        ⟨x, ⟨(tsupport_pullbackCLM_subset ω hx).1, hxT⟩, rfl⟩
+  have h := (hvan.disjoint_dsupport isClosed_closure.isOpen_compl).subset_compl_left
   rwa [compl_compl] at h
 
 /-- **The mass of a pushforward**: if `|χ| ≤ 1` and `‖DΦ‖ ≤ L` on the support of `χ`, then the
