@@ -399,23 +399,6 @@ section Quantization
 
 variable (χ : 𝓢(CoordinateSpace n, ℂ))
 
-/-- The Schwartz function `y ↦ χ(x - y)`. -/
-private def reflectAt (x : CoordinateSpace n) : 𝓢(CoordinateSpace n, ℂ) :=
-  SchwartzMap.compSubConstCLM ℂ x
-    (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ (ContinuousLinearEquiv.neg ℝ) χ)
-
-private theorem reflectAt_apply (x y : CoordinateSpace n) : reflectAt χ x y = χ (x - y) := by
-  simp [reflectAt]
-
-private theorem coe_reflectAt (x : CoordinateSpace n) : ⇑(reflectAt χ x) = fun y ↦ χ (x - y) :=
-  funext (reflectAt_apply χ x)
-
-/-- The Fourier transform of `y ↦ χ(x - y)` is `t ↦ exp(-2πi ⟪x, t⟫) 𝓕χ(-t)`. -/
-private theorem fourier_reflectAt (x t : CoordinateSpace n) :
-    𝓕 (reflectAt χ x) t = (𝐞 (-⟪x, t⟫) : ℂ) * 𝓕 χ (-t) := by
-  rw [reflectAt, SchwartzMap.fourier_compSubConstCLM_apply,
-    SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_neg_apply, Circle.smul_def, smul_eq_mul]
-
 /-- The double integrand of the quantization of the kernel cutoff, after inserting the
 convolution formula for `𝓕(χ(x - ·) u)`, is integrable in both frequencies. -/
 private theorem integrable_cutoffQuantizeIntegrand (b : Symbol n V W m)
@@ -451,6 +434,20 @@ private theorem integrable_cutoffQuantizeIntegrand (b : Symbol n V W m)
           (1 + ‖(2 * π) • (q.1 - q.2)‖ ^ 2) ^ (|m| / 2)) * ‖𝓕 u q.2‖) := by gcongr
     _ = _ := by ring
 
+/-- The integrand of the convolution formula for `𝓕(χ(x - ·) u)` at the frequency `ζ`, after the
+change of variables `η = ζ - t`, is integrable. -/
+private theorem integrable_cutoffConvolutionIntegrand (u : 𝓢(CoordinateSpace n, V))
+    (x ζ : CoordinateSpace n) :
+    Integrable fun η : CoordinateSpace n ↦ ((𝐞 (-⟪x, ζ - η⟫) : ℂ) * 𝓕 χ (η - ζ)) • 𝓕 u η := by
+  refine (((𝓕 u).integrable (μ := volume)).norm.const_mul
+    (SchwartzMap.seminorm ℂ 0 0 (𝓕 χ))).mono' ?_ (.of_forall fun η ↦ ?_)
+  · exact (((continuous_subtype_val.comp (Real.continuous_fourierChar.comp
+      (by fun_prop))).mul ((𝓕 χ).continuous.comp (by fun_prop))).smul
+        (𝓕 u).continuous).aestronglyMeasurable
+  · rw [norm_smul, norm_mul, Circle.norm_coe, one_mul]
+    gcongr
+    exact (𝓕 χ).norm_le_seminorm ℂ _
+
 variable [CompleteSpace V] [CompleteSpace W]
 
 /-- **The quantization of the kernel cutoff.** For a Schwartz function `u`,
@@ -467,29 +464,28 @@ theorem quantizeSchwartzValue_kernelCutoff (b : Symbol n V W m) (u : 𝓢(Coordi
     𝓕 χ (η - ζ) • b.coefficient (x, (2 * π) • ζ) (𝓕 u η) with hHdef
   have hH : Integrable (fun q : CoordinateSpace n × CoordinateSpace n ↦ H q.1 q.2)
       (volume.prod volume) := integrable_cutoffQuantizeIntegrand χ b u x
+  -- The Schwartz function `y ↦ χ(x - y)` and its Fourier transform `𝐞(-⟪x, t⟫) 𝓕χ(-t)`.
+  set ρ : 𝓢(CoordinateSpace n, ℂ) := SchwartzMap.compSubConstCLM ℂ x
+    (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ (ContinuousLinearEquiv.neg ℝ) χ) with hρ
+  have hfρ (t : CoordinateSpace n) : 𝓕 ρ t = (𝐞 (-⟪x, t⟫) : ℂ) * 𝓕 χ (-t) := by
+    rw [hρ, SchwartzMap.fourier_compSubConstCLM_apply,
+      SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_neg_apply, Circle.smul_def, smul_eq_mul]
   -- Insert the convolution formula for `𝓕(χ(x - ·) u)` and change variables to `η = ζ - t`.
   have hR : quantizeSchwartzValue b.coefficient
       (SchwartzMap.smulLeftCLM V (fun y ↦ χ (x - y)) u) x = ∫ ζ, ∫ η, H ζ η := by
     rw [quantizeSchwartzValue_def]
     refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
     have hsl : SchwartzMap.smulLeftCLM V (fun y ↦ χ (x - y)) u =
-        SchwartzMap.smulLeftCLM V (reflectAt χ x : CoordinateSpace n → ℂ) u := by
-      rw [coe_reflectAt]
-    have hint : Integrable fun η : CoordinateSpace n ↦
-        ((𝐞 (-⟪x, ζ - η⟫) : ℂ) * 𝓕 χ (η - ζ)) • 𝓕 u η := by
-      refine (((𝓕 u).integrable (μ := volume)).norm.const_mul
-        (SchwartzMap.seminorm ℂ 0 0 (𝓕 χ))).mono' ?_ (.of_forall fun η ↦ ?_)
-      · exact (((continuous_subtype_val.comp (Real.continuous_fourierChar.comp
-          (by fun_prop))).mul ((𝓕 χ).continuous.comp (by fun_prop))).smul
-            (𝓕 u).continuous).aestronglyMeasurable
-      · rw [norm_smul, norm_mul, Circle.norm_coe, one_mul]
-        gcongr
-        exact (𝓕 χ).norm_le_seminorm ℂ _
+        SchwartzMap.smulLeftCLM V (ρ : CoordinateSpace n → ℂ) u := by
+      congr
+      ext y
+      simp [ρ]
     beta_reduce
     rw [hsl, SchwartzMap.fourier_smulLeftCLM_apply,
-      ← integral_sub_left_eq_self (fun t ↦ 𝓕 (reflectAt χ x) t • 𝓕 u (ζ - t)) volume ζ]
-    simp only [fourier_reflectAt, sub_sub_cancel, neg_sub]
-    rw [← ContinuousLinearMap.integral_comp_comm _ hint, Circle.smul_def, ← integral_smul]
+      ← integral_sub_left_eq_self (fun t ↦ 𝓕 ρ t • 𝓕 u (ζ - t)) volume ζ]
+    simp only [hfρ, sub_sub_cancel, neg_sub]
+    rw [← ContinuousLinearMap.integral_comp_comm _ (integrable_cutoffConvolutionIntegrand χ u x ζ),
+      Circle.smul_def, ← integral_smul]
     refine integral_congr_ae (.of_forall fun η ↦ ?_)
     simp only [hHdef, map_smul, smul_smul]
     congr 1
@@ -510,11 +506,6 @@ theorem quantizeSchwartzValue_kernelCutoff (b : Symbol n V W m) (u : 𝓢(Coordi
   refine integral_congr_ae (.of_forall fun θ ↦ ?_)
   simp only [hHdef, sub_sub_cancel, smul_sub, smul_apply]
 
-private theorem hasTemperateGrowth_comp_sub (x : CoordinateSpace n) :
-    (fun y ↦ χ (x - y)).HasTemperateGrowth := by
-  rw [← coe_reflectAt]
-  exact (reflectAt χ x).hasTemperateGrowth
-
 /-- **Locality of the kernel cutoff.** `Op(c) u (x)` only depends on the values of `u` at the
 points `y` with `χ(x - y) ≠ 0`. -/
 theorem quantizeSchwartzValue_kernelCutoff_congr (b : Symbol n V W m)
@@ -525,8 +516,8 @@ theorem quantizeSchwartzValue_kernelCutoff_congr (b : Symbol n V W m)
   rw [quantizeSchwartzValue_kernelCutoff, quantizeSchwartzValue_kernelCutoff]
   congr 1
   ext y
-  rw [SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_comp_sub χ x),
-    SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_comp_sub χ x)]
+  have hχx : (fun y ↦ χ (x - y)).HasTemperateGrowth := χ.hasTemperateGrowth.comp (by fun_prop)
+  rw [SchwartzMap.smulLeftCLM_apply_apply hχx, SchwartzMap.smulLeftCLM_apply_apply hχx]
   by_cases hy : χ (x - y) = 0
   · simp [hy]
   · rw [h y hy]
