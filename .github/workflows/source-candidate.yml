@@ -16,16 +16,20 @@ jobs:
   candidate:
     # Deployment remains a separate, explicit operation. Unset is inert.
     if: ${{ vars.TAUCETI_MIXED_QUEUE_CI_ENABLED == 'true' }}
-    uses: TauCetiProject/TauCetiTools/.github/workflows/pr-build.yml@8902fa12a4faafc7bb512ab0baa9a452249b93aa
+    uses: TauCetiProject/TauCetiTools/.github/workflows/pr-build.yml@a7662ab81f900586db3586ec3a11c38a5f46962d
     with:
       tools_repository: TauCetiProject/TauCetiTools
-      tools_ref: 8902fa12a4faafc7bb512ab0baa9a452249b93aa
+      tools_ref: a7662ab81f900586db3586ec3a11c38a5f46962d
       project_ref: ${{ github.workflow_sha }}
       lean_root: TauCeti
       roadmap_dir: TauCetiRoadmap
       source_candidate_enabled: true
+      source_candidate_github_statuses: true
       # Wait for reserved staging capacity on tauchonki2; never spill to bulk CI.
       source_candidate_runner: '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]'
+      source_candidate_control_runner: '{"group":"TauCetiQueueControl","labels":["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]}'
     secrets:
+      CI_STATUS_APP_ID: ${{ secrets.CI_STATUS_APP_ID }}
+      CI_STATUS_APP_PRIVATE_KEY: ${{ secrets.CI_STATUS_APP_PRIVATE_KEY }}
       CI_SOURCE_READ_TOKEN: ${{ secrets.CI_SOURCE_READ_TOKEN }}
       LAKE_CACHE_KEY: ${{ secrets.LAKE_CACHE_KEY }}

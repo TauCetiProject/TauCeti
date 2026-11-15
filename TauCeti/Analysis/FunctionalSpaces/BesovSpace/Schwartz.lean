@@ -14,47 +14,50 @@ import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
 
 /-!
-# Schwartz functions, dyadic partial sums and smooth density in Besov spaces
+# Dyadic partial sums and smooth density in Besov spaces
 
 Let `φ : E → ℝ` be a smooth bump function on a finite-dimensional real inner product space and let
 `Δⱼ` (`j ≥ 0`) be its inhomogeneous Littlewood–Paley blocks. Every Schwartz function `f ∈ 𝓢(E, F)`
-lies in `H^{s+1,p}(E, F) ⊆ B^{s+1}_{p,∞}(E, F) ⊆ B^s_{p,q}(E, F)`, giving a continuous linear
-inclusion `SchwartzMap.toBesovSpaceCLM` for all `s ∈ ℝ` and `1 ≤ p, q ≤ ∞`.
+embeds continuously into `B^s_{p,q}(E, F)` via `SchwartzMap.toBesovSpaceCLM` (defined in
+`TauCeti.Analysis.Sobolev.BesselPotential.Besov` for all `s ∈ ℝ` and `1 ≤ p, q ≤ ∞`).
 
 Conversely, for any `u ∈ B^s_{p,q}(E, F)` the dyadic partial sums
 `S_N u = ∑_{j < N} Δⱼ u` define uniformly bounded operators `TauCeti.BesovSpace.partialSumCLM` on
 `B^s_{p,q}(E, F)`; the Fourier transform of each `S_N u` is supported in
-`Metric.closedBall 0 (2 ^ N * φ.rOut)`. Because the blocks
-`Δₖ` and `Δⱼ` interact only at bounded distance `|k - j| < L`, the block `Δₖ (u - S_N u)` is a
-bounded window sum of the blocks `Δⱼ u` with `j ≥ N`. Thus `‖u - S_N u‖_{B^s_{p,q}}` is controlled
-by the `ℓ^q` norm of the tail `(2^{js} ‖Δⱼ u‖_p)_{j ≥ N}`:
+`Metric.closedBall 0 (2 ^ N * φ.rOut)`. Because the blocks `Δₖ` and `Δⱼ` interact only at bounded
+distance `|k - j| < L`, the block `Δₖ (u - S_N u)` is a bounded window sum of the blocks `Δⱼ u`
+with `j ≥ N`. Thus `‖u - S_N u‖_{B^s_{p,q}}` is controlled by the `ℓ^q` norm of the tail
+`(2^{js} ‖Δⱼ u‖_p)_{j ≥ N}`:
 
 * for `q < ∞` (and all `1 ≤ p ≤ ∞`), `S_N u → u` in `B^s_{p,q}(E, F)` as `N → ∞`;
-* since each `S_N u` has compactly supported Fourier transform, it lies in `B^{s+1}_{p,1} ⊆
-  H^{s+1,p}`, so for `1 ≤ p < ∞` it lies in the closure of `𝓢(E, F)` in `B^s_{p,q}` (for every
-  `1 ≤ q ≤ ∞`, including `q = ∞`);
+* at `q = ∞` (and all `1 ≤ p ≤ ∞`), `S_N u → u` in `B^s_{p,∞}(E, F)` if and only if
+  `2^{js} ‖Δⱼ u‖_p → 0` (`TauCeti.BesovSpace.tendsto_partialSumCLM_top_iff`);
+* since the Fourier transform of each `S_N u` has compact support, `S_N u` lies in
+  `B^{s+1}_{p,1} ⊆ H^{s+1,p}`, so for `1 ≤ p < ∞` it lies in the closure of `𝓢(E, F)` in
+  `B^s_{p,q}` (for every `1 ≤ q ≤ ∞`, including `q = ∞`);
 * combining the two with the density of compactly supported smooth functions in `𝓢(E, F)` shows
   that both `𝓢(E, F)` and `{f ∈ 𝓢(E, F) | HasCompactSupport f}` are norm-dense in `B^s_{p,q}(E, F)`
   whenever `1 ≤ p < ∞` and `1 ≤ q < ∞`.
 
-At `q = ∞`, `S_N u` converges in `B^s_{p,∞}` if and only if `2^{js} ‖Δⱼ u‖_p → 0`; the resulting
-closed subspace is the little Besov space studied in
-`TauCeti.Analysis.FunctionalSpaces.BesovSpace.Little`.
-
 ## Main declarations
 
-* `SchwartzMap.memBesov`: every Schwartz function lies in `B^s_{p,q}` for `1 ≤ p ≤ ∞` and `q ≠ 0`.
-* `SchwartzMap.toBesovSpaceCLM`: the continuous linear inclusion `𝓢(E, F) →L[ℂ] B^s_{p,q}(E, F)`.
+* `SchwartzMap.inclusion_toBesovSpaceCLM`, `SchwartzMap.inclusionOfLT_toBesovSpaceCLM`,
+  `SchwartzMap.bumpEquiv_toBesovSpaceCLM`, `SchwartzMap.toBesovSpaceCLM_postcompCLM`,
+  `SchwartzMap.toBesovSpace_toBesselPotentialSpaceCLM`, and
+  `SchwartzMap.toBesselPotentialSpace_toBesovSpaceCLM`: compatibility of
+  `SchwartzMap.toBesovSpaceCLM` with inclusions, change of bump, `postcomp`, and
+  `BesselPotentialSpace`.
 * `TauCeti.BesovSpace.partialSumCLM`: the dyadic partial-sum operator `u ↦ ∑_{j < N} Δⱼ u` on
   `B^s_{p,q}(E, F)`, bounded uniformly in `N`, `p` and `q`
   (`TauCeti.BesovSpace.exists_norm_sub_partialSumCLM_le`,
   `TauCeti.BesovSpace.exists_norm_partialSumCLM_le`).
-* `TauCeti.BesovSpace.tendsto_partialSumCLM`: for `q < ∞`, `S_N u → u` in `B^s_{p,q}(E, F)`.
+* `TauCeti.BesovSpace.tendsto_partialSumCLM` and `TauCeti.BesovSpace.tendsto_partialSumCLM_top_iff`:
+  convergence of `S_N u` to `u` for `q < ∞` and its characterization at `q = ∞`.
 * `SchwartzMap.denseRange_toBesovSpaceCLM` and
   `SchwartzMap.dense_image_toBesovSpaceCLM_hasCompactSupport`: for `1 ≤ p < ∞` and `1 ≤ q < ∞`,
   Schwartz functions and compactly supported smooth functions are dense in `B^s_{p,q}(E, F)`.
 * `TauCeti.BesovSpace.continuousLinearMap_ext` and
-  `TauCeti.BesovSpace.continuousLinearMap_ext_hasCompactSupport`: continuous linear maps out of
+  `TauCeti.BesovSpace.continuousLinearMap_ext_hasCompactSupport`: continuous semilinear maps out of
   `B^s_{p,q}(E, F)` (`p, q < ∞`) are determined by their values on (compactly supported) Schwartz
   functions.
 
@@ -80,74 +83,32 @@ variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Finit
 
 namespace SchwartzMap
 
-/-- Every Schwartz function lies in every inhomogeneous Besov space `B^s_{p,q}` with `1 ≤ p ≤ ∞`
-and `q ≠ 0`. -/
-theorem memBesov (φ : ContDiffBump (0 : E)) (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] {q : ℝ≥0∞}
-    (hq : q ≠ 0) (f : 𝓢(E, F)) : (f : 𝓢'(E, F)).MemBesov φ s p q := by
-  have hsob := (f.toBesselPotentialSpaceCLM (s + 1) p).memSobolev_toDistr
-  rw [toDistr_toBesselPotentialSpaceCLM] at hsob
-  exact (hsob.memBesov φ).of_lt (lt_add_one s) hq
-
-/-- The continuous linear inclusion of Schwartz functions into the inhomogeneous Besov space
-`B^s_{p,q}(E, F)`, defined by composing `𝓢(E, F) →L[ℂ] H^{s+1,p}(E, F) →L[ℂ] B^{s+1}_{p,∞}(E, F)
-→L[ℂ] B^s_{p,q}(E, F)`. -/
-def toBesovSpaceCLM (φ : ContDiffBump (0 : E)) (s : ℝ) (p q : ℝ≥0∞)
-    [Fact (1 ≤ p)] [Fact (1 ≤ q)] :
-    𝓢(E, F) →L[ℂ] TauCeti.BesovSpace F φ s p q :=
-  TauCeti.BesovSpace.inclusionOfLT F φ p ∞ q (lt_add_one s) ∘L
-    BesselPotentialSpace.toBesovSpace φ ∘L
-      toBesselPotentialSpaceCLM (s + 1) p
-
 variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
-
-@[simp]
-theorem toDistr_toBesovSpaceCLM (f : 𝓢(E, F)) :
-    (f.toBesovSpaceCLM φ s p q).toDistr = (f : 𝓢'(E, F)) := by
-  simp [toBesovSpaceCLM]
-
-/-- The `j`-th Littlewood–Paley block of a Schwartz function in `B^s_{p,q}` is the `Lᵖ` class of
-the Schwartz Fourier multiplier `𝓕⁻ (ψⱼ • 𝓕 f)`. -/
-theorem block_toBesovSpaceCLM (f : 𝓢(E, F)) (j : ℕ) :
-    (f.toBesovSpaceCLM φ s p q).block j =
-      (fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f).toLp p := by
-  refine Lp.toTemperedDistribution_injective ?_
-  dsimp only
-  rw [TauCeti.BesovSpace.coe_block, toDistr_toBesovSpaceCLM,
-    TemperedDistribution.littlewoodPaleyBlock_toTemperedDistributionCLM_eq,
-    Lp.toTemperedDistribution_toLp_eq]
-
-/-- Almost everywhere, the `j`-th block of `f` in `B^s_{p,q}` is the Schwartz function
-`𝓕⁻ (ψⱼ • 𝓕 f)`. -/
-theorem coeFn_block_toBesovSpaceCLM (f : 𝓢(E, F)) (j : ℕ) :
-    (f.toBesovSpaceCLM φ s p q).block j =ᵐ[volume]
-      fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f := by
-  rw [block_toBesovSpaceCLM]
-  exact coeFn_toLp _ p volume
 
 @[simp]
 theorem inclusion_toBesovSpaceCLM {s' : ℝ} {q' : ℝ≥0∞} [Fact (1 ≤ q')] (hs : s' ≤ s)
     (hq : q ≤ q') (f : 𝓢(E, F)) :
-    TauCeti.BesovSpace.inclusion F φ p hs hq (f.toBesovSpaceCLM φ s p q) =
-      f.toBesovSpaceCLM φ s' p q' :=
+    TauCeti.BesovSpace.inclusion F φ p hs hq (toBesovSpaceCLM F φ s p q f) =
+      toBesovSpaceCLM F φ s' p q' f :=
   TauCeti.BesovSpace.ext (by simp)
 
 @[simp]
 theorem inclusionOfLT_toBesovSpaceCLM {s' : ℝ} {q' : ℝ≥0∞} [Fact (1 ≤ q')] (hs : s' < s)
     (f : 𝓢(E, F)) :
-    TauCeti.BesovSpace.inclusionOfLT F φ p q q' hs (f.toBesovSpaceCLM φ s p q) =
-      f.toBesovSpaceCLM φ s' p q' :=
+    TauCeti.BesovSpace.inclusionOfLT F φ p q q' hs (toBesovSpaceCLM F φ s p q f) =
+      toBesovSpaceCLM F φ s' p q' f :=
   TauCeti.BesovSpace.ext (by simp)
 
 @[simp]
 theorem bumpEquiv_toBesovSpaceCLM (φ' : ContDiffBump (0 : E)) (f : 𝓢(E, F)) :
-    TauCeti.BesovSpace.bumpEquiv F φ φ' s p q (f.toBesovSpaceCLM φ s p q) =
-      f.toBesovSpaceCLM φ' s p q :=
+    TauCeti.BesovSpace.bumpEquiv F φ φ' s p q (toBesovSpaceCLM F φ s p q f) =
+      toBesovSpaceCLM F φ' s p q f :=
   TauCeti.BesovSpace.ext (by simp)
 
 /-- On Schwartz functions, `TauCeti.BesovSpace.postcomp` is post-composition of Schwartz maps. -/
 theorem toBesovSpaceCLM_postcompCLM (L : F →L[ℂ] G) (f : 𝓢(E, F)) :
-    toBesovSpaceCLM φ s p q (f.postcompCLM L) =
-      TauCeti.BesovSpace.postcomp φ s p q L (f.toBesovSpaceCLM φ s p q) := by
+    toBesovSpaceCLM G φ s p q (f.postcompCLM L) =
+      TauCeti.BesovSpace.postcomp φ s p q L (toBesovSpaceCLM F φ s p q f) := by
   refine TauCeti.BesovSpace.ext ?_
   ext ψ
   rw [toDistr_toBesovSpaceCLM, TauCeti.BesovSpace.toDistr_postcomp_apply,
@@ -156,12 +117,12 @@ theorem toBesovSpaceCLM_postcompCLM (L : F →L[ℂ] G) (f : 𝓢(E, F)) :
 @[simp]
 theorem toBesovSpace_toBesselPotentialSpaceCLM (f : 𝓢(E, F)) :
     BesselPotentialSpace.toBesovSpace φ (f.toBesselPotentialSpaceCLM s p) =
-      f.toBesovSpaceCLM φ s p ∞ :=
+      toBesovSpaceCLM F φ s p ∞ f :=
   TauCeti.BesovSpace.ext (by simp)
 
 @[simp]
 theorem toBesselPotentialSpace_toBesovSpaceCLM (f : 𝓢(E, F)) :
-    (f.toBesovSpaceCLM φ s p 1).toBesselPotentialSpace = f.toBesselPotentialSpaceCLM s p :=
+    (toBesovSpaceCLM F φ s p 1 f).toBesselPotentialSpace = f.toBesselPotentialSpaceCLM s p :=
   BesselPotentialSpace.ext (by simp)
 
 end SchwartzMap
@@ -169,6 +130,16 @@ end SchwartzMap
 namespace TauCeti.BesovSpace
 
 open TemperedDistribution
+
+/-- Almost everywhere, the `j`-th block of `f` in `B^s_{p,q}` is the Schwartz function
+`𝓕⁻ (ψⱼ • 𝓕 f)`. -/
+theorem coeFn_block_toBesovSpaceCLM {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞}
+    [Fact (1 ≤ p)] [Fact (1 ≤ q)] (f : 𝓢(E, F)) (j : ℕ) :
+    (SchwartzMap.toBesovSpaceCLM F φ s p q f).block j =ᵐ[volume]
+      SchwartzMap.fourierMultiplierCLM F
+        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f := by
+  rw [block_toBesovSpaceCLM]
+  exact SchwartzMap.coeFn_toLp _ p volume
 
 section PartialSum
 
@@ -396,8 +367,7 @@ theorem tendsto_partialSumCLM (hq : q ≠ ∞) (u : BesovSpace F φ s p q) :
 
 omit [Fact (1 ≤ q)] in
 /-- **Dyadic partial sums converge in `B^s_{p,∞}` when the weighted block norms vanish at
-infinity.** The converse holds as well; see
-`TauCeti.BesovSpace.mem_littleBesov_iff_tendsto_partialSumCLM`. -/
+infinity.** For the equivalence, see `TauCeti.BesovSpace.tendsto_partialSumCLM_top_iff`. -/
 theorem tendsto_partialSumCLM_top_of_tendsto {u : BesovSpace F φ s p ∞}
     (hu : Tendsto (fun j : ℕ ↦ (2 : ℝ) ^ (s * j) * ‖u.block j‖) atTop (𝓝 0)) :
     Tendsto (fun N ↦ partialSumCLM F φ s p ∞ N u) atTop (𝓝 u) := by
@@ -422,6 +392,35 @@ theorem tendsto_partialSumCLM_top_of_tendsto {u : BesovSpace F φ s p ∞}
   rw [norm_sub_rev]
   exact hC N u
 
+omit [Fact (1 ≤ q)] in
+/-- **Characterization of partial-sum convergence at `q = ∞`.** For every `1 ≤ p ≤ ∞` and
+`u ∈ B^s_{p,∞}(E, F)`, `S_N u → u` in `B^s_{p,∞}(E, F)` if and only if `2^{js} ‖Δⱼ u‖_p → 0` as
+`j → ∞`. -/
+theorem tendsto_partialSumCLM_top_iff {u : BesovSpace F φ s p ∞} :
+    Tendsto (fun N ↦ partialSumCLM F φ s p ∞ N u) atTop (𝓝 u) ↔
+      Tendsto (fun j : ℕ ↦ (2 : ℝ) ^ (s * j) * ‖u.block j‖) atTop (𝓝 0) := by
+  refine ⟨fun ht ↦ Metric.tendsto_atTop.2 fun ε hε ↦ ?_, tendsto_partialSumCLM_top_of_tendsto⟩
+  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 ht (ε / 2) (half_pos hε)
+  set v : BesovSpace F φ s p 1 := (memBesov_toDistr_partialSumCLM s 1 N u).toBesovSpace
+  have hv_eq : inclusion F φ p le_rfl le_top v = partialSumCLM F φ s p ∞ N u := ext (by simp [v])
+  have hdecay : Tendsto (fun j : ℕ ↦ (2 : ℝ) ^ (s * j) *
+      ‖(partialSumCLM F φ s p ∞ N u).block j‖) atTop (𝓝 0) := by
+    simpa only [← hv_eq, block_inclusion] using tendsto_rpow_mul_norm_block ENNReal.one_ne_top v
+  obtain ⟨J, hJ⟩ := Metric.tendsto_atTop.1 hdecay (ε / 2) (half_pos hε)
+  refine ⟨J, fun j hj ↦ ?_⟩
+  have hNu := hN N le_rfl
+  rw [dist_comm, dist_eq_norm] at hNu
+  have hvj := hJ j hj
+  rw [Real.dist_0_eq_abs, abs_of_nonneg (by positivity)] at hvj ⊢
+  have hsub := rpow_mul_norm_block_le (u - partialSumCLM F φ s p ∞ N u) j
+  rw [block_sub] at hsub
+  calc (2 : ℝ) ^ (s * j) * ‖u.block j‖
+      ≤ 2 ^ (s * j) * ‖u.block j - (partialSumCLM F φ s p ∞ N u).block j‖ +
+          2 ^ (s * j) * ‖(partialSumCLM F φ s p ∞ N u).block j‖ := by
+        rw [← mul_add]; gcongr; exact norm_le_norm_sub_add _ _
+    _ < ε / 2 + ε / 2 := add_lt_add_of_le_of_lt (hsub.trans hNu.le) hvj
+    _ = ε := add_halves ε
+
 end PartialSum
 
 section Density
@@ -433,7 +432,8 @@ lies in the `B^s_{p,q}`-norm closure of `𝓢(E, F)`: it lifts to `H^{s+1,p}(E, 
 functions are dense. -/
 theorem partialSumCLM_mem_closure_range_toBesovSpaceCLM (hp : p ≠ ∞) (N : ℕ)
     (u : BesovSpace F φ s p q) :
-    partialSumCLM F φ s p q N u ∈ closure (Set.range (SchwartzMap.toBesovSpaceCLM φ s p q)) := by
+    partialSumCLM F φ s p q N u ∈
+      closure (Set.range (SchwartzMap.toBesovSpaceCLM F φ s p q)) := by
   let v : BesovSpace F φ (s + 1) p 1 :=
     (memBesov_toDistr_partialSumCLM (s + 1) 1 N u).toBesovSpace
   let w : H^{s + 1, p}(E, F) := v.toBesselPotentialSpace
@@ -443,29 +443,32 @@ theorem partialSumCLM_mem_closure_range_toBesovSpaceCLM (hp : p ≠ ∞) (N : �
   have hw : w ∈ closure (Set.range (SchwartzMap.toBesselPotentialSpaceCLM (s + 1) p)) :=
     SchwartzMap.denseRange_toBesselPotentialSpaceCLM (s + 1) hp w
   rw [← hTw]
+  have hcomp : ⇑T ∘ ⇑(SchwartzMap.toBesselPotentialSpaceCLM (s + 1) p) =
+      ⇑(SchwartzMap.toBesovSpaceCLM F φ s p q) :=
+    funext fun f ↦ by simp [T]
   have himg := image_closure_subset_closure_image T.continuous (Set.mem_image_of_mem T hw)
-  rwa [← Set.range_comp] at himg
+  rwa [← Set.range_comp, hcomp] at himg
 
 /-- Compactly supported smooth functions and Schwartz functions have the same norm closure in every
 Besov space `B^s_{p,q}(E, F)` (`1 ≤ p, q ≤ ∞`), because compactly supported functions are dense in
 `𝓢(E, F)` and `SchwartzMap.toBesovSpaceCLM` is continuous. -/
 theorem closure_image_toBesovSpaceCLM_hasCompactSupport :
-    closure (SchwartzMap.toBesovSpaceCLM φ s p q ''
+    closure (SchwartzMap.toBesovSpaceCLM F φ s p q ''
         {f : 𝓢(E, F) | HasCompactSupport (f : E → F)}) =
-      closure (Set.range (SchwartzMap.toBesovSpaceCLM φ s p q)) := by
+      closure (Set.range (SchwartzMap.toBesovSpaceCLM F φ s p q)) := by
   refine Set.Subset.antisymm (closure_mono (Set.image_subset_range _ _)) ?_
   refine closure_minimal ?_ isClosed_closure
   rintro _ ⟨f, rfl⟩
   have hf : f ∈ closure {g : 𝓢(E, F) | HasCompactSupport (g : E → F)} :=
     SchwartzMap.dense_hasCompactSupport f
-  exact image_closure_subset_closure_image (SchwartzMap.toBesovSpaceCLM φ s p q).continuous
+  exact image_closure_subset_closure_image (SchwartzMap.toBesovSpaceCLM F φ s p q).continuous
     (Set.mem_image_of_mem _ hf)
 
 /-- **Schwartz functions are dense in `B^s_{p,q}(E, F)`** for `1 ≤ p < ∞` and `1 ≤ q < ∞`
 (Bergh–Löfström, Theorem 6.2.4 / Triebel, Section 2.3.2). -/
 theorem _root_.SchwartzMap.denseRange_toBesovSpaceCLM (φ : ContDiffBump (0 : E)) (s : ℝ)
     {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] (hp : p ≠ ∞) (hq : q ≠ ∞) :
-    DenseRange (SchwartzMap.toBesovSpaceCLM (E := E) (F := F) φ s p q) := fun u ↦
+    DenseRange (SchwartzMap.toBesovSpaceCLM (E := E) F φ s p q) := fun u ↦
   isClosed_closure.mem_of_tendsto (tendsto_partialSumCLM hq u)
     (Eventually.of_forall fun N ↦ partialSumCLM_mem_closure_range_toBesovSpaceCLM hp N u)
 
@@ -474,7 +477,7 @@ theorem _root_.SchwartzMap.denseRange_toBesovSpaceCLM (φ : ContDiffBump (0 : E)
 theorem _root_.SchwartzMap.dense_image_toBesovSpaceCLM_hasCompactSupport
     (φ : ContDiffBump (0 : E)) (s : ℝ) {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
     (hp : p ≠ ∞) (hq : q ≠ ∞) :
-    Dense (SchwartzMap.toBesovSpaceCLM φ s p q ''
+    Dense (SchwartzMap.toBesovSpaceCLM F φ s p q ''
       {f : 𝓢(E, F) | HasCompactSupport (f : E → F)}) := by
   rw [dense_iff_closure_eq, closure_image_toBesovSpaceCLM_hasCompactSupport,
     ← dense_iff_closure_eq]
@@ -485,7 +488,7 @@ functions. -/
 theorem exists_hasCompactSupport_norm_sub_lt (hp : p ≠ ∞) (hq : q ≠ ∞)
     (u : BesovSpace F φ s p q) {ε : ℝ} (hε : 0 < ε) :
     ∃ f : 𝓢(E, F), HasCompactSupport (f : E → F) ∧
-      ‖u - f.toBesovSpaceCLM φ s p q‖ < ε := by
+      ‖u - SchwartzMap.toBesovSpaceCLM F φ s p q f‖ < ε := by
   obtain ⟨_, ⟨f, hf, rfl⟩, hdist⟩ := Metric.mem_closure_iff.1
     ((SchwartzMap.dense_image_toBesovSpaceCLM_hasCompactSupport φ s hp hq) u) ε hε
   exact ⟨f, hf, by rwa [dist_eq_norm] at hdist⟩
@@ -496,7 +499,8 @@ theorem continuousLinearMap_ext_hasCompactSupport {R : Type*} [Semiring R] {σ :
     {Z : Type*} [AddCommMonoid Z] [Module R Z] [TopologicalSpace Z] [T2Space Z]
     (hp : p ≠ ∞) (hq : q ≠ ∞) {T T' : BesovSpace F φ s p q →SL[σ] Z}
     (h : ∀ f : 𝓢(E, F), HasCompactSupport (f : E → F) →
-      T (f.toBesovSpaceCLM φ s p q) = T' (f.toBesovSpaceCLM φ s p q)) :
+      T (SchwartzMap.toBesovSpaceCLM F φ s p q f) =
+        T' (SchwartzMap.toBesovSpaceCLM F φ s p q f)) :
     T = T' := by
   refine ContinuousLinearMap.ext fun u ↦ ?_
   refine (SchwartzMap.dense_image_toBesovSpaceCLM_hasCompactSupport φ s hp hq).induction ?_
@@ -509,7 +513,8 @@ determined by their values on Schwartz functions. -/
 theorem continuousLinearMap_ext {R : Type*} [Semiring R] {σ : ℂ →+* R}
     {Z : Type*} [AddCommMonoid Z] [Module R Z] [TopologicalSpace Z] [T2Space Z]
     (hp : p ≠ ∞) (hq : q ≠ ∞) {T T' : BesovSpace F φ s p q →SL[σ] Z}
-    (h : ∀ f : 𝓢(E, F), T (f.toBesovSpaceCLM φ s p q) = T' (f.toBesovSpaceCLM φ s p q)) :
+    (h : ∀ f : 𝓢(E, F), T (SchwartzMap.toBesovSpaceCLM F φ s p q f) =
+      T' (SchwartzMap.toBesovSpaceCLM F φ s p q f)) :
     T = T' :=
   continuousLinearMap_ext_hasCompactSupport hp hq fun f _ ↦ h f
 

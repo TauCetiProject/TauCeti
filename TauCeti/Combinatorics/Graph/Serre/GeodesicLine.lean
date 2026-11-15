@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Convex
+public import TauCeti.Combinatorics.Graph.Serre.Convex.Basic
 public import TauCeti.Combinatorics.Graph.Serre.Dist
 
 /-!
