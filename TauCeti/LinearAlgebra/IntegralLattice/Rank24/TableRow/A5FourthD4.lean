@@ -44,10 +44,12 @@ this action to an order-`3` self-isometry
   `a5FourthD4.lattice` rotating the three marked `A₅` components and acting by `typeD4Triality` on
   the `D₄` component, with componentwise evaluation lemmas and
   `orderOf_a5FourthD4BlockTrialityIsometry`.
-* `TauCeti.RootfulNiemeierType.a5FourthD4CyclicSymmetryHom`,
-  `TauCeti.RootfulNiemeierType.a5FourthD4PatternIsometryHom`: the resulting faithful action of
-  `(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries` and action of `p.symmetries` for every
-  `p ∈ a5FourthD4.gluePatterns` on `a5FourthD4.lattice`.
+* `TauCeti.RootfulNiemeierType.a5FourthD4CyclicSymmetryGen`,
+  `TauCeti.RootfulNiemeierType.a5FourthD4CyclicSymmetryHom`,
+  `TauCeti.RootfulNiemeierType.a5FourthD4PatternIsometryHom`: the order-`3` generator of
+  `(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries` (`zpowers_a5FourthD4CyclicSymmetryGen`,
+  `orderOf_a5FourthD4CyclicSymmetryGen`), its resulting faithful action on `a5FourthD4.lattice`,
+  and the action of `p.symmetries` for every `p ∈ a5FourthD4.gluePatterns`.
 
 ## References
 
@@ -88,37 +90,8 @@ theorem componentType_a5FourthD4_four : a5FourthD4.componentType 4 = D 4 :=
 /-- **The block rotation of `A₅⁴ D₄`**: the coordinate permutation of the five component positions
 indicated by `[2(024)0]`, fixing position `0` and the `D₄` position `4` while cycling the three
 marked `A₅` positions `1 ↦ 2 ↦ 3 ↦ 1`. -/
-@[expose] def a5FourthD4BlockPerm : Equiv.Perm (Fin a5FourthD4.components.length) :=
+def a5FourthD4BlockPerm : Equiv.Perm (Fin a5FourthD4.components.length) :=
   Equiv.swap 1 3 * Equiv.swap 1 2
-
-/-- `a5FourthD4BlockPerm` agrees with the block-rotation generator of
-`(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries`. -/
-theorem a5FourthD4BlockPerm_eq_finSumPerm :
-    (a5FourthD4BlockPerm : Equiv.Perm (Fin 5)) =
-      Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm (1 : Equiv.Perm (Fin 1)) (finRotate 3))
-        (1 : Equiv.Perm (Fin 1)) := by
-  let g := Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm (1 : Equiv.Perm (Fin 1)) (finRotate 3))
-    (1 : Equiv.Perm (Fin 1))
-  have h0 : g (Fin.castAdd 1 (Fin.castAdd 3 0)) = 0 := by
-    rw [Equiv.Perm.finSumPerm_apply_castAdd, Equiv.Perm.finSumPerm_apply_castAdd]; decide
-  have h1 : g (Fin.castAdd 1 (Fin.natAdd 1 0)) = 2 := by
-    rw [Equiv.Perm.finSumPerm_apply_castAdd, Equiv.Perm.finSumPerm_apply_natAdd]; decide
-  have h2 : g (Fin.castAdd 1 (Fin.natAdd 1 1)) = 3 := by
-    rw [Equiv.Perm.finSumPerm_apply_castAdd, Equiv.Perm.finSumPerm_apply_natAdd]; decide
-  have h3 : g (Fin.castAdd 1 (Fin.natAdd 1 2)) = 1 := by
-    rw [Equiv.Perm.finSumPerm_apply_castAdd, Equiv.Perm.finSumPerm_apply_natAdd]; decide
-  have h4 : g (Fin.natAdd 4 0) = 4 := by
-    rw [Equiv.Perm.finSumPerm_apply_natAdd]; decide
-  let s : Equiv.Perm (Fin 5) := Equiv.swap 1 3 * Equiv.swap 1 2
-  have heq : s = g := by
-    refine Equiv.ext fun i ↦ ?_
-    fin_cases i
-    · exact (by decide : s 0 = 0).trans h0.symm
-    · exact (by decide : s 1 = 2).trans h1.symm
-    · exact (by decide : s 2 = 3).trans h2.symm
-    · exact (by decide : s 3 = 1).trans h3.symm
-    · exact (by decide : s 4 = 4).trans h4.symm
-  exact heq
 
 /-- `a5FourthD4BlockPerm` fixes position `0`. -/
 @[simp] theorem a5FourthD4BlockPerm_apply_zero : a5FourthD4BlockPerm 0 = 0 := by decide
@@ -151,49 +124,83 @@ theorem a5FourthD4BlockPerm_pow_three : a5FourthD4BlockPerm ^ 3 = 1 := by decide
 theorem orderOf_a5FourthD4BlockPerm : orderOf a5FourthD4BlockPerm = 3 :=
   orderOf_eq_prime a5FourthD4BlockPerm_pow_three (by decide)
 
-private theorem eq_of_fin_components_a5FourthD4 (k : Fin a5FourthD4.components.length) :
-    k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 := by
-  have hk : k.val < 5 := k.isLt.trans_eq length_components_a5FourthD4
-  interval_cases h : k.val
-  · exact Or.inl (Fin.ext (by simpa [length_components_a5FourthD4] using h))
-  · exact Or.inr (Or.inl (Fin.ext (by simpa [length_components_a5FourthD4] using h)))
-  · exact Or.inr (Or.inr (Or.inl (Fin.ext (by simpa [length_components_a5FourthD4] using h))))
-  · exact Or.inr (Or.inr (Or.inr (Or.inl
-      (Fin.ext (by simpa [length_components_a5FourthD4] using h)))))
-  · exact Or.inr (Or.inr (Or.inr (Or.inr
-      (Fin.ext (by simpa [length_components_a5FourthD4] using h)))))
+/-- The cyclic pattern `[2(024)0]` of `A₅⁴ D₄` has one position per component of the row. -/
+theorem length_cyclic_a5FourthD4 :
+    (GluePattern.cyclic [2] [0, 2, 4] [0]).length = a5FourthD4.components.length :=
+  length_eq_of_mem_gluePatterns (by simp [gluePatterns])
+
+/-- `a5FourthD4BlockPerm` agrees, along `finCongr length_cyclic_a5FourthD4`, with the
+block-rotation generator of `(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries`. -/
+theorem a5FourthD4BlockPerm_eq_finSumPerm :
+    a5FourthD4BlockPerm =
+      (finCongr length_cyclic_a5FourthD4).permCongr
+        (Equiv.Perm.finSumPerm
+          (Equiv.Perm.finSumPerm (1 : Equiv.Perm (Fin [2].length)) (finRotate [0, 2, 4].length))
+          (1 : Equiv.Perm (Fin [0].length))) := by
+  let e := finCongr length_cyclic_a5FourthD4
+  let g := Equiv.Perm.finSumPerm
+    (Equiv.Perm.finSumPerm (1 : Equiv.Perm (Fin [2].length)) (finRotate [0, 2, 4].length))
+    (1 : Equiv.Perm (Fin [0].length))
+  have h0 : (g (Fin.castAdd [0].length (Fin.castAdd [0, 2, 4].length ⟨0, by decide⟩))).val = 0 := by
+    rw [Equiv.Perm.finSumPerm_apply_castAdd, Equiv.Perm.finSumPerm_apply_castAdd]; decide
+  have h1 : (g (Fin.castAdd [0].length (Fin.natAdd [2].length ⟨0, by decide⟩))).val = 2 := by
+    rw [Equiv.Perm.finSumPerm_apply_castAdd, Equiv.Perm.finSumPerm_apply_natAdd]; decide
+  have h2 : (g (Fin.castAdd [0].length (Fin.natAdd [2].length ⟨1, by decide⟩))).val = 3 := by
+    rw [Equiv.Perm.finSumPerm_apply_castAdd, Equiv.Perm.finSumPerm_apply_natAdd]; decide
+  have h3 : (g (Fin.castAdd [0].length (Fin.natAdd [2].length ⟨2, by decide⟩))).val = 1 := by
+    rw [Equiv.Perm.finSumPerm_apply_castAdd, Equiv.Perm.finSumPerm_apply_natAdd]; decide
+  have h4 : (g (Fin.natAdd ([2].length + [0, 2, 4].length) ⟨0, by decide⟩)).val = 4 := by
+    rw [Equiv.Perm.finSumPerm_apply_natAdd]; decide
+  have hrhs (k : Fin a5FourthD4.components.length) :
+      (e.permCongr g k).val = (g (e.symm k)).val := rfl
+  refine Equiv.ext fun k ↦ Fin.ext (Eq.trans ?_ (hrhs k).symm)
+  fin_cases k
+  · have hk : e.symm 0 = Fin.castAdd [0].length (Fin.castAdd [0, 2, 4].length ⟨0, by decide⟩) :=
+      Fin.ext (by decide)
+    exact (congrArg Fin.val a5FourthD4BlockPerm_apply_zero).trans
+      ((by decide : (0 : Fin a5FourthD4.components.length).val = 0).trans
+        ((congrArg (fun x ↦ (g x).val) hk).trans h0).symm)
+  · have hk : e.symm 1 = Fin.castAdd [0].length (Fin.natAdd [2].length ⟨0, by decide⟩) :=
+      Fin.ext (by decide)
+    exact (congrArg Fin.val a5FourthD4BlockPerm_apply_one).trans
+      ((by decide : (2 : Fin a5FourthD4.components.length).val = 2).trans
+        ((congrArg (fun x ↦ (g x).val) hk).trans h1).symm)
+  · have hk : e.symm 2 = Fin.castAdd [0].length (Fin.natAdd [2].length ⟨1, by decide⟩) :=
+      Fin.ext (by decide)
+    exact (congrArg Fin.val a5FourthD4BlockPerm_apply_two).trans
+      ((by decide : (3 : Fin a5FourthD4.components.length).val = 3).trans
+        ((congrArg (fun x ↦ (g x).val) hk).trans h2).symm)
+  · have hk : e.symm 3 = Fin.castAdd [0].length (Fin.natAdd [2].length ⟨2, by decide⟩) :=
+      Fin.ext (by decide)
+    exact (congrArg Fin.val a5FourthD4BlockPerm_apply_three).trans
+      ((by decide : (1 : Fin a5FourthD4.components.length).val = 1).trans
+        ((congrArg (fun x ↦ (g x).val) hk).trans h3).symm)
+  · have hk : e.symm 4 = Fin.natAdd ([2].length + [0, 2, 4].length) ⟨0, by decide⟩ :=
+      Fin.ext (by decide)
+    exact (congrArg Fin.val a5FourthD4BlockPerm_apply_four).trans
+      ((by decide : (4 : Fin a5FourthD4.components.length).val = 4).trans
+        ((congrArg (fun x ↦ (g x).val) hk).trans h4).symm)
 
 /-- `a5FourthD4BlockPerm` preserves the component Dynkin types of `A₅⁴ D₄`. -/
 theorem componentType_a5FourthD4_a5FourthD4BlockPerm (k : Fin a5FourthD4.components.length) :
     a5FourthD4.componentType (a5FourthD4BlockPerm k) = a5FourthD4.componentType k := by
-  rcases eq_of_fin_components_a5FourthD4 k with rfl | rfl | rfl | rfl | rfl
-  · rw [a5FourthD4BlockPerm_apply_zero]
-  · rw [a5FourthD4BlockPerm_apply_one,
-      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4]),
-      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4])]
-  · rw [a5FourthD4BlockPerm_apply_two,
-      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4]),
-      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4])]
-  · rw [a5FourthD4BlockPerm_apply_three,
-      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4]),
-      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4])]
-  · rw [a5FourthD4BlockPerm_apply_four]
+  fin_cases k
+  · exact congrArg a5FourthD4.componentType a5FourthD4BlockPerm_apply_zero
+  · exact (congrArg a5FourthD4.componentType a5FourthD4BlockPerm_apply_one).trans
+      ((componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4])).trans
+        (componentType_a5FourthD4_of_lt (by simp)).symm)
+  · exact (congrArg a5FourthD4.componentType a5FourthD4BlockPerm_apply_two).trans
+      ((componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4])).trans
+        (componentType_a5FourthD4_of_lt (by simp)).symm)
+  · exact (congrArg a5FourthD4.componentType a5FourthD4BlockPerm_apply_three).trans
+      ((componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4])).trans
+        (componentType_a5FourthD4_of_lt (by simp)).symm)
+  · exact congrArg a5FourthD4.componentType a5FourthD4BlockPerm_apply_four
 
 /-- `a5FourthD4BlockPerm⁻¹` preserves the component Dynkin types of `A₅⁴ D₄`. -/
 theorem componentType_a5FourthD4_a5FourthD4BlockPerm_inv (k : Fin a5FourthD4.components.length) :
     a5FourthD4.componentType (a5FourthD4BlockPerm⁻¹ k) = a5FourthD4.componentType k := by
-  rcases eq_of_fin_components_a5FourthD4 k with rfl | rfl | rfl | rfl | rfl
-  · rw [a5FourthD4BlockPerm_inv_apply_zero]
-  · rw [a5FourthD4BlockPerm_inv_apply_one,
-      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4]),
-      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4])]
-  · rw [a5FourthD4BlockPerm_inv_apply_two,
-      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4]),
-      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4])]
-  · rw [a5FourthD4BlockPerm_inv_apply_three,
-      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4]),
-      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4])]
-  · rw [a5FourthD4BlockPerm_inv_apply_four]
+  simpa using (componentType_a5FourthD4_a5FourthD4BlockPerm (a5FourthD4BlockPerm⁻¹ k)).symm
 
 /-! ### Action of block rotation plus `D₄` triality on glue words -/
 
@@ -375,18 +382,17 @@ private def a5FourthD4BlockTrialityDigits (l : List ℕ) : List ℕ :=
     | 3 => 1
     | d => d]
 
-private theorem ofFn_fin_components_a5FourthD4 {α : Type*}
+/-- `List.ofFn` over the five component indices of `A₅⁴ D₄` lists the five values in order. -/
+theorem ofFn_fin_components_a5FourthD4 {α : Type*}
     (h : Fin a5FourthD4.components.length → α) :
     List.ofFn h = [h 0, h 1, h 2, h 3, h 4] := by
-  refine List.ext_getElem (by simp [length_components_a5FourthD4]) fun i hi₁ hi₂ ↦ ?_
-  rw [List.getElem_ofFn]
-  simp only [List.length_cons, List.length_nil] at hi₂
-  interval_cases i
-  · exact congrArg h (Fin.ext (by simp [length_components_a5FourthD4]))
-  · exact congrArg h (Fin.ext (by simp [length_components_a5FourthD4]))
-  · exact congrArg h (Fin.ext (by simp [length_components_a5FourthD4]))
-  · exact congrArg h (Fin.ext (by simp [length_components_a5FourthD4]))
-  · exact congrArg h (Fin.ext (by simp [length_components_a5FourthD4]))
+  rw [List.ofFn_congr length_components_a5FourthD4]
+  simp only [List.ofFn_succ, List.ofFn_zero, List.cons.injEq, and_true]
+  exact ⟨congrArg h (Fin.ext (by simp [length_components_a5FourthD4])),
+    congrArg h (Fin.ext (by simp [length_components_a5FourthD4])),
+    congrArg h (Fin.ext (by simp [length_components_a5FourthD4])),
+    congrArg h (Fin.ext (by simp [length_components_a5FourthD4])),
+    congrArg h (Fin.ext (by simp [length_components_a5FourthD4]))⟩
 
 private theorem encodeGlueWord_a5FourthD4BlockTrialityGlueEquiv (w : a5FourthD4.glueModule) :
     encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
@@ -454,24 +460,13 @@ theorem a5FourthD4BlockTrialityGlueEquiv_mem_glueGenerators {w : a5FourthD4.glue
 @[simp]
 theorem a5FourthD4BlockTrialityGlueEquiv_mem_glueSubgroup_iff (w : a5FourthD4.glueModule) :
     a5FourthD4BlockTrialityGlueEquiv w ∈ a5FourthD4.glueSubgroup ↔ w ∈ a5FourthD4.glueSubgroup := by
-  have hpre : a5FourthD4BlockTrialityGlueEquiv ⁻¹' a5FourthD4.glueGenerators =
-      a5FourthD4.glueGenerators := by
-    ext v
-    refine ⟨fun hv ↦ ?_, fun hv ↦ a5FourthD4BlockTrialityGlueEquiv_mem_glueGenerators hv⟩
-    have hv3 := a5FourthD4BlockTrialityGlueEquiv_mem_glueGenerators
-      (a5FourthD4BlockTrialityGlueEquiv_mem_glueGenerators hv)
-    rwa [a5FourthD4BlockTrialityGlueEquiv_apply_apply_apply] at hv3
-  have hmap : a5FourthD4.glueSubgroup.map
-      (a5FourthD4BlockTrialityGlueEquiv : a5FourthD4.glueModule →+ a5FourthD4.glueModule) =
-        a5FourthD4.glueSubgroup := by
-    rw [glueSubgroup_def, AddMonoidHom.map_closure, AddMonoidHom.coe_ofClass]
-    exact congrArg AddSubgroup.closure ((congrArg _ hpre.symm).trans
-      (Set.image_preimage_eq _ (EquivLike.surjective a5FourthD4BlockTrialityGlueEquiv)))
-  have h := AddSubgroup.mem_map_iff_mem
-    (f := (a5FourthD4BlockTrialityGlueEquiv : a5FourthD4.glueModule →+ a5FourthD4.glueModule))
-    (by rw [AddMonoidHom.coe_ofClass]; exact EquivLike.injective a5FourthD4BlockTrialityGlueEquiv)
-    (K := a5FourthD4.glueSubgroup) (x := w)
-  rwa [hmap, AddMonoidHom.coe_ofClass] at h
+  refine a5FourthD4.apply_mem_glueSubgroup_iff_of_preimage_glueGenerators
+    a5FourthD4BlockTrialityGlueEquiv ?_ w
+  ext v
+  refine ⟨fun hv ↦ ?_, fun hv ↦ a5FourthD4BlockTrialityGlueEquiv_mem_glueGenerators hv⟩
+  have hv3 := a5FourthD4BlockTrialityGlueEquiv_mem_glueGenerators
+    (a5FourthD4BlockTrialityGlueEquiv_mem_glueGenerators hv)
+  rwa [a5FourthD4BlockTrialityGlueEquiv_apply_apply_apply] at hv3
 
 /-! ### The lifted self-isometry of `a5FourthD4.lattice` -/
 
@@ -640,21 +635,29 @@ theorem a5FourthD4BlockTrialityIsometry_pow_three :
     a5FourthD4BlockTrialityIsometry ^ 3 = 1 := by
   refine Isometry.ext fun x ↦ funext fun k ↦ ?_
   simp only [pow_three, Isometry.mul_apply, Isometry.one_apply]
-  rcases eq_of_fin_components_a5FourthD4 k with rfl | rfl | rfl | rfl | rfl
-  · rw [a5FourthD4BlockTrialityIsometry_apply_zero, a5FourthD4BlockTrialityIsometry_apply_zero,
-      a5FourthD4BlockTrialityIsometry_apply_zero]
-  · rw [a5FourthD4BlockTrialityIsometry_apply_one, a5FourthD4BlockTrialityIsometry_apply_three,
-      a5FourthD4BlockTrialityIsometry_apply_two]
-  · rw [a5FourthD4BlockTrialityIsometry_apply_two, a5FourthD4BlockTrialityIsometry_apply_one,
-      a5FourthD4BlockTrialityIsometry_apply_three]
-  · rw [a5FourthD4BlockTrialityIsometry_apply_three, a5FourthD4BlockTrialityIsometry_apply_two,
-      a5FourthD4BlockTrialityIsometry_apply_one]
-  · simp only [a5FourthD4BlockTrialityIsometry_apply_four]
-    have htri (ht : (D 4).IsSimplyLaced) (y : Fin (D 4).rank → ℚ) :
+  fin_cases k
+  · exact (a5FourthD4BlockTrialityIsometry_apply_zero _).trans
+      ((a5FourthD4BlockTrialityIsometry_apply_zero _).trans
+        (a5FourthD4BlockTrialityIsometry_apply_zero x))
+  · exact (a5FourthD4BlockTrialityIsometry_apply_one _).trans
+      ((a5FourthD4BlockTrialityIsometry_apply_three _).trans
+        (a5FourthD4BlockTrialityIsometry_apply_two x))
+  · exact (a5FourthD4BlockTrialityIsometry_apply_two _).trans
+      ((a5FourthD4BlockTrialityIsometry_apply_one _).trans
+        (a5FourthD4BlockTrialityIsometry_apply_three x))
+  · exact (a5FourthD4BlockTrialityIsometry_apply_three _).trans
+      ((a5FourthD4BlockTrialityIsometry_apply_two _).trans
+        (a5FourthD4BlockTrialityIsometry_apply_one x))
+  · have htri (ht : (D 4).IsSimplyLaced) (y : Fin (D 4).rank → ℚ) :
         typeD4Triality ht (typeD4Triality ht (typeD4Triality ht y)) = y := by
       have h := congrArg (fun f ↦ f y) (typeD4Triality_pow_three ht)
       simpa only [pow_three, Isometry.mul_apply, Isometry.one_apply] using h
-    exact htri (a5FourthD4.isSimplyLaced_componentType 4) (x 4)
+    exact (a5FourthD4BlockTrialityIsometry_apply_four _).trans <|
+      (congrArg (typeD4Triality (a5FourthD4.isSimplyLaced_componentType 4))
+        ((a5FourthD4BlockTrialityIsometry_apply_four _).trans
+          (congrArg (typeD4Triality (a5FourthD4.isSimplyLaced_componentType 4))
+            (a5FourthD4BlockTrialityIsometry_apply_four x)))).trans
+      (htri (a5FourthD4.isSimplyLaced_componentType 4) (x 4))
 
 /-- `a5FourthD4BlockTrialityIsometry` moves the second `A₅` component, so it is not the identity. -/
 theorem a5FourthD4BlockTrialityIsometry_ne_one :
@@ -680,36 +683,61 @@ theorem orderOf_a5FourthD4BlockTrialityIsometry :
 private theorem symmetries_a5FourthD4Cyclic :
     (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries =
       Subgroup.zpowers
-        (a5FourthD4BlockPerm :
-          Equiv.Perm (Fin (GluePattern.cyclic [2] [0, 2, 4] [0]).length)) := by
+        ((finCongr length_cyclic_a5FourthD4).symm.permCongr a5FourthD4BlockPerm) := by
   rw [GluePattern.symmetries_cyclic]
-  exact congrArg Subgroup.zpowers a5FourthD4BlockPerm_eq_finSumPerm.symm
+  exact congrArg Subgroup.zpowers
+    ((Equiv.symm_apply_eq (finCongr length_cyclic_a5FourthD4).permCongr).mpr
+      a5FourthD4BlockPerm_eq_finSumPerm).symm
 
 /-- The canonical block-rotation generator of
 `(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries`. -/
 def a5FourthD4CyclicSymmetryGen : (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries :=
-  ⟨a5FourthD4BlockPerm,
+  ⟨(finCongr length_cyclic_a5FourthD4).symm.permCongr a5FourthD4BlockPerm,
     symmetries_a5FourthD4Cyclic.ge (Subgroup.mem_zpowers _)⟩
 
-/-- Coercing `a5FourthD4CyclicSymmetryGen` to a permutation recovers `a5FourthD4BlockPerm`. -/
+/-- Coercing `a5FourthD4CyclicSymmetryGen` to a permutation of the pattern positions gives
+`a5FourthD4BlockPerm` transported along `finCongr length_cyclic_a5FourthD4`. -/
 @[simp]
 theorem val_a5FourthD4CyclicSymmetryGen :
-    (a5FourthD4CyclicSymmetryGen.val : Equiv.Perm (Fin a5FourthD4.components.length)) =
-      a5FourthD4BlockPerm :=
+    a5FourthD4CyclicSymmetryGen.val =
+      (finCongr length_cyclic_a5FourthD4).symm.permCongr a5FourthD4BlockPerm :=
   (rfl)
+
+/-- Every symmetry of `[2(024)0]` is an integer power of `a5FourthD4CyclicSymmetryGen`. -/
+theorem mem_zpowers_a5FourthD4CyclicSymmetryGen
+    (x : (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries) :
+    x ∈ Subgroup.zpowers a5FourthD4CyclicSymmetryGen := by
+  obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp (symmetries_a5FourthD4Cyclic.le x.2)
+  exact Subgroup.mem_zpowers_iff.mpr ⟨n, Subtype.ext (by simpa using hn)⟩
+
+/-- `a5FourthD4CyclicSymmetryGen` generates `(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries`. -/
+@[simp]
+theorem zpowers_a5FourthD4CyclicSymmetryGen :
+    Subgroup.zpowers a5FourthD4CyclicSymmetryGen = ⊤ :=
+  eq_top_iff.mpr fun x _ ↦ mem_zpowers_a5FourthD4CyclicSymmetryGen x
+
+/-- `a5FourthD4CyclicSymmetryGen` has exponent three. -/
+@[simp]
+theorem a5FourthD4CyclicSymmetryGen_pow_three :
+    a5FourthD4CyclicSymmetryGen ^ 3 = 1 := by
+  refine Subtype.ext ?_
+  rw [Subgroup.coe_pow, Subgroup.coe_one, val_a5FourthD4CyclicSymmetryGen,
+    ← Equiv.permCongrHom_coe, ← map_pow, a5FourthD4BlockPerm_pow_three, map_one]
+
+/-- `a5FourthD4CyclicSymmetryGen` has order three. -/
+@[simp]
+theorem orderOf_a5FourthD4CyclicSymmetryGen :
+    orderOf a5FourthD4CyclicSymmetryGen = 3 := by
+  rw [← Subgroup.orderOf_coe, val_a5FourthD4CyclicSymmetryGen, ← Equiv.permCongrHom_coe,
+    MulEquiv.orderOf_eq, orderOf_a5FourthD4BlockPerm]
 
 /-- **The block rotations of `[2(024)0]` act on `a5FourthD4.lattice`** by mapping the canonical
 generator to `a5FourthD4BlockTrialityIsometry`. -/
 noncomputable def a5FourthD4CyclicSymmetryHom :
     (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries →*
       IntegralLattice.Isometry a5FourthD4.lattice a5FourthD4.lattice :=
-  monoidHomOfForallMemZpowers (g := a5FourthD4CyclicSymmetryGen)
-    (fun x ↦ by
-      obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp (symmetries_a5FourthD4Cyclic.le x.2)
-      exact Subgroup.mem_zpowers_iff.mpr ⟨n, Subtype.ext hn⟩)
-    (by
-      rw [orderOf_a5FourthD4BlockTrialityIsometry, ← Subgroup.orderOf_coe]
-      exact (orderOf_a5FourthD4BlockPerm : orderOf a5FourthD4CyclicSymmetryGen.val = 3).symm.dvd)
+  monoidHomOfForallMemZpowers mem_zpowers_a5FourthD4CyclicSymmetryGen
+    (by rw [orderOf_a5FourthD4BlockTrialityIsometry, orderOf_a5FourthD4CyclicSymmetryGen])
 
 /-- `a5FourthD4CyclicSymmetryHom` maps the canonical block-rotation generator to
 `a5FourthD4BlockTrialityIsometry`. -/
@@ -725,14 +753,10 @@ theorem a5FourthD4CyclicSymmetryHom_injective :
     Function.Injective a5FourthD4CyclicSymmetryHom := by
   rw [← MonoidHom.ker_eq_bot_iff, Subgroup.eq_bot_iff_forall]
   intro x hx
-  obtain ⟨n, rfl⟩ : ∃ n : ℤ, a5FourthD4CyclicSymmetryGen ^ n = x := by
-    obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp (symmetries_a5FourthD4Cyclic.le x.2)
-    exact ⟨n, Subtype.ext hn⟩
+  obtain ⟨n, rfl⟩ := Subgroup.mem_zpowers_iff.mp (mem_zpowers_a5FourthD4CyclicSymmetryGen x)
   rw [MonoidHom.mem_ker, map_zpow, a5FourthD4CyclicSymmetryHom_gen,
     ← orderOf_dvd_iff_zpow_eq_one, orderOf_a5FourthD4BlockTrialityIsometry] at hx
-  rw [← orderOf_dvd_iff_zpow_eq_one, ← Subgroup.orderOf_coe]
-  have hord : orderOf a5FourthD4CyclicSymmetryGen.val = 3 := orderOf_a5FourthD4BlockPerm
-  rwa [hord]
+  rwa [← orderOf_dvd_iff_zpow_eq_one, orderOf_a5FourthD4CyclicSymmetryGen]
 
 /-- **Every pattern of `A₅⁴ D₄` acts on `a5FourthD4.lattice`**: `[2(024)0]` acts through
 `a5FourthD4CyclicSymmetryHom` (block rotation paired with `D₄` triality), and the three literal

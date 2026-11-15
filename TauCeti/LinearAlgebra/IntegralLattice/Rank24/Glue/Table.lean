@@ -52,8 +52,10 @@ computations by `decide`.
 * `TauCeti.RootfulNiemeierType.gluePatterns`, `spanMode`, `glueOrder`: the glue columns.
 * `TauCeti.RootfulNiemeierType.glueWords`: the digit words denoted by a row's glue columns.
 * `TauCeti.RootfulNiemeierType.glueModule`: the glue words of a row's ordered components.
-* `TauCeti.RootfulNiemeierType.glueSubgroup`: the glue subgroup `H_r` of a row, trivial only for
-  `E₈³` (`TauCeti.RootfulNiemeierType.glueSubgroup_eq_bot_iff_eq_e8Cubed`).
+* `TauCeti.RootfulNiemeierType.glueSubgroup`: the glue subgroup `H_r` of a row, preserved by any
+  additive equivalence of `r.glueModule` whose preimage fixes `r.glueGenerators`
+  (`TauCeti.RootfulNiemeierType.apply_mem_glueSubgroup_iff_of_preimage_glueGenerators`) and trivial
+  only for `E₈³` (`TauCeti.RootfulNiemeierType.glueSubgroup_eq_bot_iff_eq_e8Cubed`).
 * `TauCeti.RootfulNiemeierType.glueModuleIsometry`: the glue words of a row as the glue words of
   an explicit family of its components, with `map_glueSubgroup_glueModuleIsometry` describing
   `H_r` in these coordinates; the lemmas `*_of_map_glueModuleIsometry` transfer the order, the
@@ -336,6 +338,23 @@ theorem glueSubgroup_eq_zmultiples (r : RootfulNiemeierType) {l : List ℕ}
     r.glueSubgroup = AddSubgroup.zmultiples w := by
   rw [glueSubgroup_def, r.glueGenerators_eq_singleton hl hw,
     AddSubgroup.zmultiples_eq_closure]
+
+/-- An additive equivalence of a row's glue module whose preimage fixes `r.glueGenerators`
+preserves `r.glueSubgroup`. -/
+theorem apply_mem_glueSubgroup_iff_of_preimage_glueGenerators (r : RootfulNiemeierType)
+    {E : Type*} [EquivLike E r.glueModule r.glueModule]
+    [AddEquivClass E r.glueModule r.glueModule] (φ : E)
+    (hφ : φ ⁻¹' r.glueGenerators = r.glueGenerators) (w : r.glueModule) :
+    φ w ∈ r.glueSubgroup ↔ w ∈ r.glueSubgroup := by
+  let e : r.glueModule ≃+ r.glueModule := AddEquivClass.toAddEquiv φ
+  have hmap : r.glueSubgroup.map e.toAddMonoidHom = r.glueSubgroup := by
+    rw [glueSubgroup_def, AddMonoidHom.map_closure, AddEquiv.coe_toAddMonoidHom]
+    exact congrArg AddSubgroup.closure
+      ((congrArg _ hφ.symm).trans (Set.image_preimage_eq _ (EquivLike.surjective φ)))
+  have h := AddSubgroup.mem_map_iff_mem (f := e.toAddMonoidHom) e.injective
+    (K := r.glueSubgroup) (x := w)
+  rw [hmap, AddEquiv.coe_toAddMonoidHom] at h
+  exact h
 
 /-! ### Glue words of a row in the coordinates of an explicit family -/
 
