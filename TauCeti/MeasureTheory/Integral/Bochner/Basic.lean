@@ -243,11 +243,9 @@ theorem Submodule.integral_mem {X E R : Type*} [MeasurableSpace X] {μ : Measure
   · rw [integral_undef hfi]
     exact B.zero_mem
   -- The quotient map to the normed space `E ⧸ B` kills `f` almost everywhere, hence its integral.
-  rw [← Submodule.Quotient.mk_eq_zero, ← Submodule.mkQ_apply, ← Submodule.mkQL_apply,
-    ← B.mkQL.integral_comp_comm hfi]
-  exact integral_eq_zero_of_ae <| hf.mono fun x hx ↦ by
-    simpa only [Submodule.mkQL_apply, Submodule.mkQ_apply, Pi.zero_apply,
-      Submodule.Quotient.mk_eq_zero, B, Submodule.restrictScalars_mem] using hx
+  have : B.mkQL (∫ x, f x ∂μ) = 0 := (B.mkQL.integral_comp_comm hfi).symm.trans <|
+    integral_eq_zero_of_ae <| hf.mono fun x hx ↦ by simpa [B] using hx
+  simpa [Submodule.Quotient.mk_eq_zero] using this
 
 /-- The integral of `g • f`, for a multiplier bounded by `K` on a set containing the support of
 the integrable function `f`, is at most `K ∫ ‖f‖`. -/

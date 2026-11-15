@@ -88,16 +88,12 @@ private theorem mem_rungeClosure_iff [CompactSpace K] (hKΩ : K ⊆ Ω) (φ : C(
   · intro hφ ε hε
     obtain ⟨ψ, ⟨g, hg, hgψ⟩, hdist⟩ := hφ ε hε
     refine ⟨g, hg, fun z ↦ ?_⟩
-    rw [hgψ z, ← ContinuousMap.sub_apply]
-    exact ((φ - ψ).norm_coe_le_norm z).trans_lt (by rwa [dist_eq_norm] at hdist)
+    simpa [hgψ z, dist_eq_norm] using (ContinuousMap.dist_lt_iff hε).1 hdist z
   · intro hφ ε hε
-    obtain ⟨g, hg, hgK⟩ := hφ (ε / 2) (half_pos hε)
+    obtain ⟨g, hg, hgK⟩ := hφ ε hε
     refine ⟨⟨fun z : K ↦ g z, (hg.continuousOn.mono hKΩ).comp_continuous continuous_subtype_val
-      fun z ↦ z.property⟩, ⟨g, hg, fun _ ↦ rfl⟩, lt_of_le_of_lt ?_ (half_lt_self hε)⟩
-    rw [ContinuousMap.dist_le (half_pos hε).le]
-    intro z
-    rw [dist_eq_norm]
-    simpa using (hgK z).le
+      fun z ↦ z.property⟩, ⟨g, hg, fun _ ↦ rfl⟩, ?_⟩
+    exact (ContinuousMap.dist_lt_iff hε).2 fun z ↦ by simpa [dist_eq_norm] using hgK z
 
 /-- **Runge's theorem.** Let `K` be a compact subset of an open set `Ω ⊆ ℂ` that is filled in
 `Ω`: no connected component of `Ω \ K` is relatively compact in `Ω`. Then every function with
@@ -112,16 +108,16 @@ theorem IsFilledIn.exists_differentiableOn_norm_sub_lt [CompleteSpace F] (hfill 
   -- Read `f` on `K` as `π⁻¹ ∫ G`, a `C(K, F)`-valued integral of simple fractions.
   have : CompactSpace K := isCompact_iff_compactSpace.mp hK
   let G : C(ℂ, C(K, F)) := ContinuousMap.curry ⟨_, hh.inv_sub_smul_of_disjoint_tsupport hhK⟩
-  have hG_apply (z : ℂ) (ξ : K) : G z ξ = ((ξ : ℂ) - z)⁻¹ • h z := rfl
+  have hG_apply (z : ℂ) (ξ : K) : G z ξ = ((ξ : ℂ) - z)⁻¹ • h z := by
+    simp [G, ContinuousMap.curry_apply]
   have hGc : HasCompactSupport G := hhc.mono fun z hz hhz ↦
     hz (ContinuousMap.ext fun ξ ↦ by simp [hG_apply, hhz])
   have hfK : (⟨fun ξ : K ↦ f ξ, hf.continuousOn.comp_continuous continuous_subtype_val
       fun ξ ↦ hKU ξ.property⟩ : C(K, F)) = (Real.pi : ℂ)⁻¹ • ∫ z, G z := by
     ext ξ
-    rw [ContinuousMap.smul_apply, ContinuousMap.integral_apply
-      ((map_continuous G).integrable_of_hasCompactSupport hGc), ContinuousMap.coe_mk,
-      ← hfh ξ.property, cauchyTransform_apply]
-    simp [hG_apply]
+    rw [ContinuousMap.coe_mk, ← hfh ξ.property]
+    simp [ContinuousMap.integral_apply ((map_continuous G).integrable_of_hasCompactSupport hGc),
+      cauchyTransform_apply, hG_apply]
   -- Each value of `G` is a simple fraction with pole off `K` times a constant, so it lies in the
   -- Runge closure, which is a closed subspace and hence contains the integral.
   have hGA (z : ℂ) : G z ∈ rungeClosure K Ω F := by
