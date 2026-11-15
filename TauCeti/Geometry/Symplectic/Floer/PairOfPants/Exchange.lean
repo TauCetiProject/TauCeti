@@ -55,9 +55,10 @@ rotation of the end at `∞` under `σ`. The main results are:
   `|w - c| < 3/2` is the pair-of-pants datum translated by `c`.
 * `TauCeti.Floer.contMDiffAt_exchangePerturbation`: the family is jointly smooth in the parameter
   `c`, the domain point of `S` and the target point.
-* `TauCeti.Floer.contDiffAt_uncurry_exchangePerturbation`: for `C¹` Hamiltonians on a normed
-  space, every member is `C¹` jointly in the domain point of `S`, in real coordinates, and the
-  target point.
+* `TauCeti.Floer.contDiffAt_exchangePerturbation_apply`: for `C^n` Hamiltonians on a normed
+  space, the family is `C^n` jointly in the parameter, the domain point of `S`, in real
+  coordinates, and the target point; `TauCeti.Floer.contDiffAt_uncurry_exchangePerturbation` is
+  the resulting smoothness of a single member.
 * `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le`: for
   Hamiltonians on a manifold with a smooth two-form, such as a closed symplectic manifold, the
   integrated curvature `∫ |R_K|` of every member with `0 ≤ c ≤ 1` is at most `B₀ + B₁ + B_∞`
@@ -394,7 +395,29 @@ namespace TauCeti.Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
 
-/-- **The family is `C¹` in real coordinates.** For period-one `C¹` Hamiltonians on a normed
+/-- **The family is smooth in real coordinates.** For period-one `C^n` Hamiltonians on a normed
+space, the family is `C^n` jointly in the parameter `c`, the domain point of `S = ℂ ∖ {0, 1}`, in
+real coordinates, and the target point. -/
+theorem contDiffAt_exchangePerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) (c : ℝ) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) (x : V) (v : ℂ) :
+    ContDiffAt ℝ n (fun p : ℝ × ((ℝ × ℝ) × V) ↦
+      exchangePerturbation H p.1 (Complex.equivRealProdCLM.symm p.2.1) p.2.2 v) (c, (z, x)) := by
+  have hHs' (q : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) n (uncurry (H q)) := by
+    have h := (hHs q).contMDiff
+    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
+    exact h
+  have h : ContDiffAt ℝ n (fun p : ℝ × (ℂ × V) ↦ exchangePerturbation H p.1 p.2.1 p.2.2)
+      (c, (Complex.equivRealProdCLM.symm z, x)) := by
+    rw [← contMDiffAt_iff_contDiffAt, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod,
+      modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+    exact contMDiffAt_exchangePerturbation hH hHs' c ⟨_, hz⟩ x
+  have hg : ContDiffAt ℝ n (fun p : ℝ × ((ℝ × ℝ) × V) ↦
+      (p.1, (Complex.equivRealProdCLM.symm p.2.1, p.2.2))) (c, (z, x)) := by
+    fun_prop
+  exact (h.comp (c, (z, x)) hg).clm_apply contDiffAt_const
+
+/-- **The members are `C¹` in real coordinates.** For period-one `C¹` Hamiltonians on a normed
 space, the member `c` of the family is `C¹` jointly in the domain point of
 `S = ℂ ∖ {0, 1}`, in real coordinates, and the target point. -/
 theorem contDiffAt_uncurry_exchangePerturbation (hH : ∀ q, Periodic (H q) 1)
@@ -402,21 +425,9 @@ theorem contDiffAt_uncurry_exchangePerturbation (hH : ∀ q, Periodic (H q) 1)
     (hz : z ∈ thricePuncturedSphereReal) (x : V) (v : ℂ) :
     ContDiffAt ℝ 1
       (uncurry fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x v)
-      (z, x) := by
-  have hin := contDiffAt_uncurry_pairOfPantsPerturbation
-    (forall_update_inf (P := fun f ↦ Periodic f 1) (fun _ ↦ rfl) hH)
-    (forall_update_inf (P := fun f ↦ ContDiff ℝ 1 (uncurry f)) contDiff_const hHs) hz x v
-  have hpl : ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦
-      negativePlanePerturbation (H inf) (Complex.equivRealProdCLM.symm (p.1 - (c, 0))) p.2 v)
       (z, x) :=
-    (SymplecticForm.contDiff_negativePlanePerturbation_apply (hH inf) (hHs inf) v).contDiffAt.comp
-      (f := fun p : (ℝ × ℝ) × V ↦ (p.1 - (c, 0), p.2)) _ (by fun_prop)
-  have he (z : ℝ × ℝ) :
-      Complex.equivRealProdCLM.symm (z - (c, 0)) = Complex.equivRealProdCLM.symm z - c := by
-    apply Complex.ext <;> simp
-  simp only [he] at hpl
-  exact (hin.add hpl).congr_of_eventuallyEq (Filter.Eventually.of_forall fun p ↦ by
-    simp [exchangePerturbation_def, uncurry])
+  (contDiffAt_exchangePerturbation_apply (n := 1) hH hHs c hz x v).comp (z, x)
+    (contDiffAt_const.prodMk contDiffAt_id)
 
 end TauCeti.Floer
 

@@ -49,7 +49,9 @@ main results are:
   the end lift `c + φ_∞`. These are the end coordinates in which the members of
   `TauCeti.Floer.exchangePerturbation` are `H_q(t) dt`.
 * `TauCeti.Floer.contMDiffAt_exchangeAlmostComplex`: for period-one `C^n` end families, the family
-  is `C^n` jointly in the parameter `-1 < c < 2`, the domain point of `S` and the point `x`.
+  is `C^n` jointly in the parameter `-1 < c < 2`, the domain point of `S` and the point `x`;
+  `TauCeti.Floer.contDiffAt_exchangeAlmostComplex` is the same statement for a normed target, with
+  the domain point in real coordinates.
 * `TauCeti.Floer.isComplexLinearMap_perturbedFDeriv_exchange_one`: for a symplectic vector space
   target, if `u` solves the Floer equation at `σ(z)` for the pair-of-pants data with exchanged
   inputs, then `u ∘ σ` solves it at `z` for the member `c = 1` of the family, perturbation and
@@ -299,6 +301,45 @@ theorem contMDiffAt_exchangeAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ�
     · rw [exchangeAlmostComplex_of_lt_norm h₀ hgt]
 
 end Smooth
+
+section SmoothNormed
+
+/-! ### Smoothness in real coordinates -/
+
+variable [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
+  {J : Puncture → ℝ → V → AlmostComplexStructure V} {hJ : ∀ q t x, ω.Tames (J q t x)}
+
+/-- **The family is smooth in real coordinates.** For a normed target `V` and families `J q t x`
+of `ω`-tame structures which have period one in `t` and are `C^n` on `ℝ × V`, the input-exchange
+family is `C^n` jointly in the parameter `-1 < c < 2`, the domain point of `S = ℂ ∖ {0, 1}`, in
+real coordinates, and the point `x`. -/
+theorem contDiffAt_exchangeAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ∞}
+    (hJp : ∀ q, Periodic (J q) 1)
+    (hJs : ∀ q, ContDiff ℝ n
+      (fun p : ℝ × V => (J q p.1 p.2).toLinearMap.toContinuousLinearMap))
+    {c : ℝ} (hc : c ∈ Ioo (-1) 2) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) (x : V) :
+    ContDiffAt ℝ n (fun p : ℝ × ((ℝ × ℝ) × V) => (exchangeAlmostComplex h₀ J hJ p.1
+      (Complex.equivRealProdCLM.symm p.2.1) p.2.2).toLinearMap.toContinuousLinearMap)
+      (c, (z, x)) := by
+  have hJs' (q : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V →L[ℝ] V) n
+      (fun p : ℝ × V => (J q p.1 p.2).toLinearMap.toContinuousLinearMap) := by
+    have h := (hJs q).contMDiff
+    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
+    exact h
+  have h : ContDiffAt ℝ n (fun p : ℝ × (ℂ × V) =>
+      (exchangeAlmostComplex h₀ J hJ p.1 p.2.1 p.2.2).toLinearMap.toContinuousLinearMap)
+      (c, (Complex.equivRealProdCLM.symm z, x)) := by
+    rw [← contMDiffAt_iff_contDiffAt, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod,
+      modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+    exact contMDiffAt_exchangeAlmostComplex h₀ hJp hJs' hc ⟨_, hz⟩ x
+  have hg : ContDiffAt ℝ n (fun p : ℝ × ((ℝ × ℝ) × V) =>
+      (p.1, (Complex.equivRealProdCLM.symm p.2.1, p.2.2))) (c, (z, x)) := by
+    fun_prop
+  exact h.comp (f := fun p : ℝ × ((ℝ × ℝ) × V) =>
+    (p.1, (Complex.equivRealProdCLM.symm p.2.1, p.2.2))) (c, (z, x)) hg
+
+end SmoothNormed
 
 section Solutions
 
