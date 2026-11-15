@@ -269,9 +269,9 @@ theorem isSimpleOrder_of_spinWeights_of_rootSubgroupPoints
     (basisCharacter_injective n) hweights
     (fun j ↦ ⇑(basisReflection n j)) (basisReflection_involutive n)
     (fun N a i ↦ single_basisReflection_mem n k N.toSubmodule (hroot N) a i)
-    (Fintype.equivFin (Finset (Fin (n + 1))) ∅) fun a ↦ by
+    (basisIndex n ∅) fun a ↦ by
       obtain ⟨l, hl⟩ := DynkinType.exists_typeBSpinReflections_eq (signSet n a)
-      exact ⟨l, by rw [foldl_basisReflection, hl]; simp [signSet]⟩
+      exact ⟨l, by rw [foldl_basisReflection, hl, basisIndex_signSet]⟩
 
 /-- **The standard comodule of the specialized type-`Bₙ₊₁` spin carrier is simple over every
 field.** -/

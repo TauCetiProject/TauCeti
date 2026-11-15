@@ -48,21 +48,19 @@ theorem single_mem_of_sub_mem_posRootCone
     (hab : basisWeight n b - basisWeight n a ∈
       posRootCone (typeBSimplyConnectedRootDatum (n + 1)) (typeBSimplyConnectedBase (n + 1)))
     (ha : Pi.single a (1 : R) ∈ N) : Pi.single b (1 : R) ∈ N := by
-  let e := Fintype.equivFin (Finset (Fin (n + 1)))
   have hpath := (typeBSpin_raisingPath_iff_mem_posRootCone (signSet n a) (signSet n b)).mpr hab
   have hmem : ∀ t, Relation.ReflTransGen TypeBSpinRaisingStep (signSet n a) t →
-      Pi.single (e t) (1 : R) ∈ N := by
+      Pi.single (basisIndex n t) (1 : R) ∈ N := by
     intro t h
     induction h with
-    | refl => simpa only [e, signSet, Equiv.apply_symm_apply] using ha
+    | refl => simpa only [basisIndex_signSet] using ha
     | @tail t u _ htu ih =>
       obtain ⟨i, hi, rfl⟩ := (typeBSpinRaisingStep_iff _ _).mp htu
-      have hweight : basisWeight n (e t) i = -1 := by
-        simpa only [basisWeight, signSet, e, Equiv.symm_apply_apply] using hi
-      have hindex : basisReflection n i (e t) = e (typeBSpinReflection i t) := by
-        simpa only [List.foldl_cons, List.foldl_nil] using foldl_basisReflection n [i] t
-      simpa only [hindex] using single_basisReflection_mem n R N i (e t) hweight ih
-  simpa only [e, signSet, Equiv.apply_symm_apply] using hmem _ hpath
+      have hweight : basisWeight n (basisIndex n t) i = -1 := by
+        simpa only [basisWeight, signSet_basisIndex] using hi
+      simpa only [basisReflection_basisIndex] using
+        single_basisReflection_mem n R N i (basisIndex n t) hweight ih
+  simpa only [basisIndex_signSet] using hmem _ hpath
 
 /-- A coordinate span is invariant precisely when its indices are upward closed for the
 integral positive-root order on spin weights. -/
