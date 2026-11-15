@@ -22,6 +22,12 @@ Remeslennikov, going back to Bryant and to Guba. Free groups of countable rank e
 `SL(2, ℤ)` (Sanov), so they are equationally Noetherian over any coefficients; for free groups of
 finite rank this is Guba's theorem.
 
+The countability hypothesis on free groups comes from this route through `SL(2, ℤ)`; it is not
+needed for the mathematical statement. Free groups of every rank are equationally Noetherian: a
+system over `F(α)` with no equivalent finite subsystem would give a chain of equations and points
+involving only countably many basis letters, which lie in a free factor of countable rank that is a
+retract of `F(α)`, contradicting the countable case. That argument is not formalised here.
+
 ## Main results
 
 * `TauCeti.GroupAlgGeom.isEquationallyNoetherian_generalLinearGroup`: `GL n R` is equationally
@@ -220,7 +226,8 @@ theorem isEquationallyNoetherian_specialLinearGroup (ι : G →* SpecialLinearGr
 
 /-- **Free groups of countable rank are equationally Noetherian.** A group with a countable
 free basis is equationally Noetherian over any coefficients; for free groups of finite rank this
-is Guba's theorem. -/
+is Guba's theorem. The countability hypothesis is an artefact of the proof through the embedding
+into `SL(2, ℤ)` (see the module docstring). -/
 theorem isEquationallyNoetherian_of_freeGroupBasis {κ : Type*} [Countable κ] (ι : G →* H)
     (b : FreeGroupBasis κ H) : IsEquationallyNoetherian ι := by
   obtain ⟨f, hf⟩ := exists_injective_freeGroup_SL κ

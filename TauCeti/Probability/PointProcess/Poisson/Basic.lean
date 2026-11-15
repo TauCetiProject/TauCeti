@@ -107,6 +107,17 @@ theorem IsPoissonRandomMeasure.ae_lt_top (h : IsPoissonRandomMeasure P N Λ)
   obtain ⟨k, hk⟩ := hω
   simp [hk]
 
+/-- A count on any set of zero intensity vanishes almost surely. -/
+theorem IsPoissonRandomMeasure.ae_eq_zero (h : IsPoissonRandomMeasure P N Λ)
+    {A : Set X} (hΛ : Λ A = 0) :
+    ∀ᵐ ω ∂P, N ω A = 0 := by
+  obtain ⟨B, hAB, hB, hΛB⟩ := exists_measurable_superset_of_null hΛ
+  have hz := h.hasLaw hB (by simp [hΛB])
+  have hz' : HasLaw (fun ω ↦ N ω B) (Measure.dirac 0) P := by
+    simpa [hΛB, poissonMeasure_zero] using hz
+  filter_upwards [hz'.ae_eq_of_dirac] with ω hω
+  exact measure_mono_null hAB hω
+
 /-- Flooring a finite-intensity count and casting back recovers the count almost surely. -/
 theorem IsPoissonRandomMeasure.ae_natCast_natFloor_eq (h : IsPoissonRandomMeasure P N Λ)
     {A : Set X} (hA : MeasurableSet A) (hfin : Λ A < ∞) :

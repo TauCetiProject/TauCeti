@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
@@ -45,7 +46,12 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet`: the inverse of the extended
   chart at `x` maps its target into the base set of the canonical trivialization at `x`.
 * `TangentBundle.chartFrame`: the canonical tangent trivialization of the intrinsic chart source
-  at its centre, which covers the whole source.
+  at its centre, which covers the whole source
+  (`TangentBundle.trivializationAt_chartSource_baseSet`).
+* `TangentBundle.trivializationAt_apply_tangentCoordChange`: the fibre coordinate at `x` of a
+  vector at `y` is the tangent coordinate change from the chart at `y` to the chart at `x`, applied
+  to that vector, and `TangentBundle.coe_chartAt_snd` is the same statement for the chart of the
+  tangent bundle at a vector.
 * `TangentBundle.mdifferentiableAt_trivializationAt_symm_apply` and
   `TangentBundle.trivializationAt_symm_apply_self`: a vector field with constant coordinates in
   the canonical trivialization at `x` is differentiable at `x` and takes the value `u` there.
@@ -70,6 +76,9 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.contDiffOn_tangentCoordChange`: the tangent coordinate change between the
   charts at two points is `C^n` on the overlap of their sources, read in the chart at the first
   point.
+* `TauCeti.Manifold.contDiffOn_trivializationAt_extChartAt_symm`: the coordinate expression, in the
+  preferred trivialization at `a` and through the inverse extended chart, of a `C^n` tangent
+  vector field is `C^n`.
 * `TauCeti.Manifold.contMDiffAt_tangentCoordChange`: that coordinate change is `C^n` at the base
   point of its first chart, as a map of manifolds into the linear endomorphisms of the model
   space.
@@ -82,7 +91,9 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.tangentSpaceOpenEquiv`: the canonical continuous linear equivalence between
   the tangent space of an open submanifold and the ambient tangent space.
 * `TauCeti.Manifold.mfderiv_subtype_val`: the differential of the inclusion is the canonical
-  tangent-space equivalence.
+  tangent-space equivalence, it is injective (`TauCeti.Manifold.mfderiv_subtype_val_injective`),
+  and the inclusion of nested open submanifolds has the identity of the model space as its
+  differential (`TauCeti.Manifold.mfderiv_inclusion_apply`).
 * `TauCeti.Manifold.tangentMap_subtype_val`: the tangent map of the inclusion under this
   equivalence.
 * `TauCeti.Manifold.mvfderiv_subtype_val_apply` and
@@ -105,23 +116,31 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.mfderiv_prodMap_apply`: differentials of product maps act componentwise
   under this equivalence.
 * `TauCeti.Manifold.isInvertible_mfderiv_prodMap`: the differential of a product map is invertible
-  where the differentials of both factors are.
+  where the differentials of both factors are, and
+  `TauCeti.Manifold.isInvertible_mfderiv_prodMap_id_right` is the case `(x, y) ↦ (f x, y)`.
 * `TauCeti.Manifold.contMDiff_prod_right_comm` and
   `TauCeti.Manifold.isInvertible_mfderiv_prod_right_comm`: the map `((x, y), z) ↦ ((x, z), y)`
-  exchanging the last two factors of a triple product is smooth with invertible differential.
+  exchanging the last two factors of a triple product is smooth with invertible differential;
+  `TauCeti.Manifold.hasMFDerivAt_prod_right_comm` and
+  `TauCeti.Manifold.mfderiv_prod_right_comm_apply` compute that differential as the same exchange
+  of the components of a tangent vector.
 * `TauCeti.Manifold.tangentSpaceProdEquiv_mfderiv_prodMap_id` and
   `TauCeti.Manifold.isInvertible_mfderiv_prodMap_id`: the differential of `(x, t) ↦ (x, φ t)` on
   `M × 𝕜` multiplies the `𝕜`-component by `φ' t`, so it is invertible where `φ' t ≠ 0`.
 * `TauCeti.Manifold.tangentCoordChange_prod`: the tangent coordinate change of a product is the
   product of the tangent coordinate changes of the factors.
 * `TauCeti.Manifold.tangentSpaceProdEquiv_symmL_trivializationAt`: the inverse tangent-bundle
-  trivialization of a product is the product of those of the factors.
+  trivialization of a product is the product of those of the factors, and
+  `TauCeti.Manifold.symmL_trivializationAt_prod_model_space` shows that on `M × F` with `F` a
+  normed space it depends on neither `F`-coordinate.
 * `TauCeti.Manifold.tangentCoordChange_sumInl` and `TauCeti.Manifold.tangentCoordChange_sumInr`:
   the tangent coordinate changes of a disjoint union between charts at points of one summand are
   those of that summand.
 * `TauCeti.Manifold.symmL_trivializationAt_sumInl` and
   `TauCeti.Manifold.symmL_trivializationAt_sumInr`: so are its inverse tangent-bundle
   trivializations.
+* `TauCeti.Manifold.tangentEndomorphismOfModel`: a `Cⁿ` field of continuous linear maps on a
+  normed space is a `Cⁿ` section of the tangent endomorphism bundle of the model manifold.
 -/
 
 public section
@@ -139,9 +158,9 @@ variable
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- The fibre coordinate of the canonical tangent-bundle trivialization is the tangent coordinate
-change. Keeping this representation bridge named avoids making consumers unfold the chart
-extension when they move between the two APIs. -/
+/-- The fibre coordinate at `x` of a vector `v` at `y`, read in the canonical tangent-bundle
+trivialization at `x`, is the tangent coordinate change from the chart at `y` to the chart at `x`,
+evaluated at `y` and applied to `v`. -/
 theorem trivializationAt_apply_tangentCoordChange [IsManifold I 1 M] {x y : M}
     (v : TangentSpace I y) :
     (trivializationAt E (TangentSpace I) x ⟨y, v⟩).2 =
@@ -175,9 +194,10 @@ abbrev chartFrame [IsManifold I 1 M] (x : M) :=
   trivializationAt E (TangentSpace I : TauCeti.chartSource (H := H) x → Type _)
     (⟨x, mem_chart_source H x⟩ : TauCeti.chartSource (H := H) x)
 
-/-- The second component of the chart of a tangent bundle at `q`, read at a point with base point
-in the chart source.  Together with `TangentBundle.coe_chartAt_fst` this describes the
-tangent-bundle charts completely. -/
+/-- The second component of the chart of a tangent bundle at `q`, read at any point `p`: it is the
+tangent coordinate change from the chart at the base point of `p` to the chart at the base point
+of `q`, applied to the fibre component of `p`.  Together with `TangentBundle.coe_chartAt_fst`
+this describes the tangent-bundle charts completely. -/
 @[simp, mfld_simps]
 theorem coe_chartAt_snd [IsManifold I 1 M] {p q : TangentBundle I M} :
     (chartAt (ModelProd H E) q p).2 =
@@ -215,7 +235,6 @@ theorem mfderiv_atlas_eq_continuousLinearMapAt (e : atlas H M) {x : M}
   ext v
   simp only [ContinuousLinearMap.comp_apply, tangentSpaceCastModel]
   rfl
-
 
 /-- Read in the canonical trivialization at `x`, a tangent vector at `x` itself is its own
 coordinate vector: the trivialization is built from the chart at `x`, whose transition function
@@ -348,25 +367,25 @@ section TrivializationCoordinates
 
 /-- If a tangent vector field is `C^n` on `V`, then its coordinate expression in the preferred
 trivialization of the tangent bundle at `a`, read through the inverse extended chart, is `C^n` on
-the interior points of the chart target which lie over `V`. -/
+the points of the chart target which lie over `V`. -/
 theorem contDiffOn_trivializationAt_extChartAt_symm {n : ℕ∞ω} [IsManifold I (n + 1) M]
     (v : (x : M) → TangentSpace I x) (a : M) {V : Set M} :
     haveI : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
     ContMDiffOn I I.tangent n (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) V →
     ContDiffOn 𝕜 n (fun z ↦ (trivializationAt E (TangentSpace I) a
       (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ : TangentBundle I M)).2)
-      (interior (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V) := by
+      ((extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V) := by
   have _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
   have _ : IsManifold I n M := IsManifold.of_le (n := n + 1) le_self_add
   have _ : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
   intro hv
   let e := trivializationAt E (TangentSpace I) a
-  let W := interior (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V
+  let W := (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V
   have hsection : ContMDiffOn (modelWithCornersSelf 𝕜 E) I.tangent n
       ((fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) ∘ (extChartAt I a).symm)
       W := hv.comp
-    ((contMDiffOn_extChartAt_symm a).mono (inter_subset_left.trans interior_subset))
+    ((contMDiffOn_extChartAt_symm a).mono inter_subset_left)
     (fun _ hz ↦ hz.2)
   have hmap : MapsTo
       ((fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) ∘ (extChartAt I a).symm)
@@ -376,8 +395,7 @@ theorem contDiffOn_trivializationAt_extChartAt_symm {n : ℕ∞ω} [IsManifold I
     -- Membership in this preimage reduces definitionally by projecting the displayed
     -- tangent-bundle point to its base point; there is no separate projection lemma to apply.
     change (extChartAt I a).symm z ∈ (chartAt H a).source
-    simpa only [extChartAt_source] using
-      (extChartAt I a).map_target (interior_subset hz.1)
+    simpa only [extChartAt_source] using (extChartAt I a).map_target hz.1
   have hcoord := ((e.contMDiffOn_iff hmap).mp hsection).2
   simpa only [Function.comp_apply] using hcoord.contDiffOn
 
@@ -406,25 +424,11 @@ manifolds into the continuous linear endomorphisms of the model space. -/
 theorem contMDiffAt_tangentCoordChange {n : ℕ∞ω} [IsManifold I (n + 1) M] {x y : M}
     (hy : x ∈ (extChartAt I y).source) :
     haveI : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
-    ContMDiffAt I 𝓘(𝕜, E →L[𝕜] E) n (tangentCoordChange I x y) x := by
-  have hI : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
-  rw [contMDiffAt_iff]
-  refine ⟨?_, ?_⟩
-  · refine (continuousOn_tangentCoordChange (I := I) (𝕜 := 𝕜) x y).continuousAt ?_
-    exact Filter.inter_mem (extChartAt_source_mem_nhds (I := I) (x := x))
-      ((isOpen_extChartAt_source y).mem_nhds hy)
-  · have hmem : extChartAt I x x ∈ ((extChartAt I x).symm ≫ extChartAt I y).source := by
-      rw [PartialEquiv.trans_source'', PartialEquiv.symm_symm, PartialEquiv.symm_target]
-      exact mem_image_of_mem _ ⟨mem_extChartAt_source x, hy⟩
-    have hychart : x ∈ (chartAt H y).source := by
-      rw [← OpenPartialHomeomorph.extend_source (f := chartAt H y) (I := I)]
-      exact hy
-    have hset : ((extChartAt I x).symm ≫ extChartAt I y).source
-        ∈ nhdsWithin (extChartAt I x x) (range I) :=
-      I.extendCoordChange_source_mem_nhdsWithin' (e := chartAt H x) (e' := chartAt H y)
-        (ChartedSpace.mem_chart_source x) hychart
-    refine ((contDiffOn_tangentCoordChange (I := I) (𝕜 := 𝕜) x y).contDiffWithinAt
-      hmem).mono_of_mem_nhdsWithin hset
+    ContMDiffAt I 𝓘(𝕜, E →L[𝕜] E) n (tangentCoordChange I x y) x :=
+  ((tangentBundleCore.isContMDiff (I := I) (M := M) (n := n)).contMDiffOn_coordChange
+    (achart H x) (achart H y)).contMDiffAt (by
+      simp only [tangentBundleCore_baseSet, coe_achart, ← extChartAt_source I]
+      exact Filter.inter_mem (extChartAt_source_mem_nhds x) (extChartAt_source_mem_nhds' hy))
 
 /-! ### Coordinate changes on the tangent of the tangent bundle -/
 
@@ -699,7 +703,7 @@ This is deliberately a named equivalence rather than `ContinuousLinearEquiv.refl
 `TangentSpace` is not reducible, a statement phrased with `refl` is type-correct only after
 unfolding it, so `rw` and `simp` fail on such statements. Mathlib introduces
 `NormedSpace.fromTangentSpace` for the analogous identification for the same reason. -/
-noncomputable def tangentSpaceOpenEquiv {U : Opens M} (x : U) :
+def tangentSpaceOpenEquiv {U : Opens M} (x : U) :
     TangentSpace I x ≃L[𝕜] TangentSpace I (x : M) where
   toFun v := v
   invFun v := v
@@ -708,11 +712,15 @@ noncomputable def tangentSpaceOpenEquiv {U : Opens M} (x : U) :
   continuous_toFun := continuous_id
   continuous_invFun := continuous_id
 
+/-- The canonical equivalence between the tangent spaces of an open submanifold and its ambient
+manifold is the identity on vectors. -/
 @[simp]
 theorem tangentSpaceOpenEquiv_apply {U : Opens M} (x : U) (v : TangentSpace I x) :
     tangentSpaceOpenEquiv (I := I) x v = v := by
   exact (rfl)
 
+/-- The inverse of the canonical equivalence between the tangent spaces of an open submanifold and
+its ambient manifold is the identity on vectors. -/
 @[simp]
 theorem tangentSpaceOpenEquiv_symm_apply {U : Opens M} (x : U)
     (v : TangentSpace I (x : M)) :
@@ -810,28 +818,67 @@ theorem tangentMap_subtype_val {U : Opens M}
       ⟨(p.proj : M), tangentSpaceOpenEquiv (I := I) p.proj p.2⟩ := by
   simp only [tangentMap, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
 
-/-- If a differentiable map `f` between open submanifolds is the restriction of a map `A` of the
-ambient manifolds, then under the canonical tangent-space identifications the differential of `f`
-at `x` is the differential of `A` at `x`. -/
+section RestrictOpen
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- A map is differentiable at a point of an open subset exactly when its restriction to that
+subset is. -/
+@[simp]
+theorem mdifferentiableAt_comp_subtype_val_iff {U : Opens N} {f : N → M} {x : U} :
+    MDifferentiableAt J I (f ∘ (Subtype.val : U → N)) x ↔ MDifferentiableAt J I f (x : N) :=
+  (differentiableWithinAt_localInvariantProp.liftPropAt_iff_comp_subtype_val f x).symm
+
+/-- A map into an open subset is differentiable at a point exactly when its composition with the
+inclusion is. -/
+@[simp]
+theorem mdifferentiableAt_subtype_val_comp_iff {U : Opens M} {f : N → U} {x : N} :
+    MDifferentiableAt J I ((Subtype.val : U → M) ∘ f) x ↔ MDifferentiableAt J I f x :=
+  ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff f Set.univ x
+
+/-- Restricting a map to an open source does not change its differential. -/
+theorem mfderiv_comp_subtype_val_apply {U : Opens N} {f : N → M} {x : U}
+    (v : TangentSpace J x) :
+    mfderiv J I (f ∘ (Subtype.val : U → N)) x v = mfderiv J I f (x : N) v := by
+  by_cases hf : MDifferentiableAt J I f (x : N)
+  · rw [mfderiv_comp x hf (contMDiff_subtype_val.mdifferentiableAt one_ne_zero),
+      ContinuousLinearMap.comp_apply, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+      tangentSpaceOpenEquiv_apply]
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
+      mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_comp_subtype_val_iff.not.mpr hf)]
+    rfl
+
+/-- Following a map into an open target by the inclusion does not change its differential. -/
+theorem mfderiv_subtype_val_comp_apply {U : Opens M} {f : N → U} {x : N}
+    (v : TangentSpace J x) :
+    mfderiv J I ((Subtype.val : U → M) ∘ f) x v = mfderiv J I f x v := by
+  by_cases hf : MDifferentiableAt J I f x
+  · rw [mfderiv_comp x (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) hf,
+      ContinuousLinearMap.comp_apply, mfderiv_subtype_val]
+    exact tangentSpaceOpenEquiv_apply _ _
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
+      mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_subtype_val_comp_iff.not.mpr hf)]
+    rfl
+
+end RestrictOpen
+
+/-- If a map `f` between open submanifolds is the restriction of a map `A` of the ambient
+manifolds, then under the canonical tangent-space identifications the differential of `f` at `x`
+is the differential of `A` at `x` (both are `0` when `f` is not differentiable at `x`). -/
 theorem tangentSpaceOpenEquiv_mfderiv_apply
     {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
     {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
     {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
     {U : Opens M} {V : Opens M'} {f : U → V} {A : M → M'} {x : U}
-    (hf : MDifferentiableAt I I' f x)
     (hcomp : Subtype.val ∘ f = A ∘ Subtype.val) (v : TangentSpace I x) :
     tangentSpaceOpenEquiv (I := I') (f x) (mfderiv I I' f x v) =
       mfderiv I I' A x (tangentSpaceOpenEquiv (I := I) x v) := by
-  have hA : MDifferentiableAt I I' A x := by
-    have h1 : MDifferentiableAt I I' (Subtype.val ∘ f) x :=
-      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero).comp x hf
-    rw [hcomp] at h1
-    exact ((differentiableWithinAt_localInvariantProp (I := I)
-      (I' := I')).liftPropAt_iff_comp_subtype_val (U := U) A x).2 h1
-  have h := mfderiv_comp_apply x
-    (contMDiff_subtype_val.mdifferentiableAt one_ne_zero (x := f x)) hf v
-  rw [hcomp, mfderiv_comp_apply x hA (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) v,
-    mfderiv_subtype_val, mfderiv_subtype_val] at h
+  have h : mfderiv I I' (Subtype.val ∘ f) x v = mfderiv I I' f x v :=
+    mfderiv_subtype_val_comp_apply v
+  rw [hcomp, mfderiv_comp_subtype_val_apply] at h
+  rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply]
   exact h.symm
 
 /-- The differential of the inclusion of nested open submanifolds is the identity of the common
@@ -839,8 +886,7 @@ model vector space. -/
 @[simp]
 theorem mfderiv_inclusion_apply {U V : Opens M} (h : U ≤ V) (x : U)
     (v : TangentSpace I x) : mfderiv I I (Opens.inclusion h) x v = v := by
-  have h' := tangentSpaceOpenEquiv_mfderiv_apply (A := id)
-    ((contMDiff_inclusion h).mdifferentiableAt one_ne_zero) rfl v
+  have h' := tangentSpaceOpenEquiv_mfderiv_apply (I' := I) (f := Opens.inclusion h) (A := id) rfl v
   rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply, mfderiv_id] at h'
   exact h'
 
@@ -854,8 +900,8 @@ theorem mvfderiv_subtype_val_apply {U : Opens E} (x : U) (v : TangentSpace 𝓘(
 /-- The derivative of the inclusion of an open subset of a normed space, read in the normed space,
 is injective. -/
 theorem injective_mvfderiv_subtype_val {U : Opens E} (x : U) :
-    Function.Injective (mvfderiv 𝓘(𝕜, E) (Subtype.val : U → E) x) := fun v w h ↦ by
-  rwa [mvfderiv_subtype_val_apply, mvfderiv_subtype_val_apply] at h
+    Function.Injective (mvfderiv 𝓘(𝕜, E) (Subtype.val : U → E) x) :=
+  TauCeti.injective_mvfderiv_iff.2 (mfderiv_subtype_val_injective x)
 
 /-- The tangent bundle of a model space is Hausdorff. -/
 theorem instT2SpaceTangentBundleModelSpace :
@@ -902,7 +948,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- Restrict a field of continuous bilinear maps on the tangent spaces of `M` to an open
 submanifold `U`, through the canonical tangent-space identification. -/
-noncomputable def restrictOpenTangentSpaceBilinear
+def restrictOpenTangentSpaceBilinear
     (b : Π x : M, TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] F) (U : Opens M) (x : U) :
     TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] F :=
   let e := tangentSpaceOpenEquiv (I := I) x
@@ -929,9 +975,9 @@ theorem contMDiffAt_restrictOpenTangentSpaceBilinear [IsManifold I 1 M] {n : ℕ
       x := by
   -- Pull ambient `C^n` regularity back along the inclusion and compare the inherited and ambient
   -- tangent-bundle coordinates on a common neighbourhood of `x`.
-  rw [contMDiffAt_section]
+  rw [contMDiffAt_section_iff]
   have h := hb.comp x (contMDiff_subtype_val (I := I) (U := U)).contMDiffAt
-  rw [contMDiffAt_totalSpace] at h
+  rw [contMDiffAt_totalSpace_iff] at h
   apply h.2.congr_of_eventuallyEq
   filter_upwards [
     (trivializationAt E (TangentSpace I : U → Type _) x).open_baseSet.mem_nhds
@@ -977,7 +1023,7 @@ variable
 the tangent spaces of the factors. Both are Mathlib's type synonym for the product of the model
 vector spaces; as for `tangentSpaceOpenEquiv`, the identification is named so that statements
 using it are type-correct without unfolding `TangentSpace`. -/
-noncomputable def tangentSpaceProdEquiv (p : M × N) :
+def tangentSpaceProdEquiv (p : M × N) :
     TangentSpace (I.prod J) p ≃L[𝕜] TangentSpace I p.1 × TangentSpace J p.2 where
   toFun v := v
   invFun v := v
@@ -986,11 +1032,15 @@ noncomputable def tangentSpaceProdEquiv (p : M × N) :
   continuous_toFun := continuous_id
   continuous_invFun := continuous_id
 
+/-- The canonical equivalence between the tangent space of a product and the product of the
+tangent spaces is the identity on vectors. -/
 @[simp]
 theorem tangentSpaceProdEquiv_apply (p : M × N) (v : TangentSpace (I.prod J) p) :
     tangentSpaceProdEquiv (I := I) (J := J) p v = v := by
   exact (rfl)
 
+/-- The inverse of the canonical equivalence between the tangent space of a product and the product
+of the tangent spaces is the identity on vectors. -/
 @[simp]
 theorem tangentSpaceProdEquiv_symm_apply (p : M × N)
     (v : TangentSpace I p.1 × TangentSpace J p.2) :
@@ -1113,20 +1163,11 @@ theorem tangentSpaceProdEquiv_mfderiv_prodMap_id {φ : 𝕜 → 𝕜} {p : M × 
 invertible. -/
 theorem isInvertible_mfderiv_prodMap_id {φ : 𝕜 → 𝕜} {p : M × 𝕜}
     (hφ' : deriv φ p.2 ≠ 0) :
-    (mfderiv (I.prod 𝓘(𝕜)) (I.prod 𝓘(𝕜)) (Prod.map id φ) p).IsInvertible := by
+    (mfderiv (I.prod 𝓘(𝕜)) (I.prod 𝓘(𝕜)) (Prod.map id φ) p).IsInvertible :=
   have hφ := differentiableAt_of_deriv_ne_zero hφ'
-  refine ⟨(tangentSpaceProdEquiv p).trans
-    (((ContinuousLinearEquiv.refl 𝕜 (TangentSpace I p.1)).prodCongr
-      ((NormedSpace.fromTangentSpace p.2).trans
-        ((ContinuousLinearEquiv.unitsEquivAut 𝕜 (Units.mk0 _ hφ')).trans
-          (NormedSpace.fromTangentSpace (φ p.2)).symm))).trans
-      (tangentSpaceProdEquiv (p.1, φ p.2)).symm),
-    ContinuousLinearMap.ext fun v ↦ (tangentSpaceProdEquiv (p.1, φ p.2)).injective ?_⟩
-  rw [tangentSpaceProdEquiv_mfderiv_prodMap_id hφ]
-  simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.prodCongr_apply,
-    ContinuousLinearEquiv.refl_apply, ContinuousLinearEquiv.unitsEquivAut_apply, Units.val_mk0,
-    Prod.map, mul_comm]
+  isInvertible_mfderiv_prodMap mdifferentiableAt_id hφ.mdifferentiableAt
+    ⟨.refl 𝕜 _, by rw [mfderiv_id, ContinuousLinearEquiv.coe_refl]⟩
+    (by simp [mfderiv_eq_fderiv, (hφ.hasDerivAt.hasFDerivAt_equiv hφ').fderiv])
 
 /-- On the common domain of two product charts, the tangent coordinate change of a product
 manifold is the product of the tangent coordinate changes of the factors. -/
@@ -1199,7 +1240,6 @@ theorem tangentCoordChange_sumInl (x y z : M) :
       tangentCoordChange I x y z := by
   simp only [tangentCoordChange_def, extChartAt_inl_apply]
   congr 1
-  have : Nonempty H := nonempty_of_chartedSpace x
   ext w
   simp [ChartedSpace.sum_chartAt_inl, Sum.inl_injective.extend_apply]
 
@@ -1210,7 +1250,6 @@ theorem tangentCoordChange_sumInr (x y z : M') :
       tangentCoordChange I x y z := by
   simp only [tangentCoordChange_def, extChartAt_inr_apply]
   congr 1
-  have : Nonempty H := nonempty_of_chartedSpace x
   ext w
   simp [ChartedSpace.sum_chartAt_inr, Sum.inr_injective.extend_apply]
 
@@ -1221,7 +1260,6 @@ at `x`. -/
 theorem symmL_trivializationAt_sumInl {x z : M} :
     (trivializationAt E (TangentSpace I : M ⊕ M' → Type _) (Sum.inl x)).symmL 𝕜 (Sum.inl z) =
       (trivializationAt E (TangentSpace I : M → Type _) x).symmL 𝕜 z := by
-  have : Nonempty H := nonempty_of_chartedSpace x
   by_cases hz : z ∈ (chartAt H x).source
   swap
   · have h₁ : (Sum.inl z : M ⊕ M') ∉
@@ -1243,7 +1281,6 @@ at `y`. -/
 theorem symmL_trivializationAt_sumInr {y z : M'} :
     (trivializationAt E (TangentSpace I : M ⊕ M' → Type _) (Sum.inr y)).symmL 𝕜 (Sum.inr z) =
       (trivializationAt E (TangentSpace I : M' → Type _) y).symmL 𝕜 z := by
-  have : Nonempty H := nonempty_of_chartedSpace y
   by_cases hz : z ∈ (chartAt H y).source
   swap
   · have h₁ : (Sum.inr z : M ⊕ M') ∉
@@ -1259,5 +1296,26 @@ theorem symmL_trivializationAt_sumInr {y z : M'} :
   exact tangentCoordChange_sumInr y z z
 
 end Sum
+
+section ModelSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V] {n : WithTop ℕ∞}
+
+/-- A `Cⁿ` field of continuous linear maps on a normed space, as a `Cⁿ` section of the tangent
+endomorphism bundle of the model manifold. -/
+def tangentEndomorphismOfModel (A : V → V →L[𝕜] V) (hA : ContDiff 𝕜 n A) :
+    ContMDiffSection 𝓘(𝕜, V) (V →L[𝕜] V) n
+      (fun x : V ↦ TangentSpace 𝓘(𝕜, V) x →L[𝕜] TangentSpace 𝓘(𝕜, V) x) :=
+  ⟨A, by
+    intro x
+    rw [contMDiffAt_hom_bundle]
+    refine ⟨contMDiffAt_id, ?_⟩
+    simpa only [inCoordinates_tangent_bundle_core_model_space] using hA.contMDiff x⟩
+
+@[simp]
+theorem tangentEndomorphismOfModel_apply (A : V → V →L[𝕜] V) (hA : ContDiff 𝕜 n A) (x : V) :
+    tangentEndomorphismOfModel A hA x = A x := (rfl)
+
+end ModelSpace
 
 end TauCeti.Manifold

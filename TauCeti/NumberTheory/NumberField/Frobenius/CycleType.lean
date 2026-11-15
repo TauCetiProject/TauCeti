@@ -43,7 +43,7 @@ vocabulary of `Polynomial.Gal`.
   for a Frobenius element of a number field in which `f` splits.
 * `TauCeti.NumberField.fullCycleType_galActionHom_restrict_minpoly_eq_map_natDegree_monicFactorsMod`
   is the same statement for the minimal polynomial of an algebraic integer `θ`, with the factor
-  degrees read off from `RingOfIntegers.monicFactorsMod θ p`.
+  degrees read off from `NumberField.RingOfIntegers.monicFactorsMod θ p`.
 * `TauCeti.NumberField.factorizationType_eq_cycleType_isArithFrobAt`: the same statement with the
   cycle type and the number of fixed points as separate summands.
 * `TauCeti.NumberField.exists_gal_fullCycleType_eq_factorizationType`: for monic `f` and a prime
@@ -124,7 +124,7 @@ whose minimal polynomial is squarefree modulo the prime `p`, and let `M` be a nu
 the minimal polynomial of `θ` splits. If `σ ∈ Gal(M/ℚ)` is an arithmetic Frobenius at a prime `Q`
 of `𝓞 M` over `p`, then the permutation of the roots of `minpoly ℚ θ` in `M` induced by `σ` has,
 counting fixed points, cycle lengths the degrees of the monic irreducible factors
-`RingOfIntegers.monicFactorsMod θ p` of `minpoly ℤ θ` modulo `p`. -/
+`NumberField.RingOfIntegers.monicFactorsMod θ p` of `minpoly ℤ θ` modulo `p`. -/
 theorem fullCycleType_galActionHom_restrict_minpoly_eq_map_natDegree_monicFactorsMod
     {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
     (hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p))))
@@ -133,7 +133,7 @@ theorem fullCycleType_galActionHom_restrict_minpoly_eq_map_natDegree_monicFactor
     {σ : M ≃ₐ[ℚ] M} (hσ : IsArithFrobAt ℤ σ Q) :
     (Gal.galActionHom (minpoly ℚ (θ : K)) M
       (Gal.restrict (minpoly ℚ (θ : K)) M σ)).fullCycleType =
-        (RingOfIntegers.monicFactorsMod θ p).val.map natDegree := by
+        (NumberField.RingOfIntegers.monicFactorsMod θ p).val.map natDegree := by
   have hmin : minpoly ℚ (θ : K) = (minpoly ℤ θ).map (Int.castRingHom ℚ) := by
     rw [← NumberField.RingOfIntegers.minpoly_coe,
       minpoly.isIntegrallyClosed_eq_field_fractions' ℚ θ.isIntegral_coe, algebraMap_int_eq]
@@ -149,7 +149,8 @@ theorem fullCycleType_galActionHom_restrict_minpoly_eq_map_natDegree_monicFactor
       ((minpoly ℤ θ).map (Int.castRingHom (ZMod p)))).Nodup :=
     (UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors
       ((minpoly.monic θ.isIntegral).map _).ne_zero).mp hsq
-  rw [key _ hmin, factorDegrees_def, RingOfIntegers.monicFactorsMod, Multiset.toFinset_val,
+  rw [key _ hmin, factorDegrees_def, NumberField.RingOfIntegers.monicFactorsMod,
+      Multiset.toFinset_val,
     hnodup.dedup]
 
 attribute [local instance] Gal.splits_ℚ_ℂ
@@ -195,7 +196,7 @@ theorem factorizationType_eq_cycleType_isArithFrobAt
     [Fact (((minpoly ℚ (θ : K)).map (algebraMap ℚ M)).Splits)]
     (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
     {σ : M ≃ₐ[ℚ] M} (hσ : IsArithFrobAt ℤ σ Q) :
-    (RingOfIntegers.monicFactorsMod θ p).val.map natDegree =
+    (NumberField.RingOfIntegers.monicFactorsMod θ p).val.map natDegree =
       (Gal.galActionHom (minpoly ℚ (θ : K)) M
           (Gal.restrict (minpoly ℚ (θ : K)) M σ)).cycleType +
         Multiset.replicate (Nat.card (Function.fixedPoints

@@ -200,7 +200,7 @@ theorem variance_id_stableSmallJumpRemainderMeasure_le {α β ε r : ℝ}
     have heq : |x| = r := le_antisymm hx.1.2 (le_of_not_gt hnot)
     simpa only [Metric.mem_sphere, Real.dist_eq, sub_zero] using heq
   have hae : band ≤ᵐ[ν] Metric.ball (0 : ℝ) r := by
-    rw [ae_le_set]
+    rw [ae_subset]
     exact measure_mono_null hsubset hsphere
   rw [variance_id_stableSmallJumpRemainderMeasure hα hβ hε hεr]
   exact setIntegral_mono_set (integrableOn_sq_stableLevyMeasure α β r)

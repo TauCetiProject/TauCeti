@@ -19,11 +19,6 @@ valid without any finite-dimensionality, of the general identity `Ad (lieExp X) 
 
 * `tangentAd_expUnit`: the tangent adjoint of an algebra-unit exponential is the exponential of the
   continuous commutator.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The conjugation formulas".
 -/
 
 public section

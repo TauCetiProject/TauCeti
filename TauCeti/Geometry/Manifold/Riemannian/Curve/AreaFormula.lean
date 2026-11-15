@@ -279,7 +279,7 @@ theorem lintegral_image_eq_lintegral_enorm_curveVelocity_mul (hO : IsOpen O)
   rw [← (MeasurableEmbedding.subtype_coe hA).lintegral_map (fun s ↦ g (γ s)),
     map_comap_subtype_coe hA,
     setLIntegral_withDensity_eq_setLIntegral_mul_non_measurable₀ _ hspeed _ hA
-      (.of_forall fun _ ↦ enorm_lt_top)]
+      (.of_forall fun _ ↦ eNorm_lt_top)]
   simp only [Pi.mul_apply]
 
 end TauCeti.Manifold

@@ -269,7 +269,7 @@ the reflection `μ ↦ q⁻² μ⁻¹`. -/
 theorem casimirScalar_eq_casimirScalar_iff (hq : q - q⁻¹ ≠ 0) {μ ν : ℂ} (hμ : μ ≠ 0)
     (hν : ν ≠ 0) : casimirScalar q μ = casimirScalar q ν ↔ μ = ν ∨ q ^ 2 * μ * ν = 1 := by
   have hq0 := ne_zero_of_sub_inv_ne_zero hq
-  rw [casimirScalar_def, casimirScalar_def, div_left_inj' (pow_ne_zero 2 hq)]
+  rw [casimirScalar_def, casimirScalar_def, div_left_inj₀ (pow_ne_zero 2 hq)]
   -- Clearing denominators, the difference of the two sides factors as
   -- `(μ - ν) (q² μ ν - 1) / (q μ ν)`.
   have key : (q * μ + q⁻¹ * μ⁻¹) - (q * ν + q⁻¹ * ν⁻¹) =

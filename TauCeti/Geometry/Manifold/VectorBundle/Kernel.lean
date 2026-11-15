@@ -99,7 +99,7 @@ theorem contMDiffWithinAt_kernel_iff
       ContMDiffWithinAt J I n (fun z ↦ (f z).proj) s y ∧
       ContMDiffWithinAt J 𝓘(𝕜, E) n (fun z ↦ ((f z).2 : E)) s y := by
   let := kernelFiberBundle hA.continuous h
-  rw [Bundle.contMDiffWithinAt_totalSpace]
+  rw [Bundle.contMDiffWithinAt_totalSpace_iff]
   simp only [trivializationAt_kernelFiberBundle, kernelTrivialization_apply]
   constructor
   · rintro ⟨hb, hv⟩

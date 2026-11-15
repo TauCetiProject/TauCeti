@@ -79,9 +79,9 @@ theorem cuspDatum_generator_eq_cycleMap {j : Fin n} {ξ : OnePoint ℝ}
   have hpar : IsParabolic (σ.cycleMap j) :=
     D.isParabolic_of_mem_stabilizer_of_ne_one hfix fun h ↦
       σ.cycleMap_ne_one_of_vertex_eq_inr hj (congrArg Subtype.val h)
-  obtain ⟨E, hEc, hEs, hEg⟩ := σ.exists_cuspDatum_generator_eq_cycleMap hj hmap hpar hdisj
+  obtain ⟨E, -, hEs, hEg⟩ := σ.exists_cuspDatum_generator_eq_cycleMap hj hmap hpar hdisj
     (hc ▸ D.scaling_smul_cusp)
-  have hED : E = D := Subgroup.CuspDatum.ext (hEc.trans hc.symm) hEs
+  have hED : E = D := Subgroup.CuspDatum.ext hEs
   exact hED ▸ hEg
 
 /-- A lift of a cusp meridian with `k` signed turns at an ideal polygon vertex ends at the
