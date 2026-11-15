@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Convergence
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # Exponential convergence of the ends of a Floer pair of pants
@@ -51,10 +52,10 @@ periodic solution of `ζ' = S'_t ζ` into one of `ζ' = S_t ζ`. Nondegeneracy o
 point of the time-one map of `H_q` therefore gives the hypothesis
 (`TauCeti.SymplecticForm.eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self`).
 
-**`C¹` convergence.** In the positive end chart a cylindrical end is a Floer half-cylinder for
-`H'_q` and the structure `J'_q(t, x) = J_q(±t, x)`
-(`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_of_cylindrical`),
-so the exponential `C¹` convergence of Floer half-cylinders at a nondegenerate end,
+**`C¹` convergence.** In the positive end chart a cylindrical end is a finite-energy Floer
+half-cylinder for `H'_q` and the structure `J'_q(t, x) = J_q(±t, x)`
+(`TauCeti.SymplecticForm.floer_comp_positiveEndChart_of_cylindrical`), so the exponential `C¹`
+convergence of Floer half-cylinders at a nondegenerate end,
 `TauCeti.SymplecticForm.exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp`, applies to
 `u ∘ φ'_q`. The end chart is the positive end chart after the reflection `z ↦ ±z`
 (`TauCeti.Floer.fderiv_comp_endChart`), and `X_{H'_q(±t)} = ±X_{H_q(t)}`, so the derivative of
@@ -152,20 +153,6 @@ theorem eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self {q : Pun
   simp only [zero_add, sub_zero]
   exact hΨ
 
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- If the end loops `t ↦ u(φ_q(±s, t))` converge uniformly to `y`, then the loops of `u ∘ φ'_q`
-converge uniformly to `t ↦ y(±t)`. -/
-private theorem tendstoUniformly_comp_positiveEndChart {q : Puncture} {y : ℝ → V}
-    (hconv : TendstoUniformly (fun s t ↦ u (endChart q (q.endSign * s, t))) y atTop) :
-    TendstoUniformly (fun s t ↦ (u ∘ positiveEndChart q) (s, t)) (fun t ↦ y (q.endSign * t))
-      atTop := by
-  have h : (fun s t ↦ (u ∘ positiveEndChart q) (s, t)) =
-      fun s ↦ (fun t ↦ u (endChart q (q.endSign * s, t))) ∘ fun t ↦ q.endSign * t := by
-    funext s t
-    simp only [comp_apply, positiveEndChart_mk]
-  rw [h]
-  exact hconv.comp _
-
 /-- Read in the end chart at `(±s, t)`, the distance of the derivative of `u` from that of the
 stationary cylinder of `y` is the distance of the derivative of `u ∘ φ'_q` at `(s, ±t)` from that
 of the stationary cylinder of the orbit `t ↦ y(±t)` of `H'_q`. -/
@@ -188,24 +175,6 @@ private theorem norm_fderiv_comp_endChart_sub_smulRight (q : Puncture) (u : ℝ 
             ((q.endSign • ω.hamiltonianVectorField (H q t)) (y t))) := by
     ext <;> simp [smul_sub, smul_smul]
   rw [h, norm_smul, Real.norm_eq_abs, abs_endSign, one_mul]
-
-/-- Exponential bounds on each of the three ends give one exponential bound on all of them, with
-the slowest rate and the largest constant. -/
-private theorem exists_pos_eventually_forall_le_mul_exp {f : Puncture → ℝ → ℝ → ℝ}
-    (h : ∀ q, ∃ κ > 0, ∃ A, ∀ᶠ s in atTop, ∀ t, f q s t ≤ A * Real.exp (-(κ * s))) :
-    ∃ κ > 0, ∃ A, ∀ᶠ s in atTop, ∀ q t, f q s t ≤ A * Real.exp (-(κ * s)) := by
-  choose κ hκ A hA using h
-  set κ₀ := Finset.univ.inf' ⟨.zero, Finset.mem_univ _⟩ κ
-  set A₀ := Finset.univ.sup' ⟨.zero, Finset.mem_univ _⟩ fun q ↦ max (A q) 0
-  refine ⟨κ₀, (Finset.lt_inf'_iff _).2 fun q _ ↦ hκ q, A₀, ?_⟩
-  filter_upwards [eventually_all.2 hA, eventually_ge_atTop 0] with s hs hs₀ q t
-  have hκq : κ₀ ≤ κ q := Finset.inf'_le _ (Finset.mem_univ q)
-  have hAq : max (A q) 0 ≤ A₀ := Finset.le_sup' (fun q ↦ max (A q) 0) (Finset.mem_univ q)
-  calc f q s t ≤ A q * Real.exp (-(κ q * s)) := hs q t
-    _ ≤ A₀ * Real.exp (-(κ₀ * s)) :=
-      mul_le_mul ((le_max_left _ _).trans hAq)
-        (Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_right hκq hs₀)))
-        (Real.exp_pos _).le ((le_max_right _ _).trans hAq)
 
 /-- **The ends of a Floer pair of pants converge exponentially to nondegenerate orbits.** Let `K`
 be equal to `H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C²` Hamiltonians `H_q`, and
@@ -321,28 +290,17 @@ theorem exists_pos_eventually_norm_fderiv_comp_positiveEndChart_sub_le_exp_of_cy
       ‖fderiv ℝ (u ∘ positiveEndChart q) (s, t) - (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight
         (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (y (q.endSign * t)))‖ ≤
           C * Real.exp (-(κ * s)) := by
-  set a := max T₀ 0
   have hHd : ∀ q t, Differentiable ℝ (H q t) := fun q t ↦
     ((hHs q).differentiable (by norm_num)).comp (differentiable_const t |>.prodMk differentiable_id)
-  have hmem (z : ℝ × ℝ) (hz : a < z.1) : positiveEndChart q z ∈ thricePuncturedSphereReal :=
-    positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt hz)
-  -- In the positive end chart the end is a Floer half-cylinder for `H'_q` and the structure
-  -- `J'(t, x) = J_q(±t, x)`, asymptotic to the orbit `t ↦ y(±t)` of `H'_q`.
-  set g : ℝ × V → ℝ × V := fun p ↦ (q.endSign * p.1, p.2)
-  have hg : ContDiff ℝ 2 g := (contDiff_const.mul contDiff_fst).prodMk contDiff_snd
-  exact exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp (u := u ∘ positiveEndChart q)
-    (J := fun t x ↦ Jq (q.endSign * t) x) (W := g ⁻¹' W) (a := a)
+  -- In the positive end chart the end is a finite-energy Floer half-cylinder for `H'_q` and the
+  -- structure `J'(t, x) = J_q(±t, x)`, asymptotic to the orbit `t ↦ y(±t)` of `H'_q`.
+  obtain ⟨hW', hJq', hJqper', hBW', hJqt', hu', hper', huB', hfloer', hE'⟩ :=
+    floer_comp_positiveEndChart_of_cylindrical hKH hH hHd hu (by norm_num) huB hfloer hE hW hJq
+      hJqper hBW hJqt hJ
+  exact exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp
+    (J := fun t x ↦ Jq (q.endSign * t) x)
     (contDiff_uncurry_positiveEndHamiltonian (hHs q)) (periodic_positiveEndHamiltonian (hH q))
-    (hW.preimage hg.continuous) (hJq.comp hg.contDiffOn (mapsTo_preimage g W))
-    (periodic_comp_endSign_mul hJqper) hB (fun p hp ↦ hBW ⟨mem_univ _, hp.2⟩)
-    (fun t x hx ↦ hJqt _ x hx)
-    (hu.comp (contDiff_positiveEndChart q 3).contDiffOn fun z hz ↦ hmem z hz.1)
-    (fun s _ t ↦ by simp only [comp_apply, positiveEndChart_add_one])
-    (fun s hs t ↦ huB _ (hmem (s, t) hs))
-    (fun z hz ↦ isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_of_cylindrical hKH hH
-      hHd (hu.differentiableOn (by norm_num)) hfloer hJ hz.1)
-    (ne_top_of_le_ne_top hE (setLIntegral_floerEnergyDensity_comp_positiveEndChart_le hKH hH hHd
-      (hu.differentiableOn (by norm_num)) q (le_max_right _ _) (le_max_left _ _)))
+    hW' hJq' hJqper' hB hBW' hJqt' hu' hper' huB' hfloer' hE'
     (periodic_comp_endSign_mul hyper) (hasDerivAt_comp_endSign_mul_positiveEndHamiltonian hy)
     (fun v hv ↦ eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self hL
       ((hHs q).of_le (by norm_num)) (hH q) hy hyper hnd hv)
