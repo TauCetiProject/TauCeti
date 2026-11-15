@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.GorensteinProjective.FGModuleCat
+public import TauCeti.CategoryTheory.Triangulated.Equivalence
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Equivalence
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Singularity
-public import TauCeti.RingTheory.IwanagaGorenstein
+public import TauCeti.RingTheory.RegularLocalRing.IwanagaGorenstein
 public import TauCeti.RingTheory.RingHom.Flat
 public import Mathlib.Algebra.Polynomial.Coeff
 
@@ -34,7 +35,9 @@ Since `quotientGorensteinProjectiveStableCokernel` and `toSingularityCategory` a
 functors, transporting their composite `CommShift ℤ` along this isomorphism equips
 `quotientSingularityCokernel` with shift compatibility and proves that it is a triangle functor
 (`quotientSingularityCokernel_isTriangulated`), requiring only `w ∈ nonZeroDivisors S` and
-`IsNoetherianRing R`.
+`IsNoetherianRing R`. Consequently, any equivalence `HMF(S, w) ≌ D_sg(mod-R)` whose forward functor
+equals `quotientSingularityCokernel` is automatically a triangulated equivalence
+(`isTriangulated_of_functor_eq_quotientSingularityCokernel`).
 
 When `S` is noetherian of finite global dimension:
 
@@ -51,12 +54,14 @@ equivalence (`quotientSingularityCokernel_isEquivalence`). Specializing to regul
 finite Krull dimension yields:
 
 * **Eisenbud's singularity equivalence**
-  (`quotientSingularityCokernel_isEquivalence_of_isRegularLocalRing`) over a regular local ring `S`;
-* **Orlov's affine theorem** (`quotientSingularityCokernel_isEquivalence_of_flat_polynomial`): for a
-  regular ring `S` of finite Krull dimension and a flat ring homomorphism `φ : k[X] →+* S` sending
-  `X` to `w` (an affine Landau–Ginzburg model `Spec S → A¹_k` with flat potential `w`), `X` is a
-  nonzerodivisor in `k[X]` over *any* commutative ring `k` (`Polynomial.X_mem_nonZeroDivisors`),
-  flatness transports it to `w ∈ nonZeroDivisors S` (`RingHom.Flat.map_mem_nonZeroDivisors`), and
+  (`quotientSingularityCokernel_isEquivalence_of_isRegularLocalRing` and
+  `quotientSingularityCokernelEquivalenceOfIsRegularLocalRing`) over a regular local ring `S`;
+* **Orlov's affine theorem** (`quotientSingularityCokernel_isEquivalence_of_flat_polynomial` and
+  `quotientSingularityCokernelEquivalenceOfFlatPolynomial`): for a regular ring `S` of finite Krull
+  dimension and a flat ring homomorphism `φ : k[X] →+* S` sending `X` to `w` (an affine
+  Landau–Ginzburg model `Spec S → A¹_k` with flat potential `w`), `X` is a nonzerodivisor in `k[X]`
+  over *any* commutative ring `k` (`Polynomial.X_mem_nonZeroDivisors`), flatness transports it to
+  `w ∈ nonZeroDivisors S` (`RingHom.Flat.map_mem_nonZeroDivisors`), and
   `HMF(S, w) ≌ D_sg(mod-S/(w))` as triangulated categories. Notice that neither `IsDomain k` nor
   `w ≠ 0` needs to be assumed separately: if `w = 0`, flatness of `φ` forces `S` to be the zero
   ring, where both categories are zero.
@@ -65,17 +70,22 @@ finite Krull dimension yields:
 
 In `TauCeti.MatrixFactorization.HomotopyCategory`:
 
-* `quotientGorensteinProjectiveStableCokernel_comp_toSingularityCategory` and
+* `quotientGorensteinProjectiveCokernel_comp_toFGModuleCat_comp_ι`,
+  `quotientGorensteinProjectiveStableCokernel_comp_toSingularityCategory`, and
   `quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso`: the factorization of
   `quotientSingularityCokernel` through `stable(Gproj-S/(w))`.
-* `quotientSingularityCokernelCommShift` and `quotientSingularityCokernel_isTriangulated`: shift
-  compatibility and triangle-functor structure on `quotientSingularityCokernel`.
+* `quotientSingularityCokernelCommShift`, `quotientSingularityCokernel_commShiftIso`,
+  `quotientSingularityCokernel_isTriangulated`, and
+  `isTriangulated_of_functor_eq_quotientSingularityCokernel`: shift compatibility and
+  triangle-functor/equivalence structure on `quotientSingularityCokernel`.
 * `quotientSingularityCokernel_isEquivalence`, `quotientSingularityCokernelEquivalence`, and
   `quotientSingularityCokernelEquivalence_isTriangulated`: the singularity equivalence in finite
   global dimension.
-* `quotientSingularityCokernel_isEquivalence_of_isRegularRing` and
-  `quotientSingularityCokernel_isEquivalence_of_isRegularLocalRing`: regular-ring and regular-local
-  specializations.
+* `quotientSingularityCokernel_isEquivalence_of_isRegularRing_of_ringKrullDim_lt_top`,
+  `quotientSingularityCokernelEquivalenceOfIsRegularRingOfRingKrullDimLtTop`,
+  `quotientSingularityCokernel_isEquivalence_of_isRegularLocalRing`, and
+  `quotientSingularityCokernelEquivalenceOfIsRegularLocalRing`: regular-ring and regular-local
+  triangulated equivalence specializations.
 * `quotientSingularityCokernel_isEquivalence_of_flat_polynomial`,
   `quotientSingularityCokernelEquivalenceOfFlatPolynomial`, and
   `quotientSingularityCokernelEquivalenceOfFlatPolynomial_isTriangulated`: **Orlov's affine
@@ -108,7 +118,9 @@ section Comparison
 variable {S : Type u} [CommRing S] {w : S}
   [IsNoetherianRing (S ⧸ Ideal.span {w})]
 
-private theorem quotientGorensteinProjectiveCokernel_comp_toFGModuleCat_comp_ι
+/-- Viewing the Gorenstein-projective cokernel functor inside `FGModuleCat (S ⧸ (w))` recovers
+base change modulo `w` followed by `cokernelFunctor`. -/
+theorem quotientGorensteinProjectiveCokernel_comp_toFGModuleCat_comp_ι
     (hw : w ∈ nonZeroDivisors S) :
     (quotientGorensteinProjectiveCokernel hw ⋙
         GorensteinProjectiveModuleCat.toFGModuleCat (S ⧸ Ideal.span {w})) ⋙
@@ -162,6 +174,28 @@ def quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso
       quotientSingularityCokernel.{v, u} (S := S) (w := w) :=
   eqToIso (quotientGorensteinProjectiveStableCokernel_comp_toSingularityCategory.{v, u} hw)
 
+/-- Unfolds `quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso`. -/
+theorem quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso_def
+    (hw : w ∈ nonZeroDivisors S) :
+    quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso.{v, u} hw =
+      eqToIso (quotientGorensteinProjectiveStableCokernel_comp_toSingularityCategory.{v, u} hw) :=
+  (rfl)
+
+@[simp]
+theorem quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso_hom
+    (hw : w ∈ nonZeroDivisors S) :
+    (quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso.{v, u} hw).hom =
+      eqToHom (quotientGorensteinProjectiveStableCokernel_comp_toSingularityCategory.{v, u} hw) :=
+  (rfl)
+
+@[simp]
+theorem quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso_inv
+    (hw : w ∈ nonZeroDivisors S) :
+    (quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso.{v, u} hw).inv =
+      eqToHom
+        (quotientGorensteinProjectiveStableCokernel_comp_toSingularityCategory.{v, u} hw).symm :=
+  (rfl)
+
 /-- Shift compatibility for `quotientSingularityCokernel : HMF(S, w) ⥤ D_sg(mod-S/(w))`,
 transported from the composite through `stable(Gproj-S/(w))`. -/
 @[instance_reducible]
@@ -174,6 +208,27 @@ def quotientSingularityCokernelCommShift (hw : w ∈ nonZeroDivisors S) :
   let := GorensteinProjectiveModuleCat.toSingularityCategoryCommShift.{v, u} (S ⧸ Ideal.span {w})
   exact Functor.CommShift.ofIso
     (quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso.{v, u} hw) ℤ
+
+/-- The shift comparison of `quotientSingularityCokernel` is the composite shift comparison of
+`quotientGorensteinProjectiveStableCokernel` and `toSingularityCategory` conjugated by
+`quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso`. -/
+theorem quotientSingularityCokernel_commShiftIso (hw : w ∈ nonZeroDivisors S) (n : ℤ) :
+    letI := (GorensteinProjectiveModuleCat.exactStructure_isFrobenius.{u, u}
+      (A := S ⧸ Ideal.span {w})).stableHasShift
+    letI := quotientGorensteinProjectiveStableCokernelCommShift hw
+    letI := GorensteinProjectiveModuleCat.toSingularityCategoryCommShift.{v, u}
+      (S ⧸ Ideal.span {w})
+    letI := quotientSingularityCokernelCommShift.{v, u} hw
+    (quotientSingularityCokernel.{v, u} (S := S) (w := w)).commShiftIso n =
+      Functor.isoWhiskerLeft (shiftFunctor (HomotopyCategory (S := S) (w := w)) n)
+        (quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso.{v, u} hw).symm ≪≫
+      (quotientGorensteinProjectiveStableCokernel hw ⋙
+        GorensteinProjectiveModuleCat.toSingularityCategory.{v, u}
+          (S ⧸ Ideal.span {w})).commShiftIso n ≪≫
+      Functor.isoWhiskerRight
+        (quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso.{v, u} hw)
+        (shiftFunctor (SingularityCategory (FGModuleCat.{u} (S ⧸ Ideal.span {w}))) n) :=
+  (rfl)
 
 /-- The comparison isomorphism factoring `quotientSingularityCokernel` through
 `stable(Gproj-S/(w))` respects shifts. -/
@@ -217,6 +272,37 @@ theorem quotientSingularityCokernel_isTriangulated (hw : w ∈ nonZeroDivisors S
     hw
   exact Functor.isTriangulated_of_iso
     (quotientGorensteinProjectiveStableCokernelCompToSingularityCategoryIso.{v, u} hw)
+
+/-- Any equivalence `E : HMF(S, w) ≌ D_sg(mod-S/(w))` whose forward functor equals
+`quotientSingularityCokernel` is a triangulated equivalence. -/
+theorem isTriangulated_of_functor_eq_quotientSingularityCokernel (hw : w ∈ nonZeroDivisors S)
+    (E : HomotopyCategory (S := S) (w := w) ≌
+      SingularityCategory (FGModuleCat.{u} (S ⧸ Ideal.span {w})))
+    (hE : E.functor = quotientSingularityCokernel.{v, u} (S := S) (w := w)) :
+    letI := quotientSingularityCokernelCommShift.{v, u} hw
+    letI : E.functor.CommShift ℤ := Functor.CommShift.ofIso (eqToIso hE.symm) ℤ
+    letI := E.commShiftInverse ℤ
+    letI := E.commShift_of_functor ℤ
+    E.IsTriangulated := by
+  let := quotientSingularityCokernelCommShift.{v, u} hw
+  have := quotientSingularityCokernel_isTriangulated.{v, u} hw
+  exact E.isTriangulated_of_functor_eq hE
+
+/-- When `quotientSingularityCokernel` is an equivalence of categories, its `.asEquivalence` is
+triangulated. -/
+theorem quotientSingularityCokernel_asEquivalence_isTriangulated (hw : w ∈ nonZeroDivisors S)
+    [(quotientSingularityCokernel.{v, u} (S := S) (w := w)).IsEquivalence] :
+    letI := quotientSingularityCokernelCommShift.{v, u} hw
+    letI : (quotientSingularityCokernel.{v, u} (S := S) (w := w)).asEquivalence.functor.CommShift
+        ℤ :=
+      Functor.CommShift.ofIso
+        (eqToIso (Functor.asEquivalence_functor _).symm) ℤ
+    letI := (quotientSingularityCokernel.{v, u} (S := S) (w := w)).asEquivalence.commShiftInverse ℤ
+    letI := (quotientSingularityCokernel.{v, u}
+      (S := S) (w := w)).asEquivalence.commShift_of_functor ℤ
+    (quotientSingularityCokernel.{v, u} (S := S) (w := w)).asEquivalence.IsTriangulated :=
+  isTriangulated_of_functor_eq_quotientSingularityCokernel.{v, u} hw _
+    (Functor.asEquivalence_functor _)
 
 end Comparison
 
@@ -274,22 +360,15 @@ theorem quotientSingularityCokernelEquivalence_isTriangulated [IsNoetherianRing 
         (eqToIso (quotientSingularityCokernelEquivalence_functor.{v, u} hw d hd).symm) ℤ
     letI := (quotientSingularityCokernelEquivalence.{v, u} hw d hd).commShiftInverse ℤ
     letI := (quotientSingularityCokernelEquivalence.{v, u} hw d hd).commShift_of_functor ℤ
-    (quotientSingularityCokernelEquivalence.{v, u} hw d hd).IsTriangulated := by
-  let := quotientSingularityCokernelCommShift.{v, u} hw
-  let e := eqToIso (quotientSingularityCokernelEquivalence_functor.{v, u} hw d hd).symm
-  let : (quotientSingularityCokernelEquivalence.{v, u} hw d hd).functor.CommShift ℤ :=
-    Functor.CommShift.ofIso e ℤ
-  let := (quotientSingularityCokernelEquivalence.{v, u} hw d hd).commShiftInverse ℤ
-  let := (quotientSingularityCokernelEquivalence.{v, u} hw d hd).commShift_of_functor ℤ
-  have := Functor.CommShift.ofIso_compatibility e ℤ
-  have := quotientSingularityCokernel_isTriangulated.{v, u} hw
-  exact Equivalence.IsTriangulated.mk' _ (Functor.isTriangulated_of_iso e)
+    (quotientSingularityCokernelEquivalence.{v, u} hw d hd).IsTriangulated :=
+  isTriangulated_of_functor_eq_quotientSingularityCokernel.{v, u} hw _
+    (quotientSingularityCokernelEquivalence_functor.{v, u} hw d hd)
 
 /-- **Singularity equivalence over a regular ring of finite Krull dimension.** Let `S` be a regular
 commutative ring of finite Krull dimension and `w` a nonzerodivisor of `S`. Then
 `quotientSingularityCokernel : HMF(S, w) ⥤ D_sg(mod-S/(w))` is an equivalence of categories. -/
-theorem quotientSingularityCokernel_isEquivalence_of_isRegularRing [IsRegularRing S]
-    [HasDerivedCategory.{v} (FGModuleCat.{u} (S ⧸ Ideal.span {w}))]
+theorem quotientSingularityCokernel_isEquivalence_of_isRegularRing_of_ringKrullDim_lt_top
+    [IsRegularRing S] [HasDerivedCategory.{v} (FGModuleCat.{u} (S ⧸ Ideal.span {w}))]
     (hdim : ringKrullDim S < ⊤) (hw : w ∈ nonZeroDivisors S) :
     (quotientSingularityCokernel.{v, u} (S := S) (w := w)).IsEquivalence := by
   have ⟨d, hd⟩ : ∃ d : ℕ, ringKrullDim S ≤ d := by
@@ -302,6 +381,50 @@ theorem quotientSingularityCokernel_isEquivalence_of_isRegularRing [IsRegularRin
   exact quotientSingularityCokernel_isEquivalence.{v, u} hw d
     (IsRegularRing.hasProjectiveDimensionLE hd)
 
+/-- The equivalence `HMF(S, w) ≌ D_sg(mod-S/(w))` for a nonzerodivisor `w` of a regular commutative
+ring `S` of finite Krull dimension. -/
+def quotientSingularityCokernelEquivalenceOfIsRegularRingOfRingKrullDimLtTop [IsRegularRing S]
+    [HasDerivedCategory.{v} (FGModuleCat.{u} (S ⧸ Ideal.span {w}))]
+    (hdim : ringKrullDim S < ⊤) (hw : w ∈ nonZeroDivisors S) :
+    HomotopyCategory (S := S) (w := w) ≌
+      SingularityCategory (FGModuleCat.{u} (S ⧸ Ideal.span {w})) :=
+  haveI := quotientSingularityCokernel_isEquivalence_of_isRegularRing_of_ringKrullDim_lt_top.{v, u}
+    hdim hw
+  (quotientSingularityCokernel.{v, u} (S := S) (w := w)).asEquivalence
+
+/-- The forward functor of
+`quotientSingularityCokernelEquivalenceOfIsRegularRingOfRingKrullDimLtTop` is
+`quotientSingularityCokernel`. -/
+@[simp]
+theorem quotientSingularityCokernelEquivalenceOfIsRegularRingOfRingKrullDimLtTop_functor
+    [IsRegularRing S] [HasDerivedCategory.{v} (FGModuleCat.{u} (S ⧸ Ideal.span {w}))]
+    (hdim : ringKrullDim S < ⊤) (hw : w ∈ nonZeroDivisors S) :
+    (quotientSingularityCokernelEquivalenceOfIsRegularRingOfRingKrullDimLtTop.{v, u}
+        hdim hw).functor =
+      quotientSingularityCokernel.{v, u} (S := S) (w := w) :=
+  (rfl)
+
+/-- **The singularity equivalence over a regular ring of finite Krull dimension is triangulated.**
+-/
+theorem quotientSingularityCokernelEquivalenceOfIsRegularRingOfRingKrullDimLtTop_isTriangulated
+    [IsRegularRing S] [HasDerivedCategory.{v} (FGModuleCat.{u} (S ⧸ Ideal.span {w}))]
+    (hdim : ringKrullDim S < ⊤) (hw : w ∈ nonZeroDivisors S) :
+    letI := quotientSingularityCokernelCommShift.{v, u} hw
+    letI : (quotientSingularityCokernelEquivalenceOfIsRegularRingOfRingKrullDimLtTop.{v, u}
+        hdim hw).functor.CommShift ℤ :=
+      Functor.CommShift.ofIso (eqToIso
+        (quotientSingularityCokernelEquivalenceOfIsRegularRingOfRingKrullDimLtTop_functor.{v, u}
+          hdim hw).symm) ℤ
+    letI := (quotientSingularityCokernelEquivalenceOfIsRegularRingOfRingKrullDimLtTop.{v, u}
+      hdim hw).commShiftInverse ℤ
+    letI := (quotientSingularityCokernelEquivalenceOfIsRegularRingOfRingKrullDimLtTop.{v, u}
+      hdim hw).commShift_of_functor ℤ
+    (quotientSingularityCokernelEquivalenceOfIsRegularRingOfRingKrullDimLtTop.{v, u}
+      hdim hw).IsTriangulated :=
+  isTriangulated_of_functor_eq_quotientSingularityCokernel.{v, u} hw _
+    (quotientSingularityCokernelEquivalenceOfIsRegularRingOfRingKrullDimLtTop_functor.{v, u}
+      hdim hw)
+
 /-- **Eisenbud's singularity equivalence.** Over a regular local ring `S`, for every nonzerodivisor
 `w` of `S`, `quotientSingularityCokernel : HMF(S, w) ⥤ D_sg(mod-S/(w))` is an equivalence of
 categories. -/
@@ -309,10 +432,46 @@ theorem quotientSingularityCokernel_isEquivalence_of_isRegularLocalRing [IsRegul
     [HasDerivedCategory.{v} (FGModuleCat.{u} (S ⧸ Ideal.span {w}))]
     (hw : w ∈ nonZeroDivisors S) :
     (quotientSingularityCokernel.{v, u} (S := S) (w := w)).IsEquivalence :=
-  quotientSingularityCokernel_isEquivalence.{v, u} hw
-    (IsLocalRing.maximalIdeal S).spanFinrank
-    (IsRegularLocalRing.hasProjectiveDimensionLE
-      (IsRegularLocalRing.spanFinrank_maximalIdeal (R := S)).ge)
+  quotientSingularityCokernel_isEquivalence_of_isRegularRing_of_ringKrullDim_lt_top.{v, u}
+    ((_root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := S)).symm.trans_lt
+      (WithBot.coe_lt_coe.mpr (ENat.natCast_lt_top _))) hw
+
+/-- The equivalence `HMF(S, w) ≌ D_sg(mod-S/(w))` of Eisenbud's theorem over a regular local ring
+`S`. -/
+def quotientSingularityCokernelEquivalenceOfIsRegularLocalRing [IsRegularLocalRing S]
+    [HasDerivedCategory.{v} (FGModuleCat.{u} (S ⧸ Ideal.span {w}))]
+    (hw : w ∈ nonZeroDivisors S) :
+    HomotopyCategory (S := S) (w := w) ≌
+      SingularityCategory (FGModuleCat.{u} (S ⧸ Ideal.span {w})) :=
+  haveI := quotientSingularityCokernel_isEquivalence_of_isRegularLocalRing.{v, u} hw
+  (quotientSingularityCokernel.{v, u} (S := S) (w := w)).asEquivalence
+
+/-- The forward functor of `quotientSingularityCokernelEquivalenceOfIsRegularLocalRing` is
+`quotientSingularityCokernel`. -/
+@[simp]
+theorem quotientSingularityCokernelEquivalenceOfIsRegularLocalRing_functor [IsRegularLocalRing S]
+    [HasDerivedCategory.{v} (FGModuleCat.{u} (S ⧸ Ideal.span {w}))]
+    (hw : w ∈ nonZeroDivisors S) :
+    (quotientSingularityCokernelEquivalenceOfIsRegularLocalRing.{v, u} hw).functor =
+      quotientSingularityCokernel.{v, u} (S := S) (w := w) :=
+  (rfl)
+
+/-- **Eisenbud's singularity equivalence is triangulated.** -/
+theorem quotientSingularityCokernelEquivalenceOfIsRegularLocalRing_isTriangulated
+    [IsRegularLocalRing S] [HasDerivedCategory.{v} (FGModuleCat.{u} (S ⧸ Ideal.span {w}))]
+    (hw : w ∈ nonZeroDivisors S) :
+    letI := quotientSingularityCokernelCommShift.{v, u} hw
+    letI : (quotientSingularityCokernelEquivalenceOfIsRegularLocalRing.{v, u}
+        hw).functor.CommShift ℤ :=
+      Functor.CommShift.ofIso (eqToIso
+        (quotientSingularityCokernelEquivalenceOfIsRegularLocalRing_functor.{v, u} hw).symm) ℤ
+    letI := (quotientSingularityCokernelEquivalenceOfIsRegularLocalRing.{v, u}
+      hw).commShiftInverse ℤ
+    letI := (quotientSingularityCokernelEquivalenceOfIsRegularLocalRing.{v, u}
+      hw).commShift_of_functor ℤ
+    (quotientSingularityCokernelEquivalenceOfIsRegularLocalRing.{v, u} hw).IsTriangulated :=
+  isTriangulated_of_functor_eq_quotientSingularityCokernel.{v, u} hw _
+    (quotientSingularityCokernelEquivalenceOfIsRegularLocalRing_functor.{v, u} hw)
 
 /-- **Orlov's affine theorem** (Orlov, Theorem 3.9). Let `S` be a regular commutative ring of
 finite Krull dimension, `k` a commutative ring, and `φ : k[X] →+* S` a flat ring homomorphism with
@@ -323,7 +482,7 @@ theorem quotientSingularityCokernel_isEquivalence_of_flat_polynomial [IsRegularR
     (hdim : ringKrullDim S < ⊤) {k : Type w} [CommRing k] {φ : Polynomial k →+* S}
     (hφ : φ.Flat) (hw : φ Polynomial.X = w) :
     (quotientSingularityCokernel.{v, u} (S := S) (w := w)).IsEquivalence :=
-  quotientSingularityCokernel_isEquivalence_of_isRegularRing.{v, u} hdim
+  quotientSingularityCokernel_isEquivalence_of_isRegularRing_of_ringKrullDim_lt_top.{v, u} hdim
     (hw ▸ hφ.map_mem_nonZeroDivisors Polynomial.X_mem_nonZeroDivisors)
 
 /-- The equivalence `HMF(S, w) ≌ D_sg(mod-S/(w))` of Orlov's affine theorem, for a regular ring `S`
@@ -365,22 +524,10 @@ theorem quotientSingularityCokernelEquivalenceOfFlatPolynomial_isTriangulated [I
     letI := (quotientSingularityCokernelEquivalenceOfFlatPolynomial.{v, u, w}
       hdim hφ hw).commShift_of_functor ℤ
     (quotientSingularityCokernelEquivalenceOfFlatPolynomial.{v, u, w}
-      hdim hφ hw).IsTriangulated := by
-  let := quotientSingularityCokernelCommShift.{v, u}
-    (hw ▸ hφ.map_mem_nonZeroDivisors Polynomial.X_mem_nonZeroDivisors)
-  let e := eqToIso
-    (quotientSingularityCokernelEquivalenceOfFlatPolynomial_functor.{v, u, w} hdim hφ hw).symm
-  let : (quotientSingularityCokernelEquivalenceOfFlatPolynomial.{v, u, w}
-      hdim hφ hw).functor.CommShift ℤ :=
-    Functor.CommShift.ofIso e ℤ
-  let := (quotientSingularityCokernelEquivalenceOfFlatPolynomial.{v, u, w}
-    hdim hφ hw).commShiftInverse ℤ
-  let := (quotientSingularityCokernelEquivalenceOfFlatPolynomial.{v, u, w}
-    hdim hφ hw).commShift_of_functor ℤ
-  have := Functor.CommShift.ofIso_compatibility e ℤ
-  have := quotientSingularityCokernel_isTriangulated.{v, u}
-    (hw ▸ hφ.map_mem_nonZeroDivisors Polynomial.X_mem_nonZeroDivisors)
-  exact Equivalence.IsTriangulated.mk' _ (Functor.isTriangulated_of_iso e)
+      hdim hφ hw).IsTriangulated :=
+  isTriangulated_of_functor_eq_quotientSingularityCokernel.{v, u}
+    (hw ▸ hφ.map_mem_nonZeroDivisors Polynomial.X_mem_nonZeroDivisors) _
+    (quotientSingularityCokernelEquivalenceOfFlatPolynomial_functor.{v, u, w} hdim hφ hw)
 
 end Equivalence
 

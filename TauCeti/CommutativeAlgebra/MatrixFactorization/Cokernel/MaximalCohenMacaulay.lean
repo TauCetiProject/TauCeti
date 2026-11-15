@@ -5,36 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Equivalence
-public import TauCeti.RingTheory.Depth.AuslanderBuchsbaum
-public import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
-import TauCeti.RingTheory.Depth.WeaklyRegular
-import TauCeti.RingTheory.KrullDimension.Module
+public import TauCeti.Algebra.Homology.GorensteinProjective.CohenMacaulay
+public import TauCeti.Algebra.Homology.GorensteinProjective.Hypersurface
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Resolution
+public import TauCeti.RingTheory.RegularLocalRing.AuslanderBuchsbaum
+import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
 /-!
 # Maximal Cohen–Macaulay modules and matrix factorizations over a local hypersurface
 
-Let `(S, 𝔪)` be a regular local ring and let `w ∈ 𝔪` be a nonzerodivisor, so that `R = S ⧸ (w)` is
-a local hypersurface ring of Krull dimension `dim S - 1`. A finitely generated `R`-module `M` is
-*maximal Cohen–Macaulay* when `dim R ≤ depth M` (with `depth 0 = ⊤`, and `depth M = dim R` when
-`M ≠ 0`).
-
-Over a Noetherian ambient ring `S` of finite global dimension, a finitely generated `R`-module is
-Gorenstein-projective over `R` if and only if its projective dimension over `S` is at most one
+Let `S` be a commutative ring and `w` a nonzerodivisor of `S`, with hypersurface quotient
+`R = S ⧸ (w)`. Over an ambient ring `S` of finite global dimension, a finitely presented `R`-module
+is Gorenstein-projective over `R` if and only if its projective dimension over `S` is at most one
 (`TauCeti.isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE`): the forward direction is
 `TauCeti.IsGorensteinProjective.hasProjectiveDimensionLE_restrictScalars_quotient`, and the reverse
 direction constructs a matrix factorization from a length-one projective resolution
 (`TauCeti.MatrixFactorization.isGorensteinProjective_of_hasProjectiveDimensionLE`).
 
-When `S` is regular local and `R = S ⧸ (w)` is local (`w ∈ 𝔪`), the Auslander–Buchsbaum formula over
-`S`,
-
-```text
-pd_S M + depth_R M = depth S = dim S = dim R + 1,
-```
-
-translates `pd_S M ≤ 1` into `dim R ≤ depth_R M`. Consequently, for a finitely generated `R`-module
-`M`, the following four conditions are equivalent (`TauCeti.isGorensteinProjective_quotient_tfae`):
+When `(S, 𝔪)` is a regular local ring and `R = S ⧸ (w)` is local (`w ∈ 𝔪`), a finitely generated
+`R`-module `M` is *maximal Cohen–Macaulay* when `dim R ≤ depth M` (with `depth 0 = ⊤`, and
+`depth M = dim R` when `M ≠ 0`). Combining the projective-dimension characterization with the
+Auslander–Buchsbaum depth criterion
+(`TauCeti.hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_le_depth`),
+the following four conditions on a finitely generated `R`-module `M` are equivalent
+(`TauCeti.isGorensteinProjective_quotient_tfae`):
 
 1. `M` is Gorenstein-projective over `R`;
 2. `M` has projective dimension at most one over `S`;
@@ -42,8 +36,11 @@ translates `pd_S M ≤ 1` into `dim R ≤ depth_R M`. Consequently, for a finite
    matrix factorization of `w`;
 4. `M` is maximal Cohen–Macaulay over `R` (`ringKrullDim R ≤ depth M`).
 
-In particular, every Gorenstein-projective `R`-module is Cohen–Macaulay, and if `M` is nonzero its
-depth equals the full Krull dimension `ringKrullDim R`. Together with
+In particular, since `R = S ⧸ (w)` is a Cohen–Macaulay local ring, every Gorenstein-projective
+`R`-module (in any universe) is Cohen–Macaulay, and if `M` is nontrivial its depth equals the full
+Krull dimension `ringKrullDim R` (specializing
+`TauCeti.IsGorensteinProjective.depth_eq_ringKrullDim` and
+`TauCeti.IsGorensteinProjective.isCohenMacaulay`). Together with
 `quotientGorensteinProjectiveStableCokernel_isEquivalence_of_isRegularLocalRing` (in
 `TauCeti.MatrixFactorization.HomotopyCategory`), this recovers Eisenbud's theorem in maximal
 Cohen–Macaulay terms: `HMF(S, w)` is triangle equivalent to the stable category of maximal
@@ -51,17 +48,17 @@ Cohen–Macaulay `S ⧸ (w)`-modules.
 
 ## Main results
 
-* `TauCeti.isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE`: over a Noetherian ring `S`
-  of finite global dimension, a finite `S ⧸ (w)`-module is Gorenstein-projective iff `pd_S M ≤ 1`.
-* `TauCeti.hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_le_depth`: over a
-  regular local ring `S`, `pd_S M ≤ 1 ↔ dim (S ⧸ (w)) ≤ depth M`.
+* `TauCeti.isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE`: over a commutative ring
+  `S` of bounded projective dimension, a finitely presented `S ⧸ (w)`-module is
+  Gorenstein-projective iff `pd_S M ≤ 1` (with Noetherian, regular, and regular-local
+  specializations).
 * `TauCeti.isGorensteinProjective_quotient_iff_ringKrullDim_le_depth`: **Buchweitz–Eisenbud
   characterization**, `IsGorensteinProjective (S ⧸ (w)) M ↔ dim (S ⧸ (w)) ≤ depth M`.
 * `TauCeti.isGorensteinProjective_quotient_tfae`: the four-way equivalence between Gorenstein
   projectivity, `pd_S M ≤ 1`, matrix-factorization cokernels, and maximal Cohen–Macaulayness.
-* `TauCeti.IsGorensteinProjective.depth_eq_ringKrullDim` and
-  `TauCeti.IsGorensteinProjective.isCohenMacaulay`: depth and Cohen–Macaulayness of
-  Gorenstein-projective modules over a local hypersurface.
+* `TauCeti.IsGorensteinProjective.depth_eq_ringKrullDim_quotient` and
+  `TauCeti.IsGorensteinProjective.isCohenMacaulay_quotient`: depth and Cohen–Macaulayness of
+  Gorenstein-projective modules over a local hypersurface in a regular local ring.
 
 ## References
 
@@ -74,7 +71,7 @@ Cohen–Macaulay `S ⧸ (w)`-modules.
 
 public section
 
-universe u
+universe v u
 
 open CategoryTheory Ideal
 
@@ -82,27 +79,70 @@ namespace TauCeti
 
 section FiniteGlobalDimension
 
-variable {S : Type u} [CommRing S] [IsNoetherianRing S] {w : S}
+variable {S : Type u} [CommRing S] {w : S}
 
-/-- Over a Noetherian ring `S` of finite global dimension, a finitely generated module over the
-hypersurface `S ⧸ (w)` (`w` a nonzerodivisor) is Gorenstein-projective if and only if its
-projective dimension over `S` is at most one. -/
+/-- Over a commutative ring `S` whose modules have projective dimension bounded by `d`, a finitely
+presented module over the hypersurface `S ⧸ (w)` (`w` a nonzerodivisor) is Gorenstein-projective if
+and only if its projective dimension over `S` is at most one. -/
 theorem isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE
     (hw : w ∈ nonZeroDivisors S) (d : ℕ)
+    (hd : ∀ N : ModuleCat.{u} S, HasProjectiveDimensionLE N d)
+    (M : ModuleCat.{u} (S ⧸ span {w})) [Module.FinitePresentation (S ⧸ span {w}) M] :
+    IsGorensteinProjective (S ⧸ span {w}) M ↔
+      HasProjectiveDimensionLE ((ModuleCat.restrictScalars (Ideal.Quotient.mk (span {w}))).obj M)
+        1 := by
+  have : Module.FinitePresentation S (S ⧸ span {w}) :=
+    Module.finitePresentation_of_surjective (span {w}).mkQ (Submodule.mkQ_surjective _)
+      (by rw [Submodule.ker_mkQ]; exact Submodule.fg_span_singleton w)
+  let : Module S M := Module.compHom M (algebraMap S (S ⧸ span {w}))
+  have : IsScalarTower S (S ⧸ span {w}) M := .of_compHom S (S ⧸ span {w}) M
+  have : Module.FinitePresentation S M :=
+    Module.FinitePresentation.trans (R := S) (M := M) (S ⧸ span {w})
+  have : Module.FinitePresentation S
+      ((ModuleCat.restrictScalars (Ideal.Quotient.mk (span {w}))).obj M) :=
+    Module.FinitePresentation.of_equiv
+      (ModuleCat.restrictScalarsAlgebraMapIso M).symm.toLinearEquiv
+  exact ⟨fun hM ↦ hM.hasProjectiveDimensionLE_restrictScalars_quotient hw d hd,
+    MatrixFactorization.isGorensteinProjective_of_hasProjectiveDimensionLE hw M⟩
+
+/-- Over a commutative ring `S` of bounded projective dimension with Noetherian quotient
+`S ⧸ (w)`, a finitely generated `S ⧸ (w)`-module (`w` a nonzerodivisor) is Gorenstein-projective if
+and only if its projective dimension over `S` is at most one. -/
+theorem isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE_of_isNoetherianRing
+    [IsNoetherianRing (S ⧸ span {w})] (hw : w ∈ nonZeroDivisors S) (d : ℕ)
     (hd : ∀ N : ModuleCat.{u} S, HasProjectiveDimensionLE N d)
     (M : ModuleCat.{u} (S ⧸ span {w})) [Module.Finite (S ⧸ span {w}) M] :
     IsGorensteinProjective (S ⧸ span {w}) M ↔
       HasProjectiveDimensionLE ((ModuleCat.restrictScalars (Ideal.Quotient.mk (span {w}))).obj M)
         1 := by
-  have : Module.Finite S ((ModuleCat.restrictScalars (Ideal.Quotient.mk (span {w}))).obj M) :=
-    ((Ideal.Quotient.mk (span {w})).finite_restrictScalars_iff
-      Ideal.Quotient.mk_surjective M).2 ‹_›
-  have := Module.finitePresentation_of_finite S
-    ((ModuleCat.restrictScalars (Ideal.Quotient.mk (span {w}))).obj M)
-  exact ⟨fun hM ↦ hM.hasProjectiveDimensionLE_restrictScalars_quotient hw d hd,
-    MatrixFactorization.isGorensteinProjective_of_hasProjectiveDimensionLE hw M⟩
+  have := Module.finitePresentation_of_finite (S ⧸ span {w}) M
+  exact isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE hw d hd M
 
 end FiniteGlobalDimension
+
+namespace IsRegularRing
+
+variable {S : Type u} [CommRing S] [IsRegularRing S] {w : S}
+
+/-- Over a commutative regular ring `S` of finite Krull dimension, a finitely generated
+`S ⧸ (w)`-module (`w` a nonzerodivisor) is Gorenstein-projective if and only if its projective
+dimension over `S` is at most one. -/
+theorem isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE_of_ringKrullDim_lt_top
+    (hdim : ringKrullDim S < ⊤) (hw : w ∈ nonZeroDivisors S)
+    (M : ModuleCat.{u} (S ⧸ span {w})) [Module.Finite (S ⧸ span {w}) M] :
+    IsGorensteinProjective (S ⧸ span {w}) M ↔
+      HasProjectiveDimensionLE ((ModuleCat.restrictScalars (Ideal.Quotient.mk (span {w}))).obj M)
+        1 := by
+  obtain ⟨d, hd⟩ : ∃ d : ℕ, ringKrullDim S ≤ d := by
+    cases h : ringKrullDim S with
+    | bot => exact ⟨0, bot_le⟩
+    | coe e =>
+      lift e to ℕ using fun he ↦ hdim.ne (by simp [h, he])
+      exact ⟨e, le_rfl⟩
+  exact isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE_of_isNoetherianRing hw d
+    (IsRegularRing.hasProjectiveDimensionLE hd) M
+
+end IsRegularRing
 
 section RegularLocalRing
 
@@ -116,72 +156,10 @@ theorem isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE_of_isRegula
     IsGorensteinProjective (S ⧸ span {w}) M ↔
       HasProjectiveDimensionLE ((ModuleCat.restrictScalars (Ideal.Quotient.mk (span {w}))).obj M)
         1 :=
-  isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE hw
-    (_root_.IsLocalRing.maximalIdeal S).spanFinrank
-    (IsRegularLocalRing.hasProjectiveDimensionLE
-      (_root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := S)).ge) M
+  IsRegularRing.isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE_of_ringKrullDim_lt_top
+    ringKrullDim_lt_top hw M
 
 variable [_root_.IsLocalRing (S ⧸ span {w})]
-
-/-- **Auslander–Buchsbaum criterion for projective dimension one over a local hypersurface.** Let
-`S` be a regular local ring and `w` a nonzerodivisor such that `R = S ⧸ (w)` is local (equivalently
-`w ∈ 𝔪_S`). A finitely generated `R`-module `M` has projective dimension at most one over `S` if
-and only if `dim R ≤ depth M` (maximal Cohen–Macaulayness). -/
-theorem hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_le_depth
-    (hw : w ∈ nonZeroDivisors S) (M : ModuleCat.{u} (S ⧸ span {w}))
-    [Module.Finite (S ⧸ span {w}) M] :
-    HasProjectiveDimensionLE ((ModuleCat.restrictScalars (Ideal.Quotient.mk (span {w}))).obj M) 1 ↔
-      ringKrullDim (S ⧸ span {w}) ≤ (_root_.IsLocalRing.depth M : WithBot ℕ∞) := by
-  let M' := (ModuleCat.restrictScalars (Ideal.Quotient.mk (span {w}))).obj M
-  cases subsingleton_or_nontrivial M
-  · have hZ : Limits.IsZero M' :=
-      (ModuleCat.restrictScalars (Ideal.Quotient.mk (span {w}))).map_isZero
-        (ModuleCat.isZero_of_subsingleton M)
-    have := hZ.hasProjectiveDimensionLT_zero
-    exact iff_of_true (hasProjectiveDimensionLT_of_ge M' 0 2 (by omega))
-      (by rw [_root_.IsLocalRing.depth_eq_top_of_subsingleton M]; exact le_top)
-  have hwm : w ∈ _root_.IsLocalRing.maximalIdeal S := by
-    by_contra h
-    exact not_subsingleton (S ⧸ span {w}) (Ideal.Quotient.subsingleton_iff.mpr
-      (span_singleton_eq_top.mpr (_root_.IsLocalRing.notMem_maximalIdeal.mp h)))
-  -- View `M` as an `S`-module through the standard quotient algebra so `IsScalarTower` applies.
-  let : Module S M := Module.compHom M (algebraMap S (S ⧸ span {w}))
-  have : IsScalarTower S (S ⧸ span {w}) M := .of_compHom S (S ⧸ span {w}) M
-  have : Module.Finite S M := Module.Finite.trans (S ⧸ span {w}) M
-  let MS : ModuleCat.{u} S := ModuleCat.of S M
-  have hpd_iso : projectiveDimension M' = projectiveDimension MS :=
-    projectiveDimension_eq_of_iso (ModuleCat.restrictScalarsAlgebraMapIso M)
-  let d := (_root_.IsLocalRing.maximalIdeal S).spanFinrank
-  have hdS : ringKrullDim S = d :=
-    (_root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := S)).symm
-  have hpd_top : projectiveDimension MS ≠ ⊤ :=
-    (((projectiveDimension_le_iff MS d).mpr
-      (IsRegularLocalRing.hasProjectiveDimensionLE hdS.le MS)).trans_lt
-      (WithBot.coe_lt_coe.mpr (ENat.natCast_lt_top d))).ne
-  have hpd_bot : projectiveDimension MS ≠ ⊥ := fun h ↦ by
-    have : Subsingleton MS :=
-      ModuleCat.subsingleton_of_isZero ((projectiveDimension_eq_bot_iff MS).mp h)
-    exact not_subsingleton M this
-  have hab := ModuleCat.projectiveDimension_add_depth_eq_depth MS hpd_top
-  have hdimQ : ringKrullDim (S ⧸ span {w}) + 1 = d :=
-    (ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors hw hwm).trans
-      hdS
-  lift projectiveDimension MS to ℕ∞ using hpd_bot with e
-  lift e to ℕ using fun h ↦ hpd_top (by simp [h]) with p
-  lift _root_.IsLocalRing.depth M to ℕ using fun h ↦
-    not_subsingleton M ((_root_.IsLocalRing.depth_eq_top_iff M).mp h) with q hq
-  lift ringKrullDim (S ⧸ span {w}) to ℕ∞ using
-    ne_bot_of_le_ne_bot WithBot.zero_ne_bot ringKrullDim_nonneg_of_nontrivial with f
-  lift f to ℕ using fun h ↦ by
-    rw [h] at hdimQ
-    exact (WithBot.coe_lt_coe.mpr (ENat.natCast_lt_top d)).ne hdimQ.symm with k
-  rw [_root_.IsLocalRing.depth_eq_depth_of_surjective (R := S) (T := S ⧸ span {w})
-      Ideal.Quotient.mk_surjective, IsRegularLocalRing.depth_eq_ringKrullDim, hdS, ← hdimQ,
-    ← hq] at hab
-  have hpqk : p + q = k + 1 := by exact_mod_cast hab
-  rw [← projectiveDimension_le_iff M' 1, hpd_iso]
-  norm_cast
-  omega
 
 /-- **Buchweitz–Eisenbud characterization of maximal Cohen–Macaulay modules.** Over the local
 hypersurface `R = S ⧸ (w)` cut out by a nonzerodivisor `w` of a regular local ring `S`, a finitely
@@ -223,30 +201,40 @@ theorem isGorensteinProjective_quotient_tfae
     hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_le_depth hw M
   tfae_finish
 
-/-- A nonzero Gorenstein-projective module over the local hypersurface `S ⧸ (w)` has depth equal to
-the full Krull dimension of `S ⧸ (w)`. -/
-theorem IsGorensteinProjective.depth_eq_ringKrullDim
-    {M : ModuleCat.{u} (S ⧸ span {w})} (hM : IsGorensteinProjective (S ⧸ span {w}) M)
-    (hw : w ∈ nonZeroDivisors S) [Nontrivial M] :
+/-- A nontrivial Gorenstein-projective module over the local hypersurface `S ⧸ (w)` in a regular
+local ring `S` has depth equal to `ringKrullDim (S ⧸ (w))`. -/
+theorem IsGorensteinProjective.depth_eq_ringKrullDim_quotient
+    {M : ModuleCat.{v} (S ⧸ span {w})} [Small.{v} (S ⧸ span {w})]
+    (hM : IsGorensteinProjective (S ⧸ span {w}) M) (hw : w ∈ nonZeroDivisors S) [Nontrivial M] :
     (_root_.IsLocalRing.depth M : WithBot ℕ∞) = ringKrullDim (S ⧸ span {w}) := by
-  have := hM.finite
-  have : IsNoetherianRing (S ⧸ span {w}) := inferInstance
-  exact le_antisymm
-    (_root_.IsLocalRing.depth_le_supportDim.trans (Module.supportDim_le_ringKrullDim _ M))
-    ((isGorensteinProjective_quotient_iff_ringKrullDim_le_depth hw M).mp hM)
+  have hwm : w ∈ _root_.IsLocalRing.maximalIdeal S := by
+    by_contra h
+    exact not_subsingleton (S ⧸ span {w}) (Ideal.Quotient.subsingleton_iff.mpr
+      (span_singleton_eq_top.mpr (_root_.IsLocalRing.notMem_maximalIdeal.mp h)))
+  have hQ : Module.IsCohenMacaulay S (QuotSMulTop w S) :=
+    (Module.isCohenMacaulay_quotSMulTop_iff
+      (Module.Flat.isSMulRegular_of_nonZeroDivisors hw) hwm).mpr
+      IsRegularLocalRing.isCohenMacaulay
+  have e : QuotSMulTop w S ≃ₗ[S] S ⧸ span {w} :=
+    (Ideal.quotientEquivAlgOfEq S (by simp [← Submodule.ideal_span_singleton_smul])).toLinearEquiv
+  have : Ring.IsCohenMacaulay (S ⧸ span {w}) :=
+    Ring.isCohenMacaulay_iff_of_isLocalRing.mpr
+      ((Module.isCohenMacaulay_iff_isCohenMacaulay_of_surjective
+        Ideal.Quotient.mk_surjective).mp (e.isCohenMacaulay_iff.mp hQ))
+  exact hM.depth_eq_ringKrullDim
 
-/-- Every Gorenstein-projective module over the local hypersurface `S ⧸ (w)` is Cohen–Macaulay. -/
-theorem IsGorensteinProjective.isCohenMacaulay
-    {M : ModuleCat.{u} (S ⧸ span {w})} (hM : IsGorensteinProjective (S ⧸ span {w}) M)
-    (hw : w ∈ nonZeroDivisors S) :
+/-- Every Gorenstein-projective module over the local hypersurface `S ⧸ (w)` in a regular local ring
+`S` is Cohen–Macaulay. -/
+theorem IsGorensteinProjective.isCohenMacaulay_quotient
+    {M : ModuleCat.{v} (S ⧸ span {w})} [Small.{v} (S ⧸ span {w})]
+    (hM : IsGorensteinProjective (S ⧸ span {w}) M) (hw : w ∈ nonZeroDivisors S) :
     Module.IsCohenMacaulay (S ⧸ span {w}) M := by
   cases subsingleton_or_nontrivial M
   · exact Module.isCohenMacaulay_of_subsingleton
   have := hM.finite
-  have : IsNoetherianRing (S ⧸ span {w}) := inferInstance
   exact Module.isCohenMacaulay_iff_supportDim_le_depth.mpr
     ((Module.supportDim_le_ringKrullDim _ M).trans
-      ((isGorensteinProjective_quotient_iff_ringKrullDim_le_depth hw M).mp hM))
+      (hM.depth_eq_ringKrullDim_quotient hw).symm.le)
 
 end RegularLocalRing
 

@@ -40,6 +40,9 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 ## Main definitions
 
 * `Ideal.mapQSMulTop`: the `R ⧸ I`-linear map `M ⧸ I • M → N ⧸ I • N` induced by `f : M →ₗ[R] N`.
+* `Ideal.quotSMulTopSelfEquiv`: the `R ⧸ I`-linear equivalence `(R ⧸ I • ⊤) ≃ₗ[R ⧸ I] R ⧸ I`.
+* `QuotSMulTop.quotSpanSingletonSMulTopEquiv`: the `R ⧸ (x)`-linear equivalence
+  `(M ⧸ (x) • ⊤) ≃ₗ[R ⧸ (x)] QuotSMulTop x M`.
 * `QuotSMulTop.quotSpanSingletonComm`: `(R ⧸ (s)) ⧸ r (R ⧸ (s)) ≃ (R ⧸ (r)) ⧸ s (R ⧸ (r))`.
 * `QuotSMulTop.restrictScalarsEquiv`: `N ⧸ (algebraMap R A r) N ≃ N ⧸ r N` as `R`-modules.
 
@@ -110,6 +113,24 @@ theorem mapQSMulTop_exact (I : Ideal R) {f : M →ₗ[R] N} {g : N →ₗ[R] P} 
       rw [Submodule.map_smul'', Submodule.map_top, LinearMap.range_eq_top.mpr hg]
       exact inf_le_right)
 
+/-- For an ideal `I` of `R`, `R ⧸ I • ⊤` is `R ⧸ I` as an `R ⧸ I`-module. -/
+noncomputable def quotSMulTopSelfEquiv (I : Ideal R) :
+    (R ⧸ I • (⊤ : Submodule R R)) ≃ₗ[R ⧸ I] R ⧸ I :=
+  (Submodule.quotEquivOfEq _ _ (by rw [Ideal.smul_eq_mul, Ideal.mul_top])).extendScalarsOfSurjective
+    Ideal.Quotient.mk_surjective
+
+/-- `quotSMulTopSelfEquiv` sends the class of `r` to the class of `r` (not `@[simp]` because
+`Submodule.smul_eq_mul` rewrites `I • (⊤ : Submodule R R)` to `I * ⊤` on the left-hand side,
+which fails `simpNF`). -/
+theorem quotSMulTopSelfEquiv_mk (I : Ideal R) (r : R) :
+    I.quotSMulTopSelfEquiv (Submodule.Quotient.mk r) = Ideal.Quotient.mk I r :=
+  (rfl)
+
+/-- `quotSMulTopSelfEquiv.symm` sends the class of `r` to the class of `r`. -/
+theorem quotSMulTopSelfEquiv_symm_mk (I : Ideal R) (r : R) :
+    I.quotSMulTopSelfEquiv.symm (Ideal.Quotient.mk I r) = Submodule.Quotient.mk r :=
+  (rfl)
+
 end Ideal
 
 namespace QuotSMulTop
@@ -123,6 +144,26 @@ theorem mk_smul_mk {x : R} (r : R) (m : M) :
     Ideal.Quotient.mk (Ideal.span {x}) r • (Submodule.Quotient.mk m : QuotSMulTop x M) =
       Submodule.Quotient.mk (r • m) :=
   rfl
+
+/-- Identifying `(x) • ⊤` with `x • ⊤` gives an `R ⧸ (x)`-linear equivalence between
+`M ⧸ (x) • ⊤` and `QuotSMulTop x M`. -/
+noncomputable def quotSpanSingletonSMulTopEquiv (x : R) (M : Type*) [AddCommGroup M]
+    [Module R M] :
+    (M ⧸ Ideal.span {x} • (⊤ : Submodule R M)) ≃ₗ[R ⧸ Ideal.span {x}] QuotSMulTop x M :=
+  (Submodule.quotEquivOfEq _ _
+    (Submodule.ideal_span_singleton_smul x ⊤)).extendScalarsOfSurjective
+    Ideal.Quotient.mk_surjective
+
+@[simp]
+theorem quotSpanSingletonSMulTopEquiv_mk (x : R) (m : M) :
+    quotSpanSingletonSMulTopEquiv x M (Submodule.Quotient.mk m) = Submodule.Quotient.mk m :=
+  (rfl)
+
+@[simp]
+theorem quotSpanSingletonSMulTopEquiv_symm_mk (x : R) (m : M) :
+    (quotSpanSingletonSMulTopEquiv x M).symm (Submodule.Quotient.mk m) =
+      Submodule.Quotient.mk m :=
+  (rfl)
 
 /-- Negation is the identity on a module modulo twice itself. -/
 @[simp]
