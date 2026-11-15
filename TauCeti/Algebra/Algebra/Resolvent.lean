@@ -16,7 +16,8 @@ integrating resolvents: on the resolvent set, multiplication by the scalar `r` g
 `r (r1 - a)⁻¹ = 1 + a (r1 - a)⁻¹`, so that over a field `(r1 - a)⁻¹ - r⁻¹1 = r⁻¹ a (r1 - a)⁻¹`
 for `r ≠ 0`. The first resolvent identity
 `(r1 - a)⁻¹ - (s1 - a)⁻¹ = (s - r) (r1 - a)⁻¹ (s1 - a)⁻¹` turns products of resolvents into
-differences. Every element commuting with `a` commutes with all resolvents of `a`.
+differences. Every element commuting with `a` commutes with all resolvents of `a`, and every
+algebra homomorphism preserves the resolvent on the resolvent set.
 -/
 
 public section
@@ -65,3 +66,14 @@ theorem Commute.resolvent_right {a b : A} (h : Commute b a) (r : R) :
     exact h'.units_inv_right
   · rw [Ring.inverse_non_unit _ hu]
     exact Commute.zero_right b
+
+/-- An algebra homomorphism preserves the resolvent at every point of the resolvent set. -/
+theorem AlgHom.map_resolvent {F B : Type*} [Ring B] [Algebra R B] [FunLike F A B]
+    [AlgHomClass F R A B] (φ : F) {a : A} {r : R} (hr : r ∈ resolventSet R a) :
+    φ (resolvent a r) = resolvent (φ a) r := by
+  have hr' : r ∈ resolventSet R (φ a) := AlgHom.mem_resolventSet_apply φ hr
+  refine (spectrum.mem_resolventSet_iff.mp hr').mul_right_inj.mp ?_
+  rw [← AlgHomClass.commutes φ r, ← map_sub, ← map_mul, resolvent,
+    Ring.mul_inverse_cancel _ (spectrum.mem_resolventSet_iff.mp hr), map_one,
+    map_sub, AlgHomClass.commutes φ r, resolvent,
+    Ring.mul_inverse_cancel _ (spectrum.mem_resolventSet_iff.mp hr')]
