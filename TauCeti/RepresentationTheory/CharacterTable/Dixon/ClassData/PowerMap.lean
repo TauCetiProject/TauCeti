@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Character
 
 /-!
@@ -392,12 +391,27 @@ theorem zpowIndex_eq_iff {z : ℤ} {i j : Fin d.numClasses} :
     d.zpowIndex z i = j ↔ IsConj (d.rep j) (d.rep i ^ z) :=
   d.index_eq_iff
 
+/-- Certify `d.zpowIndex z i = j` directly from an explicit conjugating element `c`. -/
+theorem zpowIndex_eq_of_conj {z : ℤ} {i j : Fin d.numClasses} (c : G)
+    (hc : c * d.rep j * c⁻¹ = d.rep i ^ z) : d.zpowIndex z i = j :=
+  d.zpowIndex_eq_iff.mpr (isConj_iff.mpr ⟨c, hc⟩)
+
 /-- **The `ℤ`-power map tracks integer powers** under `TauCeti.ClassData.index`. -/
 @[simp]
 theorem zpowIndex_index (z : ℤ) (g : G) : d.zpowIndex z (d.index g) = d.index (g ^ z) := by
   obtain ⟨c, hc⟩ := isConj_iff.mp (d.isConj_rep_index g)
   refine d.index_eq_index_iff.mpr (isConj_iff.mpr ⟨c, ?_⟩)
   simpa only [MulAut.conj_apply, hc] using map_zpow (MulAut.conj c) (d.rep (d.index g)) z
+
+/-- **The numbered `ℤ`-power map tracks integer powers** under `TauCeti.ClassData.classOf`. -/
+@[simp]
+theorem classOf_zpowIndex (z : ℤ) (i : Fin d.numClasses) :
+    d.classOf (d.zpowIndex z i) = ConjClasses.mk (d.rep i ^ z) := by
+  rw [zpowIndex, classOf_index]
+
+-- There is no `indexClass_zpow` parallel to `indexClass_pow`, as `ConjClasses G` has no `ℤ`-power
+-- operation (`Pow (ConjClasses G) ℤ`); on representatives `indexClass_mk` and `zpowIndex_index`
+-- already simplify `d.indexClass (ConjClasses.mk (g ^ z))`.
 
 /-- On natural exponents, `zpowIndex` agrees with `powIndex`. -/
 @[simp]
