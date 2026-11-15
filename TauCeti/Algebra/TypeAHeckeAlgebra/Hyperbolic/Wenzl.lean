@@ -52,12 +52,10 @@ This file builds the dictionary between these hyperbolic parameters and Wenzl's 
 
 ## Main definitions
 
-* `TauCeti.hyperbolicProjParam`: the native hyperbolic projection parameter
-  `(1 - tanh α * tanh θ) / 2` over `ℂ`.
-* `TauCeti.hyperbolicWenzlProjParam`: Wenzl's hyperbolic projection parameter
-  `(1 + tanh α * tanh θ) / 2` over `ℂ`.
-* `TauCeti.realHyperbolicProjParam` and `TauCeti.realHyperbolicWenzlProjParam`: their real
-  counterparts on `ℝ`.
+* `TauCeti.realHyperbolicProjParam`: the real native hyperbolic projection parameter
+  `(1 - Real.tanh α * Real.tanh θ) / 2`.
+* `TauCeti.realHyperbolicWenzlProjParam`: the real Wenzl hyperbolic projection parameter
+  `(1 + Real.tanh α * Real.tanh θ) / 2`.
 
 ## Main results
 
@@ -95,112 +93,7 @@ open scoped Real Topology
 
 namespace TauCeti
 
-/-! ### Native and Wenzl hyperbolic projection parameters -/
-
-/-- The native hyperbolic projection parameter `η = (1 - tanh α * tanh θ) / 2` at which the
-positive and negative stabilization constants of `γ i = I * exp (-α) • T i` agree on the Hecke
-algebra with parameter `q = exp (-θ)`. -/
-noncomputable def hyperbolicProjParam (α θ : ℂ) : ℂ :=
-  (1 - tanh α * tanh θ) / 2
-
-/-- Wenzl's hyperbolic projection parameter `η_W = (1 + tanh α * tanh θ) / 2 = 1 - η`, attached to
-the complementary projection `e_i^W = (1 + Q)⁻¹ • (Q - q • T i)`. -/
-noncomputable def hyperbolicWenzlProjParam (α θ : ℂ) : ℂ :=
-  (1 + tanh α * tanh θ) / 2
-
-/-- Defining formula for `hyperbolicProjParam`. -/
-theorem hyperbolicProjParam_def (α θ : ℂ) :
-    hyperbolicProjParam α θ = (1 - tanh α * tanh θ) / 2 := (rfl)
-
-/-- Defining formula for `hyperbolicWenzlProjParam`. -/
-theorem hyperbolicWenzlProjParam_def (α θ : ℂ) :
-    hyperbolicWenzlProjParam α θ = (1 + tanh α * tanh θ) / 2 := (rfl)
-
-/-- Wenzl's hyperbolic projection parameter is `1` minus the native parameter. -/
-theorem hyperbolicWenzlProjParam_eq_one_sub (α θ : ℂ) :
-    hyperbolicWenzlProjParam α θ = 1 - hyperbolicProjParam α θ := by
-  rw [hyperbolicWenzlProjParam_def, hyperbolicProjParam_def]
-  ring
-
-/-- The native hyperbolic projection parameter is `1` minus Wenzl's parameter. -/
-theorem hyperbolicProjParam_eq_one_sub (α θ : ℂ) :
-    hyperbolicProjParam α θ = 1 - hyperbolicWenzlProjParam α θ := by
-  rw [hyperbolicWenzlProjParam_eq_one_sub]
-  ring
-
-/-- The native and Wenzl hyperbolic projection parameters sum to `1`. -/
-theorem hyperbolicProjParam_add_hyperbolicWenzlProjParam (α θ : ℂ) :
-    hyperbolicProjParam α θ + hyperbolicWenzlProjParam α θ = 1 := by
-  rw [hyperbolicWenzlProjParam_eq_one_sub]
-  ring
-
-/-- `hyperbolicProjParam` is symmetric in its two arguments. -/
-theorem hyperbolicProjParam_comm (α θ : ℂ) :
-    hyperbolicProjParam α θ = hyperbolicProjParam θ α := by
-  rw [hyperbolicProjParam_def, hyperbolicProjParam_def, mul_comm]
-
-/-- `hyperbolicWenzlProjParam` is symmetric in its two arguments. -/
-theorem hyperbolicWenzlProjParam_comm (α θ : ℂ) :
-    hyperbolicWenzlProjParam α θ = hyperbolicWenzlProjParam θ α := by
-  rw [hyperbolicWenzlProjParam_def, hyperbolicWenzlProjParam_def, mul_comm]
-
-/-- Negating `α` exchanges the native and Wenzl hyperbolic projection parameters. -/
-@[simp]
-theorem hyperbolicProjParam_neg_left (α θ : ℂ) :
-    hyperbolicProjParam (-α) θ = hyperbolicWenzlProjParam α θ := by
-  simp [hyperbolicProjParam_def, hyperbolicWenzlProjParam_def, sub_eq_add_neg]
-
-/-- Negating `θ` exchanges the native and Wenzl hyperbolic projection parameters. -/
-@[simp]
-theorem hyperbolicProjParam_neg_right (α θ : ℂ) :
-    hyperbolicProjParam α (-θ) = hyperbolicWenzlProjParam α θ := by
-  simp [hyperbolicProjParam_def, hyperbolicWenzlProjParam_def, sub_eq_add_neg]
-
-/-- Negating `α` turns Wenzl's hyperbolic projection parameter into the native one. -/
-@[simp]
-theorem hyperbolicWenzlProjParam_neg_left (α θ : ℂ) :
-    hyperbolicWenzlProjParam (-α) θ = hyperbolicProjParam α θ := by
-  simp [hyperbolicProjParam_def, hyperbolicWenzlProjParam_def, sub_eq_add_neg]
-
-/-- Negating `θ` turns Wenzl's hyperbolic projection parameter into the native one. -/
-@[simp]
-theorem hyperbolicWenzlProjParam_neg_right (α θ : ℂ) :
-    hyperbolicWenzlProjParam α (-θ) = hyperbolicProjParam α θ := by
-  simp [hyperbolicProjParam_def, hyperbolicWenzlProjParam_def, sub_eq_add_neg]
-
-/-- At `α = 0`, the native hyperbolic projection parameter is `1 / 2`. -/
-@[simp]
-theorem hyperbolicProjParam_zero_left (θ : ℂ) : hyperbolicProjParam 0 θ = 1 / 2 := by
-  simp [hyperbolicProjParam_def]
-
-/-- At `θ = 0` (`Q = 1`), the native hyperbolic projection parameter is `1 / 2` for every `α`. -/
-@[simp]
-theorem hyperbolicProjParam_zero_right (α : ℂ) : hyperbolicProjParam α 0 = 1 / 2 := by
-  simp [hyperbolicProjParam_def]
-
-/-- At `α = 0`, Wenzl's hyperbolic projection parameter is `1 / 2`. -/
-@[simp]
-theorem hyperbolicWenzlProjParam_zero_left (θ : ℂ) : hyperbolicWenzlProjParam 0 θ = 1 / 2 := by
-  simp [hyperbolicWenzlProjParam_def]
-
-/-- At `θ = 0` (`Q = 1`), Wenzl's hyperbolic projection parameter is `1 / 2` for every `α`. -/
-@[simp]
-theorem hyperbolicWenzlProjParam_zero_right (α : ℂ) : hyperbolicWenzlProjParam α 0 = 1 / 2 := by
-  simp [hyperbolicWenzlProjParam_def]
-
-/-- Hyperbolic-cosine form `hyperbolicProjParam α θ = cosh (α - θ) / (2 * cosh α * cosh θ)` when
-`cosh α * cosh θ ≠ 0`. -/
-theorem hyperbolicProjParam_eq_cosh_sub_div {α θ : ℂ} (hα : cosh α ≠ 0) (hθ : cosh θ ≠ 0) :
-    hyperbolicProjParam α θ = cosh (α - θ) / (2 * cosh α * cosh θ) :=
-  (cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two hα hθ).symm
-
-/-- Hyperbolic-cosine form `hyperbolicWenzlProjParam α θ = cosh (α + θ) / (2 * cosh α * cosh θ)`
-when `cosh α * cosh θ ≠ 0`. -/
-theorem hyperbolicWenzlProjParam_eq_cosh_add_div {α θ : ℂ} (hα : cosh α ≠ 0) (hθ : cosh θ ≠ 0) :
-    hyperbolicWenzlProjParam α θ = cosh (α + θ) / (2 * cosh α * cosh θ) := by
-  have hθ' : cosh (-θ) ≠ 0 := by simpa using hθ
-  rw [← hyperbolicProjParam_neg_right, hyperbolicProjParam_eq_cosh_sub_div hα hθ', sub_neg_eq_add,
-    cosh_neg]
+/-! ### Wenzl's projection convention in hyperbolic parameters -/
 
 /-- When `cosh θ ≠ 0`, the Jones parameter `a_(-2)(exp (-2 * θ))` satisfies the balanced-projection
 compatibility `τ * (q + q⁻¹) ^ 2 = 1` for `q = hyperbolicHeckeParam θ`. -/
@@ -228,26 +121,13 @@ theorem IsMarkovTrace.map_mul_hyperbolic_wenzlProjection (hτ : IsMarkovTrace z 
       ηW * τ x := by
   have hq2 : exp (-θ) ^ 2 = exp (-2 * θ) := by rw [← exp_nat_mul]; ring_nf
   have hu0 : 1 + exp (-2 * θ) ≠ 0 := by
-    have e₁ : exp θ * exp (-θ) = 1 := by rw [← exp_add]; simp
-    have e₂ : exp (-θ) * exp (-θ) = exp (-2 * θ) := by rw [← exp_add]; ring_nf
-    have h1 : 1 + exp (-2 * θ) = 2 * cosh θ * exp (-θ) := by
-      rw [two_cosh]
-      linear_combination -e₁ - e₂
-    rw [h1]
+    rw [show -2 * θ = 2 * (-θ) by ring, one_add_exp_two_mul, cosh_neg]
     exact mul_ne_zero (mul_ne_zero two_ne_zero hθ) (exp_ne_zero _)
   have h := hτ.map_mul_wenzlProjection (Units.mk0 (1 + exp (-2 * θ)) hu0)
     (by rw [Units.val_mk0, val_hyperbolicHeckeParam, hq2]) (η := 1 - ηW)
     (by rw [val_hyperbolicHeckeParam, val_inv_hyperbolicHeckeParam, sub_sub_cancel, hz]) hx
   simpa only [Units.val_inv_eq_inv_val, Units.val_mk0, val_hyperbolicHeckeParam, hq2,
     sub_sub_cancel] using h
-
-/-- **Equal stabilization constants in the native projection convention.** For `cosh α * cosh θ ≠ 0`
-and native projection parameter `η`, `τ (γ n) = τ (γ n⁻¹)` if and only if
-`η = hyperbolicProjParam α θ`. -/
-theorem IsMarkovTrace.map_hyperbolicGen_eq_map_inv_iff_hyperbolicProjParam (hτ : IsMarkovTrace z τ)
-    (hz : z = exp (-θ) * η - exp θ * (1 - η)) (hα : cosh α ≠ 0) (hθ : cosh θ ≠ 0) (n : ℕ) :
-    τ (hyperbolicGen α θ n) = τ ↑(hyperbolicGen α θ n)⁻¹ ↔ η = hyperbolicProjParam α θ :=
-  hτ.map_hyperbolicGen_eq_map_inv_iff hz hα hθ n
 
 /-- **Equal stabilization constants in Wenzl's projection convention.** For `cosh α * cosh θ ≠ 0`
 and Wenzl projection parameter `η_W` (`z = exp (-θ) * (1 - η_W) - exp θ * η_W`),
@@ -256,7 +136,7 @@ theorem IsMarkovTrace.map_hyperbolicGen_eq_map_inv_iff_wenzl
     (hτ : IsMarkovTrace z τ) (hz : z = exp (-θ) * (1 - ηW) - exp θ * ηW) (hα : cosh α ≠ 0)
     (hθ : cosh θ ≠ 0) (n : ℕ) :
     τ (hyperbolicGen α θ n) = τ ↑(hyperbolicGen α θ n)⁻¹ ↔ ηW = hyperbolicWenzlProjParam α θ := by
-  rw [hτ.map_hyperbolicGen_eq_map_inv_iff_hyperbolicProjParam (η := 1 - ηW)
+  rw [hτ.map_hyperbolicGen_eq_map_inv_iff (η := 1 - ηW)
       (by rw [sub_sub_cancel, hz]) hα hθ n, hyperbolicWenzlProjParam_eq_one_sub]
   constructor <;> intro h <;> linear_combination -h
 
@@ -369,29 +249,11 @@ theorem InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_hyperbolicGen_ofReal_eq_iff 
     τ (InfiniteTypeAHeckeAlgebra.hyperbolicGen α θ n) =
         τ ↑(InfiniteTypeAHeckeAlgebra.hyperbolicGen α θ n)⁻¹ ↔
       η = realHyperbolicProjParam α θ := by
-  rw [hτ.map_hyperbolicGen_eq_map_inv_iff_hyperbolicProjParam hz
-    (by exact_mod_cast (Real.cosh_pos α).ne') (by exact_mod_cast (Real.cosh_pos θ).ne') n,
+  rw [hτ.map_hyperbolicGen_eq_map_inv_iff hz (cosh_ofReal_ne_zero α) (cosh_ofReal_ne_zero θ) n,
     ofReal_realHyperbolicProjParam]
 
-private theorem one_sub_tanh_div_two (θ : ℝ) :
-    (1 - Real.tanh θ) / 2 = Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)) := by
-  have e₁ : Real.exp θ * Real.exp (-θ) = 1 := by rw [← Real.exp_add]; simp
-  have e₂ : Real.exp (-θ) * Real.exp (-θ) = Real.exp (-2 * θ) := by rw [← Real.exp_add]; ring_nf
-  have h1 : 1 + Real.exp (-2 * θ) = 2 * Real.cosh θ * Real.exp (-θ) := by
-    rw [Real.cosh_eq]; linear_combination -e₁ - e₂
-  rw [Real.one_sub_tanh, h1, div_div, mul_comm (Real.cosh θ) 2,
-    ← mul_div_mul_right _ _ (Real.exp_pos (-θ)).ne', e₂]
-
-private theorem one_add_tanh_div_two (θ : ℝ) :
-    (1 + Real.tanh θ) / 2 = 1 / (1 + Real.exp (-2 * θ)) := by
-  have e₁ : Real.exp θ * Real.exp (-θ) = 1 := by rw [← Real.exp_add]; simp
-  have e₂ : Real.exp (-θ) * Real.exp (-θ) = Real.exp (-2 * θ) := by rw [← Real.exp_add]; ring_nf
-  have h1 : 1 + Real.exp (-2 * θ) = 2 * Real.cosh θ * Real.exp (-θ) := by
-    rw [Real.cosh_eq]; linear_combination -e₁ - e₂
-  rw [Real.one_add_tanh, h1, div_div, mul_comm (Real.cosh θ) 2,
-    ← mul_div_mul_right _ _ (Real.exp_pos (-θ)).ne', e₁]
-
-private theorem range_realHyperbolicProjParam_neg (θ : ℝ) :
+/-- Negating `θ` leaves the range of `α ↦ realHyperbolicProjParam α θ` unchanged. -/
+theorem range_realHyperbolicProjParam_neg (θ : ℝ) :
     (Set.range fun α ↦ realHyperbolicProjParam α (-θ)) =
       Set.range fun α ↦ realHyperbolicProjParam α θ := by
   ext y
@@ -401,20 +263,12 @@ private theorem range_realHyperbolicProjParam_neg (θ : ℝ) :
   · dsimp only at hα ⊢
     rw [realHyperbolicProjParam_neg_neg α θ, hα]
 
-private theorem endpoints_ne_of_ne_zero {θ : ℝ} (hθ : θ ≠ 0) :
-    1 / (1 + Real.exp (-2 * θ)) ≠ Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)) := by
-  intro heq
-  have hpos : 1 + Real.exp (-2 * θ) ≠ 0 := by positivity
-  field_simp [hpos] at heq
-  have h0 := Real.exp_injective (heq.symm.trans Real.exp_zero.symm)
-  exact hθ (by linarith)
-
 /-- **Upper-`α` endpoint limit.** For every real `θ`, as `α → +∞`, `realHyperbolicProjParam α θ`
 tends to `exp (-2 * θ) / (1 + exp (-2 * θ))`. -/
 theorem tendsto_realHyperbolicProjParam_atTop (θ : ℝ) :
     Filter.Tendsto (fun α ↦ realHyperbolicProjParam α θ) Filter.atTop
       (𝓝 (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)))) := by
-  rw [← one_sub_tanh_div_two, ← one_mul (Real.tanh θ)]
+  rw [← Real.one_sub_tanh_div_two, ← one_mul (Real.tanh θ)]
   exact (tendsto_const_nhds.sub (Real.tendsto_tanh_atTop.mul_const _)).div_const 2
 
 /-- **Lower-`α` endpoint limit.** For every real `θ`, as `α → -∞`, `realHyperbolicProjParam α θ`
@@ -423,7 +277,7 @@ theorem tendsto_realHyperbolicProjParam_atBot (θ : ℝ) :
     Filter.Tendsto (fun α ↦ realHyperbolicProjParam α θ) Filter.atBot
       (𝓝 (1 / (1 + Real.exp (-2 * θ)))) := by
   have hend : (1 - (-1) * Real.tanh θ) / 2 = 1 / (1 + Real.exp (-2 * θ)) := by
-    rw [neg_one_mul, sub_neg_eq_add, one_add_tanh_div_two]
+    rw [neg_one_mul, sub_neg_eq_add, Real.one_add_tanh_div_two]
   rw [← hend]
   exact (tendsto_const_nhds.sub (Real.tendsto_tanh_atBot.mul_const _)).div_const 2
 
@@ -456,12 +310,9 @@ theorem strictAnti_realHyperbolicProjParam {θ : ℝ} (hθ : 0 < θ) :
 /-- For `0 < θ`, `α ↦ realHyperbolicWenzlProjParam α θ` is strictly increasing. -/
 theorem strictMono_realHyperbolicWenzlProjParam {θ : ℝ} (hθ : 0 < θ) :
     StrictMono fun α ↦ realHyperbolicWenzlProjParam α θ := by
-  have ht : 0 < Real.tanh θ := by simpa using Real.tanh_strictMono hθ
   intro a b hab
-  have h := mul_lt_mul_of_pos_right (Real.tanh_strictMono hab) ht
-  dsimp only
-  rw [realHyperbolicWenzlProjParam_def, realHyperbolicWenzlProjParam_def]
-  linarith
+  simpa only [realHyperbolicWenzlProjParam_eq_one_sub, sub_lt_sub_iff_left] using
+    strictAnti_realHyperbolicProjParam hθ hab
 
 /-- **Positive-real interval bijection (`0 < θ`).** For `0 < θ` (so `Q = exp (-2 * θ) ∈ (0, 1)`),
 `α ↦ realHyperbolicProjParam α θ` is a bijection from `ℝ` onto the open interval
@@ -472,9 +323,10 @@ theorem bijOn_realHyperbolicProjParam {θ : ℝ} (hθ : 0 < θ) :
   have ht : 0 < Real.tanh θ := by simpa using Real.tanh_strictMono hθ
   refine ⟨fun α _ ↦ ?_, (strictAnti_realHyperbolicProjParam hθ).injective.injOn, fun η hη ↦ ?_⟩
   · dsimp only
-    rw [Set.mem_Ioo, ← one_sub_tanh_div_two, ← one_add_tanh_div_two, realHyperbolicProjParam_def]
+    rw [Set.mem_Ioo, ← Real.one_sub_tanh_div_two, ← Real.one_add_tanh_div_two,
+      realHyperbolicProjParam_def]
     exact ⟨by nlinarith [Real.tanh_lt_one α], by nlinarith [Real.neg_one_lt_tanh α]⟩
-  · rw [Set.mem_Ioo, ← one_sub_tanh_div_two, ← one_add_tanh_div_two] at hη
+  · rw [Set.mem_Ioo, ← Real.one_sub_tanh_div_two, ← Real.one_add_tanh_div_two] at hη
     let t := (1 - 2 * η) / Real.tanh θ
     have ht_mem : t ∈ Set.Ioo (-1 : ℝ) 1 := by
       rw [Set.mem_Ioo, lt_div_iff₀ ht, div_lt_iff₀ ht]
@@ -537,10 +389,11 @@ theorem closure_range_realHyperbolicProjParam (θ : ℝ) :
       Set.Icc (min (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))))
         (max (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)))) := by
   rcases eq_or_ne θ 0 with rfl | hθ
-  · simp [Set.range_const]
-    norm_num
-  · rw [range_realHyperbolicProjParam_of_ne_zero hθ]
-    exact closure_Ioo (min_lt_max.2 (endpoints_ne_of_ne_zero hθ)).ne
+  · simp [Set.range_const, one_add_one_eq_two]
+  · have hlt := Set.nonempty_Ioo.1 (range_realHyperbolicProjParam_of_ne_zero hθ ▸
+      Set.range_nonempty _)
+    rw [range_realHyperbolicProjParam_of_ne_zero hθ]
+    exact closure_Ioo hlt.ne
 
 /-- **Boundary relation `τ = η * (1 - η)`.** For every real `θ` and `η`,
 `(4 * cosh θ ^ 2)⁻¹ = η * (1 - η)` holds if and only if `η` is one of the two interval endpoints
@@ -578,10 +431,11 @@ theorem sInf_range_realHyperbolicProjParam (θ : ℝ) :
     sInf (Set.range fun α ↦ realHyperbolicProjParam α θ) =
       min (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))) := by
   rcases eq_or_ne θ 0 with rfl | hθ
-  · simp [Set.range_const]
-    norm_num
-  · rw [range_realHyperbolicProjParam_of_ne_zero hθ]
-    exact csInf_Ioo (min_lt_max.2 (endpoints_ne_of_ne_zero hθ))
+  · simp [Set.range_const, one_add_one_eq_two]
+  · have hlt := Set.nonempty_Ioo.1 (range_realHyperbolicProjParam_of_ne_zero hθ ▸
+      Set.range_nonempty _)
+    rw [range_realHyperbolicProjParam_of_ne_zero hθ]
+    exact csInf_Ioo hlt
 
 /-- The least upper bound of `α ↦ realHyperbolicProjParam α θ` is
 `max (1 / (1 + exp (-2 * θ))) (exp (-2 * θ) / (1 + exp (-2 * θ)))`. -/
@@ -589,23 +443,19 @@ theorem sSup_range_realHyperbolicProjParam (θ : ℝ) :
     sSup (Set.range fun α ↦ realHyperbolicProjParam α θ) =
       max (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))) := by
   rcases eq_or_ne θ 0 with rfl | hθ
-  · simp [Set.range_const]
-    norm_num
-  · rw [range_realHyperbolicProjParam_of_ne_zero hθ]
-    exact csSup_Ioo (min_lt_max.2 (endpoints_ne_of_ne_zero hθ))
-
-private theorem tendsto_exp_neg_two_mul_atTop :
-    Filter.Tendsto (fun θ : ℝ ↦ Real.exp (-2 * θ)) Filter.atTop (𝓝 0) := by
-  simpa [Function.comp_def] using Real.tendsto_exp_atBot.comp
-    (Filter.tendsto_id.const_mul_atTop_of_neg (by norm_num : (-2 : ℝ) < 0))
+  · simp [Set.range_const, one_add_one_eq_two]
+  · have hlt := Set.nonempty_Ioo.1 (range_realHyperbolicProjParam_of_ne_zero hθ ▸
+      Set.range_nonempty _)
+    rw [range_realHyperbolicProjParam_of_ne_zero hθ]
+    exact csSup_Ioo hlt
 
 /-- **Scalar limit of the Jones parameter as `θ → +∞` (`Q → 0⁺`).** -/
 theorem tendsto_wenzlParam_neg_two_real_exp_neg_two_mul_atTop :
     Filter.Tendsto (fun θ : ℝ ↦ wenzlParam (-2) (Real.exp (-2 * θ))) Filter.atTop (𝓝 0) := by
-  have hc : ContinuousAt (wenzlParam (-2) : ℝ → ℝ) 0 :=
-    continuousAt_wenzlParam (by simp [Finset.sum_range_succ])
-  rw [← wenzlParam_neg_natCast_zero (K := ℝ) 2]
-  exact hc.tendsto.comp tendsto_exp_neg_two_mul_atTop
+  simp_rw [wenzlParam_neg_two_real_exp_neg_two_mul]
+  exact tendsto_inv_atTop_zero.comp
+    ((Filter.tendsto_const_mul_pow_atTop (by positivity) (by positivity)).comp
+      Real.tendsto_cosh_atTop)
 
 /-- **Scalar limit of the Jones parameter as `θ → -∞` (`Q → +∞`).** -/
 theorem tendsto_wenzlParam_neg_two_real_exp_neg_two_mul_atBot :
@@ -618,37 +468,27 @@ theorem tendsto_wenzlParam_neg_two_real_exp_neg_two_mul_atBot :
   rw [h]
   exact tendsto_wenzlParam_neg_two_real_exp_neg_two_mul_atTop.comp Filter.tendsto_neg_atBot_atTop
 
-private theorem tendsto_inv_one_add_exp_atTop :
-    Filter.Tendsto (fun θ : ℝ ↦ 1 / (1 + Real.exp (-2 * θ))) Filter.atTop (𝓝 1) := by
-  have h : Filter.Tendsto (fun θ : ℝ ↦ 1 / (1 + Real.exp (-2 * θ))) Filter.atTop
-      (𝓝 (1 / (1 + 0))) :=
-    tendsto_const_nhds.div (tendsto_const_nhds.add tendsto_exp_neg_two_mul_atTop) (by norm_num)
-  rwa [add_zero, div_one] at h
-
-private theorem tendsto_exp_div_one_add_exp_atTop :
-    Filter.Tendsto (fun θ : ℝ ↦ Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))) Filter.atTop
-      (𝓝 0) := by
-  have h : Filter.Tendsto (fun θ : ℝ ↦ Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))) Filter.atTop
-      (𝓝 (0 / (1 + 0))) :=
-    tendsto_exp_neg_two_mul_atTop.div
-      (tendsto_const_nhds.add tendsto_exp_neg_two_mul_atTop) (by norm_num)
-  rwa [zero_div] at h
-
 /-- **Scalar limit of the lower interval endpoint as `θ → +∞`.** As `θ → +∞` (`Q → 0⁺`), the lower
 endpoint of the real hyperbolic interval tends to `0 = a_(-1)(Q)`. -/
 theorem tendsto_sInf_range_realHyperbolicProjParam_atTop :
     Filter.Tendsto (fun θ ↦ sInf (Set.range fun α ↦ realHyperbolicProjParam α θ)) Filter.atTop
       (𝓝 0) := by
-  simpa [sInf_range_realHyperbolicProjParam] using
-    tendsto_inv_one_add_exp_atTop.min tendsto_exp_div_one_add_exp_atTop
+  simp_rw [sInf_range_realHyperbolicProjParam, ← Real.one_add_tanh_div_two,
+    ← Real.one_sub_tanh_div_two]
+  simpa using
+    (((tendsto_const_nhds (x := (1 : ℝ))).add Real.tendsto_tanh_atTop).div_const 2).min
+      (((tendsto_const_nhds (x := (1 : ℝ))).sub Real.tendsto_tanh_atTop).div_const 2)
 
 /-- **Scalar limit of the upper interval endpoint as `θ → +∞`.** As `θ → +∞` (`Q → 0⁺`), the upper
 endpoint of the real hyperbolic interval tends to `1 = a_1(Q)`. -/
 theorem tendsto_sSup_range_realHyperbolicProjParam_atTop :
     Filter.Tendsto (fun θ ↦ sSup (Set.range fun α ↦ realHyperbolicProjParam α θ)) Filter.atTop
       (𝓝 1) := by
-  simpa [sSup_range_realHyperbolicProjParam] using
-    tendsto_inv_one_add_exp_atTop.max tendsto_exp_div_one_add_exp_atTop
+  simp_rw [sSup_range_realHyperbolicProjParam, ← Real.one_add_tanh_div_two,
+    ← Real.one_sub_tanh_div_two]
+  simpa [one_add_one_eq_two] using
+    (((tendsto_const_nhds (x := (1 : ℝ))).add Real.tendsto_tanh_atTop).div_const 2).max
+      (((tendsto_const_nhds (x := (1 : ℝ))).sub Real.tendsto_tanh_atTop).div_const 2)
 
 /-- **Scalar limit of the lower interval endpoint as `θ → -∞`.** As `θ → -∞` (`Q → +∞`), the lower
 endpoint of the real hyperbolic interval tends to `0`. -/
@@ -674,19 +514,6 @@ theorem tendsto_sSup_range_realHyperbolicProjParam_atBot :
 
 /-! ### Exceptional discrete line states `α = k * θ + π * I / 2` -/
 
-private theorem cosh_add_pi_mul_I_div_two (z : ℂ) : cosh (z + π * I / 2) = I * sinh z := by
-  rw [show π * I / 2 = (π / 2 : ℂ) * I by ring, cosh_add, cosh_mul_I, sinh_mul_I,
-    cos_pi_div_two, sin_pi_div_two]
-  ring
-
-private theorem tanh_add_pi_mul_I_div_two (z : ℂ) :
-    tanh (z + π * I / 2) = cosh z / sinh z := by
-  have hsinh : sinh (z + π * I / 2) = I * cosh z := by
-    rw [show π * I / 2 = (π / 2 : ℂ) * I by ring, sinh_add, cosh_mul_I, sinh_mul_I,
-      cos_pi_div_two, sin_pi_div_two]
-    ring
-  rw [tanh_eq_sinh_div_cosh, hsinh, cosh_add_pi_mul_I_div_two, mul_div_mul_left _ _ I_ne_zero]
-
 /-- **Native projection parameter on the exceptional line `α = k * θ + π * I / 2`.** Whenever
 `cosh θ ≠ 0` and `sinh (k * θ) ≠ 0`, `hyperbolicProjParam (k * θ + π * I / 2) θ` equals
 `a_(-k)(exp (-2 * θ))`. -/
@@ -705,9 +532,12 @@ theorem hyperbolicProjParam_mul_add_pi_mul_I_div_two {k : ℤ} {θ : ℂ} (hθ :
 theorem hyperbolicWenzlProjParam_mul_add_pi_mul_I_div_two {k : ℤ} {θ : ℂ} (hθ : cosh θ ≠ 0)
     (hk : sinh (k * θ) ≠ 0) :
     hyperbolicWenzlProjParam (k * θ + π * I / 2) θ = wenzlParam k (exp (-2 * θ)) := by
-  rw [hyperbolicWenzlProjParam_def, tanh_add_pi_mul_I_div_two, tanh_eq_sinh_div_cosh,
-    wenzlParam_exp_neg_two_mul k hθ hk, show ((k : ℂ) + 1) * θ = k * θ + θ by ring, sinh_add]
-  field_simp [hθ, hk]
+  have hθ' : cosh (-θ) ≠ 0 := by simpa using hθ
+  have hk' : sinh ((-k : ℤ) * (-θ)) ≠ 0 := by simpa using hk
+  have h := hyperbolicProjParam_mul_add_pi_mul_I_div_two hθ' hk'
+  rw [Int.cast_neg, neg_mul_neg, hyperbolicProjParam_neg_right, neg_neg,
+    show (-2 : ℂ) * -θ = -(-2 * θ) by ring, exp_neg, wenzlParam_inv] at h
+  exact h
 
 /-- **Common stabilization constant on the exceptional line.** At `α = k * θ + π * I / 2` and
 `η = a_(-k)(exp (-2 * θ))`, the common stabilization constant is `-sinh θ / sinh (k * θ)`. -/
@@ -715,9 +545,8 @@ theorem hyperbolicStabilization_mul_add_pi_mul_I_div_two {k : ℤ} {θ : ℂ} (h
     (hk : sinh (k * θ) ≠ 0) :
     hyperbolicStabilization (k * θ + π * I / 2) θ (wenzlParam (-k) (exp (-2 * θ))) =
       -sinh θ / sinh (k * θ) := by
-  have hα : cosh (k * θ + π * I / 2) ≠ 0 := by
-    rw [cosh_add_pi_mul_I_div_two]; exact mul_ne_zero I_ne_zero hk
-  rw [hyperbolicStabilization_eq_neg_I_mul_sinh_div_cosh hα hθ
+  rw [hyperbolicStabilization_eq_neg_I_mul_sinh_div_cosh
+    (cosh_add_pi_mul_I_div_two_ne_zero.2 hk) hθ
     (hyperbolicProjParam_mul_add_pi_mul_I_div_two hθ hk).symm, cosh_add_pi_mul_I_div_two]
   field_simp [I_ne_zero]
 
@@ -727,12 +556,9 @@ theorem hyperbolicProjParam_ofReal_mul_add_pi_mul_I_div_two {k : ℤ} (hk : k �
     (hθ : θ ≠ 0) :
     hyperbolicProjParam (k * (θ : ℂ) + π * I / 2) θ =
       ↑(wenzlParam (-k) (Real.exp (-2 * θ))) := by
-  have hc : cosh (θ : ℂ) ≠ 0 := by exact_mod_cast (Real.cosh_pos θ).ne'
   have hs : sinh ((k : ℂ) * θ) ≠ 0 := by
-    have : Real.sinh ((k : ℝ) * θ) ≠ 0 :=
-      Real.sinh_ne_zero.2 (mul_ne_zero (Int.cast_ne_zero.2 hk) hθ)
-    exact_mod_cast this
-  rw [hyperbolicProjParam_mul_add_pi_mul_I_div_two hc hs]
+    simpa using sinh_ofReal_ne_zero.2 (mul_ne_zero (Int.cast_ne_zero.2 hk) hθ)
+  rw [hyperbolicProjParam_mul_add_pi_mul_I_div_two (cosh_ofReal_ne_zero θ) hs]
   symm
   simpa using map_wenzlParam Complex.ofRealHom (-k) (Real.exp (-2 * θ))
 
@@ -742,14 +568,11 @@ theorem hyperbolicWenzlProjParam_ofReal_mul_add_pi_mul_I_div_two {k : ℤ} (hk :
     (hθ : θ ≠ 0) :
     hyperbolicWenzlProjParam (k * (θ : ℂ) + π * I / 2) θ =
       ↑(wenzlParam k (Real.exp (-2 * θ))) := by
-  have hc : cosh (θ : ℂ) ≠ 0 := by exact_mod_cast (Real.cosh_pos θ).ne'
-  have hs : sinh ((k : ℂ) * θ) ≠ 0 := by
-    have : Real.sinh ((k : ℝ) * θ) ≠ 0 :=
-      Real.sinh_ne_zero.2 (mul_ne_zero (Int.cast_ne_zero.2 hk) hθ)
-    exact_mod_cast this
-  rw [hyperbolicWenzlProjParam_mul_add_pi_mul_I_div_two hc hs]
-  symm
-  simpa using map_wenzlParam Complex.ofRealHom k (Real.exp (-2 * θ))
+  have h := hyperbolicProjParam_ofReal_mul_add_pi_mul_I_div_two (neg_ne_zero.2 hk)
+    (neg_ne_zero.2 hθ)
+  rw [Int.cast_neg, ofReal_neg, neg_mul_neg, hyperbolicProjParam_neg_right, neg_neg,
+    show (-2 : ℝ) * -θ = -(-2 * θ) by ring, Real.exp_neg, wenzlParam_inv] at h
+  exact h
 
 namespace InfiniteTypeAHeckeAlgebra
 
@@ -765,9 +588,7 @@ theorem IsMarkovTrace.map_hyperbolicGen_line_eq_iff (hτ : IsMarkovTrace z τ)
     τ (hyperbolicGen (k * θ + π * I / 2) θ n) =
         τ ↑(hyperbolicGen (k * θ + π * I / 2) θ n)⁻¹ ↔
       η = wenzlParam (-k) (exp (-2 * θ)) := by
-  have hα : cosh (k * θ + π * I / 2) ≠ 0 := by
-    rw [cosh_add_pi_mul_I_div_two]; exact mul_ne_zero I_ne_zero hk
-  rw [hτ.map_hyperbolicGen_eq_map_inv_iff_hyperbolicProjParam hz hα hθ n,
+  rw [hτ.map_hyperbolicGen_eq_map_inv_iff hz (cosh_add_pi_mul_I_div_two_ne_zero.2 hk) hθ n,
     hyperbolicProjParam_mul_add_pi_mul_I_div_two hθ hk]
 
 /-- **Markov trace characterization on the exceptional line (Wenzl convention).** For `cosh θ ≠ 0`
@@ -779,9 +600,7 @@ theorem IsMarkovTrace.map_hyperbolicGen_line_eq_iff_wenzl (hτ : IsMarkovTrace z
     τ (hyperbolicGen (k * θ + π * I / 2) θ n) =
         τ ↑(hyperbolicGen (k * θ + π * I / 2) θ n)⁻¹ ↔
       ηW = wenzlParam k (exp (-2 * θ)) := by
-  have hα : cosh (k * θ + π * I / 2) ≠ 0 := by
-    rw [cosh_add_pi_mul_I_div_two]; exact mul_ne_zero I_ne_zero hk
-  rw [hτ.map_hyperbolicGen_eq_map_inv_iff_wenzl hz hα hθ n,
+  rw [hτ.map_hyperbolicGen_eq_map_inv_iff_wenzl hz (cosh_add_pi_mul_I_div_two_ne_zero.2 hk) hθ n,
     hyperbolicWenzlProjParam_mul_add_pi_mul_I_div_two hθ hk]
 
 /-- Precomposing with `complementEquiv` on the exceptional line `α = k * θ + π * I / 2` gives the
@@ -792,9 +611,7 @@ theorem IsMarkovTrace.map_complementEquiv_hyperbolicGen_line_eq_iff (hτ : IsMar
     τ (complementEquiv _ (hyperbolicGen (k * θ + π * I / 2) θ n)) =
         τ (complementEquiv _ ↑(hyperbolicGen (k * θ + π * I / 2) θ n)⁻¹) ↔
       η = wenzlParam k (exp (-2 * θ)) := by
-  have hα : cosh (k * θ + π * I / 2) ≠ 0 := by
-    rw [cosh_add_pi_mul_I_div_two]; exact mul_ne_zero I_ne_zero hk
-  rw [hτ.map_complementEquiv_hyperbolicGen_eq_iff hz hα hθ n, ← hyperbolicWenzlProjParam_def,
+  rw [hτ.map_complementEquiv_hyperbolicGen_eq_iff hz (cosh_add_pi_mul_I_div_two_ne_zero.2 hk) hθ n,
     hyperbolicWenzlProjParam_mul_add_pi_mul_I_div_two hθ hk]
 
 end InfiniteTypeAHeckeAlgebra
@@ -822,12 +639,9 @@ theorem wenzlParam_neg_two_hyperbolicHeckeParam_rootOfUnity_sq (l : ℕ) :
 theorem hyperbolicProjParam_rootOfUnity {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
     hyperbolicProjParam (((k : ℂ) / l + 1 / 2) * π * I) (π * I / l) =
       wenzlParam (-(k : ℤ)) (exp (-(2 * π * I / l))) := by
-  have hl₀ : (0 : ℝ) < l := by exact_mod_cast (by omega : 0 < l)
   have hcos : Real.cos (π / l) ≠ 0 := (cos_pi_div_pos (by exact_mod_cast (by omega : 2 < l))).ne'
-  have hsin : Real.sin (k * π / l) ≠ 0 := by
-    refine (Real.sin_pos_of_pos_of_lt_pi (by positivity) ?_).ne'
-    rw [div_lt_iff₀ hl₀, mul_comm π]
-    exact mul_lt_mul_of_pos_right (by exact_mod_cast hkl) Real.pi_pos
+  have hsin : Real.sin (k * π / l) ≠ 0 :=
+    (sin_mul_pi_div_pos (Nat.cast_pos.2 hk₀) (Nat.cast_lt.2 hkl)).ne'
   -- Direct evaluations `tanh θ = I * tan (π / l)` and `tanh α = -I * cot (k * π / l)`.
   have hθ_tanh : tanh (π * I / l) = I * ↑(Real.tan (π / l)) := by
     rw [show π * I / (l : ℂ) = ↑(π / (l : ℝ)) * I by push_cast; ring, tanh_mul_I, ← ofReal_tan,
@@ -965,21 +779,17 @@ theorem IsMarkovTrace.map_hyperbolicGen_rootOfUnity_eq_iff {l k : ℕ} (hl : 3 �
     τ (hyperbolicGen (((k : ℂ) / l + 1 / 2) * π * I) (π * I / l) n) =
         τ ↑(hyperbolicGen (((k : ℂ) / l + 1 / 2) * π * I) (π * I / l) n)⁻¹ ↔
       η = wenzlParam (-(k : ℤ)) (exp (-(2 * π * I / l))) := by
-  have hl₀ : (0 : ℝ) < l := by exact_mod_cast (by omega : 0 < l)
   have hθ : cosh (π * I / l) ≠ 0 := by
     have hcos : Real.cos (π / l) ≠ 0 := (cos_pi_div_pos (by exact_mod_cast (by omega : 2 < l))).ne'
     rw [show π * I / (l : ℂ) = ↑(π / (l : ℝ)) * I by push_cast; ring, cosh_mul_I, ← ofReal_cos]
     exact_mod_cast hcos
   have hα : cosh (((k : ℂ) / l + 1 / 2) * π * I) ≠ 0 := by
-    have hsin : Real.sin (k * π / l) ≠ 0 := by
-      refine (Real.sin_pos_of_pos_of_lt_pi (by positivity) ?_).ne'
-      rw [div_lt_iff₀ hl₀, mul_comm π]
-      exact mul_lt_mul_of_pos_right (by exact_mod_cast hkl) Real.pi_pos
+    have hsin : Real.sin (k * π / l) ≠ 0 :=
+      (sin_mul_pi_div_pos (Nat.cast_pos.2 hk₀) (Nat.cast_lt.2 hkl)).ne'
     rw [show ((k : ℂ) / l + 1 / 2) * π * I = ((k * π / l + π / 2 : ℝ) : ℂ) * I by push_cast; ring,
       cosh_mul_I, ← ofReal_cos, Real.cos_add_pi_div_two]
     exact_mod_cast neg_ne_zero.2 hsin
-  rw [hτ.map_hyperbolicGen_eq_map_inv_iff_hyperbolicProjParam hz hα hθ n,
-    hyperbolicProjParam_rootOfUnity hl hk₀ hkl]
+  rw [hτ.map_hyperbolicGen_eq_map_inv_iff hz hα hθ n, hyperbolicProjParam_rootOfUnity hl hk₀ hkl]
 
 /-- **Markov trace characterization at the root-of-unity exceptional points (Wenzl convention).**
 For `l ≥ 3` and `0 < k < l`, a Markov trace with Wenzl projection parameter `η_W` has equal

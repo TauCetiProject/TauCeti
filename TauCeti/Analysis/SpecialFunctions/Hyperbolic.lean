@@ -38,17 +38,24 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   `Real.tanh` is `1 / cosh x ^ 2 = 1 - tanh x ^ 2`.
 * `Real.tendsto_tanh_atTop` and `Real.tendsto_tanh_atBot` — `Real.tanh` tends to `±1` at `±∞`.
 * `Real.hasDerivAt_inv_cosh` — the derivative of `(cosh x)⁻¹` is `-tanh x * (cosh x)⁻¹`.
-* `Real.one_add_tanh`, `Real.one_sub_tanh`, `Real.one_add_tanh_le` and `Real.one_sub_tanh_le` —
-  `1 ± tanh x = exp (± x) / cosh x`, so `Real.tanh` approaches `∓1` at the rate `2 * exp (± 2 x)`.
+* `Real.one_add_exp_two_mul`, `Real.one_add_tanh`, `Real.one_sub_tanh`,
+  `Real.one_sub_tanh_div_two`, `Real.one_add_tanh_div_two`, `Real.one_add_tanh_le` and
+  `Real.one_sub_tanh_le` — `1 + exp (2 * x) = 2 * cosh x * exp x`,
+  `1 ± tanh x = exp (± x) / cosh x`, `(1 - tanh x) / 2 = exp (-2 * x) / (1 + exp (-2 * x))`,
+  `(1 + tanh x) / 2 = 1 / (1 + exp (-2 * x))`, and `Real.tanh` approaches `∓1` at the rate
+  `2 * exp (± 2 x)`.
 * `Real.tendsto_cosh_atTop` and `Real.tendsto_cosh_atBot` — `Real.cosh` tends to infinity at both
   ends of the line.
 * `Real.hasDerivAt_log_cosh` and `Real.abs_sub_log_two_le_log_cosh` — `log (cosh x)` has
   derivative `tanh x` and is at least `|x| - log 2`, so it is a smooth version of `|x|`.
 * `Real.tendsto_cosh_sub_div_cosh_add_atTop` — `cosh (x - a) / cosh (x + a) → exp (-(2 * a))` as
   `x → ∞`.
-* `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two` —
-  `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` over `ℂ`, when
-  `cosh α * cosh θ ≠ 0`.
+* `Complex.one_add_exp_two_mul`, `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two`,
+  `Complex.sinh_add_pi_mul_I_div_two`, `Complex.cosh_add_pi_mul_I_div_two`,
+  `Complex.cosh_add_pi_mul_I_div_two_ne_zero`, `Complex.tanh_add_pi_mul_I_div_two`,
+  `Complex.cosh_ofReal_ne_zero` and `Complex.sinh_ofReal_ne_zero` — complex exponential-hyperbolic
+  factorization, `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2`,
+  quarter-period shifts by `π * I / 2`, and nonvanishing on the real axis.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
 * `Real.sinh_le_mul_exp_sq_div_six` — `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`. It bounds the
   exponential moment `∫₀¹ exp (-λ x) dx = 2 exp (-λ / 2) sinh (λ / 2) / λ` of the uniform
@@ -65,7 +72,7 @@ law of `Real.artanh`, which carries the Möbius addition of `(-1, 1)` to the add
 that law is in turn what makes the hyperbolic distance of the complex unit disc a metric.
 The complex identity `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two` rewrites the
 projection parameter at which the two stabilization constants of the Ocneanu trace agree, in
-`TauCeti/Algebra/TypeAHeckeAlgebra/Hyperbolic.lean`.
+`TauCeti/Algebra/TypeAHeckeAlgebra/Hyperbolic/Basic.lean`.
 -/
 
 public section
@@ -211,6 +218,28 @@ theorem one_sub_tanh (x : ℝ) : 1 - tanh x = exp (-x) / cosh x := by
   rw [tanh_eq_sinh_div_cosh, ← cosh_sub_sinh]
   field_simp
 
+/-- `1 + exp (2 * x) = 2 * cosh x * exp x`. -/
+theorem one_add_exp_two_mul (x : ℝ) : 1 + exp (2 * x) = 2 * cosh x * exp x := by
+  rw [cosh_eq, mul_div_cancel₀ _ two_ne_zero, add_mul, ← exp_add, ← exp_add, neg_add_cancel,
+    exp_zero, ← two_mul, add_comm]
+
+/-- `(1 - tanh x) / 2 = exp (-2 * x) / (1 + exp (-2 * x))`. -/
+theorem one_sub_tanh_div_two (x : ℝ) :
+    (1 - tanh x) / 2 = exp (-2 * x) / (1 + exp (-2 * x)) := by
+  have h1 : 1 + exp (-2 * x) = 2 * cosh x * exp (-x) := by
+    simpa [mul_neg] using one_add_exp_two_mul (-x)
+  have e₂ : exp (-x) * exp (-x) = exp (-2 * x) := by rw [← exp_add]; ring_nf
+  rw [one_sub_tanh, h1, div_div, mul_comm (cosh x) 2,
+    ← mul_div_mul_right _ _ (exp_pos (-x)).ne', e₂]
+
+/-- `(1 + tanh x) / 2 = 1 / (1 + exp (-2 * x))`, the logistic sigmoid at `2 * x`. -/
+theorem one_add_tanh_div_two (x : ℝ) :
+    (1 + tanh x) / 2 = 1 / (1 + exp (-2 * x)) := by
+  have h : (1 + tanh x) / 2 = 1 - (1 - tanh x) / 2 := by ring
+  rw [h, one_sub_tanh_div_two]
+  field_simp [show 1 + exp (-2 * x) ≠ 0 by positivity]
+  ring
+
 /-- The hyperbolic tangent approaches `-1` exponentially fast:
 `1 + tanh x ≤ 2 * exp (2 * x)`. -/
 theorem one_add_tanh_le (x : ℝ) : 1 + tanh x ≤ 2 * exp (2 * x) := by
@@ -328,6 +357,12 @@ end Real
 
 namespace Complex
 
+open scoped Real
+
+/-- `1 + exp (2 * z) = 2 * cosh z * exp z`. -/
+theorem one_add_exp_two_mul (z : ℂ) : 1 + exp (2 * z) = 2 * cosh z * exp z := by
+  rw [two_cosh, add_mul, ← exp_add, ← exp_add, neg_add_cancel, exp_zero, ← two_mul, add_comm]
+
 /-- `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` for complex `α`, `θ`
 with `cosh α ≠ 0` and `cosh θ ≠ 0`: both sides are
 `(cosh α * cosh θ - sinh α * sinh θ) / (2 * cosh α * cosh θ)` by `Complex.cosh_sub`. -/
@@ -337,5 +372,38 @@ theorem cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two {α θ : ℂ}
       (1 - tanh α * tanh θ) / 2 := by
   rw [cosh_sub, tanh_eq_sinh_div_cosh, tanh_eq_sinh_div_cosh]
   field_simp
+
+/-- Quarter-period imaginary shift for `Complex.sinh`: `sinh (z + π * I / 2) = I * cosh z`. -/
+theorem sinh_add_pi_mul_I_div_two (z : ℂ) : sinh (z + π * I / 2) = I * cosh z := by
+  rw [show π * I / 2 = (π / 2 : ℂ) * I by ring, sinh_add, cosh_mul_I, sinh_mul_I,
+    cos_pi_div_two, sin_pi_div_two]
+  ring
+
+/-- Quarter-period imaginary shift for `Complex.cosh`: `cosh (z + π * I / 2) = I * sinh z`. -/
+theorem cosh_add_pi_mul_I_div_two (z : ℂ) : cosh (z + π * I / 2) = I * sinh z := by
+  rw [show π * I / 2 = (π / 2 : ℂ) * I by ring, cosh_add, cosh_mul_I, sinh_mul_I,
+    cos_pi_div_two, sin_pi_div_two]
+  ring
+
+/-- `cosh (z + π * I / 2)` is nonzero if and only if `sinh z` is nonzero. -/
+theorem cosh_add_pi_mul_I_div_two_ne_zero {z : ℂ} :
+    cosh (z + π * I / 2) ≠ 0 ↔ sinh z ≠ 0 := by
+  simp [cosh_add_pi_mul_I_div_two, I_ne_zero]
+
+/-- Quarter-period imaginary shift for `Complex.tanh`:
+`tanh (z + π * I / 2) = cosh z / sinh z`. -/
+theorem tanh_add_pi_mul_I_div_two (z : ℂ) :
+    tanh (z + π * I / 2) = cosh z / sinh z := by
+  rw [tanh_eq_sinh_div_cosh, sinh_add_pi_mul_I_div_two, cosh_add_pi_mul_I_div_two,
+    mul_div_mul_left _ _ I_ne_zero]
+
+/-- The complex hyperbolic cosine is nonzero on the real axis. -/
+theorem cosh_ofReal_ne_zero (x : ℝ) : cosh (x : ℂ) ≠ 0 := by
+  exact_mod_cast (Real.cosh_pos x).ne'
+
+/-- On the real axis, the complex hyperbolic sine is nonzero if and only if its argument is
+nonzero. -/
+theorem sinh_ofReal_ne_zero {x : ℝ} : sinh (x : ℂ) ≠ 0 ↔ x ≠ 0 := by
+  rw [← ofReal_sinh, ne_eq, ofReal_eq_zero, ← ne_eq, Real.sinh_ne_zero]
 
 end Complex

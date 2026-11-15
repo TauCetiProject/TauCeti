@@ -12,7 +12,8 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 /-!
 # Trigonometric bounds and nonvanishing criteria
 
-The sine of `π / x` is positive for real `x > 1`, and the cosine of `π / x` for real `x > 2`.
+The sine of `x * π / l` is positive for real `0 < x < l` (in particular `sin (π / x) > 0` for
+`x > 1`), and the cosine of `π / x` is positive for real `x > 2`.
 The sine of `π * x` is nonzero for nonzero `x ∈ (-1, 1)`, a criterion used to detect nonflat
 Schwarz–Christoffel turns. The sine is
 nonpositive on `[π, 2π]`. For real `a < 1` the quantity `1 - a sin² θ` is positive, a bound
@@ -124,9 +125,15 @@ theorem sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero {x : ℝ}
   rw [Ne, sin_eq_zero_iff_of_lt_of_lt (by nlinarith [hx.1, pi_pos]) (by nlinarith [hx.2, pi_pos])]
   exact mul_ne_zero pi_ne_zero hx0
 
+/-- For `0 < x < l`, the sine of `x * π / l` is positive. -/
+theorem sin_mul_pi_div_pos {x l : ℝ} (h0 : 0 < x) (hx : x < l) : 0 < sin (x * π / l) := by
+  have hl : 0 < l := h0.trans hx
+  refine sin_pos_of_pos_of_lt_pi (div_pos (mul_pos h0 pi_pos) hl) ?_
+  rwa [div_lt_iff₀ hl, mul_comm π, mul_lt_mul_iff_left₀ pi_pos]
+
 /-- For a real denominator greater than one, the sine of `π / x` is positive. -/
-theorem sin_pi_div_pos {x : ℝ} (hx : 1 < x) : 0 < sin (π / x) :=
-  sin_pos_of_pos_of_lt_pi (div_pos pi_pos (by linarith)) (div_lt_self pi_pos hx)
+theorem sin_pi_div_pos {x : ℝ} (hx : 1 < x) : 0 < sin (π / x) := by
+  simpa only [one_mul] using sin_mul_pi_div_pos one_pos hx
 
 /-- For a real denominator greater than two, the cosine of `π / x` is positive. -/
 theorem cos_pi_div_pos {x : ℝ} (hx : 2 < x) : 0 < cos (π / x) := by

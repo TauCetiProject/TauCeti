@@ -222,13 +222,19 @@ end BalancedProjectionAlgebra
 
 namespace InfiniteTypeAHeckeAlgebra
 
-/-- **Comparison of Wenzl's projection with the native eigenprojection.** Let `u = 1 + q ^ 2` and
-`s = q + q⁻¹` be units. Wenzl's projection `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T i)` equals `1 - P i`,
-where `P i = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is the `q`-eigenprojection of `T i`. -/
-theorem wenzlProjection_eq_one_sub_eigenprojection (u s : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2)
-    (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
+private theorem val_inv_mul_eq_add_inv (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2) :
+    ((q⁻¹ * u : Rˣ) : R) = (q : R) + ↑q⁻¹ := by
+  rw [Units.val_mul, hu, mul_add, mul_one, sq, ← mul_assoc, q.inv_mul, one_mul, add_comm]
+
+/-- **Comparison of Wenzl's projection with the native eigenprojection.** Let `u = 1 + q ^ 2` be a
+unit, so `q⁻¹ * u = q + q⁻¹`. Wenzl's projection `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T i)` equals
+`1 - P i`, where `P i = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is the `q`-eigenprojection of `T i`. -/
+theorem wenzlProjection_eq_one_sub_eigenprojection (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2)
+    (i : ℕ) :
     (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i) =
-      1 - (↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R)) := by
+      1 - (↑(q⁻¹ * u)⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R)) := by
+  set s : Rˣ := q⁻¹ * u
+  have hs : (s : R) = (q : R) + ↑q⁻¹ := val_inv_mul_eq_add_inv u hu
   have hτ : (↑s⁻¹ : R) ^ 2 * ((q : R) + ↑q⁻¹) ^ 2 = 1 := by
     rw [← hs, ← mul_pow, s.inv_mul, one_pow]
   have h := (BalancedProjectionAlgebra.wenzlHeckeEquiv_e_eq_wenzlProjection hτ u hu i).symm.trans
@@ -237,22 +243,19 @@ theorem wenzlProjection_eq_one_sub_eigenprojection (u s : Rˣ) (hu : (u : R) = 1
     mul_one] at h
 
 /-- Wenzl's projection is the image of the native eigenprojection under `complementEquiv`. -/
-theorem wenzlProjection_eq_complementEquiv_eigenprojection (u s : Rˣ)
-    (hu : (u : R) = 1 + (q : R) ^ 2) (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
+theorem wenzlProjection_eq_complementEquiv_eigenprojection (u : Rˣ)
+    (hu : (u : R) = 1 + (q : R) ^ 2) (i : ℕ) :
     (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i) =
-      complementEquiv q ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) := by
-  rw [wenzlProjection_eq_one_sub_eigenprojection u s hu hs, complementEquiv_eigenprojection q s hs]
+      complementEquiv q ((↑(q⁻¹ * u)⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) := by
+  rw [wenzlProjection_eq_one_sub_eigenprojection u hu,
+    complementEquiv_eigenprojection q (q⁻¹ * u) (val_inv_mul_eq_add_inv u hu)]
 
 /-- Wenzl's projection `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T i)` is idempotent whenever `u = 1 + q ^ 2`
 is a unit. -/
 theorem isIdempotentElem_wenzlProjection (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2) (i : ℕ) :
     IsIdempotentElem ((↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i)) := by
-  have hs : ((q⁻¹ * u : Rˣ) : R) = q + ↑q⁻¹ := by
-    have hq : (↑q⁻¹ : R) * q = 1 := q.inv_mul
-    simp only [Units.val_mul, hu]
-    linear_combination (q : R) * hq
-  rw [wenzlProjection_eq_one_sub_eigenprojection u (q⁻¹ * u) hu hs]
-  exact (isIdempotentElem_eigenprojection (q⁻¹ * u) hs i).one_sub
+  rw [wenzlProjection_eq_one_sub_eigenprojection u hu]
+  exact (isIdempotentElem_eigenprojection (q⁻¹ * u) (val_inv_mul_eq_add_inv u hu) i).one_sub
 
 /-- **Eigenvalue decomposition of Wenzl's generator `g i = q • T i`.** With `e_i^W` Wenzl's
 projection `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T i)`, `g i = q ^ 2 • (1 - e_i^W) - e_i^W`. -/
@@ -294,12 +297,8 @@ theorem map_mul_wenzlProjection (hμ : IsMarkovTrace z μ) (u : Rˣ)
     (hu : (u : R) = 1 + (q : R) ^ 2) (hz : z = q * η - ↑q⁻¹ * (1 - η)) {n : ℕ}
     {x : InfiniteTypeAHeckeAlgebra R q} (hx : x ∈ InfiniteTypeAHeckeAlgebra.stage R q (n + 1)) :
     μ (x * (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q n)) = (1 - η) * μ x := by
-  have hs : ((q⁻¹ * u : Rˣ) : R) = q + ↑q⁻¹ := by
-    have hq : (↑q⁻¹ : R) * q = 1 := q.inv_mul
-    simp only [Units.val_mul, hu]
-    linear_combination (q : R) * hq
-  rw [wenzlProjection_eq_one_sub_eigenprojection u (q⁻¹ * u) hu hs, mul_sub, mul_one, map_sub,
-    hμ.map_mul_eigenprojection (q⁻¹ * u) hs hz hx]
+  rw [wenzlProjection_eq_one_sub_eigenprojection u hu, mul_sub, mul_one, map_sub,
+    hμ.map_mul_eigenprojection (q⁻¹ * u) (val_inv_mul_eq_add_inv u hu) hz hx]
   ring
 
 end IsMarkovTrace
