@@ -15,8 +15,8 @@ Split tori remain split after extending scalars between commutative rings. Tori 
 under arbitrary field extensions: embed an algebraic closure of the smaller field into one
 of the larger field and transport the splitting through the two base-change towers.
 
-This provides the scalar-extension step for descent of maximal tori in Layer 7, "Borel
-subgroups, maximal tori", of the ReductiveGroups roadmap.
+This is the scalar-extension step used to descend maximality of tori along an arbitrary field
+extension in `TauCeti.Algebra.AlgebraicGroup.Torus.Maximal`.
 
 ## Main declarations
 
