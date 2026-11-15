@@ -86,9 +86,7 @@ theorem qExpansion_normalizedCharEisensteinSeriesMF_coeff (hk : 3 ≤ (k : ℤ))
     (qExpansion 1 (normalizedCharEisensteinSeriesMF psi phi hk huv)).coeff n =
       DirichletCharacter.twistedDivisorSum (k - 1) psi phi n := by
   let _ : NeZero v := NeZero.of_dvd ((dvd_mul_left v u).trans huv)
-  have hphiInv : (phi⁻¹).IsPrimitive := by
-    rw [DirichletCharacter.isPrimitive_def, DirichletCharacter.conductor_inv]
-    exact hphi
+  have hphiInv : (phi⁻¹).IsPrimitive := hphi.inv
   have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
   have hgauss := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hphiInv
     (isPrimitive_stdAddChar v)
