@@ -25,6 +25,10 @@ used to replace the rational kernels in finite-rank holomorphic approximation op
 The proof uses Mathlib's spectral description of closed subalgebras: an extra spectral point
 fills its entire bounded complementary component. Applied to the closed algebra of holomorphic
 restrictions, filledness rules out such a component because it meets the complement of `Ω`.
+Composing a scalar simple-fraction approximant with a vector-valued polynomial extends this from
+`(z - a)⁻¹` (`TauCeti.IsFilledIn.exists_differentiableOn_norm_inv_sub_lt`) to finite negative-degree
+Laurent sums valued in any complex normed space
+(`TauCeti.IsFilledIn.exists_differentiableOn_norm_sum_zpow_neg_sub_lt`).
 
 ## References
 
@@ -36,7 +40,7 @@ restrictions, filledness rules out such a component because it meets the complem
 
 public section
 
-open Set
+open Metric Set
 open scoped Topology
 
 namespace TauCeti
@@ -114,5 +118,41 @@ theorem IsFilledIn.exists_differentiableOn_norm_inv_sub_lt (hfill : IsFilledIn K
   rw [HolomorphicFunctions.extend_apply g' ⟨z, hKΩ hz⟩, ← hv ⟨z, hz⟩]
   exact lt_of_le_of_lt ((v.val - φ g').norm_coe_le_norm ⟨z, hz⟩)
     (by simpa [dist_eq_norm] using hdist)
+
+/-- **Runge approximation for finite negative-degree Laurent sums.** On a compact set `K` filled in
+an open set `Ω ⊆ ℂ`, any normed-space-valued polynomial in `(z - a)⁻¹` without constant term at a
+pole `a ∉ K` is uniformly approximable on `K` by functions holomorphic on all of `Ω`. -/
+theorem IsFilledIn.exists_differentiableOn_norm_sum_zpow_neg_sub_lt
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    (hfill : IsFilledIn K Ω) (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω)
+    {a : ℂ} (ha : a ∉ K) (N : ℕ) (v : ℕ → F) {ε : ℝ} (hε : 0 < ε) :
+    ∃ g : ℂ → F, DifferentiableOn ℂ g Ω ∧
+      ∀ z ∈ K, ‖(∑ k ∈ Finset.range N, (z - a) ^ (-((k : ℤ) + 1)) • v k) - g z‖ < ε := by
+  let Φ : ℂ → F := fun w ↦ ∑ k ∈ Finset.range N, w ^ (k + 1) • v k
+  have hΦ : Differentiable ℂ Φ :=
+    Differentiable.fun_sum fun k _ ↦ (differentiable_id.pow (k + 1)).smul_const (v k)
+  have hinv_cont : ContinuousOn (fun z : ℂ ↦ (z - a)⁻¹) K :=
+    (continuous_id.fun_sub continuous_const).continuousOn.inv₀ fun z hz hza ↦
+      ha ((sub_eq_zero.mp hza) ▸ hz)
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn hinv_cont
+  let B : ℝ := max M 0 + 1
+  obtain ⟨δ₀, hδ₀, huc⟩ := Metric.uniformContinuousOn_iff.mp
+    ((isCompact_closedBall (0 : ℂ) B).uniformContinuousOn_of_continuous hΦ.continuous.continuousOn)
+    ε hε
+  obtain ⟨q, hq, hqK⟩ :=
+    hfill.exists_differentiableOn_norm_inv_sub_lt hΩ hK hKΩ ha (lt_min hδ₀ zero_lt_one)
+  refine ⟨Φ ∘ q, hΦ.comp_differentiableOn hq, fun z hz ↦ ?_⟩
+  have hzM : ‖(z - a)⁻¹‖ ≤ max M 0 := (hM z hz).trans (le_max_left M 0)
+  have hq_lt : ‖(z - a)⁻¹ - q z‖ < min δ₀ 1 := hqK z hz
+  have hw₁ : (z - a)⁻¹ ∈ closedBall (0 : ℂ) B :=
+    mem_closedBall_zero_iff.mpr (hzM.trans (by linarith))
+  have hw₂ : q z ∈ closedBall (0 : ℂ) B := mem_closedBall_zero_iff.mpr <| by
+    have hle := norm_sub_rev (z - a)⁻¹ (q z) ▸ norm_sub_norm_le (q z) (z - a)⁻¹
+    linarith [hq_lt.trans_le (min_le_right δ₀ 1)]
+  have hsum_eq : (∑ k ∈ Finset.range N, (z - a) ^ (-((k : ℤ) + 1)) • v k) = Φ (z - a)⁻¹ := by
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [← Int.negSucc_eq, zpow_negSucc, inv_pow]
+  rw [hsum_eq, Function.comp_apply, ← dist_eq_norm]
+  exact huc (z - a)⁻¹ hw₁ (q z) hw₂ (by rw [dist_eq_norm]; exact hq_lt.trans_le (min_le_left δ₀ 1))
 
 end TauCeti

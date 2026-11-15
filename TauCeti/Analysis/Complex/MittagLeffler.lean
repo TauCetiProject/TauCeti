@@ -23,28 +23,29 @@ import TauCeti.Topology.Codiscrete
 Let `Ω ⊆ ℂ` be a set, `E ⊆ Ω` a subset discrete and relatively closed in `Ω` (expressed via
 `Eᶜ ∈ codiscreteWithin Ω`), and `F` a complex Banach space. Given at each point `a ∈ E` a germ
 `P a : ℂ → F` that is complex-differentiable on a punctured neighborhood of `a`, this file
-constructs a single function `f : ℂ → F` holomorphic on `Ω \ E` such that at every `a ∈ E` the
-difference `f - P a` agrees on `𝓝[≠] a` with a function analytic at `a`
+constructs a single function `f : ℂ → F` complex-differentiable on `Ω \ E` such that at every
+`a ∈ E` the difference `f - P a` agrees on `𝓝[≠] a` with a function analytic at `a`
 (`TauCeti.exists_holomorphic_prescribed_isolated_singularities`). Both poles and essential
 singularities (such as `z ↦ exp ((z - a)⁻¹)`) are permitted, and `P a` only needs to be defined
-and holomorphic on a punctured neighborhood of `a` rather than on all of `ℂ \ {a}`.
+and complex-differentiable on a punctured neighborhood of `a` rather than on all of `ℂ \ {a}`.
 
 Specializing `P a` to meromorphic germs at `a` yields the classical Mittag-Leffler theorem
 (`TauCeti.exists_meromorphic_prescribed_principal_parts`), producing `f : ℂ → F` meromorphic on
-`Ω` and holomorphic on `Ω \ E` with those prescribed singular parts; for scalar polynomials without
-constant term, `TauCeti.exists_meromorphicOn_principalPart_mk_eq` realizes prescribed algebraic
-principal parts `TauCeti.meromorphicGerms.principalPart`. Neither theorem requires `Ω` itself to be
-open: in `ℂ`, any `E ⊆ Ω` with `Eᶜ ∈ codiscreteWithin Ω` avoids its closed derived set
-`derivedSet E`, so the open-set construction on `(derivedSet E)ᶜ` restricts to `Ω`.
+`Ω` and complex-differentiable on `Ω \ E` with those prescribed singular parts; for scalar
+polynomials without constant term, `TauCeti.exists_meromorphicOn_principalPart_mk_eq` realizes
+prescribed algebraic principal parts `TauCeti.meromorphicGerms.principalPart`. Neither theorem
+requires `Ω` itself to be open: whenever `E ⊆ Ω` satisfies `Eᶜ ∈ codiscreteWithin Ω`, the set `Ω`
+avoids the closed derived set `derivedSet E` (`Ω ⊆ (derivedSet E)ᶜ`), so the open-set construction
+on `(derivedSet E)ᶜ` restricts to `Ω`.
 
 The file also establishes:
 * removable-singularity patching across `Ω ∩ E`
   (`TauCeti.exists_differentiableOn_eqOn_of_analyticAt_nhdsNE`), uniqueness of solutions modulo
-  holomorphic functions on `Ω`
+  functions complex-differentiable on `Ω`
   (`TauCeti.exists_differentiableOn_eqOn_sub_of_prescribed_isolated_singularities` and
   `TauCeti.exists_differentiableOn_eqOn_sub_of_principalPart_mk_eq`), and the full affine-coset
   characterization on open sets
-  (`TauCeti.prescribed_isolated_singularities_iff_exists_differentiableOn_eqOn_sub`);
+  (`TauCeti.prescribed_isolated_singularities_iff_exists_differentiableOn_eqOn_add`);
 * functoriality of prescribed isolated singularities under pullback along non-locally-constant
   analytic maps (`TauCeti.prescribed_isolated_singularities_comp`), together with restriction to
   subsets (`TauCeti.prescribed_isolated_singularities_mono`), translation
@@ -54,16 +55,18 @@ The file also establishes:
 ## Proof outline
 
 On an open set `Ω`, `TauCeti.exists_hasLaurentSeriesOnAnnulus_of_eventually_differentiableAt`
-extracts at each `a ∈ E` a convergent punctured-disk Laurent series whose negative part
-`laurentNegPart` (`TauCeti.HasLaurentSeriesOnAnnulus`) is holomorphic on all of `ℂ \ {a}` and
-differs from `P a` near `a` by a power-series-analytic nonnegative part. Exhausting `Ω` by compact
-sets `K n` filled in `Ω` (`IsOpen.exists_isFilledIn_compact_exhaustion`), each `K n` meets `E` in a
-finite set `A n`, partitioning `E` into disjoint finite shells `B 0 = A 0` and
-`B (n + 1) = A (n + 1) \ A n`. For `a ∈ B (n + 1)`, `a ∉ K n`, so `laurentNegPart` is uniformly
-approximated on `K n` by a finite polynomial in `(z - a)⁻¹`, which in turn is uniformly
+extracts at each `a : E` a convergent punctured-disk Laurent series with coefficients `c a`, whose
+negative part `s a := laurentNegPart (c a) a.val` (`TauCeti.laurentNegPart`) is holomorphic on all
+of `ℂ \ {a.val}` (`TauCeti.HasLaurentSeriesOnAnnulus.differentiableOn_laurentNegPart`) and differs
+from `P a` near `a.val` by a power-series-analytic nonnegative part. Exhausting `Ω` by compact sets
+`K n` filled in `Ω` (`IsOpen.exists_isFilledIn_compact_exhaustion`), each `K n` meets `E` in a
+finite set `A n : Finset E`, partitioning `E` into disjoint finite shells `B 0 = A 0` and
+`B (n + 1) = A (n + 1) \ A n`. For `a ∈ B (n + 1)`, `a.val ∉ K n`, so `s a` is uniformly
+approximated on `K n` by a finite polynomial in `(z - a.val)⁻¹`, which in turn is uniformly
 approximated on `K n` by a function holomorphic on `Ω` via
-`TauCeti.IsFilledIn.exists_differentiableOn_norm_inv_sub_lt`. Subtracting holomorphic corrections
-`Q (n + 1)` with error `< 2⁻⁽ⁿ⁺¹⁾` on `K n` makes the series
+`TauCeti.IsFilledIn.exists_differentiableOn_norm_sum_zpow_neg_sub_lt` (from
+`TauCeti.IsFilledIn.exists_differentiableOn_norm_inv_sub_lt`). Setting `Q 0 = 0` and subtracting
+holomorphic corrections `Q (n + 1)` with error `< 2⁻⁽ⁿ⁺¹⁾` on `K n` makes the series
 `∑' k, ((∑ a ∈ B k, s a) - Q k)` converge uniformly on `interior (K m)` after splitting off the
 first `m + 1` shells, yielding holomorphy on `Ω \ E` (`TendstoUniformlyOn.differentiableOn`) and
 analyticity of each local remainder.
@@ -78,9 +81,9 @@ analyticity of each local remainder.
   constant-free polynomials via `TauCeti.meromorphicGerms.principalPart`.
 * `TauCeti.exists_differentiableOn_eqOn_of_analyticAt_nhdsNE`,
   `TauCeti.exists_differentiableOn_eqOn_sub_of_prescribed_isolated_singularities`,
-  `TauCeti.prescribed_isolated_singularities_iff_exists_differentiableOn_eqOn_sub`, and
+  `TauCeti.prescribed_isolated_singularities_iff_exists_differentiableOn_eqOn_add`, and
   `TauCeti.exists_differentiableOn_eqOn_sub_of_principalPart_mk_eq`: removable extension across
-  `Ω ∩ E` and uniqueness modulo functions holomorphic on `Ω`.
+  `Ω ∩ E` and uniqueness modulo functions complex-differentiable on `Ω`.
 * `TauCeti.prescribed_isolated_singularities_comp`,
   `TauCeti.prescribed_isolated_singularities_mono`,
   `TauCeti.prescribed_isolated_singularities_comp_add_right`, and
@@ -90,7 +93,7 @@ analyticity of each local remainder.
 ## References
 
 * A. Rainer, *Advanced Complex Analysis*, Theorems 12.1 and 15.7 (pp. 31, 39-40).
-* J. B. Conway, *Functions of One Complex Variable I*, 2nd ed., Springer, 1978, Chapter VII, §3.
+* J. B. Conway, *Functions of One Complex Variable I*, 2nd ed., Springer, 1978, Chapter VIII, §3.
 * L. V. Ahlfors, *Complex Analysis*, 3rd ed., McGraw-Hill, 1979, Chapter 5, §2.1.
 -/
 
@@ -105,41 +108,7 @@ section NormedSpace
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-/-- Runge approximation on a filled compact set `K ⊆ Ω` of a finite negative-degree Laurent sum
-at a pole `a ∉ K` by a function holomorphic on `Ω`. -/
-private theorem exists_differentiableOn_norm_sum_zpow_neg_sub_lt {K Ω : Set ℂ}
-    (hfill : IsFilledIn K Ω) (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω)
-    {a : ℂ} (ha : a ∉ K) (N : ℕ) (v : ℕ → F) {ε : ℝ} (hε : 0 < ε) :
-    ∃ g : ℂ → F, DifferentiableOn ℂ g Ω ∧
-      ∀ z ∈ K, ‖(∑ k ∈ Finset.range N, (z - a) ^ (-((k : ℤ) + 1)) • v k) - g z‖ < ε := by
-  let Φ : ℂ → F := fun w ↦ ∑ k ∈ Finset.range N, w ^ (k + 1) • v k
-  have hΦ : Differentiable ℂ Φ :=
-    Differentiable.fun_sum fun k _ ↦ (differentiable_id.pow (k + 1)).smul_const (v k)
-  have hinv_cont : ContinuousOn (fun z : ℂ ↦ (z - a)⁻¹) K :=
-    (continuous_id.fun_sub continuous_const).continuousOn.inv₀ fun z hz hza ↦
-      ha ((sub_eq_zero.mp hza) ▸ hz)
-  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn hinv_cont
-  let B : ℝ := max M 0 + 1
-  obtain ⟨δ₀, hδ₀, huc⟩ := Metric.uniformContinuousOn_iff.mp
-    ((isCompact_closedBall (0 : ℂ) B).uniformContinuousOn_of_continuous hΦ.continuous.continuousOn)
-    ε hε
-  obtain ⟨q, hq, hqK⟩ :=
-    hfill.exists_differentiableOn_norm_inv_sub_lt hΩ hK hKΩ ha (lt_min hδ₀ zero_lt_one)
-  refine ⟨Φ ∘ q, hΦ.comp_differentiableOn hq, fun z hz ↦ ?_⟩
-  have hzM : ‖(z - a)⁻¹‖ ≤ max M 0 := (hM z hz).trans (le_max_left M 0)
-  have hq_lt : ‖(z - a)⁻¹ - q z‖ < min δ₀ 1 := hqK z hz
-  have hw₁ : (z - a)⁻¹ ∈ closedBall (0 : ℂ) B :=
-    mem_closedBall_zero_iff.mpr (hzM.trans (by linarith))
-  have hw₂ : q z ∈ closedBall (0 : ℂ) B := mem_closedBall_zero_iff.mpr <| by
-    have hle := norm_sub_rev (z - a)⁻¹ (q z) ▸ norm_sub_norm_le (q z) (z - a)⁻¹
-    linarith [hq_lt.trans_le (min_le_right δ₀ 1)]
-  have hsum_eq : (∑ k ∈ Finset.range N, (z - a) ^ (-((k : ℤ) + 1)) • v k) = Φ (z - a)⁻¹ := by
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [← Int.negSucc_eq, zpow_negSucc, inv_pow]
-  rw [hsum_eq, Function.comp_apply, ← dist_eq_norm]
-  exact huc (z - a)⁻¹ hw₁ (q z) hw₂ (by rw [dist_eq_norm]; exact hq_lt.trans_le (min_le_left δ₀ 1))
-
-/-! ### Uniqueness modulo holomorphic functions and functoriality -/
+/-! ### Uniqueness modulo complex-differentiable functions and functoriality -/
 
 /-- **Removable-singularity patching across a relatively closed discrete subset.** If `f : ℂ → F` is
 complex-differentiable on `Ω \ E` with `Eᶜ ∈ codiscreteWithin Ω` and agrees on `𝓝[≠] a` with a
@@ -184,9 +153,9 @@ theorem exists_differentiableOn_eqOn_of_analyticAt_nhdsNE
         (by rw [Set.sdiff_eq]; exact inter_mem self_mem_nhdsWithin hE_nhds)
     exact hdiff.congr_of_eventuallyEq hev (hfh ⟨hz₀, hz₀E⟩).symm
 
-/-- **Uniqueness modulo `H(Ω)` for prescribed isolated singularities.** Two solutions `f₁, f₂` on
-`Ω \ E` sharing the same singular germs `P` at all points of `Ω ∩ E` differ on `Ω \ E` by the
-restriction of a function complex-differentiable on all of `Ω`. -/
+/-- **Uniqueness for prescribed isolated singularities modulo functions complex-differentiable on
+`Ω`.** Two solutions `f₁, f₂` on `Ω \ E` sharing the same singular germs `P` at all points of
+`Ω ∩ E` differ on `Ω \ E` by the restriction of a function complex-differentiable on all of `Ω`. -/
 theorem exists_differentiableOn_eqOn_sub_of_prescribed_isolated_singularities
     {Ω E : Set ℂ} (hE : Eᶜ ∈ codiscreteWithin Ω) {f₁ f₂ : ℂ → F} {P : E → ℂ → F}
     (hf₁ : DifferentiableOn ℂ f₁ (Ω \ E)) (hf₂ : DifferentiableOn ℂ f₂ (Ω \ E))
@@ -303,7 +272,7 @@ private theorem HasLaurentSeriesOnAnnulus.exists_differentiableOn_norm_laurentNe
     exact fun z hz hza ↦ ha (mem_singleton_iff.mp hza ▸ hz)
   obtain ⟨N, hN⟩ := (Metric.tendstoUniformlyOn_iff.mp
     (h.tendstoUniformlyOn_laurentNegPart_of_isCompact hK hKr) (ε / 2) (half_pos hε)).exists
-  obtain ⟨g, hg, hgK⟩ := exists_differentiableOn_norm_sum_zpow_neg_sub_lt hfill hΩ hK hKΩ ha N
+  obtain ⟨g, hg, hgK⟩ := hfill.exists_differentiableOn_norm_sum_zpow_neg_sub_lt hΩ hK hKΩ ha N
     (fun k ↦ c (-((k : ℤ) + 1))) (half_pos hε)
   refine ⟨g, hg, fun z hz ↦ ?_⟩
   have h₁ : ‖laurentNegPart c a z -
@@ -499,7 +468,7 @@ theorem exists_meromorphic_prescribed_principal_parts
 open set `Ω` with `E ⊆ Ω` and `Eᶜ ∈ codiscreteWithin Ω`, an arbitrary function `f : ℂ → F` solves
 the same isolated-singularity problem if and only if it agrees on `Ω \ E` with `f₀ + h` for some
 `h` holomorphic on all of `Ω`. -/
-theorem prescribed_isolated_singularities_iff_exists_differentiableOn_eqOn_sub
+theorem prescribed_isolated_singularities_iff_exists_differentiableOn_eqOn_add
     {Ω E : Set ℂ} (hΩ : IsOpen Ω) (hEΩ : E ⊆ Ω) (hE : Eᶜ ∈ codiscreteWithin Ω)
     {P : E → ℂ → F} {f₀ f : ℂ → F} (hf₀ : DifferentiableOn ℂ f₀ (Ω \ E))
     (hsing₀ : ∀ a : E, ∃ g : ℂ → F, AnalyticAt ℂ g a.val ∧ f₀ - P a =ᶠ[𝓝[≠] a.val] g) :
@@ -532,8 +501,8 @@ end NormedSpace
 
 /-- **Mittag-Leffler realization of prescribed polynomial principal parts.** Given `E ⊆ Ω` with
 `Eᶜ ∈ codiscreteWithin Ω` and at each `a : E` a polynomial `P a : ℂ[X]` without constant term
-(`(P a).coeff 0 = 0`), there exists `f : ℂ → ℂ` meromorphic on `Ω` and holomorphic on `Ω \ E` whose
-`meromorphicGerms.principalPart` at every `a : E` is `P a`. -/
+(`(P a).coeff 0 = 0`), there exists `f : ℂ → ℂ` meromorphic on `Ω` and complex-differentiable on
+`Ω \ E` whose `meromorphicGerms.principalPart` at every `a : E` is `P a`. -/
 theorem exists_meromorphicOn_principalPart_mk_eq
     {Ω E : Set ℂ} (hEΩ : E ⊆ Ω) (hE : Eᶜ ∈ codiscreteWithin Ω)
     {P : E → ℂ[X]} (hP : ∀ a : E, (P a).coeff 0 = 0) :
@@ -549,10 +518,10 @@ theorem exists_meromorphicOn_principalPart_mk_eq
     ← Germ.coe_sub, Germ.coe_eq]
   exact hfg
 
-/-- **Uniqueness modulo `H(Ω)` via `meromorphicGerms.principalPart`.** Two functions meromorphic on
-`Ω ∩ E`, holomorphic on `Ω \ E` (`Eᶜ ∈ codiscreteWithin Ω`), and having the same algebraic
-`meromorphicGerms.principalPart` at every point of `Ω ∩ E` differ on `Ω \ E` by a function
-holomorphic on all of `Ω`. -/
+/-- **Uniqueness via `meromorphicGerms.principalPart` modulo functions complex-differentiable on
+`Ω`.** Two functions meromorphic on `Ω ∩ E`, complex-differentiable on `Ω \ E`
+(`Eᶜ ∈ codiscreteWithin Ω`), and having the same algebraic `meromorphicGerms.principalPart` at
+every point of `Ω ∩ E` differ on `Ω \ E` by a function complex-differentiable on all of `Ω`. -/
 theorem exists_differentiableOn_eqOn_sub_of_principalPart_mk_eq
     {Ω E : Set ℂ} (hE : Eᶜ ∈ codiscreteWithin Ω) {f₁ f₂ : ℂ → ℂ}
     (hf₁m : MeromorphicOn f₁ (Ω ∩ E)) (hf₂m : MeromorphicOn f₂ (Ω ∩ E))
