@@ -7,24 +7,36 @@ module
 
 public import TauCeti.Analysis.AbsoluteValue.Action
 public import TauCeti.NumberTheory.NumberField.PlacesOver.FinitePlace
+public import TauCeti.NumberTheory.NumberField.PlacesOver.InfinitePlace
 
 import Mathlib.FieldTheory.Galois.IsGaloisGroup
 import Mathlib.NumberTheory.RamificationInertia.Galois
 import TauCeti.NumberTheory.NumberField.AutomorphismAction
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Action
 
 /-!
-# Conjugate absolute values over a finite place
+# Conjugate absolute values over a place
 
-Let `F / K` be a Galois extension of number fields and `v` a finite place of `K`. The Galois
-group `F ≃ₐ[K] F` acts on the absolute values of `F` by `σ • w = w ∘ σ⁻¹`
-(`AbsoluteValue.instMulActionAlgEquiv`), preserving those that lie over `v`. This file proves that
-it permutes them transitively: any two absolute values of `F` lying over `v` are conjugate
-(`NumberField.exists_smul_eq_of_liesOver_finitePlace`), so that they form a single orbit
-(`NumberField.setOf_liesOver_finitePlace_eq_orbit`). This is the `AbsoluteValue.LiesOver` form
-of the transitivity of the Galois group on the primes of `𝓞 F` over a prime of `𝓞 K`, Mathlib's
-`Ideal.exists_smul_eq_of_isGaloisGroup`. The absolute values over `v` are in general real powers of
-finite places of `F`, not finite places themselves, so the statement is not one about
-`FinitePlace F`.
+Let `F / K` be a Galois extension of fields. The Galois group `F ≃ₐ[K] F` acts on the absolute
+values of `F` by `σ • w = w ∘ σ⁻¹` (`AbsoluteValue.instMulActionAlgEquiv`), preserving those that
+lie over any fixed absolute value on `K`. This file proves that it permutes transitively the
+absolute values lying over a place `v` of `K`:
+
+* For an infinite place `v` of an arbitrary field `K` and any Galois extension `F / K`
+  (`NumberField.exists_smul_eq_of_liesOver_infinitePlace`,
+  `NumberField.setOf_liesOver_infinitePlace_eq_orbit`), every absolute value lying over `v` is an
+  infinite place of `F` (`NumberField.exists_infinitePlace_eq_of_liesOver`), so transitivity follows
+  from Mathlib's `NumberField.InfinitePlace.exists_smul_eq_of_comap_eq` and compatibility of the
+  two actions (`NumberField.InfinitePlace.coe_smul`).
+* For a finite place `v` of a number field `K` and a Galois extension of number fields `F / K`
+  (`NumberField.exists_smul_eq_of_liesOver_finitePlace`,
+  `NumberField.setOf_liesOver_finitePlace_eq_orbit`), this is the `AbsoluteValue.LiesOver` form of
+  the transitivity of the Galois group on the primes of `𝓞 F` over a prime of `𝓞 K`, Mathlib's
+  `Ideal.exists_smul_eq_of_isGaloisGroup`. The absolute values over `v` are in general real powers
+  of finite places of `F`, not finite places themselves, so the statement is not one about
+  `FinitePlace F`.
+* Combining the two cases gives transitivity over any infinite or finite place of a number field
+  (`NumberField.exists_smul_eq_of_liesOver`, `NumberField.setOf_liesOver_eq_orbit`).
 
 ## Implementation notes
 
@@ -33,8 +45,8 @@ An absolute value `w` lying over `v = FinitePlace.mk 𝔭` is determined by its 
 `σ • w` is the image under `σ` of the prime of `w`. So it suffices to move one prime to the other,
 and no equivariance of the finite places of `F` or of the adic valuations under `σ` is needed.
 
-The same transitivity statement, along the same route through the primes `{y ∈ 𝓞 F | w y < 1}`, is
-formalized in Ralf Stephan's `rwst/Subspace-Theorems` at
+The finite-place transitivity statement, along the same route through the primes
+`{y ∈ 𝓞 F | w y < 1}`, is formalized in Ralf Stephan's `rwst/Subspace-Theorems` at
 `09835cb23557ae5ae0cf55a9c4ab9055f5d60338`, file `DiophantineApproximation/ConjugatePlaces.lean`
 (Apache 2.0).
 
@@ -49,6 +61,36 @@ public section
 open AbsoluteValue IsDedekindDomain Pointwise
 
 namespace NumberField
+
+section InfinitePlace
+
+variable {K F : Type*} [Field K] [Field F] [Algebra K F] [IsGalois K F]
+
+/-- **Conjugate absolute values over an infinite place.** Let `F / K` be a Galois extension of
+fields and `v` an infinite place of `K`. Any two absolute values of `F` lying over `v` are conjugate
+under `F ≃ₐ[K] F`. -/
+theorem exists_smul_eq_of_liesOver_infinitePlace (v : InfinitePlace K)
+    (w₁ w₂ : AbsoluteValue F ℝ) [w₁.LiesOver v.1] [w₂.LiesOver v.1] :
+    ∃ σ : F ≃ₐ[K] F, σ • w₁ = w₂ := by
+  obtain ⟨u₁, _, rfl⟩ := exists_infinitePlace_eq_of_liesOver v w₁
+  obtain ⟨u₂, _, rfl⟩ := exists_infinitePlace_eq_of_liesOver v w₂
+  have hcomap : u₁.comap (algebraMap K F) = u₂.comap (algebraMap K F) := by
+    rw [InfinitePlace.LiesOver.comap_eq u₁ v, InfinitePlace.LiesOver.comap_eq u₂ v]
+  obtain ⟨σ, rfl⟩ := InfinitePlace.exists_smul_eq_of_comap_eq hcomap
+  exact ⟨σ, (InfinitePlace.coe_smul σ u₁).symm⟩
+
+/-- Let `F / K` be a Galois extension of fields and `v` an infinite place of `K`. The absolute
+values of `F` lying over `v` form a single orbit of `F ≃ₐ[K] F`. -/
+theorem setOf_liesOver_infinitePlace_eq_orbit (v : InfinitePlace K)
+    (w : AbsoluteValue F ℝ) [w.LiesOver v.1] :
+    {w' : AbsoluteValue F ℝ | w'.LiesOver v.1} = MulAction.orbit (F ≃ₐ[K] F) w := by
+  ext w'
+  simp only [Set.mem_ofPred_eq, MulAction.mem_orbit_iff]
+  refine ⟨fun _ ↦ exists_smul_eq_of_liesOver_infinitePlace v w w', ?_⟩
+  rintro ⟨σ, rfl⟩
+  infer_instance
+
+end InfinitePlace
 
 variable {K F : Type*} [Field K] [Field F] [NumberField K] [NumberField F] [Algebra K F]
 
@@ -77,6 +119,29 @@ theorem setOf_liesOver_finitePlace_eq_orbit [IsGalois K F] (v : FinitePlace K)
   ext w'
   simp only [Set.mem_ofPred_eq, MulAction.mem_orbit_iff]
   refine ⟨fun _ ↦ exists_smul_eq_of_liesOver_finitePlace v w w', ?_⟩
+  rintro ⟨σ, rfl⟩
+  infer_instance
+
+/-- **Conjugate absolute values over a place.** Let `F / K` be a Galois extension of number fields
+and `v` an infinite or finite place of `K`. Any two absolute values of `F` lying over `v` are
+conjugate under `F ≃ₐ[K] F`. -/
+theorem exists_smul_eq_of_liesOver [IsGalois K F] {v : AbsoluteValue K ℝ}
+    (hv : IsInfinitePlace v ∨ IsFinitePlace v) (w₁ w₂ : AbsoluteValue F ℝ)
+    [w₁.LiesOver v] [w₂.LiesOver v] : ∃ σ : F ≃ₐ[K] F, σ • w₁ = w₂ := by
+  rcases hv with hinf | hfin
+  · obtain ⟨v', rfl⟩ := (isInfinitePlace_iff v).mp hinf
+    exact exists_smul_eq_of_liesOver_infinitePlace v' w₁ w₂
+  · obtain ⟨v', rfl⟩ := (isFinitePlace_iff v).mp hfin
+    exact exists_smul_eq_of_liesOver_finitePlace v' w₁ w₂
+
+/-- Let `F / K` be a Galois extension of number fields and `v` an infinite or finite place of `K`.
+The absolute values of `F` lying over `v` form a single orbit of `F ≃ₐ[K] F`. -/
+theorem setOf_liesOver_eq_orbit [IsGalois K F] {v : AbsoluteValue K ℝ}
+    (hv : IsInfinitePlace v ∨ IsFinitePlace v) (w : AbsoluteValue F ℝ) [w.LiesOver v] :
+    {w' : AbsoluteValue F ℝ | w'.LiesOver v} = MulAction.orbit (F ≃ₐ[K] F) w := by
+  ext w'
+  simp only [Set.mem_ofPred_eq, MulAction.mem_orbit_iff]
+  refine ⟨fun _ ↦ exists_smul_eq_of_liesOver hv w w', ?_⟩
   rintro ⟨σ, rfl⟩
   infer_instance
 

@@ -32,7 +32,9 @@ finite place of the extension.
   and the reverse one for the norm of a normed division ring,
   `IsUltrametricDist.isUltrametricDist_of_forall_norm_natCast_le_one`; here the latter is
   transferred to absolute values through `WithAbs`. Consequently an absolute value lying over a
-  nonarchimedean one is nonarchimedean, `AbsoluteValue.isNonarchimedean_of_liesOver`.
+  nonarchimedean one is nonarchimedean, `AbsoluteValue.isNonarchimedean_of_liesOver`, and for a
+  field extension the two are nonarchimedean simultaneously,
+  `AbsoluteValue.isNonarchimedean_iff_of_liesOver`.
 * `IsNonarchimedean.isUltrametricDist_withAbs`: equipping a ring with a nonarchimedean real
   absolute value through `WithAbs` produces an ultrametric distance.
 * `IsNonarchimedean.apply_le_one_of_isIntegral`: a nonarchimedean absolute value on an
@@ -95,6 +97,21 @@ theorem isNonarchimedean_of_liesOver {K : Type*} [CommSemiring K] [Algebra K F] 
     have : Nontrivial K := (algebraMap K F).domain_nontrivial
     rw [← map_natCast (algebraMap K F), LiesOver.apply_algebraMap u]
     exact hu.apply_natCast_le_one (by simp) (map_one _)
+
+/-- An absolute value on a field over which a nonarchimedean absolute value of a nontrivial algebra
+lies is itself nonarchimedean. -/
+theorem isNonarchimedean_of_liesOver_under {L : Type*} [Semiring L] [Nontrivial L] [Algebra F L]
+    {w : AbsoluteValue L ℝ} [w.LiesOver v] (hw : IsNonarchimedean w) : IsNonarchimedean v :=
+  isNonarchimedean_of_forall_natCast_le_one fun n ↦ by
+    rw [← LiesOver.under_eq w v, under_def, comp_apply, map_natCast]
+    exact hw.apply_natCast_le_one (by simp) w.map_one
+
+/-- For an extension of fields, an absolute value lying over another is nonarchimedean if and only
+if the base absolute value is nonarchimedean. -/
+theorem isNonarchimedean_iff_of_liesOver {K : Type*} [Field K] [Algebra K F]
+    (u : AbsoluteValue K ℝ) (v : AbsoluteValue F ℝ) [v.LiesOver u] :
+    IsNonarchimedean v ↔ IsNonarchimedean u :=
+  ⟨isNonarchimedean_of_liesOver_under, isNonarchimedean_of_liesOver⟩
 
 end Field
 
