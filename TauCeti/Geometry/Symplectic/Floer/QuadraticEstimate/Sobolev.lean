@@ -38,18 +38,19 @@ The norms are taken over an open set `Ω` of the domain `ℝ × ℝ`; as there, 
 * **The estimate with supremum norms.** If `‖ξ₁‖, ‖ξ₂‖ ≤ ε ≤ δ` and `‖ξ₁ - ξ₂‖ ≤ η` pointwise on
   `Ω`, and the slice defect `∂t w - X_Kt(w)` of the base map is bounded by `B` there, then
   `‖N_w(ξ₁) - N_w(ξ₂)‖_{Lᵖ(Ω)} ≤ C (ε (1 + B) ‖ξ₁ - ξ₂‖_{Lᵖ} + η ‖Dξ₁‖_{Lᵖ} + ε ‖D(ξ₁ - ξ₂)‖_{Lᵖ})`
-  (`SymplecticForm.exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_le`). This holds
-  for every `p ≥ 1` and every open set `Ω`, with `δ` and `C` depending only on `K` and the
-  coefficients.
+  (`exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le`).
+  This holds for every `p ≥ 1` and every open set `Ω`, with `δ` and `C` depending only on `K` and
+  the coefficients.
 * **The estimate in `W^{1,p}`.** For `p > 2`, Morrey's supremum bound
   (`TauCeti.exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv`) controls the supremum norms on a
   convex open set by the `W^{1,p}` norm `‖ξ‖_{1,p} = ‖ξ‖_{Lᵖ(Ω)} + ‖Dξ‖_{Lᵖ(Ω)}`. Hence if
   `‖ξ₁‖_{1,p}, ‖ξ₂‖_{1,p} ≤ δ`, then
   `‖N_w(ξ₁) - N_w(ξ₂)‖_{Lᵖ(Ω)} ≤ C (1 + B) (‖ξ₁‖_{1,p} + ‖ξ₂‖_{1,p}) ‖ξ₁ - ξ₂‖_{1,p}`
-  (`SymplecticForm.exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_le_of_convex`),
-  which is the hypothesis of the Newton iteration, and for `ξ₂ = 0`,
-  `‖F(w + ξ) - F(w) - D_w ξ‖_{Lᵖ(Ω)} ≤ C (1 + B) ‖ξ‖_{1,p}²`
-  (`SymplecticForm.exists_pos_forall_eLpNorm_floerOperator_add_sub_floerOperator_le_of_convex`).
+  by
+  `exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le_of_convex`,
+  which has the form of the quadratic hypothesis of the Newton iteration, once the increments are
+  placed in a Banach completion. Its case `ξ₂ = 0`, the `floerOperator_add_sub` form of this
+  theorem, is `‖F(w + ξ) - F(w) - D_w ξ‖_{Lᵖ(Ω)} ≤ C (1 + B) ‖ξ‖_{1,p}²`.
 
 The constants of the `W^{1,p}` estimate do not depend on the size of `Ω`: they only depend on `p`
 and on a radius `r` and a measure `m > 0` with `m ≤ |Ω ∩ B(z, r)|` for every `z ∈ Ω`. The
@@ -87,9 +88,9 @@ variable {J : P → V → V →L[ℝ] V} {Ks Kt : P → V → ℝ} {K : Set (P �
 
 /-- The pointwise quadratic estimate with the supremum bounds `ε`, `η`, `B` inserted and the slice
 derivatives bounded by the full derivatives: the step integrated in
-`SymplecticForm.exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_le`. -/
-private theorem exists_pos_forall_norm_floerOperator_sub_floerOperator_le (hK : IsCompact K)
-    (hJ : ∀ q ∈ K, ContDiffAt ℝ 2 (Function.uncurry J) q)
+`exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le`. -/
+private theorem exists_pos_forall_norm_floerOperator_sub_floerOperator_sub_floerLinearization_le_mul
+    (hK : IsCompact K) (hJ : ∀ q ∈ K, ContDiffAt ℝ 2 (Function.uncurry J) q)
     (hKs : ∀ q ∈ K, ContDiffAt ℝ 3 (Function.uncurry Ks) q)
     (hKt : ∀ q ∈ K, ContDiffAt ℝ 3 (Function.uncurry Kt) q) :
     ∃ δ : ℝ≥0, 0 < δ ∧ ∃ C : ℝ≥0, ∀ (φ : ℝ × ℝ → P) (w ξ₁ ξ₂ : ℝ × ℝ → V) (z : ℝ × ℝ)
@@ -132,8 +133,8 @@ satisfies
 `‖F(w + ξ₁) - F(w + ξ₂) - D_w(ξ₁ - ξ₂)‖_{Lᵖ(Ω)}
   ≤ C (ε (1 + B) ‖ξ₁ - ξ₂‖_{Lᵖ(Ω)} + η ‖Dξ₁‖_{Lᵖ(Ω)} + ε ‖D(ξ₁ - ξ₂)‖_{Lᵖ(Ω)})`,
 provided its left-hand side is almost everywhere strongly measurable on `Ω`. -/
-theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_le (hK : IsCompact K)
-    (hJ : ∀ q ∈ K, ContDiffAt ℝ 2 (Function.uncurry J) q)
+theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le
+    (hK : IsCompact K) (hJ : ∀ q ∈ K, ContDiffAt ℝ 2 (Function.uncurry J) q)
     (hKs : ∀ q ∈ K, ContDiffAt ℝ 3 (Function.uncurry Ks) q)
     (hKt : ∀ q ∈ K, ContDiffAt ℝ 3 (Function.uncurry Kt) q) :
     ∃ δ : ℝ≥0, 0 < δ ∧ ∃ C : ℝ≥0, ∀ (p : ℝ≥0∞) (Ω : Set (ℝ × ℝ)) (φ : ℝ × ℝ → P)
@@ -156,7 +157,9 @@ theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_le (hK : IsCom
         C * (ε * (1 + B) * eLpNorm (ξ₁ - ξ₂) p (volume.restrict Ω) +
           η * eLpNorm (fderiv ℝ ξ₁) p (volume.restrict Ω) +
           ε * eLpNorm (fderiv ℝ (ξ₁ - ξ₂)) p (volume.restrict Ω)) := by
-  obtain ⟨δ, hδ, C, hC⟩ := ω.exists_pos_forall_norm_floerOperator_sub_floerOperator_le hK hJ hKs hKt
+  obtain ⟨δ, hδ, C, hC⟩ :=
+    ω.exists_pos_forall_norm_floerOperator_sub_floerOperator_sub_floerLinearization_le_mul hK hJ
+      hKs hKt
   refine ⟨δ, hδ, C, fun p Ω φ w ξ₁ ξ₂ ε η B hp hΩ hw hξ₁ hξ₂ hwK hB hε₁ hε₂ hεδ hη hN => ?_⟩
   have hξ : ContDiffOn ℝ 1 (ξ₁ - ξ₂) Ω := hξ₁.sub hξ₂
   -- The pointwise estimate at every point of `Ω`.
@@ -191,9 +194,8 @@ theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_le (hK : IsCom
   rw [hsplit, eLpNorm_const_smul, NNReal.eNorm_eq]
   gcongr
   refine (eLpNorm_add_le hp).trans (add_le_add ((eLpNorm_add_le hp).trans (add_le_add ?_ ?_)) ?_)
-  · rw [eLpNorm_const_smul, NNReal.eNorm_eq, eLpNorm_norm _ hm₁]
-    push_cast
-    rfl
+  · rw [eLpNorm_const_smul, NNReal.eNorm_eq, eLpNorm_norm _ hm₁, ENNReal.coe_mul, ENNReal.coe_add,
+      ENNReal.coe_one]
   · rw [eLpNorm_const_smul, NNReal.eNorm_eq, eLpNorm_norm _ hm₂]
   · rw [eLpNorm_const_smul, NNReal.eNorm_eq, eLpNorm_norm _ hm₃]
 
@@ -213,6 +215,27 @@ private theorem quadratic_terms_le {a e d d' S S₁ S₂ B : ℝ≥0∞} (he : e
     _ ≤ a * (S₁ + S₂) * (1 + B) * S + a * (S₁ + S₂) * (1 + B) * S +
         a * (S₁ + S₂) * (1 + B) * S := by gcongr
     _ = 3 * a * (1 + B) * (S₁ + S₂) * S := by ring
+
+/-- The `W^{1,p}` seminorm `‖ξ‖_{Lᵖ(Ω)} + ‖Dξ‖_{Lᵖ(Ω)}` of a difference of maps that are `C¹` on an
+open set `Ω` is at most the sum of their seminorms. -/
+private theorem eLpNorm_sub_add_eLpNorm_fderiv_sub_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω)
+    {ξ₁ ξ₂ : ℝ × ℝ → E} (hξ₁ : ContDiffOn ℝ 1 ξ₁ Ω) (hξ₂ : ContDiffOn ℝ 1 ξ₂ Ω) :
+    eLpNorm (ξ₁ - ξ₂) p (volume.restrict Ω) + eLpNorm (fderiv ℝ (ξ₁ - ξ₂)) p (volume.restrict Ω) ≤
+      eLpNorm ξ₁ p (volume.restrict Ω) + eLpNorm (fderiv ℝ ξ₁) p (volume.restrict Ω) +
+        (eLpNorm ξ₂ p (volume.restrict Ω) + eLpNorm (fderiv ℝ ξ₂) p (volume.restrict Ω)) := by
+  have hfd : fderiv ℝ (ξ₁ - ξ₂) =ᵐ[volume.restrict Ω] fderiv ℝ ξ₁ - fderiv ℝ ξ₂ :=
+    ae_restrict_of_forall_mem hΩ.measurableSet fun z hz => fderiv_sub
+      ((hξ₁.differentiableOn one_ne_zero).differentiableAt (hΩ.mem_nhds hz))
+      ((hξ₂.differentiableOn one_ne_zero).differentiableAt (hΩ.mem_nhds hz))
+  calc _ ≤ eLpNorm ξ₁ p (volume.restrict Ω) + eLpNorm ξ₂ p (volume.restrict Ω) +
+        (eLpNorm (fderiv ℝ ξ₁) p (volume.restrict Ω) +
+          eLpNorm (fderiv ℝ ξ₂) p (volume.restrict Ω)) := by
+        gcongr
+        · exact eLpNorm_sub_le hp
+        · rw [eLpNorm_congr_ae hfd]
+          exact eLpNorm_sub_le hp
+    _ = _ := by ring
 
 /-- The choice of the radius `δ₁ / (2 (a + 1))` in the `W^{1,p}` estimate makes `a` times the sum of
 two such radii at most `δ₁`. -/
@@ -234,11 +257,14 @@ such that the following holds for every convex open set `Ω` of the domain with
 `Ks (φ z)`, `Kt (φ z)` satisfies
 `‖F(w + ξ₁) - F(w + ξ₂) - D_w(ξ₁ - ξ₂)‖_{Lᵖ(Ω)}
   ≤ C (1 + B) (‖ξ₁‖_{1,p} + ‖ξ₂‖_{1,p}) ‖ξ₁ - ξ₂‖_{1,p}`,
-provided its left-hand side is almost everywhere strongly measurable on `Ω`. This is the
-quadratic hypothesis of `TauCeti.exists_mem_range_norm_le_add_add_eq_zero` for the remainder
-`ξ ↦ F(w + ξ) - F(w) - D_w ξ`, with constants independent of the size of `Ω`. -/
-theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_le_of_convex (hK : IsCompact K)
-    (hJ : ∀ q ∈ K, ContDiffAt ℝ 2 (Function.uncurry J) q)
+provided its left-hand side is almost everywhere strongly measurable on `Ω`. The constants do not
+depend on the size of `Ω`. For the remainder `ξ ↦ F(w + ξ) - F(w) - D_w ξ` this has the form of
+the quadratic hypothesis of `TauCeti.exists_mem_range_norm_le_add_add_eq_zero`; applying that
+theorem still needs a Banach space of increments (a Sobolev completion) and the measurability side
+condition. -/
+theorem
+    exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le_of_convex
+    (hK : IsCompact K) (hJ : ∀ q ∈ K, ContDiffAt ℝ 2 (Function.uncurry J) q)
     (hKs : ∀ q ∈ K, ContDiffAt ℝ 3 (Function.uncurry Ks) q)
     (hKt : ∀ q ∈ K, ContDiffAt ℝ 3 (Function.uncurry Kt) q) {p : ℝ≥0} (hp : 2 < p) (r : ℝ)
     {m : ℝ≥0∞} (hm : m ≠ 0) :
@@ -269,8 +295,9 @@ theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_le_of_convex (
   have : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure := Measure.prod.instIsAddHaarMeasure _ _
   obtain ⟨CM, hCM⟩ := exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv (μ := volume)
     (E := ℝ × ℝ) (F := V) hp1 (by rw [finrank_prod, finrank_self]; norm_num; exact hp) r hm
-  obtain ⟨δ₁, hδ₁, C₁, h₁⟩ := ω.exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_le hK hJ
-    hKs hKt
+  obtain ⟨δ₁, hδ₁, C₁, h₁⟩ :=
+    ω.exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le hK hJ
+      hKs hKt
   refine ⟨δ₁ / (2 * (CM + 1)), by positivity, 3 * C₁ * CM, fun Ω φ w ξ₁ ξ₂ B hΩ hΩc hfat hw hξ₁
     hξ₂ hwK hB hS₁ hS₂ hN => ?_⟩
   set μ := volume.restrict Ω
@@ -279,19 +306,8 @@ theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_le_of_convex (
   set S := eLpNorm (ξ₁ - ξ₂) p μ + eLpNorm (fderiv ℝ (ξ₁ - ξ₂)) p μ
   have hξ : ContDiffOn ℝ 1 (ξ₁ - ξ₂) Ω := hξ₁.sub hξ₂
   -- The `W^{1,p}` norm of the difference is finite.
-  have hfd : fderiv ℝ (ξ₁ - ξ₂) =ᵐ[μ] fderiv ℝ ξ₁ - fderiv ℝ ξ₂ :=
-    ae_restrict_of_forall_mem hΩ.measurableSet fun z hz => fderiv_sub
-      ((hξ₁.differentiableOn one_ne_zero).differentiableAt (hΩ.mem_nhds hz))
-      ((hξ₂.differentiableOn one_ne_zero).differentiableAt (hΩ.mem_nhds hz))
-  have hSle : S ≤ S₁ + S₂ := by
-    calc eLpNorm (ξ₁ - ξ₂) p μ + eLpNorm (fderiv ℝ (ξ₁ - ξ₂)) p μ ≤
-          eLpNorm ξ₁ p μ + eLpNorm ξ₂ p μ +
-            (eLpNorm (fderiv ℝ ξ₁) p μ + eLpNorm (fderiv ℝ ξ₂) p μ) := by
-          gcongr
-          · exact eLpNorm_sub_le (by exact_mod_cast hp1)
-          · rw [eLpNorm_congr_ae hfd]
-            exact eLpNorm_sub_le (by exact_mod_cast hp1)
-      _ = S₁ + S₂ := by ring
+  have hSle : S ≤ S₁ + S₂ :=
+    eLpNorm_sub_add_eLpNorm_fderiv_sub_le (by exact_mod_cast hp1) hΩ hξ₁ hξ₂
   have hS₁₂ : S₁ + S₂ ≠ ∞ := ENNReal.add_ne_top.2
     ⟨ne_top_of_le_ne_top ENNReal.coe_ne_top hS₁, ne_top_of_le_ne_top ENNReal.coe_ne_top hS₂⟩
   have hS : S ≠ ∞ := (hSle.trans_lt hS₁₂.lt_top).ne
@@ -307,7 +323,7 @@ theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_le_of_convex (
     rw [← ENNReal.coe_le_coe, hε]
     calc (CM : ℝ≥0∞) * (S₁ + S₂) ≤
           CM * ((δ₁ / (2 * (CM + 1)) : ℝ≥0) + (δ₁ / (2 * (CM + 1)) : ℝ≥0)) := by gcongr
-      _ = ((CM * (δ₁ / (2 * (CM + 1)) + δ₁ / (2 * (CM + 1))) : ℝ≥0) : ℝ≥0∞) := by push_cast; rfl
+      _ = ((CM * (δ₁ / (2 * (CM + 1)) + δ₁ / (2 * (CM + 1))) : ℝ≥0) : ℝ≥0∞) := by norm_cast
       _ ≤ δ₁ := ENNReal.coe_le_coe.2 (mul_add_div_two_mul_add_one_le CM δ₁)
   have h := h₁ p Ω φ w ξ₁ ξ₂ (CM * (S₁ + S₂)).toNNReal (CM * S).toNNReal B
     (by exact_mod_cast hp1) hΩ hw hξ₁ hξ₂ hwK hB
@@ -322,12 +338,13 @@ theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_le_of_convex (
 
 /-- **The quadratic estimate for the Floer operator at a map, in `W^{1,p}`.** Under the
 hypotheses of
-`SymplecticForm.exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_le_of_convex`, there
-are `δ > 0` and `C` such that every increment `ξ` which is `C¹` on `Ω` with
+`exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le_of_convex`,
+there are `δ > 0` and `C` such that every increment `ξ` which is `C¹` on `Ω` with
 `‖ξ‖_{1,p} = ‖ξ‖_{Lᵖ(Ω)} + ‖Dξ‖_{Lᵖ(Ω)} ≤ δ` satisfies
 `‖F(w + ξ) - F(w) - D_w ξ‖_{Lᵖ(Ω)} ≤ C (1 + B) ‖ξ‖_{1,p}²`,
 provided its left-hand side is almost everywhere strongly measurable on `Ω`. -/
-theorem exists_pos_forall_eLpNorm_floerOperator_add_sub_floerOperator_le_of_convex
+theorem
+exists_pos_forall_eLpNorm_floerOperator_add_sub_floerOperator_sub_floerLinearization_le_of_convex
     (hK : IsCompact K) (hJ : ∀ q ∈ K, ContDiffAt ℝ 2 (Function.uncurry J) q)
     (hKs : ∀ q ∈ K, ContDiffAt ℝ 3 (Function.uncurry Ks) q)
     (hKt : ∀ q ∈ K, ContDiffAt ℝ 3 (Function.uncurry Kt) q) {p : ℝ≥0} (hp : 2 < p) (r : ℝ)
@@ -351,7 +368,8 @@ theorem exists_pos_forall_eLpNorm_floerOperator_add_sub_floerOperator_le_of_conv
         C * (1 + B) *
           (eLpNorm ξ p (volume.restrict Ω) + eLpNorm (fderiv ℝ ξ) p (volume.restrict Ω)) ^ 2 := by
   obtain ⟨δ, hδ, C, h⟩ :=
-    ω.exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_le_of_convex hK hJ hKs hKt hp r hm
+    ω.exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le_of_convex
+      hK hJ hKs hKt hp r hm
   refine ⟨δ, hδ, C, fun Ω φ w ξ B hΩ hΩc hfat hw hξ hwK hB hS hN => ?_⟩
   have h0 : ContDiffOn ℝ 1 (0 : ℝ × ℝ → V) Ω := contDiffOn_const
   have hzero : eLpNorm (0 : ℝ × ℝ → V) p (volume.restrict Ω) +

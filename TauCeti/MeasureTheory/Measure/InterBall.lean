@@ -10,7 +10,6 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
-public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
@@ -40,12 +39,6 @@ once one of them has finite measure (`TauCeti.tendsto_measure_ball_nhdsGT_zero`)
 integrals of a function integrable on a ball over the concentric balls of smaller radius tend to
 its integral over the ball (`MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`).
 
-A rectangle in `ℝ × ℝ` with sides of length at least one meets the ball of radius one about each
-of its points, a square for the sup norm, in a set of area at least one
-(`TauCeti.one_le_volume_Ioo_prod_Ioo_inter_ball`), however long the rectangle is. This is the
-uniform lower bound on the local measure of a domain under which Sobolev estimates on rectangles
-of unbounded length have uniform constants.
-
 ## Main results
 
 * `TauCeti.monotone_measureReal_inter_ball`: `ρ ↦ μ(s ∩ ball x₀ ρ)` is monotone.
@@ -62,8 +55,6 @@ of unbounded length have uniform constants.
   `μ {z}`.
 * `MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`: as `r → R⁻`, the integral over
   `ball x r` tends to the integral over `ball x R`.
-* `TauCeti.one_le_volume_Ioo_prod_Ioo_inter_ball`: a rectangle with sides of length at least one
-  meets the unit ball about each of its points in a set of area at least one.
 -/
 
 public section
@@ -219,32 +210,3 @@ theorem tendsto_integral_ball_nhdsLT {f : X → F} {x : X} {R : ℝ}
       rw [indicator_of_notMem fun h ↦ hz (ball_subset_ball (le_of_lt hr) h)]
 
 end MeasureTheory.IntegrableOn
-
-namespace TauCeti
-
-open MeasureTheory Metric Set
-open scoped ENNReal
-
-/-- An open interval of length at least one meets the interval of radius one about each of its
-points in a set of length at least one. -/
-theorem one_le_volume_Ioo_inter_ball {a b x : ℝ} (hab : 1 ≤ b - a) (hx : x ∈ Ioo a b) :
-    1 ≤ volume (Ioo a b ∩ ball x 1) := by
-  rw [Real.ball_eq_Ioo, Ioo_inter_Ioo, Real.volume_Ioo, ← ENNReal.ofReal_one]
-  refine ENNReal.ofReal_le_ofReal ?_
-  have h : a ⊔ (x - 1) + 1 ≤ b ⊓ (x + 1) :=
-    le_inf (add_le_of_le_sub_right (sup_le (by linarith) (by linarith [hx.2])))
-      (by linarith [sup_le (show a ≤ x by linarith [hx.1]) (show x - 1 ≤ x by linarith)])
-  linarith
-
-/-- A rectangle in `ℝ × ℝ` with sides of length at least one meets the ball of radius one about
-each of its points in a set of area at least one, whatever the lengths of its sides. For the sup
-norm of `ℝ × ℝ` this ball is the square `(x - 1, x + 1) × (y - 1, y + 1)`. -/
-theorem one_le_volume_Ioo_prod_Ioo_inter_ball {a b c d : ℝ} (hab : 1 ≤ b - a) (hcd : 1 ≤ d - c)
-    {z : ℝ × ℝ} (hz : z ∈ Ioo a b ×ˢ Ioo c d) : 1 ≤ volume (Ioo a b ×ˢ Ioo c d ∩ ball z 1) := by
-  obtain ⟨x, y⟩ := z
-  rw [← ball_prod_same, prod_inter_prod, Measure.volume_eq_prod, Measure.prod_prod]
-  calc (1 : ℝ≥0∞) = 1 * 1 := (one_mul 1).symm
-    _ ≤ _ := mul_le_mul' (one_le_volume_Ioo_inter_ball hab hz.1)
-      (one_le_volume_Ioo_inter_ball hcd hz.2)
-
-end TauCeti
