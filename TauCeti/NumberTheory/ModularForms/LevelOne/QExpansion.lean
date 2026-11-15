@@ -56,9 +56,11 @@ The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
   of `Δ` is an integer.
 * `TauCeti.ModularForm.qExpansion_natCast_discriminant`: at period `N`, the expansion of `Δ` is
   its expansion at period `1` in the variable `qᴺ`, so it is `qᴺ + ⋯` with integer coefficients.
+* `TauCeti.ModularForm.mem_range_map_of_qExpansion_discriminant_mul_mem`: if `Δ Q` is the image
+  of a power series over a ring `R` under `R →+* ℂ`, then so is the power series `Q`.
 * `TauCeti.ModularForm.qExpansion_discriminantEquiv_mem_range`: dividing a level-one cusp form by
-  `Δ` preserves the property that its `q`-expansion is the image of a power series over a field `K`
-  under `K →+* ℂ`.
+  `Δ` preserves the property that its `q`-expansion is the image of a power series over a ring `R`
+  under `R →+* ℂ`.
 * `TauCeti.ModularForm.tendsto_discriminant_div_qParam_atImInfty`: `Δ / q → 1` at `i∞`.
 * `TauCeti.ModularForm.algebraicIndependent_qExpansion_E₄_E₆`: the `q`-expansions of `E₄` and
   `E₆` are algebraically independent over `ℂ`.
@@ -334,12 +336,11 @@ theorem qExpansion_natCast_discriminant_coeff_mem {R : Subring ℂ} (i : ℕ) :
 
 end Period
 
-/-- If the `q`-expansion of `Δ` times a power series `Q` is the image of a power series over `K`,
-then so is `Q`: the `q`-expansion of `Δ` has integer coefficients and is `q` times a power series
-with constant term `1`. -/
-private theorem mem_range_map_of_qExpansion_discriminant_mul_mem {K : Type*} [Field K]
-    (φ : K →+* ℂ) {Q : PowerSeries ℂ}
-    (hQ : qExpansion 1 discriminant * Q ∈ (PowerSeries.map φ).range) :
+/-- If the `q`-expansion of `Δ` times a power series `Q` is the image of a power series over a
+ring `R` under `φ : R →+* ℂ`, then so is `Q`: the `q`-expansion of `Δ` has integer coefficients and
+is `q` times a power series with constant term `1`. -/
+theorem mem_range_map_of_qExpansion_discriminant_mul_mem {R : Type*} [Ring R] (φ : R →+* ℂ)
+    {Q : PowerSeries ℂ} (hQ : qExpansion 1 discriminant * Q ∈ (PowerSeries.map φ).range) :
     Q ∈ (PowerSeries.map φ).range := by
   rw [PowerSeries.mem_map_range] at hQ ⊢
   refine PowerSeries.coeff_mem_of_coeff_mul_mem (m := 1) (D := qExpansion 1 discriminant)
@@ -349,8 +350,8 @@ private theorem mem_range_map_of_qExpansion_discriminant_mul_mem {K : Type*} [Fi
     qExpansion_natCast_discriminant_coeff_mem (N := 1) (R := φ.range) i
 
 /-- Dividing a level-one cusp form by `Δ` preserves the property that its `q`-expansion is
-the image of a power series over `K`. -/
-theorem qExpansion_discriminantEquiv_mem_range {K : Type*} [Field K] (φ : K →+* ℂ) {k : ℤ}
+the image of a power series over a ring `R` under `φ : R →+* ℂ`. -/
+theorem qExpansion_discriminantEquiv_mem_range {R : Type*} [Ring R] (φ : R →+* ℂ) {k : ℤ}
     {g : CuspForm 𝒮ℒ k} (hg : qExpansion 1 g ∈ (PowerSeries.map φ).range) :
     qExpansion 1 (CuspForm.discriminantEquiv g) ∈ (PowerSeries.map φ).range := by
   have hΔg : qExpansion 1 discriminant * qExpansion 1 (CuspForm.discriminantEquiv g) =

@@ -170,7 +170,8 @@ theorem qExpansion_normalizedCharG2MF_coeff_zero (huv : u * v ∣ N) (h : ψ ≠
       ring
     rw [hψ, one_mul]
     push_cast at hB
-    rw [hscale, show (2 : ℂ) * 2 = 4 by norm_num] at hB
+    rw [hscale] at hB
+    norm_num only at hB
     exact hB
   · rw [ψ.map_zero' hu, zero_mul, mul_zero]
 
