@@ -34,6 +34,7 @@ over a field.
   `TauCeti.ChainComplex.homologyπ_kronecker_homologyClassOfComp` computing its Kronecker image.
 * `TauCeti.ChainComplex.kroneckerSection`: a `k`-linear right inverse of the Kronecker map, built
   from a retraction of the inclusion of the cycles, with
+  `TauCeti.ChainComplex.kroneckerSection_coefficient_naturality` and
   `TauCeti.ChainComplex.kronecker_surjective_of_isSplitMono`.
 * `TauCeti.ChainComplex.kronecker_bijective` and `TauCeti.ChainComplex.kroneckerEquiv`: for an
   injective object `Y`, the Kronecker map is a `k`-linear equivalence.
@@ -276,6 +277,19 @@ lemma kronecker_kroneckerSection (i : α) [IsSplitMono (X.iCycles i)] (g : X.hom
     kronecker k X Y i (kroneckerSection k X Y i g) = g := by
   rw [← cancel_epi (X.homologyπ i), kroneckerSection, homologyπ_kronecker_homologyClassOfComp,
     Category.assoc, IsSplitMono.id_assoc]
+
+/-- The splitting `TauCeti.ChainComplex.kroneckerSection` commutes with postcomposition by a
+coefficient morphism, for the same chosen retraction of the cycles. -/
+lemma kroneckerSection_coefficient_naturality {Z : C} (g : Y ⟶ Z) (i : α)
+    [IsSplitMono (X.iCycles i)] (f : X.homology i ⟶ Y) :
+    homologyMap (X.linearYonedaObjMap k g) i (kroneckerSection k X Y i f) =
+      kroneckerSection k X Z i (f ≫ g) := by
+  have hφ := iCycles_cocycleOfComp (k := k) _ (d_comp_retraction_iCycles_comp_homologyπ _ i) f
+  rw [kroneckerSection_apply i f _ (hφ.trans (Category.assoc ..)),
+    X.homologyMap_linearYonedaObjMap_homologyπ_apply k]
+  exact (kroneckerSection_apply i (f ≫ g) _
+    ((X.iCycles_cyclesMap_linearYonedaObjMap_apply k g i _).trans
+      (by rw [hφ, Category.assoc, Category.assoc]))).symm
 
 /-- If the inclusion of the cycles `Zᵢ ⟶ Xᵢ` is a split monomorphism, then every morphism
 `Hᵢ(X) ⟶ Y` is the evaluation of a cohomology class of `Hom(X, Y)`. -/
