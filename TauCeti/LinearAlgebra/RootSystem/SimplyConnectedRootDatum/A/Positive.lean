@@ -149,7 +149,7 @@ theorem rootCoefficients_highestRoot_typeA [NeZero n] :
 cone. No integral spanning or irreducibility assumption is needed. -/
 theorem root_highestRoot_sub_mem_posRootCone_typeA [NeZero n] (j : Fin (n * (n + 1))) :
     (P).root (b).highestRoot - (P).root j ∈ posRootCone P b :=
-  (b).root_sub_mem_posRootCone_of_rootCoefficients_le fun k ↦ by
+  (b).root_sub_root_mem_posRootCone_iff.mpr fun k ↦ by
     simpa using rootCoefficients_typeA_le_one j k
 
 /-- The height of the highest root of type `Aₙ` is `n`. -/

@@ -175,7 +175,7 @@ theorem rootCoefficients_highestRoot_typeC [NeZero n] (k : Fin n) :
 the positive root cone. No integral spanning or irreducibility assumption is needed. -/
 theorem root_highestRoot_sub_mem_posRootCone_typeC [NeZero n] (j : Fin (2 * n ^ 2)) :
     (P).root (b).highestRoot - (P).root j ∈ posRootCone P b :=
-  (b).root_sub_mem_posRootCone_of_rootCoefficients_le fun k ↦ by
+  (b).root_sub_root_mem_posRootCone_iff.mpr fun k ↦ by
     obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
     exact (rootCoefficients_typeC_le j i).trans_eq (rootCoefficients_highestRoot_typeC i).symm
 
