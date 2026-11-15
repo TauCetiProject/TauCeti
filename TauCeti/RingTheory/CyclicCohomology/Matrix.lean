@@ -455,9 +455,7 @@ theorem matrixCochainExtension_barCoboundary (ι : Type*) [Fintype ι] (n : ℕ)
     (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => A) M) :
     matrixCochainExtension ι (n + 1) (barCoboundary R A M n φ) =
       barCoboundary R (Matrix ι ι A) M n (matrixCochainExtension ι n φ) := by
-  rw [barCoboundary_def, barCoboundary_def, LinearMap.sum_apply, LinearMap.sum_apply, map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [LinearMap.smul_apply, LinearMap.smul_apply, map_zsmul,
+  simp only [barCoboundary_def, LinearMap.sum_apply, LinearMap.smul_apply, map_sum, map_zsmul,
     matrixCochainExtension_hochschildCoface]
 
 end Coboundary

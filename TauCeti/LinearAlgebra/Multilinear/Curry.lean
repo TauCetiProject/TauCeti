@@ -20,17 +20,15 @@ Cochains with values in linear maps out of an algebra arise in this way from coc
 more argument, which is how scalar Hochschild cochains are compared with cochains valued in the
 dual bimodule.
 
-Fixing a single argument `p : Fin (n + 1)` of a multilinear map `f` to `x : M p` produces a
-multilinear map `MultilinearMap.compInsertNth f p x` in the remaining `n` arguments over any scalar
-semiring, without the commutativity hypothesis required by `MultilinearMap.curryMid` to vary `x`
-linearly. When the target carries a commuting `S`-module structure, this operation is `S`-linear in
-`f` (`MultilinearMap.compInsertNthLinearMap`).
+`MultilinearMap.compInsertNth f p x` fixes argument `p : Fin (n + 1)` of `f` to `x : M p` over any
+scalar semiring (without the commutativity hypothesis of `MultilinearMap.curryMid`), bundled as an
+`S`-linear map in `f` by `MultilinearMap.compInsertNthLinearMap`.
 
 ## Main definitions
 
 * `TauCeti.multilinearCurryFirstEquiv`: `f ↦ ((m₁, …, mₙ) ↦ (m₀ ↦ f (m₀, m₁, …, mₙ)))`.
-* `MultilinearMap.compInsertNth`, `MultilinearMap.compInsertNthLinearMap`: fixing argument `p` of a
-  multilinear map to `x` via `Fin.insertNth`, bundled as a linear map in the multilinear map.
+* `MultilinearMap.compInsertNth`, `MultilinearMap.compInsertNthLinearMap`: fixing argument `p` to
+  `x` via `Fin.insertNth`.
 -/
 
 public section
@@ -88,10 +86,8 @@ variable {R R₂ : Type*} [Semiring R] [Semiring R₂] {σ : R →+* R₂}
   {n : ℕ} {M : Fin (n + 1) → Type*} {N : Type*}
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] [AddCommMonoid N] [Module R₂ N]
 
-/-- Fix argument `p` of a multilinear map `f` in `n + 1` variables to `x : M p`, yielding a
-multilinear map in the remaining `n` variables. Unlike `MultilinearMap.curryMid`, which bundles
-linearity in `x` as well and therefore requires a commutative scalar semiring on the target, fixing
-`x` first requires no commutativity assumption on the scalars. -/
+/-- Fix argument `p` of a multilinear map `f` in `n + 1` variables to `x : M p` over any scalar
+semiring. -/
 def compInsertNth (f : (Π i, M i) →ₘₛₗ[σ] N) (p : Fin (n + 1)) (x : M p) :
     (Π i, M (p.succAbove i)) →ₘₛₗ[σ] N :=
   MultilinearMap.mk' (fun m ↦ f (p.insertNth x m))
@@ -101,9 +97,7 @@ def compInsertNth (f : (Π i, M i) →ₘₛₗ[σ] N) (p : Fin (n + 1)) (x : M 
 /-- Evaluating `f.compInsertNth p x` on `m` inserts `x` at index `p` of `m`. -/
 @[simp]
 theorem compInsertNth_apply (f : (Π i, M i) →ₘₛₗ[σ] N) (p : Fin (n + 1)) (x : M p)
-    (m : Π i, M (p.succAbove i)) :
-    f.compInsertNth p x m = f (p.insertNth x m) :=
-  (rfl)
+    (m : Π i, M (p.succAbove i)) : f.compInsertNth p x m = f (p.insertNth x m) := (rfl)
 
 /-- `MultilinearMap.compInsertNth` as an `S`-linear map in the multilinear map `f`. -/
 def compInsertNthLinearMap (S : Type*) [Semiring S] [Module S N] [SMulCommClass R₂ S N]
@@ -117,7 +111,6 @@ def compInsertNthLinearMap (S : Type*) [Semiring S] [Module S N] [SMulCommClass 
 @[simp]
 theorem compInsertNthLinearMap_apply (S : Type*) [Semiring S] [Module S N] [SMulCommClass R₂ S N]
     (p : Fin (n + 1)) (x : M p) (f : (Π i, M i) →ₘₛₗ[σ] N) :
-    compInsertNthLinearMap S p x f = f.compInsertNth p x :=
-  (rfl)
+    compInsertNthLinearMap S p x f = f.compInsertNth p x := (rfl)
 
 end MultilinearMap
