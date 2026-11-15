@@ -87,6 +87,7 @@ namespace TauCeti
 def diskBoundaryNorthPole (n : ℕ) : TopCat.diskBoundary.{w} (n + 1) :=
   ULift.up (sphereNorthPole n)
 
+/-- Projecting `TauCeti.diskBoundaryNorthPole` down to `Type 0` gives `TauCeti.sphereNorthPole`. -/
 @[simp]
 theorem diskBoundaryNorthPole_down (n : ℕ) :
     (diskBoundaryNorthPole.{w} n).down = sphereNorthPole n :=
@@ -98,6 +99,7 @@ def diskBoundaryGenLoop (n : ℕ) :
     Ω^ (Fin n) (TopCat.diskBoundary.{w} (n + 1)) (diskBoundaryNorthPole.{w} n) :=
   GenLoop.map ⟨ULift.up, continuous_uliftUp⟩ rfl (sphereGenLoop n)
 
+/-- Evaluating `TauCeti.diskBoundaryGenLoop` and projecting down recovers `sphereGenLoop`. -/
 @[simp]
 theorem diskBoundaryGenLoop_apply_down (n : ℕ) (y : Fin n → I) :
     (diskBoundaryGenLoop.{w} n y).down = sphereGenLoop n y := by

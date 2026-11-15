@@ -355,6 +355,7 @@ def hurewiczUliftAddEquiv (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin 
     funext a
     exact hurewiczUliftIntHom_apply X x (n + 1) a
 
+/-- `HomotopyGroup.hurewiczUliftAddEquiv` evaluates `hurewiczHom` at `1 : ULift.{u} ℤ`. -/
 @[simp]
 theorem hurewiczUliftAddEquiv_apply (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
     (a : Additive (HomotopyGroup (Fin (n + 2)) X x)) :

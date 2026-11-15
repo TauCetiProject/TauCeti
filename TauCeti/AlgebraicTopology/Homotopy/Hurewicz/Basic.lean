@@ -737,6 +737,7 @@ def hurewiczUliftIntHom (X : Type w) [TopologicalSpace X] (x : X) (n : ℕ) :
   map_zero' := by simp
   map_add' a b := by simp
 
+/-- Evaluating `HomotopyGroup.hurewiczUliftIntHom` applies `hurewicz` at `1 : ULift.{w} ℤ`. -/
 lemma hurewiczUliftIntHom_apply (X : Type w) [TopologicalSpace X] (x : X) (n : ℕ)
     (a : Additive (HomotopyGroup (Fin (n + 1)) X x)) :
     hurewiczUliftIntHom X x n a = (hurewicz (ModuleCat.of ℤ (ULift.{w} ℤ)) n a.toMul).hom 1 :=

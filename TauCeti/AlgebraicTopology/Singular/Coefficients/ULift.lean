@@ -10,8 +10,6 @@ public import TauCeti.Algebra.Category.ModuleCat.ULift
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.MapCoefficients
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 
-import TauCeti.Algebra.Category.ModuleCat.AB
-
 /-!
 # Singular homology with universe-lifted ring coefficients
 

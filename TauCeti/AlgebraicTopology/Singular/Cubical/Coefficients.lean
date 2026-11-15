@@ -62,21 +62,25 @@ def mapRingHom (φ : R →+* S) (n : ℕ) :
     CubicalChain X R n →ₛₗ[φ] CubicalChain X S n :=
   Finsupp.mapRange.linearMap φ.toSemilinearMap
 
+/-- `CubicalChain.mapRingHom` acts by applying `φ` to the coefficient of each singular cube. -/
 @[simp]
 theorem mapRingHom_apply (φ : R →+* S) {n : ℕ} (g : CubicalChain X R n) (c : SingularCube X n) :
     mapRingHom X φ n g c = φ (g c) := by
   simp [mapRingHom]
 
+/-- `CubicalChain.mapRingHom` sends a single cube with coefficient `a` to one with `φ a`. -/
 @[simp]
 theorem mapRingHom_single (φ : R →+* S) {n : ℕ} (c : SingularCube X n) (a : R) :
     mapRingHom X φ n (single c a) = single c (φ a) := by
   simp [mapRingHom]
 
+/-- Change of coefficients along the identity ring homomorphism is the identity map. -/
 @[simp]
 theorem mapRingHom_id (n : ℕ) :
     mapRingHom X (RingHom.id R) n = LinearMap.id :=
   Finsupp.mapRange.linearMap_id
 
+/-- Change of coefficients on unnormalized cubical chains is functorial in the ring homomorphism. -/
 theorem mapRingHom_comp {φ : R →+* S} {ψ : S →+* T} {χ : R →+* T} [RingHomCompTriple φ ψ χ]
     (n : ℕ) :
     mapRingHom X χ n = (mapRingHom X ψ n).comp (mapRingHom X φ n) := by
@@ -123,11 +127,13 @@ def ringEquiv (e : R ≃+* S) (n : ℕ) :
   haveI := RingHomInvPair.symm (↑e : R →+* S) (e.symm : S →+* R)
   Finsupp.mapRange.linearEquiv e.toSemilinearEquiv
 
+/-- Forward evaluation of `CubicalChain.ringEquiv` applies `CubicalChain.mapRingHom`. -/
 @[simp]
 theorem ringEquiv_apply (e : R ≃+* S) {n : ℕ} (g : CubicalChain X R n) :
     ringEquiv X e n g = mapRingHom X (↑e : R →+* S) n g :=
   (rfl)
 
+/-- Inverse evaluation of `CubicalChain.ringEquiv` applies `CubicalChain.mapRingHom` to `e.symm`. -/
 @[simp]
 theorem ringEquiv_symm_apply (e : R ≃+* S) {n : ℕ} (g : CubicalChain X S n) :
     haveI := RingHomInvPair.of_ringEquiv e
@@ -166,23 +172,28 @@ def mapRingHom (φ : R →+* S) (n : ℕ) :
   Submodule.mapQ _ _ (CubicalChain.mapRingHom X φ n)
     fun _ hg ↦ CubicalChain.mapRingHom_mem_degenerate φ hg
 
+/-- `NormalizedCubicalChain.mapRingHom` lifts `CubicalChain.mapRingHom` on quotient classes. -/
 @[simp]
 theorem mapRingHom_mk (φ : R →+* S) {n : ℕ} (g : CubicalChain X R n) :
     mapRingHom X φ n (Submodule.Quotient.mk g) =
       Submodule.Quotient.mk (CubicalChain.mapRingHom X φ n g) :=
   Submodule.mapQ_apply _ _ _ g
 
+/-- Change of coefficients sends the fundamental chain of a singular cube to itself over `S`. -/
 @[simp]
 theorem mapRingHom_ofCube (φ : R →+* S) {n : ℕ} (c : SingularCube X n) :
     mapRingHom X φ n (ofCube X R c) = ofCube X S c := by
   rw [ofCube_def, ofCube_def, mapRingHom_mk, CubicalChain.mapRingHom_single, map_one]
 
+/-- Change of coefficients along the identity ring homomorphism is the identity on normalized
+chains. -/
 @[simp]
 theorem mapRingHom_id (n : ℕ) :
     mapRingHom X (RingHom.id R) n = LinearMap.id := by
   unfold mapRingHom
   simp only [CubicalChain.mapRingHom_id, Submodule.mapQ_id]
 
+/-- Change of coefficients on normalized cubical chains is functorial in the ring homomorphism. -/
 theorem mapRingHom_comp {φ : R →+* S} {ψ : S →+* T} {χ : R →+* T} [RingHomCompTriple φ ψ χ]
     (n : ℕ) :
     mapRingHom X χ n = (mapRingHom X ψ n).comp (mapRingHom X φ n) := by
@@ -253,11 +264,13 @@ def ringEquiv (e : R ≃+* S) (n : ℕ) :
       rw [mapRingHom_id, LinearMap.id_apply, LinearMap.comp_apply] at h
       exact h.symm }
 
+/-- Forward evaluation of `NormalizedCubicalChain.ringEquiv` applies `mapRingHom`. -/
 @[simp]
 theorem ringEquiv_apply (e : R ≃+* S) {n : ℕ} (g : NormalizedCubicalChain X R n) :
     ringEquiv X e n g = mapRingHom X (↑e : R →+* S) n g :=
   (rfl)
 
+/-- Inverse evaluation of `NormalizedCubicalChain.ringEquiv` applies `mapRingHom` to `e.symm`. -/
 @[simp]
 theorem ringEquiv_symm_apply (e : R ≃+* S) {n : ℕ} (g : NormalizedCubicalChain X S n) :
     haveI := RingHomInvPair.of_ringEquiv e
@@ -265,6 +278,7 @@ theorem ringEquiv_symm_apply (e : R ≃+* S) {n : ℕ} (g : NormalizedCubicalCha
     (ringEquiv X e n).symm g = mapRingHom X (e.symm : S →+* R) n g :=
   (rfl)
 
+/-- `NormalizedCubicalChain.ringEquiv` sends the class of a singular cube to itself over `S`. -/
 theorem ringEquiv_ofCube (e : R ≃+* S) {n : ℕ} (c : SingularCube X n) :
     ringEquiv X e n (ofCube X R c) = ofCube X S c :=
   mapRingHom_ofCube (↑e : R →+* S) c

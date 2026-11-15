@@ -54,11 +54,13 @@ def restrictScalarsUliftIso (M : Type w) [AddCommGroup M] [Module R M] :
         rw [RingHom.id_apply, restrictScalars.smul_def]
         rfl }
 
+/-- Evaluating the forward map of `ModuleCat.restrictScalarsUliftIso` is the identity on `M`. -/
 @[simp]
 theorem restrictScalarsUliftIso_hom_apply (M : Type w) [AddCommGroup M] [Module R M] (m : M) :
     (restrictScalarsUliftIso.{u} (R := R) M).hom m = m :=
   (rfl)
 
+/-- Evaluating the inverse map of `ModuleCat.restrictScalarsUliftIso` is the identity on `M`. -/
 @[simp]
 theorem restrictScalarsUliftIso_inv_apply (M : Type w) [AddCommGroup M] [Module R M] (m : M) :
     (restrictScalarsUliftIso.{u} (R := R) M).inv m = m :=

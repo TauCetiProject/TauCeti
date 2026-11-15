@@ -75,11 +75,6 @@ private theorem chainOf_chainTo (g : (K R X).X n) :
     chainOf (chainTo g) = g :=
   (chainEquiv R).symm_apply_apply g
 
-private theorem zsmul_eq_smul (e : R ≃+* ℤ) {M : Type*} [AddCommGroup M] [Module R M]
-    (r : R) (m : M) : e r • m = r • m := by
-  have hr : ((e r : ℤ) : R) = r := e.injective (by simp)
-  rw [← Int.cast_smul_eq_zsmul R, hr]
-
 private def basedClassHomOfRingEquiv (x : X) (n : ℕ) (e : R ≃+* ℤ) :
     NormalizedCubicalChain X R (n + 2) →+ Additive (HomotopyGroup (Fin (n + 2)) X x) :=
   (NormalizedCubicalChain.basedClassHom x n).toAddMonoidHom.comp
@@ -146,16 +141,14 @@ private theorem basedCycle_add
   apply (chainEquiv R).injective
   simp only [map_add, iCycles_basedCycle]
 
-private theorem basedCycle_smul (e : R ≃+* ℤ)
+private theorem basedCycle_smul
     (r : R) (a : NormalizedCubicalChain X R (n + 2))
     (ha : a ∈ Submodule.span R
       (NormalizedCubicalChain.ofCube X R '' {c | c.IsBased (n + 2) x})) :
     basedCycle (r • a) (Submodule.smul_mem _ r ha) = r • basedCycle a ha := by
-  rw [← zsmul_eq_smul e r (basedCycle a ha)]
   apply (K R X).moduleCat_iCycles_injective
   apply (chainEquiv R).injective
-  simp only [map_zsmul, iCycles_basedCycle]
-  exact (zsmul_eq_smul e r a).symm
+  simp only [map_smul, iCycles_basedCycle]
 
 /-- The cubical Hurewicz homomorphism sends the class of a generalized loop to the cubical
 Hurewicz class of that loop. -/
@@ -207,9 +200,8 @@ private theorem cubicalHurewiczHom_basedClassHomOfRingEquiv (e : R ≃+* ℤ)
       rw [map_add, map_add, hha, hhb, basedCycle_add a b ha hb]
       exact (map_add _ _ _).symm
   | smul r a ha hha =>
-      rw [basedClassHomOfRingEquiv_smul, map_zsmul, hha, basedCycle_smul e r a ha,
-        ← zsmul_eq_smul e r (basedCycle a ha)]
-      exact (map_zsmul _ _ _).symm
+      rw [basedClassHomOfRingEquiv_smul, map_zsmul, hha, basedCycle_smul r a ha, ← map_zsmul,
+        ← Int.cast_smul_eq_zsmul R, e.injective (by simp : e ((e r : ℤ) : R) = e r)]
 
 private theorem cubicalHurewiczHom_surjective (e : R ≃+* ℤ)
     (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x)) :
