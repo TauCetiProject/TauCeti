@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.FirstPage
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.ChainFunctor
+public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Triple
 
 /-!
@@ -91,12 +92,7 @@ lemma monotone_singularChainFiltration (hX : Monotone X) :
 @[simp]
 lemma singularChainFiltration_eq_bot {a : ℤ} (ha : X a = ∅) :
     singularChainFiltration R X a = ⊥ :=
-  subspaceChainFiltration_eq_bot _ (fun Z _ ↦ by
-    -- The singular simplicial set of an empty space has no simplices.
-    have : (TopCat.toSSet.obj Z).HasDimensionLT 0 :=
-      (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun ⟨σ⟩ ↦
-        isEmptyElim (TopCat.toSSetObj₀Equiv σ)
-    exact SSet.isZero_chainComplex _ R) ha
+  subspaceChainFiltration_eq_bot _ (fun Z _ ↦ SSet.isZero_chainComplex (TopCat.toSSet.obj Z) R) ha
 
 /-- The reindexed quotient map onto the cokernel of the map of singular chains of a pair, followed
 by the identification of that cokernel with relative singular chains, is the reindexed quotient
