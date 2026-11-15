@@ -31,7 +31,8 @@ through `q`, and the loop map of `φ_{E,u}`, which sends a point `w` of the equa
 The paper applies this construction at every point `p` of a sphere `S^{4k-1}`, with `u` and `v`
 two pointwise orthonormal tangent vector fields (two of the quaternionic fields
 `TauCeti.quaternionFrame`, say), to obtain a fibred family of two-spheres; this file treats the
-fibre over one point.
+fibre over one point, and the family over the whole sphere is
+`TauCeti.tangentCircleSphereFamily`.
 
 The main result is Proposition 6.21 of the same paper, for `n ≥ 4`: the map `σ : Σ → Ω²Sⁿ`
 induces an isomorphism `σ_* : H_{n-2}(Σ; ℤ) ≅ H_{n-2}(Ω²Sⁿ; ℤ)`

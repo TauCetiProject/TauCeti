@@ -107,4 +107,23 @@ theorem orthonormal_quaternionFrame {x : E} (hx : ‖x‖ = 1) :
   ext j
   fin_cases j <;> simp
 
+/-- A unit vector `x` together with the first two vectors `x <• i` and `x <• j` of its quaternionic
+frame is an orthonormal triple: two pointwise orthonormal tangent vector fields on the unit
+sphere. -/
+theorem orthonormal_vecCons_quaternionFrame {x : E} (hx : ‖x‖ = 1) :
+    Orthonormal ℝ ![x, quaternionFrame x 0, quaternionFrame x 1] := by
+  have h := orthonormal_quaternionFrame hx
+  refine ⟨fun i ↦ ?_, fun i j hij ↦ ?_⟩
+  · fin_cases i
+    · simpa using hx
+    · simpa using h.1 0
+    · simpa using h.1 1
+  · have h0 (k : Fin 3) : ⟪x, quaternionFrame x k⟫ = 0 := by
+      rw [real_inner_comm]
+      exact inner_quaternionFrame_self x k
+    have h01 : ⟪quaternionFrame x 0, quaternionFrame x 1⟫ = 0 := h.2 (by decide)
+    have h10 : ⟪quaternionFrame x 1, quaternionFrame x 0⟫ = 0 := h.2 (by decide)
+    fin_cases i <;> fin_cases j <;>
+      simp [h0, h01, h10, -quaternionFrame_zero, -quaternionFrame_one] at hij ⊢
+
 end TauCeti

@@ -77,17 +77,12 @@ def tangentCircleLoop (hu : ‖u‖ = 1) (p₀ : sphereEquator u) :
         mem_sphere_zero_iff_norm.2 (norm_tangentCircle (mem_sphere_zero_iff_norm.1 p₀.1.2) hu
           (mem_sphereEquator.1 p₀.2) (mem_sphere_zero_iff_norm.1 q.1.2) (mem_sphereEquator.1 q.2)
           _)⟩
-      continuous_toFun := ((continuous_tangentCircle _ u).comp
-        (continuous_const.prodMk (continuous_const.mul continuous_subtype_val))).subtype_mk _
+      continuous_toFun := continuous_induced_rng.2 (by fun_prop)
       source' := Subtype.ext (by simp)
-      target' := Subtype.ext (by
-        simpa using tangentCircle_add_two_pi ((p₀ : sphere (0 : V) 1) : V) u
-          ((q : sphere (0 : V) 1) : V) 0) }
+      target' := Subtype.ext (by simp) }
   continuous_toFun := by
     refine Path.continuous_uncurry_iff.1 (Continuous.subtype_mk ?_ _)
-    exact (continuous_tangentCircle _ u).comp
-      ((continuous_subtype_val.comp (continuous_subtype_val.comp continuous_fst)).prodMk
-        (continuous_const.mul (continuous_subtype_val.comp continuous_snd)))
+    fun_prop
 
 @[simp]
 theorem coe_tangentCircleLoop_apply (hu : ‖u‖ = 1) (p₀ q : sphereEquator u) (t : I) :
