@@ -13,6 +13,7 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Analysis.Calculus.FDeriv.NormComparison
 import TauCeti.Analysis.Analytic.Submanifold.Immersion
 import TauCeti.Analysis.Analytic.Submanifold.Transport
+import TauCeti.Topology.Maps.DomRestrict
 
 /-!
 # Topographic analytic submanifolds with Lipschitz height
@@ -44,6 +45,8 @@ coordinates.
   analytic on the projection.
 * `TauCeti.IsAnalyticSubmanifold.exists_topographic`: such a submanifold is the graph of an
   `A`-Lipschitz function which is analytic on its projection, an analytic submanifold.
+* `TauCeti.IsAnalyticSubmanifold.isOpenMap_domRestrict_tail`: when `d = n`, a Lipschitz analytic
+  submanifold has open projection `ψ.domRestrict Fin.tail` to the base.
 * `TauCeti.horizontalShear z`: the linear automorphism `(t, u) ↦ (t, u + t • z)` of `𝕜ⁿ⁺¹`.
 * `TauCeti.mul_dist_tail_le_dist_tail_horizontalShear`: the shear estimate
   `‖Δu + Δt • z‖ ≥ (1 - A * ‖z‖) * ‖Δu‖`.
@@ -204,6 +207,16 @@ theorem IsAnalyticSubmanifold.exists_topographic (hψ : IsAnalyticSubmanifold d 
           ψ = {v : Fin (n + 1) → 𝕜 | Fin.tail v ∈ Fin.tail '' ψ ∧ v 0 = f (Fin.tail v)} := by
   obtain ⟨f, hfL, hf, hψf⟩ := exists_lipschitzOnWith_eq_graph h
   exact ⟨f, hfL, hψ.analyticOnSubmanifold_image_tail h hf, hψ.image_tail h, hf, hψf⟩
+
+/-- An `n`-dimensional analytic submanifold `ψ ⊆ 𝕜ⁿ⁺¹` satisfying the Lipschitz height inequality
+has open `Fin.tail` projection (`IsOpenMap (ψ.domRestrict Fin.tail)`), i.e. satisfies Łojasiewicz's
+property (P) in cylinder coordinates. -/
+theorem IsAnalyticSubmanifold.isOpenMap_domRestrict_tail (hψ : IsAnalyticSubmanifold n ψ)
+    (h : ∀ v ∈ ψ, ∀ w ∈ ψ, dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w)) :
+    IsOpenMap (ψ.domRestrict Fin.tail) := by
+  obtain ⟨f, hfL, -, hopen, -, hψf⟩ := hψ.exists_topographic h
+  rw [hψf]
+  exact hopen.isOpen.isOpenMap_domRestrict_tail_graph hfL.continuousOn
 
 end Analytic
 

@@ -67,6 +67,7 @@ defined without the hypothesis `d ≤ n`, so that charts and analytic functions 
 * `TauCeti.IsAnalyticSubmanifold.of_isOpen_preimage_val`: nonempty relatively open subsets.
 * `TauCeti.IsAnalyticSubmanifold.isLocallyClosed`: analytic submanifolds are locally closed.
 * `TauCeti.isAnalyticSubmanifold_coordSubspace`, `IsOpen.isAnalyticSubmanifold`,
+  `TauCeti.IsAnalyticSubmanifold.isOpen`, `TauCeti.isAnalyticSubmanifold_self_iff`,
   `TauCeti.isAnalyticSubmanifold_singleton`: coordinate subspaces, open sets and points.
 * `TauCeti.isConnected_coordSubspace`: coordinate subspaces are connected over a connected field.
 
@@ -272,6 +273,19 @@ theorem _root_.IsOpen.isAnalyticSubmanifold (hU : IsOpen U) (hne : U.Nonempty) :
   refine ⟨hne, le_rfl, fun x hx ↦ ⟨(OpenPartialHomeomorph.refl _).restrOpen U hU, ⟨trivial, hx⟩,
     ⟨analyticOnNhd_id, analyticOnNhd_id, fun y hy ↦ ?_⟩⟩⟩
   simpa [fun i : Fin n ↦ i.isLt.not_ge] using hy.2
+
+/-- An `n`-dimensional analytic submanifold of `𝕜ⁿ` is open. -/
+theorem IsAnalyticSubmanifold.isOpen (hS : IsAnalyticSubmanifold n S) : IsOpen S := by
+  refine isOpen_iff_mem_nhds.2 fun x hx ↦ ?_
+  obtain ⟨e, hxe, he⟩ := hS.exists_isAnalyticChart x hx
+  refine mem_of_superset (e.open_source.mem_nhds hxe) fun y hy ↦ ?_
+  exact (he.mem_iff hy).2 fun i hi ↦ (i.isLt.not_ge hi).elim
+
+/-- A subset of `𝕜ⁿ` is an `n`-dimensional analytic submanifold if and only if it is nonempty and
+open. -/
+@[simp]
+theorem isAnalyticSubmanifold_self_iff : IsAnalyticSubmanifold n S ↔ S.Nonempty ∧ IsOpen S :=
+  ⟨fun hS ↦ ⟨hS.nonempty, hS.isOpen⟩, fun ⟨hne, hS⟩ ↦ hS.isAnalyticSubmanifold hne⟩
 
 /-- A point of `𝕜ⁿ` is a `0`-dimensional analytic submanifold. -/
 theorem isAnalyticSubmanifold_singleton (a : Fin n → 𝕜) : IsAnalyticSubmanifold 0 {a} := by
