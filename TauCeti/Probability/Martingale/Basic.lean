@@ -38,10 +38,13 @@ Together they show that a position chosen at `r`, times the change of a martinga
 The following results need only a preordered time index. Sampling along a monotone time map
 preserves martingales, supermartingales, and submartingales with respect to the sampled
 filtration (`MeasureTheory.Martingale.comp`, `MeasureTheory.Supermartingale.comp`, and
-`MeasureTheory.Submartingale.comp`). The norm of a Banach-valued
+`MeasureTheory.Submartingale.comp`). Applying a continuous real-linear map preserves
+Banach-valued martingales (`ContinuousLinearMap.comp_martingale`). The norm of a Banach-valued
 martingale is a submartingale (`MeasureTheory.Martingale.norm`). A square-integrable real
 martingale has conditional square equal to its current square plus the conditional square
-of its future increment (`MeasureTheory.Martingale.condExp_sq`). For a real submartingale,
+of its future increment (`MeasureTheory.Martingale.condExp_sq`), so the expected square of an
+increment equals the difference of expected squares (`MeasureTheory.Martingale.integral_sq_sub`,
+`MeasureTheory.Martingale.sum_integral_sq_sub`). For a real submartingale,
 multiplication by a nonnegative position known at an earlier date preserves the expectation
 inequality when both products are integrable (`MeasureTheory.Submartingale.integral_mul_le`).
 In particular, positions need not be bounded. Nonnegative submartingale values inherit Lᵖ
@@ -243,6 +246,43 @@ theorem Submartingale.memLp_of_le (hY : Submartingale Y ℱ μ) {i j : ι} (hij 
     ((hY.stronglyAdapted i).mono (ℱ.le i)).aestronglyMeasurable
   filter_upwards [hpos, hY.ae_le_condExp hij] with ω hposω hω
   simpa only [Real.norm_eq_abs, abs_of_nonneg hposω] using hω
+
+/-- Applying a continuous real-linear map to a Banach-valued martingale yields a martingale. -/
+theorem _root_.ContinuousLinearMap.comp_martingale {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [CompleteSpace F] (L : E →L[ℝ] F) (hX : Martingale X ℱ μ) :
+    Martingale (fun t ω ↦ L (X t ω)) ℱ μ := by
+  refine ⟨fun t ↦ L.continuous.comp_stronglyMeasurable (hX.stronglyAdapted t), fun i j hij ↦ ?_⟩
+  exact (L.comp_condExp_comm (hX.integrable j)).symm.trans ((hX.condExp_ae_eq hij).fun_comp L)
+
+/-- The expected squared increment of a square-integrable real martingale is the increment of its
+expected squares. -/
+theorem Martingale.integral_sq_sub [SigmaFiniteFiltration μ ℱ] (hY : Martingale Y ℱ μ)
+    {i j : ι} (hij : i ≤ j) (hj : MemLp (Y j) 2 μ) :
+    ∫ ω, (Y j ω - Y i ω) ^ 2 ∂μ = ∫ ω, Y j ω ^ 2 ∂μ - ∫ ω, Y i ω ^ 2 ∂μ := by
+  have hi : MemLp (Y i) 2 μ := (hj.condExp (m := ℱ i) one_le_two).ae_eq (hY.condExp_ae_eq hij)
+  have hcond := integral_congr_ae (hY.condExp_sq hij hj)
+  rw [integral_condExp (ℱ.le i),
+    integral_add hi.integrable_sq integrable_condExp,
+    integral_condExp (ℱ.le i)] at hcond
+  linarith
+
+/-- Along a finite nondecreasing grid, the expected squared increments of a square-integrable
+real martingale sum to the difference of endpoint expected squares. -/
+theorem Martingale.sum_integral_sq_sub [SigmaFiniteFiltration μ ℱ] (hY : Martingale Y ℱ μ)
+    {g : ℕ → ι} {n : ℕ} (hg : MonotoneOn g (Set.Iic n)) (hn : MemLp (Y (g n)) 2 μ) :
+    ∑ k ∈ Finset.range n, ∫ ω, (Y (g (k + 1)) ω - Y (g k) ω) ^ 2 ∂μ =
+      ∫ ω, Y (g n) ω ^ 2 ∂μ - ∫ ω, Y (g 0) ω ^ 2 ∂μ := by
+  have hstep (k : ℕ) (hk : k ∈ Finset.range n) :
+      ∫ ω, (Y (g (k + 1)) ω - Y (g k) ω) ^ 2 ∂μ =
+        ∫ ω, Y (g (k + 1)) ω ^ 2 ∂μ - ∫ ω, Y (g k) ω ^ 2 ∂μ := by
+    have hkn : k + 1 ≤ n := Nat.succ_le_of_lt (Finset.mem_range.mp hk)
+    have hgk : g k ≤ g (k + 1) :=
+      hg (Set.mem_Iic.mpr (Nat.le_trans k.le_succ hkn)) (Set.mem_Iic.mpr hkn) k.le_succ
+    have hgn : g (k + 1) ≤ g n := hg (Set.mem_Iic.mpr hkn) (Set.mem_Iic.mpr le_rfl) hkn
+    exact hY.integral_sq_sub hgk ((hn.condExp (m := ℱ (g (k + 1))) one_le_two).ae_eq
+      (hY.condExp_ae_eq hgn))
+  rw [Finset.sum_congr rfl hstep,
+    Finset.sum_range_sub (fun k ↦ ∫ ω, Y (g k) ω ^ 2 ∂μ) n]
 
 end NormAndMultipliers
 
