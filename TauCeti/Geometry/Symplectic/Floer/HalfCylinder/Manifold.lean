@@ -76,7 +76,7 @@ as `s → ∞` along the whole half-cylinder to a single `1`-periodic orbit
 `IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer` on a compact
 manifold). In particular, when a slice loop at some `s > a` is contractible, every uniform
 cluster-point orbit is contractible
-(`TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly`), so nondegeneracy is required
+(`TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi`), so nondegeneracy is required
 only on `contractiblePeriodicSolutions` and the limit orbit is contractible (`IsNondegenerate`
 theorems `exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact`
 and `exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer`).
@@ -497,8 +497,7 @@ theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer
     (hHper : Periodic H 1) (he : ContMDiff I 𝓘(ℝ, F) 1 e) {K : Set M} (hK : IsCompact K)
     (he_inj : InjOn e K) (hde : ∀ p ∈ K, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M} {a : ℝ}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u (Ioi a ×ˢ univ))
-    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
-    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1) (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
     (hnull : ∃ s > a, ∃ g : C(AddCircle (1 : ℝ), M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (s, t))
     {C : ℝ} (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ (e ∘ u) z‖ ≤ C)
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
@@ -513,25 +512,13 @@ theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer
       (∀ t, x t ∈ K) → IsNondegenerateFixedPt I
         (timeDependentFlowOf (fun t ↦ ω.hamiltonianVectorField (H t)) 0 1) (x 0)) :
     ∃ x ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
-      (∀ t, x t ∈ K) ∧
-      TendstoUniformly (fun s t ↦ e (u (s, t))) (e ∘ x) atTop ∧
+      (∀ t, x t ∈ K) ∧ TendstoUniformly (fun s t ↦ e (u (s, t))) (e ∘ x) atTop ∧
       ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) := by
-  obtain ⟨s₀, hs₀, h₀⟩ := hnull
-  have := isCompact_iff_compactSpace.1 hK
-  have hemb : IsClosedEmbedding (K.domRestrict e) :=
-    (he.continuous.comp continuous_subtype_val).isClosedEmbedding he_inj.injective
-  have hnull_all {s : ℝ} (hs : a < s) :
-      ∃ g : C(AddCircle (1 : ℝ), M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (s, t) :=
-    ((convex_Ioi a).isPathConnected ⟨s₀, hs₀⟩).exists_nullhomotopic_addCircle_of_periodic
-      hu.continuousOn hper hs₀ h₀ hs
   have hcontr {ι : Type} {l : Filter ι} [l.NeBot] {φ : ι → ℝ} (hφa : ∀ᶠ i in l, a < φ i)
-      {y : ℝ → M} (hy : y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1)
-      (hyK : ∀ t, y t ∈ K) (hconv : TendstoUniformly (fun i t ↦ e (u (φ i, t))) (e ∘ y) l) :
-      y ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1 :=
-    mem_contractiblePeriodicSolutions_of_tendstoUniformly one_pos hemb.isInducing
-      (hφa.mono fun i hi ↦ continuous_slice_of_continuousOn hu.continuousOn hi)
-      (hφa.mono fun i hi ↦ hper _ hi) (hφa.mono fun i hi ↦ huK _ hi) hy hyK hconv
-      (hφa.mono fun i hi ↦ hnull_all hi).frequently
+      {y : ℝ → M} :=
+    mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi
+      (X := fun t ↦ ω.hamiltonianVectorField (H t)) one_pos he.continuous hK he_inj
+      hu.continuousOn hper huK hnull hφa (γ := y)
   obtain ⟨x, hx, hxK, hux, hpt⟩ :=
     hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact hH hHper he hK
       he_inj hde hu hper huK hC J hc hJc hfloer hE fun y hy hyK ⟨σ, hσa, _, hσu, _⟩ ↦

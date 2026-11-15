@@ -66,8 +66,10 @@ uniformly through an inducing map by contractible `T`-periodic curves is itself 
 
 * `TauCeti.mem_periodicSolutions_const_iff`: the periodic solutions of an autonomous field are its
   periodic integral curves.
-* `TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly`: a `T`-periodic solution that is
-  a uniform limit (through an inducing map) of contractible `T`-periodic loops is contractible.
+* `TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly` and
+  `TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi`: a `T`-periodic solution that
+  is a uniform limit (through an inducing map) of contractible `T`-periodic loops, in particular
+  along a half-cylinder `(a, ∞) × ℝ` with one contractible slice, is contractible.
 * `TauCeti.timeDependentFlowOf_add_period_of_mem`: translating both times by a period of the field
   preserves the domain and the flow.
 * `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: for `T ≠ 0`, the trajectory of a fixed point
@@ -166,18 +168,16 @@ theorem mem_contractiblePeriodicSolutions_of_tendstoUniformly {ι F : Type*} {l 
   let _ : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let _ : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   have hγc : Continuous γ := continuous_of_mem_periodicSolutions hγ
-  have hγper : Periodic γ T := hγ.2
   -- On the space `L` of closed curves on `[0, 1]` in `M`, null-homotopy is clopen, hence closed.
   let L := {f : C(unitInterval, M) // f 0 = f 1}
   let loopOf (f : L) : Path (f.1 0) (f.1 0) := ⟨f.1, rfl, f.2.symm⟩
-  have hfam : Continuous ↿loopOf :=
-    continuous_eval.comp ((continuous_subtype_val.comp continuous_fst).prodMk continuous_snd)
   have hclosed : IsClosed {f : L | (loopOf f).Homotopic (Path.refl (f.1 0))} :=
-    (isClopen_setOf_homotopic_refl loopOf hfam).isClosed
+    (isClopen_setOf_homotopic_refl loopOf <|
+      continuous_eval.comp ((continuous_subtype_val.comp continuous_fst).prodMk
+        continuous_snd)).isClosed
   -- Lift the curves on `[0, T]` to `C(I, K)` so `he` transports uniform convergence from `F`.
-  let kγ : C(unitInterval, K) :=
-    ⟨fun τ ↦ ⟨γ ((τ : ℝ) * T), hγK _⟩,
-      Continuous.subtype_mk (hγc.comp (continuous_subtype_val.mul continuous_const)) _⟩
+  let kγ : C(unitInterval, K) := ⟨fun τ ↦ ⟨γ ((τ : ℝ) * T), hγK _⟩,
+    Continuous.subtype_mk (hγc.comp (continuous_subtype_val.mul continuous_const)) _⟩
   let ku (i : ι) : C(unitInterval, K) :=
     if hi : Continuous (u i) ∧ Periodic (u i) T ∧ (∀ t, u i t ∈ K) then
       ⟨fun τ ↦ ⟨u i ((τ : ℝ) * T), hi.2.2 _⟩,
@@ -187,39 +187,58 @@ theorem mem_contractiblePeriodicSolutions_of_tendstoUniformly {ι F : Type*} {l 
       ku i = ⟨fun τ ↦ ⟨u i ((τ : ℝ) * T), hi.2.2 _⟩,
         Continuous.subtype_mk (hi.1.comp (continuous_subtype_val.mul continuous_const)) _⟩ :=
     dite_eq_left hi
-  have hku_neg {i : ι} (hi : ¬(Continuous (u i) ∧ Periodic (u i) T ∧ (∀ t, u i t ∈ K))) :
-      ku i = kγ :=
-    dite_eq_right hi
   let eK : C(K, F) := ⟨K.domRestrict e, he.continuous⟩
   have hku : Tendsto ku l (𝓝 kγ) := by
     rw [(eK.isInducing_postcomp he).tendsto_nhds_iff, ContinuousMap.tendsto_iff_tendstoUniformly]
     refine (tendstoUniformly_congr ?_).1 (hconv.comp fun τ : unitInterval ↦ (τ : ℝ) * T)
     filter_upwards [huc, huper, huK] with i hi₁ hi₂ hi₃
     funext τ
-    have hi : Continuous (u i) ∧ Periodic (u i) T ∧ (∀ t, u i t ∈ K) := ⟨hi₁, hi₂, hi₃⟩
-    simp [hku_pos hi, eK]
+    simp [hku_pos ⟨hi₁, hi₂, hi₃⟩, eK]
   let inclK : C(K, M) := ⟨Subtype.val, continuous_subtype_val⟩
-  have hfγ01 : (inclK.comp kγ) 0 = (inclK.comp kγ) 1 := by
-    simpa [inclK, kγ] using (hγper 0).symm
+  have hγper : Periodic γ T := hγ.2
+  have hfγ01 : (inclK.comp kγ) 0 = (inclK.comp kγ) 1 := by simpa [inclK, kγ] using (hγper 0).symm
   have hfu01 (i : ι) : (inclK.comp (ku i)) 0 = (inclK.comp (ku i)) 1 := by
     by_cases hi : Continuous (u i) ∧ Periodic (u i) T ∧ (∀ t, u i t ∈ K)
     · simpa [inclK, hku_pos hi] using (hi.2.1 0).symm
-    · rw [hku_neg hi]; exact hfγ01
+    · simpa only [ku, dite_eq_right hi] using hfγ01
   let fγ : L := ⟨inclK.comp kγ, hfγ01⟩
   let fu (i : ι) : L := ⟨inclK.comp (ku i), hfu01 i⟩
-  have hfu : Tendsto fu l (𝓝 fγ) :=
-    tendsto_subtype_rng.2 (((inclK.continuous_postcomp).tendsto kγ).comp hku)
-  have hfreq : ∃ᶠ i in l, fu i ∈ {f : L | (loopOf f).Homotopic (Path.refl (f.1 0))} := by
-    refine (hnull.and_eventually (huc.and (huper.and huK))).mono ?_
-    rintro i ⟨⟨g, hg, hgu⟩, hi₁, hi₂, hi₃⟩
-    have hi : Continuous (u i) ∧ Periodic (u i) T ∧ (∀ t, u i t ∈ K) := ⟨hi₁, hi₂, hi₃⟩
-    exact (g.nullhomotopic_iff_homotopic_refl (loopOf (fu i)) fun τ ↦ by
-      simp [loopOf, fu, hku_pos hi, inclK, AddCircle.ofUnitInterval_apply, hgu]).1 hg
-  have hfγ_mem := hclosed.mem_of_frequently_of_tendsto hfreq hfu
+  have hfreq : ∃ᶠ i in l, fu i ∈ {f : L | (loopOf f).Homotopic (Path.refl (f.1 0))} :=
+    (hnull.and_eventually (huc.and (huper.and huK))).mono fun i ⟨⟨g, hg, hgu⟩, hi₁, hi₂, hi₃⟩ ↦
+      (g.nullhomotopic_iff_homotopic_refl (loopOf (fu i)) fun τ ↦ by
+        simp [loopOf, fu, hku_pos ⟨hi₁, hi₂, hi₃⟩, inclK, AddCircle.ofUnitInterval_apply, hgu]).1 hg
+  have hfγ_mem : fγ ∈ {f : L | (loopOf f).Homotopic (Path.refl (f.1 0))} :=
+    hclosed.mem_of_frequently_of_tendsto hfreq
+      (tendsto_subtype_rng.2 ((inclK.continuous_postcomp.tendsto kγ).comp hku))
   let gγ : C(AddCircle T, M) := ⟨hγper.lift, hγc.quotient_liftOn' _⟩
   have hgγ (t : ℝ) : gγ t = γ t := hγper.lift_coe t
   exact ⟨hγ, gγ, (gγ.nullhomotopic_iff_homotopic_refl (loopOf fγ) fun τ ↦ by
     simp [loopOf, fγ, kγ, inclK, AddCircle.ofUnitInterval_apply, hgγ]).2 hfγ_mem, hgγ⟩
+
+/-- **Uniform slice limits along a half-cylinder with a contractible slice are contractible.** Let
+`u : ℝ × ℝ → M` be continuous on `(a, ∞) × ℝ`, with `T`-periodic slices (`0 < T`) in a compact set
+`K` on which a continuous map `e : M → F` into a Hausdorff uniform space is injective, and suppose
+that at some `s > a` the slice of `u` is contractible as a map from `AddCircle T`. Then any
+`T`-periodic solution `γ` in `K` to which `e ∘ u(φ i, ·)` converges uniformly along a nontrivial
+filter `l` with `φ i > a` eventually is contractible. -/
+theorem mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi {ι F : Type*} {l : Filter ι}
+    [l.NeBot] [UniformSpace F] [T2Space F] {K : Set M} {e : M → F} (hT : 0 < T) (he : Continuous e)
+    (hK : IsCompact K) (he_inj : InjOn e K) {a : ℝ} {u : ℝ × ℝ → M}
+    (hu : ContinuousOn u (Ioi a ×ˢ univ)) (huper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) T)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (hnull : ∃ s > a, ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (s, t))
+    {φ : ι → ℝ} (hφ : ∀ᶠ i in l, a < φ i) {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T)
+    (hγK : ∀ t, γ t ∈ K) (hconv : TendstoUniformly (fun i t ↦ e (u (φ i, t))) (e ∘ γ) l) :
+    γ ∈ contractiblePeriodicSolutions X T := by
+  obtain ⟨s₀, hs₀, h₀⟩ := hnull
+  have := isCompact_iff_compactSpace.1 hK
+  have hemb := (he.comp continuous_subtype_val).isClosedEmbedding he_inj.injective
+  exact mem_contractiblePeriodicSolutions_of_tendstoUniformly hT hemb.isInducing
+    (hφ.mono fun _ hi ↦ hu.comp_continuous (continuous_const.prodMk continuous_id)
+      fun t ↦ ⟨hi, mem_univ t⟩)
+    (hφ.mono fun _ hi ↦ huper _ hi) (hφ.mono fun _ hi ↦ huK _ hi) hγ hγK hconv
+    (hφ.mono fun _ hi ↦ ((convex_Ioi a).isPathConnected ⟨s₀, hs₀⟩)
+      |>.exists_nullhomotopic_addCircle_of_periodic hu huper hs₀ h₀ hi).frequently
 
 section Flow
 
