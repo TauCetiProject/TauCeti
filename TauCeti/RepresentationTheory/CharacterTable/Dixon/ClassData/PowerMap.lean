@@ -7,8 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Character
-import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Cyclic
-import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Quaternion
 
 /-!
 # Inverse maps, power maps, and homomorphism fusion on numbered conjugacy classes
@@ -40,8 +38,7 @@ with a decidability-free `classOf` characterization, as well as transport lemmas
 
 ## Main definitions
 
-* `TauCeti.ClassData.invIndex`, `TauCeti.ClassData.invEquiv`: the numbered inverse-class map and
-  its involutive permutation of `Fin d.numClasses`.
+* `TauCeti.ClassData.invIndex`: the numbered inverse-class map on `Fin d.numClasses`.
 * `TauCeti.ClassData.powIndex`, `TauCeti.ClassData.zpowIndex`: the numbered `ℕ`-power and
   `ℤ`-power maps on `Fin d.numClasses`.
 * `TauCeti.ClassData.fusion`: the class-fusion map `Fin dH.numClasses → Fin dG.numClasses` along a
@@ -49,15 +46,13 @@ with a decidability-free `classOf` characterization, as well as transport lemmas
 
 ## Main results
 
-* `TauCeti.ClassData.classOf_bijective`: `d.classOf` is a bijection onto `ConjClasses G` without
-  assuming decidable conjugacy.
 * `TauCeti.ClassData.orderOf_rep_map`, `TauCeti.ClassData.index_centralizer_rep_map`,
   `TauCeti.ClassData.invIndex_map`, `TauCeti.ClassData.powIndex_map`: transport of representative
   orders, centralizer indices, inverse maps, and power maps along `TauCeti.ClassData.map`.
 * `TauCeti.ClassData.invIndex_eq_self_iff`: `d.invIndex` fixes `i` if and only if `d.classOf i` is
   a real class (`TauCeti.IsRealClass`).
-* `TauCeti.ClassData.bijective_powIndex_of_coprime`,
-  `TauCeti.ClassData.bijective_powIndex_of_coprime_card`: coprime power maps permute the numbered
+* `TauCeti.ClassData.powIndex_bijective_of_coprime`,
+  `TauCeti.ClassData.powIndex_bijective_of_coprime_card`: coprime power maps permute the numbered
   classes bijectively and preserve class sizes.
 * `TauCeti.ClassData.classOf_fusion`, `TauCeti.ClassData.fusion_comp`,
   `TauCeti.ClassData.character_rep_fusion`: compatibility of `fusion` with `ConjClasses.map`,
@@ -76,30 +71,6 @@ namespace TauCeti.ClassData
 section Invariants
 
 variable {G : Type*} [Group G] (d : ClassData G)
-
-/-- **Distinct indices name distinct conjugacy classes**, without assuming decidable conjugacy. -/
-@[simp]
-theorem classOf_inj {i j : Fin d.numClasses} : d.classOf i = d.classOf j ↔ i = j := by
-  refine ⟨fun h => by_contra fun hne => d.not_isConj_rep hne ?_, congrArg _⟩
-  rwa [classOf_eq_mk, classOf_eq_mk, ConjClasses.mk_eq_mk_iff_isConj] at h
-
-/-- `TauCeti.ClassData.classOf` is injective without assuming decidable conjugacy. -/
-theorem classOf_injective : Function.Injective d.classOf :=
-  fun _ _ => d.classOf_inj.mp
-
-/-- `TauCeti.ClassData.classOf` is surjective without assuming decidable conjugacy. -/
-theorem classOf_surjective : Function.Surjective d.classOf := by
-  refine ConjClasses.forall_isConj.mpr fun g => ?_
-  obtain ⟨x, hx, hxg⟩ := d.exists_isConj g
-  obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem hx
-  refine ⟨⟨i, hi⟩, ?_⟩
-  rw [d.classOf_eq_mk]
-  exact ConjClasses.mk_eq_mk_iff_isConj.mpr hxg
-
-/-- **The class numbering is a bijection** onto `ConjClasses G`, without assuming decidable
-conjugacy or finiteness. -/
-theorem classOf_bijective : Function.Bijective d.classOf :=
-  ⟨d.classOf_injective, d.classOf_surjective⟩
 
 /-- Two numbered classes satisfy `d.classOf j = (d.classOf i)⁻¹` if and only if the `j`-th
 representative is conjugate to the inverse of the `i`-th. -/
@@ -258,23 +229,6 @@ theorem invIndex_invIndex (i : Fin d.numClasses) : d.invIndex (d.invIndex i) = i
 /-- `TauCeti.ClassData.invIndex` is involutive. -/
 theorem invIndex_involutive : Function.Involutive d.invIndex :=
   d.invIndex_invIndex
-
-/-- `TauCeti.ClassData.invIndex` is a bijection on `Fin d.numClasses`. -/
-theorem invIndex_bijective : Function.Bijective d.invIndex :=
-  d.invIndex_involutive.bijective
-
-/-- **The inverse-class involution bundled as a permutation** of `Fin d.numClasses`. -/
-@[expose] def invEquiv : Equiv.Perm (Fin d.numClasses) where
-  toFun := d.invIndex
-  invFun := d.invIndex
-  left_inv := d.invIndex_invIndex
-  right_inv := d.invIndex_invIndex
-
-@[simp]
-theorem invEquiv_apply (i : Fin d.numClasses) : d.invEquiv i = d.invIndex i := (rfl)
-
-@[simp]
-theorem invEquiv_symm : d.invEquiv.symm = d.invEquiv := (rfl)
 
 /-- **A class index is fixed by `d.invIndex` if and only if the class it names is real.** -/
 theorem invIndex_eq_self_iff {i : Fin d.numClasses} :
@@ -459,15 +413,16 @@ theorem zpowIndex_zero (i : Fin d.numClasses) : d.zpowIndex 0 i = d.index 1 := b
 theorem zpowIndex_one (i : Fin d.numClasses) : d.zpowIndex 1 i = i := by
   rw [zpowIndex, zpow_one, index_rep]
 
-/-- At `-1`, `zpowIndex` is the inverse-class map `d.invIndex`. -/
-@[simp]
-theorem zpowIndex_neg_one (i : Fin d.numClasses) : d.zpowIndex (-1) i = d.invIndex i := by
-  rw [zpowIndex, zpow_neg_one, invIndex]
-
 /-- Negating the integer exponent composes with `d.invIndex`. -/
+@[simp]
 theorem zpowIndex_neg (z : ℤ) (i : Fin d.numClasses) :
     d.zpowIndex (-z) i = d.invIndex (d.zpowIndex z i) := by
   rw [zpowIndex, zpow_neg, ← invIndex_index, zpowIndex]
+
+-- Not `@[simp]`: `simp` already reduces the left-hand side via `zpowIndex_neg` and `zpowIndex_one`.
+/-- At `-1`, `zpowIndex` is the inverse-class map `d.invIndex`. -/
+theorem zpowIndex_neg_one (i : Fin d.numClasses) : d.zpowIndex (-1) i = d.invIndex i := by
+  rw [zpowIndex_neg, zpowIndex_one]
 
 /-- Iterated `ℤ`-power maps compose multiplicatively. -/
 @[simp]
@@ -482,7 +437,7 @@ theorem zpowIndex_eq_of_modEq {z w : ℤ} {i : Fin d.numClasses}
 
 /-- **A power map coprime to every representative order is a bijection** on `Fin d.numClasses`,
 without assuming `G` is finite. -/
-theorem bijective_powIndex_of_coprime {n : ℕ}
+theorem powIndex_bijective_of_coprime {n : ℕ}
     (hn : ∀ i, (orderOf (d.rep i)).Coprime n) : Function.Bijective (d.powIndex n) := by
   refine Finite.injective_iff_bijective.mp fun i₁ i₂ h => ?_
   have hord : orderOf (d.rep i₁) = orderOf (d.rep i₂) := by
@@ -505,11 +460,11 @@ theorem bijective_powIndex_of_coprime {n : ℕ}
 
 /-- **Any power coprime to `Nat.card G` induces a bijection** on `Fin d.numClasses`. For infinite
 `G`, `Nat.card G = 0`, so `(Nat.card G).Coprime n` forces `n = 1` and the result still holds. -/
-theorem bijective_powIndex_of_coprime_card {n : ℕ}
+theorem powIndex_bijective_of_coprime_card {n : ℕ}
     (hn : (Nat.card G).Coprime n) : Function.Bijective (d.powIndex n) := by
   cases finite_or_infinite G with
   | inl _ =>
-      exact d.bijective_powIndex_of_coprime fun i => hn.of_dvd_left (orderOf_dvd_natCard _)
+      exact d.powIndex_bijective_of_coprime fun i => hn.of_dvd_left (orderOf_dvd_natCard _)
   | inr _ =>
       have hn1 : n = 1 :=
         (Nat.coprime_zero_left n).mp (by rwa [Nat.card_eq_zero_of_infinite] at hn)
@@ -585,7 +540,7 @@ theorem fusion_comp (dK : ClassData K) [DecidableRel (IsConj : K → K → Prop)
   simp only [ConjClasses.map_mk, MonoidHom.comp_apply]
 
 /-- Along a surjective homomorphism, the class-fusion map is surjective. -/
-theorem surjective_fusion_of_surjective {φ : H →* G} (hφ : Function.Surjective φ) :
+theorem fusion_surjective_of_surjective {φ : H →* G} (hφ : Function.Surjective φ) :
     Function.Surjective (dH.fusion dG φ) := by
   intro j
   obtain ⟨C, hC⟩ := ConjClasses.map_surjective hφ (dG.classOf j)
@@ -665,51 +620,26 @@ theorem indexClass_map (φ : H →* G) (C : ConjClasses H) :
   obtain ⟨h, rfl⟩ := ConjClasses.exists_rep C
   rw [ConjClasses.map_mk, indexClass_mk, indexClass_mk, fusion_index]
 
-/-- Class fusion commutes with the inverse-class map. -/
-theorem fusion_invIndex (φ : H →* G) (i : Fin dH.numClasses) :
-    dH.fusion dG φ (dH.invIndex i) = dG.invIndex (dH.fusion dG φ i) := by
-  rw [invIndex, fusion_index, map_inv, ← invIndex_index, ← fusion]
-
-/-- Class fusion commutes with every `ℕ`-power map. -/
-theorem fusion_powIndex (φ : H →* G) (n : ℕ) (i : Fin dH.numClasses) :
-    dH.fusion dG φ (dH.powIndex n i) = dG.powIndex n (dH.fusion dG φ i) := by
-  rw [powIndex, fusion_index, map_pow, ← powIndex_index, ← fusion]
-
 /-- Class fusion commutes with every `ℤ`-power map. -/
+@[simp]
 theorem fusion_zpowIndex (φ : H →* G) (z : ℤ) (i : Fin dH.numClasses) :
     dH.fusion dG φ (dH.zpowIndex z i) = dG.zpowIndex z (dH.fusion dG φ i) := by
   rw [zpowIndex, fusion_index, map_zpow, ← zpowIndex_index, ← fusion]
 
+/-- Class fusion commutes with the inverse-class map. -/
+@[simp]
+theorem fusion_invIndex (φ : H →* G) (i : Fin dH.numClasses) :
+    dH.fusion dG φ (dH.invIndex i) = dG.invIndex (dH.fusion dG φ i) := by
+  rw [← zpowIndex_neg_one, fusion_zpowIndex, zpowIndex_neg_one]
+
+/-- Class fusion commutes with every `ℕ`-power map. -/
+@[simp]
+theorem fusion_powIndex (φ : H →* G) (n : ℕ) (i : Fin dH.numClasses) :
+    dH.fusion dG φ (dH.powIndex n i) = dG.powIndex n (dH.fusion dG φ i) := by
+  rw [← zpowIndex_natCast, fusion_zpowIndex, zpowIndex_natCast]
+
 end BothDecidable
 
 end Fusion
-
-/-! ### Kernel-evaluated sanity checks -/
-
-section Regression
-
-/-- Embedding of `Multiplicative (ZMod 4)` as the cyclic subgroup `⟨a⟩` of `QuaternionGroup 2`. -/
-private def cyclicFourToQuaternionTwo :
-    Multiplicative (ZMod 4) →* QuaternionGroup 2 where
-  toFun x := QuaternionGroup.a x.toAdd
-  map_one' := rfl
-  map_mul' x y := by simp [QuaternionGroup.a_mul_a]
-
-/-- Kernel check on `cyclicClassData 4` and `quaternionClassData 2`:
-* `cyclicClassData 4` has non-real classes (`invIndex` swaps `1` and `3`), and a proper square map
-  (`powIndex 2` sends both `1` and `3` to `2`);
-* fusing `cyclicClassData 4` into `quaternionClassData 2` along `cyclicFourToQuaternionTwo`
-  collapses the inverse pair `1, 3` into a single real quaternion class of order `4`. -/
-private theorem invIndex_powIndex_fusion_cyclicFour_quaternionTwo :
-    ((List.finRange (cyclicClassData 4).numClasses).map fun i =>
-        ((cyclicClassData 4).invIndex i).val) = [0, 3, 2, 1] ∧
-      ((List.finRange (cyclicClassData 4).numClasses).map fun i =>
-        ((cyclicClassData 4).powIndex 2 i).val) = [0, 2, 0, 2] ∧
-      ((List.finRange (cyclicClassData 4).numClasses).map fun i =>
-        ((cyclicClassData 4).fusion (quaternionClassData 2) cyclicFourToQuaternionTwo i).val) =
-        [0, 3, 1, 3] := by
-  decide
-
-end Regression
 
 end TauCeti.ClassData

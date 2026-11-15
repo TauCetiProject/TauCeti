@@ -67,6 +67,8 @@ order `8` as a closed instance of everything here.
 
 ## Main results
 
+* `TauCeti.ClassData.classOf_bijective`: `d.classOf` is a bijection onto `ConjClasses G` without
+  assuming decidable conjugacy.
 * `TauCeti.ClassData.numClasses_eq_card_conjClasses`: the numbering has the expected length.
 * `TauCeti.ClassData.sum_index_centralizer_reps`: the class equation, read on the representatives.
 * `TauCeti.ClassData.index_map`, `TauCeti.ClassData.equivConjClasses_map`,
@@ -211,6 +213,30 @@ theorem not_isConj_rep {i j : Fin d.numClasses} (hij : i ≠ j) : ¬ IsConj (d.r
   rcases lt_or_gt_of_ne hij with h | h
   · exact key h
   · exact fun hc => key h hc.symm
+
+/-- **Distinct indices name distinct conjugacy classes**, without assuming decidable conjugacy. -/
+@[simp]
+theorem classOf_inj {i j : Fin d.numClasses} : d.classOf i = d.classOf j ↔ i = j := by
+  refine ⟨fun h => by_contra fun hne => d.not_isConj_rep hne ?_, congrArg _⟩
+  rwa [classOf_eq_mk, classOf_eq_mk, ConjClasses.mk_eq_mk_iff_isConj] at h
+
+/-- `TauCeti.ClassData.classOf` is injective without assuming decidable conjugacy. -/
+theorem classOf_injective : Function.Injective d.classOf :=
+  fun _ _ => d.classOf_inj.mp
+
+/-- `TauCeti.ClassData.classOf` is surjective without assuming decidable conjugacy. -/
+theorem classOf_surjective : Function.Surjective d.classOf := by
+  refine ConjClasses.forall_isConj.mpr fun g => ?_
+  obtain ⟨x, hx, hxg⟩ := d.exists_isConj g
+  obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem hx
+  refine ⟨⟨i, hi⟩, ?_⟩
+  rw [d.classOf_eq_mk]
+  exact ConjClasses.mk_eq_mk_iff_isConj.mpr hxg
+
+/-- **The class numbering is a bijection** onto `ConjClasses G`, without assuming decidable
+conjugacy or finiteness. -/
+theorem classOf_bijective : Function.Bijective d.classOf :=
+  ⟨d.classOf_injective, d.classOf_surjective⟩
 
 /-- The representatives are distinct, conjugacy being reflexive. -/
 theorem nodup_reps : d.reps.Nodup := by
