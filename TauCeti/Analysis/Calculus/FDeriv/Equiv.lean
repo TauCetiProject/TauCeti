@@ -17,6 +17,7 @@ import TauCeti.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Congr
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Topology.DiscreteSubset
 
 /-!
@@ -45,6 +46,8 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   `p` of the source and its image `e p`.
 * `OpenPartialHomeomorph.isInvertible_fderiv`, `OpenPartialHomeomorph.inverse_fderiv`: hence the
   derivative at such a point is invertible, with inverse the derivative of `e.symm` at `e p`.
+* `OpenPartialHomeomorph.hasFDerivAt_comp_symm`: the derivative `D g ∘ (D e)⁻¹` of a transition
+  map `g ∘ e.symm`, when `e` has an invertible derivative.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
 * `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable at `φ⁻¹ y` with its
   inverse differentiable at `y`, the Jacobian determinants are reciprocal,
@@ -159,6 +162,18 @@ theorem inverse_fderiv (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ e.sou
     (fderiv 𝕜 e y).inverse = fderiv 𝕜 e.symm (e y) :=
   ContinuousLinearMap.inverse_eq (e.fderiv_comp_fderiv_symm_of_mem_source hy he hes)
     (e.fderiv_symm_comp_fderiv_of_mem_source hy he hes)
+
+/-- **The derivative of a transition map.** If `e` has an invertible derivative at `e.symm p`, for
+`p` in its target, then `g ∘ e.symm` has derivative `D g (e.symm p) ∘ (D e (e.symm p))⁻¹` at `p`
+for every `g` differentiable at `e.symm p`. -/
+theorem hasFDerivAt_comp_symm {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (e : OpenPartialHomeomorph E F) {g : E → G} {p : F} (hp : p ∈ e.target)
+    (he : DifferentiableAt 𝕜 e (e.symm p)) (hinv : (fderiv 𝕜 e (e.symm p)).IsInvertible)
+    (hg : DifferentiableAt 𝕜 g (e.symm p)) :
+    HasFDerivAt (g ∘ e.symm) (fderiv 𝕜 g (e.symm p) ∘L (fderiv 𝕜 e (e.symm p)).inverse) p := by
+  obtain ⟨A, hA⟩ := hinv
+  rw [← hA, ContinuousLinearMap.inverse_equiv]
+  exact hg.hasFDerivAt.comp p (e.hasFDerivAt_symm hp (hA ▸ he.hasFDerivAt))
 
 end OpenPartialHomeomorph
 

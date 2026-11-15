@@ -16,9 +16,11 @@ import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 This file collects facts about inverting and differentiating continuous linear maps, and about ring
 inverses in a general normed algebra. The first is a perturbation criterion: a map differing from a
 continuous linear equivalence `L` by less than `‖L⁻¹‖⁻¹` in operator norm is again invertible, by a
-Neumann series. The second packages the derivative of a differentiable inverse family of continuous
-linear maps at an invertible base point, including its action on a varying vector; that is the
-analytic input for differentiating a vector-field pullback along a parametric family. For families
+Neumann series. On a compact set, a continuous invertible family has relative increments
+`D y ∘ (D x)⁻¹` uniformly close to the identity. The second part packages the derivative of a
+differentiable inverse family of continuous linear maps at an invertible base point, including its
+action on a varying vector; that is the analytic input for differentiating a vector-field pullback
+along a parametric family. For families
 on a general domain, with values in the `𝕜'`-linear maps and differentiated over a subfield `𝕜`, it
 gives the smoothness of the inverse family and the derivative formula `∂ᵥ(f⁻¹) = -f⁻¹ (∂ᵥ f) f⁻¹`.
 The last part works in an arbitrary normed algebra: it shows that the ring inverse of a `C^n`
@@ -37,6 +39,8 @@ curve through `1` with the constant `C`; the latter involves no inversion.
 * `ContinuousLinearMap.IsInvertible.of_mul_norm_sub_lt` and
   `ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt`: if `‖A⁻¹‖ ≤ M` and
   `M * ‖B - A‖ < 1`, then `B` is invertible with `‖B⁻¹‖ ≤ M / (1 - M * ‖B - A‖)`.
+* `IsCompact.exists_forall_norm_comp_inverse_sub_id_lt`: for a family `D` continuous and invertible
+  on a compact set, `D y ∘ (D x)⁻¹` is uniformly close to the identity for nearby `x` and `y`.
 * `HasDerivAt.clm_inverse`: differentiates `(A t)⁻¹`.
 * `HasDerivAt.clm_inverse_apply`: differentiates `(A t)⁻¹ (w t)`.
 * `ContDiffWithinAt.clm_inverse`, `ContDiffAt.clm_inverse`, `ContDiffOn.clm_inverse`: the
@@ -177,6 +181,30 @@ theorem ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt [Com
       _ ≤ M * ‖A x‖ := by gcongr
   rw [div_mul_eq_mul_div, le_div_iff₀ hδ]
   nlinarith [mul_le_mul_of_nonneg_left hAx hM0]
+
+/-- **Relative increments of a continuous invertible family are uniformly small on compact sets.**
+If a family `D` of continuous linear maps is continuous and invertible on a compact subset `K` of a
+pseudometric space, then `D y ∘ (D x)⁻¹` is uniformly close to the identity for all sufficiently
+close `x, y ∈ K`. -/
+theorem IsCompact.exists_forall_norm_comp_inverse_sub_id_lt [CompleteSpace E] {X : Type*}
+    [PseudoMetricSpace X] {K : Set X} (hK : IsCompact K) {D : X → E →L[𝕜] F}
+    (hD : ContinuousOn D K) (hinv : ∀ x ∈ K, (D x).IsInvertible) {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ x ∈ K, ∀ y ∈ K, dist x y < δ →
+      ‖D y ∘L (D x).inverse - ContinuousLinearMap.id 𝕜 F‖ < ε := by
+  -- The relative increment is continuous on the compact set `K ×ˢ K`, hence uniformly continuous
+  -- there, and it vanishes on the diagonal.
+  have hG : ContinuousOn (fun z : X × X ↦ D z.2 ∘L (D z.1).inverse - .id 𝕜 F) (K ×ˢ K) := by
+    refine ((hD.comp continuousOn_snd fun z (hz : z ∈ K ×ˢ K) ↦ hz.2).clm_comp
+      fun z hz ↦ ?_).sub continuousOn_const
+    exact ContinuousAt.comp_continuousWithinAt (f := fun w : X × X ↦ D w.1)
+      ((hinv z.1 hz.1).contDiffAt_map_inverse (n := 0)).continuousAt
+      ((hD z.1 hz.1).comp continuousWithinAt_fst fun w (hw : w ∈ K ×ˢ K) ↦ hw.1)
+  obtain ⟨δ, hδ, h⟩ :=
+    Metric.uniformContinuousOn_iff.1 ((hK.prod hK).uniformContinuousOn_of_continuous hG) ε hε
+  refine ⟨δ, hδ, fun x hx y hy hxy ↦ ?_⟩
+  have hd : dist (x, y) (x, x) < δ := by
+    rwa [Prod.dist_eq, dist_self, dist_comm, max_eq_right dist_nonneg]
+  simpa [dist_eq_norm, (hinv x hx).self_comp_inverse] using h (x, y) ⟨hx, hy⟩ (x, x) ⟨hx, hx⟩ hd
 
 end Perturbation
 
