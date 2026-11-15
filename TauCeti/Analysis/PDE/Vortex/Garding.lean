@@ -137,6 +137,25 @@ theorem gaugeFixedGradientDensity_nonneg (x y : ℂ → EuclideanSpace ℝ (Fin 
   rw [gaugeFixedGradientDensity_def]
   positivity
 
+/-- The squared derivative of a variation is controlled by its covariant gradient density and
+the connection coefficients of the field:
+`|Dy|² ≤ 4 (|∇b|² + |∇_a ψ|²) + 4 (A₁² + A₂²) |y|²`, where `a = i (A₁ ds + A₂ dt)`. -/
+theorem norm_fderiv_sq_le_gaugeFixedGradientDensity_add (x y : ℂ → EuclideanSpace ℝ (Fin 4))
+    (z : ℂ) :
+    ‖fderiv ℝ y z‖ ^ 2 ≤
+      4 * gaugeFixedGradientDensity x y z + 4 * (x z 0 ^ 2 + x z 1 ^ 2) * ‖y z‖ ^ 2 := by
+  have hD := norm_fderiv_sq_le_two_mul_sum_sq y z
+  rw [Fin.sum_univ_four] at hD
+  rw [gaugeFixedGradientDensity_def, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
+  nlinarith [sq_nonneg (fderiv ℝ (fun w ↦ y w 2) z 1 - 2 * (x z 0 * y z 3)),
+    sq_nonneg (fderiv ℝ (fun w ↦ y w 2) z I - 2 * (x z 1 * y z 3)),
+    sq_nonneg (fderiv ℝ (fun w ↦ y w 3) z 1 + 2 * (x z 0 * y z 2)),
+    sq_nonneg (fderiv ℝ (fun w ↦ y w 3) z I + 2 * (x z 1 * y z 2)),
+    mul_nonneg (sq_nonneg (x z 0)) (sq_nonneg (y z 0)),
+    mul_nonneg (sq_nonneg (x z 0)) (sq_nonneg (y z 1)),
+    mul_nonneg (sq_nonneg (x z 1)) (sq_nonneg (y z 0)),
+    mul_nonneg (sq_nonneg (x z 1)) (sq_nonneg (y z 1))]
+
 variable {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-! ### The pointwise identity -/

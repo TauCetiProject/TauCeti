@@ -47,6 +47,14 @@ the weighted adjoint energy bound `integral_sq_mul_norm_sq_gaugeFixedAdjoint_le`
 `TauCeti.Analysis.PDE.Vortex.RightInverse` uses to extend the weighted estimate from test fields to
 the weak right inverse on all of `L²`.
 
+The last part of the file gains one derivative. A weighted form of the Gårding inequality,
+`∫ G(w y) ≤ 2 ∫ w² |L_x y|² + (2 c² + K) ∫ w² |y|²` for weights with `|dw| ≤ |c| w`, where `G` is
+the covariant gradient density, follows from the Leibniz rule for `L_x` and the Gårding
+inequality at the vortex. Applied to `y = L_x* η` with the weight `exp(c ρ)`, together with the
+weighted `L²` estimate above, it bounds `exp(c ρ) L_x* η` in the covariant `H¹` norm, and in the
+ordinary `H¹` norm when the connection coefficients of the vortex are bounded, by
+`‖exp(c ρ) L_x L_x* η‖₂`.
+
 All estimates here concern compactly supported classical test fields. They are not a
 construction of a completed inverse or a uniform spectral gap over the noncompact vortex moduli
 space.
@@ -65,6 +73,11 @@ All in the namespace `TauCeti.Vortex`:
 * `exists_integral_exp_mul_norm_sq_le_mul_integral_exp_mul_norm_sq_gaugeFixedOperator` and
   `exists_integral_exp_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral_exp_mul_norm_sq`:
   the global weighted estimates for `η` and `L_x* η` in terms of `L_x L_x* η`.
+* `norm_sq_gaugeFixedOperator_fun_smul_le`: the Leibniz bound for `L_x` on a weighted variation.
+* `exists_integral_gaugeFixedGradientDensity_fun_smul_le`: the weighted Gårding inequality.
+* `exists_integral_gaugeFixedGradientDensity_exp_smul_gaugeFixedAdjoint_le` and
+  `exists_integral_norm_fderiv_exp_smul_gaugeFixedAdjoint_le`: the weighted covariant and ordinary
+  gradient estimates for `exp(c ρ) L_x* η` in terms of `L_x L_x* η`.
 
 ## References
 
@@ -584,6 +597,204 @@ theorem exists_integral_exp_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral_exp_mu
   have : 0 ≤ ∫ z, w z ^ 2 * ‖G z‖ ^ 2 ∂μ := integral_nonneg fun z ↦ by positivity
   have : 0 ≤ c ^ 2 := sq_nonneg c
   have := mul_le_mul_of_nonneg_left h1 (by positivity : (0 : ℝ) ≤ 1 + 4 * c ^ 2)
+  nlinarith
+
+/-! ### Weighted gradient estimates -/
+
+/-- The Leibniz rule bounds the gauge-fixed operator on a weighted variation:
+`|L_x (w y)|² ≤ 2 w² |L_x y|² + 2 |dw|² |y|²`. No equation for `x` is needed. -/
+theorem norm_sq_gaugeFixedOperator_fun_smul_le (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hw : DifferentiableAt ℝ w z)
+    (hy : DifferentiableAt ℝ y z) :
+    ‖gaugeFixedOperator x (fun t ↦ w t • y t) z‖ ^ 2 ≤
+      2 * (w z ^ 2 * ‖gaugeFixedOperator x y z‖ ^ 2) + 2 * (‖fderiv ℝ w z‖ ^ 2 * ‖y z‖ ^ 2) := by
+  rw [gaugeFixedOperator_fun_smul x hw hy]
+  have ha : ‖w z • gaugeFixedOperator x y z‖ ^ 2 = w z ^ 2 * ‖gaugeFixedOperator x y z‖ ^ 2 := by
+    rw [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
+  rw [← ha, ← norm_sq_gaugeFixedOperatorSymbol]
+  nlinarith [norm_add_le (w z • gaugeFixedOperator x y z)
+      (gaugeFixedOperatorSymbol (fderiv ℝ w z) (y z)),
+    sq_nonneg (‖w z • gaugeFixedOperator x y z‖ - ‖gaugeFixedOperatorSymbol (fderiv ℝ w z) (y z)‖),
+    norm_nonneg (w z • gaugeFixedOperator x y z + gaugeFixedOperatorSymbol (fderiv ℝ w z) (y z))]
+
+/-- **The weighted Gårding inequality at a plane vortex.** Let `x` be a `C¹` solution of the
+vortex equation with `|α| → 1` and `∇₁ α → 0` at infinity. There is a constant `K ≥ 0`,
+depending only on the vortex, such that for every `C²` weight `w` with `|dw| ≤ |c| |w|` and every
+compactly supported `C²` variation `y`,
+
+`∫ G(w y) ≤ 2 ∫ w² |L_x y|² + (2 c² + K) ∫ w² |y|²`,
+
+where `G(w y) = |∇b|² + |∇_a ψ|²` is the covariant gradient density of `w y`
+(`gaugeFixedGradientDensity`). -/
+theorem exists_integral_gaugeFixedGradientDensity_fun_smul_le
+    (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0)) :
+    ∃ K ≥ 0, ∀ (w : ℂ → ℝ) (c : ℝ), ContDiff ℝ 2 w →
+      (∀ z, ‖fderiv ℝ w z‖ ^ 2 ≤ c ^ 2 * w z ^ 2) →
+      ∀ y : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 y → HasCompactSupport y →
+        ∫ z, gaugeFixedGradientDensity x (fun t ↦ w t • y t) z ∂μ ≤
+          2 * ∫ z, w z ^ 2 * ‖gaugeFixedOperator x y z‖ ^ 2 ∂μ +
+            (2 * c ^ 2 + K) * ∫ z, w z ^ 2 * ‖y z‖ ^ 2 ∂μ := by
+  obtain ⟨R, -, K, hK⟩ := exists_integral_gaugeFixedGradientDensity_add_mul_integral_norm_sq_le
+    (μ := μ) hx hsol hlim hcov (a := 0) (by norm_num)
+  refine ⟨max K 0, le_max_right _ _, fun w c hw hdw y hy hyc ↦ ?_⟩
+  set v : ℂ → EuclideanSpace ℝ (Fin 4) := fun t ↦ w t • y t
+  have hv : ContDiff ℝ 2 v := hw.smul hy
+  have hvc : HasCompactSupport v := hyc.smul_left (f := w)
+  have hi {f : ℂ → ℝ} {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hf : Continuous f)
+      (hg : Continuous g) (hgs : HasCompactSupport g) :
+      Integrable (fun z ↦ f z ^ 2 * ‖g z‖ ^ 2) μ :=
+    ((hf.pow 2).mul (hg.norm.pow 2)).integrable_of_hasCompactSupport
+      (hgs.mono fun z hz hzero ↦ hz (by simp [hzero]))
+  have hLy : Continuous (gaugeFixedOperator x y) :=
+    continuous_gaugeFixedOperator hx.continuous (hy.of_le (by norm_num))
+  have hLyc : HasCompactSupport (gaugeFixedOperator x y) := hasCompactSupport_gaugeFixedOperator hyc
+  have hnv (z : ℂ) : ‖v z‖ ^ 2 = w z ^ 2 * ‖y z‖ ^ 2 := by
+    simp [v, norm_smul, mul_pow]
+  -- Pointwise, `|L_x (w y)|² ≤ 2 w² |L_x y|² + 2 c² w² |y|²` by the Leibniz rule.
+  have hpt (z : ℂ) : ‖gaugeFixedOperator x v z‖ ^ 2 ≤
+      2 * (w z ^ 2 * ‖gaugeFixedOperator x y z‖ ^ 2) + 2 * c ^ 2 * (w z ^ 2 * ‖y z‖ ^ 2) := by
+    refine (norm_sq_gaugeFixedOperator_fun_smul_le x (hw.differentiable (by norm_num) z)
+      (hy.differentiable (by norm_num) z)).trans ?_
+    have := mul_le_mul_of_nonneg_right (hdw z) (sq_nonneg ‖y z‖)
+    nlinarith
+  have hwy := hi hw.continuous hy.continuous hyc
+  have hwL := hi hw.continuous hLy hLyc
+  have hL : ∫ z, ‖gaugeFixedOperator x v z‖ ^ 2 ∂μ ≤
+      2 * ∫ z, w z ^ 2 * ‖gaugeFixedOperator x y z‖ ^ 2 ∂μ +
+        2 * c ^ 2 * ∫ z, w z ^ 2 * ‖y z‖ ^ 2 ∂μ := by
+    rw [← integral_const_mul, ← integral_const_mul, ← integral_add (hwL.const_mul _)
+      (hwy.const_mul _)]
+    refine integral_mono ?_ ((hwL.const_mul _).add (hwy.const_mul _)) hpt
+    exact ((continuous_gaugeFixedOperator hx.continuous (hv.of_le (by norm_num))).norm.pow
+      2).integrable_of_hasCompactSupport ((hasCompactSupport_gaugeFixedOperator (x := x) hvc).mono
+        fun z hz hzero ↦ hz (by simp [hzero]))
+  -- The mass of `w y` on the disc is at most its total mass.
+  have hB : K * ∫ z in Metric.closedBall 0 R, ‖v z‖ ^ 2 ∂μ ≤
+      max K 0 * ∫ z, w z ^ 2 * ‖y z‖ ^ 2 ∂μ := by
+    have hv2 : Integrable (fun z ↦ ‖v z‖ ^ 2) μ := by simpa only [hnv] using hwy
+    have h₀ : 0 ≤ ∫ z in Metric.closedBall 0 R, ‖v z‖ ^ 2 ∂μ :=
+      setIntegral_nonneg Metric.isClosed_closedBall.measurableSet fun z _ ↦ sq_nonneg _
+    have h₁ : ∫ z in Metric.closedBall 0 R, ‖v z‖ ^ 2 ∂μ ≤ ∫ z, w z ^ 2 * ‖y z‖ ^ 2 ∂μ := by
+      simp_rw [← hnv]
+      exact setIntegral_le_integral hv2 (ae_of_all _ fun z ↦ sq_nonneg _)
+    calc K * ∫ z in Metric.closedBall 0 R, ‖v z‖ ^ 2 ∂μ
+        ≤ max K 0 * ∫ z in Metric.closedBall 0 R, ‖v z‖ ^ 2 ∂μ :=
+          mul_le_mul_of_nonneg_right (le_max_left _ _) h₀
+      _ ≤ max K 0 * ∫ z, w z ^ 2 * ‖y z‖ ^ 2 ∂μ :=
+          mul_le_mul_of_nonneg_left h₁ (le_max_right _ _)
+  have h := hK v hv hvc
+  rw [zero_mul, add_zero] at h
+  linarith
+
+/-- **The exponentially weighted covariant `H¹` estimate for `L_x*` at a plane vortex.** Let `x`
+be a `C²` solution of the vortex equation with `|α| → 1` and `∇₁ α → 0` at infinity, let
+`ρ(z) = √(1 + |z|²)` and `|c| < 1/2`. There is `K`, depending only on the vortex and `c`, such
+that every compactly supported `C³` field `η` satisfies
+
+`∫ G(exp(c ρ) L_x* η) ≤ K ∫ exp(2 c ρ) |L_x L_x* η|²`,
+
+where `G` is the covariant gradient density (`gaugeFixedGradientDensity`). With
+`f = L_x L_x* η`, the field `L_x* η` is the value at `f` of the right inverse
+`L_x* (L_x L_x*)⁻¹`. Together with
+`exists_integral_exp_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral_exp_mul_norm_sq` this bounds
+`exp(c ρ) L_x* η` in the covariant `H¹` norm by `exp(c ρ) f` in `L²`, on inputs of this form. -/
+theorem exists_integral_gaugeFixedGradientDensity_exp_smul_gaugeFixedAdjoint_le
+    (hx : ContDiff ℝ 2 x) (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0))
+    {c : ℝ} (hc : |c| < 1 / 2) :
+    ∃ K > 0, ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 3 η → HasCompactSupport η →
+      ∫ z, gaugeFixedGradientDensity x
+          (fun t ↦ Real.exp (c * √(1 + ‖t‖ ^ 2)) • gaugeFixedAdjoint x η t) z ∂μ ≤
+        K * ∫ z, Real.exp (c * √(1 + ‖z‖ ^ 2)) ^ 2 *
+          ‖gaugeFixedOperator x (gaugeFixedAdjoint x η) z‖ ^ 2 ∂μ := by
+  have hx₁ : ContDiff ℝ 1 x := hx.of_le (by norm_num)
+  obtain ⟨K₁, hK₁, hG⟩ :=
+    exists_integral_gaugeFixedGradientDensity_fun_smul_le (μ := μ) hx₁ hsol hlim hcov
+  obtain ⟨K₂, hK₂, hA⟩ :=
+    exists_integral_exp_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral_exp_mul_norm_sq (μ := μ)
+      hx₁ hsol hlim hc
+  refine ⟨2 + (2 * c ^ 2 + K₁) * K₂, by positivity, fun η hη hηc ↦ ?_⟩
+  set w : ℂ → ℝ := fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))
+  have hw : ContDiff ℝ 2 w := contDiff_exp_mul_sqrt_add_norm_sq c one_pos
+  have hdw (z : ℂ) : ‖fderiv ℝ w z‖ ^ 2 ≤ c ^ 2 * w z ^ 2 := by
+    have := pow_le_pow_left₀ (norm_nonneg _)
+      (norm_fderiv_exp_mul_sqrt_add_norm_sq_le c one_pos z) 2
+    simpa only [mul_pow, sq_abs] using this
+  have hu : ContDiff ℝ 2 (gaugeFixedAdjoint x η) :=
+    contDiff_gaugeFixedAdjoint hx (hη.of_le (by norm_num))
+  have h₁ := hG w c hw hdw _ hu (hasCompactSupport_gaugeFixedAdjoint hηc)
+  have h₂ := hA η (hη.of_le (by norm_num)) hηc
+  have : 0 ≤ 2 * c ^ 2 + K₁ := by positivity
+  have := mul_le_mul_of_nonneg_left h₂ this
+  linarith
+
+/-- **The exponentially weighted `H¹` estimate for `L_x*` at a plane vortex.** Under the
+hypotheses of `exists_integral_gaugeFixedGradientDensity_exp_smul_gaugeFixedAdjoint_le`, if
+moreover the connection coefficients of `x` are bounded, `A₁² + A₂² ≤ M` for
+`a = i (A₁ ds + A₂ dt)`, then there is `K` such that every compactly supported `C³` field `η`
+satisfies
+
+`∫ |D(exp(c ρ) L_x* η)|² ≤ K ∫ exp(2 c ρ) |L_x L_x* η|²`.
+
+With `exists_integral_exp_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral_exp_mul_norm_sq`, this
+bounds `‖exp(c ρ) L_x* η‖_{H¹}` by `‖exp(c ρ) L_x L_x* η‖₂`: the exponentially weighted output
+estimate for the right inverse `L_x* (L_x L_x*)⁻¹`, from `L²` to `H¹`, on inputs of this form. -/
+theorem exists_integral_norm_fderiv_exp_smul_gaugeFixedAdjoint_le
+    (hx : ContDiff ℝ 2 x) (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0))
+    {M : ℝ} (hM : ∀ z, x z 0 ^ 2 + x z 1 ^ 2 ≤ M) {c : ℝ} (hc : |c| < 1 / 2) :
+    ∃ K > 0, ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 3 η → HasCompactSupport η →
+      ∫ z, ‖fderiv ℝ
+          (fun t ↦ Real.exp (c * √(1 + ‖t‖ ^ 2)) • gaugeFixedAdjoint x η t) z‖ ^ 2 ∂μ ≤
+        K * ∫ z, Real.exp (c * √(1 + ‖z‖ ^ 2)) ^ 2 *
+          ‖gaugeFixedOperator x (gaugeFixedAdjoint x η) z‖ ^ 2 ∂μ := by
+  have hx₁ : ContDiff ℝ 1 x := hx.of_le (by norm_num)
+  obtain ⟨K₁, hK₁, hG⟩ :=
+    exists_integral_gaugeFixedGradientDensity_exp_smul_gaugeFixedAdjoint_le (μ := μ) hx hsol
+      hlim hcov hc
+  obtain ⟨K₂, hK₂, hA⟩ :=
+    exists_integral_exp_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral_exp_mul_norm_sq (μ := μ)
+      hx₁ hsol hlim hc
+  have hM₀ : 0 ≤ M := (add_nonneg (sq_nonneg _) (sq_nonneg _)).trans (hM 0)
+  refine ⟨4 * K₁ + 4 * M * K₂, by positivity, fun η hη hηc ↦ ?_⟩
+  set w : ℂ → ℝ := fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))
+  set v : ℂ → EuclideanSpace ℝ (Fin 4) := fun t ↦ w t • gaugeFixedAdjoint x η t
+  have hw : ContDiff ℝ 2 w := contDiff_exp_mul_sqrt_add_norm_sq c one_pos
+  have hu : ContDiff ℝ 2 (gaugeFixedAdjoint x η) :=
+    contDiff_gaugeFixedAdjoint hx (hη.of_le (by norm_num))
+  have hv : ContDiff ℝ 2 v := hw.smul hu
+  have hvc : HasCompactSupport v := (hasCompactSupport_gaugeFixedAdjoint hηc).smul_left (f := w)
+  have hDv : Integrable (fun z ↦ ‖fderiv ℝ v z‖ ^ 2) μ :=
+    ((hv.continuous_fderiv two_ne_zero).norm.pow 2).integrable_of_hasCompactSupport
+      (hvc.fderiv (𝕜 := ℝ) |>.mono fun z hz hzero ↦ hz (by simp [hzero]))
+  have hGv : Integrable (gaugeFixedGradientDensity x v) μ :=
+    integrable_gaugeFixedGradientDensity hx.continuous (hv.of_le (by norm_num)) hvc
+  have hnv : Integrable (fun z ↦ ‖v z‖ ^ 2) μ :=
+    (hv.continuous.norm.pow 2).integrable_of_hasCompactSupport
+      (hvc.mono fun z hz hzero ↦ hz (by simp [hzero]))
+  -- Pointwise, `|Dv|² ≤ 4 G(v) + 4 M |v|²`.
+  have hpt (z : ℂ) : ‖fderiv ℝ v z‖ ^ 2 ≤
+      4 * gaugeFixedGradientDensity x v z + 4 * M * ‖v z‖ ^ 2 :=
+    (norm_fderiv_sq_le_gaugeFixedGradientDensity_add x v z).trans (by
+      gcongr
+      exact hM z)
+  have h : ∫ z, ‖fderiv ℝ v z‖ ^ 2 ∂μ ≤
+      ∫ z, (4 * gaugeFixedGradientDensity x v z + 4 * M * ‖v z‖ ^ 2) ∂μ :=
+    integral_mono hDv ((hGv.const_mul 4).add (hnv.const_mul _)) hpt
+  rw [integral_add (hGv.const_mul 4) (hnv.const_mul _), integral_const_mul,
+    integral_const_mul] at h
+  have hnv' : ∫ z, ‖v z‖ ^ 2 ∂μ =
+      ∫ z, w z ^ 2 * ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ := by
+    congr 1 with z
+    simp [v, norm_smul, mul_pow]
+  have h₁ := hG η hη hηc
+  have h₂ := hA η (hη.of_le (by norm_num)) hηc
+  rw [hnv'] at h
+  have := mul_le_mul_of_nonneg_left h₂ (by positivity : (0 : ℝ) ≤ 4 * M)
   nlinarith
 
 end TauCeti.Vortex
