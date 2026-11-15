@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Cusp.Width
+import TauCeti.NumberTheory.ModularForms.WithCenter
 
 /-!
 # The strict level of a subgroup of `SL₂(ℤ)`
@@ -28,6 +29,8 @@ lie in `Γ`.
 * `Subgroup.strictLevel`: the strict level.
 * `Subgroup.strictLevel_dvd_iff`, `Subgroup.strictLevel_dvd_iff_zpow`: the exponents `m` with
   `σ Tᵐ σ⁻¹ ∈ Γ` for every `σ` are exactly the multiples of the strict level.
+* `Subgroup.normalClosure_T_pow_le_iff`, `Subgroup.normalClosure_T_pow_strictLevel_le`:
+  `normalClosure {Tᵐ} ≤ Γ` holds exactly when `Γ.strictLevel ∣ m`.
 * `Subgroup.strictLevel_eq_sInf`: the strict level is the least such positive exponent.
 * `Subgroup.strictLevel_dvd_iff_T_pow_mem_normalCore`: the same multiples, read in the normal
   core.
@@ -35,9 +38,12 @@ lie in `Γ`.
 * `Subgroup.strictLevel_dvd_iff_forall_cuspTranslationOrbitWidth_dvd`,
   `Subgroup.strictLevel_eq_lcm_cuspTranslationOrbitWidth`: the strict level is the least common
   multiple of the widths of the cusp translation orbits.
-* `Subgroup.strictLevel_inf`, `Subgroup.strictLevel_normalCore`: the strict level of an
-  intersection is the least common multiple of the strict levels, and passing to the normal core
-  does not change it.
+* `Subgroup.strictLevel_inf`, `Subgroup.strictLevel_normalCore`,
+  `Subgroup.strictLevel_conjAct_smul`: the strict level of an intersection is the least common
+  multiple of the strict levels, and passing to the normal core or a conjugate does not change it.
+* `Subgroup.strictLevel_withCenter_dvd`, `Subgroup.strictLevel_dvd_two_mul_strictLevel_withCenter`,
+  `Subgroup.strictLevel_eq_or_eq_two_mul_strictLevel_withCenter`: adjoining `{±I}` either leaves
+  the strict level unchanged or halves it.
 * `CongruenceSubgroup.strictLevel_Gamma`, `CongruenceSubgroup.strictLevel_Gamma0`,
   `CongruenceSubgroup.strictLevel_Gamma1`: `Γ(N)`, `Γ₀(N)` and `Γ₁(N)` have strict level `N`.
 * `CongruenceSubgroup.strictLevel_dvd_of_Gamma_le`: a subgroup containing `Γ(N)` has strict level
@@ -53,7 +59,7 @@ lie in `Γ`.
 public section
 
 open Matrix Matrix.SpecialLinearGroup TauCeti.ModularForm
-open scoped MatrixGroups
+open scoped MatrixGroups Pointwise
 
 namespace Subgroup
 
@@ -89,6 +95,19 @@ theorem strictLevel_dvd_iff_T_pow_mem_normalCore {m : ℕ} :
 theorem conj_T_pow_strictLevel_mem (σ : SL(2, ℤ)) :
     σ * ModularGroup.T ^ Γ.strictLevel * σ⁻¹ ∈ Γ :=
   strictLevel_dvd_iff.mp dvd_rfl σ
+
+/-- The normal closure of `{T ^ m}` is contained in `Γ` if and only if the strict level of `Γ`
+divides `m`. -/
+theorem normalClosure_T_pow_le_iff {m : ℕ} :
+    normalClosure {ModularGroup.T ^ m} ≤ Γ ↔ Γ.strictLevel ∣ m := by
+  rw [strictLevel_dvd_iff_T_pow_mem_normalCore]
+  exact ⟨fun h ↦ normal_le_normalCore.mpr h (subset_normalClosure rfl),
+    fun h ↦ (normalClosure_le_normal (Set.singleton_subset_iff.mpr h)).trans Γ.normalCore_le⟩
+
+/-- The normal closure of `{T ^ Γ.strictLevel}` is contained in `Γ`. -/
+theorem normalClosure_T_pow_strictLevel_le :
+    normalClosure {ModularGroup.T ^ Γ.strictLevel} ≤ Γ :=
+  normalClosure_T_pow_le_iff.mpr dvd_rfl
 
 /-- The strict level is at most any positive `N` all of whose conjugates `σ * T ^ N * σ⁻¹` lie
 in `Γ`. -/
@@ -131,10 +150,84 @@ theorem strictLevel_normalCore : Γ.normalCore.strictLevel = Γ.strictLevel :=
   Nat.dvd_right_iff_eq.mp fun m ↦ by
     rw [strictLevel_dvd_iff_of_normal, strictLevel_dvd_iff_T_pow_mem_normalCore]
 
+/-- Conjugating a subgroup of `SL(2, ℤ)` does not change its strict level. -/
+@[simp]
+theorem strictLevel_conjAct_smul (g : ConjAct SL(2, ℤ)) (Γ : Subgroup SL(2, ℤ)) :
+    (g • Γ).strictLevel = Γ.strictLevel := by
+  rw [← ConjAct.toConjAct_ofConjAct g]
+  refine Nat.dvd_right_iff_eq.mp fun m ↦ ?_
+  simp only [strictLevel_dvd_iff, mem_pointwise_smul_iff_inv_smul_mem, ← map_inv,
+    ConjAct.toConjAct_smul]
+  refine ⟨fun h τ ↦ ?_, fun h σ ↦ ?_⟩
+  · simpa [mul_assoc] using h (ConjAct.ofConjAct g * τ)
+  · simpa [mul_assoc] using h ((ConjAct.ofConjAct g)⁻¹ * σ)
+
 /-- `SL(2, ℤ)` has strict level `1`. -/
 @[simp]
 theorem strictLevel_top : (⊤ : Subgroup SL(2, ℤ)).strictLevel = 1 :=
   Nat.dvd_one.mp (strictLevel_dvd_iff.mpr fun _ ↦ mem_top _)
+
+/-- The trivial subgroup of `SL(2, ℤ)` has strict level `0`. -/
+@[simp]
+theorem strictLevel_bot : (⊥ : Subgroup SL(2, ℤ)).strictLevel = 0 := by
+  have h1 : ModularGroup.T ^ (⊥ : Subgroup SL(2, ℤ)).strictLevel = 1 := by
+    simpa using conj_T_pow_strictLevel_mem (Γ := ⊥) 1
+  have h01 := congrArg (fun g : SL(2, ℤ) ↦ (g : Matrix (Fin 2) (Fin 2) ℤ) 0 1) h1
+  rw [← zpow_natCast, ModularGroup.coe_T_zpow] at h01
+  simpa using h01
+
+/-- The strict level of `Γ.withCenter` divides the strict level of `Γ`. -/
+theorem strictLevel_withCenter_dvd : Γ.withCenter.strictLevel ∣ Γ.strictLevel :=
+  strictLevel_dvd_of_le Γ.le_withCenter
+
+/-- The strict level of `Γ` divides twice the strict level of `Γ.withCenter`: squaring
+`±σ * T ^ N * σ⁻¹` kills the sign. -/
+theorem strictLevel_dvd_two_mul_strictLevel_withCenter :
+    Γ.strictLevel ∣ 2 * Γ.withCenter.strictLevel := by
+  rw [strictLevel_dvd_iff]
+  intro σ
+  obtain ⟨γ, hγ, hsign⟩ :=
+    mem_withCenter_iff_exists_eq_or_eq_neg.mp
+      (conj_T_pow_strictLevel_mem (Γ := Γ.withCenter) σ)
+  have hsq : σ * ModularGroup.T ^ (2 * Γ.withCenter.strictLevel) * σ⁻¹ =
+      (σ * ModularGroup.T ^ Γ.withCenter.strictLevel * σ⁻¹) *
+        (σ * ModularGroup.T ^ Γ.withCenter.strictLevel * σ⁻¹) := by
+    rw [mul_comm 2, pow_mul, pow_two]
+    group
+  rw [hsq]
+  rcases hsign with h | h <;> rw [h]
+  · exact mul_mem hγ hγ
+  · rw [neg_mul_neg]
+    exact mul_mem hγ hγ
+
+/-- **Strict versus signed level**: the strict level of `Γ` is either equal to the strict level of
+`Γ.withCenter` or twice it. -/
+theorem strictLevel_eq_or_eq_two_mul_strictLevel_withCenter :
+    Γ.strictLevel = Γ.withCenter.strictLevel ∨ Γ.strictLevel = 2 * Γ.withCenter.strictLevel := by
+  rcases Nat.eq_zero_or_pos Γ.withCenter.strictLevel with h0 | hpos
+  · left
+    exact h0 ▸ zero_dvd_iff.mp (h0 ▸ strictLevel_withCenter_dvd)
+  · obtain ⟨k, hk⟩ := strictLevel_withCenter_dvd (Γ := Γ)
+    have hdvd : Γ.withCenter.strictLevel * k ∣ Γ.withCenter.strictLevel * 2 := by
+      simpa [hk, mul_comm 2] using strictLevel_dvd_two_mul_strictLevel_withCenter (Γ := Γ)
+    have hk2 : k ∣ 2 := (Nat.mul_dvd_mul_iff_left hpos).mp hdvd
+    rcases (Nat.dvd_prime Nat.prime_two).mp hk2 with rfl | rfl
+    · exact Or.inl (by omega)
+    · exact Or.inr (by omega)
+
+/-- `Γ.withCenter` has strict level `0` if and only if `Γ` does. -/
+@[simp]
+theorem strictLevel_withCenter_eq_zero_iff :
+    Γ.withCenter.strictLevel = 0 ↔ Γ.strictLevel = 0 := by
+  refine ⟨fun h ↦ zero_dvd_iff.mp (h ▸ strictLevel_withCenter_dvd), fun h ↦ ?_⟩
+  have hdvd : 0 ∣ 2 * Γ.withCenter.strictLevel :=
+    h ▸ strictLevel_dvd_two_mul_strictLevel_withCenter
+  simpa using zero_dvd_iff.mp hdvd
+
+/-- If `-I ∈ Γ`, adjoining `{±I}` does not change the strict level. -/
+theorem strictLevel_withCenter_of_neg_one_mem (h : (-1 : SL(2, ℤ)) ∈ Γ) :
+    Γ.withCenter.strictLevel = Γ.strictLevel := by
+  rw [withCenter_eq_self_iff.mpr (Matrix.SpecialLinearGroup.center_le_iff_neg_one_mem.mpr h)]
 
 /-- **The strict level is the least common multiple of the cusp widths**: it divides `m` exactly
 when the width of every cusp translation orbit of `Γ` does. -/
