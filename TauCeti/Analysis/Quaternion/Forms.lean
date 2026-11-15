@@ -128,8 +128,9 @@ theorem abs_apply_le_norm_dq (x : Fin 4 → ℝ) (i : Fin 4) : |x i| ≤ ‖dq x
 
 /-- In four dimensions, a uniform coordinate bound `|x i| ≤ d` implies the Euclidean norm bound
 `‖dq x‖ ≤ 2 * d` (since `√(4 d²) = 2 d`). -/
-theorem norm_dq_le_two_mul {x : Fin 4 → ℝ} {d : ℝ} (hd : 0 ≤ d) (hx : ∀ i, |x i| ≤ d) :
+theorem norm_dq_le_two_mul {x : Fin 4 → ℝ} {d : ℝ} (hx : ∀ i, |x i| ≤ d) :
     ‖dq x‖ ≤ 2 * d := by
+  have hd : 0 ≤ d := (abs_nonneg (x 0)).trans (hx 0)
   refine (mul_self_le_mul_self_iff (b := 2 * d) (norm_nonneg (dq x)) (by positivity)).2 ?_
   rw [← _root_.Quaternion.normSq_eq_norm_mul_self, _root_.Quaternion.normSq_def']
   have hsq (i : Fin 4) : x i ^ 2 ≤ d ^ 2 := by
@@ -149,6 +150,32 @@ theorem norm_dq_lt_two_mul {x : Fin 4 → ℝ} {d : ℝ} (hx : ∀ i, |x i| < d)
     simpa [sq_abs] using sq_lt_sq.2 ((hx i).trans_le (le_abs_self d))
   have h0 := hsq 0; have h1 := hsq 1; have h2 := hsq 2; have h3 := hsq 3
   simp only [dq_apply]
+  linarith
+
+/-- The axis-aligned closed coordinate cube of side `R` centred at `dq x₀` lies inside
+`Metric.closedBall (dq x₀) R`. -/
+theorem image_dq_Icc_subset_closedBall (x₀ : Fin 4 → ℝ) (R : ℝ) :
+    dq '' Set.Icc (fun i ↦ x₀ i - R / 2) (fun i ↦ x₀ i + R / 2) ⊆ Metric.closedBall (dq x₀) R := by
+  rintro _ ⟨x, hx, rfl⟩
+  rw [Metric.mem_closedBall, dist_eq_norm, ← dq.map_sub]
+  have hle : ‖dq (x - x₀)‖ ≤ 2 * (R / 2) :=
+    norm_dq_le_two_mul fun i ↦ by
+      simp only [Pi.sub_apply]
+      exact abs_le.2 ⟨by linarith [hx.1 i], by linarith [hx.2 i]⟩
+  linarith
+
+/-- The axis-aligned open coordinate cube of side `R` centred at `dq x₀` lies inside
+`Metric.ball (dq x₀) R`. -/
+theorem image_dq_pi_Ioo_subset_ball (x₀ : Fin 4 → ℝ) (R : ℝ) :
+    (dq '' Set.pi Set.univ fun i ↦ Set.Ioo (x₀ i - R / 2) (x₀ i + R / 2)) ⊆
+      Metric.ball (dq x₀) R := by
+  rintro _ ⟨x, hx, rfl⟩
+  rw [Metric.mem_ball, dist_eq_norm, ← dq.map_sub]
+  have hlt : ‖dq (x - x₀)‖ < 2 * (R / 2) :=
+    norm_dq_lt_two_mul fun i ↦ by
+      obtain ⟨h1, h2⟩ := hx i (Set.mem_univ i)
+      simp only [Pi.sub_apply]
+      exact abs_lt.2 ⟨by linarith, by linarith⟩
   linarith
 
 /-- Every quaternion is the sum of the units `1, i, j, k` weighted by its real inner products

@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.Quaternion.Fueter
-import Mathlib.Analysis.Analytic.Constructions
 import TauCeti.Analysis.Quaternion.Cauchy.CutoffField
 import TauCeti.Analysis.Quaternion.Cauchy.Potential
 
@@ -31,12 +30,16 @@ series on `Metric.eball q₀ ((√2 - 1) (R / 2))`.
 
 ## Main declarations
 
-* `TauCeti.LeftFueterOn.exists_hasFPowerSeriesOnBall_of_box`,
-  `TauCeti.RightFueterOn.exists_hasFPowerSeriesOnBall_of_box`: quantitative power-series expansion
+* `TauCeti.LeftFueterOn.exists_hasFPowerSeriesOnBall_box`,
+  `TauCeti.RightFueterOn.exists_hasFPowerSeriesOnBall_box`: quantitative power-series expansion
   on `eball (dq x₀) ((√2 - 1) δ)` inside a coordinate box.
-* `TauCeti.LeftFueterOn.exists_hasFPowerSeriesOnBall_of_closedBall`,
-  `TauCeti.RightFueterOn.exists_hasFPowerSeriesOnBall_of_closedBall`: quantitative power-series
-  expansion on `eball q₀ ((√2 - 1) (R / 2))` when `closedBall q₀ R ⊆ s`.
+* `TauCeti.LeftFueterOn.exists_hasFPowerSeriesOnBall_of_continuousOn_closedBall`,
+  `TauCeti.RightFueterOn.exists_hasFPowerSeriesOnBall_of_continuousOn_closedBall`: quantitative
+  power-series expansion on `eball q₀ ((√2 - 1) (R / 2))` from continuity on `closedBall q₀ R`
+  and regularity on `ball q₀ R`.
+* `TauCeti.LeftFueterOn.exists_hasFPowerSeriesOnBall_of_closedBall_subset`,
+  `TauCeti.RightFueterOn.exists_hasFPowerSeriesOnBall_of_closedBall_subset`: quantitative
+  power-series expansion on `eball q₀ ((√2 - 1) (R / 2))` when `closedBall q₀ R ⊆ s`.
 * `TauCeti.LeftFueterOn.analyticAt`, `TauCeti.RightFueterOn.analyticAt`,
   `TauCeti.LeftFueterOn.analyticOnNhd`, `TauCeti.RightFueterOn.analyticOnNhd`: local and open-set
   real analyticity of left and right Fueter regular functions.
@@ -64,12 +67,6 @@ variable {f : ℍ → ℍ} {s : Set ℍ} {q q₀ : ℍ}
 
 /-! ### Quantitative power series on coordinate boxes -/
 
-private theorem sqrt_two_sub_one_lt_one : Real.sqrt 2 - 1 < 1 := by
-  have h2 : Real.sqrt 2 < 2 := by
-    rw [← Real.sqrt_sq (by positivity : (0 : ℝ) ≤ 2)]
-    exact Real.sqrt_lt_sqrt (by positivity) (by norm_num)
-  linarith
-
 private theorem coord_mem_Ioo_of_mem_eball {a b x₀ : Fin 4 → ℝ} {δ : ℝ} (hδ₀ : 0 < δ)
     (ha : ∀ i, δ ≤ x₀ i - a i) (hb : ∀ i, δ ≤ b i - x₀ i)
     {q : ℍ} (hq : q ∈ eball (dq x₀) (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ))) (i : Fin 4) :
@@ -82,7 +79,7 @@ private theorem coord_mem_Ioo_of_mem_eball {a b x₀ : Fin 4 → ℝ} {δ : ℝ}
       ENNReal.ofReal_lt_ofReal_iff (mul_pos (sub_pos.2 Real.one_lt_sqrt_two) hδ₀)] at hq
   have hlt_δ : ‖dq (x - x₀)‖ < δ := by
     rw [dq.map_sub, hdx]
-    exact hnorm.trans (mul_lt_of_lt_one_left hδ₀ sqrt_two_sub_one_lt_one)
+    exact hnorm.trans (mul_lt_of_lt_one_left hδ₀ (by linarith [Real.sqrt_two_lt_three_halves]))
   have habs : |x i - x₀ i| < δ := by
     simpa only [Pi.sub_apply] using (abs_apply_le_norm_dq (x - x₀) i).trans_lt hlt_δ
   obtain ⟨h1, h2⟩ := abs_lt.1 habs
@@ -90,17 +87,21 @@ private theorem coord_mem_Ioo_of_mem_eball {a b x₀ : Fin 4 → ℝ} {δ : ℝ}
 
 /-- Quantitative real power-series expansion on `eball (dq x₀) ((√2 - 1) δ)` for a function
 continuous on a closed coordinate box `dq '' Icc a b` and pointwise left Fueter regular in its open
-interior, whenever `x₀` lies at coordinate distance at least `δ > 0` from every face. -/
-theorem LeftFueterOn.exists_hasFPowerSeriesOnBall_of_box
+interior, whenever `x₀` is an interior point of the box at coordinate distance at least `δ > 0`
+from every face (`a i + δ ≤ x₀ i ≤ b i - δ`). -/
+theorem LeftFueterOn.exists_hasFPowerSeriesOnBall_box
     {a b x₀ : Fin 4 → ℝ} (hf : LeftFueterOn f (dq '' pi univ fun i ↦ Ioo (a i) (b i)))
     (hc : ContinuousOn f (dq '' Icc a b)) {δ : ℝ} (hδ₀ : 0 < δ)
     (ha : ∀ i, δ ≤ x₀ i - a i) (hb : ∀ i, δ ≤ b i - x₀ i) :
     ∃ p : FormalMultilinearSeries ℝ ℍ ℍ,
       HasFPowerSeriesOnBall f p (dq x₀) (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) := by
   have hab (i : Fin 4) : a i ≤ b i := by linarith [ha i, hb i]
-  obtain ⟨p, hp⟩ := exists_hasFPowerSeriesOnBall_boxBoundarySum_left (f := f) hδ₀ ha hb
-    (fun i ↦ hc.integrableOn_boxSlice (hab i) le_rfl)
-    (fun i ↦ hc.integrableOn_boxSlice le_rfl (hab i))
+  obtain ⟨p, hp⟩ := exists_hasFPowerSeriesOnBall_boxBoundarySum_cauchyFueterKernel_mul (f := f) hδ₀
+    (fun _ hq ↦ le_norm_sub_dq_of_mem_boxBoundarySet
+      (fun i ↦ by rw [abs_sub_comm]; exact (ha i).trans (le_abs_self _))
+      (fun i ↦ (hb i).trans (le_abs_self _)) hq)
+    (fun i ↦ hc.integrableOn_dq_insertNth_Icc (hab i) le_rfl)
+    (fun i ↦ hc.integrableOn_dq_insertNth_Icc le_rfl (hab i))
   refine ⟨(1 / (2 * Real.pi ^ 2) : ℝ) • p, (hp.const_smul (c := (1 / (2 * Real.pi ^ 2) : ℝ))).congr
     fun q hq ↦ ?_⟩
   set x := QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) q
@@ -113,17 +114,21 @@ theorem LeftFueterOn.exists_hasFPowerSeriesOnBall_of_box
 
 /-- Quantitative real power-series expansion on `eball (dq x₀) ((√2 - 1) δ)` for a function
 continuous on a closed coordinate box `dq '' Icc a b` and pointwise right Fueter regular in its
-open interior, whenever `x₀` lies at coordinate distance at least `δ > 0` from every face. -/
-theorem RightFueterOn.exists_hasFPowerSeriesOnBall_of_box
+open interior, whenever `x₀` is an interior point of the box at coordinate distance at least
+`δ > 0` from every face (`a i + δ ≤ x₀ i ≤ b i - δ`). -/
+theorem RightFueterOn.exists_hasFPowerSeriesOnBall_box
     {a b x₀ : Fin 4 → ℝ} (hf : RightFueterOn f (dq '' pi univ fun i ↦ Ioo (a i) (b i)))
     (hc : ContinuousOn f (dq '' Icc a b)) {δ : ℝ} (hδ₀ : 0 < δ)
     (ha : ∀ i, δ ≤ x₀ i - a i) (hb : ∀ i, δ ≤ b i - x₀ i) :
     ∃ p : FormalMultilinearSeries ℝ ℍ ℍ,
       HasFPowerSeriesOnBall f p (dq x₀) (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) := by
   have hab (i : Fin 4) : a i ≤ b i := by linarith [ha i, hb i]
-  obtain ⟨p, hp⟩ := exists_hasFPowerSeriesOnBall_boxBoundarySum_right (f := f) hδ₀ ha hb
-    (fun i ↦ hc.integrableOn_boxSlice (hab i) le_rfl)
-    (fun i ↦ hc.integrableOn_boxSlice le_rfl (hab i))
+  obtain ⟨p, hp⟩ := exists_hasFPowerSeriesOnBall_boxBoundarySum_mul_cauchyFueterKernel (f := f) hδ₀
+    (fun _ hq ↦ le_norm_sub_dq_of_mem_boxBoundarySet
+      (fun i ↦ by rw [abs_sub_comm]; exact (ha i).trans (le_abs_self _))
+      (fun i ↦ (hb i).trans (le_abs_self _)) hq)
+    (fun i ↦ hc.integrableOn_dq_insertNth_Icc (hab i) le_rfl)
+    (fun i ↦ hc.integrableOn_dq_insertNth_Icc le_rfl (hab i))
   refine ⟨(1 / (2 * Real.pi ^ 2) : ℝ) • p, (hp.const_smul (c := (1 / (2 * Real.pi ^ 2) : ℝ))).congr
     fun q hq ↦ ?_⟩
   set x := QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) q
@@ -136,31 +141,9 @@ theorem RightFueterOn.exists_hasFPowerSeriesOnBall_of_box
 
 /-! ### Quantitative power series on Euclidean balls -/
 
-private theorem inscribedCube_Icc_subset_closedBall (x₀ : Fin 4 → ℝ) {R : ℝ} (hR : 0 ≤ R) :
-    dq '' Icc (fun i ↦ x₀ i - R / 2) (fun i ↦ x₀ i + R / 2) ⊆ closedBall (dq x₀) R := by
-  rintro _ ⟨x, hx, rfl⟩
-  rw [mem_closedBall, dist_eq_norm, ← dq.map_sub]
-  have hle : ‖dq (x - x₀)‖ ≤ 2 * (R / 2) :=
-    norm_dq_le_two_mul (by positivity) fun i ↦ by
-      simp only [Pi.sub_apply]
-      exact abs_le.2 ⟨by linarith [hx.1 i], by linarith [hx.2 i]⟩
-  linarith
-
-private theorem inscribedCube_Ioo_subset_ball (x₀ : Fin 4 → ℝ) {R : ℝ} :
-    (dq '' pi univ fun i ↦ Ioo (x₀ i - R / 2) (x₀ i + R / 2)) ⊆ ball (dq x₀) R := by
-  rintro _ ⟨x, hx, rfl⟩
-  rw [mem_ball, dist_eq_norm, ← dq.map_sub]
-  have hlt : ‖dq (x - x₀)‖ < 2 * (R / 2) :=
-    norm_dq_lt_two_mul fun i ↦ by
-      obtain ⟨h1, h2⟩ := hx i (mem_univ i)
-      simp only [Pi.sub_apply]
-      exact abs_lt.2 ⟨by linarith, by linarith⟩
-  linarith
-
 /-- Quantitative real power-series expansion on `eball q₀ ((√2 - 1) (R / 2))` for a function
-continuous on `closedBall q₀ R` (`0 < R`) and pointwise left Fueter regular on `ball q₀ R`, proved
-by inscribing the axis-aligned cube of side `R` centred at `q₀`. -/
-theorem LeftFueterOn.exists_hasFPowerSeriesOnBall_of_closedBall_of_continuousOn
+continuous on `closedBall q₀ R` (`0 < R`) and pointwise left Fueter regular on `ball q₀ R`. -/
+theorem LeftFueterOn.exists_hasFPowerSeriesOnBall_of_continuousOn_closedBall
     {R : ℝ} (hf : LeftFueterOn f (ball q₀ R)) (hc : ContinuousOn f (closedBall q₀ R))
     (hR : 0 < R) :
     ∃ p : FormalMultilinearSeries ℝ ℍ ℍ,
@@ -168,13 +151,13 @@ theorem LeftFueterOn.exists_hasFPowerSeriesOnBall_of_closedBall_of_continuousOn
   let x₀ := QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) q₀
   have hdx₀ : dq x₀ = q₀ := dq_linearEquivTuple q₀
   rw [← hdx₀] at hc hf ⊢
-  exact (hf.mono (inscribedCube_Ioo_subset_ball x₀)).exists_hasFPowerSeriesOnBall_of_box
-    (hc.mono (inscribedCube_Icc_subset_closedBall x₀ hR.le))
+  exact (hf.mono (image_dq_pi_Ioo_subset_ball x₀ R)).exists_hasFPowerSeriesOnBall_box
+    (hc.mono (image_dq_Icc_subset_closedBall x₀ R))
     (half_pos hR) (fun _ ↦ by linarith) (fun _ ↦ by linarith)
 
 /-- Quantitative real power-series expansion on `eball q₀ ((√2 - 1) (R / 2))` for a function
 continuous on `closedBall q₀ R` (`0 < R`) and pointwise right Fueter regular on `ball q₀ R`. -/
-theorem RightFueterOn.exists_hasFPowerSeriesOnBall_of_closedBall_of_continuousOn
+theorem RightFueterOn.exists_hasFPowerSeriesOnBall_of_continuousOn_closedBall
     {R : ℝ} (hf : RightFueterOn f (ball q₀ R)) (hc : ContinuousOn f (closedBall q₀ R))
     (hR : 0 < R) :
     ∃ p : FormalMultilinearSeries ℝ ℍ ℍ,
@@ -182,40 +165,40 @@ theorem RightFueterOn.exists_hasFPowerSeriesOnBall_of_closedBall_of_continuousOn
   let x₀ := QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) q₀
   have hdx₀ : dq x₀ = q₀ := dq_linearEquivTuple q₀
   rw [← hdx₀] at hc hf ⊢
-  exact (hf.mono (inscribedCube_Ioo_subset_ball x₀)).exists_hasFPowerSeriesOnBall_of_box
-    (hc.mono (inscribedCube_Icc_subset_closedBall x₀ hR.le))
+  exact (hf.mono (image_dq_pi_Ioo_subset_ball x₀ R)).exists_hasFPowerSeriesOnBall_box
+    (hc.mono (image_dq_Icc_subset_closedBall x₀ R))
     (half_pos hR) (fun _ ↦ by linarith) (fun _ ↦ by linarith)
 
 /-- If `f` is left Fueter regular on a set `s` containing `closedBall q₀ R` (`0 < R`), then `f`
 admits a convergent real power series on `eball q₀ ((√2 - 1) (R / 2))`. -/
-theorem LeftFueterOn.exists_hasFPowerSeriesOnBall_of_closedBall
+theorem LeftFueterOn.exists_hasFPowerSeriesOnBall_of_closedBall_subset
     (hf : LeftFueterOn f s) {R : ℝ} (hR : 0 < R) (hs : closedBall q₀ R ⊆ s) :
     ∃ p : FormalMultilinearSeries ℝ ℍ ℍ,
       HasFPowerSeriesOnBall f p q₀ (ENNReal.ofReal ((Real.sqrt 2 - 1) * (R / 2))) :=
   (hf.mono (ball_subset_closedBall.trans hs)
-    ).exists_hasFPowerSeriesOnBall_of_closedBall_of_continuousOn (hf.continuousOn.mono hs) hR
+    ).exists_hasFPowerSeriesOnBall_of_continuousOn_closedBall (hf.continuousOn.mono hs) hR
 
 /-- If `f` is right Fueter regular on a set `s` containing `closedBall q₀ R` (`0 < R`), then `f`
 admits a convergent real power series on `eball q₀ ((√2 - 1) (R / 2))`. -/
-theorem RightFueterOn.exists_hasFPowerSeriesOnBall_of_closedBall
+theorem RightFueterOn.exists_hasFPowerSeriesOnBall_of_closedBall_subset
     (hf : RightFueterOn f s) {R : ℝ} (hR : 0 < R) (hs : closedBall q₀ R ⊆ s) :
     ∃ p : FormalMultilinearSeries ℝ ℍ ℍ,
       HasFPowerSeriesOnBall f p q₀ (ENNReal.ofReal ((Real.sqrt 2 - 1) * (R / 2))) :=
   (hf.mono (ball_subset_closedBall.trans hs)
-    ).exists_hasFPowerSeriesOnBall_of_closedBall_of_continuousOn (hf.continuousOn.mono hs) hR
+    ).exists_hasFPowerSeriesOnBall_of_continuousOn_closedBall (hf.continuousOn.mono hs) hR
 
 /-! ### Real analyticity and smoothness -/
 
 /-- A function that is left Fueter regular on a neighbourhood of `q` is real analytic at `q`. -/
 theorem LeftFueterOn.analyticAt (hf : LeftFueterOn f s) (hs : s ∈ 𝓝 q) : AnalyticAt ℝ f q := by
   obtain ⟨R, hR, hball⟩ := Metric.nhds_basis_closedBall.mem_iff.1 hs
-  obtain ⟨p, hp⟩ := hf.exists_hasFPowerSeriesOnBall_of_closedBall hR hball
+  obtain ⟨p, hp⟩ := hf.exists_hasFPowerSeriesOnBall_of_closedBall_subset hR hball
   exact hp.analyticAt
 
 /-- A function that is right Fueter regular on a neighbourhood of `q` is real analytic at `q`. -/
 theorem RightFueterOn.analyticAt (hf : RightFueterOn f s) (hs : s ∈ 𝓝 q) : AnalyticAt ℝ f q := by
   obtain ⟨R, hR, hball⟩ := Metric.nhds_basis_closedBall.mem_iff.1 hs
-  obtain ⟨p, hp⟩ := hf.exists_hasFPowerSeriesOnBall_of_closedBall hR hball
+  obtain ⟨p, hp⟩ := hf.exists_hasFPowerSeriesOnBall_of_closedBall_subset hR hball
   exact hp.analyticAt
 
 /-- **Left Fueter regular functions are real analytic.** If `f` is pointwise left Fueter regular on

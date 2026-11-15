@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 public import TauCeti.Analysis.Quaternion.Fueter
 import Mathlib.Analysis.Analytic.Uniqueness
 import TauCeti.Analysis.Analytic.Uniqueness
@@ -35,9 +35,9 @@ accumulation point of that plane, yet takes the value `1` at `1`.
 * `TauCeti.LeftFueterOn.eqOn_of_preconnected_of_eventuallyEq`,
   `TauCeti.RightFueterOn.eqOn_of_preconnected_of_eventuallyEq`: uniqueness on preconnected open
   sets from local agreement near a point.
-* `TauCeti.LeftFueterOn.eqOn_of_preconnected_of_isOpen`,
-  `TauCeti.RightFueterOn.eqOn_of_preconnected_of_isOpen`: uniqueness on preconnected open sets from
-  agreement on a nonempty open subset.
+* `TauCeti.LeftFueterOn.eqOn_of_preconnected_of_isOpen_of_eqOn`,
+  `TauCeti.RightFueterOn.eqOn_of_preconnected_of_isOpen_of_eqOn`: uniqueness on preconnected open
+  sets from agreement on a nonempty open subset.
 * `TauCeti.LeftFueterOn.eqOn_of_preconnected_of_forall_iteratedFDeriv_eq`,
   `TauCeti.RightFueterOn.eqOn_of_preconnected_of_forall_iteratedFDeriv_eq`: uniqueness on
   preconnected open sets from equality of all iterated real Fréchet derivatives at a point.
@@ -91,7 +91,7 @@ theorem RightFueterOn.eqOn_of_preconnected_of_eventuallyEq
 
 /-- A left Fueter regular function on a preconnected open set `s` that vanishes on a nonempty open
 subset `u ⊆ s` vanishes throughout `s`. -/
-theorem LeftFueterOn.eqOn_zero_of_preconnected_of_isOpen
+theorem LeftFueterOn.eqOn_zero_of_preconnected_of_isOpen_of_eqOn_zero
     (hf : LeftFueterOn f s) (hs : IsOpen s) (hc : IsPreconnected s)
     (hu : IsOpen u) (hne : u.Nonempty) (hus : u ⊆ s) (h0 : EqOn f 0 u) : EqOn f 0 s := by
   obtain ⟨q₀, hq₀⟩ := hne
@@ -100,7 +100,7 @@ theorem LeftFueterOn.eqOn_zero_of_preconnected_of_isOpen
 
 /-- A right Fueter regular function on a preconnected open set `s` that vanishes on a nonempty open
 subset `u ⊆ s` vanishes throughout `s`. -/
-theorem RightFueterOn.eqOn_zero_of_preconnected_of_isOpen
+theorem RightFueterOn.eqOn_zero_of_preconnected_of_isOpen_of_eqOn_zero
     (hf : RightFueterOn f s) (hs : IsOpen s) (hc : IsPreconnected s)
     (hu : IsOpen u) (hne : u.Nonempty) (hus : u ⊆ s) (h0 : EqOn f 0 u) : EqOn f 0 s := by
   obtain ⟨q₀, hq₀⟩ := hne
@@ -109,7 +109,7 @@ theorem RightFueterOn.eqOn_zero_of_preconnected_of_isOpen
 
 /-- **Uniqueness principle for left Fueter regular functions.** Two left Fueter regular functions
 on a preconnected open set `s` that agree on a nonempty open subset `u ⊆ s` agree on `s`. -/
-theorem LeftFueterOn.eqOn_of_preconnected_of_isOpen
+theorem LeftFueterOn.eqOn_of_preconnected_of_isOpen_of_eqOn
     (hf : LeftFueterOn f s) (hg : LeftFueterOn g s) (hs : IsOpen s) (hc : IsPreconnected s)
     (hu : IsOpen u) (hne : u.Nonempty) (hus : u ⊆ s) (hfg : EqOn f g u) : EqOn f g s := by
   obtain ⟨q₀, hq₀⟩ := hne
@@ -118,7 +118,7 @@ theorem LeftFueterOn.eqOn_of_preconnected_of_isOpen
 
 /-- **Uniqueness principle for right Fueter regular functions.** Two right Fueter regular functions
 on a preconnected open set `s` that agree on a nonempty open subset `u ⊆ s` agree on `s`. -/
-theorem RightFueterOn.eqOn_of_preconnected_of_isOpen
+theorem RightFueterOn.eqOn_of_preconnected_of_isOpen_of_eqOn
     (hf : RightFueterOn f s) (hg : RightFueterOn g s) (hs : IsOpen s) (hc : IsPreconnected s)
     (hu : IsOpen u) (hne : u.Nonempty) (hus : u ⊆ s) (hfg : EqOn f g u) : EqOn f g s := by
   obtain ⟨q₀, hq₀⟩ := hne
@@ -161,7 +161,7 @@ theorem RightFueterOn.eqOn_of_preconnected_of_forall_iteratedFDeriv_eq
 
 /-- Every point of the real two-plane `{q : ℍ | q.re = 0 ∧ q.imI = 0}` is an accumulation point of
 that plane. -/
-theorem accPt_setOf_re_eq_zero_and_imI_eq_zero {q : ℍ} (hq : q.re = 0 ∧ q.imI = 0) :
+private theorem accPt_setOf_re_eq_zero_and_imI_eq_zero {q : ℍ} (hq : q.re = 0 ∧ q.imI = 0) :
     AccPt q (𝓟 {x : ℍ | x.re = 0 ∧ x.imI = 0}) := by
   rw [accPt_iff_nhds]
   intro U hU
@@ -181,9 +181,9 @@ theorem accPt_setOf_re_eq_zero_and_imI_eq_zero {q : ℍ} (hq : q.re = 0 ∧ q.im
     linarith
 
 /-- In quaternionic analysis, an accumulating zero set does not force a regular function to vanish:
-`q ↦ ((⟨q.re, q.imI⟩ : ℂ) : ℍ)` (`t + i x`) is both left and right Fueter regular on `univ`, and
-vanishes on the real two-plane `{q : ℍ | q.re = 0 ∧ q.imI = 0}` where every point is an
-accumulation point, yet takes the value `1 ≠ 0` at `1`. -/
+there exist a function `f : ℍ → ℍ` that is both left and right Fueter regular on `univ` and a
+nonempty set `Z ⊆ ℍ` of which every point is an accumulation point such that `f` vanishes on `Z`
+while `f 1 ≠ 0`. -/
 theorem exists_leftFueterOn_and_rightFueterOn_univ_eqOn_zero_accPt_ne_zero :
     ∃ (f : ℍ → ℍ) (Z : Set ℍ),
       LeftFueterOn f univ ∧ RightFueterOn f univ ∧

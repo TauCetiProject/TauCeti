@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Quaternion.Basic
-public import TauCeti.Analysis.Quaternion.Fueter
 public import TauCeti.Analysis.Quaternion.Kernel
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
@@ -171,7 +170,9 @@ private theorem hasFDerivAt_re_sq_sub_imI_sq (q : ℍ) :
   have h1 := (hasDerivAt_pow 2 (L₁ q)).comp_hasFDerivAt q L₁.hasFDerivAt
   have hcomp := ι.hasFDerivAt.comp q (h0.sub h1)
   have hfn : (ι ∘ (((· ^ 2) ∘ L₀) - ((· ^ 2) ∘ L₁))) =
-      fun x : ℍ ↦ ((x.re ^ 2 - x.imI ^ 2 : ℝ) : ℍ) := rfl
+      fun x : ℍ ↦ ((x.re ^ 2 - x.imI ^ 2 : ℝ) : ℍ) := by
+    funext x
+    simp [ι, L₀, L₁]
   rw [hfn] at hcomp
   convert hcomp using 1
   ext h <;> simp [reSubImIBilinear, ι, L₀, L₁, mul_comm]
