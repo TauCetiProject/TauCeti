@@ -28,6 +28,12 @@ projective terms needed to construct graded resolutions; they do not assert mini
 Over a left Noetherian algebra, the kernel is again finitely generated, giving a two-term
 presentation by finite graded free modules.
 
+The homogeneous generators `freeGenerator` form an `A`-basis `freeBasis 𝒜 d` of the underlying
+module, giving an equivalence between homogeneous `A`-bases of a graded module `M` and graded
+isomorphisms `free 𝒜 d ≅ M` (`homogeneousBasisOfFreeIso`, `freeIsoOfHomogeneousBasis`), as well
+as a canonical identification `biproductShiftRegularIsoFree` with finite categorical biproducts of
+shifted copies of `regular 𝒜`.
+
 No positivity, semisimplicity, or finite-dimensionality assumption on the graded algebra is needed.
 
 ## References
@@ -271,5 +277,109 @@ theorem exists_finite_free_presentation [IsNoetherianRing A]
   refine ⟨I, J, hI, hJ, d, e, g ≫ kernelι f, f, ?_, hf⟩
   rw [hom_comp, hom_kernelι]
   exact hg.comp_exact_iff_exact.mpr (LinearMap.exact_subtype_ker_map f.hom)
+
+/-! ### Homogeneous bases and categorical biproducts -/
+
+section FreeBasis
+
+variable (𝒜 d) in
+/-- The canonical `A`-basis of the graded free module `free 𝒜 d`, sending `i` to the homogeneous
+generator `freeGenerator i` of degree `d i`. -/
+def freeBasis : Module.Basis I A (free 𝒜 d) := by
+  classical
+  exact Module.Basis.ofRepr (finsuppLequivDFinsupp A).symm
+
+variable (𝒜 d) in
+/-- Each vector of `freeBasis` is the corresponding homogeneous generator `freeGenerator i`. -/
+@[simp]
+theorem freeBasis_apply (i : I) : freeBasis 𝒜 d i = freeGenerator (𝒜 := 𝒜) (d := d) i := by
+  classical
+  simp only [freeBasis, Module.Basis.coe_ofRepr, LinearEquiv.symm_symm]
+  apply DFinsupp.ext
+  intro j
+  rw [finsuppLequivDFinsupp_apply_apply, Finsupp.toDFinsupp_single, DirectSum.single_eq_lof A,
+    ← freeGenerator_eq_lof]
+
+variable (𝒜 d) in
+/-- The `i`-th basis vector of `freeBasis 𝒜 d` has homogeneous degree `d i`. -/
+theorem freeBasis_mem_piece (i : I) :
+    freeBasis 𝒜 d i ∈ (free 𝒜 d).grading.piece (d i) := by
+  rw [freeBasis_apply]
+  exact freeGenerator_mem_free_piece i
+
+variable (𝒜) in
+/-- Reindexing the basis degrees of a graded free module along an equivalence within the same
+universe produces a canonically isomorphic graded free module. -/
+def freeCongrIso {I' : Type uI} (e : I ≃ I') (d' : I' → ℤ) :
+    free 𝒜 (d' ∘ e) ≅ free 𝒜 d' where
+  hom := freeLift fun i => ⟨freeGenerator (e i), freeGenerator_mem_free_piece (e i)⟩
+  inv := freeLift fun j => ⟨freeGenerator (e.symm j), by
+    simpa only [Function.comp_apply, Equiv.apply_symm_apply] using
+      freeGenerator_mem_free_piece (𝒜 := 𝒜) (d := d' ∘ e) (e.symm j)⟩
+  hom_inv_id := by
+    apply free_hom_ext
+    intro i
+    rw [hom_comp, LinearMap.comp_apply, freeLift_generator, freeLift_generator, hom_id,
+      LinearMap.id_apply]
+    exact congrArg freeGenerator (e.symm_apply_apply i)
+  inv_hom_id := by
+    apply free_hom_ext
+    intro j
+    rw [hom_comp, LinearMap.comp_apply, freeLift_generator, freeLift_generator, hom_id,
+      LinearMap.id_apply]
+    exact congrArg freeGenerator (e.apply_symm_apply j)
+
+variable (𝒜) in
+/-- Extract a `Fin n`-indexed homogeneous `A`-basis of `P` from a graded isomorphism
+`free 𝒜 d' ≅ P`. -/
+def homogeneousBasisOfFreeIso {n : ℕ} {d' : ULift.{v} (Fin n) → ℤ}
+    {P : GradedModuleCat.{max uA v} 𝒜} (iso : free 𝒜 d' ≅ P) :
+    Module.Basis (Fin n) A P :=
+  ((freeBasis 𝒜 d').reindex Equiv.ulift).map <|
+    LinearEquiv.ofLinearMap iso.hom.hom iso.inv.hom
+      (congrArg Hom.hom iso.inv_hom_id) (congrArg Hom.hom iso.hom_inv_id)
+
+variable (𝒜) in
+/-- Each vector of `homogeneousBasisOfFreeIso` has the corresponding homogeneous degree. -/
+theorem homogeneousBasisOfFreeIso_mem_piece {n : ℕ} {d' : ULift.{v} (Fin n) → ℤ}
+    {P : GradedModuleCat.{max uA v} 𝒜} (iso : free 𝒜 d' ≅ P) (idx : Fin n) :
+    homogeneousBasisOfFreeIso 𝒜 iso idx ∈ P.grading.piece (d' (ULift.up idx)) := by
+  have happly : homogeneousBasisOfFreeIso 𝒜 iso idx =
+      iso.hom.hom (freeBasis 𝒜 d' (ULift.up idx)) := by
+    rw [homogeneousBasisOfFreeIso, Module.Basis.map_apply, Module.Basis.reindex_apply]
+    rfl
+  rw [happly]
+  exact map_mem iso.hom (freeBasis_mem_piece 𝒜 d' (ULift.up idx))
+
+variable (𝒜) in
+/-- A homogeneous `A`-basis `b : Module.Basis J A M` with `b j ∈ M.grading.piece (d' j)` induces a
+canonical isomorphism `free 𝒜 d' ≅ M` in `GradedModuleCat 𝒜`. -/
+def freeIsoOfHomogeneousBasis {J : Type v} {d' : J → ℤ}
+    {M : GradedModuleCat.{max uA v} 𝒜}
+    (b : Module.Basis J A M) (hb : ∀ j, b j ∈ M.grading.piece (d' j)) :
+    free 𝒜 d' ≅ M := by
+  let φ : free 𝒜 d' ⟶ M := freeLift fun j => ⟨b j, hb j⟩
+  have hφ : φ.hom = ((freeBasis 𝒜 d').equiv b (Equiv.refl J)).toLinearMap := by
+    apply (freeBasis 𝒜 d').ext
+    intro j
+    rw [LinearEquiv.coe_coe, Module.Basis.equiv_apply, Equiv.refl_apply,
+      freeBasis_apply, freeLift_generator]
+  have hbij : Function.Bijective φ.hom := by
+    rw [hφ]
+    exact ((freeBasis 𝒜 d').equiv b (Equiv.refl J)).bijective
+  have _ : IsIso φ := (isIso_iff_bijective φ).mpr hbij
+  exact asIso φ
+
+variable (𝒜) in
+/-- For a finite index type `J : Type`, the categorical biproduct of shifted copies of the regular
+graded module `regular 𝒜` is canonically isomorphic to `free 𝒜 s`. -/
+def biproductShiftRegularIsoFree [Limits.HasFiniteBiproducts (GradedModuleCat.{uA} 𝒜)]
+    {J : Type} [Finite J] (s : J → ℤ) :
+    (Limits.biproduct fun j : J =>
+      (shiftFunctor (𝒜 := 𝒜) (s j)).obj (regular (𝒜 := 𝒜))) ≅ free 𝒜 s :=
+  Limits.biproduct.isoProduct _ ≪≫
+    Limits.limit.isoLimitCone ⟨_, productFanIsLimit fun j => (regular (𝒜 := 𝒜)).shiftObj (s j)⟩
+
+end FreeBasis
 
 end TauCeti.GradedModuleCat

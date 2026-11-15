@@ -40,6 +40,9 @@ graded algebras are formed in this category with this shift.
 
 ## Main results
 
+* `TauCeti.GradedModuleCat.mem_piece_iff_of_injective` and
+  `TauCeti.GradedModuleCat.piece_eq_bot_of_injective`: graded injections reflect homogeneous
+  degrees and piece vanishing.
 * `TauCeti.GradedModuleCat.shift_functor_obj`: the shift autoequivalence sends `M` to `M{1}`.
 * `TauCeti.GradedModuleCat.mem_shiftObj_piece_iff` and
   `TauCeti.GradedModuleCat.mem_shift_inverse_obj_piece_iff`: `(M{n})ₚ = M_{p-n}` and
@@ -152,6 +155,32 @@ theorem piece_eq_bot_of_surjective (f : M ⟶ N)
   have h := f.isHomogeneous.map_decompose p x
   rw [add_zero, _root_.DirectSum.decompose_of_mem_same N.grading.piece hy, hx, map_zero] at h
   exact h.symm
+
+/-- A graded injection preserves and reflects homogeneous degrees. -/
+theorem mem_piece_iff_of_injective (f : M ⟶ N)
+    (hf : Function.Injective f.hom) {p : ℤ} {x : M} :
+    f.hom x ∈ N.grading.piece p ↔ x ∈ M.grading.piece p := by
+  refine ⟨fun hfx ↦ ?_, map_mem f⟩
+  classical
+  rw [← _root_.DirectSum.sum_support_decompose M.grading.piece x]
+  refine Submodule.sum_mem _ fun q _ ↦ ?_
+  by_cases hqp : q = p
+  · subst hqp
+    exact (_root_.DirectSum.decompose M.grading.piece x q).property
+  · have h0 : f.hom (_root_.DirectSum.decompose M.grading.piece x q) = 0 := by
+      have h := f.isHomogeneous.map_decompose q x
+      rw [add_zero, _root_.DirectSum.decompose_of_mem_ne N.grading.piece hfx (Ne.symm hqp)] at h
+      exact h
+    rw [hf (h0.trans f.hom.map_zero.symm)]
+    exact (M.grading.piece p).zero_mem
+
+/-- A graded injection reflects vanishing of a homogeneous piece. -/
+theorem piece_eq_bot_of_injective (f : M ⟶ N)
+    (hf : Function.Injective f.hom) (p : ℤ) (hp : N.grading.piece p = ⊥) :
+    M.grading.piece p = ⊥ := by
+  refine (Submodule.eq_bot_iff _).mpr fun x hx ↦ ?_
+  have hfx : f.hom x = 0 := (Submodule.eq_bot_iff _).mp hp _ (map_mem f hx)
+  exact hf (hfx.trans f.hom.map_zero.symm)
 
 end Hom
 
