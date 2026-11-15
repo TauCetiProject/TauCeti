@@ -193,15 +193,27 @@ private theorem landau_bound_le_mul_sqrt {K r : ℝ} (hK : 0 ≤ Real.log K) (hr
   rw [h1]
   linarith
 
+private theorem landau_exponential_bound_le_mul_sqrt {K r : ℝ}
+    (hK : 1 ≤ K) (hr : 1 ≤ r) :
+    48 / (4 * r) * Real.log (K * Real.exp ((4 * r) ^ (3 / 2 : ℝ))) ≤
+      (12 * Real.log K + 96) * √r := by
+  have hlogM : Real.log (K * Real.exp ((4 * r) ^ (3 / 2 : ℝ))) =
+      Real.log K + 8 * r * √r := by
+    rw [Real.log_mul (by positivity) (Real.exp_ne_zero _), Real.log_exp,
+      Real.rpow_three_div_two_eq_mul_sqrt, Real.sqrt_mul (by norm_num),
+      show √(4 : ℝ) = 2 by rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]
+    ring
+  rw [hlogM]
+  exact landau_bound_le_mul_sqrt (Real.log_nonneg hK) hr
+
 /-- Off the zeros and away from the origin, the logarithmic derivatives of an entire function of
 order at most one and of its genus-one divisor product differ by `O(√‖z‖)`. This is the
 quotient-growth estimate, proved from Landau's local lemma on `closedBall 0 (4 ‖z‖)`. -/
 private theorem OrderLE.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le
-    (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0)
-    (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
-      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2)) :
+    (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) :
     ∃ C R₀ : ℝ, ∀ z, R₀ ≤ ‖z‖ → f z ≠ 0 →
       ‖logDeriv f z - logDeriv (divisorProductOne f) z‖ ≤ C * √‖z‖ := by
+  have hsum := h.summable_divisor_toNat_mul_norm_inv_sq hf (by norm_num)
   have h0 : (0 : ℂ) ∉ (MeromorphicOn.divisor f Set.univ).support :=
     (hf.analyticAt _).notMem_divisor_support_of_ne_zero hf0
   -- Constants: the zero sum `S = ∑ m_ρ ‖ρ‖ ^ (-3/2)` and the order bound
@@ -213,7 +225,6 @@ private theorem OrderLE.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le
   obtain ⟨L, _, hL⟩ := Filter.hasBasis_cobounded_norm.mem_iff.mp hb.bound
   set K := max 1 (c / ‖f 0‖)
   have hK : 1 ≤ K := le_max_left _ _
-  have hlogK : 0 ≤ Real.log K := Real.log_nonneg hK
   refine ⟨12 * Real.log K + 96 + 2 * S, max (L / 4) 1, fun z hz hfz ↦ ?_⟩
   have hz1 : 1 ≤ ‖z‖ := (le_max_right _ _).trans hz
   have hzL : L ≤ 4 * ‖z‖ := by linarith [(le_max_left (L / 4) 1).trans hz]
@@ -242,16 +253,9 @@ private theorem OrderLE.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le
     (hf.analyticAt _).notMem_divisor_support_of_ne_zero hfz
   rw [logDeriv_divisorProductOne h0 hsum hzS]
   -- Combine the two estimates.
-  have hlogM : Real.log (K * Real.exp ((4 * ‖z‖) ^ (3 / 2 : ℝ))) =
-      Real.log K + 8 * ‖z‖ * √‖z‖ := by
-    rw [Real.log_mul (by positivity) (Real.exp_ne_zero _), Real.log_exp,
-      Real.rpow_three_div_two_eq_mul_sqrt, Real.sqrt_mul (by norm_num),
-      show √(4 : ℝ) = 2 by rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]
-    ring
-  rw [hlogM] at hland
   refine (norm_sub_le_norm_sub_add_norm_sub _ _ _).trans ((add_le_add hland htail).trans ?_)
   calc _ ≤ (12 * Real.log K + 96) * √‖z‖ + 2 * √‖z‖ * S :=
-        add_le_add_left (landau_bound_le_mul_sqrt hlogK hz1) _
+        add_le_add_left (landau_exponential_bound_le_mul_sqrt hK hz1) _
     _ = _ := by ring
 
 /-- **Hadamard factorization at order at most one.** An entire function `f` of order at most one
@@ -277,7 +281,7 @@ theorem OrderLE.exists_eq_cexp_mul_divisorProductOne (h : OrderLE f 1) (hf : Dif
   have hlog {z : ℂ} (hfz : f z ≠ 0) : logDeriv f z = logDeriv P z + deriv L z := by
     rw [hfe, logDeriv_mul_cexp (hPz hfz) (hP z) (hL' z)]
   obtain ⟨C, R₀, hC⟩ :=
-    h.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le hf hf0 hsum
+    h.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le hf hf0
   -- The bound extends across the zeros by continuity.
   have hbound (z : ℂ) (hz : R₀ + 1 ≤ ‖z‖) : ‖deriv L z‖ ≤ C * √‖z‖ := by
     have hev : ∀ᶠ w in 𝓝[≠] z, ‖deriv L w‖ ≤ C * √‖w‖ := by
