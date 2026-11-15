@@ -93,11 +93,7 @@ theorem isImmersion_smul_const_of_stabilizer_eq_bot [T2Space M] {x : M}
     (hx : MulAction.stabilizer G x = ⊥) : IsImmersion I I' ∞ (fun g : G ↦ g • x) := by
   have : CompleteSpace E' := FiniteDimensional.completeSpace ℝ E'
   have : T2Space G := I.t2Space_of_lieGroup ∞
-  have : Subsingleton (MulAction.stabilizer G x) := by
-    rw [hx]
-    infer_instance
-  exact isImmersion_smul_const_iff.2
-    ((Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot (I := I) (I' := I')).1 inferInstance)
+  exact isImmersion_smul_const_iff.2 (Lie.isotropy_eq_bot_of_stabilizer_eq_bot hx)
 
 omit [CompleteSpace E] [CompleteSpace E'] in
 /-- **Free orbits of proper smooth actions are closed embedded submanifolds.** Where the stabilizer
