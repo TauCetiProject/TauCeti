@@ -818,11 +818,11 @@ private theorem IsCore.prefix_or_prefix {v w : Γ.V} (hΓ : Γ.IsCore v) {p : Γ
   | @cons b d q e ih =>
     rcases ih (hq.of_cons Γ) with ⟨s, rfl⟩ | ⟨s, rfl⟩
     swap
-    · exact Or.inr ⟨s.cons e, rfl⟩
+    · exact Or.inr ⟨s.cons e, (Quiver.Path.comp_cons _ _ _).symm⟩
     rcases Nat.eq_zero_or_pos s.length with h0 | h0
     · obtain rfl := s.eq_of_length_zero h0
       obtain rfl := Quiver.Path.eq_nil_of_length_zero s h0
-      exact Or.inr ⟨e.toPath, rfl⟩
+      exact Or.inr ⟨e.toPath, by simp⟩
     -- The next darts `e` of `q` and `f` of `p` leave `b`, on no cyclically reduced closed path.
     obtain ⟨c, f, s', -, rfl⟩ :=
       s.eq_toPath_comp_of_length_eq_succ (Nat.succ_pred_eq_of_pos h0).symm
@@ -832,7 +832,7 @@ private theorem IsCore.prefix_or_prefix {v w : Γ.V} (hΓ : Γ.IsCore v) {p : Γ
     obtain ⟨e, he, rfl⟩ := e
     obtain ⟨f, hf, rfl⟩ := f
     obtain rfl : e = f := hef
-    exact Or.inl ⟨s', by rw [← Quiver.Path.comp_assoc]; rfl⟩
+    exact Or.inl ⟨s', by rw [← Quiver.Path.comp_assoc, Quiver.Path.comp_toPath_eq_cons]⟩
 
 /-- In a core whose base vertex is on no cyclically reduced closed path, two paths from the base
 vertex to vertices on such paths, leaving only from vertices on no such path, have the same end. -/

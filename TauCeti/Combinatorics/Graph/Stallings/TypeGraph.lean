@@ -247,7 +247,9 @@ theorem base_mem_typeVertices_iff (hS : S.graph.IsCore S.base) :
     ← hS.degree_eq_zero_iff_isAcyclic, and_iff_left rfl]
   cases S.graph.degree S.base using ENat.recTopCoe with
   | top => simp
-  | coe n => simp; omega
+  | coe n =>
+    simp only [Nat.ofNat_le_cast, Nat.cast_eq_zero, ne_eq, Nat.cast_eq_one]
+    omega
 
 /-- A based core whose base vertex does not have degree one is its own type graph: either every
 vertex has degree at least two, or the core is the base vertex alone. -/

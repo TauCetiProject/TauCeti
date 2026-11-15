@@ -177,9 +177,8 @@ theorem toGraphHom_mapE_injective (f : UnbasedIso S T) : Function.Injective f.to
 
 /-- An unbased isomorphism of labelled graphs preserves degrees. -/
 @[simp] theorem degree_vertexEquiv (f : UnbasedIso S T) (a : S.graph.V) :
-    T.graph.degree (f.vertexEquiv a) = S.graph.degree a := by
-  simpa using f.toGraphHom.degree_mapV f.toGraphHom_mapV_injective
-    ⟨f.toGraphHom_mapE_injective, fun e => ⟨f.dartEquiv.symm e, by simp⟩⟩ a
+    T.graph.degree (f.vertexEquiv a) = S.graph.degree a :=
+  (f.toIso a).degree_vertexEquiv a
 
 /-- An unbased isomorphism of labelled graphs preserves degrees, read through its inverse. -/
 @[simp] theorem degree_vertexEquiv_symm (f : UnbasedIso S T) (b : T.graph.V) :
