@@ -152,8 +152,6 @@ range, so the value is a `dite` rather than a plain application.
 
 public section
 
-open scoped BigOperators
-
 namespace Finset
 
 /-- The sum of the first `k` entries of the reversed range `N - 1, ..., 0`. -/

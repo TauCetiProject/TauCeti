@@ -23,6 +23,12 @@ provide the resulting `SeminormedRing`, `NormedRing`, and `NormedAlgebra` instan
 * `TwoSidedIdeal.Quotient.nonUnitalSeminormedRing` and
   `TwoSidedIdeal.Quotient.nonUnitalNormedRing`: quotient seminormed and normed ring structures on
   `A ⧸ I` for `I : TwoSidedIdeal A`.
+* `TwoSidedIdeal.Quotient.nonUnitalSeminormedCommRing`,
+  `TwoSidedIdeal.Quotient.nonUnitalNormedCommRing`, `TwoSidedIdeal.Quotient.seminormedCommRing` and
+  `TwoSidedIdeal.Quotient.normedCommRing`: the commutative variants of these structures.
+* `TwoSidedIdeal.Quotient.norm_mk_le`, `TwoSidedIdeal.Quotient.exists_norm_mk_lt`,
+  `TwoSidedIdeal.Quotient.norm_mk_eq` and `TwoSidedIdeal.Quotient.continuous_mk`: the basic
+  properties of the quotient norm and of the projection `mk I`.
 * `TwoSidedIdeal.Quotient.seminormedRing`, `TwoSidedIdeal.Quotient.normedRing`, and
   `TwoSidedIdeal.Quotient.normedAlgebra` (with its `NormedSpace` instance
   `TwoSidedIdeal.Quotient.normedSpace`): unital and algebra counterparts on `R ⧸ I`.
@@ -70,12 +76,9 @@ theorem norm_mk_eq (a : A) : ‖mk I a‖ = sInf ((‖a + ·‖) '' (I : Set A))
 
 /-- The quotient projection `mk I` is continuous. -/
 @[fun_prop]
-theorem continuous_mk : Continuous (mk I) := by
-  have hmk : (mk I : A → A ⧸ I) = (QuotientAddGroup.mk : A → A ⧸ I.toAddSubgroup) := by
-    ext a
-    exact (quotientAddGroupMk_eq_mk I a).symm
-  rw [hmk]
-  exact QuotientAddGroup.continuous_mk
+theorem continuous_mk : Continuous (mk I) :=
+  (QuotientAddGroup.continuous_mk (N := I.toAddSubgroup)).congr fun a =>
+    quotientAddGroupMk_eq_mk I a
 
 noncomputable instance nonUnitalSeminormedRing : NonUnitalSeminormedRing (A ⧸ I) where
   dist_eq := dist_eq_norm_neg_add
