@@ -429,10 +429,15 @@ variable {E E' M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
   {I : ModelWithCorners ℝ E E'} [TopologicalSpace M] [ChartedSpace E' M] [IsManifold I ⊤ M]
   {H : Fin 3 → ℝ → M → ℝ} {Hout G G' : ℝ → M → ℝ} {L : ℝ}
 
-/-- A neck Hamiltonian scaled by `β ∈ [0, 1]` keeps its bound. -/
-private theorem ofReal_abs_smoothTransition_mul_le {b : ℝ} (hb : 0 ≤ b) (s : ℝ) :
-    ENNReal.ofReal (|smoothTransition s| * b) ≤ ENNReal.ofReal b :=
-  ENNReal.ofReal_le_ofReal (mul_le_of_le_one_left hb (smoothTransition.abs_le_one s))
+/-- The two copies of a neck Hamiltonian scaled by `β ∈ [0, 1]` are absorbed into twice any
+bound `c` of the unscaled neck. -/
+private theorem add_ofReal_abs_smoothTransition_mul_le (a : ENNReal) {b : ℝ} {c : ENNReal}
+    (hb : 0 ≤ b) (s : ℝ) (hc : ENNReal.ofReal b ≤ c) :
+    a + (ENNReal.ofReal (|smoothTransition s| * b) +
+      ENNReal.ofReal (|smoothTransition s| * b)) ≤ a + 2 * c := by
+  have hβ := ENNReal.ofReal_le_ofReal (mul_le_of_le_one_left hb (smoothTransition.abs_le_one s))
+  rw [two_mul]
+  exact add_le_add le_rfl (add_le_add (hβ.trans hc) (hβ.trans hc))
 
 /-- Before the path, the family is the plumbed datum of `(x₁ x₂) x₃` with a scaled neck, whose
 curvature bound is that of the plumbed datum. -/
@@ -450,7 +455,6 @@ private theorem lintegral_enorm_hamiltonianCurvature_associativityPerturbation_l
           Complex.I) z (u z)‖ₑ ≤
       ∑ i, ENNReal.ofReal (B i) + ENNReal.ofReal Bout +
         2 * (ENNReal.ofReal BG + ENNReal.ofReal BG') := by
-  have h := ofReal_abs_smoothTransition_mul_le ((abs_nonneg _).trans (hBG 0 (u 0))) (-τ)
   rw [associativityPerturbation_eq_left (by linarith) hτ.le]
   refine (ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_update_smul_le
     (q := zero) (Ha := leftInserted H G) (Hb := leftReceiving H Hout G) (by decide)
@@ -465,14 +469,8 @@ private theorem lintegral_enorm_hamiltonianCurvature_associativityPerturbation_l
     (fun p hp => by cases p; exacts [absurd rfl hp, hB 2, hBout]) hBG u).trans ?_
   simp only [Puncture.sum_univ, Fin.sum_univ_three, update_apply, reduceCtorEq, ite_false,
     ite_true]
-  calc _ = (ENNReal.ofReal (B 0) + ENNReal.ofReal (B 1) + ENNReal.ofReal (B 2) +
-        ENNReal.ofReal Bout) + (ENNReal.ofReal (|smoothTransition (-τ)| * BG) +
-          ENNReal.ofReal (|smoothTransition (-τ)| * BG)) := by ring
-    _ ≤ (ENNReal.ofReal (B 0) + ENNReal.ofReal (B 1) + ENNReal.ofReal (B 2) +
-        ENNReal.ofReal Bout) + (ENNReal.ofReal BG + ENNReal.ofReal BG) := by gcongr
-    _ ≤ _ := by
-      rw [two_mul]
-      exact add_le_add le_rfl (add_le_add le_self_add le_self_add)
+  exact (le_of_eq (by ring)).trans (add_ofReal_abs_smoothTransition_mul_le _
+    ((abs_nonneg _).trans (hBG 0 (u 0))) (-τ) le_self_add)
 
 /-- After the path, the family is the plumbed datum of `x₁ (x₂ x₃)` with a scaled neck, whose
 curvature bound is that of the plumbed datum. -/
@@ -490,7 +488,6 @@ private theorem lintegral_enorm_hamiltonianCurvature_associativityPerturbation_l
           Complex.I) z (u z)‖ₑ ≤
       ∑ i, ENNReal.ofReal (B i) + ENNReal.ofReal Bout +
         2 * (ENNReal.ofReal BG + ENNReal.ofReal BG') := by
-  have h := ofReal_abs_smoothTransition_mul_le ((abs_nonneg _).trans (hBG' 0 (u 0))) (τ - 4)
   rw [associativityPerturbation_eq_right (by linarith) hτ.le]
   refine (ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_update_smul_le
     (q := one) (Ha := rightInserted H G') (Hb := rightReceiving H Hout G') (by decide)
@@ -505,14 +502,8 @@ private theorem lintegral_enorm_hamiltonianCurvature_associativityPerturbation_l
     (fun p hp => by cases p; exacts [hB 0, absurd rfl hp, hBout]) hBG' u).trans ?_
   simp only [Puncture.sum_univ, Fin.sum_univ_three, update_apply, reduceCtorEq, ite_false,
     ite_true]
-  calc _ = (ENNReal.ofReal (B 0) + ENNReal.ofReal (B 1) + ENNReal.ofReal (B 2) +
-        ENNReal.ofReal Bout) + (ENNReal.ofReal (|smoothTransition (τ - 4)| * BG') +
-          ENNReal.ofReal (|smoothTransition (τ - 4)| * BG')) := by ring
-    _ ≤ (ENNReal.ofReal (B 0) + ENNReal.ofReal (B 1) + ENNReal.ofReal (B 2) +
-        ENNReal.ofReal Bout) + (ENNReal.ofReal BG' + ENNReal.ofReal BG') := by gcongr
-    _ ≤ _ := by
-      rw [two_mul]
-      exact add_le_add le_rfl (add_le_add le_add_self le_add_self)
+  exact (le_of_eq (by ring)).trans (add_ofReal_abs_smoothTransition_mul_le _
+    ((abs_nonneg _).trans (hBG' 0 (u 0))) (τ - 4) le_add_self)
 
 /-- **The integrated curvature of the associativity family is bounded uniformly.** For period-one
 `C¹` Hamiltonians `H i`, `Hout`, `G` and `G'` on a manifold `M` with a two-form `ω`, bounded by

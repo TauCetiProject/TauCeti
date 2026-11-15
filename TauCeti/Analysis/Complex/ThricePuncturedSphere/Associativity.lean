@@ -344,8 +344,9 @@ theorem norm_associativityCenters_add_le (hf₀ : 0 ≤ f) (hf₁ : f ≤ 1) (τ
     have hd : |smoothTransition (τ - 1) - smoothTransition (τ - 3)| ≤ 1 :=
       abs_le.2 ⟨by linarith, by linarith⟩
     nlinarith
-  · rw [show (⟨2, by norm_num⟩ : Fin 3) = 2 from rfl, associativityCenters_two,
-      norm_associativityScales_two hf₀, Complex.norm_real, Real.norm_of_nonneg (by nlinarith)]
+  · simp only [Fin.reduceFinMk]
+    rw [associativityCenters_two, norm_associativityScales_two hf₀, Complex.norm_real,
+      Real.norm_of_nonneg (by nlinarith)]
     nlinarith
 
 /-! ### Smoothness -/
