@@ -30,6 +30,7 @@ public section
 namespace TauCeti.Sporadic
 
 /-- The ATLAS second Janko permutation model has order `604800 = 100 * 63 * 24 * 4`. -/
+@[simp]
 theorem card_J2 : Nat.card J2 = 604800 := by
   rw [J2.card_eq_mul_card_stabilizer_zero_one_two, J2.card_stabilizerChain_three]
 

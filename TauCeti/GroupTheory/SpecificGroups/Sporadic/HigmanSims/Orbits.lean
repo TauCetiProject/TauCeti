@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.HigmanSims.Basic
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
 public import Mathlib.GroupTheory.GroupAction.Transitive
+import TauCeti.GroupTheory.Perm.InvariantRelation
 
 /-!
 # Basic orbits and a base of the Higman--Sims model
@@ -888,27 +889,9 @@ theorem card_stabilizerChain_three_eq :
 
 /-! ### The last basic orbit -/
 
--- Equality as well as relatedness to an anchor is recorded, so fixed anchors are distinguished
--- from other points with the same relation pattern.
-private def profile (l : List (Fin 100)) (x : Fin 100) : List (Bool × Bool) :=
-  l.map fun z => (decide (x = z), related z x)
-
-private theorem profile_apply (g : Equiv.Perm (Fin 100))
-    (hg : ∀ x y, related (g x) (g y) = related x y) {l : List (Fin 100)}
-    (hl : ∀ z ∈ l, g z = z) (x : Fin 100) : profile l (g x) = profile l x := by
-  apply List.map_congr_left
-  intro z hz
-  have hfix := hl z hz
-  have heq : (g x = z) ↔ x = z := by
-    constructor
-    · intro h
-      exact g.injective (h.trans hfix.symm)
-    · rintro rfl
-      exact hfix
-  exact Prod.ext (Bool.decide_congr heq) (by simpa only [hfix] using hg z x)
-
 private theorem profile_four (x : Fin 100) :
-    profile [0, 1, 2, 3] x = profile [0, 1, 2, 3] 4 → x ∈ ({4, 8, 47} : Finset (Fin 100)) := by
+    relationProfile related [0, 1, 2, 3] x = relationProfile related [0, 1, 2, 3] 4 →
+      x ∈ ({4, 8, 47} : Finset (Fin 100)) := by
   revert x
   decide +kernel
 
@@ -931,7 +914,7 @@ theorem orbit_stabilizerChain_four :
   · rintro ⟨g, rfl⟩
     obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff HS pointSequence).mp g.2
     apply profile_four
-    apply profile_apply (g : Equiv.Perm (Fin 100)) (related_apply hg)
+    apply relationProfile_apply (related_apply hg)
     intro z hz
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hz
     rcases hz with rfl | rfl | rfl | rfl
@@ -989,36 +972,16 @@ private theorem rigidAnchors_rank : ∀ x, ∀ z ∈ rigidAnchors x, rigidRank z
   decide +kernel
 
 private theorem rigidAnchors_unique : ∀ x : Fin 100, 6 ≤ x.val → ∀ y,
-    profile (rigidAnchors x) y = profile (rigidAnchors x) x → y = x := by
+    relationProfile related (rigidAnchors x) y =
+      relationProfile related (rigidAnchors x) x → y = x := by
   decide +kernel
-
-private theorem fixed_of_rank (g : Equiv.Perm (Fin 100))
-    (hg : ∀ x y, related (g x) (g y) = related x y) (n : ℕ)
-    (hseed : ∀ x : Fin 100, rigidRank x < n → x.val < 6 → g x = x) :
-    ∀ x, rigidRank x < n → g x = x := by
-  have h : ∀ m, ∀ x, rigidRank x = m → m < n → g x = x := by
-    intro m
-    induction m using Nat.strong_induction_on with
-    | ind m ih =>
-      intro x hxm hmn
-      by_cases hx : x.val < 6
-      · exact hseed x (hxm ▸ hmn) hx
-      · apply rigidAnchors_unique x (by omega)
-        apply profile_apply g hg
-        intro z hz
-        have hlt := rigidAnchors_rank x z hz
-        rw [hxm] at hlt
-        exact ih _ hlt z rfl (hlt.trans hmn)
-  exact fun x hx => h _ x rfl hx
 
 private theorem eq_one_of_fix_six (g : Equiv.Perm (Fin 100))
     (hg : ∀ x y, related (g x) (g y) = related x y)
-    (hfix : ∀ x : Fin 100, x.val < 6 → g x = x) : g = 1 := by
-  apply Equiv.ext
-  intro x
-  exact fixed_of_rank g hg 100 (fun x _ hx => hfix x hx) x (by
-    have : ∀ x, rigidRank x < 100 := by decide +kernel
-    exact this x)
+    (hfix : ∀ x : Fin 100, x.val < 6 → g x = x) : g = 1 :=
+  eq_one_of_relationProfile_unique (s := {x : Fin 100 | x.val < 6}) hg
+    (fun x _ => rigidAnchors_rank x)
+    (fun x hx => rigidAnchors_unique x (Nat.le_of_not_lt hx)) hfix
 
 -- The extra symmetry fixing the first five points exchanges 35 disjoint pairs. It preserves
 -- the relation but is odd; it therefore cannot lie in HS.
@@ -1042,21 +1005,27 @@ private theorem eq_one_of_fix_five {g : Equiv.Perm (Fin 100)} (hg : g ∈ HS)
     (hfix : ∀ i < 5, g (pointSequence i) = pointSequence i) : g = 1 := by
   have hfix' (x : Fin 100) (hx : x.val < 5) : g x = x := by
     simpa only [pointSequence_apply, Fin.ofNat_eq_cast, Fin.cast_val_eq_self] using hfix x.val hx
-  have hseed : ∀ x : Fin 100, rigidRank x < 30 → x.val < 6 → g x = x := by
-    intro x hx h6
+  have hseed : ∀ x ∈ {x : Fin 100 | x.val < 6}, rigidRank x < 30 → g x = x := by
+    intro x h6 hx
     have h5 : x.val < 5 := by
       have : ∀ x : Fin 100, rigidRank x < 30 → x.val < 6 → x.val < 5 := by decide +kernel
       exact this x hx h6
     exact hfix' x h5
-  have hf := fixed_of_rank g (related_apply hg) 30 hseed
-  have hprofile : profile [9, 33, 46] (g 5) = profile [9, 33, 46] 5 := by
-    apply profile_apply g (related_apply hg)
+  have hf (z : Fin 100) (hz : rigidRank z < 30) : g z = z :=
+    apply_eq_self_of_relationProfile_unique (related_apply hg)
+      (fun x _ => rigidAnchors_rank x)
+      (fun x hx => rigidAnchors_unique x (Nat.le_of_not_lt hx)) hseed hz
+  have hprofile :
+      relationProfile related [9, 33, 46] (g 5) = relationProfile related [9, 33, 46] 5 := by
+    apply relationProfile_apply (related_apply hg)
     intro z hz
     apply hf
     have : ∀ z ∈ ([9, 33, 46] : List (Fin 100)), rigidRank z < 30 := by decide +kernel
     exact this z hz
   have h5 : g 5 = 5 ∨ g 5 = 85 := by
-    have : ∀ x : Fin 100, profile [9, 33, 46] x = profile [9, 33, 46] 5 → x = 5 ∨ x = 85 := by
+    have : ∀ x : Fin 100,
+        relationProfile related [9, 33, 46] x = relationProfile related [9, 33, 46] 5 →
+          x = 5 ∨ x = 85 := by
       decide +kernel
     exact this _ hprofile
   have hsix : ∀ x : Fin 100, x.val < 6 → x.val < 5 ∨ x = 5 := by decide +kernel

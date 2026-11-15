@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Janko.Two.Basic
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
 import TauCeti.GroupTheory.GroupAction.Closure
+import TauCeti.GroupTheory.Perm.InvariantRelation
 import Mathlib.Algebra.Group.Action.Prod
 import Mathlib.GroupTheory.GroupAction.Transitive
 import Mathlib.Algebra.Group.Submonoid.BigOperators
@@ -590,25 +591,6 @@ theorem card_eq_mul_card_stabilizer_zero_one_two :
 
 /-! ### Four-point base rigidity -/
 
--- Equality as well as relatedness to an anchor is recorded, so fixed anchors are distinguished
--- from other points with the same relation pattern.
-private def profile (l : List (Fin 100)) (x : Fin 100) : List (Bool × Bool) :=
-  l.map fun z ↦ (decide (x = z), orbital z x)
-
-private theorem profile_apply (g : Equiv.Perm (Fin 100))
-    (hg : ∀ x y, orbital (g x) (g y) = orbital x y) {l : List (Fin 100)}
-    (hl : ∀ z ∈ l, g z = z) (x : Fin 100) : profile l (g x) = profile l x := by
-  apply List.map_congr_left
-  intro z hz
-  have hfix := hl z hz
-  have heq : (g x = z) ↔ x = z := by
-    constructor
-    · intro h
-      exact g.injective (h.trans hfix.symm)
-    · rintro rfl
-      exact hfix
-  exact Prod.ext (Bool.decide_congr heq) (by simpa only [hfix] using hg z x)
-
 -- Ranks and short lists of earlier anchors certify successive determination of all 100 points
 -- once `0, 1, 2, 3` are fixed by an automorphism of `orbital`.
 private def rigidRank (x : Fin 100) : ℕ :=
@@ -648,28 +630,16 @@ private theorem rigidAnchors_rank : ∀ x, ∀ z ∈ rigidAnchors x, rigidRank z
   decide +kernel
 
 private theorem rigidAnchors_unique : ∀ x : Fin 100, 4 ≤ x.val → ∀ y,
-    profile (rigidAnchors x) y = profile (rigidAnchors x) x → y = x := by
+    relationProfile orbital (rigidAnchors x) y =
+      relationProfile orbital (rigidAnchors x) x → y = x := by
   decide +kernel
 
 private theorem eq_one_of_fix_four (g : Equiv.Perm (Fin 100))
     (hg : ∀ x y, orbital (g x) (g y) = orbital x y)
-    (hfix : ∀ x : Fin 100, x.val < 4 → g x = x) : g = 1 := by
-  have h : ∀ m, ∀ x, rigidRank x = m → g x = x := by
-    intro m
-    induction m using Nat.strong_induction_on with
-    | ind m ih =>
-      intro x hxm
-      by_cases hx : x.val < 4
-      · exact hfix x hx
-      · apply rigidAnchors_unique x (by omega)
-        apply profile_apply g hg
-        intro z hz
-        have hlt := rigidAnchors_rank x z hz
-        rw [hxm] at hlt
-        exact ih _ hlt z rfl
-  apply Equiv.Perm.ext
-  intro x
-  exact h _ x rfl
+    (hfix : ∀ x : Fin 100, x.val < 4 → g x = x) : g = 1 :=
+  eq_one_of_relationProfile_unique (s := {x : Fin 100 | x.val < 4}) hg
+    (fun x _ ↦ rigidAnchors_rank x)
+    (fun x hx ↦ rigidAnchors_unique x (Nat.le_of_not_lt hx)) hfix
 
 /-- The points `0, 1, 2, 3` form a base of the ATLAS model of `J₂`. -/
 theorem stabilizerChain_four_eq_bot : J2.stabilizerChain basePoint 4 = ⊥ := by
@@ -683,23 +653,9 @@ theorem stabilizerChain_four_eq_bot : J2.stabilizerChain basePoint 4 = ⊥ := by
 
 /-! ### The fourth basic orbit -/
 
-private def commonCount (l : List (Fin 100)) (x : Fin 100) : ℕ :=
-  (Finset.univ.filter fun y ↦ orbital x y = true ∧ ∀ z ∈ l, orbital z y = true).card
-
-private theorem commonCount_apply {g : Equiv.Perm (Fin 100)} (hg : g ∈ J2)
-    {l : List (Fin 100)} (hl : ∀ z ∈ l, g z = z) (x : Fin 100) :
-    commonCount l (g x) = commonCount l x := by
-  symm
-  apply Finset.card_equiv g
-  intro y
-  have h (z : Fin 100) (hz : z ∈ l) : orbital z (g y) = orbital z y := by
-    simpa only [hl z hz] using orbital_apply hg z y
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and, orbital_apply hg]
-  exact and_congr_right fun _ ↦ forall_congr' fun z ↦ forall_congr' fun hz ↦ by rw [h z hz]
-
 private theorem fourthOrbit_candidates (x : Fin 100) :
-    profile [0, 1, 2] x = profile [0, 1, 2] 3 →
-      commonCount [0, 1, 2] x = commonCount [0, 1, 2] 3 →
+    relationProfile orbital [0, 1, 2] x = relationProfile orbital [0, 1, 2] 3 →
+      commonNeighborCount orbital [0, 1, 2] x = commonNeighborCount orbital [0, 1, 2] 3 →
         x ∈ ({3, 6, 41, 56} : Finset (Fin 100)) ∨
           x ∈ ({23, 31, 49, 97} : Finset (Fin 100)) := by
   revert x
@@ -802,7 +758,8 @@ theorem orbit_stabilizerChain_three :
       · simpa only [basePoint_def, Fin.reduceOfNat, Equiv.Perm.smul_def] using hfix 1 (by omega)
       · simpa only [basePoint_def, Fin.reduceOfNat, Equiv.Perm.smul_def] using hfix 2 (by omega)
     have hcand := fourthOrbit_candidates ((g : Equiv.Perm (Fin 100)) 3)
-      (profile_apply _ (orbital_apply hgJ) hfixed 3) (commonCount_apply hgJ hfixed 3)
+      (relationProfile_apply (orbital_apply hgJ) hfixed 3)
+      (commonNeighborCount_apply (orbital_apply hgJ) hfixed 3)
     exact hcand.resolve_right (not_mem_oddCandidates g.2)
   · intro hx
     simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at hx
@@ -820,12 +777,16 @@ theorem ncard_orbit_stabilizerChain_three :
   decide +kernel
 
 /-- The pointwise stabilizer of `{0, 1, 2}` in the ATLAS model of `J₂` has order 4. -/
+-- Simplify before the subtype's membership predicate expands the stabilizer chain.
+@[simp↓]
 theorem card_stabilizerChain_three : Nat.card (J2.stabilizerChain basePoint 3) = 4 := by
   simpa only [Nat.reduceAdd, ncard_orbit_stabilizerChain_three,
     stabilizerChain_four_eq_bot, Subgroup.card_bot, mul_one] using
     (J2.ncard_orbit_mul_card_stabilizerChain_succ basePoint 3).symm
 
 /-- The pointwise stabilizer of `{0, 1}` in the ATLAS model of `J₂` has order 96. -/
+-- Simplify before the subtype's membership predicate expands the stabilizer chain.
+@[simp↓]
 theorem card_stabilizerChain_two : Nat.card (J2.stabilizerChain basePoint 2) = 96 := by
   simpa only [Nat.reduceAdd, ncard_orbit_stabilizer_zero_one_two,
     card_stabilizerChain_three, Nat.reduceMul] using
