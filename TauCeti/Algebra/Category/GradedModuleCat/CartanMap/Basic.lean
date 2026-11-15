@@ -212,21 +212,19 @@ private def embed (𝒜 : ℤ → Submodule k A) :
   (gradedFiniteModules 𝒜).lift (inducedFunctor toGradedModuleCat)
     (fun M => (inferInstance : Module.Finite A (toGradedModuleCat M)))
 
-private instance : (embed 𝒜).Faithful :=
-  by
-    let _ : (inducedFunctor (toGradedModuleCat (𝒜 := 𝒜))).Faithful :=
-      (fullyFaithfulInducedFunctor (toGradedModuleCat (𝒜 := 𝒜))).faithful
-    exact Functor.Faithful.of_comp_iso
-      ((gradedFiniteModules 𝒜).liftCompιIso
-        (inducedFunctor (toGradedModuleCat (𝒜 := 𝒜))) _)
+private instance : (embed 𝒜).Faithful := by
+  let _ : (inducedFunctor (toGradedModuleCat (𝒜 := 𝒜))).Faithful :=
+    (fullyFaithfulInducedFunctor (toGradedModuleCat (𝒜 := 𝒜))).faithful
+  exact Functor.Faithful.of_comp_iso
+    ((gradedFiniteModules 𝒜).liftCompιIso
+      (inducedFunctor (toGradedModuleCat (𝒜 := 𝒜))) _)
 
-private instance : (embed 𝒜).Full :=
-  by
-    let _ : (inducedFunctor (toGradedModuleCat (𝒜 := 𝒜))).Full :=
-      (fullyFaithfulInducedFunctor (toGradedModuleCat (𝒜 := 𝒜))).full
-    exact Functor.Full.of_comp_faithful_iso
-      ((gradedFiniteModules 𝒜).liftCompιIso
-        (inducedFunctor (toGradedModuleCat (𝒜 := 𝒜))) _)
+private instance : (embed 𝒜).Full := by
+  let _ : (inducedFunctor (toGradedModuleCat (𝒜 := 𝒜))).Full :=
+    (fullyFaithfulInducedFunctor (toGradedModuleCat (𝒜 := 𝒜))).full
+  exact Functor.Full.of_comp_faithful_iso
+    ((gradedFiniteModules 𝒜).liftCompιIso
+      (inducedFunctor (toGradedModuleCat (𝒜 := 𝒜))) _)
 
 variable (M : GradedModuleCat.{uA} 𝒜) [Module.Finite A M]
 
@@ -417,7 +415,7 @@ module. When `𝒜` is a decomposition of `A`, it is the split exact structure, 
 /-- The shift on finite graded modules agrees with the ambient grading shift after applying the
 full-subcategory inclusion. -/
 noncomputable def gradedFiniteModulesExactStructureShiftFunctorCompιIso :
-  (gradedFiniteModulesExactStructure 𝒜).shift.functor ⋙ (gradedFiniteModules 𝒜).ι ≅
+    (gradedFiniteModulesExactStructure 𝒜).shift.functor ⋙ (gradedFiniteModules 𝒜).ι ≅
       (gradedFiniteModules 𝒜).ι ⋙ (GradedModuleCat.shift 𝒜).functor := by
   rw [gradedFiniteModulesExactStructure, GradedExactStructure.fullSubcategory_shift]
   let e := (gradedModuleCanonicalExactStructure 𝒜).fullSubcategoryShiftFunctorCompιIso
@@ -561,22 +559,21 @@ decomposition of `A`, these are projective objects of the graded module category
 structure is split (`TauCeti.gradedFiniteProjectiveModulesExactStructure_eq_split`). -/
 noncomputable def gradedCartanMap (𝒜 : ℤ → Submodule k A) :
     LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) →ₗ[LaurentPolynomial ℤ]
-      LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) :=
-  by
-    let h : GradedConflationExact
-        (gradedFiniteProjectiveModulesExactStructure 𝒜)
-        (gradedFiniteModulesExactStructure 𝒜)
-        (ObjectProperty.ιOfLE gradedFiniteProjectiveModules_le_finiteModules) := by
-      rw [gradedFiniteProjectiveModulesExactStructure,
-        gradedFiniteModulesExactStructure]
-      exact GradedConflationExact.ιOfLE (gradedModuleCanonicalExactStructure 𝒜)
-        (gradedFiniteProjectiveModules 𝒜)
-        isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
-        isExtensionClosed_gradedFiniteModules_gradedAbelian
-        gradedFiniteProjectiveModules_gradedAbelian_shift
-        gradedFiniteModules_gradedAbelian_shift
-        gradedFiniteProjectiveModules_le_finiteModules
-    exact LaurentK0.map.{uA, uA} h
+      LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) := by
+  let h : GradedConflationExact
+      (gradedFiniteProjectiveModulesExactStructure 𝒜)
+      (gradedFiniteModulesExactStructure 𝒜)
+      (ObjectProperty.ιOfLE gradedFiniteProjectiveModules_le_finiteModules) := by
+    rw [gradedFiniteProjectiveModulesExactStructure,
+      gradedFiniteModulesExactStructure]
+    exact GradedConflationExact.ιOfLE (gradedModuleCanonicalExactStructure 𝒜)
+      (gradedFiniteProjectiveModules 𝒜)
+      isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
+      isExtensionClosed_gradedFiniteModules_gradedAbelian
+      gradedFiniteProjectiveModules_gradedAbelian_shift
+      gradedFiniteModules_gradedAbelian_shift
+      gradedFiniteProjectiveModules_le_finiteModules
+  exact LaurentK0.map.{uA, uA} h
 
 /-- The graded Cartan map sends the class of a finite graded projective to the class of the same
 graded module in the finite-module category. -/

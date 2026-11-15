@@ -88,8 +88,8 @@ private theorem isZero_singularHomology_succ_of_bijective_zsmul (hmk : (m : k) =
   | d + 1, X, _, x, hX, q => by
     have : PathConnectedSpace X := hX.pathConnectedSpace
     have hπ₁ : Subsingleton (π_ 1 X x) := hX.subsingleton_homotopyGroup (by omega)
-    exact isZero_singularHomology_of_loopSpace x hπ₁ k
-      (isZero_singularHomology_succ_of_bijective_zsmul hmk hA d hX.loopSpace) q
+    exact isZero_singularHomology_of_loopSpace x hπ₁ k q fun r _ ↦
+      isZero_singularHomology_succ_of_bijective_zsmul hmk hA d hX.loopSpace r
 
 /-- **`K(A, n)` spaces of uniquely `m`-divisible abelian groups are acyclic modulo `m`.** If
 multiplication by the integer `m` is bijective on an abelian group `A` and `k` is a commutative

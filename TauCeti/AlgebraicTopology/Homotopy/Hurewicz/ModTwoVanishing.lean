@@ -150,7 +150,7 @@ theorem isIso_singularHomologyMap_nConnectedCoverProj_mod_two
       ((isZero_singularHomology_int_zmod_two_iff Z (m + 3)).2 hm₃)
   have hEM := isEilenbergMacLaneSpace_fiber_nConnectedCoverProj Z z m fun k _ hk ↦ hZ k hk
   refine TopCat.isIso_singularHomologyMap_of_fiber (serreFibrations_nConnectedCoverProj (m + 2) Z z)
-    z (ZMod 2) hEM.pathConnectedSpace (fun r hr ↦ ?_) q
+    z (ZMod 2) q hEM.pathConnectedSpace fun r hr _ ↦ ?_
   obtain ⟨d, rfl⟩ : ∃ d, r = d + 1 := ⟨r - 1, by omega⟩
   exact hEM.isZero_singularHomology_of_isUniquelyTwoDivisible_additive hdiv d
 
