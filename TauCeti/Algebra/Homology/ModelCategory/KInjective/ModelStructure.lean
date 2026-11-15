@@ -13,6 +13,7 @@ import Mathlib.Algebra.Homology.Factorizations.CM5b
 import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.EnoughInjectives
 import TauCeti.Algebra.Homology.HomologySequenceLemmas
 import TauCeti.Algebra.Homology.Homotopy
+import TauCeti.Algebra.Homology.HomotopyCofiber
 import TauCeti.Algebra.Homology.HomotopyCategory.KInjective
 import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Kernel
 
@@ -192,16 +193,9 @@ lemma rlp_monomorphisms_le_trivialFibrations :
     exact antitone_rlp inf_le_left _ hp
   have hK : (monomorphisms _).rlp (0 : kernel p ⟶ 0) :=
     IsStableUnderBaseChange.of_isPullback (IsPullback.kernel_ι p) hp
-  have hc : ∀ j, ∃ i, (ComplexShape.up ℤ).Rel i j := fun j ↦ ⟨j - 1, by simp⟩
-  -- the inclusion of the kernel into the contractible mapping cone of its identity
-  let ι := HomologicalComplex.homotopyCofiber.inr (𝟙 (kernel p))
-  have : Mono ι := HomologicalComplex.mono_of_mono_f _ fun k ↦
-    mono_of_mono_fac (HomologicalComplex.homotopyCofiber.inrX_sndX (𝟙 (kernel p)) k)
-  have := hK ι this
-  have sq : CommSq (𝟙 (kernel p)) ι (0 : kernel p ⟶ 0) 0 := ⟨(isZero_zero _).eq_of_tgt _ _⟩
-  have hacyc : (kernel p).Acyclic := Homotopy.acyclic ((Homotopy.ofEq (by simp [ι])).trans
-    (((HomologicalComplex.homotopyCofiber.inrCompHomotopy (𝟙 _) hc).compRight sq.lift).trans
-      (Homotopy.ofEq (by simp))))
+  have := hK (HomologicalComplex.homotopyCofiber.inr (𝟙 (kernel p))) (inferInstanceAs (Mono _))
+  have hacyc : (kernel p).Acyclic := Homotopy.acyclic
+    (nonempty_homotopy_zero_of_hasLiftingProperty (𝟙 (kernel p)) (p := 0) (isZero_zero _)).some
   have := ((fibration_iff p).1 hfib).1.epi
   have hS : (ShortComplex.mk _ _ (kernel.condition p)).ShortExact :=
     { exact := ShortComplex.exact_kernel p }
