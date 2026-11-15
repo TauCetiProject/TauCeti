@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.RademacherSum.Moment
+public import TauCeti.Analysis.Normed.Module.RademacherSum.Basic
 
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Order
@@ -23,29 +23,31 @@ time without branching on a maximizing corner.
 
 Specializing `Φ` to `id` and to `t ↦ t ^ p` (`1 ≤ p`) gives the `L¹`, `K_p`, and `R₂` contraction
 principles with sharp constant `1`, both for an explicit bound `∀ i, |α i| ≤ M` and in terms of
-`‖WithLp.toLp ∞ α‖`. Specializing `α` to `{0, 1}` indicator functions shows that restricting a
-family to a subset can only decrease `K_p` for `1 ≤ p`; consequently, for an arbitrary index type
-`α` and `1 ≤ p`, the finite truncations `s ↦ K_p(x|_s)` on `Finset α` are monotone and converge
-along `Filter.atTop` whenever they are bounded above (in particular whenever `∑' i, ‖xᵢ‖ < ∞`).
+`‖WithLp.toLp ∞ α‖`. Specializing `α` to `{0, 1}` indicator functions shows that zeroing out
+coordinates not satisfying a predicate can only decrease `K_p` for `1 ≤ p`; consequently, for an
+arbitrary index type `α` and `1 ≤ p`, the finite truncations `s ↦ K_p(x|_s)` on `Finset α` are
+monotone and converge along `Filter.atTop` whenever they are bounded above (in particular whenever
+`∑' i, ‖xᵢ‖ < ∞`).
 
 ## Main declarations
 
-* `TauCeti.expect_apply_norm_sum_smul_le`: convex contraction principle on `[0, ∞)`.
+* `ConvexOn.expect_map_norm_sum_smul_le`: convex contraction principle on `[0, ∞)`.
 * `TauCeti.expect_norm_sum_smul_le`, `TauCeti.expect_norm_sum_smul_le_norm_toLp_top`: `L¹`
   contraction principle.
 * `TauCeti.rademacherMoment_smul_le`, `TauCeti.rademacherMoment_smul_le_norm_toLp_top`: `K_p`
   contraction principle for `1 ≤ p`.
 * `TauCeti.rademacherSecondMoment_smul_le`, `TauCeti.rademacherSecondMoment_smul_le_norm_toLp_top`:
   `R₂` contraction principle.
-* `TauCeti.rademacherMoment_ite_mem_le`: subset restriction bound on a finite index type.
-* `TauCeti.rademacherMoment_subtype_mono`, `TauCeti.abs_rademacherMoment_subtype_sub_le`,
-  `TauCeti.tendsto_rademacherMoment_subtype_atTop_ciSup`: monotonicity, Cauchy bound, and
-  convergence of finite truncations of an arbitrary family.
+* `TauCeti.rademacherMoment_ite_zero_le`: indicator-masking bound on a finite index type.
+* `TauCeti.rademacherMoment_subtype_monotone`, `TauCeti.rademacherMoment_subtype_le`,
+  `TauCeti.ciSup_rademacherMoment_subtype_eq`, `TauCeti.abs_rademacherMoment_subtype_sub_le`,
+  `TauCeti.tendsto_rademacherMoment_subtype_atTop_ciSup`: monotonicity, finite-type supremum,
+  Cauchy bound, and convergence of finite truncations.
 
 ## References
 
 * M. Ledoux and M. Talagrand, *Probability in Banach Spaces*, Theorem 4.4.
-* F. Albiac and N. J. Kalton, *Topics in Banach Space Theory*, Proposition 6.1.5.
+* F. Albiac and N. J. Kalton, *Topics in Banach Space Theory*, §6.2.
 -/
 
 public section
@@ -63,7 +65,7 @@ variable {ι E : Type*} [Fintype ι] [DecidableEq ι] [SeminormedAddCommGroup E]
 
 /-- Replacing a single real coefficient `α i₀ ∈ [-1, 1]` by `1` does not decrease
 `𝔼_ε Φ ‖∑ i, εᵢ (αᵢ xᵢ)‖` when `Φ` is convex and monotone on `[0, ∞)`. -/
-private theorem expect_apply_norm_sum_smul_le_update_one [NormedSpace ℝ E] {Φ : ℝ → ℝ}
+private theorem expect_map_norm_sum_smul_le_update_one [NormedSpace ℝ E] {Φ : ℝ → ℝ}
     (hΦ_conv : ConvexOn ℝ (Set.Ici 0) Φ) (hΦ_mono : MonotoneOn Φ (Set.Ici 0))
     (α : ι → ℝ) {i₀ : ι} (hi₀ : |α i₀| ≤ 1) (x : ι → E) :
     𝔼 ε : ι → ℤˣ, Φ ‖∑ i, ε i • (α i • x i)‖ ≤
@@ -111,7 +113,7 @@ private theorem expect_apply_norm_sum_smul_le_update_one [NormedSpace ℝ E] {Φ
 
 /-- Unit-interval form of convex contraction: if `∀ i, |α i| ≤ 1`, replacing every `α i` by `1`
 does not decrease `𝔼_ε Φ ‖∑ i, εᵢ (αᵢ xᵢ)‖`. -/
-private theorem expect_apply_norm_sum_smul_le_of_abs_le_one [NormedSpace ℝ E] {Φ : ℝ → ℝ}
+private theorem expect_map_norm_sum_smul_le_of_abs_le_one [NormedSpace ℝ E] {Φ : ℝ → ℝ}
     (hΦ_conv : ConvexOn ℝ (Set.Ici 0) Φ) (hΦ_mono : MonotoneOn Φ (Set.Ici 0))
     {α : ι → ℝ} (hα : ∀ i, |α i| ≤ 1) (x : ι → E) :
     𝔼 ε : ι → ℤˣ, Φ ‖∑ i, ε i • (α i • x i)‖ ≤ 𝔼 ε : ι → ℤˣ, Φ ‖∑ i, ε i • x i‖ := by
@@ -124,7 +126,7 @@ private theorem expect_apply_norm_sum_smul_le_of_abs_le_one [NormedSpace ℝ E] 
   | empty => simp
   | @insert i₀ s hi₀ ih =>
     intro β hβ
-    refine (expect_apply_norm_sum_smul_le_update_one hΦ_conv hΦ_mono β
+    refine (expect_map_norm_sum_smul_le_update_one hΦ_conv hΦ_mono β
       (hβ i₀ (mem_insert_self i₀ s)) x).trans ?_
     refine (ih (Function.update β i₀ 1) fun i hi ↦ ?_).trans_eq ?_
     · rw [Function.update_of_ne (ne_of_mem_of_not_mem hi hi₀)]
@@ -137,7 +139,7 @@ private theorem expect_apply_norm_sum_smul_le_of_abs_le_one [NormedSpace ℝ E] 
 /-- **Convex Rademacher contraction principle.** For any convex nondecreasing function `Φ` on
 `[0, ∞)` and real coefficients satisfying `∀ i, |α i| ≤ M`, the average of
 `Φ ‖∑ i, εᵢ (αᵢ xᵢ)‖` is at most that of `Φ (M * ‖∑ i, εᵢ xᵢ‖)`. -/
-theorem expect_apply_norm_sum_smul_le [NormedSpace ℝ E] {Φ : ℝ → ℝ}
+theorem _root_.ConvexOn.expect_map_norm_sum_smul_le [NormedSpace ℝ E] {Φ : ℝ → ℝ}
     (hΦ_conv : ConvexOn ℝ (Set.Ici 0) Φ) (hΦ_mono : MonotoneOn Φ (Set.Ici 0))
     {α : ι → ℝ} {M : ℝ} (hα : ∀ i, |α i| ≤ M) (x : ι → E) :
     𝔼 ε : ι → ℤˣ, Φ ‖∑ i, ε i • (α i • x i)‖ ≤
@@ -162,7 +164,7 @@ theorem expect_apply_norm_sum_smul_le [NormedSpace ℝ E] {Φ : ℝ → ℝ}
     have hβ (i : ι) : |α i / M| ≤ 1 := by
       rw [abs_div, abs_of_pos hMpos]
       exact (div_le_one hMpos).2 (hα i)
-    have key := expect_apply_norm_sum_smul_le_of_abs_le_one hΨ_conv hΨ_mono hβ x
+    have key := expect_map_norm_sum_smul_le_of_abs_le_one hΨ_conv hΨ_mono hβ x
     refine le_of_eq_of_le ?_ key
     congr 1; ext ε
     dsimp [Ψ]
@@ -177,7 +179,7 @@ theorem expect_norm_sum_smul_le [NormedSpace ℝ E] {α : ι → ℝ} {M : ℝ} 
     (x : ι → E) :
     𝔼 ε : ι → ℤˣ, ‖∑ i, ε i • (α i • x i)‖ ≤ M * 𝔼 ε : ι → ℤˣ, ‖∑ i, ε i • x i‖ := by
   simpa [mul_expect] using
-    expect_apply_norm_sum_smul_le (convexOn_id (convex_Ici 0)) monotoneOn_id hα x
+    (convexOn_id (convex_Ici 0)).expect_map_norm_sum_smul_le monotoneOn_id hα x
 
 /-- **`L¹` contraction principle** written with the `ℓ^∞` norm `‖WithLp.toLp ∞ α‖`. -/
 theorem expect_norm_sum_smul_le_norm_toLp_top [NormedSpace ℝ E] (α : ι → ℝ) (x : ι → E) :
@@ -196,7 +198,7 @@ theorem rademacherMoment_smul_le [NormedSpace ℝ E] {p : ℝ} (hp : 1 ≤ p) {�
   obtain ⟨i₀⟩ := hne
   have hM : 0 ≤ M := (abs_nonneg (α i₀)).trans (hα i₀)
   refine rademacherMoment_le_of_rpow_le hp₀ (mul_nonneg hM (rademacherMoment_nonneg p x)) ?_
-  have hconv := expect_apply_norm_sum_smul_le (convexOn_rpow hp)
+  have hconv := (convexOn_rpow hp).expect_map_norm_sum_smul_le
     (Real.monotoneOn_rpow_Ici_of_exponent_nonneg hp₀.le) hα x
   refine hconv.trans_eq ?_
   simp_rw [Real.mul_rpow hM (norm_nonneg _), ← mul_expect, ← rademacherMoment_rpow]
@@ -213,7 +215,7 @@ theorem rademacherMoment_smul_le_norm_toLp_top [NormedSpace ℝ E] {p : ℝ} (hp
 theorem rademacherSecondMoment_smul_le [NormedSpace ℝ E] {α : ι → ℝ} {M : ℝ}
     (hα : ∀ i, |α i| ≤ M) (x : ι → E) :
     rademacherSecondMoment (fun i ↦ α i • x i) ≤ M * rademacherSecondMoment x := by
-  simpa [← rademacherMoment_two] using rademacherMoment_smul_le one_le_two hα x
+  simpa [rademacherMoment_two] using rademacherMoment_smul_le one_le_two hα x
 
 /-- **Contraction principle for `rademacherSecondMoment`** written with `‖WithLp.toLp ∞ α‖`. -/
 theorem rademacherSecondMoment_smul_le_norm_toLp_top [NormedSpace ℝ E] (α : ι → ℝ) (x : ι → E) :
@@ -221,12 +223,12 @@ theorem rademacherSecondMoment_smul_le_norm_toLp_top [NormedSpace ℝ E] (α : �
       ‖WithLp.toLp ∞ α‖ * rademacherSecondMoment x :=
   rademacherSecondMoment_smul_le (fun i ↦ PiLp.norm_apply_le (WithLp.toLp ∞ α) i) x
 
-/-- Setting coordinates outside a subset `s` to zero does not increase `rademacherMoment p` for
+/-- Setting coordinates not satisfying `P` to zero does not increase `rademacherMoment p` for
 `1 ≤ p` in a real normed space. -/
-theorem rademacherMoment_ite_mem_le [NormedSpace ℝ E] {p : ℝ} (hp : 1 ≤ p) (s : Finset ι)
-    (x : ι → E) :
-    rademacherMoment p (fun i ↦ if i ∈ s then x i else 0) ≤ rademacherMoment p x := by
-  have h := rademacherMoment_smul_le hp (α := fun i ↦ if i ∈ s then (1 : ℝ) else 0) (M := 1)
+theorem rademacherMoment_ite_zero_le [NormedSpace ℝ E] {p : ℝ} (hp : 1 ≤ p) (P : ι → Prop)
+    [DecidablePred P] (x : ι → E) :
+    rademacherMoment p (fun i ↦ if P i then x i else 0) ≤ rademacherMoment p x := by
+  have h := rademacherMoment_smul_le hp (α := fun i ↦ if P i then (1 : ℝ) else 0) (M := 1)
     (fun i ↦ by split_ifs <;> norm_num) x
   simpa [ite_smul] using h
 
@@ -238,35 +240,31 @@ section Truncation
 
 variable {α E : Type*} [DecidableEq α] [SeminormedAddCommGroup E]
 
-/-- Padding a restriction to `s` with zeros on `t \ s` (`s ⊆ t`) gives the indicator-masked family
-on `t`, with the same Rademacher `p`-th moment. -/
-private theorem rademacherMoment_subtype_eq_ite {s t : Finset α} (hst : s ⊆ t) (p : ℝ)
-    (x : α → E) :
-    rademacherMoment p (fun i : s ↦ x i) =
-      rademacherMoment p (fun j : t ↦ if (j : α) ∈ s then x j else 0) := by
-  let e : s ⊕ (t \ s : Finset α) ≃ t :=
-    { toFun := Sum.elim (fun i ↦ ⟨i.1, hst i.2⟩) (fun i ↦ ⟨i.1, (Finset.mem_sdiff.1 i.2).1⟩)
-      invFun := fun j ↦ if hj : (j : α) ∈ s then Sum.inl ⟨j, hj⟩
-        else Sum.inr ⟨j, Finset.mem_sdiff.2 ⟨j.2, hj⟩⟩
-      left_inv := by
-        rintro (⟨i, hi⟩ | ⟨i, hi⟩)
-        · simp [hi]
-        · simp [(Finset.mem_sdiff.1 hi).2]
-      right_inv := fun ⟨j, hj⟩ ↦ by by_cases h : j ∈ s <;> simp [h] }
-  rw [← rademacherMoment_sumElim_zero (κ := (t \ s : Finset α)) p (fun i : s ↦ x i),
-    ← rademacherMoment_comp_equiv e.symm p]
-  congr 1; ext j
-  by_cases hj : (j : α) ∈ s <;> simp [e, hj]
-
 /-- For `1 ≤ p` in a real normed space, the Rademacher `p`-th moment of the finite truncations
 `s ↦ K_p(x|_s)` is monotone with respect to inclusion `s ⊆ t`. -/
-theorem rademacherMoment_subtype_mono [NormedSpace ℝ E] {p : ℝ} (hp : 1 ≤ p) (x : α → E) :
-    Monotone (fun s : Finset α ↦ rademacherMoment p (fun i : s ↦ x i)) := by
-  intro s t hst
+theorem rademacherMoment_subtype_monotone [NormedSpace ℝ E] {p : ℝ} (hp : 1 ≤ p) (x : α → E) :
+    Monotone (fun s : Finset α ↦ rademacherMoment p (fun i : s ↦ x i)) := fun s t hst ↦ by
   dsimp only
   rw [rademacherMoment_subtype_eq_ite hst p x]
-  exact rademacherMoment_ite_mem_le hp (univ.filter fun j : t ↦ (j : α) ∈ s) (fun j : t ↦ x j)
-    |>.trans_eq' (by congr 1; ext j; simp)
+  exact rademacherMoment_ite_zero_le hp (fun j : t ↦ (j : α) ∈ s) (fun j : t ↦ x j)
+
+/-- On a finite index type, restricting to `s : Finset α` does not increase `rademacherMoment p`
+when `1 ≤ p` in a real normed space. -/
+theorem rademacherMoment_subtype_le [Fintype α] [NormedSpace ℝ E] {p : ℝ} (hp : 1 ≤ p)
+    (s : Finset α) (x : α → E) :
+    rademacherMoment p (fun i : s ↦ x i) ≤ rademacherMoment p x :=
+  (rademacherMoment_subtype_monotone hp x (subset_univ s)).trans_eq
+    (rademacherMoment_subtype_univ p x)
+
+/-- On a finite index type and for `1 ≤ p` in a real normed space, the supremum of the finite
+truncations `s ↦ K_p(x|_s)` equals `rademacherMoment p x`. -/
+theorem ciSup_rademacherMoment_subtype_eq [Fintype α] [NormedSpace ℝ E] {p : ℝ} (hp : 1 ≤ p)
+    (x : α → E) :
+    (⨆ s : Finset α, rademacherMoment p (fun i : s ↦ x i)) = rademacherMoment p x :=
+  le_antisymm (ciSup_le fun s ↦ rademacherMoment_subtype_le hp s x)
+    ((rademacherMoment_subtype_univ p x).symm.trans_le
+      (le_ciSup (f := fun s : Finset α ↦ rademacherMoment p (fun i : s ↦ x i))
+        (Set.toFinite _).bddAbove (univ : Finset α)))
 
 /-- For `1 ≤ p` and `s ⊆ t`, the difference between the Rademacher `p`-th moments on `t` and `s`
 is bounded by the Rademacher `p`-th moment on `t \ s`. -/
@@ -287,10 +285,10 @@ theorem tendsto_rademacherMoment_subtype_atTop_ciSup [NormedSpace ℝ E] {p : �
     (hbdd : BddAbove (Set.range fun s : Finset α ↦ rademacherMoment p (fun i : s ↦ x i))) :
     Tendsto (fun s : Finset α ↦ rademacherMoment p (fun i : s ↦ x i)) atTop
       (𝓝 (⨆ s : Finset α, rademacherMoment p (fun i : s ↦ x i))) :=
-  tendsto_atTop_ciSup (rademacherMoment_subtype_mono hp x) hbdd
+  tendsto_atTop_ciSup (rademacherMoment_subtype_monotone hp x) hbdd
 
-/-- If `∑' i, ‖x i‖` converges, the finite truncations `s ↦ K_p(x|_s)` (`1 ≤ p`) are bounded above
-and converge along `Filter.atTop` to their supremum in any real normed space. -/
+/-- If `∑' i, ‖x i‖` converges, the finite truncations `s ↦ K_p(x|_s)` (`1 ≤ p`) converge along
+`Filter.atTop` to their supremum in any real normed space. -/
 theorem tendsto_rademacherMoment_subtype_of_summable_norm [NormedSpace ℝ E] {p : ℝ} (hp : 1 ≤ p)
     {x : α → E} (hx : Summable fun i ↦ ‖x i‖) :
     Tendsto (fun s : Finset α ↦ rademacherMoment p (fun i : s ↦ x i)) atTop

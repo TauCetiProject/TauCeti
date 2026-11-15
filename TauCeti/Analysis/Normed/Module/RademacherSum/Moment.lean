@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.RademacherSum.Basic
+public import Mathlib.Algebra.Order.BigOperators.Expect
+public import Mathlib.Analysis.Normed.Lp.PiLp
 
 import Mathlib.Analysis.MeanInequalitiesPow
 
@@ -15,14 +16,18 @@ import Mathlib.Analysis.MeanInequalitiesPow
 For a real exponent `p` and a finite family `y : ι → E` in a seminormed group, the Rademacher
 `p`-th moment is
 `K_p(y) = (𝔼_ε ‖∑ i, εᵢ yᵢ‖ ^ p) ^ (1 / p)`,
-averaged uniformly over the finite sign cube `ι → ℤˣ`. At `p = 2` this recovers
-`TauCeti.rademacherSecondMoment`, and at `p = 1` it is the expected norm of the random signed sum.
+averaged uniformly over the finite sign cube `ι → ℤˣ`. At `p = 1` this is the expected norm of the
+random signed sum, and at `p = 2` it agrees with `TauCeti.rademacherSecondMoment` (proved in
+`TauCeti.Analysis.Normed.Module.RademacherSum.Basic`).
 
 We establish the basic algebra and convexity properties of `K_p`:
 
-* invariance under reindexing, coordinatewise sign changes, negation, and padding with zeros;
-* exact evaluation on a single-element index type (`K_p(y) = ‖y default‖` for `p ≠ 0`) and on
-  multiples of a fixed vector (`K_p(aᵢ • y) = K_p(a) ‖y‖` for `p ≠ 0`);
+* vanishing characterization (`K_p(y) = 0 ↔ ∀ ε, ‖∑ i, εᵢ yᵢ‖ = 0` for `p ≠ 0`, and `K_p(y) = 0 ↔
+  y = 0` in a real normed space);
+* invariance under reindexing, coordinatewise sign changes, negation, zero-padding, and zero
+  extension along injections;
+* exact evaluation on a single-element index type, on `Pi.single i x`, and on multiples of a fixed
+  vector (`K_p(aᵢ • y) = K_p(a) ‖y‖` for `p ≠ 0`);
 * monotonicity in the exponent `0 < p ≤ q` via power means;
 * Minkowski's triangle inequality `K_p(y + z) ≤ K_p(y) + K_p(z)` for `1 ≤ p` via the `PiLp` norm
   on the sign cube, together with the reverse triangle inequality;
@@ -32,10 +37,12 @@ We establish the basic algebra and convexity properties of `K_p`:
 ## Main declarations
 
 * `TauCeti.rademacherMoment`: the `p`-th Rademacher moment `K_p(y)`.
-* `TauCeti.rademacherMoment_two`: `rademacherMoment 2 y = rademacherSecondMoment y`.
+* `TauCeti.rademacherMoment_eq_zero_iff`, `TauCeti.rademacherMoment_eq_zero`: vanishing
+  characterizations for `p ≠ 0`.
 * `TauCeti.rademacherMoment_comp_equiv`, `TauCeti.rademacherMoment_units_smul`,
-  `TauCeti.rademacherMoment_sumElim_zero`: invariance under reindexing, sign changes, and zero
-  padding.
+  `TauCeti.rademacherMoment_sumElim_zero`, `TauCeti.rademacherMoment_extend_zero`,
+  `TauCeti.rademacherMoment_subtype_eq_ite`: invariance under reindexing, sign changes, zero
+  padding, and zero extension.
 * `TauCeti.rademacherMoment_mono_exponent`: `K_p(y) ≤ K_q(y)` for `0 < p ≤ q`.
 * `TauCeti.rademacherMoment_add_le`: Minkowski's inequality `K_p(y + z) ≤ K_p(y) + K_p(z)` for
   `1 ≤ p`.
@@ -57,6 +64,8 @@ open Finset
 open scoped BigOperators ENNReal NNReal
 
 namespace TauCeti
+
+section Moment
 
 variable {ι E : Type*} [Fintype ι] [DecidableEq ι] [SeminormedAddCommGroup E]
 
@@ -91,28 +100,29 @@ theorem rademacherMoment_zero_left (y : ι → E) : rademacherMoment 0 y = 1 := 
   simp [rademacherMoment]
 
 /-- At exponent `1`, the Rademacher moment is the expected norm of the signed sum. -/
-@[simp]
 theorem rademacherMoment_one (y : ι → E) :
     rademacherMoment 1 y = 𝔼 ε : ι → ℤˣ, ‖∑ i, ε i • y i‖ := by
   simp [rademacherMoment]
 
-/-- At exponent `2`, `rademacherMoment` agrees with `rademacherSecondMoment`. -/
-@[simp]
-theorem rademacherMoment_two (y : ι → E) :
-    rademacherMoment 2 y = rademacherSecondMoment y := by
-  rw [rademacherMoment, rademacherSecondMoment_def, Real.sqrt_eq_rpow]
-  simp
+/-- For `p ≠ 0`, `rademacherMoment p y` vanishes if and only if every signed sum of `y` has norm
+zero. -/
+theorem rademacherMoment_eq_zero_iff {p : ℝ} (hp : p ≠ 0) (y : ι → E) :
+    rademacherMoment p y = 0 ↔ ∀ ε : ι → ℤˣ, ‖∑ i, ε i • y i‖ = 0 := by
+  rw [rademacherMoment, Real.rpow_eq_zero (expect_nonneg fun _ _ ↦
+      Real.rpow_nonneg (norm_nonneg _) _) (one_div_ne_zero hp),
+    Fintype.expect_eq_zero_iff_of_nonneg (fun ε ↦ Real.rpow_nonneg (norm_nonneg _) _), funext_iff]
+  exact forall_congr' fun ε ↦ by simp [Real.rpow_eq_zero (norm_nonneg _) hp]
 
 /-- For `p ≠ 0`, the zero family has Rademacher `p`-th moment zero. -/
 @[simp]
 theorem rademacherMoment_zero {p : ℝ} (hp : p ≠ 0) : rademacherMoment p (0 : ι → E) = 0 := by
-  simp [rademacherMoment, Real.zero_rpow hp, Real.zero_rpow (inv_ne_zero hp)]
+  simp [rademacherMoment_eq_zero_iff hp]
 
 /-- For `p ≠ 0`, an empty Rademacher sum has `p`-th moment zero. -/
 @[simp]
 theorem rademacherMoment_of_isEmpty [IsEmpty ι] {p : ℝ} (hp : p ≠ 0) (y : ι → E) :
     rademacherMoment p y = 0 := by
-  simp [rademacherMoment, Real.zero_rpow hp, Real.zero_rpow (inv_ne_zero hp)]
+  simp [rademacherMoment_eq_zero_iff hp]
 
 /-- On a single-element index type, `rademacherMoment p y` is the norm of the sole vector whenever
 `p ≠ 0`. -/
@@ -147,7 +157,8 @@ theorem rademacherMoment_le_mul {F : Type*} [SeminormedAddCommGroup F] {p : ℝ}
       linarith [norm_nonneg (∑ i, ε i • y i), h ε, mul_neg_of_neg_of_pos hK hpos]
     have hy (ε : ι → ℤˣ) : ‖∑ i, ε i • y i‖ = 0 :=
       le_antisymm ((h ε).trans_eq (by simp [hz ε])) (norm_nonneg _)
-    simp [rademacherMoment, hy, hz, Real.zero_rpow hp.ne', Real.zero_rpow (inv_ne_zero hp.ne')]
+    rw [(rademacherMoment_eq_zero_iff hp.ne' y).2 hy,
+      (rademacherMoment_eq_zero_iff hp.ne' z).2 hz, mul_zero]
   · refine rademacherMoment_le_of_rpow_le hp (mul_nonneg hK (rademacherMoment_nonneg p z)) ?_
     rw [Real.mul_rpow hK (rademacherMoment_nonneg p z), rademacherMoment_rpow, mul_expect]
     refine expect_le_expect fun ε _ ↦ ?_
@@ -212,6 +223,54 @@ theorem rademacherMoment_sumElim_zero {κ : Type*} [Fintype κ] [DecidableEq κ]
   rw [← univ_product_univ, expect_product]
   simp
 
+/-- Extending a family by zero along an injection preserves its Rademacher `p`-th moment. -/
+theorem rademacherMoment_extend_zero {κ : Type*} [Fintype κ] [DecidableEq κ] {f : κ → ι}
+    (hf : Function.Injective f) (p : ℝ) (y : κ → E) :
+    rademacherMoment p (Function.extend f y 0) = rademacherMoment p y := by
+  classical
+  let e : κ ⊕ {i : ι // i ∉ Set.range f} ≃ ι :=
+    ((Equiv.ofInjective f hf).sumCongr (Equiv.refl _)).trans (Equiv.sumCompl (· ∈ Set.range f))
+  rw [← rademacherMoment_comp_equiv e p,
+    ← rademacherMoment_sumElim_zero (κ := {i : ι // i ∉ Set.range f}) p y]
+  congr 1
+  ext (k | ⟨i, hi⟩)
+  · simp [e, hf.extend_apply]
+  · simp [e, Function.extend_apply' _ _ _ hi]
+
+/-- For `p ≠ 0`, the Rademacher `p`-th moment of `Pi.single i x` is `‖x‖`. -/
+@[simp]
+theorem rademacherMoment_single {p : ℝ} (hp : p ≠ 0) (i : ι) (x : E) :
+    rademacherMoment p (Pi.single i x) = ‖x‖ := by
+  have h : Pi.single i x = Function.extend (fun _ : Unit ↦ i) (fun _ ↦ x) 0 := by
+    ext j
+    by_cases hj : j = i
+    · subst hj
+      simpa using ((Function.injective_of_subsingleton (fun _ : Unit ↦ j)).extend_apply
+        (fun _ ↦ x) 0 ()).symm
+    · rw [Pi.single_eq_of_ne hj, Function.extend_apply' _ _ _ (by simp [Ne.symm hj])]
+      rfl
+  rw [h, rademacherMoment_extend_zero (Function.injective_of_subsingleton _) p,
+    rademacherMoment_unique hp]
+
+/-- Restricting a family on a finite index type to `Finset.univ` leaves its Rademacher `p`-th
+moment unchanged. -/
+@[simp]
+theorem rademacherMoment_subtype_univ (p : ℝ) (x : ι → E) :
+    rademacherMoment p (fun i : (univ : Finset ι) ↦ x i) = rademacherMoment p x :=
+  rademacherMoment_comp_equiv (Equiv.subtypeUnivEquiv mem_univ) p x
+
+/-- Masking a family outside `s : Finset ι` by zero has the same Rademacher `p`-th moment as
+restricting it to `s`. -/
+theorem rademacherMoment_ite_mem (s : Finset ι) (p : ℝ) (x : ι → E) :
+    rademacherMoment p (fun i ↦ if i ∈ s then x i else 0) =
+      rademacherMoment p (fun i : s ↦ x i) := by
+  rw [← rademacherMoment_extend_zero Subtype.val_injective p (fun i : s ↦ x i)]
+  congr 1
+  ext i
+  by_cases hi : i ∈ s
+  · simpa [hi] using (Subtype.val_injective.extend_apply (fun j : s ↦ x j) 0 ⟨i, hi⟩).symm
+  · simp [hi]
+
 /-! ### Scalar homogeneity -/
 
 section Scalar
@@ -222,9 +281,6 @@ variable {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 E]
 scalar whenever `p ≠ 0`. -/
 theorem rademacherMoment_smul {p : ℝ} (hp : p ≠ 0) (c : 𝕜) (y : ι → E) :
     rademacherMoment p (fun i ↦ c • y i) = ‖c‖ * rademacherMoment p y := by
-  by_cases hc : c = 0
-  · subst hc
-    simp [← Pi.zero_def, rademacherMoment_zero hp]
   have hs (ε : ι → ℤˣ) : ∑ i, ε i • c • y i = c • ∑ i, ε i • y i := by
     rw [smul_sum]
     exact sum_congr rfl fun i _ ↦ smul_comm _ _ _
@@ -238,9 +294,6 @@ theorem rademacherMoment_smul {p : ℝ} (hp : p ≠ 0) (c : 𝕜) (y : ι → E)
 norm of the vector whenever `p ≠ 0`. -/
 theorem rademacherMoment_smul_const {p : ℝ} (hp : p ≠ 0) (a : ι → 𝕜) (y : E) :
     rademacherMoment p (fun i ↦ a i • y) = rademacherMoment p a * ‖y‖ := by
-  by_cases hy : y = 0
-  · subst hy
-    simp [← Pi.zero_def, rademacherMoment_zero hp]
   have hs (ε : ι → ℤˣ) : ∑ i, ε i • a i • y = (∑ i, ε i • a i) • y := by
     rw [sum_smul]
     exact sum_congr rfl fun i _ ↦ (smul_assoc _ _ _).symm
@@ -351,5 +404,41 @@ theorem norm_le_rademacherMoment [NormedSpace ℝ E] {p : ℝ} (hp : 1 ≤ p) (y
   have := expect_le_expect (s := univ) fun ε (_ : ε ∈ univ) ↦ hle ε
   rw [expect_const univ_nonempty, expect_add_distrib, hσe] at this
   linarith
+
+end Moment
+
+section Subtype
+
+variable {α E : Type*} [DecidableEq α] [SeminormedAddCommGroup E]
+
+/-- Padding a restriction to `s` with zeros on `t \ s` (`s ⊆ t`) gives the indicator-masked family
+on `t`, with the same Rademacher `p`-th moment. -/
+theorem rademacherMoment_subtype_eq_ite {s t : Finset α} (hst : s ⊆ t) (p : ℝ) (x : α → E) :
+    rademacherMoment p (fun i : s ↦ x i) =
+      rademacherMoment p (fun j : t ↦ if (j : α) ∈ s then x j else 0) := by
+  have hf : Function.Injective (Set.inclusion hst) := Set.inclusion_injective hst
+  rw [← rademacherMoment_extend_zero hf p (fun i : s ↦ x i)]
+  congr 1
+  ext ⟨j, hj⟩
+  by_cases hjs : j ∈ s
+  · simpa [hjs] using hf.extend_apply (fun i : s ↦ x i) 0 ⟨j, hjs⟩
+  · simp [hjs]
+
+end Subtype
+
+section Normed
+
+variable {ι E : Type*} [Fintype ι] [DecidableEq ι] [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- In a real normed space and for `p ≠ 0`, `rademacherMoment p y = 0` if and only if `y = 0`. -/
+@[simp]
+theorem rademacherMoment_eq_zero {p : ℝ} (hp : p ≠ 0) {y : ι → E} :
+    rademacherMoment p y = 0 ↔ y = 0 := by
+  refine ⟨fun h ↦ funext fun i ↦ norm_le_zero_iff.1 ?_, fun h ↦ h ▸ rademacherMoment_zero hp⟩
+  have h1 : rademacherMoment 1 y = 0 :=
+    (rademacherMoment_eq_zero_iff one_ne_zero y).2 ((rademacherMoment_eq_zero_iff hp y).1 h)
+  exact (norm_le_rademacherMoment le_rfl y i).trans_eq h1
+
+end Normed
 
 end TauCeti

@@ -10,6 +10,7 @@ public import Mathlib.Data.Set.Card
 
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
 import Mathlib.Data.Set.Card.Arithmetic
+import Mathlib.Order.Interval.Finset.Fin
 
 /-!
 # Lévy's reflection inequality and Rademacher tail iteration
@@ -35,12 +36,13 @@ sign cube, together with their normalized probability forms.
 
 * `TauCeti.ncard_exists_lt_norm_sum_Iic_le`, `TauCeti.ncard_exists_lt_norm_sum_Iic_div_le`:
   Lévy's reflection inequality on `Fin n → ℤˣ` in counting and probability forms.
-* `TauCeti.ncard_lt_norm_sum_two_mul_add_norm_toLp_top_le`,
-  `TauCeti.ncard_lt_norm_sum_two_mul_add_norm_toLp_top_div_le`: Hoffmann–Jørgensen tail bound on
+* `TauCeti.two_pow_card_mul_ncard_two_mul_add_norm_toLp_top_lt_norm_sum_le`,
+  `TauCeti.ncard_two_mul_add_norm_toLp_top_lt_norm_sum_div_le`: Hoffmann–Jørgensen tail bound on
   `ι → ℤˣ`.
-* `TauCeti.ncard_lt_norm_sum_three_mul_le`, `TauCeti.ncard_lt_norm_sum_three_mul_div_le`:
-  unconditional Rademacher tail iteration `P(3 t < ‖S‖) ≤ 4 P(t < ‖S‖)²`.
-* `TauCeti.ncard_lt_norm_sum_three_pow_mul_div_le`: iterated doubly-exponential bound
+* `TauCeti.two_pow_card_mul_ncard_three_mul_lt_norm_sum_le`,
+  `TauCeti.ncard_three_mul_lt_norm_sum_div_le`: unconditional Rademacher tail iteration
+  `P(3 t < ‖S‖) ≤ 4 P(t < ‖S‖)²`.
+* `TauCeti.four_mul_ncard_three_pow_mul_lt_norm_sum_div_le`: iterated doubly-exponential bound
   `4 P(3 ^ k * t < ‖S‖) ≤ (4 P(t < ‖S‖)) ^ (2 ^ k)`.
 
 ## References
@@ -59,6 +61,92 @@ open Finset
 open scoped BigOperators ENNReal
 
 namespace TauCeti
+
+section Aux
+
+private theorem ncard_le_two_mul_of_subset_union_image {α : Type*} [Finite α] {A B : Set α}
+    {φ : α → α} (hφ : Function.Injective φ) (h : A ⊆ B ∪ φ '' B) :
+    A.ncard ≤ 2 * B.ncard := calc
+  A.ncard ≤ (B ∪ φ '' B).ncard := Set.ncard_le_ncard h
+  _ ≤ B.ncard + (φ '' B).ncard := Set.ncard_union_le _ _
+  _ = 2 * B.ncard := by rw [Set.ncard_image_of_injective _ hφ, two_mul]
+
+private theorem div_two_pow_le_four_mul_sq {N a b : ℕ} (h : 2 ^ N * a ≤ 4 * b ^ 2) :
+    (a : ℝ) / 2 ^ N ≤ 4 * ((b : ℝ) / 2 ^ N) ^ 2 := by
+  have h' : (2 : ℝ) ^ N * a ≤ 4 * (b : ℝ) ^ 2 := by exact_mod_cast h
+  rw [div_pow, ← mul_div_assoc, div_le_div_iff₀ (by positivity) (by positivity)]
+  nlinarith [pow_pos (two_pos : (0 : ℝ) < 2) N]
+
+end Aux
+
+section Reflection
+
+variable {ι : Type*}
+
+/-- Sign reflection outside `s : Finset ι`, leaving coordinates in `s` unchanged and negating
+coordinates outside `s`. -/
+private def signFlipCompl (s : Finset ι) : (ι → ℤˣ) ≃ (ι → ℤˣ) :=
+  open Classical in Equiv.mulLeft (fun j ↦ if j ∈ s then 1 else -1)
+
+@[simp]
+private theorem signFlipCompl_signFlipCompl (s : Finset ι) (ε : ι → ℤˣ) :
+    signFlipCompl s (signFlipCompl s ε) = ε := by
+  classical
+  ext j
+  by_cases hj : j ∈ s <;> simp [signFlipCompl, hj]
+
+private theorem signFlipCompl_apply_of_mem {s : Finset ι} {j : ι} (hj : j ∈ s) (ε : ι → ℤˣ) :
+    signFlipCompl s ε j = ε j := by
+  classical
+  simp [signFlipCompl, hj]
+
+variable {E : Type*} [Fintype ι] [SeminormedAddCommGroup E]
+
+private theorem sum_add_sum_signFlipCompl [NormedSpace ℝ E] (x : ι → E) (s : Finset ι)
+    (ε : ι → ℤˣ) :
+    (∑ j, ε j • x j) + (∑ j, signFlipCompl s ε j • x j) =
+      (2 : ℝ) • ∑ j ∈ s, ε j • x j := by
+  classical
+  have hfilter : univ.filter (fun j : ι ↦ j ∈ s) = s := by ext j; simp
+  rw [← sum_filter_add_sum_filter_not univ (fun j : ι ↦ j ∈ s),
+    ← sum_filter_add_sum_filter_not univ (fun j : ι ↦ j ∈ s)
+      (fun j ↦ signFlipCompl s ε j • x j), hfilter]
+  have hmem : ∑ j ∈ s, signFlipCompl s ε j • x j = ∑ j ∈ s, ε j • x j :=
+    sum_congr rfl fun j hj ↦ by rw [signFlipCompl_apply_of_mem hj]
+  have hnot : ∑ j ∈ univ.filter (fun j : ι ↦ ¬ j ∈ s), signFlipCompl s ε j • x j =
+      -∑ j ∈ univ.filter (fun j : ι ↦ ¬ j ∈ s), ε j • x j := by
+    rw [← sum_neg_distrib]
+    exact sum_congr rfl fun j hj ↦ by simp [signFlipCompl, (mem_filter.1 hj).2, Units.smul_def]
+  rw [hmem, hnot, two_smul]
+  abel
+
+/-- Any `signFlipCompl s`-invariant set `A` on which `t < ‖∑ j ∈ s, ε j • x j‖` has cardinality at
+most twice the cardinality of `A ∩ {ε | t < ‖∑ j, ε j • x j‖}`. -/
+private theorem ncard_le_two_mul_ncard_inter_of_signFlipCompl [NormedSpace ℝ E] (x : ι → E)
+    (s : Finset ι) (t : ℝ) {A : Set (ι → ℤˣ)} (hA_inv : ∀ ε ∈ A, signFlipCompl s ε ∈ A)
+    (hA_lt : ∀ ε ∈ A, t < ‖∑ j ∈ s, ε j • x j‖) :
+    A.ncard ≤ 2 * (A ∩ {ε | t < ‖∑ j, ε j • x j‖}).ncard := by
+  refine ncard_le_two_mul_of_subset_union_image (signFlipCompl s).injective fun ε hε ↦ ?_
+  by_cases hB : t < ‖∑ j, ε j • x j‖
+  · exact Or.inl ⟨hε, hB⟩
+  · refine Or.inr ⟨signFlipCompl s ε, ⟨hA_inv ε hε, ?_⟩, signFlipCompl_signFlipCompl s ε⟩
+    rw [Set.mem_ofPred_eq]
+    have hnorm := norm_add_le (∑ j, ε j • x j) (∑ j, signFlipCompl s ε j • x j)
+    rw [sum_add_sum_signFlipCompl, norm_smul, Real.norm_ofNat] at hnorm
+    linarith [hA_lt ε hε, not_lt.1 hB]
+
+/-- Reflecting coordinates outside `s : Finset ι` bounds the upper tail of the sub-sum over `s` by
+twice the upper tail of the full signed sum. -/
+private theorem ncard_lt_norm_sum_finset_le [NormedSpace ℝ E] (x : ι → E) (s : Finset ι) (t : ℝ) :
+    {ε : ι → ℤˣ | t < ‖∑ j ∈ s, ε j • x j‖}.ncard ≤
+      2 * {ε : ι → ℤˣ | t < ‖∑ j, ε j • x j‖}.ncard := by
+  refine (ncard_le_two_mul_ncard_inter_of_signFlipCompl x s t (fun ε hε ↦ ?_) fun _ hε ↦ hε).trans
+    (Nat.mul_le_mul_left 2 (Set.ncard_le_ncard Set.inter_subset_right))
+  have hsum : ∑ j ∈ s, signFlipCompl s ε j • x j = ∑ j ∈ s, ε j • x j :=
+    sum_congr rfl fun j hj ↦ by rw [signFlipCompl_apply_of_mem hj]
+  simpa only [Set.mem_ofPred_eq, hsum] using hε
+
+end Reflection
 
 section Fin
 
@@ -93,36 +181,6 @@ private theorem iUnion_firstExceedance (x : Fin n → E) (t : ℝ) :
     by_contra hlt
     exact not_lt_of_ge (min'_le S m (mem_filter.2 ⟨mem_univ m, not_le.1 hlt⟩)) hm
 
-/-- Sign reflection strictly after index `k`, leaving coordinates `j ≤ k` unchanged. -/
-private def reflectAfter (k : Fin n) : (Fin n → ℤˣ) ≃ (Fin n → ℤˣ) :=
-  Equiv.mulLeft (fun j ↦ if j ≤ k then 1 else -1)
-
-private theorem reflectAfter_mem_firstExceedance (x : Fin n → E) (t : ℝ) (k : Fin n)
-    (ε : Fin n → ℤˣ) :
-    reflectAfter k ε ∈ firstExceedance x t k ↔ ε ∈ firstExceedance x t k := by
-  have hsum (m : Fin n) (hm : m ≤ k) :
-      ∑ j ∈ Iic m, reflectAfter k ε j • x j = ∑ j ∈ Iic m, ε j • x j :=
-    sum_congr rfl fun j hj ↦ by simp [reflectAfter, (mem_Iic.1 hj).trans hm]
-  simp only [firstExceedance, Set.mem_ofPred_eq, hsum k le_rfl]
-  exact and_congr_right fun _ ↦ forall₂_congr fun m hm ↦ by rw [hsum m hm.le]
-
-private theorem sum_add_sum_reflectAfter [NormedSpace ℝ E] (x : Fin n → E) (k : Fin n)
-    (ε : Fin n → ℤˣ) :
-    (∑ j, ε j • x j) + (∑ j, reflectAfter k ε j • x j) =
-      (2 : ℝ) • ∑ j ∈ Iic k, ε j • x j := by
-  have hfilter : univ.filter (fun j : Fin n ↦ j ≤ k) = Iic k := by ext j; simp
-  rw [← sum_filter_add_sum_filter_not univ (fun j : Fin n ↦ j ≤ k),
-    ← sum_filter_add_sum_filter_not univ (fun j : Fin n ↦ j ≤ k)
-      (fun j ↦ reflectAfter k ε j • x j), hfilter]
-  have hle : ∑ j ∈ Iic k, reflectAfter k ε j • x j = ∑ j ∈ Iic k, ε j • x j :=
-    sum_congr rfl fun j hj ↦ by simp [reflectAfter, mem_Iic.1 hj]
-  have hgt : ∑ j ∈ univ.filter (fun j : Fin n ↦ ¬ j ≤ k), reflectAfter k ε j • x j =
-      -∑ j ∈ univ.filter (fun j : Fin n ↦ ¬ j ≤ k), ε j • x j := by
-    rw [← sum_neg_distrib]
-    exact sum_congr rfl fun j hj ↦ by simp [reflectAfter, (mem_filter.1 hj).2, Units.smul_def]
-  rw [hle, hgt, two_smul]
-  abel
-
 /-- **Lévy's reflection inequality** on the sign cube (counting form): the number of sign patterns
 for which some partial sum `∑ j ≤ k, εⱼ xⱼ` exceeds `t` in norm is at most twice the number of sign
 patterns for which the full sum exceeds `t` in norm. -/
@@ -132,25 +190,13 @@ theorem ncard_exists_lt_norm_sum_Iic_le [NormedSpace ℝ E] (x : Fin n → E) (t
   let B : Set (Fin n → ℤˣ) := {ε | t < ‖∑ j, ε j • x j‖}
   have hstep (k : Fin n) :
       (firstExceedance x t k).ncard ≤ 2 * (firstExceedance x t k ∩ B).ncard := by
-    have hsub : firstExceedance x t k ⊆
-        (firstExceedance x t k ∩ B) ∪ (reflectAfter k) '' (firstExceedance x t k ∩ B) := by
-      intro ε hε
-      by_cases hB : ε ∈ B
-      · exact Or.inl ⟨hε, hB⟩
-      · right
-        refine ⟨reflectAfter k ε, ⟨(reflectAfter_mem_firstExceedance x t k ε).2 hε, ?_⟩, ?_⟩
-        · dsimp [B] at hB ⊢
-          have hnorm := norm_add_le (∑ j, ε j • x j) (∑ j, reflectAfter k ε j • x j)
-          rw [sum_add_sum_reflectAfter, norm_smul, Real.norm_ofNat] at hnorm
-          linarith [hε.1, not_lt.1 hB]
-        · ext j; by_cases hj : j ≤ k <;> simp [reflectAfter, hj]
-    calc (firstExceedance x t k).ncard
-        ≤ ((firstExceedance x t k ∩ B) ∪
-            (reflectAfter k) '' (firstExceedance x t k ∩ B)).ncard := Set.ncard_le_ncard hsub
-      _ ≤ (firstExceedance x t k ∩ B).ncard +
-            ((reflectAfter k) '' (firstExceedance x t k ∩ B)).ncard := Set.ncard_union_le _ _
-      _ = 2 * (firstExceedance x t k ∩ B).ncard := by
-            rw [Set.ncard_image_of_injective _ (reflectAfter k).injective, two_mul]
+    refine ncard_le_two_mul_ncard_inter_of_signFlipCompl x (Iic k) t (fun ε hε ↦ ?_) fun _ hε ↦ hε.1
+    have hsum (m : Fin n) (hm : m ≤ k) :
+        ∑ j ∈ Iic m, signFlipCompl (Iic k) ε j • x j = ∑ j ∈ Iic m, ε j • x j :=
+      sum_congr rfl fun j hj ↦ by
+        rw [signFlipCompl_apply_of_mem (mem_Iic.2 ((mem_Iic.1 hj).trans hm))]
+    exact ⟨by simpa only [hsum k le_rfl] using hε.1,
+      fun m hm ↦ by simpa only [hsum m hm.le] using hε.2 m hm⟩
   have hdisjB : Pairwise fun k₁ k₂ ↦
       Disjoint (firstExceedance x t k₁ ∩ B) (firstExceedance x t k₂ ∩ B) := fun k₁ k₂ hne ↦
     (pairwiseDisjoint_firstExceedance x t hne).mono Set.inter_subset_left Set.inter_subset_left
@@ -220,70 +266,35 @@ private theorem two_pow_mul_ncard_firstExceedance_inter (x : Fin n → E) (t : �
   rw [hprod_univ, nA, nD, nAD]
   ring
 
-/-- Reflecting the prefix signs `j ≤ k` bounds the upper tail of the suffix sum by twice the upper
-tail of the full sum. -/
-private theorem ncard_lt_norm_sum_compl_Iic_le [NormedSpace ℝ E] (x : Fin n → E) (t : ℝ)
-    (k : Fin n) :
-    {ε : Fin n → ℤˣ |
-      t < ‖∑ j ∈ univ.filter (fun j : Fin n ↦ ¬ j ≤ k), ε j • x j‖}.ncard ≤
-      2 * {ε : Fin n → ℤˣ | t < ‖∑ j, ε j • x j‖}.ncard := by
-  let B : Set (Fin n → ℤˣ) := {ε | t < ‖∑ j, ε j • x j‖}
-  let D : Set (Fin n → ℤˣ) := {ε | t < ‖∑ j ∈ univ.filter (fun j : Fin n ↦ ¬ j ≤ k), ε j • x j‖}
-  let φ : (Fin n → ℤˣ) ≃ (Fin n → ℤˣ) := Equiv.mulLeft (fun j ↦ if j ≤ k then -1 else 1)
-  have hsub : D ⊆ B ∪ φ '' B := by
-    intro ε hε
-    by_cases hB : ε ∈ B
-    · exact Or.inl hB
-    · right
-      refine ⟨φ ε, ?_, by ext j; by_cases hj : j ≤ k <;> simp [φ, hj]⟩
-      have hadd : (∑ j, ε j • x j) + (∑ j, φ ε j • x j) =
-          (2 : ℝ) • ∑ j ∈ univ.filter (fun j : Fin n ↦ ¬ j ≤ k), ε j • x j := by
-        rw [← sum_filter_add_sum_filter_not univ (fun j : Fin n ↦ j ≤ k),
-          ← sum_filter_add_sum_filter_not univ (fun j : Fin n ↦ j ≤ k) (fun j ↦ φ ε j • x j)]
-        have hle : ∑ j ∈ univ.filter (fun j : Fin n ↦ j ≤ k), φ ε j • x j =
-            -∑ j ∈ univ.filter (fun j : Fin n ↦ j ≤ k), ε j • x j := by
-          rw [← sum_neg_distrib]
-          exact sum_congr rfl fun j hj ↦ by simp [φ, (mem_filter.1 hj).2, Units.smul_def]
-        have hgt : ∑ j ∈ univ.filter (fun j : Fin n ↦ ¬ j ≤ k), φ ε j • x j =
-            ∑ j ∈ univ.filter (fun j : Fin n ↦ ¬ j ≤ k), ε j • x j :=
-          sum_congr rfl fun j hj ↦ by simp [φ, (mem_filter.1 hj).2]
-        rw [hle, hgt, two_smul]
-        abel
-      dsimp [B, D] at hε hB ⊢
-      have hnorm := norm_add_le (∑ j, ε j • x j) (∑ j, φ ε j • x j)
-      rw [hadd, norm_smul, Real.norm_ofNat] at hnorm
-      linarith [not_lt.1 hB]
-  calc D.ncard ≤ (B ∪ φ '' B).ncard := Set.ncard_le_ncard hsub
-    _ ≤ B.ncard + (φ '' B).ncard := Set.ncard_union_le _ _
-    _ = 2 * B.ncard := by rw [Set.ncard_image_of_injective _ φ.injective, two_mul]
-
-/-- Deterministic inclusion behind Hoffmann–Jørgensen: if `0 < n`, `0 ≤ s`, `0 ≤ t`, and every
-summand has norm at most `s`, then `2 * t + s < ‖S_n(ε)‖` forces `t < ‖S_n(ε) - S_k(ε)‖` at the
-first index `k` where `t < ‖S_k(ε)‖`. -/
-private theorem subset_iUnion_firstExceedance_inter (hn : 0 < n) (x : Fin n → E) {s : ℝ}
-    (hs₀ : 0 ≤ s) (hs : ∀ j, ‖x j‖ ≤ s) {t : ℝ} (ht : 0 ≤ t) :
+/-- Deterministic inclusion behind Hoffmann–Jørgensen: if `0 ≤ s`, `0 ≤ t`, and every summand has
+norm at most `s`, then `2 * t + s < ‖S_n(ε)‖` forces `t < ‖S_n(ε) - S_k(ε)‖` at the first index `k`
+where `t < ‖S_k(ε)‖`. -/
+private theorem subset_iUnion_firstExceedance_inter (x : Fin n → E) {s : ℝ} (hs₀ : 0 ≤ s)
+    (hs : ∀ j, ‖x j‖ ≤ s) {t : ℝ} (ht : 0 ≤ t) :
     {ε : Fin n → ℤˣ | 2 * t + s < ‖∑ j, ε j • x j‖} ⊆
       ⋃ k : Fin n, firstExceedance x t k ∩
         {ε | t < ‖∑ j ∈ univ.filter (fun j : Fin n ↦ ¬ j ≤ k), ε j • x j‖} := by
   intro ε hε
   rw [Set.mem_ofPred_eq] at hε
-  let k_max : Fin n := ⟨n - 1, Nat.sub_lt hn zero_lt_one⟩
-  have hmax : Iic k_max = univ := by ext j; simp [Fin.le_def, k_max]; omega
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp only [univ_eq_empty, sum_empty, norm_zero] at hε
+    linarith [hs₀, ht]
+  have : NeZero n := ⟨hn.ne'⟩
   have hex : ε ∈ ⋃ k : Fin n, firstExceedance x t k := by
     rw [iUnion_firstExceedance]
-    exact ⟨k_max, by rw [hmax]; linarith⟩
+    exact ⟨⊤, by rw [Iic_top]; linarith⟩
   obtain ⟨k, hεk⟩ := Set.mem_iUnion.1 hex
   refine Set.mem_iUnion.2 ⟨k, hεk, ?_⟩
   have hprev : ‖∑ j ∈ (Iic k).erase k, ε j • x j‖ ≤ t := by
-    rcases Nat.eq_zero_or_pos k.1 with hk0 | hkpos
-    · have hempty : (Iic k).erase k = ∅ := by ext j; simp [Fin.le_def, hk0]
-      rw [hempty, sum_empty, norm_zero]
+    rw [Iic_erase]
+    rcases eq_bot_or_bot_lt k with rfl | hk
+    · rw [Iio_bot, sum_empty, norm_zero]
       exact ht
-    · let k' : Fin n := ⟨k.1 - 1, by omega⟩
-      have hk' : k' < k := Fin.lt_def.2 (by dsimp [k']; omega)
-      have herase : (Iic k).erase k = Iic k' := by ext j; simp [Fin.le_def, k']; omega
-      rw [herase]
-      exact hεk.2 k' hk'
+    · have hk0 : (0 : Fin n) < k := hk
+      have hklt : k - 1 < k :=
+        Fin.lt_def.2 (by rw [Fin.val_sub_one_of_ne_zero hk0.ne']; exact Nat.sub_lt hk0 Nat.one_pos)
+      rw [← Fin.Iic_sub_one_eq_Iio hk0]
+      exact hεk.2 (k - 1) hklt
   have hpref : ‖∑ j ∈ Iic k, ε j • x j‖ ≤ t + s := by
     rw [← add_sum_erase _ _ (mem_Iic.2 le_rfl)]
     have hnorm := norm_add_le (ε k • x k) (∑ j ∈ (Iic k).erase k, ε j • x j)
@@ -297,7 +308,7 @@ private theorem subset_iUnion_firstExceedance_inter (hn : 0 < n) (x : Fin n → 
   linarith
 
 /-- Hoffmann–Jørgensen bound on `Fin n → ℤˣ` when `0 ≤ s` and every summand has norm at most `s`. -/
-private theorem ncard_lt_norm_sum_two_mul_add_le_fin [NormedSpace ℝ E] (x : Fin n → E)
+private theorem two_pow_mul_ncard_two_mul_add_lt_norm_sum_le_fin [NormedSpace ℝ E] (x : Fin n → E)
     {s : ℝ} (hs₀ : 0 ≤ s) (hs : ∀ j, ‖x j‖ ≤ s) (t : ℝ) :
     2 ^ n * {ε : Fin n → ℤˣ | 2 * t + s < ‖∑ j, ε j • x j‖}.ncard ≤
       4 * {ε : Fin n → ℤˣ | t < ‖∑ j, ε j • x j‖}.ncard ^ 2 := by
@@ -309,14 +320,6 @@ private theorem ncard_lt_norm_sum_two_mul_add_le_fin [NormedSpace ℝ E] (x : Fi
     rw [hB, Set.ncard_univ, Nat.card_eq_fintype_card, Fintype.card_fun, Fintype.card_units_int,
       Fintype.card_fin]
     nlinarith [Nat.zero_le (2 ^ n)]
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · have hC : {ε : Fin 0 → ℤˣ | 2 * t + s < ‖∑ j, ε j • x j‖} = ∅ := by
-      ext ε
-      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_lt,
-        univ_eq_empty, sum_empty, norm_zero]
-      linarith
-    rw [hC, Set.ncard_empty, mul_zero]
-    exact Nat.zero_le _
   let B : Set (Fin n → ℤˣ) := {ε | t < ‖∑ j, ε j • x j‖}
   let C : Set (Fin n → ℤˣ) := {ε | 2 * t + s < ‖∑ j, ε j • x j‖}
   let D (k : Fin n) : Set (Fin n → ℤˣ) :=
@@ -329,14 +332,15 @@ private theorem ncard_lt_norm_sum_two_mul_add_le_fin [NormedSpace ℝ E] (x : Fi
   calc 2 ^ n * C.ncard
       ≤ 2 ^ n * (⋃ k : Fin n, firstExceedance x t k ∩ D k).ncard :=
         Nat.mul_le_mul_left _
-          (Set.ncard_le_ncard (subset_iUnion_firstExceedance_inter hn x hs₀ hs ht))
+          (Set.ncard_le_ncard (subset_iUnion_firstExceedance_inter x hs₀ hs ht))
     _ ≤ 2 ^ n * ∑ k : Fin n, (firstExceedance x t k ∩ D k).ncard :=
         Nat.mul_le_mul_left _ (Set.ncard_iUnion_le_of_fintype _)
     _ = ∑ k : Fin n, (firstExceedance x t k).ncard * (D k).ncard := by
         rw [mul_sum]
         exact sum_congr rfl fun k _ ↦ two_pow_mul_ncard_firstExceedance_inter x t k
     _ ≤ ∑ k : Fin n, (firstExceedance x t k).ncard * (2 * B.ncard) :=
-        sum_le_sum fun k _ ↦ Nat.mul_le_mul_left _ (ncard_lt_norm_sum_compl_Iic_le x t k)
+        sum_le_sum fun k _ ↦ Nat.mul_le_mul_left _
+          (ncard_lt_norm_sum_finset_le x (univ.filter fun j : Fin n ↦ ¬ j ≤ k) t)
     _ = (∑ k : Fin n, (firstExceedance x t k).ncard) * (2 * B.ncard) := (sum_mul _ _ _).symm
     _ ≤ (2 * B.ncard) * (2 * B.ncard) := by
         rw [hsumA]
@@ -367,32 +371,28 @@ theorem ncard_lt_norm_sum_comp_equiv {κ : Type*} [Fintype κ] (e : κ ≃ ι) (
 /-- **Hoffmann–Jørgensen inequality** for Rademacher sums (counting form): on the sign cube
 `ι → ℤˣ`, the exceedance count above `2 * t + ‖WithLp.toLp ∞ x‖` is bounded quadratically by the
 exceedance count above `t`. -/
-theorem ncard_lt_norm_sum_two_mul_add_norm_toLp_top_le [NormedSpace ℝ E] (x : ι → E) (t : ℝ) :
+theorem two_pow_card_mul_ncard_two_mul_add_norm_toLp_top_lt_norm_sum_le [NormedSpace ℝ E]
+    (x : ι → E) (t : ℝ) :
     2 ^ Fintype.card ι *
         {ε : ι → ℤˣ | 2 * t + ‖WithLp.toLp ∞ x‖ < ‖∑ i, ε i • x i‖}.ncard ≤
       4 * {ε : ι → ℤˣ | t < ‖∑ i, ε i • x i‖}.ncard ^ 2 := by
   classical
   let e := (Fintype.equivFin ι).symm
   rw [← ncard_lt_norm_sum_comp_equiv e x, ← ncard_lt_norm_sum_comp_equiv e x]
-  exact ncard_lt_norm_sum_two_mul_add_le_fin (x ∘ e) (norm_nonneg _)
+  exact two_pow_mul_ncard_two_mul_add_lt_norm_sum_le_fin (x ∘ e) (norm_nonneg _)
     (fun j ↦ PiLp.norm_apply_le (WithLp.toLp ∞ x) (e j)) t
 
 /-- **Hoffmann–Jørgensen inequality** for Rademacher sums (probability form). -/
-theorem ncard_lt_norm_sum_two_mul_add_norm_toLp_top_div_le [NormedSpace ℝ E] (x : ι → E)
+theorem ncard_two_mul_add_norm_toLp_top_lt_norm_sum_div_le [NormedSpace ℝ E] (x : ι → E)
     (t : ℝ) :
     ({ε : ι → ℤˣ | 2 * t + ‖WithLp.toLp ∞ x‖ < ‖∑ i, ε i • x i‖}.ncard : ℝ) /
         2 ^ Fintype.card ι ≤
-      4 * (({ε : ι → ℤˣ | t < ‖∑ i, ε i • x i‖}.ncard : ℝ) / 2 ^ Fintype.card ι) ^ 2 := by
-  have h : (2 : ℝ) ^ Fintype.card ι *
-      {ε : ι → ℤˣ | 2 * t + ‖WithLp.toLp ∞ x‖ < ‖∑ i, ε i • x i‖}.ncard ≤
-    4 * ({ε : ι → ℤˣ | t < ‖∑ i, ε i • x i‖}.ncard : ℝ) ^ 2 := by
-    exact_mod_cast ncard_lt_norm_sum_two_mul_add_norm_toLp_top_le x t
-  rw [div_pow, ← mul_div_assoc, div_le_div_iff₀ (by positivity) (by positivity)]
-  nlinarith [pow_pos (two_pos : (0 : ℝ) < 2) (Fintype.card ι)]
+      4 * (({ε : ι → ℤˣ | t < ‖∑ i, ε i • x i‖}.ncard : ℝ) / 2 ^ Fintype.card ι) ^ 2 :=
+  div_two_pow_le_four_mul_sq (two_pow_card_mul_ncard_two_mul_add_norm_toLp_top_lt_norm_sum_le x t)
 
 /-- **Rademacher tail iteration** (counting form): unconditionally in any real normed space,
 `2 ^ card ι * #{3 * t < ‖S‖} ≤ 4 * #{t < ‖S‖} ^ 2`. -/
-theorem ncard_lt_norm_sum_three_mul_le [NormedSpace ℝ E] (x : ι → E) (t : ℝ) :
+theorem two_pow_card_mul_ncard_three_mul_lt_norm_sum_le [NormedSpace ℝ E] (x : ι → E) (t : ℝ) :
     2 ^ Fintype.card ι * {ε : ι → ℤˣ | 3 * t < ‖∑ i, ε i • x i‖}.ncard ≤
       4 * {ε : ι → ℤˣ | t < ‖∑ i, ε i • x i‖}.ncard ^ 2 := by
   classical
@@ -410,56 +410,31 @@ theorem ncard_lt_norm_sum_three_mul_le [NormedSpace ℝ E] (x : ι → E) (t : �
     have h3 : 3 * t = 2 * t + t := by ring
     dsimp only [B, C]
     rw [h3, ← ncard_lt_norm_sum_comp_equiv e x, ← ncard_lt_norm_sum_comp_equiv e x]
-    exact ncard_lt_norm_sum_two_mul_add_le_fin (x ∘ e) ht (fun j ↦ hmax (e j)) t
+    exact two_pow_mul_ncard_two_mul_add_lt_norm_sum_le_fin (x ∘ e) ht (fun j ↦ hmax (e j)) t
   · push Not at hmax
     obtain ⟨i₀, hi₀⟩ := hmax
-    let σ : (ι → ℤˣ) ≃ (ι → ℤˣ) := Equiv.mulLeft (Pi.mulSingle i₀ (-1))
-    have hcov : (Set.univ : Set (ι → ℤˣ)) ⊆ B ∪ σ '' B := by
-      intro ε _
-      by_cases hB : ε ∈ B
-      · exact Or.inl hB
-      · right
-        refine ⟨σ ε, ?_, by ext j; by_cases hj : j = i₀ <;> simp [σ, hj]⟩
-        have hsub : (∑ j, ε j • x j) - (∑ j, σ ε j • x j) = (2 : ℤ) • ε i₀ • x i₀ := by
-          rw [← sum_sub_distrib, ← Fintype.sum_ite_eq' i₀ fun j ↦ (2 : ℤ) • ε j • x j]
-          refine sum_congr rfl fun j _ ↦ ?_
-          by_cases hj : j = i₀
-          · subst hj; simp [σ, Units.smul_def, two_zsmul]
-          · simp [σ, hj]
-        have h2 : ‖(2 : ℤ) • ε i₀ • x i₀‖ = 2 * ‖x i₀‖ := by
-          rw [norm_zsmul ℝ, norm_units_zsmul]; norm_num
-        have hnorm := norm_sub_le (∑ j, ε j • x j) (∑ j, σ ε j • x j)
-        rw [hsub, h2] at hnorm
-        dsimp [B] at hB ⊢
-        linarith [not_lt.1 hB]
-    have h2B : 2 ^ Fintype.card ι ≤ 2 * B.ncard := calc
-      2 ^ Fintype.card ι = (Set.univ : Set (ι → ℤˣ)).ncard := huniv.symm
-      _ ≤ (B ∪ σ '' B).ncard := Set.ncard_le_ncard hcov
-      _ ≤ B.ncard + (σ '' B).ncard := Set.ncard_union_le _ _
-      _ = 2 * B.ncard := by rw [Set.ncard_image_of_injective _ σ.injective, two_mul]
+    have h2B : 2 ^ Fintype.card ι ≤ 2 * B.ncard := by
+      simpa [norm_units_zsmul, hi₀, B] using ncard_lt_norm_sum_finset_le x ({i₀} : Finset ι) t
     nlinarith
 
 /-- **Rademacher tail iteration** (probability form):
 `P(3 * t < ‖S‖) ≤ 4 * P(t < ‖S‖) ^ 2`. -/
-theorem ncard_lt_norm_sum_three_mul_div_le [NormedSpace ℝ E] (x : ι → E) (t : ℝ) :
+theorem ncard_three_mul_lt_norm_sum_div_le [NormedSpace ℝ E] (x : ι → E) (t : ℝ) :
     ({ε : ι → ℤˣ | 3 * t < ‖∑ i, ε i • x i‖}.ncard : ℝ) / 2 ^ Fintype.card ι ≤
-      4 * (({ε : ι → ℤˣ | t < ‖∑ i, ε i • x i‖}.ncard : ℝ) / 2 ^ Fintype.card ι) ^ 2 := by
-  have h : (2 : ℝ) ^ Fintype.card ι * {ε : ι → ℤˣ | 3 * t < ‖∑ i, ε i • x i‖}.ncard ≤
-      4 * ({ε : ι → ℤˣ | t < ‖∑ i, ε i • x i‖}.ncard : ℝ) ^ 2 := by
-    exact_mod_cast ncard_lt_norm_sum_three_mul_le x t
-  rw [div_pow, ← mul_div_assoc, div_le_div_iff₀ (by positivity) (by positivity)]
-  nlinarith [pow_pos (two_pos : (0 : ℝ) < 2) (Fintype.card ι)]
+      4 * (({ε : ι → ℤˣ | t < ‖∑ i, ε i • x i‖}.ncard : ℝ) / 2 ^ Fintype.card ι) ^ 2 :=
+  div_two_pow_le_four_mul_sq (two_pow_card_mul_ncard_three_mul_lt_norm_sum_le x t)
 
 /-- **Iterated doubly-exponential Rademacher tail bound**: for every `k : ℕ`,
 `4 * P(3 ^ k * t < ‖S‖) ≤ (4 * P(t < ‖S‖)) ^ (2 ^ k)`. -/
-theorem ncard_lt_norm_sum_three_pow_mul_div_le [NormedSpace ℝ E] (x : ι → E) (t : ℝ) (k : ℕ) :
+theorem four_mul_ncard_three_pow_mul_lt_norm_sum_div_le [NormedSpace ℝ E] (x : ι → E) (t : ℝ)
+    (k : ℕ) :
     4 * (({ε : ι → ℤˣ | 3 ^ k * t < ‖∑ i, ε i • x i‖}.ncard : ℝ) / 2 ^ Fintype.card ι) ≤
       (4 * (({ε : ι → ℤˣ | t < ‖∑ i, ε i • x i‖}.ncard : ℝ) / 2 ^ Fintype.card ι)) ^
         (2 ^ k) := by
   induction k with
   | zero => simp
   | succ k ih =>
-    have hstep := ncard_lt_norm_sum_three_mul_div_le x (3 ^ k * t)
+    have hstep := ncard_three_mul_lt_norm_sum_div_le x (3 ^ k * t)
     have h3 : (3 : ℝ) ^ (k + 1) * t = 3 * (3 ^ k * t) := by ring
     rw [h3]
     calc 4 * (({ε : ι → ℤˣ | 3 * (3 ^ k * t) < ‖∑ i, ε i • x i‖}.ncard : ℝ) /
