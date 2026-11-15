@@ -42,7 +42,8 @@ Hence the reduction step permutes the finite set of reduced forms of discriminan
 proper equivalence class (`exists_smul_eq_of_sameCycle`), and each proper class contains a
 reduced form, so the proper classes of discriminant `D` are the images of the finitely many
 cycles. That two different cycles always give different classes is the classical theorem of
-Gauss that completes the count of classes by cycles, and is not proved here.
+Gauss that completes the count of classes by cycles, proved in
+`TauCeti.NumberTheory.BinaryQuadraticForm.IndefiniteReduction.Cycles`.
 
 On reduced forms the step agrees with the reduction operator `ρ` of Cohen and of
 Buchmann–Vollmer: a reduced form has `|c| < √D`, which is the case in which their operator uses
