@@ -40,9 +40,9 @@ namespace TauCeti.Finance
 approximations in almost-sure pathwise L¹. No moment bound on the holding or its absolute
 interest income is required. All integrals use the bond's actual variation measure, in
 nonnegative time coordinates. -/
-theorem exists_seq_simpleHolding_ae_tendsto_bondVariation
+theorem exists_seq_simpleHolding_ae_tendsto_lintegral_enorm_sub_variation_vectorMeasureIcc_bondPrice
     {Ω : Type*} {mΩ : MeasurableSpace Ω} (ℱ : Filtration ℝ≥0 mΩ)
-    (P : Measure Ω) [IsFiniteMeasure P] {r : ℝ → ℝ} {T : ℝ}
+    (P : Measure Ω) [SFinite P] {r : ℝ → ℝ} {T : ℝ}
     (hr : ContinuousOn r (Icc 0 T)) (hT : 0 ≤ T) (β₀ : ℝ)
     {b : ℝ≥0 → Ω → ℝ} (hb : IsStronglyPredictable ℱ b)
     (hint : ∀ᵐ ω ∂P, Integrable (fun t ↦ b t ω)
