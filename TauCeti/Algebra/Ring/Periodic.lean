@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Ring.Periodic
 
 /-!
-# Periodicity under integer combinations of two periods, and of single-index families
+# Periodicity under integer combinations of periods, for single-index families, and reflection
 
 A function periodic under `c₁` and `c₂` is periodic under every integer combination
 `m c₁ + n c₂` (`Function.Periodic.int_mul_add_int_mul`). For the periods `1` and `i` of a
@@ -17,6 +17,9 @@ function on `ℂ` they are the vectors of the lattice `ℤ τ + ℤ`.
 
 The family which is a `c`-periodic function `g` at one index and zero at the others is
 `c`-periodic at every index (`Function.Periodic.piSingle_apply`).
+
+A function with period `c` composed with the reflection `x ↦ -x` still has period `c`
+(`Function.Periodic.comp_neg`).
 -/
 
 public section
@@ -39,5 +42,10 @@ theorem Periodic.piSingle_apply {ι γ δ : Type*} [DecidableEq ι] [Add γ] [Ze
   · simpa using hg
   · rw [Pi.single_eq_of_ne h]
     exact fun _ ↦ rfl
+
+/-- A function with period `c`, composed with the reflection `x ↦ -x`, has period `c`. -/
+theorem Periodic.comp_neg {γ : Type*} [AddCommGroup γ] {f : γ → β} {c : γ} (h : Periodic f c) :
+    Periodic (fun x ↦ f (-x)) c := by
+  simpa only [zero_sub] using h.const_sub 0
 
 end Function
