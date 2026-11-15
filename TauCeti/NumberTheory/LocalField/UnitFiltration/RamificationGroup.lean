@@ -12,8 +12,6 @@ public import TauCeti.NumberTheory.LocalField.Teichmuller
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
-import TauCeti.GroupTheory.PGroup
-import TauCeti.NumberTheory.LocalField.UnitFiltration.ProP
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 import TauCeti.RingTheory.Valuation.ValuativeRel.Action
 
@@ -620,9 +618,7 @@ variable (G) in
 characteristic `p`: it embeds into `U(L,i) / U(L,i+1)`, which has `q` elements. -/
 theorem isPGroup_ramificationGroupGraded_natCast_succ (p : ℕ) [CharP 𝓀[L] p] (i : ℕ) :
     IsPGroup p (RamificationGroupGraded G 𝒪[L] ((i + 1 : ℕ) : ℤ)) :=
-  have ⟨_, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-  (isPGroup_unitFiltration_succ_quotient_add_succ p i 1).of_injective _
-    (ramificationGroupGradedToUnitFiltrationGraded_injective (i := i + 1) hϖ)
+  TauCeti.IsLocalRing.isPGroup_ramificationGroupGraded G 𝒪[L] p (by omega)
 
 variable (G) in
 /-- **The positive-depth ramification groups are `p`-groups**, for `p` the residue
@@ -631,26 +627,8 @@ inertia group `G_1` is a `p`-group. The filtration reaches `1`, and each positiv
 `G_i / G_{i+1}` is a `p`-group (`TauCeti.isPGroup_ramificationGroupGraded_natCast_succ`). -/
 theorem isPGroup_ramificationGroup (p : ℕ) [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]]
     [Finite (ramificationGroup G 𝒪[L] 0)] {i : ℤ} (hi : 0 < i) :
-    IsPGroup p (ramificationGroup G 𝒪[L] i) := by
-  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G 𝒪[L]
-  obtain ⟨j, rfl⟩ : ∃ j : ℕ, i = ((j + 1 : ℕ) : ℤ) := ⟨(i - 1).toNat, by omega⟩
-  -- Descending induction on the distance `d` from the index `j + 1` to a vanishing index.
-  suffices ∀ d j : ℕ, N ≤ j + 1 + d → IsPGroup p (ramificationGroup G 𝒪[L] ((j + 1 : ℕ) : ℤ)) from
-    this N.toNat j (by omega)
-  intro d
-  induction d with
-  | zero =>
-    intro j hj
-    rw [hN _ (by omega)]
-    exact IsPGroup.of_bot
-  | succ d ih =>
-    intro j hj
-    have hsucc := ih (j + 1) (by omega)
-    push_cast at hsucc
-    -- `G_{j+1}` is an extension of the `p`-group `G_{j+1} / G_{j+2}` by the `p`-group `G_{j+2}`.
-    refine IsPGroup.of_subgroup_of_quotient ?_ (isPGroup_ramificationGroupGraded_natCast_succ G p j)
-    push_cast
-    exact hsucc.comap_subtype
+    IsPGroup p (ramificationGroup G 𝒪[L] i) :=
+  TauCeti.IsLocalRing.isPGroup_ramificationGroup G 𝒪[L] p hi
 
 /-! ### Wild inertia as the Sylow subgroup of inertia -/
 
@@ -706,10 +684,8 @@ theorem ramificationGroupOneSylow_normal (p : ℕ) [CharP 𝓀[L] p]
     [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
     (ramificationGroupOneSylow (G := G) (L := L) p :
       Subgroup (ramificationGroup G 𝒪[L] 0)).Normal := by
-  rw [ramificationGroupOneSylow_coe, Subgroup.normal_subgroupOf_iff_le_normalizer
-    (ramificationGroup_antitone (G := G) (𝒪[L]) (by omega : (0 : ℤ) ≤ 1))]
-  rw [Subgroup.normalizer_eq_top_iff.mpr inferInstance]
-  exact le_top
+  rw [ramificationGroupOneSylow_coe]
+  infer_instance
 
 variable (G) in
 /-- The wild inertia Sylow subgroup is the unique Sylow `p`-subgroup of inertia. -/

@@ -347,19 +347,11 @@ omit [Algebra k F] [IsScalarTower k F F'] in
 theorem commutator_ramificationGroup_le (i : ℕ) :
     ⁅ramificationGroup F P (i + 1), ramificationGroup F P (i + 1)⁆ ≤
       ramificationGroup F P (i + 2) := by
-  obtain ⟨t, ht⟩ := P.exists_isUniformizer
-  rw [isUniformizer_iff_ord_eq_one] at ht
-  rw [Subgroup.commutator_le]
-  intro a ha b hb
-  rw [commutatorElement_def]
-  have hmem : (⟨a, ha⟩ * ⟨b, hb⟩ * ⟨a, ha⟩⁻¹ * ⟨b, hb⟩⁻¹ :
-      ramificationGroup F P (i + 1)) ∈ (ramificationResidueHom F P ht i).ker := by
-    rw [MonoidHom.mem_ker, ← toAdd_eq_zero]
-    funext x
-    simp only [map_mul, map_inv, toAdd_mul, toAdd_inv, Pi.add_apply, Pi.neg_apply, Pi.zero_apply]
-    ring
-  rw [ker_ramificationResidueHom, Subgroup.mem_subgroupOf] at hmem
-  simpa using hmem
+  rw [ramificationGroup_def, ramificationGroup_def]
+  have h : ((i + 2 : ℕ) : ℤ) = ((i + 1 : ℕ) : ℤ) + 1 := by omega
+  rw [h]
+  exact IsLocalRing.commutator_ramificationGroup_le
+    (P.integers.decompositionSubgroup F) P.integers (by omega)
 
 omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **In characteristic `p` the successive quotients of the ramification filtration are killed by
@@ -368,16 +360,10 @@ omit [Algebra k F] [IsScalarTower k F F'] in
 theorem pow_mem_ramificationGroup_of_charP (p : ℕ) [CharP P.ResidueField p] (i : ℕ)
     {g : P.integers.decompositionSubgroup F} (hg : g ∈ ramificationGroup F P (i + 1)) :
     g ^ p ∈ ramificationGroup F P (i + 2) := by
-  obtain ⟨t, ht⟩ := P.exists_isUniformizer
-  rw [isUniformizer_iff_ord_eq_one] at ht
-  have hp : (p : P.ResidueField) = 0 := CharP.cast_eq_zero P.ResidueField p
-  have hmem : (⟨g, hg⟩ : ramificationGroup F P (i + 1)) ^ p ∈
-      (ramificationResidueHom F P ht i).ker := by
-    rw [MonoidHom.mem_ker, map_pow, ← toAdd_eq_zero]
-    funext x
-    rw [toAdd_pow, Pi.smul_apply, Pi.zero_apply, nsmul_eq_mul, hp, zero_mul]
-  rw [ker_ramificationResidueHom, Subgroup.mem_subgroupOf] at hmem
-  simpa using hmem
+  rw [ramificationGroup_def] at hg ⊢
+  have h : ((i + 2 : ℕ) : ℤ) = ((i + 1 : ℕ) : ℤ) + 1 := by omega
+  rw [h]
+  exact IsLocalRing.pow_mem_ramificationGroup_of_charP p (by omega) hg
 
 omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **In characteristic zero a finite first ramification group is trivial** (Stichtenoth,

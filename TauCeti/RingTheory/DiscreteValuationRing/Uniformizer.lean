@@ -23,14 +23,18 @@ sending the class of `u` to the residue of `(u - 1) / π ^ (n + 1)`.  This file 
 identifications explicitly and computes how they change when the uniformizer is replaced.
 
 If `π' = π * a` for a unit `a` of `R`, then the maximal-ideal identification for `π'` is the
-identification for `π` precomposed with multiplication by the residue of `a ^ m`, and the inverse
+identification for `π` precomposed with multiplication by the residue of `a ^ m`, and the
 principal-unit coordinate for `π` is the coordinate for `π'` multiplied by the residue of
 `a ^ (n + 1)`.  Thus both are independent of the uniformizer up to multiplication by a unit of the
 residue field.
 
 The explicit principal-power equivalence below follows the construction of Mathlib's
 `Ideal.quotEquivPowQuotPowSucc`, retaining a specified generator in order to expose the
-change-of-uniformizer formula.
+change-of-uniformizer formula.  The positive-depth principal-unit coordinate
+`TauCeti.maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer` adapts
+`TauCeti.unitFiltrationGradedSuccEquivResidueFieldOfUniformizer` from
+`TauCeti/NumberTheory/LocalField/UnitFiltration/Uniformizer.lean` to arbitrary discrete valuation
+rings.
 
 ## Main results
 
@@ -38,8 +42,8 @@ change-of-uniformizer formula.
   field with a maximal-ideal graded piece determined by a uniformizer.
 * `TauCeti.residueFieldEquivMaximalIdealGradedOfUniformizer_change`: changing the uniformizer
   scales the residue coordinate by the residue of the `m`th power of the change unit.
-* `TauCeti.maximalIdealPrincipalUnitGroupSuccEquivResidueFieldOfUniformizer`: the additive
-  identification of `(1 + 𝔪^(n+1)) / (1 + 𝔪^(n+2))` with `ResidueField R` determined by a
+* `TauCeti.maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer`: the
+  additive identification of `(1 + 𝔪^(n+1)) / (1 + 𝔪^(n+2))` with `ResidueField R` determined by a
   uniformizer, together with its representative evaluation and uniformizer-change formula.
 
 ## References
@@ -189,7 +193,7 @@ private theorem smul_top_maximalIdeal_pow_eq_comap (n : ℕ) :
 
 /-- The positive-depth principal-unit coordinate associated to a uniformizer `π` of a discrete
 valuation ring `R`: the class of `u ∈ 1 + 𝔪^(n+1)` is sent to the residue of `(u - 1) / π^(n+1)`. -/
-noncomputable def maximalIdealPrincipalUnitGroupSuccEquivResidueFieldOfUniformizer (n : ℕ)
+noncomputable def maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer (n : ℕ)
     (π : R) (hπ : Irreducible π) :
     Additive ((maximalIdeal R).PrincipalUnitGroupPowGraded (n + 1)) ≃+ ResidueField R :=
   ((maximalIdeal R).principalUnitGroupPowQuotientEquiv
@@ -202,36 +206,37 @@ noncomputable def maximalIdealPrincipalUnitGroupSuccEquivResidueFieldOfUniformiz
 /-- Multiplying the uniformizer coordinate of the class of `u ∈ 1 + 𝔪^(n+1)` by `π^(n+1)` gives
 the class of `u - 1` in `𝔪^(n+1) / 𝔪^(n+2)`. -/
 @[simp]
-theorem maximalIdealPrincipalUnitGroupSuccEquivResidueFieldOfUniformizer_ofMul_mk (n : ℕ)
+theorem maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk (n : ℕ)
     (π : R) (hπ : Irreducible π) (u : (maximalIdeal R ^ (n + 1)).principalUnitGroup) :
     residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (n + 1)
-        (maximalIdealPrincipalUnitGroupSuccEquivResidueFieldOfUniformizer n π hπ
+        (maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer n π hπ
           (Additive.ofMul (QuotientGroup.mk u))) =
       Submodule.Quotient.mk ⟨((u : Rˣ) : R) - 1, Ideal.mem_principalUnitGroup.mp u.2⟩ := by
-  simp [maximalIdealPrincipalUnitGroupSuccEquivResidueFieldOfUniformizer,
+  simp [maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer,
     AddEquiv.additiveMultiplicative]
 
 /-- If `u - 1 = y * π^(n+1)`, then the uniformizer coordinate of the class of `u` is the residue
 of `y`. -/
-theorem maximalIdealPrincipalUnitGroupSuccEquivResidueFieldOfUniformizer_ofMul_mk_eq_residue
+theorem
+    maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk_eq_residue
     (n : ℕ) (π : R) (hπ : Irreducible π) (u : (maximalIdeal R ^ (n + 1)).principalUnitGroup)
     (y : R) (hu : ((u : Rˣ) : R) - 1 = y * π ^ (n + 1)) :
-    maximalIdealPrincipalUnitGroupSuccEquivResidueFieldOfUniformizer n π hπ
+    maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer n π hπ
         (Additive.ofMul (QuotientGroup.mk u)) =
       residue R y := by
   apply (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (n + 1)).injective
-  rw [maximalIdealPrincipalUnitGroupSuccEquivResidueFieldOfUniformizer_ofMul_mk,
+  rw [maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk,
     residueFieldEquivMaximalIdealGradedOfUniformizer_mk]
   exact congrArg Submodule.Quotient.mk (Subtype.ext hu)
 
 /-- Coordinates attached to `π` and `π'` differ by multiplication by the residue of the `(n+1)`-st
 power of `uniformizerChangeUnit π π'`. -/
-theorem maximalIdealPrincipalUnitGroupSuccEquivResidueFieldOfUniformizer_change (n : ℕ)
+theorem maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer_change (n : ℕ)
     (π π' : R) (hπ : Irreducible π) (hπ' : Irreducible π')
     (x : Additive ((maximalIdeal R).PrincipalUnitGroupPowGraded (n + 1))) :
-    maximalIdealPrincipalUnitGroupSuccEquivResidueFieldOfUniformizer n π hπ x =
+    maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer n π hπ x =
       residue R (uniformizerChangeUnit π π' hπ hπ' : R) ^ (n + 1) *
-        maximalIdealPrincipalUnitGroupSuccEquivResidueFieldOfUniformizer n π' hπ' x :=
+        maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer n π' hπ' x :=
   residueFieldEquivMaximalIdealGradedOfUniformizer_symm_change π π' hπ hπ' (n + 1) _
 
 end TauCeti

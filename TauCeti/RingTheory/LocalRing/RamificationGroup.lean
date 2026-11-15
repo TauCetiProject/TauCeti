@@ -79,16 +79,21 @@ integer indexing that Herbrand theory uses.
   monogenic case, where a single generator decides it.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_span_eq_maximalIdeal` and
   `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_span_singleton_eq_maximalIdeal`: when `S` is a
-  local `R`-algebra with separable residue extension, membership of an element of `G_0` in `G_i`
-  is already decided on any generating set of the maximal ideal of `S`.
+  local `R`-algebra on which `G` acts by `R`-algebra automorphisms and
+  `ResidueField S / ResidueField R` is separable, membership of an element of `G_0` in `G_i` is
+  already decided on any generating set of the maximal ideal of `S`.
 * `TauCeti.IsLocalRing.commutator_ramificationGroup_le`,
+  `TauCeti.IsLocalRing.isMulCommutative_ramificationGroupGraded`,
+  `TauCeti.IsLocalRing.pow_mem_ramificationGroup_succ_iff`,
   `TauCeti.IsLocalRing.pow_mem_ramificationGroup_of_charP`,
   `TauCeti.IsLocalRing.isPGroup_ramificationGroupGraded`,
-  `TauCeti.IsLocalRing.isPGroup_ramificationGroup`, and
+  `TauCeti.IsLocalRing.isPGroup_ramificationGroup`,
+  `TauCeti.IsLocalRing.subsingleton_ramificationGroupGraded_of_charZero`, and
   `TauCeti.IsLocalRing.ramificationGroup_eq_bot_of_charZero`: at positive depth `i > 0`, the
   successive quotients `G_i / G_{i+1}` are abelian, killed by the residue characteristic `p` (so
   `G_i` is a `p`-group for a faithful action with finite `G_0` over a Noetherian local ring), and
-  trivial when finite in residue characteristic zero.
+  trivial when finite in residue characteristic zero (so `G_i = ⊥` for a faithful action with
+  finite `G_0` over a Noetherian local ring).
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_le_addVal`: over a discrete valuation ring the
   defining condition is the valuation inequality `v (σ x - x) ≥ i + 1`;
   `TauCeti.IsLocalRing.mem_ramificationGroup_iff_le_lowerIndex` reads it as `i + 1 ≤ i_G(σ)`.
@@ -110,9 +115,22 @@ integer indexing that Herbrand theory uses.
   `TauCeti.IsLocalRing.mem_ramificationGroupReal_iff_of_lowerIndex_eq`: when `i_G(σ) = n` is
   finite, `σ ∈ G_i ↔ i + 1 ≤ n` and `σ ∈ G_u ↔ u ≤ n - 1`.
 
+## Implementation notes
+
+The monogenicity-free separable-residue criterion in `section Separable` adapts the lifted
+minimal-polynomial Taylor-expansion proof from
+`TauCeti/FieldTheory/FunctionField/Place/Extension/TameInertia.lean`, and the separability-free
+positive-depth displacement homomorphism and `p`-group / characteristic-zero results in
+`section PositiveDepth` adapt
+`TauCeti/FieldTheory/FunctionField/Place/Extension/RamificationGroup.lean` and
+`TauCeti/FieldTheory/FunctionField/Place/Extension/WildInertia.lean` (following Stichtenoth,
+Proposition 3.8.5) to arbitrary commutative local rings.
+
 ## References
 
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §§1–2.
+* H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
+  Proposition 3.8.5.
 -/
 
 public section
@@ -799,23 +817,25 @@ theorem mem_ramificationGroupReal_iff_of_lowerIndex_eq {u : ℝ} {σ : G} {n : �
 
 end RealDiscreteValuationRing
 
+/-! ### Separable residue extensions -/
+
 section Separable
 
 open Polynomial
 
 variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
 
-/-- Over a local `R`-algebra `S` with separable residue extension, an element of `G_0` moving every
-element of the maximal ideal into an ideal `I` moves every element of `S` into `I`.
-
-Indeed, for `x : S`, a lift `g : R[X]` of the minimal polynomial of the residue of `x` over
-`ResidueField R` takes a value in `𝔪_S` at `x` and has unit derivative at `x`, so Taylor expansion
-writes `g(σ • x) - g(x) = (σ • x - x) * u` with `u` a unit of `S`. -/
+/-- Over a local `R`-algebra `S` on which `G` acts by `R`-algebra automorphisms with separable
+residue extension, an element of `G_0` moving every element of the maximal ideal into an ideal `I`
+moves every element of `S` into `I`. -/
 theorem smul_sub_mem_of_mem_ramificationGroup_zero_of_forall_mem_maximalIdeal (R : Type*)
     [CommRing R] [IsLocalRing R] [Algebra R S] [IsLocalHom (algebraMap R S)] [SMulCommClass G R S]
     [Algebra.IsSeparable (ResidueField R) (ResidueField S)] {I : Ideal S} {σ : G}
     (hσ : σ ∈ ramificationGroup G S 0) (hm : ∀ y ∈ maximalIdeal S, σ • y - y ∈ I) (x : S) :
     σ • x - x ∈ I := by
+  -- Lift the minimal polynomial of `residue S x` over `ResidueField R` to `g : R[X]`: then
+  -- `g(x) ∈ 𝔪_S` and `g'(x)` is a unit in `S` (adapting
+  -- `TauCeti/FieldTheory/FunctionField/Place/Extension/TameInertia.lean`, Stichtenoth Prop. 3.8.5).
   obtain ⟨g, hg⟩ := (mem_lifts _).mp
     (mem_lifts_of_surjective residue_surjective (minpoly (ResidueField R) (residue S x)))
   have hval : aeval x g ∈ maximalIdeal S := by
@@ -825,6 +845,7 @@ theorem smul_sub_mem_of_mem_ramificationGroup_zero_of_forall_mem_maximalIdeal (R
     rw [← residue_ne_zero_iff_isUnit, map_aeval_eq_aeval_map residue_comp_algebraMap,
       ← derivative_map, hg]
     exact (Algebra.IsSeparable.isSeparable _ _).aeval_derivative_ne_zero (minpoly.aeval _ _)
+  -- Taylor expansion writes `g(σ • x) - g(x) = (σ • x - x) * u` with `u` a unit of `S`.
   set f : S[X] := g.map (algebraMap R S)
   set d : S := σ • x - x
   obtain ⟨k, hk⟩ := binomExpansion f x d
@@ -847,10 +868,9 @@ theorem smul_sub_mem_of_mem_ramificationGroup_zero_of_forall_mem_maximalIdeal (R
   rw [hd_eq, hdu]
   exact I.mul_mem_right u hfσ
 
-/-- When `S` is a local `R`-algebra with separable residue extension and `G` acts by `R`-algebra
-automorphisms, membership of an element `σ ∈ G_0` in `G_i` is decided on any generating set `s` of
-the maximal ideal of `S`: propagating from `s` to `𝔪_S` by the Leibniz rule and from `𝔪_S` to `S`
-by Taylor expansion of lifted minimal polynomials advances one power of `𝔪_S` at a time. -/
+/-- When `S` is a local `R`-algebra on which `G` acts by `R`-algebra automorphisms with separable
+residue extension, membership of an element `σ ∈ G_0` in `G_i` is decided on any generating set `s`
+of the maximal ideal of `S`. -/
 theorem mem_ramificationGroup_iff_of_span_eq_maximalIdeal (R : Type*) [CommRing R]
     [IsLocalRing R] [Algebra R S] [IsLocalHom (algebraMap R S)] [SMulCommClass G R S]
     [Algebra.IsSeparable (ResidueField R) (ResidueField S)] {s : Set S}
@@ -860,6 +880,8 @@ theorem mem_ramificationGroup_iff_of_span_eq_maximalIdeal (R : Type*) [CommRing 
       ∀ z ∈ s, σ • z - z ∈ maximalIdeal S ^ (i + 1).toNat := by
   rw [mem_ramificationGroup_iff]
   refine ⟨fun h z _ ↦ h z, ?_⟩
+  -- Propagate from `s` to `𝔪_S` by the Leibniz rule and from `𝔪_S` to `S` by Taylor expansion,
+  -- advancing one power of `𝔪_S` at a time.
   suffices ∀ m : ℕ, (∀ z ∈ s, σ • z - z ∈ maximalIdeal S ^ m) →
       ∀ x : S, σ • x - x ∈ maximalIdeal S ^ m from this (i + 1).toNat
   intro m
@@ -885,8 +907,9 @@ theorem mem_ramificationGroup_iff_of_span_eq_maximalIdeal (R : Type*) [CommRing 
       rw [pow_succ]
       exact Ideal.mul_mem_mul (ihm c) (hs ▸ hy)
 
-/-- When `S` is a local `R`-algebra with separable residue extension and principal maximal ideal
-generated by `π`, membership of an element `σ ∈ G_0` in `G_i` is decided at `π` alone. -/
+/-- When `S` is a local `R`-algebra on which `G` acts by `R`-algebra automorphisms with separable
+residue extension and principal maximal ideal generated by `π`, membership of an element `σ ∈ G_0`
+in `G_i` is decided at `π` alone. -/
 theorem mem_ramificationGroup_iff_of_span_singleton_eq_maximalIdeal (R : Type*) [CommRing R]
     [IsLocalRing R] [Algebra R S] [IsLocalHom (algebraMap R S)] [SMulCommClass G R S]
     [Algebra.IsSeparable (ResidueField R) (ResidueField S)] {π : S}
@@ -895,8 +918,9 @@ theorem mem_ramificationGroup_iff_of_span_singleton_eq_maximalIdeal (R : Type*) 
     σ ∈ ramificationGroup G S i ↔ σ • π - π ∈ maximalIdeal S ^ (i + 1).toNat := by
   rw [mem_ramificationGroup_iff_of_span_eq_maximalIdeal R hπ hσ, Set.forall_mem_singleton]
 
-/-- At a nonnegative index, membership of an element `σ ∈ G_0` in `G_n` over a local `R`-algebra
-`S` with separable residue extension is decided on any generating set `s` of `𝔪_S`. -/
+/-- At a nonnegative index, over a local `R`-algebra `S` on which `G` acts by `R`-algebra
+automorphisms with separable residue extension, membership of an element `σ ∈ G_0` in `G_n` is
+decided on any generating set `s` of `𝔪_S`. -/
 theorem mem_ramificationGroup_natCast_iff_of_span_eq_maximalIdeal (R : Type*) [CommRing R]
     [IsLocalRing R] [Algebra R S] [IsLocalHom (algebraMap R S)] [SMulCommClass G R S]
     [Algebra.IsSeparable (ResidueField R) (ResidueField S)] {s : Set S}
@@ -906,8 +930,9 @@ theorem mem_ramificationGroup_natCast_iff_of_span_eq_maximalIdeal (R : Type*) [C
   have h : ((n : ℤ) + 1).toNat = n + 1 := by omega
   rw [mem_ramificationGroup_iff_of_span_eq_maximalIdeal R hs hσ, h]
 
-/-- At a nonnegative index, membership of an element `σ ∈ G_0` in `G_n` over a local `R`-algebra
-`S` with separable residue extension and principal maximal ideal `(π)` is decided at `π` alone. -/
+/-- At a nonnegative index, over a local `R`-algebra `S` on which `G` acts by `R`-algebra
+automorphisms with separable residue extension and principal maximal ideal `(π)`, membership of an
+element `σ ∈ G_0` in `G_n` is decided at `π` alone. -/
 theorem mem_ramificationGroup_natCast_iff_of_span_singleton_eq_maximalIdeal (R : Type*)
     [CommRing R] [IsLocalRing R] [Algebra R S] [IsLocalHom (algebraMap R S)] [SMulCommClass G R S]
     [Algebra.IsSeparable (ResidueField R) (ResidueField S)] {π : S}
@@ -917,6 +942,15 @@ theorem mem_ramificationGroup_natCast_iff_of_span_singleton_eq_maximalIdeal (R :
   rw [mem_ramificationGroup_natCast_iff_of_span_eq_maximalIdeal R hπ hσ, Set.forall_mem_singleton]
 
 end Separable
+
+/-! ### Positive-depth structure
+
+The displacement homomorphism and positive-depth structure theorems below adapt
+`TauCeti.Place.ramificationResidueHom` and the positive-depth structure proofs from
+`TauCeti/FieldTheory/FunctionField/Place/Extension/RamificationGroup.lean` and
+`TauCeti/FieldTheory/FunctionField/Place/Extension/WildInertia.lean` (following Stichtenoth,
+Proposition 3.8.5) to arbitrary commutative local rings without assuming a DVR or residue
+separability. -/
 
 section PositiveDepth
 
@@ -984,8 +1018,7 @@ private theorem ker_displacementHom (G : Type*) [Group G] (S : Type*) [CommRing 
     mem_ramificationGroup_natCast_iff, funext_iff]
   simp only [toAdd_displacementHom_apply, Pi.zero_apply, Ideal.Quotient.eq_zero_iff_mem]
 
-/-- At positive depth `i > 0`, the commutator subgroup `⁅G_i, G_i⁆` lies in `G_{i+1}`, so every
-positive-depth graded piece `G_i / G_{i+1}` of the ramification filtration is abelian. -/
+/-- At positive depth `i > 0`, the commutator subgroup `⁅G_i, G_i⁆` lies in `G_{i+1}`. -/
 theorem commutator_ramificationGroup_le (G : Type*) [Group G] (S : Type*) [CommRing S]
     [IsLocalRing S] [MulSemiringAction G S] {i : ℤ} (hi : 0 < i) :
     ⁅ramificationGroup G S i, ramificationGroup G S i⁆ ≤ ramificationGroup G S (i + 1) := by
@@ -1002,25 +1035,67 @@ theorem commutator_ramificationGroup_le (G : Type*) [Group G] (S : Type*) [CommR
   rw [ker_displacementHom, Subgroup.mem_subgroupOf] at hmem
   simpa using hmem
 
+/-- Every positive-depth graded piece `G_i / G_{i+1}` (`i > 0`) of the ramification filtration is
+commutative. -/
+theorem isMulCommutative_ramificationGroupGraded (G : Type*) [Group G] (S : Type*) [CommRing S]
+    [IsLocalRing S] [MulSemiringAction G S] {i : ℤ} (hi : 0 < i) :
+    IsMulCommutative (RamificationGroupGraded G S i) where
+  is_comm := ⟨fun x y ↦ by
+    induction x using QuotientGroup.induction_on with
+    | _ σ =>
+      induction y using QuotientGroup.induction_on with
+      | _ τ =>
+        rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul, QuotientGroup.eq,
+          Subgroup.mem_subgroupOf]
+        simp only [Subgroup.coe_mul, Subgroup.coe_inv, mul_inv_rev]
+        have h := commutator_ramificationGroup_le G S hi
+          (Subgroup.commutator_mem_commutator (Subgroup.inv_mem _ τ.2) (Subgroup.inv_mem _ σ.2))
+        simpa only [commutatorElement_def, inv_inv, mul_assoc] using h⟩
+
+/-- Each positive-depth graded piece `G_{n+1} / G_{n+2}` (indexed by `(n : ℤ) + 1`) is
+commutative. -/
+instance instIsMulCommutativeRamificationGroupGradedAddOne (G : Type*) [Group G] (S : Type*)
+    [CommRing S] [IsLocalRing S] [MulSemiringAction G S] (n : ℕ) :
+    IsMulCommutative (RamificationGroupGraded G S ((n : ℤ) + 1)) :=
+  isMulCommutative_ramificationGroupGraded G S (by omega)
+
+/-- Each positive-depth graded piece `G_{n+1} / G_{n+2}` (indexed by `((n + 1 : ℕ) : ℤ)`) is
+commutative. -/
+instance instIsMulCommutativeRamificationGroupGradedNatCastSucc (G : Type*) [Group G] (S : Type*)
+    [CommRing S] [IsLocalRing S] [MulSemiringAction G S] (n : ℕ) :
+    IsMulCommutative (RamificationGroupGraded G S ((n + 1 : ℕ) : ℤ)) :=
+  isMulCommutative_ramificationGroupGraded G S (by omega)
+
+/-- At positive depth `i > 0`, for `σ ∈ G_i` and `m : ℕ`, `σ ^ m` lies in `G_{i+1}` if and only if
+`m * (σ • x - x) ∈ 𝔪 ^ (i + 2)` for every `x : S`. -/
+theorem pow_mem_ramificationGroup_succ_iff {i : ℤ} (hi : 0 < i) {σ : G}
+    (hσ : σ ∈ ramificationGroup G S i) (m : ℕ) :
+    σ ^ m ∈ ramificationGroup G S (i + 1) ↔
+      ∀ x : S, (m : S) * (σ • x - x) ∈ maximalIdeal S ^ (i + 2).toNat := by
+  obtain ⟨n, rfl⟩ : ∃ n : ℕ, i = ((n + 1 : ℕ) : ℤ) := ⟨(i - 1).toNat, by omega⟩
+  have htoNat : (((n + 1 : ℕ) : ℤ) + 2).toNat = n + 3 := by omega
+  have hmem : (⟨σ, hσ⟩ : ramificationGroup G S ((n + 1 : ℕ) : ℤ)) ^ m ∈
+        (displacementHom G S n).ker ↔
+      σ ^ m ∈ ramificationGroup G S (((n + 1 : ℕ) : ℤ) + 1) := by
+    rw [ker_displacementHom, Subgroup.mem_subgroupOf, Subgroup.coe_pow]
+  rw [htoNat, ← hmem, MonoidHom.mem_ker, map_pow, ← toAdd_eq_zero, funext_iff]
+  refine forall_congr' fun x ↦ ?_
+  rw [toAdd_pow, Pi.smul_apply, Pi.zero_apply, toAdd_displacementHom_apply, nsmul_eq_mul,
+    ← map_natCast (Ideal.Quotient.mk _), ← map_mul, Ideal.Quotient.eq_zero_iff_mem]
+
 /-- At positive depth `i > 0` in residue characteristic `p`, the `p`-th power of every element of
 `G_i` lies in `G_{i+1}`. -/
 theorem pow_mem_ramificationGroup_of_charP (p : ℕ) [CharP (ResidueField S) p] {i : ℤ}
     (hi : 0 < i) {σ : G} (hσ : σ ∈ ramificationGroup G S i) :
     σ ^ p ∈ ramificationGroup G S (i + 1) := by
-  obtain ⟨n, rfl⟩ : ∃ n : ℕ, i = ((n + 1 : ℕ) : ℤ) := ⟨(i - 1).toNat, by omega⟩
+  rw [pow_mem_ramificationGroup_succ_iff hi hσ p]
+  intro x
   have hp : (p : S) ∈ maximalIdeal S := by
     rw [← residue_eq_zero_iff, map_natCast]
     exact CharP.cast_eq_zero (ResidueField S) p
-  have hmem : (⟨σ, hσ⟩ : ramificationGroup G S ((n + 1 : ℕ) : ℤ)) ^ p ∈
-      (displacementHom G S n).ker := by
-    rw [MonoidHom.mem_ker, map_pow, ← toAdd_eq_zero]
-    funext x
-    rw [toAdd_pow, Pi.smul_apply, Pi.zero_apply, toAdd_displacementHom_apply, nsmul_eq_mul,
-      ← map_natCast (Ideal.Quotient.mk _), ← map_mul, Ideal.Quotient.eq_zero_iff_mem,
-      show n + 3 = 1 + (n + 2) by omega, pow_add, pow_one]
-    exact Ideal.mul_mem_mul hp (mem_ramificationGroup_natCast_iff.mp hσ x)
-  rw [ker_displacementHom, Subgroup.mem_subgroupOf] at hmem
-  simpa only [Subgroup.coe_pow] using hmem
+  have hpow : (i + 2).toNat = 1 + (i + 1).toNat := by omega
+  rw [hpow, pow_add, pow_one]
+  exact Ideal.mul_mem_mul hp (mem_ramificationGroup_iff.mp hσ x)
 
 /-- Every positive-depth graded piece `G_i / G_{i+1}` (`i > 0`) is a `p`-group in residue
 characteristic `p`. -/
@@ -1058,36 +1133,34 @@ protected theorem isPGroup_ramificationGroup (G : Type*) [Group G] (S : Type*) [
   exact hmem
 
 /-- In residue characteristic zero, any finite positive-depth graded piece `G_i / G_{i+1}`
-(`i > 0`) is trivial: it embeds into a torsion-free additive quotient. -/
+(`i > 0`) is trivial. -/
 theorem subsingleton_ramificationGroupGraded_of_charZero (G : Type*) [Group G] (S : Type*)
     [CommRing S] [IsLocalRing S] [MulSemiringAction G S] [CharZero (ResidueField S)] {i : ℤ}
     (hi : 0 < i) [Finite (RamificationGroupGraded G S i)] :
     Subsingleton (RamificationGroupGraded G S i) := by
-  obtain ⟨n, rfl⟩ : ∃ n : ℕ, i = ((n + 1 : ℕ) : ℤ) := ⟨(i - 1).toNat, by omega⟩
   refine subsingleton_iff_forall_eq 1 |>.mpr fun q ↦ ?_
   induction q using QuotientGroup.induction_on with
   | _ g =>
-    set m := orderOf (QuotientGroup.mk g : RamificationGroupGraded G S ((n + 1 : ℕ) : ℤ))
+    -- Let `m` be the order of the class of `g` in `G_i / G_{i+1}`. Since `ResidueField S` has
+    -- characteristic zero, `m` is a unit in `S`, so `m * (g • x - x) ∈ 𝔪^(i+2)` forces
+    -- `g ∈ G_{i+1}`.
+    set m := orderOf (QuotientGroup.mk g : RamificationGroupGraded G S i)
     have hm : 0 < m := orderOf_pos _
-    have hpow : g ^ m ∈ (displacementHom G S n).ker := by
-      rw [ker_displacementHom, ← QuotientGroup.eq_one_iff, QuotientGroup.mk_pow]
-      exact pow_orderOf_eq_one _
+    have hpow : (g : G) ^ m ∈ ramificationGroup G S (i + 1) := by
+      have hq : QuotientGroup.mk (g ^ m) = (1 : RamificationGroupGraded G S i) := by
+        rw [QuotientGroup.mk_pow]
+        exact pow_orderOf_eq_one _
+      rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf, Subgroup.coe_pow] at hq
+      exact hq
+    have hmx := (pow_mem_ramificationGroup_succ_iff hi g.2 m).mp hpow
     have hunit : IsUnit (m : S) := by
       rw [← residue_ne_zero_iff_isUnit, map_natCast]
       exact Nat.cast_ne_zero.mpr hm.ne'
-    obtain ⟨v, hv⟩ := hunit.exists_left_inv
-    rw [QuotientGroup.eq_one_iff, ← ker_displacementHom, MonoidHom.mem_ker, ← toAdd_eq_zero]
-    funext x
-    rw [Pi.zero_apply, toAdd_displacementHom_apply, Ideal.Quotient.eq_zero_iff_mem]
-    have hmx : (m : S) * ((g : G) • x - x) ∈ maximalIdeal S ^ (n + 3) := by
-      rw [MonoidHom.mem_ker, map_pow, ← toAdd_eq_zero, funext_iff] at hpow
-      have hx := hpow x
-      rwa [toAdd_pow, Pi.smul_apply, Pi.zero_apply, toAdd_displacementHom_apply, nsmul_eq_mul,
-        ← map_natCast (Ideal.Quotient.mk _), ← map_mul, Ideal.Quotient.eq_zero_iff_mem] at hx
-    have hcancel : (g : G) • x - x = v * ((m : S) * ((g : G) • x - x)) := by
-      rw [← mul_assoc, hv, one_mul]
-    rw [hcancel]
-    exact Ideal.mul_mem_left _ v hmx
+    rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf, mem_ramificationGroup_iff]
+    intro x
+    have htoNat : (i + 1 + 1).toNat = (i + 2).toNat := by omega
+    rw [htoNat]
+    exact (Ideal.unit_mul_mem_iff_mem _ hunit).mp (hmx x)
 
 /-- Over a Noetherian local ring in residue characteristic zero, every positive-depth ramification
 group `G_i` (`i > 0`) of a faithful action with finite `G_0` is trivial. -/
