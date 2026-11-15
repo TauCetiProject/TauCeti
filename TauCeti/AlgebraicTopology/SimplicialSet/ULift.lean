@@ -71,8 +71,8 @@ theorem uliftFunctorObjEquiv_symm_eq_down (X : SSet.{u'}) (m : SimplexCategory�
   (rfl)
 
 @[simp]
-theorem uliftFunctorObjEquiv_map (X : SSet.{u'}) {m₁ m₂ : SimplexCategoryᵒᵖ} (f : m₁ ⟶ m₂)
-    (x : X.obj m₁) :
+theorem uliftFunctor_obj_map_uliftFunctorObjEquiv (X : SSet.{u'}) {m₁ m₂ : SimplexCategoryᵒᵖ}
+    (f : m₁ ⟶ m₂) (x : X.obj m₁) :
     (uliftFunctor.{w, u'}.obj X).map f (X.uliftFunctorObjEquiv m₁ x) =
       X.uliftFunctorObjEquiv m₂ (X.map f x) :=
   (rfl)

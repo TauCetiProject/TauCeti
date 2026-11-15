@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.AlgebraicTopology.SimplicialSet.FundamentalGroupoid.Basic
+public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Basic
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 
@@ -137,7 +138,7 @@ section FundamentalGroupoid
 /-- The canonical functor from the simplicial fundamental groupoid of `X` to the topological
 fundamental groupoid of its geometric realization `|X|`, sending a vertex `x` to `toTopPoint x`
 and an edge `e` to the path homotopy class `Path.Homotopic.Quotient.mk e.toTopPath`. -/
-@[expose]
+@[expose, implicit_reducible]
 noncomputable def toTopFundamentalGroupoid (X : SSet.{u}) :
     SSet.FundamentalGroupoid X ⥤ _root_.FundamentalGroupoid |X| :=
   FundamentalGroupoid.desc (fun x ↦ .mk (toTopPoint x))
@@ -155,31 +156,44 @@ lemma toTopFundamentalGroupoid_map_homMk (X : SSet.{u}) {x y : X _⦋0⦌} (e : 
       _root_.FundamentalGroupoid.fromPath (.mk e.toTopPath) :=
   FundamentalGroupoid.desc_map_homMk _ _ (fun h ↦ Quotient.sound h.homotopic_toTopPath) e
 
+private lemma mapFundamentalGroupoid_toTop_obj {X Y : SSet.{u}} (f : X ⟶ Y) (x : X _⦋0⦌) :
+    (mapFundamentalGroupoid f ⋙ toTopFundamentalGroupoid Y).obj (.mk x) =
+      (toTopFundamentalGroupoid X ⋙
+        _root_.FundamentalGroupoid.map (toTop.map f).hom).obj (.mk x) :=
+  _root_.FundamentalGroupoid.ext (toTop_map_toTopPoint f x).symm
+
 /-- Naturality isomorphism comparing `toTopFundamentalGroupoid` along a simplicial map `f : X ⟶ Y`
 with the topological fundamental groupoid functor induced by `toTop.map f`. -/
 noncomputable def mapFundamentalGroupoidToTopIso {X Y : SSet.{u}} (f : X ⟶ Y) :
     mapFundamentalGroupoid f ⋙ toTopFundamentalGroupoid Y ≅
-      toTopFundamentalGroupoid X ⋙ _root_.FundamentalGroupoid.map (toTop.map f).hom := by
-  have hobj (x : X _⦋0⦌) :
-      (mapFundamentalGroupoid f ⋙ toTopFundamentalGroupoid Y).obj (.mk x) =
-        (toTopFundamentalGroupoid X ⋙ _root_.FundamentalGroupoid.map (toTop.map f).hom).obj
-          (.mk x) :=
-    congrArg _root_.FundamentalGroupoid.mk (toTop_map_toTopPoint f x).symm
-  refine FundamentalGroupoid.natIsoMk (fun x ↦ eqToIso (hobj x)) fun {x y} e ↦ ?_
-  rw [← cancel_mono (eqToIso (hobj y)).inv, Category.assoc, Iso.hom_inv_id, Category.comp_id]
-  dsimp only [Functor.comp_map]
-  rw [mapFundamentalGroupoid_map_homMk, toTopFundamentalGroupoid_map_homMk,
-    toTopFundamentalGroupoid_map_homMk, Category.assoc]
-  -- `FundamentalGroupoid.map` is semireducible, so unfolding it directly to `Quotient.map` makes
-  -- the surrounding composition ill-typed at `implicit` transparency; state the reduced goal first.
-  change _root_.FundamentalGroupoid.fromPath (.mk (e.map f).toTopPath) =
-    eqToHom (congrArg _root_.FundamentalGroupoid.mk (toTop_map_toTopPoint f x).symm) ≫
-      _root_.Path.Homotopic.Quotient.map (.mk e.toTopPath) (toTop.map f).hom ≫
-      eqToHom (congrArg _root_.FundamentalGroupoid.mk (toTop_map_toTopPoint f y))
-  rw [_root_.FundamentalGroupoid.conj_eqToHom (toTop_map_toTopPoint f x).symm
-      (toTop_map_toTopPoint f y).symm,
-    ← _root_.Path.Homotopic.Quotient.mk_map]
-  exact Quotient.sound (by rw [e.toTopPath_map])
+      toTopFundamentalGroupoid X ⋙ _root_.FundamentalGroupoid.map (toTop.map f).hom :=
+  FundamentalGroupoid.natIsoMk (fun x ↦ eqToIso (mapFundamentalGroupoid_toTop_obj f x))
+    fun {x y} e ↦ by
+      rw [← cancel_mono (eqToIso (mapFundamentalGroupoid_toTop_obj f y)).inv, Category.assoc,
+        Iso.hom_inv_id, Category.comp_id, eqToIso.hom, eqToIso.inv]
+      dsimp only [Functor.comp_map]
+      rw [mapFundamentalGroupoid_map_homMk, toTopFundamentalGroupoid_map_homMk,
+        toTopFundamentalGroupoid_map_homMk, Category.assoc,
+        _root_.FundamentalGroupoid.conj_eqToHom_map_fromPath (toTop.map f).hom e.toTopPath
+          (toTop_map_toTopPoint f x).symm (toTop_map_toTopPoint f y).symm]
+      exact Quotient.sound (by rw [e.toTopPath_map])
+
+@[simp]
+lemma mapFundamentalGroupoidToTopIso_hom_app_mk {X Y : SSet.{u}} (f : X ⟶ Y) (x : X _⦋0⦌) :
+    (mapFundamentalGroupoidToTopIso f).hom.app (.mk x) =
+      eqToHom (show (mapFundamentalGroupoid f ⋙ toTopFundamentalGroupoid Y).obj (.mk x) =
+        (toTopFundamentalGroupoid X ⋙ _root_.FundamentalGroupoid.map (toTop.map f).hom).obj (.mk x)
+        from congrArg _root_.FundamentalGroupoid.mk (toTop_map_toTopPoint f x).symm) :=
+  (rfl)
+
+@[simp]
+lemma mapFundamentalGroupoidToTopIso_inv_app_mk {X Y : SSet.{u}} (f : X ⟶ Y) (x : X _⦋0⦌) :
+    (mapFundamentalGroupoidToTopIso f).inv.app (.mk x) =
+      eqToHom (show (toTopFundamentalGroupoid X ⋙
+          _root_.FundamentalGroupoid.map (toTop.map f).hom).obj (.mk x) =
+        (mapFundamentalGroupoid f ⋙ toTopFundamentalGroupoid Y).obj (.mk x)
+        from congrArg _root_.FundamentalGroupoid.mk (toTop_map_toTopPoint f x)) :=
+  (rfl)
 
 end FundamentalGroupoid
 

@@ -21,9 +21,10 @@ reindexing the string along a functor of the indexing posets reindexes its arrow
 (`CategoryTheory.ComposableArrows.totalArrow_precomp_succ_succ`), and applying a functor to the
 string maps its arrows along the functor
 (`CategoryTheory.ComposableArrows.totalArrow_mapComposableArrows_obj`), respects identities,
-composites, and `0`-simplices (`CategoryTheory.Functor.id_mapComposableArrows_obj`,
+composites, `0`-simplices, and `1`-simplices (`CategoryTheory.Functor.id_mapComposableArrows_obj`,
 `CategoryTheory.Functor.comp_mapComposableArrows_obj`,
-`CategoryTheory.Functor.mapComposableArrows_obj_mk₀`), and commutes with prepending
+`CategoryTheory.Functor.mapComposableArrows_obj_mk₀`,
+`CategoryTheory.Functor.mapComposableArrows_obj_mk₁`), and commutes with prepending
 (`CategoryTheory.Functor.mapComposableArrows_obj_precomp`). A string of at least one
 arrow is already determined by its first arrow and the remaining string
 (`CategoryTheory.ComposableArrows.ext_succ_of_totalArrow`).
@@ -173,6 +174,13 @@ theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_mk₀ {D : Type*} 
     (Φ : C ⥤ D) (X : C) :
     (Φ.mapComposableArrows 0).obj (mk₀ X) = mk₀ (Φ.obj X) :=
   ext₀ rfl
+
+/-- Applying a functor to the `1`-simplex `mk₁ f` gives `mk₁ (Φ.map f)`. -/
+@[simp]
+theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_mk₁ {D : Type*} [Category D]
+    (Φ : C ⥤ D) {X Y : C} (f : X ⟶ Y) :
+    (Φ.mapComposableArrows 1).obj (mk₁ f) = mk₁ (Φ.map f) :=
+  ext₁ rfl rfl (by simp)
 
 /-- Applying the identity functor to a string of composable arrows leaves it unchanged. -/
 @[simp]

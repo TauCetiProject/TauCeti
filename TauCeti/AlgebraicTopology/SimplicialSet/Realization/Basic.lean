@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Functor.KanExtension.DenseAtYoneda
 public import Mathlib.Geometry.Convex.ConvexSpace.Barycenter
 public import Mathlib.Topology.Category.TopCat.ULift
-public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.PiZero
+public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
+public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.SimplicialSet.ULift
+public import TauCeti.AlgebraicTopology.TopologicalSimplex
 import Mathlib.CategoryTheory.Adjunction.FullyFaithful
-import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
 # Open cells, faithfulness, discrete spaces, and universe lift of geometric realization
@@ -25,14 +27,16 @@ that degeneracy exhibits every point of `|X|` uniquely as `SSet.toTopObjMk s.sim
 nowhere-vanishing coordinates (`SSet.toTopCellEquiv`), the underlying bijection of Milnor's
 open-cell decomposition of `|X|`.
 
-Evaluating at the barycenter of the standard simplex, whose pushforwards along monotone maps
-determine the maps via cumulative weight sums, shows that `x ↦ SSet.toTopObjMk x barycenter` is
-injective in every dimension (`SSet.toTopObjMk_barycenter_injective`). Consequently the unit
-`X ⟶ Sing |X|` of `sSetTopAdj` is a monomorphism (`SSet.mono_sSetTopAdj_unit_app`), the geometric
-realization functor `SSet.toTop` is faithful, and the vertex map `SSet.toTopPoint : X _⦋0⦌ → |X|`
-is injective (`SSet.toTopPoint_injective`).
+Evaluating at any interior point of the standard simplex — in particular at `StdSimplex.barycenter`
+— whose pushforwards along monotone maps determine the maps via cumulative weight sums, shows that
+`x ↦ SSet.toTopObjMk x w` is injective in every dimension
+(`SSet.toTopObjMk_injective_of_weights_ne_zero`, `SSet.toTopObjMk_barycenter_injective`).
+Consequently the unit `X ⟶ Sing |X|` of `sSetTopAdj` is a monomorphism
+(`SSet.mono_sSetTopAdj_unit_app`), the geometric realization functor `SSet.toTop` is faithful, and
+the vertex map `SSet.toTopPoint : X _⦋0⦌ → |X|` is injective (`SSet.toTopPoint_injective`).
 
 We also record the basic point-set identifications of `|X|`:
+* `SSet.toTopPoint`, `SSet.toTop_map_toTopPoint`: the point of `|X|` attached to a vertex of `X`.
 * `SSet.nonempty_toTop_iff`, `SSet.isEmpty_toTop_iff`: `|X|` is nonempty (resp. empty) precisely
   when `X` has a `0`-simplex (resp. no `0`-simplices).
 * `SSet.toTop_map_const`: a constant simplicial map `SSet.const y` realizes to `TopCat.const`.
@@ -58,9 +62,28 @@ universe v u
 
 namespace SSet
 
+instance : stdSimplex.{u}.IsDense :=
+  inferInstanceAs uliftYoneda.{u}.IsDense
+
 section Points
 
 variable {X : SSet.{u}}
+
+-- `@[expose]` is mandated by `module` so downstream realization modules (`PiZero`,
+-- `FundamentalGroupoid`) can unfold `toTopPoint` to the unit's `0`-simplex component.
+/-- The point of the geometric realization `|X|` given by a vertex `x` of `X`: the singular vertex
+`(sSetTopAdj.unit.app X).app _ x` of `|X|`. -/
+@[expose]
+noncomputable def toTopPoint {X : SSet.{u}} (x : X _⦋0⦌) : |X| :=
+  TopCat.toSSetObj₀Equiv ((sSetTopAdj.unit.app X).app _ x)
+
+/-- The realization of a map sends the point of a vertex to the point of its image. -/
+@[simp]
+lemma toTop_map_toTopPoint {X Y : SSet.{u}} (f : X ⟶ Y) (x : X _⦋0⦌) :
+    toTop.map f (toTopPoint x) = toTopPoint (f.app _ x) := by
+  have h := ConcreteCategory.congr_hom (NatTrans.congr_app (sSetTopAdj.unit.naturality f) _) x
+  dsimp at h
+  rw [toTopPoint, toTopPoint, h, TauCeti.TopCat.toSSetObj₀Equiv_toSSet_map_app]
 
 /-- On a `0`-simplex, `toTopPoint` agrees with `toTopObjMk` at any point of `StdSimplex ℝ (Fin 1)`.
 -/
@@ -100,13 +123,11 @@ lemma toTopObjMk_eq_toTop_map {n : ℕ} (x : X _⦋n⦌) (w : StdSimplex ℝ (Fi
 lemma exists_toTopObjMk (p : |X|) :
     ∃ (n : ℕ) (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))), p = toTopObjMk x w := by
   obtain ⟨⟨m, _, f⟩, y, hy⟩ := Types.jointly_surjective_of_isColimit
-    (isColimitOfPreserves (toTop ⋙ forget TopCat) (denseAtUliftYoneda X)) p
+    (isColimitOfPreserves (toTop ⋙ forget TopCat) (stdSimplex.{u}.denseAt X)) p
   dsimp at y hy
   rw [Category.id_comp] at hy
   induction m using SimplexCategory.rec with | _ n => ?_
-  let f' : (Δ[n] : SSet.{u}) ⟶ X := f
-  let y' : |(Δ[n] : SSet.{u})| := y
-  refine ⟨n, yonedaEquiv f', ⦋n⦌.toTopHomeo y', ?_⟩
+  refine ⟨n, yonedaEquiv f, ⦋n⦌.toTopHomeo y, ?_⟩
   rw [toTopObjMk_eq_toTop_map, Equiv.symm_apply_apply, Homeomorph.symm_apply_apply]
   exact hy.symm
 
@@ -146,37 +167,38 @@ end Points
 
 section Discrete
 
+/-- Auxiliary morphism `|(Functor.const SimplexCategoryᵒᵖ).obj S| ⟶ TopCat.discrete.obj S`. -/
+private noncomputable def toTopConstHom (S : Type u) :
+    |(Functor.const SimplexCategoryᵒᵖ).obj S| ⟶ TopCat.discrete.obj S :=
+  (sSetTopAdj.homEquiv _ (TopCat.discrete.obj S)).symm
+    ((constHomEquiv S).symm fun s ↦ TopCat.toSSetObj₀Equiv (X := TopCat.discrete.obj S).symm s)
+
+private lemma toTopConstHom_toTopPoint (S : Type u) (s : S) :
+    toTopConstHom S (toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s) = s := by
+  rw [toTopConstHom, toTopPoint_eq_toTopObjMk (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s
+    default, apply_toTopObjMk, Equiv.apply_symm_apply]
+  have h0 := constHomEquiv_symm_app_zero S
+    (fun t ↦ TopCat.toSSetObj₀Equiv (X := TopCat.discrete.obj S).symm t) s
+  dsimp at h0 ⊢
+  rw [h0]; rfl
+
 /-- The geometric realization of the constant (discrete) simplicial set on `S` is isomorphic in
 `TopCat` to the discrete topological space on `S`. -/
 noncomputable def toTopConstIso (S : Type u) :
-    |(Functor.const SimplexCategoryᵒᵖ).obj S| ≅ TopCat.discrete.obj S := by
-  let homMap : |(Functor.const SimplexCategoryᵒᵖ).obj S| ⟶ TopCat.discrete.obj S :=
-    (sSetTopAdj.homEquiv _ (TopCat.discrete.obj S)).symm
-      ((constHomEquiv S).symm fun s ↦ TopCat.toSSetObj₀Equiv (X := TopCat.discrete.obj S).symm s)
-  let invMap : TopCat.discrete.obj S ⟶ |(Functor.const SimplexCategoryᵒᵖ).obj S| :=
-    TopCat.ofHom (X := TopCat.discrete.obj S)
-      ⟨fun s ↦ toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s, continuous_bot⟩
-  have hpt (s : S) :
-      homMap (toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s) = s := by
-    rw [toTopPoint_eq_toTopObjMk (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s default,
-      apply_toTopObjMk, Equiv.apply_symm_apply]
-    have h0 := constHomEquiv_symm_app_zero S
-      (fun t ↦ TopCat.toSSetObj₀Equiv (X := TopCat.discrete.obj S).symm t) s
-    dsimp at h0 ⊢
-    rw [h0]; rfl
-  exact
-    { hom := homMap
-      inv := invMap
-      hom_inv_id := toTop_hom_ext fun n x w ↦ by
-        have hx : x = ((Functor.const SimplexCategoryᵒᵖ).obj S).map
-            (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op x := rfl
-        have hw : toTopObjMk (X := (Functor.const SimplexCategoryᵒᵖ).obj S) x w =
-            toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) x := by
-          conv_lhs => rw [hx]
-          rw [toTopObjMk_map, toTopObjMk_zero]
-        simp only [ConcreteCategory.comp_apply, TopCat.id_app, hw]
-        exact congrArg invMap (hpt x)
-      inv_hom_id := by ext s; exact hpt s }
+    |(Functor.const SimplexCategoryᵒᵖ).obj S| ≅ TopCat.discrete.obj S where
+  hom := toTopConstHom S
+  inv := TopCat.ofHom (X := TopCat.discrete.obj S)
+    ⟨fun s ↦ toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s, continuous_bot⟩
+  hom_inv_id := toTop_hom_ext fun n x w ↦ by
+    have hw : toTopObjMk (X := (Functor.const SimplexCategoryᵒᵖ).obj S) x w =
+        toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) x := by
+      conv_lhs =>
+        rw [show x = ((Functor.const SimplexCategoryᵒᵖ).obj S).map
+          (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op x by simp]
+      rw [toTopObjMk_map, toTopObjMk_zero]
+    simp only [ConcreteCategory.comp_apply, TopCat.id_app, hw, toTopConstHom_toTopPoint]
+    rfl
+  inv_hom_id := by ext s; exact toTopConstHom_toTopPoint S s
 
 @[simp]
 lemma toTopConstIso_inv_apply (S : Type u) (s : S) :
@@ -185,8 +207,9 @@ lemma toTopConstIso_inv_apply (S : Type u) (s : S) :
 
 @[simp]
 lemma toTopConstIso_hom_toTopPoint (S : Type u) (s : S) :
-    (toTopConstIso S).hom (toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s) = s :=
-  ConcreteCategory.congr_hom (toTopConstIso S).inv_hom_id s
+    (toTopConstIso S).hom
+      (toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s) = s :=
+  toTopConstHom_toTopPoint S s
 
 /-- The homeomorphism between the geometric realization of the constant simplicial set on `S` and
 the discrete topological space on `S`. -/
@@ -196,7 +219,8 @@ noncomputable def toTopConstHomeomorph (S : Type u) :
 
 @[simp]
 lemma toTopConstHomeomorph_toTopPoint (S : Type u) (s : S) :
-    toTopConstHomeomorph S (toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s) = s :=
+    toTopConstHomeomorph S
+      (toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s) = s :=
   toTopConstIso_hom_toTopPoint S s
 
 @[simp]
@@ -233,92 +257,11 @@ lemma ToTopCell.ext {X : SSet.{u}} {c₁ c₂ : X.ToTopCell} (hs : c₁.simplex 
   ext j
   exact hc j
 
-/-- Every point `w` of a standard simplex comes from a face with nowhere-vanishing coordinates.
-Adapted from the face-stripping step of `SSet.prodStdSimplex.exists_injective_toTopObjMk_eq` in
-`TauCeti/AlgebraicTopology/SimplicialSet/PrismRealization.lean`. -/
-private lemma exists_mono_map_eq_of_stdSimplex :
-    ∀ {n : ℕ} (w : StdSimplex ℝ (Fin (n + 1))),
-      ∃ (k : ℕ) (ι : ⦋k⦌ ⟶ ⦋n⦌) (_ : Mono ι) (w₀ : StdSimplex ℝ (Fin (k + 1))),
-        (∀ j, w₀.weights j ≠ 0) ∧ w = w₀.map ι := by
-  intro n
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-    intro w
-    by_cases h0 : ∃ j, w.weights j = 0
-    · obtain ⟨j, hj⟩ := h0
-      obtain _ | n := n
-      · rw [Subsingleton.elim w (StdSimplex.single 0), Fin.eq_zero j,
-          StdSimplex.weights_single, Finsupp.single_eq_same] at hj
-        exact absurd hj one_ne_zero
-      have hsupp : ↑w.weights.support ⊆ Set.range j.succAbove := fun i hi ↦
-        Fin.exists_succAbove_eq fun h ↦ by simp [h, hj] at hi
-      obtain ⟨k, ι', _, w₀, hw₀, hw'⟩ :=
-        ih n (Nat.lt_succ_self n) (StdSimplex.comap Fin.succAbove_right_injective w hsupp)
-      refine ⟨k, ι' ≫ SimplexCategory.δ j, mono_comp _ _, w₀, hw₀, ?_⟩
-      exact (StdSimplex.map_comap Fin.succAbove_right_injective w hsupp).symm.trans
-        (by rw [hw', StdSimplex.map_map]; rfl)
-    · push Not at h0
-      exact ⟨n, 𝟙 ⦋n⦌, inferInstance, w, h0, (StdSimplex.map_id w).symm⟩
-
-/-- When `w` has nowhere-vanishing coordinates, the nonzero coordinates of `w.map θ` are precisely
-the range of `θ`. -/
-private lemma weights_map_ne_zero_iff {m r : ℕ} (θ : ⦋m⦌ ⟶ ⦋r⦌) {w : StdSimplex ℝ (Fin (m + 1))}
-    (hw : ∀ i, w.weights i ≠ 0) (j : Fin (r + 1)) :
-    (w.map θ).weights j ≠ 0 ↔ j ∈ Set.range (θ : Fin (m + 1) → Fin (r + 1)) := by
-  rw [StdSimplex.weights_map_apply]
-  refine ⟨fun hne ↦ ?_, ?_⟩
-  · obtain ⟨i, hi, _⟩ := Finset.exists_ne_zero_of_sum_ne_zero hne
-    exact ⟨i, by simpa using hi⟩
-  · rintro ⟨i, hi⟩
-    refine ne_of_gt (lt_of_lt_of_le (lt_of_le_of_ne (w.nonneg i) (hw i).symm) ?_)
-    exact Finset.single_le_sum (fun a _ ↦ w.nonneg a) (by simp [hi])
-
-private lemma weights_map_ne_zero_of_epi {k r : ℕ} (π : ⦋k⦌ ⟶ ⦋r⦌) [Epi π]
-    {w₀ : StdSimplex ℝ (Fin (k + 1))} (hw₀ : ∀ j, w₀.weights j ≠ 0) (j : Fin (r + 1)) :
-    (w₀.map π).weights j ≠ 0 :=
-  (weights_map_ne_zero_iff π hw₀ j).2 ((SimplexCategory.epi_iff_surjective.1 ‹Epi π›) j)
-
-private lemma range_eq_of_stdSimplex_map_eq {n k₁ k₂ : ℕ}
-    {ι₁ : ⦋k₁⦌ ⟶ ⦋n⦌} {w₁ : StdSimplex ℝ (Fin (k₁ + 1))} (hw₁ : ∀ j, w₁.weights j ≠ 0)
-    {ι₂ : ⦋k₂⦌ ⟶ ⦋n⦌} {w₂ : StdSimplex ℝ (Fin (k₂ + 1))} (hw₂ : ∀ j, w₂.weights j ≠ 0)
-    (h : w₁.map ι₁ = w₂.map ι₂) :
-    Set.range (ι₁ : Fin (k₁ + 1) → Fin (n + 1)) = Set.range (ι₂ : Fin (k₂ + 1) → Fin (n + 1)) :=
-  Set.ext fun j ↦ by rw [← weights_map_ne_zero_iff ι₁ hw₁, ← weights_map_ne_zero_iff ι₂ hw₂, h]
-
-private lemma unique_mono_dim_of_stdSimplex {n k₁ k₂ : ℕ}
-    {ι₁ : ⦋k₁⦌ ⟶ ⦋n⦌} [Mono ι₁] {w₁ : StdSimplex ℝ (Fin (k₁ + 1))} (hw₁ : ∀ j, w₁.weights j ≠ 0)
-    {ι₂ : ⦋k₂⦌ ⟶ ⦋n⦌} [Mono ι₂] {w₂ : StdSimplex ℝ (Fin (k₂ + 1))} (hw₂ : ∀ j, w₂.weights j ≠ 0)
-    (h : w₁.map ι₁ = w₂.map ι₂) : k₁ = k₂ := by
-  have hinj₁ : Function.Injective (ι₁ : Fin (k₁ + 1) → Fin (n + 1)) :=
-    SimplexCategory.mono_iff_injective.1 ‹_›
-  have hinj₂ : Function.Injective (ι₂ : Fin (k₂ + 1) → Fin (n + 1)) :=
-    SimplexCategory.mono_iff_injective.1 ‹_›
-  have hc := congrArg (fun s : Set (Fin (n + 1)) ↦ Nat.card s)
-    (range_eq_of_stdSimplex_map_eq hw₁ hw₂ h)
-  rw [Nat.card_range_of_injective hinj₁, Nat.card_range_of_injective hinj₂,
-    Nat.card_fin, Nat.card_fin] at hc
-  exact Nat.succ.inj hc
-
-private lemma unique_mono_of_stdSimplex {n k : ℕ}
-    {ι₁ ι₂ : ⦋k⦌ ⟶ ⦋n⦌} [Mono ι₁] [Mono ι₂] {w₁ w₂ : StdSimplex ℝ (Fin (k + 1))}
-    (hw₁ : ∀ j, w₁.weights j ≠ 0) (hw₂ : ∀ j, w₂.weights j ≠ 0)
-    (h : w₁.map ι₁ = w₂.map ι₂) : ι₁ = ι₂ ∧ w₁ = w₂ := by
-  have hinj₁ : Function.Injective ι₁ := SimplexCategory.mono_iff_injective.1 ‹_›
-  have hinj₂ : Function.Injective ι₂ := SimplexCategory.mono_iff_injective.1 ‹_›
-  have hfn : (ι₁ : Fin (k + 1) → Fin (n + 1)) = ι₂ :=
-    (StrictMono.range_inj_of_wellFoundedLT
-      (ι₁.toOrderHom.monotone.strictMono_of_injective hinj₁)
-      (ι₂.toOrderHom.monotone.strictMono_of_injective hinj₂)).1
-      (range_eq_of_stdSimplex_map_eq hw₁ hw₂ h)
-  have hι : ι₁ = ι₂ := by ext i : 3; exact congrFun hfn i
-  subst hι
-  exact ⟨rfl, StdSimplex.map_injective hinj₁ h⟩
-
 /-- The open cell attached to a pair `(x, w)` by stripping zero weights of `w` and taking the
 Eilenberg–Zilber nondegenerate quotient of the corresponding face of `x`. -/
 private noncomputable def toTopCellOfSimplex {X : SSet.{u}} {n : ℕ} (x : X _⦋n⦌)
     (w : StdSimplex ℝ (Fin (n + 1))) : X.ToTopCell :=
-  let hface := exists_mono_map_eq_of_stdSimplex w
+  let hface := SimplexCategory.exists_mono_stdSimplex_map_eq w
   let k := hface.choose
   let ι : ⦋k⦌ ⟶ ⦋n⦌ := hface.choose_spec.choose
   have : Mono ι := hface.choose_spec.choose_spec.choose
@@ -331,7 +274,7 @@ private noncomputable def toTopCellOfSimplex {X : SSet.{u}} {n : ℕ} (x : X _�
   let z : X.nonDegenerate r := hez.choose_spec.choose_spec.choose_spec.choose
   { simplex := N.mk z.1 z.2
     coords := w₀.map π
-    coords_ne_zero := weights_map_ne_zero_of_epi π hw₀ }
+    coords_ne_zero := SimplexCategory.weights_stdSimplex_map_ne_zero_of_epi π hw₀ }
 
 /-- Characterization of `toTopCellOfSimplex x w` by any mono–epi decomposition of `(x, w)`. -/
 private lemma toTopCellOfSimplex_eq_of_decomp {X : SSet.{u}} {n k r : ℕ} (x : X _⦋n⦌)
@@ -339,16 +282,17 @@ private lemma toTopCellOfSimplex_eq_of_decomp {X : SSet.{u}} {n k r : ℕ} (x : 
     (ι : ⦋k⦌ ⟶ ⦋n⦌) [Mono ι] (w₀ : StdSimplex ℝ (Fin (k + 1)))
     (hw₀ : ∀ j, w₀.weights j ≠ 0) (hw : w = w₀.map ι)
     (π : ⦋k⦌ ⟶ ⦋r⦌) [Epi π] (z : X.nonDegenerate r) (hz : X.map ι.op x = X.map π.op z.1) :
-    toTopCellOfSimplex x w = ⟨N.mk z.1 z.2, w₀.map π, weights_map_ne_zero_of_epi π hw₀⟩ := by
+    toTopCellOfSimplex x w =
+      ⟨N.mk z.1 z.2, w₀.map π, SimplexCategory.weights_stdSimplex_map_ne_zero_of_epi π hw₀⟩ := by
   rw [toTopCellOfSimplex]
-  set hface := exists_mono_map_eq_of_stdSimplex w
+  set hface := SimplexCategory.exists_mono_stdSimplex_map_eq w
   set k' := hface.choose
   set ι' : ⦋k'⦌ ⟶ ⦋n⦌ := hface.choose_spec.choose
   have : Mono ι' := hface.choose_spec.choose_spec.choose
   set w₀' := hface.choose_spec.choose_spec.choose_spec.choose
   have hw₀' : ∀ j, w₀'.weights j ≠ 0 := hface.choose_spec.choose_spec.choose_spec.choose_spec.1
   have hw' : w = w₀'.map ι' := hface.choose_spec.choose_spec.choose_spec.choose_spec.2
-  have hk : k' = k := unique_mono_dim_of_stdSimplex hw₀' hw₀ (hw'.symm.trans hw)
+  have hk : k' = k := SimplexCategory.eq_dim_of_mono_stdSimplex_map_eq hw₀' hw₀ (hw'.symm.trans hw)
   set hez := X.exists_nonDegenerate (X.map ι'.op x)
   set r' := hez.choose
   set π' : ⦋k'⦌ ⟶ ⦋r'⦌ := hez.choose_spec.choose
@@ -356,7 +300,7 @@ private lemma toTopCellOfSimplex_eq_of_decomp {X : SSet.{u}} {n k r : ℕ} (x : 
   set z' : X.nonDegenerate r' := hez.choose_spec.choose_spec.choose_spec.choose
   have hz' : X.map ι'.op x = X.map π'.op z'.1 := hez.choose_spec.choose_spec.choose_spec.choose_spec
   subst hk
-  obtain ⟨rfl, rfl⟩ := unique_mono_of_stdSimplex hw₀' hw₀ (hw'.symm.trans hw)
+  obtain ⟨rfl, rfl⟩ := SimplexCategory.eq_of_mono_stdSimplex_map_eq hw₀' hw₀ (hw'.symm.trans hw)
   have hr : r' = r := X.unique_nonDegenerate_dim (X.map ι'.op x) π' z' hz' π z hz
   subst hr
   have hz_eq : z' = z := X.unique_nonDegenerate_simplex (X.map ι'.op x) π' z' hz' π z hz
@@ -369,7 +313,7 @@ factorization in `SimplexCategory`. -/
 private lemma toTopCellOfSimplex_map {X : SSet.{u}} {m n : ℕ} (θ : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌)
     (w : StdSimplex ℝ (Fin (m + 1))) :
     toTopCellOfSimplex (X.map θ.op x) w = toTopCellOfSimplex x (w.map θ) := by
-  obtain ⟨k, ι, _, w₀, hw₀, rfl⟩ := exists_mono_map_eq_of_stdSimplex w
+  obtain ⟨k, ι, _, w₀, hw₀, rfl⟩ := SimplexCategory.exists_mono_stdSimplex_map_eq w
   -- Factor `ι ≫ θ` in `SimplexCategory` as an epimorphism followed by a monomorphism.
   obtain ⟨k', hk'⟩ : ∃ k' : ℕ, image (ι ≫ θ) = ⦋k'⦌ :=
     ⟨(image (ι ≫ θ)).len, SimplexCategory.rec (fun _ ↦ rfl) (image (ι ≫ θ))⟩
@@ -388,7 +332,7 @@ private lemma toTopCellOfSimplex_map {X : SSet.{u}} {m n : ℕ} (θ : ⦋m⦌ �
   have : Epi (e ≫ π') := epi_comp _ _
   rw [toTopCellOfSimplex_eq_of_decomp (X.map θ.op x) (w₀.map ι) ι w₀ hw₀ rfl (e ≫ π') z hez_lhs,
     toTopCellOfSimplex_eq_of_decomp x ((w₀.map ι).map θ) ι' (w₀.map e)
-      (weights_map_ne_zero_of_epi e hw₀) hw_rhs π' z hz]
+      (SimplexCategory.weights_stdSimplex_map_ne_zero_of_epi e hw₀) hw_rhs π' z hz]
   refine ToTopCell.ext rfl fun j ↦ ?_
   have hcomp : (w₀.map e).map π' = w₀.map (e ≫ π') := StdSimplex.map_map _ _ _
   exact congrArg (fun u ↦ u.weights j) hcomp.symm
@@ -398,13 +342,12 @@ private lemma toTopObjMk_toTopCellOfSimplex {X : SSet.{u}} {n : ℕ} (x : X _⦋
     (w : StdSimplex ℝ (Fin (n + 1))) :
     toTopObjMk (toTopCellOfSimplex x w).simplex.simplex (toTopCellOfSimplex x w).coords =
       toTopObjMk x w := by
-  obtain ⟨k, ι, _, w₀, hw₀, hw⟩ := exists_mono_map_eq_of_stdSimplex w
+  obtain ⟨k, ι, _, w₀, hw₀, hw⟩ := SimplexCategory.exists_mono_stdSimplex_map_eq w
   obtain ⟨r, π, _, z, hz⟩ := X.exists_nonDegenerate (X.map ι.op x)
   refine (congrArg (fun c : X.ToTopCell ↦ toTopObjMk c.simplex.simplex c.coords)
     (toTopCellOfSimplex_eq_of_decomp x w ι w₀ hw₀ hw π z hz)).trans ?_
-  have hmk : toTopObjMk (X := X) (n := (N.mk z.1 z.2).dim) (N.mk z.1 z.2).simplex (w₀.map π) =
-      toTopObjMk z.1 (w₀.map π) := rfl
-  rw [hmk, ← toTopObjMk_map π z.1 w₀, ← hz, toTopObjMk_map ι x w₀, ← hw]
+  dsimp only [N.mk, S.mk]
+  rw [← toTopObjMk_map π z.1 w₀, ← hz, toTopObjMk_map ι x w₀, ← hw]
 
 /-- An open cell `(s, w)` is recovered from its point `toTopObjMk s.simplex w`. -/
 private lemma toTopCellOfSimplex_cell {X : SSet.{u}} (c : X.ToTopCell) :
@@ -460,70 +403,100 @@ lemma toTopCellEquiv_toTopObjMk_of_ne_zero {X : SSet.{u}} (s : X.N)
     X.toTopCellEquiv (toTopObjMk s.simplex w) = ⟨s, w, hw⟩ := by
   simpa using X.toTopCellEquiv.apply_symm_apply ⟨s, w, hw⟩
 
-/-- Monotone maps `Fin (n + 1) → Fin (r + 1)` are determined by the pushforward of the uniform
-barycenter of `StdSimplex ℝ (Fin (n + 1))`. -/
-private lemma eq_of_barycenter_map_eq {n r : ℕ} {π₁ π₂ : ⦋n⦌ ⟶ ⦋r⦌}
-    (h : (StdSimplex.barycenter (K := ℝ) (M := Fin (n + 1))).map π₁ =
-      (StdSimplex.barycenter (K := ℝ) (M := Fin (n + 1))).map π₂) :
-    π₁ = π₂ := by
-  -- For each `j`, cumulative weights up to `j` count the preimage `{a | πᵢ a ≤ j}`, which is a
-  -- downward-closed subset of `Fin (n + 1)` and hence determined by its cardinality.
-  have hset (j : Fin (r + 1)) :
-      Finset.univ.filter (fun a : Fin (n + 1) ↦ π₁ a ≤ j) =
-        Finset.univ.filter (fun a : Fin (n + 1) ↦ π₂ a ≤ j) := by
-    have hsum := congrArg (fun u ↦ ∑ y ∈ Finset.univ.filter (· ≤ j), u.weights y) h
-    dsimp only at hsum
-    rw [StdSimplex.sum_filter_weights_map, StdSimplex.sum_filter_weights_map] at hsum
-    simp only [StdSimplex.weights_barycenter_apply, Fintype.card_fin, Nat.cast_add, Nat.cast_one,
-      Finset.sum_const, nsmul_eq_mul] at hsum
-    have hcard : (Finset.univ.filter (fun a : Fin (n + 1) ↦ π₁ a ≤ j)).card =
-        (Finset.univ.filter (fun a : Fin (n + 1) ↦ π₂ a ≤ j)).card := by
-      exact_mod_cast mul_right_cancel₀ (inv_ne_zero (by positivity : (n : ℝ) + 1 ≠ 0)) hsum
-    have hsub {f g : ⦋n⦌ ⟶ ⦋r⦌}
-        (hc : (Finset.univ.filter (fun a : Fin (n + 1) ↦ f a ≤ j)).card ≤
-          (Finset.univ.filter (fun a : Fin (n + 1) ↦ g a ≤ j)).card) :
-        Finset.univ.filter (fun a : Fin (n + 1) ↦ f a ≤ j) ⊆
-          Finset.univ.filter (fun a : Fin (n + 1) ↦ g a ≤ j) := fun a ha ↦ by
-      by_contra ha'
-      refine (Finset.card_lt_card (Finset.ssubset_iff_of_subset ?_ |>.2 ⟨a, ha, ha'⟩)).not_ge hc
-      intro b hb
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at ha ha' hb ⊢
-      exact (f.toOrderHom.monotone
-        (le_of_not_ge fun hab ↦ ha' ((g.toOrderHom.monotone hab).trans hb))).trans ha
-    exact Finset.Subset.antisymm (hsub hcard.le) (hsub hcard.ge)
-  ext i : 3
-  have hle (j : Fin (r + 1)) : π₁ i ≤ j ↔ π₂ i ≤ j := by simpa using Finset.ext_iff.1 (hset j) i
-  exact le_antisymm ((hle (π₂ i)).2 le_rfl) ((hle (π₁ i)).1 le_rfl)
+/-- Characterization of `X.toTopCellEquiv (toTopObjMk x w)` by any decomposition of `(x, w)` along
+a morphism `ι : ⦋k⦌ ⟶ ⦋n⦌` carrying interior coordinates `w₀` (for instance a face `[Mono ι]` in a
+mono–epi factorization) and an iterated degeneracy `π : ⦋k⦌ ⟶ ⦋r⦌` (`[Epi π]`) onto a
+nondegenerate simplex `z`. -/
+lemma toTopCellEquiv_toTopObjMk_eq_of_decomp {X : SSet.{u}} {n k r : ℕ} (x : X _⦋n⦌)
+    (w : StdSimplex ℝ (Fin (n + 1)))
+    (ι : ⦋k⦌ ⟶ ⦋n⦌) (w₀ : StdSimplex ℝ (Fin (k + 1)))
+    (hw₀ : ∀ j, w₀.weights j ≠ 0) (hw : w = w₀.map ι)
+    (π : ⦋k⦌ ⟶ ⦋r⦌) [Epi π] (z : X.nonDegenerate r) (hz : X.map ι.op x = X.map π.op z.1) :
+    X.toTopCellEquiv (toTopObjMk x w) =
+      ⟨N.mk z.1 z.2, w₀.map π, SimplexCategory.weights_stdSimplex_map_ne_zero_of_epi π hw₀⟩ := by
+  apply X.toTopCellEquiv.symm.injective
+  rw [Equiv.symm_apply_apply, toTopCellEquiv_symm_apply]
+  dsimp only [N.mk, S.mk]
+  rw [← toTopObjMk_map π z.1 w₀, ← hz, toTopObjMk_map ι x w₀, ← hw]
 
-/-- Evaluating `toTopObjMk · StdSimplex.barycenter` on `n`-simplices is injective. -/
-theorem toTopObjMk_barycenter_injective (X : SSet.{u}) (n : ℕ) :
-    Function.Injective fun x : X _⦋n⦌ ↦
-      toTopObjMk x (StdSimplex.barycenter (K := ℝ) (M := Fin (n + 1))) := by
+/-- A realized vertex `toTopPoint x` lies in the `0`-dimensional open cell of `x`. -/
+@[simp]
+lemma toTopCellEquiv_toTopPoint {X : SSet.{u}} (x : X _⦋0⦌) :
+    X.toTopCellEquiv (toTopPoint x) =
+      ⟨N.mk x (by simp), StdSimplex.single 0, fun j ↦ by
+        have hj : j = 0 := Fin.ext (by dsimp [N.mk, S.mk] at j ⊢; omega)
+        rw [hj, StdSimplex.weights_single, Finsupp.single_eq_same]
+        exact one_ne_zero⟩ := by
+  rw [toTopPoint_eq_toTopObjMk x (StdSimplex.single 0)]
+  exact toTopCellEquiv_toTopObjMk_of_ne_zero (N.mk x (by simp)) (StdSimplex.single 0) _
+
+/-- The nondegenerate simplex carrying `toTopObjMk x w` lies in the subcomplex generated by `x`. -/
+lemma toTopCellEquiv_toTopObjMk_subcomplex_le {X : SSet.{u}} {n : ℕ} (x : X _⦋n⦌)
+    (w : StdSimplex ℝ (Fin (n + 1))) :
+    (X.toTopCellEquiv (toTopObjMk x w)).simplex.subcomplex ≤ Subcomplex.ofSimplex x := by
+  obtain ⟨k, ι, _, w₀, hw₀, hw⟩ := SimplexCategory.exists_mono_stdSimplex_map_eq w
+  obtain ⟨r, π, _, z, hz⟩ := X.exists_nonDegenerate (X.map ι.op x)
+  rw [toTopCellEquiv_toTopObjMk_eq_of_decomp x w ι w₀ hw₀ hw π z hz]
+  exact (S.subcomplex_eq_of_epi (S.mk (X.map ι.op x)) (S.mk z.1) π hz.symm).symm.trans_le
+    (S.subcomplex_map_le (S.mk (X.map ι.op x)) (S.mk x) ι rfl)
+
+/-- The open cell of `toTopObjMk x w` has dimension at most `n`. -/
+lemma toTopCellEquiv_toTopObjMk_dim_le {X : SSet.{u}} {n : ℕ} (x : X _⦋n⦌)
+    (w : StdSimplex ℝ (Fin (n + 1))) :
+    (X.toTopCellEquiv (toTopObjMk x w)).simplex.dim ≤ n := by
+  obtain ⟨k, ι, _, w₀, hw₀, hw⟩ := SimplexCategory.exists_mono_stdSimplex_map_eq w
+  obtain ⟨r, π, _, z, hz⟩ := X.exists_nonDegenerate (X.map ι.op x)
+  rw [toTopCellEquiv_toTopObjMk_eq_of_decomp x w ι w₀ hw₀ hw π z hz]
+  exact (SimplexCategory.len_le_of_epi π).trans (SimplexCategory.len_le_of_mono ι)
+
+/-- A monomorphism `f : X ⟶ Y` of simplicial sets preserves open cells under `toTop.map f`. -/
+@[simp]
+lemma toTopCellEquiv_toTop_map {X Y : SSet.{u}} (f : X ⟶ Y) [Mono f] (p : |X|) :
+    Y.toTopCellEquiv (toTop.map f p) =
+      ⟨N.mk (f.app (op ⦋(X.toTopCellEquiv p).simplex.dim⦌) (X.toTopCellEquiv p).simplex.simplex)
+        ((nonDegenerate_iff_of_mono f _).mpr (X.toTopCellEquiv p).simplex.nonDegenerate),
+        (X.toTopCellEquiv p).coords, (X.toTopCellEquiv p).coords_ne_zero⟩ := by
+  conv_lhs =>
+    rw [← X.toTopCellEquiv.symm_apply_apply p, toTopCellEquiv_symm_apply, toTop_map_toTopObjMk]
+  exact toTopCellEquiv_toTopObjMk_of_ne_zero
+    (N.mk (f.app _ (X.toTopCellEquiv p).simplex.simplex)
+      ((nonDegenerate_iff_of_mono f _).mpr (X.toTopCellEquiv p).simplex.nonDegenerate))
+    (X.toTopCellEquiv p).coords (X.toTopCellEquiv p).coords_ne_zero
+
+/-- Evaluating `toTopObjMk · w` at any interior point `w` of `StdSimplex ℝ (Fin (n + 1))` is
+injective on `n`-simplices. -/
+theorem toTopObjMk_injective_of_weights_ne_zero (X : SSet.{u}) {n : ℕ}
+    {w : StdSimplex ℝ (Fin (n + 1))} (hw : ∀ j, w.weights j ≠ 0) :
+    Function.Injective fun x : X _⦋n⦌ ↦ toTopObjMk x w := by
   intro x₁ x₂ h
   dsimp only at h
-  let b : StdSimplex ℝ (Fin (n + 1)) := StdSimplex.barycenter
-  have hb : ∀ j, b.weights j ≠ 0 := fun j ↦ by
-    rw [StdSimplex.weights_barycenter_apply, Fintype.card_fin]; positivity
   obtain ⟨r₁, π₁, _, z₁, rfl⟩ := X.exists_nonDegenerate x₁
   obtain ⟨r₂, π₂, _, z₂, rfl⟩ := X.exists_nonDegenerate x₂
   rw [toTopObjMk_map, toTopObjMk_map] at h
-  have hc : X.toTopCellEquiv (toTopObjMk (N.mk z₁.1 z₁.2).simplex (b.map π₁)) =
-      X.toTopCellEquiv (toTopObjMk (N.mk z₂.1 z₂.2).simplex (b.map π₂)) :=
+  have hc : X.toTopCellEquiv (toTopObjMk (N.mk z₁.1 z₁.2).simplex (w.map π₁)) =
+      X.toTopCellEquiv (toTopObjMk (N.mk z₂.1 z₂.2).simplex (w.map π₂)) :=
     congrArg X.toTopCellEquiv h
-  rw [toTopCellEquiv_toTopObjMk_of_ne_zero (N.mk z₁.1 z₁.2) (b.map π₁)
-      (weights_map_ne_zero_of_epi π₁ hb),
-    toTopCellEquiv_toTopObjMk_of_ne_zero (N.mk z₂.1 z₂.2) (b.map π₂)
-      (weights_map_ne_zero_of_epi π₂ hb)] at hc
+  rw [toTopCellEquiv_toTopObjMk_of_ne_zero (N.mk z₁.1 z₁.2) (w.map π₁)
+      (SimplexCategory.weights_stdSimplex_map_ne_zero_of_epi π₁ hw),
+    toTopCellEquiv_toTopObjMk_of_ne_zero (N.mk z₂.1 z₂.2) (w.map π₂)
+      (SimplexCategory.weights_stdSimplex_map_ne_zero_of_epi π₂ hw)] at hc
   have hsimp : N.mk z₁.1 z₁.2 = N.mk z₂.1 z₂.2 := congrArg ToTopCell.simplex hc
   have hdim : r₁ = r₂ := congrArg (·.dim) hsimp
   subst hdim
   have hz : z₁ = z₂ := Subtype.ext (by injection hsimp with hS; injection hS)
   subst hz
-  have hcoords : b.map π₁ = b.map π₂ := by injection hc
-  rw [eq_of_barycenter_map_eq hcoords]
+  have hcoords : w.map π₁ = w.map π₂ := by injection hc
+  rw [SimplexCategory.eq_of_stdSimplex_map_eq_of_weights_ne_zero hw hcoords]
+
+/-- Evaluating `toTopObjMk · StdSimplex.barycenter` on `n`-simplices is injective. -/
+theorem toTopObjMk_barycenter_injective (X : SSet.{u}) (n : ℕ) :
+    Function.Injective fun x : X _⦋n⦌ ↦
+      toTopObjMk x (StdSimplex.barycenter (K := ℝ) (M := Fin (n + 1))) :=
+  toTopObjMk_injective_of_weights_ne_zero X fun _ ↦ by
+    rw [StdSimplex.weights_barycenter_apply, Fintype.card_fin]; positivity
 
 /-- The unit `X ⟶ Sing |X|` of the realization–singular adjunction is componentwise injective. -/
-theorem sSetTopAdj_unit_app_injective (X : SSet.{u}) (m : SimplexCategoryᵒᵖ) :
+theorem sSetTopAdj_unit_app_app_injective (X : SSet.{u}) (m : SimplexCategoryᵒᵖ) :
     Function.Injective ((sSetTopAdj.unit.app X).app m) := by
   rcases m with ⟨⟨n⟩⟩
   intro x₁ x₂ h
@@ -535,7 +508,7 @@ instance mono_sSetTopAdj_unit_app (X : SSet.{u}) : Mono (sSetTopAdj.unit.app X) 
   rw [NatTrans.mono_iff_mono_app]
   intro m
   rw [mono_iff_injective]
-  exact sSetTopAdj_unit_app_injective X m
+  exact sSetTopAdj_unit_app_app_injective X m
 
 /-- The geometric realization functor `SSet.toTop` is faithful. -/
 instance : toTop.{u}.Faithful :=
@@ -592,7 +565,7 @@ private lemma toTopUliftHom_toTopObjMk {X : SSet.{u}} {n : ℕ}
 /-- Homeomorphism identifying the lifted realization of a standard simplex in `Type u` with the
 realization of the standard simplex in `Type (max u v)`. -/
 private noncomputable def toTopUliftSimplexHomeo (m : SimplexCategory) :
-    TopCat.uliftFunctor.{v, u}.obj |uliftYoneda.{u}.obj m| ≃ₜ |stdSimplex.{max u v}.obj m| :=
+    TopCat.uliftFunctor.{v, u}.obj |stdSimplex.{u}.obj m| ≃ₜ |stdSimplex.{max u v}.obj m| :=
   (|stdSimplex.{u}.obj m|.uliftFunctorObjHomeo.symm.trans m.toTopHomeo.{u}).trans
     m.toTopHomeo.{max u v}.symm
 
@@ -605,23 +578,23 @@ private lemma toTopUliftSimplexHomeo_apply (m : SimplexCategory)
 
 /-- Morphism in `TopCat` underlying `toTopUliftSimplexHomeo`. -/
 private noncomputable def toTopUliftSimplexHom (m : SimplexCategory) :
-    TopCat.uliftFunctor.{v, u}.obj |uliftYoneda.{u}.obj m| ⟶ |stdSimplex.{max u v}.obj m| :=
+    TopCat.uliftFunctor.{v, u}.obj |stdSimplex.{u}.obj m| ⟶ |stdSimplex.{max u v}.obj m| :=
   ConcreteCategory.ofHom (toTopUliftSimplexHomeo.{v, u} m : C(_, _))
 
 @[simp]
 private lemma toTopUliftSimplexHom_apply (m : SimplexCategory)
-    (y : TopCat.uliftFunctor.{v, u}.obj |uliftYoneda.{u}.obj m|) :
+    (y : TopCat.uliftFunctor.{v, u}.obj |stdSimplex.{u}.obj m|) :
     toTopUliftSimplexHom.{v, u} m y = toTopUliftSimplexHomeo.{v, u} m y :=
   (rfl)
 
-private def toTopUliftCoconeLegHom {X : SSet.{u}} (j : CostructuredArrow uliftYoneda.{u} X) :
+private def toTopUliftCoconeLegHom {X : SSet.{u}} (j : CostructuredArrow stdSimplex.{u} X) :
     stdSimplex.{max u v}.obj j.left ⟶ uliftFunctor.{v, u}.obj X :=
   (uliftFunctorHomEquiv.{u, v} X j.left).symm j.hom
 
 /-- Cocone assembling the inverse `TopCat.uliftFunctor.obj |X| ⟶ |uliftFunctor.obj X|` via
 preservation of colimits by `toTop` and `TopCat.uliftFunctor`. -/
 private noncomputable def toTopUliftCocone (X : SSet.{u}) :
-    Cocone (CostructuredArrow.proj uliftYoneda.{u} X ⋙ uliftYoneda.{u} ⋙
+    Cocone (CostructuredArrow.proj stdSimplex.{u} X ⋙ stdSimplex.{u} ⋙
       toTop.{u} ⋙ TopCat.uliftFunctor.{v, u}) where
   pt := |uliftFunctor.{v, u}.obj X|
   ι :=
@@ -633,50 +606,35 @@ private noncomputable def toTopUliftCocone (X : SSet.{u}) :
           CostructuredArrow.proj_map, Functor.const_obj_obj, Functor.const_obj_map,
           Category.comp_id, ConcreteCategory.comp_apply, toTopUliftSimplexHom_apply]
         have hy : toTopUliftSimplexHomeo.{v, u} j₂.left
-              ((TopCat.uliftFunctor.{v, u}.map (toTop.{u}.map (uliftYoneda.{u}.map α.left))) y) =
+              ((TopCat.uliftFunctor.{v, u}.map (toTop.{u}.map (stdSimplex.{u}.map α.left))) y) =
             toTop.{max u v}.map (stdSimplex.{max u v}.map α.left)
               (toTopUliftSimplexHomeo.{v, u} j₁.left y) := by
-          let y₁ : TopCat.uliftFunctor.{v, u}.obj |stdSimplex.{u}.obj j₁.left| := y
-          have hy₀ : toTopUliftSimplexHomeo.{v, u} j₂.left
-                ((TopCat.uliftFunctor.{v, u}.map (toTop.{u}.map (uliftYoneda.{u}.map α.left))) y) =
-              toTopUliftSimplexHomeo.{v, u} j₂.left
-                ((TopCat.uliftFunctor.{v, u}.map (toTop.{u}.map (stdSimplex.{u}.map α.left))) y₁) :=
-            rfl
-          have hy₁ : toTopUliftSimplexHomeo.{v, u} j₁.left y =
-              toTopUliftSimplexHomeo.{v, u} j₁.left y₁ := rfl
-          rw [hy₀, hy₁, toTopUliftSimplexHomeo_apply, toTopUliftSimplexHomeo_apply,
+          rw [toTopUliftSimplexHomeo_apply, toTopUliftSimplexHomeo_apply,
             TopCat.uliftFunctorObjHomeo_symm_naturality_apply,
             SimplexCategory.toTopHomeo_naturality_apply,
             SimplexCategory.toTopHomeo_symm_naturality_apply]
         have hα : toTopUliftCoconeLegHom.{v, u} j₁ =
-            SSet.stdSimplex.map α.left ≫ toTopUliftCoconeLegHom.{v, u} j₂ := by
-          let f₁ : stdSimplex.{u}.obj j₁.left ⟶ X := j₁.hom
-          let f₂ : stdSimplex.{u}.obj j₂.left ⟶ X := j₂.hom
-          have hf₁ : toTopUliftCoconeLegHom.{v, u} j₁ =
-              (uliftFunctorHomEquiv.{u, v} X j₁.left).symm f₁ := rfl
-          have hf₂ : toTopUliftCoconeLegHom.{v, u} j₂ =
-              (uliftFunctorHomEquiv.{u, v} X j₂.left).symm f₂ := rfl
-          rw [hf₁, hf₂]
-          exact (uliftFunctorHomEquiv.{u, v} X j₁.left).injective (by
-            rw [Equiv.apply_symm_apply, uliftFunctorHomEquiv_map_comp, Equiv.apply_symm_apply]
+            SSet.stdSimplex.map α.left ≫ toTopUliftCoconeLegHom.{v, u} j₂ :=
+          (uliftFunctorHomEquiv.{u, v} X j₁.left).injective (by
+            rw [toTopUliftCoconeLegHom, toTopUliftCoconeLegHom, Equiv.apply_symm_apply,
+              uliftFunctorHomEquiv_map_comp, Equiv.apply_symm_apply]
             exact (CostructuredArrow.w α).symm)
         rw [hy, hα, toTop.map_comp, ConcreteCategory.comp_apply] }
 
 /-- Inverse morphism `TopCat.uliftFunctor.obj |X| ⟶ |uliftFunctor.obj X|`. -/
 private noncomputable def toTopUliftInv (X : SSet.{u}) :
     TopCat.uliftFunctor.{v, u}.obj |X| ⟶ |uliftFunctor.{v, u}.obj X| :=
-  (isColimitOfPreserves (toTop.{u} ⋙ TopCat.uliftFunctor.{v, u}) (denseAtUliftYoneda X)).desc
+  (isColimitOfPreserves (toTop.{u} ⋙ TopCat.uliftFunctor.{v, u}) (stdSimplex.{u}.denseAt X)).desc
     (toTopUliftCocone.{v, u} X)
 
 private lemma toTopUliftInv_uliftFunctorObjHomeo_toTopObjMk {X : SSet.{u}} {n : ℕ}
     (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))) :
     toTopUliftInv.{v, u} X (|X|.uliftFunctorObjHomeo (toTopObjMk x w)) =
       toTopObjMk (X.uliftFunctorObjEquiv.{v} (op ⦋n⦌) x) w := by
-  let hc := isColimitOfPreserves (toTop.{u} ⋙ TopCat.uliftFunctor.{v, u}) (denseAtUliftYoneda X)
-  let j : CostructuredArrow uliftYoneda.{u} X := CostructuredArrow.mk (yonedaEquiv.symm x)
-  let z₀ : TopCat.uliftFunctor.{v, u}.obj |stdSimplex.{u}.obj ⦋n⦌| :=
+  let hc := isColimitOfPreserves (toTop.{u} ⋙ TopCat.uliftFunctor.{v, u}) (stdSimplex.{u}.denseAt X)
+  let j : CostructuredArrow stdSimplex.{u} X := CostructuredArrow.mk (yonedaEquiv.symm x)
+  let z : TopCat.uliftFunctor.{v, u}.obj |stdSimplex.{u}.obj ⦋n⦌| :=
     |stdSimplex.{u}.obj ⦋n⦌|.uliftFunctorObjHomeo (⦋n⦌.toTopHomeo.symm w)
-  let z : TopCat.uliftFunctor.{v, u}.obj |uliftYoneda.{u}.obj ⦋n⦌| := z₀
   have hj : toTopUliftInv.{v, u} X
         (TopCat.uliftFunctor.{v, u}.map (toTop.{u}.map (yonedaEquiv.symm x)) z) =
       (toTopUliftSimplexHom.{v, u} ⦋n⦌ ≫
@@ -690,17 +648,16 @@ private lemma toTopUliftInv_uliftFunctorObjHomeo_toTopObjMk {X : SSet.{u}} {n : 
   rw [← hz, hj, ConcreteCategory.comp_apply, toTopUliftSimplexHom_apply]
   have hsymm : toTopUliftCoconeLegHom.{v, u} j =
       yonedaEquiv.symm (X.uliftFunctorObjEquiv.{v} (op ⦋n⦌) x) := by
-    have hj₀ : toTopUliftCoconeLegHom.{v, u} j =
-        (uliftFunctorHomEquiv.{u, v} X ⦋n⦌).symm (yonedaEquiv.symm x) := rfl
-    rw [hj₀, uliftFunctorHomEquiv_symm_eq_yonedaEquiv_symm, Equiv.apply_symm_apply]
+    dsimp only [j, toTopUliftCoconeLegHom, CostructuredArrow.mk_left]
+    rw [CostructuredArrow.mk_hom_eq_self, uliftFunctorHomEquiv_symm_eq_yonedaEquiv_symm,
+      Equiv.apply_symm_apply]
   have hw : toTopUliftSimplexHomeo.{v, u} ⦋n⦌ z = ⦋n⦌.toTopHomeo.{max u v}.symm w := by
-    have hz₀ : toTopUliftSimplexHomeo.{v, u} ⦋n⦌ z = toTopUliftSimplexHomeo.{v, u} ⦋n⦌ z₀ := rfl
-    rw [hz₀, toTopUliftSimplexHomeo_apply]
-    simp [z₀]
+    rw [toTopUliftSimplexHomeo_apply]
+    simp [z]
   rw [hsymm, hw, ← toTopObjMk_eq_toTop_map]
 
-/-- Geometric realization of a universe-lifted simplicial set is naturally isomorphic to the
-universe lift of its geometric realization. -/
+/-- Geometric realization of a universe-lifted simplicial set is isomorphic in `TopCat` to the
+universe lift of its geometric realization (see `SSet.toTopUliftNatIso` for naturality in `X`). -/
 noncomputable def toTopUliftIso (X : SSet.{u}) :
     |uliftFunctor.{v, u}.obj X| ≅ TopCat.uliftFunctor.{v, u}.obj |X| where
   hom := toTopUliftHom.{v, u} X
@@ -738,6 +695,21 @@ noncomputable def toTopUliftNatIso :
       toTop_map_toTopObjMk, toTopUliftIso_hom_toTopObjMk,
       uliftFunctorObjEquiv_symm_uliftFunctor_map, TopCat.uliftFunctorObjHomeo_naturality_apply]
 
+@[simp]
+lemma toTopUliftNatIso_hom_app (X : SSet.{u}) :
+    toTopUliftNatIso.{v, u}.hom.app X = (toTopUliftIso.{v, u} X).hom :=
+  (rfl)
+
+@[simp]
+lemma toTopUliftNatIso_inv_app (X : SSet.{u}) :
+    toTopUliftNatIso.{v, u}.inv.app X = (toTopUliftIso.{v, u} X).inv :=
+  (rfl)
+
+@[simp]
+lemma toTopUliftNatIso_app (X : SSet.{u}) :
+    toTopUliftNatIso.{v, u}.app X = toTopUliftIso.{v, u} X :=
+  Iso.ext rfl
+
 /-- Homeomorphism `|X| ≃ₜ |uliftFunctor.obj X|` between the geometric realization of `X` and the
 geometric realization of its universe lift, matching `TopCat.uliftFunctorObjHomeo`. -/
 noncomputable def toTopUliftHomeomorph (X : SSet.{u}) :
@@ -772,14 +744,14 @@ lemma toTopUliftHomeomorph_symm_toTopPoint {X : SSet.{u}}
   rw [toTopPoint_eq_toTopObjMk x default, toTopUliftHomeomorph_symm_toTopObjMk, toTopObjMk_zero]
 
 @[simp]
-lemma toTopUliftHomeomorph_naturality {X Y : SSet.{u}} (f : X ⟶ Y) (p : |X|) :
+lemma toTopUliftHomeomorph_naturality_apply {X Y : SSet.{u}} (f : X ⟶ Y) (p : |X|) :
     toTop.map (uliftFunctor.{v, u}.map f) (toTopUliftHomeomorph.{v, u} X p) =
       toTopUliftHomeomorph.{v, u} Y (toTop.map f p) := by
   obtain ⟨_, _, _, rfl⟩ := exists_toTopObjMk p
   simp
 
 @[simp]
-lemma toTopUliftHomeomorph_symm_naturality {X Y : SSet.{u}} (f : X ⟶ Y)
+lemma toTopUliftHomeomorph_symm_naturality_apply {X Y : SSet.{u}} (f : X ⟶ Y)
     (p : |uliftFunctor.{v, u}.obj X|) :
     (toTopUliftHomeomorph.{v, u} Y).symm (toTop.map (uliftFunctor.{v, u}.map f) p) =
       toTop.map f ((toTopUliftHomeomorph.{v, u} X).symm p) := by

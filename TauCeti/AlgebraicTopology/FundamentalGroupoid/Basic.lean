@@ -29,6 +29,8 @@ acts on a single morphism as the composite of the induced functors.
 * `Path.Homotopic.Quotient.cast_mem_arrows_iff`: membership of a path class in a
   subgroupoid of the fundamental groupoid is unchanged by casting its endpoints along equalities.
 * `FundamentalGroupoid.map_comp_map`: the morphism-level form of `FundamentalGroupoid.map_comp`.
+* `FundamentalGroupoid.conj_eqToHom_map_fromPath`: conjugating `(FundamentalGroupoid.map g).map`
+  of a path class by endpoint `eqToHom`s casts the pushed-forward path.
 * `FundamentalGroupoidFunctor.homotopicMapsNatIso_app`: the component at `x` of the natural
   isomorphism induced by a homotopy is the class of its trace at `x`.
 -/
@@ -85,6 +87,18 @@ theorem map_comp_map {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [
     (map (g.comp f)).map p = (map g).map ((map f).map p) := by
   rcases p
   rfl
+
+/-- Conjugating `(FundamentalGroupoid.map g).map (fromPath (.mk p))` by endpoint `eqToHom`s gives
+the homotopy class of the pushed-forward path cast along those endpoint equalities. -/
+theorem conj_eqToHom_map_fromPath {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    (g : C(X, Y)) {x₀ x₁ : X} (p : Path x₀ x₁) {x' y' : Y}
+    (hx : x' = g x₀) (hy : y' = g x₁)
+    {h₁ : mk x' = (map g).obj (mk x₀)} {h₂ : (map g).obj (mk x₁) = mk y'} :
+    eqToHom h₁ ≫ (map g).map (fromPath (.mk p)) ≫ eqToHom h₂ =
+      fromPath (.mk ((p.map g.continuous).cast hx hy)) := by
+  subst hx hy
+  dsimp [map] at h₁ h₂ ⊢
+  simp [← Path.Homotopic.Quotient.mk_map]
 
 end FundamentalGroupoid
 

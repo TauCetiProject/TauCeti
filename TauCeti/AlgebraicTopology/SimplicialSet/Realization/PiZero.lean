@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Functor.KanExtension.DenseAtYoneda
 public import Mathlib.Topology.Homotopy.TopCat.ZerothHomotopy
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
+public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
 
@@ -52,19 +53,6 @@ lemma π₀_mk_eq_zerothHomotopyEquiv_mk {T : TopCat.{u}} (q : (TopCat.toSSet.ob
 end TauCeti.TopCat
 
 namespace SSet
-
-/-- The point of the geometric realization `|X|` given by a vertex `x` of `X`: the singular vertex
-`(sSetTopAdj.unit.app X).app _ x` of `|X|`. -/
-noncomputable def toTopPoint {X : SSet.{u}} (x : X _⦋0⦌) : |X| :=
-  TopCat.toSSetObj₀Equiv ((sSetTopAdj.unit.app X).app _ x)
-
-/-- The realization of a map sends the point of a vertex to the point of its image. -/
-@[simp]
-lemma toTop_map_toTopPoint {X Y : SSet.{u}} (f : X ⟶ Y) (x : X _⦋0⦌) :
-    toTop.map f (toTopPoint x) = toTopPoint (f.app _ x) := by
-  have h := ConcreteCategory.congr_hom (NatTrans.congr_app (sSetTopAdj.unit.naturality f) _) x
-  dsimp at h
-  rw [toTopPoint, toTopPoint, h, TauCeti.TopCat.toSSetObj₀Equiv_toSSet_map_app]
 
 /-- The singular simplicial set of a weak homotopy equivalence is bijective on connected
 components, these being the path components of the spaces. -/

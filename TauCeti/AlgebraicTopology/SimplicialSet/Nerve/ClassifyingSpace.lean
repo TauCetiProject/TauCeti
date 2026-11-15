@@ -9,7 +9,6 @@ public import Mathlib.CategoryTheory.Category.Cat
 public import Mathlib.CategoryTheory.Category.ULift
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.FundamentalGroupoid
-import Mathlib.CategoryTheory.InducedCategory
 
 /-!
 # Classifying space of a category and of a functor
@@ -24,8 +23,8 @@ Each object `X : C` determines a canonical vertex `classifyingSpace.vertex X : c
 and each morphism `f : X ⟶ Y` determines a path `classifyingSpace.edgePath f` from `vertex X` to
 `vertex Y`. Identity morphisms give constant paths (`classifyingSpace.edgePath_id`), composable
 pairs `f : X ⟶ Y` and `g : Y ⟶ Z` satisfy
-`((edgePath f).trans (edgePath g)).Homotopic (edgePath (f ≫ g))` via the `2`-simplex
-`ComposableArrows.mk₂ f g` (`classifyingSpace.homotopic_edgePath_comp`), and these assemble into
+`((edgePath f).trans (edgePath g)).Homotopic (edgePath (f ≫ g))`
+(`classifyingSpace.homotopic_edgePath_comp`), and these assemble into
 `classifyingSpace.toFundamentalGroupoid C : C ⥤ FundamentalGroupoid (classifyingSpace C)`.
 
 To compare categories across different universes (such as `Functor.Elements.π F : F.Elements ⥤ C`
@@ -35,13 +34,15 @@ universe-polymorphic continuous map
 `classifyingSpace.mapOfFunctor : C(classifyingSpace C, classifyingSpace D)`.
 
 We also record the concrete identifications and properties of classifying spaces:
-* Faithfulness of `classifyingSpaceFunctor`, injectivity of `vertex`, and failure of fullness
-  (`classifyingSpace.not_full_classifyingSpaceFunctor`, witnessed by interval reflection on
-  `Fin 2`).
+* Faithfulness of `classifyingSpaceFunctor` (`classifyingSpace.mapOfFunctor_injective`),
+  injectivity of `vertex`, and failure of fullness
+  (`TauCeti.CategoryTheory.not_full_classifyingSpaceFunctor`).
 * Finite nonempty linear orders (`classifyingSpace.preorderHomeomorphStdSimplex`,
-  `classifyingSpace.finTwoHomeomorphI`), empty categories, single-object single-morphism categories
-  (`classifyingSpace.instUnique`), discrete categories (`classifyingSpace.discreteIso`,
-  `classifyingSpace.discreteHomeomorph`), and constant functors (`classifyingSpaceMap_const`).
+  `classifyingSpace.finTwoHomeomorphI`), empty categories, discrete categories
+  (`classifyingSpace.isDiscreteIso`, `classifyingSpace.isDiscreteHomeomorph`,
+  `classifyingSpace.instUnique`, `classifyingSpace.discreteIso`,
+  `classifyingSpace.discreteHomeomorph`), and constant functors
+  (`classifyingSpace.mapOfFunctor_const`, `TauCeti.CategoryTheory.classifyingSpaceMap_const`).
 
 ## References
 
@@ -119,21 +120,11 @@ lemma classifyingSpaceFunctor_map {C D : Cat.{v, u}} (F : C ⟶ D) :
     classifyingSpaceFunctor.map F = classifyingSpaceMap F.toFunctor :=
   (rfl)
 
-/-- `classifyingSpaceMap` is injective on functors. -/
-theorem classifyingSpaceMap_injective {C D : Type u} [Category.{v} C] [Category.{v} D] :
-    Function.Injective
-      (classifyingSpaceMap : (C ⥤ D) → (classifyingSpace C ⟶ classifyingSpace D)) :=
-  SSet.toTop.map_injective.comp TauCeti.nerveMap_injective
-
-/-- The classifying space functor `Cat.{v, u} ⥤ TopCat.{max u v}` is faithful. -/
-instance : classifyingSpaceFunctor.{v, u}.Faithful :=
-  inferInstanceAs (nerveFunctor.{v, u} ⋙ SSet.toTop).Faithful
-
 namespace classifyingSpace
 
-section VerticesAndEdges
+section Vertices
 
-variable {C D E : Type u} [Category.{v} C] [Category.{v} D] [Category.{v} E]
+variable {C D : Type u} [Category.{v} C] [Category.{v} D]
 
 /-- The canonical vertex `[X]` of `classifyingSpace C` associated to an object `X : C`. -/
 noncomputable def vertex (X : C) : classifyingSpace C :=
@@ -151,17 +142,8 @@ lemma vertex_eq_toTopObjMk (X : C) (w : StdSimplex ℝ (Fin 1)) :
 lemma _root_.TauCeti.CategoryTheory.classifyingSpaceMap_vertex (F : C ⥤ D) (X : C) :
     classifyingSpaceMap F (vertex X) = vertex (F.obj X) := by
   rw [vertex_eq_toTopPoint, classifyingSpaceMap_def, SSet.toTop_map_toTopPoint,
-    nerve.nerveMap_app_objEquiv_symm, Functor.mapComposableArrows_obj_nerveEquiv_symm,
-    ← vertex_eq_toTopPoint]
-
-/-- A constant functor `(Functor.const C).obj Y` realizes to the constant map at `vertex Y`. -/
-@[simp]
-lemma _root_.TauCeti.CategoryTheory.classifyingSpaceMap_const (C D : Type u)
-    [Category.{v} C] [Category.{v} D] (Y : D) :
-    classifyingSpaceMap ((Functor.const C).obj Y) =
-      TopCat.const (X := classifyingSpace C) (vertex Y) := by
-  rw [classifyingSpaceMap_def, TauCeti.nerveMap_const, SSet.toTop_map_const,
-    ← vertex_eq_toTopPoint]
+    nerve.nerveMap_app_objEquiv_symm, nerveEquiv_symm_eq_mk₀,
+    Functor.mapComposableArrows_obj_mk₀, ← nerveEquiv_symm_eq_mk₀, ← vertex_eq_toTopPoint]
 
 /-- Distinct objects of `C` give distinct vertices of `classifyingSpace C`. -/
 theorem vertex_injective (C : Type u) [Category.{v} C] :
@@ -180,78 +162,7 @@ theorem exists_joined_vertex (p : classifyingSpace C) :
   refine ⟨nerveEquiv (nerve.objEquiv s), ?_⟩
   rwa [vertex_eq_toTopPoint, Equiv.symm_apply_apply, Equiv.symm_apply_apply]
 
-/-- The edge path in `classifyingSpace C` from `vertex X` to `vertex Y` associated to a morphism
-`f : X ⟶ Y`. -/
-noncomputable def edgePath {X Y : C} (f : X ⟶ Y) : Path (vertex X) (vertex Y) :=
-  (nerve.edgeMk f).toTopPath
-
-lemma edgePath_apply {X Y : C} (f : X ⟶ Y) (t : unitInterval) :
-    edgePath f t =
-      SSet.toTopObjMk (X := nerve C) (ComposableArrows.mk₁ f) (StdSimplex.homeomorphI.symm t) :=
-  (nerve.edgeMk f).toTopPath_apply t
-
-/-- The edge path of an identity morphism `𝟙 X` is the constant path at `vertex X`. -/
-@[simp]
-lemma edgePath_id (X : C) : edgePath (𝟙 X) = Path.refl (vertex X) := by
-  ext t
-  refine (congrArg (fun e : (nerve C).Edge _ _ ↦ e.toTopPath t) (nerve.edgeMk_id X)).trans ?_
-  have hid : (SSet.Edge.id (X := nerve C) (nerveEquiv.symm X)).toTopPath t =
-      (SSet.Edge.id (nerve.objEquiv.symm (nerveEquiv.symm X))).toTopPath t :=
-    congrArg (fun x : (nerve C) _⦋0⦌ ↦ (SSet.Edge.id x).toTopPath t)
-      (nerve.objEquiv_symm_nerveEquiv_symm X).symm
-  rw [hid, SSet.Edge.toTopPath_id, ← vertex_eq_toTopPoint]
-
-/-- Pushing `edgePath f` forward along `classifyingSpaceMap F` gives `edgePath (F.map f)` after
-identifying endpoints via `classifyingSpaceMap_vertex`. -/
-lemma edgePath_map (F : C ⥤ D) {X Y : C} (f : X ⟶ Y) :
-    edgePath (F.map f) =
-      ((edgePath f).map (classifyingSpaceMap F).hom.continuous).cast
-        (classifyingSpaceMap_vertex F X).symm (classifyingSpaceMap_vertex F Y).symm := by
-  ext t
-  rw [edgePath_apply, Path.cast_coe, Path.map_coe, Function.comp_apply, edgePath_apply]
-  exact ((classifyingSpaceMap_toTopObjMk F _ _).trans
-    (congrArg (SSet.toTopObjMk · _) (nerveMap_app_mk₁ F f))).symm
-
-/-- For composable morphisms `f : X ⟶ Y` and `g : Y ⟶ Z`, the concatenation of `edgePath f` and
-`edgePath g` is homotopic rel endpoints to `edgePath (f ≫ g)`, witnessed by the `2`-simplex
-`ComposableArrows.mk₂ f g`. -/
-theorem homotopic_edgePath_comp {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    ((edgePath f).trans (edgePath g)).Homotopic (edgePath (f ≫ g)) :=
-  ((nerve.nonempty_compStruct_iff f g (f ≫ g)).2 rfl).some.homotopic_toTopPath
-
-/-- The canonical functor `C ⥤ FundamentalGroupoid (classifyingSpace C)` sending `X` to `vertex X`
-and `f : X ⟶ Y` to the path homotopy class `Path.Homotopic.Quotient.mk (edgePath f)`. -/
-@[expose, simps]
-noncomputable def toFundamentalGroupoid (C : Type u) [Category.{v} C] :
-    C ⥤ FundamentalGroupoid (classifyingSpace C) where
-  obj X := .mk (vertex X)
-  map f := FundamentalGroupoid.fromPath (.mk (edgePath f))
-  map_id X := by simp [FundamentalGroupoid.id_eq_path_refl]
-  map_comp f g := _root_.Quotient.sound (homotopic_edgePath_comp f g).symm
-
-/-- Naturality isomorphism comparing `toFundamentalGroupoid` along a functor `F : C ⥤ D` with the
-topological fundamental groupoid map of `classifyingSpaceMap F`. -/
-noncomputable def toFundamentalGroupoidNatIso (F : C ⥤ D) :
-    F ⋙ toFundamentalGroupoid D ≅
-      toFundamentalGroupoid C ⋙ FundamentalGroupoid.map (classifyingSpaceMap F).hom := by
-  have hobj (X : C) :
-      (F ⋙ toFundamentalGroupoid D).obj X =
-        (toFundamentalGroupoid C ⋙ FundamentalGroupoid.map (classifyingSpaceMap F).hom).obj X :=
-    congrArg FundamentalGroupoid.mk (classifyingSpaceMap_vertex F X).symm
-  refine NatIso.ofComponents (fun X ↦ eqToIso (hobj X)) fun {X Y} f ↦ ?_
-  rw [← cancel_mono (eqToIso (hobj Y)).inv, Category.assoc, Iso.hom_inv_id, Category.comp_id,
-    Category.assoc]
-  -- `FundamentalGroupoid.map` is semireducible; unfold to `Path.Homotopic.Quotient.map` on paths.
-  change FundamentalGroupoid.fromPath (.mk (edgePath (F.map f))) =
-    eqToHom (congrArg FundamentalGroupoid.mk (classifyingSpaceMap_vertex F X).symm) ≫
-      Path.Homotopic.Quotient.map (.mk (edgePath f)) (classifyingSpaceMap F).hom ≫
-      eqToHom (congrArg FundamentalGroupoid.mk (classifyingSpaceMap_vertex F Y))
-  rw [FundamentalGroupoid.conj_eqToHom (classifyingSpaceMap_vertex F X).symm
-      (classifyingSpaceMap_vertex F Y).symm,
-    ← Path.Homotopic.Quotient.mk_map]
-  exact _root_.Quotient.sound (by rw [edgePath_map])
-
-end VerticesAndEdges
+end Vertices
 
 section UniverseChange
 
@@ -267,11 +178,10 @@ lemma asSmallHomeomorph_toTopObjMk {C : Type u} [Category.{v} C] {n : ℕ}
     asSmallHomeomorph.{w} C (SSet.toTopObjMk s w₀) =
       SSet.toTopObjMk
         (nerve.objEquiv.symm ((AsSmall.up.mapComposableArrows n).obj (nerve.objEquiv s))) w₀ := by
-  have h : asSmallHomeomorph.{w} C (SSet.toTopObjMk s w₀) =
-      SSet.toTop.map (nerve.asSmallIso.{w} C).inv
-        ((nerve C).toTopUliftHomeomorph.{w} (SSet.toTopObjMk s w₀)) := rfl
-  rw [h, SSet.toTopUliftHomeomorph_toTopObjMk, SSet.toTop_map_toTopObjMk,
-    nerve.asSmallIso_inv_app, SSet.uliftFunctorObjEquiv_down]
+  simp only [asSmallHomeomorph, Homeomorph.trans_apply, TopCat.homeoOfIso_apply,
+    Functor.mapIso_symm, Iso.symm_hom, Functor.mapIso_inv]
+  rw [SSet.toTopUliftHomeomorph_toTopObjMk, SSet.toTop_map_toTopObjMk, nerve.asSmallIso_inv_app,
+    Equiv.symm_apply_apply]
 
 @[simp]
 lemma asSmallHomeomorph_symm_toTopObjMk {C : Type u} [Category.{v} C] {n : ℕ}
@@ -279,23 +189,32 @@ lemma asSmallHomeomorph_symm_toTopObjMk {C : Type u} [Category.{v} C] {n : ℕ}
     (asSmallHomeomorph.{w} C).symm (SSet.toTopObjMk s w₀) =
       SSet.toTopObjMk
         (nerve.objEquiv.symm ((AsSmall.down.mapComposableArrows n).obj (nerve.objEquiv s))) w₀ := by
-  have h : (asSmallHomeomorph.{w} C).symm (SSet.toTopObjMk s w₀) =
-      ((nerve C).toTopUliftHomeomorph.{w}).symm
-        (SSet.toTop.map (nerve.asSmallIso.{w} C).hom (SSet.toTopObjMk s w₀)) := rfl
-  rw [h, SSet.toTop_map_toTopObjMk, SSet.toTopUliftHomeomorph_symm_toTopObjMk,
-    SSet.uliftFunctorObjEquiv_symm_eq_down, nerve.asSmallIso_hom_app_down]
+  simp only [asSmallHomeomorph, Homeomorph.symm_trans_apply, TopCat.homeoOfIso_symm_apply,
+    Functor.mapIso_symm, Iso.symm_inv, Functor.mapIso_hom]
+  rw [SSet.toTop_map_toTopObjMk, nerve.asSmallIso_hom_app,
+    SSet.toTopUliftHomeomorph_symm_toTopObjMk, Equiv.symm_apply_apply]
 
 @[simp]
 lemma asSmallHomeomorph_vertex {C : Type u} [Category.{v} C] (X : C) :
     asSmallHomeomorph.{w} C (vertex X) = vertex (AsSmall.up.obj X) := by
   rw [vertex_eq_toTopObjMk X default, asSmallHomeomorph_toTopObjMk, Equiv.apply_symm_apply,
-    Functor.mapComposableArrows_obj_nerveEquiv_symm, ← vertex_eq_toTopObjMk]
+    nerveEquiv_symm_eq_mk₀, Functor.mapComposableArrows_obj_mk₀, ← nerveEquiv_symm_eq_mk₀,
+    ← vertex_eq_toTopObjMk]
 
 @[simp]
 lemma asSmallHomeomorph_symm_vertex {C : Type u} [Category.{v} C] (X : AsSmall.{w} C) :
     (asSmallHomeomorph.{w} C).symm (vertex X) = vertex (AsSmall.down.obj X) := by
   rw [vertex_eq_toTopObjMk X default, asSmallHomeomorph_symm_toTopObjMk, Equiv.apply_symm_apply,
-    Functor.mapComposableArrows_obj_nerveEquiv_symm, ← vertex_eq_toTopObjMk]
+    nerveEquiv_symm_eq_mk₀, Functor.mapComposableArrows_obj_mk₀, ← nerveEquiv_symm_eq_mk₀,
+    ← vertex_eq_toTopObjMk]
+
+private lemma asSmall_up_comp_down_comp_up_comp_down {C : Type u₁} [Category.{v₁} C]
+    {D : Type u₂} [Category.{v₂} D] (F : C ⥤ D) :
+    (AsSmall.up ⋙
+      (AsSmall.down (C := C) ⋙ F ⋙ AsSmall.up :
+        AsSmall.{max u₂ v₂} C ⥤ AsSmall.{max u₁ v₁} D)) ⋙
+      AsSmall.down = F :=
+  rfl
 
 /-- Continuous map `C(classifyingSpace C, classifyingSpace D)` induced by an arbitrary functor
 `F : C ⥤ D` across possibly distinct object and morphism universes `(u₁, v₁)` and `(u₂, v₂)` (such
@@ -316,23 +235,16 @@ lemma mapOfFunctor_toTopObjMk {C : Type u₁} [Category.{v₁} C] {D : Type u₂
     mapOfFunctor F (SSet.toTopObjMk s w₀) =
       SSet.toTopObjMk (nerve.objEquiv.symm ((F.mapComposableArrows n).obj (nerve.objEquiv s)))
         w₀ := by
-  have h : mapOfFunctor F (SSet.toTopObjMk s w₀) =
-      (asSmallHomeomorph.{max u₁ v₁} D).symm
-        (classifyingSpaceMap
-          (AsSmall.down (C := C) ⋙ F ⋙ AsSmall.up :
-            AsSmall.{max u₂ v₂} C ⥤ AsSmall.{max u₁ v₁} D)
-          (asSmallHomeomorph.{max u₂ v₂} C (SSet.toTopObjMk s w₀))) := rfl
-  rw [h, asSmallHomeomorph_toTopObjMk, classifyingSpaceMap_toTopObjMk,
-    nerve.nerveMap_app_objEquiv_symm, asSmallHomeomorph_symm_toTopObjMk, Equiv.apply_symm_apply,
-    ← Functor.comp_mapComposableArrows_obj, ← Functor.comp_mapComposableArrows_obj]
-  rfl
+  simp [mapOfFunctor, ← Functor.comp_mapComposableArrows_obj,
+    asSmall_up_comp_down_comp_up_comp_down]
 
 @[simp]
 lemma mapOfFunctor_vertex {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
     (F : C ⥤ D) (X : C) :
     mapOfFunctor F (vertex X) = vertex (F.obj X) := by
   rw [vertex_eq_toTopObjMk X default, mapOfFunctor_toTopObjMk, Equiv.apply_symm_apply,
-    Functor.mapComposableArrows_obj_nerveEquiv_symm, ← vertex_eq_toTopObjMk]
+    nerveEquiv_symm_eq_mk₀, Functor.mapComposableArrows_obj_mk₀, ← nerveEquiv_symm_eq_mk₀,
+    ← vertex_eq_toTopObjMk]
 
 @[simp]
 lemma mapOfFunctor_id (C : Type u₁) [Category.{v₁} C] :
@@ -357,6 +269,52 @@ lemma mapOfFunctor_eq_classifyingSpaceMap {C D : Type u} [Category.{v} C] [Categ
   ext p
   obtain ⟨n, s, w₀, rfl⟩ := SSet.exists_toTopObjMk p
   simp [nerve.nerveMap_app_eq_objEquiv_symm]
+
+/-- A constant functor `(Functor.const C).obj Y` across arbitrary universes induces the constant
+continuous map at `vertex Y`. -/
+@[simp]
+lemma mapOfFunctor_const (C : Type u₁) [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+    (Y : D) :
+    mapOfFunctor ((Functor.const C).obj Y) =
+      ContinuousMap.const (classifyingSpace C) (vertex Y) := by
+  ext p
+  obtain ⟨n, s, w₀, rfl⟩ := SSet.exists_toTopObjMk p
+  have hconst : (((Functor.const C).obj Y).mapComposableArrows n).obj (nerve.objEquiv s) =
+      nerve.objEquiv ((nerve D).map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op
+        (nerve.objEquiv.symm (nerveEquiv.symm Y))) :=
+    ComposableArrows.ext_of_totalArrow fun _ _ _ ↦ by
+      simp [nerveEquiv_symm_eq_mk₀, ComposableArrows.totalArrow_def, ComposableArrows.mk₀,
+        ComposableArrows.whiskerLeft]
+  rw [mapOfFunctor_toTopObjMk, hconst, Equiv.symm_apply_apply, SSet.toTopObjMk_map,
+    SSet.toTopObjMk_zero, ← vertex_eq_toTopPoint, ContinuousMap.const_apply]
+
+/-- A constant functor `(Functor.const C).obj Y` realizes to the constant map at `vertex Y`. -/
+@[simp]
+lemma _root_.TauCeti.CategoryTheory.classifyingSpaceMap_const (C D : Type u)
+    [Category.{v} C] [Category.{v} D] (Y : D) :
+    classifyingSpaceMap ((Functor.const C).obj Y) =
+      TopCat.const (X := classifyingSpace C) (vertex Y) := by
+  apply TopCat.ext
+  intro p
+  have h := congrArg (· p) (mapOfFunctor_const C Y)
+  rwa [mapOfFunctor_eq_classifyingSpaceMap] at h
+
+/-- `mapOfFunctor` is injective on functors across arbitrary object and morphism universes. -/
+theorem mapOfFunctor_injective {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D] :
+    Function.Injective
+      (mapOfFunctor : (C ⥤ D) → C(classifyingSpace C, classifyingSpace D)) := by
+  intro F G h
+  have hmap : classifyingSpaceMap
+      (AsSmall.down (C := C) ⋙ F ⋙ AsSmall.up :
+        AsSmall.{max u₂ v₂} C ⥤ AsSmall.{max u₁ v₁} D) =
+      classifyingSpaceMap (AsSmall.down (C := C) ⋙ G ⋙ AsSmall.up) := by
+    ext q
+    obtain ⟨p, rfl⟩ := (asSmallHomeomorph.{max u₂ v₂} C).surjective q
+    apply (asSmallHomeomorph.{max u₁ v₁} D).symm.injective
+    simpa [mapOfFunctor] using congrArg (· p) h
+  have hAS := TauCeti.nerveMap_injective (SSet.toTop.map_injective hmap)
+  simpa only [asSmall_up_comp_down_comp_up_comp_down] using
+    congrArg (fun H ↦ (AsSmall.up ⋙ H) ⋙ AsSmall.down) hAS
 
 /-- Any pair of strictly mutually inverse functors `F : C ⥤ D` and `G : D ⥤ C` (such as universe
 lifts via `ULift`, `ULiftHom`, or `AsSmall`) induces a homeomorphism on classifying spaces. -/
@@ -391,7 +349,145 @@ lemma homeomorphOfStrictIso_vertex {C : Type u₁} [Category.{v₁} C] {D : Type
     homeomorphOfStrictIso F G hFG hGF (vertex X) = vertex (F.obj X) :=
   mapOfFunctor_vertex F X
 
+lemma homeomorphOfStrictIso_symm_vertex {C : Type u₁} [Category.{v₁} C]
+    {D : Type u₂} [Category.{v₂} D] (F : C ⥤ D) (G : D ⥤ C)
+    (hFG : F ⋙ G = 𝟭 C) (hGF : G ⋙ F = 𝟭 D) (Y : D) :
+    (homeomorphOfStrictIso F G hFG hGF).symm (vertex Y) = vertex (G.obj Y) :=
+  mapOfFunctor_vertex G Y
+
 end UniverseChange
+
+section EdgesAndFundamentalGroupoid
+
+variable {C D : Type u} [Category.{v} C] [Category.{v} D]
+
+/-- The edge path in `classifyingSpace C` from `vertex X` to `vertex Y` associated to a morphism
+`f : X ⟶ Y`. -/
+noncomputable def edgePath {X Y : C} (f : X ⟶ Y) : Path (vertex X) (vertex Y) :=
+  (nerve.edgeMk f).toTopPath
+
+lemma edgePath_apply {X Y : C} (f : X ⟶ Y) (t : unitInterval) :
+    edgePath f t =
+      SSet.toTopObjMk (nerve.objEquiv.symm (ComposableArrows.mk₁ f))
+        (StdSimplex.homeomorphI.symm t) :=
+  ((nerve.edgeMk f).toTopPath_apply t).trans
+    (congrArg (SSet.toTopObjMk · _) (nerve.objEquiv_symm_eq _).symm)
+
+/-- The edge path of an identity morphism `𝟙 X` is the constant path at `vertex X`. -/
+@[simp]
+lemma edgePath_id (X : C) : edgePath (𝟙 X) = Path.refl (vertex X) := by
+  ext t
+  refine (congrArg (fun e : (nerve C).Edge _ _ ↦ e.toTopPath t) (nerve.edgeMk_id X)).trans ?_
+  have hid : (SSet.Edge.id (X := nerve C) (nerveEquiv.symm X)).toTopPath t =
+      (SSet.Edge.id (nerve.objEquiv.symm (nerveEquiv.symm X))).toTopPath t :=
+    congrArg (fun x : (nerve C) _⦋0⦌ ↦ (SSet.Edge.id x).toTopPath t)
+      (nerve.objEquiv_symm_nerveEquiv_symm X).symm
+  rw [hid, SSet.Edge.toTopPath_id, ← vertex_eq_toTopPoint]
+
+/-- Pushing `edgePath f` forward along `mapOfFunctor F` gives `edgePath (F.map f)` after
+identifying endpoints via `mapOfFunctor_vertex`. -/
+lemma edgePath_mapOfFunctor {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+    (F : C ⥤ D) {X Y : C} (f : X ⟶ Y) :
+    edgePath (F.map f) =
+      ((edgePath f).map (mapOfFunctor F).continuous).cast
+        (mapOfFunctor_vertex F X).symm (mapOfFunctor_vertex F Y).symm := by
+  ext t
+  rw [edgePath_apply, Path.cast_coe, Path.map_coe, Function.comp_apply, edgePath_apply,
+    mapOfFunctor_toTopObjMk, Equiv.apply_symm_apply, Functor.mapComposableArrows_obj_mk₁]
+
+/-- Pushing `edgePath f` forward along `classifyingSpaceMap F` gives `edgePath (F.map f)` after
+identifying endpoints via `classifyingSpaceMap_vertex`. -/
+lemma edgePath_map (F : C ⥤ D) {X Y : C} (f : X ⟶ Y) :
+    edgePath (F.map f) =
+      ((edgePath f).map (classifyingSpaceMap F).hom.continuous).cast
+        (classifyingSpaceMap_vertex F X).symm (classifyingSpaceMap_vertex F Y).symm := by
+  ext t
+  simpa [mapOfFunctor_eq_classifyingSpaceMap] using congrArg (· t) (edgePath_mapOfFunctor F f)
+
+/-- For composable morphisms `f : X ⟶ Y` and `g : Y ⟶ Z`, the concatenation of `edgePath f` and
+`edgePath g` is homotopic rel endpoints to `edgePath (f ≫ g)`. -/
+theorem homotopic_edgePath_comp {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    ((edgePath f).trans (edgePath g)).Homotopic (edgePath (f ≫ g)) :=
+  ((nerve.nonempty_compStruct_iff f g (f ≫ g)).2 rfl).some.homotopic_toTopPath
+
+/-- The canonical functor `C ⥤ FundamentalGroupoid (classifyingSpace C)` sending `X` to `vertex X`
+and `f : X ⟶ Y` to the path homotopy class `Path.Homotopic.Quotient.mk (edgePath f)`. -/
+@[expose, implicit_reducible, simps]
+noncomputable def toFundamentalGroupoid (C : Type u) [Category.{v} C] :
+    C ⥤ FundamentalGroupoid (classifyingSpace C) where
+  obj X := .mk (vertex X)
+  map f := FundamentalGroupoid.fromPath (.mk (edgePath f))
+  map_id X := by simp [FundamentalGroupoid.id_eq_path_refl]
+  map_comp f g := _root_.Quotient.sound (homotopic_edgePath_comp f g).symm
+
+private lemma mapOfFunctor_toFundamentalGroupoid_obj {C : Type u₁} [Category.{v₁} C]
+    {D : Type u₂} [Category.{v₂} D] (F : C ⥤ D) (X : C) :
+    (F ⋙ toFundamentalGroupoid D).obj X =
+      (toFundamentalGroupoid C ⋙ FundamentalGroupoid.map (mapOfFunctor F)).obj X :=
+  FundamentalGroupoid.ext (mapOfFunctor_vertex F X).symm
+
+/-- Naturality isomorphism comparing `toFundamentalGroupoid` along a functor `F : C ⥤ D` across
+arbitrary universes with the topological fundamental groupoid map of `mapOfFunctor F`. -/
+noncomputable def toFundamentalGroupoidMapOfFunctorNatIso {C : Type u₁} [Category.{v₁} C]
+    {D : Type u₂} [Category.{v₂} D] (F : C ⥤ D) :
+    F ⋙ toFundamentalGroupoid D ≅
+      toFundamentalGroupoid C ⋙ FundamentalGroupoid.map (mapOfFunctor F) :=
+  NatIso.ofComponents (fun X ↦ eqToIso (mapOfFunctor_toFundamentalGroupoid_obj F X))
+    fun {X Y} f ↦ by
+      rw [← cancel_mono (eqToIso (mapOfFunctor_toFundamentalGroupoid_obj F Y)).inv,
+        Category.assoc, Iso.hom_inv_id, Category.comp_id, eqToIso.hom, eqToIso.inv]
+      dsimp only [Functor.comp_map]
+      rw [toFundamentalGroupoid_map, toFundamentalGroupoid_map, Category.assoc,
+        FundamentalGroupoid.conj_eqToHom_map_fromPath (mapOfFunctor F) (edgePath f)
+          (mapOfFunctor_vertex F X).symm (mapOfFunctor_vertex F Y).symm]
+      exact _root_.Quotient.sound (by rw [edgePath_mapOfFunctor])
+
+@[simp]
+lemma toFundamentalGroupoidMapOfFunctorNatIso_hom_app {C : Type u₁} [Category.{v₁} C]
+    {D : Type u₂} [Category.{v₂} D] (F : C ⥤ D) (X : C) :
+    (toFundamentalGroupoidMapOfFunctorNatIso F).hom.app X =
+      eqToHom (show (F ⋙ toFundamentalGroupoid D).obj X =
+          (toFundamentalGroupoid C ⋙ FundamentalGroupoid.map (mapOfFunctor F)).obj X
+        from congrArg FundamentalGroupoid.mk (mapOfFunctor_vertex F X).symm) :=
+  (rfl)
+
+@[simp]
+lemma toFundamentalGroupoidMapOfFunctorNatIso_inv_app {C : Type u₁} [Category.{v₁} C]
+    {D : Type u₂} [Category.{v₂} D] (F : C ⥤ D) (X : C) :
+    (toFundamentalGroupoidMapOfFunctorNatIso F).inv.app X =
+      eqToHom (show (toFundamentalGroupoid C ⋙ FundamentalGroupoid.map (mapOfFunctor F)).obj X =
+          (F ⋙ toFundamentalGroupoid D).obj X
+        from congrArg FundamentalGroupoid.mk (mapOfFunctor_vertex F X)) :=
+  (rfl)
+
+/-- Naturality isomorphism comparing `toFundamentalGroupoid` along a functor `F : C ⥤ D` with the
+topological fundamental groupoid map of `classifyingSpaceMap F`. -/
+noncomputable def toFundamentalGroupoidNatIso (F : C ⥤ D) :
+    F ⋙ toFundamentalGroupoid D ≅
+      toFundamentalGroupoid C ⋙ FundamentalGroupoid.map (classifyingSpaceMap F).hom :=
+  toFundamentalGroupoidMapOfFunctorNatIso F ≪≫
+    Functor.isoWhiskerLeft (toFundamentalGroupoid C)
+      (eqToIso (congrArg FundamentalGroupoid.map (mapOfFunctor_eq_classifyingSpaceMap F)))
+
+@[simp]
+lemma toFundamentalGroupoidNatIso_hom_app (F : C ⥤ D) (X : C) :
+    (toFundamentalGroupoidNatIso F).hom.app X =
+      eqToHom (show (F ⋙ toFundamentalGroupoid D).obj X =
+          (toFundamentalGroupoid C ⋙
+            FundamentalGroupoid.map (classifyingSpaceMap F).hom).obj X
+        from congrArg FundamentalGroupoid.mk (classifyingSpaceMap_vertex F X).symm) := by
+  simp [toFundamentalGroupoidNatIso]
+
+@[simp]
+lemma toFundamentalGroupoidNatIso_inv_app (F : C ⥤ D) (X : C) :
+    (toFundamentalGroupoidNatIso F).inv.app X =
+      eqToHom (show (toFundamentalGroupoid C ⋙
+            FundamentalGroupoid.map (classifyingSpaceMap F).hom).obj X =
+          (F ⋙ toFundamentalGroupoid D).obj X
+        from congrArg FundamentalGroupoid.mk (classifyingSpaceMap_vertex F X)) := by
+  simp [toFundamentalGroupoidNatIso]
+
+end EdgesAndFundamentalGroupoid
 
 section Examples
 
@@ -413,35 +509,106 @@ instance instIsEmpty (C : Type u) [Category.{v} C] [IsEmpty C] : IsEmpty (classi
 instance instNonempty (C : Type u) [Category.{v} C] [Nonempty C] : Nonempty (classifyingSpace C) :=
   (nonempty_iff C).2 ‹_›
 
-/-- The classifying space of a category with one object and one morphism is a single point, with
-its unique point equal to the canonical vertex. -/
-noncomputable instance instUnique (C : Type u) [Category.{v} C] [Unique C]
-    [Subsingleton ((default : C) ⟶ default)] :
-    Unique (classifyingSpace C) := by
-  have hhom (x y : C) : Subsingleton (x ⟶ y) := by
-    rw [Subsingleton.elim x default, Subsingleton.elim y default]
-    infer_instance
-  let termIso : nerve C ≅ (Δ[0] : SSet.{max u v}) :=
-    IsTerminal.uniqueUpToIso
-      (IsTerminal.ofUniqueHom
-        (fun X ↦ { app m := ↾fun _ ↦ (Functor.const (Fin (m.unop.len + 1))).obj default })
-        fun X m ↦ SSet.hom_ext fun ⟨⟨n⟩⟩ ↦ ConcreteCategory.hom_ext _ _ fun x ↦
-          nerve.objEquiv.injective
-            (ComposableArrows.ext (fun _ ↦ Subsingleton.elim _ _) fun _ _ ↦ (hhom _ _).elim _ _))
-      SSet.stdSimplex.isTerminalObj₀
-  exact (TopCat.homeoOfIso (SSet.toTop.mapIso termIso)).unique
+/-- For any discrete category `C` (`[IsDiscrete C]`), `classifyingSpace C` is isomorphic in
+`TopCat` to the discrete topological space on `ULift.{v} C`. -/
+noncomputable def isDiscreteIso (C : Type u) [Category.{v} C] [IsDiscrete C] :
+    classifyingSpace C ≅ TopCat.discrete.obj (ULift.{v} C) :=
+  SSet.toTop.mapIso (nerve.isDiscreteIso C) ≪≫ SSet.toTopConstIso (ULift.{v} C)
 
 @[simp]
-lemma vertex_default_eq_default (C : Type u) [Category.{v} C] [Unique C]
-    [Subsingleton ((default : C) ⟶ default)] :
+lemma isDiscreteIso_hom_vertex {C : Type u} [Category.{v} C] [IsDiscrete C] (X : C) :
+    (isDiscreteIso C).hom (vertex X) = ULift.up X := by
+  have h1 : (SSet.toTop.map (nerve.isDiscreteIso C).hom) (vertex X) =
+      SSet.toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj (ULift.{v} C)) (ULift.up X) := by
+    rw [vertex_eq_toTopPoint, SSet.toTop_map_toTopPoint, nerve.isDiscreteIso_hom_app,
+      Equiv.apply_symm_apply, nerveEquiv_symm_obj]
+  exact (ConcreteCategory.comp_apply _ _ (vertex X)).trans
+    ((congrArg (SSet.toTopConstIso (ULift.{v} C)).hom h1).trans
+      (SSet.toTopConstIso_hom_toTopPoint (ULift.{v} C) (ULift.up X)))
+
+@[simp]
+lemma isDiscreteIso_inv_apply {C : Type u} [Category.{v} C] [IsDiscrete C]
+    (x : ULift.{v} C) :
+    (isDiscreteIso C).inv x = vertex x.down := by
+  have h0 : (Functor.const (Fin 1)).obj x.down = nerveEquiv.symm x.down :=
+    ComposableArrows.ext (fun _ ↦ rfl) (fun _ _ ↦ Subsingleton.elim _ _)
+  refine (ConcreteCategory.comp_apply
+    (SSet.toTopConstIso (ULift.{v} C)).inv
+    (SSet.toTop.map (nerve.isDiscreteIso C).inv) x).trans ?_
+  rw [SSet.toTopConstIso_inv_apply, SSet.toTop_map_toTopPoint, nerve.isDiscreteIso_inv_app, h0,
+    ← vertex_eq_toTopPoint]
+
+/-- Homeomorphism `TopCat.discrete.obj (ULift.{v} S) ≃ₜ TopCat.discrete.obj S`. -/
+private def discreteUliftHomeomorph (S : Type u) :
+    TopCat.discrete.obj (ULift.{v} S) ≃ₜ TopCat.discrete.obj S where
+  toFun x := ULift.down x
+  invFun s := ULift.up s
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := continuous_of_discreteTopology
+  continuous_invFun := continuous_of_discreteTopology
+
+/-- For any discrete category `C` (`[IsDiscrete C]`), `classifyingSpace C` is homeomorphic to `C`
+equipped with the discrete topology. -/
+noncomputable def isDiscreteHomeomorph (C : Type u) [Category.{v} C] [IsDiscrete C] :
+    classifyingSpace C ≃ₜ TopCat.discrete.obj C :=
+  (TopCat.homeoOfIso (isDiscreteIso C)).trans (discreteUliftHomeomorph.{v} C)
+
+@[simp]
+lemma isDiscreteHomeomorph_vertex {C : Type u} [Category.{v} C] [IsDiscrete C] (X : C) :
+    isDiscreteHomeomorph C (vertex X) = X :=
+  congrArg ULift.down (isDiscreteIso_hom_vertex (X := X))
+
+@[simp]
+lemma isDiscreteHomeomorph_symm_apply {C : Type u} [Category.{v} C] [IsDiscrete C]
+    (X : TopCat.discrete.obj C) :
+    (isDiscreteHomeomorph C).symm X = vertex (C := C) X := by
+  apply (isDiscreteHomeomorph C).injective
+  rw [Homeomorph.apply_symm_apply]
+  exact (isDiscreteHomeomorph_vertex (C := C) X).symm
+
+instance instDiscreteTopology (C : Type u) [Category.{v} C] [IsDiscrete C] :
+    DiscreteTopology (classifyingSpace C) :=
+  (isDiscreteHomeomorph C).isEmbedding.discreteTopology
+
+instance instSubsingleton (C : Type u) [Category.{v} C] [Subsingleton C] [IsDiscrete C] :
+    Subsingleton (classifyingSpace C) := by
+  have : Subsingleton (TopCat.discrete.obj C) := ‹Subsingleton C›
+  exact (isDiscreteHomeomorph C).toEquiv.subsingleton
+
+/-- The classifying space of a discrete category with a unique object is a single point, with its
+canonical point given by `vertex default`. -/
+noncomputable instance instUnique (C : Type u) [Category.{v} C] [Unique C] [IsDiscrete C] :
+    Unique (classifyingSpace C) where
+  default := vertex default
+  uniq _ := Subsingleton.elim _ _
+
+@[simp]
+lemma vertex_default_eq_default (C : Type u) [Category.{v} C] [Unique C] [IsDiscrete C] :
     vertex (default : C) = default :=
-  Subsingleton.elim _ _
+  (rfl)
 
 /-- For any type `S`, `classifyingSpace (Discrete S)` is isomorphic in `TopCat` to the discrete
-topological space on `S`. -/
+topological space on `S`, obtained as a specialization of `isDiscreteIso`. -/
 noncomputable def discreteIso (S : Type u) :
     classifyingSpace (Discrete S) ≅ TopCat.discrete.obj S :=
-  SSet.toTop.mapIso (nerve.discreteIso S) ≪≫ SSet.toTopConstIso S
+  isDiscreteIso (Discrete S) ≪≫
+    TopCat.discrete.mapIso (Equiv.ulift.trans discreteEquiv).toIso
+
+@[simp]
+lemma discreteIso_hom_vertex (S : Type u) (s : S) :
+    (discreteIso S).hom (vertex (Discrete.mk s)) = s :=
+  (ConcreteCategory.comp_apply _ _ _).trans
+    (congrArg (TopCat.discrete.map (Equiv.ulift.trans discreteEquiv).toIso.hom)
+      (isDiscreteIso_hom_vertex (X := Discrete.mk s)))
+
+@[simp]
+lemma discreteIso_inv_apply (S : Type u) (s : S) :
+    (discreteIso S).inv s = vertex (Discrete.mk s) :=
+  (ConcreteCategory.comp_apply
+    (TopCat.discrete.mapIso (Equiv.ulift.trans discreteEquiv).toIso).inv
+    (isDiscreteIso (Discrete S)).inv s).trans
+    (isDiscreteIso_inv_apply (ULift.up (Discrete.mk s)))
 
 /-- Homeomorphism between `classifyingSpace (Discrete S)` and `S` equipped with the discrete
 topology. -/
@@ -451,26 +618,13 @@ noncomputable def discreteHomeomorph (S : Type u) :
 
 @[simp]
 lemma discreteHomeomorph_vertex (S : Type u) (s : S) :
-    discreteHomeomorph S (vertex (Discrete.mk s)) = s := by
-  rw [vertex_eq_toTopPoint]
-  have h : discreteHomeomorph S
-      (SSet.toTopPoint (nerve.objEquiv.symm (nerveEquiv.symm (Discrete.mk s)))) =
-      (SSet.toTopConstIso S).hom
-        (SSet.toTop.map (nerve.discreteIso S).hom
-          (SSet.toTopPoint (nerve.objEquiv.symm (nerveEquiv.symm (Discrete.mk s))))) := rfl
-  rw [h, SSet.toTop_map_toTopPoint]
-  exact (congrArg
-    (fun x : S ↦ (SSet.toTopConstIso S).hom
-      (SSet.toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) x))
-    (nerve.discreteIso_hom_app_objEquiv_symm S s)).trans
-    (SSet.toTopConstIso_hom_toTopPoint S s)
+    discreteHomeomorph S (vertex (Discrete.mk s)) = s :=
+  discreteIso_hom_vertex S s
 
 @[simp]
 lemma discreteHomeomorph_symm_apply (S : Type u) (s : TopCat.discrete.obj S) :
-    (discreteHomeomorph S).symm s = vertex (Discrete.mk s) := by
-  apply (discreteHomeomorph S).injective
-  rw [Homeomorph.apply_symm_apply]
-  exact (discreteHomeomorph_vertex S s).symm
+    (discreteHomeomorph S).symm s = vertex (Discrete.mk s) :=
+  discreteIso_inv_apply S s
 
 /-- A preorder order-isomorphic to `Fin (n + 1)` has classifying space homeomorphic to the standard
 topological `n`-simplex `StdSimplex ℝ (Fin (n + 1))`. -/
@@ -482,31 +636,54 @@ noncomputable def preorderHomeomorphStdSimplex {n : ℕ} {α : Type u} [Preorder
     ⦋n⦌.toTopHomeo.{u}
 
 @[simp]
+lemma preorderHomeomorphStdSimplex_toTopObjMk {n m : ℕ} {α : Type u} [Preorder α]
+    (e : α ≃o Fin (n + 1)) (s : (nerve α) _⦋m⦌) (w : StdSimplex ℝ (Fin (m + 1))) :
+    preorderHomeomorphStdSimplex e (SSet.toTopObjMk s w) =
+      w.map fun i ↦ e ((nerve.objEquiv s).obj i) := by
+  let θ : ⦋m⦌ ⟶ ⦋n⦌ := SimplexCategory.Hom.mk
+    ⟨fun i ↦ e ((nerve.objEquiv s).obj i),
+      fun _ _ hij ↦ e.monotone (leOfHom ((nerve.objEquiv s).map (homOfLE hij)))⟩
+  have hθ : (nerve.representableBy α e).homEquiv θ = s :=
+    nerve.objEquiv.injective <| ComposableArrows.ext
+      (fun i ↦ by
+        rw [nerve.objEquiv_eq]
+        dsimp [nerve.representableBy, SimplexCategory.homEquivFunctor,
+          SimplexCategory.homEquivOrderHom, θ]
+        exact e.symm_apply_apply _)
+      (fun _ _ ↦ Subsingleton.elim _ _)
+  have hinv : (SSet.stdSimplex.isoOfRepresentableBy (nerve.representableBy α e)).inv.app (op ⦋m⦌)
+      s = SSet.stdSimplex.objEquiv.{u}.symm θ := by
+    simp [SSet.stdSimplex.isoOfRepresentableBy, ← hθ]
+  have hyon : SSet.yonedaEquiv.symm (SSet.stdSimplex.objEquiv.{u}.symm θ) =
+      SSet.stdSimplex.map θ :=
+    SSet.yonedaEquiv.injective (by rw [Equiv.apply_symm_apply, SSet.yonedaEquiv_map])
+  rw [preorderHomeomorphStdSimplex, Homeomorph.trans_apply, TopCat.homeoOfIso_apply,
+    Functor.mapIso_symm, Iso.symm_hom, Functor.mapIso_inv, SSet.toTop_map_toTopObjMk, hinv,
+    SSet.toTopObjMk_eq_toTop_map, hyon, SimplexCategory.toTopHomeo_naturality_apply,
+    Homeomorph.apply_symm_apply]
+  rfl
+
+lemma preorderHomeomorphStdSimplex_symm_eq_toTopObjMk {n : ℕ} {α : Type u} [Preorder α]
+    (e : α ≃o Fin (n + 1)) (w : StdSimplex ℝ (Fin (n + 1))) :
+    (preorderHomeomorphStdSimplex e).symm w =
+      SSet.toTopObjMk (nerve.objEquiv.symm e.symm.monotone.functor) w := by
+  apply (preorderHomeomorphStdSimplex e).injective
+  rw [Homeomorph.apply_symm_apply, preorderHomeomorphStdSimplex_toTopObjMk,
+    Equiv.apply_symm_apply]
+  simpa [Function.id_def] using (StdSimplex.map_id w).symm
+
+@[simp]
 lemma preorderHomeomorphStdSimplex_vertex {n : ℕ} {α : Type u} [Preorder α]
     (e : α ≃o Fin (n + 1)) (a : α) :
     preorderHomeomorphStdSimplex e (vertex a) = StdSimplex.single (e a) := by
-  have hinv : (SSet.stdSimplex.isoOfRepresentableBy (nerve.representableBy α e)).inv.app (op ⦋0⦌)
-      (nerve.objEquiv.symm (nerveEquiv.symm a)) =
-        SSet.stdSimplex.objEquiv.{u}.symm (SimplexCategory.const ⦋0⦌ ⦋n⦌ (e a)) := by
-    apply (SSet.stdSimplex.objEquiv.{u}.trans (nerve.representableBy α e).homEquiv).injective
-    refine (Equiv.apply_symm_apply
-      (SSet.stdSimplex.objEquiv.{u}.trans (nerve.representableBy α e).homEquiv) _).trans ?_
-    simp
-  have hyon : SSet.yonedaEquiv.symm
-      (SSet.stdSimplex.objEquiv.{u}.symm (SimplexCategory.const ⦋0⦌ ⦋n⦌ (e a))) =
-      SSet.stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ (e a)) :=
-    SSet.yonedaEquiv.injective (by rw [Equiv.apply_symm_apply, SSet.yonedaEquiv_map])
-  rw [vertex_eq_toTopPoint]
-  have h : preorderHomeomorphStdSimplex e
-      (SSet.toTopPoint (nerve.objEquiv.symm (nerveEquiv.symm a))) =
-      ⦋n⦌.toTopHomeo.{u}
-        (SSet.toTop.map (SSet.stdSimplex.isoOfRepresentableBy (nerve.representableBy α e)).inv
-          (SSet.toTopPoint (nerve.objEquiv.symm (nerveEquiv.symm a)))) := rfl
-  rw [h, SSet.toTop_map_toTopPoint, hinv,
-    SSet.toTopPoint_eq_toTopObjMk _ (StdSimplex.single 0), SSet.toTopObjMk_eq_toTop_map, hyon,
-    SimplexCategory.toTopHomeo_naturality_apply, Homeomorph.apply_symm_apply,
-    StdSimplex.map_single]
-  rfl
+  rw [vertex_eq_toTopObjMk a (StdSimplex.single 0), preorderHomeomorphStdSimplex_toTopObjMk,
+    Equiv.apply_symm_apply, StdSimplex.map_single, nerveEquiv_symm_obj]
+
+@[simp]
+lemma preorderHomeomorphStdSimplex_symm_single {n : ℕ} {α : Type u} [Preorder α]
+    (e : α ≃o Fin (n + 1)) (i : Fin (n + 1)) :
+    (preorderHomeomorphStdSimplex e).symm (StdSimplex.single i) = vertex (e.symm i) :=
+  (preorderHomeomorphStdSimplex e).injective (by simp)
 
 /-- The classifying space of a preorder order-isomorphic to `Fin (n + 1)` is contractible. -/
 lemma contractibleSpace_of_orderIso_fin {n : ℕ} {α : Type u} [Preorder α]
@@ -514,13 +691,22 @@ lemma contractibleSpace_of_orderIso_fin {n : ℕ} {α : Type u} [Preorder α]
     ContractibleSpace (classifyingSpace α) :=
   (preorderHomeomorphStdSimplex e).contractibleSpace
 
-instance : ContractibleSpace (classifyingSpace (Fin 2)) :=
-  contractibleSpace_of_orderIso_fin (OrderIso.refl (Fin 2))
+instance (n : ℕ) [NeZero n] : ContractibleSpace (classifyingSpace (Fin n)) := by
+  obtain _ | n := n
+  · exact absurd rfl (NeZero.ne 0)
+  · exact contractibleSpace_of_orderIso_fin (OrderIso.refl (Fin (n + 1)))
 
 /-- The classifying space of the ordinal `Fin 2 = {0 < 1}` is homeomorphic to the unit interval `I`,
 sending `vertex 0` to `0` and `vertex 1` to `1`. -/
 noncomputable def finTwoHomeomorphI : classifyingSpace (Fin 2) ≃ₜ unitInterval :=
   (preorderHomeomorphStdSimplex (OrderIso.refl (Fin 2))).trans StdSimplex.homeomorphI
+
+@[simp]
+lemma finTwoHomeomorphI_toTopObjMk {m : ℕ} (s : (nerve (Fin 2)) _⦋m⦌)
+    (w : StdSimplex ℝ (Fin (m + 1))) :
+    finTwoHomeomorphI (SSet.toTopObjMk s w) =
+      StdSimplex.homeomorphI (w.map ((nerve.objEquiv s).obj)) := by
+  simp [finTwoHomeomorphI]
 
 @[simp]
 lemma finTwoHomeomorphI_vertex_zero : finTwoHomeomorphI (vertex (0 : Fin 2)) = 0 := by
@@ -530,14 +716,30 @@ lemma finTwoHomeomorphI_vertex_zero : finTwoHomeomorphI (vertex (0 : Fin 2)) = 0
 lemma finTwoHomeomorphI_vertex_one : finTwoHomeomorphI (vertex (1 : Fin 2)) = 1 := by
   simp [finTwoHomeomorphI]
 
-/-- Whenever `C` has another object `Y ≠ X`, the realized identity of `C` differs from the realized
-constant endofunctor at `X`, as detected at `vertex Y`. -/
-lemma classifyingSpaceMap_id_ne_const {C : Type u} [Category.{v} C] {X Y : C} (hne : Y ≠ X) :
-    classifyingSpaceMap (𝟭 C) ≠ classifyingSpaceMap ((Functor.const C).obj X) := fun h ↦ by
-  have hy := ConcreteCategory.congr_hom h (vertex Y)
-  rw [classifyingSpaceMap_vertex, classifyingSpaceMap_const, Functor.id_obj, TopCat.const_apply,
-    vertex_inj] at hy
-  exact hne hy
+@[simp]
+lemma finTwoHomeomorphI_symm_zero : finTwoHomeomorphI.symm 0 = vertex (0 : Fin 2) :=
+  finTwoHomeomorphI.injective (by simp)
+
+@[simp]
+lemma finTwoHomeomorphI_symm_one : finTwoHomeomorphI.symm 1 = vertex (1 : Fin 2) :=
+  finTwoHomeomorphI.injective (by simp)
+
+@[simp]
+lemma finTwoHomeomorphI_edgePath_apply (f : (0 : Fin 2) ⟶ 1) (t : unitInterval) :
+    finTwoHomeomorphI (edgePath f t) = t := by
+  have hid : (ComposableArrows.mk₁ f).obj = (id : Fin 2 → Fin 2) := by
+    funext i
+    fin_cases i <;> rfl
+  rw [edgePath_apply, finTwoHomeomorphI_toTopObjMk, Equiv.apply_symm_apply, hid,
+    StdSimplex.map_id, Homeomorph.apply_symm_apply]
+
+lemma finTwoHomeomorphI_symm_apply (t : unitInterval) :
+    finTwoHomeomorphI.symm t = edgePath (homOfLE (zero_le_one' (Fin 2))) t :=
+  finTwoHomeomorphI.injective (by simp)
+
+lemma coe_finTwoHomeomorphI_symm :
+    ⇑finTwoHomeomorphI.symm = edgePath (homOfLE (zero_le_one' (Fin 2))) :=
+  funext finTwoHomeomorphI_symm_apply
 
 /-- Reflection of the interval `classifyingSpace (Fin 2) ⟶ classifyingSpace (Fin 2)` swapping
 `vertex 0` and `vertex 1`. -/
@@ -545,13 +747,22 @@ noncomputable def finTwoReflect : classifyingSpace (Fin 2) ⟶ classifyingSpace 
   (TopCat.isoOfHomeo
     ((finTwoHomeomorphI.trans unitInterval.symmHomeomorph).trans finTwoHomeomorphI.symm)).hom
 
+lemma finTwoReflect_apply (p : classifyingSpace (Fin 2)) :
+    finTwoReflect p = finTwoHomeomorphI.symm (unitInterval.symm (finTwoHomeomorphI p)) := by
+  simp [finTwoReflect]
+
+@[simp]
+lemma finTwoHomeomorphI_finTwoReflect (p : classifyingSpace (Fin 2)) :
+    finTwoHomeomorphI (finTwoReflect p) = unitInterval.symm (finTwoHomeomorphI p) := by
+  rw [finTwoReflect_apply, Homeomorph.apply_symm_apply]
+
 @[simp]
 lemma finTwoReflect_vertex_zero : finTwoReflect (vertex (0 : Fin 2)) = vertex 1 := by
-  simp [finTwoReflect, ← finTwoHomeomorphI_vertex_one]
+  simp [finTwoReflect_apply]
 
 @[simp]
 lemma finTwoReflect_vertex_one : finTwoReflect (vertex (1 : Fin 2)) = vertex 0 := by
-  simp [finTwoReflect, ← finTwoHomeomorphI_vertex_zero]
+  simp [finTwoReflect_apply]
 
 /-- The interval reflection `finTwoReflect` is not `classifyingSpaceMap F` for any functor
 `F : Fin 2 ⥤ Fin 2`. -/
@@ -566,45 +777,67 @@ theorem not_exists_classifyingSpaceMap_eq_finTwoReflect :
   rw [h0, h1] at hle
   exact absurd hle (by decide)
 
-/-- The classifying space functor `Cat.{v, u} ⥤ TopCat.{max u v}` is not full (in any universes
-`v, u`), as witnessed by lifting the interval reflection on `Fin 2` into `Cat.{v, u}`. -/
-theorem not_full_classifyingSpaceFunctor : ¬ classifyingSpaceFunctor.{v, u}.Full := by
-  intro hFull
-  let C₀ := ULiftHom.{v} (InducedCategory (Fin 2) (ULift.down : ULift.{u} (Fin 2) → Fin 2))
-  let toFin : C₀ ⥤ Fin 2 := ULiftHom.down ⋙ inducedFunctor ULift.down
-  let fromFin : Fin 2 ⥤ C₀ :=
-    { obj i := ULiftHom.objUp (ULift.up i)
-      map f := ⟨(inducedFunctor ULift.down).preimage f⟩ }
-  have hTF : toFin ⋙ fromFin = 𝟭 C₀ :=
-    CategoryTheory.Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦
-      ULift.ext (InducedCategory.hom_ext (Subsingleton.elim _ _))
-  have hFT : fromFin ⋙ toFin = 𝟭 (Fin 2) :=
-    CategoryTheory.Functor.ext (fun _ ↦ rfl) (fun _ _ _ ↦ Subsingleton.elim _ _)
-  let e : classifyingSpace C₀ ≃ₜ classifyingSpace (Fin 2) :=
-    homeomorphOfStrictIso toFin fromFin hTF hFT
-  let reflHomeo : classifyingSpace C₀ ≃ₜ classifyingSpace C₀ :=
-    ((e.trans finTwoHomeomorphI).trans unitInterval.symmHomeomorph).trans
-      (e.trans finTwoHomeomorphI).symm
-  have := hFull
-  obtain ⟨G, hG⟩ := classifyingSpaceFunctor.map_surjective (X := Cat.of C₀) (Y := Cat.of C₀)
-    (TopCat.isoOfHomeo reflHomeo).hom
-  refine not_exists_classifyingSpaceMap_eq_finTwoReflect ⟨fromFin ⋙ G.toFunctor ⋙ toFin, ?_⟩
-  apply TopCat.ext
-  intro p
-  have hp : mapOfFunctor (fromFin ⋙ G.toFunctor ⋙ toFin) p = finTwoReflect p := by
-    have he₁ : mapOfFunctor fromFin p = e.symm p := rfl
-    have he₂ (q : classifyingSpace C₀) : mapOfFunctor toFin q = e q := rfl
-    rw [mapOfFunctor_comp, mapOfFunctor_comp, ContinuousMap.comp_apply, ContinuousMap.comp_apply,
-      he₁, he₂, mapOfFunctor_eq_classifyingSpaceMap G.toFunctor]
-    have hG' : (classifyingSpaceMap G.toFunctor).hom = ((TopCat.isoOfHomeo reflHomeo).hom).hom :=
-      congrArg ConcreteCategory.hom hG
-    rw [hG']
-    simp [reflHomeo, finTwoReflect]
-  exact (congrArg (· p)
-    (mapOfFunctor_eq_classifyingSpaceMap (fromFin ⋙ G.toFunctor ⋙ toFin)).symm).trans hp
-
 end Examples
 
 end classifyingSpace
+
+/-- `classifyingSpaceMap` is injective on functors. -/
+theorem classifyingSpaceMap_injective {C D : Type u} [Category.{v} C] [Category.{v} D] :
+    Function.Injective
+      (classifyingSpaceMap : (C ⥤ D) → (classifyingSpace C ⟶ classifyingSpace D)) := fun _ _ h ↦
+  classifyingSpace.mapOfFunctor_injective
+    (by simp [classifyingSpace.mapOfFunctor_eq_classifyingSpaceMap, h])
+
+/-- The classifying space functor `Cat.{v, u} ⥤ TopCat.{max u v}` is faithful. -/
+instance : classifyingSpaceFunctor.{v, u}.Faithful :=
+  inferInstanceAs (nerveFunctor.{v, u} ⋙ SSet.toTop).Faithful
+
+/-- Whenever `C` has another object `Y ≠ X`, the realized identity of `C` differs from the realized
+constant endofunctor at `X`. -/
+lemma classifyingSpaceMap_id_ne_const {C : Type u} [Category.{v} C] {X Y : C} (hne : Y ≠ X) :
+    classifyingSpaceMap (𝟭 C) ≠ classifyingSpaceMap ((Functor.const C).obj X) := fun h ↦ by
+  have hy := ConcreteCategory.congr_hom h (classifyingSpace.vertex Y)
+  rw [classifyingSpaceMap_vertex, classifyingSpaceMap_const, Functor.id_obj, TopCat.const_apply,
+    classifyingSpace.vertex_inj] at hy
+  exact hne hy
+
+attribute [local instance] uliftCategory in
+/-- The classifying space functor `Cat.{v, u} ⥤ TopCat.{max u v}` is not full in any universes
+`v, u`. -/
+theorem not_full_classifyingSpaceFunctor : ¬ classifyingSpaceFunctor.{v, u}.Full := by
+  intro hFull
+  let C₀ : Type u := ULift.{u} (ULiftHom.{v} (Fin 2))
+  let toFin : C₀ ⥤ Fin 2 := _root_.CategoryTheory.ULift.downFunctor ⋙ ULiftHom.down
+  let fromFin : Fin 2 ⥤ C₀ := ULiftHom.up ⋙ _root_.CategoryTheory.ULift.upFunctor
+  have hTF : toFin ⋙ fromFin = 𝟭 C₀ :=
+    CategoryTheory.Functor.ext (fun _ ↦ rfl) (fun _ _ _ ↦ ULift.ext (Subsingleton.elim _ _))
+  have hFT : fromFin ⋙ toFin = 𝟭 (Fin 2) :=
+    CategoryTheory.Functor.ext (fun _ ↦ rfl) (fun _ _ _ ↦ Subsingleton.elim _ _)
+  let e : classifyingSpace C₀ ≃ₜ classifyingSpace (Fin 2) :=
+    classifyingSpace.homeomorphOfStrictIso toFin fromFin hTF hFT
+  let reflHomeo : classifyingSpace C₀ ≃ₜ classifyingSpace C₀ :=
+    ((e.trans classifyingSpace.finTwoHomeomorphI).trans unitInterval.symmHomeomorph).trans
+      (e.trans classifyingSpace.finTwoHomeomorphI).symm
+  obtain ⟨G, hG⟩ := classifyingSpaceFunctor.map_surjective (X := Cat.of C₀) (Y := Cat.of C₀)
+    (TopCat.isoOfHomeo reflHomeo).hom
+  refine classifyingSpace.not_exists_classifyingSpaceMap_eq_finTwoReflect
+    ⟨fromFin ⋙ G.toFunctor ⋙ toFin, ?_⟩
+  apply TopCat.ext
+  intro p
+  have hp : classifyingSpace.mapOfFunctor (fromFin ⋙ G.toFunctor ⋙ toFin) p =
+      classifyingSpace.finTwoReflect p := by
+    rw [classifyingSpace.mapOfFunctor_comp, classifyingSpace.mapOfFunctor_comp,
+      ContinuousMap.comp_apply, ContinuousMap.comp_apply,
+      ← classifyingSpace.homeomorphOfStrictIso_symm_apply toFin fromFin hTF hFT p,
+      ← classifyingSpace.homeomorphOfStrictIso_apply toFin fromFin hTF hFT,
+      classifyingSpace.mapOfFunctor_eq_classifyingSpaceMap G.toFunctor]
+    have hG' : (classifyingSpaceMap G.toFunctor).hom = ((TopCat.isoOfHomeo reflHomeo).hom).hom :=
+      congrArg ConcreteCategory.hom hG
+    rw [hG']
+    change e (reflHomeo (e.symm p)) = classifyingSpace.finTwoReflect p
+    simp [reflHomeo, classifyingSpace.finTwoReflect_apply]
+  exact (congrArg (· p)
+    (classifyingSpace.mapOfFunctor_eq_classifyingSpaceMap
+      (fromFin ⋙ G.toFunctor ⋙ toFin)).symm).trans hp
 
 end TauCeti.CategoryTheory
