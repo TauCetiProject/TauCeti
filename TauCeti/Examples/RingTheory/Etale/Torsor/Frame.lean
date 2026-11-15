@@ -18,8 +18,9 @@ import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 For a finite separable field extension `L / K` of degree `n`, the frame algebra
 `FrameAlgebra K L (Fin n)` is a `Perm (Fin n)`-torsor over `K` of dimension `n!` on which
 `Perm (Fin n)` acts as a Galois group, and `L` splits into `n` copies of it after base change.
-Asking for more distinct points than the rank produces the zero ring, and asking for fewer
-produces an algebra whose dimension exceeds `|Perm ι|`; neither is a `Perm ι`-torsor over a field.
+Asking for more distinct points than the rank produces the zero ring, and asking for a positive
+number of slots fewer than the rank produces an algebra whose dimension exceeds `|Perm ι|`; neither
+is a `Perm ι`-torsor over a field.
 Over a disconnected base `K × K`, a finite étale algebra of non-constant rank `(1, 0)` is split in
 the sense of `IsTotallySplit` by a finite étale torsor, while `Algebra.IsFiniteSplit` fails after
 every faithfully flat base change. Over the zero ring every finite étale algebra is split by a
@@ -54,9 +55,8 @@ example (K : Type u) (L : Type*) [Field K] [Field L] [Algebra K L] [Module.Finit
   have : IsFiniteEtaleTorsor (Equiv.Perm (Fin n)) K P :=
     FrameAlgebra.isFiniteEtaleTorsor hrank
   have hcard : Module.rankAtStalk (R := K) P = n.factorial := funext fun p ↦ by
-    rw [IsFiniteEtaleTorsor.rankAtStalk_eq_card (G := Equiv.Perm (Fin n)),
-      Nat.card_eq_fintype_card, Fintype.card_perm, Fintype.card_fin]
-    rfl
+    rw [IsFiniteEtaleTorsor.rankAtStalk_eq_card (G := Equiv.Perm (Fin n))]
+    simp [Fintype.card_perm]
   exact ⟨inferInstance, inferInstance, TauCeti.Module.finrank_eq_of_rankAtStalk_eq hcard,
     ⟨FrameAlgebra.tensorProductEquivPi hrank⟩⟩
 
@@ -84,9 +84,8 @@ example (K : Type*) [Field K] :
     (A := K) (B := FrameAlgebra K (Fin 2 → K) (Fin 1)) p
   have heq := congrFun (Module.rankAtStalk_eq_of_equiv
     (FrameAlgebra.piEquiv K (Fin 1) (Fin 2)).toLinearEquiv) p
-  rw [heq, Module.rankAtStalk_eq_finrank_of_free (R := K), Pi.natCast_apply, Nat.cast_id,
-    Module.finrank_fintype_fun_eq_card, Nat.card_eq_fintype_card, Fintype.card_perm,
-    Fintype.card_fin, Nat.factorial_one] at hcard
+  rw [heq, Module.rankAtStalk_eq_finrank_of_free (R := K)] at hcard
+  simp at hcard
   let e₀ : Fin 1 ↪ Fin 2 := ⟨fun _ ↦ 0, Function.injective_of_subsingleton _⟩
   let e₁ : Fin 1 ↪ Fin 2 := ⟨fun _ ↦ 1, Function.injective_of_subsingleton _⟩
   have : Nontrivial (Fin 1 ↪ Fin 2) :=
@@ -120,9 +119,9 @@ example (K : Type u) [Field K] :
   obtain ⟨m, ⟨φ⟩⟩ := hfs.nonempty_algEquiv_fun
   let ψ : P ⊗[K × K] S ≃ₗ[P] (Fin m → P) := φ.toLinearEquiv
   have hm (q : PrimeSpectrum P) : Module.rankAtStalk (R := P) (P ⊗[K × K] S) q = m := by
-    have hq := congrFun (Module.rankAtStalk_eq_of_equiv ψ) q
-    rw [hq, Module.rankAtStalk_eq_finrank_of_free (R := P), Pi.natCast_apply, Nat.cast_id,
-      Module.finrank_fin_fun]
+    rw [congrFun (Module.rankAtStalk_eq_of_equiv ψ) q,
+      Module.rankAtStalk_eq_finrank_of_free (R := P)]
+    simp
   have h1 : Module.rankAtStalk (R := P) (P ⊗[K × K] S) q₁ = 1 := by
     rw [Module.rankAtStalk_baseChange, hq₁, Module.rankAtStalk_quotient_span_one_sub he]
     simp [p₁, e]

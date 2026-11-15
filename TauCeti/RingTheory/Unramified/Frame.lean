@@ -518,14 +518,9 @@ theorem FrameAlgebra.baseChangeEquiv_tmul_mk (t : T) (x : ⨂[R] _ : ι, S) :
 theorem FrameAlgebra.baseChangeEquiv_tmul_singleAlgHom (t : T) (i : ι) (s : S) :
     FrameAlgebra.baseChangeEquiv R S T ι (t ⊗ₜ FrameAlgebra.singleAlgHom R S i s) =
       FrameAlgebra.singleAlgHom T (T ⊗[R] S) i (t ⊗ₜ s) := by
-  have ht : t ⊗ₜ[R] FrameAlgebra.singleAlgHom R S i s =
-      t • (1 ⊗ₜ[R] FrameAlgebra.singleAlgHom R S i s) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  have hs : (t ⊗ₜ[R] s : T ⊗[R] S) = t • (1 ⊗ₜ[R] s) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [ht, map_smul, FrameAlgebra.singleAlgHom_apply, FrameAlgebra.baseChangeEquiv_tmul_mk,
-    PiTensorProduct.baseChangeAlgEquiv_one_tmul_singleAlgHom, ← FrameAlgebra.singleAlgHom_apply,
-    hs, map_smul]
+  rw [FrameAlgebra.singleAlgHom_apply, FrameAlgebra.baseChangeEquiv_tmul_mk,
+    ← PiTensorProduct.baseChangeAlgEquiv_symm_singleAlgHom, AlgEquiv.apply_symm_apply,
+    ← FrameAlgebra.singleAlgHom_apply]
 
 /-- `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv` is equivariant for the permutations of the
 slots, acting on `T ⊗[R] FrameAlgebra R S ι` through the right factor. -/
@@ -568,39 +563,22 @@ theorem FrameAlgebra.tensorToPi_baseChange (z : T ⊗[R] (FrameAlgebra R S ι �
             ((FrameAlgebra.tensorToPi R S ι).restrictScalars R) z) i) := by
   let : Semiring (FrameAlgebra R S ι ⊗[R] S) := inferInstance
   let : Algebra R (FrameAlgebra R S ι ⊗[R] S) := inferInstance
-  let f : T ⊗[R] (FrameAlgebra R S ι ⊗[R] S) →ₗ[T] (ι → FrameAlgebra T (T ⊗[R] S) ι) :=
-    ((FrameAlgebra.tensorToPi T (T ⊗[R] S) ι).restrictScalars T).toLinearMap ∘ₗ
+  let f : T ⊗[R] (FrameAlgebra R S ι ⊗[R] S) →ₐ[T] (ι → FrameAlgebra T (T ⊗[R] S) ι) :=
+    ((FrameAlgebra.tensorToPi T (T ⊗[R] S) ι).restrictScalars T).comp <|
       (Algebra.TensorProduct.congr (FrameAlgebra.baseChangeEquiv R S T ι)
-        AlgEquiv.refl).toLinearMap ∘ₗ
+        AlgEquiv.refl).toAlgHom.comp <|
       (TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv R T
-        (FrameAlgebra R S ι) S).toLinearMap
-  let g : T ⊗[R] (FrameAlgebra R S ι ⊗[R] S) →ₗ[T] (ι → FrameAlgebra T (T ⊗[R] S) ι) :=
-    (AlgEquiv.piCongrRight fun _ : ι ↦ FrameAlgebra.baseChangeEquiv R S T ι).toLinearMap ∘ₗ
-      (Algebra.TensorProduct.piRight R T T fun _ : ι ↦ FrameAlgebra R S ι).toLinearMap ∘ₗ
-      (Algebra.TensorProduct.map (AlgHom.id T T)
-        ((FrameAlgebra.tensorToPi R S ι).restrictScalars R)).toLinearMap
-  have hfg : f z = g z := by
-    induction z using TensorProduct.inductionOn with
-    | add x y hx hy => rw [map_add, map_add, hx, hy]
-    | tmul t w =>
-      induction w using TensorProduct.inductionOn with
-      | add x y hx hy => rw [TensorProduct.tmul_add, map_add, map_add, hx, hy]
-      | tmul p s =>
-        funext j
-        have hlhs : f (t ⊗ₜ (p ⊗ₜ s)) j =
-            FrameAlgebra.baseChangeEquiv R S T ι (t ⊗ₜ p) *
-              FrameAlgebra.singleAlgHom T (T ⊗[R] S) j ((1 : T) ⊗ₜ s) := by
-          dsimp only [f]
-          rw [LinearMap.comp_apply, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-            AlgHom.restrictScalars_apply, AlgEquiv.toLinearMap_apply, AlgEquiv.toLinearMap_apply,
-            TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv_tmul]
-          rfl
-        have hrhs : g (t ⊗ₜ (p ⊗ₜ s)) j =
-            FrameAlgebra.baseChangeEquiv R S T ι
-              (t ⊗ₜ (p * FrameAlgebra.singleAlgHom R S j s)) := rfl
-        exact hlhs.trans
-          ((FrameAlgebra.baseChangeEquiv_tmul_mul_singleAlgHom t p j s).symm.trans hrhs.symm)
-  exact congrFun hfg i
+        (FrameAlgebra R S ι) S).toAlgHom
+  let g : T ⊗[R] (FrameAlgebra R S ι ⊗[R] S) →ₐ[T] (ι → FrameAlgebra T (T ⊗[R] S) ι) :=
+    (AlgEquiv.piCongrRight fun _ : ι ↦ FrameAlgebra.baseChangeEquiv R S T ι).toAlgHom.comp <|
+      (Algebra.TensorProduct.piRight R T T fun _ : ι ↦ FrameAlgebra R S ι).toAlgHom.comp <|
+      Algebra.TensorProduct.map (AlgHom.id T T)
+        ((FrameAlgebra.tensorToPi R S ι).restrictScalars R)
+  have hfg : f = g :=
+    Algebra.TensorProduct.ext (Subsingleton.elim _ _)
+      (Algebra.TensorProduct.ext' fun p s ↦ funext fun j ↦ by
+        simp [f, g, FrameAlgebra.baseChangeEquiv_tmul_mul_singleAlgHom])
+  exact congrFun (DFunLike.congr_fun hfg z) i
 
 variable (T) in
 /-- Bijectivity of `TauCeti.Algebra.FrameAlgebra.tensorToPi` descends along a faithfully flat
@@ -620,10 +598,9 @@ theorem FrameAlgebra.bijective_tensorToPi_baseChange_iff [Module.FaithfullyFlat 
     Algebra.TensorProduct.ext (AlgHom.ext fun _ ↦ rfl) (AlgHom.ext fun _ ↦ rfl)
   have hcomp :
       ⇑(FrameAlgebra.tensorToPi T (T ⊗[R] S) ι) ∘ ⇑e₁ = ⇑e₂ ∘ ⇑(γ.toLinearMap.lTensor T) := by
-    funext z i
-    rw [Function.comp_apply, Function.comp_apply, AlgEquiv.trans_apply,
-      FrameAlgebra.tensorToPi_baseChange, AlgHom.lTensor_toLinearMap_apply, ← hmap]
-    rfl
+    ext z i
+    simpa [e₁, e₂, AlgHom.lTensor_toLinearMap_apply, ← hmap] using
+      FrameAlgebra.tensorToPi_baseChange z i
   rw [← Function.Bijective.of_comp_iff _ e₁.bijective, hcomp,
     Function.Bijective.of_comp_iff' e₂.bijective,
     Module.FaithfullyFlat.lTensor_bijective_iff_bijective]
@@ -863,14 +840,8 @@ theorem FrameAlgebra.bijective_tensorToPi_pi :
       (π.trans shear)).trans π.symm
   have he : e.toAlgHom = (FrameAlgebra.tensorToPi R (ι → R) ι).restrictScalars R :=
     Algebra.TensorProduct.ext' fun p k ↦ π.injective <| funext fun i ↦ funext fun τ ↦ by
-      dsimp only [e]
-      rw [AlgEquiv.coe_toAlgHom, AlgEquiv.trans_apply, AlgEquiv.apply_symm_apply,
-        AlgEquiv.trans_apply, AlgEquiv.trans_apply, shear_apply]
-      dsimp only [π]
-      rw [AlgEquiv.piCongrRight_apply, Algebra.TensorProduct.piScalarRight_tmul_apply, map_smul,
-        Pi.smul_apply, smul_eq_mul, mul_comm, AlgEquiv.piCongrRight_apply,
-        AlgHom.restrictScalars_apply, FrameAlgebra.tensorToPi_tmul, map_mul, Pi.mul_apply,
-        FrameAlgebra.permEquiv_singleAlgHom]
+      simp [e, π, shear_apply]
+      ring
   have hcoe : ⇑e = ⇑(FrameAlgebra.tensorToPi R (ι → R) ι) := congrArg DFunLike.coe he
   exact hcoe ▸ e.bijective
 
