@@ -30,7 +30,10 @@ singletons, where the finite sum of measures becomes `MeasureTheory.Measure.sum`
 zero contribute nothing, so no positivity hypothesis on the fibres is needed.
 
 Conditioning on almost-everywhere equal events gives equal conditional measures, and a function
-bounded on a measurable event is integrable for the conditional measure on it. A measurable map
+bounded on a measurable event is integrable for the conditional measure on it. An
+almost-everywhere measurable map transports conditional measures on measurable preimages to
+conditional measures of the pushforward, and a measurable embedding transports conditional
+measures on arbitrary events without measurability assumptions. More generally, a measurable map
 that scales measure by a constant factor carries conditional measures to conditional measures.
 Conditional measures also depend measurably on a measurable family of finite measures and a
 jointly measurable family of conditioning events. In particular, conditioning between measurable
@@ -53,7 +56,8 @@ recovers the law.
 * `Measurable.cond`, `Measurable.cond_const`, and `Measurable.cond_preimage_Ioc` (with the
   corresponding `Icc`, `Ioo`, and `Ico` forms)
 * `ProbabilityTheory.integrable_cond_of_norm_le`
-* `ProbabilityTheory.map_cond_preimage`
+* `AEMeasurable.map_cond_preimage`, `MeasurableEmbedding.map_cond_preimage`,
+  `MeasurableEmbedding.map_cond`, and `ProbabilityTheory.map_cond_preimage`
 * `ProbabilityTheory.cond_univ_restrict`
 * `ProbabilityTheory.cond_compl_singleton_real`,
   `ProbabilityTheory.cond_compl_singleton_real_singleton`,
@@ -229,6 +233,33 @@ theorem integrable_cond_of_norm_le {E : Type*} [NormedAddCommGroup E] {μ : Meas
   filter_upwards [hf.ae_eq_mk, measure_eq_zero_iff_ae_notMem.1 hNnull] with x hx hx'
   rw [hx]
   exact not_lt.1 hx'
+
+/-- An almost-everywhere measurable map transports a measure conditioned on a measurable
+preimage event to the pushforward measure conditioned on that event. This holds for arbitrary
+measures, including zero-mass and infinite-mass events where both conditional measures
+vanish. -/
+theorem _root_.AEMeasurable.map_cond_preimage {f : Ω → β} {μ : Measure Ω}
+    (hf : AEMeasurable f μ) {s : Set β} (hs : MeasurableSet s) :
+    (μ[|f ⁻¹' s]).map f = (μ.map f)[|s] := by
+  rw [cond, Measure.map_smul _ hf.restrict, ← Measure.restrict_map_of_aemeasurable hf hs,
+    ← Measure.map_apply_of_aemeasurable hf hs, cond]
+
+/-- A measurable embedding transports a measure conditioned on a preimage event to the
+pushforward measure conditioned on that event, without requiring the event to be
+measurable. -/
+theorem _root_.MeasurableEmbedding.map_cond_preimage {f : Ω → β}
+    (hf : MeasurableEmbedding f) (μ : Measure Ω) (s : Set β) :
+    (μ[|f ⁻¹' s]).map f = (μ.map f)[|s] := by
+  rw [cond, Measure.map_smul _ hf.measurable.aemeasurable, ← hf.restrict_map, ← hf.map_apply,
+    cond]
+
+/-- A measurable embedding transports a conditional measure by pushing forward both the
+underlying measure and the conditioning event, without requiring the event to be
+measurable. -/
+theorem _root_.MeasurableEmbedding.map_cond {f : Ω → β}
+    (hf : MeasurableEmbedding f) (μ : Measure Ω) (s : Set Ω) :
+    (μ[|s]).map f = (μ.map f)[|f '' s] := by
+  simpa only [preimage_image_eq s hf.injective] using hf.map_cond_preimage μ (f '' s)
 
 /-- A measurable map that scales measure by a constant factor transports conditional measures:
 if `μ (f ⁻¹' A) = k * ν A` for every measurable `A`, with `k ≠ 0` finite, then `f` carries `μ`

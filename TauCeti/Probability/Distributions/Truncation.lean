@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.ConditionalProbability
+public import Mathlib.Probability.HasLaw
+public import TauCeti.Probability.ConditionalProbability
 public import TauCeti.Probability.Quantile
 public import TauCeti.MeasureTheory.Measure.LowerSet
+import Mathlib.Topology.Algebra.Field
 
 /-!
 # Interval truncation of real probability laws
@@ -29,6 +31,12 @@ Consequently, at an interior level `u`, its quantile is the quantile of `μ` at 
 positive mass. No atomlessness or nondegeneracy assumption on the conditional law is needed.
 The underlying statements for differences of lower sets also allow unbounded cuts.
 
+An invertible real affine map `x ↦ a + b * x` (`b ≠ 0`) commutes with truncation by pushing
+forward both the underlying measure and the conditioning event, without requiring the event to be
+measurable or to have positive or finite mass. Positive slopes preserve interval and ray endpoint
+flags, whereas negative slopes reverse bounded interval endpoints, exchange half-open flags, and
+swap lower and upper rays.
+
 ## Main results
 
 * `MeasureTheory.Measure.cdf_cond` — the cdf of a law conditioned on an event;
@@ -38,7 +46,14 @@ The underlying statements for differences of lower sets also allow unbounded cut
   `MeasureTheory.Measure.cdf_cond_Ioo`, `MeasureTheory.Measure.cdf_cond_Ico` — finite intervals;
 * `MeasureTheory.Measure.quantile_cond_Ioc`, `MeasureTheory.Measure.quantile_cond_Icc`,
   `MeasureTheory.Measure.quantile_cond_Ioo`, `MeasureTheory.Measure.quantile_cond_Ico` —
-  the corresponding interior quantile formulas.
+  the corresponding interior quantile formulas;
+* `MeasureTheory.Measure.map_affine_cond_preimage`, `MeasureTheory.Measure.map_affine_cond`, and
+  `ProbabilityTheory.HasLaw.affine_cond` — affine pushforward of truncated measures and random
+  variables;
+* `MeasureTheory.Measure.map_affine_cond_Icc_pos`,
+  `MeasureTheory.Measure.map_affine_cond_Icc_neg`, and the corresponding `Ioo`, `Ico`, `Ioc`,
+  `Ici`, `Ioi`, `Iic`, and `Iio` forms — signed affine transport of bounded intervals and
+  unbounded rays.
 -/
 
 public section
@@ -191,3 +206,174 @@ theorem quantile_cond_Ico {l r u : ℝ} (hLR : μ.real (Iio l) < μ.real (Iio r)
     quantile_cond_sdiff μ (IsLowerSet.Iio l) (IsLowerSet.Iio r) hLR hu
 
 end MeasureTheory.Measure
+
+/-! ### Affine transport -/
+
+namespace MeasureTheory.Measure
+
+variable (μ : Measure ℝ)
+
+/-- Real affine pushforward commutes with conditioning on the preimage of a measurable event,
+including at zero slope and for zero-mass or infinite-mass events. -/
+theorem map_affine_cond_preimage (a b : ℝ) {s : Set ℝ} (hs : MeasurableSet s) :
+    (ProbabilityTheory.cond μ ((fun x ↦ a + b * x) ⁻¹' s)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) s :=
+  (by fun_prop : Measurable (fun x : ℝ ↦ a + b * x)).aemeasurable.map_cond_preimage hs
+
+/-- An invertible real affine pushforward commutes with truncation by transforming both the
+underlying measure and the conditioning event, without requiring the event to be measurable or to
+have positive or finite mass. -/
+theorem map_affine_cond (a : ℝ) {b : ℝ} (hb : b ≠ 0) (s : Set ℝ) :
+    (ProbabilityTheory.cond μ s).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) ((fun x ↦ a + b * x) '' s) := by
+  have hf : MeasurableEmbedding (fun x : ℝ ↦ a + b * x) := by
+    convert (affineHomeomorph b a hb).measurableEmbedding using 1
+    ext x
+    simp [affineHomeomorph, add_comm]
+  exact hf.map_cond μ s
+
+/-- Positive affine transport preserves truncation to a closed interval `[l, r]`. -/
+theorem map_affine_cond_Icc_pos (a : ℝ) {b : ℝ} (hb : 0 < b) (l r : ℝ) :
+    (ProbabilityTheory.cond μ (Icc l r)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) (Icc (a + b * l) (a + b * r)) := by
+  rw [μ.map_affine_cond a hb.ne', ← image_image (a + ·) (b * ·), image_mul_left_Icc' hb,
+    image_const_add_Icc]
+
+/-- Positive affine transport preserves truncation to an open interval `(l, r)`. -/
+theorem map_affine_cond_Ioo_pos (a : ℝ) {b : ℝ} (hb : 0 < b) (l r : ℝ) :
+    (ProbabilityTheory.cond μ (Ioo l r)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) (Ioo (a + b * l) (a + b * r)) := by
+  rw [μ.map_affine_cond a hb.ne', ← image_image (a + ·) (b * ·), image_mul_left_Ioo hb,
+    image_const_add_Ioo]
+
+/-- Positive affine transport preserves truncation to a half-open interval `[l, r)`. -/
+theorem map_affine_cond_Ico_pos (a : ℝ) {b : ℝ} (hb : 0 < b) (l r : ℝ) :
+    (ProbabilityTheory.cond μ (Ico l r)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) (Ico (a + b * l) (a + b * r)) := by
+  rw [μ.map_affine_cond a hb.ne', ← image_image (a + ·) (b * ·), image_mul_left_Ico hb,
+    image_const_add_Ico]
+
+/-- Positive affine transport preserves truncation to a half-open interval `(l, r]`. -/
+theorem map_affine_cond_Ioc_pos (a : ℝ) {b : ℝ} (hb : 0 < b) (l r : ℝ) :
+    (ProbabilityTheory.cond μ (Ioc l r)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) (Ioc (a + b * l) (a + b * r)) := by
+  rw [μ.map_affine_cond a hb.ne', ← image_image (a + ·) (b * ·), image_mul_left_Ioc hb,
+    image_const_add_Ioc]
+
+/-- Positive affine transport preserves truncation to a closed upper ray `[l, ∞)`. -/
+theorem map_affine_cond_Ici_pos (a : ℝ) {b : ℝ} (hb : 0 < b) (l : ℝ) :
+    (ProbabilityTheory.cond μ (Ici l)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) (Ici (a + b * l)) := by
+  rw [μ.map_affine_cond a hb.ne', ← image_image (a + ·) (b * ·), image_mul_left_Ici hb,
+    image_const_add_Ici]
+
+/-- Positive affine transport preserves truncation to an open upper ray `(l, ∞)`. -/
+theorem map_affine_cond_Ioi_pos (a : ℝ) {b : ℝ} (hb : 0 < b) (l : ℝ) :
+    (ProbabilityTheory.cond μ (Ioi l)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) (Ioi (a + b * l)) := by
+  rw [μ.map_affine_cond a hb.ne', ← image_image (a + ·) (b * ·), image_mul_left_Ioi hb,
+    image_const_add_Ioi]
+
+/-- Positive affine transport preserves truncation to a closed lower ray `(-∞, r]`. -/
+theorem map_affine_cond_Iic_pos (a : ℝ) {b : ℝ} (hb : 0 < b) (r : ℝ) :
+    (ProbabilityTheory.cond μ (Iic r)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) (Iic (a + b * r)) := by
+  rw [μ.map_affine_cond a hb.ne', ← image_image (a + ·) (b * ·), image_mul_left_Iic hb,
+    image_const_add_Iic]
+
+/-- Positive affine transport preserves truncation to an open lower ray `(-∞, r)`. -/
+theorem map_affine_cond_Iio_pos (a : ℝ) {b : ℝ} (hb : 0 < b) (r : ℝ) :
+    (ProbabilityTheory.cond μ (Iio r)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) (Iio (a + b * r)) := by
+  rw [μ.map_affine_cond a hb.ne', ← image_image (a + ·) (b * ·), image_mul_left_Iio hb,
+    image_const_add_Iio]
+
+/-- Negative affine transport reverses the endpoints of a closed truncation interval. -/
+theorem map_affine_cond_Icc_neg (a : ℝ) {b : ℝ} (hb : b < 0) (l r : ℝ) :
+    (ProbabilityTheory.cond μ (Icc l r)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) (Icc (a + b * r) (a + b * l)) := by
+  rw [← μ.map_affine_cond_preimage a b measurableSet_Icc,
+    ← Function.comp_def (a + ·) (b * ·), preimage_comp]
+  simp [hb, hb.ne]
+
+/-- Negative affine transport reverses the endpoints of an open truncation interval. -/
+theorem map_affine_cond_Ioo_neg (a : ℝ) {b : ℝ} (hb : b < 0) (l r : ℝ) :
+    (ProbabilityTheory.cond μ (Ioo l r)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) (Ioo (a + b * r) (a + b * l)) := by
+  rw [← μ.map_affine_cond_preimage a b measurableSet_Ioo,
+    ← Function.comp_def (a + ·) (b * ·), preimage_comp]
+  simp [hb, hb.ne]
+
+/-- Negative affine transport exchanges a closed lower and open upper truncation endpoint. -/
+theorem map_affine_cond_Ico_neg (a : ℝ) {b : ℝ} (hb : b < 0) (l r : ℝ) :
+    (ProbabilityTheory.cond μ (Ico l r)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) (Ioc (a + b * r) (a + b * l)) := by
+  rw [← μ.map_affine_cond_preimage a b measurableSet_Ioc,
+    ← Function.comp_def (a + ·) (b * ·), preimage_comp]
+  simp [hb, hb.ne]
+
+/-- Negative affine transport exchanges an open lower and closed upper truncation endpoint. -/
+theorem map_affine_cond_Ioc_neg (a : ℝ) {b : ℝ} (hb : b < 0) (l r : ℝ) :
+    (ProbabilityTheory.cond μ (Ioc l r)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) (Ico (a + b * r) (a + b * l)) := by
+  rw [← μ.map_affine_cond_preimage a b measurableSet_Ico,
+    ← Function.comp_def (a + ·) (b * ·), preimage_comp]
+  simp [hb, hb.ne]
+
+/-- Negative affine transport sends truncation on a closed upper ray `[l, ∞)` to the closed lower
+ray `(-∞, a + b * l]`. -/
+theorem map_affine_cond_Ici_neg (a : ℝ) {b : ℝ} (hb : b < 0) (l : ℝ) :
+    (ProbabilityTheory.cond μ (Ici l)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) (Iic (a + b * l)) := by
+  rw [← μ.map_affine_cond_preimage a b measurableSet_Iic,
+    ← Function.comp_def (a + ·) (b * ·), preimage_comp]
+  simp [hb, hb.ne]
+
+/-- Negative affine transport sends truncation on an open upper ray `(l, ∞)` to the open lower
+ray `(-∞, a + b * l)`. -/
+theorem map_affine_cond_Ioi_neg (a : ℝ) {b : ℝ} (hb : b < 0) (l : ℝ) :
+    (ProbabilityTheory.cond μ (Ioi l)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) (Iio (a + b * l)) := by
+  rw [← μ.map_affine_cond_preimage a b measurableSet_Iio,
+    ← Function.comp_def (a + ·) (b * ·), preimage_comp]
+  simp [hb, hb.ne]
+
+/-- Negative affine transport sends truncation on a closed lower ray `(-∞, r]` to the closed upper
+ray `[a + b * r, ∞)`. -/
+theorem map_affine_cond_Iic_neg (a : ℝ) {b : ℝ} (hb : b < 0) (r : ℝ) :
+    (ProbabilityTheory.cond μ (Iic r)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) (Ici (a + b * r)) := by
+  rw [← μ.map_affine_cond_preimage a b measurableSet_Ici,
+    ← Function.comp_def (a + ·) (b * ·), preimage_comp]
+  simp [hb, hb.ne]
+
+/-- Negative affine transport sends truncation on an open lower ray `(-∞, r)` to the open upper
+ray `(a + b * r, ∞)`. -/
+theorem map_affine_cond_Iio_neg (a : ℝ) {b : ℝ} (hb : b < 0) (r : ℝ) :
+    (ProbabilityTheory.cond μ (Iio r)).map (fun x ↦ a + b * x) =
+      ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) (Ioi (a + b * r)) := by
+  rw [← μ.map_affine_cond_preimage a b measurableSet_Ioi,
+    ← Function.comp_def (a + ·) (b * ·), preimage_comp]
+  simp [hb, hb.ne]
+
+end MeasureTheory.Measure
+
+namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory
+
+/-- An invertible real affine function of a variable with a conditional law has the pushed-forward
+underlying law conditioned on the affine image of the event, without requiring the event to be
+measurable. -/
+theorem affine_cond {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {μ : Measure ℝ} {s : Set ℝ}
+    (hX : HasLaw X (ProbabilityTheory.cond μ s) P) (a : ℝ) {b : ℝ} (hb : b ≠ 0) :
+    HasLaw (fun ω ↦ a + b * X ω)
+      (ProbabilityTheory.cond (μ.map (fun x ↦ a + b * x)) ((fun x ↦ a + b * x) '' s)) P := by
+  have hf : HasLaw (fun x : ℝ ↦ a + b * x)
+      ((ProbabilityTheory.cond μ s).map (fun x ↦ a + b * x)) (ProbabilityTheory.cond μ s) :=
+    hasLaw_map (by fun_prop)
+  rw [← μ.map_affine_cond a hb s]
+  exact hf.comp hX
+
+end ProbabilityTheory.HasLaw
