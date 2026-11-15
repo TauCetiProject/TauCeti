@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Cluster.CoefficientSemifield.Basic
+public import TauCeti.Algebra.Cluster.CoefficientSemifield.Hom
 public import TauCeti.Algebra.Group.FreeAbelianCharacter
 public import TauCeti.Algebra.Tropical.Basic
 public import Mathlib.Algebra.Order.Group.Int
@@ -198,6 +198,14 @@ theorem eval_comp_reindex {Q : Type*} [CommGroup Q] (q : J' → Q) (e : J ≃ J'
     (eval q).comp ((InfTropical.reindex (A := ℤ) e : Trop J ≃+* Trop J') : Trop J →* Trop J') =
       eval (q ∘ e) :=
   MonoidHom.ext (eval_reindex q e)
+
+/-- Tropical relabelling homomorphisms compose by composing their index equivalences. -/
+@[simp]
+theorem reindex_toCoefficientSemifieldHom_comp (e : J ≃ J') (e' : J' ≃ J'') :
+    (InfTropical.reindex (A := ℤ) e').toCoefficientSemifieldHom.comp
+        (InfTropical.reindex (A := ℤ) e).toCoefficientSemifieldHom =
+      (InfTropical.reindex (A := ℤ) (e.trans e')).toCoefficientSemifieldHom := by
+  rw [← RingEquiv.toCoefficientSemifieldHom_trans, InfTropical.reindex_trans]
 
 end Trop
 
