@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cellular.Comparison
-public import TauCeti.AlgebraicTopology.Cellular.Coproduct
+public import TauCeti.AlgebraicTopology.Cellular.Lacunary
 public import TauCeti.Topology.CWComplex.Classical.ComplexProjective
 
 /-!
@@ -16,7 +15,8 @@ The CW structure `TauCeti.ComplexProjectiveSpace.cwComplex` on `CPⁿ` has one c
 dimension `0, 2, …, 2n` and none in odd dimensions. Hence, with coefficients `R` in any abelian
 category with coproducts, its cellular chain complex has a copy of `R` in each even degree
 `2i ≤ 2n` (`TauCeti.cellularChainGroupIso`) and zero in every other degree, so all of its
-differentials vanish, since one end of each differential is zero. Transporting the cellular
+differentials vanish, since one end of each differential is zero
+(`TauCeti.cellularChainComplex_d_eq_zero_of_isEmpty_cell`). Transporting the cellular
 homology along the cellular–singular comparison `TauCeti.cellularSingularHomologyIsoUniv` computes
 the singular homology of `CPⁿ`: it is `R` in the degrees `0, 2, …, 2n` and zero otherwise.
 
@@ -98,9 +98,10 @@ groups it connects is zero. -/
 theorem cellularChainComplex_d_eq_zero (j k : ℕ) : (K).d j k = 0 := by
   by_cases hjk : j = k + 1
   · subst hjk
+    refine cellularChainComplex_d_eq_zero_of_isEmpty_cell _ R k ?_
     rcases Nat.even_or_odd k with hk | hk
-    · exact (isZero_X_of_odd R (n := n) hk.add_one).eq_of_src _ _
-    · exact (isZero_X_of_odd R (n := n) hk).eq_of_tgt _ _
+    · exact .inr (isEmpty_cell_of_odd hk.add_one)
+    · exact .inl (isEmpty_cell_of_odd hk)
   · exact (K).shape j k fun h ↦ hjk h.symm
 
 /-- The cellular homology of `CPⁿ` in each degree is the cellular chain group, since all the
