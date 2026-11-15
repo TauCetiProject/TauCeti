@@ -24,7 +24,10 @@ An `n + 1`-simplex of the nerve lies in the image of the `i`-th degeneracy exact
 
 Prepending an arrow `b` to a string commutes with deleting any vertex but the first two, and
 deleting the second vertex composes `b` with the first arrow of the string
-(`CategoryTheory.nerve.δ_succ_precomp`).
+(`CategoryTheory.nerve.δ_succ_precomp`). Dually, appending a terminal object with
+`CategoryTheory.ComposableArrows.snocTerminal` is retracted by the final face
+(`CategoryTheory.nerve.δ_last_snocTerminal`) and commutes with all earlier faces
+(`CategoryTheory.nerve.δ_castSucc_snocTerminal`).
 
 A `3`-simplex of the nerve is a sequence of three composable morphisms `ComposableArrows.mk₃ f g h`.
 Its faces are the `2`-simplices obtained by dropping a vertex, whose arrows are composites of
@@ -38,6 +41,8 @@ consecutive arrows among `f`, `g` and `h`. This extends Mathlib's description of
 * `CategoryTheory.nerve.mem_range_σ_iff`: the image of the `i`-th degeneracy consists of the
   strings whose `i`-th arrow is an identity.
 * `CategoryTheory.nerve.δ_succ_precomp`: the faces of a string with a prepended arrow.
+* `CategoryTheory.nerve.δ_last_snocTerminal`, `CategoryTheory.nerve.δ_castSucc_snocTerminal`: the
+  faces of a string with an appended terminal object.
 * `CategoryTheory.nerve.δ₀_mk₃_eq`, …, `CategoryTheory.nerve.δ₃_mk₃_eq`: the faces of the
   `3`-simplex of the nerve given by three composable morphisms.
 -/
@@ -144,6 +149,60 @@ theorem δ_succ_precomp {n : ℕ} (j : Fin (n + 2)) (σ : ComposableArrows C (n 
   -- By definition of `precomp`, the first arrow of the right-hand side is the prepended one.
   rw [ComposableArrows.totalArrow_def]
   rfl
+
+/-- The `k`-th face of a simplex of the nerve reindexes its arrows along `k.succAbove`. -/
+@[simp]
+theorem totalArrow_δ {n : ℕ} (k : Fin (n + 2)) (σ : ComposableArrows C (n + 1))
+    (i j : Fin (n + 1)) (hij : i ≤ j) :
+    ((nerve C).δ k σ).totalArrow i j hij =
+      σ.totalArrow (k.succAbove i) (k.succAbove j) ((Fin.strictMono_succAbove k).monotone hij) :=
+  -- `(nerve C).δ k` whiskers `σ` by `SimplexCategory.toCat.map (SimplexCategory.δ k)`, which acts
+  -- on objects by `k.succAbove` by definition (as in Mathlib's `nerve.δ_obj`).
+  σ.totalArrow_whiskerLeft _ i j hij
+
+/-- Deleting the last vertex of `σ.snocTerminal ht` recovers `σ`. -/
+@[simp]
+theorem δ_last_snocTerminal {n : ℕ} (σ : ComposableArrows C n) {t : C} (ht : Limits.IsTerminal t) :
+    (nerve C).δ (Fin.last (n + 1)) (σ.snocTerminal ht) = σ := by
+  refine ComposableArrows.ext_of_totalArrow (n := n) fun i j hij ↦ ?_
+  rw [totalArrow_δ]
+  simp only [Fin.succAbove_last]
+  exact σ.totalArrow_snocTerminal_castSucc ht i j hij
+
+/-- Any face map other than the last commutes with `snocTerminal`. -/
+@[simp]
+theorem δ_castSucc_snocTerminal {n : ℕ} (k : Fin (n + 2)) (σ : ComposableArrows C (n + 1))
+    {t : C} (ht : Limits.IsTerminal t) :
+    (nerve C).δ k.castSucc (σ.snocTerminal ht) = ((nerve C).δ k σ).snocTerminal ht := by
+  set τ : ComposableArrows C n := (nerve C).δ k σ
+  refine ComposableArrows.ext_of_totalArrow (n := n + 1) fun i j hij ↦ ?_
+  rw [totalArrow_δ]
+  cases j using Fin.lastCases with
+  | cast j₀ =>
+    cases i using Fin.lastCases with
+    | last => exact absurd hij (not_le_of_gt (Fin.castSucc_lt_last j₀))
+    | cast i₀ =>
+      have hij₀ : i₀ ≤ j₀ := Fin.castSucc_le_castSucc_iff.mp hij
+      simp only [Fin.castSucc_succAbove_castSucc]
+      rw [σ.totalArrow_snocTerminal_castSucc ht (k.succAbove i₀) (k.succAbove j₀)
+        ((Fin.strictMono_succAbove k).monotone hij₀),
+        τ.totalArrow_snocTerminal_castSucc ht i₀ j₀ hij₀, ← totalArrow_δ]
+  | last =>
+    have hkl : k.castSucc.succAbove (Fin.last (n + 1)) = Fin.last (n + 2) :=
+      (Fin.succAbove_of_le_castSucc _ _
+        (Fin.castSucc_le_castSucc_iff.mpr (Fin.le_last k))).trans (Fin.succ_last _)
+    have hobj : (σ.snocTerminal ht).obj (k.castSucc.succAbove i) = (τ.snocTerminal ht).obj i := by
+      cases i using Fin.lastCases with
+      | last => rw [hkl, σ.snocTerminal_obj_last, τ.snocTerminal_obj_last]
+      | cast _ =>
+        rw [Fin.castSucc_succAbove_castSucc, σ.snocTerminal_obj_castSucc,
+          τ.snocTerminal_obj_castSucc, δ_obj]
+    have hr : (σ.snocTerminal ht).obj (k.castSucc.succAbove (Fin.last (n + 1))) = t := by
+      rw [hkl, σ.snocTerminal_obj_last]
+    refine (ComposableArrows.totalArrow_def _ _ _ _).trans
+      (Eq.trans ?_ (τ.totalArrow_snocTerminal_last ht i).symm)
+    refine Quiver.Total.ext hobj hr ((conj_eqToHom_iff_heq _ _ hobj hr).mp ?_)
+    rw [← cancel_mono (eqToHom hr)]; exact ht.hom_ext _ _
 
 section Faces
 

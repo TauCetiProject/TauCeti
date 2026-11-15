@@ -19,23 +19,19 @@ import TauCeti.Algebra.Homology.ShortComplex.FunctorCategory
 /-!
 # Homology of a category with coefficients in a functor
 
-Let `C` be a category and `M : C ⥤ A` a diagram in a category `A` admitting coproducts indexed by
-the simplices of `CategoryTheory.nerve C`. In degree `n`, `TauCeti.categorySimplicialObject M` is
-`∐ (σ : ComposableArrows C n), M.obj (σ.obj 0)` over strings `c₀ ⟶ c₁ ⟶ ⋯ ⟶ cₙ` in `C`, with
-summand `M(c₀)` at the initial vertex. Along `θ : ⦋m⦌ ⟶ ⦋n⦌`, the summand of `σ` maps by
-`M(c₀ ⟶ c_{θ(0)})` into the summand of `(nerve C).map θ.op σ`: `δ 0` applies `M(f₁)` and drops `c₀`,
-each `δ (j.succ)` acts as `𝟙 (M(c₀))` and composes/drops vertices, and each `σ i` acts as
-`𝟙 (M(c₀))` and inserts an identity arrow.
+For a category `C` and `M : C ⥤ A` in `A` with coproducts of size `max u v`, the simplicial object
+`TauCeti.categorySimplicialObject M` has `n`-simplices
+`∐ (σ : ComposableArrows C n), M.obj (σ.obj 0)` over strings `c₀ ⟶ ⋯ ⟶ cₙ` of
+`CategoryTheory.nerve C`; `θ : ⦋m⦌ ⟶ ⦋n⦌` maps the `σ`-summand by `M(c₀ ⟶ c_{θ(0)})` to
+`(nerve C).map θ.op σ` (`δ 0` applies `M(f₁)`, while `δ (j.succ)` and `σ i` fix `c₀`).
 
-For preadditive `A`, the alternating-face complex is `TauCeti.categoryChainComplex M`, with `n`-th
-homology `TauCeti.categoryHomology M n` when `A` has homology; both are functorial in `M` and
-covariantly functorial along `F : C ⥤ D` via pushforward from `(C, F ⋙ M)` to `(D, M)`. For abelian
-`A`, Dold–Kan normalization `TauCeti.normalizedCategoryChainComplex M` is homotopy equivalent to
-`TauCeti.categoryChainComplex M` (`TauCeti.normalizedCategoryHomologyIso`). Under
-`AB4OfSize.{max u v} A`, `TauCeti.categoryChainComplexFunctor` is exact and yields the long exact
-sequence (`TauCeti.categoryHomologyδ`). Constant coefficients `X : A` recover
-`(nerve C).chainComplex X` and `(nerve C).homology X n` (`TauCeti.categoryChainComplexConstIso`,
-`TauCeti.categoryHomologyConstIso`).
+For preadditive `A`, the alternating-face complex `TauCeti.categoryChainComplex M` has homology
+`TauCeti.categoryHomology M n` when `A` has homology, functorial in `M` and along `F : C ⥤ D` via
+pushforward. For abelian `A`, Dold–Kan normalization (`TauCeti.normalizedCategoryChainComplex M`)
+gives `TauCeti.normalizedCategoryHomologyIso`; under `AB4OfSize.{max u v} A`,
+`TauCeti.categoryChainComplexFunctor` is exact (`TauCeti.categoryHomologyδ`); constant coefficients
+recover `(nerve C).chainComplex X` and `(nerve C).homology X n` via
+`TauCeti.categoryChainComplexConstIso` and `TauCeti.categoryHomologyConstIso`.
 
 ## References
 
@@ -83,17 +79,8 @@ private def categorySimplicialObjectImpl (M : C ⥤ A) : SimplicialObject A wher
           M.map ((nerveMapFn θ₁ σ).map (homOfLE (Fin.zero_le (θ₂.unop.toOrderHom 0)))) :=
       (congrArg M.map ((congrArg σ.map (Subsingleton.elim _ _)).trans
         (σ.map_comp _ _))).trans (M.map_comp _ _)
-    refine (Limits.Sigma.ι_comp_map' _ _ σ).trans
-      ((congrArg (· ≫ _) hmap).trans ((assoc _ _ _).trans ?_))
-    refine ((Limits.Sigma.ι_comp_map'_assoc
-      (g := fun τ : ComposableArrows C Δ₁.unop.len ↦ M.obj (τ.obj 0))
-      (f := fun τ : ComposableArrows C Δ₂.unop.len ↦ M.obj (τ.obj 0))
-      (nerveMapFn θ₁) _ σ _).trans ?_).symm
-    exact congrArg (M.map (σ.map (homOfLE (Fin.zero_le (θ₁.unop.toOrderHom 0)))) ≫ ·)
-      (Limits.Sigma.ι_comp_map'
-        (g := fun τ : ComposableArrows C Δ₂.unop.len ↦ M.obj (τ.obj 0))
-        (f := fun τ : ComposableArrows C Δ₃.unop.len ↦ M.obj (τ.obj 0))
-        (nerveMapFn θ₂) _ (nerveMapFn θ₁ σ))
+    simp only [Limits.Sigma.ι_comp_map', Limits.Sigma.ι_comp_map'_assoc]
+    exact (congrArg (· ≫ _) hmap).trans (assoc _ _ _)
 
 private def categorySimplicialObjectMapImpl {M N : C ⥤ A} (α : M ⟶ N) :
     categorySimplicialObjectImpl M ⟶ categorySimplicialObjectImpl N where
@@ -265,6 +252,7 @@ instance (C : Type u) [Category.{v} C] (A : Type u') [Category.{v'} A]
 
 variable (C A) in
 /-- The functor `(C ⥤ A) ⥤ ChainComplex A ℕ` sending `M` to its category chain complex. -/
+@[expose]
 def categoryChainComplexFunctor : (C ⥤ A) ⥤ ChainComplex A ℕ :=
   categorySimplicialObjectFunctor C A ⋙ alternatingFaceMapComplex A
 
@@ -286,10 +274,21 @@ def ιCategoryChainComplex (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C n) :
     M.obj (σ.obj 0) ⟶ (categoryChainComplex M).X n :=
   ιCategorySimplicial M σ
 
+/-- `ιCategoryChainComplex` agrees with the simplicial summand inclusion `ιCategorySimplicial`. -/
+lemma ιCategoryChainComplex_eq (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C n) :
+    ιCategoryChainComplex M σ = ιCategorySimplicial M σ := (rfl)
+
 /-- Transporting the simplex index along an equality `σ₁ = σ₂` in `ιCategoryChainComplex M`. -/
 lemma ιCategoryChainComplex_congr (M : C ⥤ A) {n : ℕ} {σ₁ σ₂ : ComposableArrows C n}
-    (h : σ₁ = σ₂) (h0 : σ₁.obj 0 = σ₂.obj 0 := by subst h; rfl) :
+    (h : σ₁ = σ₂) (h0 : σ₁.obj 0 = σ₂.obj 0 := by exact congrArg (fun τ ↦ τ.obj 0) h) :
     ιCategoryChainComplex M σ₁ = eqToHom (congrArg M.obj h0) ≫ ιCategoryChainComplex M σ₂ := by
+  subst h; simp
+
+/-- Rewrite `eqToHom _ ≫ ιCategoryChainComplex M σ₁` along `h : σ₁ = σ₂`. -/
+lemma eqToHom_ιCategoryChainComplex_eq (M : C ⥤ A) {n : ℕ}
+    {σ₁ σ₂ : ComposableArrows C n} (h : σ₁ = σ₂) (h0 : σ₁.obj 0 = σ₂.obj 0 := by rfl) :
+    eqToHom (congrArg M.obj h0.symm) ≫ ιCategoryChainComplex M σ₁ =
+      ιCategoryChainComplex M σ₂ := by
   subst h; simp
 
 /-- The cofan presenting `(categoryChainComplex M).X n` as a coproduct over `n`-simplices. -/
@@ -329,12 +328,15 @@ lemma ιCategoryChainComplex_d (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C 
           ιCategoryChainComplex M ((nerve C).δ 0 σ) +
         ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j.val + 1) •
           (ιCategoryChainComplex M ((nerve C).δ j.succ σ) :
-            M.obj (σ.obj 0) ⟶ (categoryChainComplex M).X n) := by
-  unfold ιCategoryChainComplex categoryChainComplex categoryChainComplexFunctor
-  dsimp only [Functor.comp_obj]
-  rw [alternatingFaceMapComplex_obj_d, AlternatingFaceMapComplex.objD, Preadditive.comp_sum,
-    Fin.sum_univ_succ]
-  simp; rfl
+            M.obj (σ.obj 0) ⟶ (categoryChainComplex M).X n) :=
+  (congrArg (ιCategorySimplicial M σ ≫ ·) (alternatingFaceMapComplex_obj_d _ n)).trans <|
+    (Preadditive.comp_sum _ _ _).trans <| (Fin.sum_univ_succ _).trans <|
+      congrArg₂ (· + ·)
+        ((Preadditive.comp_zsmul _ _ _).trans
+          ((one_zsmul _).trans (ιCategorySimplicial_δ_zero M σ)))
+        (Finset.sum_congr rfl fun j _ ↦
+          (Preadditive.comp_zsmul _ _ _).trans
+            (congrArg ((-1 : ℤ) ^ (j.val + 1) • ·) (ιCategorySimplicial_δ_succ M j σ)))
 
 /-- Degree-`0` chain summand inclusion `M.obj X ⟶ (categoryChainComplex M).X 0` at `X : C`. -/
 abbrev ιCategoryChainComplex₀ (M : C ⥤ A) (X : C) : M.obj X ⟶ (categoryChainComplex M).X 0 :=
@@ -367,25 +369,19 @@ lemma categoryChainComplex₀_hom_ext {M : C ⥤ A} {T : A} {f g : (categoryChai
 lemma ιCategoryChainComplex₁_d (M : C ⥤ A) {X Y : C} (f : X ⟶ Y) :
     ιCategoryChainComplex₁ M f ≫ (categoryChainComplex M).d 1 0 =
       M.map f ≫ ιCategoryChainComplex₀ M Y - ιCategoryChainComplex₀ M X := by
-  have h0 : ιCategoryChainComplex M ((nerve C).δ 0 (ComposableArrows.mk₁ f)) =
-      ιCategoryChainComplex₀ M Y :=
+  have h0 : ιCategoryChainComplex M ((nerve C).δ 0 (.mk₁ f)) = ιCategoryChainComplex₀ M Y :=
     (ιCategoryChainComplex_congr M
-      (ComposableArrows.ext₀ rfl :
-        (nerve C).δ 0 (ComposableArrows.mk₁ f) = ComposableArrows.mk₀ Y) rfl).trans
-      ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (id_comp _))
-  have h1 : (ιCategoryChainComplex M ((nerve C).δ 1 (ComposableArrows.mk₁ f)) :
+      (ComposableArrows.ext₀ rfl : (nerve C).δ 0 (.mk₁ f) = .mk₀ Y) rfl).trans (id_comp _)
+  have h1 : (ιCategoryChainComplex M ((nerve C).δ 1 (.mk₁ f)) :
       M.obj X ⟶ (categoryChainComplex M).X 0) = ιCategoryChainComplex₀ M X :=
     (ιCategoryChainComplex_congr M
-      (ComposableArrows.ext₀ rfl :
-        (nerve C).δ 1 (ComposableArrows.mk₁ f) = ComposableArrows.mk₀ X) rfl).trans
-      ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (id_comp _))
-  let s : Fin 1 → (M.obj X ⟶ (categoryChainComplex M).X 0) := fun j ↦
-    (-1 : ℤ) ^ (j.val + 1) • ιCategoryChainComplex M ((nerve C).δ j.succ (ComposableArrows.mk₁ f))
-  refine (ιCategoryChainComplex_d M (ComposableArrows.mk₁ f)).trans
-    ((congrArg₂ (· + ·) (congrArg (M.map f ≫ ·) h0)
-      ((Fin.sum_univ_one s).trans (congrArg ((-1 : ℤ) ^ (1 : ℕ) • ·) h1))).trans ?_)
-  change (M.map f ≫ ιCategoryChainComplex₀ M Y) + (-1 : ℤ) • ιCategoryChainComplex₀ M X = _
-  simp [sub_eq_add_neg]
+      (ComposableArrows.ext₀ rfl : (nerve C).δ 1 (.mk₁ f) = .mk₀ X) rfl).trans (id_comp _)
+  calc ιCategoryChainComplex₁ M f ≫ (categoryChainComplex M).d 1 0
+    _ = _ := ιCategoryChainComplex_d M (.mk₁ f)
+    _ = M.map f ≫ ιCategoryChainComplex₀ M Y + -ιCategoryChainComplex₀ M X :=
+        congrArg₂ (· + ·) (by simp [h0])
+          ((Fin.sum_univ_one _).trans ((neg_one_zsmul _).trans (congrArg Neg.neg h1)))
+    _ = _ := by abel
 
 /-- On `ComposableArrows.mk₂ f g`, `d 2 1` is `M(f)` on `g`, minus `f ≫ g`, plus `f`. -/
 @[reassoc (attr := simp)]
@@ -393,28 +389,22 @@ lemma ιCategoryChainComplex₂_d (M : C ⥤ A) {X Y Z : C} (f : X ⟶ Y) (g : Y
     ιCategoryChainComplex₂ M f g ≫ (categoryChainComplex M).d 2 1 =
       M.map f ≫ ιCategoryChainComplex₁ M g -
         ιCategoryChainComplex₁ M (f ≫ g) + ιCategoryChainComplex₁ M f := by
-  have h0 : ιCategoryChainComplex M ((nerve C).δ 0 (ComposableArrows.mk₂ f g)) =
-      ιCategoryChainComplex₁ M g :=
-    (ιCategoryChainComplex_congr M (nerve.δ₀_mk₂_eq f g) rfl).trans
-      ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (id_comp _))
-  have h1 : (ιCategoryChainComplex M ((nerve C).δ 1 (ComposableArrows.mk₂ f g)) :
+  have h0 : ιCategoryChainComplex M ((nerve C).δ 0 (.mk₂ f g)) = ιCategoryChainComplex₁ M g :=
+    (ιCategoryChainComplex_congr M (nerve.δ₀_mk₂_eq f g) rfl).trans (id_comp _)
+  have h1 : (ιCategoryChainComplex M ((nerve C).δ 1 (.mk₂ f g)) :
       M.obj X ⟶ (categoryChainComplex M).X 1) = ιCategoryChainComplex₁ M (f ≫ g) :=
-    (ιCategoryChainComplex_congr M (nerve.δ₁_mk₂_eq f g) rfl).trans
-      ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (id_comp _))
-  have h2 : (ιCategoryChainComplex M ((nerve C).δ 2 (ComposableArrows.mk₂ f g)) :
+    (ιCategoryChainComplex_congr M (nerve.δ₁_mk₂_eq f g) rfl).trans (id_comp _)
+  have h2 : (ιCategoryChainComplex M ((nerve C).δ 2 (.mk₂ f g)) :
       M.obj X ⟶ (categoryChainComplex M).X 1) = ιCategoryChainComplex₁ M f :=
-    (ιCategoryChainComplex_congr M (nerve.δ₂_mk₂_eq f g) rfl).trans
-      ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (id_comp _))
-  let s : Fin 2 → (M.obj X ⟶ (categoryChainComplex M).X 1) := fun j ↦
-    (-1 : ℤ) ^ (j.val + 1) • ιCategoryChainComplex M ((nerve C).δ j.succ (ComposableArrows.mk₂ f g))
-  refine (ιCategoryChainComplex_d M (ComposableArrows.mk₂ f g)).trans
-    ((congrArg₂ (· + ·) (congrArg (M.map f ≫ ·) h0)
-      ((Fin.sum_univ_two s).trans
-        (congrArg₂ (· + ·) (congrArg ((-1 : ℤ) ^ (1 : ℕ) • ·) h1)
-          (congrArg ((-1 : ℤ) ^ (2 : ℕ) • ·) h2)))).trans ?_)
-  change (M.map f ≫ ιCategoryChainComplex₁ M g) +
-    ((-1 : ℤ) • ιCategoryChainComplex₁ M (f ≫ g) + (1 : ℤ) • ιCategoryChainComplex₁ M f) = _
-  simp [sub_eq_add_neg, add_assoc]
+    (ιCategoryChainComplex_congr M (nerve.δ₂_mk₂_eq f g) rfl).trans (id_comp _)
+  calc ιCategoryChainComplex₂ M f g ≫ (categoryChainComplex M).d 2 1
+    _ = _ := ιCategoryChainComplex_d M (.mk₂ f g)
+    _ = M.map f ≫ ιCategoryChainComplex₁ M g +
+          (-ιCategoryChainComplex₁ M (f ≫ g) + ιCategoryChainComplex₁ M f) :=
+        congrArg₂ (· + ·) (by simp [h0]) ((Fin.sum_univ_two _).trans
+          (congrArg₂ (· + ·) ((neg_one_zsmul _).trans (congrArg Neg.neg h1))
+            ((one_zsmul _).trans h2)))
+    _ = _ := by abel
 
 /-- Action of `categoryChainComplexMap α` on the summand of an `n`-simplex `σ`. -/
 @[reassoc (attr := simp)]
@@ -448,12 +438,10 @@ lemma ιCategoryChainComplex₀_pushforward_f {D : Type u₂} [Category.{v₂} D
     [HasCoproducts.{max u₂ v₂} A] (F : C ⥤ D) (M : D ⥤ A) (X : C) :
     ιCategoryChainComplex₀ (F ⋙ M) X ≫ (categoryChainComplexPushforward F M).f 0 =
       ιCategoryChainComplex₀ M (F.obj X) :=
-  (ιCategoryChainComplex_pushforward_f F M (ComposableArrows.mk₀ X)).trans
-    ((ιCategoryChainComplex_congr M
-      (ComposableArrows.ext₀ rfl :
-        (F.mapComposableArrows 0).obj (ComposableArrows.mk₀ X) =
-          ComposableArrows.mk₀ (F.obj X)) rfl).trans
-      ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (id_comp _)))
+  (ιCategoryChainComplex_pushforward_f F M (.mk₀ X)).trans <|
+    (ιCategoryChainComplex_congr M
+      (ComposableArrows.ext₀ rfl : (F.mapComposableArrows 0).obj (.mk₀ X) = .mk₀ (F.obj X))
+      rfl).trans (id_comp _)
 
 /-- Pushing forward chains along the identity functor `𝟭 C` is the identity chain map. -/
 @[simp]
@@ -632,43 +620,37 @@ variable {C : Type u} [Category.{v} C] {A : Type u'} [Category.{v'} A]
 /-- Under `AB4OfSize.{max u v} A`, `categoryChainComplexFunctor C A` preserves short exactness. -/
 theorem categoryChainComplex_shortExact {S : ShortComplex (C ⥤ A)} (hS : S.ShortExact) :
     (S.map (categoryChainComplexFunctor C A)).ShortExact := by
-  have := hS.mono_f
-  have := hS.epi_g
+  have := hS.mono_f; have := hS.epi_g
   have hmono_app (X : C) : Mono (S.f.app X) := ((evaluation C A).obj X).map_mono S.f
-  have hepi_app (X : C) : Epi (S.g.app X) := ((evaluation C A).obj X).map_epi S.g
   have hexact_n (n : ℕ) :
       (S.map (categoryChainComplexFunctor C A ⋙ HomologicalComplex.eval A _ n)).Exact := by
     let Sₙ : ShortComplex (Discrete (ComposableArrows C n) ⥤ A) :=
-      ShortComplex.mk
-        (X₁ := Discrete.functor fun σ : ComposableArrows C n ↦ S.X₁.obj (σ.obj 0))
-        (X₂ := Discrete.functor fun σ : ComposableArrows C n ↦ S.X₂.obj (σ.obj 0))
-        (X₃ := Discrete.functor fun σ : ComposableArrows C n ↦ S.X₃.obj (σ.obj 0))
+      ShortComplex.mk (X₁ := Discrete.functor fun σ ↦ S.X₁.obj (σ.obj 0))
+        (X₂ := Discrete.functor fun σ ↦ S.X₂.obj (σ.obj 0))
+        (X₃ := Discrete.functor fun σ ↦ S.X₃.obj (σ.obj 0))
         (Discrete.natTrans fun ⟨σ⟩ ↦ S.f.app (σ.obj 0))
         (Discrete.natTrans fun ⟨σ⟩ ↦ S.g.app (σ.obj 0))
         (by ext ⟨σ⟩; exact NatTrans.congr_app S.zero (σ.obj 0))
-    have hSₙ : Sₙ.Exact :=
-      (ShortComplex.exact_iff_evaluation Sₙ).2 fun ⟨σ⟩ ↦
-        ShortComplex.exact_of_iso
-          (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp [Sₙ]) (by simp [Sₙ]))
-          ((ShortComplex.exact_iff_evaluation S).1 hS.exact (σ.obj 0))
+    have hSₙ : Sₙ.Exact := (ShortComplex.exact_iff_evaluation Sₙ).2 fun ⟨σ⟩ ↦
+      ShortComplex.exact_of_iso
+        (ShortComplex.isoMk (.refl _) (.refl _) (.refl _) (by simp [Sₙ]) (by simp [Sₙ]))
+        ((ShortComplex.exact_iff_evaluation S).1 hS.exact (σ.obj 0))
     exact ShortComplex.exact_of_iso
-      (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp) (by simp))
+      (ShortComplex.isoMk (.refl _) (.refl _) (.refl _) (by simp) (by simp))
       (colim.exact_mapShortComplex hSₙ
         (isColimitCategoryChainComplexXCofan S.X₁ n) (isColimitCategoryChainComplexXCofan S.X₂ n)
         (isColimitCategoryChainComplexXCofan S.X₃ n) ((categoryChainComplexMap S.f).f n)
         ((categoryChainComplexMap S.g).f n) (fun ⟨σ⟩ ↦ ιCategoryChainComplex_map_f S.f σ)
         (fun ⟨σ⟩ ↦ ιCategoryChainComplex_map_f S.g σ))
-  have hmono_n (n : ℕ) : Mono ((categoryChainComplexMap S.f).f n) := by
-    have (σ : ComposableArrows C n) : Mono (S.f.app (σ.obj 0)) := hmono_app (σ.obj 0)
-    exact inferInstanceAs (Mono (Limits.Sigma.map fun σ : ComposableArrows C n ↦ S.f.app (σ.obj 0)))
-  have hepi_n (n : ℕ) : Epi ((categoryChainComplexMap S.g).f n) :=
-    ⟨fun _ _ h ↦ categoryChainComplex_hom_ext fun σ ↦
-      (cancel_epi (S.g.app (σ.obj 0))).1 (by simpa using ιCategoryChainComplex _ σ ≫= h)⟩
-  have hjf : JointlyFaithful (C := ChainComplex A ℕ)
-      (fun n : ℕ ↦ HomologicalComplex.eval A (ComplexShape.down ℕ) n) :=
-    ⟨fun h ↦ HomologicalComplex.hom_ext _ _ h⟩
-  exact ShortComplex.ShortExact.mk' ((hjf.jointlyReflectsIsomorphisms.exact_iff _).2 hexact_n)
-    (HomologicalComplex.mono_of_mono_f _ hmono_n) (HomologicalComplex.epi_of_epi_f _ hepi_n)
+  refine HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦
+    { exact := hexact_n n
+      mono_f := by
+        have (σ : ComposableArrows C n) : Mono (S.f.app (σ.obj 0)) := hmono_app (σ.obj 0)
+        exact inferInstanceAs (Mono (Limits.Sigma.map fun σ : ComposableArrows C n ↦
+          S.f.app (σ.obj 0)))
+      epi_g := ⟨fun _ _ h ↦ categoryChainComplex_hom_ext fun σ ↦ by
+        have : Epi (S.g.app (σ.obj 0)) := ((evaluation C A).obj (σ.obj 0)).map_epi S.g
+        exact (cancel_epi (S.g.app (σ.obj 0))).1 (by simpa using ιCategoryChainComplex _ σ ≫= h)⟩ }
 
 instance : PreservesFiniteLimits (categoryChainComplexFunctor C A) :=
   (((Functor.exact_tfae (categoryChainComplexFunctor C A)).out 1 4 rfl rfl).mp
