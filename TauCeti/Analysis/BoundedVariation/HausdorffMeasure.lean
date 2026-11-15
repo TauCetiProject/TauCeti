@@ -34,7 +34,7 @@ Consequences:
 * `TauCeti.euclideanHausdorffMeasure_reducedBoundary_inter_le_perimeter` and
   `TauCeti.euclideanHausdorffMeasure_reducedBoundary_le_perimeter`: the `(n - 1)`-dimensional
   measure of the reduced boundary is at most the perimeter, `μHE[n - 1] (∂*s ∩ U) ≤ P(s; U)` for
-  every open `U ⊆ Ω`; in particular `μHE[n - 1] (∂*s) ≤ P(s; Ω)`.
+  every open `U`; in particular `μHE[n - 1] (∂*s) ≤ P(s; Ω)`.
 * `TauCeti.euclideanHausdorffMeasure_reducedBoundary_inter_lt_top`: the reduced boundary has
   locally finite `μHE[n - 1]` measure in `Ω`, `μHE[n - 1] (∂*s ∩ K) < ∞` for every compact
   `K ⊆ Ω`, which is the finiteness hypothesis of the density theorem for countably rectifiable
@@ -96,16 +96,16 @@ theorem euclideanHausdorffMeasure_restrict_reducedBoundary_le_map_variationMeasu
     (measure_mono (preimage_mono inter_subset_left))
 
 /-- **The measure of the reduced boundary is at most the perimeter**, localized. Let `E` have
-dimension `n ≥ 2`, with Lebesgue measure. For every open `U ⊆ Ω`, the part of the reduced boundary
+dimension `n ≥ 2`, with Lebesgue measure. For every open `U`, the part of the reduced boundary
 of `s` in `Ω` lying in `U` satisfies `μHE[n - 1] (∂*s ∩ U) ≤ P(s; U)`. -/
-theorem euclideanHausdorffMeasure_reducedBoundary_inter_le_perimeter (hn : 2 ≤ finrank ℝ E)
-    (hU : U ≤ Ω) :
+theorem euclideanHausdorffMeasure_reducedBoundary_inter_le_perimeter (hn : 2 ≤ finrank ℝ E) :
     μHE[finrank ℝ E - 1] (reducedBoundary volume Ω s ∩ U) ≤ perimeter volume U s := by
   by_cases h : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω volume ∧ ∀ K, IsCompact K →
       K ⊆ Ω → ∃ V : Opens E, K ⊆ (V : Set E) ∧ totalVariationOn volume V (s.indicator 1) ≠ ∞
-  · rw [perimeter_def, ← variationMeasure_preimage_coe h.1 h.2 hU]
+  · refine le_trans ?_ (perimeter_mono (inf_le_left : U ⊓ Ω ≤ U))
+    rw [perimeter_def, ← variationMeasure_preimage_coe h.1 h.2 inf_le_right]
     exact (euclideanHausdorffMeasure_le_variationMeasure_preimage hn inter_subset_left).trans
-      (measure_mono (preimage_mono inter_subset_right))
+      (measure_mono (preimage_mono fun x hx => ⟨hx.2, reducedBoundary_subset hx.1⟩))
   · simp [reducedBoundary_eq_empty_of_not h]
 
 /-- **The measure of the reduced boundary is at most the perimeter.** Let `E` have dimension
@@ -114,7 +114,7 @@ theorem euclideanHausdorffMeasure_reducedBoundary_inter_le_perimeter (hn : 2 ≤
 theorem euclideanHausdorffMeasure_reducedBoundary_le_perimeter (hn : 2 ≤ finrank ℝ E) :
     μHE[finrank ℝ E - 1] (reducedBoundary volume Ω s) ≤ perimeter volume Ω s := by
   simpa only [inter_eq_left.2 reducedBoundary_subset] using
-    euclideanHausdorffMeasure_reducedBoundary_inter_le_perimeter (s := s) hn le_rfl
+    euclideanHausdorffMeasure_reducedBoundary_inter_le_perimeter (Ω := Ω) (U := Ω) (s := s) hn
 
 /-- **The reduced boundary has locally finite Hausdorff measure.** Let `E` have dimension `n ≥ 2`,
 with Lebesgue measure. For every compact `K ⊆ Ω`, the part of the reduced boundary of `s` in `Ω`
