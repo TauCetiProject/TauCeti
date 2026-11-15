@@ -56,12 +56,13 @@ compactness or separation assumptions):
   `FiniteRankBundleCore.exteriorPowerTopWhitneySumIso` and
   `FiniteRankBundleCore.detWhitneySumIso`: the rank-bounded Künneth isomorphism
   `⋀^n (A ⊕ D) ≅ ⋀^p A ⊗ ⋀^q D` when `A.rank ≤ p`, `D.rank ≤ q`, `p + q = n`, and its top-degree
-  and determinant-line specializations `det (A ⊕ D) ≅ det A ⊗ det D`, together with strict
-  pullback compatibility;
+  and determinant-line specializations `det (A ⊕ D) ≅ det A ⊗ det D`, together with pullback
+  compatibility (strict on exterior powers, and via `pullback_det` on determinant lines);
 * `FiniteRankBundleCore.exteriorPowerTwoWhitneySumIso` and
   `FiniteRankBundleCore.exteriorPowerTwoWhitneySumOfRankLeOneIso`: the concrete degree-two
   Whitney-sum decomposition `⋀^2 (A ⊕ D) ≅ ⋀^2 A ⊕ ((A ⊗ D) ⊕ ⋀^2 D)` and its specialization
-  `⋀^2 (A ⊕ D) ≅ A ⊗ D` when `A` and `D` have rank at most `1` (in particular for line bundles).
+  `⋀^2 (A ⊕ D) ≅ A ⊗ D` when `A` and `D` have rank at most `1` (in particular for line bundles),
+  together with strict pullback compatibility.
 
 These are the bundle operations and sum laws whose classes form `λ_t(E) = Σ [⋀^j E] tʲ` in
 topological K-theory.
@@ -480,7 +481,7 @@ theorem exteriorPower_map_whitneyMap_exteriorPowerWhitneySumIso_hom
 
 /-! ### Rank-bounded collapse, top degree, and determinant of a Whitney sum -/
 
-/-- When `A.rank ≤ p`, `D.rank ≤ q` and `p + q = n`, the Künneth inclusion is right inverse to
+/-- When `A.rank ≤ p`, `D.rank ≤ q` and `p + q = n`, the Künneth inclusion is left inverse to
 the Künneth projection in bidegree `(p, q)`. -/
 @[reassoc]
 theorem exteriorPowerWhitneyProj_incl_of_rank_le
@@ -492,7 +493,7 @@ theorem exteriorPowerWhitneyProj_incl_of_rank_le
       fiberMap_id]
     exact TauCeti.exteriorPower.piProdInclL_comp_piProdProjL_of_le hA hD h
 
-/-- In the top degree `A.rank + D.rank`, the Künneth inclusion is right inverse to the Künneth
+/-- In the top degree `A.rank + D.rank`, the Künneth inclusion is left inverse to the Künneth
 projection in bidegree `(A.rank, D.rank)`. -/
 @[reassoc (attr := simp)]
 theorem exteriorPowerWhitneyProj_incl_top (A D : FiniteRankBundleCore 𝕜 B) :
@@ -777,7 +778,6 @@ noncomputable def exteriorPowerTwoWhitneySumIso (A D : FiniteRankBundleCore 𝕜
   hom_inv_id := exteriorPowerTwo_hom_inv_id A D
   inv_hom_id := exteriorPowerTwo_inv_hom_id A D
 
-@[simp]
 theorem exteriorPowerTwoWhitneySumIso_hom (A D : FiniteRankBundleCore 𝕜 B) :
     (exteriorPowerTwoWhitneySumIso A D).hom =
       whitneyLift
@@ -789,7 +789,6 @@ theorem exteriorPowerTwoWhitneySumIso_hom (A D : FiniteRankBundleCore 𝕜 B) :
             (exteriorPowerLeftZeroTensorIso A ((exteriorPower 𝕜 B 2).obj D)).hom)) :=
   (rfl)
 
-@[simp]
 theorem exteriorPowerTwoWhitneySumIso_inv (A D : FiniteRankBundleCore 𝕜 B) :
     (exteriorPowerTwoWhitneySumIso A D).inv =
       whitneyDesc
@@ -800,6 +799,46 @@ theorem exteriorPowerTwoWhitneySumIso_inv (A D : FiniteRankBundleCore 𝕜 B) :
           ((exteriorPowerLeftZeroTensorIso A ((exteriorPower 𝕜 B 2).obj D)).inv ≫
             exteriorPowerWhitneyIncl A D 0 2 2 rfl)) :=
   (rfl)
+
+@[reassoc (attr := simp)]
+theorem exteriorPowerTwoWhitneySumIso_hom_whitneyFst (A D : FiniteRankBundleCore 𝕜 B) :
+    (exteriorPowerTwoWhitneySumIso A D).hom ≫
+        whitneyFst ((exteriorPower 𝕜 B 2).obj A)
+          (whitneySum (A ⊗ D) ((exteriorPower 𝕜 B 2).obj D)) =
+      exteriorPowerWhitneyProj A D 2 0 2 ≫
+        (exteriorPowerRightZeroTensorIso ((exteriorPower 𝕜 B 2).obj A) D).hom :=
+  whitneyLift_fst _ _
+
+@[reassoc (attr := simp)]
+theorem exteriorPowerTwoWhitneySumIso_hom_whitneySnd (A D : FiniteRankBundleCore 𝕜 B) :
+    (exteriorPowerTwoWhitneySumIso A D).hom ≫
+        whitneySnd ((exteriorPower 𝕜 B 2).obj A)
+          (whitneySum (A ⊗ D) ((exteriorPower 𝕜 B 2).obj D)) =
+      whitneyLift
+        (exteriorPowerWhitneyProj A D 1 1 2 ≫ (exteriorPowerOneOneTensorIso A D).hom)
+        (exteriorPowerWhitneyProj A D 0 2 2 ≫
+          (exteriorPowerLeftZeroTensorIso A ((exteriorPower 𝕜 B 2).obj D)).hom) :=
+  whitneyLift_snd _ _
+
+@[reassoc (attr := simp)]
+theorem whitneyInl_exteriorPowerTwoWhitneySumIso_inv (A D : FiniteRankBundleCore 𝕜 B) :
+    whitneyInl ((exteriorPower 𝕜 B 2).obj A)
+        (whitneySum (A ⊗ D) ((exteriorPower 𝕜 B 2).obj D)) ≫
+        (exteriorPowerTwoWhitneySumIso A D).inv =
+      (exteriorPowerRightZeroTensorIso ((exteriorPower 𝕜 B 2).obj A) D).inv ≫
+        exteriorPowerWhitneyIncl A D 2 0 2 rfl :=
+  whitneyInl_desc _ _
+
+@[reassoc (attr := simp)]
+theorem whitneyInr_exteriorPowerTwoWhitneySumIso_inv (A D : FiniteRankBundleCore 𝕜 B) :
+    whitneyInr ((exteriorPower 𝕜 B 2).obj A)
+        (whitneySum (A ⊗ D) ((exteriorPower 𝕜 B 2).obj D)) ≫
+        (exteriorPowerTwoWhitneySumIso A D).inv =
+      whitneyDesc
+        ((exteriorPowerOneOneTensorIso A D).inv ≫ exteriorPowerWhitneyIncl A D 1 1 2 rfl)
+        ((exteriorPowerLeftZeroTensorIso A ((exteriorPower 𝕜 B 2).obj D)).inv ≫
+          exteriorPowerWhitneyIncl A D 0 2 2 rfl) :=
+  whitneyInr_desc _ _
 
 /-- Naturality of `exteriorPowerTwoWhitneySumIso` with respect to bundle morphisms on `A` and
 `D`. -/
@@ -828,14 +867,12 @@ noncomputable def exteriorPowerTwoWhitneySumOfRankLeOneIso
     (exteriorPower 𝕜 B 2).obj (whitneySum A D) ≅ A ⊗ D :=
   exteriorPowerWhitneySumOfRankLeIso hA hD rfl ≪≫ exteriorPowerOneOneTensorIso A D
 
-@[simp]
 theorem exteriorPowerTwoWhitneySumOfRankLeOneIso_hom
     {A D : FiniteRankBundleCore 𝕜 B} (hA : A.rank ≤ 1) (hD : D.rank ≤ 1) :
     (exteriorPowerTwoWhitneySumOfRankLeOneIso hA hD).hom =
       exteriorPowerWhitneyProj A D 1 1 2 ≫ (exteriorPowerOneOneTensorIso A D).hom :=
   (rfl)
 
-@[simp]
 theorem exteriorPowerTwoWhitneySumOfRankLeOneIso_inv
     {A D : FiniteRankBundleCore 𝕜 B} (hA : A.rank ≤ 1) (hD : D.rank ≤ 1) :
     (exteriorPowerTwoWhitneySumOfRankLeOneIso hA hD).inv =
@@ -909,6 +946,148 @@ theorem pullbackFunctor_mapIso_exteriorPowerTopWhitneySumIso
     (pullbackFunctor φ).mapIso (exteriorPowerTopWhitneySumIso A D) =
       exteriorPowerTopWhitneySumIso (A.pullback φ) (D.pullback φ) :=
   pullbackFunctor_mapIso_exteriorPowerWhitneySumOfRankLeIso le_rfl le_rfl rfl φ
+
+private theorem fiberMap_exteriorPowerRightZeroTensorIso_hom
+    (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
+    (exteriorPowerRightZeroTensorIso A D).hom.fiberMap x =
+      (ContinuousLinearEquiv.kroneckerRid 𝕜 A.rank).toContinuousLinearMap.comp
+        ((ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜)).kronecker
+          (exteriorPower.piZeroContinuousEquiv 𝕜 D.rank :
+            (Fin (D.rank.choose 0) → 𝕜) →L[𝕜] (Fin 1 → 𝕜))) :=
+  (fiberMap_comp _ _ x).trans <|
+    congrArg₂ ContinuousLinearMap.comp (fiberMap_rightUnitor_hom A x)
+      ((fiberMap_whiskerLeft A _ x).trans (congrArg _ (fiberMap_exteriorPowerZeroIso_hom D x)))
+
+private theorem fiberMap_exteriorPowerLeftZeroTensorIso_hom
+    (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
+    (exteriorPowerLeftZeroTensorIso A D).hom.fiberMap x =
+      (ContinuousLinearEquiv.kroneckerLid 𝕜 D.rank).toContinuousLinearMap.comp
+        ((exteriorPower.piZeroContinuousEquiv 𝕜 A.rank :
+            (Fin (A.rank.choose 0) → 𝕜) →L[𝕜] (Fin 1 → 𝕜)).kronecker
+          (ContinuousLinearMap.id 𝕜 (Fin D.rank → 𝕜))) :=
+  (fiberMap_comp _ _ x).trans <|
+    congrArg₂ ContinuousLinearMap.comp (fiberMap_leftUnitor_hom D x)
+      ((fiberMap_whiskerRight _ D x).trans
+        (congrArg (ContinuousLinearMap.kronecker · (ContinuousLinearMap.id 𝕜 (Fin D.rank → 𝕜)))
+          (fiberMap_exteriorPowerZeroIso_hom A x)))
+
+private theorem fiberMap_exteriorPowerOneOneTensorIso_hom
+    (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
+    (exteriorPowerOneOneTensorIso A D).hom.fiberMap x =
+      (exteriorPower.piOneContinuousEquiv 𝕜 A.rank :
+          (Fin (A.rank.choose 1) → 𝕜) →L[𝕜] (Fin A.rank → 𝕜)).kronecker
+        (exteriorPower.piOneContinuousEquiv 𝕜 D.rank :
+          (Fin (D.rank.choose 1) → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) :=
+  (fiberMap_tensorHom_monoidal _ _ x).trans <|
+    congrArg₂ ContinuousLinearMap.kronecker
+      (fiberMap_exteriorPowerOneIso_hom A x) (fiberMap_exteriorPowerOneIso_hom D x)
+
+private theorem fiberMap_exteriorPowerTwoWhitneySumIso_hom
+    (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
+    (exteriorPowerTwoWhitneySumIso A D).hom.fiberMap x =
+      (splitCoords (𝕜 := 𝕜)
+          (A.rank.choose 2) (A.rank * D.rank + D.rank.choose 2)).symm.toContinuousLinearMap.comp
+        ((((ContinuousLinearEquiv.kroneckerRid 𝕜 (A.rank.choose 2)).toContinuousLinearMap.comp
+              ((ContinuousLinearMap.id 𝕜 (Fin (A.rank.choose 2) → 𝕜)).kronecker
+                (exteriorPower.piZeroContinuousEquiv 𝕜 D.rank :
+                  (Fin (D.rank.choose 0) → 𝕜) →L[𝕜] (Fin 1 → 𝕜)))).comp
+            (TauCeti.exteriorPower.piProdProjL 𝕜 A.rank D.rank 2 0 2)).prod
+          ((splitCoords (𝕜 := 𝕜)
+              (A.rank * D.rank) (D.rank.choose 2)).symm.toContinuousLinearMap.comp
+            ((((exteriorPower.piOneContinuousEquiv 𝕜 A.rank :
+                    (Fin (A.rank.choose 1) → 𝕜) →L[𝕜] (Fin A.rank → 𝕜)).kronecker
+                  (exteriorPower.piOneContinuousEquiv 𝕜 D.rank :
+                    (Fin (D.rank.choose 1) → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))).comp
+                (TauCeti.exteriorPower.piProdProjL 𝕜 A.rank D.rank 1 1 2)).prod
+              (((ContinuousLinearEquiv.kroneckerLid 𝕜 (D.rank.choose 2)).toContinuousLinearMap.comp
+                  ((exteriorPower.piZeroContinuousEquiv 𝕜 A.rank :
+                      (Fin (A.rank.choose 0) → 𝕜) →L[𝕜] (Fin 1 → 𝕜)).kronecker
+                    (ContinuousLinearMap.id 𝕜 (Fin (D.rank.choose 2) → 𝕜)))).comp
+                (TauCeti.exteriorPower.piProdProjL 𝕜 A.rank D.rank 0 2 2))))) :=
+  (fiberMap_whitneyLift _ _ x).trans <|
+    congrArg _ <| congrArg₂ ContinuousLinearMap.prod
+      ((fiberMap_comp _ _ x).trans <|
+        congrArg₂ ContinuousLinearMap.comp
+          (fiberMap_exteriorPowerRightZeroTensorIso_hom _ D x)
+          (fiberMap_exteriorPowerWhitneyProj A D 2 0 2 x))
+      ((fiberMap_whitneyLift _ _ x).trans <|
+        congrArg _ <| congrArg₂ ContinuousLinearMap.prod
+          ((fiberMap_comp _ _ x).trans <|
+            congrArg₂ ContinuousLinearMap.comp
+              (fiberMap_exteriorPowerOneOneTensorIso_hom A D x)
+              (fiberMap_exteriorPowerWhitneyProj A D 1 1 2 x))
+          ((fiberMap_comp _ _ x).trans <|
+            congrArg₂ ContinuousLinearMap.comp
+              (fiberMap_exteriorPowerLeftZeroTensorIso_hom A _ x)
+              (fiberMap_exteriorPowerWhitneyProj A D 0 2 2 x)))
+
+private theorem tensorIso_eqToIso {C : Type*} [Category* C] [MonoidalCategory C]
+    {X₁ X₂ Y₁ Y₂ : C} (hX : X₁ = X₂) (hY : Y₁ = Y₂) :
+    eqToIso hX ⊗ᵢ eqToIso hY = eqToIso congr($hX ⊗ $hY) := by
+  subst hX hY
+  ext
+  simp
+
+private theorem eqToIso_conj_trans {C : Type*} [Category* C] {W X Y Z V U : C}
+    (h₁ : W = X) (h₂ : X = Y) (e : Y ≅ Z) (h₃ : Z = V) (h₄ : V = U) :
+    eqToIso (h₁.trans h₂) ≪≫ e ≪≫ eqToIso (h₃.trans h₄) =
+      eqToIso h₁ ≪≫ (eqToIso h₂ ≪≫ e ≪≫ eqToIso h₃) ≪≫ eqToIso h₄ := by
+  subst h₁ h₂ h₃ h₄
+  simp
+
+/-- Pulling back `detWhitneySumIso` identifies with `detWhitneySumIso` of the pullbacks across
+`pullback_det`. -/
+theorem pullbackFunctor_mapIso_detWhitneySumIso
+    (A D : FiniteRankBundleCore 𝕜 Y) (φ : C(X, Y)) :
+    (pullbackFunctor φ).mapIso (detWhitneySumIso A D) =
+      eqToIso (pullback_det (whitneySum A D) φ) ≪≫
+        detWhitneySumIso (A.pullback φ) (D.pullback φ) ≪≫
+        (eqToIso (pullback_det A φ).symm ⊗ᵢ eqToIso (pullback_det D φ).symm) :=
+  ((Functor.mapIso_trans (pullbackFunctor φ) (eqToIso (det_whitneySum A D)) _).trans
+    (congrArg₂ Iso.trans (eqToIso_map (pullbackFunctor φ) (det_whitneySum A D))
+      ((Functor.mapIso_trans (pullbackFunctor φ) (exteriorPowerTopWhitneySumIso A D) _).trans
+        (congrArg₂ Iso.trans (pullbackFunctor_mapIso_exteriorPowerTopWhitneySumIso A D φ)
+          ((congrArg (pullbackFunctor φ).mapIso
+              (tensorIso_eqToIso (det_def A).symm (det_def D).symm)).trans
+            (eqToIso_map (pullbackFunctor φ) _)))))).trans <|
+    (eqToIso_conj_trans (pullback_det (whitneySum A D) φ)
+      (det_whitneySum (A.pullback φ) (D.pullback φ))
+      (exteriorPowerTopWhitneySumIso (A.pullback φ) (D.pullback φ))
+      congr($((det_def (A.pullback φ)).symm) ⊗ $((det_def (D.pullback φ)).symm))
+      congr($((pullback_det A φ).symm) ⊗ $((pullback_det D φ).symm))).trans <|
+      congrArg (_ ≪≫ ·) <| congrArg₂ Iso.trans
+        (congrArg (_ ≪≫ ·) <| congrArg (_ ≪≫ ·)
+          (tensorIso_eqToIso (det_def (A.pullback φ)).symm (det_def (D.pullback φ)).symm).symm)
+        (tensorIso_eqToIso (pullback_det A φ).symm (pullback_det D φ).symm).symm
+
+/-- Pulling back commutes strictly with `exteriorPowerTwoWhitneySumIso`. -/
+@[simp]
+theorem pullbackFunctor_mapIso_exteriorPowerTwoWhitneySumIso
+    (A D : FiniteRankBundleCore 𝕜 Y) (φ : C(X, Y)) :
+    (pullbackFunctor φ).mapIso (exteriorPowerTwoWhitneySumIso A D) =
+      exteriorPowerTwoWhitneySumIso (A.pullback φ) (D.pullback φ) :=
+  Iso.ext <| hom_ext fun x ↦
+    (fiberMap_pullbackMap _ φ x).trans
+      ((fiberMap_exteriorPowerTwoWhitneySumIso_hom A D (φ x)).trans
+        (fiberMap_exteriorPowerTwoWhitneySumIso_hom (A.pullback φ) (D.pullback φ) x).symm)
+
+/-- Pulling back commutes strictly with `exteriorPowerTwoWhitneySumOfRankLeOneIso`. -/
+@[simp]
+theorem pullbackFunctor_mapIso_exteriorPowerTwoWhitneySumOfRankLeOneIso
+    {A D : FiniteRankBundleCore 𝕜 Y} (hA : A.rank ≤ 1) (hD : D.rank ≤ 1) (φ : C(X, Y)) :
+    (pullbackFunctor φ).mapIso (exteriorPowerTwoWhitneySumOfRankLeOneIso hA hD) =
+      exteriorPowerTwoWhitneySumOfRankLeOneIso
+        ((rank_pullback A φ).le.trans hA) ((rank_pullback D φ).le.trans hD) :=
+  Iso.ext <| hom_ext fun x ↦
+    (fiberMap_pullbackMap _ φ x).trans <|
+      ((fiberMap_comp _ _ (φ x)).trans
+        (congrArg₂ ContinuousLinearMap.comp
+          (fiberMap_exteriorPowerOneOneTensorIso_hom A D (φ x))
+          (fiberMap_exteriorPowerWhitneyProj A D 1 1 2 (φ x)))).trans
+      ((fiberMap_comp _ _ x).trans
+        (congrArg₂ ContinuousLinearMap.comp
+          (fiberMap_exteriorPowerOneOneTensorIso_hom (A.pullback φ) (D.pullback φ) x)
+          (fiberMap_exteriorPowerWhitneyProj (A.pullback φ) (D.pullback φ) 1 1 2 x))).symm
 
 end Pullback
 

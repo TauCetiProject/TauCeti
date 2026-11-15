@@ -302,16 +302,31 @@ theorem piProdProj_comp_piProdIncl_of_ne {a d p' q' p q n : ℕ} (h : p + q = n)
       LinearEquiv.symm_apply_apply, LinearEquiv.apply_symm_apply,
       prodProj_wedgeTensor_of_ne h hne, map_zero, LinearMap.zero_apply]
 
+/-- Pointwise form of `piProdProj_comp_piProdIncl_of_ne`. -/
+theorem piProdProj_piProdIncl_of_ne {a d p' q' p q n : ℕ} (h : p + q = n)
+    (hne : p ≠ p' ∨ q ≠ q') (v : Fin (a.choose p * d.choose q) → R) :
+    piProdProj R a d p' q' n (piProdIncl R a d p q n h v) = 0 :=
+  DFunLike.congr_fun (piProdProj_comp_piProdIncl_of_ne h hne) v
+
+/-- Every coordinate vector in `Fin ((a + d).choose n) → R` is the sum of its bidegree-`(i, n - i)`
+coordinate Künneth components. -/
+@[simp]
+theorem sum_piProdIncl_piProdProj (a d n : ℕ) (v : Fin ((a + d).choose n) → R) :
+    ∑ i : Fin (n + 1),
+      piProdIncl R a d i (n - i) n (by omega) (piProdProj R a d i (n - i) n v) = v := by
+  simp only [piProdIncl, piProdProj, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    LinearEquiv.symm_apply_apply]
+  rw [← map_sum, ← map_sum, sum_wedgeTensor_prodProj, LinearEquiv.symm_apply_apply,
+    LinearEquiv.apply_symm_apply]
+
 /-- The coordinate Künneth projections and inclusions resolve the identity of
 `Fin ((a + d).choose n) → R`. -/
 theorem sum_piProdIncl_comp_piProdProj (a d n : ℕ) :
     ∑ i : Fin (n + 1),
-      piProdIncl R a d i (n - i) n (by omega) ∘ₗ piProdProj R a d i (n - i) n = LinearMap.id := by
-  refine LinearMap.ext fun v ↦ ?_
-  simp only [LinearMap.sum_apply, piProdIncl, piProdProj, LinearMap.comp_apply,
-    LinearEquiv.coe_toLinearMap, LinearEquiv.symm_apply_apply, LinearMap.id_apply]
-  rw [← map_sum, ← map_sum, sum_wedgeTensor_prodProj, LinearEquiv.symm_apply_apply,
-    LinearEquiv.apply_symm_apply]
+      piProdIncl R a d i (n - i) n (by omega) ∘ₗ piProdProj R a d i (n - i) n = LinearMap.id :=
+  LinearMap.ext fun v ↦ by
+    simp only [LinearMap.sum_apply, LinearMap.comp_apply, LinearMap.id_apply]
+    exact sum_piProdIncl_piProdProj a d n v
 
 /-- `piProdProj` vanishes outside total degree `n`. -/
 theorem piProdProj_eq_zero_of_add_ne {a d p q n : ℕ} (h : p + q ≠ n) :
@@ -320,16 +335,14 @@ theorem piProdProj_eq_zero_of_add_ne {a d p q n : ℕ} (h : p + q ≠ n) :
 
 /-- When `a ≤ p`, `d ≤ q` and `p + q = n`, `piProdIncl` is left inverse to `piProdProj` in
 bidegree `(p, q)`. -/
-theorem piProdIncl_comp_piProdProj_of_le {a d p q n : ℕ} (ha : a ≤ p) (hd : d ≤ q)
-    (h : p + q = n) :
-    piProdIncl R a d p q n h ∘ₗ piProdProj R a d p q n = LinearMap.id := by
-  refine LinearMap.ext fun v ↦ ?_
-  have hv := DFunLike.congr_fun (sum_piProdIncl_comp_piProdProj (R := R) a d n) v
-  simp only [LinearMap.sum_apply, LinearMap.id_apply] at hv
+theorem piProdIncl_piProdProj_of_le {a d p q n : ℕ} (ha : a ≤ p) (hd : d ≤ q)
+    (h : p + q = n) (v : Fin ((a + d).choose n) → R) :
+    piProdIncl R a d p q n h (piProdProj R a d p q n v) = v := by
+  have hv := sum_piProdIncl_piProdProj a d n v
   rw [Finset.sum_eq_single ⟨p, by omega⟩] at hv
   · have hcast : ∀ (q' : ℕ) (_ : q' = q) (h' : p + q' = n),
-        (piProdIncl R a d p q' n h' ∘ₗ piProdProj R a d p q' n) v =
-          (piProdIncl R a d p q n h ∘ₗ piProdProj R a d p q n) v := by
+        piProdIncl R a d p q' n h' (piProdProj R a d p q' n v) =
+          piProdIncl R a d p q n h (piProdProj R a d p q n v) := by
       rintro _ rfl _
       rfl
     exact (hcast (n - p) (by omega) (by omega)).symm.trans hv
@@ -342,15 +355,26 @@ theorem piProdIncl_comp_piProdProj_of_le {a d p q n : ℕ} (ha : a ≤ p) (hd : 
     have hsub : Subsingleton (Fin (a.choose i * d.choose (n - i)) → R) := by
       rw [hzero]
       infer_instance
-    simp only [LinearMap.comp_apply]
     rw [Subsingleton.elim (piProdProj R a d i (n - i) n v) 0, map_zero]
   · simp
+
+/-- Operator form of `piProdIncl_piProdProj_of_le`. -/
+theorem piProdIncl_comp_piProdProj_of_le {a d p q n : ℕ} (ha : a ≤ p) (hd : d ≤ q)
+    (h : p + q = n) :
+    piProdIncl R a d p q n h ∘ₗ piProdProj R a d p q n = LinearMap.id :=
+  LinearMap.ext fun v ↦ piProdIncl_piProdProj_of_le ha hd h v
 
 /-- In the top degree `a + d`, `piProdIncl` is left inverse to `piProdProj` in bidegree `(a, d)`. -/
 @[simp]
 theorem piProdIncl_comp_piProdProj_top (a d : ℕ) :
     piProdIncl R a d a d (a + d) rfl ∘ₗ piProdProj R a d a d (a + d) = LinearMap.id :=
   piProdIncl_comp_piProdProj_of_le le_rfl le_rfl rfl
+
+/-- Pointwise form of `piProdIncl_comp_piProdProj_top`. -/
+@[simp]
+theorem piProdIncl_piProdProj_top (a d : ℕ) (v : Fin ((a + d).choose (a + d)) → R) :
+    piProdIncl R a d a d (a + d) rfl (piProdProj R a d a d (a + d) v) = v :=
+  DFunLike.congr_fun (piProdIncl_comp_piProdProj_top a d) v
 
 /-- `piProdIncl` intertwines the tensor product of compound matrices with the compound matrix of a
 block-diagonal map on concatenated coordinates. -/

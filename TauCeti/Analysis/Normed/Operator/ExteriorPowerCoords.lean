@@ -246,20 +246,6 @@ theorem piProdInclL_comp_piProdProjL_top (a d : ℕ) :
       ContinuousLinearMap.id 𝕜 (Fin ((a + d).choose (a + d)) → 𝕜) :=
   piProdInclL_comp_piProdProjL_of_le le_rfl le_rfl rfl
 
-private theorem toLinearMap_splitCoords_blockDiag {a a' d d' : ℕ}
-    (f : (Fin a → 𝕜) →L[𝕜] (Fin a' → 𝕜)) (g : (Fin d → 𝕜) →L[𝕜] (Fin d' → 𝕜)) :
-    (((splitCoords (𝕜 := 𝕜) a' d').symm.toContinuousLinearMap.comp
-      ((f.prodMap g).comp (splitCoords (𝕜 := 𝕜) a d).toContinuousLinearMap)) :
-        (Fin (a + d) → 𝕜) →ₗ[𝕜] (Fin (a' + d') → 𝕜)) =
-      (LinearEquiv.piFinAppend 𝕜 𝕜 a' d').symm.toLinearMap ∘ₗ
-        (f : (Fin a → 𝕜) →ₗ[𝕜] (Fin a' → 𝕜)).prodMap (g : (Fin d → 𝕜) →ₗ[𝕜] (Fin d' → 𝕜)) ∘ₗ
-        (LinearEquiv.piFinAppend 𝕜 𝕜 a d).toLinearMap := by
-  refine LinearMap.ext fun v ↦ ?_
-  simp only [ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.coe_prodMap,
-    LinearMap.comp_apply, ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_coe,
-    LinearEquiv.coe_toLinearMap, splitCoords_apply, splitCoords_symm_apply,
-    LinearEquiv.piFinAppend_apply, LinearEquiv.piFinAppend_symm_apply, LinearMap.prodMap_apply]
-
 /-- `piProdInclL` intertwines the Kronecker product of compound matrices with the compound matrix
 of a block-diagonal operator formed with `splitCoords`. -/
 theorem exteriorPowerCoords_splitCoords_comp_piProdInclL {a a' d d' : ℕ}
@@ -271,9 +257,10 @@ theorem exteriorPowerCoords_splitCoords_comp_piProdInclL {a a' d d' : ℕ}
       (piProdInclL 𝕜 a' d' p q n h).comp
         ((f.exteriorPowerCoords p).kronecker (g.exteriorPowerCoords q)) := by
   apply ContinuousLinearMap.coe_injective
-  rw [ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.toLinearMap_comp,
-    ContinuousLinearMap.coe_exteriorPowerCoords, toLinearMap_splitCoords_blockDiag,
-    coe_piProdInclL, ContinuousLinearMap.toLinearMap_kronecker_eq]
+  simp only [ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.coe_exteriorPowerCoords,
+    ContinuousLinearMap.coe_prodMap, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+    ContinuousLinearEquiv.toLinearEquiv_symm, toLinearEquiv_splitCoords, coe_piProdInclL,
+    ContinuousLinearMap.toLinearMap_kronecker_eq]
   exact exteriorPowerCoords_piFinAppend_comp_piProdIncl
     (f : (Fin a → 𝕜) →ₗ[𝕜] (Fin a' → 𝕜)) (g : (Fin d → 𝕜) →ₗ[𝕜] (Fin d' → 𝕜)) p q n h
 
@@ -289,10 +276,10 @@ theorem piProdProjL_comp_exteriorPowerCoords_splitCoords {a a' d d' : ℕ}
       ((f.exteriorPowerCoords p).kronecker (g.exteriorPowerCoords q)).comp
         (piProdProjL 𝕜 a d p q n) := by
   apply ContinuousLinearMap.coe_injective
-  rw [ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.toLinearMap_comp,
-    ContinuousLinearMap.coe_exteriorPowerCoords, toLinearMap_splitCoords_blockDiag,
-    coe_piProdProjL, ContinuousLinearMap.toLinearMap_kronecker_eq]
-  simp only [LinearMap.comp_assoc]
+  simp only [ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.coe_exteriorPowerCoords,
+    ContinuousLinearMap.coe_prodMap, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+    ContinuousLinearEquiv.toLinearEquiv_symm, toLinearEquiv_splitCoords, coe_piProdProjL,
+    ContinuousLinearMap.toLinearMap_kronecker_eq, LinearMap.comp_assoc]
   exact piProdProj_comp_exteriorPowerCoords_piFinAppend
     (f : (Fin a → 𝕜) →ₗ[𝕜] (Fin a' → 𝕜)) (g : (Fin d → 𝕜) →ₗ[𝕜] (Fin d' → 𝕜)) p q n
 

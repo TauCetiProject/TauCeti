@@ -321,7 +321,20 @@ theorem prodEquiv_symm_apply (n : ℕ)
       ∑ i : Fin (n + 1), wedgeTensor R M N i (n - i) n (by omega) (z i) := by
   simp [prodEquiv]
 
+/-- `prodEquiv` sends `wedgeTensor` in bidegree `(i, n - i)` to `Pi.single i`. -/
+@[simp]
+theorem prodEquiv_wedgeTensor (n : ℕ) (i : Fin (n + 1)) (h : (i : ℕ) + (n - i) = n)
+    (z : ⋀[R]^i M ⊗[R] ⋀[R]^(n - i) N) :
+    prodEquiv R M N n (wedgeTensor R M N i (n - i) n h z) = Pi.single i z := by
+  ext j
+  by_cases hji : j = i
+  · subst hji
+    simp
+  · have hne : (i : ℕ) ≠ j := fun hij ↦ hji (Fin.ext hij.symm)
+    simp [Pi.single_eq_of_ne hji, prodProj_wedgeTensor_of_ne h (.inl hne)]
+
 /-- On a single bidegree component, `(prodEquiv R M N n).symm` applies `wedgeTensor`. -/
+@[simp high]
 theorem prodEquiv_symm_single (n : ℕ) (i : Fin (n + 1))
     (z : ⋀[R]^i M ⊗[R] ⋀[R]^(n - i) N) :
     (prodEquiv R M N n).symm (Pi.single i z) =
