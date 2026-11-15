@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Stabilizer
 public import TauCeti.Geometry.Lie.Adjoint.Splitting
 public import TauCeti.Geometry.Lie.FundamentalVectorField.Isotropy
-public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Basic
+public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.LevelAction
 
 /-!
 # The invariant splitting of the Lie algebra at a point with compact stabilizer
