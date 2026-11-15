@@ -31,9 +31,9 @@ preconnected they are precisely the connected components of the union.
 
 ## Main declarations
 
-* `TauCeti.W1p.exists_eLpNorm_sub_le_of_componentwise_poincare`: glue a uniform family of
+* `TauCeti.W1p.exists_eLpNorm_value_sub_le_of_componentwise_poincare`: glue a uniform family of
   Poincaré–Wirtinger inequalities with no loss in the constant.
-* `TauCeti.W1p.exists_componentwise_poincare_of_finite_isLipschitzDomainWith`: the inequality
+* `TauCeti.W1p.exists_eLpNorm_value_sub_le_of_finite_isLipschitzDomainWith`: the inequality
   on a finite disjoint union of bounded connected Lipschitz domains.
 
 ## References
@@ -65,7 +65,7 @@ by `C` times the norm of its weak gradient on `Ω`, including at `p = ∞`.
 
 The conclusion characterizes the normalizing function on the cover, without imposing any
 condition on its irrelevant values outside `Ω`. -/
-theorem W1p.exists_eLpNorm_sub_le_of_componentwise_poincare
+theorem W1p.exists_eLpNorm_value_sub_le_of_componentwise_poincare
     (hd : Pairwise (Disjoint on fun i ↦ (U i : Set E)))
     (hcover : ⋃ i, (U i : Set E) = Ω) (C : ℝ≥0)
     (hP : ∀ i, ∀ v : W1p mu (U i) p,
@@ -127,7 +127,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 preconnected Lipschitz open sets, the gradient controls the deviation from the mean on each
 piece, for every `1 ≤ p ≤ ∞`. The constant is uniform in the Sobolev function and can be chosen
 as the maximum of the component constants. -/
-theorem W1p.exists_componentwise_poincare_of_finite_isLipschitzDomainWith
+theorem W1p.exists_eLpNorm_value_sub_le_of_finite_isLipschitzDomainWith
     (hd : Pairwise (Disjoint on fun i ↦ (U i : Set (WithLp 2 (ℝ × E)))))
     (hcover : ⋃ i, (U i : Set (WithLp 2 (ℝ × E))) = Ω)
     (hL : ∀ i, (U i : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith (L i))
@@ -149,7 +149,7 @@ theorem W1p.exists_componentwise_poincare_of_finite_isLipschitzDomainWith
     exact ⟨⟨C, hC⟩, hP⟩
   choose C hC using hP
   refine ⟨Finset.univ.sup C, fun u ↦
-    W1p.exists_eLpNorm_sub_le_of_componentwise_poincare hd hcover _ (fun i v ↦ ?_) u⟩
+    W1p.exists_eLpNorm_value_sub_le_of_componentwise_poincare hd hcover _ (fun i v ↦ ?_) u⟩
   exact (hC i v).trans <| mul_le_mul_left (by
     exact_mod_cast (Finset.le_sup (f := C) (Finset.mem_univ i))) _
 
