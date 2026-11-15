@@ -22,9 +22,9 @@ points in the right half-plane lies in the slit plane as well, and positive real
 it.
 
 Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
-and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane. Scaling `z`
-by `t ∈ [0, 1]` preserves `1 - z ∈ slitPlane`, so the shifted cut plane
-`{z : ℂ | 1 - z ∈ slitPlane}` is open, star-convex at `0`, and preconnected.
+and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane. The
+shifted cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is open, star-convex at every `z < 1` (in
+particular at every real `x < 1` and at `0`), and path-connected.
 The module also records a locally uniform lower bound for the distance from a point of the slit
 plane to the closed negative half-axis. This bound locally dominates slit-plane kernels and thus
 supports differentiation and holomorphy arguments for parameter-dependent Stieltjes integrals.
@@ -40,9 +40,12 @@ is a principal logarithm.
 
 ## Main declarations
 
-* `Complex.one_sub_mul_ofReal_mem_slitPlane`, `TauCeti.one_sub_ofReal_mul_mem_slitPlane`
+* `Complex.one_sub_mul_ofReal_mem_slitPlane`
 * `TauCeti.isOpen_setOf_one_sub_mem_slitPlane`,
+  `TauCeti.starConvex_setOf_one_sub_mem_slitPlane`,
+  `TauCeti.starConvex_ofReal_setOf_one_sub_mem_slitPlane`,
   `TauCeti.starConvex_zero_setOf_one_sub_mem_slitPlane`,
+  `TauCeti.isPathConnected_setOf_one_sub_mem_slitPlane`,
   `TauCeti.isPreconnected_setOf_one_sub_mem_slitPlane`
 * `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`, `TauCeti.one_add_div_mem_slitPlane`
 * `TauCeti.mem_slitPlane_of_norm_one_sub_lt_one_add`,
@@ -308,28 +311,41 @@ end Complex
 
 namespace TauCeti
 
-/-- Scaling `z` on the left by a real number in `[0, 1]` preserves slit-plane membership of
-`1 - z`. -/
-theorem one_sub_ofReal_mul_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
-    {t : ℝ} (ht : t ∈ Set.Icc 0 1) : 1 - (t : ℂ) * z ∈ slitPlane := by
-  simpa only [mul_comm] using one_sub_mul_ofReal_mem_slitPlane hz ht
-
 /-- The shifted cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is open. -/
 theorem isOpen_setOf_one_sub_mem_slitPlane : IsOpen {z : ℂ | 1 - z ∈ slitPlane} :=
   isOpen_slitPlane.preimage (continuous_const.sub continuous_id)
 
-/-- The shifted cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is star-convex at `0`. -/
+open scoped ComplexOrder in
+/-- The shifted cut plane `{w : ℂ | 1 - w ∈ slitPlane}` is star-convex at every `z < 1`
+(in the partial order `ComplexOrder`). -/
+theorem starConvex_setOf_one_sub_mem_slitPlane {z : ℂ} (hz : z < 1) :
+    StarConvex ℝ z {w : ℂ | 1 - w ∈ slitPlane} := by
+  have h : (Set.Ici (1 : ℂ))ᶜ = {w : ℂ | 1 - w ∈ slitPlane} := by
+    ext w
+    simp [Complex.mem_slitPlane_iff_not_le_zero]
+  exact h ▸ starConvex_compl_Ici hz
+
+/-- The shifted cut plane `{w : ℂ | 1 - w ∈ slitPlane}` is star-convex at every real `x < 1`. -/
+theorem starConvex_ofReal_setOf_one_sub_mem_slitPlane {x : ℝ} (hx : x < 1) :
+    StarConvex ℝ (x : ℂ) {w : ℂ | 1 - w ∈ slitPlane} := by
+  open scoped ComplexOrder in
+  exact starConvex_setOf_one_sub_mem_slitPlane (by exact_mod_cast hx)
+
+/-- The shifted cut plane `{w : ℂ | 1 - w ∈ slitPlane}` is star-convex at `0`. -/
 theorem starConvex_zero_setOf_one_sub_mem_slitPlane :
-    StarConvex ℝ (0 : ℂ) {z : ℂ | 1 - z ∈ slitPlane} := by
-  intro z hz a b ha hb hab
-  simpa only [smul_zero, zero_add, real_smul, Set.mem_ofPred_eq] using
-    one_sub_ofReal_mul_mem_slitPlane hz ⟨hb, by linarith⟩
+    StarConvex ℝ (0 : ℂ) {w : ℂ | 1 - w ∈ slitPlane} := by
+  open scoped ComplexOrder in
+  exact starConvex_setOf_one_sub_mem_slitPlane zero_lt_one
+
+/-- The shifted cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is path-connected. -/
+theorem isPathConnected_setOf_one_sub_mem_slitPlane :
+    IsPathConnected {z : ℂ | 1 - z ∈ slitPlane} :=
+  starConvex_zero_setOf_one_sub_mem_slitPlane.isPathConnected (by simp [one_mem_slitPlane])
 
 /-- The shifted cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is preconnected. -/
 theorem isPreconnected_setOf_one_sub_mem_slitPlane :
     IsPreconnected {z : ℂ | 1 - z ∈ slitPlane} :=
-  (starConvex_zero_setOf_one_sub_mem_slitPlane.isPathConnected
-    (by simp [one_mem_slitPlane])).isConnected.isPreconnected
+  isPathConnected_setOf_one_sub_mem_slitPlane.isConnected.isPreconnected
 
 end TauCeti
 

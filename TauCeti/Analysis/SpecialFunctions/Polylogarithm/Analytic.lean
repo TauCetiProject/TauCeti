@@ -114,7 +114,8 @@ private lemma intervalIntegrable_and_hasDerivAt_radialIntegrand (k : ℕ) {z : �
     rw [uIoc_of_le zero_le_one] at ht
     have ht0 : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ht.1.ne'
     have htx : 1 - (t : ℂ) * x ∈ Complex.slitPlane :=
-      TauCeti.one_sub_ofReal_mul_mem_slitPlane (hball hx) (Ioc_subset_Icc_self ht)
+      mul_comm (t : ℂ) x ▸ Complex.one_sub_mul_ofReal_mem_slitPlane (hball hx)
+        (Ioc_subset_Icc_self ht)
     have hlog : HasDerivAt (fun w : ℂ ↦ -Complex.log (1 - (t : ℂ) * w))
         ((t : ℂ) / (1 - (t : ℂ) * x)) x := by
       have hd := (((hasDerivAt_const x (1 : ℂ)).sub
@@ -251,14 +252,12 @@ theorem hasDerivAt_polylog (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane
     HasDerivAt (polylog n) (polylog (n - 1) z / z) z := by
   simpa using hasDerivAt_polylog_add_one (n - 1) hz hz0
 
-private lemma continuousOn_mul_deriv_polylog_add_one (n : ℤ) {z : ℂ}
+private lemma continuousOn_deriv_polylog_add_one_mul (n : ℤ) {z : ℂ}
     (hz : 1 - z ∈ Complex.slitPlane) :
-    ContinuousOn (fun t : ℝ ↦ z * deriv (polylog (n + 1)) ((t : ℂ) * z)) (uIcc 0 1) := by
-  rw [uIcc_of_le zero_le_one]
-  refine continuousOn_const.mul ?_
-  exact (analyticOnNhd_polylog (n + 1)).deriv.continuousOn.comp
+    ContinuousOn (fun t : ℝ ↦ deriv (polylog (n + 1)) ((t : ℂ) * z)) (Icc 0 1) :=
+  (analyticOnNhd_polylog (n + 1)).deriv.continuousOn.comp
     (Complex.continuous_ofReal.continuousOn.mul continuousOn_const) fun t ht ↦
-      TauCeti.one_sub_ofReal_mul_mem_slitPlane hz ht
+      mul_comm (t : ℂ) z ▸ Complex.one_sub_mul_ofReal_mem_slitPlane hz ht
 
 private lemma eqOn_polylog_mul_div_uIoc (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
     EqOn (fun t : ℝ ↦ z * deriv (polylog (n + 1)) ((t : ℂ) * z))
@@ -267,7 +266,7 @@ private lemma eqOn_polylog_mul_div_uIoc (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Comp
   rw [uIoc_of_le zero_le_one] at ht
   have ht0 : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ht.1.ne'
   have htz : 1 - (t : ℂ) * z ∈ Complex.slitPlane :=
-    TauCeti.one_sub_ofReal_mul_mem_slitPlane hz (Ioc_subset_Icc_self ht)
+    mul_comm (t : ℂ) z ▸ Complex.one_sub_mul_ofReal_mem_slitPlane hz (Ioc_subset_Icc_self ht)
   dsimp only
   rw [← mul_deriv_polylog_add_one n htz]
   field_simp [ht0]
@@ -277,29 +276,24 @@ private lemma eqOn_polylog_mul_div_uIoc (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Comp
 theorem intervalIntegrable_polylog_mul_div (n : ℤ) {z : ℂ}
     (hz : 1 - z ∈ Complex.slitPlane) :
     IntervalIntegrable (fun t : ℝ ↦ polylog n ((t : ℂ) * z) / (t : ℂ)) volume 0 1 :=
-  (continuousOn_mul_deriv_polylog_add_one n hz).intervalIntegrable.congr
-    (eqOn_polylog_mul_div_uIoc n hz)
+  ((continuousOn_const.mul (continuousOn_deriv_polylog_add_one_mul n hz)).intervalIntegrable_of_Icc
+    zero_le_one).congr (eqOn_polylog_mul_div_uIoc n hz)
 
 /-- Recursive radial-integral identity: for every integer weight `n` and every `z` in the cut
 plane, `polylog (n + 1) z = ∫ t in 0..1, polylog n (t * z) / t`. -/
 theorem polylog_add_one_eq_integral (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
     polylog (n + 1) z = ∫ t : ℝ in 0..1, polylog n ((t : ℂ) * z) / (t : ℂ) := by
-  have hderiv : ∀ t ∈ uIcc (0 : ℝ) 1,
-      HasDerivAt (fun s : ℝ ↦ polylog (n + 1) ((s : ℂ) * z))
-        (z * deriv (polylog (n + 1)) ((t : ℂ) * z)) t := by
-    intro t ht
-    rw [uIcc_of_le zero_le_one] at ht
-    have htz : 1 - (t : ℂ) * z ∈ Complex.slitPlane :=
-      TauCeti.one_sub_ofReal_mul_mem_slitPlane hz ht
-    have hinner : HasDerivAt (fun s : ℝ ↦ (s : ℂ) * z) z t := by
-      simpa using (Complex.ofRealCLM.hasDerivAt (x := t)).mul_const z
-    simpa only [Function.comp_def, smul_eq_mul] using
-      HasDerivAt.scomp t (differentiableAt_polylog (n + 1) htz).hasDerivAt hinner
-  rw [← intervalIntegral.integral_congr_ae
-      (ae_of_all _ fun t ht ↦ eqOn_polylog_mul_div_uIoc n hz ht),
-    intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv
-      (continuousOn_mul_deriv_polylog_add_one n hz).intervalIntegrable]
-  simp
+  have hftc := intervalIntegral.integral_unitInterval_deriv_eq_sub
+    (f := polylog (n + 1)) (f' := deriv (polylog (n + 1))) (z₀ := 0) (z₁ := z)
+    (by simpa [Complex.real_smul] using continuousOn_deriv_polylog_add_one_mul n hz)
+    (fun t ht ↦ by
+      simpa [Complex.real_smul] using (differentiableAt_polylog (n + 1)
+        (mul_comm (t : ℂ) z ▸ Complex.one_sub_mul_ofReal_mem_slitPlane hz ht)).hasDerivAt)
+  simp only [zero_add, Complex.real_smul, smul_eq_mul, polylog_zero, sub_zero,
+    ← intervalIntegral.integral_const_mul] at hftc
+  rw [← hftc]
+  exact intervalIntegral.integral_congr_ae
+    (ae_of_all _ fun t ht ↦ eqOn_polylog_mul_div_uIoc n hz ht)
 
 /-- Unshifted recursive radial-integral identity: for every integer weight `n` and every `z` in
 the cut plane, `polylog n z = ∫ t in 0..1, polylog (n - 1) (t * z) / t`. -/
