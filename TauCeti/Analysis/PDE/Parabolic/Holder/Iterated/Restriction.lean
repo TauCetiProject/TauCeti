@@ -205,6 +205,16 @@ theorem mixedDerivL_restrictL (f : ParabolicCkHolderSpace k α E F hab) (r m : �
       mixedDerivL r m f (inclusion (slab_subset_slab ha hb) p) := by
   rw [restrictL_eq_restrict, mixedDerivL_restrict]
 
+/-- As a bounded continuous function, the mixed derivative of a restriction is the original
+mixed derivative precomposed with the inclusion of the smaller slab. -/
+theorem mixedDerivL_restrictL_eq_compContinuous (f : ParabolicCkHolderSpace k α E F hab)
+    (r m : ℕ) :
+    mixedDerivL r m (restrictL ha hb hab' f) = (mixedDerivL r m f).compContinuous
+      (ContinuousMap.inclusion (slab_subset_slab ha hb)) := by
+  refine BoundedContinuousFunction.ext fun p ↦ ?_
+  simpa only [BoundedContinuousFunction.compContinuous_apply, ContinuousMap.inclusion,
+    ContinuousMap.coe_mk] using mixedDerivL_restrictL (ha := ha) (hb := hb) (hab' := hab') f r m p
+
 /-- Each time slice of the restriction is the restriction of the time slice. -/
 @[simp]
 theorem timeSliceL_restrictL (f : ParabolicCkHolderSpace k α E F hab) (r m : ℕ) (x : E) :
@@ -228,6 +238,13 @@ theorem norm_restrictL_le :
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
     rw [restrictL_eq_restrict, one_mul]
     exact norm_restrict_le ha hb hab' f
+
+variable (ha hb hab') in
+/-- Restriction to a smaller slab does not increase the full parabolic Hölder norm. -/
+theorem norm_restrictL_apply_le (f : ParabolicCkHolderSpace k α E F hab) :
+    ‖restrictL ha hb hab' f‖ ≤ ‖f‖ := by
+  simpa only [one_mul] using
+    (restrictL ha hb hab').le_of_opNorm_le (norm_restrictL_le ha hb hab') f
 
 /-- Restricting to the whole slab does nothing. -/
 @[simp]
