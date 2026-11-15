@@ -39,7 +39,9 @@ indexed by `ℤ`, so singular chains in degree `n` are placed in degree `-n` alo
   graded pieces `F_q/F_{q-1} ⟶ F_{q+1}/F_{q-1} ⟶ F_{q+1}/F_q`, whose connecting map is the
   first differential (`CochainComplex.spectralSequence_first_page_d_eq`), is isomorphic to the
   relative singular chain sequence of the triple.
-* **Convergence.** The abutment in degree `-n` is `Hₙ(Y)` (`TauCeti.filteredSpaceAbutmentIso`).
+* **Convergence.** The abutment in degree `-n` is `Hₙ(Y)` (`TauCeti.filteredSpaceAbutmentIso`), and
+  the `q`th piece of its filtration is the image of `Hₙ(X q)`
+  (`toFiltrationAbutmentFiltration_comp_abutmentFiltrationι_comp_filteredSpaceAbutmentIso_hom`).
   When `X a = ∅` and `X b = Y`, the filtration is finite and the spectral sequence converges
   strongly (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfFinite`). Filtrations that
   absorb every compact subset without reaching `Y`, such as the skeletal filtration over an
@@ -305,6 +307,42 @@ def filteredSpaceAbutmentIso (n : ℕ) :
       ((AlgebraicTopology.singularHomologyFunctor A n).obj R).obj Y :=
   CochainComplex.filtrationAbutmentIso _ _ _ ≪≫
     extendHomologyIso _ ComplexShape.embeddingDownNat rfl
+
+/-- **The filtration of the abutment of a filtered space is the image filtration.** The `q`th
+piece of the filtration of the abutment receives the epimorphism
+`CochainComplex.toFiltrationAbutmentFiltration` from the homology of the `q`th stage of the
+filtered chains. Followed by the embedding into the abutment and by
+`TauCeti.filteredSpaceAbutmentIso`, it is the identification of that homology with `Hₙ(X q)`,
+followed by the map `Hₙ(X q) → Hₙ(Y)` induced by the inclusion of `X q`. -/
+lemma toFiltrationAbutmentFiltration_comp_abutmentFiltrationι_comp_filteredSpaceAbutmentIso_hom
+    (q : ℤ) (n : ℕ) :
+    CochainComplex.toFiltrationAbutmentFiltration _ (monotone_singularChainFiltration R hX) q
+          (-n) ≫
+        (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+          (monotone_singularChainFiltration R hX))).abutmentFiltrationι q (-n) ≫
+          (filteredSpaceAbutmentIso R hX n).hom =
+      homologyMap (singularChainFiltrationIso R X q).hom (-n) ≫
+        (((TopCat.toSSet.obj (TopPair.ofSubset (X q)).snd).chainComplex R).extendHomologyIso
+          ComplexShape.embeddingDownNat (j' := -(n : ℤ)) rfl).hom ≫
+          SSet.homologyMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) R n := by
+  -- The abutment isomorphism, with the homology of the singular chains of `Y` read through
+  -- `SSet.chainComplex` rather than `singularChainComplexFunctor`.
+  have h : (filteredSpaceAbutmentIso R hX n).hom =
+      (CochainComplex.filtrationAbutmentIso _ (monotone_singularChainFiltration R hX) (-n)).hom ≫
+        (((TopCat.toSSet.obj Y).chainComplex R).extendHomologyIso
+          ComplexShape.embeddingDownNat (j' := -(n : ℤ)) rfl).hom :=
+    rfl
+  have key := CochainComplex.toFiltrationAbutmentFiltration_comp_filtrationAbutmentIso_hom
+    (singularChainFiltration R X) (monotone_singularChainFiltration R hX) q (-n)
+  -- The homology objects in degree `-n` and in degree `ComplexShape.embeddingDownNat.f n` agree
+  -- only up to unfolding, so `rw` cannot abstract them and these steps use `erw`.
+  rw [h]
+  erw [reassoc_of% key]
+  rw [← singularChainFiltrationIso_hom_comp_singularChainFiltrationι, homologyMap_comp]
+  erw [Category.assoc]
+  congr 1
+  rw [singularChainFiltrationι_def]
+  erw [extendHomologyIso_hom_naturality]
 
 /-- **Strong convergence of the spectral sequence of a finite filtration of a space.** If
 `X a = ∅` and `X b` is all of `Y`, then on every page `r ≥ 2` with `q - r + 2 ≤ a` and

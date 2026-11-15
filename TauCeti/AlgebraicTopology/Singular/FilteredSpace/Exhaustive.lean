@@ -36,6 +36,10 @@ the exhaustiveness hypothesis of the convergence theorems for filtered complexes
   the graded piece `F_{q+1} H / F_q H` of `H_{-(p+q)}(Y)`
   (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfExhaustive`).
 
+For any monotone family, with module coefficients, the `q`th piece of the filtration of the
+abutment is the image of `Hₙ(X q) → Hₙ(Y)`
+(`TauCeti.range_abutmentFiltrationι_comp_filteredSpaceAbutmentIso_hom`).
+
 The filtration of the abutment vanishes at a stage `X a = ∅`, by
 `CochainComplex.isZero_filtrationAbutmentFiltration` and
 `TauCeti.singularChainFiltration_eq_bot`, so in each degree it is finite, exhaustive and
@@ -106,6 +110,32 @@ theorem exists_mem_range_singularChainFiltration_arrow (hX : Monotone X)
     exact zero_mem _
 
 variable (hX : Monotone X)
+
+/-- **The filtration of the abutment of a filtered space is the image filtration**, with
+coefficients in a module: through `TauCeti.filteredSpaceAbutmentIso`, the `q`th piece of the
+filtration of `Hₙ(Y)` is the image of the map `Hₙ(X q) → Hₙ(Y)` induced by the inclusion. -/
+theorem range_abutmentFiltrationι_comp_filteredSpaceAbutmentIso_hom (q : ℤ) (n : ℕ) :
+    LinearMap.range ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+        (monotone_singularChainFiltration M hX))).abutmentFiltrationι q (-n) ≫
+          (filteredSpaceAbutmentIso M hX n).hom).hom =
+      LinearMap.range
+        (SSet.homologyMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) M n).hom := by
+  have hτ := (ModuleCat.epi_iff_surjective
+    (CochainComplex.toFiltrationAbutmentFiltration _ (monotone_singularChainFiltration M hX) q
+      (-n))).1 inferInstance
+  have h₁ := (ModuleCat.epi_iff_surjective
+    (homologyMap (singularChainFiltrationIso M X q).hom (-n))).1 inferInstance
+  have h₂ := (ModuleCat.epi_iff_surjective
+    (((TopCat.toSSet.obj (TopPair.ofSubset (X q)).snd).chainComplex M).extendHomologyIso
+      ComplexShape.embeddingDownNat (j' := -(n : ℤ)) rfl).hom).1 inferInstance
+  -- `Hₙ(X q) → F_q Hₙ(Y)` is onto, and the composite to `Hₙ(Y)` is `Hₙ(X q) → Hₙ(Y)` up to
+  -- isomorphisms on its source.
+  refine (LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.2 hτ)).symm.trans ?_
+  refine (congrArg (fun f ↦ LinearMap.range (ModuleCat.Hom.hom f))
+    (toFiltrationAbutmentFiltration_comp_abutmentFiltrationι_comp_filteredSpaceAbutmentIso_hom M
+      hX q n)).trans ?_
+  exact (LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.2 h₁)).trans
+    (LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.2 h₂))
 
 /-- **The filtration of the abutment of an exhaustive filtration of a space is exhaustive**: every
 class of `Hₙ(Y)` lies in some piece of its filtration. -/
