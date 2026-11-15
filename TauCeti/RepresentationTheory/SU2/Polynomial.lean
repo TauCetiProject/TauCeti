@@ -137,7 +137,8 @@ theorem coeff_polynomialMonomial_self (h : i ≤ d) :
 theorem coeff_polynomialMonomial_of_ne {s : Fin 2 →₀ ℕ}
     (hs : s ≠ Finsupp.single 0 (d - i) + Finsupp.single 1 i) :
     (polynomialMonomial R d i).coeff s = 0 := by
-  simp [hs.symm]
+  rw [coeff_polynomialMonomial, ite_eq_right_iff]
+  exact fun h ↦ (hs h.2.symm).elim
 
 variable (R d i) in
 /-- **The weight of `e_i^d` is `(d - i, i)`**: the diagonal matrix `diag(t₀, t₁)` scales the
