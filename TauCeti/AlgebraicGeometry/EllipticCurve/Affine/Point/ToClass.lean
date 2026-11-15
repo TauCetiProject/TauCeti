@@ -64,7 +64,7 @@ The mathematical argument is the affine ideal-class construction of Silverman,
 *The Arithmetic of Elliptic Curves*, III.3.4--5.
 
 `Point.toClass_surjective` and `toClassEquiv` also occur in D. Angdinata's coordinate-ring
-development, shared with the project. The proof here follows the AINTLIB construction above.
+development. The proof here follows the AINTLIB construction above.
 -/
 
 public section

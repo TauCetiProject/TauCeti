@@ -26,9 +26,14 @@ projection is a submersion by `Bundle.isSubmersion_proj`, the zero section is sm
 `Bundle.contMDiff_zeroSection`, and the fibrewise addition and scalar multiplication are the vector
 space structures of the fibres.
 
-This file computes the charts in coordinates. The preferred chart at a covector over `x₀` sends a
-covector `p` at `x` to `(φ₀ x, p ∘ d(φ₀⁻¹))`, where `φ₀` is the extended chart of `M` at `x₀`
-(`TauCeti.CotangentBundle.extChartAt_apply`, `TauCeti.CotangentBundle.extChartAt_symm_apply`).
+This file computes the trivializations and charts in coordinates. The canonical trivialization at
+`x` reads a covector `p` at `y` as `p ∘ (dφ_y)⁻¹`, where `φ` is the extended chart at `x`
+(`TauCeti.CotangentBundle.trivializationAt_mk_snd`), and it is the identity over `x` itself
+(`TauCeti.CotangentBundle.continuousLinearMapAt_trivializationAt_self`,
+`TauCeti.CotangentBundle.symmL_trivializationAt_self`). The preferred chart at a covector over
+`x₀` sends a covector `p` at `x` to `(φ₀ x, p ∘ d(φ₀⁻¹))`, where `φ₀` is the extended chart of `M`
+at `x₀` (`TauCeti.CotangentBundle.extChartAt_apply`,
+`TauCeti.CotangentBundle.extChartAt_symm_apply`).
 Consequently, a change of base chart `φ = φ₁ ∘ φ₀⁻¹` acts on cotangent coordinates by
 
 `(q, p) ↦ (φ q, p ∘ (dφ_q)⁻¹)`,
@@ -108,6 +113,26 @@ theorem continuousLinearMapAt_trivializationAt_self (x : M) (p : TangentSpace I 
     Trivial.fiberBundle_trivializationAt', Trivial.continuousLinearMapAt_trivialization,
     ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_apply]
   exact congrArg p (Manifold.symmL_trivializationAt_self x v)
+
+/-- The canonical trivialization at `x` reads a covector at `y` as its precomposition with the
+inverse of the tangent trivialization at `x`, from model vectors to tangent vectors at `y`. -/
+theorem trivializationAt_mk_snd (x y : M) (p : TangentSpace I y →L[𝕜] 𝕜) :
+    (trivializationAt (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x ⟨y, p⟩).2 =
+      p ∘L (trivializationAt E (TangentSpace I) x).symmL 𝕜 y := by
+  ext v
+  simp only [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
+    Trivial.fiberBundle_trivializationAt', Trivial.continuousLinearMapAt_trivialization,
+    ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_apply]
+
+/-- The inverse of the canonical trivialization at `x` sends a model covector to itself, read as
+a covector at `x`. -/
+theorem symmL_trivializationAt_self (x : M) (p : E →L[𝕜] 𝕜) :
+    (trivializationAt (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x).symmL 𝕜 x p = p :=
+  -- `p` is read as a covector at `x`, whose coordinates at `x` are itself.
+  (congrArg _ (continuousLinearMapAt_trivializationAt_self (I := I) x p).symm).trans
+    (Trivialization.symmL_continuousLinearMapAt (R := 𝕜) _
+      (FiberBundle.mem_baseSet_trivializationAt (E →L[𝕜] 𝕜)
+        (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜) x) p)
 
 /-- The preferred chart of the cotangent bundle at `z₀` sends a covector `z` to the chart image of
 its base point and to the covector precomposed with the inverse of the tangent chart at `z₀`. -/
