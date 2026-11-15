@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+public import TauCeti.Analysis.Sobolev.Local.Haar
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
@@ -25,10 +26,11 @@ and of its weak derivative `Du(Φ z) ∘ DΦ(z)` (`MeasureTheory.MemLp.comp_rest
 the chain rule `TauCeti.HasWeakFDerivOn.comp_contDiffOn_diffeo` on `interior U`.
 
 In particular a `C¹` diffeomorphism of half-discs preserving the real axis and the upper
-half-plane preserves the half-disc classes. For real-affine maps `z ↦ A z + b` every order is
-preserved, by induction on the order from the first-order formula `Du (A z + b) ∘ A`
-(`TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`). The dilation `z ↦ 2 z` scales the
-first derivative by `2`, and the reflection `z ↦ -conj z` preserves the half-disc classes.
+half-plane preserves the half-disc classes. For real-affine maps `z ↦ A z + b` between
+finite-dimensional spaces every order is preserved
+(`TauCeti.MemWkpLoc.comp_continuousLinearEquiv_add` in `TauCeti.Analysis.Sobolev.Local.Haar`).
+The dilation `z ↦ 2 z` scales the first derivative by `2`, and the reflection `z ↦ -conj z`
+preserves the half-disc classes.
 
 Higher orders for nonlinear `Φ` need the multiplication of local Sobolev maps by smooth
 coefficients and are not treated here.
@@ -39,8 +41,6 @@ coefficients and are not treated here.
   invariance of local `Lᵖ` membership.
 * `TauCeti.MemWkpLoc.comp_contDiffOn_diffeo`: invariance of the local classes of order at most one.
 * `TauCeti.MemWkpLoc.comp_contDiffOn_diffeo_halfPlane`: the half-disc version.
-* `TauCeti.MemWkpLoc.comp_continuousLinearEquiv_add`: invariance of every order under real-affine
-  maps.
 
 ## References
 
@@ -135,36 +135,6 @@ theorem MemWkpLoc.comp_contDiffOn_diffeo_halfPlane {U' V' : Set ℂ} {u : ℂ �
   rcases (show 0 ≤ z.im from hz.2).lt_or_eq with h | h
   · exact hupper z hz.1 h
   · exact (hreal z hz.1 h.symm).ge
-
-/-- **Real-affine changes of variables preserve every order.** For `A : ℂ ≃L[ℝ] ℂ`, `b : ℂ` and
-`z ↦ A z + b` mapping `U` into `V`, precomposition maps `MemWkpLoc p V k` into
-`MemWkpLoc p U k`. The first weak derivative is given by
-`TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`. -/
-theorem MemWkpLoc.comp_continuousLinearEquiv_add {u : ℂ → F} (hu : MemWkpLoc p V k u)
-    (A : ℂ ≃L[ℝ] ℂ) (b : ℂ) (hmaps : MapsTo (fun z => A z + b) U V) :
-    MemWkpLoc p U k (fun z => u (A z + b)) := by
-  set Φ : ℂ → ℂ := fun z => A z + b
-  have hΦ : ContDiffOn ℝ 1 Φ univ := (A.contDiff.add contDiff_const).contDiffOn
-  have hinj : InjOn Φ U := ((add_left_injective b).comp A.injective).injOn
-  have hfd : ∀ z, fderiv ℝ Φ z = (A : ℂ →L[ℝ] ℂ) := fun z => by
-    simp only [Φ, fderiv_add_const, A.fderiv]
-  have hdet : ∀ z ∈ U, (fderiv ℝ Φ z).det ≠ 0 := fun z _ => by
-    rw [hfd]
-    exact A.toLinearEquiv.isUnit_det'.ne_zero
-  have hint : MapsTo Φ (interior U) (interior V) :=
-    hmaps.interior_of_contDiffOn (hΦ.mono (subset_univ U)) le_rfl fun z _ => ⟨A, (hfd z).symm⟩
-  induction k generalizing F with
-  | zero => exact memWkpLoc_zero_iff.2 (MemLpLoc.comp_contDiffOn_diffeo
-      (memWkpLoc_zero_iff.1 hu) isOpen_univ hΦ hinj hdet (subset_univ _) hmaps)
-  | succ k ih =>
-    obtain ⟨hLp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hu
-    have := hD.completeSpace
-    refine memWkpLoc_succ_iff.2
-      ⟨hLp.comp_contDiffOn_diffeo isOpen_univ hΦ hinj hdet (subset_univ _) hmaps,
-      fun z => ((ContinuousLinearMap.compL ℝ ℂ ℂ F).flip (A : ℂ →L[ℝ] ℂ)) (D (Φ z)), ?_,
-      (ih hk).clm_comp _⟩
-    simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply, Φ] using
-      hD.comp_continuousLinearEquiv_add (U := Opens.interior U) A b (by simpa using hint)
 
 /-! ### Checks -/
 

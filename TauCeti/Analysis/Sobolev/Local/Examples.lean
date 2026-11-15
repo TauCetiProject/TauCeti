@@ -35,10 +35,9 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 This file tests `TauCeti.MemWkpLoc` against explicit planar functions.
 
-* The identity of `ℂ` is in every local Sobolev class, although it is not globally `Lᵖ` for
-  `0 < p`.
-* The map `z ↦ ‖z‖` is in every local `W^{1,p}` class, as a Lipschitz map
-  (`LipschitzWith.memWkpLoc_one`).
+* The identity is in every local Sobolev class (`TauCeti.memWkpLoc_id`), although on nontrivial
+  finite-dimensional spaces it is not globally `Lᵖ` for `0 < p` (`TauCeti.not_memLp_id_univ`).
+* The norm `z ↦ ‖z‖` is in every local `W^{1,p}` class (`TauCeti.memWkpLoc_one_norm`).
 * Polynomials are in every local Sobolev class on every set, as holomorphic maps on the plane
   (`Differentiable.memWkpLoc`).
 * The map `z ↦ ‖z‖` is in the local class `W^{2,p}` exactly when `p < 2`, on every set whose
@@ -77,18 +76,6 @@ open scoped Topology Distributions RealInnerProductSpace
 namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ENNReal} {U : Set ℂ}
-
-/-! ### The identity and the norm -/
-
-/-- The identity of `ℂ` is in every local Sobolev class on every set, although for `0 < p` it is
-not in `Lᵖ` of the whole plane: the local class imposes no bound at infinity. -/
-theorem memWkpLoc_id (p : ENNReal) (U : Set ℂ) (k : ℕ) : MemWkpLoc p U k (fun z : ℂ => z) :=
-  (contDiff_id.contDiffOn : ContDiffOn ℝ k id ((⊤ : Opens ℂ) : Set ℂ)).memWkpLoc (subset_univ U)
-
-/-- The norm `z ↦ ‖z‖` is in the local class `W^{1,p}` on every set, for every exponent: its
-weak gradient `z / ‖z‖` is bounded. -/
-theorem memWkpLoc_one_norm : MemWkpLoc p U 1 (fun z : ℂ => ‖z‖) :=
-  lipschitzWith_one_norm.memWkpLoc_one
 
 /-! ### Polynomials -/
 
@@ -452,12 +439,7 @@ theorem memWkpLoc_sqrt_im_ball_inter_im_pos :
 /-- **`‖z‖⁻¹` is locally `Lᵖ` near the origin exactly for `p < 2`.** -/
 theorem memLpLoc_norm_inv_iff (hU : U ∈ 𝓝 0) :
     MemLpLoc p U (fun z : ℂ => ‖z‖⁻¹) ↔ p < 2 := by
-  refine ⟨fun h => ?_, fun h => memLpLoc_iff.2 fun K _ hK =>
-    hK.memLp_norm_inv_restrict (by simpa [Complex.finrank_real_complex] using h)⟩
-  by_contra! hp2
-  obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 hU
-  exact not_memLp_norm_inv_closedBall hε (by simpa [Complex.finrank_real_complex] using hp2)
-    (memLpLoc_iff.1 h _ hεU (isCompact_closedBall 0 ε))
+  simpa [Complex.finrank_real_complex] using memLpLoc_norm_inv_iff_lt_finrank hU
 
 /-- **The components of the gradient of `log ‖z‖` are locally `Lᵖ` near the origin exactly for
 `p < 2`.** These are `Re z / ‖z‖²` and `Im z / ‖z‖²`, the divergence-form data of `log ‖z‖`. -/
