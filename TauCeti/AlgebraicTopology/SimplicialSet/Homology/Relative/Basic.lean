@@ -92,6 +92,7 @@ chains of the ambient simplicial set is a split monomorphism. -/
 -- `SSet.chainComplexMap` reindexes a coproduct of copies of `R`.
 instance (R : C) (P : SSetPair.{w}) (n : ℕ) : IsSplitMono ((SSet.chainComplexMap P.hom R).f n) :=
   TauCeti.isSplitMono_sigmaMap' (fun _ ↦ R) (P.hom.app (op ⦋n⦌))
+    ((mono_iff_injective _).1 inferInstance)
 
 variable {A : Type*} [Category* A] [HasCoproducts.{w} A] [Abelian A]
 

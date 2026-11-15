@@ -36,6 +36,8 @@ No boundedness or boundary regularity of `Ω` is assumed.
   of `W^{k+1,p}(Ω)` lies in `W^{k,p}(Ω)`.
 * `TauCeti.Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq`: the first derivatives
   of an element of `W^{2,p}(Ω)` lie in `W^{1,p}(Ω)`, with gradients given by the weak Hessian.
+* `TauCeti.Wkp.lineDerivL`: the directional weak derivative as a bounded operator
+  `W^{k+1,p}(Ω) → W^{k,p}(Ω)`, characterised by `TauCeti.Wkp.hasWeakLineDerivOn_lineDerivL`.
 * `TauCeti.Wkp.exists_value_eq_of_forall_hasWeakLineDerivOn`: if the weak derivatives of
   `u ∈ Lᵖ(Ω)` along an orthonormal basis lie in `W^{k,p}(Ω)`, then `u ∈ W^{k+1,p}(Ω)`.
 * `TauCeti.Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn`: the two combined.
@@ -63,7 +65,7 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory TopologicalSpace
-open scoped InnerProductSpace
+open scoped InnerProductSpace NNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
@@ -157,18 +159,23 @@ private theorem Wkp.exists_wkp_lineDeriv (v : E) :
       rw [Wkp.value_mk, Wkp.value_succ (k + 2) w]
       exact hd
 
+/-- The first-order case of `TauCeti.Wkp.exists_hasWeakLineDerivOn_value`: the derivative of an
+element of `W^{1,p}(Ω)` in the direction `v` is the component `⟪v, ∇u⟫` of its weak gradient. -/
+private theorem Wkp.hasWeakLineDerivOn_value_innerSL_compLp (v : E) (w : Wkp mu Omega p 1) :
+    HasWeakLineDerivOn mu Omega (Wkp.value 1 w)
+      (Wkp.value 0 ((innerSL ℝ v).compLp (Wkp.iteratedGradient 0 w))) v := by
+  rw [Wkp.value_zero]
+  refine ((Wkp.hasWeakFDerivOn_value w).hasWeakLineDerivOn v).congr_ae_deriv ?_
+  filter_upwards [(innerSL ℝ v).coeFn_compLp (Wkp.iteratedGradient 0 w)] with x hx
+  rw [hx, innerSL_apply_apply, innerSL_apply_apply, real_inner_comm]
+
 /-- **Directional derivatives of Sobolev functions are Sobolev.** In every direction `v`, an
 element of `W^{k+1,p}(Ω)` has a weak derivative which is the value of an element of
 `W^{k,p}(Ω)`. -/
 theorem Wkp.exists_hasWeakLineDerivOn_value :
     ∀ (k : ℕ) (w : Wkp mu Omega p (k + 1)) (v : E), ∃ d : Wkp mu Omega p k,
       HasWeakLineDerivOn mu Omega (Wkp.value (k + 1) w) (Wkp.value k d) v
-  | 0, w, v => by
-      refine ⟨(innerSL ℝ v).compLp (Wkp.iteratedGradient 0 w), ?_⟩
-      rw [Wkp.value_zero]
-      refine ((Wkp.hasWeakFDerivOn_value w).hasWeakLineDerivOn v).congr_ae_deriv ?_
-      filter_upwards [(innerSL ℝ v).coeFn_compLp (Wkp.iteratedGradient 0 w)] with x hx
-      rw [hx, innerSL_apply_apply, innerSL_apply_apply, real_inner_comm]
+  | 0, w, v => ⟨_, Wkp.hasWeakLineDerivOn_value_innerSL_compLp v w⟩
   | k + 1, w, v => (Wkp.exists_wkp_lineDeriv v k w).imp fun _ h => h.1
 
 /-- **First derivatives of a `W^{2,p}` function.** In every direction `v`, an element `u` of
@@ -184,6 +191,86 @@ theorem Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq (u : Wkp mu
   rw [Wkp.iteratedGradient_zero] at hdg
   filter_upwards [(contractL v 0).coeFn_compLp (Wkp.iteratedGradient 1 u)] with x hx
   rw [hdg, hx, inner_contractL_zero, real_inner_comm]
+
+/-! ### The directional derivative as a bounded operator -/
+
+/-- An element of `W^{k,p}(Ω)` is determined by being a weak derivative of a given function in a
+given direction. -/
+theorem Wkp.eq_of_hasWeakLineDerivOn {k : ℕ} {u : E → ℝ} {v : E} {d d' : Wkp mu Omega p k}
+    (h : HasWeakLineDerivOn mu Omega u (Wkp.value k d) v)
+    (h' : HasWeakLineDerivOn mu Omega u (Wkp.value k d') v) : d = d' :=
+  Wkp.ext k (Lp.ext (h.ae_eq h'))
+
+/-- The directional derivative `W^{k+1,p}(Ω) → W^{k,p}(Ω)` is bounded: its graph norm is
+controlled by the graph norm of the function, one order higher. -/
+private theorem Wkp.exists_norm_le_of_hasWeakLineDerivOn (v : E) :
+    ∀ k : ℕ, ∃ C : ℝ≥0, ∀ (w : Wkp mu Omega p (k + 1)) (d : Wkp mu Omega p k),
+      HasWeakLineDerivOn mu Omega (Wkp.value (k + 1) w) (Wkp.value k d) v → ‖d‖ ≤ C * ‖w‖
+  | 0 => by
+    refine ⟨‖innerSL ℝ v‖₊, fun w d h => ?_⟩
+    rw [Wkp.eq_of_hasWeakLineDerivOn h (Wkp.hasWeakLineDerivOn_value_innerSL_compLp v w),
+      coe_nnNorm]
+    exact ((innerSL ℝ v).norm_compLp_le _).trans
+      (mul_le_mul_of_nonneg_left (Wkp.norm_iteratedGradient_le 0 w) (norm_nonneg _))
+  | k + 1 => by
+    obtain ⟨C, hC⟩ := Wkp.exists_norm_le_of_hasWeakLineDerivOn v k
+    refine ⟨C + ‖contractL v k‖₊, fun w d h => ?_⟩
+    obtain ⟨d', hd', hdk⟩ := Wkp.exists_wkp_lineDeriv v k w
+    obtain rfl := Wkp.eq_of_hasWeakLineDerivOn h hd'
+    rw [Wkp.value_succ (k + 1) w, Wkp.value_succ k d] at h
+    have hlow := (hC _ _ h).trans
+      (mul_le_mul_of_nonneg_left (Wkp.norm_lowerOrder_le (k + 1) w) C.coe_nonneg)
+    have htop : ‖Wkp.iteratedGradient k d‖ ≤ ‖contractL v k‖ * ‖w‖ := by
+      rw [hdk]
+      exact ((contractL v k).norm_compLp_le _).trans
+        (mul_le_mul_of_nonneg_left (Wkp.norm_iteratedGradient_le (k + 1) w) (norm_nonneg _))
+    calc ‖d‖ ≤ ‖Wkp.lowerOrder k d‖ + ‖Wkp.iteratedGradient k d‖ :=
+          Wkp.norm_le_norm_lowerOrder_add_norm_iteratedGradient k d
+      _ ≤ C * ‖w‖ + ‖contractL v k‖ * ‖w‖ := add_le_add hlow htop
+      _ = ↑(C + ‖contractL v k‖₊) * ‖w‖ := by push_cast; ring
+
+/-- **The directional derivative as a bounded operator.** The weak derivative in the direction
+`v`, as a continuous linear map `W^{k+1,p}(Ω) → W^{k,p}(Ω)`; it is characterised by
+`TauCeti.Wkp.hasWeakLineDerivOn_lineDerivL`. -/
+def Wkp.lineDerivL (v : E) (k : ℕ) : Wkp mu Omega p (k + 1) →L[ℝ] Wkp mu Omega p k :=
+  LinearMap.mkContinuousOfExistsBound
+    { toFun := fun w => (Wkp.exists_hasWeakLineDerivOn_value k w v).choose
+      map_add' := fun w w' => by
+        refine Wkp.eq_of_hasWeakLineDerivOn
+          (Wkp.exists_hasWeakLineDerivOn_value k (w + w') v).choose_spec ?_
+        refine (((Wkp.exists_hasWeakLineDerivOn_value k w v).choose_spec.add
+          (Wkp.exists_hasWeakLineDerivOn_value k w' v).choose_spec).congr_ae ?_).congr_ae_deriv ?_
+        · rw [Wkp.value_add]
+          exact (Lp.coeFn_add _ _).symm
+        · rw [Wkp.value_add]
+          exact (Lp.coeFn_add _ _).symm
+      map_smul' := fun c w => by
+        refine Wkp.eq_of_hasWeakLineDerivOn
+          (Wkp.exists_hasWeakLineDerivOn_value k (c • w) v).choose_spec ?_
+        refine (((Wkp.exists_hasWeakLineDerivOn_value k w v).choose_spec.const_smul
+          c).congr_ae ?_).congr_ae_deriv ?_
+        · rw [Wkp.value_smul]
+          exact (Lp.coeFn_smul _ _).symm
+        · rw [RingHom.id_apply, Wkp.value_smul]
+          exact (Lp.coeFn_smul _ _).symm }
+    (by
+      obtain ⟨C, hC⟩ := Wkp.exists_norm_le_of_hasWeakLineDerivOn (mu := mu) (Omega := Omega)
+        (p := p) v k
+      exact ⟨C, fun w => hC w _ (Wkp.exists_hasWeakLineDerivOn_value k w v).choose_spec⟩)
+
+/-- The value of `TauCeti.Wkp.lineDerivL v k w` is a weak derivative of the value of `w` in the
+direction `v`. -/
+theorem Wkp.hasWeakLineDerivOn_lineDerivL (v : E) (k : ℕ) (w : Wkp mu Omega p (k + 1)) :
+    HasWeakLineDerivOn mu Omega (Wkp.value (k + 1) w) (Wkp.value k (Wkp.lineDerivL v k w)) v :=
+  (Wkp.exists_hasWeakLineDerivOn_value k w v).choose_spec
+
+/-- An element of `W^{k,p}(Ω)` whose value is a weak derivative of the value of `w` in the
+direction `v` is `TauCeti.Wkp.lineDerivL v k w`. -/
+theorem Wkp.lineDerivL_eq_of_hasWeakLineDerivOn {v : E} {k : ℕ} {w : Wkp mu Omega p (k + 1)}
+    {d : Wkp mu Omega p k}
+    (h : HasWeakLineDerivOn mu Omega (Wkp.value (k + 1) w) (Wkp.value k d) v) :
+    Wkp.lineDerivL v k w = d :=
+  Wkp.eq_of_hasWeakLineDerivOn (Wkp.hasWeakLineDerivOn_lineDerivL v k w) h
 
 /-! ### From the directional derivatives to `W^{k+1,p}` -/
 

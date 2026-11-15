@@ -33,7 +33,9 @@ The gauge is the one making the section `|α|` times the winding phase outside a
 (`TauCeti.Vortex.exists_framedGaugeGroup_sectionValue_smul_eq`). For such an end-normalized
 vortex, the end trivialization by the inverse winding phase has the positive real section `|α|`,
 and the holomorphicity rows of the vortex equation then determine its connection from
-`ℓ = log |α|²` (`TauCeti.Vortex.sub_referenceField_apply_eq`). Outside a large disc,
+`ℓ = log |α|²` (`TauCeti.Vortex.sub_referenceField_apply_zero_of_equation_eq_zero`,
+`TauCeti.Vortex.sub_referenceField_apply_one_of_equation_eq_zero`,
+`TauCeti.Vortex.sub_referenceField_apply_two_and_three`). Outside a large disc,
 
 `x - x_ref = (-∂_t ℓ / 2, ∂_s ℓ / 2, x_ref,₂ (exp (ℓ / 2) - 1), x_ref,₃ (exp (ℓ / 2) - 1))`
 
@@ -227,9 +229,13 @@ private theorem sub_referenceField_apply_eq_of_eventuallyEq_log_normSq
     simp only [← sq_norm_sectionValue, Real.log_pow]
     rw [Nat.cast_ofNat, mul_div_cancel_left₀ _ two_ne_zero, Real.exp_log (norm_pos_iff.2 hα)]
   have hd := hv.fderiv_eq (𝕜 := ℝ)
-  obtain ⟨h0, h1, h2, h3⟩ := sub_referenceField_apply_eq f hrOut hp hq (by simp [hsol])
-    (by simp [hsol]) hphase hα
-  exact ⟨by rw [hd]; exact h0, by rw [hd]; exact h1, by rw [hexp]; exact h2,
+  have h₁ : equation x z 1 = 0 := by simp [hsol]
+  have h₂ : equation x z 2 = 0 := by simp [hsol]
+  have h0 := sub_referenceField_apply_zero_of_equation_eq_zero f hrOut hp hq h₁ h₂ hphase hα
+  have h1 := sub_referenceField_apply_one_of_equation_eq_zero f hrOut hp hq h₁ h₂ hphase hα
+  obtain ⟨h2, h3⟩ := sub_referenceField_apply_two_and_three f hrOut hphase.self_of_nhds
+  simp only [Pi.sub_apply, PiLp.sub_apply] at h0 h1 h2 h3
+  exact ⟨by rw [hd, neg_div]; exact h0, by rw [hd]; exact h1, by rw [hexp]; exact h2,
     by rw [hexp]; exact h3⟩
 
 /-- **End-normalized vortices lie in every Sobolev field space.** Let `x` be a smooth plane
