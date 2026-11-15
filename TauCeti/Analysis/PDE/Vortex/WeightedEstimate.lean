@@ -8,8 +8,11 @@ module
 public import TauCeti.Analysis.PDE.Vortex.SpectralGap
 public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 
 /-!
@@ -76,8 +79,8 @@ All in the namespace `TauCeti.Vortex`:
 * `norm_sq_gaugeFixedOperator_fun_smul_le`: the Leibniz bound for `L_x` on a weighted variation.
 * `exists_integral_gaugeFixedGradientDensity_fun_smul_le`: the weighted Gårding inequality.
 * `exists_integral_gaugeFixedGradientDensity_exp_smul_gaugeFixedAdjoint_le` and
-  `exists_integral_norm_fderiv_exp_smul_gaugeFixedAdjoint_le`: the weighted covariant and ordinary
-  gradient estimates for `exp(c ρ) L_x* η` in terms of `L_x L_x* η`.
+  `exists_integral_norm_sq_fderiv_exp_smul_gaugeFixedAdjoint_le`: the weighted covariant and
+  ordinary gradient estimates for `exp(c ρ) L_x* η` in terms of `L_x L_x* η`.
 
 ## References
 
@@ -111,14 +114,20 @@ theorem norm_sq_gaugeFixedAdjoint_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 
     real_inner_self_eq_norm_sq, real_inner_comm]
   ring
 
+/-- The squared gradient of the weight `exp(c √(1 + |z|²))` is at most `c²` times its square. -/
+private theorem sq_norm_fderiv_exp_mul_sqrt_one_add_norm_sq_le (c : ℝ) (z : ℂ) :
+    ‖fderiv ℝ (fun t : ℂ ↦ Real.exp (c * √(1 + ‖t‖ ^ 2))) z‖ ^ 2 ≤
+      c ^ 2 * Real.exp (c * √(1 + ‖z‖ ^ 2)) ^ 2 := by
+  have := pow_le_pow_left₀ (norm_nonneg _) (norm_fderiv_exp_mul_sqrt_add_norm_sq_le c one_pos z) 2
+  simpa only [mul_pow, sq_abs] using this
+
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure]
 
-private theorem integrable_weightGradientError (hw : ContDiff ℝ 1 w)
-    (hη : Continuous η) (hc : HasCompactSupport η) :
-    Integrable (fun z ↦ ‖fderiv ℝ w z‖ ^ 2 * ‖η z‖ ^ 2) μ := by
-  exact (by fun_prop : Continuous (fun z ↦
-    ‖fderiv ℝ w z‖ ^ 2 * ‖η z‖ ^ 2)).integrable_of_hasCompactSupport
-      (hc.mono fun z hz hzero ↦ hz (by simp [hzero]))
+private theorem integrable_sq_mul_norm_sq {f : ℂ → ℝ} {g : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hf : Continuous f) (hg : Continuous g) (hgs : HasCompactSupport g) :
+    Integrable (fun z ↦ f z ^ 2 * ‖g z‖ ^ 2) μ :=
+  ((hf.pow 2).mul (hg.norm.pow 2)).integrable_of_hasCompactSupport
+    (hgs.mono fun z hz hzero ↦ hz (by simp [hzero]))
 
 /-- The integrated localization identity: the weighted pairing with `L_x L_x*` equals
 the localized adjoint energy minus the exact weight-gradient error. -/
@@ -136,7 +145,8 @@ theorem integral_norm_sq_gaugeFixedAdjoint_fun_smul
     ((continuous_gaugeFixedAdjoint hx.continuous ((hw.pow 2).smul hη₁)).inner
       hA.continuous).integrable_of_hasCompactSupport
         (hAc.mono fun z hz he ↦ hz (by simp [he]))
-  have he := integrable_weightGradientError (μ := μ) hw hη.continuous hc
+  have he := integrable_sq_mul_norm_sq (μ := μ) (hw.continuous_fderiv one_ne_zero).norm
+    hη.continuous hc
   simp_rw [norm_sq_gaugeFixedAdjoint_fun_smul x (hw.differentiable (by norm_num) _)
     (hη.differentiable (by norm_num) _)]
   rw [integral_add hi he]
@@ -214,11 +224,9 @@ theorem mul_integral_mul_norm_sq_le_integral_mul_inner_gaugeFixedOperator
     (fun z hz ↦ hP z (fun he ↦ hz (by simp [he])))
   simp only [Pi.smul_def'] at hloc
   rw [integral_norm_sq_gaugeFixedAdjoint_fun_smul hx hη hc (hw.of_le (by norm_num))] at hloc
-  have hi : Integrable (fun z ↦ w z ^ 2 * ‖η z‖ ^ 2) μ :=
-    ((hw.continuous.pow 2).mul (hη.continuous.norm.pow 2)).integrable_of_hasCompactSupport
-      (hc.mono fun z hz hzero ↦ hz (by simp [hzero]))
-  have he := integrable_weightGradientError (μ := μ)
-    (hw.of_le (by norm_num)) hη.continuous hc
+  have hi := integrable_sq_mul_norm_sq (μ := μ) hw.continuous hη.continuous hc
+  have he := integrable_sq_mul_norm_sq (μ := μ)
+    (hw.continuous_fderiv (by norm_num)).norm hη.continuous hc
   have hb := integral_mono he (hi.const_mul (c ^ 2)) fun z ↦
     by
       by_cases hz : η z = 0
@@ -521,13 +529,10 @@ theorem exists_integral_exp_mul_norm_sq_le_mul_integral_exp_mul_norm_sq_gaugeFix
   have hw : Continuous w := (contDiff_exp_mul_sqrt_add_norm_sq (n := 0) c one_pos).continuous
   have hW₂ : ContDiff ℝ 2 W := contDiff_exp_mul_sqrt_add_norm_sq c (by linarith)
   have hWc : Continuous W := hW₂.continuous
-  have hi {f : ℂ → ℝ} {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hf : Continuous f)
-      (hg : Continuous g) (hgs : HasCompactSupport g) :
-      Integrable (fun z ↦ f z ^ 2 * ‖g z‖ ^ 2) μ :=
-    ((hf.pow 2).mul (hg.norm.pow 2)).integrable_of_hasCompactSupport
-      (hgs.mono fun z hz hzero ↦ hz (by simp [hzero]))
+  have iWη := integrable_sq_mul_norm_sq (μ := μ) hWc hη.continuous hηc
+  have iWG := integrable_sq_mul_norm_sq (μ := μ) hWc hGc hGs
   have hamgm := integral_mul_inner_le (ν := μ) (w := fun z ↦ W z ^ 2) (fun z ↦ sq_nonneg _)
-    (hi hWc hη.continuous hηc) (hi hWc hGc hGs) hδ
+    iWη iWG hδ
   have hWη := hW W hW₂ (fun z ↦ (Real.exp_pos _).le)
     (fun z ↦ (norm_fderiv_exp_mul_sqrt_add_norm_sq c (by linarith) z).trans_le (by
       rw [mul_right_comm])) η hη hηc
@@ -538,11 +543,11 @@ theorem exists_integral_exp_mul_norm_sq_le_mul_integral_exp_mul_norm_sq_gaugeFix
     have h2 := mul_le_mul_of_nonneg_left this (by positivity : (0 : ℝ) ≤ 2 * δ)
     convert h2 using 1 <;> field_simp
   -- The two weights are comparable, since `√·` is `1/2`-Hölder.
-  have h₁ := integral_mono (hi hw hη.continuous hηc) ((hi hWc hη.continuous hηc).const_mul E)
+  have h₁ := integral_mono (integrable_sq_mul_norm_sq hw hη.continuous hηc) (iWη.const_mul E)
     fun z ↦ by
       simpa only [mul_assoc, abs_sub_comm 1 b] using mul_le_mul_of_nonneg_right
         (sq_exp_mul_sqrt_add_norm_sq_le c 1 b z) (sq_nonneg ‖η z‖)
-  have h₂ := integral_mono (hi hWc hGc hGs) ((hi hw hGc hGs).const_mul E) fun z ↦ by
+  have h₂ := integral_mono iWG ((integrable_sq_mul_norm_sq hw hGc hGs).const_mul E) fun z ↦ by
       simpa only [mul_assoc] using mul_le_mul_of_nonneg_right
         (sq_exp_mul_sqrt_add_norm_sq_le c b 1 z) (sq_nonneg ‖G z‖)
   rw [integral_const_mul] at h₁ h₂
@@ -580,19 +585,13 @@ theorem exists_integral_exp_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral_exp_mu
     continuous_gaugeFixedOperator hx.continuous (contDiff_gaugeFixedAdjoint hx hη)
   have hGs : HasCompactSupport G :=
     hasCompactSupport_gaugeFixedOperator (hasCompactSupport_gaugeFixedAdjoint hηc)
-  have hdw (z : ℂ) : ‖fderiv ℝ w z‖ ^ 2 ≤ c ^ 2 * w z ^ 2 := by
-    have := pow_le_pow_left₀ (norm_nonneg _)
-      (norm_fderiv_exp_mul_sqrt_add_norm_sq_le c one_pos z) 2
-    simpa only [mul_pow, sq_abs] using this
-  have hi {f : ℂ → ℝ} {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hf : Continuous f)
-      (hg : Continuous g) (hgs : HasCompactSupport g) :
-      Integrable (fun z ↦ f z ^ 2 * ‖g z‖ ^ 2) μ :=
-    ((hf.pow 2).mul (hg.norm.pow 2)).integrable_of_hasCompactSupport
-      (hgs.mono fun z hz hzero ↦ hz (by simp [hzero]))
+  have hdw (z : ℂ) : ‖fderiv ℝ w z‖ ^ 2 ≤ c ^ 2 * w z ^ 2 :=
+    sq_norm_fderiv_exp_mul_sqrt_one_add_norm_sq_le c z
   have hA := integral_sq_mul_norm_sq_gaugeFixedAdjoint_le (μ := μ) hx hη hηc
     (hw.of_le (by norm_num)) hdw
   have hP := integral_mul_inner_le (ν := μ) (w := fun z ↦ w z ^ 2) (fun z ↦ sq_nonneg _)
-    (hi hw.continuous hη.continuous hηc) (hi hw.continuous hGc hGs) one_pos
+    (integrable_sq_mul_norm_sq hw.continuous hη.continuous hηc)
+    (integrable_sq_mul_norm_sq hw.continuous hGc hGs) one_pos
   have h1 := hK η hη hηc
   have : 0 ≤ ∫ z, w z ^ 2 * ‖G z‖ ^ 2 ∂μ := integral_nonneg fun z ↦ by positivity
   have : 0 ≤ c ^ 2 := sq_nonneg c
@@ -642,11 +641,6 @@ theorem exists_integral_gaugeFixedGradientDensity_fun_smul_le
   set v : ℂ → EuclideanSpace ℝ (Fin 4) := fun t ↦ w t • y t
   have hv : ContDiff ℝ 2 v := hw.smul hy
   have hvc : HasCompactSupport v := hyc.smul_left (f := w)
-  have hi {f : ℂ → ℝ} {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hf : Continuous f)
-      (hg : Continuous g) (hgs : HasCompactSupport g) :
-      Integrable (fun z ↦ f z ^ 2 * ‖g z‖ ^ 2) μ :=
-    ((hf.pow 2).mul (hg.norm.pow 2)).integrable_of_hasCompactSupport
-      (hgs.mono fun z hz hzero ↦ hz (by simp [hzero]))
   have hLy : Continuous (gaugeFixedOperator x y) :=
     continuous_gaugeFixedOperator hx.continuous (hy.of_le (by norm_num))
   have hLyc : HasCompactSupport (gaugeFixedOperator x y) := hasCompactSupport_gaugeFixedOperator hyc
@@ -659,17 +653,17 @@ theorem exists_integral_gaugeFixedGradientDensity_fun_smul_le
       (hy.differentiable (by norm_num) z)).trans ?_
     have := mul_le_mul_of_nonneg_right (hdw z) (sq_nonneg ‖y z‖)
     nlinarith
-  have hwy := hi hw.continuous hy.continuous hyc
-  have hwL := hi hw.continuous hLy hLyc
+  have hwy := integrable_sq_mul_norm_sq (μ := μ) hw.continuous hy.continuous hyc
+  have hwL := integrable_sq_mul_norm_sq (μ := μ) hw.continuous hLy hLyc
   have hL : ∫ z, ‖gaugeFixedOperator x v z‖ ^ 2 ∂μ ≤
       2 * ∫ z, w z ^ 2 * ‖gaugeFixedOperator x y z‖ ^ 2 ∂μ +
         2 * c ^ 2 * ∫ z, w z ^ 2 * ‖y z‖ ^ 2 ∂μ := by
     rw [← integral_const_mul, ← integral_const_mul, ← integral_add (hwL.const_mul _)
       (hwy.const_mul _)]
     refine integral_mono ?_ ((hwL.const_mul _).add (hwy.const_mul _)) hpt
-    exact ((continuous_gaugeFixedOperator hx.continuous (hv.of_le (by norm_num))).norm.pow
-      2).integrable_of_hasCompactSupport ((hasCompactSupport_gaugeFixedOperator (x := x) hvc).mono
-        fun z hz hzero ↦ hz (by simp [hzero]))
+    exact (continuous_gaugeFixedOperator hx.continuous
+      (hv.of_le (by norm_num))).integrable_norm_sq_of_hasCompactSupport
+        (hasCompactSupport_gaugeFixedOperator hvc)
   -- The mass of `w y` on the disc is at most its total mass.
   have hB : K * ∫ z in Metric.closedBall 0 R, ‖v z‖ ^ 2 ∂μ ≤
       max K 0 * ∫ z, w z ^ 2 * ‖y z‖ ^ 2 ∂μ := by
@@ -689,8 +683,8 @@ theorem exists_integral_gaugeFixedGradientDensity_fun_smul_le
   linarith
 
 /-- **The exponentially weighted covariant `H¹` estimate for `L_x*` at a plane vortex.** Let `x`
-be a `C²` solution of the vortex equation with `|α| → 1` and `∇₁ α → 0` at infinity, let
-`ρ(z) = √(1 + |z|²)` and `|c| < 1/2`. There is `K`, depending only on the vortex and `c`, such
+be a `C²` solution of the vortex equation with `|α| → 1` at infinity, let `ρ(z) = √(1 + |z|²)`
+and `|c| < 1/2`. There is `K`, depending only on the vortex and `c`, such
 that every compactly supported `C³` field `η` satisfies
 
 `∫ G(exp(c ρ) L_x* η) ≤ K ∫ exp(2 c ρ) |L_x L_x* η|²`,
@@ -703,7 +697,6 @@ where `G` is the covariant gradient density (`gaugeFixedGradientDensity`). With
 theorem exists_integral_gaugeFixedGradientDensity_exp_smul_gaugeFixedAdjoint_le
     (hx : ContDiff ℝ 2 x) (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0))
     {c : ℝ} (hc : |c| < 1 / 2) :
     ∃ K > 0, ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 3 η → HasCompactSupport η →
       ∫ z, gaugeFixedGradientDensity x
@@ -711,6 +704,13 @@ theorem exists_integral_gaugeFixedGradientDensity_exp_smul_gaugeFixedAdjoint_le
         K * ∫ z, Real.exp (c * √(1 + ‖z‖ ^ 2)) ^ 2 *
           ‖gaugeFixedOperator x (gaugeFixedAdjoint x η) z‖ ^ 2 ∂μ := by
   have hx₁ : ContDiff ℝ 1 x := hx.of_le (by norm_num)
+  -- The covariant derivative decays exponentially, so it tends to zero at infinity.
+  have hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0) := by
+    obtain ⟨K, hK⟩ := exists_norm_covariantDerivative_le_mul_exp
+      (contDiff_euclidean.1 hx 0).continuous (contDiff_euclidean.1 hx 2)
+      (contDiff_euclidean.1 hx 3) hsol hlim (c := 1 / 4) (by norm_num)
+    refine squeeze_zero_norm (fun z ↦ (hK z 1).trans_eq (by rw [norm_one, mul_one])) ?_
+    simpa using (tendsto_exp_neg_mul_norm_cocompact (E := ℂ) (c := 1 / 4) (by norm_num)).const_mul K
   obtain ⟨K₁, hK₁, hG⟩ :=
     exists_integral_gaugeFixedGradientDensity_fun_smul_le (μ := μ) hx₁ hsol hlim hcov
   obtain ⟨K₂, hK₂, hA⟩ :=
@@ -719,10 +719,8 @@ theorem exists_integral_gaugeFixedGradientDensity_exp_smul_gaugeFixedAdjoint_le
   refine ⟨2 + (2 * c ^ 2 + K₁) * K₂, by positivity, fun η hη hηc ↦ ?_⟩
   set w : ℂ → ℝ := fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))
   have hw : ContDiff ℝ 2 w := contDiff_exp_mul_sqrt_add_norm_sq c one_pos
-  have hdw (z : ℂ) : ‖fderiv ℝ w z‖ ^ 2 ≤ c ^ 2 * w z ^ 2 := by
-    have := pow_le_pow_left₀ (norm_nonneg _)
-      (norm_fderiv_exp_mul_sqrt_add_norm_sq_le c one_pos z) 2
-    simpa only [mul_pow, sq_abs] using this
+  have hdw (z : ℂ) : ‖fderiv ℝ w z‖ ^ 2 ≤ c ^ 2 * w z ^ 2 :=
+    sq_norm_fderiv_exp_mul_sqrt_one_add_norm_sq_le c z
   have hu : ContDiff ℝ 2 (gaugeFixedAdjoint x η) :=
     contDiff_gaugeFixedAdjoint hx (hη.of_le (by norm_num))
   have h₁ := hG w c hw hdw _ hu (hasCompactSupport_gaugeFixedAdjoint hηc)
@@ -742,10 +740,9 @@ satisfies
 With `exists_integral_exp_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral_exp_mul_norm_sq`, this
 bounds `‖exp(c ρ) L_x* η‖_{H¹}` by `‖exp(c ρ) L_x L_x* η‖₂`: the exponentially weighted output
 estimate for the right inverse `L_x* (L_x L_x*)⁻¹`, from `L²` to `H¹`, on inputs of this form. -/
-theorem exists_integral_norm_fderiv_exp_smul_gaugeFixedAdjoint_le
+theorem exists_integral_norm_sq_fderiv_exp_smul_gaugeFixedAdjoint_le
     (hx : ContDiff ℝ 2 x) (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0))
     {M : ℝ} (hM : ∀ z, x z 0 ^ 2 + x z 1 ^ 2 ≤ M) {c : ℝ} (hc : |c| < 1 / 2) :
     ∃ K > 0, ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 3 η → HasCompactSupport η →
       ∫ z, ‖fderiv ℝ
@@ -755,7 +752,7 @@ theorem exists_integral_norm_fderiv_exp_smul_gaugeFixedAdjoint_le
   have hx₁ : ContDiff ℝ 1 x := hx.of_le (by norm_num)
   obtain ⟨K₁, hK₁, hG⟩ :=
     exists_integral_gaugeFixedGradientDensity_exp_smul_gaugeFixedAdjoint_le (μ := μ) hx hsol
-      hlim hcov hc
+      hlim hc
   obtain ⟨K₂, hK₂, hA⟩ :=
     exists_integral_exp_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral_exp_mul_norm_sq (μ := μ)
       hx₁ hsol hlim hc
@@ -768,32 +765,14 @@ theorem exists_integral_norm_fderiv_exp_smul_gaugeFixedAdjoint_le
     contDiff_gaugeFixedAdjoint hx (hη.of_le (by norm_num))
   have hv : ContDiff ℝ 2 v := hw.smul hu
   have hvc : HasCompactSupport v := (hasCompactSupport_gaugeFixedAdjoint hηc).smul_left (f := w)
-  have hDv : Integrable (fun z ↦ ‖fderiv ℝ v z‖ ^ 2) μ :=
-    ((hv.continuous_fderiv two_ne_zero).norm.pow 2).integrable_of_hasCompactSupport
-      (hvc.fderiv (𝕜 := ℝ) |>.mono fun z hz hzero ↦ hz (by simp [hzero]))
-  have hGv : Integrable (gaugeFixedGradientDensity x v) μ :=
-    integrable_gaugeFixedGradientDensity hx.continuous (hv.of_le (by norm_num)) hvc
-  have hnv : Integrable (fun z ↦ ‖v z‖ ^ 2) μ :=
-    (hv.continuous.norm.pow 2).integrable_of_hasCompactSupport
-      (hvc.mono fun z hz hzero ↦ hz (by simp [hzero]))
-  -- Pointwise, `|Dv|² ≤ 4 G(v) + 4 M |v|²`.
-  have hpt (z : ℂ) : ‖fderiv ℝ v z‖ ^ 2 ≤
-      4 * gaugeFixedGradientDensity x v z + 4 * M * ‖v z‖ ^ 2 :=
-    (norm_fderiv_sq_le_gaugeFixedGradientDensity_add x v z).trans (by
-      gcongr
-      exact hM z)
-  have h : ∫ z, ‖fderiv ℝ v z‖ ^ 2 ∂μ ≤
-      ∫ z, (4 * gaugeFixedGradientDensity x v z + 4 * M * ‖v z‖ ^ 2) ∂μ :=
-    integral_mono hDv ((hGv.const_mul 4).add (hnv.const_mul _)) hpt
-  rw [integral_add (hGv.const_mul 4) (hnv.const_mul _), integral_const_mul,
-    integral_const_mul] at h
-  have hnv' : ∫ z, ‖v z‖ ^ 2 ∂μ =
-      ∫ z, w z ^ 2 * ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ := by
+  have h := integral_norm_fderiv_sq_le_gaugeFixedGradientDensity_add (μ := μ) (y := v)
+    hx.continuous (hv.of_le (by norm_num)) hvc (M := M) fun z _ ↦ hM z
+  have hnv : ∫ z, ‖v z‖ ^ 2 ∂μ = ∫ z, w z ^ 2 * ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ := by
     congr 1 with z
     simp [v, norm_smul, mul_pow]
   have h₁ := hG η hη hηc
   have h₂ := hA η (hη.of_le (by norm_num)) hηc
-  rw [hnv'] at h
+  rw [hnv] at h
   have := mul_le_mul_of_nonneg_left h₂ (by positivity : (0 : ℝ) ≤ 4 * M)
   nlinarith
 
