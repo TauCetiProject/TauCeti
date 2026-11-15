@@ -14,6 +14,7 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
+import TauCeti.Topology.Order.OrderClosed
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
@@ -58,8 +59,9 @@ of solutions of varying quasilinear problems need.
 * `TauCeti.PDE.intervalDirichletFluxConst_sub`, `TauCeti.PDE.intervalDirichletSlope_sub`: the flux
   constant and the derivative of the solution are affine in the data.
 * `TauCeti.PDE.norm_intervalDirichletSolution_le`,
-  `TauCeti.PDE.norm_intervalDirichletSolution_sub_le`: the bound of the solution, and its
-  dependence on the data.
+  `TauCeti.PDE.norm_intervalDirichletSolution_sub_le`,
+  `TauCeti.PDE.norm_intervalDirichletSolution_sub_le_of_le`: the bound of the solution, its
+  dependence on the data, and its Lipschitz dependence on the data for `λ ≤ a ≤ M`.
 * `TauCeti.PDE.tendsto_intervalDirichletSolution_of_tendsto_ae`,
   `TauCeti.PDE.tendsto_intervalDirichletSolution`: continuous dependence on the coefficient, and on
   the coefficient and the data jointly.
@@ -280,22 +282,21 @@ theorem tendsto_intervalDirichletSolution_of_tendsto_ae (hx : x₀ < x₁) (hlam
     (hs : IntegrableOn (intervalDirichletSlope x₀ x₁ g₀ g₁ G a) (Ioo x₀ x₁)) :
     Tendsto (fun n => intervalDirichletSolution hx.le g₀ g₁ (hsn n)) atTop
       (𝓝 (intervalDirichletSolution hx.le g₀ g₁ hs)) := by
-  let x₀' : Icc x₀ x₁ := ⟨x₀, left_mem_Icc.2 hx.le⟩
+  have hx₀ := left_mem_Icc.2 hx.le
   -- The limit coefficient inherits measurability and the lower bound.
   have ha := aestronglyMeasurable_of_tendsto_ae atTop han hlim
-  have hla : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t := by
-    filter_upwards [hlim, ae_all_iff.2 hanl] with t ht hl
-    exact ge_of_tendsto' ht hl
+  have hla : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t := eventually_ge_of_tendsto hlim hanl
   rw [tendsto_iff_norm_sub_tendsto_zero]
   refine squeeze_zero (fun _ => norm_nonneg _) (fun n => ?_)
     (tendsto_integral_abs_intervalDirichletSlope_sub hx hlam g₀ g₁ han hanl ha hla hG hlim)
-  refine (ContinuousMap.norm_le _ (integral_nonneg fun _ => abs_nonneg _)).2 fun y => ?_
-  rw [ContinuousMap.sub_apply, intervalDirichletSolution_apply,
-    intervalDirichletSolution_apply, add_sub_add_left_eq_sub,
-    ← intervalIntegral.integral_sub ((hsn n).intervalIntegrable_of_mem_Icc x₀'.2 y.2)
-      (hs.intervalIntegrable_of_mem_Icc x₀'.2 y.2)]
-  simpa only [Real.norm_eq_abs, Pi.sub_apply] using
-    intervalIntegral.norm_integral_le_setIntegral_norm ((hsn n).sub hs) x₀'.2 y.2
+  -- The difference is the primitive of the difference of the derivatives.
+  refine (intervalIntegral.norm_le_of_forall_eq_add_integral (c := 0) hx₀ ((hsn n).sub hs)
+    ((hsn n).sub hs).abs (ae_of_all _ fun t => (Real.norm_eq_abs _).le) fun y => ?_).trans_eq
+    (by rw [norm_zero, zero_add]; rfl)
+  rw [ContinuousMap.sub_apply, intervalDirichletSolution_apply, intervalDirichletSolution_apply,
+    add_sub_add_left_eq_sub, zero_add, ← intervalIntegral.integral_sub
+      ((hsn n).intervalIntegrable_of_mem_Icc hx₀ y.2) (hs.intervalIntegrable_of_mem_Icc hx₀ y.2)]
+  rfl
 
 /-- **Continuity of the frozen-solution map.** Let `a v`, for `v` in a sequential space `X`, be
 coefficients with a uniform lower bound `λ ≤ a v`, such that `a vₙ → a v` almost everywhere whenever
@@ -373,29 +374,22 @@ theorem norm_intervalDirichletSolution_le (hx : x₀ < x₁) (hlam : 0 < lam) (g
     ‖intervalDirichletSolution hx.le g₀ g₁ hs‖ ≤
       |g₀| + lam⁻¹ * ((x₁ - x₀) * |intervalDirichletFluxConst x₀ x₁ g₀ g₁ G a| +
         ∫ t in Ioo x₀ x₁, |G t|) := by
-  have : Nonempty (Icc x₀ x₁) := ⟨⟨x₀, left_mem_Icc.2 hx.le⟩⟩
-  set K := |intervalDirichletFluxConst x₀ x₁ g₀ g₁ G a|
   -- The derivative is dominated by `λ⁻¹ (|k| + |G|)`.
-  have hint : ∫ t in Ioo x₀ x₁, |intervalDirichletSlope x₀ x₁ g₀ g₁ G a t| ≤
-      lam⁻¹ * ((x₁ - x₀) * K + ∫ t in Ioo x₀ x₁, |G t|) := by
-    calc _ ≤ ∫ t in Ioo x₀ x₁, lam⁻¹ * (K + |G t|) :=
-          integral_mono_ae hs.abs (((integrable_const K).add hG.abs).const_mul _)
-            (ae_abs_intervalDirichletSlope_le hlam hla le_rfl)
-      _ = _ := by
-          rw [integral_const_mul, integral_add (integrable_const _) hG.abs, setIntegral_const,
-            Real.volume_real_Ioo_of_le hx.le, smul_eq_mul]
-  refine (ContinuousMap.norm_le_of_nonempty _).2 fun y => ?_
-  rw [intervalDirichletSolution_apply, Real.norm_eq_abs]
-  refine (abs_add_le _ _).trans (add_le_add le_rfl (le_trans ?_ hint))
-  simpa only [Real.norm_eq_abs] using
-    intervalIntegral.norm_integral_le_setIntegral_norm hs (left_mem_Icc.2 hx.le) y.2
+  refine (intervalIntegral.norm_le_of_forall_eq_add_integral (left_mem_Icc.2 hx.le) hs
+    (B := fun t => lam⁻¹ * (|intervalDirichletFluxConst x₀ x₁ g₀ g₁ G a| + |G t|))
+    (((integrable_const _).add hG.abs).const_mul lam⁻¹)
+    ((ae_abs_intervalDirichletSlope_le hlam hla le_rfl).mono fun _ h =>
+      (Real.norm_eq_abs _).trans_le h)
+    (intervalDirichletSolution_apply hx.le g₀ g₁ hs)).trans_eq ?_
+  rw [Real.norm_eq_abs, integral_const_mul, integral_add (integrable_const _) hG.abs,
+    setIntegral_const, Real.volume_real_Ioo_of_le hx.le, smul_eq_mul]
 
 /-- **Dependence on the data.** For `λ ≤ a`, the explicit solutions of two problems with the same
 coefficient differ on `[x₀, x₁]` by at most `|g₀ - g₀'| + λ⁻¹ ((x₁ - x₀) |k| + ‖G - G'‖₁)`, where
 `k` is the flux constant of the problem with the differences of the data. For `λ ≤ a ≤ M`,
 `abs_intervalDirichletFluxConst_le` bounds `|k|` by
 `M / (x₁ - x₀) (|g₁ - g₁' - (g₀ - g₀')| + λ⁻¹ ‖G - G'‖₁)`, so the solution is Lipschitz in the data
-with a constant depending only on `λ` and `M`. -/
+with a constant depending only on `λ` and `M` (`norm_intervalDirichletSolution_sub_le_of_le`). -/
 theorem norm_intervalDirichletSolution_sub_le (hx : x₀ < x₁) (hlam : 0 < lam)
     (g₀ g₁ g₀' g₁' : ℝ) {G' : ℝ → ℝ}
     (ha : AEStronglyMeasurable a (volume.restrict (Ioo x₀ x₁)))
@@ -422,6 +416,32 @@ theorem norm_intervalDirichletSolution_sub_le (hx : x₀ < x₁) (hlam : 0 < lam
   simpa only [Pi.sub_apply] using
     norm_intervalDirichletSolution_le hx hlam (g₀ - g₀') (g₁ - g₁') hla (hG.sub hG') hd
 
+/-- **Lipschitz dependence on the data.** For `λ ≤ a ≤ M`, the explicit solutions of two problems
+with the same coefficient differ on `[x₀, x₁]` by at most
+`|g₀ - g₀'| + λ⁻¹ (M (|g₁ - g₁' - (g₀ - g₀')| + λ⁻¹ ‖G - G'‖₁) + ‖G - G'‖₁)`, with the `L¹` norms
+over `(x₀, x₁)`. The bound depends on the coefficient only through `λ` and `M`. -/
+theorem norm_intervalDirichletSolution_sub_le_of_le (hx : x₀ < x₁) (hlam : 0 < lam)
+    (g₀ g₁ g₀' g₁' : ℝ) {G' : ℝ → ℝ}
+    (ha : AEStronglyMeasurable a (volume.restrict (Ioo x₀ x₁)))
+    (haM : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t ∧ a t ≤ M)
+    (hG : IntegrableOn G (Ioo x₀ x₁)) (hG' : IntegrableOn G' (Ioo x₀ x₁))
+    (hs : IntegrableOn (intervalDirichletSlope x₀ x₁ g₀ g₁ G a) (Ioo x₀ x₁))
+    (hs' : IntegrableOn (intervalDirichletSlope x₀ x₁ g₀' g₁' G' a) (Ioo x₀ x₁)) :
+    ‖intervalDirichletSolution hx.le g₀ g₁ hs - intervalDirichletSolution hx.le g₀' g₁' hs'‖ ≤
+      |g₀ - g₀'| + lam⁻¹ * (M * (|g₁ - g₁' - (g₀ - g₀')| +
+        lam⁻¹ * ∫ t in Ioo x₀ x₁, |G t - G' t|) + ∫ t in Ioo x₀ x₁, |G t - G' t|) := by
+  have hk := abs_intervalDirichletFluxConst_le hx hlam (g₀ - g₀') (g₁ - g₁') ha haM (hG.sub hG')
+  simp only [Pi.sub_apply] at hk
+  calc _ ≤ |g₀ - g₀'| + lam⁻¹ * ((x₁ - x₀) *
+          |intervalDirichletFluxConst x₀ x₁ (g₀ - g₀') (g₁ - g₁') (G - G') a| +
+            ∫ t in Ioo x₀ x₁, |G t - G' t|) :=
+        norm_intervalDirichletSolution_sub_le hx hlam g₀ g₁ g₀' g₁' ha (haM.mono fun _ h => h.1)
+          hG hG' hs hs'
+    _ ≤ |g₀ - g₀'| + lam⁻¹ * ((x₁ - x₀) * (M / (x₁ - x₀) * (|g₁ - g₁' - (g₀ - g₀')| +
+          lam⁻¹ * ∫ t in Ioo x₀ x₁, |G t - G' t|)) + ∫ t in Ioo x₀ x₁, |G t - G' t|) := by
+        gcongr
+    _ = _ := by rw [← mul_assoc, mul_div_cancel₀ M (sub_pos.2 hx).ne']
+
 /-- **Continuous dependence on all the data.** Let `λ ≤ aₙ` with `aₙ → a` almost everywhere,
 `Gₙ → G` in `L¹(x₀, x₁)`, and endpoint values `g₀ₙ → g₀` and `g₁ₙ → g₁`. Then the solutions of the
 linear problems with data `(g₀ₙ, g₁ₙ, Gₙ, aₙ)` converge uniformly on `[x₀, x₁]` to the solution
@@ -440,9 +460,7 @@ theorem tendsto_intervalDirichletSolution (hx : x₀ < x₁) (hlam : 0 < lam)
     Tendsto (fun n => intervalDirichletSolution hx.le (g₀n n) (g₁n n) (hsn n)) atTop
       (𝓝 (intervalDirichletSolution hx.le g₀ g₁ hs)) := by
   have ha := aestronglyMeasurable_of_tendsto_ae atTop han hlim
-  have hla : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t := by
-    filter_upwards [hlim, ae_all_iff.2 hanl] with t ht hl
-    exact ge_of_tendsto' ht hl
+  have hla : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a t := eventually_ge_of_tendsto hlim hanl
   -- The flux constants `kₙ` of the problems with the differences of the data tend to `0`: their
   -- numerators tend to `0`, and their denominators `∫ aₙ⁻¹` to `∫ a⁻¹ > 0`.
   have hden : Tendsto (fun n => ∫ t in Ioo x₀ x₁, (an n t)⁻¹) atTop
@@ -470,9 +488,10 @@ theorem tendsto_intervalDirichletSolution (hx : x₀ < x₁) (hlam : 0 < lam)
   have hy := tendsto_intervalDirichletSolution_of_tendsto_ae hx hlam han hanl hG hlim hsy hs
   have hB : Tendsto (fun n => |g₀n n - g₀| + lam⁻¹ * ((x₁ - x₀) *
       |intervalDirichletFluxConst x₀ x₁ (g₀n n - g₀) (g₁n n - g₁) (Gn n - G) (an n)| +
-        ∫ t in Ioo x₀ x₁, |Gn n t - G t|)) atTop (𝓝 0) := by
-    simpa using (hg₀.sub_const g₀).abs.add (((hk.abs.const_mul (x₁ - x₀)).add hGlim).const_mul
-      lam⁻¹)
+        ∫ t in Ioo x₀ x₁, |Gn n t - G t|)) atTop
+      (𝓝 (|g₀ - g₀| + lam⁻¹ * ((x₁ - x₀) * |0| + 0))) :=
+    (hg₀.sub_const g₀).abs.add (((hk.abs.const_mul (x₁ - x₀)).add hGlim).const_mul lam⁻¹)
+  rw [show |g₀ - g₀| + lam⁻¹ * ((x₁ - x₀) * |(0 : ℝ)| + 0) = 0 by simp] at hB
   have hd : Tendsto (fun n => intervalDirichletSolution hx.le (g₀n n) (g₁n n) (hsn n) -
       intervalDirichletSolution hx.le g₀ g₁ (hsy n)) atTop (𝓝 0) :=
     squeeze_zero_norm (fun n => norm_intervalDirichletSolution_sub_le hx hlam _ _ _ _ (han n)
@@ -502,24 +521,19 @@ theorem exists_strictMono_tendsto_intervalDirichletSolution (hx : x₀ < x₁) (
   have hsy := fun n => integrableOn_intervalDirichletSlope hlam g₀ g₁ (han n) (hanl n) hG
   obtain ⟨w, -, ν, hν, hyν⟩ := (isCompact_closure_range_intervalDirichletSolution hx hlam han
     hanM hG hsy).tendsto_subseq fun n => subset_closure (mem_range_self n)
-  -- The distance to the solutions with the limit data is bounded uniformly in the coefficients,
-  -- since `abs_intervalDirichletFluxConst_le` bounds the flux constants uniformly.
-  have hB : Tendsto (fun n => |g₀n n - g₀| + lam⁻¹ * ((x₁ - x₀) * (M / (x₁ - x₀) *
-      (|g₁n n - g₁ - (g₀n n - g₀)| + lam⁻¹ * ∫ t in Ioo x₀ x₁, |Gn n t - G t|)) +
-        ∫ t in Ioo x₀ x₁, |Gn n t - G t|)) atTop (𝓝 0) := by
-    have hd₀ := hg₀.sub_const g₀
-    have hd₁ := (hg₁.sub_const g₁).sub hd₀
-    simpa using hd₀.abs.add (((((hd₁.abs.add (hGlim.const_mul lam⁻¹)).const_mul
-      (M / (x₁ - x₀))).const_mul (x₁ - x₀)).add hGlim).const_mul lam⁻¹)
+  -- The distance to the solutions with the limit data is bounded uniformly in the coefficients
+  -- (`norm_intervalDirichletSolution_sub_le_of_le`), and the bound tends to `0`.
+  have hd₀ := hg₀.sub_const g₀
+  have hB : Tendsto (fun n => |g₀n n - g₀| + lam⁻¹ * (M * (|g₁n n - g₁ - (g₀n n - g₀)| +
+      lam⁻¹ * ∫ t in Ioo x₀ x₁, |Gn n t - G t|) + ∫ t in Ioo x₀ x₁, |Gn n t - G t|)) atTop
+      (𝓝 (|g₀ - g₀| + lam⁻¹ * (M * (|g₁ - g₁ - (g₀ - g₀)| + lam⁻¹ * 0) + 0))) :=
+    hd₀.abs.add ((((((hg₁.sub_const g₁).sub hd₀).abs.add (hGlim.const_mul lam⁻¹)).const_mul
+      M).add hGlim).const_mul lam⁻¹)
+  rw [show |g₀ - g₀| + lam⁻¹ * (M * (|g₁ - g₁ - (g₀ - g₀)| + lam⁻¹ * 0) + 0) = 0 by simp] at hB
   have hd : Tendsto (fun n => intervalDirichletSolution hx.le (g₀n n) (g₁n n) (hsn n) -
-      intervalDirichletSolution hx.le g₀ g₁ (hsy n)) atTop (𝓝 0) := by
-    refine squeeze_zero_norm (fun n => ?_) hB
-    refine (norm_intervalDirichletSolution_sub_le hx hlam _ _ _ _ (han n) (hanl n) (hGn n) hG
-      (hsn n) (hsy n)).trans (add_le_add le_rfl (mul_le_mul_of_nonneg_left
-        (add_le_add (mul_le_mul_of_nonneg_left ?_ (sub_nonneg.2 hx.le)) le_rfl)
-        (inv_nonneg.2 hlam.le)))
-    simpa only [Pi.sub_apply] using abs_intervalDirichletFluxConst_le hx hlam (g₀n n - g₀)
-      (g₁n n - g₁) (han n) (hanM n) ((hGn n).sub hG)
+      intervalDirichletSolution hx.le g₀ g₁ (hsy n)) atTop (𝓝 0) :=
+    squeeze_zero_norm (fun n => norm_intervalDirichletSolution_sub_le_of_le hx hlam _ _ _ _
+      (han n) (hanM n) (hGn n) hG (hsn n) (hsy n)) hB
   exact ⟨w, ν, hν, by simpa using (hd.comp hν.tendsto_atTop).add hyν⟩
 
 variable {p : ℝ≥0∞} {f F : ℝ → ℝ}

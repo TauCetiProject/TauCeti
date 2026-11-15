@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Monoid.Defs
 public import Mathlib.Data.Finset.Max
 public import Mathlib.Order.Filter.Cofinite
+public import Mathlib.Order.Filter.CountableInter
 public import Mathlib.Topology.Order.OrderClosed
 
 /-!
@@ -25,6 +26,9 @@ establishes.
   `0` along `l`, then `v ≤ K`.
 * `Filter.Tendsto.exists_forall_le_of_le`: a function tending to `b` along `cofinite` that is at
   least `b` somewhere attains its supremum.
+* `Filter.eventually_ge_of_tendsto`: a lower bound holding eventually for each member of a
+  countable family passes to its eventual pointwise limit, along a filter with countable
+  intersections such as the almost-everywhere filter of a measure.
 -/
 
 public section
@@ -58,3 +62,14 @@ theorem Filter.Tendsto.exists_forall_le_of_le {α β : Type*} [LinearOrder β] [
   by_cases hs : v s₁ ≤ v s
   · exact htmax s (by simpa using hs)
   · exact (not_le.mp hs).le.trans (by simpa using ht)
+
+/-- **A lower bound passes to an eventual pointwise limit.** Let `L` be a filter with countable
+intersections, such as the almost-everywhere filter of a measure. If `g x ≤ F i x` eventually along
+`L` for each of countably many indices `i`, and `F i x → f x` along `l` eventually along `L`, then
+`g x ≤ f x` eventually along `L`. -/
+theorem Filter.eventually_ge_of_tendsto {ι α β : Type*} [Countable ι] [TopologicalSpace β]
+    [Preorder β] [ClosedIciTopology β] {L : Filter α} [CountableInterFilter L] {l : Filter ι}
+    [l.NeBot] {F : ι → α → β} {f g : α → β} (hlim : ∀ᶠ x in L, Tendsto (fun i ↦ F i x) l (𝓝 (f x)))
+    (hF : ∀ i, ∀ᶠ x in L, g x ≤ F i x) : ∀ᶠ x in L, g x ≤ f x := by
+  filter_upwards [hlim, eventually_countable_forall.2 hF] with x hx hFx
+  exact ge_of_tendsto' hx hFx
