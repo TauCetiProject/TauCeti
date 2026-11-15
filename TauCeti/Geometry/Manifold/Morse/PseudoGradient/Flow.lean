@@ -41,7 +41,9 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
   `TauCeti.IsAdaptedPseudoGradient.mem_unstableSet_of_forall_mem`: an orbit trapped in a closed set
   whose only critical point is `x` converges to `x`.
 * `TauCeti.IsAdaptedPseudoGradient.eq_of_mem_unstableSet_inter_stableSet`: an orbit converging to
-  the same point in both directions of time is that point.
+  the same point in both directions of time is that point, and
+  `TauCeti.IsAdaptedPseudoGradient.mem_unstableSet_inter_stableSet_self_iff`: at a critical point
+  this is the only such orbit.
 * `TauCeti.IsAdaptedPseudoGradient.iUnion_stableSet` and
   `TauCeti.IsAdaptedPseudoGradient.iUnion_unstableSet`: the stable sets of the critical points
   cover the manifold, and so do their unstable sets. Together with
@@ -224,6 +226,16 @@ theorem eq_of_mem_unstableSet_inter_stableSet {x y : M}
   have hlim := Flow.mem_stableSet.1 hy.2
   simp only [hX.flow_apply_of_mfderiv_eq_zero hcrit] at hlim
   exact tendsto_nhds_unique tendsto_const_nhds hlim
+
+/-- **The trajectories from a critical point back to itself.** For a critical point `x` of `f`, a
+point lies in both the unstable and the stable set of `x` exactly when it is `x` itself. -/
+theorem mem_unstableSet_inter_stableSet_self_iff {x y : M}
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
+    y ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x ↔ y = x := by
+  refine ⟨hX.eq_of_mem_unstableSet_inter_stableSet, ?_⟩
+  rintro rfl
+  exact ⟨Flow.self_mem_unstableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hx),
+    Flow.self_mem_stableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hx)⟩
 
 /-- **The stable sets of the critical points cover the manifold.** -/
 theorem iUnion_stableSet (hf : IsMorse 𝓘(ℝ, E) f) :
