@@ -16,8 +16,16 @@ public import Mathlib.Data.Nat.BinaryRec
 steps, starting with infinity and the raw pair `S`. It records consecutive multiples:
 `LadderRel.coordinates` proves that `R` and `T` are nonzero representatives of `[n]P`
 and `[n + 1]P` when `S` represents `P`, provided `P` is neither infinity nor the
-distinguished point of order two. The relation is defined over any commutative ring;
-its geometric interpretation is over a field of characteristic different from two.
+distinguished point of order two, and `LadderRel.ne_zero_iff` shows that for `n ≠ 0`
+those two points are the exact exceptional set where `R` vanishes. Without nonvanishing
+or characteristic hypotheses, `LadderRel.cross_coordinates_eq_zero` proves that `R` and
+`T` still have vanishing cross difference with `[n]P` and `[n + 1]P` whenever
+`4 * N = (A + 2) * D`.
+
+The relation is defined over any commutative ring and commutes with ring homomorphisms
+(`LadderRel.map`), so derivations computed over `ZMod n` reduce to derivations modulo
+every divisor of `n`. Over any commutative ring, seeds with `S.z = 0` or `S.x = 0` force
+`R.z = 0` at every index and `R = 0` at every nonzero index.
 
 This is a relation between polynomial coordinate expressions, not a scalar-multiplication
 implementation. `LadderRel.exists_pairs` shows that every natural index is reached. Leading
@@ -47,7 +55,9 @@ inductive LadderRel {R : Type*} [CommRing R] (N D : R) (S : Pair R) :
 
 namespace LadderRel
 
-variable {R : Type*} [CommRing R] {N D : R} {S : Pair R}
+section CommRing
+
+variable {R : Type*} [CommRing R] {N D : R} {S U V : Pair R} {n : ℕ}
 
 /-- Every natural index admits a derivation of the binary ladder relation, even when
 some raw outputs vanish. -/
@@ -60,9 +70,137 @@ theorem exists_pairs (N D : R) (S : Pair R) (n : ℕ) : ∃ U V, LadderRel N D S
       if b then double N D V else diffAdd V U S, ?_⟩
     simpa only [Nat.bit_val] using h.bit b
 
+/-- Binary Montgomery-ladder derivations commute with any ring homomorphism. In particular,
+a derivation computed over `ZMod n` reduces along `ZMod.castHom` to a derivation over `ZMod d`
+for every divisor `d ∣ n`. -/
+theorem map {R' : Type*} [CommRing R'] (f : R →+* R')
+    (h : LadderRel N D S n U V) :
+    LadderRel (f N) (f D) (S.map f) n (U.map f) (V.map f) := by
+  induction h with
+  | zero =>
+    have h10 : (⟨1, 0⟩ : Pair R).map f = ⟨1, 0⟩ := by ext <;> simp
+    simpa only [h10] using .zero
+  | bit b _ ih =>
+    have hstep := ih.bit b
+    cases b <;> simpa [map_double, map_diffAdd] using hstep
+
+/-- Every derivation for index zero produces a first output whose second field vanishes,
+including derivations with leading zero bits. -/
+theorem z_eq_zero_zero (h : LadderRel N D S 0 U V) : U.z = 0 := by
+  generalize hn : 0 = n at h
+  induction h with
+  | zero => rfl
+  | @bit m U V b _ ih =>
+    cases b <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.add_zero] at hn
+    · have hm : 0 = m := by omega
+      simp [double_of_z_eq_zero N D (ih hm)]
+    · omega
+
+private theorem seed_z_eq_zero_aux (h : LadderRel N D S n U V) (hS : S.z = 0) :
+    (U.z = 0 ∧ V.z = 0) ∧ (n ≠ 0 → U = 0) := by
+  induction h with
+  | zero => exact ⟨⟨rfl, hS⟩, fun hn ↦ absurd rfl hn⟩
+  | @bit m U V b _ ih =>
+    obtain ⟨⟨hU, hV⟩, hm0⟩ := ih
+    cases b <;> simp only [Bool.toNat_false, Bool.toNat_true, Bool.false_eq_true,
+      ↓reduceIte, Nat.add_zero]
+    · refine ⟨⟨?_, ?_⟩, fun hm ↦ ?_⟩
+      · simp [double_of_z_eq_zero N D hU]
+      · simp [diffAdd_eq_zero_of_z_eq_zero hV hU hS]
+      · rw [hm0 (by omega), double_zero]
+    · refine ⟨⟨?_, ?_⟩, fun _ ↦ diffAdd_eq_zero_of_z_eq_zero hV hU hS⟩
+      · simp [diffAdd_eq_zero_of_z_eq_zero hV hU hS]
+      · simp [double_of_z_eq_zero N D hV]
+
+/-- From a seed with vanishing second field, every derivation maintains vanishing second fields
+in both outputs. -/
+theorem z_eq_zero_of_z_eq_zero (h : LadderRel N D S n U V) (hS : S.z = 0) :
+    U.z = 0 ∧ V.z = 0 :=
+  (h.seed_z_eq_zero_aux hS).1
+
+/-- From a seed with vanishing second field, every derivation at a nonzero index produces the
+zero raw pair as its first output. -/
+theorem eq_zero_of_z_eq_zero (h : LadderRel N D S n U V) (hn : n ≠ 0) (hS : S.z = 0) :
+    U = 0 :=
+  (h.seed_z_eq_zero_aux hS).2 hn
+
+private theorem seed_x_eq_zero_aux (h : LadderRel N D S n U V) (hS : S.x = 0) :
+    (n = 0 → U.z = 0 ∧ V.x = 0) ∧ (n ≠ 0 → U = 0 ∧ V.z = 0) := by
+  induction h with
+  | zero => exact ⟨fun _ ↦ ⟨rfl, hS⟩, fun hn ↦ absurd rfl hn⟩
+  | @bit m U V b _ ih =>
+    obtain ⟨ih0, ihn⟩ := ih
+    cases b <;> simp only [Bool.toNat_false, Bool.toNat_true, Bool.false_eq_true,
+      ↓reduceIte, Nat.add_zero]
+    · refine ⟨fun hm ↦ ?_, fun hm ↦ ?_⟩
+      · obtain ⟨hU, hV⟩ := ih0 (by omega)
+        simp [double_of_z_eq_zero N D hU, diffAdd_eq_zero_of_x_eq_zero_of_z_eq_zero hV hU hS]
+      · obtain ⟨rfl, _⟩ := ihn (by omega)
+        simp [double_zero, diffAdd_zero_right]
+    · refine ⟨fun hm ↦ by omega, fun _ ↦ ?_⟩
+      rcases eq_or_ne m 0 with rfl | hm
+      · obtain ⟨hU, hV⟩ := ih0 rfl
+        exact ⟨diffAdd_eq_zero_of_x_eq_zero_of_z_eq_zero hV hU hS,
+          by simp [double_of_x_eq_zero N D hV]⟩
+      · obtain ⟨rfl, hV⟩ := ihn hm
+        exact ⟨diffAdd_zero_right V S, by simp [double_of_z_eq_zero N D hV]⟩
+
+/-- From a seed with vanishing first field, every derivation produces a first output whose
+second field vanishes, including at index zero and at odd indices. -/
+theorem z_eq_zero_of_x_eq_zero (h : LadderRel N D S n U V) (hS : S.x = 0) : U.z = 0 := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact (h.seed_x_eq_zero_aux hS).1 rfl |>.1
+  · simp [(h.seed_x_eq_zero_aux hS).2 hn |>.1]
+
+/-- From a seed with vanishing first field, every derivation at a nonzero index produces the
+zero raw pair as its first output. -/
+theorem eq_zero_of_x_eq_zero (h : LadderRel N D S n U V) (hn : n ≠ 0) (hS : S.x = 0) :
+    U = 0 :=
+  (h.seed_x_eq_zero_aux hS).2 hn |>.1
+
+end CommRing
+
+section Domain
+
+variable {R : Type*} [CommRing R] [NoZeroDivisors R] {A B N D : R} {S U V : Pair R} {n : ℕ}
+
+/-- Over a domain with `B ≠ 0`, any derivation from a representative of infinity or of the
+distinguished point of order two has vanishing second field in its first output at every index,
+including odd indices where the odd multiple of `twoTorsionPoint` is not infinity. -/
+theorem z_eq_zero_of_eq_zero_or_eq_twoTorsionPoint (h : LadderRel N D S n U V) (hB : B ≠ 0)
+    {P : (model A B).toAffine.Point}
+    (hSP : S.cross (Montgomery.coordinates A B P) = 0)
+    (hP : P = 0 ∨ P = twoTorsionPoint A hB) : U.z = 0 := by
+  rcases hP with rfl | rfl
+  · have hS : S.z = 0 := by simpa [Pair.cross_def] using hSP
+    exact (h.z_eq_zero_of_z_eq_zero hS).1
+  · have hS : S.x = 0 := by
+      simpa [Montgomery.coordinates_twoTorsionPoint, Pair.cross_def, hB] using hSP
+    exact h.z_eq_zero_of_x_eq_zero hS
+
+/-- Over a domain with `B ≠ 0`, any derivation at a nonzero index from a representative of
+infinity or of the distinguished point of order two produces the zero raw pair as its first
+output. -/
+theorem eq_zero_of_eq_zero_or_eq_twoTorsionPoint (h : LadderRel N D S n U V) (hn : n ≠ 0)
+    (hB : B ≠ 0) {P : (model A B).toAffine.Point}
+    (hSP : S.cross (Montgomery.coordinates A B P) = 0)
+    (hP : P = 0 ∨ P = twoTorsionPoint A hB) : U = 0 := by
+  rcases hP with rfl | rfl
+  · have hS : S.z = 0 := by simpa [Pair.cross_def] using hSP
+    exact h.eq_zero_of_z_eq_zero hn hS
+  · have hS : S.x = 0 := by
+      simpa [Montgomery.coordinates_twoTorsionPoint, Pair.cross_def, hB] using hSP
+    exact h.eq_zero_of_x_eq_zero hn hS
+
+end Domain
+
 section Field
 
-variable {K : Type*} [Field K] [DecidableEq K] {A B N D : K} {S U V : Pair K} {n : ℕ}
+variable {K : Type*} [Field K] {A B N D : K} {S U V : Pair K} {n : ℕ}
+
+section DecidableEq
+
+variable [DecidableEq K]
 
 /-- **The binary ladder invariant.** Every derivation from a nonzero representative of `P`
 produces nonzero representatives of the consecutive multiples `[n]P` and `[n + 1]P`.
@@ -97,6 +235,54 @@ theorem coordinates (h : LadderRel N D S n U V) (h₂ : (2 : K) ≠ 0) (hB : B �
     · refine ⟨hne, hdiff, hdoubleV.1, ?_⟩
       have hsucc : 2 * n + 1 + 1 = 2 * (n + 1) := by omega
       simpa only [hsucc, mul_nsmul, two_nsmul, nsmul_add] using hdoubleV.2
+
+/-- **Unconditional cross-difference invariant of the binary ladder.** Assuming only the
+doubling-constant relation `4 * N = (A + 2) * D`, every derivation from any representative of `P`
+produces raw pairs having vanishing cross difference with `[n]P` and `[n + 1]P`, including when
+`S = 0`, `D = 0`, `B = 0`, in characteristic two, or at exceptional points where outputs become
+`(0, 0)`. -/
+theorem cross_coordinates_eq_zero (h : LadderRel N D S n U V)
+    (hND : 4 * N = (A + 2) * D) {P : (model A B).toAffine.Point}
+    (hSP : S.cross (Montgomery.coordinates A B P) = 0) :
+    U.cross (Montgomery.coordinates A B (n • P)) = 0 ∧
+      V.cross (Montgomery.coordinates A B ((n + 1) • P)) = 0 := by
+  induction h with
+  | zero =>
+    simp [Montgomery.coordinates_zero, hSP]
+  | @bit m U V b _ ih =>
+    obtain ⟨hUP, hVP⟩ := ih
+    have hsub : (m + 1) • P - m • P = P := by simp [succ_nsmul]
+    have hsum : (m + 1) • P + m • P = (2 * m + 1) • P := by
+      simp [add_nsmul, two_mul, add_assoc, add_comm, add_left_comm]
+    have hdiff := diffAdd_cross_eq_zero_of_cross_eq_zero hVP hUP
+      (by simpa only [hsub] using hSP)
+    have hdoubleU := double_cross_eq_zero_of_cross_eq_zero hND hUP
+    have hdoubleV := double_cross_eq_zero_of_cross_eq_zero hND hVP
+    rw [hsum] at hdiff
+    cases b <;> simp only [Bool.toNat_false, Bool.toNat_true, Bool.false_eq_true,
+      ↓reduceIte, Nat.add_zero]
+    · refine ⟨?_, hdiff⟩
+      simpa only [mul_nsmul, two_nsmul, nsmul_add] using hdoubleU
+    · refine ⟨hdiff, ?_⟩
+      have hsucc : 2 * m + 1 + 1 = 2 * (m + 1) := by omega
+      simpa only [hsucc, mul_nsmul, two_nsmul, nsmul_add] using hdoubleV
+
+end DecidableEq
+
+/-- **Exact nonvanishing criterion for the binary ladder.** Over a field of characteristic
+different from two, with `B ≠ 0`, `D ≠ 0`, and `4 * N = (A + 2) * D`, the first output of a
+derivation at a nonzero index from a nonzero representative of `P` is nonzero if and only if `P`
+is neither infinity nor the distinguished point of order two. -/
+theorem ne_zero_iff (h : LadderRel N D S n U V) (hn : n ≠ 0) (h₂ : (2 : K) ≠ 0)
+    (hB : B ≠ 0) (hD : D ≠ 0) (hND : 4 * N = (A + 2) * D)
+    {P : (model A B).toAffine.Point} (hS : S ≠ 0)
+    (hSP : S.cross (Montgomery.coordinates A B P) = 0) :
+    U ≠ 0 ↔ P ≠ 0 ∧ P ≠ twoTorsionPoint A hB := by
+  classical
+  refine ⟨fun hU ↦ ⟨fun hP ↦ hU ?_, fun hPT ↦ hU ?_⟩,
+    fun ⟨hP, hPT⟩ ↦ (h.coordinates h₂ hB hD hND hS hSP hP hPT).1⟩
+  · exact h.eq_zero_of_eq_zero_or_eq_twoTorsionPoint hn hB hSP (.inl hP)
+  · exact h.eq_zero_of_eq_zero_or_eq_twoTorsionPoint hn hB hSP (.inr hPT)
 
 end Field
 
