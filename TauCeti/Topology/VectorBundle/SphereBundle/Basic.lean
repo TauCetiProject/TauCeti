@@ -23,8 +23,10 @@ complement of the zero section:
 
 * the inclusion `D(E) → E` is a homotopy equivalence, with homotopy inverse the radial retraction
   `v ↦ v / max 1 ‖v‖` (`TauCeti.discBundleHomotopyEquiv`);
-* the inclusion `S(E) → E₀` is a homotopy equivalence, with homotopy inverse the normalization
-  `v ↦ v / ‖v‖` (`TauCeti.sphereBundleHomotopyEquiv`).
+* the inclusion `S(E) → E₀` (`TauCeti.sphereBundleInclusion`) is a homotopy equivalence, with
+  homotopy inverse the normalization `v ↦ v / ‖v‖` (`TauCeti.sphereBundleHomotopyEquiv`,
+  `TauCeti.sphereBundleNormalization`), so it induces isomorphisms on cohomology
+  (`TauCeti.isIso_singularCohomologyMap_sphereBundleInclusion`).
 
 In both cases the homotopy is the straight line from the identity to the retraction, which only
 rescales each vector by a positive factor. In general they do not combine into a homotopy
@@ -36,8 +38,16 @@ isomorphisms on relative singular cohomology with arbitrary coefficients in ever
 
 So Thom classes may be read on the disc-sphere pair `(D(E), S(E))`, and the cohomology of the
 deleted total space `E₀` in the long exact sequence of the Thom pair is that of the sphere bundle,
-as in the Gysin sequence. No orientation, finite-dimensionality or condition on the base is
-needed. The rank zero case is included: there `S(E)` and `E₀` are empty and `D(E) = E`.
+as in the Gysin sequence: with the connecting morphism `Hˡ(S(E)) ⟶ Hˡ⁺¹(E, E₀)` of the sphere
+bundle (`TauCeti.sphereBundleδ`), the sequence
+
+`⋯ ⟶ Hᵐ(E, E₀) ⟶ Hᵐ(B) ⟶ Hᵐ(S(E)) ⟶ Hᵐ⁺¹(E, E₀) ⟶ Hᵐ⁺¹(B) ⟶ ⋯`
+
+of the Euler class maps, the pullback along `S(E) → B` and `TauCeti.sphereBundleδ` is exact
+(`TauCeti.exact_eulerClass_singularCohomologyMap_sphereBundleProj`,
+`TauCeti.exact_singularCohomologyMap_sphereBundleProj_sphereBundleδ`,
+`TauCeti.exact_sphereBundleδ_eulerClass`). No orientation, finite-dimensionality or condition on
+the base is needed. The rank zero case is included: there `S(E)` and `E₀` are empty and `D(E) = E`.
 
 ## References
 
@@ -111,6 +121,21 @@ theorem discSpherePairMap_snd_apply (v : sphereBundle F E) :
     (TopPair.Hom.snd (discSpherePairMap F E) v).1 = v.1 :=
   (rfl)
 
+/-- The inclusion `S(E) → E₀` of the unit sphere bundle into the complement of the zero section. -/
+def sphereBundleInclusion : TopCat.of (sphereBundle F E) ⟶ (thomPair F E).snd :=
+  TopCat.ofHom (ContinuousMap.inclusion (sphereBundle_subset_zeroSectionCompl F E))
+
+@[simp]
+theorem coe_sphereBundleInclusion_apply (v : sphereBundle F E) :
+    @Subtype.val _ (· ∈ zeroSectionCompl F E) (sphereBundleInclusion F E v) = v :=
+  (rfl)
+
+/-- The subspace component of the inclusion `(D(E), S(E)) ⟶ (E, E₀)` is the inclusion
+`S(E) → E₀`. -/
+theorem discSpherePairMap_snd :
+    TopPair.Hom.snd (discSpherePairMap F E) = sphereBundleInclusion F E :=
+  (rfl)
+
 end Sets
 
 section Proj
@@ -127,6 +152,13 @@ def sphereBundleProj : C(sphereBundle F E, B) :=
 theorem sphereBundleProj_apply (v : sphereBundle F E) :
     sphereBundleProj F E v = (v : TotalSpace F E).proj :=
   (rfl)
+
+/-- The inclusion `S(E) → E₀` followed by the projection `π₀ : E₀ → B` is the projection of the
+sphere bundle. -/
+@[reassoc (attr := simp)]
+theorem sphereBundleInclusion_comp_zeroSectionComplProj :
+    sphereBundleInclusion F E ≫ zeroSectionComplProj F E = TopCat.ofHom (sphereBundleProj F E) :=
+  TopCat.ext fun v ↦ (zeroSectionComplProj_apply F E _).trans (sphereBundleProj_apply F E v).symm
 
 end Proj
 
@@ -218,6 +250,24 @@ theorem coe_sphereBundleHomotopyEquiv_symm_apply
     ContinuousMap.HomotopyEquiv.coe_ofWeakDeformationRetraction_symm_apply]
   simp
 
+/-- The normalization `v ↦ v / ‖v‖` of `E₀` onto the sphere bundle, the homotopy inverse of the
+inclusion `S(E) → E₀` (`TauCeti.sphereBundleHomotopyEquiv`). -/
+def sphereBundleNormalization (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
+    (thomPair F E).snd ⟶ TopCat.of (sphereBundle F E) :=
+  TopCat.ofHom (sphereBundleHomotopyEquiv F E hnorm).invFun
+
+@[simp]
+theorem coe_sphereBundleNormalization_apply (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
+    (v : zeroSectionCompl F E) :
+    (sphereBundleNormalization F E hnorm v : TotalSpace F E) =
+      TotalSpace.mk' F v.1.proj (‖v.1.2‖⁻¹ • v.1.2) :=
+  coe_sphereBundleHomotopyEquiv_symm_apply F E hnorm v
+
+/-- The forward map of the homotopy equivalence `S(E) ≃ₕ E₀` is the inclusion `S(E) → E₀`. -/
+theorem ofHom_sphereBundleHomotopyEquiv (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
+    TopCat.ofHom (sphereBundleHomotopyEquiv F E hnorm).toFun = sphereBundleInclusion F E :=
+  TopCat.ext fun v ↦ Subtype.ext (coe_sphereBundleHomotopyEquiv F E hnorm v)
+
 /-- The ambient component of the inclusion `(D(E), S(E)) ⟶ (E, E₀)` is the homotopy equivalence
 `D(E) ≃ₕ E`. -/
 private theorem discSpherePairMap_fst (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
@@ -226,13 +276,16 @@ private theorem discSpherePairMap_fst (hnorm : Continuous fun v : TotalSpace F E
   ext v
   exact (coe_discBundleHomotopyEquiv F E hnorm v).symm
 
-/-- The subspace component of the inclusion `(D(E), S(E)) ⟶ (E, E₀)` is the homotopy equivalence
-`S(E) ≃ₕ E₀`. -/
-private theorem discSpherePairMap_snd (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
-    TopPair.Hom.snd (discSpherePairMap F E) =
-      TopCat.ofHom (sphereBundleHomotopyEquiv F E hnorm).toFun := by
-  ext v
-  exact Subtype.ext (coe_sphereBundleHomotopyEquiv F E hnorm v).symm
+/-- **The inclusion `S(E) → E₀` induces isomorphisms on cohomology** with arbitrary coefficients,
+in every degree: it is a homotopy equivalence (`TauCeti.sphereBundleHomotopyEquiv`). -/
+theorem isIso_singularCohomologyMap_sphereBundleInclusion
+    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
+    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (k : Type*) [Ring k]
+    [Linear k C] (M : C) (n : ℕ) :
+    IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
+      (sphereBundleInclusion F E) n) := by
+  rw [← ofHom_sphereBundleHomotopyEquiv F E hnorm]
+  exact (sphereBundleHomotopyEquiv F E hnorm).isIso_singularCohomologyMap R k M n
 
 /-- **The disc-sphere pair computes the cohomology of the Thom pair.** For a real vector bundle
 whose fibre norm is continuous on the total space, the inclusion `(D(E), S(E)) ⟶ (E, E₀)` induces
@@ -246,8 +299,8 @@ theorem isIso_singularCohomologyMap_discSpherePairMap
   refine TopPair.isIso_singularCohomologyMap_of_forall_isIso _ (fun m ↦ ?_) (fun m ↦ ?_) n
   · rw [discSpherePairMap_fst F E hnorm]
     exact (discBundleHomotopyEquiv F E hnorm).isIso_singularCohomologyMap R k M m
-  · rw [discSpherePairMap_snd F E hnorm]
-    exact (sphereBundleHomotopyEquiv F E hnorm).isIso_singularCohomologyMap R k M m
+  · rw [discSpherePairMap_snd]
+    exact isIso_singularCohomologyMap_sphereBundleInclusion F E hnorm R k M m
 
 /-- **The disc-sphere pair computes the homology of the Thom pair.** For a real vector bundle
 whose fibre norm is continuous on the total space, the inclusion `(D(E), S(E)) ⟶ (E, E₀)` induces
@@ -258,6 +311,140 @@ theorem isIso_singularHomologyMap_discSpherePairMap
     {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (discSpherePairMap F E) R n) :=
   TopPair.isIso_singularHomologyMap_of_homotopyEquiv _ _ _ (discSpherePairMap_fst F E hnorm)
-    (discSpherePairMap_snd F E hnorm) R n
+    ((discSpherePairMap_snd F E).trans (ofHom_sphereBundleHomotopyEquiv F E hnorm).symm) R n
+
+section Cohomology
+
+variable (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
+  {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C} {k : Type*} [Ring k]
+  [Linear k C] {M : C}
+
+/-- Restricting a class of `E₀` to `S(E)` and pulling it back along the normalization
+`E₀ → S(E)` gives the class back. -/
+@[simp]
+theorem singularCohomologyMap_sphereBundleInclusion_normalization_apply {n : ℕ}
+    (y : (thomPair F E).snd.singularCohomology R k M n) :
+    TopCat.singularCohomologyMap (sphereBundleNormalization F E hnorm) n
+      (TopCat.singularCohomologyMap (sphereBundleInclusion F E) n y) = y := by
+  have h := ((sphereBundleHomotopyEquiv F E hnorm).singularCohomologyIso R k M n).hom_inv_id_apply y
+  rw [ContinuousMap.HomotopyEquiv.singularCohomologyIso_hom,
+    ContinuousMap.HomotopyEquiv.singularCohomologyIso_inv, ofHom_sphereBundleHomotopyEquiv] at h
+  exact h
+
+/-- Pulling a class of `S(E)` back along the normalization `E₀ → S(E)` and restricting it to `S(E)`
+gives the class back. -/
+@[simp]
+theorem singularCohomologyMap_sphereBundleNormalization_inclusion_apply {n : ℕ}
+    (y : (TopCat.of (sphereBundle F E)).singularCohomology R k M n) :
+    TopCat.singularCohomologyMap (sphereBundleInclusion F E) n
+      (TopCat.singularCohomologyMap (sphereBundleNormalization F E hnorm) n y) = y := by
+  have h := ((sphereBundleHomotopyEquiv F E hnorm).singularCohomologyIso R k M n).inv_hom_id_apply y
+  rw [ContinuousMap.HomotopyEquiv.singularCohomologyIso_hom,
+    ContinuousMap.HomotopyEquiv.singularCohomologyIso_inv, ofHom_sphereBundleHomotopyEquiv] at h
+  exact h
+
+variable (R k M)
+
+/-- The connecting morphism `Hˡ(S(E)) ⟶ Hᵐ(E, E₀)` of the sphere bundle, `l + 1 = m`: the pullback
+along the normalization `E₀ → S(E)`, which inverts the restriction `Hˡ(E₀) ≅ Hˡ(S(E))`, followed
+by the connecting morphism of the Thom pair `(E, E₀)`. It is characterized by
+`TauCeti.sphereBundleδ_singularCohomologyMap_sphereBundleInclusion`. -/
+def sphereBundleδ (l m : ℕ) (hl : l + 1 = m) :
+    (TopCat.of (sphereBundle F E)).singularCohomology R k M l ⟶
+      (thomPair F E).singularCohomology R k M m :=
+  TopCat.singularCohomologyMap (sphereBundleNormalization F E hnorm) l ≫
+    (thomPair F E).singularCohomologyδ R k M l m hl
+
+theorem sphereBundleδ_def (l m : ℕ) (hl : l + 1 = m) :
+    sphereBundleδ F E hnorm R k M l m hl =
+      TopCat.singularCohomologyMap (sphereBundleNormalization F E hnorm) l ≫
+        (thomPair F E).singularCohomologyδ R k M l m hl :=
+  (rfl)
+
+variable {R k M} in
+/-- The connecting morphism of the sphere bundle on the restriction of a class of `E₀` is the
+connecting morphism of the Thom pair `(E, E₀)`. -/
+@[simp]
+theorem sphereBundleδ_singularCohomologyMap_sphereBundleInclusion {l m : ℕ} (hl : l + 1 = m)
+    (y : (thomPair F E).snd.singularCohomology R k M l) :
+    sphereBundleδ F E hnorm R k M l m hl
+        (TopCat.singularCohomologyMap (sphereBundleInclusion F E) l y) =
+      (thomPair F E).singularCohomologyδ R k M l m hl y := by
+  rw [sphereBundleδ_def, ConcreteCategory.comp_apply,
+    singularCohomologyMap_sphereBundleInclusion_normalization_apply]
+
+include hnorm in
+/-- **Exactness at the cohomology of the base, read on the sphere bundle**:
+`Hᵐ(E, E₀) ⟶ Hᵐ(B) ⟶ Hᵐ(S(E))`, the Euler class map followed by the pullback along `S(E) → B`, is
+exact. -/
+theorem exact_eulerClass_singularCohomologyMap_sphereBundleProj (m : ℕ) :
+    Function.Exact (eulerClass R k M F E m)
+      (TopCat.singularCohomologyMap (TopCat.ofHom (sphereBundleProj F E)) m) := by
+  intro y
+  rw [← exact_eulerClass_singularCohomologyMap_zeroSectionComplProj R k M F E m y,
+    ← sphereBundleInclusion_comp_zeroSectionComplProj, TopCat.singularCohomologyMap_comp,
+    ConcreteCategory.comp_apply]
+  -- The restriction `Hᵐ(E₀) ⟶ Hᵐ(S(E))` is injective.
+  refine ⟨fun hy ↦ ?_, fun hy ↦ by rw [hy, map_zero]⟩
+  rw [← singularCohomologyMap_sphereBundleInclusion_normalization_apply F E hnorm
+    (TopCat.singularCohomologyMap (zeroSectionComplProj F E) m y), hy, map_zero]
+
+/-- **Exactness at the cohomology of the sphere bundle**: `Hˡ(B) ⟶ Hˡ(S(E)) ⟶ Hᵐ(E, E₀)`, the
+pullback along `S(E) → B` followed by the connecting morphism of the sphere bundle, is exact, for
+`l + 1 = m`. -/
+theorem exact_singularCohomologyMap_sphereBundleProj_sphereBundleδ (l m : ℕ) (hl : l + 1 = m) :
+    Function.Exact (TopCat.singularCohomologyMap (TopCat.ofHom (sphereBundleProj F E)) l)
+      (sphereBundleδ F E hnorm R k M l m hl) := by
+  intro y
+  rw [sphereBundleδ_def, ConcreteCategory.comp_apply,
+    exact_singularCohomologyMap_zeroSectionComplProj_singularCohomologyδ R k M F E l m hl,
+    ← sphereBundleInclusion_comp_zeroSectionComplProj]
+  -- Transport exactness at `Hˡ(E₀)` along the isomorphism `Hˡ(E₀) ≅ Hˡ(S(E))`.
+  refine ⟨fun ⟨x, hx⟩ ↦ ⟨x, ?_⟩, fun ⟨x, hx⟩ ↦ ⟨x, ?_⟩⟩
+  · rw [TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply, hx,
+      singularCohomologyMap_sphereBundleNormalization_inclusion_apply]
+  · rw [← hx, TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply,
+      singularCohomologyMap_sphereBundleInclusion_normalization_apply]
+
+/-- **Exactness at relative cohomology, read on the sphere bundle**:
+`Hˡ(S(E)) ⟶ Hᵐ(E, E₀) ⟶ Hᵐ(B)`, the connecting morphism of the sphere bundle followed by the Euler
+class map, is exact, for `l + 1 = m`. -/
+theorem exact_sphereBundleδ_eulerClass (l m : ℕ) (hl : l + 1 = m) :
+    Function.Exact (sphereBundleδ F E hnorm R k M l m hl) (eulerClass R k M F E m) := by
+  intro y
+  rw [exact_singularCohomologyδ_eulerClass R k M F E l m hl]
+  -- Transport exactness at `Hᵐ(E, E₀)` along the isomorphism `Hˡ(E₀) ≅ Hˡ(S(E))`.
+  refine ⟨fun ⟨x, hx⟩ ↦ ⟨TopCat.singularCohomologyMap (sphereBundleInclusion F E) l x, ?_⟩,
+    fun ⟨x, hx⟩ ↦ ⟨TopCat.singularCohomologyMap (sphereBundleNormalization F E hnorm) l x, hx⟩⟩
+  rwa [sphereBundleδ_singularCohomologyMap_sphereBundleInclusion]
+
+include hnorm in
+/-- The Euler class map followed by the pullback along `S(E) → B` is zero. -/
+@[reassoc (attr := simp)]
+theorem eulerClass_comp_singularCohomologyMap_sphereBundleProj (m : ℕ) :
+    eulerClass R k M F E m ≫ TopCat.singularCohomologyMap (TopCat.ofHom (sphereBundleProj F E)) m =
+      0 := by
+  ext y
+  exact (exact_eulerClass_singularCohomologyMap_sphereBundleProj F E hnorm R k M
+    m).apply_apply_eq_zero y
+
+/-- The pullback along `S(E) → B` followed by the connecting morphism of the sphere bundle is
+zero. -/
+@[reassoc (attr := simp)]
+theorem singularCohomologyMap_sphereBundleProj_comp_sphereBundleδ (l m : ℕ) (hl : l + 1 = m) :
+    TopCat.singularCohomologyMap (TopCat.ofHom (sphereBundleProj F E)) l ≫
+      sphereBundleδ F E hnorm R k M l m hl = 0 := by
+  ext y
+  exact (exact_singularCohomologyMap_sphereBundleProj_sphereBundleδ F E hnorm R k M l m
+    hl).apply_apply_eq_zero y
+
+/-- The connecting morphism of the sphere bundle followed by the Euler class map is zero. -/
+@[reassoc (attr := simp)]
+theorem sphereBundleδ_comp_eulerClass (l m : ℕ) (hl : l + 1 = m) :
+    sphereBundleδ F E hnorm R k M l m hl ≫ eulerClass R k M F E m = 0 := by
+  ext y
+  exact (exact_sphereBundleδ_eulerClass F E hnorm R k M l m hl).apply_apply_eq_zero y
+
+end Cohomology
 
 end TauCeti

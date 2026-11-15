@@ -43,6 +43,20 @@ nowhere-vanishing continuous section has zero Euler class
 (`TauCeti.eulerClass_eq_zero_of_forall_ne_zero`): every relative class restricts to zero on `E₀`.
 So a trivial bundle of positive rank has zero Euler class (`TauCeti.eulerClass_trivial_eq_zero`).
 
+The projection `π : E → B` is a homotopy equivalence with homotopy inverse the zero section
+(`TauCeti.VectorBundle.totalSpaceHomotopyEquiv`), so pullback along the zero section is an
+isomorphism `Hⁿ(E) ≅ Hⁿ(B)` with inverse `π^*`
+(`TauCeti.singularCohomologyMap_zeroSectionHom_comp_singularCohomologyMap_thomPairProj`).
+Replacing `Hⁿ(E)` by `Hⁿ(B)` in the long exact sequence of the Thom pair gives the exact sequence
+
+`⋯ ⟶ Hᵐ(E, E₀) ⟶ Hᵐ(B) ⟶ Hᵐ(E₀) ⟶ Hᵐ⁺¹(E, E₀) ⟶ Hᵐ⁺¹(B) ⟶ ⋯`
+
+of the Euler class maps, the pullback along the restriction `π₀ : E₀ → B` of the projection
+(`TauCeti.zeroSectionComplProj`) and the connecting morphisms of the pair
+(`TauCeti.exact_eulerClass_singularCohomologyMap_zeroSectionComplProj`,
+`TauCeti.exact_singularCohomologyMap_zeroSectionComplProj_singularCohomologyδ`,
+`TauCeti.exact_singularCohomologyδ_eulerClass`), the start of the Gysin sequence.
+
 Cohomology is the singular cohomology of `TauCeti/AlgebraicTopology/Cohomology/`, with the same
 general coefficients: `Hom(C(X; R), M)` in a `k`-linear abelian category `C`. Integral cohomology
 uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
@@ -61,6 +75,8 @@ uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
   as a map of pairs `(X, X ∖ S) ⟶ (E, E₀)`.
 * `TauCeti.thomPairProj`: the projection of the total space to the base, as a morphism of
   topological spaces out of the ambient space of the Thom pair.
+* `TauCeti.zeroSectionComplProj`: its restriction `π₀ : E₀ → B` to the complement of the zero
+  section.
 * `TauCeti.IsThomClass`: a relative class restricting to a generator on every fibre.
 * `TauCeti.zeroSectionHomotopy`: the straight-line homotopy `t • s` from the zero section to a
   continuous section `s`.
@@ -74,8 +90,9 @@ uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
 
 * J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
   Princeton (1974), §9 (the fundamental class `u ∈ Hⁿ(E, E₀; ℤ)` of an oriented bundle, the Euler
-  class, its naturality and its vanishing for a bundle with a nowhere-zero section) and §10 (the
-  Thom isomorphism).
+  class, its naturality and its vanishing for a bundle with a nowhere-zero section), §10 (the
+  Thom isomorphism) and §12 (the exact sequence of the pair `(E, E₀)` in the proof of the Gysin
+  sequence, Theorem 12.2).
 * A. Hatcher, *Vector Bundles and K-Theory*, §4.D (Thom classes).
 -/
 
@@ -326,6 +343,20 @@ theorem thomPairProj_def :
 theorem thomPairProj_apply (v : TotalSpace F E) : thomPairProj F E v = v.proj :=
   (rfl)
 
+/-- The projection `π₀ : E₀ → B` of the complement of the zero section to the base, the
+restriction of the bundle projection. -/
+def zeroSectionComplProj : (thomPair F E).snd ⟶ TopCat.of B :=
+  (thomPair F E).map ≫ thomPairProj F E
+
+theorem zeroSectionComplProj_def :
+    zeroSectionComplProj F E = (thomPair F E).map ≫ thomPairProj F E :=
+  (rfl)
+
+@[simp]
+theorem zeroSectionComplProj_apply (v : zeroSectionCompl F E) :
+    zeroSectionComplProj F E v = (v : TotalSpace F E).proj :=
+  thomPairProj_apply F E (v : TotalSpace F E)
+
 /-- The fibre inclusion over `b` followed by the projection is constant at `b`. -/
 theorem fiberThomPairMap_fst_comp_thomPairProj (b : B) :
     TopPair.Hom.fst (fiberThomPairMap F E b) ≫ thomPairProj F E =
@@ -514,6 +545,62 @@ def zeroSectionHom : TopCat.of B ⟶ (thomPair F E).fst :=
 theorem zeroSectionHom_apply (b : B) : zeroSectionHom F E b = zeroSection F E b :=
   (rfl)
 
+/-- The zero section followed by the projection is the identity of the base. -/
+@[reassoc (attr := simp)]
+theorem zeroSectionHom_comp_thomPairProj : zeroSectionHom F E ≫ thomPairProj F E = 𝟙 _ :=
+  TopCat.ext fun b ↦ by
+    rw [ConcreteCategory.comp_apply, zeroSectionHom_apply, thomPairProj_apply]
+    rfl
+
+variable (R k M) in
+/-- Pulling a class of the base back to the total space and then along the zero section gives the
+class back. -/
+@[reassoc (attr := simp)]
+theorem singularCohomologyMap_thomPairProj_comp_singularCohomologyMap_zeroSectionHom (n : ℕ) :
+    TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (thomPairProj F E) n ≫
+      TopCat.singularCohomologyMap (zeroSectionHom F E) n = 𝟙 _ := by
+  rw [← TopCat.singularCohomologyMap_comp, zeroSectionHom_comp_thomPairProj,
+    TopCat.singularCohomologyMap_id]
+
+variable (R k M) in
+/-- **The zero section induces an isomorphism on cohomology**, with inverse the pullback along the
+projection (`TauCeti.VectorBundle.totalSpaceHomotopyEquiv`): pulling a class of the total space
+back along the zero section and then to the total space gives the class back. -/
+@[reassoc (attr := simp)]
+theorem singularCohomologyMap_zeroSectionHom_comp_singularCohomologyMap_thomPairProj (n : ℕ) :
+    TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (zeroSectionHom F E) n ≫
+      TopCat.singularCohomologyMap (thomPairProj F E) n = 𝟙 _ := by
+  let e := VectorBundle.totalSpaceHomotopyEquiv F E
+  have hπ : TopCat.ofHom e.toFun = thomPairProj F E :=
+    TopCat.ext fun v ↦ (congrFun (VectorBundle.coe_totalSpaceHomotopyEquiv F E) v).trans
+      (thomPairProj_apply F E v).symm
+  have hs : TopCat.ofHom e.invFun = zeroSectionHom F E :=
+    TopCat.ext fun b ↦ (congrFun (VectorBundle.coe_totalSpaceHomotopyEquiv_symm F E) b).trans
+      (zeroSectionHom_apply F E b).symm
+  have h := (e.singularCohomologyIso R k M n).inv_hom_id
+  rwa [ContinuousMap.HomotopyEquiv.singularCohomologyIso_hom,
+    ContinuousMap.HomotopyEquiv.singularCohomologyIso_inv, hπ, hs] at h
+
+variable {F E} in
+@[simp]
+theorem singularCohomologyMap_zeroSectionHom_singularCohomologyMap_thomPairProj_apply {n : ℕ}
+    (x : (TopCat.of B).singularCohomology R k M n) :
+    TopCat.singularCohomologyMap (zeroSectionHom F E) n
+      (TopCat.singularCohomologyMap (thomPairProj F E) n x) = x := by
+  rw [← ConcreteCategory.comp_apply,
+    singularCohomologyMap_thomPairProj_comp_singularCohomologyMap_zeroSectionHom,
+    ConcreteCategory.id_apply]
+
+variable {F E} in
+@[simp]
+theorem singularCohomologyMap_thomPairProj_singularCohomologyMap_zeroSectionHom_apply {n : ℕ}
+    (x : (thomPair F E).fst.singularCohomology R k M n) :
+    TopCat.singularCohomologyMap (thomPairProj F E) n
+      (TopCat.singularCohomologyMap (zeroSectionHom F E) n x) = x := by
+  rw [← ConcreteCategory.comp_apply,
+    singularCohomologyMap_zeroSectionHom_comp_singularCohomologyMap_thomPairProj,
+    ConcreteCategory.id_apply]
+
 /-- Fibrewise negation `v ↦ -v` of a real vector bundle, written `v ↦ (-1) • v`, as a self-map of
 its total space. -/
 def negTotalSpace : C(TotalSpace F E, TotalSpace F E) where
@@ -632,6 +719,87 @@ theorem eulerClass_pullback (n : ℕ) :
       eulerClass R k M F E n ≫ TopCat.singularCohomologyMap (TopCat.ofHom f) n :=
   eulerClass_naturality F E _ _
     (TopCat.ext fun _ ↦ (pullbackThomPairMap_fst_apply F E f _).trans rfl) n
+
+variable (R k M)
+
+/-- **Exactness at the cohomology of the base**: `Hᵐ(E, E₀) ⟶ Hᵐ(B) ⟶ Hᵐ(E₀)`, the Euler class map
+followed by the pullback along `π₀ : E₀ → B`, is exact. -/
+theorem exact_eulerClass_singularCohomologyMap_zeroSectionComplProj (m : ℕ) :
+    Function.Exact (eulerClass R k M F E m)
+      (TopCat.singularCohomologyMap (zeroSectionComplProj F E) m) := by
+  have hex : Function.Exact ((thomPair F E).singularCohomologyπ R k M m)
+      (TopCat.singularCohomologyMap (thomPair F E).map m) :=
+    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+      ((thomPair F E).singularCohomology_exact_space R k M m)
+  -- Transport exactness of `Hᵐ(E, E₀) ⟶ Hᵐ(E) ⟶ Hᵐ(E₀)` along `π^* : Hᵐ(B) ≅ Hᵐ(E)`.
+  intro y
+  rw [zeroSectionComplProj_def, TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply,
+    hex]
+  refine ⟨fun ⟨x, hx⟩ ↦ ⟨x, ?_⟩, fun ⟨x, hx⟩ ↦ ⟨x, ?_⟩⟩
+  · rw [eulerClass_def, ConcreteCategory.comp_apply, hx,
+      singularCohomologyMap_zeroSectionHom_singularCohomologyMap_thomPairProj_apply]
+  · rw [← hx, eulerClass_def, ConcreteCategory.comp_apply,
+      singularCohomologyMap_thomPairProj_singularCohomologyMap_zeroSectionHom_apply]
+
+/-- **Exactness at the cohomology of `E₀`**: `Hˡ(B) ⟶ Hˡ(E₀) ⟶ Hᵐ(E, E₀)`, the pullback along
+`π₀ : E₀ → B` followed by the connecting morphism of the pair `(E, E₀)`, is exact, for
+`l + 1 = m`. -/
+theorem exact_singularCohomologyMap_zeroSectionComplProj_singularCohomologyδ (l m : ℕ)
+    (hl : l + 1 = m) :
+    Function.Exact (TopCat.singularCohomologyMap (zeroSectionComplProj F E) l)
+      ((thomPair F E).singularCohomologyδ R k M l m hl) := by
+  have hex : Function.Exact (TopCat.singularCohomologyMap (thomPair F E).map l)
+      ((thomPair F E).singularCohomologyδ R k M l m hl) :=
+    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+      ((thomPair F E).singularCohomology_exact_subspace R k M l m hl)
+  -- Transport exactness of `Hˡ(E) ⟶ Hˡ(E₀) ⟶ Hᵐ(E, E₀)` along `π^* : Hˡ(B) ≅ Hˡ(E)`.
+  intro y
+  rw [hex, zeroSectionComplProj_def, TopCat.singularCohomologyMap_comp]
+  refine ⟨fun ⟨x, hx⟩ ↦ ⟨TopCat.singularCohomologyMap (zeroSectionHom F E) l x, ?_⟩,
+    fun ⟨x, hx⟩ ↦ ⟨TopCat.singularCohomologyMap (thomPairProj F E) l x, hx⟩⟩
+  rwa [ConcreteCategory.comp_apply,
+    singularCohomologyMap_thomPairProj_singularCohomologyMap_zeroSectionHom_apply]
+
+/-- **Exactness at relative cohomology**: `Hˡ(E₀) ⟶ Hᵐ(E, E₀) ⟶ Hᵐ(B)`, the connecting morphism of
+the pair `(E, E₀)` followed by the Euler class map, is exact, for `l + 1 = m`. -/
+theorem exact_singularCohomologyδ_eulerClass (l m : ℕ) (hl : l + 1 = m) :
+    Function.Exact ((thomPair F E).singularCohomologyδ R k M l m hl) (eulerClass R k M F E m) := by
+  have hex : Function.Exact ((thomPair F E).singularCohomologyδ R k M l m hl)
+      ((thomPair F E).singularCohomologyπ R k M m) :=
+    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+      ((thomPair F E).singularCohomology_exact_relative R k M l m hl)
+  -- The Euler class map is `Hᵐ(E, E₀) ⟶ Hᵐ(E)` followed by the isomorphism `s^*`.
+  intro y
+  rw [← hex y, eulerClass_def, ConcreteCategory.comp_apply]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero]⟩
+  rw [← singularCohomologyMap_thomPairProj_singularCohomologyMap_zeroSectionHom_apply
+    ((thomPair F E).singularCohomologyπ R k M m y), h, map_zero]
+
+/-- The Euler class map followed by the pullback along `π₀ : E₀ → B` is zero. -/
+@[reassoc (attr := simp)]
+theorem eulerClass_comp_singularCohomologyMap_zeroSectionComplProj (m : ℕ) :
+    eulerClass R k M F E m ≫ TopCat.singularCohomologyMap (zeroSectionComplProj F E) m = 0 := by
+  ext y
+  exact
+    (exact_eulerClass_singularCohomologyMap_zeroSectionComplProj R k M F E m).apply_apply_eq_zero y
+
+/-- The pullback along `π₀ : E₀ → B` followed by the connecting morphism of the pair `(E, E₀)` is
+zero. -/
+@[reassoc (attr := simp)]
+theorem singularCohomologyMap_zeroSectionComplProj_comp_singularCohomologyδ (l m : ℕ)
+    (hl : l + 1 = m) :
+    TopCat.singularCohomologyMap (zeroSectionComplProj F E) l ≫
+      (thomPair F E).singularCohomologyδ R k M l m hl = 0 := by
+  ext y
+  exact (exact_singularCohomologyMap_zeroSectionComplProj_singularCohomologyδ R k M F E l m
+    hl).apply_apply_eq_zero y
+
+/-- The connecting morphism of the pair `(E, E₀)` followed by the Euler class map is zero. -/
+@[reassoc (attr := simp)]
+theorem singularCohomologyδ_comp_eulerClass (l m : ℕ) (hl : l + 1 = m) :
+    (thomPair F E).singularCohomologyδ R k M l m hl ≫ eulerClass R k M F E m = 0 := by
+  ext y
+  exact (exact_singularCohomologyδ_eulerClass R k M F E l m hl).apply_apply_eq_zero y
 
 end EulerClass
 
