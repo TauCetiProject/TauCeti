@@ -71,7 +71,7 @@ open scoped Nat Real Topology
 
 namespace TauCeti
 
-/-! ### Hypergeometric expansion and values at the origin -/
+/-! ### Hypergeometric expansion -/
 
 /-- The sum of squares `Ai(z)² + Bi(z)²` expressed through products of the reduced Bessel series
 `₀F₁(; 2 / 3; z³ / 9)` and `₀F₁(; 4 / 3; z³ / 9)`. -/
@@ -113,19 +113,6 @@ theorem airyAi_sq_add_airyBi_sq_eq_regularizedHGFun (z : ℂ) :
   set F₂ := regularizedHGFun 0 {(4 / 3 : ℂ)} (z ^ 3 / 9)
   rw [airyAi_def, airyBi_def]
   linear_combination F₁ ^ 2 * hc₀ + z * F₁ * F₂ * hc₁ + z ^ 2 * F₂ ^ 2 * hc₂
-
-/-- At the origin, `Bi(0)² = 3 Ai(0)²`. -/
-theorem airyBi_zero_sq : airyBi 0 ^ 2 = 3 * airyAi 0 ^ 2 := by
-  have h3 : (3 : ℂ) ≠ 0 := by norm_num
-  have hpow : ((3 : ℂ) ^ (-1 / 6 : ℂ)) ^ 2 = 3 * ((3 : ℂ) ^ (-2 / 3 : ℂ)) ^ 2 := by
-    nth_rw 2 [← cpow_one (3 : ℂ)]
-    rw [sq, sq, ← cpow_add _ _ h3, ← cpow_add _ _ h3, ← cpow_add _ _ h3]
-    norm_num
-  rw [airyAi_zero, airyBi_zero, div_pow, div_pow, hpow, mul_div_assoc]
-
-/-- At the origin, `Ai(0)² + Bi(0)² = 4 Ai(0)²`. -/
-theorem airyAi_zero_sq_add_airyBi_zero_sq : airyAi 0 ^ 2 + airyBi 0 ^ 2 = 4 * airyAi 0 ^ 2 := by
-  rw [airyBi_zero_sq]; ring
 
 /-! ### Integrability and moment evaluation on `(0, ∞)` -/
 
