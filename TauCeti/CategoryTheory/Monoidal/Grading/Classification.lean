@@ -12,19 +12,22 @@ public import TauCeti.CategoryTheory.Monoidal.Grading.MonoidalAut
 # Monoidal automorphisms and universal grading characters
 
 In a finite semisimple linear monoidal category over an algebraically closed field, with
-simple unit and finite-dimensional endomorphism spaces of simple objects, monoidal natural
-automorphisms of the identity are exactly characters of the universal grading group.
+finite-dimensional endomorphism spaces of simple objects, monoidal natural automorphisms of the
+identity are exactly characters of the universal grading group.
 
 The maps `monoidalAutCharacter` (extracting the scalar on each simple object) and
 `characterMonoidalAut` (extending those scalars to all objects) are inverse group
-homomorphisms. We package them as `monoidalAutCharacterEquiv`. Neither rigidity, finiteness of
-the set of simple classes, nor characteristic zero is needed for this identification.
+homomorphisms. We package them as `monoidalAutCharacterEquiv`. Simplicity of the tensor unit,
+rigidity, finiteness of the set of simple classes, and characteristic zero are not needed for
+this identification.
 
 ## References
 
 * V. Drinfeld, S. Gelaki, D. Nikshych, V. Ostrik, *On braided fusion categories I*,
   Selecta Math. **16** (2010), §2.3
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §4.14
+* D. Penneys, *Unitary dual functors for unitary multitensor categories*,
+  Higher Structures **4** (2020), no. 2, 22–56 (arXiv:1808.00323), Lemma 3.19
 -/
 
 public section
@@ -41,7 +44,7 @@ variable (k : Type*) [Field k] [IsAlgClosed k]
   {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
   [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
   [hfin : ∀ (X : C) [Simple X], FiniteDimensional k (X ⟶ X)]
-  [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)]
+  [IsFiniteSemisimpleCategory C]
 
 /-- Extracting the character of the automorphism extended from a character recovers that
 character. -/
