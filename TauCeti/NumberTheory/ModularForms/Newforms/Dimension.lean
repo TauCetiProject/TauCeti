@@ -58,20 +58,13 @@ public section
 
 open Finset Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup ArithmeticFunction
 
-open scoped MatrixGroups Moebius Pointwise
+open scoped MatrixGroups Moebius
 
 namespace TauCeti
 
 open _root_.CuspForm
 
 /-! ### Forward divisor-count dimension convolutions -/
-
-/-- Level-raising preserves `finrank` on any submodule of cusp forms. -/
-private lemma finrank_map_levelRaiseₗ {𝒢 𝒢' : Subgroup (GL (Fin 2) ℝ)} [𝒢.HasDetOne]
-    [𝒢'.HasDetOne] {k : ℤ} (d : ℕ) [NeZero d]
-    (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (p : Submodule ℂ (CuspForm 𝒢 k)) :
-    Module.finrank ℂ ↥(p.map (CuspForm.levelRaiseₗ d h)) = Module.finrank ℂ p :=
-  (p.equivMapOfInjective _ (CuspForm.levelRaiseₗ_injective d h)).finrank_eq.symm
 
 /-- **Divisor-count dimension formula for `S_k(Γ₁(N))`** (Diamond–Shurman, Theorem 5.8.3):
 `dim S_k(Γ₁(N)) = ∑_{M ∣ N} #(N / M).divisors * dim S_k(Γ₁(M))ⁿᵉʷ`. -/
@@ -80,7 +73,7 @@ theorem finrank_cuspForm_Gamma1_eq_sum_card_divisors_mul {N : ℕ} [NeZero N] (k
       ∑ M : {M : ℕ+ // (M : ℕ) ∣ N},
         #(N / M.1).divisors * Module.finrank ℂ (cuspFormsNew M.1 k) := by
   rw [finrank_eq_sum_finrank_of_isInternal (isInternal_map_levelRaiseₗ_cuspFormsNew N k)]
-  simp_rw [finrank_map_levelRaiseₗ]
+  simp_rw [CuspForm.finrank_map_levelRaiseₗ]
   simpa only [smul_eq_mul] using
     sum_pnatMulDvd_eq_sum_card_divisors_smul (N := N)
       (fun m ↦ Module.finrank ℂ (cuspFormsNew (m : ℕ) k))
@@ -100,7 +93,7 @@ theorem finrank_cuspFormCharSpace_eq_sum_dite_card_divisors_mul {N : ℕ} [NeZer
   rw [← iSup_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace N k χ,
     finrank_iSup_eq_sum_finrank_of_iSupIndep
       (iSupIndep_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace N k χ)]
-  simp_rw [finrank_map_levelRaiseₗ]
+  simp_rw [CuspForm.finrank_map_levelRaiseₗ]
   simpa only [smul_eq_mul] using
     sum_pnatMulDvdAnd_eq_sum_dite_card_divisors_smul
       (N := N) (fun M : ℕ+ ↦ DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ M)

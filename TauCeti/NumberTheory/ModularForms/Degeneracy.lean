@@ -368,6 +368,13 @@ lemma levelRaiseₗ_injective [𝒢.HasDetOne] [𝒢'.HasDetOne] (d : ℕ) [NeZe
     Injective (levelRaiseₗ (k := k) d h) :=
   levelRaise_injective h
 
+/-- Level-raising preserves `finrank` on any submodule of modular forms. -/
+@[simp]
+lemma finrank_map_levelRaiseₗ [𝒢.HasDetOne] [𝒢'.HasDetOne] (d : ℕ) [NeZero d]
+    (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (p : Submodule ℂ (ModularForm 𝒢 k)) :
+    Module.finrank ℂ ↥(p.map (levelRaiseₗ d h)) = Module.finrank ℂ p :=
+  (p.equivMapOfInjective _ (levelRaiseₗ_injective d h)).finrank_eq.symm
+
 /-- `V₁` is the restriction map: it changes nothing but the invariance group. -/
 lemma levelRaise_one_apply [𝒢'.HasDetOne] (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL 1)⁻¹ • 𝒢)
     (f : ModularForm 𝒢 k) (τ : ℍ) : levelRaise 1 h f τ = f τ := by
@@ -461,6 +468,13 @@ lemma levelRaiseₗ_injective [𝒢.HasDetOne] [𝒢'.HasDetOne] (d : ℕ) [NeZe
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) :
     Injective (levelRaiseₗ (k := k) d h) :=
   levelRaise_injective h
+
+/-- Level-raising preserves `finrank` on any submodule of cusp forms. -/
+@[simp]
+lemma finrank_map_levelRaiseₗ [𝒢.HasDetOne] [𝒢'.HasDetOne] (d : ℕ) [NeZero d]
+    (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (p : Submodule ℂ (CuspForm 𝒢 k)) :
+    Module.finrank ℂ ↥(p.map (levelRaiseₗ d h)) = Module.finrank ℂ p :=
+  (p.equivMapOfInjective _ (levelRaiseₗ_injective d h)).finrank_eq.symm
 
 /-- `V₁` is the restriction map: it changes nothing but the invariance group. -/
 lemma levelRaise_one_apply [𝒢'.HasDetOne] (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL 1)⁻¹ • 𝒢)
