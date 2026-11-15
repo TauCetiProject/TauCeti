@@ -295,6 +295,26 @@ theorem ofLE_val_apply (ν : InhomogeneousTerm j J) {m : ℕ∞} (hmn : m ≤ n)
 theorem ofLE_val_tangentHom (ν : InhomogeneousTerm j J) {m : ℕ∞} (hmn : m ≤ n) (q : P × M) :
     (ν.ofLE hmn).val.tangentHom q = ν.val.tangentHom q := (rfl)
 
+@[simp]
+theorem ofLE_zero {m : ℕ∞} (hmn : m ≤ n) : (0 : InhomogeneousTerm j J).ofLE hmn = 0 :=
+  (rfl)
+
+@[simp]
+theorem ofLE_add (ν μ : InhomogeneousTerm j J) {m : ℕ∞} (hmn : m ≤ n) :
+    (ν + μ).ofLE hmn = ν.ofLE hmn + μ.ofLE hmn := (rfl)
+
+@[simp]
+theorem ofLE_smul (c : ℝ) (ν : InhomogeneousTerm j J) {m : ℕ∞} (hmn : m ≤ n) :
+    (c • ν).ofLE hmn = c • ν.ofLE hmn := (rfl)
+
+@[simp]
+theorem ofLE_neg (ν : InhomogeneousTerm j J) {m : ℕ∞} (hmn : m ≤ n) :
+    (-ν).ofLE hmn = -ν.ofLE hmn := (rfl)
+
+@[simp]
+theorem ofLE_sub (ν μ : InhomogeneousTerm j J) {m : ℕ∞} (hmn : m ≤ n) :
+    (ν - μ).ofLE hmn = ν.ofLE hmn - μ.ofLE hmn := (rfl)
+
 /-- Regard a forcing term for `(j, J)` as one for equal structures `(j', J')`, keeping its
 underlying section. For instance, after a regularity downgrade of a term whose domain structure
 is a smooth structure `j₀` viewed as `C^n`, this gives a term for `j₀` viewed as `C^m`. -/
@@ -307,6 +327,41 @@ def ofEq (ν : InhomogeneousTerm j J) {j' : ContMDiffAlmostComplexStructure IP n
 theorem ofEq_val (ν : InhomogeneousTerm j J) {j' : ContMDiffAlmostComplexStructure IP n P}
     {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
     (ν.ofEq hj hJ).val = ν.val := (rfl)
+
+@[simp]
+theorem ofEq_rfl (ν : InhomogeneousTerm j J) : ν.ofEq rfl rfl = ν := (rfl)
+
+@[simp]
+theorem ofEq_ofEq (ν : InhomogeneousTerm j J) {j' j'' : ContMDiffAlmostComplexStructure IP n P}
+    {J' J'' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J')
+    (hj' : j' = j'') (hJ' : J' = J'') :
+    (ν.ofEq hj hJ).ofEq hj' hJ' = ν.ofEq (hj.trans hj') (hJ.trans hJ') := (rfl)
+
+@[simp]
+theorem ofEq_zero {j' : ContMDiffAlmostComplexStructure IP n P}
+    {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
+    (0 : InhomogeneousTerm j J).ofEq hj hJ = 0 := (rfl)
+
+@[simp]
+theorem ofEq_add (ν μ : InhomogeneousTerm j J) {j' : ContMDiffAlmostComplexStructure IP n P}
+    {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
+    (ν + μ).ofEq hj hJ = ν.ofEq hj hJ + μ.ofEq hj hJ := (rfl)
+
+@[simp]
+theorem ofEq_smul (c : ℝ) (ν : InhomogeneousTerm j J)
+    {j' : ContMDiffAlmostComplexStructure IP n P}
+    {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
+    (c • ν).ofEq hj hJ = c • ν.ofEq hj hJ := (rfl)
+
+@[simp]
+theorem ofEq_neg (ν : InhomogeneousTerm j J) {j' : ContMDiffAlmostComplexStructure IP n P}
+    {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
+    (-ν).ofEq hj hJ = -ν.ofEq hj hJ := (rfl)
+
+@[simp]
+theorem ofEq_sub (ν μ : InhomogeneousTerm j J) {j' : ContMDiffAlmostComplexStructure IP n P}
+    {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
+    (ν - μ).ofEq hj hJ = ν.ofEq hj hJ - μ.ofEq hj hJ := (rfl)
 
 /-- Compose a forcing term with jointly regular complex-linear source and target bundle maps.
 The domain and target structures may both change. -/

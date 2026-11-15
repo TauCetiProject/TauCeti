@@ -48,7 +48,9 @@ product targets such as `X × M`, on which graphs of solutions live.
   `TauCeti.isWeakPseudoholomorphic_iff_continuous_isWeakCauchyRiemannOn`: continuity together with
   the coordinate equations already gives the Sobolev class.
 * `TauCeti.isWeakPseudoholomorphicOn_ofLE`, `TauCeti.isWeakPseudoholomorphic_ofLE`: the predicate
-  does not change when `J` and `ν` are regarded as being of lower regularity.
+  does not change when `J` and `ν` are regarded as being of lower regularity, nor when `J` is
+  replaced by an equal structure (`TauCeti.isWeakPseudoholomorphicOn_ofEq`); the homogeneous case
+  is `TauCeti.isWeakPseudoholomorphicOn_zero_ofLE`.
 * `TauCeti.isWeakPseudoholomorphicOn_iff_locally`, `TauCeti.isWeakPseudoholomorphic_iff_locally`,
   `TauCeti.isWeakPseudoholomorphicOn_iSup_iff`: it is a sheaf condition on `X`.
 * `TauCeti.isWeakPseudoholomorphicOn_iff_isPseudoholomorphicOn`,
@@ -266,24 +268,60 @@ theorem isWeakPseudoholomorphic_iff_continuous_isWeakCauchyRiemannOn :
     isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn, continuousOn_univ,
     univ_inter]
 
-/-- **Regularity downgrade.** Regarding a `C^ℓ` structure `J` and an inhomogeneous term `ν` for
-it as `C^m`, for `m ≤ ℓ`, does not change which maps are weakly pseudoholomorphic on `s`. -/
+/-- Replacing `J` by an equal structure `J'`, and `ν` accordingly, does not change which maps are
+weakly pseudoholomorphic on `s`. -/
 @[simp]
-theorem isWeakPseudoholomorphicOn_ofLE {m : ℕ∞} (hmℓ : m ≤ ℓ) :
-    IsWeakPseudoholomorphicOn (J.ofLE hmℓ)
-        ((ν.ofLE hmℓ).ofEq (SmoothAlmostComplexStructure.toContMDiff_ofLE _ hmℓ) rfl) p u s ↔
+theorem isWeakPseudoholomorphicOn_ofEq
+    {J' : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) X ℓ} (hj) (hJ : J = J') :
+    IsWeakPseudoholomorphicOn J' (ν.ofEq hj hJ) p u s ↔ IsWeakPseudoholomorphicOn J ν p u s := by
+  subst hJ
+  simp only [isWeakPseudoholomorphicOn_iff, InhomogeneousTerm.chartTerm_ofEq]
+
+/-- Replacing `J` by an equal structure `J'`, and `ν` accordingly, does not change which maps are
+weakly pseudoholomorphic. -/
+@[simp]
+theorem isWeakPseudoholomorphic_ofEq
+    {J' : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) X ℓ} (hj) (hJ : J = J') :
+    IsWeakPseudoholomorphic J' (ν.ofEq hj hJ) p u ↔ IsWeakPseudoholomorphic J ν p u := by
+  simp only [← isWeakPseudoholomorphicOn_univ, isWeakPseudoholomorphicOn_ofEq]
+
+/-- **Regularity downgrade.** Regarding a `C^ℓ` structure `J` and an inhomogeneous term `ν` for
+it as `C^m`, for `m ≤ ℓ`, does not change which maps are weakly pseudoholomorphic on `s`. The
+downgraded structure may be given as any `J'` equal to `J.ofLE hmℓ`. -/
+@[simp]
+theorem isWeakPseudoholomorphicOn_ofLE {m : ℕ∞} (hmℓ : m ≤ ℓ)
+    {J' : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) X m} (hj) (hJ : J.ofLE hmℓ = J') :
+    IsWeakPseudoholomorphicOn J' ((ν.ofLE hmℓ).ofEq hj hJ) p u s ↔
       IsWeakPseudoholomorphicOn J ν p u s := by
+  subst hJ
   simp only [isWeakPseudoholomorphicOn_iff, ContMDiffAlmostComplexStructureFamily.chartField_ofLE,
     InhomogeneousTerm.chartTerm_ofEq, InhomogeneousTerm.chartTerm_ofLE]
 
 /-- **Regularity downgrade.** Regarding a `C^ℓ` structure `J` and an inhomogeneous term `ν` for
-it as `C^m`, for `m ≤ ℓ`, does not change which maps are weakly pseudoholomorphic. -/
+it as `C^m`, for `m ≤ ℓ`, does not change which maps are weakly pseudoholomorphic. The
+downgraded structure may be given as any `J'` equal to `J.ofLE hmℓ`. -/
 @[simp]
-theorem isWeakPseudoholomorphic_ofLE {m : ℕ∞} (hmℓ : m ≤ ℓ) :
-    IsWeakPseudoholomorphic (J.ofLE hmℓ)
-        ((ν.ofLE hmℓ).ofEq (SmoothAlmostComplexStructure.toContMDiff_ofLE _ hmℓ) rfl) p u ↔
+theorem isWeakPseudoholomorphic_ofLE {m : ℕ∞} (hmℓ : m ≤ ℓ)
+    {J' : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) X m} (hj) (hJ : J.ofLE hmℓ = J') :
+    IsWeakPseudoholomorphic J' ((ν.ofLE hmℓ).ofEq hj hJ) p u ↔
       IsWeakPseudoholomorphic J ν p u := by
   simp only [← isWeakPseudoholomorphicOn_univ, isWeakPseudoholomorphicOn_ofLE]
+
+/-- **Regularity downgrade, homogeneous case.** Regarding a `C^ℓ` structure `J` as `C^m`, for
+`m ≤ ℓ`, does not change which maps are weakly pseudoholomorphic on `s` for the zero term. -/
+@[simp]
+theorem isWeakPseudoholomorphicOn_zero_ofLE {m : ℕ∞} (hmℓ : m ≤ ℓ) :
+    IsWeakPseudoholomorphicOn (J.ofLE hmℓ) 0 p u s ↔ IsWeakPseudoholomorphicOn J 0 p u s := by
+  simpa only [InhomogeneousTerm.ofLE_zero, InhomogeneousTerm.ofEq_zero] using
+    isWeakPseudoholomorphicOn_ofLE (J := J) (ν := 0) (p := p) (u := u) (s := s) hmℓ
+      (SmoothAlmostComplexStructure.toContMDiff_ofLE _ hmℓ) rfl
+
+/-- **Regularity downgrade, homogeneous case.** Regarding a `C^ℓ` structure `J` as `C^m`, for
+`m ≤ ℓ`, does not change which maps are weakly pseudoholomorphic for the zero term. -/
+@[simp]
+theorem isWeakPseudoholomorphic_zero_ofLE {m : ℕ∞} (hmℓ : m ≤ ℓ) :
+    IsWeakPseudoholomorphic (J.ofLE hmℓ) 0 p u ↔ IsWeakPseudoholomorphic J 0 p u := by
+  simp only [← isWeakPseudoholomorphicOn_univ, isWeakPseudoholomorphicOn_zero_ofLE]
 
 /-! ### Locality -/
 

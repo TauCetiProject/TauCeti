@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Inhomogeneous.Basic
-public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Symplectic.Finrank
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -34,8 +34,10 @@ So the equation tested on `∂ₛ` alone loses no information.
   structures by equal ones and with identity charts.
 * `TauCeti.InhomogeneousTerm.chartTerm_apply_eq_zero_iff`: the term read in charts vanishes at a
   point exactly when the term vanishes on `∂ₛ` there.
-* `TauCeti.InhomogeneousTerm.tangentHom_eq_zero_iff_apply_one_eq_zero`: on a Riemann surface, an
-  inhomogeneous term vanishes at a point exactly when it vanishes on `1` there.
+* `TauCeti.InhomogeneousTerm.tangentHom_eq_zero_iff_apply_eq_zero`: over a two-dimensional domain,
+  an inhomogeneous term vanishes at a point exactly when it vanishes on one nonzero tangent vector
+  there; `TauCeti.InhomogeneousTerm.tangentHom_eq_zero_iff_apply_one_eq_zero` is the case of the
+  vector `1` over a domain modelled on `ℂ`, such as a Riemann surface.
 
 ## References
 
@@ -47,7 +49,7 @@ public section
 
 noncomputable section
 
-open scoped Manifold ContDiff TauCeti.ComplexManifold
+open scoped Manifold ContDiff
 
 namespace TauCeti
 
@@ -177,30 +179,34 @@ theorem chartTerm_apply_eq_zero_iff (ν : InhomogeneousTerm j J) (φ : OpenParti
   rw [← hinv w, h]
   exact map_zero _
 
-/-- On a Riemann surface, an inhomogeneous term vanishes at a point exactly when it vanishes on
-the unit vector `1` of the model tangent space there, the coordinate vector `∂ₛ` of the
-preferred chart. -/
-theorem tangentHom_eq_zero_iff_apply_one_eq_zero {X : Type*} [TopologicalSpace X]
-    [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) ∞ X] {ℓ : ℕ∞}
-    {J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) X ℓ}
-    (ν : InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ) J)
-    (q : X × M) : ν.val.tangentHom q = 0 ↔ ν.val.tangentHom q (1 : ℂ) = 0 := by
-  -- The zero map vanishes on `1`.
+/-- Over a domain of real dimension two, an inhomogeneous term vanishes at a point exactly when
+it vanishes on one nonzero tangent vector there, such as the coordinate vector `∂ₛ` of a chart. -/
+theorem tangentHom_eq_zero_iff_apply_eq_zero (ν : InhomogeneousTerm j J)
+    (hEP : Module.finrank ℝ EP = 2) (q : P × M) {v : TangentSpace IP q.1} (hv : v ≠ 0) :
+    ν.val.tangentHom q = 0 ↔ ν.val.tangentHom q v = 0 := by
+  -- The zero map vanishes on `v`.
   refine ⟨fun h ↦ by rw [h]; rfl, fun h ↦ ?_⟩
-  -- By complex antilinearity, the value on `j 1 = i` is `-J` applied to the value on `1`.
-  have hj1 : ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ) q.1 (1 : ℂ) =
-      Complex.I := by
-    simp [SmoothAlmostComplexStructure.ofComplexManifold_apply]
-    -- The two sides are `I` in `TangentSpace 𝓘(ℝ, ℂ) q.1` and in `ℂ`, equal by definition.
-    rfl
-  have hI := ν.tangentHom_apply_j q (1 : ℂ)
-  rw [hj1, h, map_zero, neg_zero] at hI
-  -- A real linear map out of `ℂ` vanishing on `1` and `i` is zero.
-  have key : ∀ L : ℂ →L[ℝ] TangentSpace I q.2, L 1 = 0 → L Complex.I = 0 → L = 0 :=
-    fun L h1 hI ↦ ContinuousLinearMap.ext fun a ↦ by
-      simpa [h1, hI] using L.toLinearMap.apply_eq_re_smul_one_add_im_smul_I a
-  -- The tangent space of `X` at `q.1` is `ℂ` by definition.
-  exact key (ν.val.tangentHom q) h hI
+  -- By complex antilinearity, the value on `j v` is `-J` applied to the value on `v`.
+  have hjv : ν.val.tangentHom q (j.almostComplexStructureAt q.1 v) = 0 := by
+    rw [ContMDiffAlmostComplexStructure.almostComplexStructureAt_apply, ν.tangentHom_apply_j, h,
+      map_zero, neg_zero]
+  -- In real dimension two, `v` and `j v` span the tangent space.
+  refine ContinuousLinearMap.coe_injective (LinearMap.ext_on
+    ((j.almostComplexStructureAt q.1).span_pair_eq_top_of_finrank_eq_two hEP hv) ?_)
+  rintro w (rfl | rfl)
+  · exact h
+  · simpa using hjv
+
+/-- Over a domain modelled on `ℂ`, such as a Riemann surface, an inhomogeneous term vanishes at a
+point exactly when it vanishes on the unit vector `1` of the model tangent space there, the
+coordinate vector `∂ₛ` of the preferred chart. -/
+theorem tangentHom_eq_zero_iff_apply_one_eq_zero {HX X : Type*} [TopologicalSpace HX]
+    {IX : ModelWithCorners ℝ ℂ HX} [TopologicalSpace X] [ChartedSpace HX X] [IsManifold IX ∞ X]
+    {jX : ContMDiffAlmostComplexStructure IX n X}
+    {J : ContMDiffAlmostComplexStructureFamily I M IX X n} (ν : InhomogeneousTerm jX J)
+    (q : X × M) : ν.val.tangentHom q = 0 ↔ ν.val.tangentHom q (1 : ℂ) = 0 :=
+  ν.tangentHom_eq_zero_iff_apply_eq_zero Complex.finrank_real_complex q
+    (one_ne_zero : (1 : ℂ) ≠ 0)
 
 end InhomogeneousTerm
 
