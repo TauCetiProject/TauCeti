@@ -31,7 +31,7 @@ namespace TauCeti.Sporadic
 
 /-- The ATLAS second Janko permutation model has order `604800 = 100 * 63 * 24 * 4`. -/
 theorem card_J2 : Nat.card J2 = 604800 := by
-  rw [J2.card_eq_mul_card_stabilizer_zero_one, J2.card_stabilizerChain_two]
+  rw [J2.card_eq_mul_card_stabilizer_zero_one_two, J2.card_stabilizerChain_three]
 
 /-- When finite, the group presented by `SporadicName.J2.presentation` has at least `604800`
 elements. The positivity hypothesis excludes infinite groups, for which `Nat.card` takes the junk
