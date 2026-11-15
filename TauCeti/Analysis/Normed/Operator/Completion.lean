@@ -9,11 +9,13 @@ public import Mathlib.Analysis.Normed.Module.Completion
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.Analysis.Normed.Group.ControlledClosure
 public import Mathlib.Analysis.Normed.Group.HomCompletion
+public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import TauCeti.Analysis.Normed.Group.BallSphere
 public import TauCeti.Analysis.Normed.Operator.Basic
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
-# Operator norms of bounded maps extended to completions
+# Operator norms and finite rank of bounded maps extended to completions
 
 A bounded semilinear map `f : E →SL[σ₁₂] F` between seminormed spaces extends to the bounded
 map `f.completion` between the completions, and, when `F` is complete and Hausdorff, to the
@@ -33,6 +35,14 @@ one with this lifting property maps each open ball about `0` onto the open ball 
 (`ContinuousLinearMap.image_ball_eq_ball`), so by `ContinuousLinearMap.norm_completion` its
 extension to the completions has the same property.
 
+Over a complete scalar field, finite rank bounds are also preserved: if `T : E →L[𝕜] F` has rank at
+most `n`, its image in `Completion F` is finite-dimensional and hence closed, so by density of `E`
+in `Completion E` the extensions `T.completion` and (for complete Hausdorff `F`) `T.fromCompletion`
+have rank at most `n`. Completeness of `𝕜` cannot be omitted (`id : ℚ →L[ℚ] ℚ` has `ℚ`-rank `1`,
+whereas its completion `ℝ →L[ℚ] ℝ` has infinite `ℚ`-rank), and the bound does not extend to
+infinite cardinals (`id` on finitely supported `ℓ²`-sequences has rank `ℵ₀`, whereas `ℓ²(ℕ)` has
+uncountable Hamel dimension).
+
 ## Main results
 
 * `ContinuousLinearMap.norm_completion`: `‖f.completion‖ = ‖f‖`.
@@ -42,6 +52,9 @@ extension to the completions has the same property.
 * `ContinuousLinearMap.ball_subset_image_completion_ball` and
   `ContinuousLinearMap.image_completion_ball`: the extension of a metric quotient map to the
   completions is a metric quotient map.
+* `ContinuousLinearMap.rank_completion_le_of_rank_le` and
+  `ContinuousLinearMap.rank_fromCompletion_le_of_rank_le`: over a complete field, extending a
+  bounded linear map of rank at most `n` (`n : ℕ`) to completions preserves `rank ≤ n`.
 * `LinearIsometryEquiv.completion`: the extension of a linear isometric equivalence to the
   completions.
 * `LinearIsometryEquiv.toLinearIsometry_completion`: as a linear isometry, it is
@@ -56,6 +69,8 @@ public section
 open UniformSpace
 
 namespace ContinuousLinearMap
+
+section Semilinear
 
 variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
   {σ₁₂ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ₁₂] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -138,6 +153,41 @@ not change its operator `ℝ≥0∞`-norm. -/
 theorem eNorm_toComplL_comp (f : E →SL[σ₁₂] F) :
     ‖(Completion.toComplL : F →L[𝕜₂] Completion F) ∘SL f‖ₑ = ‖f‖ₑ := by
   rw [← ofReal_norm, ← ofReal_norm, norm_toComplL_comp]
+
+end Semilinear
+
+section Rank
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Over a complete scalar field, extending a bounded linear map of rank at most `n` to the
+completions of its domain and codomain preserves the bound `rank ≤ n`. -/
+theorem rank_completion_le_of_rank_le (T : E →L[𝕜] F) {n : ℕ} (hT : T.rank ≤ n) :
+    T.completion.rank ≤ n := by
+  set W : Submodule 𝕜 (Completion F) :=
+    LinearMap.range ((Completion.toComplL : F →L[𝕜] Completion F) ∘L T : E →ₗ[𝕜] Completion F)
+  have hW : Module.rank 𝕜 W ≤ n :=
+    (LinearMap.rank_comp_le_right _ _).trans hT
+  have : FiniteDimensional 𝕜 W :=
+    Module.rank_lt_aleph0_iff.mp (hW.trans_lt Cardinal.natCast_lt_aleph0)
+  have hrange : LinearMap.range (T.completion : Completion E →ₗ[𝕜] Completion F) ≤ W := by
+    rintro _ ⟨x, rfl⟩
+    refine Completion.induction_on x
+      (W.isClosed_of_finiteDimensional.preimage T.completion.continuous) fun a ↦ ?_
+    simp [W]
+  exact (Submodule.rank_mono hrange).trans hW
+
+/-- Over a complete scalar field, extending a bounded linear map of rank at most `n` into a
+complete Hausdorff space to `Completion E` preserves the bound `rank ≤ n`. -/
+theorem rank_fromCompletion_le_of_rank_le [T0Space F] [CompleteSpace F] (T : E →L[𝕜] F) {n : ℕ}
+    (hT : T.rank ≤ n) : T.fromCompletion.rank ≤ n := by
+  rw [T.fromCompletion_unique ((ContinuousLinearMap.id 𝕜 F).fromCompletion ∘L T.completion)
+    fun _ ↦ by simp]
+  exact (LinearMap.rank_comp_le_right _ _).trans (T.rank_completion_le_of_rank_le hT)
+
+end Rank
 
 end ContinuousLinearMap
 
