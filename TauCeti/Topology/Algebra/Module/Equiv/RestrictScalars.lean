@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
 /-!
@@ -12,7 +14,9 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
 Mathlib's `ContinuousLinearEquiv.restrictScalars` restricts scalars for an automorphism.
 Here `ContinuousLinearEquiv.restrictScalars'` allows distinct source and target modules,
-using `LinearEquiv.restrictScalars` and preserving the original continuous maps.
+using `LinearEquiv.restrictScalars` and preserving the original continuous maps. Consequently an
+invertible continuous linear map stays invertible after restricting scalars
+(`ContinuousLinearMap.IsInvertible.restrictScalars`).
 -/
 
 public section
@@ -51,3 +55,18 @@ theorem restrictScalars'_symm [LinearMap.CompatibleSMul N M R S] (e : M ≃L[S] 
   (rfl)
 
 end ContinuousLinearEquiv
+
+namespace ContinuousLinearMap
+
+variable {R S M N : Type*} [Semiring R] [Semiring S]
+  [AddCommMonoid M] [Module R M] [Module S M] [TopologicalSpace M]
+  [AddCommMonoid N] [Module R N] [Module S N] [TopologicalSpace N]
+  [LinearMap.CompatibleSMul M N R S]
+
+/-- An invertible continuous linear map stays invertible after restricting scalars. -/
+theorem IsInvertible.restrictScalars {f : M →L[S] N} (hf : f.IsInvertible) :
+    (f.restrictScalars R).IsInvertible := by
+  obtain ⟨e, rfl⟩ := hf
+  exact ⟨e.restrictScalars' R, rfl⟩
+
+end ContinuousLinearMap

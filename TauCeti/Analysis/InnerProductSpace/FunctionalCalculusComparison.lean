@@ -11,7 +11,7 @@ public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Eigenve
 public import TauCeti.Analysis.InnerProductSpace.Modulus
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
-public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
 
 /-!
 # The finite symmetric calculus and modulus agree with the continuous functional calculus

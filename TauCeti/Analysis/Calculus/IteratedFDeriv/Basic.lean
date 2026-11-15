@@ -18,7 +18,9 @@ derivative fields. The first iterated derivative, uncurried, is the Fréchet der
 (`TauCeti.continuousMultilinearCurryFin1_iteratedFDeriv_one`, with the function-level form
 `TauCeti.fderiv_eq_continuousMultilinearCurryFin1_comp`), so agreement of the iterated
 derivatives of orders at most one is agreement of value and Fréchet derivative
-(`TauCeti.forall_le_one_iteratedFDeriv_eq_iff`). The file also supplies the
+(`TauCeti.forall_le_one_iteratedFDeriv_eq_iff`). Evaluating the third iterated derivative on
+three directions gives the three-times curried Fréchet derivative
+(`TauCeti.iteratedFDeriv_three_apply`). The file also supplies the
 two-variable currying isometry used to identify continuous multilinear second derivatives with
 curried bilinear maps, and the corresponding exact comparison for differences of second
 derivatives, which transfers Hölder bounds between the two forms of the second derivative.
@@ -27,7 +29,8 @@ Where a function `ζ` equals one on a neighbourhood of a point, every iterated d
 to a finite order have a common bound
 (`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`), and such a
 common bound is nonnegative and bounds the function itself
-(`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`).
+(`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`). Adding a constant to a function does not
+change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`).
 -/
 
 public section
@@ -102,6 +105,13 @@ theorem continuousMultilinearCurryFin2_iteratedFDeriv_two (f : E → F) (x : E) 
   simp only [continuousMultilinearCurryFin2_apply, iteratedFDeriv_two_apply,
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
 
+/-- Evaluating the third iterated derivative on three directions gives the three-times curried
+Fréchet derivative, including at points where these derivatives are junk-valued. -/
+theorem iteratedFDeriv_three_apply (f : E → F) (x : E) (m : Fin 3 → E) :
+    iteratedFDeriv 𝕜 3 f x m = fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 f)) x (m 0) (m 1) (m 2) := by
+  rw [iteratedFDeriv_succ_apply_right, iteratedFDeriv_two_apply]
+  rfl
+
 /-- Differences of curried second derivatives and multilinear second derivatives have
 exactly the same norm, without differentiability assumptions. -/
 theorem norm_fderiv_fderiv_sub (f : E → F) (x y : E) :
@@ -141,6 +151,13 @@ theorem norm_iteratedFDeriv_iteratedFDeriv (f : E → F) (i m : ℕ) (x : E) :
       (fderiv 𝕜 (iteratedFDeriv 𝕜 m f)) x i
     rw [← h] at he
     rw [he, norm_iteratedFDeriv_fderiv, ih, Nat.add_right_comm, Nat.add_assoc]
+
+/-- Adding a constant to a function does not change its iterated derivatives of positive order. No
+differentiability is needed, since the derivative of `f + c` is that of `f` everywhere. -/
+theorem iteratedFDeriv_succ_add_const (f : E → F) (c : F) (n : ℕ) :
+    iteratedFDeriv 𝕜 (n + 1) (fun x ↦ f x + c) = iteratedFDeriv 𝕜 (n + 1) f := by
+  funext x
+  simp only [iteratedFDeriv_succ_eq_comp_right, fderiv_add_const]
 
 /-- Bounded derivatives up to order `N` have a common bound. -/
 theorem exists_forall_norm_iteratedFDeriv_le_of_forall_exists {f : E → F} {N : ℕ}
