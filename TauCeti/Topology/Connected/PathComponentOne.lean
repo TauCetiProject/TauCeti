@@ -25,6 +25,7 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- Two elements of a topological group have the same image in `π₀(G) = G ⧸ G₀` exactly when they
 are joined by a path. -/
+@[simp]
 theorem mk_eq_mk_iff_joined_pathComponentOne {g h : G} :
     (g : G ⧸ Subgroup.pathComponentOne G) = h ↔ Joined g h := by
   rw [QuotientGroup.eq, ← SetLike.mem_coe, Subgroup.coe_pathComponentOne, mem_pathComponent_iff]

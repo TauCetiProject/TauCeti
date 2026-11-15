@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.GroupExtension.Basic
 public import TauCeti.AlgebraicTopology.Sphere.CubeQuotient
+public import TauCeti.AlgebraicTopology.Sphere.Zero
 public import TauCeti.Topology.Homotopy.HomotopyClassGroup.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalMonoid
 
@@ -76,18 +77,6 @@ section Positive
 
 variable (n : ℕ) [NeZero n] {G : Type*} [TopologicalSpace G] [Group G] [IsTopologicalGroup G]
 
-/-- The pointwise product of two generalized loops at `1`, read as maps out of the sphere, is the
-pointwise product of the maps. -/
-private theorem toSphere_map_mul_prod (p q : Ω^ (Fin n) G 1)
-    (h : ((ContinuousMap.id G).comp ContinuousMap.fst *
-      (ContinuousMap.id G).comp ContinuousMap.snd : C(G × G, G)) (1, 1) = 1) :
-    GenLoop.toSphere (GenLoop.map ((ContinuousMap.id G).comp ContinuousMap.fst *
-        (ContinuousMap.id G).comp ContinuousMap.snd : C(G × G, G)) h (GenLoop.prod p q)) =
-      GenLoop.toSphere p * GenLoop.toSphere q := by
-  ext s
-  obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
-  simp
-
 /-- The free homotopy class of the map `Sⁿ → G` of a class of `πₙ(G, 1)`, the function underlying
 `TauCeti.HomotopyClassGroup.ofHomotopyGroup`. -/
 private noncomputable def ofHomotopyGroupFun :
@@ -120,7 +109,7 @@ noncomputable def ofHomotopyGroup :
     induction b using Quotient.inductionOn with | h q =>
     exact (congrArg (fun c ↦ ofHomotopyGroupFun n (HomotopyGroup.map _ _ c))
       (HomotopyGroup.prod_mk p q)).trans
-        ((congrArg (mk _ G) (toSphere_map_mul_prod n p q _)).trans (map_mul _ _ _))
+        ((congrArg (mk _ G) (by ext; simp)).trans (map_mul _ _ _))
 
 @[simp]
 theorem ofHomotopyGroup_mk (p : Ω^ (Fin n) G 1) :
@@ -217,6 +206,7 @@ noncomputable def sphereMulEquiv :
 
 /-- The pair `(α, a)` corresponds to the product of `α ∈ πₙ(G, 1)` with the class of a constant
 map in the path component `a`. -/
+@[simp]
 theorem sphereMulEquiv_apply
     (x : HomotopyGroup (Fin n) G 1 ⋊[(sphereSplitting n G).conjAct]
       (G ⧸ Subgroup.pathComponentOne G)) :
@@ -248,20 +238,31 @@ variable (G) in
 noncomputable def sphereZeroMulEquiv :
     HomotopyClassGroup (sphere (0 : EuclideanSpace ℝ (Fin 1)) 1) G ≃*
       (G ⧸ Subgroup.pathComponentOne G) × (G ⧸ Subgroup.pathComponentOne G) :=
+  haveI := discreteTopology_sphere_of_finrank_eq_one finrank_euclideanSpace_fin
+    (0 : EuclideanSpace ℝ (Fin 1)) 1
   (piMulEquivOfDiscrete _ G).trans <| MulEquiv.ofBijective
     ((Pi.evalMonoidHom _ (sphereNorthPole 0)).prod (Pi.evalMonoidHom _ (-sphereNorthPole 0))) <| by
       refine ⟨fun φ ψ h ↦ funext fun t ↦ ?_, fun ab ↦ ⟨fun t ↦ if t = sphereNorthPole 0 then ab.1
         else ab.2, ?_⟩⟩
       · simp only [MonoidHom.prod_apply, Pi.evalMonoidHom_apply, Prod.mk.injEq] at h
-        rcases eq_sphereNorthPole_or_eq_neg t with rfl | rfl
-        exacts [h.1, h.2]
-      · simp [neg_sphereNorthPole_ne_self]
+        -- `S⁰` consists of the north pole and its antipode.
+        have ht : (t : EuclideanSpace ℝ (Fin 1)) ∈ ({(sphereNorthPole 0 : EuclideanSpace ℝ (Fin 1)),
+            -(sphereNorthPole 0 : EuclideanSpace ℝ (Fin 1))} : Set _) :=
+          sphere_eq_pair_of_finrank_eq_one finrank_euclideanSpace_fin (sphereNorthPole 0).2 ▸ t.2
+        rcases ht with ht | ht
+        · rw [show t = sphereNorthPole 0 from Subtype.ext ht]
+          exact h.1
+        · rw [show t = -sphereNorthPole 0 from Subtype.ext ht]
+          exact h.2
+      · simp [(ne_neg_of_mem_unit_sphere ℝ (sphereNorthPole 0)).symm]
 
 @[simp]
 theorem sphereZeroMulEquiv_mk (f : C(sphere (0 : EuclideanSpace ℝ (Fin 1)) 1, G)) :
     sphereZeroMulEquiv G (mk _ G f) =
       ((f (sphereNorthPole 0) : G ⧸ Subgroup.pathComponentOne G),
         (f (-sphereNorthPole 0) : G ⧸ Subgroup.pathComponentOne G)) :=
+  haveI := discreteTopology_sphere_of_finrank_eq_one finrank_euclideanSpace_fin
+    (0 : EuclideanSpace ℝ (Fin 1)) 1
   Prod.ext (piMulEquivOfDiscrete_mk f _) (piMulEquivOfDiscrete_mk f _)
 
 end Zero

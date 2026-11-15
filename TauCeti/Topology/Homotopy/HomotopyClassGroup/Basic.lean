@@ -200,10 +200,12 @@ theorem ker_mk : (mk X G).ker = homotopicOneSubgroup X G :=
   QuotientGroup.ker_mk' _
 
 /-- A map represents the identity class exactly when it is homotopic to the constant map `1`. -/
+@[simp]
 theorem mk_eq_one_iff {f : C(X, G)} : mk X G f = 1 ↔ f.Homotopic 1 := by
   rw [← MonoidHom.mem_ker, ker_mk, mem_homotopicOneSubgroup]
 
 /-- **Two maps into a topological group have the same class exactly when they are homotopic.** -/
+@[simp]
 theorem mk_eq_mk_iff {f g : C(X, G)} : mk X G f = mk X G g ↔ f.Homotopic g := by
   rw [← div_eq_one, ← map_div, mk_eq_one_iff, div_eq_mul_inv]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩

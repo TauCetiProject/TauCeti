@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Product
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 /-!
@@ -47,8 +48,7 @@ pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
 ## Main declarations
 
 * `TauCeti.sphereNorthPole`: the north pole `e_last` of the unit sphere of
-  `EuclideanSpace ℝ (Fin (n + 1))`; the zero-sphere consists of it and its antipode
-  (`TauCeti.eq_sphereNorthPole_or_eq_neg`).
+  `EuclideanSpace ℝ (Fin (n + 1))`.
 * `TauCeti.closedBallToSphere`: the closed unit ball of `ℝⁿ` modulo its boundary is the sphere,
   with `TauCeti.closedBallToSphere_eq_closedBallToSphere_iff` and
   `TauCeti.closedBallToSphere_surjective`.
@@ -60,8 +60,8 @@ pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
 * `TauCeti.cubeQuotientHomeomorphSphere`: the pointed homeomorphism `Iⁿ / ∂Iⁿ ≃ₜ Sⁿ`.
 * `TauCeti.sphereGenLoop`: `TauCeti.cubeToSphere` as a generalized loop of the sphere.
 * `GenLoop.toSphere` and `GenLoop.sphereEquiv`: generalized loops are pointed maps out of the
-  sphere; `p` is the image of `TauCeti.sphereGenLoop` under `GenLoop.toSphere p`
-  (`GenLoop.map_toSphere_sphereGenLoop`).
+  sphere, compatible with products (`GenLoop.toSphere_prod`); `p` is the image of
+  `TauCeti.sphereGenLoop` under `GenLoop.toSphere p` (`GenLoop.map_toSphere_sphereGenLoop`).
 * `GenLoop.injective_toSphere_iff` and `GenLoop.surjective_toSphere_iff`: `GenLoop.toSphere p` is
   injective exactly when `p` identifies only boundary points, and surjective exactly when `p` is.
 * `TauCeti.exists_cubeToSphere_eq_of_ne`: `TauCeti.cubeToSphere` covers the sphere off the north
@@ -139,26 +139,6 @@ theorem apply_last_lt_one_iff_ne_sphereNorthPole
     rw [norm_eq_of_mem_sphere, Real.norm_eq_abs] at this
     exact (abs_le.1 this).2
   rw [hle.lt_iff_ne, Ne, Ne, eq_sphereNorthPole_iff]
-
-/-- The south pole `-e_last` is not the north pole. -/
-theorem neg_sphereNorthPole_ne_self : -sphereNorthPole n ≠ sphereNorthPole n := by
-  rw [Ne, eq_sphereNorthPole_iff, coe_neg_sphere]
-  norm_num
-
-/-- The zero-sphere consists of the north pole and the south pole. -/
-theorem eq_sphereNorthPole_or_eq_neg (t : sphere (0 : EuclideanSpace ℝ (Fin 1)) 1) :
-    t = sphereNorthPole 0 ∨ t = -sphereNorthPole 0 := by
-  rcases eq_or_eq_neg_of_norm_eq_of_finrank_eq_one finrank_euclideanSpace_fin
-    (by rw [norm_eq_of_mem_sphere, norm_eq_of_mem_sphere] : ‖(t : EuclideanSpace ℝ (Fin 1))‖ =
-      ‖(sphereNorthPole 0 : EuclideanSpace ℝ (Fin 1))‖) with h | h
-  · exact .inl (Subtype.ext h)
-  · exact .inr (Subtype.ext h)
-
-/-- The zero-sphere is finite, with the two points `TauCeti.sphereNorthPole 0` and its
-antipode. -/
-instance : Finite (sphere (0 : EuclideanSpace ℝ (Fin 1)) 1) :=
-  Finite.of_surjective (fun b : Bool ↦ if b then sphereNorthPole 0 else -sphereNorthPole 0)
-    fun t ↦ (eq_sphereNorthPole_or_eq_neg t).elim (fun h ↦ ⟨true, h.symm⟩) fun h ↦ ⟨false, h.symm⟩
 
 /-- The vector underlying `TauCeti.closedBallToSphere`: `(2 √(1 - ‖x‖²) x, 2 ‖x‖² - 1)`. -/
 private def closedBallToSphereAux (x : EuclideanSpace ℝ (Fin n)) : EuclideanSpace ℝ (Fin (n + 1)) :=
@@ -532,6 +512,15 @@ theorem toSphere_const : toSphere (const : Ω^ (Fin n) X x) = ContinuousMap.cons
   ext s
   obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
   simp [const_apply]
+
+/-- The coordinatewise product of two generalized loops corresponds to the pairing of the maps out
+of the sphere. -/
+@[simp]
+theorem toSphere_prod (p : Ω^ (Fin n) X x) (q : Ω^ (Fin n) Y y) :
+    toSphere (GenLoop.prod p q) = (toSphere p).prodMk (toSphere q) := by
+  refine ContinuousMap.ext fun s ↦ ?_
+  obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
+  simp
 
 /-- The pointed map `GenLoop.toSphere p` out of the sphere is injective exactly when the generalized
 loop `p` identifies only points of the boundary of the cube. -/
