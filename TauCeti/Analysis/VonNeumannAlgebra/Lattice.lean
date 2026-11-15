@@ -310,4 +310,9 @@ theorem commutant_eq_top_iff : M.commutant = ⊤ ↔ M = ⊥ :=
 theorem commutant_eq_bot_iff : M.commutant = ⊥ ↔ M = ⊤ :=
   ⟨fun h => by rw [← commutant_commutant M, h, commutant_bot], fun h => h ▸ commutant_top⟩
 
+/-- A von Neumann algebra and its commutant generate all bounded operators if and only if the
+center `M ⊓ M.commutant` is the scalar algebra `⊥`. -/
+theorem sup_commutant_eq_top_iff : M ⊔ M.commutant = ⊤ ↔ M ⊓ M.commutant = ⊥ := by
+  rw [← commutant_eq_bot_iff, commutant_sup, commutant_commutant, inf_comm]
+
 end VonNeumannAlgebra
