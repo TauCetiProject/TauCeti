@@ -15,7 +15,9 @@ moreover nonempty and connected. Equivalently, an acyclic graph has at most one 
 between two vertices, and a tree has exactly one. These unique reduced paths are the tree paths
 used to build the free basis of the fundamental group of a graph from a spanning tree.
 
-An acyclic graph has no loop, hence no dart at all when it has at most one vertex, and a
+An acyclic graph has no loop, hence no dart at all when it has at most one vertex, and no two
+darts with the same endpoints, so the target map identifies the outgoing darts at any vertex with
+its adjacent vertices and a finite set of vertices induces finitely many darts. A
 restriction `Γ.restrict S hS` is acyclic exactly when no nonempty reduced closed path of `Γ` has
 all its darts in `S`.
 
@@ -95,24 +97,55 @@ theorem IsAcyclic.isEmpty_dart_of_subsingleton (h : Γ.IsAcyclic) [Subsingleton 
   ⟨fun e => h.src_ne_tgt e (Subsingleton.elim _ _)⟩
 
 variable {Γ} in
+/-- In an acyclic graph, a reduced path only crosses darts of any other path with the same
+endpoints, in the same order. -/
+theorem IsAcyclic.darts_sublist (h : Γ.IsAcyclic) {a b : Γ.V} {p : Γ.Path a b}
+    (hp : Path.IsReduced Γ p) (q : Γ.Path a b) : (Path.darts Γ p).Sublist (Path.darts Γ q) := by
+  rw [h.eq_of_isReduced hp (Path.isReduced_reduce Γ q)]
+  exact Path.darts_reduce_sublist Γ q
+
+variable {Γ} in
+/-- An acyclic graph has no parallel darts: a dart is determined by its endpoints. -/
+theorem IsAcyclic.eq_of_src_eq_of_tgt_eq (h : Γ.IsAcyclic) {e f : Γ.E}
+    (hs : Γ.src e = Γ.src f) (ht : Γ.tgt e = Γ.tgt f) : e = f := by
+  have key : ∀ {a b : Γ.V} (x y : Quiver.Hom a b), x.1 = y.1 := fun x y => by
+    simpa using congrArg (Path.darts Γ)
+      (h.eq_of_isReduced (Path.isReduced_toPath Γ x) (Path.isReduced_toPath Γ y))
+  exact (Γ.dart_val e).symm.trans (key (Γ.dart e) ⟨f, hs.symm, ht.symm⟩)
+
+variable {Γ} in
 /-- In an acyclic Serre graph, the target map identifies the outgoing darts at any vertex `u` with
 the adjacent vertices `{w // Nonempty (u ⟶ w)}`. -/
 noncomputable def IsAcyclic.starEquivAdjacent (h : Γ.IsAcyclic) (u : Γ.V) :
     {e : Γ.E // Γ.src e = u} ≃ {w : Γ.V // Nonempty (u ⟶ w)} :=
   Equiv.ofBijective (fun e => ⟨Γ.tgt e.1, ⟨⟨e.1, e.2, rfl⟩⟩⟩)
-    ⟨fun ⟨e₁, h₁⟩ ⟨e₂, h₂⟩ h' => Subtype.ext <| by
-      have htgt : Γ.tgt e₁ = Γ.tgt e₂ := congrArg Subtype.val h'
-      let f₁ : u ⟶ Γ.tgt e₁ := ⟨e₁, h₁, rfl⟩
-      let f₂ : u ⟶ Γ.tgt e₁ := ⟨e₂, h₂, htgt.symm⟩
-      have hpath := h.eq_of_isReduced (Path.isReduced_toPath Γ f₁) (Path.isReduced_toPath Γ f₂)
-      injection hpath with _ _ _ hf
-      exact congrArg (fun f : u ⟶ Γ.tgt e₁ => f.1) hf,
+    ⟨fun ⟨_, h₁⟩ ⟨_, h₂⟩ h' =>
+      Subtype.ext (h.eq_of_src_eq_of_tgt_eq (h₁.trans h₂.symm) (congrArg Subtype.val h')),
      fun ⟨_, ⟨f⟩⟩ => ⟨⟨f.1, f.2.1⟩, Subtype.ext f.2.2⟩⟩
 
+variable {Γ} in
 @[simp] theorem IsAcyclic.starEquivAdjacent_apply_val {h : Γ.IsAcyclic} (u : Γ.V)
     (e : {e : Γ.E // Γ.src e = u}) :
     (h.starEquivAdjacent u e).1 = Γ.tgt e.1 :=
   (rfl)
+
+variable {Γ} in
+/-- In an acyclic graph, a single vertex induces no dart. -/
+@[simp] theorem IsAcyclic.inducedDarts_singleton (h : Γ.IsAcyclic) (v : Γ.V) :
+    Γ.inducedDarts {v} = ∅ :=
+  Set.eq_empty_of_forall_notMem fun e he => by
+    obtain ⟨hs, ht⟩ := mem_inducedDarts_iff.mp he
+    exact h.src_ne_tgt e (hs.trans ht.symm)
+
+variable {Γ} in
+/-- In an acyclic graph, a finite set of vertices induces finitely many darts. -/
+theorem IsAcyclic.finite_inducedDarts (h : Γ.IsAcyclic) {C : Set Γ.V} (hC : C.Finite) :
+    (Γ.inducedDarts C).Finite := by
+  refine Set.Finite.of_finite_image (f := fun e => (Γ.src e, Γ.tgt e))
+    ((hC.prod hC).subset ?_) fun e _ f _ hef =>
+      h.eq_of_src_eq_of_tgt_eq (congrArg Prod.fst hef) (congrArg Prod.snd hef)
+  rintro _ ⟨e, he, rfl⟩
+  exact mem_inducedDarts_iff.mp he
 
 /-- A graph is acyclic exactly when any two reduced paths with the same endpoints are equal. -/
 theorem isAcyclic_iff_eq_of_isReduced : Γ.IsAcyclic ↔

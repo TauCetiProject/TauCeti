@@ -138,6 +138,31 @@ theorem eventuallyMeasurableSpace_comap_fin_succ_eq_increments
   exact eventuallyMeasurableSpace_comap_congr X _
     (fin_succ_ae_eq_sub_initial_add_const X c h0)
 
+/-- For an almost-surely deterministic initial observation, a claim valued in a completely
+metrizable space is a.e. strongly measurable from the observations exactly when it is so
+from their normalized increments. No ambient measurability of the observations is required. -/
+theorem aestronglyMeasurable_comap_fin_succ_iff_increments {E : Type*}
+    [TopologicalSpace E] [TopologicalSpace.IsCompletelyMetrizableSpace E]
+    (X : Ω → Fin (n + 1) → ℝ) (a : Fin n → ℝ) (ha : ∀ i, a i ≠ 0)
+    (c : ℝ) (h0 : ∀ᵐ ω ∂P, X ω 0 = c) {u : Ω → E} :
+    AEStronglyMeasurable[MeasurableSpace.comap X inferInstance] u P ↔
+      AEStronglyMeasurable[MeasurableSpace.comap
+        (fun ω (i : Fin n) => (X ω i.succ - X ω i.castSucc) / a i) inferInstance] u P := by
+  nontriviality E
+  constructor
+  · intro hu
+    obtain ⟨f, hf, hfact⟩ := hu.stronglyMeasurable_mk.exists_eq_measurable_comp
+    refine ⟨fun ω => f (fun j => X ω j - X ω 0 + c), ?_, ?_⟩
+    · rw [← comap_fin_succ_sub_initial_eq_increments X a ha c]
+      exact hf.comp_measurable (comap_measurable _)
+    · exact hu.ae_eq_mk.trans ((fin_succ_ae_eq_sub_initial_add_const X c h0).mono
+        fun ω hω => (congrFun hfact ω).trans (congrArg f hω))
+  · intro hu
+    apply hu.mono
+    let : MeasurableSpace Ω := MeasurableSpace.comap X inferInstance
+    exact ((measurable_fin_succ_iff_initial_increments X a ha).mp
+      (comap_measurable _)).2.comap_le
+
 /-- A standard Borel-valued claim measurable in a finite observation vector with almost-surely
 deterministic initial value is almost surely a Borel function of its normalized increments.
 The equality is almost sure even when the claim or observations have exceptional values. -/
