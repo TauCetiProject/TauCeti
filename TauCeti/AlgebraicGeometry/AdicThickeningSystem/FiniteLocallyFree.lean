@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
-public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule
+public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.Basic
 public import TauCeti.AlgebraicGeometry.RelativeSpec.PullbackAlgebra
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 import TauCeti.AlgebraicGeometry.RelativeSpec.BaseChange
