@@ -51,7 +51,7 @@ theorem isBorelOverAlgClosed_comap_identityComponent_iff
       (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)))
   intro I hI
   let _ : ConnectedSpace (PrimeSpectrum (FiniteTypeCommHopfAlgCat.quotient H I)) :=
-    hI.geometricallyConnected.connectedSpace k _
+    hI.geometricallyConnected.connectedSpace
   have hCI : HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H) ≤ I := by
     intro x hx
     apply (CommHopfAlgCat.mkQuotient_eq_zero_iff H.obj I x).mp

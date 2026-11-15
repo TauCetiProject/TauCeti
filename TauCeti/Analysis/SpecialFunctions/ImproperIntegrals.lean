@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.MeasureTheory.Integral.RpowLaplace
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
