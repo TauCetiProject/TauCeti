@@ -288,7 +288,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinElement
 trivial: the absolute Frobenius at `Q` is an involution and the residue field of `v` already has
 `q ^ 2` elements. -/
 private theorem eq_one_of_absNorm_eq_sq
-    (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
+    (hd : Squarefree d)
     (v : IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd)))
     (Q : Ideal (𝓞 (candidateGenusField hd))) [Q.IsPrime] [Q.LiesOver v.asIdeal]
     (σ : candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd)
@@ -379,7 +379,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius_at_prim
     exact autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius hd hnsq
       v.asIdeal hnorm Q σ hσ
   · -- `v` is inert: the Frobenius and the narrow class are both trivial.
-    rw [eq_one_of_absNorm_eq_sq hd hnsq v Q σ hσ hnorm, map_one,
+    rw [eq_one_of_absNorm_eq_sq hd v Q σ hσ hnorm, map_one,
       mk0_eq_one_of_absNorm_eq_sq hd hnsq v hnorm, TauCeti.elementaryTwoQuotientMk_one, ofAdd_zero]
 
 /-! ### The Artin map on ideals -/
