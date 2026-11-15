@@ -83,14 +83,7 @@ variable {E H M EG HG G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup EG] [NormedSpace ℝ EG] [TopologicalSpace HG]
   {IG : ModelWithCorners ℝ EG HG} [TopologicalSpace G] [ChartedSpace HG G]
   [Group G] [MulAction G M] [ContMDiffSMul IG I ∞ G M]
-
-/-- Evaluation of a two-form only depends on the base point through its value. -/
-private theorem eval₂_eq_of_eq (form : SmoothTwoForm I M) {p q : M} (h : p = q) (a b : E) :
-    form.eval₂ p a b = form.eval₂ q a b := by
-  subst h
-  rfl
-
-variable [FiniteDimensional ℝ E] [I.Boundaryless] [IG.Boundaryless] [IsTopologicalGroup G]
+  [FiniteDimensional ℝ E] [I.Boundaryless] [IG.Boundaryless] [IsTopologicalGroup G]
   [CompactSpace G] [IsManifold IG ∞ G]
 
 variable (IG) in
@@ -147,7 +140,7 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
     rw [SmoothBundleForm.eval₂_apply]
     exact mpullback_apply_pair _ _ _ _ _
   have hζ0 (u w : E) : ζ 0 ![u, w] = form.eval₂ x₀ u w := by
-    rw [hζapp, hes0, hes0, eval₂_eq_of_eq form (by rw [← he0, e.left_inv hx₀e])]
+    rw [hζapp, hes0, hes0, SmoothForm.eval₂_congr_basePoint form (by rw [← he0, e.left_inv hx₀e])]
   have hζs : ContDiffOn ℝ ∞ ζ D := fun y hy ↦
     RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace
       ((form.contMDiff (e.symm y)).mpullback_form (hesymm.contMDiffAt (hD.mem_nhds hy))
@@ -206,7 +199,7 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
   have hψs0 : ψ.symm 0 = 0 := (congrArg ψ.symm hψ0.symm).trans (ψ.symm_apply_apply 0)
   refine ⟨ρ, chart, hρc, hρ, fun g u w ↦ ?_, ?_, ?_, ?_, ?_⟩
   · rw [hρ g]
-    exact (eval₂_eq_of_eq form (hx₀ g).symm _ _).trans
+    exact (SmoothForm.eval₂_congr_basePoint form (hx₀ g).symm _ _).trans
       (eval₂_mfderiv_of_mpullback_eq _ (hG g) x₀ u w)
   · rw [hsrc]
     refine ⟨hx₀e, ?_⟩
@@ -245,7 +238,7 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
     have he' := hζapp (e z) (mfderiv I 𝓘(ℝ, E) e z v) (mfderiv I 𝓘(ℝ, E) e z w)
     rw [hese hz.1 v, hese hz.1 w] at he'
     calc form.eval₂ z v w = form.eval₂ (e.symm (e z)) v w :=
-          eval₂_eq_of_eq form (e.left_inv hz.1).symm v w
+          SmoothForm.eval₂_congr_basePoint form (e.left_inv hz.1).symm v w
       _ = ζ (e z) ![mfderiv I 𝓘(ℝ, E) e z v, mfderiv I 𝓘(ℝ, E) e z w] := he'.symm
       _ = ζ 0 ![fderiv ℝ ψ.symm (e z) (mfderiv I 𝓘(ℝ, E) e z v),
             fderiv ℝ ψ.symm (e z) (mfderiv I 𝓘(ℝ, E) e z w)] :=
