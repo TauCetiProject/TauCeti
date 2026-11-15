@@ -536,18 +536,20 @@ theorem toAlgHom_starLift_Lmul :
     (starLift (Lmul 𝕜 A)).toAlgHom = (lift (NonUnitalAlgHom.Lmul 𝕜 A)).rangeRestrict :=
   algHom_ext'' fun a ↦ Subtype.ext (by simp)
 
+/-- Coercing `Unitization.starLift (LeftAction.Lmul 𝕜 A) u` into `A →L[𝕜] A` agrees with the
+algebra lift `Unitization.lift (NonUnitalAlgHom.Lmul 𝕜 A) u`. -/
+theorem coe_starLift_Lmul_eq_lift_Lmul (u : Unitization 𝕜 A) :
+    ((starLift (Lmul 𝕜 A) u : LeftAction 𝕜 A) : A →L[𝕜] A) =
+      lift (NonUnitalAlgHom.Lmul 𝕜 A) u := by
+  rw [← StarAlgHom.coe_toAlgHom, toAlgHom_starLift_Lmul, AlgHom.coe_codRestrict]
+
 /-- Evaluating `Unitization.starLift (LeftAction.Lmul 𝕜 A)` in `A →L[𝕜] A` produces
 `u.fst • id + L_{u.snd}`. -/
 theorem coe_starLift_Lmul (u : Unitization 𝕜 A) :
     ((starLift (Lmul 𝕜 A) u : LeftAction 𝕜 A) : A →L[𝕜] A) =
       u.fst • ContinuousLinearMap.id 𝕜 A + mul 𝕜 A u.snd := by
-  have h : ((starLift (Lmul 𝕜 A) u : LeftAction 𝕜 A) : A →L[𝕜] A) =
-      lift (NonUnitalAlgHom.Lmul 𝕜 A) u := by
-    simpa only [← StarAlgHom.coe_toAlgHom, AlgHom.coe_codRestrict] using
-      congrArg (fun φ : Unitization 𝕜 A →ₐ[𝕜] LeftAction 𝕜 A ↦ (φ u : A →L[𝕜] A))
-        toAlgHom_starLift_Lmul
-  rw [h, lift_apply, NonUnitalAlgHom.toAlgHom_apply, Algebra.algebraMap_eq_smul_one,
-    ContinuousLinearMap.one_def, NonUnitalAlgHom.coe_Lmul]
+  rw [coe_starLift_Lmul_eq_lift_Lmul, lift_apply, NonUnitalAlgHom.toAlgHom_apply,
+    Algebra.algebraMap_eq_smul_one, ContinuousLinearMap.one_def, NonUnitalAlgHom.coe_Lmul]
 
 /-- The `⋆`-lift of `LeftAction.Lmul 𝕜 A` maps `Unitization 𝕜 A` surjectively onto
 `LeftAction 𝕜 A`. -/
@@ -575,9 +577,8 @@ noncomputable def starAlgEquivLeftAction
     Unitization 𝕜 A ≃⋆ₐ[𝕜] LeftAction 𝕜 A :=
   StarAlgEquiv.ofBijective (starLift (LeftAction.Lmul 𝕜 A))
     ⟨fun u v huv ↦ (injective_lift_Lmul_iff.mpr hA) <| by
-      have h := congrArg (fun T : LeftAction 𝕜 A ↦ (T : A →L[𝕜] A)) huv
-      simpa only [← StarAlgHom.coe_toAlgHom, LeftAction.toAlgHom_starLift_Lmul,
-        AlgHom.coe_codRestrict] using h,
+      rw [← LeftAction.coe_starLift_Lmul_eq_lift_Lmul, ← LeftAction.coe_starLift_Lmul_eq_lift_Lmul,
+        huv],
     LeftAction.starLift_Lmul_surjective⟩
 
 @[simp]
@@ -609,9 +610,9 @@ preserves norms. -/
 theorem norm_starAlgEquivLeftAction [CompleteSpace A]
     (hA : ¬ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b) (u : Unitization 𝕜 A) :
     ‖starAlgEquivLeftAction (𝕜 := 𝕜) hA u‖ = ‖u‖ := by
-  rw [AddSubgroupClass.coe_norm, coe_starAlgEquivLeftAction, ← ContinuousLinearMap.one_def,
-    ← Algebra.algebraMap_eq_smul_one, ← NonUnitalAlgHom.coe_Lmul,
-    ← NonUnitalAlgHom.toAlgHom_apply, ← lift_apply, norm_lift_Lmul hA u]
+  rw [AddSubgroupClass.coe_norm, ← StarAlgEquiv.toStarAlgHom_apply,
+    toStarAlgHom_starAlgEquivLeftAction, LeftAction.coe_starLift_Lmul_eq_lift_Lmul,
+    norm_lift_Lmul hA u]
 
 /-- When `A` is complete and has no two-sided identity, `Unitization.starAlgEquivLeftAction` is
 an isometry. -/
