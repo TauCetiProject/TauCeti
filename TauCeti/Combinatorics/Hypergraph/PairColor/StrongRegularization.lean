@@ -5,41 +5,42 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Hypergraph.PairColor.SeededRegularization
 public import Mathlib.Order.PartialSups
+public import TauCeti.Combinatorics.Hypergraph.PairColor.SeededRegularization
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
 
 /-!
-# Strong seeded regularization for pair-color systems
+# Strong pair-color regularity preserving a seed
 
-Iterating seeded equitable pair-color regularity
-(`PairColorSystem.exists_refining_equipartition_sum_irregularPairs_le`) produces a nested pair of
-equipartitions `Q ≤ P ≤ P₀` below any prescribed equitable seed `P₀` such that:
+Iterating `PairColorSystem.exists_refining_equipartition_sum_irregularPairs_le` produces a nested
+pair of equipartitions `Q ≤ P ≤ P₀` refining any seed equipartition `P₀` such that the
+irregular cell pairs of `Q` are controlled at the scale `F #P.parts` prescribed by an arbitrary
+positive schedule `F : ℕ → ℝ` while the pair-color energy rises by at most `ε` from `P` to `Q`.
 
-* the fine partition `Q` is `η #P.parts`-regular up to irregular vertex mass `η #P.parts |V|²`, for
-  an arbitrary positive schedule `η : ℕ → ℝ` evaluated at the coarse complexity `#P.parts`;
-* the pair-color energy rises by at most `γ` from `P` to `Q`, i.e. `S.energy Q - S.energy P ≤ γ`;
-* both `#P.parts` and `#Q.parts` are bounded by
-  `TauCeti.strongPairColorRegularityBound γ η #P₀.parts`, independently of `|V|`.
-
-Combined with `PairColorSystem.sum_card_mul_abs_pairColorDensity_sub_le`, the energy-gap bound
-`S.energy Q - S.energy P ≤ γ` controls the `L¹` deviation between fine and coarse block densities
-when coupling `S` on each fine block `A' ×ˢ B'` to the coarse block distribution on `A ×ˢ B`.
+Because each round refines the previous equipartition *exact*ly (`Q ≤ P`), the coarse partition
+`P` remains an exact refinement of `P₀`. Since `S.energy` lies in `[0, 1]` and is monotone under
+refinement, at most `⌊1 / ε⌋₊` energy-increment rounds of size `> ε` can occur before a
+witness pair `(P, Q)` is found. Taking the partial supremum `strongPairColorStepBound F` makes
+one round's part-count bound monotone even when `F` is not monotone.
 
 ## Main definitions
 
-* `TauCeti.strongPairColorRegularityStep`: complexity bound for one round of seeded pair-color
-  regularization under a schedule `η`.
-* `TauCeti.strongPairColorRegularityBound`: host-independent complexity bound for strong seeded
-  pair-color regularization.
+* `TauCeti.strongPairColorStepBound`: monotone part-count bound for one round of strong pair-color
+  regularization under a schedule `F`.
+* `TauCeti.strongPairColorRegularityBound`: part-count bound for the coarse equipartition `P` in
+  seeded strong pair-color regularity.
 
 ## Main results
 
-* `TauCeti.PairColorSystem.exists_strong_refining_equipartition`: existence of nested equipartitions
-  `Q ≤ P ≤ P₀` with scheduled fine regularity and energy gap at most `γ`.
+* `TauCeti.PairColorSystem.exists_strong_refining_equipartitions`: every equipartition `P₀` admits
+  nested equipartition refinements `Q ≤ P ≤ P₀` with bounded irregular pairs on `Q` at scale
+  `F #P.parts` and energy gap `S.energy Q - S.energy P ≤ ε`.
 
 ## References
 
+* N. Alon, E. Fischer, M. Krivelevich and M. Szegedy, *Efficient testing of large graphs*,
+  Combinatorica 20 (2000), Lemma 4.1.
 * T. Tao, *Szemerédi's regularity lemma revisited*, Contrib. Discrete Math. 1 (2006).
 * V. Rödl and M. Schacht, *Regular partitions of hypergraphs: regularity lemmas*,
   Combin. Probab. Comput. 16 (2007).
@@ -51,127 +52,135 @@ open Finset Finpartition Function
 
 namespace TauCeti
 
-/-- The complexity bound for one round of strong pair-color regularization under a schedule `η`,
-starting from a partition with at most `m` parts: the supremum of
-`equitablePairColorRegularityBound (η j) j` over `j ≤ m`, making the step bound monotone in `m`
-even when `η` is not monotone. -/
-noncomputable def strongPairColorRegularityStep (η : ℕ → ℝ) (m : ℕ) : ℕ :=
-  partialSups (fun j ↦ equitablePairColorRegularityBound (η j) j) m
+/-- The part-count bound for one round of strong pair-color regularization from at most `m` cells:
+the partial supremum of `equitablePairColorRegularityBound (F j) j` over `j ≤ m`. Taking the
+partial supremum makes the bound monotone in `m` for every schedule `F`. -/
+noncomputable def strongPairColorStepBound (F : ℕ → ℝ) (m : ℕ) : ℕ :=
+  partialSups (fun j ↦ equitablePairColorRegularityBound (F j) j) m
 
-/-- Unfolding lemma for `TauCeti.strongPairColorRegularityStep`. -/
-theorem strongPairColorRegularityStep_def (η : ℕ → ℝ) (m : ℕ) :
-    strongPairColorRegularityStep η m =
-      partialSups (fun j ↦ equitablePairColorRegularityBound (η j) j) m :=
+/-- Unfolding lemma for `TauCeti.strongPairColorStepBound`. -/
+theorem strongPairColorStepBound_def (F : ℕ → ℝ) (m : ℕ) :
+    strongPairColorStepBound F m =
+      partialSups (fun j ↦ equitablePairColorRegularityBound (F j) j) m :=
   (rfl)
 
-/-- `TauCeti.strongPairColorRegularityStep` as a supremum over `Finset.range (m + 1)`. -/
-theorem strongPairColorRegularityStep_eq_sup_range (η : ℕ → ℝ) (m : ℕ) :
-    strongPairColorRegularityStep η m =
-      (range (m + 1)).sup fun j ↦ equitablePairColorRegularityBound (η j) j :=
+/-- `strongPairColorStepBound` as a supremum over `Finset.range (m + 1)`. -/
+theorem strongPairColorStepBound_eq_sup_range (F : ℕ → ℝ) (m : ℕ) :
+    strongPairColorStepBound F m =
+      (range (m + 1)).sup fun j ↦ equitablePairColorRegularityBound (F j) j :=
   partialSups_eq_sup_range _ m
 
-/-- One round of `TauCeti.strongPairColorRegularityStep` dominates the single-round bound from any
-smaller partition size `j ≤ m`. -/
-theorem equitablePairColorRegularityBound_le_strongPairColorRegularityStep {η : ℕ → ℝ} {j m : ℕ}
+/-- One round of `strongPairColorStepBound` dominates seeded pair-color regularization from any
+`j ≤ m` cells. -/
+theorem equitablePairColorRegularityBound_le_strongPairColorStepBound {F : ℕ → ℝ} {j m : ℕ}
     (h : j ≤ m) :
-    equitablePairColorRegularityBound (η j) j ≤ strongPairColorRegularityStep η m :=
-  le_partialSups_of_le (fun j ↦ equitablePairColorRegularityBound (η j) j) h
+    equitablePairColorRegularityBound (F j) j ≤ strongPairColorStepBound F m :=
+  le_partialSups_of_le (fun j ↦ equitablePairColorRegularityBound (F j) j) h
 
-/-- `TauCeti.strongPairColorRegularityStep` is monotone in the starting complexity. -/
-theorem strongPairColorRegularityStep_mono (η : ℕ → ℝ) :
-    Monotone (strongPairColorRegularityStep η) :=
-  (partialSups fun j ↦ equitablePairColorRegularityBound (η j) j).monotone
+/-- `strongPairColorStepBound` is monotone in the starting part count. -/
+theorem strongPairColorStepBound_mono (F : ℕ → ℝ) : Monotone (strongPairColorStepBound F) :=
+  (partialSups fun j ↦ equitablePairColorRegularityBound (F j) j).monotone
 
-/-- When `η` is positive everywhere, `TauCeti.strongPairColorRegularityStep` is at least its
-input. -/
-theorem le_strongPairColorRegularityStep {η : ℕ → ℝ} (hη : ∀ n, 0 < η n) (m : ℕ) :
-    m ≤ strongPairColorRegularityStep η m :=
-  (le_equitablePairColorRegularityBound (hη m) m).trans
-    (equitablePairColorRegularityBound_le_strongPairColorRegularityStep le_rfl)
+/-- For a positive schedule `F`, `strongPairColorStepBound F` does not decrease the part count. -/
+theorem le_strongPairColorStepBound {F : ℕ → ℝ} (hF : ∀ n, 0 < F n) (m : ℕ) :
+    m ≤ strongPairColorStepBound F m :=
+  (le_equitablePairColorRegularityBound (hF m) m).trans
+    (equitablePairColorRegularityBound_le_strongPairColorStepBound le_rfl)
 
-/-- Host-independent complexity bound for strong seeded pair-color regularization with energy-gap
-tolerance `γ` and schedule `η`, starting from `l₀` parts: `⌊1 / γ⌋₊ + 1` iterations of
-`TauCeti.strongPairColorRegularityStep η`. -/
-noncomputable def strongPairColorRegularityBound (γ : ℝ) (η : ℕ → ℝ) (l₀ : ℕ) : ℕ :=
-  (strongPairColorRegularityStep η)^[⌊1 / γ⌋₊ + 1] l₀
+/-- Upper bound on the number of cells of the coarse equipartition in seeded strong pair-color
+regularity, starting from `l₀` cells: `⌊1 / ε⌋₊` iterations of `strongPairColorStepBound F`. -/
+noncomputable def strongPairColorRegularityBound (ε : ℝ) (F : ℕ → ℝ) (l₀ : ℕ) : ℕ :=
+  (strongPairColorStepBound F)^[⌊1 / ε⌋₊] l₀
 
 /-- Unfolding lemma for `TauCeti.strongPairColorRegularityBound`. -/
-theorem strongPairColorRegularityBound_def (γ : ℝ) (η : ℕ → ℝ) (l₀ : ℕ) :
-    strongPairColorRegularityBound γ η l₀ =
-      (strongPairColorRegularityStep η)^[⌊1 / γ⌋₊ + 1] l₀ :=
+theorem strongPairColorRegularityBound_def (ε : ℝ) (F : ℕ → ℝ) (l₀ : ℕ) :
+    strongPairColorRegularityBound ε F l₀ =
+      (strongPairColorStepBound F)^[⌊1 / ε⌋₊] l₀ :=
   (rfl)
 
-/-- `TauCeti.strongPairColorRegularityBound` is monotone in the starting complexity `l₀`. -/
-theorem strongPairColorRegularityBound_mono (γ : ℝ) (η : ℕ → ℝ) :
-    Monotone (strongPairColorRegularityBound γ η) :=
-  (strongPairColorRegularityStep_mono η).iterate _
+/-- `strongPairColorRegularityBound` is monotone in the starting cell count `l₀`. -/
+theorem strongPairColorRegularityBound_mono (ε : ℝ) (F : ℕ → ℝ) :
+    Monotone (strongPairColorRegularityBound ε F) :=
+  (strongPairColorStepBound_mono F).iterate _
 
-/-- When `η` is positive everywhere, `TauCeti.strongPairColorRegularityBound` is at least `l₀`. -/
-theorem le_strongPairColorRegularityBound (γ : ℝ) {η : ℕ → ℝ} (hη : ∀ n, 0 < η n) (l₀ : ℕ) :
-    l₀ ≤ strongPairColorRegularityBound γ η l₀ :=
-  id_le_iterate_of_id_le (le_strongPairColorRegularityStep hη) _ _
+/-- For a positive schedule `F`, `strongPairColorRegularityBound` is at least `l₀`. -/
+theorem le_strongPairColorRegularityBound (ε : ℝ) {F : ℕ → ℝ} (hF : ∀ n, 0 < F n)
+    (l₀ : ℕ) :
+    l₀ ≤ strongPairColorRegularityBound ε F l₀ :=
+  id_le_iterate_of_id_le (le_strongPairColorStepBound hF) _ _
 
 namespace PairColorSystem
 
-variable {κ V : Type*} [Fintype V] [DecidableEq V] [Fintype κ] (S : PairColorSystem κ V)
+variable {κ V : Type*} [Fintype V] [DecidableEq V] (S : PairColorSystem κ V)
 
-/-- **Strong seeded pair-color regularization.** Given an equipartition `P₀`, an energy-gap
-tolerance `γ > 0`, and a positive schedule `η : ℕ → ℝ`, there exist equipartitions `Q ≤ P ≤ P₀`
-such that `Q` has irregular vertex mass at most `η #P.parts * |V|²` at tolerance `η #P.parts`, the
-energy rises by at most `γ` from `P` to `Q`, and `#Q.parts` (hence also `#P.parts`) is bounded by
-`strongPairColorRegularityBound γ η #P₀.parts`. -/
-theorem exists_strong_refining_equipartition
-    (P₀ : Finpartition (univ : Finset V)) (hP₀ : P₀.IsEquipartition)
-    {γ : ℝ} (hγ : 0 < γ) {η : ℕ → ℝ} (hη : ∀ n, 0 < η n) :
+/-- **Seeded strong pair-color regularity.** For any `ε > 0`, any positive tolerance schedule
+`F : ℕ → ℝ`, and any equipartition `P₀` of `V`, there exist nested equipartitions `Q ≤ P ≤ P₀`
+such that `P` has at most `strongPairColorRegularityBound ε F #P₀.parts` cells, `Q` has at most
+`strongPairColorStepBound F #P.parts` cells, the `F #P.parts`-irregular cell pairs of `Q` cover
+at most `F #P.parts * |V|²` ordered vertex pairs, and `S.energy Q - S.energy P ≤ ε`. -/
+theorem exists_strong_refining_equipartitions [Fintype κ]
+    (P₀ : Finpartition (univ : Finset V)) (hP₀ : P₀.IsEquipartition) {ε : ℝ} (hε : 0 < ε)
+    {F : ℕ → ℝ} (hF : ∀ n, 0 < F n) :
     ∃ P Q : Finpartition (univ : Finset V),
-      P ≤ P₀ ∧ Q ≤ P ∧ P.IsEquipartition ∧ Q.IsEquipartition ∧
-      #Q.parts ≤ equitablePairColorRegularityBound (η #P.parts) #P.parts ∧
-      #Q.parts ≤ strongPairColorRegularityBound γ η #P₀.parts ∧
-      ∑ AB ∈ S.irregularPairs (η #P.parts) Q, (#AB.1 * #AB.2 : ℝ) ≤
-        η #P.parts * (Fintype.card V : ℝ) ^ 2 ∧
-      S.energy Q - S.energy P ≤ γ := by
-  set g := strongPairColorRegularityStep η
-  -- After `i + 1` rounds, either the energy gap is at most `γ` or `S.energy Q > γ * (i + 1)`.
-  have key (i : ℕ) : ∃ P Q : Finpartition (univ : Finset V),
-      P ≤ P₀ ∧ Q ≤ P ∧ P.IsEquipartition ∧ Q.IsEquipartition ∧
-      #Q.parts ≤ equitablePairColorRegularityBound (η #P.parts) #P.parts ∧
-      #Q.parts ≤ g^[i + 1] #P₀.parts ∧
-      ∑ AB ∈ S.irregularPairs (η #P.parts) Q, (#AB.1 * #AB.2 : ℝ) ≤
-        η #P.parts * (Fintype.card V : ℝ) ^ 2 ∧
-      (S.energy Q - S.energy P ≤ γ ∨ γ * (i + 1) < S.energy Q) := by
-    induction i with
-    | zero =>
-      obtain ⟨Q, hQP₀, hQ, hQeb, hQreg⟩ :=
-        S.exists_refining_equipartition_sum_irregularPairs_le P₀ hP₀ (hη #P₀.parts)
-      refine ⟨P₀, Q, le_rfl, hQP₀, hP₀, hQ, hQeb,
-        hQeb.trans (equitablePairColorRegularityBound_le_strongPairColorRegularityStep le_rfl),
-        hQreg, (le_or_gt _ γ).imp id fun h ↦ ?_⟩
-      have := S.energy_nonneg P₀
-      push_cast
-      linarith
-    | succ i ih =>
-      obtain ⟨P, Q, hPP₀, hQP, hP, hQ, hQeb, hQg, hQreg, hgap⟩ := ih
-      have hgi : g^[i + 1] #P₀.parts ≤ g^[i + 1 + 1] #P₀.parts := by
-        rw [iterate_succ_apply' g (i + 1)]
-        exact le_strongPairColorRegularityStep hη _
-      by_cases hclose : S.energy Q - S.energy P ≤ γ
-      · exact ⟨P, Q, hPP₀, hQP, hP, hQ, hQeb, hQg.trans hgi, hQreg, Or.inl hclose⟩
-      replace hgap := hgap.resolve_left hclose
-      obtain ⟨R, hRQ, hR, hReb, hRreg⟩ :=
-        S.exists_refining_equipartition_sum_irregularPairs_le Q hQ (hη #Q.parts)
-      refine ⟨Q, R, hQP.trans hPP₀, hRQ, hQ, hR, hReb, ?_, hRreg,
-        (le_or_gt _ γ).imp id fun h ↦ ?_⟩
-      · rw [iterate_succ_apply' g (i + 1)]
-        exact (hReb.trans
-          (equitablePairColorRegularityBound_le_strongPairColorRegularityStep le_rfl)).trans
-          (strongPairColorRegularityStep_mono η hQg)
-      · push_cast
-        linarith
-  obtain ⟨P, Q, hPP₀, hQP, hP, hQ, hQeb, hQg, hQreg, hgap⟩ := key ⌊1 / γ⌋₊
-  refine ⟨P, Q, hPP₀, hQP, hP, hQ, hQeb, hQg, hQreg, hgap.resolve_right fun h ↦ ?_⟩
-  have hN : 1 / γ < ⌊1 / γ⌋₊ + 1 := Nat.lt_floor_add_one _
-  have h1 : 1 < γ * (⌊1 / γ⌋₊ + 1) := by rwa [div_lt_iff₀ hγ, mul_comm] at hN
-  linarith [S.energy_le_one Q]
+      Q ≤ P ∧ P ≤ P₀ ∧ P.IsEquipartition ∧ Q.IsEquipartition ∧
+      #P.parts ≤ strongPairColorRegularityBound ε F #P₀.parts ∧
+      #Q.parts ≤ strongPairColorStepBound F #P.parts ∧
+      ∑ AB ∈ S.irregularPairs (F #P.parts) Q, (#AB.1 * #AB.2 : ℝ) ≤
+        F #P.parts * (Fintype.card V : ℝ) ^ 2 ∧
+      S.energy Q - S.energy P ≤ ε := by
+  set step := strongPairColorStepBound F
+  let Good (P : Finpartition (univ : Finset V)) : Prop :=
+    ∃ Q : Finpartition (univ : Finset V), Q ≤ P ∧ Q.IsEquipartition ∧
+      #Q.parts ≤ step #P.parts ∧
+      ∑ AB ∈ S.irregularPairs (F #P.parts) Q, (#AB.1 * #AB.2 : ℝ) ≤
+        F #P.parts * (Fintype.card V : ℝ) ^ 2 ∧
+      S.energy Q - S.energy P ≤ ε
+  -- One round either witnesses `Good P` or raises `S.energy` by more than `ε`.
+  have advance (M : ℕ) (P : Finpartition (univ : Finset V)) (hP : P.IsEquipartition)
+      (hPM : #P.parts ≤ M) :
+      Good P ∨ ∃ Q : Finpartition (univ : Finset V), Q ≤ P ∧ Q.IsEquipartition ∧
+        #Q.parts ≤ step M ∧ S.energy P + ε < S.energy Q := by
+    obtain ⟨Q, hQP, hQ, hQcard, hQreg⟩ :=
+      S.exists_refining_equipartition_sum_irregularPairs_le P hP (hF #P.parts)
+    have hQstep : #Q.parts ≤ step #P.parts :=
+      hQcard.trans (equitablePairColorRegularityBound_le_strongPairColorStepBound le_rfl)
+    by_cases hgap : S.energy Q - S.energy P ≤ ε
+    · exact Or.inl ⟨Q, hQP, hQ, hQstep, hQreg, hgap⟩
+    · exact Or.inr
+        ⟨Q, hQP, hQ, hQstep.trans (strongPairColorStepBound_mono F hPM), by linarith⟩
+  -- After `j` rounds, either `Good` holds on a refinement of size `≤ step^[j] #P₀.parts`, or
+  -- `j * ε ≤ S.energy P`.
+  have key (j : ℕ) :
+      (∃ P, P ≤ P₀ ∧ P.IsEquipartition ∧ #P.parts ≤ step^[j] #P₀.parts ∧ Good P) ∨
+      ∃ P, P ≤ P₀ ∧ P.IsEquipartition ∧ #P.parts ≤ step^[j] #P₀.parts ∧
+        j * ε ≤ S.energy P := by
+    induction j with
+    | zero => exact Or.inr ⟨P₀, le_rfl, hP₀, le_rfl, by simpa using S.energy_nonneg P₀⟩
+    | succ j ih =>
+      have hle : step^[j] #P₀.parts ≤ step^[j + 1] #P₀.parts := by
+        rw [iterate_succ_apply']
+        exact le_strongPairColorStepBound hF _
+      obtain ⟨P, hPP₀, hP, hPcard, hgood⟩ | ⟨P, hPP₀, hP, hPcard, hE⟩ := ih
+      · exact Or.inl ⟨P, hPP₀, hP, hPcard.trans hle, hgood⟩
+      obtain hgood | ⟨Q, hQP, hQ, hQcard, hE'⟩ := advance _ P hP hPcard
+      · exact Or.inl ⟨P, hPP₀, hP, hPcard.trans hle, hgood⟩
+      refine Or.inr ⟨Q, hQP.trans hPP₀, hQ, ?_, ?_⟩
+      · rwa [iterate_succ_apply']
+      · push_cast; linarith
+  -- Since `S.energy Q ≤ 1 < (⌊1 / ε⌋₊ + 1) * ε`, round `⌊1 / ε⌋₊` must yield a witness.
+  have hK : 1 < (⌊1 / ε⌋₊ + 1 : ℕ) * ε := by
+    rw [← div_lt_iff₀ hε, Nat.cast_add, Nat.cast_one]
+    exact Nat.lt_floor_add_one _
+  obtain ⟨P, hPP₀, hP, hPcard, Q, hQP, hQ, hQcard, hQirreg, hgap⟩ :
+      ∃ P, P ≤ P₀ ∧ P.IsEquipartition ∧
+        #P.parts ≤ step^[⌊1 / ε⌋₊] #P₀.parts ∧ Good P := by
+    obtain hgood | ⟨P, hPP₀, hP, hPcard, hE⟩ := key ⌊1 / ε⌋₊
+    · exact hgood
+    obtain hgood | ⟨Q, -, -, -, hE'⟩ := advance _ P hP hPcard
+    · exact ⟨P, hPP₀, hP, hPcard, hgood⟩
+    push_cast at hK
+    linarith [S.energy_le_one Q]
+  exact ⟨P, Q, hQP, hPP₀, hP, hQ, hPcard, hQcard, hQirreg, hgap⟩
 
 end PairColorSystem
 

@@ -113,7 +113,8 @@ private theorem isIso_ofIsIso_overTensorIso_tensor_generators_π (X : C)
     IsIso (@Presentation.ofIsIso _ _ _ _ _ _ _ _ (overTensorIso M N X).inv (Iso.isIso_inv _)
       (Presentation.tensor (R := R.over X) P Q)).generators.π :=
   Presentation.isIso_ofIsIso_generators_π (hf := Iso.isIso_inv _) _ _
-    (Presentation.isIso_tensor_generators_π _ _ hP hQ)
+    -- The restricted sheaf of rings is given explicitly; elaborating it by unification times out.
+    (@GeneratingSections.isIso_tensor_π _ _ _ (R.over X) _ _ P.generators Q.generators hP hQ)
 
 /-- If quasi-coherent data for `M` and for `N` present them locally by free sheaves, that is, all
 their generating morphisms are isomorphisms, then so does their tensor product data for

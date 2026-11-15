@@ -195,18 +195,19 @@ theorem pairColorDensity_comap {W : Type*} (S : PairColorSystem κ W) (f : V ↪
     PairColorSystem.colorOfPair_comap, ne_eq, f.injective.eq_iff, card_map]
   rfl
 
-/-- Renaming the palette along `e` permutes the pair-color densities along `e.symm`. -/
+/-- Renaming the palette along an equivalence permutes the color densities accordingly. -/
 @[simp]
-theorem pairColorDensity_relabel {κ' : Type*} (S : PairColorSystem κ V) (e : κ ≃ κ')
-    (c : κ') (s t : Finset V) :
+theorem pairColorDensity_relabel {κ' : Type*} (S : PairColorSystem κ V) (e : κ ≃ κ') (c : κ')
+    (s t : Finset V) :
     pairColorDensity (S.relabel e) c s t = pairColorDensity S (e.symm c) s t := by
   classical
-  have hf : {p ∈ s ×ˢ t | (S.relabel e).colorOfPair p.1 p.2 = some c} =
+  have hfilter : {p ∈ s ×ˢ t | (S.relabel e).colorOfPair p.1 p.2 = some c} =
       {p ∈ s ×ˢ t | S.colorOfPair p.1 p.2 = some (e.symm c)} := by
     refine filter_congr fun p _ ↦ ?_
     by_cases hp : p.1 = p.2
     · simp [hp]
-    · simp [PairColorSystem.colorOfPair_of_ne _ hp, e.eq_symm_apply]
-  simp only [pairColorDensity_def, hf]
+    · simp only [PairColorSystem.colorOfPair_of_ne _ hp, PairColorSystem.relabel_color,
+        Option.some.injEq, ← e.eq_symm_apply]
+  simp only [pairColorDensity_def, hfilter]
 
 end TauCeti
