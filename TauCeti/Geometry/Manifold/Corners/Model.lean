@@ -28,6 +28,8 @@ the boundary hyperplane of the half-space model `𝓡∂ (n + 1)`.
 * `TauCeti.euclideanQuadrantFaceRetract i`: the retraction of the quadrant of dimension `m + 1`
   onto its face `z i = 0`, read in the quadrant of dimension `m`; it inverts
   `TauCeti.euclideanQuadrantFaceInclusion i` on that face.
+* `TauCeti.modelWithCornersEuclideanQuadrant_zero_boundaryless`: the zero-dimensional quadrant
+  model `𝓡c 0` is boundaryless.
 -/
 
 public section
@@ -170,5 +172,11 @@ theorem nonneg_of_mem_range_modelWithCornersEuclideanQuadrant (i : Fin m) :
     ∀ z ∈ range (𝓡c m), 0 ≤ z i := by
   rw [range_modelWithCornersEuclideanQuadrant]
   exact fun _ hz ↦ hz i
+
+/-- The zero-dimensional Euclidean quadrant fills its model space, so it is boundaryless. -/
+instance modelWithCornersEuclideanQuadrant_zero_boundaryless : (𝓡c 0).Boundaryless where
+  range_eq_univ := eq_univ_of_forall fun _ ↦ by
+    rw [range_modelWithCornersEuclideanQuadrant]
+    exact fun i ↦ i.elim0
 
 end TauCeti
