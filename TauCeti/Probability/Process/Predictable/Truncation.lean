@@ -16,7 +16,8 @@ on `t` for every `1 ≤ p < ∞`. In particular, applying a continuous linear st
 map to these truncations gives a mean-square continuous family when `p = 2`. This is
 continuity in the space of random variables, not a selection of continuous sample paths.
 
-The symmetric-difference mass formula includes clipping at the horizon and the zero horizon.
+Continuity holds for every truncation time `t : ℝ≥0` and horizon `T : ℝ≥0`, including `T = 0`;
+the horizon measure clips truncations past `T`.
 No path regularity, Brownian process, completion, or usual-filtration assumption is needed.
 The sample measure is finite, but need not be a probability measure.
 
