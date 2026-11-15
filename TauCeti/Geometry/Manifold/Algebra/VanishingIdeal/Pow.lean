@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
 public import TauCeti.RingTheory.Derivation.DifferentialOperator
+import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Mul
 import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -50,6 +51,12 @@ target, which lets one chart serve all nearby points. The converse is Hadamard's
 * `TauCeti.differentialOperators_apply_eq_of_iteratedFDeriv_eq`: a differential operator of order
   at most `m` on `C^∞(M)` takes the same value at `x` on two functions with the same `m`-jet at
   `x`.
+* `TauCeti.differentialOperators_apply_eq_of_eventuallyEq`,
+  `TauCeti.tsupport_apply_subset_of_mem_differentialOperators`: in particular differential
+  operators are local and do not enlarge supports, so they preserve compact supports
+  (`HasCompactSupport.apply_of_mem_differentialOperators`).
+* `TauCeti.eq_of_forall_hasCompactSupport_apply_eq`: two differential operators that agree on
+  compactly supported functions are equal.
 
 ## References
 
@@ -190,5 +197,62 @@ theorem differentialOperators_apply_eq_of_iteratedFDeriv_eq {m : ℕ}
   rw [smul_eq_mul, Ideal.mul_top, map_sub, mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub,
     Pi.sub_apply, sub_eq_zero] at h
   exact h
+
+/-- **Differential operators are local.** A differential operator on `C^∞(M)`, in the sense of
+iterated commutators with multiplication operators, takes the same value at `x` on two smooth
+functions that agree on a neighbourhood of `x`. -/
+theorem differentialOperators_apply_eq_of_eventuallyEq {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) {x : M}
+    {f g : C^∞⟮I, M; ℝ⟯} (hfg : (f : M → ℝ) =ᶠ[𝓝 x] g) : D f x = D g x := by
+  have hmem : f - g ∈ smoothVanishingIdeal I x ^ (m + 1) :=
+    mem_smoothVanishingIdeal_pow_of_eventuallyEq_zero
+      (hfg.mono fun y hy ↦ by simp [hy]) (m + 1)
+  have h := apply_mem_smul_top_of_mem_pow_smul_top hD (smoothVanishingIdeal I x)
+    (x := f - g) (by simpa using hmem)
+  rw [smul_eq_mul, Ideal.mul_top, map_sub, mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub,
+    Pi.sub_apply, sub_eq_zero] at h
+  exact h
+
+/-- A differential operator on `C^∞(M)` does not enlarge supports: the image of `f` vanishes
+wherever `f` vanishes nearby. -/
+theorem tsupport_apply_subset_of_mem_differentialOperators {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (f : C^∞⟮I, M; ℝ⟯) : tsupport (D f) ⊆ tsupport f := by
+  intro x hx
+  by_contra hfx
+  refine notMem_tsupport_iff_eventuallyEq.2 ?_ hx
+  filter_upwards [(notMem_tsupport_iff_eventuallyEq.1 hfx).eventually_nhds] with y hy
+  simpa using differentialOperators_apply_eq_of_eventuallyEq hD (g := 0) hy
+
+/-- A differential operator on `C^∞(M)` maps compactly supported functions to compactly supported
+functions. -/
+theorem _root_.HasCompactSupport.apply_of_mem_differentialOperators {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯} {f : C^∞⟮I, M; ℝ⟯} (hf : HasCompactSupport f)
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) :
+    HasCompactSupport (D f) :=
+  hf.of_isClosed_subset (isClosed_tsupport _)
+    (tsupport_apply_subset_of_mem_differentialOperators hD f)
+
+/-- Two differential operators on `C^∞(M)` that agree on all compactly supported smooth functions
+are equal. -/
+theorem eq_of_forall_hasCompactSupport_apply_eq {m k : ℕ}
+    {D₁ D₂ : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD₁ : D₁ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (hD₂ : D₂ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ k)
+    (h : ∀ f : C^∞⟮I, M; ℝ⟯, HasCompactSupport f → D₁ f = D₂ f) : D₁ = D₂ := by
+  refine LinearMap.ext fun f ↦ ContMDiffMap.ext fun x ↦ ?_
+  -- Cut `f` off by a bump function equal to `1` near `x`; locality ignores the cutoff.
+  obtain ⟨b⟩ : Nonempty (SmoothBumpFunction I x) := inferInstance
+  let χ : C^∞⟮I, M; ℝ⟯ := ⟨b, b.contMDiff⟩
+  have hχ : ((χ * f : C^∞⟮I, M; ℝ⟯) : M → ℝ) =ᶠ[𝓝 x] f :=
+    b.eventuallyEq_one.mono fun y hy ↦ by
+      rw [ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.coeFn_mk, hy, Pi.one_apply, one_mul]
+  have hc : HasCompactSupport (χ * f : C^∞⟮I, M; ℝ⟯) := by
+    rw [ContMDiffMap.coe_mul]
+    exact b.hasCompactSupport.mul_right
+  rw [← differentialOperators_apply_eq_of_eventuallyEq hD₁ hχ,
+    ← differentialOperators_apply_eq_of_eventuallyEq hD₂ hχ, h _ hc]
 
 end TauCeti
