@@ -34,8 +34,9 @@ is an isomorphism (`support_conductor_subset_centre`), with equality when `f` is
 scheme-theoretically dominant (`support_conductor_eq_centre`). For a finite modification of a
 nonempty irreducible Noetherian scheme `Y` of Krull dimension at most one, the conductor closed
 subscheme therefore has strictly smaller Krull dimension, hence is an Artinian (and in particular
-affine) scheme (`isArtinianScheme_conductor_subscheme`), and `f` is an isomorphism if and only if
-`Γ(Q, ⊤)` vanishes (`subsingleton_globalSections_cokernel_unitToPushforwardObjUnit_iff_isIso`).
+affine) scheme (`isArtinianScheme_conductor_subscheme`); when `f` is also scheme-theoretically
+dominant, `f` is an isomorphism if and only if `Γ(Q, ⊤)` vanishes
+(`subsingleton_globalSections_cokernel_unitToPushforwardObjUnit_iff_isIso`).
 
 ## Main results
 
@@ -129,6 +130,15 @@ def cokernelUnitToPushforwardIsoPushforward :
           (cokernel (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom))) :=
   asIso ((Scheme.Modules.pullbackPushforwardAdjunction f.conductor.subschemeι).unit.app
     (cokernel (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom)))
+
+/-- The forward map of `cokernelUnitToPushforwardIsoPushforward` is the unit of the
+pullback-pushforward adjunction along `f.conductor.subschemeι`. -/
+@[simp]
+theorem cokernelUnitToPushforwardIsoPushforward_hom :
+    f.cokernelUnitToPushforwardIsoPushforward.hom =
+      (Scheme.Modules.pullbackPushforwardAdjunction f.conductor.subschemeι).unit.app
+        (cokernel (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom)) := by
+  rfl
 
 /-- The support of the conductor of a finite morphism is contained in its centre, the complement
 of the largest open over which the morphism is an isomorphism. -/
@@ -259,40 +269,23 @@ theorem subsingleton_globalSections_cokernel_unitToPushforwardObjUnit_iff_isIso
   refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩
   · have : IsArtinianScheme f.conductor.subscheme := f.isArtinianScheme_conductor_subscheme hY
     have : G.IsQuasicoherent := inferInstance
-    have hGtop : Subsingleton Γ(G, ⊤) := etop.symm.injective.subsingleton
-    -- Represent the zero module on the affine Artinian subscheme by the empty free module.
-    let Z₀ : f.conductor.subscheme.Modules := SheafOfModules.free PEmpty.{u + 1}
-    have hZ₀ :=
-      TauCeti.SheafOfModules.isZero_free (S := f.conductor.subscheme.ringCatSheaf) PEmpty.{u + 1}
-    have hZ₀top : Subsingleton Γ(Z₀, ⊤) :=
-      ModuleCat.subsingleton_of_isZero ((Scheme.Modules.sectionsFunctor ⊤).map_isZero hZ₀)
-    have : IsIso (hZ₀.to_ G) := Scheme.Modules.isIso_of_bijective_sectionsFunctor_map_top _
-      ⟨fun x y _ ↦ hZ₀top.elim x y, fun y ↦ ⟨0, hGtop.elim _ y⟩⟩
-    have hzeroG : IsZero G := hZ₀.of_iso (asIso (hZ₀.to_ G)).symm
+    have : Subsingleton Γ(G, ⊤) := etop.symm.injective.subsingleton
+    have hzeroG : IsZero G := G.isZero_of_subsingleton_sections_top
+    have hzeroQ : IsZero (cokernel (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom) :
+        Y.Modules) :=
+      ((Scheme.Modules.pushforward i).map_isZero hzeroG).of_iso
+        f.cokernelUnitToPushforwardIsoPushforward
     refine f.conductor_eq_top_iff_isIso.mp ?_
     rw [← f.annihilator_cokernel_unitToPushforwardObjUnit
       (fun V ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ V.1 V.2)]
-    apply Scheme.IdealSheafData.ext
-    funext U
-    rw [Scheme.Modules.annihilator_ideal, Scheme.IdealSheafData.ideal_top, Pi.top_apply,
-      Ideal.eq_top_iff_one, Module.mem_annihilator]
-    intro m
-    have hGU : Subsingleton Γ(G, i ⁻¹ᵁ U.1) :=
-      ModuleCat.subsingleton_of_isZero ((Scheme.Modules.sectionsFunctor (i ⁻¹ᵁ U.1)).map_isZero
-        hzeroG)
-    have hQU : Subsingleton
-        Γ(cokernel (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom), U.1) :=
-      @Function.Injective.subsingleton _ _
-        (Scheme.Modules.sectionsLinearEquiv f.cokernelUnitToPushforwardIsoPushforward U.1)
-        (Scheme.Modules.sectionsLinearEquiv f.cokernelUnitToPushforwardIsoPushforward U.1).injective
-        hGU
-    exact hQU.elim _ _
+    exact Scheme.Modules.annihilator_eq_top_of_subsingleton_sections _ _ fun U ↦
+      ModuleCat.subsingleton_of_isZero ((Scheme.Modules.sectionsFunctor U.1).map_isZero hzeroQ)
   · have hker : i.ker = ⊤ := f.conductor.ker_subschemeι.trans f.conductor_eq_top
     have : IsEmpty f.conductor.subscheme := i.ker_eq_top_iff_isEmpty.mp hker
     have : IsEmpty (i ⁻¹ᵁ ⊤ : f.conductor.subscheme.Opens) := ⟨fun ⟨x, _⟩ ↦ IsEmpty.false x⟩
-    have hG : Subsingleton Γ(G, i ⁻¹ᵁ ⊤) :=
-      ⟨fun s t ↦ Scheme.Modules.section_ext_of_isEmpty s t⟩
-    exact @Function.Injective.subsingleton _ _ etop etop.injective hG
+    have : Subsingleton Γ((Scheme.Modules.pushforward i).obj G, ⊤) :=
+      ⟨fun s t ↦ Scheme.Modules.section_ext_of_isEmpty (M := G) (U := i ⁻¹ᵁ ⊤) s t⟩
+    exact etop.toEquiv.subsingleton
 
 end Modification
 

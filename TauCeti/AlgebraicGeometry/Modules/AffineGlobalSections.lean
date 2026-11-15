@@ -30,10 +30,11 @@ quasicoherent. This is the affine exactness step used in Serre's affine acyclici
 Hartshorne, *Algebraic Geometry*, Chapter III, Theorem 3.5.
 
 Global sections also detect isomorphisms: on an affine scheme, a morphism of quasicoherent
-modules that is bijective on global sections is an isomorphism, and so is a quasicoherent
-submodule containing every global section. Global sections are those on the affine chart
-`Spec Γ(X, ⊤) ⟶ X`, an isomorphism, and on a spectrum they are the inverse of the tilde
-equivalence (Stacks, Lemma 26.7.5, Tag 01I7).
+modules that is bijective on global sections is an isomorphism, a quasicoherent submodule
+containing every global section is the whole module, and a quasicoherent module with vanishing
+global sections is zero. Global sections are those on the affine chart `Spec Γ(X, ⊤) ⟶ X`, an
+isomorphism, and on a spectrum they are the inverse of the tilde equivalence (Stacks, Lemma
+26.7.5, Tag 01I7).
 
 The file also records the base-ring action on affine global sections and extensionality of
 sections by restriction to basic opens.
@@ -246,10 +247,12 @@ open TauCeti.AlgebraicGeometry
 
 variable {X : Scheme.{u}}
 
-/-- Taking sections over an open subset preserves zero morphisms of sheaves of modules. -/
-instance sectionsFunctor_preservesZeroMorphisms (U : X.Opens) :
-    (sectionsFunctor U).PreservesZeroMorphisms where
-  map_zero _ _ := ModuleCat.hom_ext (LinearMap.ext fun _ ↦ rfl)
+/-- On an affine scheme, a quasicoherent module whose global sections vanish is a zero object. -/
+theorem isZero_of_subsingleton_sections_top (M : X.Modules) [IsAffine X] [M.IsQuasicoherent]
+    [hM : Subsingleton Γ(M, ⊤)] : IsZero M := by
+  have : IsIso (0 : M ⟶ M) := isIso_of_bijective_sectionsFunctor_map_top 0
+    ⟨fun x y _ ↦ hM.elim x y, fun y ↦ ⟨0, hM.elim _ y⟩⟩
+  exact (IsZero.iff_id_eq_zero M).mpr (by rw [← IsIso.hom_inv_id (0 : M ⟶ M), zero_comp])
 
 /-- Over an affine open `U` of `X`, the sections of the ambient cokernel of a morphism `g : M ⟶ N`
 of quasicoherent sheaves identify `Γ(X, U)`-linearly with the quotient of `Γ(N, U)` by the image of
@@ -257,20 +260,20 @@ of quasicoherent sheaves identify `Γ(X, U)`-linearly with the quotient of `Γ(N
 def sectionsCokernelEquiv {M N : X.Modules} (g : M ⟶ N) [M.IsQuasicoherent] [N.IsQuasicoherent]
     {U : X.Opens} (hU : IsAffineOpen U) :
     Γ(cokernel g, U) ≃ₗ[Γ(X, U)] Γ(N, U) ⧸ LinearMap.range ((sectionsFunctor U).map g).hom :=
-  have : PreservesColimit (parallelPair g 0) (sectionsFunctor U) :=
-    ⟨fun hc ↦ ⟨isColimitMapCoconeSectionsFunctor
-      (by rintro (_ | _) <;> dsimp <;> infer_instance) hc hU⟩⟩
+  have := preservesColimit_parallelPair_sectionsFunctor_of_isAffineOpen g 0 hU
   (PreservesCokernel.iso (sectionsFunctor U) g ≪≫
     ModuleCat.cokernelIsoRangeQuotient ((sectionsFunctor U).map g)).toLinearEquiv
 
+-- Normalize `(sectionsFunctor U).map g` in the implicit codomain of `DFunLike.coe` before
+-- registering the `simp` rule, since `sectionsFunctor_map` reduces it during `simp` lookup.
 /-- Under `sectionsCokernelEquiv`, the projection `N ⟶ cokernel g` acts on sections over `U` as the
 quotient map. -/
+@[simp]
 theorem sectionsCokernelEquiv_π_app {M N : X.Modules} (g : M ⟶ N) [M.IsQuasicoherent]
     [N.IsQuasicoherent] {U : X.Opens} (hU : IsAffineOpen U) (s : Γ(N, U)) :
-    sectionsCokernelEquiv g hU ((cokernel.π g).app U s) = Submodule.Quotient.mk s := by
-  have : PreservesColimit (parallelPair g 0) (sectionsFunctor U) :=
-    ⟨fun hc ↦ ⟨isColimitMapCoconeSectionsFunctor
-      (by rintro (_ | _) <;> dsimp <;> infer_instance) hc hU⟩⟩
+    dsimp% only [sectionsFunctor_obj, sectionsFunctor_map]
+      (sectionsCokernelEquiv g hU ((cokernel.π g).app U s)) = Submodule.Quotient.mk s := by
+  have := preservesColimit_parallelPair_sectionsFunctor_of_isAffineOpen g 0 hU
   exact ConcreteCategory.congr_hom
     ((PreservesCokernel.π_iso_hom_assoc (sectionsFunctor U) g
       (ModuleCat.cokernelIsoRangeQuotient ((sectionsFunctor U).map g)).hom).trans

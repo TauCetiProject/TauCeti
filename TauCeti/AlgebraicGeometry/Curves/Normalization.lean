@@ -252,45 +252,78 @@ theorem cohomologyMap_unitToPushforwardObjUnit_add_two_bijective
     f.subsingleton_cohomology_succ_cokernel_unitToPushforwardObjUnit hX n
   have hQ₂ : Subsingleton (Cohomology (ShortComplex.cokernelSequence φ).X₃ (n + 2)) :=
     f.subsingleton_cohomology_succ_cokernel_unitToPushforwardObjUnit hX (n + 1)
-  refine ⟨?_, fun y ↦ (exact_cohomologyMap_cohomologyMap hS (n + 2) y).mp (hQ₂.elim _ _)⟩
-  rw [← AddMonoidHom.ker_eq_bot_iff, eq_bot_iff]
-  intro x hx
+  refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_,
+    fun y ↦ (exact_cohomologyMap_cohomologyMap hS (n + 2) y).mp (hQ₂.elim _ _)⟩
   obtain ⟨z, rfl⟩ := (exact_cohomologyδ_cohomologyMap hS (n + 1) (n + 2) rfl x).mp hx
-  rw [hQ₁.elim z 0, map_zero]
-  rfl
+  exact (congrArg _ (hQ₁.elim z 0)).trans (map_zero _)
 
 end ConductorCohomology
 
 end Hom
 
+/-- A scheme separated over `Spec R` is separated as an absolute scheme. -/
+private theorem isSeparated_terminal_from_of_over (R : Type u) [CommRing R] (X : Scheme.{u})
+    [X.Over (Spec (.of R))] [IsSeparated (X ↘ Spec (.of R))] : IsSeparated (terminal.from X) := by
+  rw [← terminal.comp_from (X ↘ Spec (.of R))]
+  infer_instance
+
+/-- Over a commutative ring `R`, the Čech cohomology comparison `Hⁿ(X, f_* M) ≃ₗ[R] Hⁿ(Y, M)` along
+an affine `R`-morphism `f : Y ⟶ X` onto a quasi-compact scheme `X` separated over `Spec R`. -/
+private def cohomologyPushforwardBaseLinearEquivOfCompactSpace (R : Type u) [CommRing R]
+    {X Y : Scheme.{u}} [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))]
+    [CompactSpace X] [IsSeparated (X ↘ Spec (.of R))]
+    (f : Y ⟶ X) [IsAffineHom f] [f.IsOver (Spec (.of R))]
+    (M : Y.Modules) [M.IsQuasicoherent] (n : ℕ) :
+    Cohomology ((pushforward f).obj M) n ≃ₗ[R] Cohomology M n :=
+  have := isSeparated_terminal_from_of_over R X
+  let 𝒰 := X.affineCover.finiteSubcover
+  f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom
+    (fun i ↦ (𝒰.f i).opensRange) (fun i ↦ isAffineOpen_opensRange (𝒰.f i)) 𝒰.iSup_opensRange R M n
+
+/-- Every curve `X` over a field `k` admits a finite, scheme-theoretically dominant `k`-modification
+from a regular curve over `k`, namely its normalization in `k(X)`. -/
+private theorem exists_isRegular_isModification_of_isCurveOver (k : Type u) [Field k]
+    {X : Scheme.{u}} [X.Over (Spec (.of k))] [X.IsCurveOver k] :
+    ∃ (Y : Scheme.{u}) (_ : Y.Over (Spec (.of k))) (_ : Y.IsCurveOver k) (_ : IsRegular Y)
+      (ν : Y ⟶ X), ν.IsOver (Spec (.of k)) ∧ IsFinite ν ∧ IsModification ν ∧
+        IsSchemeTheoreticallyDominant ν := by
+  let ν := (X.fromSpecStalk (genericPoint X)).fromNormalization
+  have := isFinite_fromNormalization_fromSpecStalk_genericPoint_of_locallyOfFiniteType
+    (X ↘ Spec (.of k))
+  let _ : ((X.fromSpecStalk (genericPoint X)).normalization).Over (Spec (.of k)) :=
+    ⟨ν ≫ X ↘ Spec (.of k)⟩
+  have : ν.IsOver (Spec (.of k)) := ⟨rfl⟩
+  have : IsRegular (X.fromSpecStalk (genericPoint X)).normalization :=
+    IsCurveOver.isRegular_normalization k
+  exact ⟨_, inferInstance, inferInstance, inferInstance, ν, inferInstance, inferInstance,
+    inferInstance, .of_isDominant ν⟩
+
 namespace Modules
 
 section CurveCohomology
 
-variable (k : Type u) [Field k] {X Y : Scheme.{u}} [X.Over (Spec (.of k))]
-
-/-- Along a finite modification `f : Y ⟶ X` of a separated Noetherian irreducible scheme `X` over
-`k` of dimension at most one with `[IsSchemeTheoreticallyDominant f]`, `Hⁿ(X, 𝒪_X)` vanishes if
-and only if `Hⁿ(Y, 𝒪_Y)` vanishes in every degree `n ≥ 2`. -/
-theorem subsingleton_cohomology_unit_iff_of_two_le_of_isModification
-    [Y.Over (Spec (.of k))] [IsSeparated (X ↘ Spec (.of k))]
+/-- Along a finite modification `f : Y ⟶ X` of a Noetherian irreducible scheme `X` with affine
+diagonal (for instance a separated one) of dimension at most one with
+`[IsSchemeTheoreticallyDominant f]`, `Hⁿ(X, 𝒪_X)` vanishes if and only if `Hⁿ(Y, 𝒪_Y)` vanishes in
+every degree `n ≥ 2`. -/
+theorem subsingleton_cohomology_unit_iff_of_two_le_of_isModification {X Y : Scheme.{u}}
+    [IsAffineHom (pullback.diagonal (terminal.from X))]
     [IsNoetherian X] [IrreducibleSpace X] [Nonempty X] (hX : topologicalKrullDim X ≤ 1)
     (f : Y ⟶ X) [IsFinite f] [IsModification f] [IsSchemeTheoreticallyDominant f]
-    [f.IsOver (Spec (.of k))] (n : ℕ) (hn : 2 ≤ n) :
+    (n : ℕ) (hn : 2 ≤ n) :
     Subsingleton (Cohomology (SheafOfModules.unit X.ringCatSheaf : X.Modules) n) ↔
       Subsingleton (Cohomology (SheafOfModules.unit Y.ringCatSheaf : Y.Modules) n) := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
-  have : IsSeparated (terminal.from X) := by
-    rw [← terminal.comp_from (X ↘ Spec (.of k))]
-    infer_instance
   have : (SheafOfModules.unit Y.ringCatSheaf).IsQuasicoherent :=
     AlgebraicGeometry.isQuasicoherent_structureSheaf Y
   let 𝒰 := X.affineCover.finiteSubcover
-  let eCech := f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom
-    (fun i ↦ (𝒰.f i).opensRange) (fun i ↦ isAffineOpen_opensRange (𝒰.f i)) 𝒰.iSup_opensRange k
-    (SheafOfModules.unit Y.ringCatSheaf) (m + 2)
+  let eCech := (f.cohomologyPushforwardIsoOfIsAffineHom
+    (fun i ↦ (𝒰.f i).opensRange) (fun i ↦ isAffineOpen_opensRange (𝒰.f i)) 𝒰.iSup_opensRange
+    (SheafOfModules.unit Y.ringCatSheaf) (m + 2)).addCommGroupIsoToAddEquiv
   let eMap := Equiv.ofBijective _ (f.cohomologyMap_unitToPushforwardObjUnit_add_two_bijective hX m)
   exact (eMap.trans eCech.toEquiv).subsingleton_congr
+
+variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
 
 /-- **Grothendieck vanishing for the structure sheaf on a singular curve.** On every proper integral
 curve `X` over a field `k` (with no regularity or smoothness hypothesis), `Hⁿ(X, 𝒪_X) = 0` for all
@@ -298,20 +331,12 @@ curve `X` over a field `k` (with no regularity or smoothness hypothesis), `Hⁿ(
 theorem subsingleton_cohomology_unit_of_two_le_of_isCurveOver [X.IsCurveOver k]
     (n : ℕ) (hn : 2 ≤ n) :
     Subsingleton (Cohomology (SheafOfModules.unit X.ringCatSheaf : X.Modules) n) := by
-  let ν := (X.fromSpecStalk (genericPoint X)).fromNormalization
-  have := isFinite_fromNormalization_fromSpecStalk_genericPoint_of_locallyOfFiniteType
-    (X ↘ Spec (.of k))
+  obtain ⟨Y, _, _, _, ν, _, _, _, _⟩ := exists_isRegular_isModification_of_isCurveOver k (X := X)
   have := IsCurveOver.isNoetherian k X
-  have : IsRegular (X.fromSpecStalk (genericPoint X)).normalization :=
-    IsCurveOver.isRegular_normalization k
-  have : IsSchemeTheoreticallyDominant ν := .of_isDominant ν
-  let : ((X.fromSpecStalk (genericPoint X)).normalization).Over (Spec (.of k)) :=
-    ⟨ν ≫ X ↘ Spec (.of k)⟩
-  have : ν.IsOver (Spec (.of k)) := ⟨rfl⟩
-  have : (SheafOfModules.unit
-      (X.fromSpecStalk (genericPoint X)).normalization.ringCatSheaf).IsQuasicoherent :=
-    AlgebraicGeometry.isQuasicoherent_structureSheaf _
-  rw [subsingleton_cohomology_unit_iff_of_two_le_of_isModification k
+  have := isSeparated_terminal_from_of_over k X
+  have : (SheafOfModules.unit Y.ringCatSheaf).IsQuasicoherent :=
+    AlgebraicGeometry.isQuasicoherent_structureSheaf Y
+  rw [subsingleton_cohomology_unit_iff_of_two_le_of_isModification
     (IsCurveOver.topologicalKrullDim_eq_one k).le ν n hn]
   exact subsingleton_cohomology_of_two_le_of_isCurveOver k _ n hn
 
@@ -329,33 +354,18 @@ integral curve `X` over a field `k` (possibly singular, over an arbitrary field 
 makes `X.genus k` available unconditionally on every proper integral curve `[X.IsCurveOver k]`. -/
 instance finiteDimensional_cohomology_trivial_of_isCurveOver [X.IsCurveOver k] (n : ℕ) :
     FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj n) := by
-  let ν := (X.fromSpecStalk (genericPoint X)).fromNormalization
-  have := isFinite_fromNormalization_fromSpecStalk_genericPoint_of_locallyOfFiniteType
-    (X ↘ Spec (.of k))
+  obtain ⟨Y, _, _, _, ν, _, _, _, _⟩ := exists_isRegular_isModification_of_isCurveOver k (X := X)
   have := IsCurveOver.isNoetherian k X
   have hdim := (IsCurveOver.topologicalKrullDim_eq_one (X := X) k).le
-  have : IsRegular (X.fromSpecStalk (genericPoint X)).normalization :=
-    IsCurveOver.isRegular_normalization k
-  have : IsSchemeTheoreticallyDominant ν := .of_isDominant ν
-  let : ((X.fromSpecStalk (genericPoint X)).normalization).Over (Spec (.of k)) :=
-    ⟨ν ≫ X ↘ Spec (.of k)⟩
-  have : ν.IsOver (Spec (.of k)) := ⟨rfl⟩
   let OX : X.Modules := SheafOfModules.unit X.ringCatSheaf
-  let instOX (d : ℕ) : Module k (Cohomology OX d) := cohomologyBaseModule k X OX d
-  let OY : ((X.fromSpecStalk (genericPoint X)).normalization).Modules :=
-    SheafOfModules.unit (X.fromSpecStalk (genericPoint X)).normalization.ringCatSheaf
-  have : OY.IsQuasicoherent := AlgebraicGeometry.isQuasicoherent_structureSheaf _
+  let _ : ∀ d, Module k (Cohomology OX d) := cohomologyBaseModule k X OX
+  let OY : Y.Modules := SheafOfModules.unit Y.ringCatSheaf
+  have : OY.IsQuasicoherent := AlgebraicGeometry.isQuasicoherent_structureSheaf Y
   have : OY.IsFiniteType := inferInstance
-  have : IsSeparated (terminal.from X) := by
-    rw [← terminal.comp_from (X ↘ Spec (.of k))]
-    infer_instance
-  let 𝒰 := X.affineCover.finiteSubcover
   have hpush (m : ℕ) : FiniteDimensional k (Cohomology ((pushforward ν).obj OY) m) := by
-    let _ : Module k (Cohomology OY m) := cohomologyBaseModule k _ OY m
+    let _ : Module k (Cohomology OY m) := cohomologyBaseModule k Y OY m
     have := finiteDimensional_cohomology_of_isCurveOver k OY m
-    exact Module.Finite.equiv (ν.cohomologyPushforwardBaseLinearEquivOfIsAffineHom
-      (fun i ↦ (𝒰.f i).opensRange) (fun i ↦ isAffineOpen_opensRange (𝒰.f i))
-      𝒰.iSup_opensRange k OY m).symm
+    exact Module.Finite.equiv (cohomologyPushforwardBaseLinearEquivOfCompactSpace k ν OY m).symm
   let φ : OX ⟶ (pushforward ν).obj OY :=
     SheafOfModules.unitToPushforwardObjUnit ν.toRingCatSheafHom
   have : Mono φ := ν.mono_unitToPushforwardObjUnit
@@ -389,16 +399,8 @@ theorem finiteDimensional_cohomology_trivial_of_topologicalKrullDim_le_one
   rcases hX.eq_or_lt with hdim1 | hlt
   · have : X.IsCurveOver k := isCurveOver_iff.mpr ⟨inferInstance, inferInstance, hdim1⟩
     infer_instance
-  · have hdim0 : topologicalKrullDim X = 0 := by
-      cases hd : topologicalKrullDim X with
-      | bot => rw [hd] at h0; exact absurd h0 (by decide)
-      | coe m =>
-        cases m with
-        | top => rw [hd] at hlt; exact absurd hlt (by decide)
-        | coe d =>
-          have : d < 1 := by exact_mod_cast (hd ▸ hlt)
-          obtain rfl : d = 0 := by omega
-          rfl
+  · have hdim0 : topologicalKrullDim X = 0 :=
+      le_antisymm (ENat.WithBot.lt_add_one_iff (m := 0).mp (by simpa using hlt)) h0
     have hsub : Subsingleton X := topologicalKrullDim_eq_zero_iff_subsingleton.mp hdim0
     have : LocallyQuasiFinite (X ↘ Spec (.of k)) :=
       LocallyQuasiFinite.of_finite_preimage_singleton (X ↘ Spec (.of k)) fun _ ↦ Set.toFinite _
@@ -435,20 +437,14 @@ theorem eulerCharBelow_trivial_of_isModification [X.IsCurveOver k] [IsReduced Y]
   have : IsSchemeTheoreticallyDominant f := .of_isDominant f
   let OX : X.Modules := SheafOfModules.unit X.ringCatSheaf
   let OY : Y.Modules := SheafOfModules.unit Y.ringCatSheaf
-  let instOX (m : ℕ) : Module k (Cohomology OX m) := cohomologyBaseModule k X OX m
-  let instOY (m : ℕ) : Module k (Cohomology OY m) := cohomologyBaseModule k Y OY m
+  let _ : ∀ m, Module k (Cohomology OX m) := cohomologyBaseModule k X OX
+  let _ : ∀ m, Module k (Cohomology OY m) := cohomologyBaseModule k Y OY
   have : OY.IsQuasicoherent := AlgebraicGeometry.isQuasicoherent_structureSheaf Y
   let φ : OX ⟶ (pushforward f).obj OY :=
     SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom
   have : Mono φ := f.mono_unitToPushforwardObjUnit
   have hS := TauCeti.cokernelSequence_shortExact φ
-  have : IsSeparated (terminal.from X) := by
-    rw [← terminal.comp_from (X ↘ Spec (.of k))]
-    infer_instance
-  let 𝒰 := X.affineCover.finiteSubcover
-  let eCech (m : ℕ) := f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom
-    (fun i ↦ (𝒰.f i).opensRange) (fun i ↦ isAffineOpen_opensRange (𝒰.f i))
-    𝒰.iSup_opensRange k OY m
+  let eCech (m : ℕ) := cohomologyPushforwardBaseLinearEquivOfCompactSpace k f OY m
   have hY_eq : eulerCharBelow k Y (InvertibleSheaf.trivial Y).obj 2 =
       eulerCharBelow k X ((pushforward f).obj OY) 2 := by
     rw [eulerCharBelow_two, eulerCharBelow_two,
@@ -465,9 +461,7 @@ theorem eulerCharBelow_trivial_of_isModification [X.IsCurveOver k] [IsReduced Y]
       Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k Y m)
     exact Module.Finite.equiv (eCech m).symm
   have hadd := eulerCharBelow_eq_add k hS 2
-    (fun i _ _ ↦ by
-      change FiniteDimensional k (Cohomology OX i)
-      exact Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k X i))
+    (fun i _ _ ↦ Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k X i))
     (fun i _ ↦ hpush_fd i)
     (subsingleton_cohomology_unit_of_two_le_of_isCurveOver k (X := X) 2 le_rfl)
   exact hY_eq.trans (hadd.trans (congrArg₂ (· + ·) hX_eq.symm
@@ -489,13 +483,7 @@ theorem genus_le_of_isModification [X.IsCurveOver k] [Y.IsCurveOver k]
   have : FiniteDimensional k (Cohomology OX 1) :=
     Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k X 1)
   have : OY.IsQuasicoherent := AlgebraicGeometry.isQuasicoherent_structureSheaf Y
-  have : IsSeparated (terminal.from X) := by
-    rw [← terminal.comp_from (X ↘ Spec (.of k))]
-    infer_instance
-  let 𝒰 := X.affineCover.finiteSubcover
-  let eCech := f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom
-    (fun i ↦ (𝒰.f i).opensRange) (fun i ↦ isAffineOpen_opensRange (𝒰.f i))
-    𝒰.iSup_opensRange k OY 1
+  let eCech := cohomologyPushforwardBaseLinearEquivOfCompactSpace k f OY 1
   let φ : OX ⟶ (pushforward f).obj OY :=
     SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom
   let ψ : Cohomology OX 1 →ₗ[k] Cohomology OY 1 :=
@@ -551,17 +539,17 @@ theorem genus_eq_add_finrank_globalSections_cokernel_of_surjective
 
 omit [Y.Over (Spec (.of k))] in
 /-- **The `δ`-invariant vanishes if and only if the finite modification is an isomorphism.** Over
-any field `k`, for a finite modification `f : Y ⟶ X` of a curve `X` over `k` with
-`[IsSchemeTheoreticallyDominant f]` (automatic when `Y` is reduced),
-`dim_k Γ(coker(𝒪_X ⟶ f_* 𝒪_Y), ⊤) = 0 ↔ IsIso f`. -/
+any field `k`, for a finite modification `f : Y ⟶ X` of a curve `X` over `k`,
+`dim_k Γ(coker(𝒪_X ⟶ f_* 𝒪_Y), ⊤) = 0 ↔ IsIso f`. Because the target curve `X` is integral (hence
+reduced) and modifications are dominant, `f` is automatically scheme-theoretically dominant. -/
 theorem finrank_globalSections_cokernel_unitToPushforwardObjUnit_eq_zero_iff_isIso
-    [X.IsCurveOver k] (f : Y ⟶ X) [IsFinite f] [IsModification f]
-    [IsSchemeTheoreticallyDominant f] :
+    [X.IsCurveOver k] (f : Y ⟶ X) [IsFinite f] [IsModification f] :
     finrank k
         Γ((cokernel (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom) : X.Modules),
           ⊤) =
       0 ↔ IsIso f := by
   have := IsCurveOver.isNoetherian k X
+  have : IsSchemeTheoreticallyDominant f := .of_isDominant f
   have hdim := (IsCurveOver.topologicalKrullDim_eq_one (X := X) k).le
   have : FiniteDimensional k
       Γ((cokernel (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom) : X.Modules), ⊤) :=
@@ -572,7 +560,7 @@ theorem finrank_globalSections_cokernel_unitToPushforwardObjUnit_eq_zero_iff_isI
 /-- **Regularity criterion via the normalization `δ`-invariant.** Over any field `k`, a curve `X`
 over `k` is regular if and only if the global `δ`-invariant
 `dim_k Γ(coker(𝒪_X ⟶ ν_* 𝒪_{X^ν}), ⊤)` of its normalization `ν : X^ν ⟶ X` vanishes (Serre,
-Chapter IV, §1, Proposition 1; Hartshorne, Exercise IV.1.8(b)). -/
+Chapter IV, §1, Proposition 1; Hartshorne, Exercise IV.1.8(a)). -/
 theorem IsCurveOver.isRegular_iff_finrank_globalSections_cokernel_fromNormalization_eq_zero
     [X.IsCurveOver k] :
     IsRegular X ↔
@@ -584,7 +572,6 @@ theorem IsCurveOver.isRegular_iff_finrank_globalSections_cokernel_fromNormalizat
   have := isFinite_fromNormalization_fromSpecStalk_genericPoint_of_locallyOfFiniteType
     (X ↘ Spec (.of k))
   have := IsCurveOver.isNoetherian k X
-  have : IsSchemeTheoreticallyDominant ν := .of_isDominant ν
   refine Iff.trans ?_
     (finrank_globalSections_cokernel_unitToPushforwardObjUnit_eq_zero_iff_isIso k ν).symm
   refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩

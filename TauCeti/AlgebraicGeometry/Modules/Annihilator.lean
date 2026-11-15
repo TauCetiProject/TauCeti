@@ -87,6 +87,16 @@ theorem annihilator_ideal (U : X.affineOpens) :
     (M.annihilator hM).ideal U = Module.annihilator Γ(X, U) Γ(M, U) :=
   (rfl)
 
+/-- If the sections of `M` over every affine open vanish, then `Ann(M) = ⊤`. -/
+theorem annihilator_eq_top_of_subsingleton_sections
+    (hsub : ∀ U : X.affineOpens, Subsingleton Γ(M, U)) : M.annihilator hM = ⊤ := by
+  apply Scheme.IdealSheafData.ext
+  funext U
+  have := hsub U
+  rw [Scheme.Modules.annihilator_ideal, Scheme.IdealSheafData.ideal_top, Pi.top_apply,
+    Ideal.eq_top_iff_one, Module.mem_annihilator]
+  exact fun _ ↦ Subsingleton.elim _ _
+
 /-- The annihilator ideal sheaf and the zeroth Fitting ideal sheaf have the same support, the set
 of points at which the fibre of `M` is nonzero. -/
 theorem support_annihilator :

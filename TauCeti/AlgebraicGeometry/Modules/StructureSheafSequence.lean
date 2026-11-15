@@ -82,15 +82,15 @@ instance isQuasicoherent_cokernel_unitToPushforwardObjUnit
 def cokernelUnitToPushforwardSectionsEquiv [IsAffineHom f] {U : Y.Opens} (hU : IsAffineOpen U) :
     letI := (f.app U).hom.toAlgebra
     Γ(cokernel (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom), U) ≃ₗ[Γ(Y, U)]
-      (Γ(X, f ⁻¹ᵁ U) ⧸ (1 : Submodule Γ(Y, U) Γ(X, f ⁻¹ᵁ U))) := by
-  let := (f.app U).hom.toAlgebra
+      (Γ(X, f ⁻¹ᵁ U) ⧸ (1 : Submodule Γ(Y, U) Γ(X, f ⁻¹ᵁ U))) :=
+  letI := (f.app U).hom.toAlgebra
   let M : Y.Modules := SheafOfModules.unit Y.ringCatSheaf
   let N : Y.Modules := (Scheme.Modules.pushforward f).obj (SheafOfModules.unit X.ringCatSheaf)
   let φ : M ⟶ N := SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom
-  have : M.IsQuasicoherent := AlgebraicGeometry.isQuasicoherent_structureSheaf Y
-  have : (SheafOfModules.unit X.ringCatSheaf).IsQuasicoherent :=
+  let _ : M.IsQuasicoherent := AlgebraicGeometry.isQuasicoherent_structureSheaf Y
+  let _ : (SheafOfModules.unit X.ringCatSheaf).IsQuasicoherent :=
     AlgebraicGeometry.isQuasicoherent_structureSheaf X
-  have : N.IsQuasicoherent :=
+  let _ : N.IsQuasicoherent :=
     Scheme.Modules.isQuasicoherent_pushforward (SheafOfModules.unit X.ringCatSheaf) f
   -- Identify `Γ(N, U)` with `Γ(X, f ⁻¹ᵁ U)` equipped with the algebra scalar action of `Γ(Y, U)`,
   -- which matches the restriction-of-scalars action of `pushforward` definitionally.
@@ -101,15 +101,33 @@ def cokernelUnitToPushforwardSectionsEquiv [IsAffineHom f] {U : Y.Opens} (hU : I
       right_inv _ := rfl
       map_add' _ _ := rfl
       map_smul' _ _ := rfl }
-  have hrange : Submodule.map eN.toLinearMap
-      (LinearMap.range ((Scheme.Modules.sectionsFunctor U).map φ).hom) =
-      (1 : Submodule Γ(Y, U) Γ(X, f ⁻¹ᵁ U)) := by
-    ext b
-    simp only [Submodule.mem_map, Submodule.mem_one]
-    refine ⟨fun ⟨_, ⟨a, rfl⟩, hb⟩ ↦ ⟨a, hb⟩,
-      fun ⟨a, hb⟩ ↦ ⟨((Scheme.Modules.sectionsFunctor U).map φ).hom a, ⟨a, rfl⟩, hb⟩⟩
-  exact (Scheme.Modules.sectionsCokernelEquiv φ hU).trans
-    (Submodule.Quotient.equiv _ _ eN hrange)
+  (Scheme.Modules.sectionsCokernelEquiv φ hU).trans <|
+    Submodule.Quotient.equiv _ _ eN <| by
+      ext b
+      simp only [Submodule.mem_one]
+      exact ⟨fun ⟨_, ⟨a, rfl⟩, hb⟩ ↦ ⟨a, hb⟩,
+        fun ⟨a, hb⟩ ↦ ⟨((Scheme.Modules.sectionsFunctor U).map φ).hom a, ⟨a, rfl⟩, hb⟩⟩
+
+/-- Under `cokernelUnitToPushforwardSectionsEquiv`, the projection to the cokernel acts on sections
+over `U` as the quotient map `Γ(X, f ⁻¹ᵁ U) → Γ(X, f ⁻¹ᵁ U) ⧸ Γ(Y, U)`. -/
+@[simp]
+theorem cokernelUnitToPushforwardSectionsEquiv_π_app [IsAffineHom f] {U : Y.Opens}
+    (hU : IsAffineOpen U) (s : Γ(X, f ⁻¹ᵁ U)) :
+    letI := (f.app U).hom.toAlgebra
+    f.cokernelUnitToPushforwardSectionsEquiv hU
+      (Scheme.Modules.Hom.app
+        (cokernel.π (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom)) U s) =
+      Submodule.Quotient.mk s := by
+  let _ := (f.app U).hom.toAlgebra
+  let M : Y.Modules := SheafOfModules.unit Y.ringCatSheaf
+  let N : Y.Modules := (Scheme.Modules.pushforward f).obj (SheafOfModules.unit X.ringCatSheaf)
+  let φ : M ⟶ N := SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom
+  have : M.IsQuasicoherent := AlgebraicGeometry.isQuasicoherent_structureSheaf Y
+  have : (SheafOfModules.unit X.ringCatSheaf).IsQuasicoherent :=
+    AlgebraicGeometry.isQuasicoherent_structureSheaf X
+  have : N.IsQuasicoherent :=
+    Scheme.Modules.isQuasicoherent_pushforward (SheafOfModules.unit X.ringCatSheaf) f
+  exact congrArg _ (Scheme.Modules.sectionsCokernelEquiv_π_app φ hU s)
 
 /-- For a finite morphism `f : X ⟶ Y`, the cokernel `coker(𝒪_Y ⟶ f_* 𝒪_X)` is of finite type,
 with no Noetherian hypothesis on `X` or `Y`. -/

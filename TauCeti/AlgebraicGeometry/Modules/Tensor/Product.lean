@@ -112,6 +112,12 @@ def _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor (U : X.Opens) :
     PresheafOfModulesOfCommRing.evaluation (Opposite.op U)
 
 variable {X} in
+/-- Taking sections over an open subset is an additive functor (and in particular preserves zero
+morphisms). -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctorAdditive (U : X.Opens) :
+    (Scheme.Modules.sectionsFunctor U).Additive where
+
+variable {X} in
 /-- Sections over an open are lax braided monoidal, as the composite of the lax braided inclusion
 of sheaves of modules into presheaves of modules with the braided evaluation at the open. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctorLaxBraided (U : X.Opens) :
