@@ -51,6 +51,8 @@ so at the centre `x` of a closed ball of radius `ε` in `s`, with `‖g‖ ≤ M
 and at the centre of a closed ball of radius `2 ε` in `s`, `‖g'' x‖ ≤ 2 M / ε² + 3 H ε^α`. Only
 the values of `g` and the Hölder constant of `g''` on `s` enter. For a function which is `C²` on
 an open set containing `s`, with `D²u` `α`-Hölder on `s`, these are bounds on `‖Du‖` and `‖D²u‖`.
+In particular, on the whole space a bounded `C²` function with globally Hölder Hessian has bounded
+Hessian, so for `k = 0` the a priori finiteness of the supremum of `D²f` is automatic.
 
 On a closed interval `[a, b]` the same argument applies to one-sided derivatives within
 `[a, b]`, for steps `h` with `2 h ≤ b - a`, since from each point of `[a, b]` a step of length `h`
@@ -88,7 +90,8 @@ linear approximation error by the difference of the Hessians.
   derivatives above `D^k f`, and
   `HolderWith.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le`: both bounds with
   one constant, for scales `ε ≤ 1`, and `HolderWith.norm_fderiv_le_and_norm_iteratedFDeriv_two_le`:
-  its specialisation to `k = 0`, stated for a function bounded in norm.
+  its specialisation to `k = 0`, stated for a function bounded in norm, where the a priori bound
+  on `D²f` is supplied by `HolderWith.bddAbove_norm_iteratedFDeriv_two`.
 * `HolderOnWith.norm_image_sub_sub_sub_le_of_hasFDerivWithinAt`: the second-order Taylor bound
   for a Hölder second derivative.
 * `HolderOnWith.norm_le_of_hasFDerivWithinAt_of_closedBall_subset` and
@@ -96,6 +99,8 @@ linear approximation error by the difference of the Hessians.
   interpolation inequalities for the first and second derivatives on a ball.
 * `HolderOnWith.norm_fderiv_le_of_contDiffOn` and
   `HolderOnWith.norm_iteratedFDeriv_two_le_of_contDiffOn`: the same for a `C²` function.
+* `HolderWith.bddAbove_norm_iteratedFDeriv_two`: a bounded `C²` function with globally Hölder
+  Hessian has bounded Hessian.
 * `HolderOnWith.norm_le_of_hasDerivWithinAt_Icc`: the interpolation inequality for derivatives
   within a closed interval.
 * `TauCeti.holderOnWith_Icc_of_hasFDerivAt_of_hasDerivWithinAt`: the temporal
@@ -590,15 +595,27 @@ theorem norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le {f : E �
   · nlinarith [H.coe_nonneg]
   · linarith
 
+/-- **A bounded function with Hölder Hessian has bounded Hessian.** If `f` is `C²` with
+`‖f‖ ≤ M` and `D²f` is globally `α`-Hölder with constant `H`, then `‖D²f‖ ≤ 2 M + 3 H`, by the
+local interpolation inequality on balls of radius `2`. -/
+theorem bddAbove_norm_iteratedFDeriv_two {f : E → F} {H α : ℝ≥0}
+    (hH : HolderWith H α (iteratedFDeriv ℝ 2 f)) (hf : ContDiff ℝ 2 f) {M : ℝ}
+    (hM : ∀ y, ‖f y‖ ≤ M) : BddAbove (range fun y => ‖iteratedFDeriv ℝ 2 f y‖) :=
+  ⟨2 * M + 3 * H, by
+    rintro _ ⟨x, rfl⟩
+    simpa using (hH.holderOnWith univ).norm_iteratedFDeriv_two_le_of_contDiffOn isOpen_univ
+      hf.contDiffOn (subset_univ _) (fun y _ => hM y) one_pos (subset_univ _)⟩
+
 /-- **Absorbed interpolation inequalities for the first two derivatives.** If `f` is `C²` with
-`‖f‖ ≤ M`, and `D²f` is bounded and globally `α`-Hölder with constant `H`, then for every scale
-`0 < ε ≤ 1` both `‖Df x‖` and `‖D²f x‖` are at most `(34 / ε + 32 / ε²) M + 2 H ε^α`. -/
+`‖f‖ ≤ M`, and `D²f` is globally `α`-Hölder with constant `H`, then for every scale `0 < ε ≤ 1`
+both `‖Df x‖` and `‖D²f x‖` are at most `(34 / ε + 32 / ε²) M + 2 H ε^α`. No a priori bound on
+`D²f` is needed: it follows from `HolderWith.bddAbove_norm_iteratedFDeriv_two`. -/
 theorem norm_fderiv_le_and_norm_iteratedFDeriv_two_le {f : E → F} {H α : ℝ≥0}
     (hH : HolderWith H α (iteratedFDeriv ℝ 2 f)) (hf : ContDiff ℝ 2 f) {M : ℝ}
-    (hM : ∀ y, ‖f y‖ ≤ M) (hbdd : BddAbove (range fun y => ‖iteratedFDeriv ℝ 2 f y‖)) {ε : ℝ}
-    (hε : 0 < ε) (hε1 : ε ≤ 1) :
+    (hM : ∀ y, ‖f y‖ ≤ M) {ε : ℝ} (hε : 0 < ε) (hε1 : ε ≤ 1) :
     (∀ x, ‖fderiv ℝ f x‖ ≤ (34 / ε + 32 / ε ^ 2) * M + 2 * H * ε ^ (α : ℝ)) ∧
       ∀ x, ‖iteratedFDeriv ℝ 2 f x‖ ≤ (34 / ε + 32 / ε ^ 2) * M + 2 * H * ε ^ (α : ℝ) := by
+  have hbdd := hH.bddAbove_norm_iteratedFDeriv_two hf hM
   have hM0 (y : E) : ‖iteratedFDeriv ℝ 0 f y‖ ≤ M := by
     simpa only [norm_iteratedFDeriv_zero] using hM y
   refine ⟨fun x => ?_, fun x => ?_⟩
