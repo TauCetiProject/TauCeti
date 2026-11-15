@@ -547,14 +547,16 @@ theorem toSimpleGraph_copy_toGraph (d : G.EarDecomposition H) (hK : H.toGraph = 
     (hH : K.toSimpleGraphSubgraph (d.toGraph.copy hK).final_le = H) :
     (d.toGraph.copy hK).toSimpleGraph.copy hH = d := by
   subst hK
+  generalize hx : d.toGraph.copy rfl = x at hH ⊢
+  rw [Graph.EarDecomposition.copy_rfl] at hx
+  subst hx
   refine SimpleGraph.EarDecomposition.ext rfl ?_ ?_ fun i ↦ ?_
   · rw [initial_copy, Graph.EarDecomposition.initial_toSimpleGraph]
     exact (Subgraph.toSimpleGraphSubgraph_toGraph _ _).trans (subgraphAfter_zero d)
   · rw [start_copy, Graph.EarDecomposition.start_toSimpleGraph]
     exact d.start.heq_toSimpleGraph_toGraph
   · refine (walkAt_copy _ _ _).trans ((Graph.EarDecomposition.walkAt_toSimpleGraph _ _).trans ?_)
-    exact sigma_toSimpleGraph_eq
-      ((Graph.EarDecomposition.walkAt_copy _ _ _).trans (d.walkAt_toGraph i))
+    exact sigma_toSimpleGraph_eq (d.walkAt_toGraph i)
 
 end SimpleGraph.EarDecomposition
 
@@ -568,8 +570,10 @@ recovers it, after both target graphs are reindexed along the identification of 
 theorem toGraph_copy_toSimpleGraph (d : (Graph.ofSimpleGraph G).EarDecomposition K)
     (hH : K.toSimpleGraphSubgraph d.final_le = H) (hK : H.toGraph = K) :
     (d.toSimpleGraph.copy hH).toGraph.copy hK = d := by
+  subst hK
+  rw [copy_rfl]
   refine Graph.EarDecomposition.ext _ _ rfl
-    ((heq_start_copy _ _).trans d.start.heq_toGraph_toSimpleGraph)
+    d.start.heq_toGraph_toSimpleGraph
     (heq_of_eq (funext fun i ↦ Sigma.ext ?_ ?_))
   · exact (Graph.toGraph_toSimpleGraphSubgraph _ _).trans (d.earAt_fst i).symm
   · exact Graph.Ear.heq_toGraph_copy_toSimpleGraph _ _

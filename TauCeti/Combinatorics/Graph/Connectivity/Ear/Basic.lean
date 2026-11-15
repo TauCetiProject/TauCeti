@@ -749,7 +749,6 @@ theorem isOpen_cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
   ⟨start_isCycle_cycle walk isCycle, fun i ↦ Fin.elim0 i⟩
 
 /-- Reindex the final graph of an ear decomposition along an equality of graphs. -/
-@[expose]
 protected def copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
     G.EarDecomposition H' where
   length := d.length
@@ -763,6 +762,9 @@ protected def copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
 @[simp]
 theorem length_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
     (d.copy h).length = d.length := (rfl)
+
+@[simp]
+theorem copy_rfl (d : G.EarDecomposition H) : d.copy rfl = d := (rfl)
 
 @[simp]
 theorem graphAfter_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H')
