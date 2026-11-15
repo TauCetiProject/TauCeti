@@ -293,11 +293,6 @@ private lemma isIso_stepδ (n m : ℕ) (h : n + 1 = m) : IsIso (stepδ q s R M n
   unfold stepδ
   infer_instance
 
-/-- Multiplying by the Koszul sign `(-1)ⁿ` is an involution. -/
-private lemma involutive_neg_one_pow_smul {N : Type*} [AddCommGroup N] (n : ℕ) :
-    Function.Involutive fun x : N ↦ ((-1 : ℤ) ^ n) • x := fun x ↦ by
-  simp only [smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
-
 end SubspaceComplPair
 
 open SubspaceComplPair
@@ -388,12 +383,14 @@ theorem exists_bijective_singularCup_subspaceComplPair :
         (rfl : n + (c + 1) = n + (c + 1)) a (TopPair.singularCohomologyMap
           (subspaceComplPairMap (TopCat.ofHom q) (fun _ ↦ rfl) s.W') c g')
       -- `e` has the coefficients `𝟙_ (ModuleCat K)` where the goal has `ModuleCat.of K K`; they
-      -- agree only up to unfolding the monoidal unit, so `rw` cannot match `e`.
+      -- agree only up to unfolding the monoidal unit, so `rw` cannot match `e`, and after the
+      -- two signs cancel the final `rfl` closes the same mismatch.
       erw [e]
-      exact (involutive_neg_one_pow_smul n _).symm
+      simp only [smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
+      rfl
     have hsign : Function.Bijective fun x : (subspaceComplPair q W).singularCohomology
         (ModuleCat.of K K) K M (n + (c + 1)) ↦ ((-1 : ℤ) ^ n) • x :=
-      (involutive_neg_one_pow_smul n).bijective
+      (isUnit_neg_one.pow n).smul_bijective
     convert hsign.comp ((ConcreteCategory.bijective_of_isIso
       (stepδ q s (ModuleCat.of K K) M (n + c) (n + (c + 1)) rfl)).comp
         (hg' X q hq M n (n + c) rfl)) using 1
