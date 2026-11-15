@@ -1,0 +1,434 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Normed.Field.Basic
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Topology.UniformSpace.HeineCantor
+
+/-!
+# Symmetric-endpoint, midpoint, and cross-increment Taylor estimates
+
+When `H` has derivative `h` and `h` has derivative `h'` on a closed interval, both the endpoint
+increment `H y - H x` and the symmetric (trapezoidal) rule `(h x + h y) / 2 * (y - x)` share the
+second-order expansion `h x * (y - x) + 1 / 2 * h' x * (y - x) ^ 2`. Their difference is therefore
+controlled solely by the oscillation of `h'` between `x` and `y` times `(y - x) ^ 2`, without any
+second derivative of `h`. Along finite partitions whose step increments tend to zero and whose
+quadratic sums remain bounded, the symmetric-endpoint sums converge to `H (x n) - H (x 0)`. For
+affine `h`, the quadratic remainder vanishes identically on every grid without ordering or mesh
+hypotheses.
+
+The same first-order oscillation estimate controls two companion quantities used in `C¹`
+Stratonovich calculus:
+
+* the cross-increment difference `(h y - h x) * (y - x) - h' x * (y - x) ^ 2`, which reduces the
+  quadratic covariation of `h ∘ X` and `X` to a `h' ∘ X`-weighted quadratic variation; and
+* the comparison between a midpoint sample `h z * (y - x)` and the symmetric average
+  `(h x + h y) / 2 * (y - x)`, which equals `1 / 2 * h' x * ((z - x) ^ 2 - (y - z) ^ 2)` up to an
+  error controlled by `h'`-oscillation times `(z - x) ^ 2 + (y - z) ^ 2`.
+
+All estimates are stated for derivatives within a closed interval and arbitrary index filters;
+empty grids and repeated or unordered grid points are allowed.
+
+## References
+
+* P. E. Protter, *Stochastic Integration and Differential Equations*, second edition, Springer,
+  2005, Chapter V, §5.
+* I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
+  Springer, 1991, §3.3.
+-/
+
+public section
+
+open Finset Filter Set
+open scoped Topology
+
+namespace TauCeti
+
+/-- For an affine integrand `z ↦ c * z + d`, the symmetric-endpoint sum telescopes identically on
+every finite grid, with no ordering or smallness hypothesis on the increments. -/
+theorem sum_half_add_mul_sub_affine (x : ℕ → ℝ) (n : ℕ) (c d : ℝ) :
+    ∑ i ∈ range n, ((c * x i + d) + (c * x (i + 1) + d)) / 2 * (x (i + 1) - x i) =
+      c / 2 * (x n ^ 2 - x 0 ^ 2) + d * (x n - x 0) := by
+  have hstep (i : ℕ) :
+      ((c * x i + d) + (c * x (i + 1) + d)) / 2 * (x (i + 1) - x i) =
+        (c / 2 * x (i + 1) ^ 2 + d * x (i + 1)) - (c / 2 * x i ^ 2 + d * x i) := by
+    ring
+  simp_rw [hstep]
+  rw [sum_range_sub (fun i ↦ c / 2 * x i ^ 2 + d * x i) n]
+  ring
+
+/-- For the identity integrand, the symmetric-endpoint sum telescopes identically to half the
+increment of squares on every finite grid. -/
+theorem sum_half_add_mul_sub_id (x : ℕ → ℝ) (n : ℕ) :
+    ∑ i ∈ range n, (x i + x (i + 1)) / 2 * (x (i + 1) - x i) = (x n ^ 2 - x 0 ^ 2) / 2 := by
+  have h := sum_half_add_mul_sub_affine x n 1 0
+  simp only [one_mul, add_zero, zero_mul] at h
+  linarith
+
+/-- Oscillation of the derivative `h'` on the unordered segment `[x, y]` bounds the first-order
+linearization remainder of `h` at `x`. -/
+theorem abs_sub_sub_deriv_mul_le {h h' : ℝ → ℝ} {s : Set ℝ} {x y M : ℝ}
+    (hs : uIcc x y ⊆ s) (hh : ∀ z ∈ uIcc x y, HasDerivWithinAt h (h' z) s z)
+    (hosc : ∀ z ∈ uIcc x y, |h' z - h' x| ≤ M) :
+    |h y - h x - h' x * (y - x)| ≤ M * |y - x| := by
+  let g : ℝ → ℝ := fun z ↦ h z - h' x * (z - x)
+  have hg : ∀ z ∈ uIcc x y, HasDerivWithinAt g (h' z - h' x) (uIcc x y) z := by
+    intro z hz
+    have hlin : HasDerivWithinAt (fun w ↦ h' x * (w - x)) (h' x * 1) (uIcc x y) z :=
+      ((hasDerivWithinAt_id z (uIcc x y)).sub_const x).const_mul (h' x)
+    simpa only [g, Pi.sub_def, id_eq, mul_one] using ((hh z hz).mono hs).sub hlin
+  have hbound := (convex_uIcc x y).norm_image_sub_le_of_norm_hasDerivWithin_le hg
+    (fun z hz ↦ by simpa only [Real.norm_eq_abs] using hosc z hz) left_mem_uIcc right_mem_uIcc
+  have heq : g y - g x = h y - h x - h' x * (y - x) := by
+    dsimp [g]
+    ring
+  simpa only [Real.norm_eq_abs, heq] using hbound
+
+/-- Oscillation of `h'` between `x` and `y` bounds the difference between the cross-increment
+`(h y - h x) * (y - x)` and the left-weighted squared increment `h' x * (y - x) ^ 2`. -/
+theorem abs_sub_mul_sub_sub_deriv_mul_sq_le {h h' : ℝ → ℝ} {s : Set ℝ} {x y M : ℝ}
+    (hs : uIcc x y ⊆ s) (hh : ∀ z ∈ uIcc x y, HasDerivWithinAt h (h' z) s z)
+    (hosc : ∀ z ∈ uIcc x y, |h' z - h' x| ≤ M) :
+    |(h y - h x) * (y - x) - h' x * (y - x) ^ 2| ≤ M * (y - x) ^ 2 := by
+  have hfac : (h y - h x) * (y - x) - h' x * (y - x) ^ 2 =
+      (h y - h x - h' x * (y - x)) * (y - x) := by
+    ring
+  rw [hfac, abs_mul]
+  calc
+    |h y - h x - h' x * (y - x)| * |y - x|
+        ≤ (M * |y - x|) * |y - x| :=
+          mul_le_mul_of_nonneg_right (abs_sub_sub_deriv_mul_le hs hh hosc) (abs_nonneg _)
+    _ = M * (y - x) ^ 2 := by rw [mul_assoc, ← sq, sq_abs]
+
+/-- When `H` has derivative `h` and `h` has derivative `h'` within `s`, oscillation of `h'` on the
+unordered segment `[x, y]` bounds the second-order remainder of `H` at `x` by `M / 2 * (y - x) ^ 2`,
+without requiring `H` to be differentiable outside `s`. -/
+theorem abs_sub_sub_deriv_sub_half_deriv_mul_sq_le {H h h' : ℝ → ℝ} {s : Set ℝ} {x y M : ℝ}
+    (hs : uIcc x y ⊆ s) (hH : ∀ z ∈ uIcc x y, HasDerivWithinAt H (h z) s z)
+    (hh : ∀ z ∈ uIcc x y, HasDerivWithinAt h (h' z) s z)
+    (hosc : ∀ z ∈ uIcc x y, |h' z - h' x| ≤ M) :
+    |H y - H x - h x * (y - x) - 1 / 2 * h' x * (y - x) ^ 2| ≤ M / 2 * (y - x) ^ 2 := by
+  let φ : ℝ → ℝ := fun t ↦ x + t * (y - x)
+  have hφ : MapsTo φ (Icc 0 1) (uIcc x y) := by
+    intro t ht
+    have hconv := (convex_uIcc x y) left_mem_uIcc right_mem_uIcc
+      (sub_nonneg.2 ht.2) ht.1 (sub_add_cancel 1 t)
+    have heq : (1 - t) • x + t • y = φ t := by
+      dsimp [φ]
+      ring
+    exact heq ▸ hconv
+  let Λ : ℝ → ℝ := fun t ↦
+    H (φ t) - H x - t * (h x * (y - x)) - t ^ 2 / 2 * (h' x * (y - x) ^ 2)
+  have hΛ : ∀ t ∈ Icc (0 : ℝ) 1, HasDerivWithinAt Λ
+      ((h (φ t) - h x - h' x * (φ t - x)) * (y - x)) (Icc 0 1) t := by
+    intro t ht
+    have hφ' : HasDerivWithinAt φ (y - x) (Icc 0 1) t := by
+      simpa only [φ, id_eq, one_mul, zero_add] using
+        ((hasDerivWithinAt_id t (Icc 0 1)).mul_const (y - x)).const_add x
+    have hcomp : HasDerivWithinAt (fun u ↦ H (φ u)) (h (φ t) * (y - x)) (Icc 0 1) t :=
+      ((hH (φ t) (hφ ht)).mono hs).comp t hφ' hφ
+    have ht1 : HasDerivWithinAt (fun u ↦ u * (h x * (y - x))) (h x * (y - x)) (Icc 0 1) t := by
+      simpa only [id_eq, one_mul] using (hasDerivWithinAt_id t (Icc 0 1)).mul_const (h x * (y - x))
+    have ht2 : HasDerivWithinAt (fun u ↦ u ^ 2 / 2 * (h' x * (y - x) ^ 2))
+        (t * (h' x * (y - x) ^ 2)) (Icc 0 1) t := by
+      have hsq : HasDerivWithinAt (fun u : ℝ ↦ u ^ 2 / 2) t (Icc 0 1) t := by
+        simpa only [Pi.pow_apply, id_eq] using
+          (((hasDerivWithinAt_id t (Icc 0 1)).pow 2).div_const (2 : ℝ)).congr_deriv
+            (by simp only [id_eq]; ring)
+      exact (hsq.mul_const (h' x * (y - x) ^ 2)).congr_deriv (by ring)
+    have hraw : HasDerivWithinAt
+        (((fun u ↦ H (φ u) - H x) - fun u ↦ u * (h x * (y - x))) -
+          fun u ↦ u ^ 2 / 2 * (h' x * (y - x) ^ 2))
+        ((h (φ t) - h x - h' x * (φ t - x)) * (y - x)) (Icc 0 1) t :=
+      (((hcomp.sub_const (H x)).sub ht1).sub ht2).congr_deriv (by dsimp [φ]; ring)
+    simpa only [Λ, Pi.sub_def] using hraw
+  let B : ℝ → ℝ := fun t ↦ t ^ 2 / 2 * (M * (y - x) ^ 2)
+  have hB : ∀ t, HasDerivAt B (t * (M * (y - x) ^ 2)) t := by
+    intro t
+    have hsq : HasDerivAt (fun u : ℝ ↦ u ^ 2 / 2) t t := by
+      simpa only [Pi.pow_apply, id_eq] using
+        (((hasDerivAt_id t).pow 2).div_const (2 : ℝ)).congr_deriv (by simp only [id_eq]; ring)
+    exact (hsq.mul_const (M * (y - x) ^ 2)).congr_deriv (by ring)
+  have hright : ∀ t ∈ Ico (0 : ℝ) 1, HasDerivWithinAt Λ
+      ((h (φ t) - h x - h' x * (φ t - x)) * (y - x)) (Ici t) t := by
+    intro t ht
+    exact (hΛ t ⟨ht.1, ht.2.le⟩).mono_of_mem_nhdsWithin
+      (mem_of_superset (Icc_mem_nhdsGE ht.2) (Icc_subset_Icc_left ht.1))
+  have hbound : ∀ t ∈ Icc (0 : ℝ) 1, ‖Λ t‖ ≤ B t := by
+    refine image_norm_le_of_norm_deriv_right_le_deriv_boundary
+      (fun t ht ↦ (hΛ t ht).continuousWithinAt) hright
+      (by simp [Λ, φ, B]) hB fun t ht ↦ ?_
+    have hsub : uIcc x (φ t) ⊆ uIcc x y := uIcc_subset_Icc left_mem_uIcc (hφ ⟨ht.1, ht.2.le⟩)
+    have hstep := abs_sub_sub_deriv_mul_le (hsub.trans hs)
+      (fun z hz ↦ hh z (hsub hz)) (fun z hz ↦ hosc z (hsub hz))
+    rw [Real.norm_eq_abs, abs_mul]
+    calc
+      |h (φ t) - h x - h' x * (φ t - x)| * |y - x|
+          ≤ (M * |φ t - x|) * |y - x| := mul_le_mul_of_nonneg_right hstep (abs_nonneg _)
+      _ = |t| * (M * (y - x) ^ 2) := by
+            have hφx : φ t - x = t * (y - x) := by dsimp [φ]; ring
+            rw [hφx, abs_mul, ← sq_abs (y - x)]
+            ring
+      _ = t * (M * (y - x) ^ 2) := by rw [abs_of_nonneg ht.1]
+  have h1 := hbound 1 ⟨zero_le_one, le_rfl⟩
+  have hφ1 : φ 1 = y := by dsimp [φ]; ring
+  have hΛ1 : Λ 1 = H y - H x - h x * (y - x) - 1 / 2 * h' x * (y - x) ^ 2 := by
+    dsimp [Λ]
+    rw [hφ1]
+    ring
+  have hB1 : B 1 = M / 2 * (y - x) ^ 2 := by
+    dsimp [B]
+    ring
+  simpa only [Real.norm_eq_abs, hΛ1, hB1] using h1
+
+/-- Oscillation of `h'` on `[x, y]` bounds the symmetric-endpoint remainder
+`|(h x + h y) / 2 * (y - x) - (H y - H x)|` by `M * (y - x) ^ 2`. -/
+theorem abs_half_add_mul_sub_sub_le {H h h' : ℝ → ℝ} {s : Set ℝ} {x y M : ℝ}
+    (hs : uIcc x y ⊆ s) (hH : ∀ z ∈ uIcc x y, HasDerivWithinAt H (h z) s z)
+    (hh : ∀ z ∈ uIcc x y, HasDerivWithinAt h (h' z) s z)
+    (hosc : ∀ z ∈ uIcc x y, |h' z - h' x| ≤ M) :
+    |(h x + h y) / 2 * (y - x) - (H y - H x)| ≤ M * (y - x) ^ 2 := by
+  have hid : (h x + h y) / 2 * (y - x) - (H y - H x) =
+      1 / 2 * ((h y - h x) * (y - x) - h' x * (y - x) ^ 2) -
+        (H y - H x - h x * (y - x) - 1 / 2 * h' x * (y - x) ^ 2) := by
+    ring
+  rw [hid]
+  have h₁ := abs_sub_mul_sub_sub_deriv_mul_sq_le hs hh hosc
+  have h₂ := abs_sub_sub_deriv_sub_half_deriv_mul_sq_le hs hH hh hosc
+  calc
+    |1 / 2 * ((h y - h x) * (y - x) - h' x * (y - x) ^ 2) -
+        (H y - H x - h x * (y - x) - 1 / 2 * h' x * (y - x) ^ 2)|
+        ≤ |1 / 2 * ((h y - h x) * (y - x) - h' x * (y - x) ^ 2)| +
+            |H y - H x - h x * (y - x) - 1 / 2 * h' x * (y - x) ^ 2| := abs_sub _ _
+    _ = 1 / 2 * |(h y - h x) * (y - x) - h' x * (y - x) ^ 2| +
+          |H y - H x - h x * (y - x) - 1 / 2 * h' x * (y - x) ^ 2| := by
+          rw [abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2)]
+    _ ≤ 1 / 2 * (M * (y - x) ^ 2) + M / 2 * (y - x) ^ 2 := by linarith
+    _ = M * (y - x) ^ 2 := by ring
+
+/-- Comparing a sample at an intermediate state `z` with the symmetric endpoint average isolates
+`1 / 2 * h' x * ((z - x) ^ 2 - (y - z) ^ 2)`, with remainder controlled by the oscillation of `h'`
+relative to `x` times `(z - x) ^ 2 + (y - z) ^ 2`. The point `z` need not lie between `x` and
+`y`. -/
+theorem abs_midpoint_sub_half_add_sub_half_deriv_le {h h' : ℝ → ℝ} {s : Set ℝ} {x z y M : ℝ}
+    (hxz : uIcc x z ⊆ s) (hzy : uIcc z y ⊆ s)
+    (hh : ∀ u, u ∈ uIcc x z ∨ u ∈ uIcc z y → HasDerivWithinAt h (h' u) s u)
+    (hosc : ∀ u, u ∈ uIcc x z ∨ u ∈ uIcc z y → |h' u - h' x| ≤ M) :
+    |h z * (y - x) - (h x + h y) / 2 * (y - x) -
+        1 / 2 * h' x * ((z - x) ^ 2 - (y - z) ^ 2)| ≤
+      M * ((z - x) ^ 2 + (y - z) ^ 2) := by
+  have hM : 0 ≤ M := (abs_nonneg _).trans (hosc x (Or.inl left_mem_uIcc))
+  have h₁ : |h z - h x - h' x * (z - x)| ≤ M * |z - x| :=
+    abs_sub_sub_deriv_mul_le hxz (fun u hu ↦ hh u (Or.inl hu)) (fun u hu ↦ hosc u (Or.inl hu))
+  have h₂ : |h y - h z - h' x * (y - z)| ≤ M * |y - z| := by
+    let g : ℝ → ℝ := fun u ↦ h u - h' x * (u - z)
+    have hg : ∀ u ∈ uIcc z y, HasDerivWithinAt g (h' u - h' x) (uIcc z y) u := by
+      intro u hu
+      have hlin : HasDerivWithinAt (fun w ↦ h' x * (w - z)) (h' x * 1) (uIcc z y) u :=
+        ((hasDerivWithinAt_id u (uIcc z y)).sub_const z).const_mul (h' x)
+      simpa only [g, Pi.sub_def, id_eq, mul_one] using ((hh u (Or.inr hu)).mono hzy).sub hlin
+    have hb := (convex_uIcc z y).norm_image_sub_le_of_norm_hasDerivWithin_le hg
+      (fun u hu ↦ by simpa only [Real.norm_eq_abs] using hosc u (Or.inr hu))
+      left_mem_uIcc right_mem_uIcc
+    have heq : g y - g z = h y - h z - h' x * (y - z) := by dsimp [g]; ring
+    simpa only [Real.norm_eq_abs, heq] using hb
+  have hid : h z * (y - x) - (h x + h y) / 2 * (y - x) -
+      1 / 2 * h' x * ((z - x) ^ 2 - (y - z) ^ 2) =
+      1 / 2 * ((h z - h x - h' x * (z - x)) - (h y - h z - h' x * (y - z))) * (y - x) := by
+    ring
+  have htri : |y - x| ≤ |z - x| + |y - z| := by
+    simpa only [Real.dist_eq, abs_sub_comm] using dist_triangle x z y
+  rw [hid, abs_mul, abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2)]
+  have hsum : |(h z - h x - h' x * (z - x)) - (h y - h z - h' x * (y - z))| ≤
+      M * (|z - x| + |y - z|) := by
+    calc
+      |(h z - h x - h' x * (z - x)) - (h y - h z - h' x * (y - z))|
+          ≤ |h z - h x - h' x * (z - x)| + |h y - h z - h' x * (y - z)| := abs_sub _ _
+      _ ≤ M * |z - x| + M * |y - z| := add_le_add h₁ h₂
+      _ = M * (|z - x| + |y - z|) := by ring
+  calc
+    1 / 2 * |(h z - h x - h' x * (z - x)) - (h y - h z - h' x * (y - z))| * |y - x|
+        ≤ 1 / 2 * (M * (|z - x| + |y - z|)) * (|z - x| + |y - z|) := by
+          have hnn : 0 ≤ 1 / 2 * |(h z - h x - h' x * (z - x)) - (h y - h z - h' x * (y - z))| :=
+            by positivity
+          exact (mul_le_mul_of_nonneg_left htri hnn).trans
+            (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hsum (by positivity))
+              (by positivity))
+    _ ≤ M * ((z - x) ^ 2 + (y - z) ^ 2) := by
+          have hsq : (|z - x| + |y - z|) ^ 2 ≤ 2 * ((z - x) ^ 2 + (y - z) ^ 2) := by
+            have := sq_nonneg (|z - x| - |y - z|)
+            nlinarith [sq_abs (z - x), sq_abs (y - z)]
+          nlinarith
+
+/-- For a `C¹` function `h` on `[a, b]`, the difference between the cross-increment sum
+`∑ (h (x (i + 1)) - h (x i)) * (x (i + 1) - x i)` and the left-weighted quadratic sum
+`∑ h' (x i) * (x (i + 1) - x i) ^ 2` tends to zero along any filter of finite grids in `[a, b]`
+with vanishing increments and eventually bounded quadratic sums. -/
+theorem tendsto_sum_sub_mul_sub_sub_deriv_mul_sq {h h' : ℝ → ℝ} {a b : ℝ}
+    (hh : ∀ z ∈ Icc a b, HasDerivWithinAt h (h' z) (Icc a b) z)
+    (hc : ContinuousOn h' (Icc a b))
+    {ι : Type*} {l : Filter ι} {x : ι → ℕ → ℝ} {n : ι → ℕ} {δ : ι → ℝ}
+    (hx : ∀ᶠ k in l, ∀ i ≤ n k, x k i ∈ Icc a b)
+    (hδ : ∀ᶠ k in l, ∀ i < n k, |x k (i + 1) - x k i| ≤ δ k)
+    (hδ0 : Tendsto δ l (𝓝 0))
+    (hQ : l.IsBoundedUnder (· ≤ ·) (fun k ↦ ∑ i ∈ range (n k), (x k (i + 1) - x k i) ^ 2)) :
+    Tendsto (fun k ↦ (∑ i ∈ range (n k), (h (x k (i + 1)) - h (x k i)) * (x k (i + 1) - x k i)) -
+      ∑ i ∈ range (n k), h' (x k i) * (x k (i + 1) - x k i) ^ 2) l (𝓝 0) := by
+  obtain ⟨K, hK⟩ := hQ
+  rw [eventually_map] at hK
+  apply Metric.tendsto_nhds.2
+  intro ε hε
+  have hKpos : 0 < max K 0 + 1 := by positivity
+  obtain ⟨η, hη, hosc⟩ := Metric.uniformContinuousOn_iff.1
+    (isCompact_Icc.uniformContinuousOn_of_continuous hc) (ε / (max K 0 + 1)) (div_pos hε hKpos)
+  filter_upwards [(tendsto_order.1 hδ0).2 η hη, hx, hδ, hK] with k hk hxk hδk hKk
+  rw [Real.dist_eq, sub_zero, ← sum_sub_distrib]
+  have hstep (i : ℕ) (hi : i ∈ range (n k)) :
+      ‖(h (x k (i + 1)) - h (x k i)) * (x k (i + 1) - x k i) -
+        h' (x k i) * (x k (i + 1) - x k i) ^ 2‖ ≤
+        ε / (max K 0 + 1) * (x k (i + 1) - x k i) ^ 2 := by
+    rw [Real.norm_eq_abs]
+    have hi' := mem_range.1 hi
+    have hsub := uIcc_subset_Icc (hxk i hi'.le) (hxk (i + 1) hi')
+    refine abs_sub_mul_sub_sub_deriv_mul_sq_le hsub (fun z hz ↦ hh z (hsub hz)) fun z hz ↦ ?_
+    have hzx : dist z (x k i) < η := by
+      rw [Real.dist_eq]
+      exact (abs_sub_left_of_mem_uIcc hz).trans_lt ((hδk i hi').trans_lt hk)
+    exact (Real.dist_eq (h' z) (h' (x k i)) ▸ hosc z (hsub hz) (x k i) (hxk i hi'.le) hzx).le
+  have hsum : |∑ i ∈ range (n k), ((h (x k (i + 1)) - h (x k i)) * (x k (i + 1) - x k i) -
+      h' (x k i) * (x k (i + 1) - x k i) ^ 2)| ≤
+      ε / (max K 0 + 1) * max K 0 := by
+    calc
+      _ ≤ ε / (max K 0 + 1) * ∑ i ∈ range (n k), (x k (i + 1) - x k i) ^ 2 := by
+        simpa only [Real.norm_eq_abs, ← mul_sum] using norm_sum_le_of_le (range (n k)) hstep
+      _ ≤ _ := by gcongr; exact hKk.trans (le_max_left _ _)
+  apply hsum.trans_lt
+  rw [div_mul_eq_mul_div, div_lt_iff₀ hKpos]
+  linarith
+
+/-- **Deterministic symmetric-endpoint chain rule.** If `H` has derivative `h` and `h` has
+continuous derivative `h'` within `[a, b]`, the symmetric-endpoint sums
+`∑ (h (x i) + h (x (i + 1))) / 2 * (x (i + 1) - x i)` approximate `H (x n) - H (x 0)` with
+vanishing error along any filter of finite grids in `[a, b]` whose increments tend to zero and
+whose quadratic sums are eventually bounded. -/
+theorem tendsto_sum_half_add_mul_sub_sub {H h h' : ℝ → ℝ} {a b : ℝ}
+    (hH : ∀ z ∈ Icc a b, HasDerivWithinAt H (h z) (Icc a b) z)
+    (hh : ∀ z ∈ Icc a b, HasDerivWithinAt h (h' z) (Icc a b) z)
+    (hc : ContinuousOn h' (Icc a b))
+    {ι : Type*} {l : Filter ι} {x : ι → ℕ → ℝ} {n : ι → ℕ} {δ : ι → ℝ}
+    (hx : ∀ᶠ k in l, ∀ i ≤ n k, x k i ∈ Icc a b)
+    (hδ : ∀ᶠ k in l, ∀ i < n k, |x k (i + 1) - x k i| ≤ δ k)
+    (hδ0 : Tendsto δ l (𝓝 0))
+    (hQ : l.IsBoundedUnder (· ≤ ·) (fun k ↦ ∑ i ∈ range (n k), (x k (i + 1) - x k i) ^ 2)) :
+    Tendsto (fun k ↦ (∑ i ∈ range (n k),
+        (h (x k i) + h (x k (i + 1))) / 2 * (x k (i + 1) - x k i)) -
+      (H (x k (n k)) - H (x k 0))) l (𝓝 0) := by
+  obtain ⟨K, hK⟩ := hQ
+  rw [eventually_map] at hK
+  apply Metric.tendsto_nhds.2
+  intro ε hε
+  have hKpos : 0 < max K 0 + 1 := by positivity
+  obtain ⟨η, hη, hosc⟩ := Metric.uniformContinuousOn_iff.1
+    (isCompact_Icc.uniformContinuousOn_of_continuous hc) (ε / (max K 0 + 1)) (div_pos hε hKpos)
+  filter_upwards [(tendsto_order.1 hδ0).2 η hη, hx, hδ, hK] with k hk hxk hδk hKk
+  rw [Real.dist_eq, sub_zero, ← sum_range_sub (fun i ↦ H (x k i)) (n k), ← sum_sub_distrib]
+  have hstep (i : ℕ) (hi : i ∈ range (n k)) :
+      ‖(h (x k i) + h (x k (i + 1))) / 2 * (x k (i + 1) - x k i) -
+        (H (x k (i + 1)) - H (x k i))‖ ≤
+        ε / (max K 0 + 1) * (x k (i + 1) - x k i) ^ 2 := by
+    rw [Real.norm_eq_abs]
+    have hi' := mem_range.1 hi
+    have hsub := uIcc_subset_Icc (hxk i hi'.le) (hxk (i + 1) hi')
+    refine abs_half_add_mul_sub_sub_le hsub (fun z hz ↦ hH z (hsub hz))
+      (fun z hz ↦ hh z (hsub hz)) fun z hz ↦ ?_
+    have hzx : dist z (x k i) < η := by
+      rw [Real.dist_eq]
+      exact (abs_sub_left_of_mem_uIcc hz).trans_lt ((hδk i hi').trans_lt hk)
+    exact (Real.dist_eq (h' z) (h' (x k i)) ▸ hosc z (hsub hz) (x k i) (hxk i hi'.le) hzx).le
+  have hsum : |∑ i ∈ range (n k), ((h (x k i) + h (x k (i + 1))) / 2 * (x k (i + 1) - x k i) -
+      (H (x k (i + 1)) - H (x k i)))| ≤
+      ε / (max K 0 + 1) * max K 0 := by
+    calc
+      _ ≤ ε / (max K 0 + 1) * ∑ i ∈ range (n k), (x k (i + 1) - x k i) ^ 2 := by
+        simpa only [Real.norm_eq_abs, ← mul_sum] using norm_sum_le_of_le (range (n k)) hstep
+      _ ≤ _ := by gcongr; exact hKk.trans (le_max_left _ _)
+  apply hsum.trans_lt
+  rw [div_mul_eq_mul_div, div_lt_iff₀ hKpos]
+  linarith
+
+/-- Along finite families of triples `(x k i, z k i, y k i)` in `[a, b]` whose half-step increments
+vanish uniformly and whose refined quadratic sums are eventually bounded, the difference between
+`∑ h (z k i) * (y k i - x k i)` and `∑ (h (x k i) + h (y k i)) / 2 * (y k i - x k i)` differs from
+`1 / 2 * ∑ h' (x k i) * ((z k i - x k i) ^ 2 - (y k i - z k i) ^ 2)` by a vanishing remainder. -/
+theorem tendsto_sum_midpoint_sub_half_add_sub_half_deriv {h h' : ℝ → ℝ} {a b : ℝ}
+    (hh : ∀ u ∈ Icc a b, HasDerivWithinAt h (h' u) (Icc a b) u)
+    (hc : ContinuousOn h' (Icc a b))
+    {ι : Type*} {l : Filter ι} {n : ι → ℕ} {x z y : ι → ℕ → ℝ} {δ : ι → ℝ}
+    (hx : ∀ᶠ k in l, ∀ i < n k, x k i ∈ Icc a b)
+    (hz : ∀ᶠ k in l, ∀ i < n k, z k i ∈ Icc a b)
+    (hy : ∀ᶠ k in l, ∀ i < n k, y k i ∈ Icc a b)
+    (hδ₁ : ∀ᶠ k in l, ∀ i < n k, |z k i - x k i| ≤ δ k)
+    (hδ₂ : ∀ᶠ k in l, ∀ i < n k, |y k i - z k i| ≤ δ k)
+    (hδ0 : Tendsto δ l (𝓝 0))
+    (hQ : l.IsBoundedUnder (· ≤ ·) (fun k ↦ ∑ i ∈ range (n k),
+      ((z k i - x k i) ^ 2 + (y k i - z k i) ^ 2))) :
+    Tendsto (fun k ↦ ∑ i ∈ range (n k),
+      (h (z k i) * (y k i - x k i) - (h (x k i) + h (y k i)) / 2 * (y k i - x k i) -
+        1 / 2 * h' (x k i) * ((z k i - x k i) ^ 2 - (y k i - z k i) ^ 2))) l (𝓝 0) := by
+  obtain ⟨K, hK⟩ := hQ
+  rw [eventually_map] at hK
+  apply Metric.tendsto_nhds.2
+  intro ε hε
+  have hKpos : 0 < max K 0 + 1 := by positivity
+  obtain ⟨η, hη, hosc⟩ := Metric.uniformContinuousOn_iff.1
+    (isCompact_Icc.uniformContinuousOn_of_continuous hc) (ε / (max K 0 + 1)) (div_pos hε hKpos)
+  filter_upwards [(tendsto_order.1 hδ0).2 (η / 2) (half_pos hη), hx, hz, hy, hδ₁, hδ₂, hK]
+    with k hk hxk hzk hyk hδ₁k hδ₂k hKk
+  rw [Real.dist_eq, sub_zero]
+  have hstep (i : ℕ) (hi : i ∈ range (n k)) :
+      ‖h (z k i) * (y k i - x k i) - (h (x k i) + h (y k i)) / 2 * (y k i - x k i) -
+        1 / 2 * h' (x k i) * ((z k i - x k i) ^ 2 - (y k i - z k i) ^ 2)‖ ≤
+        ε / (max K 0 + 1) * ((z k i - x k i) ^ 2 + (y k i - z k i) ^ 2) := by
+    rw [Real.norm_eq_abs]
+    have hi' := mem_range.1 hi
+    have hxz := uIcc_subset_Icc (hxk i hi') (hzk i hi')
+    have hzy := uIcc_subset_Icc (hzk i hi') (hyk i hi')
+    refine abs_midpoint_sub_half_add_sub_half_deriv_le hxz hzy
+      (fun u hu ↦ hh u (hu.elim (fun h ↦ hxz h) (fun h ↦ hzy h))) fun u hu ↦ ?_
+    have hux : dist u (x k i) < η := by
+      rw [Real.dist_eq]
+      rcases hu with hu | hu
+      · exact ((abs_sub_left_of_mem_uIcc hu).trans (hδ₁k i hi')).trans_lt
+          (hk.trans (half_lt_self hη))
+      · calc
+          |u - x k i| ≤ |u - z k i| + |z k i - x k i| := abs_sub_le u (z k i) (x k i)
+          _ ≤ |y k i - z k i| + |z k i - x k i| :=
+            add_le_add_left (abs_sub_left_of_mem_uIcc hu) _
+          _ ≤ δ k + δ k := add_le_add (hδ₂k i hi') (hδ₁k i hi')
+          _ < η / 2 + η / 2 := add_lt_add hk hk
+          _ = η := add_halves η
+    have humem : u ∈ Icc a b := hu.elim (fun h ↦ hxz h) (fun h ↦ hzy h)
+    exact (Real.dist_eq (h' u) (h' (x k i)) ▸ hosc u humem (x k i) (hxk i hi') hux).le
+  have hsum : |∑ i ∈ range (n k),
+      (h (z k i) * (y k i - x k i) - (h (x k i) + h (y k i)) / 2 * (y k i - x k i) -
+        1 / 2 * h' (x k i) * ((z k i - x k i) ^ 2 - (y k i - z k i) ^ 2))| ≤
+      ε / (max K 0 + 1) * max K 0 := by
+    calc
+      _ ≤ ε / (max K 0 + 1) * ∑ i ∈ range (n k),
+          ((z k i - x k i) ^ 2 + (y k i - z k i) ^ 2) := by
+        simpa only [Real.norm_eq_abs, ← mul_sum] using norm_sum_le_of_le (range (n k)) hstep
+      _ ≤ _ := by gcongr; exact hKk.trans (le_max_left _ _)
+  apply hsum.trans_lt
+  rw [div_mul_eq_mul_div, div_lt_iff₀ hKpos]
+  linarith
+
+end TauCeti
