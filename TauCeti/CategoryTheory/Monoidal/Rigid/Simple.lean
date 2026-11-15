@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Preadditive.Schur
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Preadditive
+public import TauCeti.CategoryTheory.Preadditive.Schur
 
 /-!
 # Duals of simple objects
@@ -100,33 +100,17 @@ paired tensor product to the unit is a scalar multiple of the evaluation. -/
 theorem hom_tensorUnit_eq_smul_evaluation_of_simple_right (k : Type*) [Field k] [IsAlgClosed k]
     [Preadditive C] [HasKernels C] [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
     {X Y : C} [ExactPairing X Y] [Simple Y] [FiniteDimensional k (Y ⟶ Y)]
-    (f : Y ⊗ X ⟶ 𝟙_ C) : ∃ c : k, f = c • ε_ X Y := by
-  let e := (tensorRightHomLinearEquiv k Y X Y (𝟙_ C)).trans
-    (Linear.homCongr k (Iso.refl Y) (λ_ Y))
-  obtain ⟨c, hc⟩ := endomorphism_simple_eq_smul_id k (e f)
-  refine ⟨c, e.injective ?_⟩
-  rw [map_smul, ← hc]
-  congr 1
-  -- Frobenius reciprocity carries evaluation to the identity, with the unitors removed.
-  simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_inv,
-    Category.id_comp, tensorRightHomLinearEquiv_apply]
-  simp [tensorRightHomEquiv, ExactPairing.coevaluation_evaluation]
+    (f : Y ⊗ X ⟶ 𝟙_ C) : ∃ c : k, f = c • ε_ X Y :=
+  hom_tensorUnit_eq_smul_evaluation_of_surjective_right
+    (bijective_algebraMap_end_of_simple k Y).surjective f
 
 /-- If the left member of an exact pairing is split simple, every morphism from the
 paired tensor product to the unit is a scalar multiple of the evaluation. -/
 theorem hom_tensorUnit_eq_smul_evaluation_of_simple_left (k : Type*) [Field k] [IsAlgClosed k]
     [Preadditive C] [HasKernels C] [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
     {X Y : C} [ExactPairing X Y] [Simple X] [FiniteDimensional k (X ⟶ X)]
-    (f : Y ⊗ X ⟶ 𝟙_ C) : ∃ c : k, f = c • ε_ X Y := by
-  let e := (tensorLeftHomLinearEquiv k X X Y (𝟙_ C)).trans
-    (Linear.homCongr k (Iso.refl X) (ρ_ X))
-  obtain ⟨c, hc⟩ := endomorphism_simple_eq_smul_id k (e f)
-  refine ⟨c, e.injective ?_⟩
-  rw [map_smul, ← hc]
-  congr 1
-  -- The other Frobenius reciprocity bijection carries evaluation to the identity of `X`.
-  simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_inv,
-    Category.id_comp, tensorLeftHomLinearEquiv_apply]
-  simp [tensorLeftHomEquiv, ExactPairing.evaluation_coevaluation]
+    (f : Y ⊗ X ⟶ 𝟙_ C) : ∃ c : k, f = c • ε_ X Y :=
+  hom_tensorUnit_eq_smul_evaluation_of_surjective_left
+    (bijective_algebraMap_end_of_simple k X).surjective f
 
 end TauCeti

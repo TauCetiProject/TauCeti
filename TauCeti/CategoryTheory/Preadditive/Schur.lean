@@ -67,9 +67,13 @@ with finite-dimensional endomorphisms over an algebraically closed field `k` are
 `k`. This is the inverse of the structure map `algebraMap k (End X)`, `c ↦ c • 𝟙 X`. -/
 noncomputable def endAlgEquivOfSimple (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
     End X ≃ₐ[k] k :=
-  (AlgEquiv.ofBijective (Algebra.ofId k (End X)) <| by
-    rw [show ⇑(Algebra.ofId k (End X)) = algebraMap k (End X) from funext (Algebra.ofId_apply _)]
-    exact bijective_algebraMap_end_of_simple k X).symm
+  endAlgEquivOfBijective (bijective_algebraMap_end_of_simple k X)
+
+/-- `TauCeti.endAlgEquivOfSimple` is `TauCeti.endAlgEquivOfBijective` applied to Schur's lemma. -/
+theorem endAlgEquivOfSimple_eq_endAlgEquivOfBijective (X : C) [Simple X]
+    [FiniteDimensional k (X ⟶ X)] :
+    endAlgEquivOfSimple k X = endAlgEquivOfBijective (bijective_algebraMap_end_of_simple k X) :=
+  (rfl)
 
 section Scalar
 
@@ -79,18 +83,18 @@ variable {X : C} [Simple X] [FiniteDimensional k (X ⟶ X)]
 /-- The inverse of `endAlgEquivOfSimple` is the structure map `algebraMap k (End X)`. -/
 @[simp]
 theorem endAlgEquivOfSimple_symm_apply (c : k) :
-    (endAlgEquivOfSimple k X).symm c = algebraMap k (End X) c := by
-  rw [endAlgEquivOfSimple, AlgEquiv.symm_symm, AlgEquiv.ofBijective_apply, Algebra.ofId_apply]
+    (endAlgEquivOfSimple k X).symm c = algebraMap k (End X) c :=
+  endAlgEquivOfBijective_symm_apply (bijective_algebraMap_end_of_simple k X) c
 
 /-- Every endomorphism of a simple object is its scalar times the identity. -/
 @[simp]
-theorem endAlgEquivOfSimple_smul_id (f : End X) : endAlgEquivOfSimple k X f • 𝟙 X = f.asHom := by
-  rw [← End.algebraMap_asHom, ← endAlgEquivOfSimple_symm_apply, AlgEquiv.symm_apply_apply]
+theorem endAlgEquivOfSimple_smul_id (f : End X) : endAlgEquivOfSimple k X f • 𝟙 X = f.asHom :=
+  endAlgEquivOfBijective_smul_id (bijective_algebraMap_end_of_simple k X) f
 
 /-- The scalar of an endomorphism `f` is the unique `c` with `f = c • 𝟙 X`. -/
 theorem endAlgEquivOfSimple_apply_eq_iff (f : End X) (c : k) :
-    endAlgEquivOfSimple k X f = c ↔ f.asHom = c • 𝟙 X := by
-  rw [← AlgEquiv.eq_symm_apply, End.ext_iff, endAlgEquivOfSimple_symm_apply, End.algebraMap_asHom]
+    endAlgEquivOfSimple k X f = c ↔ f.asHom = c • 𝟙 X :=
+  endAlgEquivOfBijective_apply_eq_iff (bijective_algebraMap_end_of_simple k X) f c
 
 end Scalar
 

@@ -66,9 +66,11 @@ the double right dual functor is a monoidal autoequivalence.
   `TauCeti.doubleRightDualFunctor_μ` and `TauCeti.doubleRightDualFunctor_δ` (the unit
   comparison is also given in terms of a right adjoint mate by
   `TauCeti.doubleRightDualFunctor_ε_eq_rightAdjointMate`);
-* `TauCeti.doubleRightDualFunctor_map_evaluation` and
-  `TauCeti.doubleRightDualFunctor_map_coevaluation`: the double right dual functor carries the
-  evaluation and coevaluation of `(X, Xᘁ)` to those of `(Xᘁᘁ, Xᘁᘁᘁ)`;
+* `TauCeti.doubleRightDualFunctor_map_evaluation`,
+  `TauCeti.doubleRightDualFunctor_map_coevaluation`, and
+  `TauCeti.doubleRightDualFunctor_map_scalar`: the double right dual functor carries the
+  evaluation and coevaluation of `(X, Xᘁ)` to those of `(Xᘁᘁ, Xᘁᘁᘁ)` and preserves scalars
+  under its unit comparison;
 * `TauCeti.rigidCategoryOfIsoDoubleRightDual`: a right rigid category with isomorphisms
   `X ≅ Xᘁᘁ` is rigid, with left duals described by
   `TauCeti.rigidCategoryOfIsoDoubleRightDual_evaluation` and
@@ -498,6 +500,42 @@ theorem doubleRightDualFunctor_map_coevaluation (X : C) :
       rw [h]
       -- The two sides differ only in how the intermediate objects are written.
       rfl
+
+omit [RightRigidCategory C] in
+/-- For the self-pairing `exactPairingUnit` of the tensor unit, the right mate of any scalar
+`d : 𝟙_ C ⟶ 𝟙_ C` is `d` itself. -/
+@[simp]
+theorem rightMate_exactPairingUnit (d : 𝟙_ C ⟶ 𝟙_ C) :
+    rightMate exactPairingUnit exactPairingUnit d = d := by
+  refine rightHom_ext (X := 𝟙_ C) ?_
+  rw [rightMate_comp_evaluation, TauCeti.ExactPairing.unit_evaluation,
+    rightUnitor_naturality, ← unitors_equal, leftUnitor_naturality]
+
+/-- The double right dual functor preserves scalars `d : 𝟙_ C ⟶ 𝟙_ C` under its unit comparison:
+`ε ≫ dᘁᘁ ≫ η = d`. -/
+@[reassoc]
+theorem doubleRightDualFunctor_ε_map_η (d : 𝟙_ C ⟶ 𝟙_ C) :
+    ε (doubleRightDualFunctor C) ≫ (doubleRightDualFunctor C).map d ≫
+      η (doubleRightDualFunctor C) = d := by
+  rw [doubleRightDualFunctor_ε, doubleRightDualFunctor_η, doubleRightDualFunctor_map]
+  have key : ((rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).inv ≫
+        rightMate HasRightDual.exact (RightRigidCategory.rightDual (𝟙_ C)).exact
+          (rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).hom) ≫
+      (@rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C))
+        (RightRigidCategory.rightDual (𝟙_ C)) d)ᘁ ≫
+        rightMate (RightRigidCategory.rightDual (𝟙_ C)).exact HasRightDual.exact
+          (rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).inv ≫
+        (rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).hom = d := by
+    simp only [rightDualIso_hom, rightDualIso_inv, rightAdjointMate_eq_rightMate,
+      ← comp_rightMate, Category.id_comp, Category.comp_id, rightMate_exactPairingUnit]
+  exact key
+
+/-- The double right dual functor maps a scalar `d : 𝟙_ C ⟶ 𝟙_ C` to `η ≫ d ≫ ε`. -/
+theorem doubleRightDualFunctor_map_scalar (d : 𝟙_ C ⟶ 𝟙_ C) :
+    (doubleRightDualFunctor C).map d =
+      η (doubleRightDualFunctor C) ≫ d ≫ ε (doubleRightDualFunctor C) := by
+  conv_rhs => rw [← doubleRightDualFunctor_ε_map_η d]
+  simp only [Category.assoc, Functor.Monoidal.η_ε_assoc, Functor.Monoidal.η_ε, Category.comp_id]
 
 /-- A right rigid category in which every object `X` is isomorphic to its double right dual
 `(doubleRightDualFunctor C).obj X = Xᘁᘁ` is rigid: transporting the pairing of `Xᘁ` with `Xᘁᘁ`

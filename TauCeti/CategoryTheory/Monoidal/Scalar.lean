@@ -23,10 +23,11 @@ particular scalars commute with each other (`TauCeti.scalar_comm`).
 A scalar `a` acts on every object `Y` in two ways, from the left as
 `(λ_ Y).inv ≫ a ▷ Y ≫ (λ_ Y).hom` and from the right as `(ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom`. The two
 actions need not agree in a general monoidal category, but they do in a braided one
-(`TauCeti.leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom`). They also agree in a linear one
-over an algebraically closed field whose unit is simple with finite-dimensional endomorphisms,
-where every scalar is a multiple of the identity
-(`TauCeti.leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_simple`).
+(`TauCeti.leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom`). They also agree in a monoidal
+`R`-linear category over a commutative semiring `R` whenever `algebraMap R (End (𝟙_ C))` is
+surjective (`TauCeti.leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_surjective`), and in
+particular over an algebraically closed field whose unit is simple with finite-dimensional
+endomorphisms (`TauCeti.leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_simple`).
 
 `TauCeti.CirclesCommuteAt d X` records agreement of the two actions of a particular scalar `d`
 on a particular object `X`. These objects form a replete monoidal full subcategory: agreement
@@ -89,15 +90,28 @@ theorem leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom [BraidedCategory C]
   rw [← braiding_rightUnitor, BraidedCategory.braiding_naturality_left_assoc,
     leftUnitor_inv_braiding_assoc]
 
+/-- If every scalar is in the image of `algebraMap R (End (𝟙_ C))` for a commutative semiring `R`
+over which `C` is monoidal linear, then every scalar acts on every object in the same way from the
+left and from the right. -/
+theorem leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_surjective {R : Type w}
+    [CommSemiring R] [Preadditive C] [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
+    (h : Function.Surjective (algebraMap R (End (𝟙_ C)))) (a : 𝟙_ C ⟶ 𝟙_ C) (Y : C) :
+    (λ_ Y).inv ≫ a ▷ Y ≫ (λ_ Y).hom = (ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom := by
+  obtain ⟨r, hr⟩ := h (End.of a)
+  have ha : a = r • 𝟙 (𝟙_ C) := by
+    simpa [End.algebraMap_asHom] using (congrArg End.asHom hr).symm
+  subst ha
+  simp
+
 /-- If the tensor unit is simple with finite-dimensional endomorphisms over an algebraically
 closed field, a scalar acts on every object in the same way from the left and from the right. -/
 theorem leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_simple (k : Type w) [Field k]
     [IsAlgClosed k] [Preadditive C] [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
     [Limits.HasKernels C] [Simple (𝟙_ C)] [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)]
     (a : 𝟙_ C ⟶ 𝟙_ C) (Y : C) :
-    (λ_ Y).inv ≫ a ▷ Y ≫ (λ_ Y).hom = (ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom := by
-  obtain ⟨c, rfl⟩ := endomorphism_simple_eq_smul_id k a
-  simp
+    (λ_ Y).inv ≫ a ▷ Y ≫ (λ_ Y).hom = (ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom :=
+  leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_surjective
+    (bijective_algebraMap_end_of_simple k (𝟙_ C)).surjective a Y
 
 /-! ### Centrality at an object -/
 
@@ -173,6 +187,14 @@ theorem circlesCommuteAt_smul_id {R : Type*} [Semiring R] [Preadditive C] [Linea
     [MonoidalPreadditive C] [MonoidalLinear R C] (r : R) (X : C) :
     CirclesCommuteAt (r • 𝟙 (𝟙_ C)) X := by
   simp [circlesCommuteAt_iff]
+
+/-- If `algebraMap R (End (𝟙_ C))` is surjective for a commutative semiring `R` over which `C` is
+monoidal linear, every scalar is central at every object. -/
+theorem circlesCommuteAt_of_surjective {R : Type*} [CommSemiring R] [Preadditive C] [Linear R C]
+    [MonoidalPreadditive C] [MonoidalLinear R C]
+    (h : Function.Surjective (algebraMap R (End (𝟙_ C)))) (d : 𝟙_ C ⟶ 𝟙_ C) (X : C) :
+    CirclesCommuteAt d X :=
+  (leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_surjective h d X).symm
 
 /-- In a braided target, the existing scalar-action identity supplies local centrality. -/
 example [BraidedCategory C] (d : 𝟙_ C ⟶ 𝟙_ C) (X : C) : CirclesCommuteAt d X :=
