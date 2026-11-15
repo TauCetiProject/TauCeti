@@ -75,8 +75,8 @@ of the variation measure involves a choice depending on local finiteness, the me
 * `TauCeti.measurable_perimeter_setOf_lt`: the perimeter of `{u > t}` is measurable in `t`.
 * `TauCeti.totalVariationOn_eq_lintegral_perimeter`: the coarea formula
   `|Du|(Ω) = ∫_ℝ P({u > t}; Ω) dt` for locally integrable `u`.
-* `TauCeti.ae_perimeter_setOf_lt_lt_top`: if `|Du|(Ω) < ∞`, then `{u > t}` has finite perimeter
-  in `Ω` for almost every `t`.
+* `TauCeti.ae_perimeter_setOf_lt_lt_top`: if `u` is locally integrable on `Ω` and `|Du|(Ω) < ∞`,
+  then `{u > t}` has finite perimeter in `Ω` for almost every `t`.
 * `TauCeti.ae_exists_perimeter_setOf_lt_ne_top`: if `u` has locally finite variation on `Ω`, then
   `{u > t}` has locally finite perimeter in `Ω` for almost every `t`.
 * `TauCeti.measurable_variationMeasure_indicator_setOf_lt`: the perimeter measure
@@ -96,7 +96,7 @@ public section
 noncomputable section
 
 open MeasureTheory TopologicalSpace Filter TestFunction Set Metric
-open scoped ENNReal Distributions Topology Convolution symmDiff
+open scoped ENNReal Distributions
 
 namespace TauCeti
 
@@ -412,8 +412,8 @@ theorem totalVariationOn_eq_lintegral_perimeter (hu : LocallyIntegrableOn u Ω �
         iSup_le fun j => lintegral_perimeter_le_of_isCompact_closure hum.measurable_mk hv (hVc j)
           (hVΩ j)
 
-/-- If `u` has finite total variation on `Ω`, then its superlevel sets `{u > t}` have finite
-perimeter in `Ω` for almost every level `t`. -/
+/-- If `u` is locally integrable on `Ω` and has finite total variation on `Ω`, then its superlevel
+sets `{u > t}` have finite perimeter in `Ω` for almost every level `t`. -/
 theorem ae_perimeter_setOf_lt_lt_top (hu : LocallyIntegrableOn u Ω μ)
     (h : totalVariationOn μ Ω u ≠ ∞) : ∀ᵐ t, perimeter μ Ω {x | t < u x} < ∞ :=
   ae_lt_top (measurable_perimeter_setOf_lt hu.aestronglyMeasurable.aemeasurable)
