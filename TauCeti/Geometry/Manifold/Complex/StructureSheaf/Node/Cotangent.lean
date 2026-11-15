@@ -145,6 +145,16 @@ def cotangentEquiv :
             simp only [LinearMap.coe_mk, AddHom.coe_mk]
             simp⟩⟩
 
+/-- The cotangent comparison factors through the two branch cotangent maps. -/
+theorem cotangentEquiv_apply (v : CotangentSpace N) :
+    cotangentEquiv hp hq he he' v =
+      (e.holomorphicCotangentEquiv p hp he
+        (Ideal.mapCotangent (maximalIdeal N) (maximalIdeal A) (π₁).toIntAlgHom
+          (maximalIdeal_comap π₁).ge v),
+      e'.holomorphicCotangentEquiv q hq he'
+        (Ideal.mapCotangent (maximalIdeal N) (maximalIdeal B) (π₂).toIntAlgHom
+          (maximalIdeal_comap π₂).ge v)) := (rfl)
+
 /-- On a vanishing germ the cotangent comparison is differentiation of its branch germs. -/
 @[simp]
 theorem cotangentEquiv_toCotangent (s : maximalIdeal N) :
@@ -216,6 +226,53 @@ theorem finrank_cotangentSpace_eq_two (p : C) (q : D) :
     Module.finrank (ResidueField (nodeLocalRing 𝓘(ℂ) 𝓘(ℂ) p q))
       (CotangentSpace (nodeLocalRing 𝓘(ℂ) 𝓘(ℂ) p q)) = 2 := by
   simp
+
+variable {p : C} {q : D} {e : OpenPartialHomeomorph C ℂ} {e' : OpenPartialHomeomorph D ℂ}
+  (hp : p ∈ e.source) (hq : q ∈ e'.source)
+  (he : e ∈ maximalAtlas 𝓘(ℂ) ω C) (he' : e' ∈ maximalAtlas 𝓘(ℂ) ω D)
+  (he₁ : e ∈ maximalAtlas 𝓘(ℂ) 1 C) (he'₁ : e' ∈ maximalAtlas 𝓘(ℂ) 1 D)
+
+omit [IsManifold 𝓘(ℂ) 1 D] in
+/-- The first branch coordinate gives the first cotangent direction. -/
+-- Simplify before expanding the comparison into branch derivatives.
+@[simp↓]
+theorem cotangentEquiv_fstCoordinate :
+    cotangentEquiv hp hq he he' (Ideal.toCotangent _
+      ⟨fstCoordinate (q := q) he₁ hp, by simp [maximalIdeal_eq_ker_eval]⟩) =
+      (.id ℂ ℂ, 0) := by
+  simp
+
+omit [IsManifold 𝓘(ℂ) 1 C] in
+/-- The second branch coordinate gives the second cotangent direction. -/
+-- Simplify before expanding the comparison into branch derivatives.
+@[simp↓]
+theorem cotangentEquiv_sndCoordinate :
+    cotangentEquiv hp hq he he' (Ideal.toCotangent _
+      ⟨sndCoordinate (p := p) he'₁ hq, by simp [maximalIdeal_eq_ker_eval]⟩) =
+      (0, .id ℂ ℂ) := by
+  simp
+
+omit [IsManifold 𝓘(ℂ) 1 D] in
+/-- The first dual coordinate pulls back to the first branch coordinate class. -/
+-- Simplify before expanding the inverse on an arbitrary pair of functionals.
+@[simp↓]
+theorem cotangentEquiv_symm_id_zero :
+    (cotangentEquiv hp hq he he').symm (.id ℂ ℂ, 0) = Ideal.toCotangent _
+      ⟨fstCoordinate (q := q) (maximalAtlas_subset_of_le le_top he) hp,
+        by simp [maximalIdeal_eq_ker_eval]⟩ := by
+  apply (cotangentEquiv hp hq he he').injective
+  rw [LinearEquiv.apply_symm_apply, cotangentEquiv_fstCoordinate]
+
+omit [IsManifold 𝓘(ℂ) 1 C] in
+/-- The second dual coordinate pulls back to the second branch coordinate class. -/
+-- Simplify before expanding the inverse on an arbitrary pair of functionals.
+@[simp↓]
+theorem cotangentEquiv_symm_zero_id :
+    (cotangentEquiv hp hq he he').symm (0, .id ℂ ℂ) = Ideal.toCotangent _
+      ⟨sndCoordinate (p := p) (maximalAtlas_subset_of_le le_top he') hq,
+        by simp [maximalIdeal_eq_ker_eval]⟩ := by
+  apply (cotangentEquiv hp hq he he').injective
+  rw [LinearEquiv.apply_symm_apply, cotangentEquiv_sndCoordinate]
 
 end Curves
 
