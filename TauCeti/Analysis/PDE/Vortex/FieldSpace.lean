@@ -318,17 +318,18 @@ theorem mem_sobolevFields_of_hasCompactSupport {y : ℂ → EuclideanSpace ℝ (
   mem_sobolevFields.2 fun i ↦ mem_realSobolevFunctions_of_hasCompactSupport
     (contDiff_euclidean.1 hy i) (hc.comp_left (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) rfl) s
 
-/-- An almost everywhere strongly measurable field bounded by `K exp (-c |z|)` with `0 < c` lies in
-`sobolevFields 0`. -/
+/-- An almost everywhere strongly measurable field bounded almost everywhere by `K exp (-c |z|)`
+with `0 < c` lies in `sobolevFields 0`. -/
 theorem mem_sobolevFields_zero_of_norm_le_mul_exp {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hy : AEStronglyMeasurable y) {K c : ℝ} (hc : 0 < c)
-    (hK : ∀ z, ‖y z‖ ≤ K * Real.exp (-(c * ‖z‖))) : y ∈ sobolevFields 0 := by
+    (hK : ∀ᵐ z, ‖y z‖ ≤ K * Real.exp (-(c * ‖z‖))) : y ∈ sobolevFields 0 := by
   refine mem_sobolevFields_zero_iff.2 ((memLp_two_iff_integrable_sq_norm hy).2
     (((integrable_exp_neg_mul_norm volume (mul_pos two_pos hc)).const_mul (K ^ 2)).mono'
-      (hy.norm.pow 2) (ae_of_all _ fun z ↦ ?_)))
+      (hy.norm.pow 2) ?_))
+  filter_upwards [hK] with z hz
   rw [Real.norm_of_nonneg (sq_nonneg _)]
   calc ‖y z‖ ^ 2 ≤ (K * Real.exp (-(c * ‖z‖))) ^ 2 :=
-        pow_le_pow_left₀ (norm_nonneg _) (hK z) 2
+        pow_le_pow_left₀ (norm_nonneg _) hz 2
     _ = K ^ 2 * Real.exp (-(2 * c * ‖z‖)) := by
         rw [mul_pow, ← Real.exp_nat_mul]
         ring_nf

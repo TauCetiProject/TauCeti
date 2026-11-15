@@ -129,13 +129,21 @@ theorem sectionMul_mul (g h : ℂ → ℂ) (y : ℂ → EuclideanSpace ℝ (Fin 
   ext z i
   fin_cases i <;> simp [sectionMul_apply, Complex.mul_re, Complex.mul_im] <;> ring
 
+/-- The section multiplier sends the zero field to zero. -/
+@[simp]
+theorem sectionMul_zero (g : ℂ → ℂ) : sectionMul g 0 = 0 := by
+  ext z i
+  fin_cases i <;> simp [sectionMul_apply]
+
 /-- The section multiplier is additive in the field. -/
+@[simp]
 theorem sectionMul_add (g : ℂ → ℂ) (y v : ℂ → EuclideanSpace ℝ (Fin 4)) :
     sectionMul g (y + v) = sectionMul g y + sectionMul g v := by
   ext z i
   fin_cases i <;> simp [sectionMul_apply] <;> ring
 
 /-- The section multiplier commutes with real scalars. -/
+@[simp]
 theorem sectionMul_smul (g : ℂ → ℂ) (t : ℝ) (y : ℂ → EuclideanSpace ℝ (Fin 4)) :
     sectionMul g (t • y) = t • sectionMul g y := by
   ext z i

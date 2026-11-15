@@ -339,15 +339,6 @@ theorem gaugeFixedAdjoint_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4))
     simp [gaugeFixedAdjoint_apply_zero, gaugeFixedAdjoint_apply_one,
       gaugeFixedAdjoint_apply_two, gaugeFixedAdjoint_apply_three, hd] <;> ring
 
-open scoped Topology in
-/-- The gauge-fixing row at a point depends only on the germ of the variation there. -/
-theorem gaugeAdjoint_congr_nhds (x : ℂ → EuclideanSpace ℝ (Fin 4))
-    {y y' : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (h : y =ᶠ[𝓝 z] y') :
-    gaugeAdjoint x y z = gaugeAdjoint x y' z := by
-  have hi (i : Fin 4) : (fun w ↦ y w i) =ᶠ[𝓝 z] fun w ↦ y' w i :=
-    h.mono fun w hw ↦ by simp only [hw]
-  simp only [gaugeAdjoint_def, h.eq_of_nhds, (hi _).fderiv_eq]
-
 /-- The principal symbol of the gauge-fixed vortex operator, acting on a real covector and a field
 value. It is independent of the vortex coefficients. -/
 def gaugeFixedOperatorSymbol (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) :

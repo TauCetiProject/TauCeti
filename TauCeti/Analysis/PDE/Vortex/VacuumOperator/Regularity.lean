@@ -69,10 +69,11 @@ private theorem quadraticTerm_mem_sobolevFields {ψ : ℂ → EuclideanSpace ℝ
   have hmul (i j : Fin 4) :
       (fun z ↦ ψ z i) * (fun z ↦ ψ z j) ∈ realSobolevFunctions ℂ k 2 := by
     rcases k with _ | _ | k
-    · simpa using mul_mem_realSobolevFunctions_zero_of_bounded (hcd i).continuous (hcB i)
-        (by simpa using hc j)
+    · simpa using mul_mem_realSobolevFunctions_zero_of_bounded
+        (hcd i).continuous.aestronglyMeasurable (ae_of_all _ (hcB i)) (by simpa using hc j)
     · simpa using mul_mem_realSobolevFunctions_one_of_bounded ((hcd i).of_le (by simp))
-        ((hcd j).of_le (by simp)) (hcB i) (hcB j) (by simpa using hc i) (by simpa using hc j)
+        ((hcd j).of_le (by simp)) (ae_of_all _ (hcB i)) (ae_of_all _ (hcB j))
+        (by simpa using hc i) (by simpa using hc j)
     · refine mul_mem_realSobolevFunctions (finrank_real_complex_lt_two_mul ?_) (hc i) (hc j)
       push_cast
       linarith [(k.cast_nonneg : (0 : ℝ) ≤ k)]

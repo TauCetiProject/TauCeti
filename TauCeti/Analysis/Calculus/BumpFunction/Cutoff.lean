@@ -650,16 +650,20 @@ theorem exists_contDiff_cutoff_annulus [InnerProductSpace ℝ E] [FiniteDimensio
     constructor <;> linarith
 
 open Metric in
-/-- **Cutting off a function smooth outside a ball.** For `0 ≤ r < R`, a function `y` which is
-`Cⁿ` at every point of norm greater than `r` has a `Cⁿ` cutoff `ψ` which agrees with `y` near every
-point of norm greater than `R`, and at every point either vanishes or has norm at most `‖y‖` at a
-point of norm greater than `r`. It is `(1 - χ) • y` for a bump `χ` equal to one on the ball of
-radius `(r + R) / 2` and vanishing outside the ball of radius `R`. -/
+/-- **Cutting off a function smooth outside a ball.** For `r < R`, a function `y` which is `Cⁿ` at
+every point of norm greater than `r` has a `Cⁿ` cutoff `ψ` which agrees with `y` near every point of
+norm greater than `R`, and at every point either vanishes or has norm at most `‖y‖` at a point of
+norm greater than `r`. For `r < 0` this is `y` itself; otherwise it is `(1 - χ) • y` for a bump `χ`
+equal to one on the ball of radius `(r + R) / 2` and vanishing outside the ball of radius `R`. -/
 theorem exists_contDiff_cutoff_outside_closedBall [NormedSpace ℝ E] [HasContDiffBump E]
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞} {y : E → F} {r R : ℝ}
-    (hr : 0 ≤ r) (hrR : r < R) (hy : ∀ z, r < ‖z‖ → ContDiffAt ℝ n y z) :
+    (hrR : r < R) (hy : ∀ z, r < ‖z‖ → ContDiffAt ℝ n y z) :
     ∃ ψ : E → F, ContDiff ℝ n ψ ∧ (∀ z, R < ‖z‖ → ψ =ᶠ[𝓝 z] y) ∧
       ∀ z, ψ z = 0 ∨ (r < ‖z‖ ∧ ‖ψ z‖ ≤ ‖y z‖) := by
+  rcases lt_or_ge r 0 with hr | hr
+  · have hz (z : E) : r < ‖z‖ := hr.trans_le (norm_nonneg z)
+    exact ⟨y, contDiff_iff_contDiffAt.2 fun z ↦ hy z (hz z), fun _ _ ↦ .rfl,
+      fun z ↦ .inr ⟨hz z, le_rfl⟩⟩
   let b : ContDiffBump (0 : E) := ⟨(r + R) / 2, R, by linarith, by linarith⟩
   set χ : E → ℝ := fun z ↦ 1 - b z
   have hχ0 {z : E} (hz : ‖z‖ ≤ (r + R) / 2) : χ z = 0 := by

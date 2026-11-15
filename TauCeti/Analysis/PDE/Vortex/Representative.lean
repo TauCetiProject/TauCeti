@@ -93,8 +93,9 @@ private theorem gaugeFixedDefect_mem_sobolevFields {ψ y : ℂ → EuclideanSpac
     have heq : vacuumField + ψ =ᶠ[𝓝 z] vacuumField + y := by
       filter_upwards [hψy z hz'] with w hw
       simp only [Pi.add_apply, hw]
-    rw [gaugeAdjoint_congr_nhds _ (hψy z hz'), hgauge z hz', equation_congr_nhds heq,
-      hsol z hz']
+    have hL := congrArg (· 0) (gaugeFixedOperator_congr_nhds vacuumField (hψy z hz'))
+    simp only [gaugeFixedOperator_apply_zero] at hL
+    rw [hL, hgauge z hz', equation_congr_nhds heq, hsol z hz']
     ext i
     fin_cases i <;> simp
 
@@ -192,7 +193,7 @@ theorem sub_referenceField_mem_sobolevFields {x : ℂ → EuclideanSpace ℝ (Fi
     rfl
   -- Cut `y` off near the origin: `ψ` is smooth, bounded and square integrable.
   obtain ⟨ψ, hψ, hψU, hψy⟩ := exists_contDiff_cutoff_outside_closedBall (n := ⊤) (y := y)
-    (R := R₀ + 1) (le_max_right R 0) (by linarith) fun z hz ↦
+    (R := R₀ + 1) (by linarith) fun z hz ↦
       (hRU hz).1.1.sub contDiff_vacuumField.contDiffAt
   have hψbound (z : ℂ) : ‖ψ z‖ ≤ K * Real.exp (-(1 / 4 * ‖z‖)) := by
     rcases hψy z with h | ⟨hz, h⟩
@@ -206,7 +207,7 @@ theorem sub_referenceField_mem_sobolevFields {x : ℂ → EuclideanSpace ℝ (Fi
   -- `H^j`.
   have hψk := mem_sobolevFields_of_forall_mem_sobolevFields_equation hψ hψB
     (mem_sobolevFields_zero_of_norm_le_mul_exp hψ.continuous.aestronglyMeasurable (by norm_num)
-      hψbound)
+      (ae_of_all _ hψbound))
     (gaugeFixedDefect_mem_sobolevFields hψ hψU
       (fun z hz ↦ (hRU (by linarith)).1.2.2.2.2) fun z hz ↦ by
         convert (hRU (by linarith)).1.2.1 using 2
