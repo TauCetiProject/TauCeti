@@ -142,7 +142,7 @@ example : ((0 : ℚ) ^ 2 - 1) * ((0 : ℚ) ^ 2 - 9) * ((0 : ℚ) ^ 2 - 25) *
 
 section Seven
 
-local instance : Fact (Nat.Prime 7) := ⟨by decide⟩
+local instance suyamaPrimeSeven : Fact (Nat.Prime 7) := ⟨by decide⟩
 
 -- σ = 2 over 𝔽₇: u = 6, v = 1, the denominator is a unit, yet σ² - 25 = 0 forces
 -- B = 0 and A² = 4.
@@ -175,7 +175,7 @@ end Seven
 
 section Eleven
 
-local instance : Fact (Nat.Prime 11) := ⟨by decide⟩
+local instance suyamaPrimeEleven : Fact (Nat.Prime 11) := ⟨by decide⟩
 
 -- σ = 2 over 𝔽₁₁: σ² ≠ 25 and B = 9 ≠ 0, yet 9σ² - 25 = 0 forces A² = 4; a four-factor
 -- criterion omitting 9σ² - 25 is nonzero here and is therefore refuted.
@@ -227,9 +227,9 @@ end Eleven
 
 section SmallPrimesAndThirteen
 
-local instance : Fact (Nat.Prime 2) := ⟨by decide⟩
-local instance : Fact (Nat.Prime 5) := ⟨by decide⟩
-local instance : Fact (Nat.Prime 13) := ⟨by decide⟩
+local instance suyamaPrimeTwo : Fact (Nat.Prime 2) := ⟨by decide⟩
+local instance suyamaPrimeFive : Fact (Nat.Prime 5) := ⟨by decide⟩
+local instance suyamaPrimeThirteen : Fact (Nat.Prime 13) := ⟨by decide⟩
 
 -- Over 𝔽₂ and 𝔽₅ every parameter is exceptional as well.
 example : (∀ σ : ZMod 2, ¬ (model (suyamaA σ) (suyamaB σ)).IsElliptic) ∧
@@ -271,7 +271,7 @@ example {K : Type*} [Field K] [CharP K 3] {σ : K} (hu : σ ^ 2 ≠ 5) :
   simp only [ne_eq, mul_eq_zero, hu', or_false]
   tauto
 
-local instance : Fact (Nat.Prime 3) := ⟨by decide⟩
+local instance suyamaPrimeThree : Fact (Nat.Prime 3) := ⟨by decide⟩
 
 -- Over 𝔽₃ every element satisfies σ = 0 or σ⁴ = 1, so no parameter over 𝔽₃ is elliptic.
 example : ∀ σ : ZMod 3, ¬ (model (suyamaA σ) (suyamaB σ)).IsElliptic := by
