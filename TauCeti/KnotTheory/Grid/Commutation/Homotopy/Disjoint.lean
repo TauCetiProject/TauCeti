@@ -304,7 +304,7 @@ theorem unblockedDifferential_commutationHomotopy_add_eq_iff_overlap :
             G.rectangleHexagonWeight C R D =
           (if x = z then 1 else 0) +
             ∑ D ∈ G.pentagonPairDecompositions C C.reverse x z,
-              G.pentagonPairWeight C C.reverse R D := by
+                G.pentagonPairWeight C C.reverse R D := by
   rw [G.unblockedDifferential_commutationHomotopy_add_eq_iff_decompositions C R]
   simp_rw [G.sum_hexagonRectangleWeight_add_sum_rectangleHexagonWeight_eq_overlap C R]
 

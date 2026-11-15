@@ -553,7 +553,7 @@ theorem sum_hexagonRectangleWeight_add_sum_rectangleHexagonWeight_self_eq_one_ad
     (∑ D ∈ G.hexagonRectangleDecompositions C x x, G.hexagonRectangleWeight C R D) +
         ∑ D ∈ G.rectangleHexagonDecompositions C x x, G.rectangleHexagonWeight C R D =
       1 + ∑ D ∈ G.pentagonPairDecompositions C C.reverse x x,
-        G.pentagonPairWeight C C.reverse R D := by
+          G.pentagonPairWeight C C.reverse R D := by
   simpa only [Finsupp.add_apply,
     G.unblockedDifferential_commutationHomotopy_single_apply C R,
     G.commutationHomotopy_unblockedDifferential_single_apply C R,
@@ -564,4 +564,5 @@ theorem sum_hexagonRectangleWeight_add_sum_rectangleHexagonWeight_self_eq_one_ad
     using G.unblockedDifferential_commutationHomotopy_add_single_apply_self_eq_one_add C R x
 
 end GridDiagram
+
 end TauCeti

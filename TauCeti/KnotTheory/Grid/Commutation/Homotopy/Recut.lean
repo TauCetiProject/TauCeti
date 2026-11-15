@@ -183,11 +183,11 @@ theorem unblockedDifferential_commutationHomotopy_add_eq_iff_unpaired :
             ∑ D ∈ G.rectangleHexagonDecompositions C x x,
               G.rectangleHexagonWeight C R D =
           1 + ∑ D ∈ G.pentagonPairDecompositions C C.reverse x x,
-            G.pentagonPairWeight C C.reverse R D) ∧
+              G.pentagonPairWeight C C.reverse R D) ∧
       ∀ x z : GridState n, z ≠ x →
         ∑ D ∈ G.unpairedHexagonComposites C x z, G.hexagonCompositeWeight C R D =
           ∑ D ∈ G.pentagonPairDecompositions C C.reverse x z,
-            G.pentagonPairWeight C C.reverse R D := by
+              G.pentagonPairWeight C C.reverse R D := by
   rw [G.unblockedDifferential_commutationHomotopy_add_eq_iff_overlap C R]
   have hoff : ∀ x z : GridState n,
       (∑ D ∈ (G.hexagonRectangleDecompositions C x z).filter

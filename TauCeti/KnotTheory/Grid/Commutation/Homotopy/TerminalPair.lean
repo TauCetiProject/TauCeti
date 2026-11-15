@@ -744,7 +744,7 @@ theorem existsUnique_unpairedHexagonComposite_of_terminalPentagonPair
           (⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ :
             GridRectangleDecomposition x z) F.toRectangleDecomposition ∧
         G.hexagonCompositeWeight C R F =
-          G.pentagonPairWeight C C.reverse R ⟨y, .inl P, .inl Q⟩ := by
+            G.pentagonPairWeight C C.reverse R ⟨y, .inl P, .inl Q⟩ := by
   obtain ⟨hp, -⟩ := (G.mem_pentagons P).mp hP
   obtain ⟨hq, -⟩ := ((G.swapColumns a b).mem_pentagons Q).mp hQ
   let D : GridRectangleDecomposition x z :=
@@ -754,7 +754,7 @@ theorem existsUnique_unpairedHexagonComposite_of_terminalPentagonPair
   have hexists : ∃ F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z,
       F ∈ G.unpairedHexagonComposites C x z ∧ D.IsRecut F.toRectangleDecomposition ∧
         G.hexagonCompositeWeight C R F =
-          G.pentagonPairWeight C C.reverse R ⟨y, .inl P, .inl Q⟩ := by
+            G.pentagonPairWeight C C.reverse R ⟨y, .inl P, .inl Q⟩ := by
     rcases (D.cyclicOrder_of_isEmpty_of_right_eq_right (G.terminal_pair_right_eq C P Q)
         hne hp hq).1 with hcol | hcol
     · have hcol' : P.left ∈ Grid.cIoo Q.left b := by

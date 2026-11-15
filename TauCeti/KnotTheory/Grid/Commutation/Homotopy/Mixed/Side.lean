@@ -7,9 +7,9 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.SameSide
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Mixed.Pair
+import TauCeti.KnotTheory.Grid.Commutation.Homotopy.SameSideRecut
 import TauCeti.Algebra.BigOperators.Finset.Pairing
 import TauCeti.Algebra.CharP.Two
-import TauCeti.KnotTheory.Grid.Commutation.Homotopy.SameSideRecut
 
 /-!
 # Removing mixed-side pentagon pairs from the commutation homotopy equation
@@ -180,7 +180,7 @@ theorem disjoint_sameSidePentagonPartners_mixedSidePentagonPartners {x z : GridS
   intro F hS hM
   obtain ⟨-, D, hD, hrecut⟩ := (G.mem_sameSidePentagonPartners C F).mp hS
   obtain ⟨-, E, -, hEF⟩ := (G.mem_mixedSidePentagonPartners C F).mp hM
-  exact GridPentagonPairDecomposition.finRotate_notMem_commonSideColumns_of_sameSide_isRecut D
+  exact GridPentagonPairDecomposition.finRotate_notMem_commonSideColumns_of_isRecut
     C.reverse_column ((G.mem_sameSidePentagonPairs C D).mp hD).2 hrecut
     (hEF ▸ GridPentagonPairDecomposition.finRotate_mem_commonSideColumns E C.reverse_column)
 
