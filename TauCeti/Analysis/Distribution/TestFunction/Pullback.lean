@@ -9,9 +9,9 @@ public import TauCeti.Analysis.Distribution.Mass.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
+import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 
 /-!
 # Pullback of test forms and pushforward of currents
@@ -51,11 +51,10 @@ used to push forward currents whose support is compact, see
 * `TestFunction.extDerivCLM_cutoffPullbackCLM_apply`: `d (χ Φ^* ω) = χ Φ^* (d ω)` at every point
   near which `χ = 1`.
 * `TestFunction.cutoffPullbackCLM_cutoffPullbackCLM`: composition of pullbacks with cutoffs.
-* `TestFunction.cutoffCompCLM`: the composition with a cutoff `g ↦ χ (g ∘ Φ)` of test functions,
-  the case `k = 0` read through the identification of `0`-forms with their values, with its values
-  `TestFunction.cutoffCompCLM_apply` and support `TestFunction.tsupport_cutoffCompCLM_subset`;
-  along a constant map it is a multiple of the cutoff (`TestFunction.cutoffCompCLM_const`). It
-  pushes distributions forward, see `TauCeti.Analysis.Distribution.CutoffPushforward`.
+* `TestFunction.cutoffCompCLM`: the composition with a cutoff `f ↦ χ (f ∘ Φ)` of test functions,
+  the pullback with a cutoff of `0`-forms, with its values `TestFunction.cutoffCompCLM_apply`. Along
+  a constant map it is a multiple of the cutoff (`TestFunction.cutoffCompCLM_const`). It is used to
+  push forward distributions whose support is compact.
 
 ## Implementation notes
 
@@ -496,39 +495,31 @@ theorem cutoffPullbackCLM_cutoffPullbackCLM {Ψ : E' → E''} {χ' : 𝓓(Ω', �
     simp [smul_smul, mul_comm, ContinuousLinearMap.coe_comp, Function.comp_assoc]
   · simp [image_eq_zero_of_notMem_tsupport hx]
 
-end CutoffPullback
-
-section CutoffComp
-
-variable {χ : 𝓓(Ω, ℝ)} {hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω}
-
-/-- The **composition with a cutoff** `g ↦ χ (g ∘ Φ)` of test functions on `Ω'` with a map `Φ`
-smooth on `Ω`, where `χ` is a test function on `Ω`: its value at `x` is `χ x • g (Φ x)`
-(`TestFunction.cutoffCompCLM_apply`). It is the pullback with a cutoff of test `0`-forms,
-`TestFunction.cutoffPullbackCLM`, read through the identification of `0`-forms with their values.
-Precomposing a distribution on `Ω` with it pushes the distribution forward along `Φ`, see
-`Distribution.cutoffPushforwardCLM`. -/
+/-- The **composition with a cutoff** `f ↦ χ (f ∘ Φ)` of test functions on `Ω'` with a map `Φ`
+smooth on `Ω`, where `χ` is a test function on `Ω`: its value at `x` is `χ x • f (Φ x)`
+(`TestFunction.cutoffCompCLM_apply`). It is the pullback with a cutoff of test `0`-forms, read
+through the identification of `0`-forms with their values. -/
 def cutoffCompCLM (χ : 𝓓(Ω, ℝ)) (Φ : E → E') (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω) :
     𝓓(Ω', F) →L[ℝ] 𝓓(Ω, F) :=
   (postcompCLE (Ω := Ω) (n := ⊤)
-      (constOfIsEmptyLIE ℝ E F (Fin 0)).symm.toContinuousLinearEquiv).toContinuousLinearMap ∘L
+      (constOfIsEmptyLIE ℝ E F (Fin 0)).toContinuousLinearEquiv.symm).toContinuousLinearMap ∘L
     cutoffPullbackCLM χ Φ hΦ ∘L
-      (postcompCLE (Ω := Ω') (n := ⊤)
-        (constOfIsEmptyLIE ℝ E' F (Fin 0)).toContinuousLinearEquiv).toContinuousLinearMap
+    (postcompCLE (Ω := Ω') (n := ⊤)
+      (constOfIsEmptyLIE ℝ E' F (Fin 0)).toContinuousLinearEquiv).toContinuousLinearMap
 
-/-- The composition with a cutoff is `x ↦ χ x • g (Φ x)`. -/
+/-- The composition with a cutoff is `x ↦ χ x • f (Φ x)`. -/
 @[simp]
-theorem cutoffCompCLM_apply (g : 𝓓(Ω', F)) (x : E) :
-    cutoffCompCLM χ Φ hΦ g x = χ x • g (Φ x) := by
-  simp [cutoffCompCLM, compContinuousLinearMap_apply]
+theorem cutoffCompCLM_apply (f : 𝓓(Ω', F)) (x : E) :
+    cutoffCompCLM χ Φ hΦ f x = χ x • f (Φ x) := by
+  simp [cutoffCompCLM]
 
-/-- The support of a composition with a cutoff lies in the support of the cutoff, over the
-support of the test function. -/
-theorem tsupport_cutoffCompCLM_subset (g : 𝓓(Ω', F)) :
-    tsupport (cutoffCompCLM χ Φ hΦ g) ⊆ tsupport χ ∩ Φ ⁻¹' tsupport g := by
+/-- The support of a composition with a cutoff lies in the support of the cutoff, over the support
+of the test function. -/
+theorem tsupport_cutoffCompCLM_subset (f : 𝓓(Ω', F)) :
+    tsupport (cutoffCompCLM χ Φ hΦ f) ⊆ tsupport χ ∩ Φ ⁻¹' tsupport f := by
   simpa only [cutoffCompCLM, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     tsupport_postcompCLE] using tsupport_cutoffPullbackCLM_subset (χ := χ) (hΦ := hΦ)
-      (postcompCLE (n := ⊤) (constOfIsEmptyLIE ℝ E' F (Fin 0)).toContinuousLinearEquiv g)
+      (postcompCLE (constOfIsEmptyLIE ℝ E' F (Fin 0)).toContinuousLinearEquiv f)
 
 /-- The composition with a cutoff along a constant map at `y` is the multiple `g y • χ` of the
 cutoff. -/
@@ -538,7 +529,7 @@ theorem cutoffCompCLM_const (y : E') {hc : ContDiffOn ℝ (⊤ : ℕ∞) (fun _ 
   ext x
   simp [mul_comm]
 
-end CutoffComp
+end CutoffPullback
 
 end TestFunction
 

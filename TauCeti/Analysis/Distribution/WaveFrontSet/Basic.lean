@@ -50,9 +50,7 @@ not microlocally smooth.
 * `Distribution.isOpen_setOf_isMicrolocallySmoothAt`, `Distribution.isOpen_diff_waveFrontSet`:
   the wave front set is closed in `Ω × (E \ {0})`.
 * `Distribution.smul_mem_waveFrontSet_iff`: it is conic in the frequency variable.
-* `Distribution.waveFrontSet_subset_dsupport`: it lies over the support of `T`, since
-  `Distribution.localFourier_eq_zero_of_disjoint` makes the localized Fourier transform vanish for
-  a cutoff supported off the support of `T`.
+* `Distribution.waveFrontSet_subset_dsupport`: it lies over the support of `T`.
 * `Distribution.localFourier_smulLeftCLM`, `Distribution.localFourier_restrictCLM`: the localized
   Fourier transforms of a smooth multiple and of a restriction, as localized Fourier transforms of
   `T` with modified cutoffs.
@@ -142,6 +140,16 @@ theorem localFourier_smul (c : ℂ) (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (�
 theorem localFourier_zero (φ : 𝓓(Ω, ℂ)) (η : E) : (0 : 𝓓'(Ω, ℂ)).localFourier φ η = 0 := by
   rw [← zero_smul ℂ (0 : 𝓓'(Ω, ℂ)), localFourier_smul, zero_mul]
 
+/-- The localized Fourier transform of a finite sum of distributions is the sum of their localized
+Fourier transforms. -/
+@[simp]
+theorem localFourier_sum {ι : Type*} (s : Finset ι) (T : ι → 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
+    (∑ i ∈ s, T i).localFourier φ η = ∑ i ∈ s, (T i).localFourier φ η := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => simp [Finset.sum_insert hi, ih]
+
 /-- The localized Fourier transform is additive in the cutoff. -/
 @[simp]
 theorem localFourier_add_cutoff (T : 𝓓'(Ω, ℂ)) (φ ψ : 𝓓(Ω, ℂ)) (η : E) :
@@ -163,11 +171,12 @@ theorem localFourier_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω, �
 theorem localFourier_zero_cutoff (T : 𝓓'(Ω, ℂ)) (η : E) : T.localFourier 0 η = 0 := by
   simpa using localFourier_smul_cutoff T 0 0 η
 
-/-- The localized Fourier transform is additive over a finite sum of cutoffs. -/
+/-- The localized Fourier transform is additive in the cutoff over finite sums. -/
 @[simp]
-theorem localFourier_sum_cutoff {ι : Type*} (T : 𝓓'(Ω, ℂ)) (s : Finset ι) (ψ : ι → 𝓓(Ω, ℂ))
-    (η : E) : T.localFourier (∑ i ∈ s, ψ i) η = ∑ i ∈ s, T.localFourier (ψ i) η := by
-  simp only [localFourier, map_sum]
+theorem localFourier_sum_cutoff {ι : Type*} (T : 𝓓'(Ω, ℂ)) (s : Finset ι) (φ : ι → 𝓓(Ω, ℂ))
+    (η : E) : T.localFourier (∑ i ∈ s, φ i) η = ∑ i ∈ s, T.localFourier (φ i) η :=
+  map_sum (AddMonoidHom.mk' (fun ψ ↦ T.localFourier ψ η)
+    fun ψ ψ' ↦ localFourier_add_cutoff T ψ ψ' η) φ s
 
 /-- At the zero frequency the localized Fourier transform is the pairing `T φ` with the cutoff. -/
 @[simp]
@@ -378,14 +387,16 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
 
-/-- The localized Fourier transform of `T` vanishes for a cutoff whose support misses the support
-of `T`. -/
-theorem localFourier_eq_zero_of_disjoint (T : 𝓓'(Ω, ℂ)) {φ : 𝓓(Ω, ℂ)}
+/-- The localized Fourier transform vanishes for a cutoff whose support is disjoint from the
+support of the distribution. -/
+theorem localFourier_eq_zero_of_disjoint_dsupport {T : 𝓓'(Ω, ℂ)} {φ : 𝓓(Ω, ℂ)}
     (h : Disjoint (tsupport φ) (dsupport T)) (η : E) : T.localFourier φ η = 0 := by
-  rw [localFourier_def, complexPairing_eq_of_eventuallyEq T (ψ := 0), map_zero]
-  filter_upwards [(isClosed_tsupport φ).isOpen_compl.mem_nhdsSet.2 h.subset_compl_left]
-    with x hx
-  simp [bilinLeftCLM_apply, image_eq_zero_of_notMem_tsupport hx]
+  rw [localFourier, ← map_zero T.complexPairing]
+  -- The cut-off test function vanishes on the open neighbourhood `(tsupport φ)ᶜ` of the support.
+  refine complexPairing_eq_of_eventuallyEq T ?_
+  refine eventuallyEq_of_mem ((isClosed_tsupport φ).isOpen_compl.mem_nhdsSet.2
+    h.subset_compl_left) fun y hy => ?_
+  simp [image_eq_zero_of_notMem_tsupport hy]
 
 /-- A distribution is microlocally smooth in every direction at a point of `Ω` outside its
 support. -/
@@ -396,8 +407,8 @@ theorem isMicrolocallySmoothAt_of_notMem_dsupport {T : 𝓓'(Ω, ℂ)} {x : E} (
     inter_subset_right (1 : ℂ)
   refine isMicrolocallySmoothAt_of_forall_decay (φ := φ) (by simp [hφx])
     (fun N => ⟨0, fun η => ?_⟩) ξ
-  rw [localFourier_eq_zero_of_disjoint T (disjoint_left.2 fun y hyφ hy ↦ (hφ hyφ).1 hy) η,
-    norm_zero, mul_zero]
+  simp [localFourier_eq_zero_of_disjoint_dsupport
+    (disjoint_left.2 fun _ hy => (hφ hy).1 : Disjoint (tsupport φ) (dsupport T)) η]
 
 /-- The wave front set lies over the support of the distribution. -/
 theorem waveFrontSet_subset_dsupport (T : 𝓓'(Ω, ℂ)) :
