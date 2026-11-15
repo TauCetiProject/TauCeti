@@ -11,6 +11,7 @@ import TauCeti.Analysis.BoundedVariation.Truncation
 import TauCeti.Analysis.Calculus.FDeriv.Clamp
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Function.Coarea.Measurability
+import TauCeti.Topology.MetricSpace.ProperSpace
 import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 
 /-!
@@ -57,20 +58,16 @@ private theorem setLIntegral_perimeter_Ioo (hh : LocallyLipschitz h) {a b : ℝ}
       TauCeti.fderiv_max_min_eq_indicator (w := fun y ↦ h y - a)
         (hh.continuous.sub continuous_const) (sub_pos.mpr hab)]
     have hs : (fun y ↦ h y - a) ⁻¹' Ioo 0 (b - a) = h ⁻¹' Ioo a b := by
-      ext y
-      simp only [mem_preimage, mem_Ioo]
-      constructor <;> intro hy <;> constructor <;> linarith [hy.1, hy.2]
-    simp only [hs]
-    by_cases hx : x ∈ h ⁻¹' Ioo a b <;> simp [hx, fderiv_sub_const]
-  have hn (x : E) : ‖fderiv ℝ v x‖ₑ =
-      (h ⁻¹' Ioo a b).indicator (fun x ↦ ‖fderiv ℝ h x‖ₑ) x := by
-    rw [hd, ← ofReal_norm]
-    by_cases hx : x ∈ h ⁻¹' Ioo a b <;> simp [hx, ofReal_norm]
+      simpa only [preimage_sub_const_Ioo, zero_add, sub_add_cancel, Function.comp_def] using
+        (preimage_comp (f := h) (g := (· - a)) (s := Ioo 0 (b - a)))
+    rw [hs, funext fun x ↦ fderiv_sub_const (𝕜 := ℝ) (f := h) (x := x) a]
   rw [Measure.restrict_congr_set Ioo_ae_eq_Ico,
     ← TauCeti.totalVariationOn_max_min_const_eq_lintegral_perimeter
       (hh.locallyLipschitzOn.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet),
     hv.locallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv]
-  exact lintegral_congr hn
+  exact lintegral_congr fun x ↦ by
+    rw [hd]
+    exact eNorm_indicator_eq_indicator_eNorm (fderiv ℝ h) x
 
 /-- Identification of the two coarea densities when their integral on the domain is finite. -/
 private theorem ae_perimeter_eq_surface_of_integrableOn (hh : LocallyLipschitz h)
@@ -83,15 +80,11 @@ private theorem ae_perimeter_eq_surface_of_integrableOn (hh : LocallyLipschitz h
   have hS : AEMeasurable S :=
     hh.locallyLipschitzOn.aemeasurable_euclideanHausdorffMeasure_inter_preimage
       volume Ω.isOpen.measurableSet.nullMeasurableSet (by simp only [finrank_self]; omega)
-  have hJ : (∫⁻ x in Ω, ‖fderiv ℝ h x‖ₑ) < ∞ := by
-    simpa only [ContinuousLinearMap.normDet_adjoint_eq_norm, ofReal_norm] using
-      (hasFiniteIntegral_iff_ofReal (.of_forall fun x ↦
-        (fderiv ℝ h x).adjoint.toLinearMap.normDet_nonneg)).mp hi.hasFiniteIntegral
   have hPi : ∫⁻ t, P t ≠ ∞ := by
-    rw [← TauCeti.totalVariationOn_eq_lintegral_perimeter
-      (hh.locallyLipschitzOn.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet),
-      hh.locallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv]
-    exact hJ.ne
+    dsimp [P]
+    rw [hh.locallyLipschitzOn.lintegral_perimeter_eq_setLIntegral_enorm_fderiv]
+    simpa only [ContinuousLinearMap.normDet_adjoint_eq_norm, ofReal_norm] using
+      hi.setLIntegral_lt_top.ne
   have : IsFiniteMeasure (volume.withDensity P) := isFiniteMeasure_withDensity hPi
   have heq : volume.withDensity P = volume.withDensity S := by
     apply Real.measure_ext_Ioo_rat
@@ -120,24 +113,38 @@ private theorem ae_perimeter_eq_surface_of_integrableOn (hh : LocallyLipschitz h
     · simp [Ioo_eq_empty hab]
   exact (withDensity_eq_iff hP.aemeasurable hS hPi).mp heq
 
-/-- For a locally Lipschitz real function, almost every superlevel set has relative perimeter
-equal to the normalized Hausdorff measure of its level surface inside the open domain.
+/-- For a real function locally Lipschitz on an open domain, almost every superlevel set has
+relative perimeter equal to the normalized Hausdorff measure of its level surface there.
 Neither the domain nor the function is required to have finite volume or finite variation. -/
-theorem ae_perimeter_setOf_lt_eq_euclideanHausdorffMeasure (hh : LocallyLipschitz h)
-    (Ω : Opens E) :
+theorem _root_.LocallyLipschitzOn.ae_perimeter_setOf_lt_eq_euclideanHausdorffMeasure
+    (hh : LocallyLipschitzOn Ω h) :
     ∀ᵐ t : ℝ, TauCeti.perimeter volume Ω {x | t < h x} =
       μHE[finrank ℝ E - 1] ((Ω : Set E) ∩ h ⁻¹' {t}) := by
-  let U : ℕ → Opens E := fun n ↦ ⟨(Ω : Set E) ∩ Metric.ball 0 n,
-    Ω.isOpen.inter Metric.isOpen_ball⟩
-  have hmono : Monotone U := fun n m hnm ↦ fun x hx ↦
-    ⟨hx.1, Metric.ball_subset_ball (Nat.cast_le.mpr hnm) hx.2⟩
-  have hU : (⨆ n, U n) = Ω := by
-    apply Opens.ext
-    simp only [Opens.coe_iSup, U, Opens.coe_mk, ← inter_iUnion, Metric.iUnion_ball_nat,
-      inter_univ]
-  have hae (n : ℕ) := hh.ae_perimeter_eq_surface_of_integrableOn (Ω := U n)
-    ((hh.integrableOn_normDet_adjoint_fderiv_of_isCompact
-      (isCompact_closedBall (0 : E) n)).mono_set fun x hx ↦ Metric.ball_subset_closedBall hx.2)
+  obtain ⟨U, hUc, hUΩ, hmono, hUunion, -⟩ :=
+    Ω.exists_monotone_isCompact_closure_iUnion_eq
+  have hU : (⨆ n, U n) = Ω := Opens.ext (by rw [Opens.coe_iSup, hUunion])
+  have hae (n : ℕ) : ∀ᵐ t : ℝ, TauCeti.perimeter volume (U n) {x | t < h x} =
+      μHE[finrank ℝ E - 1] ((U n : Set E) ∩ h ⁻¹' {t}) := by
+    obtain ⟨K, hK⟩ := (hh.mono (hUΩ n)).exists_lipschitzOnWith_of_compact (hUc n)
+    obtain ⟨g, hg, heq⟩ := hK.extend_real
+    have hagree : EqOn h g (U n) := heq.mono subset_closure
+    have hi := (hg.locallyLipschitz.integrableOn_normDet_adjoint_fderiv_of_isCompact
+      (hUc n)).mono_set subset_closure
+    filter_upwards [hg.locallyLipschitz.ae_perimeter_eq_surface_of_integrableOn hi] with t ht
+    have hper : TauCeti.perimeter volume (U n) {x | t < h x} =
+        TauCeti.perimeter volume (U n) {x | t < g x} := by
+      apply TauCeti.perimeter_congr_of_inter_eq
+      ext x
+      by_cases hx : x ∈ U n
+      · simp [hx, hagree hx]
+      · simp [hx]
+    have hsurface : (U n : Set E) ∩ h ⁻¹' {t} = (U n : Set E) ∩ g ⁻¹' {t} := by
+      ext x
+      by_cases hx : x ∈ U n
+      · simp [hx, hagree hx]
+      · simp [hx]
+    rw [hper, hsurface]
+    exact ht
   filter_upwards [ae_all_iff.mpr hae] with t ht
   rw [← hU, TauCeti.perimeter_iSup hmono.directed_le]
   simp_rw [ht]
@@ -146,5 +153,13 @@ theorem ae_perimeter_setOf_lt_eq_euclideanHausdorffMeasure (hh : LocallyLipschit
   rw [hU, ← hunion]
   exact (Monotone.measure_iUnion (fun n m hnm ↦
     inter_subset_inter_left _ (hmono hnm))).symm
+
+/-- For a globally locally Lipschitz real function, almost every superlevel set has relative
+perimeter equal to the normalized Hausdorff measure of its level surface in any open domain. -/
+theorem ae_perimeter_setOf_lt_eq_euclideanHausdorffMeasure (hh : LocallyLipschitz h)
+    (Ω : Opens E) :
+    ∀ᵐ t : ℝ, TauCeti.perimeter volume Ω {x | t < h x} =
+      μHE[finrank ℝ E - 1] ((Ω : Set E) ∩ h ⁻¹' {t}) :=
+  hh.locallyLipschitzOn.ae_perimeter_setOf_lt_eq_euclideanHausdorffMeasure
 
 end LocallyLipschitz
