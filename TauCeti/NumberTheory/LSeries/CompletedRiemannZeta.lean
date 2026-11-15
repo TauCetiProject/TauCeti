@@ -190,7 +190,7 @@ theorem divisor_completedRiemannZeta_conj (s : ℂ) :
       MeromorphicOn.divisor completedRiemannZeta univ s := by
   have hΛ : conj ∘ completedRiemannZeta ∘ conj = completedRiemannZeta :=
     funext fun z ↦ by simp
-  rw [← divisor_conj_conj, preimage_univ, hΛ]
+  rw [← divisor_conj_conj_univ, hΛ]
 
 open scoped ComplexOrder in
 /-- The completed Riemann zeta function has no zero on the real axis: it has poles at `0` and `1`,

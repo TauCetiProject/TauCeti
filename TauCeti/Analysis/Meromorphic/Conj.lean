@@ -30,6 +30,7 @@ its dual, whose completed function is the reflection of the original one.
   function.
 * `TauCeti.divisor_conj_conj`: reflection carries the divisor on `U` to the divisor on the
   reflected domain `conj ⁻¹' U`, at the reflected point.
+* `TauCeti.divisor_conj_conj_univ`: the whole-plane case, as a simp lemma.
 -/
 
 public section
@@ -97,7 +98,6 @@ theorem TauCeti.meromorphicOrderAt_conj_conj :
 /-- Reflection across the real axis moves the divisor: the divisor of `conj ∘ f ∘ conj` on the
 reflected domain `conj ⁻¹' U` at `x` is the divisor of `f` on `U` at `conj x`. No meromorphy is
 assumed, since both divisors vanish identically when `f` is not meromorphic on `U`. -/
-@[simp]
 theorem TauCeti.divisor_conj_conj (U : Set ℂ) (x : ℂ) :
     MeromorphicOn.divisor (conj ∘ f ∘ conj) (conj ⁻¹' U) x =
       MeromorphicOn.divisor f U (conj x) := by
@@ -106,3 +106,11 @@ theorem TauCeti.divisor_conj_conj (U : Set ℂ) (x : ℂ) :
       fun hf z hz ↦ meromorphicAt_conj_conj_iff.2 (hf _ hz)⟩
   rw [MeromorphicOn.divisor_def, MeromorphicOn.divisor_def, hU, meromorphicOrderAt_conj_conj,
     Set.mem_preimage]
+
+/-- Reflection across the real axis moves the divisor on the whole plane: the divisor of
+`conj ∘ f ∘ conj` at `x` is the divisor of `f` at `conj x`. -/
+@[simp]
+theorem TauCeti.divisor_conj_conj_univ (x : ℂ) :
+    MeromorphicOn.divisor (conj ∘ f ∘ conj) Set.univ x =
+      MeromorphicOn.divisor f Set.univ (conj x) := by
+  rw [← TauCeti.divisor_conj_conj, Set.preimage_univ]

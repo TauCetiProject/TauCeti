@@ -165,13 +165,13 @@ has at `conj s`. -/
 theorem divisor_dual_completed (s : ℂ) :
     MeromorphicOn.divisor d.dual.completed univ s =
       MeromorphicOn.divisor d.completed univ (conj s) := by
-  rw [dual_completed, ← divisor_conj_conj, preimage_univ]
+  rw [dual_completed, divisor_conj_conj_univ]
 
 /-- The zero count of the dual card over a region is the zero count of the card over the
 reflected region. -/
 theorem zeroCount_dual_completed (R : Set ℂ) :
     zeroCount d.dual.completed univ R = zeroCount d.completed univ (conj ⁻¹' R) := by
-  rw [dual_completed, ← zeroCount_conj_conj, preimage_univ]
+  rw [dual_completed, zeroCount_conj_conj_univ]
 
 /-- **The dual card counts the zeros below the real axis.** The one-sided count of the dual card
 at height `T` is the number of zeros of the completed function in `0 ≤ Re s ≤ 1`,

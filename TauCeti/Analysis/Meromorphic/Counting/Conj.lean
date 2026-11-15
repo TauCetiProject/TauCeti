@@ -23,6 +23,8 @@ one.
 ## Main results
 
 * `TauCeti.divisorCount_conj_conj`, `TauCeti.zeroCount_conj_conj`: reflection of the two counts.
+* `TauCeti.divisorCount_conj_conj_univ`, `TauCeti.zeroCount_conj_conj_univ`: the whole-plane
+  cases, as simp lemmas.
 -/
 
 public section
@@ -50,5 +52,19 @@ theorem zeroCount_conj_conj (f : ℂ → ℂ) (U R : Set ℂ) :
   refine (finsum_mem_eq_of_bijOn conj
     ((Function.Involutive.bijective Complex.conj_conj).bijOn_preimage (t := R)) fun z _ ↦ ?_).symm
   rw [divisor_conj_conj, Complex.conj_conj]
+
+/-- **Reflection of the signed count on the whole plane.** The signed count of `conj ∘ f ∘ conj`
+over `R` is the signed count of `f` over the reflected region `conj ⁻¹' R`. -/
+@[simp]
+theorem divisorCount_conj_conj_univ (f : ℂ → ℂ) (R : Set ℂ) :
+    divisorCount (conj ∘ f ∘ conj) univ R = divisorCount f univ (conj ⁻¹' R) := by
+  rw [← divisorCount_conj_conj, preimage_univ]
+
+/-- **Reflection of the zero count on the whole plane.** The zero count of `conj ∘ f ∘ conj` over
+`R` is the zero count of `f` over the reflected region `conj ⁻¹' R`. -/
+@[simp]
+theorem zeroCount_conj_conj_univ (f : ℂ → ℂ) (R : Set ℂ) :
+    zeroCount (conj ∘ f ∘ conj) univ R = zeroCount f univ (conj ⁻¹' R) := by
+  rw [← zeroCount_conj_conj, preimage_univ]
 
 end TauCeti
