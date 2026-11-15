@@ -9,28 +9,33 @@ public import Mathlib.RingTheory.AdicCompletion.Basic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LocalRing
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Analytic.Order
+import Mathlib.RingTheory.AdicCompletion.Topology
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Analytic.Uniqueness
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Germ
+import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 import TauCeti.Geometry.Manifold.ContMDiff.Analytic
 
 /-!
 # Maximal-ideal separatedness of holomorphic stalks
 
-Let `X` be a complex analytic manifold modelled without boundary on a complex normed space `E`.
-This file proves that the stalk `(holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x` is
+Let `X` be a complex analytic manifold modelled without boundary directly on a complex normed space
+`E`. This file proves that the stalk `(holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x` is
 separated (`IsHausdorff`) with respect to its maximal ideal: a holomorphic germ lying in every
-power of the maximal ideal is zero.
+power of the maximal ideal is zero. When `E` is finite-dimensional, transporting along an extended
+chart extends separatedness to any finite-dimensional boundaryless complex manifold modelled on an
+arbitrary `ModelWithCorners ℂ E H`.
 
-The argument requires neither finite-dimensionality of `E` nor Noetherianity of the stalk (so
-Krull's intersection theorem is not needed). If a germ `s` lies in `𝔪_x ^ n`, restricting any local
-representative of `s` read in a holomorphic chart `e` to any complex line `z ↦ e x + z • v`
-through `e x` produces a one-variable holomorphic function vanishing to order at least `n` at
-`0`. Lying in `𝔪_x ^ n` for every `n` therefore forces infinite analytic order at `0` along every
-complex line, hence vanishing near `e x` by one-variable analytic continuation along radial discs
-(`AnalyticAt.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul`). (For complex curves
-`E = ℂ`, `TauCeti.Geometry.Manifold.Complex.StructureSheaf.Order` obtains separatedness from local
-coordinate division instead.)
+The argument requires neither finite-dimensionality of `E` (for `𝓘(ℂ, E)`) nor Noetherianity of the
+stalk (so Krull's intersection theorem is not needed). If a germ `s` lies in `𝔪_x ^ n`, restricting
+any local representative of `s` read in a holomorphic chart `e` to any complex line
+`z ↦ e x + z • v` through `e x` produces a one-variable holomorphic function vanishing to order at
+least `n` at `0`. Lying in `𝔪_x ^ n` for every `n` therefore forces infinite analytic order at `0`
+along every complex line, hence vanishing near `e x` by one-variable analytic continuation along
+radial discs (`AnalyticAt.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul`). (For
+complex curves `E = ℂ`, `TauCeti.Geometry.Manifold.Complex.StructureSheaf.Order` obtains
+separatedness from local coordinate division instead.)
 
 ## Main results
 
@@ -43,8 +48,8 @@ coordinate division instead.)
   instance on stalks of any complex analytic manifold `[IsManifold 𝓘(ℂ, E) ω X]`, with no
   finite-dimensionality assumption on `E`.
 * `TauCeti.holomorphicStructureSheaf.instIsHausdorffMaximalIdealStalk`: `IsHausdorff` instance on
-  stalks of any finite-dimensional complex manifold
-  `[FiniteDimensional ℂ E] [IsManifold 𝓘(ℂ, E) 1 X]`.
+  stalks of any finite-dimensional boundaryless complex manifold
+  `[FiniteDimensional ℂ E] [I.Boundaryless] [IsManifold I 1 X]`.
 
 ## References
 
@@ -189,25 +194,31 @@ end Omega
 section FiniteDimensional
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  {X : Type} [TopologicalSpace X] [ChartedSpace E X] [IsManifold 𝓘(ℂ, E) 1 X]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
+  {X : Type} [TopologicalSpace X] [ChartedSpace H X] [IsManifold I 1 X]
 
-/-- On a finite-dimensional complex manifold, the powers of the maximal ideal of any holomorphic
-stalk have trivial intersection. -/
-theorem iInf_pow_maximalIdeal_stalk_eq_bot (x : X) :
-    (⨅ n : ℕ,
-      IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x) ^ n) =
-      ⊥ := by
-  let : IsManifold 𝓘(ℂ, E) ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  exact iInf_pow_maximalIdeal_stalk_eq_bot_of_omega x
-
-/-- On a finite-dimensional complex manifold, every holomorphic stalk is Hausdorff with respect to
-its maximal ideal. -/
+/-- On a finite-dimensional boundaryless complex manifold, every holomorphic stalk is Hausdorff with
+respect to its maximal ideal. -/
 instance instIsHausdorffMaximalIdealStalk (x : X) :
     IsHausdorff
-      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x))
-      ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x) := by
-  let : IsManifold 𝓘(ℂ, E) ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  infer_instance
+      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x))
+      ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
+  have : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+  let V : Type := Fin (Module.finrank ℂ E) → ℂ
+  let L : E ≃L[ℂ] V := LinearEquiv.toContinuousLinearEquiv (Module.finBasis ℂ E).equivFun
+  let eqv := RingEquiv.ofBijective _ (stalkPullback_comp_extChartAt_bijective (I := I) x L)
+  rw [← IsLocalRing.map_ringEquiv_maximalIdeal eqv]
+  exact (IsHausdorff.congr_ringEquiv _ eqv).2 inferInstance
+
+/-- On a finite-dimensional boundaryless complex manifold, the powers of the maximal ideal of any
+holomorphic stalk have trivial intersection. -/
+theorem iInf_pow_maximalIdeal_stalk_eq_bot (x : X) :
+    (⨅ n : ℕ,
+      IsLocalRing.maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x) ^ n) =
+      ⊥ := by
+  refine eq_bot_iff.2 fun s hs ↦ Ideal.mem_bot.2 <|
+    IsHausdorff.haus (instIsHausdorffMaximalIdealStalk x) s fun n ↦ ?_
+  simpa [smul_eq_mul, Ideal.mul_top, SModEq.zero] using Ideal.mem_iInf.1 hs n
 
 end FiniteDimensional
 

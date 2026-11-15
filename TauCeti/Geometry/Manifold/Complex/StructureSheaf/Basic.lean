@@ -158,6 +158,15 @@ theorem map_apply {U V : (Opens (TopCat.of X))ᵒᵖ} (h : U ⟶ V)
 theorem algebraMap_apply (U : (Opens (TopCat.of X))ᵒᵖ) (c : ℂ) (x : ↥(unop U)) :
     algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj U) c x = c := (rfl)
 
+/-- Restriction along open inclusions in `holomorphicStructureSheaf` preserves complex scalar
+sections. -/
+@[simp]
+theorem presheaf_map_algebraMap {U V : Opens X} (h : U ⟶ V) (c : ℂ) :
+    ((holomorphicStructureSheaf I X).presheaf.map h.op).hom
+      (algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op V)) c) =
+      algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op U)) c :=
+  ext fun _ ↦ by simp
+
 variable (I) in
 /-- Restriction of holomorphic sections along an inclusion `V ≤ U` of open subsets, bundled as a
 `ℂ`-algebra homomorphism. -/
@@ -308,6 +317,12 @@ theorem eval_germ (U : Opens X) (x : X) (hx : x ∈ U)
   unfold eval
   exact evalHom_germ I X U x hx f)
 
+variable {I X} in
+/-- The `CommRingCat` evaluation morphism `evalHom` acts on germs by `eval`. -/
+@[simp]
+theorem evalHom_hom_apply (x : X) (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    (evalHom I X x).hom s = eval I X x s := (rfl)
+
 /-- Every complex number is the value of a constant holomorphic germ. -/
 theorem eval_surjective (x : X) : Function.Surjective (eval I X x) := by
   intro c
@@ -343,6 +358,15 @@ theorem precomp_apply (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒ�
     toFun I X (no_index (op (α := Opens X)
       ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))))
       (no_index (precomp I X f hf U g)) x = toFun J Y U g ⟨f x.1, x.2⟩ := (rfl)
+
+variable {I X} in
+/-- Precomposition on sections along a complex analytic map preserves complex scalar sections. -/
+@[simp]
+theorem precomp_algebraMap (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ) (c : ℂ) :
+    precomp I X f hf U (algebraMap ℂ ((holomorphicStructureSheaf J Y).obj.obj U) c) =
+      algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj
+        ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).op.obj U)) c :=
+  ext fun _ ↦ by simp
 
 /-- A complex analytic map induces a morphism `𝒪_Y ⟶ f_*𝒪_X` by precomposition. -/
 def homOfContMDiff (f : X → Y) (hf : ContMDiff I J ω f) :
