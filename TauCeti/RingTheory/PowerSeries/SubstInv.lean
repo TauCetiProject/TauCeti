@@ -34,6 +34,8 @@ form used to change formal parameters.
 * `PowerSeries.map_substInvOfIsUnit`: coefficient maps commute with the explicit construction
   `substInvOfIsUnit` for any series with a unit linear coefficient; it is a compositional inverse
   when the constant coefficient is zero.
+* `PowerSeries.substInvOfIsUnit_congr`: equal power series with unit linear coefficients have equal
+  `substInvOfIsUnit`, regardless of the unit proofs.
 -/
 
 public section
@@ -41,6 +43,13 @@ public section
 namespace PowerSeries
 
 variable {R : Type*} [CommRing R]
+
+/-- Equal power series with unit linear coefficients have equal `substInvOfIsUnit`, regardless of
+the unit proofs. -/
+theorem substInvOfIsUnit_congr {P Q : R⟦X⟧} {hP : IsUnit (coeff 1 P)} {hQ : IsUnit (coeff 1 Q)}
+    (h : P = Q) : P.substInvOfIsUnit hP = Q.substInvOfIsUnit hQ := by
+  cases h
+  rfl
 
 /-- A power series `Q` with nilpotent constant coefficient that has a left inverse `P` for
 substitution, `P(Q) = X`, has a unit of `R` as its linear coefficient. -/

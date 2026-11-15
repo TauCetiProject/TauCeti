@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.FreeProbability.Cumulant.BoxedConvolution.Associative
+public import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
 # The boxed-convolution monoid of formal power series
@@ -25,10 +26,10 @@ Both standard constant-coefficient conventions sit compatibly inside this monoid
 * on series with zero constant coefficient (Nica and Speicher's convention `∑_{n ≥ 1} aₙ Xⁿ`),
   `X` acts as a two-sided identity (`PowerSeries.boxedConvolution_X_of_constantCoeff_eq_zero`).
 
-Iterating `IsFreelyIndependent.freeCumulantSeries_mul` along
-`IsFreelyIndependent.biSup_of_pairwise_disjoint` expresses the free cumulant series of a product of
-variables from pairwise distinct members of a freely independent family (over any semiring `A`) as
-the product in `BoxedConvolution R` of their individual free cumulant series.
+Iterating `IsFreelyIndependentElements.freeCumulantSeries_mul` along
+`IsFreelyIndependent.isFreelyIndependentElements_cond_list_prod` expresses the free cumulant series
+of a product of variables from pairwise distinct members of a freely independent family (over any
+semiring `A`) as the product in `BoxedConvolution R` of their individual free cumulant series.
 
 ## Main definitions
 
@@ -36,8 +37,8 @@ the product in `BoxedConvolution R` of their individual free cumulant series.
   convolution and whose identity is `1 + X`.
 * `TauCeti.BoxedConvolution.constantCoeffHom`, `TauCeti.BoxedConvolution.coeffOneHom`:
   the constant and linear coefficients as monoid homomorphisms `BoxedConvolution R →* R`.
-* `TauCeti.BoxedConvolution.map`: base change `BoxedConvolution R →* BoxedConvolution S`
-  along a ring homomorphism `R →+* S`.
+* `TauCeti.BoxedConvolution.map`, `TauCeti.BoxedConvolution.mapNormalized`: base change on
+  `BoxedConvolution R` and `normalizedSubmonoid R` along a ring homomorphism `R →+* S`.
 * `TauCeti.BoxedConvolution.normalizedSubmonoid R`: the submonoid of series with constant
   coefficient `1`.
 
@@ -208,6 +209,26 @@ theorem map_comp_apply {S T : Type*} [CommSemiring S] [CommSemiring T] (f : R �
     map (g.comp f) x = map g (map f x) :=
   DFunLike.congr_fun (map_comp f g) x
 
+@[simp]
+theorem constantCoeffHom_comp_map {S : Type*} [CommSemiring S] (f : R →+* S) :
+    constantCoeffHom.comp (map f) = (f : R →* S).comp constantCoeffHom :=
+  MonoidHom.ext fun _ => by simp
+
+theorem constantCoeffHom_map {S : Type*} [CommSemiring S] (f : R →+* S)
+    (x : BoxedConvolution R) :
+    constantCoeffHom (map f x) = f (constantCoeffHom x) := by
+  simp
+
+@[simp]
+theorem coeffOneHom_comp_map {S : Type*} [CommSemiring S] (f : R →+* S) :
+    coeffOneHom.comp (map f) = (f : R →* S).comp coeffOneHom :=
+  MonoidHom.ext fun _ => by simp
+
+theorem coeffOneHom_map {S : Type*} [CommSemiring S] (f : R →+* S)
+    (x : BoxedConvolution R) :
+    coeffOneHom (map f x) = f (coeffOneHom x) := by
+  simp
+
 variable (R) in
 /-- The submonoid of `BoxedConvolution R` consisting of normalised series `1 + ∑_{n ≥ 1} aₙ Xⁿ`,
 those with constant coefficient `1`. -/
@@ -218,6 +239,46 @@ noncomputable def normalizedSubmonoid : Submonoid (BoxedConvolution R) :=
 theorem mem_normalizedSubmonoid_iff {x : BoxedConvolution R} :
     x ∈ normalizedSubmonoid R ↔ constantCoeff x.ofBoxed = 1 :=
   Iff.rfl
+
+/-- Base change preserves the normalised boxed-convolution submonoid. -/
+theorem map_mem_normalizedSubmonoid {S : Type*} [CommSemiring S] (f : R →+* S)
+    {x : BoxedConvolution R} (hx : x ∈ normalizedSubmonoid R) :
+    map f x ∈ normalizedSubmonoid S := by
+  simpa using congrArg f (mem_normalizedSubmonoid_iff.mp hx)
+
+/-- Base change on the normalised boxed-convolution submonoid along a ring homomorphism
+`f : R →+* S`. -/
+noncomputable def mapNormalized {S : Type*} [CommSemiring S] (f : R →+* S) :
+    normalizedSubmonoid R →* normalizedSubmonoid S where
+  toFun x := ⟨map f x.1, map_mem_normalizedSubmonoid f x.2⟩
+  map_one' := Subtype.ext (map_one (map f))
+  map_mul' x y := Subtype.ext (map_mul (map f) x.1 y.1)
+
+@[simp]
+theorem coe_mapNormalized {S : Type*} [CommSemiring S] (f : R →+* S)
+    (x : normalizedSubmonoid R) :
+    ((mapNormalized f x : normalizedSubmonoid S) : BoxedConvolution S) = map f x := (rfl)
+
+@[simp]
+theorem subtype_comp_mapNormalized {S : Type*} [CommSemiring S] (f : R →+* S) :
+    (normalizedSubmonoid S).subtype.comp (mapNormalized f) =
+      (map f).comp (normalizedSubmonoid R).subtype :=
+  MonoidHom.ext fun _ => rfl
+
+@[simp]
+theorem mapNormalized_id :
+    mapNormalized (RingHom.id R) = MonoidHom.id (normalizedSubmonoid R) :=
+  MonoidHom.ext fun x => Subtype.ext <| by simp
+
+theorem mapNormalized_comp {S T : Type*} [CommSemiring S] [CommSemiring T]
+    (f : R →+* S) (g : S →+* T) :
+    mapNormalized (g.comp f) = (mapNormalized g).comp (mapNormalized f) :=
+  MonoidHom.ext fun x => Subtype.ext <| by simp [map_comp_apply]
+
+theorem mapNormalized_comp_apply {S T : Type*} [CommSemiring S] [CommSemiring T]
+    (f : R →+* S) (g : S →+* T) (x : normalizedSubmonoid R) :
+    mapNormalized (g.comp f) x = mapNormalized g (mapNormalized f x) :=
+  DFunLike.congr_fun (mapNormalized_comp f g) x
 
 end CommSemiring
 
@@ -273,20 +334,13 @@ theorem IsFreelyIndependent.toBoxed_freeCumulantSeries_list_prod {B : ι → Sub
   | nil => simp [toBoxed_freeCumulantSeries_one hφ]
   | cons p l ih =>
     rw [List.map_cons, List.nodup_cons] at hnodup
-    let S : Bool → Set ι := fun b => if b then {p.1} else {j | j ∈ l.map Prod.fst}
-    have hB := h.biSup_of_pairwise_disjoint (S := S) hφ fun b₁ b₂ hb => by
-      cases b₁ <;> cases b₂ <;> simp_all [S, Function.onFun]
-    have hp : p.2 ∈ ⨆ i ∈ S true, B i :=
-      (le_iSup₂ (f := fun i (_ : i ∈ S true) => B i) p.1 rfl) (hl p List.mem_cons_self)
-    have htail : (l.map Prod.snd).prod ∈ ⨆ i ∈ S false, B i :=
-      Subalgebra.list_prod_mem _ fun _ ha => by
-        obtain ⟨q, hq, rfl⟩ := List.mem_map.mp ha
-        have hqS : q.1 ∈ S false := List.mem_map.mpr ⟨q, hq, rfl⟩
-        exact (le_iSup₂ (f := fun i (_ : i ∈ S false) => B i) q.1 hqS)
-          (hl q (List.mem_cons_of_mem p hq))
-    have hmul := hB.freeCumulantSeries_mul hφ (i := true) (j := false) (by decide) hp htail
+    have hl' : ∀ q ∈ l, q.2 ∈ B q.1 := fun q hq => hl q (List.mem_cons_of_mem p hq)
+    have hmul := (h.isFreelyIndependentElements_cond_list_prod hφ hnodup.1
+      (hl p List.mem_cons_self) hl').freeCumulantSeries_mul hφ (i := true) (j := false)
+      (by decide)
+    simp only [Bool.cond_true, Bool.cond_false] at hmul
     simp only [List.map_cons, List.prod_cons]
-    rw [hmul, toBoxed_boxedConvolution, ih hnodup.2 fun q hq => hl q (List.mem_cons_of_mem p hq)]
+    rw [hmul, toBoxed_boxedConvolution, ih hnodup.2 hl']
 
 /-- *Free cumulants of a finite product of free elements*: for a duplicate-free list `l` of
 indices of a freely independent family `c` under a normalised `φ`, the free cumulant series of

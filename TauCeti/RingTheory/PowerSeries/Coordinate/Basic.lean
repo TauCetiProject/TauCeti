@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Opposite
 public import Mathlib.Data.PNat.Defs
 public import Mathlib.RingTheory.PowerSeries.Substitution
+public import TauCeti.RingTheory.PowerSeries.Basic
 import Mathlib.RingTheory.PowerSeries.Inverse
 import TauCeti.Algebra.Ring.GeomSum
 import TauCeti.RingTheory.PowerSeries.SubstInv
@@ -558,10 +559,27 @@ theorem unitsEquiv_homothety_mul (u : Rˣ) (φ : FormalCoordinate R) :
   rw [X_mul_val_unitsEquiv, toPowerSeries_homothety_mul]
   simp [Algebra.smul_def, mul_left_comm X]
 
+/-- Right-multiplying a formal coordinate by `homothety u` rescales `φ.unitsEquiv` by `u` and
+multiplies by `C u`. -/
+theorem unitsEquiv_mul_homothety (φ : FormalCoordinate R) (u : Rˣ) :
+    (φ * homothety u).unitsEquiv =
+      Units.map ↑(C (R := R)) u * Units.map ↑(rescale (u : R)) φ.unitsEquiv := by
+  apply Units.ext
+  apply X_mul_injective
+  dsimp only
+  rw [X_mul_val_unitsEquiv, toPowerSeries_mul_homothety, ← X_mul_val_unitsEquiv φ, map_mul,
+    rescale_X]
+  simp [mul_left_comm X, mul_assoc]
+
 @[simp]
 theorem map_unitsEquiv {S : Type*} [CommRing S] (f : R →+* S) (φ : FormalCoordinate R) :
     Units.map ↑(PowerSeries.map f) φ.unitsEquiv = (map f φ).unitsEquiv :=
   Units.ext <| PowerSeries.ext fun n ↦ by simp
+
+@[simp]
+theorem map_unitsEquiv_symm {S : Type*} [CommRing S] (f : R →+* S) (u : R⟦X⟧ˣ) :
+    map f (unitsEquiv.symm u) = unitsEquiv.symm (Units.map ↑(PowerSeries.map f) u) :=
+  FormalCoordinate.ext <| by simp
 
 end UnitsEquiv
 
@@ -637,6 +655,19 @@ theorem linearCoeff_toFormalCoordinate (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) 
     (f.toFormalCoordinate hf).linearCoeff = hf.unit :=
   Units.ext <| by simp
 
+@[simp]
+theorem toFormalCoordinate_toPowerSeries (φ : FormalCoordinate R) :
+    φ.toPowerSeries.toFormalCoordinate φ.isUnit_coeff_one = φ :=
+  FormalCoordinate.ext <| by simp
+
+@[simp]
+theorem toFormalCoordinate_X : (X : R⟦X⟧).toFormalCoordinate (by simp) = 1 :=
+  FormalCoordinate.ext <| by simp
+
+@[simp]
+theorem toFormalCoordinate_one_add_X : (1 + X : R⟦X⟧).toFormalCoordinate (by simp) = 1 :=
+  FormalCoordinate.ext <| by simp
+
 /-- `toFormalCoordinate` depends only on the positive-degree coefficients of `f`. -/
 theorem toFormalCoordinate_congr {f g : R⟦X⟧} (hf : IsUnit (coeff 1 f)) (hg : IsUnit (coeff 1 g))
     (h : ∀ k, k ≠ 0 → coeff k f = coeff k g) :
@@ -646,16 +677,31 @@ theorem toFormalCoordinate_congr {f g : R⟦X⟧} (hf : IsUnit (coeff 1 f)) (hg 
     · simp [coeff_zero_eq_constantCoeff_apply]
     · simp [coeff_C, hn, h n hn]
 
+/-- Adding a constant series on the left leaves `toFormalCoordinate` unchanged. -/
+@[simp]
+theorem toFormalCoordinate_C_add (c : R) (f : R⟦X⟧) (hf : IsUnit (coeff 1 (C c + f))) :
+    (C c + f).toFormalCoordinate hf = f.toFormalCoordinate (by simpa [coeff_C] using hf) :=
+  toFormalCoordinate_congr _ _ fun k hk ↦ by simp [coeff_C, hk]
+
+/-- Adding a constant series on the right leaves `toFormalCoordinate` unchanged. -/
+@[simp]
+theorem toFormalCoordinate_add_C (f : R⟦X⟧) (c : R) (hf : IsUnit (coeff 1 (f + C c))) :
+    (f + C c).toFormalCoordinate hf = f.toFormalCoordinate (by simpa [coeff_C] using hf) :=
+  toFormalCoordinate_congr _ _ fun k hk ↦ by simp [coeff_C, hk]
+
+/-- Subtracting a constant series leaves `toFormalCoordinate` unchanged. -/
+@[simp]
+theorem toFormalCoordinate_sub_C (f : R⟦X⟧) (c : R) (hf : IsUnit (coeff 1 (f - C c))) :
+    (f - C c).toFormalCoordinate hf = f.toFormalCoordinate (by simpa [coeff_C] using hf) :=
+  toFormalCoordinate_congr _ _ fun k hk ↦ by simp [coeff_C, hk]
+
 /-- Base change of `toFormalCoordinate` along a ring homomorphism `α : R →+* S`. -/
 @[simp]
 theorem map_toFormalCoordinate {S : Type*} [CommRing S] (α : R →+* S) (f : R⟦X⟧)
     (hf : IsUnit (coeff 1 f)) :
     FormalCoordinate.map α (f.toFormalCoordinate hf) =
       (map α f).toFormalCoordinate (by simpa using hf.map α) :=
-  FormalCoordinate.ext <| PowerSeries.ext fun n ↦ by
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp [← coeff_zero_eq_constantCoeff_apply (map α f), coeff_map]
-    · simp [coeff_C, hn]
+  FormalCoordinate.ext <| by simp
 
 /-- Rescaling `f` by a unit `c` right-multiplies `f.toFormalCoordinate` by `homothety c`. -/
 theorem toFormalCoordinate_rescale {c : R} (hc : IsUnit c) (f : R⟦X⟧) (hf : IsUnit (coeff 1 f)) :
