@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Group.Int
-public import Mathlib.Basic.Countable.Defs
-public import TauCeti.Algebra.Order.Group.DimensionGroup.Basic
+public import TauCeti.Algebra.Order.Group.DimensionGroup.SimplicialPresentation
 
 import Mathlib.Algebra.Order.Group.Basic
 import Mathlib.Basic.Countable.Basic
@@ -21,9 +19,9 @@ import Mathlib.Tactic.Abel
 A countable partially ordered abelian group is a dimension group if and only if it admits a
 sequential positive inductive presentation by simplicial groups `(ℤ^{rₙ}, ℕ^{rₙ})`.
 
-The converse direction transfers directedness, unperforation, and Riesz interpolation from the
-simplicial stages `Fin (rank n) → ℤ` to the inductive limit `G` using eventual vanishing of
-elements mapping to `0` and positive exhaustion of `G⁺`.
+The converse direction (`SimplicialPresentation.isDimensionGroup`, `.countable`) is established in
+`TauCeti.Algebra.Order.Group.DimensionGroup.SimplicialPresentation`. This file proves the forward
+direction and the equivalence `effros_handelman_shen`.
 
 The forward direction rests on **Shen's triangle lemma**
 (`TauCeti.exists_monotone_factorization_of_map_eq_zero`): given an unperforated partially ordered
@@ -32,18 +30,8 @@ abelian group `G` with Riesz interpolation, a monotone homomorphism `f : (Fin r 
 `α` and `β` monotone and `α x = 0`. Iterating over finite subsets of `ker f` while adjoining
 elements of a countable exhaustion of `G⁺` builds a `SimplicialPresentation G`.
 
-## Main definitions
-
-* `TauCeti.bondIter` : Composite bonding homomorphism from stage `n` to stage `n + k` in a
-  sequential system of simplicial groups.
-* `TauCeti.SimplicialPresentation G` : Presentation of a partially ordered abelian group `G` as a
-  sequential positive inductive limit of simplicial groups `Fin (rank n) → ℤ`.
-
 ## Main results
 
-* `TauCeti.SimplicialPresentation.isDimensionGroup` and
-  `TauCeti.SimplicialPresentation.countable` : Any partially ordered abelian group admitting a
-  `SimplicialPresentation` is a countable dimension group.
 * `TauCeti.exists_monotone_factorization_of_map_eq_zero` and
   `TauCeti.exists_monotone_factorization_finset` : Shen's triangle lemma for single elements and
   finite subsets of the kernel of a positive map from `Fin r → ℤ`.
@@ -66,265 +54,6 @@ elements of a countable exhaustion of `G⁺` builds a `SimplicialPresentation G`
 public section
 
 namespace TauCeti
-
-section Presentation
-
-/-- The composite of the bonding maps of a sequential system of simplicial groups from stage
-`n` to stage `n + k`. -/
-def bondIter {rank : ℕ → ℕ}
-    (bond : ∀ n, (Fin (rank n) → ℤ) →+ (Fin (rank (n + 1)) → ℤ)) (n : ℕ) :
-    ∀ k : ℕ, (Fin (rank n) → ℤ) →+ (Fin (rank (n + k)) → ℤ)
-  | 0 => AddMonoidHom.id _
-  | k + 1 => (bond (n + k)).comp (bondIter bond n k)
-
-/-- Zero steps of `bondIter` is the identity homomorphism. -/
-@[simp]
-theorem bondIter_zero {rank : ℕ → ℕ}
-    (bond : ∀ n, (Fin (rank n) → ℤ) →+ (Fin (rank (n + 1)) → ℤ)) (n : ℕ) :
-    bondIter bond n 0 = AddMonoidHom.id _ :=
-  (rfl)
-
-/-- `k + 1` steps of `bondIter` composes the `k`-step iterate with `bond (n + k)`. -/
-@[simp]
-theorem bondIter_succ {rank : ℕ → ℕ}
-    (bond : ∀ n, (Fin (rank n) → ℤ) →+ (Fin (rank (n + 1)) → ℤ)) (n k : ℕ) :
-    bondIter bond n (k + 1) = (bond (n + k)).comp (bondIter bond n k) :=
-  (rfl)
-
-/-- If every bonding map is monotone, so is every composite `bondIter bond n k`. -/
-theorem bondIter_mono {rank : ℕ → ℕ}
-    {bond : ∀ n, (Fin (rank n) → ℤ) →+ (Fin (rank (n + 1)) → ℤ)}
-    (hbond : ∀ n, Monotone (bond n)) (n k : ℕ) :
-    Monotone (bondIter bond n k) := by
-  induction k with
-  | zero => exact monotone_id
-  | succ k ih => exact (hbond (n + k)).comp ih
-
-/-- Iterating `bond` for `d + l` steps from stage `n` agrees with iterating `d` steps from
-stage `n` and then `l` steps from stage `n + d`, up to `Fin.cast` along `Nat.add_assoc`. -/
-theorem bondIter_add_apply {rank : ℕ → ℕ}
-    (bond : ∀ n, (Fin (rank n) → ℤ) →+ (Fin (rank (n + 1)) → ℤ))
-    (n d l : ℕ) (u : Fin (rank n) → ℤ) :
-    bondIter bond n (d + l) u =
-      bondIter bond (n + d) l (bondIter bond n d u) ∘
-        Fin.cast (congrArg rank (Nat.add_assoc n d l).symm) := by
-  have hstep : ∀ {a b : ℕ} (hab : a = b) (v : Fin (rank a) → ℤ),
-      bond b (v ∘ Fin.cast (congrArg rank hab.symm)) =
-        bond a v ∘ Fin.cast (congrArg rank (congrArg (· + 1) hab).symm) := by
-    rintro a _ rfl v
-    rfl
-  induction l with
-  | zero => simp [AddMonoidHom.id_apply]
-  | succ l ih =>
-    simp only [Nat.add_succ, bondIter_succ, AddMonoidHom.comp_apply, ih]
-    exact hstep (Nat.add_assoc n d l) _
-
-/-- An inequality between `k`-step iterates of monotone bonding maps persists at every later stage
-`K ≥ k`. -/
-theorem bondIter_le_of_le {rank : ℕ → ℕ}
-    {bond : ∀ n, (Fin (rank n) → ℤ) →+ (Fin (rank (n + 1)) → ℤ)}
-    (hbond : ∀ n, Monotone (bond n)) (n : ℕ) {k K : ℕ} (hkK : k ≤ K)
-    {x y : Fin (rank n) → ℤ}
-    (hxy : bondIter bond n k x ≤ bondIter bond n k y) :
-    bondIter bond n K x ≤ bondIter bond n K y := by
-  induction K, hkK using Nat.le_induction with
-  | base => exact hxy
-  | succ K _ ih =>
-    rw [bondIter_succ, AddMonoidHom.comp_apply, AddMonoidHom.comp_apply]
-    exact hbond (n + K) ih
-
-/-- A presentation of a partially ordered abelian group `G` as the sequential positive
-inductive limit of simplicial groups `(ℤ^{rₙ}, ℕ^{rₙ})`: positive bonding maps (not required to
-be injective), compatible positive maps into `G` whose images exhaust `G` and whose images of
-the positive cones exhaust `G⁺`, and whose kernels are the eventual kernels of the system. -/
-structure SimplicialPresentation (G : Type*) [AddCommGroup G] [PartialOrder G]
-    [IsOrderedAddMonoid G] where
-  /-- The rank of the simplicial group at stage `n`. -/
-  rank : ℕ → ℕ
-  /-- The bonding map from stage `n` to stage `n + 1`. -/
-  bond : ∀ n, (Fin (rank n) → ℤ) →+ (Fin (rank (n + 1)) → ℤ)
-  bond_mono : ∀ n, Monotone (bond n)
-  /-- The map from stage `n` to the limit `G`. -/
-  toLimit : ∀ n, (Fin (rank n) → ℤ) →+ G
-  toLimit_mono : ∀ n, Monotone (toLimit n)
-  toLimit_comp_bond : ∀ n, (toLimit (n + 1)).comp (bond n) = toLimit n
-  exhausts : ∀ g : G, ∃ n x, toLimit n x = g
-  exhausts_pos : ∀ g : G, 0 ≤ g → ∃ n x, 0 ≤ x ∧ toLimit n x = g
-  eventually_zero : ∀ n x, toLimit n x = 0 → ∃ k, bondIter bond n k x = 0
-
-namespace SimplicialPresentation
-
-variable {G : Type*} [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
-
-/-- Applying `bond n` followed by `toLimit (n + 1)` recovers `toLimit n`. -/
-@[simp]
-theorem toLimit_bond_apply (P : SimplicialPresentation G) (n : ℕ)
-    (x : Fin (P.rank n) → ℤ) :
-    P.toLimit (n + 1) (P.bond n x) = P.toLimit n x :=
-  DFunLike.congr_fun (P.toLimit_comp_bond n) x
-
-/-- Every composite bonding map of a `SimplicialPresentation` is monotone. -/
-theorem bondIter_mono (P : SimplicialPresentation G) (n k : ℕ) :
-    Monotone (bondIter P.bond n k) :=
-  TauCeti.bondIter_mono P.bond_mono n k
-
-/-- An inequality between `k`-step iterates of `P.bond` persists at every stage `K ≥ k`. -/
-theorem bondIter_le_of_le (P : SimplicialPresentation G) (n : ℕ) {k K : ℕ} (hkK : k ≤ K)
-    {x y : Fin (P.rank n) → ℤ}
-    (hxy : bondIter P.bond n k x ≤ bondIter P.bond n k y) :
-    bondIter P.bond n K x ≤ bondIter P.bond n K y :=
-  TauCeti.bondIter_le_of_le P.bond_mono n hkK hxy
-
-/-- Composing `toLimit (n + k)` with `bondIter P.bond n k` recovers `toLimit n`. -/
-@[simp]
-theorem toLimit_comp_bondIter (P : SimplicialPresentation G) (n k : ℕ) :
-    (P.toLimit (n + k)).comp (bondIter P.bond n k) = P.toLimit n := by
-  induction k with
-  | zero => exact AddMonoidHom.comp_id (P.toLimit n)
-  | succ k ih =>
-    rw [bondIter_succ, ← AddMonoidHom.comp_assoc]
-    exact (congrArg (·.comp (bondIter P.bond n k)) (P.toLimit_comp_bond (n + k))).trans ih
-
-/-- Applying `bondIter P.bond n k` followed by `toLimit (n + k)` recovers `toLimit n`. -/
-@[simp]
-theorem toLimit_bondIter_apply (P : SimplicialPresentation G) (n k : ℕ)
-    (x : Fin (P.rank n) → ℤ) :
-    P.toLimit (n + k) (bondIter P.bond n k x) = P.toLimit n x :=
-  DFunLike.congr_fun (P.toLimit_comp_bondIter n k) x
-
-/-- Any element represented at stage `m` is also represented at every stage `n ≥ m`. -/
-theorem exists_toLimit_of_le (P : SimplicialPresentation G) {m n : ℕ} (h : m ≤ n)
-    {g : G} (hg : ∃ x, P.toLimit m x = g) :
-    ∃ x, P.toLimit n x = g := by
-  obtain ⟨x, rfl⟩ := hg
-  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le h
-  exact ⟨bondIter P.bond m d x, P.toLimit_bondIter_apply m d x⟩
-
-/-- Any element represented nonnegatively at stage `m` is also represented nonnegatively at
-every stage `n ≥ m`. -/
-theorem exists_nonneg_toLimit_of_le (P : SimplicialPresentation G) {m n : ℕ} (h : m ≤ n)
-    {g : G} (hg : ∃ x, 0 ≤ x ∧ P.toLimit m x = g) :
-    ∃ x, 0 ≤ x ∧ P.toLimit n x = g := by
-  obtain ⟨x, hx0, rfl⟩ := hg
-  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le h
-  exact ⟨bondIter P.bond m d x, by simpa using P.bondIter_mono m d hx0,
-    P.toLimit_bondIter_apply m d x⟩
-
-/-- Every partially ordered abelian group admitting a `SimplicialPresentation` is countable. -/
-theorem countable (P : SimplicialPresentation G) : Countable G := by
-  let f : (Σ n : ℕ, Fin (P.rank n) → ℤ) → G := fun p => P.toLimit p.1 p.2
-  have hf : Function.Surjective f := fun g =>
-    let ⟨n, x, hx⟩ := P.exhausts g
-    ⟨⟨n, x⟩, hx⟩
-  exact hf.countable
-
-/-- Every partially ordered abelian group admitting a `SimplicialPresentation` is directed. -/
-theorem isDirectedOrder (P : SimplicialPresentation G) : IsDirectedOrder G := by
-  refine ⟨fun a b => ?_⟩
-  obtain ⟨n₁, x₁, hx₁⟩ := P.exhausts a
-  obtain ⟨n₂, x₂, hx₂⟩ := P.exhausts b
-  obtain ⟨y₁, rfl⟩ := P.exists_toLimit_of_le (le_max_left n₁ n₂) ⟨x₁, hx₁⟩
-  obtain ⟨y₂, rfl⟩ := P.exists_toLimit_of_le (le_max_right n₁ n₂) ⟨x₂, hx₂⟩
-  exact ⟨P.toLimit (max n₁ n₂) (y₁ ⊔ y₂),
-    P.toLimit_mono _ le_sup_left, P.toLimit_mono _ le_sup_right⟩
-
-/-- Every partially ordered abelian group admitting a `SimplicialPresentation` is unperforated. -/
-theorem isUnperforated (P : SimplicialPresentation G) : IsUnperforated G := by
-  rw [isUnperforated_iff]
-  intro m hm g hg
-  obtain ⟨n₁, x₁, hx₁⟩ := P.exhausts g
-  obtain ⟨n₂, z₁, hz₁0, hz₁⟩ := P.exhausts_pos (m • g) hg
-  let N := max n₁ n₂
-  obtain ⟨x, hx⟩ := P.exists_toLimit_of_le (n := N) (le_max_left n₁ n₂) ⟨x₁, hx₁⟩
-  obtain ⟨z, hz0, hz⟩ :=
-    P.exists_nonneg_toLimit_of_le (n := N) (le_max_right n₁ n₂) ⟨z₁, hz₁0, hz₁⟩
-  have hker : P.toLimit N (m • x - z) = 0 := by rw [map_sub, map_nsmul, hx, hz, sub_self]
-  obtain ⟨k, hk⟩ := P.eventually_zero N _ hker
-  rw [map_sub, map_nsmul, sub_eq_zero] at hk
-  have hmk : 0 ≤ m • bondIter P.bond N k x := by rw [hk]; simpa using P.bondIter_mono N k hz0
-  have hx0 : 0 ≤ bondIter P.bond N k x :=
-    (IsUnperforated.pi fun _ => .of_linearOrder).nonneg_of_nsmul_nonneg hm hmk
-  rw [← hx, ← P.toLimit_bondIter_apply N k x]
-  simpa using P.toLimit_mono (N + k) hx0
-
-/-- Order lifting along a `SimplicialPresentation`: if `P.toLimit n x ≤ P.toLimit n y`, then
-`bondIter P.bond n k x ≤ bondIter P.bond n k y` at some later stage `n + k`. -/
-theorem exists_bondIter_le (P : SimplicialPresentation G) (n : ℕ)
-    {x y : Fin (P.rank n) → ℤ} (hxy : P.toLimit n x ≤ P.toLimit n y) :
-    ∃ k : ℕ, bondIter P.bond n k x ≤ bondIter P.bond n k y := by
-  have hu : 0 ≤ P.toLimit n (y - x) := by
-    rw [map_sub]
-    exact sub_nonneg.mpr hxy
-  obtain ⟨m, z, hz0, hzm⟩ := P.exhausts_pos (P.toLimit n (y - x)) hu
-  suffices ∃ k : ℕ, 0 ≤ bondIter P.bond n k (y - x) by
-    obtain ⟨k, hk⟩ := this
-    exact ⟨k, sub_nonneg.mp (by rwa [← map_sub])⟩
-  rcases le_total n m with hnm | hmn
-  · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hnm
-    have hker : P.toLimit (n + d) (bondIter P.bond n d (y - x) - z) = 0 := by
-      rw [map_sub, P.toLimit_bondIter_apply, hzm, sub_self]
-    obtain ⟨l, hl⟩ := P.eventually_zero (n + d) _ hker
-    have hl' : 0 ≤ bondIter P.bond (n + d) l (bondIter P.bond n d (y - x)) := by
-      rw [map_sub, sub_eq_zero] at hl
-      rw [hl]
-      simpa using P.bondIter_mono (n + d) l hz0
-    refine ⟨d + l, ?_⟩
-    rw [bondIter_add_apply]
-    exact fun _ => hl' _
-  · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hmn
-    have hz'0 : 0 ≤ bondIter P.bond m d z := by
-      simpa using P.bondIter_mono m d hz0
-    have hker : P.toLimit (m + d) ((y - x) - bondIter P.bond m d z) = 0 := by
-      rw [map_sub, P.toLimit_bondIter_apply, hzm, sub_self]
-    obtain ⟨k, hk⟩ := P.eventually_zero (m + d) _ hker
-    refine ⟨k, ?_⟩
-    rw [map_sub, sub_eq_zero] at hk
-    rw [hk]
-    simpa using P.bondIter_mono (m + d) k hz'0
-
-/-- Every partially ordered abelian group admitting a `SimplicialPresentation` satisfies Riesz
-interpolation. -/
-theorem hasRieszInterpolation (P : SimplicialPresentation G) : HasRieszInterpolation G := by
-  rw [hasRieszInterpolation_iff]
-  intro a₁ a₂ b₁ b₂ h₁₁ h₁₂ h₂₁ h₂₂
-  obtain ⟨n₁, x₁₀, hx₁₀⟩ := P.exhausts a₁
-  obtain ⟨n₂, x₂₀, hx₂₀⟩ := P.exhausts a₂
-  obtain ⟨n₃, y₁₀, hy₁₀⟩ := P.exhausts b₁
-  obtain ⟨n₄, y₂₀, hy₂₀⟩ := P.exhausts b₂
-  let N := max (max n₁ n₂) (max n₃ n₄)
-  obtain ⟨x₁, rfl⟩ :=
-    P.exists_toLimit_of_le (n := N) (le_max_of_le_left (le_max_left n₁ n₂)) ⟨x₁₀, hx₁₀⟩
-  obtain ⟨x₂, rfl⟩ :=
-    P.exists_toLimit_of_le (n := N) (le_max_of_le_left (le_max_right n₁ n₂)) ⟨x₂₀, hx₂₀⟩
-  obtain ⟨y₁, rfl⟩ :=
-    P.exists_toLimit_of_le (n := N) (le_max_of_le_right (le_max_left n₃ n₄)) ⟨y₁₀, hy₁₀⟩
-  obtain ⟨y₂, rfl⟩ :=
-    P.exists_toLimit_of_le (n := N) (le_max_of_le_right (le_max_right n₃ n₄)) ⟨y₂₀, hy₂₀⟩
-  obtain ⟨k₁₁, hk₁₁⟩ := P.exists_bondIter_le N h₁₁
-  obtain ⟨k₁₂, hk₁₂⟩ := P.exists_bondIter_le N h₁₂
-  obtain ⟨k₂₁, hk₂₁⟩ := P.exists_bondIter_le N h₂₁
-  obtain ⟨k₂₂, hk₂₂⟩ := P.exists_bondIter_le N h₂₂
-  let K := max (max k₁₁ k₁₂) (max k₂₁ k₂₂)
-  obtain ⟨z, hz₁, hz₂, hz₃, hz₄⟩ :=
-    (HasRieszInterpolation.pi fun _ : Fin (P.rank (N + K)) => .of_semilatticeSup).exists_ge_ge_le_le
-      (P.bondIter_le_of_le N (K := K) (le_max_of_le_left (le_max_left k₁₁ k₁₂)) hk₁₁)
-      (P.bondIter_le_of_le N (K := K) (le_max_of_le_left (le_max_right k₁₁ k₁₂)) hk₁₂)
-      (P.bondIter_le_of_le N (K := K) (le_max_of_le_right (le_max_left k₂₁ k₂₂)) hk₂₁)
-      (P.bondIter_le_of_le N (K := K) (le_max_of_le_right (le_max_right k₂₁ k₂₂)) hk₂₂)
-  exact ⟨P.toLimit (N + K) z,
-    (P.toLimit_bondIter_apply N K x₁).symm.trans_le (P.toLimit_mono (N + K) hz₁),
-    (P.toLimit_bondIter_apply N K x₂).symm.trans_le (P.toLimit_mono (N + K) hz₂),
-    (P.toLimit_mono (N + K) hz₃).trans_eq (P.toLimit_bondIter_apply N K y₁),
-    (P.toLimit_mono (N + K) hz₄).trans_eq (P.toLimit_bondIter_apply N K y₂)⟩
-
-/-- Every partially ordered abelian group admitting a `SimplicialPresentation` is a dimension
-group. -/
-theorem isDimensionGroup (P : SimplicialPresentation G) : IsDimensionGroup G :=
-  ⟨P.isDirectedOrder, P.isUnperforated, P.hasRieszInterpolation⟩
-
-end SimplicialPresentation
-
-end Presentation
 
 section ShenTriangle
 
@@ -845,7 +574,7 @@ private theorem stageSeq_toLimit_comp_bondIter (hd : IsDimensionGroup G)
         (bondIter (stageBond hd posEnum hpos enumZVec) m k) =
       (stageSeq hd posEnum hpos enumZVec m).toLimit := by
   induction k with
-  | zero => exact AddMonoidHom.comp_id _
+  | zero => simp
   | succ k ih =>
     simp only [Nat.add_succ, bondIter_succ, ← AddMonoidHom.comp_assoc,
       stageSeq_toLimit_comp_stageBond, ih]

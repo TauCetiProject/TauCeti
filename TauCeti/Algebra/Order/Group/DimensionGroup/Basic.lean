@@ -67,9 +67,9 @@ def HasRieszInterpolation (G : Type*) [LE G] : Prop :=
   ∀ a₁ a₂ b₁ b₂ : G, a₁ ≤ b₁ → a₁ ≤ b₂ → a₂ ≤ b₁ → a₂ ≤ b₂ →
     ∃ c, a₁ ≤ c ∧ a₂ ≤ c ∧ c ≤ b₁ ∧ c ≤ b₂
 
-/-- A partially ordered abelian group is unperforated when `0 ≤ n • g` for some `n ≠ 0`
+/-- A preordered abelian group is unperforated when `0 ≤ n • g` for some `n ≠ 0`
 forces `0 ≤ g`. -/
-def IsUnperforated (G : Type*) [AddCommGroup G] [PartialOrder G] : Prop :=
+def IsUnperforated (G : Type*) [AddCommGroup G] [Preorder G] : Prop :=
   ∀ ⦃n : ℕ⦄, n ≠ 0 → ∀ ⦃g : G⦄, 0 ≤ n • g → 0 ≤ g
 
 /-- A dimension group: a directed, unperforated partially ordered abelian group with Riesz
@@ -91,7 +91,7 @@ theorem hasRieszInterpolation_iff (G : Type*) [LE G] :
   Iff.rfl
 
 /-- Unfolding lemma for `IsUnperforated`. -/
-theorem isUnperforated_iff (G : Type*) [AddCommGroup G] [PartialOrder G] :
+theorem isUnperforated_iff (G : Type*) [AddCommGroup G] [Preorder G] :
     IsUnperforated G ↔ ∀ ⦃n : ℕ⦄, n ≠ 0 → ∀ ⦃g : G⦄, 0 ≤ n • g → 0 ≤ g :=
   Iff.rfl
 
@@ -242,12 +242,12 @@ namespace IsUnperforated
 variable {G : Type*} [AddCommGroup G]
 
 /-- In an unperforated group, `0 ≤ g` follows from `0 ≤ n • g` for any `n ≠ 0`. -/
-theorem nonneg_of_nsmul_nonneg [PartialOrder G] (h : IsUnperforated G)
+theorem nonneg_of_nsmul_nonneg [Preorder G] (h : IsUnperforated G)
     {n : ℕ} (hn : n ≠ 0) {g : G} (hg : 0 ≤ n • g) : 0 ≤ g :=
   h hn hg
 
 /-- In an unperforated group, `0 ≤ n • g ↔ 0 ≤ g` for `n ≠ 0`. -/
-theorem nsmul_nonneg_iff [PartialOrder G] [IsOrderedAddMonoid G]
+theorem nsmul_nonneg_iff [Preorder G] [IsOrderedAddMonoid G]
     (h : IsUnperforated G) {n : ℕ} (hn : n ≠ 0) {g : G} : 0 ≤ n • g ↔ 0 ≤ g :=
   ⟨h.nonneg_of_nsmul_nonneg hn, fun hg ↦ nsmul_nonneg hg n⟩
 
@@ -256,7 +256,7 @@ theorem of_linearOrder [LinearOrder G] [IsOrderedAddMonoid G] : IsUnperforated G
   fun _ hn _ ↦ (_root_.nsmul_nonneg_iff hn).1
 
 /-- Unperforation passes to products, ordered componentwise. -/
-theorem pi {ι : Type*} {G : ι → Type*} [∀ i, AddCommGroup (G i)] [∀ i, PartialOrder (G i)]
+theorem pi {ι : Type*} {G : ι → Type*} [∀ i, AddCommGroup (G i)] [∀ i, Preorder (G i)]
     (h : ∀ i, IsUnperforated (G i)) : IsUnperforated (∀ i, G i) :=
   fun _ hn _ hg i ↦ (h i).nonneg_of_nsmul_nonneg hn (hg i)
 
