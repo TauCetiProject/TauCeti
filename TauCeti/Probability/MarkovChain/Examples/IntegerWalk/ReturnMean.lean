@@ -6,26 +6,34 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.MarkovChain.Examples.IntegerWalk.Basic
+public import TauCeti.Probability.MarkovChain.Examples.IntegerWalk.Recurrence
+public import TauCeti.Probability.MarkovChain.NullRecurrence
 public import TauCeti.Probability.MarkovChain.Occupation
 public import TauCeti.Analysis.SpecificLimits.CentralBinomial
 public import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 
 /-!
-# Infinite mean return time of the symmetric integer walk
+# Infinite mean return time and null recurrence of nearest-neighbor integer walks
 
-The symmetric nearest-neighbor walk has infinite extended mean positive return time.
-The value at a missing return is infinity, not zero. The result is stated separately
-from recurrence, so it can be combined with the return-series criterion to classify
-the walk as null recurrent.
+Every nearest-neighbor integer walk `integerWalk p` (`p : unitInterval`) has infinite
+extended mean first positive return time, with no symmetry assumption on `p`. For the
+symmetric walk (`p = 1 / 2`), central binomial return probabilities tend to zero, so their
+Cesàro averages vanish whereas the occupation strong law identifies their limit with the
+reciprocal extended mean return time; a finite mean would give a positive reciprocal. For
+every biased walk (`p ≠ 1 / 2`), including the deterministic endpoints `0` and `1`, the
+walk is transient and therefore also has infinite mean return time.
 
-Central binomial probabilities tend to zero. Their Cesàro means therefore vanish,
-whereas the occupation law identifies their limit with the reciprocal extended mean
-return time. A finite mean would give a positive reciprocal, a contradiction.
-No invariant-probability characterization is needed.
+Combining this unconditional infinite-mean formula with the return-series recurrence
+criterion classifies every integer walk across the recurrence trichotomy:
+
+* no state of `integerWalk p` is positive recurrent for any `p : unitInterval`;
+* `integerWalk p` is null recurrent if and only if `(p : ℝ) = 1 / 2`;
+* every finite `(integerWalk p)`-invariant measure is zero, so no integer walk admits an
+  invariant probability measure.
 
 ## References
 
-* J. R. Norris, *Markov Chains*, Cambridge University Press (1997), §§1.6 and 1.10.
+* J. R. Norris, *Markov Chains*, Cambridge University Press (1997), §§1.6, 1.7, and 1.10.
 -/
 
 public section
@@ -70,19 +78,43 @@ private theorem tendsto_integerWalk_integral_visitCount_div (p : unitInterval)
   simpa only [div_eq_inv_mul, Function.comp_apply] using
     ((tendsto_integerWalk_pow_real_self p hp x).comp (tendsto_add_atTop_nat 1)).cesaro
 
-/-- The extended mean first positive return of the symmetric integer walk is infinite.
-The first return starts at one, and a missing return contributes infinity. -/
-theorem integerWalk_meanReturnTime_eq_top (p : unitInterval) (hp : (p : ℝ) = 1 / 2)
-    (x : ℤ) : (integerWalk p).meanReturnTime x = ∞ := by
-  classical
-  let P := markovChainLaw (Measure.dirac x) (integerWalk p)
-  by_contra hfinite
-  have hpos : 0 < ((integerWalk p).meanReturnTime x)⁻¹.toReal :=
-    ENNReal.toReal_pos (ENNReal.inv_ne_zero.mpr hfinite)
-      (ENNReal.inv_ne_top.mpr (ne_zero_of_lt
-        (lt_of_lt_of_le zero_lt_one (Kernel.one_le_meanReturnTime (κ := integerWalk p) (x := x)))))
-  have hLLN := (HasLaw.id (μ := P)).tendsto_integral_visitCount_div_markovChainLaw_dirac
-  exact hpos.ne' (tendsto_nhds_unique hLLN (tendsto_integerWalk_integral_visitCount_div p hp x))
+/-- The extended mean first positive return time of every nearest-neighbor integer walk is
+infinite, for both symmetric and biased parameters (including the deterministic endpoints). -/
+-- Simplify before the endpoint rules replace `integerWalk` by a deterministic kernel.
+@[simp↓]
+theorem integerWalk_meanReturnTime_eq_top (p : unitInterval) (x : ℤ) :
+    (integerWalk p).meanReturnTime x = ∞ := by
+  by_cases hp : (p : ℝ) = 1 / 2
+  · refine (Kernel.IsNullRecurrent.meanReturnTime_eq_top ?_)
+    exact (integerWalk p).isNullRecurrent_iff_isRecurrent_and_tendsto_integral_visitCount_div_zero.2
+      ⟨(integerWalk_isRecurrent_iff p x).mpr hp, tendsto_integerWalk_integral_visitCount_div p hp x⟩
+  · exact ((integerWalk_isTransient_iff p x).mpr hp).meanReturnTime_eq_top
+
+/-- No nearest-neighbor integer walk has a positive recurrent state. -/
+@[simp↓]
+theorem not_integerWalk_isPositiveRecurrent (p : unitInterval) (x : ℤ) :
+    ¬ (integerWalk p).IsPositiveRecurrent x := by
+  simp [Kernel.isPositiveRecurrent_iff, integerWalk_meanReturnTime_eq_top]
+
+/-- **Null recurrence of the symmetric integer walk.** A nearest-neighbor integer walk is null
+recurrent at `x` if and only if `(p : ℝ) = 1 / 2`. -/
+@[simp↓]
+theorem integerWalk_isNullRecurrent_iff (p : unitInterval) (x : ℤ) :
+    (integerWalk p).IsNullRecurrent x ↔ (p : ℝ) = 1 / 2 := by
+  simp [Kernel.isNullRecurrent_iff, integerWalk_isRecurrent_iff, integerWalk_meanReturnTime_eq_top]
+
+/-- Every finite invariant measure of any nearest-neighbor integer walk is zero. -/
+theorem integerWalk_invariant_eq_zero {p : unitInterval} {μ : Measure ℤ} [IsFiniteMeasure μ]
+    (hμ : (integerWalk p).Invariant μ) :
+    μ = 0 :=
+  Measure.ext_of_singleton fun x =>
+    hμ.apply_singleton_eq_zero_of_not_isPositiveRecurrent (not_integerWalk_isPositiveRecurrent p x)
+
+/-- No nearest-neighbor integer walk admits an invariant probability measure. -/
+theorem not_integerWalk_invariant_of_isProbabilityMeasure (p : unitInterval) (μ : Measure ℤ)
+    [IsProbabilityMeasure μ] :
+    ¬ (integerWalk p).Invariant μ :=
+  fun hμ => IsProbabilityMeasure.ne_zero μ (integerWalk_invariant_eq_zero hμ)
 
 end TauCeti.Probability
 
@@ -90,13 +122,12 @@ namespace ProbabilityTheory.HasLaw
 
 open TauCeti.Probability
 
-/-- Every realization of the symmetric integer walk has infinite extended mean first
-positive return. No topology on its probability space is required. -/
+/-- Every realization of any nearest-neighbor integer walk has infinite extended mean first
+positive return. No symmetry assumption on `p` or topology on the sample space is required. -/
 theorem lintegral_integerWalk_hittingAfter_eq_top
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℕ → ℤ}
     {p : unitInterval} {x : ℤ}
-    (hX : HasLaw X (markovChainLaw (Measure.dirac x) (integerWalk p)) P)
-    (hp : (p : ℝ) = 1 / 2) :
+    (hX : HasLaw X (markovChainLaw (Measure.dirac x) (integerWalk p)) P) :
     (∫⁻ ω, ENat.toENNReal (hittingAfter (fun n ω => X ω n) {x} 1 ω) ∂P) = ∞ := by
   have hτ : Measurable (hittingAfter (fun n (ω : ℕ → ℤ) => ω n) {x} 1) :=
     (Filtration.adapted_piLE.isStoppingTime_hittingAfter
@@ -106,7 +137,7 @@ theorem lintegral_integerWalk_hittingAfter_eq_top
   -- therefore identifies the integrand with the canonical path functional.
   convert (hX.lintegral_comp hm.aemeasurable).trans
     (by simpa only [Kernel.meanReturnTime_def, Function.comp_def] using
-      integerWalk_meanReturnTime_eq_top p hp x) using 1
+      integerWalk_meanReturnTime_eq_top p x) using 1
   apply lintegral_congr
   intro ω
   simp only [Function.comp_apply, hittingAfter_def]

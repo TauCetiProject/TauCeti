@@ -81,4 +81,47 @@ theorem exists_invariant_probability_subtype_iff (κ : Kernel S S) (hs : Measura
       (MeasurableEmbedding.subtype_coe hs).isProbabilityMeasure_comap hae,
       (invariant_comap_subtype_iff κ hs hclosed ν hν).2 hinv⟩
 
+/-- A closed-state restriction has a unique invariant probability measure if and only if the
+ambient kernel has a unique invariant probability measure concentrated on those states. -/
+theorem existsUnique_invariant_probability_subtype_iff (κ : Kernel S S) (hs : MeasurableSet s)
+    (hclosed : κ.IsClosedSet s) :
+    (∃! ν : Measure s, IsProbabilityMeasure ν ∧ (κ.subtype hs).Invariant ν) ↔
+      ∃! ν : Measure S, IsProbabilityMeasure ν ∧ κ.Invariant ν ∧ ν sᶜ = 0 := by
+  constructor
+  · rintro ⟨ν, ⟨hprob, hinv⟩, huniq⟩
+    have := hprob
+    refine ⟨ν.map Subtype.val, ⟨inferInstance, (invariant_subtype_iff κ hs hclosed ν).1 hinv, ?_⟩,
+      ?_⟩
+    · rw [Measure.map_apply measurable_subtype_coe hs.compl]
+      simp
+    · rintro μ ⟨hμ_prob, hμ_inv, hμ_supp⟩
+      have := hμ_prob
+      have hae : ∀ᵐ x ∂μ, x ∈ range (Subtype.val : s → S) := by
+        simpa only [Subtype.range_coe] using (ae_iff.mpr hμ_supp : ∀ᵐ x ∂μ, x ∈ s)
+      have heq : μ.comap Subtype.val = ν :=
+        huniq (μ.comap Subtype.val)
+          ⟨(MeasurableEmbedding.subtype_coe hs).isProbabilityMeasure_comap hae,
+            (invariant_comap_subtype_iff κ hs hclosed μ hμ_supp).2 hμ_inv⟩
+      calc
+        μ = μ.restrict s := (Measure.restrict_eq_self_of_ae_mem (ae_iff.mpr hμ_supp)).symm
+        _ = (μ.comap Subtype.val).map Subtype.val := (map_comap_subtype_coe hs μ).symm
+        _ = ν.map Subtype.val := by rw [heq]
+  · rintro ⟨μ, ⟨hμ_prob, hμ_inv, hμ_supp⟩, huniq⟩
+    have := hμ_prob
+    have hae : ∀ᵐ x ∂μ, x ∈ range (Subtype.val : s → S) := by
+      simpa only [Subtype.range_coe] using (ae_iff.mpr hμ_supp : ∀ᵐ x ∂μ, x ∈ s)
+    refine ⟨μ.comap Subtype.val,
+      ⟨(MeasurableEmbedding.subtype_coe hs).isProbabilityMeasure_comap hae,
+        (invariant_comap_subtype_iff κ hs hclosed μ hμ_supp).2 hμ_inv⟩, ?_⟩
+    rintro ν ⟨hν_prob, hν_inv⟩
+    have := hν_prob
+    have hmap : ν.map Subtype.val = μ := by
+      refine huniq (ν.map Subtype.val)
+        ⟨inferInstance, (invariant_subtype_iff κ hs hclosed ν).1 hν_inv, ?_⟩
+      rw [Measure.map_apply measurable_subtype_coe hs.compl]
+      simp
+    have hmap_comap : (μ.comap (Subtype.val : s → S)).map Subtype.val = μ := by
+      rw [map_comap_subtype_coe hs, Measure.restrict_eq_self_of_ae_mem (ae_iff.mpr hμ_supp)]
+    exact (MeasurableEmbedding.subtype_coe hs).map_injective (hmap.trans hmap_comap.symm)
+
 end ProbabilityTheory.Kernel

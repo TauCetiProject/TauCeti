@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.MeasurableSpace.Embedding
 public import TauCeti.Probability.MarkovChain.FiniteEntrance
 public import TauCeti.Probability.MarkovChain.Reachability
 public import TauCeti.Probability.Kernel.ClosedClass.Basic
@@ -26,13 +27,14 @@ permanence in the entered class; no stopping-time or conditional-law choice is n
 
 Restricting a Markov kernel to a measurable closed set preserves the entire trajectory law
 under the inclusion of paths, not just its finite-time transition probabilities. In particular,
-entrance and positive-return times have the same laws and the same extended nonnegative means.
-Recurrence and transience are therefore unchanged by restriction.
+entrance and positive-return times have the same laws and the same extended nonnegative means
+(`Kernel.meanReturnTime_subtype`). Recurrence and transience are therefore unchanged by
+restriction, without requiring measurable singletons.
 
 These identities allow results for chains on a finite closed communicating class to be used
 in an ambient, possibly infinite state space. The initial law may be any finite measure on the
-subtype. No countability or topology on the state space is needed. The Markov instance for the
-restricted kernel is equivalent to closedness by
+subtype. No countability, measurable singletons, or topology on the state space are needed for
+subtype restriction. The Markov instance for the restricted kernel is equivalent to closedness by
 `Kernel.isMarkovKernel_subtype_iff_isClosedSet`.
 
 ## References
@@ -188,18 +190,37 @@ theorem lintegral_hittingAfter_markovChainLaw_subtype (ν : Measure s) [IsFinite
   rw [← MeasureTheory.lintegral_map hmean hhit',
     map_hittingAfter_markovChainLaw_subtype κ hs ν ht, MeasureTheory.lintegral_map hmean hhit]
 
-variable {S : Type*} [MeasurableSpace S] [MeasurableSingletonClass S] {s : Set S}
-  (κ : Kernel S S) [IsMarkovKernel κ] (hs : MeasurableSet s)
-  [IsMarkovKernel (κ.subtype hs)]
+private theorem hittingAfter_singleton_subtype_coe {S : Type*} {s : Set S} (x : s) (m : ℕ)
+    (ω : ℕ → s) :
+    hittingAfter (fun n (w : ℕ → S) => w n) {x.val} m (fun n => (ω n).val) =
+      hittingAfter (fun n w => w n) {x} m ω := by
+  have hpre : (Subtype.val : s → S) ⁻¹' {x.val} = {x} := by
+    ext
+    simp [Subtype.ext_iff]
+  exact congrArg (fun t => hittingAfter (fun n w => w n) t m ω) hpre
+
+/-- Restricting a Markov kernel to a closed set preserves the extended mean positive return time
+of each of its states. -/
+@[simp]
+theorem meanReturnTime_subtype (x : s) :
+    (κ.subtype hs).meanReturnTime x = κ.meanReturnTime x.val := by
+  have hembed : MeasurableEmbedding (fun (ω : ℕ → s) n => (ω n).val) := by
+    convert MeasurableEmbedding.piMap fun _ : ℕ => MeasurableEmbedding.subtype_coe hs
+    simp
+  rw [meanReturnTime_def, meanReturnTime_def, ← Measure.map_dirac' measurable_subtype_coe x,
+    ← markovChainLaw_map_subtype κ hs (Measure.dirac x), hembed.lintegral_map]
+  simp only [hittingAfter_singleton_subtype_coe]
 
 /-- Restricting to a closed set preserves and reflects recurrence of each of its states. -/
 @[simp]
 theorem isRecurrent_subtype_iff (x : s) :
     (κ.subtype hs).IsRecurrent x ↔ κ.IsRecurrent x.val := by
-  have hclosed := (isMarkovKernel_subtype_iff_isClosedSet hs).mp
-    (inferInstance : IsMarkovKernel (κ.subtype hs))
-  simp only [isRecurrent_iff_tsum_eq_top,
-    subtype_pow_apply κ hs hclosed, image_singleton]
+  have hembed : MeasurableEmbedding (fun (ω : ℕ → s) n => (ω n).val) := by
+    convert MeasurableEmbedding.piMap fun _ : ℕ => MeasurableEmbedding.subtype_coe hs
+    simp
+  rw [isRecurrent_iff, isRecurrent_iff, ← Measure.map_dirac' measurable_subtype_coe x,
+    ← markovChainLaw_map_subtype κ hs (Measure.dirac x), hembed.map_apply]
+  simp only [preimage_ofPred_eq, hittingAfter_singleton_subtype_coe]
 
 /-- Restricting to a closed set preserves and reflects transience of each of its states. -/
 @[simp]

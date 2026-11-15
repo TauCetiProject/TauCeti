@@ -10,6 +10,7 @@ public import Mathlib.Probability.Kernel.Invariance
 public import Mathlib.Probability.UniformOn
 public import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 public import TauCeti.Probability.Kernel.Reachability
+public import TauCeti.Probability.MarkovChain.NullRecurrence
 public import TauCeti.Probability.MarkovChain.Period
 
 /-!
@@ -17,7 +18,9 @@ public import TauCeti.Probability.MarkovChain.Period
 
 `cycleKernel n` moves from `x : Fin n` to `x + 1`, with addition modulo the positive
 integer `n`. Its transition powers are point masses at `x + k`, every state reaches every
-other state, its period is exactly `n`, and the uniform probability is invariant.
+other state, its period is `n`, its mean return time at every state is `n`, every state is
+positive recurrent (hence recurrent and neither transient nor null recurrent), and the
+uniform probability is invariant.
 
 Despite this invariant probability, starting from a point mass does not approach equilibrium
 unless `n = 1`: at every time the total variation distance is `2 * (1 - 1 / n)`.
@@ -34,7 +37,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Filter
-open scoped Fin.NatCast
+open scoped ENNReal Fin.NatCast
 
 namespace TauCeti.Probability
 
@@ -148,5 +151,33 @@ theorem cycleKernel_tendsto_tvDist_uniformOn_iff (x : Fin n) :
     exact_mod_cast this
   · rintro rfl
     norm_num
+
+/-- Every state of the finite cycle has extended mean return time equal to the cycle length `n`. -/
+@[simp] theorem cycleKernel_meanReturnTime (x : Fin n) :
+    (cycleKernel n).meanReturnTime x = n := by
+  have hkac := (cycleKernel_invariant_uniformOn n).apply_singleton_eq_inv_meanReturnTime x
+  have hunif : (uniformOn (Set.univ : Set (Fin n))) {x} = (n : ℝ≥0∞)⁻¹ := by
+    simp [uniformOn_univ]
+  exact inv_inj.mp (hkac.symm.trans hunif)
+
+/-- Every state of the finite cycle is positive recurrent. -/
+theorem cycleKernel_isPositiveRecurrent (x : Fin n) :
+    (cycleKernel n).IsPositiveRecurrent x := by
+  simp [Kernel.isPositiveRecurrent_iff]
+
+/-- Every state of the finite cycle is recurrent. -/
+theorem cycleKernel_isRecurrent (x : Fin n) :
+    (cycleKernel n).IsRecurrent x :=
+  (cycleKernel_isPositiveRecurrent n x).isRecurrent
+
+/-- No state of the finite cycle is transient. -/
+@[simp] theorem not_cycleKernel_isTransient (x : Fin n) :
+    ¬ (cycleKernel n).IsTransient x :=
+  (cycleKernel_isPositiveRecurrent n x).not_isTransient
+
+/-- No state of the finite cycle is null recurrent. -/
+theorem not_cycleKernel_isNullRecurrent (x : Fin n) :
+    ¬ (cycleKernel n).IsNullRecurrent x :=
+  (cycleKernel n).not_isNullRecurrent_of_finite x
 
 end TauCeti.Probability
