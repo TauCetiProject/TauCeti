@@ -54,6 +54,9 @@ and orbit-theoretic properties of the reduced space:
   residual torus, its image is the polytope `Δ`
   (`TauCeti.Toric.DelzantQuotient.range_reducedMomentMap`), and its fibres are exactly the orbits
   of the residual torus (`TauCeti.Toric.DelzantQuotient.reducedMomentMap_eq_reducedMomentMap_iff`).
+  When moreover `Δ` is bounded, `M_Δ` is compact, so `μ_Δ` induces a homeomorphism from the orbit
+  space of the residual torus onto `Δ`
+  (`TauCeti.Toric.DelzantQuotient.orbitRelQuotientHomeomorph`).
 
 The smooth structure on `M_Δ` and its reduced symplectic form are not constructed here.
 
@@ -63,6 +66,10 @@ The smooth structure on `M_Δ` and its reduced symplectic form are not construct
   torus `(ℝ / 2πℤ)^ι / N_Δ`.
 * `TauCeti.Toric.DelzantQuotient.reducedMomentMap`: the moment map `M_Δ → V*` of the residual
   torus.
+* `TauCeti.Toric.DelzantQuotient.lift`: the descent to `M_Δ` of a function on the level invariant
+  under the kernel torus.
+* `TauCeti.Toric.DelzantQuotient.orbitRelQuotientHomeomorph`: the homeomorphism from the orbit
+  space of the residual torus onto `Δ`.
 
 ## Main results
 
@@ -77,6 +84,8 @@ The smooth structure on `M_Δ` and its reduced symplectic form are not construct
 * `TauCeti.Toric.DelzantQuotient.range_reducedMomentMap`: the image of `μ_Δ` is `Δ`.
 * `TauCeti.Toric.DelzantQuotient.reducedMomentMap_eq_reducedMomentMap_iff`: the fibres of `μ_Δ`
   are the orbits of the residual torus.
+* `TauCeti.Toric.DelzantQuotient.coe_orbitRelQuotientHomeomorph_mk`: the orbit space
+  homeomorphism sends the orbit of `q` to `μ_Δ(q)`.
 
 ## References
 
@@ -142,6 +151,19 @@ theorem mk_vadd_of_mem_ker {θ : ι → AddCircle (2 * π)} (hθ : θ ∈ (facet
     (x : delzantLevel i u c) : mk (θ +ᵥ x) = mk x :=
   mk_eq_mk_iff.2 ⟨θ, hθ, rfl⟩
 
+/-- A function on the level that is invariant under the kernel torus descends to the Delzant
+quotient. -/
+def lift {β : Type*} (f : delzantLevel i u c → β)
+    (hf : ∀ θ ∈ (facetTorusHom i u (2 * π)).ker, ∀ x, f (θ +ᵥ x) = f x) :
+    DelzantQuotient i u c → β :=
+  AddAction.orbitRelQuotientLift f fun θ x ↦ hf θ θ.2 x
+
+@[simp]
+theorem lift_mk {β : Type*} (f : delzantLevel i u c → β)
+    (hf : ∀ θ ∈ (facetTorusHom i u (2 * π)).ker, ∀ x, f (θ +ᵥ x) = f x) (x : delzantLevel i u c) :
+    lift f hf (mk x) = f x :=
+  AddAction.orbitRelQuotientLift_mk x
+
 /-- The projection from the level onto the Delzant quotient is an open quotient map. -/
 theorem isOpenQuotientMap_mk : IsOpenQuotientMap (mk (i := i) (u := u) (c := c)) :=
   AddAction.isOpenQuotientMap_quotientMk
@@ -149,6 +171,12 @@ theorem isOpenQuotientMap_mk : IsOpenQuotientMap (mk (i := i) (u := u) (c := c))
 @[fun_prop]
 theorem continuous_mk : Continuous (mk (i := i) (u := u) (c := c)) :=
   isOpenQuotientMap_mk.continuous
+
+theorem continuous_lift {β : Type*} [TopologicalSpace β] {f : delzantLevel i u c → β}
+    (hf : ∀ θ ∈ (facetTorusHom i u (2 * π)).ker, ∀ x, f (θ +ᵥ x) = f x) (hc : Continuous f) :
+    Continuous (lift f hf) :=
+  isOpenQuotientMap_mk.isQuotientMap.continuous_iff.2 (by
+    simpa only [Function.comp_def, lift_mk] using hc)
 
 /-! ### The residual torus action -/
 
@@ -318,6 +346,38 @@ theorem reducedMomentMap_eq_reducedMomentMap_iff {q q' : DelzantQuotient i u c} 
   ext1
   rw [coe_vadd_delzantLevel, torusRotation_coe]
   simpa [Pi.neg_def] using ht
+
+/-- **The orbit space of a Delzant quotient is its polytope.** When the real normals span `V` and
+the polytope `Δ` is bounded, as for a Delzant polytope, the reduced moment map induces a
+homeomorphism from the orbit space of the residual torus action on `M_Δ` onto `Δ`. -/
+def orbitRelQuotientHomeomorph (hb : Bornology.IsBounded (facetPolyhedron i u c)) :
+    AddAction.orbitRel.Quotient ((ι → AddCircle (2 * π)) ⧸ (facetTorusHom i u (2 * π)).ker)
+      (DelzantQuotient i u c) ≃ₜ facetPolyhedron i u c :=
+  haveI := compactSpace_delzantQuotient hb
+  Continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective
+    (Quotient.lift
+      (fun q ↦ ⟨reducedMomentMap hβ q, reducedMomentMap_mem_facetPolyhedron hβ q⟩)
+      fun q q' h ↦ by
+        obtain ⟨θ, rfl⟩ := AddAction.orbitRel_apply.1 h
+        exact Subtype.ext (reducedMomentMap_vadd hβ θ q'))
+    ⟨fun a b h ↦ by
+      induction a using Quotient.inductionOn with | h q =>
+      induction b using Quotient.inductionOn with | h q' =>
+      obtain ⟨θ, hθ⟩ := (reducedMomentMap_eq_reducedMomentMap_iff hβ).1 (congrArg Subtype.val h)
+      exact Quotient.sound ⟨θ, hθ⟩,
+    fun ⟨y, hy⟩ ↦ by
+      rw [← range_reducedMomentMap hβ] at hy
+      obtain ⟨q, rfl⟩ := hy
+      exact ⟨Quotient.mk _ q, rfl⟩⟩)
+    (continuous_quot_lift _ ((continuous_reducedMomentMap hβ).subtype_mk _))
+
+/-- The homeomorphism `orbitRelQuotientHomeomorph` sends the orbit of `q` to `μ_Δ(q)`. -/
+@[simp]
+theorem coe_orbitRelQuotientHomeomorph_mk (hb : Bornology.IsBounded (facetPolyhedron i u c))
+    (q : DelzantQuotient i u c) :
+    (orbitRelQuotientHomeomorph hβ hb (Quotient.mk _ q) : StrongDual ℝ V) =
+      reducedMomentMap hβ q :=
+  (rfl)
 
 /-- **Stabilizers over the faces of `Δ`.** The class of `θ ∈ (ℝ / 2πℤ)^ι` in the residual torus
 fixes a point `q` of the Delzant quotient exactly when `θ` agrees with an element of the kernel
