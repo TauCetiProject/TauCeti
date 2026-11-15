@@ -121,13 +121,8 @@ theorem universalGSpaceCellularComplexIso_hom_naturality (φ : G →* H) :
     universalGSpaceCellularComplexForget₂Iso_hom_comp_map_cellularComplexIso_hom_assoc]
   rw [← φ.universalGSpaceCellularChainComplexIso_naturality,
     ← universalGSpaceCellularComplexForget₂Iso_hom_comp_map_cellularComplexIso_hom k H,
-    φ.universalGSpaceCellularComplexForget₂Iso_naturality_assoc]
-  congr 2
-  simpa only [HomologicalComplex.repResForget₂Iso_def, Iso.app_hom, Functor.comp_map] using
-    (Functor.mapHomologicalComplexCompIso
-      (F := Rep.resFunctor φ) (G := forget₂ (Rep k G) (ModuleCat k))
-      (H := forget₂ (Rep k H) (ModuleCat k)) (Iso.refl _) _).hom.naturality
-      (universalGSpaceCellularComplexIso k H).hom
+    φ.universalGSpaceCellularComplexForget₂Iso_naturality_assoc,
+    HomologicalComplex.repResForget₂Iso_hom_naturality]
 
 /-- Inverse form of `universalGSpaceCellularComplexIso_hom_naturality`: the inverse equivariant
 ordered-to-cellular chain isomorphism is also natural along every group homomorphism. -/
@@ -179,15 +174,11 @@ theorem universalGSpaceCellularComplexMap_comp_augmentation (φ : G →* H) :
           ((universalGSpaceCellularComplexIso k H).hom ≫ universalGSpaceAugmentation k H) ≫
         (HomologicalComplex.singleMapHomologicalComplex (Rep.resFunctor φ) _ 0).hom.app
           (Rep.trivial k H k) =
-      (universalGSpaceCellularComplexIso k G).hom ≫ universalGSpaceAugmentation k G :=
-  let s := (HomologicalComplex.singleMapHomologicalComplex (Rep.resFunctor φ) _ 0).hom.app
-    (Rep.trivial k H k)
-  (congrArg (φ.universalGSpaceCellularComplexMap ≫ ·)
-    ((congrArg (· ≫ s) (((Rep.resFunctor φ).mapHomologicalComplex _).map_comp _ _)).trans
-      (Category.assoc _ _ _))).trans
-    ((φ.universalGSpaceCellularComplexIso_hom_naturality_assoc _).trans
-      (congrArg ((universalGSpaceCellularComplexIso k G).hom ≫ ·)
-        φ.universalGSpaceChainMap_comp_augmentation))
+      (universalGSpaceCellularComplexIso k G).hom ≫ universalGSpaceAugmentation k G := by
+  rw [Functor.map_comp, Category.assoc,
+    φ.universalGSpaceCellularComplexIso_hom_naturality_assoc]
+  exact congrArg ((universalGSpaceCellularComplexIso k G).hom ≫ ·)
+    φ.universalGSpaceChainMap_comp_augmentation
 
 end MonoidHom
 
@@ -282,12 +273,7 @@ theorem universalGSpaceCellularStandardHomotopyEquiv_hom_naturality (φ : G →*
         ((Rep.standardComplex k H).repResForget₂Iso φ).hom := by
   simp only [universalGSpaceCellularStandardHomotopyEquiv_hom, Category.assoc,
     universalGSpaceCellularChainComplexIso_naturality_assoc]
-  simp only [HomologicalComplex.repResForget₂Iso_def, Iso.app_hom]
-  rw [← (Functor.mapHomologicalComplexCompIso
-    (F := Rep.resFunctor φ) (G := forget₂ (Rep k G) (ModuleCat k))
-    (H := forget₂ (Rep k H) (ModuleCat k)) (Iso.refl _) _).hom.naturality]
-  simp only [Functor.comp_map]
-  rw [← Functor.map_comp_assoc,
+  rw [← HomologicalComplex.repResForget₂Iso_hom_naturality, ← Functor.map_comp_assoc,
     φ.universalGSpaceChainComplexToStandardComplex_naturality, Functor.map_comp_assoc]
 
 /-- **Change-of-group naturality of the equivariant geometric cellular-to-bar comparison.**

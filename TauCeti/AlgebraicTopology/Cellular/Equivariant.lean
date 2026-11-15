@@ -322,8 +322,7 @@ theorem cellularActionRepresentationMap_id
   apply Rep.hom_ext
   apply Representation.IntertwiningMap.ext
   simp only [cellularActionRepresentationMap_hom_toLinearMap, cellularChainGroupMap_id,
-    ModuleCat.hom_id, Rep.hom_id]
-  rfl
+    ModuleCat.hom_id, Rep.hom_id, Representation.IntertwiningMap.toLinearMap_id]
 
 /-- The identity cellular map induces the identity chain map on the equivariant cellular
 complex, regardless of the proofs of cellularity and equivariance. -/

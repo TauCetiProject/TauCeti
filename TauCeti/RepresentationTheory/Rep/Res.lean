@@ -31,7 +31,7 @@ namespace Rep
 /-- Restricting the identity morphism of a representation gives the identity morphism of the
 restricted representation. -/
 @[simp]
-theorem resMap_id_hom (f : H →* G) (X : Rep.{t} k G) :
+theorem resMap_id' (f : H →* G) (X : Rep.{t} k G) :
     resMap f (𝟙 X) = 𝟙 (res f X) :=
   (resFunctor f).map_id X
 

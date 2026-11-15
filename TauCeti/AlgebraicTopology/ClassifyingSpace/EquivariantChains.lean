@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Cellular.Equivariant
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.CellMap
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.ChainComparison
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.StandardResolution
+import TauCeti.RepresentationTheory.Rep.Res
 
 /-!
 # Equivariant geometric cellular chains of Milnor's join
@@ -423,7 +424,7 @@ theorem universalGSpaceCellularRepresentationMap_hom_toLinearMap (φ : G →* H)
       (cellularChainGroupMap univ univ φ.isCellular_universalGSpaceCellularMap
         (ModuleCat.of k k) n).hom := by
   unfold universalGSpaceCellularRepresentationMap
-  exact cellularActionRepresentationMap_hom_toLinearMap _ _ _ _ _ _ _ _ _ _ _ _ _ _
+  exact cellularActionRepresentationMap_hom_toLinearMap ..
 
 /-- The equivariant geometric cellular map sends each cellular basis vector to the cellular
 basis vector of the relabelled simplex, with no orientation sign. -/
@@ -450,17 +451,18 @@ theorem universalGSpaceCellularRepresentationMap_comp_differential (φ : G →* 
       universalGSpaceCellularDifferential k G n ≫
         φ.universalGSpaceCellularRepresentationMap n := by
   unfold universalGSpaceCellularRepresentationMap universalGSpaceCellularDifferential
-  exact cellularActionRepresentationMap_comp_differential _ _ _ _ _ _ _ _ _ _ _ _ _ _
+  exact cellularActionRepresentationMap_comp_differential ..
 
 /-- The identity homomorphism induces the identity on each geometric cellular chain
 representation. -/
 @[simp]
 theorem universalGSpaceCellularRepresentationMap_id (n : ℕ) :
-    (MonoidHom.id G).universalGSpaceCellularRepresentationMap (k := k) n = 𝟙 _ :=
-  (cellularActionRepresentationMap_congr _ _ _ _ _ _ _ _ _ _
-    (φ := MonoidHom.id G) _ _ k universalGSpaceCellularMap_id (isCellular_id _)
-    (fun g ↦ by simp) n).trans
-    (cellularActionRepresentationMap_id _ _ _ _ _ _ _ k n)
+    (MonoidHom.id G).universalGSpaceCellularRepresentationMap (k := k) n = 𝟙 _ := by
+  unfold universalGSpaceCellularRepresentationMap universalGSpaceCellularRepresentation
+  rw [cellularActionRepresentationMap_congr (φ := MonoidHom.id G) (R := k)
+    (hff' := universalGSpaceCellularMap_id) (hf' := isCellular_id _)
+    (hequiv' := fun g ↦ (Category.comp_id _).trans (Category.id_comp _).symm)]
+  exact cellularActionRepresentationMap_id ..
 
 /-- Geometric cellular chain representation maps respect composition of group homomorphisms,
 restricting the second map along the first homomorphism. -/
@@ -471,14 +473,13 @@ theorem universalGSpaceCellularRepresentationMap_comp {K : Type u} [Group K]
       φ.universalGSpaceCellularRepresentationMap n ≫
         (Rep.resFunctor φ).map (ψ.universalGSpaceCellularRepresentationMap n) := by
   unfold universalGSpaceCellularRepresentationMap universalGSpaceCellularRepresentation
-  rw [cellularActionRepresentationMap_congr _ _ _ _ _ _ _ _ _ _ _ _ k
-    (universalGSpaceCellularMap_comp ψ φ)
-    (IsCellular.comp _ _ φ.isCellular_universalGSpaceCellularMap
+  rw [cellularActionRepresentationMap_congr (R := k) (hff' := universalGSpaceCellularMap_comp ψ φ)
+    (hf' := IsCellular.comp _ _ φ.isCellular_universalGSpaceCellularMap
       ψ.isCellular_universalGSpaceCellularMap)
-    (fun g ↦ by
+    (hequiv' := fun g ↦ by
       rw [← universalGSpaceCellularMap_comp]
       exact (ψ.comp φ).universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap g)]
-  exact cellularActionRepresentationMap_comp _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ k n
+  exact cellularActionRepresentationMap_comp ..
 
 /-- The equivariant chain map on geometric cellular chains of Milnor's join induced by a
 group homomorphism, with the target action restricted along the homomorphism. -/
@@ -502,17 +503,18 @@ theorem universalGSpaceCellularComplexMap_f (φ : G →* H) (n : ℕ) :
         φ.universalGSpaceCellularRepresentationMap n ≫
         (Rep.resFunctor φ).map (eqToHom (universalGSpaceCellularComplex_X k H n).symm) := by
   unfold universalGSpaceCellularComplexMap universalGSpaceCellularRepresentationMap
-  exact cellularActionComplexMap_f _ _ _ _ _ _ _ _ _ _ _ _ _ _
+  exact cellularActionComplexMap_f ..
 
 /-- The identity homomorphism induces the identity equivariant cellular chain map. -/
 @[simp]
 theorem universalGSpaceCellularComplexMap_id :
     (MonoidHom.id G).universalGSpaceCellularComplexMap (k := k) =
-      𝟙 (universalGSpaceCellularComplex k G) :=
-  (cellularActionComplexMap_congr _ _ _ _ _ _ _ _ _ _
-    (φ := MonoidHom.id G) _ _ k universalGSpaceCellularMap_id (isCellular_id _)
-    (fun g ↦ by simp)).trans
-    (cellularActionComplexMap_id _ _ _ _ _ _ _ k)
+      𝟙 (universalGSpaceCellularComplex k G) := by
+  ext n : 1
+  simp only [universalGSpaceCellularComplexMap_f, universalGSpaceCellularRepresentationMap_id,
+    Category.id_comp, HomologicalComplex.id_f]
+  rw [Rep.resMap_id]
+  simp only [eqToHom_trans, eqToHom_refl]
 
 /-- Equivariant geometric cellular chain maps respect composition of group homomorphisms,
 restricting the second map along the first homomorphism. -/
@@ -523,15 +525,11 @@ theorem universalGSpaceCellularComplexMap_comp {K : Type u} [Group K]
       φ.universalGSpaceCellularComplexMap ≫
         ((Rep.resFunctor φ).mapHomologicalComplex _).map
           ψ.universalGSpaceCellularComplexMap := by
-  unfold universalGSpaceCellularComplexMap universalGSpaceCellularComplex
-  rw [cellularActionComplexMap_congr _ _ _ _ _ _ _ _ _ _ _ _ k
-    (universalGSpaceCellularMap_comp ψ φ)
-    (IsCellular.comp _ _ φ.isCellular_universalGSpaceCellularMap
-      ψ.isCellular_universalGSpaceCellularMap)
-    (fun g ↦ by
-      rw [← universalGSpaceCellularMap_comp]
-      exact (ψ.comp φ).universalGSpaceCellularTranslation_comp_universalGSpaceCellularMap g)]
-  exact cellularActionComplexMap_comp _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ k
+  ext n : 1
+  simp only [universalGSpaceCellularComplexMap_f, universalGSpaceCellularRepresentationMap_comp,
+    HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f,
+    Rep.resMap_comp, Rep.resMap_eqToHom, Category.assoc, eqToHom_trans_assoc,
+    eqToHom_refl, Category.id_comp]
 
 /-- Forgetting the translation action intertwines the equivariant cellular chain map with the
 ordinary geometric cellular chain map induced by `MonoidHom.universalGSpaceCellularMap`. -/
@@ -546,7 +544,7 @@ theorem universalGSpaceCellularComplexForget₂Iso_naturality (φ : G →* H) :
       ((universalGSpaceCellularComplex k H).repResForget₂Iso φ).hom := by
   unfold universalGSpaceCellularComplexForget₂Iso universalGSpaceCellularComplexMap
     universalGSpaceCellularComplex
-  exact cellularActionComplexForget₂Iso_hom_naturality _ _ _ _ _ _ _ _ _ _ _ _ _
+  exact cellularActionComplexForget₂Iso_hom_naturality ..
 
 end Ring
 

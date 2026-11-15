@@ -119,7 +119,7 @@ theorem universalGSpaceChainMap_comp_augmentation (φ : G →* H) :
           (Rep.trivial k H k) =
       universalGSpaceAugmentation k G := by
   apply HomologicalComplex.to_single_hom_ext
-  simpa [Rep.resMap_id_hom] using
+  simpa [Rep.resMap_id'] using
     MulActionHom.toRepRes_comp_permutationAugmentation (k := k)
       (φ.universalGSpaceCellMulActionHom 0)
 
