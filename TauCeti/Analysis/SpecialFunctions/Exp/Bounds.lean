@@ -25,6 +25,7 @@ with the rescaled level `exp (-(t / ε))`.
 * `TauCeti.div_exp_sub_one_le_one`: `x / (exp x - 1) ≤ 1` for `0 ≤ x`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
 * `TauCeti.abs_exp_sub_one_le_mul_exp_abs`: `|exp t - 1| ≤ |t| exp |t|` for every real `t`.
+* `TauCeti.abs_exp_sub_one_le_mul_abs`: `|exp t - 1| ≤ exp (max M 0) |t|` for `t ≤ M`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
 -/
@@ -74,6 +75,24 @@ theorem abs_exp_sub_one_le_mul_exp_abs (t : ℝ) : |exp t - 1| ≤ |t| * exp |t|
     div_one, pow_one] at h
   rwa [← Complex.ofReal_exp, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
     Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs] at h
+
+/-- `|exp t - 1| ≤ exp (max M 0) |t|` for `t ≤ M`: on a half-line bounded above, `exp t - 1` is
+bounded by a constant multiple of `|t|`. -/
+theorem abs_exp_sub_one_le_mul_abs {t M : ℝ} (ht : t ≤ M) :
+    |exp t - 1| ≤ exp (max M 0) * |t| := by
+  have h1 : 1 ≤ exp (max M 0) := one_le_exp (le_max_right _ _)
+  rcases le_total t 0 with h | h
+  · have := add_one_le_exp t
+    have := exp_le_one_iff.2 h
+    rw [abs_of_nonpos (by linarith), abs_of_nonpos h]
+    nlinarith [abs_nonneg t]
+  · -- `exp t - 1 ≤ t exp t`, from `1 - t ≤ exp (-t)`.
+    have h2 := add_one_le_exp (-t)
+    have h3 : exp t * exp (-t) = 1 := by
+      rw [← exp_add, add_neg_cancel, exp_zero]
+    have h4 : exp t ≤ exp (max M 0) := exp_le_exp.2 (ht.trans (le_max_left _ _))
+    rw [abs_of_nonneg (by linarith [add_one_le_exp t]), abs_of_nonneg h]
+    nlinarith [exp_pos t]
 
 /-- `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real `t`. The right-hand side is the power series
 `∑ 2 · 4ⁿ t ^ (2n + 2) / (2n)!`, so this bounds `(exp t - 1)²` by a series of even powers. -/

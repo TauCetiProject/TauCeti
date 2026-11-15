@@ -20,8 +20,11 @@ import TauCeti.Analysis.InnerProductSpace.WeakSolution
 import TauCeti.Analysis.PDE.Regularity.PlanarPoisson
 import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Analysis.Sobolev.BesselPotential.PowerSeries
 import TauCeti.Analysis.Sobolev.Poincare.Schrodinger
 import TauCeti.Analysis.Sobolev.W1p.Density
+import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -85,6 +88,14 @@ solves the equation pointwise (`TauCeti.eqOn_laplacian_of_forall_integral_laplac
 real and imaginary parts separately gives the complex version
 (`TauCeti.exists_contDiff_re_im_mem_realSobolevFunctions_two_neg_laplacian_add_mul_eq`).
 
+Elliptic regularity of `-Δ + 1` also bootstraps the semilinear equation `Δu = c (exp u - 1) + h`
+in the plane. A `C²` square-integrable solution `u`, bounded above, satisfies `-Δu + u = g` with
+`g = u - c (exp u - 1) - h`. If `u ∈ H^s` with `s ≥ 2`, then `exp u - 1 ∈ H^s`
+(`TemperedDistribution.exp_mul_sub_one_mem_realSobolevFunctions`), so `g ∈ H^s` and
+`u ∈ H^(s+2)`. Hence `u` lies in every `H^s`
+(`TauCeti.mem_realSobolevFunctions_of_laplacian_eq`). For `c = 1 / 4` this is the equation of
+`log |α|²` for a plane vortex.
+
 The potential may vanish on a large set inside the ball, so `-Δ + P` need not be bounded below
 by a positive constant pointwise. A potential of this kind is `P = |α|² / 4` for the section `α`
 of a plane vortex, which vanishes at the zeros of `α` and tends to `1 / 4` at infinity; the
@@ -113,6 +124,9 @@ equation `Δη = P η` for `η = δα / α` describes the infinitesimal deformat
   a smooth `H²` solution solving the equation pointwise, for smooth `P` and `g`.
 * `TauCeti.exists_contDiff_re_im_mem_realSobolevFunctions_two_neg_laplacian_add_mul_eq`: the same
   for a complex right-hand side.
+* `TauCeti.mem_realSobolevFunctions_of_laplacian_eq`: a `C²` square-integrable solution, bounded
+  above, of `Δu = c (exp u - 1) + h` in the plane with `h` smooth and compactly supported lies in
+  every `H^s`.
 
 ## References
 
@@ -674,5 +688,91 @@ theorem exists_contDiff_re_im_mem_realSobolevFunctions_two_neg_laplacian_add_mul
     exact e₁
   · rw [Complex.add_im, Complex.neg_im, Complex.im_ofReal_mul, hΔim, congrFun him z]
     exact e₂
+
+/-! ### Regularity of square-integrable solutions of `Δu = c (exp u - 1) + h` in the plane -/
+
+/-- **Sobolev regularity for a semilinear equation in the plane.** Let `u` be a `C²`
+square-integrable function on the plane, bounded above, with `Δu = c (exp u - 1) + h` for a smooth
+compactly supported `h`. Then `u` lies in every Sobolev space `H^s(ℂ)`. For `c = 1 / 4` and
+`h = 0` this is the equation `Δ log |α|² = (|α|² - 1) / 4` of a plane vortex off the zeros of its
+section. -/
+theorem mem_realSobolevFunctions_of_laplacian_eq {u h : ℂ → ℝ} {c M : ℝ} (hu : ContDiff ℝ 2 u)
+    (hu2 : MemLp u 2 volume) (huM : ∀ z, u z ≤ M) (hh : ContDiff ℝ ∞ h)
+    (hhc : HasCompactSupport h) (heq : ∀ z, Δ u z = c * (Real.exp (u z) - 1) + h z) (s : ℝ) :
+    u ∈ realSobolevFunctions ℂ s 2 := by
+  set g : ℂ → ℝ := fun z ↦ u z - c * (Real.exp (u z) - 1) - h z with hg
+  -- `-Δu + u = g` holds weakly, by Green's identity.
+  have hweak (φ : ℂ → ℝ) (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ) :
+      ∫ z, u z * (-Δ (φ : ℂ → ℝ) z + φ z) = ∫ z, g z * φ z := by
+    have hφ2 : MemLp φ 2 volume := hφ.continuous.memLp_of_hasCompactSupport hφc
+    have hΔφ2 : MemLp (Δ φ) 2 volume :=
+      (hφ.of_le (by simp)).continuous_laplacian.memLp_of_hasCompactSupport hφc.laplacian
+    have hgreen : ∫ z, Δ φ z * u z = ∫ z, φ z * Δ u z := by
+      -- The bundled test function has `φ` as its underlying function.
+      exact hu.contDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian
+        (μ := volume) (⟨φ, hφ, hφc, by simp⟩ : 𝓓((⊤ : TopologicalSpace.Opens ℂ), ℝ))
+    have hi₁ : Integrable (fun z ↦ Δ φ z * u z) volume := hΔφ2.integrable_mul hu2
+    have hi₂ : Integrable (fun z ↦ u z * φ z) volume := hu2.integrable_mul hφ2
+    have hi₃ : Integrable (fun z ↦ φ z * Δ u z) volume :=
+      (hφ.continuous.mul hu.continuous_laplacian).integrable_of_hasCompactSupport
+        hφc.mul_right
+    calc ∫ z, u z * (-Δ φ z + φ z) = ∫ z, (-(Δ φ z * u z) + u z * φ z) := by
+          congr 1
+          ext z
+          ring
+      _ = -(∫ z, φ z * Δ u z) + ∫ z, u z * φ z := by
+          rw [integral_add (f := fun z ↦ -(Δ φ z * u z)) hi₁.neg hi₂, integral_neg, hgreen]
+      _ = ∫ z, (-(φ z * Δ u z) + u z * φ z) := by
+          rw [integral_add (f := fun z ↦ -(φ z * Δ u z)) hi₃.neg hi₂, integral_neg]
+      _ = ∫ z, g z * φ z := by
+          congr 1
+          ext z
+          simp only [hg, heq z]
+          ring
+  -- The right side `g` is square integrable.
+  have hh2 : MemLp h 2 volume := hh.continuous.memLp_of_hasCompactSupport hhc
+  have hg2 : MemLp g 2 volume := by
+    have hgc : Continuous g := by
+      have := hu.continuous
+      have := hh.continuous
+      fun_prop
+    refine MemLp.of_le ((hu2.norm.const_mul (1 + |c| * Real.exp (max M 0))).add hh2.norm)
+      hgc.aestronglyMeasurable (ae_of_all _ fun z ↦ ?_)
+    have hK : 0 ≤ (1 + |c| * Real.exp (max M 0)) * ‖u z‖ + ‖h z‖ := by positivity
+    rw [Pi.add_apply, Real.norm_of_nonneg hK]
+    simp only [hg, Real.norm_eq_abs]
+    have he := abs_exp_sub_one_le_mul_abs (huM z)
+    have t₁ := abs_sub (u z) (c * (Real.exp (u z) - 1))
+    have t₂ := abs_sub (u z - c * (Real.exp (u z) - 1)) (h z)
+    rw [abs_mul] at t₁
+    nlinarith [abs_nonneg c, abs_nonneg (u z)]
+  -- The weak equation is that of the Schrödinger operator `-Δ + P` with `P = 1`.
+  have hweak₁ (φ : ℂ → ℝ) (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ) :
+      ∫ z, u z * (-Δ (φ : ℂ → ℝ) z + (fun _ ↦ (1 : ℝ)) z * φ z) = ∫ z, g z * φ z := by
+    simpa only [one_mul] using hweak φ hφ hφc
+  -- Bootstrap: `u ∈ H^(2n+2)` for every `n`.
+  have hboot (n : ℕ) : u ∈ realSobolevFunctions ℂ (2 * n + 2) 2 := by
+    induction n with
+    | zero =>
+      simpa using mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq
+        (memLp_top_const 1) hu2 hg2 hweak₁
+    | succ n ih =>
+      have hs : Module.finrank ℝ ℂ < 2 * (2 * (n : ℝ) + 2) :=
+        finrank_real_complex_lt_two_mul (by linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)])
+      have hE := exp_mul_sub_one_mem_realSobolevFunctions hs ih 1
+      have hgs : g ∈ realSobolevFunctions ℂ (2 * n + 2) 2 := by
+        have := sub_mem (sub_mem ih (Submodule.smul_mem _ c hE))
+          (mem_realSobolevFunctions_of_hasCompactSupport hh hhc (2 * n + 2))
+        convert this using 1
+        ext z
+        simp [hg]
+      have := mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_mul_eq ih
+        (by simpa only [one_mul] using ih) hgs hweak₁
+      convert this using 2
+      push_cast
+      ring
+  exact realSobolevFunctions_mono (by norm_num) (by norm_num)
+    (show s ≤ 2 * (⌈s⌉₊ : ℝ) + 2 by linarith [Nat.le_ceil s, (Nat.ceil s).cast_nonneg (α := ℝ)])
+    (hboot ⌈s⌉₊)
 
 end TauCeti

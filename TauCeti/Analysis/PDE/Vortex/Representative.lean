@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
-import Mathlib.Analysis.Distribution.TestFunction
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.Schrodinger.Stationary
 import TauCeti.Analysis.PDE.Vortex.Decay
@@ -15,8 +14,8 @@ import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.PowerSeries
-import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
+import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -51,7 +50,7 @@ integrable, so `u ∈ H²` by elliptic regularity of `-Δ + 1`
 and whenever
 `u ∈ H^s` with `s ≥ 2`, the function `exp u - 1` lies in `H^s`
 (`TemperedDistribution.exp_mul_sub_one_mem_realSobolevFunctions`), so `-Δu + u ∈ H^s` and
-`u ∈ H^(s+2)` (`TauCeti.Vortex.mem_realSobolevFunctions_of_laplacian_eq`). The derivatives of `u`
+`u ∈ H^(s+2)` (`TauCeti.mem_realSobolevFunctions_of_laplacian_eq`). The derivatives of `u`
 and the products of `exp (u / 2) - 1` with the reference coordinates, which have bounded
 derivatives, then lie in every `H^s`.
 
@@ -59,8 +58,6 @@ derivatives, then lie in every `H^s`.
 
 All in the namespace `TauCeti.Vortex`:
 
-* `mem_realSobolevFunctions_of_laplacian_eq`: a `C²` square-integrable solution `u`, bounded
-  above, of `Δu = c (exp u - 1) + h` with `h` smooth and compactly supported lies in every `H^s(ℂ)`.
 * `mem_framedFieldSpace_of_sectionValue_eq`: a smooth vortex with `|α| → 1` whose section is `|α|`
   times the winding phase outside a compact set lies in `A_m^s` for every `s`.
 * `exists_framedGaugeGroup_smul_mem_framedFieldSpace`: every smooth framed vortex has a smooth
@@ -82,108 +79,6 @@ namespace TauCeti.Vortex
 
 open Complex Filter MeasureTheory Metric Module TemperedDistribution
 open scoped ContDiff Topology Laplacian Distributions
-
-/-! ### Regularity of square-integrable solutions of `Δu = c (exp u - 1) + h` -/
-
-/-- `|exp t - 1| ≤ exp (max M 0) |t|` for `t ≤ M`. -/
-private theorem abs_exp_sub_one_le_mul_abs {t M : ℝ} (ht : t ≤ M) :
-    |Real.exp t - 1| ≤ Real.exp (max M 0) * |t| := by
-  have h1 : 1 ≤ Real.exp (max M 0) := Real.one_le_exp (le_max_right _ _)
-  rcases le_total t 0 with h | h
-  · have := Real.add_one_le_exp t
-    have := Real.exp_le_one_iff.2 h
-    rw [abs_of_nonpos (by linarith), abs_of_nonpos h]
-    nlinarith [abs_nonneg t]
-  · -- `exp t - 1 ≤ t exp t`, from `1 - t ≤ exp (-t)`.
-    have h2 := Real.add_one_le_exp (-t)
-    have h3 : Real.exp t * Real.exp (-t) = 1 := by
-      rw [← Real.exp_add, add_neg_cancel, Real.exp_zero]
-    have h4 : Real.exp t ≤ Real.exp (max M 0) := Real.exp_le_exp.2 (ht.trans (le_max_left _ _))
-    rw [abs_of_nonneg (by linarith [Real.add_one_le_exp t]), abs_of_nonneg h]
-    nlinarith [Real.exp_pos t]
-
-/-- **Sobolev regularity for the scalar vortex equation.** Let `u` be a `C²` square-integrable
-function on the plane, bounded above, with `Δu = c (exp u - 1) + h` for a smooth compactly
-supported `h`. Then `u` lies in every Sobolev space `H^s(ℂ)`. For `c = 1 / 4` and `h = 0` this is
-the equation `Δ log |α|² = (|α|² - 1) / 4` of a plane vortex off the zeros of its section. -/
-theorem mem_realSobolevFunctions_of_laplacian_eq {u h : ℂ → ℝ} {c M : ℝ} (hu : ContDiff ℝ 2 u)
-    (hu2 : MemLp u 2 volume) (huM : ∀ z, u z ≤ M) (hh : ContDiff ℝ ∞ h)
-    (hhc : HasCompactSupport h) (heq : ∀ z, Δ u z = c * (Real.exp (u z) - 1) + h z) (s : ℝ) :
-    u ∈ realSobolevFunctions ℂ s 2 := by
-  set g : ℂ → ℝ := fun z ↦ u z - c * (Real.exp (u z) - 1) - h z with hg
-  -- `-Δu + u = g` holds weakly, by Green's identity.
-  have hweak (φ : ℂ → ℝ) (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ) :
-      ∫ z, u z * (-Δ (φ : ℂ → ℝ) z + φ z) = ∫ z, g z * φ z := by
-    have hφ2 : MemLp φ 2 volume := hφ.continuous.memLp_of_hasCompactSupport hφc
-    have hΔφ2 : MemLp (Δ φ) 2 volume :=
-      (hφ.of_le (by simp)).continuous_laplacian.memLp_of_hasCompactSupport hφc.laplacian
-    have hgreen : ∫ z, Δ φ z * u z = ∫ z, φ z * Δ u z := by
-      -- The bundled test function has `φ` as its underlying function.
-      exact hu.contDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian
-        (μ := volume) (⟨φ, hφ, hφc, by simp⟩ : 𝓓((⊤ : TopologicalSpace.Opens ℂ), ℝ))
-    have hi₁ : Integrable (fun z ↦ Δ φ z * u z) volume := hΔφ2.integrable_mul hu2
-    have hi₂ : Integrable (fun z ↦ u z * φ z) volume := hu2.integrable_mul hφ2
-    have hi₃ : Integrable (fun z ↦ φ z * Δ u z) volume :=
-      (hφ.continuous.mul hu.continuous_laplacian).integrable_of_hasCompactSupport
-        hφc.mul_right
-    calc ∫ z, u z * (-Δ φ z + φ z) = ∫ z, (-(Δ φ z * u z) + u z * φ z) := by
-          congr 1
-          ext z
-          ring
-      _ = -(∫ z, φ z * Δ u z) + ∫ z, u z * φ z := by
-          rw [integral_add (f := fun z ↦ -(Δ φ z * u z)) hi₁.neg hi₂, integral_neg, hgreen]
-      _ = ∫ z, (-(φ z * Δ u z) + u z * φ z) := by
-          rw [integral_add (f := fun z ↦ -(φ z * Δ u z)) hi₃.neg hi₂, integral_neg]
-      _ = ∫ z, g z * φ z := by
-          congr 1
-          ext z
-          simp only [hg, heq z]
-          ring
-  -- The right side `g` is square integrable.
-  have hh2 : MemLp h 2 volume := hh.continuous.memLp_of_hasCompactSupport hhc
-  have hg2 : MemLp g 2 volume := by
-    have hgc : Continuous g := by
-      have := hu.continuous
-      have := hh.continuous
-      fun_prop
-    refine MemLp.of_le ((hu2.norm.const_mul (1 + |c| * Real.exp (max M 0))).add hh2.norm)
-      hgc.aestronglyMeasurable (ae_of_all _ fun z ↦ ?_)
-    have hK : 0 ≤ (1 + |c| * Real.exp (max M 0)) * ‖u z‖ + ‖h z‖ := by positivity
-    rw [Pi.add_apply, Real.norm_of_nonneg hK]
-    simp only [hg, Real.norm_eq_abs]
-    have he := abs_exp_sub_one_le_mul_abs (huM z)
-    have t₁ := abs_sub (u z) (c * (Real.exp (u z) - 1))
-    have t₂ := abs_sub (u z - c * (Real.exp (u z) - 1)) (h z)
-    rw [abs_mul] at t₁
-    nlinarith [abs_nonneg c, abs_nonneg (u z)]
-  -- The weak equation is that of the Schrödinger operator `-Δ + P` with `P = 1`.
-  have hweak₁ (φ : ℂ → ℝ) (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ) :
-      ∫ z, u z * (-Δ (φ : ℂ → ℝ) z + (fun _ ↦ (1 : ℝ)) z * φ z) = ∫ z, g z * φ z := by
-    simpa only [one_mul] using hweak φ hφ hφc
-  -- Bootstrap: `u ∈ H^(2n+2)` for every `n`.
-  have hboot (n : ℕ) : u ∈ realSobolevFunctions ℂ (2 * n + 2) 2 := by
-    induction n with
-    | zero =>
-      simpa using mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq
-        (memLp_top_const 1) hu2 hg2 hweak₁
-    | succ n ih =>
-      have hs : finrank ℝ ℂ < 2 * (2 * (n : ℝ) + 2) :=
-        finrank_real_complex_lt_two_mul (by linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)])
-      have hE := exp_mul_sub_one_mem_realSobolevFunctions hs ih 1
-      have hgs : g ∈ realSobolevFunctions ℂ (2 * n + 2) 2 := by
-        have := sub_mem (sub_mem ih (Submodule.smul_mem _ c hE))
-          (mem_realSobolevFunctions_of_hasCompactSupport hh hhc (2 * n + 2))
-        convert this using 1
-        ext z
-        simp [hg]
-      have := mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_mul_eq ih
-        (by simpa only [one_mul] using ih) hgs hweak₁
-      convert this using 2
-      push_cast
-      ring
-  exact realSobolevFunctions_mono (by norm_num) (by norm_num)
-    (show s ≤ 2 * (⌈s⌉₊ : ℝ) + 2 by linarith [Nat.le_ceil s, (Nat.ceil s).cast_nonneg (α := ℝ)])
-    (hboot ⌈s⌉₊)
 
 /-! ### The field outside a disc in terms of `log |α|²` -/
 
@@ -290,18 +185,6 @@ private theorem sub_referenceField_eq_logField (f : ContDiffBump (0 : ℝ)) (hx 
   ext i
   fin_cases i <;> simp [logField, ← h0, ← h1, hx2, hx3, r, σ] <;> ring
 
-/-- `|log s| ≤ 2 (1 - s)` for `1 / 2 ≤ s ≤ 1`. -/
-private theorem abs_log_le_two_mul_one_sub {s : ℝ} (h₁ : 1 / 2 ≤ s) (h₂ : s ≤ 1) :
-    |Real.log s| ≤ 2 * (1 - s) := by
-  have hs : 0 < s := by linarith
-  have hlog := Real.log_le_sub_one_of_pos (inv_pos.2 hs)
-  rw [Real.log_inv] at hlog
-  rw [abs_of_nonpos (Real.log_nonpos hs.le h₂)]
-  have : s⁻¹ - 1 ≤ 2 * (1 - s) := by
-    rw [inv_eq_one_div, div_sub_one hs.ne', div_le_iff₀ hs]
-    nlinarith
-  linarith
-
 /-- The smooth field `logField f m u` lies in every Sobolev space when `u` does. -/
 private theorem logField_mem_sobolevFields (f : ContDiffBump (0 : ℝ)) (m : ℕ) {u : ℂ → ℝ}
     (hu : ContDiff ℝ ∞ u) (hus : ∀ s, u ∈ realSobolevFunctions ℂ s 2) (s : ℝ) :
@@ -335,38 +218,40 @@ private theorem logField_mem_sobolevFields (f : ContDiffBump (0 : ℝ)) (m : ℕ
   · simpa [logField, div_eq_inv_mul, mul_comm] using hr 2
   · simpa [logField, div_eq_inv_mul, mul_comm] using hr 3
 
-/-- **End-normalized vortices lie in every `A_m^s`.** Let `x` be a smooth plane vortex with
-`|α| → 1` at infinity whose section is `|α|` times the winding phase `(z / |z|)^m` outside a compact
-set. Then `x - x_ref` lies in every Sobolev space `H^s(ℂ; ℝ⁴)`, that is, `x ∈ A_m^s` for every
-`s`. -/
-theorem mem_framedFieldSpace_of_sectionValue_eq (hx : ContDiff ℝ ∞ x)
+/-- The field `logField f m u` is smooth when `u` is. -/
+private theorem contDiff_logField (f : ContDiffBump (0 : ℝ)) (m : ℕ) {u : ℂ → ℝ}
+    (hu : ContDiff ℝ ∞ u) : ContDiff ℝ ∞ (logField f m u) := by
+  have hdu (v : ℂ) : ContDiff ℝ ∞ fun z ↦ fderiv ℝ u z v :=
+    (hu.fderiv_right (by simp)).clm_apply contDiff_const
+  have hr (j : Fin 4) := contDiff_euclidean.1 (contDiff_referenceField f m) j
+  have he : ContDiff ℝ ∞ fun z ↦ Real.exp (u z / 2) - 1 :=
+    (Real.contDiff_exp.comp (hu.div_const 2)).sub contDiff_const
+  refine contDiff_euclidean.2 fun i ↦ ?_
+  fin_cases i
+  · simpa [logField] using ((hdu I).neg.div_const 2)
+  · simpa [logField] using ((hdu 1).div_const 2)
+  · simpa [logField] using he.mul (hr 2)
+  · simpa [logField] using he.mul (hr 3)
+
+/-- **The truncation of `log |α|²`.** Let `x` be a smooth plane vortex with `|α| → 1` at infinity,
+and let `R ≥ 0` be such that `|α|² ≥ 1 / 2` outside the disc of radius `R`. Cutting off
+`ℓ = log |α|²` inside the disc of radius `R + 1` gives a smooth, nonpositive, square-integrable
+function `u`, equal to `ℓ` outside the disc of radius `R + 2`, which solves
+`Δu = (exp u - 1) / 4 + h` with `h` smooth and compactly supported. -/
+private theorem exists_truncation_log_normSq (hx : ContDiff ℝ ∞ x)
     (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
-    (f : ContDiffBump (0 : ℝ)) (s : ℝ) : x ∈ framedFieldSpace f m s := by
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {R : ℝ}
+    (hR0 : 0 ≤ R) (hR : ∀ z : ℂ, R < ‖z‖ → 1 / 2 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) :
+    ∃ u h : ℂ → ℝ, ContDiff ℝ ∞ u ∧ MemLp u 2 volume ∧ (∀ z, u z ≤ 0) ∧ ContDiff ℝ ∞ h ∧
+      HasCompactSupport h ∧ (∀ z, Δ u z = 1 / 4 * (Real.exp (u z) - 1) + h z) ∧
+      ∀ z : ℂ, R + 2 < ‖z‖ → u =ᶠ[𝓝 z] fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)) := by
   have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := contDiff_euclidean.1 hx i
   set ℓ : ℂ → ℝ := fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)) with hℓ
   have hle (z : ℂ) :=
     normSq_le_one_of_tendsto ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol hlim z
-  -- Outside a disc of radius `R`, the section is normalized, `|α|² ≥ 1 / 2`, and the reference
-  -- field has its exact tail.
-  have hev : ∀ᶠ z in cocompact ℂ,
-      (sectionValue x z = ‖sectionValue x z‖ * windingPhase m z ∧
-        1 / 2 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) ∧ f.rOut < ‖z‖ ^ 2 := by
-    refine (hphase.and (hlim.eventually (le_mem_nhds (by norm_num)))).and ?_
-    filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop (max 1 f.rOut)] with z hz
-    have h1 : 1 < ‖z‖ := (le_max_left _ _).trans_lt hz
-    have h2 : f.rOut < ‖z‖ := (le_max_right _ _).trans_lt hz
-    nlinarith
-  obtain ⟨R₀, -, hR₀⟩ :=
-    hasBasis_cobounded_norm.eventually_iff.mp (cobounded_eq_cocompact (α := ℂ) ▸ hev)
-  set R := max R₀ 0
-  have hR (z : ℂ) (hz : R < ‖z‖) := hR₀ ((le_max_left _ _).trans hz.le : R₀ ≤ ‖z‖)
-  have hRnhds {z : ℂ} (hz : R < ‖z‖) : ∀ᶠ w in 𝓝 z, R < ‖w‖ :=
-    (isOpen_lt continuous_const continuous_norm).mem_nhds hz
-  have hpos {z : ℂ} (hz : R < ‖z‖) : 0 < x z 2 ^ 2 + x z 3 ^ 2 := by linarith [(hR z hz).1.2]
+  have hpos {z : ℂ} (hz : R < ‖z‖) : 0 < x z 2 ^ 2 + x z 3 ^ 2 := by linarith [hR z hz]
   -- The cutoff `χ = 1 - b` vanishes on the disc of radius `R + 1` and is one outside `R + 2`.
-  set b : ContDiffBump (0 : ℂ) := ⟨R + 1, R + 2, by positivity, by linarith⟩
+  set b : ContDiffBump (0 : ℂ) := ⟨R + 1, R + 2, by linarith, by linarith⟩
   set u : ℂ → ℝ := fun z ↦ (1 - b z) * ℓ z with hu_def
   have hu_in {z : ℂ} (hz : ‖z‖ < R + 1) : u =ᶠ[𝓝 z] 0 := by
     filter_upwards [(isOpen_lt continuous_norm continuous_const).mem_nhds hz] with w hw
@@ -401,7 +286,10 @@ theorem mem_framedFieldSpace_of_sectionValue_eq (hx : ContDiff ℝ ∞ x)
           _ ≤ 1 * (2 * (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2))) := by
               gcongr
               · linarith
-              · exact abs_log_le_two_mul_one_sub (hR z hz).1.2 (hle z)
+              · rw [abs_of_nonpos (Real.log_nonpos (by positivity) (hle z))]
+                have := Real.neg_log_one_sub_le_two_mul (x := 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2))
+                  (by linarith [hle z]) (by linarith [hR z hz])
+                rwa [sub_sub_cancel] at this
           _ ≤ 2 * K * Real.exp (-(1 / 4 * ‖z‖)) := by linarith [hK z]
     have hg : MemLp (fun z : ℂ ↦ K' * Real.exp (-(1 / 4 * ‖z‖))) 2 volume := by
       refine (memLp_two_iff_integrable_sq (by fun_prop)).2 ?_
@@ -429,30 +317,49 @@ theorem mem_framedFieldSpace_of_sectionValue_eq (hx : ContDiff ℝ ∞ x)
     rw [(InnerProductSpace.laplacian_congr_nhds (hu_out hz')).eq_of_nhds,
       (hu_out hz').eq_of_nhds, hℓ, hΔ, Real.exp_log (mul_pos four_pos (hpos hRz))]
     ring
-  have hus := mem_realSobolevFunctions_of_laplacian_eq (hu.of_le (by simp)) hu2 hu0 hh hhc
-    (c := 1 / 4) fun z ↦ by rw [hh_def]; ring
+  exact ⟨u, h, hu, hu2, hu0, hh, hhc, fun z ↦ by rw [hh_def]; ring, fun z hz ↦ hu_out hz⟩
+
+/-- **End-normalized vortices lie in every `A_m^s`.** Let `x` be a smooth plane vortex with
+`|α| → 1` at infinity whose section is `|α|` times the winding phase `(z / |z|)^m` outside a compact
+set. Then `x - x_ref` lies in every Sobolev space `H^s(ℂ; ℝ⁴)`, that is, `x ∈ A_m^s` for every
+`s`. -/
+theorem mem_framedFieldSpace_of_sectionValue_eq (hx : ContDiff ℝ ∞ x)
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
+    (f : ContDiffBump (0 : ℝ)) (s : ℝ) : x ∈ framedFieldSpace f m s := by
+  -- Outside a disc of radius `R`, the section is normalized, `|α|² ≥ 1 / 2`, and the reference
+  -- field has its exact tail.
+  have hev : ∀ᶠ z in cocompact ℂ,
+      (sectionValue x z = ‖sectionValue x z‖ * windingPhase m z ∧
+        1 / 2 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) ∧ f.rOut < ‖z‖ ^ 2 := by
+    refine (hphase.and (hlim.eventually (le_mem_nhds (by norm_num)))).and ?_
+    filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop (max 1 f.rOut)] with z hz
+    have h1 : 1 < ‖z‖ := (le_max_left _ _).trans_lt hz
+    have h2 : f.rOut < ‖z‖ := (le_max_right _ _).trans_lt hz
+    nlinarith
+  obtain ⟨R₀, -, hR₀⟩ :=
+    hasBasis_cobounded_norm.eventually_iff.mp (cobounded_eq_cocompact (α := ℂ) ▸ hev)
+  set R := max R₀ 0
+  have hR (z : ℂ) (hz : R < ‖z‖) := hR₀ ((le_max_left _ _).trans hz.le : R₀ ≤ ‖z‖)
+  have hRnhds {z : ℂ} (hz : R < ‖z‖) : ∀ᶠ w in 𝓝 z, R < ‖w‖ :=
+    (isOpen_lt continuous_const continuous_norm).mem_nhds hz
+  have hpos {z : ℂ} (hz : R < ‖z‖) : 0 < x z 2 ^ 2 + x z 3 ^ 2 := by linarith [(hR z hz).1.2]
+  -- The truncation `u` of `log |α|²` lies in every `H^s`.
+  obtain ⟨u, h, hu, hu2, hu0, hh, hhc, heq, hu_out⟩ :=
+    exists_truncation_log_normSq hx hsol hlim (le_max_right R₀ 0) fun z hz ↦ (hR z hz).1.2
+  have hus := mem_realSobolevFunctions_of_laplacian_eq (hu.of_le (by simp)) hu2 hu0 hh hhc heq
   -- `x - x_ref` agrees with `logField f m u` outside the disc of radius `R + 2`.
   have hY := logField_mem_sobolevFields f m hu hus
-  have hYc : ContDiff ℝ ∞ (logField f m u) := by
-    have hdu (v : ℂ) : ContDiff ℝ ∞ fun z ↦ fderiv ℝ u z v :=
-      (hu.fderiv_right (by simp)).clm_apply contDiff_const
-    have hr (j : Fin 4) := contDiff_euclidean.1 (contDiff_referenceField f m) j
-    have he : ContDiff ℝ ∞ fun z ↦ Real.exp (u z / 2) - 1 :=
-      (Real.contDiff_exp.comp (hu.div_const 2)).sub contDiff_const
-    refine contDiff_euclidean.2 fun i ↦ ?_
-    fin_cases i
-    · simpa [logField] using ((hdu I).neg.div_const 2)
-    · simpa [logField] using ((hdu 1).div_const 2)
-    · simpa [logField] using he.mul (hr 2)
-    · simpa [logField] using he.mul (hr 3)
   have hD : x - referenceField f m - logField f m u ∈ sobolevFields s := by
     refine mem_sobolevFields_of_hasCompactSupport
-      ((hx.sub (contDiff_referenceField f m)).sub hYc) ?_ s
+      ((hx.sub (contDiff_referenceField f m)).sub (contDiff_logField f m hu)) ?_ s
     refine HasCompactSupport.intro (isCompact_closedBall (0 : ℂ) (R + 2)) fun z hz ↦ ?_
     have hz' : R + 2 < ‖z‖ := by simpa using hz
     have hRz : R < ‖z‖ := by linarith
-    have hlog : logField f m u z = logField f m ℓ z := by
-      simp only [logField, (hu_out hz').fderiv_eq, (hu_out hz').eq_of_nhds]
+    have hlog : logField f m u z =
+        logField f m (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z := by
+      simp only [logField, (hu_out z hz').fderiv_eq, (hu_out z hz').eq_of_nhds]
     rw [hlog,
       sub_referenceField_eq_logField f hx (hsol z) (hR z hRz).2 (hpos hRz)
         ((hRnhds hRz).mono fun w hw ↦ (hR w hw).1.1), sub_self]
