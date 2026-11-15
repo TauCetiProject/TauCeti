@@ -59,6 +59,8 @@ statement.
   `Ω ∩ {0 ≤ im}` such a map agrees on the closed upper half-plane with a map in the class of a disc
   (`TauCeti.MemWkpLoc.exists_ball_extension`). Local `Lᵖ` membership extends in the same way,
   `TauCeti.MemLpLoc.planarReflection` and `TauCeti.MemLpLoc.planarReflection_ball`.
+* `TauCeti.continuousOn_planarReflection`: with weights of sum one, the reflection of a map
+  continuous up to the real axis is continuous across it.
 * `TauCeti.MemWkpLoc.exists_opens_memWkpLoc_planarReflection`: without any symmetry of `Ω`, the
   reflection is in `W^{k,p}_loc(V)` for an open `V` with `Ω ∩ {0 ≤ im} ⊆ V ⊆ Ω`.
 * `TauCeti.eLpNorm_planarReflection_le`: the `Lᵖ(Ω)` bound by the `Lᵖ(Ω ∩ {0 ≤ im})` norm, with the
@@ -173,6 +175,37 @@ theorem MemLpLoc.planarReflection {p : ℝ≥0∞} {Ω : Set ℂ}
         (measurableEmbedding_imDilation (higherReflectionNode_ne_zero j)).injective] at h
     refine h.mono_measure (Measure.restrict_mono ?_ le_rfl)
     exact fun z hz => ⟨hz.2, (show z.im < 0 from hz.1).le⟩
+
+/-- **Continuity of the reflection.** If the node dilations map the lower part of `Ω` into `Ω` and
+the weights sum to one, the reflection of a map `g` continuous on `Ω ∩ {0 ≤ im}` is continuous on
+`Ω`: on the real axis every reflected copy takes the value of `g` itself. -/
+theorem continuousOn_planarReflection (hd : ∑ j, d j = 1) {Ω : Set ℂ}
+    (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
+    (hg : ContinuousOn g (Ω ∩ {z | 0 ≤ z.im})) :
+    ContinuousOn (planarReflection d g) Ω := by
+  have hmaps (j : Fin k) :
+      MapsTo (imDilation (higherReflectionNode j)) (Ω ∩ {z | z.im ≤ 0}) (Ω ∩ {z | 0 ≤ z.im}) := by
+    rintro z ⟨hzΩ, hz : z.im ≤ 0⟩
+    refine ⟨?_, ?_⟩
+    · rcases hz.lt_or_eq with hz | hz
+      · exact hΩ z hzΩ hz j
+      · rwa [imDilation_of_im_eq_zero _ hz]
+    · simpa [imDilation_apply_im] using
+        mul_nonneg_of_nonpos_of_nonpos (higherReflectionNode_neg j).le hz
+  have heq : planarReflection d g = fun z => if 0 ≤ z.im then g z else
+      ∑ j, d j • g (imDilation (higherReflectionNode j) z) := by
+    funext z
+    split_ifs with hz
+    · exact planarReflection_of_nonneg _ _ hz
+    · exact planarReflection_of_neg _ _ (not_le.1 hz)
+  rw [heq]
+  refine ContinuousOn.if (fun z hz => ?_) ?_ ?_
+  · rw [Complex.frontier_setOfPred_le_im] at hz
+    simp only [imDilation_of_im_eq_zero _ hz.2, ← Finset.sum_smul, hd, one_smul]
+  · rwa [(isClosed_le continuous_const Complex.continuous_im).closure_eq]
+  · simp_rw [not_le, Complex.closure_setOfPred_im_lt]
+    exact continuousOn_finsetSum _ fun j _ =>
+      (hg.comp (imDilation (higherReflectionNode j)).continuous.continuousOn (hmaps j)).const_smul _
 
 /-! ### Integration by parts up to the real axis -/
 

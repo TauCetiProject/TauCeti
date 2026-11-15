@@ -16,10 +16,9 @@ import TauCeti.Analysis.Sobolev.Local.Reflection
 Let `p > 2`, `1 < q ≤ p` and let `B : F × G → H` be continuous bilinear with `F` and `G`
 finite-dimensional. For every `i ≥ 1`, if `f ∈ W^{i,p}_loc` and `g ∈ W^{i,q}_loc` on the
 relatively open set `Ω ∩ {0 ≤ im}` of the closed upper half-plane, then
-`B(f, g) ∈ W^{i,q}_loc(Ω ∩ {0 ≤ im})`, with bounds up to the real axis. At `q = p` this is the
-algebra property of `W^{i,p}_loc` on half-discs under continuous bilinear maps. This carries
-`TauCeti.MemWkpLoc.bilin_succ` from open planar domains to half-discs; the order-one case is
-`TauCeti.MemWkpLoc.bilin_halfPlane`.
+`B(f, g) ∈ W^{i,q}_loc(Ω ∩ {0 ≤ im})`. At `q = p` this is the algebra property of
+`W^{i,p}_loc` on half-discs under continuous bilinear maps. This carries
+`TauCeti.MemWkpLoc.bilin_succ` from open planar domains to half-discs.
 
 Near a boundary point of a pseudoholomorphic curve with boundary, the curve is modelled on a
 half-disc, and the boundary bootstrap multiplies the map and its derivatives by coefficient
@@ -30,15 +29,6 @@ fields in the same local Sobolev classes, up to the real axis.
 * `TauCeti.MemWkpLoc.bilin_succ_halfPlane`: mixed-exponent products at every positive order.
 * `TauCeti.MemWkpLoc.clm_apply_succ_halfPlane`: the field form `z ↦ A z (u z)`.
 * `TauCeti.MemWkpLoc.compL_succ_halfPlane`: the composition form `z ↦ A z ∘L C z`.
-
-## Implementation notes
-
-Near a point of the real axis, both factors on a disc centred on the axis are extended across the
-axis by the higher-order reflection of the same order,
-`TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball`, the interior theorem is applied on
-the disc, and the result is restricted back to the half-disc by `TauCeti.MemWkpLoc.congr_mono`,
-since the reflection agrees with the original map there. Near a point off the axis the interior
-theorem applies directly. `TauCeti.inter_setOf_im_nonneg_induction` glues the two cases.
 
 ## References
 
@@ -60,9 +50,8 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimen
 
 /-- **Mixed-exponent products on half-discs at every positive order.** For `p > 2` and
 `1 < q ≤ p`, the product of a `W^{k+1,p}_loc` map with a `W^{k+1,q}_loc` map on `Ω ∩ {0 ≤ im}`,
-both with finite-dimensional values, is in `W^{k+1,q}_loc` there, with bounds up to the real
-axis. At `q = p` this is the algebra property of `W^{k+1,p}_loc` on half-discs under continuous
-bilinear maps. -/
+both with finite-dimensional values, is in `W^{k+1,q}_loc` there. At `q = p` this is the
+algebra property of `W^{k+1,p}_loc` on half-discs under continuous bilinear maps. -/
 theorem MemWkpLoc.bilin_succ_halfPlane [CompleteSpace H] (B : F →L[ℝ] G →L[ℝ] H) (hp : 2 < p)
     (hq : 1 < q) (hqp : q ≤ p) {k : ℕ} {f : ℂ → F} {g : ℂ → G}
     (hf : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) f)
