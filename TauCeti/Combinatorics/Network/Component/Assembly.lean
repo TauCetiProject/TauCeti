@@ -244,31 +244,27 @@ namespace ExcessFlow
 weak component, with inherited arrow bounds and prescribed excess. -/
 def componentEquiv : ExcessFlow lo hi d ≃
     ((C : @WeaklyConnectedComponent V ⟨Q⟩) →
-      ExcessFlow (lo.restrictComponent C) (hi.restrictComponent C) (fun x ↦ d x.1)) where
-  toFun f C := f.restrictComponent C
-  invFun f := ⟨(Assignment.componentEquiv Q K).symm (fun C ↦ (f C).val),
-    ⟨(Assignment.mem_Icc_iff_forall_restrictComponent _ lo hi).2 (by
-        intro C
-        simpa using (f C).mem_Icc),
-      funext fun x ↦ by
-        rw [Assignment.excessAt_componentEquiv_symm]
-        exact (f (@WeaklyConnectedComponent.mk V ⟨Q⟩ x)).excessAt_eq ⟨x, rfl⟩⟩⟩
-  left_inv f := by
-    apply Subtype.ext
-    simpa only [restrictComponent_val] using
-      Assignment.componentEquiv_symm_restrictComponent f.val
-  right_inv f := by
-    funext C
-    apply Subtype.ext
-    simpa only [restrictComponent_val, Assignment.componentEquiv_apply] using
-      congrFun ((Assignment.componentEquiv Q K).apply_symm_apply (fun C ↦ (f C).val)) C
+      ExcessFlow (lo.restrictComponent C) (hi.restrictComponent C) (fun x ↦ d x.1)) :=
+  ((Assignment.componentEquiv Q K).subtypeEquiv (fun f ↦ by
+    simp only [Assignment.componentEquiv_apply, forall_and]
+    rw [Assignment.mem_Icc_iff_forall_restrictComponent]
+    apply and_congr_right
+    intro _
+    simp only [funext_iff]
+    constructor
+    · intro h C x
+      simpa only [Assignment.excessAt_restrictComponent] using h x.1
+    · intro h x
+      simpa only [Assignment.excessAt_restrictComponent] using
+        h (@WeaklyConnectedComponent.mk V ⟨Q⟩ x) ⟨x, rfl⟩)).trans Equiv.subtypePiEquivPi
 
 /-- The equivalence sends a feasible assignment to its component restrictions. -/
 @[simp]
 theorem componentEquiv_apply (f : ExcessFlow lo hi d)
     (C : @WeaklyConnectedComponent V ⟨Q⟩) :
-    componentEquiv lo hi d f C = f.restrictComponent C :=
-  (rfl)
+    componentEquiv lo hi d f C = f.restrictComponent C := by
+  apply Subtype.ext
+  simp [componentEquiv, Equiv.subtypePiEquivPi, restrictComponent_val]
 
 /-- The inverse equivalence assembles the component arrow assignments without changing values. -/
 @[simp]
@@ -282,8 +278,8 @@ theorem componentEquiv_symm_apply_val
 /-- Assembling all restrictions recovers the original prescribed-excess assignment. -/
 @[simp]
 theorem componentEquiv_symm_restrictComponent (f : ExcessFlow lo hi d) :
-    (componentEquiv lo hi d).symm (fun C ↦ f.restrictComponent C) = f :=
-  (componentEquiv lo hi d).symm_apply_apply f
+    (componentEquiv lo hi d).symm (fun C ↦ f.restrictComponent C) = f := by
+  simpa only [← componentEquiv_apply] using (componentEquiv lo hi d).symm_apply_apply f
 
 /-- Restricting an assembly recovers the supplied prescribed-excess component assignment. -/
 @[simp]
@@ -312,34 +308,27 @@ component, retaining both arrow bounds and both vertex-excess bounds. -/
 def componentEquiv : ExcessIntervalFlow lo hi a b ≃
     ((C : @WeaklyConnectedComponent V ⟨Q⟩) →
       ExcessIntervalFlow (lo.restrictComponent C) (hi.restrictComponent C)
-        (fun x ↦ a x.1) (fun x ↦ b x.1)) where
-  toFun f C := f.restrictComponent C
-  invFun f := ⟨(Assignment.componentEquiv Q K).symm (fun C ↦ (f C).val),
-    ⟨(Assignment.mem_Icc_iff_forall_restrictComponent _ lo hi).2 (by
-        intro C
-        simpa using (f C).mem_Icc),
-      ⟨fun x ↦ by
-        rw [Assignment.excessAt_componentEquiv_symm]
-        exact (f (@WeaklyConnectedComponent.mk V ⟨Q⟩ x)).excessAt_mem_Icc.1 ⟨x, rfl⟩,
-      fun x ↦ by
-        rw [Assignment.excessAt_componentEquiv_symm]
-        exact (f (@WeaklyConnectedComponent.mk V ⟨Q⟩ x)).excessAt_mem_Icc.2 ⟨x, rfl⟩⟩⟩⟩
-  left_inv f := by
-    apply Subtype.ext
-    simpa only [restrictComponent_val] using
-      Assignment.componentEquiv_symm_restrictComponent f.val
-  right_inv f := by
-    funext C
-    apply Subtype.ext
-    simpa only [restrictComponent_val, Assignment.componentEquiv_apply] using
-      congrFun ((Assignment.componentEquiv Q K).apply_symm_apply (fun C ↦ (f C).val)) C
+        (fun x ↦ a x.1) (fun x ↦ b x.1)) :=
+  ((Assignment.componentEquiv Q K).subtypeEquiv (fun f ↦ by
+    simp only [Assignment.componentEquiv_apply, forall_and]
+    rw [Assignment.mem_Icc_iff_forall_restrictComponent]
+    apply and_congr_right
+    intro _
+    simp only [Set.mem_Icc, Pi.le_def, ← forall_and]
+    constructor
+    · intro h C x
+      simpa only [Assignment.excessAt_restrictComponent] using h x.1
+    · intro h x
+      simpa only [Assignment.excessAt_restrictComponent] using
+        h (@WeaklyConnectedComponent.mk V ⟨Q⟩ x) ⟨x, rfl⟩)).trans Equiv.subtypePiEquivPi
 
 /-- The equivalence sends an interval-excess assignment to its component restrictions. -/
 @[simp]
 theorem componentEquiv_apply (f : ExcessIntervalFlow lo hi a b)
     (C : @WeaklyConnectedComponent V ⟨Q⟩) :
-    componentEquiv lo hi a b f C = f.restrictComponent C :=
-  (rfl)
+    componentEquiv lo hi a b f C = f.restrictComponent C := by
+  apply Subtype.ext
+  simp [componentEquiv, Equiv.subtypePiEquivPi, restrictComponent_val]
 
 /-- The inverse interval-excess equivalence assembles the underlying arrow assignments. -/
 @[simp]
@@ -354,8 +343,8 @@ theorem componentEquiv_symm_apply_val
 /-- Assembling all restrictions recovers the original interval-excess assignment. -/
 @[simp]
 theorem componentEquiv_symm_restrictComponent (f : ExcessIntervalFlow lo hi a b) :
-    (componentEquiv lo hi a b).symm (fun C ↦ f.restrictComponent C) = f :=
-  (componentEquiv lo hi a b).symm_apply_apply f
+    (componentEquiv lo hi a b).symm (fun C ↦ f.restrictComponent C) = f := by
+  simpa only [← componentEquiv_apply] using (componentEquiv lo hi a b).symm_apply_apply f
 
 /-- Restricting an assembly recovers the supplied interval-excess component assignment. -/
 @[simp]
