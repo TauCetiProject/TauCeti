@@ -34,13 +34,15 @@ to exist
 nonzero meromorphic `1`-form exists is not proved here, so `ω` is a hypothesis of
 `TauCeti.RiemannSurface.differentialSheafCechCohomologyIso`.
 
-The comparison does not depend on the choice of `ω`, only on the existence of a `1`-form which is
-meromorphic and of finite order everywhere, that is, of a canonical divisor
-(`TauCeti.RiemannSurface.IsCanonicalDivisor`). For every canonical divisor `K` the cohomology of
-`Ω_D` is that of `𝒪_(D + K)`
+Only the existence of a `1`-form which is meromorphic and of finite order everywhere, that is, of
+a canonical divisor (`TauCeti.RiemannSurface.IsCanonicalDivisor`), is needed for the existence of
+the comparison: for every canonical divisor `K` the cohomology of `Ω_D` is isomorphic to that of
+`𝒪_(D + K)`
 (`nonempty_iso_cechCohomology_differentialSheaf_divisorSheaf_add_of_isCanonicalDivisor`);
 on the Riemann sphere, `div dz = -2[∞]`, so `Ω_D` has the cohomology of `𝒪_(D - 2[∞])`
-(`nonempty_iso_cechCohomology_differentialSheaf_divisorSheaf_add_neg_two_infty`).
+(`nonempty_iso_cechCohomology_differentialSheaf_divisorSheaf_add_neg_two_infty`). These
+statements only assert that an isomorphism exists; the isomorphisms induced by different
+choices of `ω` are not compared here.
 A finite holomorphic map to the Riemann sphere supplies a canonical divisor, by pulling back
 `dz` (see `TauCeti.Analysis.Complex.RiemannSurface.Differential.RiemannHurwitz`).
 
