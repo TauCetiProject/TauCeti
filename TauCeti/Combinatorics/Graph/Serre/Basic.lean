@@ -660,6 +660,10 @@ instance (α : Type w) [DecidableEq α] : DecidableEq (rose α).E :=
 instance (α : Type w) [IsEmpty α] : IsEmpty (rose α).E :=
   inferInstanceAs (IsEmpty (α × Bool))
 
+/-- A rose with finitely many petals has finitely many darts. -/
+instance (α : Type w) [Finite α] : Finite (rose α).E :=
+  inferInstanceAs (Finite (α × Bool))
+
 /-- The geometric edges of a rose are its petals. -/
 def roseGeomEdgeEquiv (α : Type w) : (rose α).GeomEdge ≃ α where
   toFun := GeomEdge.lift (rose α) Prod.fst fun _ => rfl
