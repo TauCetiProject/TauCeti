@@ -265,6 +265,21 @@ def rightMappingSpacePiAddEquiv (X Y : KInjectiveDGCategory C) (n : ℕ) :
   (dgNerve.rightMappingSpacePiAddEquivHomology X Y n).trans
     (linearHomComplexHomologyLinearEquivOfIsKInjective R X.obj Y.obj _).toAddEquiv
 
+/-- The mapping-space equivalence is the dg-nerve identification of homotopy groups with the
+cohomology of the Hom complex, followed by the identification of that cohomology with morphisms
+in the derived category. -/
+-- Not `@[simp]`: the cast `((n + 1 : ℕ) : ℤ)` in the type is not in simp normal form, so the
+-- left-hand side is not either.
+theorem rightMappingSpacePiAddEquiv_apply (X Y : KInjectiveDGCategory C) (n : ℕ)
+    (x : Additive (SSet.KanComplex.π (n + 1)
+      ((dgNerve R (KInjectiveDGCategory C)).rightMappingSpace ((dgNerveEquiv R _).symm X)
+        ((dgNerveEquiv R _).symm Y)) (dgNerve.rightMappingSpaceZero (R := R) X Y))) :
+    rightMappingSpacePiAddEquiv R X Y n x =
+      haveI : Y.obj.IsKInjective := Y.property
+      linearHomComplexHomologyLinearEquivOfIsKInjective R X.obj Y.obj _
+        (dgNerve.rightMappingSpacePiAddEquivHomology X Y n x) :=
+  (rfl)
+
 end MappingSpace
 
 end KInjectiveDGCategory

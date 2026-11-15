@@ -99,6 +99,18 @@ theorem linearHomComplexHomologyLinearEquivOfIsKInjective_symm_mk {K L : Cochain
     LinearEquiv.trans_apply, linearHomComplexHomologyLinearEquiv_symm_mk]
   simp [qhShiftIso, Linear.homCongr_apply, quotientCompQhIso_hom_naturality_assoc]
 
+/-- Transporting the identification along isomorphisms out of the derived-category images of
+`K` and of `L⟦n⟧` amounts to transporting the image of a homotopy class under `Qh`. -/
+private lemma homCongr_linearHomComplexHomologyLinearEquivOfIsKInjective
+    {K L : CochainComplex C ℤ} [L.IsKInjective] {n : ℤ} {X Y : DerivedCategory C}
+    (e : Qh.obj ((HomotopyCategory.quotient C _).obj K) ≅ X)
+    (e' : Qh.obj ((HomotopyCategory.quotient C _).obj (L⟦n⟧)) ≅ Y)
+    (a : (CochainComplex.linearHomComplex R K L).homology n) :
+    Linear.homCongr R ((quotientCompQhIso C).symm.app K ≪≫ e) ((qhShiftIso L n).symm ≪≫ e')
+        (linearHomComplexHomologyLinearEquivOfIsKInjective R K L n a) =
+      (e.inv ≫ Qh.map (linearHomComplexHomologyLinearEquiv R K L n a)) ≫ e'.hom := by
+  simp [linearHomComplexHomologyLinearEquivOfIsKInjective, Linear.homCongr_apply]
+
 end KInjective
 
 variable (R : Type w) [Ring R] (C : Type u) [Category.{v} C] [Abelian C] [Linear R C]
@@ -194,12 +206,25 @@ def derivedHomHomologyLinearEquiv (L M : DerivedCategory C) (n : ℤ) :
       (L ⟶ M⟦n⟧) :=
   (homologyDerivedHomIso R L M n ≪≫ (Functor.isoWhiskerLeft _ (homologyFunctorFactorsh _ n) ≪≫
     HomotopyCategory.homologyFunctorFactors _ _ n).app _).toLinearEquiv ≪≫ₗ
-    linearHomComplexHomologyLinearEquiv R ((kInjectiveReplacement C).obj L).as
+    linearHomComplexHomologyLinearEquivOfIsKInjective R ((kInjectiveReplacement C).obj L).as
       ((kInjectiveReplacement C).obj M).as n ≪≫ₗ
-    LinearEquiv.ofBijective (Qh.mapLinearMap R)
-      (CochainComplex.IsKInjective.Qh_map_bijective _ _) ≪≫ₗ
-    Linear.homCongr R ((asIso (kInjectiveReplacementAdjunction C).counit).app L)
-      (shiftKInjectiveReplacementIso M n)
+    Linear.homCongr R ((quotientCompQhIso C).symm.app _ ≪≫
+        (asIso (kInjectiveReplacementAdjunction C).counit).app L)
+      ((qhShiftIso _ n).symm ≪≫ shiftKInjectiveReplacementIso M n)
+
+/-- The identification of `Hⁿ RHom(L, M)` with `L ⟶ M⟦n⟧`, written through the cohomology of the
+Hom complex of the K-injective replacements. -/
+private lemma derivedHomHomologyLinearEquiv_apply (L M : DerivedCategory C) (n : ℤ)
+    (z : (homologyFunctor (ModuleCat.{v} R) n).obj (((derivedHom R C).obj (op L)).obj M)) :
+    derivedHomHomologyLinearEquiv R L M n z =
+      (((asIso (kInjectiveReplacementAdjunction C).counit).app L).inv ≫
+        Qh.map (linearHomComplexHomologyLinearEquiv R ((kInjectiveReplacement C).obj L).as
+          ((kInjectiveReplacement C).obj M).as n
+            ((homologyDerivedHomIso R L M n ≪≫ (Functor.isoWhiskerLeft _
+              (homologyFunctorFactorsh _ n) ≪≫
+                HomotopyCategory.homologyFunctorFactors _ _ n).app _).toLinearEquiv z))) ≫
+        (shiftKInjectiveReplacementIso M n).hom :=
+  homCongr_linearHomComplexHomologyLinearEquivOfIsKInjective R _ _ _
 
 /-- The identification of the cohomology of `RHom(L, M)` with morphisms `L ⟶ M⟦n⟧` is natural in
 `M`: a morphism `g : M ⟶ M'` acts by composition with `g⟦n⟧`. -/
@@ -245,7 +270,7 @@ theorem derivedHomHomologyLinearEquiv_naturality_right (L : DerivedCategory C)
       _ = _ := (congrArg (fun t ↦ _ ≫ Qh.map a ≫ t)
             (shiftKInjectiveReplacementIso_naturality g g' hg' n)).trans
           ((Category.assoc _ _ _).trans (Category.assoc _ _ _)).symm
-  rw [derivedHomHomologyLinearEquiv, derivedHomHomologyLinearEquiv, hmap]
+  rw [derivedHomHomologyLinearEquiv_apply, derivedHomHomologyLinearEquiv_apply, hmap]
   exact (congrArg (fun t ↦ (((asIso (kInjectiveReplacementAdjunction C).counit).app L).inv ≫
     Qh.map (linearHomComplexHomologyLinearEquiv R I J' n t)) ≫
       (shiftKInjectiveReplacementIso M' n).hom) hz).trans
@@ -294,7 +319,7 @@ theorem derivedHomHomologyLinearEquiv_naturality_left {L L' : DerivedCategory C}
       ((congrArg (· ≫ _) ((Category.assoc _ _ _).symm.trans
         (congrArg (· ≫ Qh.map a) (counit_inv_naturality f f' hf')))).trans
           ((congrArg (· ≫ _) (Category.assoc _ _ _)).trans (Category.assoc _ _ _)))
-  rw [derivedHomHomologyLinearEquiv, derivedHomHomologyLinearEquiv, hmap]
+  rw [derivedHomHomologyLinearEquiv_apply, derivedHomHomologyLinearEquiv_apply, hmap]
   exact (congrArg (fun t ↦ (((asIso (kInjectiveReplacementAdjunction C).counit).app L').inv ≫
     Qh.map (linearHomComplexHomologyLinearEquiv R I' J n t)) ≫
       (shiftKInjectiveReplacementIso M n).hom) hz).trans
