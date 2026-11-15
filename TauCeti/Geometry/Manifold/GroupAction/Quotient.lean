@@ -80,8 +80,9 @@ abbrev QuotientModelSpace (E E' : Type*) [NormedAddCommGroup E] [NormedSpace ℝ
   EuclideanSpace ℝ (Fin (finrank ℝ E' - finrank ℝ E))
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+  [BoundarylessManifold I G]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
@@ -89,7 +90,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 section Slice
 
-omit [I.Boundaryless] in
+omit [BoundarylessManifold I G] in
 variable (I G I') in
 /-- A free action of a finite-dimensional Lie group is locally free. -/
 private theorem isotropy_eq_bot (x : M) :
@@ -104,14 +105,14 @@ private def sliceComplement (x : M) : Submodule ℝ E' :=
   (Submodule.exists_isCompl
     ((InfinitesimalAction.fundamental I G I' M).orbitTangent x)).choose
 
-omit [I.Boundaryless] [I'.Boundaryless] [ProperSMul G M] [IsCancelSMul G M] in
+omit [BoundarylessManifold I G] [I'.Boundaryless] [ProperSMul G M] [IsCancelSMul G M] in
 private theorem isCompl_sliceComplement (x : M) :
     IsCompl ((InfinitesimalAction.fundamental I G I' M).orbitTangent x)
       (sliceComplement I G I' x : Submodule ℝ E') :=
   (Submodule.exists_isCompl
     ((InfinitesimalAction.fundamental I G I' M).orbitTangent x)).choose_spec
 
-omit [I.Boundaryless] in
+omit [BoundarylessManifold I G] in
 private theorem finrank_sliceComplement (x : M) :
     finrank ℝ (QuotientModelSpace E E') = finrank ℝ (sliceComplement I G I' x) := by
   have h1 : finrank ℝ ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) +
@@ -134,7 +135,7 @@ variable (I G I') in
 private def slice (x : M) (v : QuotientModelSpace E E') : M :=
   (extChartAt I' x).symm (extChartAt I' x x + sliceEquiv I G I' x v)
 
-omit [I.Boundaryless] in
+omit [BoundarylessManifold I G] in
 private theorem slice_zero (x : M) : slice I G I' x 0 = x := by
   simp [slice]
 
@@ -154,7 +155,7 @@ private theorem isLocalDiffeomorphAt_smul_slice (x : M) :
   have hT : T (1, 0) = (1, 0) := Prod.ext rfl e.map_zero
   exact IsLocalDiffeomorphAt.comp (hf := T.isLocalDiffeomorph (1, 0)) (hg := hT ▸ h)
 
-omit [I.Boundaryless] in
+omit [BoundarylessManifold I G] in
 /-- The slice through `x` is smooth where `φ x + e v` lies in the target of `φ`. -/
 private theorem contMDiffOn_slice (x : M) :
     ContMDiffOn 𝓘(ℝ, QuotientModelSpace E E') I' ∞ (slice I G I' x)
@@ -233,6 +234,10 @@ private def sliceChart (x : M) :
         x).isLocalHomeomorphOn).isOpenMap
     (isOpen_sliceDomain x)).symm
 
+private theorem sliceChart_target (x : M) :
+    (sliceChart I G I' x).target = sliceDomain I G I' x :=
+  rfl
+
 private theorem sliceChart_symm_apply (x : M) (v : QuotientModelSpace E E') :
     (sliceChart I G I' x).symm v = Quotient.mk _ (slice I G I' x v) :=
   rfl
@@ -276,6 +281,11 @@ def orbitRelQuotientChartedSpace :
     rwa [Quotient.out_eq] at h
   chart_mem_atlas q := mem_range_self q
 
+private theorem chartAt_orbitRelQuotient (q : MulAction.orbitRel.Quotient G M) :
+    letI := orbitRelQuotientChartedSpace I G I' M
+    chartAt (QuotientModelSpace E E') q = sliceChart I G I' q.out :=
+  rfl
+
 /-- **The quotient manifold theorem.** The orbit space of a free proper smooth action of a
 finite-dimensional Lie group `G` on a boundaryless smooth manifold `M` is a smooth manifold for
 the slice charts `ProperSMul.orbitRelQuotientChartedSpace`. -/
@@ -289,10 +299,11 @@ instance instIsManifoldOrbitRelQuotient :
   simp only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, range_id, preimage_id_eq,
     inter_univ, CompTriple.comp_eq]
   intro v hv
+  rw [id_eq, OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source,
+    sliceChart_target, mem_inter_iff, mem_preimage, sliceChart_symm_apply] at hv
   -- The transition sends `v` to the slice coordinate at `q'` of the orbit of `τ v`.
-  have hv' : v ∈ sliceDomain I G I' q.out := hv.1
   have h := contMDiffAt_sliceChart_comp
-    ((contMDiffOn_sliceDomain q.out).contMDiffAt ((isOpen_sliceDomain q.out).mem_nhds hv'))
+    ((contMDiffOn_sliceDomain q.out).contMDiffAt ((isOpen_sliceDomain q.out).mem_nhds hv.1))
     q'.out hv.2
   exact (contMDiffAt_iff_contDiffAt.1 h).contDiffWithinAt
 
@@ -305,10 +316,10 @@ theorem contMDiff_quotientMk :
   rw [contMDiffAt_iff_target]
   refine ⟨continuous_quot_mk.continuousAt, ?_⟩
   -- In the chart at the orbit of `y`, the projection reads as a slice coordinate.
-  have h := contMDiffAt_sliceChart_comp (I := I) (G := G) contMDiffAt_id
-    (Quotient.mk (MulAction.orbitRel G M) y).out
-    (mem_chart_source (QuotientModelSpace E E') (Quotient.mk _ y))
-  rw [extChartAt_coe, modelWithCornersSelf_coe, Function.id_comp]
+  have hy := mem_chart_source (QuotientModelSpace E E') (Quotient.mk (MulAction.orbitRel G M) y)
+  rw [chartAt_orbitRelQuotient] at hy
+  have h := contMDiffAt_sliceChart_comp (I := I) (G := G) contMDiffAt_id _ hy
+  rw [extChartAt_coe, modelWithCornersSelf_coe, Function.id_comp, chartAt_orbitRelQuotient]
   exact h
 
 /-- The differential of the orbit projection is surjective: the slice through a representative,
@@ -333,11 +344,9 @@ private theorem surjective_mfderiv_quotientMk (y : M) :
   have hq0 : extChartAt 𝓘(ℝ, QuotientModelSpace E E') q q = 0 := by
     have h0 : (sliceChart I G I' x).symm 0 = q := by
       rw [sliceChart_symm_apply, slice_zero, Quotient.out_eq]
-    rw [extChartAt_coe, modelWithCornersSelf_coe, Function.id_comp]
-    -- The chart at `q` is by definition the slice chart at its representative `x`.
-    change sliceChart I G I' x q = 0
-    rw [← h0]
-    exact (sliceChart I G I' x).right_inv (zero_mem_sliceDomain x)
+    rw [extChartAt_coe, modelWithCornersSelf_coe, Function.id_comp, chartAt_orbitRelQuotient]
+    exact (congrArg (sliceChart I G I' x) h0.symm).trans
+      ((sliceChart I G I' x).right_inv (zero_mem_sliceDomain x))
   have hderiv : mfderiv 𝓘(ℝ, QuotientModelSpace E E') 𝓘(ℝ, QuotientModelSpace E E')
       (Quotient.mk (MulAction.orbitRel G M) ∘ σ) 0 = ContinuousLinearMap.id ℝ _ := by
     rw [hπσ, ← hq0, ← mfderivWithin_univ, ← (𝓘(ℝ, QuotientModelSpace E E')).range_eq_univ]
