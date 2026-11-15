@@ -8,32 +8,38 @@ module
 public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
 public import TauCeti.RingTheory.Huber.WeightedEval.Completion
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.BoundedEval
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Adic
 
 /-!
-# Coefficient maps and evaluation under the Gauss comparison
+# Coefficient maps, reductions, and evaluation under the Gauss comparison
 
 The unit-radius Gauss comparison identifies the Huber and normed restricted-series carriers.
-This file proves that their coefficient maps and evaluations agree, both before and after
-completion. In particular, evaluation on the completed Huber carrier satisfies the same bound
-as the coefficient homomorphism, measured using the Gauss norm on the compared carrier.
-
-The coefficient map may be bounded by an arbitrary constant, not necessarily contractive.
-The points have coordinate norms at most one. These bounds imply power-boundedness, so that
-Huber evaluation is defined; its more general power-bounded evaluation is not asserted to have
-a Gauss-norm bound without these hypotheses. Completeness of the source coefficients is needed
-only for comparisons involving the source completion.
+This file proves that their coefficient maps, open-ideal polynomial reductions, adic polynomial
+quotient equivalences, and topological evaluations agree, both before and after completion. In
+particular, evaluation on the completed Huber carrier into a normed target satisfies the same bound
+as the coefficient homomorphism, measured using the Gauss norm on the compared carrier, while
+evaluation into a general complete Hausdorff nonarchimedean or linearly topologised target agrees
+with `restrictedLift` and `restrictedLiftOfIsLinearTopology`.
 
 ## Main results
 
 * `restrictedMvPowerSeriesGaussEquiv_weightedMap` and
   `restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion`: coefficient-map naturality.
-* `weightedEvalHom_eq_restrictedEval₂OfBound`: topological evaluation is normed evaluation.
-* `weightedEvalHomCompletion_eq_restrictedEval₂OfBound`: the same comparison after completion.
-* `norm_weightedEvalHomCompletion_le`: the bound on completed evaluation.
+* `weightedEvalHom_eq_restrictedEval₂OfBound` and
+  `weightedEvalHomCompletion_eq_restrictedEval₂OfBound`: topological evaluation is normed
+  evaluation at points of norm at most one, with bound `norm_weightedEvalHomCompletion_le`.
+* `quotientRestrictedPowEquivMvPolynomialQuotient_eq_gauss_trans` and
+  `quotientRestrictedCompletionPowEquivMvPolynomialQuotient_eq_gauss_trans`: the Huber and
+  Gauss-normed polynomial quotient algebra isomorphisms modulo `Iᵐ` agree before and after
+  completion.
+* `weightedEvalHom_eq_restrictedLift`, `weightedEvalHomCompletion_eq_restrictedLift`, and
+  `weightedEvalHomCompletion_eq_restrictedLiftOfIsLinearTopology`: Huber evaluation into general
+  complete Hausdorff nonarchimedean or linearly topologised targets agrees with `restrictedLift`.
 
 ## References
 
 * Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.1.1.
+* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, §§7.5.1–7.5.3.
 * T. Wedhorn, *Adic Spaces*, §5.6, Proposition 5.50.
 -/
 
@@ -146,5 +152,111 @@ theorem norm_weightedEvalHomCompletion_le (f : restrictedMvPowerSeriesCompletion
   exact φ.norm_restrictedEval₂OfBound_le a hφ ha _
 
 end Evaluation
+
+section Reduction
+
+/-- The polynomial quotient isomorphism on Huber restricted series agrees with transporting
+`quotientIsRestrictedSubringPowEquivMvPolynomialQuotient` along
+`restrictedMvPowerSeriesGaussAlgEquiv`. -/
+theorem quotientRestrictedPowEquivMvPolynomialQuotient_eq_gauss_trans {I : Ideal R}
+    (hI : IsAdic I) (hfg : I.FG) {m : ℕ} (hm : 0 < m) :
+    quotientRestrictedPowEquivMvPolynomialQuotient (k := k) hI hfg hm =
+      (Ideal.quotientEquivAlg _ _ (restrictedMvPowerSeriesGaussAlgEquiv (n := k) (R := R)) (by
+        rw [← Ideal.map_pow, ← Ideal.map_pow, Ideal.map_map,
+          ← algebraMap_weightedRestrictedSubring]
+        exact congrArg (Ideal.map · (I ^ m))
+          (restrictedMvPowerSeriesGaussAlgEquiv (n := k)
+            (R := R)).toAlgHom.comp_algebraMap.symm)).trans
+        (quotientIsRestrictedSubringPowEquivMvPolynomialQuotient hI hfg hm) := by
+  ext x
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp
+
+/-- Over a complete ultrametric normed ring `R`, the completed polynomial quotient isomorphism
+modulo `(I · R⟨X⟩)ᵐ` agrees with transporting
+`quotientIsRestrictedSubringPowEquivMvPolynomialQuotient` along
+`restrictedMvPowerSeriesCompletionGaussAlgEquiv`. -/
+theorem quotientRestrictedCompletionPowEquivMvPolynomialQuotient_eq_gauss_trans [CompleteSpace R]
+    {I : Ideal R} (hI : IsAdic I) (hfg : I.FG) {m : ℕ} (hm : 0 < m) :
+    quotientRestrictedCompletionPowEquivMvPolynomialQuotient (k := k) hI hfg hm =
+      (Ideal.quotientEquivAlg _ _
+        (restrictedMvPowerSeriesCompletionGaussAlgEquiv (n := k) (R := R)) (by
+          rw [← Ideal.map_pow, ← Ideal.map_pow, Ideal.map_map]
+          exact congrArg (Ideal.map · (I ^ m))
+            (restrictedMvPowerSeriesCompletionGaussAlgEquiv (n := k)
+              (R := R)).toAlgHom.comp_algebraMap.symm)).trans
+        (quotientIsRestrictedSubringPowEquivMvPolynomialQuotient hI hfg hm) := by
+  ext x
+  obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp
+
+end Reduction
+
+section TopologicalEvaluation
+
+variable {T : Type*} [CommRing T] [UniformSpace T] [IsUniformAddGroup T]
+  {ψ : R →+* T} {b : Fin k → T}
+
+/-- Huber topological evaluation into a complete Hausdorff nonarchimedean ring agrees with
+`restrictedLift` across `restrictedMvPowerSeriesGaussEquiv`. -/
+theorem weightedEvalHom_eq_restrictedLift [NonarchimedeanRing T] [CompleteSpace T] [T3Space T]
+    (hψ : Continuous ψ) (hb : ∀ i, IsPowerBounded (b i))
+    (hwb : IsWeightBounded ψ (fun _ : Fin k ↦ ({1} : Set R)) b)
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight) :
+    weightedEvalHom isWeightFamily_one_weight hψ.continuousAt hwb f =
+      restrictedLift hψ hb (restrictedMvPowerSeriesGaussEquiv f) := by
+  have h := weightedRestrictedSubring_ringHom_ext_of_continuous isWeightFamily_one_weight
+    (f := weightedEvalHom isWeightFamily_one_weight hψ.continuousAt hwb)
+    (g := (restrictedLift hψ hb).comp
+      (restrictedMvPowerSeriesGaussEquiv (n := k) (R := R)).toRingHom)
+    (continuous_weightedEvalHom _ _ _)
+    ((continuous_restrictedLift hψ hb).comp continuous_restrictedMvPowerSeriesGaussEquiv)
+    (fun r ↦ by simp)
+    (fun i ↦ by simp)
+  exact congr($h f)
+
+/-- Over a complete base `R`, completed Huber evaluation into a complete Hausdorff nonarchimedean
+ring agrees with `restrictedLift` across `restrictedMvPowerSeriesCompletionGaussEquiv`. -/
+theorem weightedEvalHomCompletion_eq_restrictedLift [CompleteSpace R] [NonarchimedeanRing T]
+    [CompleteSpace T] [T3Space T] (hψ : Continuous ψ) (hb : ∀ i, IsPowerBounded (b i))
+    (hwb : IsWeightBounded ψ (fun _ : Fin k ↦ ({1} : Set R)) b)
+    (x : restrictedMvPowerSeriesCompletion k R) :
+    weightedEvalHomCompletion isWeightFamily_one_weight hψ.continuousAt hwb x =
+      restrictedLift hψ hb (restrictedMvPowerSeriesCompletionGaussEquiv x) := by
+  refine UniformSpace.Completion.induction_on x (isClosed_eq
+    (continuous_weightedEvalHomCompletion _ _ _)
+    ((continuous_restrictedLift hψ hb).comp
+      continuous_restrictedMvPowerSeriesCompletionGaussEquiv)) ?_
+  intro f
+  rw [weightedEvalHomCompletion_coe, restrictedMvPowerSeriesCompletionGaussEquiv_coe,
+    weightedEvalHom_eq_restrictedLift hψ hb hwb]
+
+/-- Over a complete base `R`, completed Huber evaluation into a complete Hausdorff linearly
+topologised ring at arbitrary variable images agrees with `restrictedLiftOfIsLinearTopology` across
+`restrictedMvPowerSeriesCompletionGaussEquiv`. -/
+theorem weightedEvalHomCompletion_eq_restrictedLiftOfIsLinearTopology [CompleteSpace R]
+    [IsLinearTopology T T] [CompleteSpace T] [T2Space T] (hψ : Continuous ψ)
+    (x : restrictedMvPowerSeriesCompletion k R) :
+    (letI := IsLinearTopology.isTopologicalRing (R := T)
+     letI := IsLinearTopology.nonarchimedeanRing T
+     weightedEvalHomCompletion isWeightFamily_one_weight hψ.continuousAt
+       (isWeightBounded_of_isLinearTopology ψ _ b) x) =
+      restrictedLiftOfIsLinearTopology hψ b (restrictedMvPowerSeriesCompletionGaussEquiv x) := by
+  have := IsLinearTopology.isTopologicalRing (R := T)
+  have := IsLinearTopology.nonarchimedeanRing T
+  have h := completion_weightedRestrictedSubring_ringHom_ext_of_continuous
+    isWeightFamily_one_weight
+    (f := weightedEvalHomCompletion isWeightFamily_one_weight hψ.continuousAt
+      (isWeightBounded_of_isLinearTopology ψ _ b))
+    (g := (restrictedLiftOfIsLinearTopology hψ b).comp
+      (restrictedMvPowerSeriesCompletionGaussEquiv (n := k) (R := R)).toRingHom)
+    (continuous_weightedEvalHomCompletion _ _ _)
+    ((continuous_restrictedLiftOfIsLinearTopology hψ b).comp
+      continuous_restrictedMvPowerSeriesCompletionGaussEquiv)
+    (fun r ↦ by simp)
+    (fun i ↦ by simp)
+  exact congr($h x)
+
+end TopologicalEvaluation
 
 end TauCeti.Huber
