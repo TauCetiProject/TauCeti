@@ -7,7 +7,6 @@ module
 
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField
-import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.Analysis.Meromorphic.FactorizedRational
 import TauCeti.Topology.Compactification.OnePoint.Nhds
 
@@ -73,8 +72,6 @@ public noncomputable section
 
 open Filter Function OnePoint Polynomial Set Topology
 
-open scoped Manifold nonZeroDivisors
-
 namespace TauCeti.RiemannSurface.MeromorphicFunction
 
 /-! ### The coordinate and polynomials -/
@@ -87,8 +84,8 @@ def coordinate : MeromorphicFunction (OnePoint ℂ) where
   ne_infty' h := OnePoint.coe_ne_infty (0 : ℂ) (congrFun h ((0 : ℂ) : OnePoint ℂ))
 
 @[simp]
-theorem coordinate_apply (x : OnePoint ℂ) : coordinate x = x := by
-  simp [coordinate]
+theorem coordinate_apply (x : OnePoint ℂ) : coordinate x = x :=
+  (rfl)
 
 /-- The sphere coordinate is not the zero meromorphic function. -/
 @[simp]

@@ -34,7 +34,8 @@ reflexivity), and `ℓ²` is finitely representable in every infinite-dimensiona
 * `TauCeti.FinitelyRepresentable.submodule`: finite representability is inherited by subspaces.
 * `LinearIsometry.finitelyRepresentable_of_denseRange`: a space is finitely representable in
   each of its isometrically embedded dense subspaces; so a space and its completion are each
-  finitely representable in the other (`TauCeti.finitelyRepresentable_completion_iff`).
+  finitely representable in the other (`TauCeti.finitelyRepresentable_completion` and
+  `UniformSpace.Completion.toComplₗᵢ.finitelyRepresentable`).
 * `TauCeti.finitelyRepresentable_iff_banachMazurDist_lt`: over a densely normed field such as
   `ℝ`, `ℂ` or `ℚ`, `E` is finitely representable in `F` if and only if every
   finite-dimensional subspace of `E` is at Banach–Mazur distance less than `1 + ε` from some
@@ -56,8 +57,6 @@ formulations differ.
 -/
 
 public section
-
-open Metric
 
 namespace TauCeti
 
