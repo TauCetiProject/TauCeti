@@ -115,6 +115,19 @@ theorem existsUnique_lift_of_isUnit (c : C) [Algebra.FormallyEtale A (Localizati
       rw [AlgHom.comp_assoc, hf', hf, hg']
     exact IsLocalization.algHom_ext (Submonoid.powers c) h
 
+/-- **Lifting over `D(x)`.** Let `ι : R → S` be an `A`-algebra map sending `x` to a unit. If
+`C_x` is formally étale over `A` and `I` is a nilpotent ideal of `R`, then the image in `S ⧸ I S`
+of an `A`-algebra map `g : C → R ⧸ I` lifts uniquely to an `A`-algebra map `C → S`. -/
+private lemma existsUnique_lift_quotientMapₐ {x : A}
+    [Algebra.FormallyEtale A (Localization.Away (algebraMap A C x))] {S : Type*} [CommRing S]
+    [Algebra A S] (ι : R →ₐ[A] S) (hx : IsUnit (ι (algebraMap A R x))) {I : Ideal R}
+    (hI : IsNilpotent I) (g : C →ₐ[A] R ⧸ I) :
+    ∃! f : C →ₐ[A] S, (Ideal.Quotient.mkₐ A (I.map ι)).comp f =
+      (Ideal.quotientMapₐ (I.map ι) ι Ideal.le_comap_map).comp g :=
+  existsUnique_lift_of_isUnit (algebraMap A C x) (I.map ι) (hI.map (Ideal.mapHom _)) _ (by
+    rw [AlgHom.commutes, IsScalarTower.algebraMap_apply A S (S ⧸ _), ← ι.commutes]
+    exact hx.map _)
+
 /-- Let `ι : R → S`, `ι' : R → S'` and `ρ : S → S'` be `A`-algebra maps with `ρ ∘ ι = ι'`. If
 `f : C → S` lifts the image of `g : C → R ⧸ I` in `S ⧸ I S`, then `ρ ∘ f` lifts the image of `g`
 in `S' ⧸ I S'`. -/
@@ -165,17 +178,10 @@ private lemma mem_range_of_lift_away {a b : A}
   have hρa : ρa.comp (IsScalarTower.toAlgHom A R _) = ιab := AlgHom.ext fun r ↦ by simp [ρa, ιab]
   have hρb : ρb.comp ιb = ιab := AlgHom.ext fun r ↦ by simp [ρb, ιb, ιab]
   -- Lift `g` over `D(b)`; the two lifts agree over `D(ab)`, so `fa c` and `fb c` glue.
-  obtain ⟨fb, hfb, -⟩ := existsUnique_lift_of_isUnit (algebraMap A C b) (I.map ιb)
-    (hI.map (Ideal.mapHom _)) ((Ideal.quotientMapₐ (I.map ιb) ιb Ideal.le_comap_map).comp g) (by
-      rw [AlgHom.commutes, IsScalarTower.algebraMap_apply A Rb (Rb ⧸ _),
-        IsScalarTower.algebraMap_apply A R Rb]
-      exact (IsLocalization.Away.algebraMap_isUnit _).map _)
+  obtain ⟨fb, hfb, -⟩ := existsUnique_lift_quotientMapₐ (C := C) ιb
+    (IsLocalization.Away.algebraMap_isUnit (algebraMap A R b)) hI g
   have hab : ρa.comp fa = ρb.comp fb :=
-    (existsUnique_lift_of_isUnit (algebraMap A C a) (I.map ιab) (hI.map (Ideal.mapHom _))
-      ((Ideal.quotientMapₐ (I.map ιab) ιab Ideal.le_comap_map).comp g) (by
-        rw [AlgHom.commutes, IsScalarTower.algebraMap_apply A Rab (Rab ⧸ _),
-          IsScalarTower.algebraMap_apply A R Rab]
-        exact hua.map _)).unique
+    (existsUnique_lift_quotientMapₐ (C := C) ιab hua hI g).unique
       (mkₐ_comp_comp_eq ρa hρa hfa) (mkₐ_comp_comp_eq ρb hρb hfb)
   obtain ⟨r, ⟨hr, -⟩, -⟩ := hR.existsUnique_algebraMap_eq (fa c) (fb c) congr($hab c)
   exact ⟨r, hr⟩
@@ -198,12 +204,8 @@ theorem existsUnique_lift_of_isWeaklyRegular {a b : A}
   let qa := Ideal.quotientMapₐ (I.map ιa) ιa Ideal.le_comap_map
   -- Lift `g` over `D(a)`. As `a` is regular on `R`, the map `R → R_a` is injective, and the lift
   -- takes values in `R`, so it factors through a map `f : C → R`.
-  obtain ⟨fa, hfa, hfa_uniq⟩ :=
-    existsUnique_lift_of_isUnit (algebraMap A C a) (I.map ιa) (hI.map (Ideal.mapHom _)) (qa.comp g)
-      (by
-        rw [AlgHom.commutes, IsScalarTower.algebraMap_apply A Ra (Ra ⧸ _),
-          IsScalarTower.algebraMap_apply A R Ra]
-        exact (IsLocalization.Away.algebraMap_isUnit _).map _)
+  obtain ⟨fa, hfa, hfa_uniq⟩ := existsUnique_lift_quotientMapₐ (C := C) ιa
+    (IsLocalization.Away.algebraMap_isUnit (algebraMap A R a)) hI g
   have hιa : Function.Injective ιa := fun r s hrs ↦ by
     obtain ⟨⟨_, k, rfl⟩, hk⟩ := IsLocalization.exists_of_eq (M := .powers (algebraMap A R a)) hrs
     exact (ha.pow k) hk
