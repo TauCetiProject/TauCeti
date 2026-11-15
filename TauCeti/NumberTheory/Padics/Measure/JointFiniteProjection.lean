@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.Measure.FiniteProjection
-public import Mathlib.NumberTheory.Padics.RingHoms
+public import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Joint finite and coefficient projections of p-adic measures
@@ -149,3 +149,22 @@ example :
     norm_num
 
 end AbstractMeasure
+
+namespace TauCeti
+
+open AbstractMeasure
+
+/-- Joint finite projection is weakly continuous when its coefficients carry the product
+topology. The finite quotient and coefficient precision are independent. -/
+theorem continuous_jointFiniteProjection (r : ℕ) [Finite A] [DiscreteTopology A]
+    (q : C(X, A)) :
+    @Continuous _ _ (WeakTopology (X := X) (R := ℤ_[p]) (E := ℤ_[p])) inferInstance
+      (fun μ : D(X, ℤ_[p]) ↦ fun a ↦ jointFiniteProjection r q μ a) := by
+  let : TopologicalSpace D(X, ℤ_[p]) := WeakTopology
+  apply continuous_pi
+  intro a
+  simpa only [Function.comp_def, jointFiniteProjection_apply, finiteProjection_apply] using
+    (PadicInt.continuous_toZModPow r).comp
+      ((continuous_apply a).comp (continuous_finiteProjection q))
+
+end TauCeti

@@ -8,21 +8,47 @@ module
 public import Mathlib.Algebra.Group.Action.End
 
 /-!
-# Coordinates of `mulAutArrow`
+# Actions of `MulAut`: conjugation laws and coordinates of `mulAutArrow`
+
+A group `G` acts on any type `α` with an action of `MulAut G` through the inner automorphisms,
+`s ↦ MulAut.conj s • (-)`. This file records the laws making this an action of `G` in the form
+`MulAut.conj s • a`, in which Mathlib writes the conjugate `sHs⁻¹` of a subgroup `H`.
 
 Mathlib's `mulAutArrow` lets a group `G` acting on `A` act on `A → M` by multiplicative
-automorphisms. This file records that action's evaluation formula in plain coordinates, supporting
-coordinate calculations in semidirect products built from `mulAutArrow`, particularly
+automorphisms. This file also records that action's evaluation formula in plain coordinates,
+supporting coordinate calculations in semidirect products built from `mulAutArrow`, particularly
 arbitrary-action permutation wreath products.
 
 ## Main results
 
+* `TauCeti.conj_one_smul`, `TauCeti.conj_mul_smul`, `TauCeti.conj_inv_smul_smul`: conjugation is
+  an action of `G` on any type on which `MulAut G` acts, for instance on the subgroups of `G`.
 * `TauCeti.mulAutArrow_apply_apply_eq_apply_inv_smul`: `mulAutArrow g f a = f (g⁻¹ • a)`.
 -/
 
 public section
 
 namespace TauCeti
+
+section Conj
+
+variable {G α : Type*} [Group G] [MulAction (MulAut G) α]
+
+/-- Conjugating by `1` acts trivially, for instance on the subgroups of `G`. -/
+theorem conj_one_smul (a : α) : MulAut.conj (1 : G) • a = a := by
+  simp
+
+/-- Conjugating by `s * t` is conjugating by `t` and then by `s`, for instance on the subgroups
+of `G`. -/
+theorem conj_mul_smul (s t : G) (a : α) :
+    MulAut.conj (s * t) • a = MulAut.conj s • (MulAut.conj t • a) := by
+  rw [map_mul, mul_smul]
+
+/-- Conjugating by `s⁻¹` undoes conjugating by `s`, for instance on the subgroups of `G`. -/
+theorem conj_inv_smul_smul (s : G) (a : α) : MulAut.conj s⁻¹ • (MulAut.conj s • a) = a := by
+  rw [map_inv, inv_smul_smul]
+
+end Conj
 
 variable {G M A : Type*} [Group G] [MulAction G A] [Monoid M]
 

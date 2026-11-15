@@ -41,6 +41,8 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
   is Hermitian;
 * `Matrix.PosSemidef.rank_sqrt` — the square root of a positive-semidefinite matrix has the same
   rank;
+* `Matrix.PosSemidef.sqrt_mul_transpose_sqrt` — over the reals, the square root times its
+  transpose recovers the matrix;
 * `Matrix.PosSemidef.range_toEuclideanLin_sqrt` — its Euclidean linear map has the same range;
 * `Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin` — the quadratic form of `Θ` at
   `CFC.sqrt S x` is the quadratic form of the sandwich at `x`;
@@ -49,6 +51,7 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
 * `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt` and
   `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self` — for positive-semidefinite `S`, the traces
   of the sandwich and of its square are those of `Θ * S` and `Θ * S * Θ * S`;
+* `Matrix.PosDef.isUnit_det_sqrt` — the square root of a positive-definite matrix is invertible;
 * `Matrix.PosDef.inv_sub_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_iff` — the scale form
   `S⁻¹ - X` of the pencil and its positive-definiteness;
 * `Matrix.PosDef.inv_sub_smul_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_smul_iff` — the same
@@ -78,6 +81,14 @@ theorem PosSemidef.rank_sqrt {S : Matrix ι ι 𝕜} (hS : S.PosSemidef) :
     rw [hh.eq, CFC.sqrt_mul_sqrt_self S hS.nonneg]
   conv_rhs => rw [← hfac]
   rw [Matrix.rank_conjTranspose_mul_self]
+
+open scoped Classical in
+/-- For a real positive-semidefinite matrix, its square root times its transpose is the matrix. -/
+theorem PosSemidef.sqrt_mul_transpose_sqrt {S : Matrix ι ι ℝ} (hS : S.PosSemidef) :
+    CFC.sqrt S * (CFC.sqrt S)ᵀ = S := by
+  rw [← Matrix.conjTranspose_eq_transpose_of_trivial,
+    (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).isHermitian.eq]
+  exact CFC.sqrt_mul_sqrt_self S hS.nonneg
 
 open scoped Classical in
 /-- The Euclidean linear maps of a positive-semidefinite matrix and its square root have the same
@@ -148,6 +159,10 @@ theorem PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self {S : Matrix ι ι 𝕜} (hS 
 section PosDef
 
 variable [DecidableEq ι] {S : Matrix ι ι 𝕜}
+
+/-- The square root of a positive-definite matrix has a unit determinant, so it is invertible. -/
+theorem PosDef.isUnit_det_sqrt (hS : S.PosDef) : IsUnit (CFC.sqrt S).det :=
+  (isUnit_iff_isUnit_det _).1 (hS.isStrictlyPositive.isUnit_cfcSqrt S)
 
 /-- **The scale form of the pencil.** For positive-definite `S` and any `X`, the matrix `S⁻¹ - X`
 is the congruence of the sandwich pencil `1 - CFC.sqrt S * X * CFC.sqrt S` by `(CFC.sqrt S)⁻¹`. -/

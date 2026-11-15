@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Range
 import Mathlib.Tactic.NormNum.IsSquare
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!
@@ -141,10 +141,9 @@ theorem coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_symm_apply
 @[simp]
 theorem normSq_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne
     (s : spinGroup (weightedSumSquares K ![(1 : K), 1, 1])) :
-    Quaternion.normSq
-        (evenHamiltonEquivWeightedSumSquaresOne
-          (evenUnitaryGroupEvenPart _ (spinGroupToEvenUnitary _ s))) = 1 := by
-  rw [← coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_apply]
+    Quaternion.normSq (evenHamiltonEquivWeightedSumSquaresOne (spinGroupToEven _ s)) = 1 := by
+  rw [← evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply,
+    ← coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_apply]
   exact Quaternion.normSq_coe_unitary_eq_one _
 
 end
@@ -355,10 +354,10 @@ theorem spinToSpecialOrthogonal_weightedSumSquares_one_surjective_iff :
   · intro h x y z hs
     have := h (Units.mk0 _ hs) (mem_unitValueSet.2 ((represents_iff _ _).2 ⟨![x, y, z], by
       simp [happ]⟩))
-    rwa [← isSquare_units_val_iff, Units.val_mk0] at this
+    rwa [← Units.isSquare_coe_iff, Units.val_mk0] at this
   · intro h a ha
     obtain ⟨v, hv⟩ := (represents_iff _ _).1 (mem_unitValueSet.1 ha)
-    rw [← isSquare_units_val_iff, ← hv, happ]
+    rw [← Units.isSquare_coe_iff, ← hv, happ]
     exact h _ _ _ (by rw [← happ, hv]; exact a.ne_zero)
 
 /-- The Spin action on the special orthogonal group of the rational sum of three squares is not

@@ -95,28 +95,36 @@ theorem adDerivation_weightTorus_rootVector {B : Type*} [CommRing B]
   · rw [Matrix.map_apply, rootIntMatrix_eq_zero_of_weight_ne k hab]
     simp
 
-variable [Module.Projective ℤ (Bialgebra.CotangentSpace ℤ Q)]
-
 /-- An adjoint weight vector has matrix entries only at the corresponding integral weight
 differences. Cotangent projectivity is needed for the adjoint comodule, not for the entrywise
 torus-action equation. -/
-theorem mem_adjointWeightSpace_iff (α : Multiplicative (Fin 6 →₀ ℤ))
+-- Projectivity of this concrete cotangent carrier is an ordinary hypothesis;
+-- a local instance binder would violate Mathlib's concrete-instance policy.
+theorem mem_adjointWeightSpace_iff
+    (projectiveCotangent : Module.Projective ℤ (Bialgebra.CotangentSpace ℤ Q))
+    (α : Multiplicative (Fin 6 →₀ ℤ))
     (x : Module.Dual ℤ (Bialgebra.CotangentSpace ℤ Q)) :
+    letI := projectiveCotangent
     x ∈ Derivation.adjointWeightSpace weightTorusIntegralCoordinateMap.hom α ↔
       ∀ a b, SplitTorus.weightCharacter (matrixWeight a - matrixWeight b) ≠ α →
         GeneralLinear.tangentMatrix 54
           (HopfIdeal.quotientLieHom definingIdeal
-            (Derivation.cotangentLinearEquiv (B := ℤ) x)) a b = 0 :=
-  HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus definingIdeal matrixWeight
+            (Derivation.cotangentLinearEquiv (B := ℤ) x)) a b = 0 := by
+  let := projectiveCotangent
+  exact HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus definingIdeal matrixWeight
     weightTorusIntegralCoordinateMap.hom weightTorusIntegralCoordinateMap_comp_quotient α x
 
 /-- A normalized root differential, viewed in the cotangent dual of the integral carrier, has
 its prescribed signed simple-root character. -/
-theorem rootVector_mem_adjointWeightSpace (k : Fin 6 ⊕ Fin 6) :
+theorem rootVector_mem_adjointWeightSpace
+    (projectiveCotangent : Module.Projective ℤ (Bialgebra.CotangentSpace ℤ Q))
+    (k : Fin 6 ⊕ Fin 6) :
+    letI := projectiveCotangent
     (Derivation.cotangentLinearEquiv (B := ℤ)).symm (rootVector (B := ℤ) k) ∈
       Derivation.adjointWeightSpace weightTorusIntegralCoordinateMap.hom
         (SplitTorus.weightCharacter (E6.rootGeneratorWeight k)) := by
-  rw [mem_adjointWeightSpace_iff]
+  let := projectiveCotangent
+  rw [mem_adjointWeightSpace_iff projectiveCotangent]
   intro a b hab
   rw [LinearEquiv.apply_symm_apply, tangentMatrix_rootVector, Matrix.map_apply]
   simp only [Int.cast_id]
@@ -124,9 +132,13 @@ theorem rootVector_mem_adjointWeightSpace (k : Fin 6 ⊕ Fin 6) :
 
 /-- Every numbered signed simple-root character occurs as a nontrivial adjoint weight of the
 integral doubled carrier, assuming its cotangent module is projective. -/
-theorem rootGeneratorWeight_mem_nontrivialAdjointWeights (k : Fin 6 ⊕ Fin 6) :
+theorem rootGeneratorWeight_mem_nontrivialAdjointWeights
+    (projectiveCotangent : Module.Projective ℤ (Bialgebra.CotangentSpace ℤ Q))
+    (k : Fin 6 ⊕ Fin 6) :
+    letI := projectiveCotangent
     SplitTorus.weightCharacter (E6.rootGeneratorWeight k) ∈
       Derivation.nontrivialAdjointWeights weightTorusIntegralCoordinateMap.hom := by
+  let := projectiveCotangent
   rw [Derivation.mem_nontrivialAdjointWeights]
   refine ⟨?_, ?_⟩
   · intro h
@@ -137,7 +149,7 @@ theorem rootGeneratorWeight_mem_nontrivialAdjointWeights (k : Fin 6 ⊕ Fin 6) :
     cases k <;> simp [E6.rootGeneratorWeight_inl, E6.rootGeneratorWeight_inr,
       CartanMatrix.E_diag] at hdiag
   · intro hbot
-    have hv := rootVector_mem_adjointWeightSpace k
+    have hv := rootVector_mem_adjointWeightSpace projectiveCotangent k
     rw [hbot, Submodule.mem_bot] at hv
     have hz := congrArg (Derivation.cotangentLinearEquiv (B := ℤ)) hv
     exact rootVector_ne_zero k (by simpa only [LinearEquiv.apply_symm_apply, map_zero] using hz)

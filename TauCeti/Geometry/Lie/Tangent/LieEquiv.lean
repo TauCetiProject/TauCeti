@@ -15,10 +15,7 @@ public import TauCeti.Geometry.Lie.Tangent.LeftInvariantDerivation
 For a finite-dimensional smooth real Lie group whose identity is an interior point, the canonical
 linear equivalence between left-invariant derivations and the tangent space at the identity is an
 equivalence of Lie algebras. This supplies the bracket-compatible dictionary needed to transport the
-tangent adjoint action to Mathlib's roadmap-facing Lie algebra `LeftInvariantDerivation I G`.
-
-This advances Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
+tangent adjoint action to Mathlib's Lie algebra `LeftInvariantDerivation I G`.
 
 ## Main results
 
@@ -31,8 +28,6 @@ This advances Deliverable A, Layer 1 of
 ## References
 
 * `Mathlib/Geometry/Manifold/GroupLieAlgebra.lean`, whose compatibility TODO this file discharges.
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The group adjoint".
 -/
 
 public section
@@ -47,7 +42,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [LieGroup I ∞ G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 /-- The map sending a tangent vector at the identity to its left-invariant derivation preserves the
 Lie bracket. -/
@@ -103,7 +98,7 @@ Lie algebras. -/
 noncomputable def leftInvariantDerivationLieEquivGroupLieAlgebra
     [FiniteDimensional ℝ E] (h₁ : I.IsInteriorPoint (1 : G)) :
     LeftInvariantDerivation I G ≃ₗ⁅ℝ⁆ GroupLieAlgebra I G :=
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   { leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G) h₁ with
     map_lie' := by
       intro D D'
@@ -127,7 +122,7 @@ theorem leftInvariantDerivationLieEquivGroupLieAlgebra_apply
     leftInvariantDerivationLieEquivGroupLieAlgebra h₁ D =
       leftInvariantDerivationEquivGroupLieAlgebra h₁ D := by
   have hT2 : (inferInstance : T2Space G) =
-      t2Space_of_lieGroup (I := I) (n := ∞) := Subsingleton.elim _ _
+      I.t2Space_of_lieGroup ∞ := Subsingleton.elim _ _
   cases hT2
   rfl
 
@@ -138,7 +133,7 @@ theorem leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply
     (v : GroupLieAlgebra I G) :
     (leftInvariantDerivationLieEquivGroupLieAlgebra h₁).symm v =
       tangentToLeftInvariantDerivation v := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   let e := leftInvariantDerivationLieEquivGroupLieAlgebra h₁
   let e₀ := leftInvariantDerivationEquivGroupLieAlgebra h₁
   apply e.symm_apply_eq.mpr
@@ -155,12 +150,12 @@ section CanonicalModelBridges
 the model vector space. -/
 theorem leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply_eq_lieEquiv_apply
     [FiniteDimensional ℝ E] (D : LeftInvariantDerivation I G) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
     leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G) D =
       (show E from leftInvariantDerivationLieEquivGroupLieAlgebra
         BoundarylessManifold.isInteriorPoint D) := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
   dsimp only
   rw [leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply,

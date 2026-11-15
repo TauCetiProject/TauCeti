@@ -77,7 +77,8 @@ theorem logDeriv_comp_ofComplex_fdBoundary_arc_add_four_sub_eq_neg
   have him := im_fdBoundary_arc_pos H ⟨ht.1.le, ht.2.le⟩
   have h0 : fdBoundary H t ≠ 0 := fun h ↦ absurd him (by simp [h])
   rw [fdBoundary_four_sub_arc H ⟨ht.1.le, ht.2.le⟩, deriv_fdBoundary_four_sub_arc H ht,
-    smul_eq_mul, smul_eq_mul, logDeriv_comp_ofComplex_S_transform f hS him hd hne,
+    smul_eq_mul, smul_eq_mul,
+    logDeriv_comp_ofComplex_S_transform (Γ := Γ) f (Subgroup.mem_map_of_mem _ hS) him hd hne,
     logDeriv_apply (fdBoundary H) t]
   field_simp
   ring

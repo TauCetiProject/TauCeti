@@ -43,6 +43,12 @@ noncomputable def coneShortComplex : ShortComplex
 
 attribute [local implicit_reducible] coneShortComplex
 
+/-- The cone sequence has the canonical inclusion and projection as its two arrows. -/
+theorem coneShortComplex_eq_mk :
+    coneShortComplex f = ShortComplex.mk (coneInclusion f) (coneProjection f)
+      (coneInclusion_comp_coneProjection f) := by
+  rfl
+
 /-- The first object of the cone sequence is its target module. -/
 @[simp]
 theorem coneShortComplex_X₁ : (coneShortComplex f).X₁ =

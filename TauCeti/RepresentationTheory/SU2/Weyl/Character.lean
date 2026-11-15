@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.SU2.SymmetricPower
-import TauCeti.Topology.Circle.Basic
+import TauCeti.Algebra.Field.Basic
 import TauCeti.Topology.Circle.Metric
 
 /-!
@@ -67,11 +67,6 @@ the given element is conjugate to, where the closed forms below apply.
 
 ## References
 
-This serves the engine case of
-`TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md`, "Engine case: `SU(2)` and the
-maximal torus", which asks for the character on the torus in the closed forms
-`sin ((n+1)θ) / sin θ` and `(e^{i(n+1)θ} - e^{-i(n+1)θ}) / (e^{iθ} - e^{-iθ})`.
-
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 18.
 * T. Bröcker, T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
   Chapter II, §5.
@@ -118,7 +113,7 @@ quotient of the Weyl numerator by the Weyl denominator. -/
 theorem character_symPower_torusHom_eq_div {z : Circle} (hz : (z : ℂ) ^ 2 ≠ 1) :
     (symPower d).character (torusHom z)
       = ((z : ℂ) ^ (d + 1) - ((z : ℂ)⁻¹) ^ (d + 1)) / ((z : ℂ) - (z : ℂ)⁻¹) :=
-  eq_div_of_mul_eq (circle_sub_inv_ne_zero hz)
+  eq_div_of_mul_eq ((sub_inv_eq_zero_iff z.coe_ne_zero).not.mpr hz)
     (by rw [mul_comm]; exact sub_inv_mul_character_symPower_torusHom d z)
 
 /-- **The character at the two points where the Weyl denominator vanishes.**  At `z = ±1` every one

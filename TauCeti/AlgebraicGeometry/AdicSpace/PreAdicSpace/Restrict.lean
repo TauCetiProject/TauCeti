@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Category.Ring.Instances
 public import Mathlib.Geometry.RingedSpace.OpenImmersion
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Hom
 
+import TauCeti.Topology.Category.TopCat.Opens
+
 /-!
 # Restriction of pre-adic spaces to open subspaces
 
@@ -29,6 +31,12 @@ the restriction of `X` to an open `U` isomorphically onto the restriction of `Y`
 `PresheafedSpace.IsOpenImmersion.isoOfRangeEq` identifies the underlying presheafed spaces, and the
 identification is a morphism of pre-adic spaces because it factors one through the other.
 
+For an object property `P`, `X.propOpens P` is the set of opens `U` with `P (X|_U)`; the open
+affinoid subspaces are the case `P = isAffinoid`. When `P` is closed under isomorphisms, the
+transport of restrictions along isomorphisms shows that these opens are carried along
+isomorphisms (`map_hom_base_mem_propOpens_iff`), and the whole space belongs to them exactly when
+`X` satisfies `P` (`top_mem_propOpens_iff`).
+
 ## Main definitions
 
 * `TauCeti.PreAdicSpace.restrict`: the restriction of a pre-adic space along an open embedding.
@@ -40,6 +48,8 @@ identification is a morphism of pre-adic spaces because it factors one through t
 * `TauCeti.PreAdicSpace.restrictIso`: the transport of a restriction along an isomorphism.
 * `TauCeti.PreAdicSpace.restrictIsoOfRangeEq`: restrictions along two open embeddings with the same
   range are isomorphic.
+* `TauCeti.PreAdicSpace.propOpens`: the opens of a pre-adic space on which the restriction
+  satisfies a given object property.
 
 The design follows `AlgebraicGeometry.LocallyRingedSpace.restrict`.
 
@@ -335,6 +345,62 @@ theorem restrictIsoOfRangeEq_hom_ofRestrict :
   exact restrictIsoOfRangeEqPresheafedSpace_hom_ofRestrict X hf hg e
 
 end RestrictIsoOfRangeEq
+
+/-! ### Opens with a property -/
+
+section PropOpens
+
+variable (X : PreAdicSpace.{u})
+
+/-- The opens `U` of an object `X` of `𝒱^pre` such that `X` restricted to `U` satisfies the
+object property `P`. For `P = isAffinoid` these are the open affinoid subspaces. -/
+def propOpens (P : ObjectProperty PreAdicSpace.{u}) : Set (Opens X) :=
+  {U | P (X.restrict U.isOpenEmbedding)}
+
+variable {X} in
+/-- Unfolding lemma for `TauCeti.PreAdicSpace.propOpens`. -/
+theorem mem_propOpens_iff (P : ObjectProperty PreAdicSpace.{u}) {U : Opens X} :
+    U ∈ X.propOpens P ↔ P (X.restrict U.isOpenEmbedding) :=
+  Iff.rfl
+
+/-- The whole space is in `X.propOpens P` exactly when `X` satisfies `P`. -/
+@[simp]
+theorem top_mem_propOpens_iff (P : ObjectProperty PreAdicSpace.{u})
+    [P.IsClosedUnderIsomorphisms] : ⊤ ∈ X.propOpens P ↔ P X :=
+  ObjectProperty.prop_iff_of_iso P X.restrictTopIso
+
+variable {X} in
+/-- An open `U` of `Y` is in `Y.propOpens P` exactly when its preimage under an isomorphism
+`e : X ≅ Y` is in `X.propOpens P`: `e` carries `X` restricted to `e⁻¹(U)` isomorphically onto `Y`
+restricted to `U`. -/
+@[simp]
+theorem map_hom_base_mem_propOpens_iff (P : ObjectProperty PreAdicSpace.{u})
+    [P.IsClosedUnderIsomorphisms] {Y : PreAdicSpace.{u}} (e : X ≅ Y) {U : Opens Y} :
+    (Opens.map e.hom.base).obj U ∈ X.propOpens P ↔ U ∈ Y.propOpens P := by
+  -- `restrictIso e` lands in `Y` restricted to the image of `e⁻¹(U)` under `e`, which is `U`
+  have key := Opens.map_inv_obj_map_hom_obj (forgetToTop.mapIso e) U
+  simp only [Functor.mapIso_hom, Functor.mapIso_inv, forgetToTop_map] at key
+  refine ⟨fun hU ↦ key ▸ ObjectProperty.prop_of_iso P (restrictIso e _) hU, fun hU ↦ ?_⟩
+  -- `e.symm.inv` is `e.hom`
+  exact ObjectProperty.prop_of_iso P (restrictIso e.symm U) hU
+
+variable {X} in
+/-- Being covered by opens in `propOpens P` is invariant under isomorphism: an isomorphism
+`e : X ≅ Y` pulls such opens of `Y` back to such opens of `X`. -/
+theorem exists_mem_propOpens_of_iso (P : ObjectProperty PreAdicSpace.{u})
+    [P.IsClosedUnderIsomorphisms] {Y : PreAdicSpace.{u}} (e : X ≅ Y)
+    (hY : ∀ y : Y, ∃ V ∈ Y.propOpens P, y ∈ V) (x : X) : ∃ U ∈ X.propOpens P, x ∈ U :=
+  let ⟨_, hV, hxV⟩ := hY (e.hom.base x)
+  ⟨_, (map_hom_base_mem_propOpens_iff P e).mpr hV, hxV⟩
+
+variable {X} in
+/-- If `X.propOpens P` is a basis of the topology, it covers `X`. -/
+theorem exists_mem_propOpens_of_isBasis {P : ObjectProperty PreAdicSpace.{u}}
+    (hB : Opens.IsBasis (X.propOpens P)) (x : X) : ∃ U ∈ X.propOpens P, x ∈ U :=
+  let ⟨U, hU, hx, _⟩ := Opens.isBasis_iff_nbhd.mp hB (Opens.mem_top x)
+  ⟨U, hU, hx⟩
+
+end PropOpens
 
 end PreAdicSpace
 

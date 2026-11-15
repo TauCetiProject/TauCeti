@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Invariant.Defs
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve.Basic
 import TauCeti.Algebra.Polynomial.AlgHom
+import TauCeti.RingTheory.PowerBasis
 import Mathlib.RingTheory.IsAdjoinRoot
 import Mathlib.Tactic.ComputeDegree
 
@@ -495,23 +496,10 @@ theorem isInvariant_anharmonicGroup (h6 : (6 : R) ∈ nonZeroDivisors R) :
     refine Submodule.sum_mem _ fun j _ => ?_
     rw [map_smul, pb.basis_eq_pow, hgen]
     exact Submodule.smul_mem _ _ (orbitSum_lambda_pow_mem R (hdim ▸ j.2))
-  -- Comparing coordinates in the basis `1, λ, …, λ⁵`, `a` is its constant coordinate.
-  set j₀ : Fin pb.dim := ⟨0, hdim ▸ by norm_num⟩
-  have hrepr (c : R[X]) : pb.basis.repr (algebraMap R[X] (LegendreRing R) c) =
-      Finsupp.single j₀ c := by
-    have hj₀ : pb.basis j₀ = 1 := by simp [pb.basis_eq_pow, j₀]
-    rw [Algebra.algebraMap_eq_smul_one, map_smul, ← hj₀, pb.basis.repr_self,
-      Finsupp.smul_single_one]
+  -- Since `6` is a nonzerodivisor, `a` itself lies in `R[u]`.
   have h6' : (6 : R[X]) ∈ nonZeroDivisors R[X] :=
     mem_nonZeroDivisors_of_coeff_mem 0 (by simpa using h6)
-  refine ⟨pb.basis.repr a j₀, pb.basis.ext_elem fun j => ?_⟩
-  rw [hrepr]
-  obtain rfl | hj := eq_or_ne j j₀
-  · simp
-  · have := congr(pb.basis.repr $hc j)
-    rw [hrepr, map_smul, Finsupp.smul_apply, smul_eq_mul, Finsupp.single_eq_of_ne hj] at this
-    rw [Finsupp.single_eq_of_ne hj,
-      (mul_left_mem_nonZeroDivisors_eq_zero_iff h6').mp this.symm]
+  exact pb.exists_algebraMap_eq_of_algebraMap_eq_smul h6' hc
 
 end anharmonic
 

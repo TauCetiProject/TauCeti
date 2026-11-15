@@ -73,7 +73,7 @@ theorem hasGaloisLabel_X_pow_five_sub_C {a : ℤ} (hirr : Irreducible (X ^ 5 - C
   have hf : (X ^ 5 - C a : ℤ[X]).Monic := monic_X_pow_sub_C a (by norm_num)
   rw [← hmap] at hirr ⊢
   refine hasGaloisLabel_five_two_of_not_isSquare_discr_of_hasSexticRoot hf hirr
-    (natDegree_X_pow_sub_C a) (hf.isSquare_discr_map_rat_iff.not.mp ?_)
+    (natDegree_X_pow_sub_C a) ((isSquare_discr_map_rat_iff _).not.mp ?_)
     (hasSexticRoot_X_pow_five_sub_C ha)
   rw [hmap]
   exact not_isSquare_discr_X_pow_five_sub_C (by exact_mod_cast ha)
@@ -94,7 +94,7 @@ local instance factPrimeEleven : Fact (Nat.Prime 11) := ⟨by decide⟩
 /-- The reduction of `X⁵ - 2` modulo `11` is irreducible: `2` is not a fifth power in `𝔽₁₁`. -/
 theorem irreducible_X_pow_five_sub_two_zmod_eleven : Irreducible (X ^ 5 - 2 : (ZMod 11)[X]) := by
   rw [← C_ofNat]
-  exact X_pow_sub_C_irreducible_of_prime Nat.prime_five (by decide)
+  exact irreducible_X_pow_sub_C_of_prime Nat.prime_five (by decide)
 
 /-- `X⁵ - 2` has a single irreducible factor of degree five modulo `11`. -/
 @[simp] theorem factorDegrees_X_pow_five_sub_two_eleven :

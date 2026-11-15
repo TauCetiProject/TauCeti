@@ -133,8 +133,8 @@ private theorem card_sum_mul_sq_fin_even_of_odd (hF : ringChar F ≠ 2) {m : ℕ
         quadraticChar F ((-1) ^ (m + 1) * ∏ i, w i) * (Fintype.card F : ℤ) ^ m *
           if c = 0 then (Fintype.card F : ℤ) - 1 else -1 := by
   rw [card_sum_mul_sq_fin_succ_eq hF w (hw 0)]
-  simp only [hodd (Fin.tail w) (fun i ↦ hw _), mul_add, sum_add_distrib, ← sum_mul,
-    sum_quadraticChar_mul hF (hw 0), zero_mul, zero_add]
+  simp only [hodd (Fin.tail w) (fun _ ↦ hw _), mul_add, sum_add_distrib, ← sum_mul,
+    sum_quadraticChar_mul hF, zero_mul, zero_add]
   have hu (u : F) : quadraticChar F (w 0 * u) *
       (quadraticChar F ((-1) ^ m * (∏ i, Fin.tail w i) * (c - u)) * (Fintype.card F : ℤ) ^ m) =
       quadraticChar F ((-1) ^ m * w 0 * ∏ i, Fin.tail w i) * (Fintype.card F : ℤ) ^ m *
@@ -168,7 +168,7 @@ private theorem card_sum_mul_sq_fin_odd_of_even (hF : ringChar F ≠ 2) {m : ℕ
     exact heven
   rw [card_sum_mul_sq_fin_succ_eq hF w (hw 0)]
   simp only [heven' _ (by ring) (Fin.tail w) (fun i ↦ hw _), mul_add, sum_add_distrib,
-    ← sum_mul, sum_quadraticChar_mul hF (hw 0), zero_mul, zero_add]
+    ← sum_mul, sum_quadraticChar_mul hF, zero_mul, zero_add]
   have hu (u : F) : quadraticChar F (w 0 * u) *
       (quadraticChar F ((-1) ^ (m + 1) * ∏ i, Fin.tail w i) * (Fintype.card F : ℤ) ^ m *
         if c - u = 0 then (Fintype.card F : ℤ) - 1 else -1) =
@@ -181,7 +181,7 @@ private theorem card_sum_mul_sq_fin_odd_of_even (hF : ringChar F ≠ 2) {m : ℕ
     · simp only [sub_eq_zero, Ne.symm h, h, ite_false]
       ring
   rw [sum_congr rfl fun u _ ↦ hu u, ← mul_sum, sum_sub_distrib, ← mul_sum,
-    Fintype.sum_ite_eq', sum_quadraticChar_mul hF (hw 0), Fin.prod_univ_succ w]
+    Fintype.sum_ite_eq', sum_quadraticChar_mul hF, Fin.prod_univ_succ w]
   simp only [Fin.tail, map_mul, map_pow]
   ring
 
@@ -279,18 +279,9 @@ private theorem exists_card_dotProduct_mulVec_eq (hA : A.IsSymm) (hF : ringChar 
       rw [← hcongr, hPAP]
       simp only [dotProduct, mulVec_diagonal]
       exact sum_congr rfl fun i _ ↦ by ring
-    have hinv : P⁻¹ * P = 1 := nonsing_inv_mul P ((isUnit_iff_isUnit_det P).mp hP)
-    have hinv' : P * P⁻¹ = 1 := mul_nonsing_inv P ((isUnit_iff_isUnit_det P).mp hP)
-    refine (card_nbij' (fun y ↦ P *ᵥ y) (fun x ↦ P⁻¹ *ᵥ x) ?_ ?_ ?_ ?_).symm
-    · intro y hy
-      simpa only [mem_coe, mem_filter, mem_univ, true_and, hform] using hy
-    · intro x hx
-      simp only [mem_coe, mem_filter, mem_univ, true_and] at hx ⊢
-      rw [← hform, mulVec_mulVec, hinv', one_mulVec, hx]
-    · intro y _
-      simp only [mulVec_mulVec, hinv, one_mulVec]
-    · intro x _
-      simp only [mulVec_mulVec, hinv', one_mulVec]
+    refine (card_bijective P.mulVec
+      ⟨mulVec_injective_of_isUnit hP, mulVec_surjective_iff_isUnit.mpr hP⟩ fun y ↦ ?_).symm
+    simp only [mem_filter, mem_univ, true_and, hform]
 
 /-- **Points on a nondegenerate quadric in odd rank.** Over a finite field of odd characteristic
 with `q` elements, if `A` is a symmetric matrix with `det A ≠ 0` indexed by a type with `2m + 1`

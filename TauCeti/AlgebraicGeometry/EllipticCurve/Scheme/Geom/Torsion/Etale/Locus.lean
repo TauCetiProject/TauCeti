@@ -12,7 +12,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Rank
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Unramified
-import TauCeti.AlgebraicGeometry.Morphisms.Etale
+import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!

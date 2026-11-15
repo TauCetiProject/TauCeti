@@ -10,6 +10,7 @@ public import Mathlib.Basic.Countable.Basic
 public import Mathlib.Basic.Finite.Prod
 public import Mathlib.Basic.Finite.Sigma
 public import Mathlib.Basic.Finite.Sum
+import TauCeti.ModelTheory.Basic
 
 /-!
 # Atomic types of finite tuples
@@ -45,8 +46,6 @@ variable [L.Structure M] [L.Structure N] [L.Structure P]
 
 /-- A countable relation language has countably many atomic tests on a finite tuple. -/
 instance [Countable (Σ k, L.Relations k)] : Countable (AtomicIdx L n) := by
-  have : ∀ k, Countable (L.Relations k) := fun k =>
-    (sigma_mk_injective (i := k)).countable
   let f : AtomicIdx L n → (Fin n × Fin n) ⊕ (Σ k, L.Relations k × (Fin k → Fin n))
     | .eq i j => .inl (i, j)
     | .rel r g => .inr ⟨_, r, g⟩

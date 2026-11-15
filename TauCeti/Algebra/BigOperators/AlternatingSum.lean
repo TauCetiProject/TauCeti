@@ -11,16 +11,20 @@ public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.Data.Int.Interval
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
 /-!
 # Alternating sums
 
 This file gives a telescoping formula for alternating sums of consecutive pairs in an additive
-commutative group, and the cancellation of alternating double sums whose terms satisfy the
-simplicial identity, which is the combinatorial core of `d ∘ d = 0` for alternating face map
-differentials. It also provides finite Euler sums for explicitly supported `ℤ`-graded families,
-including support independence, additivity, and translation of the grading.
+commutative group, the evaluation of the alternating triangular double sum
+`∑_{j = 0}^n ∑_{r ≤ j} (-1)^(j - r) = n / 2 + 1`, and the cancellation of alternating double sums
+whose terms satisfy the simplicial identity, which is the combinatorial core of `d ∘ d = 0` for
+alternating face map differentials. It also provides finite Euler sums for explicitly supported
+`ℤ`-graded families, including support independence, additivity, and translation of the grading.
+Finally, it relates the alternating sums `xₙ - xₙ₋₁ + ⋯ ± x₀`, which appear in the strong Morse
+inequalities, to the Euler sums `x₀ - x₁ + ⋯ ± xₙ` and to each other.
 -/
 
 public section
@@ -66,17 +70,14 @@ theorem finiteEulerSum_add (f g : ℤ → G) (s : Finset ℤ) :
     finiteEulerSum (fun n ↦ f n + g n) s = finiteEulerSum f s + finiteEulerSum g s := by
   simp only [finiteEulerSum, smul_add, Finset.sum_add_distrib]
 
-/-- Two finite sets supporting the same family compute the same Euler sum. -/
+/-- Two finite sets compute the same Euler sum of a family that vanishes in every degree lying in
+only one of them; for instance, when both sets contain the support of the family. -/
 theorem finiteEulerSum_eq_of_eq_zero (f : ℤ → G) {s t : Finset ℤ}
-    (hs : ∀ n, n ∉ s → f n = 0) (ht : ∀ n, n ∉ t → f n = 0) :
+    (hs : ∀ n ∈ t, n ∉ s → f n = 0) (ht : ∀ n ∈ s, n ∉ t → f n = 0) :
     finiteEulerSum f s = finiteEulerSum f t := by
-  have hsu : finiteEulerSum f s = finiteEulerSum f (s ∪ t) :=
-    Finset.sum_subset Finset.subset_union_left fun n _ hn ↦ by
-      rw [hs n hn, smul_zero]
-  have htu : finiteEulerSum f t = finiteEulerSum f (s ∪ t) :=
-    Finset.sum_subset Finset.subset_union_right fun n _ hn ↦ by
-      rw [ht n hn, smul_zero]
-  rw [hsu, htu]
+  rw [finiteEulerSum_def, finiteEulerSum_def]
+  exact Finset.sum_congr_of_eq_on_inter (fun n hn hnt ↦ by rw [ht n hn hnt, smul_zero])
+    (fun n hn hns ↦ by rw [hs n hn hns, smul_zero]) fun _ _ _ ↦ rfl
 
 /-- Translating the grading by `m` multiplies its Euler sum by `(-1)ᵐ`. The set on the right is
 the corresponding translate of the finite summation range. -/
@@ -149,5 +150,73 @@ theorem sum_neg_one_pow_smul_sum_neg_one_pow_smul_eq_zero {G : Type*} [AddCommGr
       Fin.val_castLT, ← neg_smul]
     congr 1
     ring
+
+/-- In any ring, the alternating triangular double sum `∑_{j = 0}^n ∑_{r ≤ j} (-1)^(j - r)` equals
+`n / 2 + 1`: the inner sum is `1` when `j` is even and `0` when `j` is odd. -/
+theorem sum_Iic_neg_one_pow_sub {R : Type*} [Ring R] (n : ℕ) :
+    ∑ j : Fin (n + 1), ∑ r ∈ Finset.Iic j, (-1 : R) ^ ((j : ℕ) - r) = (n / 2 + 1 : ℕ) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Fin.sum_univ_castSucc]
+    have hinit : (∑ i : Fin (n + 1), ∑ r ∈ Finset.Iic i.castSucc,
+        (-1 : R) ^ ((i.castSucc : ℕ) - r)) = (n / 2 + 1 : ℕ) := by
+      simp_rw [Fin.sum_Iic_castSucc, Fin.val_castSucc]
+      exact ih
+    have hlast : (∑ r ∈ Finset.Iic (Fin.last (n + 1)),
+        (-1 : R) ^ ((Fin.last (n + 1) : ℕ) - r)) = if Even (n + 2) then 0 else 1 := by
+      rw [← Fin.top_eq_last, Finset.Iic_top, Fin.top_eq_last, Fin.val_last,
+        ← Equiv.sum_comp Fin.revPerm]
+      refine (Finset.sum_congr rfl fun x _ ↦ ?_).trans (Fin.sum_neg_one_pow R (n + 2))
+      simp only [Fin.revPerm_apply, Fin.val_rev]
+      congr 1
+      omega
+    rw [hinit, hlast]
+    rcases Nat.even_or_odd n with ⟨k, rfl⟩ | ⟨k, rfl⟩
+    · have heven : Even (k + k + 2) := ⟨k + 1, by omega⟩
+      rw [ite_eq_left heven, add_zero, show (k + k + 1) / 2 = (k + k) / 2 by omega]
+    · have hodd : ¬Even (2 * k + 1 + 2) := fun ⟨m, hm⟩ ↦ by omega
+      rw [ite_eq_right hodd, show (2 * k + 1 + 1) / 2 + 1 = (2 * k + 1) / 2 + 1 + 1 by omega]
+      push_cast
+      abel
+
+/-! ### Alternating sums ending in degree `n` -/
+
+/-- The alternating sum `xₙ - xₙ₋₁ + ⋯ ± x₀` is `(-1)ⁿ (x₀ - x₁ + ⋯ ± xₙ)`. -/
+theorem sum_range_neg_one_pow_sub_smul (x : ℕ → G) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) • x i =
+      (-1 : ℤ) ^ n • ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i • x i := by
+  rw [Finset.smul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [smul_smul]
+  congr 1
+  have h : (-1 : ℤ) ^ n = (-1) ^ (n - i) * (-1) ^ i := by
+    rw [← pow_add, Nat.sub_add_cancel (Finset.mem_range_succ_iff.1 hi)]
+  have hsq : ((-1 : ℤ) ^ i) ^ 2 = 1 := by rw [pow_right_comm, neg_one_sq, one_pow]
+  linear_combination (-(-1 : ℤ) ^ i) * h - (-1 : ℤ) ^ (n - i) * hsq
+
+/-- The alternating sums `sₙ = xₙ - xₙ₋₁ + ⋯ ± x₀` satisfy `sₙ₊₁ = xₙ₊₁ - sₙ`. -/
+theorem sum_range_succ_neg_one_pow_sub_smul (x : ℕ → G) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 2), (-1 : ℤ) ^ (n + 1 - i) • x i =
+      x (n + 1) - ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) • x i := by
+  rw [Finset.sum_range_succ, Nat.sub_self, pow_zero, one_smul, sub_eq_add_neg, add_comm,
+    ← Finset.sum_neg_distrib]
+  congr 1
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [Nat.sub_add_comm (Finset.mem_range_succ_iff.1 hi), pow_succ, mul_neg_one, neg_smul]
+
+/-- The alternating sum `xₙ - xₙ₋₁ + ⋯ ± x₀` in a ring is `(-1)ⁿ (x₀ - x₁ + ⋯ ± xₙ)`. -/
+theorem sum_range_neg_one_pow_sub_mul {R : Type*} [Ring R] (x : ℕ → R) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ (n - i) * x i =
+      (-1 : R) ^ n * ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ i * x i := by
+  simpa only [zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one] using
+    sum_range_neg_one_pow_sub_smul x n
+
+/-- The alternating sums `sₙ = xₙ - xₙ₋₁ + ⋯ ± x₀` in a ring satisfy `sₙ₊₁ = xₙ₊₁ - sₙ`. -/
+theorem sum_range_succ_neg_one_pow_sub_mul {R : Type*} [Ring R] (x : ℕ → R) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 2), (-1 : R) ^ (n + 1 - i) * x i =
+      x (n + 1) - ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ (n - i) * x i := by
+  simpa only [zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one] using
+    sum_range_succ_neg_one_pow_sub_smul x n
 
 end TauCeti

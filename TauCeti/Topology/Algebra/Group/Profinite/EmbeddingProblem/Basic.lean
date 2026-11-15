@@ -127,11 +127,8 @@ abbrev ofSurjective (φ : E →* F) (hφ : Function.Surjective φ) (β : G →* 
   π := β.rangeRestrict
   isOpen_ker_π := by rwa [MonoidHom.ker_rangeRestrict]
   π_surjective := β.rangeRestrict_surjective
-  α := (φ.domRestrict (β.range.comap φ)).codRestrict β.range fun x ↦ x.2
-  α_surjective := by
-    rintro ⟨_, g, rfl⟩
-    obtain ⟨e, he⟩ := hφ (β g)
-    exact ⟨⟨e, by simp [he]⟩, Subtype.ext he⟩
+  α := φ.subgroupComap β.range
+  α_surjective := φ.subgroupComap_surjective _ hφ
 
 variable {φ : E →* F} {hφ : Function.Surjective φ} {β : G →* F} {hβ : IsOpen (β.ker : Set G)}
 
@@ -147,11 +144,13 @@ theorem coe_ofSurjective_π_apply (g : G) : ((ofSurjective φ hφ β hβ).π g :
 /-- The kernel of the embedding problem cut out by `φ` and `β` is the kernel of `φ`. -/
 @[simp]
 theorem ker_ofSurjective_α :
-    (ofSurjective φ hφ β hβ).α.ker = φ.ker.subgroupOf (β.range.comap φ) :=
-  (MonoidHom.ker_codRestrict _ _ _).trans (MonoidHom.ker_domRestrict _ _)
+    (ofSurjective φ hφ β hβ).α.ker = φ.ker.subgroupOf (β.range.comap φ) := by
+  ext
+  rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, MonoidHom.mem_ker, ← OneMemClass.coe_eq_one,
+    coe_ofSurjective_α_apply]
 
-/-- A solution of the embedding problem cut out by `φ` and `β` is a lift of `β` through `φ` with
-open kernel. -/
+/-- The solutions of the embedding problem cut out by `φ` and `β` are exactly the lifts of `β`
+through `φ` with open kernel. -/
 -- Not `@[simp]`: the `simp` lemma `isSolution_iff` already rewrites the left-hand side, so the
 -- `simpNF` linter rejects the attribute.
 theorem isSolution_ofSurjective_iff {β' : G →* β.range.comap φ} :

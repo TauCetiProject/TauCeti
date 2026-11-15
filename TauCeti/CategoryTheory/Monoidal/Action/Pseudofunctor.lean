@@ -42,7 +42,9 @@ pseudofunctor is exactly the associativity and unit axioms of the action, and co
   recovered from `F.monoidalLeftAction` is `F`, including its unit and composition comparisons;
 * `CategoryTheory.MonoidalCategory.MonoidalLeftAction.pseudofunctorEquiv`: the resulting
   bijection between categories equipped with a left action of `Discrete M` and pseudofunctors
-  `LocallyDiscrete (SingleObj M) ⥤ᵖ Cat`.
+  `LocallyDiscrete (SingleObj M) ⥤ᵖ Cat`;
+* `TauCeti.trivialAction M D`: the trivial action of `M` on a category `D`, as a pseudofunctor
+  with identity action functors and identity unit and composition comparisons.
 -/
 
 @[expose] public section
@@ -277,3 +279,24 @@ def pseudofunctorEquiv :
 end MonoidalCategory.MonoidalLeftAction
 
 end CategoryTheory
+
+namespace TauCeti
+
+open CategoryTheory Bicategory
+
+variable (M : Type u) [Monoid M]
+
+/-- The trivial categorical action of a monoid `M` on a category `D`, as a pseudofunctor
+`LocallyDiscrete (SingleObj M) ⥤ᵖ Cat`: every element of `M` acts by the identity functor, and
+the unit and composition comparisons are identities. -/
+-- This is reducible so that its value at the unique object is `D` at reducible transparency, for
+-- instance in the fibers of equivariant groupoid lifts of trivial actions, where `rw` and `simp`
+-- need the transport functors to be functors between the categories `D`, not only up to unfolding.
+abbrev trivialAction (D : Cat.{v, w}) : LocallyDiscrete (SingleObj M) ⥤ᵖ Cat.{v, w} where
+  obj _ := D
+  map _ := 𝟙 D
+  map₂ _ := 𝟙 _
+  mapId _ := Iso.refl _
+  mapComp _ _ := (λ_ _).symm
+
+end TauCeti

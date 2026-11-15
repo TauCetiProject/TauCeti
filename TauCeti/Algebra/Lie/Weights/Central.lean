@@ -57,7 +57,8 @@ describes its action.
 * `TauCeti.lie_eq_centralWeight_smul` and `TauCeti.toEnd_eq_centralWeight_smul` are the defining
   property of the central weight, and `TauCeti.centralWeight_eq_of_forall_lie_eq_smul` its
   characterization.
-* `TauCeti.centralWeight_eq_of_lieModuleEquiv`: the central weight is an isomorphism invariant.
+* `TauCeti.centralWeight_eq_of_ne_zero`: the central weight is an isomorphism invariant, shared by
+  any two irreducible modules joined by a nonzero morphism.
 * `TauCeti.isIrreducible_of_sup_center_eq_top`: a Lie subalgebra whose sum with the centre is all of
   `L` already acts irreducibly. This is the mechanism by which a reductive Lie algebra hands its
   irreducibles down to its derived ideal, the centre contributing only the scalars recorded by
@@ -114,14 +115,10 @@ and therefore everything. Neither finite-dimensionality nor algebraic closedness
 what `TauCeti.exists_forall_apply_eq_smul` needs to produce the scalar in the first place. -/
 theorem forall_apply_eq_smul_of_apply_eq_smul (f : M →ₗ⁅K,L⁆ M) {c : K} {m₀ : M} (hm₀ : m₀ ≠ 0)
     (h : f m₀ = c • m₀) (m : M) : f m = c • m := by
-  have hmem : ∀ y : M, y ∈ (f - c • (LieModuleHom.id : M →ₗ⁅K,L⁆ M)).ker ↔ f y = c • y := by
-    intro y
-    rw [LieModuleHom.mem_ker, sub_apply, smul_apply,
-      LieModuleHom.id_apply, sub_eq_zero]
-  have htop : (f - c • (LieModuleHom.id : M →ₗ⁅K,L⁆ M)).ker = ⊤ := by
-    refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot ↦ hm₀ ?_
-    have hm₀' := (hmem m₀).2 h
-    rwa [hbot, LieSubmodule.mem_bot] at hm₀'
+  have hmem (y : M) : y ∈ (f - c • LieModuleHom.id).ker ↔ f y = c • y := by simp [sub_eq_zero]
+  have htop : (f - c • LieModuleHom.id).ker = ⊤ :=
+    (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot ↦
+      hm₀ <| (LieSubmodule.mem_bot m₀).1 (hbot ▸ (hmem m₀).2 h)
   exact (hmem m).1 (htop ▸ LieSubmodule.mem_top m)
 
 end ScalarPropagation
@@ -212,17 +209,14 @@ noncomputable def centralWeight : Module.Dual K (LieAlgebra.center K L) where
     have _i : Nontrivial M := LieModule.nontrivial_of_isIrreducible K L M
     refine eq_of_forall_lie_eq_smul (exists_forall_lie_eq_smul K L M (z + w)).choose_spec
       fun m ↦ ?_
-    have hz := (exists_forall_lie_eq_smul K L M z).choose_spec m
-    have hw := (exists_forall_lie_eq_smul K L M w).choose_spec m
-    have hcoe : ((z + w : LieAlgebra.center K L) : L) = (z : L) + (w : L) := rfl
-    rw [hcoe, add_lie, hz, hw, add_smul]
+    rw [LieSubmodule.coe_add, add_lie, (exists_forall_lie_eq_smul K L M z).choose_spec,
+      (exists_forall_lie_eq_smul K L M w).choose_spec, add_smul]
   map_smul' t z := by
     have _i : Nontrivial M := LieModule.nontrivial_of_isIrreducible K L M
     refine eq_of_forall_lie_eq_smul (exists_forall_lie_eq_smul K L M (t • z)).choose_spec
       fun m ↦ ?_
-    have hz := (exists_forall_lie_eq_smul K L M z).choose_spec m
-    have hcoe : ((t • z : LieAlgebra.center K L) : L) = t • (z : L) := rfl
-    rw [hcoe, smul_lie, hz, smul_smul, RingHom.id_apply, smul_eq_mul]
+    rw [LieSubmodule.coe_smul, smul_lie, (exists_forall_lie_eq_smul K L M z).choose_spec,
+      RingHom.id_apply, smul_eq_mul, mul_smul]
 
 /-- **The defining property of the central weight**: a central element acts by the scalar the
 weight assigns to it. -/
@@ -282,16 +276,17 @@ variable (N : Type x) [AddCommGroup N] [Module K N] [LieRingModule L N] [LieModu
 variable [FiniteDimensional K M] [LieModule.IsIrreducible K L M]
 variable [FiniteDimensional K N] [LieModule.IsIrreducible K L N]
 
-/-- **The central weight is an isomorphism invariant.** Equivalent irreducible modules have the same
-central weight, so the weight is an invariant of the isomorphism class and can be used to separate
-irreducibles. -/
-theorem centralWeight_eq_of_lieModuleEquiv (e : M ≃ₗ⁅K,L⁆ N) :
+/-- **The central weight is an isomorphism invariant.** Two irreducible modules joined by a nonzero
+morphism, in particular two equivalent ones, have the same central weight, so the weight is an
+invariant of the isomorphism class and can be used to separate irreducibles. -/
+theorem centralWeight_eq_of_ne_zero {f : M →ₗ⁅K,L⁆ N} (hf : f ≠ 0) :
     centralWeight K L N = centralWeight K L M := by
+  obtain ⟨m, hm⟩ : ∃ m, f m ≠ 0 := by simpa [DFunLike.ne_iff] using hf
   ext z
-  refine centralWeight_eq_of_forall_lie_eq_smul K L N fun n ↦ ?_
-  have key : ⁅(z : L), e (e.symm n)⁆ = e ⁅(z : L), e.symm n⁆ :=
-    (e.toLieModuleHom.map_lie (z : L) (e.symm n)).symm
-  rw [← e.apply_symm_apply n, key, lie_eq_centralWeight_smul K L M z, map_smul]
+  refine smul_left_injective K hm ?_
+  dsimp only
+  rw [← lie_eq_centralWeight_smul K L N z, ← map_smul, ← lie_eq_centralWeight_smul K L M z,
+    LieModuleHom.map_lie]
 
 end Transfer
 
@@ -314,24 +309,19 @@ theorem isIrreducible_of_sup_center_eq_top_of_forall_exists_lie_eq_smul (L' : Li
     LieModule.IsIrreducible K L' M := by
   have _i : Nontrivial M := LieModule.nontrivial_of_isIrreducible K L M
   refine LieModule.IsIrreducible.mk fun P hP ↦ ?_
-  have hx : ∀ x : L, ∃ y ∈ L'.toSubmodule, ∃ z ∈ (LieAlgebra.center K L).toSubmodule,
-      y + z = x := fun x ↦ Submodule.mem_sup.1 (by rw [h]; exact Submodule.mem_top)
   let P' : LieSubmodule K L M :=
     { __ := P.toSubmodule
       lie_mem := fun {x m} hm ↦ by
-        obtain ⟨y, hy, z, hz, rfl⟩ := hx x
+        obtain ⟨y, hy, z, hz, rfl⟩ := Submodule.mem_sup.1 (h ▸ Submodule.mem_top (x := x))
         -- `hc` speaks of `⟨z, hz⟩ : center K L`, whose coercion back to `L` is `z` only up to
         -- unfolding; ascribing the type at the destructuring puts the hypothesis in terms of `z`.
         obtain ⟨c, hcz⟩ : ∃ c : K, ∀ m : M, ⁅z, m⁆ = c • m := hc ⟨z, hz⟩
-        rw [add_lie]
-        refine P.toSubmodule.add_mem ?_ ?_
-        · simpa using P.lie_mem (x := (⟨y, hy⟩ : L')) hm
-        · rw [hcz m]
-          exact P.toSubmodule.smul_mem c hm }
-  refine (LieSubmodule.toSubmodule_eq_top P).1 ?_
-  rcases IsSimpleOrder.eq_bot_or_eq_top P' with hbot | htop
-  · exact absurd ((LieSubmodule.toSubmodule_eq_bot P).1 (congrArg LieSubmodule.toSubmodule hbot)) hP
-  · exact congrArg LieSubmodule.toSubmodule htop
+        rw [add_lie, hcz m]
+        exact P.toSubmodule.add_mem (by simpa using P.lie_mem (x := (⟨y, hy⟩ : L')) hm)
+          (P.toSubmodule.smul_mem c hm) }
+  have hP' : P' = ⊤ := (IsSimpleOrder.eq_bot_or_eq_top P').resolve_left fun hbot ↦
+    hP <| (LieSubmodule.toSubmodule_eq_bot P).1 (congrArg LieSubmodule.toSubmodule hbot)
+  exact (LieSubmodule.toSubmodule_eq_top P).1 (congrArg LieSubmodule.toSubmodule hP')
 
 end Descent
 

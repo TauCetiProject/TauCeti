@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Scheme
 import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
+import TauCeti.Topology.KrullDimension.Basic
 
 /-!
 # Krull dimension of projective orbits
@@ -24,8 +25,11 @@ Thus these orbit dimension statements apply also to disconnected groups.
 
 * `TauCeti.Comodule.topologicalKrullDim_projectiveOrbitScheme`: the orbit scheme has the Krull
   dimension of the orbit.
-* `TauCeti.Comodule.topologicalKrullDim_range_projectiveOrbitMap_ne_top`: the orbit has finite
-  Krull dimension.
+* `TauCeti.Comodule.topologicalKrullDim_range_projectiveOrbitMap_ne_top` and
+  `TauCeti.Comodule.exists_topologicalKrullDim_range_projectiveOrbitMap_eq_natCast`: the orbit
+  has finite Krull dimension, a natural number.
+* `TauCeti.Comodule.topologicalKrullDim_range_projectiveOrbitMap_add_one_le_finrank`: the orbit
+  of a line in `M` has Krull dimension at most `dim M - 1`.
 * `TauCeti.Comodule.topologicalKrullDim_closure_range_projectiveOrbitMap`: the orbit of a line
   has the Krull dimension of its closure.
 * `TauCeti.Comodule.topologicalKrullDim_closure_diff_range_projectiveOrbitMap_lt`: its boundary
@@ -57,6 +61,30 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_ne_top
     topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m hm)) ≠ ⊤ :=
   ne_top_of_le_ne_top (TauCeti.AlgebraicGeometry.topologicalKrullDim_ne_top_of_locallyOfFiniteType
     (SymmetricAlgebra.projToSpec k (Module.Dual k M))) (topologicalKrullDim_subspace_le _ _)
+
+/-- The orbit of a line has the Krull dimension of a natural number: it is finite, and it is not
+`⊥` because the orbit is nonempty. -/
+theorem exists_topologicalKrullDim_range_projectiveOrbitMap_eq_natCast
+    (m : M) (hm : Module.IsUnimodular k m) :
+    ∃ n : ℕ, topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m hm)) = n := by
+  have : Nonempty (Set.range (projectiveOrbitMap (H := H) m hm)) :=
+    ⟨⟨_, Set.mem_range_self (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H))⟩⟩
+  obtain ⟨d, hd⟩ := WithBot.ne_bot_iff_exists.mp
+    ((WithBot.bot_lt_coe _).trans_le (TauCeti.coheight_le_topologicalKrullDim
+      (Classical.arbitrary (Set.range (projectiveOrbitMap (H := H) m hm))))).ne'
+  obtain ⟨n, rfl⟩ := ENat.ne_top_iff_exists.mp (show d ≠ ⊤ by
+    rintro rfl; exact topologicalKrullDim_range_projectiveOrbitMap_ne_top (H := H) m hm hd.symm)
+  exact ⟨n, hd.symm⟩
+
+/-- **Orbits have dimension at most that of the projective space.** The orbit of a line in `M`
+has Krull dimension at most `dim M - 1`. -/
+theorem topologicalKrullDim_range_projectiveOrbitMap_add_one_le_finrank
+    (m : M) (hm : Module.IsUnimodular k m) :
+    topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m hm)) + 1 ≤
+      Module.finrank k M := by
+  grw [topologicalKrullDim_subspace_le]
+  exact (SymmetricAlgebra.topologicalKrullDim_proj_add_one_le_finrank (Module.Dual k M) k).trans_eq
+    (by rw [Subspace.dual_finrank_eq])
 
 end Range
 

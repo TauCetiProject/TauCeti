@@ -197,19 +197,15 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
-variable (E) in
-/-- **Normalization of convex bodies.** In a finite-dimensional real normed space `E` there is a
-radius `r > 0`, depending only on `E`, such that every bounded convex set `s` with nonempty
-interior is mapped by some affine equivalence `T` to a set between the balls of radii `r` and `1`
-about `0`. -/
-theorem exists_affineEquiv_ball_subset_image_subset_ball :
-    ∃ r > 0, ∀ s : Set E, Convex ℝ s → Bornology.IsBounded s → (interior s).Nonempty →
-      ∃ T : E ≃ᵃ[ℝ] E, ball 0 r ⊆ T '' s ∧ T '' s ⊆ ball 0 1 := by
-  -- A reference simplex: its interior contains a ball about its centroid `c`, and the points with
-  -- barycentric coordinates in `[-1, 1]` lie in the ball of radius `∑ i, ‖b₁ i‖` about `0`.
-  let ι := Fin (finrank ℝ E + 1)
-  have hι : Fintype.card ι = finrank ℝ E + 1 := Fintype.card_fin _
-  obtain ⟨b₁⟩ := AffineBasis.exists_affineBasis_of_finiteDimensional (k := ℝ) (P := E) hι
+/-- A reference simplex: an affine basis `b₁` and a point `c` (its centroid) such that all
+barycentric coordinates are positive on the ball of radius `ρ` about `c`, while the points with
+barycentric coordinates in `[-1, 1]` lie in the ball of radius `R` about `c`. -/
+private theorem exists_affineBasis_coord_pos_of_dist_lt_and_norm_sub_lt :
+    ∃ (b₁ : AffineBasis (Fin (finrank ℝ E + 1)) ℝ E) (c : E) (ρ R : ℝ), 0 < ρ ∧ 0 < R ∧
+      (∀ y, dist y c < ρ → ∀ i, 0 < b₁.coord i y) ∧
+      ∀ y, (∀ i, |b₁.coord i y| ≤ 1) → ‖y - c‖ < R := by
+  obtain ⟨b₁⟩ := AffineBasis.exists_affineBasis_of_finiteDimensional (k := ℝ) (P := E)
+    (Fintype.card_fin (finrank ℝ E + 1))
   set c := Finset.univ.centroid ℝ b₁
   have hc : c ∈ interior (convexHull ℝ (range b₁)) := b₁.centroid_mem_interior_convexHull
   rw [b₁.interior_convexHull] at hc
@@ -223,18 +219,29 @@ theorem exists_affineEquiv_ball_subset_image_subset_ball :
     refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ => ?_)
     rw [norm_smul, Real.norm_eq_abs]
     exact mul_le_of_le_one_left (norm_nonneg _) (hy i)
-  set R := ∑ i, ‖b₁ i‖ + ‖c‖ + 1
-  have hR : 0 < R := by
-    have := Finset.sum_nonneg fun i (_ : i ∈ Finset.univ) => norm_nonneg (b₁ i)
-    have := norm_nonneg c
-    linarith
+  have h₁ := Finset.sum_nonneg fun i (_ : i ∈ Finset.univ) => norm_nonneg (b₁ i)
+  have h₂ := norm_nonneg c
+  refine ⟨b₁, c, ρ, ∑ i, ‖b₁ i‖ + ‖c‖ + 1, hρ, by linarith, fun y hy => hball hy, fun y hy => ?_⟩
+  linarith [hbound y hy, norm_sub_le y c]
+
+variable (E) in
+/-- **Normalization of convex bodies.** In a finite-dimensional real normed space `E` there is a
+radius `r > 0`, depending only on `E`, such that every bounded convex set `s` with nonempty
+interior is mapped by some affine equivalence `T` to a set between the balls of radii `r` and `1`
+about `0`. -/
+theorem exists_affineEquiv_ball_subset_image_subset_ball :
+    ∃ r > 0, ∀ s : Set E, Convex ℝ s → Bornology.IsBounded s → (interior s).Nonempty →
+      ∃ T : E ≃ᵃ[ℝ] E, ball 0 r ⊆ T '' s ∧ T '' s ⊆ ball 0 1 := by
+  obtain ⟨b₁, c, ρ, R, hρ, hR, hball, hbound⟩ :=
+    exists_affineBasis_coord_pos_of_dist_lt_and_norm_sub_lt (E := E)
   refine ⟨ρ / R, div_pos hρ hR, fun s hs hsb hsi => ?_⟩
   -- An affine basis in the closure of `s` relative to which the barycentric coordinates of the
   -- points of the closure lie in `[-1, 1]`.
   have hspan : affineSpan ℝ (closure s) = ⊤ :=
     top_unique <| (isOpen_interior.affineSpan_eq_top hsi).symm.le.trans
       (affineSpan_mono ℝ (interior_subset.trans subset_closure))
-  obtain ⟨b, hbs, hb⟩ := hsb.isCompact_closure.exists_affineBasis_abs_coord_le_one hspan hι
+  obtain ⟨b, hbs, hb⟩ := hsb.isCompact_closure.exists_affineBasis_abs_coord_le_one hspan
+    (Fintype.card_fin (finrank ℝ E + 1))
   -- Move it onto the reference simplex, then recentre at `0` and rescale by `R⁻¹`.
   obtain ⟨T₀, hT₀⟩ := b.exists_affineEquiv_apply_eq b₁
   have hcoord : ∀ x i, b₁.coord i (T₀ x) = b.coord i x := fun x i =>
@@ -249,8 +256,8 @@ theorem exists_affineEquiv_ball_subset_image_subset_ball :
     have hy' : T₀.symm (c + R • y) ∈ s := by
       have hpos : ∀ i, 0 < b.coord i (T₀.symm (c + R • y)) := fun i => by
         rw [← hcoord, AffineEquiv.apply_symm_apply]
-        refine hball ?_ i
-        rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hR.le]
+        refine hball _ ?_ i
+        rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hR.le]
         rw [mem_ball_zero_iff, lt_div_iff₀ hR] at hy
         linarith
       have hhull : convexHull ℝ (range b) ⊆ closure s :=
@@ -270,6 +277,6 @@ theorem exists_affineEquiv_ball_subset_image_subset_ball :
       exact hb x (subset_closure hx) i
     rw [mem_ball_zero_iff, hT, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hR.le),
       inv_mul_lt_iff₀ hR, mul_one]
-    linarith [norm_sub_le (T₀ x) c]
+    exact hle
 
 end TauCeti

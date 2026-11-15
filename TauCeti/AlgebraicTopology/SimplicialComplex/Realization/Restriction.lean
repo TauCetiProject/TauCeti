@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Restriction
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Compact
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 
 /-!
 # Vertex restrictions and compact factorization
@@ -119,6 +120,15 @@ theorem mem_range_restrictInclusion_realizationMap (x : Realization K) :
   · intro hx
     refine ⟨(K.restrictRealizationHomeomorph s).symm ⟨x, hx⟩, ?_⟩
     rw [← restrictRealizationHomeomorph_apply, Homeomorph.apply_symm_apply]
+
+/-- Points supported on a finite set of vertices form a compact subpolyhedron, even when the
+ambient complex has infinitely many faces. -/
+theorem isCompact_setOf_support_subset (hs : s.Finite) :
+    IsCompact {x : Realization K | (x.1.support : Set ι) ⊆ s} := by
+  let : Finite s := hs.to_subtype
+  convert isCompact_range (K.restrictInclusion s).realizationMap.continuous using 1
+  ext x
+  exact (mem_range_restrictInclusion_realizationMap K s x).symm
 
 /-- Every continuous map with compact image factors continuously through a finite vertex
 restriction. The statement includes empty domains and imposes no hypothesis on the vertices. -/

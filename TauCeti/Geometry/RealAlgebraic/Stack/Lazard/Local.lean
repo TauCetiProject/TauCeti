@@ -47,6 +47,27 @@ namespace TauCeti
 variable {n : ℕ} {ι : Type*} {F : ι → MvPolynomial (Fin (n + 1)) ℝ}
   {S : Set (Fin n → ℝ)}
 
+/-- If the Lazard delineations `D a` over `S ∩ U a` exist on open neighborhoods `U a` of each
+point `a` of a preconnected base `S`, then the exponent vector removed by Lazard evaluation of
+each polynomial is the same at every point of `S`: it is locally constant by the local
+delineations, hence constant. -/
+private theorem lazardExponent_eq_of_locally (hS : IsPreconnected S) {U : S → Set (Fin n → ℝ)}
+    (hU : ∀ a, IsOpen (U a)) (hxU : ∀ a : S, a.1 ∈ U a)
+    (D : ∀ a : S, LazardDelineation F (S ∩ U a : Set (Fin n → ℝ))) (k : ι) (x x₀ : S) :
+    (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardExponent
+        (Polynomial.C ∘ x.1) =
+      (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardExponent
+        (Polynomial.C ∘ x₀.1) := by
+  let _ := isPreconnected_iff_preconnectedSpace.1 hS
+  have hloc : IsLocallyConstant fun y : S ↦
+      (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardExponent
+        (Polynomial.C ∘ y.1) := by
+    refine (IsLocallyConstant.iff_eventually_eq _).2 fun a ↦ ?_
+    filter_upwards [((hU a).preimage continuous_subtype_val).mem_nhds (hxU a)] with y hy
+    exact ((D a).lazardExponent_eq k ⟨y.1, y.2, hy⟩).trans
+      ((D a).lazardExponent_eq k ⟨a.1, a.2, hxU a⟩).symm
+  exact (hloc.apply_eq_of_preconnectedSpace x x₀).trans rfl
+
 /-- Local Lazard delineations on ambient open neighborhoods glue over a nonempty preconnected
 base. The local root counts, root multiplicities, and removed base-exponent vectors may depend
 on the neighborhood; their global constancy is a conclusion. -/
@@ -87,15 +108,8 @@ theorem nonempty_lazardDelineation_of_locally (hS : IsPreconnected S) (hSne : S.
       (Polynomial.C ∘ x₀.1)
   have he (k : ι) (x : S) :
       (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardExponent
-          (Polynomial.C ∘ x.1) = e k := by
-    have hloc : IsLocallyConstant fun y : S ↦
-        (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardExponent
-          (Polynomial.C ∘ y.1) := by
-      refine (IsLocallyConstant.iff_eventually_eq _).2 fun a ↦ ?_
-      filter_upwards [((hU a).preimage continuous_subtype_val).mem_nhds (hxU a)] with y hy
-      exact ((D a).lazardExponent_eq k ⟨y.1, y.2, hy⟩).trans
-        ((D a).lazardExponent_eq k ⟨a.1, a.2, hxU a⟩).symm
-    exact (hloc.apply_eq_of_preconnectedSpace x x₀).trans rfl
+          (Polynomial.C ∘ x.1) = e k :=
+    lazardExponent_eq_of_locally hS hU hxU D k x x₀
   refine ⟨{
     nonempty := hSne
     count := q

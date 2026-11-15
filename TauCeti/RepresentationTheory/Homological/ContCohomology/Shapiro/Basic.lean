@@ -82,7 +82,7 @@ arguments is uniform local constancy of the underlying function on the compact g
 
 ## Implementation notes
 
-Degree zero needs no topological hypothesis beyond a continuous multiplication on `G`: a
+Degree zero needs only separately continuous multiplication on `G`: a
 `G`-invariant element of the coinduced module is constant, and the constant it takes is
 `U`-invariant. Degrees one and two are where profiniteness and closedness of `U` are used, through
 the continuous factorization; for an *open* `U` the finite transversal `Quotient.out` would already
@@ -118,7 +118,7 @@ def constCoind (a : H0 U A) : DiscreteCoind G U A :=
 @[simp]
 theorem constCoind_apply (a : H0 U A) (g : G) : constCoind G a g = (a : A) := (rfl)
 
-variable [ContinuousMul G]
+variable [SeparatelyContinuousMul G]
 
 /-- A `G`-invariant element of `Coind_U^G A` is a constant function: right translation moves `1`
 to every point of `G`. -/
@@ -137,8 +137,8 @@ variable (G U A) in
 
 A `G`-invariant element of the coinduced module is constant and the constant it takes is
 `U`-invariant; conversely a `U`-invariant `a : A` is `TauCeti.ContCohomology.constCoind`. Only
-continuity of the multiplication on `G` is used: neither compactness of `G` nor closedness of `U`
-enters in this degree. -/
+separate continuity of multiplication on `G` is used: neither compactness of `G` nor closedness
+of `U` enters in this degree. -/
 def explicitShapiro0 : H0 G (DiscreteCoind G U A) ≃+ H0 U A where
   toFun f := ⟨(f : DiscreteCoind G U A) 1, (FixedPoints.mem_addSubgroup U A _).2 fun u => by
     rw [← DiscreteCoind.apply_coe, apply_eq_apply_one_of_mem_H0 f]⟩
@@ -273,11 +273,16 @@ theorem coindCochain1_apply (g x : G) :
 /-- The inverse Shapiro cochain of a `1`-coboundary of `U` is a `1`-coboundary of `G`, with the
 primitive `x ↦ w x • α` in `Coind_U^G A`. This is what makes the inverse construction descend to
 cohomology. -/
-theorem coindCochain1_mem_B1_of_mem_B1 [ContinuousSMul U A] (hcB : c ∈ B1 U A) :
+theorem coindCochain1_mem_B1_of_mem_B1 (hcB : c ∈ B1 U A) :
     coindCochain1 w c hw hwmul hccont hccoc ∈ B1 G (DiscreteCoind G U A) := by
   obtain ⟨α, hα⟩ := mem_B1_iff.1 hcB
+  -- `w x • α = c (w x) + α` is continuous without any continuity of the action on `A`.
+  have hcont : Continuous fun x => w x • α := by
+    have h : (fun x => w x • α) = fun x => c (w x) + α := funext fun x => by
+      rw [← hα, sub_add_cancel]
+    exact h ▸ (hccont.comp hw).add continuous_const
   refine mem_B1_iff.2 ⟨DiscreteCoind.mk G U A (fun x => w x • α)
-    ((IsLocallyConstant.iff_continuous _).2 (continuous_smul.comp (hw.prodMk continuous_const)))
+    ((IsLocallyConstant.iff_continuous _).2 hcont)
     (fun u x => by rw [hwmul u x, mul_smul]), fun g => DiscreteCoind.ext fun x => ?_⟩
   simp only [DiscreteCoind.coe_sub, Pi.sub_apply, DiscreteCoind.coe_smul,
     DiscreteCoind.mk_apply, coindCochain1_apply, ← hα]

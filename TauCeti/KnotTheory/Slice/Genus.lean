@@ -6,14 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Orientation.Basic
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import Mathlib.Algebra.Category.ModuleCat.Colimits
-public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Data.ENat.Lattice
+public import TauCeti.AlgebraicTopology.Singular.SurfaceGenus
 public import TauCeti.KnotTheory.Slice.Basic
 public import TauCeti.Geometry.Manifold.Orientation.ClosedBall
 import Mathlib.Analysis.Convex.Contractible
-import TauCeti.AlgebraicTopology.Singular.Contractible
 
 /-!
 # The smooth slice genus of a knot
@@ -152,19 +149,15 @@ attribute [instance] topologicalSpace chartedSpace isManifold compactSpace conne
 
 variable {K K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
 
-/-- The first singular homology `H₁(S; ℚ)` of a slice surface, with rational coefficients. -/
-abbrev firstHomology (S : SliceSurfaceData K) : Type :=
-  ((singularHomologyFunctor (ModuleCat ℚ) 1).obj (ModuleCat.of ℚ ℚ)).obj (TopCat.of S.carrier)
-
-/-- The **genus** of a slice surface: half the dimension of its first rational homology. A
-compact, connected, orientable surface of genus `g` with one boundary circle has
-`H₁(S; ℚ) ≅ ℚ²ᵍ`, so this is the genus of `S`: since `S.toFun` is an embedding, the boundary of `S`
-is homeomorphic to the image of `K`, a single circle. -/
+/-- The **genus** of a slice surface: half the dimension of its first rational homology
+(`TauCeti.surfaceGenus`). A compact, connected, orientable surface of genus `g` with one boundary
+circle has `H₁(S; ℚ) ≅ ℚ²ᵍ`, so this is the genus of `S`: since `S.toFun` is an embedding, the
+boundary of `S` is homeomorphic to the image of `K`, a single circle. -/
 def genus (S : SliceSurfaceData K) : ℕ :=
-  finrank ℚ S.firstHomology / 2
+  surfaceGenus S.carrier
 
-/-- The genus of a slice surface is half the dimension of its first rational homology. -/
-theorem genus_def (S : SliceSurfaceData K) : S.genus = finrank ℚ S.firstHomology / 2 :=
+/-- The genus of a slice surface is the genus `TauCeti.surfaceGenus` of its carrier. -/
+theorem genus_def (S : SliceSurfaceData K) : S.genus = surfaceGenus S.carrier :=
   (rfl)
 
 /-- Slice surface data for `K` is slice surface data for every knot `K'` with the same image. -/
@@ -243,10 +236,7 @@ theorem genus_ofClosedBall (Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1
     (ofClosedBall Φ hΦ hpre himg).genus = 0 := by
   have : ContractibleSpace (ofClosedBall Φ hΦ hpre himg).carrier :=
     (convex_closedBall (0 : ℂ) 1).contractibleSpace (nonempty_closedBall.2 zero_le_one)
-  have := ModuleCat.isZero_iff_subsingleton.1 <|
-    isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of ℚ ℚ)
-      (TopCat.of (ofClosedBall Φ hΦ hpre himg).carrier) one_ne_zero
-  rw [genus_def, finrank_zero_of_subsingleton, Nat.zero_div]
+  rw [genus_def, surfaceGenus_eq_zero_of_contractibleSpace]
 
 end SliceSurfaceData
 

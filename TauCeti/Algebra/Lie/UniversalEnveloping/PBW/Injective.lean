@@ -26,7 +26,7 @@ injectivity, the linear-independence half of the theorem.
 
 Choose a basis `b` of `L` indexed by a linearly ordered type, and let `U(L)` act on the polynomial
 algebra `S` through the PBW representation `Module.Basis.pbwPolynomialRep` of
-`TauCeti/Algebra/Lie/UniversalEnveloping/PBW/PolynomialRep.lean`. Evaluating that action at `1`
+`TauCeti/Algebra/Lie/UniversalEnveloping/PBW/Polynomial/Rep.lean`. Evaluating that action at `1`
 sends the PBW filtration step `Uₙ` into the polynomials of total degree at most `n`, and sends a
 word `ι(x₁) ⋯ ι(xₙ)` to the product of the linear forms `zₓ₁ ⋯ zₓₙ` up to terms of lower degree.
 Taking the degree-`n` homogeneous component therefore kills `Uₙ₋₁` and descends to a linear map

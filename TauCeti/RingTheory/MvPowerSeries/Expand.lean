@@ -8,6 +8,10 @@ module
 public import Mathlib.RingTheory.MvPowerSeries.Expand
 public import Mathlib.RingTheory.MvPowerSeries.Restricted
 public import TauCeti.Data.Nat.ModEq
+-- Proof-only: the quotient by `p` has characteristic `p`.
+import Mathlib.Algebra.CharP.Quotient
+-- Proof-only: divisibility by a constant is coefficientwise divisibility.
+import TauCeti.RingTheory.MvPowerSeries.Dvd
 
 /-!
 # Expanding multivariate power series
@@ -19,12 +23,21 @@ when `f` is restricted at `r ^ p`. In finitely many variables, the coefficient a
 a sum `∑ X^ν' g_ν'(X^p)` over the exponents `ν'` with `ν' i < p` is the coefficient at `μ` of
 `g_ν`; this is the formal uniqueness of the decomposition along the expansion.
 
+Expansion by `p ^ i` is the integral shadow of the Frobenius: if `φ` is a ring endomorphism with
+`φ(a) ≡ a ^ (p ^ i)` modulo `p`, then `ψ ^ (p ^ i) ≡ (φ ψ)(X ^ (p ^ i))` modulo `p` for every power
+series `ψ`, where `φ ψ` applies `φ` to the coefficients. Modulo `p` this is Mathlib's
+`MvPowerSeries.map_iterateFrobenius_expand`. Such congruences drive integrality arguments for
+power series defined by functional equations, as in Hazewinkel's functional equation lemma.
+
 ## Main results
 
 * `MvPowerSeries.prod_pow_nsmul`: the weight of `p • μ` at `r` is the weight of `μ` at `r ^ p`.
 * `MvPowerSeries.isRestricted_expand_iff`: `f(X^p)` is restricted at `r` exactly when `f` is
   restricted at `r ^ p`.
+* `MvPowerSeries.IsRestricted.coeff_nsmul_add`: restrictedness of an expansion component.
 * `MvPowerSeries.coeff_sum_monomial_mul_expand`: the coefficients of `∑ X^ν g_ν(X^p)`.
+* `MvPowerSeries.natCast_dvd_pow_sub_expand_map`: if `φ(a) ≡ a ^ (p ^ i)` modulo the prime `p`,
+  then `p` divides `ψ ^ (p ^ i) - (φ ψ)(X ^ (p ^ i))`.
 -/
 
 public section
@@ -66,6 +79,25 @@ theorem isRestricted_expand_iff {R : Type*} [NormedCommRing R] {r t : σ → ℝ
   · obtain ⟨μ, -, rfl⟩ := support_expand_subset p hp f (a := α) hα0
     exact ⟨μ, hα, rfl⟩
 
+/-- Extracting the coefficients in an arithmetic progression of exponents preserves
+restrictedness, with the polyradii raised to the common step. -/
+theorem IsRestricted.coeff_nsmul_add {R : Type*} [NormedRing R] {r t : σ → ℝ}
+    [∀ i, Fact (0 < r i)] {p : ℕ} {f : MvPowerSeries σ R} (hf : IsRestricted r f)
+    (hp : p ≠ 0) (ht : ∀ i, r i ^ p = t i) (ν : σ →₀ ℕ) :
+    IsRestricted t (fun μ ↦ coeff (p • μ + ν) f : MvPowerSeries σ R) := by
+  have hi : Function.Injective fun μ : σ →₀ ℕ ↦ p • μ + ν :=
+    (add_left_injective ν).comp (nsmul_right_injective hp)
+  have hpos : 0 < ν.prod (r · ^ ·) := Finset.prod_pos fun i _ ↦ pow_pos Fact.out _
+  have h := (hf.comp hi.tendsto_cofinite).const_mul (ν.prod (r · ^ ·))⁻¹
+  rw [mul_zero] at h
+  refine h.congr fun μ ↦ ?_
+  have hc : coeff μ (fun μ ↦ coeff (p • μ + ν) f : MvPowerSeries σ R) =
+      coeff (p • μ + ν) f := coeff_apply _ μ
+  rw [hc, Function.comp_apply,
+    Finsupp.prod_add_index' (fun _ ↦ pow_zero _) (fun _ _ _ ↦ pow_add _ _ _),
+    prod_pow_nsmul p ht]
+  field_simp [hpos.ne']
+
 /-- The coefficient at `p • μ + ν` of a sum `∑ X^ν' g_ν'(X^p)` over the exponents `ν'` with
 `ν' i < p` is the coefficient at `μ` of `g_ν`. -/
 theorem coeff_sum_monomial_mul_expand {R : Type*} [CommRing R] [Fintype σ] [DecidableEq σ]
@@ -89,5 +121,33 @@ theorem coeff_sum_monomial_mul_expand {R : Type*} [CommRing R] [Fintype σ] [Dec
       exact Nat.not_dvd_mul_add_sub (ν i).isLt (ν' i).isLt (fun h ↦ hi (Fin.ext h.symm)) hle'
     · rfl
   · simp
+
+/-- **The Frobenius congruence for power series.** Let `p` be a prime and `φ` a ring endomorphism
+of `A` with `φ(a) ≡ a ^ (p ^ i)` modulo `p` for all `a`. Then `p` divides
+`ψ ^ (p ^ i) - (φ ψ)(X ^ (p ^ i))` for every power series `ψ` over `A`, where `φ ψ` applies `φ` to
+the coefficients of `ψ`. -/
+theorem natCast_dvd_pow_sub_expand_map {A : Type*} [CommRing A] {p : ℕ} [Fact p.Prime] (i : ℕ)
+    {φ : A →+* A} (hφ : ∀ a, (p : A) ∣ φ a - a ^ p ^ i) (ψ : MvPowerSeries σ A) :
+    (p : MvPowerSeries σ A) ∣ ψ ^ p ^ i - expand (p ^ i) (NeZero.ne _) (map φ ψ) := by
+  set I := Ideal.span {(p : A)}
+  rw [← map_natCast (C (σ := σ) (R := A)), C_dvd_iff_dvd_coeff]
+  intro d
+  -- reduce the coefficients modulo `p`, where `φ` becomes the `i`-th power of the Frobenius
+  rw [← Ideal.mem_span_singleton, ← Ideal.Quotient.eq_zero_iff_mem, ← coeff_map, map_sub, map_pow,
+    map_expand, map_map]
+  refine (congrArg (coeff d) (sub_eq_zero.mpr ?_)).trans (map_zero _)
+  by_cases hI : (p : A) ∈ nonunits A
+  · have : CharP (A ⧸ I) p := CharP.quotient A p hI
+    have hc : (Ideal.Quotient.mk I).comp φ =
+        (iterateFrobenius (A ⧸ I) p i).comp (Ideal.Quotient.mk I) := by
+      ext a
+      simp only [RingHom.comp_apply, iterateFrobenius_def, ← map_pow]
+      rw [Ideal.Quotient.eq, Ideal.mem_span_singleton]
+      exact hφ a
+    rw [hc, ← map_map, ← map_expand, map_iterateFrobenius_expand _ (NeZero.ne p)]
+  · have : Subsingleton (A ⧸ I) := by
+      rw [Ideal.Quotient.subsingleton_iff, Ideal.span_singleton_eq_top]
+      simpa [nonunits] using hI
+    exact ext fun _ ↦ Subsingleton.elim _ _
 
 end MvPowerSeries

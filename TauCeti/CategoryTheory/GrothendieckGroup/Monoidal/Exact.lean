@@ -161,7 +161,7 @@ noncomputable instance instRing : Ring (ExactK0 E) where
 
 /-- Two ring homomorphisms out of exact `K₀` agreeing on the classes of objects are equal. -/
 @[ext]
-theorem ringHom_ext {R : Type*} [NonAssocRing R] {f g : ExactK0 E →+* R}
+theorem ringHom_ext {R : Type*} [NonAssocSemiring R] {f g : ExactK0 E →+* R}
     (h : ∀ X : C, f (of X) = g (of X)) : f = g :=
   RingHom.toAddMonoidHom_injective (hom_ext h)
 

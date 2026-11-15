@@ -22,6 +22,8 @@ a finite-type ambient affine group.
 
 * `TauCeti.smoothCommHopfAlgProperty.tensorProduct`: a direct product of smooth affine groups is
   smooth.
+* `TauCeti.FiniteTypeCommHopfAlgCat.smooth_tensorProduct`: the same statement for finite-type
+  coordinate Hopf algebras, phrased with `Algebra.Smooth`.
 * `TauCeti.smoothCommHopfAlgProperty.semidirectProduct`: a semidirect product of smooth affine
   groups is smooth.
 * `TauCeti.smoothCommHopfAlgProperty.normalSemidirectProduct`: the conjugation semidirect-product
@@ -98,6 +100,21 @@ theorem productOfNormal (H : CommHopfAlgCat.{u} k) [Algebra.FiniteType k H]
   exact normalSemidirectProduct H I J hI hIs hJs
 
 end smoothCommHopfAlgProperty
+
+namespace FiniteTypeCommHopfAlgCat
+
+variable {R : Type u} [CommRing R]
+
+/-- The finite-type product of two smooth coordinate Hopf algebras is smooth. Contravariantly,
+direct products of smooth affine group schemes of finite type are smooth. -/
+theorem smooth_tensorProduct {H K : FiniteTypeCommHopfAlgCat.{u, v} R}
+    (hH : Algebra.Smooth R H) (hK : Algebra.Smooth R K) :
+    Algebra.Smooth R (tensorProduct H K) :=
+  (smoothCommHopfAlgProperty_iff _).mp <|
+    smoothCommHopfAlgProperty.tensorProduct H.obj K.obj
+      ((smoothCommHopfAlgProperty_iff _).mpr hH) ((smoothCommHopfAlgProperty_iff _).mpr hK)
+
+end FiniteTypeCommHopfAlgCat
 
 end
 

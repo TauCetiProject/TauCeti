@@ -59,7 +59,7 @@ theorem exists_map_toLp_symm_eq_smul (μ : Measure (EuclideanSpace ℝ ι)) [μ.
 theorem measure_preimage_ofLp {μ : Measure (EuclideanSpace ℝ ι)} {a : ℝ≥0∞}
     (he : μ.map (MeasurableEquiv.toLp 2 (ι → ℝ)).symm = a • volume) (S : Set (ι → ℝ)) :
     μ (ofLp ⁻¹' S) = a * volume S := by
-  rw [← MeasurableEquiv.coe_toLp_symm, ← MeasurableEquiv.map_apply, he, Measure.smul_apply,
+  rw [← MeasurableEquiv.coe_toLp_symm, ← MeasurableEquiv.map_apply, he, _root_.smul_apply,
     smul_eq_mul]
 
 /-- If `ofLp` carries `μ` to `a • volume`, then `μ` gives the cube of half-side `r ≥ 0` the
@@ -140,5 +140,13 @@ theorem measurableEmbedding_euclideanSpace_proj {ι : Type*} [Unique ι] (i : ι
   convert hm using 1
   funext z
   exact congrArg (fun j ↦ z j) (Subsingleton.elim i default)
+
+/-- Integrating a function of the unique coordinate of a Euclidean line over the preimage of `s`
+is integrating it over `s`. -/
+theorem setIntegral_comp_euclideanSpace_proj_preimage {ι : Type*} [Fintype ι] [Unique ι]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] (g : ℝ → G) (s : Set ℝ) (i : ι) :
+    ∫ z in proj (𝕜 := ℝ) i ⁻¹' s, g (z i) = ∫ t in s, g t :=
+  (volume_preserving_euclideanSpace_proj i).setIntegral_preimage_emb
+    (measurableEmbedding_euclideanSpace_proj i) g s
 
 end TauCeti

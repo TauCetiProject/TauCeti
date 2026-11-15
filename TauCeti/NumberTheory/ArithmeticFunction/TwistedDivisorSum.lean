@@ -39,6 +39,9 @@ powers. For characters of level one it specializes to Mathlib's ordinary divisor
 * `DirichletCharacter.linearIndependent_twistedDivisorSum`: for a positive exponent, the twisted
   divisor sums of distinct pairs of characters of level `N` are linearly independent as functions
   on the integers prime to `N`.
+* `DirichletCharacter.linearIndependent_twistedDivisorSum_zero`: at exponent zero, where the
+  sums are symmetric in the two characters, the same holds for pairs that are distinct as
+  unordered pairs.
 
 The independence statement compares values at products `p q` of two distinct primes, which
 Dirichlet's theorem on primes in arithmetic progressions places in arbitrary residue classes
@@ -48,6 +51,11 @@ coefficient of `p^e` (at `q^e`-degree zero) is `phi p psi q`, the value of a cha
 `(ZMod N)ˣ × (ZMod N)ˣ`;
 independence then follows from Artin's independence of characters
 (`linearIndependent_monoidHom`).
+
+At exponent zero the value at `p q` is `(psi x + phi x) (psi y + phi y)`, a sum of four
+characters of `(ZMod N)ˣ × (ZMod N)ˣ`. Summing against `χ⁻¹ ⊗ χ'⁻¹`, by orthogonality of
+characters, extracts the coefficient of `χ ⊗ χ'`; for `χ ≠ χ'` it is the coefficient of the
+unordered pair `{χ, χ'}`, and the pairs `{χ, χ}` follow.
 
 The convention follows Diamond--Shurman, *A First Course in Modular Forms*, Chapter 4
 (especially Sections 4.5--4.8).
@@ -94,6 +102,12 @@ theorem twistedDivisorSum_apply (e : ℕ) (psi : DirichletCharacter R u)
     ← psi.apply_eq_toArithmeticFunction_apply hdiv_pos.ne',
     ← phi.apply_eq_toArithmeticFunction_apply hd_pos.ne']
   simp [hd_pos.ne', mul_assoc]
+
+/-- At exponent zero the two characters may be exchanged. -/
+theorem twistedDivisorSum_zero_comm (psi : DirichletCharacter R u)
+    (phi : DirichletCharacter R v) : twistedDivisorSum 0 psi phi = twistedDivisorSum 0 phi psi := by
+  simp only [twistedDivisorSum, pow_zero_eq_zeta, pmul_zeta]
+  exact mul_comm _ _
 
 /-- Twisted divisor sums are multiplicative arithmetic functions. -/
 @[arith_mult]
@@ -236,6 +250,27 @@ private theorem sum_mul_mul_eq_zero_of_affine {g a b c d : ι → R} {P₁ P₂ 
 
 variable [CharZero R] {N : ℕ} [NeZero N]
 
+omit [IsDomain R] [CharZero R] [NeZero N] in
+/-- A vanishing combination of twisted divisor sums, evaluated at the product `p q` of two
+distinct primes in the unit classes `x` and `y` modulo `N`. -/
+private theorem sum_mul_mul_eq_zero_of_prime_mul_prime {e : ℕ}
+    {psi phi : ι → DirichletCharacter R N} {g : ι → R}
+    (hsum : ∑ i ∈ s, g i • (fun n : {n : ℕ // n.Coprime N} ↦
+      twistedDivisorSum e (psi i) (phi i) n) = 0)
+    {x y : (ZMod N)ˣ} {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q)
+    (hpx : (p : ZMod N) = x) (hqy : (q : ZMod N) = y) :
+    ∑ i ∈ s, g i * ((psi i x + phi i x * (p : R) ^ e) *
+      (psi i y + phi i y * (q : R) ^ e)) = 0 := by
+  have hpN : p.Coprime N := (ZMod.isUnit_iff_coprime p N).mp (hpx ▸ x.isUnit)
+  have hqN : q.Coprime N := (ZMod.isUnit_iff_coprime q N).mp (hqy ▸ y.isUnit)
+  have := congrFun hsum ⟨p * q, Nat.coprime_mul_iff_left.mpr ⟨hpN, hqN⟩⟩
+  simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply] at this
+  rw [← this]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [(isMultiplicative_twistedDivisorSum e _ _).map_mul_of_coprime
+    ((Nat.coprime_primes hp hq).mpr hpq), twistedDivisorSum_apply_prime _ _ _ hp,
+    twistedDivisorSum_apply_prime _ _ _ hq, hpx, hqy]
+
 /-- **Independence of twisted divisor sums.** For a positive exponent `e`, the twisted divisor
 sums `n ↦ ∑_{d ∣ n} psi (n / d) phi d d^e` attached to pairwise distinct pairs `(psi, phi)` of
 Dirichlet characters of level `N` are linearly independent as functions on the positive integers
@@ -262,20 +297,6 @@ theorem linearIndependent_twistedDivisorSum {e : ℕ} (he : e ≠ 0)
   ext ⟨x, y⟩
   simp only [Finset.sum_apply, Pi.smul_apply, Function.comp_apply, hG, smul_eq_mul,
     Pi.zero_apply]
-  -- The vanishing combination, evaluated at `p q` for primes `p ≡ x` and `q ≡ y` modulo `N`.
-  have hpq {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q) (hpx : (p : ZMod N) = x)
-      (hqy : (q : ZMod N) = y) :
-      ∑ i ∈ s, g i * ((psi i x + phi i x * (p : R) ^ e) *
-        (psi i y + phi i y * (q : R) ^ e)) = 0 := by
-    have hpN : p.Coprime N := (ZMod.isUnit_iff_coprime p N).mp (hpx ▸ x.isUnit)
-    have hqN : q.Coprime N := (ZMod.isUnit_iff_coprime q N).mp (hqy ▸ y.isUnit)
-    have := congrFun hsum ⟨p * q, Nat.coprime_mul_iff_left.mpr ⟨hpN, hqN⟩⟩
-    simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply] at this
-    rw [← this]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [(isMultiplicative_twistedDivisorSum e _ _).map_mul_of_coprime
-      ((Nat.coprime_primes hp hq).mpr hpq), twistedDivisorSum_apply_prime _ _ _ hp,
-      twistedDivisorSum_apply_prime _ _ _ hq, hpx, hqy]
   -- Four primes `q₁ < q₂ < p₁ < p₂` with `p₁ ≡ p₂ ≡ x` and `q₁ ≡ q₂ ≡ y` modulo `N`.
   obtain ⟨q₁, -, hq₁, hq₁y⟩ := Nat.forall_exists_prime_gt_and_eq_mod y.isUnit 0
   obtain ⟨q₂, hq₁₂, hq₂, hq₂y⟩ := Nat.forall_exists_prime_gt_and_eq_mod y.isUnit q₁
@@ -288,9 +309,57 @@ theorem linearIndependent_twistedDivisorSum {e : ℕ} (he : e ≠ 0)
   rintro P hP Q hQ
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hP hQ
   rcases hP with rfl | rfl <;> rcases hQ with rfl | rfl
-  · exact hpq hp₁ hq₁ (by omega) hp₁x hq₁y
-  · exact hpq hp₁ hq₂ (by omega) hp₁x hq₂y
-  · exact hpq hp₂ hq₁ (by omega) hp₂x hq₁y
-  · exact hpq hp₂ hq₂ (by omega) hp₂x hq₂y
+  -- The vanishing combination, evaluated at `p q` for primes `p ≡ x` and `q ≡ y` modulo `N`.
+  · exact sum_mul_mul_eq_zero_of_prime_mul_prime hsum hp₁ hq₁ (by omega) hp₁x hq₁y
+  · exact sum_mul_mul_eq_zero_of_prime_mul_prime hsum hp₁ hq₂ (by omega) hp₁x hq₂y
+  · exact sum_mul_mul_eq_zero_of_prime_mul_prime hsum hp₂ hq₁ (by omega) hp₂x hq₁y
+  · exact sum_mul_mul_eq_zero_of_prime_mul_prime hsum hp₂ hq₂ (by omega) hp₂x hq₂y
+
+/-- **Independence of twisted divisor sums at exponent zero.** The sums
+`n ↦ ∑_{d ∣ n} psi (n / d) phi d` are symmetric in `psi` and `phi`
+(`twistedDivisorSum_zero_comm`); attached to pairs of Dirichlet characters of level `N` that are
+pairwise distinct as unordered pairs, they are linearly independent as functions on the positive
+integers prime to `N`. -/
+theorem linearIndependent_twistedDivisorSum_zero {psi phi : ι → DirichletCharacter R N}
+    (h : Function.Injective fun i ↦ s(psi i, phi i)) :
+    LinearIndependent R fun i (n : {n : ℕ // n.Coprime N}) ↦
+      twistedDivisorSum 0 (psi i) (phi i) n := by
+  classical
+  rw [linearIndependent_iff']
+  intro s g hsum
+  -- The vanishing combination at `p q`, for primes `p ≡ x` and `q ≡ y` modulo `N`.
+  have hunits (x y : (ZMod N)ˣ) :
+      ∑ i ∈ s, g i * ((psi i x + phi i x) * (psi i y + phi i y)) = 0 := by
+    obtain ⟨q, -, hq, hqy⟩ := Nat.forall_exists_prime_gt_and_eq_mod y.isUnit 0
+    obtain ⟨p, hqp, hp, hpx⟩ := Nat.forall_exists_prime_gt_and_eq_mod x.isUnit q
+    simpa using sum_mul_mul_eq_zero_of_prime_mul_prime (e := 0) hsum hp hq hqp.ne' hpx hqy
+  -- The multiplicity `ε i χ` of `χ` in the pair `(psi i, phi i)`.
+  let ε (i : ι) (χ : DirichletCharacter R N) : R :=
+    (if psi i = χ then 1 else 0) + if phi i = χ then 1 else 0
+  -- Summing against `χ⁻¹ ⊗ χ'⁻¹` extracts the coefficient of `χ ⊗ χ'`.
+  have hcoeff (χ χ' : DirichletCharacter R N) : ∑ i ∈ s, g i * (ε i χ * ε i χ') = 0 :=
+    sum_mul_eq_zero_of_forall_units hunits χ χ'
+  -- A pair of distinct characters has coefficient `1` at its own `χ ⊗ χ'`.
+  have hoff (i : ι) (hi : i ∈ s) (hne : psi i ≠ phi i) : g i = 0 := by
+    have H := hcoeff (psi i) (phi i)
+    rw [Finset.sum_eq_single i (fun j _ hji ↦ ?_) (fun h ↦ (h hi).elim)] at H
+    · simpa [ε, hne, Ne.symm hne] using H
+    have hpair : s(psi j, phi j) ≠ s(psi i, phi i) := fun hp ↦ hji (h hp)
+    simp only [ε]
+    split_ifs <;> simp_all
+  intro i hi
+  by_cases hne : psi i = phi i
+  · -- A pair `(χ, χ)` has coefficient `4` at `χ ⊗ χ`, the other pairs through `χ` being zero.
+    have H := hcoeff (psi i) (psi i)
+    rw [Finset.sum_eq_single i (fun j hj hji ↦ ?_) (fun h ↦ (h hi).elim)] at H
+    · have h4 : (4 : R) ≠ 0 := by exact_mod_cast (by norm_num : (4 : ℕ) ≠ 0)
+      have : g i * 4 = 0 := by simpa [ε, ← hne, ← two_mul, mul_mul_mul_comm] using H
+      simpa [h4] using this
+    by_cases hj' : psi j = phi j
+    · have hpair : s(psi j, phi j) ≠ s(psi i, phi i) := fun hp ↦ hji (h hp)
+      simp only [ε]
+      split_ifs <;> simp_all
+    · simp [hoff j hj hj']
+  · exact hoff i hi hne
 
 end DirichletCharacter

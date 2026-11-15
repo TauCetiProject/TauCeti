@@ -41,6 +41,6 @@ theorem adjointSemisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_of_
   exact (congrArg (fun H : _root_.CommHopfAlgCat k ↦
     CommHopfAlgCat.centerDefiningIdeal H = HopfIdeal.augmentation k H)
       (finiteTypeCoordinateHopfAlgebra_obj k n)).mpr
-        (centerDefiningIdeal_eq_augmentation_of_odd k n hn hodd)
+        (centerDefiningIdeal_eq_augmentation_of_odd k n hodd)
 
 end TauCeti.SpecialOrthogonal

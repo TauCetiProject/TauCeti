@@ -227,8 +227,8 @@ theorem negOnePow_maslovOℤ (x : GridState n) :
     rw [maslovOℤ_def]
     linarith
   rw [heq, Int.negOnePow_add, Int.negOnePow_add, ← neg_one_pow_eq_negOnePow,
-    ← neg_one_pow_eq_negOnePow, ← sign_eq_neg_one_pow_card_inversion,
-    ← sign_eq_neg_one_pow_card_inversion]
+    ← neg_one_pow_eq_negOnePow, ← Finset.inversions_univ, ← Finset.inversions_univ,
+    ← sign_eq_neg_one_pow_card_inversion, ← sign_eq_neg_one_pow_card_inversion]
 
 /-- The parity of the `X`-Maslov grading is the analogous expression using the `X` markings. -/
 theorem negOnePow_maslovXℤ (x : GridState n) :
@@ -272,7 +272,7 @@ theorem negOnePow_alexanderTwoℤ (x : GridState n) :
 theorem even_alexanderTwoℤ_iff (x : GridState n) :
     Even (G.alexanderTwoℤ x) ↔ Odd G.componentCount := by
   rw [← Int.negOnePow_eq_one_iff, negOnePow_alexanderTwoℤ, Int.negOnePow_eq_one_iff,
-    Int.even_add_one, Int.not_even_iff_odd, Int.odd_coe_nat]
+    Int.even_add_one, Int.not_even_iff_odd, Int.odd_natCast]
 
 /-- The Alexander grading of a state is an integer exactly when the diagram has an odd number of
 link components. For an even number of components, every Alexander grading is a strict

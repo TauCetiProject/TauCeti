@@ -80,7 +80,7 @@ section One
 variable (τ : A →ₗ[k] M) (δ : derivationLieAlgebra k A)
 
 /-- The `1`-cochain `(a₀, a₁) ↦ τ(a₀ δ(a₁))` of a linear map `τ` and a derivation `δ`. -/
-def traceDerivationCochain : MultilinearMap k (fun _ : Fin 2 ↦ A) M :=
+def traceDerivationCochain : MultilinearMap (RingHom.id k) (fun _ : Fin 2 ↦ A) M :=
   MultilinearMap.mk' (fun a ↦ τ (a 0 * (δ : Module.End k A) (a 1)))
     (fun a i x y ↦ by fin_cases i <;> simp [mul_add, add_mul])
     (fun a i c x ↦ by fin_cases i <;> simp [smul_mul_assoc, mul_smul_comm])
@@ -128,7 +128,7 @@ def traceDerivationCocycle (hτ : ∀ x y, τ (x * y) = τ (y * x))
 theorem coe_traceDerivationCocycle (hτ : ∀ x y, τ (x * y) = τ (y * x))
     (hδ : ∀ x, τ ((δ : Module.End k A) x) = 0) :
     ((traceDerivationCocycle hτ hδ : cyclicCochains k A M 1) :
-      MultilinearMap k (fun _ : Fin 2 ↦ A) M) = traceDerivationCochain τ δ :=
+      MultilinearMap (RingHom.id k) (fun _ : Fin 2 ↦ A) M) = traceDerivationCochain τ δ :=
   (rfl)
 
 end One
@@ -141,7 +141,7 @@ variable (τ : A →ₗ[k] M) (δ₁ δ₂ : derivationLieAlgebra k A)
 
 /-- The `2`-cochain `(a₀, a₁, a₂) ↦ τ(a₀ (δ₁(a₁) δ₂(a₂) - δ₂(a₁) δ₁(a₂)))` of a linear map `τ`
 and two derivations `δ₁`, `δ₂`. -/
-def traceDerivationPairCochain : MultilinearMap k (fun _ : Fin 3 ↦ A) M :=
+def traceDerivationPairCochain : MultilinearMap (RingHom.id k) (fun _ : Fin 3 ↦ A) M :=
   MultilinearMap.mk'
     (fun a ↦ τ (a 0 * ((δ₁ : Module.End k A) (a 1) * (δ₂ : Module.End k A) (a 2) -
       (δ₂ : Module.End k A) (a 1) * (δ₁ : Module.End k A) (a 2))))
@@ -166,20 +166,6 @@ theorem traceDerivationPairCochain_swap :
   simp only [traceDerivationPairCochain_apply, neg_apply, ← map_neg, ← mul_neg,
     neg_sub]
 
-omit [IsScalarTower k A A] [SMulCommClass k A A] in
-/-- For a trace `τ` and a map `ω : A → A → A` with
-`ω(x y, z) - ω(x, y z) = x ω(y, z) - ω(x, y) z`, the cochain `τ(a₀ ω(a₁, a₂))` satisfies the
-Hochschild cocycle identity. -/
-private theorem trace_mul_hochschild_eq_zero {τ : A →ₗ[k] M} (hτ : ∀ x y, τ (x * y) = τ (y * x))
-    (ω : A → A → A) (hω : ∀ x y z, ω (x * y) z - ω x (y * z) = x * ω y z - ω x y * z)
-    (a₀ a₁ a₂ a₃ : A) :
-    τ (a₀ * a₁ * ω a₂ a₃) - τ (a₀ * ω (a₁ * a₂) a₃) + τ (a₀ * ω a₁ (a₂ * a₃)) -
-      τ (a₃ * a₀ * ω a₁ a₂) = 0 := by
-  have h := congrArg (fun x ↦ τ (a₀ * x)) (hω a₁ a₂ a₃)
-  simp only [mul_sub, map_sub, ← mul_assoc] at h
-  rw [mul_assoc a₃, hτ a₃]
-  linear_combination (norm := abel) -h
-
 /-- For a trace `τ`, the cochain `(a₀, a₁, a₂) ↦ τ(a₀ (δ₁(a₁) δ₂(a₂) - δ₂(a₁) δ₁(a₂)))` is a
 Hochschild cocycle. -/
 theorem hochschildCoboundary_traceDerivationPairCochain (hτ : ∀ x y, τ (x * y) = τ (y * x)) :
@@ -188,10 +174,9 @@ theorem hochschildCoboundary_traceDerivationPairCochain (hτ : ∀ x y, τ (x * 
   rw [hochschildCoboundary_two_apply]
   simp only [traceDerivationPairCochain_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons, zero_apply]
-  refine trace_mul_hochschild_eq_zero hτ (fun x y ↦ (δ₁ : Module.End k A) x *
-    (δ₂ : Module.End k A) y - (δ₂ : Module.End k A) x * (δ₁ : Module.End k A) y)
-    (fun x y z ↦ ?_) _ _ _ _
-  simp only [derivationLieAlgebra.leibniz, add_mul, mul_add, sub_mul, mul_sub, mul_assoc]
+  rw [mul_assoc (a 3), hτ (a 3)]
+  simp only [derivationLieAlgebra.leibniz, mul_add, add_mul, mul_sub, sub_mul, map_add, map_sub,
+    ← mul_assoc]
   abel
 
 /-- For a trace `τ` invariant under two commuting derivations `δ₁` and `δ₂`, the cochain
@@ -235,7 +220,7 @@ theorem coe_traceDerivationPairCocycle (hτ : ∀ x y, τ (x * y) = τ (y * x))
     (hδ₁ : ∀ x, τ ((δ₁ : Module.End k A) x) = 0) (hδ₂ : ∀ x, τ ((δ₂ : Module.End k A) x) = 0)
     (hcomm : Commute (δ₁ : Module.End k A) δ₂) :
     ((traceDerivationPairCocycle hτ hδ₁ hδ₂ hcomm : cyclicCochains k A M 2) :
-      MultilinearMap k (fun _ : Fin 3 ↦ A) M) = traceDerivationPairCochain τ δ₁ δ₂ :=
+      MultilinearMap (RingHom.id k) (fun _ : Fin 3 ↦ A) M) = traceDerivationPairCochain τ δ₁ δ₂ :=
   (rfl)
 
 end Two
@@ -284,7 +269,8 @@ Hochschild coboundary of the `0`-cochain `a ↦ -τ(a z)`. -/
 theorem traceDerivationCochain_innerDerivation (hτ : ∀ x y, τ (x * y) = τ (y * x)) (z : A) :
     traceDerivationCochain τ (innerDerivation k z) =
       hochschildCoboundary k A M 0
-        (MultilinearMap.ofSubsingleton k A M (0 : Fin 1) (-(τ ∘ₗ LinearMap.mulRight k z))) := by
+        (MultilinearMap.ofSubsingleton (RingHom.id k) A M (0 : Fin 1) (-(τ ∘ₗ LinearMap.mulRight k
+            z))) := by
   ext a
   rw [hochschildCoboundary_zero_apply]
   simp only [traceDerivationCochain_apply, coe_innerDerivation, LieAlgebra.ad_apply, Ring.lie_def,
@@ -305,7 +291,8 @@ theorem cyclicCohomology.mk_traceDerivationCocycle_innerDerivation
     cyclicCohomology.mk k A M 1
       (traceDerivationCocycle hτ (map_innerDerivation_apply_eq_zero hτ z)) = 0 := by
   rw [cyclicCohomology.mk_eq_zero_iff, mem_cyclicCoboundaries_succ_iff]
-  refine ⟨⟨MultilinearMap.ofSubsingleton k A M (0 : Fin 1) (-(τ ∘ₗ LinearMap.mulRight k z)),
+  refine ⟨⟨MultilinearMap.ofSubsingleton (RingHom.id k) A M (0 : Fin 1) (-(τ ∘ₗ LinearMap.mulRight
+      k z)),
     by simp⟩, Subtype.ext ?_⟩
   rw [coe_cyclicHochschildCoboundary_apply, coe_traceDerivationCocycle,
     traceDerivationCochain_innerDerivation hτ]

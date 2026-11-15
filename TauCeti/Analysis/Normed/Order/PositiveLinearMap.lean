@@ -35,6 +35,8 @@ automatic continuity for positive maps between C⋆-algebras.
 * `PositiveLinearMap.lipschitzWith_of_forall_le_norm_smul`: `φ` is `φ u`-Lipschitz.
 * `ContinuousLinearMap.opNorm_eq_apply_of_monotone`: a monotone continuous linear functional has
   operator norm `ψ u` when `‖u‖ ≤ 1`.
+* `LinearMap.apply_nonneg_of_abs_apply_le_mul_norm`: conversely, a linear functional with
+  `|ψ f| ≤ ψ u * ‖f‖` is nonnegative at every `f` with `‖‖f‖ • u - f‖ ≤ ‖f‖`.
 -/
 
 public section
@@ -100,3 +102,21 @@ theorem opNorm_eq_apply_of_monotone (ψ : E →L[ℝ] ℝ) (hψ : Monotone ψ)
       _ ≤ ‖ψ‖ := mul_le_of_le_one_right (norm_nonneg ψ) hu₁
 
 end ContinuousLinearMap
+
+namespace LinearMap
+
+variable {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E] {u : E}
+
+/-- A converse to `PositiveLinearMap.abs_apply_le_mul_norm`: a linear functional `ψ` with
+`|ψ g| ≤ ψ u * ‖g‖` for all `g` is nonnegative at every `f` with `‖‖f‖ • u - f‖ ≤ ‖f‖`. For
+bounded real functions or real `L∞` with `u = 1`, every nonnegative `f` has this property. -/
+theorem apply_nonneg_of_abs_apply_le_mul_norm (ψ : E →ₗ[ℝ] ℝ) (hψ : ∀ g, |ψ g| ≤ ψ u * ‖g‖)
+    {f : E} (hf : ‖‖f‖ • u - f‖ ≤ ‖f‖) : 0 ≤ ψ f := by
+  have hu : 0 ≤ ψ u := by
+    by_contra! h
+    nlinarith [hψ u, abs_pos.2 h.ne, norm_nonneg u]
+  have := (le_abs_self _).trans (hψ (‖f‖ • u - f))
+  rw [map_sub, map_smul, smul_eq_mul] at this
+  nlinarith [mul_le_mul_of_nonneg_left hf hu]
+
+end LinearMap

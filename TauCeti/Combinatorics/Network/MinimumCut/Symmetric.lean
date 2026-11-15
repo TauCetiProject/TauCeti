@@ -67,6 +67,23 @@ theorem pairMinimumValue_comm [Fintype V] [DecidableEq V] [Zero K] [LinearOrder 
   rw [pairMinimumValue_of_ne f hst, pairMinimumValue_of_ne f hst.symm]
   exact minimumValue_comm hf _
 
+/-- If `S` is a minimum `y`–`r` cut avoiding `x`, and some minimum `r`–`x` cut avoids `y`, then
+`S` is also a minimum `y`–`x` cut for a symmetric set function. -/
+theorem IsMinimum.reattach [Fintype V] [DecidableEq V] [Zero K] [LinearOrder K]
+    {f : Finset V → K} (hf : ∀ S, f Sᶜ = f S) {S X : Finset V} {r x y : V}
+    (hS : IsMinimum f {y} {r} S) (hX : IsMinimum f {r} {x} X) (hyX : y ∉ X) (hxS : x ∉ S) :
+    IsMinimum f {y} {x} S := by
+  obtain ⟨hyS, -⟩ := isAdmissible_singleton.mp hS.admissible
+  obtain ⟨hrX, -⟩ := isAdmissible_singleton.mp hX.admissible
+  have hyx : y ≠ x := fun h ↦ hxS (h ▸ hyS)
+  have hle : pairMinimumValue f y r ≤ pairMinimumValue f r x := by
+    rw [hX.pairMinimumValue_eq, ← hf X]
+    exact pairMinimumValue_le f (mem_compl.mpr hyX) (by simpa using hrX)
+  rw [isMinimum_singleton_iff_pairMinimumValue_eq]
+  refine ⟨hyS, hxS, le_antisymm ?_ (pairMinimumValue_le f hyS hxS)⟩
+  rw [← hS.pairMinimumValue_eq]
+  exact (le_min le_rfl hle).trans (min_pairMinimumValue_le f hyx r)
+
 end TerminalCut
 
 namespace IsSymmSubmodular

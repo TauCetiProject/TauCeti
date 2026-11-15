@@ -34,9 +34,11 @@ public section
 
 noncomputable section
 
+universe u
+
 namespace TauCeti
 
-variable {K L : Type} [Field K] [Field L] [Algebra K L]
+variable {K L : Type u} [Field K] [Field L] [Algebra K L]
   (σ : L →ₐ[K] SeparableClosure K)
   (E : IntermediateField K (SeparableClosure K)) [FiniteDimensional K E] [IsGalois K E]
   [Algebra L E] [IsScalarTower K L E]

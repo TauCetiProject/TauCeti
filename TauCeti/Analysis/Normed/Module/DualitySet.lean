@@ -38,7 +38,7 @@ namespace TauCeti
 
 open scoped Pointwise
 
-variable (𝕜 : Type*) {E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable (𝕜 : Type*) {E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- The **(normalized) duality set** `J(x)` of a vector `x` in a normed space: the continuous
 linear functionals `x'` with `x' x = ‖x‖²` and `‖x'‖ = ‖x‖`. -/
@@ -58,12 +58,9 @@ the reverse inequality is forced by `x' x = ‖x‖²`. -/
 theorem mem_dualitySet_iff_norm_le {x : E} {f : StrongDual 𝕜 E} :
     f ∈ dualitySet 𝕜 x ↔ f x = (‖x‖ : 𝕜) ^ 2 ∧ ‖f‖ ≤ ‖x‖ := by
   refine ⟨fun h => ⟨h.1, h.2.le⟩, fun ⟨hfx, hle⟩ => ⟨hfx, le_antisymm hle ?_⟩⟩
-  rcases (norm_nonneg x).eq_or_lt with hx | hx
-  · rw [← hx]
-    exact norm_nonneg f
-  · have h := f.le_opNorm x
-    rw [hfx, norm_pow, RCLike.norm_ofReal, abs_norm, sq] at h
-    exact le_of_mul_le_mul_right h hx
+  have h := f.le_opNorm x
+  simp only [hfx, norm_pow, RCLike.norm_ofReal, abs_norm] at h
+  nlinarith [norm_nonneg f]
 
 /-- Rescaling a norming functional: if `‖g‖ ≤ 1` and `g x = ‖x‖`, then `‖x‖ • g` lies in the
 duality set of `x`. -/
@@ -73,20 +70,15 @@ theorem smul_mem_dualitySet {x : E} {g : StrongDual 𝕜 E} (hg : ‖g‖ ≤ 1)
   rw [norm_smul, RCLike.norm_ofReal, abs_norm]
   exact mul_le_of_le_one_right (norm_nonneg x) hg
 
-/-- Multiplying a vector by a scalar multiplies its norming functional by the conjugate
-scalar. -/
+/-- If `f` lies in the duality set of `x`, then `star c • f` lies in the duality set of `c • x`:
+scaling a vector scales its duality functionals by the conjugate scalar. -/
 theorem star_smul_mem_dualitySet {x : E} {f : StrongDual 𝕜 E}
     (hf : f ∈ dualitySet 𝕜 x) (c : 𝕜) :
     star c • f ∈ dualitySet 𝕜 (c • x) := by
-  obtain ⟨hfx, hfn⟩ := mem_dualitySet_iff.mp hf
-  apply mem_dualitySet_iff.mpr
-  constructor
-  · simp only [smul_apply, map_smul, smul_eq_mul, hfx]
-    rw [← mul_assoc, mul_comm c (star c), RCLike.star_def, RCLike.conj_mul]
-    simp only [norm_smul]
-    push_cast
-    ring
-  · simp [norm_smul, hfn]
+  obtain ⟨hfx, hfn⟩ := hf
+  refine ⟨?_, by simp [norm_smul, hfn]⟩
+  simp only [smul_apply, map_smul, smul_eq_mul, hfx, norm_smul, RCLike.ofReal_mul, mul_pow,
+    ← mul_assoc, RCLike.star_def, RCLike.mul_conj]
 
 variable (𝕜) in
 /-- **The duality set is nonempty**, by the Hahn--Banach theorem. -/
@@ -98,46 +90,26 @@ theorem dualitySet_nonempty (x : E) : (dualitySet 𝕜 x).Nonempty := by
 @[simp]
 theorem dualitySet_zero : dualitySet 𝕜 (0 : E) = {0} := by
   ext f
-  simp
+  refine ⟨fun hf => ?_, by rintro rfl; simp⟩
+  ext y
+  -- Mathlib's `‖f‖ = 0 → f = 0` needs a normed domain; with `E` seminormed, use `le_opNorm`.
+  simpa [(mem_dualitySet_iff.1 hf).2] using f.le_opNorm y
 
 /-- The duality set is conjugate-homogeneous under scalar multiplication. -/
 @[simp]
 theorem dualitySet_smul (c : 𝕜) (x : E) :
     dualitySet 𝕜 (c • x) = star c • dualitySet 𝕜 x := by
-  by_cases hc : c = 0
-  · subst c
-    rw [zero_smul, dualitySet_zero]
-    ext f
-    constructor
-    · intro hf
-      obtain ⟨g, hg⟩ := dualitySet_nonempty 𝕜 x
-      apply Set.mem_smul_set.mpr
-      refine ⟨g, hg, ?_⟩
-      rw [Set.mem_singleton_iff.mp hf]
-      ext y
-      simp
-    · intro hf
-      rcases Set.mem_smul_set.mp hf with ⟨g, _, rfl⟩
-      simp only [star_zero, Set.mem_singleton_iff]
-      ext y
-      simp
-  · ext f
-    constructor
-    · intro hf
-      have hpre : star c⁻¹ • f ∈ dualitySet 𝕜 x := by
-        have h := star_smul_mem_dualitySet hf c⁻¹
-        simpa [inv_smul_smul₀ hc] using h
-      apply Set.mem_smul_set.mpr
-      refine ⟨_, hpre, ?_⟩
-      simp [smul_smul, hc]
-    · intro hf
-      rcases Set.mem_smul_set.mp hf with ⟨g, hg, rfl⟩
-      exact star_smul_mem_dualitySet hg c
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp [Set.zero_smul_set (α := 𝕜) (dualitySet_nonempty 𝕜 x), Set.singleton_zero]
+  refine (Set.smul_set_subset_iff.2 fun f hf => star_smul_mem_dualitySet hf c).antisymm' ?_
+  rw [Set.subset_smul_set_iff₀ (star_ne_zero.2 hc), ← star_inv₀]
+  refine Set.smul_set_subset_iff.2 fun f hf => ?_
+  simpa [inv_smul_smul₀ hc] using star_smul_mem_dualitySet hf c⁻¹
 
 /-- Negating a vector negates its duality set. -/
 @[simp]
-theorem dualitySet_neg (x : E) :
-    dualitySet 𝕜 (-x) = (-1 : 𝕜) • dualitySet 𝕜 x := by
-  simpa using dualitySet_smul (-1 : 𝕜) x
+theorem dualitySet_neg (x : E) : dualitySet 𝕜 (-x) = -dualitySet 𝕜 x := by
+  ext f
+  simp [neg_eq_iff_eq_neg]
 
 end TauCeti

@@ -199,7 +199,7 @@ private theorem mul_one_sub_le_sinkhornDivergence [IsProbabilityMeasure μ]
   have hexp := integrable_entropicGibbsFactor_of_le (μ := μ) (ν := ν) (ε := ε) hc hp hq
     (fun x ↦ le_of_abs_le (hpC x)) (fun x ↦ le_of_abs_le (hqC x))
   have hdual := entropicDualValue_le_toReal_entropicTransportCost
-    (entropicTransportCost_ne_top_of_forall_le hcB ε) hc.aemeasurable hε
+    (entropicTransportCost_ne_top_of_ae_le (ae_of_all _ hcB) ε) hc.aemeasurable hε
     (.of_bound hp.aestronglyMeasurable Cp (ae_of_all _ hpC))
     (.of_bound hq.aestronglyMeasurable Cq (ae_of_all _ hqC)) hexp
   rw [entropicDualValue_def, kantorovichDualValue_def, integral_sub hexp (integrable_const _),
@@ -219,7 +219,7 @@ private theorem comp_swap_eq_of_posSemidef (hcB : ∀ z, c z ≤ B) (hε : ε �
   have h := hk.isHermitian.apply z.1 z.2
   rw [star_trivial, entropicGibbsKernel_of_ne_top (hfin _),
     entropicGibbsKernel_of_ne_top (hfin _), Real.exp_eq_exp,
-    div_left_inj' (NNReal.coe_ne_zero.2 hε), neg_inj] at h
+    div_left_inj₀ (NNReal.coe_ne_zero.2 hε), neg_inj] at h
   exact (ENNReal.toReal_eq_toReal_iff' (hfin _) (hfin _)).1 h
 
 variable [TopologicalSpace X] [CompactSpace X]

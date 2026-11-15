@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 public import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+import Mathlib.Topology.Instances.Nat
 
 /-!
 # The multinomial distribution
@@ -142,7 +143,7 @@ theorem sum_multinomialWeight_eq_one (n : ℕ) (p : StdSimplex NNReal ι) :
 /-- The multinomial law is a probability measure. -/
 theorem isProbabilityMeasure_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) :
     IsProbabilityMeasure (multinomialMeasure n p) := by
-  rw [isProbabilityMeasure_iff, multinomialMeasure, Measure.finsetSum_apply]
+  rw [isProbabilityMeasure_iff, multinomialMeasure, _root_.sum_apply]
   simpa using sum_multinomialWeight_eq_one n p
 
 /-- With no trials, the multinomial law is concentrated at the zero count vector. -/
@@ -157,7 +158,7 @@ zero elsewhere. -/
 theorem multinomialMeasure_singleton (n : ℕ) (p : StdSimplex NNReal ι) (k : ι → ℕ) :
     multinomialMeasure n p {k} =
       if ∑ i, k i = n then multinomialWeight p.weights k else 0 := by
-  simp [multinomialMeasure, Measure.finsetSum_apply, Pi.single_apply,
+  simp [multinomialMeasure, _root_.sum_apply, Pi.single_apply,
     mul_ite, Finset.mem_piAntidiag]
 
 /-- The real singleton mass of a multinomial law, in the usual factorial form. -/
@@ -221,7 +222,7 @@ size. -/
 @[simp]
 theorem multinomialMeasure_sum_eq (n : ℕ) (p : StdSimplex NNReal ι) :
     multinomialMeasure n p {k | ∑ i, k i = n} = 1 := by
-  rw [multinomialMeasure, Measure.finsetSum_apply]
+  rw [multinomialMeasure, _root_.sum_apply]
   calc
     _ = ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight p.weights k := by
       apply Finset.sum_congr rfl
@@ -259,12 +260,27 @@ def multinomialToEuclidean (k : ι → ℕ) : EuclideanSpace ℝ ι :=
 theorem multinomialToEuclidean_apply (k : ι → ℕ) (i : ι) :
     multinomialToEuclidean k i = (k i : ℝ) := (rfl)
 
+/-- Pairing a direction with the Euclidean count vector is the corresponding weighted sum. -/
+theorem inner_multinomialToEuclidean [Fintype ι] (θ : EuclideanSpace ℝ ι) (k : ι → ℕ) :
+    inner ℝ θ (multinomialToEuclidean k) = ∑ i, θ i * (k i : ℝ) := by
+  simp only [EuclideanSpace.inner_eq_star_dotProduct, dotProduct, star_trivial,
+    multinomialToEuclidean_apply]
+  exact Finset.sum_congr rfl fun i _ ↦ mul_comm _ _
+
 /-- The cast of count vectors into Euclidean space is measurable. -/
-theorem measurable_multinomialToEuclidean [Finite ι] :
-    Measurable (multinomialToEuclidean (ι := ι)) := by
-  have := Fintype.ofFinite ι
-  refine (EuclideanSpace.equiv ι ℝ).symm.continuous.measurable.comp ?_
-  exact Measurable.of_eval fun i => measurable_from_nat.comp (measurable_pi_apply i)
+theorem measurable_multinomialToEuclidean :
+    Measurable (multinomialToEuclidean (ι := ι)) :=
+  (WithLp.measurable_toLp 2 (ι → ℝ)).comp
+    (Measurable.of_eval fun i => measurable_from_nat.comp (measurable_pi_apply i))
+
+/-- Casting count vectors into Euclidean space is a closed embedding. In particular, closed
+sets of count vectors remain closed after casting, even when they are infinite. -/
+theorem isClosedEmbedding_multinomialToEuclidean :
+    Topology.IsClosedEmbedding (multinomialToEuclidean (ι := ι)) := by
+  convert (EuclideanSpace.equiv ι ℝ).symm.toHomeomorph.isClosedEmbedding.comp
+    (Topology.IsClosedEmbedding.piMap fun _ : ι => Nat.isClosedEmbedding_coe_real) using 1
+  ext k i
+  exact multinomialToEuclidean_apply k i
 
 /-- Casting count vectors into Euclidean space is a measurable embedding. -/
 theorem measurableEmbedding_multinomialToEuclidean [Finite ι] :

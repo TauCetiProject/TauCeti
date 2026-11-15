@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Dart
 public import Mathlib.Combinatorics.Quiver.Symmetric
+public import Mathlib.Combinatorics.Quiver.ConnectedComponent
 
 /-!
 # Graphs with edge reversal
@@ -15,6 +16,22 @@ A Serre graph has directed edges paired by a fixed-point-free reversal. In parti
 still has two distinct directions, and parallel edges remain distinct. The quiver associated to
 a Serre graph keeps those directed edge identities, so its paths can be used for reduced paths,
 graph groups, and labelled-graph arguments.
+
+The geometric edges of a Serre graph are the reversal pairs `{e, rev e}`; data attached to an
+unoriented edge, such as the edge groups of a graph of groups, is indexed by them, and
+`GeomEdge.out` chooses a dart representing each of them. An orientation chooses one dart above
+each geometric edge; orientations pull back along morphisms of Serre graphs.
+
+For a reversal-closed set `S` of darts, the subgraph `Γ.restrict S hS` keeps every vertex of `Γ`
+and the darts in `S`. More generally, a set `A` of vertices together with a reversal-closed set
+`D` of darts starting in `A` forms the subgraph `Γ.subgraph A D hsrc hrev`. For a set `C` of
+vertices, `Γ.inducedDarts C` is the set of darts with both endpoints in `C`: the darts of the
+subgraph induced on `C`.
+
+In a graph all of whose darts are loops, such as the graph `noEdge V` with the vertices `V` and no
+edges, a path never leaves its starting vertex. Such a graph is preconnected exactly when it has
+at most one vertex, and connected exactly when it has exactly one: the empty graph is
+preconnected but not connected, and two isolated vertices are not even preconnected.
 
 The simple-graph construction takes its edge set from Mathlib's darts. It provides the familiar
 loopless example while retaining the reversal structure used for general graphs.
@@ -50,8 +67,9 @@ namespace SerreGraph
 
 variable (Γ : SerreGraph.{u, v})
 
-/-- Terminal vertex of a dart. -/
-def tgt (e : Γ.E) : Γ.V := Γ.src (Γ.rev e)
+/-- Terminal vertex of a dart. The body is exposed so that families indexed by vertices, such as
+the vertex groups of a graph of groups, can be evaluated at `Γ.tgt e` without a cast. -/
+@[expose] def tgt (e : Γ.E) : Γ.V := Γ.src (Γ.rev e)
 
 /-- A dart ends where its reverse starts. -/
 theorem tgt_def (e : Γ.E) : Γ.tgt e = Γ.src (Γ.rev e) := (rfl)
@@ -62,9 +80,94 @@ theorem tgt_def (e : Γ.E) : Γ.tgt e = Γ.src (Γ.rev e) := (rfl)
 @[simp] theorem tgt_rev (e : Γ.E) : Γ.tgt (Γ.rev e) = Γ.src e := by
   simp only [tgt, Γ.rev_rev]
 
-theorem rev_injective : Function.Injective Γ.rev := by
-  intro e f h
-  simpa only [Γ.rev_rev] using congrArg Γ.rev h
+theorem rev_injective : Function.Injective Γ.rev :=
+  Function.Involutive.injective Γ.rev_rev
+
+/-- The geometric edges of a Serre graph: the pairs `{e, rev e}` of mutually reverse darts. -/
+def GeomEdge : Type v := Quot fun e f : Γ.E => f = Γ.rev e
+
+/-- The geometric edge underlying a dart. -/
+def toGeomEdge (e : Γ.E) : Γ.GeomEdge := Quot.mk _ e
+
+/-- A dart and its reverse have the same underlying geometric edge. -/
+@[simp] theorem toGeomEdge_rev (e : Γ.E) : Γ.toGeomEdge (Γ.rev e) = Γ.toGeomEdge e :=
+  Quot.sound (Γ.rev_rev e).symm
+
+theorem toGeomEdge_surjective : Function.Surjective Γ.toGeomEdge :=
+  Quot.mk_surjective
+
+/-- A graph without darts has no geometric edge. -/
+instance [IsEmpty Γ.E] : IsEmpty Γ.GeomEdge := Quot.instIsEmpty
+
+/-- A graph with finitely many darts has finitely many geometric edges. -/
+instance [Finite Γ.E] : Finite Γ.GeomEdge := Finite.of_surjective _ Γ.toGeomEdge_surjective
+
+/-- Two darts have the same geometric edge exactly when they are equal or mutually reverse. -/
+theorem toGeomEdge_eq_toGeomEdge_iff {e f : Γ.E} :
+    Γ.toGeomEdge e = Γ.toGeomEdge f ↔ f = e ∨ f = Γ.rev e := by
+  refine ⟨fun h => ?_, ?_⟩
+  · have hequiv : Equivalence fun e f : Γ.E => f = e ∨ f = Γ.rev e :=
+      { refl := fun _ => Or.inl rfl
+        symm := by
+          rintro e f (rfl | rfl)
+          · exact Or.inl rfl
+          · exact Or.inr (Γ.rev_rev e).symm
+        trans := by
+          rintro e f g (rfl | rfl) (rfl | rfl)
+          · exact Or.inl rfl
+          · exact Or.inr rfl
+          · exact Or.inr rfl
+          · exact Or.inl (Γ.rev_rev e) }
+    exact hequiv.eqvGen_iff.mp ((Quot.eqvGen_exact h).mono fun _ _ => Or.inr)
+  · rintro (rfl | rfl)
+    · rfl
+    · exact (Γ.toGeomEdge_rev e).symm
+
+/-- A function on darts taking the same value on mutually reverse darts descends to geometric
+edges. -/
+def GeomEdge.lift {β : Sort*} (f : Γ.E → β) (hf : ∀ e, f (Γ.rev e) = f e) :
+    Γ.GeomEdge → β :=
+  Quot.lift f fun e _ h => h ▸ (hf e).symm
+
+@[simp] theorem GeomEdge.lift_toGeomEdge {β : Sort*} (f : Γ.E → β)
+    (hf : ∀ e, f (Γ.rev e) = f e) (e : Γ.E) : GeomEdge.lift Γ f hf (Γ.toGeomEdge e) = f e :=
+  (rfl)
+
+/-- A chosen dart representing a geometric edge. -/
+noncomputable def GeomEdge.out (y : Γ.GeomEdge) : Γ.E :=
+  Quot.out y
+
+/-- The chosen dart of a geometric edge lies on it. -/
+@[simp] theorem toGeomEdge_out (y : Γ.GeomEdge) : Γ.toGeomEdge (GeomEdge.out Γ y) = y :=
+  Quot.out_eq y
+
+/-- Distinct geometric edges have distinct chosen darts. -/
+theorem GeomEdge.out_injective : Function.Injective (GeomEdge.out Γ) :=
+  Function.LeftInverse.injective Γ.toGeomEdge_out
+
+@[simp] theorem GeomEdge.out_inj {x y : Γ.GeomEdge} :
+    GeomEdge.out Γ x = GeomEdge.out Γ y ↔ x = y :=
+  (GeomEdge.out_injective Γ).eq_iff
+
+/-- The dart representing the geometric edge of a dart `e` is `e` or its reverse. -/
+theorem GeomEdge.out_toGeomEdge_eq_or_eq_rev (e : Γ.E) :
+    GeomEdge.out Γ (Γ.toGeomEdge e) = e ∨ GeomEdge.out Γ (Γ.toGeomEdge e) = Γ.rev e :=
+  Γ.toGeomEdge_eq_toGeomEdge_iff.mp (Γ.toGeomEdge_out _).symm
+
+/-- A bijection of darts commuting with reversal induces a bijection of geometric edges. -/
+def GeomEdge.congr {Δ : SerreGraph.{w, x}} (f : Γ.E ≃ Δ.E)
+    (hf : ∀ e, f (Γ.rev e) = Δ.rev (f e)) : Γ.GeomEdge ≃ Δ.GeomEdge :=
+  Quot.congr f fun e e' => by rw [← hf, f.apply_eq_iff_eq]
+
+@[simp] theorem GeomEdge.congr_toGeomEdge {Δ : SerreGraph.{w, x}} (f : Γ.E ≃ Δ.E)
+    (hf : ∀ e, f (Γ.rev e) = Δ.rev (f e)) (e : Γ.E) :
+    GeomEdge.congr Γ f hf (Γ.toGeomEdge e) = Δ.toGeomEdge (f e) :=
+  Quot.congr_mk ..
+
+@[simp] theorem GeomEdge.congr_symm_toGeomEdge {Δ : SerreGraph.{w, x}} (f : Γ.E ≃ Δ.E)
+    (hf : ∀ e, f (Γ.rev e) = Δ.rev (f e)) (e : Δ.E) :
+    (GeomEdge.congr Γ f hf).symm (Δ.toGeomEdge e) = Γ.toGeomEdge (f.symm e) := by
+  rw [Equiv.symm_apply_eq, GeomEdge.congr_toGeomEdge, Equiv.apply_symm_apply]
 
 /-- An orientation chooses one dart from each reverse pair. -/
 def IsOrientation (O : Set Γ.E) : Prop := ∀ e, e ∈ O ↔ Γ.rev e ∉ O
@@ -79,6 +182,35 @@ theorem IsOrientation.mem_rev_iff {O : Set Γ.E} (hO : Γ.IsOrientation O) (e : 
 theorem IsOrientation.rev_notMem_of_mem {O : Set Γ.E} (hO : Γ.IsOrientation O)
     (e : Γ.E) (he : e ∈ O) : Γ.rev e ∉ O :=
   (hO e).mp he
+
+variable {Γ} in
+/-- An orientation contains a dart or its reverse. -/
+theorem IsOrientation.mem_or_rev_mem {O : Set Γ.E} (hO : Γ.IsOrientation O) (e : Γ.E) :
+    e ∈ O ∨ Γ.rev e ∈ O :=
+  or_iff_not_imp_left.mpr (IsOrientation.mem_rev_iff Γ hO e).mpr
+
+/-- An orientation contains exactly one dart above each geometric edge. -/
+theorem IsOrientation.bijective_toGeomEdge {O : Set Γ.E} (hO : Γ.IsOrientation O) :
+    Function.Bijective fun e : O => Γ.toGeomEdge e := by
+  refine ⟨fun e f h => Subtype.ext ?_, fun g => ?_⟩
+  · rcases Γ.toGeomEdge_eq_toGeomEdge_iff.mp h with hf | hf
+    · exact hf.symm
+    · exact absurd (hf ▸ f.2) (hO.rev_notMem_of_mem Γ e e.2)
+  · obtain ⟨e, rfl⟩ := Γ.toGeomEdge_surjective g
+    by_cases he : e ∈ O
+    · exact ⟨⟨e, he⟩, rfl⟩
+    · exact ⟨⟨Γ.rev e, (hO.mem_rev_iff Γ e).mpr he⟩, Γ.toGeomEdge_rev e⟩
+
+/-- Every Serre graph has an orientation: choose one dart above each geometric edge. -/
+theorem exists_isOrientation : ∃ O : Set Γ.E, Γ.IsOrientation O := by
+  choose out hout using Γ.toGeomEdge_surjective
+  have hmem (e : Γ.E) : e ∈ Set.range out ↔ out (Γ.toGeomEdge e) = e :=
+    ⟨by rintro ⟨g, rfl⟩; rw [hout], fun h => ⟨_, h⟩⟩
+  refine ⟨Set.range out, fun e => ?_⟩
+  rw [hmem, hmem, toGeomEdge_rev]
+  rcases Γ.toGeomEdge_eq_toGeomEdge_iff.mp (hout (Γ.toGeomEdge e)).symm with h | h
+  · simpa [h] using (Γ.rev_ne e).symm
+  · simpa [h] using Γ.rev_ne e
 
 /-- The quiver whose arrows are the actual darts from their source to their target. -/
 @[expose, instance_reducible] def toQuiver : Quiver Γ.V where
@@ -112,8 +244,88 @@ def dart (e : Γ.E) : Quiver.Hom (Γ.src e) (Γ.tgt e) :=
 @[simp] theorem dart_val (e : Γ.E) : (Γ.dart e).1 = e := by
   simp only [dart]
 
+theorem dart_def (e : Γ.E) : Γ.dart e = ⟨e, rfl, rfl⟩ :=
+  (rfl)
+
+/-- If the dart of `e : a ⟶ b` is the reverse of the dart of `f : c ⟶ d`, then `e` starts where
+`f` ends. -/
+theorem src_eq_tgt_of_val_eq_rev {a b c d : Γ.V} {e : Quiver.Hom a b} {f : Quiver.Hom c d}
+    (h : e.1 = Γ.rev f.1) : a = d := by
+  rw [← e.2.1, h, src_rev, f.2.2]
+
+/-- If the dart of `e : a ⟶ b` is the reverse of the dart of `f : c ⟶ d`, then `e` ends where
+`f` starts. -/
+theorem tgt_eq_src_of_val_eq_rev {a b c d : Γ.V} {e : Quiver.Hom a b} {f : Quiver.Hom c d}
+    (h : e.1 = Γ.rev f.1) : b = c := by
+  rw [← e.2.2, h, tgt_rev, f.2.1]
+
+/-- An arrow `e : b ⟶ a` whose dart is the reverse of the dart of `f : a ⟶ b` is the reverse
+of `f`. -/
+theorem eq_reverse_of_val_eq_rev {a b : Γ.V} {e : Quiver.Hom b a} {f : Quiver.Hom a b}
+    (h : e.1 = Γ.rev f.1) : e = Quiver.reverse f :=
+  Subtype.ext (h.trans (Γ.reverse_val f).symm)
+
 /-- An indexed path in a Serre graph is a path of its associated quiver. -/
 abbrev Path (a b : Γ.V) : Type (max u v) := Quiver.Path a b
+
+/-- A Serre graph is preconnected when any two vertices are joined by a path. -/
+def Preconnected : Prop := Quiver.IsStronglyConnected Γ.V
+
+/-- Preconnectivity is pairwise Serre path reachability. -/
+theorem preconnected_iff : Γ.Preconnected ↔ ∀ a b, Nonempty (Γ.Path a b) :=
+  Quiver.isStronglyConnected_iff Γ.V
+
+/-- A Serre graph is preconnected as soon as one vertex is joined by a path to every vertex:
+paths can be reversed. -/
+theorem preconnected_of_forall_nonempty_path (a : Γ.V) (h : ∀ b, Nonempty (Γ.Path a b)) :
+    Γ.Preconnected :=
+  (preconnected_iff Γ).2 fun b c => ⟨(h b).some.reverse.comp (h c).some⟩
+
+/-- In a Serre graph all of whose darts are loops, a path never leaves its starting vertex. -/
+theorem eq_of_path_of_forall_src_eq_tgt (h : ∀ e, Γ.src e = Γ.tgt e) {a b : Γ.V}
+    (p : Γ.Path a b) : a = b := by
+  induction p with
+  | nil => rfl
+  | cons _ e ih => exact ih.trans (e.2.1.symm.trans ((h e.1).trans e.2.2))
+
+/-- A preconnected Serre graph without darts has at most one vertex. -/
+theorem Preconnected.subsingleton_of_isEmpty {Γ : SerreGraph.{u, v}} [IsEmpty Γ.E]
+    (hΓ : Γ.Preconnected) : Subsingleton Γ.V :=
+  ⟨fun a b => (Γ.preconnected_iff.mp hΓ a b).elim
+    (Γ.eq_of_path_of_forall_src_eq_tgt fun e => isEmptyElim e)⟩
+
+/-- A Serre graph is connected when it is nonempty and path-connected. -/
+def Connected : Prop := Nonempty Γ.V ∧ Γ.Preconnected
+
+/-- Connectedness requires a vertex as well as preconnectivity. -/
+theorem connected_iff : Γ.Connected ↔ Nonempty Γ.V ∧ Γ.Preconnected := Iff.rfl
+
+variable {Γ} in
+/-- A Serre graph with at most one vertex is preconnected; this includes the empty graph. -/
+theorem Preconnected.of_subsingleton [Subsingleton Γ.V] : Γ.Preconnected :=
+  (preconnected_iff Γ).2 fun a b => Subsingleton.elim a b ▸ ⟨.nil⟩
+
+/-- A Serre graph without vertices is not connected, although it is preconnected. -/
+theorem not_connected_of_isEmpty [IsEmpty Γ.V] : ¬Γ.Connected :=
+  fun h => isEmptyElim h.1.some
+
+/-- In a Serre graph all of whose darts are loops, a path joins two vertices exactly when they
+are equal. -/
+theorem nonempty_path_iff_of_forall_src_eq_tgt (h : ∀ e, Γ.src e = Γ.tgt e) {a b : Γ.V} :
+    Nonempty (Γ.Path a b) ↔ a = b :=
+  ⟨fun ⟨p⟩ => Γ.eq_of_path_of_forall_src_eq_tgt h p, by rintro rfl; exact ⟨.nil⟩⟩
+
+/-- A Serre graph all of whose darts are loops is preconnected exactly when it has at most one
+vertex. -/
+theorem preconnected_iff_of_forall_src_eq_tgt (h : ∀ e, Γ.src e = Γ.tgt e) :
+    Γ.Preconnected ↔ Subsingleton Γ.V := by
+  simp only [preconnected_iff, Γ.nonempty_path_iff_of_forall_src_eq_tgt h, subsingleton_iff]
+
+/-- A Serre graph all of whose darts are loops is connected exactly when it has exactly one
+vertex. -/
+theorem connected_iff_of_forall_src_eq_tgt (h : ∀ e, Γ.src e = Γ.tgt e) :
+    Γ.Connected ↔ Nonempty Γ.V ∧ Subsingleton Γ.V :=
+  (connected_iff Γ).trans (and_congr_right fun _ => Γ.preconnected_iff_of_forall_src_eq_tgt h)
 
 attribute [simp] SerreGraph.rev_rev
 
@@ -139,6 +351,62 @@ attribute [simp] Hom.map_src Hom.map_rev
 @[simp] theorem Hom.map_tgt {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ) (e : Γ.E) :
     Δ.tgt (f.mapE e) = f.mapV (Γ.tgt e) := by
   simp only [tgt, ← f.map_rev, f.map_src]
+
+/-- A morphism of Serre graphs sends darts with the same geometric edge to darts with the same
+geometric edge. -/
+theorem Hom.toGeomEdge_mapE_congr {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ)
+    {e e' : Γ.E} (h : Γ.toGeomEdge e = Γ.toGeomEdge e') :
+    Δ.toGeomEdge (f.mapE e) = Δ.toGeomEdge (f.mapE e') := by
+  obtain rfl | rfl := Γ.toGeomEdge_eq_toGeomEdge_iff.1 h
+  · rfl
+  · rw [f.map_rev, Δ.toGeomEdge_rev]
+
+/-- The preimage of an orientation under a morphism of Serre graphs is an orientation. -/
+theorem Hom.isOrientation_preimage {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) {O' : Set Δ.E} (hO' : Δ.IsOrientation O') : Γ.IsOrientation (f.mapE ⁻¹' O') :=
+  (isOrientation_iff Γ _).2 fun e => by simpa using (isOrientation_iff Δ O').1 hO' (f.mapE e)
+
+/-- A morphism carrying an orientation `O` of the source into an orientation `O'` of the target
+sends a dart into `O'` exactly when the dart lies in `O`: so `O` is the preimage of `O'`. -/
+theorem Hom.mapE_mem_iff {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ)
+    {O : Set Γ.E} {O' : Set Δ.E} (hO : Γ.IsOrientation O) (hO' : Δ.IsOrientation O')
+    (hf : Set.MapsTo f.mapE O O') (e : Γ.E) : f.mapE e ∈ O' ↔ e ∈ O := by
+  refine ⟨fun he => ?_, fun he => hf he⟩
+  by_contra h
+  exact hO'.rev_notMem_of_mem Δ _ he (f.map_rev e ▸ hf ((hO.mem_rev_iff Γ e).mpr h))
+
+/-- The quiver prefunctor underlying a Serre-graph morphism. -/
+@[expose] def Hom.toPrefunctor {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) : Γ.V ⥤q Δ.V where
+  obj := f.mapV
+  map := fun e => ⟨f.mapE e.1,
+    by simpa only [f.map_src] using congrArg f.mapV e.2.1,
+    by simpa only [f.map_tgt] using congrArg f.mapV e.2.2⟩
+
+@[simp] theorem Hom.toPrefunctor_obj {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) (a : Γ.V) : f.toPrefunctor.obj a = f.mapV a := rfl
+
+@[simp] theorem Hom.toPrefunctor_map_val {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) {a b : Γ.V} (e : Quiver.Hom a b) :
+    (f.toPrefunctor.map e).1 = f.mapE e.1 := rfl
+
+/-- A vertex-surjective graph morphism carries preconnectedness to its target. -/
+theorem Hom.preconnected_of_surjective {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) (hf : Function.Surjective f.mapV)
+    (hΓ : Γ.Preconnected) : Δ.Preconnected := by
+  apply (preconnected_iff Δ).2
+  intro a b
+  obtain ⟨x, rfl⟩ := hf a
+  obtain ⟨y, rfl⟩ := hf b
+  obtain ⟨p⟩ := (preconnected_iff Γ).1 hΓ x y
+  exact ⟨f.toPrefunctor.mapPath p⟩
+
+/-- A vertex-surjective graph morphism carries connectedness to its target. -/
+theorem Hom.connected_of_surjective {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) (hf : Function.Surjective f.mapV)
+    (hΓ : Γ.Connected) : Δ.Connected := by
+  obtain ⟨⟨x⟩, hpre⟩ := (connected_iff Γ).1 hΓ
+  exact (connected_iff Δ).2 ⟨⟨f.mapV x⟩, f.preconnected_of_surjective hf hpre⟩
 
 /-- Identity morphism of a Serre graph. -/
 def Hom.id : Γ.Hom Γ where
@@ -181,6 +449,142 @@ theorem Hom.comp_assoc {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
     Hom.comp h (Hom.comp g f) = Hom.comp (Hom.comp h g) f := by
   apply Hom.ext <;> rfl
 
+@[simp] theorem Hom.toPrefunctor_id :
+    (Hom.id Γ).toPrefunctor = Prefunctor.id Γ.V := by
+  unfold Hom.id Hom.toPrefunctor Prefunctor.id
+  rfl
+
+@[simp] theorem Hom.toPrefunctor_comp {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
+    (g : Δ.Hom Θ) (f : Γ.Hom Δ) :
+    (Hom.comp g f).toPrefunctor = f.toPrefunctor.comp g.toPrefunctor := by
+  unfold Hom.comp Hom.toPrefunctor Prefunctor.comp
+  rfl
+
+instance Hom.toPrefunctor_mapReverse {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ) :
+    f.toPrefunctor.MapReverse where
+  map_reverse' e := by
+    apply Subtype.ext
+    simp only [Hom.toPrefunctor_map_val, Γ.reverse_val, Δ.reverse_val, f.map_rev]
+
+section Restrict
+
+variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
+
+/-- The subgraph of `Γ` with all vertices of `Γ` and the darts of a reversal-closed set `S`. The
+vertex type reduces to that of `Γ`, so vertices of `Γ` are vertices of the subgraph. -/
+abbrev restrict : SerreGraph.{u, v} where
+  V := Γ.V
+  E := S
+  src e := Γ.src e.1
+  rev e := ⟨Γ.rev e.1, hS e.1 e.2⟩
+  rev_rev e := Subtype.ext (Γ.rev_rev e.1)
+  rev_ne e he := Γ.rev_ne e.1 (congrArg Subtype.val he)
+
+@[simp] theorem restrict_src (e : (Γ.restrict S hS).E) :
+    (Γ.restrict S hS).src e = Γ.src e.1 := (rfl)
+
+@[simp] theorem restrict_rev_val (e : (Γ.restrict S hS).E) :
+    ((Γ.restrict S hS).rev e).1 = Γ.rev e.1 := (rfl)
+
+@[simp] theorem restrict_tgt (e : (Γ.restrict S hS).E) :
+    (Γ.restrict S hS).tgt e = Γ.tgt e.1 := (rfl)
+
+/-- The inclusion of a restriction into the ambient graph. -/
+@[expose] def restrictInclusion : (Γ.restrict S hS).Hom Γ where
+  mapV := id
+  mapE := Subtype.val
+  map_src _ := rfl
+  map_rev _ := rfl
+
+@[simp] theorem restrictInclusion_mapV (a : (Γ.restrict S hS).V) :
+    (Γ.restrictInclusion S hS).mapV a = a := (rfl)
+
+@[simp] theorem restrictInclusion_mapE (e : (Γ.restrict S hS).E) :
+    (Γ.restrictInclusion S hS).mapE e = e.1 := (rfl)
+
+end Restrict
+
+section Subgraph
+
+variable (A : Set Γ.V) (D : Set Γ.E) (hsrc : ∀ e ∈ D, Γ.src e ∈ A)
+  (hrev : ∀ e ∈ D, Γ.rev e ∈ D)
+
+/-- The subgraph of `Γ` on a set `A` of vertices and a reversal-closed set `D` of darts starting
+in `A`. Its carriers compute to these subtypes so that paths can be lifted through them. -/
+@[expose] def subgraph : SerreGraph.{u, v} where
+  V := A
+  E := D
+  src e := ⟨Γ.src e.1, hsrc e.1 e.2⟩
+  rev e := ⟨Γ.rev e.1, hrev e.1 e.2⟩
+  rev_rev e := Subtype.ext (Γ.rev_rev e.1)
+  rev_ne e he := Γ.rev_ne e.1 (congrArg Subtype.val he)
+
+@[simp] theorem subgraph_src_val (e : (Γ.subgraph A D hsrc hrev).E) :
+    ((Γ.subgraph A D hsrc hrev).src e).1 = Γ.src e.1 := (rfl)
+
+@[simp] theorem subgraph_rev_val (e : (Γ.subgraph A D hsrc hrev).E) :
+    ((Γ.subgraph A D hsrc hrev).rev e).1 = Γ.rev e.1 := (rfl)
+
+@[simp] theorem subgraph_tgt_val (e : (Γ.subgraph A D hsrc hrev).E) :
+    ((Γ.subgraph A D hsrc hrev).tgt e).1 = Γ.tgt e.1 := (rfl)
+
+instance [Finite A] : Finite (Γ.subgraph A D hsrc hrev).V := inferInstanceAs (Finite A)
+instance [Finite D] : Finite (Γ.subgraph A D hsrc hrev).E := inferInstanceAs (Finite D)
+
+/-- Inclusion of a subgraph into the ambient graph. Its vertex map computes to `Subtype.val`, so
+that a path of the subgraph mapped by the inclusion has the ambient endpoints and can be compared
+with paths of `Γ`. -/
+@[expose] def subgraphInclusion : (Γ.subgraph A D hsrc hrev).Hom Γ where
+  mapV := Subtype.val
+  mapE := Subtype.val
+  map_src _ := rfl
+  map_rev _ := rfl
+
+@[simp] theorem subgraphInclusion_mapV (a : (Γ.subgraph A D hsrc hrev).V) :
+    (Γ.subgraphInclusion A D hsrc hrev).mapV a = a.1 := (rfl)
+
+@[simp] theorem subgraphInclusion_mapE (e : (Γ.subgraph A D hsrc hrev).E) :
+    (Γ.subgraphInclusion A D hsrc hrev).mapE e = e.1 := (rfl)
+
+/-- The inclusion of a subgraph is injective on vertices. -/
+theorem subgraphInclusion_mapV_injective :
+    Function.Injective (Γ.subgraphInclusion A D hsrc hrev).mapV :=
+  Subtype.val_injective
+
+/-- The inclusion of a subgraph is injective on darts. -/
+theorem subgraphInclusion_mapE_injective :
+    Function.Injective (Γ.subgraphInclusion A D hsrc hrev).mapE :=
+  Subtype.val_injective
+
+end Subgraph
+
+section InducedDarts
+
+/-- The darts induced by a set of vertices: those with both endpoints in the set. They are the
+darts of the subgraph induced on the set. -/
+def inducedDarts (C : Set Γ.V) : Set Γ.E :=
+  {e | Γ.src e ∈ C ∧ Γ.tgt e ∈ C}
+
+variable {Γ}
+
+@[simp] theorem mem_inducedDarts_iff {C : Set Γ.V} {e : Γ.E} :
+    e ∈ Γ.inducedDarts C ↔ Γ.src e ∈ C ∧ Γ.tgt e ∈ C := Iff.rfl
+
+theorem rev_mem_inducedDarts_iff {C : Set Γ.V} {e : Γ.E} :
+    Γ.rev e ∈ Γ.inducedDarts C ↔ e ∈ Γ.inducedDarts C := by
+  rw [mem_inducedDarts_iff, mem_inducedDarts_iff, src_rev, tgt_rev, and_comm]
+
+theorem inducedDarts_mono {C D : Set Γ.V} (h : C ⊆ D) : Γ.inducedDarts C ⊆ Γ.inducedDarts D :=
+  fun _ he => ⟨h he.1, h he.2⟩
+
+@[simp] theorem inducedDarts_empty : Γ.inducedDarts ∅ = ∅ :=
+  Set.eq_empty_of_forall_notMem fun _ he => he.1
+
+@[simp] theorem inducedDarts_univ : Γ.inducedDarts Set.univ = Set.univ :=
+  Set.eq_univ_of_forall fun _ => ⟨trivial, trivial⟩
+
+end InducedDarts
+
 /-- The rose on a type of petals. Each petal is a loop with two distinct darts. -/
 @[expose] def rose (α : Type w) : SerreGraph.{0, w} where
   V := PUnit
@@ -200,6 +604,119 @@ theorem Hom.comp_assoc {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
 @[simp] theorem rose_tgt (α : Type w) (e : α × Bool) :
     (rose α).tgt e = PUnit.unit := rfl
 
+/-- The Serre graph with vertex type `V` and no edges. The definition unfolds at instance
+transparency, so that an element of `V` is accepted as a vertex of `noEdge V` by rewriting and
+simplification. -/
+@[expose, instance_reducible] def noEdge (V : Type u) : SerreGraph.{u, v} where
+  V := V
+  E := PEmpty
+  src := PEmpty.elim
+  rev := PEmpty.elim
+  rev_rev e := e.elim
+  rev_ne e := e.elim
+
+section NoEdge
+
+variable {V : Type u}
+
+/-- A graph without edges has no dart. -/
+instance : IsEmpty (noEdge.{u, v} V).E := inferInstanceAs (IsEmpty PEmpty)
+
+/-- The empty enumeration of the darts of a graph without edges. -/
+instance : Fintype (noEdge.{u, v} V).E := inferInstanceAs (Fintype PEmpty)
+
+/-- A graph without edges on finitely many vertices is finite. -/
+instance [Finite V] : Finite (noEdge.{u, v} V).V := inferInstanceAs (Finite V)
+
+/-- The vertices of a graph without edges, enumerated as the elements of `V`. -/
+instance [Fintype V] : Fintype (noEdge.{u, v} V).V := inferInstanceAs (Fintype V)
+
+/-- The vertices of a graph without edges have the decidable equality of `V`. -/
+instance [DecidableEq V] : DecidableEq (noEdge.{u, v} V).V := inferInstanceAs (DecidableEq V)
+
+/-- The graph without edges on an empty type has no vertex. -/
+instance [IsEmpty V] : IsEmpty (noEdge.{u, v} V).V := inferInstanceAs (IsEmpty V)
+
+/-- The graph without edges on a nonempty type has a vertex. -/
+instance [Nonempty V] : Nonempty (noEdge.{u, v} V).V := inferInstanceAs (Nonempty V)
+
+/-- A vertex of a graph without edges, the default element of `V`. -/
+instance [Inhabited V] : Inhabited (noEdge.{u, v} V).V := inferInstanceAs (Inhabited V)
+
+/-- The graph without edges on a subsingleton has at most one vertex. -/
+instance [Subsingleton V] : Subsingleton (noEdge.{u, v} V).V := inferInstanceAs (Subsingleton V)
+
+/-- The graph without edges on a type with exactly one element has exactly one vertex. -/
+instance [Unique V] : Unique (noEdge.{u, v} V).V := inferInstanceAs (Unique V)
+
+/-- The graph without edges on a nontrivial type has two distinct vertices. -/
+instance [Nontrivial V] : Nontrivial (noEdge.{u, v} V).V := inferInstanceAs (Nontrivial V)
+
+/-- In a graph without edges a path joins two vertices exactly when they are equal. -/
+@[simp] theorem noEdge_nonempty_path_iff {a b : V} :
+    Nonempty ((noEdge.{u, v} V).Path a b) ↔ a = b :=
+  (noEdge V).nonempty_path_iff_of_forall_src_eq_tgt isEmptyElim
+
+/-- A graph without edges is preconnected exactly when it has at most one vertex. -/
+@[simp] theorem noEdge_preconnected_iff : (noEdge.{u, v} V).Preconnected ↔ Subsingleton V :=
+  (noEdge V).preconnected_iff_of_forall_src_eq_tgt isEmptyElim
+
+/-- A graph without edges is connected exactly when it has exactly one vertex. -/
+@[simp] theorem noEdge_connected_iff :
+    (noEdge.{u, v} V).Connected ↔ Nonempty V ∧ Subsingleton V :=
+  (noEdge V).connected_iff_of_forall_src_eq_tgt isEmptyElim
+
+/-- Two or more isolated vertices are not all joined by paths. -/
+theorem noEdge_not_preconnected [Nontrivial V] : ¬(noEdge.{u, v} V).Preconnected :=
+  noEdge_preconnected_iff.not.mpr (not_subsingleton V)
+
+/-- A graph of two or more isolated vertices is not connected, although it has a vertex. -/
+theorem noEdge_not_connected [Nontrivial V] : ¬(noEdge.{u, v} V).Connected :=
+  fun h => noEdge_not_preconnected h.2
+
+end NoEdge
+
+/-- A rose has a single vertex. -/
+instance (α : Type w) : Unique (rose α).V := inferInstanceAs (Unique PUnit)
+
+/-- The darts of a rose, being pairs of a petal and a direction, have decidable equality when
+the petals do. -/
+instance (α : Type w) [DecidableEq α] : DecidableEq (rose α).E :=
+  inferInstanceAs (DecidableEq (α × Bool))
+
+/-- A rose without petals has no dart. -/
+instance (α : Type w) [IsEmpty α] : IsEmpty (rose α).E :=
+  inferInstanceAs (IsEmpty (α × Bool))
+
+/-- A rose with finitely many petals has finitely many darts. -/
+instance (α : Type w) [Finite α] : Finite (rose α).E :=
+  inferInstanceAs (Finite (α × Bool))
+
+/-- The geometric edges of a rose are its petals. -/
+def roseGeomEdgeEquiv (α : Type w) : (rose α).GeomEdge ≃ α where
+  toFun := GeomEdge.lift (rose α) Prod.fst fun _ => rfl
+  invFun a := (rose α).toGeomEdge (a, true)
+  left_inv x := by
+    obtain ⟨⟨a, b⟩, rfl⟩ := (rose α).toGeomEdge_surjective x
+    refine ((rose α).toGeomEdge_eq_toGeomEdge_iff).2 ?_
+    cases b
+    · exact .inr rfl
+    · exact .inl rfl
+  right_inv _ := rfl
+
+@[simp] theorem roseGeomEdgeEquiv_toGeomEdge (α : Type w) (e : α × Bool) :
+    roseGeomEdgeEquiv α ((rose α).toGeomEdge e) = e.1 := (rfl)
+
+/-- Every rose is connected, including the rose without petals. -/
+theorem rose_connected (α : Type*) : (rose α).Connected := by
+  rw [(rose α).connected_iff]
+  refine ⟨⟨PUnit.unit⟩, ?_⟩
+  rw [(rose α).preconnected_iff]
+  intro u v
+  cases u
+  cases v
+  exact ⟨Quiver.Path.nil⟩
+
 /-- Positive darts form an orientation of a rose. -/
 theorem rose_isOrientation (α : Type w) :
     (rose α).IsOrientation {e | e.2 = true} := by
@@ -208,14 +725,52 @@ theorem rose_isOrientation (α : Type w) :
   change (b = true) ↔ ¬(!b = true)
   cases b <;> decide
 
+/-- The segment: two vertices joined by a single pair of darts. The dart `b` runs from the
+vertex `b` to the vertex `!b`. -/
+@[expose] def segment : SerreGraph.{0, 0} where
+  V := Bool
+  E := Bool
+  src := id
+  rev := not
+  rev_rev := Bool.not_not
+  rev_ne := Bool.not_ne_self
+
+@[simp] theorem segment_src (b : Bool) : segment.src b = b := rfl
+
+/-- Every vertex of the segment is the source of a dart: the dart with the same Boolean label. -/
+theorem segment_src_surjective : Function.Surjective segment.src := fun b => ⟨b, segment_src b⟩
+
+@[simp] theorem segment_rev (b : Bool) : segment.rev b = !b := rfl
+
+@[simp] theorem segment_tgt (b : Bool) : segment.tgt b = !b := rfl
+
+/-- The vertices of the segment are the Booleans. -/
+def segmentVEquiv : segment.V ≃ Bool := Equiv.refl Bool
+
+/-- The darts of the segment, being Booleans, have decidable equality. -/
+instance : DecidableEq segment.E := inferInstanceAs (DecidableEq Bool)
+
+/-- The segment has a single geometric edge. -/
+instance : Unique segment.GeomEdge where
+  default := segment.toGeomEdge true
+  uniq x := by
+    obtain ⟨b, rfl⟩ := segment.toGeomEdge_surjective x
+    refine (segment.toGeomEdge_eq_toGeomEdge_iff).2 ?_
+    cases b
+    · exact .inr rfl
+    · exact .inl rfl
+
 end SerreGraph
 
 end TauCeti
 
 namespace SimpleGraph
 
-/-- The Serre graph of a simple graph has its darts as directed edges. -/
-@[expose] def toSerreGraph {V : Type u} (G : SimpleGraph V) : TauCeti.SerreGraph.{u, u} where
+/-- The Serre graph of a simple graph has its darts as directed edges. The definition unfolds at
+instance transparency, so that a vertex or a dart of the simple graph is accepted as a vertex or a
+dart of its Serre graph by rewriting and simplification. -/
+@[expose, instance_reducible] def toSerreGraph {V : Type u} (G : SimpleGraph V) :
+    TauCeti.SerreGraph.{u, u} where
   V := V
   E := G.Dart
   src := fun e => e.fst

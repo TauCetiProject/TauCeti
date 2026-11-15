@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Adjoint.Exponential.Basic
+import TauCeti.Analysis.SpecialFunctions.Exponential
 import TauCeti.Geometry.Lie.Adjoint.Infinitesimal
 public import TauCeti.Geometry.Lie.Adjoint.OperatorExponential
 public import TauCeti.Geometry.Lie.Exponential.Units.Compatibility
@@ -20,15 +21,10 @@ the tangent formula by differentiating exponential equivariance along a line, re
 established compatibility between the abstract Lie-group exponential and the Banach-algebra
 exponential.
 
-This advances Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
-
 ## Main result
 
 * `tangentAd_units`: on the tangent Lie algebra of the unit group, `tangentAd g x` is
   `g * x * g⁻¹`.
-* `hasDerivAt_exp_mul_const_mul_exp_neg`: the derivative at zero of exponential conjugation is
-  the associative commutator.
 * `unitsLieAlgebraEquiv_Ad`: under the canonical identification with the ambient algebra,
   `Ad g X` is `g * X * g⁻¹`.
 * `groupLieAlgebra_units_ad_apply`: the tangent Lie bracket on algebra units is the associative
@@ -36,11 +32,6 @@ This advances Deliverable A, Layer 1 of
 * `unitsLieAlgebraLieEquiv`: the canonical units identification as a Lie equivalence.
 * `unitsLieAlgebraEquiv_ad`: the units identification transports the abstract adjoint operator to
   the bounded commutator operator.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The group adjoint".
 -/
 
 public section
@@ -100,17 +91,6 @@ theorem tangentAd_units (g : Rˣ) (x : R) :
   rw [hfun] at hconj
   exact hy.unique hconj
 
-/-- The derivative at zero of conjugation by an exponential is the associative commutator. -/
-theorem hasDerivAt_exp_mul_const_mul_exp_neg (x c : R) :
-    HasDerivAt
-      (fun t : ℝ ↦ NormedSpace.exp (t • x) * c * NormedSpace.exp (t • (-x)))
-      (x * c - c * x) 0 := by
-  have h := ((hasDerivAt_exp_smul_const x (0 : ℝ)).mul_const c).mul
-    (hasDerivAt_exp_smul_const (-x) (0 : ℝ))
-  convert h using 1
-  all_goals
-    simp only [zero_smul, NormedSpace.exp_zero, one_mul, mul_one, mul_neg, sub_eq_add_neg]
-
 end Complete
 
 section FiniteDimensional
@@ -118,7 +98,7 @@ section FiniteDimensional
 variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ R]
 
 local instance finiteDimensionalCompleteSpaceAdjointUnits : CompleteSpace R :=
-  FiniteDimensional.complete ℝ R
+  FiniteDimensional.completeSpace ℝ R
 
 /-- The Lie bracket on the tangent Lie algebra of algebra units is the associative commutator. -/
 @[simp]
@@ -128,7 +108,7 @@ theorem groupLieAlgebra_units_ad_apply (x y : R) :
       x * y - y * x := by
   -- For units the model space, and hence `GroupLieAlgebra`, is definitionally the ambient algebra
   -- `R`; the displayed casts expose that identification to the generic tangent-adjoint theorem.
-  let _ : T2Space Rˣ := t2Space_of_lieGroup (I := 𝓘(ℝ, R)) (n := ∞)
+  let _ : T2Space Rˣ := ModelWithCorners.t2Space_of_lieGroup 𝓘(ℝ, R) ∞
   have hgeom := hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero
     (I := 𝓘(ℝ, R)) (G := Rˣ)
     (x : GroupLieAlgebra 𝓘(ℝ, R) Rˣ) (y : GroupLieAlgebra 𝓘(ℝ, R) Rˣ)
@@ -182,7 +162,7 @@ theorem unitsLieAlgebraEquiv_Ad (g : Rˣ)
   have ht := tangentAd_units (R := R) g
     (show R from leftInvariantDerivationLieEquivGroupLieAlgebra
       (I := 𝓘(ℝ, R)) (G := Rˣ)
-      (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, R)) (n := ∞) (by simp) (1 : Rˣ)) X)
+      BoundarylessManifold.isInteriorPoint X)
   rw [ht] at hR
   simpa only [unitsLieAlgebraEquiv_apply,
     leftInvariantDerivationLieEquivGroupLieAlgebra_apply] using hR
@@ -196,7 +176,7 @@ noncomputable def unitsLieAlgebraLieEquiv :
   { unitsLieAlgebraEquiv (R := R) with
     map_lie' := by
       intro X Y
-      let _ : T2Space Rˣ := t2Space_of_lieGroup (I := 𝓘(ℝ, R)) (n := ∞)
+      let _ : T2Space Rˣ := ModelWithCorners.t2Space_of_lieGroup 𝓘(ℝ, R) ∞
       let e := leftInvariantDerivationLieEquivGroupLieAlgebra
         (I := 𝓘(ℝ, R)) (G := Rˣ) BoundarylessManifold.isInteriorPoint
       have hmap := e.map_lie X Y

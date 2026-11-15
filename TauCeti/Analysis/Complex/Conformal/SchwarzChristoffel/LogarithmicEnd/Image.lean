@@ -52,15 +52,11 @@ private theorem exists_log_coordinate (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     simpa only [hGder.deriv] using (hGan _ (mem_ball_self hs)).hasStrictDerivAt
   have hsym : ∀ᶠ z in 𝓝 (p : ℂ), G (conj z) = conj (G z) :=
     eventually_nhds_iff_ball.mpr ⟨s, hs, hGsym⟩
-  obtain ⟨t, ht, hsign⟩ := Metric.eventually_nhds_iff.mp
-    (hstrict.eventually_im_pos_iff_of_conj (by norm_num) hsym)
-  have hsmall : 0 < min R (min s t) := lt_min hR (lt_min hs ht)
-  obtain ⟨r, hr, hinj, δ, hδ, himage⟩ :=
-    hstrict.exists_ball_image_inter_upperHalfPlane_of_conj (by norm_num) hsym hsmall
-  have hrs : r ≤ s := hr.2.le.trans ((min_le_right _ _).trans (min_le_left _ _))
-  have hrt : r ≤ t := hr.2.le.trans ((min_le_right _ _).trans (min_le_right _ _))
+  obtain ⟨r, hr, hinj, hsign, δ, hδ, himage⟩ :=
+    hstrict.exists_ball_image_inter_upperHalfPlane_of_conj (by norm_num) hsym (lt_min hR hs)
+  have hrs : r ≤ s := hr.2.le.trans (min_le_right _ _)
   have hmaps : MapsTo G (ball (p : ℂ) r ∩ upperHalfPlaneSet) upperHalfPlaneSet :=
-    fun z hz => (hsign (ball_subset_ball hrt hz.1)).mpr hz.2
+    fun z hz => (hsign z hz.1).mpr hz.2
   let U := ball (p : ℂ) r ∩ upperHalfPlaneSet
   let C := schwarzChristoffelPrevertexCoefficient a e p
   let N : ℂ → ℂ := fun z => (schwarzChristoffelPrimitive a e z₀ z - c) / C

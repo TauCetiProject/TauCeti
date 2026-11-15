@@ -8,43 +8,34 @@ module
 public import TauCeti.Analysis.Complex.PlaneSeparation.JordanCurve
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Complex.LocalLine
+import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import TauCeti.Analysis.Contour.Winding.Separation
 
 /-!
 # Complementary components at a straight point of a Jordan curve
 
-If a Jordan curve agrees locally with a line at one point, it has at most one bounded
-complementary component. In particular, any bounded complementary component is the entire
-filled hull minus the curve. This identifies the inside of a simple polygon from any one of
-its bounded complementary components, without a convexity assumption.
-
 An interior point of a nondegenerate straight segment has a ball in which the segment
 agrees with its supporting line. This supplies the local line hypothesis for polygonal curves.
 
-The more general local-cover result bounds the number of complementary components by two
-whenever a neighbourhood of a curve point, minus the curve, is covered by two preconnected
-subsets of the complement. Every complementary component approaches that point, so three
-different components would have to meet the same local side.
-
-Points on opposite sides of the straight piece lie in different components of the complement by
-the segment-crossing theorem
-`TauCeti.Contour.notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton`.
-Consequently exactly one of the two sides lies inside the curve. Since every Jordan curve has a
-nonempty inside (`TauCeti.IsJordanCurve.nonempty_filledHull_sdiff`), the inside of such a curve is a
-single complementary component, and its frontier is the whole curve.
+Points on opposite sides of a straight piece of a Jordan curve lie in different components of the
+complement by the segment-crossing theorem
+`TauCeti.Contour.notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton`. Since the
+inside of a Jordan curve is a single complementary component
+(`TauCeti.IsJordanCurve.filledHull_sdiff_eq_connectedComponentIn`), exactly one of the two sides
+lies inside the curve. This identifies the inside of a simple polygon from the side of any one of
+its edges, without a convexity assumption.
 
 ## Main results
 
-* `TauCeti.IsJordanCurve.filledHull_sdiff_eq_connectedComponentIn_of_locally_eq_line` -- a Jordan
-  curve that is straight near one of its points has at most one bounded complementary component.
+* `TauCeti.exists_ball_openSegment_eq_line` -- near an interior point, a segment agrees with its
+  supporting line.
 * `TauCeti.IsJordanCurve.notMem_connectedComponentIn_of_locally_eq_line` -- points on opposite
   sides of a straight piece lie in different complementary components.
 * `TauCeti.mem_connectedComponentIn_of_locally_subset_line_of_im_pos` -- points on the same local
   side of a line lie in the same complementary component.
 * `TauCeti.IsJordanCurve.mem_filledHull_iff_notMem_filledHull_of_locally_eq_line` -- exactly one
   of the two sides lies inside the curve.
-* `TauCeti.IsJordanCurve.frontier_filledHull_sdiff_of_locally_eq_line` -- the inside is a single
-  complementary component, so its frontier is the curve.
 
 ## References
 
@@ -58,104 +49,6 @@ public section
 open Bornology Complex Filter Metric Set Topology
 
 namespace TauCeti
-
-/-- If two preconnected subsets of the complement cover the complement locally at a point of
-a Jordan curve, every complementary component is one of any two distinct components. -/
-theorem IsJordanCurve.connectedComponentIn_eq_or_eq_of_local_cover
-    {C W S T : Set ℂ} (hC : IsJordanCurve C) {p x y z : ℂ}
-    (hp : p ∈ C) (hW : IsOpen W) (hpW : p ∈ W)
-    (hcover : W \ C ⊆ S ∪ T) (hS : IsPreconnected S) (hT : IsPreconnected T)
-    (hSC : S ⊆ Cᶜ) (hTC : T ⊆ Cᶜ)
-    (hx : x ∉ C) (hy : y ∉ C) (hz : z ∉ C)
-    (hxy : y ∉ connectedComponentIn Cᶜ x) :
-    connectedComponentIn Cᶜ z = connectedComponentIn Cᶜ x ∨
-      connectedComponentIn Cᶜ z = connectedComponentIn Cᶜ y := by
-  by_contra! hne
-  obtain ⟨u, huW, hux⟩ := _root_.mem_closure_iff.mp
-    (hC.subset_closure_connectedComponentIn hx hp) W hW hpW
-  obtain ⟨v, hvW, hvy⟩ := _root_.mem_closure_iff.mp
-    (hC.subset_closure_connectedComponentIn hy hp) W hW hpW
-  obtain ⟨w, hwW, hwz⟩ := _root_.mem_closure_iff.mp
-    (hC.subset_closure_connectedComponentIn hz hp) W hW hpW
-  have hu := hcover ⟨huW, connectedComponentIn_subset _ _ hux⟩
-  have hv := hcover ⟨hvW, connectedComponentIn_subset _ _ hvy⟩
-  have hw := hcover ⟨hwW, connectedComponentIn_subset _ _ hwz⟩
-  have hcompu := connectedComponentIn_eq hux
-  have hcompv := connectedComponentIn_eq hvy
-  have hcompw := connectedComponentIn_eq hwz
-  have hcompxy : connectedComponentIn Cᶜ x ≠ connectedComponentIn Cᶜ y := by
-    intro h
-    exact hxy (h ▸ mem_connectedComponentIn hy)
-  have hsameS : ∀ u ∈ S, ∀ v ∈ S,
-      connectedComponentIn Cᶜ u = connectedComponentIn Cᶜ v :=
-    fun u hu v hv => connectedComponentIn_eq (hS.subset_connectedComponentIn hu hSC hv)
-  have hsameT : ∀ u ∈ T, ∀ v ∈ T,
-      connectedComponentIn Cᶜ u = connectedComponentIn Cᶜ v :=
-    fun u hu v hv => connectedComponentIn_eq (hT.subset_connectedComponentIn hu hTC hv)
-  rcases hu with hu | hu <;> rcases hv with hv | hv <;> rcases hw with hw | hw <;>
-    grind
-
-/-- If a Jordan curve agrees with a line in a neighbourhood of one of its points, its filled
-hull minus the curve is any bounded complementary component. The point `x` selects such a
-component; no convexity of the curve or of that component is required. -/
-theorem IsJordanCurve.filledHull_sdiff_eq_connectedComponentIn_of_locally_eq_line
-    {C : Set ℂ} (hC : IsJordanCurve C) {p x : ℂ} {r : ℝ} (hr : 0 < r)
-    (v : ℂ) (hline : ∀ z ∈ ball p r, z ∈ C ↔ (v * (z - p)).im = 0)
-    (hx : x ∈ filledHull C \ C) :
-    filledHull C \ C = connectedComponentIn Cᶜ x := by
-  have hp : p ∈ C := (hline p (mem_ball_self hr)).mpr (by simp)
-  -- The two half-balls are convex and cover the local complement of the line.
-  let S := ball p r ∩ {z : ℂ | (v * p).im < (v * z).im}
-  let T := ball p r ∩ {z : ℂ | (v * z).im < (v * p).im}
-  have hS : IsPreconnected S :=
-    ((convex_ball p r).inter
-      (convex_halfSpace_gt (Complex.imLm.comp (LinearMap.mulLeft ℝ v)).isLinear
-        (v * p).im)).isPreconnected
-  have hT : IsPreconnected T :=
-    ((convex_ball p r).inter
-      (convex_halfSpace_lt (Complex.imLm.comp (LinearMap.mulLeft ℝ v)).isLinear
-        (v * p).im)).isPreconnected
-  have hSC : S ⊆ Cᶜ := by
-    intro z hz hzC
-    have heq := (hline z hz.1).mp hzC
-    simp only [mul_sub, sub_im, sub_eq_zero] at heq
-    exact hz.2.ne' heq
-  have hTC : T ⊆ Cᶜ := by
-    intro z hz hzC
-    have heq := (hline z hz.1).mp hzC
-    simp only [mul_sub, sub_im, sub_eq_zero] at heq
-    exact hz.2.ne heq
-  have hcover : ball p r \ C ⊆ S ∪ T := by
-    intro z hz
-    have hne := mt (hline z hz.1).mpr hz.2
-    simp only [mul_sub, sub_im, sub_eq_zero] at hne
-    rcases lt_or_gt_of_ne hne with hlt | hgt
-    · exact Or.inr ⟨hz.1, hlt⟩
-    · exact Or.inl ⟨hz.1, hgt⟩
-  -- There is an unbounded component, since the filled hull of the compact curve is bounded.
-  obtain ⟨y, hy⟩ : ∃ y, y ∉ filledHull C := by
-    by_contra! h
-    exact NormedSpace.unbounded_univ ℝ ℂ
-      ((isBounded_filledHull.mpr hC.isCompact.isBounded).subset fun z _ => h z)
-  have hyC : y ∉ C := fun hyC => hy (subset_filledHull hyC)
-  have hxy : y ∉ connectedComponentIn Cᶜ x := by
-    intro h
-    apply hy
-    rw [mem_filledHull_iff, ← connectedComponentIn_eq h]
-    exact mem_filledHull_iff.mp hx.1
-  -- The local cover allows only the chosen bounded component and the unbounded one.
-  apply Subset.antisymm
-  · intro z hz
-    rcases hC.connectedComponentIn_eq_or_eq_of_local_cover hp isOpen_ball
-        (mem_ball_self hr) hcover hS hT hSC hTC hx.2 hyC hz.2 hxy with heq | heq
-    · exact heq ▸ mem_connectedComponentIn hz.2
-    · exact False.elim (hy (by
-        rw [mem_filledHull_iff, ← heq]
-        exact mem_filledHull_iff.mp hz.1))
-  · intro z hz
-    refine ⟨?_, connectedComponentIn_subset _ _ hz⟩
-    rw [mem_filledHull_iff, ← connectedComponentIn_eq hz]
-    exact mem_filledHull_iff.mp hx.1
 
 /-- Near an interior point of a nondegenerate complex line segment, the segment agrees with
 its supporting real line. The line is expressed in the coordinate obtained by dividing by
@@ -270,7 +163,6 @@ private theorem IsJordanCurve.notMem_model_connectedComponentIn_of_locally_eq_li
     (hline : ∀ z ∈ ball p r, z ∈ C ↔ (v * (z - p)).im = 0) (hs : 0 < s) (hsr : s < r * ‖v‖) :
     p - I * s / v ∉ connectedComponentIn Cᶜ (p + I * s / v) := by
   let d : ℂ := -(I / v)
-  have hd : d ≠ 0 := neg_ne_zero.mpr (div_ne_zero I_ne_zero hv)
   have hcoord (t : ℝ) : v * (d * (t : ℂ) + p - p) = -(I * t) := by
     dsimp [d]
     field_simp [hv]
@@ -284,42 +176,11 @@ private theorem IsJordanCurve.notMem_model_connectedComponentIn_of_locally_eq_li
     rw [hcoord] at him
     simpa only [neg_im, mul_im, I_re, I_im, ofReal_re, ofReal_im, zero_mul, one_mul,
       zero_add, sub_zero, neg_eq_zero] using him
-  let φ : ℝ → ℂ := fun t => p + t / v
-  have hφcont : Continuous φ := by fun_prop
-  have hφ0 : Tendsto φ (𝓝 (0 : ℝ)) (𝓝 p) := by
-    simpa [φ] using hφcont.tendsto 0
-  have hφv (t : ℝ) : v * (φ t - p) = t := by
-    dsimp [φ]
-    field_simp [hv]
-    ring
-  have hφd (t : ℝ) : ((φ t - p) / d).im = t := by
-    have heq : (φ t - p) / d = I * t := by
-      dsimp [φ, d]
-      field_simp [hv, I_ne_zero]
-      simp [Complex.I_sq]
-    rw [heq]
-    simp
   have hr : 0 < r := by
     by_contra h
     have := mul_nonpos_of_nonpos_of_nonneg (le_of_not_gt h) (norm_nonneg v)
     linarith
-  have hφball : ∀ᶠ t in 𝓝 (0 : ℝ), φ t ∈ ball p r :=
-    hφ0.eventually (ball_mem_nhds p hr)
-  have hφC : ∀ᶠ t in 𝓝 (0 : ℝ), φ t ∈ C := by
-    filter_upwards [hφball] with t ht
-    exact (hline _ ht).mpr (by rw [hφv]; simp)
-  have hleft : p ∈ closure (C ∩ {q | 0 < ((q - p) / d).im}) := by
-    apply mem_closure_of_tendsto (b := 𝓝[>] (0 : ℝ))
-      (hφ0.mono_left nhdsWithin_le_nhds)
-    filter_upwards [hφC.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin]
-      with t htC (ht : 0 < t)
-    exact ⟨htC, by simpa [hφd] using ht⟩
-  have hright : p ∈ closure (C ∩ {q | ((q - p) / d).im < 0}) := by
-    apply mem_closure_of_tendsto (b := 𝓝[<] (0 : ℝ))
-      (hφ0.mono_left nhdsWithin_le_nhds)
-    filter_upwards [hφC.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin]
-      with t htC (ht : t < 0)
-    exact ⟨htC, by simpa [hφd] using ht⟩
+  obtain ⟨hleft, hright⟩ := mem_closure_inter_of_line_subset hv hr fun z hz => (hline z hz).mpr
   have hstart : d * ((-s : ℝ) : ℂ) + p = p + I * s / v := by
     dsimp [d]
     push_cast
@@ -340,7 +201,7 @@ private theorem IsJordanCurve.notMem_model_connectedComponentIn_of_locally_eq_li
       closure (C ∩ {q | ((q - (d * (0 : ℂ) + p)) / d).im < 0}) := by
     simpa only [mul_zero, zero_add] using hright
   have hsep := Contour.notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton
-    hC.isClosed hd hzero hseg hpre hleft' hright'
+    hC.isClosed hzero hseg hpre hleft' hright'
   simpa only [mul_zero, zero_add, hstart, hend] using hsep
 
 /-- **A Jordan curve separates the two sides of a straight piece.** If a Jordan curve `C` agrees
@@ -386,23 +247,12 @@ theorem IsJordanCurve.mem_filledHull_iff_notMem_filledHull_of_locally_eq_line {C
   refine ⟨fun haH hbH => hab ?_, fun hbH => ?_⟩
   · have haC : a ∉ C := fun h => ha'.ne' ((hline a ha).mp h)
     have hbC : b ∉ C := fun h => hb'.ne ((hline b hb).mp h)
-    rw [← hC.filledHull_sdiff_eq_connectedComponentIn_of_locally_eq_line (pos_of_mem_ball ha) v
-      hline ⟨haH, haC⟩]
+    rw [← hC.filledHull_sdiff_eq_connectedComponentIn ⟨haH, haC⟩]
     exact ⟨hbH, hbC⟩
   · have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
       rw [Complex.rank_real_complex]
       exact Cardinal.one_lt_two
     exact (mem_filledHull_or_mem_filledHull_of_notMem_connectedComponentIn hrank
       hC.isCompact.isBounded hab).resolve_right hbH
-
-/-- **A Jordan curve with a straight piece bounds its inside.** If a Jordan curve `C` agrees with a
-line in a ball about one of its points, then the frontier of its filled hull minus `C` is `C`. -/
-theorem IsJordanCurve.frontier_filledHull_sdiff_of_locally_eq_line {C : Set ℂ}
-    (hC : IsJordanCurve C) {p v : ℂ} {r : ℝ} (hr : 0 < r)
-    (hline : ∀ z ∈ ball p r, z ∈ C ↔ (v * (z - p)).im = 0) :
-    frontier (filledHull C \ C) = C := by
-  obtain ⟨x, hx⟩ := hC.nonempty_filledHull_sdiff
-  rw [hC.filledHull_sdiff_eq_connectedComponentIn_of_locally_eq_line hr v hline hx]
-  exact hC.frontier_connectedComponentIn hx.2
 
 end TauCeti

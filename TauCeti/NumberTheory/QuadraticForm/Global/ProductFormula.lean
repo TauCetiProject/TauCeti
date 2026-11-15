@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.QuadraticForm.Global.CohomologicalSymbol
 public import TauCeti.NumberTheory.QuadraticForm.Global.FormInvariants
 public import TauCeti.NumberTheory.QuadraticForm.Global.HilbertSymbol
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.Hilbert.Reciprocity
+import Mathlib.Algebra.Field.Shrink
+import Mathlib.Algebra.Ring.Shrink
+import Mathlib.RingTheory.Finiteness.Small
+import TauCeti.NumberTheory.ClassFieldTheory.Global.Hilbert.Reciprocity
+import TauCeti.NumberTheory.QuadraticForm.Global.CohomologicalSymbol
+import TauCeti.NumberTheory.QuadraticForm.Global.Transport
 
 /-!
 # The product formula for the norm-equation Hilbert symbol and for the Hasse invariant
@@ -21,9 +25,10 @@ contribute nothing, because every element of `ℂ` is a square.
 Hilbert's reciprocity law in its cohomological form is the vanishing of the sum of the local
 invariants of `(a) ∪ (b)` in `ZMod 2` (`TauCeti.ClassFieldTheory.hilbertProductFormula`), and the
 product of the norm-equation symbols over the finite and real places is the sign of that sum
-(`TauCeti.finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_hilbertSign`). This file transports the
-law to the norm-equation symbols. Over `ℚ` it reads `∏_ℓ (a, b)_ℓ · (a, b)_∞ = 1` over the primes
-`ℓ` and the real place, with the symbols computed in `ℚ_ℓ` and in `ℝ`.
+(`TauCeti.finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_hilbertSign`). For `K : Type` this gives
+the norm-equation formula directly, and `Shrink.ringEquiv K` transports it to number fields in any
+universe. Over `ℚ` it reads `∏_ℓ (a, b)_ℓ · (a, b)_∞ = 1` over the primes `ℓ` and the real place,
+with the symbols computed in `ℚ_ℓ` and in `ℝ`.
 
 Multiplying the product formula over the pairs of coefficients of a diagonalization
 `Q ≅ ⟨a₁, …, aₙ⟩` gives the product formula for the Hasse invariant of a regular form `Q`: the
@@ -58,7 +63,18 @@ open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField
 
 namespace TauCeti
 
-variable {K : Type} [Field K] [NumberField K]
+open scoped Classical in
+/-- Hilbert's product formula in `Type`, read directly from the cohomological reciprocity law. -/
+private theorem hilbertSymbol_productFormula_zero {K₀ : Type} [Field K₀] [NumberField K₀]
+    (a b : K₀ˣ) :
+    (∏ᶠ v : HeightOneSpectrum (𝓞 K₀),
+        hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b)) *
+      ∏ w : {w : InfinitePlace K₀ // w.IsReal},
+        hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) = 1 := by
+  rw [finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_hilbertSign,
+    ClassFieldTheory.hilbertProductFormula a b, hilbertSign_zero]
+
+variable {K : Type*} [Field K] [NumberField K]
 
 open scoped Classical in
 /-- **Hilbert's product formula.** For `a, b ∈ Kˣ` in a number field `K`, the product of the
@@ -69,8 +85,16 @@ theorem hilbertSymbol_productFormula (a b : Kˣ) :
         hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b)) *
       ∏ w : {w : InfinitePlace K // w.IsReal},
         hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) = 1 := by
-  rw [finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_hilbertSign,
-    ClassFieldTheory.hilbertProductFormula a b, hilbertSign_zero]
+  have : Small.{0} K := Module.Finite.small.{0} ℚ K
+  let e : Shrink.{0} K ≃+* K := Shrink.ringEquiv K
+  have : NumberField (Shrink.{0} K) := .of_ringEquiv K (Shrink.{0} K) e.symm
+  let a₀ : (Shrink.{0} K)ˣ := Units.map (e.symm : K →* Shrink.{0} K) a
+  let b₀ : (Shrink.{0} K)ˣ := Units.map (e.symm : K →* Shrink.{0} K) b
+  have ha : Units.map (e : Shrink.{0} K →* K) a₀ = a := Units.ext (e.apply_symm_apply a)
+  have hb : Units.map (e : Shrink.{0} K →* K) b₀ = b := Units.ext (e.apply_symm_apply b)
+  rw [← ha, ← hb, finprod_hilbertSymbol_unitAtFinitePlace_ringEquiv e,
+    prod_hilbertSymbol_unitAtRealPlace_ringEquiv e]
+  exact hilbertSymbol_productFormula_zero a₀ b₀
 
 /-- **Hilbert's product formula over `ℚ`.** For `a, b ∈ ℚˣ`, the product over the primes `ℓ` of the
 Hilbert symbols `(a, b)_ℓ` computed in `ℚ_ℓ`, times the Hilbert symbol `(a, b)_∞` computed in `ℝ`,
@@ -97,7 +121,7 @@ namespace QuadraticForm
 
 open Finset
 
-variable {K : Type} [Field K] [NumberField K]
+variable {K : Type*} [Field K] [NumberField K]
 variable {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 variable (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
 

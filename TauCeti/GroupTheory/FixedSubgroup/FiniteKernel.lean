@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.FixedPointFree
+public import TauCeti.GroupTheory.FixedSubgroup.Lang
 public import TauCeti.GroupTheory.FixedSubgroup
 
 /-!
@@ -42,22 +42,10 @@ theorem existsUnique_fixed_lift_of_finite_ker (ψ : G →* H) {F : G →* G} {F'
     -- The restricted map acts by `F` on underlying elements of `G`.
     exact Subgroup.disjoint_def.mp hker k.property
       (TauCeti.mem_fixedSubgroup.mpr (congrArg Subtype.val hk))
-  obtain ⟨x, rfl⟩ := hsurj y
-  have hd : x / F x ∈ ψ.ker := by
-    rw [MonoidHom.mem_ker, map_div, heq, hy, div_self']
-  obtain ⟨k, hk⟩ := hf.commutatorMap_surjective ⟨x / F x, hd⟩
-  -- Coercing the kernel equation to `G` replaces the restricted map by `F`.
-  have hcorr : (k : G) / F k = x / F x := congrArg Subtype.val hk
-  have hfixed : F ((k : G)⁻¹ * x) = (k : G)⁻¹ * x := by
-    apply mul_left_cancel (a := (k : G))
-    calc
-      (k : G) * F ((k : G)⁻¹ * x) = ((k : G) / F k) * F x := by
-        rw [map_mul, map_inv, ← mul_assoc, div_eq_mul_inv]
-      _ = (x / F x) * F x := by rw [hcorr]
-      _ = (k : G) * ((k : G)⁻¹ * x) := by simp
-  have himage : ψ ((k : G)⁻¹ * x) = ψ x := by
-    rw [map_mul, map_inv, MonoidHom.mem_ker.mp k.property, inv_one, one_mul]
-  refine ⟨(k : G)⁻¹ * x, ⟨hfixed, himage⟩, ?_⟩
+  obtain ⟨x, hfixed, himage⟩ := ψ.exists_fixed_lift_of_surjective_commutatorMap
+    ψ.ker.subtype ψ.ker.range_subtype f F F' heq (fun _ ↦ rfl) hsurj
+    hf.commutatorMap_surjective hy
+  refine ⟨x, ⟨hfixed, himage⟩, ?_⟩
   rintro z ⟨hz, hzy⟩
   apply div_eq_one.mp
   apply Subgroup.disjoint_def.mp hker

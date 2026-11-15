@@ -39,10 +39,6 @@ unitriangular matrices, the triangular input to the Borel component of a pinning
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Sections 10 and 26.
 * R. W. Carter, *Simple Groups of Lie Type*, Sections 4.4 and 8.2.
-
-This advances the pinning and Chevalley--Demazure construction targets in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Their pinned ambient group is consumed by milestone L0
-of `TauCetiRoadmap/CFSGStatement/README.md`.
 -/
 
 public section
@@ -67,15 +63,34 @@ theorem weightDegree_apply (μ : Fin t.rank → ℤ) :
       (fun i ↦ (μ i : ℚ)) :=
   (rfl)
 
+/-- The degree of an integral root is its height relative to the pinned base. -/
+@[simp]
+theorem weightDegree_root (γ : Fin t.numRoots) :
+    t.weightDegree ht ((t.simplyConnectedRootDatum ht).root γ) =
+      ((t.rationalBase ht).height γ : ℚ) := by
+  simp only [weightDegree_apply, ← root_rationalRootSystem, heightLinearMap_root]
+
+/-- Every positive root has strictly positive weight degree. -/
+theorem weightDegree_root_pos {γ : Fin t.numRoots}
+    (hγ : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
+    0 < t.weightDegree ht ((t.simplyConnectedRootDatum ht).root γ) := by
+  rw [weightDegree_root]
+  exact_mod_cast lt_of_lt_of_le Int.zero_lt_one
+    (one_le_height_of_mem_posRoots (t.rationalRootSystem ht) (t.rationalBase ht) hγ)
+
+/-- Every negative root has strictly negative weight degree. -/
+theorem weightDegree_root_neg {γ : Fin t.numRoots}
+    (hγ : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
+    t.weightDegree ht ((t.simplyConnectedRootDatum ht).root γ) < 0 := by
+  rw [weightDegree_root]
+  exact_mod_cast height_neg_of_mem_negRoots (t.rationalRootSystem ht) (t.rationalBase ht) hγ
+
 /-- The integral weight of a root coordinate in Geck's representation, cast to `ℚ`, is the
 corresponding root of the pinned rational root system. -/
 theorem intCast_geckWeight_inr (k : Fin t.numRoots) :
     (fun i ↦ (t.geckWeight ht (Sum.inr k) i : ℚ)) =
       (t.rationalRootSystem ht).root k := by
   ext i
-  have hcoroot : (t.rationalRootSystem ht).coroot (t.simpleIndex ht i) = Pi.single i 1 := by
-    ext j
-    by_cases hij : i = j <;> simp [hij]
   calc
     (t.geckWeight ht (Sum.inr k) i : ℚ) =
         (t.rationalRootSystem ht).pairing k (t.simpleIndex ht i) := by
@@ -83,7 +98,7 @@ theorem intCast_geckWeight_inr (k : Fin t.numRoots) :
         (t.rationalRootSystem ht).algebraMap_pairingIn ℤ k (t.simpleSupportEquiv ht i)
     _ = (t.rationalRootSystem ht).root k i := by
       simp only [← RootPairing.root_coroot_eq_pairing, toLinearMap_rationalRootSystem,
-        hcoroot, dotProduct_single, mul_one]
+        coroot_rationalRootSystem_simpleIndex, dotProduct_single, mul_one]
 
 /-- The degree of a root coordinate in Geck's defining representation is the height of that root
 relative to the pinned base. -/
@@ -97,9 +112,8 @@ theorem weightDegree_geckWeight_inr (k : Fin t.numRoots) :
 theorem weightDegree_geckWeight_inr_pos {k : Fin t.numRoots}
     (hk : k ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
     0 < t.weightDegree ht (t.geckWeight ht (Sum.inr k)) := by
-  rw [weightDegree_geckWeight_inr]
-  exact_mod_cast lt_of_lt_of_le Int.zero_lt_one
-    (one_le_height_of_mem_posRoots (t.rationalRootSystem ht) (t.rationalBase ht) hk)
+  rw [weightDegree_geckWeight_inr, ← weightDegree_root]
+  exact t.weightDegree_root_pos ht hk
 
 /-- A Cartan-support coordinate in Geck's defining representation has weight zero, hence degree
 zero. -/
@@ -119,7 +133,7 @@ theorem weightDegree_cartanMatrix_row (i : Fin t.rank) :
   have hweight : (fun j ↦ t.cartanMatrix i j) =
       t.geckWeight ht (Sum.inr (t.simpleIndex ht i)) := by
     ext j
-    simp
+    simp [pairingIn_simpleIndex]
   have hi := (t.simpleSupportEquiv ht i).property
   rw [coe_simpleSupportEquiv] at hi
   rw [hweight, weightDegree_geckWeight_inr,

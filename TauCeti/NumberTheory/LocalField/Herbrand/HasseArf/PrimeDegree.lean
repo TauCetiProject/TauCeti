@@ -64,6 +64,34 @@ theorem UpperJump.eq_of_finrank_prime {u v : RamificationIndexDomain}
   exact le_antisymm (le_of_not_gt (no_two_jumps hv hu)) (le_of_not_gt (no_two_jumps hu hv))
 
 variable {K L} in
+/-- In prime degree, if the inverse Herbrand function sends `u` to a natural number `t` at which
+the lower filtration drops, then `u = t`. -/
+private theorem coe_eq_natCast_of_inverseHerbrand_eq_natCast
+    [Fact (Nat.card (L ≃ₐ[K] L)).Prime] {u : RamificationIndexDomain} (t : ℕ)
+    (hinverse : inverseHerbrand K L u = ⟨(t : ℝ), Nat.cast_mem_ramificationIndexDomain t⟩)
+    (hlower : LowerJump K L ⟨(t : ℝ), Nat.cast_mem_ramificationIndexDomain t⟩) :
+    (u : ℝ) = t := by
+  have hdrop : lowerRamificationGroup K L (t + 1) < lowerRamificationGroup K L t :=
+    (lowerJump_intCast_iff K L (i := (t : ℤ))
+      (Nat.cast_mem_ramificationIndexDomain t)).1 hlower
+  have ht_ne : lowerRamificationGroup K L t ≠ ⊥ :=
+    (bot_le.trans_lt hdrop).ne'
+  have ht_top : lowerRamificationGroup K L t = ⊤ :=
+    ((lowerRamificationGroup K L t).eq_bot_or_eq_top_of_prime_card).resolve_left ht_ne
+  have hzero_top : lowerRamificationGroup K L 0 = ⊤ :=
+    top_le_iff.1 <| ht_top ▸ lowerRamificationGroup_antitone K L (by positivity)
+  have hpsi : psiNat K L t = t :=
+    (psiNat_eq_self_iff K L).2 (ht_top.trans hzero_top.symm)
+  have hinverse_t : inverseHerbrand K L ⟨(t : ℝ), Nat.cast_mem_ramificationIndexDomain t⟩ =
+      ⟨(t : ℝ), Nat.cast_mem_ramificationIndexDomain t⟩ := by
+    apply Subtype.ext
+    simpa only [hpsi] using (coe_psiNat K L t).symm
+  have hu_eq : u = ⟨(t : ℝ), Nat.cast_mem_ramificationIndexDomain t⟩ :=
+    (inverseHerbrand_strictMono K L).injective <| hinverse.trans hinverse_t.symm
+  exact congrArg Subtype.val hu_eq
+
+
+variable {K L} in
 /-- In a prime-degree Galois extension, an upper ramification break is either the possible
 unramified break at `-1` or a nonnegative integer.
 
@@ -84,52 +112,16 @@ theorem UpperJump.eq_neg_one_or_exists_eq_natCast_of_finrank_prime
       have : (-1 : ℤ) ≤ i := by exact_mod_cast hi
       omega
     subst i
-    have hinverse_neg_one :
-        inverseHerbrand K L
-            ⟨(-1 : ℝ), le_rfl⟩ =
-          ⟨(-1 : ℝ), le_rfl⟩ :=
-      inverseHerbrand_of_coe_le_zero K L (by norm_num)
-    have hpoint :
-        (⟨((-1 : ℤ) : ℝ), hi⟩ : RamificationIndexDomain) =
-          ⟨-1, le_rfl⟩ :=
-      Subtype.ext (by norm_num)
-    have hu_eq : u = ⟨(-1 : ℝ), le_rfl⟩ :=
-      (inverseHerbrand_strictMono K L).injective <|
-        hinverse.trans (hpoint.trans hinverse_neg_one.symm)
-    exact congrArg Subtype.val hu_eq
+    refine coe_eq_neg_one_of_inverseHerbrand_eq_neg_one (hinverse.trans (Subtype.ext ?_))
+    norm_num
   · right
-    have hi_nonneg : 0 ≤ i := le_of_not_gt hineg
-    let t := i.toNat
-    have hi_eq : i = t := (Int.toNat_of_nonneg hi_nonneg).symm
-    let t' : RamificationIndexDomain :=
-      ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩
-    have hpoint : (⟨(i : ℝ), hi⟩ : RamificationIndexDomain) = t' := by
-      apply Subtype.ext
-      dsimp only [t']
-      exact_mod_cast hi_eq
-    have ht_lower : LowerJump K L
-        ⟨(t : ℝ), Nat.cast_mem_ramificationIndexDomain t⟩ := by
-      rw [hinverse, hpoint] at hlower
-      exact hlower
-    have hdrop : lowerRamificationGroup K L (t + 1) < lowerRamificationGroup K L t :=
-      (lowerJump_intCast_iff K L (i := (t : ℤ))
-        (Nat.cast_mem_ramificationIndexDomain t)).1 ht_lower
-    have ht_ne : lowerRamificationGroup K L t ≠ ⊥ :=
-      (bot_le.trans_lt hdrop).ne'
-    have ht_top : lowerRamificationGroup K L t = ⊤ :=
-      ((lowerRamificationGroup K L t).eq_bot_or_eq_top_of_prime_card).resolve_left ht_ne
-    have hzero_top : lowerRamificationGroup K L 0 = ⊤ :=
-      top_le_iff.1 <| ht_top ▸ lowerRamificationGroup_antitone K L (by positivity)
-    have hpsi : psiNat K L t = t :=
-      (psiNat_eq_self_iff K L).2 (ht_top.trans hzero_top.symm)
-    have hinverse_t : inverseHerbrand K L t' = t' := by
-      apply Subtype.ext
-      simpa only [t', hpsi] using (coe_psiNat K L t).symm
-    have hinverse_u : inverseHerbrand K L u = t' := by
-      exact hinverse.trans hpoint
-    have hu_eq : u = t' :=
-      (inverseHerbrand_strictMono K L).injective <| hinverse_u.trans hinverse_t.symm
-    exact ⟨t, congrArg Subtype.val hu_eq⟩
+    have hi_eq : i = (i.toNat : ℤ) := (Int.toNat_of_nonneg (le_of_not_gt hineg)).symm
+    have hpoint : (⟨(i : ℝ), hi⟩ : RamificationIndexDomain) =
+        ⟨(i.toNat : ℝ), Nat.cast_mem_ramificationIndexDomain i.toNat⟩ :=
+      Subtype.ext (by dsimp only; exact_mod_cast hi_eq)
+    rw [hinverse, hpoint] at hlower
+    exact ⟨i.toNat, coe_eq_natCast_of_inverseHerbrand_eq_natCast i.toNat (hinverse.trans hpoint)
+      hlower⟩
 
 variable {K L} in
 /-- **Hasse--Arf in prime degree.** Every upper ramification break of a finite Galois extension

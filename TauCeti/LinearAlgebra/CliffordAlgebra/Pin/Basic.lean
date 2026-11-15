@@ -17,6 +17,10 @@ and the Spin inclusion used when transporting norms and actions along those maps
 
 `TauCeti.CliffordAlgebra.coe_inv_pinToLipschitz` identifies the inverse unit coordinate of a
 Pin element's image in the Lipschitz group with its Clifford star.
+
+Every Pin element is homogeneous for the `ℤ/2`-grading `CliffordAlgebra.evenOdd`, as an element of
+the Lipschitz group (`pinGroup.exists_mem_evenOdd`). This is what assigns a parity to a Pin element,
+the sign with which it acts on vectors through the grade involution.
 -/
 
 public section
@@ -38,6 +42,13 @@ theorem ι_mem_pinGroup {v : M} (hv : Q v = -1) : ι Q v ∈ pinGroup Q := by
   refine ⟨⟨unitι Q v, unitι_mem_lipschitzGroup v, coe_unitι v⟩, ?_, ?_⟩
   · rw [star_ι, neg_mul, hsq, neg_neg]
   · rw [star_ι, mul_neg, hsq, neg_neg]
+
+/-- **Elements of the Pin group are homogeneous**: every element of the Pin group is even or odd
+for the `ℤ/2`-grading of the Clifford algebra. -/
+theorem _root_.pinGroup.exists_mem_evenOdd {x : CliffordAlgebra Q} (hx : x ∈ pinGroup Q) :
+    ∃ p : ZMod 2, x ∈ evenOdd Q p := by
+  obtain ⟨u, hu, rfl⟩ := pinGroup.mem_lipschitzGroup hx
+  exact lipschitzGroup.exists_mem_evenOdd hu
 
 variable (Q)
 

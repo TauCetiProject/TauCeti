@@ -79,10 +79,11 @@ theorem orthogonalSpinorNorm_eq_one_iff_isSquare_apply_of_finrank_eq_one (Q : Qu
     (v : V) [Invertible (Q v)] :
     orthogonalSpinorNorm Q hQ = 1 ↔ IsSquare (Q v) := by
   refine (MonoidHom.range_eq_bot_iff
-    (G := orthogonalGroup Q) (G' := Multiplicative (SquareClassGroup K))
+    (G := orthogonalGroup Q) (G' := (Kˣ ⧸ Subgroup.square Kˣ))
     (f := orthogonalSpinorNorm Q hQ)).symm.trans ?_
   rw [orthogonalSpinorNorm_range_eq_zpowers_of_finrank_eq_one Q hQ hV v, Subgroup.zpowers_eq_bot]
-  simp [squareClassHom_apply, ← isSquare_units_val_iff]
+  exact (squareClassHom_eq_one_iff (unitOfInvertible (Q v))).trans
+    (Units.isSquare_coe_iff (a := unitOfInvertible (Q v))).symm
 
 /-- In dimension one, `-1` is the reflection in any anisotropic vector `v`, so its spinor norm is
 the square class of `Q v`. -/
@@ -108,6 +109,6 @@ theorem orthogonalSpinorNorm_negOrthogonal_smul_sq_eq_one_iff (a : Kˣ) :
     orthogonalSpinorNorm ((a : K) • QuadraticMap.sq) (QuadraticMap.nondegenerate_smul_sq a.ne_zero)
       (negOrthogonal _) = 1 ↔ IsSquare (a : K) := by
   rw [orthogonalSpinorNorm_negOrthogonal_smul_sq]
-  simp [squareClassHom_apply, ← isSquare_units_val_iff]
+  exact (squareClassHom_eq_one_iff a).trans Units.isSquare_coe_iff.symm
 
 end CliffordAlgebra

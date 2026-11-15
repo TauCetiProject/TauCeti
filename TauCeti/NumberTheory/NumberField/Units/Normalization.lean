@@ -38,6 +38,7 @@ variable {K : Type*} [Field K] [NumberField K]
 
 namespace TauCeti.NumberField.Units
 
+omit [NumberField K] in
 open scoped Classical in
 /-- A unit with `w v ≠ 1` whose logarithmic absolute value is below `log B` can be inverted and
 multiplied by a torsion unit so that its real image lies in the open interval from `1` to `B`. -/

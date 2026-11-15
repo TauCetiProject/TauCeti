@@ -26,15 +26,15 @@ image subgroups.
 
 The proof combines Mathlib's path-conjugation isomorphism for fundamental groups with its
 path-lifting and monodromy API, packaged for recovered subgroups in
-`TauCeti.Topology.Homotopy.Monodromy.Basic`. This is the path-level compatibility needed by
-the pointed and unpointed parts of Stage 2, items 7 and 8, of
-`TauCetiRoadmap/UniversalCovers/README.md`; the convention is the usual one from Hatcher,
+`TauCeti.Topology.Homotopy.Monodromy.Basic`. The convention is the usual one from Hatcher,
 *Algebraic Topology*, Section 1.3.
 -/
 
 public section
 
-namespace TauCeti
+namespace IsCoveringMap
+
+open TauCeti
 
 variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X]
   {p : E → X} {x₀ x₁ : X}
@@ -42,7 +42,7 @@ variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X]
 /-- **Monodromy after basepoint change.** Monodromy along the transport back along `γ` of a loop
 class `g` at `x₁` is monodromy along `g`, conjugated by monodromy along `γ`: lift `γ`, then go
 around `g`, then return along `γ`. -/
-theorem _root_.IsCoveringMap.monodromy_fundamentalGroupMulEquivOfPath_symm_apply
+theorem monodromy_fundamentalGroupMulEquivOfPath_symm_apply
     (hp : IsCoveringMap p) (γ : Path x₀ x₁) (g : FundamentalGroup X x₁) (e₀ : p ⁻¹' {x₀}) :
     hp.monodromy ((FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g).toPath e₀ =
       (coveringFiberEquiv hp (.mk γ)).symm (hp.monodromy g.toPath (hp.monodromy (.mk γ) e₀)) := by
@@ -52,7 +52,7 @@ theorem _root_.IsCoveringMap.monodromy_fundamentalGroupMulEquivOfPath_symm_apply
 /-- The monodromy permutation of the transport back along `γ` of a loop class `g` is the monodromy
 permutation of `g`, transported from the fibre over `x₁` to the fibre over `x₀` by monodromy along
 `γ`. -/
-theorem _root_.IsCoveringMap.monodromyPerm_fundamentalGroupMulEquivOfPath_symm
+theorem monodromyPerm_fundamentalGroupMulEquivOfPath_symm
     (hp : IsCoveringMap p) (γ : Path x₀ x₁) (g : FundamentalGroup X x₁) :
     hp.monodromyPerm x₀ ((FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g) =
       (coveringFiberEquiv hp (.mk γ)).symm.permCongr (hp.monodromyPerm x₁ g) := by
@@ -66,7 +66,7 @@ theorem _root_.IsCoveringMap.monodromyPerm_fundamentalGroupMulEquivOfPath_symm
 starting point `e₀`. This is the path-level statement behind
 `IsCoveringMap.range_mapOfEq_monodromy_path`: transporting the recovered subgroup along `γ`
 amounts to conjugating the classes that the monodromy action fixes. -/
-theorem _root_.IsCoveringMap.monodromy_eq_self_iff_fundamentalGroupMulEquivOfPath_symm_apply
+theorem monodromy_eq_self_iff_fundamentalGroupMulEquivOfPath_symm_apply
     (hp : IsCoveringMap p) (γ : Path x₀ x₁) (e₀ : p ⁻¹' {x₀})
     (g : FundamentalGroup X x₁) :
     hp.monodromy g.toPath (hp.monodromy ⟦γ⟧ e₀) = hp.monodromy ⟦γ⟧ e₀ ↔
@@ -79,7 +79,7 @@ theorem _root_.IsCoveringMap.monodromy_eq_self_iff_fundamentalGroupMulEquivOfPat
 
 /-- The subgroup recovered at the endpoint of a lifted path is the basepoint transport of the
 subgroup recovered at its starting point. -/
-theorem _root_.IsCoveringMap.range_mapOfEq_monodromy_path (hp : IsCoveringMap p) (γ : Path x₀ x₁)
+theorem range_mapOfEq_monodromy_path (hp : IsCoveringMap p) (γ : Path x₀ x₁)
     (e₀ : p ⁻¹' {x₀}) :
     (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩
       (hp.monodromy ⟦γ⟧ e₀).2).range =
@@ -98,4 +98,4 @@ theorem _root_.IsCoveringMap.range_mapOfEq_monodromy_path (hp : IsCoveringMap p)
     ← IsCoveringMap.monodromy_eq_self_iff_mem_range hp e₀]
   exact hp.monodromy_eq_self_iff_fundamentalGroupMulEquivOfPath_symm_apply γ e₀ g
 
-end TauCeti
+end IsCoveringMap

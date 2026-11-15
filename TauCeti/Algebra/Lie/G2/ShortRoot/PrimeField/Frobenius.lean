@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.Group.End
 public import TauCeti.Algebra.CharP.Frobenius.Bialgebra
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.PointsFunctor
 public import TauCeti.FieldTheory.Finite.Frobenius
@@ -116,10 +117,9 @@ theorem frobenius_add (m k : ℕ) (A : Type v) [CommRing A] [Algebra (ZMod 3) A]
 Frobenius of the carrier, in the endomorphism monoid of its points, is its `3 ^ (k * m)`-power
 Frobenius. -/
 theorem frobenius_pow (k m : ℕ) (A : Type v) [CommRing A] [Algebra (ZMod 3) A] :
-    (show Monoid.End _ from frobenius k A) ^ m = frobenius (k * m) A := by
-  induction m with
-  | zero => rw [pow_zero, Nat.mul_zero, frobenius_zero]; rfl
-  | succ m ih => rw [pow_succ, ih, Nat.mul_succ, frobenius_add (k * m) k A]; rfl
+    (show Monoid.End _ from frobenius k A) ^ m = frobenius (k * m) A :=
+  Monoid.End.pow_eq_of_add_eq_comp (fun j => frobenius j A) (frobenius_zero A)
+    (fun a b => frobenius_add a b A) k m
 
 /-- **Frobenius raises the parameter of every numbered simple root subgroup to its `3 ^ m`-th
 power.** -/

@@ -24,7 +24,8 @@ finite-dimensional, its graded corners `e_j Π_n e_i` vanish in all large degree
 * the inverse `M⁻¹` has a negative coefficient.
 
 Both statements rest on one observation: when `Q` is nonempty, no matrix `N` whose entries are
-polynomials satisfies `M N = I` (`Matrix.isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one`).
+polynomials satisfies `M N = I`, since no column of a right inverse of `M` is polynomial
+(`Matrix.exists_coeff_ne_zero_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one`).
 For the second statement, the Koszul defect formula
 gives `M H = I + D` where `D` has nonnegative coefficients
 (`TauCeti.coeff_one_le_coeff_mul_preprojectiveHilbertSeries`). If every coefficient of `M⁻¹` were
@@ -36,7 +37,7 @@ For a finite simple graph `G` without isolated vertices, `M` is the zigzag grade
 (`TauCeti.zigzagGradedCartanMatrix_map_aeval_neg_X_eq_submatrix`). Hence `C_G(-X)⁻¹` has a negative
 coefficient as soon as the preprojective algebra of one orientation of `G` is finite-dimensional,
 which is the case for every finite simply-laced Dynkin diagram
-(`TauCeti.finiteDimensional_preprojectiveAlgebra_of_isSimplyLaced`). This is the numerical
+(`TauCeti.finiteDimensional_preprojectiveAlgebra_of_iso`). This is the numerical
 obstruction to the Koszulity of the zigzag algebras of these graphs: the inverse of the graded
 Cartan matrix of a Koszul algebra at `q = -X` is the matrix Hilbert series of its Koszul dual, so it
 has nonnegative coefficients. It contrasts with the finite preconnected graphs containing a cycle,
@@ -114,11 +115,10 @@ theorem mul_preprojectiveHilbertSeries_ne_one [FiniteDimensional k (preprojectiv
           (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ⟦X⟧)) *
         preprojectiveHilbertSeries k Q ≠ 1 := fun h => by
   obtain ⟨d, hd⟩ := exists_forall_le_coeff_preprojectiveHilbertSeries_eq_zero k Q
-  refine not_isEmpty_of_nonempty Q (Matrix.isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one
-    (Matrix.of fun v w : Q => (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ)) ?_ hd)
-  convert h using 4
-  ext v w
-  simp
+  obtain ⟨n, hn, i, hi⟩ := Matrix.exists_coeff_ne_zero_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one
+    (Matrix.of fun v w : Q => (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ))
+    (by convert h using 4; ext v w; simp) (Classical.arbitrary Q) d
+  exact hi (hd n hn i _)
 
 omit [DecidableEq Q] in
 /-- **The Koszul complex of a finite-dimensional preprojective algebra is not exact at its left
@@ -175,12 +175,11 @@ theorem exists_coeff_inv_lt_zero_of_finiteDimensional
   obtain ⟨d, hd⟩ := exists_forall_le_coeff_preprojectiveHilbertSeries_eq_zero k Q
   have hN (n : ℕ) (hn : d ≤ n) (v i : Q) : coeff n (M⁻¹ v i) = 0 :=
     le_antisymm ((hle n v i).trans (hd n hn v i).le) (hpos n v i)
-  refine not_isEmpty_of_nonempty Q (Matrix.isEmpty_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one
-    (Matrix.of fun v w : Q => (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ)) ?_ hN)
-  convert Matrix.mul_nonsing_inv M hdet using 2
-  rw [hM]
-  ext v w
-  simp
+  obtain ⟨n, hn, i, hi⟩ := Matrix.exists_coeff_ne_zero_of_one_add_X_sq_smul_sub_X_smul_mul_eq_one
+    (Matrix.of fun v w : Q => (Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) : ℤ))
+    (N := M⁻¹) (by convert Matrix.mul_nonsing_inv M hdet using 2; rw [hM]; ext v w; simp)
+    (Classical.arbitrary Q) d
+  exact hi (hN n hn i _)
 
 end Quiver
 

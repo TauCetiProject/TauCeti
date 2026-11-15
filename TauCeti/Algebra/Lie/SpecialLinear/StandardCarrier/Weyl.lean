@@ -170,7 +170,7 @@ private theorem exp_neg_rep_rootGenerator (k : Fin r ⊕ Fin r) :
       1 - rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator r k)) := by
   have hsq : (-rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator r k))) ^ 2 = 0 := by
     refine LinearMap.ext fun v => ?_
-    rw [pow_two, Module.End.mul_apply, LinearMap.neg_apply, LinearMap.neg_apply, map_neg, neg_neg,
+    rw [pow_two, mul_apply_eq_comp, LinearMap.neg_apply, LinearMap.neg_apply, map_neg, neg_neg,
       rep_rootGenerator_rep_rootGenerator_eq_zero, LinearMap.zero_apply]
   rw [IsNilpotent.exp_eq_sum hsq]
   simp [Finset.sum_range_succ, sub_eq_add_neg]
@@ -185,7 +185,7 @@ private theorem weylUnit_apply_single (i : Fin r) (j : Fin (r + 1)) :
         Pi.single (Equiv.swap i.castSucc i.succ j) 1 := by
   have hne : i.castSucc ≠ i.succ := (Fin.castSucc_lt_succ (i := i)).ne
   rw [coe_weylUnit, exp_rep_rootGenerator, exp_neg_rep_rootGenerator]
-  simp only [Module.End.mul_apply, LinearMap.add_apply, LinearMap.sub_apply, Module.End.one_apply,
+  simp only [mul_apply_eq_comp, LinearMap.add_apply, LinearMap.sub_apply, one_apply_eq_self,
     map_add, map_sub, rep_rootGenerator_apply, rootSource_inl, rootTarget_inl, rootSource_inr,
     rootTarget_inr]
   by_cases hc : j = i.castSucc

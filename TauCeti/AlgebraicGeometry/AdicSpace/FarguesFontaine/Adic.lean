@@ -203,7 +203,8 @@ theorem isLocallyAffinoid_spaXPreAdicSpace (h : (spaYPresheaf P ϖ).IsSheaf) :
     (PreAdicSpace.IsOpenImmersion.isoRestrict f)
     (PreAdicSpace.isLocallyAffinoid_restrict V.isOpenEmbedding
       (isLocallyAffinoid_spaYPreAdicSpace P hI)) ⟨y, hy⟩
-  exact ⟨_, (PreAdicSpace.mem_affinoidOpens_restrict_iff _ f.isOpenEmbedding W).mp hW,
+  exact ⟨_, (PreAdicSpace.mem_propOpens_restrict_iff _ f.isOpenEmbedding PreAdicSpace.isAffinoid
+    W).mp hW,
     ⟨y, hy⟩, hyW, hq⟩
 
 /-- **`𝒳 = 𝒴 / φ^ℤ` is an adic space** when `𝒪_𝒴` is a sheaf: it is sheafy

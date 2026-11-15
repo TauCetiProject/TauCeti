@@ -17,8 +17,7 @@ a finite mixture both as an explicit sum and as the Laplace transform of the cor
 finite sum of weighted Dirac measures.
 
 This is the finite-support case of the measure representation in Bernstein's theorem. In
-particular, a single atom of unit weight at `p = 1` represents `t ↦ exp (-t)`, one of the
-acceptance examples in the one-parameter-semigroups roadmap.
+particular, a single atom of unit weight at `p = 1` represents `t ↦ exp (-t)`.
 
 ## Main declarations
 
@@ -29,8 +28,7 @@ acceptance examples in the one-parameter-semigroups roadmap.
   completely monotone.
 * `TauCeti.finiteExponentialMixture_eq_integral`: the explicit sum is the Laplace transform of
   its discrete representing measure.
-* `TauCeti.integral_exp_neg_mul_dirac_one`: the acceptance example
-  `exp (-t) ↔ δ₁`.
+* `TauCeti.integral_exp_neg_mul_dirac_one`: the example `exp (-t) ↔ δ₁`.
 
 ## References
 
@@ -90,8 +88,8 @@ theorem finiteExponentialMixtureMeasure_apply {ι : Type*} (s : Finset ι)
     (w p : ι → ℝ≥0) {A : Set ℝ≥0} (hA : MeasurableSet A) :
     finiteExponentialMixtureMeasure s w p A =
       ∑ i ∈ s, A.indicator (fun _ => (w i : ℝ≥0∞)) (p i) := by
-  simp only [finiteExponentialMixtureMeasure, Measure.finsetSum_apply, hA,
-    Measure.smul_apply, Measure.dirac_apply']
+  simp only [finiteExponentialMixtureMeasure, _root_.sum_apply, hA,
+    _root_.smul_apply, Measure.dirac_apply']
   refine Finset.sum_congr rfl fun i _ => ?_
   by_cases hi : p i ∈ A <;> simp [hi, smul_eq_mul]
 
@@ -122,7 +120,7 @@ theorem finiteExponentialMixture_eq_integral {ι : Type*} (s : Finset ι) (w p :
 
 /-- The Laplace transform of the unit Dirac mass at `1` is `t ↦ exp (-t)`.
 
-This is the discrete representing-measure acceptance example for Bernstein's theorem. -/
+This is the basic discrete representing-measure example for Bernstein's theorem. -/
 theorem integral_exp_neg_mul_dirac_one (t : ℝ) :
     (∫ q : ℝ≥0, Real.exp (-t * (q : ℝ)) ∂Measure.dirac 1) = Real.exp (-t) := by
   simp

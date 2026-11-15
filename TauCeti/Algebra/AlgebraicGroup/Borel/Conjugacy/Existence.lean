@@ -53,7 +53,7 @@ variable {k : Type u} [Field k] [IsAlgClosed k]
 /-- The proper subgroup in the closed-orbit argument can be chosen smooth and connected,
 while retaining containment of conjugates of all Borel subgroups. -/
 private theorem exists_proper_smooth_connected_of_not_isSolvable
-    (H : FiniteTypeCommHopfAlgCat.{u, u} k) [IrreducibleSpace (PrimeSpectrum H)]
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     (hH : ¬ Group.IsSolvable (WithConv (H →ₐ[k] k))) :
     ∃ P : HopfIdeal k H, P ≠ ⊥ ∧
       Algebra.Smooth k (FiniteTypeCommHopfAlgCat.quotient H P) ∧
@@ -99,7 +99,7 @@ private theorem exists_conjugate_eq_of_smooth_connected (n : ℕ) :
         IsBorelOverAlgClosed k H I → IsBorelOverAlgClosed k H J →
         ∃ g : WithConv (H →ₐ[k] k), I.conjugate g = J := by
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     intro H hsm hconn hdim I J hI hJ
     let _ : Algebra.Smooth k H := hsm
     let _ : IsReduced H := isReduced_of_smooth k H
@@ -127,6 +127,7 @@ private theorem exists_conjugate_eq_of_smooth_connected (n : ℕ) :
         have heq := congrArg (fun B : HopfIdeal k H ↦ B.conjugate h⁻¹) ha
         simpa [conjugate_mul, mul_assoc] using heq⟩
 
+omit [IsAlgClosed k] in
 /-- **Borel conjugacy.** Any two Borel subgroups of a finite-type affine group over an
 algebraically closed field are conjugate by a rational point. The ambient group need not
 be smooth, reduced, or connected. -/
@@ -134,6 +135,7 @@ theorem IsBorelOverAlgClosed.exists_conjugate_eq
     {H : FiniteTypeCommHopfAlgCat.{u, u} k} {I J : HopfIdeal k H}
     (hI : IsBorelOverAlgClosed k H I) (hJ : IsBorelOverAlgClosed k H J) :
     ∃ g : WithConv (H →ₐ[k] k), I.conjugate g = J := by
+  have : IsAlgClosed k := ((isBorelOverAlgClosed_iff k H I).1 hI).1
   apply exists_conjugate_eq_of_isBorelOverAlgClosed_of_smooth_connected _ hI hJ
   intro K hsm hconn
   exact exists_conjugate_eq_of_smooth_connected _ K hsm hconn le_rfl

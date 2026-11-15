@@ -159,7 +159,7 @@ theorem autOfComponents_mul_natural
         f.hom.toLinearMap.baseChange A := by
   apply LinearMap.ext
   intro m
-  simp only [LinearMap.comp_apply, Module.End.mul_apply]
+  simp only [LinearMap.comp_apply, _root_.mul_apply_eq_comp]
   have hFm := LinearMap.congr_fun (hF f) ((G M : Module.End A (A ⊗[R] M)) m)
   have hGm := LinearMap.congr_fun (hG f) m
   exact hFm.trans (congrArg (F N : Module.End A (A ⊗[R] N)) hGm)

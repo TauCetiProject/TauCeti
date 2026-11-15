@@ -82,7 +82,7 @@ theorem isPiecewiseAffineOn_coordinateSimplexBoundaryChartLift (v : Option (Opti
     coordinateSimplexBoundaryChartProjection v (coordinateSimplexBoundaryChartLift v y) = y := by
   simp only [coordinateSimplexBoundaryChartProjection, coordinateSimplexBoundaryChartLift,
     ContinuousAffineMap.comp_apply, ContinuousLinearMap.coe_toContinuousAffineMap,
-    coordinateSimplexChartSwap_involutive, coordinateSimplexBoundaryProjection_lift]
+    coordinateSimplexChartSwap_coordinateSimplexChartSwap, coordinateSimplexBoundaryProjection_lift]
 
 /-- The chart source is the boundary with the facet opposite the chosen vertex deleted. -/
 def coordinateSimplexBoundaryChartSource (v : Option (Option ι)) :
@@ -119,7 +119,7 @@ theorem coordinateSimplexBoundaryChartLift_projection (v : Option (Option ι))
     ContinuousAffineMap.comp_apply, ContinuousLinearMap.coe_toContinuousAffineMap]
   rw [coordinateSimplexBoundaryLift_projection
     ((coordinateSimplexChartSwap_mem_frontier_iff v x.1).2 x.2)
-    ((mem_chartSource_iff v x).1 hx), coordinateSimplexChartSwap_involutive]
+    ((mem_chartSource_iff v x).1 hx), coordinateSimplexChartSwap_coordinateSimplexChartSwap]
 
 /-- If the minimum-subtraction lift of `y` has mass less than one (the common chart target
 condition), then every chart lift of `y` lies on the geometric simplex boundary. -/
@@ -143,9 +143,8 @@ theorem isOpen_coordinateSimplexBoundaryChartSource (v : Option (Option ι)) :
 theorem exists_mem_coordinateSimplexBoundaryChartSource
     (x : frontier (coordinateSimplex (Option ι))) :
     ∃ v, x ∈ coordinateSimplexBoundaryChartSource v := by
-  exact (sum_lt_one_or_exists_pos_of_mem_coordinateSimplex _
-    ((isClosed_coordinateSimplex _).frontier_subset x.2)).elim
-      (fun h => ⟨none, h⟩) (fun ⟨j, h⟩ => ⟨some j, h⟩)
+  exact (sum_lt_one_or_exists_pos x.1).elim
+    (fun h => ⟨none, h⟩) (fun ⟨j, h⟩ => ⟨some j, h⟩)
 
 private theorem chartProjection_mem_target (v : Option (Option ι))
     (x : frontier (coordinateSimplex (Option ι)))
@@ -178,7 +177,8 @@ def coordinateSimplexBoundaryChart (v : Option (Option ι)) :
     simp only [mem_ofPred_eq] at hy
     simp only [dite_eq_left hy]
     rw [mem_chartSource_iff]
-    simpa only [coordinateSimplexBoundaryChartLift, coordinateSimplexChartSwap_involutive] using hy
+    simpa only [coordinateSimplexBoundaryChartLift,
+      coordinateSimplexChartSwap_coordinateSimplexChartSwap] using hy
   left_inv' x hx := by
     simp only [dite_eq_left (chartProjection_mem_target v x hx)]
     exact Subtype.ext (coordinateSimplexBoundaryChartLift_projection v x hx)

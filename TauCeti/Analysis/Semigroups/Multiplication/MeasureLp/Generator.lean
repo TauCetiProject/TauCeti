@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Semigroups.Multiplication.MeasureLp.Basic
 public import TauCeti.Analysis.Semigroups.Resolvent.Identity
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
-import TauCeti.Analysis.Calculus.ExponentialSlope
+import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 
 /-!
 # Generators of measure-space Lᵖ multiplication semigroups
@@ -91,7 +91,8 @@ theorem ContractionSemigroup.ofMeasureLpMultiplication_generator_apply_ae
       exact hq.mono fun a ha _ => ha
     · exact .of_forall fun _ h => (hn h).elim
   filter_upwards [hae, hquot] with a ha hqa
-  have hpoint := ((TauCeti.tendsto_exp_mul_sub_one_div (-(m a : ℝ))).smul
+  have hpoint := (((Real.tendsto_exp_mul_sub_one_div (-(m a : ℝ))).mono_left
+    (nhdsGT_le_nhdsNE 0)).smul
     (tendsto_const_nhds (x := (f : Lp E p μ) a))).comp hts
   have heq : (fun n => ((1 / ts n) •
       (S.realOperator (ts n) f - (f : Lp E p μ))) a) =ᶠ[atTop]
@@ -115,9 +116,8 @@ private theorem tendsto_multiplication_quotient (hm : AEMeasurable m μ) (hp : p
   have hlim : Tendsto (fun t : ℝ => eLpNorm
       ((fun a => ((Real.exp (-((m a : ℝ) * t)) - 1) / t) • f a) -
         (fun a => -(m a : ℝ) • f a)) p μ) (𝓝[>] 0) (𝓝 0) := by
-    apply TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto
-      (ne_of_gt (zero_lt_one.trans_le (Fact.out : 1 ≤ p))) hp
-      (.of_forall fun t => by fun_prop) (by fun_prop) hf (C := 1)
+    apply TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto hp (.of_forall fun t => by fun_prop) hf
+      (C := 1)
     · filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
       filter_upwards with a
       have he : Real.exp (-((m a : ℝ) * t)) ≤ 1 :=
@@ -140,7 +140,7 @@ private theorem tendsto_multiplication_quotient (hm : AEMeasurable m μ) (hp : p
         (ENNReal.ofReal_le_ofReal hn)
     · exact .of_forall fun a => by
         simpa only [neg_mul] using
-          (TauCeti.tendsto_exp_mul_sub_one_div (-(m a : ℝ))).smul
+          ((Real.tendsto_exp_mul_sub_one_div (-(m a : ℝ))).mono_left (nhdsGT_le_nhdsNE 0)).smul
             (tendsto_const_nhds (x := f a))
   refine hlim.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
@@ -149,7 +149,6 @@ private theorem tendsto_multiplication_quotient (hm : AEMeasurable m μ) (hp : p
 /-- The domain of the multiplication generator is exactly the weighted Lᵖ domain:
 `f ∈ D(A)` if and only if `m • f` belongs to Lᵖ. This applies to arbitrary measures and
 unbounded almost everywhere measurable multipliers. -/
-@[simp]
 theorem ContractionSemigroup.ofMeasureLpMultiplication_mem_domain_iff
     (hm : AEMeasurable m μ) (hp : p ≠ ∞) (f : Lp E p μ) :
     f ∈ (ofMeasureLpMultiplication hm hp).toStronglyContinuousSemigroup.domain ↔

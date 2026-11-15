@@ -16,9 +16,10 @@ inequality is required. It singles out the units needed in norm estimates when t
 not be multiplicative.
 
 Multiplicative units are closed under multiplication and inversion, and norm-preserving
-multiplicative equivalences preserve and reflect them. In a norm-one monoid, one and all powers
-of multiplicative units are multiplicative units. In a commutative norm-one monoid, so are
-finite products. Their norms are the corresponding powers and products of norms.
+multiplicative equivalences preserve and reflect them. Powers of multiplicative units are
+multiplicative units. In a norm-one monoid, so is one, and the norms of powers are the powers of
+the norm. In a commutative norm-one monoid, finite products of multiplicative units are
+multiplicative units, with the product of the norms as norm.
 
 An element of nonzero norm scaling all norms exactly forces `‖1‖ = 1`; if it is a unit, its
 inverse has reciprocal norm.
@@ -42,6 +43,13 @@ section Units
 theorem norm_one_of_norm_mul {R : Type*} [MulOneClass R] [Norm R] {u : R} (hu0 : ‖u‖ ≠ 0)
     (hu : ∀ x : R, ‖u * x‖ = ‖u‖ * ‖x‖) : ‖(1 : R)‖ = 1 :=
   (mul_eq_left₀ hu0).mp (by simpa using (hu 1).symm)
+
+/-- A unit of zero norm by which left multiplication scales the norm exactly forces every
+element to have zero norm. -/
+theorem norm_eq_zero_of_norm_mul {R : Type*} [Monoid R] [Norm R] {u : Rˣ}
+    (hu0 : ‖(u : R)‖ = 0) (hu : ∀ x : R, ‖(u : R) * x‖ = ‖(u : R)‖ * ‖x‖) (x : R) :
+    ‖x‖ = 0 := by
+  simpa [← mul_assoc, hu0] using hu (((u⁻¹ : Rˣ) : R) * x)
 
 /-- A unit of nonzero norm by which left multiplication scales the norm exactly has inverse
 of norm `‖u‖⁻¹`. -/
@@ -98,10 +106,17 @@ theorem isNormMulUnit_one : IsNormMulUnit (1 : R) :=
 
 namespace IsNormMulUnit
 
+omit [NormOneClass R] in
 /-- Powers of a multiplicative unit are multiplicative units. -/
 theorem pow {u : R} (hu : IsNormMulUnit u) (n : ℕ) : IsNormMulUnit (u ^ n) := by
   induction n with
-  | zero => simp
+  | zero =>
+    rw [pow_zero]
+    refine ⟨isUnit_one, fun x ↦ ?_⟩
+    obtain ⟨w, rfl⟩ := hu.isUnit
+    by_cases hu0 : ‖(w : R)‖ = 0
+    · rw [one_mul, NormedRing.norm_eq_zero_of_norm_mul hu0 hu.norm_mul x, mul_zero]
+    · rw [one_mul, NormedRing.norm_one_of_norm_mul hu0 hu.norm_mul, one_mul]
   | succ n ih => simpa [pow_succ] using ih.mul hu
 
 /-- The norm of a power of a multiplicative unit is the power of its norm. -/
@@ -121,10 +136,7 @@ theorem units_inv {u : Rˣ} (hu : IsNormMulUnit (u : R)) :
     IsNormMulUnit ((u⁻¹ : Rˣ) : R) := by
   refine ⟨Units.isUnit _, fun x ↦ ?_⟩
   by_cases hu0 : ‖(u : R)‖ = 0
-  · have hall (y : R) : ‖y‖ = 0 := by
-      have h := hu.norm_mul (((u⁻¹ : Rˣ) : R) * y)
-      simpa [← mul_assoc, hu0] using h
-    simp [hall]
+  · simp [NormedRing.norm_eq_zero_of_norm_mul hu0 hu.norm_mul]
   · rw [NormedRing.norm_units_inv_of_norm_mul hu0 hu.norm_mul,
       eq_inv_mul_iff_mul_eq₀ hu0]
     simpa [← mul_assoc] using (hu.norm_mul (((u⁻¹ : Rˣ) : R) * x)).symm

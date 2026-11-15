@@ -58,16 +58,14 @@ bookkeeping.  The monotonicity and product corollaries below are likewise the mu
 analogues of `Module.length_le_of_injective`, `Module.length_le_of_surjective` and
 `Module.length_prod`.  What is new is that the transports are shown to preserve each factor's
 isomorphism class and not merely the number of factors: the identification of the subquotients is
-`TauCeti.mapSubquotientEquivOfInjective` and `TauCeti.comapSubquotientEquivOfSurjective` of
+`LinearMap.mapSubquotientEquivOfInjective` and `LinearMap.comapSubquotientEquivOfSurjective` of
 `TauCeti/Algebra/Module/Submodule/Quotient.lean`, and the resulting factor-by-factor comparison is
 `TauCeti.isCompositionFactorAt_mapCompositionSeriesOfInjective_iff` and its surjective counterpart
 in `TauCeti/RingTheory/CompositionSeries/Multiplicity.lean`;
 `TauCeti/RingTheory/CompositionSeries/Basic.lean` supplies the transports themselves.
 
 The additivity of `[Pᵢ : Sⱼ]` is what makes the Cartan matrix of a finite-dimensional algebra
-computable, in Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md` ("The Cartan matrix of an
-algebra"); `TauCeti/RingTheory/CompositionSeries/Multiplicity.lean` supplies the multiplicity
+computable; `TauCeti/RingTheory/CompositionSeries/Multiplicity.lean` supplies the multiplicity
 itself.
 
 * Assem, Simson and Skowroński, *Elements of the Representation Theory of Associative Algebras* I,

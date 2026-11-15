@@ -31,6 +31,10 @@ representation on `Lie(K)`. The exponential map of `G` intertwines the two.
 
 ## Main results
 
+* `Subgroup.normalizerAdjointRepresentation_ker`: the kernel on a closed preconnected
+  subgroup is the centralizer inside the normalizer.
+* `Subgroup.weylAdjointRepresentation_injective_iff`: for a closed preconnected commutative
+  subgroup, faithfulness is equivalent to its centralizer being contained in the subgroup.
 * `TauCeti.Lie.lieExp_weylAdjointRepresentation_apply`: the exponential of a closed commutative
   subgroup intertwines the two actions of its Weyl group.
 
@@ -55,7 +59,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- **The adjoint representation of the normalizer of `K` on `Lie(K)`**: the adjoint
@@ -84,7 +88,7 @@ def _root_.Subgroup.weylAdjointRepresentation (K : Subgroup G) [IsMulCommutative
       (lieSubalgebraOfSubgroup (I := I) K).toSubmodule :=
   K.normalizerQuotientLift (K.normalizerAdjointRepresentation (I := I)) fun g hg =>
     LinearMap.ext fun X => Subtype.ext <| by
-      rw [Module.End.one_apply, Subgroup.coe_normalizerAdjointRepresentation_apply]
+      rw [one_apply_eq_self, Subgroup.coe_normalizerAdjointRepresentation_apply]
       exact Ad_apply_eq_self_of_mem_lieSubalgebraOfSubgroup hg X.2
 
 @[simp]
@@ -94,6 +98,37 @@ theorem _root_.Subgroup.coe_weylAdjointRepresentation_mk_apply (K : Subgroup G) 
         LeftInvariantDerivation I G) = Ad (I := I) (g : G) X := by
   simp only [Subgroup.weylAdjointRepresentation, Subgroup.normalizerQuotientLift,
     QuotientGroup.lift_mk, Subgroup.coe_normalizerAdjointRepresentation_apply]
+
+/-- The kernel of the normalizer's adjoint action on a closed preconnected subgroup's
+Lie algebra is its centralizer, viewed inside the normalizer. -/
+theorem _root_.Subgroup.normalizerAdjointRepresentation_ker (K : Subgroup G)
+    (hK : IsClosed (K : Set G)) (hconn : IsPreconnected (K : Set G)) :
+    (K.normalizerAdjointRepresentation (I := I)).ker =
+      (Subgroup.centralizer (K : Set G)).subgroupOf (Subgroup.normalizer (K : Set G)) := by
+  apply Subgroup.ext
+  intro g
+  rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf]
+  constructor
+  · intro hg
+    refine (mem_centralizer_iff_forall_Ad_apply_eq_self (I := I) hK hconn _).mpr fun X hX ↦ ?_
+    have h := congrArg Subtype.val (DFunLike.congr_fun hg ⟨X, hX⟩)
+    simpa only [Subgroup.coe_normalizerAdjointRepresentation_apply, one_apply_eq_self] using h
+  · intro hg
+    refine LinearMap.ext fun X ↦ Subtype.ext ?_
+    rw [Subgroup.coe_normalizerAdjointRepresentation_apply, one_apply_eq_self]
+    exact Ad_apply_eq_self_of_mem_centralizer hg X.property
+
+/-- The Weyl adjoint representation of a closed preconnected commutative subgroup is faithful
+exactly when its centralizer is contained in the subgroup. -/
+theorem _root_.Subgroup.weylAdjointRepresentation_injective_iff (K : Subgroup G)
+    [IsMulCommutative K] (hK : IsClosed (K : Set G)) (hconn : IsPreconnected (K : Set G)) :
+    Function.Injective (K.weylAdjointRepresentation (I := I)) ↔
+      Subgroup.centralizer (K : Set G) ≤ K := by
+  rw [Subgroup.weylAdjointRepresentation]
+  apply Subgroup.normalizerQuotientLift_injective_iff_centralizer_le
+  intro g
+  rw [← MonoidHom.mem_ker, K.normalizerAdjointRepresentation_ker hK hconn,
+    Subgroup.mem_subgroupOf]
 
 /-- **The exponential intertwines the two actions of the Weyl group** of a closed commutative
 subgroup. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.BinaryForm
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.BinaryForm.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup.Invariants
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
@@ -148,7 +148,7 @@ theorem ofConv_mul_columnOrbitHom_two_zero_of_upperTriangular {A : Type v} [Comm
           (coordinateMap R 2).hom 1 0] i) := by
     funext i
     fin_cases i <;> exact hcol _
-  rw [hvec, ((mem_binaryForms).mp hf).aeval_smul, smul_eq_mul]
+  rw [hvec, ((mem_binaryForms).mp hf).aeval_smul_of_algebra, smul_eq_mul]
 
 /-- **Right translation by the diagonal torus on binary forms.** Right translation by
 `diag(t, t⁻¹)` acts on the image of the binary forms of degree `d` by the character `t ↦ tᵈ`,

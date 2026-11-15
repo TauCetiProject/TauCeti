@@ -49,7 +49,7 @@ public section
 open CategoryTheory Limits Opposite AlgebraicGeometry
 open Scheme.AffineZariskiSite
 
-namespace TauCeti
+namespace CategoryTheory.CommMon
 
 universe u
 
@@ -61,38 +61,62 @@ variable (f g : A ⟶ B)
 
 /-- The `Γ(X, U)`-subalgebra of sections of `A` over `U` on which the algebra morphisms `f` and
 `g` agree. -/
-def _root_.CategoryTheory.CommMon.equalizerSections (U : X.Opens) :
+def equalizerSections (U : X.Opens) :
     Subalgebra Γ(X, U) Γ(A.X, U) :=
   AlgHom.equalizer (CommMon.sectionsAlgHom f U) (CommMon.sectionsAlgHom g U)
 
 variable {f g} in
 @[simp]
-lemma _root_.CategoryTheory.CommMon.mem_equalizerSections {U : X.Opens} {x : Γ(A.X, U)} :
+lemma mem_equalizerSections {U : X.Opens} {x : Γ(A.X, U)} :
     x ∈ CommMon.equalizerSections f g U ↔
       CommMon.sectionsAlgHom f U x = CommMon.sectionsAlgHom g U x :=
   Iff.rfl
 
 /-- Restriction of sections preserves the sections on which `f` and `g` agree. -/
-lemma _root_.CategoryTheory.CommMon.restrictSections_mem_equalizerSections {U V : X.Opens}
+lemma restrictSections_mem_equalizerSections {U V : X.Opens}
     (i : V ⟶ U) {x : Γ(A.X, U)} (hx : x ∈ CommMon.equalizerSections f g U) :
     A.restrictSections i x ∈ CommMon.equalizerSections f g V := by
   rw [CommMon.mem_equalizerSections] at hx ⊢
   rw [CommMon.sectionsAlgHom_restrictSections, CommMon.sectionsAlgHom_restrictSections, hx]
 
 /-- The presheaf of subalgebras of sections of `A` on which `f` and `g` agree. -/
-def _root_.CategoryTheory.CommMon.equalizerSubalgebraPresheaf : A.SubalgebraPresheaf where
+def equalizerSubalgebraPresheaf : A.SubalgebraPresheaf where
   sections := CommMon.equalizerSections f g
   restrictSections_mem i _ := CommMon.restrictSections_mem_equalizerSections f g i
 
 @[simp]
-lemma _root_.CategoryTheory.CommMon.equalizerSubalgebraPresheaf_sections (U : X.Opens) :
+lemma equalizerSubalgebraPresheaf_sections (U : X.Opens) :
     (CommMon.equalizerSubalgebraPresheaf f g).sections U = CommMon.equalizerSections f g U :=
   (rfl)
+
+/-- The image of `r` in the sections of `A` on which `f` and `g` agree over `X.basicOpen r` is a
+unit, because it is already a unit in `Γ(X, X.basicOpen r)`. -/
+private theorem isUnit_algebraMap_equalizerSections_basicOpen
+    {U : X.Opens} (r : Γ(X, U)) :
+    letI := ((A.restrictSections (homOfLE (X.basicOpen_le r))).restrict
+      (CommMon.equalizerSections f g U) (CommMon.equalizerSections f g (X.basicOpen r))
+      fun _ ↦ CommMon.restrictSections_mem_equalizerSections f g _).toAlgebra
+    IsUnit (algebraMap (CommMon.equalizerSections f g U)
+      (CommMon.equalizerSections f g (X.basicOpen r)) (algebraMap Γ(X, U)
+        (CommMon.equalizerSections f g U) r)) := by
+  let _ : Algebra (CommMon.equalizerSections f g U)
+      (CommMon.equalizerSections f g (X.basicOpen r)) :=
+    ((A.restrictSections (homOfLE (X.basicOpen_le r))).restrict
+      (CommMon.equalizerSections f g U) (CommMon.equalizerSections f g (X.basicOpen r))
+      fun _ ↦ CommMon.restrictSections_mem_equalizerSections f g _).toAlgebra
+  have : algebraMap (CommMon.equalizerSections f g U)
+      (CommMon.equalizerSections f g (X.basicOpen r)) (algebraMap Γ(X, U)
+        (CommMon.equalizerSections f g U) r) =
+      algebraMap Γ(X, X.basicOpen r) (CommMon.equalizerSections f g (X.basicOpen r))
+        (X.presheaf.map (homOfLE (X.basicOpen_le r)).op r) :=
+    Subtype.ext (A.restrictSections_algebraMap (homOfLE (X.basicOpen_le r)) r)
+  rw [this]
+  exact (X.toRingedSpace.isUnit_res_basicOpen r).map _
 
 /-- Over the basic open `X.basicOpen r` of an affine open `U`, the sections of `A` on which `f`
 and `g` agree are the localization away from `r` of those over `U`. This is the counterpart of
 `CommMon.isLocalization_basicOpen` for the equalizer: localization is exact. -/
-theorem _root_.CategoryTheory.CommMon.isLocalization_equalizerSections_basicOpen
+theorem isLocalization_equalizerSections_basicOpen
     [A.X.IsQuasicoherent] [B.X.IsQuasicoherent] {U : X.Opens} (hU : IsAffineOpen U)
     (r : Γ(X, U)) :
     letI := ((A.restrictSections (homOfLE (X.basicOpen_le r))).restrict
@@ -118,13 +142,8 @@ theorem _root_.CategoryTheory.CommMon.isLocalization_equalizerSections_basicOpen
   refine (isLocalization_iff _ _).mpr ⟨?_, ?_, ?_⟩
   · -- The image of `r` is a unit, already in `Γ(X, X.basicOpen r)`.
     rintro ⟨_, n, rfl⟩
-    have : algebraMap E E' (algebraMap Γ(X, U) E r ^ n) =
-        algebraMap Γ(X, X.basicOpen r) E' (X.presheaf.map i.op r) ^ n := by
-      rw [map_pow]
-      congr 1
-      exact Subtype.ext (A.restrictSections_algebraMap i r)
-    rw [this]
-    exact ((X.toRingedSpace.isUnit_res_basicOpen r).map _).pow n
+    rw [map_pow]
+    exact (CommMon.isUnit_algebraMap_equalizerSections_basicOpen f g r).pow n
   · -- A section `z` with `z * r ^ n = x` has `f x` and `g x` equal away from `r`, hence
     -- `r ^ m * x` lies in the equalizer for some `m`.
     intro z
@@ -156,7 +175,7 @@ theorem _root_.CategoryTheory.CommMon.isLocalization_equalizerSections_basicOpen
 
 /-- On the affine opens of `X`, the presheaf of sections on which `f` and `g` agree is
 coequifibered over the structure presheaf: its sections over basic opens are localizations. -/
-instance _root_.CategoryTheory.CommMon.isCoequifibered_equalizerSubalgebraPresheaf
+instance isCoequifibered_equalizerSubalgebraPresheaf
     [A.X.IsQuasicoherent] [B.X.IsQuasicoherent] :
     (CommMon.equalizerSubalgebraPresheaf f g).IsCoequifibered :=
   .of_isLocalizationAway fun hU r ↦ CommMon.isLocalization_equalizerSections_basicOpen f g hU r
@@ -164,7 +183,7 @@ instance _root_.CategoryTheory.CommMon.isCoequifibered_equalizerSubalgebraPreshe
 /-- The morphism `Spec_X(A) ⟶ Spec_X(equalizer of f and g)` coequalizes the morphisms of
 relative spectra induced by `f` and `g`. -/
 @[reassoc]
-lemma _root_.CategoryTheory.CommMon.relativeSpecMap_equalizerSubalgebraPresheaf_relativeSpecπ
+lemma relativeSpecMap_equalizerSubalgebraPresheaf_relativeSpecπ
     [A.X.IsQuasicoherent] [B.X.IsQuasicoherent] :
     CommMon.relativeSpecMap f ≫ (CommMon.equalizerSubalgebraPresheaf f g).relativeSpecπ =
       CommMon.relativeSpecMap g ≫ (CommMon.equalizerSubalgebraPresheaf f g).relativeSpecπ :=
@@ -172,4 +191,4 @@ lemma _root_.CategoryTheory.CommMon.relativeSpecMap_equalizerSubalgebraPresheaf_
 
 end
 
-end TauCeti
+end CategoryTheory.CommMon

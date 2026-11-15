@@ -38,12 +38,15 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
   {b : (IsKilling.rootSystem H).Base}
 
-/-- Two distinct dot orbits are separated by a dot-invariant polynomial with values zero
-and one. The weights need not be integral or dominant. -/
-theorem exists_mem_dotInvariants_lift_eq_zero_one {lam mu : Dual K H}
+/-- Finite interpolation on the dot orbits of `lam` and `mu`: if the orbits are distinct, some
+polynomial vanishes on the orbit of `lam` and is `1` on the orbit of `mu`. -/
+private theorem exists_lift_dotAction_eq_zero_one {lam mu : Dual K H}
     (h : ¬ ∃ w, dotAction (IsKilling.rootSystem H) b w lam = mu) :
-    ∃ p ∈ dotInvariants b, SymmetricAlgebra.lift lam p = 0 ∧
-      SymmetricAlgebra.lift mu p = 1 := by
+    ∃ q : SymmetricAlgebra K H,
+      (∀ w : (IsKilling.rootSystem H).weylGroup,
+        SymmetricAlgebra.lift (dotAction (IsKilling.rootSystem H) b w lam) q = 0) ∧
+      ∀ w : (IsKilling.rootSystem H).weylGroup,
+        SymmetricAlgebra.lift (dotAction (IsKilling.rootSystem H) b w mu) q = 1 := by
   classical
   let P := IsKilling.rootSystem H
   let := RootPairing.finite_weylGroup P
@@ -67,6 +70,16 @@ theorem exists_mem_dotInvariants_lift_eq_zero_one {lam mu : Dual K H}
     apply h
     refine ⟨w⁻¹ * v, ?_⟩
     rw [dotAction_mul, hv, dotAction_inv_dotAction]
+  exact ⟨q, hq_lam, hq_mu⟩
+
+/-- Pulling a polynomial back along the dot action of `w`: the algebra maps `pull w` satisfy
+`lift f (pull w p) = lift (w ∙ f) p`. -/
+private theorem exists_lift_pull_eq_lift_dotAction :
+    ∃ pull : (IsKilling.rootSystem H).weylGroup → SymmetricAlgebra K H →ₐ[K] SymmetricAlgebra K H,
+      ∀ (w : (IsKilling.rootSystem H).weylGroup) (f : Dual K H) (p : SymmetricAlgebra K H),
+        SymmetricAlgebra.lift f (pull w p) =
+          SymmetricAlgebra.lift (dotAction (IsKilling.rootSystem H) b w f) p := by
+  let P := IsKilling.rootSystem H
   -- The transpose map on the Cartan and the affine constant give polynomial pullbacks.
   let pull (w : P.weylGroup) : SymmetricAlgebra K H →ₐ[K] SymmetricAlgebra K H :=
     SymmetricAlgebra.lift
@@ -97,11 +110,26 @@ theorem exists_mem_dotInvariants_lift_eq_zero_one {lam mu : Dual K H}
       rw [← ht']
       simp [dotAction_def, add_sub_assoc]
     exact DFunLike.congr_fun heq p
+  exact ⟨pull, hpull⟩
+
+/-- Two distinct dot orbits are separated by a dot-invariant polynomial with values zero
+and one. The weights need not be integral or dominant. -/
+theorem exists_mem_dotInvariants_lift_eq_zero_one {lam mu : Dual K H}
+    (h : ¬ ∃ w, dotAction (IsKilling.rootSystem H) b w lam = mu) :
+    ∃ p ∈ dotInvariants b, SymmetricAlgebra.lift lam p = 0 ∧
+      SymmetricAlgebra.lift mu p = 1 := by
+  classical
+  classical
+  let P := IsKilling.rootSystem H
+  let := RootPairing.finite_weylGroup P
+  let := Fintype.ofFinite P.weylGroup
+  obtain ⟨q, hq_lam, hq_mu⟩ := exists_lift_dotAction_eq_zero_one (b := b) h
+  obtain ⟨pull, hpull⟩ := exists_lift_pull_eq_lift_dotAction (b := b) (H := H)
   -- Right multiplication permutes the factors, so the product is dot-invariant.
   let p := ∏ w : P.weylGroup, pull w q
   have heval (f : Dual K H) : SymmetricAlgebra.lift f p =
       ∏ w : P.weylGroup, SymmetricAlgebra.lift (dotAction P b w f) q := by
-    simp only [p, map_prod, hpull]
+    simp only [p, P, map_prod, hpull]
   refine ⟨p, ?_, ?_, ?_⟩
   · rw [mem_dotInvariants_iff]
     intro v f
@@ -109,9 +137,9 @@ theorem exists_mem_dotInvariants_lift_eq_zero_one {lam mu : Dual K H}
     exact Fintype.prod_equiv (Equiv.mulRight v) _ _
       (fun w ↦ by simp only [P, Equiv.coe_mulRight, dotAction_mul])
   · rw [heval]
-    simp [hq_lam]
+    simp [P, hq_lam]
   · rw [heval]
-    simp [hq_mu]
+    simp [P, hq_mu]
 
 /-- Equality of all dot-invariant polynomial values characterizes a dot orbit. -/
 theorem forall_mem_dotInvariants_lift_eq_iff {lam mu : Dual K H} :

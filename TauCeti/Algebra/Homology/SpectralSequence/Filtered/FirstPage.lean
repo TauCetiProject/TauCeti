@@ -32,7 +32,8 @@ connecting maps of the short exact sequences of graded pieces
 
 ## Main results
 
-* `CochainComplex.spectralObject_δ_comp_spectralObjectHIsoCokernel_hom`: the connecting maps of the
+* `CochainComplex.spectralObject_δ_comp_spectralObjectHIsoCokernel_hom`,
+  `CochainComplex.spectralObjectHIsoCokernel_inv_comp_spectralObject_δ`: the connecting maps of the
   spectral object, for monomorphic transition maps.
 * `CochainComplex.spectralSequence_first_page_d_eq`: the first differential of the spectral
   sequence of a filtered complex.
@@ -73,6 +74,20 @@ lemma spectralObject_δ_comp_spectralObjectHIsoCokernel_hom {i j k : ι} (f : i 
     (congrArg (fun t => A ≫ t)
       (mappingCone.shiftMap_mappingConeCompTriangle_mor₃ (F.map f) (F.map g) n₀ n₁
         (by lia))).trans (Category.assoc _ _ _).symm
+
+/-- The form of `spectralObject_δ_comp_spectralObjectHIsoCokernel_hom` with the identification of
+`H^{n₀}(g)` with the cohomology of `cokernel (F.map g)` moved to the source: on the cohomology of
+the cokernels, the connecting maps of the spectral object of `F` are the connecting maps of the
+short exact sequences of cokernels. -/
+@[reassoc]
+lemma spectralObjectHIsoCokernel_inv_comp_spectralObject_δ {i j k : ι} (f : i ⟶ j) (g : j ⟶ k)
+    [Mono (F.map f)] [Mono (F.map g)] (n₀ n₁ : ℤ) (h : n₀ + 1 = n₁) :
+    (spectralObjectHIsoCokernel F g n₀).inv ≫ (spectralObject F).δ f g n₀ n₁ h =
+      (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact (F.map f) (F.map g)).δ
+          n₀ n₁ (by simp [← h]) ≫ (spectralObjectHIsoCokernel F f n₁).inv :=
+  (Iso.inv_comp_eq _).2 (((Iso.eq_comp_inv _).2
+    (spectralObject_δ_comp_spectralObjectHIsoCokernel_hom F f g n₀ n₁ h)).trans
+      (Category.assoc _ _ _))
 
 end SpectralObject
 

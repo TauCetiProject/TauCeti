@@ -95,7 +95,7 @@ where `χ^μ` is the character of the Specht module `S^μ`. -/
 theorem char_weylRep_eq_sum_character (t : YoungTableau μ) (g : GL (Fin n) k) :
     Representation.character (V := (weylModule k n t).toSubmodule) (weylRep k n t) g =
       (μ.card.factorial : k)⁻¹ *
-        ∑ σ, (spechtSubrepresentation μ).toRepresentation.character σ •
+        ∑ σ, (spechtSubrepresentation (R := ℚ) μ).toRepresentation.character σ •
           LinearMap.trace k _ (permTensorAction k n μ.card σ * tensorPowerRep k n μ.card g) := by
   rw [sum_char_spechtSubrepresentation_smul t _
       fun σ τ => trace_permTensorAction_conj_mul_tensorPowerRep σ τ g,
@@ -176,7 +176,7 @@ the character of `(kⁿ)^{⊗d}` at `g` is the sum over the partitions `μ` of `
 the Weyl modules `𝕊^μ(kⁿ)` at `g`, each weighted by the dimension `f^μ` of the Specht module
 `S^μ`. -/
 theorem sum_finrank_spechtModule_mul_char_weylRepOfShape_ofPartition (d : ℕ) (g : GL (Fin n) k) :
-    ∑ μ : d.Partition, (finrank ℚ (spechtModule μ) : k) *
+    ∑ μ : d.Partition, (finrank ℚ (spechtModule (R := ℚ) μ) : k) *
         Representation.character (V := (weylModuleOfShape k n (ofPartition μ)).toSubmodule)
           (weylRepOfShape k n (ofPartition μ)) g =
       (tensorPowerRep k n d).character g := by
@@ -184,10 +184,11 @@ theorem sum_finrank_spechtModule_mul_char_weylRepOfShape_ofPartition (d : ℕ) (
   set T := fun σ : Equiv.Perm (Fin d) =>
     LinearMap.trace k _ (permTensorAction k n d σ * tensorPowerRep k n d g)
   simp_rw [char_weylRepOfShape_ofPartition_eq_sum_spechtChar]
-  calc ∑ μ : d.Partition, (finrank ℚ (spechtModule μ) : k) *
+  calc ∑ μ : d.Partition, (finrank ℚ (spechtModule (R := ℚ) μ) : k) *
         ((d.factorial : k)⁻¹ * ∑ σ, spechtChar μ σ • T σ)
       _ = (d.factorial : k)⁻¹ *
-          ∑ σ, (∑ μ : d.Partition, (finrank ℚ (spechtModule μ) : ℤ) * spechtChar μ σ) • T σ := by
+          ∑ σ, (∑ μ : d.Partition, (finrank ℚ (spechtModule (R := ℚ) μ) : ℤ) * spechtChar μ σ) •
+            T σ := by
         simp_rw [Finset.sum_smul, Finset.mul_sum]
         rw [Finset.sum_comm]
         refine Finset.sum_congr rfl fun μ _ => Finset.sum_congr rfl fun σ _ => ?_
@@ -202,7 +203,7 @@ theorem sum_finrank_spechtModule_mul_char_weylRepOfShape_ofPartition (d : ℕ) (
 /-- **The Schur-Weyl decomposition of the character of the bundled tensor power**: the `FDRep` form
 of `TauCeti.sum_finrank_spechtModule_mul_char_weylRepOfShape_ofPartition`. -/
 theorem sum_finrank_spechtModule_mul_char_weylFDRepOfShape_ofPartition (d : ℕ) (g : GL (Fin n) k) :
-    ∑ μ : d.Partition, (finrank ℚ (spechtModule μ) : k) *
+    ∑ μ : d.Partition, (finrank ℚ (spechtModule (R := ℚ) μ) : k) *
         (weylFDRepOfShape k n (ofPartition μ)).character g =
       (tensorPowerFDRep k n d).character g :=
   sum_finrank_spechtModule_mul_char_weylRepOfShape_ofPartition d g
@@ -211,7 +212,7 @@ variable (k) in
 /-- **The Schur-Weyl dimension count**: `∑_{μ ⊢ d} f^μ · dim 𝕊^μ(kⁿ) = n^d`, where `f^μ` is the
 dimension of the Specht module `S^μ`. -/
 theorem sum_finrank_spechtModule_mul_finrank_weylModuleOfShape (n d : ℕ) :
-    ∑ μ : d.Partition, finrank ℚ (spechtModule μ) *
+    ∑ μ : d.Partition, finrank ℚ (spechtModule (R := ℚ) μ) *
         finrank k (weylModuleOfShape k n (ofPartition μ)).toSubmodule = n ^ d := by
   have h := sum_finrank_spechtModule_mul_char_weylRepOfShape_ofPartition (k := k) (n := n) d 1
   simp only [Representation.char_one, finrank_tensorPower] at h

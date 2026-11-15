@@ -93,8 +93,8 @@ theorem taylorExp_leftInvariantDerivation_apply
   choose m hm using hd
   let N := m h + ∑ i ∈ 𝓡.index, m (𝓡.right i)
   have hN : ∀ x, m x ≤ N → D^[N] x = 0 := fun x hx => by
-    simpa [Module.End.pow_apply] using Module.End.pow_map_zero_of_le (f := D.toLinearMap) hx
-      (by simpa [Module.End.pow_apply] using hm x)
+    simpa [pow_apply_eq_iterate] using Module.End.pow_map_zero_of_le (f := D.toLinearMap) hx
+      (by simpa [pow_apply_eq_iterate] using hm x)
   have hright : ∀ i ∈ 𝓡.index, D^[N] (𝓡.right i) = 0 := fun i hi =>
     hN _ (le_add_left (Finset.single_le_sum (fun j _ => Nat.zero_le (m (𝓡.right j))) hi))
   have hexp : ∀ i ∈ 𝓡.index, expPoint d hd (𝓡.right i) =
@@ -111,7 +111,7 @@ theorem taylorExp_leftInvariantDerivation_apply
         refine Finset.sum_congr rfl fun k _ => ?_
         rw [iterate_leftInvariantDerivation_apply, ← 𝓡.eq, map_sum, Finset.smul_sum]
         refine Finset.sum_congr rfl fun i _ => ?_
-        rw [tensorComponent_tmul, smul_assoc, LinearMap.comp_apply, Module.End.coe_pow,
+        rw [tensorComponent_tmul, smul_assoc, LinearMap.comp_apply, FunLike.coe_pow_eq_iterate,
           Derivation.coeFn_coe]
     _ = ∑ i ∈ 𝓡.index, expPoint d hd (𝓡.right i) • 𝓡.left i := by
         rw [Finset.sum_comm]

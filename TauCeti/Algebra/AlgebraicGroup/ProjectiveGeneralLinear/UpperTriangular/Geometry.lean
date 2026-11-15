@@ -85,8 +85,6 @@ theorem faithfullyFlat_conjugationMap :
   let _ : Algebra.Smooth k (GeneralLinear.UpperTriangular.coordinateHopfAlgebra k n) :=
     (smoothCommHopfAlgProperty_iff _).mp
       (GeneralLinear.UpperTriangular.smoothCommHopfAlgProperty_coordinateHopfAlgebra n k)
-  let _ := isGeometricallyReduced_of_smooth k
-    (GeneralLinear.UpperTriangular.coordinateHopfAlgebra k n)
   exact CommHopfAlgCat.faithfullyFlat_imageι (restriction k n)
 
 /-- Over an algebraically closed value field, the points cut out by the projective

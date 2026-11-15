@@ -170,10 +170,14 @@ theorem perimeter_ball (hr : 0 < r) :
     ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_natCast,
     ofReal_measureReal measure_ball_lt_top.ne]
 
-/-- **The perimeter of a ball, normalized by its volume.** A ball of radius `r > 0` has perimeter
-`(n / r) μ (ball c r)`, where `n` is the dimension. -/
-theorem perimeter_ball_eq_ofReal_div_mul (hr : 0 < r) :
+/-- **The perimeter of a ball, normalized by its volume.** A ball of radius `r` has perimeter
+`(n / r) μ (ball c r)`, where `n` is the dimension. For `r ≤ 0` the ball is empty and both sides
+are `0`. -/
+theorem perimeter_ball_eq_ofReal_div_mul :
     perimeter μ ⊤ (ball c r) = ENNReal.ofReal (finrank ℝ E / r) * μ (ball c r) := by
+  by_cases hr : 0 < r
+  swap
+  · rw [ball_eq_empty.2 (not_lt.1 hr), perimeter_empty, measure_empty, mul_zero]
   rw [perimeter_ball_eq_ofReal hr, ← μ.finrank_div_mul_addHaar_real_ball c hr,
     ENNReal.ofReal_mul (by positivity), ofReal_measureReal measure_ball_lt_top.ne]
 

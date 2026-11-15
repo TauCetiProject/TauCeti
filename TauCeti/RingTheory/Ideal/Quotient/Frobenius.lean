@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RingTheory.Perfection
 public import TauCeti.Algebra.CharP.Frobenius.PowRingHom
 public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
@@ -36,6 +37,9 @@ in which `ϖ` becomes a unit, this map is automatically injective.
   `frobeniusModPow`, as divisibility conditions.
 * `TauCeti.frobeniusModPow_injective`: `frobeniusModPow` is injective when `A` is integrally closed
   in an algebra in which `ϖ` is a unit.
+* `TauCeti.surjective_pow_modP_iff`, `TauCeti.surjective_frobenius_modP_iff`: the `p`-th power map
+  (Frobenius) on `ModP A p = A ⧸ p` is surjective exactly when every element of `A` is a `p`-th
+  power modulo `p`.
 
 ## References
 
@@ -137,5 +141,30 @@ theorem frobeniusModPow_injective {B : Type*} [CommRing B] [Algebra A B]
     Function.Injective (frobeniusModPow p h) :=
   (frobeniusModPow_injective_iff h).mpr fun _ ↦
     (IsIntegrallyClosedIn.pow_dvd_pow_iff (NeZero.ne p) hϖ).mp
+
+omit [Fact p.Prime] in
+variable (A) in
+/-- The `p`-th power map on `ModP A p = A ⧸ p` is surjective exactly when every element of `A` is
+a `p`-th power modulo `p`. Unlike `surjective_frobenius_modP_iff`, this needs no characteristic
+assumption on `ModP A p`, so it applies even when `p` is a unit of `A`. -/
+theorem surjective_pow_modP_iff :
+    Function.Surjective (fun x : ModP A p ↦ x ^ p) ↔ ∀ x : A, ∃ y, (p : A) ∣ x - y ^ p := by
+  simp_rw [← Ideal.mem_span_singleton, ← Ideal.Quotient.eq]
+  refine ⟨fun h x ↦ ?_, fun h x ↦ ?_⟩
+  · obtain ⟨y, hy⟩ := h (Ideal.Quotient.mk _ x)
+    obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
+    beta_reduce at hy
+    exact ⟨y, by rw [← hy, map_pow]⟩
+  · obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+    obtain ⟨y, hy⟩ := h x
+    exact ⟨Ideal.Quotient.mk _ y, by beta_reduce; rw [← map_pow, hy]⟩
+
+omit [Fact p.Prime] in
+variable (A) in
+/-- Frobenius on `ModP A p = A ⧸ p` is surjective exactly when every element of `A` is a `p`-th
+power modulo `p`. -/
+theorem surjective_frobenius_modP_iff [ExpChar (ModP A p) p] :
+    Function.Surjective (frobenius (ModP A p) p) ↔ ∀ x : A, ∃ y, (p : A) ∣ x - y ^ p := by
+  simpa only [← frobenius_def] using surjective_pow_modP_iff (A := A) (p := p)
 
 end TauCeti

@@ -262,7 +262,7 @@ theorem iSupIndep_dgRightModuleCochains :
     have h0 : ∑ i ∈ s, v i x = 0 := by
       rw [← LinearMap.sum_apply, hsum, LinearMap.zero_apply]
     have key := congrArg (fun y : N ↦ (decompose ℳN y (q + j) : N)) h0
-    simp only [decompose_sum, decompose_zero, DirectSum.sum_apply, zero_apply,
+    simp only [decompose_sum, decompose_zero, DirectSum.sum_apply, DirectSum.zero_apply,
       ZeroMemClass.coe_zero, Submodule.coe_sum] at key
     rw [Finset.sum_eq_single j (fun i hi hij ↦ decompose_of_mem_ne ℳN (hmem i hi)
       (by omega)) (fun h ↦ absurd hj h), decompose_of_mem_same ℳN (hmem j hj)] at key
@@ -370,10 +370,10 @@ def dgRightModuleHomLinearEquivZeroCocycles (hM : IsDGRightModule h ℳ dM)
   __ := dgRightModuleHomEquivZeroCocycles hM hN
   map_add' f g := by
     ext x
-    exact DGRightModuleHom.add_apply f g x
+    exact TauCeti.DGRightModuleHom.add_apply f g x
   map_smul' r f := by
     ext x
-    exact DGRightModuleHom.smul_apply r f x
+    exact TauCeti.DGRightModuleHom.smul_apply r f x
 
 @[simp]
 theorem dgRightModuleHomLinearEquivZeroCocycles_toEquiv (hM : IsDGRightModule h ℳ dM)

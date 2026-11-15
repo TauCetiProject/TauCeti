@@ -29,6 +29,13 @@ ring and `G` is commutative, a regular cochain satisfying the cocycle identity o
 a regular cocycle; when moreover `G` is a group, this says that the sections are multiplicative
 on all points. Both follow from the universal pair of points of `R[G] ⊗[R] R[G]`.
 
+Combined with the Yoneda description of natural sections
+(`TauCeti.Comodule.eq_pointSection_of_naturality`), this classifies all splittings of `V_a ⋊ D`
+defined on the functor of points: for a commutative group `G`, every family of splittings natural
+in the value algebra is the splitting of a regular cocycle, hence the conjugate of the standard
+splitting by a single vector of `V`. Conversely, the splitting of a regular cocycle is natural in
+the value algebra.
+
 This is the vector-group step in the conjugacy of maximal tori in a connected solvable group:
 two tori complementary to a normal vector subgroup on which they act linearly are images of two
 splittings, which are then conjugate by a rational point of the vector subgroup.
@@ -47,6 +54,12 @@ splittings, which are then conjugate by a rational point of the vector subgroup.
   the standard splitting by a vector independent of the value algebra.
 * `TauCeti.Comodule.IsRegularCocycle₁.isConj_pointSplitting`: it is conjugate to the standard
   splitting by an element of the normal factor.
+* `TauCeti.Comodule.IsRegularCocycle₁.pointSemidirectMap_pointSplitting`: the splitting of a
+  regular cocycle is natural in the value algebra.
+* `TauCeti.Comodule.isRegularCocycle₁_of_naturality`: a family of splittings natural in the value
+  algebra is the splitting of a regular cocycle.
+* `TauCeti.Comodule.exists_splitting_eq_conj_of_naturality`: such a family is the conjugate of the
+  standard splitting by a single vector, independent of the value algebra.
 
 ## References
 
@@ -153,6 +166,13 @@ theorem isConj_pointSplitting (hb : IsRegularCocycle₁ b) :
         (hb.pointSplitting A) (inr_splitting _) :=
   ⟨_, funext hb.pointSplitting_apply⟩
 
+/-- The splitting defined by a regular cocycle is natural in the value algebra. -/
+theorem pointSemidirectMap_pointSplitting (hb : IsRegularCocycle₁ b) {B : Type*} [CommRing B]
+    [Algebra R B] (φ : A →ₐ[R] B) (g : WithConv (MonoidAlgebra R G →ₐ[R] A)) :
+    pointSemidirectMap V φ (hb.pointSplitting A g) =
+      hb.pointSplitting B (AlgHom.mapValue φ g) :=
+  pointSemidirectMap_pointSection φ b g
+
 end IsRegularCocycle₁
 
 end Group
@@ -203,6 +223,69 @@ theorem isRegularCocycle₁_iff_forall_pointSection_mul (b : V ⊗[R] MonoidAlge
         pointSection V A b (g * h) = pointSection V A b g * pointSection V A b h := by
   simp only [pointSection_mul_eq_iff]
   exact isRegularCocycle₁_iff_forall_pointCochain_mul b
+
+/-- **Natural splittings come from regular cocycles.** Let `s` be a family of splittings of the
+points semidirect products `(A ⊗[R] V) ⋊ D(A) → D(A)`, natural in the commutative `R`-algebra
+`A`. The regular cochain read off from `s` at the universal point `id : R[G] →ₐ[R] R[G]` is a
+regular cocycle. By `TauCeti.Comodule.eq_pointSection_of_naturality`, `s` is the splitting
+`g ↦ (b(g), g)` of this cocycle `b`. -/
+theorem isRegularCocycle₁_of_naturality
+    (s : ∀ (A : Type (max u v)) [CommRing A] [Algebra R A],
+      (toGroupExtension
+        (pointsRepresentation (R := R) (H := MonoidAlgebra R G) (A := A) V).toMulAut).Splitting)
+    (hs : ∀ (A B : Type (max u v)) [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
+      (φ : A →ₐ[R] B) (g : WithConv (MonoidAlgebra R G →ₐ[R] A)),
+      pointSemidirectMap V φ (s A g) = s B (AlgHom.mapValue φ g)) :
+    IsRegularCocycle₁ (TensorProduct.comm R (MonoidAlgebra R G) V
+      (s (MonoidAlgebra R G) (toConv (AlgHom.id R (MonoidAlgebra R G)))).left.toAdd) := by
+  refine (isRegularCocycle₁_iff_forall_pointSection_mul _).2 fun A _ _ g g' ↦ ?_
+  have h (g : WithConv (MonoidAlgebra R G →ₐ[R] A)) :
+      s A g = pointSection V A (TensorProduct.comm R (MonoidAlgebra R G) V
+        (s (MonoidAlgebra R G) (toConv (AlgHom.id R (MonoidAlgebra R G)))).left.toAdd) g :=
+    eq_pointSection_of_naturality (fun A _ _ ↦ (s A).toSection) hs A g
+  rw [← h (g * g'), ← h g, ← h g']
+  exact map_mul (s A) g g'
+
+/-- **Natural splittings of `V_a ⋊ D` are conjugate to the standard splitting.** Let `s` be a
+family of splittings of the points semidirect products `(A ⊗[R] V) ⋊ D(A) → D(A)`, natural in the
+commutative `R`-algebra `A`. Then a single vector `y : V` conjugates the standard splitting
+`g ↦ (0, g)` to `s` on the points over every `A`: the splitting is conjugation by `1 ⊗ y`. -/
+theorem exists_splitting_eq_conj_of_naturality
+    (s : ∀ (A : Type (max u v)) [CommRing A] [Algebra R A],
+      (toGroupExtension
+        (pointsRepresentation (R := R) (H := MonoidAlgebra R G) (A := A) V).toMulAut).Splitting)
+    (hs : ∀ (A B : Type (max u v)) [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
+      (φ : A →ₐ[R] B) (g : WithConv (MonoidAlgebra R G →ₐ[R] A)),
+      pointSemidirectMap V φ (s A g) = s B (AlgHom.mapValue φ g)) :
+    ∃ y : V, ∀ (A : Type (max u v)) [CommRing A] [Algebra R A]
+      (g : WithConv (MonoidAlgebra R G →ₐ[R] A)),
+      s A g = inl (Multiplicative.ofAdd ((1 : A) ⊗ₜ[R] y)) * inr g *
+        (inl (Multiplicative.ofAdd ((1 : A) ⊗ₜ[R] y)))⁻¹ := by
+  set b := TensorProduct.comm R (MonoidAlgebra R G) V
+    (s (MonoidAlgebra R G) (toConv (AlgHom.id R (MonoidAlgebra R G)))).left.toAdd
+  have hb : IsRegularCocycle₁ b := isRegularCocycle₁_of_naturality s hs
+  refine ⟨LinearMap.tensorComponent (monoidCoeff R G 1) b, fun A _ _ g ↦ ?_⟩
+  have h : s A g = pointSection V A b g :=
+    eq_pointSection_of_naturality (fun A _ _ ↦ (s A).toSection) hs A g
+  rw [h, ← IsRegularCocycle₁.coe_pointSplitting A hb]
+  exact hb.pointSplitting_apply g
+
+/-- On the points over every commutative `R`-algebra, a family of splittings of `V_a ⋊ D → D`
+natural in the value algebra is conjugate to the standard splitting by an element of the normal
+factor. -/
+theorem isConj_inr_splitting_of_naturality
+    (s : ∀ (A : Type (max u v)) [CommRing A] [Algebra R A],
+      (toGroupExtension
+        (pointsRepresentation (R := R) (H := MonoidAlgebra R G) (A := A) V).toMulAut).Splitting)
+    (hs : ∀ (A B : Type (max u v)) [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
+      (φ : A →ₐ[R] B) (g : WithConv (MonoidAlgebra R G →ₐ[R] A)),
+      pointSemidirectMap V φ (s A g) = s B (AlgHom.mapValue φ g))
+    (A : Type (max u v)) [CommRing A] [Algebra R A] :
+    (toGroupExtension
+      (pointsRepresentation (R := R) (H := MonoidAlgebra R G) (A := A) V).toMulAut).IsConj
+        (s A) (inr_splitting _) := by
+  obtain ⟨y, hy⟩ := exists_splitting_eq_conj_of_naturality s hs
+  exact ⟨_, funext (hy A)⟩
 
 end CommGroup
 

@@ -236,6 +236,46 @@ lemma mapHom_apply (a : π (n + 1) X x) : mapHom f hy a = map f hy a := (rfl)
 
 end map
 
+/-- An isomorphism of simplicial sets induces an equivalence on homotopy classes
+at corresponding base points, in every degree. -/
+def equivOfIso {Y : SSet.{u}} {y : Y _⦋0⦌} (e : X ≅ Y) (hy : e.hom.app _ x = y) :
+    π n X x ≃ π n Y y where
+  toFun := map e.hom hy
+  invFun := map e.inv (by rw [← hy]; exact congr($(e.hom_inv_id).app _ x))
+  left_inv a := by simp [map_map]
+  right_inv a := by simp [map_map]
+
+omit [KanComplex X] in
+@[simp]
+lemma equivOfIso_apply {Y : SSet.{u}} {y : Y _⦋0⦌} (e : X ≅ Y)
+    (hy : e.hom.app _ x = y) (a : π n X x) :
+    equivOfIso e hy a = map e.hom hy a := (rfl)
+
+omit [KanComplex X] in
+@[simp]
+lemma equivOfIso_symm_apply {Y : SSet.{u}} {y : Y _⦋0⦌} (e : X ≅ Y)
+    (hy : e.hom.app _ x = y) (a : π n Y y) :
+    (equivOfIso e hy).symm a =
+      map e.inv (by rw [← hy]; exact congr($(e.hom_inv_id).app _ x)) a := (rfl)
+
+/-- Isomorphisms of Kan complexes induce group isomorphisms on positive homotopy groups. -/
+def mulEquivOfIso {Y : SSet.{u}} [KanComplex Y] {y : Y _⦋0⦌}
+    (e : X ≅ Y) (hy : e.hom.app _ x = y) :
+    π (n + 1) X x ≃* π (n + 1) Y y where
+  __ := equivOfIso e hy
+  map_mul' := map_mul e.hom hy
+
+@[simp]
+lemma mulEquivOfIso_apply {Y : SSet.{u}} [KanComplex Y] {y : Y _⦋0⦌}
+    (e : X ≅ Y) (hy : e.hom.app _ x = y) (a : π (n + 1) X x) :
+    mulEquivOfIso e hy a = map e.hom hy a := (rfl)
+
+@[simp]
+lemma mulEquivOfIso_symm_apply {Y : SSet.{u}} [KanComplex Y] {y : Y _⦋0⦌}
+    (e : X ≅ Y) (hy : e.hom.app _ x = y) (a : π (n + 1) Y y) :
+    (mulEquivOfIso e hy).symm a =
+      map e.inv (by rw [← hy]; exact congr($(e.hom_inv_id).app _ x)) a := (rfl)
+
 end π
 
 end KanComplex

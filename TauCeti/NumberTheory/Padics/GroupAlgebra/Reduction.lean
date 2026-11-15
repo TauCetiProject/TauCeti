@@ -28,7 +28,7 @@ Reduction of coefficients gives a surjective ring homomorphism
 This is the coefficient-reduction bridge needed to compare projective integral lattices with
 modular representations in Swan's rational detection theorem.  The quotient map is packaged as a
 semilinear map, and its scalar action and kernel are recorded explicitly.  Projectivity of the
-reduction is the special case of `Module.Projective.quotient_smul_top` for coefficient reduction.
+reduction is the special case of `RingHom.projective_quotient_smul_top` for coefficient reduction.
 
 Reduction is functorial for isomorphisms, and it commutes with restriction along a monoid
 homomorphism `f : G →* H`: the reduction of a `ℤ_p[H]`-module over `G` is its reduction over `H`,
@@ -174,7 +174,7 @@ theorem padicReduction_module_finite [Module.Finite A M] :
 projective `𝔽_p[G]`-module. -/
 theorem padicReduction_module_projective [Module.Projective A M] :
     Module.Projective kG (M ⧸ I • (⊤ : Submodule A M)) :=
-  .quotient_smul_top π (padicMonoidAlgebraReduction_surjective p G)
+  (π).projective_quotient_smul_top (padicMonoidAlgebraReduction_surjective p G)
     (ker_padicMonoidAlgebraReduction p G).ge (padicReduction_smul p G M)
 
 /-- A `𝔽_p[G]`-linear map preserves `ℤ_p[G]`-scalar multiplication when the integral actions

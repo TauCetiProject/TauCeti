@@ -135,7 +135,8 @@ private lemma slabRestrict_apply_of_subset {n : ℕ} {s s' : Set I} (hss' : s �
     slabRestrict M h n s α = (reducedSingularHomologyFunctor M n).map
       (ofHom (ContinuousMap.inclusion (slabCompl_subset_slabCompl hss')))
         (slabRestrict M h n s' α) := by
-  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, ofHom_inclusion_comp_ofHom_inclusion]
+  rw [← ConcreteCategory.comp_apply, ← CategoryTheory.Functor.map_comp,
+    ofHom_inclusion_comp_ofHom_inclusion]
 
 variable [T2Space Y]
 

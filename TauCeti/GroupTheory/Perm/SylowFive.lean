@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Perm.Recognition
-public import TauCeti.GroupTheory.Sylow
+public import TauCeti.GroupTheory.Sylow.Basic
 
 /-!
 # Sylow `5`-subgroups of `S₅` and the orders of its transitive subgroups

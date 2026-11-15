@@ -8,9 +8,11 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Distribution.DuBoisReymond
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.Topology.Order.Interval
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -59,11 +61,18 @@ theorem, turns `∫ φ' t • ∫ s in α..t, u' s` into `-∫ φ s • u' s`. T
   `TauCeti.hasWeakLineDerivOn_Ioo_iff_exists_ae_eq_add_intervalIntegral`: a function is weakly
   differentiable on an interval exactly when it is almost everywhere a constant plus the primitive
   of its weak derivative.
+* `TauCeti.HasWeakLineDerivOn.exists_ae_eq_add_intervalIntegral_left`: the same with the primitive
+  taken from the left endpoint, when the weak derivative is integrable.
 * `TauCeti.HasWeakLineDerivOn.exists_ae_eq_add_intervalIntegral_top`: the same on the whole line.
 * `TauCeti.HasWeakLineDerivOn.exists_continuousOn_ae_eq`: if the weak derivative is integrable,
   the function has a representative continuous on the closed interval.
 * `TauCeti.HasWeakLineDerivOn.integral_eq_sub`: the fundamental theorem of calculus for such a
   continuous representative.
+* `TauCeti.HasWeakLineDerivOn.absolutelyContinuousOnInterval` and
+  `TauCeti.HasWeakLineDerivOn.ae_hasDerivAt`: absolute continuity and identification of the
+  classical derivative of a continuous representative.
+* `TauCeti.HasWeakLineDerivOn.integral_eq_zero_iff_exists_absolutelyContinuousOnInterval`:
+  zero integral of the weak derivative characterizes matching endpoint traces.
 * `TauCeti.HasWeakLineDerivOn.integral_deriv_smul_eq_sub`: integration by parts against a `C¹`
   function for such a continuous representative.
 * `TauCeti.HasWeakLineDerivOn.norm_le_setAverage_add_integral`: for `a < b`, the pointwise bound
@@ -204,6 +213,19 @@ theorem HasWeakLineDerivOn.exists_ae_eq_add_intervalIntegral
   filter_upwards [hc] with t ht
   rw [← ht, Pi.sub_apply, sub_add_cancel]
 
+/-- **The fundamental theorem of calculus for weak derivatives, from the left endpoint.** If `u'`
+is the weak derivative of `u` on `Ioo a b` and `u'` is integrable on `Ioo a b`, then `u` is almost
+everywhere on `Ioo a b` equal to a constant plus the primitive `t ↦ ∫ s in a..t, u' s`. -/
+theorem HasWeakLineDerivOn.exists_ae_eq_add_intervalIntegral_left
+    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ u u' 1) (hu' : IntegrableOn u' (Ioo a b)) :
+    ∃ c, u =ᵐ[volume.restrict (Ioo a b)] fun t ↦ c + ∫ s in a..t, u' s := by
+  have := h.completeSpace
+  obtain ⟨c, hc⟩ := ((h.sub (hasWeakLineDerivOn_intervalIntegral_left hu')).congr_ae_deriv
+    (EventuallyEq.of_eq (sub_self u'))).exists_ae_eq_const
+  refine ⟨c, ?_⟩
+  filter_upwards [hc] with t ht
+  rw [← ht, Pi.sub_apply, sub_add_cancel]
+
 /-- **Weak derivatives on an interval.** For `u'` locally integrable on `Ioo a b` and
 `t₀ ∈ Ioo a b`, `u'` is the weak derivative of `u` on `Ioo a b` exactly when `u` is almost
 everywhere on `Ioo a b` a constant plus the primitive `t ↦ ∫ s in t₀..t, u' s`. -/
@@ -289,6 +311,81 @@ theorem HasWeakLineDerivOn.integral_eq_sub
       (uIcc_of_le hab.le ▸ hr))
   rw [heq ht, heq hs, hw_def, add_sub_add_left_eq_sub,
     integral_interval_sub_left (hsub t ht) (hsub s hs)]
+
+/-- A continuous representative of a function with integrable weak derivative on an interval
+is absolutely continuous on the closed interval. -/
+theorem HasWeakLineDerivOn.absolutelyContinuousOnInterval
+    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ u u' 1)
+    (hu' : IntegrableOn u' (Ioo a b)) (hv : ContinuousOn v (Icc a b))
+    (hae : u =ᵐ[volume.restrict (Ioo a b)] v) (hab : a ≤ b) :
+    AbsolutelyContinuousOnInterval v a b := by
+  have hint := (intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hu'
+  have hconst := (LipschitzWith.const (v a)).lipschitzOnWith.absolutelyContinuousOnInterval
+    (a := a) (b := b)
+  refine (hconst.add (hint.absolutelyContinuousOnInterval_intervalIntegral'
+    left_mem_uIcc)).congr fun t ht ↦ ?_
+  simp only [Pi.add_apply]
+  rw [h.integral_eq_sub hu' hv hae (left_mem_Icc.2 hab) (uIcc_of_le hab ▸ ht)]
+  exact add_sub_cancel _ _
+
+/-- The case of `HasWeakLineDerivOn.ae_hasDerivAt` where the weak derivative is integrable. -/
+private theorem HasWeakLineDerivOn.ae_hasDerivAt_of_integrableOn
+    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ u u' 1)
+    (hu' : IntegrableOn u' (Ioo a b)) (hv : ContinuousOn v (Icc a b))
+    (hae : u =ᵐ[volume.restrict (Ioo a b)] v) (hab : a ≤ b) :
+    ∀ᵐ t, t ∈ uIoc a b → HasDerivAt v (u' t) t := by
+  have := h.completeSpace
+  have hint := (intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hu'
+  filter_upwards [hint.ae_hasDerivAt_integral, volume.ae_ne b] with t ht htb hmem
+  have htIoc : t ∈ Ioc a b := uIoc_of_le hab ▸ hmem
+  have htI : t ∈ Ioo a b := ⟨htIoc.1, lt_of_le_of_ne htIoc.2 htb⟩
+  refine ((ht (uIoc_subset_uIcc hmem) a left_mem_uIcc).const_add (v a)).congr_of_eventuallyEq ?_
+  filter_upwards [Ioo_mem_nhds htI.1 htI.2] with s hs
+  rw [h.integral_eq_sub hu' hv hae (left_mem_Icc.2 hab) (Ioo_subset_Icc_self hs)]
+  exact (add_sub_cancel _ _).symm
+
+/-- The classical derivative of a Sobolev representative continuous on the open interval agrees
+almost everywhere in the interval with its weak derivative. -/
+theorem HasWeakLineDerivOn.ae_hasDerivAt
+    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ u u' 1)
+    (hv : ContinuousOn v (Ioo a b)) (hae : u =ᵐ[volume.restrict (Ioo a b)] v) (hab : a ≤ b) :
+    ∀ᵐ t, t ∈ uIoc a b → HasDerivAt v (u' t) t := by
+  rcases hab.eq_or_lt with rfl | hab
+  · simp
+  -- Cover `Ioc a b` up to `b` by the compact subintervals `Icc (c n) (d n)` of `Ioo a b`, on
+  -- which `u'` is integrable.
+  obtain ⟨c, d, -, -, hc, hd, hcd, hca, hdb⟩ := exists_seq_strictAnti_strictMono_tendsto hab
+  have hn (n : ℕ) : ∀ᵐ t, t ∈ uIoc (c n) (d n) → HasDerivAt v (u' t) t := by
+    have hsub : Icc (c n) (d n) ⊆ Ioo a b := Icc_subset_Ioo (hc n).1 (hd n).2
+    exact (h.mono (Ω' := ⟨Ioo (c n) (d n), isOpen_Ioo⟩)
+      (Ioo_subset_Ioo (hc n).1.le (hd n).2.le)).ae_hasDerivAt_of_integrableOn
+      ((h.locallyIntegrableOn_deriv.integrableOn_compact_subset hsub isCompact_Icc).mono_set
+        Ioo_subset_Icc_self) (hv.mono hsub)
+      (ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo (hc n).1.le (hd n).2.le) hae)
+      (hcd n n).le
+  filter_upwards [ae_all_iff.2 hn, volume.ae_ne b] with t ht htb hmem
+  have htIoc : t ∈ Ioc a b := uIoc_of_le hab.le ▸ hmem
+  have htlt : t < b := lt_of_le_of_ne htIoc.2 htb
+  obtain ⟨n, hn1, hn2⟩ := ((hca.eventually_lt_const htIoc.1).and
+    (hdb.eventually_const_lt htlt)).exists
+  exact ht n (by rw [uIoc_of_le (hcd n n).le]; exact ⟨hn1, hn2.le⟩)
+
+/-- The integral of an integrable weak derivative is zero exactly when the Sobolev function
+has an absolutely continuous representative whose endpoint values agree. -/
+theorem HasWeakLineDerivOn.integral_eq_zero_iff_exists_absolutelyContinuousOnInterval
+    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ u u' 1)
+    (hu' : IntegrableOn u' (Ioo a b)) (hab : a ≤ b) :
+    (∫ t in a..b, u' t) = 0 ↔ ∃ v, AbsolutelyContinuousOnInterval v a b ∧
+      u =ᵐ[volume.restrict (Ioo a b)] v ∧ v a = v b := by
+  constructor
+  · intro hz
+    obtain ⟨v, hv, hae⟩ := h.exists_continuousOn_ae_eq hu'
+    refine ⟨v, h.absolutelyContinuousOnInterval hu' hv hae hab, hae, ?_⟩
+    have hftc := h.integral_eq_sub hu' hv hae (left_mem_Icc.2 hab) (right_mem_Icc.2 hab)
+    exact (sub_eq_zero.mp (hftc.symm.trans hz)).symm
+  · rintro ⟨v, hv, hae, hvab⟩
+    rw [h.integral_eq_sub hu' (uIcc_of_le hab ▸ hv.continuousOn) hae
+      (left_mem_Icc.2 hab) (right_mem_Icc.2 hab), hvab, sub_self]
 
 /-- **Integration by parts for a continuous representative.** Let `u'` be the weak derivative of
 `u` on `Ioo a b`, `a ≤ b`, integrable on `Ioo a b`, and let `v` be continuous on `Icc a b` and

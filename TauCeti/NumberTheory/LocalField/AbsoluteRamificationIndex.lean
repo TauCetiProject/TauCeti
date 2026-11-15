@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.Padic
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
+import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 
 /-!
 # The absolute ramification index of a mixed-characteristic local field
@@ -116,6 +117,14 @@ def absoluteRamificationIndex (K : Type*) [Field K] [ValuativeRel K] [Topologica
 theorem absoluteRamificationIndex_pos : 0 < absoluteRamificationIndex K p := by
   exact ramificationIndex_pos (K := ℚ_[p]) (L := K)
 
+variable {K p} in
+/-- Every depth `j` above the ramification index `e` satisfies `e < (p - 1) * j`. This is the
+bound under which `p`-adic exponential and logarithm converge on the `j`-th power of the maximal
+ideal. -/
+theorem absoluteRamificationIndex_lt_sub_one_mul_of_lt {j : ℕ}
+    (h : absoluteRamificationIndex K p < j) : absoluteRamificationIndex K p < (p - 1) * j :=
+  h.trans_le <| Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt)
+
 /-- In a finite extension `K/ℚ_[p]`, the normalized valuation of a nonzero natural number is the
 absolute ramification index times its `p`-adic valuation. -/
 theorem natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat
@@ -181,9 +190,10 @@ theorem charP_residueField : CharP 𝓀[K] p := by
 relative ramification index of `L/K` and the absolute ramification index of `K`. -/
 theorem absoluteRamificationIndex_tower (L : Type*) [Field L] [ValuativeRel L]
     [TopologicalSpace L] [IsNonarchimedeanLocalField L] [FinitePadicExtension L p] [Algebra K L]
-    [IsScalarTower ℚ_[p] K L] [ValuativeExtension K L] :
+    [IsScalarTower ℚ_[p] K L] :
     absoluteRamificationIndex L p =
       ramificationIndex K L * absoluteRamificationIndex K p := by
+  have : ValuativeExtension K L := .of_isScalarTower (K := ℚ_[p])
   simpa only [absoluteRamificationIndex, Nat.mul_comm] using
     ramificationIndex_tower (K := ℚ_[p]) (L := K) L
 

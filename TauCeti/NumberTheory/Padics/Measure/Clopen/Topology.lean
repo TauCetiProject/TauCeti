@@ -13,8 +13,9 @@ public import TauCeti.NumberTheory.Padics.Measure.Pushforward
 
 Restriction to a clopen subset and inclusion pushforward are continuous for both the weak
 and strong topologies on abstract measures. Inclusion is a closed embedding, and the algebraic
-clopen decomposition is a homeomorphism in either topology. For field coefficients, restriction
-contracts the continuous-dual operator norm and inclusion preserves it exactly.
+clopen decomposition is a homeomorphism in either topology. For measures with values in a
+seminormed module over a field, restriction contracts the continuous-dual operator norm and
+inclusion preserves it exactly.
 
 These results allow measures supported on a clopen subset, such as a residue class or the
 p-adic units, to be treated intrinsically without changing their topology. Measures may take
@@ -31,7 +32,7 @@ public section
 
 open AbstractMeasure ContinuousMap TopologicalSpace Topology
 
-namespace TauCeti
+namespace TopologicalSpace.Clopens
 
 variable {X R E : Type*} [TopologicalSpace X] [CompactSpace X]
 
@@ -94,9 +95,9 @@ theorem isHomeomorph_clopenDecomposition_weak (s : Clopens X) :
 
 end Weak
 
-section Strong
+section OperatorNorm
 
-variable [NontriviallyNormedField R] [NormedAddCommGroup E] [NormedSpace R E]
+variable [NontriviallyNormedField R] [SeminormedAddCommGroup E] [NormedSpace R E]
 
 /-- Clopen restriction does not increase the continuous-dual operator norm. -/
 theorem norm_toCLMEquiv_restrictClopen_le (s : Clopens X) (μ : AbstractMeasure X R E) :
@@ -115,6 +116,12 @@ theorem norm_toCLMEquiv_map_subtype (s : Clopens X) (ν : AbstractMeasure s R E)
   have h := norm_toCLMEquiv_restrictClopen_le s (map (subtypeVal (s : Set X)) ν)
   rw [restrictClopen_map_subtype (R := R) (E := E)] at h
   exact h
+
+end OperatorNorm
+
+section Strong
+
+variable [NontriviallyNormedField R] [NormedAddCommGroup E] [NormedSpace R E]
 
 /-- Clopen restriction is continuous for the strong continuous-dual topologies. -/
 theorem continuous_restrictClopen_strong (s : Clopens X) :
@@ -165,4 +172,4 @@ theorem isHomeomorph_clopenDecomposition_strong (s : Clopens X) :
 
 end Strong
 
-end TauCeti
+end TopologicalSpace.Clopens

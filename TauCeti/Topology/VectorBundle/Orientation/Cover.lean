@@ -33,8 +33,17 @@ orientation double cover has a continuous section
 (`TauCeti.VectorBundleOrientation.nonempty_iff_exists_section`). Over a connected base, a
 nonempty proper clopen subset of the cover is the image of such a section, so a bundle is
 orientable if and only if its orientation double cover is disconnected
-(`TauCeti.VectorBundleOrientation.nonempty_iff_not_connectedSpace`). Applied to the tangent
-bundle this gives the orientation double cover of a manifold.
+(`TauCeti.VectorBundleOrientation.nonempty_iff_not_connectedSpace`). An orientation also
+trivializes the cover over the base as `B × Fin 2`
+(`TauCeti.VectorBundleOrientation.coverHomeomorph`), with the two sheets given by the chosen
+orientation and its opposite. Applied to the tangent bundle this gives the orientation double
+cover of a manifold. Conversely, any homeomorphism over the base from `B × Fin 2` to the cover
+gives an orientation (`TauCeti.VectorBundleOrientation.nonempty_iff_exists_homeomorph`).
+
+A family of bases of fibres whose vectors vary continuously in the total space orients those
+fibres continuously: the induced map to the cover is continuous
+(`TauCeti.VectorBundleOrientationCover.continuous_mk_basis_orientation`), because the bases read
+in a trivialization have locally constant determinant sign.
 
 ## Main definitions
 
@@ -47,10 +56,14 @@ bundle this gives the orientation double cover of a manifold.
 ## Main results
 
 * `TauCeti.VectorBundleOrientationCover.isCoveringMap_proj`: the projection is a covering map.
+* `TauCeti.VectorBundleOrientationCover.continuous_mk_basis_orientation`: continuously varying
+  bases of the fibres give a continuous map to the cover.
 * `TauCeti.VectorBundleOrientationCover.exists_section_of_isClopen`: over a preconnected base, a
   nonempty proper clopen subset of the cover is the image of a continuous section.
 * `TauCeti.VectorBundleOrientation.nonempty_iff_exists_section`: a bundle is orientable if and
   only if its orientation double cover has a continuous section.
+* `TauCeti.VectorBundleOrientation.nonempty_iff_exists_homeomorph`: a bundle is orientable if
+  and only if its orientation double cover is a product with `Fin 2` over the base.
 * `TauCeti.VectorBundleOrientation.nonempty_iff_not_connectedSpace`: over a connected base, a
   bundle is orientable if and only if its orientation double cover is disconnected.
 
@@ -133,6 +146,11 @@ theorem isOpen_sheet_trivializationAt (b : B) (o : Orientation ℝ F ι) :
 theorem continuous_proj : Continuous (proj : VectorBundleOrientationCover F E ι → B) :=
   ⟨fun _ ↦ isOpen_preimage_proj⟩
 
+/-- The orientation-cover projection as a continuous map. It is an abbreviation so that
+fibres of its pullback are definitionally the original fibres. -/
+abbrev projection : C(VectorBundleOrientationCover F E ι, B) :=
+  ⟨proj, continuous_proj⟩
+
 /-- A map into the orientation double cover is continuous when its composite with the projection
 is continuous and the preimage of the sheet of every preferred trivialization is open. -/
 theorem continuous_of_isOpen_preimage_sheet {X : Type*} [TopologicalSpace X]
@@ -180,6 +198,12 @@ theorem deck_apply (p : VectorBundleOrientationCover F E ι) :
 theorem proj_deck (p : VectorBundleOrientationCover F E ι) : (deck p).proj = p.proj :=
   (rfl)
 
+/-- The deck involution, as a continuous map, lies over the base. -/
+theorem proj_comp_deck :
+    proj ∘ ⇑(deck (F := F) (E := E) (ι := ι) :
+      C(VectorBundleOrientationCover F E ι, VectorBundleOrientationCover F E ι)) = proj :=
+  funext proj_deck
+
 /-- The deck involution reverses the orientation of each point. -/
 @[simp]
 theorem orientation_deck (p : VectorBundleOrientationCover F E ι) :
@@ -206,7 +230,7 @@ theorem deck_ne_self (p : VectorBundleOrientationCover F E ι) : deck p ≠ p :=
   obtain ⟨b, o⟩ := p
   exact Module.Ray.ne_neg_self o (mk_eq_mk_iff.1 h).symm
 
-variable [Fintype ι] [FiniteDimensional ℝ F]
+variable [Fintype ι]
 
 /-- The sheet of every trivialization of the atlas is open, provided `ι` has cardinality the
 rank of the bundle. -/
@@ -294,16 +318,6 @@ theorem isCoveringMap_proj (hι : Fintype.card ι = finrank ℝ F) :
       isOpen_preimage_proj (trivializationAt F E b).open_baseSet,
       trivializationHomeomorph hι (trivializationAt F E b), fun _ ↦ rfl⟩
 
-/-- The projection of the orientation double cover is surjective, provided `ι` has cardinality
-the rank of the bundle. -/
-theorem surjective_proj (hι : Fintype.card ι = finrank ℝ F) :
-    Function.Surjective (proj : VectorBundleOrientationCover F E ι → B) := by
-  classical
-  intro b
-  have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) b
-  exact ⟨⟨b, ((trivializationAt F E b).mapOrientation ι hb).symm
-    ((Module.finBasis ℝ F).reindex (Fintype.equivFinOfCardEq hι).symm).orientation⟩, rfl⟩
-
 /-- The fibre of the orientation double cover through `p` consists of `p` and `deck p`, provided
 `ι` has cardinality the rank of the bundle. -/
 theorem eq_or_eq_deck (hι : Fintype.card ι = finrank ℝ F) {p q : VectorBundleOrientationCover F E ι}
@@ -315,13 +329,41 @@ theorem eq_or_eq_deck (hι : Fintype.card ι = finrank ℝ F) {p q : VectorBundl
   -- `card ι`, so they are equal or opposite.
   have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) b'
   have hinj := ((trivializationAt F E b').mapOrientation ι hb).injective
-  rcases Orientation.eq_or_eq_neg ((trivializationAt F E b').mapOrientation ι hb o')
+  rcases Orientation.eq_or_eq_neg_of_card_eq_finrank
+    ((trivializationAt F E b').mapOrientation ι hb o')
     ((trivializationAt F E b').mapOrientation ι hb o) hι with h | h
   · obtain rfl := hinj h
     exact .inl rfl
   · rw [← Trivialization.mapOrientation_neg] at h
     obtain rfl := hinj h
     exact .inr rfl
+
+variable [FiniteDimensional ℝ F]
+
+/-- The projection of the orientation double cover is surjective, provided `ι` has cardinality
+the rank of the bundle. -/
+theorem surjective_proj (hι : Fintype.card ι = finrank ℝ F) :
+    Function.Surjective (proj : VectorBundleOrientationCover F E ι → B) := by
+  classical
+  intro b
+  have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) b
+  exact ⟨⟨b, ((trivializationAt F E b).mapOrientation ι hb).symm
+    ((Module.finBasis ℝ F).reindex (Fintype.equivFinOfCardEq hι).symm).orientation⟩, rfl⟩
+
+/-- Every fibre of the orientation double cover has exactly two points, provided `ι` has
+cardinality the rank of the bundle. -/
+@[simp]
+theorem ncard_fiber (hι : Fintype.card ι = finrank ℝ F) (b : B) :
+    ((proj : VectorBundleOrientationCover F E ι → B) ⁻¹' {b}).ncard = 2 := by
+  rw [← Nat.card_coe_set_eq]
+  obtain ⟨p, hp⟩ := surjective_proj (F := F) (E := E) hι b
+  let p₀ : (proj : VectorBundleOrientationCover F E ι → B) ⁻¹' {b} := ⟨p, hp⟩
+  refine (Nat.card_eq_two_iff' p₀).mpr ⟨⟨deck p, hp⟩, ?_, ?_⟩
+  · exact fun h ↦ deck_ne_self p (congrArg Subtype.val h)
+  · intro q hq
+    apply Subtype.ext
+    exact (eq_or_eq_deck hι (q.2.trans hp.symm)).resolve_left
+      fun h ↦ hq (Subtype.ext h)
 
 /-- Over a preconnected base, a clopen subset of the orientation double cover that is invariant
 under the deck involution is empty or the whole cover, provided `ι` has cardinality the rank of
@@ -454,7 +496,7 @@ theorem isOpen_setOf_orientation_eq (o : VectorBundleOrientation F E ι) :
   rintro q ⟨hqU, hq, hqo⟩
   exact (e.mapOrientation ι hq).injective (hqo.trans (hUsub hqU hq).symm)
 
-variable [Fintype ι] [FiniteDimensional ℝ F]
+variable [Fintype ι]
 
 /-- The section of the orientation double cover given by an orientation of the bundle is
 continuous, provided `ι` has cardinality the rank of the bundle. -/
@@ -502,6 +544,137 @@ theorem isClopen_setOf_orientation_eq (hι : Fintype.card ι = finrank ℝ F)
   exact ⟨isOpen_compl_iff.1 (hcompl ▸ (-o).isOpen_setOf_orientation_eq),
     o.isOpen_setOf_orientation_eq⟩
 
+/-- An orientation trivializes the orientation double cover: sheet `0` carries the chosen
+orientation and sheet `1` its opposite. The homeomorphism commutes with projection to the base,
+including when the base is empty or disconnected. -/
+def coverHomeomorph (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) :
+    B × Fin 2 ≃ₜ VectorBundleOrientationCover F E ι := by
+  classical
+  exact
+    { toFun := fun p ↦ if p.2 = 0 then ⟨p.1, o p.1⟩ else ⟨p.1, -o p.1⟩
+      invFun := fun p ↦ (p.proj, if p.orientation = o p.proj then 0 else 1)
+      left_inv := by
+        rintro ⟨b, i⟩
+        fin_cases i <;> dsimp <;> simp [Ne.symm (Module.Ray.ne_neg_self (o b))]
+      right_inv := by
+        rintro ⟨b, u⟩
+        rcases VectorBundleOrientationCover.eq_or_eq_deck hι
+            (p := ⟨b, o b⟩) (q := ⟨b, u⟩) rfl with h | h
+        · obtain rfl := VectorBundleOrientationCover.mk_eq_mk_iff.mp h
+          simp
+        · rw [VectorBundleOrientationCover.deck_apply] at h
+          obtain rfl := VectorBundleOrientationCover.mk_eq_mk_iff.mp h
+          simp [Ne.symm (Module.Ray.ne_neg_self (o b))]
+      continuous_toFun := continuous_prod_of_discrete_right.mpr fun i ↦ by
+        by_cases hi : i = 0
+        · simpa only [hi, ↓reduceIte] using o.continuous_mk_cover hι
+        · simpa only [hi, ↓reduceIte, neg_apply] using (-o).continuous_mk_cover hι
+      continuous_invFun := VectorBundleOrientationCover.continuous_proj.prodMk
+        (continuous_const.if (by
+          rw [(o.isClopen_setOf_orientation_eq hι).frontier_eq]
+          simp) continuous_const) }
+
+/-- The trivialization sends each sheet to the chosen orientation or its opposite. -/
+theorem coverHomeomorph_apply (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) (p : B × Fin 2) :
+    o.coverHomeomorph hι p =
+      if p.2 = 0 then ⟨p.1, o p.1⟩ else ⟨p.1, -o p.1⟩ := by
+  classical
+  rfl
+
+/-- Sheet `0` of the trivialization induced by an orientation is its continuous section. -/
+@[simp]
+theorem coverHomeomorph_apply_zero (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) (b : B) :
+    o.coverHomeomorph hι (b, 0) = ⟨b, o b⟩ := by
+  classical
+  simp [coverHomeomorph]
+
+/-- Sheet `1` of the trivialization induced by an orientation is the opposite section. -/
+@[simp]
+theorem coverHomeomorph_apply_one (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) (b : B) :
+    o.coverHomeomorph hι (b, 1) = ⟨b, -o b⟩ := by
+  classical
+  simp [coverHomeomorph]
+
+/-- The trivialization induced by an orientation lies over the identity on the base. -/
+@[simp]
+theorem proj_coverHomeomorph (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) (p : B × Fin 2) :
+    (o.coverHomeomorph hι p).proj = p.1 := by
+  classical
+  simp [coverHomeomorph, apply_ite]
+
+open Classical in
+/-- The inverse trivialization records the base point and whether its orientation is the
+chosen one or its opposite. -/
+theorem coverHomeomorph_symm_apply (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) (p : VectorBundleOrientationCover F E ι) :
+    (o.coverHomeomorph hι).symm p =
+      (p.proj, if p.orientation = o p.proj then 0 else 1) := by
+  classical
+  rfl
+
+/-- The inverse trivialization preserves the base point. -/
+@[simp]
+theorem coverHomeomorph_symm_apply_fst (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) (p : VectorBundleOrientationCover F E ι) :
+    ((o.coverHomeomorph hι).symm p).1 = p.proj := by
+  rw [coverHomeomorph_symm_apply]
+
+/-- The chosen orientation belongs to sheet `0` of the inverse trivialization. -/
+@[simp]
+theorem coverHomeomorph_symm_apply_mk (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) (b : B) :
+    (o.coverHomeomorph hι).symm ⟨b, o b⟩ = (b, 0) := by
+  rw [← coverHomeomorph_apply_zero o hι, Homeomorph.symm_apply_apply]
+
+/-- The opposite orientation belongs to sheet `1` of the inverse trivialization. -/
+@[simp]
+theorem coverHomeomorph_symm_apply_mk_neg (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) (b : B) :
+    (o.coverHomeomorph hι).symm ⟨b, -o b⟩ = (b, 1) := by
+  rw [← coverHomeomorph_apply_one o hι, Homeomorph.symm_apply_apply]
+
+/-- Reversing the chosen orientation composes the trivialization with the deck involution. -/
+theorem coverHomeomorph_neg (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) :
+    (-o).coverHomeomorph hι = (o.coverHomeomorph hι).trans VectorBundleOrientationCover.deck := by
+  apply Homeomorph.ext
+  rintro ⟨b, i⟩
+  fin_cases i <;> simp [VectorBundleOrientationCover.deck_apply]
+
+/-- The deck involution exchanges the two sheets of the trivialization. -/
+theorem deck_coverHomeomorph (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) (p : B × Fin 2) :
+    VectorBundleOrientationCover.deck (o.coverHomeomorph hι p) =
+      o.coverHomeomorph hι (p.1, p.2 + 1) := by
+  obtain ⟨b, i⟩ := p
+  fin_cases i
+  · simp [VectorBundleOrientationCover.deck_apply]
+  · simp only [Fin.mk_one, Fin.isValue, coverHomeomorph_apply_one, Fin.reduceAdd,
+      coverHomeomorph_apply_zero, VectorBundleOrientationCover.deck_apply,
+      VectorBundleOrientationCover.mk_eq_mk_iff]
+    -- The inherited negation on `Orientation` does not syntactically match the simp lemma.
+    exact neg_neg (o b)
+
+/-- A bundle is orientable exactly when its orientation double cover is a product with
+`Fin 2` over the base, without connectedness or separation assumptions on the base. -/
+theorem nonempty_iff_exists_homeomorph (hι : Fintype.card ι = finrank ℝ F) :
+    Nonempty (VectorBundleOrientation F E ι) ↔
+      ∃ e : B × Fin 2 ≃ₜ VectorBundleOrientationCover F E ι, ∀ p, (e p).proj = p.1 := by
+  constructor
+  · rintro ⟨o⟩
+    exact ⟨o.coverHomeomorph hι, o.proj_coverHomeomorph hι⟩
+  · rintro ⟨e, he⟩
+    exact (nonempty_iff_exists_section hι).mpr
+      ⟨fun b ↦ e (b, 0), e.continuous.comp (continuous_id.prodMk continuous_const),
+        fun b ↦ he (b, 0)⟩
+
+variable [FiniteDimensional ℝ F]
+
 /-- Over a connected base, a bundle of rank `card ι` is orientable if and only if its orientation
 double cover is disconnected. -/
 theorem nonempty_iff_not_connectedSpace [ConnectedSpace B] (hι : Fintype.card ι = finrank ℝ F) :
@@ -526,5 +699,44 @@ theorem nonempty_iff_not_connectedSpace [ConnectedSpace B] (hι : Fintype.card �
     exact (nonempty_iff_exists_section hι).2 ⟨s, hs, hsproj⟩
 
 end VectorBundleOrientation
+
+namespace VectorBundleOrientationCover
+
+variable {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommGroup (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+
+/-- A family of bases `v x` of the fibres over `g x`, whose vectors depend continuously on `x` in
+the total space, gives a continuous map to the orientation double cover: `x` goes to the
+orientation of the fibre over `g x` determined by the basis `v x`. -/
+theorem continuous_mk_basis_orientation [Fintype ι] [DecidableEq ι] {X : Type*}
+    [TopologicalSpace X] {g : X → B} (hg : Continuous g) (v : ∀ x, Basis ι ℝ (E (g x)))
+    (hv : ∀ i, Continuous fun x ↦ (⟨g x, v x i⟩ : TotalSpace F E)) :
+    Continuous fun x ↦ (⟨g x, (v x).orientation⟩ : VectorBundleOrientationCover F E ι) := by
+  refine continuous_of_isOpen_preimage_sheet hg fun b o ↦
+    isOpen_iff_mem_nhds.2 fun x₀ ⟨h₀, hx₀⟩ ↦ ?_
+  set e := trivializationAt F E b
+  -- `w x` is the basis at `x` read in `e`; near `x₀` it has positive determinant against the
+  -- basis `c = w x₀`, so it determines the same orientation of `F`.
+  let w (x : X) (i : ι) : F := (e ⟨g x, v x i⟩).2
+  have hmap {x : X} (hx : g x ∈ e.baseSet) : ⇑((v x).map (e.linearEquivAt ℝ (g x) hx)) = w x :=
+    funext fun i ↦ by rw [Basis.map_apply, Trivialization.linearEquivAt_apply]
+  let c : Basis ι ℝ F := (v x₀).map (e.linearEquivAt ℝ (g x₀) h₀)
+  have hd : ContinuousAt (fun x ↦ c.det (w x)) x₀ := by
+    simp only [Basis.det_apply]
+    refine (continuous_id.matrix_det).continuousAt.comp <|
+      continuousAt_pi.2 fun i ↦ continuousAt_pi.2 fun j ↦ ?_
+    simp only [← c.equivFunL_apply]
+    exact (continuous_apply i).continuousAt.comp <| c.equivFunL.continuous.continuousAt.comp <|
+      continuous_snd.continuousAt.comp <| (e.continuousOn.continuousAt <|
+        e.open_source.mem_nhds (e.mem_source.2 h₀)).comp (hv j).continuousAt
+  have hd₀ : c.det (w x₀) = 1 := by rw [← hmap h₀, c.det_self]
+  filter_upwards [(e.open_baseSet.preimage hg).mem_nhds h₀,
+    hd.eventually (lt_mem_nhds (hd₀ ▸ one_pos))] with x hx hdx
+  refine ⟨hx, ?_⟩
+  rw [← hx₀, Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply,
+    ← Basis.orientation_map, ← Basis.orientation_map]
+  exact ((c.orientation_eq_iff_det_pos _).2 (by rwa [hmap hx])).symm
+
+end VectorBundleOrientationCover
 
 end TauCeti

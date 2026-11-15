@@ -28,7 +28,8 @@ is kept separate from the integrand-specific boundedness result it feeds.
 * `Contour.hasLipschitzDerivOnEachSideAt_iff` -- its characteristic elimination/introduction iff.
 * `Contour.hasLipschitzDerivOnEachSideAt_of_lipschitzOnWith` -- introduces it from one-sided
   `C^{1,1}` data on arbitrary pieces.
-* `Contour.hasLipschitzDerivOnEachSideAt_of_contDiffOn` -- introduces it from one-sided `C²` data.
+* `Contour.hasLipschitzDerivOnEachSideAt_of_contDiffOn` -- introduces it from one-sided `C^n`
+  data, `2 ≤ n`.
 
 ## References
 
@@ -38,8 +39,6 @@ is kept separate from the integrand-specific boundedness result it feeds.
 -/
 
 public section
-
-noncomputable section
 
 namespace TauCeti.Contour
 
@@ -90,29 +89,27 @@ theorem hasLipschitzDerivOnEachSideAt_of_lipschitzOnWith {γ : ℝ → E} {c t d
     (hlipR : LipschitzOnWith KR (derivWithin γ (Icc t d)) (Icc t d))
     (hlipL : LipschitzOnWith KL (derivWithin γ (Icc c t)) (Icc c t)) :
     HasLipschitzDerivOnEachSideAt γ t := by
-  refine ⟨d - t, by linarith, KR, ?_, t - c, by linarith, KL, ?_⟩ <;>
+  refine ⟨d - t, sub_pos.2 htd, KR, ?_, t - c, sub_pos.2 hct, KL, ?_⟩ <;>
     simpa only [add_sub_cancel, sub_sub_cancel]
 
-/-- **Introducing `HasLipschitzDerivOnEachSideAt` from one-sided `C²` data.** A `γ` twice
-differentiable on `[c, t]` and on `[t, d]` -- independently, so `t` may be a corner where the two
+/-- **Introducing `HasLipschitzDerivOnEachSideAt` from one-sided `C²` data.** A `γ` that is `C^n`,
+`2 ≤ n`, on `[c, t]` and on `[t, d]` -- independently, so `t` may be a corner where the two
 sides disagree -- has, on each half, a `C¹` (hence locally Lipschitz, and Lipschitz on the
 compact half itself) `derivWithin`: the natural route to `HasLipschitzDerivOnEachSideAt` for a
 curve with an honest second derivative on each side of a crossing, as opposed to the merely
-`C^{1,1}` case this predicate was built to also cover. The two-sided `C²` case is `hγ.mono` on
+`C^{1,1}` case this predicate was built to also cover. The two-sided case is `hγ.mono` on
 each half at the call site. -/
-theorem hasLipschitzDerivOnEachSideAt_of_contDiffOn {γ : ℝ → E} {c t d : ℝ} (hct : c < t)
-    (htd : t < d) (hγL : ContDiffOn ℝ 2 γ (Icc c t)) (hγR : ContDiffOn ℝ 2 γ (Icc t d)) :
+theorem hasLipschitzDerivOnEachSideAt_of_contDiffOn {γ : ℝ → E} {c t d : ℝ} {n : WithTop ℕ∞}
+    (hn : 2 ≤ n) (hct : c < t) (htd : t < d) (hγL : ContDiffOn ℝ n γ (Icc c t))
+    (hγR : ContDiffOn ℝ n γ (Icc t d)) :
     HasLipschitzDerivOnEachSideAt γ t := by
-  have huR : UniqueDiffOn ℝ (Icc t d) := uniqueDiffOn_Icc htd
-  have huL : UniqueDiffOn ℝ (Icc c t) := uniqueDiffOn_Icc hct
-  obtain ⟨KR, hKR⟩ := ContDiffOn.exists_lipschitzOnWith
-    (ContDiffOn.derivWithin hγR huR (m := 1) (by norm_num)) one_ne_zero (convex_Icc _ _)
-    isCompact_Icc
-  obtain ⟨KL, hKL⟩ := ContDiffOn.exists_lipschitzOnWith
-    (ContDiffOn.derivWithin hγL huL (m := 1) (by norm_num)) one_ne_zero (convex_Icc _ _)
-    isCompact_Icc
+  have key {x y : ℝ} (hxy : x < y) (hγ : ContDiffOn ℝ n γ (Icc x y)) :
+      ∃ K, LipschitzOnWith K (derivWithin γ (Icc x y)) (Icc x y) :=
+    (hγ.derivWithin (uniqueDiffOn_Icc hxy) (m := 1)
+      (one_add_one_eq_two.trans_le hn)).exists_lipschitzOnWith one_ne_zero (convex_Icc _ _)
+      isCompact_Icc
+  obtain ⟨KR, hKR⟩ := key htd hγR
+  obtain ⟨KL, hKL⟩ := key hct hγL
   exact hasLipschitzDerivOnEachSideAt_of_lipschitzOnWith hct htd hKR hKL
 
 end TauCeti.Contour
-
-end

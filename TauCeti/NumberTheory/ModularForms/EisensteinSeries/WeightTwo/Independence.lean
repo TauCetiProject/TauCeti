@@ -92,7 +92,7 @@ private lemma sum_coefficients_eq_zero (N : ℕ)
     omega
   have h' : (∑ j ∈ s, g j) * (-24) = 0 := by
     convert h using 1
-    all_goals simp [hnotdiv, ArithmeticFunction.sigma_one, ← Finset.sum_mul]
+    simp [hnotdiv, ArithmeticFunction.sigma_one, ← Finset.sum_mul]
   exact (mul_eq_zero.mp h').resolve_right (by norm_num)
 
 private lemma least_divisor_correction_eq (N : ℕ)
@@ -150,7 +150,7 @@ theorem linearIndependent_correctedE2AtLevel (N : ℕ) :
             g j * (if j.val ∣ m.val then
               24 * (j.val : ℂ) * σ 1 (m.val / j.val) else 0)) := by
           apply Finset.sum_congr rfl
-          intro j hj
+          intro j _
           by_cases hd : j.val ∣ m.val <;> simp [hd] <;> ring
         _ = _ := by rw [Finset.sum_add_distrib, ← Finset.mul_sum]
     rw [hrewrite, hsum_g] at hcoeff_m

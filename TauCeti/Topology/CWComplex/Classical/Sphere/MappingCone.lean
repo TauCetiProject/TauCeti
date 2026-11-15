@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
 public import TauCeti.Topology.CWComplex.Classical.Sphere.Basic
+import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
 
 /-!
 # Attaching a cell to a sphere
@@ -77,15 +78,13 @@ section DiskMap
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] (f : C(sphere (0 : E) 1, sphere (0 : F) 1))
 
-open scoped Classical in
 /-- The map from the unit ball of `E` attaching it to the unit sphere of `F` along
 `f : S(E) → S(F)`. It sends `x` to `(‖x‖ • f (‖x‖⁻¹ • x), (1 - ‖x‖) • x)` in `F × E`, and `0` to
-`0`. It is `x ↦ (f x, 0)` on the unit sphere (`TauCeti.sphereMappingConeDiskMap_coe_sphere`), and on
-the open unit ball it is injective and misses `S(F) × {0}`. -/
+`0`; its first coordinate is the cone `TauCeti.sphereCone f` over `f`. It is `x ↦ (f x, 0)` on the
+unit sphere (`TauCeti.sphereMappingConeDiskMap_coe_sphere`), and on the open unit ball it is
+injective and misses `S(F) × {0}`. -/
 def sphereMappingConeDiskMap (x : E) : F × E :=
-  (if hx : x = 0 then 0 else
-      ‖x‖ • (f (homeomorphUnitSphereProd _ ⟨x, mem_compl_singleton_iff.2 hx⟩).1 : F),
-    (1 - ‖x‖) • x)
+  (sphereCone (fun u ↦ (f u : F)) x, (1 - ‖x‖) • x)
 
 @[simp]
 theorem sphereMappingConeDiskMap_snd (x : E) :
@@ -99,57 +98,21 @@ theorem sphereMappingConeDiskMap_zero : sphereMappingConeDiskMap f 0 = 0 := by
 /-- The first coordinate of `TauCeti.sphereMappingConeDiskMap f x` has norm `‖x‖`. -/
 @[simp]
 theorem norm_sphereMappingConeDiskMap_fst (x : E) :
-    ‖(sphereMappingConeDiskMap f x).1‖ = ‖x‖ := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  · simp [sphereMappingConeDiskMap, hx, norm_smul]
-
-/-- Away from the origin, the first coordinate of `TauCeti.sphereMappingConeDiskMap f` is
-`(y, r) ↦ r • f y` in the polar coordinates `homeomorphUnitSphereProd`. -/
-private theorem sphereMappingConeDiskMap_fst_of_ne_zero (x : ({0}ᶜ : Set E)) :
-    (sphereMappingConeDiskMap f x).1 =
-      ((homeomorphUnitSphereProd E x).2 : ℝ) • (f (homeomorphUnitSphereProd E x).1 : F) := by
-  have hx : (x : E) ≠ 0 := x.2
-  simp only [sphereMappingConeDiskMap, hx, ↓reduceDIte, homeomorphUnitSphereProd_apply_snd_coe]
+    ‖(sphereMappingConeDiskMap f x).1‖ = ‖x‖ :=
+  norm_sphereCone (fun u ↦ norm_eq_of_mem_sphere (f u)) x
 
 /-- On the unit sphere, `TauCeti.sphereMappingConeDiskMap f` is `x ↦ (f x, 0)`: the ball is
 attached along `f`. -/
 @[simp]
 theorem sphereMappingConeDiskMap_coe_sphere (x : sphere (0 : E) 1) :
     sphereMappingConeDiskMap f x = ((f x : F), 0) := by
-  have hx : (x : E) ∈ ({0}ᶜ : Set E) := ne_zero_of_mem_unit_sphere x
-  have h1 : ‖(x : E)‖ = 1 := norm_eq_of_mem_sphere x
-  -- In polar coordinates, `x` is `(x, 1)`.
-  have hpolar : (homeomorphUnitSphereProd E ⟨x, hx⟩).1 = x :=
-    Subtype.ext (by simp [h1])
-  ext1
-  · rw [sphereMappingConeDiskMap_fst_of_ne_zero f ⟨x, hx⟩, hpolar,
-      homeomorphUnitSphereProd_apply_snd_coe, h1, one_smul]
-  · simp [h1]
+  simp [sphereMappingConeDiskMap, norm_eq_of_mem_sphere x]
 
 /-- The map attaching the unit ball along `f` is continuous, including at the origin, where the
 direction `‖x‖⁻¹ • x` is undefined. -/
-theorem continuous_sphereMappingConeDiskMap : Continuous (sphereMappingConeDiskMap f) := by
-  have h1 : Continuous fun x ↦ (sphereMappingConeDiskMap f x).1 := by
-    refine continuous_iff_continuousAt.2 fun x ↦ ?_
-    rcases eq_or_ne x 0 with rfl | hx
-    · -- At the origin the first coordinate tends to `0`, since its norm is `‖x‖`.
-      rw [ContinuousAt, sphereMappingConeDiskMap_zero, Prod.fst_zero]
-      exact squeeze_zero_norm (fun y ↦ (norm_sphereMappingConeDiskMap_fst f y).le)
-        (continuous_norm.tendsto' 0 0 norm_zero)
-    -- Away from the origin the first coordinate is `(y, r) ↦ r • f y` in polar coordinates.
-    have : ContinuousOn (fun x ↦ (sphereMappingConeDiskMap f x).1) {0}ᶜ := by
-      rw [continuousOn_iff_continuous_domRestrict]
-      have heq : ({0}ᶜ : Set E).domRestrict (fun x ↦ (sphereMappingConeDiskMap f x).1) =
-          (fun p ↦ (p.2 : ℝ) • (f p.1 : F)) ∘ homeomorphUnitSphereProd E := by
-        ext1 x
-        rw [Set.domRestrict_apply, sphereMappingConeDiskMap_fst_of_ne_zero, Function.comp_apply]
-      rw [heq]
-      exact ((continuous_subtype_val.comp continuous_snd).smul
-        (continuous_subtype_val.comp (f.continuous.comp continuous_fst))).comp
-          (homeomorphUnitSphereProd E).continuous
-    exact this.continuousAt (isOpen_compl_singleton.mem_nhds hx)
-  exact h1.prodMk ((continuous_const.sub continuous_norm).smul continuous_id)
+theorem continuous_sphereMappingConeDiskMap : Continuous (sphereMappingConeDiskMap f) :=
+  (continuous_sphereCone (by fun_prop) fun u ↦ (norm_eq_of_mem_sphere (f u)).le).prodMk
+    ((continuous_const.sub continuous_norm).smul continuous_id)
 
 /-- On the open unit ball, the second coordinate of `TauCeti.sphereMappingConeDiskMap f`, rescaled
 by the norm of the first, recovers the point. -/

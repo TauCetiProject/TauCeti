@@ -86,18 +86,16 @@ theorem vertex_ne_inr_infty_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) {i : F
 theorem sideForm_sideGeodesic_zero_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) (z : ℂ) :
     sideForm (P.sideGeodesic 0) z = (toComplex (P.vertex 1)).re - z.re := by
   have hg := P.isGeodesicFromTo_sideGeodesic 0
-  have h₁ := P.vertex_ne_vertex_add_one 0
-  rw [h₀, zero_add] at hg h₁
-  exact hg.sideForm_eq_of_inr_infty_left h₁.symm z
+  rw [h₀, zero_add] at hg
+  exact hg.sideForm_eq_of_inr_infty_left z
 
 /-- If `vertex 0` is `∞`, the side from `vertex (-1)` up to `∞` is the vertical line through
 `vertex (-1)`, with side form `Re z - xₙ₋₁`. -/
 theorem sideForm_sideGeodesic_neg_one_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) (z : ℂ) :
     sideForm (P.sideGeodesic (-1)) z = z.re - (toComplex (P.vertex (-1))).re := by
   have hg := P.isGeodesicFromTo_sideGeodesic (-1)
-  have h₁ := P.vertex_ne_vertex_add_one (-1)
-  rw [neg_add_cancel, h₀] at hg h₁
-  exact hg.sideForm_eq_of_inr_infty_right h₁ z
+  rw [neg_add_cancel, h₀] at hg
+  exact hg.sideForm_eq_of_inr_infty_right z
 
 /-- If `vertex 0` is `∞`, it lies strictly to the left of every side not ending at it. -/
 theorem infty_mem_boundaryLeftHalfPlane_sideGeodesic_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞)
@@ -267,7 +265,7 @@ theorem volume_carrier_inter_strip (h₀ : P.vertex 0 = .inr ∞) {i : Fin n} (h
   have hv := P.vertex_ne_inr_infty_of_vertex_zero h₀ hi
   have hv' := P.vertex_ne_inr_infty_of_vertex_zero h₀ hi'
   have hlt := P.re_toComplex_vertex_lt_of_vertex_zero h₀ hi hi'
-  rw [heq, volume_idealRegionAbove hρ (Complex.re_mem_Icc_of_normSq_sub_eq hρ.le hi₁).1 hlt.le
+  rw [heq, volume_idealRegionAbove hρ (Complex.re_mem_Icc_of_normSq_sub_eq hρ.le hi₁).1
     (Complex.re_mem_Icc_of_normSq_sub_eq hρ.le hi₂).2,
     vertexAngle_infty_of_re_lt hρ hv hv' hi₁ hi₂ hlt,
     vertexAngle_infty_of_lt_re hρ hv hv' hi₁ hi₂ hlt]
@@ -318,8 +316,7 @@ theorem interiorAngle_eq_add_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) {i : 
   | inl A =>
     rw [hv, toComplex_inl] at hA₁ hA₂
     rw [hv, toComplex_inl, coe_re] at hpA hAq
-    exact vertexAngle_eq_add_of_mem_circles (P.vertex_ne_inr_infty_of_vertex_zero h₀ hi₁)
-      (P.vertex_ne_inr_infty_of_vertex_zero h₀ hi') hA₁ hp₁ hA₂ hq₂ hpA hAq
+    exact vertexAngle_eq_add_of_mem_circles hA₁ hp₁ hA₂ hq₂ hpA hAq
       (sub_neg.1 (neg_of_mul_neg_right hp₂ hκ₂.le))
 
 /-! ### Moving an ideal vertex to `∞` -/

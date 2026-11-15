@@ -38,6 +38,7 @@ example : CompleteSpace (CompletedTensor A B C) := inferInstance
 example : T2Space (CompletedTensor A B C) := inferInstance
 example [IsTateRing B] : IsTateRing (CompletedTensor A B C) := inferInstance
 example [IsTateRing C] : IsTateRing (CompletedTensor A B C) := inferInstance
+example [IsTateRing A] : IsTateRing (CompletedTensor A B C) := inferInstance
 
 example [Subsingleton B] : Subsingleton (CompletedTensor A B C) :=
   (CompletedTensor.inl A B C).codomain_trivial

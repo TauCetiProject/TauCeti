@@ -48,7 +48,8 @@ morphism.
   original morphism, so `CategoryTheory.rightAdjointMate_injective`;
 * `CategoryTheory.Iso.rightAdjointMate`: the isomorphism `Yᘁ ≅ Xᘁ` induced by `X ≅ Y`;
 * `CategoryTheory.ExactPairing.rightMate`: the right adjoint mate with respect to explicit exact
-  pairings, characterized by `CategoryTheory.ExactPairing.rightMate_comp_evaluation` and
+  pairings, characterized by `CategoryTheory.ExactPairing.rightMate_comp_evaluation` (and its
+  whiskered form `CategoryTheory.ExactPairing.whiskerRight_rightMate_evaluation`) and
   `CategoryTheory.ExactPairing.coevaluation_comp_rightMate`, with `rightMate_id` and
   `comp_rightMate`;
 * `CategoryTheory.ExactPairing.rightMate_whiskerLeft`,
@@ -78,7 +79,10 @@ morphism.
   as left mates;
 * `CategoryTheory.ExactPairing.leftMate_rightDualIso_hom` and
   `CategoryTheory.ExactPairing.rightMate_leftDualIso_hom`: the opposite-handed mate of the
-  comparison between two duals is an identity.
+  comparison between two duals is an identity;
+* `CategoryTheory.ExactPairing.leftMate_rightDualIso_inv` and
+  `CategoryTheory.ExactPairing.rightMate_leftDualIso_inv`: the opposite-handed mate of the
+  inverse comparison between two duals is the comparison between the two opposite-handed duals.
 
 ## References
 
@@ -120,7 +124,7 @@ pairings made ambient. Stating it with the type `Y' ⟶ X'` keeps the duals `X'`
 to rewriting: as a term `@rightAdjointMate C _ _ X Y ⟨X'⟩ ⟨Y'⟩ f`, its source and target are the
 projections `HasRightDual.rightDual ⟨Y'⟩` and `HasRightDual.rightDual ⟨X'⟩`, and Mathlib's lemmas
 about it do not rewrite against the evaluation `ε_ X X'` of the given pairing. -/
-def rightMate {X X' Y Y' : C} (pX : ExactPairing X X') (pY : ExactPairing Y Y') (f : X ⟶ Y) :
+def rightMate {X X' Y Y' : C} (_ : ExactPairing X X') (_ : ExactPairing Y Y') (f : X ⟶ Y) :
     Y' ⟶ X' :=
   @rightAdjointMate C _ _ X Y ⟨X'⟩ ⟨Y'⟩ f
 
@@ -131,6 +135,15 @@ theorem rightMate_comp_evaluation {X X' Y Y' : C} (pX : ExactPairing X X')
     (pY : ExactPairing Y Y') (f : X ⟶ Y) :
     rightMate pX pY f ▷ X ≫ ε_ X X' = Y' ◁ f ≫ ε_ Y Y' :=
   @rightAdjointMate_comp_evaluation C _ _ X Y ⟨X'⟩ ⟨Y'⟩ f
+
+/-- The characteristic property of the right adjoint mate, after a morphism `a : W ⟶ Y'` into the
+dual of the target: evaluating `a` followed by the mate of `f : X ⟶ Y` against `X` is evaluating
+`a` against `Y` after applying `f` to `X`. Morphisms into a right dual are compared in this form
+via `CategoryTheory.ExactPairing.rightHom_ext`. -/
+theorem whiskerRight_rightMate_evaluation {W X X' Y Y' : C} (pX : ExactPairing X X')
+    (pY : ExactPairing Y Y') (a : W ⟶ Y') (f : X ⟶ Y) :
+    a ▷ X ≫ rightMate pX pY f ▷ X ≫ ε_ X X' = W ◁ f ≫ a ▷ Y ≫ ε_ Y Y' := by
+  rw [rightMate_comp_evaluation, whisker_exchange_assoc]
 
 /-- The dual characterization of the right adjoint mate: applying it after the coevaluation of
 `(Y, Y')` is the same as applying `f` after the coevaluation of `(X, X')`. -/
@@ -309,7 +322,7 @@ theorem leftDualHom_ext {X Y A : C} [ExactPairing X Y] {f g : A ⟶ X}
 pairings `(X', X)` and `(Y', Y)`: Mathlib's `CategoryTheory.leftAdjointMate` with the given
 pairings made ambient. As for `CategoryTheory.ExactPairing.rightMate`, the type `Y' ⟶ X'` keeps
 the left duals `X'` and `Y'` visible to rewriting. -/
-def leftMate {X X' Y Y' : C} (pX : ExactPairing X' X) (pY : ExactPairing Y' Y) (f : X ⟶ Y) :
+def leftMate {X X' Y Y' : C} (_ : ExactPairing X' X) (_ : ExactPairing Y' Y) (f : X ⟶ Y) :
     Y' ⟶ X' :=
   @leftAdjointMate C _ _ X Y ⟨X'⟩ ⟨Y'⟩ f
 
@@ -462,6 +475,22 @@ theorem rightMate_leftDualIso_hom {X₁ X₂ Y Z : C} (p₁ : ExactPairing X₁ 
     rightHom_ext (X := X₁) (by
       rw [rightMate_comp_evaluation, leftDualIso_hom, leftMate_comp_evaluation])
   rw [← Category.comp_id (leftDualIso p₁ p₂).hom, comp_rightMate p₁ p₂ q, h, Category.comp_id]
+
+/-- If `X` has two right duals `Y₁` and `Y₂` and `Z` is a left dual of `Y₁`, then the left mate
+of the inverse comparison `Y₂ ⟶ Y₁` is the comparison `leftDualIso q p₁ : Z ≅ X` of the two left
+duals of `Y₁`. -/
+theorem leftMate_rightDualIso_inv {X Y₁ Y₂ Z : C} (p₁ : ExactPairing X Y₁)
+    (p₂ : ExactPairing X Y₂) (q : ExactPairing Z Y₁) :
+    leftMate p₂ q (rightDualIso p₁ p₂).inv = (leftDualIso q p₁).hom := by
+  rw [rightDualIso_inv, ← rightDualIso_hom, leftMate_rightDualIso_hom, ← leftDualIso_hom]
+
+/-- If `Y` has two left duals `X₁` and `X₂` and `Z` is a right dual of `X₁`, then the right mate
+of the inverse comparison `X₂ ⟶ X₁` is the comparison `rightDualIso q p₁ : Z ≅ Y` of the two
+right duals of `X₁`. -/
+theorem rightMate_leftDualIso_inv {X₁ X₂ Y Z : C} (p₁ : ExactPairing X₁ Y)
+    (p₂ : ExactPairing X₂ Y) (q : ExactPairing X₁ Z) :
+    rightMate p₂ q (leftDualIso p₁ p₂).inv = (rightDualIso q p₁).hom := by
+  rw [leftDualIso_inv, ← leftDualIso_hom, rightMate_leftDualIso_hom, ← rightDualIso_hom]
 
 end CategoryTheory.ExactPairing
 

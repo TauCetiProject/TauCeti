@@ -37,7 +37,7 @@ closed subgroup, which reduces the conjugacy of Borel subgroups to a group of sm
   the stabilizer of a point of a closed projective orbit, if it is a Borel candidate, is a Borel
   subgroup whose conjugates are all the Borel subgroups.
 * `TauCeti.HopfIdeal.exists_ne_bot_forall_isBorelCandidate_exists_conjugate_le_of_not_isSolvable`:
-  an irreducible group that is not solvable has a proper closed subgroup containing a conjugate of
+  an affine group that is not solvable has a proper closed subgroup containing a conjugate of
   every Borel candidate.
 
 ## References
@@ -58,6 +58,7 @@ variable {k H M : Type u} [Field k] [IsAlgClosed k]
   [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
   [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
 
+omit [IsAlgClosed k] in
 /-- A Borel candidate lies in a conjugate of `D` as soon as every reduced connected closed
 subgroup with solvable rational points does. -/
 theorem IsBorelCandidate.exists_conjugate_le {D J : HopfIdeal k H}
@@ -74,7 +75,7 @@ theorem IsBorelCandidate.exists_conjugate_le {D J : HopfIdeal k H}
   let _ : Algebra.Smooth k Q := (smoothCommHopfAlgProperty_iff _).mp hJ.smooth
   let _ : IsReduced Q := isReduced_of_smooth k Q
   let _ : ConnectedSpace (PrimeSpectrum Q) :=
-    hJ.geometricallyConnected.connectedSpace k Q.obj
+    hJ.geometricallyConnected.connectedSpace
   let _ : Group.IsSolvable (WithConv (Q →ₐ[k] AlgebraicClosure k)) :=
     (geometricallySolvablePointsCommHopfAlgProperty_iff _ _).mp hJ.geometricallySolvable
   let _ : Group.IsSolvable (WithConv (Q →ₐ[k] k)) :=
@@ -107,11 +108,11 @@ theorem isBorelOverAlgClosed_iff_exists_eq_conjugate_of_isClosed_projectiveOrbit
       exists_conjugate_le_of_isClosed_projectiveOrbit
         (H := FiniteTypeCommHopfAlgCat.of k H) D I m hm hclosed hstab
 
-/-- An irreducible affine group of finite type over an algebraically closed field whose
+/-- An affine group of finite type over an algebraically closed field whose
 rational points do not form a solvable group has a proper closed subgroup containing a conjugate
 of every Borel candidate, in particular of every Borel subgroup. -/
 theorem exists_ne_bot_forall_isBorelCandidate_exists_conjugate_le_of_not_isSolvable
-    [IrreducibleSpace (PrimeSpectrum H)] (hH : ¬ Group.IsSolvable (WithConv (H →ₐ[k] k))) :
+    (hH : ¬ Group.IsSolvable (WithConv (H →ₐ[k] k))) :
     ∃ D : HopfIdeal k H, D ≠ ⊥ ∧ ∀ J : HopfIdeal k H,
       IsBorelCandidate k (FiniteTypeCommHopfAlgCat.of k H) J →
         ∃ g : WithConv (H →ₐ[k] k), D.conjugate g ≤ J := by

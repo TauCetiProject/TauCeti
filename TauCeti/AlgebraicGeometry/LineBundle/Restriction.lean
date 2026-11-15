@@ -56,7 +56,7 @@ theorem surjective_tensorRestriction_of_high_degree
         SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom) ⊤) := by
   have : ConnectedSpace X :=
     GeometricallyConnected.connectedSpace_of_subsingleton (f := X ↘ Spec (.of k))
-  have hIdeg := hI.eulerDegree_inv_mk_toInvertibleSheaf k I s
+  have hIdeg := hI.eulerDegree_inv_mk_toInvertibleSheaf_of_smooth k I s
   have hcancel := LineBundleClass.eulerDegree_mul_of_smooth k
     (LineBundleClass.mk hI.toInvertibleSheaf) (LineBundleClass.mk hI.toInvertibleSheaf)⁻¹
   rw [mul_inv_cancel, LineBundleClass.eulerDegree_one, hIdeg,

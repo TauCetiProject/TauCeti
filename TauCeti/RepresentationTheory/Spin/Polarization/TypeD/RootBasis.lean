@@ -186,7 +186,7 @@ theorem typeDSpinRep_serreE_exteriorBasis (i : Fin n) (s : Finset (Fin n))
       by_cases hxi : x = i <;> by_cases hxq : x = q <;>
         simp_all [Equiv.swap_apply_def, q]
     rw [P.typeDSpinRep_serreE_eq_spinAction b hn, hrefl]
-    simp only [P.typeDSimpleRootBivector_def b, dite_eq_left hi, map_mul, Module.End.mul_apply,
+    simp only [P.typeDSimpleRootBivector_def b, dite_eq_left hi, map_mul, mul_apply_eq_comp,
       TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector]
     rw [TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis_of_not_mem_of_mem
       b i q s hmem.1 hmem.2, chainRaisingShuffleSign i s hi hmem.1 hmem.2, one_smul]
@@ -206,7 +206,7 @@ theorem typeDSpinRep_serreE_exteriorBasis (i : Fin n) (s : Finset (Fin n))
       by_cases hxp : x = p <;> by_cases hxq : x = q <;>
         simp_all [Equiv.swap_apply_def]
     rw [P.typeDSpinRep_serreE_eq_spinAction b hn, hrefl]
-    simp only [P.typeDSimpleRootBivector_def b, dite_eq_right hi, map_mul, Module.End.mul_apply,
+    simp only [P.typeDSimpleRootBivector_def b, dite_eq_right hi, map_mul, mul_apply_eq_comp,
       TauCeti.spinAction_ι_wedge]
     -- Unfolding the Fock action exposes the two exterior multiplications at the fork node.
     change ExteriorAlgebra.ι ℚ (b p) *
@@ -239,7 +239,7 @@ theorem typeDSpinRep_serreF_exteriorBasis (i : Fin n) (s : Finset (Fin n))
         simp_all [Equiv.swap_apply_def, q]
     rw [P.typeDSpinRep_serreF_eq_spinAction b hn, hrefl]
     simp only [P.typeDSimpleNegativeRootBivector_def b, dite_eq_left hi, map_mul,
-      Module.End.mul_apply, TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract,
+      mul_apply_eq_comp, TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract,
       P.pairingEquiv_dualVector]
     rw [TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis_of_not_mem_of_mem
       b q i s hmem.2 hmem.1, chainLoweringShuffleSign i s hi, one_smul]
@@ -260,7 +260,7 @@ theorem typeDSpinRep_serreF_exteriorBasis (i : Fin n) (s : Finset (Fin n))
         simp_all [Equiv.swap_apply_def]
     rw [P.typeDSpinRep_serreF_eq_spinAction b hn, hrefl]
     simp only [P.typeDSimpleNegativeRootBivector_def b, dite_eq_right hi, map_mul,
-      Module.End.mul_apply, TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector]
+      mul_apply_eq_comp, TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector]
     -- Unfolding the Fock action exposes the two successive contractions at the fork node.
     change contractLeft (Q := (0 : QuadraticForm ℚ P.W)) (b.coord q)
       (contractLeft (Q := (0 : QuadraticForm ℚ P.W)) (b.coord p)
@@ -291,7 +291,7 @@ theorem typeDSpinRep_serreE_exteriorBasis_eq_zero (i : Fin n) (s : Finset (Fin n
       by_cases his : i ∈ s <;> by_cases hqs : q ∈ s <;> simp_all [q]
     rw [P.typeDSpinRep_serreE_eq_spinAction b hn]
     simp only [P.typeDSimpleRootBivector_def b, dite_eq_left hi, map_mul,
-      Module.End.mul_apply, TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract,
+      mul_apply_eq_comp, TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract,
       P.pairingEquiv_dualVector]
     -- Unfolding the Fock action exposes creation after coordinate contraction at a chain node.
     change ExteriorAlgebra.ι ℚ (b i) *
@@ -317,7 +317,7 @@ theorem typeDSpinRep_serreE_exteriorBasis_eq_zero (i : Fin n) (s : Finset (Fin n
       by_cases hp : p ∈ s <;> by_cases hq : q ∈ s <;> simp_all
     rw [P.typeDSpinRep_serreE_eq_spinAction b hn]
     simp only [P.typeDSimpleRootBivector_def b, dite_eq_right hi, map_mul,
-      Module.End.mul_apply, TauCeti.spinAction_ι_wedge]
+      mul_apply_eq_comp, TauCeti.spinAction_ι_wedge]
     -- Unfolding the Fock action exposes the two exterior multiplications at the fork node.
     change ExteriorAlgebra.ι ℚ (b p) *
       (ExteriorAlgebra.ι ℚ (b q) * b.ExteriorAlgebra s) = 0
@@ -342,7 +342,7 @@ theorem typeDSpinRep_serreF_exteriorBasis_eq_zero (i : Fin n) (s : Finset (Fin n
       by_cases his : i ∈ s <;> by_cases hqs : q ∈ s <;> simp_all [q]
     rw [P.typeDSpinRep_serreF_eq_spinAction b hn]
     simp only [P.typeDSimpleNegativeRootBivector_def b, dite_eq_left hi, map_mul,
-      Module.End.mul_apply, TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract,
+      mul_apply_eq_comp, TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract,
       P.pairingEquiv_dualVector]
     -- Unfolding the Fock action exposes creation after coordinate contraction at a chain node.
     change ExteriorAlgebra.ι ℚ (b q) *
@@ -368,7 +368,7 @@ theorem typeDSpinRep_serreF_exteriorBasis_eq_zero (i : Fin n) (s : Finset (Fin n
       by_cases hp : p ∈ s <;> by_cases hq : q ∈ s <;> simp_all
     rw [P.typeDSpinRep_serreF_eq_spinAction b hn]
     simp only [P.typeDSimpleNegativeRootBivector_def b, dite_eq_right hi, map_mul,
-      Module.End.mul_apply, TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector]
+      mul_apply_eq_comp, TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector]
     rcases hnot with hp | hq
     · simp [p, hp]
     · by_cases hp : p ∈ s <;> simp [p, q, hp, hq]

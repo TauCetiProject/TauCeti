@@ -78,8 +78,7 @@ variable (hP : P.ringOfDefinition ≤ S.plus) (J : Ideal A)
 
 /-- **The quotient morphism** `Spa(A ⧸ J, (A ⧸ J)⁺) ⟶ Spa(A, A⁺)` of pre-adic spaces, for a Huber
 pair `(A, A⁺)` and an ideal `J` whose quotient pair has a sheaf as structure presheaf. It is the
-morphism induced by the quotient map `A → A ⧸ J`, which is open, so carries open ideals to open
-ideals. -/
+morphism induced by the quotient map `A → A ⧸ J`. -/
 noncomputable def presentationLimitPreAdicSpaceQuotientComap
     (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa (S.quotient J).plus))
       (presentationLimitPresheaf (P.quotient J) (S.quotient J).plus)) :
@@ -89,9 +88,6 @@ noncomputable def presentationLimitPreAdicSpaceQuotientComap
       presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hP :=
   presentationLimitPreAdicSpaceComap (Ideal.Quotient.mk J)
     (QuotientRing.isOpenQuotientMap_mk J).continuous
-    (fun I hI ↦ by
-      rw [Ideal.map_eq_image_of_surjective _ Ideal.Quotient.mk_surjective]
-      exact (QuotientRing.isOpenQuotientMap_mk J).isOpenMap _ hI)
     (Pair.Hom.toRingHom_quotientHom S J ▸ (Pair.quotientHom S J).map_mem_plus)
     S.isRingOfIntegralElements.isPowerBounded_of_mem
     (S.quotient J).isRingOfIntegralElements.isPowerBounded_of_mem hP
@@ -106,9 +102,6 @@ theorem presentationLimitPreAdicSpaceQuotientComap_def :
     presentationLimitPreAdicSpaceQuotientComap S P hP J hsheaf =
       presentationLimitPreAdicSpaceComap (Ideal.Quotient.mk J)
         (QuotientRing.isOpenQuotientMap_mk J).continuous
-        (fun I hI ↦ by
-          rw [Ideal.map_eq_image_of_surjective _ Ideal.Quotient.mk_surjective]
-          exact (QuotientRing.isOpenQuotientMap_mk J).isOpenMap _ hI)
         (Pair.Hom.toRingHom_quotientHom S J ▸ (Pair.quotientHom S J).map_mem_plus)
         S.isRingOfIntegralElements.isPowerBounded_of_mem
         (S.quotient J).isRingOfIntegralElements.isPowerBounded_of_mem hP
@@ -165,17 +158,15 @@ theorem presentationLimitPreAdicSpaceComap_quotientLift_comp_quotientComap {B : 
     [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B] {T : Pair B}
     (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus) (f : Pair.Hom S T)
     (hf : J ≤ RingHom.ker f.toRingHom)
-    (hopen : ∀ ⦃I : Ideal A⦄, IsOpen (I : Set A) → IsOpen (I.map f.toRingHom : Set B))
     (hsheafT : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
       (presentationLimitPresheaf P' T.plus)) :
     presentationLimitPreAdicSpaceComap (f.quotientLift J hf).toRingHom
-        (f.quotientLift J hf).continuous_toRingHom
-        (fun _ hI ↦ f.isOpen_map_quotientLift J hf hopen hI) (f.quotientLift J hf).map_mem_plus
+        (f.quotientLift J hf).continuous_toRingHom (f.quotientLift J hf).map_mem_plus
         (S.quotient J).isRingOfIntegralElements.isPowerBounded_of_mem
         T.isRingOfIntegralElements.isPowerBounded_of_mem
         (P.quotient_ringOfDefinition_le_quotient_plus hP J) hP' hsheafT ≫
       presentationLimitPreAdicSpaceQuotientComap S P hP J hsheaf =
-    presentationLimitPreAdicSpaceComap f.toRingHom f.continuous_toRingHom hopen f.map_mem_plus
+    presentationLimitPreAdicSpaceComap f.toRingHom f.continuous_toRingHom f.map_mem_plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem
       T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheafT := by
   rw [presentationLimitPreAdicSpaceQuotientComap, ← presentationLimitPreAdicSpaceComap_comp]
@@ -349,9 +340,6 @@ theorem isClosedImmersion_presentationLimitPreAdicSpaceComap_of_isQuotientMappin
     (hsheafT : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
       (presentationLimitPresheaf P' T.plus)) :
     IsClosedImmersion (presentationLimitPreAdicSpaceComap f.toRingHom f.continuous_toRingHom
-      (fun I hI ↦ by
-        rw [Ideal.map_eq_image_of_surjective _ hf.isOpenQuotientMap.surjective]
-        exact hf.isOpenQuotientMap.isOpenMap _ hI)
       f.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
       T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheafT) := by
   set K := RingHom.ker f.toRingHom
@@ -367,10 +355,6 @@ theorem isClosedImmersion_presentationLimitPreAdicSpaceComap_of_isQuotientMappin
     have h := congrArg Pair.Hom.toRingHom hf.quotientLift_comp_quotientKerInverse
     rw [Pair.Hom.toRingHom_comp, Pair.Hom.toRingHom_id] at h
     exact DFunLike.congr_fun h x
-  have hopenψ : ∀ ⦃I : Ideal B⦄, IsOpen (I : Set B) → IsOpen (I.map ψ.toRingHom : Set (A ⧸ K)) :=
-    fun I hI ↦ by
-      rw [Ideal.map_eq_image_of_surjective _ (Function.LeftInverse.surjective hψφ)]
-      exact IsOpenMap.of_inverse φ.continuous_toRingHom hψφ hφψ _ hI
   -- `Spa(A ⧸ K)` is sheafy, being isomorphic to `Spa(B, B⁺)`
   have hsK : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa (S.quotient K).plus))
       (presentationLimitPresheaf (P.quotient K) (S.quotient K).plus) :=
@@ -381,14 +365,11 @@ theorem isClosedImmersion_presentationLimitPreAdicSpaceComap_of_isQuotientMappin
       (P.quotient_ringOfDefinition_le_quotient_plus hP K) hP') hsheafT
   -- the morphism induced by `φ` is an isomorphism, with inverse induced by `ψ`
   have hiso : IsIso (presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-      (fun _ hI ↦ f.isOpen_map_quotientLift K le_rfl
-        (fun I hI ↦ by
-          rw [Ideal.map_eq_image_of_surjective _ hf.isOpenQuotientMap.surjective]
-          exact hf.isOpenQuotientMap.isOpenMap _ hI) hI) φ.map_mem_plus
+      φ.map_mem_plus
       (S.quotient K).isRingOfIntegralElements.isPowerBounded_of_mem
       T.isRingOfIntegralElements.isPowerBounded_of_mem
       (P.quotient_ringOfDefinition_le_quotient_plus hP K) hP' hsheafT) := by
-    refine ⟨presentationLimitPreAdicSpaceComap ψ.toRingHom ψ.continuous_toRingHom hopenψ
+    refine ⟨presentationLimitPreAdicSpaceComap ψ.toRingHom ψ.continuous_toRingHom
       ψ.map_mem_plus _ _ _ _ hsK, ?_, ?_⟩
     · rw [← presentationLimitPreAdicSpaceComap_comp, ← presentationLimitPreAdicSpaceComap_id
         (P := P') _ _ hsheafT]

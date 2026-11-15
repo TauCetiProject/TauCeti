@@ -37,8 +37,6 @@ through divisors of points, such as points of exact order `N`, pull back along b
   `E ×_S E`, as a point of the base change of `E` to `E`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.toBaseChangeSelf hg P'`: the morphism from `E'` to
   the base change of `E` to `E`, lying over the morphism `S' ⟶ E` given by an `S'`-point `P'`.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsEquivOfIsPullback hg h0`: the `S'`-points of
-  `E'` are the points of `E` with values in `S'`, as groups.
 
 ## Main results
 
@@ -168,6 +166,13 @@ composite with the pullback projection. -/
 theorem pointsBaseChangeEquiv_left (P : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
     (pointsBaseChangeEquiv hg h0 P).left = P.left ≫ g := by
   rfl
+
+/-- The `S'`-point of `E'` given by a point `x` of `E` with values in `S'` is the unique section
+`P` of `E'` with `P ≫ g = x`. -/
+@[reassoc (attr := simp)]
+theorem pointsBaseChangeEquiv_symm_apply_left_comp (x : Over.mk f ⟶ Over.mk E.structureMap) :
+    ((pointsBaseChangeEquiv hg h0).symm x).left ≫ g = x.left :=
+  hg.lift_fst _ _ _
 
 /-- The base change `P'` of a point `P` satisfies `P' ≫ g = f ≫ P`. -/
 @[reassoc (attr := simp)]
@@ -380,38 +385,6 @@ theorem exists_grpObj_isMonHom_comap (D : E.carrier.IdealSheafData)
       simp [i, i', neg_comp_of_isPullback hg h0, reassoc_of% hρ]
     rw [key]
     exact hj.trans (Scheme.Hom.le_ker_comp _ _)
-
-/-! ### Points of a base change as points of the original curve -/
-
-/-- **Points of a base change are points of the original curve.** For a morphism `g : E' ⟶ E` of
-elliptic curves lying over `f : S' ⟶ S`, forming a pullback square with the structure morphisms
-and carrying the zero section of `E'` to that of `E`, composing with `g` identifies the group of
-`S'`-points of `E'` with the group of points of `E` with values in `S'`, viewed as a scheme over
-`S` through `f`. -/
-noncomputable def pointsEquivOfIsPullback :
-    (𝟙_ (Over S') ⟶ Over.mk E'.structureMap) ≃* (Over.mk f ⟶ Over.mk E.structureMap) where
-  toFun P := Over.homMk (P.left ≫ g) (by simp [hg.w])
-  invFun x := Over.homMk (hg.lift x.left (𝟙 S') (by simpa using Over.w x)) (by simp)
-  left_inv P := point_ext hg (by simp)
-  right_inv x := by ext1; simp
-  map_mul' P Q := by
-    ext1
-    simp only [Over.homMk_left]
-    rw [mul_left_comp_of_isPullback hg h0, hom_mul_left]
-    congr 1
-
-/-- The point of `E` given by an `S'`-point `P` of `E'` is `P ≫ g`. -/
-@[simp]
-theorem pointsEquivOfIsPullback_apply_left (P : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
-    (pointsEquivOfIsPullback hg h0 P).left = P.left ≫ g :=
-  (rfl)
-
-/-- The `S'`-point of `E'` given by a point `x` of `E` with values in `S'` is the unique section
-`P` of `E'` with `P ≫ g = x`. -/
-@[reassoc (attr := simp)]
-theorem pointsEquivOfIsPullback_symm_apply_left_comp (x : Over.mk f ⟶ Over.mk E.structureMap) :
-    ((pointsEquivOfIsPullback hg h0).symm x).left ≫ g = x.left :=
-  hg.lift_fst _ _ _
 
 end EllipticCurveGeom
 

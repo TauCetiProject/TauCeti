@@ -6,15 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Blowup.AwayFromCenter
+public import TauCeti.AlgebraicGeometry.Blowup.IdealSheaf
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
 import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.Blowup.BaseChange
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.NonZeroDivisors
 import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 
 /-!
-# The universal property of the blowup of an affine scheme
+# The universal property of the blowup
 
 Let `I` be an ideal of a commutative ring `R` and let `π : Proj R[It] ⟶ Spec R` be the blowup of
 `Spec R` along `V(I)`. This file proves its universal property: a morphism `f : T ⟶ Spec R` along
@@ -36,14 +38,27 @@ of `i` is a nonzerodivisor generating `I B_c`, so the universal property of the 
 algebra `R[I/i]` (`Ideal.affineBlowupLift`) gives a morphism into the chart
 `Spec R[I/i] ⟶ Proj R[It]`. These local lifts agree on overlaps by uniqueness and glue.
 
-Together with the fact that the centre pulls back to an effective Cartier divisor on
-`Proj R[It]` itself, this characterizes the blowup of an affine scheme; the blowup of a
-quasi-coherent ideal on a general scheme is glued from these affine blowups.
+*The blowup along an ideal sheaf.* The same universal property holds for the blowup
+`Bl_I X ⟶ X` of an arbitrary scheme `X` along an arbitrary ideal sheaf `I`
+(`AlgebraicGeometry.Scheme.IdealSheafData.blowup`): a morphism `f : T ⟶ X` along which the ideal
+sheaf `I.comap f` of the inverse image of `V(I)` is effective Cartier factors uniquely through
+`Bl_I X`. Over an affine open `V` of `X`, the blowup is the blowup of `Spec Γ(X, V)` along
+`V(I(V))` (`AlgebraicGeometry.Scheme.IdealSheafData.isPullback_blowupChart`), and the inverse image
+of `V(I)` on `V` is cut out by `I(V)`
+(`AlgebraicGeometry.Scheme.IdealSheafData.comap_fromSpec_eq_ofIdealTop`). So on `f⁻¹ V` the affine
+universal property gives a lift through the chart over `V`, unique among all lifts into the
+blowup, and these lifts glue. Again no finiteness hypothesis on `I` is needed.
+
+Together with the fact that the centre pulls back to an effective Cartier divisor on the blowup
+itself, this characterizes the blowup as the terminal morphism along which the centre becomes an
+effective Cartier divisor.
 
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.projReesAlgebraLift f hf`: the morphism `T ⟶ Proj R[It]` lifting
   `f : T ⟶ Spec R`, when the centre pulls back to an effective Cartier divisor on `T`.
+* `AlgebraicGeometry.Scheme.IdealSheafData.blowupLift I f hf`: the morphism `T ⟶ Bl_I X` lifting
+  `f : T ⟶ X`, when `I.comap f` is an effective Cartier divisor on `T`.
 
 ## Main results
 
@@ -52,11 +67,18 @@ quasi-coherent ideal on a general scheme is glued from these affine blowups.
   agree when the centre pulls back to an effective Cartier divisor on `T`.
 * `TauCeti.AlgebraicGeometry.existsUnique_comp_toSpecZero_reesAlgebra_eq_of_isEffectiveCartier`:
   the universal property of the blowup of `Spec R` along `V(I)`.
+* `AlgebraicGeometry.Scheme.IdealSheafData.blowupLift_blowupToBase`,
+  `AlgebraicGeometry.Scheme.IdealSheafData.blowup_hom_ext` and
+  `AlgebraicGeometry.Scheme.IdealSheafData.existsUnique_comp_blowupToBase_eq_of_isEffectiveCartier`:
+  the same statements for the blowup of a scheme along an ideal sheaf;
+  `AlgebraicGeometry.Scheme.IdealSheafData.comp_blowupLift` is the naturality of the lift in `T`.
 
 ## References
 
 * [The Stacks Project, Section *Blowing up*](https://stacks.math.columbia.edu/tag/01OF), the
   universal property of blowing up.
+* [The Stacks Project, Lemma 0806](https://stacks.math.columbia.edu/tag/0806), the universal
+  property of the blowing up of a scheme along a quasi-coherent sheaf of ideals.
 * R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Proposition II.7.14.
 -/
 
@@ -260,3 +282,119 @@ theorem existsUnique_comp_toSpecZero_reesAlgebra_eq_of_isEffectiveCartier {f : T
     fun _ hg ↦ eq_projReesAlgebraLift hf hg⟩
 
 end TauCeti.AlgebraicGeometry
+
+/-! ### The blowup of a scheme along an ideal sheaf -/
+
+namespace AlgebraicGeometry.Scheme.IdealSheafData
+
+open TauCeti.AlgebraicGeometry
+
+variable {X T : Scheme.{u}} (I : X.IdealSheafData)
+
+/-- **Uniqueness in the universal property of the blowup along an ideal sheaf.** Two morphisms
+`T ⟶ Bl_I X` over `X` are equal if the centre `V(I)` pulls back to an effective Cartier divisor
+on `T`. -/
+theorem blowup_hom_ext {g₁ g₂ : T ⟶ I.blowup}
+    (h : g₁ ≫ I.blowupToBase = g₂ ≫ I.blowupToBase)
+    (hf : (I.comap (g₁ ≫ I.blowupToBase)).IsEffectiveCartier) : g₁ = g₂ := by
+  set f := g₁ ≫ I.blowupToBase
+  refine Scheme.hom_ext_of_forall _ _ fun x ↦ ?_
+  obtain ⟨V, hV, hxV, -⟩ := exists_isAffineOpen_mem_and_subset (show f x ∈ ⊤ from trivial)
+  refine ⟨f ⁻¹ᵁ V, hxV, ?_⟩
+  -- On `f⁻¹ V`, both morphisms land in the affine chart of the blowup over `V`.
+  have hrange (g : T ⟶ I.blowup) (hg : g ≫ I.blowupToBase = f) :
+      Set.range ((f ⁻¹ᵁ V).ι ≫ g) ⊆ Set.range (I.blowupChart hV) := by
+    rintro _ ⟨y, rfl⟩
+    rw [← Scheme.Hom.coe_opensRange, opensRange_blowupChart, SetLike.mem_coe,
+      Scheme.Hom.mem_preimage, ← Scheme.Hom.comp_apply, Category.assoc, hg]
+    exact y.2
+  have hlift (g : T ⟶ I.blowup) (hg : g ≫ I.blowupToBase = f) :
+      (IsOpenImmersion.lift (I.blowupChart hV) _ (hrange g hg) ≫
+          Proj.toSpecZero (reesAlgebra.grade (I.ideal ⟨V, hV⟩)) ≫
+            Spec.map (reesAlgebra.gradeZeroEquiv (I.ideal ⟨V, hV⟩)).toCommRingCatIso.hom) ≫
+              hV.fromSpec =
+        (f ⁻¹ᵁ V).ι ≫ f := by
+    rw [Category.assoc, ← toSpecCoeff_reesAlgebra, ← blowupChart_blowupToBase,
+      IsOpenImmersion.lift_fac_assoc, Category.assoc, hg]
+  rw [← IsOpenImmersion.lift_fac (I.blowupChart hV) _ (hrange g₁ rfl),
+    ← IsOpenImmersion.lift_fac (I.blowupChart hV) _ (hrange g₂ h.symm)]
+  congr 1
+  refine projReesAlgebra_hom_ext ?_ ?_
+  · rw [← cancel_mono hV.fromSpec]
+    exact (hlift g₁ rfl).trans (hlift g₂ h.symm).symm
+  · have hc := hf.comap (f ⁻¹ᵁ V).ι
+    rw [← comap_comp, ← hlift g₁ rfl, comap_comp, comap_fromSpec_eq_ofIdealTop] at hc
+    -- `hc` is the goal up to the eta rule `CommRingCat.of Γ(X, V) = Γ(X, V)`, which `rw` cannot
+    -- see through: the affine universal property is stated over `Spec (.of R)`.
+    exact hc
+
+/-- Over an affine open `V` of `X`, a morphism `f : T ⟶ X` along which the centre pulls back to an
+effective Cartier divisor lifts to the blowup on `f⁻¹ V`, through the affine chart over `V`. -/
+private theorem exists_comp_blowupToBase_eq_of_isAffineOpen {f : T ⟶ X}
+    (hf : (I.comap f).IsEffectiveCartier) {V : X.Opens} (hV : IsAffineOpen V) :
+    ∃ g : (f ⁻¹ᵁ V).toScheme ⟶ I.blowup, g ≫ I.blowupToBase = (f ⁻¹ᵁ V).ι ≫ f := by
+  set f' : (f ⁻¹ᵁ V).toScheme ⟶ Spec Γ(X, V) := (f ∣_ V) ≫ hV.isoSpec.hom
+  have hf' : f' ≫ hV.fromSpec = (f ⁻¹ᵁ V).ι ≫ f := by
+    rw [Category.assoc, ← hV.isoSpec_inv_ι, Iso.hom_inv_id_assoc, morphismRestrict_ι]
+  have hc : ((ofIdealTop ((I.ideal ⟨V, hV⟩).map (Scheme.ΓSpecIso Γ(X, V)).inv.hom)).comap
+      f').IsEffectiveCartier := by
+    rw [← comap_fromSpec_eq_ofIdealTop, ← comap_comp, hf', comap_comp]
+    exact hf.comap _
+  refine ⟨projReesAlgebraLift _ f' hc ≫ I.blowupChart hV, ?_⟩
+  rw [Category.assoc, blowupChart_blowupToBase, toSpecCoeff_reesAlgebra, Category.assoc,
+    projReesAlgebraLift_toSpecZero_assoc, hf']
+
+/-- Existence in the universal property, by gluing the lifts over the affine opens of `X`. -/
+private theorem exists_comp_blowupToBase_eq {f : T ⟶ X} (hf : (I.comap f).IsEffectiveCartier) :
+    ∃ g : T ⟶ I.blowup, g ≫ I.blowupToBase = f := by
+  choose g hg using fun V : X.affineOpens ↦ I.exists_comp_blowupToBase_eq_of_isAffineOpen hf V.2
+  -- The local lifts agree on overlaps, by uniqueness over the overlap.
+  have compat (V W : X.affineOpens) :
+      Limits.pullback.fst (f ⁻¹ᵁ V.1).ι (f ⁻¹ᵁ W.1).ι ≫ g V =
+        Limits.pullback.snd (f ⁻¹ᵁ V.1).ι (f ⁻¹ᵁ W.1).ι ≫ g W := by
+    have key : (Limits.pullback.fst (f ⁻¹ᵁ V.1).ι (f ⁻¹ᵁ W.1).ι ≫ g V) ≫ I.blowupToBase =
+        (Limits.pullback.fst (f ⁻¹ᵁ V.1).ι (f ⁻¹ᵁ W.1).ι ≫ (f ⁻¹ᵁ V.1).ι) ≫ f := by
+      rw [Category.assoc, hg, Category.assoc]
+    refine I.blowup_hom_ext ?_ ?_
+    · rw [key, Category.assoc, Category.assoc, hg, Limits.pullback.condition_assoc]
+    · rw [key, comap_comp]
+      exact hf.comap _
+  have hcover : ⨆ V : X.affineOpens, f ⁻¹ᵁ V.1 = ⊤ := by
+    rw [← Scheme.Hom.preimage_iSup, iSup_affineOpens_eq_top, Scheme.Hom.preimage_top]
+  let 𝒰 := T.openCoverOfIsOpenCover (fun V : X.affineOpens ↦ f ⁻¹ᵁ V.1) hcover
+  exact ⟨𝒰.glueMorphisms g compat, 𝒰.hom_ext _ _ fun V ↦
+    (𝒰.ι_glueMorphisms_assoc g compat V _).trans (hg V)⟩
+
+/-- **The universal property of the blowup along an ideal sheaf: the lift.** If the centre `V(I)`
+pulls back to an effective Cartier divisor on `T` along `f : T ⟶ X`, this is the morphism
+`T ⟶ Bl_I X` over `X` lifting `f` (`blowupLift_blowupToBase`). It is the only such morphism
+(`eq_blowupLift`). -/
+def blowupLift (f : T ⟶ X) (hf : (I.comap f).IsEffectiveCartier) : T ⟶ I.blowup :=
+  (I.exists_comp_blowupToBase_eq hf).choose
+
+/-- The lift `I.blowupLift f hf` is a morphism over `X`. -/
+@[reassoc (attr := simp)]
+theorem blowupLift_blowupToBase (f : T ⟶ X) (hf : (I.comap f).IsEffectiveCartier) :
+    I.blowupLift f hf ≫ I.blowupToBase = f :=
+  (I.exists_comp_blowupToBase_eq hf).choose_spec
+
+/-- Every morphism `T ⟶ Bl_I X` over `X` lifting `f` is the lift `blowupLift`. -/
+theorem eq_blowupLift {f : T ⟶ X} (hf : (I.comap f).IsEffectiveCartier) {g : T ⟶ I.blowup}
+    (hg : g ≫ I.blowupToBase = f) : g = I.blowupLift f hf :=
+  I.blowup_hom_ext (hg.trans (I.blowupLift_blowupToBase f hf).symm) (hg ▸ hf)
+
+/-- **The universal property of the blowup along an ideal sheaf.** A morphism `f : T ⟶ X` along
+which the centre `V(I)` pulls back to an effective Cartier divisor factors uniquely through the
+blowup `Bl_I X ⟶ X`. -/
+theorem existsUnique_comp_blowupToBase_eq_of_isEffectiveCartier {f : T ⟶ X}
+    (hf : (I.comap f).IsEffectiveCartier) : ∃! g : T ⟶ I.blowup, g ≫ I.blowupToBase = f :=
+  ⟨I.blowupLift f hf, I.blowupLift_blowupToBase f hf, fun _ hg ↦ I.eq_blowupLift hf hg⟩
+
+/-- The lift to the blowup is natural in the source: precomposing the lift of `f` with
+`h : T' ⟶ T` gives the lift of `h ≫ f`. -/
+theorem comp_blowupLift {T' : Scheme.{u}} (h : T' ⟶ T) (f : T ⟶ X)
+    (hf : (I.comap f).IsEffectiveCartier) (hhf : (I.comap (h ≫ f)).IsEffectiveCartier) :
+    h ≫ I.blowupLift f hf = I.blowupLift (h ≫ f) hhf :=
+  I.eq_blowupLift hhf (by rw [Category.assoc, blowupLift_blowupToBase])
+
+end AlgebraicGeometry.Scheme.IdealSheafData

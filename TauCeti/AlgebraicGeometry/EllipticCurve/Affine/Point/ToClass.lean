@@ -64,7 +64,7 @@ The mathematical argument is the affine ideal-class construction of Silverman,
 *The Arithmetic of Elliptic Curves*, III.3.4--5.
 
 `Point.toClass_surjective` and `toClassEquiv` also occur in D. Angdinata's coordinate-ring
-development, shared with the project. The proof here follows the AINTLIB construction above.
+development. The proof here follows the AINTLIB construction above.
 -/
 
 public section
@@ -359,7 +359,7 @@ private theorem exists_codimLEOne_inv_integral
     simp [h]
   obtain ⟨a, ha_mem, ha, hbound⟩ := exists_mem_norm_natDegree_le (F := F) I hIne
   obtain ⟨J, hJunit, hJne, hJ⟩ :=
-    Ideal.exists_isUnit_span_singleton_eq_mul I hIunit ha ha_mem
+    Ideal.exists_isUnit_span_singleton_eq_mul I hIunit (mem_nonZeroDivisors_of_ne_zero ha) ha_mem
   have haK : algebraMap W.CoordinateRing W.FunctionField a ≠ 0 := by
     simpa using (FaithfulSMul.algebraMap_injective W.CoordinateRing W.FunctionField).ne ha
   refine ⟨J, hJunit, ?_, ?_⟩
@@ -384,7 +384,7 @@ private theorem exists_codimLEOne_inv_integral
     refine ⟨Units.mk0 _ haK, ?_⟩
     rw [Units.val_mul, hJunit.unit_spec, hIunit.unit_spec,
       ← FractionalIdeal.coeIdeal_mul, mul_comm J I, ← hJ,
-      FractionalIdeal.coeIdeal_span_singleton, FractionalIdeal.coe_spanSingleton]
+      FractionalIdeal.coeIdeal_span_singleton, FractionalIdeal.coeToSubmodule_spanSingleton]
     simp
 
 /-- Every fractional ideal class has an inverse-class integral representative of codimension at
@@ -420,7 +420,7 @@ private theorem mk_eq_one_of_finrank_quotient_eq_zero
     exact hsub
   rw [ClassGroup.mk_eq_one_iff]
   refine ⟨1, ?_⟩
-  rw [hIunit.unit_spec, htop, FractionalIdeal.coeIdeal_top, FractionalIdeal.coe_one,
+  rw [hIunit.unit_spec, htop, FractionalIdeal.coeIdeal_top, FractionalIdeal.coeToSubmodule_one,
     Submodule.one_eq_span]
 
 private theorem mk_eq_mk_XYIdeal'_of_finrank_quotient_eq_one

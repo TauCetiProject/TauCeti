@@ -56,8 +56,8 @@ lemma coeff_ofFinsupp (m : X →₀ ℕ) (x : X) :
 
 /-- Finitely supported natural multiplicities give effective divisors. -/
 @[simp]
-lemma isEffective_ofFinsupp (m : X →₀ ℕ) : IsEffective (ofFinsupp m : WeilDivisor X) := by
-  rw [isEffective_iff]
+lemma ofFinsupp_nonneg (m : X →₀ ℕ) : 0 ≤ (ofFinsupp m : WeilDivisor X) := by
+  rw [nonneg_iff]
   intro x
   simp
 
@@ -109,8 +109,8 @@ lemma weightedDegree_ofFinsupp_eq_zero_iff_of_pos
   constructor
   · intro hdeg
     have hzero : (ofFinsupp m : WeilDivisor X) = 0 :=
-      IsEffective.eq_zero_of_weightedDegree_eq_zero_of_pos_on_support
-        (isEffective_ofFinsupp m) (by simpa using hw) hdeg
+      eq_zero_of_weightedDegree_eq_zero_of_pos_on_support
+        (ofFinsupp_nonneg m) (by simpa using hw) hdeg
     ext x
     have hcoeff := congrArg (fun D : WeilDivisor X => coeff D x) hzero
     simpa using hcoeff
@@ -167,19 +167,13 @@ lemma ofFinsetWithMultiplicity_insert [DecidableEq X] {s : Finset X} {x : X}
 
 /-- A named finite-set divisor with natural multiplicities is effective. -/
 @[simp]
-lemma isEffective_ofFinsetWithMultiplicity (s : Finset X) (m : X → ℕ) :
-    IsEffective (ofFinsetWithMultiplicity s m : WeilDivisor X) := by
+lemma ofFinsetWithMultiplicity_nonneg (s : Finset X) (m : X → ℕ) :
+    0 ≤ (ofFinsetWithMultiplicity s m : WeilDivisor X) := by
   classical
-  rw [isEffective_iff]
+  rw [nonneg_iff]
   intro x
   rw [coeff_ofFinsetWithMultiplicity]
   split_ifs <;> simp
-
-/-- A named finite-set divisor with natural multiplicities belongs to the effective divisor
-submonoid. -/
-lemma ofFinsetWithMultiplicity_mem_effectiveSubmonoid (s : Finset X) (m : X → ℕ) :
-    ofFinsetWithMultiplicity s m ∈ effectiveSubmonoid X :=
-  (mem_effectiveSubmonoid _).mpr (isEffective_ofFinsetWithMultiplicity s m)
 
 /-- The support of a named finite-set divisor with multiplicities is contained in the chosen
 finite set. Points in the set whose multiplicity is zero may drop out of the support. -/
@@ -233,8 +227,8 @@ lemma weightedDegree_ofFinsetWithMultiplicity_eq_zero_iff_of_pos
   constructor
   · intro hdeg x hx
     have hzero : (ofFinsetWithMultiplicity s m : WeilDivisor X) = 0 :=
-      IsEffective.eq_zero_of_weightedDegree_eq_zero_of_pos_on_support
-        (isEffective_ofFinsetWithMultiplicity s m)
+      eq_zero_of_weightedDegree_eq_zero_of_pos_on_support
+        (ofFinsetWithMultiplicity_nonneg s m)
         (fun y hy => by
           obtain ⟨hys, hmy⟩ := mem_support_ofFinsetWithMultiplicity_iff.mp hy
           exact hw y hys hmy)
@@ -297,13 +291,8 @@ lemma coeff_ofFinset [DecidableEq X] (s : Finset X) (x : X) :
 
 /-- The named coefficient-one finite-set divisor is effective. -/
 @[simp]
-lemma isEffective_ofFinset (s : Finset X) : IsEffective (ofFinset s : WeilDivisor X) :=
-  isEffective_ofFinsetWithMultiplicity s fun _ => 1
-
-/-- The named coefficient-one finite-set divisor belongs to the effective divisor submonoid. -/
-lemma ofFinset_mem_effectiveSubmonoid (s : Finset X) :
-    ofFinset s ∈ effectiveSubmonoid X :=
-  (mem_effectiveSubmonoid _).mpr (isEffective_ofFinset s)
+lemma ofFinset_nonneg (s : Finset X) : 0 ≤ (ofFinset s : WeilDivisor X) :=
+  ofFinsetWithMultiplicity_nonneg s fun _ => 1
 
 /-- The support of the named coefficient-one finite-set divisor is exactly the chosen finite
 set. -/

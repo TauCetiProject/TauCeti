@@ -32,6 +32,7 @@ maps `Γ^d_R(M) → N`, by composition with `γ_d`.
 * `DividedPowerAlgebra.gamma R M d`: the universal homogeneous polynomial law of degree `d`.
 * `DividedPowerAlgebra.isHomogeneousOfDegree_gamma`: it is homogeneous of degree `d`.
 * `DividedPowerAlgebra.gamma_toFun_tmul`: `γ_d(s ⊗ m) = s ^ d ⊗ dp R d m`.
+* `DividedPowerAlgebra.gamma_toFun_one`: for an algebra `A`, `γ_d(1) = 1 ⊗ dp R d 1`.
 * `DividedPowerAlgebra.gamma_toFun_sum_tmul`: the formula for `γ_d` on a finite sum of pure
   tensors, after scalar extension to an algebra in any universe.
 * `DividedPowerAlgebra.ground_gamma_apply`: the ground value of `γ_d` at `m` is `dp R d m`.
@@ -138,6 +139,13 @@ theorem gamma_toFun_tmul (d : ℕ) {S : Type*} [CommSemiring S] [Algebra R S] (s
       (s ^ d) ⊗ₜ[R] ⟨dp R d m, dp_mem_homogeneousSubmodule d m⟩ := by
   rw [gamma_toFun, gammaFun, coeff_exp_tmul, LinearMap.lTensor_tmul,
     homogeneousProj_apply, decompose_dp, DirectSum.of_eq_same]
+
+/-- For an `R`-algebra `A`, the value of `γ_d` at the unit of `S ⊗[R] A` is `1 ⊗ dp R d 1`. -/
+@[simp]
+theorem gamma_toFun_one {A : Type*} [Semiring A] [Algebra R A] (d : ℕ) (S : Type*)
+    [CommSemiring S] [Algebra R S] :
+    (gamma R A d).toFun S 1 = 1 ⊗ₜ ⟨dp R d 1, dp_mem_homogeneousSubmodule d 1⟩ := by
+  rw [Algebra.TensorProduct.one_def, gamma_toFun_tmul, one_pow]
 
 /-- The ground value of `γ_d` at `m` is `dp R d m`. -/
 @[simp]

@@ -102,7 +102,7 @@ private theorem inner_symmetricBasis (p : ℕ)
   let _ : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusNormedAddCommGroup
   let _ : InnerProductSpace ℝ (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusInnerProductSpace
   obtain ⟨⟨k, l⟩, hkl⟩ := kl
-  rw [selfAdjoint.coe_inner, Matrix.frobenius_inner_def]
+  rw [selfAdjoint.coe_inner, Matrix.frobenius_real_inner_eq_sum_mul]
   by_cases h : k = l
   · subst h
     rw [coe_symmetricBasis_diag, sum_mul_single]

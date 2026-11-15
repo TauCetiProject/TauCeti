@@ -116,12 +116,9 @@ private theorem symmetricPowerZeroIso_inv_app_eq (M : SheafOfModules.{u} (ringCa
         (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
           ((PresheafOfModulesOfCommRing.symmetricPowerZeroIso R.obj).inv.app M.val) ≫
         (symmetricPowerIso 0 M).inv := by
-  rw [symmetricPowerZeroIso_inv_app, TauCeti.SheafOfModules.sheafification_ε]
+  rw [symmetricPowerZeroIso_inv_app]
   congr 1
-  -- Both isomorphisms are the counit of the sheafification adjunction at the structure sheaf; their
-  -- sources agree only up to the definitional identification of the unit presheaf of modules.
-  exact (Iso.inv_eq_inv _ _).2 ((TauCeti.SheafOfModules.sheafificationIso_hom _ _).trans
-    (TauCeti.SheafOfModules.sheafificationUnitIso_hom R).symm)
+  exact TauCeti.SheafOfModules.sheafificationIso_unit_inv R
 
 /-- The multiplication of symmetric powers of a sheaf of modules is associative, up to the
 identification of the degrees `i + (j + k)` and `i + j + k`. -/

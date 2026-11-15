@@ -349,10 +349,9 @@ private theorem alternatingGroupFive_candidateCharacterTable_orthogonal_reindex
     norm_num [Fin.sum_univ_succ, card_classFinset_alternatingGroupFiveClassData,
       alternatingGroupFiveCandidateCharacterTable_apply]
   all_goals
-    try rw [hgolden]
+    rw [hgolden]
     ring_nf
-    try rw [hsq]
-    try ring
+  all_goals rw [hsq]; ring
 
 /-- The candidate ordinary-character rows satisfy Hermitian row orthogonality. -/
 theorem alternatingGroupFive_candidateCharacterTable_orthogonal

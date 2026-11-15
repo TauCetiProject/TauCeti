@@ -34,12 +34,9 @@ part of the pinned type-`A` graph automorphism.
 
 ## Formalization source
 
-The transpose-and-units composition is the construction of `HeckeRing.GLn.transposeGLEquiv` in
-`TauCeti.NumberTheory.HeckeRing.GLn.TransposeAntiInvolution`, whose source credits Chris Birkbeck's
-[AINTLIB](https://github.com/CBirkbeck/AINTLIB) `LeanModularForms` project, file
-`LeanModularForms/HeckeRIngs/GLn/TransposeAntiInvolution.lean`. Here it is composed with inversion
-and generalized from rational matrices with `Fin` indices to commutative semirings and finite
-index types.
+The transpose-and-units composition is Mathlib's
+`Matrix.GeneralLinearGroup.transposeMulEquiv`. Here it is composed with inversion and generalized
+from Mathlib's commutative-ring coefficients to commutative semirings.
 -/
 
 public section

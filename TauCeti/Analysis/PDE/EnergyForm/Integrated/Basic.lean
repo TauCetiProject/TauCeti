@@ -14,7 +14,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 The weak energy form of a divergence-form operator is
 
-`a(u, v) = ∫ aⁱʲ ∂ᵢu ∂ⱼv + bⁱ ∂ᵢu v + c u v`.
+`a(u, v) = ∫ aⁱʲ ∂ⱼu ∂ᵢv + bⁱ ∂ᵢu v + c u v`.
 
 The preceding PDE files build the pointwise jet integrand
 `energyIntegrand (a x) (b x) (c x)` and prove the measurability and integrability estimates

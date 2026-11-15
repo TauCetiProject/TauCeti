@@ -63,7 +63,8 @@ public section
 noncomputable section
 
 open NumberField
-open scoped TensorProduct NumberField.LiesOver
+open scoped TensorProduct
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -100,7 +101,9 @@ theorem infiniteAdeleSemilocalHom_algebraMap (x : L) :
     infiniteAdeleSemilocalHom L v (algebraMap L _ x) = 1 ⊗ₜ[K] x := by
   rw [infiniteAdeleSemilocalHom_apply, ← infiniteSemilocalEquiv_symm_algebraMap L v x]
   exact congrArg (infiniteSemilocalEquiv L v).symm
-    (funext fun w ↦ InfiniteAdeleRing.algebraMap_apply L x w.1)
+    (funext fun w ↦ by
+      rw [InfiniteAdeleRing.algebraMap_apply,
+        NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe])
 
 /-! ### The product over all infinite places -/
 

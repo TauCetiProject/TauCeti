@@ -111,6 +111,35 @@ theorem linearMap_ext {N : Type uN} [AddCommMonoid N] [Module R N]
   ext x
   exact h n x
 
+/-- Linear maps on two tensor-word factors separated by a module agree if they agree on
+pure words in both factors. -/
+theorem linearMap_ext_threefold {B X N : Type*}
+    [AddCommMonoid B] [Module R B] [AddCommMonoid X] [Module R X]
+    [AddCommMonoid N] [Module R N]
+    {f g : (TensorWords R M ⊗[R] X) ⊗[R] TensorWords R B →ₗ[R] N}
+    (h : ∀ (i j : ℕ) (a : Fin i → M) (x : X) (b : Fin j → B),
+      f ((of R M i (PiTensorProduct.tprod R a) ⊗ₜ x) ⊗ₜ
+        of R B j (PiTensorProduct.tprod R b)) =
+      g ((of R M i (PiTensorProduct.tprod R a) ⊗ₜ x) ⊗ₜ
+        of R B j (PiTensorProduct.tprod R b))) : f = g := by
+  apply TensorProduct.ext'
+  intro u v
+  suffices hv : (TensorProduct.curry f).flip v =
+      (TensorProduct.curry g).flip v from LinearMap.congr_fun hv u
+  apply TensorProduct.ext'
+  intro w x
+  have hw : (TensorProduct.curry ((TensorProduct.curry f).flip v)).flip x =
+      (TensorProduct.curry ((TensorProduct.curry g).flip v)).flip x := by
+    apply linearMap_ext
+    intro i a
+    have hv : TensorProduct.curry f (of R M i (PiTensorProduct.tprod R a) ⊗ₜ x) =
+        TensorProduct.curry g (of R M i (PiTensorProduct.tprod R a) ⊗ₜ x) := by
+      apply linearMap_ext
+      intro j b
+      exact h i j a x b
+    exact LinearMap.congr_fun hv v
+  exact LinearMap.congr_fun hw w
+
 /-- Project tensor words to a fixed tensor length. -/
 noncomputable def component (n : ℕ) : TensorWords R M →ₗ[R] TensorPower R n M :=
   DirectSum.component R ℕ (fun n ↦ TensorPower R n M) n
@@ -826,6 +855,41 @@ theorem map_reducedProjection_comp_deconcatenation :
   · rw [← reducedInclusion_of R M ⟨n, hn⟩,
       map_reducedProjection_deconcatenation_reducedInclusion,
       reducedProjection_reducedInclusion]
+
+end TensorWords
+
+namespace ReducedTensorWords
+
+/-- Each positive bidegree of reduced deconcatenation splits the component of the total
+length. This is the positive-length restriction of the coaugmented coproduct formula. -/
+theorem map_component_comp_deconcatenation (p q : {n : ℕ // 0 < n}) :
+    TensorProduct.map (component R M p) (component R M q) ∘ₗ deconcatenation R M =
+      (TensorPower.mulEquiv (R := R) (M := M)).symm.toLinearMap ∘ₗ
+        component R M ⟨p.1 + q.1, Nat.add_pos_left p.2 q.1⟩ := by
+  have hc (k : {n : ℕ // 0 < n}) :
+      component R M k ∘ₗ TensorWords.reducedProjection R M = TensorWords.component R M k.1 :=
+    LinearMap.ext (TensorWords.component_reducedProjection R M k)
+  have hi (k : {n : ℕ // 0 < n}) :
+      TensorWords.component R M k.1 ∘ₗ TensorWords.reducedInclusion R M = component R M k := by
+    rw [← hc k, LinearMap.comp_assoc, TensorWords.reducedProjection_comp_reducedInclusion,
+      LinearMap.comp_id]
+  calc
+    _ = TensorProduct.map (component R M p) (component R M q) ∘ₗ
+        (TensorProduct.map (TensorWords.reducedProjection R M)
+          (TensorWords.reducedProjection R M) ∘ₗ TensorWords.deconcatenation R M ∘ₗ
+            TensorWords.reducedInclusion R M) := by
+      rw [TensorWords.map_reducedProjection_comp_deconcatenation_comp_reducedInclusion]
+    _ = TensorProduct.map (TensorWords.component R M p.1) (TensorWords.component R M q.1) ∘ₗ
+        TensorWords.deconcatenation R M ∘ₗ TensorWords.reducedInclusion R M := by
+      rw [← LinearMap.comp_assoc, ← LinearMap.comp_assoc, ← TensorProduct.map_comp, hc p, hc q,
+        LinearMap.comp_assoc]
+    _ = _ := by
+      rw [← LinearMap.comp_assoc, TensorWords.map_component_comp_deconcatenation,
+        LinearMap.comp_assoc, hi ⟨p.1 + q.1, Nat.add_pos_left p.2 q.1⟩]
+
+end ReducedTensorWords
+
+namespace TensorWords
 
 /-- The letters of a tensor word are primitive.
 

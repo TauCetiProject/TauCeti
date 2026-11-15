@@ -10,10 +10,12 @@ public import TauCeti.Probability.Distributions.GeneralizedGamma.Basic
 /-!
 # Real-power moments of generalized gamma laws
 
-The `q`th real-power moment exists exactly when `a + q / c > 0`, and equals
+For `c ≠ 0`, the `q`th real-power moment exists exactly when `a + q / c > 0`, and then equals
 `s ^ q * Gamma (a + q / c) / Gamma a`. This criterion covers negative power parameters
 as well as positive ones. Natural moments, the mean, and variance follow on their
-respective exact integrability domains.
+respective exact integrability domains. The integrability criteria hold for every exponent `c`,
+while the moment formulas assume `c ≠ 0`: for `c = 0` the law is the zero measure, so the
+integrability condition reduces to `0 < a` and every moment is zero.
 
 These results transfer the Gamma real-power moment criterion and formula through the
 power pushforward; no new improper-integral calculation is needed.
@@ -42,11 +44,18 @@ private theorem generalizedGamma_rpow_ae (hs : 0 < s) (q : ℝ) :
   congr 2
   ring
 
-/-- A real power is integrable exactly when its shifted Gamma shape is positive. -/
+/-- A real power is integrable exactly when its shifted Gamma shape is positive. No hypothesis on
+the exponent `c` is needed: for `c = 0` the law is the zero measure, and `q / 0 = 0` turns the
+condition into `0 < a`, so both sides hold. -/
 @[simp]
 theorem integrable_rpow_generalizedGammaMeasure_iff
-    (ha : 0 < a) (hc : c ≠ 0) (hs : 0 < s) (q : ℝ) :
+    (ha : 0 < a) (hs : 0 < s) (q : ℝ) :
     Integrable (fun x : ℝ ↦ x ^ q) (generalizedGammaMeasure a c s) ↔ 0 < a + q / c := by
+  -- For `c = 0` the law is the zero measure, and `q / 0 = 0` makes the right side `0 < a`.
+  by_cases hc : c = 0
+  · subst c
+    rw [generalizedGammaMeasure_of_not_valid (c := 0) (by simp)]
+    simp [ha]
   rw [generalizedGammaMeasure_of_valid ha hc hs,
     integrable_map_measure (by fun_prop) (by fun_prop)]
   simp only [Function.comp_def]
@@ -69,10 +78,10 @@ theorem integral_rpow_generalizedGammaMeasure
 /-- The sharp criterion for absolute integrability of a natural power, including order zero. -/
 @[simp]
 theorem integrable_pow_generalizedGammaMeasure_iff
-    (ha : 0 < a) (hc : c ≠ 0) (hs : 0 < s) (n : ℕ) :
+    (ha : 0 < a) (hs : 0 < s) (n : ℕ) :
     Integrable (fun x : ℝ ↦ x ^ n) (generalizedGammaMeasure a c s) ↔
       0 < a + (n : ℝ) / c := by
-  simpa only [rpow_natCast] using integrable_rpow_generalizedGammaMeasure_iff ha hc hs (n : ℝ)
+  simpa only [rpow_natCast] using integrable_rpow_generalizedGammaMeasure_iff ha hs (n : ℝ)
 
 /-- Natural moments whenever the corresponding absolute moment is finite. -/
 @[simp]
@@ -85,10 +94,10 @@ theorem integral_pow_generalizedGammaMeasure
 /-- The mean exists exactly when the first shifted shape is positive. -/
 @[simp]
 theorem integrable_id_generalizedGammaMeasure_iff
-    (ha : 0 < a) (hc : c ≠ 0) (hs : 0 < s) :
+    (ha : 0 < a) (hs : 0 < s) :
     Integrable id (generalizedGammaMeasure a c s) ↔ 0 < a + c⁻¹ := by
   simpa only [Function.id_def, pow_one, Nat.cast_one, one_div] using
-    integrable_pow_generalizedGammaMeasure_iff ha hc hs 1
+    integrable_pow_generalizedGammaMeasure_iff ha hs 1
 
 /-- The generalized gamma mean on its domain of integrability. -/
 @[simp]
@@ -112,7 +121,7 @@ theorem variance_id_generalizedGammaMeasure
     linarith
   have hLp : MemLp id 2 (generalizedGammaMeasure a c s) :=
     (memLp_two_iff_integrable_sq aestronglyMeasurable_id).2
-      ((integrable_pow_generalizedGammaMeasure_iff ha hc hs 2).2 (by simpa using h))
+      ((integrable_pow_generalizedGammaMeasure_iff ha hs 2).2 (by simpa using h))
   rw [variance_eq_sub hLp]
   simp only [Pi.pow_apply, id_eq,
     integral_pow_generalizedGammaMeasure ha hc hs 2 (by simpa using h),

@@ -42,8 +42,8 @@ theorem isCentralIsogeny_iff_geometricCharacterMap_injective_and_finite_quotient
         Finite (CommHopfAlgCat.geometricCharacterGroup K.obj ⧸
           (CommHopfAlgCat.geometricCharacterMap f).range) := by
   rw [← CommHopfAlgCat.isCentralIsogeny_baseChangeMap_iff (L := AlgebraicClosure k) f]
-  simpa only [CommHopfAlgCat.geometricCharacterMap_eq_groupLikeMap] using
-    (DiagonalizableGroup.isCentralIsogeny_iff_groupLikeMap_injective_and_finite_quotient
+  simpa only [CommHopfAlgCat.geometricCharacterMap_eq_mapGroupLike] using
+    (DiagonalizableGroup.isCentralIsogeny_iff_mapGroupLike_injective_and_finite_quotient
     ((Subcoalgebra.groupLikeSetSpan_eq_top_iff_span_eq_top).mp
       ((DiagonalizableGroup.groupLikeSpannedProperty_iff _ _).mp
         ((multiplicativeTypeCommHopfAlgProperty_iff k H).mp hH)))

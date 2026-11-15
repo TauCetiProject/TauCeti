@@ -7,8 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborhoodComponents
 
-import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Topology.Algebra.Module.LocallyConvex
+import TauCeti.Analysis.Convex.SimplyConnected
 import TauCeti.Analysis.Complex.OpenSegment
 import TauCeti.Topology.IsLocalHomeomorph
 
@@ -140,8 +140,7 @@ private theorem isSimplyConnected_preimage_coe {T : Set ℂ} (hT : Convex ℝ T)
     (hT01 : ∀ w ∈ T, 0 < w.re ∧ w.re < 1) :
     IsSimplyConnected (((↑) : ThricePuncturedSphere → ℂ) ⁻¹' T) := by
   rw [← isOpenEmbedding_coe.isEmbedding.isSimplyConnected_image, image_coe_preimage_coe hT01]
-  have := hT.contractibleSpace hne
-  exact SimplyConnectedSpace.ofContractible _
+  exact hT.isSimplyConnected hne
 
 /-- The segment `(0, 1)` is simply connected. -/
 theorem isSimplyConnected_unitSegment : IsSimplyConnected unitSegment :=
@@ -285,7 +284,7 @@ private theorem mk_eq_mk_monodromy (hyS : y ∈ unitSegment ∩ S)
     ((hxx'.mono (preimage_mono hseg)).symm.trans hi).trans
       (hp.joinedIn_preimage_monodromy α hα (ν.symm i))
   have := isSimplyConnected_unitSegment.simplyConnectedSpace
-  have hx' : x' = hp.monodromy (.mk α) (ν.symm i) := hp.eq_of_joinedIn_preimage hyS.1 hjoin
+  have hx' : x' = hp.monodromy (.mk α) (ν.symm i) := hp.eq_of_joinedIn_preimage hjoin
   subst hx'
   rw [ConnectedComponents.coe_eq_coe']
   exact pathComponent_subset_component _

@@ -42,11 +42,18 @@ instance instSimplyConnectedSpaceUniversalGSpace (G : Type u) [Nonempty G] :
   simplyConnectedSpace_realization_indexedJoin (Set.infinite_univ.mono fun _ _ => ‹Nonempty G›)
 
 /-- Every positive-dimensional homotopy group of Milnor's countable join is trivial. -/
-theorem subsingleton_homotopyGroup_universalGSpace (G : Type u) [Nonempty G]
+theorem subsingleton_homotopyGroup_universalGSpace (G : Type u)
     (n : ℕ) (x : universalGSpace G) :
-    Subsingleton (π_ (n + 1) (universalGSpace G) x) :=
-  subsingleton_homotopyGroup_realization_indexedJoin
-    (Set.infinite_univ.mono fun _ _ => ‹Nonempty G›) (Fin (n + 1)) x
+    Subsingleton (π_ (n + 1) (universalGSpace G) x) := by
+  have : Nonempty G := by
+    by_contra hG
+    let : IsEmpty G := not_nonempty_iff.mp hG
+    have hsum := AbstractSimplicialComplex.Realization.sum_eq_one _ x
+    simp [Subsingleton.elim x.1 0] at hsum
+  exact
+    subsingleton_homotopyGroup_realization_indexedJoin
+      (Set.infinite_univ.mono fun _ _ => ‹Nonempty G›) (Fin (n + 1)) x
+
 
 end TauCeti
 

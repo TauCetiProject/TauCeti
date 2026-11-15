@@ -34,15 +34,7 @@ theorem toAddSubgroup'_zpowers_ofAdd_eq_span {n : ℕ} {V : Type*} [AddCommGroup
     [Module (ZMod n) V] (z : V) :
     (Subgroup.zpowers (Multiplicative.ofAdd z)).toAddSubgroup' = (ZMod n ∙ z).toAddSubgroup := by
   ext v
-  simp only [Subgroup.mem_toAddSubgroup', Subgroup.mem_zpowers_iff,
-    Submodule.mem_toAddSubgroup, Submodule.mem_span_singleton]
-  constructor
-  · rintro ⟨m, hm⟩
-    refine ⟨(m : ZMod n), ?_⟩
-    apply Multiplicative.ofAdd.injective
-    rw [Int.cast_smul_eq_zsmul, ofAdd_zsmul, hm]
-  · rintro ⟨a, rfl⟩
-    refine ⟨ZMod.cast a, ?_⟩
-    rw [← ofAdd_zsmul, ← Int.cast_smul_eq_zsmul (ZMod n), ZMod.intCast_zmod_cast]
+  simp [Subgroup.mem_zpowers_iff, Submodule.mem_span_singleton, ← ofAdd_zsmul,
+    ZMod.intCast_surjective.exists, Int.cast_smul_eq_zsmul]
 
 end TauCeti

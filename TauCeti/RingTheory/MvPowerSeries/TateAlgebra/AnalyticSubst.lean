@@ -49,6 +49,8 @@ here allows radii that are not norms of elements of `R`, which no weight family 
 * `TauCeti.MvPowerSeries.norm_restrictedAnalyticSubst_le`: substitution is contractive.
 * `TauCeti.MvPowerSeries.eq_restrictedAnalyticSubst`: uniqueness among continuous algebra
   homomorphisms.
+* `TauCeti.MvPowerSeries.restrictedAnalyticSubst_zero_apply`: substituting zero gives the
+  constant coefficient.
 * `TauCeti.MvPowerSeries.restrictedAnalyticSubst_self` and
   `TauCeti.MvPowerSeries.restrictedAnalyticSubst_comp`: the identity and composition laws.
 * `TauCeti.MvPowerSeries.restrictedEval₂_restrictedAnalyticSubst`: evaluating `f(g)` at `b` is
@@ -158,6 +160,17 @@ theorem coe_restrictedAnalyticSubst_eq_subst
     ← tsum_eq_finsum (L := .unconditional _) (coeff_subst_finite hsub _ e)]
   refine tsum_congr fun t ↦ ?_
   rw [Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _, smul_eq_mul]
+
+/-- **Substituting zero** evaluates at the origin: `f(0)` is the constant coefficient of `f`. -/
+@[simp]
+theorem restrictedAnalyticSubst_zero_apply
+    (hh : ∀ i, ‖(0 : Fin k → IsRestricted.subring (R := R) s) i‖ ≤ r i)
+    (f : IsRestricted.subring (R := R) r) :
+    restrictedAnalyticSubst 0 hh f =
+      algebraMap R _ (constantCoeff (f : MvPowerSeries (Fin k) R)) := by
+  refine Subtype.ext ?_
+  rw [coe_restrictedAnalyticSubst_eq_subst _ _ HasSubst.zero, coe_algebraMap_isRestrictedSubring]
+  exact subst_zero_eq_C_constantCoeff.trans (by simp)
 
 variable [∀ i, Fact (0 < r i)]
 

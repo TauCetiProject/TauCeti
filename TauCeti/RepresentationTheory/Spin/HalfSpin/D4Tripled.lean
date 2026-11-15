@@ -83,14 +83,10 @@ private theorem d4SpinPlusBasisVector_linearIndependent :
 private noncomputable def d4SpinPlusBasis :
     Module.Basis {s : Finset (Fin 4) // Even s.card} ℚ (spinPlus Q P) :=
   letI : FiniteDimensional ℚ P.W := b.finiteDimensional_of_finite
-  letI : FiniteDimensional ℚ (ExteriorAlgebra ℚ P.W) :=
-    b.ExteriorAlgebra.finiteDimensional_of_finite
-  letI : FiniteDimensional ℚ (spinPlus Q P) :=
-    FiniteDimensional.of_injective (spinPlus Q P).subtype (Submodule.injective_subtype _)
   basisOfLinearIndependentOfCardEqFinrank' (P.d4SpinPlusExteriorBasis b)
     (P.d4SpinPlusBasisVector_linearIndependent b) (by
       rw [Fintype.card_eq_nat_card, TauCeti.card_even_card_finset, Nat.card_fin,
-        TauCeti.finrank_spinPlus P (P.W_ne_bot b), Module.finrank_eq_card_basis b]
+        TauCeti.finrank_spinPlus P, Module.finrank_eq_card_basis b]
       norm_num)
 
 /-- An odd exterior-basis vector, regarded as an element of the odd half-spin module. -/
@@ -109,10 +105,6 @@ private theorem d4SpinMinusBasisVector_linearIndependent :
 private noncomputable def d4SpinMinusBasis :
     Module.Basis {s : Finset (Fin 4) // Odd s.card} ℚ (spinMinus Q P) :=
   letI : FiniteDimensional ℚ P.W := b.finiteDimensional_of_finite
-  letI : FiniteDimensional ℚ (ExteriorAlgebra ℚ P.W) :=
-    b.ExteriorAlgebra.finiteDimensional_of_finite
-  letI : FiniteDimensional ℚ (spinMinus Q P) :=
-    FiniteDimensional.of_injective (spinMinus Q P).subtype (Submodule.injective_subtype _)
   basisOfLinearIndependentOfCardEqFinrank' (P.d4SpinMinusExteriorBasis b)
     (P.d4SpinMinusBasisVector_linearIndependent b) (by
       rw [Fintype.card_eq_nat_card, TauCeti.card_odd_card_finset, Nat.card_fin,

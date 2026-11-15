@@ -707,7 +707,7 @@ theorem ramificationGroup_eq_comap_of_comap_maximalIdeal_pow (φ : G →* H) (f 
       rw [map_sub, hf, smul_sub]
       ring
     rw [hsplit]
-    exact sub_mem (add_mem (smul_mem_maximalIdeal_pow _ hx) hσx) hx
+    exact sub_mem (add_mem ((smul_mem_maximalIdeal_pow_iff _).2 hx) hσx) hx
   · rw [← hcomap, Ideal.mem_comap, map_sub, hf]
     exact h (f x)
 

@@ -280,7 +280,7 @@ namespace IsCorner
 
 /-- A corner of `μ` is addable to the diagram obtained by removing it. -/
 theorem isAddable_erase (h : IsCorner μ c) : IsAddable (erase μ c) c := by
-  refine ⟨h.notMem_erase, fun d hd ↦ ?_⟩
+  refine ⟨notMem_erase, fun d hd ↦ ?_⟩
   rw [h.mem_erase_iff]
   exact ⟨μ.isLowerSet hd.le h.mem, hd.ne⟩
 

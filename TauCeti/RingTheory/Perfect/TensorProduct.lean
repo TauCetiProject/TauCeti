@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.Ideal.TensorProduct
 public import TauCeti.RingTheory.Perfect.FrobeniusRootIdeal
 
 /-!
-# `Tor₁` of radical quotients of perfect rings
+# Tensor products of perfect rings and `Tor₁` of radical quotients
 
 Let `A` be a perfect ring of prime characteristic `p`, let `I` be a radical ideal of `A` and let
 `C` be a perfect `A`-algebra. We show that `I ⊗[A] C → A ⊗[A] C` is injective, that is,
@@ -29,12 +29,20 @@ This is the `Tor₁` part of the Tor independence of perfect rings, which assert
 `Tor_i^A(B, C) = 0` for all `i > 0` and all maps `B ← A → C` of perfect rings, in the case where
 `B = A ⧸ I` is a quotient.
 
+The file also shows that `B ⊗[A] C` is perfect whenever `A`, `B` and `C` are perfect
+(`Algebra.TensorProduct.perfectRing`): its `p`-th root is `b ⊗ c ↦ b ^ (1 / p) ⊗ c ^ (1 / p)`,
+which is well defined because `(a • b) ^ (1 / p) = a ^ (1 / p) • b ^ (1 / p)`. Perfectness of `A`
+is needed: over `A = 𝔽_p[t]`, with `B = 𝔽_p[t ^ (1 / p ^ ∞)]` perfect, the element
+`t ^ (1 / p) ⊗ 1 - 1 ⊗ t ^ (1 / p)` of `B ⊗[A] B` is nonzero, but its `p`-th power vanishes.
+
 ## Main results
 
 * `TauCeti.frobeniusRootIdeal_subtype_rTensor_injective`: `J_f ⊗[A] C → A ⊗[A] C` is injective for
   every reduced `A`-algebra `C`.
 * `TauCeti.subtype_rTensor_injective_of_isRadical`: `I ⊗[A] C → A ⊗[A] C` is injective for every
   radical ideal `I` of `A` and every perfect `A`-algebra `C`.
+* `Algebra.TensorProduct.perfectRing`: the tensor product of two perfect algebras over a perfect
+  ring is perfect.
 
 ## References
 
@@ -126,3 +134,48 @@ theorem subtype_rTensor_injective_of_isRadical [ExpChar C p] [PerfectRing C p] {
   rw [fg hN (hx.trans (map_zero _).symm), map_zero]
 
 end TauCeti
+
+namespace Algebra.TensorProduct
+
+variable {A B C : Type*} [CommSemiring A] [CommSemiring B] [CommSemiring C] [Algebra A B]
+  [Algebra A C] (p : ℕ) [ExpChar A p] [PerfectRing A p] [ExpChar B p] [PerfectRing B p]
+  [ExpChar C p] [PerfectRing C p]
+
+/-- The `p`-th root of `B ⊗[A] C`, `b ⊗ c ↦ b ^ (1 / p) ⊗ c ^ (1 / p)`, as an additive map. -/
+private noncomputable def pthRoot : B ⊗[A] C →+ B ⊗[A] C :=
+  liftAddHom
+    { toFun b :=
+        { toFun c := (frobeniusEquiv B p).symm b ⊗ₜ (frobeniusEquiv C p).symm c
+          map_zero' := by simp
+          map_add' _ _ := by simp [tmul_add] }
+      map_zero' := by ext; simp
+      map_add' _ _ := by ext; simp [add_tmul] }
+    fun a b c ↦ by
+      simp only [AddMonoidHom.coe_mk, ZeroHom.coe_mk]
+      rw [TauCeti.frobeniusEquiv_symm_smul, TauCeti.frobeniusEquiv_symm_smul, smul_tmul]
+
+private theorem pthRoot_tmul (b : B) (c : C) :
+    pthRoot p (b ⊗ₜ[A] c) = (frobeniusEquiv B p).symm b ⊗ₜ (frobeniusEquiv C p).symm c :=
+  rfl
+
+/-- The tensor product of two perfect algebras over a perfect ring is perfect. -/
+instance perfectRing : PerfectRing (B ⊗[A] C) p := by
+  obtain _ | ⟨hp⟩ := ‹ExpChar A p›
+  · exact ⟨by simp only [pow_one]; exact Function.bijective_id⟩
+  rcases subsingleton_or_nontrivial (B ⊗[A] C) with _ | _
+  · exact ⟨⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun x ↦ ⟨x, Subsingleton.elim _ _⟩⟩⟩
+  -- `p = 0` in `B ⊗[A] C`, since it is an `A`-algebra.
+  have : CharP (B ⊗[A] C) p := (CharP.charP_iff_prime_eq_zero hp).2 <| by
+    rw [← map_natCast (algebraMap A (B ⊗[A] C)), CharP.cast_eq_zero, map_zero]
+  have : ExpChar (B ⊗[A] C) p := .prime hp
+  refine ⟨Function.bijective_iff_has_inverse.2 ⟨pthRoot p, fun x ↦ ?_, fun x ↦ ?_⟩⟩
+  · beta_reduce
+    induction x using TensorProduct.inductionOn with
+    | tmul b c => rw [tmul_pow, pthRoot_tmul, frobeniusEquiv_symm_pow, frobeniusEquiv_symm_pow]
+    | add x y hx hy => rw [add_pow_expChar, map_add, hx, hy]
+  · beta_reduce
+    induction x using TensorProduct.inductionOn with
+    | tmul b c => rw [pthRoot_tmul, tmul_pow, frobeniusEquiv_symm_pow_p, frobeniusEquiv_symm_pow_p]
+    | add x y hx hy => rw [map_add, add_pow_expChar, hx, hy]
+
+end Algebra.TensorProduct

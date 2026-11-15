@@ -129,7 +129,22 @@ noncomputable def specializedPointsMulEquiv :
   (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (baseChangeCoordinateIso R)
       (CommAlgCat.of R R)).trans
     (pointsPresentation
-      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ R) (CommAlgCat.of R R))).mulEquiv
+      (CommAlgCat.restrictScalarsObj (algebraMap ℤ R) (CommAlgCat.of R R))).mulEquiv
+
+/-- The specialized point equivalence preserves the ambient invertible matrix. -/
+@[simp]
+theorem coe_specializedPointsMulEquiv_apply
+    (q : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R) (CommAlgCat.of R R)) :
+    (specializedPointsMulEquiv R q : Matrix.GeneralLinearGroup (Fin 54) R) =
+      GeneralLinear.pointsMulEquiv 54
+        (CommHopfAlgCat.quotientPointsHom
+          (GeneralLinear.coordinateHopfAlgebra R 54) (baseChangeDefiningIdeal R)
+          (CommAlgCat.of R R) q) := by
+  rw [specializedPointsMulEquiv, MulEquiv.trans_apply,
+    GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply]
+  exact GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
+    54 definingIdeal (baseChangeDefiningIdeal R) (baseChangeCoordinateIso R)
+    (mkQuotient_comp_baseChangeCoordinateIso_hom R) (CommAlgCat.of R R) q
 
 /-- Under the specialized point equivalence, the quotient point is represented by the carrier
 point's ambient general-linear matrix. -/
@@ -140,18 +155,7 @@ theorem quotientPointsHom_specializedPointsMulEquiv_symm (g : points R) :
         (CommAlgCat.of R R) ((specializedPointsMulEquiv R).symm g) =
       (GeneralLinear.pointsMulEquiv (R := R) 54).symm
         (g : Matrix.GeneralLinearGroup (Fin 54) R) := by
-  have h :
-      ((specializedPointsMulEquiv R)
-          ((specializedPointsMulEquiv R).symm g) : Matrix.GeneralLinearGroup (Fin 54) R) =
-        GeneralLinear.pointsMulEquiv 54
-          (CommHopfAlgCat.quotientPointsHom
-            (GeneralLinear.coordinateHopfAlgebra R 54) (baseChangeDefiningIdeal R)
-            (CommAlgCat.of R R) ((specializedPointsMulEquiv R).symm g)) := by
-    rw [specializedPointsMulEquiv, MulEquiv.trans_apply,
-      GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply]
-    exact GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
-      54 definingIdeal (baseChangeDefiningIdeal R) (baseChangeCoordinateIso R)
-      (mkQuotient_comp_baseChangeCoordinateIso_hom R) (CommAlgCat.of R R) _
+  have h := coe_specializedPointsMulEquiv_apply R ((specializedPointsMulEquiv R).symm g)
   rw [MulEquiv.apply_symm_apply] at h
   rw [h, MulEquiv.symm_apply_apply]
 
@@ -174,6 +178,15 @@ theorem points_mulVec_mem
 /-- The weight-torus character of a doubled minuscule coordinate. -/
 noncomputable abbrev minusculeCharacter (a : Fin 54) : Multiplicative (Fin 6 →₀ ℤ) :=
   SplitTorus.weightCharacter (matrixWeight a)
+
+/-- The fifty-four doubled minuscule coordinates have distinct integral torus characters. -/
+theorem minusculeCharacter_injective : Function.Injective minusculeCharacter := by
+  intro a b h
+  apply matrixIndexEquiv.symm.injective
+  apply DynkinType.e6DoubledMinusculeWeight_injective
+  funext i
+  simpa only [minusculeCharacter, SplitTorus.toAdd_weightCharacter, matrixWeight_apply] using
+    congrArg (fun χ : Multiplicative (Fin 6 →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
 
 /-- Restriction of the standard comodule to the weight torus gives its fifty-four weight lines,
 over every commutative ring. -/

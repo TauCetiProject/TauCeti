@@ -104,7 +104,7 @@ theorem Newform.qExpansion_coeff_prime_eq_zero_of_sq_dvd (f : Newform N k) (hp :
   have hpN : p ∣ N := (dvd_pow_self p two_ne_zero).trans hpsq
   -- the nebentypus is the pull-back of the lowered character `hχ.χ₀`
   have hcomp : f.χ = hχ.χ₀.toUnitHom.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpN)) := by
-    rw [← f.dirichletLift_equivToUnitHom, ← MulChar.toUnitHom_eq]
+    rw [← f.dirichletLift_toUnitHom]
     conv_lhs => rw [hχ.eq_changeLevel]
     rw [DirichletCharacter.changeLevel_toUnitHom]
   -- the eigenvector `U_p f = a_p(f) • f` is old, and it is new, so it vanishes

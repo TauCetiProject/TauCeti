@@ -30,8 +30,8 @@ The two numerical invariants of a presentation satisfy
 `deg K A = n * index K A`.
 
 The index is `1` exactly when `A` is split. Combining the construction with the maximal-subfield
-theorem gives the arithmetic meaning required by the semisimple-algebras roadmap: every central
-simple algebra has a finite splitting field whose degree over `K` is exactly its index.
+theorem gives the index its arithmetic meaning: every central simple algebra has a finite splitting
+field whose degree over `K` is exactly its index.
 
 ## Main results
 
@@ -46,9 +46,6 @@ simple algebra has a finite splitting field whose degree over `K` is exactly its
 
 ## References
 
-This implements the index portion of Layer 6, “Splitting fields, maximal subfields, and the
-index”, of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See P. Gille and T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.4, and
 R. S. Pierce, *Associative Algebras*, Chapter 13.
 -/
@@ -110,7 +107,7 @@ finite-dimensional central division algebra `D`, then the index of `A` is `deg K
 This is the characteristic property of `TauCeti.Algebra.index`; later results use it instead of
 unfolding the choice made in the definition. -/
 theorem index_eq_deg_of_algEquiv_matrix {n : ℕ} [NeZero n] {D : Type*} [DivisionRing D]
-    [Algebra K D] [Algebra.IsCentral K D] [FiniteDimensional K D]
+    [Algebra K D] [Algebra.IsCentral K D]
     (e : A ≃ₐ[K] Matrix (Fin n) (Fin n) D) : index K A = deg K D := by
   let W := wedderburnData K A
   let _ := W.divisionRing
@@ -131,7 +128,7 @@ theorem index_eq_deg_of_algEquiv_matrix {n : ℕ} [NeZero n] {D : Type*} [Divisi
 /-- **The degree read from a Wedderburn presentation.** If `A ≃ Mₙ(D)`, then
 `deg K A = n * index K A`. -/
 theorem deg_eq_mul_index_of_algEquiv_matrix {n : ℕ} [NeZero n] {D : Type*} [DivisionRing D]
-    [Algebra K D] [Algebra.IsCentral K D] [FiniteDimensional K D]
+    [Algebra K D] [Algebra.IsCentral K D]
     (e : A ≃ₐ[K] Matrix (Fin n) (Fin n) D) : deg K A = n * index K A := by
   rw [deg_eq_mul_deg_of_algEquiv_matrix e, index_eq_deg_of_algEquiv_matrix e]
 

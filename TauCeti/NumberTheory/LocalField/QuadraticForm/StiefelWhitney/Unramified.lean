@@ -9,7 +9,7 @@ public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.QuadraticExtensio
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Cup.Unramified
 
 import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
-import TauCeti.FieldTheory.Separable.Quadratic
+import TauCeti.FieldTheory.Separable.PrimeDegree
 
 /-!
 # The trace form of the unramified quadratic extension of a dyadic field
@@ -61,13 +61,16 @@ nonzero class `w₂(Tr_*⟨1⟩) = (2) ∪ (5)` of `ℚ₂(√5)`.
 
 public section
 
+universe u
+
 namespace TauCeti
 
 open _root_.ContinuousCohomology
 
-variable {K L : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
+variable {K L : Type u} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Invertible (2 : K)]
 
+omit [Invertible (2 : K)] in
 /-- A square root of the unramified class does not lie in `K`, since `Δ` is not a square. -/
 private theorem not_mem_range_of_sq_eq_unramified [Field L] [Algebra K L] {x : L} {Δ : Kˣ}
     (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
@@ -78,7 +81,7 @@ private theorem not_mem_range_of_sq_eq_unramified [Field L] [Algebra K L] {x : L
   have hc0 : c ≠ 0 := by
     rintro rfl
     exact Δ.ne_zero (by rw [← hc]; ring)
-  exact not_isSquare_of_unramified_class (isUnit_of_invertible (2 : K)).ne_zero hΔ
+  exact not_isSquare_of_unramified_class hΔ
     ⟨Units.mk0 c hc0, Units.ext (by rw [Units.val_mul, Units.val_mk0, ← hc]; ring)⟩
 
 variable [Field L] [Algebra K L] [FiniteDimensional K L]
@@ -122,7 +125,7 @@ theorem galoisEvens_kummerClass_sqrt_unramified [Invertible (2 : L)]
 /-- **The trace form of the unramified quadratic extension of a finite extension of `ℚ₂`**: if
 `K` is a finite extension of `ℚ₂` and `L = K(√Δ)` its unramified quadratic extension, then
 `w₂(Tr_*⟨1⟩) ≠ 0` exactly when the absolute ramification index of `K` is odd. -/
-theorem sw2Class_formClass_traceTransfer_sq_unramified_ne_zero_iff [Fact (Nat.Prime 2)]
+theorem sw2Class_formClass_traceTransfer_sq_unramified_ne_zero_iff
     [FinitePadicExtension K 2] (hfin : Module.finrank K L = 2) {x : L} {Δ : Kˣ}
     (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
       Even (normalizedValuation K b).toAdd)
@@ -136,7 +139,7 @@ theorem sw2Class_formClass_traceTransfer_sq_unramified_ne_zero_iff [Fact (Nat.Pr
 /-- **The Evens norm of the square root of the unramified class over a finite extension of
 `ℚ₂`**: if `K` is a finite extension of `ℚ₂` and `L = K(x)` with `x² = Δ` the unramified class,
 then `N^{Ev}((x)) ≠ 0` exactly when the absolute ramification index of `K` is odd. -/
-theorem galoisEvens_kummerClass_sqrt_unramified_ne_zero_iff [Fact (Nat.Prime 2)]
+theorem galoisEvens_kummerClass_sqrt_unramified_ne_zero_iff
     [FinitePadicExtension K 2] [Invertible (2 : L)] (σ : L →ₐ[K] SeparableClosure K)
     (hfin : Module.finrank K L = 2) {x : L} {Δ : Kˣ}
     (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔

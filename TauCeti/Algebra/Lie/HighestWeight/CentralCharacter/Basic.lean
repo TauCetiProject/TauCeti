@@ -154,7 +154,7 @@ private noncomputable def centralCharacterAux (hv : IsHighestWeightVector b lam 
   toFun := centralScalarAux hv hgen
   map_one' := centralScalarAux_eq hv hgen (by simp)
   map_mul' u w := centralScalarAux_eq hv hgen (by
-    rw [MulMemClass.coe_mul, map_mul, Module.End.mul_apply,
+    rw [MulMemClass.coe_mul, map_mul, mul_apply_eq_comp,
       representation_eq_centralScalarAux_smul hv hgen w, map_smul,
       representation_eq_centralScalarAux_smul hv hgen u, smul_smul, mul_comm])
   map_zero' := centralScalarAux_eq hv hgen (by simp)

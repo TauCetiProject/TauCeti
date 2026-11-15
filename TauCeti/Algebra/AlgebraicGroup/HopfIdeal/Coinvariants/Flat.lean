@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Translation
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.InvariantTheory
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Equivariance
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Descent
-import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Ascent
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ClosedPoints
 public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
 import Mathlib.RingTheory.FiniteStability
@@ -128,11 +127,7 @@ theorem faithfullyFlat_coinvariants_of_isLinearlyReductive
   let K := AlgebraicClosure k
   let J := CommHopfAlgCat.baseChangeHopfIdeal (K := K) I
   apply (CommHopfAlgCat.faithfullyFlat_coinvariants_baseChange_iff (S := K) I).mp
-  have hJ : Coalgebra.IsLinearlyReductive K
-      (CommHopfAlgCat.baseChange (K := K) H ⧸ J.toIdeal) := by
-    exact (Coalgebra.isLinearlyReductive_iff_of_coalgEquiv K
-      (CommHopfAlgCat.ofIso (CommHopfAlgCat.quotientBaseChangeIso (K := K) I)).toCoalgEquiv).mpr
-      (Coalgebra.IsLinearlyReductive.baseChange K hI)
+  have hJ := I.isLinearlyReductive_quotient_baseChangeHopfIdeal K hI
   let : Algebra.FiniteType K J.coinvariants :=
     J.finiteType_coinvariants_of_isLinearlyReductive hJ
   have hsurj := J.surjective_comap_coinvariants_of_isLinearlyReductive hJ

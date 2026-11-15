@@ -11,8 +11,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.IsSepClosed
 -- Proof-only: torsion abscissae of invertible index have separable minimal polynomial.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.DivisionPolynomialSeparable
--- Proof-only: an even index with nonzero cast keeps `2` nonzero.
-import TauCeti.Data.Int.CastNeZero
+-- Proof-only: a nonzero even element keeps `2` nonzero.
+import TauCeti.Algebra.Ring.Parity
 -- Proof-only: an integral element whose minimal polynomial splits lies in the base field.
 import Mathlib.RingTheory.Adjoin.Field
 
@@ -89,7 +89,7 @@ private theorem two_ne_zero_or_add_ne_zero_of_zsmul_eq_zero {n : ℤ} (hchar : (
       _ = 0 := add_neg_cancel _
   -- An invertible index in characteristic `2` is odd, so the point itself vanishes.
   obtain ⟨k, hk⟩ : Odd n := Int.not_even_iff_odd.mp fun heven ↦
-    Int.two_ne_zero_of_even_of_cast_ne_zero heven hchar (by exact_mod_cast h2)
+    heven.intCast.two_ne_zero_of_ne_zero hchar h2
   refine Affine.Point.some_ne_zero hns ?_
   rwa [hk, add_smul, one_smul, mul_comm (2 : ℤ) k, mul_smul, htwo, smul_zero, zero_add] at h
 

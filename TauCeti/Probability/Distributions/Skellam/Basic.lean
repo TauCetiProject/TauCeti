@@ -6,7 +6,6 @@ Authors: Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Distributions.Poisson.Measurability
 public import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 
@@ -103,7 +102,7 @@ theorem hasSum_skellamMeasure_mass (r₁ r₂ : ℝ≥0) (k : ℕ) :
       (Real.exp (-(r₁ : ℝ)) * (r₁ : ℝ) ^ (j + k) / (j + k).factorial) *
         (Real.exp (-(r₂ : ℝ)) * (r₂ : ℝ) ^ j / j.factorial))
       ((skellamMeasure r₁ r₂).real {(k : ℤ)}) := by
-  have hsum := (ENNReal.summable.hasSum_iff.mpr
+  have hsum := (CompleteLattice.summable.hasSum_iff.mpr
     (skellamMeasure_singleton_natCast r₁ r₂ k).symm).toReal (measure_ne_top _ _)
   simpa only [ENNReal.toReal_mul, ← measureReal_def, poissonMeasure_real_singleton] using hsum
 
@@ -130,24 +129,14 @@ theorem skellamMeasure_singleton_pos {r₁ r₂ : ℝ≥0} (h₁ : 0 < r₁) (h�
   have hnat (s₁ s₂ : ℝ≥0) (h : 0 < s₁) (n : ℕ) :
       0 < skellamMeasure s₁ s₂ {(n : ℤ)} := by
     rw [skellamMeasure_singleton_natCast]
-    apply lt_of_lt_of_le _ (ENNReal.le_tsum 0)
+    apply lt_of_lt_of_le _ (_root_.le_tsum _ 0)
     simp only [zero_add, poissonMeasure_singleton, pow_zero, Nat.factorial_zero]
-    have hs : (0 : ℝ) < s₁ := h
     positivity
   cases k with
   | ofNat n => exact hnat r₁ r₂ h₁ n
   | negSucc n =>
     rw [Int.negSucc_eq, skellamMeasure_singleton_neg]
     exact hnat r₂ r₁ h₂ (n + 1)
-
-/-- Positive rates give full topological support on the integer carrier. -/
-theorem support_skellamMeasure {r₁ r₂ : ℝ≥0} (h₁ : 0 < r₁) (h₂ : 0 < r₂) :
-    (skellamMeasure r₁ r₂).support = Set.univ := by
-  ext k
-  simp only [Set.mem_univ, iff_true, Measure.mem_support_iff_forall]
-  intro U hU
-  exact (skellamMeasure_singleton_pos h₁ h₂ k).trans_le
-    (measure_mono (singleton_subset_iff.mpr (mem_of_mem_nhds hU)))
 
 /-- With zero second rate the Skellam law is the natural Poisson law cast to integers. -/
 @[simp]

@@ -8,10 +8,14 @@ module
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
+public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.Dual
 public import TauCeti.Algebra.Coalgebra.Comodule.MonoidAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Product
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Quotient
+import TauCeti.LinearAlgebra.Exact
 
 /-!
 # Formal characters of comodules over a monoid algebra
@@ -28,6 +32,14 @@ rational representations of `D(X)`. The formal character then records the weight
 of a representation, labelled by the actual character lattice `X`. This file proves that it turns
 the operations on representations into operations in `ℤ[X]`: direct sums into sums, tensor
 products into products (weights add), and duals into the inversion `g ↦ g⁻¹` (weights negate).
+
+The formal character is also additive on short exact sequences, and in particular on a
+subcomodule and its quotient, because a comodule morphism maps each weight space of its source
+onto the corresponding weight space of its image: the weight-space functors are exact. Applied
+to a representation of a split reductive group restricted to a maximal torus, this lets characters
+be computed along a filtration by subrepresentations. Finally, restricting a representation along
+a homomorphism `q : X →* Y` of character groups, that is, corestricting the comodule along
+`k[q] : k[X] → k[Y]`, pushes the formal character forward along `q`.
 
 The computations go through bases of weight vectors. Every finite-dimensional comodule has one
 (`TauCeti.Comodule.exists_basis_mem_weightSpace`), the dimension of each weight space counts the
@@ -59,6 +71,13 @@ weight vectors, `TauCeti.Comodule.mem_weightSpace_dual_iff` and
 * `TauCeti.Comodule.formalCharacter_prod`: **additivity on direct sums.**
 * `TauCeti.Comodule.formalCharacter_tensor`: **multiplicativity on tensor products.**
 * `TauCeti.Comodule.formalCharacter_dual`: **the dual has the inverted character.**
+* `TauCeti.Comodule.finrank_weightSpace_eq_add_of_exact`: weight multiplicities are additive on
+  short exact sequences.
+* `TauCeti.Comodule.formalCharacter_eq_add_of_exact`: **additivity on short exact sequences.**
+* `TauCeti.Comodule.formalCharacter_quotient_add_formalCharacter`: the character of a comodule is
+  the sum of the characters of a subcomodule and of the quotient by it.
+* `TauCeti.Comodule.formalCharacter_corestrict_mapDomainBialgHom`: **restriction along a
+  homomorphism of character groups pushes the formal character forward.**
 * `TauCeti.Comodule.formalCharacter_groupLike` and `TauCeti.Comodule.formalCharacter_trivial`:
   the comodule with coaction `v ↦ v ⊗ g` has formal character `dim V · g`; for `g = 1`, the
   trivial comodule, this is `dim V`.
@@ -75,7 +94,7 @@ open Module TensorProduct
 
 namespace TauCeti.Comodule
 
-universe u v w x
+universe u v w x y
 
 /-! ### Weights of duals -/
 
@@ -279,6 +298,96 @@ theorem formalCharacter_dual :
     (Finsupp.mapDomain_equiv_apply (f := Equiv.inv G) (formalCharacter k G V).coeff g).symm
 
 end Dual
+
+/-! ### Exactness -/
+
+section Exact
+
+variable {U : Type y} [AddCommGroup U] [Module k U] [Comodule k (MonoidAlgebra k G) U]
+
+omit [FiniteDimensional k W] in
+/-- **Weight multiplicities are additive on short exact sequences.** If `0 → U → V → W → 0` is
+a short exact sequence of comodules over `k[G]` with `V` finite-dimensional, then for every `x`
+the dimension of the `x`-weight space of `V` is the sum of those of `U` and `W`. -/
+theorem finrank_weightSpace_eq_add_of_exact {f : Hom k (MonoidAlgebra k G) U V}
+    {g : Hom k (MonoidAlgebra k G) V W} (hf : Function.Injective f)
+    (hg : Function.Surjective g) (hfg : Function.Exact f g) (x : G) :
+    finrank k (weightSpace k G V x) =
+      finrank k (weightSpace k G U x) + finrank k (weightSpace k G W x) := by
+  -- Restricted to `x`-weight spaces, `f` stays injective, `g` stays surjective and the sequence
+  -- stays exact, because comodule morphisms commute with the weight projections.
+  let fx : weightSpace k G U x →ₗ[k] weightSpace k G V x :=
+    f.toLinearMap.restrict fun _ hu ↦ f.map_mem_weightSpace hu
+  let gx : weightSpace k G V x →ₗ[k] weightSpace k G W x :=
+    g.toLinearMap.restrict fun _ hv ↦ g.map_mem_weightSpace hv
+  have hfx : Function.Injective fx := fun u u' h ↦
+    Subtype.ext (hf (by simpa [fx] using congrArg Subtype.val h))
+  have hgx : Function.Surjective gx := fun ⟨w, hw⟩ ↦ by
+    obtain ⟨v, rfl⟩ := hg w
+    exact ⟨⟨_, weightProj_mem_weightSpace x v⟩, Subtype.ext <| by
+      simp [gx, weightProj_of_mem hw]⟩
+  have hfgx : Function.Exact fx gx := fun ⟨v, hv⟩ ↦ by
+    constructor
+    · intro h
+      obtain ⟨u, rfl⟩ := (hfg v).mp (by simpa [gx] using congrArg Subtype.val h)
+      exact ⟨⟨_, weightProj_mem_weightSpace x u⟩, Subtype.ext <| by
+        simp [fx, weightProj_of_mem hv]⟩
+    · rintro ⟨u, hu⟩
+      refine Subtype.ext ?_
+      rw [← hu]
+      simpa [fx, gx] using (hfg (f u)).mpr ⟨u, rfl⟩
+  exact hfgx.finrank_eq_add hfx hgx
+
+variable [FiniteDimensional k U]
+
+/-- **The formal character is additive on short exact sequences.** -/
+theorem formalCharacter_eq_add_of_exact {f : Hom k (MonoidAlgebra k G) U V}
+    {g : Hom k (MonoidAlgebra k G) V W} (hf : Function.Injective f)
+    (hg : Function.Surjective g) (hfg : Function.Exact f g) :
+    formalCharacter k G V = formalCharacter k G U + formalCharacter k G W := by
+  refine MonoidAlgebra.coeff_injective (Finsupp.ext fun x ↦ ?_)
+  simp [finrank_weightSpace_eq_add_of_exact hf hg hfg x]
+
+end Exact
+
+/-- **The formal character of a comodule is the sum of the characters of a subcomodule and of
+the quotient by it.** -/
+theorem formalCharacter_quotient_add_formalCharacter (N : Subcomodule k (MonoidAlgebra k G) V) :
+    formalCharacter k G (V ⧸ N.toSubmodule) + formalCharacter k G N = formalCharacter k G V := by
+  rw [add_comm, formalCharacter_eq_add_of_exact (f := Subcomodule.subtype N) (g := N.mkQ)
+    (fun _ _ h ↦ Subtype.ext (by simpa using h)) N.mkQ_surjective fun v ↦ by
+      rw [N.mkQ_eq_zero_iff]
+      simp]
+
+/-! ### Restriction along a homomorphism of character groups -/
+
+section Restriction
+
+variable [Monoid G] {G' : Type y} [Monoid G'] (q : G →* G')
+
+/-- **Restriction along a homomorphism of character groups pushes the formal character
+forward.** Corestricting a comodule over `k[G]` along the bialgebra map `k[q] : k[G] → k[G']`
+induced by `q : G →* G'` gives a comodule over `k[G']` whose formal character is the image of the
+original one under `q`.
+
+For commutative groups this is the restriction of a representation of `D(G)` along the
+homomorphism `D(G') → D(G)` dual to `q`, for instance to a subtorus. -/
+theorem formalCharacter_corestrict_mapDomainBialgHom :
+    letI : Comodule k (MonoidAlgebra k G') V := Corestrict (M := V)
+      (MonoidAlgebra.mapDomainBialgHom k q : MonoidAlgebra k G →ₗc[k] MonoidAlgebra k G')
+    formalCharacter k G' V = MonoidAlgebra.mapDomain q (formalCharacter k G V) := by
+  let : Comodule k (MonoidAlgebra k G') V := Corestrict (M := V)
+      (MonoidAlgebra.mapDomainBialgHom k q : MonoidAlgebra k G →ₗc[k] MonoidAlgebra k G')
+  -- A weight basis for `k[G]` is a weight basis for `k[G']`, with weights pushed along `q`.
+  obtain ⟨ι, _, b, wt, hb⟩ := exists_basis_mem_weightSpace k G V
+  rw [b.comoduleFormalCharacter_eq_sum wt hb,
+    b.comoduleFormalCharacter_eq_sum (fun i ↦ q (wt i)) fun i ↦ ?_]
+  · rw [← MonoidAlgebra.mapDomainRingHom_apply, map_sum]
+    simp
+  rw [mem_weightSpace, corestrict_coact_apply, mem_weightSpace.mp (hb i)]
+  simp
+
+end Restriction
 
 end Character
 

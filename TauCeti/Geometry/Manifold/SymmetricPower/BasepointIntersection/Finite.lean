@@ -82,7 +82,7 @@ theorem finite_basepointDivisor_intersections_in_chart (z : α)
     obtain ⟨ℓ, b, g, _, _, hg, hzero, t₀, ht₀U, hgt₀⟩ :=
       exists_analyticOnNhd_basepointDivisor_equation_in_chart z hchart ha houtside w hwU hwD
     have hfinite : {t ∈ K | g t = 0}.Finite :=
-      finite_setOf_mem_and_eq_zero_of_isCompact hg hU ht₀U hgt₀ hK hKU
+      hg.finite_setOf_mem_and_eq_zero_of_isCompact hU ht₀U hgt₀ hK hKU
     have heq : K ∩ f ⁻¹' Sym.basepointDivisor z = {t ∈ K | g t = 0} := by
       ext t
       by_cases htK : t ∈ K

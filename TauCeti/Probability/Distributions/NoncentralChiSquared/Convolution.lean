@@ -60,7 +60,7 @@ theorem noncentralChiSquaredMeasure_conv_noncentralChiSquaredMeasure
   rw [Measure.sum_apply _ hs, Measure.bind_apply hs (.of_discrete), lintegral_countable']
   apply tsum_congr
   rintro ⟨m, n⟩
-  rw [Measure.smul_apply, ← Set.singleton_prod_singleton, Measure.prod_prod]
+  rw [_root_.smul_apply, ← Set.singleton_prod_singleton, Measure.prod_prod]
   simp [Nat.cast_add, mul_comm]
 
 end TauCeti.Probability

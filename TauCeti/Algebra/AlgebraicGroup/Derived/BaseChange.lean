@@ -62,7 +62,7 @@ private theorem commutator_mem_baseChangeDerivedPointsSubgroup
       (baseChangeHopfIdeal (K := K) (derivedDefiningIdeal (R := k) H)) A := by
   rw [mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff]
   simpa using commutator_mem_derivedPointsSubgroup H
-    (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A)
+    (CommAlgCat.restrictScalarsObj (algebraMap k K) A)
     (baseChangePointsMulEquiv (K := K) A H g)
     (baseChangePointsMulEquiv (K := K) A H h)
 

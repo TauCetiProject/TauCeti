@@ -140,7 +140,7 @@ theorem resolutionMap_isInducing (hι : IsInducing ι.hom) :
       ⟨_, map_continuous (resolutionMap (ContinuousMonoidHom.id G) ι n).hom⟩
       (resolutionMap_isInducing hι n)
 
-variable [DiscreteTopology X.V] [DiscreteTopology Y.V]
+variable [DiscreteTopology X.V]
 
 /-- An element of the coinduced resolution of `X` all of whose values lie in the range of an
 injective morphism `ι : Y ⟶ X` comes from the coinduced resolution of `Y`. -/
@@ -149,6 +149,8 @@ theorem exists_resolutionMap_eq_of_resolutionValues_subset (hι : Function.Injec
       ∃ y : (resolutionX Y n).V, (resolutionMap (ContinuousMonoidHom.id G) ι n).hom y = x
   | 0, x, hx => hx rfl
   | n + 1, F, hF => by
+    -- an injective continuous map into a discrete space has discrete domain
+    have : DiscreteTopology Y.V := .of_continuous_injective (map_continuous ι.hom) hι
     -- lift each value `F g` separately, then check that the lifts vary continuously
     have h : ∀ g : G, ∃ y : (resolutionX Y n).V,
         (resolutionMap (ContinuousMonoidHom.id G) ι n).hom y =
@@ -175,6 +177,7 @@ theorem exists_cochainsMap_f_eq_of_resolutionValues_subset (hι : Function.Injec
     (c : (homogeneousCochains X).X n)
     (hc : resolutionValues X (n + 1) c.1 ⊆ Set.range ι.hom) :
     ∃ c' : (homogeneousCochains Y).X n, (cochainsMap (ContinuousMonoidHom.id G) ι).f n c' = c := by
+  have : DiscreteTopology Y.V := .of_continuous_injective (map_continuous ι.hom) hι
   obtain ⟨y, hy⟩ := exists_resolutionMap_eq_of_resolutionValues_subset ι hι (n + 1) c.1 hc
   -- `y` is invariant because its image `c.1` is and the map is injective and equivariant
   have hyinv : y ∈ (resolutionX Y (n + 1)).ρ.invariants := fun g ↦
@@ -305,9 +308,9 @@ fixed degree. Let `G` be a compact group, `p ≠ 0`, and `M` a discrete `p`-prim
 `G`-module with continuous action. If `Hⁿ(G, N)` vanishes for every finite discrete `p`-primary
 `G`-module `N`, then `Hⁿ(G, M)` vanishes. -/
 theorem subsingleton_continuousCohomology_of_forall_finite {p : ℕ} (hp : p ≠ 0)
-    (hM : IsPPrimaryTorsion p M) (n : ℕ)
+    (hM : IsAddPGroup p M) (n : ℕ)
     (h : ∀ (N : Type (max v w)) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
-      [DistribMulAction G N] [ContinuousSMul G N] [Finite N], IsPPrimaryTorsion p N →
+      [DistribMulAction G N] [ContinuousSMul G N] [Finite N], IsAddPGroup p N →
       Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G N))) :
     Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G M)) := by
   refine subsingleton_continuousCohomology_of_forall_finite_addSubgroup (hM.isAddTorsion hp) n
@@ -334,7 +337,7 @@ every **finite** discrete `p`-primary `G`-module `M`. -/
 theorem cohomologicalDimensionLE_iff_forall_finite (hp : p ≠ 0) {n : ℕ} :
     CohomologicalDimensionLE.{v} p G n ↔
       ∀ (M : Type (max u v)) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-        [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsPPrimaryTorsion p M →
+        [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsAddPGroup p M →
         ∀ i : ℕ, n < i → Subsingleton (continuousCohomology i (ofDiscreteModule ℤ G M)) := by
   rw [cohomologicalDimensionLE_iff]
   exact ⟨fun h M _ _ _ _ _ _ hM i hi ↦ h M hM i hi, fun h M _ _ _ _ _ hM i hi ↦
@@ -347,7 +350,7 @@ for every `i > n` and every **finite** discrete `p`-primary `G`-module `M`. -/
 theorem cohomologicalDimensionAt_le_iff_forall_finite (hp : p ≠ 0) (n : ℕ) :
     cohomologicalDimensionAt.{v} p G ≤ n ↔
       ∀ (M : Type (max u v)) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-        [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsPPrimaryTorsion p M →
+        [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsAddPGroup p M →
         ∀ i : ℕ, n < i → Subsingleton (continuousCohomology i (ofDiscreteModule ℤ G M)) := by
   rw [cohomologicalDimensionAt_le_iff, cohomologicalDimensionLE_iff_forall_finite hp]
 

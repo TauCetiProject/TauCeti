@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Algebra.Lie.Semisimple.Basic
+public import TauCeti.Algebra.Lie.Matrix.Single
 
 /-!
 # The centre and the derived ideal of `gl n R`
@@ -38,9 +39,6 @@ sits *inside* the derived ideal and the two are not complementary.
 
 ## Main results
 
-* `TauCeti.lie_single_self_sub_single_self_single` and `TauCeti.lie_single_lie_single_of_ne`: over
-  any ring, `⁅Eₚₚ - E_qq, Eₚq c⁆ = Eₚq (2c)` for `p ≠ q`, and `(ad Eⱼᵢ)² x = Eⱼᵢ (-2 xᵢⱼ)` for
-  `i ≠ j`; these produce matrix units inside a Lie ideal of `gl n R`.
 * `TauCeti.mem_of_trace_eq_zero_of_single_mem`: a submodule of `gl n R` containing the off-diagonal
   matrix units and the differences of the diagonal ones contains every trace-zero matrix. This is
   the spanning core shared by the derived-ideal computation below and by the ideal-generation
@@ -68,10 +66,10 @@ sits *inside* the derived ideal and the two are not complementary.
 Every result about `gl n R` is stated over an arbitrary commutative ring `R`; no field,
 characteristic, or algebraic closure hypothesis is used. The bundled complement carries
 invertibility of `Fintype.card n` as an `Invertible` hypothesis, while its elementwise consequence
-asks only that the cardinality be a unit when the index type is nonempty. Two groups of
-declarations ask for less: the matrix-unit bracket identities and the spanning theorem for
-trace-zero matrices need only a ring, and the decomposition of a trace-zero matrix into matrix units
-needs only an additive commutative group, no multiplication at all.
+asks only that the cardinality be a unit when the index type is nonempty. The spanning theorem
+for trace-zero matrices needs only a ring, and their decomposition into matrix units needs only an
+additive commutative group, no multiplication at all. The matrix-unit commutator identities
+used here are supplied by `TauCeti.Algebra.Lie.Matrix.Single` over an arbitrary ring.
 
 Mathlib does not register `LieRing.ofAssociativeRing` as a global instance, so, as in
 `Mathlib/Algebra/Lie/Matrix.lean`, it is a local instance here.
@@ -156,60 +154,6 @@ theorem mem_of_trace_eq_zero_of_single_mem {N : Submodule R (Matrix n n R)}
   · subst hpq
     simpa using hdiag p i₀ (A p p)
   · simpa [hpq] using hoff hpq (A p q)
-
-/-! ### Matrix units as commutators -/
-
-/-- The commutator of two single-entry matrices is the difference of the two possible
-composites. -/
-@[simp]
-theorem lie_single_single (a b i j : n) (c d : R) :
-    ⁅single a b c, single i j d⁆ =
-      (if b = i then single a j (c * d) else 0) -
-        if j = a then single i b (d * c) else 0 := by
-  rw [LieRing.of_associative_ring_bracket]
-  by_cases hbi : b = i
-  · subst i
-    by_cases hja : j = a
-    · subst j
-      rw [single_mul_single_same, single_mul_single_same]
-      simp
-    · rw [single_mul_single_same, single_mul_single_of_ne (h := hja)]
-      simp [hja]
-  · by_cases hja : j = a
-    · subst j
-      rw [single_mul_single_of_ne (h := hbi), single_mul_single_same]
-      simp [hbi]
-    · rw [single_mul_single_of_ne (h := hbi), single_mul_single_of_ne (h := hja)]
-      simp [hbi, hja]
-
-/-- An off-diagonal matrix unit is a commutator: `Eᵢⱼ = ⁅Eᵢᵢ, Eᵢⱼ⁆` when `i ≠ j`. -/
-theorem lie_single_self_single_of_ne {i j : n} (hij : i ≠ j) (c : R) :
-    ⁅single i i (1 : R), single i j c⁆ = single i j c := by
-  rw [LieRing.of_associative_ring_bracket, single_mul_single_same,
-    single_mul_single_of_ne (h := Ne.symm hij), one_mul, sub_zero]
-
-/-- A difference of diagonal matrix units is a commutator: `Eᵢᵢ - Eⱼⱼ = ⁅Eᵢⱼ, Eⱼᵢ⁆`. -/
-theorem lie_single_single_eq_sub (i j : n) (c : R) :
-    ⁅single i j c, single j i (1 : R)⁆ = single i i c - single j j c := by
-  rw [LieRing.of_associative_ring_bracket, single_mul_single_same, single_mul_single_same, mul_one,
-    one_mul]
-
-/-- A difference of diagonal matrix units doubles the matrix unit between them. -/
-theorem lie_single_self_sub_single_self_single {p q : n} (hpq : p ≠ q) (c : R) :
-    ⁅single p p (1 : R) - single q q (1 : R), single p q c⁆ = single p q (2 * c) := by
-  simp [sub_lie, lie_single_single, hpq.symm, two_mul, single_add]
-
-/-- Bracketing twice against an off-diagonal matrix unit isolates the transposed entry. -/
-theorem lie_single_lie_single_of_ne {i j : n} (hij : i ≠ j) (x : Matrix n n R) :
-    ⁅single j i (1 : R), ⁅single j i (1 : R), x⁆⁆ = single j i (-(2 * x i j)) := by
-  have hsq : single j i (1 : R) * single j i (1 : R) = 0 := by
-    rw [single_mul_single_of_ne (h := hij)]
-  have hmid : single j i (1 : R) * x * single j i (1 : R) = single j i (x i j) := by
-    simp [single_mul_mul_single]
-  simp only [LieRing.of_associative_ring_bracket, mul_sub, sub_mul, ← mul_assoc,
-    hsq, zero_mul, hmid, zero_sub]
-  rw [mul_assoc x, hsq]
-  simp [two_mul, single_add, single_neg, sub_eq_add_neg]
 
 end Ring
 
@@ -297,8 +241,8 @@ variable (R n) in
 
 One inclusion is the vanishing of the trace of a commutator. For the other, a trace-zero matrix is
 the sum of its off-diagonal matrix units `Eᵢⱼ (Aᵢⱼ)`, commutators by
-`TauCeti.lie_single_self_single_of_ne`, and of the differences `Eᵢᵢ (Aᵢᵢ) - E₀₀ (Aᵢᵢ)`, commutators
-by `TauCeti.lie_single_single_eq_sub`; the discrepancy between the two sums is `E₀₀ (trace A)`,
+`Matrix.lie_single_self_single_of_ne`, and of the differences `Eᵢᵢ (Aᵢᵢ) - E₀₀ (Aᵢᵢ)`, commutators
+by `Matrix.lie_single_single_eq_sub`; the discrepancy between the two sums is `E₀₀ (trace A)`,
 which vanishes. For an empty index type both sides are the zero ideal. -/
 theorem derivedSeries_one_eq_slIdeal :
     derivedSeries R (Matrix n n R) 1 = slIdeal R n := by
@@ -315,10 +259,10 @@ theorem derivedSeries_one_eq_slIdeal :
   rw [← LieSubmodule.mem_toSubmodule]
   refine mem_of_trace_eq_zero_of_single_mem ?_ ?_ (mem_slIdeal_iff.mp hA)
   · intro p q hpq c
-    rw [LieSubmodule.mem_toSubmodule, ← lie_single_self_single_of_ne hpq c]
+    rw [LieSubmodule.mem_toSubmodule, ← Matrix.lie_single_self_single_of_ne hpq c]
     exact hlie _ _
   · intro p q c
-    rw [LieSubmodule.mem_toSubmodule, ← lie_single_single_eq_sub p q c]
+    rw [LieSubmodule.mem_toSubmodule, ← Matrix.lie_single_single_eq_sub p q c]
     exact hlie _ _
 
 variable (R n) in

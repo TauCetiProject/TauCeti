@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Basic
 public import TauCeti.LinearAlgebra.Dimension.Submodule
+import TauCeti.Analysis.Normed.Operator.Restrict
 
 /-!
 # Min–max bounds for approximation numbers
@@ -28,7 +29,9 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
   `Vᗮ`. Composing `T` with the orthogonal projection onto `V` gives an approximant of rank at
   most `n` whose error is `T` on `Vᗮ`. Conversely, for an approximant `R` of rank at most `n` the
   subspace `V = (ker R)ᗮ` has rank at most `n`, and `R` vanishes up to norm zero on
-  `Vᗮ = closure (ker R)`, so `T` restricted to `Vᗮ` is no larger than `T - R`.
+  `Vᗮ = closure (ker R)`, so `T` restricted to `Vᗮ` is no larger than `T - R`. The norm of that
+  restriction is the supremum of `‖T x‖` over `x ∈ Vᗮ` with `‖x‖ ≤ 1`, which gives the formula
+  in the classical form `aₙ(T) = inf_V sup {‖T x‖ : x ∈ Vᗮ, ‖x‖ ≤ 1}`.
 * **The converse min–max localization.** The coercive-subspace bound has a converse on a pair of
   spaces `E`, `F` exactly when every strict lower bound `r < aₙ(T)` is beaten by a uniform
   coercivity bound on the span of `n + 1` linearly independent vectors. This is the property
@@ -59,9 +62,13 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
   subspace `V` of rank at most `n`.
 * `ContinuousLinearMap.singularValue_eq_iInf_nnnorm_comp_orthogonal`: on a complete inner product
   space, `aₙ(T)` is the infimum of `‖T|_{Vᗮ}‖` over subspaces `V` of rank at most `n`.
+* `ContinuousLinearMap.singularValue_eq_iInf_sSup_image_orthogonal_inter_unitClosedBall`: the same,
+  with `‖T|_{Vᗮ}‖` written as the supremum of `‖T x‖` over the closed unit ball of `Vᗮ`.
 * `ContinuousLinearMap.exists_linearIndependent_or_exists_rank_le`: on a complete inner product
   space, `T` is `c`-coercive on the span of `n + 1` linearly independent vectors or
   `c`-contractive on the orthogonal complement of a subspace of rank at most `n`.
+* `ContinuousLinearMap.singularValue_orthogonalProjectionOnto_comp_comp_subtypeL_le`: compressing a
+  map to subspaces of its source and target does not increase its approximation numbers.
 * `TauCeti.HasMinMaxLowerBound`: the converse min–max localization property of a pair of spaces.
 * `TauCeti.hasMinMaxLowerBound_iff_forall_isLUB`: a pair has this property exactly when, for every
   `T` and `n`, `aₙ(T)` is the least upper bound of the coercivity constants of `T` on spans of
@@ -74,6 +81,8 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
 * `TauCeti.HasMinMaxLowerBound.exists_singularValue_le_compression`: on a pair with the property,
   the first `k` approximation numbers of `T` are those of a compression of `T` to
   finite-dimensional subspaces, up to any `δ > 0`.
+* `TauCeti.HasMinMaxLowerBound.exists_singularValue_le_compression_endomorphism`: the same for an
+  endomorphism, compressed to a single finite-dimensional subspace.
 
 ## References
 
@@ -238,11 +247,22 @@ theorem singularValue_eq_iInf_nnnorm_comp_orthogonal [CompleteSpace E] (T : E �
     rw [← Submodule.topologicalClosure_coe, ← Submodule.orthogonal_orthogonal_eq_closure]
     exact x.2
   have hRx : ‖R x‖₊ = 0 := by
-    rw [← NNReal.coe_eq_zero, coe_nnnorm, ← mem_closure_zero_iff_norm]
+    rw [← NNReal.coe_eq_zero, coe_nnNorm, ← mem_closure_zero_iff_norm]
     exact map_mem_closure R.continuous hx fun y hy ↦ hy
   calc ‖(T ∘L Vᗮ.subtypeL) x‖₊ = ‖(T - R) x + R x‖₊ := by simp
-    _ ≤ ‖(T - R) x‖₊ := by simpa [hRx] using nnnorm_add_le ((T - R) x) (R x)
+    _ ≤ ‖(T - R) x‖₊ := by simpa [hRx] using nnNorm_add_le ((T - R) x) (R x)
     _ ≤ ‖T - R‖₊ * ‖x‖₊ := (T - R).le_opNNNorm x
+
+open Metric in
+/-- **Orthogonal-tail min–max formula, closed-unit-ball form.** On a complete inner product
+space, `aₙ(T)` is the infimum, over subspaces `V` of rank at most `n`, of the supremum of `‖T x‖`
+over the vectors `x ∈ Vᗮ` with `‖x‖ ≤ 1`. -/
+theorem singularValue_eq_iInf_sSup_image_orthogonal_inter_unitClosedBall [CompleteSpace E]
+    (T : E →L[𝕜] F) (n : ℕ) :
+    T.singularValue n = ⨅ V : {V : Submodule 𝕜 E // Module.rank 𝕜 V ≤ n},
+      sSup ((fun x ↦ ‖T x‖₊) '' ((V.1ᗮ : Set E) ∩ closedBall 0 1)) := by
+  simp_rw [sSup_image_inter_unitClosedBall_eq_nnNorm_comp_subtypeL]
+  exact T.singularValue_eq_iInf_nnnorm_comp_orthogonal n
 
 end OrthogonalTail
 
@@ -338,6 +358,27 @@ theorem exists_linearIndependent_or_exists_rank_le [CompleteSpace E] (T : E →L
     exact Nat.findGreatest_is_greatest (Nat.lt_succ_self _) (hle _ ⟨_, hv', hvc'⟩) ⟨_, hv', hvc'⟩
 
 end Inertia
+
+section Compression
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- Compressing `T` to subspaces `V ≤ E` and `W ≤ F`, by the inclusion of `V` and the orthogonal
+projection onto `W`, does not increase its approximation numbers. -/
+theorem singularValue_orthogonalProjectionOnto_comp_comp_subtypeL_le (W : Submodule 𝕜 F)
+    [W.HasOrthogonalProjection] (V : Submodule 𝕜 E) (T : E →L[𝕜] F) (n : ℕ) :
+    (W.orthogonalProjectionOnto.comp (T.comp V.subtypeL)).singularValue n ≤ T.singularValue n :=
+  calc (W.orthogonalProjectionOnto.comp (T.comp V.subtypeL)).singularValue n
+      ≤ ‖W.orthogonalProjectionOnto‖₊ * T.singularValue n * ‖V.subtypeL‖₊ :=
+        singularValue_comp_comp_le _ _ _ n
+    _ ≤ 1 * T.singularValue n * 1 := by
+        gcongr
+        · exact_mod_cast Submodule.orthogonalProjectionOnto_norm_le _
+        · exact_mod_cast V.norm_subtypeL_le
+    _ = T.singularValue n := by rw [one_mul, mul_one]
+
+end Compression
 
 end ContinuousLinearMap
 
@@ -438,7 +479,7 @@ theorem HasMinMaxLowerBound.of_completeSpace [CompleteSpace E] : HasMinMaxLowerB
   -- `aₙ(T) ≤ c`, so `T` is `c`-coercive on an `(n + 1)`-dimensional span.
   set c : ℝ := (r + T.singularValue n) / 2 with hc
   have hrc : r < c := by rw [hc]; linarith
-  have hca : c < T.singularValue n := by rw [hc]; linarith
+  have _ : c < T.singularValue n := by rw [hc]; linarith
   obtain ⟨v, hv, hvc⟩ | ⟨U, hU, hUc⟩ :=
     T.exists_linearIndependent_or_exists_rank_le n (c := c) (by positivity)
   · exact ⟨c, hrc, v, hv, hvc⟩
@@ -500,6 +541,47 @@ theorem HasMinMaxLowerBound.exists_singularValue_le_compression (h : HasMinMaxLo
       W.norm_orthogonalProjectionOnto_apply hW]
     exact hvs x hx'
   · exact (le_of_not_gt hδn).trans (le_add_of_nonneg_left (NNReal.coe_nonneg _))
+
+/-- **Finite-dimensional compressions of endomorphisms.** On a space with the converse min–max
+localization property towards itself, for every `k` and `δ > 0` there is a finite-dimensional
+subspace `U` such that the compression `P_U T|_U : U → U` of an endomorphism `T` lowers none of the
+first `k` approximation numbers of `T` by more than `δ`. Unlike
+`TauCeti.HasMinMaxLowerBound.exists_singularValue_le_compression`, the same subspace is used for
+the source and the target, so that the compression of a positive operator is positive. -/
+theorem HasMinMaxLowerBound.exists_singularValue_le_compression_endomorphism
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] (h : HasMinMaxLowerBound 𝕜 E E)
+    (T : E →L[𝕜] E) (k : ℕ) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ (U : Submodule 𝕜 E) (_ : FiniteDimensional 𝕜 U), ∀ n < k,
+      (T.singularValue n : ℝ) ≤
+        (U.orthogonalProjectionOnto.comp (T.comp U.subtypeL)).singularValue n + δ := by
+  obtain ⟨V, _, hV⟩ := h.exists_singularValue_le_compression T k hδ
+  set W := V.map (T : E →ₗ[𝕜] E)
+  -- Enlarge `V` to `U = V ⊔ T V`; the compression `V → T V` factors through `P_U T|_U`.
+  set U := V ⊔ W
+  set C := U.orthogonalProjectionOnto.comp (T.comp U.subtypeL)
+  have hfac : W.orthogonalProjectionOnto.comp (T.comp V.subtypeL) =
+      (W.orthogonalProjectionOnto.comp U.subtypeL).comp
+        (C.comp (U.orthogonalProjectionOnto.comp V.subtypeL)) := by
+    ext x
+    have hx : U.starProjection (x : E) = x :=
+      Submodule.starProjection_eq_self_iff.2 (Submodule.mem_sup_left x.2)
+    simp only [C, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
+      Submodule.coe_orthogonalProjectionOnto_apply, hx]
+    exact (congrArg (· (T x))
+      (Submodule.starProjection_comp_starProjection_of_le (le_sup_right : W ≤ U))).symm
+  -- Both outer factors have norm at most one.
+  have h₁ : ‖W.orthogonalProjectionOnto.comp U.subtypeL‖₊ ≤ 1 :=
+    (ContinuousLinearMap.opNNNorm_comp_le _ _).trans
+      (mul_le_one' (Submodule.orthogonalProjectionOnto_norm_le W) U.norm_subtypeL_le)
+  have h₂ : ‖U.orthogonalProjectionOnto.comp V.subtypeL‖₊ ≤ 1 :=
+    (ContinuousLinearMap.opNNNorm_comp_le _ _).trans
+      (mul_le_one' (Submodule.orthogonalProjectionOnto_norm_le U) V.norm_subtypeL_le)
+  refine ⟨U, inferInstance, fun n hn ↦ (hV n hn).trans ?_⟩
+  gcongr
+  rw [hfac]
+  calc _ ≤ _ := ContinuousLinearMap.singularValue_comp_comp_le _ _ _ n
+    _ ≤ 1 * C.singularValue n * 1 := by gcongr
+    _ = C.singularValue n := by rw [one_mul, mul_one]
 
 end Compression
 

@@ -93,8 +93,9 @@ theorem degree_additivePolynomial [Nontrivial R] :
     V.additivePolynomial.degree = Fintype.card V := by
   rw [additivePolynomial, Lagrange.degree_nodal, Finset.card_univ]
 
-theorem monic_additivePolynomial_sub_C [Nontrivial R] (u : R) :
+theorem monic_additivePolynomial_sub_C (u : R) :
     (V.additivePolynomial - C u).Monic := by
+  nontriviality R using Polynomial.monic_of_subsingleton _
   refine V.monic_additivePolynomial.sub_of_left (degree_C_le.trans_lt ?_)
   rw [degree_additivePolynomial]
   exact_mod_cast Fintype.card_pos

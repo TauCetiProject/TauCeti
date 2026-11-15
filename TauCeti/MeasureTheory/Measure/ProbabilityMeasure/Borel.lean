@@ -69,21 +69,14 @@ weak convergence is measurable for the Giry σ-algebra. -/
 theorem Continuous.measurable_probabilityMeasure [HasOuterApproxClosed X] [BorelSpace X]
     [OpensMeasurableSpace α] {g : α → ProbabilityMeasure X} (hg : Continuous g) :
     Measurable g := by
-  -- It suffices that every evaluation `a ↦ g a s` at a measurable set `s` is measurable.
-  suffices h : ∀ s, MeasurableSet s → Measurable fun a ↦ (g a : Measure X) s from
-    (Measure.measurable_of_measurable_coe _ h).subtype_mk
-  refine MeasurableSpace.induction_on_inter (BorelSpace.measurable_eq.trans
-    borel_eq_generateFrom_isClosed) isPiSystem_isClosed (by simp) (fun F hF ↦ ?_)
-    (fun s hs h ↦ ?_) (fun f hdisj hf h ↦ ?_)
-  · -- Closed sets: the portmanteau theorem makes `P ↦ P F` upper semicontinuous.
-    refine UpperSemicontinuous.measurable (upperSemicontinuous_iff_limsup_le.2 fun a ↦ ?_)
-    exact ProbabilityMeasure.limsup_measure_closed_le_of_tendsto (hg.tendsto a) hF
-  · -- Complements: `P sᶜ = 1 - P s`.
-    simp_rw [prob_compl_eq_one_sub hs]
-    exact measurable_const.sub h
-  · -- Disjoint countable unions: countable additivity.
-    simp_rw [measure_iUnion hdisj hf]
-    exact Measurable.tsum h
+  -- Closed sets form a π-system generating the σ-algebra of `X`, so it suffices that each
+  -- evaluation `a ↦ g a F` at a closed set `F` is measurable.
+  refine (Measurable.measure_of_isPiSystem_of_isProbabilityMeasure (μ := fun a ↦ (g a : Measure X))
+    (BorelSpace.measurable_eq.trans borel_eq_generateFrom_isClosed) isPiSystem_isClosed
+    fun F hF ↦ ?_).subtype_mk
+  -- By the portmanteau theorem, `P ↦ P F` is upper semicontinuous.
+  refine UpperSemicontinuous.measurable (upperSemicontinuous_iff_limsup_le.2 fun a ↦ ?_)
+  exact ProbabilityMeasure.limsup_measure_closed_le_of_tendsto (hg.tendsto a) hF
 
 /-- **Open sets are measurable in a hereditarily Lindelöf space of laws.** Let
 `g : α → ProbabilityMeasure X` be a topological inducing map that is measurable for the Giry
@@ -94,18 +87,16 @@ theorem Topology.IsInducing.opensMeasurableSpace_probabilityMeasure [OpensMeasur
     (hgm : Measurable g) : OpensMeasurableSpace α := by
   -- The weak topology is induced by the family of integrals of bounded continuous functions.
   let Φ : α → (X →ᵇ ℝ≥0) → ℝ≥0 := fun a ↦ (g a).toWeakDualBCNN
-  -- The weak topology on `ProbabilityMeasure X` is by definition induced through
-  -- `toFiniteMeasure` and `FiniteMeasure.toWeakDualBCNN` from the product topology on
-  -- `(X →ᵇ ℝ≥0) → ℝ≥0`, so these three inducing statements hold by `rfl`.
+  -- The topology of `WeakDual` is by definition induced from the product topology on
+  -- `(X →ᵇ ℝ≥0) → ℝ≥0`, and that of `FiniteMeasure X` through `toWeakDualBCNN`, so the first
+  -- two inducing statements hold by `rfl`.
   have hΦ : IsInducing Φ :=
     (IsInducing.mk (f := fun φ : WeakDual ℝ≥0 (X →ᵇ ℝ≥0) ↦ (φ : (X →ᵇ ℝ≥0) → ℝ≥0)) rfl).comp <|
       (IsInducing.mk (f := FiniteMeasure.toWeakDualBCNN (Ω := X)) rfl).comp <|
-      (IsInducing.mk (f := ProbabilityMeasure.toFiniteMeasure (Ω := X)) rfl).comp hg
+      (ProbabilityMeasure.toFiniteMeasure_isEmbedding X).isInducing.comp hg
   have hΦm : Measurable Φ := measurable_pi_iff.2 fun f ↦ by
     simp only [Φ, ProbabilityMeasure.toWeakDualBCNN_apply]
-    refine Measurable.ennreal_toNNReal ?_
-    exact (Measure.measurable_lintegral (measurable_coe_nnreal_ennreal.comp
-      f.continuous.measurable)).comp (measurable_subtype_coe.comp hgm)
+    exact ((Measure.measurable_lintegral (by fun_prop)).comp hgm.subtype_val).ennreal_toNNReal
   refine ⟨MeasurableSpace.generateFrom_le fun U hU ↦ ?_⟩
   obtain ⟨W, hW, rfl⟩ := hΦ.isOpen_iff.1 hU
   -- Each point of `Φ ⁻¹' W` lies in the preimage of a finite-dimensional open cylinder in `W`.
@@ -132,10 +123,7 @@ continuous functions, and `α` is hereditarily Lindelöf, then this measurable s
 theorem Topology.IsInducing.borelSpace_probabilityMeasure [HasOuterApproxClosed X] [BorelSpace X]
     [HereditarilyLindelofSpace α] {g : α → ProbabilityMeasure X} (hg : IsInducing g)
     (hm : ‹MeasurableSpace α› = .comap g inferInstance) : BorelSpace α := by
-  have hgm : Measurable g := by
-    rw [hm]
-    exact comap_measurable g
-  have := hg.opensMeasurableSpace_probabilityMeasure hgm
+  have := hg.opensMeasurableSpace_probabilityMeasure (measurable_iff_comap_le.2 hm.ge)
   refine ⟨le_antisymm ?_ OpensMeasurableSpace.borel_le⟩
   rw [hm]
   -- The pulled-back structure is below the Borel one, since `g` is continuous.

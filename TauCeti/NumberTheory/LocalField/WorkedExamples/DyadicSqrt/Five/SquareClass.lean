@@ -79,7 +79,7 @@ theorem normalizedValuation_unitSquareClassGenerator (i : Fin 3) :
       norm_num [padicValInt] at ht
       exact ht
     · have ht := Padic.valuation_intCast (p := 2) (-11)
-      norm_num [padicValInt, padicValNat.eq_zero_of_not_dvd] at ht
+      norm_num [padicValInt, multiplicity_eq_zero_of_not_dvd] at ht
       exact ht
   rw [hn, inertiaDegree_eq_two] at h
   apply Multiplicative.toAdd.injective
@@ -136,7 +136,7 @@ private theorem valuation_fullRep (c : Fin 4 → ZMod 2) :
         (Units.mk0 (2 : ℚ_[2]) two_ne_zero) = Units.mk0 2 (by norm_num) := by ext; simp [map_ofNat]
     rw [hu] at h
     rw [h, Padic.toAdd_normalizedValuation_eq_valuation, Units.val_mk0,
-      Padic.valuation_ofNat, padicValNat_self]
+      Padic.valuation_ofNat, Nat.Prime.multiplicity_self]
     norm_num
   simp [fullRep, htwo]
 
@@ -157,7 +157,7 @@ private theorem fullRep_isSquare_iff (c : Fin 4 → ZMod 2) :
         Algebra.coe_normUnits, norm_unitSquareClassGenerator]
     have hsq : IsSquare ((-1 : ℚ_[2]) ^ (c 1).val * (-11) ^ (c 2).val) := by
       rw [← hnorm]
-      exact isSquare_units_val_iff.mpr hn
+      exact Units.isSquare_coe_iff.mpr hn
     have cases (z : ZMod 2) : z = 0 ∨ z = 1 := by revert z; decide
     have h12 : c 1 = 0 ∧ c 2 = 0 := by
       rcases cases (c 1) with h1 | h1 <;> rcases cases (c 2) with h2 | h2
@@ -180,7 +180,7 @@ private theorem fullRep_isSquare_iff (c : Fin 4 → ZMod 2) :
           apply Units.ext
           simp [fullRep, unitSquareClassRep_def, Fin.prod_univ_three,
             h0, h12.1, h12.2, h3, ZMod.val_one]
-        exact isSquare_units_val_iff.mpr (heq ▸ hs)
+        exact Units.isSquare_coe_iff.mpr (heq ▸ hs)
     funext i
     fin_cases i <;> simp [h0, h12.1, h12.2, h3]
   · rintro rfl

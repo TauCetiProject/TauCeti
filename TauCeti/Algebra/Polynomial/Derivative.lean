@@ -7,14 +7,19 @@ module
 
 public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.Reverse
+public import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Polynomial.Eval.Degree
+import Mathlib.Algebra.Polynomial.FieldDivision
 
 /-!
 # Polynomial derivatives
 
 This file records auxiliary results relating Mathlib's polynomial derivative APIs, computing
-iterated derivatives after a linear change of variables, and controlling degrees of derivatives
-under coefficient maps.
+iterated derivatives and their values after a linear change of variables, and controlling degrees
+of derivatives under coefficient maps.
+The derivative of a cubic `a (X - e₁)(X - e₂)(X - e₃)` at the root `e₁` is
+`a (e₁ - e₂)(e₁ - e₃)`.
+The roots of all nonzero iterated derivatives of a polynomial form a finite set.
 
 The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function,
 and every scalar multiple of it is locally nilpotent.
@@ -35,9 +40,30 @@ basic example.
 
 For `δ ≠ 0` over a semiring without zero divisors, the operator `q ↦ q' + δ q` and all of its
 iterates preserve the degree of a polynomial and have trivial kernel.
+
+Over any commutative ring, the quotient of `p` by `X - a` takes the value `p' (a)` at `a`.
+
+Over any semiring, the coefficient of `p q'` in degree `deg p + deg q - 1` is
+`leadingCoeff p · leadingCoeff q · deg q`.
 -/
 
 public section
+
+namespace Polynomial
+
+open Set
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- The roots of the nonzero derivatives of `p`, of every order, form a finite set. -/
+theorem finite_setOfPred_isRoot_iterate_derivative (p : R[X]) :
+    {z | ∃ k, derivative^[k] p ≠ 0 ∧ (derivative^[k] p).IsRoot z}.Finite := by
+  have hk : {k | derivative^[k] p ≠ 0}.Finite := (finite_Iic p.natDegree).subset
+    fun k hk ↦ not_lt.1 fun h ↦ hk (iterate_derivative_eq_zero h)
+  exact (hk.biUnion fun k hk ↦ finite_setOfPred_isRoot hk).subset
+    fun z ⟨k, hk, hz⟩ ↦ mem_biUnion hk hz
+
+end Polynomial
 
 namespace TauCeti
 
@@ -56,8 +82,8 @@ polynomial. -/
 theorem _root_.Polynomial.exists_iterate_smul_derivative'_apply_eq_zero [CommSemiring R] (r : R)
     (p : R[X]) : ∃ n, (r • derivative' : Derivation R R[X] R[X])^[n] p = 0 := by
   refine ⟨p.natDegree + 1, ?_⟩
-  rw [← Derivation.coeFn_coe, ← Module.End.coe_pow, Derivation.coe_smul_linearMap, smul_pow,
-    LinearMap.smul_apply, Module.End.pow_apply, Derivation.coeFn_coe, coe_derivative',
+  rw [← Derivation.coeFn_coe, ← FunLike.coe_pow_eq_iterate, Derivation.coe_smul_linearMap, smul_pow,
+    LinearMap.smul_apply, _root_.pow_apply_eq_iterate, Derivation.coeFn_coe, coe_derivative',
     iterate_derivative_eq_zero (Nat.lt_succ_self _), smul_zero]
 
 /-- The `k`-th derivative of `p (a X + b)` is `a ^ k p⁽ᵏ⁾ (a X + b)`. -/
@@ -76,6 +102,31 @@ theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X [CommSemiring R] (p : 
     (k : ℕ) :
     derivative^[k] (p.comp (C a * X)) = C (a ^ k) * (derivative^[k] p).comp (C a * X) := by
   simpa using p.iterate_derivative_comp_C_mul_X_add_C a 0 k
+
+/-- The `k`-th derivative of `p (a X + b)` at `x` is `a ^ k` times the `k`-th derivative of `p`
+at `a x + b`. -/
+theorem _root_.Polynomial.eval_iterate_derivative_comp_C_mul_X_add_C [CommSemiring R]
+    (p : R[X]) (a b x : R) (k : ℕ) :
+    (derivative^[k] (p.comp (C a * X + C b))).eval x =
+      a ^ k * (derivative^[k] p).eval (a * x + b) := by
+  simp only [iterate_derivative_comp_C_mul_X_add_C, eval_mul, eval_C, eval_comp, eval_add, eval_X]
+
+/-- The `k`-th derivative of `p (a X)` at `x` is `a ^ k` times the `k`-th derivative of `p` at
+`a x`. -/
+theorem _root_.Polynomial.eval_iterate_derivative_comp_C_mul_X [CommSemiring R] (p : R[X])
+    (a x : R) (k : ℕ) :
+    (derivative^[k] (p.comp (C a * X))).eval x = a ^ k * (derivative^[k] p).eval (a * x) := by
+  simpa using p.eval_iterate_derivative_comp_C_mul_X_add_C a 0 x k
+
+/-- The derivative of the cubic `a (X - e₁)(X - e₂)(X - e₃)` at its root `e₁` is
+`a (e₁ - e₂)(e₁ - e₃)`. -/
+theorem _root_.Polynomial.eval_derivative_C_mul_X_sub_C_mul_X_sub_C_mul_X_sub_C [CommRing R]
+    (a e₁ e₂ e₃ : R) :
+    (C a * (X - C e₁) * (X - C e₂) * (X - C e₃)).derivative.eval e₁ =
+      a * (e₁ - e₂) * (e₁ - e₃) := by
+  simp only [derivative_mul, derivative_C, derivative_sub, derivative_X, eval_add, eval_mul,
+    eval_sub, eval_C, eval_X, eval_one, eval_zero]
+  ring
 
 /-- **Reciprocal-polynomial identity.** A polynomial `p` of degree at most `2 g` which is its own
 reflection at `2 g`, that is `X ^ (2 g) p (1 / X) = p (X)`, satisfies `p' (1) = g p (1)`. -/
@@ -180,3 +231,29 @@ theorem _root_.Polynomial.iterate_derivative_add_C_mul_eq_zero_iff (hδ : δ ≠
 end ShiftedDerivative
 
 end TauCeti
+
+namespace Polynomial
+
+/-- The quotient of `p` by `X - a` takes the value `p' (a)` at `a`, over any commutative ring.
+Note that `a` need not be a root of `p`. -/
+@[simp]
+theorem eval_divByMonic_X_sub_C_self {R : Type*} [CommRing R] (p : R[X]) (a : R) :
+    (p /ₘ (X - C a)).eval a = p.derivative.eval a := by
+  simpa using congrArg (eval a) (divByMonic_add_X_sub_C_mul_derivative_divByMonic_eq_derivative p a)
+
+/-- The coefficient of `p * q'` in degree `deg p + deg q - 1` is
+`leadingCoeff p · leadingCoeff q · deg q`, that is, `leadingCoeff p` times the coefficient of
+`q'` in degree `deg q - 1`. That coefficient of `q'` need not be its leading coefficient: it
+vanishes when the characteristic of `R` divides `deg q`, even if `q' ≠ 0`. If `q` is constant,
+both sides are `0`, as `q' = 0`; this includes `q = 0`. If `p = 0`, both sides are `0` too. -/
+theorem coeff_mul_derivative_natDegree_add_natDegree_sub_one {R : Type*} [Semiring R]
+    (p q : R[X]) :
+    (p * derivative q).coeff (p.natDegree + q.natDegree - 1) =
+      p.leadingCoeff * q.leadingCoeff * q.natDegree := by
+  rcases hq : q.natDegree with _ | n
+  · simp [derivative_of_natDegree_zero hq]
+  · rw [Nat.add_succ_sub_one, coeff_mul_add_eq_of_natDegree_le le_rfl
+      ((natDegree_derivative_le q).trans_eq (by omega)), coeff_derivative, leadingCoeff,
+      leadingCoeff, hq, Nat.cast_add_one, mul_assoc]
+
+end Polynomial

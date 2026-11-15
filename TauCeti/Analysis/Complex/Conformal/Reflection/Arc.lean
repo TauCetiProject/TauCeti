@@ -29,9 +29,9 @@ symmetry. If the original branch is injective up to the source arc and maps the 
 that arc to the positive side of the target arc, the extension is injective, so its derivative
 vanishes nowhere on `e.source`, the points of the source arc included.
 
-This proves the analytic-arc part of layer L4 in the conformal-mapping roadmap. It follows the
-standard reduction of reflection across an analytic arc to reflection across the real axis; see
-Ahlfors, *Complex Analysis*, Chapters 4--6. The underlying real-axis theorems are
+This is the Schwarz reflection principle across an analytic arc. It follows the standard reduction
+of reflection across an analytic arc to reflection across the real axis; see Ahlfors, *Complex
+Analysis*, Chapters 4--6. The underlying real-axis theorems are
 `TauCeti.differentiableOn_schwarzReflection_of_symmetric` and
 `TauCeti.injOn_schwarzReflection_of_symmetric`.
 -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 import Mathlib.RingTheory.DedekindDomain.Factorization
+import TauCeti.RingTheory.UniqueFactorizationDomain.FactorSet
 
 /-!
 # Complements on ideals of a Dedekind domain
@@ -31,6 +32,11 @@ with the uniqueness statement `Ideal.eq_and_eq_of_pow_mul_eq_pow_mul` and the re
 finite set of primes into a finite Euler product in
 `TauCeti/NumberTheory/ArithmeticDirichletSeries/EulerProduct/Basic.lean`.
 
+The carrier `IsDedekindDomain.HeightOneSpectrum.primeIdealPow` represents prime powers as nonzero
+ideals over any integral domain, with injectivity in the exponent over a Dedekind domain.
+`Ideal.eventually_isPrimeTo_compl` records that a nonzero ideal is supported on every sufficiently
+large finite set of primes. These constructions use only ideal arithmetic, independently of norms.
+
 It also collects how an isomorphism `e : R ≃+* R'` moves ideals: `Ideal.map e` preserves
 divisibility (`Ideal.map_dvd_map_iff_of_ringEquiv`, `Ideal.map_pow_dvd_map_iff_of_ringEquiv`,
 stated over commutative *semirings*, since the proofs use only that `Ideal.map e` and
@@ -53,22 +59,21 @@ The file also identifies any height-one prime of a discrete valuation ring with 
 (`IsDedekindDomain.HeightOneSpectrum.eq_maximalIdeal`), which is what lets a condition stated at
 the height-one primes of such a ring be read as a condition on its valuation. It was split out of
 material adapted from Michael Stoll's elliptic-curves formalisation
-(`EllipticCurves/Mathlib/AdicCompletionExtension.lean` at the roadmap's pin `66889eada51a`,
+(`EllipticCurves/Mathlib/AdicCompletionExtension.lean` at commit `66889eada51a`,
 Apache 2.0, by Michael Stoll), where it is the step behind `valuation_adicCompletion_algebraMap`.
 
 The theorem `IsDedekindDomain.HeightOneSpectrum.exists_mem_notMem` was split out of material
 adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at the
-roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll); following this repository's
-convention for adapted material, the upstream authorship is credited here rather than in the
-copyright header.
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at
+commit `66889eada51a`, Apache 2.0, by Michael Stoll); following this repository's convention for
+adapted material, the upstream authorship is credited here rather than in the copyright header.
 
 `IsDedekindDomain.HeightOneSpectrum.comapOfNeBot` and its projection are likewise adapted from that
 formalisation (`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/Basic.lean`
-line 539, at the roadmap's pin `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`, Apache 2.0, by Michael
-Stoll). The construction is the source's; what changed is the hypothesis — the source and this
-version take the nonvanishing of the contraction as a hypothesis, where Mathlib's
-`HeightOneSpectrum.comap` instead derives it from surjectivity of the map.
+line 539, at commit `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`, Apache 2.0, by Michael Stoll).
+The construction is the source's; what changed is the hypothesis — the source and this version
+take the nonvanishing of the contraction as a hypothesis, where Mathlib's `HeightOneSpectrum.comap`
+instead derives it from surjectivity of the map.
 
 `Ideal.ne_bot_of_comap_ne_bot` plays the role of the source's
 `comap_ne_bot_of_comap_comap_ne_bot` (`EllipticCurves/Mathlib/Basic.lean` line 270): it is what
@@ -76,9 +81,16 @@ discharges that nonvanishing hypothesis when a prime is contracted through an in
 It is stated here in the general form — an arbitrary ideal and an injective ring homomorphism,
 with the map producing the ideal dropped, since it plays no role — and proved from Mathlib's
 `Ideal.comap_bot_of_injective`.
+
+In a ring where irreducible elements are prime, such as a principal ideal domain, an irreducible
+element `q` generates the height-one prime `IsDedekindDomain.HeightOneSpectrum.ofIrreducible`,
+and two irreducible elements generate the same prime exactly when they are associated
+(`IsDedekindDomain.HeightOneSpectrum.ofIrreducible_eq_ofIrreducible_iff`).
 -/
 
 public section
+
+open scoped nonZeroDivisors
 
 namespace Ideal
 
@@ -95,8 +107,7 @@ theorem map_dvd_map_iff_of_ringEquiv (e : R ≃+* R') (I J : Ideal R) :
   change Ideal.map (e : R →+* R') I ∣ Ideal.map (e : R →+* R') J ↔ I ∣ J
   refine ⟨fun h ↦ ?_, fun h ↦ by
     simpa only [mapHom_apply] using map_dvd (mapHom (e : R →+* R')) h⟩
-  have hcomp : (e.symm : R' →+* R).comp (e : R →+* R') = RingHom.id R := by ext x; simp
-  simpa only [mapHom_apply, Ideal.map_map, hcomp, Ideal.map_id] using
+  simpa only [mapHom_apply, Ideal.map_of_equiv] using
     map_dvd (mapHom (e.symm : R' →+* R)) h
 
 /-- The prime-power divisibility `p ^ n ∣ I` is unchanged by pushing forward along a ring
@@ -114,31 +125,44 @@ variable {R R' : Type*} [CommRing R] [IsDedekindDomain R] [CommRing R'] [IsDedek
 
 /-- Multiplicities in the factorisation of an ideal are unchanged by pushing forward along a ring
 isomorphism: the number of times `Ideal.map e p` divides `Ideal.map e I` is the number of times
-`p` divides `I`. -/
-theorem count_factors_map_of_ringEquiv (e : R ≃+* R') {p I : Ideal R} (hp : Prime p) (hI : I ≠ ⊥) :
+`p` divides `I`. The identity also holds, with both sides `0`, when `p` is not prime or `I = ⊥`. -/
+theorem count_factors_map_of_ringEquiv (e : R ≃+* R') {p I : Ideal R} :
     (Associates.mk (Ideal.map e p)).count (Associates.mk (Ideal.map e I)).factors =
       (Associates.mk p).count (Associates.mk I).factors := by
   classical
-  have hpb : p ≠ ⊥ := by simpa only [zero_eq_bot] using hp.ne_zero
-  have hpmapb : Ideal.map e p ≠ ⊥ := by
-    simpa only [ne_eq, map_eq_bot_iff_of_injective e.injective] using hpb
-  have hI0 : I ≠ 0 := by simpa only [zero_eq_bot] using hI
-  -- `map_isPrime_of_equiv` is an instance, so it fires once `p.IsPrime` is in the context.
-  have : p.IsPrime := (prime_iff_isPrime hpb).mp hp
-  have hpmap : Prime (Ideal.map e p) := (prime_iff_isPrime hpmapb).mpr (map_isPrime_of_equiv e)
-  have hmkImap : Associates.mk (Ideal.map e I) ≠ 0 := Associates.mk_ne_zero.mpr
-    (by simpa only [ne_eq, zero_eq_bot, map_eq_bot_iff_of_injective e.injective] using hI)
-  have hmkI : Associates.mk I ≠ 0 := Associates.mk_ne_zero.mpr hI0
-  -- Both counts are pinned by the same `n ≤ ·` characterisation, through `prime_pow_dvd_iff_le`.
-  have key : ∀ n : ℕ, n ≤ (Associates.mk (Ideal.map e p)).count
-        (Associates.mk (Ideal.map e I)).factors ↔
-      n ≤ (Associates.mk p).count (Associates.mk I).factors := fun n ↦ by
-    rw [← Associates.prime_pow_dvd_iff_le hmkImap (Associates.irreducible_mk.mpr hpmap.irreducible),
-      ← Associates.prime_pow_dvd_iff_le hmkI (Associates.irreducible_mk.mpr hp.irreducible),
-      ← Associates.mk_pow, ← Associates.mk_pow, Associates.mk_le_mk_iff_dvd,
-      Associates.mk_le_mk_iff_dvd]
-    exact map_pow_dvd_map_iff_of_ringEquiv e p I n
-  exact le_antisymm ((key _).mp le_rfl) ((key _).mpr le_rfl)
+  by_cases hI : I = ⊥
+  · subst hI
+    rw [Ideal.map_bot]
+    simp only [← zero_eq_bot, Associates.mk_zero, Associates.factors_zero, Associates.count_top]
+  by_cases hp : Prime p
+  · have hpmap := Ideal.map_prime_of_equiv e hp hp.ne_zero
+    have hI0 : I ≠ 0 := by simpa only [zero_eq_bot] using hI
+    have hmkImap : Associates.mk (Ideal.map e I) ≠ 0 := Associates.mk_ne_zero.mpr
+      (by simpa only [ne_eq, zero_eq_bot, map_eq_bot_iff_of_injective e.injective] using hI)
+    have hmkI : Associates.mk I ≠ 0 := Associates.mk_ne_zero.mpr hI0
+    -- Both counts are pinned by the same `n ≤ ·` characterisation, through
+    -- `prime_pow_dvd_iff_le`.
+    have key : ∀ n : ℕ, n ≤ (Associates.mk (Ideal.map e p)).count
+          (Associates.mk (Ideal.map e I)).factors ↔
+        n ≤ (Associates.mk p).count (Associates.mk I).factors := fun n ↦ by
+      rw [← Associates.prime_pow_dvd_iff_le hmkImap
+          (Associates.irreducible_mk.mpr hpmap.irreducible),
+        ← Associates.prime_pow_dvd_iff_le hmkI (Associates.irreducible_mk.mpr hp.irreducible),
+        ← Associates.mk_pow, ← Associates.mk_pow, Associates.mk_le_mk_iff_dvd,
+        Associates.mk_le_mk_iff_dvd]
+      exact map_pow_dvd_map_iff_of_ringEquiv e p I n
+    exact le_antisymm ((key _).mp le_rfl) ((key _).mpr le_rfl)
+  · -- Neither `p` nor `Ideal.map e p` is prime, so both counts are the junk value `0`.
+    have hp' : ¬ Prime (Ideal.map e p) := fun h ↦ hp <| by
+      have := Ideal.map_prime_of_equiv e.symm h h.ne_zero
+      -- `Ideal.map_prime_of_equiv` states `Ideal.map` through the isomorphism class coercion; read
+      -- it through `RingHom` coercions, as `Ideal.map_of_equiv` is stated.
+      change Prime (Ideal.map (e.symm : R' →+* R) (Ideal.map (e : R →+* R') p)) at this
+      rwa [Ideal.map_of_equiv] at this
+    rw [Associates.count_reducible (mt Associates.irreducible_mk.mp
+        (mt (irreducible_iff_prime.mp) hp')),
+      Associates.count_reducible (mt Associates.irreducible_mk.mp (mt irreducible_iff_prime.mp hp))]
+    rfl
 
 end RingEquivDedekind
 
@@ -193,6 +217,40 @@ end Ideal
 
 namespace IsDedekindDomain.HeightOneSpectrum
 
+section PrimeIdealPow
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- The `e`-th power of a height-one prime, as a nonzero ideal. -/
+def primeIdealPow (P : HeightOneSpectrum R) (e : ℕ) : (Ideal R)⁰ :=
+  ⟨P.asIdeal ^ e, mem_nonZeroDivisors_of_ne_zero (pow_ne_zero e P.ne_bot)⟩
+
+/-- A prime power, as a nonzero ideal, has the expected underlying ideal. -/
+@[simp]
+theorem coe_primeIdealPow (P : HeightOneSpectrum R) (e : ℕ) :
+    (primeIdealPow P e : Ideal R) = P.asIdeal ^ e :=
+  (rfl)
+
+/-- The zeroth power of a height-one prime is the unit ideal in the nonzero-ideal carrier. -/
+@[simp]
+theorem primeIdealPow_zero (P : HeightOneSpectrum R) : P.primeIdealPow 0 = 1 :=
+  Subtype.ext (by simp)
+
+/-- Distinct primes give distinct first powers. -/
+theorem primeIdealPow_one_injective :
+    Function.Injective fun P : HeightOneSpectrum R ↦ primeIdealPow P 1 := fun P Q h ↦
+  HeightOneSpectrum.asIdeal_injective
+    (by simpa only [coe_primeIdealPow, pow_one] using
+      congrArg (Subtype.val : (Ideal R)⁰ → Ideal R) h)
+
+end PrimeIdealPow
+
+/-- Distinct exponents give distinct powers of a height-one prime of a Dedekind domain. -/
+theorem primeIdealPow_injective {R : Type*} [CommRing R] [IsDedekindDomain R]
+    (P : HeightOneSpectrum R) : Function.Injective (primeIdealPow P) := fun m n h ↦
+  pow_injective_of_not_isUnit P.prime.not_isUnit P.prime.ne_zero
+    (by simpa only [coe_primeIdealPow] using congrArg Subtype.val h)
+
 section Comap
 
 variable {B C : Type*} [CommRing B] [CommRing C]
@@ -211,8 +269,8 @@ apply, nor integral `Algebra` maps, so `HeightOneSpectrum.under` does not either
 flat, not integral.) The `ne_bot` hypothesis has to be supplied by hand.
 
 Adapted from Michael Stoll's `EllipticCurves` (`EllipticCurves/Mathlib/Basic.lean` line 539, Apache
-2.0, at the roadmap's pin `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`); the `ne_bot`-as-hypothesis
-formulation is the source's. -/
+2.0, at commit `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`); the `ne_bot`-as-hypothesis formulation
+is the source's. -/
 def comapOfNeBot (ψ : B →+* C) (w : HeightOneSpectrum C) (hne : w.asIdeal.comap ψ ≠ ⊥) :
     HeightOneSpectrum B where
   asIdeal := w.asIdeal.comap ψ
@@ -250,6 +308,35 @@ theorem asIdeal_equivOfRingEquiv_symm (e : R ≃+* R') (w : HeightOneSpectrum R'
     ((equivOfRingEquiv e).symm w).asIdeal = Ideal.comap e w.asIdeal := rfl
 
 end RingEquivTransport
+
+section OfIrreducible
+
+variable {R : Type*} [CommRing R] [DecompositionMonoid R]
+
+/-- The height-one prime `(q)` generated by an irreducible element `q` of a ring in which
+irreducible elements are prime, such as a principal ideal domain. For `R = K[X]` and `q = X` this
+is Mathlib's `Polynomial.idealX`. -/
+def ofIrreducible {q : R} (hq : Irreducible q) : HeightOneSpectrum R where
+  asIdeal := Ideal.span {q}
+  isPrime := (Ideal.span_singleton_prime hq.ne_zero).mpr hq.prime
+  ne_bot := Ideal.span_singleton_eq_bot.not.mpr hq.ne_zero
+
+-- `(rfl)` elaborates here, where the definition is visible.
+@[simp]
+theorem ofIrreducible_asIdeal {q : R} (hq : Irreducible q) :
+    (ofIrreducible hq).asIdeal = Ideal.span {q} :=
+  (rfl)
+
+/-- Two irreducible elements generate the same height-one prime exactly when they are
+associated. -/
+@[simp]
+theorem ofIrreducible_eq_ofIrreducible_iff {q r : R} (hq : Irreducible q)
+    (hr : Irreducible r) : ofIrreducible hq = ofIrreducible hr ↔ Associated q r := by
+  rw [HeightOneSpectrum.ext_iff, ofIrreducible_asIdeal, ofIrreducible_asIdeal, le_antisymm_iff,
+    Ideal.span_singleton_le_span_singleton, Ideal.span_singleton_le_span_singleton]
+  exact ⟨fun h => hq.associated_of_dvd hr h.2, fun h => ⟨h.symm.dvd, h.dvd⟩⟩
+
+end OfIrreducible
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 
@@ -321,6 +408,17 @@ theorem isPrimeTo_comap_iff {A : Type*} [CommRing A] (e : R ≃+* A)
   simp only [isPrimeTo_iff, ne_eq, hbot, Set.forall_mem_image, hdvd]
 
 variable [IsDedekindDomain R]
+
+/-- Every nonzero ideal is eventually supported: a sufficiently large finite set of height-one
+primes contains all its finitely many prime divisors. -/
+theorem eventually_isPrimeTo_compl (hI : I ≠ ⊥) :
+    ∀ᶠ S : Finset (HeightOneSpectrum R) in Filter.atTop,
+      IsPrimeTo I (S : Set (HeightOneSpectrum R))ᶜ := by
+  classical
+  have hfinite := Ideal.finite_factors hI
+  filter_upwards [Filter.eventually_ge_atTop hfinite.toFinset] with S hS
+  rw [isPrimeTo_iff]
+  exact ⟨hI, fun P hP hPdvd ↦ hP (hS (hfinite.mem_toFinset.mpr hPdvd))⟩
 
 @[simp]
 theorem isPrimeTo_top : IsPrimeTo (⊤ : Ideal R) S := by

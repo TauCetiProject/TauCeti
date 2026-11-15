@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.Basic
+public import Mathlib.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
 
 /-!
@@ -40,6 +41,8 @@ it, and two such cocycles have the same class exactly when they differ by a homo
   the differential on a successor level of the resolution, at a point.
 * `TopRep.d_sum_apply_add_sum_d_apply`: evaluation at finitely many points, summed, contracts the
   coinduced resolution up to the number of points.
+* `TopRep.resolutionX_add_self_eq_zero`: the resolution of coefficients that are their own
+  additive inverses has the same property.
 * `TopRep.homogeneousCochains.eq_d_zero_apply_of_d_eq_zero`: a homogeneous zero-cocycle is
   constant.
 * `TopRep.homogeneousCochains.d_one_apply`: the differential of a homogeneous one-cochain,
@@ -56,6 +59,8 @@ it, and two such cocycles have the same class exactly when they differ by a homo
 * `TopRep.cochainClass_eq_cochainClass_iff`: two homogeneous cocycles of positive degree have the
   same class exactly when their difference is a coboundary, and `TopRep.cochainClass_eq_of_sub_eq_d`
   is the direction that compares two explicit representatives.
+* `TauCeti.ContinuousCohomology.map_cochainClass`: the map of a compatible pair on the class of a
+  homogeneous cocycle.
 -/
 
 public section
@@ -90,6 +95,14 @@ theorem d_sum_apply_add_sum_d_apply {ι : Type*} [Fintype ι] (σ : ι → G) (m
         Fintype.card ι • F := by
   rw [map_sum, ← Finset.sum_add_distrib]
   simp [hom_d_succ, ContIntertwiningMap.sub_apply]
+
+/-- If every coefficient is its own additive inverse, then so is every element of every term of
+the coinduced resolution, the terms being iterated spaces of continuous functions into the
+coefficients. -/
+theorem resolutionX_add_self_eq_zero (hX : ∀ x : X.V, x + x = 0) :
+    ∀ (n : ℕ) (F : (resolutionX X n).V), F + F = 0
+  | 0, F => hX F
+  | n + 1, F => ContinuousMap.ext fun g ↦ resolutionX_add_self_eq_zero hX n (F g)
 
 variable {X}
 
@@ -269,3 +282,28 @@ theorem cochainClass_eq_of_sub_eq_d {j : ℕ} (hj : j + 1 = n)
   (cochainClass_eq_cochainClass_iff hj ha hb).2 ⟨c, hc⟩
 
 end TopRep
+
+namespace TauCeti.ContinuousCohomology
+
+open CategoryTheory TopRep
+
+universe u v w
+
+variable {k : Type u} [Ring k] [TopologicalSpace k]
+  {G H : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [Group H] [TopologicalSpace H] [IsTopologicalGroup H] (φ : H →ₜ* G)
+  {X : TopRep.{max v w} k G} {Y : TopRep.{max v w} k H}
+
+/-- The map of a compatible pair carries the class of a homogeneous cocycle `a` to the class of
+its image under Mathlib's cochain map `ContinuousCohomology.cochainsMap φ f`. -/
+@[simp]
+theorem map_cochainClass (f : TopRep.res (φ : H →* G) X ⟶ Y) {n : ℕ}
+    (a : (homogeneousCochains X).X n) (ha : ((homogeneousCochains X).d n (n + 1)).hom a = 0) :
+    _root_.ContinuousCohomology.map φ f n (X.cochainClass n a ha) =
+      Y.cochainClass n (((_root_.ContinuousCohomology.cochainsMap φ f).f n).hom a) (by
+        rw [← ConcreteCategory.comp_apply, HomologicalComplex.Hom.comm,
+          ConcreteCategory.comp_apply, ha, map_zero]) := by
+  rw [cochainClass_def, cochainClass_def]
+  exact HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq _ _ _ _ _
+
+end TauCeti.ContinuousCohomology

@@ -364,7 +364,7 @@ theorem endOfPoint_sub_one_tmul (g : SymmetricAlgebra R R →ₐ[R] A) (a : A) (
         (a * g (ι R R 1) ^ i) ⊗ₜ[R] coactDecomposition R V v i :=
     Finsupp.sum_of_support_subset _ (Finset.subset_insert _ _) _ fun i _ =>
       TensorProduct.tmul_zero _ _
-  rw [LinearMap.sub_apply, Module.End.one_apply, endOfPoint_tmul_eq_sum, hsum,
+  rw [LinearMap.sub_apply, one_apply_eq_self, endOfPoint_tmul_eq_sum, hsum,
     ← Finset.add_sum_erase _ _ (Finset.mem_insert_self 0 _), Finset.erase_insert_eq_erase]
   simp only [coactDecomposition_apply, coactComponent_zero, LinearMap.id_coe, id_eq, pow_zero,
     mul_one, add_sub_cancel_left]
@@ -409,7 +409,7 @@ theorem pow_endOfPoint_sub_one_apply_eq_zero (g : SymmetricAlgebra R R →ₐ[R]
       rw [Submodule.baseChange_eq_span, Submodule.span_le]
       rintro _ ⟨v, hv, rfl⟩
       exact endOfPoint_sub_one_tmul_mem R V g 1 hv
-    rw [pow_succ, Module.End.mul_apply]
+    rw [pow_succ, mul_apply_eq_comp]
     exact ih (h hz)
 
 /-- **Every point of `𝔾ₐ` acts unipotently on every finitely generated comodule.** -/

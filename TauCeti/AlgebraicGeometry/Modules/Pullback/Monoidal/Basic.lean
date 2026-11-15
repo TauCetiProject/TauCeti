@@ -126,6 +126,25 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModules_η :
     ((pullback f).map_id (𝟙_ Y.Modules))).trans
       ((Category.id_comp _).trans (pullback_η f))
 
+/-- The tensor comparison inverts the canonical module-pullback tensor comparison. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModules_μ
+    (E F : QuasicoherentSheaf Y) :
+    haveI := @isIso_pullback_δ_of_isQuasicoherent _ _ f E.obj F.obj E.property
+    μ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f) E F =
+      inv (δ (pullback f) E.obj F.obj) :=
+  haveI := @isIso_pullback_δ_of_isQuasicoherent _ _ f E.obj F.obj E.property
+  IsIso.eq_inv_of_hom_inv_id ((congrArg (· ≫ _) (pullbackToModules_δ f E F).symm).trans
+    (Functor.Monoidal.δ_μ _ E F))
+
+/-- The unit comparison inverts the canonical structure-sheaf identification. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModules_ε :
+    ε ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f) =
+      (pullbackObjUnitIso f).inv :=
+  (Iso.comp_hom_eq_id _).mp ((congrArg (_ ≫ ·) (pullbackToModules_η f).symm).trans
+    (Functor.Monoidal.ε_η _))
+
 /-- Pullback of quasicoherent sheaves, viewed in all modules, respects symmetry. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModulesBraided :
     ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f).Braided where

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.GroupWithZero.Action.Units
 public import Mathlib.Algebra.Module.Defs
+public import Mathlib.Algebra.Regular.SMul
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -14,10 +14,10 @@ import Mathlib.Tactic.Module
 /-!
 # Affine combinations `u • x + (1 - u) • y` in a module
 
-If `u` is a unit of the scalar ring, then `x = u • y + (1 - u) • x` forces `x = y`: the equation
-says `u • (x - y) = 0`. Such equations arise as module relations whose two sides share a term,
-for example the relation of an under-strand at a crossing of a link diagram whose incoming arc is
-also its outgoing arc.
+If `u` is `M`-regular (for instance a unit of the scalar ring), then `x = u • y + (1 - u) • x`
+holds exactly when `x = y`: the equation says `u • x = u • y`. Such equations arise as module
+relations whose two sides share a term, for example the relation of an under-strand at a crossing
+of a link diagram whose incoming arc is also its outgoing arc.
 
 The braid relation `TauCeti.smul_add_one_sub_smul_braid_relation` compares two ways of crossing
 three values pairwise by affine combinations. It is the self-distributivity of the Alexander
@@ -29,13 +29,17 @@ public section
 
 namespace TauCeti
 
-/-- If `u` is a unit, then `x = u • y + (1 - u) • x` forces `x = y`. -/
-theorem _root_.IsUnit.eq_of_eq_smul_add_one_sub_smul {R M : Type*} [Ring R] [AddCommGroup M]
-    [Module R M] {u : R} (hu : IsUnit u) {x y : M} (h : x = u • y + (1 - u) • x) : x = y := by
-  have h' : u • (x - y) = 0 := calc
-    u • (x - y) = x - (u • y + (1 - u) • x) := by rw [smul_sub, sub_smul, one_smul]; abel
-    _ = 0 := by rw [← h, sub_self]
-  exact sub_eq_zero.1 (hu.smul_eq_zero.1 h')
+/-- If `u` is `M`-regular, then `x = u • y + (1 - u) • x` holds exactly when `x = y`. -/
+@[simp]
+theorem _root_.IsSMulRegular.eq_smul_add_one_sub_smul_iff {R M : Type*} [Ring R]
+    [AddCommGroup M] [Module R M] {u : R} (hu : IsSMulRegular M u) {x y : M} :
+    x = u • y + (1 - u) • x ↔ x = y := by
+  rw [sub_smul, one_smul]
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · have hux : u • x = u • y := by linear_combination (norm := abel) h
+    exact hu hux
+  · rintro rfl
+    rw [add_sub_cancel]
 
 /-- **The braid relation for affine combinations.** Three strands enter a triangle with values
 `a`, `b`, `c` and cross pairwise; at a crossing of two strands with entering values `x` and `y`,

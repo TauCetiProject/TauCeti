@@ -30,8 +30,9 @@ For an idempotent `f` of degree zero, a graded map `Af ⟶ M` is determined by t
 which can be any vector of `f • M₀`. Therefore
 `χ_q(Af, M) = ∑ⱼ q⁻ʲ dim_k(f • M₋ⱼ) = ∑ₚ dim_k(f • Mₚ) qᵖ`: pairing against `[Af]` is the
 idempotent coordinate `TauCeti.gradedIdempotentCoordinate`. In particular, if the degree-zero
-idempotents `eᵢ` cut out graded simples `Sᵢ` with `gdim(eᵢ • Sⱼ) = δᵢⱼ`, then
-`χ_q([A eᵢ], [Sⱼ]) = δᵢⱼ`, and the classes `[A eᵢ]` pair with `G₀^gr(mod A)` as the coordinate
+idempotents `eᵢ` cut out graded simples `Sᵢ` with `gdim(eᵢ • Sⱼ) = 0` for `i ≠ j`, then
+`χ_q([A eᵢ], [Sⱼ])` is `gdim(eᵢ • Sᵢ)` on the diagonal and `0` off it. When moreover every
+`gdim(eᵢ • Sᵢ) = 1`, the classes `[A eᵢ]` pair with `G₀^gr(mod A)` as the coordinate
 functionals of the graded simple-class basis. This is the graded form of the duality between
 projective covers and simples.
 
@@ -48,9 +49,12 @@ projective covers and simples.
   idempotent coordinate of `f`.
 * `TauCeti.gradedExtEulerSesquilinear_gradedCartanMap`: when every pair of finite graded modules is
   graded Euler-admissible, `χ_q(c x, y) = χ_q(x, y)` for the graded Cartan map `c`.
-* `TauCeti.gradedProjectiveExtEuler_basis`: `χ_q([A eᵢ], [Sⱼ]) = δᵢⱼ`.
-* `TauCeti.gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_repr`: pairing against `[A eᵢ]` is
-  the `i`th coordinate in the graded simple-class basis.
+* `TauCeti.gradedProjectiveExtEuler_basis`: `χ_q([A eᵢ], [Sⱼ])` is `gdim(eᵢ • Sᵢ)` if `i = j` and
+  `0` otherwise.
+* `TauCeti.gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_mul_repr`: pairing against
+  `[A eᵢ]` is `gdim(eᵢ • Sᵢ)` times the `i`th coordinate in the graded simple-class basis.
+* `TauCeti.gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_repr`: when every
+  `gdim(eᵢ • Sᵢ) = 1`, pairing against `[A eᵢ]` is the `i`th simple-class coordinate.
 
 ## References
 
@@ -230,28 +234,45 @@ variable {I : Type uI} (S : I → (gradedFiniteModules 𝒜).FullSubcategory) {e
   (he : ∀ i, IsIdempotentElem (e i)) (he₀ : ∀ i, e i ∈ 𝒜 0)
   (hI : ∀ i, (Ideal.span {e i} : Ideal A).IsHomogeneous 𝒜)
   (hne : Pairwise fun i j => (S j).obj.smulGradedDimension (e i) = 0)
-  (hself : ∀ i, (S i).obj.smulGradedDimension (e i) = 1)
 
-include he₀ hne hself in
-/-- **Kronecker pairing under the q-Euler form**: if the finite graded modules `Sⱼ` and the
-degree-zero idempotents `eᵢ` satisfy `gdim(eᵢ • Sⱼ) = δᵢⱼ`, then `χ_q([A eᵢ], [Sⱼ]) = δᵢⱼ`. -/
+include he₀ hne in
+/-- **Diagonal pairing under the q-Euler form**: if the finite graded modules `Sⱼ` and the
+degree-zero idempotents `eᵢ` satisfy `gdim(eᵢ • Sⱼ) = 0` for `i ≠ j`, then
+`χ_q([A eᵢ], [Sⱼ])` is `gdim(eᵢ • Sᵢ)` for `i = j` and `0` otherwise. -/
 @[simp]
 theorem gradedProjectiveExtEuler_basis [DecidableEq I] (i j : I) :
     gradedProjectiveExtEuler 𝒜 (LaurentK0.of.{uA} _
         ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i),
           gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i) (hI i)⟩)
         (LaurentK0.of.{uA} _ (S j)) =
-      if i = j then 1 else 0 := by
+      if i = j then (S i).obj.smulGradedDimension (e i) else 0 := by
   rw [gradedProjectiveExtEuler_ofIdeal_span_singleton (he i) (he₀ i) (hI i),
     gradedIdempotentCoordinate_of]
   split_ifs with hij
-  · subst hij
-    exact hself i
+  · rw [hij]
   · exact hne hij
 
+/-- **Pairing against `[A eᵢ]` is a multiple of the `i`th simple-class coordinate**: for an
+exhaustive family of graded simples `Sᵢ` cut out by degree-zero idempotents `eᵢ` with nonzero
+diagonal graded dimensions, `χ_q([A eᵢ], x)` is `gdim(eᵢ • Sᵢ)` times the `i`th coordinate of `x`
+in the graded simple-class basis of `G₀^gr(mod A)`. -/
+theorem gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_mul_repr
+    (hself : ∀ i, (S i).obj.smulGradedDimension (e i) ≠ 0) (hS : IsExhaustiveGradedSimpleFamily S)
+    (i : I) (x : LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) :
+    gradedProjectiveExtEuler 𝒜 (LaurentK0.of.{uA} _
+        ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i),
+          gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i) (hI i)⟩) x =
+      (S i).obj.smulGradedDimension (e i) *
+        (gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS).repr x i := by
+  rw [gradedProjectiveExtEuler_ofIdeal_span_singleton (he i) (he₀ i) (hI i),
+    gradedIdempotentCoordinate_eq_mul_gradedSimpleClassBasisOfNeZero_repr]
+
+variable (hself : ∀ i, (S i).obj.smulGradedDimension (e i) = 1)
+
 /-- **Pairing against `[A eᵢ]` is the `i`th simple-class coordinate**: for an exhaustive family of
-graded simples `Sᵢ` cut out by degree-zero idempotents `eᵢ`, the form `χ_q([A eᵢ], -)` is the
-`i`th coordinate functional of the graded simple-class basis of `G₀^gr(mod A)`. -/
+graded simples `Sᵢ` cut out by degree-zero idempotents `eᵢ` with `gdim(eᵢ • Sⱼ) = δᵢⱼ`, the form
+`χ_q([A eᵢ], -)` is the `i`th coordinate functional of the graded simple-class basis of
+`G₀^gr(mod A)`. -/
 @[simp]
 theorem gradedProjectiveExtEuler_ofIdeal_span_singleton_eq_repr
     (hS : IsExhaustiveGradedSimpleFamily S) (i : I)

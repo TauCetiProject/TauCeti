@@ -11,24 +11,20 @@ public import Mathlib.Order.Disjoint
 /-!
 # Pairwise disjoint families
 
-`Pairwise.disjoint_iff_ne` characterizes disjointness in a pairwise disjoint family of non-bottom
-elements by inequality of the indices. It reduces disjointness questions for such a family to
-questions about its labels.
+`Pairwise.disjoint_iff_ne` characterizes disjointness in a pairwise disjoint family by inequality
+of the indices, as soon as one of the two elements is different from bottom. It reduces
+disjointness questions for such a family to questions about its labels.
 -/
 
 public section
 
 namespace Pairwise
 
-/-- In a pairwise disjoint family whose elements are all different from bottom, two elements are
-disjoint exactly when their indices differ. -/
+/-- In a pairwise disjoint family, an element different from bottom is disjoint from another
+member of the family exactly when their indices differ. -/
 theorem disjoint_iff_ne {α : Type*} [PartialOrder α] [OrderBot α] {ι : Type*} {f : ι → α}
-    (h : Pairwise (Function.onFun Disjoint f)) (hne : ∀ i, f i ≠ ⊥) (i j : ι) :
-    Disjoint (f i) (f j) ↔ i ≠ j := by
-  constructor
-  · intro hd hij
-    exact (Disjoint.ne (hne i) hd) (congrArg f hij)
-  · intro hij
-    exact h hij
+    (h : Pairwise (Function.onFun Disjoint f)) {i j : ι} (hi : f i ≠ ⊥) :
+    Disjoint (f i) (f j) ↔ i ≠ j :=
+  ⟨fun hd hij ↦ hd.ne hi (congrArg f hij), fun hij ↦ h hij⟩
 
 end Pairwise

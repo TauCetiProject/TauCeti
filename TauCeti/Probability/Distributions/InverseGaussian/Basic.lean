@@ -8,9 +8,8 @@ module
 public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
 public import TauCeti.Probability.Density
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
-import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Distributions.Affine
 
 /-!
@@ -68,7 +67,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Real Set Filter Topology
-open scoped ENNReal NNReal
+open scoped ENNReal
 
 namespace TauCeti.Probability
 
@@ -121,10 +120,7 @@ theorem inverseGaussianPDFReal_pos (hμ : 0 < μ) (hlam : 0 < lam) (hx : 0 < x) 
 
 /-- The real inverse Gaussian density is nonnegative. -/
 theorem inverseGaussianPDFReal_nonneg (μ lam x : ℝ) : 0 ≤ inverseGaussianPDFReal μ lam x := by
-  unfold inverseGaussianPDFReal
-  split_ifs
-  · positivity
-  · exact le_rfl
+  unfold inverseGaussianPDFReal; positivity
 
 /-- Converting the inverse Gaussian density back to `ℝ` recovers its real-valued version. -/
 @[simp]
@@ -213,6 +209,15 @@ private def cdfFormula (μ lam x : ℝ) : ℝ :=
   cdf (gaussianReal 0 1) (√(lam / x) * (x / μ - 1)) +
     exp (2 * lam / μ) * cdf (gaussianReal 0 1) (-(√(lam / x) * (x / μ + 1)))
 
+/-- The square root in the inverse Gaussian density splits as a quotient: writing the radicand as a
+quotient by the perfect square `(√(2 π) x) ^ 2`. -/
+private theorem sqrt_div_two_pi_mul_pow_three_eq (hx : 0 < x) :
+    √(lam / (2 * π * x ^ 3)) = √(lam / x) / (√(2 * π) * x) := by
+  have hrad : lam / (2 * π * x ^ 3) = (lam / x) / (√(2 * π) * x) ^ 2 := by
+    rw [mul_pow, sq_sqrt (by positivity)]
+    field_simp
+  rw [hrad, sqrt_div' _ (sq_nonneg _), sqrt_sq (by positivity)]
+
 /-- On the positive half-line, the closed-form cdf has the density as its derivative. The two
 Gaussian arguments `w₁ = √(lam / x) (x / μ - 1)` and `w₂ = √(lam / x) (x / μ + 1)` satisfy
 `w₂ ^ 2 - w₁ ^ 2 = 4 lam / μ`, so the factor `exp (2 lam / μ)` turns `φ(w₂)` into `φ(w₁)` and the
@@ -239,12 +244,8 @@ private theorem hasDerivAt_cdfFormula (hμ : 0 < μ) (hlam : 0 < lam) (hx : 0 < 
     rw [neg_sq, mul_pow, mul_pow, hr2]
     field_simp
     ring
-  -- Write the radicand as a quotient by a perfect square, so that the square root splits.
-  have hrad : lam / (2 * π * x ^ 3) = (lam / x) / (√(2 * π) * x) ^ 2 := by
-    rw [mul_pow, sq_sqrt (by positivity)]
-    field_simp
-  have hS : √(lam / (2 * π * x ^ 3)) = r / (√(2 * π) * x) := by
-    rw [hrad, sqrt_div' _ (sq_nonneg _), sqrt_sq (by positivity)]
+  have hS : √(lam / (2 * π * x ^ 3)) = r / (√(2 * π) * x) :=
+    sqrt_div_two_pi_mul_pow_three_eq hx
   have hE : -(lam * (x - μ) ^ 2) / (2 * μ ^ 2 * x) = -(r * (x / μ + -1)) ^ 2 / 2 := by
     rw [mul_pow, hr2]
     field_simp
@@ -396,16 +397,19 @@ theorem isProbabilityMeasure_inverseGaussianMeasure_iff :
   refine ⟨fun h ↦ ?_, fun h ↦ isProbabilityMeasure_inverseGaussianMeasure h.1 h.2⟩
   by_contra hp
   rw [inverseGaussianMeasure_of_not_pos hp] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- Every inverse Gaussian measure is finite, including the zero measure at invalid
 parameters. -/
 instance : IsFiniteMeasure (inverseGaussianMeasure μ lam) := by
-  by_cases h : 0 < μ ∧ 0 < lam
-  · have := isProbabilityMeasure_inverseGaussianMeasure h.1 h.2
-    infer_instance
-  · rw [inverseGaussianMeasure_of_not_pos h]
-    infer_instance
+  rw [inverseGaussianMeasure_eq_withDensity, funext (inverseGaussianPDF_eq_ofReal μ lam)]
+  exact isFiniteMeasure_withDensity_ofReal
+    (integrable_inverseGaussianPDFReal μ lam).hasFiniteIntegral
+
+/-- Inverse Gaussian measures have no atoms, including at invalid parameters. -/
+instance : NullSingletonClass (inverseGaussianMeasure μ lam) := by
+  rw [inverseGaussianMeasure_eq_withDensity]
+  infer_instance
 
 /-- The inverse Gaussian law gives no mass to the nonpositive half-line, at all parameters. -/
 @[simp]
@@ -506,15 +510,13 @@ theorem cdf_inverseGaussianMeasure_of_pos (hμ : 0 < μ) (hlam : 0 < lam) (hx : 
       cdf (gaussianReal 0 1) (√(lam / x) * (x / μ - 1)) +
         exp (2 * lam / μ) * cdf (gaussianReal 0 1) (-(√(lam / x) * (x / μ + 1))) := by
   have := isProbabilityMeasure_inverseGaussianMeasure hμ hlam
-  have hint : IntegrableOn (inverseGaussianPDFReal μ lam) (Ioi x) :=
-    (integrable_inverseGaussianPDFReal μ lam).integrableOn
   rw [cdf_eq_real, ← compl_Ioi, measureReal_compl measurableSet_Ioi, probReal_univ,
     inverseGaussianMeasure_eq_withDensity, funext (inverseGaussianPDF_eq_ofReal μ lam),
     measureReal_withDensity_ofReal (ae_of_all _ (inverseGaussianPDFReal_nonneg μ lam))
-      measurableSet_Ioi hint,
+      measurableSet_Ioi (measurable_inverseGaussianPDFReal μ lam).aemeasurable,
     integral_Ioi_inverseGaussianPDFReal_of_pos hμ hlam hx, sub_sub_cancel, cdfFormula]
 
-/-- The inverse Gaussian cdf vanishes on the nonpositive half-line. -/
+/-- At positive parameters, the inverse Gaussian cdf vanishes on the nonpositive half-line. -/
 theorem cdf_inverseGaussianMeasure_of_nonpos (hμ : 0 < μ) (hlam : 0 < lam) (hx : x ≤ 0) :
     cdf (inverseGaussianMeasure μ lam) x = 0 := by
   have := isProbabilityMeasure_inverseGaussianMeasure hμ hlam
@@ -522,8 +524,8 @@ theorem cdf_inverseGaussianMeasure_of_nonpos (hμ : 0 < μ) (hlam : 0 < lam) (hx
     measure_mono_null (Iic_subset_Iic.mpr hx) (inverseGaussianMeasure_Iic_zero μ lam),
     ENNReal.toReal_zero]
 
-/-- **The inverse Gaussian cdf.** It vanishes on the nonpositive half-line and has the classical
-closed form on the positive half-line. -/
+/-- **The inverse Gaussian cdf.** At positive parameters, it vanishes on the nonpositive half-line
+and has the classical closed form on the positive half-line. -/
 theorem cdf_inverseGaussianMeasure_eq (hμ : 0 < μ) (hlam : 0 < lam) (x : ℝ) :
     cdf (inverseGaussianMeasure μ lam) x =
       if x ≤ 0 then 0 else

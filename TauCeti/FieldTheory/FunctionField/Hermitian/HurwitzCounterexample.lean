@@ -81,7 +81,7 @@ theorem exists_not_isTame_hermitianTranslations
   have hchar : ((p ^ n : ℕ) : K) = 0 := natCast_pow_expChar_eq_zero (by omega)
   by_contra htame
   have hle := natCard_le_eighty_four_mul_genus_sub_one
-    (h.isFunctionField (by omega)) (h.isIntegrallyClosedIn (by omega) hchar)
+    h.isFunctionField (h.isIntegrallyClosedIn (by omega) hchar)
     (hermitianTranslations K p n x y) (h.two_le_genus (by omega) hchar)
     (not_exists_not.mp htame)
   exact (h.eighty_four_mul_genus_sub_one_lt_natCard_hermitianTranslations hK hq).not_ge hle

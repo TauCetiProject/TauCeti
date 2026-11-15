@@ -37,7 +37,7 @@ from finiteness of the matrices.
 
 ## Implementation notes
 
-A private linear equivalence identifies `sl n R` with the entries away from one diagonal place.
+`specialLinearEntryEquiv` identifies `sl n R` with the entries away from one diagonal place.
 Freeness, finiteness and dimension follow by transporting the corresponding facts about this
 function space. Membership is read through `LieAlgebra.SpecialLinear.mem_sl_iff`.
 -/
@@ -62,7 +62,7 @@ private def diagIdx (k : {k : n // k ≠ i₀}) : {p : n × n // p ≠ (i₀, i�
   ⟨(k.1, k.1), fun hk => k.2 (congrArg Prod.fst hk)⟩
 
 /-- A trace-zero matrix is determined by its entries away from `(i₀, i₀)`. -/
-private def slEquivFun : SpecialLinear.sl n R ≃ₗ[R] ({p : n × n // p ≠ (i₀, i₀)} → R) where
+def specialLinearEntryEquiv : SpecialLinear.sl n R ≃ₗ[R] ({p : n × n // p ≠ (i₀, i₀)} → R) where
   toFun A p := A.val p.1.1 p.1.2
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
@@ -95,6 +95,39 @@ private def slEquivFun : SpecialLinear.sl n R ≃ₗ[R] ({p : n × n // p ≠ (i
     funext p
     exact dite_eq_right p.property
 
+/-- The free entry coordinates read the corresponding matrix entries. -/
+@[simp]
+theorem specialLinearEntryEquiv_apply (X : SpecialLinear.sl n R)
+    (p : {p : n × n // p ≠ (i₀, i₀)}) :
+    specialLinearEntryEquiv (R := R) i₀ X p = X.val p.val.1 p.val.2 := by
+  rfl
+
+
+/-- Away from the omitted diagonal place, the inverse reads the free entry coordinate. -/
+@[simp]
+theorem specialLinearEntryEquiv_symm_apply_of_ne
+    (g : {p : n × n // p ≠ (i₀, i₀)} → R) {i j : n} (h : (i, j) ≠ (i₀, i₀)) :
+    ((specialLinearEntryEquiv (R := R) i₀).symm g).val i j = g ⟨(i, j), h⟩ := by
+  exact congrFun ((specialLinearEntryEquiv (R := R) i₀).apply_symm_apply g) ⟨(i, j), h⟩
+
+/-- The omitted diagonal entry is minus the sum of the other diagonal coordinates. -/
+@[simp]
+theorem specialLinearEntryEquiv_symm_apply_self
+    (g : {p : n × n // p ≠ (i₀, i₀)} → R) :
+    ((specialLinearEntryEquiv (R := R) i₀).symm g).val i₀ i₀ =
+      -∑ k : {k : n // k ≠ i₀},
+        g ⟨(k.1, k.1), fun h => k.2 (congrArg Prod.fst h)⟩ := by
+  have htrace := SpecialLinear.mem_sl_iff.mp
+    ((specialLinearEntryEquiv (R := R) i₀).symm g).property
+  simp only [Matrix.trace, Matrix.diag_apply] at htrace
+  rw [Fintype.sum_eq_add_sum_subtype_ne _ i₀] at htrace
+  have hdiag (k : {k : n // k ≠ i₀}) :
+      ((specialLinearEntryEquiv (R := R) i₀).symm g).val k.1 k.1 =
+        g ⟨(k.1, k.1), fun h => k.2 (congrArg Prod.fst h)⟩ :=
+    specialLinearEntryEquiv_symm_apply_of_ne i₀ g fun h => k.2 (congrArg Prod.fst h)
+  simp only [hdiag] at htrace
+  exact (neg_eq_of_add_eq_zero_left htrace).symm
+
 end Coordinates
 
 section FreeFinite
@@ -106,13 +139,13 @@ it; for an empty one it is the zero module. -/
 instance : Module.Free R (SpecialLinear.sl n R) := by
   rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
   · infer_instance
-  · exact Module.Free.of_equiv (slEquivFun (R := R) i₀).symm
+  · exact Module.Free.of_equiv (specialLinearEntryEquiv (R := R) i₀).symm
 
 /-- **`sl n R` is a finite module**, the coordinates above being finite in number. -/
 instance : Module.Finite R (SpecialLinear.sl n R) := by
   rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
   · infer_instance
-  · exact Module.Finite.equiv (slEquivFun (R := R) i₀).symm
+  · exact Module.Finite.equiv (specialLinearEntryEquiv (R := R) i₀).symm
 
 end FreeFinite
 
@@ -129,7 +162,7 @@ theorem finrank_sl :
     finrank R (SpecialLinear.sl n R) = Fintype.card n ^ 2 - 1 := by
   rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
   · simp [Module.finrank_zero_of_subsingleton]
-  · rw [(slEquivFun (R := R) i₀).finrank_eq]
+  · rw [(specialLinearEntryEquiv (R := R) i₀).finrank_eq]
     simp [Fintype.card_subtype_compl, sq]
 
 variable [Nonempty n]

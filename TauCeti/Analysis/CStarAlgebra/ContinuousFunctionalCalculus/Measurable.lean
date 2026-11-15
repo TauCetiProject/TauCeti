@@ -24,56 +24,54 @@ complete normed algebras carrying an isometric continuous functional calculus.
 
 * `TauCeti.measurable_cfc`: measurability on the whole algebra, including the zero value
   outside the defining predicate.
-* `TauCeti.measurable_cfc_of_predicate`: measurability along a random element satisfying
-  the defining predicate, without a measurability assumption on the predicate itself.
+* `Measurable.cfc_of_mem_nhdsSet`: measurability along a random element satisfying the
+  defining predicate, without a measurability assumption on the predicate itself. This is the
+  measurable counterpart of `Continuous.cfc_of_mem_nhdsSet`.
 -/
 
 public section
 
 open scoped Topology
 
-namespace TauCeti
-
 variable {𝕜 A : Type*} {p : A → Prop} [RCLike 𝕜] [NormedRing A] [StarRing A]
   [NormedAlgebra 𝕜 A] [IsometricContinuousFunctionalCalculus 𝕜 A p] [ContinuousStar A]
   [CompleteSpace A]
   [MeasurableSpace A] [BorelSpace A]
+
+namespace TauCeti
 
 /-- Applying a fixed scalar function by functional calculus is measurable on the whole
 algebra if the defining predicate is measurable and the function is continuous on a common
 neighborhood of the spectra of elements satisfying that predicate. Outside the predicate
 the calculus takes the value zero. -/
 @[fun_prop]
-theorem measurable_cfc {f : 𝕜 → 𝕜} {s : Set 𝕜} (hf : ContinuousOn f s)
+theorem measurable_cfc {s : Set 𝕜} (f : 𝕜 → 𝕜)
     (hs : s ∈ 𝓝ˢ (⋃ a ∈ {a : A | p a}, spectrum 𝕜 a))
-    (hp : MeasurableSet {a : A | p a}) : Measurable (cfc f : A → A) := by
+    (hp : MeasurableSet {a : A | p a}) (hf : ContinuousOn f s := by cfc_cont_tac) :
+    Measurable (cfc f : A → A) := by
   -- This proof generalizes the piecewise-measurability argument in Gaëtan Serré's
   -- non-unital `CFC.measurable_sqrt` in
   -- `Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Measurable`,
   -- using `ContinuousOn.cfc_of_mem_nhdsSet` for continuity on the predicate.
   classical
-  have hc : ContinuousOn (cfc f : A → A) {a | p a} :=
-    continuousOn_id.cfc_of_mem_nhdsSet f hs (fun _ ha ↦ ha) hf
-  convert hc.measurable_piecewise (continuousOn_const (c := (0 : A))) hp using 1
+  convert (continuousOn_id.cfc_of_mem_nhdsSet f hs (fun _ ha ↦ ha) hf).measurable_piecewise
+    (continuousOn_const (c := (0 : A))) hp using 1
   ext a
-  by_cases ha : p a
-  · simp [Set.piecewise, ha]
-  · simp [Set.piecewise, ha, cfc_apply_of_not_predicate a ha]
+  by_cases ha : p a <;> simp [Set.piecewise, ha, cfc_apply_of_not_predicate]
+
+end TauCeti
 
 /-- Continuous functional calculus preserves measurability along a random element
 satisfying its defining predicate, for a scalar function continuous on a common neighborhood
 of the spectra of values taken by the random element. The predicate itself need not be
-measurable. -/
+measurable. This is the measurable counterpart of `Continuous.cfc_of_mem_nhdsSet`. -/
 @[fun_prop]
-theorem measurable_cfc_of_predicate {X : Type*} [MeasurableSpace X]
-    {a : X → A} (ha : Measurable a) (hpa : ∀ x, p (a x))
-    {f : 𝕜 → 𝕜} {s : Set 𝕜} (hf : ContinuousOn f s)
-    (hs : s ∈ 𝓝ˢ (⋃ x, spectrum 𝕜 (a x))) :
+theorem Measurable.cfc_of_mem_nhdsSet {X : Type*} [MeasurableSpace X] {s : Set 𝕜}
+    (f : 𝕜 → 𝕜) {a : X → A} (hs : s ∈ 𝓝ˢ (⋃ x, spectrum 𝕜 (a x))) (ha : Measurable a)
+    (hpa : ∀ x, p (a x) := by cfc_tac) (hf : ContinuousOn f s := by cfc_cont_tac) :
     Measurable (fun x ↦ cfc f (a x)) := by
   have hc : Continuous (fun b : Set.range a ↦ cfc f (b : A)) :=
     continuous_subtype_val.cfc_of_mem_nhdsSet f
       (by simpa only [Set.iUnion_subtype, Set.biUnion_range] using hs)
       (by rintro ⟨_, x, rfl⟩; exact hpa x) hf
   exact hc.measurable.comp (ha.subtype_mk (h := fun x ↦ Set.mem_range_self x))
-
-end TauCeti

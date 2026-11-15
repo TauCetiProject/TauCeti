@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.DedekindDomain.Discriminant.Separable
 /-!
 # Ramification and the relative discriminant
 
-For a separable extension of fraction fields of Dedekind domains, a nonzero prime divides the
+For a separable extension of fraction fields of Dedekind domains, a prime divides the
 relative discriminant exactly when some prime above it is ramified. Here ramification is expressed
 intrinsically by failure of `Algebra.IsUnramifiedAt`; no residue-field separability is required.
 
@@ -36,13 +36,13 @@ variable {A B : Type*} [CommRing A] [IsDedekindDomain A]
   [CommRing B] [IsDedekindDomain B] [Algebra A B] [Module.Finite A B]
   [Module.IsTorsionFree A B] [Algebra.IsSeparable (FractionRing A) (FractionRing B)]
 
-/-- **A nonzero prime divides the relative discriminant exactly when a prime above it is
-ramified.** Ramification means failure of `Algebra.IsUnramifiedAt`, so this statement does not
-need the residue extensions to be separable. -/
-theorem dvd_relDiscr_iff_exists_not_isUnramifiedAt {p : Ideal A} [p.IsPrime] (hp : p ≠ ⊥) :
+/-- **A prime divides the relative discriminant exactly when a prime above it is ramified.**
+Ramification means failure of `Algebra.IsUnramifiedAt`, so this statement does not need the residue
+extensions to be separable. -/
+theorem dvd_relDiscr_iff_exists_not_isUnramifiedAt {p : Ideal A} [p.IsPrime] :
     p ∣ relDiscr A B ↔
       ∃ P : p.primesOver B, ¬ Algebra.IsUnramifiedAt A (P : Ideal B) := by
-  rw [relDiscr_def, Ideal.dvd_relNorm_iff_exists_liesOver_dvd hp]
+  rw [relDiscr_def, Ideal.dvd_relNorm_iff_exists_liesOver_dvd]
   apply exists_congr
   intro P
   constructor

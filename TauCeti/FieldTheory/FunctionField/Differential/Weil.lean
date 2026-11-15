@@ -260,7 +260,7 @@ rewrites in the opposite direction. -/
 theorem repartitionDualMul_repartitionDualMul (hF : IsFunctionField k F) (f g : F)
     (ω : Module.Dual k ↥(repartitionSpace k F)) :
     repartitionDualMul hF f (repartitionDualMul hF g ω) = repartitionDualMul hF (f * g) ω := by
-  rw [← Module.End.mul_apply, ← map_mul]
+  rw [← mul_apply_eq_comp, ← map_mul]
 
 /-- **Multiplying by a nonzero function and then by its inverse restores the linear form**, so
 multiplication by a nonzero function is invertible on `Ω_F`. -/
@@ -268,7 +268,7 @@ multiplication by a nonzero function is invertible on `Ω_F`. -/
 theorem repartitionDualMul_inv_repartitionDualMul (hF : IsFunctionField k F) {x : F} (hx : x ≠ 0)
     (ω : Module.Dual k ↥(repartitionSpace k F)) :
     repartitionDualMul hF x⁻¹ (repartitionDualMul hF x ω) = ω := by
-  rw [← Module.End.mul_apply, ← map_mul, inv_mul_cancel₀ hx, map_one, Module.End.one_apply]
+  rw [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel₀ hx, map_one, one_apply_eq_self]
 
 /-- **Multiplication of a fixed linear form by a varying function**, as a `k`-linear map
 `F → Module.Dual k A_F`: the map `x ↦ x · ω` obtained by freezing the second argument of

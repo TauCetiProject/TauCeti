@@ -112,12 +112,6 @@ lemma objectCode_eq_objectCode_iff {X Y : C} :
 lemma objectCode_congr {X Y : C} (e : X ≅ Y) : objectCode X = objectCode Y :=
   objectCode_eq_objectCode_iff.2 ⟨e⟩
 
-private noncomputable def isoOfObjectCodeEq {X Y : C} (h : objectCode X = objectCode Y) : X ≅ Y :=
-  (objectCode_eq_objectCode_iff.1 h).some
-
-private noncomputable def objectCodeOutIso (X : C) : objectCodeOut (objectCode X) ≅ X :=
-  isoOfObjectCodeEq (objectCode_objectCodeOut _)
-
 lemma objectCode_surjective : Function.Surjective (objectCode : C → ObjectCode C) :=
   fun c => ⟨objectCodeOut c, objectCode_objectCodeOut c⟩
 
@@ -160,8 +154,8 @@ noncomputable def freeLift (f : C → G) : FreeAbelianGroup (ObjectCode C) →+ 
 
 lemma freeLift_freeOf {f : C → G} (hf : ∀ ⦃X Y : C⦄, (X ≅ Y) → f X = f Y) (X : C) :
     freeLift f (freeOf X) = f X := by
-  rw [freeOf, freeLift_apply_of]
-  exact hf (objectCodeOutIso X)
+  obtain ⟨e⟩ := objectCode_eq_objectCode_iff.1 (objectCode_objectCodeOut (objectCode X))
+  rw [freeOf, freeLift_apply_of, hf e]
 
 lemma freeLift_unique {f : C → G} (g : FreeAbelianGroup (ObjectCode C) →+ G)
     (hg : ∀ X : C, g (freeOf X) = f X) :
@@ -236,14 +230,14 @@ lemma mk_freeOf (X : C) : (mk (freeOf X) : PresentedK0 rels) = of X :=
 lemma of_congr {X Y : C} (e : X ≅ Y) : (of X : PresentedK0 rels) = of Y := by
   rw [of, of, freeOf_congr e]
 
-private lemma freeLift_of_eq_mk : freeLift (fun X : C => (of X : PresentedK0 rels)) = mk := by
-  exact (freeLift_unique mk mk_freeOf).symm
+private lemma freeLift_of_eq_mk : freeLift (fun X : C => (of X : PresentedK0 rels)) = mk :=
+  (freeLift_unique mk mk_freeOf).symm
 
 /-- The image of `PresentedK0.of` generates the whole additive group. -/
 theorem closure_range_of :
     AddSubgroup.closure (Set.range (of : C → PresentedK0 rels)) = ⊤ := by
-  refine eq_top_iff.2 fun x hx => ?_
-  clear hx
+  rw [eq_top_iff]
+  rintro x -
   obtain ⟨y, rfl⟩ := mk_surjective x
   induction y using FreeAbelianGroup.induction_on with
   | zero => rw [map_zero]; exact zero_mem _
@@ -284,18 +278,16 @@ end HomExt
 object of `C` is surjective, since those classes generate. -/
 theorem surjective_of_forall_of_mem_range {G : Type*} [AddGroup G] {f : G →+ PresentedK0 rels}
     (h : ∀ X : C, of X ∈ f.range) : Function.Surjective f := by
-  rw [← AddMonoidHom.range_eq_top, eq_top_iff, ← closure_range_of, AddSubgroup.closure_le]
-  rintro _ ⟨X, rfl⟩
-  exact h X
+  rw [← AddMonoidHom.range_eq_top, eq_top_iff, ← closure_range_of, AddSubgroup.closure_le,
+    Set.range_subset_iff]
+  exact h
 
 variable {G : Type*} [AddCommGroup G]
 
 /-- The additive homomorphism induced by an additive invariant. -/
 noncomputable def lift (a : AdditiveInvariant rels G) : PresentedK0 rels →+ G :=
-  QuotientAddGroup.lift _ (freeLift a.obj) (by
-    rw [AddSubgroup.closure_le]
-    intro r hr
-    simpa [AddMonoidHom.mem_ker] using a.map_rel r hr)
+  QuotientAddGroup.lift _ (freeLift a.obj)
+    ((AddSubgroup.closure_le _).2 fun r hr => AddMonoidHom.mem_ker.2 (a.map_rel r hr))
 
 @[simp]
 lemma lift_mk (a : AdditiveInvariant rels G) (r : FreeAbelianGroup (ObjectCode C)) :
@@ -349,16 +341,16 @@ lemma freeMap_freeOf (F : C ⥤ D) (X : C) : freeMap F (freeOf X) = freeOf (F.ob
   freeLift_freeOf (fun _ _ e => freeOf_congr (F.mapIso e)) X
 
 @[simp]
-lemma freeMap_id : freeMap (𝟭 C) = AddMonoidHom.id _ := by
-  exact (freeLift_unique _ fun X => by simp).symm
+lemma freeMap_id : freeMap (𝟭 C) = AddMonoidHom.id _ :=
+  (freeLift_unique _ fun X => by simp).symm
 
 lemma freeMap_comp {E : Type u''} [Category.{v''} E] [EssentiallySmall.{w''} E]
-    (F : C ⥤ D) (G : D ⥤ E) : freeMap (F ⋙ G) = (freeMap G).comp (freeMap F) := by
-  exact (freeLift_unique _ fun X => by simp).symm
+    (F : C ⥤ D) (G : D ⥤ E) : freeMap (F ⋙ G) = (freeMap G).comp (freeMap F) :=
+  (freeLift_unique _ fun X => by simp).symm
 
 lemma freeMap_congr {F G : C ⥤ D} (h : ∀ X : C, Nonempty (F.obj X ≅ G.obj X)) :
-    freeMap F = freeMap G := by
-  exact freeLift_unique _ fun X => by simpa using freeOf_congr (h X).some
+    freeMap F = freeMap G :=
+  freeLift_unique _ fun X => by simpa using freeOf_congr (h X).some
 
 variable {relsC : Set (FreeAbelianGroup (ObjectCode C))}
   {relsD : Set (FreeAbelianGroup (ObjectCode D))}
@@ -464,22 +456,10 @@ directions induces an isomorphism of presented Grothendieck groups. -/
 noncomputable def mapEquiv (e : C ≌ D)
     (h : ∀ r ∈ relsC, freeMap e.functor r ∈ AddSubgroup.closure relsD)
     (h' : ∀ r ∈ relsD, freeMap e.inverse r ∈ AddSubgroup.closure relsC) :
-    PresentedK0 relsC ≃+ PresentedK0 relsD where
-  toFun := map e.functor h
-  invFun := map e.inverse h'
-  left_inv x := by
-    have hinv : (map e.inverse h').comp (map e.functor h) = AddMonoidHom.id _ :=
-      (map_comp e.functor e.inverse h h').symm.trans <|
-        (map_congr (fun X => ⟨e.unitIso.symm.app X⟩)
-          (freeMap_comp_mapsTo e.functor e.inverse h h') freeMap_id_mapsTo).trans map_id
-    exact DFunLike.congr_fun hinv x
-  right_inv x := by
-    have hinv : (map e.functor h).comp (map e.inverse h') = AddMonoidHom.id _ :=
-      (map_comp e.inverse e.functor h' h).symm.trans <|
-        (map_congr (fun Y => ⟨e.counitIso.app Y⟩)
-          (freeMap_comp_mapsTo e.inverse e.functor h' h) freeMap_id_mapsTo).trans map_id
-    exact DFunLike.congr_fun hinv x
-  map_add' := map_add _
+    PresentedK0 relsC ≃+ PresentedK0 relsD :=
+  (map e.functor h).toAddEquiv (map e.inverse h')
+    (hom_ext fun X => by simpa using of_congr (e.unitIso.app X).symm)
+    (hom_ext fun Y => by simpa using of_congr (e.counitIso.app Y))
 
 @[simp]
 lemma mapEquiv_of (e : C ≌ D)
@@ -507,19 +487,14 @@ lemma mapEquiv_toAddMonoidHom (e : C ≌ D)
 /-- Equivalence invariance for the identity equivalence is the identity. -/
 @[simp]
 lemma mapEquiv_refl
-    (h : ∀ r ∈ relsC,
-      freeMap (CategoryTheory.Equivalence.refl : C ≌ C).functor r ∈
-        AddSubgroup.closure relsC := by
-      simpa only [CategoryTheory.Equivalence.refl_functor] using
-        (freeMap_id_mapsTo (relsC := relsC)))
-    (h' : ∀ r ∈ relsC,
-      freeMap (CategoryTheory.Equivalence.refl : C ≌ C).inverse r ∈
-        AddSubgroup.closure relsC := by
-      simpa only [CategoryTheory.Equivalence.refl_inverse] using
-        (freeMap_id_mapsTo (relsC := relsC))) :
-    mapEquiv (relsC := relsC) (relsD := relsC) (CategoryTheory.Equivalence.refl : C ≌ C)
-      h h' =
-        AddEquiv.refl (PresentedK0 relsC) :=
+    (h : ∀ r ∈ relsC, freeMap (CategoryTheory.Equivalence.refl : C ≌ C).functor r ∈
+        AddSubgroup.closure relsC :=
+      freeMap_id_mapsTo)
+    (h' : ∀ r ∈ relsC, freeMap (CategoryTheory.Equivalence.refl : C ≌ C).inverse r ∈
+        AddSubgroup.closure relsC :=
+      freeMap_id_mapsTo) :
+    mapEquiv (relsC := relsC) (relsD := relsC) CategoryTheory.Equivalence.refl h h' =
+      AddEquiv.refl (PresentedK0 relsC) :=
   AddEquiv.toAddMonoidHom_injective <| hom_ext fun X => by simp
 
 /-- Equivalence invariance respects composition of equivalences. -/

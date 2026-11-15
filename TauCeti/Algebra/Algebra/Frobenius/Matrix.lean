@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Algebra.Frobenius.Basic
 /-!
 # The matrix trace as a Frobenius functional
 
-The trace of square matrices over a commutative ring is a symmetric Frobenius functional
+The trace of square matrices over a commutative semiring is a symmetric Frobenius functional
 (`Matrix.isSymmetricFrobeniusFunctional_traceLinearMap`), so a matrix algebra over a field is a
 symmetric algebra. This is the basic example of the notions defined in
 `TauCeti.Algebra.Algebra.Frobenius.Basic`.
@@ -23,16 +23,16 @@ symmetric algebra. This is the basic example of the notions defined in
 
 public section
 
-namespace TauCeti
+namespace Matrix
 
-variable {k : Type*} [CommRing k]
+variable {k : Type*} [CommSemiring k]
 
-/-- The trace of square matrices over a commutative ring is a symmetric Frobenius functional. -/
-theorem _root_.Matrix.isSymmetricFrobeniusFunctional_traceLinearMap (n : Type*) [Fintype n]
+/-- The trace of square matrices over a commutative semiring is a symmetric Frobenius functional. -/
+theorem isSymmetricFrobeniusFunctional_traceLinearMap (n : Type*) [Fintype n]
     [DecidableEq n] : (Matrix.traceLinearMap n k k).IsSymmetricFrobeniusFunctional where
   isFrobeniusFunctional := LinearMap.isFrobeniusFunctional_iff.mpr
     ⟨fun a h => Matrix.ext_iff_trace_mul_right.mpr fun x => by simpa using h x,
       fun b h => Matrix.ext_iff_trace_mul_left.mpr fun x => by simpa using h x⟩
   apply_mul_comm a b := by simpa using Matrix.trace_mul_comm a b
 
-end TauCeti
+end Matrix

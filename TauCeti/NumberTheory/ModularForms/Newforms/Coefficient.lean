@@ -61,6 +61,8 @@ Hecke recurrence along the powers of every prime.
   coefficient identities at the good indices,
   `HeckeRing.GL2.EigenformAwayFromLevel.qExpansion_coeff_mul` and
   `HeckeRing.GL2.EigenformAwayFromLevel.qExpansion_coeff_prime_pow_add_two`.
+* `HeckeRing.GL2.Newform.qExpansion_coeff_eq_eigenvalue`: `a_n(f) = λ_n` for a newform at a good
+  index.
 * `Eigenform.exists_toCuspForm_eq_and_χ_eq_iff_ne_zero_and_forall_prime_qExpansion_coeff_prime_mul`:
   a cusp form of nebentypus `χ` underlies a full Hecke eigenform exactly when it is nonzero and
   its coefficients satisfy a scalar Hecke recurrence at every prime.
@@ -92,7 +94,7 @@ divisor-sum coefficient formula; here they are statements about `EigenformAwayFr
 
 public section
 
-open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup
+open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup TauCeti
 
 open scoped MatrixGroups
 
@@ -309,5 +311,15 @@ theorem exists_toCuspForm_eq_and_χ_eq_iff_qExpansion_coeff_mul_and_prime_pow_ad
     simp [qExpansion_zero] at h₁
 
 end Eigenform
+
+namespace Newform
+
+/-- **The coefficients of a newform at its good indices are its eigenvalues**: `a_n(f) = λ_n` at
+every index `n` coprime to the level, by the normalisation `Newform.isNorm`. -/
+theorem qExpansion_coeff_eq_eigenvalue (f : Newform N k) (n : ℕ+) (hn : Nat.Coprime (n : ℕ) N) :
+    (qExpansion 1 f.toCuspForm).coeff (n : ℕ) = f.eigenvalue n hn :=
+  f.toEigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue f.isNorm n hn
+
+end Newform
 
 end HeckeRing.GL2

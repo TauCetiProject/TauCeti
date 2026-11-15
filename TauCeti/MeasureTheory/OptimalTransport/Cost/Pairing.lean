@@ -27,7 +27,9 @@ is recorded in `TauCeti.MeasureTheory.OptimalTransport.CTransform.Pairing`.
 * `TauCeti.pairingCost_flip` — the pairing cost of the transposed pairing is the transposed
   pairing cost;
 * `TauCeti.isCyclicallyMonotone_pairingCost_iff` — cyclical monotonicity for the pairing cost
-  is the sum inequality `∑ i, B (x i) (y (σ i)) ≤ ∑ i, B (x i) (y i)`.
+  is the sum inequality `∑ i, B (x i) (y (σ i)) ≤ ∑ i, B (x i) (y i)`;
+* `TauCeti.IsCyclicallyMonotone.pairingCost_smul_add_smul` — nonnegative combinations of the
+  targets of two cyclically monotone sets over a common source form a cyclically monotone set.
 
 ## References
 
@@ -67,6 +69,24 @@ theorem isCyclicallyMonotone_pairingCost_iff {Γ : Set (E × F)} :
         ∀ σ : Equiv.Perm (Fin n), ∑ i, B (x i) (y (σ i)) ≤ ∑ i, B (x i) (y i) := by
   simp only [isCyclicallyMonotone_iff, pairingCost_apply, Finset.sum_neg_distrib,
     neg_le_neg_iff]
+
+variable {B} in
+/-- **Nonnegative combinations of cyclically monotone sets.** If `Γ₀` and `Γ₁` are cyclically
+monotone for the pairing cost and `a, b ≥ 0`, then so is the set of pairs `(x, a • y₀ + b • y₁)`
+with `(x, y₀) ∈ Γ₀` and `(x, y₁) ∈ Γ₁`. Read through subdifferential graphs, this is the inclusion
+`a ∂u₀ + b ∂u₁ ⊆ ∂(a u₀ + b u₁)`. -/
+theorem IsCyclicallyMonotone.pairingCost_smul_add_smul {Γ₀ Γ₁ : Set (E × F)}
+    (h₀ : IsCyclicallyMonotone (pairingCost B) Γ₀) (h₁ : IsCyclicallyMonotone (pairingCost B) Γ₁)
+    {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    IsCyclicallyMonotone (pairingCost B)
+      {z : E × F | ∃ y₀ y₁, (z.1, y₀) ∈ Γ₀ ∧ (z.1, y₁) ∈ Γ₁ ∧ z.2 = a • y₀ + b • y₁} := by
+  rw [isCyclicallyMonotone_pairingCost_iff] at h₀ h₁ ⊢
+  intro n x y hy σ
+  choose y₀ y₁ hy₀ hy₁ hy using hy
+  obtain rfl : y = fun i ↦ a • y₀ i + b • y₁ i := funext hy
+  simp only [map_add, map_smul, smul_eq_mul, Finset.sum_add_distrib, ← Finset.mul_sum]
+  exact add_le_add (mul_le_mul_of_nonneg_left (h₀ n x y₀ hy₀ σ) ha)
+    (mul_le_mul_of_nonneg_left (h₁ n x y₁ hy₁ σ) hb)
 
 end TauCeti
 

@@ -83,7 +83,7 @@ theorem exists_comp_eq_comp_of_finiteType [Algebra.FiniteType A S] {j : ι}
   have hgen (x : s) : ∃ k, ∃ hjk : j ≤ k, f j k hjk (ψ₁ x) = f j k hjk (ψ₂ x) := by
     have hx := congr($h x)
     simp only [AlgHom.comp_apply, DirectLimit.Algebra.of_apply] at hx
-    obtain ⟨k, hk₁, hk₂, hk⟩ := Quotient.eq.mp hx
+    obtain ⟨k, hk₁, _, hk⟩ := Quotient.eq.mp hx
     exact ⟨k, hk₁, hk⟩
   choose k hjk hk using hgen
   obtain ⟨l₀, hl₀⟩ := Finite.exists_le k

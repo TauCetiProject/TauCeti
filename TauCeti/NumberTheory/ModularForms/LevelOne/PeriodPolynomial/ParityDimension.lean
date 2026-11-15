@@ -107,7 +107,7 @@ private lemma swap_preserves_ker {c : Module.End K (homogeneousSubmodule (Fin 2)
     ∀ x ∈ LinearMap.ker c, swapAction K w x ∈ LinearMap.ker c := by
   intro x hx
   rw [LinearMap.mem_ker] at hx ⊢
-  rw [← Module.End.mul_apply, hc.eq, Module.End.mul_apply, hx, map_zero]
+  rw [← mul_apply_eq_comp, hc.eq, mul_apply_eq_comp, hx, map_zero]
 
 private lemma swap_preserves_a (hw : Even w) :
     ∀ x ∈ LinearMap.ker (1 + sAction K w),
@@ -135,8 +135,8 @@ private lemma trace_swap_a (hw : Even w) :
   have heq : ((2 : K) • 1 - (1 + sAction K w)) * swapAction K w =
       swapAction K w - sAction K w * swapAction K w := by
     ext1 x
-    simp only [Module.End.mul_apply, LinearMap.sub_apply, LinearMap.smul_apply,
-      LinearMap.add_apply, Module.End.one_apply]
+    simp only [mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.smul_apply,
+      LinearMap.add_apply, one_apply_eq_self]
     module
   have ht := (LinearMap.trace K (homogeneousSubmodule (Fin 2) K w)).map_sub
     (swapAction K w) (sAction K w * swapAction K w)
@@ -158,8 +158,8 @@ private lemma trace_swap_b (hw : Even w) :
       (2 : K) • swapAction K w - uAction K w * swapAction K w -
         uAction K w ^ 2 * swapAction K w := by
     ext1 x
-    simp only [Module.End.mul_apply, LinearMap.sub_apply, LinearMap.smul_apply,
-      LinearMap.add_apply, Module.End.one_apply]
+    simp only [mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.smul_apply,
+      LinearMap.add_apply, one_apply_eq_self]
     module
   have ht := (LinearMap.trace K (homogeneousSubmodule (Fin 2) K w)).map_sub
     ((2 : K) • swapAction K w - uAction K w * swapAction K w)
@@ -202,7 +202,7 @@ private lemma swapOnPeriods_sq (hw : Even w) : swapOnPeriods (K := K) hw ^ 2 = 1
     rw [h, op_one, map_one]
   ext1 P
   apply Subtype.ext
-  simpa [swapOnPeriods, LinearMap.restrict, Module.End.mul_apply, pow_two] using
+  simpa [swapOnPeriods, LinearMap.restrict, mul_apply_eq_comp, pow_two] using
     congrArg (fun L : Module.End K (homogeneousSubmodule (Fin 2) K w) ↦ L P) hJ
 
 omit [CharZero K] in
@@ -214,7 +214,7 @@ private lemma parity_eq_neg_swap (P : periodPolynomials K w) :
     congr 2
     decide
   have hS := eq_neg_of_add_eq_zero_right (mem_periodPolynomials_iff.mp P.2).1
-  rw [← h, Module.End.mul_apply, hS, map_neg]
+  rw [← h, mul_apply_eq_comp, hS, map_neg]
 
 omit [CharZero K] in
 private lemma finrank_ker_one_add_swapOnPeriods (hw : Even w) :
@@ -226,7 +226,7 @@ private lemma finrank_ker_one_add_swapOnPeriods (hw : Even w) :
     rw [LinearMap.mem_ker, Submodule.mem_comap, Submodule.subtype_apply,
       mem_evenPeriodPolynomials_iff, and_iff_right P.2, parity_eq_neg_swap]
     rw [← Subtype.val_inj]
-    simp only [LinearMap.add_apply, Module.End.one_apply, Submodule.coe_add,
+    simp only [LinearMap.add_apply, one_apply_eq_self, Submodule.coe_add,
       ZeroMemClass.coe_zero, swapOnPeriods, LinearMap.coe_restrict_apply]
     exact ⟨fun h ↦ neg_eq_iff_eq_neg.mpr (eq_neg_of_add_eq_zero_right h),
       fun h ↦ add_eq_zero_iff_eq_neg.mpr h.symm⟩

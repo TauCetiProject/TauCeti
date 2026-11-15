@@ -32,46 +32,9 @@ universe u v w x y
 variable {K : Type u} [CommSemiring K]
 variable {M : Type v} {N : Type w} [AddCommMonoid M] [Module K M]
   [AddCommMonoid N] [Module K N]
-variable {ι : Type x} {κ : Type y}
+variable {ι : Type x} {κ : Type y} [DecidableEq ι] [DecidableEq κ]
 variable (A : ι → Submodule K M) (B : κ → Submodule K N)
 
-/-- The tensor product of two submodules is linearly equivalent to its image in the tensor product
-of the ambient modules. The internal decompositions split both summand inclusions, so their tensor
-product is injective. -/
-private noncomputable def summandEquiv [DecidableEq ι] [DecidableEq κ]
-    [DirectSum.Decomposition A] [DirectSum.Decomposition B] (i : ι) (j : κ) :
-    A i ⊗[K] B j ≃ₗ[K] Submodule.map₂ (TensorProduct.mk K M N) (A i) (B j) :=
-  LinearEquiv.ofBijective
-    (LinearMap.codRestrict
-      (Submodule.map₂ (TensorProduct.mk K M N) (A i) (B j))
-      (TensorProduct.mapIncl (A i) (B j)) fun z ↦ by
-        rw [← TensorProduct.range_mapIncl]
-        exact ⟨z, rfl⟩)
-    ⟨fun x y h ↦ LinearMap.injective_of_comp_eq_id (TensorProduct.mapIncl (A i) (B j))
-        (TensorProduct.map
-          (DirectSum.component K ι (fun i ↦ A i) i ∘ₗ DirectSum.decomposeLinearEquiv A)
-          (DirectSum.component K κ (fun j ↦ B j) j ∘ₗ DirectSum.decomposeLinearEquiv B)) (by
-            rw [← TensorProduct.map_comp, LinearMap.comp_assoc,
-              DirectSum.decomposeLinearEquiv_comp_subtype,
-              DirectSum.component_comp_lof_same, LinearMap.comp_assoc,
-              DirectSum.decomposeLinearEquiv_comp_subtype,
-              DirectSum.component_comp_lof_same, TensorProduct.map_id]) (congrArg Subtype.val h),
-      fun z ↦ by
-      have hz : (z : M ⊗[K] N) ∈ LinearMap.range (TensorProduct.mapIncl (A i) (B j)) := by
-        simpa only [TensorProduct.range_mapIncl] using z.property
-      obtain ⟨x, hx⟩ := hz
-      refine ⟨x, ?_⟩
-      apply Subtype.ext
-      exact hx⟩
-
-@[simp] private theorem coe_summandEquiv [DecidableEq ι] [DecidableEq κ]
-    [DirectSum.Decomposition A] [DirectSum.Decomposition B]
-    (i : ι) (j : κ) (x : A i ⊗[K] B j) :
-    ((summandEquiv A B i j x :
-      Submodule.map₂ (TensorProduct.mk K M N) (A i) (B j)) : M ⊗[K] N) =
-      TensorProduct.mapIncl (A i) (B j) x := rfl
-
-open scoped Classical in
 /-- **Tensor products of internal decompositions are internal.** If `A` and `B` internally
 decompose `M` and `N`, the images of `A i ⊗ B j` under the canonical map internally decompose
 `M ⊗ N`.
@@ -83,45 +46,30 @@ theorem tensorProduct (hA : DirectSum.IsInternal A) (hB : DirectSum.IsInternal B
       Submodule.map₂ (TensorProduct.mk K M N) (A p.1) (B p.2) := by
   let _ := hA.chooseDecomposition
   let _ := hB.chooseDecomposition
-  let E : M ⊗[K] N ≃ₗ[K]
-      ⨁ p : ι × κ, Submodule.map₂ (TensorProduct.mk K M N) (A p.1) (B p.2) :=
-    TensorProduct.congr (DirectSum.decomposeLinearEquiv A) (DirectSum.decomposeLinearEquiv B) ≪≫ₗ
-      TensorProduct.directSum K K (fun i ↦ A i) (fun j ↦ B j) ≪≫ₗ
-      DirectSum.congrLinearEquiv (fun p ↦ summandEquiv A B p.1 p.2)
-  have hE (i : ι) (j : κ) (x : A i ⊗[K] B j) :
-      E (((summandEquiv A B i j x :
-        Submodule.map₂ (TensorProduct.mk K M N) (A i) (B j)) : M ⊗[K] N)) =
-        DirectSum.lof K (ι × κ)
-          (fun p ↦ Submodule.map₂ (TensorProduct.mk K M N) (A p.1) (B p.2)) (i, j)
-          (summandEquiv A B i j x) := by
-    rw [coe_summandEquiv]
+  -- The summand inclusions are split by the decompositions, so their tensor product is injective.
+  have hinj (i : ι) (j : κ) : Function.Injective (mapIncl (A i) (B j)) :=
+    LinearMap.injective_of_comp_eq_id _
+      (TensorProduct.map (component K ι (fun i ↦ A i) i ∘ₗ decomposeLinearEquiv A)
+        (component K κ (fun j ↦ B j) j ∘ₗ decomposeLinearEquiv B)) (by ext; simp)
+  let C := fun p : ι × κ ↦ Submodule.map₂ (TensorProduct.mk K M N) (A p.1) (B p.2)
+  let e (p : ι × κ) : A p.1 ⊗[K] B p.2 ≃ₗ[K] C p :=
+    (LinearEquiv.ofInjective _ (hinj p.1 p.2)).trans
+      (LinearEquiv.ofEq _ _ (range_mapIncl (A p.1) (B p.2)))
+  let E : M ⊗[K] N ≃ₗ[K] ⨁ p, C p :=
+    TensorProduct.congr (decomposeLinearEquiv A) (decomposeLinearEquiv B) ≪≫ₗ
+      TensorProduct.directSum K K (fun i ↦ A i) (fun j ↦ B j) ≪≫ₗ congrLinearEquiv e
+  -- Recomposition is inverse to `E`: check it on the image of each summand `A i ⊗ B j`.
+  have hcoe : coeLinearMap C = E.symm.toLinearMap := by
+    refine linearMap_ext K fun p ↦ LinearMap.ext fun z ↦ ?_
+    obtain ⟨x, rfl⟩ := (e p).surjective z
+    rw [LinearMap.comp_apply, coeLinearMap_lof, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      LinearEquiv.eq_symm_apply]
+    obtain ⟨i, j⟩ := p
     induction x using TensorProduct.inductionOn with
-    | tmul a b =>
-      simp only [TensorProduct.map_tmul, Submodule.coe_subtype, E, LinearEquiv.trans_apply,
-        TensorProduct.congr_tmul, DirectSum.decomposeLinearEquiv_apply_coe,
-        TensorProduct.directSum_lof_tmul_lof]
-      rw [DirectSum.coe_congrLinearEquiv, DirectSum.lmap_lof]
-      rfl
-    | add a b ha hb => simp [ha, hb]
-  have hcoe :
-      DirectSum.coeLinearMap
-          (fun p : ι × κ ↦ Submodule.map₂ (TensorProduct.mk K M N) (A p.1) (B p.2)) =
-        E.symm.toLinearMap := by
-    apply DirectSum.linearMap_ext
-    rintro ⟨i, j⟩
-    apply LinearMap.ext
-    intro z
-    obtain ⟨x, rfl⟩ := (summandEquiv A B i j).surjective z
-    simp only [LinearMap.comp_apply]
-    rw [DirectSum.coeLinearMap_lof]
-    apply E.injective
-    simpa using hE i j x
-  -- `DirectSum.IsInternal` is defined using `coeAddMonoidHom`; its underlying function is
-  -- definitionally the same as this linear map, whose inverse is the linear equivalence `E.symm`.
-  change Function.Bijective
-    (DirectSum.coeLinearMap
-      (fun p : ι × κ ↦ Submodule.map₂ (TensorProduct.mk K M N) (A p.1) (B p.2)))
-  rw [hcoe]
-  exact E.symm.bijective
+    | tmul a b => simp [E, e, coe_congrLinearEquiv]
+    | add x y hx hy => simp_all
+  let _ : Decomposition C := .ofLinearMap C E.toLinearMap
+    (by rw [hcoe, LinearEquiv.symm_comp]) (by rw [hcoe, LinearEquiv.comp_symm])
+  exact Decomposition.isInternal C
 
 end DirectSum.IsInternal

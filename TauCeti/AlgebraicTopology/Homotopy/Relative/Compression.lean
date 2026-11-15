@@ -39,7 +39,8 @@ criterion also gives exactness of the homotopy sequence of a pair at `π_{n+1}(X
 ## Main declarations
 
 * `TauCeti.RelGenLoop.mapsTo_prodBoundary`: a relative cube is a map of pairs
-  `(I × I^N, ∂(I × I^N)) → (X, A)`.
+  `(I × I^N, ∂(I × I^N)) → (X, A)`, and `TauCeti.RelGenLoop.Homotopic.homotopicWith`: a homotopy
+  through relative cubes is a homotopy through maps of pairs.
 * `TauCeti.RelGenLoop.Homotopic.of_homotopicRel`: relative cubes homotopic relative to the
   boundary of the cube are homotopic through relative cubes.
 * `TauCeti.RelGenLoop.exists_homotopicRel_of_homotopic_const`: a relative cube homotopic through
@@ -48,6 +49,8 @@ criterion also gives exactness of the homotopy sequence of a pair at `π_{n+1}(X
 * `TauCeti.RelHomotopyGroup.mk_eq_default_iff`: **the compression criterion**.
 * `TauCeti.RelHomotopyGroup.subsingleton_iff`: `π_{n+1}(X, A, a₀)` is trivial exactly when every
   relative cube compresses into `A`.
+* `TauCeti.RelHomotopyGroup.subsingleton_of_homotopyRel`: `π_{n+1}(X, A, a₀)` is trivial when
+  `X` deforms into `A` relative to `A`.
 
 ## References
 
@@ -78,6 +81,14 @@ theorem mapsTo_prodBoundary {p : C(I × (I^N), X.pair.fst)} (hp : p ∈ RelGenLo
     exact (mem_iff.1 hp).1 t
   · exact ⟨_, ((mem_iff.1 hp).2 s t (.inl hs)).symm⟩
   · exact ⟨_, ((mem_iff.1 hp).2 s t (.inr ht)).symm⟩
+
+/-- A homotopy through relative cubes is a homotopy through maps of pairs
+`(I × I^N, ∂(I × I^N)) → (X, A)`. -/
+theorem Homotopic.homotopicWith {p q : RelGenLoop N X} (h : Homotopic p q) :
+    (p : C(I × (I^N), X.pair.fst)).HomotopicWith q
+      fun f ↦ MapsTo f (Cube.prodBoundary N) (range X.pair.map) := by
+  obtain ⟨F⟩ := homotopic_iff.1 h
+  exact ⟨{ toHomotopy := F.toHomotopy, prop' := fun t ↦ mapsTo_prodBoundary (F.prop t) }⟩
 
 /-- Relative cubes that are homotopic relative to the boundary of the cube `I × I^N` are
 homotopic through relative cubes. -/
@@ -206,6 +217,22 @@ theorem subsingleton_iff :
   obtain ⟨p, rfl⟩ := mk_surjective a
   obtain ⟨q, rfl⟩ := mk_surjective b
   rw [mk_eq_default_iff.2 (h p), mk_eq_default_iff.2 (h q)]
+
+/-- **A deformation into the subspace kills the relative homotopy sets.** If the identity of `X` is
+homotopic, relative to `A`, to a map `g` with values in `A`, then `π_{n+1}(X, A, a₀)` is trivial:
+composing a relative cube with the homotopy compresses it into `A`. -/
+theorem subsingleton_of_homotopyRel {g : C(X.pair.fst, X.pair.fst)}
+    (H : (ContinuousMap.id X.pair.fst).HomotopyRel g (range X.pair.map))
+    (hg : ∀ x, g x ∈ range X.pair.map) : Subsingleton (RelHomotopyGroup N X) := by
+  refine subsingleton_iff.2 fun p ↦ ⟨g.comp p, ⟨?_⟩, fun y ↦ hg (p y)⟩
+  exact
+    { toFun y := H (y.1, p y.2)
+      continuous_toFun := H.continuous.comp (continuous_fst.prodMk
+        ((p : C(I × (I^N), X.pair.fst)).continuous.comp continuous_snd))
+      map_zero_left y := by simp
+      map_one_left y := by simp
+      prop' t y hy := by
+        simpa using H.eq_fst t (RelGenLoop.mapsTo_prodBoundary p.2 hy) }
 
 end RelHomotopyGroup
 

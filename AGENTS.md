@@ -39,12 +39,27 @@ needs no fresh roadmap claim but should name the one roadmap chiefly motivating 
 Do not infer the association from a `TauCeti/` directory name; code organization and roadmap
 scope do not coincide.
 
+Every pull request description must also carry a completed quality pass: the `Quality pass:`
+block of [`.github/pull_request_template.md`](.github/pull_request_template.md), one line per
+check, after running the checks that the template explains over every declaration the PR adds or
+changes. GitHub fills the template in only for PRs opened in the browser or interactively;
+`gh pr create --body` and the API do not, so read it and copy the block into your description
+yourself. When later commits add or change declarations, for instance to answer review findings,
+run the checks again over those and update the block (`gh pr edit <number> --body-file <file>`).
+The `quality-pass` review angle checks it.
+
 ## The rules of the repo
 
 - `main` is always green. CI builds against pinned Mathlib and enforces: no `sorry`, no
   axioms beyond `propext`, `Classical.choice`, `Quot.sound` (so no `native_decide`), no
   `meta import`, and the Mathlib linter set (style, file length, no `maxHeartbeats`
   overrides). Do not try to disable these.
+- Content CI verifies the mathematics. Regression tests of CI tooling belong in
+  independent workflows triggered by changes under `scripts/` or `.github/`
+  (the general suite is `Infrastructure tests`). Never make content builds, audits, lint,
+  merge statuses, or cache
+  publication depend on infrastructure test suites. Runtime checks needed to establish
+  a safe sandbox and validate the actual candidate remain part of content CI.
 - Prefer named definitions, abbreviations, and lemmas to custom term syntax. Local tactic
   macros should remove substantial repeated proof machinery, rather than just shorten a
   couple of small proofs. Keep macro hygiene enabled: `set_option`, including

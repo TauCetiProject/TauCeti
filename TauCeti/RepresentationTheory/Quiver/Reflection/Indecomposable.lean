@@ -363,7 +363,7 @@ theorem finrank_end_eq_one_of_forall_subsingleton
   obtain ⟨y, -, hspan⟩ := exists_ne_zero_span_eq_top_of_forall_subsingleton hloop hM h
   have hid : (1 : End M) ≠ 0 := fun hzero ↦
     hM.1 ((Limits.IsZero.iff_id_eq_zero M).mpr (congrArg End.asHom hzero))
-  refine (finrank_eq_one_iff_of_nonzero' 1 hid).mpr fun f ↦ ?_
+  refine (finrank_eq_one_iff_of_ne_zero' 1 hid).mpr fun f ↦ ?_
   have hfy : (f.asHom.app i) y ∈ Submodule.span k {y} := by rw [hspan]; trivial
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hfy
   refine ⟨c, End.ext (NatTrans.ext (funext fun a ↦ ?_))⟩
@@ -384,7 +384,7 @@ theorem dimVector_eq_single_of_forall_subsingleton [DecidableEq Q]
   obtain ⟨y, hy, hspan⟩ := exists_ne_zero_span_eq_top_of_forall_subsingleton hloop hM h
   have hone : dimVector M i = 1 := by
     rw [dimVector_apply]
-    exact (finrank_eq_one_iff_of_nonzero (K := k) y hy).mpr hspan
+    exact (finrank_eq_one_iff_of_ne_zero (K := k) y hy).mpr hspan
   have hzero : ∀ j : Q, j ≠ i → dimVector M j = 0 := by
     intro j hj
     let : Subsingleton (M.obj ((Paths.of Q).obj j)) := h j hj
@@ -407,8 +407,8 @@ theorem nonempty_iso_of_forall_subsingleton
   classical
   obtain ⟨y, hy, hyspan⟩ := exists_ne_zero_span_eq_top_of_forall_subsingleton hloop hM hMi
   obtain ⟨z, hz, hzspan⟩ := exists_ne_zero_span_eq_top_of_forall_subsingleton hloop hN hNi
-  have hy1 : Module.finrank k (M.obj i) = 1 := (finrank_eq_one_iff_of_nonzero y hy).mpr hyspan
-  have hz1 : Module.finrank k (N.obj i) = 1 := (finrank_eq_one_iff_of_nonzero z hz).mpr hzspan
+  have hy1 : Module.finrank k (M.obj i) = 1 := (finrank_eq_one_iff_of_ne_zero y hy).mpr hyspan
+  have hz1 : Module.finrank k (N.obj i) = 1 := (finrank_eq_one_iff_of_ne_zero z hz).mpr hzspan
   have := Module.finite_of_finrank_eq_succ hy1
   have := Module.finite_of_finrank_eq_succ hz1
   let e : M.obj i ≅ N.obj i := (LinearEquiv.ofFinrankEq _ _ (hy1.trans hz1.symm)).toModuleIso

@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.LogitNormal.Basic
 public import TauCeti.Probability.Density
 public import Mathlib.MeasureTheory.Measure.Support
+import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -17,7 +18,8 @@ At nonzero Gaussian variance, the logit-normal density is the Gaussian density a
 divided by `x * (1 - x)` on the open unit interval, and zero elsewhere. The change of variables
 along the sigmoid establishes the measure identity, hence the `HasPDF` and Radon–Nikodym APIs.
 Its topological support is the closed unit interval despite its almost-sure open carrier.
-At zero variance the chosen density vanishes and the law is a singular Dirac mass instead.
+At zero variance the chosen density vanishes and the law is a singular Dirac mass whose support
+is the sigmoid of the Gaussian location.
 
 The substitution uses `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`, as in the
 log-normal density calculation in `TauCeti.Probability.Distributions.LogNormal.Basic`.
@@ -122,7 +124,7 @@ private theorem sigmoid_jacobian_mul_pdf (m : ℝ) (v : ℝ≥0) (y : ℝ) :
 theorem logitNormalMeasure_eq_withDensity (m : ℝ) (hv : v ≠ 0) :
     logitNormalMeasure m v = volume.withDensity (logitNormalPDF m v) := by
   have hmap := MeasureTheory.map_withDensity_abs_deriv_mul (f := logitNormalPDF m v)
-    MeasurableSet.univ (by fun_prop)
+    MeasurableSet.univ
     (fun y _ ↦ (Real.hasDerivAt_sigmoid y).hasDerivWithinAt) Real.sigmoid_injective.injOn
   simp only [Measure.restrict_univ, sigmoid_jacobian_mul_pdf, image_univ,
     Real.range_sigmoid] at hmap
@@ -146,11 +148,31 @@ theorem pdf_eq_logitNormalPDF_of_hasLaw_logitNormalMeasure (hv : v ≠ 0)
   pdf_eq_of_hasLaw_withDensity (measurable_logitNormalPDF m v).aemeasurable
     (by rwa [logitNormalMeasure_eq_withDensity m hv] at hX)
 
-/-- The Radon–Nikodym derivative against volume is the named density. -/
-theorem rnDeriv_logitNormalMeasure (m : ℝ) (hv : v ≠ 0) :
+/-- The zero-variance boundary is singular with respect to Lebesgue measure. -/
+theorem mutuallySingular_logitNormalMeasure_zero_var (m : ℝ) :
+    logitNormalMeasure m 0 ⟂ₘ volume := by
+  rw [logitNormalMeasure_zero_var]
+  exact mutuallySingular_dirac _ _
+
+/-- The Radon–Nikodym derivative against volume is the named density, including the
+zero-variance boundary, where both vanish almost everywhere. -/
+theorem rnDeriv_logitNormalMeasure (m : ℝ) :
     (logitNormalMeasure m v).rnDeriv volume =ᵐ[volume] logitNormalPDF m v := by
+  by_cases hv : v = 0
+  · subst v
+    have hzero : logitNormalPDF m 0 = 0 := by
+      funext x
+      simp [logitNormalPDF]
+    rw [hzero]
+    exact (Measure.rnDeriv_eq_zero _ _).2 (mutuallySingular_logitNormalMeasure_zero_var m)
   rw [logitNormalMeasure_eq_withDensity m hv]
   exact Measure.rnDeriv_withDensity volume (measurable_logitNormalPDF m v)
+
+/-- At zero Gaussian variance, the topological support of the logit-normal law is its single
+atom. -/
+theorem support_logitNormalMeasure_zero_var (m : ℝ) :
+    (logitNormalMeasure m 0).support = {Real.sigmoid m} := by
+  rw [logitNormalMeasure_zero_var, Measure.support_dirac, closure_singleton]
 
 /-- A nondegenerate logit-normal law has topological support equal to the closed unit interval. -/
 @[simp]
@@ -165,10 +187,5 @@ theorem support_logitNormalMeasure (m : ℝ) (hv : v ≠ 0) :
     exact iff_of_true (logitNormalPDFReal_pos m hv hx) hx
   · simp [Function.mem_support, logitNormalPDF, hx]
 
-/-- The zero-variance boundary is singular with respect to Lebesgue measure. -/
-theorem mutuallySingular_logitNormalMeasure_zero_var (m : ℝ) :
-    logitNormalMeasure m 0 ⟂ₘ volume := by
-  rw [logitNormalMeasure_zero_var]
-  exact mutuallySingular_dirac _ _
 
 end TauCeti.Probability

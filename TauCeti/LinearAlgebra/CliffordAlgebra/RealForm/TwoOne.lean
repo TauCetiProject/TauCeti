@@ -138,7 +138,7 @@ private def realCliffordTwoOneAugmentedIsometry :
   toLinearEquiv := (realCliffordPositiveSplitIsometry 1 1).toLinearEquiv
   map_app' v := by
     convert (realCliffordPositiveSplitIsometry 1 1).map_app v using 1
-    all_goals norm_num
+    norm_num
 
 private theorem realCliffordTwoOneAugmentedIsometry_apply (v : Fin (2 + 1) → ℝ) :
     realCliffordTwoOneAugmentedIsometry v = (![v 0, v 2], v 1) := by
@@ -155,7 +155,7 @@ private def realCliffordOneOneScaleIsometry :
     (-(↑((1 : ℝˣ)⁻¹) : ℝ) • realCliffordForm 1 1).IsometryEquiv
       (realCliffordForm 1 1) where
   toLinearEquiv := (realCliffordFormNegIsometry 1 1).toLinearEquiv
-  map_app' v := by simp [neg_apply]
+  map_app' v := by simp [_root_.neg_apply]
 
 private theorem realCliffordOneOneScaleIsometry_apply (v : Fin (1 + 1) → ℝ) :
     realCliffordOneOneScaleIsometry v = ![v 1, v 0] := by

@@ -16,7 +16,7 @@ import TauCeti.RingTheory.Smooth.GeometricallyReduced
 # Normal unipotent subgroups seen through a faithful representation
 
 Let `H` be a reduced finite-type commutative Hopf algebra over an algebraically closed field `k`
-and let `M` be a finite-dimensional `H`-comodule which is completely reducible and faithful. Then
+and let `M` be an `H`-comodule which is completely reducible and faithful. Then
 every normal Hopf ideal of `H` whose quotient is smooth unipotent is the augmentation ideal:
 contravariantly, every normal smooth unipotent closed subgroup of the represented affine group is
 trivial. Consequently the unipotent radical of `H` is trivial.
@@ -27,7 +27,7 @@ ambient subcomodule, so the normal-invariants theorem together with Kolchin's fi
 forces the subgroup to act trivially on `M`, and faithfulness then identifies its defining ideal
 with the augmentation ideal.
 
-Only the existence of one faithful completely reducible finite-dimensional representation is used,
+Only the existence of one faithful completely reducible representation is used,
 so the same statement serves `GLₙ`, `SLₙ` and the explicit Chevalley carriers. Neither smoothness
 nor connectedness of `H` itself is needed; reducedness of `H` is.
 
@@ -63,7 +63,7 @@ noncomputable section
 
 variable (k : Type u) [Field k] [IsAlgClosed k]
 variable (H : FiniteTypeCommHopfAlgCat.{u, u} k) [IsReduced H]
-variable (M : Type u) [AddCommGroup M] [Module k M] [Comodule k H M] [FiniteDimensional k M]
+variable (M : Type u) [AddCommGroup M] [Module k M] [Comodule k H M]
 
 namespace HopfIdeal
 
@@ -80,14 +80,14 @@ theorem eq_augmentation_of_isNormal_of_forall_isUnipotentPoint_of_isFaithful
     (hu : ∀ g : WithConv (CommHopfAlgCat.quotient H.obj I →ₐ[k] k),
       HopfAlgebra.IsUnipotentPoint g) :
     I = HopfIdeal.augmentation k H := by
+  have := hM.finite
   have htrivial :=
     mkQuotient_coact_eq_tmul_one_of_isNormal_of_forall_isUnipotentPoint_of_isCompletelyReducible
       (M := M) hI hu hcr
   exact Comodule.eq_augmentation_of_isFaithful_of_quotient_coact_eq_tmul_one I hM htrivial
 
 /-- **A normal smooth unipotent closed subgroup is trivial as soon as the ambient reduced
-finite-type affine group has a faithful completely reducible finite-dimensional
-representation.**
+finite-type affine group has a faithful completely reducible representation.**
 
 The conclusion is stated contravariantly: the subgroup's defining Hopf ideal is the augmentation
 ideal. Neither smoothness nor connectedness of the ambient group is needed. -/
@@ -150,7 +150,7 @@ end HopfIdeal
 namespace FiniteTypeCommHopfAlgCat
 
 /-- **The unipotent radical is trivial as soon as the reduced finite-type affine group has a
-faithful completely reducible finite-dimensional representation.** -/
+faithful completely reducible representation.** -/
 theorem unipotentRadicalDefiningIdeal_eq_augmentation_of_isFaithful
     (hcr : Comodule.IsCompletelyReducible k H M)
     (hM : Comodule.IsFaithful (k := k) (H := H) (V := M)) :

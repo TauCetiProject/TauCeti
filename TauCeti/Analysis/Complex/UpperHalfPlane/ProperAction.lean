@@ -17,6 +17,20 @@ The Möbius action of `PSL(2, ℝ)` on the upper half-plane is continuous, trans
 for the hyperbolic metric, and proper. Each of these is descended from the corresponding
 property of Mathlib's `SL(2, ℝ)` action using the surjective quotient map
 `SL(2, ℝ) → PSL(2, ℝ)`.
+
+The isometric action extends to the whole of Mathlib's action `UpperHalfPlane.glAction` of
+`GL(2, ℝ)` and to the induced action of `PGL(2, ℝ)`. This includes the orientation-reversing,
+antiholomorphic elements of negative determinant: each is the reflection `z ↦ -conj z`, the
+action of Mathlib's `UpperHalfPlane.J`, composed with an element of positive determinant.
+
+## Main declarations
+
+* `IsIsometricSMul (GL (Fin 2) ℝ) ℍ` and `IsIsometricSMul PGL(2, ℝ) ℍ`: every element of
+  `GL(2, ℝ)` and of `PGL(2, ℝ)` acts on `ℍ` by an isometry of the hyperbolic distance.
+
+## References
+
+* Svetlana Katok, *Fuchsian Groups*, Chapter 1.
 -/
 
 public section
@@ -47,6 +61,36 @@ instance : IsIsometricSMul PSL(2, ℝ) ℍ where
   isometry_smul q := by
     induction q using QuotientGroup.induction_on with | _ g =>
     simpa only [UpperHalfPlane.pslMk_smul] using isometry_smul ℍ g
+
+/-- Every element of `GL(2, ℝ)` acts on `ℍ` by a hyperbolic isometry, including the
+orientation-reversing elements of negative determinant, which act through complex
+conjugation. -/
+instance : IsIsometricSMul (GL (Fin 2) ℝ) ℍ where
+  isometry_smul g := by
+    -- an element of positive determinant acts as its normalized representative in `PSL(2, ℝ)`
+    have pos (h : GL (Fin 2) ℝ) (hh : 0 < h.det.val) : Isometry (h • · : ℍ → ℍ) := by
+      have hiso := isometry_smul ℍ (glPosToPSL2R ⟨h, (Matrix.mem_glpos h).2 hh⟩)
+      simpa only [glPosToPSL2R_smul, Subgroup.mk_smul] using hiso
+    rcases g.det.ne_zero.lt_or_gt with hg | hg
+    · -- `g = J * (J * g)`, and `J * g` has positive determinant
+      have hJg : 0 < (J * g).det.val := by simpa using hg
+      have hfun : (g • · : ℍ → ℍ) = (J • ·) ∘ ((J * g) • ·) := by
+        funext z
+        rw [Function.comp_apply, smul_smul, ← mul_assoc, ← sq, J_sq, one_mul]
+      -- the orientation-reversing involution `J : z ↦ -conj z` is an isometry
+      have hJ : Isometry (J • · : ℍ → ℍ) :=
+        Isometry.of_dist_eq fun z w ↦ by
+          rw [UpperHalfPlane.dist_eq, UpperHalfPlane.dist_eq, coe_J_smul, coe_J_smul,
+            dist_neg_neg, Complex.dist_conj_conj, J_smul_im, J_smul_im]
+      rw [hfun]
+      exact hJ.comp (pos (J * g) hJg)
+    · exact pos g hg
+
+/-- Every element of `PGL(2, ℝ)` acts on `ℍ` by a hyperbolic isometry. -/
+instance : IsIsometricSMul PGL(2, ℝ) ℍ where
+  isometry_smul g := by
+    induction g using Matrix.ProjGenLinGroup.induction_on with | mk g =>
+    simpa only [pglMk_smul] using isometry_smul ℍ g
 
 /-- The effective `PSL(2, ℝ)` action on the upper half-plane is transitive. -/
 instance : MulAction.IsPretransitive PSL(2, ℝ) ℍ where

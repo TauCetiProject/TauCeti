@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Algebra.Group.Submonoid.BigOperators
@@ -44,6 +45,8 @@ at the sink `t`. A loop at `v` enters and leaves `v`, so it contributes nothing 
 * `TauCeti.sum_excessAt_eq_arrowSum_sub`: the total excess on a vertex set `S` is the value
   entering `S` minus the value leaving `S`.
 * `TauCeti.sum_excessAt`: the total excess over all vertices vanishes.
+* `TauCeti.sum_excessAt_eq_zero_of_forall_mem_iff`: the total excess vanishes on a vertex set
+  that no arrow enters or leaves.
 * `TauCeti.excessAt_single`: a single arrow from `x` to `y` carrying `q` has excess `q` at `y` and
   `-q` at `x`.
 * `TauCeti.excessAt_source_eq_neg_sink`: an assignment conserved away from `s` and `t` has opposite
@@ -140,6 +143,13 @@ theorem arrowSum_add (f g : Assignment Q K) (S T : Finset V) :
     arrowSum (f + g) S T = arrowSum f S T + arrowSum g S T := by
   simp [arrowSum_def, sum_add_distrib]
 
+theorem arrowSum_sum {ι : Type*} (s : Finset ι) (f : ι → Assignment Q K) (S T : Finset V) :
+    arrowSum (∑ i ∈ s, f i) S T = ∑ i ∈ s, arrowSum (f i) S T := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [sum_insert hi, sum_insert hi, arrowSum_add, ih]
+
 @[simp]
 theorem arrowSum_empty_left (f : Assignment Q K) (T : Finset V) : arrowSum f ∅ T = 0 := by
   simp [arrowSum_def]
@@ -147,6 +157,15 @@ theorem arrowSum_empty_left (f : Assignment Q K) (T : Finset V) : arrowSum f ∅
 @[simp]
 theorem arrowSum_empty_right (f : Assignment Q K) (S : Finset V) : arrowSum f S ∅ = 0 := by
   simp [arrowSum_def]
+
+/-- If every arrow leaving `S` ends in `S`, then the arrow sum from `S` to its complement
+vanishes. -/
+theorem arrowSum_compl_eq_zero_of_forall_mem [Fintype V] [DecidableEq V]
+    (f : Assignment Q K) {S : Finset V}
+    (hS : ∀ ⦃x y⦄, Q x y → x ∈ S → y ∈ S) : arrowSum f S Sᶜ = 0 := by
+  rw [arrowSum_def]
+  exact sum_eq_zero fun _ hx ↦ sum_eq_zero fun _ hy ↦ sum_eq_zero fun e _ ↦
+    absurd (hS e hx) (mem_compl.1 hy)
 
 theorem arrowSum_union_left [DecidableEq V] (f : Assignment Q K) {S S' : Finset V}
     (h : Disjoint S S') (T : Finset V) :
@@ -270,6 +289,14 @@ theorem sum_sum_single_out [Fintype V] [DecidableEq V] {x y : V} (e : Q x y) (q 
       Assignment.single_apply_of_ne e q fun h ↦ hv (congrArg Sigma.fst h)
 
 end AddCommMonoid
+
+/-- The unit assignment counts arrows: its total value on the arrows from `S` to `T` is the
+number of these arrows, with parallel arrows counted separately. -/
+theorem arrowSum_one [AddCommMonoidWithOne K] [Fintype V] [DecidableEq V]
+    [∀ v w, Fintype (Q v w)] (S T : Finset V) :
+    arrowSum (1 : Assignment Q K) S T = #{a : Σ x y, Q x y | a.1 ∈ S ∧ a.2.1 ∈ T} := by
+  rw [arrowSum_eq_sum_ite, natCast_card_filter]
+  simp only [Fintype.sum_sigma, Pi.one_apply]
 
 section SubtractionCommMonoid
 
@@ -395,6 +422,17 @@ vertex and leaves exactly one vertex. -/
 theorem sum_excessAt (f : Assignment Q K) : ∑ v, excessAt f v = 0 := by
   simp only [excessAt_def, sum_sub_distrib]
   rw [sum_comm, sub_self]
+
+/-- A vertex set that no arrow enters or leaves, such as a union of weakly connected components,
+has total excess zero. -/
+theorem sum_excessAt_eq_zero_of_forall_mem_iff (f : Assignment Q K) {S : Finset V}
+    (hS : ∀ ⦃x y⦄, Q x y → (x ∈ S ↔ y ∈ S)) : ∑ v ∈ S, excessAt f v = 0 := by
+  classical
+  rw [sum_excessAt_eq_arrowSum_sub,
+    arrowSum_compl_eq_zero_of_forall_mem f fun _ _ e hx ↦ (hS e).1 hx, sub_zero]
+  simpa only [compl_compl] using
+    arrowSum_compl_eq_zero_of_forall_mem (f := f) (S := Sᶜ)
+      fun _ _ e hx ↦ by simpa only [mem_compl, hS e] using hx
 
 /-- If an assignment is conserved at every vertex other than `s` and `t`, then its excesses at `s`
 and `t` are opposite. In particular a flow loses at its source exactly what it delivers to its

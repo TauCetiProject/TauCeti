@@ -5,15 +5,29 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
+public import TauCeti.AlgebraicGeometry.Modules.SymmetricPower.Pullback.Quasicoherent
 public import TauCeti.AlgebraicGeometry.VectorBundle.SymmetricPower.Basic
+public import TauCeti.AlgebraicGeometry.VectorBundle.Functoriality
+-- Proof-only: identify the full-subcategory lifts with their underlying module functors.
+import all TauCeti.AlgebraicGeometry.VectorBundle.SymmetricPower.Basic
+import all TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 
 /-!
-# Pullback of symmetric powers of free sheaves
+# Pullback of symmetric powers of vector bundles
 
-The symmetric power of a finite free sheaf is free on the multisets indexing its monomial basis.
-Pullback preserves this description, giving the chart comparison needed for pullback compatibility
-of symmetric powers of finite locally free sheaves.
+For any scheme morphism `f : X ⟶ Y`, the canonical comparison
+`f^* (Symⁿ E) ⟶ Symⁿ (f^* E)` is an isomorphism of finite locally free sheaves,
+natural in `E`. Its underlying map is `Scheme.Modules.pullbackSymmetricPowerComparison`,
+which is invertible on quasicoherent sheaves. No choice of a local basis is involved, and no
+flatness or constant-rank hypothesis is needed.
+
+`pullbackSymmetricPowerIso_hom_app_id` and `pullbackSymmetricPowerIso_hom_app_comp` express
+compatibility with the identity and composition isomorphisms of vector-bundle pullback. These
+allow symmetric powers to be used together with successive changes of base.
+
+## References
+
+* [R. Hartshorne, *Algebraic Geometry*][hartshorne1977], Chapter II, Exercise 5.16.
 -/
 
 public section
@@ -22,74 +36,80 @@ open CategoryTheory
 
 namespace TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf
 
-universe u
-
 open _root_.AlgebraicGeometry
 
-variable {X Y : _root_.AlgebraicGeometry.Scheme.{u}} (f : X ⟶ Y)
+universe u
 
-/-- Pullback commutes with symmetric powers of a finite free sheaf, by identifying both sides with
-the free sheaf on degree-`n` multisets in the basis. -/
-noncomputable def pullbackSymmetricPowerFreeIso (I : Type u) [Finite I] (n : ℕ) :
-    (pullback f).obj ((symmetricPower Y n).obj (free Y I)) ≅
-      (symmetricPower X n).obj ((pullback f).obj (free Y I)) := by
-  classical
-  let eY : (symmetricPower Y n).obj (free Y I) ≅ free Y (Sym I n) :=
-    ObjectProperty.isoMk _
-      (eqToIso (by simp only [symmetricPower_obj_obj, free_obj]; rfl) ≪≫
-        SheafOfModules.symmetricPowerFreeIso (R := Y.sheaf) I n ≪≫
-        eqToIso (free_obj Y (Sym I n)).symm)
-  let eX : (symmetricPower X n).obj (free X I) ≅ free X (Sym I n) :=
-    ObjectProperty.isoMk _
-      (eqToIso (by simp only [symmetricPower_obj_obj, free_obj]; rfl) ≪≫
-        SheafOfModules.symmetricPowerFreeIso (R := X.sheaf) I n ≪≫
-        eqToIso (free_obj X (Sym I n)).symm)
-  letI : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (Scheme.Modules.pushforward f).IsRightAdjoint
-  let pI : (pullback f).obj (free Y I) ≅ free X I :=
-    ObjectProperty.isoMk _
-      (eqToIso (by rw [pullback_obj_obj, free_obj]; rfl) ≪≫
-        SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom I ≪≫
-        eqToIso (free_obj X I).symm)
-  let pSym : (pullback f).obj (free Y (Sym I n)) ≅ free X (Sym I n) :=
-    ObjectProperty.isoMk _
-      (eqToIso (by rw [pullback_obj_obj, free_obj]; rfl) ≪≫
-        SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom (Sym I n) ≪≫
-        eqToIso (free_obj X (Sym I n)).symm)
-  exact ((pullback f).mapIso eY ≪≫ pSym) ≪≫
-    ((symmetricPower X n).mapIso pI ≪≫ eX).symm
+noncomputable section
 
-/-- The forward map of the pullback comparison is the composite of the free-sheaf
-identifications on both sides. -/
-theorem pullbackSymmetricPowerFreeIso_hom (I : Type u) [Finite I] (n : ℕ) :
-    (pullbackSymmetricPowerFreeIso f I n).hom =
-      (let eY : (symmetricPower Y n).obj (free Y I) ≅ free Y (Sym I n) :=
-          ObjectProperty.isoMk _
-            (eqToIso (by simp only [symmetricPower_obj_obj, free_obj]; rfl) ≪≫
-              SheafOfModules.symmetricPowerFreeIso (R := Y.sheaf) I n ≪≫
-              eqToIso (free_obj Y (Sym I n)).symm)
-       let eX : (symmetricPower X n).obj (free X I) ≅ free X (Sym I n) :=
-          ObjectProperty.isoMk _
-            (eqToIso (by simp only [symmetricPower_obj_obj, free_obj]; rfl) ≪≫
-              SheafOfModules.symmetricPowerFreeIso (R := X.sheaf) I n ≪≫
-              eqToIso (free_obj X (Sym I n)).symm)
-       letI : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
-          inferInstanceAs (Scheme.Modules.pushforward f).IsRightAdjoint
-       let pI : (pullback f).obj (free Y I) ≅ free X I :=
-          ObjectProperty.isoMk _
-            (eqToIso (by rw [pullback_obj_obj, free_obj]; rfl) ≪≫
-              SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom I ≪≫
-              eqToIso (free_obj X I).symm)
-       let pSym : (pullback f).obj (free Y (Sym I n)) ≅ free X (Sym I n) :=
-          ObjectProperty.isoMk _
-            (eqToIso (by rw [pullback_obj_obj, free_obj]; rfl) ≪≫
-              SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom (Sym I n) ≪≫
-              eqToIso (free_obj X (Sym I n)).symm)
-       (((pullback f).mapIso eY ≪≫ pSym) ≪≫
-         ((symmetricPower X n).mapIso pI ≪≫ eX).symm).hom) := by
-  classical
-  rfl
+variable {X Y Z : Scheme.{u}}
 
-end TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf
+/-- Pullback commutes naturally with the `n`-th symmetric power of finite locally free sheaves.
+The forward map is the canonical symmetric-power comparison of module sheaves. -/
+def pullbackSymmetricPowerIso (f : X ⟶ Y) (n : ℕ) :
+    symmetricPower Y n ⋙ pullback f ≅ pullback f ⋙ symmetricPower X n :=
+  NatIso.ofComponents
+    (fun E ↦ ObjectProperty.isoMk _
+      (asIso ((Scheme.Modules.pullbackSymmetricPowerComparison f n).app E.obj) :))
+    -- On underlying modules both functors are the corresponding full-subcategory lifts.
+    fun φ ↦ ObjectProperty.hom_ext _
+      ((Scheme.Modules.pullbackSymmetricPowerComparison f n).naturality φ.hom)
+
+/-- The forward comparison on underlying modules is the canonical symmetric-power comparison,
+through the object identifications of pullback and symmetric power. -/
+@[simp]
+theorem pullbackSymmetricPowerIso_hom_app_hom (f : X ⟶ Y) (n : ℕ)
+    (E : FiniteLocallyFreeSheaf Y) :
+    ((pullbackSymmetricPowerIso f n).hom.app E).hom =
+      eqToHom (by simp only [Functor.comp_obj, pullback_obj_obj, symmetricPower_obj_obj]; rfl) ≫
+        (Scheme.Modules.pullbackSymmetricPowerComparison f n).app E.obj ≫
+        eqToHom (by
+          simp only [Functor.comp_obj, symmetricPower_obj_obj, pullback_obj_obj]; rfl) :=
+  -- The transports are identities because both functors are full-subcategory lifts.
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
+
+/-- The inverse comparison on underlying modules is the inverse of the canonical
+symmetric-power comparison. -/
+@[simp]
+theorem pullbackSymmetricPowerIso_inv_app_hom (f : X ⟶ Y) (n : ℕ)
+    (E : FiniteLocallyFreeSheaf Y) :
+    ((pullbackSymmetricPowerIso f n).inv.app E).hom =
+      eqToHom (by
+          simp only [Functor.comp_obj, symmetricPower_obj_obj, pullback_obj_obj]; rfl) ≫
+        inv ((Scheme.Modules.pullbackSymmetricPowerComparison f n).app E.obj) ≫
+        eqToHom (by
+          simp only [Functor.comp_obj, pullback_obj_obj, symmetricPower_obj_obj]; rfl) :=
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
+
+/-- The symmetric-power pullback comparison along the identity agrees with the canonical
+identity comparisons of vector-bundle pullback. -/
+@[reassoc]
+theorem pullbackSymmetricPowerIso_hom_app_id (n : ℕ) (E : FiniteLocallyFreeSheaf X) :
+    (pullbackSymmetricPowerIso (𝟙 X) n).hom.app E ≫
+        (symmetricPower X n).map ((pullbackId X).hom.app E) =
+      (pullbackId X).hom.app ((symmetricPower X n).obj E) := by
+  ext1
+  simp only [ObjectProperty.FullSubcategory.comp_hom, pullbackSymmetricPowerIso_hom_app_hom,
+    symmetricPower_map_hom, pullbackId_app_hom_hom]
+  -- The remaining object transports are identities, by the defining full-subcategory lifts.
+  exact pullbackSymmetricPowerComparison_id n E.obj
+
+/-- The symmetric-power comparison along `f ≫ g` is the composite of the comparisons along
+`g` and `f`, through the canonical composition isomorphisms of vector-bundle pullback. -/
+@[reassoc]
+theorem pullbackSymmetricPowerIso_hom_app_comp (f : X ⟶ Y) (g : Y ⟶ Z) (n : ℕ)
+    (E : FiniteLocallyFreeSheaf Z) :
+    (pullbackSymmetricPowerIso (f ≫ g) n).hom.app E ≫
+        (symmetricPower X n).map ((pullbackComp f g).inv.app E) =
+      (pullbackComp f g).inv.app ((symmetricPower Z n).obj E) ≫
+        (pullback f).map ((pullbackSymmetricPowerIso g n).hom.app E) ≫
+        (pullbackSymmetricPowerIso f n).hom.app ((pullback g).obj E) := by
+  ext1
+  simp only [ObjectProperty.FullSubcategory.comp_hom, pullbackSymmetricPowerIso_hom_app_hom,
+    symmetricPower_map_hom, pullbackComp_inv_app_hom, pullback_map_hom]
+  -- The full-subcategory transports are identities, leaving the ambient coherence equation.
+  exact pullbackSymmetricPowerComparison_comp f g n E.obj
 
 end
+
+end TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf

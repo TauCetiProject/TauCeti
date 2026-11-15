@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.RingTheory.Etale.Finite
 public import Mathlib.CategoryTheory.Limits.FintypeCat
 public import TauCeti.CategoryTheory.ObjectProperty
+import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 /-!
 # Finite étale schemes and their coordinate algebras
@@ -159,7 +160,7 @@ private theorem exists_spec_iso (X : FiniteEtaleScheme (Spec R)) :
     ⟨ObjectProperty.isoMk _ (Over.isoMk X.obj.left.isoSpec.symm ?_)⟩⟩
   exact hφ.symm
 
-instance : (spec R).EssSurj where
+instance essSurj_spec : (spec R).EssSurj where
   mem_essImage X := exists_spec_iso R X
 
 instance : (spec R).IsEquivalence where
@@ -296,3 +297,21 @@ theorem equivOfIsSepClosedFunctorCompInclIso_hom_app_apply (K : Type u) [Field K
 end FiniteEtaleScheme
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+/-- Every finite étale scheme over an affine base admits a finite étale coordinate algebra,
+with an isomorphism respecting the structure morphism. -/
+theorem exists_finiteEtale_algebra {R : CommRingCat.{u}} {X : Scheme.{u}}
+    (f : X ⟶ Spec R) [IsFinite f] [Etale f] :
+    ∃ B : CommAlgCat.FiniteEtale R,
+      Nonempty (Over.mk (Spec.algebraMap R B.obj) ≅ Over.mk f) := by
+  obtain ⟨B, ⟨e⟩⟩ := Functor.EssSurj.mem_essImage
+    (TauCeti.FiniteEtaleScheme.spec R) (TauCeti.FiniteEtaleScheme.ofHom f)
+  have e' := (TauCeti.finiteEtaleSchemeProperty (Spec R)).ι.mapIso e
+  rw [ObjectProperty.ι_obj, ObjectProperty.ι_obj, TauCeti.FiniteEtaleScheme.spec_obj_obj,
+    TauCeti.FiniteEtaleScheme.ofHom_obj] at e'
+  exact ⟨B.unop,
+    ⟨(TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk B.unop.obj).symm ≪≫ e'⟩⟩
+
+end AlgebraicGeometry.Scheme.Hom

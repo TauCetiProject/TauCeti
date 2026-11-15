@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.Torsion
 public import Mathlib.RingTheory.HopfAlgebra.GroupLike
 public import TauCeti.Algebra.Bialgebra.GroupLike.Evaluation
 public import TauCeti.Algebra.MonoidAlgebra.Torsion
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Torsion in groups of group-like elements
@@ -59,7 +60,7 @@ theorem isMulTorsionFree_groupLike_of_isReduced_of_connectedSpace
     GroupLike.liftGroupLikeBialgHom_injective k H
   have _ : IsReduced (MonoidAlgebra k (GroupLike k H)) := isReduced_of_injective _ hf
   have _ : ConnectedSpace (PrimeSpectrum (MonoidAlgebra k (GroupLike k H))) :=
-    connectedSpace_primeSpectrum_of_injective _ hf
+    RingHom.connectedSpace_primeSpectrum_of_injective _ hf
   exact isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace k (GroupLike k H)
 
 variable {k H}

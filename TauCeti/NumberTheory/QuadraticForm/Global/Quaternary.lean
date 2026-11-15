@@ -147,7 +147,7 @@ theorem not_anisotropic_of_isLocallyIsotropic_quaternary
       (by rw [hd, squareClass_eq_zero_iff]; exact hsq) hloc (hternary K)
   -- Otherwise pass to the quadratic field `E = K(√d)`, where the discriminant becomes a square.
   set d := ∏ i, p.2 i
-  have : Fact (¬IsSquare (d : K)) := ⟨by rwa [isSquare_units_val_iff]⟩
+  have : Fact (¬IsSquare (d : K)) := ⟨by rwa [Units.isSquare_coe_iff]⟩
   let E := QuadraticAlgebra K (d : K) 0
   have : NumberField E := NumberField.of_module_finite K E
   have : Algebra.IsQuadraticExtension K E := ⟨QuadraticAlgebra.finrank_eq_two _ _⟩

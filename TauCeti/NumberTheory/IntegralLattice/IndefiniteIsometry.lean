@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.Isometry.OrthogonalExtension
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Transvection
 public import TauCeti.LinearAlgebra.IntegralLattice.Restriction
 public import TauCeti.NumberTheory.IntegralLattice.Binary.NormOne
+import TauCeti.Algebra.Module.LocalizedModule.Submodule
 import TauCeti.GroupTheory.Index.Basic
 
 /-!
@@ -133,9 +134,11 @@ theorem infinite_isometry_of_isIndefinite_of_anisotropic {L : IntegralLattice V}
     (M.not_isSquare_binaryDiscriminant_of_anisotropic hV hManiso)
   set ι := L.restrictIsometry S
   -- A single nonzero integer `d` carries the orthogonal projection of `L` into `M`.
-  obtain ⟨d, hd, hdπ⟩ := Submodule.IsLattice.exists_ne_zero_forall_smul_mem ℚ M.carrier
-    ((Module.Finite.fg_top (M := L)).map ((ι.orthogonalProjection hS).restrictScalars ℤ ∘ₗ
-      L.carrier.subtype))
+  obtain ⟨d, hd, hdπ⟩ := ((Module.Finite.fg_top (M := L)).map
+    ((ι.orthogonalProjection hS).restrictScalars ℤ ∘ₗ L.carrier.subtype)).exists_smul_mem_of_le_span
+      (F := ℚ) (M := M.carrier) (nonZeroDivisors ℤ) fun _ _ ↦ by
+        simp [Submodule.IsLattice.span_eq_top]
+  replace hd : d ≠ 0 := nonZeroDivisors.ne_zero hd
   -- The isometries of `M` acting trivially on `M / d M` form an infinite group.
   let Γ := Isometry.congruenceSubgroup M d
   have := Isometry.finiteIndex_congruenceSubgroup M hd

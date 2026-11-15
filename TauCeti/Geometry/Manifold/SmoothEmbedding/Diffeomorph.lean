@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Manifold.Immersion.Basic
+public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
@@ -32,11 +33,10 @@ transport moves it by the ambient diffeomorphism, and the two assemble into an a
 self-diffeomorphism group `TauCeti.Diff` of the target and a right action of that of the source;
 the two actions commute, which is recorded as a `SMulCommClass` instance.
 
-This is the transport layer that layer 4 of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`) needs for its geometric presentations, where a knot
-presentation is a smooth embedding of the circle into the ambient manifold `N`: reversing the
-orientation of such a presentation and rotating its parametrisation are precisely precomposition
-with a diffeomorphism of the circle, while the ambient `Diff(N)`-action is postcomposition.
+This is the transport needed by geometric knot presentations, where a knot presentation is a
+smooth embedding of the circle into the ambient manifold `N`: reversing the orientation of such a
+presentation and rotating its parametrisation are precisely precomposition with a diffeomorphism
+of the circle, while the ambient `Diff(N)`-action is postcomposition.
 
 ## Main results
 
@@ -45,6 +45,8 @@ with a diffeomorphism of the circle, while the ambient `Diff(N)`-action is postc
   stable under composition with a diffeomorphism on either side.
 * `TauCeti.isSmoothEmbedding_comp_continuousLinearEquiv`: a smooth embedding of a vector space stays
   one after a linear change of coordinates of the source, which changes its model.
+* `Diffeomorph.isSmoothEmbedding_comp`: from a boundaryless source, a diffeomorphism onto a
+  boundaryless manifold with a different finite-dimensional model transports smooth embeddings.
 * `TauCeti.isSmoothEmbedding_diffeomorph`: a diffeomorphism is a smooth embedding.
 * `TauCeti.isSmoothEmbedding_continuousLinearEquiv`: a continuous linear equivalence between normed
   spaces is a smooth embedding.
@@ -73,8 +75,8 @@ noncomputable section
 
 namespace TauCeti
 
-open Manifold Set
-open scoped Manifold ContDiff
+open _root_.Manifold Set
+open scoped _root_.Manifold ContDiff
 
 section IsSmoothEmbedding
 
@@ -143,6 +145,29 @@ theorem isSmoothEmbedding_continuousLinearEquiv (e : E ≃L[𝕜] E') :
   simpa using isSmoothEmbedding_comp_continuousLinearEquiv e IsSmoothEmbedding.id
 
 end IsSmoothEmbedding
+
+section ChangeOfModel
+
+variable {𝕜 : Type*} [RCLike 𝕜]
+  {E E' E'' H G G' M N P : Type*}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [FiniteDimensional 𝕜 E'']
+  [TopologicalSpace H] [TopologicalSpace G] [TopologicalSpace G']
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 E' G} {K : ModelWithCorners 𝕜 E'' G'}
+  [I.Boundaryless] [K.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace G N]
+  [TopologicalSpace P] [ChartedSpace G' P]
+  {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N] [IsManifold K n P] {f : M → N}
+
+omit [IsManifold J n N] in
+/-- Transporting a smooth embedding from a boundaryless manifold by a diffeomorphism of the target
+onto a boundaryless manifold gives a smooth embedding, also when the new target has a different
+finite-dimensional model. -/
+theorem _root_.Diffeomorph.isSmoothEmbedding_comp (Φ : N ≃ₘ^n⟮J, K⟯ P) (hn : 1 ≤ n)
+    (h : IsSmoothEmbedding I J n f) : IsSmoothEmbedding I K n (Φ ∘ f) :=
+  ⟨Φ.isImmersion_comp hn h.isImmersion, Φ.toHomeomorph.isEmbedding.comp h.isEmbedding⟩
+
+end ChangeOfModel
 
 namespace SmoothEmbedding
 

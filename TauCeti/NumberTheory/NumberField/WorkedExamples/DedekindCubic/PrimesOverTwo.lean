@@ -493,7 +493,6 @@ theorem dedekindCubic_ncard_primesOver_two_eq_finrank :
   rw [dedekindCubic_primesOver_two_eq hmin hgen, ncard_dedekindPrimes hmin hgen,
     dedekindCubic_finrank_eq_three hmin hgen]
 
-open RamificationInertia in
 /-- Every prime above `2` is unramified with residue degree one. -/
 theorem dedekindCubic_ramificationIdx_eq_one_and_inertiaDeg_eq_one {P : Ideal (𝓞 K)}
     (hP : P ∈ (span {(2 : ℤ)}).primesOver (𝓞 K)) :

@@ -40,6 +40,7 @@ actions on codes.
 
 * `TauCeti.hammingNorm_monomialEquiv`, `TauCeti.hammingDist_monomialEquiv`: a monomial
   equivalence preserves Hamming weight and Hamming distance.
+* `TauCeti.hammingNorm_signedEquiv`: so does a signed coordinate change, for Hamming weight.
 * `TauCeti.IsMonomialEquivalent.finrank_eq`, `TauCeti.IsMonomialEquivalent.card_eq`:
   monomially equivalent codes have the same dimension and the same number of codewords.
 * `TauCeti.IsPermutationEquivalent.finrank_eq`, `TauCeti.IsPermutationEquivalent.card_eq`: the
@@ -125,6 +126,15 @@ theorem signedEquiv_apply (u : ι → ℤˣ) (e : ι ≃ κ) (x : ι → R) (j :
     signedEquiv (R := R) u e x j = (u (e.symm j) : R) * x (e.symm j) := by
   simp [signedEquiv]
 
+/-- A sign change of coordinates without relabelling is an involution. -/
+@[simp]
+theorem signedEquiv_signedEquiv (u : ι → ℤˣ) (x : ι → R) :
+    signedEquiv u (Equiv.refl ι) (signedEquiv u (Equiv.refl ι) x) = x := by
+  ext i
+  simp only [signedEquiv_apply, Equiv.refl_symm, Equiv.refl_apply, ← mul_assoc]
+  norm_cast
+  simp
+
 /-- The additive homomorphism underlying a signed coordinate change has the same action as the
 ambient linear equivalence. -/
 @[simp]
@@ -152,6 +162,12 @@ theorem monomialEquiv_eq_signedEquiv_of_intUnits (u : ι → Rˣ) (e : ι ≃ κ
     monomialEquiv u e = signedEquiv v e := by
   ext x j
   rw [monomialEquiv_apply, signedEquiv_apply, hv]
+
+/-- A signed coordinate change of finite coordinate spaces preserves Hamming weight. -/
+@[simp]
+theorem hammingNorm_signedEquiv [Fintype ι] [Fintype κ] [DecidableEq R] (u : ι → ℤˣ)
+    (e : ι ≃ κ) (x : ι → R) : hammingNorm (signedEquiv u e x) = hammingNorm x :=
+  hammingNorm_monomialEquiv _ _ _
 
 /-- A monomial map over a commutative ring is a signed coordinate change exactly when
 each multiplier is `1` or `-1`. -/

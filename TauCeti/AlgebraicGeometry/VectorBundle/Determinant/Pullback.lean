@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
-public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Quasicoherent
-public import TauCeti.AlgebraicGeometry.VectorBundle.Determinant.Basic
+public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.LocallyConstant
+public import TauCeti.AlgebraicGeometry.VectorBundle.Determinant.LocallyConstantRank
 -- Proof-only: the bodies of the full-subcategory lifts `determinant`, `FixedRank.pullback` and
 -- `FiniteLocallyFreeSheaf.pullback` are not exposed.
 import all TauCeti.AlgebraicGeometry.VectorBundle.Determinant.Basic
@@ -28,6 +28,13 @@ isomorphism of pullback, and along a composite `f ≫ g` it is the composite of 
 along `g` and `f`, through the composition isomorphisms of pullback of invertible sheaves and of
 fixed-rank sheaves.
 
+Without a constant rank, the determinant `det E = ⋀^{rank E} E` is the exterior power in the
+locally constant degree `rank E`. Its pullback is compared with `det (f^* E)` through the
+exterior-power comparison `f^* (⋀^{rank E} E) ⟶ ⋀^{rank E ∘ f} (f^* E)`, again an isomorphism
+since `E` is quasicoherent
+(`TauCeti.AlgebraicGeometry.isIso_pullbackLocallyConstantExteriorPowerComparison_app`), and the
+identification `rank (f^* E) = rank E ∘ f` (`FiniteLocallyFreeSheaf.rank_pullback`).
+
 ## Main declarations
 
 * `FiniteLocallyFreeSheaf.pullbackDeterminantIso f r`: the natural isomorphism
@@ -35,7 +42,9 @@ fixed-rank sheaves.
 * `FiniteLocallyFreeSheaf.pullbackDeterminantIso_hom_app_id`: compatibility with the identity
   isomorphisms of pullback;
 * `FiniteLocallyFreeSheaf.pullbackDeterminantIso_hom_app_comp`: compatibility with the
-  composition isomorphisms of pullback.
+  composition isomorphisms of pullback;
+* `FiniteLocallyFreeSheaf.pullbackDetIso f E`: the isomorphism `f^* (det E) ≅ det (f^* E)` of
+  invertible sheaves, for `E` of locally constant rank.
 
 ## References
 
@@ -138,6 +147,43 @@ theorem pullbackDeterminantIso_hom_app_comp (f : X ⟶ Y) (g : Y ⟶ Z) {r : ℕ
   -- As in `pullbackDeterminantIso_hom_app_id`, the remaining `eqToHom`s are identities, and this is
   -- `pullbackExteriorPowerComparison_comp` on underlying sheaves.
   exact pullbackExteriorPowerComparison_comp f g r E.obj.obj
+
+/-- **Pullback of the determinant in locally constant rank.** For a morphism of schemes
+`f : X ⟶ Y` and a finite locally free sheaf `E` on `Y`, the pullback of `det E = ⋀^{rank E} E`
+is the determinant of `f^* E`. The forward map is the exterior-power comparison
+`f^* (⋀^{rank E} E) ⟶ ⋀^{rank E ∘ f} (f^* E)`, an isomorphism because `E` is quasicoherent,
+followed by the identification `rank (f^* E) = rank E ∘ f`. -/
+def pullbackDetIso (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y) :
+    (InvertibleSheaf.pullback f).obj (det E) ≅ det ((FiniteLocallyFreeSheaf.pullback f).obj E) :=
+  ObjectProperty.isoMk _ <|
+    eqToIso (by rw [InvertibleSheaf.pullback_obj_obj, det_obj, Functor.comp_obj]) ≪≫
+      asIso ((pullbackLocallyConstantExteriorPowerComparison f E.rank).app E.obj) ≪≫
+      eqToIso (by
+        rw [det_obj, rank_pullback, FiniteLocallyFreeSheaf.pullback_obj_obj, Functor.comp_obj])
+
+/-- On underlying sheaves, the forward map of `pullbackDetIso` is the exterior-power comparison
+`f^* (⋀^{rank E} E) ⟶ ⋀^{rank E ∘ f} (f^* E)`, followed by the identification
+`rank (f^* E) = rank E ∘ f`. -/
+@[simp]
+theorem pullbackDetIso_hom_hom (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y) :
+    (pullbackDetIso f E).hom.hom =
+      eqToHom (by rw [InvertibleSheaf.pullback_obj_obj, det_obj, Functor.comp_obj]) ≫
+        (pullbackLocallyConstantExteriorPowerComparison f E.rank).app E.obj ≫
+        eqToHom (by
+          rw [det_obj, rank_pullback, FiniteLocallyFreeSheaf.pullback_obj_obj, Functor.comp_obj]) :=
+  (rfl)
+
+/-- On underlying sheaves, the inverse map of `pullbackDetIso` is the inverse of the
+exterior-power comparison `f^* (⋀^{rank E} E) ⟶ ⋀^{rank E ∘ f} (f^* E)`, preceded by the
+identification `rank (f^* E) = rank E ∘ f`. -/
+@[simp]
+theorem pullbackDetIso_inv_hom (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y) :
+    (pullbackDetIso f E).inv.hom =
+      eqToHom (by
+          rw [det_obj, rank_pullback, FiniteLocallyFreeSheaf.pullback_obj_obj, Functor.comp_obj]) ≫
+        inv ((pullbackLocallyConstantExteriorPowerComparison f E.rank).app E.obj) ≫
+        eqToHom (by rw [InvertibleSheaf.pullback_obj_obj, det_obj, Functor.comp_obj]) :=
+  (rfl)
 
 end FiniteLocallyFreeSheaf
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
 public import TauCeti.RingTheory.PowerSeries.Map
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.DivMod
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
@@ -102,9 +103,7 @@ theorem IsMulDistinguished.eq_and_eq_map_of_mul_eq_map_mul
       PowerSeries.map φ ((e : PowerSeries R) * (ω : PowerSeries R))) :
     e' = restrictedMap φ hφ e ∧ ω' = ω.map φ := by
   have : Nontrivial S := hω'.nontrivial
-  have hm : (ω.map φ).IsMonicOfDegree s :=
-    ⟨(hωm.monic.natDegree_map φ).trans hωm.natDegree_eq, hωm.monic.map φ⟩
-  apply hω'.eq_and_eq_of_mul_eq_mul hc hωm' hm (he.map (restrictedMap φ hφ))
+  apply hω'.eq_and_eq_of_mul_eq_mul hc hωm' (hωm.map φ) (he.map (restrictedMap φ hφ))
   exact h.trans ((map_mul (PowerSeries.map φ) _ _).trans
     (congrArg₂ (· * ·) (coe_restrictedMap_powerSeries φ hφ e).symm
       Polynomial.polynomial_map_coe.symm))
@@ -122,8 +121,10 @@ theorem IsMulDistinguished.isNormMulUnit_restrictedMap_and_gaussNorm_map_eq_of_m
       (ω.map φ : PowerSeries S).gaussNorm norm c = c ^ s := by
   have : NormOneClass S := hg'.normOneClass
   have hgr : g.IsRestricted c := h ▸ e.2.mul (isRestricted_polynomial ω)
+  -- `MvPowerSeries.map φ g` is definitionally `fun t ↦ φ (coeff t g)`, the series that
+  -- `isRestricted_map` shows to be restricted.
   obtain ⟨u, p, hu, hp, hn, hmul⟩ :=
-    hg'.exists_isNormMulUnit_isMonicOfDegree_mul_eq (hgr.map φ hφ)
+    hg'.exists_isNormMulUnit_isMonicOfDegree_mul_eq (MvPowerSeries.isRestricted_map _ φ hφ hgr)
   have hp' := (isMulDistinguished_iff_gaussNorm_eq (Fact.out : 0 < c) hp).mpr hn
   obtain ⟨rfl, rfl⟩ := hp'.eq_and_eq_map_of_mul_eq_map_mul φ hφ Fact.out hp hωm he (by rw [h, hmul])
   exact ⟨hu, hn⟩

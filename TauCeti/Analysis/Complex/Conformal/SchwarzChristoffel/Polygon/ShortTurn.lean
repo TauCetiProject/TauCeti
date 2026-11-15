@@ -7,9 +7,12 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Turning
+import TauCeti.Analysis.Complex.Angle
+import TauCeti.Analysis.Complex.PlaneSeparation.Segment
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.ClosedEdge
 import TauCeti.Data.Fin.Basic
+import TauCeti.LinearAlgebra.AffineSpace.Independent
 
 /-!
 # Short-turn separation of Schwarz--Christoffel sides
@@ -68,7 +71,7 @@ theorem schwarzChristoffelPolygon_bounded_edgeSet_inter_subset_vertex_of_adjacen
   have hmid : i.succ = j.castSucc := Fin.ext hadj
   have hfree (k : Fin n) :
       ∀ l, e l ≠ 0 → a l ∉ Ioo (a k.castSucc) (a k.succ) :=
-    fun l _ ↦ not_mem_Ioo_castSucc_succ a ha k l
+    fun l _ ↦ notMem_Ioo_castSucc_succ a ha k l
   have hcornerSin : Real.sin (Real.pi * ∑ l with a l = a i.succ, e l) ≠ 0 :=
     sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero hcorner hcorner0
   have haff := affineIndependent_schwarzChristoffelVertex_of_adjacent a e z₀
@@ -76,14 +79,8 @@ theorem schwarzChristoffelPolygon_bounded_edgeSet_inter_subset_vertex_of_adjacen
     (by rw [hmid]; exact hj)
     (hfree i) (by rw [hmid]; exact hfree j)
     hleft hcorner.1 hcornerSin hright
-  rw [affineIndependent_iff_linearIndependent_vsub ℝ _ (1 : Fin 3),
-    ← linearIndependent_equiv (finSuccAboveEquiv (1 : Fin 3))] at haff
-  have hlin : LinearIndependent ℝ
-      ![schwarzChristoffelVertex a e z₀ i.castSucc - schwarzChristoffelVertex a e z₀ i.succ,
-        schwarzChristoffelVertex a e z₀ j.succ - schwarzChristoffelVertex a e z₀ i.succ] := by
-    convert! haff using 1
-    ext k
-    fin_cases k <;> simp [finSuccAboveEquiv_apply]
+  have hlin := affineIndependent_iff_linearIndependent_vsub_vsub.1 haff
+  simp only [vsub_eq_sub] at hlin
   intro z hz
   rw [mem_inter_iff, schwarzChristoffelPolygon_edgeSet_castSucc_castSucc,
     schwarzChristoffelPolygon_edgeSet_castSucc_castSucc] at hz
@@ -108,7 +105,7 @@ theorem schwarzChristoffelVertex_succ_sub_eq_norm_mul (a e : Fin (n + 1) → ℝ
         Complex.exp (schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I) := by
   have hai : a i.castSucc < a i.succ := ha i.castSucc_lt_succ
   have hfree : ∀ k, e k ≠ 0 → a k ∉ Ioo (a i.castSucc) (a i.succ) :=
-    fun k _ ↦ not_mem_Ioo_castSucc_succ a ha.monotone i k
+    fun k _ ↦ notMem_Ioo_castSucc_succ a ha.monotone i k
   simpa only [schwarzChristoffelBoundary_apply_prevertex a e z₀ i.castSucc hfinite_left,
     schwarzChristoffelBoundary_apply_prevertex a e z₀ i.succ hfinite_right] using
     schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ hfree hfinite_left hfinite_right
@@ -281,23 +278,8 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_of_short_turn
     rw [schwarzChristoffelVertex_succ_sub_eq_norm_mul a e z₀ ha i
       (hfinite _ ⟨le_rfl, Fin.mk_le_mk.mpr (by omega)⟩)
       (hfinite _ ⟨Fin.mk_le_mk.mpr (by omega), Fin.mk_le_mk.mpr (by omega)⟩)]
-    dsimp only [u, Vi, Vi']
-    have hmul : Complex.exp
-          (-schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I) *
-          ((‖schwarzChristoffelVertex a e z₀ i.succ -
-              schwarzChristoffelVertex a e z₀ i.castSucc‖ : ℂ) *
-            Complex.exp (schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I)) =
-        (‖schwarzChristoffelVertex a e z₀ i.succ -
-            schwarzChristoffelVertex a e z₀ i.castSucc‖ : ℂ) *
-          Complex.exp (-schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I +
-            schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I) := by
-      rw [Complex.exp_add]
-      ring
-    rw [hmul]
-    have hz : -schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I +
-        schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I = 0 := by ring
-    rw [hz, Complex.exp_zero, mul_one, Complex.ofReal_im]
-  have hlast : 0 ≤ (u * (t • (Vj' - Vj))).im := by
+    exact Complex.im_exp_neg_mul_mul_ofReal_mul_exp _ _
+  have hlast : 0 ≤ (u * (Vj' - Vj)).im := by
     have hij' : i < j := Fin.mk_lt_mk.mpr (by omega)
     have hmemi : i.castSucc ∈ Icc i.castSucc j.castSucc := by
       simp only [mem_Icc, Fin.le_def, Fin.val_castSucc]
@@ -312,28 +294,8 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_of_short_turn
       a e z₀ ha i j
         (hfinite _ ⟨Fin.mk_le_mk.mpr (by omega), Fin.mk_le_mk.mpr (by omega)⟩)
         (hfinite _ ⟨Fin.mk_le_mk.mpr (by omega), le_rfl⟩) hturn hshort
-    have hmul : u * (t • (Vj' - Vj)) = (t : ℂ) * (u * (Vj' - Vj)) := by
-      rw [Complex.real_smul]
-      ring
-    rw [hmul, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero]
-    exact mul_nonneg ht.1 hjpos.le
-  have hdecomp :
-      AffineMap.lineMap Vj Vj' t - AffineMap.lineMap Vi Vi' s =
-        (1 - s) • (Vi' - Vi) + (Vj - Vi') + t • (Vj' - Vj) := by
-    simp only [AffineMap.lineMap_apply_module']
-    module
-  have hpos : 0 <
-      (u * (AffineMap.lineMap Vj Vj' t - AffineMap.lineMap Vi Vi' s)).im := by
-    rw [hdecomp, mul_add, mul_add, Complex.add_im, Complex.add_im]
-    have hs0 : (u * ((1 - s) • (Vi' - Vi))).im = 0 := by
-      have hmul : u * ((1 - s) • (Vi' - Vi)) =
-          ((1 - s : ℝ) : ℂ) * (u * (Vi' - Vi)) := by
-        rw [Complex.real_smul]
-        ring
-      rw [hmul, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
-        zero_mul, add_zero, hfirst, mul_zero]
-    rw [hs0, zero_add]
-    exact add_pos_of_pos_of_nonneg hmiddle hlast
+    exact hjpos.le
+  have hpos := Complex.im_mul_lineMap_sub_pos u Vi Vi' Vj Vj' s t ht.1 hfirst hmiddle hlast
   have heq' : AffineMap.lineMap Vj Vj' t = AffineMap.lineMap Vi Vi' s := by
     simpa only [AffineMap.lineMap_apply_module', add_comm, Vi, Vi', Vj, Vj'] using heq
   rw [heq', sub_self, mul_zero, Complex.zero_im] at hpos

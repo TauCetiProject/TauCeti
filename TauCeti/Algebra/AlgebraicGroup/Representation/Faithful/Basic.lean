@@ -36,7 +36,10 @@ is equivalent to generation of the coordinate ring by matrix coefficients and th
 ## Main declarations
 
 * `TauCeti.Comodule.coordinateBialgHom_range`: the exact range of the coordinate morphism.
+* `TauCeti.Comodule.coordinateBialgHom_surjective_iff_of_bases`: coordinate-morphism
+  surjectivity is independent of the finite basis.
 * `TauCeti.Comodule.IsFaithful`: the basis-independent predicate for a faithful comodule.
+* `TauCeti.Comodule.IsFaithful.finite`: a faithful comodule is finite over the base ring.
 * `TauCeti.Comodule.coordinateBialgHom_surjective_iff_isFaithful`: faithfulness is surjectivity
   of the coordinate morphism for any basis.
 * `TauCeti.Comodule.isFaithful_iff_matrixCoefficientSubalgebra_sup_antipode_eq_top`: the
@@ -49,6 +52,8 @@ is equivalent to generation of the coordinate ring by matrix coefficients and th
   trivially on a faithful comodule is the identity point.
 * `TauCeti.Comodule.isClosedImmersion_coordinateGroupSchemeHom_iff_of_bases`: faithfulness is
   independent of the chosen finite basis.
+* `TauCeti.Comodule.exists_isFaithful`: an affine group of finite type over a field has a
+  faithful finite-dimensional representation.
 
 ## References
 
@@ -171,6 +176,15 @@ theorem coordinateBialgHom_surjective_iff_matrixCoefficientSubalgebra_sup_antipo
   change Function.Surjective (coordinateBialgHom (H := H) b).toAlgHom ↔ _
   rw [← AlgHom.range_eq_top, coordinateBialgHom_range]
 
+/-- Surjectivity of a comodule's coordinate morphism is independent of its finite basis,
+even when the base ring, Hopf algebra, and comodule lie in independent universes. -/
+theorem coordinateBialgHom_surjective_iff_of_bases
+    {m : ℕ} (b : Basis (Fin n) R M) (c : Basis (Fin m) R M) :
+    Function.Surjective (coordinateBialgHom (H := H) b) ↔
+      Function.Surjective (coordinateBialgHom (H := H) c) := by
+  rw [coordinateBialgHom_surjective_iff_matrixCoefficientSubalgebra_sup_antipode_eq_top,
+    coordinateBialgHom_surjective_iff_matrixCoefficientSubalgebra_sup_antipode_eq_top]
+
 section Dual
 
 attribute [local instance] dual Prod
@@ -232,6 +246,11 @@ theorem isFaithful_def :
       ∃ (d : ℕ) (b : Basis (Fin d) k V),
         IsClosedImmersion (coordinateGroupSchemeHom (H := H) b).hom.hom.left :=
   Iff.rfl
+
+/-- A faithful comodule is finite over the base ring: faithfulness supplies a finite basis. -/
+theorem IsFaithful.finite (hV : IsFaithful (k := k) (H := H) (V := V)) : Module.Finite k V := by
+  obtain ⟨_, b, -⟩ := isFaithful_def.mp hV
+  exact Module.Finite.of_basis b
 
 /-- **Faithfulness is generation by matrix coefficients.** The affine group-scheme morphism
 associated to a finite free comodule is a closed immersion if and only if the coefficients of
@@ -356,7 +375,7 @@ theorem eq_one_of_ofLinearEquiv_pointsAction_eq_one_of_isFaithful
   apply pointsAction_injective_of_isFaithful hV
   rw [map_one]
   refine LinearEquiv.ext fun x ↦ ?_
-  simpa only [LinearMap.GeneralLinearGroup.ofLinearEquiv_smul, one_smul, LinearEquiv.coe_one,
+  simpa only [LinearMap.GeneralLinearGroup.ofLinearEquiv_smul, one_smul, FunLike.coe_one_eq_id,
     id_eq] using congrArg (· • x) hg
 
 section Dual
@@ -383,6 +402,22 @@ theorem isFaithful_iff_matrixCoefficientSubalgebra_prod_dual_eq_top
 end Dual
 
 end GroupScheme
+
+section FiniteType
+
+variable {k H : Type u} [Field k] [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
+
+/-- An affine group of finite type over a field has a faithful finite-dimensional
+representation. -/
+theorem exists_isFaithful :
+    ∃ M : FGComoduleCat.{u, u, u} k H, IsFaithful (k := k) (H := H) (V := M) := by
+  obtain ⟨M, d, b, hb⟩ := exists_isClosedImmersion_coordinateGroupSchemeHom (k := k) (H := H)
+  let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup k
+  let _ : Module.Finite k M := Module.Finite.of_basis b
+  exact ⟨FGComoduleCat.of (R := k) (C := H) M,
+    (isFaithful_iff_isClosedImmersion_coordinateGroupSchemeHom b).mpr hb⟩
+
+end FiniteType
 
 end
 

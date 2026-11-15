@@ -106,9 +106,8 @@ theorem sections_top_eq_bot_of_relativeDegree_neg {D : SchemeWeilDivisor X}
       orderAt y f = X.ord (Scheme.rationalFunctionsEquiv (⊤ : X.Opens) s) (y : X) :=
     ⟨Additive.ofMul (Units.mk0 _ hc0), fun y ↦ by
       rw [orderAt_apply, toMul_ofMul, Units.val_mk0]⟩
-  have heff : WeilDivisor.IsEffective
-      ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor f + D) :=
-    (WeilDivisor.isEffective_iff _).mpr fun y ↦ by
+  have heff : 0 ≤ (WeilDivisor.OrderSystem.ofScheme X).principalDivisor f + D :=
+    (WeilDivisor.nonneg_iff _).mpr fun y ↦ by
       have hy := hord y trivial
       rw [WeilDivisor.coeff_add, WeilDivisor.OrderSystem.coeff_principalDivisor,
         WeilDivisor.OrderSystem.ofScheme_ord, hordf y]
@@ -168,9 +167,8 @@ theorem relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf
   let _ : IsLocallyNoetherian X :=
     LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   have h := eulerCharBelow_sheaf_eq_relativeDegree_add k hX D
-  rw [Scheme.Modules.eulerCharBelow_two, Scheme.Modules.eulerCharBelow_two,
-    finrank_cohomology_zero_trivial_eq_one_of_surjective k hφ] at h
-  rw [Scheme.genus_def]
+  rw [eulerCharBelow_trivial_eq_one_sub_genus_of_surjective k hφ,
+    Scheme.Modules.eulerCharBelow_two] at h
   have := Int.natCast_nonneg (finrank k (Scheme.Modules.Cohomology (sheaf D) 1))
   omega
 
