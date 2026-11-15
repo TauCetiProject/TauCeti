@@ -16,8 +16,9 @@ braiding on module categories.
 
 For a morphism `f : A →+* P` and a `P`-module `M`, tensoring an extension of scalars with `M`
 over `P` is tensoring with `M` over `A`: `M ⊗[P] (P ⊗[A] X) ≅ M ⊗[A] X`, naturally in the
-`A`-module `X` (`ModuleCat.extendScalarsCompTensorLeftIso`). This computes `Tor` over `A` by a
-projective resolution over `P` after a flat extension of scalars.
+`A`-module `X` (`ModuleCat.extendScalarsCompTensorLeftIso`). Specializing `M` to the monoidal unit
+`P` identifies `extendScalars f ⋙ restrictScalars f` with `tensorLeft ((restrictScalars f).obj P)`
+(`ModuleCat.extendScalarsCompRestrictScalarsIso`).
 -/
 
 public section
@@ -88,5 +89,16 @@ theorem extendScalarsCompTensorLeftIso_inv_app_tmul (M : ModuleCat.{u} P) (X : M
         (TensorProduct.tmul A (M := (restrictScalars f).obj M) (N := X) m x) =
       TensorProduct.tmul P (M := M) (N := (extendScalars f).obj X) m ((1 : P) ⊗ₜ[A, f] x) :=
   (rfl)
+
+/-- Extension of scalars followed by restriction of scalars along `f : A →+* P` is naturally
+isomorphic to tensoring on the left with `P` viewed as an `A`-module via `f`. -/
+noncomputable def extendScalarsCompRestrictScalarsIso :
+    extendScalars.{u, u, u} f ⋙ restrictScalars.{u} f ≅
+      tensorLeft ((restrictScalars f).obj (𝟙_ (ModuleCat.{u} P))) :=
+  Functor.isoWhiskerLeft (extendScalars.{u, u, u} f) (restrictScalars.{u} f).leftUnitor.symm ≪≫
+    Functor.isoWhiskerLeft (extendScalars.{u, u, u} f)
+      (Functor.isoWhiskerRight (MonoidalCategory.leftUnitorNatIso (ModuleCat.{u} P)).symm
+        (restrictScalars.{u} f)) ≪≫
+    extendScalarsCompTensorLeftIso f (𝟙_ (ModuleCat.{u} P))
 
 end ModuleCat
