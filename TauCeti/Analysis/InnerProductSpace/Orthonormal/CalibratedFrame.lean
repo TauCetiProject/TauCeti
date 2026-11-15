@@ -125,21 +125,8 @@ theorem isCalibratedFrame_sum_smul_iff {A : Matrix (Fin k) (Fin k) ℝ}
     φ.IsCalibratedFrame (fun j ↦ ∑ i, A j i • v i) ↔ (A.det • φ).IsCalibratedFrame v := by
   have hval : φ (fun j ↦ ∑ i, A j i • v i) = (A.det • φ) v := by
     simpa using φ.toAlternatingMap.map_sum_smul A v
-  -- The inverse change of frame is the one by `Aᵀ`, which is orthogonal too.
-  have hback : (fun j ↦ ∑ i, Aᵀ j i • ∑ l, A i l • v l) = v := by
-    ext j
-    simp_rw [Finset.smul_sum, smul_smul]
-    rw [Finset.sum_comm]
-    simp_rw [← Finset.sum_smul, ← Matrix.mul_apply, (Matrix.mem_orthogonalGroup_iff' _ _).1 hA]
-    simp [Matrix.one_apply]
-  have horth : Orthonormal ℝ (fun j ↦ ∑ i, A j i • v i) ↔ Orthonormal ℝ v := by
-    refine ⟨fun hw ↦ hback ▸ (hw.orthonormal_sum_smul_iff Aᵀ).2 ?_, fun hv ↦
-      (hv.orthonormal_sum_smul_iff A).2 ?_⟩
-    · rw [Matrix.conjTranspose_eq_transpose_of_trivial, Matrix.transpose_transpose]
-      exact (Matrix.mem_orthogonalGroup_iff' _ _).1 hA
-    · rw [Matrix.conjTranspose_eq_transpose_of_trivial]
-      exact (Matrix.mem_orthogonalGroup_iff _ _).1 hA
-  rw [isCalibratedFrame_iff, isCalibratedFrame_iff, horth, hval]
+  rw [isCalibratedFrame_iff, isCalibratedFrame_iff,
+    TauCeti.orthonormal_sum_smul_iff_of_mem_unitaryGroup hA, hval]
 
 /-- A special orthogonal change of frame `vⱼ ↦ ∑ i, A j i • vᵢ` preserves calibrated frames. -/
 theorem isCalibratedFrame_sum_smul_iff_of_mem_specialOrthogonalGroup

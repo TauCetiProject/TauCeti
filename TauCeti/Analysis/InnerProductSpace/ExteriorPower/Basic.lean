@@ -269,9 +269,8 @@ private theorem ιMulti_eq_ιMulti_iff_of_finiteDimensional {e v : Fin n → E} 
     ext j
     rw [← U.starProjection_eq_self_iff.2 (hmem j), he.starProjection_apply_eq_sum rfl]
     simp [A]
-  have hAO : A ∈ Matrix.orthogonalGroup (Fin n) ℝ := by
-    have := (he.orthonormal_sum_smul_iff A).1 (hvA ▸ hv)
-    rwa [Matrix.conjTranspose_eq_transpose_of_trivial, ← Matrix.mem_orthogonalGroup_iff] at this
+  have hAO : A ∈ Matrix.orthogonalGroup (Fin n) ℝ :=
+    (he.orthonormal_sum_smul_iff_mem_unitaryGroup A).1 (hvA ▸ hv)
   refine ⟨A, Matrix.mem_specialOrthogonalGroup_iff.2 ⟨hAO, ?_⟩, hvA⟩
   have hne : ιMulti ℝ n e ≠ 0 := fun h0 ↦ by simpa [h0] using he.norm_ιMulti
   refine smul_left_injective ℝ hne ?_
