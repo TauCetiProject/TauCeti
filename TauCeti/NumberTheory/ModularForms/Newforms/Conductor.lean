@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.Newforms.Newform
-import TauCeti.NumberTheory.DirichletCharacter.PrimeValues
+public import TauCeti.NumberTheory.ModularForms.Newforms.LevelRaise
 import TauCeti.NumberTheory.ModularForms.Newforms.Associated
-import TauCeti.NumberTheory.ModularForms.Newforms.EigenFromPrimes
-import TauCeti.NumberTheory.ModularForms.Newforms.Fields
+import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne.Nebentypus
 
 /-!
 # The conductor and primitive associate of a good Hecke eigenform
@@ -28,9 +26,9 @@ develops their theory.
 * **Character descent and all good indices.** Because `g.χ` pulls back to `f.χ` along
   `(ZMod N)ˣ → (ZMod M)ˣ`, the zero-extended Dirichlet character `MulChar.ofUnitHom f.χ` is the
   level-raise of `g.dirichletLift`; in particular it factors through `f.conductor`, so its
-  character conductor divides `f.conductor`, and when `f.χ` is primitive `f.conductor = N`. The
-  prime-power Hecke recurrence and coprime multiplicativity propagate equality of eigenvalues from
-  good primes to every index `n` coprime to `N`.
+  character conductor divides `f.conductor`, and when `f.χ` is primitive `f.conductor = N`. By
+  `EigenformAwayFromLevel.eigenvalue_eq_of_comp_unitsMap_eq_of_forall_prime`, equality of
+  eigenvalues propagates from good primes to every index `n` coprime to `N`.
 * **Universal divisibility and the new/old dichotomy.** Among divisors `M' ∣ N`, `f` arises from
   level `M'` — meaning `f` lies in `∑_{d * M' ∣ N} V_d S_k(Γ₁(M'))` — if and only if
   `f.conductor ∣ M'`. Consequently a good Hecke eigenform is never mixed: it lies in the new
@@ -44,22 +42,19 @@ develops their theory.
   characters, and cross-level strong multiplicity one equates the primitive associates. When the
   nebentypes are already known to agree on a common multiple of the levels, agreement at the common
   good primes outside a finite set suffices.
-* **Stability under level-raising and oldspace combinations.** Every nonzero cusp form in the span
-  of `{V_d f | d * M ∣ N}` bundles into a good Hecke eigenform (`ofMemSpanLevelRaise`) with the
-  same conductor and primitive associate as `f`. Specialising to a single generator gives the
-  bundled level-raise `EigenformAwayFromLevel.levelRaise`; specialising to `V₁ g + c • V_d g` for a
-  newform `g` and `1 < d` produces, for every `c : ℂ`, a normalised good Hecke eigenform of
-  conductor `M` and primitive associate `g` whose `d`-th Fourier coefficient is `a_d(g) + c`,
-  showing that the good eigensystem leaves bad-prime coefficients unconstrained.
+* **Stability under level-raising and oldspace combinations.** Bundling a nonzero cusp form in the
+  span of `{V_d f | d * M ∣ N}` via `EigenformAwayFromLevel.ofMemSpanLevelRaise` — in particular
+  the bundled level-raise `EigenformAwayFromLevel.levelRaise` — preserves the conductor and
+  primitive associate of `f`. Specialising to `V₁ g + c • V_d g` for a newform `g` and `1 < d`
+  produces, for every `c : ℂ`, a normalised good Hecke eigenform of conductor `M` and primitive
+  associate `g` whose `d`-th Fourier coefficient is `a_d(g) + c`, showing that the good eigensystem
+  leaves bad-prime coefficients unconstrained.
 
 ## Main definitions (in `HeckeRing.GL2`)
 
 * `EigenformAwayFromLevel.conductor`: the conductor `M ∣ N` of a good Hecke eigenform.
 * `EigenformAwayFromLevel.primitiveAssociate`: the unique newform of level `f.conductor` attached
   to `f`.
-* `EigenformAwayFromLevel.ofMemSpanLevelRaise`: bundle any nonzero form in the level-raise span of
-  `f` as a good Hecke eigenform at the raised level.
-* `EigenformAwayFromLevel.levelRaise`: raise a bundled good Hecke eigenform along `d * M ∣ N`.
 
 ## Main results (in `HeckeRing.GL2`)
 
@@ -91,7 +86,7 @@ develops their theory.
 
 public section
 
-open Filter Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup ZMod TauCeti
+open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup ZMod TauCeti
 
 open scoped MatrixGroups ModularForm
 
@@ -100,76 +95,6 @@ namespace HeckeRing.GL2
 variable {N M L : ℕ} {k : ℤ}
 
 namespace EigenformAwayFromLevel
-
-/-! ### Propagating eigenvalue agreement from primes to all good indices -/
-
-/-- Prime-power Hecke recurrence step: if `g` of level `M ∣ N` has nebentypus inducing `f.χ` and
-agrees with `f` at a good prime `P`, then `g` and `f` agree at every power `P ^ s`. -/
-private theorem eigenvalue_prime_pow_eq_of_comp_unitsMap_eq [NeZero M] [NeZero N]
-    (g : EigenformAwayFromLevel M k) (f : EigenformAwayFromLevel N k) (hM : M ∣ N)
-    (hχ : g.χ.comp (unitsMap hM) = f.χ) {P : ℕ+} (hp : (P : ℕ).Prime)
-    (hP : ∀ hpN : Nat.Coprime (P : ℕ) N,
-      g.eigenvalue P (hpN.coprime_dvd_right hM) = f.eigenvalue P hpN)
-    (s : ℕ) (hsM : Nat.Coprime (P ^ s : ℕ+) M) (hsN : Nat.Coprime (P ^ s : ℕ+) N) :
-    g.eigenvalue (P ^ s) hsM = f.eigenvalue (P ^ s) hsN := by
-  induction s using Nat.twoStepInduction with
-  | zero =>
-      exact (g.eigenvalue_congr (pow_zero P) (hn := Nat.coprime_one_left M)).trans
-        (g.eigenvalue_one.trans (f.eigenvalue_one.symm.trans
-          (f.eigenvalue_congr (pow_zero P).symm)))
-  | one =>
-      have hpN : Nat.Coprime (P : ℕ) N := by rwa [pow_one] at hsN
-      exact (g.eigenvalue_congr (pow_one P) (hn := hpN.coprime_dvd_right hM)).trans
-        ((hP hpN).trans (f.eigenvalue_congr (pow_one P).symm))
-  | more s ih₀ ih₁ =>
-      have hpN : Nat.Coprime (P : ℕ) N :=
-        (Nat.coprime_pow_left_iff (Nat.succ_pos _) (P : ℕ) N).mp
-          (PNat.pow_coe P (s + 2) ▸ hsN)
-      have hpM : Nat.Coprime (P : ℕ) M := hpN.coprime_dvd_right hM
-      have hchr : g.χ (unitOfCoprime (P : ℕ) hpM) = f.χ (unitOfCoprime (P : ℕ) hpN) := by
-        rw [← hχ, MonoidHom.comp_apply, unitsMap_unitOfCoprime]
-      rw [g.eigenvalue_prime_pow_add_two (p := P) hp hpM s,
-        f.eigenvalue_prime_pow_add_two (p := P) hp hpN s,
-        hP hpN, hchr, ih₁ _ _, ih₀ _ _]
-
-/-- **Good-prime eigenvalues and compatible nebentypus determine all good eigenvalues.** If `g` of
-level `M ∣ N` has nebentypus inducing that of `f` modulo `N` and agrees with `f` at every prime
-`p ∤ N`, then `g` and `f` have the same eigenvalue at every positive index coprime to `N`. -/
-theorem eigenvalue_eq_of_comp_unitsMap_eq_of_forall_prime [NeZero M] [NeZero N]
-    (g : EigenformAwayFromLevel M k) (f : EigenformAwayFromLevel N k) (hM : M ∣ N)
-    (hχ : g.χ.comp (unitsMap hM) = f.χ)
-    (hp_eq : ∀ (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N),
-      g.eigenvalue ⟨p, hp.pos⟩ (hpN.coprime_dvd_right hM) = f.eigenvalue ⟨p, hp.pos⟩ hpN)
-    (n : ℕ+) (hm : Nat.Coprime (n : ℕ) M) (hn : Nat.Coprime (n : ℕ) N) :
-    g.eigenvalue n hm = f.eigenvalue n hn := by
-  -- Induct on the positive natural number underlying `n` via prime powers and coprime products.
-  suffices ∀ (m : ℕ) (hm0 : 0 < m) (hmM : Nat.Coprime m M) (hmN : Nat.Coprime m N),
-      g.eigenvalue ⟨m, hm0⟩ hmM = f.eigenvalue ⟨m, hm0⟩ hmN from
-    this n.val n.pos hm hn
-  intro m
-  induction m using Nat.recOnPrimeCoprime with
-  | zero => intro hm0; exact absurd hm0 (lt_irrefl 0)
-  | prime_pow p r hp =>
-      intro _ hmM hmN
-      let P : ℕ+ := ⟨p, hp.pos⟩
-      have heq : (⟨p ^ r, pow_pos hp.pos r⟩ : ℕ+) = P ^ r := Subtype.ext (PNat.pow_coe P r).symm
-      refine (g.eigenvalue_congr heq (hn := PNat.pow_coe P r ▸ hmM)).trans ?_
-      refine (eigenvalue_prime_pow_eq_of_comp_unitsMap_eq g f hM hχ (P := P) hp
-        (fun hpN ↦ hp_eq p hp hpN) r _ (PNat.pow_coe P r ▸ hmN)).trans ?_
-      exact f.eigenvalue_congr heq.symm
-  | coprime a b _ _ hab iha ihb =>
-      intro hpos hmM hmN
-      have ha0 : 0 < a := Nat.pos_of_mul_pos_right hpos
-      have hb0 : 0 < b := Nat.pos_of_mul_pos_left hpos
-      obtain ⟨haM, hbM⟩ := Nat.coprime_mul_iff_left.mp hmM
-      obtain ⟨haN, hbN⟩ := Nat.coprime_mul_iff_left.mp hmN
-      let A : ℕ+ := ⟨a, ha0⟩
-      let B : ℕ+ := ⟨b, hb0⟩
-      have heq : (⟨a * b, hpos⟩ : ℕ+) = A * B := Subtype.ext (PNat.mul_coe A B).symm
-      refine (g.eigenvalue_congr heq (hn := PNat.mul_coe A B ▸ hmM)).trans ?_
-      rw [g.eigenvalue_mul (m := A) (n := B) hab haM hbM, iha ha0 haM haN, ihb hb0 hbM hbN,
-        ← f.eigenvalue_mul (m := A) (n := B) hab haN hbN]
-      exact f.eigenvalue_congr heq.symm
 
 /-! ### The conductor and primitive associate -/
 
@@ -337,18 +262,6 @@ theorem mem_span_levelRaise_primitiveAssociate [NeZero N] (f : EigenformAwayFrom
           f.primitiveAssociate.toCuspForm = G} :=
   f.primitiveAssociate_spec.2.2.1
 
-/-- Membership in the oldspace of the primitive associate, indexed by divisors `d ∣ N / f.conductor`
-as in `g(d z)` for `d ∣ N / M`. -/
-theorem mem_span_levelRaise_primitiveAssociate_div [NeZero N] (f : EigenformAwayFromLevel N k) :
-    f.toCuspForm ∈ Submodule.span ℂ {G : CuspForm ((Gamma1 N).map (mapGL ℝ)) k |
-      ∃ (d : ℕ) (_ : NeZero d) (hd : d ∣ N / f.conductor),
-        CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd
-          (mul_comm f.conductor d ▸ (Nat.dvd_div_iff_mul_dvd f.conductor_dvd).mp hd))
-          f.primitiveAssociate.toCuspForm = G} := by
-  refine Submodule.span_mono ?_ f.mem_span_levelRaise_primitiveAssociate
-  rintro _ ⟨d, hd0, h, rfl⟩
-  exact ⟨d, hd0, (Nat.dvd_div_iff_mul_dvd f.conductor_dvd).mpr (mul_comm d f.conductor ▸ h), rfl⟩
-
 /-! ### Uniqueness and cross-level comparison of primitive associates -/
 
 /-- **Uniqueness of the conductor and primitive associate** (Miyake, Theorem 4.6.19 and Corollary
@@ -393,60 +306,16 @@ theorem χ_comp_unitsMap_eq_of_forall_notMem_eigenvalue_eq [NeZero N] [NeZero M]
     (h : ∀ (n : ℕ+) (hnN : Nat.Coprime (n : ℕ) N) (hnM : Nat.Coprime (n : ℕ) M),
       (n : ℕ) ∉ S → f₁.eigenvalue n hnN = f₂.eigenvalue n hnM) :
     f₁.χ.comp (unitsMap hNL) = f₂.χ.comp (unitsMap hML) := by
-  -- Evaluate the Dirichlet lifts of the two primitive associates at primes `p > S.sup id + N + M`
-  -- directly: multiples of primes dividing `N / f₁.conductor` form an infinite set where `f₁` has
-  -- no good-index hypothesis, whereas large primes `p` and `p²` are coprime to both `N` and `M`.
-  have hev : ∀ᶠ p : ℕ in cofinite, p.Prime →
-      f₁.primitiveAssociate.dirichletLift p = f₂.primitiveAssociate.dirichletLift p := by
-    rw [Nat.cofinite_eq_atTop]
-    filter_upwards [eventually_gt_atTop (S.sup id + N + M)] with p hpB hp
-    have hcop {R : ℕ} [NeZero R] (hR : R < p) : Nat.Coprime p R :=
-      hp.coprime_iff_not_dvd.mpr fun hpR ↦ (Nat.le_of_dvd (NeZero.pos R) hpR).not_gt hR
-    have hpN : Nat.Coprime p N := hcop (by omega)
-    have hpM : Nat.Coprime p M := hcop (by omega)
-    have hpC₁ : Nat.Coprime p f₁.conductor := hpN.coprime_dvd_right f₁.conductor_dvd
-    have hpC₂ : Nat.Coprime p f₂.conductor := hpM.coprime_dvd_right f₂.conductor_dvd
-    have hS {m : ℕ} (hm : p ≤ m) : m ∉ S := fun hmS ↦
-      (Finset.le_sup (f := id) hmS).not_gt (by simp only [id]; omega)
-    have h₁ : (qExpansion 1 f₁.primitiveAssociate.toCuspForm).coeff p =
-        (qExpansion 1 f₂.primitiveAssociate.toCuspForm).coeff p :=
-      (f₁.qExpansion_coeff_primitiveAssociate ⟨p, hp.pos⟩ hpN).trans
-        ((h ⟨p, hp.pos⟩ hpN hpM (hS le_rfl)).trans
-          (f₂.qExpansion_coeff_primitiveAssociate ⟨p, hp.pos⟩ hpM).symm)
-    have h₂ : (qExpansion 1 f₁.primitiveAssociate.toCuspForm).coeff (p ^ 2) =
-        (qExpansion 1 f₂.primitiveAssociate.toCuspForm).coeff (p ^ 2) :=
-      (f₁.qExpansion_coeff_primitiveAssociate ⟨p ^ 2, pow_pos hp.pos 2⟩ (hpN.pow_left 2)).trans
-        ((h ⟨p ^ 2, pow_pos hp.pos 2⟩ (hpN.pow_left 2) (hpM.pow_left 2)
-          (hS (Nat.le_self_pow two_ne_zero p))).trans
-          (f₂.qExpansion_coeff_primitiveAssociate ⟨p ^ 2, pow_pos hp.pos 2⟩ (hpM.pow_left 2)).symm)
-    rw [f₁.primitiveAssociate.dirichletLift_apply_of_coprime hpC₁,
-      f₂.primitiveAssociate.dirichletLift_apply_of_coprime hpC₂,
-      TauCeti.char_prime_eq_coeff f₁.primitiveAssociate hp hpC₁,
-      TauCeti.char_prime_eq_coeff f₂.primitiveAssociate hp hpC₂, h₁, h₂]
-  have hchg := congrArg MulChar.toUnitHom
-    (DirichletCharacter.changeLevel_eq_changeLevel_of_eventually_apply_prime_eq
-      (f₁.conductor_dvd.trans hNL) (f₂.conductor_dvd.trans hML) hev)
-  rwa [Newform.changeLevel_dirichletLift_toUnitHom, Newform.changeLevel_dirichletLift_toUnitHom,
-    f₁.primitiveAssociate_χ_comp_unitsMap_of_dvd hNL,
-    f₂.primitiveAssociate_χ_comp_unitsMap_of_dvd hML] at hchg
-
-/-- **Uniqueness of the conductor and primitive associate without a nebentypus hypothesis.** Any
-newform `g` of an arbitrary level `M` whose eigenvalues agree with those of `f` at all common good
-indices outside a finite set `S` has `M = f.conductor` and coincides on `ℍ` with
-`f.primitiveAssociate`. -/
-theorem level_eq_conductor_and_coe_eq_primitiveAssociate_of_forall_notMem_eigenvalue_eq
-    [NeZero N] [NeZero M] (f : EigenformAwayFromLevel N k) (g : Newform M k) {S : Finset ℕ}
-    (h : ∀ (n : ℕ+) (hnM : Nat.Coprime (n : ℕ) M) (hnN : Nat.Coprime (n : ℕ) N),
-      (n : ℕ) ∉ S → g.eigenvalue n hnM = f.eigenvalue n hnN) :
-    M = f.conductor ∧ ⇑g.toCuspForm = ⇑f.primitiveAssociate.toCuspForm := by
-  set L := Nat.lcm N M
-  have : NeZero L := ⟨Nat.lcm_ne_zero (NeZero.ne N) (NeZero.ne M)⟩
-  have hNL : N ∣ L := Nat.dvd_lcm_left N M
-  have hML : M ∣ L := Nat.dvd_lcm_right N M
-  refine f.level_eq_conductor_and_coe_eq_primitiveAssociate g hNL hML
-    (χ_comp_unitsMap_eq_of_forall_notMem_eigenvalue_eq g.toEigenformAwayFromLevel f hML hNL h)
-    (S := S) fun p hp hpL hpS ↦
-      h ⟨p, hp.pos⟩ (hpL.coprime_dvd_right hML) (hpL.coprime_dvd_right hNL) hpS
+  have hχ := Newform.χ_comp_unitsMap_eq_of_forall_notMem_qExpansion_coeff_eq
+    f₁.primitiveAssociate f₂.primitiveAssociate
+    (f₁.conductor_dvd.trans hNL) (f₂.conductor_dvd.trans hML) (S := S) fun n hnL hnS ↦ by
+      have hnN := hnL.coprime_dvd_right hNL
+      have hnM := hnL.coprime_dvd_right hML
+      rw [f₁.qExpansion_coeff_primitiveAssociate n hnN,
+        f₂.qExpansion_coeff_primitiveAssociate n hnM]
+      exact h n hnN hnM hnS
+  rwa [f₁.primitiveAssociate_χ_comp_unitsMap_of_dvd hNL,
+    f₂.primitiveAssociate_χ_comp_unitsMap_of_dvd hML] at hχ
 
 /-- **Two good Hecke eigenforms with compatible nebentypes and prime eigenvalues agreeing outside a
 finite set have the same conductor and primitive associate.** -/
@@ -636,30 +505,6 @@ theorem conductor_lt_self_iff_mem_cuspFormsOld [NeZero N] (f : EigenformAwayFrom
   rw [← f.conductor_ne_self_iff_mem_cuspFormsOld]
   exact ⟨ne_of_lt, fun hne ↦ lt_of_le_of_ne f.conductor_le_self hne⟩
 
-/-- Every cusp form raised along `d * M ∣ N` from `S_k(Γ₁(M))` is a linear combination of
-level-raised newforms `V_c g'` with `c * M' ∣ N` and `M' ∣ M`. -/
-private theorem iSup_range_levelRaise_le_span_newform [NeZero N] [NeZero M] :
-    (⨆ (d : ℕ) (hd : d * M ∣ N),
-      haveI : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd hd)
-      LinearMap.range
-        (CuspForm.levelRaiseₗ (k := k) d (Gamma1_map_le_conjAct_scaleGL_of_dvd hd))) ≤
-    Submodule.span ℂ {G : CuspForm ((Gamma1 N).map (mapGL ℝ)) k |
-      ∃ (M' c : ℕ) (_ : NeZero M') (_ : NeZero c) (hc : c * M' ∣ N),
-        M' ∣ M ∧ ∃ g' : Newform M' k,
-          CuspForm.levelRaise c (Gamma1_map_le_conjAct_scaleGL_of_dvd hc) g'.toCuspForm = G} := by
-  refine iSup_le fun d ↦ iSup_le fun hd ↦ ?_
-  have : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd hd)
-  rw [← Submodule.map_top, ← Newform.span_levelRaise_eq_top M k, Submodule.map_span,
-    Submodule.span_le]
-  rintro _ ⟨_, ⟨M', e, _, _, he, g', rfl⟩, rfl⟩
-  have hed : (e * d) * M' ∣ N := by
-    rw [mul_comm e d, mul_assoc]
-    exact (mul_dvd_mul_left d he).trans hd
-  have : NeZero (e * d) := ⟨mul_ne_zero (NeZero.ne e) (NeZero.ne d)⟩
-  rw [CuspForm.levelRaiseₗ_apply, CuspForm.levelRaise_levelRaise]
-  exact Submodule.subset_span ⟨M', e * d, inferInstance, inferInstance, hed,
-    dvd_of_mul_left_dvd he, g', rfl⟩
-
 /-- If `f` lies in the span of level-raised newforms from levels dividing `M`, then
 `f.conductor ∣ M`, by independence of nebentypus spaces and joint good-prime eigenspaces. -/
 private theorem conductor_dvd_of_mem_span_newform [NeZero N]
@@ -723,25 +568,15 @@ theorem conductor_dvd_iff_mem_iSup_levelRaise [NeZero N] [NeZero M]
   · intro hCM
     refine Submodule.span_le.mpr ?_ f.mem_span_levelRaise_primitiveAssociate
     rintro _ ⟨d, _, hd, rfl⟩
-    -- Factor `d = d₂ * d₁` with `d₂ = gcd(d, M / f.conductor)` so `V_d = V_{d₁} ∘ V_{d₂}`
+    -- Factor `d = d₂ * d₁` across `(M / f.conductor) * (N / M)` so `V_d = V_{d₁} ∘ V_{d₂}`
     -- steps through level `M`.
-    obtain ⟨d₁, d₂, rfl, hd₂M, hd₁N⟩ :
-        ∃ d₁ d₂ : ℕ, d₂ * d₁ = d ∧ d₂ * f.conductor ∣ M ∧ d₁ * M ∣ N := by
-      let d₂ := Nat.gcd d (M / f.conductor)
-      let d₁ := d / d₂
-      have hd₂0 : 0 < d₂ := Nat.gcd_pos_of_pos_right d
-        (Nat.div_pos (Nat.le_of_dvd (NeZero.pos M) hCM) f.conductor_pos)
-      have hd₁₂ : d₁ * d₂ = d := Nat.div_mul_cancel (Nat.gcd_dvd_left d (M / f.conductor))
-      refine ⟨d₁, d₂, mul_comm d₁ d₂ ▸ hd₁₂, ?_, ?_⟩
-      · exact (mul_dvd_mul_right (Nat.gcd_dvd_right d (M / f.conductor)) f.conductor).trans
-          (Nat.div_mul_cancel hCM).dvd
-      · refine (Nat.mul_dvd_mul_iff_right hd₂0).mp ?_
-        have hmul : d₁ * M * d₂ = d * M := by rw [mul_right_comm, hd₁₂]
-        have hMC : d * M = d * f.conductor * (M / f.conductor) := by
-          rw [mul_assoc, mul_comm f.conductor, Nat.div_mul_cancel hCM]
-        rw [hmul, ← Nat.gcd_mul_left]
-        exact Nat.dvd_gcd (mul_comm d M ▸ mul_dvd_mul_right hMN d)
-          (hMC ▸ mul_dvd_mul_right hd (M / f.conductor))
+    obtain ⟨q, hM⟩ := hCM
+    obtain ⟨r, hN⟩ := hMN
+    have hdqr : d ∣ q * r := (Nat.mul_dvd_mul_iff_left f.conductor_pos).mp <| by
+      rwa [← mul_assoc, ← hM, ← hN, mul_comm f.conductor d]
+    obtain ⟨d₂, d₁, hd₂q, hd₁r, rfl⟩ := exists_dvd_and_dvd_of_dvd_mul hdqr
+    have hd₂M : d₂ * f.conductor ∣ M := hM ▸ mul_comm f.conductor q ▸ mul_dvd_mul_right hd₂q _
+    have hd₁N : d₁ * M ∣ N := hN ▸ mul_comm M r ▸ mul_dvd_mul_right hd₁r _
     have : NeZero d₁ := NeZero.of_dvd (dvd_of_mul_right_dvd hd₁N)
     have : NeZero d₂ := NeZero.of_dvd (dvd_of_mul_right_dvd hd₂M)
     refine Submodule.mem_iSup_of_mem d₁ (Submodule.mem_iSup_of_mem hd₁N ?_)
@@ -749,7 +584,7 @@ theorem conductor_dvd_iff_mem_iSup_levelRaise [NeZero N] [NeZero M]
       f.primitiveAssociate.toCuspForm, ?_⟩
     rw [CuspForm.levelRaiseₗ_apply, CuspForm.levelRaise_levelRaise]
   · exact fun hmem ↦ f.conductor_dvd_of_mem_span_newform
-      (iSup_range_levelRaise_le_span_newform hmem)
+      (Newform.iSup_range_levelRaise_le_span_levelRaise hmem)
 
 /-- **The conductor is the least divisor level from which a good Hecke eigenform arises.** -/
 theorem isLeast_conductor [NeZero N] (f : EigenformAwayFromLevel N k) :
@@ -765,85 +600,7 @@ theorem isLeast_conductor [NeZero N] (f : EigenformAwayFromLevel N k) :
   have := hM0
   exact Nat.le_of_dvd (NeZero.pos M) ((f.conductor_dvd_iff_mem_iSup_levelRaise hMN).mpr hmem)
 
-/-! ### Oldspace combinations, bundled level-raising, and bad-prime perturbations -/
-
-/-- Every cusp form in the level-raise span of `f` has nebentypus induced by `f.χ` and is an
-eigenvector of `T_p` for every prime `p ∤ N` with eigenvalue `f.eigenvalue p`. -/
-private theorem mem_charSpace_and_heckeTCuspNat_of_mem_span_levelRaise [NeZero M] [NeZero N]
-    (f : EigenformAwayFromLevel M k) (hMN : M ∣ N)
-    {F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
-    (hF : F ∈ Submodule.span ℂ {G : CuspForm ((Gamma1 N).map (mapGL ℝ)) k |
-      ∃ (d : ℕ) (_ : NeZero d) (h : d * M ∣ N),
-        CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) f.toCuspForm = G}) :
-    F ∈ cuspFormCharSpace k (f.χ.comp (unitsMap hMN)) ∧
-      ∀ (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N),
-        heckeTCuspNat k p (_hn := ⟨hp.ne_zero⟩) F =
-          f.eigenvalue ⟨p, hp.pos⟩ (hpN.coprime_dvd_right hMN) • F := by
-  refine ⟨Submodule.span_le.mpr ?_ hF, fun p hp hpN ↦ ?_⟩
-  · rintro _ ⟨d, _, hd, rfl⟩
-    exact CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd hd f.χ f.mem_charSpace
-  · have : NeZero p := ⟨hp.ne_zero⟩
-    refine Module.End.mem_eigenspace_iff.mp (Submodule.span_le.mpr ?_ hF)
-    rintro _ ⟨d, _, hd, rfl⟩
-    exact Module.End.mem_eigenspace_iff.mpr
-      (f.heckeTCuspNat_levelRaise_eq_eigenvalue_smul hd hp hpN)
-
-/-- **Bundle any nonzero cusp form in the level-raise span of `f` as a good Hecke eigenform.**
-For `M ∣ N` and any nonzero `F` in `span {V_d f | d * M ∣ N}`, `F` inherits the induced nebentypus,
-the good eigenvalues, the conductor, and the primitive associate of `f`. -/
-noncomputable def ofMemSpanLevelRaise [NeZero M] [NeZero N] (f : EigenformAwayFromLevel M k)
-    (hMN : M ∣ N) {F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
-    (hF : F ∈ Submodule.span ℂ {G : CuspForm ((Gamma1 N).map (mapGL ℝ)) k |
-      ∃ (d : ℕ) (_ : NeZero d) (h : d * M ∣ N),
-        CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) f.toCuspForm = G})
-    (hF0 : F ≠ 0) : EigenformAwayFromLevel N k :=
-  let hprop := mem_charSpace_and_heckeTCuspNat_of_mem_span_levelRaise f hMN hF
-  ofForallPrime hprop.1 hF0 fun p hp hpN ↦
-    have : NeZero p := ⟨hp.ne_zero⟩
-    ⟨f.eigenvalue ⟨p, hp.pos⟩ (hpN.coprime_dvd_right hMN), by
-      rw [← heckeTCompositeGamma0_prime N hp]
-      exact heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_smul_of_heckeTCuspNat_eq_smul hp
-        (hprop.2 p hp hpN)⟩
-
-/-- The underlying cusp form of `f.ofMemSpanLevelRaise` is `F`. -/
-@[simp]
-theorem ofMemSpanLevelRaise_toCuspForm [NeZero M] [NeZero N] (f : EigenformAwayFromLevel M k)
-    (hMN : M ∣ N) {F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
-    (hF : F ∈ Submodule.span ℂ {G : CuspForm ((Gamma1 N).map (mapGL ℝ)) k |
-      ∃ (d : ℕ) (_ : NeZero d) (h : d * M ∣ N),
-        CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) f.toCuspForm = G})
-    (hF0 : F ≠ 0) :
-    (f.ofMemSpanLevelRaise hMN hF hF0).toCuspForm = F := by
-  rw [ofMemSpanLevelRaise, ofForallPrime_toCuspForm]
-
-/-- The nebentypus of `f.ofMemSpanLevelRaise` is `f.χ` pulled back to `(ZMod N)ˣ`. -/
-@[simp]
-theorem ofMemSpanLevelRaise_χ [NeZero M] [NeZero N] (f : EigenformAwayFromLevel M k)
-    (hMN : M ∣ N) {F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
-    (hF : F ∈ Submodule.span ℂ {G : CuspForm ((Gamma1 N).map (mapGL ℝ)) k |
-      ∃ (d : ℕ) (_ : NeZero d) (h : d * M ∣ N),
-        CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) f.toCuspForm = G})
-    (hF0 : F ≠ 0) :
-    (f.ofMemSpanLevelRaise hMN hF hF0).χ = f.χ.comp (unitsMap hMN) := by
-  rw [ofMemSpanLevelRaise, ofForallPrime_χ]
-
--- Not `@[simp]`: the proof `hm` appears only on the right-hand side.
-/-- The eigenvalues of `ofMemSpanLevelRaise` at all good indices agree with those of `f`. -/
-theorem ofMemSpanLevelRaise_eigenvalue [NeZero M] [NeZero N] (f : EigenformAwayFromLevel M k)
-    (hMN : M ∣ N) {F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
-    (hF : F ∈ Submodule.span ℂ {G : CuspForm ((Gamma1 N).map (mapGL ℝ)) k |
-      ∃ (d : ℕ) (_ : NeZero d) (h : d * M ∣ N),
-        CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) f.toCuspForm = G})
-    (hF0 : F ≠ 0) (n : ℕ+) (hn : Nat.Coprime (n : ℕ) N) (hm : Nat.Coprime (n : ℕ) M) :
-    (f.ofMemSpanLevelRaise hMN hF hF0).eigenvalue n hn = f.eigenvalue n hm := by
-  symm
-  refine eigenvalue_eq_of_comp_unitsMap_eq_of_forall_prime f (f.ofMemSpanLevelRaise hMN hF hF0)
-    hMN (f.ofMemSpanLevelRaise_χ hMN hF hF0).symm (fun p hp hpN ↦ ?_) n hm hn
-  have : NeZero p := ⟨hp.ne_zero⟩
-  have h1 := (f.ofMemSpanLevelRaise hMN hF hF0).heckeTCuspNat_eq_eigenvalue_smul hp hpN
-  have h2 := (mem_charSpace_and_heckeTCuspNat_of_mem_span_levelRaise f hMN hF).2 p hp hpN
-  rw [f.ofMemSpanLevelRaise_toCuspForm] at h1
-  exact smul_left_injective ℂ hF0 (h2.symm.trans h1)
+/-! ### Stability under level-raising and bad-prime perturbations -/
 
 /-- **Every nonzero form in the level-raise span of `f` has the same conductor as `f`.** -/
 @[simp]
@@ -874,72 +631,23 @@ theorem coe_primitiveAssociate_ofMemSpanLevelRaise [NeZero M] [NeZero N]
     (f.ofMemSpanLevelRaise hMN hF hF0) f dvd_rfl hMN (by simp) (S := ∅) fun p hp hpN hpM _ ↦
       f.ofMemSpanLevelRaise_eigenvalue hMN hF hF0 ⟨p, hp.pos⟩ hpN hpM).2
 
-/-- **Raise the level of a bundled good Hecke eigenform** along `d * M ∣ N`: the degeneracy image
-`V_d f` as an `EigenformAwayFromLevel N k`. -/
-noncomputable def levelRaise [NeZero M] [NeZero N] (d : ℕ) [NeZero d] (h : d * M ∣ N)
-    (f : EigenformAwayFromLevel M k) : EigenformAwayFromLevel N k :=
-  f.ofMemSpanLevelRaise (dvd_of_mul_left_dvd h)
-    (Submodule.subset_span ⟨d, inferInstance, h, rfl⟩)
-    (by
-      rw [← CuspForm.levelRaiseₗ_apply]
-      exact (map_ne_zero_iff _ (CuspForm.levelRaiseₗ_injective _)).mpr f.ne_zero)
-
-/-- The underlying cusp form of `f.levelRaise d h` is `CuspForm.levelRaise d _ f.toCuspForm`. -/
-@[simp]
-theorem levelRaise_toCuspForm [NeZero M] [NeZero N] (d : ℕ) [NeZero d] (h : d * M ∣ N)
-    (f : EigenformAwayFromLevel M k) :
-    (f.levelRaise d h).toCuspForm =
-      CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) f.toCuspForm := by
-  rw [levelRaise, ofMemSpanLevelRaise_toCuspForm]
-
-/-- The nebentypus of `f.levelRaise d h` is `f.χ` pulled back to `(ZMod N)ˣ`. -/
-@[simp]
-theorem levelRaise_χ [NeZero M] [NeZero N] (d : ℕ) [NeZero d] (h : d * M ∣ N)
-    (f : EigenformAwayFromLevel M k) :
-    (f.levelRaise d h).χ = f.χ.comp (unitsMap (dvd_of_mul_left_dvd h)) := by
-  rw [levelRaise, ofMemSpanLevelRaise_χ]
-
--- Not `@[simp]`: the proof `hm` appears only on the right-hand side.
-/-- Raising the level preserves the eigenvalue at every index coprime to the raised level. -/
-theorem levelRaise_eigenvalue [NeZero M] [NeZero N] (d : ℕ) [NeZero d] (h : d * M ∣ N)
-    (f : EigenformAwayFromLevel M k) (n : ℕ+)
-    (hn : Nat.Coprime (n : ℕ) N) (hm : Nat.Coprime (n : ℕ) M) :
-    (f.levelRaise d h).eigenvalue n hn = f.eigenvalue n hm :=
-  f.ofMemSpanLevelRaise_eigenvalue _ _ _ n hn hm
-
-/-- Raising a good Hecke eigenform by `V₁` to its own level returns the eigenform unchanged. -/
-@[simp]
-theorem levelRaise_one_self [NeZero N] (h : 1 * N ∣ N) (f : EigenformAwayFromLevel N k) :
-    f.levelRaise 1 h = f := by
-  ext1
-  rw [levelRaise_toCuspForm]
-  exact _root_.CuspForm.levelRaise_one_self _ f.toCuspForm
-
-/-- Iterated level-raising of bundled good Hecke eigenforms composes by multiplying the dilation
-factors. -/
-@[simp]
-theorem levelRaise_levelRaise [NeZero M] [NeZero N] [NeZero L] {d e : ℕ} [NeZero d] [NeZero e]
-    (he : e * M ∣ N) (hd : d * N ∣ L) (f : EigenformAwayFromLevel M k) :
-    (f.levelRaise e he).levelRaise d hd =
-      f.levelRaise (e * d)
-        (by rw [mul_comm e d, mul_assoc]; exact (mul_dvd_mul_left d he).trans hd) := by
-  ext1
-  rw [levelRaise_toCuspForm, levelRaise_toCuspForm, levelRaise_toCuspForm,
-    CuspForm.levelRaise_levelRaise]
-
 /-- **Invariance of the conductor under level-raising.** -/
 @[simp]
 theorem conductor_levelRaise [NeZero M] [NeZero N] (d : ℕ) [NeZero d] (h : d * M ∣ N)
     (f : EigenformAwayFromLevel M k) :
     (f.levelRaise d h).conductor = f.conductor :=
-  f.conductor_ofMemSpanLevelRaise _ _ _
+  (conductor_eq_and_coe_primitiveAssociate_eq_of_forall_notMem_prime_eigenvalue_eq
+    (f.levelRaise d h) f dvd_rfl (dvd_of_mul_left_dvd h) (by simp) (S := ∅)
+    fun p hp hpN hpM _ ↦ f.levelRaise_eigenvalue d h ⟨p, hp.pos⟩ hpN hpM).1
 
 /-- **Invariance of the primitive associate under level-raising.** -/
 @[simp]
 theorem coe_primitiveAssociate_levelRaise [NeZero M] [NeZero N] (d : ℕ) [NeZero d]
     (h : d * M ∣ N) (f : EigenformAwayFromLevel M k) :
     ⇑(f.levelRaise d h).primitiveAssociate.toCuspForm = ⇑f.primitiveAssociate.toCuspForm :=
-  f.coe_primitiveAssociate_ofMemSpanLevelRaise _ _ _
+  (conductor_eq_and_coe_primitiveAssociate_eq_of_forall_notMem_prime_eigenvalue_eq
+    (f.levelRaise d h) f dvd_rfl (dvd_of_mul_left_dvd h) (by simp) (S := ∅)
+    fun p hp hpN hpM _ ↦ f.levelRaise_eigenvalue d h ⟨p, hp.pos⟩ hpN hpM).2
 
 end EigenformAwayFromLevel
 
@@ -966,20 +674,22 @@ theorem exists_eigenformAwayFromLevel_qExpansion_coeff_eq [NeZero M] [NeZero N] 
       c • CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hd) g.toCuspForm
   have hΓM := one_mem_strictPeriods_Gamma1_map M
   have hΓN := one_mem_strictPeriods_Gamma1_map N
+  have hcoeff (n : ℕ) : (qExpansion 1 F).coeff n =
+      (qExpansion 1 g.toCuspForm).coeff n +
+        c * if d ∣ n then (qExpansion 1 g.toCuspForm).coeff (n / d) else 0 := by
+    have hlin := map_add (CuspForm.qExpansionCoeffₗ one_pos hΓN k n)
+      (CuspForm.levelRaise 1 (Gamma1_map_le_conjAct_scaleGL_of_dvd h₁) g.toCuspForm)
+      (c • CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hd) g.toCuspForm)
+    rw [_root_.map_smul, smul_eq_mul, CuspForm.qExpansionCoeffₗ_apply,
+      CuspForm.qExpansionCoeffₗ_apply, CuspForm.qExpansionCoeffₗ_apply,
+      CuspForm.qExpansion_levelRaise_coeff hΓM, CuspForm.qExpansion_levelRaise_coeff hΓM] at hlin
+    simpa only [one_dvd, ↓reduceIte, Nat.div_one] using hlin
   have hc1 : (qExpansion 1 F).coeff 1 = 1 := by
-    rw [FunLike.coe_add, ModularForm.qExpansion_add one_pos hΓN, map_add,
-      FunLike.coe_smul, ModularForm.qExpansion_smul one_pos hΓN, _root_.map_smul, smul_eq_mul,
-      CuspForm.qExpansion_levelRaise_coeff hΓM, CuspForm.qExpansion_levelRaise_coeff hΓM]
-    simp only [one_dvd, ↓reduceIte, Nat.div_one, g.isNorm,
-      Nat.not_dvd_of_pos_of_lt zero_lt_one hd1, mul_zero, add_zero]
+    simp [hcoeff, Nat.not_dvd_of_pos_of_lt zero_lt_one hd1]
   have hF0 : F ≠ 0 := fun h0 ↦ zero_ne_one <| by
-    rwa [h0, FunLike.coe_zero, UpperHalfPlane.qExpansion_zero, map_zero] at hc1
+    rwa [← CuspForm.qExpansionCoeffₗ_apply one_pos hΓN, h0, map_zero] at hc1
   have hcd : (qExpansion 1 F).coeff d = w := by
-    rw [FunLike.coe_add, ModularForm.qExpansion_add one_pos hΓN, map_add,
-      FunLike.coe_smul, ModularForm.qExpansion_smul one_pos hΓN, _root_.map_smul, smul_eq_mul,
-      CuspForm.qExpansion_levelRaise_coeff hΓM, CuspForm.qExpansion_levelRaise_coeff hΓM]
-    simp only [one_dvd, dvd_rfl, ↓reduceIte, Nat.div_one,
-      Nat.div_self (zero_lt_one.trans hd1), g.isNorm, mul_one, c, add_sub_cancel]
+    simp [hcoeff, Nat.div_self (zero_lt_one.trans hd1), c]
   have hmem : F ∈ Submodule.span ℂ {G : CuspForm ((Gamma1 N).map (mapGL ℝ)) k |
       ∃ (e : ℕ) (_ : NeZero e) (h : e * M ∣ N),
         CuspForm.levelRaise e (Gamma1_map_le_conjAct_scaleGL_of_dvd h) g.toCuspForm = G} :=
