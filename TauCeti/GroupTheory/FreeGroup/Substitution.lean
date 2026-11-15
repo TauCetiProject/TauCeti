@@ -21,7 +21,9 @@ letters (`FreeGroup.substituteVars`): it is the substitution in Makanin's genera
 where both sides must agree letter by letter. It is primitive recursive jointly in the word
 and a finite table of the substituted words (`FreeGroup.primrec₂_substituteVars_getD`). It only
 depends on the words assigned to the generators that occur, so changing the word of one generator
-changes the substitution only at the letters of that generator.
+changes the substitution only at the letters of that generator, and renaming the variables of a
+word amounts to composing the assignment with the renaming
+(`FreeGroup.substituteVars_map_sumMap`).
 -/
 
 public section
@@ -169,6 +171,15 @@ theorem substituteVars_singleton_inr (U : X → List (A × Bool)) (a : A) (b : B
 theorem substituteVars_map_inl (U : X → List (A × Bool)) (l : List X) :
     substituteVars U (l.map fun x => (Sum.inl x, true)) = l.flatMap U := by
   simp [substituteVars, List.flatMap_map]
+
+/-- Substituting into a word whose variables are renamed along `f` is substituting the words
+assigned to the renamed variables. -/
+@[simp]
+theorem substituteVars_map_sumMap {Y : Type*} (U : Y → List (A × Bool)) (f : X → Y)
+    (w : List ((X ⊕ A) × Bool)) :
+    substituteVars U (w.map (Prod.map (Sum.map f id) id)) = substituteVars (U ∘ f) w := by
+  rw [substituteVars, substituteVars, flatMap_substituteLetter_map, Sum.elim_comp_map,
+    Function.comp_id]
 
 /-- Substitution without free reduction commutes with formal inverses. -/
 theorem substituteVars_invRev (U : X → List (A × Bool)) (w : List ((X ⊕ A) × Bool)) :
