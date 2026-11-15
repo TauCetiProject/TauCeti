@@ -54,7 +54,9 @@ characteristics two and three and rings with nilpotents.
 ## Main results
 
 * `WeierstrassCurve.VariableChange.formalCoordinate`: the transition `ψ`, with
-  `formalCoordinate_mul` (the cocycle identity) and `map_formalCoordinate` (base change).
+  `formalCoordinate_mul` (the cocycle identity), `map_formalCoordinate` (base change), the
+  low-degree coefficients `coeff_two_formalCoordinate`, `coeff_three_formalCoordinate`,
+  `coeff_four_formalCoordinate`, and faithfulness `formalCoordinate_injective`.
 * `WeierstrassCurve.VariableChange.subst_formalCoordinate_formalInvariantDifferentialDenom`:
   `G_W(ψ(z)) = u ψ'(z) G_{C • W}(z)` for the denominators `G` of the invariant differentials.
 * `WeierstrassCurve.VariableChange.subst_formalCoordinate_invariantDifferential_formalGroup`:
@@ -318,6 +320,88 @@ theorem map_formalCoordinate (C : VariableChange R) (W : WeierstrassCurve R) (f 
   apply TauCeti.FormalCoordinate.ext
   simp [formalCoordinate_toPowerSeries, TauCeti.FormalCoordinate.toPowerSeries_map,
     map_variableChange, map_formalW]
+
+/-- The quadratic coefficient of the formal coordinate transition is `s u⁻²`. -/
+@[simp]
+theorem coeff_two_formalCoordinate (C : VariableChange R) (W : WeierstrassCurve R) :
+    coeff 2 (C.formalCoordinate W).toPowerSeries = C.s * ↑C.u⁻¹ ^ 2 := by
+  have h : -(↑C.u⁻¹ * (C.s * (C.u : R) ^ 2)) +
+      coeff 2 (C.formalCoordinate W).toPowerSeries * (C.u : R) ^ 3 = 0 := by
+    simpa [formalDenom_def, coeff_mul, coeff_X, Finset.Nat.antidiagonal_succ, ← map_pow] using
+      congrArg (coeff 2) (C.formalCoordinate_mul_formalDenom W)
+  have hu : (C.u : R) * ↑C.u⁻¹ = 1 := C.u.mul_inv
+  apply (C.u ^ 3).isUnit.mul_right_cancel
+  rw [Units.val_pow_eq_pow_val]
+  linear_combination h - C.s * (C.u : R) * pow_mul_pow_eq_one 2 hu + C.s * (C.u : R) * hu
+
+/-- The cubic coefficient of the formal coordinate transition is `(r + s²) u⁻³`. -/
+@[simp]
+theorem coeff_three_formalCoordinate (C : VariableChange R) (W : WeierstrassCurve R) :
+    coeff 3 (C.formalCoordinate W).toPowerSeries = (C.r + C.s ^ 2) * ↑C.u⁻¹ ^ 3 := by
+  have h : -(C.s * (↑C.u⁻¹ : R) ^ 2 * (C.s * (C.u : R) ^ 2)) +
+      coeff 3 (C.formalCoordinate W).toPowerSeries * (C.u : R) ^ 3 = C.r := by
+    simpa [formalDenom_def, coeff_mul, coeff_X, Finset.Nat.antidiagonal_succ, ← map_pow] using
+      congrArg (coeff 3) (C.formalCoordinate_mul_formalDenom W)
+  have hu : (C.u : R) * ↑C.u⁻¹ = 1 := C.u.mul_inv
+  apply (C.u ^ 3).isUnit.mul_right_cancel
+  rw [Units.val_pow_eq_pow_val]
+  linear_combination h - (C.r + C.s ^ 2) * pow_mul_pow_eq_one 3 hu +
+    C.s ^ 2 * pow_mul_pow_eq_one 2 hu
+
+/-- The quartic coefficient of the formal coordinate transition is `(t + s³ + 3rs + a₁r) u⁻⁴`. -/
+@[simp]
+theorem coeff_four_formalCoordinate (C : VariableChange R) (W : WeierstrassCurve R) :
+    coeff 4 (C.formalCoordinate W).toPowerSeries =
+      (C.t + C.s ^ 3 + 3 * C.r * C.s + W.a₁ * C.r) * ↑C.u⁻¹ ^ 4 := by
+  have hw0 : ∀ k < 3, formalWCoeff (C • W) k = 0 := fun _ hk ↦ formalWCoeff_eq_zero_of_lt _ hk
+  have hw4 : formalWCoeff (C • W) 4 = (C • W).a₁ := by
+    rw [formalWCoeff_recurrence _ (by decide), selfConvTwo_eq_zero hw0 (by decide),
+      selfConvTwo_eq_zero hw0 (by decide), selfConvThree_eq_zero hw0 (by decide)]
+    simp
+  have h : -(↑C.u⁻¹ * C.t) + (-((C.r + C.s ^ 2) * (↑C.u⁻¹ : R) ^ 3 * (C.s * (C.u : R) ^ 2)) +
+      coeff 4 (C.formalCoordinate W).toPowerSeries * (C.u : R) ^ 3) =
+      C.r * (↑C.u⁻¹ * (W.a₁ + 2 * C.s)) := by
+    simpa [formalDenom_def, coeff_mul, coeff_X, Finset.Nat.antidiagonal_succ, hw4,
+      variableChange_a₁, ← map_pow] using congrArg (coeff 4) (C.formalCoordinate_mul_formalDenom W)
+  have hu : (C.u : R) * ↑C.u⁻¹ = 1 := C.u.mul_inv
+  apply (C.u ^ 3).isUnit.mul_right_cancel
+  rw [Units.val_pow_eq_pow_val]
+  linear_combination h -
+    (C.t + C.s ^ 3 + 3 * C.r * C.s + W.a₁ * C.r) * (↑C.u⁻¹ : R) * pow_mul_pow_eq_one 3 hu +
+    (C.r * C.s + C.s ^ 3) * (↑C.u⁻¹ : R) * pow_mul_pow_eq_one 2 hu
+
+/-- A Weierstrass change of variables is determined by the `4`-jet of its formal coordinate
+transition, over every commutative ring and without any nonsingularity hypothesis. -/
+theorem ext_of_coeff_formalCoordinate_eq {C₁ C₂ : VariableChange R} {W : WeierstrassCurve R}
+    (h₁ : coeff 1 (C₁.formalCoordinate W).toPowerSeries =
+      coeff 1 (C₂.formalCoordinate W).toPowerSeries)
+    (h₂ : coeff 2 (C₁.formalCoordinate W).toPowerSeries =
+      coeff 2 (C₂.formalCoordinate W).toPowerSeries)
+    (h₃ : coeff 3 (C₁.formalCoordinate W).toPowerSeries =
+      coeff 3 (C₂.formalCoordinate W).toPowerSeries)
+    (h₄ : coeff 4 (C₁.formalCoordinate W).toPowerSeries =
+      coeff 4 (C₂.formalCoordinate W).toPowerSeries) : C₁ = C₂ := by
+  have hu : C₁.u = C₂.u := by
+    apply inv_injective
+    apply Units.ext
+    simpa using h₁
+  simp only [coeff_two_formalCoordinate, hu, ← Units.val_pow_eq_pow_val] at h₂
+  have hs : C₁.s = C₂.s := (C₂.u⁻¹ ^ 2).isUnit.mul_right_cancel h₂
+  simp only [coeff_three_formalCoordinate, hu, hs, ← Units.val_pow_eq_pow_val] at h₃
+  have hr : C₁.r = C₂.r := add_right_cancel ((C₂.u⁻¹ ^ 3).isUnit.mul_right_cancel h₃)
+  simp only [coeff_four_formalCoordinate, hu, hs, hr, ← Units.val_pow_eq_pow_val] at h₄
+  have ht : C₁.t = C₂.t := by
+    have h4 := (C₂.u⁻¹ ^ 4).isUnit.mul_right_cancel h₄
+    linear_combination h4
+  exact VariableChange.ext hu hr hs ht
+
+/-- **Faithfulness on the formal neighbourhood**: two Weierstrass changes of variables of `W` that
+induce the same formal coordinate transition are equal, over every commutative ring. -/
+theorem formalCoordinate_injective (W : WeierstrassCurve R) :
+    Function.Injective fun C : VariableChange R ↦ C.formalCoordinate W := fun _ _ h ↦
+  have hp := congrArg TauCeti.FormalCoordinate.toPowerSeries h
+  ext_of_coeff_formalCoordinate_eq (congrArg (coeff 1) hp) (congrArg (coeff 2) hp)
+    (congrArg (coeff 3) hp) (congrArg (coeff 4) hp)
 
 end WeierstrassCurve.VariableChange
 
