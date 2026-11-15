@@ -31,7 +31,8 @@ disk, so the constructions require no choices of values at boundary or exterior 
 * `TauCeti.HardySpace.inner_reproducingKernel`: pairing with the kernel is evaluation.
 * `TauCeti.HardySpace.norm_reproducingKernel`: the norm of the kernel, `(√(1 - ‖w‖ ^ 2))⁻¹`.
 * `TauCeti.HardySpace.norm_diskEvaluation`: the sharp norm of evaluation.
-* `TauCeti.HardySpace.normalize_reproducingKernel`: the normalized kernel.
+* `TauCeti.HardySpace.normalize_reproducingKernel`: the normalized kernel is the kernel scaled
+  by `√(1 - ‖w‖ ^ 2)`.
 
 ## References
 
