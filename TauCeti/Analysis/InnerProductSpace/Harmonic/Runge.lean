@@ -16,7 +16,7 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
-import TauCeti.Analysis.LocallyConvex.Bipolar
+import TauCeti.Analysis.Normed.Module.Annihilator
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.CutoffPotential
 
 /-!
@@ -272,7 +272,7 @@ private theorem mem_topologicalClosure_harmonicJetSubmodule {d : ℕ} (hd : 3 �
   set Uf : Set (EuclideanSpace ℝ (Fin d)) := {y | HarmonicAt f y}
   have hUf : IsOpen Uf := isOpen_setOfPred_harmonicAt (f := f)
   have hfU : HarmonicOnNhd f Uf := fun _ hy ↦ hy
-  refine (Submodule.mem_topologicalClosure_iff_forall_dual_eq_zero _).2 fun ℓ hℓ ↦ ?_
+  refine (Submodule.mem_topologicalClosure_iff_forall_dual_eq_zero _ _).2 fun ℓ hℓ ↦ ?_
   let Ωo : Opens (EuclideanSpace ℝ (Fin d)) := ⟨Ω, hΩ⟩
   let T : 𝓓'(Ωo, ℝ) := pullbackJetDual Ωo hK m ℓ
   have hTK : dsupport T ⊆ K := by
