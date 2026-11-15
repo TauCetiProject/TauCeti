@@ -29,6 +29,9 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
   in `U`, times a function continuous on `U`, is continuous.
 * `TauCeti.tsupport_snd_smul_fst_subset`: the topological support of `(x, y) ↦ f y • g x` lies in
   `tsupport g ×ˢ tsupport f`.
+* `Finset.sum_eventuallyEq_of_pairwiseDisjoint_tsupport`: near a point of the topological support
+  of one member of a finite family with pairwise disjoint topological supports, the sum of the
+  family is that member.
 * `HasCompactSupport.comp_of_forall_mem_imp_mem`: a function of `Ψ y` that vanishes outside `T` is
   compactly supported when the preimage of `T` under `Ψ` lies in a compact set.
 -/
@@ -120,3 +123,26 @@ theorem HasCompactSupport.comp_of_forall_mem_imp_mem {X Y Z : Type*} [Topologica
     (hΨK : ∀ y, Ψ y ∈ T → y ∈ K) {k : Y → Z}
     (hkz : ∀ z ∉ T, k z = 0) : HasCompactSupport fun y ↦ k (Ψ y) :=
   HasCompactSupport.intro hK fun y hy ↦ hkz _ fun h ↦ hy (hΨK y h)
+
+namespace Finset
+
+open Filter Topology
+
+variable {α X M : Type*} [TopologicalSpace X] [CommMonoid M]
+
+/-- Near a point of the topological multiplicative support of one member of a finite family of
+functions with pairwise disjoint topological multiplicative supports, the product of the family is
+that member. -/
+@[to_additive /-- Near a point of the topological support of one member of a finite family of
+functions with pairwise disjoint topological supports, the sum of the family is that member. -/]
+theorem prod_eventuallyEq_of_pairwiseDisjoint_mulTSupport {A : Finset α} {φ : α → X → M}
+    (hdisj : (A : Set α).PairwiseDisjoint fun a ↦ mulTSupport (φ a)) {a : α} (ha : a ∈ A) {x : X}
+    (hx : x ∈ mulTSupport (φ a)) : ∏ b ∈ A, φ b =ᶠ[𝓝 x] φ a := by
+  classical
+  have h : ∀ᶠ y in 𝓝 x, ∀ b ∈ A.erase a, φ b y = 1 :=
+    (eventually_all_finset _).2 fun b hb ↦ notMem_mulTSupport_iff_eventuallyEq.1 fun hxb ↦
+      Set.disjoint_left.1 (hdisj ha (mem_of_mem_erase hb) (ne_of_mem_erase hb).symm) hx hxb
+  filter_upwards [h] with y hy
+  rw [Finset.prod_apply, prod_eq_single_of_mem a ha fun b hb hba ↦ hy b (mem_erase.2 ⟨hba, hb⟩)]
+
+end Finset
