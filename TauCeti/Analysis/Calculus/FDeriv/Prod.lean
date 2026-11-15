@@ -74,6 +74,7 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   norm at most that of the derivative.
 * `ContDiffOn.continuousOn_deriv_slice_right`: the partial derivative in a scalar second variable
   of a `C¹` map is continuous along every vertical segment inside its open domain.
+* `TauCeti.continuous_fderiv_apply_slice_right`: for a `C¹` map, `t ↦ df(a, t) v` is continuous.
 * `TauCeti.fderiv_apply_mk_one_zero`: the derivative of a function in a scalar first variable,
   applied to `(1, 0)`, is the derivative of its first-variable slice.
 * `TauCeti.fderiv_comp_graph_apply`: the chain rule along a graph `x ↦ f (x, u x)`.
@@ -332,6 +333,12 @@ theorem _root_.ContDiffOn.continuousOn_deriv_slice_right {u : E × 𝕜 → G} {
   refine h.congr fun t ht ↦ ?_
   exact (hasDerivAt_slice_right ((hu.differentiableOn one_ne_zero _ (hKU t ht)).differentiableAt
     (hU.mem_nhds (hKU t ht)))).deriv
+
+/-- For a `C¹` map `f` on a product, `t ↦ df(a, t) v` is continuous. -/
+theorem continuous_fderiv_apply_slice_right {f : E × F → G} (hf : ContDiff 𝕜 1 f) (a : E)
+    (v : E × F) : Continuous fun t ↦ fderiv 𝕜 f (a, t) v :=
+  ((hf.continuous_fderiv one_ne_zero).clm_apply continuous_const).comp
+    (Continuous.prodMk_right a)
 
 /-- The derivative in the second variable of a first partial derivative `fderiv 𝕜 u · v` is the
 second derivative of `u` in the direction `(0, 1)`. -/
