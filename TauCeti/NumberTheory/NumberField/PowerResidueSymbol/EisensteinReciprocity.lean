@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi.Primary
-import TauCeti.NumberTheory.NumberField.AutomorphismAction
-import TauCeti.NumberTheory.NumberField.Ideal.Norm
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
-import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
 /-!
 # The Eisenstein reciprocity law
@@ -47,10 +44,6 @@ The proof passes through Stickelberger's relation:
 
 ## Main results
 
-* `Ideal.powerResidueSymbolIdeal_stickelbergerProduct`: `(α ^ γ / 𝔅)_m = (α / N 𝔅)_m` for `m ≥ 2`
-  in `ℚ(ζ_m)`, without coprimality hypotheses on `α` or `𝔅`.
-* `Ideal.powerResidueSymbol_stickelbergerProduct`: `(α ^ γ / P)_m = (α / N P)_m` at a maximal ideal
-  `P`.
 * `IsPrimitiveRoot.eisenstein_reciprocity_absNorm`: `(α / N 𝔅)_p = (N 𝔅 / α)_p` for odd prime `p`,
   primary `α`, and `(N 𝔅).Coprime p`.
 * `IsPrimitiveRoot.eisenstein_reciprocity_natCast`: `(α / n)_p = (n / α)_p` for natural `n` with
@@ -74,77 +67,6 @@ The proof passes through Stickelberger's relation:
 public section
 
 open NumberField Ideal UniqueFactorizationMonoid
-open scoped Pointwise
-
-namespace Ideal
-
-open IsCyclotomicExtension.Rat
-
-variable {m : ℕ} [NeZero m] {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {m} ℚ K]
-
-/-- **The power residue symbol of a Stickelberger product.** In an `m`-th cyclotomic field over `ℚ`
-with `m ≥ 2`, the `m`-th power residue symbol at an ideal `𝔅` of `α ^ γ = ∏_σ (σ⁻¹ α) ^ c(σ)`
-equals the symbol of `α` at `(N 𝔅)`. Each factor `((σ⁻¹ α) / 𝔅)_m ^ c(σ)` is `σ (((σ⁻¹ α) / 𝔅)_m)`
-and hence `(α / σ 𝔅)_m`, and the conjugates `σ 𝔅` multiply to `(N 𝔅)`. No coprimality or
-nonzeroness hypothesis on `α` or `𝔅` is required. -/
-theorem powerResidueSymbolIdeal_stickelbergerProduct (hm : 2 ≤ m) (𝔅 : Ideal (𝓞 K)) (α : 𝓞 K) :
-    powerResidueSymbolIdeal 𝔅 m (Quotient.mk 𝔅 (TauCeti.stickelbergerProduct m α)) =
-      powerResidueSymbolIdeal (span {(absNorm 𝔅 : 𝓞 K)}) m (Quotient.mk _ α) := by
-  classical
-  have : Fact (1 < m) := ⟨hm⟩
-  obtain rfl | h𝔅 := eq_or_ne 𝔅 ⊥
-  · -- At the zero ideal `N ⊥ = 0` and both characters are trivial; `α` is a unit iff `α ^ γ` is.
-    rw [absNorm_bot, Nat.cast_zero, span_singleton_eq_bot.mpr rfl, powerResidueSymbolIdeal_bot]
-    have hbot : ∀ x : 𝓞 K, IsUnit (Quotient.mk (⊥ : Ideal (𝓞 K)) x) ↔ IsUnit x := fun x ↦ by
-      rw [Quotient.isUnit_mk_iff, sup_bot_eq, span_singleton_eq_top]
-    have hunit : IsUnit (TauCeti.stickelbergerProduct m α) ↔ IsUnit α := by
-      rw [TauCeti.stickelbergerProduct_def]
-      refine ⟨fun h ↦ ?_, fun h ↦ Finset.prod_induction _ IsUnit (fun _ _ ↦ IsUnit.mul) isUnit_one
-        fun σ _ ↦ (h.map (MulSemiringAction.toRingHom Gal(K/ℚ) (𝓞 K) σ⁻¹)).pow _⟩
-      have hdvd : ((1 : Gal(K/ℚ))⁻¹ • α) ^ (galEquivZMod m K 1 : ZMod m).val ∣
-          ∏ σ : Gal(K/ℚ), (σ⁻¹ • α) ^ (galEquivZMod m K σ : ZMod m).val :=
-        Finset.dvd_prod_of_mem (fun σ : Gal(K/ℚ) ↦ (σ⁻¹ • α) ^ (galEquivZMod m K σ : ZMod m).val)
-          (Finset.mem_univ (1 : Gal(K/ℚ)))
-      rw [inv_one, one_smul, map_one, Units.val_one, ZMod.val_one, pow_one] at hdvd
-      exact isUnit_of_dvd_unit hdvd h
-    by_cases hα : IsUnit α
-    · rw [MulChar.one_apply ((hbot _).mpr (hunit.mpr hα)), MulChar.one_apply ((hbot _).mpr hα)]
-    · rw [MulChar.map_nonunit _ (mt (hbot _).mp (mt hunit.mp hα)),
-        MulChar.map_nonunit _ (mt (hbot _).mp hα)]
-  · have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
-    have hσ𝔅 (σ : Gal(K/ℚ)) : σ • 𝔅 ≠ ⊥ := fun h ↦
-      h𝔅 (by simpa using congrArg (σ⁻¹ • ·) h)
-    -- Rewrite each factor `((σ⁻¹ α) / 𝔅)_m ^ c(σ)` as `(α / σ 𝔅)_m`.
-    have hfactor (σ : Gal(K/ℚ)) :
-        powerResidueSymbolIdeal 𝔅 m
-            (Quotient.mk 𝔅 ((σ⁻¹ • α) ^ (galEquivZMod m K σ : ZMod m).val)) =
-          powerResidueSymbolIdeal (σ • 𝔅) m (Quotient.mk (σ • 𝔅) α) := by
-      let x := powerResidueSymbolIdeal 𝔅 m (Quotient.mk 𝔅 (σ⁻¹ • α))
-      let τ := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ
-      have hc : (galEquivZMod m K σ : ZMod m).val ≠ 0 :=
-        (ZMod.val_ne_zero _).mpr (Units.ne_zero _)
-      have hpow : x ^ (galEquivZMod m K σ : ZMod m).val = σ • x := by
-        by_cases hu : IsUnit (Quotient.mk 𝔅 (σ⁻¹ • α))
-        · exact (galEquivZMod_smul_of_pow_eq m K σ (powerResidueSymbolIdeal_pow_eq_one hu)).symm
-        · simp [x, MulChar.map_nonunit _ hu, zero_pow hc]
-      have hmap := map_powerResidueSymbolIdeal (n := m) 𝔅 τ (σ⁻¹ • α)
-      have hτx : τ x = σ • x := rfl
-      have hτ𝔅 : 𝔅.map τ = σ • 𝔅 := rfl
-      have hτα : τ (σ⁻¹ • α) = α := smul_inv_smul σ α
-      rw [map_pow, map_pow, hpow, ← hτx, hmap, hτα, hτ𝔅]
-    rw [TauCeti.stickelbergerProduct_def, map_prod, map_prod,
-      Finset.prod_congr rfl fun σ _ ↦ hfactor σ,
-      ← powerResidueSymbolIdeal_prod_right Finset.univ (fun σ _ ↦ hσ𝔅 σ) α,
-      prod_automorphisms_smul_eq_span_absNorm]
-
-/-- At a maximal ideal `P`, the `m`-th power residue symbol of `α ^ γ` is `(α / N P)_m`. -/
-theorem powerResidueSymbol_stickelbergerProduct (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal]
-    (α : 𝓞 K) :
-    powerResidueSymbol P m (Quotient.mk P (TauCeti.stickelbergerProduct m α)) =
-      powerResidueSymbolIdeal (span {(absNorm P : 𝓞 K)}) m (Quotient.mk _ α) := by
-  rw [← powerResidueSymbolIdeal_of_isMaximal, powerResidueSymbolIdeal_stickelbergerProduct hm]
-
-end Ideal
 
 namespace IsPrimitiveRoot
 
