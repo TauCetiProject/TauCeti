@@ -8,6 +8,8 @@ module
 public import TauCeti.ModelTheory.Infinitary.FiniteInstances
 public import TauCeti.ModelTheory.ModelExistence.Isolation
 public import TauCeti.ModelTheory.ModelExistence.ModelExistence
+import TauCeti.ModelTheory.LanguageMap
+import TauCeti.ModelTheory.Semantics
 
 /-!
 # Omitting types in countable fragments
@@ -19,7 +21,12 @@ Consequently a partial type realized in every countable nonempty model is isolat
 Over a language with countably many symbols, applying the theorem to the first-order image
 fragment gives the first-order omitting types theorem, for a first-order theory satisfiable in the
 sense of Mathlib's `Theory.IsSatisfiable` and first-order partial types not isolated by a
-first-order formula modulo the theory.
+first-order formula modulo the theory. Consequently, over a countable language, a first-order
+partial type realized in every countable nonempty model of a satisfiable theory is isolated modulo
+that theory; over a complete theory the converse also holds. By contrast, `Theory.IsSatisfiable`
+alone detects only finite satisfiability: a partial type is realized in *some* nonempty model if and
+only if every finite subset has a satisfiable conjunction, so isolation and realizability coincide
+for finite partial types.
 
 The key refutation lemma applies to the consistency property of satisfiable finite instances.
 Projecting those instances onto a prescribed tuple of Henkin constants gives a consistent
@@ -36,10 +43,22 @@ requests supplies the final model.
   realized in every countable nonempty model of the theory is isolated.
 * `FirstOrder.Language.Theory.exists_countable_model_omitting`: the first-order omitting types
   theorem.
+* `FirstOrder.Language.Theory.exists_modelType_realize_iff_forall_finset_isSatisfiable`: a
+  first-order partial type is realized in some nonempty model if and only if the conjunction of
+  every finite subset is satisfiable with the theory.
+* `FirstOrder.Language.Theory.exists_isolating_iff_of_finite`: a finite first-order partial type is
+  isolated modulo a theory if and only if it is realized in some nonempty model.
+* `FirstOrder.Language.Theory.exists_isolating_of_realized_in_every_countable_model`: over a
+  countable language, a first-order partial type realized in every countable nonempty model of a
+  satisfiable theory is isolated modulo that theory.
+* `FirstOrder.Language.Theory.IsComplete.exists_isolating_iff_realized_in_every_countable_model`:
+  over a complete theory in a countable language, a first-order partial type is isolated if and
+  only if it is realized in every countable nonempty model.
 
 ## References
 
 * D. Marker, *Lectures on Infinitary Model Theory*, Cambridge University Press, 2016, Chapter 4.
+* D. Marker, *Model Theory: An Introduction*, Springer, 2002, Section 4.2.
 * H. J. Keisler, *Model Theory for Infinitary Logic*, North-Holland, 1971.
 -/
 
@@ -179,6 +198,185 @@ theorem exists_countable_model_omitting [Countable (Σ l, L.Functions l)]
   refine ⟨M, inferInstance, hMc, hMne, Theoryω.model_image_toOmega_iff.1 hMT, fun i a => ?_⟩
   obtain ⟨_, ⟨ψ, hψ, rfl⟩, hψa⟩ := omitsType_iff.1 (hMo i) a
   exact ⟨ψ, hψ, fun h => hψa ((BoundedFormula.realize_toInf ψ Empty.elim a).2 h)⟩
+
+/-- Convert a bounded formula with no free variables into a sentence of `L[[Fin n]]` evaluating
+its bound positions at the adjoined constants. -/
+private def evalAtConstants {n : ℕ} (ψ : L.BoundedFormula Empty n) : L[[Fin n]].Sentence :=
+  Formula.equivSentence (ψ.toFormula.relabel (Sum.elim Empty.elim id))
+
+private theorem realize_evalAtConstants_iff {M : Type w} [L.Structure M] {n : ℕ}
+    (a : Fin n → M) (ψ : L.BoundedFormula Empty n) :
+    @Sentence.Realize _ M (@withConstantsStructure L M _ (Fin n) (constantsOn.structure a))
+      (evalAtConstants ψ) ↔ ψ.Realize Empty.elim a := by
+  let : (constantsOn (Fin n)).Structure M := constantsOn.structure a
+  rw [evalAtConstants, Formula.realize_equivSentence, Formula.realize_relabel]
+  have hfun :
+      (fun i : Fin n => (L.con i : M)) ∘ Sum.elim Empty.elim id = Sum.elim Empty.elim a := by
+    ext (x | i)
+    · exact x.elim
+    · rfl
+  rw [hfun, BoundedFormula.realize_toFormula]
+  rfl
+
+private theorem realize_exs_iff {M : Type w} [L.Structure M] {n : ℕ}
+    (φ : L.BoundedFormula Empty n) :
+    M ⊨ φ.exs ↔ ∃ a : Fin n → M, φ.Realize Empty.elim a := by
+  rw [Sentence.Realize, Subsingleton.elim (default : Empty → M) Empty.elim,
+    BoundedFormula.realize_exs]
+
+/-- A partial type isolated by a first-order formula `φ` modulo `T` is realized in some nonempty
+model of `T`. -/
+theorem exists_modelType_realize_of_isolating {T : L.Theory} {n : ℕ}
+    {p : Set (L.BoundedFormula Empty n)} {φ : L.BoundedFormula Empty n}
+    (hsat : (insert φ.exs T).IsSatisfiable) (himp : ∀ ψ ∈ p, T ⊨ᵇ (φ.imp ψ).alls) :
+    ∃ M : ModelType.{u, v, max u v} T, ∃ a : Fin n → M, ∀ ψ ∈ p, ψ.Realize Empty.elim a := by
+  obtain ⟨M⟩ := hsat
+  have hMT : M ⊨ T := M.is_model.mono (Set.subset_insert _ _)
+  obtain ⟨a, ha⟩ := (realize_exs_iff φ).1 (M.is_model.realize_of_mem _ (Set.mem_insert _ _))
+  let := hMT
+  refine ⟨ModelType.of T M, a, fun ψ hψ => ?_⟩
+  have hψa := (Sentence.realize_alls (φ.imp ψ)).1 ((himp ψ hψ).realize_sentence M) a
+  exact BoundedFormula.realize_imp.1 hψa ha
+
+/-- **Compactness for first-order partial types.** A partial type `p` is realized in some nonempty
+model of `T` if and only if for every finite subset `s` of `p`, `T` together with the existential
+closure of the conjunction of `s` is satisfiable in the sense of `Theory.IsSatisfiable`. Compare
+with isolation modulo `T`, which asks for a single formula `φ` consistent with `T` that implies
+every member of `p`. -/
+theorem exists_modelType_realize_iff_forall_finset_isSatisfiable {T : L.Theory} {n : ℕ}
+    {p : Set (L.BoundedFormula Empty n)} :
+    (∃ M : ModelType.{u, v, max u v} T, ∃ a : Fin n → M, ∀ ψ ∈ p, ψ.Realize Empty.elim a) ↔
+      ∀ s : Finset (L.BoundedFormula Empty n), (s : Set (L.BoundedFormula Empty n)) ⊆ p →
+        (insert (BoundedFormula.iInf fun ψ : s => ψ.1).exs T).IsSatisfiable := by
+  constructor
+  · rintro ⟨M, a, ha⟩ s hs
+    have hM : M ⊨ insert (BoundedFormula.iInf fun ψ : s => ψ.1).exs T := by
+      refine model_insert_iff.2 ⟨(realize_exs_iff _).2 ?_, M.is_model⟩
+      exact ⟨a, BoundedFormula.realize_iInf.2 fun ψ => ha ψ.1 (hs ψ.2)⟩
+    let := hM
+    exact Model.isSatisfiable M
+  · intro hfin
+    let g := L.lhomWithConstants (Fin n)
+    let Sub := {s : Finset (L.BoundedFormula Empty n) // (s : Set (L.BoundedFormula Empty n)) ⊆ p}
+    have : Nonempty Sub := ⟨⟨∅, by simp⟩⟩
+    let S : Sub → L[[Fin n]].Theory := fun s => g.onTheory T ∪ evalAtConstants '' (s.1 : Set _)
+    have hdir : Directed (· ⊆ ·) S := by
+      classical
+      intro s₁ s₂
+      refine ⟨⟨s₁.1 ∪ s₂.1, by simp [s₁.2, s₂.2]⟩, ?_, ?_⟩
+      · exact Set.union_subset_union_right _ (Set.image_mono (by simp))
+      · exact Set.union_subset_union_right _ (Set.image_mono (by simp))
+    have hsatS : ∀ s : Sub, (S s).IsSatisfiable := by
+      intro s
+      obtain ⟨N⟩ := hfin s.1 s.2
+      have hNT : N ⊨ T := N.is_model.mono (Set.subset_insert _ _)
+      obtain ⟨a, ha⟩ := (realize_exs_iff _).1
+        (N.is_model.realize_of_mem _ (Set.mem_insert _ _))
+      let : (constantsOn (Fin n)).Structure N := constantsOn.structure a
+      let := hNT
+      have hNS : N ⊨ S s := by
+        refine model_union_iff.2 ⟨(g.onTheory_model T).2 hNT, (model_iff _).2 ?_⟩
+        rintro _ ⟨ψ, hψ, rfl⟩
+        exact (realize_evalAtConstants_iff a ψ).2 (BoundedFormula.realize_iInf.1 ha ⟨ψ, hψ⟩)
+      let := hNS
+      exact Model.isSatisfiable N
+    have hu : (⋃ s : Sub, S s) = g.onTheory T ∪ evalAtConstants '' p := by
+      ext σ
+      simp only [S, Set.mem_iUnion, Set.mem_union, Set.mem_image, Finset.mem_coe]
+      refine ⟨?_, ?_⟩
+      · rintro ⟨s, hT | ⟨ψ, hψ, rfl⟩⟩
+        · exact Or.inl hT
+        · exact Or.inr ⟨ψ, s.2 hψ, rfl⟩
+      · rintro (hT | ⟨ψ, hψ, rfl⟩)
+        · exact ⟨⟨∅, by simp⟩, Or.inl hT⟩
+        · exact ⟨⟨{ψ}, by simp [hψ]⟩, Or.inr ⟨ψ, Finset.mem_singleton_self ψ, rfl⟩⟩
+    obtain ⟨M⟩ := (hu ▸ (isSatisfiable_directed_union_iff hdir).2 hsatS)
+    let : L.Structure M := g.reduct M
+    have hMT : M ⊨ T := (g.onTheory_model T).1 (M.is_model.mono Set.subset_union_left)
+    have hMp : M ⊨ evalAtConstants '' p := M.is_model.mono Set.subset_union_right
+    let := hMT
+    refine ⟨ModelType.of T M, fun i => (L.con i : M), fun ψ hψ => ?_⟩
+    have heq := withConstantsStructure_reduct_eq (L := L) (γ := Fin n) M
+    exact (realize_evalAtConstants_iff (fun i => (L.con i : M)) ψ).1
+      (heq.symm ▸ hMp.realize_of_mem _ ⟨ψ, hψ, rfl⟩)
+
+/-- A **finite** first-order partial type realized in any nonempty model `M` of `T` (in any
+universe `w`) is isolated modulo `T` by the conjunction of its members. -/
+theorem exists_isolating_of_finite_of_realize {T : L.Theory} {M : Type w} [L.Structure M]
+    [Nonempty M] [M ⊨ T] {n : ℕ} {p : Set (L.BoundedFormula Empty n)} (hp : p.Finite)
+    {a : Fin n → M} (ha : ∀ ψ ∈ p, ψ.Realize Empty.elim a) :
+    ∃ φ : L.BoundedFormula Empty n,
+      (insert φ.exs T).IsSatisfiable ∧ ∀ ψ ∈ p, T ⊨ᵇ (φ.imp ψ).alls := by
+  have := hp.fintype
+  refine ⟨BoundedFormula.iInf fun ψ : p => ψ.1, ?_, fun ψ hψ => ?_⟩
+  · have hM : M ⊨ insert (BoundedFormula.iInf fun ψ : p => ψ.1).exs T := by
+      refine model_insert_iff.2 ⟨(realize_exs_iff _).2 ?_, inferInstance⟩
+      exact ⟨a, BoundedFormula.realize_iInf.2 fun q => ha q.1 q.2⟩
+    let := hM
+    exact Model.isSatisfiable M
+  · refine models_sentence_iff.2 fun N => (Sentence.realize_alls _).2 fun b => ?_
+    exact BoundedFormula.realize_imp.2 fun hb => BoundedFormula.realize_iInf.1 hb ⟨ψ, hψ⟩
+
+/-- A **finite** first-order partial type is isolated modulo `T` if and only if it is realized in
+some nonempty model of `T`: the conjunction of its members is itself a single first-order
+formula. -/
+theorem exists_isolating_iff_of_finite {T : L.Theory} {n : ℕ}
+    {p : Set (L.BoundedFormula Empty n)} (hp : p.Finite) :
+    (∃ φ : L.BoundedFormula Empty n,
+        (insert φ.exs T).IsSatisfiable ∧ ∀ ψ ∈ p, T ⊨ᵇ (φ.imp ψ).alls) ↔
+      ∃ M : ModelType.{u, v, max u v} T, ∃ a : Fin n → M, ∀ ψ ∈ p, ψ.Realize Empty.elim a :=
+  ⟨fun ⟨_, hsat, himp⟩ => exists_modelType_realize_of_isolating hsat himp,
+    fun ⟨_, _, ha⟩ => exists_isolating_of_finite_of_realize hp ha⟩
+
+/-- Over a language with countably many function and relation symbols, a first-order partial type
+realized in every countable nonempty model of a satisfiable first-order theory `T` (tested in any
+one universe `w`) is isolated by a first-order formula modulo `T`. -/
+theorem exists_isolating_of_realized_in_every_countable_model [Countable (Σ l, L.Functions l)]
+    [Countable (Σ l, L.Relations l)] {T : L.Theory} (hT : T.IsSatisfiable)
+    {n : ℕ} {p : Set (L.BoundedFormula Empty n)}
+    (h : ∀ (M : Type w) [L.Structure M] [Countable M] [Nonempty M] [M ⊨ T],
+      ∃ a : Fin n → M, ∀ ψ ∈ p, ψ.Realize Empty.elim a) :
+    ∃ φ : L.BoundedFormula Empty n,
+      (insert φ.exs T).IsSatisfiable ∧ ∀ ψ ∈ p, T ⊨ᵇ (φ.imp ψ).alls := by
+  by_contra hnp
+  obtain ⟨M, _, _, _, hMT, hMo⟩ := exists_countable_model_omitting.{u, v, w} hT
+    (fun _ : Unit => p) (fun _ => hnp)
+  let := hMT
+  obtain ⟨a, ha⟩ := h M
+  obtain ⟨ψ, hψ, hψa⟩ := hMo () a
+  exact hψa (ha ψ hψ)
+
+/-- Over a complete first-order theory `T`, any partial type isolated by a first-order formula `φ`
+modulo `T` is realized in every nonempty model of `T`, of any cardinality and in any universe, with
+no countability hypothesis on the language. -/
+theorem IsComplete.exists_realize_of_isolating {T : L.Theory} (hT : T.IsComplete)
+    {n : ℕ} {p : Set (L.BoundedFormula Empty n)} {φ : L.BoundedFormula Empty n}
+    (hsat : (insert φ.exs T).IsSatisfiable) (himp : ∀ ψ ∈ p, T ⊨ᵇ (φ.imp ψ).alls)
+    (M : Type w) [L.Structure M] [Nonempty M] [M ⊨ T] :
+    ∃ a : Fin n → M, ∀ ψ ∈ p, ψ.Realize Empty.elim a := by
+  have hφT : T ⊨ᵇ φ.exs := (hT.2 φ.exs).resolve_right fun hnot => by
+    obtain ⟨N⟩ := hsat
+    have hNT : N ⊨ T := N.is_model.mono (Set.subset_insert _ _)
+    let := hNT
+    exact (Sentence.realize_not N).1 (hnot.realize_sentence N)
+      (N.is_model.realize_of_mem _ (Set.mem_insert _ _))
+  obtain ⟨a, ha⟩ := (realize_exs_iff φ).1 (hφT.realize_sentence M)
+  refine ⟨a, fun ψ hψ => ?_⟩
+  have hψM := (Sentence.realize_alls (φ.imp ψ)).1 ((himp ψ hψ).realize_sentence M) a
+  exact BoundedFormula.realize_imp.1 hψM ha
+
+/-- Over a complete first-order theory `T` in a language with countably many function and relation
+symbols, a partial type is isolated by a first-order formula modulo `T` if and only if it is
+realized in every countable nonempty model of `T` in a given universe `w`. -/
+theorem IsComplete.exists_isolating_iff_realized_in_every_countable_model
+    [Countable (Σ l, L.Functions l)] [Countable (Σ l, L.Relations l)]
+    {T : L.Theory} (hT : T.IsComplete) {n : ℕ} {p : Set (L.BoundedFormula Empty n)} :
+    (∃ φ : L.BoundedFormula Empty n,
+        (insert φ.exs T).IsSatisfiable ∧ ∀ ψ ∈ p, T ⊨ᵇ (φ.imp ψ).alls) ↔
+      ∀ (M : Type w) [L.Structure M] [Countable M] [Nonempty M] [M ⊨ T],
+        ∃ a : Fin n → M, ∀ ψ ∈ p, ψ.Realize Empty.elim a :=
+  ⟨fun ⟨_, hsat, himp⟩ M _ _ _ _ => hT.exists_realize_of_isolating hsat himp M,
+    exists_isolating_of_realized_in_every_countable_model hT.1⟩
 
 end Theory
 
