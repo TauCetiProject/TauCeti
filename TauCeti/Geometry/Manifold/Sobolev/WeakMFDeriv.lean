@@ -56,8 +56,11 @@ constrains it almost everywhere in holomorphic charts over `s`.
   `mfderiv` is a weak differential, so every weak differential agrees with `mfderiv` almost
   everywhere on the part of the target of every holomorphic chart over `s`
   (`TauCeti.HasWeakMFDerivOn.ae_eq_mfderiv`, for `IsManifold I ∞ M`).
-* `TauCeti.hasWeakMFDerivOn_conj`: the weak differential of `conj : ℂ → ℂ` is the constant
-  conjugation map, which is `mfderiv` and is not complex linear.
+* `TauCeti.hasWeakMFDerivOn_conj`: the constant conjugation map is a weak differential of
+  `conj : ℂ → ℂ` on `univ` for every exponent. As remarks resting on Mathlib facts rather than on
+  declarations of this file, this map is also the `mfderiv` of `conj`
+  (`ContinuousLinearEquiv.mfderiv_eq`), and it is not complex linear, since it sends `I` to `-I`
+  (`Complex.conj_I`).
 
 ## Implementation notes
 
