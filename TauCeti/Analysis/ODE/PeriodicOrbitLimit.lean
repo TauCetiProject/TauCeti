@@ -170,6 +170,12 @@ private theorem comp_negFst {β : Type*} (f : ℝ × ℝ → β) :
   ext z
   simp [negFst_apply]
 
+/-- The reflection is an isometry of `ℝ × ℝ`, so precomposing with it preserves operator norms. -/
+private theorem opNorm_comp_negFst (f : ℝ × ℝ →L[ℝ] V) :
+    ‖f.comp (negFst : ℝ × ℝ →L[ℝ] ℝ × ℝ)‖ = ‖f‖ :=
+  f.opNorm_comp_linearIsometryEquiv
+    { negFst.toLinearEquiv with norm_map' := fun z ↦ by simp [negFst_apply, Prod.norm_def] }
+
 /-- The reflected map `(s, t) ↦ u(-s, t)` is `C¹` on `s > -a` when `u` is `C¹` on `s < a`. -/
 private theorem contDiffOn_comp_negFst (hu : ContDiffOn ℝ 1 u (Iio a ×ˢ univ)) :
     ContDiffOn ℝ 1 (fun z ↦ u (-z.1, z.2)) (Ioi (-a) ×ˢ univ) := by
@@ -700,12 +706,8 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atBot [CompleteSpace V] {K :
   have hC' : ∀ z ∈ Ioi (-a) ×ˢ univ, ‖fderiv ℝ (fun z ↦ u (-z.1, z.2)) z‖ ≤ C := by
     intro z hz
     have hz' : negFst z ∈ Iio a ×ˢ univ := by simpa [negFst_apply] using neg_lt.1 hz.1
-    rw [comp_negFst u, negFst.comp_right_fderiv]
-    refine ContinuousLinearMap.opNorm_le_bound _ ((norm_nonneg _).trans (hC _ hz')) fun v ↦ ?_
-    have hv : ‖negFst v‖ = ‖v‖ := by simp [negFst_apply, Prod.norm_def]
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, ← hv]
-    exact (ContinuousLinearMap.le_opNorm _ _).trans
-      (mul_le_mul_of_nonneg_right (hC _ hz') (norm_nonneg _))
+    rw [comp_negFst u, negFst.comp_right_fderiv, opNorm_comp_negFst]
+    exact hC _ hz'
   obtain ⟨x, hxper, hx, hux⟩ :=
     exists_periodic_hasDerivAt_tendstoUniformly_atTop (contDiffOn_comp_negFst hu)
       (fun s hs ↦ hper (-s) (neg_lt.1 hs)) hK (fun s hs ↦ huK (-s) (neg_lt.1 hs)) hX hXper
