@@ -65,6 +65,15 @@ open PointedSSet
 
 /-! ### Pullback-hom corners for cotensors -/
 
+/-- Conjugating the level-`n` evaluation of a composite `a ≫ b = c` by level isomorphisms `e₁` and
+`e₂` reduces to `d` once `(evaluation n).map c` intertwines `e₁.hom` and `e₂.hom` with `d`. -/
+private lemma evaluation_inv_comp_map_comp {X Y Z : SymmetricSpectrum}
+    {a : X ⟶ Y} {b : Y ⟶ Z} {c : X ⟶ Z} (hab : a ≫ b = c) (n : ℕ)
+    {X' Z' : PointedSSet.{0}} (e₁ : (evaluation n).obj X ≅ X') (e₂ : (evaluation n).obj Z ≅ Z')
+    {d : X' ⟶ Z'} (hnat : (evaluation n).map c ≫ e₂.hom = e₁.hom ≫ d) :
+    (e₁.inv ≫ (evaluation n).map a) ≫ ((evaluation n).map b ≫ e₂.hom) = d := by
+  rw [Category.assoc, Iso.inv_comp_eq, ← Category.assoc, ← (evaluation n).map_comp, hab, hnat]
+
 /-- Evaluating a spectral cotensor pullback-hom corner at level `n` yields a pointed simplicial
 pullback-hom corner whose comparison map differs from `(evaluation n).map P.π` by the isomorphism
 `(cotensorLevelIso L E n).inv`. -/
@@ -84,38 +93,16 @@ private noncomputable def cotensorPullbackObjObjLevel
       (cotensorLevelIso_hom_naturality K p n)
       (cotensorLevelIso_hom_naturality_left j F n)
   π := (cotensorLevelIso L E n).inv ≫ (evaluation n).map P.π
-  π_fst := by
-    -- `cotensorBifunctor` unfolds on objects to `cotensor`, matching `cotensorLevelIso`, and
-    -- `MonoidalClosed.internalHom.map j.op` unfolds to `MonoidalClosed.pre j`.
-    let π : (cotensor L).obj E ⟶ P.pt := P.π
-    let fst : P.pt ⟶ (cotensor K).obj E := P.fst
-    have h : (evaluation n).map π ≫ (evaluation n).map fst =
-        (evaluation n).map ((MonoidalClosed.pre ((free 0).map j)).app E) := by
-      rw [← (evaluation n).map_comp]
-      change (evaluation n).map (P.π ≫ P.fst) = _
-      rw [P.π_fst]
-      rfl
-    change ((cotensorLevelIso L E n).inv ≫ (evaluation n).map π) ≫
-        ((evaluation n).map fst ≫ (cotensorLevelIso K E n).hom) =
-      (MonoidalClosed.pre j).app ((evaluation n).obj E)
-    rw [Category.assoc, Iso.inv_comp_eq, ← Category.assoc, h]
-    exact cotensorLevelIso_hom_naturality_left j E n
-  π_snd := by
+  π_fst :=
+    -- `cotensorBifunctor` unfolds on objects to `cotensor` and on left maps to `MonoidalClosed.pre`
+    -- along `free 0`, and `MonoidalClosed.internalHom.map j.op` unfolds to `MonoidalClosed.pre j`.
+    evaluation_inv_comp_map_comp P.π_fst n (cotensorLevelIso L E n) (cotensorLevelIso K E n)
+      (cotensorLevelIso_hom_naturality_left j E n)
+  π_snd :=
     -- `cotensorBifunctor.obj (op L)` unfolds to `cotensor L`, and `MonoidalClosed.internalHom.obj`
     -- unfolds to `CategoryTheory.ihom`.
-    let π : (cotensor L).obj E ⟶ P.pt := P.π
-    let snd : P.pt ⟶ (cotensor L).obj F := P.snd
-    have h : (evaluation n).map π ≫ (evaluation n).map snd =
-        (evaluation n).map ((cotensor L).map p) := by
-      rw [← (evaluation n).map_comp]
-      change (evaluation n).map (P.π ≫ P.snd) = _
-      rw [P.π_snd]
-      rfl
-    change ((cotensorLevelIso L E n).inv ≫ (evaluation n).map π) ≫
-        ((evaluation n).map snd ≫ (cotensorLevelIso L F n).hom) =
-      (CategoryTheory.ihom L).map ((evaluation n).map p)
-    rw [Category.assoc, Iso.inv_comp_eq, ← Category.assoc, h]
-    exact cotensorLevelIso_hom_naturality L p n
+    evaluation_inv_comp_map_comp P.π_snd n (cotensorLevelIso L E n) (cotensorLevelIso L F n)
+      (cotensorLevelIso_hom_naturality L p n)
 
 /-- Since `(cotensorPullbackObjObjLevel P n).π` differs from `(evaluation n).map P.π` by the
 isomorphism `(cotensorLevelIso L E n).inv`, their underlying simplicial maps belong to the same
@@ -265,8 +252,7 @@ fibration whenever every level of `E` is a Kan complex. -/
 lemma levelFibrations_cotensorBifunctor_map_app {K L : PointedSSet.{0}} (j : K ⟶ L) [Mono j.right]
     (E : SymmetricSpectrum) [∀ n, SSet.KanComplex ((evaluation n).obj E).right] :
     levelFibrations ((cotensorBifunctor.map j.op).app E) :=
-  levelFibrations_cotensorBifunctor_pullbackObjObjπ
-    ((levelFibrations_terminal_from_iff E).2 inferInstance)
+  levelFibrations_cotensorBifunctor_pullbackObjObjπ (levelFibrations_terminal_from E)
     (Functor.PullbackObjObj.ofIsTerminal cotensorBifunctor j (terminal.from E) terminalIsTerminal)
 
 /-- Precomposing a cotensor `E^L ⟶ E^K` along an anodyne based map `j : K ⟶ L` gives a level
@@ -276,7 +262,7 @@ lemma levelTrivialFibrations_cotensorBifunctor_map_app {K L : PointedSSet.{0}} {
     [∀ n, SSet.KanComplex ((evaluation n).obj E).right] :
     levelTrivialFibrations ((cotensorBifunctor.map j.op).app E) :=
   levelTrivialFibrations_cotensorBifunctor_pullbackObjObjπ_of_anodyne hj
-    ((levelFibrations_terminal_from_iff E).2 inferInstance)
+    (levelFibrations_terminal_from E)
     (Functor.PullbackObjObj.ofIsTerminal cotensorBifunctor j (terminal.from E) terminalIsTerminal)
 
 /-- Level `n` of the cotensor `E^K` is a Kan complex whenever level `n` of `E` is a Kan
@@ -573,7 +559,7 @@ lemma kanComplex_mappingSpace {X E : SymmetricSpectrum}
     SSet.KanComplex ((mappingSpace X).obj E).right := by
   have : Fibration ((simplicialMappingSpace.obj (op X)).map (terminal.from E)) := by
     rw [simplicialMappingSpace_obj_map]
-    exact fibration_mappingSpace_map hX ((levelFibrations_terminal_from_iff E).2 inferInstance)
+    exact fibration_mappingSpace_map hX (levelFibrations_terminal_from E)
   let hT := terminalIsTerminal.isTerminalObj (simplicialMappingSpace.obj (op X))
     (⊤_ SymmetricSpectrum)
   simpa only [simplicialMappingSpace_obj_obj] using (isFibrant_iff_of_isTerminal
@@ -585,8 +571,7 @@ lemma fibration_mappingSpaceBifunctor_map_app {A B E : SymmetricSpectrum} {i : A
     (hi : projectiveCofibrations i)
     [∀ n, SSet.KanComplex ((evaluation n).obj E).right] :
     Fibration ((mappingSpaceBifunctor.map i.op).app E).right :=
-  fibration_mappingSpaceBifunctor_pullbackObjObjπ hi
-    ((levelFibrations_terminal_from_iff E).2 inferInstance)
+  fibration_mappingSpaceBifunctor_pullbackObjObjπ hi (levelFibrations_terminal_from E)
     (Functor.PullbackObjObj.ofIsTerminal mappingSpaceBifunctor i (terminal.from E)
       terminalIsTerminal)
 
@@ -597,7 +582,7 @@ lemma rlp_monomorphisms_mappingSpaceBifunctor_map_app {A B E : SymmetricSpectrum
     [∀ n, SSet.KanComplex ((evaluation n).obj E).right] :
     (monomorphisms SSet.{0}).rlp ((mappingSpaceBifunctor.map i.op).app E).right :=
   rlp_monomorphisms_mappingSpaceBifunctor_pullbackObjObjπ_of_llp hi
-    ((levelFibrations_terminal_from_iff E).2 inferInstance)
+    (levelFibrations_terminal_from E)
     (Functor.PullbackObjObj.ofIsTerminal mappingSpaceBifunctor i (terminal.from E)
       terminalIsTerminal)
 

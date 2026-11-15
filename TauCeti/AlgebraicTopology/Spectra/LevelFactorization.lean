@@ -65,8 +65,9 @@ systems on simplicial sets.
 * `SymmetricSpectrum.levelTrivialFibrations_le_levelFibrations` and
   `SymmetricSpectrum.levelTrivialFibrations_le_levelEquivalences`: level trivial fibrations are
   level fibrations and level equivalences.
-* `SymmetricSpectrum.levelFibrations_terminal_from_iff`: `E ⟶ ⊤` is a level fibration precisely
-  when every level of `E` is a Kan complex.
+* `SymmetricSpectrum.levelFibrations_terminal_from_iff` and
+  `SymmetricSpectrum.levelFibrations_terminal_from`: `E ⟶ ⊤` is a level fibration precisely when
+  every level of `E` is a Kan complex.
 * `SymmetricSpectrum.free_map_mem_projectiveCofibrations`,
   `SymmetricSpectrum.free_map_mem_llp_levelFibrations`,
   `SymmetricSpectrum.projectiveCofibrations_initial_to_free`, and
@@ -375,6 +376,13 @@ lemma levelFibrations_terminal_from_iff (E : SymmetricSpectrum) :
   have hT := terminalIsTerminal.isTerminalObj (evaluation n ⋙ forgetBasepoint)
     (⊤_ SymmetricSpectrum)
   exact (isFibrant_iff_of_isTerminal ((evaluation n).map (terminal.from E)).right hT).symm
+
+/-- If every level of a symmetric spectrum `E` is a Kan complex, then `E ⟶ ⊤` is a level
+fibration. -/
+lemma levelFibrations_terminal_from (E : SymmetricSpectrum)
+    [∀ n, SSet.KanComplex ((evaluation n).obj E).right] :
+    levelFibrations (terminal.from E) :=
+  (levelFibrations_terminal_from_iff E).2 inferInstance
 
 /-- For every based map `j : K ⟶ L` of pointed simplicial sets whose underlying map is a
 monomorphism, the free spectrum map `F_n j` is a projective cofibration. -/
