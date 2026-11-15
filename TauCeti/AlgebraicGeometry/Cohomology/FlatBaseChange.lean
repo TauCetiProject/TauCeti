@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.BaseChange
-public import TauCeti.AlgebraicGeometry.Cohomology.Cech.BaseChange
 public import TauCeti.AlgebraicGeometry.Cohomology.Pullback
 import Mathlib.Algebra.FiveLemma
-import TauCeti.AlgebraicGeometry.Cohomology.Cech.Basic
-import TauCeti.AlgebraicGeometry.Modules.Pullback.Flat
+import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 import TauCeti.AlgebraicGeometry.Scheme.Induction
 
 /-!
@@ -25,23 +23,17 @@ an `R'`-linear map
 `TauCeti.AlgebraicGeometry.cohomologyBaseChange H M n : R' ⊗_R Hⁿ(X, M) →ₗ[R'] Hⁿ(Y, g^* M)`.
 
 This file proves that this canonical map is an isomorphism in every degree when `R → R'` is flat,
-`M` is quasi-coherent and `X` is quasi-compact with affine diagonal (for instance quasi-compact
-and separated): this is flat base change over an affine base (Stacks 02KH, Hartshorne III.9.3).
+`M` is quasi-coherent and `X` is quasi-compact and quasi-separated: this is flat base change over
+an affine base (Stacks 02KH, Hartshorne III.9.3).
 Unlike `TauCeti.AlgebraicGeometry.nonempty_linearEquiv_tensor_cohomology_pullback_of_iSup_eq_top`,
 which computes both sides by Čech complexes of a chosen cover, the isomorphism here does not depend
 on any choice, and it is compatible with the maps induced by morphisms of sheaves and with the
 connecting maps of short exact sequences. Over a field `k` and a field extension `K / k` it shows
 that the dimension of `Hⁿ(X, M)` does not change when `k` is extended to `K`.
 
-The proof is by dimension shifting, simultaneously for all quasi-coherent sheaves. In degree zero
-the map is the flat base change of global sections
-(`TauCeti.AlgebraicGeometry.linearEquivTensorCohomologyZeroPullback`). Choose a finite affine open
-cover `U` of `X`. Every quasi-coherent `M` embeds into the quasi-coherent sheaf
-`I = ⨁ᵢ (U i).ι_* (M|_{U i})`, which has no higher cohomology on `X` because each open immersion
-`(U i).ι` is affine. By the Čech computation, `g^* I` has no higher cohomology on `Y` either. The
-pullback of `0 ⟶ M ⟶ I ⟶ Q ⟶ 0` is exact because `g` is flat, and the five lemma, applied to the
-two long exact sequences, shows that the map in degree `n + 1` for `M` is bijective as soon as
-those in degree `n` for `I` and `Q` are.
+The whole-scheme result follows from the version for opens below, using
+`Scheme.Hom.cohomologyOnTopIso_hom_cohomologyOnPullback`: under the terminal-open comparison,
+pullback on the cohomology of the top open is pullback on whole-scheme cohomology.
 
 The same construction on the cohomology of an open subset `U` of `X`, from the pullback
 `Scheme.Hom.cohomologyOnPullback`, is the base change map
@@ -66,7 +58,7 @@ the flat base change of sections over a quasi-compact quasi-separated open
 * `TauCeti.AlgebraicGeometry.cohomologyBaseChange`: the canonical map
   `R' ⊗_R Hⁿ(X, M) →ₗ[R'] Hⁿ(Y, g^* M)`, characterized by `cohomologyBaseChange_tmul`;
 * `TauCeti.AlgebraicGeometry.bijective_cohomologyBaseChange`: it is bijective for flat
-  `R → R'`, quasi-coherent `M` and `X` quasi-compact with affine diagonal;
+  `R → R'`, quasi-coherent `M` and `X` quasi-compact and quasi-separated;
 * `TauCeti.AlgebraicGeometry.bijective_cohomologyBaseChange_zero`: in degree zero it is bijective
   for every quasi-compact quasi-separated `X`, being the flat base change of global sections
   (`TauCeti.AlgebraicGeometry.linearEquivTensorCohomologyZeroPullback_toLinearMap`);
@@ -174,7 +166,7 @@ private lemma cohomologyPullback_base_smul (M : X.Modules) (n : ℕ) (r : R)
 /-- The flat base change map `R' ⊗_R Hⁿ(X, M) →ₗ[R'] Hⁿ(Y, g^* M)` for the base change
 `Y = X ×_R R'` along a ring map `R → R'`: the `R'`-linear extension of the pullback map on
 cohomology. It is an isomorphism when `R → R'` is flat, `M` is quasi-coherent and `X` is
-quasi-compact with affine diagonal (`bijective_cohomologyBaseChange`). -/
+quasi-compact and quasi-separated (`bijective_cohomologyBaseChange`). -/
 def cohomologyBaseChange (M : X.Modules) (n : ℕ) :
     R' ⊗[R] Cohomology M n →ₗ[R'] Cohomology ((Scheme.Modules.pullback g).obj M) n :=
   letI : Module R (Cohomology ((Scheme.Modules.pullback g).obj M) n) :=
@@ -251,90 +243,6 @@ theorem bijective_cohomologyBaseChange_zero [Module.Flat R R'] [CompactSpace X]
     Function.Bijective (cohomologyBaseChange H M 0) := by
   rw [← linearEquivTensorCohomologyZeroPullback_toLinearMap]
   exact (linearEquivTensorCohomologyZeroPullback H M).bijective
-
-include H in
-/-- **Flat base change for the cohomology of quasi-coherent sheaves.** Let `X` be a quasi-compact
-scheme with affine diagonal over `R`, for instance a quasi-compact separated one, let `R → R'` be
-a flat ring map and let `Y = X ×_R R'`, given as a pullback square with projection `g`. Then for
-every quasi-coherent sheaf `M` on `X` and every `n`, the canonical map
-`R' ⊗_R Hⁿ(X, M) ⟶ Hⁿ(Y, g^* M)`, `r' ⊗ x ↦ r' • g^* x`, is bijective. -/
-theorem bijective_cohomologyBaseChange [Module.Flat R R'] [CompactSpace X]
-    [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
-    (n : ℕ) : Function.Bijective (cohomologyBaseChange H M n) := by
-  have : QuasiSeparatedSpace X :=
-    have : QuasiSeparated (terminal.from X) := ⟨inferInstance⟩
-    quasiSeparatedSpace_of_quasiSeparated (terminal.from X)
-  have : Flat g := by
-    have : Flat (Spec.map (CommRingCat.ofHom (algebraMap R R'))) := by
-      rw [Flat.SpecMap_iff]
-      exact RingHom.flat_algebraMap_iff.mpr inferInstance
-    exact MorphismProperty.of_isPullback H.flip inferInstance
-  induction n generalizing M with
-  | zero => exact bijective_cohomologyBaseChange_zero H M
-  | succ n ih =>
-    obtain ⟨I, i, hI, hi, hIX⟩ := M.exists_mono_isQuasicoherent_subsingleton_cohomology
-    -- The short exact sequence `0 ⟶ M ⟶ I ⟶ Q ⟶ 0` and its pullback along the flat map `g`.
-    let S := ShortComplex.mk i (cokernel.π i) (cokernel.condition i)
-    have hS : S.ShortExact := .mk' (ShortComplex.exact_of_g_is_cokernel S
-      (cokernelIsCokernel i)) hi inferInstance
-    have hS' : (S.map (Scheme.Modules.pullback g)).ShortExact :=
-      g.shortExact_map_pullback_of_flat S hS
-    -- `g^* I` has no higher cohomology on `Y` either, by the Čech computation of base change.
-    have hIY : Subsingleton (Cohomology ((Scheme.Modules.pullback g).obj I) (n + 1)) := by
-      let 𝒰 := X.affineCover.finiteSubcover
-      obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_pullback_of_iSup_eq_top H I
-        (fun i : 𝒰.I₀ ↦ (𝒰.f i).opensRange)
-        (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ isAffineOpen_opensRange (𝒰.f i))
-        𝒰.iSup_opensRange (n + 1)
-      have := hIX n
-      exact e.toEquiv.subsingleton_congr.mp inferInstance
-    have := hIX n
-    exact LinearMap.bijective_of_surjective_of_bijective_of_right_exact
-      ((cohomologyMapBaseLinear R X S.g n).baseChange R')
-      ((cohomologyδBaseLinear R X hS n (n + 1) rfl).baseChange R')
-      (cohomologyMapBaseLinear R' Y ((Scheme.Modules.pullback g).map S.g) n)
-      (cohomologyδBaseLinear R' Y hS' n (n + 1) rfl)
-      (cohomologyBaseChange H I n) (cohomologyBaseChange H (cokernel i) n)
-      (cohomologyBaseChange H M (n + 1))
-      (cohomologyMapBaseLinear_comp_cohomologyBaseChange H S.g n)
-      (cohomologyδBaseLinear_comp_cohomologyBaseChange H hS hS' n)
-      (by
-        rw [LinearMap.baseChange_eq_lTensor, LinearMap.baseChange_eq_lTensor]
-        exact Module.Flat.lTensor_exact R'
-          (exact_cohomologyMapBaseLinear_cohomologyδBaseLinear R X hS n))
-      (exact_cohomologyMapBaseLinear_cohomologyδBaseLinear R' Y hS' n)
-      (ih I).2 (ih (cokernel i))
-      (LinearMap.baseChange_surjective _ (by
-        rw [coe_cohomologyδBaseLinear]
-        exact cohomologyδ_surjective hS n (n + 1) rfl (hIX n)))
-      (by
-        rw [coe_cohomologyδBaseLinear]
-        exact cohomologyδ_surjective hS' n (n + 1) rfl hIY)
-
-/-- **Flat base change for the cohomology of quasi-coherent sheaves**, as the canonical linear
-equivalence `R' ⊗_R Hⁿ(X, M) ≃ₗ[R'] Hⁿ(Y, g^* M)` for a quasi-coherent sheaf `M` on a quasi-compact
-scheme `X` with affine diagonal over `R` and a flat ring map `R → R'`. -/
-def cohomologyBaseChangeLinearEquiv [Module.Flat R R'] [CompactSpace X]
-    [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
-    (n : ℕ) : R' ⊗[R] Cohomology M n ≃ₗ[R'] Cohomology ((Scheme.Modules.pullback g).obj M) n :=
-  LinearEquiv.ofBijective (cohomologyBaseChange H M n) (bijective_cohomologyBaseChange H M n)
-
-/-- The underlying linear map of the flat base change isomorphism is the canonical base change
-map `cohomologyBaseChange`. -/
-@[simp]
-lemma cohomologyBaseChangeLinearEquiv_toLinearMap [Module.Flat R R'] [CompactSpace X]
-    [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
-    (n : ℕ) :
-    (cohomologyBaseChangeLinearEquiv H M n).toLinearMap = cohomologyBaseChange H M n :=
-  (rfl)
-
-/-- The flat base change isomorphism sends `r' ⊗ x` to `r'` times the pullback of `x`. -/
-@[simp]
-lemma cohomologyBaseChangeLinearEquiv_tmul [Module.Flat R R'] [CompactSpace X]
-    [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
-    (n : ℕ) (r' : R') (x : Cohomology M n) :
-    cohomologyBaseChangeLinearEquiv H M n (r' ⊗ₜ x) = r' • g.cohomologyPullback M n x :=
-  (rfl)
 
 section Opens
 
@@ -593,6 +501,78 @@ lemma cohomologyOnBaseChangeLinearEquiv_apply [Module.Flat R R'] [M.IsQuasicoher
 
 end Opens
 
+/-- The top-open base change map agrees with the whole-scheme base change map under
+extension of scalars of the terminal-open comparison. -/
+lemma cohomologyOnTopBaseLinearEquiv_comp_cohomologyOnBaseChange (M : X.Modules) (n : ℕ) :
+    (cohomologyOnTopBaseLinearEquiv ((Scheme.Modules.pullback g).obj M) R' n).toLinearMap ∘ₗ
+        cohomologyOnBaseChange H M n ⊤ =
+      cohomologyBaseChange H M n ∘ₗ
+        ((cohomologyOnTopBaseLinearEquiv M R n).baseChange R R' _ _).toLinearMap := by
+  let eX := cohomologyOnTopBaseLinearEquiv M R n
+  let eY := cohomologyOnTopBaseLinearEquiv ((Scheme.Modules.pullback g).obj M) R' n
+  apply LinearMap.ext
+  intro z
+  induction z using TensorProduct.inductionOn with
+  | tmul r' x =>
+    have ht : eY (g.cohomologyOnPullback M n ⊤ x) = g.cohomologyPullback M n (eX x) :=
+      (cohomologyOnTopBaseLinearEquiv_apply _ R' n _).trans
+        ((g.cohomologyOnTopIso_hom_cohomologyOnPullback M n x).trans
+          (congrArg (g.cohomologyPullback M n)
+            (cohomologyOnTopBaseLinearEquiv_apply M R n x).symm))
+    have hr : cohomologyBaseChange H M n ((eX.baseChange R R' _ _) (r' ⊗ₜ x)) =
+        r' • g.cohomologyPullback M n (eX x) := by
+      rw [LinearEquiv.baseChange_tmul, cohomologyBaseChange_tmul]
+    -- Evaluate the composites as terms: rewriting through the two presentations of
+    -- the preimage of the top open does not match at implicit transparency.
+    exact ((congrArg eY (cohomologyOnBaseChange_tmul H M n ⊤ r' x)).trans
+      ((eY.map_smul r' _).trans (congrArg (r' • ·) ht))).trans hr.symm
+  | add z w hz hw =>
+    simpa only [_root_.map_add] using congrArg₂ (· + ·) hz hw
+
+include H in
+/-- **Flat base change for the cohomology of quasi-coherent sheaves.** Let `X` be a
+quasi-compact quasi-separated scheme over `R`, let `R → R'` be flat and let `Y = X ×_R R'`,
+given as a pullback square with projection `g`. For every quasi-coherent sheaf `M` on `X`
+and every `n`, the canonical map `R' ⊗_R Hⁿ(X, M) ⟶ Hⁿ(Y, g^* M)` is bijective. -/
+theorem bijective_cohomologyBaseChange [Module.Flat R R'] [CompactSpace X]
+    [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent]
+    (n : ℕ) : Function.Bijective (cohomologyBaseChange H M n) := by
+  let eX := cohomologyOnTopBaseLinearEquiv M R n
+  let eY := cohomologyOnTopBaseLinearEquiv ((Scheme.Modules.pullback g).obj M) R' n
+  have hBC : Function.Bijective (cohomologyOnBaseChange H M n ⊤) :=
+    bijective_cohomologyOnBaseChange H M (U := ⊤) isCompact_univ isQuasiSeparated_univ n
+  have h := eY.bijective.comp hBC
+  have he := cohomologyOnTopBaseLinearEquiv_comp_cohomologyOnBaseChange H M n
+  have hb := (congrArg (fun (φ : R' ⊗[R] cohomologyOn M n ⊤ →ₗ[R']
+      Cohomology ((Scheme.Modules.pullback g).obj M) n) ↦ Function.Bijective φ) he).mp h
+  exact (Function.Bijective.of_comp_iff (cohomologyBaseChange H M n)
+    (eX.baseChange R R' _ _).bijective).mp hb
+
+/-- **Flat base change for the cohomology of quasi-coherent sheaves**, as the canonical linear
+equivalence `R' ⊗_R Hⁿ(X, M) ≃ₗ[R'] Hⁿ(Y, g^* M)` for a quasi-coherent sheaf `M` on a quasi-compact
+quasi-separated scheme `X` over `R` and a flat ring map `R → R'`. -/
+def cohomologyBaseChangeLinearEquiv [Module.Flat R R'] [CompactSpace X]
+    [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent]
+    (n : ℕ) : R' ⊗[R] Cohomology M n ≃ₗ[R'] Cohomology ((Scheme.Modules.pullback g).obj M) n :=
+  LinearEquiv.ofBijective (cohomologyBaseChange H M n) (bijective_cohomologyBaseChange H M n)
+
+/-- The underlying linear map of the flat base change isomorphism is the canonical base change
+map `cohomologyBaseChange`. -/
+@[simp]
+lemma cohomologyBaseChangeLinearEquiv_toLinearMap [Module.Flat R R'] [CompactSpace X]
+    [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent]
+    (n : ℕ) :
+    (cohomologyBaseChangeLinearEquiv H M n).toLinearMap = cohomologyBaseChange H M n :=
+  (rfl)
+
+/-- The flat base change isomorphism sends `r' ⊗ x` to `r'` times the pullback of `x`. -/
+@[simp]
+lemma cohomologyBaseChangeLinearEquiv_tmul [Module.Flat R R'] [CompactSpace X]
+    [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent]
+    (n : ℕ) (r' : R') (x : Cohomology M n) :
+    cohomologyBaseChangeLinearEquiv H M n (r' ⊗ₜ x) = r' • g.cohomologyPullback M n x :=
+  (rfl)
+
 end FlatBaseChange
 
 section Field
@@ -604,11 +584,11 @@ variable {k K : Type u} [Field k] [Field K] [Algebra k K]
 
 include H in
 /-- The dimension of `Hⁿ(X, M)` does not change under extension of the base field, for a
-quasi-coherent sheaf `M` on a quasi-compact scheme over a field with affine diagonal, for instance a
+quasi-coherent sheaf `M` on a quasi-compact quasi-separated scheme over a field, for instance a
 separated scheme of finite type. The coefficients after base change are the canonical pullback
 sheaf. -/
 theorem finrank_cohomology_pullback_eq_of_isPullback [CompactSpace X]
-    [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
+    [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent]
     (n : ℕ) :
     Module.finrank K (Cohomology ((Scheme.Modules.pullback g).obj M) n) =
       Module.finrank k (Cohomology M n) := by
@@ -616,18 +596,18 @@ theorem finrank_cohomology_pullback_eq_of_isPullback [CompactSpace X]
 
 include H in
 /-- The cohomology `Hⁿ(X, M)` of a quasi-coherent sheaf stays finite-dimensional under extension of
-the base field, on a quasi-compact scheme over a field with affine diagonal. -/
+the base field, on a quasi-compact quasi-separated scheme over a field. -/
 theorem finiteDimensional_cohomology_pullback_of_isPullback [CompactSpace X]
-    [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
+    [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent]
     (n : ℕ) [FiniteDimensional k (Cohomology M n)] :
     FiniteDimensional K (Cohomology ((Scheme.Modules.pullback g).obj M) n) :=
   Module.Finite.equiv (cohomologyBaseChangeLinearEquiv H M n)
 
 include H in
 /-- The dimension of `Hⁿ(X, 𝒪_X)` does not change under extension of the base field, on a
-quasi-compact scheme over a field with affine diagonal, for instance a proper one. -/
+quasi-compact quasi-separated scheme over a field, for instance a proper one. -/
 theorem finrank_cohomology_trivial_eq_of_isPullback [CompactSpace X]
-    [IsAffineHom (pullback.diagonal (terminal.from X))] (n : ℕ) :
+    [QuasiSeparatedSpace X] (n : ℕ) :
     Module.finrank K (Cohomology (InvertibleSheaf.trivial Y).obj n) =
       Module.finrank k (Cohomology (InvertibleSheaf.trivial X).obj n) := by
   let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
@@ -638,9 +618,9 @@ theorem finrank_cohomology_trivial_eq_of_isPullback [CompactSpace X]
 
 include H in
 /-- `Hⁿ(X, 𝒪_X)` stays finite-dimensional under extension of the base field, on a quasi-compact
-scheme over a field with affine diagonal, for instance a proper one. -/
+quasi-separated scheme over a field, for instance a proper one. -/
 theorem finiteDimensional_cohomology_trivial_of_isPullback [CompactSpace X]
-    [IsAffineHom (pullback.diagonal (terminal.from X))] (n : ℕ)
+    [QuasiSeparatedSpace X] (n : ℕ)
     [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj n)] :
     FiniteDimensional K (Cohomology (InvertibleSheaf.trivial Y).obj n) := by
   let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
@@ -658,17 +638,15 @@ theorem finiteDimensional_cohomology_trivial_of_isPullback_of_isProper
     [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj n)] :
     FiniteDimensional K (Cohomology (InvertibleSheaf.trivial Y).obj n) := by
   have : CompactSpace X := QuasiCompact.compactSpace_of_compactSpace (X ↘ Spec (.of k))
-  have : IsSeparated (terminal.from X) := by
-    rw [← terminal.comp_from (X ↘ Spec (.of k))]
-    infer_instance
+  have : QuasiSeparatedSpace X := quasiSeparatedSpace_of_quasiSeparated (X ↘ Spec (.of k))
   exact finiteDimensional_cohomology_trivial_of_isPullback H n
 
 include H in
 /-- The truncated Euler characteristic `∑_{i < n} (-1)ⁱ dim Hⁱ(X, M)` of a quasi-coherent sheaf
-does not change under extension of the base field, on a quasi-compact scheme over a field with
-affine diagonal. -/
+does not change under extension of the base field, on a quasi-compact quasi-separated scheme
+over a field. -/
 theorem eulerCharBelow_pullback_eq_of_isPullback [CompactSpace X]
-    [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
+    [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent]
     (n : ℕ) :
     eulerCharBelow K Y ((Scheme.Modules.pullback g).obj M) n = eulerCharBelow k X M n := by
   induction n with

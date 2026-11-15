@@ -42,6 +42,9 @@ local field on `E` compatible with `K`; `L` is then a valuative extension of `E`
   `TauCeti.ramificationIndex_unramifiedExtension_inertiaDegree` and
   `TauCeti.finrank_unramifiedExtension_inertiaDegree_eq_ramificationIndex`: `L/L₀` is totally
   ramified, with ramification index and degree `e`.
+* `TauCeti.wildRamificationExponent_unramifiedExtension_inertiaDegree` and
+  `TauCeti.tameRamificationIndex_unramifiedExtension_inertiaDegree`: `L/L₀` has the wild
+  ramification exponent and tame index of `L/K`.
 * `TauCeti.map_unramifiedExtension_inertiaDegree_le`: maximal unramified subextensions are
   covariant in towers.
 * `TauCeti.map_unramifiedExtension_inertiaDegree_eq_iff`: the maximal unramified subextension is
@@ -152,6 +155,24 @@ theorem ramificationIndex_unramifiedExtension_inertiaDegree :
     ramificationIndex (unramifiedExtension K L (inertiaDegree K L)) L = ramificationIndex K L :=
   have := isUnramified_unramifiedExtension_inertiaDegree K L
   IsUnramified.ramificationIndex_tower_eq K _ L
+
+/-- The wild ramification exponent of the top step of the canonical unramified--totally
+ramified factorization equals that of `L/K`. -/
+@[simp]
+theorem wildRamificationExponent_unramifiedExtension_inertiaDegree :
+    wildRamificationExponent (unramifiedExtension K L (inertiaDegree K L)) L =
+      wildRamificationExponent K L :=
+  have := isUnramified_unramifiedExtension_inertiaDegree K L
+  IsUnramified.wildRamificationExponent_tower_eq K _ L
+
+/-- The tame ramification index of the top step of the canonical unramified--totally ramified
+factorization equals that of `L/K`. -/
+@[simp]
+theorem tameRamificationIndex_unramifiedExtension_inertiaDegree :
+    tameRamificationIndex (unramifiedExtension K L (inertiaDegree K L)) L =
+      tameRamificationIndex K L :=
+  have := isUnramified_unramifiedExtension_inertiaDegree K L
+  IsUnramified.tameRamificationIndex_tower_eq K _ L
 
 end TotallyRamified
 

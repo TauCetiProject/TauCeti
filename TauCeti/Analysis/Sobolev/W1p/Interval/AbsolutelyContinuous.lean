@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
+public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.WeakDeriv.AbsolutelyContinuous
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
+import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -17,6 +19,7 @@ An absolutely continuous real function on `[a,b]` whose classical derivative bel
 defines an element of `W1p volume (Ioo a b) p`, for every `1 ≤ p ≤ ∞`. Its value and gradient
 agree almost everywhere with the function and its derivative. This is the converse to the
 existing construction of absolutely continuous representatives of interval Sobolev classes.
+For `p < ∞`, if the function also vanishes at both endpoints, the class lies in `W^{1,p}_0(a,b)`.
 
 The range of `W1p.intervalRepresentativeL` is exactly the continuous functions whose extension
 by endpoint projection is absolutely continuous and has derivative in `Lᵖ(a,b)`. In
@@ -66,6 +69,28 @@ theorem exists_w1p_value_gradient_ae_eq (hf : AbsolutelyContinuousOnInterval f a
     rw [ht]
   · simpa only [TauCeti.W1p.value_mk] using hv.coeFn_toLp
   · simpa only [TauCeti.W1p.gradient_mk] using hdf.coeFn_toLp
+
+/-- For `p < ∞`, an absolutely continuous function vanishing at both endpoints, with classical
+derivative in `Lᵖ(a,b)`, represents a class in `W^{1,p}_0(a,b)`; the recorded weak gradient is
+its classical derivative almost everywhere. -/
+theorem exists_mem_w1p0Submodule_value_gradient_ae_eq (hf : AbsolutelyContinuousOnInterval f a b)
+    (hdf : MemLp (deriv f) p (volume.restrict (Ioo a b))) (hp : p ≠ ∞)
+    (ha : f a = 0) (hb : f b = 0) :
+    ∃ u ∈ TauCeti.w1p0Submodule volume ⟨Ioo a b, isOpen_Ioo⟩ p,
+      TauCeti.W1p.value u =ᵐ[volume.restrict (Ioo a b)] f ∧
+      TauCeti.W1p.gradient u =ᵐ[volume.restrict (Ioo a b)] deriv f := by
+  obtain ⟨u, hv, hg⟩ := hf.exists_w1p_value_gradient_ae_eq hdf
+  refine ⟨u, TauCeti.W1p.mem_w1p0Submodule_of_continuousOn_closure hp
+    (by simpa using Metric.isBounded_Ioo a b) ?_ ?_ hv, hv, hg⟩ <;>
+    rcases le_or_gt b a with hab | hab
+  -- On an empty interval the closure and the frontier are empty.
+  · simp [Ioo_eq_empty_of_le hab]
+  · simpa [closure_Ioo hab.ne, uIcc_of_le hab.le] using hf.continuousOn
+  · simp [Ioo_eq_empty_of_le hab]
+  · intro t ht
+    simp only [Opens.coe_mk, frontier_Ioo hab, mem_insert_iff, mem_singleton_iff] at ht
+    rcases ht with rfl | rfl
+    exacts [ha, hb]
 
 end AbsolutelyContinuousOnInterval
 
