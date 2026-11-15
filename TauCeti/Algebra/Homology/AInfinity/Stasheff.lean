@@ -567,14 +567,8 @@ Only the inputs actually read, namely those below `n`, need be homogeneous. -/
 theorem replaceBlock_mem_replaceDeg_of_mem_blockDeg {n p s : ℕ} {d : ℕ → ℤ} {x : ℕ → A} {e : A}
     (hx : ∀ i < n, x i ∈ 𝒜 (d i)) (he : e ∈ 𝒜 (blockDeg d p s)) (hps : p + s ≤ n)
     {i : ℕ} (hi : i < p + 1 + (n - p - s)) :
-    replaceBlock x p s e i ∈ 𝒜 (replaceDeg d p s i) := by
-  rcases lt_trichotomy i p with h | rfl | h
-  · rw [replaceBlock_of_lt _ _ _ _ h, replaceDeg_of_lt _ _ _ h]
-    exact hx i (by omega)
-  · rw [replaceBlock_self, replaceDeg_self]
-    exact he
-  · rw [replaceBlock_of_gt _ _ _ _ h, replaceDeg_of_gt _ _ _ h]
-    exact hx _ (by omega)
+    replaceBlock x p s e i ∈ 𝒜 (replaceDeg d p s i) :=
+  replaceBlock_mem 𝒜 hx he hps hi
 
 end Comparison
 

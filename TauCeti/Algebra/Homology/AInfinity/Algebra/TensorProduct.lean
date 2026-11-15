@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Homology.AInfinity.Algebra
 public import TauCeti.Algebra.Homology.DG.Algebra.Defs
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
 import TauCeti.Algebra.Homology.AInfinity.Algebra.CoaugmentedBar
+import TauCeti.Data.List.ProdOfFn
+import TauCeti.LinearAlgebra.TensorAlgebra.Basic
 import TauCeti.LinearAlgebra.TensorAlgebra.Grading
 import TauCeti.LinearAlgebra.TensorCoalgebra.Brace
 import TauCeti.LinearAlgebra.TensorCoalgebra.Splice
@@ -122,22 +124,6 @@ theorem shuffleExp_congr {n : ℕ} {dA dB eA eB : ℕ → ℤ} (hA : ∀ i < n, 
   rw [Finset.mem_range] at hj
   rw [hA j hj, Finset.sum_congr rfl fun i hi ↦ hB i (by rw [Finset.mem_range] at hi; omega)]
 
-/-- Raising the degree at `p` by one raises every partial sum past `p` by one. -/
-private theorem sum_range_replaceBlock_succ (dB : ℕ → ℤ) (p m : ℕ) :
-    ∑ i ∈ Finset.range m, replaceBlock dB p 1 (dB p + 1) i =
-      ∑ i ∈ Finset.range m, dB i + if p < m then 1 else 0 := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    rw [Finset.sum_range_succ, ih, Finset.sum_range_succ]
-    rcases lt_trichotomy m p with h | rfl | h
-    · rw [replaceBlock_of_lt _ _ _ _ h, ite_eq_right (by omega), ite_eq_right (by omega)]
-      ring
-    · rw [replaceBlock_self, ite_eq_right (by omega), ite_eq_left (by omega)]
-      ring
-    · rw [replaceBlock_of_gt _ _ _ _ h, ite_eq_left h, ite_eq_left (by omega), Nat.add_sub_cancel]
-      ring
-
 /-- Raising the `B`-degree at `p` by one raises the shuffle exponent by the `A`-degrees of the
 letters after `p`. -/
 private theorem shuffleExp_replaceBlock_succ (dA dB : ℕ → ℤ) {p n : ℕ} (hp : p < n) :
@@ -146,7 +132,7 @@ private theorem shuffleExp_replaceBlock_succ (dA dB : ℕ → ℤ) {p n : ℕ} (
   induction n with
   | zero => omega
   | succ n ih =>
-    rw [shuffleExp_succ, shuffleExp_succ, sum_range_replaceBlock_succ, Finset.sum_range_succ dA n]
+    rw [shuffleExp_succ, shuffleExp_succ, sum_range_replaceBlock_one, Finset.sum_range_succ dA n]
     rcases Nat.lt_succ_iff_lt_or_eq.1 hp with h | rfl
     · rw [ih h, ite_eq_left h]
       ring
@@ -221,79 +207,6 @@ namespace AInfinityAlgebra
 variable {R : Type uR} {A : Type uA} {B : Type uB} [CommRing R] [AddCommGroup A] [Module R A]
   [Ring B] [Algebra R B]
 
-/-- Ordered products of the first `n` entries of a string in an algebra. -/
-private theorem prod_ofFn_succ {n : ℕ} (b : ℕ → B) :
-    (List.ofFn fun j : Fin (n + 1) ↦ b j).prod = (List.ofFn fun j : Fin n ↦ b j).prod * b n := by
-  rw [List.ofFn_succ', List.prod_concat]
-  simp
-
-/-- A product of homogeneous elements lies in the piece of the sum of their degrees. -/
-private theorem prod_ofFn_mem (ℬ : ℤ → Submodule R B) [GradedAlgebra ℬ] {n : ℕ} (b : ℕ → B)
-    (dB : ℕ → ℤ) (hb : ∀ i < n, b i ∈ ℬ (dB i)) :
-    (List.ofFn fun j : Fin n ↦ b j).prod ∈ ℬ (∑ i ∈ Finset.range n, dB i) := by
-  have h := SetLike.list_prod_ofFn_mem_graded (fun j : Fin n ↦ dB j) (fun j : Fin n ↦ b j)
-    fun j ↦ hb j j.isLt
-  rwa [List.sum_ofFn, Fin.sum_univ_eq_sum_range (fun i ↦ dB i)] at h
-
-/-- A product of `n + 1` generators of the tensor algebra splits off its last generator. -/
-private theorem tensorAlgebra_tprod_succ {M : Type*} [AddCommGroup M] [Module R M] {n : ℕ}
-    (x : ℕ → M) :
-    TensorAlgebra.tprod R M (n + 1) (fun j : Fin (n + 1) ↦ x j) =
-      TensorAlgebra.tprod R M n (fun j : Fin n ↦ x j) * TensorAlgebra.ι R (x n) := by
-  simp only [TensorAlgebra.tprod_apply]
-  exact prod_ofFn_succ (fun j ↦ TensorAlgebra.ι R (x j))
-
-/-- An ordered product only reads the entries below its length. -/
-private theorem prod_ofFn_congr {n : ℕ} {b b' : ℕ → B} (h : ∀ i < n, b i = b' i) :
-    (List.ofFn fun j : Fin n ↦ b j).prod = (List.ofFn fun j : Fin n ↦ b' j).prod := by
-  congr 1
-  exact List.ofFn_inj.2 (funext fun j ↦ h j j.isLt)
-
-/-- An ordered product of a concatenation is the product of the two ordered products. -/
-private theorem prod_ofFn_add (b : ℕ → B) (p d : ℕ) :
-    (List.ofFn fun j : Fin (p + d) ↦ b j).prod =
-      (List.ofFn fun j : Fin p ↦ b j).prod * (List.ofFn fun j : Fin d ↦ b (p + j)).prod := by
-  induction d with
-  | zero => simp
-  | succ d ih =>
-    rw [← add_assoc, prod_ofFn_succ, ih, prod_ofFn_succ (fun j ↦ b (p + j)), mul_assoc]
-
-/-- Collapsing a block of a string to the product of its entries does not change the product of
-the string. -/
-private theorem prod_ofFn_replaceBlock (b : ℕ → B) (p d t : ℕ) :
-    (List.ofFn fun j : Fin (p + 1 + t) ↦
-        replaceBlock b p d (List.ofFn fun j : Fin d ↦ b (p + j)).prod j).prod =
-      (List.ofFn fun j : Fin (p + d + t) ↦ b j).prod := by
-  induction t with
-  | zero =>
-    rw [add_zero, add_zero, prod_ofFn_succ, prod_ofFn_add b p d, replaceBlock_self,
-      prod_ofFn_congr fun i hi ↦ replaceBlock_of_lt b p d _ hi]
-  | succ t ih =>
-    rw [← add_assoc, prod_ofFn_succ, ih, ← add_assoc (p + d), prod_ofFn_succ,
-      replaceBlock_of_gt _ _ _ _ (by omega : p < p + 1 + t)]
-    congr 2
-    omega
-
-/-- The graded Leibniz rule for an ordered product of homogeneous elements. -/
-private theorem map_prod_ofFn {ℬ : ℤ → Submodule R B} [GradedAlgebra ℬ] {dB : B →ₗ[R] B}
-    (hB : IsDGAlgebra ℬ dB) (n : ℕ) (b : ℕ → B) (e : ℕ → ℤ) (hb : ∀ i < n, b i ∈ ℬ (e i)) :
-    dB (List.ofFn fun j : Fin n ↦ b j).prod =
-      ∑ k ∈ Finset.range n, negOnePowCast R (∑ i ∈ Finset.range k, e i) •
-        (List.ofFn fun j : Fin n ↦ replaceBlock b k 1 (dB (b k)) j).prod := by
-  induction n with
-  | zero => simp [hB.map_one_eq_zero]
-  | succ n ih =>
-    rw [prod_ofFn_succ, hB.leibniz (prod_ofFn_mem ℬ (n := n) b e fun i hi ↦ hb i (by omega)),
-      ih fun i hi ↦ hb i (by omega), Finset.sum_range_succ, Finset.sum_mul,
-      negOnePow_smul_eq_negOnePowCast_smul (R := R)]
-    congr 1
-    · refine Finset.sum_congr rfl fun k hk ↦ ?_
-      rw [Finset.mem_range] at hk
-      rw [smul_mul_assoc, prod_ofFn_succ (replaceBlock b k 1 (dB (b k))),
-        replaceBlock_of_gt _ _ _ _ hk, Nat.add_sub_cancel]
-    · rw [prod_ofFn_succ (replaceBlock b n 1 (dB (b n))), replaceBlock_self,
-        prod_ofFn_congr fun i hi ↦ replaceBlock_of_lt b n 1 _ hi]
-
 section Shuffle
 
 variable (𝒜 : AInfinityAlgebra R A) (ℬ : ℤ → Submodule R B) [GradedAlgebra ℬ]
@@ -325,12 +238,12 @@ private theorem lift_shuffleLetter_tprod (n : ℕ) (a : ℕ → A) (b : ℕ → 
       AInfinity.shuffleExp_zero, negOnePowCast_zero, one_smul]
     exact (GradedTensorProduct.of_one (tensorAlgebraPiece (𝒜.grading.shift 1)) ℬ).symm
   | succ n ih =>
-    rw [tensorAlgebra_tprod_succ (fun j ↦ a j ⊗ₜ[R] b j), map_mul, ih (fun i hi ↦ ha i (by omega))
-      (fun i hi ↦ hb i (by omega)), TensorAlgebra.lift_ι_apply, shuffleLetter_tmul, smul_mul_assoc,
-      tensorAlgebra_tprod_succ a, prod_ofFn_succ b]
+    simp only [TensorAlgebra.tprod_succ, Fin.val_castSucc, Fin.val_last]
+    rw [map_mul, ih (fun i hi ↦ ha i (by omega)) (fun i hi ↦ hb i (by omega)),
+      TensorAlgebra.lift_ι_apply, shuffleLetter_tmul, smul_mul_assoc, List.prod_ofFn_val_succ b]
     have hA : TensorAlgebra.ι R (a n) ∈ tensorAlgebraPiece (𝒜.grading.shift 1) (dA n) :=
       ι_mem_tensorAlgebraPiece _ (ha n (by omega))
-    have hB := prod_ofFn_mem ℬ (n := n) b dB fun i hi ↦ hb i (by omega)
+    have hB := list_prod_ofFn_val_mem_graded ℬ (n := n) b dB fun i hi ↦ hb i (by omega)
     have hmul := GradedTensorProduct.tmul_coe_mul_coe_tmul (R := R)
       (𝒜 := tensorAlgebraPiece (𝒜.grading.shift 1)) (ℬ := ℬ)
       (TensorAlgebra.tprod R A n (fun j : Fin n ↦ a j)) ⟨_, hB⟩ ⟨_, hA⟩ (b n)
@@ -522,16 +435,6 @@ private theorem splice_eq_of_replaceBlock {M : Type*} [AddCommGroup M] [Module R
   rw [ReducedTensorWords.splice_eq_of_tprod_replaceBlock R x hd (by omega) e]
   exact ReducedTensorWords.of_tprod_congr R M _ (by omega) fun _ ↦ rfl
 
-/-- Collapsing a block of a string of homogeneous elements to a homogeneous element. -/
-private theorem replaceBlock_mem {M : Type*} [AddCommGroup M] [Module R M] {S : ℤ → Submodule R M}
-    {x : ℕ → M} {e : ℕ → ℤ} {p d t : ℕ} (hx : ∀ i < p + d + t, x i ∈ S (e i)) {v : M} {α : ℤ}
-    (hv : v ∈ S α) : ∀ i < p + 1 + t, replaceBlock x p d v i ∈ S (replaceBlock e p d α i) := by
-  intro i hi
-  rcases lt_trichotomy i p with h | rfl | h
-  · simpa only [replaceBlock_of_lt _ _ _ _ h] using hx i (by omega)
-  · rwa [replaceBlock_self, replaceBlock_self]
-  · simpa only [replaceBlock_of_gt _ _ _ _ h] using hx _ (by omega)
-
 /-- The signed shuffle of a word of pure tensors with a block collapsed to a pure tensor. -/
 private theorem shuffle_reducedInclusion_splice (a : ℕ → A) (b : ℕ → B) (dA dB' : ℕ → ℤ)
     {p d t : ℕ} (hd : 0 < d) (ha : ∀ i < p + d + t, a i ∈ (𝒜.grading.shift 1).piece (dA i))
@@ -546,8 +449,9 @@ private theorem shuffle_reducedInclusion_splice (a : ℕ → A) (b : ℕ → B) 
           (List.ofFn fun j : Fin (p + 1 + t) ↦ replaceBlock b p d b' j).prod) := by
   rw [splice_eq_of_replaceBlock (fun i ↦ a i ⊗ₜ[R] b i) hd, splice_eq_of_replaceBlock a hd]
   simp only [replaceBlock_tmul]
-  exact shuffle_reducedInclusion_of_tprod 𝒜 ℬ _ _ _ _ _ (replaceBlock_mem ha ha')
-    (replaceBlock_mem hb hb')
+  exact shuffle_reducedInclusion_of_tprod 𝒜 ℬ _ _ _ _ _
+    (fun i hi ↦ replaceBlock_mem _ ha ha' (by omega) (by omega))
+    fun i hi ↦ replaceBlock_mem _ hb hb' (by omega) (by omega)
 
 /-- The Taylor map of `A` on a word of homogeneous letters has the total suspended degree plus
 one. -/
@@ -559,15 +463,6 @@ private theorem taylor_of_tprod_mem {n : ℕ} (hn : 0 < n) (a : ℕ → A) (dA :
     (fun j : Fin n ↦ a j) (fun j ↦ dA j) fun j ↦ ha j j.isLt
   rw [Fin.sum_univ_eq_sum_range (fun i ↦ dA i)] at h
   exact (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree).map_mem h
-
-/-- Replacing a letter by itself does not change a string. -/
-private theorem replaceBlock_one_self {M : Type*} (x : ℕ → M) (p : ℕ) :
-    replaceBlock x p 1 (x p) = x := by
-  funext i
-  rcases lt_trichotomy i p with h | rfl | h
-  · rw [replaceBlock_of_lt _ _ _ _ h]
-  · rw [replaceBlock_self]
-  · rw [replaceBlock_of_gt _ _ _ _ h, Nat.add_sub_cancel]
 
 /-- The shuffled `(p, d)` term of the bar differential of the tensor product, for a block that
 fits: the shuffled term of the bar differential of `A`, and for `d = 1` also the `d_B` term of
@@ -590,7 +485,7 @@ private theorem shuffle_splice_tensorTaylor_of_fits (hB : IsDGAlgebra ℬ dB) (a
           negOnePowCast R (∑ j ∈ Finset.range (p + d + t), dA j + ∑ j ∈ Finset.range p, dB' j) •
             (TensorWords.reducedInclusion R A (ReducedTensorWords.of R A ⟨p + d + t, by omega⟩
               (PiTensorProduct.tprod R fun j : Fin (p + d + t) ↦ a j)) ⊗ₜ
-                (List.ofFn fun j : Fin (p + d + t) ↦ replaceBlock b p 1 (dB (b p)) j).prod)
+                (List.ofFn fun j : Fin (p + d + t) ↦ Function.update b p (dB (b p)) j).prod)
         else 0) := by
   have hpd : p + d ≤ p + d + t := by omega
   rw [ReducedTensorWords.subword_eq_of_tprod R _ hd hpd,
@@ -605,26 +500,24 @@ private theorem shuffle_splice_tensorTaylor_of_fits (hB : IsDGAlgebra ℬ dB) (a
     ReducedTensorWords.splice_smul, map_smul, map_smul, map_add, map_add, map_smul, map_smul,
     shuffle_reducedInclusion_splice 𝒜 ℬ a b dA dB' hd ha hb
       (taylor_of_tprod_mem 𝒜 hd (fun j ↦ a (p + j)) (fun j ↦ dA (p + j)) fun i _ ↦ ha _ (by omega))
-      (prod_ofFn_mem ℬ (n := d) (fun j ↦ b (p + j)) (fun j ↦ dB' (p + j))
+      (list_prod_ofFn_val_mem_graded ℬ (n := d) (fun j ↦ b (p + j)) (fun j ↦ dB' (p + j))
         fun i _ ↦ hb _ (by omega)),
     prod_ofFn_replaceBlock b p d t]
   have hsplice := AInfinity.negOnePow_splice dA dB' p d t
-  have hcast : ∀ {x y : ℤ}, Even (x - y) → negOnePowCast R x = negOnePowCast R y := fun h ↦ by
-    rw [negOnePowCast_eq_intCast, negOnePowCast_eq_intCast, (Int.negOnePow_eq_iff _ _).2 h]
   by_cases hd1 : d = 1
   · subst hd1
     have hP : (List.ofFn fun j : Fin 1 ↦ b (p + j)).prod = b p := by simp
     rw [ite_eq_left rfl, ite_eq_left rfl, add_zero, hP,
       shuffle_reducedInclusion_splice 𝒜 ℬ a b dA dB' hd ha hb (ha p (by omega))
         (hB.map_mem (hb p (by omega))), splice_eq_of_replaceBlock a hd (a p), replaceBlock_one_self,
-      replaceBlock_one_self]
+      replaceBlock_one_self, replaceBlock_one b p]
     simp only [AInfinity.shuffleExp_one, Finset.sum_range_one, add_zero, negOnePowCast_zero,
       one_smul] at hsplice ⊢
     simp only [smul_add, smul_smul, ← negOnePowCast_add]
     congr 2
-    · exact hcast (by convert (Int.negOnePow_eq_iff _ _).1 hsplice using 1)
+    · exact negOnePowCast_eq_of_even_sub (by convert (Int.negOnePow_eq_iff _ _).1 hsplice using 1)
     · -- Raising the degree of `b p` by one moves `d_B` past the `A`-degrees of the later letters.
-      refine hcast ⟨0, ?_⟩
+      refine negOnePowCast_eq_of_even_sub ⟨0, ?_⟩
       rw [AInfinity.shuffleExp_replaceBlock_succ dA dB' (by omega), Finset.sum_add_distrib,
         Finset.sum_range_succ]
       ring
@@ -632,7 +525,7 @@ private theorem shuffle_splice_tensorTaylor_of_fits (hB : IsDGAlgebra ℬ dB) (a
       ReducedTensorWords.splice_zero, map_zero, map_zero, smul_zero, add_zero, add_zero]
     simp only [smul_smul, ← negOnePowCast_add]
     congr 1
-    refine hcast ?_
+    refine negOnePowCast_eq_of_even_sub ?_
     convert (Int.negOnePow_eq_iff _ _).1 hsplice using 1
     ring
 
@@ -653,7 +546,7 @@ private theorem shuffle_splice_tensorTaylor (hB : IsDGAlgebra ℬ dB) (a : ℕ �
           negOnePowCast R (∑ j ∈ Finset.range n, dA j + ∑ j ∈ Finset.range p, dB' j) •
             (TensorWords.reducedInclusion R A (ReducedTensorWords.of R A ⟨n, hn⟩
               (PiTensorProduct.tprod R fun j : Fin n ↦ a j)) ⊗ₜ
-                (List.ofFn fun j : Fin n ↦ replaceBlock b p 1 (dB (b p)) j).prod)
+                (List.ofFn fun j : Fin n ↦ Function.update b p (dB (b p)) j).prod)
         else 0) := by
   by_cases hfit : 0 < d ∧ p + d ≤ n
   · obtain ⟨t, rfl⟩ : ∃ t, n = p + d + t := ⟨n - p - d, by omega⟩
@@ -682,8 +575,8 @@ private theorem shuffle_gradedCoderiv_of_tprod (hB : IsDGAlgebra ℬ dB) {n : �
     tensorBarDifferential_tmul, ← LinearMap.comp_apply 𝒜.coaugmentedBarDifferential,
     coaugmentedBarDifferential_comp_reducedInclusion, LinearMap.comp_apply, barDifferential_def,
     gradedCoderiv_of_tprod_nat _ _ hn a dA ha, InternalGrading.koszulTwist_apply_of_mem _ hmem,
-    map_prod_ofFn hB n b dB' hb]
-  simp only [map_sum, map_smul]
+    hB.map_list_prod_ofFn b dB' hb]
+  simp only [map_sum, map_smul, negOnePow_smul_eq_negOnePowCast_smul (R := R)]
   rw [Finset.sum_congr rfl fun p hp ↦ Finset.sum_congr rfl fun d _ ↦
     shuffle_splice_tensorTaylor 𝒜 ℬ dB hB a b dA dB' (d := d) hn (Finset.mem_range.1 hp) ha hb]
   simp only [← Finset.smul_sum, smul_add, Finset.sum_add_distrib]
@@ -733,22 +626,6 @@ private theorem shuffle_comp_gradedCoderiv (hB : IsDGAlgebra ℬ dB) :
   simp only [LinearMap.comp_apply, hz]
   rwa [ReducedTensorWords.of_def] at h
 
-/-- Shifting the first factor of a tensor product of gradings shifts the total grading. -/
-private theorem shift_tensorProduct_piece {M N : Type*} [AddCommGroup M] [Module R M]
-    [AddCommGroup N] [Module R N] (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) :
-    ((G.shift 1).tensorProduct H).piece = ((G.tensorProduct H).shift 1).piece := by
-  funext d
-  refine le_antisymm (InternalGrading.tensorProduct_piece_le _ _ fun p x hx y hy ↦ ?_) ?_
-  · rw [InternalGrading.shift_piece] at hx ⊢
-    simpa [show p + 1 + (d - p) = d + 1 by ring] using
-      InternalGrading.tmul_mem_tensorProduct G H hx hy
-  · rw [InternalGrading.shift_piece]
-    refine InternalGrading.tensorProduct_piece_le _ _ fun p x hx y hy ↦ ?_
-    have hx' : x ∈ (G.shift 1).piece (p - 1) := by
-      rwa [InternalGrading.shift_piece, sub_add_cancel]
-    simpa [show p - 1 + (d + 1 - p) = d by ring] using
-      InternalGrading.tmul_mem_tensorProduct (G.shift 1) H hx' hy
-
 /-- The signed shuffle preserves the suspended total degree. -/
 private theorem isHomogeneous_shuffle :
     LinearMap.IsHomogeneous (shuffle 𝒜 ℬ)
@@ -760,7 +637,7 @@ private theorem isHomogeneous_shuffle :
   have hletter : LinearMap.IsHomogeneous (shuffleLetter 𝒜 ℬ)
       ((𝒜.grading.tensorProduct (InternalGrading.ofDecomposition ℬ)).shift 1).piece
       (gradedTensorGrading 𝒯 ℬ) 0 := by
-    rw [← shift_tensorProduct_piece]
+    rw [← InternalGrading.shift_tensorProduct_piece]
     refine LinearMap.isHomogeneous_def.2 fun d z hz ↦ ?_
     rw [add_zero]
     refine InternalGrading.tensorProduct_piece_le _ _ (C := (gradedTensorGrading 𝒯 ℬ d).comap _)
@@ -842,7 +719,7 @@ private theorem isHomogeneous_tensorTaylor (hB : IsDGAlgebra ℬ dB) :
     · simpa only [zero_add] using hτ.tensorProduct hd
   have h := (hlet.tensorProduct (LinearMap.isHomogeneous_id _)).comp
     (h𝔇.comp ((isHomogeneous_shuffle 𝒜 ℬ).comp hι))
-  rw [shift_tensorProduct_piece] at h
+  rw [InternalGrading.shift_tensorProduct_piece] at h
   simpa only [tensorTaylor, add_zero, zero_add] using h
 
 /-- The bar coderivation of the Taylor map of the tensor product squares to zero. -/
@@ -981,11 +858,9 @@ theorem tensorDGAlgebra_m_apply (hB : IsDGAlgebra ℬ dB) {n : ℕ} (hn : n ≠ 
     𝒜.taylor_of_tprod, InternalGrading.koszulTwist_apply_of_mem _ (ha _ (Fin.isLt _)),
     MultilinearMap.map_smul_univ, ← TensorProduct.smul_tmul', smul_smul]
   congr 1
-  have hcast : ∀ {x y : ℤ}, Even (x - y) → negOnePowCast R x = negOnePowCast R y := fun h ↦ by
-    rw [negOnePowCast_eq_intCast, negOnePowCast_eq_intCast, (Int.negOnePow_eq_iff _ _).2 h]
   simp only [RingHom.id_apply]
   rw [← negOnePowCast_sum, ← negOnePowCast_sum, ← negOnePowCast_add, ← negOnePowCast_add]
-  refine hcast ⟨∑ i ∈ Finset.range n, ((n : ℤ) - 1 - i) * p i, ?_⟩
+  refine negOnePowCast_eq_of_even_sub ⟨∑ i ∈ Finset.range n, ((n : ℤ) - 1 - i) * p i, ?_⟩
   rw [Fin.sum_univ_eq_sum_range (fun i ↦ ((n : ℤ) - 1 - i) * (p i + q i)),
     Fin.sum_univ_eq_sum_range (fun i ↦ ((n : ℤ) - 1 - i) * p i), AInfinity.shuffleExp_sub_one]
   simp only [mul_add, Finset.sum_add_distrib]
