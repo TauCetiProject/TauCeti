@@ -289,6 +289,19 @@ theorem reducedTensorWordsHomotopy_ofLetter (G : InternalGrading R M ℤ) (a : M
   rw [ofLetter_eq_of_tprod, ofLetter_eq_of_tprod, c.reducedTensorWordsHomotopy_of_tprod G 1]
   simp
 
+/-- The letter component of the tensor-trick homotopy is the homotopy on the letter component:
+the tensor-trick homotopy preserves word length, so only single-letter words contribute. -/
+@[simp]
+theorem letter_comp_reducedTensorWordsHomotopy (G : InternalGrading R M ℤ) :
+    letter R M ∘ₗ c.reducedTensorWordsHomotopy G = c.homotopy ∘ₗ letter R M := by
+  refine linearMap_ext R M fun ⟨n, hn⟩ x ↦ ?_
+  rcases eq_or_ne n 1 with rfl | hn1
+  · rw [of_tprod_eq_subword R hn x, subword_one R M x hn]
+    simp
+  · have hne : (⟨n, hn⟩ : {n : ℕ // 0 < n}) ≠ 1 := fun h ↦ hn1 (congrArg Subtype.val h)
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, c.reducedTensorWordsHomotopy_of G ⟨n, hn⟩,
+      letter_of_of_ne_one R M hne, letter_of_of_ne_one R M hne, map_zero]
+
 /-- On a two-letter word the tensor-trick homotopy is `h ⊗ i p + τ ⊗ h`, where `τ` is the Koszul
 twist of parameter one. -/
 theorem reducedTensorWordsHomotopy_of_two (G : InternalGrading R M ℤ) (a b : M) :
