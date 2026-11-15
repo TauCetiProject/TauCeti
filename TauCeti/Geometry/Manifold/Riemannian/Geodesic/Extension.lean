@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
 import TauCeti.Geometry.Manifold.IntegralCurve.Extension
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 
 /-!
-# Extending a geodesic past a finite endpoint
+# Extending geodesics and smooth geodesic segments
 
 The velocity lift of a geodesic is an integral curve of the geodesic spray, which is a `C¹`
 vector field on the tangent bundle of a `C³` manifold with a `C²` metric. The finite-endpoint
@@ -27,8 +29,9 @@ interval containing `[a, b]`. This gives, for instance, the endpoint velocities 
 is only known to be a geodesic in the interior of its parameter interval, such as a
 length-minimizing curve whose endpoints lie on the boundary of a domain.
 
-The extension theorems need a `C²` metric on a `C³` manifold without boundary, and nothing is
-assumed about the completeness of the manifold.
+The finite-endpoint geodesic extensions need a `C²` metric on a `C³` manifold without boundary.
+The globally smooth curve extensions require a smooth metric and manifold without boundary.
+No completeness assumption is needed.
 
 ## Main results
 
@@ -41,6 +44,19 @@ assumed about the completeness of the manifold.
 * `TauCeti.Manifold.IsGeodesicCurveOn.exists_isGeodesicCurveOn_Ioo_of_continuousOn_Icc`: a
   geodesic on `(a, b)` which is continuous on `[a, b]` agrees on `[a, b]` with a geodesic on an
   open interval containing `[a, b]`.
+* `TauCeti.Manifold.IsGeodesicCurveOn.exists_contMDiff_eventuallyEq`: a geodesic on an open
+  preconnected set `U` agrees near any set closed in `ℝ` and contained in `U` with a globally
+  smooth curve.
+* `TauCeti.Manifold.IsGeodesicCurveOn.exists_contMDiff_isGeodesicCurveOn_comp_affine`: an affine
+  reparametrization on a nondegenerate closed interval mapped into `U` has a globally smooth
+  extension preserving its germs and affine velocity formula.
+* `TauCeti.Manifold.IsGeodesicCurveOn.exists_contMDiff_isGeodesicCurveOn_Icc`: a geodesic on a
+  nondegenerate closed interval has a globally smooth extension preserving its endpoint velocities.
+* `TauCeti.Manifold.exists_contMDiff_eventuallyEq_maximalGeodesic`: a maximal geodesic agrees near
+  any set closed in `ℝ` and contained in its maximal interval with a globally smooth curve.
+* `TauCeti.Manifold.exists_contMDiff_isGeodesicCurveOn_maximalGeodesic`: the same for an affine
+  reparametrization on a nondegenerate closed interval mapped into the maximal interval,
+  preserving its germs and affine velocity formula.
 
 ## References
 
@@ -63,6 +79,55 @@ variable
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {a b : ℝ}
+
+section SmoothExtension
+
+variable [I.Boundaryless] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- A geodesic on an open preconnected set `U` agrees near any set closed in `ℝ` and contained
+in `U` with a curve smooth on the whole line. -/
+theorem IsGeodesicCurveOn.exists_contMDiff_eventuallyEq {γ : ℝ → M} {U K : Set ℝ}
+    (hγ : IsGeodesicCurveOn I γ U) (hU : IsOpen U) (hconn : IsPreconnected U)
+    (hK : IsClosed K) (hKU : K ⊆ U) :
+    ∃ f : ℝ → M, ContMDiff 𝓘(ℝ) I ∞ f ∧ ∀ t ∈ K, f =ᶠ[𝓝 t] γ := by
+  rcases U.eq_empty_or_nonempty with rfl | ⟨c, hc⟩
+  · exact ⟨fun _ ↦ γ 0, contMDiff_const, fun t ht ↦ (hKU ht).elim⟩
+  exact hγ.contMDiffOn_infty.exists_contMDiff_eventuallyEq_of_starConvex hU
+    (hconn.ordConnected.convex.starConvex hc) hK hKU
+
+/-- An affine reparametrization of a geodesic on an open preconnected set `U`, restricted to a
+nondegenerate closed interval mapped into `U`, has a globally smooth extension agreeing near
+each parameter, which is geodesic on the interval and has the affinely rescaled velocity. -/
+theorem IsGeodesicCurveOn.exists_contMDiff_isGeodesicCurveOn_comp_affine
+    {γ : ℝ → M} {U : Set ℝ} {m k t₀ t₁ : ℝ} (hγ : IsGeodesicCurveOn I γ U)
+    (hU : IsOpen U) (hconn : IsPreconnected U)
+    (ht : t₀ < t₁) (hG : ∀ u ∈ Icc t₀ t₁, m * u + k ∈ U) :
+    ∃ f : ℝ → M, ContMDiff 𝓘(ℝ) I ∞ f ∧
+      (∀ u ∈ Icc t₀ t₁, f =ᶠ[𝓝 u] fun x ↦ γ (m * x + k)) ∧
+      IsGeodesicCurveOn I f (Icc t₀ t₁) ∧ ∀ u ∈ Icc t₀ t₁,
+        curveVelocity I f u = m • curveVelocity I γ (m * u + k) := by
+  have hφ : Continuous fun u : ℝ ↦ m * u + k := by fun_prop
+  obtain ⟨g, hg, hev⟩ := hγ.exists_contMDiff_eventuallyEq hU hconn
+    (isCompact_Icc.image hφ).isClosed (image_subset_iff.2 hG)
+  have hev' (u : ℝ) (hu : u ∈ Icc t₀ t₁) :
+      (fun x ↦ g (m * x + k)) =ᶠ[𝓝 u] fun x ↦ γ (m * x + k) :=
+    (hev _ (mem_image_of_mem _ hu)).comp_tendsto hφ.continuousAt
+  have heq : EqOn (fun x ↦ g (m * x + k)) (fun x ↦ γ (m * x + k))
+      (Icc t₀ t₁) := fun u hu ↦ (hev' u hu).self_of_nhds
+  refine ⟨fun x ↦ g (m * x + k), hg.comp (contDiff_const.mul contDiff_id |>.add
+    contDiff_const).contMDiff, hev', ?_, fun u hu ↦ ?_⟩
+  · exact (hγ.comp_affine m k (uniqueDiffOn_Icc ht) hG).congr heq
+  · have hd : HasDerivAt (fun x : ℝ ↦ m * x + k) m u := by
+      simpa using ((hasDerivAt_id u).const_mul m).add_const k
+    have hdiff : MDifferentiableAt 𝓘(ℝ) I γ (m * u + k) :=
+      (hγ.contMDiffAt_infty (hU.mem_nhds (hG u hu))).mdifferentiableAt (by simp)
+    have hvel : curveVelocity I (fun x ↦ g (m * x + k)) u =
+        curveVelocity I (γ ∘ fun x ↦ m * x + k) u :=
+      (hev' u hu).curveVelocity_eq
+    rw [hvel, curveVelocity_comp hd hdiff]
+
+end SmoothExtension
 
 namespace IsGeodesicCurveOn
 
@@ -177,5 +242,59 @@ theorem exists_isGeodesicCurveOn_Ioo_of_continuousOn_Icc (hγ : IsGeodesicCurveO
     · exact heq₁ ⟨hat, htb⟩
 
 end IsGeodesicCurveOn
+
+variable [I.Boundaryless] [T2Space M] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- A geodesic on a nondegenerate closed interval has a globally smooth extension agreeing on
+that interval, with the same velocity lift, including at the endpoints. -/
+theorem IsGeodesicCurveOn.exists_contMDiff_isGeodesicCurveOn_Icc
+    (hγ : IsGeodesicCurveOn I γ (Icc a b)) (hab : a < b) :
+    ∃ f : ℝ → M, ContMDiff 𝓘(ℝ) I ∞ f ∧ EqOn f γ (Icc a b) ∧
+      IsGeodesicCurveOn I f (Icc a b) ∧ ∀ u ∈ Icc a b,
+        curveVelocityLift I f u = curveVelocityLiftWithin I γ (Icc a b) u := by
+  have hγopen := hγ.mono (uniqueDiffOn_Ioo a b) Ioo_subset_Icc_self
+  obtain ⟨c, hc, d, hd, δ, hδ, hδγ⟩ :=
+    hγopen.exists_isGeodesicCurveOn_Ioo_of_continuousOn_Icc hab hγ.continuousOn
+  have hsub : Icc a b ⊆ Ioo c d := fun u hu ↦ ⟨hc.trans_le hu.1, hu.2.trans_lt hd⟩
+  obtain ⟨f, hf, hevent⟩ := hδ.exists_contMDiff_eventuallyEq isOpen_Ioo isPreconnected_Ioo
+    isClosed_Icc hsub
+  have heq : EqOn f γ (Icc a b) := fun u hu ↦ (hevent u hu).self_of_nhds.trans (hδγ hu)
+  refine ⟨f, hf, heq, hγ.congr heq, fun u hu ↦ ?_⟩
+  have hev : f =ᶠ[𝓝[Icc a b] u] γ := by
+    filter_upwards [self_mem_nhdsWithin] with t ht using heq ht
+  calc
+    curveVelocityLift I f u = curveVelocityLiftWithin I f (Icc a b) u := by
+      rw [curveVelocityLiftWithin_apply, curveVelocityLift_apply,
+        curveVelocityWithin_subset (subset_univ _) ((uniqueDiffOn_Icc hab) u hu)
+          ((hf.mdifferentiable (by simp)) u).mdifferentiableWithinAt,
+        curveVelocityWithin_univ]
+    _ = curveVelocityLiftWithin I γ (Icc a b) u := hev.curveVelocityLiftWithin_eq (heq hu)
+
+variable {p : M} {v : TangentSpace I p}
+
+/-- **Smooth extension of a geodesic segment.** Near a set `K` closed in `ℝ` and contained in its
+maximal interval, the maximal geodesic from `p` with initial velocity `v` agrees with a curve
+which is smooth on the whole line. -/
+theorem exists_contMDiff_eventuallyEq_maximalGeodesic {K : Set ℝ} (hK : IsClosed K)
+    (hKG : K ⊆ geodesicInterval I M p v) :
+    ∃ f : ℝ → M, ContMDiff 𝓘(ℝ) I ∞ f ∧ ∀ t ∈ K, f =ᶠ[𝓝 t] maximalGeodesic I M p v := by
+  exact (isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn
+    |>.exists_contMDiff_eventuallyEq isOpen_geodesicInterval isPreconnected_geodesicInterval
+      hK hKG
+
+/-- **An affinely reparametrized geodesic segment as a smooth geodesic piece.** If `t₀ < t₁` and
+`m * u + k` lies in the maximal interval of `v` for `u ∈ [t₀, t₁]`, there is a curve smooth on
+the whole line which agrees near each point of `[t₀, t₁]` with `u ↦ γ_v (m * u + k)`, is a
+geodesic there and has the corresponding affinely rescaled velocity. -/
+theorem exists_contMDiff_isGeodesicCurveOn_maximalGeodesic {m k t₀ t₁ : ℝ}
+    (ht : t₀ < t₁) (hG : ∀ u ∈ Icc t₀ t₁, m * u + k ∈ geodesicInterval I M p v) :
+    ∃ f : ℝ → M, ContMDiff 𝓘(ℝ) I ∞ f ∧
+      (∀ u ∈ Icc t₀ t₁, f =ᶠ[𝓝 u] fun x ↦ maximalGeodesic I M p v (m * x + k)) ∧
+      IsGeodesicCurveOn I f (Icc t₀ t₁) ∧ ∀ u ∈ Icc t₀ t₁,
+        curveVelocity I f u = m • curveVelocity I (maximalGeodesic I M p v) (m * u + k) := by
+  exact (isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn
+    |>.exists_contMDiff_isGeodesicCurveOn_comp_affine isOpen_geodesicInterval
+      isPreconnected_geodesicInterval ht hG
 
 end TauCeti.Manifold

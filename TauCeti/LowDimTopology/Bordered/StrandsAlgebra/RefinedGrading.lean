@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading
+public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading.Basic
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Matched
 
 /-!
@@ -502,6 +502,11 @@ def gradedPart (g : StrandGradingGroup α) : Submodule R (StrandsAlgebra R α) :
   gradedPartBy R ψ.grading g
 
 variable {R}
+
+/-- The part of refined grading `g` is the part of degree `g` for the function `ψ.grading`. -/
+theorem gradedPart_eq_gradedPartBy (g : StrandGradingGroup α) :
+    ψ.gradedPart R g = gradedPartBy R ψ.grading g := by
+  rw [gradedPart]
 
 /-- An element has refined grading `g` exactly when every strand diagram in its support has
 refined grading `g`. -/
