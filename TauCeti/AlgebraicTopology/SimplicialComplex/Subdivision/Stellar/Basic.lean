@@ -515,7 +515,8 @@ theorem dimension_stellarSubdivision_simplex_self (hV : V.Nonempty) :
       hV, dimension_simplex hV]
 
 /-- Starring a zero-simplex at its sole vertex replaces that vertex by the starring vertex. -/
-@[simp]
+-- Simplify before converting a singleton simplex to the point complex.
+@[simp↓]
 theorem stellarSubdivision_simplex_singleton_self (x v : ι) :
     stellarSubdivision (simplex {x}) {x} v = simplex {v} := by
   by_cases hvx : v = x

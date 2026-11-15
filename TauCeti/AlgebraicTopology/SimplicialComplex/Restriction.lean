@@ -81,14 +81,6 @@ theorem map_restrict_eq_of_subset [DecidableEq ι] {K : PreAbstractSimplicialCom
   rw [mem_map_restrict_iff]
   exact ⟨And.left, fun hσ => ⟨hσ, hs σ hσ⟩⟩
 
-/-- Mapping along an injective vertex map is injective on precomplexes. -/
-theorem map_injective {κ : Type*} [DecidableEq κ] {f : ι → κ} (hf : Function.Injective f) :
-    Function.Injective (fun K : PreAbstractSimplicialComplex ι => K.map f) := by
-  intro K L hKL
-  apply SetLike.ext'
-  exact (Finset.image_injective hf).image_injective
-    (congrArg PreAbstractSimplicialComplex.faces hKL)
-
 /-- When `K` is already supported in `s` and `s ⊆ t`, mapping `K.restrict s` along
 `Set.inclusion hst` gives `K.restrict t`. -/
 theorem map_inclusion_restrict {K : PreAbstractSimplicialComplex ι} {s t : Set ι} [DecidableEq t]

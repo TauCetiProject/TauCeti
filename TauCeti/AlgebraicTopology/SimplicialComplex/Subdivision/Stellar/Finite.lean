@@ -46,13 +46,6 @@ namespace PreAbstractSimplicialComplex
 
 variable {ι κ Ω : Type*}
 
-/-- Every precomplex with finitely many faces is supported on a finite set of ambient vertices. -/
-theorem exists_finset_subset_of_finite_faces {K : PreAbstractSimplicialComplex ι}
-    (hfin : K.faces.Finite) : ∃ V : Finset ι, ∀ σ ∈ K, σ ⊆ V := by
-  classical
-  exact ⟨hfin.toFinset.biUnion id, fun σ hσ _ hx =>
-    Finset.mem_biUnion.mpr ⟨σ, hfin.mem_toFinset.mpr hσ, hx⟩⟩
-
 /-- A stellar move between two complexes supported in a vertex set `s` restricts to a stellar move
 on `s`. -/
 theorem IsStellarMove.restrict [DecidableEq Ω] {K L : PreAbstractSimplicialComplex Ω}

@@ -372,7 +372,7 @@ private theorem mem_manifoldBoundary_stellarSubdivision_iff_of_mem [DecidableEq 
 
 /-- **Exact commutation of `manifoldBoundary` with stellar subdivision** at a fresh vertex:
 starring any set `σ` at `{v} ∉ K` stars `manifoldBoundary K` at `σ` (which leaves
-`manifoldBoundary K` unchanged whenever `σ ∉ manifoldBoundary K`). -/
+`manifoldBoundary K` unchanged whenever `σ.Nonempty` and `σ ∉ manifoldBoundary K`). -/
 @[simp]
 theorem manifoldBoundary_stellarSubdivision [DecidableEq ι] {K : PreAbstractSimplicialComplex ι}
     {σ : Finset ι} {v : ι} (hv : ({v} : Finset ι) ∉ K) :

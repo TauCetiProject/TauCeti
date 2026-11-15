@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialComplex.Basic
 public import Mathlib.Data.Set.Finite.Basic
+import Mathlib.Data.Finset.Union
 
 /-!
 # Basic abstract simplicial complex API
@@ -73,11 +74,26 @@ theorem map_id [DecidableEq ι] : K.map id = K := by
   refine SetLike.ext fun τ => ?_
   simp [mem_map_iff]
 
+/-- Mapping along an injective vertex map is injective on precomplexes. -/
+theorem map_injective {κ : Type*} [DecidableEq κ] {f : ι → κ} (hf : Function.Injective f) :
+    Function.Injective (fun K : PreAbstractSimplicialComplex ι => K.map f) := by
+  intro K₁ K₂ hKL
+  apply SetLike.ext'
+  exact (Finset.image_injective hf).image_injective
+    (congrArg PreAbstractSimplicialComplex.faces hKL)
+
 /-- An injective relabeling preserves and reflects finiteness of the face collection. -/
 theorem finite_faces_map_iff_of_injective {κ : Type*} [DecidableEq κ]
     (f : ι → κ) (hf : Function.Injective f) : (K.map f).faces.Finite ↔ K.faces.Finite := by
   rw [faces_map]
   exact Set.finite_image_iff (Finset.image_injective hf).injOn
+
+/-- Every precomplex with finitely many faces is supported on a finite set of ambient vertices. -/
+theorem exists_finset_subset_of_finite_faces (hfin : K.faces.Finite) :
+    ∃ V : Finset ι, ∀ σ ∈ K, σ ⊆ V := by
+  classical
+  exact ⟨hfin.toFinset.biUnion id, fun σ hσ _ hx =>
+    Finset.mem_biUnion.mpr ⟨σ, hfin.mem_toFinset.mpr hσ, hx⟩⟩
 
 /-- Mapping the void precomplex along any vertex function gives the void precomplex. -/
 @[simp]
