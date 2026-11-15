@@ -56,6 +56,9 @@ one of them: `W.autGroup ≃* (Hom W W)ˣ`.
 
 * `TauCeti.Isogeny.variableChangeIsogeny`: the isogeny `W₁ ⟶ W₂` of a change of variables `C`
   with `C • W₁ = W₂`.
+* `TauCeti.Isogeny.conjByVariableChange`: the isogeny `C₁ • W₁ ⟶ C₂ • W₂` obtained by conjugating
+  `φ : W₁ ⟶ W₂` by changes of variables `C₁` and `C₂` (preserving degree and scaling the
+  differential constant by `C₂.u / C₁.u`).
 * `TauCeti.Isogeny.Hom.autGroupToUnits`: the homomorphism `W.autGroup →* (Hom W W)ˣ`.
 * `TauCeti.Isogeny.Hom.autGroupEquivUnits`: for an elliptic curve, the isomorphism
   `W.autGroup ≃* (Hom W W)ˣ`.
@@ -254,6 +257,42 @@ theorem pullbackDifferential_variableChangeIsogeny_invariantDifferential (h : C 
     map_inv₀, hd, smul_smul, ← algebraMap_smul W₁.FunctionField (C.u : F), smul_smul]
   congr 1
   rw [mul_inv, mul_right_comm, ← map_inv₀, ← map_mul, hu]
+
+/-- The isogeny `C₁ • W₁ ⟶ C₂ • W₂` obtained by conjugating `φ : W₁ ⟶ W₂` by admissible changes of
+variables `C₁` and `C₂`. -/
+noncomputable def conjByVariableChange (φ : Isogeny W₁ W₂) (C₁ C₂ : VariableChange F) :
+    Isogeny (C₁ • W₁).toAffine (C₂ • W₂).toAffine :=
+  (variableChangeIsogeny C₂ rfl).comp
+    (φ.comp (variableChangeIsogeny C₁⁻¹ (inv_smul_smul C₁ W₁)))
+
+/-- The definition of `TauCeti.Isogeny.conjByVariableChange`. -/
+theorem conjByVariableChange_def (φ : Isogeny W₁ W₂) (C₁ C₂ : VariableChange F) :
+    φ.conjByVariableChange C₁ C₂ =
+      (variableChangeIsogeny C₂ rfl).comp
+        (φ.comp (variableChangeIsogeny C₁⁻¹ (inv_smul_smul C₁ W₁))) :=
+  (rfl)
+
+/-- Conjugating an isogeny by changes of variables preserves its degree. -/
+@[simp]
+theorem degree_conjByVariableChange (φ : Isogeny W₁ W₂) (C₁ C₂ : VariableChange F) :
+    (φ.conjByVariableChange C₁ C₂).degree = φ.degree := by
+  simp [conjByVariableChange_def]
+
+open _root_.WeierstrassCurve.Affine in
+/-- Conjugating `φ : W₁ ⟶ W₂` with `φ^*ω₂ = c ω₁` by changes of variables `C₁` and `C₂` scales the
+differential pullback constant by `C₂.u / C₁.u`. -/
+theorem pullbackDifferential_conjByVariableChange_invariantDifferential (φ : Isogeny W₁ W₂)
+    {c : F} (hc : φ.pullbackDifferential (invariantDifferential W₂) =
+      c • invariantDifferential W₁)
+    (C₁ C₂ : VariableChange F) :
+    (φ.conjByVariableChange C₁ C₂).pullbackDifferential
+        (invariantDifferential (C₂ • W₂).toAffine) =
+      (c * C₂.u / C₁.u) • invariantDifferential (C₁ • W₁).toAffine := by
+  simp only [conjByVariableChange, pullbackDifferential_comp, LinearMap.comp_apply,
+    pullbackDifferential_variableChangeIsogeny_invariantDifferential, map_smul, hc, smul_smul]
+  congr 1
+  simp [VariableChange.inv_def, div_eq_mul_inv]
+  ring
 
 /-! ### Every isomorphism is a change of variables -/
 

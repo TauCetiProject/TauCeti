@@ -75,86 +75,6 @@ open scoped nonZeroDivisors
 variable {O : Type*} [CommRing O] [IsDedekindDomain O]
   {K : Type*} [Field K] [Algebra O K] [IsFractionRing O K]
 
-/-! ### Comparing with a local change of variables at one prime -/
-
-/-- **The translation parameters of `C * D⁻¹` are integral at `v`** as soon as those of `C` agree
-with those of `D` to the orders `v (D.u) ^ 2`, `v (D.u)` and `v (D.u) ^ 3`, the last corrected by
-`D.s * (C.r - D.r)`. -/
-private theorem valuation_mul_inv_le_one (v : HeightOneSpectrum O) (C D : VariableChange K)
-    (hr : v.valuation K (C.r - D.r) ≤ v.valuation K D.u ^ 2)
-    (hs : v.valuation K (C.s - D.s) ≤ v.valuation K D.u)
-    (ht : v.valuation K (C.t - D.t - D.s * (C.r - D.r)) ≤ v.valuation K D.u ^ 3) :
-    v.valuation K (C * D⁻¹).r ≤ 1 ∧ v.valuation K (C * D⁻¹).s ≤ 1 ∧
-      v.valuation K (C * D⁻¹).t ≤ 1 := by
-  have hD : 0 < v.valuation K D.u :=
-    zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
-  have hBr : (C * D⁻¹).r = (C.r - D.r) / (D.u : K) ^ 2 := by
-    rw [VariableChange.mul_inv_r, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
-  have hBs : (C * D⁻¹).s = (C.s - D.s) / (D.u : K) := by
-    rw [VariableChange.mul_inv_s, Units.val_inv_eq_inv_val, div_eq_mul_inv]
-  have hBt : (C * D⁻¹).t = (C.t - D.t - D.s * (C.r - D.r)) / (D.u : K) ^ 3 := by
-    rw [VariableChange.mul_inv_t, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
-  refine ⟨?_, ?_, ?_⟩
-  · rw [hBr, map_div₀, map_pow]; exact (div_le_one₀ (pow_pos hD 2)).2 hr
-  · rw [hBs, map_div₀]; exact (div_le_one₀ hD).2 hs
-  · rw [hBt, map_div₀, map_pow]; exact (div_le_one₀ (pow_pos hD 3)).2 ht
-
-/-- **Minimality at `v` from approximation of a local minimalising change of variables.** If `D`
-carries `W` to a model minimal at `v`, then so does every `C` whose scaling factor has the same
-valuation as `D.u` and whose translation parameters approximate those of `D` as in
-`valuation_mul_inv_le_one`: these make `C * D⁻¹` defined over the localisation at `v`. -/
-private theorem isMinimal_smul_of_valuation_sub_le (v : HeightOneSpectrum O)
-    (W : WeierstrassCurve K) (C D : VariableChange K)
-    [IsMinimal (Localization.AtPrime v.asIdeal) (D • W)]
-    (hu : v.valuation K C.u = v.valuation K D.u)
-    (hr : v.valuation K (C.r - D.r) ≤ v.valuation K D.u ^ 2)
-    (hs : v.valuation K (C.s - D.s) ≤ v.valuation K D.u)
-    (ht : v.valuation K (C.t - D.t - D.s * (C.r - D.r)) ≤ v.valuation K D.u ^ 3) :
-    IsMinimal (Localization.AtPrime v.asIdeal) (C • W) := by
-  have hv := v.integers_valuation_of_isLocalizationAtPrime (Localization.AtPrime v.asIdeal) (K := K)
-  have hD : 0 < v.valuation K D.u :=
-    zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
-  have hBu : ((C * D⁻¹).u : K) = C.u / D.u := by
-    rw [VariableChange.mul_inv_u, Units.val_mul, Units.val_inv_eq_inv_val, div_eq_mul_inv]
-  obtain ⟨hr', hs', ht'⟩ := valuation_mul_inv_le_one v C D hr hs ht
-  -- The four components of `C * D⁻¹` are integral at `v`, the first a unit.
-  obtain ⟨u, hu'⟩ := hv.exists_of_le_one (r := ((C * D⁻¹).u : K)) (by
-    rw [hBu, map_div₀, hu, div_self hD.ne'])
-  obtain ⟨r, hr'⟩ := hv.exists_of_le_one hr'
-  obtain ⟨s, hs'⟩ := hv.exists_of_le_one hs'
-  obtain ⟨t, ht'⟩ := hv.exists_of_le_one ht'
-  have hunit : IsUnit u := hv.isUnit_of_one' (by
-    rw [hu', hBu, map_div₀, hu, div_self hD.ne'])
-  have hB : (⟨hunit.unit, r, s, t⟩ : VariableChange _).baseChange K = C * D⁻¹ :=
-    VariableChange.ext (Units.ext hu') hr' hs' ht'
-  have hCW : C • W = (C * D⁻¹) • (D • W) := by rw [smul_smul, inv_mul_cancel_right]
-  rw [hCW, ← hB]
-  exact isMinimal_baseChange_smul _ _ _
-
-/-- **Integrality at `v` from approximation of a local change of variables.** If `D` carries `W`
-to a model integral at `v`, then so does every `C` whose translation parameters approximate those
-of `D` as in `valuation_mul_inv_le_one` and whose scaling factor has valuation at least that of
-`D.u`: then `C • W` is the transform of `D • W` by `C * D⁻¹`, whose `u⁻¹`, `r`, `s` and `t` are
-integral at `v`. -/
-private theorem isIntegral_smul_of_valuation_sub_le (v : HeightOneSpectrum O)
-    (W : WeierstrassCurve K) (C D : VariableChange K)
-    [IsIntegral (Localization.AtPrime v.asIdeal) (D • W)]
-    (hu : v.valuation K D.u ≤ v.valuation K C.u)
-    (hr : v.valuation K (C.r - D.r) ≤ v.valuation K D.u ^ 2)
-    (hs : v.valuation K (C.s - D.s) ≤ v.valuation K D.u)
-    (ht : v.valuation K (C.t - D.t - D.s * (C.r - D.r)) ≤ v.valuation K D.u ^ 3) :
-    IsIntegral (Localization.AtPrime v.asIdeal) (C • W) := by
-  have hv := v.integers_valuation_of_isLocalizationAtPrime (Localization.AtPrime v.asIdeal) (K := K)
-  have hBu : (↑(C * D⁻¹).u⁻¹ : K) = (C.u : K)⁻¹ * D.u := by
-    rw [VariableChange.mul_inv_u, mul_inv, inv_inv, Units.val_mul, Units.val_inv_eq_inv_val]
-  obtain ⟨hr', hs', ht'⟩ := valuation_mul_inv_le_one v C D hr hs ht
-  have hCW : C • W = (C * D⁻¹) • (D • W) := by rw [smul_smul, inv_mul_cancel_right]
-  rw [hCW]
-  refine isIntegral_smul_of_exists_lift (hv.exists_of_le_one ?_) (hv.exists_of_le_one hr')
-    (hv.exists_of_le_one hs') (hv.exists_of_le_one ht')
-  rw [hBu, map_mul, map_inv₀]
-  exact inv_mul_le_one_of_le₀ hu zero_le
-
 /-! ### The local data at every prime -/
 
 variable (O) in
@@ -294,7 +214,9 @@ theorem exists_isGlobalMinimal_smul_of_weierstrassDefectIdeal_eq_span
     IsGlobalMinimal.of_forall_isMinimal fun v ↦ ?_⟩
   have := hDmin v
   obtain ⟨hr, hs, ht⟩ := hrst v
-  refine isMinimal_smul_of_valuation_sub_le v W _ (D v) ?_ ?_ ?_ ?_
+  refine isMinimal_smul_of_valuation_sub_le
+    (v.integers_valuation_of_isLocalizationAtPrime (Localization.AtPrime v.asIdeal)) W _ (D v)
+    ?_ ?_ ?_ ?_
   · exact (valuation_eq_exp_neg_obstructionExponentAt v W hg).trans (hDu v).symm
   · rw [hDu]; exact hr
   · rw [hDu]; exact hs
@@ -353,7 +275,9 @@ theorem exists_isSharpSemiGlobalMinimalAt_smul_of_coe_weierstrassDefectIdeal_eq
     -- whose `u⁻¹` has order one.
     have := hDmin v₀
     obtain ⟨hr, hs, ht⟩ := hrst v₀
-    refine isIntegral_smul_of_valuation_sub_le v₀ W C (D v₀) ?_ ?_ ?_ ?_
+    refine isIntegral_smul_of_valuation_sub_le
+      (v₀.integers_valuation_of_isLocalizationAtPrime (Localization.AtPrime v₀.asIdeal)) W C (D v₀)
+      ?_ ?_ ?_ ?_
     · rw [hDu, Units.val_mk0, Valuation.valuation_eq_exp_neg_ord _
         ((v₀.valuation K).ne_zero_iff.mpr hu₀), hord₀,
         WithZero.exp_le_exp]
@@ -363,7 +287,9 @@ theorem exists_isSharpSemiGlobalMinimalAt_smul_of_coe_weierstrassDefectIdeal_eq
     · rw [hDu]; exact ht
   · have := hDmin v
     obtain ⟨hr, hs, ht⟩ := hrst v
-    refine isMinimal_smul_of_valuation_sub_le v W C (D v) ?_ ?_ ?_ ?_
+    refine isMinimal_smul_of_valuation_sub_le
+      (v.integers_valuation_of_isLocalizationAtPrime (Localization.AtPrime v.asIdeal)) W C (D v)
+      ?_ ?_ ?_ ?_
     · rw [hDu, Units.val_mk0, Valuation.valuation_eq_exp_neg_ord _
         ((v.valuation K).ne_zero_iff.mpr hu₀), hord v hv]
     · rw [hDu]; exact hr

@@ -40,9 +40,8 @@ This file proves that these notions coincide.
 * `WeierstrassCurve.isMinimal_baseChange_adicCompletionIntegers_iff` and
   `WeierstrassCurve.isMinimal_baseChange_integer_adicCompletion_iff`: `W.baseChange K_v` is minimal
   over the completed valuation ring if and only if `W` is minimal over
-  `Localization.AtPrime v.asIdeal`. Descent of minimality from `Localization.AtPrime v.asIdeal` to
-  the completion approximates any integralising change of variables over `K_v` by one over `K`
-  using the density of `K` in `K_v`.
+  `Localization.AtPrime v.asIdeal`. Preservation of minimality under completion approximates any
+  integralising change of variables over `K_v` by one over `K` using the density of `K` in `K_v`.
 * `WeierstrassCurve.IsGlobalMinimal.isMinimal_baseChange_adicCompletionIntegers` and
   `WeierstrassCurve.IsGlobalMinimal.isMinimal_baseChange_integer_adicCompletion`: a globally
   minimal equation over `R` remains minimal after base change to every adic completion.
@@ -69,7 +68,9 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 theorem isIntegral_integer_adicCompletion_iff (v : HeightOneSpectrum R)
     (V : WeierstrassCurve (v.adicCompletion K)) :
     IsIntegral 𝒪[v.adicCompletion K] V ↔ IsIntegral (v.adicCompletionIntegers K) V := by
-  -- Both rings coerce from equal `ValuationSubring`s of `v.adicCompletion K`.
+  -- Stating this for every valuation subring `T` equal to `v.adicCompletionIntegers K` lets
+  -- `integer_eq_adicCompletionIntegers` be substituted. The coercion of `valuationSubring` to a
+  -- type is by definition that of `Valuation.integer`, which is `𝒪[v.adicCompletion K]`.
   suffices ∀ (T : ValuationSubring (v.adicCompletion K)),
       v.adicCompletionIntegers K = T →
         (IsIntegral T V ↔ IsIntegral (v.adicCompletionIntegers K) V) by
@@ -81,9 +82,10 @@ theorem isIntegral_integer_adicCompletion_iff (v : HeightOneSpectrum R)
 /-- Minimality over `𝒪[v.adicCompletion K]` agrees with minimality over
 `v.adicCompletionIntegers K`. -/
 theorem isMinimal_integer_adicCompletion_iff (v : HeightOneSpectrum R)
-    [IsDiscreteValuationRing 𝒪[v.adicCompletion K]]
     (V : WeierstrassCurve (v.adicCompletion K)) :
     IsMinimal 𝒪[v.adicCompletion K] V ↔ IsMinimal (v.adicCompletionIntegers K) V := by
+  -- As in `isIntegral_integer_adicCompletion_iff`, the coercion of `valuationSubring` to a type is
+  -- definitionally `Valuation.integer`, i.e. `𝒪[v.adicCompletion K]`.
   suffices ∀ (T : ValuationSubring (v.adicCompletion K)) [IsDiscreteValuationRing T],
       v.adicCompletionIntegers K = T →
         (IsMinimal T V ↔ IsMinimal (v.adicCompletionIntegers K) V) by
@@ -97,29 +99,6 @@ theorem isMinimal_integer_adicCompletion_iff (v : HeightOneSpectrum R)
 
 /-! ### Integrality over `Localization.AtPrime` and the adic completion -/
 
-/-- An element of `K` lifts to `v.adicCompletionIntegers K` in `v.adicCompletion K` if and only if
-it lifts to `Localization.AtPrime v.asIdeal` in `K`. -/
-private theorem exists_lift_adicCompletionIntegers_iff (v : HeightOneSpectrum R) (x : K) :
-    (∃ y : v.adicCompletionIntegers K,
-        algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) y =
-          algebraMap K (v.adicCompletion K) x) ↔
-      ∃ r : Localization.AtPrime v.asIdeal,
-        algebraMap (Localization.AtPrime v.asIdeal) K r = x := by
-  have hv := v.integers_valuation_of_isLocalizationAtPrime (Localization.AtPrime v.asIdeal) (K := K)
-  have hval : Valued.v (algebraMap K (v.adicCompletion K) x) = v.valuation K x := by
-    rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
-      Algebra.algebraMap_self_apply]
-  constructor
-  · rintro ⟨y, hy⟩
-    refine hv.exists_of_le_one ?_
-    rw [← hval, ← hy]
-    exact (mem_adicCompletionIntegers R K v).mp y.2
-  · rintro ⟨r, rfl⟩
-    refine ⟨⟨algebraMap K (v.adicCompletion K)
-      (algebraMap (Localization.AtPrime v.asIdeal) K r), ?_⟩, rfl⟩
-    rw [mem_adicCompletionIntegers, hval]
-    exact hv.map_le_one r
-
 /-- **Integrality of a base change to the adic completion.** A Weierstrass equation over `K`
 becomes integral over `v.adicCompletionIntegers K` after base change to `v.adicCompletion K` if and
 only if it is integral over `Localization.AtPrime v.asIdeal`. -/
@@ -131,31 +110,29 @@ theorem isIntegral_baseChange_adicCompletionIntegers_iff (v : HeightOneSpectrum 
   constructor
   · intro hI
     let V := integralModel (v.adicCompletionIntegers K) (W.baseChange (v.adicCompletion K))
-    have hcoeff (a : K) (ha : ∃ y : v.adicCompletionIntegers K,
-        algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) y =
-          algebraMap K (v.adicCompletion K) a) :
-        ∃ r : Localization.AtPrime v.asIdeal,
-          algebraMap (Localization.AtPrime v.asIdeal) K r = a :=
-      (exists_lift_adicCompletionIntegers_iff v a).mp ha
+    have hcoeff (a : K)
+        (ha : IsLocalization.IsInteger (v.adicCompletionIntegers K)
+          (algebraMap K (v.adicCompletion K) a)) :
+        IsLocalization.IsInteger (Localization.AtPrime v.asIdeal) a :=
+      (v.isInteger_adicCompletionIntegers_algebraMap_iff a).mp ha
     exact isIntegral_of_exists_lift _
-      (hcoeff W.a₁ ⟨V.a₁, (integralModel_a₁_eq _ (W.baseChange (v.adicCompletion K))).trans rfl⟩)
-      (hcoeff W.a₂ ⟨V.a₂, (integralModel_a₂_eq _ (W.baseChange (v.adicCompletion K))).trans rfl⟩)
-      (hcoeff W.a₃ ⟨V.a₃, (integralModel_a₃_eq _ (W.baseChange (v.adicCompletion K))).trans rfl⟩)
-      (hcoeff W.a₄ ⟨V.a₄, (integralModel_a₄_eq _ (W.baseChange (v.adicCompletion K))).trans rfl⟩)
-      (hcoeff W.a₆ ⟨V.a₆, (integralModel_a₆_eq _ (W.baseChange (v.adicCompletion K))).trans rfl⟩)
+      (hcoeff W.a₁ ⟨V.a₁, by rw [integralModel_a₁_eq, baseChange, map_a₁]⟩)
+      (hcoeff W.a₂ ⟨V.a₂, by rw [integralModel_a₂_eq, baseChange, map_a₂]⟩)
+      (hcoeff W.a₃ ⟨V.a₃, by rw [integralModel_a₃_eq, baseChange, map_a₃]⟩)
+      (hcoeff W.a₄ ⟨V.a₄, by rw [integralModel_a₄_eq, baseChange, map_a₄]⟩)
+      (hcoeff W.a₆ ⟨V.a₆, by rw [integralModel_a₆_eq, baseChange, map_a₆]⟩)
   · intro hI
-    have hcoeff (a : K) (ha : ∃ r : Localization.AtPrime v.asIdeal,
-        algebraMap (Localization.AtPrime v.asIdeal) K r = a) :
-        ∃ y : v.adicCompletionIntegers K,
-          algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) y =
-            algebraMap K (v.adicCompletion K) a :=
-      (exists_lift_adicCompletionIntegers_iff v a).mpr ha
+    let U := integralModel (Localization.AtPrime v.asIdeal) W
+    have hcoeff (a : K) (ha : IsLocalization.IsInteger (Localization.AtPrime v.asIdeal) a) :
+        IsLocalization.IsInteger (v.adicCompletionIntegers K)
+          (algebraMap K (v.adicCompletion K) a) :=
+      (v.isInteger_adicCompletionIntegers_algebraMap_iff a).mpr ha
     exact isIntegral_of_exists_lift _
-      (by simpa [baseChange] using hcoeff W.a₁ ⟨(integralModel _ W).a₁, integralModel_a₁_eq _ W⟩)
-      (by simpa [baseChange] using hcoeff W.a₂ ⟨(integralModel _ W).a₂, integralModel_a₂_eq _ W⟩)
-      (by simpa [baseChange] using hcoeff W.a₃ ⟨(integralModel _ W).a₃, integralModel_a₃_eq _ W⟩)
-      (by simpa [baseChange] using hcoeff W.a₄ ⟨(integralModel _ W).a₄, integralModel_a₄_eq _ W⟩)
-      (by simpa [baseChange] using hcoeff W.a₆ ⟨(integralModel _ W).a₆, integralModel_a₆_eq _ W⟩)
+      (by rw [baseChange, map_a₁]; exact hcoeff W.a₁ ⟨U.a₁, integralModel_a₁_eq _ W⟩)
+      (by rw [baseChange, map_a₂]; exact hcoeff W.a₂ ⟨U.a₂, integralModel_a₂_eq _ W⟩)
+      (by rw [baseChange, map_a₃]; exact hcoeff W.a₃ ⟨U.a₃, integralModel_a₃_eq _ W⟩)
+      (by rw [baseChange, map_a₄]; exact hcoeff W.a₄ ⟨U.a₄, integralModel_a₄_eq _ W⟩)
+      (by rw [baseChange, map_a₆]; exact hcoeff W.a₆ ⟨U.a₆, integralModel_a₆_eq _ W⟩)
 
 /-- A Weierstrass equation over `K` becomes integral over `𝒪[v.adicCompletion K]` after base change
 to `v.adicCompletion K` if and only if it is integral over `Localization.AtPrime v.asIdeal`. -/
@@ -169,15 +146,6 @@ theorem isIntegral_baseChange_integer_adicCompletion_iff (v : HeightOneSpectrum 
 
 /-! ### Minimality over `Localization.AtPrime` and the adic completion -/
 
-/-- Every element of `v.adicCompletion K` can be approximated within any nonzero valuation bound by
-an element of `K`. -/
-private theorem exists_valued_algebraMap_sub_le (v : HeightOneSpectrum R)
-    (x : v.adicCompletion K) {γ : ℤᵐ⁰} (hγ : γ ≠ 0) :
-    ∃ y : K, Valued.v (algebraMap K (v.adicCompletion K) y - x) ≤ γ := by
-  have hU : IsOpen {z : v.adicCompletion K | Valued.v (z - x) ≤ γ} :=
-    (v.isOpen_setOf_valued_le (K := K) hγ).preimage (continuous_sub_right x)
-  exact (v.denseRange_algebraMap K).exists_mem_open hU ⟨x, by simp⟩
-
 /-- Every integralising change of variables over `v.adicCompletion K` can be approximated by a
 change of variables over `K` with the same scaling valuation that also keeps `W` integral at `v`. -/
 private theorem exists_variableChange_isIntegral_localizationAtPrime_and_valued_u_eq
@@ -188,9 +156,9 @@ private theorem exists_variableChange_isIntegral_localizationAtPrime_and_valued_
   set γ : ℤᵐ⁰ := Valued.v (C.u : v.adicCompletion K)
   have hγ : γ ≠ 0 := (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰).ne_zero_iff.mpr C.u.ne_zero
   have hγ_pos : 0 < γ := zero_lt_iff.mpr hγ
-  -- Approximate `C.u`, `C.r`, `C.s`, `C.t` closely enough in `K` that `D.baseChange K_v * C⁻¹`
-  -- has `u⁻¹`, `r`, `s`, `t` in `v.adicCompletionIntegers K`.
-  obtain ⟨u₀, hu₀_approx⟩ := exists_valued_algebraMap_sub_le v (C.u : v.adicCompletion K)
+  -- Approximate `C.u`, `C.r`, `C.s`, `C.t` closely enough in `K` for
+  -- `isIntegral_smul_of_valuation_sub_le` to transfer integrality from `C` to `D.baseChange K_v`.
+  obtain ⟨u₀, hu₀_approx⟩ := v.exists_valued_algebraMap_sub_le (C.u : v.adicCompletion K)
     (mul_ne_zero hγ (WithZero.exp_ne_zero (a := (-1 : ℤ))))
   have hu₀_lt : Valued.v (algebraMap K (v.adicCompletion K) u₀ - C.u) < γ :=
     hu₀_approx.trans_lt <| by
@@ -203,50 +171,21 @@ private theorem exists_variableChange_isIntegral_localizationAtPrime_and_valued_
   have hu₀ : u₀ ≠ 0 := by
     rintro rfl
     exact hγ (by simpa using hu₀_val.symm)
-  obtain ⟨r₀, hr₀⟩ := exists_valued_algebraMap_sub_le v C.r (pow_ne_zero 2 hγ)
-  obtain ⟨s₀, hs₀⟩ := exists_valued_algebraMap_sub_le v C.s hγ
-  obtain ⟨t₀, ht₀⟩ := exists_valued_algebraMap_sub_le v
+  obtain ⟨r₀, hr₀⟩ := v.exists_valued_algebraMap_sub_le C.r (pow_ne_zero 2 hγ)
+  obtain ⟨s₀, hs₀⟩ := v.exists_valued_algebraMap_sub_le C.s hγ
+  obtain ⟨t₀, ht₀⟩ := v.exists_valued_algebraMap_sub_le
     (C.t + C.s * (algebraMap K (v.adicCompletion K) r₀ - C.r)) (pow_ne_zero 3 hγ)
   let D : VariableChange K := ⟨Units.mk0 u₀ hu₀, r₀, s₀, t₀⟩
-  let B : VariableChange (v.adicCompletion K) := D.baseChange (v.adicCompletion K) * C⁻¹
-  have hlift (z : v.adicCompletion K) (hz : Valued.v z ≤ 1) :
-      ∃ y : v.adicCompletionIntegers K,
-        algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) y = z :=
-    ⟨⟨z, (mem_adicCompletionIntegers R K v).mpr hz⟩, rfl⟩
-  have hBu : Valued.v (↑B.u⁻¹ : v.adicCompletion K) ≤ 1 := by
-    have hBu_eq : (↑B.u⁻¹ : v.adicCompletion K) =
-        (C.u : v.adicCompletion K) / algebraMap K (v.adicCompletion K) u₀ := by
-      simp [B, D, VariableChange.baseChange, div_eq_mul_inv, mul_comm]
-    rw [hBu_eq, map_div₀, hu₀_val, div_self hγ]
-  have hBr : Valued.v B.r ≤ 1 := by
-    have hBr_eq : B.r =
-        (algebraMap K (v.adicCompletion K) r₀ - C.r) / (C.u : v.adicCompletion K) ^ 2 := by
-      simp [B, D, VariableChange.mul_inv_r, VariableChange.baseChange, div_eq_mul_inv]
-    rw [hBr_eq, map_div₀, map_pow]
-    exact (div_le_one₀ (pow_pos hγ_pos 2)).mpr hr₀
-  have hBs : Valued.v B.s ≤ 1 := by
-    have hBs_eq : B.s =
-        (algebraMap K (v.adicCompletion K) s₀ - C.s) / (C.u : v.adicCompletion K) := by
-      simp [B, D, VariableChange.mul_inv_s, VariableChange.baseChange, div_eq_mul_inv]
-    rw [hBs_eq, map_div₀]
-    exact (div_le_one₀ hγ_pos).mpr hs₀
-  have hBt : Valued.v B.t ≤ 1 := by
-    have hBt_eq : B.t =
-        (algebraMap K (v.adicCompletion K) t₀ -
-            (C.t + C.s * (algebraMap K (v.adicCompletion K) r₀ - C.r))) /
-          (C.u : v.adicCompletion K) ^ 3 := by
-      simp [B, D, VariableChange.mul_inv_t, VariableChange.baseChange, div_eq_mul_inv, sub_sub]
-    rw [hBt_eq, map_div₀, map_pow]
-    exact (div_le_one₀ (pow_pos hγ_pos 3)).mpr ht₀
-  have hBInt : IsIntegral (v.adicCompletionIntegers K)
-      (B • (C • W.baseChange (v.adicCompletion K))) :=
-    isIntegral_smul_of_exists_lift (hlift _ hBu) (hlift _ hBr) (hlift _ hBs) (hlift _ hBt)
-  have hBC : B • (C • W.baseChange (v.adicCompletion K)) =
-      (D • W).baseChange (v.adicCompletion K) := by
-    rw [← mul_smul, show B * C = D.baseChange (v.adicCompletion K) from inv_mul_cancel_right _ _,
-      baseChange_smul_baseChange]
-  rw [hBC, isIntegral_baseChange_adicCompletionIntegers_iff] at hBInt
-  exact ⟨D, hBInt, hu₀_val⟩
+  have hDInt : IsIntegral (v.adicCompletionIntegers K)
+      (D.baseChange (v.adicCompletion K) • W.baseChange (v.adicCompletion K)) :=
+    isIntegral_smul_of_valuation_sub_le (adicCompletionIntegers.integers K v)
+      (W.baseChange (v.adicCompletion K)) (D.baseChange (v.adicCompletion K)) C
+      (by simp [D, VariableChange.baseChange, hu₀_val, γ])
+      (by simpa [D, VariableChange.baseChange] using hr₀)
+      (by simpa [D, VariableChange.baseChange] using hs₀)
+      (by simpa [D, VariableChange.baseChange, sub_sub] using ht₀)
+  rw [baseChange_smul_baseChange, isIntegral_baseChange_adicCompletionIntegers_iff] at hDInt
+  exact ⟨D, hDInt, hu₀_val⟩
 
 /-- The `v`-adic discriminant valuation of a `K`-equation matches the completed discriminant
 valuation of its base change. -/
@@ -314,7 +253,7 @@ theorem isMinimal_baseChange_adicCompletionIntegers_iff (v : HeightOneSpectrum R
 to `v.adicCompletion K` if and only if it is minimal over `Localization.AtPrime v.asIdeal`. -/
 @[simp]
 theorem isMinimal_baseChange_integer_adicCompletion_iff (v : HeightOneSpectrum R)
-    [IsDiscreteValuationRing 𝒪[v.adicCompletion K]] (W : WeierstrassCurve K) :
+    (W : WeierstrassCurve K) :
     IsMinimal 𝒪[v.adicCompletion K] (W.baseChange (v.adicCompletion K)) ↔
       IsMinimal (Localization.AtPrime v.asIdeal) W :=
   (isMinimal_integer_adicCompletion_iff v _).trans
@@ -330,8 +269,7 @@ theorem IsGlobalMinimal.isMinimal_baseChange_adicCompletionIntegers {W : Weierst
 /-- A globally minimal equation over `R` remains minimal over `𝒪[v.adicCompletion K]` at every
 height-one prime `v`. -/
 theorem IsGlobalMinimal.isMinimal_baseChange_integer_adicCompletion {W : WeierstrassCurve K}
-    [W.IsElliptic] (h : IsGlobalMinimal R W) (v : HeightOneSpectrum R)
-    [IsDiscreteValuationRing 𝒪[v.adicCompletion K]] :
+    [W.IsElliptic] (h : IsGlobalMinimal R W) (v : HeightOneSpectrum R) :
     IsMinimal 𝒪[v.adicCompletion K] (W.baseChange (v.adicCompletion K)) :=
   (isMinimal_baseChange_integer_adicCompletion_iff v W).mpr (h.isMinimal v)
 

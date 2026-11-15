@@ -65,6 +65,34 @@ theorem tamagawaNumber_def : E.tamagawaNumber v =
   classical
   rfl
 
+variable {v} in
+/-- Equivalent valuations have the same valuation subring and hence the same local Tamagawa
+number. -/
+theorem tamagawaNumber_congr {Γ₀' : Type*} [LinearOrderedCommGroupWithZero Γ₀']
+    {v' : Valuation F Γ₀'} [IsDiscreteValuationRing v'.valuationSubring] (h : v.IsEquiv v') :
+    E.tamagawaNumber v = E.tamagawaNumber v' := by
+  classical
+  have hA : v.valuationSubring = v'.valuationSubring :=
+    (Valuation.isEquiv_iff_valuationSubring v v').1 h
+  have hmin : E.minimal v.valuationSubring = E.minimal v'.valuationSubring := by
+    have key (A B : ValuationSubring F) [IsDiscreteValuationRing A] [IsDiscreteValuationRing B]
+        (hAB : A = B) : E.minimal A = E.minimal B := by
+      subst hAB
+      congr!
+    exact key v.valuationSubring v'.valuationSubring hA
+  have _ : IsIntegral v'.valuationSubring (E.minimal v.valuationSubring) :=
+    hmin ▸ (inferInstance : IsIntegral v'.valuationSubring (E.minimal v'.valuationSubring))
+  have hidx : ((E.minimal v.valuationSubring).toAffine.nonsingularReduction v').index =
+      ((E.minimal v'.valuationSubring).toAffine.nonsingularReduction v').index := by
+    have step (W₁ W₂ : WeierstrassCurve F) [IsIntegral v'.valuationSubring W₁]
+        [IsIntegral v'.valuationSubring W₂] (hW : W₁ = W₂) :
+        (W₁.toAffine.nonsingularReduction v').index =
+          (W₂.toAffine.nonsingularReduction v').index := by
+      subst hW
+      congr!
+    exact step _ _ hmin
+  rw [tamagawaNumber_def, tamagawaNumber_def, ← hidx, Affine.nonsingularReduction_congr v h]
+
 variable [E.IsElliptic]
 
 /-- Every isomorphic minimal equation computes the same Tamagawa number.

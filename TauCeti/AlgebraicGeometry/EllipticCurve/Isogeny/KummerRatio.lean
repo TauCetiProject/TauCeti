@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.VariableChange
 import TauCeti.GroupTheory.Index.Comp
 
 /-!
@@ -14,8 +15,8 @@ import TauCeti.GroupTheory.Index.Comp
 Over a field `F`, the Kummer ratio of `φ : E₁ → E₂` is
 `[E₂(F) : φ E₁(F)] / #E₁(F)[φ]`. The kernel is always finite. The ratio is positive when the
 image has finite index, and zero otherwise, following the convention for subgroup indices.
-It is multiplicative under composition, without a finite-index hypothesis, and equals one for
-degree-one isogenies.
+It is multiplicative under composition, without a finite-index hypothesis, equals one for
+degree-one isogenies, and is invariant under conjugation by admissible changes of variables.
 
 Over completions of a global field, these ratios are the local factors in the global Selmer-ratio
 formula used in Cassels' proof of isogeny invariance of the Birch–Swinnerton-Dyer quotient.
@@ -106,5 +107,19 @@ theorem kummerRatio_eq_one_of_degree_eq_one (φ : Isogeny W₁ W₂) (hφ : φ.d
       ⟨(Hom.ofIsogeny ψ).pointMapHom Q, by
         rw [← AddMonoidHom.comp_apply, hcomp₂, AddMonoidHom.id_apply]⟩
   simp [kummerRatio_def, hker, hrange]
+
+/-- The isogeny associated to an admissible change of variables has Kummer ratio one. -/
+@[simp]
+theorem kummerRatio_variableChangeIsogeny (C : WeierstrassCurve.VariableChange F)
+    (h : C • W₁ = W₂) :
+    (variableChangeIsogeny C h).kummerRatio = 1 :=
+  kummerRatio_eq_one_of_degree_eq_one _ (degree_variableChangeIsogeny C h)
+
+/-- Conjugating an isogeny by admissible changes of variables preserves its Kummer ratio. -/
+@[simp]
+theorem kummerRatio_conjByVariableChange (φ : Isogeny W₁ W₂)
+    (C₁ C₂ : WeierstrassCurve.VariableChange F) :
+    (φ.conjByVariableChange C₁ C₂).kummerRatio = φ.kummerRatio := by
+  simp [conjByVariableChange_def]
 
 end TauCeti.Isogeny

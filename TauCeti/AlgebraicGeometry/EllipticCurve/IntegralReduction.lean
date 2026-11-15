@@ -25,8 +25,9 @@ counts supply torsion certificates for rational curves.
 
 Over the completion `F_u` at a height-one prime `u` with finite residue field, the ring of
 integers `𝒪[F_u]` of the valuative relation is `O_u`. So an elliptic equation over `O_u` has good
-reduction at `𝒪[F_u]` (`WeierstrassCurve.hasGoodReduction_baseChange_adicCompletion`), and its
-reduction there has as many points as the reduction used by the reduction homomorphism
+reduction at `𝒪[F_u]` (`WeierstrassCurve.hasGoodReduction_baseChange_adicCompletion`), and any
+equation over `O_u` minimal at `𝒪[F_u]` has as many reduced points there as on the reduction
+used by the reduction homomorphism
 (`WeierstrassCurve.natCard_point_reduction_baseChange_adicCompletion`).
 -/
 
@@ -126,9 +127,11 @@ instance hasGoodReduction_baseChange_adicCompletion :
   rw [hasGoodReduction_iff_isUnit_integralModel_Δ, integralModel_baseChange_self]
   exact C.isUnit_Δ
 
-/-- The reduction at `𝒪[F_u]` of an elliptic equation over `O_u` has as many points as its
-reduction at `Valued.v.valuationSubring`, the ring used by the reduction homomorphism. -/
-theorem natCard_point_reduction_baseChange_adicCompletion :
+omit [Finite (A ⧸ u.asIdeal)] [C.IsElliptic] in
+/-- For an equation over `O_u` minimal at `𝒪[F_u]`, its reduction at `𝒪[F_u]` has as many points as
+its reduction at `Valued.v.valuationSubring`, the ring used by the reduction homomorphism. -/
+theorem natCard_point_reduction_baseChange_adicCompletion
+    [(C.baseChange (u.adicCompletion F)).IsMinimal 𝒪[u.adicCompletion F]] :
     Nat.card ((C.baseChange (u.adicCompletion F)).reduction 𝒪[u.adicCompletion F]).toAffine.Point =
       Nat.card ((integralModel (Valued.v : Valuation (u.adicCompletion F)
         (WithZero (Multiplicative ℤ))).valuationSubring (C.baseChange (u.adicCompletion F))).map
