@@ -696,17 +696,12 @@ ambient space, has nonzero velocity at `t`. -/
 theorem deriv_coe_comp_circleExp_ne_zero
     (hinj : Injective (mfderiv (𝓡 1) (𝓡 n) f (Circle.exp t))) :
     deriv (fun s => (f (Circle.exp s) : E)) t ≠ 0 := by
-  intro h0
-  have hf : MDifferentiableAt (𝓡 1) (𝓡 n) f (Circle.exp t) :=
-    mdifferentiableAt_of_mfderiv_injective hinj
-  have h := smul_deriv_coe_comp_circleExp hf 1
-  rw [h0, smul_zero] at h
-  -- The derivatives of the inclusion, of `f` and of `Circle.exp` are injective, so the
-  -- composite cannot kill `1`.
-  have h₁ := injective_mvfderiv_subtypeVal_sphere _ (h.symm.trans (map_zero _).symm)
-  have h₂ := hinj (h₁.trans (map_zero _).symm)
-  have h₃ : (1 : ℝ) = 0 := injective_mfderiv_circleExp t (h₂.trans (map_zero _).symm)
-  exact one_ne_zero h₃
+  -- The loop read in the ambient space has injective derivative, as the inclusion does.
+  refine (deriv_comp_circleExp_ne_zero_and_range_mfderiv
+    (f := ((↑) : sphere (0 : E) 1 → E) ∘ f) ?_).1
+  rw [mfderiv_comp _ ((contMDiff_coe_sphere (m := 1) _).mdifferentiableAt one_ne_zero)
+    (mdifferentiableAt_of_mfderiv_injective hinj)]
+  exact (injective_mvfderiv_iff.1 (injective_mvfderiv_subtypeVal_sphere _)).comp hinj
 
 /-- **The velocity along `Circle.exp` determines the derivative.** Two loops in a sphere which take
 the same value at `exp (t i)`, and whose velocities at `t` read along `Circle.exp` in the ambient
@@ -797,19 +792,12 @@ theorem deriv_coe_fst_comp_circleExp_ne_zero {Γ : Circle × ℝ → sphere (0 :
     (hinj : Injective (mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) Γ (Circle.exp θ, t)))
     (hvert : mfderiv 𝓘(ℝ) (𝓡 n) (fun s => (Γ (Circle.exp θ, s)).1) t = 0) :
     deriv (fun θ' => ((Γ (Circle.exp θ', t)).1 : E)) θ ≠ 0 := by
-  intro h0
+  -- It suffices that the sphere component of the slice has injective derivative: let `u` be
+  -- killed by it.
+  refine deriv_coe_comp_circleExp_ne_zero (n := n) (f := fun z => (Γ (z, t)).1)
+    ((injective_iff_map_eq_zero _).2 fun (u : EuclideanSpace ℝ (Fin 1)) h₁ => ?_)
   have hΓ : MDifferentiableAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) Γ (Circle.exp θ, t) :=
     mdifferentiableAt_of_mfderiv_injective hinj
-  set u : EuclideanSpace ℝ (Fin 1) := mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp θ (1 : ℝ)
-  have hu : u ≠ 0 := fun h =>
-    one_ne_zero (show (1 : ℝ) = 0 from injective_mfderiv_circleExp θ (h.trans (map_zero _).symm))
-  have hΓ₁ : MDifferentiableAt (𝓡 1) ((𝓡 n).prod 𝓘(ℝ)) (fun z => Γ (z, t)) (Circle.exp θ) :=
-    hΓ.comp (Circle.exp θ) (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
-  -- The sphere component of the slice has zero derivative in the direction `u`.
-  have h₁ : mfderiv (𝓡 1) (𝓡 n) (fun z => (Γ (z, t)).1) (Circle.exp θ) u = 0 := by
-    have h := smul_deriv_coe_comp_circleExp hΓ₁.fst 1
-    rw [h0, smul_zero] at h
-    exact injective_mvfderiv_subtypeVal_sphere _ (h.symm.trans (map_zero _).symm)
   set c : ℝ := mfderiv (𝓡 1) 𝓘(ℝ) (fun z => (Γ (z, t)).2) (Circle.exp θ) u
   set a : ℝ := mfderiv 𝓘(ℝ) 𝓘(ℝ) (fun s => (Γ (Circle.exp θ, s)).2) t (1 : ℝ)
   -- The derivative of `Γ` sends `(α • u, r)` to `(0, α * c + r * a)`.
@@ -828,8 +816,8 @@ theorem deriv_coe_fst_comp_circleExp_ne_zero {Γ : Circle × ℝ → sphere (0 :
       exact Prod.ext ha hb
     exact hinj (hw.trans (map_zero _).symm)
   rcases eq_or_ne a 0 with ha | ha
-  · exact one_ne_zero (congrArg Prod.snd (hkey 0 1 (by rw [ha]; ring)))
-  · exact hu ((smul_eq_zero.1 (congrArg Prod.fst (hkey a (-c) (by ring)))).resolve_left ha)
+  · exact (one_ne_zero (congrArg Prod.snd (hkey 0 1 (by rw [ha]; ring)))).elim
+  · exact (smul_eq_zero.1 (congrArg Prod.fst (hkey a (-c) (by ring)))).resolve_left ha
 
 /-- A smooth real function on the circle, of absolute value at most `δ`, which vanishes at
 `exp (θ₀ i)` and has velocity `1` there along `Circle.exp`: `κ arctan (sin (θ - θ₀) / κ)` with
