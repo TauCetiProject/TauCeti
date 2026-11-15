@@ -30,9 +30,13 @@ Since `ρ` preserves Lebesgue measure, a locally `L^q` field `η` satisfies
 `∫ ⟪D φ, η⟫ = ∫ ⟪φ, ζ⟫` for every test function `φ` on `Ω` exactly when `η ∘ ρ` is a weak
 solution of `D' (η ∘ ρ) = ζ ∘ ρ` on `ρ⁻¹ Ω` in the sense of `TauCeti.IsWeakCRSolution`. In
 particular an element annihilating the range of `D` on test functions is, after reflection, a weak
-solution of a homogeneous real Cauchy–Riemann equation with Sobolev coefficients, so the interior
-regularity theory of such equations applies to it. The reflection `ρ` preserves the closed upper
-half-plane, which is what makes it suitable for boundary problems as well.
+solution of a homogeneous real Cauchy–Riemann equation with Sobolev coefficients. Interior
+regularity for such equations needs more than Sobolev coefficients: `V` finite-dimensional,
+`J'² = -1` (equivalent to `J² = -1` at the reflected point, by
+`TauCeti.crReflectedAdjointCoeff_mul_self_eq_neg_one_iff`) and exponent conditions such as
+`p > 2`. When these hold, that regularity theory applies to the reflected element. The reflection
+`ρ` preserves the closed upper half-plane, which is what makes it suitable for boundary problems
+as well.
 
 ## Main declarations
 
