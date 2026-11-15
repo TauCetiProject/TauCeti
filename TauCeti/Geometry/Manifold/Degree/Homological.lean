@@ -214,8 +214,8 @@ theorem exists_homologyMap_eq_degreeAtRegularValue_smul
   have : BoundarylessManifold I₁ P := Φ₁.boundarylessManifold one_ne_zero
   let P' : Type := BoundarylessModel I₁ P
   let : ChartedSpace E P' := BoundarylessModel.interiorChartedSpace I₁
-  have : T2Space P' := inferInstanceAs (T2Space P)
-  have : CompactSpace P' := inferInstanceAs (CompactSpace P)
+  have : T2Space P' := (BoundarylessModel.homeomorph I₁ P).t2Space
+  have : CompactSpace P' := (BoundarylessModel.homeomorph I₁ P).compactSpace
   have : IsManifold 𝓘(ℝ, E) 1 P' := BoundarylessModel.instIsManifoldInteriorChartedSpace I₁
   let Φ : P' ≃ₘ^1⟮𝓘(ℝ, E), I⟯ P := (BoundarylessModel.interiorDiffeomorph I₁ 1).symm.trans Φ₁.symm
   let o₁ : Manifold.Orientation 𝓘(ℝ, E) P' (Fin (n + 1)) :=
@@ -224,12 +224,12 @@ theorem exists_homologyMap_eq_degreeAtRegularValue_smul
   intro Q _ _ _ _ _ _ oQ f y hy
   have hdeg : degreeAtRegularValue o₁ oQ (f.comp ⟨Φ, Φ.continuous⟩) y =
       degreeAtRegularValue oP oQ f y :=
-    Φ.degreeAtRegularValue_comp_right_of_isOrientationPreservingAt one_ne_zero oQ
+    Φ.degreeAtRegularValue_comp_diffeomorph_of_isOrientationPreservingAt one_ne_zero oQ
       fun x _ ↦ isOrientationPreservingAt_pullback _ _ _ _ x
   exact ((o₁.toHomologicalOrientation hE).mapFundamentalClass_comp hE f
     ⟨Φ, Φ.continuous⟩).symm.trans
     ((mapFundamentalClass_eq_degreeAtRegularValue_smul hE o₁ oQ
-      ((Φ.isRegularValue_comp_right_iff one_ne_zero).2 hy)).trans (by rw [hdeg]))
+      ((Φ.isRegularValue_comp_diffeomorph_iff one_ne_zero).2 hy)).trans (by rw [hdeg]))
 
 end Manifold.Orientation
 

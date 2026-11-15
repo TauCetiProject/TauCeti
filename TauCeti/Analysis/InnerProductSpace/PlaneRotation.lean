@@ -7,34 +7,26 @@ module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Analysis.InnerProductSpace.Reflection
-import TauCeti.Analysis.Complex.Circle
 
 /-!
 # Rotations of an isometrically embedded complex plane
 
 A linear isometry `ι : ℂ →ₗᵢ[ℝ] E` into a real inner product space distinguishes the plane `ι ℂ`
-of `E`. Every orthonormal pair `(u, v)` in `E` defines such an embedding by
-`z ↦ Re z • u + Im z • v` (`LinearIsometry.ofOrthonormalPair`). Every point `c` of the unit circle
-rotates the plane `ι ℂ` by multiplication, `ι w ↦ ι (c w)`, and this rotation extends to a linear
-isometry of `E` fixing the orthogonal complement of the plane pointwise. These extensions form a
-homomorphism `LinearIsometry.planeRotation ι : Circle →* E ≃ₗᵢ[ℝ] E`, the extension of Mathlib's
-`rotation` of `ℂ` to `E`.
+of `E`. Every point `c` of the unit circle rotates that plane by multiplication, `ι w ↦ ι (c w)`,
+and this rotation extends to a linear isometry of `E` fixing the orthogonal complement of the
+plane pointwise. These extensions form a homomorphism
+`LinearIsometry.planeRotation ι : Circle →* E ≃ₗᵢ[ℝ] E`, the extension of Mathlib's `rotation` of
+`ℂ` to `E`.
 
 Explicitly, `planeRotation ι c x = x + ι ((c - 1) w)`, where `w = ⟪ι 1, x⟫ + ⟪ι i, x⟫ i` is the
 complex coordinate of the orthogonal projection of `x` onto the plane. The rotation by `-1` is the
 half-turn of the plane, the reflection across its orthogonal complement
-(`LinearIsometry.planeRotation_neg_one`), and the rotation depends smoothly on the plane, the angle
-and the point (`LinearIsometry.contMDiff_planeRotation`, `ContMDiff.planeRotation`,
-`Continuous.planeRotation`).
-In finite dimensions every plane rotation has determinant `1` (`LinearIsometry.det_planeRotation`).
-Rotating the plane moves a great circle of the unit sphere of `E` along itself; this is how knotted
-arcs are slid along a great circle, and how the rotation family of a sphere lifts to its
-diffeomorphism group.
+(`LinearIsometry.planeRotation_neg_one`), and the rotation depends smoothly on the angle and the
+point (`LinearIsometry.contMDiff_planeRotation`). Rotating the plane moves a great circle of the
+unit sphere of `E` along itself; this is how knotted arcs are slid along a great circle.
 
 ## Main definitions
 
-* `LinearIsometry.ofOrthonormalPair`: the linear isometry `ℂ →ₗᵢ[ℝ] E`, `z ↦ Re z • u + Im z • v`,
-  determined by an orthonormal pair `(u, v)`.
 * `LinearIsometry.planeRotation ι`: the rotations of `E` in the plane `ι ℂ`.
 
 ## Main results
@@ -44,10 +36,8 @@ diffeomorphism group.
   the plane.
 * `LinearIsometry.planeRotation_neg_one`: the rotation by `-1` is the reflection across that
   complement.
-* `LinearIsometry.det_planeRotation`, `LinearIsometry.linearEquiv_det_planeRotation`: in finite
-  dimensions, every plane rotation has determinant `1`.
-* `LinearIsometry.contMDiff_planeRotation`, `Continuous.planeRotation`,
-  `ContMDiff.planeRotation`: joint regularity in the plane, the angle and the point.
+* `LinearIsometry.contMDiff_planeRotation`: the rotation is smooth in the angle and the point.
+* `Continuous.planeRotation`: the rotation depends continuously on the plane and the angle.
 -/
 
 public section
@@ -60,81 +50,6 @@ open Complex
 open scoped RealInnerProductSpace Manifold ContDiff
 
 attribute [local instance] finrank_real_complex_fact'
-
-section OrthonormalPair
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- The **linear isometry `ℂ →ₗᵢ[ℝ] E` determined by an orthonormal pair** `(u, v)`: it sends
-`w : ℂ` to `Re w • u + Im w • v`, carrying `1` to `u` and `i` to `v`. -/
-def ofOrthonormalPair {u v : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (huv : ⟪u, v⟫ = 0) :
-    ℂ →ₗᵢ[ℝ] E where
-  toLinearMap := (Complex.reCLM.smulRight u + Complex.imCLM.smulRight v).toLinearMap
-  norm_map' w := by
-    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm, Complex.normSq_apply]
-    simp [norm_add_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right, hu, hv, huv]
-    ring
-
-/-- Applying `ofOrthonormalPair` forms the linear combination `Re w • u + Im w • v`. -/
-@[simp]
-theorem ofOrthonormalPair_apply {u v : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (huv : ⟪u, v⟫ = 0)
-    (w : ℂ) : ofOrthonormalPair hu hv huv w = w.re • u + w.im • v :=
-  (rfl)
-
-/-- `ofOrthonormalPair` sends `1` to the first vector `u`. -/
-theorem ofOrthonormalPair_one {u v : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (huv : ⟪u, v⟫ = 0) :
-    ofOrthonormalPair hu hv huv 1 = u := by
-  simp
-
-/-- `ofOrthonormalPair` sends `i` to the second vector `v`. -/
-theorem ofOrthonormalPair_I {u v : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (huv : ⟪u, v⟫ = 0) :
-    ofOrthonormalPair hu hv huv I = v := by
-  simp
-
-/-- As a continuous linear map, `ofOrthonormalPair` is `Re • u + Im • v`. -/
-theorem toContinuousLinearMap_ofOrthonormalPair {u v : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1)
-    (huv : ⟪u, v⟫ = 0) :
-    (ofOrthonormalPair hu hv huv).toContinuousLinearMap =
-      Complex.reCLM.smulRight u + Complex.imCLM.smulRight v := by
-  ext w
-  simp
-
-/-- A vector is orthogonal to the plane spanned by `(u, v)` exactly when it is orthogonal to both
-`u` and `v`. -/
-theorem mem_orthogonal_range_ofOrthonormalPair_iff {u v x : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1)
-    (huv : ⟪u, v⟫ = 0) :
-    x ∈ (ofOrthonormalPair hu hv huv).rangeᗮ ↔ ⟪u, x⟫ = 0 ∧ ⟪v, x⟫ = 0 := by
-  rw [Submodule.mem_orthogonal]
-  refine ⟨fun h ↦ ⟨?_, ?_⟩, ?_⟩
-  · simpa using h (ofOrthonormalPair hu hv huv 1) (LinearMap.mem_range_self _ 1)
-  · simpa using h (ofOrthonormalPair hu hv huv I) (LinearMap.mem_range_self _ I)
-  · rintro ⟨hux, hvx⟩ _ ⟨w, rfl⟩
-    simp [LinearIsometry.coe_toLinearMap, inner_add_left, real_inner_smul_left, hux, hvx]
-
-/-- A continuous family of orthonormal pairs defines an operator-norm continuous family of
-isometric plane embeddings `ℂ →L[ℝ] E`. -/
-theorem _root_.Continuous.ofOrthonormalPair {X : Type*} [TopologicalSpace X]
-    {u v : X → E} (hcu : Continuous u) (hcv : Continuous v)
-    (hu : ∀ x, ‖u x‖ = 1) (hv : ∀ x, ‖v x‖ = 1) (huv : ∀ x, ⟪u x, v x⟫ = 0) :
-    Continuous fun x ↦ (ofOrthonormalPair (hu x) (hv x) (huv x)).toContinuousLinearMap := by
-  simp_rw [toContinuousLinearMap_ofOrthonormalPair]
-  exact ((ContinuousLinearMap.smulRightL ℝ ℂ E Complex.reCLM).continuous.comp hcu).add
-    ((ContinuousLinearMap.smulRightL ℝ ℂ E Complex.imCLM).continuous.comp hcv)
-
-/-- A `C^m` family of orthonormal pairs defines a `C^m` family of isometric plane embeddings
-`ℂ →L[ℝ] E`. -/
-theorem _root_.ContMDiff.ofOrthonormalPair
-    {F H M : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H]
-    {I : ModelWithCorners ℝ F H} [TopologicalSpace M] [ChartedSpace H M] {m : ℕ∞ω}
-    {u v : M → E} (hcu : ContMDiff I 𝓘(ℝ, E) m u) (hcv : ContMDiff I 𝓘(ℝ, E) m v)
-    (hu : ∀ x, ‖u x‖ = 1) (hv : ∀ x, ‖v x‖ = 1) (huv : ∀ x, ⟪u x, v x⟫ = 0) :
-    ContMDiff I 𝓘(ℝ, ℂ →L[ℝ] E) m fun x ↦
-      (ofOrthonormalPair (hu x) (hv x) (huv x)).toContinuousLinearMap := by
-  simp_rw [toContinuousLinearMap_ofOrthonormalPair]
-  exact ((ContinuousLinearMap.smulRightL ℝ ℂ E Complex.reCLM).contDiff.contMDiff.comp hcu).add
-    ((ContinuousLinearMap.smulRightL ℝ ℂ E Complex.imCLM).contDiff.contMDiff.comp hcv)
-
-end OrthonormalPair
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (ι : ℂ →ₗᵢ[ℝ] E)
 
@@ -246,27 +161,6 @@ theorem planeRotation_apply_of_mem_orthogonal (c : Circle) {x : E} (hx : x ∈ �
     simp
   rw [planeRotation_apply_eq, h0, mul_zero, map_zero, add_zero]
 
-/-- Rotating the plane of an orthonormal pair `(u, v)` by `c` sends `u` to `Re c • u + Im c • v`. -/
-theorem planeRotation_ofOrthonormalPair_apply_left {u v : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1)
-    (huv : ⟪u, v⟫ = 0) (c : Circle) :
-    (ofOrthonormalPair hu hv huv).planeRotation c u = (c : ℂ).re • u + (c : ℂ).im • v := by
-  simpa using (ofOrthonormalPair hu hv huv).planeRotation_apply_map c 1
-
-/-- Rotating the plane of an orthonormal pair `(u, v)` by `c` sends `v` to
-`-Im c • u + Re c • v`. -/
-theorem planeRotation_ofOrthonormalPair_apply_right {u v : E} (hu : ‖u‖ = 1) (hv : ‖v‖ = 1)
-    (huv : ⟪u, v⟫ = 0) (c : Circle) :
-    (ofOrthonormalPair hu hv huv).planeRotation c v = -(c : ℂ).im • u + (c : ℂ).re • v := by
-  simpa using (ofOrthonormalPair hu hv huv).planeRotation_apply_map c I
-
-/-- Rotating the plane of an orthonormal pair `(u, v)` fixes every vector orthogonal to both `u`
-and `v`. -/
-theorem planeRotation_ofOrthonormalPair_apply_of_inner_eq_zero {u v x : E} (hu : ‖u‖ = 1)
-    (hv : ‖v‖ = 1) (huv : ⟪u, v⟫ = 0) (c : Circle) (hux : ⟪u, x⟫ = 0) (hvx : ⟪v, x⟫ = 0) :
-    (ofOrthonormalPair hu hv huv).planeRotation c x = x :=
-  (ofOrthonormalPair hu hv huv).planeRotation_apply_of_mem_orthogonal c
-    ((mem_orthogonal_range_ofOrthonormalPair_iff hu hv huv).2 ⟨hux, hvx⟩)
-
 /-- **The rotation by `-1` is the half-turn of the plane `ι ℂ`**, the reflection across its
 orthogonal complement. -/
 theorem planeRotation_neg_one : ι.planeRotation (-1) = ι.rangeᗮ.reflection := by
@@ -282,51 +176,6 @@ theorem planeRotation_neg_one : ι.planeRotation (-1) = ι.rangeᗮ.reflection :
   rw [hx, map_add, map_add, planeRotation_apply_map, planeRotation_apply_of_mem_orthogonal _ _ hq,
     reflection_orthogonal_range_apply, Submodule.reflection_mem_subspace_eq_self hq,
     Circle.coe_neg, Circle.coe_one, neg_one_mul, map_neg]
-
-/-- Every linear isometry equivalence of a finite-dimensional real inner product space has squared
-determinant `1`. -/
-private theorem sq_det_linearIsometryEquiv [FiniteDimensional ℝ E] (e : E ≃ₗᵢ[ℝ] E) :
-    LinearMap.det (e.toLinearEquiv : E →ₗ[ℝ] E) ^ 2 = 1 := by
-  obtain ⟨l, -, rfl⟩ := e.reflections_generate_dim
-  induction l with
-  | nil => simp [LinearIsometryEquiv.one_def]
-  | cons v l ih =>
-    rw [List.map_cons, List.prod_cons, LinearIsometryEquiv.mul_def,
-      LinearIsometryEquiv.toLinearEquiv_trans, ← LinearEquiv.coe_det, LinearEquiv.det_trans,
-      Units.val_mul, LinearEquiv.coe_det, LinearEquiv.coe_det, mul_pow, ih, mul_one]
-    by_cases hv : v = 0
-    · have hg : (ℝ ∙ v)ᗮ.reflection = 1 := by
-        ext x
-        rw [TauCeti.reflection_orthogonal_singleton_apply_div_norm_sq, hv]
-        simp [LinearIsometryEquiv.one_def]
-      simp [hg, LinearIsometryEquiv.one_def]
-    · rw [← LinearEquiv.coe_det, TauCeti.linearEquiv_det_reflection_orthogonal_singleton hv]
-      norm_num
-
-/-- **Every plane rotation has determinant `1`.** -/
-@[simp]
-theorem det_planeRotation [FiniteDimensional ℝ E] (c : Circle) :
-    LinearMap.det ((ι.planeRotation c).toLinearEquiv : E →ₗ[ℝ] E) = 1 := by
-  -- Every point `c` of the circle has a square root `d`, and `det (R_d)² = 1`.
-  obtain ⟨d, rfl⟩ := Circle.exists_pow_nat_eq c two_ne_zero
-  rw [pow_two, map_mul, LinearIsometryEquiv.mul_def, LinearIsometryEquiv.toLinearEquiv_trans,
-    ← LinearEquiv.coe_det, LinearEquiv.det_trans, Units.val_mul, LinearEquiv.coe_det, ← pow_two]
-  exact sq_det_linearIsometryEquiv (ι.planeRotation d)
-
-/-- **Every plane rotation has unit determinant `1`.** -/
-theorem linearEquiv_det_planeRotation [FiniteDimensional ℝ E] (c : Circle) :
-    LinearEquiv.det (ι.planeRotation c).toLinearEquiv = 1 :=
-  Units.ext (by simp)
-
-/-- `planeRotation ι c`, viewed as a continuous linear map `E →L[ℝ] E`, written in terms of `ι`,
-`c` and `planeCoord ι`. -/
-private theorem toContinuousLinearMap_planeRotation_eq (c : Circle) :
-    ((ι.planeRotation c).toContinuousLinearEquiv : E →L[ℝ] E) =
-      ContinuousLinearMap.id ℝ E +
-        ι.toContinuousLinearMap.comp
-          ((ContinuousLinearMap.mul ℝ ℂ ((c : ℂ) - 1)).comp (planeCoord ι)) := by
-  ext x
-  exact planeRotation_apply_eq ι c x
 
 /-- **The rotation is smooth in the angle and the point**: the map `(c, x) ↦ planeRotation ι c x`
 from `Circle × E` to `E` is analytic. -/
@@ -367,36 +216,5 @@ theorem _root_.Continuous.planeRotation {X : Type*} [TopologicalSpace X] {ι : X
     (hι.clm_comp (hmul.clm_comp hcoord))).congr fun x ↦ ?_
   ext y
   simp [planeRotation_apply_eq, sub_mul]
-
-/-- **Operator-norm smoothness of plane rotations in both the plane and the angle.** If `ι x`
-is `C^m` into `ℂ →L[ℝ] E` and `c x` is `C^m` into `Circle`, then `planeRotation (ι x) (c x)` is
-`C^m` into `E →L[ℝ] E`. -/
-theorem _root_.ContMDiff.planeRotation
-    {F H M : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H]
-    {I : ModelWithCorners ℝ F H} [TopologicalSpace M] [ChartedSpace H M] {m : ℕ∞ω}
-    {ι : M → ℂ →ₗᵢ[ℝ] E} {c : M → Circle}
-    (hι : ContMDiff I 𝓘(ℝ, ℂ →L[ℝ] E) m fun x ↦ (ι x).toContinuousLinearMap)
-    (hc : ContMDiff I (𝓡 1) m c) :
-    ContMDiff I 𝓘(ℝ, E →L[ℝ] E) m
-      fun x ↦ (((ι x).planeRotation (c x)).toContinuousLinearEquiv : E →L[ℝ] E) := by
-  simp_rw [toContinuousLinearMap_planeRotation_eq]
-  have h₁ : ContMDiff I 𝓘(ℝ, E) m fun x ↦ ι x 1 :=
-    (ContinuousLinearMap.apply ℝ E (1 : ℂ)).contDiff.contMDiff.comp hι
-  have hI : ContMDiff I 𝓘(ℝ, E) m fun x ↦ ι x Complex.I :=
-    (ContinuousLinearMap.apply ℝ E Complex.I).contDiff.contMDiff.comp hι
-  have hcoord : ContMDiff I 𝓘(ℝ, E →L[ℝ] ℂ) m fun x ↦ planeCoord (ι x) :=
-    (((ContinuousLinearMap.smulRightL ℝ E ℂ).flip (1 : ℂ)).contDiff.contMDiff.comp
-      ((innerSL ℝ).contDiff.contMDiff.comp h₁)).add
-      (((ContinuousLinearMap.smulRightL ℝ E ℂ).flip Complex.I).contDiff.contMDiff.comp
-        ((innerSL ℝ).contDiff.contMDiff.comp hI))
-  have hmul : ContMDiff I 𝓘(ℝ, ℂ →L[ℝ] ℂ) m
-      fun x ↦ ContinuousLinearMap.mul ℝ ℂ ((c x : ℂ) - 1) :=
-    (ContinuousLinearMap.mul ℝ ℂ).contDiff.contMDiff.comp
-      ((contMDiff_coe_sphere.comp hc).sub contMDiff_const)
-  have hcomp₁ : ContMDiff I 𝓘(ℝ, E →L[ℝ] ℂ) m
-      fun x ↦ (ContinuousLinearMap.mul ℝ ℂ ((c x : ℂ) - 1)).comp (planeCoord (ι x)) :=
-    isBoundedBilinearMap_comp.contDiff.contMDiff.comp (hmul.prodMk_space hcoord)
-  exact contMDiff_const.add
-    (isBoundedBilinearMap_comp.contDiff.contMDiff.comp (hι.prodMk_space hcomp₁))
 
 end LinearIsometry

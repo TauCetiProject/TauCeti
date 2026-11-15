@@ -8,7 +8,10 @@ module
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
 public import TauCeti.Geometry.Diffeomorphism.Evaluation
+public import TauCeti.Geometry.Manifold.Degree.Basic
+import TauCeti.Geometry.Manifold.Degree.Homological
 
 /-!
 # Manifolds covered by diffeomorphisms
@@ -31,8 +34,10 @@ such that either `π₂ ≠ 0` or its first nontrivial homotopy group in degree 
 provides the condition and the ways it is established:
 
 * a family of diffeomorphisms `φ : Z → Diff(M)` and a class `a ∈ H_d(Z; ℤ)` whose image under
-  `ev ∘ φ` is `ℓ • [M]`; in particular a family parametrized by a compact oriented `d`-manifold
-  `P` with `(ev ∘ φ)_*[P] = ℓ • [M]`, such as a rotation family of spheres;
+  `ev ∘ φ` is `ℓ • [M]`; in particular a family parametrized by a compact oriented boundaryless
+  `C¹` manifold `(P, I)` of dimension `d = d' + 1`, for which `ev ∘ φ : P → M` sends the
+  fundamental class of `P` to `(degreeAtRegularValue oP oM (ev ∘ φ) y) • [M]` at any regular value
+  `y` (such as a rotation family of spheres);
 * a continuous section `σ : M → Diff(M)` of evaluation, `σ x x₀ = x`, which makes `M` covered;
 * a jointly smooth action of a group `G` on `M`, through the orbit map `g ↦ g • x₀`: if it sends
   a class of `H_d(G; ℤ)` to `ℓ • [M]`, then `M` is `ℓ`-covered;
@@ -51,11 +56,17 @@ within a path component, since evaluations at two points joined by a path are ho
 
 * `IsCoveredByDiffeomorphisms.of_homologyMap`, `IsCoveredByDiffeomorphisms.of_mapFundamentalClass`:
   the condition from a family of diffeomorphisms.
+* `Manifold.Orientation.isCoveredByDiffeomorphisms_toHomologicalOrientation_of_isRegularValue`,
+  `isCoveredByDiffeomorphisms_of_isRegularValue`,
+  `exists_isCoveredByDiffeomorphisms_of_degreeAtRegularValue_ne_zero`: covering by
+  `degreeAtRegularValue` at a regular value of `ev ∘ φ` for a family parametrized by a compact
+  oriented boundaryless `C¹` manifold `(P, I)`.
 * `isCoveredByDiffeomorphisms_of_section`: a section of evaluation makes `M` covered.
 * `isCoveredByDiffeomorphisms_of_smul`: the condition from a smooth group action.
 * `isCoveredByDiffeomorphisms_of_lieGroup`: compact Lie groups are covered by diffeomorphisms.
-* `IsCoveredByDiffeomorphisms.mul_left`, `IsCoveredByDiffeomorphisms.abs`,
-  `isCoveredByDiffeomorphisms_neg_right`: multiples, absolute value and sign of `ℓ`.
+* `IsCoveredByDiffeomorphisms.mul_left`, `isCoveredByDiffeomorphisms_abs_right`,
+  `IsCoveredByDiffeomorphisms.abs`, `isCoveredByDiffeomorphisms_neg_right`: multiples, absolute
+  value and sign of `ℓ`.
 * `isCoveredByDiffeomorphisms_neg`: independence of the orientation.
 * `isCoveredByDiffeomorphisms_iff_of_joined`,
   `isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace`: independence of the base point.
@@ -64,7 +75,7 @@ within a path component, since evaluations at two points joined by a path are ho
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
   Applications to cotangent bundles*, arXiv:2404.07953, §6.4.3, Definitions 6.26 and 6.32,
-  Example 6.28 and Example 6.30.
+  Example 6.28, Example 6.30, and Proposition 6.34.
 * C. Viterbo, *Inverse reduction inequalities for spectral numbers and applications*,
   arXiv:2203.13172, Definition 6.1.
 -/
@@ -199,11 +210,17 @@ theorem isCoveredByDiffeomorphisms_neg_right {x₀ : M} {ℓ : ℤ} :
     o.IsCoveredByDiffeomorphisms hd n x₀ (-ℓ) ↔ o.IsCoveredByDiffeomorphisms hd n x₀ ℓ :=
   ⟨fun h ↦ by simpa using h.mul_left (-1), fun h ↦ by simpa using h.mul_left (-1)⟩
 
+/-- Covering by `|ℓ|` is equivalent to covering by `ℓ`. -/
+@[simp]
+theorem isCoveredByDiffeomorphisms_abs_right {x₀ : M} {ℓ : ℤ} :
+    o.IsCoveredByDiffeomorphisms hd n x₀ |ℓ| ↔ o.IsCoveredByDiffeomorphisms hd n x₀ ℓ := by
+  rcases abs_choice ℓ with h | h <;> simp [h]
+
 /-- If `M` is `ℓ`-covered by diffeomorphisms, it is `|ℓ|`-covered by diffeomorphisms. -/
 theorem IsCoveredByDiffeomorphisms.abs {x₀ : M} {ℓ : ℤ}
     (h : o.IsCoveredByDiffeomorphisms hd n x₀ ℓ) :
-    o.IsCoveredByDiffeomorphisms hd n x₀ |ℓ| := by
-  simpa only [Int.sign_mul_self_eq_abs] using h.mul_left ℓ.sign
+    o.IsCoveredByDiffeomorphisms hd n x₀ |ℓ| :=
+  isCoveredByDiffeomorphisms_abs_right.2 h
 
 /-- Covering by diffeomorphisms does not depend on the orientation. -/
 @[simp]
@@ -257,5 +274,69 @@ theorem isCoveredByDiffeomorphisms_of_lieGroup (x₀ : M) :
 end LieGroup
 
 end HomologicalOrientation
+
+section Degree
+
+variable {E M : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace M] [T2Space M] [ChartedSpace E M] [CompactSpace M] [IsManifold 𝓘(ℝ, E) 1 M]
+  {d : ℕ}
+  {P F H : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ F H} [TopologicalSpace P] [T2Space P]
+  [ChartedSpace H P] [IsManifold I 1 P] [BoundarylessManifold I P] [CompactSpace P]
+
+/-- **Covering by diffeomorphisms from `degreeAtRegularValue`.** If `φ : P → Diff^r(M)` is a
+continuous family of diffeomorphisms parametrized by a compact oriented boundaryless `C¹` manifold
+`(P, I)` and `y : M` is a regular value of `ev_{x₀} ∘ φ`, then `M` is `ℓ`-covered by `C^r`
+diffeomorphisms at `x₀` with `ℓ = degreeAtRegularValue oP oM (ev_{x₀} ∘ φ) y`. -/
+theorem Manifold.Orientation.isCoveredByDiffeomorphisms_toHomologicalOrientation_of_isRegularValue
+    [PreconnectedSpace M] (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (d + 1)))
+    (hE : finrank ℝ E = d + 1) (r : ℕ∞ω) [IsManifold 𝓘(ℝ, E) r M]
+    (oP : Manifold.Orientation I P (Fin (d + 1)))
+    (φ : C(P, M ≃ₘ^r⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M)) {x₀ y : M}
+    (hy : IsRegularValue I 𝓘(ℝ, E) ((Diffeomorph.evalAt x₀).comp φ) y) :
+    (oM.toHomologicalOrientation hE).IsCoveredByDiffeomorphisms hE r x₀
+      (degreeAtRegularValue oP oM ((Diffeomorph.evalAt x₀).comp φ) y) := by
+  obtain ⟨a, ha⟩ := oP.exists_homologyMap_eq_degreeAtRegularValue_smul hE
+  refine HomologicalOrientation.IsCoveredByDiffeomorphisms.of_homologyMap φ a ?_
+  rw [HomologicalOrientation.mapFundamentalClass_id]
+  exact ha oM hy
+
+namespace HomologicalOrientation
+
+/-- **Covering by diffeomorphisms from `degreeAtRegularValue`, for any homological orientation.**
+On a compact preconnected manifold `M`, any homological orientation `o` agrees up to sign with the
+one induced by a smooth orientation `oM`, so at any regular value `y` of `ev_{x₀} ∘ φ` the
+manifold `M` is `ℓ`-covered by `C^r` diffeomorphisms at `x₀` with
+`ℓ = degreeAtRegularValue oP oM (ev_{x₀} ∘ φ) y`. -/
+theorem isCoveredByDiffeomorphisms_of_isRegularValue [PreconnectedSpace M]
+    (o : HomologicalOrientation M E (d + 1)) (hE : finrank ℝ E = d + 1) (r : ℕ∞ω)
+    [IsManifold 𝓘(ℝ, E) r M] (oP : Manifold.Orientation I P (Fin (d + 1)))
+    (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (d + 1)))
+    (φ : C(P, M ≃ₘ^r⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M)) {x₀ y : M}
+    (hy : IsRegularValue I 𝓘(ℝ, E) ((Diffeomorph.evalAt x₀).comp φ) y) :
+    o.IsCoveredByDiffeomorphisms hE r x₀
+      (degreeAtRegularValue oP oM ((Diffeomorph.evalAt x₀).comp φ) y) := by
+  have : ConnectedSpace M := ⟨⟨x₀⟩⟩
+  have hcov :=
+    oM.isCoveredByDiffeomorphisms_toHomologicalOrientation_of_isRegularValue hE r oP φ hy
+  rcases HomologicalOrientation.eq_or_eq_neg hE (oM.toHomologicalOrientation hE) o with rfl | rfl
+  · exact hcov
+  · exact isCoveredByDiffeomorphisms_neg.2 hcov
+
+/-- If `ev_{x₀} ∘ φ` has nonzero degree at some regular value `y`, then `M` is `ℓ`-covered by `C^r`
+diffeomorphisms at `x₀` for some `ℓ > 0`. -/
+theorem exists_isCoveredByDiffeomorphisms_of_degreeAtRegularValue_ne_zero [PreconnectedSpace M]
+    (o : HomologicalOrientation M E (d + 1)) (hE : finrank ℝ E = d + 1) (r : ℕ∞ω)
+    [IsManifold 𝓘(ℝ, E) r M] (oP : Manifold.Orientation I P (Fin (d + 1)))
+    (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (d + 1)))
+    (φ : C(P, M ≃ₘ^r⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M)) {x₀ y : M}
+    (hy : IsRegularValue I 𝓘(ℝ, E) ((Diffeomorph.evalAt x₀).comp φ) y)
+    (hdeg : degreeAtRegularValue oP oM ((Diffeomorph.evalAt x₀).comp φ) y ≠ 0) :
+    ∃ ℓ : ℤ, 0 < ℓ ∧ o.IsCoveredByDiffeomorphisms hE r x₀ ℓ :=
+  ⟨_, abs_pos.2 hdeg, (o.isCoveredByDiffeomorphisms_of_isRegularValue hE r oP oM φ hy).abs⟩
+
+end HomologicalOrientation
+
+end Degree
 
 end TauCeti

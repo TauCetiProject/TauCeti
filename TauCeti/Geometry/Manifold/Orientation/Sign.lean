@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
@@ -34,8 +35,12 @@ a composite of differentiable maps is the product of the signs.
   `TauCeti.Manifold.Orientation.orientationSign_eq_neg_one_iff`,
   `TauCeti.Manifold.Orientation.orientationSign_eq_zero_iff`: the sign is `1`, `-1` or `0` exactly
   where `f` preserves orientations, reverses them, or has singular derivative.
-* `TauCeti.Manifold.Orientation.orientationSign_comp`: the orientation sign of a composite of
-  differentiable maps is the product of the orientation signs.
+* `TauCeti.Manifold.Orientation.orientationSign_comp`,
+  `IsLocalDiffeomorphAt.orientationSign_comp`,
+  `Diffeomorph.orientationSign_comp_diffeomorph`,
+  `Diffeomorph.orientationSign_diffeomorph_comp`: the orientation sign of a composite of
+  differentiable maps (or of an arbitrary map composed with a local or global diffeomorphism) is
+  the product of the orientation signs.
 * `TauCeti.Manifold.Orientation.orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint`: at a
   regular point the orientation sign is `1` or `-1`.
 * `TauCeti.Manifold.Orientation.eventually_orientationSign_eq`: the orientation sign is constant
@@ -54,7 +59,7 @@ public section
 noncomputable section
 
 open Function
-open scoped Manifold Topology
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -199,6 +204,22 @@ theorem orientationSign_comp (hg : MDifferentiableAt J K g (f x))
     · rw [orientationSign_of_not_isInvertible h, mul_zero]
     · rw [orientationSign_of_not_isInvertible h, zero_mul]
 
+/-- Precomposing an arbitrary map `g` with a `C^r` local diffeomorphism `f` (`r ≠ 0`) multiplies
+its orientation sign by that of `f`, with no differentiability hypothesis on `g`. -/
+theorem _root_.IsLocalDiffeomorphAt.orientationSign_comp {r : ℕ∞ω}
+    (hf : IsLocalDiffeomorphAt I J r f x) (hr : r ≠ 0)
+    (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J N ι)
+    (o'' : Manifold.Orientation K P ι) (g : N → P) :
+    orientationSign o o'' (g ∘ f) x =
+      orientationSign o' o'' g (f x) * orientationSign o o' f x := by
+  by_cases hinv : (mfderiv J K g (f x)).IsInvertible
+  · exact Manifold.Orientation.orientationSign_comp
+      (mdifferentiableAt_of_isInvertible_mfderiv hinv) (hf.mdifferentiableAt hr)
+  · have hinv' : ¬(mfderiv I K (g ∘ f) x).IsInvertible :=
+      mt (hf.isInvertible_mfderiv_comp_iff hr).1 hinv
+    rw [orientationSign_of_not_isInvertible hinv', orientationSign_of_not_isInvertible hinv,
+      zero_mul]
+
 /-- The orientation sign is locally constant near a point where the map is `C¹` with invertible
 derivative. -/
 theorem eventually_orientationSign_eq (hf : ContMDiffAt I J 1 f x)
@@ -232,3 +253,47 @@ theorem orientationSign_congrModel_right {J₁ J₂ : ModelWithCorners ℝ E' H'
 end Manifold.Orientation
 
 end TauCeti
+
+namespace Diffeomorph
+
+open TauCeti TauCeti.Manifold.Orientation
+
+variable {E₁ H₁ M' : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁]
+  [TopologicalSpace H₁] {I' : ModelWithCorners ℝ E₁ H₁} [TopologicalSpace M'] [ChartedSpace H₁ M']
+  [IsManifold I' 1 M']
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I 1 M]
+  {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold J 1 N]
+  {E₂' H₂' N' : Type*} [NormedAddCommGroup E₂'] [NormedSpace ℝ E₂'] [FiniteDimensional ℝ E₂']
+  [TopologicalSpace H₂'] {J' : ModelWithCorners ℝ E₂' H₂'} [TopologicalSpace N']
+  [ChartedSpace H₂' N'] [IsManifold J' 1 N']
+  {ι : Type*} [Fintype ι] {r : ℕ∞ω}
+
+/-- Precomposing an arbitrary map `f` with a `C^r` diffeomorphism `Φ` (`r ≠ 0`) multiplies its
+orientation sign by that of `Φ`, with no differentiability hypothesis on `f`. -/
+theorem orientationSign_comp_diffeomorph (Φ : M' ≃ₘ^r⟮I', I⟯ M) (hr : r ≠ 0)
+    (o₁ : Manifold.Orientation I' M' ι) (o : Manifold.Orientation I M ι)
+    (o' : Manifold.Orientation J N ι) (f : M → N) (x : M') :
+    orientationSign o₁ o' (f ∘ Φ) x =
+      orientationSign o o' f (Φ x) * orientationSign o₁ o Φ x :=
+  (Φ.isLocalDiffeomorph x).orientationSign_comp hr o₁ o o' f
+
+/-- Postcomposing an arbitrary map `f` with a `C^r` diffeomorphism `Ψ` (`r ≠ 0`) multiplies its
+orientation sign by that of `Ψ`, with no differentiability hypothesis on `f`. -/
+theorem orientationSign_diffeomorph_comp (Ψ : N ≃ₘ^r⟮J, J'⟯ N') (hr : r ≠ 0)
+    (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J N ι)
+    (o₁' : Manifold.Orientation J' N' ι) (f : M → N) (x : M) :
+    orientationSign o o₁' (Ψ ∘ f) x =
+      orientationSign o' o₁' Ψ (f x) * orientationSign o o' f x := by
+  by_cases hinv : (mfderiv I J f x).IsInvertible
+  · exact orientationSign_comp (Ψ.contMDiff.mdifferentiableAt hr)
+      (mdifferentiableAt_of_isInvertible_mfderiv hinv)
+  · have hinv' : ¬(mfderiv I J' (Ψ ∘ f) x).IsInvertible :=
+      mt (Ψ.isInvertible_mfderiv_diffeomorph_comp_iff hr).1 hinv
+    rw [orientationSign_of_not_isInvertible hinv', orientationSign_of_not_isInvertible hinv,
+      mul_zero]
+
+end Diffeomorph

@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Sphere.Connected
 public import TauCeti.Topology.Grassmannian.SphereBundle.Exact
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
-import TauCeti.Geometry.Diffeomorphism.Degree
 import TauCeti.Geometry.Diffeomorphism.Sphere.RotationFamily
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HomotopyGroup
 
@@ -20,9 +19,10 @@ import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HomotopyGroup
 
 A compact oriented `d`-manifold `M` is `ℓ`-covered by diffeomorphisms when some class of
 `H_d(Diff(M); ℤ)` evaluates to `ℓ • [M]`
-(`TauCeti.HomologicalOrientation.IsCoveredByDiffeomorphisms`). This file gives both proofs of
-Proposition 6.34 of Barraud–Damian–Humilière–Oancea that odd-dimensional spheres are `ℓ`-covered by
-diffeomorphisms for some `ℓ > 0`.
+(`TauCeti.HomologicalOrientation.IsCoveredByDiffeomorphisms`). This file formalizes both arguments
+of Proposition 6.34 of Barraud–Damian–Humilière–Oancea: the first reduces covering of `Sⁿ⁺¹` to
+torsion of `πₙ(SO(n + 1))` (discharged here for `S³`), while the second establishes `2`-covering
+unconditionally for all odd-dimensional spheres.
 
 ## First proof: exact sequence of `SO(n + 1) → SO(n + 2) → Sⁿ⁺¹`
 

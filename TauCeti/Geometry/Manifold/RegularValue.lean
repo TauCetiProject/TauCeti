@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
@@ -51,6 +53,12 @@ to manifolds, including manifolds with boundary or corners.
   over a complete field, regularity is invertibility of the manifold derivative.
 * `TauCeti.isRegularPoint_comp_iff`: a composite of differentiable maps is regular exactly when
   the derivative of the outer map sends the tangent image of the inner map onto the target.
+* `IsLocalDiffeomorphAt.isRegularPoint_comp_iff`,
+  `Diffeomorph.isRegularPoint_comp_diffeomorph_iff`,
+  `Diffeomorph.isRegularPoint_diffeomorph_comp_iff`,
+  `Diffeomorph.isRegularValue_comp_diffeomorph_iff`,
+  `Diffeomorph.isRegularValue_diffeomorph_comp_iff`: invariance of regular points and regular
+  values under local and global diffeomorphisms.
 * `TauCeti.IsRegularPoint.mdifferentiableAt`: a map into a normed space is differentiable at its
   regular points.
 * `TauCeti.range_mfderiv_le_ker_mfderiv_of_eventually_eq`: a map into a level set `f ⁻¹' {y}`
@@ -75,7 +83,7 @@ to manifolds, including manifolds with boundary or corners.
 public section
 
 open Function Set
-open scoped Manifold Topology
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -262,6 +270,15 @@ theorem isRegularPoint_comp_iff (hfd : MDifferentiableAt I J f (g p))
   rw [isRegularPoint_iff, mfderiv_comp p hfd hgd, ← LinearMap.range_comp, LinearMap.range_eq_top,
     ← ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.coe_coe]
 
+/-- Precomposing an arbitrary map with a `C^n` local diffeomorphism (`n ≠ 0`) preserves regular
+points. -/
+theorem _root_.IsLocalDiffeomorphAt.isRegularPoint_comp_iff {n : ℕ∞ω}
+    (hg : IsLocalDiffeomorphAt K I n g p) (hn : n ≠ 0) :
+    IsRegularPoint K J (f ∘ g) p ↔ IsRegularPoint I J f (g p) := by
+  rw [isRegularPoint_iff, isRegularPoint_iff, hg.mfderiv_comp hn,
+    ContinuousLinearMap.coe_comp, ← hg.mfderivToContinuousLinearEquiv_coe hn]
+  exact EquivLike.surjective_comp (hg.mfderivToContinuousLinearEquiv hn) _
+
 end Composition
 
 /-- Every point of an open subset is a regular point of its inclusion. -/
@@ -400,3 +417,54 @@ theorem exists_isRegularValue_forall_mem_Ioc {E H M : Type*} [NormedAddCommGroup
     isRegularValue_of_notMem_range fun ⟨x, hx⟩ ↦ (hb x).ne hx, fun x ↦ ⟨ha x, (hb x).le⟩⟩
 
 end TauCeti
+
+namespace Diffeomorph
+
+open TauCeti
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E₁ H₁ M' : Type*} [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁]
+  [TopologicalSpace H₁] {I' : ModelWithCorners 𝕜 E₁ H₁} [TopologicalSpace M'] [ChartedSpace H₁ M']
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+  {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  {E₂' H₂' N' : Type*} [NormedAddCommGroup E₂'] [NormedSpace 𝕜 E₂']
+  [TopologicalSpace H₂'] {J' : ModelWithCorners 𝕜 E₂' H₂'} [TopologicalSpace N']
+  [ChartedSpace H₂' N']
+  {r : ℕ∞ω}
+
+/-- Precomposing with a `C^r` diffeomorphism (`r ≠ 0`) preserves regular points. -/
+@[simp]
+theorem isRegularPoint_comp_diffeomorph_iff (Φ : M' ≃ₘ^r⟮I', I⟯ M) (hr : r ≠ 0) {f : M → N}
+    {x : M'} :
+    IsRegularPoint I' J (f ∘ Φ) x ↔ IsRegularPoint I J f (Φ x) :=
+  (Φ.isLocalDiffeomorph x).isRegularPoint_comp_iff hr
+
+/-- Postcomposing with a `C^r` diffeomorphism (`r ≠ 0`) preserves regular points. -/
+@[simp]
+theorem isRegularPoint_diffeomorph_comp_iff (Ψ : N ≃ₘ^r⟮J, J'⟯ N') (hr : r ≠ 0) {f : M → N}
+    {x : M} :
+    IsRegularPoint I J' (Ψ ∘ f) x ↔ IsRegularPoint I J f x := by
+  rw [isRegularPoint_iff, isRegularPoint_iff, Ψ.mfderiv_diffeomorph_comp hr,
+    ContinuousLinearMap.coe_comp, ← Ψ.mfderivToContinuousLinearEquiv_coe hr]
+  exact EquivLike.comp_surjective _ (Ψ.mfderivToContinuousLinearEquiv hr (f x))
+
+/-- Precomposing with a `C^r` diffeomorphism (`r ≠ 0`) leaves regular values unchanged. -/
+@[simp]
+theorem isRegularValue_comp_diffeomorph_iff (Φ : M' ≃ₘ^r⟮I', I⟯ M) (hr : r ≠ 0) {f : M → N}
+    {y : N} :
+    IsRegularValue I' J (f ∘ Φ) y ↔ IsRegularValue I J f y := by
+  rw [isRegularValue_iff, isRegularValue_iff]
+  refine ⟨fun h x hx ↦ ?_, fun h x hx ↦ (Φ.isRegularPoint_comp_diffeomorph_iff hr).2 (h (Φ x) hx)⟩
+  simpa only [Φ.isRegularPoint_comp_diffeomorph_iff hr, Φ.apply_symm_apply] using
+    h (Φ.symm x) (by simpa [Function.comp_apply] using hx)
+
+/-- Postcomposing with a `C^r` diffeomorphism `Ψ` (`r ≠ 0`) transports regular values along `Ψ`. -/
+@[simp]
+theorem isRegularValue_diffeomorph_comp_iff (Ψ : N ≃ₘ^r⟮J, J'⟯ N') (hr : r ≠ 0) {f : M → N}
+    {y : N} :
+    IsRegularValue I J' (Ψ ∘ f) (Ψ y) ↔ IsRegularValue I J f y := by
+  simp [isRegularValue_iff, Ψ.isRegularPoint_diffeomorph_comp_iff hr]
+
+end Diffeomorph
