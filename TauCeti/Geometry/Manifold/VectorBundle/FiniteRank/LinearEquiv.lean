@@ -56,10 +56,11 @@ instance isContMDiff_ofLinearEquiv {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜))
     [FiberBundle F V] [VectorBundle 𝕜 F V] [ContMDiffVectorBundle n F V I] :
     (ofLinearEquiv e V).core.IsContMDiff I n where
   contMDiffOn_coordChange b c := by
-    dsimp +instances only [ofLinearEquiv]
-    exact (e.arrowCongr e).contDiff.contMDiff.comp_contMDiffOn
+    rw [baseSet_ofLinearEquiv, baseSet_ofLinearEquiv]
+    refine ((e.arrowCongr e).contDiff.contMDiff.comp_contMDiffOn
       (contMDiffOn_coordChangeL (IB := I) (n := n)
-        (trivializationAt F V b) (trivializationAt F V c))
+        (trivializationAt F V b) (trivializationAt F V c))).congr fun x _ ↦ ?_
+    exact coordChange_ofLinearEquiv e V b c x
 
 section TotalSpace
 
@@ -181,6 +182,9 @@ noncomputable def ofLinearEquivChangeDiffeomorph {r₁ r₂ : ℕ}
       (ofLinearEquivChangeIso e₁ e₂ V).inv.totalSpaceMap :=
   CoordinateHom.coe_toDiffeomorphOfInv_symm _ _ _ _ _ _
 
+/-- The change-of-coordinates diffeomorphism `ofLinearEquivChangeDiffeomorph e₁ e₂ V I n` commutes
+with the two reconstruction diffeomorphisms `ofLinearEquivTotalSpaceDiffeomorph e₁ V I n` and
+`ofLinearEquivTotalSpaceDiffeomorph e₂ V I n` onto `TotalSpace F V`. -/
 theorem ofLinearEquivTotalSpaceDiffeomorph_changeDiffeomorph {r₁ r₂ : ℕ}
     (e₁ : F ≃L[𝕜] (Fin r₁ → 𝕜)) (e₂ : F ≃L[𝕜] (Fin r₂ → 𝕜)) (V : B → Type z)
     [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
