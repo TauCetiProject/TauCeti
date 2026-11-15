@@ -65,9 +65,9 @@ namespace TauCeti.Hyperfunction
 /-! ### Holomorphic sections as sections of the structure sheaf -/
 
 /-- A holomorphic function on an open `V ⊆ ℂ` is complex analytic on the open submanifold `V`. -/
-theorem contMDiff_holomorphicSections {V : Opens ℂ} (f : holomorphicSections V) :
-    ContMDiff 𝓘(ℂ) 𝓘(ℂ) ω (fun x : V ↦ (f : ℂ → ℂ) x) :=
-  (contMDiffOn_iff_contDiffOn.2 (((mem_holomorphicSections_iff.1 f.2).1.analyticOnNhd
+theorem contMDiff_subtype_of_mem_holomorphicSections {V : Opens ℂ} {f : ℂ → ℂ}
+    (hf : f ∈ holomorphicSections V) : ContMDiff 𝓘(ℂ) 𝓘(ℂ) ω (fun x : V ↦ f x) :=
+  (contMDiffOn_iff_contDiffOn.2 (((mem_holomorphicSections_iff.1 hf).1.analyticOnNhd
     V.isOpen).contDiffOn V.isOpen.uniqueDiffOn)).comp_contMDiff contMDiff_subtype_val
     fun x ↦ x.2
 
@@ -85,7 +85,8 @@ theorem extend_mem_holomorphicSections {V : Opens ℂ}
 are the sections over `V` of the holomorphic structure sheaf of `ℂ`. -/
 def holomorphicSectionsEquiv (V : Opens ℂ) :
     holomorphicSections V ≃ₗ[ℂ] (holomorphicStructureSheafModules 𝓘(ℂ) ℂ).obj.obj (op V) where
-  toFun f := holomorphicStructureSheafModules.ofContMDiff _ (contMDiff_holomorphicSections f)
+  toFun f := holomorphicStructureSheafModules.ofContMDiff _
+    (contMDiff_subtype_of_mem_holomorphicSections f.2)
   invFun s := ⟨Subtype.val.extend s 0, extend_mem_holomorphicSections s⟩
   map_add' f g := holomorphicStructureSheafModules.ext fun x ↦ by simp
   map_smul' c f := holomorphicStructureSheafModules.ext fun x ↦ by simp
