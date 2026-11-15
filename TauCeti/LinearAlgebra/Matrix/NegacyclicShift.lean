@@ -14,10 +14,10 @@ import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 # The negacyclic shift matrix
 
 `TauCeti.negacyclicShift R n` is the `n × n` matrix of the linear map sending the standard basis
-vector `eⱼ` to `eⱼ₊₁` for `j + 1 < n`, and the last one `e_{n-1}` to `-e₀`. It is the companion
-matrix of `X ^ n + 1`: its `n`-th power is `-1`, and `e₀` is a cyclic vector, since its first `n`
-images `e₀, …, e_{n-1}` are the standard basis. Consequently its characteristic polynomial is
-`X ^ n + 1`, and, when `-1 ≠ 1`, it has order `2 * n`.
+vector `eⱼ` to `eⱼ₊₁` for `j + 1 < n`, and the last one `e_{n-1}` to `-e₀`. For `n ≥ 1` it is
+the companion matrix of `X ^ n + 1`: its `n`-th power is `-1`, and `e₀` is a cyclic vector, since
+its first `n` images `e₀, …, e_{n-1}` are the standard basis. Consequently, for `n ≥ 1`, its
+characteristic polynomial is `X ^ n + 1`, and, when moreover `-1 ≠ 1`, it has order `2 * n`.
 
 It is the Coxeter element of the Weyl group of type `Bₙ` (or `Cₙ`) acting on the classical
 lattice `ℤ ^ n`, a signed `n`-cycle.
@@ -27,8 +27,8 @@ lattice `ℤ ^ n`, a signed `n`-cycle.
 * `TauCeti.negacyclicShift_pow_apply`: the entries of the powers `negacyclicShift R n ^ i` with
   `i ≤ n`.
 * `TauCeti.negacyclicShift_pow_self`: `negacyclicShift R n ^ n = -1`.
-* `TauCeti.charpoly_negacyclicShift`: the characteristic polynomial is `X ^ n + 1`.
-* `TauCeti.orderOf_negacyclicShift`: the order is `2 * n` when `2 ≠ 0` in `R`.
+* `TauCeti.charpoly_negacyclicShift`: for `n ≥ 1`, the characteristic polynomial is `X ^ n + 1`.
+* `TauCeti.orderOf_negacyclicShift`: for `n ≥ 1`, the order is `2 * n` when `2 ≠ 0` in `R`.
 -/
 
 public section

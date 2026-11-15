@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Every
 
 /-!
-# Every Coxeter element of a classical type has order the Coxeter number
+# Every Coxeter element of types `B`, `C` and `D` has order the Coxeter number
 
 A *Coxeter element* of a base is a product of all the simple reflections, each once, in any order.
 The Dynkin diagrams of types `Bₙ`, `Cₙ` and `Dₙ` are trees whose numbering order is
