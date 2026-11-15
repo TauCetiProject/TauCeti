@@ -203,7 +203,8 @@ private def typeE₆WeightCoeff : Fin 6 → ℤ := ![4, 3, 5, 6, 4, 2]
 def typeE₆MinusculeWeight : Fin 6 → ℚ :=
   fun j ↦ (typeE₆WeightCoeff j : ℚ) / 3
 
-/-- The coordinates of the minuscule weight of `E₆`: `(4, 3, 5, 6, 4, 2) / 3`. -/
+/-- The simple-root coordinates of the minuscule weight `ϖ₁` of type `E₆`:
+`(4, 3, 5, 6, 4, 2) / 3`. -/
 @[simp]
 theorem typeE₆MinusculeWeight_apply (j : Fin 6) :
     typeE₆MinusculeWeight j =
@@ -262,7 +263,7 @@ theorem typeE₆MinusculeWeight_mem_dualCarrier :
 noncomputable def typeE₆MinusculeWeightDual : typeE₆RootLattice.dualCarrier :=
   ⟨typeE₆MinusculeWeight, typeE₆MinusculeWeight_mem_dualCarrier⟩
 
-/-- The minuscule weight of `E₆`, read as an element of the dual lattice, has the same
+/-- The minuscule weight `ϖ₁` of type `E₆`, read as an element of the dual lattice, has the same
 coordinates. -/
 @[simp]
 theorem coe_typeE₆MinusculeWeightDual :
@@ -330,7 +331,8 @@ noncomputable def typeE₆DiscriminantGroupEquiv :
     (fun x ↦ by rw [zmultiples_typeE₆MinusculeWeightClass_eq_top]; exact AddSubgroup.mem_top x)
     natCard_discriminantGroup_typeE₆RootLattice
 
-/-- The generator `1` of `ℤ/3` corresponds to the class of the minuscule weight of `E₆`. -/
+/-- Under `typeE₆DiscriminantGroupEquiv`, `1 : ZMod 3` maps to the class of the minuscule weight
+`ϖ₁` of type `E₆`. -/
 @[simp]
 theorem typeE₆DiscriminantGroupEquiv_apply_one :
     typeE₆DiscriminantGroupEquiv 1 = typeE₆MinusculeWeightClass :=
