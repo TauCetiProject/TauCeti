@@ -263,6 +263,46 @@ theorem edges_toWalk_subset_edgeSet_add (e : G.Ear H) {f : β}
   rw [edgeSet_add, edgeSet_toGraph]
   exact Or.inr hf
 
+/-- Transport an ear along an equality of base graphs without altering its walk data. -/
+protected def copy {H' : Graph α β} (e : G.Ear H) (h : H = H') : G.Ear H' :=
+  match e with
+  | .open hHG p hp hs ht hst hinter hedge =>
+      .open (h ▸ hHG) p hp (h ▸ hs) (h ▸ ht) hst (h ▸ hinter) (h ▸ hedge)
+  | .closed hHG p hp hs hinter hedge =>
+      .closed (h ▸ hHG) p hp (h ▸ hs) (h ▸ hinter) (h ▸ hedge)
+
+@[simp]
+theorem copy_rfl (e : G.Ear H) : e.copy rfl = e := by
+  cases e <;> rfl
+
+@[simp]
+theorem copy_copy {H' H'' : Graph α β} (e : G.Ear H) (h₁ : H = H') (h₂ : H' = H'') :
+    (e.copy h₁).copy h₂ = e.copy (h₁.trans h₂) := by
+  subst h₁ h₂
+  cases e <;> rfl
+
+@[simp]
+theorem kind_copy {H' : Graph α β} (e : G.Ear H) (h : H = H') :
+    (e.copy h).kind = e.kind := by
+  cases e <;> rfl
+
+@[simp]
+theorem toWalk_copy {H' : Graph α β} (e : G.Ear H) (h : H = H') :
+    (e.copy h).toWalk = e.toWalk := by
+  cases e <;> rfl
+
+@[simp]
+theorem toGraph_copy {H' : Graph α β} (e : G.Ear H) (h : H = H') :
+    (e.copy h).toGraph = e.toGraph := by
+  subst h
+  rw [copy_rfl]
+
+@[simp]
+theorem add_copy {H' : Graph α β} (e : G.Ear H) (h : H = H') :
+    (e.copy h).add = e.add := by
+  subst h
+  rw [copy_rfl]
+
 /-- The interiors of an open ear and an oppositely directed path in its base are disjoint. -/
 theorem open_support_tail_disjoint {s t : α} (hHG : H ≤ G) {p : G.Walk s t}
     (hp : p.IsPath) (hinter : ∀ z ∈ p.support, z ≠ s → z ≠ t → z ∉ V(H))
@@ -628,6 +668,46 @@ theorem walkAt_eq (d : G.EarDecomposition H) (i : Fin d.length) :
     d.walkAt i = (d.earAt i).2.toWalk := by
   rw [walkAt]
 
+/-- Two ear decompositions with the same length, initial graph, initial stage witness, and
+displayed ear walks are equal: all intermediate stage graphs and ear records are uniquely
+determined by step-by-step compatible union. -/
+theorem ext_of_walkAt {d₁ d₂ : G.EarDecomposition H} (hlen : d₁.length = d₂.length)
+    (hinit : d₁.initial = d₂.initial) (hstart : HEq d₁.start d₂.start)
+    (hwalk : ∀ i : Fin d₁.length, d₁.walkAt i = d₂.walkAt (Fin.cast hlen i)) : d₁ = d₂ := by
+  have hgraph : ∀ k : Fin (d₁.length + 1),
+      d₁.graphAfter k = d₂.graphAfter (Fin.cast (congrArg (· + 1) hlen) k) := by
+    refine Fin.induction ?_ (fun i ih ↦ ?_)
+    · simpa only [Fin.cast_zero, ← initial_eq_graphAfter] using hinit
+    · have hsucc : Fin.cast (congrArg (· + 1) hlen) i.succ = (Fin.cast hlen i).succ := rfl
+      have hcast : Fin.cast (congrArg (· + 1) hlen) i.castSucc = (Fin.cast hlen i).castSucc := rfl
+      rw [hsucc, d₁.graphAfter_succ i, d₂.graphAfter_succ (Fin.cast hlen i)]
+      refine (Compatible.of_le_le (d₁.earAt i).2.add_le
+        (d₂.earAt (Fin.cast hlen i)).2.add_le).ext ?_ ?_
+      · rw [Ear.vertexSet_add, Ear.vertexSet_add, Ear.vertexSet_toGraph, Ear.vertexSet_toGraph,
+          ← walkAt_eq, ← walkAt_eq, hwalk i, d₁.earAt_fst i, d₂.earAt_fst (Fin.cast hlen i),
+          ← hcast, ih]
+      · rw [Ear.edgeSet_add, Ear.edgeSet_add, Ear.edgeSet_toGraph, Ear.edgeSet_toGraph,
+          ← walkAt_eq, ← walkAt_eq, hwalk i, d₁.earAt_fst i, d₂.earAt_fst (Fin.cast hlen i),
+          ← hcast, ih]
+  refine ext d₁ d₂ hlen hstart ?_
+  obtain ⟨n₁, g₁, s₁, e₁, hfst₁, hsucc₁, hlast₁⟩ := d₁
+  obtain ⟨n₂, g₂, s₂, e₂, hfst₂, hsucc₂, hlast₂⟩ := d₂
+  simp only at hlen hwalk hgraph ⊢
+  subst hlen
+  refine heq_of_eq (funext fun i ↦ ?_)
+  have hw : (e₁ i).2.toWalk = (e₂ i).2.toWalk := by
+    simpa only [walkAt_eq, Fin.cast_refl, id_eq] using hwalk i
+  have hg := hgraph i.castSucc
+  rcases h₁ : e₁ i with ⟨K₁, x₁⟩
+  rcases h₂ : e₂ i with ⟨K₂, x₂⟩
+  have hK : K₁ = K₂ := by
+    simpa only [h₁, h₂, Fin.cast_refl, id_eq] using
+      (hfst₁ i).trans (hg.trans (hfst₂ i).symm)
+  subst hK
+  congr 1
+  rw [h₁, h₂] at hw
+  exact Ear.ext x₁ x₂ hw
+
 /-- An open ear decomposition starts from a cycle and adds only open ears. -/
 def IsOpen (d : G.EarDecomposition H) : Prop :=
   d.start.IsCycle ∧ ∀ i, d.kindAt i = .open
@@ -758,6 +838,14 @@ protected def copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
   earAt_fst := d.earAt_fst
   graphAfter_succ := d.graphAfter_succ
   graphAfter_last := d.graphAfter_last.trans h
+
+@[simp]
+theorem copy_rfl (d : G.EarDecomposition H) : d.copy rfl = d := (rfl)
+
+@[simp]
+theorem copy_copy {H' H'' : Graph α β} (d : G.EarDecomposition H) (h₁ : H = H')
+    (h₂ : H' = H'') :
+    (d.copy h₁).copy h₂ = d.copy (h₁.trans h₂) := (rfl)
 
 @[simp]
 theorem length_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
@@ -1147,6 +1235,16 @@ theorem kindAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
     (d.prefix i).kindAt (Fin.cast (length_prefix d i).symm j) =
       d.kindAt (Fin.castLE (Nat.le_of_lt_succ i.isLt) j) := by
   rw [kindAt_eq, earAt_prefix, ← kindAt_eq]
+
+/-- Prefixing commutes with `copy` reindexing of the final graph. -/
+@[simp]
+theorem prefix_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H')
+    (i : Fin ((d.copy h).length + 1)) :
+    (d.copy h).prefix i =
+      (d.prefix (Fin.cast (congrArg (· + 1) (d.length_copy h)) i)).copy
+        (d.graphAfter_copy h i).symm := by
+  subst h
+  rfl
 
 /-- Every prefix of an open ear decomposition is open. -/
 theorem IsOpen.prefix {d : G.EarDecomposition H} (hd : d.IsOpen)

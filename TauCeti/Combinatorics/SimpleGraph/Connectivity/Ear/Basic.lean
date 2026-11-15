@@ -214,6 +214,12 @@ def copy {H' : G.Subgraph} (e : G.Ear H) (h : H = H') : G.Ear H' :=
 theorem copy_rfl (e : G.Ear H) : e.copy rfl = e := by cases e <;> rfl
 
 @[simp]
+theorem copy_copy {H' H'' : G.Subgraph} (e : G.Ear H) (h₁ : H = H') (h₂ : H' = H'') :
+    (e.copy h₁).copy h₂ = e.copy (h₁.trans h₂) := by
+  subst h₁ h₂
+  cases e <;> rfl
+
+@[simp]
 theorem kind_copy {H' : G.Subgraph} (e : G.Ear H) (h : H = H') : (e.copy h).kind = e.kind := by
   cases e <;> rfl
 
@@ -534,6 +540,11 @@ def copy {H' : G.Subgraph} (d : G.EarDecomposition H) (h : H = H') : G.EarDecomp
 @[simp] theorem copy_rfl (d : G.EarDecomposition H) : d.copy rfl = d := rfl
 
 @[simp]
+theorem copy_copy {H' : G.Subgraph} {H'' : G.Subgraph} (d : G.EarDecomposition H)
+    (h₁ : H = H') (h₂ : H' = H'') :
+    (d.copy h₁).copy h₂ = d.copy (h₁.trans h₂) := (rfl)
+
+@[simp]
 theorem length_copy {H' : G.Subgraph} (d : G.EarDecomposition H) (h : H = H') :
     (d.copy h).length = d.length := rfl
 
@@ -759,6 +770,10 @@ theorem walkAt_prefix (d : G.EarDecomposition H) (k : Fin (d.length + 1)) (j : F
 @[simp]
 theorem kindAt_prefix (d : G.EarDecomposition H) (k : Fin (d.length + 1)) (j : Fin k) :
     (d.prefix k).kindAt j = d.kindAt (j.castLE k.is_le) := (rfl)
+
+@[simp]
+theorem prefix_copy {H' : G.Subgraph} (d : G.EarDecomposition H) (h : H = H')
+    (k : Fin ((d.copy h).length + 1)) : (d.copy h).prefix k = d.prefix k := rfl
 
 theorem IsOpen.prefix {d : G.EarDecomposition H} (hd : d.IsOpen) (k : Fin (d.length + 1)) :
     (d.prefix k).IsOpen :=
