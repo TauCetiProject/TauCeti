@@ -17,7 +17,9 @@ It records compatibility with the structure morphism and proves that the inclusi
 immersion and an affine morphism, with scheme-theoretically dense image. A morphism of total spaces
 over the base is compatible with the chosen generic fibres exactly when it commutes with these
 inclusions.
-When the model is a family of curves, so is its generic fibre.
+When the model is a family of curves, so is its generic fibre, and every point of the total space
+of a model of relative dimension at most `d` (in particular, at most one) has coheight at most
+`d + 1` (resp. at most two).
 -/
 
 public section
@@ -132,6 +134,20 @@ field. -/
 lemma familyOfCurves_toK (M : Model R K C toK) [AlgebraicGeometry.FamilyOfCurves M.toBase] :
     AlgebraicGeometry.FamilyOfCurves toK :=
   .of_isPullback M.isPullback_genericι
+
+/-- Every point of the total space of a model of relative dimension at most `d` over a discrete
+valuation ring has coheight at most `d + 1`. -/
+theorem coheight_le_add_one {d : ℕ} (M : Model R K C toK)
+    [TauCeti.AlgebraicGeometry.RelativeDimensionLE d M.toBase] (x : M.total) :
+    Order.coheight x ≤ d + 1 :=
+  TauCeti.AlgebraicGeometry.coheight_le_add_of_relativeDimensionLE M.toBase x
+
+/-- Every point of the total space of a model of relative dimension at most one over a discrete
+valuation ring has coheight at most two. -/
+theorem coheight_le_two (M : Model R K C toK)
+    [TauCeti.AlgebraicGeometry.RelativeDimensionLE 1 M.toBase] (x : M.total) :
+    Order.coheight x ≤ 2 :=
+  M.coheight_le_add_one x
 
 end Model
 

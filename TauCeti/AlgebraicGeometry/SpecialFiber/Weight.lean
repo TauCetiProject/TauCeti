@@ -38,8 +38,6 @@ That the weight `wᵢ` of the `i`-th component divides the `i`-th row of the int
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.HasFiniteSpecialFiberCohomology`: finiteness over `k` of
-  `H^q(C, 𝒪_C)` for every codimension-one component `C` of the special fibre.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberWeight`: the weight `dim_k H⁰(C, 𝒪_C)` of the closure
   `C` of a point of the special fibre.
 * `AlgebraicGeometry.Scheme.Hom.isField_globalSections_subscheme_closure_singleton`: the global
@@ -69,15 +67,6 @@ universe u
 namespace AlgebraicGeometry.Scheme.Hom
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
-
-/-- Finiteness over the residue field of `R` of the `q`-th cohomology of the structure sheaf on
-every codimension-one component of the special fibre of `toBase : X ⟶ Spec R`. -/
-abbrev HasFiniteSpecialFiberCohomology (q : ℕ) : Prop :=
-  ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
-    letI := subschemeOverResidueField
-      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
-    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
-      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj q)
 
 /-- The **weight** of the closure `C` of a point `x` of the special fibre of a scheme over a local
 ring `R`: the dimension `dim_k H⁰(C, 𝒪_C)` over the residue field `k` of `R`, where `C` carries its

@@ -58,25 +58,20 @@ theorem specialFiberMultiplicity_coe
   exact Int.toNat_of_nonneg (Scheme.ord_germToFunctionField_nonneg _ trivial)
 
 omit [IsLocalRing R] [Ring.DimensionLEOne R] in
-/-- Associated elements of `R` have the same special-fibre multiplicities: their pullbacks to `X`
-differ by a global unit, which has order of vanishing zero everywhere. -/
+/-- Associated elements of `R` have the same special-fibre multiplicities. -/
 theorem specialFiberMultiplicity_eq_of_associated {π₁ π₂ : R} (h : Associated π₁ π₂)
     (x : CodimensionOnePoint X) :
     toBase.specialFiberMultiplicity π₁ x = toBase.specialFiberMultiplicity π₂ x := by
   obtain ⟨u, rfl⟩ := h
-  let φ : R →+* X.functionField :=
-    (X.germToFunctionField ⊤).hom.comp
-      (toBase.appTop.hom.comp (Scheme.ΓSpecIso (.of R)).inv.hom)
-  change (X.ord (φ π₁) x).toNat = (X.ord (φ (π₁ * u)) x).toNat
-  rw [map_mul]
-  rcases eq_or_ne (φ π₁) 0 with h0 | h0
+  simp only [Scheme.Hom.specialFiberMultiplicity, map_mul]
+  rcases eq_or_ne
+      (X.germToFunctionField ⊤ (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π₁))) 0 with h0 | h0
   · rw [h0, zero_mul]
   · have hu : IsUnit (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv u)) :=
-      u.isUnit.map (toBase.appTop.hom.comp (Scheme.ΓSpecIso (.of R)).inv.hom)
-    have hu0 : φ u ≠ 0 := (hu.map (X.germToFunctionField ⊤).hom).ne_zero
-    have htop : Nonempty (⊤ : X.Opens) := ⟨⟨genericPoint X, trivial⟩⟩
-    have hord : X.ord (φ u) x = 0 := X.ord_of_isUnit hu (trivial : (x : X) ∈ (⊤ : X.Opens))
-    rw [X.ord_mul h0 hu0, hord, add_zero]
+      (u.isUnit.map (Scheme.ΓSpecIso (.of R)).inv.hom).map toBase.appTop.hom
+    have hu0 : X.germToFunctionField ⊤ (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv u)) ≠ 0 :=
+      (hu.map (X.germToFunctionField ⊤).hom).ne_zero
+    rw [X.ord_mul h0 hu0, X.ord_of_isUnit hu (trivial : (x : X) ∈ (⊤ : X.Opens)), add_zero]
 
 omit [Ring.DimensionLEOne R] in
 /-- Over a local ring, elements generating the same principal ideal have the same special-fibre

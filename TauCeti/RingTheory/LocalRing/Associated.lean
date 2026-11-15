@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
+import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
 # Associated elements and principal ideals in local rings
@@ -13,17 +14,19 @@ public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 In an integral domain, two elements divide each other—equivalently, generate the same principal
 ideal—if and only if they differ by a unit (`associated_of_dvd_dvd` and
 `Ideal.span_singleton_eq_span_singleton`). In an arbitrary commutative ring with zero divisors
-this fails, since `e` and `-e` need not be associated. In a commutative local ring it holds
-without any domain hypothesis: if `b = a * c` and `a = b * d`, then either `c` is a unit, so `a`
-and `b` are associated, or `c * d` lies in the maximal ideal, so `1 - c * d` is a unit killing
-`a`, forcing `a = b = 0`.
+this can fail, as for `x` and `x * z` in `k[x, z] ⧸ (x * (1 - z ^ 2))`. In any local ring mutual
+divisibility still characterizes `Associated` without a domain or commutativity hypothesis, and in
+a commutative local ring two elements generate the same principal ideal if and only if they are
+associated. In particular, invariants defined from a generator of a principal ideal of a local ring
+(such as its maximal ideal) can be shown independent of the chosen generator by proving invariance
+under multiplication by a unit.
 
 ## Main results
 
-* `TauCeti.IsLocalRing.associated_of_dvd_dvd`: in a commutative local ring, mutual divisibility
-  implies `Associated`.
+* `TauCeti.IsLocalRing.associated_of_dvd_dvd`: in a local ring, mutual divisibility implies
+  `Associated`.
 * `TauCeti.IsLocalRing.associated_iff_dvd_dvd`: characterization of `Associated` by mutual
-  divisibility in a commutative local ring.
+  divisibility in a local ring.
 * `TauCeti.IsLocalRing.span_singleton_eq_span_singleton`: two elements of a commutative local ring
   generate the same principal ideal if and only if they are associated.
 -/
@@ -34,11 +37,12 @@ namespace TauCeti.IsLocalRing
 
 open _root_.IsLocalRing
 
-variable {R : Type*} [CommRing R] [IsLocalRing R]
+section Ring
 
-/-- In a commutative local ring, two elements that divide each other are associated, with no
-domain hypothesis: if `b = a * c` and `a = b * d` with `c` a nonunit, then `1 - c * d` is a unit
-annihilating `a`, so both elements vanish. -/
+variable {R : Type*} [Ring R] [IsLocalRing R]
+
+/-- In a local ring, two elements that divide each other on the right are associated, with no
+domain or commutativity hypothesis. -/
 theorem associated_of_dvd_dvd {a b : R} (hab : a ∣ b) (hba : b ∣ a) : Associated a b := by
   obtain ⟨c, rfl⟩ := hab
   obtain ⟨d, hd⟩ := hba
@@ -51,14 +55,15 @@ theorem associated_of_dvd_dvd {a b : R} (hab : a ∣ b) (hba : b ∣ a) : Associ
     obtain rfl : a = 0 := hu.mul_left_eq_zero.mp ha0
     rw [zero_mul]
 
-/-- In a commutative local ring, two elements are associated if and only if each divides the
-other. -/
+/-- In a local ring, two elements are associated if and only if each divides the other. -/
 theorem associated_iff_dvd_dvd {a b : R} : Associated a b ↔ a ∣ b ∧ b ∣ a :=
   ⟨fun h ↦ ⟨h.dvd, h.symm.dvd⟩, fun ⟨hab, hba⟩ ↦ associated_of_dvd_dvd hab hba⟩
 
+end Ring
+
 /-- In a commutative local ring, two elements generate the same principal ideal if and only if
 they are associated. -/
-theorem span_singleton_eq_span_singleton {a b : R} :
+theorem span_singleton_eq_span_singleton {R : Type*} [CommRing R] [IsLocalRing R] {a b : R} :
     Ideal.span {a} = Ideal.span {b} ↔ Associated a b := by
   rw [le_antisymm_iff, Ideal.span_singleton_le_iff_mem, Ideal.span_singleton_le_iff_mem,
     Ideal.mem_span_singleton, Ideal.mem_span_singleton, and_comm, ← associated_iff_dvd_dvd]

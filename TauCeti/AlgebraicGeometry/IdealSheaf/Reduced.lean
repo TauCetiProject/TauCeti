@@ -111,7 +111,8 @@ instance isReduced_subscheme_nilradical (X : Scheme.{u}) : IsReduced X.nilradica
   infer_instance
 
 /-- Every morphism from a reduced scheme kills the nilradical of its target. -/
-theorem nilradical_le_ker {X Y : Scheme.{u}} [IsReduced Y] (f : Y ⟶ X) : X.nilradical ≤ f.ker :=
+theorem Hom.nilradical_le_ker {X Y : Scheme.{u}} [IsReduced Y] (f : Y ⟶ X) :
+    X.nilradical ≤ f.ker :=
   IdealSheafData.vanishingIdeal_top ▸
     IdealSheafData.vanishingIdeal_le_ker_of_range_subset f (Set.subset_univ _)
 
@@ -121,7 +122,7 @@ induced subscheme `X.nilradical.subscheme`. -/
 noncomputable def Hom.liftNilradicalSubscheme {X Y : Scheme.{u}} [IsReduced Y] (f : Y ⟶ X) :
     Y ⟶ X.nilradical.subscheme :=
   IsClosedImmersion.lift X.nilradical.subschemeι f
-    (by rw [IdealSheafData.ker_subschemeι]; exact nilradical_le_ker f)
+    (by rw [IdealSheafData.ker_subschemeι]; exact f.nilradical_le_ker)
 
 /-- Composing `f.liftNilradicalSubscheme` with the closed immersion `X.nilradical.subschemeι`
 recovers `f`. -/

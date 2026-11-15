@@ -30,9 +30,9 @@ applied to the components.
 
 ## References
 
-* [The Stacks Project, Section 55.8](https://stacks.math.columbia.edu/tag/0C6Y) and
-  [Section 55.9](https://stacks.math.columbia.edu/tag/0C9U), for the numerical type of a regular
-  model.
+* [The Stacks Project, Section 55.3 (Tag 0C6Y)](https://stacks.math.columbia.edu/tag/0C6Y) and
+  [Section 55.9 (Tag 0C5Y)](https://stacks.math.columbia.edu/tag/0C5Y), for the numerical type of a
+  regular model.
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1.
 -/
 
