@@ -13,13 +13,15 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 
 For a zero or probability measure, a function with positive lower Lebesgue integral
 has a zero set of mass strictly less than one. In particular, no zero of the function
-can carry all the mass. No measurability assumption on the function is needed.
+can carry all the mass; for a zero or probability measure on `ℝ≥0` of infinite extended mean,
+the singleton `{0}` has mass strictly less than one. No measurability assumption on the function
+is needed.
 -/
 
 public section
 
 open MeasureTheory
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace MeasureTheory.Measure
 
@@ -43,5 +45,12 @@ theorem measure_singleton_lt_one_of_lintegral_pos {f : α → ℝ≥0∞} {a : �
     (ha : f a = 0) (h : 0 < ∫⁻ u, f u ∂μ) : μ {a} < 1 := by
   refine lt_of_le_of_lt (measure_mono ?_) (μ.measure_compl_support_lt_one_of_lintegral_pos h)
   simpa [Function.support] using ha
+
+/-- A zero or probability measure on `ℝ≥0` of infinite extended mean has mass strictly below one at
+zero. -/
+theorem measure_singleton_zero_lt_one_of_mean_eq_top (μ : Measure ℝ≥0)
+    [IsZeroOrProbabilityMeasure μ] (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂μ) = ∞) : μ {0} < 1 :=
+  μ.measure_singleton_lt_one_of_lintegral_pos (f := fun x => (x : ℝ≥0∞)) (a := 0) (by simp)
+    (hmean ▸ ENNReal.zero_lt_top)
 
 end MeasureTheory.Measure

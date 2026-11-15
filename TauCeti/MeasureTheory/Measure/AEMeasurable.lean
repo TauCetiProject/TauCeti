@@ -20,7 +20,9 @@ measure both pushforwards are zero.
 
 For an ordered target with a greatest element, an a.e. measurable function has a measurable
 majorant agreeing with it almost everywhere. This permits replacement of representatives
-while preserving pointwise upper bounds.
+while preserving pointwise upper bounds. Canonical measurable modifications `hf.mk f` also preserve
+pushforward measures and preimage or predicate-fiber measures without measurability assumptions on
+the target set.
 
 ## Main results
 
@@ -30,6 +32,8 @@ while preserving pointwise upper bounds.
   embedding `f`, with no measurability assumption on `g`.
 * `AEMeasurable.exists_measurable_ge_ae_eq`: a measurable majorant in the same
   a.e. equivalence class.
+* `AEMeasurable.map_mk`, `AEMeasurable.measure_preimage_mk`, `AEMeasurable.measure_setOf_mk`:
+  invariance of pushforwards and preimage or predicate-fiber measures under `AEMeasurable.mk`.
 -/
 
 public section
@@ -56,6 +60,33 @@ theorem exists_measurable_ge_ae_eq {α β : Type*} [MeasurableSpace α] [Measura
       simp [hx, heq]
   · filter_upwards [hf.ae_eq_mk, compl_mem_ae_iff.mpr hsμ] with x hx hxs
     simpa only [Set.piecewise_eq_of_notMem s _ _ hxs] using hx
+
+section Mk
+
+variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α} {f : α → β}
+
+/-- Replacing an almost everywhere measurable function `f` by its measurable modification `hf.mk f`
+preserves its pushforward measure. -/
+@[simp]
+theorem map_mk (hf : AEMeasurable f μ) : μ.map (hf.mk f) = μ.map f :=
+  Measure.map_congr hf.ae_eq_mk.symm
+
+/-- Replacing an almost everywhere measurable function `f` by its measurable modification `hf.mk f`
+preserves the measure of every preimage `f ⁻¹' s`, without requiring measurability of `s`. -/
+@[simp]
+theorem measure_preimage_mk (hf : AEMeasurable f μ) (s : Set β) :
+    μ (hf.mk f ⁻¹' s) = μ (f ⁻¹' s) :=
+  measure_congr (Filter.eventuallyEqSet_iff.2 (hf.ae_eq_mk.symm.mono fun _ hx ↦ by
+    rw [Set.mem_preimage, Set.mem_preimage, hx]))
+
+/-- Replacing an almost everywhere measurable function `f` by its measurable modification `hf.mk f`
+preserves the measure of every predicate fiber `{x | p (f x)}`, without requiring measurability of
+`{y | p y}`. -/
+theorem measure_setOf_mk (hf : AEMeasurable f μ) (p : β → Prop) :
+    μ {x | p (hf.mk f x)} = μ {x | p (f x)} :=
+  hf.measure_preimage_mk {y | p y}
+
+end Mk
 
 end AEMeasurable
 

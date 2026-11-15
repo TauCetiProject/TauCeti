@@ -10,6 +10,9 @@ public import Mathlib.Probability.BorelCantelli
 public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.Probability.Independence.ConvolutionPower
+import TauCeti.MeasureTheory.Measure.AEMeasurable
+import TauCeti.Probability.IdentDistrib
+import TauCeti.Probability.Independence.Basic
 
 /-!
 # Arrival times and counts of an ordinary renewal process
@@ -282,16 +285,9 @@ theorem ae_tendsto_arrival_atTop (hindep : iIndepFun T P)
     ∀ᵐ ω ∂P, Tendsto (fun n ↦ arrival T n ω) atTop atTop := by
   have := hindep.isProbabilityMeasure
   let T' : ℕ → Ω → ℝ≥0 := fun n ↦ (hid n).aemeasurable_fst.mk (T n)
-  have hT'_ae (n : ℕ) : T n =ᵐ[P] T' n := (hid n).aemeasurable_fst.ae_eq_mk
   have hT' (n : ℕ) : Measurable (T' n) := (hid n).aemeasurable_fst.measurable_mk
-  have hindep' : iIndepFun T' P := hindep.congr hT'_ae
-  have hid' (n : ℕ) : IdentDistrib (T' n) (T' 0) P P :=
-    ((hid n).aemeasurable_fst.identDistrib_mk.symm.trans (hid n)).trans
-      (hid 0).aemeasurable_fst.identDistrib_mk
-  have hzero' : P {ω | T' 0 ω = 0} < 1 := by
-    have hset : ({ω | T' 0 ω = 0} : Set Ω) =ᵐ[P] {ω | T 0 ω = 0} :=
-      Filter.Eventually.mono (hT'_ae 0).symm fun ω hω ↦ by simp only [Set.mem_ofPred_eq, hω]
-    rwa [measure_congr hset]
+  have hzero' : P {ω | T' 0 ω = 0} < 1 :=
+    ((hid 0).aemeasurable_fst.measure_setOf_mk (· = 0)).trans_lt hzero
   -- Since `T' 0` is not almost surely zero, some threshold `a > 0` has `0 < P (a ≤ T' 0)`.
   obtain ⟨k, hpos⟩ : ∃ k : ℕ, 0 < P (T' 0 ⁻¹' Ici (1 / (k + 1))) := by
     refine exists_measure_pos_of_not_measure_iUnion_null fun h0 ↦ hzero'.ne ?_
@@ -306,14 +302,15 @@ theorem ae_tendsto_arrival_atTop (hindep : iIndepFun T P)
   have hsm : ∀ n, MeasurableSet (T' n ⁻¹' Ici a) := fun n ↦ hT' n measurableSet_Ici
   have hindep_s : iIndepSet (fun n ↦ T' n ⁻¹' Ici a) P :=
     (iIndepSet_iff_meas_biInter hsm).2 fun S ↦
-      hindep'.meas_biInter fun i _ ↦ ⟨Ici a, measurableSet_Ici, rfl⟩
+      (hindep.aemeasurable_mk fun n ↦ (hid n).aemeasurable_fst).meas_biInter
+        fun i _ ↦ ⟨Ici a, measurableSet_Ici, rfl⟩
   have hsum : ∑' n, P (T' n ⁻¹' Ici a) = ∞ := by
-    rw [tsum_congr fun n ↦ (hid' n).measure_mem_eq measurableSet_Ici]
+    rw [tsum_congr fun n ↦ (hid n).aemeasurable_mk.measure_mem_eq measurableSet_Ici]
     exact ENNReal.tsum_const_eq_top_of_ne_zero hpos.ne'
   have hlimsup : ∀ᵐ ω ∂P, ω ∈ limsup (fun n ↦ T' n ⁻¹' Ici a) atTop :=
     mem_ae_iff.2 <| (prob_compl_eq_zero_iff (MeasurableSet.measurableSet_limsup hsm)).2 <|
       measure_limsup_eq_one hsm hindep_s hsum
-  filter_upwards [hlimsup, arrival_congr_ae hT'_ae] with ω hω hEq
+  filter_upwards [hlimsup, arrival_congr_ae fun n ↦ (hid n).aemeasurable_fst.ae_eq_mk] with ω hω hEq
   exact (tendsto_arrival_atTop_of_frequently_le ha (mem_limsup_iff_frequently_mem.1 hω)).congr
     fun n ↦ (hEq n).symm
 

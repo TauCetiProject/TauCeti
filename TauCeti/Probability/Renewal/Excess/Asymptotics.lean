@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Renewal.InfiniteMean
 public import TauCeti.Probability.Renewal.Excess.Escape
 public import TauCeti.Probability.Renewal.Excess.Limit
+import TauCeti.MeasureTheory.Integral.Lebesgue.Support
 
 /-!
 # Asymptotic behavior of the excess life of a renewal process
@@ -82,70 +83,6 @@ namespace TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → ℝ≥0}
 
-/-! ### Measurable modification of almost-everywhere measurable increments -/
-
-/-- Measurable modification of the increments `T n` supplied by `IdentDistrib (T n) (T 0) P P`. -/
-private noncomputable def mkMeasurable (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (n : ℕ) : Ω → ℝ≥0 :=
-  ((hid n).aemeasurable_fst).mk (T n)
-
-private lemma measurable_mkMeasurable (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (n : ℕ) :
-    Measurable (mkMeasurable hid n) :=
-  ((hid n).aemeasurable_fst).measurable_mk
-
-private lemma ae_eq_mkMeasurable (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (n : ℕ) :
-    T n =ᵐ[P] mkMeasurable hid n :=
-  ((hid n).aemeasurable_fst).ae_eq_mk
-
-private lemma iIndepFun_mkMeasurable (hindep : iIndepFun T P)
-    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) :
-    iIndepFun (mkMeasurable hid) P :=
-  hindep.congr (ae_eq_mkMeasurable hid)
-
-private lemma identDistrib_mkMeasurable (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (n : ℕ) :
-    IdentDistrib (mkMeasurable hid n) (mkMeasurable hid 0) P P :=
-  (((hid n).aemeasurable_fst).identDistrib_mk.symm.trans (hid n)).trans
-    ((hid 0).aemeasurable_fst).identDistrib_mk
-
-private lemma map_mkMeasurable_zero (hid : ∀ n, IdentDistrib (T n) (T 0) P P) :
-    P.map (mkMeasurable hid 0) = P.map (T 0) :=
-  Measure.map_congr (ae_eq_mkMeasurable hid 0).symm
-
-private lemma measure_mkMeasurable_zero_eq_zero (hid : ∀ n, IdentDistrib (T n) (T 0) P P) :
-    P {ω | mkMeasurable hid 0 ω = 0} = (P.map (T 0)) {0} := by
-  rw [← map_mkMeasurable_zero hid,
-    Measure.map_apply (measurable_mkMeasurable hid 0) (measurableSet_singleton 0)]
-  rfl
-
-private lemma measure_mkMeasurable_zero_lt_one (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (hF : (P.map (T 0)) {0} < 1) :
-    P {ω | mkMeasurable hid 0 ω = 0} < 1 := by
-  rwa [measure_mkMeasurable_zero_eq_zero hid]
-
-private lemma measureReal_renewalExcess_le_mkMeasurable (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (t x : ℝ≥0) :
-    P.real {ω | renewalExcess T t ω ≤ x} =
-      P.real {ω | renewalExcess (mkMeasurable hid) t ω ≤ x} := by
-  refine measureReal_congr (eventuallyEqSet_iff.2 ?_)
-  filter_upwards [renewalExcess_congr_ae (ae_eq_mkMeasurable hid)] with ω hω
-  simp [hω t]
-
-private lemma measureReal_lt_renewalExcess_mkMeasurable (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (t x : ℝ≥0) :
-    P.real {ω | x < renewalExcess T t ω} =
-      P.real {ω | x < renewalExcess (mkMeasurable hid) t ω} := by
-  refine measureReal_congr (eventuallyEqSet_iff.2 ?_)
-  filter_upwards [renewalExcess_congr_ae (ae_eq_mkMeasurable hid)] with ω hω
-  simp [hω t]
-
-private lemma map_coe_renewalExcess_mkMeasurable (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (t : ℝ≥0) :
-    P.map (fun ω ↦ (renewalExcess T t ω : ℝ)) =
-      P.map (fun ω ↦ (renewalExcess (mkMeasurable hid) t ω : ℝ)) := by
-  refine Measure.map_congr ?_
-  filter_upwards [renewalExcess_congr_ae (ae_eq_mkMeasurable hid)] with ω hω
-  simp [hω t]
-
 /-! ### Infinite-mean excess escape -/
 
 /-- **Infinite-mean excess escape.** For independent, identically distributed nonnegative increments
@@ -156,15 +93,11 @@ theorem tendsto_measureReal_renewalExcess_le_of_mean_eq_top
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂P.map (T 0)) = ∞) (x : ℝ≥0) :
     Tendsto (fun t ↦ P.real {ω | renewalExcess T t ω ≤ x}) atTop (𝓝 0) := by
   have := hindep.isProbabilityMeasure
-  have hmean' : (∫⁻ u, (u : ℝ≥0∞) ∂P.map (mkMeasurable hid 0)) = ∞ := by
-    rwa [map_mkMeasurable_zero hid]
-  simp_rw [measureReal_renewalExcess_le_mkMeasurable hid _ x]
-  exact tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub
-    (measurable_mkMeasurable hid) (iIndepFun_mkMeasurable hindep hid)
-    (identDistrib_mkMeasurable hid)
-    (measure_mkMeasurable_zero_lt_one hid
-      ((P.map (T 0)).measure_singleton_zero_lt_one_of_mean_eq_top hmean)) x
-    ((P.map (mkMeasurable hid 0)).tendsto_renewalFunction_add_sub_of_mean_eq_top hmean' x)
+  have hzero : P {ω | T 0 ω = 0} < 1 := by
+    simpa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst (measurableSet_singleton 0),
+      Set.preimage] using (P.map (T 0)).measure_singleton_zero_lt_one_of_mean_eq_top hmean
+  exact tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub hindep hid hzero x
+    ((P.map (T 0)).tendsto_renewalFunction_add_sub_of_mean_eq_top hmean x)
 
 /-- **Infinite-mean excess escape (`ℝ≥0∞` form).** When the interarrival law has infinite extended
 mean, lattice or nonlattice, `P {E t ≤ x} → 0` in `ℝ≥0∞` as `t → ∞` for every `x : ℝ≥0`. -/
@@ -210,16 +143,11 @@ theorem tendsto_measureReal_lt_renewalExcess
     Tendsto (fun t ↦ P.real {ω | x < renewalExcess T t ω}) atTop
       (𝓝 ((P.map (T 0)).equilibriumExcessLaw.real (Ioi (x : ℝ)))) := by
   have := hindep.isProbabilityMeasure
-  have hmap := map_mkMeasurable_zero hid
-  have hNL' : ¬ (P.map (mkMeasurable hid 0)).IsLattice := by rwa [hmap]
-  simp_rw [measureReal_lt_renewalExcess_mkMeasurable hid _ x, ← hmap]
-  exact tendsto_measureReal_lt_renewalExcess_of_tendsto_measureReal_Ioc
-    (measurable_mkMeasurable hid) (iIndepFun_mkMeasurable hindep hid)
-    (identDistrib_mkMeasurable hid)
-    (measure_mkMeasurable_zero_lt_one hid
-      (Measure.measure_singleton_zero_lt_one_of_not_isLattice hNL))
-    (by rwa [hmap])
-    ((P.map (mkMeasurable hid 0)).tendsto_renewalMeasure_real_Ioc hNL') x
+  have hzero : P {ω | T 0 ω = 0} < 1 := by
+    simpa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst (measurableSet_singleton 0),
+      Set.preimage] using Measure.measure_singleton_zero_lt_one_of_not_isLattice hNL
+  exact tendsto_measureReal_lt_renewalExcess_of_tendsto_measureReal_Ioc hindep hid hzero hmean
+    ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) x
 
 /-- **Asymptotic excess sublevel probability for nonlattice laws.** For i.i.d. nonnegative
 increments whose common law `F = P.map (T 0)` is nonlattice, `P(E t ≤ x)` converges as `t → ∞` to
@@ -237,16 +165,11 @@ theorem tendsto_measureReal_renewalExcess_le
       Pi.zero_apply]
     exact tendsto_measureReal_renewalExcess_le_of_mean_eq_top hindep hid hmean x
   · have := hindep.isProbabilityMeasure
-    have hmap := map_mkMeasurable_zero hid
-    have hNL' : ¬ (P.map (mkMeasurable hid 0)).IsLattice := by rwa [hmap]
-    simp_rw [measureReal_renewalExcess_le_mkMeasurable hid _ x, ← hmap]
-    exact tendsto_measureReal_renewalExcess_le_of_tendsto_measureReal_Ioc
-      (measurable_mkMeasurable hid) (iIndepFun_mkMeasurable hindep hid)
-      (identDistrib_mkMeasurable hid)
-      (measure_mkMeasurable_zero_lt_one hid
-        (Measure.measure_singleton_zero_lt_one_of_not_isLattice hNL))
-      (by rwa [hmap])
-      ((P.map (mkMeasurable hid 0)).tendsto_renewalMeasure_real_Ioc hNL') x
+    have hzero : P {ω | T 0 ω = 0} < 1 := by
+      simpa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst (measurableSet_singleton 0),
+        Set.preimage] using Measure.measure_singleton_zero_lt_one_of_not_isLattice hNL
+    exact tendsto_measureReal_renewalExcess_le_of_tendsto_measureReal_Ioc hindep hid hzero hmean
+      ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) x
 
 /-- **Asymptotic excess sublevel probability (`ℝ≥0∞` form).** For i.i.d. nonlattice increments,
 `P {E t ≤ x} → (P.map (T 0)).equilibriumExcessLaw (Iic x)` in `ℝ≥0∞` as `t → ∞`, for both finite
@@ -303,16 +226,11 @@ theorem tendsto_cdf_renewalExcess
     Tendsto (fun t ↦ cdf (P.map (fun ω ↦ (renewalExcess T t ω : ℝ))) x) atTop
       (𝓝 (cdf (P.map (T 0)).equilibriumExcessLaw x)) := by
   have := hindep.isProbabilityMeasure
-  have hmap := map_mkMeasurable_zero hid
-  have hNL' : ¬ (P.map (mkMeasurable hid 0)).IsLattice := by rwa [hmap]
-  simp_rw [map_coe_renewalExcess_mkMeasurable hid, ← hmap]
-  exact tendsto_cdf_renewalExcess_of_tendsto_measureReal_Ioc
-    (measurable_mkMeasurable hid) (iIndepFun_mkMeasurable hindep hid)
-    (identDistrib_mkMeasurable hid)
-    (measure_mkMeasurable_zero_lt_one hid
-      (Measure.measure_singleton_zero_lt_one_of_not_isLattice hNL))
-    (by rwa [hmap])
-    ((P.map (mkMeasurable hid 0)).tendsto_renewalMeasure_real_Ioc hNL') x
+  have hzero : P {ω | T 0 ω = 0} < 1 := by
+    simpa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst (measurableSet_singleton 0),
+      Set.preimage] using Measure.measure_singleton_zero_lt_one_of_not_isLattice hNL
+  exact tendsto_cdf_renewalExcess_of_tendsto_measureReal_Ioc hindep hid hzero hmean
+    ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) x
 
 /-- **Convergence in distribution of the excess life.** For i.i.d. nonlattice increments of finite
 extended mean, the real-valued excess `(renewalExcess T t · : ℝ)` converges in distribution along

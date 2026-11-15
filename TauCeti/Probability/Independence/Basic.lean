@@ -8,15 +8,37 @@ module
 public import Mathlib.Probability.Independence.Basic
 
 /-!
-# Independence of almost surely constant coordinates
+# Basic lemmas on independence of random variables
 
 A dependent family of random variables is independent if all but at most one coordinate are
-almost surely constant. No measurability assumption or restriction on the index type is needed.
+almost surely constant; no measurability assumption or restriction on the index type is needed.
+Independent pairs and families also remain independent when replaced coordinatewise by canonical
+measurable modifications `AEMeasurable.mk`.
 -/
 
 public section
 
 open MeasureTheory ProbabilityTheory
+
+namespace ProbabilityTheory
+
+/-- Replacing two independent almost everywhere measurable random variables by their canonical
+measurable modifications preserves independence. -/
+theorem IndepFun.aemeasurable_mk {Ω β γ : Type*} [MeasurableSpace Ω] [MeasurableSpace β]
+    [MeasurableSpace γ] {μ : Measure Ω} {f : Ω → β} {g : Ω → γ}
+    (h : IndepFun f g μ) (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) :
+    IndepFun (hf.mk f) (hg.mk g) μ :=
+  h.congr hf.ae_eq_mk hg.ae_eq_mk
+
+/-- Replacing an independent family of almost everywhere measurable random variables coordinatewise
+by their canonical measurable modifications preserves independence. -/
+theorem iIndepFun.aemeasurable_mk {Ω ι : Type*} {β : ι → Type*} [MeasurableSpace Ω]
+    [∀ i, MeasurableSpace (β i)] {μ : Measure Ω} {X : ∀ i, Ω → β i}
+    (h : iIndepFun X μ) (hX : ∀ i, AEMeasurable (X i) μ) :
+    iIndepFun (fun i ↦ (hX i).mk (X i)) μ :=
+  h.congr fun i ↦ (hX i).ae_eq_mk
+
+end ProbabilityTheory
 
 namespace TauCeti.Probability
 

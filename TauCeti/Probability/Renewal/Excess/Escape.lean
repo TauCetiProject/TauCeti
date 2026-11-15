@@ -39,20 +39,20 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → 
 the probability of an excess at most `x` tends to zero. No finite-mean assumption
 is needed, and genuine zero-time arrivals are allowed. -/
 theorem tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub
-    (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+    (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
     (hzero : P {ω | T 0 ω = 0} < 1) (x : ℝ≥0)
     (hlim : Tendsto (fun t ↦ ((P.map (T 0)).renewalFunction (t + x)).toReal -
       ((P.map (T 0)).renewalFunction t).toReal) atTop (𝓝 0)) :
     Tendsto (fun t ↦ P.real {ω | renewalExcess T t ω ≤ x}) atTop (𝓝 0) :=
   squeeze_zero (fun _ ↦ measureReal_nonneg)
-    (fun t ↦ measureReal_renewalExcess_le_le_renewalFunction_sub hT hindep hid hzero t x) hlim
+    (fun t ↦ measureReal_renewalExcess_le_le_renewalFunction_sub hindep hid hzero t x) hlim
 
 /-- Vanishing successive renewal increments on one positive grid imply excess escape
 at all real observation times, for every bounded excess threshold. The increment
 hypothesis is exactly the zero-rate lattice Blackwell limit. -/
 theorem tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub_lattice
-    (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+    (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
     (hzero : P {ω | T 0 ω = 0} < 1) {a : ℝ≥0} (ha : 0 < a)
     (hlim : Tendsto (fun n : ℕ ↦ ((P.map (T 0)).renewalFunction (a * (n + 1))).toReal -
@@ -60,9 +60,9 @@ theorem tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub_latt
     Tendsto (fun t ↦ P.real {ω | renewalExcess T t ω ≤ x}) atTop (𝓝 0) := by
   have := hindep.isProbabilityMeasure
   have hF : (P.map (T 0)) {0} < 1 := by
-    rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)]
+    rwa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst (measurableSet_singleton 0)]
   exact tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub
-    hT hindep hid hzero x
+    hindep hid hzero x
     (((P.map (T 0)).monotone_toReal_renewalFunction hF).tendsto_sub_add_of_tendsto_sub_lattice
       ha hlim x)
 

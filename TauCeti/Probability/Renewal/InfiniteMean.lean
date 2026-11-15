@@ -35,8 +35,6 @@ Infinite mean automatically rules out full concentration at zero
 
 ## Main results
 
-* `MeasureTheory.Measure.measure_singleton_zero_lt_one_of_mean_eq_top`: a zero or probability
-  measure on `ℝ≥0` of infinite extended mean satisfies `F {0} < 1`.
 * `MeasureTheory.Measure.tendsto_renewalFunction_add_sub_of_mean_eq_top`: unconditional vanishing of
   fixed-window renewal-function increments for infinite-mean laws.
 * `MeasureTheory.Measure.tendsto_renewalMeasure_real_Ioc_of_mean_eq_top`,
@@ -62,13 +60,6 @@ open scoped ENNReal NNReal Topology
 namespace MeasureTheory.Measure
 
 open TauCeti.Probability
-
-/-- A zero or probability measure on `ℝ≥0` of infinite extended mean has mass strictly below one at
-zero. -/
-theorem measure_singleton_zero_lt_one_of_mean_eq_top (F : Measure ℝ≥0)
-    [IsZeroOrProbabilityMeasure F] (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞) : F {0} < 1 :=
-  F.measure_singleton_lt_one_of_lintegral_pos (f := fun x => (x : ℝ≥0∞)) (a := 0) (by simp)
-    (hmean ▸ ENNReal.zero_lt_top)
 
 variable (F : Measure ℝ≥0) [IsProbabilityMeasure F]
 
