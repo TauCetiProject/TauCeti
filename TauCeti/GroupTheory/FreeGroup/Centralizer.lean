@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.FreeGroup.Commuting
 public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import TauCeti.Algebra.Group.Subgroup.Centralizer
+import TauCeti.Algebra.Group.Torsion
 import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
 
 /-!
@@ -19,16 +20,16 @@ nontrivial central element is commutative, and, since subgroups of free groups a
 (Nielsen–Schreier), commutation is transitive on the nontrivial elements of a free group. The
 centralizer of a nontrivial element of a free group is therefore abelian, hence cyclic.
 
+These are the facts from which maximal roots of elements of a free group are built, in
+`TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic`. Free groups are also shown to have unique
+roots for a fixed nonzero exponent, transporting Mathlib's instance for `FreeGroup α` along a
+free basis.
+
 Write the reduced word of `u ≠ 1` as `c ++ v ++ c⁻¹` with `v` cyclically reduced; the reduced
 word of `u ^ m` is then `c ++ vᵐ ++ c⁻¹` for `m ≥ 1`. If the reduced words of large powers of `u`
 and of `u'` agree on a long enough prefix, reading the common prefix past both conjugators shows
 `u ^ |v'| = u' ^ |v|`; since commutation is transitive on nontrivial elements, `u` and `u'`
 commute.
-
-These are the facts from which maximal roots of elements of a free group are built, in
-`TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic`. Free groups are also shown to have unique
-roots for a fixed nonzero exponent, transporting Mathlib's instance for `FreeGroup α` along a
-free basis.
 
 ## Main results
 
@@ -40,6 +41,7 @@ free basis.
   is trivial.
 * `FreeGroup.center_eq_bot_of_nontrivial`: the centre of a free group on at least two generators
   is trivial.
+* `FreeGroup.commute_of_zpow_of_zpow_iff`: nonzero powers of distinct generators do not commute.
 * `IsFreeGroup.commute_of_commute`: in a free group, two elements commuting with a common
   nontrivial element commute with each other.
 * `IsFreeGroup.isCyclic_centralizer`: the centralizer of a nontrivial element of a free group is
@@ -162,7 +164,19 @@ end IsFreeGroup
 
 namespace FreeGroup
 
-variable {α : Type*} [DecidableEq α]
+variable {α : Type*}
+
+/-- Nonzero powers of distinct generators of a free group do not commute: `of a ^ m` and
+`of b ^ n` commute only when `m = 0` or `n = 0`. -/
+@[simp]
+theorem commute_of_zpow_of_zpow_iff {a b : α} (hab : a ≠ b) {m n : ℤ} :
+    Commute (of a ^ m) (of b ^ n) ↔ m = 0 ∨ n = 0 := by
+  refine ⟨fun h => ?_, by rintro (rfl | rfl) <;> simp⟩
+  by_contra! hmn
+  rw [Commute.zpow_left_iff hmn.1, Commute.zpow_right_iff hmn.2] at h
+  exact hab (eq_of_commute_of_of h)
+
+variable [DecidableEq α]
 
 open reduceCyclically
 

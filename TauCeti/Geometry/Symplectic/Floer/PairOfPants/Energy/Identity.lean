@@ -518,11 +518,7 @@ private theorem integral_Ico_eq_hamiltonianAction (ω : SymplecticForm V)
     simpa [stdComplexLineImag_eq] using HasDerivAt.prodMk (hasDerivAt_const t s) (hasDerivAt_id t)
   have hderiv (t : ℝ) : deriv x t = fderiv ℝ (u ∘ endChart q) (s, t) stdComplexLineImag :=
     (((huq t).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt t (hline t)).deriv
-  have hper : Periodic x 1 := fun t ↦ by
-    have h := q.periodic_cylindricalEndLift s t
-    simp only [x, endChart_apply, Complex.equivRealProdCLM_symm_apply]
-    push_cast at h ⊢
-    rw [h]
+  have hper : Periodic x 1 := fun t ↦ by simp only [x, endChart_add_one]
   -- The integrand is continuous and periodic, so its integral over any period is the same.
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦
     ((huq t).continuousAt).comp (continuous_const.prodMk continuous_id).continuousAt
@@ -1161,10 +1157,7 @@ private theorem integral_Ico_eq_intervalIntegral (hH : ∀ q, Periodic (H q) 1) 
     ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), H q t (u (endChart q (s, t))) =
       ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t))) := by
   have hper : Periodic (fun t ↦ H q t (u (endChart q (s, t)))) 1 := fun t ↦ by
-    have h := q.periodic_cylindricalEndLift s t
-    simp only [endChart_apply, Complex.equivRealProdCLM_symm_apply]
-    push_cast at h ⊢
-    rw [h, hH q t]
+    simp only [endChart_add_one, hH q t]
   have h := hper.intervalIntegral_add_eq (-1 / 2) 0
   rw [zero_add, show (-1 / 2 : ℝ) + 1 = 1 / 2 by norm_num,
     intervalIntegral.integral_of_le (by norm_num)] at h
