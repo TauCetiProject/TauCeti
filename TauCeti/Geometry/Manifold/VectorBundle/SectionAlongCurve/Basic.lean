@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Coordinates of vector-bundle sections along curves
@@ -117,14 +118,8 @@ trivialization whose base set contains the current base point, also within a par
 theorem continuousWithinAt_sectionCoord {s : Set 𝕜} {x : M} {t : 𝕜}
     (h : ContinuousWithinAt (fun r ↦ TotalSpace.mk' F (γ r) (W r)) s t)
     (hx : γ t ∈ (trivializationAt F V x).baseSet) :
-    ContinuousWithinAt (sectionCoord (F := F) γ W x) s t := by
-  let e := trivializationAt F V x
-  have hγ := ((FiberBundle.continuousWithinAt_totalSpace F _).1 h).1
-  have he := ((e.continuousAt ((e.coe_mem_source).2 hx)).comp_continuousWithinAt
-    (f := fun r ↦ TotalSpace.mk' F (γ r) (W r)) h).snd
-  refine he.congr_of_eventuallyEq ?_ (e.continuousLinearMapAt_apply_of_mem 𝕜 hx (W t))
-  filter_upwards [hγ.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx)] with r hr
-  exact e.continuousLinearMapAt_apply_of_mem 𝕜 hr (W r)
+    ContinuousWithinAt (sectionCoord (F := F) γ W x) s t :=
+  (((trivializationAt F V x).tendsto_mk_nhds_mk_iff 𝕜 hx).1 h.tendsto).2
 
 /-- A continuous section along a curve has continuous coordinates in any canonical
 trivialization whose base set contains the current base point. -/
