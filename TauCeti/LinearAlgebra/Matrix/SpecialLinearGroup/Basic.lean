@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.GroupTheory.Index.Basic
 import Mathlib.Tactic.LinearCombination
@@ -55,7 +56,8 @@ proof is independent of the source's.
   the kernel of reduction modulo `N` iff it is congruent to the identity modulo `N` entrywise.
 * `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
   along an injective ring hom, base change is injective and its range is described entrywise.
-* `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
+* `Matrix.SpecialLinearGroup.mapGL_neg_one` and `Matrix.SpecialLinearGroup.mapGL_neg`:
+  `mapGL S (-1) = -1` and `mapGL S (-A) = -mapGL S A`.
 * `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: right multiplication of row vectors
   by `g` is inverted by `g⁻¹`.
 * `Matrix.SpecialLinearGroup.sum_comp_vecMul`: over a finite ring, this right multiplication
@@ -74,11 +76,15 @@ proof is independent of the source's.
   ring, indexed by a nonempty type, is nonzero.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
-  nonassociative ring.
-* `Matrix.SpecialLinearGroup.coe_mapGL_int`: the matrix of `mapGL S` on `SL(n, ℤ)` is the
-  entrywise integer cast.
-* `Matrix.SpecialLinearGroup.coe_mapGL_fin_two`: the entrywise matrix of `mapGL S` on `SL₂(R)`,
-  with `coe_mapGL_int_rat_fin_two` its `ℤ`-to-`ℚ` specialization.
+  nonassociative ring and `mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero` its upper-triangular
+  diagonal specialization.
+* `Matrix.SpecialLinearGroup.coe_mapGL_int` and `Matrix.SpecialLinearGroup.mapGL_map_intCast`:
+  the matrix of `mapGL S` on `SL(n, ℤ)` is the entrywise integer cast, and `mapGL S` absorbs
+  base change from `ℤ`.
+* `Matrix.SpecialLinearGroup.coe_mapGL_fin_two` and
+  `Matrix.SpecialLinearGroup.mapGL_transvection_eq_upperRightHom`: the entrywise matrix of
+  `mapGL S` on `SL₂(R)` (with `coe_mapGL_int_rat_fin_two` its `ℤ`-to-`ℚ` specialization) and its
+  action on upper-right transvections.
 * `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(c, d)` of an
   `SL₂(R)` matrix over a commutative ring gives the Bézout relation `a d - b c = 1` for its top
   row `(a, b)`.
@@ -247,12 +253,31 @@ lemma intCast_fin_two_mul_sub_mul_eq_one {R : Type*} [NonAssocRing R] (g : SL(2,
     ((g 0 0 : ℤ) : R) * (g 1 1 : ℤ) - (g 0 1 : ℤ) * (g 1 0 : ℤ) = 1 := by
   exact_mod_cast congrArg (Int.cast : ℤ → R) g.fin_two_mul_sub_mul_eq_one
 
+/-- For an upper-triangular matrix `g ∈ SL₂(R)`, the product of the diagonal entries is `1`. -/
+lemma mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero {R : Type*} [CommRing R] {g : SL(2, R)}
+    (hg : g 1 0 = 0) : g 0 0 * g 1 1 = 1 := by
+  simpa only [hg, mul_zero, sub_zero] using fin_two_mul_sub_mul_eq_one g
+
+/-- For an upper-triangular matrix `g ∈ SL₂(R)` and any ring homomorphism `f : R →+* S`, the images
+of the diagonal entries multiply to `1`. -/
+lemma map_mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero {R S : Type*} [CommRing R]
+    [Semiring S] (f : R →+* S) {g : SL(2, R)} (hg : g 1 0 = 0) :
+    f (g 0 0) * f (g 1 1) = 1 := by
+  rw [← map_mul, mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero hg, map_one]
+
 /-- The matrix of `mapGL S σ` for an integral `σ` is its entrywise integer cast: this is
 `mapGL_coe_matrix` with `algebraMap ℤ S` written as `Int.cast`. -/
 lemma coe_mapGL_int {n : Type*} [Fintype n] [DecidableEq n] {S : Type*} [CommRing S]
     (σ : SpecialLinearGroup n ℤ) :
     (↑(mapGL S σ) : Matrix n n S) = (σ : Matrix n n ℤ).map (Int.cast : ℤ → S) := by
   simp [mapGL_coe_matrix, algebraMap_int_eq, RingHom.mapMatrix_apply]
+
+/-- `mapGL S` absorbs entrywise base change from `ℤ` to an intermediate coefficient ring `R`. -/
+lemma mapGL_map_intCast {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
+    [Algebra R S] (g : SpecialLinearGroup n ℤ) :
+    mapGL S (map (Int.castRingHom R) g) = mapGL S g := by
+  ext i j
+  simp [mapGL_coe_matrix]
 
 /-- The matrix of `mapGL S σ`, written entrywise for `σ ∈ SL₂(R)`. -/
 lemma coe_mapGL_fin_two {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
@@ -263,6 +288,18 @@ lemma coe_mapGL_fin_two {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
   rw [mapGL_coe_matrix]
   ext i j
   fin_cases i <;> fin_cases j <;> simp
+
+/-- Under `mapGL S`, an upper-right transvection in `SL₂(R)` becomes `upperRightHom` at the
+mapped entry. -/
+lemma mapGL_transvection_eq_upperRightHom {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    (w : R) :
+    mapGL S (transvection (zero_ne_one' (Fin 2)) w) =
+      GeneralLinearGroup.upperRightHom (algebraMap R S w) := by
+  apply GeneralLinearGroup.ext
+  intro i j
+  rw [coe_mapGL_fin_two]
+  fin_cases i <;> fin_cases j <;>
+    simp [transvection, Matrix.transvection, GeneralLinearGroup.upperRightHom]
 
 /-- The rational matrix of `mapGL ℚ σ`, written entrywise for `σ ∈ SL₂(ℤ)`. -/
 lemma coe_mapGL_int_rat_fin_two (σ : SL(2, ℤ)) :
@@ -315,6 +352,13 @@ lemma mapGL_neg_one {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [Co
     mapGL S (-1 : SpecialLinearGroup n R) = -1 := by
   ext i j
   rcases eq_or_ne i j with h | h <;> simp [mapGL, h]
+
+/-- `mapGL S` commutes with negation on `SL(n, R)` whenever `n` has even cardinality. -/
+lemma mapGL_neg {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
+    [Algebra R S] [Fact (Even (Fintype.card n))] (A : SpecialLinearGroup n R) :
+    mapGL S (-A) = -mapGL S A := by
+  have hA : (-A : SpecialLinearGroup n R) = -1 * A := by simp
+  rw [hA, map_mul, mapGL_neg_one, neg_one_mul]
 
 variable {R : Type*} [CommRing R]
 
@@ -370,7 +414,7 @@ theorem card_center_le_two [NoZeroDivisors R] :
 /-- `-I ≠ I` in `SL₂` is exactly `(2 : R) ≠ 0`, read off the `(0,0)` entry. Stated as a helper so
 the `@[simp]` lemmas below can take `[NeZero (2 : R)]`, which simp's discharger can settle by
 typeclass synthesis, rather than an explicit hypothesis, which it cannot. -/
-private theorem neg_one_ne_one_of_neZero_two [NeZero (2 : R)] :
+theorem neg_one_ne_one_of_neZero_two [NeZero (2 : R)] :
     (-1 : SpecialLinearGroup (Fin 2) R) ≠ 1 := fun h ↦ by
   have h00 := congrArg (fun g : SpecialLinearGroup (Fin 2) R ↦
     (g : Matrix (Fin 2) (Fin 2) R) 0 0) h

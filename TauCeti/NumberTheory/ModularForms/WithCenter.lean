@@ -32,11 +32,72 @@ disjoint. This needs no more about `Γ` than the membership description above, s
   element of `Γ`.
 * `Subgroup.inf_withCenter_eq_of_le`: for `Γ' ≤ Γ` with `-I ∈ Γ → -I ∈ Γ'`, the part of
   `Γ'·{±I}` inside `Γ` is `Γ'`.
+* `Subgroup.index_eq_index_withCenter_of_neg_one_mem` and
+  `Subgroup.relIndex_withCenter_eq_one_of_neg_one_mem`: when `-I ∈ Γ`, adjoining `±I` leaves the
+  index unchanged and `[±Γ : Γ] = 1`.
+* `Subgroup.relIndex_withCenter_eq_one_or_two`, `Subgroup.relIndex_withCenter_pos`, and
+  `Subgroup.relIndex_withCenter_ne_zero`: for any `Γ ≤ SL₂(R)`, `[±Γ : Γ] ∈ {1, 2}` and is
+  nonzero.
+* `Subgroup.relIndex_withCenter_mul_card_center_subgroupOf_eq_two`: when `(2 : R) ≠ 0`,
+  `[±Γ : Γ] · |{±I} ∩ Γ| = 2`.
 * `ModularGroup.pairwise_disjoint_smul_fdo_out_withCenter`: the translates of `𝒟ᵒ` indexed by
   the cosets of `Γ·{±I}` are pairwise disjoint.
 -/
 
 public section
+
+namespace Subgroup
+
+open Matrix
+
+open scoped MatrixGroups
+
+section SpecialLinearTwo
+
+variable {R : Type*} [CommRing R] [NoZeroDivisors R]
+
+/-- When `-I ∈ Γ`, adjoining `±I` leaves the index of `Γ ≤ SL₂(R)` unchanged. -/
+theorem index_eq_index_withCenter_of_neg_one_mem {Γ : Subgroup (SpecialLinearGroup (Fin 2) R)}
+    (h : (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ) :
+    Γ.index = Γ.withCenter.index :=
+  index_eq_index_withCenter (Matrix.SpecialLinearGroup.center_le_iff_neg_one_mem.mpr h)
+
+/-- When `-I ∈ Γ`, `Γ ≤ SL₂(R)` has relative index `1` inside `±Γ`. -/
+theorem relIndex_withCenter_eq_one_of_neg_one_mem {Γ : Subgroup (SpecialLinearGroup (Fin 2) R)}
+    (h : (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ) :
+    Γ.relIndex Γ.withCenter = 1 :=
+  relIndex_withCenter_eq_one (Matrix.SpecialLinearGroup.center_le_iff_neg_one_mem.mpr h)
+
+/-- The relative index `[±Γ : Γ]` of any subgroup `Γ ≤ SL₂(R)` is either `1` or `2`. -/
+theorem relIndex_withCenter_eq_one_or_two (Γ : Subgroup (SpecialLinearGroup (Fin 2) R)) :
+    Γ.relIndex Γ.withCenter = 1 ∨ Γ.relIndex Γ.withCenter = 2 := by
+  by_cases h : (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ
+  · exact Or.inl (relIndex_withCenter_eq_one_of_neg_one_mem h)
+  · exact Or.inr (Matrix.SpecialLinearGroup.relIndex_withCenter_eq_two_of_neg_one_notMem h)
+
+/-- The relative index `[±Γ : Γ]` of any subgroup `Γ ≤ SL₂(R)` is positive. -/
+theorem relIndex_withCenter_pos (Γ : Subgroup (SpecialLinearGroup (Fin 2) R)) :
+    0 < Γ.relIndex Γ.withCenter := by
+  rcases Γ.relIndex_withCenter_eq_one_or_two with h | h <;> omega
+
+/-- The relative index `[±Γ : Γ]` of any subgroup `Γ ≤ SL₂(R)` is nonzero. -/
+theorem relIndex_withCenter_ne_zero (Γ : Subgroup (SpecialLinearGroup (Fin 2) R)) :
+    Γ.relIndex Γ.withCenter ≠ 0 :=
+  Γ.relIndex_withCenter_pos.ne'
+
+/-- **Product of the central index and central stabiliser factor in `SL₂(R)`**: when `(2 : R) ≠ 0`,
+`[±Γ : Γ] · |{±I} ∩ Γ| = 2`. -/
+theorem relIndex_withCenter_mul_card_center_subgroupOf_eq_two [NeZero (2 : R)]
+    (Γ : Subgroup (SpecialLinearGroup (Fin 2) R)) :
+    Γ.relIndex Γ.withCenter *
+        Nat.card ((Subgroup.center (SpecialLinearGroup (Fin 2) R)).subgroupOf Γ) = 2 := by
+  rw [Γ.relIndex_withCenter_mul_card_center_subgroupOf,
+    Matrix.SpecialLinearGroup.card_center_eq_two
+      Matrix.SpecialLinearGroup.neg_one_ne_one_of_neZero_two]
+
+end SpecialLinearTwo
+
+end Subgroup
 
 namespace TauCeti.ModularForm
 

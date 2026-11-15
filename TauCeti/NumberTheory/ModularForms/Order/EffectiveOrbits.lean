@@ -7,6 +7,9 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Norm.Valence
 public import TauCeti.NumberTheory.ModularForms.WithCenter
+import TauCeti.Analysis.Complex.Fuchsian.ProperAction
+import TauCeti.Topology.Algebra.ConstMulAction
+import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup
 
 /-!
 # Vanishing orders on the effective quotient `Γ \ ℍ`
@@ -16,7 +19,7 @@ effective Fuchsian image `Γ.map sl2zToPSL2R ≤ PSL(2, ℝ)` induce the same or
 upper half-plane `ℍ`: the centre `{±I}` of `SL(2, ℤ)` acts trivially. Their point stabilisers,
 however, differ by `{±I} ∩ Γ`, which has order `2` when `-1 ∈ Γ` and `1` when `-1 ∉ Γ`. Since
 `[±Γ : Γ]` takes the complementary values `1` and `2`, the product `[±Γ : Γ] · |{±I} ∩ Γ|` is
-identically `2`.
+identically `2` (`Subgroup.relIndex_withCenter_mul_card_center_subgroupOf_eq_two`).
 
 Consequently, descending the vanishing order of a modular form to the effective quotient
 `MulAction.orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ` — the interior of the compactified modular
@@ -26,8 +29,8 @@ weighted order `2 · ord_P f / |Stab_Γ P|` by the uniform factor `[±Γ : Γ]`.
 
 ## Main definitions
 
-* `TauCeti.ModularForm.subgroupOrbitEquivEffectiveOrbit`: the canonical equivalence between the
-  matrix orbit space `(Γ : Subgroup (GL (Fin 2) ℝ)) \ ℍ` and the effective orbit space
+* `Subgroup.subgroupOrbitEquivEffectiveOrbit`: the canonical equivalence between the matrix orbit
+  space `(Γ : Subgroup (GL (Fin 2) ℝ)) \ ℍ` and the effective orbit space
   `(Γ.map sl2zToPSL2R) \ ℍ`.
 * `TauCeti.ModularForm.orderOfVanishingOnEffectiveOrbit`: the vanishing order descended to the
   effective orbit space.
@@ -36,13 +39,14 @@ weighted order `2 · ord_P f / |Stab_Γ P|` by the uniform factor `[±Γ : Γ]`.
 
 ## Main results
 
-* `TauCeti.ModularForm.relIndex_withCenter_mul_card_center_subgroupOf`: for every `Γ ≤ SL(2, ℤ)`,
-  `[±Γ : Γ] · |{±I} ∩ Γ| = 2`.
 * `TauCeti.ModularForm.cardStabilizerOnOrbit_eq_card_center_mul_effective`: the matrix stabiliser
   order on an orbit is `|{±I} ∩ Γ|` times the effective stabiliser order `e_P`.
-* `ModularForm.orderOfVanishingOnEffectiveOrbit_mul` and
-  `ModularForm.weightedOrderOfVanishingOnEffectiveOrbit_mul`: additivity under products of nonzero
-  modular forms.
+* `TauCeti.ModularForm.orderOfVanishingOnEffectiveOrbit_eq_zero_iff` and
+  `TauCeti.ModularForm.orderOfVanishingOnEffectiveOrbit_pos_iff`: zero-detection on effective
+  orbits for nonzero modular forms.
+* `TauCeti.ModularForm.orderOfVanishingOnEffectiveOrbit_eq_add_of_coe_eq_mul`,
+  `ModularForm.orderOfVanishingOnEffectiveOrbit_mul`, and their power, finite-product, and weighted
+  counterparts: additivity and scaling under products and powers of modular forms.
 * `TauCeti.ModularForm.hasFiniteSupport_orderOfVanishingOnEffectiveOrbit` and
   `TauCeti.ModularForm.hasFiniteSupport_weightedOrderOfVanishingOnEffectiveOrbit`: finite support
   on the effective orbit space.
@@ -60,47 +64,7 @@ open MulAction UpperHalfPlane
 
 open scoped MatrixGroups ModularForm Modular
 
-namespace TauCeti.ModularForm
-
-section CenterAndOrbits
-
-variable {Γ : Subgroup SL(2, ℤ)}
-
-/-- When `-I ∈ Γ`, adjoining the centre does not enlarge `Γ`, so `[±Γ : Γ] = 1`. -/
-theorem relIndex_withCenter_eq_one_of_neg_one_mem (h : (-1 : SL(2, ℤ)) ∈ Γ) :
-    Γ.relIndex Γ.withCenter = 1 := by
-  have hΓ : Γ.withCenter = Γ := Subgroup.withCenter_eq_self_iff.mpr fun c hc ↦ by
-    rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hc with rfl | rfl
-    · exact Γ.one_mem
-    · exact h
-  rw [hΓ, Subgroup.relIndex_self]
-
-/-- For every `Γ ≤ SL(2, ℤ)`, the relative index `[±Γ : Γ]` is `1` or `2`. -/
-theorem relIndex_withCenter_eq_one_or_two (Γ : Subgroup SL(2, ℤ)) :
-    Γ.relIndex Γ.withCenter = 1 ∨ Γ.relIndex Γ.withCenter = 2 := by
-  by_cases h : (-1 : SL(2, ℤ)) ∈ Γ
-  · exact Or.inl (relIndex_withCenter_eq_one_of_neg_one_mem h)
-  · exact Or.inr (relIndex_withCenter_eq_two_of_neg_one_notMem h)
-
-/-- The relative index `[±Γ : Γ]` is always positive. -/
-theorem relIndex_withCenter_pos (Γ : Subgroup SL(2, ℤ)) :
-    0 < Γ.relIndex Γ.withCenter := by
-  rcases relIndex_withCenter_eq_one_or_two Γ with h | h <;> omega
-
-/-- The relative index `[±Γ : Γ]` is nonzero. -/
-theorem relIndex_withCenter_ne_zero (Γ : Subgroup SL(2, ℤ)) :
-    Γ.relIndex Γ.withCenter ≠ 0 :=
-  (relIndex_withCenter_pos Γ).ne'
-
-/-- **The centre-index dichotomy in product form**: for every subgroup `Γ ≤ SL(2, ℤ)`, the product
-`[±Γ : Γ] · |{±I} ∩ Γ|` equals `2`, with no case split left for downstream consumers. -/
-theorem relIndex_withCenter_mul_card_center_subgroupOf (Γ : Subgroup SL(2, ℤ)) :
-    Γ.relIndex Γ.withCenter * Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) = 2 := by
-  by_cases h : (-1 : SL(2, ℤ)) ∈ Γ
-  · rw [relIndex_withCenter_eq_one_of_neg_one_mem h,
-      (Matrix.SpecialLinearGroup.card_center_subgroupOf_eq_two_iff Γ).mpr h]
-  · rw [relIndex_withCenter_eq_two_of_neg_one_notMem h,
-      (Matrix.SpecialLinearGroup.card_center_subgroupOf_eq_one_iff Γ).mpr h]
+namespace Subgroup
 
 private lemma orbitRel_subgroup_iff_effective (Γ : Subgroup SL(2, ℤ)) {z w : ℍ} :
     orbitRel (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ z w ↔ orbitRel (Γ.map sl2zToPSL2R) ℍ z w := by
@@ -123,41 +87,25 @@ def subgroupOrbitEquivEffectiveOrbit (Γ : Subgroup SL(2, ℤ)) :
   left_inv o := Quotient.inductionOn' o fun _ ↦ rfl
   right_inv P := Quotient.inductionOn' P fun _ ↦ rfl
 
+/-- `subgroupOrbitEquivEffectiveOrbit` acts as the identity on orbit representatives. -/
 @[simp]
 theorem subgroupOrbitEquivEffectiveOrbit_mk (Γ : Subgroup SL(2, ℤ)) (z : ℍ) :
-    subgroupOrbitEquivEffectiveOrbit Γ (Quotient.mk'' z) = Quotient.mk'' z :=
+    Γ.subgroupOrbitEquivEffectiveOrbit (Quotient.mk'' z) = Quotient.mk'' z :=
   (rfl)
 
+/-- `subgroupOrbitEquivEffectiveOrbit.symm` acts as the identity on orbit representatives. -/
 @[simp]
 theorem subgroupOrbitEquivEffectiveOrbit_symm_mk (Γ : Subgroup SL(2, ℤ)) (z : ℍ) :
-    (subgroupOrbitEquivEffectiveOrbit Γ).symm (Quotient.mk'' z) = Quotient.mk'' z :=
+    Γ.subgroupOrbitEquivEffectiveOrbit.symm (Quotient.mk'' z) = Quotient.mk'' z :=
   (rfl)
 
-/-- The matrix image `(Γ : Subgroup (GL (Fin 2) ℝ))` has the same point stabiliser orders as `Γ`
-itself, since `mapGL ℝ` is injective. -/
-theorem card_stabilizer_mapGL_eq (Γ : Subgroup SL(2, ℤ)) (z : ℍ) :
-    Nat.card (stabilizer (Γ : Subgroup (GL (Fin 2) ℝ)) z) = Nat.card (stabilizer Γ z) := by
-  have h := TauCeti.card_stabilizer_eq_card_ker_mul_card_stabilizer
-    ((Matrix.SpecialLinearGroup.mapGL ℝ).subgroupMap Γ)
-    (MonoidHom.subgroupMap_surjective _ _) z
-    fun g ↦ by simp [Subgroup.smul_def, MulAction.compHom_smul_def]
-  rw [Subgroup.ker_subgroupMap,
-    (MonoidHom.ker_eq_bot_iff _).mpr Matrix.SpecialLinearGroup.mapGL_injective] at h
-  simpa using h.symm
+end Subgroup
 
-/-- **The stabiliser order in `Γ` splits off `{±I} ∩ Γ` above the effective image in `PSL(2, ℝ)`.**
-This is the `PSL(2, ℝ)` counterpart of
-`TauCeti.ModularGroup.card_stabilizer_eq_card_center_mul_card_stabilizer_psl`, stated directly on
-`Γ.map sl2zToPSL2R`. -/
-theorem card_stabilizer_eq_card_center_mul_card_stabilizer_effective
-    (Γ : Subgroup SL(2, ℤ)) (z : ℍ) :
-    Nat.card (stabilizer Γ z) =
-      Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) *
-        Nat.card (stabilizer (Γ.map sl2zToPSL2R) z) := by
-  have h := TauCeti.card_stabilizer_eq_card_ker_mul_card_stabilizer
-    (sl2zToPSL2R.subgroupMap Γ) (MonoidHom.subgroupMap_surjective _ _) z
-    fun g ↦ by simp [Subgroup.smul_def]
-  rwa [Subgroup.ker_subgroupMap, sl2zToPSL2R_ker] at h
+namespace TauCeti.ModularForm
+
+section CenterAndOrbits
+
+variable {Γ : Subgroup SL(2, ℤ)}
 
 /-- Orbitwise form of the stabiliser splitting: the matrix stabiliser order on `o` is
 `|{±I} ∩ Γ|` times the effective stabiliser order `e_P` on the corresponding `PSL(2, ℝ)`-orbit. -/
@@ -165,61 +113,54 @@ theorem cardStabilizerOnOrbit_eq_card_center_mul_effective
     (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
     cardStabilizerOnOrbit o =
       Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) *
-        cardStabilizerOnOrbit (subgroupOrbitEquivEffectiveOrbit Γ o) := by
+        cardStabilizerOnOrbit (Γ.subgroupOrbitEquivEffectiveOrbit o) := by
   induction o using Quotient.inductionOn' with
   | h z =>
-    rw [subgroupOrbitEquivEffectiveOrbit_mk, cardStabilizerOnOrbit_mk, cardStabilizerOnOrbit_mk,
-      card_stabilizer_mapGL_eq, card_stabilizer_eq_card_center_mul_card_stabilizer_effective]
-
-/-- Every point orbit of `Γ.map sl2zToPSL2R` in `ℍ` has finite, nonempty stabiliser, so its
-effective stabiliser order `e_P` is nonzero. -/
-theorem cardStabilizerOnOrbit_effective_ne_zero
-    (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
-    cardStabilizerOnOrbit P ≠ 0 := by
-  intro h0
-  have h := cardStabilizerOnOrbit_eq_card_center_mul_effective (Γ := Γ)
-    ((subgroupOrbitEquivEffectiveOrbit Γ).symm P)
-  rw [Equiv.apply_symm_apply, h0, mul_zero] at h
-  exact cardStabilizerOnOrbit_ne_zero _ h
-
-/-- The effective stabiliser order `e_P` is positive on every orbit in `(Γ.map sl2zToPSL2R) \ ℍ`. -/
-theorem cardStabilizerOnOrbit_effective_pos
-    (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
-    0 < cardStabilizerOnOrbit P :=
-  Nat.pos_of_ne_zero (cardStabilizerOnOrbit_effective_ne_zero P)
+    rw [Subgroup.subgroupOrbitEquivEffectiveOrbit_mk, cardStabilizerOnOrbit_mk,
+      cardStabilizerOnOrbit_mk, Γ.card_stabilizer_mapGL,
+      Γ.card_stabilizer_eq_card_center_mul_card_stabilizer_effective]
 
 end CenterAndOrbits
 
 section Order
 
-variable {Γ : Subgroup SL(2, ℤ)} {k k₁ k₂ : ℤ}
-variable {F : Type*} [FunLike F ℍ ℂ]
+variable {Γ : Subgroup SL(2, ℤ)} {k k₁ k₂ k₃ : ℤ}
+variable {F F₁ F₂ F₃ : Type*} [FunLike F ℍ ℂ] [FunLike F₁ ℍ ℂ] [FunLike F₂ ℍ ℂ] [FunLike F₃ ℍ ℂ]
 
 /-- The vanishing order of a slash-invariant form on `Γ`, descended to the effective orbit space
 `(Γ.map sl2zToPSL2R) \ ℍ`. -/
 def orderOfVanishingOnEffectiveOrbit
     [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F)
     (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) : ℤ :=
-  orderOfVanishingOnSubgroupOrbit f ((subgroupOrbitEquivEffectiveOrbit Γ).symm P)
+  orderOfVanishingOnSubgroupOrbit f (Γ.subgroupOrbitEquivEffectiveOrbit.symm P)
 
+/-- Unfolding `orderOfVanishingOnEffectiveOrbit` across module boundaries. -/
+theorem orderOfVanishingOnEffectiveOrbit_def
+    [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F)
+    (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    orderOfVanishingOnEffectiveOrbit f P =
+      orderOfVanishingOnSubgroupOrbit f (Γ.subgroupOrbitEquivEffectiveOrbit.symm P) :=
+  (rfl)
+
+/-- Evaluating `orderOfVanishingOnEffectiveOrbit` on the orbit of `z` gives `orderOfVanishingAt`. -/
 @[simp]
 theorem orderOfVanishingOnEffectiveOrbit_mk
     [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F) (z : ℍ) :
     orderOfVanishingOnEffectiveOrbit f
         (Quotient.mk'' z : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) =
       orderOfVanishingAt f z := by
-  rw [orderOfVanishingOnEffectiveOrbit, subgroupOrbitEquivEffectiveOrbit_symm_mk,
+  rw [orderOfVanishingOnEffectiveOrbit_def, Subgroup.subgroupOrbitEquivEffectiveOrbit_symm_mk,
     orderOfVanishingOnSubgroupOrbit_mk]
 
-/-- Transporting a matrix orbit along `subgroupOrbitEquivEffectiveOrbit` preserves its vanishing
-order. -/
+/-- Transporting a matrix orbit along `Subgroup.subgroupOrbitEquivEffectiveOrbit` preserves its
+vanishing order. -/
 @[simp]
 theorem orderOfVanishingOnEffectiveOrbit_subgroupOrbitEquivEffectiveOrbit
     [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F)
     (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
-    orderOfVanishingOnEffectiveOrbit f (subgroupOrbitEquivEffectiveOrbit Γ o) =
+    orderOfVanishingOnEffectiveOrbit f (Γ.subgroupOrbitEquivEffectiveOrbit o) =
       orderOfVanishingOnSubgroupOrbit f o := by
-  rw [orderOfVanishingOnEffectiveOrbit, Equiv.symm_apply_apply]
+  rw [orderOfVanishingOnEffectiveOrbit_def, Equiv.symm_apply_apply]
 
 /-- The vanishing order of a modular form on an effective orbit is nonnegative. -/
 theorem orderOfVanishingOnEffectiveOrbit_nonneg
@@ -228,12 +169,99 @@ theorem orderOfVanishingOnEffectiveOrbit_nonneg
     0 ≤ orderOfVanishingOnEffectiveOrbit f P :=
   orderOfVanishingOnSubgroupOrbit_nonneg f _
 
+/-- The zero form has vanishing order `0` on every effective orbit. -/
 @[simp]
 theorem orderOfVanishingOnEffectiveOrbit_zero
+    [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] [Zero F] [IsZeroApply F]
     (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
-    orderOfVanishingOnEffectiveOrbit (0 : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k) P = 0 := by
+    orderOfVanishingOnEffectiveOrbit (0 : F) P = 0 := by
   induction P using Quotient.inductionOn' with
-  | h z => simp
+  | h z => simp [FunLike.coe_zero]
+
+/-- Scaling a slash-invariant form by a nonzero complex constant leaves its vanishing order on each
+effective orbit unchanged. -/
+@[simp]
+theorem orderOfVanishingOnEffectiveOrbit_smul
+    [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] [SMul ℂ F] [IsSMulApply ℂ F]
+    {c : ℂ} (hc : c ≠ 0) (f : F) (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    orderOfVanishingOnEffectiveOrbit (c • f) P = orderOfVanishingOnEffectiveOrbit f P := by
+  induction P using Quotient.inductionOn' with
+  | h z => simp [FunLike.coe_smul, hc]
+
+/-- For a nonzero modular form `f`, the vanishing order on an effective orbit `P` is zero if and
+only if `f` is nonvanishing at every point representing `P`. -/
+theorem orderOfVanishingOnEffectiveOrbit_eq_zero_iff
+    [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] {f : F} (hf : (⇑f : ℍ → ℂ) ≠ 0)
+    (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    orderOfVanishingOnEffectiveOrbit f P = 0 ↔
+      ∀ z : ℍ, (Quotient.mk'' z : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) = P → f z ≠ 0 := by
+  induction P using Quotient.inductionOn' with
+  | h z₀ =>
+    rw [orderOfVanishingOnEffectiveOrbit_mk, orderOfVanishingAt_eq_zero_iff
+      (ModularFormClass.holo f) hf]
+    refine ⟨fun hz₀ z hz ↦ ?_, fun h ↦ h z₀ rfl⟩
+    have hord : orderOfVanishingAt f z = 0 := by
+      rw [← orderOfVanishingOnEffectiveOrbit_mk (Γ := Γ), hz, orderOfVanishingOnEffectiveOrbit_mk]
+      exact (orderOfVanishingAt_eq_zero_iff (ModularFormClass.holo f) hf).mpr hz₀
+    exact (orderOfVanishingAt_eq_zero_iff (ModularFormClass.holo f) hf).mp hord
+
+/-- For a nonzero modular form `f`, the vanishing order on an effective orbit `P` is positive if
+and only if `f` vanishes at a point representing `P`. -/
+theorem orderOfVanishingOnEffectiveOrbit_pos_iff
+    [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] {f : F} (hf : (⇑f : ℍ → ℂ) ≠ 0)
+    (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    0 < orderOfVanishingOnEffectiveOrbit f P ↔
+      ∃ z : ℍ, (Quotient.mk'' z : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) = P ∧ f z = 0 := by
+  rw [(orderOfVanishingOnEffectiveOrbit_nonneg f P).lt_iff_ne, ne_comm]
+  simpa only [not_forall, Classical.not_not, exists_prop] using
+    (orderOfVanishingOnEffectiveOrbit_eq_zero_iff hf P).not
+
+/-- **Additivity on products (`ModularFormClass` form)**: if `fg` is a slash-invariant form whose
+underlying function is `f * g` for nonzero modular forms `f` and `g`, its vanishing order on each
+effective orbit is the sum of their orders. -/
+theorem orderOfVanishingOnEffectiveOrbit_eq_add_of_coe_eq_mul
+    [ModularFormClass F₁ (Γ : Subgroup (GL (Fin 2) ℝ)) k₁]
+    [ModularFormClass F₂ (Γ : Subgroup (GL (Fin 2) ℝ)) k₂]
+    [SlashInvariantFormClass F₃ (Γ : Subgroup (GL (Fin 2) ℝ)) k₃]
+    (f : F₁) (g : F₂) (fg : F₃) (hfg : ⇑fg = ⇑f * ⇑g)
+    (hf : (⇑f : ℍ → ℂ) ≠ 0) (hg : (⇑g : ℍ → ℂ) ≠ 0)
+    (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    orderOfVanishingOnEffectiveOrbit fg P =
+      orderOfVanishingOnEffectiveOrbit f P + orderOfVanishingOnEffectiveOrbit g P := by
+  induction P using Quotient.inductionOn' with
+  | h z =>
+    simp only [orderOfVanishingOnEffectiveOrbit_mk, hfg]
+    exact orderOfVanishingAt_mul (ModularFormClass.holo f) (ModularFormClass.holo g) hf hg z
+
+/-- **Power scaling (`ModularFormClass` form)**: if `fn` has underlying function `f ^ n` for a
+modular form `f`, its vanishing order on each effective orbit is `n` times that of `f`. -/
+theorem orderOfVanishingOnEffectiveOrbit_eq_mul_of_coe_eq_pow
+    [ModularFormClass F₁ (Γ : Subgroup (GL (Fin 2) ℝ)) k₁]
+    [SlashInvariantFormClass F₂ (Γ : Subgroup (GL (Fin 2) ℝ)) k₂]
+    (f : F₁) (n : ℕ) (fn : F₂) (hfn : ⇑fn = ⇑f ^ n)
+    (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    orderOfVanishingOnEffectiveOrbit fn P = n * orderOfVanishingOnEffectiveOrbit f P := by
+  induction P using Quotient.inductionOn' with
+  | h z =>
+    simp only [orderOfVanishingOnEffectiveOrbit_mk, hfn]
+    exact orderOfVanishingAt_pow (ModularFormClass.holo f) n z
+
+/-- **Finite-product additivity (`ModularFormClass` form)**: if `fp` has underlying function
+`∏ i ∈ s, g i` for nonzero modular forms `g i`, its vanishing order on each effective orbit is the
+sum of their orders. -/
+theorem orderOfVanishingOnEffectiveOrbit_eq_sum_of_coe_eq_prod {ι : Type*} {s : Finset ι}
+    {kᵢ : ι → ℤ} {G : ι → Type*} [∀ i, FunLike (G i) ℍ ℂ]
+    [∀ i, ModularFormClass (G i) (Γ : Subgroup (GL (Fin 2) ℝ)) (kᵢ i)]
+    [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
+    (g : (i : ι) → G i) (fp : F) (hfp : ⇑fp = ∏ i ∈ s, ⇑(g i))
+    (hg : ∀ i ∈ s, (⇑(g i) : ℍ → ℂ) ≠ 0)
+    (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    orderOfVanishingOnEffectiveOrbit fp P =
+      ∑ i ∈ s, orderOfVanishingOnEffectiveOrbit (g i) P := by
+  induction P using Quotient.inductionOn' with
+  | h z =>
+    simp only [orderOfVanishingOnEffectiveOrbit_mk, hfp]
+    exact orderOfVanishingAt_prod (fun i _ ↦ ModularFormClass.holo (g i)) hg z
 
 /-- **Additivity on products**: for nonzero modular forms `f` and `g` of weights `k₁` and `k₂` on
 `Γ`, the vanishing order of `f.mul g` on each effective orbit is the sum of their orders. -/
@@ -242,13 +270,39 @@ theorem _root_.ModularForm.orderOfVanishingOnEffectiveOrbit_mul
     (g : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₂)
     (hf : f ≠ 0) (hg : g ≠ 0) (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
     orderOfVanishingOnEffectiveOrbit (f.mul g) P =
-      orderOfVanishingOnEffectiveOrbit f P + orderOfVanishingOnEffectiveOrbit g P := by
-  induction P using Quotient.inductionOn' with
-  | h z =>
-    have hf' : (⇑f : ℍ → ℂ) ≠ 0 := fun h ↦ hf (DFunLike.ext' h)
-    have hg' : (⇑g : ℍ → ℂ) ≠ 0 := fun h ↦ hg (DFunLike.ext' h)
-    simp only [orderOfVanishingOnEffectiveOrbit_mk, _root_.ModularForm.coe_mul]
-    exact orderOfVanishingAt_mul (ModularFormClass.holo f) (ModularFormClass.holo g) hf' hg' z
+      orderOfVanishingOnEffectiveOrbit f P + orderOfVanishingOnEffectiveOrbit g P :=
+  orderOfVanishingOnEffectiveOrbit_eq_add_of_coe_eq_mul f g (f.mul g)
+    (_root_.ModularForm.coe_mul f g)
+    (fun h ↦ hf (DFunLike.ext' h)) (fun h ↦ hg (DFunLike.ext' h)) P
+
+/-- Vanishing orders on effective orbits scale under `ModularForm.pow`. -/
+theorem _root_.ModularForm.orderOfVanishingOnEffectiveOrbit_pow
+    (f : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k) (n : ℕ)
+    (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    orderOfVanishingOnEffectiveOrbit (f.pow n) P = n * orderOfVanishingOnEffectiveOrbit f P :=
+  orderOfVanishingOnEffectiveOrbit_eq_mul_of_coe_eq_pow f n (f.pow n)
+    (_root_.ModularForm.coe_pow f n) P
+
+/-- Vanishing orders on effective orbits sum over `ModularForm.prod` of nonzero forms. -/
+theorem _root_.ModularForm.orderOfVanishingOnEffectiveOrbit_prod {ι : Type*} {s : Finset ι}
+    {kᵢ : ι → ℤ} (m : ℤ) (hm : m = ∑ i ∈ s, kᵢ i)
+    (g : (i : ι) → ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) (kᵢ i))
+    (hg : ∀ i ∈ s, g i ≠ 0) (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    orderOfVanishingOnEffectiveOrbit (_root_.ModularForm.prod m hm g) P =
+      ∑ i ∈ s, orderOfVanishingOnEffectiveOrbit (g i) P :=
+  orderOfVanishingOnEffectiveOrbit_eq_sum_of_coe_eq_prod g (_root_.ModularForm.prod m hm g)
+    (by simp) (fun i hi h ↦ hg i hi (DFunLike.ext' h)) P
+
+/-- Additivity on `CuspForm.mulModularForm` for nonzero forms. -/
+theorem _root_.CuspForm.orderOfVanishingOnEffectiveOrbit_mulModularForm
+    (f : CuspForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₁)
+    (g : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₂)
+    (hf : f ≠ 0) (hg : g ≠ 0) (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    orderOfVanishingOnEffectiveOrbit (f.mulModularForm g) P =
+      orderOfVanishingOnEffectiveOrbit f P + orderOfVanishingOnEffectiveOrbit g P :=
+  orderOfVanishingOnEffectiveOrbit_eq_add_of_coe_eq_mul f g (f.mulModularForm g)
+    (_root_.CuspForm.coe_mulModularForm f g)
+    (fun h ↦ hf (DFunLike.ext' h)) (fun h ↦ hg (DFunLike.ext' h)) P
 
 /-- A modular form for a finite-index subgroup `Γ ≤ SL(2, ℤ)` has nonzero vanishing order on only
 finitely many effective orbits in `(Γ.map sl2zToPSL2R) \ ℍ`. -/
@@ -256,8 +310,8 @@ theorem hasFiniteSupport_orderOfVanishingOnEffectiveOrbit [Γ.FiniteIndex]
     [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F) :
     Function.HasFiniteSupport (orderOfVanishingOnEffectiveOrbit (Γ := Γ) (k := k) f) := by
   refine ((hasFiniteSupport_orderOfVanishingOnSubgroupOrbit f).image
-    (subgroupOrbitEquivEffectiveOrbit Γ)).subset fun P hP ↦ ?_
-  exact ⟨(subgroupOrbitEquivEffectiveOrbit Γ).symm P, hP, Equiv.apply_symm_apply _ _⟩
+    Γ.subgroupOrbitEquivEffectiveOrbit).subset fun P hP ↦ ?_
+  exact ⟨Γ.subgroupOrbitEquivEffectiveOrbit.symm P, hP, Equiv.apply_symm_apply _ _⟩
 
 /-- **The projective weighted vanishing order on an effective orbit**: `ord_P f / e_P`, where
 `e_P = cardStabilizerOnOrbit P` is the order of the point stabiliser in `Γ.map sl2zToPSL2R`. -/
@@ -266,6 +320,7 @@ def weightedOrderOfVanishingOnEffectiveOrbit
     (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) : ℚ :=
   (orderOfVanishingOnEffectiveOrbit f P : ℚ) / (cardStabilizerOnOrbit P : ℚ)
 
+/-- Unfolding `weightedOrderOfVanishingOnEffectiveOrbit` across module boundaries. -/
 theorem weightedOrderOfVanishingOnEffectiveOrbit_def
     [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F)
     (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
@@ -273,6 +328,8 @@ theorem weightedOrderOfVanishingOnEffectiveOrbit_def
       (orderOfVanishingOnEffectiveOrbit f P : ℚ) / (cardStabilizerOnOrbit P : ℚ) :=
   (rfl)
 
+/-- Evaluating `weightedOrderOfVanishingOnEffectiveOrbit` on the orbit of `z` divides
+`orderOfVanishingAt` by the effective stabiliser order at `z`. -/
 @[simp]
 theorem weightedOrderOfVanishingOnEffectiveOrbit_mk
     [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F) (z : ℍ) :
@@ -290,7 +347,7 @@ theorem cardStabilizerOnOrbit_mul_weightedOrderOfVanishingOnEffectiveOrbit
     (cardStabilizerOnOrbit P : ℚ) * weightedOrderOfVanishingOnEffectiveOrbit f P =
       (orderOfVanishingOnEffectiveOrbit f P : ℚ) := by
   rw [weightedOrderOfVanishingOnEffectiveOrbit_def]
-  exact mul_div_cancel₀ _ (by exact_mod_cast cardStabilizerOnOrbit_effective_ne_zero P)
+  exact mul_div_cancel₀ _ (by exact_mod_cast TauCeti.cardStabilizerOnOrbit_ne_zero P)
 
 /-- The projective weighted vanishing order of a modular form is nonnegative. -/
 theorem weightedOrderOfVanishingOnEffectiveOrbit_nonneg
@@ -300,12 +357,89 @@ theorem weightedOrderOfVanishingOnEffectiveOrbit_nonneg
   rw [weightedOrderOfVanishingOnEffectiveOrbit_def]
   exact div_nonneg (by exact_mod_cast orderOfVanishingOnEffectiveOrbit_nonneg f P) (by positivity)
 
+/-- The zero form has projective weighted vanishing order `0` on every effective orbit. -/
 @[simp]
 theorem weightedOrderOfVanishingOnEffectiveOrbit_zero
+    [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] [Zero F] [IsZeroApply F]
     (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
-    weightedOrderOfVanishingOnEffectiveOrbit
-      (0 : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k) P = 0 := by
+    weightedOrderOfVanishingOnEffectiveOrbit (0 : F) P = 0 := by
   simp [weightedOrderOfVanishingOnEffectiveOrbit_def]
+
+/-- Scaling a slash-invariant form by a nonzero complex constant leaves its projective weighted
+order unchanged. -/
+@[simp]
+theorem weightedOrderOfVanishingOnEffectiveOrbit_smul
+    [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] [SMul ℂ F] [IsSMulApply ℂ F]
+    {c : ℂ} (hc : c ≠ 0) (f : F) (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    weightedOrderOfVanishingOnEffectiveOrbit (c • f) P =
+      weightedOrderOfVanishingOnEffectiveOrbit f P := by
+  simp [weightedOrderOfVanishingOnEffectiveOrbit_def, hc]
+
+/-- For a nonzero modular form `f`, the projective weighted order on `P` vanishes if and only if
+`f` is nonvanishing on `P`. -/
+theorem weightedOrderOfVanishingOnEffectiveOrbit_eq_zero_iff
+    [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] {f : F} (hf : (⇑f : ℍ → ℂ) ≠ 0)
+    (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    weightedOrderOfVanishingOnEffectiveOrbit f P = 0 ↔
+      ∀ z : ℍ, (Quotient.mk'' z : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) = P → f z ≠ 0 := by
+  have he : (cardStabilizerOnOrbit P : ℚ) ≠ 0 := by
+    exact_mod_cast TauCeti.cardStabilizerOnOrbit_ne_zero P
+  rw [weightedOrderOfVanishingOnEffectiveOrbit_def, div_eq_zero_iff, or_iff_left he,
+    Int.cast_eq_zero, orderOfVanishingOnEffectiveOrbit_eq_zero_iff hf P]
+
+/-- For a nonzero modular form `f`, the projective weighted order on `P` is positive if and only if
+`f` vanishes at a point representing `P`. -/
+theorem weightedOrderOfVanishingOnEffectiveOrbit_pos_iff
+    [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] {f : F} (hf : (⇑f : ℍ → ℂ) ≠ 0)
+    (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    0 < weightedOrderOfVanishingOnEffectiveOrbit f P ↔
+      ∃ z : ℍ, (Quotient.mk'' z : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) = P ∧ f z = 0 := by
+  have he : (0 : ℚ) < (cardStabilizerOnOrbit P : ℚ) := by
+    exact_mod_cast TauCeti.cardStabilizerOnOrbit_pos P
+  rw [weightedOrderOfVanishingOnEffectiveOrbit_def, div_pos_iff_of_pos_right he, Int.cast_pos,
+    orderOfVanishingOnEffectiveOrbit_pos_iff hf P]
+
+/-- Additivity of the projective weighted order on products (`ModularFormClass` form). -/
+theorem weightedOrderOfVanishingOnEffectiveOrbit_eq_add_of_coe_eq_mul
+    [ModularFormClass F₁ (Γ : Subgroup (GL (Fin 2) ℝ)) k₁]
+    [ModularFormClass F₂ (Γ : Subgroup (GL (Fin 2) ℝ)) k₂]
+    [SlashInvariantFormClass F₃ (Γ : Subgroup (GL (Fin 2) ℝ)) k₃]
+    (f : F₁) (g : F₂) (fg : F₃) (hfg : ⇑fg = ⇑f * ⇑g)
+    (hf : (⇑f : ℍ → ℂ) ≠ 0) (hg : (⇑g : ℍ → ℂ) ≠ 0)
+    (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    weightedOrderOfVanishingOnEffectiveOrbit fg P =
+      weightedOrderOfVanishingOnEffectiveOrbit f P +
+        weightedOrderOfVanishingOnEffectiveOrbit g P := by
+  rw [weightedOrderOfVanishingOnEffectiveOrbit_def, weightedOrderOfVanishingOnEffectiveOrbit_def,
+    weightedOrderOfVanishingOnEffectiveOrbit_def,
+    orderOfVanishingOnEffectiveOrbit_eq_add_of_coe_eq_mul f g fg hfg hf hg P, Int.cast_add,
+    add_div]
+
+/-- Power scaling of the projective weighted order (`ModularFormClass` form). -/
+theorem weightedOrderOfVanishingOnEffectiveOrbit_eq_mul_of_coe_eq_pow
+    [ModularFormClass F₁ (Γ : Subgroup (GL (Fin 2) ℝ)) k₁]
+    [SlashInvariantFormClass F₂ (Γ : Subgroup (GL (Fin 2) ℝ)) k₂]
+    (f : F₁) (n : ℕ) (fn : F₂) (hfn : ⇑fn = ⇑f ^ n)
+    (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    weightedOrderOfVanishingOnEffectiveOrbit fn P =
+      n * weightedOrderOfVanishingOnEffectiveOrbit f P := by
+  rw [weightedOrderOfVanishingOnEffectiveOrbit_def, weightedOrderOfVanishingOnEffectiveOrbit_def,
+    orderOfVanishingOnEffectiveOrbit_eq_mul_of_coe_eq_pow f n fn hfn P, Int.cast_mul,
+    Int.cast_natCast, mul_div_assoc]
+
+/-- Finite-product additivity of the projective weighted order (`ModularFormClass` form). -/
+theorem weightedOrderOfVanishingOnEffectiveOrbit_eq_sum_of_coe_eq_prod {ι : Type*} {s : Finset ι}
+    {kᵢ : ι → ℤ} {G : ι → Type*} [∀ i, FunLike (G i) ℍ ℂ]
+    [∀ i, ModularFormClass (G i) (Γ : Subgroup (GL (Fin 2) ℝ)) (kᵢ i)]
+    [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
+    (g : (i : ι) → G i) (fp : F) (hfp : ⇑fp = ∏ i ∈ s, ⇑(g i))
+    (hg : ∀ i ∈ s, (⇑(g i) : ℍ → ℂ) ≠ 0)
+    (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    weightedOrderOfVanishingOnEffectiveOrbit fp P =
+      ∑ i ∈ s, weightedOrderOfVanishingOnEffectiveOrbit (g i) P := by
+  simp only [weightedOrderOfVanishingOnEffectiveOrbit_def,
+    orderOfVanishingOnEffectiveOrbit_eq_sum_of_coe_eq_prod g fp hfp hg P, Int.cast_sum,
+    Finset.sum_div]
 
 /-- Additivity of the projective weighted order on products of nonzero modular forms. -/
 theorem _root_.ModularForm.weightedOrderOfVanishingOnEffectiveOrbit_mul
@@ -314,10 +448,41 @@ theorem _root_.ModularForm.weightedOrderOfVanishingOnEffectiveOrbit_mul
     (hf : f ≠ 0) (hg : g ≠ 0) (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
     weightedOrderOfVanishingOnEffectiveOrbit (f.mul g) P =
       weightedOrderOfVanishingOnEffectiveOrbit f P +
-        weightedOrderOfVanishingOnEffectiveOrbit g P := by
-  rw [weightedOrderOfVanishingOnEffectiveOrbit_def, weightedOrderOfVanishingOnEffectiveOrbit_def,
-    weightedOrderOfVanishingOnEffectiveOrbit_def,
-    f.orderOfVanishingOnEffectiveOrbit_mul g hf hg P, Int.cast_add, add_div]
+        weightedOrderOfVanishingOnEffectiveOrbit g P :=
+  weightedOrderOfVanishingOnEffectiveOrbit_eq_add_of_coe_eq_mul f g (f.mul g)
+    (_root_.ModularForm.coe_mul f g)
+    (fun h ↦ hf (DFunLike.ext' h)) (fun h ↦ hg (DFunLike.ext' h)) P
+
+/-- Projective weighted vanishing orders scale under `ModularForm.pow`. -/
+theorem _root_.ModularForm.weightedOrderOfVanishingOnEffectiveOrbit_pow
+    (f : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k) (n : ℕ)
+    (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    weightedOrderOfVanishingOnEffectiveOrbit (f.pow n) P =
+      n * weightedOrderOfVanishingOnEffectiveOrbit f P :=
+  weightedOrderOfVanishingOnEffectiveOrbit_eq_mul_of_coe_eq_pow f n (f.pow n)
+    (_root_.ModularForm.coe_pow f n) P
+
+/-- Projective weighted vanishing orders sum over `ModularForm.prod` of nonzero forms. -/
+theorem _root_.ModularForm.weightedOrderOfVanishingOnEffectiveOrbit_prod {ι : Type*}
+    {s : Finset ι} {kᵢ : ι → ℤ} (m : ℤ) (hm : m = ∑ i ∈ s, kᵢ i)
+    (g : (i : ι) → ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) (kᵢ i))
+    (hg : ∀ i ∈ s, g i ≠ 0) (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    weightedOrderOfVanishingOnEffectiveOrbit (_root_.ModularForm.prod m hm g) P =
+      ∑ i ∈ s, weightedOrderOfVanishingOnEffectiveOrbit (g i) P :=
+  weightedOrderOfVanishingOnEffectiveOrbit_eq_sum_of_coe_eq_prod g
+    (_root_.ModularForm.prod m hm g) (by simp) (fun i hi h ↦ hg i hi (DFunLike.ext' h)) P
+
+/-- Additivity of the projective weighted order on `CuspForm.mulModularForm`. -/
+theorem _root_.CuspForm.weightedOrderOfVanishingOnEffectiveOrbit_mulModularForm
+    (f : CuspForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₁)
+    (g : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₂)
+    (hf : f ≠ 0) (hg : g ≠ 0) (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
+    weightedOrderOfVanishingOnEffectiveOrbit (f.mulModularForm g) P =
+      weightedOrderOfVanishingOnEffectiveOrbit f P +
+        weightedOrderOfVanishingOnEffectiveOrbit g P :=
+  weightedOrderOfVanishingOnEffectiveOrbit_eq_add_of_coe_eq_mul f g (f.mulModularForm g)
+    (_root_.CuspForm.coe_mulModularForm f g)
+    (fun h ↦ hf (DFunLike.ext' h)) (fun h ↦ hg (DFunLike.ext' h)) P
 
 /-- Only finitely many effective orbits carry nonzero projective weighted order. -/
 theorem hasFiniteSupport_weightedOrderOfVanishingOnEffectiveOrbit [Γ.FiniteIndex]
@@ -336,17 +501,17 @@ theorem weightedOrderOfVanishingOnSubgroupOrbit_eq_relIndex_withCenter_mul
     (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
     weightedOrderOfVanishingOnSubgroupOrbit f o =
       (Γ.relIndex Γ.withCenter : ℚ) *
-        weightedOrderOfVanishingOnEffectiveOrbit f (subgroupOrbitEquivEffectiveOrbit Γ o) := by
-  set P := subgroupOrbitEquivEffectiveOrbit Γ o
+        weightedOrderOfVanishingOnEffectiveOrbit f (Γ.subgroupOrbitEquivEffectiveOrbit o) := by
+  set P := Γ.subgroupOrbitEquivEffectiveOrbit o
   have he : (cardStabilizerOnOrbit P : ℚ) ≠ 0 := by
-    exact_mod_cast cardStabilizerOnOrbit_effective_ne_zero P
+    exact_mod_cast TauCeti.cardStabilizerOnOrbit_ne_zero P
   have hstab : (cardStabilizerOnOrbit o : ℚ) =
       (Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) : ℚ) *
         (cardStabilizerOnOrbit P : ℚ) := by
     exact_mod_cast cardStabilizerOnOrbit_eq_card_center_mul_effective o
   have hprod : (Γ.relIndex Γ.withCenter : ℚ) *
       (Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) : ℚ) = 2 := by
-    exact_mod_cast relIndex_withCenter_mul_card_center_subgroupOf Γ
+    exact_mod_cast Γ.relIndex_withCenter_mul_card_center_subgroupOf_eq_two
   have hcz : (Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) : ℚ) ≠ 0 :=
     right_ne_zero_of_mul (by rw [hprod]; norm_num)
   rw [weightedOrderOfVanishingOnSubgroupOrbit_def, weightedOrderOfVanishingOnEffectiveOrbit_def,
@@ -364,7 +529,7 @@ theorem finsum_weightedOrderOfVanishingOnSubgroupOrbit_eq_relIndex_withCenter_mu
         ∑ᶠ P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ,
           weightedOrderOfVanishingOnEffectiveOrbit f P := by
   simp_rw [weightedOrderOfVanishingOnSubgroupOrbit_eq_relIndex_withCenter_mul f]
-  rw [← finsum_comp_equiv (subgroupOrbitEquivEffectiveOrbit Γ), mul_finsum]
+  rw [← finsum_comp_equiv Γ.subgroupOrbitEquivEffectiveOrbit, mul_finsum]
 
 end Order
 

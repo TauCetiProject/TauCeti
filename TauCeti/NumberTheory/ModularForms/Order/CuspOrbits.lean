@@ -5,20 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
+public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
+public import TauCeti.NumberTheory.ModularForms.Cusps.Regularity
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Irregular
 import Mathlib.NumberTheory.ModularForms.NormTrace
 import TauCeti.Analysis.Complex.Fuchsian.Cusp.ChangeScaling
 import TauCeti.Analysis.Complex.Fuchsian.Cusp.Conj
-import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
-import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
-import TauCeti.NumberTheory.ModularForms.Basic
-import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 /-!
 # Vanishing orders on cusp orbits of `Γ \ ∂ℍ`
 
-For a finite-index subgroup `Γ ≤ SL(2, ℤ)`, the cusps of the compactified modular curve
+For a subgroup `Γ ≤ SL(2, ℤ)`, the cusps of the compactified modular curve
 `(Γ.map sl2zToPSL2R).CompactifiedQuotient` are the cusp orbits `(Γ.map sl2zToPSL2R).CuspOrbit`.
 Each normalized cusp datum `D` of `Γ.map sl2zToPSL2R` specifies a boundary cusp, a projective
 scaling `σ ∈ PSL(2, ℝ)` sending that cusp to `∞`, and its projective width `D.width > 0`. Lifting
@@ -26,22 +23,18 @@ scaling `σ ∈ PSL(2, ℝ)` sending that cusp to `∞`, and its projective widt
 the `q₂`-expansion at period `2 * D.width`, matching `TauCeti.Subgroup.CuspDatum.automorphyUntwist`
 — produces a `ℚ`-valued cusp order.
 
-Two invariance facts let this order descend to `(Γ.map sl2zToPSL2R).CuspOrbit`:
-1. Slashing an `h`-periodic function `g : ℍ → ℂ` by the inverse of an upper-triangular matrix
-   `t ∈ SL(2, ℝ)` rescales its period to `t₀₀² * h` and multiplies its `cuspFunction` near `0` by
-   `(t₁₁)^k` while rotating the `q`-coordinate by a nonzero constant, leaving both
-   `qExpansionOrderAtCusp` and `orderAtCusp` unchanged.
-2. At an integral representative `γ ∈ SL(2, ℤ)` with scaling `sl2zToPSL2R γ⁻¹`, the normalized
-   cusp width `D.width` equals the projective width `widthInfty` of the conjugated arithmetic
-   subgroup `γ⁻¹ Γ γ`. Comparing any cusp datum `D` and any lift `s` of `D.scaling` against an
-   integral representative of `D.cuspOrbit` shows simultaneously that the order is independent of
-   the lift `s`, of the scaling at the cusp, and of the cusp point chosen inside the `Γ`-orbit.
+When `Γ` has finite index in `SL(2, ℤ)`, comparing any normalized cusp datum `D` and any lift `s`
+of `D.scaling` against an integral representative `γ ∈ SL(2, ℤ)` of `D.cuspOrbit` (using
+`TauCeti.orderAtCusp_slash_mapGL_inv` and `TauCeti.ModularForm.cuspDatum_width_eq_widthInfty`)
+shows simultaneously that the rational cusp order is independent of the lift `s`, of the scaling at
+the cusp, and of the cusp point chosen inside the `Γ`-orbit.
 
-We also descend cusp regularity from `Subgroup.IsRegularAtInfty` on `γ⁻¹ Γ γ` to a representative-
-independent predicate `IsRegularCusp Γ C` on `(Γ.map sl2zToPSL2R).CuspOrbit`, and record the
-resulting parity dichotomy: `orderAtCuspOrbit f C` is a natural number at every regular cusp and in
-every even weight, and has the form `m + 1 / 2` (`m : ℕ`) for a nonzero odd-weight form at an
-irregular cusp.
+We also characterize vanishing at a cusp orbit (`0 < orderAtCuspOrbit f C`) and cuspidality
+(`f ∈ ModularForm.cuspFormSubmodule _ k`) for nonzero modular forms, establish additivity and
+power scaling on `[ModularFormClass]` and `ModularForm`/`CuspForm`, and record the parity
+dichotomy governed by `Subgroup.IsRegularCusp`: `orderAtCuspOrbit f C` is a natural number at every
+regular cusp and in every even weight, and has the form `m + 1 / 2` (`m : ℕ`) for a nonzero
+odd-weight form at an irregular cusp.
 
 ## Main definitions
 
@@ -49,25 +42,26 @@ irregular cusp.
   at a normalized cusp datum `D` of `Γ.map sl2zToPSL2R`.
 * `TauCeti.ModularForm.orderAtCuspOrbit`: the `ℚ`-valued vanishing order descended to a cusp orbit
   `C : (Γ.map sl2zToPSL2R).CuspOrbit`.
-* `TauCeti.ModularForm.IsRegularCusp`: regularity of a cusp orbit `C` of `Γ`.
 
 ## Main results
 
-* `TauCeti.qExpansionOrderAtCusp_slash_mapGL_inv` and `TauCeti.orderAtCusp_slash_mapGL_inv`:
-  invariance of `q`-expansion and rational cusp orders under upper-triangular `SL(2, ℝ)` scalings.
-* `TauCeti.ModularForm.cuspDatum_width_eq_widthInfty`: at `D.scaling = sl2zToPSL2R γ⁻¹`, the datum
-  width `D.width` equals the projective width `widthInfty` of `γ⁻¹ Γ γ`.
 * `TauCeti.ModularForm.orderAtCuspDatum_eq_orderAtCusp_slash` and
   `TauCeti.ModularForm.orderAtCuspDatum_eq_of_cuspOrbit_eq`: independence of the `SL(2, ℝ)` lift,
   cusp scaling, and cusp-orbit representative.
 * `TauCeti.ModularForm.orderAtCuspOrbit_cuspOrbit` and
   `TauCeti.ModularForm.orderAtCuspOrbit_cuspOrbitOfSL2Z`: evaluation at any cusp datum or integral
   matrix representative.
-* `ModularForm.orderAtCuspOrbit_mul`: additivity on products of nonzero forms.
+* `TauCeti.ModularForm.orderAtCuspOrbit_eq_zero_iff`,
+  `TauCeti.ModularForm.orderAtCuspOrbit_pos_iff`, and
+  `ModularForm.mem_cuspFormSubmodule_iff_forall_orderAtCuspOrbit_pos`: zero-detection at cusps and
+  cuspidality characterization via positivity of all cusp orders.
+* `TauCeti.ModularForm.orderAtCuspOrbit_eq_add_of_coe_eq_mul`,
+  `ModularForm.orderAtCuspOrbit_mul`, and their power and finite-product counterparts: additivity
+  and scaling on products and powers.
 * `TauCeti.ModularForm.exists_orderAtCuspOrbit_eq_natCast_of_isRegularCusp`,
-  `TauCeti.ModularForm.exists_orderAtCuspOrbit_eq_natCast_of_even`, and
-  `TauCeti.ModularForm.exists_orderAtCuspOrbit_eq_natCast_add_half_of_odd_of_not_isRegularCusp`:
-  integrality and half-integrality of `orderAtCuspOrbit`.
+  `TauCeti.ModularForm.exists_orderAtCuspOrbit_eq_natCast_of_even`,
+  `TauCeti.ModularForm.exists_orderAtCuspOrbit_eq_natCast_add_half_of_odd_of_not_isRegularCusp`,
+  and the `[CuspFormClass]` lower bounds `1` vs `1 / 2`.
 
 ## References
 
@@ -77,308 +71,16 @@ irregular cusp.
 
 public noncomputable section
 
-open Complex Filter Function Matrix Matrix.SpecialLinearGroup Metric MulAction OnePoint
-  UpperHalfPlane
+open Complex Filter Function Matrix Matrix.SpecialLinearGroup MulAction OnePoint UpperHalfPlane
 
-open scoped MatrixGroups ModularForm Pointwise Topology
+open scoped MatrixGroups ModularForm Pointwise
 
-namespace TauCeti
-
-section UpperTriangularScaling
-
-variable {h : ℝ} {k : ℤ} {g : ℍ → ℂ} {t : SL(2, ℝ)}
-
-private lemma coe_inv_smul_of_apply_one_zero_eq_zero (ht : t 1 0 = 0) (τ : ℍ) :
-    ((t⁻¹ • τ : ℍ) : ℂ) = (t 1 1 : ℂ) ^ 2 * τ - t 0 1 * t 1 1 := by
-  have hdet : (t 0 0 : ℂ) * t 1 1 = 1 := by
-    have hd := t.det_coe
-    rw [Matrix.det_fin_two, ht, mul_zero, sub_zero] at hd
-    exact_mod_cast hd
-  have hsmul := UpperHalfPlane.coe_smul_of_apply_zero_one_eq_zero ht (t⁻¹ • τ)
-  rw [smul_inv_smul] at hsmul
-  calc ((t⁻¹ • τ : ℍ) : ℂ)
-      = 1 ^ 2 * (t⁻¹ • τ : ℍ) + (1 - 1) * (t 0 1 * t 1 1) := by ring
-    _ = ((t 0 0 : ℂ) * t 1 1) ^ 2 * (t⁻¹ • τ : ℍ) +
-          ((t 0 0 : ℂ) * t 1 1 - 1) * (t 0 1 * t 1 1) := by rw [hdet]
-    _ = (t 1 1 : ℂ) ^ 2 * ((t 0 0 : ℂ) ^ 2 * (t⁻¹ • τ : ℍ) + t 0 0 * t 0 1) -
-          t 0 1 * t 1 1 := by ring
-    _ = (t 1 1 : ℂ) ^ 2 * τ - t 0 1 * t 1 1 := by rw [← hsmul]
-
-private lemma slash_mapGL_inv_apply_of_apply_one_zero_eq_zero (ht : t 1 0 = 0) (g : ℍ → ℂ)
-    (τ : ℍ) :
-    (g ∣[k] mapGL ℝ t⁻¹) τ = (t 1 1 : ℂ) ^ k * g (t⁻¹ • τ) := by
-  have h := Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul t k g (t⁻¹ • τ)
-  rw [smul_inv_smul] at h
-  rw [h]
-  simp [UpperHalfPlane.denom, mapGL_coe_matrix, ht]
-
-/-- Slashing an `h`-periodic function by the inverse of an upper-triangular `t ∈ SL(2, ℝ)` produces
-a function periodic of period `t₀₀² * h`. -/
-lemma periodic_slash_mapGL_inv_of_apply_one_zero_eq_zero (ht : t 1 0 = 0)
-    (hg_per : Periodic (g ∘ ofComplex) h) :
-    Periodic ((g ∣[k] mapGL ℝ t⁻¹) ∘ ofComplex) (t 0 0 ^ 2 * h : ℝ) := by
-  have hdet : (t 0 0 : ℂ) * t 1 1 = 1 := by
-    have hd := t.det_coe
-    rw [Matrix.det_fin_two, ht, mul_zero, sub_zero] at hd
-    exact_mod_cast hd
-  have hg' := TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff.mp hg_per
-  refine TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff.mpr fun τ ↦ ?_
-  have hshift : t⁻¹ • ((t 0 0 ^ 2 * h) +ᵥ τ) = h +ᵥ (t⁻¹ • τ) := by
-    apply UpperHalfPlane.ext
-    rw [coe_inv_smul_of_apply_one_zero_eq_zero ht, coe_vadd, coe_vadd,
-      coe_inv_smul_of_apply_one_zero_eq_zero ht]
-    push_cast
-    linear_combination (h : ℂ) * ((t 0 0 : ℂ) * t 1 1 + 1) * hdet
-  rw [slash_mapGL_inv_apply_of_apply_one_zero_eq_zero ht, hshift, hg',
-    slash_mapGL_inv_apply_of_apply_one_zero_eq_zero ht]
-
-/-- Near `q = 0`, slashing an `h`-periodic function by `t⁻¹` (`t ∈ SL(2, ℝ)` upper triangular)
-multiplies its `cuspFunction` at period `t₀₀² * h` by `t₁₁ ^ k` and rotates the `q`-parameter by
-`exp (-2πi t₀₁ t₁₁ / h)`. -/
-lemma cuspFunction_slash_mapGL_inv_eventuallyEq (hh : 0 < h) (ht : t 1 0 = 0)
-    (hg_per : Periodic (g ∘ ofComplex) h) (hg : ContinuousAt (cuspFunction h g) 0) :
-    cuspFunction (t 0 0 ^ 2 * h) (g ∣[k] mapGL ℝ t⁻¹) =ᶠ[𝓝 0] fun q : ℂ ↦
-      (t 1 1 : ℂ) ^ k *
-        cuspFunction h g (Complex.exp (-2 * Real.pi * Complex.I * (t 0 1 * t 1 1) / h) * q) := by
-  have hdet : t 0 0 * t 1 1 = 1 := by
-    have hd := t.det_coe
-    rw [Matrix.det_fin_two, ht, mul_zero, sub_zero] at hd
-    exact hd
-  have ha0 : t 0 0 ≠ 0 := left_ne_zero_of_mul_eq_one hdet
-  have hh' : 0 < t 0 0 ^ 2 * h := mul_pos (sq_pos_of_ne_zero ha0) hh
-  have hper' := periodic_slash_mapGL_inv_of_apply_one_zero_eq_zero (k := k) ht hg_per
-  set ζ : ℂ := Complex.exp (-2 * Real.pi * Complex.I * (t 0 1 * t 1 1) / h)
-  have hne : cuspFunction (t 0 0 ^ 2 * h) (g ∣[k] mapGL ℝ t⁻¹) =ᶠ[𝓝[≠] 0]
-      fun q : ℂ ↦ (t 1 1 : ℂ) ^ k * cuspFunction h g (ζ * q) := by
-    refine eventually_nhdsWithin_iff.mpr ?_
-    filter_upwards [ball_mem_nhds (0 : ℂ) one_pos] with q hq_ball hq_ne
-    have him := Periodic.im_invQParam_pos_of_norm_lt_one hh' (mem_ball_zero_iff.mp hq_ball) hq_ne
-    let τ : ℍ := ⟨Periodic.invQParam (t 0 0 ^ 2 * h) q, him⟩
-    have hqτ : Periodic.qParam (t 0 0 ^ 2 * h) (τ : ℂ) = q :=
-      Periodic.qParam_right_inv hh'.ne' hq_ne
-    have hq_rel : Periodic.qParam h ((t⁻¹ • τ : ℍ) : ℂ) = ζ * q := by
-      have hh0 : (h : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hh.ne'
-      have haC : (t 0 0 : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ha0
-      have hdetC : (t 0 0 : ℂ) * t 1 1 = 1 := by exact_mod_cast hdet
-      have hd_eq : (t 1 1 : ℂ) = (t 0 0 : ℂ)⁻¹ := eq_inv_of_mul_eq_one_right hdetC
-      rw [← hqτ, Periodic.qParam, Periodic.qParam, coe_inv_smul_of_apply_one_zero_eq_zero ht,
-        ← Complex.exp_add]
-      congr 1
-      push_cast
-      rw [hd_eq]
-      field_simp
-      ring
-    rw [← hqτ, UpperHalfPlane.eq_cuspFunction τ hh'.ne' hper',
-      slash_mapGL_inv_apply_of_apply_one_zero_eq_zero ht,
-      ← UpperHalfPlane.eq_cuspFunction (t⁻¹ • τ) hh.ne' hg_per, hq_rel, hqτ]
-  exact TauCeti.UpperHalfPlane.cuspFunction_eventuallyEq_nhds_of_continuousAt hne <|
-    continuousAt_const.mul (hg.comp_of_eq (continuousAt_const.mul continuousAt_id) (mul_zero ζ))
-
-/-- Analyticity at `q = 0` of `cuspFunction` is preserved under upper-triangular `SL(2, ℝ)`
-scalings. -/
-lemma analyticAt_cuspFunction_slash_mapGL_inv (hh : 0 < h) (ht : t 1 0 = 0)
-    (hg_per : Periodic (g ∘ ofComplex) h) (hg : AnalyticAt ℂ (cuspFunction h g) 0) :
-    AnalyticAt ℂ (cuspFunction (t 0 0 ^ 2 * h) (g ∣[k] mapGL ℝ t⁻¹)) 0 := by
-  set ζ : ℂ := Complex.exp (-2 * Real.pi * Complex.I * (t 0 1 * t 1 1) / h)
-  have han : AnalyticAt ℂ (fun q : ℂ ↦ (t 1 1 : ℂ) ^ k * cuspFunction h g (ζ * q)) 0 :=
-    (analyticAt_const (v := (t 1 1 : ℂ) ^ k)).mul
-      (hg.comp_of_eq ((analyticAt_const (v := ζ)).mul analyticAt_id) (mul_zero ζ))
-  exact han.congr (cuspFunction_slash_mapGL_inv_eventuallyEq hh ht hg_per hg.continuousAt).symm
-
-private lemma analyticOrderAt_const_mul_comp_const_mul {G : ℂ → ℂ} {c ζ : ℂ}
-    (hG : AnalyticAt ℂ G 0) (hc : c ≠ 0) (hζ : ζ ≠ 0) :
-    analyticOrderAt (fun q : ℂ ↦ c * G (ζ * q)) 0 = analyticOrderAt G 0 := by
-  have hlin : AnalyticAt ℂ (fun q : ℂ ↦ ζ * q) 0 := analyticAt_const.mul analyticAt_id
-  have hcomp : AnalyticAt ℂ (G ∘ fun q : ℂ ↦ ζ * q) 0 := hG.comp_of_eq hlin (mul_zero ζ)
-  have hord_lin : analyticOrderAt (fun q : ℂ ↦ ζ * q - 0) 0 = 1 := by
-    have heq : (fun q : ℂ ↦ ζ * q - 0) = (fun _ : ℂ ↦ ζ) * id := funext fun q ↦ by simp
-    rw [heq, analyticOrderAt_mul analyticAt_const analyticAt_id,
-      analyticAt_const.analyticOrderAt_eq_zero.mpr hζ, analyticOrderAt_id, zero_add]
-  have hmul : (fun q : ℂ ↦ c * G (ζ * q)) = (fun _ : ℂ ↦ c) * (G ∘ fun q : ℂ ↦ ζ * q) := rfl
-  rw [hmul, analyticOrderAt_mul analyticAt_const hcomp,
-    analyticAt_const.analyticOrderAt_eq_zero.mpr hc, zero_add,
-    AnalyticAt.analyticOrderAt_comp (by simpa using hG) hlin, mul_zero, hord_lin, mul_one]
-
-/-- **Upper-triangular scaling invariance of `qExpansionOrderAtCusp`.** Slashing an `h`-periodic
-function whose cusp function is analytic at `0` by `t⁻¹` (`t ∈ SL(2, ℝ)`, `t 1 0 = 0`) leaves its
-`q`-expansion order unchanged when read at the rescaled width `t₀₀² * h`. -/
-theorem qExpansionOrderAtCusp_slash_mapGL_inv (hh : 0 < h) (ht : t 1 0 = 0)
-    (hg_per : Periodic (g ∘ ofComplex) h) (hg : AnalyticAt ℂ (cuspFunction h g) 0) :
-    qExpansionOrderAtCusp (t 0 0 ^ 2 * h) (g ∣[k] mapGL ℝ t⁻¹) = qExpansionOrderAtCusp h g := by
-  have hdet : t 0 0 * t 1 1 = 1 := by
-    have hd := t.det_coe
-    rw [Matrix.det_fin_two, ht, mul_zero, sub_zero] at hd
-    exact hd
-  have hd0 : (t 1 1 : ℂ) ≠ 0 :=
-    Complex.ofReal_ne_zero.mpr (right_ne_zero_of_mul_eq_one hdet)
-  rw [qExpansionOrderAtCusp_eq_analyticOrderAt
-      (analyticAt_cuspFunction_slash_mapGL_inv hh ht hg_per hg),
-    qExpansionOrderAtCusp_eq_analyticOrderAt hg,
-    analyticOrderAt_congr (cuspFunction_slash_mapGL_inv_eventuallyEq hh ht hg_per hg.continuousAt),
-    analyticOrderAt_const_mul_comp_const_mul hg (zpow_ne_zero k hd0) (Complex.exp_ne_zero _)]
-
-/-- **Upper-triangular scaling invariance of `orderAtCusp`.** -/
-theorem orderAtCusp_slash_mapGL_inv (hh : 0 < h) (ht : t 1 0 = 0)
-    (hg_per : Periodic (g ∘ ofComplex) (2 * h : ℝ))
-    (hg : AnalyticAt ℂ (cuspFunction (2 * h) g) 0) :
-    orderAtCusp (t 0 0 ^ 2 * h) (g ∣[k] mapGL ℝ t⁻¹) = orderAtCusp h g := by
-  have hw : 2 * (t 0 0 ^ 2 * h) = t 0 0 ^ 2 * (2 * h) := by ring
-  rw [orderAtCusp_def, orderAtCusp_def, hw,
-    qExpansionOrderAtCusp_slash_mapGL_inv (by positivity) ht hg_per hg]
-
-end UpperTriangularScaling
-
-namespace ModularForm
-
-section IntegralCuspDatum
-
-variable {Γ : Subgroup SL(2, ℤ)}
-
-private lemma mapGL_transvection_eq_upperRightHom (w : ℝ) :
-    mapGL ℝ (Matrix.SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) w) =
-      Matrix.GeneralLinearGroup.upperRightHom w := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [mapGL_coe_matrix, Matrix.SpecialLinearGroup.transvection_coe,
-      Matrix.GeneralLinearGroup.upperRightHom]
-
-private lemma mapGL_neg_eq (A : SL(2, ℝ)) : mapGL ℝ (-A) = -mapGL ℝ A := by
-  ext i j
-  simp [mapGL_coe_matrix]
-
-private lemma mapGL_map_intCast_eq (g : SL(2, ℤ)) :
-    mapGL ℝ (Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) g) = mapGL ℝ g := by
-  ext i j
-  simp [mapGL_coe_matrix]
-
-/-- If a normalized cusp datum `D` of `Γ.map sl2zToPSL2R` has scaling `sl2zToPSL2R γ⁻¹`, then its
-cusp point is `sl2zToPSL2R γ • ∞`. -/
-theorem cuspDatum_cusp_eq_of_scaling_eq {D : (Γ.map sl2zToPSL2R).CuspDatum} {γ : SL(2, ℤ)}
-    (hσ : D.scaling = sl2zToPSL2R γ⁻¹) :
-    D.cusp = sl2zToPSL2R γ • (∞ : OnePoint ℝ) := by
-  have h := D.scaling_smul_cusp
-  rw [hσ, map_inv, inv_smul_eq_iff] at h
-  exact h
-
-private lemma cuspDatum_width_mem_periods {D : (Γ.map sl2zToPSL2R).CuspDatum} {γ : SL(2, ℤ)}
-    (hσ : D.scaling = sl2zToPSL2R γ⁻¹) :
-    D.width ∈
-      (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).periods := by
-  set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
-  obtain ⟨g₀, hg₀, hg₀_eq⟩ := Subgroup.mem_map.mp D.generator.2
-  have hconj : sl2zToPSL2R (γ⁻¹ * g₀ * γ) =
-      Matrix.ProjectiveSpecialLinearGroup.upperRightHom D.width := by
-    simpa [map_mul, map_inv, hσ, hg₀_eq] using D.scaling_mul_generator_mul_inv
-  rw [sl2zToPSL2R_apply, Matrix.ProjectiveSpecialLinearGroup.upperRightHom_apply,
-    Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff] at hconj
-  have hmem_conj : mapGL ℝ (γ⁻¹ * g₀ * γ) ∈ Γγ := by
-    rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv, inv_inv,
-      ConjAct.toConjAct_smul]
-    simpa [map_mul, map_inv, mul_assoc] using Subgroup.mem_map_of_mem (mapGL ℝ) hg₀
-  rw [← mapGL_map_intCast_eq (γ⁻¹ * g₀ * γ)] at hmem_conj
-  rw [Subgroup.periods, Subgroup.mem_strictPeriods_iff, Subgroup.mem_adjoinNegOne_iff]
-  rcases hconj with hpos | hneg
-  · left
-    rwa [← hpos, mapGL_transvection_eq_upperRightHom] at hmem_conj
-  · right
-    rwa [neg_eq_iff_eq_neg.mp hneg.symm, mapGL_neg_eq,
-      mapGL_transvection_eq_upperRightHom] at hmem_conj
-
-private lemma exists_mem_sl2zToPSL2R_conj_eq_upperRightHom_of_mem_periods {γ : SL(2, ℤ)} {w : ℝ}
-    (hw : w ∈ (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).periods) :
-    ∃ g₁ ∈ Γ, sl2zToPSL2R (γ⁻¹ * g₁ * γ) =
-      Matrix.ProjectiveSpecialLinearGroup.upperRightHom w := by
-  rw [Subgroup.periods, Subgroup.mem_strictPeriods_iff, Subgroup.mem_adjoinNegOne_iff] at hw
-  rcases hw with hp | hn
-  · rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv, inv_inv,
-      ConjAct.toConjAct_smul] at hp
-    obtain ⟨g₁, hg₁, hg₁_eq⟩ := Subgroup.mem_map.mp hp
-    refine ⟨g₁, hg₁, ?_⟩
-    have hM : Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) (γ⁻¹ * g₁ * γ) =
-        Matrix.SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) w := by
-      apply mapGL_injective (S := ℝ)
-      rw [mapGL_map_intCast_eq, mapGL_transvection_eq_upperRightHom, map_mul, map_mul, map_inv,
-        hg₁_eq]
-      group
-    rw [sl2zToPSL2R_apply, hM, Matrix.ProjectiveSpecialLinearGroup.upperRightHom_apply]
-  · rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv, inv_inv,
-      ConjAct.toConjAct_smul] at hn
-    obtain ⟨g₁, hg₁, hg₁_eq⟩ := Subgroup.mem_map.mp hn
-    refine ⟨g₁, hg₁, ?_⟩
-    have hM : Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) (γ⁻¹ * g₁ * γ) =
-        -Matrix.SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) w := by
-      apply mapGL_injective (S := ℝ)
-      rw [mapGL_map_intCast_eq, mapGL_neg_eq, mapGL_transvection_eq_upperRightHom, map_mul,
-        map_mul, map_inv, hg₁_eq]
-      group
-    rw [sl2zToPSL2R_apply, hM, Matrix.ProjectiveSpecialLinearGroup.mk_neg,
-      Matrix.ProjectiveSpecialLinearGroup.upperRightHom_apply]
-
-private lemma widthInfty_mem_zmultiples_cuspDatum_width {D : (Γ.map sl2zToPSL2R).CuspDatum}
-    {γ : SL(2, ℤ)} (hσ : D.scaling = sl2zToPSL2R γ⁻¹) :
-    (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).widthInfty ∈
-      AddSubgroup.zmultiples D.width := by
-  set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
-  obtain ⟨g₁, hg₁, hconj₁⟩ :=
-    exists_mem_sl2zToPSL2R_conj_eq_upperRightHom_of_mem_periods Γγ.widthInfty_mem_periods
-  have hconj₁' : D.scaling * sl2zToPSL2R g₁ * D.scaling⁻¹ =
-      Matrix.ProjectiveSpecialLinearGroup.upperRightHom Γγ.widthInfty := by
-    simpa [hσ, map_mul, map_inv] using hconj₁
-  have hstab : (⟨sl2zToPSL2R g₁, Subgroup.mem_map_of_mem _ hg₁⟩ : Γ.map sl2zToPSL2R) ∈
-      stabilizer (Γ.map sl2zToPSL2R) D.cusp := by
-    rw [mem_stabilizer_iff, Subgroup.mk_smul]
-    apply MulAction.injective D.scaling
-    calc D.scaling • sl2zToPSL2R g₁ • D.cusp
-        = (D.scaling * sl2zToPSL2R g₁ * D.scaling⁻¹) • D.scaling • D.cusp := by
-            rw [mul_smul, mul_smul, inv_smul_smul]
-      _ = D.scaling • D.cusp := by
-            rw [hconj₁', D.scaling_smul_cusp,
-              Matrix.ProjectiveSpecialLinearGroup.upperRightHom_smul_infty]
-  obtain ⟨n, hn⟩ := D.mem_stabilizer_iff_conj.mp hstab
-  rw [hconj₁'] at hn
-  exact AddSubgroup.mem_zmultiples_iff.mpr
-    ⟨n, by rw [zsmul_eq_mul, (Matrix.ProjectiveSpecialLinearGroup.upperRightHom_injective hn).symm]⟩
-
-variable [Γ.FiniteIndex]
-
-/-- If a normalized cusp datum `D` of `Γ.map sl2zToPSL2R` has scaling `sl2zToPSL2R γ⁻¹`, then its
-cusp orbit is `Γ.cuspOrbitOfSL2Z γ`. -/
-theorem cuspDatum_cuspOrbit_eq_of_scaling_eq {D : (Γ.map sl2zToPSL2R).CuspDatum} {γ : SL(2, ℤ)}
-    (hσ : D.scaling = sl2zToPSL2R γ⁻¹) :
-    D.cuspOrbit = Γ.cuspOrbitOfSL2Z γ := by
-  apply Subtype.ext
-  rw [D.cuspOrbit_val, Γ.cuspOrbitOfSL2Z_val, cuspDatum_cusp_eq_of_scaling_eq hσ]
-
-/-- **Compatibility of Fuchsian and arithmetic cusp widths.** At an integral scaling
-`D.scaling = sl2zToPSL2R γ⁻¹`, the normalized Fuchsian cusp width `D.width` agrees with Mathlib's
-projective width `widthInfty` of the conjugated arithmetic group `γ⁻¹ Γ γ`. -/
-theorem cuspDatum_width_eq_widthInfty {D : (Γ.map sl2zToPSL2R).CuspDatum} {γ : SL(2, ℤ)}
-    (hσ : D.scaling = sl2zToPSL2R γ⁻¹) :
-    D.width =
-      (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).widthInfty := by
-  set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
-  obtain ⟨m, hm⟩ := AddSubgroup.mem_zmultiples_iff.mp
-    (Γγ.periods_eq_zmultiples_widthInfty ▸ cuspDatum_width_mem_periods hσ)
-  obtain ⟨n, hn⟩ := AddSubgroup.mem_zmultiples_iff.mp
-    (widthInfty_mem_zmultiples_cuspDatum_width hσ)
-  rw [zsmul_eq_mul] at hm hn
-  have hmn : (m : ℝ) * n = 1 := mul_right_cancel₀ D.width_pos.ne' <| by
-    calc (m : ℝ) * n * D.width
-        = m * (n * D.width) := mul_assoc _ _ _
-      _ = m * Γγ.widthInfty := by rw [hn]
-      _ = 1 * D.width := by rw [hm, one_mul]
-  have hm_pos : 0 ≤ m := by
-    have : (0 : ℝ) < m * Γγ.widthInfty := hm ▸ D.width_pos
-    exact_mod_cast (pos_of_mul_pos_left this Γγ.widthInfty_pos.le).le
-  have hm1 : m = 1 := Int.eq_one_of_mul_eq_one_right hm_pos (by exact_mod_cast hmn)
-  rw [← hm, hm1, Int.cast_one, one_mul]
-
-end IntegralCuspDatum
+namespace TauCeti.ModularForm
 
 section OrderAtCuspOrbit
 
 variable {Γ : Subgroup SL(2, ℤ)} {k k₁ k₂ : ℤ}
-variable {F : Type*} [FunLike F ℍ ℂ]
+variable {F F₁ F₂ F₃ : Type*} [FunLike F ℍ ℂ] [FunLike F₁ ℍ ℂ] [FunLike F₂ ℍ ℂ] [FunLike F₃ ℍ ℂ]
 
 /-- **The `ℚ`-valued vanishing order of a slash-invariant form at a normalized cusp datum `D` of
 `Γ.map sl2zToPSL2R`.** It is `TauCeti.orderAtCusp D.width (f ∣[k] s⁻¹)` for a lift `s ∈ SL(2, ℝ)`
@@ -389,6 +91,31 @@ def orderAtCuspDatum [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ))
   TauCeti.orderAtCusp D.width
     ⇑(_root_.SlashInvariantForm.translate f
       (mapGL ℝ (QuotientGroup.mk_surjective D.scaling).choose⁻¹))
+
+/-- Unfolding `orderAtCuspDatum` across module boundaries. -/
+theorem orderAtCuspDatum_def [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
+    (D : (Γ.map sl2zToPSL2R).CuspDatum) (f : F) :
+    orderAtCuspDatum D f =
+      TauCeti.orderAtCusp D.width
+        ⇑(_root_.SlashInvariantForm.translate f
+          (mapGL ℝ (QuotientGroup.mk_surjective D.scaling).choose⁻¹)) :=
+  (rfl)
+
+/-- The cusp order at any normalized cusp datum is nonnegative. -/
+theorem orderAtCuspDatum_nonneg [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
+    (D : (Γ.map sl2zToPSL2R).CuspDatum) (f : F) :
+    0 ≤ orderAtCuspDatum D f :=
+  TauCeti.orderAtCusp_nonneg _ _
+
+/-- The zero form has cusp order `0` at every normalized cusp datum. -/
+@[simp]
+theorem orderAtCuspDatum_zero
+    [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] [Zero F] [IsZeroApply F]
+    (D : (Γ.map sl2zToPSL2R).CuspDatum) :
+    orderAtCuspDatum D (0 : F) = 0 := by
+  rw [orderAtCuspDatum_def, _root_.SlashInvariantForm.coe_translate, FunLike.coe_zero,
+    SlashAction.zero_slash]
+  simp [TauCeti.orderAtCusp_def]
 
 /-- **Simultaneous lift, scaling, and representative invariance.** For any normalized cusp datum `D`
 of `Γ.map sl2zToPSL2R`, any lift `s ∈ SL(2, ℝ)` of `D.scaling`, and any integral matrix
@@ -402,7 +129,6 @@ theorem orderAtCusp_slash_scaling_inv_eq [Γ.FiniteIndex]
       TauCeti.orderAtCusp
         (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).widthInfty
         (⇑f ∣[k] mapGL ℝ γ) := by
-  have : DiscreteTopology (Γ.map sl2zToPSL2R) := Γ.isCofinite_map_sl2zToPSL2R.discreteTopology
   set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
   -- Compare `D` against an integral cusp datum `D₀` on the same orbit via `t = s * h₀ * s₀⁻¹`.
   obtain ⟨D₀, -, hD₀_scal⟩ :=
@@ -439,12 +165,12 @@ theorem orderAtCusp_slash_scaling_inv_eq [Γ.FiniteIndex]
     rwa [_root_.Subgroup.CuspDatum.conj_width, cuspDatum_width_eq_widthInfty hD₀_scal] at hw₀
   have hslash : ⇑f ∣[k] mapGL ℝ s⁻¹ = (⇑f ∣[k] mapGL ℝ γ) ∣[k] mapGL ℝ t⁻¹ := by
     have hs_inv : s⁻¹ = h₀ * s₀⁻¹ * t⁻¹ := by rw [ht_def]; group
-    rw [hs_inv, map_mul, map_mul, mapGL_map_intCast_eq, map_inv, mapGL_map_intCast_eq, map_inv,
-      inv_inv, SlashAction.slash_mul, SlashAction.slash_mul,
+    rw [hs_inv, map_mul, map_mul, mapGL_map_intCast (R := ℝ) (S := ℝ), map_inv,
+      mapGL_map_intCast (R := ℝ) (S := ℝ), map_inv, inv_inv, SlashAction.slash_mul,
+      SlashAction.slash_mul,
       SlashInvariantFormClass.slash_action_eq f _ (Subgroup.mem_map_of_mem _ hγ₀)]
   let fγ : ModularForm Γγ k := _root_.ModularForm.translate f (mapGL ℝ γ)
-  have hfγ_coe : ⇑fγ = ⇑f ∣[k] mapGL ℝ γ := rfl
-  rw [hw, hslash, ← hfγ_coe]
+  rw [hw, hslash, ← _root_.ModularForm.coe_translate f (mapGL ℝ γ)]
   exact orderAtCusp_slash_mapGL_inv Γγ.widthInfty_pos ht
     (SlashInvariantFormClass.periodic_comp_ofComplex fγ Γγ.two_mul_widthInfty_mem_strictPeriods)
     (ModularFormClass.analyticAt_cuspFunction_zero fγ (mul_pos two_pos Γγ.widthInfty_pos)
@@ -456,7 +182,7 @@ theorem orderAtCuspDatum_eq_orderAtCusp_slash [Γ.FiniteIndex]
     (D : (Γ.map sl2zToPSL2R).CuspDatum) {s : SL(2, ℝ)} (hs : (s : PSL(2, ℝ)) = D.scaling) :
     orderAtCuspDatum D f = TauCeti.orderAtCusp D.width (⇑f ∣[k] mapGL ℝ s⁻¹) := by
   obtain ⟨γ, hγ⟩ := Γ.cuspOrbitOfSL2Z_surjective D.cuspOrbit
-  rw [orderAtCuspDatum, _root_.SlashInvariantForm.coe_translate,
+  rw [orderAtCuspDatum_def, _root_.SlashInvariantForm.coe_translate,
     orderAtCusp_slash_scaling_inv_eq f (QuotientGroup.mk_surjective D.scaling).choose_spec hγ,
     orderAtCusp_slash_scaling_inv_eq f hs hγ]
 
@@ -466,7 +192,7 @@ theorem orderAtCuspDatum_eq_of_cuspOrbit_eq [Γ.FiniteIndex]
     {D D' : (Γ.map sl2zToPSL2R).CuspDatum} (h : D.cuspOrbit = D'.cuspOrbit) :
     orderAtCuspDatum D f = orderAtCuspDatum D' f := by
   obtain ⟨γ, hγ⟩ := Γ.cuspOrbitOfSL2Z_surjective D.cuspOrbit
-  rw [orderAtCuspDatum, orderAtCuspDatum, _root_.SlashInvariantForm.coe_translate,
+  rw [orderAtCuspDatum_def, orderAtCuspDatum_def, _root_.SlashInvariantForm.coe_translate,
     _root_.SlashInvariantForm.coe_translate,
     orderAtCusp_slash_scaling_inv_eq f (QuotientGroup.mk_surjective D.scaling).choose_spec hγ,
     orderAtCusp_slash_scaling_inv_eq f (QuotientGroup.mk_surjective D'.scaling).choose_spec
@@ -474,10 +200,29 @@ theorem orderAtCuspDatum_eq_of_cuspOrbit_eq [Γ.FiniteIndex]
 
 /-- **The `ℚ`-valued vanishing order of a slash-invariant form on a cusp orbit
 `C : (Γ.map sl2zToPSL2R).CuspOrbit`.** -/
-def orderAtCuspOrbit [Γ.FiniteIndex] [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
+def orderAtCuspOrbit [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
     (f : F) (C : (Γ.map sl2zToPSL2R).CuspOrbit) : ℚ :=
-  haveI : DiscreteTopology (Γ.map sl2zToPSL2R) := Γ.isCofinite_map_sl2zToPSL2R.discreteTopology
   orderAtCuspDatum C.cuspDatum f
+
+/-- Unfolding `orderAtCuspOrbit` across module boundaries. -/
+theorem orderAtCuspOrbit_def [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
+    (f : F) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    orderAtCuspOrbit f C = orderAtCuspDatum C.cuspDatum f :=
+  (rfl)
+
+/-- The cusp order on every cusp orbit is nonnegative. -/
+theorem orderAtCuspOrbit_nonneg [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
+    (f : F) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    0 ≤ orderAtCuspOrbit f C :=
+  orderAtCuspDatum_nonneg C.cuspDatum f
+
+/-- The zero form has cusp order `0` at every cusp orbit. -/
+@[simp]
+theorem orderAtCuspOrbit_zero
+    [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] [Zero F] [IsZeroApply F]
+    (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    orderAtCuspOrbit (0 : F) C = 0 := by
+  rw [orderAtCuspOrbit_def, orderAtCuspDatum_zero]
 
 /-- `orderAtCuspOrbit` evaluated on the cusp orbit of any normalized cusp datum `D` recovers
 `orderAtCuspDatum D f`. -/
@@ -485,9 +230,8 @@ def orderAtCuspOrbit [Γ.FiniteIndex] [SlashInvariantFormClass F (Γ : Subgroup 
 theorem orderAtCuspOrbit_cuspOrbit [Γ.FiniteIndex]
     [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F)
     (D : (Γ.map sl2zToPSL2R).CuspDatum) :
-    orderAtCuspOrbit f D.cuspOrbit = orderAtCuspDatum D f := by
-  have : DiscreteTopology (Γ.map sl2zToPSL2R) := Γ.isCofinite_map_sl2zToPSL2R.discreteTopology
-  exact orderAtCuspDatum_eq_of_cuspOrbit_eq f D.cuspOrbit.cuspOrbit_cuspDatum
+    orderAtCuspOrbit f D.cuspOrbit = orderAtCuspDatum D f :=
+  orderAtCuspDatum_eq_of_cuspOrbit_eq f D.cuspOrbit.cuspOrbit_cuspDatum
 
 /-- **Evaluation of `orderAtCuspOrbit` at an integral cusp representative `γ ∈ SL(2, ℤ)`.** The
 order at `Γ.cuspOrbitOfSL2Z γ` is `TauCeti.orderAtCusp` of `f ∣[k] γ` at the projective width
@@ -499,24 +243,205 @@ theorem orderAtCuspOrbit_cuspOrbitOfSL2Z [Γ.FiniteIndex]
       TauCeti.orderAtCusp
         (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).widthInfty
         (⇑f ∣[k] mapGL ℝ γ) := by
-  have : DiscreteTopology (Γ.map sl2zToPSL2R) := Γ.isCofinite_map_sl2zToPSL2R.discreteTopology
-  rw [orderAtCuspOrbit, orderAtCuspDatum, _root_.SlashInvariantForm.coe_translate]
+  rw [orderAtCuspOrbit_def, orderAtCuspDatum_def, _root_.SlashInvariantForm.coe_translate]
   exact orderAtCusp_slash_scaling_inv_eq f
     (QuotientGroup.mk_surjective (Γ.cuspOrbitOfSL2Z γ).cuspDatum.scaling).choose_spec
     (Γ.cuspOrbitOfSL2Z γ).cuspOrbit_cuspDatum.symm
 
-/-- The cusp order on every cusp orbit is nonnegative. -/
-theorem orderAtCuspOrbit_nonneg [Γ.FiniteIndex]
-    [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F)
-    (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
-    0 ≤ orderAtCuspOrbit f C :=
-  TauCeti.orderAtCusp_nonneg _ _
-
+/-- Scaling a modular form by a nonzero complex constant leaves its cusp order on each cusp orbit
+unchanged. -/
 @[simp]
-theorem orderAtCuspOrbit_zero [Γ.FiniteIndex] (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
-    orderAtCuspOrbit (0 : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k) C = 0 := by
+theorem orderAtCuspOrbit_smul [Γ.FiniteIndex]
+    [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] [SMul ℂ F] [IsSMulApply ℂ F]
+    {c : ℂ} (hc : c ≠ 0) (f : F) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    orderAtCuspOrbit (c • f) C = orderAtCuspOrbit f C := by
   obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
-  simp [SlashAction.zero_slash, TauCeti.orderAtCusp_def]
+  set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
+  let fγ : ModularForm Γγ k := _root_.ModularForm.translate f (mapGL ℝ γ)
+  rw [orderAtCuspOrbit_cuspOrbitOfSL2Z, orderAtCuspOrbit_cuspOrbitOfSL2Z, FunLike.coe_smul,
+    ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← _root_.ModularForm.SL_slash,
+    _root_.ModularForm.SL_smul_slash, _root_.ModularForm.SL_slash,
+    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+    ← _root_.ModularForm.coe_translate f (mapGL ℝ γ)]
+  exact TauCeti.orderAtCusp_smul
+    (ModularFormClass.analyticAt_cuspFunction_zero fγ (mul_pos two_pos Γγ.widthInfty_pos)
+      Γγ.two_mul_widthInfty_mem_strictPeriods) hc
+
+/-- Scaling a modular form by a nonzero complex constant leaves its cusp order at any normalized
+cusp datum unchanged. -/
+@[simp]
+theorem orderAtCuspDatum_smul [Γ.FiniteIndex]
+    [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] [SMul ℂ F] [IsSMulApply ℂ F]
+    {c : ℂ} (hc : c ≠ 0) (D : (Γ.map sl2zToPSL2R).CuspDatum) (f : F) :
+    orderAtCuspDatum D (c • f) = orderAtCuspDatum D f := by
+  rw [← orderAtCuspOrbit_cuspOrbit, ← orderAtCuspOrbit_cuspOrbit, orderAtCuspOrbit_smul hc]
+
+/-- For a nonzero modular form `f`, the cusp order at `Γ.cuspOrbitOfSL2Z γ` is positive if and only
+if `f ∣[k] γ` vanishes at `i∞`. -/
+theorem orderAtCuspOrbit_cuspOrbitOfSL2Z_pos_iff [Γ.FiniteIndex]
+    [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] {f : F} (hf : (⇑f : ℍ → ℂ) ≠ 0)
+    (γ : SL(2, ℤ)) :
+    0 < orderAtCuspOrbit f (Γ.cuspOrbitOfSL2Z γ) ↔
+      IsZeroAtImInfty (⇑f ∣[k] mapGL ℝ γ) := by
+  set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
+  let fγ : ModularForm Γγ k := _root_.ModularForm.translate f (mapGL ℝ γ)
+  have hfγ : (⇑fγ : ℍ → ℂ) ≠ 0 := by
+    rw [_root_.ModularForm.coe_translate]
+    exact (SlashAction.slash_eq_zero_iff k (mapGL ℝ γ) ⇑f).not.mpr hf
+  have h2w : 0 < 2 * Γγ.widthInfty := mul_pos two_pos Γγ.widthInfty_pos
+  have hper := Γγ.two_mul_widthInfty_mem_strictPeriods
+  rw [orderAtCuspOrbit_cuspOrbitOfSL2Z, ← _root_.ModularForm.coe_translate f (mapGL ℝ γ),
+    orderAtCusp_pos_iff Γγ.widthInfty_pos hper hfγ,
+    UpperHalfPlane.cuspFunction_apply_zero h2w
+      (ModularFormClass.analyticAt_cuspFunction_zero fγ h2w hper)
+      (SlashInvariantFormClass.periodic_comp_ofComplex fγ hper)]
+  exact ⟨_root_.ModularForm.isZeroAtImInfty_of_valueAtInfty_eq_zero fγ,
+    IsZeroAtImInfty.valueAtInfty_eq_zero⟩
+
+/-- For a nonzero modular form `f`, the cusp order at `Γ.cuspOrbitOfSL2Z γ` vanishes if and only if
+`f ∣[k] γ` does not vanish at `i∞`. -/
+theorem orderAtCuspOrbit_cuspOrbitOfSL2Z_eq_zero_iff [Γ.FiniteIndex]
+    [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] {f : F} (hf : (⇑f : ℍ → ℂ) ≠ 0)
+    (γ : SL(2, ℤ)) :
+    orderAtCuspOrbit f (Γ.cuspOrbitOfSL2Z γ) = 0 ↔
+      ¬IsZeroAtImInfty (⇑f ∣[k] mapGL ℝ γ) := by
+  rw [← (orderAtCuspOrbit_cuspOrbitOfSL2Z_pos_iff hf γ).not, not_lt, le_antisymm_iff,
+    and_iff_left (orderAtCuspOrbit_nonneg f _)]
+
+/-- For a nonzero modular form `f`, the cusp order on a cusp orbit `C` vanishes if and only if
+`f ∣[k] γ` is nonvanishing at `i∞` for every `γ ∈ SL(2, ℤ)` representing `C`. -/
+theorem orderAtCuspOrbit_eq_zero_iff [Γ.FiniteIndex]
+    [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] {f : F} (hf : (⇑f : ℍ → ℂ) ≠ 0)
+    (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    orderAtCuspOrbit f C = 0 ↔
+      ∀ γ : SL(2, ℤ), Γ.cuspOrbitOfSL2Z γ = C → ¬IsZeroAtImInfty (⇑f ∣[k] mapGL ℝ γ) := by
+  obtain ⟨γ₀, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
+  refine ⟨fun h0 γ hγ ↦ ?_,
+    fun h ↦ (orderAtCuspOrbit_cuspOrbitOfSL2Z_eq_zero_iff hf γ₀).mpr (h γ₀ rfl)⟩
+  rw [← orderAtCuspOrbit_cuspOrbitOfSL2Z_eq_zero_iff hf γ, hγ]
+  exact h0
+
+/-- For a nonzero modular form `f`, the cusp order on a cusp orbit `C` is positive if and only if
+`f ∣[k] γ` vanishes at `i∞` for some (equivalently, every) `γ ∈ SL(2, ℤ)` representing `C`. -/
+theorem orderAtCuspOrbit_pos_iff [Γ.FiniteIndex]
+    [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] {f : F} (hf : (⇑f : ℍ → ℂ) ≠ 0)
+    (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    0 < orderAtCuspOrbit f C ↔
+      ∃ γ : SL(2, ℤ), Γ.cuspOrbitOfSL2Z γ = C ∧ IsZeroAtImInfty (⇑f ∣[k] mapGL ℝ γ) := by
+  rw [(orderAtCuspOrbit_nonneg f C).lt_iff_ne, ne_comm]
+  simpa only [not_forall, Classical.not_not, exists_prop] using
+    (orderAtCuspOrbit_eq_zero_iff hf C).not
+
+/-- **Cuspidality via cusp-orbit orders**: a nonzero modular form `f` on finite-index `Γ` belongs to
+`ModularForm.cuspFormSubmodule` if and only if `0 < orderAtCuspOrbit f C` at every cusp orbit `C` of
+`Γ`. -/
+theorem _root_.ModularForm.mem_cuspFormSubmodule_iff_forall_orderAtCuspOrbit_pos [Γ.FiniteIndex]
+    {f : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k} (hf : f ≠ 0) :
+    f ∈ _root_.ModularForm.cuspFormSubmodule (Γ : Subgroup (GL (Fin 2) ℝ)) k ↔
+      ∀ C : (Γ.map sl2zToPSL2R).CuspOrbit, 0 < orderAtCuspOrbit f C := by
+  have hf' : (⇑f : ℍ → ℂ) ≠ 0 := fun h ↦ hf (DFunLike.ext' h)
+  rw [_root_.ModularForm.mem_cuspFormSubmodule_iff, _root_.ModularForm.isCuspForm_iff]
+  refine ⟨fun hcusp C ↦ ?_, fun hpos c hc ↦ ?_⟩
+  · obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
+    rw [orderAtCuspOrbit_cuspOrbitOfSL2Z_pos_iff hf' γ]
+    have hcγ : IsCusp (mapGL ℝ γ • ∞) (Γ : Subgroup (GL (Fin 2) ℝ)) :=
+      (Subgroup.IsArithmetic.isCusp_iff_isCusp_SL2Z _).mpr
+        (_root_.isCusp_SL2Z_iff'.mpr ⟨γ, rfl⟩)
+    exact hcusp hcγ (mapGL ℝ γ) rfl
+  · rw [OnePoint.isZeroAt_iff_forall_SL2Z ((Subgroup.IsArithmetic.isCusp_iff_isCusp_SL2Z _).mp hc)]
+    intro γ _
+    rw [_root_.ModularForm.SL_slash, TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
+    exact (orderAtCuspOrbit_cuspOrbitOfSL2Z_pos_iff hf' γ).mp (hpos (Γ.cuspOrbitOfSL2Z γ))
+
+/-- **Additivity on products at cusps (`ModularFormClass` form)**: if `fg` is a modular form of
+weight `k₁ + k₂` with underlying function `f * g` for nonzero modular forms `f` and `g`, its cusp
+order on each cusp orbit is the sum of their cusp orders. -/
+theorem orderAtCuspOrbit_eq_add_of_coe_eq_mul [Γ.FiniteIndex]
+    [ModularFormClass F₁ (Γ : Subgroup (GL (Fin 2) ℝ)) k₁]
+    [ModularFormClass F₂ (Γ : Subgroup (GL (Fin 2) ℝ)) k₂]
+    [ModularFormClass F₃ (Γ : Subgroup (GL (Fin 2) ℝ)) (k₁ + k₂)]
+    (f : F₁) (g : F₂) (fg : F₃) (hfg : ⇑fg = ⇑f * ⇑g)
+    (hf : (⇑f : ℍ → ℂ) ≠ 0) (hg : (⇑g : ℍ → ℂ) ≠ 0)
+    (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    orderAtCuspOrbit fg C = orderAtCuspOrbit f C + orderAtCuspOrbit g C := by
+  obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
+  set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
+  let fγ : ModularForm Γγ k₁ := _root_.ModularForm.translate f (mapGL ℝ γ)
+  let gγ : ModularForm Γγ k₂ := _root_.ModularForm.translate g (mapGL ℝ γ)
+  have hfγ : (⇑fγ : ℍ → ℂ) ≠ 0 := by
+    rw [_root_.ModularForm.coe_translate]
+    exact (SlashAction.slash_eq_zero_iff k₁ (mapGL ℝ γ) ⇑f).not.mpr hf
+  have hgγ : (⇑gγ : ℍ → ℂ) ≠ 0 := by
+    rw [_root_.ModularForm.coe_translate]
+    exact (SlashAction.slash_eq_zero_iff k₂ (mapGL ℝ γ) ⇑g).not.mpr hg
+  have hprod : (⇑fg ∣[k₁ + k₂] mapGL ℝ γ) = ⇑fγ * ⇑gγ := by
+    simp only [hfg, _root_.ModularForm.mul_slash, det_mapGL, Units.val_one, abs_one, one_smul]
+    rw [← _root_.ModularForm.coe_translate f (mapGL ℝ γ),
+      ← _root_.ModularForm.coe_translate g (mapGL ℝ γ)]
+  have h2w : 0 < 2 * Γγ.widthInfty := mul_pos two_pos Γγ.widthInfty_pos
+  have hper := Γγ.two_mul_widthInfty_mem_strictPeriods
+  rw [orderAtCuspOrbit_cuspOrbitOfSL2Z, orderAtCuspOrbit_cuspOrbitOfSL2Z,
+    orderAtCuspOrbit_cuspOrbitOfSL2Z, hprod,
+    ← _root_.ModularForm.coe_translate f (mapGL ℝ γ),
+    ← _root_.ModularForm.coe_translate g (mapGL ℝ γ)]
+  exact TauCeti.orderAtCusp_mul
+    (ModularFormClass.analyticAt_cuspFunction_zero fγ h2w hper)
+    (ModularFormClass.analyticAt_cuspFunction_zero gγ h2w hper)
+    (analyticOrderAt_cuspFunction_ne_top h2w hper hfγ)
+    (analyticOrderAt_cuspFunction_ne_top h2w hper hgγ)
+
+/-- **Power scaling at cusps (`ModularFormClass` form)**: if `fn` is a modular form of weight
+`n * k` with underlying function `f ^ n`, its cusp order on each cusp orbit is `n` times that of
+`f`. -/
+theorem orderAtCuspOrbit_eq_mul_of_coe_eq_pow [Γ.FiniteIndex] {n : ℕ}
+    [ModularFormClass F₁ (Γ : Subgroup (GL (Fin 2) ℝ)) k]
+    [ModularFormClass F₂ (Γ : Subgroup (GL (Fin 2) ℝ)) (n * k)]
+    (f : F₁) (fn : F₂) (hfn : ⇑fn = ⇑f ^ n)
+    (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    orderAtCuspOrbit fn C = n * orderAtCuspOrbit f C := by
+  obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
+  set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
+  let fγ : ModularForm Γγ k := _root_.ModularForm.translate f (mapGL ℝ γ)
+  have hpow : (⇑fn ∣[(n : ℤ) * k] mapGL ℝ γ) = ⇑fγ ^ n := by
+    simp only [hfn, _root_.ModularForm.pow_slash, det_mapGL, Units.val_one, abs_one,
+      _root_.one_zpow, one_smul]
+    rw [← _root_.ModularForm.coe_translate f (mapGL ℝ γ)]
+  rw [orderAtCuspOrbit_cuspOrbitOfSL2Z, orderAtCuspOrbit_cuspOrbitOfSL2Z, hpow,
+    ← _root_.ModularForm.coe_translate f (mapGL ℝ γ)]
+  exact TauCeti.orderAtCusp_pow n
+    (ModularFormClass.analyticAt_cuspFunction_zero fγ (mul_pos two_pos Γγ.widthInfty_pos)
+      Γγ.two_mul_widthInfty_mem_strictPeriods)
+
+/-- **Finite-product additivity at cusps (`ModularFormClass` form)**: if `fp` is a modular form of
+weight `∑ i ∈ s, kᵢ i` with underlying function `∏ i ∈ s, g i` for nonzero modular forms `g i`, its
+cusp order on each cusp orbit is the sum of their cusp orders. -/
+theorem orderAtCuspOrbit_eq_sum_of_coe_eq_prod [Γ.FiniteIndex] {ι : Type*} {s : Finset ι}
+    {kᵢ : ι → ℤ} {G : ι → Type*} [∀ i, FunLike (G i) ℍ ℂ]
+    [∀ i, ModularFormClass (G i) (Γ : Subgroup (GL (Fin 2) ℝ)) (kᵢ i)]
+    [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (hk : k = ∑ i ∈ s, kᵢ i)
+    (g : (i : ι) → G i) (fp : F) (hfp : ⇑fp = ∏ i ∈ s, ⇑(g i))
+    (hg : ∀ i ∈ s, (⇑(g i) : ℍ → ℂ) ≠ 0)
+    (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    orderAtCuspOrbit fp C = ∑ i ∈ s, orderAtCuspOrbit (g i) C := by
+  obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
+  set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
+  let gγ : (i : ι) → ModularForm Γγ (kᵢ i) := fun i ↦ _root_.ModularForm.translate (g i) (mapGL ℝ γ)
+  have hgγ : ∀ i ∈ s, (⇑(gγ i) : ℍ → ℂ) ≠ 0 := fun i hi ↦ by
+    rw [_root_.ModularForm.coe_translate]
+    exact (SlashAction.slash_eq_zero_iff (kᵢ i) (mapGL ℝ γ) ⇑(g i)).not.mpr (hg i hi)
+  have hprod : (⇑fp ∣[k] mapGL ℝ γ) = ∏ i ∈ s, ⇑(gγ i) := by
+    subst hk
+    simp only [hfp, _root_.ModularForm.prod_slash_sum_weights, det_mapGL, Units.val_one, abs_one,
+      _root_.one_zpow, one_smul]
+    exact Finset.prod_congr rfl fun i _ ↦ (_root_.ModularForm.coe_translate (g i) (mapGL ℝ γ)).symm
+  have h2w : 0 < 2 * Γγ.widthInfty := mul_pos two_pos Γγ.widthInfty_pos
+  have hper := Γγ.two_mul_widthInfty_mem_strictPeriods
+  rw [orderAtCuspOrbit_cuspOrbitOfSL2Z, hprod,
+    TauCeti.orderAtCusp_prod s
+      (fun i _ ↦ ModularFormClass.analyticAt_cuspFunction_zero (gγ i) h2w hper)
+      (fun i hi ↦ analyticOrderAt_cuspFunction_ne_top h2w hper (hgγ i hi))]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [orderAtCuspOrbit_cuspOrbitOfSL2Z, ← _root_.ModularForm.coe_translate (g i) (mapGL ℝ γ)]
 
 /-- **Additivity on products at cusps**: for nonzero modular forms `f` and `g` on `Γ`, the cusp
 order of `f.mul g` at every cusp orbit `C` is the sum of their cusp orders at `C`. -/
@@ -524,30 +449,36 @@ theorem _root_.ModularForm.orderAtCuspOrbit_mul [Γ.FiniteIndex]
     (f : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₁)
     (g : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₂)
     (hf : f ≠ 0) (hg : g ≠ 0) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
-    orderAtCuspOrbit (f.mul g) C = orderAtCuspOrbit f C + orderAtCuspOrbit g C := by
-  obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
-  set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
-  let fγ : ModularForm Γγ k₁ := _root_.ModularForm.translate f (mapGL ℝ γ)
-  let gγ : ModularForm Γγ k₂ := _root_.ModularForm.translate g (mapGL ℝ γ)
-  have hfγ : (⇑fγ : ℍ → ℂ) ≠ 0 :=
-    (SlashAction.slash_eq_zero_iff k₁ (mapGL ℝ γ) ⇑f).not.mpr fun h ↦ hf (DFunLike.ext' h)
-  have hgγ : (⇑gγ : ℍ → ℂ) ≠ 0 :=
-    (SlashAction.slash_eq_zero_iff k₂ (mapGL ℝ γ) ⇑g).not.mpr fun h ↦ hg (DFunLike.ext' h)
-  have hfγ_coe : ⇑fγ = ⇑f ∣[k₁] mapGL ℝ γ := rfl
-  have hgγ_coe : ⇑gγ = ⇑g ∣[k₂] mapGL ℝ γ := rfl
-  have hprod : (⇑(f.mul g) ∣[k₁ + k₂] mapGL ℝ γ) = ⇑fγ * ⇑gγ := by
-    rw [hfγ_coe, hgγ_coe]
-    simp only [_root_.ModularForm.coe_mul, _root_.ModularForm.mul_slash, det_mapGL, Units.val_one,
-      abs_one, one_smul]
-  have h2w : 0 < 2 * Γγ.widthInfty := mul_pos two_pos Γγ.widthInfty_pos
-  have hper := Γγ.two_mul_widthInfty_mem_strictPeriods
-  rw [orderAtCuspOrbit_cuspOrbitOfSL2Z, orderAtCuspOrbit_cuspOrbitOfSL2Z,
-    orderAtCuspOrbit_cuspOrbitOfSL2Z, hprod]
-  exact TauCeti.orderAtCusp_mul
-    (ModularFormClass.analyticAt_cuspFunction_zero fγ h2w hper)
-    (ModularFormClass.analyticAt_cuspFunction_zero gγ h2w hper)
-    (analyticOrderAt_cuspFunction_ne_top h2w hper hfγ)
-    (analyticOrderAt_cuspFunction_ne_top h2w hper hgγ)
+    orderAtCuspOrbit (f.mul g) C = orderAtCuspOrbit f C + orderAtCuspOrbit g C :=
+  orderAtCuspOrbit_eq_add_of_coe_eq_mul f g (f.mul g) (_root_.ModularForm.coe_mul f g)
+    (fun h ↦ hf (DFunLike.ext' h)) (fun h ↦ hg (DFunLike.ext' h)) C
+
+/-- Cusp orders scale under `ModularForm.pow`. -/
+theorem _root_.ModularForm.orderAtCuspOrbit_pow [Γ.FiniteIndex]
+    (f : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k) (n : ℕ)
+    (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    orderAtCuspOrbit (f.pow n) C = n * orderAtCuspOrbit f C :=
+  orderAtCuspOrbit_eq_mul_of_coe_eq_pow f (f.pow n) (_root_.ModularForm.coe_pow f n) C
+
+/-- Cusp orders sum over `ModularForm.prod` of nonzero forms. -/
+theorem _root_.ModularForm.orderAtCuspOrbit_prod [Γ.FiniteIndex] {ι : Type*} {s : Finset ι}
+    {kᵢ : ι → ℤ} (m : ℤ) (hm : m = ∑ i ∈ s, kᵢ i)
+    (g : (i : ι) → ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) (kᵢ i))
+    (hg : ∀ i ∈ s, g i ≠ 0) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    orderAtCuspOrbit (_root_.ModularForm.prod m hm g) C =
+      ∑ i ∈ s, orderAtCuspOrbit (g i) C :=
+  orderAtCuspOrbit_eq_sum_of_coe_eq_prod hm g (_root_.ModularForm.prod m hm g) (by simp)
+    (fun i hi h ↦ hg i hi (DFunLike.ext' h)) C
+
+/-- Additivity on `CuspForm.mulModularForm` at cusps for nonzero forms. -/
+theorem _root_.CuspForm.orderAtCuspOrbit_mulModularForm [Γ.FiniteIndex]
+    (f : CuspForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₁)
+    (g : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₂)
+    (hf : f ≠ 0) (hg : g ≠ 0) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    orderAtCuspOrbit (f.mulModularForm g) C = orderAtCuspOrbit f C + orderAtCuspOrbit g C :=
+  orderAtCuspOrbit_eq_add_of_coe_eq_mul f g (f.mulModularForm g)
+    (_root_.CuspForm.coe_mulModularForm f g)
+    (fun h ↦ hf (DFunLike.ext' h)) (fun h ↦ hg (DFunLike.ext' h)) C
 
 /-- Since `(Γ.map sl2zToPSL2R).CuspOrbit` is finite for `[Γ.FiniteIndex]`, `orderAtCuspOrbit f` has
 finite support. -/
@@ -563,83 +494,11 @@ section RegularityAndParity
 variable {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteIndex] {k : ℤ}
 variable {F : Type*} [FunLike F ℍ ℂ]
 
-/-- **Regularity of a cusp orbit `C` of `Γ ≤ SL(2, ℤ)`.** A cusp orbit is regular when at every
-integral matrix `γ ∈ SL(2, ℤ)` representing it, `∞` is a regular cusp of the conjugated subgroup
-`γ⁻¹ Γ γ` (`Subgroup.IsRegularAtInfty`); `isRegularCusp_cuspOrbitOfSL2Z` shows that all
-representatives agree. -/
-def IsRegularCusp (Γ : Subgroup SL(2, ℤ)) [Γ.FiniteIndex]
-    (C : (Γ.map sl2zToPSL2R).CuspOrbit) : Prop :=
-  ∀ γ : SL(2, ℤ), Γ.cuspOrbitOfSL2Z γ = C →
-    (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).IsRegularAtInfty
-
-private lemma isRegularAtInfty_conj_of_cuspOrbitOfSL2Z_eq {γ γ' : SL(2, ℤ)}
-    (h : Γ.cuspOrbitOfSL2Z γ = Γ.cuspOrbitOfSL2Z γ') :
-    (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).IsRegularAtInfty ↔
-      (ConjAct.toConjAct (mapGL ℝ γ')⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).IsRegularAtInfty := by
-  obtain ⟨g₀, hg₀, hc⟩ := (Γ.cuspOrbitOfSL2Z_eq_iff γ γ').mp h
-  set m : SL(2, ℤ) := γ⁻¹ * g₀ * γ' with hm_def
-  have hγ' : γ' = g₀⁻¹ * γ * m := by rw [hm_def]; group
-  have hm_10 : (mapGL ℝ m) 1 0 = 0 := by
-    simpa [mapGL_coe_matrix] using hc
-  have hm_div : (mapGL ℝ m) 0 0 / (mapGL ℝ m) 1 1 = 1 := by
-    have had : m 0 0 * m 1 1 = 1 := by
-      simpa only [Matrix.det_fin_two, hc, mul_zero, sub_zero] using m.det_coe
-    have heq : m 0 0 = m 1 1 := by
-      rcases Int.eq_one_or_neg_one_of_mul_eq_one had with h1 | h1
-      · rw [h1, one_mul] at had
-        rw [h1, had]
-      · rw [h1, neg_one_mul, neg_eq_iff_eq_neg] at had
-        rw [h1, had]
-    have hd0 : ((m 1 1 : ℤ) : ℝ) ≠ 0 := by
-      exact_mod_cast right_ne_zero_of_mul_eq_one had
-    simpa [mapGL_coe_matrix, heq] using div_self hd0
-  have hΓg₀ : ConjAct.toConjAct (mapGL ℝ g₀⁻¹)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ)) =
-      (Γ : Subgroup (GL (Fin 2) ℝ)) := by
-    rw [map_inv (mapGL ℝ), inv_inv]
-    exact Subgroup.conjAct_pointwise_smul_eq_self
-      (Subgroup.le_normalizer (Subgroup.mem_map_of_mem _ hg₀))
-  have hconj : ConjAct.toConjAct (mapGL ℝ γ')⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ)) =
-      ConjAct.toConjAct (mapGL ℝ m)⁻¹ •
-        (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))) := by
-    rw [hγ', map_mul, map_mul, _root_.mul_inv_rev, _root_.mul_inv_rev,
-      ConjAct.toConjAct_mul, ConjAct.toConjAct_mul, mul_smul, mul_smul, hΓg₀]
-  set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
-  have hsp : (ConjAct.toConjAct (mapGL ℝ m)⁻¹ • Γγ).strictPeriods = Γγ.strictPeriods := by
-    ext x
-    rw [Subgroup.mem_strictPeriods_conj_of_upperTriangular hm_10, hm_div, one_mul]
-  have hp : (ConjAct.toConjAct (mapGL ℝ m)⁻¹ • Γγ).periods = Γγ.periods := by
-    ext x
-    rw [Subgroup.periods, Subgroup.periods, Subgroup.adjoinNegOne_conj,
-      Subgroup.mem_strictPeriods_conj_of_upperTriangular hm_10, hm_div, one_mul]
-  rw [hconj, Subgroup.IsRegularAtInfty, Subgroup.IsRegularAtInfty, hsp, hp]
-
-/-- Regularity of `Γ.cuspOrbitOfSL2Z γ` is regularity at `∞` of `γ⁻¹ Γ γ`. -/
-@[simp]
-theorem isRegularCusp_cuspOrbitOfSL2Z (γ : SL(2, ℤ)) :
-    IsRegularCusp Γ (Γ.cuspOrbitOfSL2Z γ) ↔
-      (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).IsRegularAtInfty :=
-  ⟨fun h ↦ h γ rfl, fun h _ hγ' ↦
-    (isRegularAtInfty_conj_of_cuspOrbitOfSL2Z_eq hγ'.symm).mp h⟩
-
-/-- When `-I ∈ Γ`, every cusp orbit of `Γ` is regular. -/
-theorem isRegularCusp_of_neg_one_mem (h : (-1 : SL(2, ℤ)) ∈ Γ)
-    (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
-    IsRegularCusp Γ C := by
-  obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
-  rw [isRegularCusp_cuspOrbitOfSL2Z]
-  refine Subgroup.isRegularAtInfty_of_neg_one_mem ?_
-  rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv, inv_inv,
-    ConjAct.toConjAct_smul]
-  have hneg : (-1 : GL (Fin 2) ℝ) ∈ (Γ : Subgroup (GL (Fin 2) ℝ)) := by
-    rw [← Matrix.SpecialLinearGroup.mapGL_neg_one (R := ℤ)]
-    exact Subgroup.mem_map_of_mem (mapGL ℝ) h
-  simpa using hneg
-
 /-- At a regular cusp `Γ.cuspOrbitOfSL2Z γ`, the rational cusp order equals the integral
 `q`-expansion order at width `widthInfty`. -/
 theorem orderAtCuspOrbit_cuspOrbitOfSL2Z_eq_qExpansionOrderAtCusp_of_isRegularCusp
     [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F) {γ : SL(2, ℤ)}
-    (hreg : IsRegularCusp Γ (Γ.cuspOrbitOfSL2Z γ)) :
+    (hreg : Γ.IsRegularCusp (Γ.cuspOrbitOfSL2Z γ)) :
     orderAtCuspOrbit f (Γ.cuspOrbitOfSL2Z γ) =
       (qExpansionOrderAtCusp
         (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).widthInfty
@@ -647,10 +506,10 @@ theorem orderAtCuspOrbit_cuspOrbitOfSL2Z_eq_qExpansionOrderAtCusp_of_isRegularCu
   set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
   let fγ : ModularForm Γγ k := _root_.ModularForm.translate f (mapGL ℝ γ)
   have hw_mem : Γγ.widthInfty ∈ Γγ.strictPeriods :=
-    Γγ.isRegularAtInfty_iff.mp ((isRegularCusp_cuspOrbitOfSL2Z γ).mp hreg)
+    Γγ.isRegularAtInfty_iff.mp ((Γ.isRegularCusp_cuspOrbitOfSL2Z γ).mp hreg)
   have : Fact (IsCusp OnePoint.infty Γγ) :=
     ⟨Γγ.isCusp_of_mem_strictPeriods Γγ.widthInfty_pos hw_mem⟩
-  rw [orderAtCuspOrbit_cuspOrbitOfSL2Z]
+  rw [orderAtCuspOrbit_cuspOrbitOfSL2Z, ← _root_.ModularForm.coe_translate f (mapGL ℝ γ)]
   exact TauCeti.orderAtCusp_eq_qExpansionOrderAtCusp Γγ.widthInfty_pos
     (SlashInvariantFormClass.periodic_comp_ofComplex fγ hw_mem)
     (ModularFormClass.bdd_at_infty fγ) (ModularFormClass.holo fγ)
@@ -658,7 +517,7 @@ theorem orderAtCuspOrbit_cuspOrbitOfSL2Z_eq_qExpansionOrderAtCusp_of_isRegularCu
 /-- At a regular cusp orbit, `orderAtCuspOrbit f C` is a natural number regardless of the weight. -/
 theorem exists_orderAtCuspOrbit_eq_natCast_of_isRegularCusp
     [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F)
-    {C : (Γ.map sl2zToPSL2R).CuspOrbit} (hreg : IsRegularCusp Γ C) :
+    {C : (Γ.map sl2zToPSL2R).CuspOrbit} (hreg : Γ.IsRegularCusp C) :
     ∃ m : ℕ, orderAtCuspOrbit f C = m := by
   obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
   rw [orderAtCuspOrbit_cuspOrbitOfSL2Z_eq_qExpansionOrderAtCusp_of_isRegularCusp f hreg,
@@ -673,26 +532,72 @@ theorem exists_orderAtCuspOrbit_eq_natCast_of_even
     ∃ m : ℕ, orderAtCuspOrbit f C = m := by
   obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
   let fγ : ModularForm _ k := _root_.ModularForm.translate f (mapGL ℝ γ)
-  rw [orderAtCuspOrbit_cuspOrbitOfSL2Z]
+  rw [orderAtCuspOrbit_cuspOrbitOfSL2Z, ← _root_.ModularForm.coe_translate f (mapGL ℝ γ)]
   exact exists_orderAtCusp_eq_natCast_of_even fγ hk
 
 /-- For a nonzero modular form of odd weight, the cusp order at an irregular cusp orbit is strictly
 half-integral: `m + 1 / 2` for some `m : ℕ`. -/
 theorem exists_orderAtCuspOrbit_eq_natCast_add_half_of_odd_of_not_isRegularCusp
     [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0)
-    (hk : Odd k) {C : (Γ.map sl2zToPSL2R).CuspOrbit} (hirr : ¬IsRegularCusp Γ C) :
+    (hk : Odd k) {C : (Γ.map sl2zToPSL2R).CuspOrbit} (hirr : ¬Γ.IsRegularCusp C) :
     ∃ m : ℕ, orderAtCuspOrbit f C = (m : ℚ) + 1 / 2 := by
   obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
-  rw [isRegularCusp_cuspOrbitOfSL2Z] at hirr
+  rw [Γ.isRegularCusp_cuspOrbitOfSL2Z] at hirr
   let fγ : ModularForm _ k := _root_.ModularForm.translate f (mapGL ℝ γ)
-  have hfγ : (⇑fγ : ℍ → ℂ) ≠ 0 := (SlashAction.slash_eq_zero_iff k (mapGL ℝ γ) ⇑f).not.mpr hf
-  rw [orderAtCuspOrbit_cuspOrbitOfSL2Z]
+  have hfγ : (⇑fγ : ℍ → ℂ) ≠ 0 := by
+    rw [_root_.ModularForm.coe_translate]
+    exact (SlashAction.slash_eq_zero_iff k (mapGL ℝ γ) ⇑f).not.mpr hf
+  rw [orderAtCuspOrbit_cuspOrbitOfSL2Z, ← _root_.ModularForm.coe_translate f (mapGL ℝ γ)]
   exact exists_orderAtCusp_eq_natCast_add_half_of_odd_of_not_isRegularAtInfty fγ hfγ hk hirr
+
+/-- Every nonzero cusp form has strictly positive vanishing order at every cusp orbit. -/
+theorem orderAtCuspOrbit_pos [CuspFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
+    {f : F} (hf : (⇑f : ℍ → ℂ) ≠ 0) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    0 < orderAtCuspOrbit f C := by
+  obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
+  let fγ : CuspForm _ k := _root_.CuspForm.translate f (mapGL ℝ γ)
+  rw [orderAtCuspOrbit_cuspOrbitOfSL2Z_pos_iff hf γ, ← _root_.CuspForm.coe_translate f (mapGL ℝ γ)]
+  exact CuspFormClass.zero_at_infty fγ
+
+/-- Every nonzero cusp form has vanishing order at least `1 / 2` at every cusp orbit (and at least
+`1` at regular cusps or in even weight). -/
+theorem one_div_two_le_orderAtCuspOrbit [CuspFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
+    {f : F} (hf : (⇑f : ℍ → ℂ) ≠ 0) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    1 / 2 ≤ orderAtCuspOrbit f C := by
+  obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
+  have hpos := orderAtCuspOrbit_pos hf (Γ.cuspOrbitOfSL2Z γ)
+  rw [orderAtCuspOrbit_cuspOrbitOfSL2Z, TauCeti.orderAtCusp_def] at hpos ⊢
+  set n : ℤ := qExpansionOrderAtCusp
+    (2 * (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).widthInfty)
+    (⇑f ∣[k] mapGL ℝ γ)
+  have hpos' : (0 : ℚ) < n := by linarith
+  have h1 : (1 : ℤ) ≤ n := Int.lt_iff_add_one_le.mp (by exact_mod_cast hpos')
+  have h1q : (1 : ℚ) ≤ n := by exact_mod_cast h1
+  linarith
+
+/-- At a regular cusp orbit, every nonzero cusp form has vanishing order at least `1`. -/
+theorem one_le_orderAtCuspOrbit_of_isRegularCusp
+    [CuspFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] {f : F} (hf : (⇑f : ℍ → ℂ) ≠ 0)
+    {C : (Γ.map sl2zToPSL2R).CuspOrbit} (hreg : Γ.IsRegularCusp C) :
+    1 ≤ orderAtCuspOrbit f C := by
+  obtain ⟨m, hm⟩ := exists_orderAtCuspOrbit_eq_natCast_of_isRegularCusp f hreg
+  have hpos : (0 : ℚ) < m := hm ▸ orderAtCuspOrbit_pos hf C
+  have hm1 : 1 ≤ m := Nat.succ_le_of_lt (by exact_mod_cast hpos)
+  rw [hm]
+  exact_mod_cast hm1
+
+/-- In even weight, every nonzero cusp form has vanishing order at least `1` at every cusp orbit. -/
+theorem one_le_orderAtCuspOrbit_of_even [CuspFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
+    {f : F} (hf : (⇑f : ℍ → ℂ) ≠ 0) (hk : Even k) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
+    1 ≤ orderAtCuspOrbit f C := by
+  obtain ⟨m, hm⟩ := exists_orderAtCuspOrbit_eq_natCast_of_even f hk C
+  have hpos : (0 : ℚ) < m := hm ▸ orderAtCuspOrbit_pos hf C
+  have hm1 : 1 ≤ m := Nat.succ_le_of_lt (by exact_mod_cast hpos)
+  rw [hm]
+  exact_mod_cast hm1
 
 end RegularityAndParity
 
-end ModularForm
-
-end TauCeti
+end TauCeti.ModularForm
 
 end

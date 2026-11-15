@@ -49,9 +49,10 @@ positive-determinant matrix fixing a point as elliptic.
   orbits.
 * `TauCeti.ModularGroup.card_stabilizer_eq_two_of_orbit_ne_I_of_orbit_ne_ρ`: order `2` on every
   other orbit.
-* `TauCeti.ModularGroup.card_stabilizer_eq_card_center_mul_card_stabilizer_psl`: for any
+* `TauCeti.ModularGroup.card_stabilizer_eq_card_center_mul_card_stabilizer_psl`,
+  `Subgroup.card_stabilizer_eq_card_center_mul_card_stabilizer_effective`: for any
   `Γ ≤ SL(2, ℤ)`, the stabiliser order in `Γ` splits off the part of the centre that `Γ`
-  contains, leaving the projective order in `Γ`'s image in `PSL(2, ℤ)`.
+  contains, leaving the projective order in `Γ`'s image in `PSL(2, ℤ)` or `PSL(2, ℝ)`.
 * `TauCeti.ModularGroup.card_stabilizer_eq_two_mul_card_stabilizer_psl`: the projective order is
   the matrix one halved.
 * `TauCeti.ModularGroup.card_stabilizer_psl_I`, `TauCeti.ModularGroup.card_stabilizer_psl_ρ` and
@@ -215,6 +216,20 @@ theorem card_stabilizer_eq_card_center_mul_card_stabilizer_psl {Γ : Subgroup SL
         Nat.card (stabilizer (Γ.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))) z) :=
   TauCeti.card_stabilizer_eq_card_subgroupOf_mul_card_stabilizer_map _ Γ z
     fun _ ↦ UpperHalfPlane.pslMk_smul _ _
+
+/-- **The stabiliser order in `Γ ≤ SL(2, ℤ)` splits off `{±I} ∩ Γ` above the effective image in
+`PSL(2, ℝ)`.** This is the `PSL(2, ℝ)` counterpart of
+`TauCeti.ModularGroup.card_stabilizer_eq_card_center_mul_card_stabilizer_psl`, stated directly on
+`Γ.map sl2zToPSL2R`. -/
+theorem _root_.Subgroup.card_stabilizer_eq_card_center_mul_card_stabilizer_effective
+    (Γ : Subgroup SL(2, ℤ)) (z : ℍ) :
+    Nat.card (stabilizer Γ z) =
+      Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) *
+        Nat.card (stabilizer (Γ.map sl2zToPSL2R) z) := by
+  have h := TauCeti.card_stabilizer_eq_card_ker_mul_card_stabilizer
+    (sl2zToPSL2R.subgroupMap Γ) (MonoidHom.subgroupMap_surjective _ _) z
+    fun g ↦ by simp [Subgroup.smul_def]
+  rwa [Subgroup.ker_subgroupMap, sl2zToPSL2R_ker] at h
 
 /-- **The `SL(2, ℤ)`-stabiliser order is twice the `PSL(2, ℤ)` one.** The two differ exactly by
 the centre `±1`, which acts trivially on `ℍ`, so every projective stabiliser is the matrix one

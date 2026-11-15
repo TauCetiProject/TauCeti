@@ -228,17 +228,9 @@ theorem qExpansionAt_SL2Z (γ : SL(2, ℤ)) (f : ModularForm 𝒮ℒ k) :
 theorem qExpansionAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
     qExpansionAt (-γ) f = (-1 : ℂ) ^ k • qExpansionAt γ f := by
   let Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ
-  have hneg : mapGL ℝ (-γ) = mapGL ℝ γ * (-1) := by
-    rw [← mapGL_neg_one (R := ℤ), ← map_mul, mul_neg_one]
-  have hΓ : ConjAct.toConjAct (-1 : GL (Fin 2) ℝ)⁻¹ • ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ =
-      Γγ :=
-    Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.mem_normalizer_iff.mpr fun x ↦ by simp)
-  simp only [qExpansionAt_apply, coe_translate, hneg, SlashAction.slash_mul,
-    ModularForm.slash_neg_one]
-  have hΓneg : ConjAct.toConjAct (mapGL ℝ γ * (-1))⁻¹ • Γ = Γγ := by
-    rw [_root_.mul_inv_rev, ConjAct.toConjAct_mul, mul_smul]
-    exact hΓ
-  rw [hΓneg]
+  have hneg : mapGL ℝ (-γ) = mapGL ℝ γ * (-1) := by rw [mapGL_neg, ← mul_neg_one]
+  simp only [qExpansionAt_apply, coe_translate, Subgroup.conj_mapGL_neg]
+  simp only [hneg, SlashAction.slash_mul, ModularForm.slash_neg_one]
   -- The translate wrapper coerces to this slash action. Expose it so the public
   -- `qExpansion_smul` lemma applies without unfolding the cusp-function construction.
   change qExpansion Γγ.strictWidthInfty

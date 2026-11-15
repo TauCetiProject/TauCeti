@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjJ
 import TauCeti.Algebra.Field.LinearFractional
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # The Möbius-action conjugation at a positive determinant
@@ -35,6 +36,10 @@ unfolded by hand.
   `g • z` cleared.
 * `UpperHalfPlane.coe_smul_of_apply_zero_one_eq_zero`: an upper triangular element
   `!![a, b; 0, a⁻¹]` of `SL(2, ℝ)` acts on `ℍ` by `τ ↦ a ^ 2 * τ + a * b`.
+* `UpperHalfPlane.coe_smul_of_apply_one_zero_eq_zero`,
+  `UpperHalfPlane.coe_inv_smul_of_apply_one_zero_eq_zero`: a positive-determinant upper-triangular
+  `M ∈ GL(2, ℝ)` acts on `ℍ` by `τ ↦ (M 0 0 / M 1 1) * τ + M 0 1 / M 1 1`, and the inverse of an
+  upper-triangular `t ∈ SL(2, ℝ)` acts by `τ ↦ t 1 1 ^ 2 * τ - t 1 1 * t 0 1`.
 * `UpperHalfPlane.J_smul_re`, `UpperHalfPlane.J_smul_im`: the involution `J : z ↦ -conj z`
   negates the real part and preserves the imaginary part.
 * `Matrix.SpecialLinearGroup.J_mul_mapGL_mul_J`, `Matrix.SpecialLinearGroup.J_mul_mapGL`:
@@ -196,15 +201,45 @@ theorem coe_smul_sub_conj_smul {g : GL (Fin 2) ℝ} (hdet : 0 < g.det.val) (z τ
 `UpperHalfPlane.exists_SL2_smul_eq_of_apply_zero_one_eq_zero`. -/
 theorem coe_smul_of_apply_zero_one_eq_zero {g : SL(2, ℝ)} (hg : g 1 0 = 0) (τ : ℍ) :
     ((g • τ : ℍ) : ℂ) = (g 0 0 : ℂ) ^ 2 * τ + g 0 0 * g 0 1 := by
-  have hdet : (g 0 0 : ℂ) * g 1 1 = 1 := by
-    have h := g.det_coe
-    rw [Matrix.det_fin_two, hg, mul_zero, sub_zero] at h
-    exact_mod_cast h
+  have hdet : (g 0 0 : ℂ) * g 1 1 = 1 :=
+    Matrix.SpecialLinearGroup.map_mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero
+      Complex.ofRealHom hg
   have h11 : (g 1 1 : ℂ) ≠ 0 := right_ne_zero_of_mul_eq_one hdet
   rw [coe_specialLinearGroup_apply, hg]
   simp only [Algebra.algebraMap_self, RingHom.id_apply, Complex.ofReal_zero, zero_mul, zero_add]
   field_simp
   linear_combination (-((g 0 0 : ℂ) * τ + g 0 1)) * hdet
+
+/-- **An upper triangular element of `GL(2, ℝ)` of positive determinant acts on `ℍ` by a real
+affine map**: if `M = !![a, b; 0, d]` with `0 < a * d`, then `M • τ = (a / d) * τ + b / d`. -/
+theorem coe_smul_of_apply_one_zero_eq_zero {M : GL (Fin 2) ℝ}
+    (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0) (τ : ℍ) :
+    ((M • τ : ℍ) : ℂ) = ((M 0 0 / M 1 1 : ℝ) : ℂ) * τ + (M 0 1 / M 1 1 : ℝ) := by
+  have h11_ne : (M 1 1 : ℝ) ≠ 0 := by
+    intro h0
+    rw [Matrix.det_fin_two, hM, h0, mul_zero, mul_zero, sub_self] at hdet
+    exact lt_irrefl 0 hdet
+  have h11_c : (M 1 1 : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr h11_ne
+  rw [coe_smul_of_det_pos (by rwa [Matrix.GeneralLinearGroup.val_det_apply])]
+  simp only [num, denom, hM, Complex.ofReal_zero, zero_mul, zero_add, Complex.ofReal_div]
+  field_simp
+
+/-- The inverse of an upper-triangular matrix `t ∈ SL(2, ℝ)` acts on `ℍ` by the real affine map
+`τ ↦ d² τ - b d`, where `t = !![a, b; 0, d]`. -/
+theorem coe_inv_smul_of_apply_one_zero_eq_zero {t : SL(2, ℝ)} (ht : t 1 0 = 0) (τ : ℍ) :
+    ((t⁻¹ • τ : ℍ) : ℂ) = (t 1 1 : ℂ) ^ 2 * τ - t 0 1 * t 1 1 := by
+  have hdet : (t 0 0 : ℂ) * t 1 1 = 1 :=
+    Matrix.SpecialLinearGroup.map_mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero
+      Complex.ofRealHom ht
+  have hsmul := UpperHalfPlane.coe_smul_of_apply_zero_one_eq_zero ht (t⁻¹ • τ)
+  rw [smul_inv_smul] at hsmul
+  calc ((t⁻¹ • τ : ℍ) : ℂ)
+      = 1 ^ 2 * (t⁻¹ • τ : ℍ) + (1 - 1) * (t 0 1 * t 1 1) := by ring
+    _ = ((t 0 0 : ℂ) * t 1 1) ^ 2 * (t⁻¹ • τ : ℍ) +
+          ((t 0 0 : ℂ) * t 1 1 - 1) * (t 0 1 * t 1 1) := by rw [hdet]
+    _ = (t 1 1 : ℂ) ^ 2 * ((t 0 0 : ℂ) ^ 2 * (t⁻¹ • τ : ℍ) + t 0 0 * t 0 1) -
+          t 0 1 * t 1 1 := by ring
+    _ = (t 1 1 : ℂ) ^ 2 * τ - t 0 1 * t 1 1 := by rw [← hsmul]
 
 /-- Scalar action invariance for `GL (Fin 2) ℝ`: a matrix that is a scalar multiple of another
 acts identically on `ℍ`, through Mathlib's scalar-matrix action `glScalar_smul`. The scalar is

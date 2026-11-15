@@ -205,6 +205,10 @@ theorem scaling_smul_cusp : D.scaling • D.cusp = ∞ := by
   rwa [(isParabolic_upperRightHom_iff.mpr D.width_pos.ne').smul_eq_self_iff,
     parabolicFixedPoint_upperRightHom] at hfix
 
+/-- The cusp of a cusp datum is the image of `∞` under the inverse scaling. -/
+theorem cusp_eq_inv_scaling_smul_infty : D.cusp = D.scaling⁻¹ • ∞ :=
+  (inv_smul_eq_iff.mpr D.scaling_smul_cusp.symm).symm
+
 /-- Cusp data with the same scaling represent the same boundary point. -/
 theorem cusp_eq_of_scaling_eq {Δ : Subgroup PSL(2, ℝ)} (D : Δ.CuspDatum) (E : Γ.CuspDatum)
     (hσ : D.scaling = E.scaling) : D.cusp = E.cusp :=

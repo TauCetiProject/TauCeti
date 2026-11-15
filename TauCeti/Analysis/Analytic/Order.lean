@@ -33,6 +33,9 @@ at `z` keeps its order as that exponent. The finiteness of the zero set itself o
 * `TauCeti.analyticOrderAt_prod`: the order of `∏ i ∈ s, F i` is `∑ i ∈ s`, of the orders.
 * `TauCeti.analyticOrderAt_comp_pow_zero`: the order of `q ↦ f (q ^ N)` at `0` is `N` times
   the order of `f` at `0`.
+* `TauCeti.analyticOrderAt_comp_const_mul`, `TauCeti.analyticOrderAt_const_smul_comp_const_mul`,
+  `TauCeti.analyticOrderAt_const_mul_comp_const_mul`: rescaling the argument or value of an
+  analytic function by nonzero constants preserves its order at `0`.
 * `TauCeti.analyticOrderAt_pow_sub_zero_pow`: the order of `w ↦ w ^ m - 0 ^ m` at `0` is `m`
   for `m ≠ 0`.
 * `AnalyticAt.analyticOrderAt_sub_eq_one_iff_deriv_ne_zero`: `f · - f x` has order `1` at `x`
@@ -108,6 +111,38 @@ lemma analyticOrderAt_comp_pow_zero {E : Type*} [NormedAddCommGroup E] [NormedSp
     AnalyticAt.analyticOrderAt_comp (hzero.symm ▸ hf) (analyticAt_id.pow N), hzero, h_sub_eq,
     analyticOrderAt_pow analyticAt_id, analyticOrderAt_id]
   simp
+
+/-- Rescaling the argument by a nonzero constant preserves the analytic order at `0`. -/
+lemma analyticOrderAt_comp_const_mul {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {f : 𝕜 → E} (hf : AnalyticAt 𝕜 f 0) {ζ : 𝕜} (hζ : ζ ≠ 0) :
+    analyticOrderAt (fun q : 𝕜 ↦ f (ζ * q)) 0 = analyticOrderAt f 0 := by
+  have hlin' : AnalyticAt 𝕜 (fun q : 𝕜 ↦ ζ * q) 0 := analyticAt_const.mul analyticAt_id
+  have hord_lin : analyticOrderAt (fun q : 𝕜 ↦ ζ * q - 0) 0 = 1 := by
+    have heq : (fun q : 𝕜 ↦ ζ * q - 0) = (fun _ : 𝕜 ↦ ζ) * id := funext fun q ↦ by simp
+    rw [heq, analyticOrderAt_mul analyticAt_const analyticAt_id,
+      analyticAt_const.analyticOrderAt_eq_zero.mpr hζ, analyticOrderAt_id, zero_add]
+  have hcomp := AnalyticAt.analyticOrderAt_comp (z₀ := (0 : 𝕜))
+    (by simpa only [mul_zero] using hf) hlin'
+  simpa only [Function.comp_def, mul_zero, hord_lin, mul_one] using hcomp
+
+/-- Scaling an analytic function by a nonzero scalar and its argument by a nonzero constant
+preserves the analytic order at `0`. -/
+lemma analyticOrderAt_const_smul_comp_const_mul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {f : 𝕜 → E} (hf : AnalyticAt 𝕜 f 0) {c ζ : 𝕜} (hc : c ≠ 0) (hζ : ζ ≠ 0) :
+    analyticOrderAt (fun q : 𝕜 ↦ c • f (ζ * q)) 0 = analyticOrderAt f 0 := by
+  have hcomp_an : AnalyticAt 𝕜 (fun q : 𝕜 ↦ f (ζ * q)) 0 :=
+    hf.comp_of_eq (analyticAt_const.mul analyticAt_id) (mul_zero ζ)
+  have hsmul : (fun q : 𝕜 ↦ c • f (ζ * q)) = (fun _ : 𝕜 ↦ c) • fun q ↦ f (ζ * q) := rfl
+  rw [hsmul, analyticOrderAt_smul analyticAt_const hcomp_an,
+    analyticAt_const.analyticOrderAt_eq_zero.mpr hc, zero_add,
+    analyticOrderAt_comp_const_mul hf hζ]
+
+/-- Multiplying a scalar-valued analytic function by a nonzero constant and rescaling its argument
+by a nonzero constant preserves the analytic order at `0`. -/
+lemma analyticOrderAt_const_mul_comp_const_mul {f : 𝕜 → 𝕜} (hf : AnalyticAt 𝕜 f 0) {c ζ : 𝕜}
+    (hc : c ≠ 0) (hζ : ζ ≠ 0) :
+    analyticOrderAt (fun q : 𝕜 ↦ c * f (ζ * q)) 0 = analyticOrderAt f 0 :=
+  analyticOrderAt_const_smul_comp_const_mul hf hc hζ
 
 /-- The power map `w ↦ w ^ m`, recentred at `0`, has analytic order `m` at `0` when `m ≠ 0`. -/
 theorem analyticOrderAt_pow_sub_zero_pow {m : ℕ} (hm : m ≠ 0) :

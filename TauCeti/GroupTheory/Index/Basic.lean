@@ -57,8 +57,12 @@ centre gives the `Γ.withCenter` readings.
   with a homomorphism of finite-index range.
 * `MonoidHom.mk_mul_out_bijective`: right cosets of a composite range are represented by
   products of representatives for the two successive ranges.
+* `Subgroup.relIndex_withCenter_eq_one`, `Subgroup.index_eq_index_withCenter`: when `Γ` contains
+  the centre, `Γ` has relative index `1` in `Γ.withCenter` and the same index in `G`.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}` and `a ∉ Γ`.
+* `Subgroup.relIndex_withCenter_mul_card_center_subgroupOf`: in any group,
+  `[Γ·Z(G) : Γ] · |Z(G) ⊓ Γ| = |Z(G)|`.
 -/
 
 
@@ -409,6 +413,15 @@ theorem index_eq_two_mul_index_sup (N : Subgroup G) (hnorm : Γ ≤ Subgroup.nor
   rw [← Subgroup.relIndex_mul_index (le_sup_left : Γ ≤ Γ ⊔ N),
     relIndex_sup_eq_two N hnorm ha haΓ hN]
 
+/-- **When `Γ` contains the centre, `Γ` has relative index `1` in `Γ.withCenter`.** Adjoining the
+centre leaves `Γ` unchanged by `Subgroup.withCenter_eq_self_iff`. -/
+theorem relIndex_withCenter_eq_one (h : Subgroup.center G ≤ Γ) : Γ.relIndex Γ.withCenter = 1 := by
+  rw [withCenter_eq_self_iff.mpr h, relIndex_self]
+
+/-- **When `Γ` contains the centre, `Γ` and `Γ.withCenter` have the same index in `G`.** -/
+theorem index_eq_index_withCenter (h : Subgroup.center G ≤ Γ) : Γ.index = Γ.withCenter.index := by
+  rw [withCenter_eq_self_iff.mpr h]
+
 /-- **When the centre is `{1, a}` and `a ∉ Γ`, `Γ` has relative index exactly `2` in
 `Γ.withCenter`.** The centre reading of `Subgroup.relIndex_sup_eq_two`. This is the branch in
 which the two subgroups genuinely differ; they coincide exactly when the centre already lies
@@ -430,6 +443,25 @@ theorem index_eq_two_mul_index_withCenter (ha : a ∈ Subgroup.center G) (haΓ :
     (hcenter : ∀ c ∈ Subgroup.center G, c = 1 ∨ c = a) : Γ.index = 2 * Γ.withCenter.index :=
   Subgroup.withCenter_def Γ ▸
     index_eq_two_mul_index_sup _ Subgroup.le_normalizer_of_normal ha haΓ hcenter
+
+/-- **Product of the central relative index and the central intersection order.** For any subgroup
+`Γ ≤ G`, `[Γ·Z(G) : Γ] · |Z(G) ⊓ Γ| = |Z(G)|`: since `Z(G)` is normal, `[Γ ⊔ Z(G) : Γ] =
+[Z(G) : Γ ⊓ Z(G)]` by `Subgroup.relIndex_sup_of_le_normalizer`, and Lagrange's theorem on `Z(G)`
+finishes the identity. -/
+theorem relIndex_withCenter_mul_card_center_subgroupOf (Γ : Subgroup G) :
+    Γ.relIndex Γ.withCenter * Nat.card ((Subgroup.center G).subgroupOf Γ) =
+      Nat.card (Subgroup.center G) := by
+  have hrel : Γ.relIndex Γ.withCenter = (Γ.subgroupOf (Subgroup.center G)).index := by
+    rw [withCenter_def, relIndex_sup_of_le_normalizer Subgroup.le_normalizer_of_normal, relIndex]
+  have hcard : Nat.card ((Subgroup.center G).subgroupOf Γ) =
+      Nat.card (Γ.subgroupOf (Subgroup.center G)) :=
+    Nat.card_congr
+      { toFun := fun x ↦ ⟨⟨x.1.1, mem_subgroupOf.mp x.2⟩, mem_subgroupOf.mpr x.1.2⟩
+        invFun := fun y ↦ ⟨⟨y.1.1, mem_subgroupOf.mp y.2⟩, mem_subgroupOf.mpr y.1.2⟩
+        left_inv := fun _ ↦ rfl
+        right_inv := fun _ ↦ rfl }
+  rw [hrel, hcard, mul_comm]
+  exact (Γ.subgroupOf (Subgroup.center G)).card_mul_index
 
 end Subgroup
 

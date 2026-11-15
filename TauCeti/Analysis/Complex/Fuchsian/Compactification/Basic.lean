@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Horodisc
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 import TauCeti.Analysis.Complex.Fuchsian.Covolume
 
 /-!
@@ -42,6 +43,8 @@ the complex structure at the cusps are not part of this file.
 
 * `Subgroup.CompactifiedQuotient`: the carrier, with its topology for a discrete `Γ`.
 * `Subgroup.CompactifiedQuotient.equivSum`: the identification with the sum type.
+* `Subgroup.CompactifiedQuotient.effectiveStabilizerOrder`: the orbifold stabilizer order (`e_q`
+  at an interior orbit `q`, `1` at an adjoined cusp).
 * `Subgroup.CompactifiedQuotient.cuspNhd`: the basic neighbourhoods of a cusp orbit.
 * `Subgroup.CompactifiedQuotient.nhds_basis_cuspNhd`: they form a neighbourhood basis, for
   every cusp datum representing the orbit and every lower bound on the height.
@@ -130,6 +133,45 @@ theorem ofQuotient_surjective_iff :
 theorem compl_range_ofQuotient : (range (ofQuotient (Γ := Γ)))ᶜ = range ofCusp := by
   ext x
   cases x <;> simp
+
+/-- The orbifold stabilizer order on the compactified quotient `Γ.CompactifiedQuotient`: at an
+interior orbit `q` it is the effective stabilizer order `TauCeti.cardStabilizerOnOrbit q`, and at an
+adjoined cusp it is `1`. -/
+noncomputable def effectiveStabilizerOrder : Γ.CompactifiedQuotient → ℕ
+  | ofQuotient q => TauCeti.cardStabilizerOnOrbit q
+  | ofCusp _ => 1
+
+/-- On an interior orbit `q`, `effectiveStabilizerOrder` is `TauCeti.cardStabilizerOnOrbit q`. -/
+@[simp]
+theorem effectiveStabilizerOrder_ofQuotient (q : orbitRel.Quotient Γ ℍ) :
+    effectiveStabilizerOrder (ofQuotient q) = TauCeti.cardStabilizerOnOrbit q :=
+  (rfl)
+
+/-- At an adjoined cusp, `effectiveStabilizerOrder` is `1`. -/
+@[simp]
+theorem effectiveStabilizerOrder_ofCusp (C : Γ.CuspOrbit) :
+    effectiveStabilizerOrder (ofCusp C : Γ.CompactifiedQuotient) = 1 :=
+  (rfl)
+
+/-- Every point of the compactified quotient of a properly discontinuous Fuchsian group has positive
+effective stabilizer order. -/
+theorem effectiveStabilizerOrder_pos [ProperlyDiscontinuousSMul Γ ℍ]
+    (x : Γ.CompactifiedQuotient) : 0 < effectiveStabilizerOrder x := by
+  cases x with
+  | ofQuotient q =>
+    induction q using Quotient.inductionOn' with
+    | h z =>
+      have : Finite (stabilizer Γ z) :=
+        (ProperlyDiscontinuousSMul.finite_stabilizer z).to_subtype
+      rw [effectiveStabilizerOrder_ofQuotient, TauCeti.cardStabilizerOnOrbit_mk]
+      exact Nat.card_pos
+  | ofCusp _ => exact Nat.one_pos
+
+/-- Every point of the compactified quotient of a properly discontinuous Fuchsian group has nonzero
+effective stabilizer order. -/
+theorem effectiveStabilizerOrder_ne_zero [ProperlyDiscontinuousSMul Γ ℍ]
+    (x : Γ.CompactifiedQuotient) : effectiveStabilizerOrder x ≠ 0 :=
+  (effectiveStabilizerOrder_pos x).ne'
 
 /-! ### Cusp neighbourhoods -/
 

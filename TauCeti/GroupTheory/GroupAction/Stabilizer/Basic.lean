@@ -84,7 +84,9 @@ normality of it is equivalent to freeness of the action of the image.
 * `TauCeti.card_stabilizer_of_orbitRel`: the stabiliser order is an invariant of the orbit,
   with `TauCeti.card_stabilizer_smul` the translate-presented corollary.
 * `TauCeti.cardStabilizerOnOrbit`: that order as a function on the orbit space, with
-  `TauCeti.cardStabilizerOnOrbit_mk` its evaluation lemma.
+  `TauCeti.cardStabilizerOnOrbit_mk` its evaluation lemma and
+  `TauCeti.cardStabilizerOnOrbit_pos` / `TauCeti.cardStabilizerOnOrbit_ne_zero` its positivity
+  when point stabilisers are finite.
 * `TauCeti.natCard_smul_mem_eq_natCard_mul_natCard_stabilizer`: the elements carrying a base point
   into a subset `S` of its orbit number `|S|` times the order of its stabiliser.
 * `TauCeti.card_stabilizer_congr`: the stabiliser order is preserved by a map carrying one action
@@ -287,6 +289,18 @@ theorem cardStabilizerOnOrbit_mk (a : α) :
       Nat.card (MulAction.stabilizer G a) := by
   unfold cardStabilizerOnOrbit
   rfl
+
+/-- When every point stabiliser is finite, `cardStabilizerOnOrbit` is positive on every orbit:
+each stabiliser is a finite group, hence nonempty. For a properly discontinuous action,
+`TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul` supplies the hypothesis. -/
+theorem cardStabilizerOnOrbit_pos [∀ a : α, Finite (MulAction.stabilizer G a)]
+    (q : MulAction.orbitRel.Quotient G α) : 0 < cardStabilizerOnOrbit q :=
+  Quotient.inductionOn' q fun _ ↦ by rw [cardStabilizerOnOrbit_mk]; exact Nat.card_pos
+
+/-- When every point stabiliser is finite, `cardStabilizerOnOrbit` is nonzero on every orbit. -/
+theorem cardStabilizerOnOrbit_ne_zero [∀ a : α, Finite (MulAction.stabilizer G a)]
+    (q : MulAction.orbitRel.Quotient G α) : cardStabilizerOnOrbit q ≠ 0 :=
+  (cardStabilizerOnOrbit_pos q).ne'
 
 section Congr
 
