@@ -28,7 +28,8 @@ Lax--Milgram produces the unique `u : V` with `B u v = ⟪h, J v⟫` for all `v`
 `IsCoercive.formSolutionOperator`, an operator `S : H →L[ℝ] H`. These constructions, their
 kernel and eigenvector correspondence, and their compactness, symmetry and positivity properties
 do not require `H` to be complete. Spectral existence and triviality of the orthogonal complement
-of the eigenspaces also hold without completeness; the Hilbert-basis theorem assumes it.
+of the eigenspaces also hold without completeness; the Hilbert-basis theorem, density of the range
+of `S` and invertibility of `I + S` assume it.
 
 `S` is the right object to spectralize.  It is compact as soon as `J` is, it is symmetric as
 soon as `B` is, and its nonzero eigenvalues are exactly the reciprocals of the variational
@@ -60,9 +61,10 @@ eigenfunction.
   `IsCoercive.isSymmetric_formSolutionOperator` and
   `IsCoercive.inner_formSolutionOperator_self_nonneg`.
 * `IsCoercive.ker_formSolutionOperator`: the kernel of `S` is `(range J)ᗮ`, and
-  `IsCoercive.formSolutionOperator_injective`, `IsCoercive.denseRange_formSolutionOperator`: `S`
-  is injective with dense range when `J` has dense range.
-* `IsCoercive.isUnit_one_add_formSolutionOperator`: `I + S` is invertible.
+  `IsCoercive.formSolutionOperator_injective`: `S` is injective when `J` has dense range.
+* `IsCoercive.denseRange_formSolutionOperator`: `S` has dense range when `H` is complete and `J`
+  has dense range.
+* `IsCoercive.isUnit_one_add_formSolutionOperator`: `I + S` is invertible when `H` is complete.
 * `IsCoercive.hasEigenvalue_formSolutionOperator_iff`: the reciprocal correspondence between
   the nonzero eigenvalues of `S` and the variational eigenvalues.
 * `IsCoercive.exists_ne_zero_forall_apply_eq_smul_inner`: existence of a variational
@@ -296,7 +298,7 @@ theorem formSolutionOperator_injective (hB : IsCoercive B) {J : V →L[ℝ] H} (
   LinearMap.ker_eq_bot.1 ((eigenspace_zero _).symm.trans
     (hB.eigenspace_formSolutionOperator_zero_eq_bot hJ))
 
-/-- With `J` of dense range, the solution operator has dense range. -/
+/-- When `H` is complete and `J` has dense range, the solution operator has dense range. -/
 theorem denseRange_formSolutionOperator [CompleteSpace H] (hB : IsCoercive B) {J : V →L[ℝ] H}
     (hJ : DenseRange J) : DenseRange (hB.formSolutionOperator J) := by
   have horth : (LinearMap.range (hB.formSolutionOperator J : H →ₗ[ℝ] H))ᗮ = ⊥ := by
@@ -313,8 +315,7 @@ theorem denseRange_formSolutionOperator [CompleteSpace H] (hB : IsCoercive B) {J
   simpa [DenseRange, LinearMap.coe_range] using Submodule.dense_iff_topologicalClosure_eq_top.2
     (Submodule.topologicalClosure_eq_top_iff.2 horth)
 
-/-- `I + S` is invertible, since `⟪(I + S) h, h⟫ ≥ ‖h‖²` for the positive semidefinite solution
-operator `S`. -/
+/-- When `H` is complete, `I + S` is invertible for the solution operator `S`. -/
 theorem isUnit_one_add_formSolutionOperator [CompleteSpace H] (hB : IsCoercive B)
     (J : V →L[ℝ] H) : IsUnit (1 + hB.formSolutionOperator J) := by
   refine ContinuousLinearMap.isUnit_of_forall_le_norm_inner_map _ one_pos fun h => ?_

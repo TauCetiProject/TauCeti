@@ -211,10 +211,8 @@ theorem dirichletSolutionOperator_injective
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
     Function.Injective (dirichletSolutionOperator hcoeff hcoercive) := by
-  have h := hcoercive.eigenspace_formSolutionOperator_zero_eq_bot
-    (W1p0.denseRange_valueL_two (mu := mu) (Omega := Omega))
-  rw [eigenspace_zero] at h
-  exact LinearMap.ker_eq_bot.1 h
+  rw [dirichletSolutionOperator_def]
+  exact hcoercive.formSolutionOperator_injective W1p0.denseRange_valueL_two
 
 /-! ### Dirichlet eigenvalues -/
 
