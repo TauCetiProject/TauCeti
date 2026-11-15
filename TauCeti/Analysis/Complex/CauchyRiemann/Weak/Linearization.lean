@@ -25,7 +25,7 @@ This file proves the part of the bootstrap that does not use that regularity the
   continuous on `W`, then `Jᵤ` has a weak derivative `DJᵤ` with `(Jᵤ, DJᵤ, 0)` Sobolev
   Cauchy–Riemann coefficients (`TauCeti.IsSobolevCRCoefficients`), and `u` is a weak solution of
   `∂ₛu + Jᵤ ∂ₜu = ηᵤ` in the sense of `TauCeti.IsWeakCRSolution`.
-* `TauCeti.isWeakCRSolution_linearization_id`: the check `J = i`, `η = 0`, `u = id`.
+* `TauCeti.isWeakCRSolution_id`: the check `J = i`, `η = 0`, `u = id`.
 
 At higher order, the regularity the induction feeds back into the linear theorem is the
 composition theorem `TauCeti.MemWkpLoc.contDiffOn_comp_graph_succ`: since a weak solution is
@@ -100,7 +100,7 @@ end IsWeakCauchyRiemannOn
 /-- **Check: the standard structure.** For `J = i`, `η = 0` and `u = id` on `ℂ`, the linearized
 equation is the homogeneous equation `∂ₛu + i ∂ₜu = 0` for the constant structure `i`, and the
 identity solves it weakly. -/
-theorem isWeakCRSolution_linearization_id (hp : 2 < p) :
+theorem isWeakCRSolution_id (hp : 2 < p) :
     IsWeakCRSolution p Ω (fun _ => I • ContinuousLinearMap.id ℝ ℂ) 0 0 id 0 := by
   have hid := isWeakCauchyRiemannOn_id (p := (p : ℝ≥0∞)) (Ω := Ω)
   obtain ⟨DJ, hc, hsol⟩ := hid.exists_isWeakCRSolution_linearization (W := Set.univ) hp
