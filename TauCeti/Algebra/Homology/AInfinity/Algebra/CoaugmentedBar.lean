@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Extension
+public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Grading
 
 /-!
 # The bar coderivation of the coaugmented tensor coalgebra
@@ -49,6 +50,8 @@ co-Leibniz identity itself, the letterwise maps, and the total-letter-degree pie
 * `TauCeti.AInfinityAlgebra.coaugmentedBarDifferential_sq`: its square is zero.
 * `TauCeti.AInfinityAlgebra.isHomogeneous_coaugmentedBarDifferential`: it raises the total letter
   degree by one.
+* `TauCeti.AInfinityAlgebra.map_koszulTwist_coaugmentedBarDifferential`: the Koszul twist of the
+  suspended words anticommutes with it.
 * `TauCeti.AInfinityAlgebra.isGradedCoderivation_coaugmentedBarDifferential`: it is a
   twist-parameter-one graded coderivation of the coaugmented tensor coalgebra.
 
@@ -122,6 +125,21 @@ theorem isHomogeneous_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A) :
     LinearMap.IsHomogeneous 𝒜.coaugmentedBarDifferential
       (gradedPiece (𝒜.grading.shift 1)) (gradedPiece (𝒜.grading.shift 1)) 1 :=
   isHomogeneous_extendReduced 𝒜.isHomogeneous_barDifferential
+
+/-- The extension has degree one for the grading of the suspended tensor words. -/
+theorem isHomogeneous_coaugmentedBarDifferential_grading (𝒜 : AInfinityAlgebra R A) :
+    LinearMap.IsHomogeneous 𝒜.coaugmentedBarDifferential
+      (TensorWords.grading (𝒜.grading.shift 1)).piece
+      (TensorWords.grading (𝒜.grading.shift 1)).piece 1 := by
+  simpa only [grading_piece] using 𝒜.isHomogeneous_coaugmentedBarDifferential
+
+/-- The Koszul twist of the suspended words anticommutes with the extension. -/
+theorem map_koszulTwist_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A)
+    (w : TensorWords R A) :
+    TensorWords.map ((𝒜.grading.shift 1).koszulTwist 1) (𝒜.coaugmentedBarDifferential w) =
+      -𝒜.coaugmentedBarDifferential (TensorWords.map ((𝒜.grading.shift 1).koszulTwist 1) w) := by
+  rw [← koszulTwist_grading]
+  simpa using 𝒜.isHomogeneous_coaugmentedBarDifferential_grading.koszulTwist_apply 1 w
 
 /-- The extension satisfies the graded co-Leibniz identity of the coaugmented tensor coalgebra. -/
 theorem isGradedCoderivation_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A) :

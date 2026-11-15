@@ -261,8 +261,7 @@ theorem isHomogeneous_gradedCoderiv (G : InternalGrading R M ℤ)
     have hτ : LinearMap.IsHomogeneous (TensorWords.map ((AA.grading.shift 1).koszulTwist 1))
         W.piece W.piece 0 := by
       rw [← koszulTwist_grading]
-      exact LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
-        simpa only [add_zero] using W.koszulTwist_mem_piece hx 1
+      exact W.isHomogeneous_koszulTwist 1
     have hb : LinearMap.IsHomogeneous AA.coaugmentedBarDifferential W.piece W.piece 1 := by
       simpa only [W, grading_piece] using AA.isHomogeneous_coaugmentedBarDifferential
     have h1 := (hτ.tensorProduct hF).comp hδ

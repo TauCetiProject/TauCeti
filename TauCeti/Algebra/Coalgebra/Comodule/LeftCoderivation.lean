@@ -60,6 +60,8 @@ bar constructions.
   `TauCeti.Comodule`): the square-zero law can be checked on the counit component.
 * `TauCeti.Comodule.comp_comp_eq_lTensor_comp_of_comp_self_eq_id`: two maps intertwining left
   coactions up to the same involution of the coalgebra factor compose to a map of left comodules.
+* `TauCeti.Comodule.comp_ringInverse_eq_lTensor_comp`: the inverse of an invertible map of left
+  comodules is a map of left comodules.
 * `TauCeti.Comodule.leftCofreeCoact_comp_leftCofreeCoact` and
   `TauCeti.Comodule.leftCofreeCoact_comp_leftCoactRTensor_leftCofreeCoact`: the cofree left
   coaction, and its extension to the cofree bicomodule `(C ⊗ P) ⊗ N`, are coassociative.
@@ -169,8 +171,22 @@ theorem comp_comp_eq_lTensor_comp_of_comp_self_eq_id {X Z : Type*} [AddCommMonoi
     {g : Y →ₗ[R] Z} (hτ : τ ∘ₗ τ = LinearMap.id) (hf : δY ∘ₗ f = TensorProduct.map τ f ∘ₗ δX)
     (hg : δZ ∘ₗ g = TensorProduct.map τ g ∘ₗ δY) :
     δZ ∘ₗ g ∘ₗ f = (g ∘ₗ f).lTensor C ∘ₗ δX := by
-  rw [comp_comp_eq_map_comp_comp hf hg, hτ]
-  rfl
+  rw [comp_comp_eq_map_comp_comp hf hg, hτ, LinearMap.lTensor_def]
+
+/-- If an invertible endomorphism `U` is a map of left comodules, so is its inverse. -/
+theorem comp_ringInverse_eq_lTensor_comp {δY : Y →ₗ[R] C ⊗[R] Y} {U : Module.End R Y}
+    (hUnit : IsUnit U) (hU : δY ∘ₗ U = U.lTensor C ∘ₗ δY) :
+    δY ∘ₗ Ring.inverse U = (Ring.inverse U).lTensor C ∘ₗ δY := by
+  calc δY ∘ₗ Ring.inverse U
+      = (Ring.inverse U * U).lTensor C ∘ₗ δY ∘ₗ Ring.inverse U := by
+        rw [Ring.inverse_mul_cancel _ hUnit, Module.End.one_eq_id, LinearMap.lTensor_id,
+          LinearMap.id_comp]
+    _ = (Ring.inverse U).lTensor C ∘ₗ δY ∘ₗ (U * Ring.inverse U) := by
+        rw [Module.End.mul_eq_comp, Module.End.mul_eq_comp, LinearMap.lTensor_comp,
+          LinearMap.comp_assoc, ← LinearMap.comp_assoc (Ring.inverse U) U δY, hU,
+          LinearMap.comp_assoc]
+    _ = (Ring.inverse U).lTensor C ∘ₗ δY := by
+        rw [Ring.mul_inverse_cancel _ hUnit, Module.End.one_eq_id, LinearMap.comp_id]
 
 section Bicomodule
 

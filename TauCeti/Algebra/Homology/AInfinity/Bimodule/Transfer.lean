@@ -112,14 +112,6 @@ variable {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B} (MM : AInfinity
   (hincl : LinearMap.IsHomogeneous c.incl GN.piece MM.grading.piece 0)
   (hproj : LinearMap.IsHomogeneous c.proj MM.grading.piece GN.piece 0)
 
-/-- The unary part is the tensor product differential of `Tᶜ(sA) ⊗ M` with `Tᶜ(sB)`. -/
-theorem unaryBarDifferential_eq_rTensor_add (G : InternalGrading R M ℤ) (d : Module.End R M) :
-    unaryBarDifferential AA BB G d =
-      (leftUnaryDifferential AA d).rTensor (TensorWords R B) +
-        BB.coaugmentedBarDifferential.lTensor (TensorWords R A ⊗[R] M) ∘ₗ
-          (((leftGrading AA G).shift 1).koszulTwist 1).rTensor (TensorWords R B) := by
-  rw [unaryBarDifferential_def, AInfinityRightModule.unaryBarDifferential_def]
-
 /-- A homogeneous map `g` gives a map `1 ⊗ g` of the same degree for the left gradings. -/
 private theorem isHomogeneous_lTensor_leftGrading {G : InternalGrading R M ℤ}
     {G' : InternalGrading R N ℤ} {g : M →ₗ[R] N} {r : ℤ}
@@ -138,12 +130,10 @@ private theorem isHomogeneous_map_koszulTwist_leftGrading {G : InternalGrading R
     LinearMap.IsHomogeneous
       (TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist 1) g)
       ((leftGrading AA G).shift 1).piece ((leftGrading AA G').shift 1).piece r := by
-  let W := TensorWords.grading (AA.grading.shift 1)
-  have hτ : LinearMap.IsHomogeneous (W.koszulTwist 1) W.piece W.piece 0 :=
-    LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
-      simpa only [add_zero] using W.koszulTwist_mem_piece hx 1
   rw [shift_one_leftGrading, shift_one_leftGrading]
-  simpa only [zero_add] using hτ.tensorProduct (LinearMap.isHomogeneous_shift_piece_iff.2 hg)
+  simpa only [zero_add] using
+    ((TensorWords.grading (AA.grading.shift 1)).isHomogeneous_koszulTwist 1).tensorProduct
+      (LinearMap.isHomogeneous_shift_piece_iff.2 hg)
 
 /-- A homogeneous map `f` of `Tᶜ(sA) ⊗ sM` gives a map `f ⊗ 1` of the same degree for the bar
 gradings. -/
@@ -163,7 +153,7 @@ private theorem isHomogeneous_rTensor_of_leftGrading {G : InternalGrading R M �
 noncomputable def leftContraction :
     LinearSpecialContraction (M := TensorWords R A ⊗[R] M) (N := TensorWords R A ⊗[R] N)
       (leftUnaryDifferential AA MM.differential) (leftUnaryDifferential AA dN) :=
-  c.lTensor (isHomogeneous_coaugmentedBarDifferential_grading AA)
+  c.lTensor AA.isHomogeneous_coaugmentedBarDifferential_grading
 
 /-- The inclusion of the left contraction is `1 ⊗ i`. -/
 @[simp]
@@ -235,24 +225,6 @@ theorem barContraction_homotopy :
         c.homotopy).rTensor (TensorWords R B) := by
   simp only [barContraction, LinearSpecialContraction.rTensor_homotopy, leftContraction_homotopy]
 
-/-- The source differential of the bar contraction squares to zero. -/
-theorem unaryBarDifferential_differential_comp_self :
-    unaryBarDifferential AA BB MM.grading MM.differential ∘ₗ
-      unaryBarDifferential AA BB MM.grading MM.differential = 0 :=
-  unaryBarDifferential_comp_self AA BB MM.grading
-    (LinearMap.isHomogeneous_shift_piece_iff.2 MM.isHomogeneous_differential)
-    MM.differential_comp_self_eq_zero
-
-/-- The higher part is a perturbation of the unary part: `(D₀ + δ)² = D₀²`, since `D₀ + δ` is the
-bar differential and both sides vanish. -/
-theorem unaryBarDifferential_add_higherBarDifferential_comp_self :
-    (unaryBarDifferential AA BB MM.grading MM.differential + MM.higherBarDifferential) ∘ₗ
-        (unaryBarDifferential AA BB MM.grading MM.differential + MM.higherBarDifferential) =
-      unaryBarDifferential AA BB MM.grading MM.differential ∘ₗ
-        unaryBarDifferential AA BB MM.grading MM.differential := by
-  rw [unaryBarDifferential_add_higherBarDifferential, barDifferential_sq,
-    MM.unaryBarDifferential_differential_comp_self]
-
 /-- The unit hypothesis of the perturbation lemma for the bar contraction. -/
 theorem isUnit_one_add_higherBarDifferential_mul_barContraction_homotopy :
     IsUnit (1 + MM.higherBarDifferential * (MM.barContraction c hh hincl hproj).homotopy) := by
@@ -305,17 +277,7 @@ theorem leftCoact_comp_perturbationSeries :
       LinearMap.lTensor_id, LinearMap.id_comp]
   have hUnit : IsUnit U := MM.isUnit_one_add_higherBarDifferential_mul_barContraction_homotopy
     c hh hincl hproj
-  have hinv : Δ ∘ₗ Ring.inverse U = (Ring.inverse U).lTensor (TensorWords R A) ∘ₗ Δ := by
-    calc Δ ∘ₗ Ring.inverse U
-        = (Ring.inverse U * U).lTensor (TensorWords R A) ∘ₗ Δ ∘ₗ Ring.inverse U := by
-          rw [Ring.inverse_mul_cancel _ hUnit, Module.End.one_eq_id, LinearMap.lTensor_id,
-            LinearMap.id_comp]
-      _ = (Ring.inverse U).lTensor (TensorWords R A) ∘ₗ Δ ∘ₗ (U * Ring.inverse U) := by
-          rw [Module.End.mul_eq_comp, Module.End.mul_eq_comp, LinearMap.lTensor_comp,
-            LinearMap.comp_assoc, ← LinearMap.comp_assoc (Ring.inverse U) U Δ, hU,
-            LinearMap.comp_assoc]
-      _ = (Ring.inverse U).lTensor (TensorWords R A) ∘ₗ Δ := by
-          rw [Ring.mul_inverse_cancel _ hUnit, Module.End.one_eq_id, LinearMap.comp_id]
+  have hinv := Comodule.comp_ringInverse_eq_lTensor_comp hUnit hU
   rw [LinearSpecialContraction.perturbationSeries_def, Module.End.mul_eq_comp,
     ← LinearMap.comp_assoc, hinv, LinearMap.comp_assoc, MM.leftCoact_comp_higherBarDifferential,
     ← LinearMap.comp_assoc, LinearMap.lTensor_comp_map]
@@ -327,15 +289,6 @@ theorem perturbationSeries_one_tmul_tmul_one (x : M) :
       ((1 ⊗ₜ x) ⊗ₜ (1 : TensorWords R B)) = 0 := by
   rw [LinearSpecialContraction.perturbationSeries_def, mul_apply_eq_comp,
     higherBarDifferential_one_tmul_tmul_one, map_zero]
-
-/-- The higher part has degree one. -/
-theorem isHomogeneous_higherBarDifferential :
-    LinearMap.IsHomogeneous MM.higherBarDifferential (barGrading AA BB MM.grading).piece
-      (barGrading AA BB MM.grading).piece 1 := by
-  rw [higherBarDifferential_def]
-  exact MM.isHomogeneous_barDifferential.sub
-    (isHomogeneous_unaryBarDifferential AA BB MM.grading
-      (LinearMap.isHomogeneous_shift_piece_iff.2 MM.isHomogeneous_differential))
 
 /-- The perturbation operator has degree one. -/
 theorem isHomogeneous_perturbationSeries :

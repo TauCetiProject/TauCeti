@@ -57,6 +57,7 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
   only finitely many nonzero homogeneous pieces.
 * `TauCeti.InternalGrading.koszulTwist_apply_of_mem`: the twist acts by the Koszul scalar on
   each homogeneous piece.
+* `TauCeti.InternalGrading.isHomogeneous_koszulTwist`: the twist is homogeneous of degree zero.
 * `TauCeti.InternalGrading.koszulTwist_comp`: twists compose by adding the twist parameters.
 * `TauCeti.InternalGrading.koszulTwist_ofDecomposition_mul` and
   `TauCeti.InternalGrading.koszulTwist_ofDecomposition_one`: the Koszul twist of a graded algebra
@@ -528,6 +529,12 @@ theorem InternalGrading.koszulTwist_mem_piece (G : InternalGrading R M ℤ) {x :
     koszulTwist G q x ∈ G.piece e := by
   rw [InternalGrading.koszulTwist_apply_of_mem G hx q]
   exact Submodule.smul_mem _ _ hx
+
+/-- The Koszul twist is homogeneous of degree zero. -/
+theorem InternalGrading.isHomogeneous_koszulTwist (G : InternalGrading R M ℤ) (q : ℤ) :
+    LinearMap.IsHomogeneous (koszulTwist G q) G.piece G.piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
+    simpa only [add_zero] using G.koszulTwist_mem_piece hx q
 
 /-- The Koszul twist of the grading of a decomposition `ℳ` preserves each piece `ℳ k`. -/
 theorem InternalGrading.koszulTwist_mem_ofDecomposition (ℳ : ℤ → Submodule R M)

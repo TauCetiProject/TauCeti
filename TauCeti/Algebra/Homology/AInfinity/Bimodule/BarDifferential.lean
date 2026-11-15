@@ -131,6 +131,14 @@ theorem unaryBarDifferential_def :
       AInfinityRightModule.unaryBarDifferential (M := TensorWords R A ⊗[R] M) BB
         (leftGrading AA G) (leftUnaryDifferential AA d) := (rfl)
 
+/-- The unary part is the tensor product differential of `Tᶜ(sA) ⊗ M` with `Tᶜ(sB)`. -/
+theorem unaryBarDifferential_eq_rTensor_add :
+    unaryBarDifferential AA BB G d =
+      (leftUnaryDifferential AA d).rTensor (TensorWords R B) +
+        BB.coaugmentedBarDifferential.lTensor (TensorWords R A ⊗[R] M) ∘ₗ
+          (((leftGrading AA G).shift 1).koszulTwist 1).rTensor (TensorWords R B) := by
+  rw [unaryBarDifferential_def, AInfinityRightModule.unaryBarDifferential_def]
+
 /-- The unary part on `w ⊗ x ⊗ v`. -/
 @[simp]
 theorem unaryBarDifferential_tmul (w : TensorWords R A) (x : M) (v : TensorWords R B) :
@@ -197,20 +205,6 @@ theorem isGradedCoderivationOver_unaryBarDifferential :
   rw [unaryBarDifferential_eq_gradedCoderiv]
   exact isGradedCoderivationOver_gradedCoderiv _ _ _ _
 
-/-- The bar differential of `A` has degree one for the grading of the suspended words. -/
-theorem isHomogeneous_coaugmentedBarDifferential_grading :
-    LinearMap.IsHomogeneous AA.coaugmentedBarDifferential
-      (TensorWords.grading (AA.grading.shift 1)).piece
-      (TensorWords.grading (AA.grading.shift 1)).piece 1 := by
-  simpa only [grading_piece] using AA.isHomogeneous_coaugmentedBarDifferential
-
-/-- The Koszul twist of the suspended words anticommutes with the bar differential of `A`. -/
-private theorem map_koszulTwist_coaugmentedBarDifferential (w : TensorWords R A) :
-    TensorWords.map ((AA.grading.shift 1).koszulTwist 1) (AA.coaugmentedBarDifferential w) =
-      -AA.coaugmentedBarDifferential (TensorWords.map ((AA.grading.shift 1).koszulTwist 1) w) := by
-  rw [← koszulTwist_grading]
-  simpa using (isHomogeneous_coaugmentedBarDifferential_grading AA).koszulTwist_apply 1 w
-
 variable {d}
 
 /-- The left unary differential has degree one when `d` does for the suspended grading. -/
@@ -218,14 +212,10 @@ theorem isHomogeneous_leftUnaryDifferential
     (hd : LinearMap.IsHomogeneous d (G.shift 1).piece (G.shift 1).piece 1) :
     LinearMap.IsHomogeneous (leftUnaryDifferential AA d) ((leftGrading AA G).shift 1).piece
       ((leftGrading AA G).shift 1).piece 1 := by
-  let W := TensorWords.grading (AA.grading.shift 1)
-  have hτ : LinearMap.IsHomogeneous (W.koszulTwist 1) W.piece W.piece 0 :=
-    LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
-      simpa only [add_zero] using W.koszulTwist_mem_piece hx 1
   rw [shift_one_leftGrading, leftUnaryDifferential_def]
   simpa only [zero_add] using
-    ((isHomogeneous_coaugmentedBarDifferential_grading AA).rTensor (G.shift 1)).add
-      (hτ.tensorProduct hd)
+    (AA.isHomogeneous_coaugmentedBarDifferential_grading.rTensor (G.shift 1)).add
+      (((TensorWords.grading (AA.grading.shift 1)).isHomogeneous_koszulTwist 1).tensorProduct hd)
 
 /-- The left unary differential squares to zero when `d` does, since the Koszul twist
 anticommutes with the bar differential of `A`. -/
@@ -239,7 +229,7 @@ theorem leftUnaryDifferential_comp_self (hdd : d ∘ₗ d = 0) :
     rw [← koszulTwist_grading, InternalGrading.koszulTwist_koszulTwist]
   simp only [LinearMap.comp_apply, LinearMap.zero_apply] at hdd hbb
   simp only [LinearMap.comp_apply, leftUnaryDifferential_tmul, map_add, LinearMap.zero_apply,
-    hdd, hbb, hττ, map_koszulTwist_coaugmentedBarDifferential, TensorProduct.zero_tmul,
+    hdd, hbb, hττ, AA.map_koszulTwist_coaugmentedBarDifferential, TensorProduct.zero_tmul,
     TensorProduct.tmul_zero, TensorProduct.neg_tmul]
   abel
 
@@ -308,6 +298,31 @@ theorem unaryBarDifferential_add_higherBarDifferential :
     unaryBarDifferential AA BB MM.grading MM.differential + MM.higherBarDifferential =
       MM.barDifferential :=
   add_sub_cancel _ _
+
+/-- The unary part for the unary operation of a bimodule squares to zero. -/
+theorem unaryBarDifferential_differential_comp_self :
+    unaryBarDifferential AA BB MM.grading MM.differential ∘ₗ
+      unaryBarDifferential AA BB MM.grading MM.differential = 0 :=
+  unaryBarDifferential_comp_self AA BB MM.grading MM.isHomogeneous_differential_shift
+    MM.differential_comp_self_eq_zero
+
+/-- The higher part is a perturbation of the unary part: `(D₀ + δ)² = D₀²`, since `D₀ + δ` is the
+bar differential and both sides vanish. -/
+theorem unaryBarDifferential_add_higherBarDifferential_comp_self :
+    (unaryBarDifferential AA BB MM.grading MM.differential + MM.higherBarDifferential) ∘ₗ
+        (unaryBarDifferential AA BB MM.grading MM.differential + MM.higherBarDifferential) =
+      unaryBarDifferential AA BB MM.grading MM.differential ∘ₗ
+        unaryBarDifferential AA BB MM.grading MM.differential := by
+  rw [unaryBarDifferential_add_higherBarDifferential, barDifferential_sq,
+    MM.unaryBarDifferential_differential_comp_self]
+
+/-- The higher part has degree one. -/
+theorem isHomogeneous_higherBarDifferential :
+    LinearMap.IsHomogeneous MM.higherBarDifferential (barGrading AA BB MM.grading).piece
+      (barGrading AA BB MM.grading).piece 1 := by
+  rw [higherBarDifferential_def]
+  exact MM.isHomogeneous_barDifferential.sub
+    (isHomogeneous_unaryBarDifferential AA BB MM.grading MM.isHomogeneous_differential_shift)
 
 /-- The left cofree parts of two Taylor maps differ by the twisted left coaction followed by the
 difference of the Taylor maps. -/
