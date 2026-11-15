@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.ZeroSum
 import TauCeti.Data.Int.MulPred
+import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.Dual
 
 /-!
 # Shortest vectors in the discriminant cosets of `Aₙ`
@@ -33,12 +34,18 @@ lower bound, and it is attained exactly when every `mⱼ` is `0` or `1`: the min
 class are the vectors with `k` coordinates equal to `(n + 1 - k) / (n + 1)` and the remaining
 `n + 1 - k` coordinates equal to `-k / (n + 1)`.
 
+In Bourbaki simple-root coordinates on `Fin n → ℚ`, the canonical computable representative
+`TauCeti.IntegralLattice.typeACosetRepresentative` of `k ω₁` (`0 ≤ k ≤ n + 1`) has `j`-th
+coordinate `min (j + 1) k - (j + 1) k / (n + 1)` (the `k`-th fundamental weight `ω_k` for
+`1 ≤ k ≤ n`, and `0` at `k = 0` and `k = n + 1`), whose classical coordinates have `1 - k / (n + 1)`
+in the first `k` positions and `-k / (n + 1)` in the remaining `n + 1 - k` positions.
+
 The minima are stated as `IsLeast` over the norms of the actual dual-lattice vectors in each
 discriminant class, so they record attainment as well as the lower bound.  They are the
 shortest-norm values attached to the glue labels of an `Aₙ` component, the input for bounding the
 norm of a glue vector in an orthogonal sum of root lattices.
 
-## Main results
+## Main declarations
 
 * `TauCeti.IntegralLattice.dotProduct_self_eq_mul_sub_div_add_sum`: the exact norm identity
   `∑ xⱼ² = k (n + 1 - k) / (n + 1) + ∑ mⱼ (mⱼ - 1)` in classical coordinates.
@@ -46,8 +53,10 @@ norm of a glue vector in an orthogonal sum of root lattices.
   sum zero with coordinates in `ℤ - k / (n + 1)` has norm at least `k (n + 1 - k) / (n + 1)`.
 * `TauCeti.IntegralLattice.dotProduct_self_eq_mul_sub_div_iff`: equality holds exactly when all
   coordinates are `-k / (n + 1)` or `1 - k / (n + 1)`.
-* `TauCeti.IntegralLattice.exists_mk_eq_nsmul_typeAFundamentalWeightClass_and_apply_eq`: the
-  class `k ω₁` contains a dual vector with these minimal classical coordinates.
+* `TauCeti.IntegralLattice.typeACosetRepresentative`: computable simple-root representative of the
+  class `k ω₁`, with `typeAIsometryZeroSumLattice_typeACosetRepresentative_apply`,
+  `typeACosetRepresentative_mem_dualCarrier`, `mk_typeACosetRepresentative`, and
+  `form_typeACosetRepresentative_self`.
 * `TauCeti.IntegralLattice.isLeast_form_self_nsmul_typeAFundamentalWeightClass`: the minimum norm
   of the class `k ω₁` is `k (n + 1 - k) / (n + 1)` for `k ≤ n + 1`.
 * `TauCeti.IntegralLattice.isLeast_form_self_typeADiscriminantGroupEquiv`: the same minimum,
@@ -55,6 +64,7 @@ norm of a glue vector in an orthogonal sum of root lattices.
 
 ## References
 
+* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate I.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 4, §6.1 and
   Chapter 16, §1.
 -/
@@ -117,59 +127,146 @@ theorem dotProduct_self_eq_mul_sub_div_iff {k : ℤ} {x : Fin (n + 1) → ℚ} (
 
 /-! ## The discriminant classes of the root lattice -/
 
-/-- **A minimal vector of the discriminant class `k ω₁` of `Aₙ`.** For `0 ≤ k ≤ n + 1`, the class
-`k ω₁` contains a dual vector whose classical coordinates are `1 - k / (n + 1)` in the first `k`
-places and `-k / (n + 1)` in the others. -/
-theorem exists_mk_eq_nsmul_typeAFundamentalWeightClass_and_apply_eq {k : ℕ} (hk : k ≤ n + 1) :
-    ∃ x : (typeARootLattice n).dualCarrier,
-      Submodule.Quotient.mk x = k • typeAFundamentalWeightClass n ∧
-        ∀ j, (typeAIsometryZeroSumLattice n x : Fin (n + 1) → ℚ) j =
-          (if (j : ℕ) < k then 1 else 0) - k / (n + 1) := by
-  set e := typeAIsometryZeroSumLattice n
-  -- The difference `z` of the wanted vector from the classical coordinates
-  -- `k (e₀ - (1 / (n + 1)) (1, …, 1))` of `k ω₁` is an integral vector of coordinate sum zero.
-  set z : Fin (n + 1) → ℚ := fun j ↦ (if (j : ℕ) < k then 1 else 0) - k * if j = 0 then 1 else 0
-  have hz : z ∈ singleParityCheckCode ℚ (Fin (n + 1)) := by
+/-- **The canonical simple-root representative of the discriminant class `k ω₁` of `Aₙ`**:
+its `j`-th Bourbaki simple-root coordinate is `min (j + 1) k - (j + 1) k / (n + 1)`.  For
+`0 ≤ k ≤ n + 1`, its classical zero-sum coordinates have `1 - k / (n + 1)` in the first `k`
+positions and `-k / (n + 1)` in the remaining `n + 1 - k` positions (so for `1 ≤ k ≤ n` it is the
+`k`-th fundamental weight `ω_k`, and at `k = 0` and `k = n + 1` it is `0`), attaining the minimum
+norm `k (n + 1 - k) / (n + 1)` of the coset `k ω₁`. -/
+@[expose] def typeACosetRepresentative (n k : ℕ) : Fin n → ℚ :=
+  fun j ↦ ((min (j.val + 1) k : ℕ) : ℚ) - ((j.val + 1 : ℕ) * k : ℚ) / (n + 1)
+
+/-- The `j`-th Bourbaki simple-root coordinate of `typeACosetRepresentative n k`. -/
+@[simp]
+theorem typeACosetRepresentative_apply (n k : ℕ) (j : Fin n) :
+    typeACosetRepresentative n k j =
+      ((min (j.val + 1) k : ℕ) : ℚ) - ((j.val + 1 : ℕ) * k : ℚ) / (n + 1) :=
+  (rfl)
+
+/-- At `k = 0`, `typeACosetRepresentative n 0` is the zero vector. -/
+@[simp]
+theorem typeACosetRepresentative_zero (n : ℕ) : typeACosetRepresentative n 0 = 0 := by
+  funext j
+  rw [typeACosetRepresentative_apply]
+  simp only [Nat.min_zero, CharP.cast_eq_zero, mul_zero, zero_div, sub_self]
+  rfl
+
+/-- At `k = 1`, `typeACosetRepresentative n 1` is the first fundamental weight `ω₁`. -/
+theorem typeACosetRepresentative_one (n : ℕ) :
+    typeACosetRepresentative n 1 = typeAFundamentalWeight n := by
+  funext j
+  have hmin : min (j.val + 1) 1 = 1 := Nat.min_eq_right (Nat.succ_le_succ (Nat.zero_le _))
+  have hn : ((n : ℚ) + 1) ≠ 0 := by positivity
+  rw [typeACosetRepresentative_apply, hmin, typeAFundamentalWeight_apply]
+  push_cast
+  field_simp
+  ring
+
+/-- At `k = n + 1`, `typeACosetRepresentative n (n + 1)` evaluates to the zero vector. -/
+theorem typeACosetRepresentative_add_one_self (n : ℕ) :
+    typeACosetRepresentative n (n + 1) = 0 := by
+  funext j
+  have hj : j.val < n := j.isLt
+  have hmin : min (j.val + 1) (n + 1) = j.val + 1 := Nat.min_eq_left (by omega)
+  have hn : ((n : ℚ) + 1) ≠ 0 := by positivity
+  rw [Pi.zero_apply, typeACosetRepresentative_apply, hmin]
+  push_cast
+  field_simp
+  ring
+
+/-- **Classical zero-sum coordinates of `typeACosetRepresentative`**: for `0 ≤ k ≤ n + 1`,
+`typeAIsometryZeroSumLattice` carries `typeACosetRepresentative n k` to the vector in `ℚ^{n+1}`
+with `1 - k / (n + 1)` in the first `k` positions and `-k / (n + 1)` in the remaining positions. -/
+theorem typeAIsometryZeroSumLattice_typeACosetRepresentative_apply (n : ℕ) {k : ℕ}
+    (hk : k ≤ n + 1) (j : Fin (n + 1)) :
+    (typeAIsometryZeroSumLattice n (typeACosetRepresentative n k) : Fin (n + 1) → ℚ) j =
+      (if (j : ℕ) < k then 1 else 0) - k / (n + 1) := by
+  set v : Fin n → ℚ := typeACosetRepresentative n k
+  set w : Fin (n + 1) → ℚ := fun r ↦ (if (r : ℕ) < k then 1 else 0) - k / (n + 1)
+  have hn : ((n : ℚ) + 1) ≠ 0 := by positivity
+  have hw : w ∈ singleParityCheckCode ℚ (Fin (n + 1)) := by
     rw [mem_singleParityCheckCode]
-    simp [z, sum_sub_distrib, sum_boole, Fin.card_filter_val_lt, min_eq_right hk]
-  have hzL : e.symm ⟨z, hz⟩ ∈ (typeARootLattice n).carrier := by
-    rw [e.symm.apply_mem_carrier_iff, mem_zeroSumLattice_carrier_iff]
-    intro j
-    refine ⟨(if (j : ℕ) < k then 1 else 0) - k * if j = 0 then 1 else 0, ?_⟩
-    simp [z]
-  refine ⟨(k : ℤ) • typeAFundamentalWeightDual n +
-    ⟨e.symm ⟨z, hz⟩, (typeARootLattice n).le_dualCarrier hzL⟩, ?_, fun j ↦ ?_⟩
-  · rw [← natCast_zsmul, mk_eq_zsmul_typeAFundamentalWeightClass_iff, Submodule.coe_add,
-      Submodule.coe_smul, coe_typeAFundamentalWeightDual, add_sub_cancel_left]
-    exact hzL
-  · simp only [Submodule.coe_add, Submodule.coe_smul, coe_typeAFundamentalWeightDual, map_add,
-      map_zsmul, Isometry.apply_symm_apply]
-    simp [e, z]
-    split_ifs <;> ring
+    simp only [w, sum_sub_distrib, sum_boole, Fin.card_filter_val_lt, min_eq_right hk, sum_const,
+      card_univ, Fintype.card_fin, nsmul_eq_mul, Nat.cast_add, Nat.cast_one]
+    field_simp
+    ring
+  have key : (typeAIsometryZeroSumLattice n v : Fin (n + 1) → ℚ) = w := by
+    rw [← sum_smul_zeroSumSimpleRoot n hw]
+    conv_lhs =>
+      rw [← sum_smul_typeASimpleRoot v, map_sum]
+    simp only [map_smul, Submodule.coe_sum, Submodule.coe_smul,
+      typeAIsometryZeroSumLattice_typeASimpleRoot]
+    refine sum_congr rfl fun r _ ↦ congrArg (· • zeroSumSimpleRoot n r) ?_
+    have hr : r.val < n := r.isLt
+    have hfilter :
+        Finset.filter (fun i : Fin (n + 1) ↦ (i : ℕ) < k) (Iic r.castSucc) =
+          Finset.filter (fun i : Fin (n + 1) ↦ (i : ℕ) < min (r.val + 1) k) univ := by
+      ext i
+      simp only [mem_filter, mem_Iic, mem_univ, true_and, Fin.le_def, Fin.val_castSucc,
+        Nat.lt_min]
+      omega
+    have hmin_le : min (r.val + 1) k ≤ n + 1 := (Nat.min_le_left _ _).trans (by omega)
+    simp only [w, v, sum_sub_distrib, sum_boole, hfilter, Fin.card_filter_val_lt,
+      min_eq_right hmin_le, sum_const, Fin.card_Iic, Fin.val_castSucc, nsmul_eq_mul,
+      typeACosetRepresentative_apply]
+    push_cast
+    field_simp
+  exact congrFun key j
+
+/-- For `0 ≤ k ≤ n + 1`, `typeACosetRepresentative n k` lies in the dual of `typeARootLattice n`. -/
+theorem typeACosetRepresentative_mem_dualCarrier (n : ℕ) {k : ℕ} (hk : k ≤ n + 1) :
+    typeACosetRepresentative n k ∈ (typeARootLattice n).dualCarrier := by
+  refine (mem_dualCarrier_typeARootLattice_iff (typeACosetRepresentative n k)).mpr fun i j ↦ ?_
+  refine ⟨(if (i : ℕ) < k then 1 else 0) - if (j : ℕ) < k then 1 else 0, ?_⟩
+  simp only [typeAIsometryZeroSumLattice_typeACosetRepresentative_apply n hk, Int.cast_sub,
+    Int.cast_ite, Int.cast_one, Int.cast_zero]
+  ring
+
+/-- For `0 ≤ k ≤ n + 1`, `typeACosetRepresentative n k` projects to `k • ω₁` in the discriminant
+group of `typeARootLattice n`. -/
+@[simp]
+theorem mk_typeACosetRepresentative (n : ℕ) {k : ℕ} (hk : k ≤ n + 1)
+    (hx : typeACosetRepresentative n k ∈ (typeARootLattice n).dualCarrier) :
+    (Submodule.Quotient.mk ⟨typeACosetRepresentative n k, hx⟩ :
+        (typeARootLattice n).DiscriminantGroup) =
+      k • typeAFundamentalWeightClass n := by
+  rw [← natCast_zsmul, mk_eq_zsmul_typeAFundamentalWeightClass_iff_forall_exists_intCast_sub]
+  intro j
+  refine ⟨if (j : ℕ) < k then 1 else 0, ?_⟩
+  simp only [typeAIsometryZeroSumLattice_typeACosetRepresentative_apply n hk j, Int.cast_ite,
+    Int.cast_one, Int.cast_zero, Int.cast_natCast]
+
+/-- For `0 ≤ k ≤ n + 1`, `typeACosetRepresentative n k` has squared norm `k (n + 1 - k) / (n + 1)`
+in `typeARootLattice n`. -/
+@[simp]
+theorem form_typeACosetRepresentative_self (n : ℕ) {k : ℕ} (hk : k ≤ n + 1) :
+    (typeARootLattice n).form (typeACosetRepresentative n k) (typeACosetRepresentative n k) =
+      (k : ℚ) * (n + 1 - k) / (n + 1) := by
+  let v := typeACosetRepresentative n k
+  refine (typeARootLattice_form_self_eq_dotProduct v).trans ?_
+  set e := typeAIsometryZeroSumLattice n
+  have hsum := (mem_singleParityCheckCode ℚ (Fin (n + 1))).mp (e v).2
+  have hcoord := typeAIsometryZeroSumLattice_typeACosetRepresentative_apply n hk
+  exact (dotProduct_self_eq_mul_sub_div_iff (k := k) hsum fun j ↦
+    ⟨if (j : ℕ) < k then 1 else 0, by simp [e, v, hcoord j]⟩).mpr fun j ↦ by
+    by_cases hj : (j : ℕ) < k <;> simp [e, v, hcoord j, hj]
 
 /-- **The minimum norm of the discriminant class `k ω₁` of `Aₙ` is `k (n + 1 - k) / (n + 1)`**,
-for `0 ≤ k ≤ n + 1`.  It is attained by the dual vector whose classical coordinates are
-`(n + 1 - k) / (n + 1)` in the first `k` places and `-k / (n + 1)` in the others, and it bounds the
-norm of every dual vector of the class. -/
+for `0 ≤ k ≤ n + 1`.  It is attained by `typeACosetRepresentative n k`, whose classical coordinates
+are `(n + 1 - k) / (n + 1)` in the first `k` places and `-k / (n + 1)` in the others, and it bounds
+the norm of every dual vector of the class. -/
 theorem isLeast_form_self_nsmul_typeAFundamentalWeightClass {k : ℕ} (hk : k ≤ n + 1) :
     IsLeast {q : ℚ | ∃ x : (typeARootLattice n).dualCarrier,
       Submodule.Quotient.mk x = k • typeAFundamentalWeightClass n ∧
         (typeARootLattice n).form x x = q} ((k : ℚ) * (n + 1 - k) / (n + 1)) := by
-  set e := typeAIsometryZeroSumLattice n
-  refine ⟨?_, ?_⟩
-  · obtain ⟨x, hx, hex⟩ := exists_mk_eq_nsmul_typeAFundamentalWeightClass_and_apply_eq hk
-    refine ⟨x, hx, ?_⟩
-    have hsum := (mem_singleParityCheckCode ℚ (Fin (n + 1))).mp (e x).2
-    rw [typeARootLattice_form_self_eq_dotProduct]
-    refine (dotProduct_self_eq_mul_sub_div_iff (k := k) hsum fun j ↦
-      ⟨if (j : ℕ) < k then 1 else 0, by simp [e, hex]⟩).mpr fun j ↦ ?_
-    by_cases hj : (j : ℕ) < k <;> simp [e, hex, hj]
-  · rintro q ⟨x, hx, rfl⟩
-    rw [← natCast_zsmul] at hx
-    rw [typeARootLattice_form_self_eq_dotProduct]
-    have hsum := (mem_singleParityCheckCode ℚ (Fin (n + 1))).mp (e x).2
-    simpa using mul_sub_div_le_dotProduct_self (k := k) hsum
-      (exists_typeAIsometryZeroSumLattice_apply_eq_intCast_sub_of_mk_eq x hx)
+  refine ⟨⟨⟨typeACosetRepresentative n k, typeACosetRepresentative_mem_dualCarrier n hk⟩,
+    mk_typeACosetRepresentative n hk _, form_typeACosetRepresentative_self n hk⟩, ?_⟩
+  rintro q ⟨x, hx, rfl⟩
+  rw [← natCast_zsmul] at hx
+  rw [typeARootLattice_form_self_eq_dotProduct]
+  have hsum := (mem_singleParityCheckCode ℚ (Fin (n + 1))).mp (typeAIsometryZeroSumLattice n x).2
+  simpa using mul_sub_div_le_dotProduct_self (k := k) hsum
+    (exists_typeAIsometryZeroSumLattice_apply_eq_intCast_sub_of_mk_eq x hx)
 
 /-- **The minimum norm of the discriminant class labelled `a : ZMod (n + 1)`.**  The class
 `typeADiscriminantGroupEquiv n a = a.val • ω₁` of `Aₙ` has minimum norm

@@ -62,8 +62,10 @@ abbreviation of `r.lattice` for its row, so the uniform theorems apply to it dir
   `TauCeti.RootfulNiemeierType.mem_lattice_carrier_iff_exists_glueSubgroup`: membership in `N_r` by
   discriminant class and by explicit coset representative.
 * `TauCeti.RootfulNiemeierType.glueDigitsVector`, `TauCeti.RootfulNiemeierType.glueWordVector`:
-  computable canonical dual-lattice representatives of digit words and glue words, attaining the
-  coset minimum `μ(w)` (`lattice_form_glueWordVector_self`, `lattice_form_glueDigitsVector_self`).
+  computable canonical dual-lattice representatives of digit words and glue words, projecting to the
+  discriminant class named by `w` (`mk_glueWordVector`, `mk_glueDigitsVector`), realizing the polar
+  pairing (`pairing_glueModule_eq_form_glueWordVector`), and attaining the coset minimum `μ(w)`
+  (`lattice_form_glueWordVector_self`, `lattice_form_glueDigitsVector_self`).
 * `TauCeti.RootfulNiemeierType.lattice_carrier_eq_sup_span`,
   `TauCeti.RootfulNiemeierType.lattice_carrier_eq_sup_span_glueGenerators`,
   `TauCeti.RootfulNiemeierType.lattice_carrier_eq_sup_span_glueWords`: `N_r` is spanned by `R_r`
@@ -199,6 +201,24 @@ theorem glueDigitsVector_apply (r : RootfulNiemeierType) (l : List ℕ)
     r.glueDigitsVector l i = (r.componentType i).glueLabelVector (l.getD i 0) :=
   (rfl)
 
+/-- Evaluating `r.glueDigitsVector` on `List.ofFn d` reads the representative of `d i` at each
+component `i`. -/
+@[simp]
+theorem glueDigitsVector_ofFn (r : RootfulNiemeierType) (d : Fin r.components.length → ℕ) :
+    r.glueDigitsVector (List.ofFn d) = fun i ↦ (r.componentType i).glueLabelVector (d i) :=
+  TauCeti.glueDigitsVector_ofFn r.componentType d
+
+/-- The empty digit list evaluates to the zero vector for row `r`. -/
+@[simp]
+theorem glueDigitsVector_nil (r : RootfulNiemeierType) : r.glueDigitsVector [] = 0 :=
+  TauCeti.glueDigitsVector_nil r.componentType
+
+/-- Any all-zero digit list evaluates to the zero vector for row `r`. -/
+@[simp]
+theorem glueDigitsVector_replicate_zero (r : RootfulNiemeierType) (m : ℕ) :
+    r.glueDigitsVector (List.replicate m 0) = 0 :=
+  TauCeti.glueDigitsVector_replicate_zero r.componentType m
+
 /-- **The computable canonical coordinate vector of a glue word** of row `r`, assembling
 `TauCeti.DynkinType.glueVector` componentwise via `TauCeti.DynkinType.glueWordVector`. -/
 def glueWordVector (r : RootfulNiemeierType)
@@ -278,6 +298,44 @@ theorem mk_glueWordVector (r : RootfulNiemeierType) (w : r.glueModule)
       DynkinType.glueWordIsometry r.componentType r.isSimplyLaced_componentType
         r.valid_componentType w :=
   DynkinType.mk_glueWordVector _ _ r.valid_componentType w hx
+
+/-- **The coordinate vector of a decoded digit word of row `r` projects to the discriminant class
+named by `w`.** -/
+theorem mk_glueDigitsVector (r : RootfulNiemeierType) {l : List ℕ} {w : r.glueModule}
+    (h : decodeGlueWord r.componentType r.isSimplyLaced_componentType l = some w)
+    (hx : r.glueDigitsVector l ∈ r.rootLattice.dualCarrier :=
+      r.glueDigitsVector_mem_dualCarrier
+        ((decodeGlueWord_isSome_iff r.componentType r.isSimplyLaced_componentType l).mp
+          (by simp [h]))) :
+    Submodule.Quotient.mk ⟨r.glueDigitsVector l, hx⟩ =
+      DynkinType.glueWordIsometry r.componentType r.isSimplyLaced_componentType
+        r.valid_componentType w :=
+  TauCeti.mk_glueDigitsVector _ _ r.valid_componentType h hx
+
+/-- A dual vector `x` of `R_r` lies in the coset named by `w` if and only if
+`x - r.glueWordVector w` lies in `R_r`. -/
+theorem sub_glueWordVector_mem_rootLattice_carrier_iff (r : RootfulNiemeierType)
+    (x : r.rootLattice.dualCarrier) (w : r.glueModule) :
+    (x : ∀ i, Fin (r.componentType i).rank → ℚ) - r.glueWordVector w ∈ r.rootLattice.carrier ↔
+      Submodule.Quotient.mk x =
+        DynkinType.glueWordIsometry r.componentType r.isSimplyLaced_componentType
+          r.valid_componentType w :=
+  DynkinType.sub_glueWordVector_mem_pi_rootLattice_carrier_iff _ _ r.valid_componentType x w
+
+/-- Glue-word representatives of row `r` add up to a vector of the root lattice `R_r`. -/
+theorem glueWordVector_add_sub_mem_rootLattice_carrier (r : RootfulNiemeierType)
+    (v w : r.glueModule) :
+    r.glueWordVector (v + w) - (r.glueWordVector v + r.glueWordVector w) ∈
+      r.rootLattice.carrier :=
+  DynkinType.glueWordVector_add_sub_mem_pi_rootLattice_carrier _ _ r.valid_componentType v w
+
+/-- **The polar bilinear pairing on `r.glueModule` is the ambient pairing of `r.glueWordVector`
+modulo `ℤ`.** -/
+theorem pairing_glueModule_eq_form_glueWordVector (r : RootfulNiemeierType)
+    (v w : r.glueModule) :
+    r.glueModule.toFiniteBilinearModule.pairing v w =
+      ((r.rootLattice.form (r.glueWordVector v) (r.glueWordVector w) : ℚ) : AddCircle (1 : ℚ)) :=
+  DynkinType.pairing_pi_glueAlphabet_eq_form_glueWordVector _ _ r.valid_componentType v w
 
 /-- **Every glue-word representative attains the coset minimum norm `μ(w)` in `N_r`.** -/
 theorem lattice_form_glueWordVector_self (r : RootfulNiemeierType) (w : r.glueModule) :

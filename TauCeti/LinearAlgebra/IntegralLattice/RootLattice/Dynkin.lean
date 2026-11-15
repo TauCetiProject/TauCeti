@@ -299,12 +299,9 @@ theorem rootLatticeIsometryCheckerboard_eq_of_repr (n : ℕ) (hn : 4 ≤ n)
     rootLatticeIsometryCheckerboard n hn ht x = y := by
   let f : (Fin n → ℚ) →ₗ[ℚ] (Fin n → ℚ) :=
     (rootLatticeIsometryCheckerboard n hn ht : (Fin (D n).rank → ℚ) ≃ₗ[ℚ] (Fin n → ℚ)).toLinearMap
-  have hx : x = ∑ k : Fin n, x k • Pi.single k (1 : ℚ) := by
-    funext j
-    simp [Finset.sum_apply, Pi.single_apply]
   calc
     f x = ∑ k : Fin n, x k • f (Pi.single k 1) := by
-      conv_lhs => rw [hx]
+      conv_lhs => rw [pi_eq_sum_univ' x]
       rw [map_sum]
       exact Finset.sum_congr rfl fun k _ ↦ map_smul f _ _
     _ = ∑ k : Fin n, (typeDSimpleRootBasis ℚ n hn).repr y k • typeDSimpleRootBasis ℚ n hn k := by
