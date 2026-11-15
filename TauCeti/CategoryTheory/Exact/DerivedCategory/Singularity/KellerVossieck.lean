@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Mk
 public import TauCeti.CategoryTheory.Exact.HomologicalComplex.Injective.Stalk
 public import TauCeti.CategoryTheory.Exact.Frobenius
 public import TauCeti.CategoryTheory.Exact.Stable.Autoequivalence
+public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Equivalence
 
 /-!
 # The Keller–Vossieck theorem
@@ -27,12 +28,13 @@ Morphisms of `D_sg(E)` are computed through the bounded below derived category
   `I_M ⟶ I_N` factors in the homotopy category through a bounded complex, so it is eventually
   null-homotopic, and its restriction `f` to the cycles in degree `0` factors through a
   projective object.
-* **Fullness.** A morphism `M ⟶ N` of `D_sg(E)` is a right fraction `M ← X → N` whose first map
-  has cone a bounded complex of projectives `K`. Truncating `I_M` above a degree `k + 1` beyond `K`
-  gives a bounded complex `T ≃ M` whose lower terms are projective and whose top term is the
-  object of cycles `Zᵏ⁺¹` of `I_M`; the inclusion of the top term is inverted in `D_sg(E)` and
-  admits no nonzero map to `K`, so it factors through `X`. The resulting map `Zᵏ⁺¹[-k-1] ⟶ N` is a
-  map of cycles of injective resolutions, which lifts to a map `I_M ⟶ I_N`.
+* **Fullness.** Truncating `I_M` above a degree `k + 1` gives a bounded complex `T ≃ M` whose
+  lower terms are projective and whose top term is the object of cycles `Zᵏ⁺¹` of `I_M`; the
+  inclusion `δₖ : Zᵏ⁺¹[-k-1] ⟶ T ≃ M` of the top term is inverted in `D_sg(E)`. A map from `M` to a
+  bounded complex of projectives `K` is killed by `δₖ` once `k` lies beyond `K`, so every morphism
+  `M ⟶ N` of `D_sg(E)` becomes, after composing with `δₖ`, a morphism `Zᵏ⁺¹[-k-1] ⟶ N` of `Dᵇ(E)`
+  (`ObjectProperty.TrWLocalization.exists_map_comp_eq_map`). This is a map of cycles of injective
+  resolutions, which lifts to a map `I_M ⟶ I_N`.
 * **Essential surjectivity.** The same truncation of the injective resolution of a bounded complex
   shows that it is isomorphic in `D_sg(E)` to an object placed in a positive degree `t`, and
   `Zᵗ ≃ Σᵗ` together with stable loops brings it to degree zero.
@@ -53,6 +55,12 @@ Morphisms of `D_sg(E)` are computed through the bounded below derived category
 
 * Bernhard Keller, Dieter Vossieck, *Sous les catégories dérivées*, C. R. Acad. Sci. Paris
   **305** (1987), 225--228, Example 2.3.
+* Bernhard Keller, *Chain complexes and stable categories*, Manuscripta Math. **67** (1990),
+  379--417, Section 4, for morphisms of `Dᵇ(E)` computed in `D⁺(E) ≃ K⁺(inj E)` without
+  idempotent completeness.
+* Theo Bühler, *Exact categories*, Expositiones Mathematicae **28** (2010), 1--69,
+  <https://arxiv.org/abs/0811.1480>, Sections 10--13, for acyclic complexes, resolutions and
+  Frobenius exact categories.
 -/
 
 public section
@@ -82,14 +90,20 @@ private noncomputable abbrev resPlus (M : C) : _root_.HomotopyCategory.Plus C :=
 
 /-- The injective resolution of `M`, as a morphism of `K⁺(C)`. -/
 private noncomputable abbrev resHom (M : C) : singlePlus M ⟶ resPlus hF M :=
-  ObjectProperty.homMk ((HomotopyCategory.Bounded.singleFunctorCompιIso C 0).hom.app M ≫
-    (_root_.HomotopyCategory.quotient C (.up ℤ)).map (hF.enoughInjectives.stalkResolutionι M))
+  (HomotopyCategory.Bounded.toPlus C).map (singleFunctorObjIsoMk 0 M).hom ≫
+    ObjectProperty.homMk
+      ((_root_.HomotopyCategory.quotient C (.up ℤ)).map (hF.enoughInjectives.stalkResolutionι M))
 
-private instance (M : C) : IsIso ((PlusDerivedCategory.Q E).map (resHom hF M)) :=
-  Localization.inverts _ E.acyclicPlus.trW _ ((E.acyclicPlus_trW_iff _).2
-    (MorphismProperty.comp_mem _ _ _ (MorphismProperty.of_isIso _ _)
+private instance (M : C) : IsIso ((PlusDerivedCategory.Q E).map (resHom hF M)) := by
+  have : IsIso ((PlusDerivedCategory.Q E).map (ObjectProperty.homMk
+      ((_root_.HomotopyCategory.quotient C (.up ℤ)).map (hF.enoughInjectives.stalkResolutionι M)) :
+        (HomotopyCategory.Bounded.toPlus C).obj
+          (HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single 0 M)) ⟶ resPlus hF M)) :=
+    Localization.inverts _ E.acyclicPlus.trW _ ((E.acyclicPlus_trW_iff _).2
       (E.homotopyAcyclic_trW_quotient_map _
-        (hF.enoughInjectives.acyclic_mappingCone_stalkResolutionι M))))
+        (hF.enoughInjectives.stalkTailData M).acyclic_mappingCone_ι))
+  rw [Functor.map_comp]
+  infer_instance
 
 /-- Maps into a bounded below complex of injectives are the same in `K⁺(C)` and in `D⁺(E)`. -/
 private theorem map_bijective_of_injectivePlus {Y : _root_.HomotopyCategory.Plus C}
@@ -101,19 +115,6 @@ private theorem map_bijective_of_injectivePlus {Y : _root_.HomotopyCategory.Plus
 private theorem injectivePlus_resPlus (M : C) : E.injectivePlus (resPlus hF M) :=
   (E.injectivePlus_iff _).2 ((E.plusInjective_iff _).2
     ⟨_, ⟨0, inferInstance⟩, hF.enoughInjectives.isInjective_stalkResolution_X M, ⟨Iso.refl _⟩⟩)
-
-omit [HasBinaryBiproducts C] in
-/-- Two maps from an object in degree zero to a complex vanishing in negative degrees which are
-homotopic agree in degree zero. -/
-private theorem f_zero_eq_of_homotopy {M : C} {I : CochainComplex C ℤ} [I.IsStrictlyGE 0]
-    {g₁ g₂ : (HomologicalComplex.single C (.up ℤ) 0).obj M ⟶ I} (h : Homotopy g₁ g₂) :
-    g₁.f 0 = g₂.f 0 := by
-  have := h.comm 0
-  rw [dNext_eq _ (show (ComplexShape.up ℤ).Rel 0 1 by simp),
-    prevD_eq _ (show (ComplexShape.up ℤ).Rel (-1) 0 by simp)] at this
-  rw [this, (HomologicalComplex.isZero_single_obj_X _ 0 M 1 (by lia)).eq_of_src (h.hom 1 0) 0,
-    (I.isZero_of_isStrictlyGE 0 (-1) (by lia)).eq_of_tgt (h.hom 0 (-1)) 0]
-  simp
 
 /-- A morphism of `C` vanishing in the singularity category factors in `Dᵇ(E)` through the class of
 a bounded complex of projectives. -/
@@ -172,7 +173,8 @@ private theorem exists_isEventuallyNullHomotopic {M N : C} (f : M ⟶ N)
   have hcomp : resHom hF M ≫ u ≫ v = (HomotopyCategory.Bounded.toPlus C).map
       ((HomotopyCategory.Bounded.singleFunctor C 0).map f) ≫ resHom hF N := by
     apply (map_bijective_of_injectivePlus (injectivePlus_resPlus hF N) _).1
-    rw [Functor.map_comp, Functor.map_comp, hu, hv, Functor.map_comp]
+    rw [Functor.map_comp _ (resHom hF M), Functor.map_comp _ u v, hu, hv,
+      Functor.map_comp _ _ (resHom hF N)]
     simp only [IsIso.hom_inv_id_assoc, Category.assoc, Iso.hom_inv_id_app_assoc]
     rw [← Functor.map_comp_assoc, hag, BoundedDerivedCategory.toPlus_map_Q]
     simp [η]
@@ -197,33 +199,15 @@ private theorem cyclesMap_zero_eq {M N : C} (f : M ⟶ N)
     (hF.enoughInjectives.stalkTailData M).cyclesMap (hF.enoughInjectives.stalkTailData N) φ 0 =
       f := by
   let hE := hF.enoughInjectives
-  have h1 := congrArg (fun x ↦ x.hom) h
+  -- Move `f` past the identification of `M` in degree zero, and cancel it.
+  rw [Category.assoc, ← Functor.map_comp_assoc,
+    HomotopyCategory.Bounded.singleFunctor_map_comp_singleFunctorObjIsoMk_hom, Functor.map_comp,
+    Category.assoc, cancel_epi] at h
+  have h' := congrArg (fun x ↦ x.hom) h
   simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
-    ObjectProperty.ιOfLE_map] at h1
-  have nat := (HomotopyCategory.Bounded.singleFunctorCompιIso C 0).hom.naturality f
-  have h3 : (_root_.HomotopyCategory.quotient C (.up ℤ)).map (hE.stalkResolutionι M) ≫
-      (_root_.HomotopyCategory.quotient C (.up ℤ)).map φ =
-        (_root_.HomotopyCategory.singleFunctor C 0).map f ≫
-          (_root_.HomotopyCategory.quotient C (.up ℤ)).map (hE.stalkResolutionι N) := by
-    refine (cancel_epi ((HomotopyCategory.Bounded.singleFunctorCompιIso C 0).hom.app M)).1 ?_
-    refine (Category.assoc _ _ _).symm.trans (h1.trans ((Category.assoc _ _ _).symm.trans
-      ((congrArg (fun x ↦ x ≫
-        (_root_.HomotopyCategory.quotient C (.up ℤ)).map (hE.stalkResolutionι N)) nat).trans
-          (Category.assoc _ _ _))))
-  -- Homotopic maps out of an object in degree zero agree in degree zero.
-  have h2 := f_zero_eq_of_homotopy (_root_.HomotopyCategory.homotopyOfEq
-    (hE.stalkResolutionι M ≫ φ) ((HomologicalComplex.single C (.up ℤ) 0).map f ≫
-      hE.stalkResolutionι N) (by rw [Functor.map_comp, Functor.map_comp]; exact h3))
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, hE.stalkResolutionι_f_zero M,
-    hE.stalkResolutionι_f_zero N, HomologicalComplex.single_map_f_self] at h2
-  have h4 : (hE.stalkTailData M).i 0 ≫ φ.f 0 = f ≫ (hE.stalkTailData N).i 0 :=
-    (cancel_epi (HomologicalComplex.singleObjXSelf (.up ℤ) 0 M).hom).1
-      ((Category.assoc _ _ _).symm.trans (h2.trans ((Category.assoc _ _ _).trans
-        (congrArg (fun x ↦ (HomologicalComplex.singleObjXSelf (.up ℤ) 0 M).hom ≫ x)
-          ((Category.assoc _ _ _).trans (congrArg (fun x ↦ f ≫ x)
-            (Iso.inv_hom_id_assoc _ _)))))))
-  exact (cancel_mono ((hE.stalkTailData N).i 0)).1
-    ((TailData.cyclesMap_i _ _ _ _).trans h4)
+    ObjectProperty.ιOfLE_map, ← Functor.map_comp] at h'
+  exact (hE.stalkTailData M).cyclesMap_zero_eq_of_homotopy (hE.stalkTailData N) φ f
+    (_root_.HomotopyCategory.homotopyOfEq _ _ h')
 
 include hF in
 /-- **Faithfulness in the Keller–Vossieck theorem**: a morphism of a Frobenius exact category which
@@ -236,69 +220,13 @@ theorem mem_projectiveStableIdeal_of_singleToSingularity_map_eq_zero {M N : C} (
   rw [mem_projectiveStableIdeal_iff, ← cyclesMap_zero_eq hF f φ hφ]
   exact (hE.stalkTailData M).factorsThrough_cyclesMap_zero_of_isEventuallyNullHomotopic
     (hE.stalkTailData N) φ
-    (fun k ↦ (hF.injective_iff_projective _).1 (hE.isInjective_stalkResolution_X M k))
-    (fun k ↦ (hF.injective_iff_projective _).1 (hE.isInjective_stalkResolution_X N k)) hnull
+    (fun k ↦ (hF.injective_iff_projective _).1 (hE.isInjective_stalkResolution_X M k)) hnull
 
-/-- If a map from `M` in degree zero to a complex `T` vanishing above degree `k + 1` has acyclic
-mapping cone, the top differential `Tᵏ ⟶ Tᵏ⁺¹` of `T` is an epimorphism. -/
-private theorem epi_d_of_acyclic_mappingCone {M : C} {T : CochainComplex C ℤ} (k : ℕ)
-    [T.IsStrictlyLE ((k + 1 : ℕ) : ℤ)] (r' : (HomologicalComplex.single C (.up ℤ) 0).obj M ⟶ T)
-    (hcone : E.acyclic (CochainComplex.mappingCone r')) : Epi (T.d k ((k + 1 : ℕ) : ℤ)) := by
-  -- In degrees `k` and `k + 1`, the mapping cone of `r'` is `T`, and its differential into the
-  -- last nonzero degree is an epimorphism.
-  obtain ⟨hC⟩ := (E.acyclic_iff _).1 hcone
-  have := CochainComplex.mappingCone.isIso_inr_f r' (k : ℤ)
-    (HomologicalComplex.isZero_single_obj_X _ 0 M _ (by lia))
-  have := CochainComplex.mappingCone.isIso_inr_f r' ((k + 1 : ℕ) : ℤ)
-    (HomologicalComplex.isZero_single_obj_X _ 0 M _ (by lia))
-  have : Epi ((CochainComplex.mappingCone r').d k ((k + 1 : ℕ) : ℤ)) :=
-    hC.epi_d (k : ℤ) ((CochainComplex.mappingCone.isZero_X_iff r' _).2
-      ⟨HomologicalComplex.isZero_single_obj_X _ 0 M _ (by lia),
-        T.isZero_of_isStrictlyLE ((k + 1 : ℕ) : ℤ) _ (by lia)⟩)
-  have h : T.d k ((k + 1 : ℕ) : ℤ) = (CochainComplex.mappingCone.inr r').f k ≫
-      (CochainComplex.mappingCone r').d k ((k + 1 : ℕ) : ℤ) ≫
-        inv ((CochainComplex.mappingCone.inr r').f ((k + 1 : ℕ) : ℤ)) := by
-    rw [CochainComplex.mappingCone.inr_f_d_assoc, IsIso.hom_inv_id, Category.comp_id]
-  rw [h]
-  infer_instance
-
-/-- Let `j : T ⟶ I_M` map a complex vanishing above degree `k + 1` to the injective resolution of
-`M`, invertible in degree `k` and monic in degree `k + 1`, with `Tᵏ ⟶ Tᵏ⁺¹` an epimorphism.
-Then `j` identifies the top term `Tᵏ⁺¹` with the object of cycles `Zᵏ⁺¹` of `I_M`. -/
-private theorem exists_iso_stalkTailData_Z (hE : E.EnoughInjectives) {M : C}
-    {T : CochainComplex C ℤ} (k : ℕ) [T.IsStrictlyLE ((k + 1 : ℕ) : ℤ)]
-    (j : T ⟶ hE.stalkResolution M) [IsIso (j.f k)] [Mono (j.f ((k + 1 : ℕ) : ℤ))]
-    [Epi (T.d k ((k + 1 : ℕ) : ℤ))] :
-    ∃ θ : T.X ((k + 1 : ℕ) : ℤ) ≅ (hE.stalkTailData M).Z (k + 1),
-      θ.hom ≫ (hE.stalkTailData M).i (k + 1) = j.f ((k + 1 : ℕ) : ℤ) := by
-  let tM := hE.stalkTailData M
-  have hjp : j.f ((k + 1 : ℕ) : ℤ) ≫ tM.p (k + 1) = 0 := by
-    rw [← cancel_mono (tM.i (k + 1 + 1)), Category.assoc, tM.fac, zero_comp]
-    refine (j.comm _ _).trans ?_
-    rw [(T.isZero_of_isStrictlyLE ((k + 1 : ℕ) : ℤ) _ (by lia)).eq_of_tgt (T.d _ _) 0, zero_comp]
-  let θ : T.X ((k + 1 : ℕ) : ℤ) ⟶ tM.Z (k + 1) := tM.liftZ (k + 1) _ hjp
-  have hθ : θ ≫ tM.i (k + 1) = j.f ((k + 1 : ℕ) : ℤ) := tM.liftZ_i _ _ _
-  let ψ : tM.Z (k + 1) ⟶ T.X ((k + 1 : ℕ) : ℤ) :=
-    tM.descZ k (inv (j.f k) ≫ T.d k ((k + 1 : ℕ) : ℤ)) (by
-    rw [← cancel_mono (j.f ((k + 1 : ℕ) : ℤ)), Category.assoc, Category.assoc, zero_comp]
-    refine (congrArg (fun x ↦ tM.i k ≫ inv (j.f k) ≫ x) (j.comm _ _).symm).trans ?_
-    rw [IsIso.inv_hom_id_assoc]
-    exact tM.i_d k)
-  have hψ : tM.p k ≫ ψ = inv (j.f k) ≫ T.d k ((k + 1 : ℕ) : ℤ) := tM.p_descZ _ _ _
-  have hθψ : θ ≫ ψ = 𝟙 _ := by
-    rw [← cancel_epi (T.d k ((k + 1 : ℕ) : ℤ))]
-    refine (?_ : _ = T.d k ((k + 1 : ℕ) : ℤ)).trans (Category.comp_id _).symm
-    have h : T.d k ((k + 1 : ℕ) : ℤ) ≫ θ = j.f k ≫ tM.p k := by
-      rw [← cancel_mono (tM.i (k + 1)), Category.assoc, hθ, Category.assoc, tM.fac]
-      exact (j.comm _ _).symm
-    rw [reassoc_of% h, hψ, IsIso.hom_inv_id_assoc]
-  have hψθ : ψ ≫ θ = 𝟙 _ := by
-    rw [← cancel_mono (tM.i (k + 1)), ← cancel_epi (tM.p k)]
-    simp only [Category.assoc, Category.id_comp]
-    rw [hθ, reassoc_of% hψ, tM.fac]
-    refine (congrArg (fun x ↦ inv (j.f k) ≫ x) (j.comm _ _).symm).trans ?_
-    exact IsIso.inv_hom_id_assoc _ _
-  exact ⟨⟨θ, ψ, hθψ, hψθ⟩, hθ⟩
+include hF in
+/-- The terms of a complex mapping to a complex of injectives by isomorphisms are projective. -/
+private theorem isProjective_X_of_isIso {T I : CochainComplex C ℤ} (j : T ⟶ I)
+    (hI : ∀ l, E.isInjective (I.X l)) (l : ℤ) [IsIso (j.f l)] : E.isProjective (T.X l) :=
+  E.isProjective.prop_of_iso (asIso (j.f l)).symm ((hF.injective_iff_projective _).1 (hI l))
 
 include hF in
 /-- **The truncated resolution of an object.** The injective resolution `I_M` of `M`, cut off above
@@ -318,70 +246,16 @@ private theorem exists_truncation_stalk (M : C) (k : ℕ) :
     CochainComplex.isStrictlyLE_of_le _ 0 (k : ℤ) (by lia)
   obtain ⟨T, j, r', hr'j, hiso, hmono, hTle, hge, hcone⟩ :=
     exists_truncation_of_acyclic_mappingCone (hE.stalkResolutionι M)
-      (hE.acyclic_mappingCone_stalkResolutionι M) (k : ℤ)
+      ((hE.stalkTailData M).acyclic_mappingCone_ι) (k : ℤ)
   have : T.IsStrictlyLE ((k + 1 : ℕ) : ℤ) := hTle
   have := hiso k le_rfl
   have : Mono (j.f ((k + 1 : ℕ) : ℤ)) := hmono
-  have := epi_d_of_acyclic_mappingCone k r' hcone
-  obtain ⟨θ, hθ⟩ := exists_iso_stalkTailData_Z hE k j
+  have : Epi (T.d k ((k + 1 : ℕ) : ℤ)) := epi_d_of_acyclic_mappingCone (k : ℤ) r' hcone
+  obtain ⟨θ, hθ⟩ := (hE.stalkTailData M).exists_iso_Z k j
   refine ⟨T, j, r', θ, (CochainComplex.bounded_iff C T).2 ⟨_, _, hge 0 inferInstance, hTle⟩,
     hTle, hr'j, hθ, hcone, fun l hl ↦ ?_⟩
   have := hiso l (by lia)
-  exact E.isProjective.prop_of_iso (asIso (j.f l)).symm
-    ((hF.injective_iff_projective _).1 (hE.isInjective_stalkResolution_X M l))
-
-/-- A map from an object in degree zero to a bounded complex with acyclic mapping cone is inverted
-in `Dᵇ(E)`. -/
-private theorem acyclicBounded_trW_homMk_single {M : C}
-    {T : CochainComplex C ℤ} (hT : CochainComplex.bounded C T)
-    (r' : (HomologicalComplex.single C (.up ℤ) 0).obj M ⟶ T)
-    (hr' : E.acyclic (CochainComplex.mappingCone r')) :
-    E.acyclicBounded.trW (ObjectProperty.homMk
-      ((HomotopyCategory.Bounded.singleFunctorCompιIso C 0).hom.app M ≫
-        (_root_.HomotopyCategory.quotient C (.up ℤ)).map r') :
-      (HomotopyCategory.Bounded.singleFunctor C 0).obj M ⟶ HomotopyCategory.Bounded.mk T hT) := by
-  have h : (ObjectProperty.homMk ((HomotopyCategory.Bounded.singleFunctorCompιIso C 0).hom.app M ≫
-      (_root_.HomotopyCategory.quotient C (.up ℤ)).map r') :
-        (HomotopyCategory.Bounded.singleFunctor C 0).obj M ⟶ HomotopyCategory.Bounded.mk T hT) =
-      (singleFunctorObjIsoMk 0 M).hom ≫ mkMap r' := by
-    apply (HomotopyCategory.Bounded.ι C).map_injective
-    rw [Functor.map_comp, HomotopyCategory.Bounded.ι_map_singleFunctorObjIsoMk_hom]
-    rfl
-  rw [h]
-  exact MorphismProperty.comp_mem _ _ _ (MorphismProperty.of_isIso _ _)
-    (E.acyclicBounded_trW_homMk_quotient_map
-      (X := HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single 0 M))
-      (Y := HomotopyCategory.Bounded.mk T hT) r' hr')
-
-/-- The inclusion `Tⁿ[-n] ⟶ T` of the top term of a bounded complex vanishing above degree `n`,
-whose terms below `n` are projective, is inverted in the singularity category. -/
-private theorem boundedProjective_trW_Q_map_mkMap_ιTop (T : CochainComplex C ℤ) (n : ℤ)
-    [T.IsStrictlyLE n] (hT : CochainComplex.bounded C T)
-    (hP : ∀ k < n, E.isProjective (T.X k)) :
-    E.boundedProjective.trW ((BoundedDerivedCategory.Q E).map
-      (mkMap (T.ιTop n) : HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single n (T.X n)) ⟶
-        HomotopyCategory.Bounded.mk T hT)) := by
-  let e : (HomotopyCategory.Bounded.quotient C).obj ⟨T, hT⟩ ≅ HomotopyCategory.Bounded.mk T hT :=
-    (HomotopyCategory.Bounded.fullyFaithfulι C).preimageIso
-      (eqToIso (HomotopyCategory.Bounded.quotient_obj_obj C ⟨T, hT⟩))
-  have h : (mkMap (T.ιTop n) :
-      HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single n (T.X n)) ⟶
-        HomotopyCategory.Bounded.mk T hT) =
-      (singleFunctorObjIsoMk n (T.X n)).inv ≫ HomotopyCategory.Bounded.ιTop T n hT ≫ e.hom := by
-    rw [Iso.eq_inv_comp]
-    have h₁ : (singleFunctorObjIsoMk n (T.X n)).hom.hom =
-        (HomotopyCategory.Bounded.singleFunctorCompιIso C n).hom.app (T.X n) :=
-      HomotopyCategory.Bounded.ι_map_singleFunctorObjIsoMk_hom n _
-    have h₂ : e.hom.hom = eqToHom (HomotopyCategory.Bounded.quotient_obj_obj C ⟨T, hT⟩) :=
-      (HomotopyCategory.Bounded.fullyFaithfulι C).map_preimage _
-    apply ObjectProperty.hom_ext
-    simp only [ObjectProperty.FullSubcategory.comp_hom, h₁, h₂, HomotopyCategory.Bounded.ιTop_hom,
-      ObjectProperty.homMk_hom, Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
-    exact congrArg (_ ≫ ·) (Category.id_comp _).symm
-  rw [h, Functor.map_comp, Functor.map_comp]
-  exact MorphismProperty.comp_mem _ _ _ (MorphismProperty.of_isIso _ _)
-    (MorphismProperty.comp_mem _ _ _ (boundedProjective_trW_Q_map_ιTop T n hT hP)
-      (MorphismProperty.of_isIso _ _))
+  exact isProjective_X_of_isIso hF j (hE.isInjective_stalkResolution_X M) l
 
 include hF in
 /-- In `Dᵇ(E)`, every morphism from an object placed in degree `n` to the class of a bounded
@@ -409,22 +283,6 @@ private theorem eq_zero_of_isStrictlyLE {n b : ℤ} (hbn : b < n) (A : C)
       Functor.map_zero]
     simp
   rw [hg0, Functor.map_zero]
-
-include hF in
-/-- Let `s : X ⟶ Y` be a morphism of `Dᵇ(E)` inverted in the singularity category. For some `k`,
-every morphism to `Y` from an object placed in degree `k + 1` factors through `s`. -/
-private theorem exists_comp_eq_of_boundedProjective_trW {X Y : E.BoundedDerivedCategory}
-    {s : X ⟶ Y} (hs : E.boundedProjective.trW s) :
-    ∃ k : ℕ, ∀ (A : C) (c : (BoundedDerivedCategory.Q E).obj
-      (HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single ((k + 1 : ℕ) : ℤ) A)) ⟶ Y),
-        ∃ w, c = w ≫ s := by
-  -- The cone of `s` is a bounded complex of projectives `K`, vanishing above some degree `k`.
-  obtain ⟨P, u, v, hT, hP⟩ := hs
-  obtain ⟨K, hK, ⟨e⟩⟩ := (E.boundedProjective_iff P).1 hP
-  obtain ⟨_, b, _, _⟩ := (CochainComplex.bounded_iff C K.obj).1 K.property
-  refine ⟨b.toNat, fun A c ↦ Triangle.coyoneda_exact₂ _ hT c ?_⟩
-  rw [← cancel_mono e.hom, zero_comp]
-  exact eq_zero_of_isStrictlyLE hF (by lia : b < ((b.toNat + 1 : ℕ) : ℤ)) _ K hK _
 
 include hF in
 /-- Let `j : T ⟶ I_M` identify the top term `Tᵏ⁺¹` of a complex vanishing above degree `k + 1`
@@ -461,10 +319,8 @@ private theorem exists_ιTop_comp_eq {M N : C} (k : ℕ) {T : CochainComplex C �
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, T.ιTop_f]
   refine (cancel_epi (HomologicalComplex.singleObjXSelf (.up ℤ) ((k + 1 : ℕ) : ℤ)
     (T.X ((k + 1 : ℕ) : ℤ))).inv).1 ?_
-  rw [Iso.inv_hom_id_assoc]
-  change j.f ((k + 1 : ℕ) : ℤ) ≫ Φ.f ((k + 1 : ℕ) : ℤ) = y
-  rw [← hθ, Category.assoc, ← TailData.cyclesMap_i, hΦ]
-  simp only [Category.assoc, TailData.liftZ_i, Iso.hom_inv_id_assoc]
+  rw [Iso.inv_hom_id_assoc, ← hθ, Category.assoc, ← TailData.cyclesMap_i, hΦ]
+  simp only [Category.assoc, TailData.liftZ_i, Iso.hom_inv_id_assoc, y]
 
 include hF in
 /-- A map of resolutions `Φ : I_M ⟶ I_N`, restricted along a factorization `M ⟶ T ⟶ I_M` of the
@@ -478,38 +334,23 @@ private theorem toPlus_map_comp_resHom {M N : C} {T : CochainComplex C ℤ}
     (hf : (hF.enoughInjectives.stalkTailData M).cyclesMap (hF.enoughInjectives.stalkTailData N) Φ
       0 = f) :
     (HomotopyCategory.Bounded.toPlus C).map ((HomotopyCategory.Bounded.singleFunctor C 0).map f) ≫
-      resHom hF N =
-      (HomotopyCategory.Bounded.toPlus C).map (ObjectProperty.homMk
-        ((HomotopyCategory.Bounded.singleFunctorCompιIso C 0).hom.app M ≫
-          (_root_.HomotopyCategory.quotient C (.up ℤ)).map r') :
-            (HomotopyCategory.Bounded.singleFunctor C 0).obj M ⟶
-              HomotopyCategory.Bounded.mk T hT) ≫
+        resHom hF N =
+      (HomotopyCategory.Bounded.toPlus C).map ((singleFunctorObjIsoMk 0 M).hom ≫
+          (mkMap r' : _ ⟶ HomotopyCategory.Bounded.mk T hT)) ≫
         (ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map (j ≫ Φ)) :
           (HomotopyCategory.Bounded.toPlus C).obj (HomotopyCategory.Bounded.mk T hT) ⟶
             resPlus hF N) := by
-  let hE := hF.enoughInjectives
+  have h := (hF.enoughInjectives.stalkTailData M).single_map_comp_ι
+    (hF.enoughInjectives.stalkTailData N) Φ
+  rw [hf] at h
+  rw [← Functor.map_comp_assoc,
+    HomotopyCategory.Bounded.singleFunctor_map_comp_singleFunctorObjIsoMk_hom, Functor.map_comp,
+    Functor.map_comp, Category.assoc, Category.assoc]
+  congr 1
   apply ObjectProperty.hom_ext
-  have nat := (HomotopyCategory.Bounded.singleFunctorCompιIso C 0).hom.naturality f
-  change ((HomotopyCategory.Bounded.singleFunctor C 0).map f).hom ≫
-      (HomotopyCategory.Bounded.singleFunctorCompιIso C 0).hom.app N ≫
-        (_root_.HomotopyCategory.quotient C (.up ℤ)).map (hE.stalkResolutionι N) =
-    ((HomotopyCategory.Bounded.singleFunctorCompιIso C 0).hom.app M ≫
-      (_root_.HomotopyCategory.quotient C (.up ℤ)).map r') ≫
-        (_root_.HomotopyCategory.quotient C (.up ℤ)).map (j ≫ Φ)
-  calc _ = ((HomotopyCategory.Bounded.singleFunctorCompιIso C 0).hom.app M ≫
-        (_root_.HomotopyCategory.singleFunctor C 0).map f) ≫
-          (_root_.HomotopyCategory.quotient C (.up ℤ)).map (hE.stalkResolutionι N) :=
-        (Category.assoc _ _ _).symm.trans (congrArg (fun z ↦ z ≫ _) nat)
-    _ = (HomotopyCategory.Bounded.singleFunctorCompιIso C 0).hom.app M ≫
-        (_root_.HomotopyCategory.quotient C (.up ℤ)).map
-          ((HomologicalComplex.single C (.up ℤ) 0).map f ≫ hE.stalkResolutionι N) :=
-        (Category.assoc _ _ _).trans (congrArg (fun z ↦ _ ≫ z)
-          (Functor.map_comp (_root_.HomotopyCategory.quotient C (.up ℤ)) _ _).symm)
-    _ = _ := by
-        rw [hE.single_map_comp_stalkResolutionι M Φ f hf, ← hr'j, Category.assoc]
-        exact (congrArg (fun z ↦ _ ≫ z)
-          (Functor.map_comp (_root_.HomotopyCategory.quotient C (.up ℤ)) _ _)).trans
-            (Category.assoc _ _ _).symm
+  simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
+    ObjectProperty.ιOfLE_map, ← Functor.map_comp]
+  rw [h, reassoc_of% hr'j]
 
 /-- Let `s : X ⟶ Z` be inverted in `Dᵇ(E)` and `ρ : X' ⟶ R` in `D⁺(E)`. If `J : Z ⟶ R`
 satisfies `f ≫ ρ = s ≫ J` in `K⁺(C)`, and `t ≫ J` is the image of `γ` followed by `ρ` in
@@ -549,24 +390,6 @@ private theorem Q_map_comp_inv_comp_eq (hE : E.EnoughInjectives)
   exact (cancel_mono (η.hom.app X' ≫ (PlusDerivedCategory.Q E).map ρ)).1
     ((cancel_epi (η.inv.app Y)).1 (h1.trans hγ))
 
-/-- If `w ≫ φ.s` is inverted by a localization functor `L` and `w ≫ φ.s ≫ f = w ≫ φ.f`, then the
-right fraction `φ` is sent by `L` to `L.map f`. -/
-private theorem rightFraction_map_eq {D D' : Type*} [Category D] [Category D'] (L : D ⥤ D')
-    {W : MorphismProperty D} [L.IsLocalization W] {X Y Z : D} (φ : W.RightFraction X Y)
-    (w : Z ⟶ φ.X') (f : X ⟶ Y) [IsIso (L.map (w ≫ φ.s))] (h : (w ≫ φ.s) ≫ f = w ≫ φ.f) :
-    φ.map L (Localization.inverts L W) = L.map f := by
-  have : IsIso (L.map φ.s) := Localization.inverts L W _ φ.hs
-  have : IsIso (L.map w) := by
-    have : IsIso (L.map w ≫ L.map φ.s) := by
-      rw [← L.map_comp]
-      infer_instance
-    exact IsIso.of_isIso_comp_right _ (L.map φ.s)
-  rw [← cancel_epi (L.map φ.s), MorphismProperty.RightFraction.map_s_comp_map,
-    ← cancel_epi (L.map w)]
-  have := congrArg L.map h
-  simp only [Functor.map_comp, Category.assoc] at this
-  exact this.symm
-
 include hF in
 /-- **Fullness in the Keller–Vossieck theorem**: every morphism between objects of a Frobenius exact
 category in the singularity category comes from a morphism of the category. -/
@@ -575,75 +398,68 @@ theorem singleToSingularity_map_surjective (M N : C) :
   rw [singleToSingularity_eq]
   intro α
   let hE := hF.enoughInjectives
-  let XM := (HomotopyCategory.Bounded.singleFunctor C 0).obj M
-  -- A right fraction `M ← X → N`, with `X ⟶ M` inverted in `D_sg(E)`.
-  obtain ⟨φ, hφ⟩ := Localization.exists_rightFraction (SingularityCategory.Q E)
-    E.boundedProjective.trW α
-  obtain ⟨k, hk⟩ := exists_comp_eq_of_boundedProjective_trW hF φ.hs
-  -- The truncation `T` of the resolution of `M` above degree `k + 1`, and the inclusion `c` of
-  -- its top term, inverted in `D_sg(E)`.
-  obtain ⟨T, j, r', θ, hTb, hTle, hr'j, hθ, hcone, hTproj⟩ := exists_truncation_stalk hF M k
-  let bW := HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single ((k + 1 : ℕ) : ℤ)
-    (T.X ((k + 1 : ℕ) : ℤ)))
-  let sT : bW ⟶ HomotopyCategory.Bounded.mk T hTb := mkMap (T.ιTop _)
-  let sR : XM ⟶ HomotopyCategory.Bounded.mk T hTb := ObjectProperty.homMk
-    ((HomotopyCategory.Bounded.singleFunctorCompιIso C 0).hom.app M ≫
-      (_root_.HomotopyCategory.quotient C (.up ℤ)).map r')
-  have hsR : E.acyclicBounded.trW sR := acyclicBounded_trW_homMk_single hTb r' hcone
-  have := Localization.inverts (BoundedDerivedCategory.Q E) _ _ hsR
-  let c := (BoundedDerivedCategory.Q E).map sT ≫ inv ((BoundedDerivedCategory.Q E).map sR)
-  have : IsIso ((SingularityCategory.Q E).map ((BoundedDerivedCategory.Q E).map sT)) :=
-    Localization.inverts _ _ _ (boundedProjective_trW_Q_map_mkMap_ιTop T _ hTb hTproj)
-  have : IsIso ((SingularityCategory.Q E).map c) := by
-    simp only [c, Functor.map_comp, Functor.map_inv]
-    infer_instance
-  obtain ⟨w, hw⟩ := hk _ c
-  -- In `D⁺(E)`, the map from the top term through `X` to `N` is a map into the resolution of
-  -- `N`, which comes from a map of resolutions `Φ`.
+  -- For each `k`, the truncation `T k` of the resolution of `M` above degree `k + 1`, and the
+  -- inclusion `δ k` of its top term, placed in degree `k + 1`, into `T k ≃ M` in `Dᵇ(E)`.
+  choose T j r' θ hTb hTle hr'j hθ hcone hTproj using exists_truncation_stalk hF M
+  let X (k : ℕ) := HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single
+    ((k + 1 : ℕ) : ℤ) ((T k).X ((k + 1 : ℕ) : ℤ)))
+  let sT (k : ℕ) : X k ⟶ HomotopyCategory.Bounded.mk (T k) (hTb k) := mkMap ((T k).ιTop _)
+  let sR (k : ℕ) : (HomotopyCategory.Bounded.singleFunctor C 0).obj M ⟶
+      HomotopyCategory.Bounded.mk (T k) (hTb k) := (singleFunctorObjIsoMk 0 M).hom ≫ mkMap (r' k)
+  have hsR (k : ℕ) : E.acyclicBounded.trW (sR k) :=
+    MorphismProperty.comp_mem _ _ _ (MorphismProperty.of_isIso _ _)
+      (E.acyclicBounded_trW_homMk_quotient_map
+        (X := HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single 0 M))
+        (Y := HomotopyCategory.Bounded.mk (T k) (hTb k)) (r' k) (hcone k))
+  have (k : ℕ) := Localization.inverts (BoundedDerivedCategory.Q E) _ _ (hsR k)
+  let δ (k : ℕ) := (BoundedDerivedCategory.Q E).map (sT k) ≫
+    inv ((BoundedDerivedCategory.Q E).map (sR k))
+  -- A map from `M` to a bounded complex of projectives `K` is killed by `δ k` for `k` beyond `K`.
+  obtain ⟨k, h, hh⟩ := ObjectProperty.TrWLocalization.exists_map_comp_eq_map E.boundedProjective
+    (SingularityCategory.Q E) δ (fun K hK a ↦ by
+      obtain ⟨K', hK', ⟨e⟩⟩ := (E.boundedProjective_iff K).1 hK
+      obtain ⟨_, b, _, _⟩ := (CochainComplex.bounded_iff C K'.obj).1 K'.property
+      refine ⟨b.toNat, ?_⟩
+      rw [← cancel_mono e.hom, zero_comp, Category.assoc]
+      exact eq_zero_of_isStrictlyLE hF (by lia : b < ((b.toNat + 1 : ℕ) : ℤ)) _ K' hK' _) α
+  have : T k |>.IsStrictlyLE ((k + 1 : ℕ) : ℤ) := hTle k
+  -- In `D⁺(E)`, `h` is a map from the top term to the resolution of `N`, which comes from a map
+  -- of resolutions `Φ`.
   let η := BoundedDerivedCategory.QCompToPlusIso E
   obtain ⟨g, hg⟩ := (map_bijective_of_injectivePlus (injectivePlus_resPlus hF N) _).2
-    (η.inv.app bW ≫ (BoundedDerivedCategory.toPlus E).map (w ≫ φ.f) ≫ η.hom.app _ ≫
+    (η.inv.app (X k) ≫ (BoundedDerivedCategory.toPlus E).map h ≫ η.hom.app _ ≫
       (PlusDerivedCategory.Q E).map (resHom hF N))
   obtain ⟨g', hg'⟩ := (_root_.HomotopyCategory.quotient C (.up ℤ)).map_surjective g.hom
-  obtain ⟨Φ, hΦ⟩ := exists_ιTop_comp_eq hF k j θ hθ g'
-  let f : M ⟶ N := (hE.stalkTailData M).cyclesMap (hE.stalkTailData N) Φ 0
-  refine ⟨f, ?_⟩
-  have hgJ : (HomotopyCategory.Bounded.toPlus C).map sT ≫
-      ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map (j ≫ Φ)) = g := by
+  obtain ⟨Φ, hΦ⟩ := exists_ιTop_comp_eq hF k (j k) (θ k) (hθ k) g'
+  refine ⟨(hE.stalkTailData M).cyclesMap (hE.stalkTailData N) Φ 0, ?_⟩
+  have hgJ : (HomotopyCategory.Bounded.toPlus C).map (sT k) ≫
+      ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map (j k ≫ Φ)) = g := by
     apply ObjectProperty.hom_ext
-    change (_root_.HomotopyCategory.quotient C (.up ℤ)).map (T.ιTop _) ≫
-      (_root_.HomotopyCategory.quotient C (.up ℤ)).map (j ≫ Φ) = g.hom
-    rw [← hg', ← hΦ]
-    simp only [Functor.map_comp]
-  have key := Q_map_comp_inv_comp_eq hE sR hsR sT _ (resHom hF N) _
-    (toPlus_map_comp_resHom hF hTb r' j hr'j Φ f rfl) (w ≫ φ.f) (by rw [hgJ, hg])
-  have : IsIso ((SingularityCategory.Q E).map (w ≫ φ.s)) := hw ▸ inferInstance
-  rw [hφ]
-  exact (rightFraction_map_eq _ φ w _ (by rw [← hw, ← key, Category.assoc])).symm
+    simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
+      ObjectProperty.ιOfLE_map, sT, ← Functor.map_comp, hΦ, hg']
+  have key := Q_map_comp_inv_comp_eq hE (sR k) (hsR k) (sT k) _ (resHom hF N) _
+    (toPlus_map_comp_resHom hF (hTb k) (r' k) (j k) (hr'j k) Φ _ rfl) h (by rw [hgJ, hg])
+  have : IsIso ((SingularityCategory.Q E).map ((BoundedDerivedCategory.Q E).map (sT k))) :=
+    Localization.inverts _ _ _ (boundedProjective_trW_Q_map_mkMap_ιTop (T k) _ (hTb k) (hTproj k))
+  have : IsIso ((SingularityCategory.Q E).map (δ k)) := by
+    simp only [δ, Functor.map_comp, Functor.map_inv]
+    infer_instance
+  rw [← cancel_epi ((SingularityCategory.Q E).map (δ k)), hh, ← key]
+  simp only [δ, Functor.comp_map, Functor.map_comp, Category.assoc]
 
 include hF in
 /-- **The functor `stable(E) ⥤ D_sg(E)` is faithful** for a Frobenius exact structure. -/
-theorem faithful_stableToSingularity : E.stableToSingularity.Faithful where
-  map_injective {X Y} f g h := by
-    obtain ⟨f, rfl⟩ := E.projectiveStableFunctor.map_surjective f
-    obtain ⟨g, rfl⟩ := E.projectiveStableFunctor.map_surjective g
-    rw [stableToSingularity_map_projectiveStableFunctor_map,
-      stableToSingularity_map_projectiveStableFunctor_map, cancel_epi, cancel_mono] at h
-    replace h : E.singleToSingularity.map (f - g) = 0 := by
-      rw [Functor.map_sub, h, sub_self]
-    exact CategoryTheory.Quotient.sound _ ((MorphismIdeal.rel_iff _).2
-      (hF.mem_projectiveStableIdeal_of_singleToSingularity_map_eq_zero _ h))
+theorem faithful_stableToSingularity : E.stableToSingularity.Faithful := by
+  rw [stableToSingularity_eq, MorphismIdeal.faithful_lift_iff]
+  exact fun _ _ f hf ↦ hF.mem_projectiveStableIdeal_of_singleToSingularity_map_eq_zero f
+    ((Functor.mem_kerIdeal_hom _).1 hf)
 
 include hF in
 /-- **The functor `stable(E) ⥤ D_sg(E)` is full** for a Frobenius exact structure. -/
-theorem full_stableToSingularity : E.stableToSingularity.Full where
-  map_surjective {X Y} α := by
-    obtain ⟨f, hf⟩ := hF.singleToSingularity_map_surjective X.as Y.as
-      (eqToHom (stableToSingularity_obj_projectiveStableFunctor_obj E X.as).symm ≫ α ≫
-        eqToHom (stableToSingularity_obj_projectiveStableFunctor_obj E Y.as))
-    exact ⟨E.projectiveStableFunctor.map f, by
-      rw [stableToSingularity_map_projectiveStableFunctor_map, hf]
-      simp⟩
+theorem full_stableToSingularity : E.stableToSingularity.Full := by
+  have : E.singleToSingularity.Full := ⟨hF.singleToSingularity_map_surjective _ _⟩
+  rw [stableToSingularity_eq]
+  infer_instance
 
 /-- **The functor `stable(E) ⥤ D_sg(E)` is fully faithful** for a Frobenius exact structure. -/
 noncomputable def fullyFaithfulStableToSingularity : E.stableToSingularity.FullyFaithful :=
@@ -675,31 +491,44 @@ private noncomputable def sgIsoOfStableIso (a : ℤ) {X Y : C}
       E.stableToSingularity.mapIso e ≪≫ E.stableToSingularityObjIso Y ≪≫
         (sgShiftIso a 0 a (add_zero a) Y).symm)
 
+/-- Let `r : L ⟶ T` be a map of bounded complexes with acyclic mapping cone, where `T` vanishes
+above degree `n` and its terms below `n` are projective. Then `L` is isomorphic in the singularity
+category to the top term `Tⁿ` placed in degree `n`. -/
+private noncomputable def sgIsoOfTruncation {L T : CochainComplex C ℤ}
+    (hL : CochainComplex.bounded C L) (hT : CochainComplex.bounded C T) (n : ℤ)
+    [T.IsStrictlyLE n] (hP : ∀ l < n, E.isProjective (T.X l)) (r : L ⟶ T)
+    (hr : E.acyclic (CochainComplex.mappingCone r)) :
+    (SingularityCategory.Q E).obj
+      ((BoundedDerivedCategory.Q E).obj (HomotopyCategory.Bounded.mk L hL)) ≅ sg E n (T.X n) :=
+  have : IsIso ((SingularityCategory.Q E).map ((BoundedDerivedCategory.Q E).map
+      (mkMap (T.ιTop n) : HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single n (T.X n)) ⟶
+        HomotopyCategory.Bounded.mk T hT))) :=
+    Localization.inverts _ E.boundedProjective.trW _
+      (boundedProjective_trW_Q_map_mkMap_ιTop T n hT hP)
+  have : IsIso ((BoundedDerivedCategory.Q E).map
+      (mkMap r : HomotopyCategory.Bounded.mk L hL ⟶ HomotopyCategory.Bounded.mk T hT)) :=
+    Localization.inverts _ E.acyclicBounded.trW _ (E.acyclicBounded_trW_homMk_quotient_map
+      (X := HomotopyCategory.Bounded.mk L hL) (Y := HomotopyCategory.Bounded.mk T hT) r hr)
+  (SingularityCategory.Q E).mapIso (asIso ((BoundedDerivedCategory.Q E).map
+      (mkMap r : HomotopyCategory.Bounded.mk L hL ⟶ HomotopyCategory.Bounded.mk T hT))) ≪≫
+    (asIso ((SingularityCategory.Q E).map ((BoundedDerivedCategory.Q E).map
+      (mkMap (T.ιTop n) : HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single n (T.X n)) ⟶
+        HomotopyCategory.Bounded.mk T hT)))).symm ≪≫
+      (BoundedDerivedCategory.Q E ⋙ SingularityCategory.Q E).mapIso
+        (singleFunctorObjIsoMk n (T.X n)).symm
+
 include hF in
 /-- The object of cycles `Zᵏ⁺¹` of the injective resolution of `M`, placed in degree `k + 1`, is
 isomorphic to `M` in the singularity category. -/
 private theorem nonempty_sg_stalkZ_iso (M : C) (k : ℕ) :
     Nonempty (sg E ((k + 1 : ℕ) : ℤ) (hF.enoughInjectives.stalkZ M (k + 1)) ≅ sg E 0 M) := by
-  obtain ⟨T, j, r', θ, hTb, hTle, -, -, hcone, hTproj⟩ := exists_truncation_stalk hF M k
+  obtain ⟨T, -, r', θ, hTb, hTle, -, -, hcone, hTproj⟩ := exists_truncation_stalk hF M k
   have : T.IsStrictlyLE ((k + 1 : ℕ) : ℤ) := hTle
-  let sT : HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single _ (T.X ((k + 1 : ℕ) : ℤ))) ⟶
-      HomotopyCategory.Bounded.mk T hTb :=
-    mkMap (T.ιTop _)
-  have : IsIso ((SingularityCategory.Q E).map ((BoundedDerivedCategory.Q E).map sT)) :=
-    Localization.inverts _ E.boundedProjective.trW _
-      (boundedProjective_trW_Q_map_mkMap_ιTop T _ hTb hTproj)
-  have : IsIso ((BoundedDerivedCategory.Q E).map (ObjectProperty.homMk
-      ((HomotopyCategory.Bounded.singleFunctorCompιIso C 0).hom.app M ≫
-        (_root_.HomotopyCategory.quotient C (.up ℤ)).map r') :
-      (HomotopyCategory.Bounded.singleFunctor C 0).obj M ⟶ HomotopyCategory.Bounded.mk T hTb)) :=
-    Localization.inverts _ E.acyclicBounded.trW _ (acyclicBounded_trW_homMk_single hTb r' hcone)
   exact ⟨(BoundedDerivedCategory.Q E ⋙ SingularityCategory.Q E).mapIso
-    ((HomotopyCategory.Bounded.singleFunctor C _).mapIso θ.symm ≪≫
-      HomotopyCategory.Bounded.singleFunctorObjIsoMk _ _) ≪≫
-      asIso ((SingularityCategory.Q E).map ((BoundedDerivedCategory.Q E).map sT)) ≪≫
-        (SingularityCategory.Q E).mapIso (asIso ((BoundedDerivedCategory.Q E).map
-          (ObjectProperty.homMk ((HomotopyCategory.Bounded.singleFunctorCompιIso C 0).hom.app M ≫
-            (_root_.HomotopyCategory.quotient C (.up ℤ)).map r')))).symm⟩
+    ((HomotopyCategory.Bounded.singleFunctor C _).mapIso θ.symm) ≪≫
+      (sgIsoOfTruncation (CochainComplex.bounded_single 0 M) hTb _ hTproj r' hcone).symm ≪≫
+        (BoundedDerivedCategory.Q E ⋙ SingularityCategory.Q E).mapIso
+          (singleFunctorObjIsoMk 0 M).symm⟩
 
 include hF in
 /-- Every object is, in the stable category, isomorphic to the object of cycles `Zᵗ` of the
@@ -732,29 +561,11 @@ private theorem exists_sg_iso_of_bounded (L : CochainComplex C ℤ)
   obtain ⟨I, α, hIa, hI, hα⟩ := hF.enoughInjectives.exists_injectiveResolution L a
   obtain ⟨T, j, r', -, hiso, -, hTle, hge, hcone⟩ :=
     exists_truncation_of_acyclic_mappingCone α hα (k : ℤ)
-  have hTb : CochainComplex.bounded C T :=
-    (CochainComplex.bounded_iff C T).2 ⟨_, _, hge a hIa, hTle⟩
   have : T.IsStrictlyLE ((k + 1 : ℕ) : ℤ) := hTle
-  let sT : HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single _ (T.X ((k + 1 : ℕ) : ℤ))) ⟶
-      HomotopyCategory.Bounded.mk T hTb :=
-    mkMap (T.ιTop _)
-  have : IsIso ((SingularityCategory.Q E).map ((BoundedDerivedCategory.Q E).map sT)) :=
-    Localization.inverts _ E.boundedProjective.trW _
-      (boundedProjective_trW_Q_map_mkMap_ιTop T _ hTb fun l hl ↦ by
-        have := hiso l (by lia)
-        exact E.isProjective.prop_of_iso (asIso (j.f l)).symm
-          ((hF.injective_iff_projective _).1 (hI l)))
-  let sR : HomotopyCategory.Bounded.mk L hL ⟶ HomotopyCategory.Bounded.mk T hTb :=
-    ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map r')
-  have : IsIso ((BoundedDerivedCategory.Q E).map sR) :=
-    Localization.inverts _ E.acyclicBounded.trW _
-      (E.acyclicBounded_trW_homMk_quotient_map (X := HomotopyCategory.Bounded.mk L hL)
-        (Y := HomotopyCategory.Bounded.mk T hTb) r' hcone)
-  exact ⟨k, T.X ((k + 1 : ℕ) : ℤ), ⟨(SingularityCategory.Q E).mapIso
-    (asIso ((BoundedDerivedCategory.Q E).map sR)) ≪≫
-      (asIso ((SingularityCategory.Q E).map ((BoundedDerivedCategory.Q E).map sT))).symm ≪≫
-        (BoundedDerivedCategory.Q E ⋙ SingularityCategory.Q E).mapIso
-          (HomotopyCategory.Bounded.singleFunctorObjIsoMk _ _).symm⟩⟩
+  exact ⟨k, T.X ((k + 1 : ℕ) : ℤ), ⟨sgIsoOfTruncation hL
+    ((CochainComplex.bounded_iff C T).2 ⟨_, _, hge a hIa, hTle⟩) _ (fun l hl ↦ by
+      have := hiso l (by lia)
+      exact isProjective_X_of_isIso hF j hI l) r' hcone⟩⟩
 
 include hF in
 /-- **Essential surjectivity in the Keller–Vossieck theorem**: every object of the singularity

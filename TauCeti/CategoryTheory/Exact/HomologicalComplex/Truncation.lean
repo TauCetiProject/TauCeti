@@ -31,6 +31,8 @@ The truncation is constructed for `n = -1` and moved to any `n` by shifting.
 
 * `TauCeti.ExactStructure.exists_truncation_of_acyclic_mappingCone`: the truncation, with its
   properties.
+* `TauCeti.ExactStructure.epi_d_of_acyclic_mappingCone`: the top differential of such a
+  truncation is an epimorphism.
 
 ## References
 
@@ -303,5 +305,25 @@ theorem exists_truncation_of_acyclic_mappingCone {Y I : CochainComplex C ℤ} (r
   · exact E.acyclic_mappingCone_of_iso eY.symm (Iso.refl _) (by simp)
       (E.acyclic.prop_of_iso (CochainComplex.mappingCone.shiftIso r' (-(n + 1)))
         (hT.shift (-(n + 1))).acyclic)
+
+/-- **The top differential of a bounded truncation is an epimorphism.** If `r : Y ⟶ T` has
+acyclic mapping cone, `Y` vanishes in degrees `> n` and `T` vanishes in degrees `> n + 1`, then
+`Tⁿ ⟶ Tⁿ⁺¹` is an epimorphism. -/
+theorem epi_d_of_acyclic_mappingCone {Y T : CochainComplex C ℤ} (n : ℤ) [Y.IsStrictlyLE n]
+    [T.IsStrictlyLE (n + 1)] (r : Y ⟶ T) (hr : E.acyclic (CochainComplex.mappingCone r)) :
+    Epi (T.d n (n + 1)) := by
+  -- In degrees `n` and `n + 1`, the mapping cone of `r` is `T`, and its differential into the
+  -- last nonzero degree is an epimorphism.
+  obtain ⟨hC⟩ := (E.acyclic_iff _).1 hr
+  have := isIso_inr_f r n (Y.isZero_of_isStrictlyLE n _ (by lia))
+  have := isIso_inr_f r (n + 1) (Y.isZero_of_isStrictlyLE n _ (by lia))
+  have : Epi ((CochainComplex.mappingCone r).d n (n + 1)) :=
+    hC.epi_d n ((isZero_X_iff r _).2
+      ⟨Y.isZero_of_isStrictlyLE n _ (by lia), T.isZero_of_isStrictlyLE (n + 1) _ (by lia)⟩)
+  have h : T.d n (n + 1) = (inr r).f n ≫ (CochainComplex.mappingCone r).d n (n + 1) ≫
+      inv ((inr r).f (n + 1)) := by
+    rw [inr_f_d_assoc, IsIso.hom_inv_id, Category.comp_id]
+  rw [h]
+  infer_instance
 
 end TauCeti.ExactStructure

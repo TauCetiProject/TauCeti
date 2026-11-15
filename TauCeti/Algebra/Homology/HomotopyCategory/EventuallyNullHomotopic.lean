@@ -28,6 +28,8 @@ map.
 ## Main results
 
 * `CochainComplex.IsEventuallyNullHomotopic.of_homotopy`: invariance under homotopy.
+* `CochainComplex.IsEventuallyNullHomotopic.add`, `neg`, `sub`, `comp_left`, `comp_right`:
+  eventually null-homotopic maps form an ideal of the category of cochain complexes.
 * `CochainComplex.isEventuallyNullHomotopic_of_quotient_map_eq_comp`: a map whose homotopy class
   factors through a complex vanishing in high degrees is eventually null-homotopic.
 
@@ -72,6 +74,54 @@ theorem of_homotopy {f g : A ⟶ B} (h : Homotopy f g) (hg : IsEventuallyNullHom
   have := Cochain.congr_v hw p p (add_zero p)
   rw [Cochain.add_v, Cochain.ofHom_v, Cochain.ofHom_v] at this
   rw [this, hz p hp, δ_add, Cochain.add_v]
+
+/-- Homotopic maps are eventually null-homotopic together. -/
+theorem homotopy_iff {f g : A ⟶ B} (h : Homotopy f g) :
+    IsEventuallyNullHomotopic f ↔ IsEventuallyNullHomotopic g :=
+  ⟨of_homotopy h.symm, of_homotopy h⟩
+
+/-- The zero map is eventually null-homotopic. -/
+@[simp]
+theorem zero : IsEventuallyNullHomotopic (0 : A ⟶ B) :=
+  of_eventually_eq_zero 0 fun _ _ ↦ rfl
+
+/-- A sum of eventually null-homotopic maps is eventually null-homotopic. -/
+theorem add {f g : A ⟶ B} (hf : IsEventuallyNullHomotopic f) (hg : IsEventuallyNullHomotopic g) :
+    IsEventuallyNullHomotopic (f + g) := by
+  obtain ⟨n, z, hz⟩ := hf
+  obtain ⟨m, w, hw⟩ := hg
+  refine ⟨max n m, z + w, fun p hp ↦ ?_⟩
+  rw [HomologicalComplex.add_f_apply, hz p (le_of_max_le_left hp), hw p (le_of_max_le_right hp),
+    δ_add, Cochain.add_v]
+
+/-- The negative of an eventually null-homotopic map is eventually null-homotopic. -/
+theorem neg {f : A ⟶ B} (hf : IsEventuallyNullHomotopic f) : IsEventuallyNullHomotopic (-f) := by
+  obtain ⟨n, z, hz⟩ := hf
+  refine ⟨n, -z, fun p hp ↦ ?_⟩
+  rw [HomologicalComplex.neg_f_apply, hz p hp, δ_neg, Cochain.neg_v]
+
+/-- A difference of eventually null-homotopic maps is eventually null-homotopic. -/
+theorem sub {f g : A ⟶ B} (hf : IsEventuallyNullHomotopic f) (hg : IsEventuallyNullHomotopic g) :
+    IsEventuallyNullHomotopic (f - g) := by
+  rw [sub_eq_add_neg]
+  exact hf.add hg.neg
+
+/-- Composing an eventually null-homotopic map on the right keeps it eventually
+null-homotopic. -/
+theorem comp_right {f : A ⟶ B} (hf : IsEventuallyNullHomotopic f) (g : B ⟶ D) :
+    IsEventuallyNullHomotopic (f ≫ g) := by
+  obtain ⟨n, z, hz⟩ := hf
+  refine ⟨n, z.comp (Cochain.ofHom g) (add_zero _), fun p hp ↦ ?_⟩
+  rw [HomologicalComplex.comp_f, hz p hp, δ_comp_ofHom, Cochain.comp_zero_cochain_v,
+    Cochain.ofHom_v]
+
+/-- Composing an eventually null-homotopic map on the left keeps it eventually null-homotopic. -/
+theorem comp_left {f : A ⟶ B} (hf : IsEventuallyNullHomotopic f) (g : D ⟶ A) :
+    IsEventuallyNullHomotopic (g ≫ f) := by
+  obtain ⟨n, z, hz⟩ := hf
+  refine ⟨n, (Cochain.ofHom g).comp z (zero_add _), fun p hp ↦ ?_⟩
+  rw [HomologicalComplex.comp_f, hz p hp, δ_ofHom_comp, Cochain.zero_cochain_comp_v,
+    Cochain.ofHom_v]
 
 end IsEventuallyNullHomotopic
 

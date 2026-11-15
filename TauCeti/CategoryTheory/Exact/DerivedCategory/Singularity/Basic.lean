@@ -10,6 +10,7 @@ public import TauCeti.CategoryTheory.Exact.Projective
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Generation
 public import TauCeti.CategoryTheory.Exact.HomologicalComplex.Projective.Basic
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.MappingCone
+public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Mk
 public import Mathlib.CategoryTheory.Triangulated.Orthogonal
 
 /-!
@@ -43,6 +44,8 @@ the stable category of `E`.
   any degree lies in `Kᵇ(proj E)`.
 * `TauCeti.ExactStructure.boundedProjective_trW_Q_map_ιTop`: splitting off the top term of a
   bounded complex whose lower terms are projective is inverted in the singularity category.
+  `TauCeti.ExactStructure.boundedProjective_trW_Q_map_mkMap_ιTop` is the same map written with
+  `HomotopyCategory.Bounded.mkMap`.
 
 ## References
 
@@ -195,6 +198,39 @@ theorem boundedProjective_trW_Q_map_ιTop (K : CochainComplex C ℤ) (n : ℤ) [
       (asIso ((K.πStupidTrunc (ComplexShape.embeddingUpIntLE b)).f k)) (hP k (by lia))
   · exact E.isProjective.prop_of_isZero
       (K.isZero_stupidTrunc_embeddingUpIntLE_X b (by lia))
+
+variable {E} in
+/-- The inclusion `Kⁿ[-n] ⟶ K` of the top term of a bounded complex vanishing above degree `n`,
+whose terms below `n` are projective, written with `HomotopyCategory.Bounded.mkMap`, lies in
+`E.boundedProjective.trW`. -/
+theorem boundedProjective_trW_Q_map_mkMap_ιTop (K : CochainComplex C ℤ) (n : ℤ)
+    [K.IsStrictlyLE n] (hK : CochainComplex.bounded C K) (hP : ∀ k < n, E.isProjective (K.X k)) :
+    E.boundedProjective.trW ((BoundedDerivedCategory.Q E).map
+      (HomotopyCategory.Bounded.mkMap (K.ιTop n) :
+        HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single n (K.X n)) ⟶
+          HomotopyCategory.Bounded.mk K hK)) := by
+  let e : (HomotopyCategory.Bounded.quotient C).obj ⟨K, hK⟩ ≅ HomotopyCategory.Bounded.mk K hK :=
+    (HomotopyCategory.Bounded.fullyFaithfulι C).preimageIso
+      (eqToIso (HomotopyCategory.Bounded.quotient_obj_obj C ⟨K, hK⟩))
+  have h : (HomotopyCategory.Bounded.mkMap (K.ιTop n) :
+      HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single n (K.X n)) ⟶
+        HomotopyCategory.Bounded.mk K hK) =
+      (HomotopyCategory.Bounded.singleFunctorObjIsoMk n (K.X n)).inv ≫
+        HomotopyCategory.Bounded.ιTop K n hK ≫ e.hom := by
+    rw [Iso.eq_inv_comp]
+    have h₁ : (HomotopyCategory.Bounded.singleFunctorObjIsoMk n (K.X n)).hom.hom =
+        (HomotopyCategory.Bounded.singleFunctorCompιIso C n).hom.app (K.X n) :=
+      HomotopyCategory.Bounded.ι_map_singleFunctorObjIsoMk_hom n _
+    have h₂ : e.hom.hom = eqToHom (HomotopyCategory.Bounded.quotient_obj_obj C ⟨K, hK⟩) :=
+      (HomotopyCategory.Bounded.fullyFaithfulι C).map_preimage _
+    apply ObjectProperty.hom_ext
+    simp only [ObjectProperty.FullSubcategory.comp_hom, h₁, h₂, HomotopyCategory.Bounded.ιTop_hom,
+      ObjectProperty.homMk_hom, Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
+    exact congrArg (_ ≫ ·) (Category.id_comp _).symm
+  rw [h, Functor.map_comp, Functor.map_comp]
+  exact MorphismProperty.comp_mem _ _ _ (MorphismProperty.of_isIso _ _)
+    (MorphismProperty.comp_mem _ _ _ (boundedProjective_trW_Q_map_ιTop K n hK hP)
+      (MorphismProperty.of_isIso _ _))
 
 /-- The **singularity category** `Dᵇ(E) / Kᵇ(proj E)` of an exact category: the Verdier quotient of
 the bounded derived category by the bounded complexes of projectives. -/

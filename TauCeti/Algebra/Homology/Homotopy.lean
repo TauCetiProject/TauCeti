@@ -59,6 +59,8 @@ coboundaries to homotopies.
 Dually, `CochainComplex.nonempty_homotopy_zero_iff_of_single` characterizes null-homotopic chain
 maps from an object `X` placed in degree `p` to a cochain complex `K`: such a map is null-homotopic
 if and only if its component `X ⟶ Kᵖ` factors through the differential `Kᵖ⁻¹ ⟶ Kᵖ`.
+`CochainComplex.f_eq_of_homotopy_of_single` says that homotopic maps from `X` placed in degree
+`p` to a complex vanishing in degree `p - 1` agree in degree `p`.
 
 `Homotopy.cyclesMap_sub_eq` expresses the difference of the maps on cycles induced by
 homotopic maps as a factorization through a term of the target complex. In particular, these
@@ -381,5 +383,18 @@ lemma nonempty_homotopy_zero_iff_of_single (K : CochainComplex C ℤ) {X : C} {p
   rw [h]
   exact ⟨fun ⟨ho⟩ ↦ ⟨Cochain.ofHomotopy ho, by simp [δ_ofHomotopy]⟩,
     fun ⟨z, hz⟩ ↦ ⟨(Cochain.equivHomotopy _ _).symm ⟨z, by simpa using hz.symm⟩⟩⟩
+
+/-- **Homotopic maps out of an object in one degree agree in that degree**: two homotopic maps
+from `X` placed in degree `p` to a complex `K` with `Kᵠ = 0`, where `q + 1 = p`, have the same
+component in degree `p`. -/
+lemma f_eq_of_homotopy_of_single {X : C} {p q : ℤ} (hqp : q + 1 = p) {K : CochainComplex C ℤ}
+    (hK : IsZero (K.X q)) {g₁ g₂ : (HomologicalComplex.single C (.up ℤ) p).obj X ⟶ K}
+    (h : Homotopy g₁ g₂) : g₁.f p = g₂.f p := by
+  have := h.comm p
+  rw [dNext_eq _ (show (ComplexShape.up ℤ).Rel p (p + 1) by simp),
+    prevD_eq _ (show (ComplexShape.up ℤ).Rel q p by simp [← hqp])] at this
+  rw [this, (HomologicalComplex.isZero_single_obj_X _ p X (p + 1) (by lia)).eq_of_src
+    (h.hom (p + 1) p) 0, hK.eq_of_tgt (h.hom p q) 0]
+  simp
 
 end CochainComplex
