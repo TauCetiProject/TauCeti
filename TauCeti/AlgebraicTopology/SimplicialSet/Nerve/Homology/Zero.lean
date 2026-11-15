@@ -18,44 +18,12 @@ public import TauCeti.CategoryTheory.ComposableArrows.Postcomp
 /-!
 # Degree-zero homology of a category and concrete homological checks
 
-For a small (or locally small) category `C` and a functor `M : C ⥤ A` into a category with
-homology and coproducts, degree-`0` homology `categoryHomology C M 0` is canonically a colimit of
-`M`: the vertex inclusions `ιCategoryHomology₀ M c : M.obj c ⟶ categoryHomology C M 0` form a
-colimit cocone `categoryHomology₀Cocone M`, yielding isomorphisms
-`categoryHomology C M 0 ≅ colimit M` and `categoryHomologyFunctor C A 0 ≅ colim`.
-
-We also establish three concrete computations and sanity checks:
-1. **Connected category, constant coefficients:** when `C` is connected,
-   `categoryHomology C ((Functor.const C).obj X) 0 ≅ X`.
-2. **Category with a terminal object:** if `ht : IsTerminal t`, appending `ht.from _` via
-   `ComposableArrows.postcomp` gives an explicit chain homotopy equivalence
-   `categoryChainComplex C M ≃ₕ (ChainComplex.single₀ A).obj (M.obj t)`, whence
-   `categoryHomology C M 0 ≅ M.obj t` and `IsZero (categoryHomology C M (n + 1))`.
-3. **Nerve of `ℤ/2` with trivial integral coefficients:** for `G = Multiplicative (ZMod 2)`,
-   `categoryHomology (SingleObj G) ((Functor.const _).obj (ModuleCat.of ℤ ℤ)) 2` is zero, whereas
-   `groupCohomology (Rep.trivial ℤ G ℤ) 2 ≅ ModuleCat.of ℤ (ZMod 2)` is nonzero (distinguishing
-   homology in degree `2` from cohomology in degree `2`).
-
-## Main definitions and results
-
-* `TauCeti.ιCategoryHomology₀`, `TauCeti.categoryHomology₀Cocone`,
-  `TauCeti.isColimitCategoryHomology₀Cocone`: colimit cocone presenting `categoryHomology C M 0`
-  as a colimit of `M`.
-* `TauCeti.categoryHomologyZeroIsoOfIsColimit`, `TauCeti.categoryHomologyZeroIso`,
-  `TauCeti.categoryHomologyFunctorZeroIso`: canonical isomorphisms `H₀(C, M) ≅ colimit M` and
-  `H₀(C, -) ≅ colim`.
-* `TauCeti.categoryHomologyZeroConstIsoOfIsConnected`: `H₀(C, const X) ≅ X` when `[IsConnected C]`.
-* `TauCeti.categoryChainComplexTerminalHomotopyEquiv`, `TauCeti.categoryHomologyZeroTerminalIso`,
-  `TauCeti.isZero_categoryHomology_succ_of_isTerminal`: chain homotopy equivalence with `M(t)[0]`
-  and vanishing of higher homology when `t` is terminal.
-* `TauCeti.isZero_categoryHomology_singleObj_zmod_two_int_two`,
-  `TauCeti.groupCohomologyTrivialZModTwoIntTwoIso`,
-  `TauCeti.not_isZero_groupCohomology_trivial_zmod_two_int_two`: `H₂(B(ℤ/2), ℤ) = 0` versus
-  `H²(ℤ/2, ℤ) ≅ ℤ/2 ≠ 0`.
-
-## References
-
-* [Daniel Quillen, *Higher algebraic K-theory: I*][quillen1973]
+For `C` and `M : C ⥤ A`, `TauCeti.ιCategoryHomology₀ M` forms a colimit cocone
+`TauCeti.categoryHomology₀Cocone M` presenting `categoryHomology C M 0` as `colimit M`
+(`TauCeti.categoryHomologyZeroIso`, `TauCeti.categoryHomologyFunctorZeroIso`). We also prove
+`H₀(C, const X) ≅ X` when `[IsConnected C]`, the contracting homotopy equivalence onto
+`(ChainComplex.single₀ A).obj (M.obj t)` when `t` is terminal, and `H₂(B(ℤ/2), ℤ) = 0` whereas
+`H²(ℤ/2, ℤ) ≅ ℤ/2 ≠ 0` ([Daniel Quillen, *Higher algebraic K-theory: I*][quillen1973]).
 -/
 
 public noncomputable section
@@ -93,10 +61,8 @@ lemma ιCategoryChainComplex₀_fromCategoryChainComplexXZero (M : C ⥤ A) (s :
 lemma d_fromCategoryChainComplexXZero (M : C ⥤ A) (s : Cocone M) (n : ℕ) :
     (categoryChainComplex C M).d n 0 ≫ fromCategoryChainComplexXZero M s = 0 := by
   by_cases hn : n = 1
-  · subst hn
-    ext σ
-    have hσ : ComposableArrows.mk₁ (σ.map' 0 1) = σ :=
-      ComposableArrows.ext₁ rfl rfl (by simp)
+  · subst hn; ext σ
+    have hσ : ComposableArrows.mk₁ (σ.map' 0 1) = σ := ComposableArrows.ext₁ rfl rfl (by simp)
     rw [← hσ, ιCategoryChainComplex_mk₁, ιCategoryChainComplex₁_d_one_zero_assoc,
       Preadditive.sub_comp, Category.assoc, ιCategoryChainComplex₀_fromCategoryChainComplexXZero,
       ιCategoryChainComplex₀_fromCategoryChainComplexXZero, s.w (σ.map' 0 1), sub_self, comp_zero]
@@ -121,51 +87,41 @@ lemma ιCategoryHomology₀_naturality (M : C ⥤ A) {c₀ c₁ : C} (f : c₀ �
     zero_comp, comp_zero]
 
 /-- Cocone on `M : C ⥤ A` with vertex `categoryHomology C M 0` and legs `ιCategoryHomology₀ M`. -/
-abbrev categoryHomology₀Cocone (M : C ⥤ A) : Cocone M where
-  pt := categoryHomology C M 0
-  ι :=
-    { app := ιCategoryHomology₀ M
-      naturality := fun _ _ f ↦ by simp }
+abbrev categoryHomology₀Cocone (M : C ⥤ A) : Cocone M :=
+  ⟨categoryHomology C M 0, { app := ιCategoryHomology₀ M, naturality := fun _ _ _ ↦ by simp }⟩
 
-/-- Morphisms out of `categoryHomology C M 0` are determined on `ιCategoryHomology₀ M c` for all
-`c : C`. -/
 @[ext]
 lemma categoryHomology₀_hom_ext {M : C ⥤ A} {T : A} {f g : categoryHomology C M 0 ⟶ T}
-    (h : ∀ c : C, ιCategoryHomology₀ M c ≫ f = ιCategoryHomology₀ M c ≫ g) :
-    f = g := by
+    (h : ∀ c : C, ιCategoryHomology₀ M c ≫ f = ιCategoryHomology₀ M c ≫ g) : f = g := by
   rw [← cancel_epi (ChainComplex.isoHomologyι₀ (categoryChainComplex C M)).inv,
     ← cancel_epi ((categoryChainComplex C M).pOpcycles 0)]
   exact categoryChainComplex_hom_ext₀ fun c ↦ by
     simpa only [ιCategoryHomology₀, Category.assoc] using h c
 
-/-- `categoryHomology₀Cocone M` is a colimit cocone presenting `categoryHomology C M 0` as a
-colimit of `M : C ⥤ A`. -/
-def isColimitCategoryHomology₀Cocone (M : C ⥤ A) : IsColimit (categoryHomology₀Cocone M) where
-  desc s := (ChainComplex.isoHomologyι₀ (categoryChainComplex C M)).hom ≫
-    (categoryChainComplex C M).descOpcycles (fromCategoryChainComplexXZero M s) 1
-      (ChainComplex.prev ℕ 0) (d_fromCategoryChainComplexXZero M s 1)
-  fac s c := by
-    dsimp only [categoryHomology₀Cocone, ιCategoryHomology₀]
-    rw [Category.assoc, Category.assoc, Iso.inv_hom_id_assoc,
-      HomologicalComplex.p_descOpcycles, ιCategoryChainComplex₀_fromCategoryChainComplexXZero]
-  uniq s m hm := categoryHomology₀_hom_ext fun c ↦ by
-    dsimp only [categoryHomology₀Cocone] at hm ⊢
-    rw [hm c]
+/-- `categoryHomology₀Cocone M` presents `categoryHomology C M 0` as a colimit of `M`. -/
+def isColimitCategoryHomology₀Cocone (M : C ⥤ A) : IsColimit (categoryHomology₀Cocone M) := by
+  have hfac (s : Cocone M) (c : C) : ιCategoryHomology₀ M c ≫
+      ((ChainComplex.isoHomologyι₀ (categoryChainComplex C M)).hom ≫
+        (categoryChainComplex C M).descOpcycles (fromCategoryChainComplexXZero M s) 1
+          (ChainComplex.prev ℕ 0) (d_fromCategoryChainComplexXZero M s 1)) = s.ι.app c := by
     dsimp only [ιCategoryHomology₀]
     rw [Category.assoc, Category.assoc, Iso.inv_hom_id_assoc,
       HomologicalComplex.p_descOpcycles, ιCategoryChainComplex₀_fromCategoryChainComplexXZero]
+  exact { desc s := (ChainComplex.isoHomologyι₀ (categoryChainComplex C M)).hom ≫
+            (categoryChainComplex C M).descOpcycles (fromCategoryChainComplexXZero M s) 1
+              (ChainComplex.prev ℕ 0) (d_fromCategoryChainComplexXZero M s 1)
+          fac := hfac
+          uniq s m hm := categoryHomology₀_hom_ext fun c ↦ (hm c).trans (hfac s c).symm }
 
 @[reassoc (attr := simp)]
 lemma ιCategoryHomology₀_categoryHomologyCoeffMap {M N : C ⥤ A} (α : M ⟶ N) (c : C) :
-    ιCategoryHomology₀ M c ≫ categoryHomologyCoeffMap α 0 =
-      α.app c ≫ ιCategoryHomology₀ N c := by
+    ιCategoryHomology₀ M c ≫ categoryHomologyCoeffMap α 0 = α.app c ≫ ιCategoryHomology₀ N c := by
   dsimp only [ιCategoryHomology₀, categoryHomologyCoeffMap, HomologicalComplex.homologyFunctor_map]
   rw [Category.assoc, Category.assoc, ChainComplex.isoHomologyι₀_inv_naturality,
     HomologicalComplex.p_opcyclesMap_assoc,
     ιCategoryChainComplex₀_categoryChainComplexCoeffMap_f_assoc]
 
-/-- Canonical isomorphism `categoryHomology C M 0 ≅ s.pt` associated to any colimit cocone `s` on
-`M : C ⥤ A`. -/
+/-- Canonical isomorphism `categoryHomology C M 0 ≅ s.pt` for any colimit cocone `s` on `M`. -/
 def categoryHomologyZeroIsoOfIsColimit (M : C ⥤ A) (s : Cocone M) (hs : IsColimit s) :
     categoryHomology C M 0 ≅ s.pt :=
   (isColimitCategoryHomology₀Cocone M).coconePointUniqueUpToIso hs
@@ -183,8 +139,7 @@ lemma ι_categoryHomologyZeroIsoOfIsColimit_inv (M : C ⥤ A) (s : Cocone M) (hs
   (isColimitCategoryHomology₀Cocone M).comp_coconePointUniqueUpToIso_inv hs c
 
 /-- Canonical isomorphism `categoryHomology C M 0 ≅ colimit M` when `M` has a colimit. -/
-def categoryHomologyZeroIso (M : C ⥤ A) [HasColimit M] :
-    categoryHomology C M 0 ≅ colimit M :=
+def categoryHomologyZeroIso (M : C ⥤ A) [HasColimit M] : categoryHomology C M 0 ≅ colimit M :=
   categoryHomologyZeroIsoOfIsColimit M _ (colimit.isColimit M)
 
 @[reassoc (attr := simp)]
@@ -198,10 +153,8 @@ lemma ι_categoryHomologyZeroIso_inv (M : C ⥤ A) [HasColimit M] (c : C) :
   ι_categoryHomologyZeroIsoOfIsColimit_inv M _ (colimit.isColimit M) c
 
 variable (C A) [HasColimitsOfShape C A] in
-/-- Natural isomorphism `categoryHomologyFunctor C A 0 ≅ colim` identifying degree-`0` category
-homology with the colimit functor `(C ⥤ A) ⥤ A`. -/
-def categoryHomologyFunctorZeroIso :
-    categoryHomologyFunctor C A 0 ≅ colim :=
+/-- Natural isomorphism `categoryHomologyFunctor C A 0 ≅ colim`. -/
+def categoryHomologyFunctorZeroIso : categoryHomologyFunctor C A 0 ≅ colim :=
   NatIso.ofComponents (fun M ↦ categoryHomologyZeroIso M) fun α ↦
     categoryHomology₀_hom_ext fun c ↦ by
       change ιCategoryHomology₀ _ c ≫
@@ -211,18 +164,14 @@ def categoryHomologyFunctorZeroIso :
         ιCategoryHomology₀_categoryHomologyZeroIso_hom,
         ιCategoryHomology₀_categoryHomologyZeroIso_hom_assoc, ι_colimMap]
 
-/-- For a connected category `C` and constant coefficient object `X : A`, degree-`0` homology
-`categoryHomology C ((Functor.const C).obj X) 0` is canonically isomorphic to `X`. -/
+/-- For connected `C`, `categoryHomology C ((Functor.const C).obj X) 0 ≅ X`. -/
 def categoryHomologyZeroConstIsoOfIsConnected (C : Type u) [Category.{v} C] [IsConnected C]
-    (X : A) :
-    categoryHomology C ((Functor.const C).obj X) 0 ≅ X :=
-  categoryHomologyZeroIsoOfIsColimit ((Functor.const C).obj X)
-    (constCocone C X) (isColimitConstCocone C X)
+    (X : A) : categoryHomology C ((Functor.const C).obj X) 0 ≅ X :=
+  categoryHomologyZeroIsoOfIsColimit _ (constCocone C X) (isColimitConstCocone C X)
 
 @[reassoc (attr := simp)]
 lemma ιCategoryHomology₀_categoryHomologyZeroConstIsoOfIsConnected_hom [IsConnected C] (X : A)
-    (c : C) :
-    ιCategoryHomology₀ ((Functor.const C).obj X) c ≫
+    (c : C) : ιCategoryHomology₀ ((Functor.const C).obj X) c ≫
       (categoryHomologyZeroConstIsoOfIsConnected C X).hom = 𝟙 X :=
   ιCategoryHomology₀_categoryHomologyZeroIsoOfIsColimit_hom _ _ _ c
 
@@ -236,8 +185,7 @@ variable {C : Type u} [Category.{v} C] {A : Type u'} [Category.{v'} A]
   [Preadditive A] [HasCoproducts.{max u v} A]
 
 private def nerveFace {n : ℕ} (i : Fin (n + 2)) (σ : ComposableArrows C (n + 1)) :
-    ComposableArrows C n :=
-  (nerve C).δ i σ
+    ComposableArrows C n := (nerve C).δ i σ
 
 private lemma nerveFace_zero_obj_zero {n : ℕ} (σ : ComposableArrows C (n + 1)) :
     (nerveFace 0 σ).obj 0 = σ.obj 1 := rfl
@@ -254,30 +202,24 @@ private lemma ιCategoryChainComplex_d_nerveFace (M : C ⥤ A) {n : ℕ}
         ∑ j : Fin (n + 1), (-1) ^ (j.val + 1) •
           (eqToHom (congrArg M.obj (nerveFace_succ_obj_zero j σ).symm) ≫
             ιCategoryChainComplex M (nerveFace j.succ σ)) := by
-  refine (ιCategoryChainComplex_d M σ).trans (congrArg₂ (· + ·) ?_ ?_)
-  · have h : eqToHom (congrArg M.obj (nerveFace_zero_obj_zero σ).symm) = 𝟙 _ := eqToHom_refl _ _
-    exact (congrArg (M.map _ ≫ ·) ((congrArg (· ≫ _) h).trans (Category.id_comp _))).symm
-  · refine Finset.sum_congr rfl fun j _ ↦ congrArg ((-1 : ℤ) ^ (j.val + 1) • ·) ?_
-    have h : eqToHom (congrArg M.obj (nerveFace_succ_obj_zero j σ).symm) = 𝟙 _ := eqToHom_refl _ _
-    exact ((congrArg (· ≫ _) h).trans (Category.id_comp _)).symm
+  refine (ιCategoryChainComplex_d M σ).trans (congrArg₂ (· + ·) ?_
+    (Finset.sum_congr rfl fun j _ ↦ congrArg ((-1 : ℤ) ^ (j.val + 1) • ·) ?_))
+  · exact congrArg (M.map _ ≫ ·)
+      ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _)).symm
+  · exact ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _)).symm
 
 private def ιPostcomp (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C n) {Y : C} (g : σ.right ⟶ Y) :
     M.obj (σ.obj 0) ⟶ (categoryChainComplex C M).X (n + 1) :=
-  eqToHom (congrArg M.obj (σ.postcomp_obj_zero g).symm) ≫
-    ιCategoryChainComplex M (σ.postcomp g)
+  eqToHom (congrArg M.obj (σ.postcomp_obj_zero g).symm) ≫ ιCategoryChainComplex M (σ.postcomp g)
 
 private lemma eqToHom_ι_of_eq (M : C ⥤ A) {m : ℕ} {τ σ : ComposableArrows C m}
     (h : τ = σ) (h₀ : M.obj (σ.obj 0) = M.obj (τ.obj 0)) :
-    eqToHom h₀ ≫ ιCategoryChainComplex M τ = ιCategoryChainComplex M σ := by
-  subst h
-  simp
+    eqToHom h₀ ≫ ιCategoryChainComplex M τ = ιCategoryChainComplex M σ := by subst h; simp
 
 private lemma eqToHom_ι_eq_ιPostcomp (M : C ⥤ A) {m : ℕ} {ρ : ComposableArrows C (m + 1)}
     {ν : ComposableArrows C m} {Y : C} {q : ν.right ⟶ Y}
     (h : ρ = ν.postcomp q) (h₀ : M.obj (ν.obj 0) = M.obj (ρ.obj 0)) :
-    eqToHom h₀ ≫ ιCategoryChainComplex M ρ = ιPostcomp M ν q := by
-  subst h
-  simp [ιPostcomp]
+    eqToHom h₀ ≫ ιCategoryChainComplex M ρ = ιPostcomp M ν q := by subst h; simp [ιPostcomp]
 
 private def terminalHomotopyStep (M : C ⥤ A) {t : C} (ht : IsTerminal t) (n : ℕ) :
     (categoryChainComplex C M).X n ⟶ (categoryChainComplex C M).X (n + 1) :=
@@ -288,9 +230,8 @@ private lemma ι_terminalHomotopyStep (M : C ⥤ A) {t : C} (ht : IsTerminal t) 
     (σ : ComposableArrows C n) :
     ιCategoryChainComplex M σ ≫ terminalHomotopyStep M ht n =
       (-1 : ℤ) ^ (n + 1) • ιPostcomp M σ (ht.from σ.right) :=
-  (Preadditive.comp_zsmul _ _ _).trans
-    (congrArg ((-1 : ℤ) ^ (n + 1) • ·)
-      (Cofan.IsColimit.fac (isColimitCategoryChainComplexXCofan M n) _ σ))
+  (Preadditive.comp_zsmul _ _ _).trans (congrArg ((-1 : ℤ) ^ (n + 1) • ·)
+    (Cofan.IsColimit.fac (isColimitCategoryChainComplexXCofan M n) _ σ))
 
 private lemma ιPostcomp_d_one_zero (M : C ⥤ A) {t : C} (ht : IsTerminal t)
     (σ : ComposableArrows C 0) :
@@ -308,8 +249,7 @@ private lemma ιPostcomp_d_one_zero (M : C ⥤ A) {t : C} (ht : IsTerminal t)
   have hobj₀ : (nerveFace 0 τ).obj 0 = (ComposableArrows.mk₀ t).obj 0 :=
     congrArg (fun ρ : ComposableArrows C 0 ↦ ρ.obj 0) hδ₀
   have hmap : eqToHom (σ.postcomp_obj_zero g).symm ≫
-      τ.map (homOfLE (Fin.zero_le (1 : Fin 2))) ≫
-        eqToHom (nerveFace_zero_obj_zero τ).symm =
+      τ.map (homOfLE (Fin.zero_le (1 : Fin 2))) ≫ eqToHom (nerveFace_zero_obj_zero τ).symm =
       ht.from (σ.obj 0) ≫ eqToHom (hmk.trans hobj₀.symm) := by
     rw [← cancel_mono (eqToHom (hobj₀.trans hmk.symm))]
     simp only [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
@@ -319,18 +259,17 @@ private lemma ιPostcomp_d_one_zero (M : C ⥤ A) {t : C} (ht : IsTerminal t)
         eqToHom (congrArg M.obj (nerveFace_zero_obj_zero τ).symm) ≫
           ιCategoryChainComplex M (nerveFace 0 τ)) =
       M.map (ht.from (σ.obj 0)) ≫ ιCategoryChainComplex₀ M t := by
-    rw [← Category.assoc, ← Category.assoc,
-      ← eqToHom_map M (σ.postcomp_obj_zero g).symm,
-      ← eqToHom_map M (nerveFace_zero_obj_zero τ).symm,
-      ← M.map_comp, ← M.map_comp, Category.assoc, hmap, M.map_comp, eqToHom_map, Category.assoc]
+    rw [← Category.assoc, ← Category.assoc, ← eqToHom_map M (σ.postcomp_obj_zero g).symm,
+      ← eqToHom_map M (nerveFace_zero_obj_zero τ).symm, ← M.map_comp, ← M.map_comp,
+      Category.assoc, hmap, M.map_comp, eqToHom_map, Category.assoc]
     exact congrArg (M.map _ ≫ ·) ((eqToHom_ι_of_eq M hδ₀ _).trans (ιCategoryChainComplex_mk₀ M t))
   have h₂ : eqToHom (congrArg M.obj (σ.postcomp_obj_zero g).symm) ≫
       (eqToHom (congrArg M.obj (nerveFace_succ_obj_zero 0 τ).symm) ≫
-        ιCategoryChainComplex M (nerveFace (0 : Fin 1).succ τ)) =
+        ιCategoryChainComplex M (nerveFace (Fin.succ 0) τ)) =
       ιCategoryChainComplex M σ := by
     rw [← Category.assoc, eqToHom_trans]
     exact eqToHom_ι_of_eq M (CategoryTheory.nerve.δ_last_postcomp σ g) _
-  rw [h₁, h₂, sub_eq_add_neg]
+  rw [h₁, h₂, ← sub_eq_add_neg]
 
 private lemma ιPostcomp_d_succ (M : C ⥤ A) {t : C} (ht : IsTerminal t) {n : ℕ}
     (σ : ComposableArrows C (n + 1)) :
@@ -342,36 +281,32 @@ private lemma ιPostcomp_d_succ (M : C ⥤ A) {t : C} (ht : IsTerminal t) {n : �
           (eqToHom (congrArg M.obj (nerveFace_succ_obj_zero j σ).symm) ≫
             ιPostcomp M (nerveFace j.succ σ) (ht.from _))) +
         (-1 : ℤ) ^ (n + 2) • ιCategoryChainComplex M σ := by
-  let g := ht.from σ.right
-  let τ := σ.postcomp g
-  have hdef : ιPostcomp M σ g =
-      eqToHom (congrArg M.obj (σ.postcomp_obj_zero g).symm) ≫ ιCategoryChainComplex M τ := rfl
-  rw [hdef, Category.assoc, ιCategoryChainComplex_d_nerveFace, Preadditive.comp_add,
+  let g := ht.from σ.right; let τ := σ.postcomp g
+  change (eqToHom (congrArg M.obj (σ.postcomp_obj_zero g).symm) ≫ ιCategoryChainComplex M τ) ≫ _ = _
+  rw [Category.assoc, ιCategoryChainComplex_d_nerveFace, Preadditive.comp_add,
     Preadditive.comp_sum, Fin.sum_univ_castSucc, ← add_assoc]
   congr 1
   · congr 1
-    · have hta : τ.totalArrow (0 : Fin (n + 3)) (1 : Fin (n + 3)) (Fin.zero_le _) =
-          σ.totalArrow (0 : Fin (n + 2)) (1 : Fin (n + 2)) (Fin.zero_le _) :=
-        σ.totalArrow_postcomp_castSucc_castSucc g 0 1 (Fin.zero_le _)
+    · have hta := σ.totalArrow_postcomp_castSucc_castSucc g 0 1 (Fin.zero_le _)
       rw [ComposableArrows.totalArrow_def, ComposableArrows.totalArrow_def] at hta
-      obtain ⟨h₀, h₁, hm⟩ := Quiver.Total.mk.inj hta
+      obtain ⟨_, h₁, hm⟩ := Quiver.Total.mk.inj hta
       have h₁' : (nerveFace 0 σ).obj 0 = (nerveFace 0 τ).obj 0 :=
         (nerveFace_zero_obj_zero σ).trans (h₁.symm.trans (nerveFace_zero_obj_zero τ).symm)
-      have hmap : eqToHom h₀.symm ≫ τ.map (homOfLE (Fin.zero_le (1 : Fin (n + 3)))) ≫
-          eqToHom (nerveFace_zero_obj_zero τ).symm =
+      have hmap : eqToHom (σ.postcomp_obj_zero g).symm ≫
+          τ.map (homOfLE (Fin.zero_le (1 : Fin (n + 3)))) ≫
+            eqToHom (nerveFace_zero_obj_zero τ).symm =
           σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2)))) ≫
             eqToHom (nerveFace_zero_obj_zero σ).symm ≫ eqToHom h₁' := by
         rw [← cancel_mono (eqToHom h₁'.symm), ← cancel_mono (eqToHom (nerveFace_zero_obj_zero σ))]
         simp only [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
-        exact ((conj_eqToHom_iff_heq' _ _ h₀.symm h₁).mpr hm.symm).symm
-      have hδ₀ : nerveFace 0 τ = (nerveFace 0 σ).postcomp (ht.from _) :=
-        CategoryTheory.nerve.δ_castSucc_postcomp_isTerminal σ ht 0
-      rw [← Category.assoc, ← Category.assoc,
-        ← eqToHom_map M (σ.postcomp_obj_zero g).symm,
-        ← eqToHom_map M (nerveFace_zero_obj_zero τ).symm,
-        ← M.map_comp, ← M.map_comp, Category.assoc, hmap, M.map_comp, M.map_comp,
-        eqToHom_map, eqToHom_map, Category.assoc, Category.assoc]
-      exact congrArg (M.map _ ≫ eqToHom _ ≫ ·) (eqToHom_ι_eq_ιPostcomp M hδ₀ (congrArg M.obj h₁'))
+        exact ((conj_eqToHom_iff_heq' _ _ (σ.postcomp_obj_zero g).symm h₁).mpr hm.symm).symm
+      rw [← Category.assoc, ← Category.assoc, ← eqToHom_map M (σ.postcomp_obj_zero g).symm,
+        ← eqToHom_map M (nerveFace_zero_obj_zero τ).symm, ← M.map_comp, ← M.map_comp,
+        Category.assoc, hmap, M.map_comp, M.map_comp, eqToHom_map, eqToHom_map, Category.assoc,
+        Category.assoc]
+      exact congrArg (M.map _ ≫ eqToHom _ ≫ ·)
+        (eqToHom_ι_eq_ιPostcomp M (CategoryTheory.nerve.δ_castSucc_postcomp_isTerminal σ ht 0)
+          (congrArg M.obj h₁'))
     · refine Finset.sum_congr rfl fun j _ ↦ ?_
       rw [Preadditive.comp_zsmul, Fin.val_castSucc]
       refine congrArg ((-1 : ℤ) ^ (j.val + 1) • ·) ?_
@@ -384,18 +319,13 @@ private lemma ιPostcomp_d_succ (M : C ⥤ A) {t : C} (ht : IsTerminal t) {n : �
       rw [← Category.assoc, eqToHom_trans, ← eqToHom_ι_eq_ιPostcomp M hδj hj₀,
         ← Category.assoc, eqToHom_trans]
   · rw [Preadditive.comp_zsmul, Fin.val_last, ← Category.assoc, eqToHom_trans]
-    have hδlast : nerveFace (Fin.last (n + 1)).succ τ = σ :=
-      (congrArg (fun i ↦ nerveFace i τ) (Fin.succ_last (n + 1))).trans
-        (CategoryTheory.nerve.δ_last_postcomp σ g)
-    exact congrArg ((-1 : ℤ) ^ (n + 2) • ·) (eqToHom_ι_of_eq M hδlast _)
+    exact congrArg ((-1 : ℤ) ^ (n + 2) • ·) (eqToHom_ι_of_eq M
+      ((congrArg (fun i ↦ nerveFace i τ) (Fin.succ_last (n + 1))).trans
+        (CategoryTheory.nerve.δ_last_postcomp σ g)) _)
 
 private lemma neg_one_pow_succ_add (m : ℕ) {G₀ : Type*} [AddCommGroup G₀] (x : G₀) :
     (-1 : ℤ) ^ (m + 1) • x + (-1 : ℤ) ^ (m + 2) • x = 0 := by
   rw [pow_succ (-1 : ℤ) (m + 1), mul_neg_one, neg_zsmul, add_neg_cancel]
-
-private lemma neg_one_pow_self_mul (m : ℕ) {G₀ : Type*} [AddCommGroup G₀] (x : G₀) :
-    (-1 : ℤ) ^ m • ((-1 : ℤ) ^ m • x) = x := by
-  rw [smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_zsmul]
 
 private lemma ι_terminalHomotopy_succ (M : C ⥤ A) {t : C} (ht : IsTerminal t) {n : ℕ}
     (σ : ComposableArrows C (n + 1)) :
@@ -403,65 +333,45 @@ private lemma ι_terminalHomotopy_succ (M : C ⥤ A) {t : C} (ht : IsTerminal t)
       ((categoryChainComplex C M).d (n + 1) n ≫ terminalHomotopyStep M ht n +
         terminalHomotopyStep M ht (n + 1) ≫ (categoryChainComplex C M).d (n + 2) (n + 1)) =
       ιCategoryChainComplex M σ := by
-  have hpart₁ : ιCategoryChainComplex M σ ≫ (categoryChainComplex C M).d (n + 1) n ≫
-      terminalHomotopyStep M ht n =
-      (-1 : ℤ) ^ (n + 1) • (M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
-        eqToHom (congrArg M.obj (nerveFace_zero_obj_zero σ).symm) ≫
-          ιPostcomp M (nerveFace 0 σ) (ht.from _)) +
-      ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j.val + 1) •
-        ((-1 : ℤ) ^ (n + 1) • (eqToHom (congrArg M.obj (nerveFace_succ_obj_zero j σ).symm) ≫
-          ιPostcomp M (nerveFace j.succ σ) (ht.from _))) := by
+  let a₀ := M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
+    eqToHom (congrArg M.obj (nerveFace_zero_obj_zero σ).symm) ≫
+      ιPostcomp M (nerveFace 0 σ) (ht.from _)
+  let aj (j : Fin (n + 1)) := eqToHom (congrArg M.obj (nerveFace_succ_obj_zero j σ).symm) ≫
+    ιPostcomp M (nerveFace j.succ σ) (ht.from _)
+  have h₁ : ιCategoryChainComplex M σ ≫ (categoryChainComplex C M).d (n + 1) n ≫
+      terminalHomotopyStep M ht n = (-1 : ℤ) ^ (n + 1) • a₀ +
+        ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j.val + 1) • ((-1 : ℤ) ^ (n + 1) • aj j) := by
     rw [← Category.assoc, ιCategoryChainComplex_d_nerveFace, Preadditive.add_comp,
       Category.assoc, Category.assoc, ι_terminalHomotopyStep, Preadditive.comp_zsmul,
       Preadditive.comp_zsmul, Preadditive.sum_comp]
     refine congrArg (_ + ·) (Finset.sum_congr rfl fun j _ ↦ ?_)
     rw [Preadditive.zsmul_comp, Category.assoc, ι_terminalHomotopyStep, Preadditive.comp_zsmul]
-  have hpart₂ : ιCategoryChainComplex M σ ≫ terminalHomotopyStep M ht (n + 1) ≫
-      (categoryChainComplex C M).d (n + 2) (n + 1) =
-      (-1 : ℤ) ^ (n + 2) • (M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
-        eqToHom (congrArg M.obj (nerveFace_zero_obj_zero σ).symm) ≫
-          ιPostcomp M (nerveFace 0 σ) (ht.from _)) +
-      (∑ j : Fin (n + 1), (-1 : ℤ) ^ (j.val + 1) •
-        ((-1 : ℤ) ^ (n + 2) • (eqToHom (congrArg M.obj (nerveFace_succ_obj_zero j σ).symm) ≫
-          ιPostcomp M (nerveFace j.succ σ) (ht.from _)))) +
-      ιCategoryChainComplex M σ := by
-    rw [← Category.assoc, ι_terminalHomotopyStep, Preadditive.zsmul_comp,
-      ιPostcomp_d_succ M ht σ, smul_add, smul_add, neg_one_pow_self_mul (n + 2),
+  have h₂ : ιCategoryChainComplex M σ ≫ terminalHomotopyStep M ht (n + 1) ≫
+      (categoryChainComplex C M).d (n + 2) (n + 1) = (-1 : ℤ) ^ (n + 2) • a₀ +
+        (∑ j : Fin (n + 1), (-1 : ℤ) ^ (j.val + 1) • ((-1 : ℤ) ^ (n + 2) • aj j)) +
+          ιCategoryChainComplex M σ := by
+    rw [← Category.assoc, ι_terminalHomotopyStep, Preadditive.zsmul_comp, ιPostcomp_d_succ M ht σ,
+      smul_add, smul_add, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_zsmul,
       Finset.smul_sum]
-    refine congrArg₂ (· + ·) (congrArg (_ + ·) (Finset.sum_congr rfl fun j _ ↦ ?_)) rfl
-    exact smul_comm ((-1 : ℤ) ^ (n + 2)) ((-1 : ℤ) ^ (j.val + 1)) _
-  have hcancel :
-      ((-1 : ℤ) ^ (n + 1) • (M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
-          eqToHom (congrArg M.obj (nerveFace_zero_obj_zero σ).symm) ≫
-            ιPostcomp M (nerveFace 0 σ) (ht.from _)) +
-        ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j.val + 1) •
-          ((-1 : ℤ) ^ (n + 1) • (eqToHom (congrArg M.obj (nerveFace_succ_obj_zero j σ).symm) ≫
-            ιPostcomp M (nerveFace j.succ σ) (ht.from _)))) +
-      ((-1 : ℤ) ^ (n + 2) • (M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
-          eqToHom (congrArg M.obj (nerveFace_zero_obj_zero σ).symm) ≫
-            ιPostcomp M (nerveFace 0 σ) (ht.from _)) +
-        ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j.val + 1) •
-          ((-1 : ℤ) ^ (n + 2) • (eqToHom (congrArg M.obj (nerveFace_succ_obj_zero j σ).symm) ≫
-            ιPostcomp M (nerveFace j.succ σ) (ht.from _)))) = 0 := by
-    rw [add_add_add_comm, neg_one_pow_succ_add, zero_add, ← Finset.sum_add_distrib]
-    refine Finset.sum_eq_zero fun j _ ↦ ?_
-    rw [← smul_add, neg_one_pow_succ_add, smul_zero]
-  rw [Preadditive.comp_add, hpart₁, hpart₂, ← add_assoc, hcancel, zero_add]
+    exact congrArg₂ (· + ·) (congrArg (_ + ·) (Finset.sum_congr rfl fun j _ ↦
+      smul_comm ((-1 : ℤ) ^ (n + 2)) ((-1 : ℤ) ^ (j.val + 1)) _)) rfl
+  rw [Preadditive.comp_add, h₁, h₂, ← add_assoc, add_add_add_comm, neg_one_pow_succ_add, zero_add,
+    ← Finset.sum_add_distrib, Finset.sum_eq_zero fun j _ ↦ by
+      rw [← smul_add, neg_one_pow_succ_add, smul_zero], zero_add]
 
 section Single₀
 
 variable [HasZeroObject A]
 
 /-- Chain map `categoryChainComplex C M ⟶ (ChainComplex.single₀ A).obj (M.obj t)` induced by a
-terminal object `t` of `C`. -/
+terminal object `t`. -/
 def categoryChainComplexToTerminalSingle₀ (M : C ⥤ A) {t : C} (ht : IsTerminal t) :
     categoryChainComplex C M ⟶ (ChainComplex.single₀ A).obj (M.obj t) :=
   HomologicalComplex.mkHomToSingle
     (fromCategoryChainComplexXZero M (coconeOfDiagramTerminal ht M))
     fun i _ ↦ d_fromCategoryChainComplexXZero M _ i
 
-/-- Chain map `(ChainComplex.single₀ A).obj (M.obj t) ⟶ categoryChainComplex C M` including the
-summand at a terminal object `t`. -/
+/-- Chain map `(ChainComplex.single₀ A).obj (M.obj t) ⟶ categoryChainComplex C M` at `t`. -/
 def categoryChainComplexFromTerminalSingle₀ (M : C ⥤ A) (t : C) :
     (ChainComplex.single₀ A).obj (M.obj t) ⟶ categoryChainComplex C M :=
   HomologicalComplex.mkHomFromSingle (ιCategoryChainComplex₀ M t)
@@ -479,17 +389,15 @@ lemma categoryChainComplexFromTerminalSingle₀_comp_toTerminalSingle₀ (M : C 
     ιCategoryChainComplex₀_fromCategoryChainComplexXZero_assoc, coconeOfDiagramTerminal_ι_app]
   rw [ht.hom_ext (ht.from t) (𝟙 t), M.map_id, Category.id_comp, Iso.hom_inv_id]
 
-/-- Explicit contracting chain homotopy from `𝟙 (categoryChainComplex C M)` to the projection-and-
-inclusion through `M.obj t` when `t` is terminal in `C`. -/
+/-- Contracting chain homotopy on `categoryChainComplex C M` when `t` is terminal. -/
 def categoryChainComplexTerminalHomotopy (M : C ⥤ A) {t : C} (ht : IsTerminal t) :
     Homotopy (𝟙 (categoryChainComplex C M))
       (categoryChainComplexToTerminalSingle₀ M ht ≫
         categoryChainComplexFromTerminalSingle₀ M t) where
   hom i j := if h : i + 1 = j then terminalHomotopyStep M ht i ≫ eqToHom (by rw [h]) else 0
   zero _ _ hij := dite_eq_right hij
-  comm i := by
-    cases i with
-    | zero =>
+  comm := fun
+    | 0 => by
       rw [Homotopy.dNext_zero_chainComplex, Homotopy.prevD_chainComplex, zero_add]
       dsimp only [HomologicalComplex.id_f, HomologicalComplex.comp_f]
       rw [dite_eq_left rfl, eqToHom_refl, Category.comp_id, categoryChainComplexToTerminalSingle₀,
@@ -500,14 +408,14 @@ def categoryChainComplexTerminalHomotopy (M : C ⥤ A) {t : C} (ht : IsTerminal 
         Preadditive.zsmul_comp, ιPostcomp_d_one_zero M ht σ,
         ιCategoryChainComplex_fromCategoryChainComplexXZero_assoc]
       simp
-    | succ n =>
+    | n + 1 => by
       rw [Homotopy.dNext_succ_chainComplex, Homotopy.prevD_chainComplex]
       dsimp only [HomologicalComplex.id_f, HomologicalComplex.comp_f]
       rw [dite_eq_left rfl, dite_eq_left rfl, eqToHom_refl, eqToHom_refl,
         Category.comp_id, Category.comp_id]
-      have hzf : (categoryChainComplexFromTerminalSingle₀ M t).f (n + 1) = 0 := by
-        dsimp only [categoryChainComplexFromTerminalSingle₀, HomologicalComplex.mkHomFromSingle]
-        exact dite_eq_right (Nat.succ_ne_zero n)
+      have hzf : (categoryChainComplexFromTerminalSingle₀ M t).f (n + 1) = 0 :=
+        (HomologicalComplex.isZero_single_obj_X _ 0 (M.obj t) (n + 1)
+          (Nat.succ_ne_zero n)).eq_of_src _ _
       rw [hzf, comp_zero, add_zero]
       ext σ
       exact (Category.comp_id _).trans (ι_terminalHomotopy_succ M ht σ).symm
@@ -528,8 +436,7 @@ section TerminalHomology
 
 variable [CategoryWithHomology A]
 
-/-- When `t` is terminal in `C`, degree-`0` homology `categoryHomology C M 0` is isomorphic to
-`M.obj t`. -/
+/-- When `t` is terminal in `C`, `categoryHomology C M 0 ≅ M.obj t`. -/
 def categoryHomologyZeroTerminalIso (M : C ⥤ A) {t : C} (ht : IsTerminal t) :
     categoryHomology C M 0 ≅ M.obj t :=
   categoryHomologyZeroIsoOfIsColimit M (coconeOfDiagramTerminal ht M)
@@ -541,11 +448,9 @@ lemma ιCategoryHomology₀_categoryHomologyZeroTerminalIso_hom (M : C ⥤ A) {t
     ιCategoryHomology₀ M c ≫ (categoryHomologyZeroTerminalIso M ht).hom = M.map (ht.from c) :=
   ιCategoryHomology₀_categoryHomologyZeroIsoOfIsColimit_hom M _ _ c
 
-/-- When `C` has a terminal object `t`, all positive-degree homology groups
-`categoryHomology C M (n + 1)` vanish. -/
+/-- When `C` has a terminal object `t`, `categoryHomology C M (n + 1)` vanishes. -/
 lemma isZero_categoryHomology_succ_of_isTerminal (M : C ⥤ A) {t : C} (ht : IsTerminal t)
-    (n : ℕ) :
-    IsZero (categoryHomology C M (n + 1)) := by
+    (n : ℕ) : IsZero (categoryHomology C M (n + 1)) := by
   have := Preadditive.hasZeroObject_of_hasCoproduct.{max u v} A
   have : QuasiIso (categoryChainComplexToTerminalSingle₀ M ht) :=
     (categoryChainComplexTerminalHomotopyEquiv M ht).quasiIso_hom
@@ -561,9 +466,7 @@ section ZModTwoCheck
 
 private abbrev G₂ : Type := Multiplicative (ZMod 2)
 private abbrev C₂ : Type := SingleObj G₂
-
 private abbrev toNerve₂ {n : ℕ} (σ : ComposableArrows C₂ n) : (nerve C₂) _⦋n⦌ := σ
-
 private def mapG₂ {m : ℕ} (τ : ComposableArrows C₂ m) {i j : Fin (m + 1)} (f : i ⟶ j) : G₂ :=
   τ.map f
 
@@ -584,9 +487,7 @@ private lemma totalArrow_eq_of_mapG₂_eq_one {m : ℕ} (τ : ComposableArrows C
 private def paritySimplex (n : ℕ) : ComposableArrows C₂ n where
   obj _ := SingleObj.star G₂
   map {i j} _ := Multiplicative.ofAdd ((j.val : ZMod 2) - (i.val : ZMod 2))
-  map_id _ := by
-    simp only [sub_self]
-    rfl
+  map_id _ := by simp only [sub_self]; rfl
   map_comp {i j k} _ _ := by
     change Multiplicative.ofAdd ((k.val : ZMod 2) - (i.val : ZMod 2)) =
       Multiplicative.ofAdd ((k.val : ZMod 2) - (j.val : ZMod 2)) *
@@ -594,8 +495,7 @@ private def paritySimplex (n : ℕ) : ComposableArrows C₂ n where
     rw [← ofAdd_add, sub_add_sub_cancel]
 
 private lemma g₂_ne_one_iff (x : G₂) : x ≠ 1 ↔ x = Multiplicative.ofAdd (1 : ZMod 2) := by
-  revert x
-  decide
+  revert x; decide
 
 private lemma paritySimplex_nonDegenerate (n : ℕ) :
     toNerve₂ (paritySimplex n) ∈ (nerve C₂).nonDegenerate n := by
@@ -605,15 +505,11 @@ private lemma paritySimplex_nonDegenerate (n : ℕ) :
   · rw [SSet.degenerate_eq_iUnion_range_σ, Set.mem_iUnion]
     rintro ⟨i, hi⟩
     change (paritySimplex (n + 1) : (nerve C₂) _⦋n + 1⦌) ∈ Set.range ((nerve C₂).σ i) at hi
-    rw [CategoryTheory.nerve.mem_range_σ_iff] at hi
-    obtain ⟨_, hx⟩ := hi
+    obtain ⟨_, hx⟩ := (CategoryTheory.nerve.mem_range_σ_iff _ i).mp hi
     have h1 := mapG₂_eq_one_of_totalArrow (paritySimplex (n + 1)) i hx
     change Multiplicative.ofAdd (((i.val + 1 : ℕ) : ZMod 2) - (i.val : ZMod 2)) =
       Multiplicative.ofAdd 0 at h1
-    have hval : ((i.val + 1 : ℕ) : ZMod 2) - (i.val : ZMod 2) = 1 := by
-      push_cast
-      exact add_sub_cancel_left _ _
-    rw [hval] at h1
+    rw [show ((i.val + 1 : ℕ) : ZMod 2) - (i.val : ZMod 2) = 1 by push_cast; ring] at h1
     exact absurd (Multiplicative.ofAdd.injective h1) (by decide)
 
 private lemma mapG₂_zero_le_of_notMem_degenerate {n : ℕ} (σ : ComposableArrows C₂ n)
@@ -622,52 +518,36 @@ private lemma mapG₂_zero_le_of_notMem_degenerate {n : ℕ} (σ : ComposableArr
       Multiplicative.ofAdd (m : ZMod 2) := by
   induction m with
   | zero =>
-    have hid : homOfLE (Fin.zero_le (0 : Fin (n + 1))) = 𝟙 (0 : Fin (n + 1)) :=
-      Subsingleton.elim _ _
     change mapG₂ σ (homOfLE (Fin.zero_le (0 : Fin (n + 1)))) = Multiplicative.ofAdd 0
-    rw [hid]
+    rw [Subsingleton.elim (homOfLE (Fin.zero_le (0 : Fin (n + 1)))) (𝟙 0)]
     exact σ.map_id 0
   | succ d ih =>
     obtain _ | r := n
     · omega
     · let k : Fin (r + 1) := ⟨d, by omega⟩
-      have hne : mapG₂ σ (homOfLE k.castSucc_le_succ) ≠ 1 := by
-        intro h1
-        apply hnotdeg
+      have hne : mapG₂ σ (homOfLE k.castSucc_le_succ) ≠ 1 := fun h1 ↦ hnotdeg <| by
         rw [SSet.degenerate_eq_iUnion_range_σ, Set.mem_iUnion]
         exact ⟨k, (CategoryTheory.nerve.mem_range_σ_iff σ k).mpr
           ⟨SingleObj.star G₂, totalArrow_eq_of_mapG₂_eq_one σ k h1⟩⟩
-      have hk : mapG₂ σ (homOfLE k.castSucc_le_succ) = Multiplicative.ofAdd (1 : ZMod 2) :=
-        (g₂_ne_one_iff _).mp hne
-      have hcomp : homOfLE (Fin.zero_le (⟨d + 1, hm⟩ : Fin (r + 2))) =
-          homOfLE (Fin.zero_le k.castSucc) ≫ homOfLE k.castSucc_le_succ :=
-        Subsingleton.elim _ _
       have hmul : mapG₂ σ (homOfLE (Fin.zero_le (⟨d + 1, hm⟩ : Fin (r + 2)))) =
           mapG₂ σ (homOfLE k.castSucc_le_succ) * mapG₂ σ (homOfLE (Fin.zero_le k.castSucc)) := by
-        rw [hcomp]
+        rw [Subsingleton.elim (homOfLE (Fin.zero_le (⟨d + 1, hm⟩ : Fin (r + 2))))
+          (homOfLE (Fin.zero_le k.castSucc) ≫ homOfLE k.castSucc_le_succ)]
         exact σ.map_comp _ _
-      rw [hmul, hk, ih (by omega), ← ofAdd_add]
-      congr 1
-      push_cast
-      ring
+      rw [hmul, (g₂_ne_one_iff _).mp hne, ih (by omega), ← ofAdd_add]
+      congr 1; push_cast; ring
 
 private lemma eq_paritySimplex_of_nonDegenerate {n : ℕ} (σ : ComposableArrows C₂ n)
-    (hσ : toNerve₂ σ ∈ (nerve C₂).nonDegenerate n) :
-    σ = paritySimplex n := by
-  have hnotdeg : toNerve₂ σ ∉ (nerve C₂).degenerate n := by
-    rwa [← SSet.mem_nonDegenerate_iff_notMem_degenerate]
+    (hσ : toNerve₂ σ ∈ (nerve C₂).nonDegenerate n) : σ = paritySimplex n := by
+  have hnotdeg := (SSet.mem_nonDegenerate_iff_notMem_degenerate _ _).mp hσ
   refine CategoryTheory.Functor.ext (fun _ ↦ Subsingleton.elim _ _) fun i j f ↦ ?_
   simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
-  have hcomp : homOfLE (Fin.zero_le j) = homOfLE (Fin.zero_le i) ≫ f := Subsingleton.elim _ _
   have hmul : mapG₂ σ (homOfLE (Fin.zero_le j)) =
       mapG₂ σ f * mapG₂ σ (homOfLE (Fin.zero_le i)) := by
-    rw [hcomp]
+    rw [Subsingleton.elim (homOfLE (Fin.zero_le j)) (homOfLE (Fin.zero_le i) ≫ f)]
     exact σ.map_comp _ _
-  have hfj : mapG₂ σ f =
-      mapG₂ σ (homOfLE (Fin.zero_le j)) * (mapG₂ σ (homOfLE (Fin.zero_le i)))⁻¹ :=
-    eq_mul_inv_of_mul_eq hmul.symm
   change mapG₂ σ f = Multiplicative.ofAdd ((j.val : ZMod 2) - (i.val : ZMod 2))
-  rw [hfj, mapG₂_zero_le_of_notMem_degenerate σ hnotdeg j.val j.isLt,
+  rw [eq_mul_inv_of_mul_eq hmul.symm, mapG₂_zero_le_of_notMem_degenerate σ hnotdeg j.val j.isLt,
     mapG₂_zero_le_of_notMem_degenerate σ hnotdeg i.val i.isLt,
     ← ofAdd_neg, ← ofAdd_add, sub_eq_add_neg]
 
@@ -679,48 +559,24 @@ private instance uniqueNonDegenerateSingleObjZModTwo (n : ℕ) :
 private lemma δ₁_paritySimplex_two_degenerate :
     toNerve₂ ((nerve C₂).δ 1 (paritySimplex 2)) ∈ (nerve C₂).degenerate 1 := by
   let τ : ComposableArrows C₂ 1 := (nerve C₂).δ 1 (paritySimplex 2)
-  change toNerve₂ τ ∈ (nerve C₂).degenerate 1
   rw [SSet.degenerate_eq_iUnion_range_σ, Set.mem_iUnion]
-  have h1 : mapG₂ τ (homOfLE (0 : Fin 1).castSucc_le_succ) = 1 := by
-    change Multiplicative.ofAdd (((2 : ℕ) : ZMod 2) - ((0 : ℕ) : ZMod 2)) = Multiplicative.ofAdd 0
-    decide
-  exact ⟨0, (CategoryTheory.nerve.mem_range_σ_iff τ 0).mpr
-    ⟨SingleObj.star G₂, totalArrow_eq_of_mapG₂_eq_one τ 0 h1⟩⟩
+  refine ⟨0, (CategoryTheory.nerve.mem_range_σ_iff τ 0).mpr
+    ⟨SingleObj.star G₂, totalArrow_eq_of_mapG₂_eq_one τ 0 ?_⟩⟩
+  change Multiplicative.ofAdd (((2 : ℕ) : ZMod 2) - ((0 : ℕ) : ZMod 2)) = Multiplicative.ofAdd 0
+  decide
 
-private lemma δ₀_paritySimplex_two_eq :
-    (nerve C₂).δ 0 (paritySimplex 2) = paritySimplex 1 := by
-  let τ : ComposableArrows C₂ 1 := (nerve C₂).δ 0 (paritySimplex 2)
-  refine eq_paritySimplex_of_nonDegenerate τ ?_
+private lemma paritySimplex_two_face_eq (k : Fin 3)
+    (hne : mapG₂ ((nerve C₂).δ k (paritySimplex 2)) (homOfLE (0 : Fin 1).castSucc_le_succ) ≠ 1) :
+    (nerve C₂).δ k (paritySimplex 2) = paritySimplex 1 := by
+  refine eq_paritySimplex_of_nonDegenerate _ ?_
   rw [SSet.mem_nonDegenerate_iff_notMem_degenerate, SSet.degenerate_eq_iUnion_range_σ,
     Set.mem_iUnion]
-  rintro ⟨i, hi⟩
-  fin_cases i
-  change (τ : (nerve C₂) _⦋1⦌) ∈ Set.range ((nerve C₂).σ 0) at hi
-  rw [CategoryTheory.nerve.mem_range_σ_iff] at hi
-  obtain ⟨_, hx⟩ := hi
-  have h1 := mapG₂_eq_one_of_totalArrow τ 0 hx
-  change Multiplicative.ofAdd (((2 : ℕ) : ZMod 2) - ((1 : ℕ) : ZMod 2)) =
-    Multiplicative.ofAdd 0 at h1
-  exact absurd (Multiplicative.ofAdd.injective h1) (by decide)
-
-private lemma δ₂_paritySimplex_two_eq :
-    (nerve C₂).δ 2 (paritySimplex 2) = paritySimplex 1 := by
-  let τ : ComposableArrows C₂ 1 := (nerve C₂).δ 2 (paritySimplex 2)
-  refine eq_paritySimplex_of_nonDegenerate τ ?_
-  rw [SSet.mem_nonDegenerate_iff_notMem_degenerate, SSet.degenerate_eq_iUnion_range_σ,
-    Set.mem_iUnion]
-  rintro ⟨i, hi⟩
-  fin_cases i
-  change (τ : (nerve C₂) _⦋1⦌) ∈ Set.range ((nerve C₂).σ 0) at hi
-  rw [CategoryTheory.nerve.mem_range_σ_iff] at hi
-  obtain ⟨_, hx⟩ := hi
-  have h1 := mapG₂_eq_one_of_totalArrow τ 0 hx
-  change Multiplicative.ofAdd (((1 : ℕ) : ZMod 2) - ((0 : ℕ) : ZMod 2)) =
-    Multiplicative.ofAdd 0 at h1
-  exact absurd (Multiplicative.ofAdd.injective h1) (by decide)
+  rintro ⟨i, hi⟩; fin_cases i
+  obtain ⟨_, hx⟩ := (CategoryTheory.nerve.mem_range_σ_iff _ 0).mp hi
+  exact hne (mapG₂_eq_one_of_totalArrow _ 0 hx)
 
 /-- For `G = Multiplicative (ZMod 2)` with trivial integral coefficients, degree-`2` category
-homology `H₂(BG, ℤ)` vanishes (matching `H₂(ℤ/2, ℤ) = 0`, in contrast with `H²(ℤ/2, ℤ) ≅ ℤ/2`). -/
+homology `H₂(BG, ℤ)` vanishes (contrasting with `H²(ℤ/2, ℤ) ≅ ℤ/2`). -/
 theorem isZero_categoryHomology_singleObj_zmod_two_int_two :
     IsZero (categoryHomology (SingleObj (Multiplicative (ZMod 2)))
       ((Functor.const _).obj (ModuleCat.of ℤ ℤ)) 2) := by
@@ -729,43 +585,29 @@ theorem isZero_categoryHomology_singleObj_zmod_two_int_two :
   let e₂ := normalizedCategoryChainComplexXIsoOfUnique M 2
   let e₁ := normalizedCategoryChainComplexXIsoOfUnique M 1
   have hdef₂ : nerveNonDegSimplex (default : (nerve C₂).nonDegenerate 2) = paritySimplex 2 :=
-    nerveNonDegSimplex_mk (paritySimplex 2) (paritySimplex_nonDegenerate 2)
+    nerveNonDegSimplex_mk _ _
   have hdef₁ : nerveNonDegSimplex (default : (nerve C₂).nonDegenerate 1) = paritySimplex 1 :=
-    nerveNonDegSimplex_mk (paritySimplex 1) (paritySimplex_nonDegenerate 1)
-  have hd : e₂.hom ≫ (normalizedCategoryChainComplex C₂ M).d 2 1 =
-      ((2 : ℤ) • 𝟙 R) ≫ e₁.hom := by
+    nerveNonDegSimplex_mk _ _
+  have hd₀ : (nerve C₂).δ 0 (paritySimplex 2) = paritySimplex 1 :=
+    paritySimplex_two_face_eq 0 (by decide)
+  have hd₂ : (nerve C₂).δ 2 (paritySimplex 2) = paritySimplex 1 :=
+    paritySimplex_two_face_eq 2 (by decide)
+  have hd : e₂.hom ≫ (normalizedCategoryChainComplex C₂ M).d 2 1 = ((2 : ℤ) • 𝟙 R) ≫ e₁.hom := by
     dsimp only [e₂, e₁]
     rw [normalizedCategoryChainComplexXIsoOfUnique_hom,
-      normalizedCategoryChainComplexXIsoOfUnique_hom]
-    have hlhs : ιNormalizedCategoryChainComplex M
-        (nerveNonDegSimplex (default : (nerve C₂).nonDegenerate 2)) ≫
-        (normalizedCategoryChainComplex C₂ M).d 2 1 =
-        ιNormalizedCategoryChainComplex M (paritySimplex 2) ≫
-        (normalizedCategoryChainComplex C₂ M).d 2 1 := by
-      rw [hdef₂]
-    have hrhs : ((2 : ℤ) • 𝟙 R) ≫ ιNormalizedCategoryChainComplex M
-        (nerveNonDegSimplex (default : (nerve C₂).nonDegenerate 1)) =
-        ((2 : ℤ) • 𝟙 R) ≫ ιNormalizedCategoryChainComplex M (paritySimplex 1) := by
-      rw [hdef₁]
-    rw [hlhs, hrhs, ιNormalizedCategoryChainComplex_d, Fin.sum_univ_two]
+      normalizedCategoryChainComplexXIsoOfUnique_hom, hdef₂, hdef₁,
+      ιNormalizedCategoryChainComplex_d, Fin.sum_univ_two]
     dsimp only [M, Functor.const_obj_obj, Functor.const_obj_map]
     simp only [Category.id_comp, Fin.val_zero, Fin.val_one, zero_add, Nat.reduceAdd, pow_one,
       neg_smul, one_smul, neg_one_sq, Fin.succ_zero_eq_one, Fin.succ_one_eq_two]
     rw [ιNormalizedCategoryChainComplex_eq_zero M _ δ₁_paritySimplex_two_degenerate,
-      neg_zero, zero_add, Preadditive.zsmul_comp, Category.id_comp, two_zsmul,
-      δ₀_paritySimplex_two_eq, δ₂_paritySimplex_two_eq]
-  have hmono₂ : Mono ((2 : ℤ) • 𝟙 R) := by
-    rw [ModuleCat.mono_iff_injective]
-    intro a b hab
-    let a' : ℤ := a
-    let b' : ℤ := b
-    have hab' : (2 : ℤ) * a' = (2 : ℤ) * b' := hab
-    exact mul_left_cancel₀ (by decide : (2 : ℤ) ≠ 0) hab'
-  have hfac : (normalizedCategoryChainComplex C₂ M).d 2 1 =
-      e₂.inv ≫ ((2 : ℤ) • 𝟙 R) ≫ e₁.hom := by
-    rw [← hd, Iso.inv_hom_id_assoc]
+      neg_zero, zero_add, Preadditive.zsmul_comp, Category.id_comp, two_zsmul, hd₀, hd₂]
+  have hmono₂ : Mono ((2 : ℤ) • 𝟙 R) :=
+    (ModuleCat.mono_iff_injective _).mpr fun a b (hab : (2 : ℤ) * a = 2 * b) ↦
+      mul_left_cancel₀ (by decide : (2 : ℤ) ≠ 0) hab
   have hmono_d : Mono ((normalizedCategoryChainComplex C₂ M).d 2 1) := by
-    rw [hfac]
+    rw [show (normalizedCategoryChainComplex C₂ M).d 2 1 = e₂.inv ≫ ((2 : ℤ) • 𝟙 R) ≫ e₁.hom by
+      rw [← hd, Iso.inv_hom_id_assoc]]
     exact mono_comp _ _
   have hex : (normalizedCategoryChainComplex C₂ M).ExactAt 2 := by
     rw [HomologicalComplex.exactAt_iff' _ 3 2 1 (ChainComplex.prev ℕ 2)
@@ -778,9 +620,7 @@ private lemma zpowers_gen_g₂ (x : G₂) :
     x ∈ Subgroup.zpowers (Multiplicative.ofAdd (1 : ZMod 2)) := by
   rcases eq_or_ne x 1 with rfl | hx
   · exact ⟨0, zpow_zero _⟩
-  · refine ⟨1, ?_⟩
-    dsimp only
-    rw [zpow_one, (g₂_ne_one_iff x).mp hx]
+  · exact ⟨1, (zpow_one _).trans ((g₂_ne_one_iff x).mp hx).symm⟩
 
 /-- Second group cohomology `H²(ℤ/2, ℤ)` with trivial integral action is isomorphic to `ℤ/2`. -/
 def groupCohomologyTrivialZModTwoIntTwoIso :
@@ -791,10 +631,8 @@ def groupCohomologyTrivialZModTwoIntTwoIso :
   let S := Rep.FiniteCyclicGroup.normHomCompSub A₀ g₀
   have hf (x : ℤ) : S.f.hom x = 2 * x := by
     change (∑ _ : G₂, x) = 2 * x
-    rw [Finset.sum_const, Finset.card_univ]
-    have hc : Fintype.card G₂ = 2 := by decide
-    rw [hc, nsmul_eq_mul, Nat.cast_two]
-  have hg (x : ℤ) : S.g.hom x = 0 := sub_self x
+    rw [Finset.sum_const, Finset.card_univ, show Fintype.card G₂ = 2 by decide,
+      nsmul_eq_mul, Nat.cast_two]
   let K := LinearMap.ker S.g.hom
   let R₀ := LinearMap.range S.moduleCatToCycles
   let φ : K →ₗ[ℤ] ZMod 2 := (Algebra.linearMap ℤ (ZMod 2)).comp K.subtype
@@ -802,29 +640,23 @@ def groupCohomologyTrivialZModTwoIntTwoIso :
     rintro _ ⟨x, rfl⟩
     exact LinearMap.mem_ker.mpr ((ZMod.intCast_zmod_eq_zero_iff_dvd (S.f.hom x) 2).mpr ⟨x, hf x⟩)
   let ψ : (K ⧸ R₀) →ₗ[ℤ] ZMod 2 := Submodule.liftQ R₀ φ hR₀
-  have hinj : Function.Injective ψ := by
-    rw [injective_iff_map_eq_zero]
-    intro z hz
-    obtain ⟨⟨x, hx⟩, rfl⟩ := Submodule.Quotient.mk_surjective R₀ z
-    have hxz : (x : ZMod 2) = 0 := hz
-    obtain ⟨q, rfl⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd x 2).mp hxz
-    exact (Submodule.Quotient.mk_eq_zero R₀).mpr ⟨q, Subtype.ext (hf q)⟩
+  have hinj : Function.Injective ψ :=
+    (injective_iff_map_eq_zero ψ).mpr fun z hz ↦ by
+      obtain ⟨⟨x, _⟩, rfl⟩ := Submodule.Quotient.mk_surjective R₀ z
+      obtain ⟨q, rfl⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd x 2).mp hz
+      exact (Submodule.Quotient.mk_eq_zero R₀).mpr ⟨q, Subtype.ext (hf q)⟩
   have hsurj : Function.Surjective ψ := fun y ↦ by
     obtain ⟨x, rfl⟩ := ZMod.intCast_surjective y
-    exact ⟨Submodule.Quotient.mk ⟨x, LinearMap.mem_ker.mpr (hg x)⟩, rfl⟩
+    exact ⟨Submodule.Quotient.mk ⟨x, LinearMap.mem_ker.mpr (sub_self x)⟩, rfl⟩
   exact Rep.FiniteCyclicGroup.groupCohomologyIsoEven A₀ g₀ zpowers_gen_g₂ 2 ⟨1, rfl⟩ ≪≫
     S.moduleCatHomologyIso ≪≫ (LinearEquiv.ofBijective ψ ⟨hinj, hsurj⟩).toModuleIso
 
-/-- Second group cohomology `H²(ℤ/2, ℤ)` with trivial integral action is nonzero, contrasting with
-`isZero_categoryHomology_singleObj_zmod_two_int_two` (`H₂(B(ℤ/2), ℤ) = 0`). -/
+/-- Second group cohomology `H²(ℤ/2, ℤ)` with trivial integral action is nonzero. -/
 theorem not_isZero_groupCohomology_trivial_zmod_two_int_two :
-    ¬ IsZero (groupCohomology (Rep.trivial ℤ (Multiplicative (ZMod 2)) ℤ) 2) := by
-  intro hz
-  have hz' : IsZero (ModuleCat.of ℤ (ZMod 2)) :=
-    hz.of_iso groupCohomologyTrivialZModTwoIntTwoIso.symm
-  have hid : (𝟙 (ModuleCat.of ℤ (ZMod 2))) = 0 := hz'.eq_of_src _ _
-  have h10 : (1 : ZMod 2) = 0 := congrArg (fun φ : ModuleCat.of ℤ (ZMod 2) ⟶ _ ↦ φ.hom 1) hid
-  exact absurd h10 (by decide)
+    ¬ IsZero (groupCohomology (Rep.trivial ℤ (Multiplicative (ZMod 2)) ℤ) 2) := fun hz ↦ by
+  have hid : (𝟙 (ModuleCat.of ℤ (ZMod 2))) = 0 :=
+    (hz.of_iso groupCohomologyTrivialZModTwoIntTwoIso.symm).eq_of_src _ _
+  exact absurd (congrArg (fun φ : ModuleCat.of ℤ (ZMod 2) ⟶ _ ↦ φ.hom 1) hid) (by decide)
 
 end ZModTwoCheck
 
