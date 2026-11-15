@@ -14,6 +14,7 @@ public import Mathlib.Algebra.FiniteSupport.Defs
 public import Mathlib.Data.Matrix.Composition
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 import TauCeti.Algebra.Homology.ModuleCat.Basic
 import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.LinearAlgebra.Basis.SmulTower
@@ -23,7 +24,9 @@ import TauCeti.LinearAlgebra.Matrix.Rank
 # Dimensions of boundaries of complexes of vector spaces
 
 In a homological complex of vector spaces, a homology group has dimension at most that of the
-finite-dimensional term it is computed from (`HomologicalComplex.finrank_homology_le_finrank_X`).
+finite-dimensional term it is computed from (`HomologicalComplex.finrank_homology_le_finrank_X`),
+with equality, even for complexes of modules over any ring, when the differentials into and out of
+that degree vanish (`HomologicalComplex.finrank_homology_eq_finrank_X_of_d_eq_zero`).
 Over any ring satisfying the strong rank condition and rank--nullity, the rank of a finitely
 generated term `K.X i` equals the rank of `K.homology i` plus the ranks of the incoming and
 outgoing boundary submodules (`HomologicalComplex.finrank_X_eq`).
@@ -70,6 +73,14 @@ theorem finrank_homology_le_finrank_X {k : Type*} [DivisionRing k] {ι : Type*}
   -- The middle term of `K.sc i` is `K.X i` by construction.
   have : Module.Finite k (K.sc i).X₂ := ‹Module.Finite k (K.X i)›
   (K.sc i).finrank_homology_le_finrank_X₂
+
+/-- In a homological complex of modules, if the differentials into and out of degree `i`
+vanish, the homology in degree `i` has the rank of the term in degree `i`. -/
+theorem finrank_homology_eq_finrank_X_of_d_eq_zero {R : Type*} [Ring R] {ι : Type*}
+    {c : ComplexShape ι} (K : HomologicalComplex (ModuleCat R) c) (i : ι)
+    (h₁ : K.d (c.prev i) i = 0) (h₂ : K.d i (c.next i) = 0) :
+    finrank R (K.homology i) = finrank R (K.X i) :=
+  (K.XIsoHomologyOfDEqZero i h₁ h₂).toLinearEquiv.finrank_eq.symm
 
 /-- **Rank--nullity at one index of a homological complex.** Over a ring satisfying the strong rank
 condition and rank--nullity, if `K.X i` is finitely generated, its rank is the rank of
