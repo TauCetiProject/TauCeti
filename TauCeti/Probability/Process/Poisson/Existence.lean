@@ -23,8 +23,8 @@ half-line with homogeneous intensity `α • nnvolume` form a rate-`α` Poisson 
 their natural filtration (`IsPoissonRandomMeasure.isFilteredPoissonProcess_natural`). The rate may
 be zero.
 
-Applying this to the sampling law `Measure.poissonLaw`, after replacing by the zero measure the
-null set of realizations that are not locally finite, integer-valued and simple, gives a
+Applying this to the sampling law `Measure.poissonLaw`, after modifying the identity on a null set
+so that every realization is locally finite, integer-valued and simple, gives a
 probability space carrying a rate-`α` Poisson process for its natural filtration
 (`exists_isFilteredPoissonProcess`). Every path of this process, not merely almost every path,
 is natural-valued, nondecreasing and right-continuous, starts at zero and jumps by at most one.
@@ -88,33 +88,21 @@ theorem exists_isFilteredPoissonProcess (α : ℝ≥0) :
       ∀ ω, N 0 ω = 0 ∧ (∀ t, ∃ n : ℕ, N t ω = n) ∧ Monotone (fun t ↦ N t ω) ∧
         (∀ t, ContinuousWithinAt (fun t ↦ N t ω) (Ici t) t) ∧
         ∀ t, ∀ᶠ s in 𝓝[<] t, N t ω ≤ N s ω + 1 := by
-  classical
   set Λ : Measure ℝ≥0 := (α : ℝ≥0∞) • nnvolume
   have : IsLocallyFiniteMeasure Λ := nnvolume.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
   have hP := Measure.isPoissonRandomMeasure_poissonLaw Λ
-  -- Discard a measurable null set containing every irregular realization.
+  -- Modify the identity on a null set so that every realization is regular.
   have hgood : ∀ᵐ μ ∂Λ.poissonLaw,
-      IsLocallyFiniteMeasure μ ∧ μ.IsIntegerValued ∧ ∀ t, μ {t} ≤ 1 := by
+      μ ∈ {μ : Measure ℝ≥0 | IsLocallyFiniteMeasure μ ∧ μ.IsIntegerValued ∧ ∀ t, μ {t} ≤ 1} := by
     filter_upwards [hP.ae_isLocallyFiniteMeasure, hP.ae_isIntegerValued,
       hP.ae_forall_singleton_le_one_smul_nnvolume] with μ h₁ h₂ h₃
     exact ⟨h₁, h₂, h₃⟩
-  obtain ⟨S, hbad, hS, hS0⟩ := exists_measurable_superset_of_null (ae_iff.1 hgood)
-  let M : Measure ℝ≥0 → Measure ℝ≥0 := S.piecewise 0 id
-  have hM : Measurable M := Measurable.piecewise hS measurable_const measurable_id
-  have hPM : IsPoissonRandomMeasure Λ.poissonLaw M Λ := hP.congr hM <| by
-    filter_upwards [measure_eq_zero_iff_ae_notMem.1 hS0] with μ hμ
-    simp [M, hμ]
-  have hreg (μ : Measure ℝ≥0) :
-      IsLocallyFiniteMeasure (M μ) ∧ (M μ).IsIntegerValued ∧ ∀ t, M μ {t} ≤ 1 := by
-    by_cases hμ : μ ∈ S
-    · simp only [M, piecewise_eq_of_mem _ _ _ hμ, Pi.zero_apply]
-      exact ⟨inferInstance, Measure.isIntegerValued_zero, fun _ ↦ by simp⟩
-    · simp only [M, piecewise_eq_of_notMem _ _ _ hμ, id_eq]
-      by_contra hbad'
-      exact hμ (hbad hbad')
+  obtain ⟨M, hM, hreg, hidM⟩ := measurable_id.aemeasurable.exists_ae_eq_range_subset hgood
+    ⟨0, inferInstance, Measure.isIntegerValued_zero, fun _ ↦ by simp⟩
+  have hPM : IsPoissonRandomMeasure Λ.poissonLaw M Λ := hP.congr hM hidM
   refine ⟨Measure ℝ≥0, inferInstance, Λ.poissonLaw, _, hPM.stronglyMeasurable_natCast_nat_count,
     hPM.isFilteredPoissonProcess_natural, fun μ ↦ ?_⟩
-  obtain ⟨hloc, hint, hsimple⟩ := hreg μ
+  obtain ⟨hloc, hint, hsimple⟩ := hreg (mem_range_self μ)
   refine ⟨by simp, fun t ↦ ⟨_, rfl⟩, fun s t hst ↦ ?_, fun t ↦ ?_, fun t ↦ ?_⟩
   · exact Nat.cast_le.2 ((M μ).monotone_natFloor_Ioc 0 hst)
   · exact (continuous_of_discreteTopology (f := fun n : ℕ ↦ (n : ℝ))).continuousAt
