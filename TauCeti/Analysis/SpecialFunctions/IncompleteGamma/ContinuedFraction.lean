@@ -14,40 +14,39 @@ import TauCeti.Analysis.SpecialFunctions.Hypergeometric.KummerLimit
 /-!
 # The continued fraction for the lower incomplete Gamma function (DLMF 8.9.1)
 
-For a complex parameter `a ∉ {-1, -2, …}` and any complex argument `z`, the normalized Tricomi
-function `Γ(a + 1) e^z γ*(a, z) = Γ(a + 1) 𝐌(1, a + 1, z)` admits the classical continued-fraction
-expansion (DLMF 8.9.1)
+In the classical continued-fraction expansion (DLMF 8.9.1) of the lower incomplete Gamma function,
+dividing the first two levels by `a` removes the removable singularity at `a = 0` and yields the
+formal generalized continued fraction
 $$
-  \Gamma(a + 1)\,e^z\,\gamma^*(a, z)
-    = \cfrac{1}{1 - \cfrac{z}{a + 1 + \cfrac{z}{a + 2 - \cfrac{(a + 1)z}{a + 3 +
-        \cfrac{2z}{a + 4 - \cdots}}}}},
+  \cfrac{1}{1 - \cfrac{z}{a + 1 + \cfrac{z}{a + 2 - \cfrac{(a + 1)z}{a + 3 +
+        \cfrac{2z}{a + 4 - \cdots}}}}}
 $$
-so that `γ(a, z) = (z^a e^{-z} / a) (Γ(a + 1) e^z γ*(a, z))` for all complex `a` and `z` (including
-`a ∈ -ℕ` under Mathlib's conventions `x / 0 = 0` and `Γ(-n) = 0`).
+associated with the normalized Tricomi function `Γ(a + 1) e^z γ*(a, z) = Γ(a + 1) 𝐌(1, a + 1, z)`
+(which determines `γ(a, z)` via `γ(a, z) = (z^a e^{-z} / a) (Γ(a + 1) e^z γ*(a, z))` for all
+complex `a` and `z`, including `a ∈ -ℕ` under Mathlib's conventions `x / 0 = 0` and `Γ(-n) = 0`).
 
-Dividing the first two levels of DLMF 8.9.1 by `a` removes the removable singularity at `a = 0`,
-yielding a generalized continued fraction `Complex.tricomiContFrac a z` with zero integer part,
-partial numerators `a₁ = 1`, `a₂ = -z`, `a_{2k} = -(a + k - 1) z` (`k ≥ 2`), `a_{2k+1} = k z`
-(`k ≥ 1`), and partial denominators `b₁ = 1`, `b_n = a + n - 1` (`n ≥ 2`).
+This file defines that generalized continued fraction as `Complex.tricomiContFrac a z`, with zero
+integer part, partial numerators `a₁ = 1`, `a₂ = -z`, `a_{2k} = -(a + k - 1) z` (`k ≥ 2`),
+`a_{2k+1} = k z` (`k ≥ 1`), and partial denominators `b₁ = 1`, `b_n = a + n - 1` (`n ≥ 2`).
+Convergence of `(tricomiContFrac a z).convs` to `Γ(a + 1) e^z γ*(a, z)` is proved here only at
+`z = 0` (`a ∉ {-1, -2, …}`), where all partial numerators from `a₂` onwards vanish so every
+convergent from index `1` onwards has numerator and denominator `(a + 1)_{n - 1}` and equals
+`1 = Γ(a + 1) γ*(a, 0)`.
 
-At `z = 0`, all partial numerators from `a₂` onwards vanish, so every convergent from index `1`
-onwards has numerator and denominator `(a + 1)_{n - 1}` and equals `1 = Γ(a + 1) γ*(a, 0)` whenever
-`a ∉ {-1, -2, …}`.
-
-For `z ≠ 0` and `a ∉ {-1, -2, …}`, we construct an explicit solution
-`Complex.tricomiContFracSolution a z` of the three-term recurrence
-`f(n + 1) = b_n f(n) + a_n f(n - 1)` in terms of Kummer's regularized hypergeometric function:
-`f(0) = 1` and
+For `z ≠ 0` and `a ∉ {-1, -2, …}`, this file establishes the ingredients that Pincherle's theorem
+needs to deduce convergence of `(tricomiContFrac a z).convs` to `Γ(a + 1) e^z γ*(a, z)`: we
+construct an explicit solution `Complex.tricomiContFracSolution a z` of the three-term recurrence
+`f(n + 1) = b_n f(n) + a_n f(n - 1)` in terms of Kummer's regularized hypergeometric function,
 $$
+  f(0) = 1, \qquad
   f(m) = (-1)^{\lceil m / 2 \rceil}\,\Gamma(a + 1)\,z^{m - 1}\,d_m\,
-    \mathbf{M}\bigl(\lceil m / 2 \rceil, a + m, z\bigr) \qquad (m \ge 1),
+    \mathbf{M}\bigl(\lceil m / 2 \rceil, a + m, z\bigr) \quad (m \ge 1),
 $$
-where `d_{2k} = (a + 1)_{k - 1} (k - 1)!` and `d_{2k + 1} = (a + 1)_{k - 1} k!`. Its initial ratio
-`-f(1) / f(0)` equals `Γ(a + 1) e^z γ*(a, z)`. Using the Kummer contiguous relations for the
-recurrence and the large-parameter limit `Γ(2k + c) 𝐌(k, 2k + c, z) → e^{z / 2}` for the tail
-asymptotics, we show that consecutive reduction-of-order summands
-`(-1)^m (∏_{j=1}^m a_j) / (f(m) f(m + 1))` have ratio `O(1 / m) → 0`, so their partial sums diverge
-in norm for every starting index `N`.
+where `d_{2k} = (a + 1)_{k - 1} (k - 1)!` and `d_{2k + 1} = (a + 1)_{k - 1} k!`, identify its
+initial ratio `-(f(1) / f(0))` with `Γ(a + 1) e^z γ*(a, z)`, and combine the Kummer contiguous
+relations with the large-parameter limit `Γ(2k + c) 𝐌(k, 2k + c, z) → e^{z / 2}` to show that
+consecutive reduction-of-order summands `(-1)^m (∏_{j=1}^m a_j) / (f(m) f(m + 1))` have ratio
+`O(1 / m) → 0`, so their partial sums diverge in norm for every starting index `N`.
 
 ## Main definitions
 
@@ -80,7 +79,8 @@ in norm for every starting index `N`.
 
 ## References
 
-* *NIST Digital Library of Mathematical Functions*, [§8.9](https://dlmf.nist.gov/8.9).
+* *NIST Digital Library of Mathematical Functions*, [§8.5](https://dlmf.nist.gov/8.5) and
+  [§8.9](https://dlmf.nist.gov/8.9).
 * W. Gautschi, *Computational aspects of three-term recurrence relations*, SIAM Rev. 9 (1967),
   24–82.
 * W. B. Jones and W. J. Thron, *Continued Fractions: Analytic Theory and Applications*,
@@ -443,24 +443,26 @@ theorem prod_Icc_tricomiContFracPartNum (a z : ℂ) {m : ℕ} (hm : 1 ≤ m) :
   induction m, hm using Nat.le_induction with
   | base => simp
   | succ m hm ih =>
-    rw [prod_Icc_succ_top (Nat.le_add_left 1 m), ih]
+    rw [prod_Icc_succ_top (Nat.le_add_left 1 m), ih, Nat.add_sub_cancel]
     rcases m.even_or_odd' with ⟨k, rfl | rfl⟩
-    · obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' (by omega : 1 ≤ k)
-      have hj1 : 1 ≤ j + 1 := Nat.le_add_left 1 j
-      rw [tricomiContFracPartNum_two_mul_add_one a z hj1,
-        tricomiContFracScale_two_mul_add_one_eq_mul a hj1]
-      simp only [Nat.ofNat_pos, Nat.mul_div_right, Nat.mul_add_div, Nat.reduceDiv, add_zero,
-        two_mul_succ_sub_one, Nat.add_sub_cancel]
-      ring_nf
+    · have hk : 1 ≤ k := by omega
+      have hd1 : 2 * k / 2 = k := by omega
+      have hd2 : (2 * k + 1) / 2 = k := by omega
+      have hzpow : z ^ (2 * k) = z ^ (2 * k - 1) * z := by
+        rw [← pow_succ]; congr 1; omega
+      rw [tricomiContFracPartNum_two_mul_add_one a z hk,
+        tricomiContFracScale_two_mul_add_one_eq_mul a hk, hd1, hd2, hzpow]
+      ring
     · rcases eq_or_lt_of_le (Nat.zero_le k) with rfl | hk
       · simp
-      · rw [Nat.add_assoc, ← Nat.mul_succ,
-          tricomiContFracPartNum_two_mul a z (by omega),
-          tricomiContFracScale_two_mul_succ_eq_mul a hk]
-        simp only [Nat.ofNat_pos, Nat.mul_div_right, Nat.mul_add_div, Nat.reduceDiv, add_zero,
-          two_mul_succ_sub_one, Nat.add_sub_cancel, pow_succ]
+      · have h2k : 2 * k + 1 + 1 = 2 * (k + 1) := by omega
+        have hd1 : (2 * k + 1) / 2 = k := by omega
+        have hd2 : 2 * (k + 1) / 2 = k + 1 := by omega
+        have hsub : 2 * k + 1 - 1 = 2 * k := by omega
+        rw [h2k, tricomiContFracPartNum_two_mul a z (by omega),
+          tricomiContFracScale_two_mul_succ_eq_mul a hk, hd1, hd2, hsub, pow_succ, pow_succ]
         push_cast
-        ring_nf
+        ring
 
 /-! ### Explicit Kummer solution and the three-term recurrence -/
 
@@ -514,8 +516,9 @@ theorem tricomiContFracSolution_two_mul_add_one (a z : ℂ) (k : ℕ) :
   rw [tricomiContFracSolution_succ_def, Nat.mul_add_div two_pos]
   simp only [Nat.reduceDiv]
 
-/-- The initial ratio `-(f(1) / f(0))` of `tricomiContFracSolution` equals the normalized Tricomi
-function `Γ(a + 1) e^z γ*(a, z)` (DLMF 8.9.1). -/
+/-- Identification of the initial ratio `-(f(1) / f(0))` of `tricomiContFracSolution` with the
+normalized Tricomi value `Γ(a + 1) e^z γ*(a, z)` that the continued fraction represents, via
+`γ*(a, z) = e^{-z} 𝐌(1, a + 1, z)` (DLMF 8.5.2). -/
 theorem neg_tricomiContFracSolution_one_div_zero (a z : ℂ) :
     -(tricomiContFracSolution a z 1 / tricomiContFracSolution a z 0) =
       Gamma (a + 1) * cexp z * tricomiIncompleteGamma a z := by
@@ -538,9 +541,9 @@ theorem mul_neg_tricomiContFracSolution_one_div_zero_eq_Gamma_mul_regularizedGam
     _ = Gamma (a + 1) * (z ^ a * tricomiIncompleteGamma a z) := by
           rw [← exp_add, neg_add_cancel, exp_zero, mul_one]
 
-/-- **DLMF 8.9.1** initial-ratio identity for the lower incomplete Gamma function `γ(a, z)`:
-`(z^a e^{-z} / a) (-(f(1) / f(0))) = γ(a, z)` for all complex `a` and `z` (at `a ∈ -ℕ` both sides
-vanish under Mathlib's conventions `x / 0 = 0` and `Γ(-n) = 0`). -/
+/-- Identification of `(z^a e^{-z} / a) (-(f(1) / f(0)))` with the lower incomplete Gamma function
+`γ(a, z)` (via DLMF 8.5.1), holding for all complex `a` and `z` (at `a ∈ -ℕ` both sides vanish
+under Mathlib's conventions `x / 0 = 0` and `Γ(-n) = 0`). -/
 theorem mul_neg_tricomiContFracSolution_one_div_zero_eq_lowerIncompleteGamma (a z : ℂ) :
     z ^ a * cexp (-z) / a * -(tricomiContFracSolution a z 1 / tricomiContFracSolution a z 0) =
       lowerIncompleteGamma a z := by
@@ -622,10 +625,15 @@ private theorem tricomiContFracSolution_add_one_two_mul (a z : ℂ) {k : ℕ} (h
     tricomiContFracPartDen_of_two_le a (by omega),
     tricomiPrefactor_succ a z (2 * (m + 1)),
     tricomiPrefactor_two_mul_succ a z m,
-    tricomiContFracPartNum_two_mul_add_one a z hm1,
-    regularizedHGFun_singleton_eq_mul_add_mul ((m + 1 : ℕ) : ℂ) (a + (2 * m + 1 : ℕ)) z]
-  push_cast
-  ring_nf
+    tricomiContFracPartNum_two_mul_add_one a z hm1]
+  have hM := regularizedHGFun_singleton_eq_mul_add_mul ((m + 1 : ℕ) : ℂ) (a + (2 * m + 1 : ℕ)) z
+  have ha1 : ((m + 1 : ℕ) : ℂ) + 1 = ((m + 1 + 1 : ℕ) : ℂ) := by push_cast; ring
+  have hb1 : a + ((2 * m + 1 : ℕ) : ℂ) + 1 = a + (2 * (m + 1) : ℕ) := by push_cast; ring
+  have hb2 : a + ((2 * m + 1 : ℕ) : ℂ) + 2 = a + (2 * (m + 1) + 1 : ℕ) := by push_cast; ring
+  have hden : a + ((2 * (m + 1) : ℕ) : ℂ) - 1 = a + (2 * m + 1 : ℕ) := by push_cast; ring
+  rw [ha1, hb1, hb2] at hM
+  rw [hden, hM]
+  ring
 
 /-- Odd-index step of the three-term recurrence:
 `f(2k + 2) = b_{2k + 1} f(2k + 1) + a_{2k + 1} f(2k)`
@@ -643,11 +651,16 @@ private theorem tricomiContFracSolution_add_one_two_mul_add_one (a z : ℂ) {k :
     tricomiPrefactor_two_mul_succ a z k,
     tricomiPrefactor_succ a z (2 * k),
     tricomiContFracPartNum_two_mul a z (by omega)]
+  have hM := mul_regularizedHGFun_add_one_sub (k : ℂ) (a + (2 * k : ℕ)) z
+  have ha1 : (k : ℂ) + 1 = ((k + 1 : ℕ) : ℂ) := by push_cast; ring
+  have hb1 : a + ((2 * k : ℕ) : ℂ) + 1 = a + (2 * k + 1 : ℕ) := by push_cast; ring
+  have hb2 : a + ((2 * k : ℕ) : ℂ) + 2 = a + (2 * (k + 1) : ℕ) := by push_cast; ring
+  have hden : a + ((2 * k + 1 : ℕ) : ℂ) - 1 = a + (2 * k : ℕ) := by push_cast; ring
+  have hnum : a + ((k + 1 : ℕ) : ℂ) - 1 = a + (2 * k : ℕ) - (k : ℂ) := by push_cast; ring
+  rw [ha1, hb1, hb2] at hM
+  rw [hden, hnum]
   set A := tricomiContFracPartNum a z (2 * k + 1)
   set P := tricomiPrefactor a z (2 * k)
-  have hM := mul_regularizedHGFun_add_one_sub (k : ℂ) (a + (2 * k : ℕ)) z
-  push_cast at hM ⊢
-  ring_nf at hM ⊢
   linear_combination A * P * hM
 
 /-- Three-term recurrence `f(n + 1) = b_n f(n) + a_n f(n - 1)` for `n ≥ 2`, holding unconditionally
@@ -671,10 +684,10 @@ theorem tricomiContFracSolution_add_one {a : ℂ} (ha : ∀ k : ℕ, a ≠ -(k +
   · have hG := Gamma_add_one_ne_zero_of_ne_neg_succ ha
     have hM : regularizedHGFun {1} {a + 1} z =
         (Gamma (a + 1))⁻¹ + z * regularizedHGFun {1} {a + 2} z := by
-      have h := tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one a z
+      have h := regularizedHGFun_add_one_left_sub 0 (a + 1) z
       have ha2 : a + 1 + 1 = a + 2 := by ring
-      simp only [tricomiIncompleteGamma_def, div_eq_mul_inv, ha2] at h
-      exact mul_left_cancel₀ (exp_ne_zero (-z)) (by linear_combination h)
+      rw [zero_add, regularizedHGFun_singleton_zero_left, ha2] at h
+      linear_combination h
     rw [tricomiContFracSolution_two, tricomiContFracSolution_one, tricomiContFracSolution_zero,
       tricomiContFracPartDen_one, tricomiContFracPartNum_one, hM]
     calc -Gamma (a + 1) * z * regularizedHGFun {1} {a + 2} z
@@ -710,28 +723,20 @@ private theorem tendsto_Gamma_mul_regularizedHGFun_odd (a z : ℂ) :
 theorem eventually_tricomiContFracSolution_ne_zero {a z : ℂ}
     (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) (hz : z ≠ 0) :
     ∀ᶠ n in atTop, tricomiContFracSolution a z n ≠ 0 := by
-  have hG := Gamma_add_one_ne_zero_of_ne_neg_succ ha
-  have heven : ∀ᶠ k : ℕ in atTop, regularizedHGFun {(k : ℂ)} {a + (2 * k : ℕ)} z ≠ 0 := by
-    filter_upwards [(tendsto_Gamma_mul_regularizedHGFun_even a z).eventually_ne
-      (exp_ne_zero _)] with k hk h0
-    exact hk (by rw [h0, mul_zero])
-  have hodd : ∀ᶠ k : ℕ in atTop,
-      regularizedHGFun {((k + 1 : ℕ) : ℂ)} {a + (2 * k + 1 : ℕ)} z ≠ 0 := by
-    filter_upwards [(tendsto_Gamma_mul_regularizedHGFun_odd a z).eventually_ne
-      (exp_ne_zero _)] with k hk h0
-    exact hk (by rw [h0, mul_zero])
-  obtain ⟨K₁, hK₁⟩ := eventually_atTop.1 heven
-  obtain ⟨K₂, hK₂⟩ := eventually_atTop.1 hodd
+  have hM_ne {u b : ℕ → ℂ}
+      (h : Tendsto (fun k ↦ Gamma (b k) * regularizedHGFun {u k} {b k} z)
+        atTop (𝓝 (cexp (z / 2)))) :
+      ∀ᶠ k in atTop, regularizedHGFun {u k} {b k} z ≠ 0 :=
+    (h.eventually_ne (exp_ne_zero _)).mono fun _ ↦ right_ne_zero_of_mul
+  obtain ⟨K₁, hK₁⟩ := eventually_atTop.1 (hM_ne (tendsto_Gamma_mul_regularizedHGFun_even a z))
+  obtain ⟨K₂, hK₂⟩ := eventually_atTop.1 (hM_ne (tendsto_Gamma_mul_regularizedHGFun_odd a z))
   rw [eventually_atTop]
   refine ⟨2 * max (max K₁ K₂) 1, fun n hn ↦ ?_⟩
   rcases n.even_or_odd' with ⟨k, rfl | rfl⟩
-  · have hk1 : 1 ≤ k := by omega
-    rw [tricomiContFracSolution_two_mul a z hk1]
-    exact mul_ne_zero (mul_ne_zero (mul_ne_zero (mul_ne_zero (pow_ne_zero _ (by norm_num)) hG)
-      (pow_ne_zero _ hz)) (tricomiContFracScale_ne_zero ha _)) (hK₁ k (by omega))
-  · rw [tricomiContFracSolution_two_mul_add_one]
-    exact mul_ne_zero (mul_ne_zero (mul_ne_zero (mul_ne_zero (pow_ne_zero _ (by norm_num)) hG)
-      (pow_ne_zero _ hz)) (tricomiContFracScale_ne_zero ha _)) (hK₂ k (by omega))
+  · rw [tricomiContFracSolution_two_mul_eq_prefactor a z (by omega)]
+    exact mul_ne_zero (tricomiPrefactor_ne_zero ha hz _) (hK₁ k (by omega))
+  · rw [tricomiContFracSolution_two_mul_add_one_eq_prefactor]
+    exact mul_ne_zero (tricomiPrefactor_ne_zero ha hz _) (hK₂ k (by omega))
 
 /-- The `m`-th summand `(-1)^m (∏_{j=1}^m a_j) / (f(m) f(m + 1))` of the reduction-of-order series
 for `tricomiContFrac a z`. -/
@@ -807,16 +812,20 @@ private theorem neg_tricomiContFracSolution_div_even {a z : ℂ}
             regularizedHGFun {((k + 1 : ℕ) : ℂ)} {a + (2 * (k + 1) : ℕ)} z) /
           (Gamma (a + (2 * k : ℕ)) *
             regularizedHGFun {(k : ℂ)} {a + (2 * k : ℕ)} z)) := by
+  have hdiv1 : (2 * k + 2 + 1) / 2 = k + 1 := by omega
+  have hdiv2 : (2 * k + 1) / 2 = k := by omega
   have h2k : 2 * k + 2 = 2 * (k + 1) := by omega
-  rw [neg_tricomiContFracSolution_div_eq ha hz (by omega)]
-  simp only [Nat.add_assoc, Nat.ofNat_pos, Nat.mul_add_div, Nat.reduceAdd, Nat.reduceDiv, add_zero]
-  rw [h2k, tricomiContFracPartNum_two_mul a z (by omega)]
+  rw [neg_tricomiContFracSolution_div_eq ha hz (by omega), hdiv1, hdiv2, h2k,
+    tricomiContFracPartNum_two_mul a z (by omega)]
   have hG := mul_div_Gamma_add_two_eq z (c := a + k)
     (M := regularizedHGFun {(k : ℂ)} {a + (2 * k : ℕ)} z)
     (M' := regularizedHGFun {((k + 1 : ℕ) : ℂ)} {a + (2 * (k + 1) : ℕ)} z) hs
-  push_cast at hG ⊢
-  ring_nf at hG ⊢
-  exact hG.symm
+  have hs2 : a + ((2 * k : ℕ) : ℂ) + 2 = a + (2 * (k + 1) : ℕ) := by push_cast; ring
+  have hlhs : -(-(a + ((k + 1 : ℕ) : ℂ) - 1) * z) = z * (a + k) := by push_cast; ring
+  have hd1 : a + 2 * (k : ℂ) = a + (2 * k : ℕ) := by push_cast; ring
+  have hd2 : a + 1 + 2 * (k : ℂ) = a + (2 * k : ℕ) + 1 := by push_cast; ring
+  rw [hs2] at hG
+  rw [hlhs, hd1, hd2, hG]
 
 /-- Closed form of `-f(2k + 3) / (a_{2k + 2} f(2k + 1))` in terms of `Γ · 𝐌` ratios for
 `0 < Re(a + 2k + 1)`. -/
@@ -831,16 +840,20 @@ private theorem neg_tricomiContFracSolution_div_odd {a z : ℂ}
             regularizedHGFun {((k + 1 + 1 : ℕ) : ℂ)} {a + (2 * (k + 1) + 1 : ℕ)} z) /
           (Gamma (a + (2 * k + 1 : ℕ)) *
             regularizedHGFun {((k + 1 : ℕ) : ℂ)} {a + (2 * k + 1 : ℕ)} z)) := by
+  have hdiv1 : (2 * k + 1 + 2 + 1) / 2 = k + 1 + 1 := by omega
+  have hdiv2 : (2 * k + 1 + 1) / 2 = k + 1 := by omega
   have h2k3 : 2 * k + 1 + 2 = 2 * (k + 1) + 1 := by omega
-  rw [neg_tricomiContFracSolution_div_eq ha hz (by omega)]
-  simp only [Nat.add_assoc, Nat.ofNat_pos, Nat.mul_add_div, Nat.reduceAdd, Nat.reduceDiv]
-  rw [h2k3, tricomiContFracPartNum_two_mul_add_one a z (Nat.le_add_left 1 k)]
+  rw [neg_tricomiContFracSolution_div_eq ha hz (by omega), hdiv1, hdiv2, h2k3,
+    tricomiContFracPartNum_two_mul_add_one a z (Nat.le_add_left 1 k)]
   have hG := mul_div_Gamma_add_two_eq (-z) (c := 1 + k)
     (M := regularizedHGFun {((k + 1 : ℕ) : ℂ)} {a + (2 * k + 1 : ℕ)} z)
     (M' := regularizedHGFun {((k + 1 + 1 : ℕ) : ℂ)} {a + (2 * (k + 1) + 1 : ℕ)} z) hs
-  push_cast at hG ⊢
-  ring_nf at hG ⊢
-  exact hG.symm
+  have hs2 : a + ((2 * k + 1 : ℕ) : ℂ) + 2 = a + (2 * (k + 1) + 1 : ℕ) := by push_cast; ring
+  have hlhs : -(((k + 1 : ℕ) : ℂ) * z) = -z * (1 + k) := by push_cast; ring
+  have hd1 : a + 1 + 2 * (k : ℂ) = a + (2 * k + 1 : ℕ) := by push_cast; ring
+  have hd2 : a + 2 + 2 * (k : ℂ) = a + (2 * k + 1 : ℕ) + 1 := by push_cast; ring
+  rw [hs2] at hG
+  rw [hlhs, hd1, hd2, hG]
 
 /-- Common `O(1 / k)` limit shape for the even and odd reduction-of-order ratios: if
 `g k → L ≠ 0`, then `w * ((c₀ + k) / (b₀ + 2k)) * (1 / (b₀ + 1 + 2k)) * (g (k + 1) / g k) → 0`. -/

@@ -30,9 +30,10 @@ theorem.
   and `0 < ‖u m‖` frequently, then `‖u n‖ → ∞`.
 * `TauCeti.tendsto_norm_sum_Ico_atTop_of_mul_norm_le`: if `2 < c`, `c * ‖u m‖ ≤ ‖u (m + 1)‖`
   eventually, and `0 < ‖u m‖` frequently, then `‖∑ m ∈ Finset.Ico N n, u m‖ → ∞`.
-* `Asymptotics.IsLittleO.eventually_norm_pos_of_succ`: if `u =o[atTop] fun m ↦ u (m + 1)` and
-  `0 < ‖u m‖` frequently, then `0 < ‖u m‖` eventually.
-* `Asymptotics.IsLittleO.tendsto_norm_atTop_of_succ`: under the same hypotheses, `‖u n‖ → ∞`.
+* `Asymptotics.IsLittleO.tendsto_norm_atTop_of_succ`: if `u =o[atTop] fun m ↦ u (m + 1)` and
+  `0 < ‖u m‖` frequently, then `‖u n‖ → ∞`.
+* `Asymptotics.IsLittleO.eventually_norm_pos_of_succ`: under the same hypotheses, `0 < ‖u m‖`
+  eventually.
 * `Asymptotics.IsLittleO.tendsto_norm_sum_Ico_atTop_of_succ`: under the same hypotheses,
   `‖∑ m ∈ Finset.Ico N n, u m‖ → ∞` for every `N`.
 -/
@@ -104,8 +105,13 @@ theorem tendsto_norm_sum_Ico_atTop_of_mul_norm_le {E : Type*} [SeminormedAddComm
             · exact norm_sub_le _ _
             · exact norm_sum_le _ _
     have htail := mul_sum_Ico_norm_le hstepM hm
+    have hmul := mul_le_mul_of_nonneg_left htri (by linarith : (0 : ℝ) ≤ c - 1)
     rw [Nat.add_sub_cancel, div_le_iff₀ (by linarith)]
-    nlinarith
+    calc (c - 2) * ‖u m‖ - (c - 1) * B
+        = (c - 1) * ‖u m‖ - ‖u m‖ - (c - 1) * B := by ring
+      _ ≤ (c - 1) * (‖∑ j ∈ Ico N (m + 1), u j‖ + B + ∑ j ∈ Ico M m, ‖u j‖) -
+            (c - 1) * ∑ j ∈ Ico M m, ‖u j‖ - (c - 1) * B := by linarith
+      _ = ‖∑ j ∈ Ico N (m + 1), u j‖ * (c - 1) := by ring
   refine tendsto_atTop_mono' atTop hlower ?_
   exact (((hnorm_atTop.comp (tendsto_sub_atTop_nat 1)).const_mul_atTop (by linarith)).atTop_add
     tendsto_const_nhds).atTop_div_const (by linarith)
@@ -121,24 +127,19 @@ private theorem eventually_three_mul_norm_le {E : Type*} [SeminormedAddCommGroup
   filter_upwards [hu.def (by positivity : (0 : ℝ) < 1 / 3)] with m hm
   linarith
 
-/-- If `u =o[atTop] fun m ↦ u (m + 1)` and `0 < ‖u m‖` frequently, then `0 < ‖u m‖` eventually. -/
-theorem eventually_norm_pos_of_succ {E : Type*} [SeminormedAddCommGroup E]
-    {u : ℕ → E} (hu : u =o[atTop] fun m ↦ u (m + 1))
-    (hne : ∃ᶠ m in atTop, 0 < ‖u m‖) :
-    ∀ᶠ m in atTop, 0 < ‖u m‖ := by
-  obtain ⟨M₀, hM₀⟩ := eventually_atTop.1 hu.eventually_three_mul_norm_le
-  obtain ⟨M, hpos, hM⟩ := (hne.and_eventually (eventually_ge_atTop M₀)).exists
-  filter_upwards [eventually_ge_atTop M] with m hm
-  induction m, hm using Nat.le_induction with
-  | base => exact hpos
-  | succ m hm ih => linarith [hM₀ m (hM.trans hm)]
-
 /-- If `u =o[atTop] fun m ↦ u (m + 1)` and `0 < ‖u m‖` frequently, then `‖u n‖ → ∞`. -/
 theorem tendsto_norm_atTop_of_succ {E : Type*} [SeminormedAddCommGroup E]
     {u : ℕ → E} (hu : u =o[atTop] fun m ↦ u (m + 1))
     (hne : ∃ᶠ m in atTop, 0 < ‖u m‖) :
     Tendsto (fun n ↦ ‖u n‖) atTop atTop :=
   TauCeti.tendsto_norm_atTop_of_mul_norm_le (by norm_num) hu.eventually_three_mul_norm_le hne
+
+/-- If `u =o[atTop] fun m ↦ u (m + 1)` and `0 < ‖u m‖` frequently, then `0 < ‖u m‖` eventually. -/
+theorem eventually_norm_pos_of_succ {E : Type*} [SeminormedAddCommGroup E]
+    {u : ℕ → E} (hu : u =o[atTop] fun m ↦ u (m + 1))
+    (hne : ∃ᶠ m in atTop, 0 < ‖u m‖) :
+    ∀ᶠ m in atTop, 0 < ‖u m‖ :=
+  (hu.tendsto_norm_atTop_of_succ hne).eventually_gt_atTop 0
 
 /-- If `u =o[atTop] fun m ↦ u (m + 1)` and `0 < ‖u m‖` frequently, then the norms of the partial
 sums `∑ m ∈ Ico N n, u m` tend to `+∞` for every starting index `N`. -/
