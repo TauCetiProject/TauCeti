@@ -43,6 +43,11 @@ Both directions hold more generally, and are proved in
   `LinearMap.isNilpotent_iff_forall_trace_pow_eq_zero`
   (`TauCeti.isNilpotent_toEnd_of_forall_lift_eval_eq_zero`).
 
+* **Common zeros of the invariants lie in the derived ideal.** A linear function vanishing on
+  `⁅L, L⁆` is an invariant of degree one, so every common zero of the invariants of positive degree
+  lies in `⁅L, L⁆` (`TauCeti.mem_derivedSeries_of_forall_lift_eval_eq_zero`), over any field. In
+  a reductive Lie algebra this cuts out the central coordinates.
+
 Thus, pointwise, the nilpotent cone is the zero fibre of the map defined by the invariant
 polynomial functions of positive degree. For the adjoint quotient `𝔤 → 𝔤 // G` of a group `G`,
 this describes the points of its zero fibre wherever its invariant algebra is `S(𝔤*)^𝔤`.
@@ -52,6 +57,8 @@ this describes the points of its zero fibre wherever its invariant algebra is `S
 * `TauCeti.isNilpotent_ad_iff_forall_lift_eval_eq_zero`: in a Lie algebra with
   nondegenerate Killing form, `ad x` is nilpotent exactly when every invariant polynomial function
   with zero constant term vanishes at `x`.
+* `TauCeti.mem_derivedSeries_of_forall_lift_eval_eq_zero`: a common zero of the invariants of
+  positive degree lies in the derived ideal.
 
 ## References
 
@@ -69,7 +76,25 @@ namespace TauCeti
 
 open SymmetricAlgebra
 
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
+
+/-- **Common zeros of the invariants lie in the derived ideal.** If every invariant polynomial
+function on `L` with zero constant term vanishes at `x`, then `x ∈ ⁅L, L⁆`: a linear function
+vanishing on `⁅L, L⁆` is killed by the coadjoint action, so it is such an invariant. -/
+theorem mem_derivedSeries_of_forall_lift_eval_eq_zero {x : L}
+    (h : ∀ p ∈ lieInvariants K L (Dual K L), algebraMapInv p = 0 → lift (Dual.eval K L x) p = 0) :
+    x ∈ derivedSeries K L 1 := by
+  by_contra hx
+  obtain ⟨φ, hφx, hφ⟩ := Submodule.exists_le_ker_of_notMem
+    (p := (derivedSeries K L 1 : Submodule K L)) hx
+  refine hφx ?_
+  have hinv : ι K (Dual K L) φ ∈ lieInvariants K L (Dual K L) :=
+    ι_mem_lieInvariants_of_apply_lie_eq_zero fun y z ↦ LinearMap.mem_ker.mp <| hφ <| by
+      rw [derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero]
+      exact LieSubmodule.lie_mem_lie (LieSubmodule.mem_top y) (LieSubmodule.mem_top z)
+  simpa using h _ hinv (algebraMapInv_ι φ)
+
+variable [CharZero K]
 
 /-- **The ad-nilpotent elements are the common zeros of the invariants of positive degree.** In a
 Lie algebra with nondegenerate Killing form (hence finite-dimensional) over a field of

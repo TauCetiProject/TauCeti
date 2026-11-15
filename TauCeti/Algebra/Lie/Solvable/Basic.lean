@@ -63,8 +63,8 @@ whole algebra.
   the two readings are trivial, respectively solvable, together, and
   `LieIdeal.eq_bot_of_le_of_isSolvable`: **a solvable ideal inside an ideal with trivial radical
   is trivial**.
-* `LieAlgebra.hasTrivialRadical_of_equiv`: triviality of the radical transfers along an
-  isomorphism of Lie algebras.
+* `LieAlgebra.hasTrivialRadical_of_equiv` and `LieAlgebra.hasCentralRadical_of_equiv`: triviality
+  of the radical, and its equality with the centre, transfer along an isomorphism of Lie algebras.
 * `LieAlgebra.hasTrivialRadical_quotient_radical`: **the quotient of a Noetherian Lie algebra by
   its radical has trivial radical**, with `LieAlgebra.radical_le_of_hasTrivialRadical_quotient`
   and `LieAlgebra.hasTrivialRadical_quotient_iff`: the radical is the smallest ideal, and the
@@ -260,6 +260,26 @@ theorem hasTrivialRadical_of_equiv [HasTrivialRadical R L] (e : L ≃ₗ⁅R⁆ 
     have hker : (e.symm : L' →ₗ⁅R⁆ L).ker = ⊥ := (LieHom.ker_eq_bot _).mpr e.symm.injective
     rw [LieIdeal.map_eq_bot_iff, hker, le_bot_iff] at hbot
     exact hbot
+
+/-- **Reductivity transfers along an isomorphism of Lie algebras**: if the radical of `L` is its
+centre, then so is the radical of `L'`.
+
+No finiteness hypothesis is needed: neither Lie algebra has to be Noetherian or
+finite-dimensional. -/
+theorem hasCentralRadical_of_equiv [HasCentralRadical R L] (e : L ≃ₗ⁅R⁆ L') :
+    HasCentralRadical R L' :=
+  hasCentralRadical_of_radical_le R L' fun x hx => by
+    have hker : IsSolvable ↥(e.symm : L' →ₗ⁅R⁆ L).ker := by
+      rw [(LieHom.ker_eq_bot _).mpr e.symm.injective]
+      infer_instance
+    -- the inverse isomorphism carries the radical of `L'` onto the radical of `L`, its centre
+    have hx' : e.symm x ∈ center R L := by
+      rw [← radical_eq_center, ← LieIdeal.radical_map_eq _ e.symm.surjective hker]
+      exact LieIdeal.mem_map hx
+    rw [LieModule.mem_maxTrivSubmodule] at hx' ⊢
+    intro y
+    have h := congrArg e (hx' (e.symm y))
+    rwa [LieEquiv.map_lie, e.apply_symm_apply, e.apply_symm_apply, map_zero] at h
 
 variable (R L)
 

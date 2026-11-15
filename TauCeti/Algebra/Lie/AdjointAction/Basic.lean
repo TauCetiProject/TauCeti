@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.AdjointAction.Basic
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.Data.Nat.Choose.Sum
@@ -36,6 +37,8 @@ every element centralizing `x` (`TauCeti.LieAlgebra.lie_eq_zero_of_ad_mem_adjoin
 
 Adjoint semisimplicity, like adjoint nilpotence, passes from a Lie algebra to its Lie subalgebras
 (`LieSubalgebra.isSemisimple_ad_of_isSemisimple_ad`, over any commutative ring).
+For an ideal, adjoint nilpotence also passes back to the ambient Lie algebra
+(`LieIdeal.isNilpotent_ad_iff`), because `ad x` maps the ambient Lie algebra into the ideal.
 
 ## Main statements
 
@@ -46,6 +49,10 @@ Adjoint semisimplicity, like adjoint nilpotence, passes from a Lie algebra to it
   element has nilpotent adjoint action.
 * `LieSubalgebra.isSemisimple_ad_of_isSemisimple_ad`: an element of a Lie subalgebra that is
   ad-semisimple in the ambient Lie algebra is ad-semisimple in the subalgebra.
+* `LieIdeal.isNilpotent_ad_iff`: an element of an ideal is ad-nilpotent in the ideal exactly when
+  it is ad-nilpotent in the ambient Lie algebra.
+* `TauCeti.isNilpotent_ad_add_iff_of_mem_center`: adding a central element does not change
+  ad-nilpotence.
 
 ## References
 
@@ -124,6 +131,48 @@ theorem isSemisimple_ad_of_isSemisimple_ad {R L : Type*} [CommRing R] [LieRing L
   exact (LinearEquiv.isSemisimple_iff _ _ (LinearEquiv.refl R L') (by ext; rfl)).1 (h.restrict hp)
 
 end LieSubalgebra
+
+namespace LieIdeal
+
+open LieAlgebra
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- **Ad-nilpotence in an ideal.** An element `x` of an ideal `I` acts nilpotently on `I` exactly
+when it acts nilpotently on the whole Lie algebra: `ad x` maps `L` into `I`, where its powers are
+those of the adjoint action of `I`. For a subalgebra which is not an ideal only the implication
+`LieSubalgebra.isNilpotent_ad_of_isNilpotent_ad` holds. -/
+theorem isNilpotent_ad_iff (I : LieIdeal R L) {x : I} :
+    IsNilpotent (ad R I x) ↔ IsNilpotent (ad R L x) := by
+  -- on `I`, the powers of `ad x` are those of the adjoint action of `I`
+  have key (m : ℕ) (v : I) : (ad R L x ^ m) v = ((ad R I x ^ m) v : L) := by
+    induction m generalizing v with
+    | zero => simp
+    | succ m ih => simpa [pow_succ] using ih ⁅x, v⁆
+  refine ⟨fun ⟨n, hn⟩ ↦ ⟨n + 1, LinearMap.ext fun y ↦ ?_⟩,
+    I.toLieSubalgebra.isNilpotent_ad_of_isNilpotent_ad⟩
+  -- `ad x` maps `L` into `I`
+  have h := key n ⟨⁅(x : L), y⁆, _root_.lie_mem_left R L I _ _ x.2⟩
+  simp only [hn, LinearMap.zero_apply, ZeroMemClass.coe_zero] at h
+  simpa [pow_succ] using h
+
+end LieIdeal
+
+namespace TauCeti
+
+open _root_.LieAlgebra
+
+/-- Adding a central element does not change the adjoint action, so it does not change
+`ad`-nilpotence. -/
+theorem isNilpotent_ad_add_iff_of_mem_center {R L : Type*} [CommRing R] [LieRing L]
+    [LieAlgebra R L] {z : L} (hz : z ∈ center R L) (y : L) :
+    IsNilpotent (ad R L (z + y)) ↔ IsNilpotent (ad R L y) := by
+  have hz' : ad R L z = 0 := LinearMap.ext fun w ↦ by
+    rw [ad_apply, LinearMap.zero_apply, ← lie_skew,
+      (LieModule.mem_maxTrivSubmodule R L L z).mp hz w, neg_zero]
+  rw [map_add, hz', zero_add]
+
+end TauCeti
 
 namespace TauCeti.LieAlgebra
 

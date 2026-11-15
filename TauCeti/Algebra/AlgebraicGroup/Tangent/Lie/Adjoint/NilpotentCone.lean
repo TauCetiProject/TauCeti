@@ -12,6 +12,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ComoduleAlgebra
 public import TauCeti.Algebra.Lie.AdjointAction.InvariantZeroLocus
 public import TauCeti.Algebra.Lie.TracePowerPolynomial
+import TauCeti.Algebra.Lie.Reductive.InvariantZeroLocus
 
 /-!
 # The nilpotent cone of an affine group
@@ -41,6 +42,13 @@ the Killing form of `𝔤` is nondegenerate, the Lie-invariant functions of posi
 characteristic zero, and points of the cone are `ad`-nilpotent for every connected group over an
 algebraically closed field of characteristic zero.
 
+When `𝔤` is only reductive, `𝔤 = Z(𝔤) ⊕ ⁅𝔤, 𝔤⁆`, the linear functions vanishing on `⁅𝔤, 𝔤⁆` are
+invariants of degree one, and the cone is cut out inside `⁅𝔤, 𝔤⁆`: its `k`-points are the
+`ad`-nilpotent elements of the derived ideal
+(`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff_mem_derivedSeries_and_isNilpotent_ad`). These
+have zero central coordinate, whereas the `ad`-nilpotent elements of `𝔤` form the larger set
+`Z(𝔤) × 𝒩(⁅𝔤, 𝔤⁆)` (`TauCeti.isNilpotent_ad_iff_exists_mem_center_add`).
+
 ## Main declarations
 
 * `TauCeti.adjointPolynomialComoduleAlgebra`: the action of `G` on the polynomial functions on `𝔤`,
@@ -57,6 +65,13 @@ algebraically closed field of characteristic zero.
   and `TauCeti.isNilpotent_ad_of_nilpotentConeIdeal_le_ker_lift_eval`. More generally, points of
   the cone act nilpotently on every finite-dimensional module
   (`TauCeti.isNilpotent_toEnd_of_nilpotentConeIdeal_le_ker_lift_eval`).
+* `TauCeti.ι_mem_nilpotentConeIdeal`: for a connected group, the linear functions vanishing on
+  `⁅𝔤, 𝔤⁆` lie in the ideal of the cone, which therefore has zero central coordinate.
+* `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff_forall_lift_eval_eq_zero`: for a connected
+  group, the `k`-points of the cone are the common zeros of the Lie invariants of positive degree.
+* `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff_mem_derivedSeries_and_isNilpotent_ad`: for a
+  connected group with reductive Lie algebra, the `k`-points of the cone are the `ad`-nilpotent
+  elements of the derived ideal.
 
 ## References
 
@@ -258,6 +273,30 @@ theorem adjointInvariantPolynomials_eq_lieInvariants :
       rw [differential_adjointPolynomialComoduleAlgebra]
       exact SymmetricAlgebra.mem_lieInvariants.mp hp _
 
+/-- **Points of the nilpotent cone are the common zeros of the Lie invariants.** For a connected
+affine group over an algebraically closed field of characteristic zero, evaluation at an element
+`x` of the Lie algebra kills the ideal of the nilpotent cone exactly when every polynomial function
+on the Lie algebra that is killed by the coadjoint action and vanishes at the origin vanishes
+at `x`. -/
+theorem nilpotentConeIdeal_le_ker_lift_eval_iff_forall_lift_eval_eq_zero {x : 𝔤} :
+    nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x)) ↔
+      ∀ p ∈ SymmetricAlgebra.lieInvariants k 𝔤 (Module.Dual k 𝔤),
+        SymmetricAlgebra.algebraMapInv p = 0 →
+          SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x) p = 0 := by
+  simp only [nilpotentConeIdeal_le_iff, adjointInvariantPolynomials_eq_lieInvariants,
+    RingHom.mem_ker]
+
+/-- **The nilpotent cone has zero central coordinate.** For a connected affine group over an
+algebraically closed field of characteristic zero, a linear function on the Lie algebra vanishing on
+all brackets, that is on the derived ideal `⁅𝔤, 𝔤⁆`, lies in the ideal of the nilpotent cone. So the
+cone is a closed subscheme of the linear subspace `⁅𝔤, 𝔤⁆`. -/
+theorem ι_mem_nilpotentConeIdeal {φ : Module.Dual k 𝔤} (hφ : ∀ x y : 𝔤, φ ⁅x, y⁆ = 0) :
+    _root_.SymmetricAlgebra.ι k (Module.Dual k 𝔤) φ ∈ nilpotentConeIdeal k H := by
+  refine mem_nilpotentConeIdeal_of_mem_adjointInvariantPolynomials ?_
+    (SymmetricAlgebra.algebraMapInv_ι φ)
+  rw [adjointInvariantPolynomials_eq_lieInvariants]
+  exact SymmetricAlgebra.ι_mem_lieInvariants_of_apply_lie_eq_zero hφ
+
 /-- **Points of the nilpotent cone act nilpotently.** For a connected affine group over an
 algebraically closed field of characteristic zero, if evaluation at an element `x` of the Lie
 algebra kills the ideal of the nilpotent cone, then `x` acts nilpotently on every
@@ -266,8 +305,8 @@ theorem isNilpotent_toEnd_of_nilpotentConeIdeal_le_ker_lift_eval (M : Type*) [Ad
     [Module k M] [FiniteDimensional k M] [LieRingModule 𝔤 M] [LieModule k 𝔤 M] {x : 𝔤}
     (hx : nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x))) :
     IsNilpotent (LieModule.toEnd k 𝔤 M x) :=
-  isNilpotent_toEnd_of_forall_lift_eval_eq_zero M fun p hp hp₀ ↦
-    nilpotentConeIdeal_le_iff.mp hx p (by rwa [adjointInvariantPolynomials_eq_lieInvariants]) hp₀
+  isNilpotent_toEnd_of_forall_lift_eval_eq_zero M
+    (nilpotentConeIdeal_le_ker_lift_eval_iff_forall_lift_eval_eq_zero.mp hx)
 
 /-- **Points of the nilpotent cone are nilpotent.** For a connected affine group over an
 algebraically closed field of characteristic zero, if evaluation at an element `x` of the Lie
@@ -286,6 +325,21 @@ theorem nilpotentConeIdeal_le_ker_lift_eval_iff [LieAlgebra.IsKilling k 𝔤] {x
       IsNilpotent (LieAlgebra.ad k 𝔤 x) :=
   ⟨isNilpotent_ad_of_nilpotentConeIdeal_le_ker_lift_eval,
     nilpotentConeIdeal_le_ker_lift_eval_of_isNilpotent⟩
+
+/-- **The rational points of the nilpotent cone of a group with reductive Lie algebra.** For a
+connected affine group over an algebraically closed field of characteristic zero whose Lie algebra
+is reductive, an element `x` of the Lie algebra lies on the nilpotent cone, that is evaluation at
+`x` kills its ideal, exactly when `x` lies in the derived ideal `⁅𝔤, 𝔤⁆` and `ad x` is nilpotent.
+
+The invariant linear functions are those vanishing on `⁅𝔤, 𝔤⁆`, so the cone has zero central
+coordinate: unlike the set of `ad`-nilpotent elements, it contains no nonzero central element
+(`TauCeti.forall_lift_eval_add_eq_zero_iff`). -/
+theorem nilpotentConeIdeal_le_ker_lift_eval_iff_mem_derivedSeries_and_isNilpotent_ad
+    [LieAlgebra.HasCentralRadical k 𝔤] {x : 𝔤} :
+    nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x)) ↔
+      x ∈ LieAlgebra.derivedSeries k 𝔤 1 ∧ IsNilpotent (LieAlgebra.ad k 𝔤 x) := by
+  rw [nilpotentConeIdeal_le_ker_lift_eval_iff_forall_lift_eval_eq_zero,
+    mem_derivedSeries_and_isNilpotent_ad_iff_forall_lift_eval_eq_zero]
 
 end Connected
 

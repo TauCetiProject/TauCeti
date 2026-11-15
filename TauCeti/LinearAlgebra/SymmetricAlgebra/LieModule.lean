@@ -51,6 +51,8 @@ functions `S(L*)^L` with the Weyl-invariant polynomial functions on a Cartan sub
   each homogeneous degree.
 * `TauCeti.SymmetricAlgebra.mem_lieInvariants_iff_mem_maxTrivSubmodule`: the invariants are the
   maximal trivial submodule of the Lie module `S(M)`.
+* `TauCeti.SymmetricAlgebra.ι_mem_lieInvariants_of_apply_lie_eq_zero`: a linear function on `L`
+  vanishing on all brackets is a coadjoint invariant of degree one.
 * `TauCeti.SymmetricAlgebra.decompose_mem_lieInvariants_iff`: an element is invariant exactly when
   all of its homogeneous components are.
 * `LieModuleEquiv.map_lieInvariants`: a Lie module equivalence carries the invariants
@@ -191,6 +193,13 @@ theorem mem_lieInvariants_iff_mem_maxTrivSubmodule {p : S} :
 theorem ι_mem_lieInvariants {m : M} (hm : ∀ x : L, ⁅x, m⁆ = 0) :
     ι R M m ∈ lieInvariants R L M :=
   mem_lieInvariants.mpr fun x ↦ by simp [hm x]
+
+/-- A linear function on `L` vanishing on all brackets is killed by the coadjoint action, so its
+generator is an invariant polynomial function on `L` of degree one. -/
+theorem ι_mem_lieInvariants_of_apply_lie_eq_zero {φ : Module.Dual R L}
+    (hφ : ∀ x y : L, φ ⁅x, y⁆ = 0) :
+    ι R (Module.Dual R L) φ ∈ lieInvariants R L (Module.Dual R L) :=
+  ι_mem_lieInvariants fun x ↦ LinearMap.ext fun y ↦ by simp [hφ]
 
 /-- **The invariants are graded**: an element of the symmetric algebra is invariant exactly when
 each of its homogeneous components is. -/
