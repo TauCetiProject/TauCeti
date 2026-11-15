@@ -92,25 +92,8 @@ private theorem integral_inner_value_eq_sum {f : ℂ → EuclideanSpace ℝ (Fin
   simp_rw [PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
   rw [integral_finsetSum _ fun j _ ↦ hint j]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  simp only [L2.inner_def, Measure.restrict_coe_opens_top]
-  refine integral_congr_ae ?_
-  filter_upwards [ae_mono (Measure.restrict_coe_opens_top _).ge
-    ((hf j).mono_measure (Measure.restrict_coe_opens_top _).le).coeFn_toLp] with z hz
-  simp only [W1p.valueL_apply, RCLike.inner_apply, conj_trivial, hz]
-
-/-- The pairing of an element of `L²(ℂ; ℝ⁴)` with a compactly supported continuous field, as an
-`L²` inner product. -/
-private theorem integral_inner_eq_inner_toLp (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤)
-    {f : ℂ → EuclideanSpace ℝ (Fin 4)} (hf : Continuous f) (hfc : HasCompactSupport f) :
-    ∫ z, ⟪g z, f z⟫ =
-      ⟪g, ((hf.memLp_of_hasCompactSupport hfc).mono_measure
-        (Measure.restrict_coe_opens_top _).le).toLp f⟫ := by
-  simp only [L2.inner_def, Measure.restrict_coe_opens_top]
-  refine integral_congr_ae ?_
-  filter_upwards [ae_mono (Measure.restrict_coe_opens_top _).ge
-    ((hf.memLp_of_hasCompactSupport hfc).mono_measure
-      (Measure.restrict_coe_opens_top _).le).coeFn_toLp] with z hz
-  rw [hz]
+  simp only [L2.inner_toLp, Measure.restrict_coe_opens_top, W1p.valueL_apply,
+    RCLike.inner_apply, conj_trivial]
 
 /-! ### Weak and strong solutions -/
 
@@ -128,13 +111,15 @@ theorem integral_inner_sobolevGaugeFixedOperator (hx : Continuous x) (hax : a =�
   have hLj (j : Fin 4) : MemLp (fun z ↦ gaugeFixedAdjoint x η z j) 2 volume :=
     ((continuous_apply j).comp ((PiLp.continuous_ofLp 2 _).comp hL)).memLp_of_hasCompactSupport
       (hLc.comp_left (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v j) rfl)
-  rw [integral_inner_eq_inner_toLp _ hη.continuous hηc, integral_inner_value_eq_sum hLj]
+  have hη2 : MemLp η 2 μ⊤ := (hη.continuous.memLp_of_hasCompactSupport hηc).mono_measure
+    (Measure.restrict_coe_opens_top _).le
+  have hpair (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) : ∫ z, ⟪g z, η z⟫ = ⟪g, hη2.toLp η⟫ := by
+    simp only [L2.inner_toLp g hη2, Measure.restrict_coe_opens_top]
+  rw [hpair, integral_inner_value_eq_sum hLj]
   -- Both sides are continuous in `y`, and agree on the dense subspace of test fields.
   refine (DenseRange.piMap fun _ : Fin 4 ↦
     W1p.denseRange_ofTestFunctionₗ_top (mu := volume) (p := 2) (by norm_num)).induction_on
-      (p := fun y ↦ ⟪sobolevGaugeFixedOperator a y,
-          ((hη.continuous.memLp_of_hasCompactSupport hηc).mono_measure
-            (Measure.restrict_coe_opens_top _).le).toLp η⟫ =
+      (p := fun y ↦ ⟪sobolevGaugeFixedOperator a y, hη2.toLp η⟫ =
         ∑ j, ⟪W1p.valueL (y j),
           ((hLj j).mono_measure (Measure.restrict_coe_opens_top _).le).toLp _⟫)
       y ?_ fun φ ↦ ?_
@@ -152,8 +137,8 @@ theorem integral_inner_sobolevGaugeFixedOperator (hx : Continuous x) (hax : a =�
     have hT := (sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator hax
       (y := Pi.map (fun _ ↦ W1p.ofTestFunctionₗ volume ⊤ 2) φ) hY hvalue).filter_mono
         (ae_mono (Measure.restrict_coe_opens_top _).ge)
-    rw [← integral_inner_eq_inner_toLp _ hη.continuous hηc,
-      ← integral_inner_value_eq_sum hLj, integral_congr_ae (hT.mono fun z hz ↦ by rw [hz]),
+    rw [← hpair, ← integral_inner_value_eq_sum hLj,
+      integral_congr_ae (hT.mono fun z hz ↦ by rw [hz]),
       integral_inner_gaugeFixedOperator hx hY hYc hη]
     refine integral_congr_ae ?_
     filter_upwards [ae_all_iff.2 fun j ↦ ae_mono (Measure.restrict_coe_opens_top _).ge (hvalue j)]
