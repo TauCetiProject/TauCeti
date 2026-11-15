@@ -188,6 +188,24 @@ noncomputable abbrev subschemeOverResidueField {I : X.IdealSheafData}
     (hI : (specialFiberι R toBase).ker ≤ I) : I.subscheme.Over (Spec (.of (ResidueField R))) :=
   ⟨subschemeToSpecialFiber hI ≫ (specialFiber R toBase).hom⟩
 
+/-- The structure morphism of a closed subscheme contained in the special fibre is its
+factorization through the special fibre and then the spectrum of the residue field. -/
+lemma subschemeOverResidueField_over {I : X.IdealSheafData}
+    (hI : (specialFiberι R toBase).ker ≤ I) :
+    letI := subschemeOverResidueField hI
+    I.subscheme ↘ Spec (.of (ResidueField R)) =
+      subschemeToSpecialFiber hI ≫ (specialFiber R toBase).hom := rfl
+
+/-- For a closed subscheme contained in the special fibre, the structure morphisms to `Spec R`
+and to the spectrum of the residue field are compatible. -/
+lemma subschemeOverResidueField_comp {I : X.IdealSheafData}
+    (hI : (specialFiberι R toBase).ker ≤ I) :
+    letI := subschemeOverResidueField hI
+    (I.subscheme ↘ Spec (.of (ResidueField R))) ≫
+        Spec.map (CommRingCat.ofHom (algebraMap R (ResidueField R))) = I.subschemeι ≫ toBase := by
+  rw [subschemeOverResidueField_over, Category.assoc, ← specialFiberι_toBase R toBase,
+    ← Category.assoc, subschemeToSpecialFiber_specialFiberι]
+
 /-- A closed subscheme of a proper scheme over `R` contained in the special fibre is proper over the
 residue field. -/
 lemma isProper_subschemeOverResidueField [IsProper toBase] {I : X.IdealSheafData}

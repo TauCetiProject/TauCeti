@@ -249,7 +249,7 @@ private theorem coordConj_ae_eq_integral
 private theorem enorm_coordConj
     (T : Lp E 2 (volume : Measure V) →L[ℝ] Lp F 2 (volume : Measure V)) :
     ‖coordConj b T‖ₑ = ‖T‖ₑ := by
-  simp only [coordConj, enorm_eq_nnnorm, opNNNorm_linearIsometryEquiv_comp]
+  simp only [coordConj, eNorm_eq_nnNorm, opNNNorm_linearIsometryEquiv_comp]
   exact congrArg _ (opNNNorm_comp_linearIsometryEquiv T (lpCoord b E).symm)
 
 /-- A weak type `(1, 1)` bound for `T` in coordinates is a weak type `(1, 1)` bound for `T`, with
@@ -264,7 +264,7 @@ private theorem mul_volume_lt_enorm_le_of_coordConj
   have h := hA (lpCoord b E f) t
   -- Transfer the level set of `T' (f ∘ e) = (T f) ∘ e` and the `L¹` norm of `f ∘ e` back to `V`.
   have hS : MeasurableSet {v | t < ‖T f v‖ₑ} :=
-    measurableSet_lt measurable_const (Lp.stronglyMeasurable (T f)).enorm
+    measurableSet_lt measurable_const (Lp.stronglyMeasurable (T f)).eNorm
   have hlevel : volume {x | t < ‖coordConj b T (lpCoord b E f) x‖ₑ} =
       volume {v | t < ‖T f v‖ₑ} := by
     rw [← he.measure_preimage hS.nullMeasurableSet]
@@ -272,8 +272,8 @@ private theorem mul_volume_lt_enorm_le_of_coordConj
     filter_upwards [coeFn_lpCoord b (T f)] with x hx
     simp only [coordConj_lpCoord, hx, Function.comp_apply, mem_ofPred_eq, mem_preimage]
   have hnorm : ∫⁻ x, ‖lpCoord b E f x‖ₑ = ∫⁻ v, ‖f v‖ₑ := by
-    rw [← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _),
-      ← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _), eLpNorm_lpCoord]
+    rw [← eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable _),
+      ← eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable _), eLpNorm_lpCoord]
   rwa [hlevel, hnorm] at h
 
 variable [CompleteSpace E] [CompleteSpace F]
@@ -375,7 +375,7 @@ private theorem setLIntegral_compl_closedBall_enorm_coordConj_le_of_hormander
     _ ≤ B * ∫⁻ v, ‖g v‖ₑ := hcanc
     _ = B * ∫⁻ x, ‖f x‖ₑ := by
         rw [← he.lintegral_comp_emb e.measurableEmbedding]
-        exact congrArg _ (lintegral_congr_ae (hge.mono fun x hx => congrArg enorm hx))
+        exact congrArg _ (lintegral_congr_ae (hge.mono fun x hx => congrArg eNorm hx))
 
 end Coordinates
 
@@ -486,7 +486,7 @@ theorem exists_eLpNorm_le_of_norm_sub_le_mul_rpow
   obtain ⟨B', hB', hT'⟩ := exists_cancellation b (adjoint T) hk'm hδ' hsize' hk' hrep'
   rw [← adjoint_coordConj] at hT'
   obtain ⟨A, hA⟩ := exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le
-    (ι := Fin (Module.finrank ℝ V)) (H := H) (K := K) 2 (M := ‖coordConj b T‖ₑ) enorm_ne_top hB hB'
+    (ι := Fin (Module.finrank ℝ V)) (H := H) (K := K) 2 (M := ‖coordConj b T‖ₑ) eNorm_ne_top hB hB'
     hp hp_top
   refine ⟨A, fun f => ?_⟩
   simpa only [coordConj_lpCoord, eLpNorm_lpCoord] using
@@ -555,13 +555,13 @@ theorem _root_.TauCeti.setLIntegral_enorm_sub_le_of_norm_sub_le {G G' : Type*}
         refine lintegral_mono fun x ↦ ?_
         simp only [Set.indicator, Set.mem_ofPred_eq, dist_eq_norm, h]
         split_ifs
-        · refine enorm_le_iff_norm_le.2 ((hk x y y').trans_eq ?_)
+        · refine eNorm_le_iff_norm_le.2 ((hk x y y').trans_eq ?_)
           rw [sub_sub_sub_cancel_right]
         · exact le_rfl
     _ = ∫⁻ z in {z | 2 * ‖h‖ < ‖z‖}, ‖K (z - h) - K z‖ₑ := by
         rw [lintegral_sub_right_eq_self, lintegral_indicator hS]
     _ = ENNReal.ofReal (∫ z in {z | 2 * ‖h‖ < ‖z‖}, ‖K (z - h) - K z‖) :=
-        (ofReal_integral_norm_eq_lintegral_enorm hint.integrableOn).symm
+        (ofReal_integral_norm_eq_lintegral_eNorm hint.integrableOn).symm
     _ ≤ ENNReal.ofReal B := ENNReal.ofReal_le_ofReal (hB h)
 
 end ContinuousLinearMap

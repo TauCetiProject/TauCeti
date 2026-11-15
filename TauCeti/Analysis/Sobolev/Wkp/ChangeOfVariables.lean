@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
+import TauCeti.Analysis.Normed.Affine.Isometry.Basic
+import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
@@ -418,6 +420,45 @@ theorem add_const (a : E) (hA : MapsTo (· + a) U V) :
       pos := one_pos
       le_abs_det := fun x _ ↦ by simp [ContinuousLinearMap.det] }
 
+/-- Conjugating a change of variables `Φ` by an affine isometry equivalence `e` gives a change of
+variables `e⁻¹ ∘ Φ ∘ e` with the same constants: its iterated derivatives have the same norms and
+its Jacobian determinant is that of `Φ`. -/
+theorem conj {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {U' V' : Opens F}
+    (h : IsChangeOfVariables k U V Φ L c) (e : F ≃ᵃⁱ[ℝ] E) (hU : MapsTo e U' U)
+    (hV : MapsTo e.symm V V') : IsChangeOfVariables k U' V' (e.symm ∘ Φ ∘ e) L c := by
+  set A := e.toAffineIsometry.toContinuousAffineMap
+  set B := e.symm.toAffineIsometry.toContinuousAffineMap
+  have hΦe : ContDiffOn ℝ k (Φ ∘ e) U' := h.contDiffOn.comp A.contDiff.contDiffOn hU
+  refine
+    { contDiffOn := B.contDiff.comp_contDiffOn hΦe
+      differentiableOn :=
+        B.differentiable.comp_differentiableOn (h.differentiableOn.comp A.differentiableOn hU)
+      injOn := e.symm.injective.comp_injOn (h.injOn.comp e.injective.injOn hU)
+      mapsTo := hV.comp (h.mapsTo.comp hU)
+      norm_iteratedFDeriv_le := fun i hi hik x hx ↦ ?_
+      pos := h.pos
+      le_abs_det := fun x hx ↦ ?_ }
+  · rw [AffineIsometryEquiv.norm_iteratedFDeriv_comp_left _ _ _ (by omega),
+      AffineIsometryEquiv.norm_iteratedFDeriv_comp_right]
+    exact h.norm_iteratedFDeriv_le i hi hik (e x) (hU hx)
+  · -- The derivative is `D(e⁻¹) ∘ DΦ(e x) ∘ De`, the conjugate of `DΦ(e x)` by the linear part
+    -- of `e`, so it has the same determinant.
+    have hΦ : HasFDerivAt Φ (fderiv ℝ Φ (e x)) (e x) :=
+      (h.differentiableOn.differentiableAt (U.isOpen.mem_nhds (hU hx))).hasFDerivAt
+    have hd : HasFDerivAt (e.symm ∘ Φ ∘ e)
+        (B.contLinear.comp ((fderiv ℝ Φ (e x)).comp A.contLinear)) x :=
+      (B.hasFDerivAt (x := Φ (e x))).comp x (hΦ.comp x (A.hasFDerivAt (x := x)))
+    have hconj : (B.contLinear.comp ((fderiv ℝ Φ (e x)).comp A.contLinear) : F →ₗ[ℝ] F) =
+        (e.linearIsometryEquiv.symm.toLinearEquiv : E →ₗ[ℝ] F) ∘ₗ
+          (fderiv ℝ Φ (e x) : E →ₗ[ℝ] E) ∘ₗ
+            (e.linearIsometryEquiv.symm.toLinearEquiv.symm : F →ₗ[ℝ] E) := by
+      -- The linear part of the continuous affine map underlying an affine isometry equivalence
+      -- is its linear isometry equivalence by construction; Mathlib states no lemma for this.
+      ext y
+      rfl
+    rw [hd.fderiv, ContinuousLinearMap.det, hconj, LinearMap.det_conj]
+    exact h.le_abs_det (e x) (hU hx)
+
 /-- **Changes of variables on relatively compact sets.** Let `Φ` be `Cᵏ` with `k ≥ 1` on an open
 set `Ω`. If the closure of an open `U` is compact and contained in `Ω`, `Φ` is injective on `U`
 with invertible derivative on `closure U`, and `Φ` maps `U` into `V`, then `Φ` is a change of
@@ -515,7 +556,7 @@ private theorem eLpNorm_iteratedFDeriv_comp_le (h : IsChangeOfVariables k U V Φ
           fun j hj1 hji => h.norm_iteratedFDeriv_le j hj1 (hji.trans hi) x hx
     _ = ENNReal.ofReal (max 1 L ^ i) * eLpNorm (∑ π : OrderedFinpartition i,
           fun x => ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U) := by
-        rw [← Real.enorm_of_nonneg (pow_nonneg (zero_le_one.trans (le_max_left _ _)) _),
+        rw [← Real.eNorm_of_nonneg (pow_nonneg (zero_le_one.trans (le_max_left _ _)) _),
           ← eLpNorm_const_smul]
         congr 1
         funext x

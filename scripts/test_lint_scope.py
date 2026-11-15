@@ -758,21 +758,14 @@ class PrBuildWiringTest(unittest.TestCase):
             "workflow_dispatch", "TauCeti/A.lean", api=f"lint-repair/main\to/r\t{self.BOT}"),
             (False, False))
 
-    def test_only_the_full_lint_label_rebuilds(self):
-        # A separate workflow dispatches ordinary full-lint requests; self-tested has its own label route.
+    def test_ci_label_router_owns_full_lint_dispatch(self):
         pr_build = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build.yml").read_text())
-        self.assertIn("labeled", pr_build[True]["pull_request_target"]["types"])
-        # Ordinary full-lint labeling still only starts the full-lint workflow;
-        # pr-build label routing is limited to manual self-tested assertions.
-        condition = pr_build["jobs"]["pick-runner"]["if"]
-        self.assertIn("github.event.label.name == 'self-tested'", condition)
-        self.assertIn("contains(github.event.pull_request.labels.*.name, 'self-tested')", condition)
-        self.assertIn('contains(fromJSON(', condition)
+        self.assertNotIn("labeled", pr_build[True]["pull_request_target"]["types"])
         self.assertIn("workflow_dispatch", pr_build[True])
         wf = yaml.safe_load((ROOT / ".github" / "workflows" / "full-lint-label.yml").read_text())
-        self.assertEqual(wf[True]["pull_request_target"]["types"], ["labeled"])
+        self.assertEqual(wf[True]["pull_request_target"]["types"], ["labeled", "unlabeled"])
         (job,) = wf["jobs"].values()
-        self.assertEqual(job["if"], "${{ github.event.label.name == 'full-lint' }}")
+        self.assertIn("github.event.label.name == 'full-lint'", job["if"])
         self.assertIn("gh workflow run pr-build.yml", job["steps"][0]["run"])
 
 if __name__ == "__main__":

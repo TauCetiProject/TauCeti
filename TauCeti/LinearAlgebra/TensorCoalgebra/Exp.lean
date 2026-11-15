@@ -286,7 +286,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [Algebra ℚ R] [AddCommMonoid
 
 /-- The exponential of the coderivation of a degree-zero family of Taylor components with no unary
 component has degree zero. -/
-theorem isHomogeneous_expCoderiv (G : InternalGrading R M) {φ : ReducedTensorWords R M →ₗ[R] M}
+theorem isHomogeneous_expCoderiv (G : InternalGrading R M ℤ) {φ : ReducedTensorWords R M →ₗ[R] M}
     (hφ : LinearMap.IsHomogeneous φ (gradedPiece G) G.piece 0) (hφ₁ : φ ∘ₗ ofLetter R M = 0) :
     LinearMap.IsHomogeneous (expCoderiv R φ) (gradedPiece G) (gradedPiece G) 0 := by
   have hD : LinearMap.IsHomogeneous (coderiv R φ) (gradedPiece G) (gradedPiece G) 0 := by

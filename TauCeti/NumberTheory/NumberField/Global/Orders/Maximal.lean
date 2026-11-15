@@ -94,9 +94,9 @@ theorem mem_maximalOrderFractionalIdealEquiv
   have h (y : K) : IsFractionRing.ringEquivOfRingEquiv (K := K) (L := K)
       (maximalOrderRingEquiv K) y = y := by
     rw [ringEquivOfRingEquiv_maximalOrderRingEquiv, RingEquiv.refl_apply]
-  rw [← FractionalIdeal.mem_coe, maximalOrderFractionalIdealEquiv,
-    FractionalIdeal.ringEquivOfRingEquiv_apply, FractionalIdeal.coe_mk]
-  simp only [Submodule.mem_map, FractionalIdeal.val_eq_coe, FractionalIdeal.mem_coe]
+  rw [← FractionalIdeal.mem_coeToSubmodule, maximalOrderFractionalIdealEquiv,
+    FractionalIdeal.ringEquivOfRingEquiv_apply, FractionalIdeal.coeToSubmodule_mk]
+  simp only [Submodule.mem_map, FractionalIdeal.val_eq_coe, FractionalIdeal.mem_coeToSubmodule]
   -- The semilinear equivalence underlying the transport applies
   -- `IsFractionRing.ringEquivOfRingEquiv` (`IsFractionRing.semilinearEquivOfRingEquiv_apply`).
   refine ⟨fun ⟨y, hy, hyx⟩ => ?_, fun hx => ⟨x, hx, h x⟩⟩

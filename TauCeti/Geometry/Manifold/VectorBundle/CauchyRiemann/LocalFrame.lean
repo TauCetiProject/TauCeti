@@ -174,7 +174,7 @@ theorem eq_frameCauchyRiemannOperator_add_sum (hD : IsRealCauchyRiemannOperator 
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Φ.smul (hcd i) (hframe i), ← Manifold.frameCauchyRiemannOperator_apply,
     Manifold.frameCauchyRiemannOperator_localFrame b hx, sub_zero]
-  rfl
+  simp only [c, LinearMap.piApply_apply_apply]
 
 end IsRealCauchyRiemannOperator
 

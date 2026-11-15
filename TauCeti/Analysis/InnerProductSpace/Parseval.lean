@@ -76,7 +76,7 @@ theorem _root_.OrthonormalBasis.sum_sq_norm_apply_eq_norm_sq [Fintype ι]
     (b : OrthonormalBasis ι 𝕜 E) (A : E →L[𝕜] 𝕜) :
     ∑ i, ‖A (b i)‖ ^ 2 = ‖A‖ ^ 2 := by
   have : FiniteDimensional 𝕜 E := Module.Finite.of_basis b.toBasis
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   rw [← (InnerProductSpace.toDual 𝕜 E).symm.norm_map A, ← b.sum_sq_norm_inner_left]
   simp_rw [InnerProductSpace.toDual_symm_apply]
 

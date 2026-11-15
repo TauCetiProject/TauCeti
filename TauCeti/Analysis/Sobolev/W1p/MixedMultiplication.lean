@@ -134,7 +134,7 @@ private theorem W1p.holderComp_spec {r : ℝ≥0∞} [Fact (1 ≤ r)]
         ContinuousLinearMap.le_opENorm₂ _ _ _
       _ ≤ ‖B‖ₑ * ‖f‖ₑ * (‖S‖ₑ * ‖g‖ₑ) := by
         gcongr
-        · exact enorm_le_iff_norm_le.mpr (B.norm_holderL_le)
+        · exact eNorm_le_iff_norm_le.mpr (B.norm_holderL_le)
         · exact S.le_opENorm g
       _ = _ := by ac_rfl
 
@@ -181,8 +181,8 @@ theorem W1p.exists_eLpNorm_mixed_le (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : 
   let : ENNReal.HolderTriple (p : ℝ≥0∞) r (q : ℝ≥0∞) := hhr
   refine ⟨‖S‖₊, fun B f g ↦ ?_⟩
   have hT := W1p.holderComp_spec (p := p) S hS B
-  rw [← eLpNorm_congr_ae (hT.1 f g), ← Lp.enorm_def]
-  simpa only [enorm_eq_nnnorm] using hT.2 f g
+  rw [← eLpNorm_congr_ae (hT.1 f g), ← Lp.eNorm_def]
+  simpa only [eNorm_eq_nnNorm] using hT.2 f g
 
 /-- The actual mixed product lies in `L^q(V)` for every `V` with compact closure in `Ω`. -/
 theorem W1p.memLp_mixed (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q ≤ p)
@@ -250,8 +250,8 @@ theorem W1p.exists_eLpNorm_le_of_holderTriple (hp : (finrank ℝ E : ℝ≥0) < 
       rw [← NNReal.coe_le_coe]
       push_cast
       exact h
-    rw [hX, ← Lp.enorm_toLp hgq, ← Lp.enorm_toLp hDq]
-    simp only [enorm_eq_nnnorm]
+    rw [hX, ← Lp.eNorm_toLp hgq, ← Lp.eNorm_toLp hDq]
+    simp only [eNorm_eq_nnNorm]
     exact_mod_cast h'
   have key (i : Fin (finrank ℝ G)) :
       eLpNorm (fun x ↦ b.coord i (g x)) r (μ.restrict K) ≤ ‖S‖ₑ * ‖P‖ₑ * X := by
@@ -261,11 +261,11 @@ theorem W1p.exists_eLpNorm_le_of_holderTriple (hp : (finrank ℝ E : ℝ≥0) < 
       rw [hx, hx', hprev, hx'']
     calc
       eLpNorm (fun x ↦ b.coord i (g x)) r (μ.restrict K) = ‖S (P u i)‖ₑ := by
-        rw [Lp.enorm_def, eLpNorm_congr_ae hw]
+        rw [Lp.eNorm_def, eLpNorm_congr_ae hw]
       _ ≤ ‖S‖ₑ * ‖P u i‖ₑ := S.le_opENorm _
       _ ≤ ‖S‖ₑ * (‖P‖ₑ * ‖u‖ₑ) := by
         gcongr
-        exact (enorm_le_iff_norm_le.2 (norm_le_pi_norm (P u) i)).trans (P.le_opENorm u)
+        exact (eNorm_le_iff_norm_le.2 (norm_le_pi_norm (P u) i)).trans (P.le_opENorm u)
       _ ≤ ‖S‖ₑ * ‖P‖ₑ * X := by
         rw [← mul_assoc]
         gcongr
@@ -279,7 +279,7 @@ theorem W1p.exists_eLpNorm_le_of_holderTriple (hp : (finrank ℝ E : ℝ≥0) < 
       exact key i
     _ = ↑(∑ i, ‖b i‖₊ * (‖S‖₊ * ‖P‖₊)) * X := by
       push_cast
-      simp only [enorm_eq_nnnorm, Finset.sum_mul, mul_assoc]
+      simp only [eNorm_eq_nnNorm, Finset.sum_mul, mul_assoc]
 
 /-- **Local bound for order-zero mixed products.** For `dim E < p`, `1 ≤ q ≤ p` and a compact
 `K ⊆ Ω`, one constant bounds `‖B(f, g)‖_{L^q(K)}` by
@@ -300,7 +300,7 @@ theorem W1p.exists_eLpNorm_bilin_le (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : 
   calc
     _ ≤ ‖B‖ₑ * eLpNorm f p (μ.restrict K) *
         eLpNorm g ((q : ℝ≥0∞)⁻¹ - (p : ℝ≥0∞)⁻¹)⁻¹ (μ.restrict K) :=
-      eLpNorm_le_enorm_mul_eLpNorm_mul_eLpNorm B hf
+      eLpNorm_le_eNorm_mul_eLpNorm_mul_eLpNorm B hf
         (hgq.aestronglyMeasurable.mono_measure (Measure.restrict_mono_set μ hKΩ))
     _ ≤ ‖B‖ₑ * eLpNorm f p (μ.restrict K) *
         (C * (eLpNorm g q (μ.restrict Ω) + eLpNorm Dg q (μ.restrict Ω))) :=
@@ -335,19 +335,19 @@ theorem W1p.exists_eLpNorm_bilin_add_eLpNorm_deriv_le (hp : (finrank ℝ E : ℝ
   have hDgK : eLpNorm Dg q (μ.restrict K) ≤ X :=
     (eLpNorm_mono_measure Dg hKm).trans le_add_self
   have h₀ : eLpNorm (fun x ↦ B (f x) (g x)) q (μ.restrict K) ≤ ‖B‖ₑ * M * X :=
-    (eLpNorm_le_enorm_mul_eLpNorm_mul_eLpNorm (p := ∞) B hf
+    (eLpNorm_le_eNorm_mul_eLpNorm_mul_eLpNorm (p := ∞) B hf
       (hgq.aestronglyMeasurable.mono_measure hKm)).trans (by gcongr)
   have h₁ : eLpNorm (fun x ↦ B.precompL E (Df x) (g x)) q (μ.restrict K) ≤
       C * ‖B‖ₑ * N * X :=
     (hC (B.precompL E) Df g Dg hDf hg hgq hDq).trans (by
       gcongr
-      exact enorm_le_iff_norm_le.2 (ContinuousLinearMap.norm_precompL_le E B))
+      exact eNorm_le_iff_norm_le.2 (ContinuousLinearMap.norm_precompL_le E B))
   have h₂ : eLpNorm (fun x ↦ B.precompR E (f x) (Dg x)) q (μ.restrict K) ≤
       ‖B‖ₑ * M * X :=
-    (eLpNorm_le_enorm_mul_eLpNorm_mul_eLpNorm (p := ∞) (B.precompR E) hf
+    (eLpNorm_le_eNorm_mul_eLpNorm_mul_eLpNorm (p := ∞) (B.precompR E) hf
       (hDq.aestronglyMeasurable.mono_measure hKm)).trans (by
       gcongr
-      exact enorm_le_iff_norm_le.2 (ContinuousLinearMap.norm_precompR_le E B))
+      exact eNorm_le_iff_norm_le.2 (ContinuousLinearMap.norm_precompR_le E B))
   have hadd := eLpNorm_add_le (μ := μ.restrict K)
     (f := fun x ↦ B.precompL E (Df x) (g x)) (g := fun x ↦ B.precompR E (f x) (Dg x))
     (Fact.out : (1 : ℝ≥0∞) ≤ q)
