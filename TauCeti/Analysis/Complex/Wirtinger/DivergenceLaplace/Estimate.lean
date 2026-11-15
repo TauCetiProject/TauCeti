@@ -9,10 +9,11 @@ public import TauCeti.Analysis.Complex.Wirtinger.DivergenceLaplace.Basic
 public import TauCeti.Analysis.Sobolev.Local.Norm
 import TauCeti.Analysis.Complex.Pompeiu.DivergenceForm
 import TauCeti.Analysis.Complex.Wirtinger.Beurling.Lp
-import TauCeti.Analysis.InnerProductSpace.Harmonic.WeakInteriorLp
+import TauCeti.Analysis.InnerProductSpace.Harmonic.InteriorLp
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Integral
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
 /-!
 # The interior estimate for the divergence-form Laplace equation in the plane
@@ -36,8 +37,8 @@ bound holds for the `Lʳ(U)` norm of every weak derivative of `ξ` on `Ω`
 (`TauCeti.exists_eLpNorm_le_of_integral_laplacian_smul_eq_of_hasWeakFDerivOn`).
 
 The term `‖ξ‖_{L^q(Ω)}` cannot be dropped: the constant function `1` is harmonic, solves the
-equation with `f = g = 0`, and has positive `W^{1,r}` norm on every disc
-(`TauCeti.not_exists_eLpNormWkp_one_le_of_integral_laplacian_smul_eq`).
+equation with `f = g = 0`, and has positive `W^{1,r}` norm on every set of positive measure
+(`TauCeti.not_exists_eLpNormWkp_one_le_eLpNorm_add_eLpNorm_of_integral_laplacian_smul_eq`).
 
 ## The argument
 
@@ -47,12 +48,13 @@ Coordinates in a basis reduce to `V = ℝ`. Cover the closure of `U` by finitely
 (`TauCeti.weaklyHarmonicOn_sub_half_re_cauchyTransform`), and the boundedness of the Cauchy and
 Beurling transforms bounds `‖ξ₀‖_{W^{1,r}(D)}` by a multiple of `‖h‖_{Lʳ}`
 (`TauCeti.eLpNorm_cauchyTransform_add_eLpNorm_wirtingerPartsCLM_beurlingLp_le`). The remainder
-`ξ - ξ₀` is weakly harmonic on `B(c, R)`, so by Weyl's lemma and the mean value property it agrees
-almost everywhere with a harmonic `v` whose value and derivative are bounded on `closedBall c ρ`
-by a multiple of `‖ξ - ξ₀‖_{L¹(B(c, R))}`
-(`TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_norm_and_norm_fderiv_le_integral_norm`),
-which Hölder's inequality on `D` bounds by `‖ξ‖_{L^q(D)}` and `‖ξ₀‖_{Lʳ(D)}`. Summing over the
-discs gives the estimate.
+`ξ - ξ₀` is weakly harmonic on `B(c, R)`, so by Weyl's lemma it agrees almost everywhere with a
+harmonic `v` (`TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq`), and by the mean value
+property the `Lʳ(B(c, ρ))` norms of `v` and its derivative are bounded by a multiple of
+`‖ξ - ξ₀‖_{L¹(B(c, R))}`
+(`TauCeti.exists_eLpNorm_and_eLpNorm_fderiv_le_integral_norm_of_harmonicOnNhd`), which Hölder's
+inequality on `D` bounds by `‖ξ‖_{L^q(D)}` and `‖ξ₀‖_{Lʳ(D)}`. Summing over the discs gives the
+estimate.
 
 ## References
 
@@ -71,6 +73,107 @@ variable {r q : ℝ≥0∞} {Ω : Opens ℂ}
 
 section Scalar
 
+/-- The particular solution on one disc: for `f, g ∈ Lʳ(closedBall c R)` and
+`h = 1_{closedBall c R} (f + I g)`, the `W^{1,r}` norm of `½ Re T h` on `closedBall c R` is
+bounded by a multiple of `‖f‖_{Lʳ} + ‖g‖_{Lʳ}` on `closedBall c R`. -/
+private theorem exists_eLpNormWkp_one_closedBall_half_re_cauchyTransform_le (hr : 1 < r)
+    (hr_top : r ≠ ⊤) (c : ℂ) (R : ℝ≥0) :
+    ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ f g : ℂ → ℝ, MemLp f r (volume.restrict (closedBall c R)) →
+      MemLp g r (volume.restrict (closedBall c R)) →
+      eLpNormWkp r (closedBall c R) 1 (fun w ↦ (2 : ℝ)⁻¹ *
+        (cauchyTransform ((closedBall c R).indicator fun z ↦ (f z : ℂ) + I * g z) w).re) ≤
+      C * (eLpNorm f r (volume.restrict (closedBall c R)) +
+        eLpNorm g r (volume.restrict (closedBall c R))) := by
+  have : Fact (1 ≤ r) := ⟨hr.le⟩
+  set K : Set ℂ := closedBall c R
+  let A : ℂ →L[ℝ] ℝ := (2⁻¹ : ℝ) • reCLM
+  set KB : ℝ≥0∞ := ((2 * (R + R) + ‖beurlingLp (F := ℂ) r hr hr_top‖₊ + 1 : ℝ≥0) : ℝ≥0∞)
+  refine ⟨‖A‖ₑ * KB, by finiteness, fun f g hfK hgK ↦ ?_⟩
+  have hfgK : MemLp (fun z ↦ (f z : ℂ) + I * g z) r (volume.restrict K) :=
+    hfK.ofReal.add (hgK.ofReal.const_mul I)
+  set h : ℂ → ℂ := K.indicator fun z ↦ (f z : ℂ) + I * g z
+  have hhLp : MemLp h r volume :=
+    (memLp_indicator_iff_restrict measurableSet_closedBall.nullMeasurableSet).2 hfgK
+  have hH : eLpNorm h r volume ≤ eLpNorm f r (volume.restrict K) +
+      eLpNorm g r (volume.restrict K) := by
+    rw [eLpNorm_indicator_eq_eLpNorm_restrict measurableSet_closedBall.nullMeasurableSet]
+    refine (eLpNorm_add_le hr.le).trans (le_of_eq ?_)
+    congr 1
+    · exact eLpNorm_congr_norm_ae hfK.ofReal.aestronglyMeasurable hfK.aestronglyMeasurable
+        (.of_forall fun z ↦ by simp)
+    · exact eLpNorm_congr_norm_ae (hgK.ofReal.const_mul I).aestronglyMeasurable
+        hgK.aestronglyMeasurable (.of_forall fun z ↦ by simp)
+  have hTw : eLpNormWkp r K 1 (cauchyTransform h) ≤ KB * eLpNorm h r volume := by
+    refine (eLpNormWkp_succ_le (hasWeakFDerivOn_cauchyTransform_of_memLp hr hr_top hhLp
+      support_indicator_subset (Opens.interior K))).trans ?_
+    rw [eLpNormWkp_zero]
+    exact eLpNorm_cauchyTransform_add_eLpNorm_wirtingerPartsCLM_beurlingLp_le hr hr_top hhLp
+      support_indicator_subset R
+  have hA : (fun w ↦ (2 : ℝ)⁻¹ * (cauchyTransform h w).re) = fun w ↦ A (cauchyTransform h w) := by
+    ext w
+    simp [A]
+  rw [hA, mul_assoc]
+  exact (eLpNormWkp_clm_comp_le A).trans (by gcongr; exact hTw.trans (by gcongr))
+
+/-- The harmonic part on one disc: if `u - w` is weakly harmonic on `B(c, R)`, its `W^{1,r}` norm
+on the smaller disc `B(c, ρ)` is bounded by a multiple of `‖u‖_{L^q} + ‖w‖_{Lʳ}` on
+`closedBall c R`. -/
+private theorem exists_eLpNormWkp_one_ball_sub_le_of_weaklyHarmonicOn (hr : 1 ≤ r) (hq : 1 ≤ q)
+    (c : ℂ) {ρ R : ℝ} (hρR : ρ < R) :
+    ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ u w : ℂ → ℝ, WeaklyHarmonicOn volume ⟨ball c R, isOpen_ball⟩ (u - w) →
+      IntegrableOn u (closedBall c R) → IntegrableOn w (closedBall c R) →
+      eLpNormWkp r (ball c ρ) 1 (u - w) ≤ C * (eLpNorm u q (volume.restrict (closedBall c R)) +
+        eLpNorm w r (volume.restrict (closedBall c R))) := by
+  set K : Set ℂ := closedBall c R
+  have hμK : volume K ≠ ∞ := measure_closedBall_lt_top.ne
+  have : IsFiniteMeasure (volume.restrict K) := isFiniteMeasure_restrict.2 hμK
+  obtain ⟨Ch, hCh⟩ := exists_eLpNorm_and_eLpNorm_fderiv_le_integral_norm_of_harmonicOnNhd
+    (F := ℝ) (μ := volume) c hρR
+  set M : ℝ≥0∞ := volume (ball c ρ) ^ r.toReal⁻¹
+  set E₁ : ℝ≥0∞ := volume K ^ (1 / (1 : ℝ≥0∞).toReal - 1 / q.toReal)
+  set E₂ : ℝ≥0∞ := volume K ^ (1 / (1 : ℝ≥0∞).toReal - 1 / r.toReal)
+  have hM : M ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg (by positivity) measure_ball_lt_top.ne
+  have hE₁ : E₁ ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg
+    (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg one_ne_zero hq) hμK
+  have hE₂ : E₂ ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg
+    (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg one_ne_zero hr) hμK
+  refine ⟨2 * (M * Ch) * (E₁ + E₂), by finiteness, fun u w hu hui hwi ↦ ?_⟩
+  have hint : IntegrableOn (u - w) (ball c R) := (hui.sub hwi).mono_set ball_subset_closedBall
+  obtain ⟨v, hv, huv⟩ := hu.exists_harmonicOnNhd_ae_eq
+  have hI : ∫ z in ball c R, ‖v z‖ = ∫ z in ball c R, ‖(u - w) z‖ :=
+    integral_congr_ae (huv.mono fun _ h ↦ congrArg norm h.symm)
+  obtain ⟨hv₀, hv₁⟩ := hCh hv (hint.congr huv) r
+  rw [hI, ENNReal.ofReal_mul Ch.coe_nonneg, ENNReal.ofReal_coe_nnreal,
+    ofReal_integral_norm_eq_lintegral_eNorm hint,
+    ← eLpNorm_one_eq_lintegral_eNorm hint.aestronglyMeasurable] at hv₀ hv₁
+  have hρB : Opens.interior (ball c ρ) ≤ ⟨ball c R, isOpen_ball⟩ := by
+    rw [← SetLike.coe_subset_coe, Opens.coe_interior]
+    exact interior_subset.trans (ball_subset_ball hρR.le)
+  calc eLpNormWkp r (ball c ρ) 1 (u - w) = eLpNormWkp r (ball c ρ) 1 v :=
+        eLpNormWkp_congr_ae (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hρR.le) huv)
+    _ ≤ eLpNorm v r (volume.restrict (ball c ρ)) +
+        eLpNorm (fderiv ℝ v) r (volume.restrict (ball c ρ)) := by
+        refine (eLpNormWkp_succ_le ((hv.contDiffOn.of_le (by norm_num)).hasWeakFDerivOn_fderiv.mono
+          hρB)).trans ?_
+        rw [eLpNormWkp_zero]
+    _ ≤ 2 * (M * Ch) * eLpNorm (u - w) 1 (volume.restrict (ball c R)) :=
+        (add_le_add hv₀ hv₁).trans_eq (by ring)
+    _ ≤ 2 * (M * Ch) * (eLpNorm u q (volume.restrict K) * E₁ +
+        eLpNorm w r (volume.restrict K) * E₂) := by
+        gcongr
+        refine (eLpNorm_mono_measure _ (Measure.restrict_mono ball_subset_closedBall le_rfl)).trans
+          ((eLpNorm_sub_le (f := u) (g := w) le_rfl).trans ?_)
+        gcongr
+        · simpa only [Measure.restrict_apply_univ] using
+            eLpNorm_le_eLpNorm_mul_rpow_measure_univ hq hui.aestronglyMeasurable
+        · simpa only [Measure.restrict_apply_univ] using
+            eLpNorm_le_eLpNorm_mul_rpow_measure_univ hr hwi.aestronglyMeasurable
+    _ ≤ 2 * (M * Ch) * ((eLpNorm u q (volume.restrict K) + eLpNorm w r (volume.restrict K)) * E₁ +
+        (eLpNorm u q (volume.restrict K) + eLpNorm w r (volume.restrict K)) * E₂) := by
+        gcongr
+        exacts [le_self_add, le_add_self]
+    _ = _ := by ring
+
 /-- The scalar estimate on one disc: the `W^{1,r}` norm of `ξ` on `B(c, ρ)` is bounded in terms of
 the data on `Ω ⊇ closedBall c R`. -/
 private theorem exists_eLpNormWkp_one_ball_le_real (hr : 1 < r) (hr_top : r ≠ ⊤) (hq : 1 ≤ q)
@@ -81,132 +184,47 @@ private theorem exists_eLpNormWkp_one_ball_le_real (hr : 1 < r) (hr_top : r ≠ 
         -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z)) →
       eLpNormWkp r (ball c ρ) 1 ξ ≤ C * (eLpNorm f r (volume.restrict Ω) +
         eLpNorm g r (volume.restrict Ω) + eLpNorm ξ q (volume.restrict Ω)) := by
-  have : Fact (1 ≤ r) := ⟨hr.le⟩
   set K : Set ℂ := closedBall c R
   have hKc : IsCompact K := isCompact_closedBall c R
-  have hKm : MeasurableSet K := measurableSet_closedBall
-  have hμK : volume K ≠ ∞ := hKc.measure_lt_top.ne
-  have : IsFiniteMeasure (volume.restrict K) := isFiniteMeasure_restrict.2 hμK
-  let B : Opens ℂ := ⟨ball c R, isOpen_ball⟩
-  have hBΩ : B ≤ Ω := ball_subset_closedBall.trans hRΩ
-  let A : ℂ →L[ℝ] ℝ := (2⁻¹ : ℝ) • reCLM
-  set KB : ℝ≥0∞ := ((2 * (R + R) + ‖beurlingLp (F := ℂ) r hr hr_top‖₊ + 1 : ℝ≥0) : ℝ≥0∞)
-  set E₁ : ℝ≥0∞ := volume K ^ (1 / (1 : ℝ≥0∞).toReal - 1 / q.toReal)
-  set E₂ : ℝ≥0∞ := volume K ^ (1 / (1 : ℝ≥0∞).toReal - 1 / r.toReal)
-  set N : ℝ≥0∞ := E₁ + E₂ * (‖A‖ₑ * KB)
-  set M : ℝ≥0∞ := volume (ball c ρ) ^ r.toReal⁻¹
-  have hE₁ : E₁ ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg
-    (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg one_ne_zero hq) hμK
-  have hE₂ : E₂ ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg
-    (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg one_ne_zero hr.le) hμK
-  have hM : M ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg (by positivity) measure_ball_lt_top.ne
-  obtain ⟨Ch, hCh⟩ :=
-    WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_norm_and_norm_fderiv_le_integral_norm (F := ℝ)
-      (μ := volume) (Ω := B) c hρR subset_rfl
-  refine ⟨‖A‖ₑ * KB + 2 * (M * (Ch * N)), by finiteness, fun ξ f g hξ hf hg hdiv ↦ ?_⟩
+  have : IsFiniteMeasure (volume.restrict K) := isFiniteMeasure_restrict.2 hKc.measure_lt_top.ne
+  obtain ⟨Cp, hCp, hCpb⟩ :=
+    exists_eLpNormWkp_one_closedBall_half_re_cauchyTransform_le hr hr_top c R
+  obtain ⟨Ch, hCh, hChb⟩ :=
+    exists_eLpNormWkp_one_ball_sub_le_of_weaklyHarmonicOn hr.le hq c hρR
+  refine ⟨Cp + Ch * (1 + Cp), by finiteness, fun ξ f g hξ hf hg hdiv ↦ ?_⟩
   set X := eLpNorm f r (volume.restrict Ω) + eLpNorm g r (volume.restrict Ω) +
     eLpNorm ξ q (volume.restrict Ω)
-  -- The complex datum `h = 1_K (f + I g)`.
   have hfK : MemLp f r (volume.restrict K) := memLpLoc_iff.1 hf K hRΩ hKc
   have hgK : MemLp g r (volume.restrict K) := memLpLoc_iff.1 hg K hRΩ hKc
-  have hfgK : MemLp (fun z ↦ (f z : ℂ) + I * g z) r (volume.restrict K) :=
-    hfK.ofReal.add (hgK.ofReal.const_mul I)
-  set h : ℂ → ℂ := K.indicator fun z ↦ (f z : ℂ) + I * g z
-  have hhLp : MemLp h r volume := (memLp_indicator_iff_restrict hKm.nullMeasurableSet).2 hfgK
-  have hhs : support h ⊆ closedBall c (R : ℝ) := support_indicator_subset
-  have hhi : Integrable h := (integrable_indicator_iff hKm).2 (hfgK.integrable hr.le)
-  have hH : eLpNorm h r volume ≤ eLpNorm f r (volume.restrict Ω) +
-      eLpNorm g r (volume.restrict Ω) := by
-    rw [eLpNorm_indicator_eq_eLpNorm_restrict hKm.nullMeasurableSet]
-    refine (eLpNorm_add_le hr.le).trans ?_
-    have h₁ : eLpNorm (fun z ↦ (f z : ℂ)) r (volume.restrict K) = eLpNorm f r (volume.restrict K) :=
-      eLpNorm_congr_norm_ae hfK.ofReal.aestronglyMeasurable hfK.aestronglyMeasurable
-        (.of_forall fun z ↦ by simp)
-    have h₂ : eLpNorm (fun z ↦ I * (g z : ℂ)) r (volume.restrict K) =
-        eLpNorm g r (volume.restrict K) :=
-      eLpNorm_congr_norm_ae (hgK.ofReal.const_mul I).aestronglyMeasurable hgK.aestronglyMeasurable
-        (.of_forall fun z ↦ by simp)
-    rw [h₁, h₂]
-    exact add_le_add (eLpNorm_mono_measure _ (Measure.restrict_mono hRΩ le_rfl))
-      (eLpNorm_mono_measure _ (Measure.restrict_mono hRΩ le_rfl))
-  have hHX : eLpNorm h r volume ≤ X := hH.trans le_self_add
-  -- The particular solution `ξ₀ = ½ Re T h` and its `W^{1,r}(K)` norm.
-  have hTw : eLpNormWkp r K 1 (cauchyTransform h) ≤ KB * eLpNorm h r volume := by
-    refine (eLpNormWkp_succ_le (hasWeakFDerivOn_cauchyTransform_of_memLp hr hr_top hhLp hhs
-      (Opens.interior K))).trans ?_
-    rw [eLpNormWkp_zero]
-    exact eLpNorm_cauchyTransform_add_eLpNorm_wirtingerPartsCLM_beurlingLp_le hr hr_top hhLp hhs R
-  set ξ₀ : ℂ → ℝ := fun w ↦ (2 : ℝ)⁻¹ * (cauchyTransform h w).re
-  have hξ₀A : ξ₀ = fun w ↦ A (cauchyTransform h w) := by
-    ext w
-    simp [ξ₀, A]
-  have hξ₀w : eLpNormWkp r K 1 ξ₀ ≤ ‖A‖ₑ * KB * eLpNorm h r volume := by
-    rw [hξ₀A, mul_assoc]
-    exact (eLpNormWkp_clm_comp_le A).trans (by gcongr)
-  have hξ₀w_ne : eLpNormWkp r K 1 ξ₀ ≠ ∞ :=
-    ne_top_of_le_ne_top (by finiteness [hhLp.eLpNorm_ne_top]) hξ₀w
-  have hξ₀K : MemLp ξ₀ r (volume.restrict K) := memLp_of_eLpNormWkp_ne_top hξ₀w_ne
-  have hξK : IntegrableOn ξ K := hξ.integrableOn_compact_subset hRΩ hKc
-  -- The harmonic remainder.
-  have hwh : WeaklyHarmonicOn volume B (ξ - ξ₀) :=
-    weaklyHarmonicOn_sub_half_re_cauchyTransform hBΩ hξ hdiv hhi
-      (ae_restrict_of_forall_mem isOpen_ball.measurableSet fun z hz ↦
-        indicator_of_mem (ball_subset_closedBall hz) _)
-  have hint : IntegrableOn (ξ - ξ₀) (ball c R) :=
-    (hξK.sub (hξ₀K.integrable hr.le)).mono_set ball_subset_closedBall
-  obtain ⟨v, hv, hξv, hbd⟩ := hCh hwh hint
-  -- The `L¹` norm of the remainder.
-  have hI : ENNReal.ofReal (∫ z in ball c R, ‖(ξ - ξ₀) z‖) ≤ N * X := by
-    rw [ofReal_integral_norm_eq_lintegral_eNorm hint,
-      ← eLpNorm_one_eq_lintegral_eNorm hint.aestronglyMeasurable]
-    calc eLpNorm (ξ - ξ₀) 1 (volume.restrict (ball c R))
-        ≤ eLpNorm (ξ - ξ₀) 1 (volume.restrict K) :=
-          eLpNorm_mono_measure _ (Measure.restrict_mono ball_subset_closedBall le_rfl)
-      _ ≤ eLpNorm ξ 1 (volume.restrict K) + eLpNorm ξ₀ 1 (volume.restrict K) :=
-          eLpNorm_sub_le le_rfl
-      _ ≤ eLpNorm ξ q (volume.restrict K) * E₁ + eLpNorm ξ₀ r (volume.restrict K) * E₂ := by
-          gcongr
-          · simpa only [Measure.restrict_apply_univ] using
-              eLpNorm_le_eLpNorm_mul_rpow_measure_univ hq hξK.aestronglyMeasurable
-          · simpa only [Measure.restrict_apply_univ] using
-              eLpNorm_le_eLpNorm_mul_rpow_measure_univ hr.le hξ₀K.aestronglyMeasurable
-      _ ≤ X * E₁ + (‖A‖ₑ * KB * X) * E₂ := by
-          gcongr
-          · exact (eLpNorm_mono_measure _ (Measure.restrict_mono hRΩ le_rfl)).trans le_add_self
-          · exact eLpNorm_le_eLpNormWkp.trans (hξ₀w.trans (by gcongr))
-      _ = N * X := by ring
-  -- The `W^{1,r}` norm of the harmonic part on `B(c, ρ)`.
-  have hvC : ContDiffOn ℝ 1 v B := hv.contDiffOn.of_le (by norm_num)
-  have hρB : ball c ρ ⊆ B := ball_subset_ball hρR.le
-  have hbound {E : Type} [NormedAddCommGroup E] (w : ℂ → E)
-      (hw : ContinuousOn w B) (hwu : ∀ x ∈ ball c ρ, ‖w x‖ ≤ Ch * ∫ z in ball c R, ‖(ξ - ξ₀) z‖) :
-      eLpNorm w r (volume.restrict (ball c ρ)) ≤ M * (Ch * (N * X)) := by
-    refine (eLpNorm_le_of_ae_bound ((hw.mono hρB).aestronglyMeasurable measurableSet_ball)
-      (ae_restrict_of_forall_mem measurableSet_ball hwu)).trans ?_
-    rw [Measure.restrict_apply_univ, ENNReal.ofReal_mul Ch.coe_nonneg, ENNReal.ofReal_coe_nnreal]
+  -- The particular solution `ξ₀ = ½ Re T (1_K (f + I g))`.
+  set ξ₀ : ℂ → ℝ := fun w ↦ (2 : ℝ)⁻¹ *
+    (cauchyTransform (K.indicator fun z ↦ (f z : ℂ) + I * g z) w).re
+  have hξ₀K : MemLp ξ₀ r (volume.restrict K) := memLp_of_eLpNormWkp_ne_top (ne_top_of_le_ne_top
+    (by finiteness [hfK.eLpNorm_ne_top, hgK.eLpNorm_ne_top]) (hCpb f g hfK hgK))
+  have hξ₀w : eLpNormWkp r K 1 ξ₀ ≤ Cp * X := (hCpb f g hfK hgK).trans (by
     gcongr
-  have hv₀ := hbound v hvC.continuousOn fun x hx ↦ (hbd x (ball_subset_closedBall hx)).1
-  have hv₁ := hbound (fderiv ℝ v) (hvC.continuousOn_fderiv_of_isOpen B.isOpen le_rfl)
-    fun x hx ↦ (hbd x (ball_subset_closedBall hx)).2
-  have hρB' : Opens.interior (ball c ρ) ≤ B := by
-    rw [← SetLike.coe_subset_coe, Opens.coe_interior]
-    exact interior_subset.trans hρB
-  have hvw : eLpNormWkp r (ball c ρ) 1 v ≤ M * (Ch * (N * X)) + M * (Ch * (N * X)) := by
-    refine (eLpNormWkp_succ_le (hvC.hasWeakFDerivOn_fderiv.mono hρB')).trans ?_
-    rw [eLpNormWkp_zero]
-    exact add_le_add hv₀ hv₁
-  -- Assemble.
-  have hξeq : ξ =ᵐ[volume.restrict (ball c ρ)] ξ₀ + v := by
-    filter_upwards [ae_restrict_of_ae_restrict_of_subset hρB hξv] with z hz
-    simp only [Pi.add_apply, ← hz, Pi.sub_apply, add_sub_cancel]
-  calc eLpNormWkp r (ball c ρ) 1 ξ = eLpNormWkp r (ball c ρ) 1 (ξ₀ + v) :=
-        eLpNormWkp_congr_ae hξeq
-    _ ≤ eLpNormWkp r (ball c ρ) 1 ξ₀ + eLpNormWkp r (ball c ρ) 1 v := eLpNormWkp_add_le hr.le
-    _ ≤ ‖A‖ₑ * KB * X + (M * (Ch * (N * X)) + M * (Ch * (N * X))) := by
+    refine le_trans ?_ le_self_add
+    gcongr)
+  -- The harmonic remainder `ξ - ξ₀`.
+  have hξK : IntegrableOn ξ K := hξ.integrableOn_compact_subset hRΩ hKc
+  have hBΩ : (⟨ball c R, isOpen_ball⟩ : Opens ℂ) ≤ Ω := ball_subset_closedBall.trans hRΩ
+  have hwh := weaklyHarmonicOn_sub_half_re_cauchyTransform hBΩ hξ hdiv
+    ((integrable_indicator_iff measurableSet_closedBall).2
+      ((hfK.ofReal.add (hgK.ofReal.const_mul I)).integrable hr.le))
+    (ae_restrict_of_forall_mem isOpen_ball.measurableSet fun z hz ↦
+      indicator_of_mem (ball_subset_closedBall hz) _)
+  calc eLpNormWkp r (ball c ρ) 1 ξ = eLpNormWkp r (ball c ρ) 1 (ξ₀ + (ξ - ξ₀)) := by
+        rw [add_sub_cancel]
+    _ ≤ eLpNormWkp r K 1 ξ₀ +
+        Ch * (eLpNorm ξ q (volume.restrict K) + eLpNorm ξ₀ r (volume.restrict K)) :=
+        (eLpNormWkp_add_le hr.le).trans (add_le_add (eLpNormWkp_mono_set
+          (ball_subset_closedBall.trans (closedBall_subset_closedBall hρR.le)))
+          (hChb ξ ξ₀ hwh hξK (hξ₀K.integrable hr.le)))
+    _ ≤ Cp * X + Ch * (X + Cp * X) := by
         gcongr
-        exact (eLpNormWkp_mono_set (ball_subset_closedBall.trans
-          (closedBall_subset_closedBall hρR.le))).trans (hξ₀w.trans (by gcongr))
-    _ = (‖A‖ₑ * KB + 2 * (M * (Ch * N))) * X := by ring
+        · exact (eLpNorm_mono_measure _ (Measure.restrict_mono hRΩ le_rfl)).trans le_add_self
+        · exact eLpNorm_le_eLpNormWkp.trans hξ₀w
+    _ = (Cp + Ch * (1 + Cp)) * X := by ring
 
 end Scalar
 
@@ -236,21 +254,12 @@ private theorem exists_eLpNormWkp_one_ball_le {V : Type*} [NormedAddCommGroup V]
   have hgloc := hg.locallyIntegrableOn hr.le Ω.isOpen.isLocallyClosed
   have hcoord (i) : eLpNormWkp r (ball c ρ) 1 (fun z ↦ L i (ξ z)) ≤ C * (‖L i‖ₑ * X) := by
     refine (hCb _ _ _ ((L i).locallyIntegrableOn_comp hξ) (hf.clm_comp (L i))
-      (hg.clm_comp (L i)) (fun φ ↦ ?_)).trans ?_
-    · have hint : Integrable fun z ↦
-          fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z :=
-        (integrable_fderiv_smul_of_locallyIntegrableOn hfloc φ 1).add
-          (integrable_fderiv_smul_of_locallyIntegrableOn hgloc φ I)
-      have e := congrArg (L i) (hdiv φ)
-      rw [map_neg,
-        ← (L i).integral_comp_comm (integrable_laplacian_smul_of_locallyIntegrableOn hξ φ),
-        ← (L i).integral_comp_comm hint] at e
-      simpa only [map_add, map_smul, Function.comp_apply] using e
-    · gcongr
-      calc _ ≤ ‖L i‖ₑ * eLpNorm f r (volume.restrict Ω) + ‖L i‖ₑ * eLpNorm g r (volume.restrict Ω) +
-            ‖L i‖ₑ * eLpNorm ξ q (volume.restrict Ω) := by
-            gcongr <;> exact eLpNorm_clm_comp_le (L i)
-        _ = ‖L i‖ₑ * X := by ring
+      (hg.clm_comp (L i)) ((L i).integral_laplacian_smul_comp_eq hξ hfloc hgloc hdiv)).trans ?_
+    gcongr
+    calc _ ≤ ‖L i‖ₑ * eLpNorm f r (volume.restrict Ω) + ‖L i‖ₑ * eLpNorm g r (volume.restrict Ω) +
+          ‖L i‖ₑ * eLpNorm ξ q (volume.restrict Ω) := by
+          gcongr <;> exact eLpNorm_clm_comp_le (L i)
+      _ = ‖L i‖ₑ * X := by ring
   have hξsum : ξ = ∑ i, fun z ↦ S i (L i (ξ z)) := by
     ext z
     simp only [Finset.sum_apply, S, L, ContinuousLinearMap.toSpanSingleton_apply,
@@ -374,25 +383,27 @@ theorem exists_eLpNorm_le_of_integral_laplacian_smul_eq_of_hasWeakFDerivOn {V : 
   obtain ⟨C, hC⟩ := exists_eLpNorm_add_eLpNorm_le_of_hasWeakFDerivOn (V := V) hr hr_top hq hUc hUΩ
   exact ⟨C, fun ξ f g hξ hf hg hdiv D hD ↦ le_add_self.trans (hC ξ f g hξ hf hg hdiv D hD)⟩
 
-/-- **Check: the `L^q` term is needed.** No estimate
-`‖ξ‖_{W^{1,r}(B(0, 1))} ≤ C (‖f‖_{Lʳ} + ‖g‖_{Lʳ})` holds for solutions of `Δξ = ∂ₛf + ∂ₜg` on the
-plane: the harmonic function `ξ = 1` solves the equation with `f = g = 0` and has positive norm. -/
-theorem not_exists_eLpNormWkp_one_le_of_integral_laplacian_smul_eq (hr : r ≠ 0) :
-    ¬ ∃ C : ℝ≥0, ∀ ξ f g : ℂ → ℝ, LocallyIntegrableOn ξ (⊤ : Opens ℂ) volume →
-      MemLpLoc r (⊤ : Opens ℂ) f → MemLpLoc r (⊤ : Opens ℂ) g →
-      (∀ φ : 𝓓((⊤ : Opens ℂ), ℝ), ∫ z, Δ (φ : ℂ → ℝ) z • ξ z =
+/-- **Check: the `L^q` term is needed.** On no set `U` of positive measure does an estimate
+`‖ξ‖_{W^{1,r}(U)} ≤ C (‖f‖_{Lʳ(Ω)} + ‖g‖_{Lʳ(Ω)})` hold for solutions of `Δξ = ∂ₛf + ∂ₜg` on `Ω`:
+the harmonic function `ξ = 1` solves the equation with `f = g = 0` and has positive norm. -/
+theorem not_exists_eLpNormWkp_one_le_eLpNorm_add_eLpNorm_of_integral_laplacian_smul_eq
+    (hr : r ≠ 0) {U : Set ℂ} (hU : volume U ≠ 0) :
+    ¬ ∃ C : ℝ≥0, ∀ ξ f g : ℂ → ℝ, LocallyIntegrableOn ξ Ω volume → MemLpLoc r Ω f →
+      MemLpLoc r Ω g →
+      (∀ φ : 𝓓(Ω, ℝ), ∫ z, Δ (φ : ℂ → ℝ) z • ξ z =
         -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z)) →
-      eLpNormWkp r (ball (0 : ℂ) 1) 1 ξ ≤ C * (eLpNorm f r (volume.restrict (⊤ : Opens ℂ)) +
-        eLpNorm g r (volume.restrict (⊤ : Opens ℂ))) := by
+      eLpNormWkp r U 1 ξ ≤ C * (eLpNorm f r (volume.restrict Ω) +
+        eLpNorm g r (volume.restrict Ω)) := by
   rintro ⟨C, hC⟩
-  have hdiv (φ : 𝓓((⊤ : Opens ℂ), ℝ)) : ∫ z, Δ (φ : ℂ → ℝ) z • (fun _ ↦ (1 : ℝ)) z =
+  have hdiv (φ : 𝓓(Ω, ℝ)) : ∫ z, Δ (φ : ℂ → ℝ) z • (fun _ ↦ (1 : ℝ)) z =
       -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • (0 : ℂ → ℝ) z + fderiv ℝ (φ : ℂ → ℝ) z I •
         (0 : ℂ → ℝ) z) := by
     simpa using integral_laplacian_eq_zero_of_hasCompactSupport (μ := volume)
       (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
   have h := hC (fun _ ↦ 1) 0 0 (locallyIntegrableOn_const 1) memLpLoc_zero memLpLoc_zero hdiv
   simp only [eLpNorm_zero, add_zero, mul_zero, nonpos_iff_eq_zero] at h
-  exact one_ne_zero (Measure.eqOn_open_of_ae_eq (ae_eq_zero_of_eLpNormWkp_eq_zero hr h) isOpen_ball
-    continuousOn_const continuousOn_const (mem_ball_self one_pos))
+  have : (ae (volume.restrict U)).NeBot := ae_neBot.2 (by simpa using hU)
+  obtain ⟨_, hz⟩ := (ae_eq_zero_of_eLpNormWkp_eq_zero hr h).exists
+  exact one_ne_zero hz
 
 end TauCeti
