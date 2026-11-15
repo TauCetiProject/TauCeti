@@ -26,11 +26,11 @@ Indeed, any subgradient selection near `x` is continuous at `x` by
 `TauCeti.hasGradientAt_toReal_of_continuousAt_subgradient`.
 
 Points where `∂f(x)` is not a subsingleton have two subgradients differing along some vector `v` of
-an orthonormal basis of `E`. Splitting `E` orthogonally along `(ℝ ∙ v)ᗮ` and `v` via
-`TauCeti.orthogonalLineEquiv` reduces this to
-`TauCeti.exists_lipschitzWith_graphs_cover_subdifferential_vertical_ne`: the multivalued locus of
-any `f : E → EReal`, convex or not, is covered by countably many closed globally Lipschitz graphs
-`range (fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v)` over hyperplanes orthogonal to unit vectors
+an orthonormal basis of `E`. Applying
+`TauCeti.exists_lipschitzWith_graphs_cover_subdifferential_inner_ne` along each basis direction
+covers the multivalued locus of any `f : E → EReal`, convex or not, by countably many closed
+globally Lipschitz graphs `range (fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v)` over hyperplanes
+orthogonal to unit vectors
 (`OrthonormalBasis.exists_lipschitzWith_graphs_cover_not_subsingleton_subdifferential` and
 `TauCeti.exists_lipschitzWith_graphs_cover_not_subsingleton_subdifferential`).
 
@@ -121,43 +121,6 @@ end DifferentiabilityCriterion
 section HyperplaneGraphs
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- Points where `f : E → EReal` admits two subgradients with different inner products along a unit
-vector `v` are covered by countably many globally Lipschitz graphs over `(ℝ ∙ v)ᗮ`. Neither
-convexity of `f` nor finite dimensionality of `E` is needed. -/
-theorem exists_lipschitzWith_graphs_cover_subdifferential_inner_ne (f : E → EReal)
-    {v : E} (hv : ‖v‖ = 1) :
-    ∃ (K : ℚ × ℚ × ℕ → ℝ≥0) (g : (ℚ × ℚ × ℕ) → (ℝ ∙ v)ᗮ → ℝ),
-      (∀ i, LipschitzWith (K i) (g i)) ∧
-      ∀ (x y₁ y₂ : E),
-        y₁ ∈ subdifferential (innerₗ E) f x →
-        y₂ ∈ subdifferential (innerₗ E) f x →
-        inner ℝ y₁ v ≠ inner ℝ y₂ v →
-        ∃ i, x ∈ range fun w : (ℝ ∙ v)ᗮ => (w : E) + g i w • v := by
-  let Φ : (ℝ ∙ v)ᗮ × ℝ →L[ℝ] E := (orthogonalLineEquiv v hv).toContinuousLinearMap
-  obtain ⟨K, g, hg, hcover⟩ :=
-    exists_lipschitzWith_graphs_cover_subdifferential_vertical_ne (f ∘ Φ)
-  refine ⟨K, g, hg, fun x y₁ y₂ hy₁ hy₂ hne => ?_⟩
-  let p : (ℝ ∙ v)ᗮ × ℝ := (orthogonalLineEquiv v hv).symm x
-  have hp : Φ p = x := (orthogonalLineEquiv v hv).apply_symm_apply x
-  have hpull {y : E} (hy : y ∈ subdifferential (innerₗ E) f x) :
-      (innerSL ℝ y).comp Φ ∈
-        subdifferential (topDualPairing ℝ ((ℝ ∙ v)ᗮ × ℝ)).flip (f ∘ Φ) p := by
-    rw [mem_subdifferential_iff]
-    refine ⟨by simpa only [Function.comp_apply, hp] using
-        ne_bot_of_mem_subdifferential (innerₗ E) hy,
-      by simpa only [Function.comp_apply, hp] using
-        ne_top_of_mem_subdifferential (innerₗ E) hy, fun q => ?_⟩
-    simp only [Function.comp_apply, hp, LinearMap.flip_apply, topDualPairing_apply,
-      ContinuousLinearMap.comp_apply, innerSL_apply_apply]
-    rw [map_sub Φ q p, hp, real_inner_comm (Φ q - x) y, ← innerₗ_apply_apply]
-    exact add_le_of_mem_subdifferential (innerₗ E) hy (Φ q)
-  have hne' : ((innerSL ℝ y₁).comp Φ) (0, 1) ≠ ((innerSL ℝ y₂).comp Φ) (0, 1) := by
-    simpa [Φ, innerSL_apply_apply] using hne
-  obtain ⟨i, hi⟩ := hcover p _ _ (hpull hy₁) (hpull hy₂) hne'
-  refine ⟨i, p.1, ?_⟩
-  dsimp only [Φ] at hp
-  rwa [ContinuousLinearEquiv.coe_coe, ← Prod.eta (p := p), orthogonalLineEquiv_apply, hi] at hp
 
 /-- Given a finite orthonormal basis `b` of `E`, the points where `f : E → EReal` has at least two
 subgradients are covered by countably many globally Lipschitz graphs over `(ℝ ∙ b k)ᗮ`. -/

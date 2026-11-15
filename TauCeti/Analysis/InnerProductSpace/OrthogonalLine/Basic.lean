@@ -66,23 +66,8 @@ theorem sqrt_mul_abs_apply_sub_apply_le (e : E) (he : ‖e‖ = 1) (L : E →L[�
 theorem lipschitzWith_coe_add_smul {v : E} (hv : ‖v‖ = 1) {K : ℝ≥0} {g : (ℝ ∙ v)ᗮ → ℝ}
     (hg : LipschitzWith K g) :
     LipschitzWith (1 + K) (fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v) := by
-  refine LipschitzWith.of_dist_le_mul fun w₁ w₂ => ?_
-  have hsub : ((w₁ : E) + g w₁ • v) - ((w₂ : E) + g w₂ • v) =
-      ((w₁ - w₂ : (ℝ ∙ v)ᗮ) : E) + (g w₁ - g w₂) • v := by
-    simp only [Submodule.coe_sub, sub_smul]
-    abel
-  rw [dist_eq_norm, hsub]
-  calc
-    ‖((w₁ - w₂ : (ℝ ∙ v)ᗮ) : E) + (g w₁ - g w₂) • v‖
-      ≤ ‖((w₁ - w₂ : (ℝ ∙ v)ᗮ) : E)‖ + ‖(g w₁ - g w₂) • v‖ := norm_add_le _ _
-    _ = dist w₁ w₂ + dist (g w₁) (g w₂) := by
-      rw [Submodule.norm_coe, ← dist_eq_norm, norm_smul, hv, mul_one, Real.norm_eq_abs,
-        ← Real.dist_eq]
-    _ ≤ 1 * dist w₁ w₂ + K * dist w₁ w₂ := by
-      gcongr
-      · rw [one_mul]
-      · exact hg.dist_le_mul w₁ w₂
-    _ = ↑(1 + K) * dist w₁ w₂ := by push_cast; ring
+  simpa using (ℝ ∙ v)ᗮ.subtypeₗᵢ.lipschitzWith.add
+    ((LinearIsometry.toSpanSingleton ℝ E hv).lipschitzWith.comp hg)
 
 /-- The graph `Set.range (fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v)` over the orthogonal complement of
 a unit vector `v` is closed whenever `g` is continuous (in particular whenever `g` is Lipschitz). -/
