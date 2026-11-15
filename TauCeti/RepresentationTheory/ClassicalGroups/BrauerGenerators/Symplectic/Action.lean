@@ -397,99 +397,128 @@ private theorem symplecticActionMatrix_capCup_mul_of_cup {a b : Fin d} (hab : a 
   rw [hsum, Matrix.sum_sum_J_mul_J, hD]
   ring
 
+omit [Fintype l] in
+/-- Under a framing `π` of `D` placing the arcs at `Sum.inr a` and `Sum.inr b` at distinct indices
+`r₁ ≠ r₂`, updating the output labelling `v` at `a` and `b` leaves the product over the remaining
+arcs `r ∉ {r₁, r₂}` unchanged and pulls out the two affected arc weights. -/
+private theorem skewArcProd_symplecticArcWeight_update_pair {D : BrauerDiagram d}
+    {π : Equiv.Perm (Fin d ⊕ Fin d)} {r₁ r₂ a b : Fin d} (hr₁₂ : r₁ ≠ r₂) (hπ : D.IsFraming π)
+    (h₁_inl : π (Sum.inl r₁) = Sum.inr a) (h₁_inr : π (Sum.inr r₁) = D.val (Sum.inr a))
+    (h₂_inl : π (Sum.inl r₂) = D.val (Sum.inr b)) (h₂_inr : π (Sum.inr r₂) = Sum.inr b)
+    (u v : Fin d → l ⊕ l) (x y : l ⊕ l) :
+    D.skewArcProd (symplecticArcWeight k u (Function.update (Function.update v a x) b y)) =
+      -((Equiv.Perm.sign π : ℤ) : k) *
+        (∏ r ∈ (Finset.univ.erase r₁).erase r₂,
+          symplecticArcWeight k u v (π (Sum.inl r)) (π (Sum.inr r))) *
+        (symplecticArcWeight k u (Function.update (Function.update v a x) b y)
+            (D.val (Sum.inr a)) (Sum.inr a) *
+          symplecticArcWeight k u (Function.update (Function.update v a x) b y)
+            (D.val (Sum.inr b)) (Sum.inr b)) := by
+  rw [D.skewArcProd_eq_of_isFraming (symplecticArcWeight_swap k _ _) hπ,
+    ← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ r₁),
+    ← Finset.mul_prod_erase (Finset.univ.erase r₁) _ (Finset.mem_erase.mpr ⟨hr₁₂.symm,
+      Finset.mem_univ r₂⟩), h₁_inl, h₁_inr, h₂_inl, h₂_inr,
+    symplecticArcWeight_swap k _ _ (D.val (Sum.inr a)) (Sum.inr a)]
+  have hP : ∏ r ∈ (Finset.univ.erase r₁).erase r₂,
+      symplecticArcWeight k u (Function.update (Function.update v a x) b y)
+        (π (Sum.inl r)) (π (Sum.inr r)) =
+      ∏ r ∈ (Finset.univ.erase r₁).erase r₂,
+        symplecticArcWeight k u v (π (Sum.inl r)) (π (Sum.inr r)) := by
+    refine Finset.prod_congr rfl fun r hr => ?_
+    have hr₂ : r ≠ r₂ := (Finset.mem_erase.mp hr).1
+    have hr₁ : r ≠ r₁ := (Finset.mem_erase.mp (Finset.mem_of_mem_erase hr)).1
+    exact symplecticArcWeight_update_of_ne k l x y
+      (by simp [← h₁_inl, hr₁]) (by simp [← h₂_inr])
+      (by simp [← h₁_inl]) (by simp [← h₂_inr, hr₂])
+  rw [hP]
+  ring
+
+omit [Fintype l] in
+/-- Under a framing `π` of `D` placing the distinct arcs at `Sum.inr a` and `Sum.inr b` at indices
+`r₁ ≠ r₂`, reconnecting `Sum.inr a` to `Sum.inr b` extracts `J (v a) (v b)` and the arc weight
+between their partners, leaving the remaining `r ∉ {r₁, r₂}` product unchanged. -/
+private theorem skewArcProd_reconnect_symplecticArcWeight {D : BrauerDiagram d}
+    {π : Equiv.Perm (Fin d ⊕ Fin d)} {r₁ r₂ a b : Fin d} (hab : a ≠ b)
+    (hcup : D.val (Sum.inr a) ≠ Sum.inr b) (hr₁₂ : r₁ ≠ r₂) (hπ : D.IsFraming π)
+    (h₁_inl : π (Sum.inl r₁) = Sum.inr a) (h₁_inr : π (Sum.inr r₁) = D.val (Sum.inr a))
+    (h₂_inl : π (Sum.inl r₂) = D.val (Sum.inr b)) (h₂_inr : π (Sum.inr r₂) = Sum.inr b)
+    (u v : Fin d → l ⊕ l) :
+    skewArcProd (D.reconnect (Sum.inr a) (Sum.inr b)) (symplecticArcWeight k u v) =
+      ((Equiv.Perm.sign π : ℤ) : k) * Matrix.J l k (v a) (v b) *
+        symplecticArcWeight k u v (D.val (Sum.inr a)) (D.val (Sum.inr b)) *
+        ∏ r ∈ (Finset.univ.erase r₁).erase r₂,
+          symplecticArcWeight k u v (π (Sum.inl r)) (π (Sum.inr r)) := by
+  set z₁ := D.val (Sum.inr a)
+  set z₂ := D.val (Sum.inr b)
+  set τ := Equiv.swap z₁ (Sum.inr b)
+  have hz₁a : z₁ ≠ Sum.inr a := D.apply_ne (Sum.inr a)
+  have hz₂b : z₂ ≠ Sum.inr b := D.apply_ne (Sum.inr b)
+  have hz₁z₂ : z₁ ≠ z₂ := D.val.injective.ne (Sum.inr_injective.ne hab)
+  rw [skewArcProd_eq_of_isFraming _ (symplecticArcWeight_swap k u v)
+      (hπ.reconnect (Sum.inr a) (Sum.inr b)), map_mul, Equiv.Perm.sign_swap hcup,
+    ← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ r₁),
+    ← Finset.mul_prod_erase (Finset.univ.erase r₁) _ (Finset.mem_erase.mpr ⟨hr₁₂.symm,
+      Finset.mem_univ r₂⟩)]
+  have hτ₁ : (τ * π) (Sum.inl r₁) = Sum.inr a := by
+    simp [τ, h₁_inl, Equiv.swap_apply_of_ne_of_ne hz₁a.symm (Sum.inr_injective.ne hab)]
+  have hτ₁' : (τ * π) (Sum.inr r₁) = Sum.inr b := by simp [τ, h₁_inr, z₁]
+  have hτ₂ : (τ * π) (Sum.inl r₂) = z₂ := by
+    simp [τ, h₂_inl, z₂, Equiv.swap_apply_of_ne_of_ne hz₁z₂.symm hz₂b]
+  have hτ₂' : (τ * π) (Sum.inr r₂) = z₁ := by simp [τ, h₂_inr, z₁]
+  have hP : ∏ r ∈ (Finset.univ.erase r₁).erase r₂,
+      symplecticArcWeight k u v ((τ * π) (Sum.inl r)) ((τ * π) (Sum.inr r)) =
+      ∏ r ∈ (Finset.univ.erase r₁).erase r₂,
+        symplecticArcWeight k u v (π (Sum.inl r)) (π (Sum.inr r)) := by
+    refine Finset.prod_congr rfl fun r hr => ?_
+    have hr₂ : r ≠ r₂ := (Finset.mem_erase.mp hr).1
+    have hr₁ : r ≠ r₁ := (Finset.mem_erase.mp (Finset.mem_of_mem_erase hr)).1
+    have hl : τ (π (Sum.inl r)) = π (Sum.inl r) :=
+      Equiv.swap_apply_of_ne_of_ne (by simp [z₁, ← h₁_inr]) (by simp [← h₂_inr])
+    have hr' : τ (π (Sum.inr r)) = π (Sum.inr r) :=
+      Equiv.swap_apply_of_ne_of_ne (by simp [z₁, ← h₁_inr, hr₁]) (by simp [← h₂_inr, hr₂])
+    simp [hl, hr']
+  rw [hτ₁, hτ₁', hτ₂, hτ₂', hP, symplecticArcWeight_inr_inr,
+    symplecticArcWeight_swap k u v z₁ z₂]
+  simp only [Units.val_mul, Units.val_neg, Units.val_one, Int.cast_mul, Int.cast_neg, Int.cast_one]
+  ring
+
 /-- Reconnection case of `symplecticActionMatrix_capCup_mul`: when `D` does not cup `a` to `b`,
 stacking `capCup a b` above `D` reconnects the two arcs at `Sum.inr a` and `Sum.inr b`. -/
 private theorem symplecticActionMatrix_capCup_mul_of_not_cup {a b : Fin d} (hab : a ≠ b)
     {D : BrauerDiagram d} (hcup : D.val (Sum.inr a) ≠ Sum.inr b) (v u : Fin d → l ⊕ l) :
     ((capCup a b).symplecticActionMatrix k l * D.symplecticActionMatrix k l) v u =
       symplecticActionMatrix k l (D.reconnect (Sum.inr a) (Sum.inr b)) v u := by
+  -- Orient the two distinct arcs at `Sum.inr a` and `Sum.inr b` in a single framing `π`.
   obtain ⟨π, r₁, r₂, hr₁₂, hπ, h₁_inl, h₁_inr, h₂_inl, h₂_inr⟩ :=
     D.exists_isFraming_apply_pair_eq (Sum.inr_injective.ne hab) hcup
   set z₁ := D.val (Sum.inr a)
   set z₂ := D.val (Sum.inr b)
-  have hz₁a : z₁ ≠ Sum.inr a := D.apply_ne (Sum.inr a)
-  have hz₂b : z₂ ≠ Sum.inr b := D.apply_ne (Sum.inr b)
-  have hz₂a : z₂ ≠ Sum.inr a := fun h => hcup (D.apply_eq_of_apply_eq h)
-  have hz₁z₂ : z₁ ≠ z₂ := D.val.injective.ne (Sum.inr_injective.ne hab)
-  set S := (Finset.univ.erase r₁).erase r₂
-  set P : k := ∏ r ∈ S, symplecticArcWeight k u v (π (Sum.inl r)) (π (Sum.inr r))
-  have hnot_ab {r : Fin d} (hr : r ∈ S) (x : Fin d ⊕ Fin d)
-      (hx : x = π (Sum.inl r) ∨ x = π (Sum.inr r)) :
-      x ≠ Sum.inr a ∧ x ≠ Sum.inr b ∧ x ≠ z₁ ∧ x ≠ z₂ := by
-    have hr₂ : r ≠ r₂ := (Finset.mem_erase.mp hr).1
-    have hr₁ : r ≠ r₁ := (Finset.mem_erase.mp (Finset.mem_of_mem_erase hr)).1
-    rcases hx with rfl | rfl <;> refine ⟨?_, ?_, ?_, ?_⟩
-    · exact fun h => hr₁ (Sum.inl_injective (π.injective (h.trans h₁_inl.symm)))
-    · exact fun h => absurd (π.injective (h.trans h₂_inr.symm)) Sum.inl_ne_inr
-    · exact fun h => absurd (π.injective (h.trans h₁_inr.symm)) Sum.inl_ne_inr
-    · exact fun h => hr₂ (Sum.inl_injective (π.injective (h.trans h₂_inl.symm)))
-    · exact fun h => absurd (π.injective (h.trans h₁_inl.symm)) Sum.inr_ne_inl
-    · exact fun h => hr₂ (Sum.inr_injective (π.injective (h.trans h₂_inr.symm)))
-    · exact fun h => hr₁ (Sum.inr_injective (π.injective (h.trans h₁_inr.symm)))
-    · exact fun h => absurd (π.injective (h.trans h₂_inl.symm)) Sum.inr_ne_inl
-  have hfactor (x y : l ⊕ l) :
-      D.skewArcProd (symplecticArcWeight k u (Function.update (Function.update v a x) b y)) =
-        -((Equiv.Perm.sign π : ℤ) : k) * P *
-          (symplecticArcWeight k u (Function.update (Function.update v a x) b y) z₁ (Sum.inr a) *
-            symplecticArcWeight k u (Function.update (Function.update v a x) b y) z₂
-              (Sum.inr b)) := by
-    rw [D.skewArcProd_eq_of_isFraming (symplecticArcWeight_swap k _ _) hπ,
-      ← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ r₁),
-      ← Finset.mul_prod_erase (Finset.univ.erase r₁) _ (Finset.mem_erase.mpr ⟨hr₁₂.symm,
-        Finset.mem_univ r₂⟩), h₁_inl, h₁_inr, h₂_inl, h₂_inr,
-      symplecticArcWeight_swap k _ _ z₁ (Sum.inr a)]
-    have hP : ∏ r ∈ S, symplecticArcWeight k u (Function.update (Function.update v a x) b y)
-        (π (Sum.inl r)) (π (Sum.inr r)) = P :=
-      Finset.prod_congr rfl fun r hr => symplecticArcWeight_update_of_ne k l x y
-        (hnot_ab hr _ (Or.inl rfl)).1 (hnot_ab hr _ (Or.inl rfl)).2.1
-        (hnot_ab hr _ (Or.inr rfl)).1 (hnot_ab hr _ (Or.inr rfl)).2.1
-    rw [hP]
-    ring
-  have hrec : skewArcProd (D.reconnect (Sum.inr a) (Sum.inr b)) (symplecticArcWeight k u v) =
-      ((Equiv.Perm.sign π : ℤ) : k) * Matrix.J l k (v a) (v b) *
-        symplecticArcWeight k u v z₁ z₂ * P := by
-    set τ := Equiv.swap z₁ (Sum.inr b)
-    rw [skewArcProd_eq_of_isFraming _ (symplecticArcWeight_swap k u v)
-        (hπ.reconnect (Sum.inr a) (Sum.inr b)), map_mul, Equiv.Perm.sign_swap hcup,
-      ← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ r₁),
-      ← Finset.mul_prod_erase (Finset.univ.erase r₁) _ (Finset.mem_erase.mpr ⟨hr₁₂.symm,
-        Finset.mem_univ r₂⟩)]
-    have hτ₁ : (τ * π) (Sum.inl r₁) = Sum.inr a := by
-      simp [τ, h₁_inl, Equiv.swap_apply_of_ne_of_ne hz₁a.symm (Sum.inr_injective.ne hab)]
-    have hτ₁' : (τ * π) (Sum.inr r₁) = Sum.inr b := by simp [τ, h₁_inr, z₁]
-    have hτ₂ : (τ * π) (Sum.inl r₂) = z₂ := by
-      simp [τ, h₂_inl, z₂, Equiv.swap_apply_of_ne_of_ne hz₁z₂.symm hz₂b]
-    have hτ₂' : (τ * π) (Sum.inr r₂) = z₁ := by simp [τ, h₂_inr, z₁]
-    have hP' :
-        ∏ r ∈ S, symplecticArcWeight k u v ((τ * π) (Sum.inl r)) ((τ * π) (Sum.inr r)) = P :=
-      Finset.prod_congr rfl fun r hr => by
-        have h1 := hnot_ab hr _ (Or.inl rfl)
-        have h2 := hnot_ab hr _ (Or.inr rfl)
-        simp [τ, Equiv.swap_apply_of_ne_of_ne h1.2.2.1 h1.2.1,
-          Equiv.swap_apply_of_ne_of_ne h2.2.2.1 h2.2.1]
-    rw [hτ₁, hτ₁', hτ₂, hτ₂', hP', symplecticArcWeight_inr_inr,
-      symplecticArcWeight_swap k u v z₁ z₂]
-    simp only [Units.val_mul, Units.val_neg, Units.val_one, Int.cast_mul, Int.cast_neg,
-      Int.cast_one]
-    ring
+  set P : k := ∏ r ∈ (Finset.univ.erase r₁).erase r₂,
+    symplecticArcWeight k u v (π (Sum.inl r)) (π (Sum.inr r))
+  -- Expand the matrix product into a double sum over the contracted slots `(x, y)` at `(a, b)` and
+  -- extract the unaffected arc product `P` from `D.skewArcProd`.
   rw [Matrix.mul_apply]
   simp_rw [symplecticActionMatrix_capCup k hab, symplecticActionMatrix_apply, ite_mul, zero_mul]
   rw [Fintype.sum_ite_eq_off_pair hab v]
-  simp only [Function.update_self, Function.update_of_ne hab, hfactor]
-  have hpull : (∑ x : l ⊕ l, ∑ y : l ⊕ l,
-      -(Matrix.J l k x y * Matrix.J l k (v a) (v b)) *
-        (-((Equiv.Perm.sign π : ℤ) : k) * P *
-          (symplecticArcWeight k u (Function.update (Function.update v a x) b y) z₁ (Sum.inr a) *
-            symplecticArcWeight k u (Function.update (Function.update v a x) b y) z₂
-              (Sum.inr b)))) =
-      ((Equiv.Perm.sign π : ℤ) : k) * Matrix.J l k (v a) (v b) *
-        (∑ x : l ⊕ l, ∑ y : l ⊕ l, Matrix.J l k x y *
-          symplecticArcWeight k u (Function.update (Function.update v a x) b y) z₁ (Sum.inr a) *
-          symplecticArcWeight k u (Function.update (Function.update v a x) b y) z₂ (Sum.inr b)) *
-        P := by
-    simp_rw [Finset.mul_sum, Finset.sum_mul]
-    exact Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => by ring
-  rw [hpull, sum_J_mul_symplecticArcWeight_update k l hab hz₁a hcup hz₂a hz₂b, hrec]
+  simp only [Function.update_self, Function.update_of_ne hab,
+    skewArcProd_symplecticArcWeight_update_pair k l hr₁₂ hπ h₁_inl h₁_inr h₂_inl h₂_inr]
+  -- Pull constants out of the `(x, y)` sum, straighten the two arcs via `Jᵀ * J = 1`, and match
+  -- the reconnected diagram's arc product.
+  calc _ = ((Equiv.Perm.sign π : ℤ) : k) * Matrix.J l k (v a) (v b) *
+            (∑ x : l ⊕ l, ∑ y : l ⊕ l, Matrix.J l k x y *
+              symplecticArcWeight k u (Function.update (Function.update v a x) b y)
+                z₁ (Sum.inr a) *
+              symplecticArcWeight k u (Function.update (Function.update v a x) b y)
+                z₂ (Sum.inr b)) * P := by
+          simp_rw [Finset.mul_sum, Finset.sum_mul]
+          exact Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => by ring
+    _ = ((Equiv.Perm.sign π : ℤ) : k) * Matrix.J l k (v a) (v b) *
+          symplecticArcWeight k u v z₁ z₂ * P := by
+          rw [sum_J_mul_symplecticArcWeight_update k l hab (D.apply_ne (Sum.inr a)) hcup
+            (fun h => hcup (D.apply_eq_of_apply_eq h)) (D.apply_ne (Sum.inr b))]
+    _ = skewArcProd (D.reconnect (Sum.inr a) (Sum.inr b)) (symplecticArcWeight k u v) :=
+          (skewArcProd_reconnect_symplecticArcWeight k l hab hcup hr₁₂ hπ h₁_inl h₁_inr h₂_inl
+            h₂_inr u v).symm
 
 /-- Multiplying on the left by a cap-cup diagram matrix obeys the loop rule at `-2 |l|`. -/
 private theorem symplecticActionMatrix_capCup_mul {a b : Fin d} (hab : a ≠ b)
