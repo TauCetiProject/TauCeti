@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Analysis.InnerProductSpace.PlaneRotation
 public import TauCeti.Geometry.Diffeomorphism.Covered
 public import TauCeti.Geometry.Diffeomorphism.Sphere
@@ -12,7 +13,7 @@ public import TauCeti.Geometry.Manifold.Degree.Homological
 public import TauCeti.Geometry.Manifold.Degree.SphereRotation
 public import TauCeti.Geometry.Sphere.Connected
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Odd spheres are `2`-covered by plane rotations
@@ -38,7 +39,7 @@ gives the second, direct proof of Proposition 6.34 of Barraud–Damian–Humili�
 
 * `Sᵐ⁺¹` is `(1 + (-1)ᵐ)`-covered by `C^k` diffeomorphisms for every `m`, every homological
   orientation, every base point, and every smoothness exponent `k`
-  (`TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_add_neg_one_pow`).
+  (`TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_one_add_neg_one_pow`).
 * In particular, when `m` is even, every odd-dimensional sphere `Sᵐ⁺¹` (including `S¹`) is
   explicitly `2`-covered by diffeomorphisms
   (`TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_two_of_even`), without
@@ -57,11 +58,12 @@ gives the second, direct proof of Proposition 6.34 of Barraud–Damian–Humili�
 
 * `TauCeti.evalAt_comp_sphereRotationDiffFamily`: evaluating `sphereRotationDiffFamily p k` at `p`
   recovers `sphereRotationFamily p`.
-* `TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_add_neg_one_pow`: `Sᵐ⁺¹` is
+* `TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_one_add_neg_one_pow`: `Sᵐ⁺¹` is
   `(1 + (-1)ᵐ)`-covered by `C^k` diffeomorphisms.
-* `TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_two_of_even`,
-  `TauCeti.HomologicalOrientation.exists_isCoveredByDiffeomorphisms_sphere_of_even`: odd spheres
-  are `2`-covered by `C^k` diffeomorphisms.
+* `TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_two_of_even`: when `m` is even,
+  `Sᵐ⁺¹` is `2`-covered by `C^k` diffeomorphisms.
+* `TauCeti.HomologicalOrientation.exists_isCoveredByDiffeomorphisms_sphere_of_even`: when `m` is
+  even, `Sᵐ⁺¹` is `ℓ`-covered by `C^k` diffeomorphisms for some `ℓ > 0`.
 
 ## References
 
@@ -128,6 +130,13 @@ def spherePlaneRotation (p : sphere (0 : E) 1)
     (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) : E ≃ₗᵢ[ℝ] E :=
   (spherePlaneIsometry p x.1).planeRotation (Circle.homeomorphSphere.symm x.2)
 
+/-- Unfolding equation relating `spherePlaneRotation` to `LinearIsometry.planeRotation`. -/
+theorem spherePlaneRotation_def (p : sphere (0 : E) 1)
+    (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) :
+    spherePlaneRotation p x =
+      (spherePlaneIsometry p x.1).planeRotation (Circle.homeomorphSphere.symm x.2) :=
+  (rfl)
+
 /-- Explicit coordinate formula for `spherePlaneRotation`: it adds `(z - 1)` times the complex
 coordinate of the orthogonal projection onto the plane spanned by `p` and `v`. -/
 theorem spherePlaneRotation_apply (p : sphere (0 : E) 1)
@@ -135,36 +144,8 @@ theorem spherePlaneRotation_apply (p : sphere (0 : E) 1)
     spherePlaneRotation p x u =
       u + spherePlaneIsometry p x.1 (((x.2 : ℂ) - 1) *
         ((⟪(p : E), u⟫ : ℂ) + (⟪((x.1 : (ℝ ∙ (p : E))ᗮ) : E), u⟫ : ℂ) * Complex.I)) := by
-  set ι := spherePlaneIsometry p x.1
-  let c : Circle := Circle.homeomorphSphere.symm x.2
-  set w : ℂ := (⟪(p : E), u⟫ : ℂ) + (⟪((x.1 : (ℝ ∙ (p : E))ᗮ) : E), u⟫ : ℂ) * Complex.I
-  have hv : ‖((x.1 : (ℝ ∙ (p : E))ᗮ) : E)‖ = 1 := norm_eq_of_mem_sphere x.1
-  have horth : ⟪(p : E), ((x.1 : (ℝ ∙ (p : E))ᗮ) : E)⟫ = 0 :=
-    Submodule.mem_orthogonal_singleton_iff_inner_right.1 (x.1 : (ℝ ∙ (p : E))ᗮ).2
-  have horth' : ⟪((x.1 : (ℝ ∙ (p : E))ᗮ) : E), (p : E)⟫ = 0 := by rw [real_inner_comm, horth]
-  have hu : u - ι w ∈ ι.rangeᗮ := by
-    rw [Submodule.mem_orthogonal]
-    rintro _ ⟨z, rfl⟩
-    have hwre : w.re = ⟪(p : E), u⟫ := by simp [w]
-    have hwim : w.im = ⟪((x.1 : (ℝ ∙ (p : E))ᗮ) : E), u⟫ := by simp [w]
-    rw [LinearIsometry.coe_toLinearMap, inner_sub_right, spherePlaneIsometry_apply,
-      spherePlaneIsometry_apply, hwre, hwim, inner_add_left, inner_add_left, inner_add_right,
-      inner_add_right]
-    simp only [real_inner_smul_left, real_inner_smul_right, real_inner_self_eq_norm_sq,
-      norm_eq_of_mem_sphere p, hv, horth, horth', one_pow, mul_one, mul_zero]
-    ring
-  have hsplit : u = ι w + (u - ι w) := by abel
-  rw [spherePlaneRotation]
-  conv_lhs => rw [hsplit]
-  rw [map_add, LinearIsometry.planeRotation_apply_map,
-    LinearIsometry.planeRotation_apply_of_mem_orthogonal _ _ hu]
-  calc
-    ι (c * w) + (u - ι w) = u + (ι (c * w) - ι w) := by abel
-    _ = u + ι (((x.2 : ℂ) - 1) * w) := by
-      rw [← map_sub]
-      congr 2
-      rw [Circle.coe_homeomorphSphere_symm_apply]
-      ring
+  rw [spherePlaneRotation_def, LinearIsometry.planeRotation_apply,
+    Circle.coe_homeomorphSphere_symm_apply, spherePlaneIsometry_one, spherePlaneIsometry_I]
 
 /-- Evaluating `spherePlaneRotation p (v, z)` at `p` gives `Re z • p + Im z • v`. -/
 @[simp]
@@ -176,7 +157,7 @@ theorem spherePlaneRotation_apply_coe_self (p : sphere (0 : E) 1)
     spherePlaneRotation p x (p : E) =
         (spherePlaneIsometry p x.1).planeRotation (Circle.homeomorphSphere.symm x.2)
           (spherePlaneIsometry p x.1 1) := by
-      rw [spherePlaneRotation, spherePlaneIsometry_one]
+      rw [spherePlaneRotation_def, spherePlaneIsometry_one]
     _ = (x.2 : ℂ).re • (p : E) + (x.2 : ℂ).im • ((x.1 : (ℝ ∙ (p : E))ᗮ) : E) := by
       rw [LinearIsometry.planeRotation_apply_map, Circle.coe_homeomorphSphere_symm_apply, mul_one,
         spherePlaneIsometry_apply]
@@ -192,7 +173,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The plane rotations of the unit sphere depend jointly smoothly on the parameters `(v, z)` and
 the sphere point `q`. -/
-theorem contMDiff_sphereRotationDiffFamily_uncurry (p : sphere (0 : E) 1) (k : ℕ∞ω) :
+private theorem contMDiff_unitSphereDiffHom_spherePlaneRotation (p : sphere (0 : E) 1)
+    (k : ℕ∞ω) :
     ContMDiff (((𝓡 m).prod (𝓡 1)).prod (𝓡 (m + 1))) (𝓡 (m + 1)) k
       fun z : (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) × sphere (0 : E) 1 ↦
         LinearIsometryEquiv.unitSphereDiffHom (n := m + 1) k (spherePlaneRotation p z.1) z.2 := by
@@ -242,7 +224,7 @@ def sphereRotationDiffFamily (p : sphere (0 : E) 1) (k : ℕ∞ω) :
       Diff (𝓡 (m + 1)) (sphere (0 : E) 1) k) :=
   Diffeomorph.ofSmoothFamily
     (fun x ↦ LinearIsometryEquiv.unitSphereDiffHom (n := m + 1) k (spherePlaneRotation p x))
-    (contMDiff_sphereRotationDiffFamily_uncurry p k)
+    (contMDiff_unitSphereDiffHom_spherePlaneRotation p k)
 
 /-- `sphereRotationDiffFamily p k` restricts `spherePlaneRotation p x` to the unit sphere. -/
 @[simp]
@@ -251,6 +233,15 @@ theorem sphereRotationDiffFamily_apply (p : sphere (0 : E) 1) (k : ℕ∞ω)
     sphereRotationDiffFamily (m := m) p k x =
       LinearIsometryEquiv.unitSphereDiffHom (n := m + 1) k (spherePlaneRotation p x) := by
   rw [sphereRotationDiffFamily, Diffeomorph.ofSmoothFamily_apply]
+
+/-- The plane-rotation diffeomorphism family is jointly `C^k` in the parameters `(v, z)` and the
+sphere point `q`. -/
+theorem contMDiff_sphereRotationDiffFamily_uncurry (p : sphere (0 : E) 1) (k : ℕ∞ω) :
+    ContMDiff (((𝓡 m).prod (𝓡 1)).prod (𝓡 (m + 1))) (𝓡 (m + 1)) k
+      fun z : (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) × sphere (0 : E) 1 ↦
+        sphereRotationDiffFamily (m := m) p k z.1 z.2 := by
+  simpa only [sphereRotationDiffFamily_apply] using
+    contMDiff_unitSphereDiffHom_spherePlaneRotation (m := m) p k
 
 /-- Evaluating the diffeomorphism `sphereRotationDiffFamily p k x` at `p` gives
 `sphereRotationFamily p x`. -/
@@ -283,33 +274,11 @@ section GeneralSphere
 variable {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {m : ℕ} [Fact (finrank ℝ E = m + 1 + 1)]
 
-/-- Every point `p` of the unit sphere in an `(m + 2)`-dimensional real inner product space admits
-an orthogonal point `q` on the unit sphere, which in particular satisfies `q ≠ p` and `q ≠ -p`. -/
-private theorem exists_orthogonal_sphere_ne (_hm : finrank ℝ E = m + 1 + 1) (p : sphere (0 : E) 1) :
-    ∃ q : sphere (0 : E) 1, q ≠ p ∧ q ≠ -p := by
-  have hdim : finrank ℝ (ℝ ∙ (p : E))ᗮ = m + 1 := Fact.out
-  let b := stdOrthonormalBasis ℝ (ℝ ∙ (p : E))ᗮ
-  let i : Fin (finrank ℝ (ℝ ∙ (p : E))ᗮ) := ⟨0, by rw [hdim]; exact Nat.succ_pos m⟩
-  let q : sphere (0 : E) 1 := ⟨(b i : E), by
-    rw [mem_sphere_zero_iff_norm, Submodule.norm_coe, b.orthonormal.1 i]⟩
-  have horth : ⟪(p : E), (q : E)⟫ = 0 :=
-    Submodule.mem_orthogonal_singleton_iff_inner_right.1 (b i).2
-  have hp_self : ⟪(p : E), (p : E)⟫ = 1 := by
-    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p, one_pow]
-  refine ⟨q, fun h ↦ ?_, fun h ↦ ?_⟩
-  · have h' : ⟪(p : E), (q : E)⟫ = 1 := by rw [h, hp_self]
-    linarith
-  · have h' : ⟪(p : E), (q : E)⟫ = -1 := by
-      have hq : (q : E) = -(p : E) := congrArg Subtype.val h
-      rw [hq, inner_neg_right, hp_self]
-    linarith
-
 /-- **Spheres are `(1 + (-1)ᵐ)`-covered by plane rotations** (second proof of Proposition 6.34 of
 Barraud–Damian–Humilière–Oancea). For every homological orientation `o` of the unit sphere `Sᵐ⁺¹`
 in an `(m + 2)`-dimensional real inner product space `E`, every smoothness exponent `k : ℕ∞ω`, and
-every base point `x₀`, the pushforward of `[Sᵐ × S¹]` along `sphereRotationDiffFamily x₀ k`
-evaluates at `x₀` to `(1 + (-1) ^ m) • [Sᵐ⁺¹]`. -/
-theorem isCoveredByDiffeomorphisms_sphere_add_neg_one_pow
+every base point `x₀`, `Sᵐ⁺¹` is `(1 + (-1) ^ m)`-covered by `C^k` diffeomorphisms at `x₀`. -/
+theorem isCoveredByDiffeomorphisms_sphere_one_add_neg_one_pow
     (o : HomologicalOrientation (sphere (0 : E) 1) (EuclideanSpace ℝ (Fin (m + 1))) (m + 1))
     (k : ℕ∞ω) (x₀ : sphere (0 : E) 1) :
     o.IsCoveredByDiffeomorphisms finrank_euclideanSpace_fin k x₀ (1 + (-1) ^ m) := by
@@ -321,7 +290,19 @@ theorem isCoveredByDiffeomorphisms_sphere_add_neg_one_pow
     rcases o₀.eq_or_eq_neg finrank_euclideanSpace_fin o with rfl | rfl
     · exact h₀
     · rwa [isCoveredByDiffeomorphisms_neg]
-  obtain ⟨q, hqx₀, hqneg⟩ := exists_orthogonal_sphere_ne (m := m) Fact.out x₀
+  obtain ⟨qE, hqnorm, hqorth⟩ :=
+    exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ) {(x₀ : E)}
+      (by rw [Finset.card_singleton, Fact.out (p := finrank ℝ E = m + 1 + 1)]; omega)
+  have hinner : ⟪qE, (x₀ : E)⟫ = 0 := by
+    rw [real_inner_comm]
+    exact hqorth (x₀ : E) (Finset.mem_singleton_self _)
+  let q : sphere (0 : E) 1 := ⟨qE, mem_sphere_zero_iff_norm.2 hqnorm⟩
+  have hqx₀ : q ≠ x₀ := fun h ↦ by
+    have h' : qE = (x₀ : E) := congrArg Subtype.val h
+    rw [h', inner_self_eq_zero] at hinner
+    exact ne_zero_of_mem_unit_sphere x₀ hinner
+  have hqneg : q ≠ -x₀ := fun h ↦
+    ne_neg_of_inner_eq_zero (𝕜 := ℝ) (ne_zero_of_mem_unit_sphere x₀) hinner (congrArg Subtype.val h)
   let oDom := (oE.orthogonalSpanSingleton (ne_zero_of_mem_unit_sphere x₀)).sphereOrientation.prod
     Complex.orientation.sphereOrientation
   refine .of_homologyMap (sphereRotationDiffFamily x₀ k) oDom.fundamentalClass ?_
@@ -339,7 +320,7 @@ theorem isCoveredByDiffeomorphisms_sphere_two_of_even
     (o : HomologicalOrientation (sphere (0 : E) 1) (EuclideanSpace ℝ (Fin (m + 1))) (m + 1))
     (hm : Even m) (k : ℕ∞ω) (x₀ : sphere (0 : E) 1) :
     o.IsCoveredByDiffeomorphisms finrank_euclideanSpace_fin k x₀ 2 := by
-  have h := o.isCoveredByDiffeomorphisms_sphere_add_neg_one_pow k x₀
+  have h := o.isCoveredByDiffeomorphisms_sphere_one_add_neg_one_pow k x₀
   rw [hm.neg_one_pow] at h
   norm_num at h
   exact h
@@ -356,16 +337,16 @@ end GeneralSphere
 
 section EuclideanSphere
 
-/-- Euclidean-sphere specialization of `isCoveredByDiffeomorphisms_sphere_add_neg_one_pow`:
+/-- Euclidean-sphere specialization of `isCoveredByDiffeomorphisms_sphere_one_add_neg_one_pow`:
 `Sᵐ⁺¹ ⊆ ℝᵐ⁺²` is `(1 + (-1) ^ m)`-covered by `C^k` diffeomorphisms. -/
-theorem isCoveredByDiffeomorphisms_euclideanSphere_add_neg_one_pow {m : ℕ}
+theorem isCoveredByDiffeomorphisms_euclideanSphere_one_add_neg_one_pow {m : ℕ}
     (o : HomologicalOrientation (sphere (0 : EuclideanSpace ℝ (Fin (m + 2))) 1)
       (EuclideanSpace ℝ (Fin (m + 1))) (m + 1))
     (k : ℕ∞ω) (x₀ : sphere (0 : EuclideanSpace ℝ (Fin (m + 2))) 1) :
     o.IsCoveredByDiffeomorphisms finrank_euclideanSpace_fin k x₀ (1 + (-1) ^ m) := by
   have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin (m + 2))) = m + 1 + 1) :=
     ⟨finrank_euclideanSpace_fin⟩
-  exact o.isCoveredByDiffeomorphisms_sphere_add_neg_one_pow k x₀
+  exact o.isCoveredByDiffeomorphisms_sphere_one_add_neg_one_pow k x₀
 
 /-- Euclidean-sphere specialization of `isCoveredByDiffeomorphisms_sphere_two_of_even`: for even
 `m`, `Sᵐ⁺¹ ⊆ ℝᵐ⁺²` is `2`-covered by `C^k` diffeomorphisms. -/

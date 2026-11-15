@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
@@ -36,6 +37,10 @@ a composite of differentiable maps is the product of the signs.
   where `f` preserves orientations, reverses them, or has singular derivative.
 * `TauCeti.Manifold.Orientation.orientationSign_comp`: the orientation sign of a composite of
   differentiable maps is the product of the orientation signs.
+* `Diffeomorph.orientationSign_diffeomorph_comp`,
+  `Diffeomorph.orientationSign_comp_diffeomorph`: multiplicativity of the orientation sign under
+  postcomposition and precomposition with a diffeomorphism, with no differentiability assumption on
+  the other factor.
 * `TauCeti.Manifold.Orientation.orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint`: at a
   regular point the orientation sign is `1` or `-1`.
 * `TauCeti.Manifold.Orientation.eventually_orientationSign_eq`: the orientation sign is constant
@@ -198,6 +203,38 @@ theorem orientationSign_comp (hg : MDifferentiableAt J K g (f x))
     rcases not_and_or.1 hinv with h | h
     · rw [orientationSign_of_not_isInvertible h, mul_zero]
     · rw [orientationSign_of_not_isInvertible h, zero_mul]
+
+open scoped ContDiff in
+/-- **Orientation sign under postcomposition with a diffeomorphism.** For a `C^n` diffeomorphism
+`h : N ≃ₘ^n⟮J, K⟯ P` (`n ≠ 0`) and an arbitrary map `f : M → N`, the orientation sign of `h ∘ f` at
+`x` is the product of the orientation signs, with no differentiability hypothesis on `f`. -/
+theorem _root_.Diffeomorph.orientationSign_diffeomorph_comp {n : ℕ∞ω} (h : N ≃ₘ^n⟮J, K⟯ P)
+    (hn : n ≠ 0) (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J N ι)
+    (o'' : Manifold.Orientation K P ι) (f : M → N) (x : M) :
+    orientationSign o o'' (h ∘ f) x =
+      orientationSign o' o'' h (f x) * orientationSign o o' f x := by
+  by_cases hinv : (mfderiv I J f x).IsInvertible
+  · exact orientationSign_comp (h.mdifferentiable hn (f x))
+      (mdifferentiableAt_of_isInvertible_mfderiv hinv)
+  · rw [orientationSign_of_not_isInvertible
+        ((h.isInvertible_mfderiv_diffeomorph_comp_iff hn f x).not.mpr hinv),
+      orientationSign_of_not_isInvertible hinv, mul_zero]
+
+open scoped ContDiff in
+/-- **Orientation sign under precomposition with a diffeomorphism.** For a `C^n` diffeomorphism
+`h : P ≃ₘ^n⟮K, I⟯ M` (`n ≠ 0`) and an arbitrary map `f : M → N`, the orientation sign of `f ∘ h` at
+`x` is the product of the orientation signs, with no differentiability hypothesis on `f`. -/
+theorem _root_.Diffeomorph.orientationSign_comp_diffeomorph {n : ℕ∞ω} (h : P ≃ₘ^n⟮K, I⟯ M)
+    (hn : n ≠ 0) (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J N ι)
+    (o'' : Manifold.Orientation K P ι) (f : M → N) (x : P) :
+    orientationSign o'' o' (f ∘ h) x =
+      orientationSign o o' f (h x) * orientationSign o'' o h x := by
+  by_cases hinv : (mfderiv I J f (h x)).IsInvertible
+  · exact orientationSign_comp (mdifferentiableAt_of_isInvertible_mfderiv hinv)
+      (h.mdifferentiable hn x)
+  · rw [orientationSign_of_not_isInvertible
+        ((h.isInvertible_mfderiv_comp_diffeomorph_iff hn f x).not.mpr hinv),
+      orientationSign_of_not_isInvertible hinv, zero_mul]
 
 /-- The orientation sign is locally constant near a point where the map is `C¹` with invertible
 derivative. -/
