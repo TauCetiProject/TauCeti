@@ -144,6 +144,15 @@ theorem HasLocalPotentials.smul (hφ : HasLocalPotentials s φ) (c : ℝ) :
   obtain ⟨r, hr, hrs, g, hg, hd⟩ := hφ x hx
   exact ⟨r, hr, hrs, c • g, hg.const_smul c, fun y hy ↦ (hd y hy).const_smul c⟩
 
+/-- Postcomposing a locally potential field with a continuous linear map preserves local
+potentials, obtained by postcomposing each potential. -/
+theorem HasLocalPotentials.continuousLinearMap_comp (hφ : HasLocalPotentials s φ)
+    (L : F →L[ℝ] G) : HasLocalPotentials s (fun x ↦ L.comp (φ x)) := by
+  intro x hx
+  obtain ⟨r, hr, hrs, g, hg, hd⟩ := hφ x hx
+  exact ⟨r, hr, hrs, L ∘ g, L.contDiff.comp_contDiffOn hg,
+    fun y hy ↦ L.hasFDerivAt.comp y (hd y hy)⟩
+
 /-- Pullback of a locally potential covector field along a `C¹` map of open domains has
 local potentials, obtained by composing each potential with the map. -/
 theorem HasLocalPotentials.pullback {u : Set G} {f : G → E}
