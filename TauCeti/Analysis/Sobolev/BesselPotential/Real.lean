@@ -75,7 +75,7 @@ theorem mem_realSubmodule {h : 0 ≤ s} {u : H^{s}(E)} :
   rw [realSubmodule, LinearMap.mem_ker, Lp.eq_zero_iff_ae_eq_zero]
   refine Filter.eventually_congr ?_
   filter_upwards [Complex.imCLM.coeFn_compLpL (inclusion h u).toLp] with x hx
-  simp [hx]
+  simp [-toLp_inclusion, hx]
 
 /-- The real elements of `H^s(E)` form a closed subspace. -/
 theorem isClosed_realSubmodule (h : 0 ≤ s) :
@@ -128,7 +128,7 @@ def realContinuousRep (hs : finrank ℝ E < 2 * s) :
     refine DFunLike.coe_injective (eq_of_ae_eq huv₀ (ContinuousMap.continuous _) huv ?_)
     filter_upwards [coeFn_toLp_inclusion_add h (u : H^{s}(E)) v, hu, hv] with x hx hux hvx
     rw [Submodule.coe_add, hx, Pi.add_apply, hux, hvx]
-    simp
+    simp [-toLp_inclusion]
   map_smul' c u := by
     have h := TauCeti.nonneg_of_finrank_lt_two_mul hs
     obtain ⟨-, hu⟩ := (exists_continuous_ae_eq hs u).choose_spec
@@ -136,7 +136,7 @@ def realContinuousRep (hs : finrank ℝ E < 2 * s) :
     refine DFunLike.coe_injective (eq_of_ae_eq hcu₀ (ContinuousMap.continuous _) hcu ?_)
     filter_upwards [coeFn_toLp_inclusion_smul h (c : ℂ) (u : H^{s}(E)), hu] with x hx hux
     rw [Submodule.coe_smul, ← Complex.coe_smul, hx, Pi.smul_apply, hux]
-    simp
+    simp [-toLp_inclusion]
 
 /-- The continuous real representative of `u` represents `u` almost everywhere. -/
 theorem coeFn_toLp_inclusion_ae_eq_realContinuousRep (hs : finrank ℝ E < 2 * s)
