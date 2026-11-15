@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.EvalAt
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.GaussNorm
+import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
@@ -31,6 +32,10 @@ The values of Hasse derivatives are also controlled by the coefficients of `q`: 
 the weighted coefficient norms `‖qₖ‖ cᵏ` in every degree `k ≥ n`, then `‖(D⁽ⁿ⁾ q)(a)‖ cⁿ ≤ ε` at
 every `a` with `‖a‖ ≤ c`. This needs neither completeness nor `‖1‖ = 1`.
 
+Over a semifield `K`, scalar multiplication by `k!` is a homeomorphism for `k! ≠ 0` and zero
+otherwise, so `(d⁄dX^[k] f)(b) = k! • (D⁽ᵏ⁾ f)(b)` holds without any convergence hypothesis; in
+characteristic zero the two vanish together.
+
 ## Main results
 
 * `PowerSeries.norm_evalAt_hasseDeriv_mul_pow_le_of_forall`: a bound on the weighted coefficients
@@ -39,6 +44,9 @@ every `a` with `‖a‖ ≤ c`. This needs neither completeness nor `‖1‖ = 1
   `(X - a) * q`.
 * `PowerSeries.IsRestricted.evalAt_hasseDeriv_hasseDeriv`: the evaluated composition rule
   `(D⁽ᵗ⁾ (D⁽ᵏ⁾ q))(b) = (t + k).choose t • (D⁽ᵗ⁺ᵏ⁾ q)(b)`.
+* `PowerSeries.evalAt_iterate_derivative` and `PowerSeries.evalAt_iterate_derivative_eq_zero_iff`:
+  over a semifield, `(d⁄dX^[k] f)(b) = k! • (D⁽ᵏ⁾ f)(b)`, so in characteristic zero the two vanish
+  together.
 -/
 
 public section
@@ -77,6 +85,8 @@ theorem norm_evalAt_hasseDeriv_mul_pow_le_of_forall (ha : ‖a‖ ≤ c)
 
 end Bound
 
+section Restricted
+
 variable {R A : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormedRing A] [Algebra R A]
   [IsBoundedSMul R A] [IsUltrametricDist A] [CompleteSpace A] {c : ℝ} {q : R⟦X⟧}
 
@@ -101,5 +111,33 @@ theorem IsRestricted.evalAt_hasseDeriv_hasseDeriv (hq : q.IsRestricted c) {b : A
       (t + k).choose t • (PowerSeries.hasseDeriv (t + k) q).evalAt b := by
   rw [← LinearMap.comp_apply, hasseDeriv_comp, LinearMap.smul_apply, ← Nat.cast_smul_eq_nsmul R,
     (hq.hasseDeriv _).evalAt_smul _ hb, Nat.cast_smul_eq_nsmul]
+
+end Restricted
+
+section Semifield
+
+variable {K A : Type*} [Semifield K] [Semiring A] [Algebra K A] [TopologicalSpace A]
+  [ContinuousConstSMul K A] [T2Space A]
+
+/-- Over a semifield `K`, the `k`-th iterated formal derivative of a power series `f` evaluates at
+any point `b` of a Hausdorff topological `K`-algebra with continuous scalar multiplication to `k!`
+times the value of the `k`-th Hasse derivative `(D⁽ᵏ⁾ f)(b)`. No convergence hypothesis is needed:
+when the series diverges, both sides take the junk value `0`. -/
+theorem evalAt_iterate_derivative (f : K⟦X⟧) (k : ℕ) (b : A) :
+    (d⁄dX^[k] f).evalAt b = k.factorial • (hasseDeriv k f).evalAt b := by
+  rw [← factorial_smul_hasseDeriv, ← Nat.cast_smul_eq_nsmul K, evalAt_def, evalAt_def,
+    ← Nat.cast_smul_eq_nsmul K]
+  simp_rw [coeff_smul, smul_assoc]
+  exact tsum_const_smul'' (k.factorial : K)
+
+/-- Over a semifield `K` of characteristic zero, the `k`-th iterated formal derivative of a power
+series vanishes at a point `b` of a Hausdorff topological `K`-algebra with continuous scalar
+multiplication if and only if the `k`-th Hasse derivative vanishes at `b`. -/
+theorem evalAt_iterate_derivative_eq_zero_iff [CharZero K] (f : K⟦X⟧) (k : ℕ) (b : A) :
+    (d⁄dX^[k] f).evalAt b = 0 ↔ (hasseDeriv k f).evalAt b = 0 := by
+  rw [evalAt_iterate_derivative, ← Nat.cast_smul_eq_nsmul K,
+    ((Nat.cast_ne_zero.mpr k.factorial_ne_zero).isUnit).smul_eq_zero]
+
+end Semifield
 
 end PowerSeries
