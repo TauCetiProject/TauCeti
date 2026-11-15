@@ -173,29 +173,20 @@ theorem ker_singularHomologyMap_presentation :
     exact r.2
   -- Every class of `Hₙ₊₂(W)` is the Hurewicz class of a generalized loop, so up to sign the class
   -- of its attaching sphere, which lies in the kernel of `ψ` with the class.
-  obtain ⟨ε, hε⟩ :=
-    exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz (n + 1)
   obtain ⟨a, rfl⟩ :=
     (HomotopyGroup.hurewiczAddEquiv (subsingleton_homotopyGroup_wedge A n)).surjective h
   induction a using Additive.rec with | ofMul a => ?_
   induction a using Quotient.inductionOn with | h p => ?_
-  have hp : (H (n + 2)).map (GenLoop.diskBoundaryMap p) (sphereClass n) =
-      (ε : ℤ) • HomotopyGroup.hurewiczAddEquiv (subsingleton_homotopyGroup_wedge A n)
-        (Additive.ofMul ⟦p⟧) := by
+  have hp : HomotopyGroup.hurewiczAddEquiv (subsingleton_homotopyGroup_wedge A n)
+      (Additive.ofMul ⟦p⟧) = (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 := by
     rw [HomotopyGroup.hurewiczAddEquiv_apply, HomotopyGroup.hurewiczHom_apply]
     -- `Additive.ofMul ⟦p⟧` is presented through `Quotient` rather than `HomotopyGroup`, so the
     -- generated motive of `rw` is ill-typed and `erw` is needed.
     erw [toMul_ofMul, HomotopyGroup.hurewicz_mk]
-    exact hε (wedge A n) _ p
-  have hr : ψ ((H (n + 2)).map (GenLoop.diskBoundaryMap p) (sphereClass n)) = 0 := by
-    rw [hp, map_zsmul, LinearMap.mem_ker.1 hh, smul_zero]
-  have hmem := (Submodule.span ℤ (Set.range fun r : Relation A n ψ ↦
-    (H (n + 2)).map (relationAttach A n ψ r) (sphereClass n))).toAddSubgroup.zsmul_mem
-    (Submodule.subset_span ⟨⟨GenLoop.diskBoundaryMap p, hr⟩, rfl⟩) ((ε⁻¹ : ℤˣ) : ℤ)
-  dsimp only [relationAttach] at hmem
-  rw [hp] at hmem
-  simpa only [smul_smul, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_smul,
-    Submodule.mem_toAddSubgroup] using hmem
+  rw [hp] at hh ⊢
+  have hr := (singularHomologyMap_diskBoundaryMap_mem_iff p (LinearMap.ker ψ)).2 hh
+  exact (singularHomologyMap_diskBoundaryMap_mem_iff p _).1
+    (Submodule.subset_span ⟨⟨GenLoop.diskBoundaryMap p, hr⟩, rfl⟩)
 
 /-- **The presentation complex has `πₙ₊₂ ≅ A`.** For a surjection `ψ : Hₙ₊₂(W; ℤ) → A`, the
 `(n + 2)`-nd homotopy group of the presentation complex is isomorphic to `A`. -/

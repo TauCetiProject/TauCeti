@@ -17,7 +17,9 @@ map `GenLoop.diskBoundaryMap p` of the cell that kills its class. With integer c
 image under this map of the standard generator `[Sⁿ⁺¹]` of the homology of the sphere
 `TopCat.diskBoundary (n + 2)` (`TauCeti.reducedSingularHomologyTopCatSphereIso`) is the Hurewicz
 class of `p`, up to a sign that depends neither on the space nor on the loop
-(`TauCeti.exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz`).
+(`TauCeti.exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz`). In particular
+the two classes lie in the same submodules
+(`TauCeti.singularHomologyMap_diskBoundaryMap_mem_iff`).
 
 Both classes are natural in based maps, and every generalized loop factors through the
 tautological loop of the sphere (`GenLoop.hurewicz_eq_hurewicz_sphereGenLoop_comp`), so it
@@ -117,5 +119,22 @@ theorem exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz (n : �
   -- `TopCat.ofHom (toSphere p)` has target `TopCat.of X`, which is `X` only up to unfolding.
   erw [Functor.map_comp]
   rfl
+
+/-- **The attaching sphere of a generalized loop and its Hurewicz class lie in the same
+submodules.** Since the two classes differ by a unit of `ℤ`, the image of the generator `[Sⁿ⁺¹]`
+under `GenLoop.diskBoundaryMap p` lies in a submodule `S` of `Hₙ₊₁(X; ℤ)` exactly when the
+Hurewicz class of `p` does. -/
+theorem singularHomologyMap_diskBoundaryMap_mem_iff {n : ℕ} {X : TopCat.{0}} {x : X}
+    (p : Ω^ (Fin (n + 1)) X x)
+    (S : Submodule ℤ
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).obj X)) :
+    (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).map
+          (diskBoundaryMap p)).hom
+        ((reducedSingularHomologyι (ModuleCat.of ℤ ℤ) (n + 1)).app (TopCat.diskBoundary.{0} (n + 2))
+          ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of ℤ ℤ) (n + 1)).inv 1)) ∈ S ↔
+      (hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 ∈ S := by
+  obtain ⟨ε, hε⟩ := exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz n
+  rw [hε X x p]
+  exact S.smul_mem_iff_of_isUnit ε.isUnit
 
 end TauCeti

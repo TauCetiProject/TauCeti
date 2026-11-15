@@ -91,11 +91,9 @@ theorem nullhomotopic_relationAttach_comp
     (GenLoop.sphereEquiv (n + 2) _ _).symm ⟨g.hom.comp ⟨ULift.up, continuous_uliftUp⟩, rfl⟩
   have hp : GenLoop.diskBoundaryMap p = g := GenLoop.diskBoundaryMap_sphereEquiv_symm g
   -- The Hurewicz class of `p` is, up to sign, the class of the relation, so it lies in `ker ψ`.
-  obtain ⟨ε, hε⟩ := exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz (n + 1)
   have hker : (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 ∈ LinearMap.ker ψ := by
-    rw [← hp, hε (wedge A n) _ p, map_zsmul] at hr
-    rw [LinearMap.mem_ker]
-    simpa using congrArg (((ε⁻¹ : ℤˣ) : ℤ) • ·) hr
+    rw [← hp] at hr
+    exact (singularHomologyMap_diskBoundaryMap_mem_iff p _).1 hr
   -- So the class of `f ∘ p` has trivial Hurewicz class, and is trivial by the Hurewicz theorem.
   rw [← hp, ← HomotopyGroup.map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp f rfl]
   refine (HomotopyGroup.bijective_hurewicz (hZ _)).1 ?_
