@@ -22,6 +22,8 @@ is bounded on `x ≥ 0`.
 ## Main results
 
 * `TauCeti.eventually_mul_add_lt_exp_mul`: `A x + B < exp (a x)` eventually, for `0 < a`.
+* `TauCeti.exists_pos_eventually_forall_le_mul_exp`: finitely many eventual exponential bounds
+  `f i s t ≤ A_i exp (-κ_i s)` combine into one, with the slowest rate and the largest constant.
 * `TauCeti.exp_neg_le_div_exp_sub_one`: `exp (-x) ≤ x / (exp x - 1)` for `0 < x`.
 * `TauCeti.div_exp_sub_one_le_one`: `x / (exp x - 1) ≤ 1` for `0 ≤ x`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
@@ -46,6 +48,28 @@ theorem eventually_mul_add_lt_exp_mul {a : ℝ} (ha : 0 < a) (A B : ℝ) :
   rw [rpow_one, lt_div_iff₀ (by linarith)] at hx
   nlinarith [mul_nonneg (sub_nonneg.2 (le_abs_self A)) (by linarith : (0 : ℝ) ≤ x),
     mul_nonneg (abs_nonneg B) (by linarith : (0 : ℝ) ≤ x - 1), le_abs_self B]
+
+/-- Eventual exponential bounds `f i s t ≤ A_i exp (-κ_i s)` with rates `κ_i > 0`, for finitely
+many indices `i`, combine into one bound `f i s t ≤ A exp (-κ s)` for all `i`, with the slowest
+rate `κ = min_i κ_i` and the largest constant `A = max_i max A_i 0`. -/
+theorem exists_pos_eventually_forall_le_mul_exp {ι α : Type*} [Finite ι] {f : ι → ℝ → α → ℝ}
+    (h : ∀ i, ∃ κ > 0, ∃ A, ∀ᶠ s in atTop, ∀ t, f i s t ≤ A * exp (-(κ * s))) :
+    ∃ κ > 0, ∃ A, ∀ᶠ s in atTop, ∀ i t, f i s t ≤ A * exp (-(κ * s)) := by
+  cases isEmpty_or_nonempty ι
+  · exact ⟨1, one_pos, 0, Eventually.of_forall fun _ i ↦ isEmptyElim i⟩
+  cases nonempty_fintype ι
+  choose κ hκ A hA using h
+  set κ₀ := Finset.univ.inf' Finset.univ_nonempty κ
+  set A₀ := Finset.univ.sup' Finset.univ_nonempty fun i ↦ max (A i) 0
+  refine ⟨κ₀, (Finset.lt_inf'_iff _).2 fun i _ ↦ hκ i, A₀, ?_⟩
+  filter_upwards [eventually_all.2 hA, eventually_ge_atTop 0] with s hs hs₀ i t
+  have hκi : κ₀ ≤ κ i := Finset.inf'_le _ (Finset.mem_univ i)
+  have hAi : max (A i) 0 ≤ A₀ := Finset.le_sup' (fun i ↦ max (A i) 0) (Finset.mem_univ i)
+  calc f i s t ≤ A i * exp (-(κ i * s)) := hs i t
+    _ ≤ A₀ * exp (-(κ₀ * s)) :=
+      mul_le_mul ((le_max_left _ _).trans hAi)
+        (exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_right hκi hs₀)))
+        (exp_pos _).le ((le_max_right _ _).trans hAi)
 
 /-- For `0 < x`, `exp (-x) ≤ x / (exp x - 1)`. -/
 theorem exp_neg_le_div_exp_sub_one {x : ℝ} (hx : 0 < x) : exp (-x) ≤ x / (exp x - 1) := by
