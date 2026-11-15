@@ -116,6 +116,25 @@ def homMk {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S}
     (f : Grp.mk G.toOver ⟶ Grp.mk H.toOver) : G ⟶ H :=
   ⟨f⟩
 
+/-- Rebundling the underlying group-object homomorphism recovers the original homomorphism. -/
+@[simp]
+theorem homMk_eta {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S} (f : G ⟶ H) :
+    homMk f.hom = f :=
+  (rfl)
+
+/-- Bundling the identity group-object homomorphism gives the identity homomorphism. -/
+@[simp]
+theorem homMk_id {S : Scheme.{u}} (G : FiniteFlatCommGroupScheme S) :
+    homMk (𝟙 (Grp.mk G.toOver)) = 𝟙 G :=
+  (rfl)
+
+/-- Composition of bundled homomorphisms bundles their composite. -/
+@[reassoc (attr := simp)]
+theorem homMk_comp_homMk {S : Scheme.{u}} {G H K : FiniteFlatCommGroupScheme S}
+    (f : Grp.mk G.toOver ⟶ Grp.mk H.toOver) (g : Grp.mk H.toOver ⟶ Grp.mk K.toOver) :
+    homMk f ≫ homMk g = homMk (f ≫ g) :=
+  (rfl)
+
 /-- Homomorphisms are determined by their underlying group-object homomorphisms. -/
 @[ext]
 theorem hom_ext {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S} (f g : G ⟶ H)
@@ -154,9 +173,9 @@ theorem isoMk_inv {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S}
     (e : Grp.mk G.toOver ≅ Grp.mk H.toOver) : (isoMk e).inv = homMk e.inv :=
   (rfl)
 
-/-- The fully faithful functor forgetting finiteness and commutativity of a finite locally free
-commutative group scheme. The object map is exposed so that its morphisms are the underlying
-group-object homomorphisms without transports. -/
+/-- The fully faithful functor forgetting finite local freeness and commutativity of a finite
+locally free commutative group scheme. The object map is exposed so that its morphisms are the
+underlying group-object homomorphisms without transports. -/
 @[expose, implicit_reducible]
 noncomputable def toGrp (S : Scheme.{u}) : FiniteFlatCommGroupScheme S ⥤ Grp (Over S) where
   obj G := Grp.mk G.toOver
@@ -174,7 +193,8 @@ theorem toGrp_map {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S} (f : G �
     (toGrp S).map f = f.hom :=
   (rfl)
 
-/-- Forgetting finiteness and commutativity does not change group-scheme homomorphisms. -/
+/-- Forgetting finite local freeness and commutativity does not change group-scheme
+homomorphisms. -/
 noncomputable def fullyFaithfulToGrp (S : Scheme.{u}) : (toGrp S).FullyFaithful where
   preimage f := homMk f
 
@@ -182,14 +202,15 @@ instance {S : Scheme.{u}} : (toGrp S).Full := (fullyFaithfulToGrp S).full
 
 instance {S : Scheme.{u}} : (toGrp S).Faithful := (fullyFaithfulToGrp S).faithful
 
-/-- The explicit fully faithful structure lifts a homomorphism without changing it. -/
+/-- The explicit fully faithful structure lifts a group-object homomorphism by bundling it
+with `homMk`. -/
 @[simp]
 theorem fullyFaithfulToGrp_preimage {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S}
     (f : (toGrp S).obj G ⟶ (toGrp S).obj H) :
     (fullyFaithfulToGrp S).preimage f = homMk f :=
   (rfl)
 
-/-- The forgetful functor lifts a homomorphism without changing it. -/
+/-- The forgetful functor lifts a group-object homomorphism by bundling it with `homMk`. -/
 @[simp]
 theorem toGrp_preimage {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S}
     (f : (toGrp S).obj G ⟶ (toGrp S).obj H) : (toGrp S).preimage f = homMk f :=
@@ -198,6 +219,28 @@ theorem toGrp_preimage {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S}
 instance {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S} (f : G ⟶ H) [IsIso f] :
     IsIso f.hom :=
   (toGrp S).map_isIso f
+
+/-- A homomorphism is an isomorphism exactly when its underlying group-object map is. -/
+theorem isIso_hom_iff {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S} (f : G ⟶ H) :
+    IsIso f.hom ↔ IsIso f :=
+  ⟨fun _ => (isoMk (asIso f.hom)).isIso_hom, fun _ => inferInstance⟩
+
+instance {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S}
+    (g : Grp.mk G.toOver ⟶ Grp.mk H.toOver) [IsIso g] : IsIso (homMk g) :=
+  (isoMk (asIso g)).isIso_hom
+
+/-- The underlying map of an inverse is the inverse of the underlying map. -/
+@[simp]
+theorem inv_hom {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S} (f : G ⟶ H) [IsIso f] :
+    (inv f).hom = inv f.hom :=
+  IsIso.eq_inv_of_hom_inv_id ((toGrp S).congr_map (asIso f).hom_inv_id)
+
+/-- Equality transport of group schemes induces equality transport of their group objects. -/
+@[simp]
+theorem eqToHom_hom {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S} (h : G = H) :
+    (eqToHom h).hom = eqToHom (by subst h; rfl) := by
+  subst h
+  rfl
 
 /-- The underlying maps of an isomorphism cancel in the forward direction. -/
 @[reassoc (attr := simp)]

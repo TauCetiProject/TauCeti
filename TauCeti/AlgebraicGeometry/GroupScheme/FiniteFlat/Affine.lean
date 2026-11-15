@@ -237,13 +237,13 @@ theorem affineEquivalence_functor : (affineEquivalence R).functor = toAffine R :
 theorem affineEquivalence_inverse : (affineEquivalence R).inverse = fromAffine R :=
   (rfl)
 
-/-- The unit of the affine equivalence is the identity on underlying group objects. -/
+/-- The unit of the affine equivalence is the identity. -/
 @[simp]
 theorem affineEquivalence_unitIso_hom_app (G : FiniteFlatCommGroupScheme (Spec R)) :
     (affineEquivalence R).unitIso.hom.app G = 𝟙 G :=
   (rfl)
 
-/-- The inverse unit of the affine equivalence is the identity on underlying group objects. -/
+/-- The inverse unit of the affine equivalence is the identity. -/
 @[simp]
 theorem affineEquivalence_unitIso_inv_app (G : FiniteFlatCommGroupScheme (Spec R)) :
     (affineEquivalence R).unitIso.inv.app G = 𝟙 G :=
