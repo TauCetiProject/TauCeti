@@ -59,6 +59,9 @@ changes the sign of the attaching map in reduced homology
 * `OpenPartialHomeomorph.morseCharacteristicMap`: the characteristic map `D^k ⟶ M_{c+ε}` of the
   cell.
 * `OpenPartialHomeomorph.morseAttachingMap`: the attaching map `∂D^k ⟶ M_{c-ε}` of the cell.
+* `TauCeti.morseCharacteristicFamily`, `TauCeti.morseAttachingFamily`: for a family of charts `ψ p`
+  whose inverses are jointly continuous, the characteristic maps `P × D^k → M_{c+ε}` and the
+  attaching maps `P × ∂D^k → M_{c-ε}` of the cells, as continuous families over `P`.
 
 ## Main results
 
@@ -404,7 +407,8 @@ namespace TauCeti
 
 section Family
 
-variable {M : Type u} [TopologicalSpace M] {n k : ℕ} {ε : ℝ} {P : Type*} [TopologicalSpace P]
+variable {M : Type u} [TopologicalSpace M] {n k : ℕ} {f : M → ℝ} {c ε : ℝ} {P : Type*}
+  [TopologicalSpace P]
 
 /-- The cells `(p, w) ↦ (ψ p)⁻¹(√ε • (w, 0))` of a family of charts whose inverses are jointly
 continuous on the closed ball of radius `√ε` depend continuously on the parameter and the point of
@@ -423,6 +427,64 @@ theorem continuousOn_morseCellMap_family
         Real.norm_of_nonneg (Real.sqrt_nonneg ε)]
       exact mul_le_of_le_one_right (Real.sqrt_nonneg ε) (mem_closedBall_zero_iff.1 hq.2)⟩).congr
     fun q _ ↦ OpenPartialHomeomorph.morseCellMap_def hk q.2
+
+/-- The characteristic maps `w ↦ (ψ p)⁻¹(√ε • (w, 0))` of the cells of a family of normal-form
+charts `ψ p`, whose inverses are jointly continuous on the closed ball of radius `√ε`, as a
+continuous family `P × D^k → M_{c+ε}` over `P`. -/
+def morseCharacteristicFamily (ψ : P → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
+    (hk : k ≤ n) (hε : 0 ≤ ε) (hball : ∀ p, closedBall 0 √ε ⊆ (ψ p).target)
+    (hf : ∀ p, ∀ y ∈ (ψ p).source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ p y j ^ 2)
+    (hs : ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin n) ↦ (ψ q.1).symm q.2)
+      (univ ×ˢ closedBall 0 √ε)) :
+    C(P × TopCat.disk.{u} k, {x | f x ≤ c + ε}) where
+  toFun q := (ψ q.1).morseCharacteristicMap hk hε (hball q.1) (hf q.1) q.2
+  continuous_toFun := continuous_induced_rng.2 <|
+    ((continuousOn_morseCellMap_family hk hs).comp_continuous
+      (continuous_fst.prodMk (continuous_subtype_val.comp (continuous_uliftDown.comp
+        continuous_snd))) fun q ↦ ⟨mem_univ _, q.2.down.2⟩).congr fun q ↦
+      (OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball q.1) (hf q.1) hk hε q.2).symm
+
+/-- The attaching maps `s ↦ (ψ p)⁻¹(√ε • (s, 0))` of the cells of a family of normal-form charts
+`ψ p`, as a continuous family `P × ∂D^k → M_{c-ε}` over `P`, with `M_{c-ε}` viewed inside
+`M_{c+ε}`: the restriction of `TauCeti.morseCharacteristicFamily` to the boundary spheres. -/
+def morseAttachingFamily (ψ : P → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
+    (hk : k ≤ n) (hε : 0 ≤ ε) (hball : ∀ p, closedBall 0 √ε ⊆ (ψ p).target)
+    (hf : ∀ p, ∀ y ∈ (ψ p).source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ p y j ^ 2)
+    (hs : ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin n) ↦ (ψ q.1).symm q.2)
+      (univ ×ˢ closedBall 0 √ε)) :
+    C(P × TopCat.diskBoundary.{u} k, {y : {x | f x ≤ c + ε} | f y ≤ c - ε}) where
+  toFun q :=
+    ⟨morseCharacteristicFamily ψ hk hε hball hf hs (q.1, TopCat.diskBoundaryInclusion k q.2),
+    (congrArg f (OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball q.1) (hf q.1) hk hε
+      _)).trans_le (OpenPartialHomeomorph.apply_morseCellMap_of_norm_eq_one (hball q.1) (hf q.1) hk
+        hε (TopCat.norm_diskBoundaryInclusion q.2)).le⟩
+  continuous_toFun := ((morseCharacteristicFamily ψ hk hε hball hf hs).continuous.comp
+    (continuous_fst.prodMk ((TopCat.diskBoundaryInclusion k).hom.continuous.comp
+      continuous_snd))).subtype_mk _
+
+variable {ψ : P → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} (hk : k ≤ n) (hε : 0 ≤ ε)
+  (hball : ∀ p, closedBall 0 √ε ⊆ (ψ p).target)
+  (hf : ∀ p, ∀ y ∈ (ψ p).source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ p y j ^ 2)
+  (hs : ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin n) ↦ (ψ q.1).symm q.2)
+    (univ ×ˢ closedBall 0 √ε))
+
+@[simp]
+theorem morseCharacteristicFamily_apply (p : P) (w : TopCat.disk.{u} k) :
+    morseCharacteristicFamily ψ hk hε hball hf hs (p, w) =
+      (ψ p).morseCharacteristicMap hk hε (hball p) (hf p) w :=
+  (rfl)
+
+@[simp]
+theorem coe_morseAttachingFamily_apply (p : P) (s : TopCat.diskBoundary.{u} k) :
+    (morseAttachingFamily ψ hk hε hball hf hs (p, s) : {x | f x ≤ c + ε}) =
+      morseCharacteristicFamily ψ hk hε hball hf hs (p, TopCat.diskBoundaryInclusion k s) :=
+  (rfl)
+
+/-- On the boundary spheres the characteristic family is the attaching family. -/
+theorem morseCharacteristicFamily_diskBoundaryInclusion (p : P) (s : TopCat.diskBoundary.{u} k) :
+    morseCharacteristicFamily ψ hk hε hball hf hs (p, TopCat.diskBoundaryInclusion k s) =
+      morseAttachingFamily ψ hk hε hball hf hs (p, s) :=
+  (rfl)
 
 end Family
 

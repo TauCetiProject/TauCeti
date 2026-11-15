@@ -42,14 +42,11 @@ linear isometries, the reattachment map along such a homotopy is a fibre homotop
 a single parameter (`TauCeti.exists_homotopicRel_morseCellReattachment_comp`), this needs no
 deformation of `M_{c+ε}` onto the attached cells.
 
-## Main definitions
-
-* `TauCeti.morseCharacteristicFamily`: the family over `P` of characteristic maps of the cells of a
-  family of normal-form charts.
-* `TauCeti.morseAttachingFamily`: the family over `P` of their attaching maps.
-
 ## Main results
 
+* `TauCeti.exists_homotopy_morseCharacteristicFamily`: the characteristic family of `ψ₁` is
+  homotopic over `P`, as a family of maps of pairs, to that of `ψ₀` composed with the disk maps of
+  a jointly continuous family of linear isometries.
 * `TauCeti.exists_fiberHomotopyEquiv_fiberwiseCellAttachment_morseAttachingFamily`: **Milnor's
   Lemma 3.6 over a compact parameter space.**
 
@@ -70,71 +67,6 @@ universe u
 
 namespace TauCeti
 
-section Family
-
-variable {M : Type u} [TopologicalSpace M] {n k : ℕ} {f : M → ℝ} {c ε : ℝ}
-  {P : Type u} [TopologicalSpace P]
-
-/-- The characteristic maps `w ↦ (ψ p)⁻¹(√ε • (w, 0))` of the cells of a family of normal-form
-charts `ψ p`, whose inverses are jointly continuous on the closed ball of radius `√ε`, as a
-continuous family `P × D^k → M_{c+ε}` over `P`. -/
-def morseCharacteristicFamily (ψ : P → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
-    (hk : k ≤ n) (hε : 0 ≤ ε) (hball : ∀ p, closedBall 0 √ε ⊆ (ψ p).target)
-    (hf : ∀ p, ∀ y ∈ (ψ p).source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ p y j ^ 2)
-    (hs : ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin n) ↦ (ψ q.1).symm q.2)
-      (univ ×ˢ closedBall 0 √ε)) :
-    C(P × TopCat.disk.{u} k, {x | f x ≤ c + ε}) where
-  toFun q := (ψ q.1).morseCharacteristicMap hk hε (hball q.1) (hf q.1) q.2
-  continuous_toFun := continuous_induced_rng.2 <|
-    ((continuousOn_morseCellMap_family hk hs).comp_continuous
-      (continuous_fst.prodMk (continuous_subtype_val.comp (continuous_uliftDown.comp
-        continuous_snd))) fun q ↦ ⟨mem_univ _, q.2.down.2⟩).congr fun q ↦
-      (OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball q.1) (hf q.1) hk hε q.2).symm
-
-/-- The attaching maps `s ↦ (ψ p)⁻¹(√ε • (s, 0))` of the cells of a family of normal-form charts
-`ψ p`, as a continuous family `P × ∂D^k → M_{c-ε}` over `P`, with `M_{c-ε}` viewed inside
-`M_{c+ε}`: the restriction of `TauCeti.morseCharacteristicFamily` to the boundary spheres. -/
-def morseAttachingFamily (ψ : P → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
-    (hk : k ≤ n) (hε : 0 ≤ ε) (hball : ∀ p, closedBall 0 √ε ⊆ (ψ p).target)
-    (hf : ∀ p, ∀ y ∈ (ψ p).source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ p y j ^ 2)
-    (hs : ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin n) ↦ (ψ q.1).symm q.2)
-      (univ ×ˢ closedBall 0 √ε)) :
-    C(P × TopCat.diskBoundary.{u} k, {y : {x | f x ≤ c + ε} | f y ≤ c - ε}) where
-  toFun q :=
-    ⟨morseCharacteristicFamily ψ hk hε hball hf hs (q.1, TopCat.diskBoundaryInclusion k q.2),
-    (congrArg f (OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball q.1) (hf q.1) hk hε
-      _)).trans_le (OpenPartialHomeomorph.apply_morseCellMap_of_norm_eq_one (hball q.1) (hf q.1) hk
-        hε (TopCat.norm_diskBoundaryInclusion q.2)).le⟩
-  continuous_toFun := ((morseCharacteristicFamily ψ hk hε hball hf hs).continuous.comp
-    (continuous_fst.prodMk ((TopCat.diskBoundaryInclusion k).hom.continuous.comp
-      continuous_snd))).subtype_mk _
-
-variable {ψ : P → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} (hk : k ≤ n) (hε : 0 ≤ ε)
-  (hball : ∀ p, closedBall 0 √ε ⊆ (ψ p).target)
-  (hf : ∀ p, ∀ y ∈ (ψ p).source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ p y j ^ 2)
-  (hs : ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin n) ↦ (ψ q.1).symm q.2)
-    (univ ×ˢ closedBall 0 √ε))
-
-@[simp]
-theorem morseCharacteristicFamily_apply (p : P) (w : TopCat.disk.{u} k) :
-    morseCharacteristicFamily ψ hk hε hball hf hs (p, w) =
-      (ψ p).morseCharacteristicMap hk hε (hball p) (hf p) w :=
-  (rfl)
-
-@[simp]
-theorem coe_morseAttachingFamily_apply (p : P) (s : TopCat.diskBoundary.{u} k) :
-    (morseAttachingFamily ψ hk hε hball hf hs (p, s) : {x | f x ≤ c + ε}) =
-      morseCharacteristicFamily ψ hk hε hball hf hs (p, TopCat.diskBoundaryInclusion k s) :=
-  (rfl)
-
-/-- On the boundary spheres the characteristic family is the attaching family. -/
-theorem morseCharacteristicFamily_diskBoundaryInclusion (p : P) (s : TopCat.diskBoundary.{u} k) :
-    morseCharacteristicFamily ψ hk hε hball hf hs (p, TopCat.diskBoundaryInclusion k s) =
-      morseAttachingFamily ψ hk hε hball hf hs (p, s) :=
-  (rfl)
-
-end Family
-
 section Comparison
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -142,10 +74,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type u} [TopologicalSpace M] [ChartedSpace H M] [IsManifold Iₘ ∞ M] [T2Space M]
   {f : M → ℝ} {c ε : ℝ} {n : ℕ} {P : Type u} [TopologicalSpace P] {ι : Type u} {k : ι → ℕ}
 
-/-- The polar-factor homotopy of `TauCeti.exists_homotopy_morseCharacteristicMap_polarFactor_family`
-as a homotopy of families over `P`, from the characteristic family of `ψ₁` to that of `ψ₀` composed
-with the disk maps of the polar factors `g p`, which are jointly continuous. -/
-private theorem exists_homotopy_morseCharacteristicFamily [CompactSpace P] {k : ℕ}
+/-- **Characteristic families of two chart families are homotopic up to isometries.** Let `P` be
+compact and let `ψ₀ p` and `ψ₁ p` be normal-form charts with common centres, as in
+`TauCeti.exists_homotopy_morseCharacteristicMap_polarFactor_family`. Then there are linear
+isometries `g p` of `ℝᵏ`, jointly continuous in `p` and the point, and a homotopy over `P` from the
+characteristic family of `ψ₁` to that of `ψ₀` composed with the disk maps of the `g p`, which keeps
+the boundary spheres in `M_{c-ε}`. The `g p` are the polar factors of the negative blocks of the
+derivatives of the transitions at the origin. -/
+theorem exists_homotopy_morseCharacteristicFamily [CompactSpace P] {k : ℕ}
     (hf : ContMDiff Iₘ 𝓘(ℝ) ∞ f) (ψ₀ ψ₁ : P → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
     (hk : k ≤ n) (hε : 0 < ε) (hball₀ : ∀ p, closedBall 0 √ε ⊆ (ψ₀ p).target)
     (hball₁ : ∀ p, closedBall 0 √ε ⊆ (ψ₁ p).target)
@@ -178,7 +114,7 @@ private theorem exists_homotopy_morseCharacteristicFamily [CompactSpace P] {k : 
     hgc.congr fun p ↦ ContinuousLinearMap.ext fun x ↦ (congrFun (hg p) x).symm
   refine ⟨g, (hgc'.comp continuous_fst).clm_apply continuous_snd,
     { toContinuousMap := K
-      map_zero_left := fun q ↦ hK0 q.1 q.2
+      map_zero_left := fun q ↦ (hK0 q.1 q.2).trans (morseCharacteristicFamily_apply ..).symm
       map_one_left := fun q ↦ (hK1 q.1 q.2).trans (by
         simp only [ContinuousMap.comp_apply, ContinuousMap.prod_eval, ContinuousMap.fst_apply,
           morseCharacteristicFamily_apply]

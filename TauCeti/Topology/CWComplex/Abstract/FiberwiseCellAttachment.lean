@@ -868,11 +868,17 @@ private def reattachmentBoundaryHomotopy (i : ι) :
       ((TopCat.diskBoundaryInclusion (k i)).hom.continuous.comp
         (continuous_snd.comp continuous_snd))))).subtype_mk _⟩
 
+private theorem coe_reattachmentBoundaryHomotopy_apply (i : ι) (t : I) (p : P)
+    (s : TopCat.diskBoundary.{u} (k i)) :
+    (reattachmentBoundaryHomotopy χ₀ χ₁ h K hK i (t, (p, s)) : Y) =
+      K i (t, (p, TopCat.diskBoundaryInclusion (k i) s)) :=
+  rfl
+
 include hχ₁ in
 private theorem reattachmentBoundaryHomotopy_zero (i : ι) (p : P)
     (s : TopCat.diskBoundary.{u} (k i)) :
     reattachmentBoundaryHomotopy χ₀ χ₁ h K hK i (0, (p, s)) = α₁ i (p, s) :=
-  Subtype.ext ((K i).apply_zero _ |>.trans (hχ₁ i p s))
+  Subtype.ext <| by rw [coe_reattachmentBoundaryHomotopy_apply, (K i).apply_zero, hχ₁]
 
 include hg hg' in
 /-- For `‖x‖ ≤ 1/4`, the composite of the reattachment maps along `K` and `K'` sends the point `x`
@@ -900,8 +906,8 @@ private theorem collarCell_of_norm_le_quarter (i : ι) (p : P) {x z : TopCat.dis
       (hv := TopCat.coe_reattachmentRadial_of_norm_le hy₂),
     collarCell_of_norm_le _ p hz₂ (TopCat.coe_reattachmentRadial_of_norm_le hz₂)]
   refine congrArg (fun w ↦ fiberwiseCellAttachmentCell α₁ i (p, w)) (ULift.ext (Subtype.ext ?_))
-  rw [hg', TopCat.coe_reattachmentRadial_of_norm_le hy₂, hy, ← map_smul,
-    LinearIsometryEquiv.symm_apply_apply, TopCat.coe_reattachmentRadial_of_norm_le hz₂, hz]
+  simp [hg', TopCat.coe_reattachmentRadial_of_norm_le hy₂, hy, ← map_smul,
+    TopCat.coe_reattachmentRadial_of_norm_le hz₂, hz]
 
 include hg hg' hKK' in
 /-- For `1/4 ≤ ‖x‖ ≤ 1/2`, the composite of the reattachment maps along `K` and `K'` sends the point
@@ -932,13 +938,10 @@ private theorem collarCell_of_quarter_le_norm_le_half (i : ι) (p : P)
       (by rw [coe_symm_eq, TopCat.coe_reattachmentTime_of_le_norm hy₂, hny]; ring)
       (TopCat.coe_annulusDir (by norm_num) ⟨z, hz₂⟩)]
   refine congrArg (fun a ↦ fiberwiseCellAttachmentIncl α₁ (p, a)) (Subtype.ext ?_)
-  refine Eq.symm ((hKK' i _ p _).trans (congrArg (fun w ↦ K i (_, (p, w)))
-    (ULift.ext (Subtype.ext ?_))))
-  rw [hg', TopCat.coe_diskBoundaryInclusion_apply_down, TopCat.coe_annulusDir,
-    TopCat.coe_diskBoundaryInclusion_apply_down, TopCat.coe_annulusDir, map_smul, hy,
-    LinearIsometryEquiv.symm_apply_apply, LinearIsometryEquiv.norm_map]
-  dsimp only
-  rw [hz]
+  rw [coe_reattachmentBoundaryHomotopy_apply]
+  refine Eq.trans ?_ (hKK' i _ p _).symm
+  refine congrArg (fun w ↦ K i (_, (p, w))) (ULift.ext (Subtype.ext ?_))
+  simp [hg', TopCat.coe_diskBoundaryInclusion_apply_down, TopCat.coe_annulusDir, hy, hz, norm_smul]
 
 /-- For `1/2 ≤ ‖x‖`, the composite of the reattachment maps along `K` and `K'` sends the point `x`
 of the `i`-th cell to the point `K i (2 - 2‖x‖, x/‖x‖)` of `A`: `E` sends it there, and `E'` is the
@@ -957,10 +960,9 @@ private theorem collarCell_of_half_le_norm (i : ι) (p : P) {x z : TopCat.disk.{
     rw [hz, norm_smul, Real.norm_of_nonneg (div_nonneg h₃.le hx₀.le), div_mul_cancel₀ _ hx₀.ne']
   have hz₂ : 1 / 2 ≤ ‖z.down.1‖ := by rw [hnz]; linarith [mem_closedBall_zero_iff.1 x.down.2]
   have hθ : (TopCat.annulusDir (by norm_num) ⟨x, hx⟩).down.1 = ‖z.down.1‖⁻¹ • z.down.1 := by
-    rw [TopCat.coe_annulusDir, hnz, hz, smul_smul]
-    congr 1
-    field_simp
-    exact (div_self (by linarith)).symm
+    have hc : (3 / 2 - ‖x.down.1‖)⁻¹ * ((3 / 2 - ‖x.down.1‖) / ‖x.down.1‖) = ‖x.down.1‖⁻¹ := by
+      rw [mul_div_assoc', inv_mul_cancel₀ h₃.ne', one_div]
+    rw [TopCat.coe_annulusDir, hnz, hz, smul_smul, hc]
   rw [fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm (hw := hx)
       (ht := TopCat.coe_reattachmentTime_of_le_norm hx)
       (hs := TopCat.coe_annulusDir (by norm_num) ⟨x, hx⟩),
@@ -968,7 +970,8 @@ private theorem collarCell_of_half_le_norm (i : ι) (p : P) {x z : TopCat.disk.{
     collarCell_of_le_norm _ p hz₂ (t := TopCat.reattachmentTime x)
       (by rw [TopCat.coe_reattachmentTime_of_le_norm hx, hnz]; ring)
       hθ]
-  rfl
+  exact congrArg (fun a ↦ fiberwiseCellAttachmentIncl α₁ (p, a))
+    (Subtype.ext (coe_reattachmentBoundaryHomotopy_apply χ₀ χ₁ h K hK i _ p _).symm)
 
 include hg hg' hKK' in
 /-- At time `0` the fold path, read in the cell with a collar along `K i`, is the composite of the
@@ -1205,15 +1208,8 @@ theorem exists_fiberHomotopyEquiv_fiberwiseCellAttachment_of_homotopy :
       ∃ G : (Ψ.toFun.comp Ψ.invFun).HomotopyRel (ContinuousMap.id _)
           (range (fiberwiseCellAttachmentIncl α₀)),
         ∀ t y, fiberwiseCellAttachmentProj α₀ (G (t, y)) = fiberwiseCellAttachmentProj α₀ y := by
-  -- In finite dimension the isometries are continuous in the operator norm, and so are their
-  -- inverses, since the linear isometries form a topological group.
-  have hg' (i : ι) : Continuous fun q : P × EuclideanSpace ℝ (Fin (k i)) ↦ (g i q.1).symm q.2 := by
-    open scoped TauCeti.LinearIsometryEquivOperatorNorm in
-    have hgc : Continuous (g i) := LinearIsometryEquiv.continuous_operatorNorm_iff_apply.2
-      fun v ↦ (hg i).comp (continuous_id.prodMk continuous_const)
-    open scoped TauCeti.LinearIsometryEquivOperatorNorm in
-    exact (continuous_eval.comp ((hgc.inv.comp continuous_fst).prodMk continuous_snd)).congr
-      fun q ↦ by simp [LinearIsometryEquiv.coe_inv]
+  have hg' (i : ι) : Continuous fun q : P × EuclideanSpace ℝ (Fin (k i)) ↦ (g i q.1).symm q.2 :=
+    LinearIsometryEquiv.continuous_symm_apply_of_continuous_apply (hg i)
   let h' := diskMapFamilyInv g hg'
   have hh (i : ι) (p : P) : MapsTo (fun w ↦ TopCat.diskMapFamily (g i) (hg i) (p, w))
       (range (TopCat.diskBoundaryInclusion.{u} (k i)))

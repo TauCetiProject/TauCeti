@@ -18,7 +18,9 @@ maps. This topology permits comparisons between orthogonal groups and groups of 
 isometries. The instance is scoped as `TauCeti.LinearIsometryEquivOperatorNorm`.
 
 In finite dimension, continuity of a family is equivalent to continuity at each vector.
-The linear isometry group of any normed space is a topological group.
+The linear isometry group of any normed space is a topological group. The inverses of a jointly
+continuous family of linear isometry equivalences are jointly continuous
+(`LinearIsometryEquiv.continuous_symm_apply_of_continuous_apply`).
 -/
 
 public section
@@ -100,5 +102,26 @@ theorem isTopologicalGroup_operatorNorm : IsTopologicalGroup (E ≃ₗᵢ[𝕜] 
 
 scoped[TauCeti.LinearIsometryEquivOperatorNorm] attribute [instance]
   LinearIsometryEquiv.isTopologicalGroup_operatorNorm
+
+/-- If a family of linear isometry equivalences `f x` between normed spaces is jointly continuous
+in the parameter and the vector, then so is the family of their inverses: with
+`w = (f x₀)⁻¹ v₀`, `‖(f x)⁻¹ v - w‖ ≤ ‖v - v₀‖ + ‖f x w - f x₀ w‖`. -/
+theorem continuous_symm_apply_of_continuous_apply {X : Type*} [TopologicalSpace X]
+    {f : X → E ≃ₗᵢ[𝕜] F} (hf : Continuous fun q : X × E => f q.1 q.2) :
+    Continuous fun q : X × F => (f q.1).symm q.2 := by
+  refine continuous_iff_continuousAt.2 fun q₀ => ?_
+  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
+  set w := (f q₀.1).symm q₀.2
+  have h₁ := tendsto_iff_norm_sub_tendsto_zero.1 (continuous_snd.tendsto q₀)
+  have h₂ := tendsto_iff_norm_sub_tendsto_zero.1
+    ((hf.comp (continuous_fst.prodMk (continuous_const (y := w)))).tendsto q₀)
+  refine squeeze_zero (fun _ => norm_nonneg _) (fun q => ?_) (by simpa using h₁.add h₂)
+  calc ‖(f q.1).symm q.2 - w‖
+      ≤ ‖(f q.1).symm q.2 - (f q.1).symm q₀.2‖ + ‖(f q.1).symm q₀.2 - w‖ :=
+        norm_sub_le_norm_sub_add_norm_sub _ _ _
+    _ = ‖q.2 - q₀.2‖ + ‖f q.1 w - f q₀.1 w‖ := by
+        have hw : f q₀.1 w = q₀.2 := apply_symm_apply _ _
+        rw [← map_sub, norm_map, hw, ← (f q.1).norm_map ((f q.1).symm q₀.2 - w), map_sub,
+          apply_symm_apply, norm_sub_rev q₀.2]
 
 end LinearIsometryEquiv
