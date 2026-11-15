@@ -126,7 +126,7 @@ theorem norm_aeval_hermite_mul_pow_div_factorial_le (m : ℕ) (y : ℝ) (w : ℂ
   have hb := mul_le_mul_of_nonneg_left (abs_aeval_hermite_mul_exp_div_factorial_le m y)
     (by positivity : 0 ≤ Real.exp (y ^ 2 / 2) * ‖w‖ ^ m)
   have hexp : Real.exp (y ^ 2 / 2) * Real.exp (-(y ^ 2) / 2) = 1 := by
-    rw [← Real.exp_add, show y ^ 2 / 2 + -(y ^ 2) / 2 = 0 by ring, Real.exp_zero]
+    rw [← Real.exp_add, neg_div, add_neg_cancel, Real.exp_zero]
   rw [hnorm]
   calc |Polynomial.aeval y (Polynomial.hermite m)| * ‖w‖ ^ m / (m ! : ℝ)
       = (Real.exp (y ^ 2 / 2) * Real.exp (-(y ^ 2) / 2)) *

@@ -16,6 +16,7 @@ import Mathlib.Analysis.MellinTransform
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Half-line Gaussian–Laplace integrals
@@ -45,7 +46,7 @@ derivative shifts and the termwise shifted integrals of the Laplace–Hermite ro
   `(a, ∞)` (`0 < a`) for `0 < b` with arbitrary `(s, c)` and for `0 ≤ b` when `0 < c` or
   `0 ≤ c ∧ s < -1`.
 * `TauCeti.norm_cpow_mul_cexp_neg_mul_sq_sub_mul`: pointwise norm formula on `(0, ∞)` for
-  `(u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)`.
+  `(u : ℂ) ^ s * cexp (-b * (u : ℂ) ^ 2 - z * u)`.
 * `TauCeti.integrableOn_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi`,
   `TauCeti.integrableOn_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi_of_pos`: complex integrability on
   `(0, ∞)` for `0 < b.re` and `0 < s.re`, and on `(a, ∞)` (`0 < a`) for `0 < b.re` and any `s`.
@@ -86,18 +87,6 @@ theorem integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi {b s : ℝ} (hb : 0 < b
         mul_le_mul_of_nonneg_left (exp_neg_mul_sq_sub_mul_le hb c u) (by positivity)
     _ = rexp (c ^ 2 / (2 * b)) * (u ^ s * rexp (-(b / 2) * u ^ 2)) := by ring
 
-private theorem rpow_le_rpow_sub_mul_rpow_max {a u : ℝ} (ha : 0 < a) (hu : a < u) (s : ℝ) :
-    u ^ s ≤ a ^ (s - max s 0) * u ^ max s 0 := by
-  set m := max s 0
-  have hu0 : 0 < u := ha.trans hu
-  have hua : 1 ≤ u / a := (one_le_div ha).mpr hu.le
-  have hle : (u / a) ^ s ≤ (u / a) ^ m :=
-    Real.rpow_le_rpow_of_exponent_le hua (le_max_left s 0)
-  rw [Real.div_rpow hu0.le ha.le, Real.div_rpow hu0.le ha.le,
-    div_le_div_iff₀ (Real.rpow_pos_of_pos ha s) (Real.rpow_pos_of_pos ha m)] at hle
-  rw [Real.rpow_sub ha, div_mul_eq_mul_div, le_div_iff₀ (Real.rpow_pos_of_pos ha m)]
-  linarith
-
 /-- For `0 < a` and `0 < b`, `u ↦ u ^ s * exp (-b u² - c u)` is integrable on `(a, ∞)` for every
 real exponent `s` and linear parameter `c`. -/
 theorem integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi_of_pos {a b : ℝ} (ha : 0 < a)
@@ -117,7 +106,9 @@ theorem integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi_of_pos {a b : ℝ} (ha 
   rw [Real.norm_of_nonneg (by positivity)]
   calc u ^ s * rexp (-b * u ^ 2 - c * u)
       ≤ (a ^ (s - m) * u ^ m) * rexp (-b * u ^ 2 - c * u) :=
-        mul_le_mul_of_nonneg_right (rpow_le_rpow_sub_mul_rpow_max ha hu s) (Real.exp_pos _).le
+        mul_le_mul_of_nonneg_right
+          (Real.rpow_le_rpow_sub_mul_rpow_of_exponent_le ha hu.le (le_max_left s 0))
+          (Real.exp_pos _).le
     _ = a ^ (s - m) * (u ^ m * rexp (-b * u ^ 2 - c * u)) := by ring
 
 /-- For `0 < a` and `0 ≤ b`, `u ↦ u ^ s * exp (-b u² - c u)` is integrable on `(a, ∞)` whenever
@@ -141,7 +132,7 @@ theorem integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi_of_nonneg {a b s c : �
     rw [Real.norm_of_nonneg (by positivity), Real.rpow_one]
     calc u ^ s * rexp (-b * u ^ 2 - c * u)
         ≤ (a ^ (s - m) * u ^ m) * rexp (-c * u) :=
-          mul_le_mul (rpow_le_rpow_sub_mul_rpow_max ha hu s)
+          mul_le_mul (Real.rpow_le_rpow_sub_mul_rpow_of_exponent_le ha hu.le (le_max_left s 0))
             (Real.exp_le_exp.mpr (by nlinarith [sq_nonneg u])) (Real.exp_pos _).le (by positivity)
       _ = a ^ (s - m) * (u ^ m * rexp (-c * u)) := by ring
   · refine (integrableOn_Ioi_rpow_of_lt hs ha).mono' hmeas ?_
@@ -156,14 +147,13 @@ private theorem re_neg_mul_sq_sub_mul (b z : ℂ) (u : ℝ) :
   simp [sq]
 
 /-- For `0 < u` and any `b s z : ℂ`, the norm of
-`(u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)` is
-`u ^ (s.re - 1) * exp (-b.re * u ^ 2 - z.re * u)`. -/
+`(u : ℂ) ^ s * cexp (-b * (u : ℂ) ^ 2 - z * u)` is
+`u ^ s.re * exp (-b.re * u ^ 2 - z.re * u)`. -/
 theorem norm_cpow_mul_cexp_neg_mul_sq_sub_mul (b s z : ℂ) {u : ℝ} (hu : 0 < u) :
-    ‖(u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)‖ =
-      u ^ (s.re - 1) * rexp (-b.re * u ^ 2 - z.re * u) := by
+    ‖(u : ℂ) ^ s * cexp (-b * (u : ℂ) ^ 2 - z * u)‖ =
+      u ^ s.re * rexp (-b.re * u ^ 2 - z.re * u) := by
   rw [norm_mul, Complex.norm_cpow_eq_rpow_re_of_pos hu, Complex.norm_exp,
     re_neg_mul_sq_sub_mul]
-  simp
 
 /-- For `0 < b.re` and `0 < s.re`, the complex Gaussian–Laplace integrand
 `u ↦ (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)` is integrable on `(0, ∞)` for every
@@ -176,7 +166,8 @@ theorem integrableOn_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi {b s : ℂ} (hb : 0 < 
     z.re
   refine hmaj.mono' (Measurable.aestronglyMeasurable (by fun_prop)) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : 0 < u)
-  rw [norm_cpow_mul_cexp_neg_mul_sq_sub_mul b s z hu]
+  rw [norm_cpow_mul_cexp_neg_mul_sq_sub_mul b (s - 1) z hu]
+  simp
 
 /-- For `0 < a` and `0 < b.re`, `u ↦ (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)` is
 integrable on `(a, ∞)` for every `s z : ℂ`. -/
@@ -187,7 +178,8 @@ theorem integrableOn_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi_of_pos {a : ℝ} {b : 
   have hmaj := integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi_of_pos ha hb (s.re - 1) z.re
   refine hmaj.mono' (Measurable.aestronglyMeasurable (by fun_prop)) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : a < u)
-  rw [norm_cpow_mul_cexp_neg_mul_sq_sub_mul b s z (ha.trans hu)]
+  rw [norm_cpow_mul_cexp_neg_mul_sq_sub_mul b (s - 1) z (ha.trans hu)]
+  simp
 
 /-- Positive rescaling `v = c * u` (`0 < c`) in the half-line Gaussian–Laplace integral: for every
 `b s z : ℂ`, `∫_{u > 0} u^{s - 1} exp (-(b c²) u² - z u) du` equals
@@ -235,9 +227,7 @@ theorem hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi {b s : ℂ} (hb
       rw [Metric.mem_ball, dist_eq_norm] at hw
       have h1 : |w.re - z.re| < 1 := lt_of_le_of_lt (Complex.abs_re_le_norm (w - z)) hw
       linarith [abs_lt.mp h1, le_abs_self z.re, neg_le_abs z.re]
-    rw [norm_neg, show (u : ℂ) ^ s = (u : ℂ) ^ ((s + 1) - 1) by rw [add_sub_cancel_right],
-      norm_cpow_mul_cexp_neg_mul_sq_sub_mul b (s + 1) w hu]
-    simp only [Complex.add_re, Complex.one_re, add_sub_cancel_right]
+    rw [norm_neg, norm_cpow_mul_cexp_neg_mul_sq_sub_mul b s w hu]
     gcongr
   · filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : 0 < u) w _
     have hu0 : (u : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hu.ne'

@@ -40,12 +40,12 @@ representation of `U(s - 1 / 2, x)` (DLMF 12.5.1) and the Hermite polynomial spe
    estimate `TauCeti.norm_aeval_hermite_mul_pow_div_factorial_le` (derived from
    `TauCeti.abs_aeval_hermite_mul_exp_div_factorial_le`) gives
    `‖He_m(y) w^m / m!‖ ≤ exp(y² / 2) * ((‖w‖ / √2)^m / Γ(m / 2 + 1))`.
-   Bounding `(u : ℝ)^{k + M} ≤ u^M` on `(0, 1]` and applying the polynomial-free bound
-   `Real.tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp` cancels `‖r‖² u² / 2` against
-   `exp(-u² / 2)` without introducing polynomial growth in `u`. Consequently, for every `M : ℕ`,
-   `s, x, r : ℂ` with `0 < s.re + M`, and `y : ℝ`, the `M`-shifted tail converges absolutely
-   whenever `‖r‖ < 1`, whenever `‖r‖ ≤ 1` and `0 < x.re`, and at the critical case `‖r‖ ≤ 1`,
-   `0 ≤ x.re`, `s.re < 0`.
+   Applying `Real.abs_tsum_mul_pow_add_div_Gamma_div_two_add_one_le_of_abs_le_one` on `(0, 1]` and
+   the polynomial-free bound `Real.abs_tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp` on
+   `(1, ∞)` cancels `‖r‖² u² / 2` against `exp(-u² / 2)` without losing integrability near `0`.
+   Consequently, for every `M : ℕ`, `s, x, r : ℂ` with `0 < s.re + M`, and `y : ℝ`, the `M`-shifted
+   tail converges absolutely whenever `‖r‖ < 1`, whenever `‖r‖ ≤ 1` and `0 < x.re`, and at the
+   critical case `‖r‖ ≤ 1`, `0 ≤ x.re`, `s.re < 0`.
 2. **Holomorphy in `s`:** Uniform domination on small disks by pairs of real exponents yields
    complex differentiability of the `M`-shifted `tsum` on `{s : ℂ | 0 < s.re + M}` whenever
    `‖r‖ < 1` or `‖r‖ ≤ 1 ∧ 0 < x.re`, and on `{s : ℂ | 0 < s.re + M ∧ s.re < 0}` at the critical
@@ -119,8 +119,7 @@ theorem mul_integral_cpow_add_nat_eq_integral_mul (s x r y : ℂ) (m : ℕ) :
   refine setIntegral_congr_fun measurableSet_Ioi fun u (hu : 0 < u) => ?_
   have hu0 : (u : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hu.ne'
   have hcpow : (u : ℂ) ^ (s + (m : ℂ) - 1) = (u : ℂ) ^ (s - 1) * (u : ℂ) ^ m := by
-    rw [show s + (m : ℂ) - 1 = (s - 1) + (m : ℂ) by ring, Complex.cpow_add _ _ hu0,
-      Complex.cpow_natCast]
+    rw [add_sub_right_comm, Complex.cpow_add _ _ hu0, Complex.cpow_natCast]
   rw [hcpow, mul_pow]
   ring
 
@@ -138,27 +137,13 @@ theorem integrableOn_rpow_mul_exp_mul_tsum_pow_div_Gamma_Ioi {σ x q : ℝ} {M :
       (Ioi 0) := by
   let S : ℝ → ℝ := fun u =>
     ∑' k : ℕ, (q * u / √2) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)
-  let S_abs : ℝ → ℝ := fun u =>
-    ∑' k : ℕ, (|q| * u / √2) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)
   have hmeas : Measurable fun u : ℝ => u ^ (σ - 1) * rexp (-u ^ 2 / 2 - x * u) * S u :=
     (by fun_prop : Measurable fun u : ℝ => u ^ (σ - 1) * rexp (-u ^ 2 / 2 - x * u)).mul
       ((Real.continuous_tsum_pow_add_div_Gamma_div_two_add_one M).measurable.comp (by fun_prop))
-  have hS_norm : ∀ {u : ℝ}, 0 < u → ‖S u‖ ≤ S_abs u := fun {u} hu => by
-    have hterm_norm :
-        (fun k : ℕ => ‖(q * u / √2) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)‖) =
-          fun k : ℕ => (|q| * u / √2) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) := by
-      ext k
-      rw [norm_div, norm_pow, Real.norm_eq_abs, abs_div, abs_mul, abs_of_pos hu,
-        abs_of_pos (Real.sqrt_pos.mpr zero_lt_two),
-        Real.norm_of_nonneg (Real.Gamma_pos_of_pos (by positivity)).le]
-    have hsum_norm :
-        Summable fun k : ℕ => ‖(q * u / √2) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)‖ := by
-      rw [hterm_norm]
-      exact (summable_nat_add_iff M).2 (Real.summable_pow_div_Gamma_div_two_add_one (|q| * u / √2))
-    simpa only [S, S_abs, hterm_norm] using norm_tsum_le_tsum_norm hsum_norm
   rw [← Ioc_union_Ioi_eq_Ioi (zero_le_one : (0 : ℝ) ≤ 1)]
   refine IntegrableOn.union ?_ ?_
-  · let C₀ : ℝ := 2 * rexp (q ^ 2 / 2)
+  · -- Near `0`, extract `u ^ M` via the scaled `[0, 1]` shifted-tail bound.
+    let C₀ : ℝ := 2 * rexp (q ^ 2 / 2)
     have hmaj : IntegrableOn
         (fun u : ℝ => C₀ * (u ^ (σ + (M : ℝ) - 1) * rexp (-(1 / 2) * u ^ 2 - x * u)))
         (Ioc 0 1) :=
@@ -166,40 +151,13 @@ theorem integrableOn_rpow_mul_exp_mul_tsum_pow_div_Gamma_Ioi {σ x q : ℝ} {M :
         (s := σ + (M : ℝ) - 1) (by linarith) x).mono_set Ioc_subset_Ioi_self).const_mul C₀
     refine hmaj.mono' hmeas.aestronglyMeasurable ?_
     filter_upwards [ae_restrict_mem measurableSet_Ioc] with u ⟨hu0, hu1⟩
-    have hS_le : S_abs u ≤ C₀ * u ^ M := by
-      have hterm : ∀ k : ℕ,
-          (|q| * u / √2) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) ≤
-            u ^ M * ((|q| / √2) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) := fun k => by
-        have hpow : (|q| * u / √2) ^ (k + M) ≤ u ^ M * (|q| / √2) ^ (k + M) := by
-          rw [mul_div_right_comm, mul_pow, pow_add u k M, mul_comm (u ^ k)]
-          calc (|q| / √2) ^ (k + M) * (u ^ M * u ^ k)
-              ≤ (|q| / √2) ^ (k + M) * (u ^ M * 1) := by
-                gcongr
-                exact pow_le_one₀ hu0.le hu1
-            _ = u ^ M * (|q| / √2) ^ (k + M) := by ring
-        calc (|q| * u / √2) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)
-            ≤ (u ^ M * (|q| / √2) ^ (k + M)) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) :=
-              div_le_div_of_nonneg_right hpow (Real.Gamma_pos_of_pos (by positivity)).le
-          _ = u ^ M * ((|q| / √2) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) :=
-              mul_div_assoc _ _ _
-      have hsum₁ : Summable fun k : ℕ =>
-          (|q| * u / √2) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) :=
-        (summable_nat_add_iff M).2 (Real.summable_pow_div_Gamma_div_two_add_one (|q| * u / √2))
-      have hsum₂ : Summable fun k : ℕ =>
-          u ^ M * ((|q| / √2) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) :=
-        ((summable_nat_add_iff M).2
-          (Real.summable_pow_div_Gamma_div_two_add_one (|q| / √2))).mul_left (u ^ M)
-      have hsq : (|q| / √2) ^ 2 = q ^ 2 / 2 := by
-        rw [div_pow, sq_abs, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
-      calc S_abs u
-          ≤ ∑' k : ℕ, u ^ M * ((|q| / √2) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1)) :=
-            hsum₁.tsum_le_tsum hterm hsum₂
-        _ = u ^ M * ∑' k : ℕ, (|q| / √2) ^ (k + M) / Real.Gamma ((↑(k + M) : ℝ) / 2 + 1) :=
-            tsum_mul_left
-        _ ≤ u ^ M * (2 * rexp ((|q| / √2) ^ 2)) := by
-            gcongr
-            exact (Real.tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp (|q| / √2) M).le
-        _ = C₀ * u ^ M := by dsimp only [C₀]; rw [hsq]; ring
+    have hS_le : ‖S u‖ ≤ C₀ * u ^ M := by
+      have h := Real.abs_tsum_mul_pow_add_div_Gamma_div_two_add_one_le_of_abs_le_one (q / √2)
+        (u := u) (by rwa [abs_of_pos hu0]) M
+      have hsq : (q / √2) ^ 2 = q ^ 2 / 2 := by
+        rw [div_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
+      rw [abs_of_pos hu0, hsq] at h
+      simpa only [S, Real.norm_eq_abs, div_mul_eq_mul_div] using h
     have hrpow : u ^ (σ - 1) * u ^ M = u ^ (σ + (M : ℝ) - 1) := by
       rw [← Real.rpow_natCast u M, ← Real.rpow_add hu0]
       congr 1
@@ -207,13 +165,14 @@ theorem integrableOn_rpow_mul_exp_mul_tsum_pow_div_Gamma_Ioi {σ x q : ℝ} {M :
     rw [norm_mul, Real.norm_of_nonneg (by positivity)]
     calc u ^ (σ - 1) * rexp (-u ^ 2 / 2 - x * u) * ‖S u‖
         ≤ u ^ (σ - 1) * rexp (-u ^ 2 / 2 - x * u) * (C₀ * u ^ M) :=
-          mul_le_mul_of_nonneg_left ((hS_norm hu0).trans hS_le) (by positivity)
+          mul_le_mul_of_nonneg_left hS_le (by positivity)
       _ = C₀ * ((u ^ (σ - 1) * u ^ M) * rexp (-u ^ 2 / 2 - x * u)) := by ring
       _ = C₀ * (u ^ (σ + (M : ℝ) - 1) * rexp (-(1 / 2) * u ^ 2 - x * u)) := by
           rw [hrpow]
           congr 3
           ring
-  · have htail : IntegrableOn
+  · -- On `(1, ∞)`, cancel `q² u² / 2` against `-u² / 2` via the polynomial-free bound.
+    have htail : IntegrableOn
         (fun u : ℝ => u ^ (σ - 1) * rexp (-((1 - q ^ 2) / 2) * u ^ 2 - x * u)) (Ioi 1) := by
       rcases hconv with hq1 | ⟨hq1, hx⟩
       · have hq_sq : q ^ 2 < 1 := by
@@ -228,18 +187,18 @@ theorem integrableOn_rpow_mul_exp_mul_tsum_pow_div_Gamma_Ioi {σ x q : ℝ} {M :
           (hx.imp_right fun ⟨hx0, _⟩ => ⟨hx0, by linarith⟩)
     refine (htail.const_mul 2).mono' hmeas.aestronglyMeasurable ?_
     filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : 1 < u)
-    have hu0 : 0 < u := zero_lt_one.trans hu
-    have hS_le : S_abs u ≤ 2 * rexp (q ^ 2 / 2 * u ^ 2) := by
-      have h1 := (Real.tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp
-        (|q| * u / √2) M).le
-      have hsq : (|q| * u / √2) ^ 2 = q ^ 2 / 2 * u ^ 2 := by
-        rw [div_pow, mul_pow, sq_abs, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
+    have : 0 < u := zero_lt_one.trans hu
+    have hS_le : ‖S u‖ ≤ 2 * rexp (q ^ 2 / 2 * u ^ 2) := by
+      have h1 := (Real.abs_tsum_pow_add_div_Gamma_div_two_add_one_lt_two_mul_exp
+        (q * u / √2) M).le
+      have hsq : (q * u / √2) ^ 2 = q ^ 2 / 2 * u ^ 2 := by
+        rw [div_pow, mul_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
         ring
-      rwa [hsq] at h1
+      rwa [Real.norm_eq_abs, ← hsq]
     rw [norm_mul, Real.norm_of_nonneg (by positivity)]
     calc u ^ (σ - 1) * rexp (-u ^ 2 / 2 - x * u) * ‖S u‖
         ≤ u ^ (σ - 1) * rexp (-u ^ 2 / 2 - x * u) * (2 * rexp (q ^ 2 / 2 * u ^ 2)) :=
-          mul_le_mul_of_nonneg_left ((hS_norm hu0).trans hS_le) (by positivity)
+          mul_le_mul_of_nonneg_left hS_le (by positivity)
       _ = 2 * (u ^ (σ - 1) * (rexp (-u ^ 2 / 2 - x * u) * rexp (q ^ 2 / 2 * u ^ 2))) := by ring
       _ = 2 * (u ^ (σ - 1) * rexp (-((1 - q ^ 2) / 2) * u ^ 2 - x * u)) := by
           rw [← Real.exp_add]
@@ -259,7 +218,8 @@ private theorem norm_integrand_le_majorantTerm (s x r : ℂ) (y : ℝ) (m : ℕ)
       majorantTerm s.re x.re ‖r‖ y m u := by
   have h1 : ‖(u : ℂ) ^ (s - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u)‖ =
       u ^ (s.re - 1) * rexp (-u ^ 2 / 2 - x.re * u) := by
-    rw [neg_sq_div_two_sub_eq, norm_cpow_mul_cexp_neg_mul_sq_sub_mul (1 / 2) s x hu]
+    rw [neg_sq_div_two_sub_eq, norm_cpow_mul_cexp_neg_mul_sq_sub_mul (1 / 2) (s - 1) x hu]
+    simp only [Complex.sub_re, Complex.one_re]
     congr 2
     norm_num
     ring
@@ -285,7 +245,7 @@ private theorem integrableOn_majorantTerm {σ : ℝ} {m : ℕ} (hσ : 0 < σ + (
   refine IntegrableOn.congr_fun hmaj ?_ measurableSet_Ioi
   intro u (hu : 0 < u)
   have hrpow : u ^ (σ + (m : ℝ) - 1) = u ^ (σ - 1) * u ^ m := by
-    rw [show σ + (m : ℝ) - 1 = (σ - 1) + (m : ℝ) by ring, Real.rpow_add hu, Real.rpow_natCast]
+    rw [add_sub_right_comm, Real.rpow_add hu, Real.rpow_natCast]
   have hexp : -(1 / 2 : ℝ) * u ^ 2 - x * u = -u ^ 2 / 2 - x * u := by ring
   unfold majorantTerm
   dsimp [C₁]
@@ -550,6 +510,7 @@ theorem hasSum_pow_div_factorial_mul_hermite_mul_integral {s : ℂ} (hs : 0 < s.
       (aeval (y : ℂ) (hermite m) * ((r : ℂ) * u) ^ m / (m ! : ℂ))
   let f : ℝ → ℂ := fun u =>
     (u : ℂ) ^ (s - 1) * cexp (-((1 / 2 : ℂ) * (c : ℂ) ^ 2) * (u : ℂ) ^ 2 - (x - r * y) * u)
+  -- Interchange sum and integral by dominated convergence against `majorantTerm`.
   have hr' : |r| < 1 ∨ (|r| ≤ 1 ∧ (0 < x.re ∨ (0 ≤ x.re ∧ s.re < 0))) :=
     hr.imp_right fun ⟨h1, h2⟩ => ⟨h1, Or.inl h2⟩
   have hdom : HasSum (fun m : ℕ => ∫ u in Ioi (0 : ℝ), F m u) (∫ u in Ioi (0 : ℝ), f u) := by
@@ -567,8 +528,7 @@ theorem hasSum_pow_div_factorial_mul_hermite_mul_integral {s : ℂ} (hs : 0 < s.
           (rexp (y ^ 2 / 2))) ?_ measurableSet_Ioi
       intro u _
       unfold majorantTerm
-      simp only [Nat.add_zero]
-      rw [tsum_mul_left, tsum_mul_left]
+      simp only [Nat.add_zero, tsum_mul_left]
     · filter_upwards [ae_restrict_mem measurableSet_Ioi] with u _
       have hgen := (Polynomial.hasSum_hermite_generating_function (y : ℂ) ((r : ℂ) * u)).mul_left
         ((u : ℂ) ^ (s - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u))
@@ -582,17 +542,11 @@ theorem hasSum_pow_div_factorial_mul_hermite_mul_integral {s : ℂ} (hs : 0 < s.
         push_cast
         ring
       exact hf_eq ▸ hgen
+  -- Rescale `v = c * u` (`c = √(1 + r²)`) in the summed Gaussian–Laplace integral.
   have hscale := integral_cpow_mul_cexp_neg_mul_sq_mul_sq_sub_mul_Ioi_eq_cpow_mul_integral hc
     (1 / 2) s (x - r * y)
-  have htarget : ∫ u in Ioi (0 : ℝ), f u =
-      (c : ℂ) ^ (-s) *
-        ∫ v in Ioi (0 : ℝ),
-          (v : ℂ) ^ (s - 1) * cexp (-(v : ℂ) ^ 2 / 2 - ((x - r * y) / c) * v) := by
-    rw [hscale]
-    congr 1
-    refine setIntegral_congr_fun measurableSet_Ioi fun v _ => ?_
-    rw [neg_sq_div_two_sub_eq]
-  rw [← htarget]
+  simp_rw [← neg_sq_div_two_sub_eq] at hscale
+  rw [← hscale]
   exact hdom.congr_fun fun m => mul_integral_cpow_add_nat_eq_integral_mul s x (r : ℂ) (y : ℂ) m
 
 /-- Trigonometric form of the Laplace–Hermite rotational identity (the Laplace core of DLMF
