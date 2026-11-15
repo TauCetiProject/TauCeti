@@ -52,6 +52,9 @@ points, the form in which Hölder seminorms are written in analysis texts.
 By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1` for
 `α ≤ 1`.
 
+For an `α`-Hölder `f` and a `β`-Hölder `g`, the `α β`-Hölder seminorm of `f ∘ g` is at most the
+seminorm of `f` times the `α`-th power of the seminorm of `g`.
+
 ## Main declarations
 
 * `HolderOnWith.of_dist_le`: a Hölder bound stated with `dist` gives `HolderOnWith`; the converse
@@ -93,6 +96,7 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
 * `eHolderNorm_le_iff`: `eHolderNorm r f ≤ C` if and only if the Hölder inequality holds with the
   extended constant `C`.
 * `edist_le_eHolderNorm_mul`: the Hölder inequality holds with the Hölder seminorm as constant.
+* `MemHolder.nnHolderNorm_comp_le`: the Hölder seminorm of a composition of Hölder functions.
 * `eHolderNorm_eq_iSup`, `eHolderNorm_eq_iSup_dist`: the Hölder seminorm is the supremum of the
   difference quotients.
 * `TauCeti.holderWith_norm_rpow`: the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1` for
@@ -456,6 +460,15 @@ theorem edist_le_eHolderNorm_mul {X Y : Type*} [MetricSpace X] [PseudoEMetricSpa
     (f : X → Y) (x y : X) :
     edist (f x) (f y) ≤ eHolderNorm r f * edist x y ^ (r : ℝ) :=
   eHolderNorm_le_iff.1 le_rfl x y
+
+/-- **The Hölder seminorm of a composition.** If `f` is `α`-Hölder and `g` is `β`-Hölder, then the
+`α β`-Hölder seminorm of `f ∘ g` is at most `nnHolderNorm α f * nnHolderNorm β g ^ α`. For a
+`K`-Lipschitz `g` (`β = 1`) the factor is at most `K ^ α`. -/
+theorem MemHolder.nnHolderNorm_comp_le {X' X Z : Type*} [MetricSpace X'] [MetricSpace X]
+    [EMetricSpace Z] {α β : ℝ≥0} {f : X → Z} (hf : MemHolder α f) {g : X' → X}
+    (hg : MemHolder β g) :
+    nnHolderNorm (α * β) (f ∘ g) ≤ nnHolderNorm α f * nnHolderNorm β g ^ (α : ℝ) :=
+  (hf.holderWith.comp hg.holderWith).nnholderNorm_le
 
 /-- The Hölder seminorm is the supremum of the difference quotients
 `edist (f x) (f y) / edist x y ^ r` over pairs of distinct points. -/
