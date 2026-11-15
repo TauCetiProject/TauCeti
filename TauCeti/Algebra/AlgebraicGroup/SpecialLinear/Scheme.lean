@@ -19,6 +19,7 @@ This file presents the special linear group scheme `SLₙ` as the closed subgrou
 ## Main declarations
 
 * `TauCeti.SpecialLinear.groupScheme`: the special linear group scheme.
+* `TauCeti.SpecialLinear.isAffine_groupScheme`: it is affine.
 * `TauCeti.SpecialLinear.groupSchemeι`: the closed immersion `SLₙ ⟶ GLₙ`.
 * `TauCeti.SpecialLinear.groupSchemePointMulEquiv`: the spectrum-points equivalence for `SLₙ`.
 * `TauCeti.SpecialLinear.schemePointsMulEquiv`: the group of scheme-valued points of `SLₙ` is
@@ -64,6 +65,11 @@ lemma groupScheme_X_left :
     (groupScheme R n).X.left = Spec (CommRingCat.of (coordinateHopfAlgebra R n)) := by
   simpa only [groupScheme] using
     hopfSpec_obj_X_left R (coordinateHopfAlgebra R n)
+
+/-- The special linear group scheme is affine. -/
+instance isAffine_groupScheme : IsAffine (groupScheme R n).X.left := by
+  rw [groupScheme_X_left]
+  infer_instance
 
 /-- The closed immersion of the special linear group scheme into the general linear group scheme. -/
 noncomputable def groupSchemeι :

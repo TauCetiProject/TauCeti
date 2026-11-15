@@ -38,14 +38,30 @@ gluing constructions, with explicit radii.
   solutions for two residuals `e` and `e'` (`TauCeti.one_sub_mul_norm_sub_le_mul_norm_sub`). The
   weight only controls the distance when it is positive: if `x` and `y` lie in a common ball of
   radius `r ≤ δ` with `C L r < 1`, then `‖x - y‖ ≤ C / (1 - C L r)` times the residual of `y`, resp.
-  `‖e - e'‖`, so on such a ball solutions depend Lipschitz-continuously on the residual.
+  `‖e - e'‖`, so on such a ball solutions depend Lipschitz-continuously on the residual. More
+  generally, a solution is compared with an arbitrary point `y` through its defect
+  `y + Q (e + N y)` as a fixed point of `z ↦ -Q (e + N z)`
+  (`TauCeti.one_sub_mul_norm_sub_le_norm_add_apply`), and
+  solutions of two different equations through the difference of the maps `z ↦ Q (e + N z)` and
+  `z ↦ Q' (e' + N' z)` (`TauCeti.one_sub_mul_norm_sub_le_norm_apply_sub_apply`).
 * **Uniqueness.** Two solutions in the range of `Q` of norm at most `r ≤ δ` coincide as soon as
   `C L r < 1` (`TauCeti.eq_of_add_add_eq_zero`). The radius `r` may be much larger than the
   radius `2 C ‖e‖` where the solution is constructed.
-* **Existence.** If `E` is complete, `2 C ‖e‖ ≤ δ` and `2 C² L ‖e‖ < 1`, then the map
+* **Existence.** On the closed ball of radius `R ≤ δ`, the map `z ↦ Q (e + N z)` is Lipschitz with
+  constant `C L R` (`TauCeti.lipschitzOnWith_apply_add_apply`). If `E` is complete,
+  `2 C ‖e‖ ≤ δ` and `2 C² L ‖e‖ < 1`, it follows that the map
   `x ↦ -Q (e + N x)` contracts the closed ball of radius `2 C ‖e‖`, and its fixed point is a
   solution `x` in the range of `Q` with `‖x‖ ≤ 2 C ‖e‖`
   (`TauCeti.exists_mem_range_norm_le_add_add_eq_zero`).
+* **Dependence on a parameter.** For a family of equations `e p + D p x + N p x = 0` with
+  constants `C` and `L` uniform in `p`, and targets `F p` that may depend on `p`, solutions `x p`
+  in the range of `Q p` of norm at most `r ≤ δ`, with `C L r < 1`, depend continuously on `p` as
+  soon as each map `p ↦ Q p (e p + N p z)` with `‖z‖ ≤ r` does
+  (`TauCeti.continuousAt_of_eventually_add_add_eq_zero`, which only needs the hypotheses near the
+  base point, and `TauCeti.continuous_of_forall_add_add_eq_zero`). In particular, when moreover
+  `E` is complete, `N p 0 = 0` and `2 C ‖e p‖ ≤ r` for all `p`, the solutions constructed above
+  form a continuous family (`TauCeti.exists_continuous_forall_add_add_eq_zero`). Smooth
+  dependence is in `TauCeti.Analysis.Calculus.QuadraticCorrection`.
 
 No linearity of `D` and no completeness of `F` is needed; the fixed-point characterization needs
 no norms at all, and the estimates only need seminorms on `E` and `F`. The right inverse `Q` is
@@ -69,8 +85,8 @@ arbitrary approximate solutions in that range.
 
 public section
 
-open Metric Set
-open scoped NNReal
+open Filter Metric Set
+open scoped NNReal Topology
 
 namespace TauCeti
 
@@ -108,6 +124,28 @@ variable [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [AddMonoidHomClas
     ‖N x - N y‖ ≤ L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖)
 include hDQ hQ hN
 
+/-- **Defect estimate.** A solution `x` of `e + D x + N x = 0` in the range of `Q` is compared with
+an arbitrary point `y` of the closed ball of radius `δ` through the defect `y + Q (e + N y)` of `y`
+as a fixed point of `z ↦ -Q (e + N z)`: the distance, weighted by `1 - C L (‖x‖ + ‖y‖) / 2`, is at
+most the norm of the defect. -/
+theorem one_sub_mul_norm_sub_le_norm_add_apply {x y : E} (hx : x ∈ closedBall 0 δ)
+    (hy : y ∈ closedBall 0 δ) (hxQ : x ∈ range Q) (hxe : e + D x + N x = 0) :
+    (1 - C * (L / 2 * (‖x‖ + ‖y‖))) * ‖x - y‖ ≤ ‖y + Q (e + N y)‖ := by
+  have hx' : x = -Q (e + N x) := (mem_range_and_add_add_eq_zero_iff hDQ).1 ⟨hxQ, hxe⟩
+  -- The difference splits into `-Q` of the difference of the remainders and the defect of `y`.
+  have hsub : x - y = -Q (N x - N y) - (y + Q (e + N y)) := by
+    calc x - y = -Q (e + N x) - y := by rw [← hx']
+      _ = _ := by simp only [map_add, map_sub]; abel
+  have hle : ‖x - y‖ ≤ C * (L / 2 * (‖x‖ + ‖y‖)) * ‖x - y‖ + ‖y + Q (e + N y)‖ := by
+    calc ‖x - y‖ ≤ ‖Q (N x - N y)‖ + ‖y + Q (e + N y)‖ := by
+          rw [hsub]
+          exact (norm_sub_le _ _).trans_eq (by rw [norm_neg])
+      _ ≤ C * (L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖) + ‖y + Q (e + N y)‖ := by
+          gcongr
+          exact (hQ _).trans (by gcongr; exact hN x hx y hy)
+      _ = _ := by ring
+  linarith
+
 /-- **A priori estimate.** A solution `x` of `e + D x + N x = 0` in the range of the right inverse
 `Q` satisfies a weighted comparison estimate with every point `y` of the range: the distance,
 weighted by `1 - C L (‖x‖ + ‖y‖) / 2`, is at most `C` times the residual of `y`. When the weight is
@@ -116,22 +154,29 @@ theorem one_sub_mul_norm_sub_le_mul_norm_add_add {x y : E} (hx : x ∈ closedBal
     (hy : y ∈ closedBall 0 δ) (hxQ : x ∈ range Q) (hxe : e + D x + N x = 0)
     (hyQ : y ∈ range Q) :
     (1 - C * (L / 2 * (‖x‖ + ‖y‖))) * ‖x - y‖ ≤ C * ‖e + D y + N y‖ := by
-  have hx' : x = -Q (e + N x) := (mem_range_and_add_add_eq_zero_iff hDQ).1 ⟨hxQ, hxe⟩
+  refine (one_sub_mul_norm_sub_le_norm_add_apply hDQ hQ hN hx hy hxQ hxe).trans ?_
   obtain ⟨z, rfl⟩ := hyQ
-  -- Writing `x = -Q (e + N x)` and `Q z = Q (D (Q z))`, the difference is `-Q` of the residual
-  -- of `Q z` plus the difference of the remainders.
-  have hsub : x - Q z = -Q ((e + D (Q z) + N (Q z)) + (N x - N (Q z))) := by
-    calc x - Q z = -Q (e + N x) - Q z := by rw [← hx']
-      _ = _ := by rw [hDQ]; simp only [map_add, map_sub]; abel
-  have h := (hN x hx (Q z) hy)
-  have hle : ‖x - Q z‖ ≤ C * ‖e + D (Q z) + N (Q z)‖ +
-      C * (L / 2 * (‖x‖ + ‖Q z‖)) * ‖x - Q z‖ := by
-    calc ‖x - Q z‖ ≤ C * ‖(e + D (Q z) + N (Q z)) + (N x - N (Q z))‖ := by
-          rw [hsub, norm_neg]; exact hQ _
-      _ ≤ C * (‖e + D (Q z) + N (Q z)‖ + L / 2 * (‖x‖ + ‖Q z‖) * ‖x - Q z‖) := by
-          gcongr; exact (norm_add_le _ _).trans (by gcongr)
-      _ = _ := by ring
-  linarith
+  -- Since `Q z = Q (D (Q z))`, the defect of `Q z` is `Q` of its residual.
+  calc ‖Q z + Q (e + N (Q z))‖ = ‖Q (e + D (Q z) + N (Q z))‖ := by
+        rw [hDQ]; simp only [map_add]; abel_nf
+    _ ≤ C * ‖e + D (Q z) + N (Q z)‖ := hQ _
+
+/-- **Comparison of two equations.** Let `x` solve `e + D x + N x = 0` in the range of `Q`, and let
+`y` solve a second equation `e' + D' y + N' y = 0` in the range of an additive right inverse `Q'` of
+`D'`, whose target `F'` may differ from `F`. If `x` and `y` lie in the closed ball of radius `δ`,
+the distance, weighted by `1 - C L (‖x‖ + ‖y‖) / 2`, is at most the norm
+`‖Q (e + N y) - Q' (e' + N' y)‖` of the difference of the maps `z ↦ Q (e + N z)` and
+`z ↦ Q' (e' + N' z)` at `y`. Only the first equation needs the bound on `Q` and the quadratic
+estimate on `N`. -/
+theorem one_sub_mul_norm_sub_le_norm_apply_sub_apply {F' G' : Type*} [AddCommGroup F']
+    [FunLike G' F' E] [AddMonoidHomClass G' F' E] {Q' : G'} {D' N' : E → F'} {e' : F'}
+    (hDQ' : ∀ y, D' (Q' y) = y) {x y : E} (hx : x ∈ closedBall 0 δ) (hy : y ∈ closedBall 0 δ)
+    (hxQ : x ∈ range Q) (hxe : e + D x + N x = 0) (hyQ : y ∈ range Q')
+    (hye : e' + D' y + N' y = 0) :
+    (1 - C * (L / 2 * (‖x‖ + ‖y‖))) * ‖x - y‖ ≤ ‖Q (e + N y) - Q' (e' + N' y)‖ := by
+  have hy' : y = -Q' (e' + N' y) := (mem_range_and_add_add_eq_zero_iff hDQ').1 ⟨hyQ, hye⟩
+  refine (one_sub_mul_norm_sub_le_norm_add_apply hDQ hQ hN hx hy hxQ hxe).trans_eq ?_
+  rw [sub_eq_add_neg, ← hy', add_comm y]
 
 /-- Solutions `x` of `e + D x + N x = 0` and `y` of `e' + D y + N y = 0` in the range of `Q`
 satisfy a weighted comparison estimate: the distance, weighted by `1 - C L (‖x‖ + ‖y‖) / 2`, is at
@@ -141,10 +186,26 @@ theorem one_sub_mul_norm_sub_le_mul_norm_sub {e' : F} {x y : E} (hx : x ∈ clos
     (hy : y ∈ closedBall 0 δ) (hxQ : x ∈ range Q) (hxe : e + D x + N x = 0)
     (hyQ : y ∈ range Q) (hye : e' + D y + N y = 0) :
     (1 - C * (L / 2 * (‖x‖ + ‖y‖))) * ‖x - y‖ ≤ C * ‖e - e'‖ := by
-  have h : e + D y + N y = e - e' := by
-    rw [← sub_eq_zero, ← hye]
-    abel
-  simpa only [h] using one_sub_mul_norm_sub_le_mul_norm_add_add hDQ hQ hN hx hy hxQ hxe hyQ
+  refine (one_sub_mul_norm_sub_le_norm_apply_sub_apply hDQ hQ hN hDQ hx hy hxQ hxe hyQ hye).trans ?_
+  rw [← map_sub, add_sub_add_right_eq_sub]
+  exact hQ _
+
+omit hDQ in
+/-- On the closed ball of radius `R ≤ δ`, the map `z ↦ Q (e + N z)` is Lipschitz with
+constant `C L R`. -/
+theorem lipschitzOnWith_apply_add_apply {R : ℝ} (hRδ : R ≤ δ) :
+    LipschitzOnWith (C * L * R).toNNReal (fun z ↦ Q (e + N z)) (closedBall 0 R) := by
+  refine LipschitzOnWith.of_dist_le_mul fun z hz w hw ↦ ?_
+  have hz' := mem_closedBall_zero_iff.1 hz
+  have hw' := mem_closedBall_zero_iff.1 hw
+  have hR : 0 ≤ R := (norm_nonneg _).trans hz'
+  rw [Real.coe_toNNReal _ (by positivity), dist_eq_norm, dist_eq_norm]
+  calc ‖Q (e + N z) - Q (e + N w)‖ = ‖Q (N z - N w)‖ := by
+        rw [← map_sub, add_sub_add_left_eq_sub]
+    _ ≤ C * (L / 2 * (‖z‖ + ‖w‖) * ‖z - w‖) := by
+        grw [hQ, hN z (closedBall_subset_closedBall hRδ hz) w (closedBall_subset_closedBall hRδ hw)]
+    _ ≤ C * (L / 2 * (R + R) * ‖z - w‖) := by gcongr
+    _ = C * L * R * ‖z - w‖ := by ring
 
 end Seminormed
 
@@ -205,17 +266,11 @@ theorem exists_mem_range_norm_le_add_add_eq_zero [CompleteSpace E] (hN0 : N 0 = 
       _ = C * ‖e‖ * (1 + 2 * C ^ 2 * L * ‖e‖) := by rw [hR]; ring
       _ ≤ C * ‖e‖ * 2 := by gcongr; linarith
       _ = R := by rw [hR]; ring
-  have hlip : LipschitzOnWith (Real.toNNReal (C * L * R)) T (closedBall 0 R) := by
-    refine LipschitzOnWith.of_dist_le_mul fun x hx y hy ↦ ?_
-    have hx' := mem_closedBall_zero_iff.1 hx
-    have hy' := mem_closedBall_zero_iff.1 hy
-    rw [Real.coe_toNNReal _ (by positivity), dist_eq_norm, dist_eq_norm]
-    calc ‖T x - T y‖ = ‖Q (N x - N y)‖ := by
-          rw [hT, ← norm_neg]; simp only [map_add, map_sub]; congr 1; abel
-      _ ≤ C * (L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖) := by
-          grw [hQ, hN x (hball hx) y (hball hy)]
-      _ ≤ C * (L / 2 * (R + R) * ‖x - y‖) := by gcongr
-      _ = C * L * R * ‖x - y‖ := by ring
+  have hlip : LipschitzOnWith (Real.toNNReal (C * L * R)) T (closedBall 0 R) :=
+    LipschitzOnWith.of_dist_le_mul fun x hx y hy ↦ by
+      have h := (lipschitzOnWith_apply_add_apply (e := e) hQ hN hδ).dist_le_mul x hx y hy
+      rw [dist_comm, dist_eq_norm] at h
+      simpa only [hT, dist_eq_norm, neg_sub_neg] using h
   have hK : ContractingWith (Real.toNNReal (C * L * R)) (hmaps.restrict T _ _) :=
     ⟨Real.toNNReal_lt_one.2 (by rw [hR]; linarith), hlip.mapsToRestrict hmaps⟩
   obtain ⟨x, hxs, hfix, -⟩ := hK.exists_fixedPoint' isClosed_closedBall.isComplete hmaps
@@ -224,5 +279,103 @@ theorem exists_mem_range_norm_le_add_add_eq_zero [CompleteSpace E] (hN0 : N 0 = 
   exact ⟨x, hxQ, mem_closedBall_zero_iff.1 hxs, hxe⟩
 
 end Normed
+
+section Parametric
+
+/-! ### Dependence on a parameter -/
+
+variable {P : Type*} [TopologicalSpace P] {F G : P → Type*} [∀ p, FunLike (G p) (F p) E]
+  {Q : ∀ p, G p} {D N : ∀ p, E → F p} {e : ∀ p, F p}
+
+section Seminormed
+
+variable [SeminormedAddCommGroup E] [∀ p, SeminormedAddCommGroup (F p)]
+  [∀ p, AddMonoidHomClass (G p) (F p) E]
+
+/-- **Continuous dependence on a parameter.** Let `e p + D p x + N p x = 0` be a family of
+equations, with right inverses `Q p` of `D p` and remainders `N p` satisfying the bounds with
+constants `C` and `L` uniform in `p` near `p₀`; the target `F p` of `D p` may depend on `p`. A
+family of solutions `x p` in the range of `Q p`, of norm at most `r ≤ δ` with `C L r < 1` for `p`
+near `p₀`, is continuous at `p₀` as soon as the map `p ↦ Q p (e p + N p z)` is continuous at `p₀`
+for the single point `z = x p₀`. -/
+theorem continuousAt_of_eventually_add_add_eq_zero {p₀ : P}
+    (hDQ : ∀ᶠ p in 𝓝 p₀, ∀ y, D p (Q p y) = y) (hQ : ∀ᶠ p in 𝓝 p₀, ∀ y, ‖Q p y‖ ≤ C * ‖y‖)
+    (hN : ∀ᶠ p in 𝓝 p₀, ∀ x ∈ closedBall (0 : E) δ, ∀ y ∈ closedBall (0 : E) δ,
+      ‖N p x - N p y‖ ≤ L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖)
+    {x : P → E} {r : ℝ} (hrδ : r ≤ δ) (hr : C * L * r < 1) (hx : ∀ᶠ p in 𝓝 p₀, ‖x p‖ ≤ r)
+    (hxQ : ∀ᶠ p in 𝓝 p₀, x p ∈ range (Q p))
+    (hxe : ∀ᶠ p in 𝓝 p₀, e p + D p (x p) + N p (x p) = 0)
+    (hT : ContinuousAt (fun p ↦ Q p (e p + N p (x p₀))) p₀) : ContinuousAt x p₀ := by
+  have hC : (0 : ℝ) ≤ C := C.2
+  have hL : (0 : ℝ) ≤ L := L.2
+  have hk : 0 < 1 - C * L * r := by linarith
+  have hx₀ := hx.self_of_nhds
+  rw [Metric.continuousAt_iff'] at hT ⊢
+  intro ε hε
+  filter_upwards [hT ((1 - C * L * r) * ε) (mul_pos hk hε), hDQ, hQ, hN, hx, hxQ, hxe]
+    with p hp hDQp hQp hNp hxp hxQp hxep
+  rw [dist_eq_norm] at hp ⊢
+  have h := one_sub_mul_norm_sub_le_norm_apply_sub_apply hDQp hQp hNp hDQ.self_of_nhds
+    (mem_closedBall_zero_iff.2 (hxp.trans hrδ)) (mem_closedBall_zero_iff.2 (hx₀.trans hrδ)) hxQp
+    hxep hxQ.self_of_nhds hxe.self_of_nhds
+  -- The weight in the comparison estimate is at least `1 - C L r`.
+  have hw : 1 - C * L * r ≤ 1 - C * (L / 2 * (‖x p‖ + ‖x p₀‖)) := by
+    have := add_le_add hxp hx₀
+    nlinarith [mul_nonneg hC hL]
+  refine lt_of_mul_lt_mul_left ?_ hk.le
+  exact ((mul_le_mul_of_nonneg_right hw (norm_nonneg _)).trans h).trans_lt hp
+
+variable (hDQ : ∀ p y, D p (Q p y) = y) (hQ : ∀ p y, ‖Q p y‖ ≤ C * ‖y‖)
+  (hN : ∀ p, ∀ x ∈ closedBall (0 : E) δ, ∀ y ∈ closedBall (0 : E) δ,
+    ‖N p x - N p y‖ ≤ L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖)
+include hDQ hQ hN
+
+/-- **Continuous dependence on a parameter**, global form: a family of solutions `x p` in the
+range of `Q p`, of norm at most `r ≤ δ` with `C L r < 1`, is continuous when the map
+`p ↦ Q p (e p + N p z)` is continuous for every `z` in the closed ball of radius `r`. -/
+theorem continuous_of_forall_add_add_eq_zero {x : P → E} {r : ℝ} (hrδ : r ≤ δ)
+    (hr : C * L * r < 1) (hx : ∀ p, ‖x p‖ ≤ r) (hxQ : ∀ p, x p ∈ range (Q p))
+    (hxe : ∀ p, e p + D p (x p) + N p (x p) = 0)
+    (hT : ∀ z ∈ closedBall (0 : E) r, Continuous fun p ↦ Q p (e p + N p z)) : Continuous x :=
+  continuous_iff_continuousAt.2 fun p ↦
+    continuousAt_of_eventually_add_add_eq_zero (.of_forall hDQ) (.of_forall hQ) (.of_forall hN)
+      hrδ hr (.of_forall hx) (.of_forall hxQ) (.of_forall hxe)
+      (hT _ (mem_closedBall_zero_iff.2 (hx p))).continuousAt
+
+end Seminormed
+
+variable [NormedAddCommGroup E] [∀ p, SeminormedAddCommGroup (F p)]
+  [∀ p, AddMonoidHomClass (G p) (F p) E]
+  (hDQ : ∀ p y, D p (Q p y) = y) (hQ : ∀ p y, ‖Q p y‖ ≤ C * ‖y‖)
+  (hN : ∀ p, ∀ x ∈ closedBall (0 : E) δ, ∀ y ∈ closedBall (0 : E) δ,
+    ‖N p x - N p y‖ ≤ L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖)
+include hDQ hQ hN
+
+/-- **Existence of a continuous family of solutions.** If `E` is complete, the remainders vanish
+at the origin, `N p 0 = 0`, and the residuals satisfy `2 C ‖e p‖ ≤ r` for one `r ≤ δ` with
+`C L r < 1`, the solutions `x p` of
+`e p + D p x + N p x = 0` constructed by `TauCeti.exists_mem_range_norm_le_add_add_eq_zero` depend
+continuously on `p`, provided the map `p ↦ Q p (e p + N p z)` is continuous for every `z` in the
+closed ball of radius `r`. By
+`TauCeti.eq_of_add_add_eq_zero`, `x p` is the only solution in the range of `Q p` of norm at
+most `r`. -/
+theorem exists_continuous_forall_add_add_eq_zero [CompleteSpace E] (hN0 : ∀ p, N p 0 = 0)
+    {r : ℝ} (hrδ : r ≤ δ) (hr : C * L * r < 1) (he : ∀ p, 2 * C * ‖e p‖ ≤ r)
+    (hT : ∀ z ∈ closedBall (0 : E) r, Continuous fun p ↦ Q p (e p + N p z)) :
+    ∃ x : P → E, Continuous x ∧
+      ∀ p, x p ∈ range (Q p) ∧ ‖x p‖ ≤ 2 * C * ‖e p‖ ∧ e p + D p (x p) + N p (x p) = 0 := by
+  have hC : (0 : ℝ) ≤ C := C.2
+  have hL : (0 : ℝ) ≤ L := L.2
+  have hsol (p : P) : ∃ x ∈ range (Q p), ‖x‖ ≤ 2 * C * ‖e p‖ ∧ e p + D p x + N p x = 0 := by
+    refine exists_mem_range_norm_le_add_add_eq_zero (hDQ p) (hQ p) (hN p) (hN0 p)
+      ((he p).trans hrδ) ?_
+    have : 2 * C ^ 2 * L * ‖e p‖ = C * L * (2 * C * ‖e p‖) := by ring
+    rw [this]
+    exact (mul_le_mul_of_nonneg_left (he p) (mul_nonneg hC hL)).trans_lt hr
+  choose x hxQ hxn hxe using hsol
+  exact ⟨x, continuous_of_forall_add_add_eq_zero hDQ hQ hN hrδ hr (fun p ↦ (hxn p).trans (he p))
+    hxQ hxe hT, fun p ↦ ⟨hxQ p, hxn p, hxe p⟩⟩
+
+end Parametric
 
 end TauCeti

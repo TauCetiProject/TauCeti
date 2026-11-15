@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 
 /-!
@@ -24,7 +25,9 @@ The relative theorem uses derivatives within the source set, so it applies at bo
 corner points. No invertibility, finite dimensionality, or completeness is required.
 
 For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map on smooth forms.
-Its underlying rough form is the existing `TauCeti.mpullback`. Pullback along a smooth map with a
+Its underlying rough form is the existing `TauCeti.mpullback`. Restriction to an open subset does
+not change the values of a smooth form (`TauCeti.SmoothForm.coe_mpullback_subtype_val_apply`).
+Pullback along a smooth map with a
 smooth right inverse, such as a vector bundle projection, is injective. The diffeomorphisms of `M`
 preserving a smooth form form a subgroup of the diffeomorphism group, its stabilizer
 (`TauCeti.SmoothForm.diffeomorphStabilizer`).
@@ -453,6 +456,11 @@ theorem mpullback_mpullback_of_comp_eq {f : M → M'} {g : M' → M''} {f' : M �
     mpullback f hf (mpullback g hg β) = mpullback f' hf' (mpullback g' hg' β) := by
   simp only [mpullback_mpullback, hcomp]
 
+/-- Restricting a smooth form on `M` to an open subset does not change its value at any point. -/
+theorem coe_mpullback_subtype_val_apply {U : TopologicalSpace.Opens M} (σ : SmoothForm I M F k)
+    (x : U) : (mpullback (Subtype.val : U → M) contMDiff_subtype_val σ).1 x = σ.1 x :=
+  TauCeti.mpullback_subtype_val_apply σ.1 x
+
 /-- Pullback along a smooth map with a smooth right inverse is injective. -/
 theorem mpullback_injective_of_rightInverse {f : M → M'} {g : M' → M}
     (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I' I ∞ g) (hfg : Function.RightInverse g f) :
@@ -470,6 +478,14 @@ theorem mpullback_proj_injective {F' : Type*} [NormedAddCommGroup F'] [NormedSpa
     Function.Injective
       (mpullback (I := I.prod 𝓘(ℝ, F')) (I' := I) (F := F) (k := k) (π F' V) (contMDiff_proj V)) :=
   mpullback_injective_of_rightInverse _ (contMDiff_zeroSection ℝ V) fun _ ↦ rfl
+
+/-- Pullback along the second projection `M × M' → M'` is injective when `M` is nonempty: any
+slice `y ↦ (x, y)` is a smooth right inverse of the projection. -/
+theorem mpullback_snd_injective [Nonempty M] :
+    Function.Injective (mpullback (I := I.prod I') (F := F) (k := k) (Prod.snd : M × M' → M')
+      contMDiff_snd) :=
+  mpullback_injective_of_rightInverse _ (g := Prod.mk (Classical.arbitrary M))
+    (contMDiff_const.prodMk contMDiff_id) fun _ ↦ rfl
 
 /-- If a diffeomorphism `φ` pulls `β` back to `α`, then its inverse pulls `α` back to `β`. -/
 theorem mpullback_symm_eq_of_mpullback_eq {φ : M ≃ₘ⟮I, I'⟯ M'} {α : SmoothForm I M F k}
