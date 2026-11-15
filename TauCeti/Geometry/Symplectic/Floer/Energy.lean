@@ -636,32 +636,22 @@ theorem norm_fderiv_sq_le_of_isComplexLinearMap (ω : SymplecticForm V)
     _ ≤ 2 * (2 * (1 + M ^ 2) / a * ω.floerEnergyDensity Ks Kt u z) + 2 * N ^ 2 := by gcongr
     _ = _ := by ring
 
-/-- For a solution of the Floer equation at `z` for `J` with `ω(v, J v) ≤ b ‖v‖²`, and a
-Hamiltonian one-form of norm at most `N` at `(z, u z)`, the energy density is at most
-`2 b (‖∂ₛu(z)‖² + N²)`. -/
+/-- For a solution of the Floer equation at `z` for `J` with `ω(v, J v) ≤ b ‖v‖²`, where `0 ≤ b`,
+the energy density is at most `2 b (‖∂ₛu(z)‖² + ‖X_{K_s}(u z)‖²)`. -/
 theorem floerEnergyDensity_le_of_isComplexLinearMap (ω : SymplecticForm V)
-    {J : AlmostComplexStructure V} {b N : ℝ} (hb : 0 ≤ b) (hJb : ∀ v, ω v (J v) ≤ b * ‖v‖ ^ 2)
-    (hN : ‖ω.hamiltonianOneForm Ks Kt z (u z)‖ ≤ N)
+    {J : AlmostComplexStructure V} {b : ℝ} (hb : 0 ≤ b) (hJb : ∀ v, ω v (J v) ≤ b * ‖v‖ ^ 2)
     (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
       (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
-    ω.floerEnergyDensity Ks Kt u z ≤
-      2 * b * (‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 + N ^ 2) := by
+    ω.floerEnergyDensity Ks Kt u z ≤ 2 * b *
+      (‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 + ‖ω.hamiltonianVectorField (Ks z) (u z)‖ ^ 2) := by
   rw [ω.floerEnergyDensity_eq_of_isComplexLinearMap h, perturbedFDeriv_apply_stdComplexLineReal]
   set d := fderiv ℝ u z stdComplexLineReal
   set X := ω.hamiltonianVectorField (Ks z) (u z)
-  -- `X_{K_s}` is the value of the one-form `X_K` on the unit vector `(1, 0)`.
-  have hX : ‖X‖ ≤ N := by
-    have h1 : ω.hamiltonianOneForm Ks Kt z (u z) stdComplexLineReal = X := by
-      simp [hamiltonianOneForm_apply, X]
-    rw [← h1]
-    refine ((ω.hamiltonianOneForm Ks Kt z (u z)).le_opNorm _).trans ?_
-    simpa [stdComplexLineReal_eq, Prod.norm_def] using hN
-  have h0 : 0 ≤ N := (norm_nonneg _).trans hN
-  have hdX : ‖d - X‖ ^ 2 ≤ 2 * (‖d‖ ^ 2 + N ^ 2) := by
+  have hdX : ‖d - X‖ ^ 2 ≤ 2 * (‖d‖ ^ 2 + ‖X‖ ^ 2) := by
     have := norm_sub_le d X
     nlinarith [norm_nonneg (d - X), norm_nonneg d, norm_nonneg X, sq_nonneg (‖d‖ - ‖X‖)]
   calc ω (d - X) (J (d - X)) ≤ b * ‖d - X‖ ^ 2 := hJb _
-    _ ≤ b * (2 * (‖d‖ ^ 2 + N ^ 2)) := by gcongr
+    _ ≤ b * (2 * (‖d‖ ^ 2 + ‖X‖ ^ 2)) := by gcongr
     _ = _ := by ring
 
 /-- **The energy density and the derivative are comparable over a compact window.** Let `J(z, x)`
@@ -696,15 +686,23 @@ theorem exists_forall_norm_fderiv_sq_le_and_floerEnergyDensity_le (ω : Symplect
     ((J z (u z)).toLinearMap.toContinuousLinearMap.le_opNorm v).trans
       (mul_le_mul_of_nonneg_right ((hM _ hp).trans (le_max_left _ _)) (norm_nonneg _))
   have hNz : ‖ω.hamiltonianOneForm Ks Kt z (u z)‖ ≤ N' := (hN _ hp).trans (le_max_left _ _)
+  -- `X_{K_s}` is the value of the one-form `X_K` on the unit vector `(1, 0)`.
+  have hXz : ‖ω.hamiltonianVectorField (Ks z) (u z)‖ ≤ N' := by
+    have h1 : ω.hamiltonianOneForm Ks Kt z (u z) stdComplexLineReal =
+        ω.hamiltonianVectorField (Ks z) (u z) := by
+      simp [hamiltonianOneForm_apply]
+    rw [← h1]
+    refine ((ω.hamiltonianOneForm Ks Kt z (u z)).le_opNorm _).trans ?_
+    simpa [stdComplexLineReal_eq, Prod.norm_def] using hNz
   have he0 : 0 ≤ ω.floerEnergyDensity Ks Kt u z := ω.floerEnergyDensity_nonneg (hJt z hz _ hu) h
   have h₁ := ω.norm_fderiv_sq_le_of_isComplexLinearMap ha (fun v ↦ (hab _ hp v).1) hJM hNz h
-  have h₂ := ω.floerEnergyDensity_le_of_isComplexLinearMap hb (fun v ↦ (hab _ hp v).2) hNz h
+  have h₂ := ω.floerEnergyDensity_le_of_isComplexLinearMap hb (fun v ↦ (hab _ hp v).2) h
   have hc : 0 ≤ 4 * (1 + M' ^ 2) / a := by positivity
   constructor
   · nlinarith [sq_nonneg N', mul_nonneg hb (sq_nonneg N')]
   · set d := ‖fderiv ℝ u z stdComplexLineReal‖
     have hd0 : 0 ≤ d ^ 2 := sq_nonneg d
-    calc ω.floerEnergyDensity Ks Kt u z ≤ 2 * b * (d ^ 2 + N' ^ 2) := h₂
+    calc ω.floerEnergyDensity Ks Kt u z ≤ 2 * b * (d ^ 2 + N' ^ 2) := h₂.trans (by gcongr)
       _ ≤ 2 * b * (1 + N' ^ 2) * (d ^ 2 + 1) := by
         nlinarith [mul_nonneg (mul_nonneg hb (sq_nonneg N')) hd0]
       _ ≤ _ := by gcongr; nlinarith [sq_nonneg N']

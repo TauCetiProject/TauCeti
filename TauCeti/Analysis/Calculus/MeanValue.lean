@@ -61,6 +61,18 @@ For a function on the real line with derivative of norm at most `D r ^ (β - 1)`
 where `0 ≤ β ≤ 1`, the increments satisfy `‖u b - u a‖ ≤ 2 D |b - a| a ^ (β - 1)` for `a > 0` and
 `a / 2 ≤ b` (`TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt`).
 
+## Staying in a coordinate patch
+
+Let `u` be a continuous map from a ball `B_s(y₀)` of a normed space to a topological space `M`,
+and let `ψ : M → V` be a coordinate, continuous on a closed set `C ∋ u y₀`. Suppose that the points
+of `C` within `η > 0` of `u y₀`, as measured by `ψ`, lie in an open set `O ⊆ C`. If the reading
+`ψ ∘ u` has derivative of norm at most `κ` wherever `u` takes values in `O`, and `κ s ≤ η`, then
+`u` maps the whole ball into `O`, and `ψ ∘ u` is `κ`-Lipschitz from the centre
+(`TauCeti.mapsTo_ball_of_norm_fderiv_comp_le`). The derivative bound is only available while the
+image stays in the patch, and the proof follows each segment from the centre for as long as it
+does. This keeps the image of a small disc in a single chart of a manifold
+(`PartialDiffeomorph.mapsTo_ball_of_norm_fderiv_comp_le`).
+
 ## Space-time functions vanishing outside a time interval
 
 A function of time and space with derivative bounded by `C` that vanishes outside the time
@@ -298,6 +310,105 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCom
   calc ‖u b - u a‖ ≤ D * (a / 2) ^ (β - 1) * |b - a| := hmv
     _ ≤ D * (2 * a ^ (β - 1)) * |b - a| := by gcongr
     _ = _ := by ring
+
+section Trapping
+
+open Filter Metric Topology
+
+variable {𝕜 F M V : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [TopologicalSpace M]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+/-- **A map whose coordinate reading has bounded derivative stays in the coordinate patch.** Let
+`u` be continuous on the ball `B_s(y₀)` with `u y₀ ∈ C`, where `C` is closed and `ψ` is continuous
+on `C`. Let `O ⊆ C` be open and contain every `x ∈ C` with `‖ψ x - ψ (u y₀)‖ < η`, where `0 < η`.
+If `ψ ∘ u` is differentiable with derivative of norm at most `κ` at every point of the ball where
+`u` takes values in `O`, and `κ s ≤ η`, then `u` maps the ball into `O` and
+`‖ψ (u y) - ψ (u y₀)‖ ≤ κ ‖y - y₀‖` on the ball.
+
+The continuity of `ψ` on `C` is needed because the derivative bound is only assumed on `O`: at a
+point of `C \ O`, a jump of `ψ` could otherwise let the segment estimate fail in the limit. -/
+theorem mapsTo_ball_of_norm_fderiv_comp_le {u : F → M} {ψ : M → V} {C O : Set M} {y₀ : F}
+    {s κ η : ℝ} (hC : IsClosed C) (hO : IsOpen O) (hOC : O ⊆ C) (hψ : ContinuousOn ψ C)
+    (hu : ContinuousOn u (ball y₀ s)) (hy₀ : u y₀ ∈ C)
+    (hCO : ∀ x ∈ C, ‖ψ x - ψ (u y₀)‖ < η → x ∈ O)
+    (hd : ∀ y ∈ ball y₀ s, u y ∈ O →
+      DifferentiableAt 𝕜 (ψ ∘ u) y ∧ ‖fderiv 𝕜 (ψ ∘ u) y‖ ≤ κ)
+    (hη : 0 < η) (hκs : κ * s ≤ η) :
+    MapsTo u (ball y₀ s) O ∧ ∀ y ∈ ball y₀ s, ‖ψ (u y) - ψ (u y₀)‖ ≤ κ * ‖y - y₀‖ := by
+  -- Along the segment `p τ = y₀ + τ (y - y₀)`, the set `S` of times `τ` at which `u (p τ) ∈ C`
+  -- with the Lipschitz bound is closed in `[0, 1]`, contains `0`, and extends to the right from
+  -- each of its points below `1`, since there `u (p τ) ∈ O` and the derivative bound holds on a
+  -- ball about `p τ`. So `S ⊇ [0, 1]`, and `τ = 1` gives the claim at `y`.
+  suffices h : ∀ y ∈ ball y₀ s, u y ∈ O ∧ ‖ψ (u y) - ψ (u y₀)‖ ≤ κ * ‖y - y₀‖ from
+    ⟨fun y hy ↦ (h y hy).1, fun y hy ↦ (h y hy).2⟩
+  intro y hy
+  have hys : ‖y - y₀‖ < s := by simpa [dist_eq_norm] using hy
+  -- The bound at the centre, where `u y₀ ∈ O`, shows `0 ≤ κ`.
+  have hκ : 0 ≤ κ := (norm_nonneg _).trans (hd y₀ (mem_ball_self ((norm_nonneg _).trans_lt hys))
+    (hCO _ hy₀ (by simpa using hη))).2
+  -- Follow the segment `p τ = y₀ + τ (y - y₀)` from the centre.
+  set p : ℝ → F := fun τ ↦ y₀ + τ • (y - y₀) with hp_def
+  have hp : Continuous p := continuous_const.add (continuous_id.smul continuous_const)
+  have hpball {τ : ℝ} (hτ : τ ∈ Icc (0 : ℝ) 1) : p τ ∈ ball y₀ s := by
+    rw [mem_ball, dist_eq_norm, hp_def, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hτ.1]
+    exact (mul_le_of_le_one_left (norm_nonneg _) hτ.2).trans_lt hys
+  have hpsub (τ σ : ℝ) : p σ - p τ = (σ - τ) • (y - y₀) := by
+    simp only [hp_def, sub_smul]
+    abel
+  have hgc : ContinuousOn (u ∘ p) (Icc 0 1) :=
+    hu.comp hp.continuousOn fun _ hτ ↦ hpball hτ
+  set S : Set ℝ := {τ | u (p τ) ∈ C ∧ ‖ψ (u (p τ)) - ψ (u y₀)‖ ≤ κ * (τ * ‖y - y₀‖)}
+  have hclosed : IsClosed (S ∩ Icc 0 1) := by
+    have hZ : IsClosed (Icc (0 : ℝ) 1 ∩ (u ∘ p) ⁻¹' C) :=
+      hgc.preimage_isClosed_of_isClosed isClosed_Icc hC
+    have heq : S ∩ Icc 0 1 = {τ ∈ Icc (0 : ℝ) 1 ∩ (u ∘ p) ⁻¹' C |
+        ‖ψ (u (p τ)) - ψ (u y₀)‖ ≤ κ * (τ * ‖y - y₀‖)} := by
+      ext τ
+      simp only [S, mem_inter_iff, mem_ofPred_eq, mem_preimage, Function.comp_apply]
+      tauto
+    rw [heq]
+    exact hZ.isClosed_le ((hψ.comp (hgc.mono inter_subset_left) fun _ hτ ↦ hτ.2).sub
+      continuousOn_const).norm (continuousOn_const.mul (continuousOn_id.mul continuousOn_const))
+  have h0 : (0 : ℝ) ∈ S := by simp [S, hp_def, hy₀]
+  have hlt : κ * ‖y - y₀‖ < η := by
+    rcases hκ.eq_or_lt with h | h
+    · rwa [← h, zero_mul]
+    · exact (mul_lt_mul_of_pos_left hys h).trans_le hκs
+  have hstep : ∀ τ ∈ S ∩ Ico 0 1, S ∈ 𝓝[>] τ := by
+    rintro τ ⟨⟨hτC, hτψ⟩, hτ0, hτ1⟩
+    -- `u (p τ)` lies in the open set `O`, and `u` keeps a ball about `p τ` in `O`.
+    have hτO : u (p τ) ∈ O := hCO _ hτC (hτψ.trans_lt ((mul_le_mul_of_nonneg_left
+      (mul_le_of_le_one_left (norm_nonneg _) hτ1.le) hκ).trans_lt hlt))
+    have hpτ : p τ ∈ ball y₀ s := hpball ⟨hτ0, hτ1.le⟩
+    have hev : ∀ᶠ w in 𝓝 (p τ), w ∈ ball y₀ s ∧ u w ∈ O :=
+      Filter.Eventually.and (isOpen_ball.mem_nhds hpτ)
+        ((hu.continuousAt (isOpen_ball.mem_nhds hpτ)).preimage_mem_nhds (hO.mem_nhds hτO))
+    obtain ⟨ε, hε, hεsub⟩ := Metric.eventually_nhds_iff_ball.1 hev
+    -- On that ball the derivative bound holds, so `ψ ∘ u` is `κ`-Lipschitz there.
+    have hmvt : ∀ w ∈ ball (p τ) ε, ‖ψ (u w) - ψ (u (p τ))‖ ≤ κ * ‖w - p τ‖ := fun w hw ↦
+      (convex_ball (p τ) ε).norm_image_sub_le_of_norm_fderiv_le (f := ψ ∘ u)
+        (fun x hx ↦ (hd x (hεsub x hx).1 (hεsub x hx).2).1)
+        (fun x hx ↦ (hd x (hεsub x hx).1 (hεsub x hx).2).2) (mem_ball_self hε) hw
+    filter_upwards [nhdsWithin_le_nhds (hp.continuousAt.preimage_mem_nhds
+      (ball_mem_nhds (p τ) hε)), self_mem_nhdsWithin] with σ hσball hστ
+    have hστ0 : 0 ≤ σ - τ := sub_nonneg.2 (mem_Ioi.1 hστ).le
+    refine ⟨hOC (hεsub _ hσball).2, ?_⟩
+    calc ‖ψ (u (p σ)) - ψ (u y₀)‖
+        ≤ ‖ψ (u (p σ)) - ψ (u (p τ))‖ + ‖ψ (u (p τ)) - ψ (u y₀)‖ :=
+          norm_sub_le_norm_sub_add_norm_sub _ _ _
+      _ ≤ κ * ‖p σ - p τ‖ + κ * (τ * ‖y - y₀‖) := add_le_add (hmvt _ hσball) hτψ
+      _ = κ * (σ * ‖y - y₀‖) := by
+        rw [hpsub, norm_smul, Real.norm_of_nonneg hστ0]
+        ring
+  obtain ⟨h1C, h1ψ⟩ := IsClosed.Icc_subset_of_forall_mem_nhdsWithin hclosed h0 hstep
+    ⟨zero_le_one, le_rfl⟩
+  have hp1 : p 1 = y := by simp [hp_def]
+  rw [hp1] at h1C h1ψ
+  rw [one_mul] at h1ψ
+  exact ⟨hCO _ h1C (h1ψ.trans_lt hlt), h1ψ⟩
+
+end Trapping
 
 section Direction
 

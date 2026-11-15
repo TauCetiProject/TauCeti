@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
+public import TauCeti.Geometry.Symplectic.Floer.Chart
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import TauCeti.Analysis.Hofer
-import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Topology.OpenPartialHomeomorph.ClosedBall
 
 /-!
 # The mean-value inequality for Floer solutions in a manifold
@@ -26,21 +27,17 @@ norm of `ℝ × ℝ`, the domain of Floer solutions in Tau Ceti.
 
 * For a symplectic vector space target the inequality holds with `δ` and `B` uniform over a compact
   window of the domain and a compact set of the target
-  (`TauCeti.SymplecticForm.exists_pos_forall_sq_mul_floerEnergyDensity_le`). It is the mean-value
-  inequality for the coordinate equation,
-  `TauCeti.Floer.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy`, on the
-  disc of radius `r / 2` about `z₀`, contained in the square
-  (`TauCeti.SymplecticForm.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_stdComplexLineReal_sq_le`),
-  combined with the comparison of `e` with `‖du‖²` on compact sets
-  (`TauCeti.SymplecticForm.exists_forall_norm_fderiv_sq_le_and_floerEnergyDensity_le`).
+  (`TauCeti.SymplecticForm.exists_pos_forall_sq_mul_floerEnergyDensity_le`, in
+  `TauCeti.Geometry.Symplectic.Floer.Compactness.Basic`).
 * Read in a symplectic chart `φ` of a manifold `M`, the same holds for solutions whose image lies
   in a compact subset `C` of the chart
-  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le`), and
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le`). There
   the derivative of the chart reading `φ ∘ u` is bounded by `e`
-  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_forall_norm_fderiv_comp_sq_le`).
-* For finitely many such charts and compact sets `A i` in the interiors of the `C i`, the
-  inequality holds for every solution with image in `⋃ A i`, whether or not the image of the square
-  lies in a single chart
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_forall_norm_fderiv_comp_sq_le`, in
+  `TauCeti.Geometry.Symplectic.Floer.Chart`).
+* For finitely many such charts, into possibly different symplectic vector spaces, and compact sets
+  `A i` in the interiors of the `C i`, the inequality holds for every solution with image in
+  `⋃ A i`, whether or not the image of the square lies in a single chart
   (`SmoothTwoForm.IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_mapsTo_iUnion`).
   On a closed symplectic manifold, finitely many Darboux charts give such sets with `⋃ A i = M`.
 
@@ -62,171 +59,8 @@ bounds `e(x')` directly or shows that `e(x')` is bounded by a constant.
 
 public section
 
-open Complex ContinuousLinearMap Filter Function MeasureTheory Metric Real Set Topology
+open Filter Function MeasureTheory Metric Real Set Topology
 open scoped Manifold
-
-namespace TauCeti.SymplecticForm
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {z : ℝ × ℝ}
-
-/-- **The mean-value inequality for Floer solutions on squares.** Let `K = K_s ds + K_t dt` be
-`C³` and `J(z, x)` be `C²` on an open set `W ⊆ (ℝ × ℝ) × V` containing `D × K` for compact
-`D ⊆ ℝ × ℝ` and `K ⊆ V`. There is a threshold `δ > 0` with the following property. Let `u` be a
-`C³` solution of the Floer equation `(du - X_K)^{0,1} = 0` for `J(z, u)` on the square `B_r(z₀) ⊆ D`
-of side `2 r`, with image in `K` and `‖∂ₛu‖²` integrable. If `π r² + ∫_{B_r(z₀)} ‖∂ₛu‖² < δ`, then
-`π r² ‖∂ₛu(z₀)‖² ≤ 7 π r² + 32 ∫_{B_r(z₀)} ‖∂ₛu‖²`. -/
-theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_stdComplexLineReal_sq_le
-    (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {W : Set ((ℝ × ℝ) × V)}
-    {D : Set (ℝ × ℝ)} {K : Set V} (hW : IsOpen W) (hKs : ContDiffOn ℝ 3 (uncurry Ks) W)
-    (hKt : ContDiffOn ℝ 3 (uncurry Kt) W)
-    (hJ : ContDiffOn ℝ 2
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
-    (hD : IsCompact D) (hK : IsCompact K) (hDKW : D ×ˢ K ⊆ W) :
-    ∃ δ > 0, ∀ ⦃u : ℝ × ℝ → V⦄ ⦃z₀ : ℝ × ℝ⦄ ⦃r : ℝ⦄, 0 < r → ball z₀ r ⊆ D →
-      ContDiffOn ℝ 3 u (ball z₀ r) →
-      (∀ z ∈ ball z₀ r, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
-        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) →
-      MapsTo u (ball z₀ r) K →
-      IntegrableOn (fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2) (ball z₀ r) →
-      π * r ^ 2 + ∫ z in ball z₀ r, ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 < δ →
-      π * r ^ 2 * ‖fderiv ℝ u z₀ stdComplexLineReal‖ ^ 2 ≤
-        7 * π * r ^ 2 + 32 * ∫ z in ball z₀ r, ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 := by
-  -- Apply `Floer.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy` on the
-  -- disc of radius `r / 2` about `z₀`, contained in the square, read through the complex
-  -- coordinate `equivRealProdCLM`.
-  set e : ℂ ≃L[ℝ] ℝ × ℝ := equivRealProdCLM with he
-  set g : ℂ × V → (ℝ × ℝ) × V := fun q ↦ (e q.1, q.2)
-  have hg {n : WithTop ℕ∞} : ContDiff ℝ n g :=
-    (e.contDiff.comp contDiff_fst).prodMk contDiff_snd
-  have hX := ω.contDiffOn_hamiltonianOneForm_uncurry (n := 2) hW hKs hKt
-  obtain ⟨δ, hδ, hmean⟩ :=
-    Floer.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy
-    (J := fun q ↦ (J (e q.1) q.2).toLinearMap.toContinuousLinearMap)
-    (X := fun q ↦ ω.hamiltonianOneForm Ks Kt (e q.1) q.2 ∘L (e : ℂ →L[ℝ] ℝ × ℝ))
-    (hW.preimage (hg (n := 0)).continuous) (hJ.comp hg.contDiffOn (mapsTo_preimage g W))
-    ((hX.comp hg.contDiffOn (mapsTo_preimage g W)).clm_comp
-      (contDiffOn_const (c := (e : ℂ →L[ℝ] ℝ × ℝ))))
-    (e.toHomeomorph.isCompact_preimage.2 hD) hK (fun q hq ↦ hDKW ⟨hq.1, hq.2⟩)
-    (fun _ _ _ _ v ↦ by simp)
-  refine ⟨δ, hδ, fun u z₀ r hr hrD hu hfl huK hint hsmall ↦ ?_⟩
-  set d : ℝ × ℝ → ℝ := fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 with hd_def
-  -- The closed disc of radius `r / 2` about `e⁻¹ z₀` lies, through `e`, in the square.
-  set y₀ := e.symm z₀
-  have hball : ∀ y, ‖y - y₀‖ ≤ r / 2 → e y ∈ ball z₀ r := fun y hy ↦ by
-    have h := lipschitz_equivRealProd.dist_le_mul y y₀
-    simp only [NNReal.coe_one, one_mul] at h
-    rw [mem_ball, show z₀ = e y₀ by simp [y₀]]
-    refine (h.trans ?_).trans_lt (half_lt_self hr)
-    simpa [dist_eq_norm] using hy
-  have hsub : ball y₀ (r / 2) ⊆ e ⁻¹' ball z₀ r := fun y hy ↦
-    hball y (by simpa [dist_eq_norm] using (mem_ball.1 hy).le)
-  have hu' : ContDiffOn ℝ 3 (u ∘ e) (e ⁻¹' ball z₀ r) :=
-    hu.comp e.contDiff.contDiffOn (mapsTo_preimage _ _)
-  -- `e` preserves volume, and `∂ₛ(u ∘ e) = (∂ₛu) ∘ e`.
-  have hint' : IntegrableOn (fun y ↦ ‖fderiv ℝ (u ∘ e) y 1‖ ^ 2) (e ⁻¹' ball z₀ r) := by
-    simp only [he, fderiv_comp_equivRealProdCLM_one]
-    exact (Complex.volume_preserving_equiv_real_prod.integrableOn_comp_preimage
-      equivRealProdCLM.toHomeomorph.measurableEmbedding).2 hint
-  have hJle : ∫ y in ball y₀ (r / 2), ‖fderiv ℝ (u ∘ e) y 1‖ ^ 2 ≤ ∫ z in ball z₀ r, d z := by
-    refine (setIntegral_mono_set hint' (Eventually.of_forall fun _ ↦ by positivity)
-      hsub.eventuallySubset).trans_eq ?_
-    simp only [he, hd_def, fderiv_comp_equivRealProdCLM_one]
-    exact Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
-      equivRealProdCLM.toHomeomorph.measurableEmbedding d _
-  have hmv := hmean (u := u ∘ e) (z₀ := y₀) (r := r / 2) (by positivity)
-    (fun y hy ↦ hrD (hsub hy)) (hu'.mono hsub)
-    (((hu'.continuousOn_fderiv_of_isOpen (isOpen_ball.preimage e.continuous)
-      (by norm_num)).clm_apply continuousOn_const).mono fun y hy ↦
-        hball y (by simpa [dist_eq_norm] using mem_closedBall.1 hy))
-    (fun y hy ↦ by simpa [he] using ω.fderiv_comp_equivRealProdCLM_I_sub (hfl (e y) (hsub hy)))
-    (fun y hy ↦ huK (hsub hy))
-    (by nlinarith [pi_pos, sq_nonneg r])
-  rw [fderiv_comp_equivRealProdCLM_one, show e y₀ = z₀ by simp [y₀]] at hmv
-  nlinarith
-
-/-- **The mean-value inequality for the Floer energy density.** Let `K = K_s ds + K_t dt` be `C³`
-and `J(z, x)` be `C²` on an open set `W ⊆ (ℝ × ℝ) × V` containing `D × K` for compact
-`D ⊆ ℝ × ℝ` and `K ⊆ V`, with `J(z, x)` tamed by `ω` on `D × K`. There are a threshold `δ > 0` and
-a constant `A ≥ 0` with the following property. Let `u` be a `C³` solution of the Floer equation
-`(du - X_K)^{0,1} = 0` for `J(z, u)` on the square `B_r(z₀) ⊆ D` of side `2 r`, with image in `K`
-and integrable energy density `e = ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t})`. If `r² + ∫_{B_r(z₀)} e < δ`,
-then `r² e(z₀) ≤ A (r² + ∫_{B_r(z₀)} e)`. -/
-theorem exists_pos_forall_sq_mul_floerEnergyDensity_le (ω : SymplecticForm V)
-    {J : ℝ × ℝ → V → AlmostComplexStructure V} {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)}
-    {K : Set V} (hW : IsOpen W) (hKs : ContDiffOn ℝ 3 (uncurry Ks) W)
-    (hKt : ContDiffOn ℝ 3 (uncurry Kt) W)
-    (hJ : ContDiffOn ℝ 2
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
-    (hD : IsCompact D) (hK : IsCompact K) (hDKW : D ×ˢ K ⊆ W)
-    (hJt : ∀ z ∈ D, ∀ x ∈ K, ω.Tames (J z x)) :
-    ∃ δ > 0, ∃ A ≥ 0, ∀ ⦃u : ℝ × ℝ → V⦄ ⦃z₀ : ℝ × ℝ⦄ ⦃r : ℝ⦄, 0 < r → ball z₀ r ⊆ D →
-      ContDiffOn ℝ 3 u (ball z₀ r) →
-      (∀ z ∈ ball z₀ r, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
-        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) →
-      MapsTo u (ball z₀ r) K → IntegrableOn (ω.floerEnergyDensity Ks Kt u) (ball z₀ r) →
-      r ^ 2 + ∫ z in ball z₀ r, ω.floerEnergyDensity Ks Kt u z < δ →
-      r ^ 2 * ω.floerEnergyDensity Ks Kt u z₀ ≤
-        A * (r ^ 2 + ∫ z in ball z₀ r, ω.floerEnergyDensity Ks Kt u z) := by
-  obtain ⟨L, hL0, hL⟩ := ω.exists_forall_norm_fderiv_sq_le_and_floerEnergyDensity_le hD hK
-    (hJ.continuousOn.mono hDKW)
-    ((ω.contDiffOn_hamiltonianOneForm_uncurry (n := 2) hW hKs hKt).continuousOn.mono hDKW) hJt
-  obtain ⟨δ₀, hδ₀, hmean⟩ :=
-    ω.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_stdComplexLineReal_sq_le hW hKs hKt hJ hD hK
-      hDKW
-  set C₁ := 2 * L + 1
-  have hC₁ : 0 < C₁ := by positivity
-  refine ⟨δ₀ / (4 + 4 * C₁), by positivity, L * (8 + 128 * C₁), by positivity,
-    fun u z₀ r hr hrD hu hfl huK hint hsmall ↦ ?_⟩
-  set f := ω.floerEnergyDensity Ks Kt u
-  set I := ∫ z in ball z₀ r, f z
-  have hf0 : ∀ z ∈ ball z₀ r, 0 ≤ f z := fun z hz ↦
-    ω.floerEnergyDensity_nonneg (hJt z (hrD hz) _ (huK hz)) (hfl z hz)
-  have hI0 : 0 ≤ I := setIntegral_nonneg measurableSet_ball hf0
-  -- On the square, `‖∂ₛu‖²` is integrable, with integral at most `C₁ (4 r² + ∫ e)`.
-  set d : ℝ × ℝ → ℝ := fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 with hd_def
-  have hdle : ∀ z ∈ ball z₀ r, d z ≤ L * f z + L := fun z hz ↦ by
-    have h1 : ‖fderiv ℝ u z stdComplexLineReal‖ ≤ ‖fderiv ℝ u z‖ :=
-      ((fderiv ℝ u z).le_opNorm _).trans_eq (by simp [stdComplexLineReal_eq, Prod.norm_def])
-    have h2 := (hL (hrD hz) (huK hz) (hfl z hz)).1
-    simp only [hd_def]
-    nlinarith [norm_nonneg (fderiv ℝ u z stdComplexLineReal)]
-  have hfin : volume (ball z₀ r) ≠ ⊤ := measure_ball_lt_top.ne
-  have hdint : IntegrableOn d (ball z₀ r) := integrableOn_of_le_mul_add measurableSet_ball hfin
-    ((((hu.continuousOn_fderiv_of_isOpen isOpen_ball (by norm_num)).clm_apply
-      continuousOn_const).norm.pow 2).aestronglyMeasurable measurableSet_ball) hint
-    (fun _ _ ↦ by positivity) hdle
-  have hdI : ∫ z in ball z₀ r, d z ≤ C₁ * (4 * r ^ 2 + I) := by
-    have h := setIntegral_le_mul_measureReal_add_setIntegral_of_le measurableSet_ball hfin hL0 hL0
-      hdint hint hf0 hdle
-    -- The square `B_r(z₀)` has area `4 r²`.
-    have hvol : volume.real (ball z₀ r) = 4 * r ^ 2 := by
-      rw [← ball_prod_same z₀.1 z₀.2 r, measureReal_def, Measure.volume_eq_prod,
-        Measure.prod_prod, Real.volume_ball, Real.volume_ball, ENNReal.toReal_mul,
-        ENNReal.toReal_ofReal (by positivity)]
-      ring
-    rwa [hvol, show L + L + 1 = C₁ by ring] at h
-  have hd0 : 0 ≤ ∫ z in ball z₀ r, d z := setIntegral_nonneg measurableSet_ball fun _ _ ↦ by
-    positivity
-  have hmv := hmean hr hrD hu hfl huK hdint (by
-    have : (4 + 4 * C₁) * (r ^ 2 + I) < δ₀ := by
-      rwa [lt_div_iff₀ (by positivity), mul_comm] at hsmall
-    nlinarith [pi_le_four, sq_nonneg r])
-  -- From `π r² ‖∂ₛu(z₀)‖² ≤ 7 π r² + 32 ∫ ‖∂ₛu‖²` and `π ≥ 2`, and `e ≤ L (‖∂ₛu‖² + 1)` at `z₀`.
-  set s := ‖fderiv ℝ u z₀ stdComplexLineReal‖ ^ 2
-  have hs : r ^ 2 * s ≤ 7 * r ^ 2 + 16 * (C₁ * (4 * r ^ 2 + I)) := by
-    nlinarith [two_le_pi, sq_nonneg r, mul_nonneg (sq_nonneg r) (sq_nonneg
-      ‖fderiv ℝ u z₀ stdComplexLineReal‖)]
-  have hez₀ := (hL (hrD (mem_ball_self hr)) (huK (mem_ball_self hr))
-    (hfl z₀ (mem_ball_self hr))).2
-  calc r ^ 2 * f z₀ ≤ r ^ 2 * (L * (s + 1)) := by gcongr
-    _ = L * (r ^ 2 * s + r ^ 2) := by ring
-    _ ≤ L * (7 * r ^ 2 + 16 * (C₁ * (4 * r ^ 2 + I)) + r ^ 2) := by gcongr
-    _ ≤ L * (8 + 128 * C₁) * (r ^ 2 + I) := by
-      nlinarith [mul_nonneg hL0 (mul_nonneg hC₁.le hI0), mul_nonneg hL0 (sq_nonneg r),
-        mul_nonneg hL0 (mul_nonneg hC₁.le (sq_nonneg r))]
-
-end TauCeti.SymplecticForm
 
 namespace TauCeti.SmoothTwoForm.IsNondegenerate
 
@@ -236,43 +70,6 @@ variable {E H M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
   {ω : SmoothTwoForm I M} {ω₀ : SymplecticForm V} {Ks Kt : ℝ × ℝ → M → ℝ}
   {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
   {J' : ℝ × ℝ → V → AlmostComplexStructure V}
-
-/-- **The energy density bounds the derivative in a symplectic chart.** Under the hypotheses of
-`IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset` on a chart `φ`
-and compact sets `D` and `C ⊆ φ.source`, there is a constant `L ≥ 0` such that every solution `u`
-of the Floer equation for `J(z, u)` at a point `z ∈ D` where it is differentiable, with `u z ∈ C`,
-satisfies `‖d(φ ∘ u)(z)‖² ≤ L (e + 1)` for its energy density `e = ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t})`
-at `z`. -/
-theorem exists_forall_norm_fderiv_comp_sq_le (hω : ω.IsNondegenerate)
-    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞))
-    {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {C : Set M}
-    (hφ : ∀ x ∈ C, ∀ v w : TangentSpace I x,
-      ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
-    (hJJ' : ∀ z ∈ D, ∀ x ∈ C,
-      IsComplexLinearMap (J z x) (J' z (φ x)) (mvfderiv I φ x).toLinearMap) (hW : IsOpen W)
-    (hKs : ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V ↦ Ks p.1 (φ.symm p.2)) W)
-    (hKt : ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V ↦ Kt p.1 (φ.symm p.2)) W)
-    (hJ' : ContDiffOn ℝ 2
-      (fun p : (ℝ × ℝ) × V ↦ (J' p.1 p.2).toLinearMap.toContinuousLinearMap) W)
-    (hD : IsCompact D) (hC : IsCompact C) (hCφ : C ⊆ φ.source) (hDCW : D ×ˢ (φ '' C) ⊆ W)
-    (hJt : ∀ z ∈ D, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (J z x)) :
-    ∃ L ≥ 0, ∀ ⦃u : ℝ × ℝ → M⦄ ⦃z : ℝ × ℝ⦄, z ∈ D → u z ∈ C →
-      MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z →
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
-        (ω.perturbedMFDeriv Ks Kt u z).toLinearMap →
-      ‖fderiv ℝ (φ ∘ u) z‖ ^ 2 ≤ L * (ω.floerEnergyDensity Ks Kt u z + 1) := by
-  have hφC : IsCompact (φ '' C) := hC.image_of_continuousOn (φ.contMDiffOn.continuousOn.mono hCφ)
-  have hJ't := tames_of_mem_image hω φ hφ hJJ' hCφ hJt
-  obtain ⟨L, hL0, hL⟩ := ω₀.exists_forall_norm_fderiv_sq_le_and_floerEnergyDensity_le
-    (Ks := fun z y ↦ Ks z (φ.symm y)) (Kt := fun z y ↦ Kt z (φ.symm y)) hD hφC
-    (hJ'.continuousOn.mono hDCW)
-    ((ω₀.contDiffOn_hamiltonianOneForm_uncurry (n := 2) (Ks := fun z y ↦ Ks z (φ.symm y))
-      (Kt := fun z y ↦ Kt z (φ.symm y)) hW hKs hKt).continuousOn.mono hDCW) hJ't
-  refine ⟨L, hL0, fun u z hz hu hdu hfl ↦ ?_⟩
-  obtain ⟨he, hfl'⟩ := floerEnergyDensity_comp_and_isComplexLinearMap hω φ (hφ _ hu)
-    (hJJ' z hz _ hu) hW hKs hKt (hCφ hu) (hDCW ⟨hz, u z, hu, rfl⟩) hdu hfl
-  rw [← he]
-  exact (hL hz ⟨u z, hu, rfl⟩ hfl').1
 
 /-- **The mean-value inequality for Floer solutions in a symplectic chart.** Under the hypotheses
 of `IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset` on a chart
@@ -303,17 +100,25 @@ theorem exists_pos_forall_sq_mul_floerEnergyDensity_le (hω : ω.IsNondegenerate
       r ^ 2 * ω.floerEnergyDensity Ks Kt u z₀ ≤
         A * (r ^ 2 + ∫ z in ball z₀ r, ω.floerEnergyDensity Ks Kt u z) := by
   have hφC : IsCompact (φ '' C) := hC.image_of_continuousOn (φ.contMDiffOn.continuousOn.mono hCφ)
-  have hJ't := tames_of_mem_image hω φ hφ hJJ' hCφ hJt
   obtain ⟨δ, hδ, A, hA, hmean⟩ := ω₀.exists_pos_forall_sq_mul_floerEnergyDensity_le
     (Ks := fun z y ↦ Ks z (φ.symm y)) (Kt := fun z y ↦ Kt z (φ.symm y)) hW hKs hKt hJ' hD hφC
-    hDCW hJ't
+    hDCW fun z hz ↦ hω.tames_of_mem_image φ (by simp) hφ (hJJ' z hz) hCφ (hJt z hz)
   refine ⟨δ, hδ, A, hA, fun u z₀ r hr hrD hu hfl huC hint hsmall ↦ ?_⟩
   -- At each point of the square, the chart transports the Floer equation and the energy density.
-  have hpt {z : ℝ × ℝ} (hz : z ∈ ball z₀ r) :=
-    floerEnergyDensity_comp_and_isComplexLinearMap hω φ (hφ _ (huC hz))
-      (hJJ' z (hrD hz) _ (huC hz)) hW hKs hKt (hCφ (huC hz))
-      (hDCW ⟨hrD hz, u z, huC hz, rfl⟩)
-      ((hu.contMDiffAt (isOpen_ball.mem_nhds hz)).mdifferentiableAt (by norm_num)) (hfl z hz)
+  have hpt {z : ℝ × ℝ} (hz : z ∈ ball z₀ r) :
+      ω₀.floerEnergyDensity (fun z y ↦ Ks z (φ.symm y)) (fun z y ↦ Kt z (φ.symm y)) (φ ∘ u) z =
+          ω.floerEnergyDensity Ks Kt u z ∧
+        IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J' z (φ (u z)))
+          (ω₀.perturbedFDeriv (fun z y ↦ Ks z (φ.symm y)) (fun z y ↦ Kt z (φ.symm y)) (φ ∘ u)
+            z).toLinearMap := by
+    have hzW : (z, φ (u z)) ∈ W := hDCW ⟨hrD hz, u z, huC hz, rfl⟩
+    have hdu := (hu.contMDiffAt (isOpen_ball.mem_nhds hz)).mdifferentiableAt (by norm_num)
+    have hdKs := (hKs.differentiableOn (by norm_num) _ hzW).differentiableAt (hW.mem_nhds hzW)
+    have hdKt := (hKt.differentiableOn (by norm_num) _ hzW).differentiableAt (hW.mem_nhds hzW)
+    exact ⟨hω.floerEnergyDensity_comp_of_mem_source φ (by simp) hdu (hCφ (huC hz))
+      (hφ _ (huC hz)) hdKs hdKt,
+      (hω.isComplexLinearMap_perturbedFDeriv_comp_iff_of_mem_source φ (by simp) hdu (hCφ (huC hz))
+        (hφ _ (huC hz)) hdKs hdKt (hJJ' z (hrD hz) _ (huC hz))).2 (hfl z hz)⟩
   have hint_eq : ∫ z in ball z₀ r, ω₀.floerEnergyDensity (fun z y ↦ Ks z (φ.symm y))
       (fun z y ↦ Kt z (φ.symm y)) (φ ∘ u) z = ∫ z in ball z₀ r, ω.floerEnergyDensity Ks Kt u z :=
     setIntegral_congr_fun measurableSet_ball fun z hz ↦ (hpt hz).1
@@ -323,40 +128,6 @@ theorem exists_pos_forall_sq_mul_floerEnergyDensity_le (hω : ω.IsNondegenerate
     (fun z hz ↦ (hpt hz).2) (fun z hz ↦ ⟨u z, huC hz, rfl⟩)
     (hint.congr_fun (fun z hz ↦ ((hpt hz).1).symm) measurableSet_ball) (hint_eq ▸ hsmall)
   rwa [hint_eq, (hpt (mem_ball_self hr)).1] at h
-
-/-- Under the hypotheses of `exists_pos_forall_sq_mul_floerEnergyDensity_le` on a chart `φ`, the
-energy density of a `C³` solution on an open set `U ⊆ D` is continuous at every point `z` of `U`
-with `u z` in the interior of `C`: near `z` it is the energy density of the coordinate map. -/
-private theorem continuousAt_floerEnergyDensity (hω : ω.IsNondegenerate)
-    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞))
-    {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {C : Set M}
-    (hφ : ∀ x ∈ C, ∀ v w : TangentSpace I x,
-      ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
-    (hJJ' : ∀ z ∈ D, ∀ x ∈ C,
-      IsComplexLinearMap (J z x) (J' z (φ x)) (mvfderiv I φ x).toLinearMap) (hW : IsOpen W)
-    (hKs : ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V ↦ Ks p.1 (φ.symm p.2)) W)
-    (hKt : ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V ↦ Kt p.1 (φ.symm p.2)) W)
-    (hCφ : C ⊆ φ.source) (hDCW : D ×ˢ (φ '' C) ⊆ W) {u : ℝ × ℝ → M} {U : Set (ℝ × ℝ)}
-    (hU : IsOpen U) (hUD : U ⊆ D) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u U)
-    (hfl : ∀ z ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
-      (ω.perturbedMFDeriv Ks Kt u z).toLinearMap) {z : ℝ × ℝ} (hz : z ∈ U)
-    (hzC : u z ∈ interior C) :
-    ContinuousAt (ω.floerEnergyDensity Ks Kt u) z := by
-  set N := U ∩ u ⁻¹' interior C
-  have hN : IsOpen N := hu.continuousOn.isOpen_inter_preimage hU isOpen_interior
-  have hNC {y : ℝ × ℝ} (hy : y ∈ N) : u y ∈ C := interior_subset hy.2
-  have hcont := ω₀.continuousOn_floerEnergyDensity_of_continuousOn_hamiltonianOneForm
-    (Ks := fun z y ↦ Ks z (φ.symm y)) (Kt := fun z y ↦ Kt z (φ.symm y)) hN
-    ((contMDiffOn_iff_contDiffOn.1 <| (φ.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).comp
-      (hu.mono inter_subset_left) fun y hy ↦ hCφ (hNC hy)).of_le (by norm_num))
-    (ω₀.contDiffOn_hamiltonianOneForm_uncurry (n := 2) (Ks := fun z y ↦ Ks z (φ.symm y))
-      (Kt := fun z y ↦ Kt z (φ.symm y)) hW hKs hKt).continuousOn
-    fun y hy ↦ hDCW ⟨hUD hy.1, u y, hNC hy, rfl⟩
-  refine (hcont.congr fun y hy ↦ ?_).continuousAt (hN.mem_nhds ⟨hz, hzC⟩)
-  exact (floerEnergyDensity_comp_and_isComplexLinearMap hω φ (hφ _ (hNC hy))
-    (hJJ' y (hUD hy.1) _ (hNC hy)) hW hKs hKt (hCφ (hNC hy))
-    (hDCW ⟨hUD hy.1, u y, hNC hy, rfl⟩)
-    ((hu.contMDiffAt (hU.mem_nhds hy.1)).mdifferentiableAt (by norm_num)) (hfl y hy.1)).1.symm
 
 /-- The arithmetic of the case of the mean-value inequality in which the trapping radius
 `t = η / (√(L (4 a + 1)) + 1)` is the binding constraint: if `t² a ≤ A (t² + Q)` and `Q` is small
@@ -407,7 +178,7 @@ private theorem sq_mul_le_of_min_sq_mul_le {a A L η Q ε ε' : ℝ} (ha : 0 ≤
     nlinarith [mul_le_mul hε'2 hbd ha (by positivity)]
 
 /-- **The mean-value inequality for Floer solutions in a manifold.** Let finitely many symplectic
-charts `φ i` carry the hypotheses of
+charts `φ i` into symplectic vector spaces `(V i, ω₀ i)` carry the hypotheses of
 `TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le` on compact
 sets `C i ⊆ (φ i).source`, over a compact window `D` of the domain, and let `A i` be compact sets
 with `A i` in the interior of `C i`; for a closed manifold, finitely many Darboux charts give such
@@ -417,19 +188,21 @@ the square `B_r(z₀) ⊆ D`, with image in `⋃ A i` and integrable energy dens
 `e = ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t})`. If `r² + ∫_{B_r(z₀)} e < δ`, then
 `r² e(z₀) ≤ B (r² + ∫_{B_r(z₀)} e)`. The image of `B_r(z₀)` need not lie in a single chart. -/
 theorem exists_pos_forall_sq_mul_floerEnergyDensity_le_of_mapsTo_iUnion
-    [T2Space M] (hω : ω.IsNondegenerate) {ι : Type*} [Finite ι]
-    (φ : ι → PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞))
-    {Jc : ι → ℝ × ℝ → V → AlmostComplexStructure V} {W : ι → Set ((ℝ × ℝ) × V)}
-    {D : Set (ℝ × ℝ)} {A C : ι → Set M}
+    [T2Space M] (hω : ω.IsNondegenerate) {ι : Type*} [Finite ι] {V : ι → Type*}
+    [∀ i, NormedAddCommGroup (V i)] [∀ i, InnerProductSpace ℝ (V i)]
+    [∀ i, FiniteDimensional ℝ (V i)] {ω₀ : (i : ι) → SymplecticForm (V i)}
+    (φ : (i : ι) → PartialDiffeomorph I 𝓘(ℝ, V i) M (V i) (⊤ : ℕ∞))
+    {Jc : (i : ι) → ℝ × ℝ → V i → AlmostComplexStructure (V i)}
+    {W : (i : ι) → Set ((ℝ × ℝ) × V i)} {D : Set (ℝ × ℝ)} {A C : ι → Set M}
     (hφ : ∀ i, ∀ x ∈ C i, ∀ v w : TangentSpace I x,
-      ω.eval₂ x v w = ω₀ (mvfderiv I (φ i) x v) (mvfderiv I (φ i) x w))
+      ω.eval₂ x v w = ω₀ i (mvfderiv I (φ i) x v) (mvfderiv I (φ i) x w))
     (hJJ' : ∀ i, ∀ z ∈ D, ∀ x ∈ C i,
       IsComplexLinearMap (J z x) (Jc i z (φ i x)) (mvfderiv I (φ i) x).toLinearMap)
     (hW : ∀ i, IsOpen (W i))
-    (hKs : ∀ i, ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V ↦ Ks p.1 ((φ i).symm p.2)) (W i))
-    (hKt : ∀ i, ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V ↦ Kt p.1 ((φ i).symm p.2)) (W i))
+    (hKs : ∀ i, ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V i ↦ Ks p.1 ((φ i).symm p.2)) (W i))
+    (hKt : ∀ i, ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V i ↦ Kt p.1 ((φ i).symm p.2)) (W i))
     (hJc : ∀ i, ContDiffOn ℝ 2
-      (fun p : (ℝ × ℝ) × V ↦ (Jc i p.1 p.2).toLinearMap.toContinuousLinearMap) (W i))
+      (fun p : (ℝ × ℝ) × V i ↦ (Jc i p.1 p.2).toLinearMap.toContinuousLinearMap) (W i))
     (hD : IsCompact D) (hC : ∀ i, IsCompact (C i)) (hCφ : ∀ i, C i ⊆ (φ i).source)
     (hDCW : ∀ i, D ×ˢ ((φ i) '' C i) ⊆ W i)
     (hJt : ∀ i, ∀ z ∈ D, ∀ x ∈ C i, (hω.symplecticFormAt x).Tames (J z x))
@@ -448,9 +221,11 @@ theorem exists_pos_forall_sq_mul_floerEnergyDensity_le_of_mapsTo_iUnion
   -- Constants for each chart, made uniform over the finitely many charts.
   choose δi hδi Ai _ hmean using fun i ↦ exists_pos_forall_sq_mul_floerEnergyDensity_le hω
     (φ i) (hφ i) (hJJ' i) (hW i) (hKs i) (hKt i) (hJc i) hD (hC i) (hCφ i) (hDCW i) (hJt i)
-  choose Li _ hder using fun i ↦ exists_forall_norm_fderiv_comp_sq_le hω
-    (φ i) (hφ i) (hJJ' i) (hW i) (hKs i) (hKt i) (hJc i) hD (hC i) (hCφ i) (hDCW i) (hJt i)
-  choose ηi hηi hmarg using fun i ↦ (φ i).exists_pos_forall_mem_interior (hA i) (hAC i) (hCφ i)
+  choose Li _ hder using fun i ↦ exists_forall_norm_fderiv_comp_sq_le hω (φ i) (by simp) (hφ i)
+    (hJJ' i) (hW i) ((hKs i).of_le (by norm_num)) ((hKt i).of_le (by norm_num))
+    ((hJc i).continuousOn.mono (hDCW i)) hD (hC i) (hCφ i) (hDCW i) (hJt i)
+  choose ηi hηi hmarg using fun i ↦
+    (φ i).toOpenPartialHomeomorph.exists_pos_forall_mem_interior (hA i) (hAC i) (hCφ i)
   obtain ⟨⟨δ₀, hδ₀⟩, hδ₀i⟩ := Finite.exists_ge fun i ↦ (⟨δi i, hδi i⟩ : {x : ℝ // 0 < x})
   obtain ⟨⟨η, hη⟩, hηi'⟩ := Finite.exists_ge fun i ↦ (⟨ηi i, hηi i⟩ : {x : ℝ // 0 < x})
   obtain ⟨A₀, hA₀⟩ := Finite.exists_le Ai
@@ -477,8 +252,9 @@ theorem exists_pos_forall_sq_mul_floerEnergyDensity_le_of_mapsTo_iUnion
     nlinarith [sq_nonneg r]
   have hcont : ContinuousOn e (ball z₀ r) := fun z hz ↦ by
     obtain ⟨i, hi⟩ := huA' hz
-    exact (continuousAt_floerEnergyDensity hω (φ i) (hφ i) (hJJ' i) (hW i) (hKs i) (hKt i)
-      (hCφ i) (hDCW i) isOpen_ball hrD hu hfl hz (hAC i hi)).continuousWithinAt
+    exact (continuousAt_floerEnergyDensity hω (φ i) (by simp) (hφ i) (hW i)
+      ((hKs i).of_le (by norm_num)) ((hKt i).of_le (by norm_num)) (hCφ i) (hDCW i) isOpen_ball
+      hrD (hu.of_le (by norm_num)) hz (hAC i hi)).continuousWithinAt
   -- Hofer's lemma for `e` at `z₀`, with `ε = r / 4`: a point `x'` and a radius `ε'` on which
   -- `e ≤ 4 e(x')`, with `ε² e(z₀) ≤ ε'² e(x')`.
   set ε := r / 4 with hε_def
@@ -507,17 +283,20 @@ theorem exists_pos_forall_sq_mul_floerEnergyDensity_le_of_mapsTo_iUnion
       _ ≤ (κ + 1) * t := by gcongr; linarith
       _ = η := mul_div_cancel₀ _ (by positivity)
   have htrap : MapsTo u (ball x' s) (C i) :=
-    (φ i).mapsTo_ball_of_norm_fderiv_comp_le (by simp) (hC i).isClosed (hCφ i)
+    ((φ i).mapsTo_ball_of_norm_fderiv_comp_le (by simp) (hC i).isClosed (hCφ i)
       ((hu.mdifferentiableOn (by norm_num)).mono hsub') (hAC' i hi)
-      (fun x hx hlt ↦ hmarg i _ hi x hx (hlt.trans_le (Subtype.coe_le_coe.2 (hηi' i))))
+      (fun x hx hlt ↦ hmarg i _ hi x hx (by
+        rw [dist_eq_norm]
+        exact hlt.trans_le (Subtype.coe_le_coe.2 (hηi' i))))
       (fun y hy hyC ↦ by
         have hmd : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u y :=
           (hu.contMDiffAt (isOpen_ball.mem_nhds (hsub' hy))).mdifferentiableAt (by norm_num)
         rw [← Real.sqrt_sq (norm_nonneg _)]
-        refine Real.sqrt_le_sqrt ((hder i (hrD (hsub' hy)) hyC hmd (hfl y (hsub' hy))).trans ?_)
+        refine Real.sqrt_le_sqrt ((hder i (hrD (hsub' hy)) (interior_subset hyC) hmd
+          (hfl y (hsub' hy))).trans ?_)
         have hy' : e y ≤ 4 * e x' := hloc' y (ball_subset_ball (min_le_left _ _) hy)
         exact mul_le_mul (hL' i) (by linarith) (by linarith [he0 y (hsub' hy)]) hL'0)
-      hη hκs
+      hη hκs).1.mono_right interior_subset
   -- The mean-value inequality in the chart `i` on the square of radius `s` about `x'`.
   have hIs : ∫ z in ball x' s, e z ≤ E₀ :=
     setIntegral_mono_set hint (ae_restrict_of_forall_mem measurableSet_ball he0)

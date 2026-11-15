@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Basic
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Normed.Operator.Prod
 
 /-!
 # The standard complex line as a source for constant-structure `J`-holomorphic maps
@@ -150,19 +151,6 @@ lemma stdComplexLine_eq_smul_real_add_smul_imag (z : ℝ × ℝ) :
     z = z.1 • stdComplexLineReal + z.2 • stdComplexLineImag := by
   ext <;> simp [stdComplexLineReal, stdComplexLineImag]
 
-/-- A continuous linear map out of `ℝ × ℝ`, with its sup norm, has operator norm at most the sum of
-the norms of its values on the two coordinate vectors. -/
-lemma _root_.ContinuousLinearMap.opNorm_le_norm_apply_stdComplexLineReal_add {E : Type*}
-    [SeminormedAddCommGroup E] [NormedSpace ℝ E] (L : ℝ × ℝ →L[ℝ] E) :
-    ‖L‖ ≤ ‖L stdComplexLineReal‖ + ‖L stdComplexLineImag‖ := by
-  refine L.opNorm_le_bound (by positivity) fun v ↦ ?_
-  have hv : L v = v.1 • L stdComplexLineReal + v.2 • L stdComplexLineImag := by
-    rw [← map_smul, ← map_smul, ← map_add, ← stdComplexLine_eq_smul_real_add_smul_imag]
-  rw [hv, add_mul]
-  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, mul_comm]
-  · exact mul_le_mul_of_nonneg_left (norm_fst_le v) (norm_nonneg _)
-  · exact mul_le_mul_of_nonneg_left (norm_snd_le v) (norm_nonneg _)
-
 section Linear
 
 variable {U : Type*} [AddCommGroup U] [Module ℝ U]
@@ -176,6 +164,19 @@ lemma _root_.LinearMap.apply_stdComplexLine (F : (ℝ × ℝ) →ₗ[ℝ] V) (z 
     F z = z.1 • F stdComplexLineReal + z.2 • F stdComplexLineImag := by
   simpa only [map_add, map_smul] using
     congrArg F (stdComplexLine_eq_smul_real_add_smul_imag z)
+
+/-- A continuous linear map out of `ℝ × ℝ`, with its sup norm, has operator norm at most the sum of
+the norms of its values on the two coordinate vectors. -/
+lemma _root_.ContinuousLinearMap.opNorm_le_norm_apply_stdComplexLineReal_add {E : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] (L : ℝ × ℝ →L[ℝ] E) :
+    ‖L‖ ≤ ‖L stdComplexLineReal‖ + ‖L stdComplexLineImag‖ := by
+  -- `L` is the coproduct of the maps `t ↦ t • L (1, 0)` and `t ↦ t • L (0, 1)`.
+  have hL : L = (ContinuousLinearMap.toSpanSingleton ℝ (L stdComplexLineReal)).coprod
+      (ContinuousLinearMap.toSpanSingleton ℝ (L stdComplexLineImag)) :=
+    ContinuousLinearMap.ext fun z ↦ by simpa using L.toLinearMap.apply_stdComplexLine z
+  conv_lhs => rw [hL]
+  refine (ContinuousLinearMap.opNorm_coprod_le _ _).trans_eq ?_
+  rw [ContinuousLinearMap.norm_toSpanSingleton, ContinuousLinearMap.norm_toSpanSingleton]
 
 /-- Complex-linearity for a real-linear map out of the standard complex line is exactly the
 coordinate Cauchy--Riemann equation `F(0,1) = J(F(1,0))`. -/

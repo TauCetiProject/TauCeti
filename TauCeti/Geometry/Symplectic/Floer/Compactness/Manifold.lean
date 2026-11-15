@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Chart
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 
 /-!
 # Compactness of Floer solutions in a symplectic chart of a manifold
@@ -62,62 +61,8 @@ variable {E H M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup V]
   [InnerProductSpace ℝ V] [FiniteDimensional ℝ E] [IsManifold I (⊤ : ℕ∞) M] [FiniteDimensional ℝ V]
   {ω : SmoothTwoForm I M} {ω₀ : SymplecticForm V} {Ks Kt : ℝ × ℝ → M → ℝ}
-
-/-- At a point `z` with `u z` in the source of a smooth partial diffeomorphism `φ` pulling `ω₀`
-back to `ω` at `u z`, the coordinate map `φ ∘ u` has the energy density of `u`, and solves the
-coordinate Floer equation for the structure `J'` read in the chart if `u` solves the Floer equation
-for `J`. -/
-theorem floerEnergyDensity_comp_and_isComplexLinearMap (hω : ω.IsNondegenerate)
-    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {u : ℝ × ℝ → M} {z : ℝ × ℝ}
-    (hφ : ∀ v w : TangentSpace I (u z),
-      ω.eval₂ (u z) v w = ω₀ (mvfderiv I φ (u z) v) (mvfderiv I φ (u z) w))
-    {J : AlmostComplexStructure (TangentSpace I (u z))} {J' : AlmostComplexStructure V}
-    (hJJ' : IsComplexLinearMap J J' (mvfderiv I φ (u z)).toLinearMap)
-    {W : Set ((ℝ × ℝ) × V)} (hW : IsOpen W)
-    (hKs : ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V ↦ Ks p.1 (φ.symm p.2)) W)
-    (hKt : ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V ↦ Kt p.1 (φ.symm p.2)) W)
-    (hx : u z ∈ φ.source) (hzx : (z, φ (u z)) ∈ W) (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z)
-    (hfl : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (ω.perturbedMFDeriv Ks Kt u z).toLinearMap) :
-    ω₀.floerEnergyDensity (fun z y ↦ Ks z (φ.symm y)) (fun z y ↦ Kt z (φ.symm y)) (φ ∘ u) z =
-        ω.floerEnergyDensity Ks Kt u z ∧
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) J'
-        (ω₀.perturbedFDeriv (fun z y ↦ Ks z (φ.symm y)) (fun z y ↦ Kt z (φ.symm y)) (φ ∘ u)
-          z).toLinearMap := by
-  have hφx := φ.mdifferentiableAt (by simp) hx
-  have hsurj := (φ.bijective_mvfderiv (by simp) hx).surjective
-  -- Near `u z`, each Hamiltonian is its coordinate expression composed with `φ`, and that
-  -- expression is differentiable at `φ (u z)`.
-  have hK₁ (K : ℝ × ℝ → M → ℝ) : K z =ᶠ[𝓝 (u z)] (fun y ↦ K z (φ.symm y)) ∘ φ :=
-    (φ.toOpenPartialHomeomorph.eventually_left_inverse hx).mono fun y hy ↦
-      congrArg (K z) hy.symm
-  have hK₂ {K : ℝ × ℝ → M → ℝ}
-      (hK : ContDiffOn ℝ 3 (fun p : (ℝ × ℝ) × V ↦ K p.1 (φ.symm p.2)) W) :
-      DifferentiableAt ℝ (fun y ↦ K z (φ.symm y)) (φ (u z)) :=
-    (((hK.differentiableOn (by norm_num)) _ hzx).differentiableAt (hW.mem_nhds hzx)).comp _
-      ((differentiableAt_const z).prodMk differentiableAt_id)
-  exact ⟨hω.floerEnergyDensity_comp hu hφx hsurj hφ (hK₁ Ks) (hK₁ Kt) (hK₂ hKs) (hK₂ hKt),
-    (hω.isComplexLinearMap_perturbedFDeriv_comp_iff hu hφx hsurj hφ (hK₁ Ks) (hK₁ Kt) (hK₂ hKs)
-      (hK₂ hKt) hJJ').2 hfl⟩
-
-variable {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+  {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
   {J' : ℝ × ℝ → V → AlmostComplexStructure V}
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
-/-- In a chart `φ` pulling `ω₀` back to `ω` on `C ⊆ φ.source`, the family `J'` reading `J` in the
-chart is tamed by `ω₀` over `D × φ(C)` wherever `J` is tamed by `ω` over `D × C`. -/
-theorem tames_of_mem_image (hω : ω.IsNondegenerate)
-    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {D : Set (ℝ × ℝ)} {C : Set M}
-    (hφ : ∀ x ∈ C, ∀ v w : TangentSpace I x,
-      ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
-    (hJJ' : ∀ z ∈ D, ∀ x ∈ C,
-      IsComplexLinearMap (J z x) (J' z (φ x)) (mvfderiv I φ x).toLinearMap)
-    (hCφ : C ⊆ φ.source) (hJt : ∀ z ∈ D, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (J z x)) :
-    ∀ z ∈ D, ∀ y ∈ φ '' C, ω₀.Tames (J' z y) := by
-  rintro z hz _ ⟨x, hx, rfl⟩
-  exact tames_of_isComplexLinearMap_mvfderiv hω
-    (φ.bijective_mvfderiv (by simp) (hCφ hx)).surjective (hφ x hx) (hJJ' z hz x hx)
-    (hJt z hz x hx)
 
 /-- **Floer solutions of bounded energy in a symplectic chart converge off finitely many bubbling
 points.** Let `φ` be a smooth partial diffeomorphism from `M` onto an open subset of `V`, and let
@@ -166,14 +111,24 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset (hω : ω.
   have hφC : IsCompact (φ '' C) := hC.image_of_continuousOn (φ.contMDiffOn.continuousOn.mono hCφ)
   obtain ⟨δ, hδ, hconv⟩ := ω₀.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
     (Ks := fun z y ↦ Ks z (φ.symm y)) (Kt := fun z y ↦ Kt z (φ.symm y)) hW hKs hKt hJ' hD hφC
-    hDCW (tames_of_mem_image hω φ hφ hJJ' hCφ hJt)
+    hDCW fun z hz ↦ hω.tames_of_mem_image φ (by simp) hφ (hJJ' z hz) hCφ (hJt z hz)
   refine ⟨δ, hδ, fun Ω u A hΩ hΩD hu hfl huC hint hA ↦ ?_⟩
   -- At each point of `Ω`, the chart transports the Floer equation and the energy density.
-  have hpt (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) :=
-    floerEnergyDensity_comp_and_isComplexLinearMap hω φ (hφ _ (huC k hz))
-      (hJJ' z (hΩD hz) _ (huC k hz)) hW hKs hKt (hCφ (huC k hz))
-      (hDCW ⟨hΩD hz, u k z, huC k hz, rfl⟩)
-      (((hu k).contMDiffAt (hΩ.mem_nhds hz)).mdifferentiableAt (by norm_num)) (hfl k z hz)
+  have hpt (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) :
+      ω₀.floerEnergyDensity (fun z y ↦ Ks z (φ.symm y)) (fun z y ↦ Kt z (φ.symm y)) (φ ∘ u k) z =
+          ω.floerEnergyDensity Ks Kt (u k) z ∧
+        IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J' z (φ (u k z)))
+          (ω₀.perturbedFDeriv (fun z y ↦ Ks z (φ.symm y)) (fun z y ↦ Kt z (φ.symm y)) (φ ∘ u k)
+            z).toLinearMap := by
+    have hzW : (z, φ (u k z)) ∈ W := hDCW ⟨hΩD hz, u k z, huC k hz, rfl⟩
+    have hdu := ((hu k).contMDiffAt (hΩ.mem_nhds hz)).mdifferentiableAt (by norm_num)
+    have hdKs := (hKs.differentiableOn (by norm_num) _ hzW).differentiableAt (hW.mem_nhds hzW)
+    have hdKt := (hKt.differentiableOn (by norm_num) _ hzW).differentiableAt (hW.mem_nhds hzW)
+    exact ⟨hω.floerEnergyDensity_comp_of_mem_source φ (by simp) hdu (hCφ (huC k hz))
+      (hφ _ (huC k hz)) hdKs hdKt,
+      (hω.isComplexLinearMap_perturbedFDeriv_comp_iff_of_mem_source φ (by simp) hdu
+        (hCφ (huC k hz)) (hφ _ (huC k hz)) hdKs hdKt (hJJ' z (hΩD hz) _ (huC k hz))).2
+        (hfl k z hz)⟩
   have hint_eq (k : ℕ) {S : Set (ℝ × ℝ)} (hS : MeasurableSet S) (hSΩ : S ⊆ Ω) :
       ∫ y in S, ω₀.floerEnergyDensity (fun z y ↦ Ks z (φ.symm y)) (fun z y ↦ Kt z (φ.symm y))
         (φ ∘ u k) y = ∫ y in S, ω.floerEnergyDensity Ks Kt (u k) y :=

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
+import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # Closed balls of a chart covering a compact set
@@ -16,6 +17,10 @@ back to `M` through `φ.symm`. This file proves that a compact subset `A` of the
 covered by finitely many such balls centred at points of `A`, all lying in the target of `φ` and
 pulling back into a given neighbourhood of `A`
 (`OpenPartialHomeomorph.exists_finset_closedBall_cover`).
+
+A compact set `A` in the interior of a set `C ⊆ φ.source` also has a uniform margin in `C`
+measured in `φ`: every point of `C` within some fixed `η > 0` of a point of `A`, after applying
+`φ`, lies in the interior of `C` (`OpenPartialHomeomorph.exists_pos_forall_mem_interior`).
 -/
 
 public section
@@ -48,5 +53,20 @@ theorem exists_finset_closedBall_cover (φ : OpenPartialHomeomorph M E) {A U : S
   obtain ⟨hxs, a, ha, hxb⟩ : x ∈ φ.source ∧ ∃ a ∈ t, φ x ∈ ball (φ a) (r a) := by
     simpa using hAt hx
   exact ⟨φ x, mem_biUnion ha (ball_subset_closedBall hxb), φ.left_inv hxs⟩
+
+/-- In an open partial homeomorphism `φ` into a pseudometric space, a compact set `A` in the
+interior of `C ⊆ φ.source` has a margin: there is `η > 0` such that every point of `C` within `η`
+of a point of `A`, measured in `φ`, lies in the interior of `C`. -/
+theorem exists_pos_forall_mem_interior (φ : OpenPartialHomeomorph M E) {A C : Set M}
+    (hA : IsCompact A) (hAC : A ⊆ interior C) (hCφ : C ⊆ φ.source) :
+    ∃ η > 0, ∀ a ∈ A, ∀ x ∈ C, dist (φ x) (φ a) < η → x ∈ interior C := by
+  have hT : IsCompact (φ '' A) :=
+    hA.image_of_continuousOn (φ.continuousOn.mono (hAC.trans (interior_subset.trans hCφ)))
+  have hU : IsOpen (φ '' interior C) :=
+    φ.isOpen_image_of_subset_source isOpen_interior (interior_subset.trans hCφ)
+  obtain ⟨η, hη, hsub⟩ := hT.exists_thickening_subset_open hU (image_mono hAC)
+  refine ⟨η, hη, fun a ha x hx hxa ↦ ?_⟩
+  obtain ⟨c, hc, hcx⟩ := hsub (mem_thickening_iff.2 ⟨φ a, mem_image_of_mem φ ha, hxa⟩)
+  rwa [← φ.injOn (hCφ (interior_subset hc)) (hCφ hx) hcx]
 
 end OpenPartialHomeomorph

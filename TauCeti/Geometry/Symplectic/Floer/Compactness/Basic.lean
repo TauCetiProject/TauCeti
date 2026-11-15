@@ -93,6 +93,17 @@ The taming constants of `J_p` and the sizes of `X_{K_{s,p}}` are uniform over `C
 comparison of the two energies holds with constants independent of `p`. The statement for a single
 datum is the case of a constant family over a one-point window.
 
+The coordinate mean-value inequality also holds on squares `B_r(z₀)` of `ℝ × ℝ`, the balls of its
+sup norm, with `δ` uniform over a compact window of the domain and a compact set of the target
+(`TauCeti.SymplecticForm.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_stdComplexLineReal_sq_le`):
+the disc of radius `r / 2` about `z₀` is contained in the square. Combined with the comparison of
+`e = ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t})` with `‖du‖²` on compact sets
+(`TauCeti.SymplecticForm.exists_forall_norm_fderiv_sq_le_and_floerEnergyDensity_le`), it gives the
+mean-value inequality for the Floer energy density: `r² e(z₀) ≤ A (r² + ∫_{B_r(z₀)} e)` once
+`r² + ∫_{B_r(z₀)} e` is below a threshold
+(`TauCeti.SymplecticForm.exists_pos_forall_sq_mul_floerEnergyDensity_le`). Its form for Floer
+solutions in a manifold is in `TauCeti.Geometry.Symplectic.Floer.Compactness.MeanValue`.
+
 The limit is only shown to be continuous; its regularity, the rescaled bubbles at the points of
 `Z` (spheres for the structure `J(z, ·)` frozen at the bubbling point), and breaking along
 cylindrical ends are not treated here.
@@ -785,5 +796,161 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset (ω : Symp
   obtain ⟨φ, -, Z, v, hφ, -, -, h⟩ :=
     hconv (p := fun _ ↦ 0) hΩ hΩD (fun _ ↦ rfl) hu hfl huK hint hE
   exact ⟨φ, Z, v, hφ, h⟩
+
+/-- **The mean-value inequality for Floer solutions on squares.** Let `K = K_s ds + K_t dt` be
+`C³` and `J(z, x)` be `C²` on an open set `W ⊆ (ℝ × ℝ) × V` containing `D × K` for compact
+`D ⊆ ℝ × ℝ` and `K ⊆ V`. There is a threshold `δ > 0` with the following property. Let `u` be a
+`C³` solution of the Floer equation `(du - X_K)^{0,1} = 0` for `J(z, u)` on the square `B_r(z₀) ⊆ D`
+of side `2 r`, with image in `K` and `‖∂ₛu‖²` integrable. If `π r² + ∫_{B_r(z₀)} ‖∂ₛu‖² < δ`, then
+`π r² ‖∂ₛu(z₀)‖² ≤ 7 π r² + 32 ∫_{B_r(z₀)} ‖∂ₛu‖²`. -/
+theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_stdComplexLineReal_sq_le
+    (ω : SymplecticForm V) {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {K : Set V} (hW : IsOpen W)
+    (hKs : ContDiffOn ℝ 3 (Function.uncurry Ks) W)
+    (hKt : ContDiffOn ℝ 3 (Function.uncurry Kt) W)
+    (hJ : ContDiffOn ℝ 2
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hD : IsCompact D) (hK : IsCompact K) (hDKW : D ×ˢ K ⊆ W) :
+    ∃ δ > 0, ∀ ⦃u : ℝ × ℝ → V⦄ ⦃z₀ : ℝ × ℝ⦄ ⦃r : ℝ⦄, 0 < r → ball z₀ r ⊆ D →
+      ContDiffOn ℝ 3 u (ball z₀ r) →
+      (∀ z ∈ ball z₀ r, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) →
+      MapsTo u (ball z₀ r) K →
+      IntegrableOn (fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2) (ball z₀ r) →
+      π * r ^ 2 + ∫ z in ball z₀ r, ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 < δ →
+      π * r ^ 2 * ‖fderiv ℝ u z₀ stdComplexLineReal‖ ^ 2 ≤
+        7 * π * r ^ 2 + 32 * ∫ z in ball z₀ r, ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 := by
+  -- Apply `Floer.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy` on the
+  -- disc of radius `r / 2` about `z₀`, contained in the square, read through the complex
+  -- coordinate `equivRealProdCLM`.
+  set e : ℂ ≃L[ℝ] ℝ × ℝ := equivRealProdCLM with he
+  set g : ℂ × V → (ℝ × ℝ) × V := fun q ↦ (e q.1, q.2)
+  have hg {n : WithTop ℕ∞} : ContDiff ℝ n g :=
+    (e.contDiff.comp contDiff_fst).prodMk contDiff_snd
+  have hX := ω.contDiffOn_hamiltonianOneForm_uncurry (n := 2) hW hKs hKt
+  obtain ⟨δ, hδ, hmean⟩ :=
+    Floer.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy
+    (J := fun q ↦ (J (e q.1) q.2).toLinearMap.toContinuousLinearMap)
+    (X := fun q ↦ ω.hamiltonianOneForm Ks Kt (e q.1) q.2 ∘L (e : ℂ →L[ℝ] ℝ × ℝ))
+    (hW.preimage (hg (n := 0)).continuous) (hJ.comp hg.contDiffOn (mapsTo_preimage g W))
+    ((hX.comp hg.contDiffOn (mapsTo_preimage g W)).clm_comp
+      (contDiffOn_const (c := (e : ℂ →L[ℝ] ℝ × ℝ))))
+    (e.toHomeomorph.isCompact_preimage.2 hD) hK (fun q hq ↦ hDKW ⟨hq.1, hq.2⟩)
+    (fun _ _ _ _ v ↦ by simp)
+  refine ⟨δ, hδ, fun u z₀ r hr hrD hu hfl huK hint hsmall ↦ ?_⟩
+  set d : ℝ × ℝ → ℝ := fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 with hd_def
+  -- The closed disc of radius `r / 2` about `e⁻¹ z₀` lies, through `e`, in the square.
+  set y₀ := e.symm z₀
+  have hball : ∀ y, ‖y - y₀‖ ≤ r / 2 → e y ∈ ball z₀ r := fun y hy ↦ by
+    have h := lipschitz_equivRealProd.dist_le_mul y y₀
+    simp only [NNReal.coe_one, one_mul] at h
+    rw [mem_ball, show z₀ = e y₀ by simp [y₀]]
+    refine (h.trans ?_).trans_lt (half_lt_self hr)
+    simpa [dist_eq_norm] using hy
+  have hsub : ball y₀ (r / 2) ⊆ e ⁻¹' ball z₀ r := fun y hy ↦
+    hball y (by simpa [dist_eq_norm] using (mem_ball.1 hy).le)
+  have hu' : ContDiffOn ℝ 3 (u ∘ e) (e ⁻¹' ball z₀ r) :=
+    hu.comp e.contDiff.contDiffOn (mapsTo_preimage _ _)
+  -- `e` preserves volume, and `∂ₛ(u ∘ e) = (∂ₛu) ∘ e`.
+  have hint' : IntegrableOn (fun y ↦ ‖fderiv ℝ (u ∘ e) y 1‖ ^ 2) (e ⁻¹' ball z₀ r) := by
+    simp only [he, fderiv_comp_equivRealProdCLM_one]
+    exact (Complex.volume_preserving_equiv_real_prod.integrableOn_comp_preimage
+      equivRealProdCLM.toHomeomorph.measurableEmbedding).2 hint
+  have hJle : ∫ y in ball y₀ (r / 2), ‖fderiv ℝ (u ∘ e) y 1‖ ^ 2 ≤ ∫ z in ball z₀ r, d z := by
+    refine (setIntegral_mono_set hint' (Eventually.of_forall fun _ ↦ by positivity)
+      hsub.eventuallySubset).trans_eq ?_
+    simp only [he, hd_def, fderiv_comp_equivRealProdCLM_one]
+    exact Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
+      equivRealProdCLM.toHomeomorph.measurableEmbedding d _
+  have hmv := hmean (u := u ∘ e) (z₀ := y₀) (r := r / 2) (by positivity)
+    (fun y hy ↦ hrD (hsub hy)) (hu'.mono hsub)
+    (((hu'.continuousOn_fderiv_of_isOpen (isOpen_ball.preimage e.continuous)
+      (by norm_num)).clm_apply continuousOn_const).mono fun y hy ↦
+        hball y (by simpa [dist_eq_norm] using mem_closedBall.1 hy))
+    (fun y hy ↦ by simpa [he] using ω.fderiv_comp_equivRealProdCLM_I_sub (hfl (e y) (hsub hy)))
+    (fun y hy ↦ huK (hsub hy))
+    (by nlinarith [pi_pos, sq_nonneg r])
+  rw [fderiv_comp_equivRealProdCLM_one, show e y₀ = z₀ by simp [y₀]] at hmv
+  nlinarith
+
+/-- **The mean-value inequality for the Floer energy density.** Let `K = K_s ds + K_t dt` be `C³`
+and `J(z, x)` be `C²` on an open set `W ⊆ (ℝ × ℝ) × V` containing `D × K` for compact
+`D ⊆ ℝ × ℝ` and `K ⊆ V`, with `J(z, x)` tamed by `ω` on `D × K`. There are a threshold `δ > 0` and
+a constant `A ≥ 0` with the following property. Let `u` be a `C³` solution of the Floer equation
+`(du - X_K)^{0,1} = 0` for `J(z, u)` on the square `B_r(z₀) ⊆ D` of side `2 r`, with image in `K`
+and integrable energy density `e = ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t})`. If `r² + ∫_{B_r(z₀)} e < δ`,
+then `r² e(z₀) ≤ A (r² + ∫_{B_r(z₀)} e)`. -/
+theorem exists_pos_forall_sq_mul_floerEnergyDensity_le (ω : SymplecticForm V)
+    {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {K : Set V} (hW : IsOpen W)
+    (hKs : ContDiffOn ℝ 3 (Function.uncurry Ks) W)
+    (hKt : ContDiffOn ℝ 3 (Function.uncurry Kt) W)
+    (hJ : ContDiffOn ℝ 2
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hD : IsCompact D) (hK : IsCompact K) (hDKW : D ×ˢ K ⊆ W)
+    (hJt : ∀ z ∈ D, ∀ x ∈ K, ω.Tames (J z x)) :
+    ∃ δ > 0, ∃ A ≥ 0, ∀ ⦃u : ℝ × ℝ → V⦄ ⦃z₀ : ℝ × ℝ⦄ ⦃r : ℝ⦄, 0 < r → ball z₀ r ⊆ D →
+      ContDiffOn ℝ 3 u (ball z₀ r) →
+      (∀ z ∈ ball z₀ r, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) →
+      MapsTo u (ball z₀ r) K → IntegrableOn (ω.floerEnergyDensity Ks Kt u) (ball z₀ r) →
+      r ^ 2 + ∫ z in ball z₀ r, ω.floerEnergyDensity Ks Kt u z < δ →
+      r ^ 2 * ω.floerEnergyDensity Ks Kt u z₀ ≤
+        A * (r ^ 2 + ∫ z in ball z₀ r, ω.floerEnergyDensity Ks Kt u z) := by
+  obtain ⟨L, hL0, hL⟩ := ω.exists_forall_norm_fderiv_sq_le_and_floerEnergyDensity_le hD hK
+    (hJ.continuousOn.mono hDKW)
+    ((ω.contDiffOn_hamiltonianOneForm_uncurry (n := 2) hW hKs hKt).continuousOn.mono hDKW) hJt
+  obtain ⟨δ₀, hδ₀, hmean⟩ :=
+    ω.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_stdComplexLineReal_sq_le hW hKs hKt hJ hD hK
+      hDKW
+  set C₁ := 2 * L + 1
+  have hC₁ : 0 < C₁ := by positivity
+  refine ⟨δ₀ / (4 + 4 * C₁), by positivity, L * (8 + 128 * C₁), by positivity,
+    fun u z₀ r hr hrD hu hfl huK hint hsmall ↦ ?_⟩
+  set f := ω.floerEnergyDensity Ks Kt u
+  set I := ∫ z in ball z₀ r, f z
+  have hf0 : ∀ z ∈ ball z₀ r, 0 ≤ f z := fun z hz ↦
+    ω.floerEnergyDensity_nonneg (hJt z (hrD hz) _ (huK hz)) (hfl z hz)
+  have hI0 : 0 ≤ I := setIntegral_nonneg measurableSet_ball hf0
+  -- On the square, `‖∂ₛu‖²` is integrable, with integral at most `C₁ (4 r² + ∫ e)`.
+  set d : ℝ × ℝ → ℝ := fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 with hd_def
+  have hdle : ∀ z ∈ ball z₀ r, d z ≤ L * f z + L := fun z hz ↦ by
+    have h1 : ‖fderiv ℝ u z stdComplexLineReal‖ ≤ ‖fderiv ℝ u z‖ :=
+      ((fderiv ℝ u z).le_opNorm _).trans_eq (by simp [stdComplexLineReal_eq, Prod.norm_def])
+    have h2 := (hL (hrD hz) (huK hz) (hfl z hz)).1
+    simp only [hd_def]
+    nlinarith [norm_nonneg (fderiv ℝ u z stdComplexLineReal)]
+  have hfin : volume (ball z₀ r) ≠ ⊤ := measure_ball_lt_top.ne
+  have hdint : IntegrableOn d (ball z₀ r) := integrableOn_of_le_mul_add measurableSet_ball hfin
+    ((((hu.continuousOn_fderiv_of_isOpen isOpen_ball (by norm_num)).clm_apply
+      continuousOn_const).norm.pow 2).aestronglyMeasurable measurableSet_ball) hint
+    (fun _ _ ↦ by positivity) hdle
+  have hdI : ∫ z in ball z₀ r, d z ≤ C₁ * (4 * r ^ 2 + I) := by
+    have h := setIntegral_le_mul_measureReal_add_setIntegral_of_le measurableSet_ball hfin hL0 hL0
+      hdint hint hf0 hdle
+    -- The square `B_r(z₀)` has area `4 r²`.
+    have hvol : volume.real (ball z₀ r) = 4 * r ^ 2 := by
+      rw [← ball_prod_same z₀.1 z₀.2 r, measureReal_def, Measure.volume_eq_prod,
+        Measure.prod_prod, Real.volume_ball, Real.volume_ball, ENNReal.toReal_mul,
+        ENNReal.toReal_ofReal (by positivity)]
+      ring
+    rwa [hvol, show L + L + 1 = C₁ by ring] at h
+  have hd0 : 0 ≤ ∫ z in ball z₀ r, d z := setIntegral_nonneg measurableSet_ball fun _ _ ↦ by
+    positivity
+  have hmv := hmean hr hrD hu hfl huK hdint (by
+    have : (4 + 4 * C₁) * (r ^ 2 + I) < δ₀ := by
+      rwa [lt_div_iff₀ (by positivity), mul_comm] at hsmall
+    nlinarith [pi_le_four, sq_nonneg r])
+  -- From `π r² ‖∂ₛu(z₀)‖² ≤ 7 π r² + 32 ∫ ‖∂ₛu‖²` and `π ≥ 2`, and `e ≤ L (‖∂ₛu‖² + 1)` at `z₀`.
+  set s := ‖fderiv ℝ u z₀ stdComplexLineReal‖ ^ 2
+  have hs : r ^ 2 * s ≤ 7 * r ^ 2 + 16 * (C₁ * (4 * r ^ 2 + I)) := by
+    nlinarith [two_le_pi, sq_nonneg r, mul_nonneg (sq_nonneg r) (sq_nonneg
+      ‖fderiv ℝ u z₀ stdComplexLineReal‖)]
+  have hez₀ := (hL (hrD (mem_ball_self hr)) (huK (mem_ball_self hr))
+    (hfl z₀ (mem_ball_self hr))).2
+  calc r ^ 2 * f z₀ ≤ r ^ 2 * (L * (s + 1)) := by gcongr
+    _ = L * (r ^ 2 * s + r ^ 2) := by ring
+    _ ≤ L * (7 * r ^ 2 + 16 * (C₁ * (4 * r ^ 2 + I)) + r ^ 2) := by gcongr
+    _ ≤ L * (8 + 128 * C₁) * (r ^ 2 + I) := by
+      nlinarith [mul_nonneg hL0 (mul_nonneg hC₁.le hI0), mul_nonneg hL0 (sq_nonneg r),
+        mul_nonneg hL0 (mul_nonneg hC₁.le (sq_nonneg r))]
 
 end TauCeti.SymplecticForm

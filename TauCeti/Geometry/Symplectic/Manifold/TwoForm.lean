@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.TwoForm.Pullback
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
@@ -65,7 +66,9 @@ example.
   immersion there.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tames_of_isComplexLinearMap_mvfderiv`: such a map with
   surjective differential carries a tamed almost complex structure to one tamed by the constant
-  form.
+  form; for a partial diffeomorphism pulling the form back on a set `C` of its source, a family
+  tamed on `C` is carried to a family tamed on the image of `C`
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.tames_of_mem_image`).
 * `TauCeti.SymplecticForm.constSmooth`: a symplectic form as a constant smooth two-form, which is
   symplectic (`TauCeti.SymplecticForm.isSymplectic_constSmooth`), together with its `mvfderiv` and
   partial-diffeomorphism pullback characterizations
@@ -403,6 +406,23 @@ theorem IsNondegenerate.tames_of_isComplexLinearMap_mvfderiv (h : form.IsNondege
   simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe] at hJv
   rw [← hJv, ← hform, ← IsNondegenerate.symplecticFormAt_apply]
   exact hJt v fun hv ↦ hw (by rw [hv, map_zero])
+
+/-- **Taming over a symplectic chart.** Let `φ` be a partial diffeomorphism into `V` pulling the
+symplectic form `ω₀` back to the nondegenerate form `form` at every point of `C ⊆ φ.source`, and
+let the family `J'` on `V` read the family `J` in the chart, `dφ_x ∘ J x = J' (φ x) ∘ dφ_x` for
+`x ∈ C`. If `J x` is tamed by `form_x` for every `x ∈ C`, then `J' y` is tamed by `ω₀` for every
+`y ∈ φ(C)`. -/
+theorem IsNondegenerate.tames_of_mem_image (h : form.IsNondegenerate) {m : WithTop ℕ∞}
+    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V m) (hm : m ≠ 0) {C : Set M}
+    (hform : ∀ x ∈ C, ∀ v w : TangentSpace I x,
+      form.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
+    {J : (x : M) → AlmostComplexStructure (TangentSpace I x)} {J' : V → AlmostComplexStructure V}
+    (hJ : ∀ x ∈ C, IsComplexLinearMap (J x) (J' (φ x)) (mvfderiv I φ x).toLinearMap)
+    (hCφ : C ⊆ φ.source) (hJt : ∀ x ∈ C, (h.symplecticFormAt x).Tames (J x)) :
+    ∀ y ∈ φ '' C, ω₀.Tames (J' y) := by
+  rintro _ ⟨x, hx, rfl⟩
+  exact h.tames_of_isComplexLinearMap_mvfderiv (φ.bijective_mvfderiv hm (hCφ hx)).surjective
+    (hform x hx) (hJ x hx) (hJt x hx)
 
 end Chart
 
