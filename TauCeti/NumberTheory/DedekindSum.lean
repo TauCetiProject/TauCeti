@@ -322,7 +322,7 @@ theorem dedekindSum_eq_of_mul_modEq_one {d d' c : ℤ} (h : d * d' ≡ 1 [ZMOD c
         _ = a * b * r := by ring
         _ ≡ 1 * r [MOD c] := hab.mul_right r
         _ = r := one_mul r
-      exact Eq.trans hmod (Nat.mod_eq_of_lt (mem_range.mp hr))
+      exact Nat.mod_eq_of_modEq hmod (mem_range.mp hr)
     rw [hinv, mul_comm]
 
 /-- The Dedekind sum through the floor sum `∑_{r < c} r ⌊h r / c⌋`:
