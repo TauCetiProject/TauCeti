@@ -79,22 +79,9 @@ theorem exists_eLpNormWkp_bilin_le [CompleteSpace H] (hp : 2 < p) (hq : 1 < q) (
     let _ : Fact (1 ≤ (p : ℝ≥0∞)) := ⟨hq1.trans (by exact_mod_cast hqp)⟩
     have hq0 : (q : ℝ≥0∞) ≠ 0 := (zero_lt_one.trans_le hq1).ne'
     have hp0 : (p : ℝ≥0∞) ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
-    have hUm : volume.restrict U ≤ volume.restrict Ω :=
-      Measure.restrict_mono (subset_closure.trans hUΩ) le_rfl
-    -- If `B = 0` or either factor vanishes almost everywhere on `Ω`, so does the product on `U`.
-    have hvanish (h : (fun z => B (f z) (g z)) =ᵐ[volume.restrict Ω] 0) :
-        eLpNormWkp q U (k + 1 + 1) (fun z => B (f z) (g z)) = 0 := by
-      rw [eLpNormWkp_congr_ae (ae_mono hUm h), eLpNormWkp_zero_fun]
-    refine ENNReal.le_mul_mul_of_ne_top_imp_le (fun hCB => hvanish (.of_forall fun z => ?_))
-      (fun hf0 => hvanish ?_) (fun hg0 => hvanish ?_) fun _ hf hg => ?_
-    · -- `eNorm_eq_zero` does not elaborate on this iterated operator space, so go through `‖B‖`.
-      have hB : ‖B‖ₑ = 0 := (mul_eq_zero.1 hCB).resolve_left fun h => by
-        exact (ENNReal.coe_ne_zero.2 (add_pos_of_nonneg_of_pos zero_le one_pos).ne') h
-      simp [B.opNorm_zero_iff.1 <| (norm_nonneg B).antisymm' <| by simpa [← ofReal_norm] using hB]
-    · filter_upwards [ae_eq_zero_of_eLpNormWkp_eq_zero hp0 hf0] with z hz
-      simp [hz]
-    · filter_upwards [ae_eq_zero_of_eLpNormWkp_eq_zero hq0 hg0] with z hz
-      simp [hz]
+    have hUΩ' : U ⊆ Ω := subset_closure.trans hUΩ
+    refine le_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le hp0 hq0 hUΩ' hUΩ' (by positivity)
+      (fun h => by rw [eLpNormWkp_congr_ae h, eLpNormWkp_zero_fun]) fun hf hg => ?_
     -- Weak derivatives of the factors realizing their norms on `Ω`.
     obtain ⟨Df, hDf, hDfk, hfΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hf
     obtain ⟨Dg, hDg, hDgk, hgΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hg
@@ -105,18 +92,16 @@ theorem exists_eLpNormWkp_bilin_le [CompleteSpace H] (hp : 2 < p) (hq : 1 < q) (
     have hDfX : eLpNormWkp p Ω (k + 1) Df ≤ X := hfΩ ▸ le_add_self
     have hDgY : eLpNormWkp q Ω (k + 1) Dg ≤ Y := hgΩ ▸ le_add_self
     -- The weak Leibniz rule on `Ω`, with `f` locally bounded.
-    have hfloc : MemWkpLoc p Ω 1 f :=
-      (memWkpLoc_of_eLpNormWkp_ne_top hf).of_le (by omega)
+    have hfloc : MemWkpLoc p Ω 1 f := (memWkpLoc_of_eLpNormWkp_ne_top hf).of_le (by omega)
     have hLeib := hDf.bilin_of_memLpLoc B hp hq hqp
       ((hfloc.memLpLoc_of_holderTriple hp le_rfl).mono_exponent le_top)
       (memLp_of_eLpNormWkp_ne_top hDfk).memLpLoc hDg (memLp_of_eLpNormWkp_ne_top hg).memLpLoc
       (memLp_of_eLpNormWkp_ne_top hDgk).memLpLoc
-    have hint : Opens.interior U ≤ Ω := fun z hz => hUΩ (subset_closure (interior_subset hz))
     calc
       _ ≤ eLpNorm (fun z => B (f z) (g z)) q (volume.restrict U) +
           eLpNormWkp q U (k + 1)
             (fun z => B.precompL ℂ (Df z) (g z) + B.precompR ℂ (f z) (Dg z)) :=
-        eLpNormWkp_succ_le (hLeib.mono hint)
+        eLpNormWkp_succ_le (hLeib.mono fun z hz => hUΩ' (interior_subset hz))
       _ ≤ eLpNormWkp q U (k + 1) (fun z => B (f z) (g z)) +
           (eLpNormWkp q U (k + 1) (fun z => B.precompL ℂ (Df z) (g z)) +
             eLpNormWkp q U (k + 1) (fun z => B.precompR ℂ (f z) (Dg z))) :=
@@ -124,18 +109,12 @@ theorem exists_eLpNormWkp_bilin_le [CompleteSpace H] (hp : 2 < p) (hq : 1 < q) (
       _ ≤ C₀ * ‖B‖ₑ * X * Y + (Cl * ‖B‖ₑ * X * Y + Cr * ‖B‖ₑ * X * Y) := by
         gcongr
         · exact (hC₀ B f g).trans (by gcongr)
-        · refine (hCl (B.precompL ℂ) Df g).trans ?_
-          gcongr
-          exact eNorm_le_iff_norm_le.2 (B.norm_precompL_le ℂ)
-        · refine (hCr (B.precompR ℂ) f Dg).trans ?_
-          gcongr
-          exact eNorm_le_iff_norm_le.2 (B.norm_precompR_le ℂ)
-      _ = ↑(C₀ + Cl + Cr) * ‖B‖ₑ * X * Y := by
-        push_cast
-        ring
-      _ ≤ _ := by
-        gcongr ?_ * _ * _ * _
-        exact_mod_cast le_self_add
+        · exact (hCl (B.precompL ℂ) Df g).trans
+            (by gcongr; exact eNorm_le_iff_norm_le.2 (B.norm_precompL_le ℂ))
+        · exact (hCr (B.precompR ℂ) f Dg).trans
+            (by gcongr; exact eNorm_le_iff_norm_le.2 (B.norm_precompR_le ℂ))
+      _ = ↑(C₀ + Cl + Cr) * ‖B‖ₑ * X * Y := by push_cast; ring
+      _ ≤ _ := by gcongr ?_ * _ * _ * _; exact_mod_cast le_self_add
 
 /-- **Local bound for coefficient fields acting on local Sobolev maps.** Fix finite-dimensional
 real normed spaces `F` and `G`. For `p > 2`, `1 < q ≤ p`, every `k` and a set `U` whose closure
