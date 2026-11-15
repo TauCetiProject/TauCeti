@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
+import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 
@@ -46,6 +47,8 @@ descriptions.
 * `TemperedDistribution.mem_realSobolevFunctions_add_one_of_fderiv_apply`: conversely, a real `C¹`
   function in `H^{s,p}` whose classical directional derivatives lie in `H^{s,p}` lies in
   `H^{s+1,p}`.
+* `TemperedDistribution.mem_realSobolevFunctions_natCast_of_contDiff`: a real `C^k` function whose
+  iterated derivatives of order at most `k` lie in `Lᵖ` lies in `H^{k,p}`.
 
 ## References
 
@@ -207,5 +210,22 @@ theorem mem_realSobolevFunctions_add_one_of_fderiv_apply {p : ℝ≥0∞} [Fact 
   obtain ⟨u', hu'f, hu'⟩ := mem_realSobolevFunctions.1 (hd v)
   rw [lineDerivOp_toTemperedDistribution_ofReal_eq_of_contDiff hf huf hu'f]
   exact hu'
+
+/-- **Smooth functions with `Lᵖ` derivatives are Bessel-potential functions.** For `1 < p < ∞`,
+a real `C^k` function whose iterated derivatives of order at most `k` lie in `Lᵖ` lies in
+`H^{k,p}`. -/
+theorem mem_realSobolevFunctions_natCast_of_contDiff {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p)
+    (hp_top : p ≠ ∞) {k : ℕ} {f : E → ℝ} (hf : ContDiff ℝ k f)
+    (hd : ∀ n ≤ k, MemLp (iteratedFDeriv ℝ n f) p volume) :
+    f ∈ realSobolevFunctions E k p := by
+  have hvolume : (volume : Measure E) = volume.restrict ((⊤ : Opens E) : Set E) := by simp
+  obtain ⟨w, hw⟩ := Wkp.exists_value_ae_eq_of_contDiffOn (mu := volume) (Omega := ⊤) k
+    hf.contDiffOn fun n hn ↦ hvolume ▸ hd n hn
+  have hf₀ : MemLp f p volume := (hd 0 (Nat.zero_le k)).congr_norm
+    hf.continuous.aestronglyMeasurable (.of_forall fun x ↦ norm_iteratedFDeriv_zero)
+  replace hw : (Wkp.value k w : E → ℝ) =ᵐ[volume] f := by simpa using hw
+  exact mem_realSobolevFunctions.2 ⟨hf₀.toLp f, hf₀.coeFn_toLp,
+    (Lp.memSobolev_natCast_iff_exists_wkp_value_eq hp hp_top k _).2
+      ⟨w, hw.trans hf₀.coeFn_toLp.symm⟩⟩
 
 end TemperedDistribution
