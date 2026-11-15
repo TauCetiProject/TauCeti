@@ -63,7 +63,7 @@ theorem exists_monic_irreducible_natDegree_eq_ne_X
     ∃ h : k[X], h.Monic ∧ Irreducible h ∧ h.natDegree = d ∧ h ≠ X := by
   rcases eq_or_ne d 1 with rfl | hd1
   · exact ⟨X + C 1, monic_X_add_C 1, irreducible_of_degree_eq_one (degree_X_add_C 1),
-      natDegree_X_add_C 1, fun h ↦ by simpa using congrArg (coeff · 0) h⟩
+      natDegree_X_add_C 1, fun h ↦ by simpa using congrArg (fun p : k[X] ↦ p.coeff 0) h⟩
   · obtain ⟨h, hmonic, hirr, rfl⟩ := exists_monic_irreducible_natDegree_eq k d hd
     exact ⟨h, hmonic, hirr, rfl, by rintro rfl; simp at hd1⟩
 

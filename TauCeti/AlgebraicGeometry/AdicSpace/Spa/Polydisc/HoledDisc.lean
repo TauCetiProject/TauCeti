@@ -394,7 +394,7 @@ theorem discPoint_mem_holedDisc_iff (e : K) (he : ‖e‖ ≤ 1) (hr₀ : 0 < r)
   refine and_congr_right' (forall_congr' fun i ↦ ?_)
   rw [discPoint_vle_iff, taylorHom_weightedC, ← NNReal.coe_le_coe,
     coe_closedDiscGaussValuation_taylorHom_weightedX_sub_weightedC he,
-    closedDiscGaussValuation_weightedC, coe_nnnorm, norm_sub_rev]
+    closedDiscGaussValuation_weightedC, coe_nnNorm, norm_sub_rev]
 
 /-- **The point `η_{e,r⁺}` lies in a holed disc exactly when `‖e - a‖ ≤ ‖c‖`, `r < ‖c‖` and
 `‖dᵢ‖ ≤ max r ‖e - bᵢ‖` for every `i`.** Only the outer disc distinguishes it from `η_{e,r}`:
@@ -439,7 +439,7 @@ theorem holedDisc_eq_empty_iff {a c : K} (ha : ‖a‖ ≤ 1) (hc : ‖c‖ ≤ 
     rw [discPoint_mem_holedDisc_iff]
     exact ⟨⟨by simp, le_rfl⟩, hne.2⟩
   · rintro (rfl | ⟨i, hi⟩)
-    · exact Set.subset_eq_empty (holedDisc_subset_closedSubdisc a 0 b d)
+    · exact Set.eq_empty_of_subset (holedDisc_subset_closedSubdisc a 0 b d)
         (closedSubdisc_zero_right a)
     · exact holedDisc_eq_empty_of_lt i hi
 

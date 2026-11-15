@@ -441,19 +441,11 @@ theorem isIso_singularHomologyMap_compl_of_starConvex (hK : StarConvex ℝ y K) 
     let g₂ : TopCat.of (sphere y r) ⟶ (TopPair.ofSubset ({y}ᶜ : Set (TopCat.of E))).snd :=
       TopCat.ofHom e₂.toFun
     have hfac : g₁ ≫ TopPair.Hom.snd f = g₂ := hK.ofHom_complSphereHomotopyEquiv_comp_snd hy hKr
-    -- `((singularHomologyFunctor A n).obj R).map g` is `SSet.homologyMap (TopCat.toSSet.map g) R n`
-    -- by definition of `singularChainComplexFunctor`, so the homotopy equivalences give
-    -- isomorphisms in the latter form.
-    have h₁ : IsIso (SSet.homologyMap (TopCat.toSSet.map g₁) R n) := by
-      have := (e₁.singularHomologyIso R n).isIso_hom
-      rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom] at this
-      exact this
+    have h₁ : IsIso (SSet.homologyMap (TopCat.toSSet.map g₁) R n) := e₁.isIso_homologyMap R n
     have h₂ : IsIso (SSet.homologyMap (TopCat.toSSet.map g₁) R n ≫
         SSet.homologyMap (TopCat.toSSet.map (TopPair.Hom.snd f)) R n) := by
       rw [← SSet.homologyMap_comp, ← Functor.map_comp, hfac]
-      have := (e₂.singularHomologyIso R n).isIso_hom
-      rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom] at this
-      exact this
+      exact e₂.isIso_homologyMap R n
     exact IsIso.of_isIso_comp_left (SSet.homologyMap (TopCat.toSSet.map g₁) R n) _
   exact TopPair.isIso_singularHomologyMap_of_isIso R f k (hfst k) (hsnd k) (fun m _ ↦ hfst m)
     fun m _ ↦ hsnd m

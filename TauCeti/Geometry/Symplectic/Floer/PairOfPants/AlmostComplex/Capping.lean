@@ -336,7 +336,7 @@ theorem contMDiffAt_plumbedAlmostComplex_update_inf (h₀ : ω.Compatible J₀) 
   · -- Off it, the point lies in the plumbed four-punctured sphere.
     have h := periodic_and_contMDiff_update_inf (J₀ := J₀) (hJbp q) (hJbs q)
     exact contMDiffAt_plumbedAlmostComplex h₀ h₀ hq (fun r => (h r).1) hJbp (fun r => (h r).2) hJbs
-      (by simp) hL (mem_plumbedSphere_of_le_norm_sub_endCenter hq hw hge) x
+      (by simp) hL (mem_plumbedSphere_of_le_norm_sub_endCenter hw hge) x
 
 end Smooth
 

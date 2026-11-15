@@ -81,7 +81,7 @@ theorem exists_homologyPeriodHom_timeForm_eq_intCast_mul
     ((0 : ℝ) : AddCircle p)).surjective c
   obtain ⟨a, rfl⟩ := Additive.ofMul.surjective a
   obtain ⟨g, rfl⟩ := Quot.exists_rep a
-  rw [Abelianization.mk_eq_of]
+  rw [Group.Abelianization.mk_eq_of]
   exact ⟨windingNumber g, by rw [homologyPeriodHom_hurewiczHomologyAddEquiv, periodHom_timeForm]⟩
 
 end AddCircle

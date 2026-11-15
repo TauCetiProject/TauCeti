@@ -16,6 +16,8 @@ This file records that this involution is additive, isometric and, over a star m
 conjugate-linear. Thus `Lp R p μ` is a star additive monoid and a star module for every exponent
 `p`, and a normed star group for `1 ≤ p`. Over `ℂ` the involution is pointwise complex
 conjugation of classes of functions; these laws are part of the C⋆-algebra structure of `L∞`.
+Over any `RCLike` field, a class almost everywhere equal to a real-valued function is fixed by
+`star` (`MeasureTheory.Lp.star_eq_self_of_ae_eq_ofReal`).
 -/
 
 public section
@@ -46,5 +48,12 @@ instance instStarModule [NormedRing 𝕜] [Star 𝕜] [Module 𝕜 R] [IsBounded
     filter_upwards [coeFn_star (c • f), coeFn_smul c f, coeFn_smul (star c) (star f),
       coeFn_star f] with x h₁ h₂ h₃ h₄
     simp only [h₁, h₂, h₃, h₄, Pi.star_apply, Pi.smul_apply, star_smul]
+
+/-- A class almost everywhere equal to a real-valued function is real: `star f = f`. -/
+theorem star_eq_self_of_ae_eq_ofReal [RCLike 𝕜] {f : Lp 𝕜 p μ} {u : α → ℝ}
+    (hf : f =ᵐ[μ] fun x ↦ (u x : 𝕜)) : star f = f := by
+  ext
+  filter_upwards [coeFn_star f, hf] with x h₁ h₂
+  simp [h₁, h₂]
 
 end MeasureTheory.Lp

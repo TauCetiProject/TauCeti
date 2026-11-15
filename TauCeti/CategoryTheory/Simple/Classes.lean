@@ -32,8 +32,8 @@ distinct simple classes hom orthogonal.
   types of simple classes;
 * `TauCeti.SimpleClasses.homOrthogonal_repr`: in a preadditive category with kernels, the chosen
   representatives of distinct simple classes are hom orthogonal (Schur's lemma);
-* `TauCeti.SimpleClasses.classOf_eq_of_ne_zero`: simple objects related by a nonzero morphism have
-  the same class;
+* `TauCeti.SimpleClasses.classOf_eq_iff_exists_ne_zero`: two simple objects have the same class
+  exactly when there is a nonzero morphism between them (Schur's lemma);
 * `TauCeti.SimpleClasses.sum_comp_classOfReprIso_eq_id`: a biproduct decomposition into simple
   objects resolves the identity through the chosen representatives of their classes.
 -/
@@ -160,11 +160,18 @@ theorem homOrthogonal_repr {D : Type u₁} [Category.{v₁} D] [Preadditive D] [
   have := isIso_of_hom_simple hf
   exact h ((eq_iff_nonempty_iso S T).2 ⟨asIso f⟩)
 
-/-- Two simple objects related by a nonzero morphism have the same class (Schur's lemma). -/
-theorem classOf_eq_of_ne_zero {D : Type u₁} [Category.{v₁} D] [Preadditive D] [HasKernels D]
-    {X Y : D} [Simple X] [Simple Y] {f : X ⟶ Y} (hf : f ≠ 0) : classOf X = classOf Y :=
-  have := isIso_of_hom_simple hf
-  (classOf_eq_iff_nonempty_iso X Y).2 ⟨asIso f⟩
+/-- Two simple objects have the same class exactly when there is a nonzero morphism between them
+(Schur's lemma). -/
+theorem classOf_eq_iff_exists_ne_zero {D : Type u₁} [Category.{v₁} D] [Preadditive D]
+    [HasKernels D] {X Y : D} [Simple X] [Simple Y] :
+    classOf X = classOf Y ↔ ∃ f : X ⟶ Y, f ≠ 0 := by
+  rw [classOf_eq_iff_nonempty_iso]
+  constructor
+  · rintro ⟨e⟩
+    exact ⟨e.hom, (isIso_iff_ne_zero e.hom).1 inferInstance⟩
+  · rintro ⟨f, hf⟩
+    have := isIso_of_hom_simple hf
+    exact ⟨asIso f⟩
 
 /-- A biproduct decomposition `e : Y ≅ ⨁ a` into simple objects resolves `𝟙 Y` through the chosen
 representatives `(classOf (a i)).repr` of their isomorphism classes. -/

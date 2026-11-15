@@ -469,7 +469,7 @@ private theorem inv_sub_mem_eball_radius_negCoordPowerSeries
     (ENNReal.ofReal_lt_ofReal_iff'.1 (hρmin.trans_le (min_le_left _ _))).1
   have hρR : ENNReal.ofReal ρ < R := hρmin.trans_le (min_le_right _ _)
   refine eball_subset_eball (h.le_radius_negCoordPowerSeries hrρ hρR) ?_
-  rw [mem_eball, edist_zero_right, enorm_eq_nnnorm]
+  rw [mem_eball, edist_zero_right, eNorm_eq_nnNorm]
   have hnorm : ‖(w - c)⁻¹‖ < ρ⁻¹ := by
     rw [norm_inv]
     exact inv_strictAnti₀ hρ_pos (by simpa only [dist_eq_norm] using hρw)

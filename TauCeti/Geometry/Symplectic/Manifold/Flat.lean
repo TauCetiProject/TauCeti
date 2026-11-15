@@ -52,7 +52,8 @@ skew-adjoint everywhere without changing that value.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.interior_injective`: for a nondegenerate form,
   `X ↦ ι_X σ` is injective.
 * `TauCeti.SmoothTwoForm.contMDiff_flat`: the flat maps form a smooth section.
-* `TauCeti.SmoothTwoForm.contMDiffAt_sectionAlong_flatL`: the flat maps of a smooth family of
+* `TauCeti.SmoothTwoForm.contMDiffAt_sectionAlong_flatL` and
+  `TauCeti.SmoothTwoForm.contMDiffAt_sectionAlong_flat`: the flat maps of a smooth family of
   two-forms along a map depend smoothly on the parameter.
 * `TauCeti.SmoothTwoForm.isNondegenerate_iff_isInvertible_flat`: nondegeneracy is invertibility of
   the flat maps, in finite dimensions.
@@ -61,7 +62,9 @@ skew-adjoint everywhere without changing that value.
 * `TauCeti.SmoothTwoForm.interiorₗ`: contraction of smooth vector fields, as a linear map to smooth
   one-forms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv`: for a nondegenerate form in finite
-  dimensions, contraction identifies smooth vector fields with smooth one-forms.
+  dimensions, contraction identifies smooth vector fields with smooth one-forms. The vector field
+  `(σ♭)⁻¹ α` vanishes exactly where `α` does
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv_symm_apply_eq_zero_iff`).
 * `TauCeti.SmoothTwoForm.flatComp`: the bilinear forms `σ(C ·, ·)` of a section of `End(TM)`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.skewPart`: the `σ`-skew part of a section of `End(TM)`,
   skew-adjoint at every point and equal to `C` wherever `C` is already skew-adjoint.
@@ -160,6 +163,23 @@ theorem contMDiffAt_sectionAlong_flatL {EN HN N : Type*} [NormedAddCommGroup EN]
   congr 1
   ext i
   fin_cases i <;> exact (Trivialization.symmL_apply _ hm _).symm
+
+/-- **Flat maps of a smooth family of smooth two-forms.** Let `σ m` be smooth two-forms on `M`
+depending on a parameter `m ∈ N`, and let `b : N → M`. If the values `(σ m)_(b m)` depend `C^n` on
+`m`, as a section along `b`, then so do the flat maps `(σ m)♭_(b m)`. This is
+`TauCeti.SmoothTwoForm.contMDiffAt_sectionAlong_flatL` stated with `TauCeti.SmoothTwoForm.flat`. -/
+theorem contMDiffAt_sectionAlong_flat {EN HN N : Type*} [NormedAddCommGroup EN]
+    [NormedSpace ℝ EN] [TopologicalSpace HN] {J : ModelWithCorners ℝ EN HN} [TopologicalSpace N]
+    [ChartedSpace HN N] {n : WithTop ℕ∞} {b : N → M} {σ : N → SmoothTwoForm I M} {m₀ : N}
+    (hσ : ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] ℝ)) n
+      (fun m ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x [⋀^Fin 2]→L[ℝ] Trivial M ℝ x) (b m) ((σ m).1 (b m)))
+      m₀) :
+    ContMDiffAt J (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
+      (fun m ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (b m)
+        ((σ m).flat (b m))) m₀ :=
+  contMDiffAt_sectionAlong_flatL hσ
 
 /-- **The flat maps of a two-form form a smooth section** of the bundle `Hom(TM, Hom(TM, ℝ))`. -/
 theorem contMDiff_flat (σ : SmoothTwoForm I M) :
@@ -263,6 +283,21 @@ theorem IsNondegenerate.interiorEquiv_symm_apply [FiniteDimensional ℝ E]
 theorem IsNondegenerate.interiorₗ_interiorEquiv_symm [FiniteDimensional ℝ E]
     (h : σ.IsNondegenerate) (α : SmoothForm I M ℝ 1) : σ.interiorₗ (h.interiorEquiv.symm α) = α :=
   h.interiorEquiv.apply_symm_apply α
+
+/-- The vector field `(σ♭)⁻¹ α` contracts to `α`, as rough forms: `ι_((σ♭)⁻¹ α) σ = α`. -/
+@[simp]
+theorem IsNondegenerate.interior_interiorEquiv_symm [FiniteDimensional ℝ E]
+    (h : σ.IsNondegenerate) (α : SmoothForm I M ℝ 1) :
+    RoughForm.interior (h.interiorEquiv.symm α) σ.1 = α.1 :=
+  congrArg Subtype.val (h.interiorₗ_interiorEquiv_symm α)
+
+/-- The vector field `(σ♭)⁻¹ α` vanishes exactly where `α` does. -/
+theorem IsNondegenerate.interiorEquiv_symm_apply_eq_zero_iff [FiniteDimensional ℝ E]
+    (h : σ.IsNondegenerate) (α : SmoothForm I M ℝ 1) (x : M) :
+    h.interiorEquiv.symm α x = 0 ↔ α.1 x = 0 := by
+  rw [interiorEquiv_symm_apply, (h.isInvertible_flat x).inverse_apply_eq, map_zero,
+    ← SmoothForm.degreeOneEquiv_coe_eq_zero_iff, ← ContinuousLinearMap.toLinearMap_zero,
+    ContinuousLinearMap.coe_inj]
 
 /-! ### The skew part of an endomorphism field -/
 
