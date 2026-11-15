@@ -29,6 +29,8 @@ of the file tests the first one on `⟨-1,-1,-1⟩`.
 
 ## Main results
 
+* `TauCeti.RegularFormClass.cliffordInvariant_natCast_eq_pow_iff_real`: over `ℝ`,
+  `c(n⟨1⟩) = [(-1,-1)]^k` exactly when `⌊(n+1)/4⌋ ≡ k (mod 2)`.
 * `TauCeti.RegularFormClass.cliffordInvariant_natCast_eq_one_iff_real`: over `ℝ`, `c(n⟨1⟩)` is
   trivial exactly when `n ≡ 0, 1, 2, 7 (mod 8)`.
 * `TauCeti.RegularFormClass.cliffordInvariant_natCast_eq_quaternionClass_iff_real`: over `ℝ`,
@@ -54,7 +56,7 @@ open BrauerGroup
 /-- Over `ℝ`, `c(n⟨1⟩) = [(-1,-1)]^k` exactly when `⌊(n+1)/4⌋ ≡ k (mod 2)`: the class of `ℍ` has
 order two, and by Lucas' theorem at the prime `2` the exponent `C(n+1,4)` of
 `TauCeti.RegularFormClass.cliffordInvariant_natCast` has the parity of `⌊(n+1)/4⌋`. -/
-private theorem cliffordInvariant_natCast_eq_pow_iff_real (n k : ℕ) :
+theorem cliffordInvariant_natCast_eq_pow_iff_real (n k : ℕ) :
     cliffordInvariant (n : RegularFormClass ℝ) = quaternionClass (-1) (-1) ^ k ↔
       (n + 1) / 4 ≡ k [MOD 2] := by
   have h2 : orderOf (quaternionClass (-1 : ℝˣ) (-1)) = 2 := by
