@@ -69,7 +69,7 @@ open TauCeti
 space modelled on `V ≃L[ℝ] ℝ × F'`, every point of a simple polygon lies in the source of a chart
 with values in `ℝ × F'` identifying the polygon in its source with the line `ℝ × {0}` in its
 target. -/
-theorem IsSimple.exists_isSliceChart {n : ℕ} [NeZero n] {poly : Polygon P n}
+theorem IsSimple.exists_isSliceChart {n : ℕ} {poly : Polygon P n}
     (h : poly.IsSimple ℝ) (e : V ≃L[ℝ] ℝ × F') {z : P} (hz : z ∈ poly.boundary ℝ) :
     ∃ φ : OpenPartialHomeomorph P (ℝ × F'), z ∈ φ.source ∧
       IsSliceChart φ ((univ : Set ℝ) ×ˢ ({0} : Set F')) (poly.boundary ℝ) := by
