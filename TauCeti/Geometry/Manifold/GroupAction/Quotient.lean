@@ -9,9 +9,11 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Manifold.Submersion
 public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import TauCeti.Geometry.Lie.FundamentalVectorField
+import TauCeti.Geometry.Lie.Interior
 import TauCeti.Geometry.Lie.Subgroup.Stabilizer
 import TauCeti.Geometry.Manifold.GroupAction.SliceChart
 import TauCeti.Geometry.Manifold.GroupAction.TransverseSlice
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 import TauCeti.Geometry.Manifold.Submersion.Split
 import TauCeti.Topology.Algebra.GroupAction.SliceChart
 import TauCeti.Topology.Algebra.ProperAction.TransverseSlice
@@ -72,6 +74,7 @@ open scoped ContDiff Manifold
 namespace ProperSMul
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- The model space `ℝ^(dim E' - dim E)` of the orbit space of a free proper action of a Lie group
 modelled on `E` on a manifold modelled on `E'`. -/
@@ -82,7 +85,6 @@ abbrev QuotientModelSpace (E E' : Type*) [NormedAddCommGroup E] [NormedSpace ℝ
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
-  [BoundarylessManifold I G]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
@@ -90,7 +92,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 section Slice
 
-omit [BoundarylessManifold I G] in
 variable (I G I') in
 /-- A free action of a finite-dimensional Lie group is locally free. -/
 private theorem isotropy_eq_bot (x : M) :
@@ -105,14 +106,13 @@ private def sliceComplement (x : M) : Submodule ℝ E' :=
   (Submodule.exists_isCompl
     ((InfinitesimalAction.fundamental I G I' M).orbitTangent x)).choose
 
-omit [BoundarylessManifold I G] [I'.Boundaryless] [ProperSMul G M] [IsCancelSMul G M] in
+omit [I'.Boundaryless] [ProperSMul G M] [IsCancelSMul G M] in
 private theorem isCompl_sliceComplement (x : M) :
     IsCompl ((InfinitesimalAction.fundamental I G I' M).orbitTangent x)
       (sliceComplement I G I' x : Submodule ℝ E') :=
   (Submodule.exists_isCompl
     ((InfinitesimalAction.fundamental I G I' M).orbitTangent x)).choose_spec
 
-omit [BoundarylessManifold I G] in
 private theorem finrank_sliceComplement (x : M) :
     finrank ℝ (QuotientModelSpace E E') = finrank ℝ (sliceComplement I G I' x) := by
   have h1 : finrank ℝ ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) +
@@ -135,7 +135,6 @@ variable (I G I') in
 private def slice (x : M) (v : QuotientModelSpace E E') : M :=
   (extChartAt I' x).symm (extChartAt I' x x + sliceEquiv I G I' x v)
 
-omit [BoundarylessManifold I G] in
 private theorem slice_zero (x : M) : slice I G I' x 0 = x := by
   simp [slice]
 
@@ -147,15 +146,10 @@ private theorem isLocalDiffeomorphAt_smul_slice (x : M) :
     (isotropy_eq_bot I G I' x) (isCompl_sliceComplement x)
   -- Precompose with the linear coordinates on the complement.
   let e := sliceEquiv I G I' x
-  let T : (G × QuotientModelSpace E E') ≃ₘ^∞⟮I.prod 𝓘(ℝ, QuotientModelSpace E E'),
-      I.prod 𝓘(ℝ, sliceComplement I G I' x)⟯ (G × sliceComplement I G I' x) :=
-    { toEquiv := (Equiv.refl G).prodCongr e.toEquiv
-      contMDiff_toFun := contMDiff_fst.prodMk (e.contDiff.contMDiff.comp contMDiff_snd)
-      contMDiff_invFun := contMDiff_fst.prodMk (e.symm.contDiff.contMDiff.comp contMDiff_snd) }
-  have hT : T (1, 0) = (1, 0) := Prod.ext rfl e.map_zero
-  exact IsLocalDiffeomorphAt.comp (hf := T.isLocalDiffeomorph (1, 0)) (hg := hT ▸ h)
+  rw [← e.map_zero] at h
+  exact IsLocalDiffeomorphAt.comp (hg := h) (hf :=
+    ((Diffeomorph.refl I G ∞).isLocalDiffeomorph 1).prodMap (e.toDiffeomorph.isLocalDiffeomorph 0))
 
-omit [BoundarylessManifold I G] in
 /-- The slice through `x` is smooth where `φ x + e v` lies in the target of `φ`. -/
 private theorem contMDiffOn_slice (x : M) :
     ContMDiffOn 𝓘(ℝ, QuotientModelSpace E E') I' ∞ (slice I G I' x)
@@ -286,6 +280,11 @@ private theorem chartAt_orbitRelQuotient (q : MulAction.orbitRel.Quotient G M) :
     chartAt (QuotientModelSpace E E') q = sliceChart I G I' q.out :=
   rfl
 
+private theorem extChartAt_orbitRelQuotient (q : MulAction.orbitRel.Quotient G M) :
+    letI := orbitRelQuotientChartedSpace I G I' M
+    ⇑(extChartAt 𝓘(ℝ, QuotientModelSpace E E') q) = sliceChart I G I' q.out :=
+  rfl
+
 /-- **The quotient manifold theorem.** The orbit space of a free proper smooth action of a
 finite-dimensional Lie group `G` on a boundaryless smooth manifold `M` is a smooth manifold for
 the slice charts `ProperSMul.orbitRelQuotientChartedSpace`. -/
@@ -299,12 +298,13 @@ instance instIsManifoldOrbitRelQuotient :
   simp only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, range_id, preimage_id_eq,
     inter_univ, CompTriple.comp_eq]
   intro v hv
-  rw [id_eq, OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source,
-    sliceChart_target, mem_inter_iff, mem_preimage, sliceChart_symm_apply] at hv
+  obtain ⟨hv₁, hv₂⟩ : v ∈ sliceDomain I G I' q.out ∧
+      Quotient.mk _ (slice I G I' q.out v) ∈ (sliceChart I G I' q'.out).source := by
+    simpa [sliceChart_target, sliceChart_symm_apply] using hv
   -- The transition sends `v` to the slice coordinate at `q'` of the orbit of `τ v`.
   have h := contMDiffAt_sliceChart_comp
-    ((contMDiffOn_sliceDomain q.out).contMDiffAt ((isOpen_sliceDomain q.out).mem_nhds hv.1))
-    q'.out hv.2
+    ((contMDiffOn_sliceDomain q.out).contMDiffAt ((isOpen_sliceDomain q.out).mem_nhds hv₁))
+    q'.out hv₂
   exact (contMDiffAt_iff_contDiffAt.1 h).contDiffWithinAt
 
 /-- **The orbit projection is smooth** for the slice charts on `M ⧸ G`. -/
@@ -319,7 +319,7 @@ theorem contMDiff_quotientMk :
   have hy := mem_chart_source (QuotientModelSpace E E') (Quotient.mk (MulAction.orbitRel G M) y)
   rw [chartAt_orbitRelQuotient] at hy
   have h := contMDiffAt_sliceChart_comp (I := I) (G := G) contMDiffAt_id _ hy
-  rw [extChartAt_coe, modelWithCornersSelf_coe, Function.id_comp, chartAt_orbitRelQuotient]
+  rw [extChartAt_orbitRelQuotient]
   exact h
 
 /-- The differential of the orbit projection is surjective: the slice through a representative,
@@ -344,7 +344,7 @@ private theorem surjective_mfderiv_quotientMk (y : M) :
   have hq0 : extChartAt 𝓘(ℝ, QuotientModelSpace E E') q q = 0 := by
     have h0 : (sliceChart I G I' x).symm 0 = q := by
       rw [sliceChart_symm_apply, slice_zero, Quotient.out_eq]
-    rw [extChartAt_coe, modelWithCornersSelf_coe, Function.id_comp, chartAt_orbitRelQuotient]
+    rw [extChartAt_orbitRelQuotient]
     exact (congrArg (sliceChart I G I' x) h0.symm).trans
       ((sliceChart I G I' x).right_inv (zero_mem_sliceDomain x))
   have hderiv : mfderiv 𝓘(ℝ, QuotientModelSpace E E') 𝓘(ℝ, QuotientModelSpace E E')
@@ -356,15 +356,12 @@ private theorem surjective_mfderiv_quotientMk (y : M) :
       ).contMDiffAt.mdifferentiableAt (by simp)).comp (0 : QuotientModelSpace E E')
       (mdifferentiableAt_const.prodMk mdifferentiableAt_id)
   -- The chain rule for the projection after the section, at the point `σ 0 = y`.
-  have key : ∀ z, σ 0 = z → Surjective (mfderiv I' 𝓘(ℝ, QuotientModelSpace E E')
-      (Quotient.mk (MulAction.orbitRel G M)) z) := by
-    rintro z rfl w
-    refine ⟨mfderiv 𝓘(ℝ, QuotientModelSpace E E') I' σ 0 w, ?_⟩
-    have h := mfderiv_comp (0 : QuotientModelSpace E E')
-      ((contMDiff_quotientMk (I := I) (G := G) (σ 0)).mdifferentiableAt (by simp)) hσ
-    rw [hderiv] at h
-    exact (congrArg (· w) h).symm
-  exact key y hσ0
+  intro w
+  refine ⟨mfderiv 𝓘(ℝ, QuotientModelSpace E E') I' σ 0 w, ?_⟩
+  have h := mfderiv_comp_apply_of_eq (0 : QuotientModelSpace E E')
+    ((contMDiff_quotientMk (I := I) (G := G) y).mdifferentiableAt (by simp)) hσ hσ0 w
+  rw [hderiv] at h
+  exact h.symm
 
 /-- **The orbit projection is a smooth submersion** for the slice charts on `M ⧸ G`. In
 particular a map out of `M ⧸ G` is smooth exactly when its composite with the projection is
@@ -387,23 +384,19 @@ theorem ker_mfderiv_quotientMk (y : M) :
   have hconst : Quotient.mk (MulAction.orbitRel G M) ∘ (fun g : G ↦ g • y) =
       fun _ ↦ Quotient.mk _ y :=
     funext fun g ↦ Quotient.sound (MulAction.orbitRel_apply.2 (MulAction.mem_orbit _ _))
-  have key : ∀ z, (1 : G) • y = z → ∀ ξ : GroupLieAlgebra I G,
-      mfderiv I' 𝓘(ℝ, QuotientModelSpace E E') (Quotient.mk (MulAction.orbitRel G M)) z
-        (mfderiv I I' (fun g : G ↦ g • y) 1 ξ) = 0 := by
-    rintro z rfl ξ
-    have h := mfderiv_comp (f := fun g : G ↦ g • y) (g := Quotient.mk (MulAction.orbitRel G M))
-      (1 : G) ((contMDiff_quotientMk (I := I) ((1 : G) • y)).mdifferentiableAt (by simp))
-      ((ContMDiffSMul.contMDiff_smul_const (I := I) (I' := I') (n := ∞) y).mdifferentiableAt
-        (x := 1) (by simp))
-    rw [hconst, mfderiv_const] at h
-    exact (congrArg (· ξ) h).symm
   have hle : (InfinitesimalAction.fundamental I G I' M).orbitTangent y ≤
       (mfderiv I' 𝓘(ℝ, QuotientModelSpace E E') (Quotient.mk (MulAction.orbitRel G M)) y).ker := by
     intro v hv
     obtain ⟨ξ, rfl⟩ := (InfinitesimalAction.mem_orbitTangent_iff _ _).1 hv
     rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, InfinitesimalAction.fundamental_apply,
       fundamentalVectorField_apply]
-    exact key y (one_smul G y) ξ
+    -- The chain rule for the projection after the orbit map, at the point `1 • y = y`.
+    have h := mfderiv_comp_apply_of_eq (1 : G)
+      ((contMDiff_quotientMk (I := I) (G := G) y).mdifferentiableAt (by simp))
+      ((ContMDiffSMul.contMDiff_smul_const (I := I) (I' := I') (n := ∞) y).mdifferentiableAt
+        (x := 1) (by simp)) (one_smul G y) ξ
+    rw [hconst, mfderiv_const] at h
+    exact h.symm
   -- Both have the dimension of `G`.
   have hrank : finrank ℝ (QuotientModelSpace E E') + finrank ℝ
       (mfderiv I' 𝓘(ℝ, QuotientModelSpace E E') (Quotient.mk (MulAction.orbitRel G M)) y).ker =
