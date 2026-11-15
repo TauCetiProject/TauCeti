@@ -63,9 +63,9 @@ f.radius` or `A` is ultrametric and `f` is restricted at `b ^ k`.
   and `PowerSeries.forall_mem_closedBall_summable_iff_isRestricted`: in a complete ultrametric
   extension, convergence at `x` (and on a closed ball of attained radius `r`) is equivalent to
   restrictedness.
-* `PowerSeries.summable_norm_of_lt_radius`, `PowerSeries.summable_of_lt_radius` and
+* `PowerSeries.summable_norm_of_lt_radius_of_norm_smul_le`, `PowerSeries.summable_of_lt_radius` and
   `PowerSeries.hasSum_evalAt_of_lt_radius`: absolute summability and evaluation strictly inside
-  `f.radius` under a bounded scalar action, without ultrametricity.
+  `f.radius` under a contractive or bounded scalar action, without ultrametricity.
 * `PowerSeries.convergenceRadius_le_radius`, `PowerSeries.convergenceRadius_pos_iff_radius_pos`,
   `PowerSeries.convergenceRadius_eq_zero_iff_radius_eq_zero` and
   `PowerSeries.convergenceRadius_eq_top_iff`: upper bound by `f.radius`, and characterizations of
@@ -141,17 +141,6 @@ private theorem isRestricted_norm_of_summable_of_norm_le {y : A}
   TauCeti.PowerSeries.isRestricted_of_abs_le (isRestricted_norm_of_summable hx)
     (by rwa [abs_norm, abs_norm])
 
-/-- If `∑ aₙ • xⁿ` is summable at a point `x` with `‖x‖ = |r|`, then `f` is restricted at `r`. -/
-theorem isRestricted_of_summable_of_norm_eq_abs (h : Summable fun n ↦ coeff n f • x ^ n)
-    (hx : ‖x‖ = |r|) : f.IsRestricted r := by
-  rw [← isRestricted_abs_iff, ← hx]
-  exact isRestricted_norm_of_summable h
-
-/-- If `∑ aₙ • xⁿ` is summable at a point `x` of norm `r`, then `f` is restricted at `r`. -/
-theorem isRestricted_of_summable_of_norm_eq (h : Summable fun n ↦ coeff n f • x ^ n)
-    (hx : ‖x‖ = r) : f.IsRestricted r :=
-  hx ▸ isRestricted_norm_of_summable h
-
 /-- **Pointwise convergence is bounded by the coefficient radius.** If `∑ aₙ • xⁿ` is summable,
 then `‖x‖ₑ ≤ f.radius`. -/
 theorem le_radius_of_summable (h : Summable fun n ↦ coeff n f • x ^ n) : ‖x‖ₑ ≤ f.radius := by
@@ -175,14 +164,6 @@ theorem IsRestricted.summable_norm_smul_pow_of_norm_smul_le {R A : Type*} [Norme
   PowerSeries.summable_norm_smul_pow_of_norm_smul_le hsmul
     (hf.summable_norm_coeff_mul_pow (by rwa [abs_norm x]))
 
-/-- Strictly inside a restricted radius `r`, the term norms `‖aₙ • xⁿ‖` are summable in any
-seminormed ring with a bounded scalar action, without completeness or ultrametricity. -/
-theorem IsRestricted.summable_norm_smul_pow {R A : Type*} [NormedRing R] [SeminormedRing A]
-    [SMulZeroClass R A] [IsBoundedSMul R A] {f : R⟦X⟧} {r : ℝ} (hf : f.IsRestricted r)
-    {x : A} (hx : ‖x‖ < |r|) :
-    Summable fun n ↦ ‖coeff n f • x ^ n‖ :=
-  hf.summable_norm_smul_pow_of_norm_smul_le norm_smul_le hx
-
 end TermNorm
 
 section Ultrametric
@@ -197,12 +178,6 @@ theorem summable_smul_pow_iff_isRestricted :
     Summable (fun n ↦ coeff n f • x ^ n) ↔ f.IsRestricted ‖x‖ := by
   rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
     tendsto_smul_pow_cofinite_iff_isRestricted]
-
-/-- At a point `x : A` of norm `r`, convergence of `∑ aₙ • xⁿ` is equivalent to restrictedness of
-`f` at `r`. -/
-theorem summable_smul_pow_iff_isRestricted_of_norm_eq (hx : ‖x‖ = r) :
-    Summable (fun n ↦ coeff n f • x ^ n) ↔ f.IsRestricted r :=
-  hx ▸ summable_smul_pow_iff_isRestricted
 
 /-- In a complete ultrametric extension, convergence at one point `x` implies convergence at every
 point `y` of the closed disc `‖y‖ ≤ ‖x‖`. -/
@@ -379,19 +354,13 @@ theorem IsEntire.convergenceRadius_eq_iSup_of_norm_smul_le {R : Type*} [NormedRi
   convergenceRadius_eq_iSup_of_forall_summable fun x ↦
     (summable_norm_smul_pow_of_norm_smul_le hsmul (hf.summable_norm_coeff_mul_pow ‖x‖)).of_norm
 
-/-- An entire series converges at every point of a complete extension `A`, so its pointwise
-convergence radius in `A` is `⨆ x : A, ‖x‖ₑ`. -/
-theorem IsEntire.convergenceRadius_eq_iSup {R : Type*} [NormedRing R] {f : R⟦X⟧} (hf : f.IsEntire)
-    (A : Type*) [SeminormedRing A] [SMulZeroClass R A] [IsBoundedSMul R A] [CompleteSpace A] :
-    f.convergenceRadius A = ⨆ x : A, ‖x‖ₑ :=
-  convergenceRadius_eq_iSup_of_forall_summable hf.summable_smul_pow
-
 /-- Over a complete nontrivially normed field `L`, every entire series has infinite pointwise
 convergence radius. -/
 theorem IsEntire.convergenceRadius_eq_top {R : Type*} [NormedRing R] {f : R⟦X⟧} (hf : f.IsEntire)
     (L : Type*) [NontriviallyNormedField L] [SMulZeroClass R L] [IsBoundedSMul R L]
     [CompleteSpace L] : f.convergenceRadius L = ⊤ := by
-  rw [hf.convergenceRadius_eq_iSup L, NormedField.iSup_eNorm_eq_top]
+  rw [convergenceRadius_eq_iSup_of_forall_summable hf.summable_smul_pow,
+    NormedField.iSup_eNorm_eq_top]
 
 end ConvergenceRadiusAlgebraic
 
@@ -452,20 +421,13 @@ theorem summable_norm_of_lt_radius_of_norm_smul_le {R A : Type*} [NormedRing R]
     exact_mod_cast (by simpa only [eNorm_eq_nnNorm, ENNReal.coe_lt_coe] using hxs : ‖x‖₊ < s)
   exact hs.summable_norm_smul_pow_of_norm_smul_le hsmul hlt
 
-/-- Strictly inside `f.radius`, the term norms `‖aₙ • xⁿ‖` are summable in any seminormed ring with
-a bounded scalar action, without completeness or ultrametricity. -/
-theorem summable_norm_of_lt_radius {R A : Type*} [NormedRing R] [SeminormedRing A]
-    [SMulZeroClass R A] [IsBoundedSMul R A] {f : R⟦X⟧} {x : A} (hx : ‖x‖ₑ < f.radius) :
-    Summable fun n ↦ ‖coeff n f • x ^ n‖ :=
-  summable_norm_of_lt_radius_of_norm_smul_le norm_smul_le hx
-
 /-- In a complete seminormed ring with a bounded scalar action, `f` is summable at every point
 `x : A` with `‖x‖ₑ < f.radius`. -/
 theorem summable_of_lt_radius {R A : Type*} [NormedRing R] [SeminormedRing A]
     [SMulZeroClass R A] [IsBoundedSMul R A] [CompleteSpace A] {f : R⟦X⟧} {x : A}
     (hx : ‖x‖ₑ < f.radius) :
     Summable fun n ↦ coeff n f • x ^ n :=
-  (summable_norm_of_lt_radius hx).of_norm
+  (summable_norm_of_lt_radius_of_norm_smul_le norm_smul_le hx).of_norm
 
 /-- In a complete seminormed algebra with a bounded scalar action, `f` sums to `f.evalAt x` at
 every point `x : A` with `‖x‖ₑ < f.radius`. -/
@@ -473,7 +435,7 @@ theorem hasSum_evalAt_of_lt_radius {R A : Type*} [NormedCommRing R] [SeminormedR
     [Algebra R A] [IsBoundedSMul R A] [CompleteSpace A] {f : R⟦X⟧} {x : A}
     (hx : ‖x‖ₑ < f.radius) :
     HasSum (fun n ↦ coeff n f • x ^ n) (f.evalAt x) :=
-  hasSum_evalAt_of_summable_norm (summable_norm_of_lt_radius hx)
+  hasSum_evalAt_of_summable_norm (summable_norm_of_lt_radius_of_norm_smul_le norm_smul_le hx)
 
 /-- **Comparison with the coefficient radius.** The pointwise convergence radius
 `f.convergenceRadius A` never exceeds the intrinsic coefficient radius `f.radius`. Neither
@@ -632,9 +594,9 @@ theorem convergenceRadius_eq_ofReal_zpow [IsUltrametricDist A] [CompleteSpace A]
     f.convergenceRadius A = ENNReal.ofReal (b ^ k) := by
   refine le_antisymm (convergenceRadius_le_ofReal_zpow hb hdisc hnres) ?_
   obtain ⟨x, hx⟩ := hatt
-  rw [← hx, ofReal_norm]
-  exact le_convergenceRadius_of_summable
-    ((summable_smul_pow_iff_isRestricted_of_norm_eq hx).mpr hres)
+  rw [← hx] at hres ⊢
+  rw [ofReal_norm]
+  exact le_convergenceRadius_of_summable (summable_smul_pow_iff_isRestricted.mpr hres)
 
 /-- **Pointwise convergence radius in a discretely normed extension strictly inside `f.radius`.**
 Suppose `b > 1` and every nonzero norm in `A` is an integer power `b ^ m` (`m ∈ ℤ`). In any

@@ -175,8 +175,8 @@ theorem summable_halfSlopeSeries_padicComplex_iff {x : ℂ_[p]} :
         convergenceRadius_padicComplex_halfSlopeSeries
       rw [← ofReal_norm, ENNReal.ofReal_le_ofReal_iff (Real.sqrt_nonneg p)] at h
       exact h
-    refine hle.lt_of_ne fun heq ↦ not_isRestricted_halfSlopeSeries_sqrt (p := p) ?_
-    exact isRestricted_of_summable_of_norm_eq hs heq
+    exact hle.lt_of_ne fun heq ↦
+      not_isRestricted_halfSlopeSeries_sqrt (heq ▸ isRestricted_norm_of_summable hs)
   · intro hx
     refine summable_of_lt_convergenceRadius ?_
     rw [convergenceRadius_padicComplex_halfSlopeSeries, ← ofReal_norm]

@@ -23,10 +23,9 @@ This file relates `λ` and the Newton slopes of `f` to the pointwise convergence
   `ℚ_[p]`), `f.convergenceRadius L = 0` if and only if the coefficient heights fail to be
   admissible (`¬IsAdmissible`), and `f.convergenceRadius L = ⊤` if and only if `λ = ⊤` (for
   admissible infinitely supported `f`, if and only if the finite Newton slopes are unbounded).
-* When `L` is complete and either densely normed (such as `ℂ_[p]`) or algebraically closed and
-  nontrivially normed, `f.convergenceRadius L` equals `b ^ λ`, and for admissible infinitely
-  supported `f` it equals `b` raised to the supremum of the finite unit slopes of
-  `f.newtonPolygon v`.
+* When `L` is complete and densely normed (such as `ℂ_[p]` or `PadicAlgCl p`),
+  `f.convergenceRadius L` equals `b ^ λ`, and for admissible infinitely supported `f` it equals `b`
+  raised to the supremum of the finite unit slopes of `f.newtonPolygon v`.
 * Over a discretely normed extension `A` whose nonzero norms are integer powers `b ^ m`, whenever
   `λ = t ∈ ℝ` is not an integer, the pointwise convergence radius is strictly smaller than
   `f.radius`, and when `A` is complete and `b ^ ⌊t⌋` is attained in `A`, it equals `b ^ ⌊t⌋`.
@@ -38,10 +37,9 @@ This file relates `λ` and the Newton slopes of `f` to the pointwise convergence
   `PowerSeries.convergenceRadius_eq_top_iff_iSup_unitSlope_newtonPolygon_eq_top`: vanishing and
   finiteness/infinite pointwise convergence radius in any complete nontrivially normed extension.
 * `PowerSeries.convergenceRadius_eq_exp_linearGrowthInf`,
-  `PowerSeries.convergenceRadius_eq_ofReal_rpow`,
-  `PowerSeries.convergenceRadius_eq_exp_iSup_unitSlope_newtonPolygon` and their `*_of_isAlgClosed`
-  counterparts: Newton-polygon formulas for `f.convergenceRadius L` in complete densely normed or
-  algebraically closed nontrivially normed extensions `L`.
+  `PowerSeries.convergenceRadius_eq_ofReal_rpow` and
+  `PowerSeries.convergenceRadius_eq_exp_iSup_unitSlope_newtonPolygon`: Newton-polygon formulas for
+  `f.convergenceRadius L` in complete densely normed extensions `L`.
 * `PowerSeries.convergenceRadius_eq_ofReal_zpow_floor` and
   `PowerSeries.convergenceRadius_lt_radius_of_linearGrowthInf`: rounding down to `b ^ ⌊t⌋` in
   complete extensions and strict inequality `f.convergenceRadius A < f.radius` for non-integral
@@ -103,14 +101,6 @@ theorem convergenceRadius_eq_exp_linearGrowthInf (L : Type*) [DenselyNormedField
       EReal.exp ((linearGrowthInf fun n ↦ (v (coeff n f)).toEReal) * Real.log b) := by
   rw [f.convergenceRadius_eq_radius L, radius_eq_exp_linearGrowthInf f v hb hv]
 
-/-- **Pointwise convergence radius from coefficient growth** in a complete algebraically closed
-nontrivially normed extension `L`: `f.convergenceRadius L = b ^ λ`. -/
-theorem convergenceRadius_eq_exp_linearGrowthInf_of_isAlgClosed (L : Type*)
-    [NontriviallyNormedField L] [IsAlgClosed L] [SMul K L] [NormSMulClass K L] [CompleteSpace L] :
-    f.convergenceRadius L =
-      EReal.exp ((linearGrowthInf fun n ↦ (v (coeff n f)).toEReal) * Real.log b) := by
-  rw [f.convergenceRadius_eq_radius_of_isAlgClosed L, radius_eq_exp_linearGrowthInf f v hb hv]
-
 /-- When the lower linear growth of the coefficient heights is a finite real number `t`, the
 pointwise convergence radius in a complete densely normed extension `L` is `b ^ t`. -/
 theorem convergenceRadius_eq_ofReal_rpow (L : Type*) [DenselyNormedField L]
@@ -118,15 +108,6 @@ theorem convergenceRadius_eq_ofReal_rpow (L : Type*) [DenselyNormedField L]
     (ht : (linearGrowthInf fun n ↦ (v (coeff n f)).toEReal) = t) :
     f.convergenceRadius L = ENNReal.ofReal (b ^ t) := by
   rw [f.convergenceRadius_eq_radius L, radius_eq_ofReal_rpow f v hb hv ht]
-
-/-- When the lower linear growth of the coefficient heights is a finite real number `t`, the
-pointwise convergence radius in a complete algebraically closed nontrivially normed extension `L`
-is `b ^ t`. -/
-theorem convergenceRadius_eq_ofReal_rpow_of_isAlgClosed (L : Type*) [NontriviallyNormedField L]
-    [IsAlgClosed L] [SMul K L] [NormSMulClass K L] [CompleteSpace L] {t : ℝ}
-    (ht : (linearGrowthInf fun n ↦ (v (coeff n f)).toEReal) = t) :
-    f.convergenceRadius L = ENNReal.ofReal (b ^ t) := by
-  rw [f.convergenceRadius_eq_radius_of_isAlgClosed L, radius_eq_ofReal_rpow f v hb hv ht]
 
 /-- **Pointwise convergence radius from Newton slopes.** For admissible, infinitely supported `f`,
 its pointwise convergence radius in a complete densely normed extension `L` is `b` raised to the
@@ -137,17 +118,6 @@ theorem convergenceRadius_eq_exp_iSup_unitSlope_newtonPolygon (L : Type*) [Dense
     f.convergenceRadius L = EReal.exp ((⨆ i : finiteEdges (f.newtonPolygon v),
       (unitSlope (f.newtonPolygon v) i : EReal)) * Real.log b) := by
   rw [f.convergenceRadius_eq_radius L, radius_eq_exp_iSup_unitSlope_newtonPolygon f v hb hv hf hinf]
-
-/-- For admissible, infinitely supported `f`, its pointwise convergence radius in a complete
-algebraically closed nontrivially normed extension `L` is `b` raised to the supremum of the finite
-unit slopes of `f.newtonPolygon v`. -/
-theorem convergenceRadius_eq_exp_iSup_unitSlope_newtonPolygon_of_isAlgClosed (L : Type*)
-    [NontriviallyNormedField L] [IsAlgClosed L] [SMul K L] [NormSMulClass K L] [CompleteSpace L]
-    (hf : IsAdmissible fun n ↦ v (coeff n f)) (hinf : {n | coeff n f ≠ 0}.Infinite) :
-    f.convergenceRadius L = EReal.exp ((⨆ i : finiteEdges (f.newtonPolygon v),
-      (unitSlope (f.newtonPolygon v) i : EReal)) * Real.log b) := by
-  rw [f.convergenceRadius_eq_radius_of_isAlgClosed L,
-    radius_eq_exp_iSup_unitSlope_newtonPolygon f v hb hv hf hinf]
 
 private theorem ofReal_zpow_lt_radius_of_linearGrowthInf {t : ℝ}
     (ht : (linearGrowthInf fun n ↦ (v (coeff n f)).toEReal) = t) {k : ℤ} (hk : (k : ℝ) < t) :
