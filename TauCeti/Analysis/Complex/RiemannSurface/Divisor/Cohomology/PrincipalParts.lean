@@ -42,8 +42,6 @@ Forster, Theorem 17.3.
 
 ## Main declarations
 
-* `LocalPrincipalPart.boundedBy D E x`: the principal parts relative to `D` at `x` with pole
-  order bounded by `E`.
 * `principalPartsSheaf D E` and its flasqueness `isFlasque_principalPartsSheaf`.
 * `principalPartsMap D E : 𝒪_E ⟶ principalPartsSheaf D E`, taking principal parts.
 * `principalPartsSequence_shortExact`: the short exact sequence of sheaves.
@@ -70,41 +68,6 @@ universe u
 section Sheaf
 
 variable {X : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
-
-namespace LocalPrincipalPart
-
-/-- The **principal parts relative to `D` with poles bounded by `E`** at `x`: the classes of the
-coordinate germs of order at least `-E x`, modulo those of order at least `-D x`. For `D ≤ E` it
-is the kernel of the projection `LocalPrincipalPart D x → LocalPrincipalPart E x`. -/
-def boundedBy (D E : WeilDivisor X) (x : X) : Submodule ℂ (LocalPrincipalPart D x) :=
-  (meromorphicGerms.orderGE (chartAt ℂ x x) (-E x)).map
-    (meromorphicGerms.orderGE (chartAt ℂ x x) (-D x)).mkQ
-
-variable {D E : WeilDivisor X} {x : X}
-
-/-- The class of a germ satisfying the order bound of `E` is bounded by `E`. -/
-theorem mk_mem_boundedBy {φ : meromorphicGerms ℂ (chartAt ℂ x x)}
-    (hφ : φ ∈ meromorphicGerms.orderGE (chartAt ℂ x x) (-E x)) :
-    (Submodule.Quotient.mk φ : LocalPrincipalPart D x) ∈ boundedBy D E x :=
-  Submodule.mem_map_of_mem hφ
-
-/-- Where `E` permits no more poles than `D`, there are no principal parts bounded by `E`. -/
-theorem boundedBy_eq_bot (h : E x ≤ D x) : boundedBy D E x = ⊥ := by
-  rw [eq_bot_iff]
-  rintro _ ⟨φ, hφ, rfl⟩
-  exact (Submodule.mem_bot ℂ).2 ((Submodule.Quotient.mk_eq_zero _).2
-    (meromorphicGerms.orderGE_antitone _ (neg_le_neg h) hφ))
-
-/-- For `D ≤ E`, the principal parts bounded by `E` are those which vanish relative to `E`. -/
-theorem boundedBy_eq_ker_mapOfLE (h : D ≤ E) (x : X) :
-    boundedBy D E x = LinearMap.ker (mapOfLE h x) := by
-  have he :
-      mapOfLE h x = Submodule.factor (meromorphicGerms.orderGE_antitone _ (neg_le_neg (h x))) :=
-    Submodule.linearMap_qext _ (LinearMap.ext (mapOfLE_mk h x))
-  rw [he, Submodule.ker_mapQ, Submodule.comap_id]
-  rfl
-
-end LocalPrincipalPart
 
 open LocalPrincipalPart
 
@@ -253,33 +216,28 @@ omit [IsManifold 𝓘(ℂ) 1 X] in
 theorem principalPartsSequence_g (h : D ≤ E) :
     (principalPartsSequence h).g = principalPartsMap D E := (rfl)
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The first object of the principal-parts sequence is the divisor sheaf of `D`. -/
+@[simp]
+theorem principalPartsSequence_X₁ (h : D ≤ E) :
+    (principalPartsSequence h).X₁ = divisorSheaf D := (rfl)
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The middle object of the principal-parts sequence is the divisor sheaf of `E`. -/
+@[simp]
+theorem principalPartsSequence_X₂ (h : D ≤ E) :
+    (principalPartsSequence h).X₂ = divisorSheaf E := (rfl)
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The final object of the principal-parts sequence is the principal-parts sheaf. -/
+@[simp]
+theorem principalPartsSequence_X₃ (h : D ≤ E) :
+    (principalPartsSequence h).X₃ = principalPartsSheaf D E := (rfl)
+
 /-- **Exactness in the middle of the principal-parts sequence**: a section of `𝒪_E` with zero
 principal parts relative to `D` comes locally from `𝒪_D`. -/
-theorem principalPartsSequence_exact (h : D ≤ E) : (principalPartsSequence h).Exact := by
-  apply (TopCat.Sheaf.exact_iff_stalkFunctor_map_exact _).2
-  intro y
-  rw [ShortComplex.moduleCat_exact_iff]
-  -- The short-complex objects and arrows are exactly the displayed stalks and maps.
-  change ∀ s, (TopCat.Presheaf.stalkFunctor _ y).map (principalPartsMap D E).hom s = 0 →
-    ∃ t, (TopCat.Presheaf.stalkFunctor _ y).map (divisorSheafMapOfLE h).hom t = s
-  intro s hs
-  obtain ⟨U, hyU, f, rfl⟩ := TopCat.Presheaf.exists_germ_eq (divisorSheaf E).obj s
-  have hg : TopCat.Presheaf.germ (principalPartsSheaf D E).obj U y hyU
-        ((principalPartsMap D E).hom.app (op U) f) =
-      TopCat.Presheaf.germ (principalPartsSheaf D E).obj U y hyU 0 := by
-    rw [map_zero, ← TopCat.Presheaf.stalkFunctor_map_germ_apply]
-    exact hs
-  obtain ⟨V, hyV, iVU, _, heq⟩ := TopCat.Presheaf.germ_eq _ y hyU hyU _ _ hg
-  let fV := (divisorSheaf E).obj.map iVU.op f
-  have hz : (principalPartsMap D E).hom.app (op V) fV = 0 := by
-    rw [← ConcreteCategory.comp_apply, (principalPartsMap D E).hom.naturality,
-      ConcreteCategory.comp_apply]
-    exact heq.trans (map_zero _)
-  obtain ⟨W, hyW, hWV, t, ht⟩ := exists_divisorSheafMapOfLE_app_eq h V fV ⟨y, hyV⟩
-    (neg_le_order_of_principalPartsMap_eq_zero fV hz ⟨y, hyV⟩)
-  refine ⟨TopCat.Presheaf.germ (divisorSheaf D).obj W y hyW t, ?_⟩
-  rw [TopCat.Presheaf.stalkFunctor_map_germ_apply, ht,
-    TopCat.Presheaf.germ_res_apply, TopCat.Presheaf.germ_res_apply]
+theorem principalPartsSequence_exact (h : D ≤ E) : (principalPartsSequence h).Exact :=
+  exact_divisorSheafMapOfLE_of_neg_le_order h _ _ neg_le_order_of_principalPartsMap_eq_zero
 
 /-- Principal parts bounded by `E` are prescribed locally by sections of `𝒪_E`: near a point
 `y` a coordinate representative realizes the principal part at `y`, and the other points of the
@@ -290,7 +248,8 @@ theorem principalPartsMap_isLocallySurjective :
   have := ChartedSpace.t1Space ℂ X
   rw [TopCat.Presheaf.isLocallySurjective_iff]
   intro U t y hyU
-  obtain ⟨φ, hφ, hφt⟩ := (principalPartsSheafSectionsEquiv D E U t ⟨y, hyU⟩).2
+  obtain ⟨φ, hφ, hφt⟩ :=
+    mem_boundedBy_iff.1 (principalPartsSheafSectionsEquiv D E U t ⟨y, hyU⟩).2
   obtain ⟨U₁, hy₁, f, hf⟩ := exists_section_toChartGerm_eq E y φ hφ
   let S : Set X := (((E - D).support.erase y : Finset X) : Set X)
   let V : Opens X := U ⊓ U₁ ⊓ ⟨Sᶜ, (Finset.finite_toSet _).isClosed.isOpen_compl⟩

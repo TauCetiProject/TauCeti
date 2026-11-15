@@ -351,35 +351,9 @@ private theorem old_order_bound_of_pointTwistMap_eq_zero (D : WeilDivisor X) (x 
 /-- **Exactness at the middle of the point-twist sequence.** A zero new coefficient is exactly
 the local lifting condition through the old divisor sheaf. -/
 theorem pointTwistSequence_exact (D : WeilDivisor X) (x : X)
-    [∀ U : Opens X, Decidable (x ∈ U)] : (pointTwistSequence D x).Exact := by
-  apply (TopCat.Sheaf.exact_iff_stalkFunctor_map_exact _).2
-  intro y
-  rw [ShortComplex.moduleCat_exact_iff]
-  -- The short-complex objects and arrows are exactly the displayed divisor stalks and maps.
-  change ∀ s, (TopCat.Presheaf.stalkFunctor _ y).map (pointTwistMap D x).hom s = 0 →
-    ∃ t, (TopCat.Presheaf.stalkFunctor _ y).map
-      (divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom t = s
-  intro s hs
-  obtain ⟨U, hyU, f, rfl⟩ := TopCat.Presheaf.exists_germ_eq
-    (divisorSheaf (D + WeilDivisor.ofPoint x)).obj s
-  have hg : TopCat.Presheaf.germ (skyscraperSheaf (X := TopCat.of X) x
-        (ModuleCat.of ℂ (ULift.{u} ℂ))).obj U y hyU ((pointTwistMap D x).hom.app (op U) f) =
-      TopCat.Presheaf.germ (skyscraperSheaf (X := TopCat.of X) x
-        (ModuleCat.of ℂ (ULift.{u} ℂ))).obj U y hyU 0 := by
-    rw [map_zero, ← TopCat.Presheaf.stalkFunctor_map_germ_apply]
-    exact hs
-  obtain ⟨V, hyV, iVU, _, heq⟩ := TopCat.Presheaf.germ_eq _ y hyU hyU _ _ hg
-  let fV := (divisorSheaf (D + WeilDivisor.ofPoint x)).obj.map iVU.op f
-  have hz : (pointTwistMap D x).hom.app (op V) fV = 0 := by
-    rw [← ConcreteCategory.comp_apply, (pointTwistMap D x).hom.naturality,
-      ConcreteCategory.comp_apply]
-    exact heq.trans (map_zero _)
-  obtain ⟨W, hyW, hWV, t, ht⟩ := exists_divisorSheafMapOfLE_app_eq
-    (WeilDivisor.le_add_ofPoint D x) V fV ⟨y, hyV⟩
-    (old_order_bound_of_pointTwistMap_eq_zero D x fV hz ⟨y, hyV⟩)
-  refine ⟨TopCat.Presheaf.germ (divisorSheaf D).obj W y hyW t, ?_⟩
-  rw [TopCat.Presheaf.stalkFunctor_map_germ_apply, ht,
-    TopCat.Presheaf.germ_res_apply, TopCat.Presheaf.germ_res_apply]
+    [∀ U : Opens X, Decidable (x ∈ U)] : (pointTwistSequence D x).Exact :=
+  exact_divisorSheafMapOfLE_of_neg_le_order _ _ _
+    (old_order_bound_of_pointTwistMap_eq_zero D x)
 
 
 /-- Every scalar coefficient lifts to a germ of the point-twisted divisor sheaf. The lift is

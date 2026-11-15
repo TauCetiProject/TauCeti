@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sheaf
 public import TauCeti.Analysis.Meromorphic.OrderFiltration
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import Mathlib.Topology.Sheaves.Abelian
+public import TauCeti.Algebra.Category.ModuleCat.FilteredColimits
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.ContMDiff.Analytic
 import TauCeti.Geometry.Manifold.Complex.Analytic
@@ -24,7 +27,9 @@ satisfying its order bound has a normalized representative at the centre: allowe
 pinned to zero, and otherwise the removable singularity is filled holomorphically. Two normalized
 representatives of the same punctured germ have the same full germ. Consequently a local section
 of `𝒪_E` satisfying the order bound of `D ≤ E` lifts locally through the divisor inclusion
-(`exists_divisorSheafMapOfLE_app_eq`).
+(`exists_divisorSheafMapOfLE_app_eq`), so any sheaf map out of `𝒪_E` whose kernel sections
+satisfy that bound completes the inclusion to a sequence exact in the middle
+(`exact_divisorSheafMapOfLE_of_neg_le_order`).
 
 ## References
 
@@ -305,6 +310,39 @@ theorem exists_divisorSheafMapOfLE_app_eq {D E : WeilDivisor X} (h : D ≤ E) (U
     _ = (divisorSheafSectionsEquiv E U f).1 ⟨z.1, hVU z.2⟩ :=
       Subtype.val_injective.extend_apply (divisorSheafSectionsEquiv E U f).1
         (0 : X → ℂ) (⟨z.1, hVU z.2⟩ : U)
+
+/-- **Exactness through the divisor inclusion.** If every section of `𝒪_E` annihilated by a sheaf
+map `g` satisfies the order bound of `D ≤ E` at every point, then `𝒪_D ⟶ 𝒪_E ⟶ G` is exact: such
+a section comes locally from `𝒪_D`. -/
+theorem exact_divisorSheafMapOfLE_of_neg_le_order {D E : WeilDivisor X} (h : D ≤ E)
+    {G : TopCat.Sheaf (ModuleCat.{u} ℂ) (TopCat.of X)} (g : divisorSheaf E ⟶ G)
+    (w : divisorSheafMapOfLE h ≫ g = 0)
+    (hg : ∀ {U : Opens X} (f : (divisorSheaf E).obj.obj (op U)), g.hom.app (op U) f = 0 →
+      ∀ y : U, ((-D y.1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt
+        (Subtype.val.extend (divisorSheafSectionsEquiv E U f).1 0) y.1) :
+    (ShortComplex.mk (divisorSheafMapOfLE h) g w).Exact := by
+  apply (TopCat.Sheaf.exact_iff_stalkFunctor_map_exact _).2
+  intro y
+  rw [ShortComplex.moduleCat_exact_iff]
+  -- The short-complex objects and arrows are exactly the displayed stalks and maps.
+  change ∀ s, (TopCat.Presheaf.stalkFunctor _ y).map g.hom s = 0 →
+    ∃ t, (TopCat.Presheaf.stalkFunctor _ y).map (divisorSheafMapOfLE h).hom t = s
+  intro s hs
+  obtain ⟨U, hyU, f, rfl⟩ := TopCat.Presheaf.exists_germ_eq (divisorSheaf E).obj s
+  have hgU : TopCat.Presheaf.germ G.obj U y hyU (g.hom.app (op U) f) =
+      TopCat.Presheaf.germ G.obj U y hyU 0 := by
+    rw [map_zero, ← TopCat.Presheaf.stalkFunctor_map_germ_apply]
+    exact hs
+  obtain ⟨V, hyV, iVU, _, heq⟩ := TopCat.Presheaf.germ_eq _ y hyU hyU _ _ hgU
+  let fV := (divisorSheaf E).obj.map iVU.op f
+  have hz : g.hom.app (op V) fV = 0 := by
+    rw [← ConcreteCategory.comp_apply, g.hom.naturality, ConcreteCategory.comp_apply]
+    exact heq.trans (map_zero _)
+  obtain ⟨W, hyW, hWV, t, ht⟩ := exists_divisorSheafMapOfLE_app_eq h V fV ⟨y, hyV⟩
+    (hg fV hz ⟨y, hyV⟩)
+  refine ⟨TopCat.Presheaf.germ (divisorSheaf D).obj W y hyW t, ?_⟩
+  rw [TopCat.Presheaf.stalkFunctor_map_germ_apply, ht,
+    TopCat.Presheaf.germ_res_apply, TopCat.Presheaf.germ_res_apply]
 
 end Representation
 
