@@ -33,6 +33,9 @@ When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number'
 by itself; at `z = r`, Lean's totalized inverse gives value one.
 
 Two integers whose images in `ℂ` are at distance less than `1` are equal.
+
+Dividing by a natural number does not increase the norm, so `‖(a z + b) / M‖ ≤ ‖a‖ C + ‖b‖`
+whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`).
 -/
 
 public section
@@ -156,19 +159,13 @@ theorem norm_conj_sub_sq_div_le {r : ℝ} (x y : ℂ)
       exact add_le_add le_rfl htail
     _ ≤ _ := by linarith
 
-/-- The division point `(b₀ z + b₁) / M` has norm less than `|b₀| |C| + |b₁| + 1` when
-`‖z‖ ≤ |C|`. -/
-theorem norm_intCast_mul_add_intCast_div_lt (M : ℕ) (b : Fin 2 → ℤ) {z : ℂ} {C : ℝ}
-    (hz : ‖z‖ ≤ |C|) :
-    ‖((b 0 : ℂ) * z + b 1) / M‖ < |(b 0 : ℝ)| * |C| + |(b 1 : ℝ)| + 1 := by
-  have hdiv : ‖((b 0 : ℂ) * z + b 1) / M‖ ≤ ‖(b 0 : ℂ) * z + b 1‖ := by
-    rcases M.eq_zero_or_pos with rfl | hM
-    · simp
-    · rw [norm_div, Complex.norm_natCast]
-      exact div_le_self (norm_nonneg _) (Nat.one_le_cast.2 hM)
-  refine hdiv.trans_lt <| (norm_add_le _ _).trans_lt ?_
-  rw [norm_mul, Complex.norm_intCast, Complex.norm_intCast]
-  have := mul_le_mul_of_nonneg_left hz (abs_nonneg (b 0 : ℝ))
-  linarith
+/-- Dividing by a natural number does not increase the norm, so the point `(a z + b) / M` has
+norm at most `‖a‖ C + ‖b‖` when `‖z‖ ≤ C`. For `M = 0` the quotient is `0` by Lean's convention
+`x / 0 = 0`. -/
+theorem norm_mul_add_div_natCast_le (M : ℕ) (a b : ℂ) {z : ℂ} {C : ℝ} (hz : ‖z‖ ≤ C) :
+    ‖(a * z + b) / M‖ ≤ ‖a‖ * C + ‖b‖ := by
+  rw [norm_div, Complex.norm_natCast]
+  exact (div_nat_le_self_of_nonneg (norm_nonneg _) M).trans
+    (norm_add_le_of_le (norm_mul_le_of_le le_rfl hz) le_rfl)
 
 end Complex

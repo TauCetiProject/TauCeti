@@ -366,7 +366,7 @@ private lemma tendstoLocallyUniformly_weierstrassP_divisionPoint (b : Fin 2 → 
     continuous_coe.continuousOn
   set r₀ := r ⟨⟨A, B⟩, hB⟩
   have hr₀ : 0 < r₀ := r_pos _
-  set R : ℝ := |(b 0 : ℝ)| * |M| + |(b 1 : ℝ)| + 1
+  set R : ℝ := ‖(b 0 : ℂ)‖ * |M| + ‖(b 1 : ℂ)‖ + 1
   have hR : 0 < R := by positivity
   have hlim : (fun z : ℍ ↦ ℘[z.periodPair] (divisionPoint N b z)) =
       fun z ↦ ∑' y, ((N : ℂ) ^ 2 * eisSummand 2 (b - N • y) z - eisSummand 2 y z) :=
@@ -391,8 +391,8 @@ private lemma tendstoLocallyUniformly_weierstrassP_divisionPoint (b : Fin 2 → 
     (mul_le_mul_of_nonneg_right (r_lower_bound_on_verticalStrip z hB (HABK hz))
       (norm_nonneg _)).trans (r_mul_max_le z hy0)
   have hx : ‖divisionPoint N b z‖ < R :=
-    Complex.norm_intCast_mul_add_intCast_div_lt N b
-      ((hM z hz).trans (le_abs_self M))
+    (Complex.norm_mul_add_div_natCast_le N (b 0) (b 1) ((hM z hz).trans (le_abs_self M))).trans_lt
+      (lt_add_one _)
   refine (weierstrassP_bound R hR _ hx _ (hy'.trans hl)).trans ?_
   rw [mul_assoc (10 * R), ← Real.mul_rpow hr₀.le (norm_nonneg _)]
   exact mul_le_mul_of_nonneg_left
