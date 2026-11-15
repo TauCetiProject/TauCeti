@@ -62,7 +62,10 @@ theorem Splitting.semidirectProductMulEquiv_symm_splitting (s : S.Splitting) (g 
 projection. -/
 @[simp]
 theorem Splitting.right_semidirectProductMulEquiv_symm (s : S.Splitting) (e : E) :
-    (s.semidirectProductMulEquiv.symm e).right = S.rightHom e := (rfl)
+    (s.semidirectProductMulEquiv.symm e).right = S.rightHom e := by
+  have he := s.semidirectProductMulEquiv.apply_symm_apply e
+  rw [semidirectProductMulEquiv_apply] at he
+  simpa using congrArg S.rightHom he
 
 /-- Including the left component of the inverse semidirect-product equivalence gives the kernel
 remainder after dividing out the splitting value. -/

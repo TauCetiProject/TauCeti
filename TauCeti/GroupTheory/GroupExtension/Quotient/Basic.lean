@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupExtension.Splitting
 public import TauCeti.GroupTheory.GroupExtension.Of.Surjective
+public import TauCeti.GroupTheory.SemidirectProduct
 
 /-!
 # The quotient extension and subgroup complements
@@ -16,6 +17,12 @@ by `N`. Its splittings correspond bijectively to subgroup complements of `N`, wi
 finiteness or commutativity assumptions. The inverse construction uses Mathlib's
 `Subgroup.IsComplement'.QuotientMulEquiv`: a complement is isomorphic to the quotient,
 and its inverse inclusion is the required section homomorphism.
+
+For a complement `D` of `N`, the ambient components of `(SemidirectProduct.mulEquivSubgroup h).symm`
+are `g * (h.quotientSplitting (g : G ⧸ N))⁻¹` and `h.quotientSplitting (g : G ⧸ N)`, and
+relabelling the acting quotient `G ⧸ N` along `h.symm.QuotientMulEquiv`
+(`Subgroup.IsComplement'.quotientSemidirectProductCongr`) identifies
+`SemidirectProduct.mulEquivSubgroup h` with `h.quotientSplitting.semidirectProductMulEquiv`.
 -/
 
 public section
@@ -120,5 +127,135 @@ theorem exists_isComplement'_iff_nonempty_splitting_quotientExtension :
     (∃ D : Subgroup G, N.IsComplement' D) ↔ Nonempty N.quotientExtension.Splitting := by
   rw [← nonempty_subtype]
   exact N.quotientSplittingEquiv.nonempty_congr.symm
+
+namespace IsComplement'
+
+variable {N} {D : Subgroup G} (h : N.IsComplement' D)
+
+/-- In `G`, the right component of `(SemidirectProduct.mulEquivSubgroup h).symm` is the quotient
+splitting evaluated on the coset. -/
+theorem coe_right_mulEquivSubgroup_symm (g : G) :
+    (((SemidirectProduct.mulEquivSubgroup h).symm g).right : G) =
+      h.quotientSplitting (g : G ⧸ N) := by
+  rw [SemidirectProduct.right_mulEquivSubgroup_symm_eq_quotientMulEquiv,
+    h.quotientSplitting_apply]
+
+/-- In `G`, the left component of `(SemidirectProduct.mulEquivSubgroup h).symm` is the remainder
+after dividing out the quotient splitting value. -/
+theorem coe_left_mulEquivSubgroup_symm (g : G) :
+    (((SemidirectProduct.mulEquivSubgroup h).symm g).left : G) =
+      g * (h.quotientSplitting (g : G ⧸ N))⁻¹ := by
+  rw [← h.coe_right_mulEquivSubgroup_symm, SemidirectProduct.left_mulEquivSubgroup_symm,
+    SemidirectProduct.right_mulEquivSubgroup_symm, IsComplement.equiv_fst_eq_mul_inv]
+
+/-- Composing `SemidirectProduct.mulEquivSubgroup` with `inr` and `G ⧸ N ≃* D` recovers the
+quotient splitting homomorphism. -/
+theorem mulEquivSubgroup_comp_inr_comp_quotientMulEquiv :
+    (MonoidHom.ofClass (SemidirectProduct.mulEquivSubgroup h)).comp
+      (SemidirectProduct.inr.comp (MonoidHom.ofClass h.symm.QuotientMulEquiv)) =
+      h.quotientSplitting.toMonoidHom := by
+  rw [← MonoidHom.comp_assoc, SemidirectProduct.mulEquivSubgroup_comp_inr]
+  ext q
+  exact (h.quotientSplitting_apply q).symm
+
+/-- Conjugation on `N` induced by `h.quotientSplitting` agrees with ambient conjugation through
+the quotient isomorphism `G ⧸ N ≃* D`. -/
+theorem quotientSplitting_conjAct_eq (q : G ⧸ N) :
+    h.quotientSplitting.conjAct q =
+      ((N.normalizerMonoidHom).comp (inclusion (N.normalizer_eq_top ▸ le_top)))
+        (h.symm.QuotientMulEquiv q) := by
+  ext n : 1
+  apply Subtype.ext
+  have hcomm := N.quotientExtension.inl_conjAct_comm (e := h.quotientSplitting q) (n := n)
+  simpa only [GroupExtension.Splitting.conjAct, MonoidHom.comp_apply,
+    MonoidHom.coe_ofClass, quotientExtension_inl, subtype_apply, h.quotientSplitting_apply,
+    normalizerMonoidHom_apply_apply_coe, coe_inclusion] using hcomm
+
+/-- Relabelling the acting quotient `G ⧸ N` along `h.symm.QuotientMulEquiv` identifies the
+extension semidirect product of `h.quotientSplitting` with the subgroup semidirect product
+`N ⋊ D`. -/
+noncomputable def quotientSemidirectProductCongr :
+    N ⋊[h.quotientSplitting.conjAct] (G ⧸ N) ≃*
+      N ⋊[(N.normalizerMonoidHom).comp (inclusion (N.normalizer_eq_top ▸ le_top))] D :=
+  SemidirectProduct.congr (MulEquiv.refl N) h.symm.QuotientMulEquiv fun q => by
+    ext n
+    simp [h.quotientSplitting_conjAct_eq q]
+
+/-- `quotientSemidirectProductCongr` acts as the identity on the left factor. -/
+@[simp]
+theorem left_quotientSemidirectProductCongr
+    (x : N ⋊[h.quotientSplitting.conjAct] (G ⧸ N)) :
+    (h.quotientSemidirectProductCongr x).left = x.left := (rfl)
+
+/-- `quotientSemidirectProductCongr` applies `h.symm.QuotientMulEquiv` on the right factor. -/
+@[simp]
+theorem right_quotientSemidirectProductCongr
+    (x : N ⋊[h.quotientSplitting.conjAct] (G ⧸ N)) :
+    (h.quotientSemidirectProductCongr x).right = h.symm.QuotientMulEquiv x.right := (rfl)
+
+/-- `quotientSemidirectProductCongr` fixes the included normal subgroup. -/
+@[simp]
+theorem quotientSemidirectProductCongr_inl (n : N) :
+    h.quotientSemidirectProductCongr (SemidirectProduct.inl n) = SemidirectProduct.inl n := by
+  apply SemidirectProduct.ext
+  · rfl
+  · simp only [right_quotientSemidirectProductCongr, SemidirectProduct.right_inl, map_one]
+
+/-- `quotientSemidirectProductCongr` transports the included quotient along
+`h.symm.QuotientMulEquiv`. -/
+@[simp]
+theorem quotientSemidirectProductCongr_inr (q : G ⧸ N) :
+    h.quotientSemidirectProductCongr (SemidirectProduct.inr q) =
+      SemidirectProduct.inr (h.symm.QuotientMulEquiv q) := by
+  ext <;> simp
+
+/-- `quotientSemidirectProductCongr.symm` acts as the identity on the left factor. -/
+@[simp]
+theorem left_quotientSemidirectProductCongr_symm
+    (x : N ⋊[(N.normalizerMonoidHom).comp (inclusion (N.normalizer_eq_top ▸ le_top))] D) :
+    (h.quotientSemidirectProductCongr.symm x).left = x.left := (rfl)
+
+/-- `quotientSemidirectProductCongr.symm` projects the right factor to its coset in `G ⧸ N`. -/
+@[simp]
+theorem right_quotientSemidirectProductCongr_symm
+    (x : N ⋊[(N.normalizerMonoidHom).comp (inclusion (N.normalizer_eq_top ▸ le_top))] D) :
+    (h.quotientSemidirectProductCongr.symm x).right = (x.right : G ⧸ N) := by
+  exact h.symm.QuotientMulEquiv_symm_apply x.right
+
+/-- `quotientSemidirectProductCongr.symm` fixes the included normal subgroup. -/
+@[simp]
+theorem quotientSemidirectProductCongr_symm_inl (n : N) :
+    h.quotientSemidirectProductCongr.symm (SemidirectProduct.inl n) =
+      SemidirectProduct.inl n := by
+  ext <;> simp
+
+/-- `quotientSemidirectProductCongr.symm` projects the included complement to its cosets in
+`G ⧸ N`. -/
+@[simp]
+theorem quotientSemidirectProductCongr_symm_inr (d : D) :
+    h.quotientSemidirectProductCongr.symm (SemidirectProduct.inr d) =
+      SemidirectProduct.inr (d : G ⧸ N) := by
+  ext <;> simp
+
+/-- Following `quotientSemidirectProductCongr` with `SemidirectProduct.mulEquivSubgroup` recovers
+the semidirect-product isomorphism induced by `h.quotientSplitting`. -/
+theorem quotientSemidirectProductCongr_trans_mulEquivSubgroup :
+    h.quotientSemidirectProductCongr.trans (SemidirectProduct.mulEquivSubgroup h) =
+      h.quotientSplitting.semidirectProductMulEquiv := by
+  ext x
+  simp [h.quotientSplitting_apply]
+
+/-- Following `(SemidirectProduct.mulEquivSubgroup h).symm` with
+`quotientSemidirectProductCongr.symm` recovers the inverse semidirect-product isomorphism of
+`h.quotientSplitting`. -/
+theorem mulEquivSubgroup_symm_trans_quotientSemidirectProductCongr_symm :
+    (SemidirectProduct.mulEquivSubgroup h).symm.trans h.quotientSemidirectProductCongr.symm =
+      h.quotientSplitting.semidirectProductMulEquiv.symm := by
+  rw [← h.quotientSemidirectProductCongr_trans_mulEquivSubgroup]
+  apply MulEquiv.ext
+  intro g
+  rfl
+
+end IsComplement'
 
 end Subgroup

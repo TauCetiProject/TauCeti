@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Complement
+public import TauCeti.GroupTheory.Complement.Basic
 public import TauCeti.Algebra.Group.Subgroup.ModularLaw
 public import TauCeti.GroupTheory.GroupAction.ConjAct
 
@@ -410,56 +410,32 @@ end Conjugation
 
 section GlobalComparison
 
-/-- Evaluating `IsComplement'.QuotientMulEquiv` on a coset extracts the left component of the
-complement decomposition. -/
-theorem IsComplement'.quotientMulEquiv_mk [K.Normal] (h : H.IsComplement' K) (g : G) :
-    h.QuotientMulEquiv (g : G ⧸ K) = (h.equiv g).1 := by
-  apply h.QuotientMulEquiv.symm.injective
-  have hsymm : h.QuotientMulEquiv.symm (h.equiv g).1 = (((h.equiv g).1 : G) : G ⧸ K) :=
-    h.QuotientMulEquiv_symm_apply (h.equiv g).1
-  rw [MulEquiv.symm_apply_apply, hsymm]
-  conv_lhs => rw [← h.equiv_fst_mul_equiv_snd g]
-  rw [← QuotientGroup.mk'_apply, map_mul, QuotientGroup.mk'_apply, QuotientGroup.mk'_apply,
-    (QuotientGroup.eq_one_iff _).mpr (h.equiv g).2.property, mul_one]
-
-/-- When the left subgroup is normal, the quotient isomorphism to the complement extracts the
-right component of the complement decomposition. -/
-theorem IsComplement'.symm_quotientMulEquiv_mk [N.Normal] (h : N.IsComplement' K) (g : G) :
-    h.symm.QuotientMulEquiv (g : G ⧸ N) = (h.equiv g).2 := by
-  apply h.symm.QuotientMulEquiv.symm.injective
-  have hsymm : h.symm.QuotientMulEquiv.symm (h.equiv g).2 = (((h.equiv g).2 : G) : G ⧸ N) :=
-    h.symm.QuotientMulEquiv_symm_apply (h.equiv g).2
-  rw [MulEquiv.symm_apply_apply, hsymm]
-  conv_lhs => rw [← h.equiv_fst_mul_equiv_snd g]
-  rw [← QuotientGroup.mk'_apply, map_mul, QuotientGroup.mk'_apply, QuotientGroup.mk'_apply,
-    (QuotientGroup.eq_one_iff _).mpr (h.equiv g).1.property, one_mul]
-
-/-- Viewing a global complement as a local complement in `⊤` preserves the product
-decomposition. -/
+/-- Viewing a local complement in `⊤` globally preserves the product decomposition. -/
 @[simp]
-theorem IsComplement'.isLocalComplement_top_equiv [N.Normal] (h : N.IsComplement' K)
+theorem IsLocalComplement.equiv_top [N.Normal] (h : N.IsLocalComplement K ⊤)
     (x : (⊤ : Subgroup G)) :
-    (isLocalComplement_top_iff.mpr h).equiv x = h.equiv x := by
-  have hx : x = ⟨((h.equiv x).1 : G) * (h.equiv x).2, mem_top _⟩ :=
-    Subtype.ext (h.equiv_fst_mul_equiv_snd x).symm
+    h.equiv x = (isLocalComplement_top_iff.mp h).equiv x := by
+  have h' := isLocalComplement_top_iff.mp h
+  have hx : x = ⟨((h'.equiv x).1 : G) * (h'.equiv x).2, mem_top _⟩ :=
+    Subtype.ext (h'.equiv_fst_mul_equiv_snd x).symm
   conv_lhs => rw [hx]
-  exact (isLocalComplement_top_iff.mpr h).equiv_mul (h.equiv x).1 (h.equiv x).2
+  exact h.equiv_mul (h'.equiv x).1 (h'.equiv x).2
 
-/-- The left projection of a global complement viewed locally in `⊤` is the first component of
+/-- The left projection of a local complement in `⊤` is the first component of
 `IsComplement.equiv`. -/
 @[simp]
-theorem IsComplement'.isLocalComplement_top_leftProjection [N.Normal] (h : N.IsComplement' K)
+theorem IsLocalComplement.leftProjection_top [N.Normal] (h : N.IsLocalComplement K ⊤)
     (x : (⊤ : Subgroup G)) :
-    (isLocalComplement_top_iff.mpr h).leftProjection x = (h.equiv x).1 := by
-  rw [IsLocalComplement.leftProjection_apply, h.isLocalComplement_top_equiv]
+    h.leftProjection x = ((isLocalComplement_top_iff.mp h).equiv x).1 := by
+  rw [IsLocalComplement.leftProjection_apply, h.equiv_top]
 
-/-- The right projection of a global complement viewed locally in `⊤` is the second component of
+/-- The right projection of a local complement in `⊤` is the second component of
 `IsComplement.equiv`. -/
 @[simp]
-theorem IsComplement'.isLocalComplement_top_rightProjection [N.Normal] (h : N.IsComplement' K)
+theorem IsLocalComplement.rightProjection_top [N.Normal] (h : N.IsLocalComplement K ⊤)
     (x : (⊤ : Subgroup G)) :
-    (isLocalComplement_top_iff.mpr h).rightProjection x = (h.equiv x).2 := by
-  rw [IsLocalComplement.rightProjection_apply, h.isLocalComplement_top_equiv]
+    h.rightProjection x = ((isLocalComplement_top_iff.mp h).equiv x).2 := by
+  rw [IsLocalComplement.rightProjection_apply, h.equiv_top]
 
 end GlobalComparison
 
