@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.ContDiff.Basis
 public import TauCeti.Analysis.Sobolev.Wkp.SmoothMultiplication
 
 /-!
@@ -24,8 +23,7 @@ the same way on the components of `F`-valued Sobolev maps in a basis `b` of `F`,
 `g` in the bases `b` and `b'` (`TauCeti.Wkp.contDiffOnCLMApplyL`): the components of the
 product are the components in `b'` of `g x` applied to the vector with components `u l x`
 (`TauCeti.Wkp.value_contDiffOnCLMApplyL_ae`). These are the multiplications by the coordinate
-changes of a vector bundle that relate the chart data of a Sobolev section in two charts. The
-smoothness of the matrix entries of `g` follows from `Module.Basis.contDiffOn_repr_apply`. Both
+changes of a vector bundle that relate the chart data of a Sobolev section in two charts. Both
 multiplications commute with forgetting the highest weak derivative.
 
 ## Main declarations
@@ -133,7 +131,8 @@ def contDiffOnCLMApplyL (hU : UniqueDiffOn ℝ U) (hΩ : IsCompact (closure (Ome
     [FiniteDimensional ℝ F'] (hg : ContDiffOn ℝ ∞ g U) :
     (ι → Wkp mu Omega p k) →L[ℝ] (κ → Wkp mu Omega p k) :=
   contDiffOnMulVecL hU hΩ hΩU k fun m l ↦
-    b'.contDiffOn_repr_apply (hg.clm_apply (contDiffOn_const (c := b l))) m
+    (hg.clm_apply (contDiffOn_const (c := b l))).continuousLinearMap_comp
+      (b'.coord m).toContinuousLinearMap
 
 @[simp]
 theorem contDiffOnCLMApplyL_apply (hU : UniqueDiffOn ℝ U)
@@ -142,7 +141,8 @@ theorem contDiffOnCLMApplyL_apply (hU : UniqueDiffOn ℝ U)
     (u : ι → Wkp mu Omega p k) (m : κ) :
     contDiffOnCLMApplyL hU hΩ hΩU k b b' hg u m =
       ∑ l, contDiffOnSMulL hU hΩ hΩU k
-        (b'.contDiffOn_repr_apply (hg.clm_apply (contDiffOn_const (c := b l))) m) (u l) := by
+        ((hg.clm_apply (contDiffOn_const (c := b l))).continuousLinearMap_comp
+          (b'.coord m).toContinuousLinearMap) (u l) := by
   rw [contDiffOnCLMApplyL, contDiffOnMulVecL_apply]
 
 /-- The components in `b'` of a product with a smooth operator coefficient are, almost everywhere
