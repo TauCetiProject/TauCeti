@@ -24,11 +24,12 @@ On a predictable rectangle `(s,t] × A` its value is `1_A (W_t − W_s)`, with c
 the declared horizon. The map is uniquely determined by these elementary values.
 Linearity and the isometry are supplied by the bundled map, not separate operations on
 chosen representatives. The result is a terminal-time map on L² classes, not a
-time-indexed integral process by itself. With almost-surely continuous Brownian paths,
-`exists_continuous_martingale_l2Integral` realizes every terminal integral as the final
-value of a predictable, square-integrable, almost-surely continuous martingale, frozen after
-the horizon and starting at zero. Continuity holds outside one common null set on the
-original raw filtration; no usual conditions or everywhere-continuous raw version are assumed.
+time-indexed integral process by itself. With Brownian paths almost-surely continuous on
+`Iic T`, `exists_continuous_martingale_l2Integral` realizes every terminal integral as the
+final value of a predictable, square-integrable martingale. Path continuity, starting at
+zero, and freezing after the horizon all hold simultaneously outside one common null set,
+and `I T =ᵐ[P] hW.l2Integral T f`. This uses the original raw filtration; no usual conditions
+or everywhere-continuous raw version are assumed.
 
 The construction uses the overlapping-increment Gram identity and the density of predictable
 rectangles, followed by Mathlib's `LinearMap.extendOfIsometry`. The continuous realization
@@ -275,14 +276,13 @@ private def Rectangle.process (T : ℝ≥0) (R : Rectangle ℱ) (W : ℝ≥0 →
 private theorem Rectangle.process_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
     (T : ℝ≥0) (R : Rectangle ℱ) (u : ℝ≥0) : MemLp (R.process T W u) 2 P := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  classical
   unfold Rectangle.process
-  by_cases hsu : R.s ≤ u
-  · simpa only [min_eq_left hsu] using hW.memLp_mul_sub
-      (le_min (le_max_left R.s (min R.t T)) hsu) R.height_measurable R.height_memLp
-  · have hus := le_of_not_ge hsu
-    have hue : u ≤ max R.s (min R.t T) := hus.trans (le_max_left _ _)
-    simpa only [min_eq_right hus, min_eq_right hue, sub_self, mul_zero]
-      using (MemLp.zero' : MemLp (fun _ : Ω ↦ (0 : ℝ)) 2 P)
+  simpa only [Finset.sum_singleton] using
+    hW.memLp_sum_mul_sub_min {R} (s := Rectangle.s)
+      (t := fun Q ↦ max Q.s (min Q.t T)) (X := Rectangle.height)
+      (fun Q _ ↦ le_max_left _ _) (fun Q _ ↦ Q.height_measurable)
+      (fun Q _ ↦ Q.height_memLp) u
 
 private theorem Rectangle.process_martingale (hW : IsFilteredPreBrownianReal ℱ W P)
     (T : ℝ≥0) (R : Rectangle ℱ) : Martingale (R.process T W) ℱ P := by
@@ -315,7 +315,7 @@ private theorem Rectangle.process_frozen (T : ℝ≥0) (R : Rectangle ℱ)
       sub_self, mul_zero]
 
 private theorem exists_approximating_martingales (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hc : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω)) (T : ℝ≥0)
+    (T : ℝ≥0) (hc : ∀ᵐ ω ∂P, ContinuousOn (fun t ↦ W t ω) (Iic T))
     (f : Lp ℝ 2 (ℱ.predictableMeasure P T)) :
     ∃ (M : ℕ → ℝ≥0 → Ω → ℝ) (hmem : ∀ n u, MemLp (M n u) 2 P),
       (∀ n, Martingale (M n) ℱ P) ∧
@@ -338,9 +338,13 @@ private theorem exists_approximating_martingales (hW : IsFilteredPreBrownianReal
       (fun R _ ↦ (R.process_martingale hW T).smul ((c n) R))
   have hmem (n : ℕ) (u : ℝ≥0) : MemLp (M n u) 2 P := by
     classical
-    simpa only [M, Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_apply,
-      Pi.smul_apply, smul_eq_mul] using memLp_finsetSum' (c n).support
-        (fun R _ ↦ (R.process_memLp hW T u).const_smul ((c n) R))
+    refine (memLp_congr_ae ?_).mp (hW.memLp_sum_mul_sub_min (c n).support (s := Rectangle.s)
+      (t := fun R ↦ max R.s (min R.t T)) (X := fun R ω ↦ (c n) R * R.height ω)
+      (fun R _ ↦ le_max_left _ _)
+      (fun R _ ↦ R.height_measurable.const_mul ((c n) R))
+      (fun R _ ↦ R.height_memLp.const_mul ((c n) R)) u)
+    exact Eventually.of_forall fun ω ↦ by
+      simp [M, Finsupp.linearCombination_apply, Finsupp.sum, Rectangle.process, mul_assoc]
   -- Identify the terminal L² classes before using any martingale completion theorem.
   have hterm (n : ℕ) : (hmem n T).toLp (M n T) = hW.l2Integral T (L (c n)) := by
     classical
@@ -374,24 +378,29 @@ private theorem exists_approximating_martingales (hW : IsFilteredPreBrownianReal
   · intro n
     filter_upwards [hc] with ω hω
     classical
+    have hstop : Continuous (fun t ↦ W (min T t) ω) :=
+      hω.comp_continuous (continuous_const.min continuous_id) (fun t ↦ min_le_left T t)
+    suffices Continuous (fun u ↦ M n (min T u) ω) by
+      simpa only [hfrozen] using this
     simp only [M, Finsupp.linearCombination_apply, Finsupp.sum,
       Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Rectangle.process]
-    exact continuous_finsetSum _ fun R _ ↦ continuous_const.mul
-      (continuous_const.mul ((hω.comp (continuous_const.min continuous_id)).sub
-        (hω.comp (continuous_const.min continuous_id))))
+    simpa only [Function.comp_def, min_left_comm T, Pi.mul_apply, Pi.sub_apply, id_eq] using
+      continuous_finsetSum (c n).support (fun R _ ↦ continuous_const.mul
+        (continuous_const.mul ((hstop.comp (continuous_const.min continuous_id)).sub
+          (hstop.comp (continuous_const.min continuous_id)))))
   · intro n
     classical
     ext ω
     simp [M, Finsupp.linearCombination_apply, Finsupp.sum, Rectangle.process]
 
-/-- Every finite-horizon predictable L² Brownian integral is the terminal value of a
-predictable square-integrable martingale with almost-surely continuous paths. The martingale
-starts at zero and is frozen after the declared horizon. Path continuity uses one common
-sample-full event and requires no completeness or right continuity of the filtration.
-This is a continuous realization of the terminal map, not a cross-horizon identification
-of separate L² representatives. -/
+/-- If the Brownian paths are almost-surely continuous on `Iic T`, every predictable L²
+Brownian integral at horizon `T` is the terminal value of a predictable square-integrable
+martingale. Path continuity, `I 0 ω = 0`, and `∀ t, I (min T t) ω = I t ω` all hold on one
+common sample-full event, while `I T =ᵐ[P] hW.l2Integral T f`. No completeness or right
+continuity of the filtration is required. This is a continuous realization of the terminal
+map, not a cross-horizon identification of separate L² representatives. -/
 theorem exists_continuous_martingale_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hc : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω)) (T : ℝ≥0)
+    (T : ℝ≥0) (hc : ∀ᵐ ω ∂P, ContinuousOn (fun t ↦ W t ω) (Iic T))
     (f : Lp ℝ 2 (ℱ.predictableMeasure P T)) :
     ∃ I : ℝ≥0 → Ω → ℝ, Martingale I ℱ P ∧ IsStronglyPredictable ℱ I ∧
       (∀ t, MemLp (I t) 2 P) ∧
@@ -399,7 +408,7 @@ theorem exists_continuous_martingale_l2Integral (hW : IsFilteredPreBrownianReal 
         ∀ t, I (min T t) ω = I t ω) ∧ I T =ᵐ[P] hW.l2Integral T f := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
   obtain ⟨M, hmem, hM, hcont, hzero, hfrozen, htermLim⟩ :=
-    exists_approximating_martingales hW hc T f
+    exists_approximating_martingales hW T hc f
   -- Conditional expectation contracts terminal L² errors at every observation time.
   have hcond (n : ℕ) (u : ℝ≥0) : (hmem n u).toLp (M n u) =
       (condExpL2 ℝ ℝ (ℱ.le u) ((hmem n T).toLp (M n T)) : Lp ℝ 2 P) := by
