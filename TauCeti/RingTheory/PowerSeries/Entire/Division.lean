@@ -94,6 +94,9 @@ operators, whose Fredholm determinants are entire series.
 * `TauCeti.PowerSeries.eq_and_eq_of_entire_mul_add_eq` and
   `TauCeti.PowerSeries.existsUnique_entire_mul_add_eq`: uniqueness over an ultrametric ring
   with `‖1‖ = 1`.
+* `TauCeti.PowerSeries.polynomialHom_dvd_iff` and
+  `TauCeti.PowerSeries.eq_of_polynomialHom_dvd_of_natDegree_le`: polynomial divisibility reflection
+  from `PowerSeries.IsEntire.subring R` for divisors with invertible leading coefficient.
 
 ## References
 
@@ -769,5 +772,41 @@ theorem existsUnique_entire_mul_add_eq (hf : f.IsEntire) (hp : IsUnit p.leadingC
   refine ⟨(q, b), ⟨hq, hb, h⟩, fun qb ⟨hq', hb', h'⟩ ↦ ?_⟩
   obtain ⟨rfl, rfl⟩ := eq_and_eq_of_entire_mul_add_eq hp hq' hq hb' hb h' h
   rfl
+
+/-- Over a complete ultrametric norm-one ring, a polynomial `p` with invertible leading coefficient
+divides a polynomial `q` in the subring of entire power series if and only if `p ∣ q` as
+polynomials. -/
+theorem polynomialHom_dvd_iff {p q : Polynomial R} (hp : IsUnit p.leadingCoeff) :
+    IsEntire.polynomialHom p ∣ IsEntire.polynomialHom q ↔ p ∣ q := by
+  refine ⟨fun ⟨⟨H, hH⟩, hqH⟩ ↦ ?_, map_dvd IsEntire.polynomialHom⟩
+  have : Nontrivial R := NormOneClass.nontrivial
+  let u := hp.unit
+  have hm : (u⁻¹ • p).Monic := Polynomial.monic_of_isUnit_leadingCoeff_inv_smul hp
+  have hmk : AdjoinRoot.mk (u⁻¹ • p) q = 0 := by
+    rw [← IsEntire.mkAdjoinRoot_coe hm q, IsEntire.mkAdjoinRoot_eq_zero_iff hm]
+    refine ⟨u • H, (IsEntire.mem_subring.mp hH).smul _, ?_⟩
+    have hq_eq : (q : R⟦X⟧) = (p : R⟦X⟧) * H := by simpa using congrArg Subtype.val hqH
+    simp only
+    rw [hq_eq, Units.smul_def, Units.smul_def, Polynomial.smul_eq_C_mul, PowerSeries.smul_eq_C_mul,
+      Polynomial.coe_mul, Polynomial.coe_C, mul_assoc, mul_left_comm (p : R⟦X⟧),
+      ← mul_assoc (PowerSeries.C (↑u⁻¹ : R)), ← map_mul, u.inv_mul, map_one, one_mul]
+  obtain ⟨k, hk⟩ := AdjoinRoot.mk_eq_zero.mp hmk
+  exact ⟨u⁻¹ • k, by rw [hk, smul_mul_assoc, mul_smul_comm]⟩
+
+/-- Over a complete ultrametric norm-one ring, if a polynomial `p` with `p(0) = 1` and invertible
+leading coefficient divides `q` in `IsEntire.subring R`, with `q(0) = 1` and
+`q.natDegree ≤ p.natDegree`, then `q = p`. -/
+theorem eq_of_polynomialHom_dvd_of_natDegree_le {p q : Polynomial R} (hp0 : p.coeff 0 = 1)
+    (hp : IsUnit p.leadingCoeff) (hq0 : q.coeff 0 = 1) (hdeg : q.natDegree ≤ p.natDegree)
+    (hdvd : IsEntire.polynomialHom p ∣ IsEntire.polynomialHom q) : q = p := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  obtain ⟨k, rfl⟩ := (polynomialHom_dvd_iff hp).mp hdvd
+  have hk0 : k.coeff 0 = 1 := by simpa [Polynomial.mul_coeff_zero, hp0] using hq0
+  have hk_ne : k ≠ 0 := by rintro rfl; simp at hk0
+  have hlc : p.leadingCoeff * k.leadingCoeff ≠ 0 :=
+    fun h ↦ Polynomial.leadingCoeff_ne_zero.mpr hk_ne (hp.mul_right_eq_zero.mp h)
+  have hk_deg : k.natDegree = 0 := by have := Polynomial.natDegree_mul' hlc; omega
+  have hk_eq : k = 1 := by rw [Polynomial.eq_C_of_natDegree_eq_zero hk_deg, hk0, Polynomial.C_1]
+  rw [hk_eq, mul_one]
 
 end TauCeti.PowerSeries

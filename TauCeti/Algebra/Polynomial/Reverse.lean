@@ -401,4 +401,11 @@ theorem reverse_C_mul_prod_X_sub_C {K ι : Type*} [Field K] (s : Finset ι) (r :
   simp only [Finset.prod_mul_distrib, ← map_prod]
   rw [← mul_assoc, ← C_mul]
 
+/-- Reversing a polynomial commutes with scaling by a unit of the coefficient semiring. -/
+@[simp]
+theorem reverse_units_smul [Semiring R] (p : R[X]) (c : Rˣ) :
+    (c • p).reverse = c • p.reverse := by
+  rw [reverse, natDegree_smul_of_smul_regular p (IsSMulRegular.all c), Units.smul_def,
+    Units.smul_def, smul_eq_C_mul, smul_eq_C_mul, reflect_C_mul, ← reverse]
+
 end Polynomial

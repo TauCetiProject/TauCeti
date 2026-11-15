@@ -30,13 +30,18 @@ A pseudo-inverse `g` of `f`, with `f ∘ g ∘ f = f`, gives the projection `g �
 
 * `ContinuousLinearMap.IsIdempotentElem.rangeEquiv`: the isomorphism of the ranges of `p` and
   `q` induced by `q * p + (1 - q) * (1 - p)`, when that operator is invertible.
+* `ContinuousLinearMap.IsIdempotentElem.kerRestrict`: the retraction `1 - p` of `M` onto `p.ker`.
 * `ContinuousLinearMap.rangeEquivOfRetract`: the identification of the range of `e` with the
   range of its extension `i ∘ e ∘ r` along a retract.
 
 ## Main results
 
-* `ContinuousLinearMap.IsIdempotentElem.apply_coe_range`: an idempotent continuous linear map
-  fixes every vector of its range.
+* `ContinuousLinearMap.IsIdempotentElem.apply_coe_range` and
+  `ContinuousLinearMap.IsIdempotentElem.rangeRestrict_comp_subtypeL`: an idempotent continuous
+  linear map fixes its range, making `p.rangeRestrict` a retraction onto `p.range`.
+* `ContinuousLinearMap.IsIdempotentElem.kerRestrict_comp_subtypeL` and
+  `ContinuousLinearMap.IsIdempotentElem.kerRestrict_comp_comp_subtypeL`: `1 - p` retracts `M` onto
+  `p.ker` and conjugates invariant endomorphisms to their restrictions.
 * `ContinuousLinearMap.IsIdempotentElem.mul_self_add_one_sub_mul_one_sub`: the operator
   `p * p + (1 - p) * (1 - p)` intertwining an idempotent `p` with itself is the identity.
 * `ContinuousLinearMap.isIdempotentElem_comp_comp_of_retract`: the extension of an idempotent
@@ -65,7 +70,49 @@ theorem apply_coe_range (hp : IsIdempotentElem p) (w : p.range) : p w = w :=
   (LinearMap.IsIdempotentElem.mem_range_iff
     (ContinuousLinearMap.IsIdempotentElem.toLinearMap hp)).mp w.2
 
+/-- Restricting an idempotent continuous linear map to its range gives a retraction onto
+`p.range`. -/
+@[simp]
+theorem rangeRestrict_comp_subtypeL (hp : IsIdempotentElem p) :
+    p.rangeRestrict.comp p.range.subtypeL = .id R p.range :=
+  ContinuousLinearMap.ext fun w ↦ Subtype.ext (apply_coe_range hp w)
+
 variable [IsTopologicalAddGroup M]
+
+/-- For an idempotent continuous linear map `p`, `1 - p` retracts `M` onto `p.ker`. -/
+def kerRestrict (hp : IsIdempotentElem p) : M →L[R] p.ker :=
+  (1 - p).codRestrict p.ker fun x ↦ LinearMap.mem_ker.mpr <| by
+    simpa [sub_eq_zero] using congr($hp.eq x).symm
+
+/-- Applying the kernel retraction `kerRestrict` computes `1 - p`. -/
+@[simp]
+theorem coe_kerRestrict_apply (hp : IsIdempotentElem p) (x : M) :
+    (kerRestrict hp x : M) = (1 - p) x :=
+  (rfl)
+
+/-- Composing the subtype inclusion with `kerRestrict` recovers `1 - p`. -/
+@[simp]
+theorem subtypeL_comp_kerRestrict (hp : IsIdempotentElem p) :
+    p.ker.subtypeL.comp (kerRestrict hp) = 1 - p :=
+  subtypeL_comp_codRestrict _ _ _
+
+/-- The kernel retraction `kerRestrict` is a left inverse to the subtype inclusion of `p.ker`. -/
+@[simp]
+theorem kerRestrict_comp_subtypeL (hp : IsIdempotentElem p) :
+    (kerRestrict hp).comp p.ker.subtypeL = .id R p.ker :=
+  ContinuousLinearMap.ext fun x ↦ Subtype.ext <| by
+    have hx : p x.1 = 0 := x.2
+    simp [kerRestrict, hx]
+
+/-- Conjugating an endomorphism `u` leaving `p.ker` invariant by the kernel inclusion and
+retraction recovers `u.restrict`. -/
+theorem kerRestrict_comp_comp_subtypeL (hp : IsIdempotentElem p) {u : M →L[R] M}
+    (hm : Set.MapsTo u p.ker p.ker) :
+    (kerRestrict hp).comp (u.comp p.ker.subtypeL) = u.restrict hm :=
+  ContinuousLinearMap.ext fun x ↦ Subtype.ext <| by
+    have hx : p (u x.1) = 0 := hm x.2
+    simp [kerRestrict, hx]
+    rfl
 
 /-- The operator `p * p + (1 - p) * (1 - p)`, which intertwines an idempotent `p` with itself, is
 the identity. -/

@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.Analysis.Normed.Module.Bases.Orthonormal
 public import TauCeti.Analysis.Normed.Operator.RingOpNorm.OpenMapping
 import Mathlib.Topology.MetricSpace.Ultra.Pi
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 
 /-!
 # Potentially orthonormalisable modules and property (Pr)
@@ -133,6 +134,20 @@ theorem HasPr.of_retract (h : HasPr R N) (i : M →L[R] N) (r : N →L[R] M)
 /-- Property (Pr) is invariant under continuous linear equivalence. -/
 theorem HasPr.of_equiv (h : HasPr R N) (e : M ≃L[R] N) : HasPr R M :=
   h.of_retract e e.symm (by ext; simp)
+
+/-- The range of an idempotent continuous linear endomorphism of a module with property (Pr) has
+property (Pr). -/
+theorem HasPr.range_of_isIdempotentElem (h : HasPr R M) {e : M →L[R] M}
+    (he : IsIdempotentElem e) : HasPr R e.range :=
+  h.of_retract e.range.subtypeL e.rangeRestrict
+    (ContinuousLinearMap.IsIdempotentElem.rangeRestrict_comp_subtypeL he)
+
+/-- The kernel of an idempotent continuous linear endomorphism of a module with property (Pr) has
+property (Pr). -/
+theorem HasPr.ker_of_isIdempotentElem (h : HasPr R M) {e : M →L[R] M}
+    (he : IsIdempotentElem e) : HasPr R e.ker :=
+  h.of_retract e.ker.subtypeL (ContinuousLinearMap.IsIdempotentElem.kerRestrict he)
+    (ContinuousLinearMap.IsIdempotentElem.kerRestrict_comp_subtypeL he)
 
 /-- A finite product of potentially orthonormalisable modules is potentially orthonormalisable. -/
 theorem IsPotentiallyONable.prod (hM : IsPotentiallyONable R M) (hN : IsPotentiallyONable R N) :

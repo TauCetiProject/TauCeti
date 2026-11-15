@@ -24,8 +24,9 @@ polynomial over `R ⧸ I` produce lifts of idempotents.
 
 For an idempotent `b` of a possibly noncommutative `R`-algebra, a polynomial `Q` satisfies
 `Q(b) b = Q(1) b` and `Q(b) (1 - b) = Q(0) (1 - b)` (`IsIdempotentElem.aeval_mul_self`,
-`IsIdempotentElem.aeval_mul_one_sub`). If an ideal `I` acts by zero on `B`, evaluation at elements
-of `B` sees only reductions modulo `I` (`Ideal.aeval_eq_of_map_eq`,
+`IsIdempotentElem.aeval_mul_one_sub`), and for `u` commuting with `b` and `P(0) = 0` one has
+`P(u b) = P(u) b` (`IsIdempotentElem.aeval_mul_of_coeff_zero`). If an ideal `I` acts by zero on
+`B`, evaluation at elements of `B` sees only reductions modulo `I` (`Ideal.aeval_eq_of_map_eq`,
 `Ideal.algebraMap_eq_one_of_mk_eq_one`).
 -/
 
@@ -66,7 +67,26 @@ end Ideal
 
 namespace IsIdempotentElem
 
+/-- Evaluating a polynomial with zero constant term at `u * b`, where `b` is an idempotent
+commuting with `u`, multiplies evaluation at `u` on the right by `b`. -/
+theorem aeval_mul_of_coeff_zero {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
+    {u b : B} (hb : IsIdempotentElem b) (hub : Commute u b) {P : R[X]} (hP : P.coeff 0 = 0) :
+    aeval (u * b) P = aeval u P * b := by
+  conv_lhs => rw [P.as_sum_support_C_mul_X_pow]
+  conv_rhs => rw [P.as_sum_support_C_mul_X_pow]
+  rw [map_sum, map_sum, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero fun h0 : i = 0 ↦ mem_support_iff.mp hi (h0 ▸ hP)
+  simp only [map_mul, aeval_C, map_pow, aeval_X, hub.mul_pow, hb.pow_succ_eq, mul_assoc]
+
 variable {R B : Type*} [CommRing R] [Ring B] [Algebra R B] {b : B}
+
+/-- Evaluating a polynomial with zero constant term at `u * (1 - b)`, where `b` is an idempotent
+commuting with `u`, multiplies evaluation at `u` on the right by `1 - b`. -/
+theorem aeval_mul_one_sub_of_coeff_zero {u : B} (hb : IsIdempotentElem b) (hub : Commute u b)
+    {P : R[X]} (hP : P.coeff 0 = 0) :
+    aeval (u * (1 - b)) P = aeval u P * (1 - b) :=
+  hb.one_sub.aeval_mul_of_coeff_zero ((Commute.one_right u).sub_right hub) hP
 
 /-- A polynomial evaluated at an idempotent `b`, multiplied by `b`, is `Q(1) b`. -/
 theorem aeval_mul_self (hb : IsIdempotentElem b) (Q : R[X]) :

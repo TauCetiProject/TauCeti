@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
 public import TauCeti.Analysis.Normed.Operator.RowCompact.PrModule
 public import TauCeti.LinearAlgebra.Charpoly.Projective
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 
 /-!
 # Fredholm series of row-compact operators on modules with property (Pr)
@@ -215,6 +216,18 @@ theorem IsPrCompact.charPowerSeries_smul [ContinuousConstSMul R M] {u : M →L[R
   rw [(hu.smul c).charPowerSeries_eq hM, hu.charPowerSeries_eq hM, smul_comp, comp_smul,
     matrixCoeff_smul,
     Matrix.charPowerSeries_smul c (hu.isRowCompact_comp iM rM).summable_principalMinor]
+
+omit [NormOneClass R] in
+/-- The Fredholm series of the restriction of a row-compact endomorphism `u` of a (Pr) module to an
+invariant kernel of an idempotent `e` equals the Fredholm series of `u * (1 - e)`. -/
+theorem IsPrCompact.charPowerSeries_restrict_ker_of_isIdempotentElem {u e : M →L[R] M}
+    (hu : u.IsPrCompact) (he : IsIdempotentElem e) (hm : Set.MapsTo u e.ker e.ker) :
+    (u.restrict hm).charPowerSeries = (u * (1 - e)).charPowerSeries := by
+  have hKer := hu.hasPr_source.ker_of_isIdempotentElem he
+  rw [← IsIdempotentElem.kerRestrict_comp_comp_subtypeL he hm,
+    ((hu.comp_clm e.ker.subtypeL hKer).charPowerSeries_comp_comm
+      (IsIdempotentElem.kerRestrict he)).symm,
+    comp_assoc, IsIdempotentElem.subtypeL_comp_kerRestrict he, ← mul_def]
 
 end RowCompact
 

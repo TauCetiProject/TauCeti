@@ -17,9 +17,9 @@ scalars (`TauCeti.NormedRing.IsTate`), with `S` complete, and let `u_S = u.mapCo
 coefficientwise extension of an endomorphism `u` of `C₀(I, R)`. Whenever `Q : R[X]` preserves its
 degree under `f` (in particular whenever `IsUnit Q.leadingCoeff`), `(Q.map f).reverse =
 Q.reverse.map f`, so any Riesz–Coleman projection `E` of `u` for `Q` extends to `E.mapCoeffs f hf`
-for `Q.map f` without compactness. Under a coprime Fredholm factorization `H_u = Q * S₀` over a
-complete `R`, the explicit projector `rieszColemanProjection` commutes with `mapCoeffs`, and bounded
-field extensions preserve `finrank K (ker Q*(u))`.
+for `Q.map f` without compactness. Under a coprime Fredholm factorization `H_u = Q * S₀` with
+`IsUnit Q.leadingCoeff` over a complete `R`, the explicit projector `rieszColemanProjection`
+commutes with `mapCoeffs`, and bounded field extensions preserve `finrank K (ker Q*(u))`.
 
 ## Main results
 
@@ -27,7 +27,8 @@ field extensions preserve `finrank K (ker Q*(u))`.
   `ContinuousLinearMap.IsRieszColemanProjection.mapCoeffs_of_isUnit_leadingCoeff`: Riesz–Coleman
   projections commute with bounded coefficient extension without compactness.
 * `ContinuousLinearMap.IsRowCompact.rieszColemanProjection_mapCoeffs`: the explicit projector
-  commutes with bounded coefficient extension under a coprime Fredholm factorization.
+  commutes with bounded coefficient extension under a coprime Fredholm factorization with
+  `IsUnit Q.leadingCoeff`.
 * `ContinuousLinearMap.IsRowCompact.finrank_ker_aeval_reverse_mapCoeffs`: bounded field extension
   preserves the dimension of `ker Q*(u)`.
 
@@ -134,8 +135,9 @@ theorem IsRowCompact.finrank_ker_aeval_reverse_mapCoeffs
   have hQ : IsUnit Q.leadingCoeff := (leadingCoeff_ne_zero.mpr fun h0 ↦ by
     simpa [h0, u.matrixCoeff.constantCoeff_charPowerSeries] using
       congrArg (PowerSeries.constantCoeff (R := K)) hfac).isUnit
-  have hE := hu.isRieszColemanProjection_rieszColemanProjection hQ hS₀ hfac hcop
-  have hEf := hE.mapCoeffs_of_isUnit_leadingCoeff hQ f hf
+  have hEf :=
+    (hu.isRieszColemanProjection_rieszColemanProjection hQ hS₀ hfac
+      hcop).mapCoeffs_of_isUnit_leadingCoeff hQ f hf
   set B := 1 - C (Ring.inverse Q.leadingCoeff) * Q.reverse with hB_def
   have hB0 : B.coeff 0 = 0 := coeff_zero_one_sub_C_mul_reverse (Ring.inverse_mul_cancel _ hQ)
   have hv := hu.aeval hB0
@@ -151,7 +153,7 @@ theorem IsRowCompact.finrank_ker_aeval_reverse_mapCoeffs
     simpa only [map_one] using hEv.mapCoeffs f hf
   have hGoodf := by simpa only [map_one] using hv.isGoodZero_charPowerSeries_mapCoeffs f hf hGood
   rw [← hEf.range_eq_ker, hEvf.finrank_range (hv.mapCoeffs f hf) hGoodf,
-    hE.finrank_ker_aeval_reverse hu hS₀ hfac hcop]
+    hu.finrank_ker_aeval_reverse hS₀ hfac hcop]
 
 end Field
 
