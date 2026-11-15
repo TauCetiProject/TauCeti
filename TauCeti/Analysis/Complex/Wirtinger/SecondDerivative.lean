@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Wirtinger.InteriorEstimate
-public import TauCeti.Analysis.Sobolev.Morrey
+public import TauCeti.Analysis.Sobolev.Morrey.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.Topology.MetricSpace.Equicontinuity

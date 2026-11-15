@@ -34,11 +34,11 @@ defined modulo `N / p`) and `HeckeRing.GL2.Newform.qExpansion_coeff_prime_eq_zer
 
 ## Main results
 
-* `HeckeRing.GL2.Newform.norm_qExpansion_coeff_prime_sq_of_not_exists_eq_comp`:
+* `HeckeRing.GL2.Newform.norm_qExpansion_coeff_prime_sq_of_not_factorsThrough`:
   `‖a_p(f)‖ ^ 2 = p ^ (k - 1)`.
-* `HeckeRing.GL2.Newform.norm_qExpansion_coeff_prime_of_not_exists_eq_comp`:
+* `HeckeRing.GL2.Newform.norm_qExpansion_coeff_prime_of_not_factorsThrough`:
   `‖a_p(f)‖ = (√p) ^ (k - 1)`.
-* `HeckeRing.GL2.Newform.qExpansion_coeff_prime_ne_zero_of_not_exists_eq_comp`: `a_p(f) ≠ 0`.
+* `HeckeRing.GL2.Newform.qExpansion_coeff_prime_ne_zero_of_not_factorsThrough`: `a_p(f) ≠ 0`.
 
 ## References
 
@@ -58,11 +58,11 @@ namespace HeckeRing.GL2.Newform
 variable {N p : ℕ} [NeZero N] {k : ℤ}
 
 /-- **The bad-prime eigenvalue when the nebentypus is not defined modulo `N / p`** (Li,
-Theorem 3): for a newform `f` and a prime `p ∣ N` such that the nebentypus of `f` is not of the
-form `χ₀ ∘ (ZMod N → ZMod (N / p))`, `‖a_p(f)‖ ^ 2 = p ^ (k - 1)`. -/
-theorem norm_qExpansion_coeff_prime_sq_of_not_exists_eq_comp (f : Newform N k) (hp : p.Prime)
+Theorem 3): for a newform `f` and a prime `p ∣ N` such that the nebentypus of `f` is not defined
+modulo `N / p`, `‖a_p(f)‖ ^ 2 = p ^ (k - 1)`. -/
+theorem norm_qExpansion_coeff_prime_sq_of_not_factorsThrough (f : Newform N k) (hp : p.Prime)
     (hpN : p ∣ N)
-    (hχ : ¬ ∃ χ₀ : (ZMod (N / p))ˣ →* ℂˣ, f.χ = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpN))) :
+    (hχ : ¬ f.dirichletLift.FactorsThrough (N / p)) :
     ‖(qExpansion 1 f.toCuspForm).coeff p‖ ^ 2 = (p : ℝ) ^ (k - 1) := by
   set a := (qExpansion 1 f.toCuspForm).coeff p
   set c := f.frickePseudoEigenvalue
@@ -82,7 +82,14 @@ theorem norm_qExpansion_coeff_prime_sq_of_not_exists_eq_comp (f : Newform N k) (
   have hrhs : (p : ℂ) ^ (k - 1) • normalizedFrickeOperatorCusp k f.toCuspForm =
       ((p : ℂ) ^ (k - 1) * c) • f.conj.toCuspForm := by
     rw [hW, smul_smul]
-  have h := heckeUCuspNat_normalizedFrickeOperatorCusp_heckeUCuspNat hp hpN hχ f.mem_charSpace
+  have hχ' : ¬ ∃ χ₀ : (ZMod (N / p))ˣ →* ℂˣ,
+      f.χ = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpN)) := by
+    rintro ⟨χ₀, hχ₀⟩
+    refine hχ ((DirichletCharacter.factorsThrough_iff_ker_unitsMap
+      (Nat.div_dvd_of_dvd hpN)).mpr fun u hu ↦ ?_)
+    rw [MonoidHom.mem_ker, MulChar.toUnitHom_eq, dirichletLift_equivToUnitHom, hχ₀,
+      MonoidHom.comp_apply, MonoidHom.mem_ker.mp hu, map_one]
+  have h := heckeUCuspNat_normalizedFrickeOperatorCusp_heckeUCuspNat hp hpN hχ' f.mem_charSpace
   rw [hlhs, hrhs] at h
   have hmul : a * starRingEnd ℂ a = (p : ℂ) ^ (k - 1) :=
     mul_right_cancel₀ hc (by linear_combination smul_left_injective ℂ f.conj.ne_zero h)
@@ -91,24 +98,24 @@ theorem norm_qExpansion_coeff_prime_sq_of_not_exists_eq_comp (f : Newform N k) (
 
 /-- **The absolute value of the bad-prime eigenvalue when the nebentypus is not defined modulo
 `N / p`**: `‖a_p(f)‖ = (√p) ^ (k - 1)`, that is `|a_p(f)| = p ^ ((k - 1) / 2)`. -/
-theorem norm_qExpansion_coeff_prime_of_not_exists_eq_comp (f : Newform N k) (hp : p.Prime)
+theorem norm_qExpansion_coeff_prime_of_not_factorsThrough (f : Newform N k) (hp : p.Prime)
     (hpN : p ∣ N)
-    (hχ : ¬ ∃ χ₀ : (ZMod (N / p))ˣ →* ℂˣ, f.χ = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpN))) :
+    (hχ : ¬ f.dirichletLift.FactorsThrough (N / p)) :
     ‖(qExpansion 1 f.toCuspForm).coeff p‖ = Real.sqrt p ^ (k - 1) := by
   have hs : Real.sqrt p ^ 2 = p := Real.sq_sqrt (Nat.cast_nonneg p)
   refine (sq_eq_sq₀ (norm_nonneg _) (zpow_nonneg (Real.sqrt_nonneg _) _)).mp ?_
-  rw [f.norm_qExpansion_coeff_prime_sq_of_not_exists_eq_comp hp hpN hχ, ← zpow_natCast,
+  rw [f.norm_qExpansion_coeff_prime_sq_of_not_factorsThrough hp hpN hχ, ← zpow_natCast,
     ← zpow_mul, mul_comm, zpow_mul, zpow_natCast, hs]
 
 /-- **The bad-prime eigenvalue is nonzero when the nebentypus is not defined modulo `N / p`**:
 its absolute value is `p ^ ((k - 1) / 2)`
-(`HeckeRing.GL2.Newform.norm_qExpansion_coeff_prime_sq_of_not_exists_eq_comp`). -/
-theorem qExpansion_coeff_prime_ne_zero_of_not_exists_eq_comp (f : Newform N k) (hp : p.Prime)
+(`HeckeRing.GL2.Newform.norm_qExpansion_coeff_prime_sq_of_not_factorsThrough`). -/
+theorem qExpansion_coeff_prime_ne_zero_of_not_factorsThrough (f : Newform N k) (hp : p.Prime)
     (hpN : p ∣ N)
-    (hχ : ¬ ∃ χ₀ : (ZMod (N / p))ˣ →* ℂˣ, f.χ = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpN))) :
+    (hχ : ¬ f.dirichletLift.FactorsThrough (N / p)) :
     (qExpansion 1 f.toCuspForm).coeff p ≠ 0 := by
   intro h0
-  have hsq := f.norm_qExpansion_coeff_prime_sq_of_not_exists_eq_comp hp hpN hχ
+  have hsq := f.norm_qExpansion_coeff_prime_sq_of_not_factorsThrough hp hpN hχ
   rw [h0, norm_zero, zero_pow two_ne_zero] at hsq
   exact zpow_ne_zero _ (Nat.cast_ne_zero.mpr hp.ne_zero) hsq.symm
 

@@ -501,9 +501,17 @@ theorem W1p.ext {u v : W1p mu Omega p}
 theorem W1p.norm_value_le (u : W1p mu Omega p) : ‖W1p.value u‖ ≤ ‖u‖ :=
   Sobolev1JetLp.norm_value_le u.1
 
+/-- The extended norm of a Sobolev function controls the extended norm of its value component. -/
+theorem W1p.enorm_value_le (u : W1p mu Omega p) : ‖W1p.value u‖ₑ ≤ ‖u‖ₑ :=
+  eNorm_le_iff_norm_le.2 (W1p.norm_value_le u)
+
 /-- The norm of a Sobolev function controls the norm of its weak gradient. -/
 theorem W1p.norm_gradient_le (u : W1p mu Omega p) : ‖W1p.gradient u‖ ≤ ‖u‖ :=
   Sobolev1JetLp.norm_gradient_le u.1
+
+/-- The extended norm of a Sobolev function controls the extended norm of its weak gradient. -/
+theorem W1p.enorm_gradient_le (u : W1p mu Omega p) : ‖W1p.gradient u‖ₑ ≤ ‖u‖ₑ :=
+  eNorm_le_iff_norm_le.2 (W1p.norm_gradient_le u)
 
 /-- The `Lᵖ` norm of the weak gradient on subsets of `Ω` is monotone in the subset. -/
 theorem W1p.toReal_eLpNorm_gradient_mono (u : W1p mu Omega p) {s t : Set E} (hst : s ⊆ t)
@@ -520,6 +528,13 @@ gradient. -/
 theorem W1p.norm_le_norm_value_add_norm_gradient (u : W1p mu Omega p) :
     ‖u‖ ≤ ‖W1p.value u‖ + ‖W1p.gradient u‖ :=
   Sobolev1JetLp.norm_le_norm_value_add_norm_gradient u.1
+
+/-- The extended norm of a Sobolev function is at most the sum of the extended norms of its value
+and its weak gradient. -/
+theorem W1p.enorm_le_enorm_value_add_enorm_gradient (u : W1p mu Omega p) :
+    ‖u‖ₑ ≤ ‖W1p.value u‖ₑ + ‖W1p.gradient u‖ₑ := by
+  simpa only [ENNReal.ofReal_add (norm_nonneg _) (norm_nonneg _), ofReal_norm] using
+    ENNReal.ofReal_le_ofReal (W1p.norm_le_norm_value_add_norm_gradient u)
 
 /-- Almost everywhere on `Ω`, the squared norm of the jet of a Sobolev function is the sum of the
 squared norms of its value and its weak gradient. -/
@@ -661,6 +676,21 @@ theorem W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn {u : E → ℝ} {D : 
     exact hu.coeFn_toLp
   · rw [W1p.gradient_mk]
     exact hg.coeFn_toLp
+
+/-- The extended norm of a Sobolev function is at most `‖u‖_{Lᵖ} + ‖D‖_{Lᵖ}` whenever its value
+agrees almost everywhere with `u` and its weak gradient with the dual of `D`. -/
+theorem W1p.enorm_le_eLpNorm_add_eLpNorm_of_ae_eq {v : W1p mu Omega p} {u : E → ℝ}
+    {D : E → E →L[ℝ] ℝ} (hv : W1p.value v =ᵐ[mu.restrict Omega] u)
+    (hg : W1p.gradient v =ᵐ[mu.restrict Omega]
+      fun x => (InnerProductSpace.toDual ℝ E).symm (D x)) :
+    ‖v‖ₑ ≤ eLpNorm u p (mu.restrict Omega) + eLpNorm D p (mu.restrict Omega) := by
+  have hDm : AEStronglyMeasurable D (mu.restrict Omega) := by
+    simpa using (InnerProductSpace.toDual ℝ E).continuous.comp_aestronglyMeasurable
+      ((Lp.aestronglyMeasurable (W1p.gradient v)).congr hg)
+  refine (W1p.enorm_le_enorm_value_add_enorm_gradient v).trans_eq ?_
+  rw [Lp.eNorm_def, Lp.eNorm_def, eLpNorm_congr_ae hv]
+  exact congrArg _ (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) hDm
+    (hg.mono fun x hx => by rw [hx, LinearIsometryEquiv.norm_map]))
 
 /-- A Sobolev function is integrable near every point of its (open) domain. -/
 theorem W1p.integrableAtFilter_value_of_mem (u : W1p mu Omega p) {x : E}

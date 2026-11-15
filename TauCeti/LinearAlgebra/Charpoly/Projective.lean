@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.LinearAlgebra.Determinant.Projective
 public import TauCeti.LinearAlgebra.End.Aeval
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
+public import TauCeti.LinearAlgebra.Trace.Projective
 import Mathlib.RingTheory.LocalProperties.Basic
 
 /-!
@@ -31,7 +32,10 @@ If `π : R ^ n → M` and `σ : M → R ^ n` split `M` off a free module, then
 `projectiveCharpolyRev f` is the reversed characteristic polynomial of the matrix of `σ ∘ f ∘ π`
 (`LinearMap.projectiveCharpolyRev_eq_charpolyRev_toMatrix`). Through this description:
 
-* its value at `1` is the determinant of `1 - f` (`LinearMap.eval_one_projectiveCharpolyRev`);
+* its value at `t` is the determinant of `1 - t f` (`LinearMap.eval_projectiveCharpolyRev`), so
+  its value at `0` is `1` (`LinearMap.eval_zero_projectiveCharpolyRev`), and
+  its coefficient in degree one is minus the trace `LinearMap.projectiveTrace` of `f`
+  (`LinearMap.coeff_projectiveCharpolyRev_one`);
 * it commutes with base change (`LinearMap.projectiveCharpolyRev_baseChange`);
 * its degree is at most any bound for the ranks of `M` at the points of `Spec R`
   (`LinearMap.natDegree_projectiveCharpolyRev_le`); on a free module its coefficient in degree
@@ -124,18 +128,39 @@ theorem coeff_projectiveCharpolyRev_zero (f : Module.End R M) :
   rw [projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h,
     coeff_zero_eq_eval_zero, Matrix.eval_charpolyRev]
 
+/-- The value at `t` of the reversed characteristic polynomial `det (1 - X f)` is the
+determinant of `1 - t f`. -/
+theorem eval_projectiveCharpolyRev (f : Module.End R M) (t : R) :
+    (projectiveCharpolyRev f).eval t = projectiveDet (1 - t • f) := by
+  obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
+  have hσ : σ ∘ₗ (1 - t • f) ∘ₗ π + (1 - σ ∘ₗ π) = 1 - t • σ ∘ₗ f ∘ₗ π := by
+    ext x
+    simp
+  rw [projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h,
+    Matrix.eval_charpolyRev_eq_det_one_sub_smul, projectiveDet_eq_det_of_comp_eq_id π σ h, hσ,
+    ← det_toMatrix (Pi.basisFun R (Fin n)), map_sub, map_smul, toMatrix_one]
+
+/-- The value at `0` of the reversed characteristic polynomial is `1`. -/
+@[simp]
+theorem eval_zero_projectiveCharpolyRev (f : Module.End R M) :
+    (projectiveCharpolyRev f).eval 0 = 1 := by
+  rw [← coeff_zero_eq_eval_zero, coeff_projectiveCharpolyRev_zero]
+
 /-- The value at `1` of the reversed characteristic polynomial `det (1 - X f)` is the determinant
 of `1 - f`. -/
 @[simp]
 theorem eval_one_projectiveCharpolyRev (f : Module.End R M) :
     (projectiveCharpolyRev f).eval 1 = projectiveDet (1 - f) := by
+  rw [eval_projectiveCharpolyRev, one_smul]
+
+/-- The coefficient of `det (1 - X f)` in degree one is minus the trace of `f`. -/
+@[simp]
+theorem coeff_projectiveCharpolyRev_one (f : Module.End R M) :
+    (projectiveCharpolyRev f).coeff 1 = -projectiveTrace R M f := by
   obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
-  have hσ : σ ∘ₗ (1 - f) ∘ₗ π + (1 - σ ∘ₗ π) = 1 - σ ∘ₗ f ∘ₗ π := by
-    ext x
-    simp
   rw [projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h,
-    Matrix.eval_one_charpolyRev, projectiveDet_eq_det_of_comp_eq_id π σ h, hσ,
-    ← det_toMatrix (Pi.basisFun R (Fin n)), map_sub, toMatrix_one]
+    Matrix.coeff_charpolyRev_eq_neg_trace, ← trace_eq_matrix_trace, ← projectiveTrace_eq_trace,
+    ← comp_assoc, projectiveTrace_cyclic, ← comp_assoc, h, id_comp]
 
 /-- The reversed characteristic polynomial commutes with base change. -/
 @[simp]

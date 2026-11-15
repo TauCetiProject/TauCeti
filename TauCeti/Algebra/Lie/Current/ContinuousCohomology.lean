@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Current.ResidueCocycle
 public import TauCeti.Algebra.Lie.Current.Topology
 public import TauCeti.Algebra.Lie.Loop.Cocycle
 -- Non-public: used only inside proofs.
+import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.Killing.Perfect
 
 /-!
@@ -166,7 +167,7 @@ theorem twoCochainOfBilinear_mem_continuousTwoCocycle (Φ : LinearMap.BilinForm 
 trivial coefficients. -/
 def residueClass (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) :
     continuousSecondCohomology R (currentAlgebra R L) (TrivialLieModule R (currentAlgebra R L) R) :=
-  continuousSecondCohomologyMk _ _ _
+  continuousSecondCohomologyMk R (currentAlgebra R L) (TrivialLieModule R (currentAlgebra R L) R)
     ⟨twoCochainOfBilinear R L Φ hΦs, twoCochainOfBilinear_mem_continuousTwoCocycle R L Φ hΦ hΦs⟩
 
 variable {R L}
@@ -174,8 +175,9 @@ variable {R L}
 /-- The residue class is represented by the residue cocycle. -/
 theorem residueClass_eq_mk (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L)
     (hΦs : Φ.IsSymm) :
-    residueClass R L Φ hΦ hΦs = continuousSecondCohomologyMk _ _ _
-      ⟨twoCochainOfBilinear R L Φ hΦs,
+    residueClass R L Φ hΦ hΦs =
+      continuousSecondCohomologyMk R (currentAlgebra R L)
+        (TrivialLieModule R (currentAlgebra R L) R) ⟨twoCochainOfBilinear R L Φ hΦs,
         twoCochainOfBilinear_mem_continuousTwoCocycle R L Φ hΦ hΦs⟩ :=
   (rfl)
 
@@ -269,8 +271,9 @@ section Coefficients
 variable {Z : Type*} [AddCommGroup Z] [Module R Z]
 
 variable (R L) in
-/-- The residue cochain with coefficients in a module `Z` with trivial action is a continuous
-2-cocycle. -/
+/-- The residue cochain with coefficients in a module `Z` with trivial action, of an invariant
+symmetric form `Φ`, is a continuous 2-cocycle. Invariance of `Φ` is what makes the residue
+cochain a cocycle. -/
 theorem twoCochainOfBilinearSMulRight_mem_continuousTwoCocycle (Φ : LinearMap.BilinForm R L)
     (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (z : Z) :
     twoCochainOfBilinearSMulRight R L Φ hΦs z ∈
@@ -292,14 +295,16 @@ continuous second cohomology of formal currents. For `Z = R` it sends `t` to `t 
 def residueClassMap (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) :
     Z →ₗ[R] continuousSecondCohomology R (currentAlgebra R L)
       (TrivialLieModule R (currentAlgebra R L) Z) :=
-  continuousSecondCohomologyMk _ _ _ ∘ₗ (twoCochainOfBilinearSMulRight R L Φ hΦs).codRestrict _
+  continuousSecondCohomologyMk R (currentAlgebra R L) (TrivialLieModule R (currentAlgebra R L) Z) ∘ₗ
+    (twoCochainOfBilinearSMulRight R L Φ hΦs).codRestrict _
     (twoCochainOfBilinearSMulRight_mem_continuousTwoCocycle R L Φ hΦ hΦs)
 
 /-- The residue class with coefficients in `Z` is represented by the residue cocycle. -/
 theorem residueClassMap_apply (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L)
     (hΦs : Φ.IsSymm) (z : Z) :
-    residueClassMap R L Φ hΦ hΦs z = continuousSecondCohomologyMk _ _ _
-      ⟨twoCochainOfBilinearSMulRight R L Φ hΦs z,
+    residueClassMap R L Φ hΦ hΦs z =
+      continuousSecondCohomologyMk R (currentAlgebra R L)
+        (TrivialLieModule R (currentAlgebra R L) Z) ⟨twoCochainOfBilinearSMulRight R L Φ hΦs z,
         twoCochainOfBilinearSMulRight_mem_continuousTwoCocycle R L Φ hΦ hΦs z⟩ :=
   (rfl)
 
@@ -350,7 +355,7 @@ end Coefficients
 
 section Classification
 
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [_root_.LieAlgebra.IsKilling K L]
 
 open _root_.LieAlgebra
@@ -551,6 +556,8 @@ noncomputable def residueClassEquiv {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lie
   LinearEquiv.ofBijective (residueClassMap K L Ψ hΨ hΨs)
     ⟨residueClassMap_injective hΨ hΨs hΨ0, residueClassMap_surjective hΨ hΨs hspan⟩
 
+/-- The residue class equivalence `residueClassEquiv` is given by the residue class map
+`residueClassMap`. -/
 @[simp]
 theorem residueClassEquiv_apply {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
     (hΨs : Ψ.IsSymm)
@@ -569,6 +576,7 @@ theorem finrank_continuousSecondCohomology_eq_one [IsAlgClosed K]
     Module.finrank K (continuousSecondCohomology K (currentAlgebra K L)
       (TrivialLieModule K (currentAlgebra K L) K)) = 1 :=
   have _i := _root_.LieModule.nontrivial_of_isIrreducible K L L
+  have _j := TauCeti.finite_of_isKilling (R := K) (L := L)
   (residueClassEquiv K (_root_.LieModule.traceForm_lieInvariant K L L)
     (LinearMap.BilinForm.isSymm_iff.mpr (_root_.LieModule.traceForm_isSymm K L L))
     (fun _ hΦ ↦ TauCeti.LieAlgebra.exists_eq_smul_killingForm hΦ)

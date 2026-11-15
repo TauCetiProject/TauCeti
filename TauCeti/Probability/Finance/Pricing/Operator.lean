@@ -77,8 +77,13 @@ variable {α : ℝ≥0} {t₀ t₁ : ℝ} {ht : t₀ < t₁}
 -- These shortcuts keep instance search shallow for the nested coefficient spaces.
 private local instance : NormedAddCommGroup (ℝ →L[ℝ] ℝ) := inferInstance
 private local instance : NormedSpace ℝ (ℝ →L[ℝ] ℝ) := inferInstance
-private local instance : NormedAddCommGroup (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
-private local instance : NormedSpace ℝ (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
+/-- A local shortcut for the norm on Hessians on the line. Without it, instance search for the
+operator norm on `(ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ`, the coefficient space of the second-order term,
+fails, for the reason explained in `TauCeti.Analysis.PDE.Parabolic.Holder.Operator`. It is not
+private, so that public statements may mention that coefficient space. -/
+local instance : NormedAddCommGroup (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
+/-- A local shortcut for scalar operations on Hessians on the line, needed for the same reason. -/
+local instance : NormedSpace ℝ (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
 private local instance : NormedAddCommGroup ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
 private local instance : NormedSpace ℝ ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
 private local instance : NormedAddCommGroup ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
@@ -127,6 +132,15 @@ def weightedLogSpotPricingOperatorL :
   backwardParabolicOperatorL (F := ℝ) hα
     ((lsmul ℝ ℝ).compHolder₂ a (HolderSpace.const ((apply ℝ ℝ 1).comp (apply ℝ _ 1))))
     (weightedLogSpotFirstOrderCoeff hα a r) (weightedLogSpotZerothOrderCoeff hα r)
+
+/-- The weighted operator is the backward operator with the second-order coefficient `a`
+and the weighted first- and zeroth-order coefficients. -/
+theorem weightedLogSpotPricingOperatorL_def :
+    weightedLogSpotPricingOperatorL (ht := ht) hα a r =
+      backwardParabolicOperatorL (F := ℝ) hα
+        ((lsmul ℝ ℝ).compHolder₂ a (HolderSpace.const ((apply ℝ ℝ 1).comp (apply ℝ _ 1))))
+        (weightedLogSpotFirstOrderCoeff hα a r) (weightedLogSpotZerothOrderCoeff hα r) :=
+  (rfl)
 
 /-- Evaluation of the bounded operator in terms of its derivative fields. -/
 @[simp]

@@ -260,22 +260,10 @@ private theorem exists_decomposition (hs : s = (1 - θ) * s₀ + θ * s₁) {t :
 
 /-! ### The row and column integrals of the kernel `φ(t 2 ^ ((s₁ - s₀) j))` -/
 
+/-- The integral of `φ` against `dt / t` is `kMethodConst θ 1`. -/
 private theorem lintegral_ofReal_phi :
     ∫⁻ r, ENNReal.ofReal (phi θ r) ∂multHaar = kMethodConst θ 1 := by
-  -- `kMethodConst θ 1` is the `L¹(dt / t)` norm of `φ`, written as a lambda
-  have hφ : (fun t : ℝ ↦ t ^ (-θ) * min 1 t) = phi θ := rfl
-  rw [kMethodConst_def, hφ, eLpNorm_one_eq_lintegral_eNorm measurable_phi.aestronglyMeasurable]
-  refine lintegral_congr_ae ?_
-  filter_upwards [ae_pos_multHaar] with r hr
-  exact (Real.eNorm_of_nonneg (phi_nonneg hr.le)).symm
-
-/-- Each column integral of the kernel is `kMethodConst θ 1`, by dilation invariance. -/
-private theorem lintegral_ofReal_phi_mul (ρ : ℝ) (hρ : 0 < ρ) :
-    ∫⁻ t, ENNReal.ofReal (phi θ (t * ρ)) ∂multHaar = kMethodConst θ 1 := by
-  have hmp : MeasurePreserving (ρ * ·) multHaar multHaar :=
-    ⟨measurable_const_mul ρ, map_multHaar_mul_left hρ⟩
-  simp_rw [mul_comm (_ : ℝ) ρ]
-  rw [hmp.lintegral_comp measurable_phi.ennreal_ofReal, lintegral_ofReal_phi]
+  simpa only [phi, mul_one] using lintegral_mul_rpow_neg_mul_min_one_mul θ one_pos
 
 /-- The row sums of the kernel are bounded:
 `|μ| log 2 ∑ j, φ(t 2 ^ (μ j)) ≤ 2 ^ (θ |μ|) c_{θ,1}`. -/
@@ -477,7 +465,8 @@ theorem kMethodENorm_weightedLp_le (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) (
     rw [lintegral_count]
     exact tsum_ofReal_phi_le hθ.1.le hμ ht
   have hcol : ∀ᵐ j ∂Measure.count, ∫⁻ t, k t j ∂multHaar ≤ K :=
-    Filter.Eventually.of_forall fun j ↦ (lintegral_ofReal_phi_mul _ (by positivity)).le
+    Filter.Eventually.of_forall fun j ↦
+      (lintegral_mul_rpow_neg_mul_min_one_mul θ (by positivity)).le
   have hpt : ∀ᵐ t ∂multHaar, ‖t ^ (-θ) * (weightedLp 𝕜 A q₀ q₁ s₀ s₁).kFunctional t u‖ₑ ≤
       ‖∫⁻ j, k t j * ‖v j‖ₑ ∂Measure.count‖ₑ := by
     filter_upwards [ae_pos_multHaar] with t ht
