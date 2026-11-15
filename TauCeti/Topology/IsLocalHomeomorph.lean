@@ -54,6 +54,7 @@ groupoid.
   meets the preimage of each compact set in a compact set, then near each point of the base the
   sum of `f` over the fibers is a fixed finite sum of `f` composed with local sections.
 * `IsLocalHomeomorph.prodMap`: the product of two local homeomorphisms is a local homeomorphism.
+* `isLocalHomeomorph_snd`: the projection `X × Y → Y` with discrete `X` is a local homeomorphism.
 * `IsLocalHomeomorph.pullback_snd`: the base change of a local homeomorphism along a continuous
   map is a local homeomorphism.
 * `IsLocalHomeomorph.of_isEmbedding_of_range_eq`: a local homeomorphism restricts to one along a
@@ -193,6 +194,17 @@ theorem prodMap {f : X → Y} {g : Z → W} (hf : IsLocalHomeomorph f)
   obtain ⟨e, he, rfl⟩ := hf p.1
   obtain ⟨e', he', rfl⟩ := hg p.2
   exact ⟨e.prod e', ⟨he, he'⟩, fun _ _ ↦ rfl⟩
+
+/-- **A projection with discrete fibre is a local homeomorphism**: when `X` is discrete, the
+projection `X × Y → Y` maps each open slice `{x} × Y` homeomorphically onto `Y`. -/
+theorem _root_.isLocalHomeomorph_snd [DiscreteTopology X] :
+    IsLocalHomeomorph (Prod.snd : X × Y → Y) := by
+  refine isLocalHomeomorph_iff_isOpenEmbedding_restrict.mpr fun p ↦ ?_
+  have hU : IsOpen ({p.1} ×ˢ Set.univ : Set (X × Y)) := (isOpen_discrete _).prod isOpen_univ
+  refine ⟨_, hU.mem_nhds ⟨rfl, trivial⟩, .of_continuous_injective_isOpenMap
+    (continuous_snd.comp continuous_subtype_val) (fun a b hab ↦ ?_)
+    (isOpenMap_snd.comp hU.isOpenMap_subtype_val)⟩
+  exact Subtype.ext (Prod.ext (a.2.1.trans b.2.1.symm) hab)
 
 end Prod
 
