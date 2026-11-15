@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
+import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 
 /-!
 # Pullback of test forms and pushforward of currents
@@ -50,8 +51,9 @@ used to push forward currents whose support is compact, see
 * `TestFunction.extDerivCLM_cutoffPullbackCLM_apply`: `d (χ Φ^* ω) = χ Φ^* (d ω)` at every point
   near which `χ = 1`.
 * `TestFunction.cutoffPullbackCLM_cutoffPullbackCLM`: composition of pullbacks with cutoffs.
-* `TestFunction.cutoffCompCLM`: the composition `ψ ↦ χ • (ψ ∘ Φ)` of scalar or vector-valued test
-  functions, the pullback with a cutoff of test `0`-forms.
+* `TestFunction.cutoffCompCLM`: the composition with a cutoff `f ↦ χ (f ∘ Φ)` of test functions,
+  the pullback with a cutoff of `0`-forms, with its values `TestFunction.cutoffCompCLM_apply`. It
+  is used to push forward distributions whose support is compact.
 
 ## Implementation notes
 
@@ -492,33 +494,31 @@ theorem cutoffPullbackCLM_cutoffPullbackCLM {Ψ : E' → E''} {χ' : 𝓓(Ω', �
     simp [smul_smul, mul_comm, ContinuousLinearMap.coe_comp, Function.comp_assoc]
   · simp [image_eq_zero_of_notMem_tsupport hx]
 
-/-- The **composition with a cutoff** `ψ ↦ χ • (ψ ∘ Φ)` of `F`-valued test functions on `Ω'` with
-a map `Φ` smooth on `Ω`, where `χ` is a test function on `Ω`: the pullback with a cutoff of `ψ`
-viewed as a test `0`-form (`TestFunction.cutoffCompCLM_apply`). It is supported in `tsupport χ`,
-so `Φ` need not be proper. -/
+/-- The **composition with a cutoff** `f ↦ χ (f ∘ Φ)` of test functions on `Ω'` with a map `Φ`
+smooth on `Ω`, where `χ` is a test function on `Ω`: its value at `x` is `χ x • f (Φ x)`
+(`TestFunction.cutoffCompCLM_apply`). It is the pullback with a cutoff of test `0`-forms, read
+through the identification of `0`-forms with their values. -/
 def cutoffCompCLM (χ : 𝓓(Ω, ℝ)) (Φ : E → E') (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω) :
     𝓓(Ω', F) →L[ℝ] 𝓓(Ω, F) :=
-  postcompCLM (𝕜 := ℝ) ((constOfIsEmptyLIE ℝ E F (Fin 0)).symm : (E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] F) ∘L
+  (postcompCLE (Ω := Ω) (n := ⊤)
+      (constOfIsEmptyLIE ℝ E F (Fin 0)).toContinuousLinearEquiv.symm).toContinuousLinearMap ∘L
     cutoffPullbackCLM χ Φ hΦ ∘L
-      postcompCLM (𝕜 := ℝ) (constOfIsEmptyLIE ℝ E' F (Fin 0) : F →L[ℝ] E' [⋀^Fin 0]→L[ℝ] F)
+    (postcompCLE (Ω := Ω') (n := ⊤)
+      (constOfIsEmptyLIE ℝ E' F (Fin 0)).toContinuousLinearEquiv).toContinuousLinearMap
 
-/-- The composition with a cutoff is `x ↦ χ x • ψ (Φ x)`. -/
+/-- The composition with a cutoff is `x ↦ χ x • f (Φ x)`. -/
 @[simp]
-theorem cutoffCompCLM_apply (ψ : 𝓓(Ω', F)) (x : E) :
-    cutoffCompCLM χ Φ hΦ ψ x = χ x • ψ (Φ x) := by
+theorem cutoffCompCLM_apply (f : 𝓓(Ω', F)) (x : E) :
+    cutoffCompCLM χ Φ hΦ f x = χ x • f (Φ x) := by
   simp [cutoffCompCLM]
 
 /-- The support of a composition with a cutoff lies in the support of the cutoff, over the support
 of the test function. -/
-theorem tsupport_cutoffCompCLM_subset (ψ : 𝓓(Ω', F)) :
-    tsupport (cutoffCompCLM χ Φ hΦ ψ) ⊆ tsupport χ ∩ Φ ⁻¹' tsupport ψ := by
-  -- Transport the support bound for test `0`-forms through the identification with values.
-  rw [cutoffCompCLM, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    postcompCLM_apply]
-  refine (tsupport_comp_subset (_root_.map_zero _) _).trans <|
-    (tsupport_cutoffPullbackCLM_subset _).trans <| inter_subset_inter_right _ <| preimage_mono ?_
-  rw [postcompCLM_apply]
-  exact tsupport_comp_subset (_root_.map_zero _) _
+theorem tsupport_cutoffCompCLM_subset (f : 𝓓(Ω', F)) :
+    tsupport (cutoffCompCLM χ Φ hΦ f) ⊆ tsupport χ ∩ Φ ⁻¹' tsupport f := by
+  simpa only [cutoffCompCLM, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    tsupport_postcompCLE] using tsupport_cutoffPullbackCLM_subset (χ := χ) (hΦ := hΦ)
+      (postcompCLE (constOfIsEmptyLIE ℝ E' F (Fin 0)).toContinuousLinearEquiv f)
 
 end CutoffPullback
 

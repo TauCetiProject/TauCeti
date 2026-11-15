@@ -15,6 +15,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Topology.MetricSpace.Lipschitz
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 import TauCeti.Analysis.Normed.Field.Lipschitz
@@ -69,6 +70,8 @@ constants are parameters, not hidden existential data.
   form is at most the sum of the absolute values of the entries.
 * `TauCeti.PDE.norm_toEuclideanCLM_apply_le`: the operator norm of the attached bilinear form
   bounds the action of the matrix on Euclidean space.
+* `TauCeti.PDE.abs_sum_mul_apply_single_mul_apply_single_le`: a bilinear upper bound controls
+  the pairing of the matrix with the coordinates of two continuous linear functionals.
 * `TauCeti.PDE.mul_sq_mul_norm_sq_le_matrixBilinearForm_add`: the pointwise absorption
   estimate used in Caccioppoli inequalities.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_matrixBilinearForm`: pointwise coercivity of
@@ -358,6 +361,28 @@ lemma abs_dotProduct_coefficientSymmetricPart_mulVec_le {A : Matrix n n ℝ} {La
   rw [abs_of_pos (a := (2 : ℝ)) two_pos]
   exact (div_le_iff₀' two_pos).2 (by
     simpa [Real.norm_eq_abs] using hsum)
+
+/-- If the bilinear form of `A` is bounded, `|ηᵀ A ξ| ≤ Λ ‖η‖ ‖ξ‖`, then so is its pairing with
+the coordinates of two linear functionals: `|∑ᵢⱼ Aᵢⱼ L₁(eᵢ) L₂(eⱼ)| ≤ Λ ‖L₁‖ ‖L₂‖`. This bounds
+the first-order cross term `∑ᵢⱼ Aᵢⱼ ∂ᵢη ∂ⱼu` of the principal part of a product. -/
+lemma abs_sum_mul_apply_single_mul_apply_single_le [DecidableEq n] {A : Matrix n n ℝ} {Lam : ℝ}
+    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
+    (L₁ L₂ : EuclideanSpace ℝ n →L[ℝ] ℝ) :
+    |∑ i, ∑ j, A i j * (L₁ (EuclideanSpace.single i 1) * L₂ (EuclideanSpace.single j 1))| ≤
+      Lam * ‖L₁‖ * ‖L₂‖ := by
+  set X := (InnerProductSpace.toDual ℝ (EuclideanSpace ℝ n)).symm L₁
+  set Y := (InnerProductSpace.toDual ℝ (EuclideanSpace ℝ n)).symm L₂
+  have hX (i : n) : L₁ (EuclideanSpace.single i 1) = X i := by
+    rw [← InnerProductSpace.toDual_symm_apply, EuclideanSpace.inner_single_right]
+    simp [X]
+  have hY (i : n) : L₂ (EuclideanSpace.single i 1) = Y i := by
+    rw [← InnerProductSpace.toDual_symm_apply, EuclideanSpace.inner_single_right]
+    simp [Y]
+  have h := hA X Y
+  rw [LinearIsometryEquiv.norm_map, LinearIsometryEquiv.norm_map] at h
+  convert h using 2
+  simp only [hX, hY, dotProduct, mulVec, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
 
 end BilinearForm
 
