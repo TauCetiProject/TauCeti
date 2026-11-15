@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SpectralObject.Map
-public import Mathlib.Algebra.Homology.SpectralObject.SpectralSequence
+public import Mathlib.Algebra.Homology.SpectralObject.FirstPage
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.LeftHomology
 -- The statement of `SpectralObject.spectralSequence_iso` refers to private auxiliary proofs of
@@ -38,6 +38,9 @@ which is functorial in `φ`.
   next page.
 * `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_id`,
   `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_comp`: functoriality.
+* `spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom`: on the first page, through
+  Mathlib's identifications of its objects with the objects `H^n(f)`, the morphism of pages is the
+  component of `φ`.
 
 ## Implementation notes
 
@@ -239,6 +242,28 @@ noncomputable def spectralSequenceMap : X.spectralSequence data ⟶ Y.spectralSe
 lemma spectralSequenceMap_hom (r : ℤ) (hr : r₀ ≤ r) :
     (spectralSequenceMap data φ).hom r hr = spectralSequencePageMap data φ r hr := by
   rw [spectralSequenceMap]
+
+section FirstPage
+
+variable [data.HasFirstPageComputation]
+
+/-- On the first page, through Mathlib's identifications `spectralSequenceFirstPageXIso` of its
+objects with the objects `H^n(f)` of the spectral objects, the morphism
+`spectralSequencePageXMap` is the component of `φ`. -/
+@[reassoc]
+lemma spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom (pq : κ) (i₁ i₂ : ι)
+    (hi₁ : i₁ = data.i₁ pq) (hi₂ : i₂ = data.i₂ pq) (n : ℤ) (hn : n = data.deg pq) :
+    spectralSequencePageXMap data φ r₀ le_rfl pq ≫
+        (Y.spectralSequenceFirstPageXIso data pq i₁ i₂ hi₁ hi₂ n hn).hom =
+      (X.spectralSequenceFirstPageXIso data pq i₁ i₂ hi₁ hi₂ n hn).hom ≫
+        (φ.hom n).app (mk₁ (homOfLE (data.le₁₂' pq hi₁ hi₂))) := by
+  rw [X.spectralSequenceFirstPageXIso_hom data pq i₁ i₂ hi₁ hi₂ (n - 1) n (n + 1) hn (by lia) rfl,
+    Y.spectralSequenceFirstPageXIso_hom data pq i₁ i₂ hi₁ hi₂ (n - 1) n (n + 1) hn (by lia) rfl,
+    ← spectralSequencePageXIso_hom_comp_EMap_assoc, Category.assoc]
+  exact congrArg (_ ≫ ·) (EMap_EIsoH_hom φ _ (n - 1) n (n + 1) (by lia) rfl)
+
+end FirstPage
+
 
 @[simp]
 lemma spectralSequencePageXMap_id (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :

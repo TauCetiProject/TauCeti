@@ -231,7 +231,7 @@ variable (hX : Monotone X)
 /-- The quotient of two stages of the filtration of singular chains, as the cokernel of a
 transition map of the functor `CochainComplex.filtrationFunctor` of the filtration, is the
 reindexed relative singular chain complex of the corresponding pair. -/
-private def cokernelFiltrationFunctorMapIso {a b : ℤ} (f : (a : EInt) ⟶ b) :
+def singularChainFiltrationFunctorCokernelIso {a b : ℤ} (f : (a : EInt) ⟶ b) :
     cokernel ((CochainComplex.filtrationFunctor _ (monotone_singularChainFiltration R hX)).map f) ≅
       ((TopPair.ofInclusion (hX (WithBotTop.coe_le_coe.mp (leOfHom f)))).singularChainComplex
         R).extend ComplexShape.embeddingDownNat :=
@@ -244,9 +244,11 @@ private def cokernelFiltrationFunctorMapIso {a b : ℤ} (f : (a : EInt) ⟶ b) :
         reassoc_of% CochainComplex.filtrationFunctor_map_comp_objIso_hom, Category.assoc]) ≪≫
     singularChainFiltrationCokernelIso R _
 
+/-- The identification `singularChainFiltrationFunctorCokernelIso` of the cokernel of `F_a ⟶ F_b`
+with relative singular chains is induced by the quotient map from the singular chains of `X b`. -/
 @[reassoc]
-private lemma π_cokernelFiltrationFunctorMapIso_hom {a b : ℤ} (f : (a : EInt) ⟶ b) :
-    cokernel.π _ ≫ (cokernelFiltrationFunctorMapIso R hX f).hom =
+lemma π_singularChainFiltrationFunctorCokernelIso_hom {a b : ℤ} (f : (a : EInt) ⟶ b) :
+    cokernel.π _ ≫ (singularChainFiltrationFunctorCokernelIso R hX f).hom =
       (CochainComplex.filtrationFunctorObjIso _ _ b).hom ≫
         Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ b).le ≫
           (singularChainFiltrationIso R X b).hom ≫
@@ -274,8 +276,22 @@ def filteredSpaceSpectralSequenceFirstPageXIso (pq : ℤ × ℤ) (a b : ℤ) (ha
     ((filteredSpaceSpectralSequence R hX).page 2).X pq ≅
       (TopPair.ofInclusion (hX (by lia : a ≤ b))).singularHomology R n :=
   CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq a b ha hb m hm ≪≫
-    (homologyFunctor A _ _).mapIso (cokernelFiltrationFunctorMapIso R hX _) ≪≫
+    (homologyFunctor A _ _).mapIso (singularChainFiltrationFunctorCokernelIso R hX _) ≪≫
     extendHomologyIso _ ComplexShape.embeddingDownNat hn.symm
+
+/-- The identification of the first page with relative singular homology is the identification
+`CochainComplex.spectralSequenceFirstPageXIsoCokernel` with the cohomology of the graded piece
+`F_b / F_a`, followed by the identification of that graded piece with relative singular chains. -/
+lemma filteredSpaceSpectralSequenceFirstPageXIso_hom (pq : ℤ × ℤ) (a b : ℤ) (ha : a = pq.2)
+    (hb : b = pq.2 + 1) (m : ℤ) (hm : m = pq.1 + pq.2) (n : ℕ) (hn : m = -n) :
+    (filteredSpaceSpectralSequenceFirstPageXIso R hX pq a b ha hb m hm n hn).hom =
+      (CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq a b ha hb m hm).hom ≫
+        HomologicalComplex.homologyMap
+          (singularChainFiltrationFunctorCokernelIso R hX _).hom m ≫
+          (extendHomologyIso _ ComplexShape.embeddingDownNat hn.symm).hom := by
+  rw [filteredSpaceSpectralSequenceFirstPageXIso]
+  -- the component of `(homologyFunctor A _ m).mapIso` is `homologyMap` by definition
+  rfl
 
 /-- The first page of the spectral sequence of a filtered space vanishes in positive total
 degree `p + q`, since singular chains are concentrated in nonpositive cohomological degrees. -/
@@ -285,7 +301,7 @@ lemma isZero_filteredSpaceSpectralSequence_page_two_X (pq : ℤ × ℤ) (h : 0 <
       have : -(n : ℤ) = pq.1 + pq.2 := hn
       lia).isZero_homology)
     (CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq pq.2 (pq.2 + 1) rfl rfl _ rfl ≪≫
-      (homologyFunctor A _ _).mapIso (cokernelFiltrationFunctorMapIso R hX _))
+      (homologyFunctor A _ _).mapIso (singularChainFiltrationFunctorCokernelIso R hX _))
 
 /-- **The abutment of the spectral sequence of a filtered space** in degree `-n` is the singular
 homology `Hₙ(Y)`. -/
@@ -377,18 +393,18 @@ private lemma extendMap_π_comp_totalToOuter :
 /-- The identification of the sequence of graded pieces with the reindexed relative singular
 chain sequence of the triple `(X (q + 1), X q, X (q - 1))`. -/
 private def gradedShortComplexHom : gradedShortComplex R hX q ⟶ tripleShortComplex R hX q where
-  τ₁ := (cokernelFiltrationFunctorMapIso R hX _).hom
+  τ₁ := (singularChainFiltrationFunctorCokernelIso R hX _).hom
   τ₂ := (cokernelIsoOfEq (Functor.map_comp _ _ _).symm ≪≫
-    cokernelFiltrationFunctorMapIso R hX _).hom
-  τ₃ := (cokernelFiltrationFunctorMapIso R hX _).hom
+    singularChainFiltrationFunctorCokernelIso R hX _).hom
+  τ₃ := (singularChainFiltrationFunctorCokernelIso R hX _).hom
   comm₁₂ := by
     unfold gradedShortComplex kernelCokernelCompSequence.snakeInput
     refine (cancel_epi (cokernel.π _)).1 ?_
     simp only [homOfLE_leOfHom, TopTriple.innerPair_obj_ofInclusions,
-      TopTriple.totalPair_obj_ofInclusions, π_cokernelFiltrationFunctorMapIso_hom_assoc,
+      TopTriple.totalPair_obj_ofInclusions, π_singularChainFiltrationFunctorCokernelIso_hom_assoc,
       TopPair.toSSetPair_obj_right, homOfLE_comp, Iso.trans_hom, cokernel.π_desc_assoc,
       coequalizer_as_cokernel, Category.assoc, π_comp_cokernelIsoOfEq_hom_assoc,
-      π_cokernelFiltrationFunctorMapIso_hom,
+      π_singularChainFiltrationFunctorCokernelIso_hom,
       reassoc_of% CochainComplex.filtrationFunctor_map_comp_objIso_hom,
       Subobject.ofLE_comp_ofLE_assoc, Iso.cancel_iso_hom_left]
     rw [← Subobject.ofLE_comp_ofLE_assoc _ (singularChainFiltration R X q) _
@@ -406,9 +422,9 @@ private def gradedShortComplexHom : gradedShortComplex R hX q ⟶ tripleShortCom
     refine (cancel_epi (cokernel.π _)).1 ?_
     simp only [homOfLE_leOfHom, homOfLE_comp, Iso.trans_hom,
       TopTriple.totalPair_obj_ofInclusions, TopTriple.outerPair_obj_ofInclusions, Category.assoc,
-      π_comp_cokernelIsoOfEq_hom_assoc, π_cokernelFiltrationFunctorMapIso_hom_assoc,
+      π_comp_cokernelIsoOfEq_hom_assoc, π_singularChainFiltrationFunctorCokernelIso_hom_assoc,
       TopPair.toSSetPair_obj_right, cokernel.π_desc_assoc, coequalizer_as_cokernel,
-      Category.id_comp, π_cokernelFiltrationFunctorMapIso_hom, Iso.cancel_iso_hom_left]
+      Category.id_comp, π_singularChainFiltrationFunctorCokernelIso_hom, Iso.cancel_iso_hom_left]
     exact congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans <|
       congrArg (_ ≫ ·) (extendMap_π_comp_totalToOuter R hX q))
 
@@ -448,7 +464,7 @@ theorem filteredSpaceSpectralSequence_first_page_d_eq (p : ℤ) (n : ℕ)
     Category.assoc]
   congr 1
   rw [(Iso.eq_comp_inv ((homologyFunctor A _ (p + q + 1)).mapIso
-      (cokernelFiltrationFunctorMapIso R hX _) ≪≫ extendHomologyIso _ _ _)).2
+      (singularChainFiltrationFunctorCokernelIso R hX _) ≪≫ extendHomologyIso _ _ _)).2
     ((δ_comp_extendHomologyIso_hom R hX q n _ _ hn (by lia) rfl).trans
       (Category.assoc _ _ _).symm)]
   exact (Category.assoc _ _ _).trans (Category.assoc _ _ _)

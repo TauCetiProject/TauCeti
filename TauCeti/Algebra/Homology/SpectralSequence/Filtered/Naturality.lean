@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.SpectralObject.SpectralSequenceMap
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
 
 /-!
@@ -35,6 +36,9 @@ their spectral sequences.
   the morphism of spectral objects is the map in cohomology of the morphism of cokernels.
 * `CochainComplex.filtrationFunctorMap_id`, `CochainComplex.filtrationFunctorMap_comp`:
   functoriality of `filtrationFunctorMap`.
+* `CochainComplex.spectralSequenceMap_hom_two_f_comp_firstPageXIsoCokernel_hom`: on the first
+  page, the morphism of spectral sequences is the map in cohomology of the morphism of graded
+  pieces.
 -/
 
 public section
@@ -133,5 +137,34 @@ lemma filtrationFunctorMap_comp (f : K ⟶ L) (g : L ⟶ N)
     filtrationFunctorMap_app_comp_assoc]
 
 end FiltrationMap
+
+section FirstPage
+
+variable {F G : EInt ⥤ CochainComplex C ℤ}
+
+/-- On the first page, through the identifications `spectralSequenceFirstPageXIsoCokernel` of its
+objects with the cohomology of the graded pieces, the morphism of spectral sequences induced by a
+morphism `α` of functors `EInt ⥤ CochainComplex C ℤ` is the map in cohomology of the induced
+morphism of cokernels. -/
+@[reassoc]
+lemma spectralSequenceMap_hom_two_f_comp_firstPageXIsoCokernel_hom (α : F ⟶ G)
+    (pq : ℤ × ℤ) (i₁ i₂ : ℤ) (hi₁ : i₁ = pq.2) (hi₂ : i₂ = pq.2 + 1) (n : ℤ)
+    (hn : n = pq.1 + pq.2) [Mono (F.map (homOfLE (coe_le_coe_of_eq_add_one hi₁ hi₂)))]
+    [Mono (G.map (homOfLE (coe_le_coe_of_eq_add_one hi₁ hi₂)))] :
+    ((Abelian.SpectralObject.spectralSequenceMap Abelian.SpectralObject.coreE₂Cohomological
+        (spectralObjectMap α)).hom 2 le_rfl).f pq ≫
+        (spectralSequenceFirstPageXIsoCokernel G pq i₁ i₂ hi₁ hi₂ n hn).hom =
+      (spectralSequenceFirstPageXIsoCokernel F pq i₁ i₂ hi₁ hi₂ n hn).hom ≫
+        HomologicalComplex.homologyMap
+          (cokernel.map _ _ (α.app i₁) (α.app i₂) (α.naturality _)) n := by
+  rw [Abelian.SpectralObject.spectralSequenceMap_hom,
+    Abelian.SpectralObject.spectralSequencePageMap_f, spectralSequenceFirstPageXIsoCokernel_eq,
+    spectralSequenceFirstPageXIsoCokernel_eq, Iso.trans_hom, Iso.trans_hom, Category.assoc,
+    ← spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom α _ n]
+  -- the degree `n = pq.1 + pq.2` is `coreE₂Cohomological.deg pq` only up to unfolding
+  exact Abelian.SpectralObject.spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom_assoc
+    _ (spectralObjectMap α) pq _ _ _ _ n hn _
+
+end FirstPage
 
 end CochainComplex

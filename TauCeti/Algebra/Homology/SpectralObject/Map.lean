@@ -33,6 +33,8 @@ spectral sequences induced by `φ`.
 * `CategoryTheory.Abelian.SpectralObject.EMap_id`, `EMap_comp`: functoriality.
 * `CategoryTheory.Abelian.SpectralObject.map_EMap`: compatibility with `X.map`.
 * `CategoryTheory.Abelian.SpectralObject.d_EMap`: compatibility with the differentials.
+* `CategoryTheory.Abelian.SpectralObject.EMap_EIsoH_hom`: through the identifications
+  `E^n(𝟙, f, 𝟙) ≅ H^n(f)`, `EMap φ` is the component of `φ`.
 
 ## References
 
@@ -204,6 +206,24 @@ lemma πE_EMap :
     cyclesIso_inv_cyclesMap_shortComplexMapOfHom_assoc φ f g n f₃ n₀ n₂ hn₁ hn₂]
 
 end Cycles
+
+section EIsoH
+
+/-- Through the identifications `EIsoH` of `E^n(𝟙 i, f, 𝟙 j)` with `H^n(f)`, the map `EMap` is
+the component of `φ` at `f`. -/
+@[reassoc]
+lemma EMap_EIsoH_hom {i j : ι} (f : i ⟶ j) (n₀ n₁ n₂ : ℤ) (hn₁ : n₀ + 1 = n₁)
+    (hn₂ : n₁ + 1 = n₂) :
+    EMap φ (𝟙 i) f (𝟙 j) n₀ n₁ n₂ hn₁ hn₂ ≫ (Y.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom =
+      (X.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom ≫ (φ.hom n₁).app (mk₁ f) := by
+  rw [← cancel_epi (X.πE (𝟙 i) f (𝟙 j) n₀ n₁ n₂ hn₁ hn₂), πE_EMap_assoc,
+    Y.πE_EIsoH_hom f n₀ n₁ n₂ hn₁ hn₂, X.πE_EIsoH_hom_assoc f n₀ n₁ n₂ hn₁ hn₂,
+    ← cancel_epi (X.cyclesIsoH f n₁ n₂ hn₂).inv, X.cyclesIsoH_inv f n₁ n₂ hn₂,
+    toCycles_cyclesMapOfHom_assoc φ (𝟙 i) f n₁ f (Category.id_comp f),
+    Y.cyclesIsoH_inv_hom_id f n₁ n₂ hn₂, X.cyclesIsoH_inv_hom_id_assoc f n₁ n₂ hn₂,
+    Category.comp_id]
+
+end EIsoH
 
 section Opcycles
 
