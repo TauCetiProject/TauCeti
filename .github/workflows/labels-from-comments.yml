@@ -1,7 +1,8 @@
 # Adapted from Mathlib's comment-label workflow:
 # https://github.com/leanprover-community/mathlib4/blob/master/.github/workflows/labels_from_comment.yml
 # Any contributor may add/remove an allowlisted label with a standalone LABEL/-LABEL line.
-# self-tested commands are restricted to the PR author and the commented head.
+# self-tested commands are restricted to the PR author on pull requests; adding
+# also requires the comment to postdate the current open head.
 # Only newly posted conversation comments count; editing/deleting a comment does not undo it.
 # The last matching line for each label wins. Labels and matching are case-sensitive.
 name: Labels from comments
