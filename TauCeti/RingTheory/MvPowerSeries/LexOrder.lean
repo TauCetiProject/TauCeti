@@ -5,74 +5,54 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Basic
-public import Mathlib.RingTheory.MvPowerSeries.LexOrder
+public import TauCeti.RingTheory.MvPowerSeries.Basic
+
+import Mathlib.RingTheory.MvPowerSeries.LexOrder
+import Mathlib.SetTheory.Cardinal.Order
 
 /-!
 # Coefficient-subspace division for multivariate power series
 
-Let `K` be a field, `A` a `K`-algebra, and `E` a `K`-submodule of `A`. Multiplying a formal power
-series `U : MvPowerSeries σ A` on the left by `MvPowerSeries.map (algebraMap K A) D` for a nonzero
-scalar power series `D : MvPowerSeries σ K` preserves and reflects membership of all coefficients in
-`E` whenever `σ` carries a linear order with `WellFoundedGT σ` — and therefore unconditionally
-whenever `σ` is finite.
+Let `K` be a field, `A` a `K`-algebra, and `E` a `K`-submodule of `A`. For any variable type `σ`,
+multiplying a formal power series `U : MvPowerSeries σ A` on the left by
+`MvPowerSeries.map (algebraMap K A) D` for a nonzero scalar power series `D : MvPowerSeries σ K`
+preserves and reflects membership of all coefficients in `E`.
 
-This formalizes the power-series coefficient-membership step of
-[Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §5.3.2, Theorem 1: if
-a nonzero scalar power series multiplies a power series over an extension ring into series with
-coefficients in a `K`-subspace `E`, then the original power series already has all coefficients in
-`E`.
+This formalizes the power-series coefficient-membership step of Bosch–Güntzer–Remmert,
+*Non-Archimedean Analysis*, §5.3.2, Theorem 1: if a nonzero scalar power series multiplies a power
+series over an extension ring into series with coefficients in a `K`-subspace `E`, then the original
+power series already has all coefficients in `E`. The proof equips `σ` with an auxiliary reverse
+well-ordering via `exists_wellFoundedGT` and inducts on the induced lexicographic order on
+exponents.
 
 ## Main results
 
-* `MvPowerSeries.coeff_map_mul_mem`: over any commutative semiring `R` and `R`-algebra `A`, if all
-  coefficients of `U` lie in `E : Submodule R A`, so do all coefficients of
-  `MvPowerSeries.map (algebraMap R A) D * U`.
-* `MvPowerSeries.coeff_mem_of_coeff_map_mul_mem_of_wellFoundedGT` and
-  `MvPowerSeries.forall_coeff_map_mul_mem_iff_of_wellFoundedGT`: the converse and equivalence over a
-  field `K` for nonzero `D` when `[LinearOrder σ] [WellFoundedGT σ]`.
-* `MvPowerSeries.coeff_mem_of_coeff_map_mul_mem` and `MvPowerSeries.forall_coeff_map_mul_mem_iff`:
-  the unconditional converse and equivalence for `[Finite σ]`.
+* `MvPowerSeries.coeff_mem_of_coeff_map_mul_mem`: for any variable type `σ`, field `K`,
+  `K`-algebra `A`, `K`-submodule `E ≤ A`, and nonzero `D : MvPowerSeries σ K`, if all coefficients
+  of `MvPowerSeries.map (algebraMap K A) D * U` lie in `E`, then all coefficients of `U` lie in `E`.
+* `MvPowerSeries.forall_coeff_map_mul_mem_iff`: multiplying on the left by a nonzero scalar power
+  series preserves and reflects coefficient membership in `E`.
 
 ## References
 
-* [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §5.3.2, Theorem 1.
+* S. Bosch, U. Güntzer, and R. Remmert, *Non-Archimedean Analysis*, §5.3.2, Theorem 1.
 -/
 
 public section
 
 namespace MvPowerSeries
 
-section Semiring
-
-variable {σ R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-
-/-- Multiplying `U : MvPowerSeries σ A` on the left by a scalar series
-`MvPowerSeries.map (algebraMap R A) D` preserves membership of coefficients in an `R`-submodule
-`E : Submodule R A`. -/
-theorem coeff_map_mul_mem (D : MvPowerSeries σ R) {U : MvPowerSeries σ A} {E : Submodule R A}
-    (hU : ∀ α, coeff α U ∈ E) (β : σ →₀ ℕ) :
-    coeff β (MvPowerSeries.map (algebraMap R A) D * U) ∈ E := by
-  classical
-  rw [coeff_mul]
-  refine E.sum_mem fun uv _ ↦ ?_
-  rw [coeff_map, ← Algebra.smul_def]
-  exact E.smul_mem _ (hU uv.2)
-
-end Semiring
-
-section Field
-
 variable {σ K A : Type*} [Field K] [Ring A] [Algebra K A]
 
-/-- If `[LinearOrder σ] [WellFoundedGT σ]`, `D : MvPowerSeries σ K` is nonzero, and all coefficients
-of `MvPowerSeries.map (algebraMap K A) D * U` lie in `E : Submodule K A`, then all coefficients of
-`U` lie in `E`. -/
-theorem coeff_mem_of_coeff_map_mul_mem_of_wellFoundedGT [LinearOrder σ] [WellFoundedGT σ]
-    {D : MvPowerSeries σ K} (hD : D ≠ 0) {U : MvPowerSeries σ A} {E : Submodule K A}
+/-- If `D : MvPowerSeries σ K` is nonzero and all coefficients of
+`MvPowerSeries.map (algebraMap K A) D * U` lie in `E : Submodule K A`, then all coefficients of `U`
+lie in `E` (Bosch–Güntzer–Remmert, *Non-Archimedean Analysis*, §5.3.2, Theorem 1). -/
+theorem coeff_mem_of_coeff_map_mul_mem {D : MvPowerSeries σ K} (hD : D ≠ 0)
+    {U : MvPowerSeries σ A} {E : Submodule K A}
     (hmul : ∀ β, coeff β (MvPowerSeries.map (algebraMap K A) D * U) ∈ E) (α : σ →₀ ℕ) :
     coeff α U ∈ E := by
   classical
+  rcases exists_wellFoundedGT σ with ⟨_, _⟩
   obtain ⟨p, hp⟩ := exists_finsupp_eq_lexOrder_of_ne_zero hD
   have hp_ne : coeff p D ≠ 0 := coeff_ne_zero_of_lexOrder hp.symm
   suffices ∀ q : Lex (σ →₀ ℕ), coeff (ofLex q) U ∈ E from this (toLex α)
@@ -99,32 +79,11 @@ theorem coeff_mem_of_coeff_map_mul_mem_of_wellFoundedGT [LinearOrder σ] [WellFo
     have hsmul : coeff p D • coeff d U ∈ E := (add_mem_cancel_right herase).mp hprod
     simpa only [inv_smul_smul₀ hp_ne] using E.smul_mem (coeff p D)⁻¹ hsmul
 
-/-- Under `[LinearOrder σ] [WellFoundedGT σ]`, multiplying on the left by a nonzero scalar power
-series `D : MvPowerSeries σ K` preserves and reflects coefficient membership in `E : Submodule K A`.
--/
-theorem forall_coeff_map_mul_mem_iff_of_wellFoundedGT [LinearOrder σ] [WellFoundedGT σ]
-    {D : MvPowerSeries σ K} (hD : D ≠ 0) {U : MvPowerSeries σ A} {E : Submodule K A} :
-    (∀ β, coeff β (MvPowerSeries.map (algebraMap K A) D * U) ∈ E) ↔ ∀ α, coeff α U ∈ E :=
-  ⟨coeff_mem_of_coeff_map_mul_mem_of_wellFoundedGT hD, coeff_map_mul_mem D⟩
-
-/-- In finitely many variables, if `D : MvPowerSeries σ K` is nonzero and all coefficients of
-`MvPowerSeries.map (algebraMap K A) D * U` lie in `E : Submodule K A`, then all coefficients of `U`
-lie in `E` ([bosch-guntzer-remmert], §5.3.2, Theorem 1). -/
-theorem coeff_mem_of_coeff_map_mul_mem [Finite σ]
-    {D : MvPowerSeries σ K} (hD : D ≠ 0) {U : MvPowerSeries σ A} {E : Submodule K A}
-    (hmul : ∀ β, coeff β (MvPowerSeries.map (algebraMap K A) D * U) ∈ E) (α : σ →₀ ℕ) :
-    coeff α U ∈ E := by
-  obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin σ
-  let _ : LinearOrder σ := LinearOrder.lift' e e.injective
-  exact coeff_mem_of_coeff_map_mul_mem_of_wellFoundedGT hD hmul α
-
-/-- In finitely many variables, multiplying on the left by a nonzero scalar power series
-`D : MvPowerSeries σ K` preserves and reflects coefficient membership in `E : Submodule K A`. -/
-theorem forall_coeff_map_mul_mem_iff [Finite σ]
-    {D : MvPowerSeries σ K} (hD : D ≠ 0) {U : MvPowerSeries σ A} {E : Submodule K A} :
+/-- Multiplying on the left by a nonzero scalar power series `D : MvPowerSeries σ K` preserves and
+reflects coefficient membership in `E : Submodule K A`. -/
+theorem forall_coeff_map_mul_mem_iff {D : MvPowerSeries σ K} (hD : D ≠ 0)
+    {U : MvPowerSeries σ A} {E : Submodule K A} :
     (∀ β, coeff β (MvPowerSeries.map (algebraMap K A) D * U) ∈ E) ↔ ∀ α, coeff α U ∈ E :=
   ⟨coeff_mem_of_coeff_map_mul_mem hD, coeff_map_mul_mem D⟩
-
-end Field
 
 end MvPowerSeries
