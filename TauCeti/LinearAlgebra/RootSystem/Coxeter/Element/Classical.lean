@@ -342,11 +342,10 @@ theorem roots_charpoly_of_hasCartanType_A_of_actsBy {n : ℕ} (h : HasCartanType
     (W.map (Int.castRingHom ℂ)).charpoly.roots =
       Multiset.ofList (aExponents n |>.map fun e : ℕ =>
         Complex.exp (2 * Real.pi * Complex.I * (e / (n + 1 : ℂ)))) := by
-  have hc := charpoly_of_hasCartanType_A_of_actsBy h hnd hall hW
   have hmap :
       (W.map (Int.castRingHom ℂ)).charpoly = ∑ k ∈ Finset.range (n + 1), (X : ℂ[X]) ^ k := by
-    rw [Matrix.charpoly_map, hc, Polynomial.map_sum]
-    simp
+    rw [Matrix.charpoly_map, charpoly_of_hasCartanType_A_of_actsBy h hnd hall hW,
+      Polynomial.map_sum]; simp
   rw [hmap, roots_sum_range_X_pow (Complex.isPrimitiveRoot_exp (n + 1) (Nat.succ_ne_zero n))]
   simp [aExponents, List.map_map, Function.comp_def, exp_two_pi_I_div_pow]
 
@@ -358,10 +357,8 @@ theorem roots_charpoly_of_hasCartanType_B_of_actsBy {n : ℕ} (hn : 0 < n)
     (W.map (Int.castRingHom ℂ)).charpoly.roots =
       Multiset.ofList (bExponents n |>.map fun e : ℕ =>
         Complex.exp (2 * Real.pi * Complex.I * (e / (2 * n : ℂ)))) := by
-  have hc := charpoly_of_hasCartanType_B_of_actsBy hn h hnd hall hW
   have hmap : (W.map (Int.castRingHom ℂ)).charpoly = (X : ℂ[X]) ^ n + 1 := by
-    rw [Matrix.charpoly_map, hc]
-    simp
+    rw [Matrix.charpoly_map, charpoly_of_hasCartanType_B_of_actsBy hn h hnd hall hW]; simp
   rw [hmap, roots_X_pow_add_one hn (Complex.isPrimitiveRoot_exp (2 * n) (by omega))]
   simp [bExponents, List.map_map, Function.comp_def, exp_two_pi_I_div_pow]
 
@@ -373,10 +370,8 @@ theorem roots_charpoly_of_hasCartanType_C_of_actsBy {n : ℕ} (hn : 0 < n)
     (W.map (Int.castRingHom ℂ)).charpoly.roots =
       Multiset.ofList (cExponents n |>.map fun e : ℕ =>
         Complex.exp (2 * Real.pi * Complex.I * (e / (2 * n : ℂ)))) := by
-  have hc := charpoly_of_hasCartanType_C_of_actsBy hn h hnd hall hW
   have hmap : (W.map (Int.castRingHom ℂ)).charpoly = (X : ℂ[X]) ^ n + 1 := by
-    rw [Matrix.charpoly_map, hc]
-    simp
+    rw [Matrix.charpoly_map, charpoly_of_hasCartanType_C_of_actsBy hn h hnd hall hW]; simp
   rw [hmap, roots_X_pow_add_one hn (Complex.isPrimitiveRoot_exp (2 * n) (by omega))]
   simp [cExponents, bExponents, List.map_map, Function.comp_def, exp_two_pi_I_div_pow]
 
@@ -389,14 +384,11 @@ theorem roots_charpoly_of_hasCartanType_D_of_actsBy {n : ℕ} (hn : 2 ≤ n)
     (W.map (Int.castRingHom ℂ)).charpoly.roots =
       Multiset.ofList (dExponents n |>.map fun e : ℕ =>
         Complex.exp (2 * Real.pi * Complex.I * (e / (2 * (n - 1 : ℂ))))) := by
-  have hc := charpoly_of_hasCartanType_D_of_actsBy hn h hnd hall hW
   have hmap : (W.map (Int.castRingHom ℂ)).charpoly = ((X : ℂ[X]) ^ (n - 1) + 1) * (X + 1) := by
-    rw [Matrix.charpoly_map, hc]
-    simp
-  have hn0 : n ≠ 0 := by omega
+    rw [Matrix.charpoly_map, charpoly_of_hasCartanType_D_of_actsBy hn h hnd hall hW]; simp
   rw [hmap, roots_X_pow_add_one_mul_X_add_one hn
     (Complex.isPrimitiveRoot_exp (2 * (n - 1)) (by omega))]
-  simp [dExponents, hn0, List.map_map, Function.comp_def, exp_two_pi_I_div_pow,
+  simp [dExponents, show n ≠ 0 by omega, List.map_map, Function.comp_def, exp_two_pi_I_div_pow,
     Nat.cast_sub (by omega : 1 ≤ n)]
 
 /-- **Complex eigenvalue multiset of a Coxeter element of type `E₆` on the simple roots.** -/

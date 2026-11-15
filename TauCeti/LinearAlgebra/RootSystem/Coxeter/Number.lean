@@ -165,20 +165,14 @@ theorem length_exponents (t : DynkinType) : t.exponents.length = t.rank := by
 /-- `1` is an exponent of every valid Dynkin type. -/
 theorem one_mem_exponents {t : DynkinType} (ht : t.Valid) : 1 ∈ t.exponents := by
   cases t with
-  | A n =>
-    simp only [exponents_A, Coxeter.aExponents, List.mem_map, List.mem_range]
-    exact ⟨0, valid_A.mp ht, rfl⟩
+  | A n => exact List.mem_map.mpr ⟨0, List.mem_range.mpr (valid_A.mp ht), rfl⟩
   | B n =>
-    simp only [exponents_B, Coxeter.bExponents, List.mem_map, List.mem_range]
-    exact ⟨0, lt_of_lt_of_le zero_lt_two (valid_B.mp ht), rfl⟩
-  | C n =>
-    simp only [exponents_C, Coxeter.cExponents, Coxeter.bExponents, List.mem_map, List.mem_range]
-    exact ⟨0, by have := valid_C.mp ht; omega, rfl⟩
+    exact List.mem_map.mpr ⟨0, List.mem_range.mpr (lt_of_lt_of_le zero_lt_two (valid_B.mp ht)), rfl⟩
+  | C n => exact List.mem_map.mpr ⟨0, List.mem_range.mpr (by have := valid_C.mp ht; omega), rfl⟩
   | D n =>
-    have hn : 4 ≤ n := valid_D.mp ht
-    have hn0 : n ≠ 0 := by omega
-    simp only [exponents_D, Coxeter.dExponents, hn0, ↓reduceIte, List.mem_append, List.mem_map,
-      List.mem_range]
+    have hn := valid_D.mp ht
+    simp only [exponents_D, Coxeter.dExponents, show n ≠ 0 by omega, ↓reduceIte, List.mem_append,
+      List.mem_map, List.mem_range]
     exact Or.inl ⟨0, by omega, rfl⟩
   | E6 | E7 | E8 | F4 | G2 => decide
 
@@ -186,17 +180,11 @@ theorem one_mem_exponents {t : DynkinType} (ht : t.Valid) : 1 ∈ t.exponents :=
 theorem pos_of_mem_exponents {t : DynkinType} (ht : t.Valid) {e : ℕ} (he : e ∈ t.exponents) :
     0 < e := by
   cases t with
-  | A n =>
-    obtain ⟨k, -, rfl⟩ := List.mem_map.mp he
-    omega
-  | B n | C n =>
-    obtain ⟨k, -, rfl⟩ := List.mem_map.mp he
-    omega
+  | A n | B n | C n => obtain ⟨k, -, rfl⟩ := List.mem_map.mp he; omega
   | D n =>
-    have hn : 4 ≤ n := valid_D.mp ht
-    have hn0 : n ≠ 0 := by omega
-    simp only [exponents_D, Coxeter.dExponents, hn0, ↓reduceIte, List.mem_append, List.mem_map,
-      List.mem_singleton] at he
+    have hn := valid_D.mp ht
+    simp only [exponents_D, Coxeter.dExponents, show n ≠ 0 by omega, ↓reduceIte, List.mem_append,
+      List.mem_map, List.mem_singleton] at he
     rcases he with ⟨k, -, rfl⟩ | rfl <;> omega
   | E6 | E7 | E8 | F4 | G2 => revert e; decide
 
@@ -204,27 +192,13 @@ theorem pos_of_mem_exponents {t : DynkinType} (ht : t.Valid) {e : ℕ} (he : e �
 theorem lt_coxeterNumber_of_mem_exponents {t : DynkinType} (ht : t.Valid) {e : ℕ}
     (he : e ∈ t.exponents) : e < t.coxeterNumber := by
   cases t with
-  | A n =>
+  | A n | B n | C n =>
     obtain ⟨k, hk, rfl⟩ := List.mem_map.mp he
-    rw [List.mem_range] at hk
-    simp only [coxeterNumber_A]
-    omega
-  | B n =>
-    obtain ⟨k, hk, rfl⟩ := List.mem_map.mp he
-    rw [List.mem_range] at hk
-    simp only [coxeterNumber_B]
-    omega
-  | C n =>
-    obtain ⟨k, hk, rfl⟩ := List.mem_map.mp he
-    rw [List.mem_range] at hk
-    simp only [coxeterNumber_C]
-    omega
+    rw [List.mem_range] at hk; simp; omega
   | D n =>
-    have hn : 4 ≤ n := valid_D.mp ht
-    have hn0 : n ≠ 0 := by omega
-    simp only [exponents_D, Coxeter.dExponents, hn0, ↓reduceIte, List.mem_append, List.mem_map,
-      List.mem_range, List.mem_singleton] at he
-    simp only [coxeterNumber_D]
+    have hn := valid_D.mp ht
+    simp only [exponents_D, Coxeter.dExponents, show n ≠ 0 by omega, ↓reduceIte, List.mem_append,
+      List.mem_map, List.mem_range, List.mem_singleton, coxeterNumber_D] at he ⊢
     rcases he with ⟨k, hk, rfl⟩ | rfl <;> omega
   | E6 | E7 | E8 | F4 | G2 => revert e; decide
 
@@ -257,20 +231,25 @@ theorem two_mul_sum_exponents_eq_numRoots (t : DynkinType) :
     · rfl
     · simp only [exponents_D, Coxeter.dExponents, Nat.succ_ne_zero, ↓reduceIte,
         Nat.add_sub_cancel, List.sum_append, List.sum_singleton, numRoots_D]
-      have hb := sum_bExponents m
-      simp only [Coxeter.bExponents] at hb
-      rw [hb]
-      ring
+      have hb := sum_bExponents m; simp only [Coxeter.bExponents] at hb; rw [hb]; ring
   | E6 | E7 | E8 | F4 | G2 => decide
 
 private theorem perm_range_sub (m : ℕ) : ((List.range m).map (m - 1 - ·)).Perm (List.range m) := by
-  have hnd : ((List.range m).map (m - 1 - ·)).Nodup := by
-    refine (List.nodup_map_iff_inj_on List.nodup_range).mpr fun a ha b hb hab => ?_
-    rw [List.mem_range] at ha hb
-    omega
+  have hnd : ((List.range m).map (m - 1 - ·)).Nodup :=
+    (List.nodup_map_iff_inj_on List.nodup_range).mpr fun a ha b hb hab => by
+      rw [List.mem_range] at ha hb; omega
   refine (List.perm_ext_iff_of_nodup hnd List.nodup_range).mpr fun k => ?_
   simp only [List.mem_map, List.mem_range]
   exact ⟨fun ⟨a, ha, hka⟩ => by omega, fun hk => ⟨m - 1 - k, by omega, by omega⟩⟩
+
+private theorem perm_map_two_mul_sub (m : ℕ) :
+    (((List.range m).map fun k => 2 * k + 1).map (2 * m - ·)).Perm
+      ((List.range m).map fun k => 2 * k + 1) := by
+  rw [List.map_map, show List.map ((fun x => 2 * m - x) ∘ fun k => 2 * k + 1) (List.range m) =
+      ((List.range m).map (m - 1 - ·)).map (fun k => 2 * k + 1) from by
+    rw [List.map_map]
+    exact List.map_congr_left fun k hk => by rw [List.mem_range] at hk; simp; omega]
+  exact (perm_range_sub m).map _
 
 /-- **Duality of exponents**: `e ↦ h - e` permutes `t.exponents` (preserving multiplicities). -/
 theorem perm_map_sub_exponents (t : DynkinType) :
@@ -278,40 +257,18 @@ theorem perm_map_sub_exponents (t : DynkinType) :
   cases t with
   | A n =>
     simp only [exponents_A, coxeterNumber_A, Coxeter.aExponents, List.map_map]
-    have hmap : List.map ((fun x => n + 1 - x) ∘ (· + 1)) (List.range n) =
-        ((List.range n).map (n - 1 - ·)).map (· + 1) := by
+    rw [show List.map ((fun x => n + 1 - x) ∘ (· + 1)) (List.range n) =
+        ((List.range n).map (n - 1 - ·)).map (· + 1) from by
       rw [List.map_map]
-      exact List.map_congr_left fun k hk => by rw [List.mem_range] at hk; simp; omega
-    rw [hmap]
+      exact List.map_congr_left fun k hk => by rw [List.mem_range] at hk; simp; omega]
     exact (perm_range_sub n).map (· + 1)
-  | B n =>
-    simp only [exponents_B, coxeterNumber_B, Coxeter.bExponents, List.map_map]
-    have hmap : List.map ((fun x => 2 * n - x) ∘ fun k => 2 * k + 1) (List.range n) =
-        ((List.range n).map (n - 1 - ·)).map (fun k => 2 * k + 1) := by
-      rw [List.map_map]
-      exact List.map_congr_left fun k hk => by rw [List.mem_range] at hk; simp; omega
-    rw [hmap]
-    exact (perm_range_sub n).map _
-  | C n =>
-    simp only [exponents_C, coxeterNumber_C, Coxeter.cExponents, Coxeter.bExponents, List.map_map]
-    have hmap : List.map ((fun x => 2 * n - x) ∘ fun k => 2 * k + 1) (List.range n) =
-        ((List.range n).map (n - 1 - ·)).map (fun k => 2 * k + 1) := by
-      rw [List.map_map]
-      exact List.map_congr_left fun k hk => by rw [List.mem_range] at hk; simp; omega
-    rw [hmap]
-    exact (perm_range_sub n).map _
+  | B n | C n => exact perm_map_two_mul_sub n
   | D n =>
     rcases n with _ | m
     · simp [Coxeter.dExponents]
     · simp only [exponents_D, coxeterNumber_D, Coxeter.dExponents, Nat.succ_ne_zero, ↓reduceIte,
-        Nat.add_sub_cancel, List.map_append, List.map_map, List.map_singleton,
-        show 2 * m - m = m by omega]
-      have hmap : List.map ((fun x => 2 * m - x) ∘ fun k => 2 * k + 1) (List.range m) =
-          ((List.range m).map (m - 1 - ·)).map (fun k => 2 * k + 1) := by
-        rw [List.map_map]
-        exact List.map_congr_left fun k hk => by rw [List.mem_range] at hk; simp; omega
-      rw [hmap]
-      exact ((perm_range_sub m).map _).append_right [m]
+        Nat.add_sub_cancel, List.map_append, List.map_singleton, show 2 * m - m = m by omega]
+      exact (perm_map_two_mul_sub m).append_right [m]
   | E6 | E7 | E8 | F4 | G2 => decide
 
 end DynkinType
@@ -421,36 +378,22 @@ theorem HasCartanType.roots_charpoly_of_actsBy [DecidableEq ι] [CharZero R] [Is
       Multiset.ofList (t.exponents.map fun e : ℕ =>
         Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / (t.coxeterNumber : ℂ)))) := by
   cases t with
-  | A n =>
-    rw [Coxeter.roots_charpoly_of_hasCartanType_A_of_actsBy h hnd hall hW]
-    simp
+  | A n => rw [Coxeter.roots_charpoly_of_hasCartanType_A_of_actsBy h hnd hall hW]; simp
   | B n =>
     rw [Coxeter.roots_charpoly_of_hasCartanType_B_of_actsBy
-      (lt_of_lt_of_le zero_lt_two (DynkinType.valid_B.mp ht)) h hnd hall hW]
-    simp
+      (lt_of_lt_of_le zero_lt_two (DynkinType.valid_B.mp ht)) h hnd hall hW]; simp
   | C n =>
     rw [Coxeter.roots_charpoly_of_hasCartanType_C_of_actsBy
-      (by have := DynkinType.valid_C.mp ht; omega) h hnd hall hW]
-    simp
+      (by have := DynkinType.valid_C.mp ht; omega) h hnd hall hW]; simp
   | D n =>
     have hn := DynkinType.valid_D.mp ht
     rw [Coxeter.roots_charpoly_of_hasCartanType_D_of_actsBy (by omega) h hnd hall hW]
     simp [Nat.cast_sub (by omega : 1 ≤ n)]
-  | E6 =>
-    rw [Coxeter.roots_charpoly_of_hasCartanType_E6_of_actsBy h hnd hall hW]
-    simp
-  | E7 =>
-    rw [Coxeter.roots_charpoly_of_hasCartanType_E7_of_actsBy h hnd hall hW]
-    simp
-  | E8 =>
-    rw [Coxeter.roots_charpoly_of_hasCartanType_E8_of_actsBy h hnd hall hW]
-    simp
-  | F4 =>
-    rw [Coxeter.roots_charpoly_of_hasCartanType_F4_of_actsBy h hnd hall hW]
-    simp
-  | G2 =>
-    rw [Coxeter.roots_charpoly_of_hasCartanType_G2_of_actsBy h hnd hall hW]
-    simp
+  | E6 => rw [Coxeter.roots_charpoly_of_hasCartanType_E6_of_actsBy h hnd hall hW]; simp
+  | E7 => rw [Coxeter.roots_charpoly_of_hasCartanType_E7_of_actsBy h hnd hall hW]; simp
+  | E8 => rw [Coxeter.roots_charpoly_of_hasCartanType_E8_of_actsBy h hnd hall hW]; simp
+  | F4 => rw [Coxeter.roots_charpoly_of_hasCartanType_F4_of_actsBy h hnd hall hW]; simp
+  | G2 => rw [Coxeter.roots_charpoly_of_hasCartanType_G2_of_actsBy h hnd hall hW]; simp
 
 /-- **Uniform weight-space eigenvalue multiset** for any complex root system whose base has valid
 Cartan type `t`. -/
