@@ -13,6 +13,7 @@ public import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Cosh
+import TauCeti.Topology.MetricSpace.Pseudo.Basic
 
 /-!
 # Kernel and cokernel cancellation on a neck
@@ -322,23 +323,6 @@ theorem exists_abs_iteratedDeriv_neckCoeff_add_sub_iteratedDeriv_tanh_le (k : �
     refine (hC _).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)
     linarith [le_abs_self (s + 2 * R)]
 
-/-- A family of functions within `C exp (a - b R)` of `G` on `S`, with `b > 0`, converges to `G`
-uniformly on `S` as `R → ∞`. -/
-private theorem tendstoUniformlyOn_of_abs_sub_le_mul_exp {F : ℝ → ℝ → ℝ} {G : ℝ → ℝ}
-    {S : Set ℝ} {C a b : ℝ} (hb : 0 < b) (h : ∀ R, ∀ s ∈ S, |F R s - G s| ≤ C * exp (a - b * R)) :
-    TendstoUniformlyOn F G atTop S := by
-  have hlim : Tendsto (fun R ↦ C * exp (a - b * R)) atTop (𝓝 0) := by
-    have h : Tendsto (fun R : ℝ ↦ a - b * R) atTop atBot :=
-      (tendsto_atBot_add_const_left _ a
-        (tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.2 hb))).congr fun R ↦ by
-          simp only [id]; ring
-    simpa using (tendsto_exp_atBot.comp h).const_mul C
-  rw [Metric.tendstoUniformlyOn_iff]
-  intro ε hε
-  filter_upwards [(tendsto_order.1 hlim).2 ε hε] with R hR s hs
-  rw [Real.dist_eq, abs_sub_comm]
-  exact (h R s hs).trans_lt hR
-
 /-- The translated neck coefficients `a_R(· - R)` converge to `-tanh` as `R → ∞` in every `C^k`
 norm, uniformly on every half-line `s ≤ c`: the neck operator `d/ds - a_R`, read near `-R`,
 converges to `d/ds + tanh s`. -/
@@ -347,8 +331,11 @@ theorem tendstoUniformlyOn_iteratedDeriv_neckCoeff_sub (k : ℕ) (c : ℝ) :
       (fun s ↦ -iteratedDeriv k tanh s) atTop (Iic c) := by
   obtain ⟨C, hC₀, hC⟩ := exists_abs_iteratedDeriv_neckCoeff_sub_add_iteratedDeriv_tanh_le k
   -- On `s ≤ c` the bound is at most `C exp (2 c - 4 R)`.
-  refine tendstoUniformlyOn_of_abs_sub_le_mul_exp (C := C) (a := 2 * c) four_pos fun R s hs ↦ ?_
-  rw [sub_neg_eq_add]
+  refine tendstoUniformlyOn_of_dist_le (u := fun R ↦ C * exp (2 * c + -4 * R)) ?_
+    (Eventually.of_forall fun R s hs ↦ ?_)
+  · simpa using (tendsto_exp_comp_nhds_zero.2 <| tendsto_atBot_add_const_left _ _ <|
+      tendsto_id.const_mul_atTop_of_neg (by norm_num : (-4 : ℝ) < 0)).const_mul C
+  rw [Real.dist_eq, sub_neg_eq_add]
   refine (hC R s).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)
   linarith [mem_Iic.1 hs]
 
@@ -360,7 +347,11 @@ theorem tendstoUniformlyOn_iteratedDeriv_neckCoeff_add (k : ℕ) (c : ℝ) :
       (iteratedDeriv k tanh) atTop (Ici c) := by
   obtain ⟨C, hC₀, hC⟩ := exists_abs_iteratedDeriv_neckCoeff_add_sub_iteratedDeriv_tanh_le k
   -- On `s ≥ c` the bound is at most `C exp (-2 c - 4 R)`.
-  refine tendstoUniformlyOn_of_abs_sub_le_mul_exp (C := C) (a := -(2 * c)) four_pos fun R s hs ↦ ?_
+  refine tendstoUniformlyOn_of_dist_le (u := fun R ↦ C * exp (-(2 * c) + -4 * R)) ?_
+    (Eventually.of_forall fun R s hs ↦ ?_)
+  · simpa using (tendsto_exp_comp_nhds_zero.2 <| tendsto_atBot_add_const_left _ _ <|
+      tendsto_id.const_mul_atTop_of_neg (by norm_num : (-4 : ℝ) < 0)).const_mul C
+  rw [Real.dist_eq]
   refine (hC R s).trans (mul_le_mul_of_nonneg_left (exp_le_exp.2 ?_) hC₀)
   linarith [mem_Ici.1 hs]
 
