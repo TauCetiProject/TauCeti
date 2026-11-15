@@ -83,8 +83,7 @@ private theorem lie_restrictScalars_map_update_smul {ι : Type*} [Fintype ι] [D
     ⁅x, ω.restrictScalars R⁆ (update v i (a • y)) =
       a • ⁅x, ω.restrictScalars R⁆ (update v i y) := by
   let w : ι → L := update v i y
-  have hw_eq : update v i (a • y) = update w i (a • w i) := by
-    simp [w]
+  have hw_eq : update v i (a • y) = update w i (a • w i) := by simp [w]
   have hself : update w i (w i) = w := update_eq_self i w
   -- In slot `i`, the Lie–Rinehart Leibniz rule produces an extra `⁅x, a⁆ * ω w` term.
   have hterm_eq :
@@ -96,11 +95,9 @@ private theorem lie_restrictScalars_map_update_smul {ι : Type*} [Fintype ι] [D
   have hterm_ne (j : ι) (hj : j ≠ i) :
       ω (update (update w i (a • w i)) j ⁅x, update w i (a • w i) j⁆) =
         a • ω (update w j ⁅x, w j⁆) := by
-    have hcomm :
-        update (update w i (a • w i)) j ⁅x, w j⁆ =
-          update (update w j ⁅x, w j⁆) i (a • update w j ⁅x, w j⁆ i) := by
-      rw [update_of_ne hj.symm, update_comm hj.symm]
-    rw [update_of_ne hj, hcomm, ω.map_update_smul, update_eq_self]
+    rw [update_of_ne hj, update_comm hj.symm, ω.map_update_smul]
+    congr 2
+    ext k; by_cases hk : k = i <;> simp [hk, hj.symm]
   have hsum :
       ∑ j : ι, ω (update (update w i (a • w i)) j ⁅x, update w i (a • w i) j⁆) =
         a • (∑ j : ι, ω (update w j ⁅x, w j⁆)) + ⁅x, a⁆ * ω w := by
@@ -141,17 +138,14 @@ variable {R A L}
 @[simp]
 theorem restrictScalars_lieDeriv {ι : Type*} [Fintype ι] [DecidableEq ι]
     (x : L) (ω : L [⋀^ι]→ₗ[A] A) :
-    (lieDeriv R A L x ω).restrictScalars R = ⁅x, ω.restrictScalars R⁆ := by
-  ext v
-  simp [lieDeriv]
+    (lieDeriv R A L x ω).restrictScalars R = ⁅x, ω.restrictScalars R⁆ := by ext v; simp [lieDeriv]
 
 @[simp]
 theorem lieDeriv_apply {ι : Type*} [Fintype ι] [DecidableEq ι]
     (x : L) (ω : L [⋀^ι]→ₗ[A] A) (v : ι → L) :
     lieDeriv R A L x ω v = ⁅x, ω v⁆ - ∑ i, ω (update v i ⁅x, v i⁆) := by
   have h := AlternatingMap.lie_apply x (ω.restrictScalars R) v
-  simp only [← restrictScalars_lieDeriv, restrictScalars_apply] at h
-  exact h
+  simpa only [← restrictScalars_lieDeriv, restrictScalars_apply] using h
 
 /-- The Lie derivative is a Lie algebra representation: `L_{[x, y]} = L_x ∘ L_y - L_y ∘ L_x`. -/
 theorem lieDeriv_lie {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -203,12 +197,8 @@ private theorem d_restrictScalars_map_update_smul :
     have hsucc (u : Fin (n + 2) → L) (j : Fin (n + 1)) (z : L) :
         LieModule.Cohomology.d R L A (n + 1) (ω.restrictScalars R) (update u j.succ (a • z)) =
           a • LieModule.Cohomology.d R L A (n + 1) (ω.restrictScalars R) (update u j.succ z) := by
-      have hcons (w : L) :
-          update u j.succ w = Matrix.vecCons (u 0) (update (Fin.tail u) j w) := by
-        ext r
-        refine Fin.cases ?_ (fun s ↦ ?_) r
-        · simp [Matrix.vecCons, update_of_ne (Fin.succ_ne_zero j).symm]
-        · by_cases hs : s = j <;> simp [hs, Matrix.vecCons, Fin.tail]
+      have hcons (w : L) : update u j.succ w = Matrix.vecCons (u 0) (update (Fin.tail u) j w) := by
+        rw [Matrix.vecCons, Fin.cons_update, Fin.cons_self_tail]
       -- After inserting `u 0`, Cartan's formula expresses `d ω` via two `A`-multilinear maps.
       let ψ : L [⋀^Fin (n + 1)]→ₗ[A] A := lieDeriv R A L (u 0) ω - D (ω.curryLeft (u 0))
       have hψ (r : Fin (n + 1) → L) :
@@ -216,7 +206,6 @@ private theorem d_restrictScalars_map_update_smul :
             ψ r := by
         rw [← curryLeft_apply_apply, LieModule.Cohomology.curryLeft_d_succ, sub_apply,
           ← restrictScalars_lieDeriv, restrictScalars_apply, curryLeft_restrictScalars]
-        simp only [ψ, sub_apply]
         rfl
       rw [hcons, hcons, hψ, hψ]
       exact ψ.map_update_smul (Fin.tail u) j a z
@@ -226,12 +215,7 @@ private theorem d_restrictScalars_map_update_smul :
     have hswap (z : L) :
         update v 0 z ∘ Equiv.swap (0 : Fin (n + 2)) 1 =
           update (v ∘ Equiv.swap 0 1) ((0 : Fin (n + 1)).succ) z := by
-      ext r
-      by_cases hr0 : r = 0
-      · subst hr0; simp [Equiv.swap_apply_left]
-      · by_cases hr1 : r = 1
-        · subst hr1; simp [Equiv.swap_apply_right]
-        · simp [Equiv.swap_apply_of_ne_of_ne hr0 hr1, hr0, hr1]
+      rw [update_comp_equiv, Equiv.symm_swap, Equiv.swap_apply_left]; rfl
     set F := LieModule.Cohomology.d R L A (n + 1) (ω.restrictScalars R)
     apply neg_injective
     rw [← F.map_swap (update v 0 (a • y)) h01, hswap, hsucc (v ∘ Equiv.swap 0 1) 0 y, ← hswap,
@@ -250,23 +234,18 @@ def d (n : ℕ) : (L [⋀^Fin n]→ₗ[A] A) →ₗ[R] L [⋀^Fin (n + 1)]→ₗ
         convert d_restrictScalars_map_update_smul (R := R) n ω m k c x
       map_eq_zero_of_eq' :=
         (LieModule.Cohomology.d R L A n (ω.restrictScalars R)).map_eq_zero_of_eq' }
-  map_add' ω₁ ω₂ := by
-    ext v
-    simp
+  map_add' ω₁ ω₂ := by ext v; simp
   map_smul' c ω := by
     ext v
-    change LieModule.Cohomology.d R L A n ((c • ω).restrictScalars R) v =
-      c • LieModule.Cohomology.d R L A n (ω.restrictScalars R) v
-    rw [restrictScalars_smul, map_smul]
-    rfl
+    change LieModule.Cohomology.d R L A n ((c • ω).restrictScalars R) v = _
+    rw [restrictScalars_smul, map_smul]; rfl
 
 variable {R A L}
 
 @[simp]
 theorem restrictScalars_d (n : ℕ) (ω : L [⋀^Fin n]→ₗ[A] A) :
     (d R A L n ω).restrictScalars R = LieModule.Cohomology.d R L A n (ω.restrictScalars R) := by
-  ext v
-  simp [d]
+  ext v; simp [d]
 
 /-- Cartan's formula in degree zero: `ι_x (d ω) = L_x ω`. -/
 @[simp]
@@ -312,8 +291,7 @@ theorem d_zero_apply (ω : L [⋀^Fin 0]→ₗ[A] A) (v : Fin 1 → L) :
 
 /-- Evaluating `d` on the constant `0`-cochain of `a : A` gives the anchor derivative `⁅v 0, a⁆`. -/
 theorem d_zero_constOfIsEmpty (a : A) (v : Fin 1 → L) :
-    d R A L 0 (AlternatingMap.constOfIsEmpty A L (Fin 0) a) v = ⁅v 0, a⁆ := by
-  simp
+    d R A L 0 (AlternatingMap.constOfIsEmpty A L (Fin 0) a) v = ⁅v 0, a⁆ := by simp
 
 /-- **The Chevalley–Eilenberg formula** in arbitrary positive degree for a Lie–Rinehart algebra:
 `(d ω)(v₀, …, vₙ₊₁) = ∑ i, (-1)^i ⁅vᵢ, ω(…, v̂ᵢ, …)⁆`
@@ -324,8 +302,7 @@ theorem d_succ_apply {n : ℕ} (ω : L [⋀^Fin (n + 1)]→ₗ[A] A) (v : Fin (n
         ∑ i : Fin (n + 1), ∑ j ≥ i, (-1 : ℤ) ^ (i + j + 1 : ℕ) •
           ω (Matrix.vecCons ⁅v i.castSucc, v j.succ⁆ (j.removeNth (i.castSucc.removeNth v))) := by
   have h := LieModule.Cohomology.d_succ_apply (ω.restrictScalars R) v
-  simp only [← restrictScalars_d, restrictScalars_apply] at h
-  exact h
+  simpa only [← restrictScalars_d, restrictScalars_apply] using h
 
 /-- The degree-`1` Chevalley–Eilenberg formula `(d ω)(x, y) = ⁅x, ω(y)⁆ - ⁅y, ω(x)⁆ - ω(⁅x, y⁆)`. -/
 theorem d_one_apply (ω : L [⋀^Fin 1]→ₗ[A] A) (x y : L) :
@@ -368,13 +345,11 @@ degree-`n` cochains `L [⋀^Fin n]→ₗ[A] A`. -/
 
 @[simp]
 theorem cochainComplex_X (n : ℕ) :
-    (cochainComplex R A L).X n = ModuleCat.of R (L [⋀^Fin n]→ₗ[A] A) :=
-  (rfl)
+    (cochainComplex R A L).X n = ModuleCat.of R (L [⋀^Fin n]→ₗ[A] A) := (rfl)
 
 @[simp]
 theorem cochainComplex_d_succ (n : ℕ) :
-    (cochainComplex R A L).d n (n + 1) = ModuleCat.ofHom (d R A L n) := by
-  simp [cochainComplex]
+    (cochainComplex R A L).d n (n + 1) = ModuleCat.ofHom (d R A L n) := by simp [cochainComplex]
 
 /-- Scalar restriction from `A`-multilinear to `R`-multilinear cochains as a cochain map from the
 Lie–Rinehart Chevalley–Eilenberg complex to the Lie-algebra Chevalley–Eilenberg complex of `L` with
@@ -386,15 +361,12 @@ noncomputable def restrictScalarsChainMap :
     rintro n _ rfl
     dsimp [cochainComplex, LieModule.Cohomology.cochainComplex]
     rw [CochainComplex.of_d, CochainComplex.of_d, ← ModuleCat.ofHom_comp, ← ModuleCat.ofHom_comp]
-    congr 1
-    ext ω v
-    simp
+    congr 1; ext ω v; simp
 
 @[simp]
 theorem restrictScalarsChainMap_f (n : ℕ) :
     (restrictScalarsChainMap R A L).f n =
-      ModuleCat.ofHom (AlternatingMap.restrictScalarsLM R R) :=
-  (rfl)
+      ModuleCat.ofHom (AlternatingMap.restrictScalarsLM R R) := (rfl)
 
 /-- The `n`-th Lie–Rinehart cohomology `H^n(L; A)` of `(A, L)` over `R`. -/
 noncomputable abbrev cohomology (n : ℕ) : ModuleCat R :=

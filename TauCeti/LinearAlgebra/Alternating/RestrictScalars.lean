@@ -46,8 +46,7 @@ def restrictScalars (f : M [⋀^ι]→ₗ[A] N) : M [⋀^ι]→ₗ[R] N where
   map_eq_zero_of_eq' := f.map_eq_zero_of_eq'
 
 @[simp]
-theorem coe_restrictScalars (f : M [⋀^ι]→ₗ[A] N) : ⇑(f.restrictScalars R) = f :=
-  (rfl)
+theorem coe_restrictScalars (f : M [⋀^ι]→ₗ[A] N) : ⇑(f.restrictScalars R) = f := (rfl)
 
 @[simp]
 theorem restrictScalars_apply (f : M [⋀^ι]→ₗ[A] N) (v : ι → M) : f.restrictScalars R v = f v :=
@@ -55,12 +54,11 @@ theorem restrictScalars_apply (f : M [⋀^ι]→ₗ[A] N) (v : ι → M) : f.res
 
 @[simp]
 theorem toMultilinearMap_restrictScalars (f : M [⋀^ι]→ₗ[A] N) :
-    (f.restrictScalars R).toMultilinearMap = f.toMultilinearMap.restrictScalars R :=
-  (rfl)
+    (f.restrictScalars R).toMultilinearMap = f.toMultilinearMap.restrictScalars R := (rfl)
 
 theorem restrictScalars_injective :
-    Function.Injective (restrictScalars R : (M [⋀^ι]→ₗ[A] N) → M [⋀^ι]→ₗ[R] N) := fun _ _ h ↦
-  ext fun v ↦ congr($h v)
+    Function.Injective (restrictScalars R : (M [⋀^ι]→ₗ[A] N) → M [⋀^ι]→ₗ[R] N) :=
+  fun _ _ h ↦ ext fun v ↦ congr($h v)
 
 @[simp]
 theorem restrictScalars_inj {f g : M [⋀^ι]→ₗ[A] N} :
@@ -68,19 +66,16 @@ theorem restrictScalars_inj {f g : M [⋀^ι]→ₗ[A] N} :
   (restrictScalars_injective R).eq_iff
 
 @[simp]
-theorem restrictScalars_zero : (0 : M [⋀^ι]→ₗ[A] N).restrictScalars R = 0 :=
-  ext fun _ ↦ rfl
+theorem restrictScalars_zero : (0 : M [⋀^ι]→ₗ[A] N).restrictScalars R = 0 := ext fun _ ↦ rfl
 
 @[simp]
 theorem restrictScalars_add (f g : M [⋀^ι]→ₗ[A] N) :
-    (f + g).restrictScalars R = f.restrictScalars R + g.restrictScalars R :=
-  ext fun _ ↦ rfl
+    (f + g).restrictScalars R = f.restrictScalars R + g.restrictScalars R := ext fun _ ↦ rfl
 
 @[simp]
 theorem restrictScalars_smul {S : Type*} [Monoid S] [DistribMulAction S N]
     [SMulCommClass A S N] [SMulCommClass R S N] (c : S) (f : M [⋀^ι]→ₗ[A] N) :
-    (c • f).restrictScalars R = c • f.restrictScalars R :=
-  ext fun _ ↦ rfl
+    (c • f).restrictScalars R = c • f.restrictScalars R := ext fun _ ↦ rfl
 
 /-- Scalar restriction bundled as an `S`-linear map. -/
 def restrictScalarsLM (S : Type*) [Semiring S] [Module S N]
@@ -93,8 +88,7 @@ def restrictScalarsLM (S : Type*) [Semiring S] [Module S N]
 @[simp]
 theorem restrictScalarsLM_apply (S : Type*) [Semiring S] [Module S N]
     [SMulCommClass A S N] [SMulCommClass R S N] (f : M [⋀^ι]→ₗ[A] N) :
-    restrictScalarsLM R S f = f.restrictScalars R :=
-  (rfl)
+    restrictScalarsLM R S f = f.restrictScalars R := (rfl)
 
 end Semiring
 
@@ -106,13 +100,11 @@ variable (R : Type*) {A M N ι : Type*} [Semiring R] [Semiring A] [SMul R A]
 
 @[simp]
 theorem restrictScalars_neg (f : M [⋀^ι]→ₗ[A] N) :
-    (-f).restrictScalars R = -f.restrictScalars R :=
-  ext fun _ ↦ rfl
+    (-f).restrictScalars R = -f.restrictScalars R := ext fun _ ↦ rfl
 
 @[simp]
 theorem restrictScalars_sub (f g : M [⋀^ι]→ₗ[A] N) :
-    (f - g).restrictScalars R = f.restrictScalars R - g.restrictScalars R :=
-  ext fun _ ↦ rfl
+    (f - g).restrictScalars R = f.restrictScalars R - g.restrictScalars R := ext fun _ ↦ rfl
 
 end Group
 
@@ -124,8 +116,7 @@ variable (R : Type*) {A M N : Type*} [CommSemiring R] [CommSemiring A] [SMul R A
 
 @[simp]
 theorem curryLeft_restrictScalars {n : ℕ} (f : M [⋀^Fin (n + 1)]→ₗ[A] N) (x : M) :
-    (f.restrictScalars R).curryLeft x = (f.curryLeft x).restrictScalars R :=
-  ext fun _ ↦ rfl
+    (f.restrictScalars R).curryLeft x = (f.curryLeft x).restrictScalars R := ext fun _ ↦ rfl
 
 end Curry
 
