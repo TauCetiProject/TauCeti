@@ -33,8 +33,8 @@ the slab, on a compact boundaryless manifold `M` and for `C > 0`.
 * **Trajectories across the slab.** The trajectories from `(p, 0)` to `(q, 1)` are the curves
   `s ↦ (φ_s y, q_C(s + τ))`, where `y` lies on a trajectory of `X` from `p` to `q`, `φ` is the flow
   of `X` and `q_C` is the base trajectory `TauCeti.intervalBaseOrbit C` from `0` to `1`. The two
-  components run independently, so the unparametrized trajectories form the product of the
-  trajectory set `W^u(p) ∩ W^s(q)` of `X` with the line of shifts `τ`.
+  components run independently, so the parametrized trajectories correspond to the pairs
+  `(y, τ) ∈ (W^u(p) ∩ W^s(q)) × ℝ`.
 * **Trajectories in an end level.** The trajectories from `(p, 0)` to `(q, 0)`, and likewise from
   `(p, 1)` to `(q, 1)`, stay in the level and are the trajectories of `X` from `p` to `q`. So the
   two ends of the slab carry the Morse trajectories of `f` itself.
@@ -126,16 +126,6 @@ section
 
 variable (hX : IsAdaptedPseudoGradient f X)
 include hX
-
-/-- An integral curve of an adapted pseudo-gradient from `p` to `q` is the orbit of a point of
-`W^u(p) ∩ W^s(q)`. -/
-private theorem mem_unstableSet_inter_stableSet_of_isMIntegralCurve {γ : ℝ → M}
-    (hγ : IsMIntegralCurve γ X) (hp : Tendsto γ atBot (𝓝 p)) (hq : Tendsto γ atTop (𝓝 q)) :
-    γ 0 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q ∧ γ = fun s ↦ hX.flow s (γ 0) := by
-  have hflow : γ = fun s ↦ hX.flow s (γ 0) := funext fun s ↦
-    (hX.flow_apply_eq_of_isMIntegralCurve hγ s).symm
-  rw [hflow] at hp hq
-  exact ⟨⟨Flow.mem_unstableSet.2 hp, Flow.mem_stableSet.2 hq⟩, hflow⟩
 
 /-- **The trajectories of the constant continuation across the slab.** For `C > 0`, the integral
 curves of `constantContinuationField X C` tending to `(p, 0)` at `-∞` and to `(q, 1)` at `+∞` are
