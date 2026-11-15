@@ -78,22 +78,18 @@ theorem ContinuousWithinAt.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [No
 At an infinite stopping time the path is unchanged. -/
 theorem Continuous.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
     [TopologicalSpace ι] [OrderClosedTopology ι] [TopologicalSpace E]
-    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω}
-    (hX : Continuous (X · ω)) :
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω} (hX : Continuous (X · ω)) :
     Continuous (MeasureTheory.stoppedProcess X τ · ω) := by
   cases hτ : τ ω with
   | top =>
-    have heq : (MeasureTheory.stoppedProcess X τ · ω) = (X · ω) :=
-      funext fun _ ↦ MeasureTheory.stoppedProcess_eq_of_le (by simp [hτ])
-    exact heq ▸ hX
+    exact hX.congr fun _ ↦ (MeasureTheory.stoppedProcess_eq_of_le (by simp [hτ])).symm
   | coe u =>
-    have heq : (MeasureTheory.stoppedProcess X τ · ω) = fun t ↦ X (min t u) ω := by
-      ext t
-      rcases le_total t u with htu | hut
-      · rw [MeasureTheory.stoppedProcess_eq_of_le (by simpa [hτ] using htu), min_eq_left htu]
-      · rw [MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut),
-          hτ, WithTop.untopA, WithTop.untopD_coe, min_eq_right hut]
-    exact heq ▸ hX.comp (continuous_id.min continuous_const)
+    refine (hX.comp (continuous_id.min (continuous_const (y := u)))).congr fun t ↦ ?_
+    dsimp only [Function.comp_apply, id_eq]
+    rcases le_total t u with htu | hut
+    · rw [min_eq_left htu, MeasureTheory.stoppedProcess_eq_of_le (by simpa [hτ] using htu)]
+    · rw [min_eq_right hut, MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut), hτ,
+        WithTop.untopA, WithTop.untopD_coe]
 
 namespace MeasureTheory
 

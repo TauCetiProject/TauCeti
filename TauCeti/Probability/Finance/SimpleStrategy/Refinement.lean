@@ -180,11 +180,9 @@ theorem simpleHolding_min_ite_lt_of_le {g : ℕ → ι} {N : ℕ} {b : ℕ → �
     (hs : s ≤ t) (ω : Ω) :
     simpleHolding (fun j ↦ min (g j) t) N (fun j ↦ if g j < t then b j else 0) s ω =
       simpleHolding g N b s ω := by
-  rw [simpleHolding_def, simpleHolding_def]
-  refine sum_congr rfl fun j _ ↦ ?_
+  rw [simpleHolding_def, simpleHolding_def]; refine sum_congr rfl fun j _ ↦ ?_
   by_cases h : g j < t
-  · simp only [h, ↓reduceIte, min_eq_left h.le, Set.indicator_apply, Set.mem_Ioc,
-      le_min_iff, hs, and_true]
+  · simp [h, min_eq_left h.le, Set.indicator_apply, Set.mem_Ioc, hs]
   · simp [h, Set.mem_Ioc, (hs.trans (not_lt.1 h)).not_gt]
 
 /-- For a nondecreasing grid, summing the `min · t`-clipped increments against positions zeroed at
@@ -192,27 +190,20 @@ or after `t` recovers `simpleGains` at `t`. -/
 theorem sum_ite_lt_mul_sub_min_eq_simpleGains {g : ℕ → ι} {N : ℕ} {b : ℕ → Ω → ℝ}
     (hg : MonotoneOn g (Set.Iic N)) (X : ι → Ω → ℝ) (t : ι) (ω : Ω) :
     (∑ j ∈ range N, (if g j < t then b j else 0) ω *
-        (X (min (g (j + 1)) t) ω - X (min (g j) t) ω)) =
-      simpleGains g N b X t ω := by
-  rw [simpleGains_def]
-  refine sum_congr rfl fun j hj ↦ ?_
+        (X (min (g (j + 1)) t) ω - X (min (g j) t) ω)) = simpleGains g N b X t ω := by
+  rw [simpleGains_def]; refine sum_congr rfl fun j hj ↦ ?_
   by_cases h : g j < t
   · simp [h]
-  · have hle : t ≤ g j := not_lt.1 h
-    have hle' : t ≤ g (j + 1) := hle.trans
-      (hg (mem_range.1 hj).le (mem_range.1 hj) (Nat.le_succ j))
-    simp [h, min_eq_right hle, min_eq_right hle']
+  · simp [h, min_eq_right (not_lt.1 h), min_eq_right ((not_lt.1 h).trans
+      (hg (mem_range.1 hj).le (mem_range.1 hj) (Nat.le_succ j)))]
 
 /-- Clip two left-measurable finite-grid strategies to `[⊥, t]` and represent their difference on a
 single nondecreasing deterministic grid starting at `⊥` and bounded by `t`, with heights bounded
 pointwise by the sum of the input absolute heights. -/
 theorem exists_simpleHolding_simpleGains_sub [OrderBot ι] {mΩ : MeasurableSpace Ω}
-    (ℱ : Filtration ι mΩ) (t : ι)
-    {n₁ n₂ : ℕ} {τ₁ τ₂ : ℕ → ι} {a₁ a₂ : ℕ → Ω → ℝ}
-    (hτ₁ : MonotoneOn τ₁ (Set.Iic n₁))
-    (ha₁ : ∀ j < n₁, StronglyMeasurable[ℱ (τ₁ j)] (a₁ j))
-    (hτ₂ : MonotoneOn τ₂ (Set.Iic n₂))
-    (ha₂ : ∀ j < n₂, StronglyMeasurable[ℱ (τ₂ j)] (a₂ j)) :
+    (ℱ : Filtration ι mΩ) (t : ι) {n₁ n₂ : ℕ} {τ₁ τ₂ : ℕ → ι} {a₁ a₂ : ℕ → Ω → ℝ}
+    (hτ₁ : MonotoneOn τ₁ (Set.Iic n₁)) (ha₁ : ∀ j < n₁, StronglyMeasurable[ℱ (τ₁ j)] (a₁ j))
+    (hτ₂ : MonotoneOn τ₂ (Set.Iic n₂)) (ha₂ : ∀ j < n₂, StronglyMeasurable[ℱ (τ₂ j)] (a₂ j)) :
     ∃ (N : ℕ) (grid : ℕ → ι) (height : ℕ → Ω → ℝ),
       grid 0 = ⊥ ∧ MonotoneOn grid (Set.Iic N) ∧ (∀ j ≤ N, grid j ≤ t) ∧
       (∀ j < N, StronglyMeasurable[ℱ (grid j)] (height j)) ∧
@@ -229,39 +220,30 @@ theorem exists_simpleHolding_simpleGains_sub [OrderBot ι] {mΩ : MeasurableSpac
     (fun i ↦ if τ₁ i < t then a₁ i else 0) (fun i ↦ if τ₂ i < t then (-a₂) i else 0)
   have hc : ∀ k ∈ (Finset.univ : Finset (Fin n₁ ⊕ Fin n₂)), StronglyMeasurable[ℱ (l k)] (c k) := by
     rintro (i | i) _ <;> dsimp only [c, Sum.elim_inl, Sum.elim_inr] <;> split_ifs with h
-    · have hl : l (Sum.inl i) = τ₁ i := min_eq_left h.le
-      exact hl ▸ ha₁ i i.2
+    · have hl : l (.inl i) = τ₁ i := min_eq_left h.le; exact hl ▸ ha₁ i i.2
     · exact stronglyMeasurable_zero
-    · have hl : l (Sum.inr i) = τ₂ i := min_eq_left h.le
-      exact hl ▸ (ha₂ i i.2).neg
+    · have hl : l (.inr i) = τ₂ i := min_eq_left h.le; exact hl ▸ (ha₂ i i.2).neg
     · exact stronglyMeasurable_zero
   obtain ⟨N, g, b, hg0, hg, hb, hb_norm, hhold, hgains⟩ :=
     exists_simpleHolding_simpleGains_eq_sum ℱ Finset.univ l u c hc
   let grid (j : ℕ) : ι := min (g j) t
   let height (j : ℕ) : Ω → ℝ := if g j < t then b j else 0
-  have hlu (k : Fin n₁ ⊕ Fin n₂) : l k ≤ u k := by
-    rcases k with i | i
-    · exact min_le_min_right t (hτ₁ i.2.le i.2 (Nat.le_succ i))
-    · exact min_le_min_right t (hτ₂ i.2.le i.2 (Nat.le_succ i))
-  have hut (k : Fin n₁ ⊕ Fin n₂) : u k ≤ t := by rcases k with i | i <;> exact min_le_right _ _
+  have hlu : ∀ k : Fin n₁ ⊕ Fin n₂, l k ≤ u k
+    | .inl i => min_le_min_right t (hτ₁ i.2.le i.2 (Nat.le_succ i))
+    | .inr i => min_le_min_right t (hτ₂ i.2.le i.2 (Nat.le_succ i))
+  have hut : ∀ k : Fin n₁ ⊕ Fin n₂, u k ≤ t := by rintro (i | i) <;> exact min_le_right _ _
   refine ⟨N, grid, height, by simp [grid, hg0],
     fun i hi j hj hij ↦ min_le_min_right t (hg.monotoneOn hi hj hij),
     fun _ _ ↦ min_le_right _ _, fun j hj ↦ ?_, fun j hj ω ↦ ?_, fun s hs ω ↦ ?_, fun X ω ↦ ?_⟩
-  · dsimp only [height]
-    split_ifs with h
-    · have hg_eq : grid j = g j := min_eq_left h.le
-      exact hg_eq ▸ hb j hj
+  · dsimp only [height]; split_ifs with h
+    · have hg_eq : grid j = g j := min_eq_left h.le; exact hg_eq ▸ hb j hj
     · exact stronglyMeasurable_zero
   · have hsum_c : (∑ k : Fin n₁ ⊕ Fin n₂, ‖c k ω‖) ≤
         (∑ i ∈ range n₁, ‖a₁ i ω‖) + ∑ i ∈ range n₂, ‖a₂ i ω‖ := by
       rw [Fintype.sum_sum_type, ← Fin.sum_univ_eq_sum_range, ← Fin.sum_univ_eq_sum_range]
-      refine add_le_add (sum_le_sum fun i _ ↦ ?_) (sum_le_sum fun i _ ↦ ?_)
-      · dsimp only [c, Sum.elim_inl]
-        split_ifs <;> simp
-      · dsimp only [c, Sum.elim_inr]
-        split_ifs <;> simp
-    dsimp only [height]
-    split_ifs
+      exact add_le_add (sum_le_sum fun _ _ ↦ by dsimp [c]; split_ifs <;> simp)
+        (sum_le_sum fun _ _ ↦ by dsimp [c]; split_ifs <;> simp)
+    dsimp only [height]; split_ifs
     · exact (hb_norm j hj ω).trans hsum_c
     · simp only [Pi.zero_apply, norm_zero]
       exact add_nonneg (sum_nonneg fun _ _ ↦ norm_nonneg _) (sum_nonneg fun _ _ ↦ norm_nonneg _)

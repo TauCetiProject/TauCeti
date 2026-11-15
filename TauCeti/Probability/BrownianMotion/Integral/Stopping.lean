@@ -117,24 +117,19 @@ theorem LocallyBrownianIntegrable.tendsto_measure_lintegral_dyadicCeilTime [IsFi
       ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime d (τ ω) then H s ω else 0) -
         (if (s : WithTop ℝ≥0) ≤ τ ω then H s ω else 0)‖ₑ ^ 2
       ∂Probability.timeMeasure T}) atTop (𝓝 0) := by
-  let F (d : ℕ) (s : ℝ≥0) (ω : Ω) : ℝ≥0∞ :=
-    ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime d (τ ω) then H s ω else 0) -
-      (if (s : WithTop ℝ≥0) ≤ τ ω then H s ω else 0)‖ₑ ^ 2
-  have hF_meas (d : ℕ) : Measurable (fun p : ℝ≥0 × Ω ↦ F d p.1 p.2) :=
+  have hF_meas (d : ℕ) : Measurable (fun p : ℝ≥0 × Ω ↦
+      ‖(if (p.1 : WithTop ℝ≥0) ≤ dyadicCeilTime d (τ p.2) then H p.1 p.2 else 0) -
+        (if (p.1 : WithTop ℝ≥0) ≤ τ p.2 then H p.1 p.2 else 0)‖ₑ ^ 2) :=
     (((hH.isStronglyPredictable.ite_le (hτ.dyadicCeilTime d)).sub
-      (hH.isStronglyPredictable.ite_le hτ)).mono ℱ.predictable_le_prod).measurable.eNorm
-      |>.pow_const 2
+      (hH.isStronglyPredictable.ite_le hτ)).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const 2
   rw [← measure_empty (μ := P)]
   refine tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure atTop MeasurableSet.empty
-    (fun d ↦ (hF_meas d).lintegral_prod_left' measurableSet_Ici)
-    (hH.ae_memLp.mono fun ω hω ↦ ?_)
-  have hm := hω T
-  rw [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def] at hm
-  have hlim := tendsto_lintegral_dyadicCeilTime (u := τ ω)
+    (fun d ↦ (hF_meas d).lintegral_prod_left' measurableSet_Ici) (hH.ae_memLp.mono fun ω hω ↦ ?_)
+  have hm := hω T; rw [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def] at hm
+  filter_upwards [(tendsto_lintegral_dyadicCeilTime (u := τ ω)
     (hm.aestronglyMeasurable.eNorm.pow_const 2)
-    (hm.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.1 hm).ne
-  filter_upwards [hlim.eventually (eventually_lt_nhds hε)] with d hd
-  simp only [Set.mem_empty_iff_false, iff_false, not_le]
-  exact hd
+    (hm.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.1 hm).ne).eventually
+    (eventually_lt_nhds hε)] with d hd
+  simpa using hd
 
 end TauCeti

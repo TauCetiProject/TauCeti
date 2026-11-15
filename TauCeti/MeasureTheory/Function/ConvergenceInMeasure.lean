@@ -131,18 +131,13 @@ theorem tendsto_measure_ge_zero_const_mul {E : ι → α → ℝ≥0∞} {c : �
     {ε : ℝ≥0∞} (hε : 0 < ε) :
     Tendsto (fun i ↦ μ {x | ε ≤ c * E i x}) l (𝓝 0) := by
   rcases eq_or_ne c 0 with rfl | hc0
-  · simp only [zero_mul, not_le_of_gt hε, Set.ofPred_false, measure_empty]
-    exact tendsto_const_nhds
+  · simp only [zero_mul, not_le_of_gt hε, Set.ofPred_false, measure_empty]; exact tendsto_const_nhds
   rcases eq_or_ne ε ∞ with rfl | _
   · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h 1 one_pos)
-      (fun _ ↦ zero_le) fun i ↦ measure_mono fun x hx ↦ ?_
-    by_contra hnot
-    rw [Set.mem_ofPred_eq, not_le] at hnot
-    exact (ENNReal.mul_lt_top hc.lt_top (hnot.trans ENNReal.one_lt_top)).not_ge hx
-  · have hdiv : 0 < ε / c := ENNReal.div_pos hε.ne' hc
-    refine (h (ε / c) hdiv).congr' (.of_forall fun i ↦ ?_)
-    congr 1
-    ext x
+      (fun _ ↦ zero_le) fun i ↦ measure_mono fun x hx ↦ by_contra fun hnot ↦
+        (ENNReal.mul_lt_top hc.lt_top ((not_le.1 hnot).trans ENNReal.one_lt_top)).not_ge hx
+  · refine (h (ε / c) (ENNReal.div_pos hε.ne' hc)).congr' (.of_forall fun i ↦ ?_)
+    congr 1; ext x
     simp only [Set.mem_ofPred_eq, ENNReal.div_le_iff_le_mul (.inl hc0) (.inl hc), mul_comm]
 
 /-- On a finite measure space, multiplying an `ℝ≥0∞`-valued family by a fixed `μ`-almost everywhere
@@ -153,31 +148,23 @@ theorem tendsto_measure_ge_zero_mul_of_ae_lt_top [IsFiniteMeasure μ]
     (h : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ μ {x | ε ≤ E i x}) l (𝓝 0))
     {ε : ℝ≥0∞} (hε : 0 < ε) :
     Tendsto (fun i ↦ μ {x | ε ≤ c x * E i x}) l (𝓝 0) := by
-  rw [ENNReal.tendsto_nhds_zero]
-  intro δ hδ
+  rw [ENNReal.tendsto_nhds_zero]; intro δ hδ
   let A (M : ℕ) : Set α := {x | (M : ℝ≥0∞) ≤ c x}
-  have hA_meas (M : ℕ) : NullMeasurableSet (A M) μ := hc.nullMeasurable measurableSet_Ici
-  have hA_anti : Antitone A :=
-    fun _ _ hMN _ (hx : (_ : ℝ≥0∞) ≤ _) ↦ (Nat.cast_le.2 hMN).trans hx
-  have hA_inter : μ (⋂ M, A M) = 0 := by
-    refine measure_mono_null (fun x hx ↦ ?_) (ae_iff.1 hfin)
-    simp only [Set.mem_iInter, Set.mem_ofPred_eq, not_lt, top_le_iff] at hx ⊢
-    by_contra hne
-    obtain ⟨M, hM⟩ := ENNReal.exists_nat_gt hne
-    exact hM.not_ge (hx M)
-  have hA_lim : Tendsto (μ ∘ A) atTop (𝓝 0) :=
-    hA_inter ▸ tendsto_measure_iInter_atTop hA_meas hA_anti ⟨0, measure_ne_top μ _⟩
+  have hA_inter : μ (⋂ M, A M) = 0 :=
+    measure_mono_null (fun x hx ↦ by
+      simp only [Set.mem_iInter, Set.mem_ofPred_eq, not_lt, top_le_iff] at hx ⊢
+      exact by_contra fun hne ↦ (ENNReal.exists_nat_gt hne).elim fun M hM ↦ hM.not_ge (hx M))
+      (ae_iff.1 hfin)
+  have hA_lim : Tendsto (μ ∘ A) atTop (𝓝 0) := hA_inter ▸ tendsto_measure_iInter_atTop
+    (fun _ ↦ hc.nullMeasurable measurableSet_Ici)
+    (fun _ _ hMN _ (hx : (_ : ℝ≥0∞) ≤ _) ↦ (Nat.cast_le.2 hMN).trans hx) ⟨0, measure_ne_top μ _⟩
   have hhalf : 0 < δ / 2 := ENNReal.half_pos hδ.ne'
   obtain ⟨M, hM⟩ := (hA_lim.eventually (eventually_le_nhds hhalf)).exists
-  have hEM := (tendsto_measure_ge_zero_const_mul (ENNReal.natCast_ne_top M) h hε).eventually
-    (eventually_le_nhds hhalf)
-  filter_upwards [hEM] with i hi
-  have hsub : {x | ε ≤ c x * E i x} ⊆ A M ∪ {x | ε ≤ (M : ℝ≥0∞) * E i x} := fun x hx ↦ by
-    by_cases hxM : x ∈ A M
-    · exact Or.inl hxM
-    · refine Or.inr (show ε ≤ (M : ℝ≥0∞) * E i x from hx.trans ?_)
-      gcongr
-      exact le_of_not_ge hxM
+  filter_upwards [(tendsto_measure_ge_zero_const_mul (ENNReal.natCast_ne_top M) h hε).eventually
+    (eventually_le_nhds hhalf)] with i hi
+  have hsub : {x | ε ≤ c x * E i x} ⊆ A M ∪ {x | ε ≤ (M : ℝ≥0∞) * E i x} := fun x hx ↦
+    if hxM : (M : ℝ≥0∞) ≤ c x then .inl hxM else .inr (show ε ≤ (M : ℝ≥0∞) * E i x from
+      hx.trans (by gcongr; exact le_of_not_ge hxM))
   exact ((measure_mono hsub).trans (measure_union_le _ _)).trans
     ((add_le_add hM hi).trans_eq (ENNReal.add_halves δ))
 
@@ -187,34 +174,23 @@ of `E₁` and `E₂` tend to zero along `l`, then all positive tail measures of 
 theorem tendsto_measure_ge_zero_of_ae_le {E E₁ E₂ : ι → α → ℝ≥0∞}
     (h₁ : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ μ {x | ε ≤ E₁ i x}) l (𝓝 0))
     (h₂ : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ μ {x | ε ≤ E₂ i x}) l (𝓝 0))
-    (hle : ∀ᶠ i in l, ∀ᵐ x ∂μ, E i x ≤ E₁ i x + E₂ i x)
-    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    (hle : ∀ᶠ i in l, ∀ᵐ x ∂μ, E i x ≤ E₁ i x + E₂ i x) {ε : ℝ≥0∞} (hε : 0 < ε) :
     Tendsto (fun i ↦ μ {x | ε ≤ E i x}) l (𝓝 0) := by
+  let δ := min 1 (ε / 2)
+  have hδ : 0 < δ := lt_min one_pos (ENNReal.div_pos hε.ne' (by norm_num))
+  have hsum : Tendsto (fun i ↦ μ {x | δ ≤ E₁ i x} + μ {x | δ ≤ E₂ i x}) l (𝓝 0) := by
+    simpa using (h₁ δ hδ).add (h₂ δ hδ)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
+    (Eventually.of_forall fun _ ↦ zero_le) (hle.mono fun i hi ↦
+      (measure_mono_ae (hi.mono fun x hx hge ↦ by_contra fun hnot ↦ ?_)).trans
+        (measure_union_le _ _))
+  dsimp only [δ] at hnot
+  simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le, lt_min_iff] at hnot
   rcases eq_or_ne ε ∞ with rfl | _
-  · have hsum : Tendsto (fun i ↦ μ {x | 1 ≤ E₁ i x} + μ {x | 1 ≤ E₂ i x}) l (𝓝 0) := by
-      simpa using (h₁ 1 one_pos).add (h₂ 1 one_pos)
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
-      (Eventually.of_forall fun _ ↦ zero_le) (hle.mono fun i hi ↦ ?_)
-    refine (measure_mono_ae ?_).trans (measure_union_le _ _)
-    filter_upwards [hi] with x hx htop
-    by_contra hnot
-    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
-    have hlt : E i x < ∞ := hx.trans_lt (ENNReal.add_lt_top.2
-      ⟨hnot.1.trans ENNReal.one_lt_top, hnot.2.trans ENNReal.one_lt_top⟩)
-    exact hlt.not_ge htop
-  · have hhalf : 0 < ε / 2 := ENNReal.half_pos hε.ne'
-    have hsum : Tendsto (fun i ↦
-        μ {x | ε / 2 ≤ E₁ i x} + μ {x | ε / 2 ≤ E₂ i x}) l (𝓝 0) := by
-      simpa using (h₁ _ hhalf).add (h₂ _ hhalf)
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
-      (Eventually.of_forall fun _ ↦ zero_le) (hle.mono fun i hi ↦ ?_)
-    refine (measure_mono_ae ?_).trans (measure_union_le _ _)
-    filter_upwards [hi] with x hx hge
-    by_contra hnot
-    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
-    have hlt : E₁ i x + E₂ i x < ε :=
-      (ENNReal.add_lt_add hnot.1 hnot.2).trans_eq (ENNReal.add_halves ε)
-    exact (hx.trans_lt hlt).not_ge hge
+  · exact (hx.trans_lt (ENNReal.add_lt_top.2 ⟨hnot.1.1.trans ENNReal.one_lt_top,
+      hnot.2.1.trans ENNReal.one_lt_top⟩)).not_ge hge
+  · exact (hx.trans_lt ((ENNReal.add_lt_add hnot.1.2 hnot.2.2).trans_eq
+      (ENNReal.add_halves ε))).not_ge hge
 
 /-- If `eLpNorm (f i) 2 (μ.prod ν)` tends to zero along `l` for `SFinite` measures `μ` and `ν`,
 then the `ν`-measure of the slices where `∫⁻ x, ‖f i (x, y)‖ₑ ^ 2 ∂μ` exceeds any positive
@@ -226,35 +202,21 @@ theorem tendsto_measure_lintegral_enorm_sq_of_tendsto_eLpNorm
     (hlim : Tendsto (fun i ↦ eLpNorm (f i) 2 (μ.prod ν)) l (𝓝 0))
     {ε : ℝ≥0∞} (hε : 0 < ε) :
     Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖f i (x, y)‖ₑ ^ 2 ∂μ}) l (𝓝 0) := by
-  have hev : ∀ᶠ i in l, AEStronglyMeasurable (f i) (μ.prod ν) := by
-    filter_upwards [hlim.eventually (eventually_lt_nhds ENNReal.zero_lt_top)] with i hi
-    by_contra hnot
-    exact hi.ne (eLpNorm_of_not_aestronglyMeasurable hnot)
-  have hsq : Tendsto (fun i ↦ eLpNorm (f i) 2 (μ.prod ν) ^ 2) l (𝓝 0) := by
-    simpa using ENNReal.Tendsto.pow (n := 2) hlim
-  rcases eq_or_ne ε ∞ with rfl | hεtop
-  · refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsq
-      (Eventually.of_forall fun _ ↦ zero_le) (hev.mono fun i hsm ↦ ?_)
-    have hm : AEMeasurable (fun p ↦ ‖f i p‖ₑ ^ 2) (μ.prod ν) := hsm.eNorm.pow_const 2
-    have hsub : {y | ∞ ≤ ∫⁻ x, ‖f i (x, y)‖ₑ ^ 2 ∂μ} ⊆
-        {y | 1 ≤ ∫⁻ x, ‖f i (x, y)‖ₑ ^ 2 ∂μ} :=
-      fun _ hy ↦ (le_top : (1 : ℝ≥0∞) ≤ ∞).trans hy
-    refine (measure_mono hsub).trans ?_
-    refine (MeasureTheory.meas_ge_le_lintegral_div hm.lintegral_prod_left'
-      one_ne_zero ENNReal.one_ne_top).trans_eq ?_
-    rw [div_one, ← lintegral_prod_symm _ hm,
-      TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow (by norm_num : 2 ≠ 0) hsm]
-    rfl
-  · have hdiv : Tendsto (fun i ↦ eLpNorm (f i) 2 (μ.prod ν) ^ 2 / ε) l (𝓝 0) := by
-      simpa only [ENNReal.zero_div] using ENNReal.Tendsto.div_const hsq (.inr hε.ne')
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hdiv
-      (Eventually.of_forall fun _ ↦ zero_le) (hev.mono fun i hsm ↦ ?_)
-    have hm : AEMeasurable (fun p ↦ ‖f i p‖ₑ ^ 2) (μ.prod ν) := hsm.eNorm.pow_const 2
-    refine (MeasureTheory.meas_ge_le_lintegral_div hm.lintegral_prod_left'
-      hε.ne' hεtop).trans_eq ?_
-    rw [← lintegral_prod_symm _ hm,
-      TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow (by norm_num : 2 ≠ 0) hsm]
-    rfl
+  let δ := min 1 ε
+  have hδ0 : δ ≠ 0 := (lt_min one_pos hε).ne'
+  have hδtop : δ ≠ ∞ := ((min_le_left 1 ε).trans_lt ENNReal.one_lt_top).ne
+  have hev : ∀ᶠ i in l, AEStronglyMeasurable (f i) (μ.prod ν) :=
+    (hlim.eventually (eventually_lt_nhds ENNReal.zero_lt_top)).mono fun i hi ↦
+      by_contra fun hnot ↦ hi.ne (eLpNorm_of_not_aestronglyMeasurable hnot)
+  have hdiv : Tendsto (fun i ↦ eLpNorm (f i) 2 (μ.prod ν) ^ 2 / δ) l (𝓝 0) := by
+    simpa using ENNReal.Tendsto.div_const (ENNReal.Tendsto.pow (n := 2) hlim) (.inr hδ0)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hdiv
+    (Eventually.of_forall fun _ ↦ zero_le) (hev.mono fun i hsm ↦ ?_)
+  have hm : AEMeasurable (fun p ↦ ‖f i p‖ₑ ^ 2) (μ.prod ν) := hsm.eNorm.pow_const 2
+  refine (measure_mono fun _ hy ↦ (min_le_right 1 ε).trans hy).trans
+    ((MeasureTheory.meas_ge_le_lintegral_div hm.lintegral_prod_left' hδ0 hδtop).trans_eq ?_)
+  rw [← lintegral_prod_symm _ hm,
+    TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow (by norm_num : 2 ≠ 0) hsm]; rfl
 
 end TauCeti
 
@@ -269,20 +231,16 @@ theorem TendstoInMeasure.add {Ω E ι : Type*} {mΩ : MeasurableSpace Ω} {μ : 
     (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂) :
     TendstoInMeasure μ (fun i ω ↦ f₁ i ω + f₂ i ω) l (fun ω ↦ g₁ ω + g₂ ω) := by
   refine tendstoInMeasure_iff_norm.2 fun ε hε ↦ ?_
-  have hhalf : 0 < ε / 2 := half_pos hε
   have hsum : Tendsto (fun i ↦ μ {ω | ε / 2 ≤ ‖f₁ i ω - g₁ ω‖} +
       μ {ω | ε / 2 ≤ ‖f₂ i ω - g₂ ω‖}) l (𝓝 0) := by
-    simpa using ((tendstoInMeasure_iff_norm.1 h₁) _ hhalf).add
-      ((tendstoInMeasure_iff_norm.1 h₂) _ hhalf)
+    simpa using ((tendstoInMeasure_iff_norm.1 h₁) _ (half_pos hε)).add
+      ((tendstoInMeasure_iff_norm.1 h₂) _ (half_pos hε))
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum
-    (fun _ ↦ zero_le) fun i ↦ ?_
-  refine (measure_mono fun ω hω ↦ ?_).trans (measure_union_le _ _)
+    (fun _ ↦ zero_le) fun i ↦ (measure_mono fun ω hω ↦ ?_).trans (measure_union_le _ _)
   simp only [Set.mem_union, Set.mem_ofPred_eq] at hω ⊢
-  by_contra hnot
-  push Not at hnot
-  have htri : ‖f₁ i ω + f₂ i ω - (g₁ ω + g₂ ω)‖ ≤ ‖f₁ i ω - g₁ ω‖ + ‖f₂ i ω - g₂ ω‖ := by
-    simpa only [add_sub_add_comm] using norm_add_le (f₁ i ω - g₁ ω) (f₂ i ω - g₂ ω)
-  linarith
+  by_contra! hnot
+  have := norm_add_le (f₁ i ω - g₁ ω) (f₂ i ω - g₂ ω)
+  rw [← add_sub_add_comm] at this; linarith
 
 /-- Pointwise scalar multiplication by a constant preserves convergence in measure whenever
 `(c • ·)` is uniformly continuous, for any measure and filter and without measurability
@@ -291,14 +249,12 @@ theorem TendstoInMeasure.const_smul {Ω M E ι : Type*} {mΩ : MeasurableSpace �
     [PseudoEMetricSpace E] [SMul M E] [UniformContinuousConstSMul M E]
     {l : Filter ι} {f : ι → Ω → E} {g : Ω → E}
     (h : TendstoInMeasure μ f l g) (c : M) :
-    TendstoInMeasure μ (fun i ω ↦ c • f i ω) l (fun ω ↦ c • g ω) := by
-  intro ε hε
+    TendstoInMeasure μ (fun i ω ↦ c • f i ω) l (fun ω ↦ c • g ω) := fun ε hε ↦ by
   obtain ⟨δ, hδ, huc⟩ := EMetric.uniformContinuous_iff.1
     (uniformContinuous_const_smul c : UniformContinuous fun x : E ↦ c • x) ε hε
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h δ hδ)
-    (fun _ ↦ zero_le) fun i ↦ measure_mono fun ω hω ↦ ?_
-  by_contra hlt
-  exact (huc (not_le.1 hlt)).not_ge hω
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h δ hδ)
+    (fun _ ↦ zero_le) fun i ↦ measure_mono fun _ hω ↦ by_contra fun hlt ↦
+      (huc (not_le.1 hlt)).not_ge hω
 
 /-- Pointwise negation preserves convergence in measure, for any measure and filter and without
 measurability hypotheses. -/
@@ -325,27 +281,21 @@ theorem AEStronglyMeasurable.tendstoInMeasure_smul {Ω 𝕜 E ι : Type*} {mΩ :
     (h : TendstoInMeasure μ f l g) :
     TendstoInMeasure μ (fun i ω ↦ c ω • f i ω) l (fun ω ↦ c ω • g ω) := by
   refine tendstoInMeasure_iff_norm.2 fun ε hε ↦ ?_
-  have hE (δ : ℝ≥0∞) (hδ : 0 < δ) :
-      Tendsto (fun i ↦ μ {ω | δ ≤ ‖f i ω - g ω‖ₑ}) l (𝓝 0) := by
+  have hE (δ : ℝ≥0∞) (hδ : 0 < δ) : Tendsto (fun i ↦ μ {ω | δ ≤ ‖f i ω - g ω‖ₑ}) l (𝓝 0) := by
     rcases eq_or_ne δ ∞ with rfl | hδtop
     · simp only [not_le_of_gt eNorm_lt_top, Set.ofPred_false, measure_empty]
       exact tendsto_const_nhds
     · refine ((tendstoInMeasure_iff_norm.1 h) δ.toReal (ENNReal.toReal_pos hδ.ne' hδtop)).congr'
         (.of_forall fun i ↦ ?_)
-      congr 1
-      ext ω
-      simp only [Set.mem_ofPred_eq, ← ofReal_norm, ENNReal.le_ofReal_iff_toReal_le hδtop
-        (norm_nonneg _)]
-  have hmul := TauCeti.tendsto_measure_ge_zero_mul_of_ae_lt_top hc.eNorm
-    (.of_forall fun _ ↦ eNorm_lt_top) hE (ENNReal.ofReal_pos.2 hε)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hmul
+      congr 1; ext ω
+      simp [← ofReal_norm, ENNReal.le_ofReal_iff_toReal_le hδtop (norm_nonneg _)]
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (TauCeti.tendsto_measure_ge_zero_mul_of_ae_lt_top hc.eNorm
+      (.of_forall fun _ ↦ eNorm_lt_top) hE (ENNReal.ofReal_pos.2 hε))
     (fun _ ↦ zero_le) fun i ↦ measure_mono fun ω hω ↦ ?_
-  rw [Set.mem_ofPred_eq] at hω ⊢
-  have hbound : ‖c ω • f i ω - c ω • g ω‖ ≤ ‖c ω‖ * ‖f i ω - g ω‖ := by
-    simpa only [smul_sub] using norm_smul_le (c ω) (f i ω - g ω)
-  have he : ENNReal.ofReal ε ≤ ENNReal.ofReal (‖c ω‖ * ‖f i ω - g ω‖) :=
-    ENNReal.ofReal_le_ofReal (hω.trans hbound)
-  rwa [ENNReal.ofReal_mul (norm_nonneg _), ofReal_norm, ofReal_norm] at he
+  have he := ENNReal.ofReal_le_ofReal (hω.trans (by
+    simpa only [smul_sub] using norm_smul_le (c ω) (f i ω - g ω)))
+  rwa [Set.mem_ofPred_eq, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg _)]
 
 /-- Convergence in mean square implies convergence in measure, for any measure and filter.
 Integrability of the squared deviations is needed only eventually. -/

@@ -104,15 +104,10 @@ theorem IsPreLocalizingSequence.tendsto_measure_lintegral_ite_le {ι Ω E : Type
     Tendsto (fun n ↦ P {ω | ε ≤ ∫⁻ s,
       ‖(if (s : WithTop ι) ≤ τ n ω then H s ω else 0) - H s ω‖ₑ ^ 2 ∂μ}) atTop (𝓝 0) := by
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hτ.tendsto_measure_le T)
-    (fun _ ↦ zero_le) fun n ↦ measure_mono fun ω (hω : ε ≤ _) ↦ ?_
-  by_contra hnot
-  have hgt : (T : WithTop ι) < τ n ω := not_le.1 hnot
-  have hzero : (∫⁻ s,
-      ‖(if (s : WithTop ι) ≤ τ n ω then H s ω else 0) - H s ω‖ₑ ^ 2 ∂μ) = 0 := by
-    refine (lintegral_congr_ae ?_).trans lintegral_zero
-    filter_upwards [hμ] with s hs
-    have hsτ : (s : WithTop ι) ≤ τ n ω := (WithTop.coe_le_coe.2 hs).trans hgt.le
-    rw [ite_eq_left hsτ, sub_self, eNorm_zero, zero_pow (by norm_num)]
+    (fun _ ↦ zero_le) fun n ↦ measure_mono fun ω (hω : ε ≤ _) ↦ by_contra fun hnot ↦ ?_
+  have hzero : (∫⁻ s, ‖(if (s : WithTop ι) ≤ τ n ω then H s ω else 0) - H s ω‖ₑ ^ 2 ∂μ) = 0 :=
+    (lintegral_congr_ae (hμ.mono fun s hs ↦ by
+      simp [((WithTop.coe_le_coe.2 hs).trans (not_le.1 hnot).le)])).trans lintegral_zero
   exact hε.not_ge (hzero ▸ hω)
 
 variable {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
