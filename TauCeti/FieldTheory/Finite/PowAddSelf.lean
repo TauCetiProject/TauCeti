@@ -158,6 +158,47 @@ theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero
     rw [one_mul, add_comm, hb]
   · exact ⟨1, one_ne_zero, by simp⟩
 
+/-- Over a field of order `q²`, the affine trace equation
+`z + z ^ q = x ^ q * x` has exactly `q³` solutions `(z, x)`. -/
+theorem natCard_add_pow_eq_pow_mul {q : ℕ} (hK : Nat.card K = q ^ 2) :
+    Nat.card {c : K × K // c.1 + c.1 ^ q = c.2 ^ q * c.2} = q ^ 3 := by
+  classical
+  by_cases hq : q = 0
+  · subst q
+    let e : {c : K × K // c.1 + c.1 ^ 0 = c.2 ^ 0 * c.2} ≃ K :=
+      { toFun c := c.1.1
+        invFun z := ⟨(z, z + 1), by simp⟩
+        left_inv c := by
+          apply Subtype.ext
+          exact Prod.ext rfl (by simpa using c.2)
+        right_inv z := rfl }
+    simpa using (Nat.card_congr e).trans hK
+  have : Finite K := Nat.finite_of_card_ne_zero (hK ▸ pow_ne_zero 2 hq)
+  let := Fintype.ofFinite K
+  -- The square root of a finite field's order is a power of its characteristic.
+  obtain ⟨p, hchar, n, hprime, hcard⟩ := _root_.FiniteField.card' K
+  let : CharP K p := hchar
+  let : Fact p.Prime := ⟨hprime⟩
+  have hdvd : q ∣ p ^ (n : ℕ) := by
+    rw [← hcard, ← Nat.card_eq_fintype_card, hK]
+    exact dvd_pow_self q two_ne_zero
+  obtain ⟨n, -, rfl⟩ := (Nat.dvd_prime_pow hprime).mp hdvd
+  have hpow (a : K) : a ^ (p ^ n) ^ 2 = a := by
+    rw [← hK, Nat.card_eq_fintype_card]
+    exact _root_.FiniteField.pow_card a
+  have hfib (x : K) : Nat.card {z : K // z ^ p ^ n + z = x ^ p ^ n * x} = p ^ n := by
+    apply natCard_pow_add_self_eq hK
+    rw [mul_pow, ← pow_mul, ← sq, hpow, mul_comm]
+  let e : {c : K × K // c.1 + c.1 ^ p ^ n = c.2 ^ p ^ n * c.2} ≃
+      {c : K × K // c.2 ^ p ^ n + c.2 = c.1 ^ p ^ n * c.1} :=
+    Equiv.subtypeEquiv (Equiv.prodComm K K) (by intro c; simp [add_comm])
+  rw [Nat.card_congr e,
+    Nat.card_congr (Equiv.subtypeProdEquivSigmaSubtype
+      fun x z : K => z ^ p ^ n + z = x ^ p ^ n * x), Nat.card_sigma]
+  simp only [hfib, Finset.sum_const, Finset.card_univ, smul_eq_mul]
+  rw [← Nat.card_eq_fintype_card, hK]
+  ring
+
 end FiniteField
 
 end TauCeti

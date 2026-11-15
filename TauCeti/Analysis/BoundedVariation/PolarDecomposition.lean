@@ -146,8 +146,8 @@ private theorem exists_le_one :
     rw [Measure.setLIntegral_rnDeriv hlam, ← eNorm_neg, ← hrep]
     exact enorm_integral_divergenceCLM_mul_le_variationMeasure hu hfin φ hφU hφ
   -- Normalize `g` by `k`.
-  obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hlam hgm hbound
-  refine ⟨σ, hσm, hσ1, fun φ => ?_⟩
+  obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hgm hbound
+  refine ⟨σ, hσm, Filter.Eventually.of_forall hσ1, fun φ => ?_⟩
   rw [hrep, ← integral_toReal_rnDeriv_mul hlam]
   congr 1
   refine integral_congr_ae ?_

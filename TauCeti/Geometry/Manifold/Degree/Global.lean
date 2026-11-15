@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Degree.Integral
+public import TauCeti.Geometry.Manifold.DeRham.HomotopyInvariance
 public import TauCeti.Geometry.Manifold.DeRham.Integration.Bijective
 public import TauCeti.Geometry.Manifold.DeRham.Integration.Surjective
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
@@ -34,6 +35,13 @@ formula `∫_M f^*φ = deg(f) ∫_N φ` holds with no regular value named
 (`TauCeti.integralTopForm_mpullback_eq_degree_mul`). A map of nonzero degree is surjective
 (`TauCeti.surjective_of_degree_ne_zero`).
 
+The cohomological form of the formula gives the basic calculus of the degree. Smoothly homotopic
+maps induce the same map on top compactly supported cohomology of the compact manifold `M`
+(`TauCeti.compactlySupportedDeRhamCohomology.map_eq_of_homotopy`), so they have the same degree
+(`TauCeti.degree_eq_of_homotopy`). Pullback is contravariantly functorial, so the degree is
+multiplicative, `deg (g ∘ f) = deg g · deg f`, for maps between compact connected manifolds
+(`TauCeti.degree_comp`).
+
 As in the local computation, `M` and `N` are modelled on the same vector space `E`.
 
 The proof is Lee's. Near `y` the formula holds by the stack-of-records computation
@@ -54,6 +62,8 @@ integration over `M` are linear, and the integral over `M` of `f^*θ` is `deg_y(
   regular value.
 * `TauCeti.degree_eq_degreeAtRegularValue`: the degree is the signed count at every regular value.
 * `TauCeti.surjective_of_degree_ne_zero`: a map of nonzero degree is surjective.
+* `TauCeti.degree_eq_of_homotopy`: smoothly homotopic maps have the same degree.
+* `TauCeti.degree_comp`: the degree of a composite is the product of the degrees.
 
 ## References
 
@@ -61,6 +71,8 @@ integration over `M` are linear, and the integral over `M` of `f^*θ` is `deg_y(
   Springer, 2013, Chapter 17, section Degree Theory, Theorem 17.35.
 * J. W. Milnor, *Topology from the Differentiable Viewpoint*, University Press of Virginia, 1965,
   §5.
+* R. Bott and L. W. Tu, *Differential Forms in Algebraic Topology*, GTM 82, Springer, 1982, §4
+  (the degree through top compactly supported cohomology).
 -/
 
 public section
@@ -182,5 +194,42 @@ theorem surjective_of_degree_ne_zero (o : Manifold.Orientation I M (Fin k))
   rw [← mem_range] at hy
   exact h ((degree_eq_degreeAtRegularValue o o' hf (isRegularValue_of_notMem_range hy)).trans
     (degreeAtRegularValue_of_notMem_range hy))
+
+/-- **Homotopy invariance of the degree.** If `F : M × [0, 1] → N` is a smooth homotopy from `f`
+to `g`, then `f` and `g` have the same degree. -/
+theorem degree_eq_of_homotopy (o : Manifold.Orientation I M (Fin k))
+    (o' : Manifold.Orientation J N (Fin k)) {f g : M → N} (hf : ContMDiff I J ∞ f)
+    (hg : ContMDiff I J ∞ g) {F : M × Icc (0 : ℝ) 1 → N} (hF : ContMDiff (I.prod (𝓡∂ 1)) J ∞ F)
+    (h₀ : ∀ x, F (x, 0) = f x) (h₁ : ∀ x, F (x, 1) = g x) :
+    degree o o' f = degree o o' g := by
+  -- Compare the integrals of the pullbacks of a class of integral one.
+  obtain ⟨c, hc⟩ := compactlySupportedDeRhamCohomology.surjective_integral o' 1
+  have h := compactlySupportedDeRhamCohomology.integral_map_eq_degree_mul o o' hf c
+  rw [compactlySupportedDeRhamCohomology.map_eq_of_homotopy hf hg hf.continuous.isProperMap
+    hg.continuous.isProperMap hF h₀ h₁,
+    compactlySupportedDeRhamCohomology.integral_map_eq_degree_mul o o' hg, hc, mul_one,
+    mul_one] at h
+  exact_mod_cast h.symm
+
+omit [SigmaCompactSpace N] in
+/-- **Multiplicativity of the degree.** For smooth maps `f : M → N` and `g : N → P` between
+compact connected oriented boundaryless manifolds of the same dimension,
+`deg (g ∘ f) = deg g · deg f`. -/
+theorem degree_comp {H'' P : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ E H''}
+    [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K ∞ P] [BoundarylessManifold K P]
+    [T2Space P] [SigmaCompactSpace P] [ConnectedSpace P] [CompactSpace N]
+    (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k))
+    (o'' : Manifold.Orientation K P (Fin k)) {f : M → N} {g : N → P} (hf : ContMDiff I J ∞ f)
+    (hg : ContMDiff J K ∞ g) :
+    degree o o'' (g ∘ f) = degree o' o'' g * degree o o' f := by
+  -- Pull a class of integral one back along `g` and then along `f`.
+  obtain ⟨c, hc⟩ := compactlySupportedDeRhamCohomology.surjective_integral o'' 1
+  have h := compactlySupportedDeRhamCohomology.integral_map_eq_degree_mul o o'' (hg.comp hf) c
+  rw [compactlySupportedDeRhamCohomology.map_comp f g hf hg hf.continuous.isProperMap
+    hg.continuous.isProperMap, LinearMap.comp_apply,
+    compactlySupportedDeRhamCohomology.integral_map_eq_degree_mul o o' hf,
+    compactlySupportedDeRhamCohomology.integral_map_eq_degree_mul o' o'' hg, hc, mul_one, mul_one,
+    mul_comm] at h
+  exact_mod_cast h.symm
 
 end TauCeti

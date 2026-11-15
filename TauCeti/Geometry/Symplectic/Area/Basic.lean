@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Line
+public import TauCeti.Topology.Algebra.Module.BilinearForm
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.Analysis.Calculus.Deriv.CompMul
 import Mathlib.Analysis.Calculus.Deriv.Shift
@@ -42,6 +43,11 @@ minus the loop area of the counterclockwise circle
 (`TauCeti.SymplecticForm.loopArea_comp_circleMap_sub_mul`).
 The area of `u` vanishes when `u` vanishes on the slices `s = a` and `s = b`
 (`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic`).
+
+The loop area is Lipschitz for the uniform distance between closed loops whose speed is bounded
+by `L`: `|a(x) - a(y)| ≤ ‖ω‖ L sup ‖x - y‖`, with no closeness of the derivatives required
+(`TauCeti.SymplecticForm.abs_loopArea_sub_loopArea_le`). So the loop areas, and the actions, of
+loops of bounded speed are controlled by their uniform limits.
 
 A square-integrable differential also gives an integrable symplectic area density, on any domain.
 Pairing bounded loops with functions whose norms have vanishing mean over `[0, 1]` gives
@@ -301,6 +307,69 @@ theorem integral_symplecticForm_fderiv_smul_eq_loopArea (ω : SymplecticForm V) 
     (fun z hz ↦ contDiffAt_fst.smul ((hx z.2 hz.2).comp z contDiffAt_snd))
     (fun s _ ↦ by simp only [hx₁])]
   simp
+
+/-- **The loop area is Lipschitz for the uniform distance between loops of bounded speed.** Let
+`x` and `y` be closed loops, `x 1 = x 0` and `y 1 = y 0`, differentiable at every point of
+`[0, 1]` with derivatives continuous there and of norm at most `L`. If `‖x t - y t‖ ≤ η` on
+`[0, 1]`, then their loop areas differ by at most `‖ω‖ L η`. No closeness of the derivatives is
+needed: the difference of the areas is `½ ∫₀¹ ω(x - y, x' + y')`, because the remaining terms
+`ω(y', x - y) + ω(y, x' - y')` are the derivative of `ω(y, x - y)`, which integrates to zero over
+closed loops. -/
+theorem abs_loopArea_sub_loopArea_le (ω : SymplecticForm V) {x y : ℝ → V} {L η : ℝ}
+    (hx : ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ x t)
+    (hy : ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ y t)
+    (hx' : ContinuousOn (deriv x) (Icc 0 1)) (hy' : ContinuousOn (deriv y) (Icc 0 1))
+    (hx₁ : x 1 = x 0) (hy₁ : y 1 = y 0) (hxL : ∀ t ∈ Icc (0 : ℝ) 1, ‖deriv x t‖ ≤ L)
+    (hyL : ∀ t ∈ Icc (0 : ℝ) 1, ‖deriv y t‖ ≤ L) (hxy : ∀ t ∈ Icc (0 : ℝ) 1, ‖x t - y t‖ ≤ η) :
+    |ω.loopArea x - ω.loopArea y| ≤ ‖ω.toBilinForm.toContinuousBilinearMap‖ * L * η := by
+  have hC : 0 ≤ ‖ω.toBilinForm.toContinuousBilinearMap‖ :=
+    ω.toBilinForm.toContinuousBilinearMap.opNorm_nonneg
+  have hxc : ContinuousOn x (Icc 0 1) := fun t ht ↦ (hx t ht).continuousAt.continuousWithinAt
+  have hyc : ContinuousOn y (Icc 0 1) := fun t ht ↦ (hy t ht).continuousAt.continuousWithinAt
+  rw [← uIcc_of_le zero_le_one] at hx hy hx' hy' hxc hyc hxL hyL hxy
+  -- The derivative of `ω(y, x - y)` integrates to zero over the closed loops.
+  have hdi : IntervalIntegrable
+      (fun t ↦ ω (deriv y t) (x t - y t) + ω (y t) (deriv x t - deriv y t)) volume 0 1 :=
+    ((ω.continuousOn_apply_comp hy' (hxc.sub hyc)).add
+      (ω.continuousOn_apply_comp hyc (hx'.sub hy'))).intervalIntegrable
+  have hd : ∫ t in (0 : ℝ)..1, (ω (deriv y t) (x t - y t) + ω (y t) (deriv x t - deriv y t)) =
+      0 := by
+    rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (f := fun t ↦ ω (y t) (x t - y t))
+      (fun t ht ↦ ω.hasDerivAt_apply_comp (hy t ht).hasDerivAt
+        ((hx t ht).hasDerivAt.sub (hy t ht).hasDerivAt)) hdi]
+    simp [hx₁, hy₁]
+  -- Pointwise, the difference of the area densities is `ω(x - y, x' + y')` plus that derivative.
+  have hpt (t : ℝ) : ω (x t) (deriv x t) - ω (y t) (deriv y t) =
+      ω (x t - y t) (deriv x t + deriv y t) +
+        (ω (deriv y t) (x t - y t) + ω (y t) (deriv x t - deriv y t)) := by
+    have h₁ : ω (deriv y t) (x t) = -ω (x t) (deriv y t) := (ω.neg_eq _ _).symm
+    have h₂ : ω (deriv y t) (y t) = -ω (y t) (deriv y t) := (ω.neg_eq _ _).symm
+    simp only [map_sub, map_add, LinearMap.sub_apply] at h₁ h₂ ⊢
+    linear_combination h₂ - h₁
+  have hmi : IntervalIntegrable (fun t ↦ ω (x t - y t) (deriv x t + deriv y t)) volume 0 1 :=
+    (ω.continuousOn_apply_comp (hxc.sub hyc) (hx'.add hy')).intervalIntegrable
+  have hdiff : ω.loopArea x - ω.loopArea y =
+      (1 / 2 : ℝ) * ∫ t in (0 : ℝ)..1, ω (x t - y t) (deriv x t + deriv y t) := by
+    rw [loopArea_def, loopArea_def, ← mul_sub, ← intervalIntegral.integral_sub
+      (ω.continuousOn_apply_comp hxc hx').intervalIntegrable
+      (ω.continuousOn_apply_comp hyc hy').intervalIntegrable,
+      intervalIntegral.integral_congr (g := fun t ↦ ω (x t - y t) (deriv x t + deriv y t) +
+        (ω (deriv y t) (x t - y t) + ω (y t) (deriv x t - deriv y t))) fun t _ ↦ hpt t,
+      intervalIntegral.integral_add hmi hdi, hd, add_zero]
+  -- The integrand of the remaining term is at most `‖ω‖ η (2 L)`.
+  have hbound : ‖∫ t in (0 : ℝ)..1, ω (x t - y t) (deriv x t + deriv y t)‖ ≤
+      ‖ω.toBilinForm.toContinuousBilinearMap‖ * η * (2 * L) * |(1 : ℝ) - 0| := by
+    refine intervalIntegral.norm_integral_le_of_norm_le_const fun t ht ↦ ?_
+    have ht' : t ∈ uIcc (0 : ℝ) 1 := uIoc_subset_uIcc ht
+    have hL' : ‖deriv x t + deriv y t‖ ≤ 2 * L :=
+      (norm_add_le _ _).trans (by linarith [hxL t ht', hyL t ht'])
+    rw [Real.norm_eq_abs]
+    exact (ω.abs_apply_le_opNorm_mul_norm_mul_norm _ _).trans
+      (mul_le_mul (mul_le_mul_of_nonneg_left (hxy t ht') hC) hL' (norm_nonneg _)
+        (mul_nonneg hC ((norm_nonneg _).trans (hxy t ht'))))
+  rw [hdiff, abs_mul, abs_of_pos (by norm_num : (0 : ℝ) < 1 / 2), ← Real.norm_eq_abs]
+  rw [sub_zero, abs_one, mul_one] at hbound
+  linarith
 
 end LoopArea
 

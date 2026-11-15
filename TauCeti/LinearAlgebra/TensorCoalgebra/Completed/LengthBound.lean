@@ -39,7 +39,7 @@ namespace ReducedTensorWords
 
 /-- An arity-bounded graded Taylor expansion cannot contribute to a length more than `c`
 below its input length. -/
-theorem component_gradedCoderiv_of_eq_zero (G : InternalGrading R M)
+theorem component_gradedCoderiv_of_eq_zero (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) (c : ℕ)
     (hF : ∀ n : {n : ℕ // 0 < n}, c + 1 < n.1 → F ∘ₗ of R M n = 0)
     (k n : {n : ℕ // 0 < n}) (hn : k.1 + 1 + c ≤ n.1)
@@ -78,7 +78,7 @@ namespace TensorWords
 
 /-- Extending an arity-bounded graded Taylor expansion by zero on the empty word has
 the corresponding uniform length bound. -/
-theorem hasLengthBound_extendReduced_gradedCoderiv (G : InternalGrading R M)
+theorem hasLengthBound_extendReduced_gradedCoderiv (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) (c : ℕ)
     (hF : ∀ n : {n : ℕ // 0 < n}, c + 1 < n.1 →
       F ∘ₗ ReducedTensorWords.of R M n = 0) :

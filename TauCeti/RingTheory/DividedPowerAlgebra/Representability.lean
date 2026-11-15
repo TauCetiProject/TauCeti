@@ -443,6 +443,8 @@ def homogeneousLawEquiv (d : ℕ) :
   LinearEquiv.ofBijective (homogeneousLawMap R M N d)
     ⟨homogeneousLawMap_injective d, homogeneousLawMap_surjective d⟩
 
+/-- The Roby equivalence `homogeneousLawEquiv` sends a linear map `g` on `Γ^d_R(M)` to the
+homogeneous polynomial law `homogeneousLawMap R M N d g` obtained by composing with `γ_d`. -/
 @[simp]
 theorem homogeneousLawEquiv_apply (d : ℕ)
     (g : homogeneousSubmodule (R := R) (M := M) d →ₗ[R] N) :

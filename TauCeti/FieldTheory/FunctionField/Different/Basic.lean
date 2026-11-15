@@ -144,7 +144,7 @@ theorem differentIdeal_eq_top_of_ord_discr_eq_zero {ι : Type*} [Fintype ι] [De
         Submodule (integralClosure (P.integers) F') F')
       = ((1 : FractionalIdeal (integralClosure (P.integers) F')⁰ F') :
         Submodule (integralClosure (P.integers) F') F') := by
-    rw [FractionalIdeal.coe_dual_one, FractionalIdeal.coe_one]
+    rw [FractionalIdeal.coeToSubmodule_dual_one, FractionalIdeal.coeToSubmodule_one]
     exact traceDual_one_eq_one_of_ord_discr_eq_zero F' P hb hd
   have hdual : FractionalIdeal.dual (P.integers) F
       (1 : FractionalIdeal (integralClosure (P.integers) F')⁰ F') = 1 :=

@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Topology.ConnectedComponents
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.ModEq
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
@@ -66,7 +67,10 @@ polynomial in the Morse inequalities.
 
 * `TauCeti.criticalPoints`: the critical set, with `TauCeti.mem_criticalPoints_iff_mfderiv_eq_zero`,
   on boundaryless manifolds `TauCeti.mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero`,
-  and on a normed space `TauCeti.mem_criticalPoints_iff_fderiv_eq_zero`.
+  on a normed space `TauCeti.mem_criticalPoints_iff_fderiv_eq_zero`, and on the real line
+  `TauCeti.mem_criticalPoints_iff_deriv_eq_zero`.
+* `TauCeti.criticalPoints_pow`: the only critical point of `y ↦ yᵐ` on the real line, `m ≥ 2`,
+  is `0`.
 * `TauCeti.isMorseOn_iff_criticalPoints`: Morse functions in terms of the critical set.
 * `TauCeti.criticalPoints_comp_subtypeVal` and `TauCeti.totalCriticalCount_comp_subtypeVal`: the
   critical points of the restriction of `f` to an open submanifold `U` are those of `f` in `U`.
@@ -170,6 +174,19 @@ theorem mem_criticalPoints_iff_fderiv_eq_zero {f : E → ℝ} {x : E} :
   rw [mem_criticalPoints, mvfderiv_eq_fderiv]
   -- `NormedSpace.fromTangentSpace x` is the identity of `E`, read on the tangent space.
   exact Iff.rfl
+
+/-- On the real line, a point is critical exactly when the derivative vanishes there. -/
+theorem mem_criticalPoints_iff_deriv_eq_zero {f : ℝ → ℝ} {x : ℝ} :
+    x ∈ criticalPoints 𝓘(ℝ, ℝ) f ↔ deriv f x = 0 := by
+  rw [mem_criticalPoints_iff_fderiv_eq_zero, ← toSpanSingleton_deriv,
+    ← ContinuousLinearMap.toSpanSingleton_zero, ContinuousLinearMap.toSpanSingleton_inj]
+
+/-- On the real line, the only critical point of `y ↦ y ^ m` with `m ≥ 2` is `0`. -/
+theorem criticalPoints_pow {m : ℕ} (hm : 2 ≤ m) :
+    criticalPoints 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ m) = {0} := by
+  ext y
+  rw [mem_criticalPoints_iff_deriv_eq_zero, deriv_pow_field, mem_singleton_iff]
+  simp [show m ≠ 0 by omega, show m - 1 ≠ 0 by omega]
 
 /-- The critical set is the zero locus of the manifold derivative `mfderiv I 𝓘(ℝ) f`. -/
 theorem criticalPoints_eq_setOf_mfderiv_eq_zero :
@@ -490,7 +507,7 @@ theorem isClosed_criticalPoints (hf : ContMDiff I 𝓘(ℝ) 1 f) : IsClosed (cri
       ← fderivWithin_of_mem_nhdsWithin (extChartAt_target_mem_nhdsWithin_of_mem hyt)
         (I.uniqueDiffOn _ (extChartAt_target_subset_range x hyt))
         ((hg _ hyt).differentiableWithinAt one_ne_zero),
-      (hf.mdifferentiableAt one_ne_zero).fderivWithin_comp_extChartAt_symm x hy]
+      TauCeti.fderivWithin_comp_extChartAt_symm x hy]
     -- The change of tangent coordinates is invertible, so it can be cancelled.
     have hsurj : ∀ w, tangentCoordChange I x y y (tangentCoordChange I y x y w) = w := fun w ↦ by
       rw [tangentCoordChange_comp (w := y) ⟨⟨mem_extChartAt_source y, hy⟩,
@@ -557,6 +574,18 @@ theorem IsMorse.finite_criticalPoints_inter (hf : IsMorse I f) {K : Set M} (hK :
   finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint
     (hf.contMDiff.of_le (by simp)) hK
     fun _ hx ↦ hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hx.1
+
+omit [IsManifold I 1 M] in
+/-- If only finitely many critical points lie in `S`, then only finitely many pairs of an index `m`
+and a critical point of index `m` in `S` exist. -/
+theorem finite_sigma_criticalPoints_inter {S : Set M} (hS : (criticalPoints I f ∩ S).Finite) :
+    Finite (Σ m, ↥{x ∈ criticalPoints I f ∩ S | manifoldMorseIndex I f x = m}) :=
+  have := hS.to_subtype
+  .of_injective (fun x ↦ (⟨x.2, x.2.2.1⟩ : ↥(criticalPoints I f ∩ S)))
+    fun ⟨_, _, hx⟩ ⟨_, _, hy⟩ hxy ↦ by
+      cases Subtype.ext_iff.1 hxy
+      cases hx.2.symm.trans hy.2
+      rfl
 
 /-- **The critical points of a Morse function are isolated.** Near any point `x` there is no
 critical point of a Morse function other than `x` itself. -/

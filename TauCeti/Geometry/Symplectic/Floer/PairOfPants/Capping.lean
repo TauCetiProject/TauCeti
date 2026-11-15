@@ -448,7 +448,7 @@ theorem contMDiffAt_plumbedPerturbation_single_inf {n : ℕ∞} (hq : q ≠ inf)
       (forall_single inf (P := fun f => Periodic f 1) (fun _ => rfl) (hHb q)) hHb
       (forall_single inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
         contMDiff_const (hHbs q)) hHbs (by simp) hL
-      (mem_plumbedSphere_of_le_norm_sub_endCenter hq hw hge) x
+      (mem_plumbedSphere_of_le_norm_sub_endCenter hw hge) x
 
 section VectorSpace
 

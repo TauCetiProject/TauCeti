@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Isogeny.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RealPeriod
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Real
