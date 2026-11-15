@@ -100,7 +100,7 @@ theorem abs_integral_cutoff_bubble_rpow_criticalExponent_sub_roundSphereVolume_l
   have hcut : Integrable (fun x ↦ |χ x * bubble t b x| ^ criticalExponent (finrank ℝ E)) := by
     refine hbase.mono' ?_ (.of_forall fun x ↦ ?_)
     · have hU : Measurable (bubble t b) :=
-        (contDiff_bubble (m := 0) ht.ne' b).continuous.measurable
+        (contDiff_bubble (m := 0) t b).continuous.measurable
       exact (by fun_prop : Measurable fun x ↦
         |χ x * bubble t b x| ^ criticalExponent (finrank ℝ E)).aestronglyMeasurable
     · rw [Real.norm_of_nonneg (by positivity), abs_mul_bubble_rpow_criticalExponent _ ht]
@@ -163,7 +163,7 @@ private lemma abs_norm_fderiv_cutoff_bubble_sq_sub_le (hn : 2 < finrank ℝ E) {
   set s := (2 * t / r) ^ (finrank ℝ E - 2)
   have hU := (bubble_pos ht b x).le
   have hmul : A = ‖χ x • fderiv ℝ (bubble t b) x + bubble t b x • fderiv ℝ χ x‖ :=
-    congrArg norm (fderiv_fun_mul hχ ((contDiff_bubble (m := 1) ht.ne' b).differentiable_one x))
+    congrArg norm (fderiv_fun_mul hχ ((contDiff_bubble (m := 1) t b).differentiable_one x))
   have hA : A ≤ B + bubble t b x * c := by
     rw [hmul]
     refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
@@ -191,7 +191,7 @@ theorem abs_integral_norm_fderiv_cutoff_bubble_sq_sub_le (hn : 2 < finrank ℝ E
       (2 * t / r) ^ (finrank ℝ E - 2) *
         ∫ x, (12 * ‖fderiv ℝ (bubble r b) x‖ ^ 2 + 2 * ‖fderiv ℝ χ x‖ ^ 2 * bubble r b x ^ 2) := by
   have hcut : Integrable (fun x ↦ ‖fderiv ℝ (fun y ↦ χ y * bubble t b y) x‖ ^ 2) := by
-    have hcd : ContDiff ℝ 1 (fun y ↦ χ y * bubble t b y) := hχ.mul (contDiff_bubble ht.ne' b)
+    have hcd : ContDiff ℝ 1 (fun y ↦ χ y * bubble t b y) := hχ.mul (contDiff_bubble t b)
     have hcont : Continuous fun x ↦ ‖fderiv ℝ (fun y ↦ χ y * bubble t b y) x‖ ^ 2 :=
       (hcd.continuous_fderiv one_ne_zero).norm.pow 2
     have hcc : HasCompactSupport (fun y ↦ χ y * bubble t b y) := hχc.mul_right
@@ -200,7 +200,7 @@ theorem abs_integral_norm_fderiv_cutoff_bubble_sq_sub_le (hn : 2 < finrank ℝ E
   have hcχ : Integrable (fun x ↦ ‖fderiv ℝ χ x‖ ^ 2 * bubble r b x ^ 2) := by
     have hcont : Continuous fun x ↦ ‖fderiv ℝ χ x‖ ^ 2 * bubble r b x ^ 2 :=
       ((hχ.continuous_fderiv one_ne_zero).norm.pow 2).mul
-        ((contDiff_bubble (m := 0) hr.ne' b).continuous.pow 2)
+        ((contDiff_bubble (m := 0) r b).continuous.pow 2)
     have hcc : HasCompactSupport fun x ↦ ‖fderiv ℝ χ x‖ ^ 2 :=
       (hχc.fderiv ℝ).comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp)
     exact hcont.integrable_of_hasCompactSupport hcc.mul_right
@@ -401,7 +401,7 @@ theorem exists_contDiff_hasCompactSupport_sobolev_quotient_lt (hn : 2 < finrank 
       hq.eventually_lt_const (lt_add_of_pos_right _ hε)] with t ht hmt hqt
     exact ⟨ht, hmt, hqt⟩
   obtain ⟨t, ht, hmt, hqt⟩ := hev.exists
-  refine ⟨fun x ↦ χ x * bubble t b x, hχ.mul (contDiff_bubble ht.ne' b), hχc.mul_right,
+  refine ⟨fun x ↦ χ x * bubble t b x, hχ.mul (contDiff_bubble t b), hχc.mul_right,
     tsupport_mul_subset_left.trans hχΩ, fun x ↦ mul_nonneg (hχrange' x).1 (bubble_pos ht b x).le,
     hmt, hqt⟩
 

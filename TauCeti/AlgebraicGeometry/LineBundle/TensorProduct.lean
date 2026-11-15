@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.TensorProduct.Closure
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Associator
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 
 /-!

@@ -285,7 +285,7 @@ theorem unique [CompleteSpace K] (h : IsDiscPreparation r d f P U)
   obtain ⟨c, -, rfl⟩ := Polynomial.isUnit_iff.mp (IsUnit.of_mul_eq_one _ huu)
   have hc : c = 1 := by
     simpa [h.coeff_zero_eq_one, h'.coeff_zero_eq_one, eq_comm] using
-      congrArg (Polynomial.coeff · 0) hu
+      congrArg (AddMonoidAlgebra.coeff · 0) hu
   have hPQ : P = Q := by rw [hu, hc, Polynomial.C_1, mul_one]
   refine ⟨hPQ, mul_left_cancel₀ (by exact_mod_cast h.ne_zero : (P : PowerSeries K) ≠ 0) ?_⟩
   rw [← h.eq_mul, hPQ, ← h'.eq_mul]

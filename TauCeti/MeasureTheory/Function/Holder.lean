@@ -25,6 +25,8 @@ integration-by-parts arguments:
   integral of the product.
 * `TauCeti.enorm_integral_smul_le`: Hölder's inequality `‖∫ a • f‖ ≤ ‖a‖_p ‖f‖_q` for the
   Bochner integral of a pointwise scalar multiple, for any boundedly acting scalars.
+* `MeasureTheory.Lp.sum_smul` and `MeasureTheory.Lp.smul_sum`: the heterogeneous scalar
+  multiplication `Lᵖ × L^q → Lʳ` distributes over finite sums in each factor.
 -/
 
 public section
@@ -90,6 +92,31 @@ theorem lpPairing_mul_eq_integral (g : Lp R q μ) (f : Lp R q' μ) :
 
 end ContinuousLinearMap
 
+namespace MeasureTheory.Lp
+
+variable {α ι 𝕜 E : Type*} {mα : MeasurableSpace α} {μ : Measure α} {p q r : ℝ≥0∞}
+  [p.HolderTriple q r] [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+
+/-- The heterogeneous scalar multiplication of `Lp` functions distributes over finite sums in the
+scalar factor. -/
+protected theorem sum_smul (s : Finset ι) (f : ι → Lp 𝕜 p μ) (g : Lp E q μ) :
+    (∑ i ∈ s, f i) • g = ∑ i ∈ s, (f i • g : Lp E r μ) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi, Lp.smul_add, ih]
+
+/-- The heterogeneous scalar multiplication of `Lp` functions distributes over finite sums in the
+vector factor. -/
+protected theorem smul_sum (s : Finset ι) (f : Lp 𝕜 p μ) (g : ι → Lp E q μ) :
+    f • (∑ i ∈ s, g i) = ∑ i ∈ s, (f • g i : Lp E r μ) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi, Lp.add_smul, ih]
+
+end MeasureTheory.Lp
+
 namespace TauCeti
 
 open MeasureTheory
@@ -103,10 +130,10 @@ theorem enorm_integral_smul_le {α 𝕜 F : Type*} [MeasurableSpace α]
     {f : α → F} :
     ‖∫ x, a x • f x ∂μ‖ₑ ≤ eLpNorm a p μ * eLpNorm f q μ := by
   calc ‖∫ x, a x • f x ∂μ‖ₑ ≤ eLpNorm (fun x => a x • f x) 1 μ :=
-      (enorm_integral_le_lintegral_enorm _).trans lintegral_enorm_le_eLpNorm_one
+      (eNorm_integral_le_lintegral_eNorm _).trans lintegral_eNorm_le_eLpNorm_one
     _ ≤ eLpNorm a p μ * eLpNorm f q μ := by
-      simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_enorm_of_pos (· • ·) 1
+      simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_eNorm_of_pos (· • ·) 1
         continuous_smul.comp_aestronglyMeasurable₂
-        (.of_forall fun _ => by simpa using enorm_smul_le) zero_lt_one
+        (.of_forall fun _ => by simpa using eNorm_smul_le) zero_lt_one
 
 end TauCeti

@@ -274,7 +274,7 @@ theorem mul_integral_norm_deriv_sq_eq_eVariationOn_toReal_sq_iff
   rw [htd.hasDerivAt.metricDerivative_eq]
   have : ‖deriv γ t‖ = m := by
     simpa [sub_eq_zero] using ht
-  rw [← enorm_norm, this, Real.enorm_eq_ofReal hm]
+  rw [← eNorm_norm, this, Real.eNorm_eq_ofReal hm]
   exact ENNReal.ofReal_eq_coe_nnreal hm
 
 end AbsolutelyContinuousOnInterval

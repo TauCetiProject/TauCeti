@@ -197,9 +197,9 @@ theorem norm_le_norm_coeffEquiv_ofFn_add_one (f : Fin n → K) :
         ≤ ‖coeffEquiv K n (Sym.ofFn f)‖₊ := by
       refine Finset.sup_le fun i hi => ?_
       rw [Finset.mem_range] at hi
-      have hcoord := nnnorm_le_pi_nnnorm (coeffEquiv K n (Sym.ofFn f)) ⟨i, hi⟩
+      have hcoord := nnNorm_le_pi_nnNorm (coeffEquiv K n (Sym.ofFn f)) ⟨i, hi⟩
       rwa [coeffEquiv_apply_eq_coeff] at hcoord
-    rw [cauchyBound, hmonic.leadingCoeff, nnnorm_one, div_one, natDegree_toMonic]
+    rw [cauchyBound, hmonic.leadingCoeff, nnNorm_one, div_one, natDegree_toMonic]
     exact add_le_add hsup le_rfl
   have : ‖f j‖₊ < ‖coeffEquiv K n (Sym.ofFn f)‖₊ + 1 := hcauchy.trans_le hbound
   simpa using (NNReal.coe_lt_coe.2 this).le

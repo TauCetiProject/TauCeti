@@ -75,7 +75,7 @@ private theorem totalVariationOn_mul_add_le_of_contDiff (hu : ContDiff ℝ 1 u)
     hw.locallyLipschitz.locallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv
   rw [hL (w := u * v) (hu.mul hv), hL (w := u + v - u * v) ((hu.add hv).sub (hu.mul hv)), hL hu,
     hL hv,
-    ← lintegral_add_left ((hu.continuous_fderiv one_ne_zero).measurable.enorm)]
+    ← lintegral_add_left ((hu.continuous_fderiv one_ne_zero).measurable.eNorm)]
   refine (le_lintegral_add _ _).trans (lintegral_mono fun x => ?_)
   have hdu := hu.differentiable one_ne_zero x
   have hdv := hv.differentiable one_ne_zero x
@@ -120,7 +120,7 @@ private theorem totalVariationOn_mul_add_le_liminf_normed_convolution {Ω' : Ope
     tendsto_lintegral_zero_of_le_add (μ := μ.restrict K)
       (.of_forall fun n => .of_forall (hF n))
       (.of_forall fun n => ((hsmooth hu n).continuous.aestronglyMeasurable.sub
-        hu.aestronglyMeasurable).restrict.enorm) (hlim hu hK) (hlim hv hK)
+        hu.aestronglyMeasurable).restrict.eNorm) (hlim hu hK) (hlim hv hK)
   have hmem := ContDiffBump.normed_convolution_mem_Icc (μ := μ) (G := E)
   have hli {w : E → ℝ} (hw : ContDiff ℝ 1 w) : LocallyIntegrableOn w Ω' μ :=
     hw.continuous.locallyIntegrable.locallyIntegrableOn _
