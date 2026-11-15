@@ -33,7 +33,8 @@ The proof is by induction on `k`, starting from the order-one bound
 * `TauCeti.exists_eLpNormWkp_bilin_le`: the bound at every positive order.
 * `TauCeti.exists_eLpNormWkp_clm_apply_le`: the field form `z ↦ A z (u z)` for a coefficient field
   `A` of linear maps.
-* `TauCeti.exists_eLpNormWkp_compL_le`: the composition form `z ↦ A z ∘L C z`.
+* `TauCeti.exists_eLpNormWkp_compL_le`: the composition form `z ↦ A z ∘L T z`, for
+  finite-dimensional `H`.
 
 ## References
 
@@ -52,19 +53,6 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimen
   [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
   [NormedAddCommGroup H] [NormedSpace ℝ H]
   {Ω : Opens ℂ} {p q : ℝ≥0}
-
-/-- The `W^{k,p}` norm is bounded by the `W^{k+1,p}` norm. -/
-private theorem eLpNormWkp_le_eLpNormWkp_add_one {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {r : ℝ≥0∞} {V : Set ℂ} (k : ℕ) (u : ℂ → E) :
-    eLpNormWkp r V k u ≤ eLpNormWkp r V (k + 1) u := by
-  induction k generalizing E with
-  | zero =>
-    rw [eLpNormWkp_zero]
-    exact eLpNorm_le_eLpNormWkp
-  | succ k ih =>
-    rw [eLpNormWkp_succ, eLpNormWkp_succ (k := k + 1)]
-    gcongr
-    exact ih _
 
 /-- **Local bound for mixed-exponent products at every positive order.** Fix real normed spaces
 `F`, `G` and `H` with `F` and `G` finite-dimensional and `H` complete. For `p > 2`, `1 < q ≤ p`,
@@ -112,8 +100,8 @@ theorem exists_eLpNormWkp_bilin_le [CompleteSpace H] (hp : 2 < p) (hq : 1 < q) (
     obtain ⟨Dg, hDg, hDgk, hgΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hg
     set X := eLpNormWkp p Ω (k + 1 + 1) f
     set Y := eLpNormWkp q Ω (k + 1 + 1) g
-    have hfX : eLpNormWkp p Ω (k + 1) f ≤ X := eLpNormWkp_le_eLpNormWkp_add_one _ f
-    have hgY : eLpNormWkp q Ω (k + 1) g ≤ Y := eLpNormWkp_le_eLpNormWkp_add_one _ g
+    have hfX : eLpNormWkp p Ω (k + 1) f ≤ X := eLpNormWkp_mono_order (k + 1).le_succ
+    have hgY : eLpNormWkp q Ω (k + 1) g ≤ Y := eLpNormWkp_mono_order (k + 1).le_succ
     have hDfX : eLpNormWkp p Ω (k + 1) Df ≤ X := hfΩ ▸ le_add_self
     have hDgY : eLpNormWkp q Ω (k + 1) Dg ≤ Y := hgΩ ▸ le_add_self
     -- The weak Leibniz rule on `Ω`, with `f` locally bounded.
@@ -149,11 +137,12 @@ theorem exists_eLpNormWkp_bilin_le [CompleteSpace H] (hp : 2 < p) (hq : 1 < q) (
         gcongr ?_ * _ * _ * _
         exact_mod_cast le_self_add
 
-/-- **Local bound for coefficient fields acting on local Sobolev maps.** For `p > 2`,
-`1 < q ≤ p`, every `k` and a set `U` whose closure is compact and contained in `Ω`, there is a
-constant `C` such that `‖z ↦ A z (u z)‖_{W^{k+1,q}(U)} ≤ C ‖A‖_{W^{k+1,p}(Ω)} ‖u‖_{W^{k+1,q}(Ω)}`
-for every coefficient field `A : ℂ → F →L[ℝ] G` and every `u : ℂ → F`. This is the bound that
-accompanies `TauCeti.MemWkpLoc.clm_apply_succ`. -/
+/-- **Local bound for coefficient fields acting on local Sobolev maps.** Fix finite-dimensional
+real normed spaces `F` and `G`. For `p > 2`, `1 < q ≤ p`, every `k` and a set `U` whose closure
+is compact and contained in `Ω`, there is a constant `C` such that
+`‖z ↦ A z (u z)‖_{W^{k+1,q}(U)} ≤ C ‖A‖_{W^{k+1,p}(Ω)} ‖u‖_{W^{k+1,q}(Ω)}` for every
+coefficient field `A : ℂ → F →L[ℝ] G` and every `u : ℂ → F`. This is the bound that accompanies
+`TauCeti.MemWkpLoc.clm_apply_succ`. -/
 theorem exists_eLpNormWkp_clm_apply_le (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p) (k : ℕ)
     {U : Set ℂ} (hU : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) :
     ∃ C : ℝ≥0, ∀ (A : ℂ → F →L[ℝ] G) (u : ℂ → F),
@@ -168,10 +157,11 @@ theorem exists_eLpNormWkp_clm_apply_le (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
       exact (ofReal_norm _).symm.trans_le (ENNReal.ofReal_le_one.2 ContinuousLinearMap.norm_id_le)
     _ = _ := by rw [mul_one]
 
-/-- **Local bound for compositions of local Sobolev fields of linear maps.** For `p > 2`,
-`1 < q ≤ p`, every `k` and a set `U` whose closure is compact and contained in `Ω`, there is a
-constant `C` such that `‖z ↦ A z ∘L T z‖_{W^{k+1,q}(U)} ≤ C ‖A‖_{W^{k+1,p}(Ω)} ‖T‖_{W^{k+1,q}(Ω)}`
-for all fields `A : ℂ → G →L[ℝ] H` and `T : ℂ → F →L[ℝ] G`. This is the bound that accompanies
+/-- **Local bound for compositions of local Sobolev fields of linear maps.** Fix
+finite-dimensional real normed spaces `F`, `G` and `H`. For `p > 2`, `1 < q ≤ p`, every `k` and a
+set `U` whose closure is compact and contained in `Ω`, there is a constant `C` such that
+`‖z ↦ A z ∘L T z‖_{W^{k+1,q}(U)} ≤ C ‖A‖_{W^{k+1,p}(Ω)} ‖T‖_{W^{k+1,q}(Ω)}` for all fields
+`A : ℂ → G →L[ℝ] H` and `T : ℂ → F →L[ℝ] G`. This is the bound that accompanies
 `TauCeti.MemWkpLoc.compL_succ`. -/
 theorem exists_eLpNormWkp_compL_le [FiniteDimensional ℝ H] (hp : 2 < p) (hq : 1 < q)
     (hqp : q ≤ p) (k : ℕ) {U : Set ℂ} (hU : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) :
