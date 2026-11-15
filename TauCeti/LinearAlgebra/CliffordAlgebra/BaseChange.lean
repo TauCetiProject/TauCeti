@@ -33,8 +33,9 @@ reversal laws for `CliffordAlgebra.toBaseChange`, and identifies the `ℤ/2`-gra
 * `CliffordAlgebra.ofBaseChangeAux_mem_even` proves preservation of the even subalgebra.
 * `CliffordAlgebra.ofBaseChangeAux_injective` proves injectivity for faithful flat extensions.
 * `CliffordAlgebra.ofBaseChangeAux_baseChange` identifies direct and successive scalar extension.
-* `CliffordAlgebra.baseChange_ringHom_ext`: a ring homomorphism out of `Cℓ(A ⊗ M)` is determined
-  by its values on the scalars of `A` and on the vectors `ι (1 ⊗ₜ v)`.
+* `CliffordAlgebra.baseChange_ringHom_ext` and `CliffordAlgebra.baseChange_algHom_ext`: a ring or
+  `A`-algebra homomorphism out of `Cℓ(A ⊗ M)` is determined by its values on the scalars of `A`
+  (automatically for `A`-algebra maps) and on the vectors `ι (1 ⊗ₜ v)`.
 * `CliffordAlgebra.baseChangeCongr` is the isomorphism `Cℓ(A ⊗ M) ≃ Cℓ(B ⊗ M)` induced by an
   isomorphism of coefficient algebras `A ≃ₐ[R] B`; `CliffordAlgebra.baseChangeCongr_unique`
   characterizes it, and it commutes with the grade involution, reversal and Clifford conjugation.
@@ -206,6 +207,15 @@ theorem baseChange_ringHom_ext {S : Type*} [Semiring S] (Q : QuadraticForm R M)
       | add w w' hw hw' => simp only [map_add, hw, hw']
   | add x y hx hy => simp only [map_add, hx, hy]
   | mul x y hx hy => simp only [map_mul, hx, hy]
+
+/-- Over `A`, an `A`-algebra homomorphism out of `CliffordAlgebra (Q.baseChange A)` is determined
+by its values on the vectors `ι (1 ⊗ₜ v)` coming from `M`. -/
+theorem baseChange_algHom_ext {S : Type*} [Semiring S] [Algebra A S] (Q : QuadraticForm R M)
+    {f g : CliffordAlgebra (Q.baseChange A) →ₐ[A] S}
+    (hι : ∀ v : M, f (ι (Q.baseChange A) (1 ⊗ₜ v)) = g (ι (Q.baseChange A) (1 ⊗ₜ v))) :
+    f = g :=
+  AlgHom.toRingHom_injective <|
+    baseChange_ringHom_ext Q (fun a ↦ (f.commutes a).trans (g.commutes a).symm) hι
 
 /-- An `R`-algebra isomorphism `σ : A ≃ₐ[R] B` of coefficient algebras induces an isomorphism of
 the base-changed Clifford algebras, acting by `σ` on the scalars and fixing the vectors of `M`.

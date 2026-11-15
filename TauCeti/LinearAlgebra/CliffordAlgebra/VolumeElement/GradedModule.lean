@@ -62,16 +62,20 @@ every vector (`CliffordAlgebra.map_lsmul_complexVolume_ι_smul`). Its twisting g
 ## Main results
 
 * `CliffordAlgebra.complexVolume_smul_twistingGrading`: `γ = Γ γ_W`.
+* `CliffordAlgebra.twistingGrading_eq_id_iff`: `γ_W = id` iff `γ` is the chiral grading `Γ`.
 * `CliffordAlgebra.eigenspaceTwistingGradingEquiv_apply`: the components of an eigenvector of `γ`.
 * `CliffordAlgebra.isotypicEval_map_twistingGrading`: evaluation intertwines `Γ ⊗ γ_W` with `γ`.
 * `CliffordAlgebra.map_lsmul_complexVolume_ι_smul`: the graded twist is a graded module.
 * `CliffordAlgebra.twistingGrading_map_lsmul_complexVolume_apply`: its twisting grading is
   `1 ⊗ γ_A`.
+* `CliffordAlgebra.map_lsmul_complexVolume_tmul_of_mem_eigenspace_neg_one`: on `S ⊗ A⁻` the tensor
+  grading `Γ ⊗ γ_A` differs by a minus sign from `Γ ⊗ 1`.
 
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §5.
 * N. Berline, E. Getzler and M. Vergne, *Heat Kernels and Dirac Operators* (1992), Chapter 3.
+* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, §2.2, p. 633.
 -/
 
 public section
@@ -134,6 +138,20 @@ theorem twistingGrading_involutive (hγ₂ : Function.Involutive γ) :
     Function.Involutive (twistingGrading o hn γ hγ) := fun ψ ↦ by
   rw [twistingGrading_apply, twistingGrading_apply, apply_complexVolume_smul o hn hγ, hγ₂,
     complexVolume_smul_complexVolume_smul o hQ]
+
+/-- **Chirally graded modules are those with trivial twisting grading**: `γ_W = id` if and only if
+`γ` is left multiplication by `CliffordAlgebra.complexVolume Q o`. -/
+theorem twistingGrading_eq_id_iff :
+    twistingGrading o hn γ hγ = LinearMap.id ↔
+      γ = Algebra.lsmul ℂ ℂ E (complexVolume Q o) := by
+  constructor
+  · intro h
+    ext ψ
+    rw [← complexVolume_smul_twistingGrading o hn hγ hQ ψ, LinearMap.congr_fun h ψ,
+      LinearMap.id_apply, Algebra.lsmul_coe]
+  · rintro rfl
+    ext ψ
+    simp [twistingGrading_apply, complexVolume_smul_complexVolume_smul o hQ]
 
 /-! ### The multiplicity space of a graded module -/
 
@@ -263,6 +281,14 @@ theorem twistingGrading_map_lsmul_complexVolume_apply (hQ : ∀ v, Q v = -‖v�
     simp only [twistingGrading_apply, smul_tmul', map_tmul, Algebra.lsmul_coe,
       complexVolume_smul_complexVolume_smul o hQ, LinearMap.lTensor_tmul]
   | add x y hx hy => rw [map_add, hx, hy, map_add]
+
+/-- On `S ⊗ A⁻` (`a ∈ eigenspace γA (-1)`), the tensor grading `Γ_S ⊗ γ_A` of the graded twist acts
+by `-((Γ_S s) ⊗ a)`, differing by a minus sign from the chiral grading `Γ_S ⊗ 1`. -/
+theorem map_lsmul_complexVolume_tmul_of_mem_eigenspace_neg_one (s : S) {a : A}
+    (ha : a ∈ eigenspace γA (-1)) :
+    TensorProduct.map (Algebra.lsmul ℂ ℂ S (complexVolume Q o)) γA (s ⊗ₜ a) =
+      -((complexVolume Q o • s) ⊗ₜ a) := by
+  rw [map_tmul, Algebra.lsmul_coe, mem_eigenspace_iff.1 ha, neg_one_smul, tmul_neg]
 
 end Twist
 

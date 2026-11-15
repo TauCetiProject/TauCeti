@@ -37,7 +37,7 @@ pure tensor `a ᵍ⊗ b` acts by `ρ₁ a γ ^ j ⊗ ρ₂ b`.
 
 For the spinor modules of oriented even-dimensional Euclidean spaces, `γ` is the chirality
 operator, and the normalized volume element of `V ⊕ W` then acts by the tensor grading; see
-`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod.lean`.
+`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod/Basic.lean`.
 
 ## Main definitions
 
@@ -53,6 +53,8 @@ operator, and the normalized volume element of `V ⊕ W` then acts by the tensor
   parity `j` acts by `γ ^ j ⊗ ρ₂ (·)`.
 * `AlgHom.cliffordProdTensor_toProd_tmul`: under `CliffordAlgebra.prodEquiv`, the pure tensor
   `a ᵍ⊗ b` with `b` of parity `j` acts by `ρ₁ a γ ^ j ⊗ ρ₂ b`.
+* `AlgHom.cliffordProdTensor_toProd_tmul_tmul_of_apply_eq_neg_one_pow_smul`: on `e ⊗ f` with `b`
+  of parity `j` and `γ e = (-1) ^ i • e`, `a ᵍ⊗ b` acts by `(-1) ^ (i * j.val) • (ρ₁ a e ⊗ ρ₂ b f)`.
 * `AlgHom.map_mul_cliffordProdTensor_ι`: the tensor grading `γ ⊗ γ₂` anticommutes with every
   vector.
 
@@ -224,5 +226,30 @@ theorem cliffordProdTensor_toProd_tmul (a : CliffordAlgebra Q₁) {j : ZMod 2}
   rw [toProd, GradedTensorProduct.lift_tmul, map_mul, cliffordProdTensor_map_inl,
     cliffordProdTensor_map_inr_of_mem_evenOdd ρ₁ γ hγ hγρ ρ₂ hb, LinearMap.rTensor,
     ← Module.End.one_eq_id, ← TensorProduct.map_mul, one_mul]
+
+private theorem pow_apply_of_apply_eq_smul {μ : R} {e : E} (he : γ e = μ • e) (k : ℕ) :
+    (γ ^ k) e = μ ^ k • e := by
+  induction k with
+  | zero => simp
+  | succ k ih => rw [pow_succ', mul_apply_eq_comp, ih, map_smul, he, smul_smul, pow_succ]
+
+/-- On a pure tensor `e ⊗ f` with `γ e = μ • e`, the pure tensor `a ᵍ⊗ b` with `b` of parity `j`
+acts via `CliffordAlgebra.toProd` as `μ ^ j.val • (ρ₁ a e ⊗ ρ₂ b f)`. -/
+theorem cliffordProdTensor_toProd_tmul_tmul_of_apply_eq_smul (a : CliffordAlgebra Q₁) {j : ZMod 2}
+    {b : CliffordAlgebra Q₂} (hb : b ∈ evenOdd Q₂ j) {μ : R} {e : E} (he : γ e = μ • e) (f : F) :
+    cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ b)) (e ⊗ₜ f) =
+      μ ^ j.val • (ρ₁ a e ⊗ₜ ρ₂ b f) := by
+  rw [cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hb, map_tmul, mul_apply_eq_comp,
+    pow_apply_of_apply_eq_smul γ he, map_smul, smul_tmul']
+
+/-- **Koszul sign on homogeneous vectors**: for `b` of parity `j` and `e` of parity `i` in the
+sense `γ e = (-1) ^ i • e`, the pure tensor `a ᵍ⊗ b` acts on `e ⊗ f` via `CliffordAlgebra.toProd`
+by `(-1) ^ (i * j.val) • (ρ₁ a e ⊗ ρ₂ b f)`. -/
+theorem cliffordProdTensor_toProd_tmul_tmul_of_apply_eq_neg_one_pow_smul (a : CliffordAlgebra Q₁)
+    {j : ZMod 2} {b : CliffordAlgebra Q₂} (hb : b ∈ evenOdd Q₂ j) {i : ℕ} {e : E}
+    (he : γ e = (-1 : R) ^ i • e) (f : F) :
+    cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ b)) (e ⊗ₜ f) =
+      (-1 : R) ^ (i * j.val) • (ρ₁ a e ⊗ₜ ρ₂ b f) := by
+  rw [cliffordProdTensor_toProd_tmul_tmul_of_apply_eq_smul ρ₁ γ hγ hγρ ρ₂ a hb he, ← pow_mul]
 
 end AlgHom
