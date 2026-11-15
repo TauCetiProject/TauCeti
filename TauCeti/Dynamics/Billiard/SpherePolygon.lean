@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Billiard.PeriodicPolygon
+import TauCeti.Analysis.InnerProductSpace.Sphere.Antipodal
 
 /-!
 # Inscribed polygon perimeter bounds on spheres
 
 This file proves sharp upper bounds and equality characterizations for the perimeter
 `TauCeti.inscribedPerimeter χ s = ∑ₖ ‖χ(s_(k+1)) - χ(s_k)‖` of closed polygons whose vertices lie
-on a sphere `Metric.sphere c R` in a real inner product space `F`, together with the `N = 2`
-double-normal characterization of the equal-angle reflection law.
+on a sphere `Metric.sphere c R` in a real inner product space `F`.
 
 * **General `N`-gon diameter bound.** In any normed group, if every vertex lies at distance at most
   `R` from `c`, then `inscribedPerimeter χ s ≤ 2 N R`
@@ -30,9 +30,6 @@ double-normal characterization of the equal-angle reflection law.
   side has length `√3 R` (`TauCeti.inscribedPerimeter_zmod_three_eq_iff_norm_sub_eq`),
   equivalently if and only if the centroid of the vertices is `c`
   (`TauCeti.inscribedPerimeter_zmod_three_eq_iff_sum_sub_eq_zero`).
-* **Double-normal characterization for `N = 2`.** Equality of the incoming and outgoing unit-chord
-  inner products at both vertices of a `2`-gon holds if and only if the chord is orthogonal to the
-  tangent vectors at both endpoints (`TauCeti.inner_eq_inner_zmod_two_iff`).
 
 ## References
 
@@ -85,47 +82,11 @@ theorem inscribedPerimeter_zmod_four_le_of_mem_sphere {χ : α → F} {s : ZMod 
   (inscribedPerimeter_le_two_mul_of_dist_le fun k ↦ (Metric.mem_sphere.1 (hs k)).le).trans_eq
     (by push_cast; ring)
 
-/-- Explicit three-term expansion of `inscribedPerimeter` for `N = 3`. -/
-theorem inscribedPerimeter_zmod_three (χ : α → F) (s : ZMod 3 → α) :
-    inscribedPerimeter χ s =
-      ‖χ (s 1) - χ (s 0)‖ + ‖χ (s 2) - χ (s 1)‖ + ‖χ (s 0) - χ (s 2)‖ := by
-  have huniv : (Finset.univ : Finset (ZMod 3)) = {0, 1, 2} := by decide
-  have h01 : (0 : ZMod 3) + 1 = 1 := rfl
-  have h11 : (1 : ZMod 3) + 1 = 2 := rfl
-  have h21 : (2 : ZMod 3) + 1 = 0 := rfl
-  rw [inscribedPerimeter_def, huniv, Finset.sum_insert (by decide),
-    Finset.sum_insert (by decide), Finset.sum_singleton, h01, h11, h21]
-  ring
-
 end NormedGroup
 
 section InnerProduct
 
 variable [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-
-/-- Two points on a sphere of center `c` and radius `R` lie at distance `2 R` if and only if they
-are antipodal across `c`. -/
-theorem norm_sub_eq_two_mul_iff_of_mem_sphere {x y c : F} {R : ℝ} (hx : x ∈ Metric.sphere c R)
-    (hy : y ∈ Metric.sphere c R) :
-    ‖y - x‖ = 2 * R ↔ y - c = -(x - c) := by
-  have hR : 0 ≤ R := hx ▸ dist_nonneg
-  have hx' : ‖x - c‖ = R := by simpa [dist_eq_norm] using hx
-  have hy' : ‖y - c‖ = R := by simpa [dist_eq_norm] using hy
-  have hpar : ‖(y - c) + (x - c)‖ ^ 2 + ‖y - x‖ ^ 2 = 4 * R ^ 2 := by
-    rw [← sub_sub_sub_cancel_right y x c, norm_add_sq_real (y - c) (x - c),
-      norm_sub_sq_real (y - c) (x - c), hx', hy']
-    ring
-  constructor
-  · intro h
-    have h0 : ‖(y - c) + (x - c)‖ ^ 2 = 0 := by
-      rw [h] at hpar
-      nlinarith
-    exact eq_neg_of_add_eq_zero_left (norm_eq_zero.1 (sq_eq_zero_iff.1 h0))
-  · intro h
-    have hadd : (y - c) + (x - c) = 0 := add_eq_zero_iff_eq_neg.2 h
-    rw [hadd, norm_zero] at hpar
-    have hsq : ‖y - x‖ ^ 2 = (2 * R) ^ 2 := by nlinarith
-    exact (pow_left_inj₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hsq
 
 /-- An `N`-gon on the sphere of center `c` and radius `R` has maximal chordwise perimeter `2 N R`
 if and only if every pair of consecutive vertices is antipodal across `c`. -/
@@ -180,43 +141,6 @@ theorem inscribedPerimeter_zmod_four_eq_iff_of_mem_sphere {χ : α → F} {s : Z
     inscribedPerimeter χ s = 8 * R ↔ ∀ k, χ (s (k + 1)) - c = -(χ (s k) - c) := by
   have heq : (2 : ℝ) * (4 : ℕ) * R = 8 * R := by push_cast; ring
   rw [← heq, inscribedPerimeter_eq_two_mul_iff_of_mem_sphere hs]
-
-end InnerProduct
-
-section SeminormedInnerProduct
-
-variable [SeminormedAddCommGroup F] [InnerProductSpace ℝ F]
-
-/-- **For `N = 2`, the equal-angle reflection law is double normality.** Equality of the incoming
-and outgoing unit-chord inner products at both vertices of a `2`-gon is equivalent to orthogonality
-of the chord `χ(s_1) - χ(s_0)` to both `d(s_0)` and `d(s_1)`. -/
-theorem inner_eq_inner_zmod_two_iff (χ d : α → F) (s : ZMod 2 → α) :
-    (∀ k : ZMod 2,
-        ⟪‖χ (s k) - χ (s (k - 1))‖⁻¹ • (χ (s k) - χ (s (k - 1))), d (s k)⟫ =
-          ⟪‖χ (s (k + 1)) - χ (s k)‖⁻¹ • (χ (s (k + 1)) - χ (s k)), d (s k)⟫) ↔
-      ⟪χ (s 1) - χ (s 0), d (s 0)⟫ = 0 ∧ ⟪χ (s 1) - χ (s 0), d (s 1)⟫ = 0 := by
-  have hall {P : ZMod 2 → Prop} : (∀ k, P k) ↔ P 0 ∧ P 1 :=
-    ⟨fun h ↦ ⟨h 0, h 1⟩, fun ⟨h0, h1⟩ k ↦ by fin_cases k; exacts [h0, h1]⟩
-  have hunit (v u : F) : ‖v‖⁻¹ * ⟪v, u⟫ = 0 ↔ ⟪v, u⟫ = 0 := by
-    refine ⟨fun h ↦ (mul_eq_zero.1 h).elim (fun hv ↦ ?_) id, fun h ↦ by rw [h, mul_zero]⟩
-    have habs := abs_real_inner_le_norm v u
-    rw [inv_eq_zero.1 hv, zero_mul] at habs
-    exact abs_nonpos_iff.1 habs
-  have h0_sub : (0 : ZMod 2) - 1 = 1 := rfl
-  have h0_add : (0 : ZMod 2) + 1 = 1 := rfl
-  have h1_sub : (1 : ZMod 2) - 1 = 0 := rfl
-  have h1_add : (1 : ZMod 2) + 1 = 0 := rfl
-  rw [hall, h0_sub, h0_add, h1_sub, h1_add, norm_sub_rev (χ (s 0)) (χ (s 1)),
-    ← neg_sub (χ (s 1)) (χ (s 0)), smul_neg]
-  refine and_congr ?_ ?_ <;>
-    (rw [inner_neg_left, real_inner_smul_left];
-      exact ⟨fun h ↦ (hunit _ _).1 (by linarith), fun h ↦ by rw [(hunit _ _).2 h]; ring⟩)
-
-end SeminormedInnerProduct
-
-section InnerProductTriangles
-
-variable [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
 /-- Exact quadratic deficit of the perimeter of a triangle on the sphere of radius `R`:
 `(3 √3 R)² - P² = 3 ‖(p₀ - c) + (p₁ - c) + (p₂ - c)‖² + ∑ (side length differences)²`. -/
@@ -315,8 +239,10 @@ theorem inscribedPerimeter_zmod_three_eq_iff_sum_sub_eq_zero {χ : α → F} {s 
   have hR : 0 ≤ R := hs 0 ▸ dist_nonneg
   have hn (k : ZMod 3) : ‖χ (s k) - c‖ = R := by simpa [dist_eq_norm] using hs k
   have hsum3 : ∑ k : ZMod 3, (χ (s k) - c) =
-      (χ (s 0) - c) + (χ (s 1) - c) + (χ (s 2) - c) :=
-    Fin.sum_univ_three fun k : Fin 3 ↦ χ (s (k : ZMod 3)) - c
+      (χ (s 0) - c) + (χ (s 1) - c) + (χ (s 2) - c) := by
+    have huniv : (Finset.univ : Finset (ZMod 3)) = {0, 1, 2} := by decide
+    rw [huniv, Finset.sum_insert (by decide), Finset.sum_insert (by decide), Finset.sum_singleton,
+      ← add_assoc]
   rw [hsum3]
   constructor
   · intro h
@@ -335,7 +261,7 @@ theorem inscribedPerimeter_zmod_three_eq_iff_sum_sub_eq_zero {χ : α → F} {s 
         ‖y - x‖ = √3 * R := by
       have hxy : y + x = -z := eq_neg_of_add_eq_zero_left (by rwa [add_comm y x])
       have hpar : ‖y + x‖ ^ 2 + ‖y - x‖ ^ 2 = 4 * R ^ 2 := by
-        rw [norm_add_sq_real, norm_sub_sq_real, hx, hy]
+        rw [parallelogram_law_with_norm ℝ, hx, hy]
         ring
       rw [hxy, norm_neg, hz] at hpar
       have hsq : ‖y - x‖ ^ 2 = (√3 * R) ^ 2 := by
@@ -362,6 +288,6 @@ theorem inscribedPerimeter_zmod_three_eq_iff_sum_sub_eq_zero {χ : α → F} {s 
     · exact he1
     · exact he2
 
-end InnerProductTriangles
+end InnerProduct
 
 end TauCeti
