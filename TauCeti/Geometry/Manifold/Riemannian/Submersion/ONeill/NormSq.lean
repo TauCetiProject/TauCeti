@@ -55,6 +55,10 @@ pair `X, Y`, so `|A|² = 2`: the two off-diagonal ordered pairs each contribute 
   orthonormal basis `(cᵢ)` of the horizontal space.
 * `TauCeti.IsRiemannianSubmersion.oneillANormSq_eq_sum_ker`: `|A|² = ∑ᵢ ∑ₐ |A_(cᵢ) bₐ|²` for
   orthonormal bases of the horizontal and the vertical space.
+* `TauCeti.IsRiemannianSubmersion.oneillAInnerForm_eq_two_mul_sum`:
+  `tr_g ⟨A_u ·, A_(u') ·⟩ = 2 ∑ⱼ ⟨A_u cⱼ, A_(u') cⱼ⟩` for every orthonormal basis `(cⱼ)` of the
+  horizontal space.
+* `TauCeti.IsRiemannianSubmersion.oneillANormSq_eq_zero_iff`: `|A|² = 0` exactly when `A = 0`.
 * `TauCeti.IsRiemannianSubmersion.contMDiff_oneillANormSq`: `|A|²` is smooth.
 * `TauCeti.IsRiemannianSubmersion.exists_forall_oneillANormSq_le`: on a compact manifold, `|A|²`
   is bounded.
@@ -151,6 +155,83 @@ theorem two_mul_oneillANormSq_eq_sum {x : M} {ι : Type*} [Fintype ι]
   rw [oneillANormSq_def, mul_div_cancel₀ _ two_ne_zero, bilinFormTrace_eq_sum _ e]
   simp only [h.oneillAInnerForm_eq_sum e, real_inner_self_eq_norm_sq]
 
+/-- `oneillAInnerForm` is symmetric. -/
+theorem oneillAInnerForm_comm (x : M) (u u' : TangentSpace I x) :
+    h.oneillAInnerForm x u u' = h.oneillAInnerForm x u' u := by
+  simp only [h.oneillAInnerForm_eq_sum (stdOrthonormalBasis ℝ (TangentSpace I x)),
+    real_inner_comm]
+
+/-- `oneillAInnerForm` is nonnegative on the diagonal: `oneillAInnerForm x u u = ∑ⱼ |A_u eⱼ|²`. -/
+theorem oneillAInnerForm_self_nonneg (x : M) (u : TangentSpace I x) :
+    0 ≤ h.oneillAInnerForm x u u := by
+  rw [h.oneillAInnerForm_eq_sum (stdOrthonormalBasis ℝ (TangentSpace I x))]
+  exact Finset.sum_nonneg fun j _ ↦ real_inner_self_nonneg
+
+/-- `oneillAInnerForm` is positive semidefinite. -/
+theorem oneillAInnerForm_isPosSemidef (x : M) : (h.oneillAInnerForm x).IsPosSemidef :=
+  ⟨⟨h.oneillAInnerForm_comm x⟩, ⟨h.oneillAInnerForm_self_nonneg x⟩⟩
+
+/-- `oneillAInnerForm x u u` vanishes exactly when `A_u` does. -/
+theorem oneillAInnerForm_self_eq_zero_iff (x : M) (u : TangentSpace I x) :
+    h.oneillAInnerForm x u u = 0 ↔ h.oneillA x u = 0 := by
+  let e := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [h.oneillAInnerForm_eq_sum e, Finset.sum_eq_zero_iff_of_nonneg
+    fun j _ ↦ real_inner_self_nonneg]
+  simp only [Finset.mem_univ, forall_const, inner_self_eq_zero]
+  refine ⟨fun hu ↦ ?_, fun hu j ↦ by simp [hu]⟩
+  exact ContinuousLinearMap.coe_injective (e.toBasis.ext fun j ↦ by simpa using hu j)
+
+/-- `oneillAInnerForm` vanishes exactly when `A` does. -/
+theorem oneillAInnerForm_eq_zero_iff (x : M) :
+    h.oneillAInnerForm x = 0 ↔ h.oneillA x = 0 := by
+  refine ⟨fun hA ↦ ?_, fun hA ↦ ?_⟩
+  · ext u : 1
+    exact (h.oneillAInnerForm_self_eq_zero_iff x u).1 (by simp [hA])
+  · ext u u'
+    simp [h.oneillAInnerForm_eq_sum (stdOrthonormalBasis ℝ (TangentSpace I x)), hA]
+
+/-- The first argument of `oneillAInnerForm` only sees its horizontal component. -/
+@[simp] theorem oneillAInnerForm_starProjection_orthogonal_ker_left (x : M)
+    (u u' : TangentSpace I x) :
+    h.oneillAInnerForm x ((mfderiv I J f x).kerᗮ.starProjection u) u' =
+      h.oneillAInnerForm x u u' := by
+  simp only [oneillAInnerForm_apply, oneillA_starProjection_orthogonal_ker]
+
+/-- The second argument of `oneillAInnerForm` only sees its horizontal component. -/
+@[simp] theorem oneillAInnerForm_starProjection_orthogonal_ker_right (x : M)
+    (u u' : TangentSpace I x) :
+    h.oneillAInnerForm x u ((mfderiv I J f x).kerᗮ.starProjection u') =
+      h.oneillAInnerForm x u u' := by
+  simp only [oneillAInnerForm_apply, oneillA_starProjection_orthogonal_ker]
+
+/-- `oneillAInnerForm` vanishes on a vertical first argument. -/
+@[simp] theorem oneillAInnerForm_starProjection_ker_left (x : M) (u u' : TangentSpace I x) :
+    h.oneillAInnerForm x ((mfderiv I J f x).ker.starProjection u) u' = 0 := by
+  simp [h.oneillAInnerForm_eq_sum (stdOrthonormalBasis ℝ (TangentSpace I x))]
+
+/-- `oneillAInnerForm` vanishes on a vertical second argument. -/
+@[simp] theorem oneillAInnerForm_starProjection_ker_right (x : M) (u u' : TangentSpace I x) :
+    h.oneillAInnerForm x u ((mfderiv I J f x).ker.starProjection u') = 0 := by
+  simp [h.oneillAInnerForm_eq_sum (stdOrthonormalBasis ℝ (TangentSpace I x))]
+
+/-- `|A|²` is nonnegative. -/
+theorem oneillANormSq_nonneg (x : M) : 0 ≤ h.oneillANormSq x := by
+  refine (mul_nonneg_iff_of_pos_left two_pos).1 ?_
+  rw [h.two_mul_oneillANormSq_eq_sum (stdOrthonormalBasis ℝ (TangentSpace I x))]
+  positivity
+
+/-- `|A|²` vanishes exactly when `A` does. -/
+theorem oneillANormSq_eq_zero_iff (x : M) : h.oneillANormSq x = 0 ↔ h.oneillA x = 0 := by
+  let e := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [← mul_eq_zero_iff_left two_ne_zero, h.two_mul_oneillANormSq_eq_sum e,
+    Finset.sum_eq_zero_iff_of_nonneg fun _ _ ↦ by positivity]
+  simp only [Finset.mem_univ, forall_const, Finset.sum_eq_zero_iff_of_nonneg
+    fun _ _ ↦ sq_nonneg _, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, pow_eq_zero_iff,
+    norm_eq_zero]
+  refine ⟨fun hA ↦ ?_, fun hA i j ↦ by simp [hA]⟩
+  refine ContinuousLinearMap.coe_injective (e.toBasis.ext fun i ↦ ?_)
+  exact ContinuousLinearMap.coe_injective (e.toBasis.ext fun j ↦ by simpa using hA i j)
+
 /-- In the chart-local frame `(eᵢ)` at `a`, `|A|²` is half the contraction
 `gⁱʲ gᵏˡ ⟨A_(eᵢ) eₖ, A_(eⱼ) eₗ⟩` against the inverse Gram matrix of the frame. -/
 private theorem oneillANormSq_eq_sum_chartInvGramMatrix (a : M) {x : M}
@@ -166,27 +247,61 @@ private theorem oneillANormSq_eq_sum_chartInvGramMatrix (a : M) {x : M}
 
 variable [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
 
+/-- **`A` pairs the same way on the vertical and on the horizontal space.** For orthonormal
+bases `b` of the vertical space and `c` of the horizontal space,
+`∑ᵢ ⟨A_u bᵢ, A_(u') bᵢ⟩ = ∑ⱼ ⟨A_u cⱼ, A_(u') cⱼ⟩`. Both sides are
+`∑ᵢ ∑ⱼ ⟨A_u bᵢ, cⱼ⟩ ⟨A_(u') bᵢ, cⱼ⟩`, since `A_u` and `A_(u')` exchange the two spaces and are
+skew-adjoint. -/
+theorem sum_inner_oneillA_ker_eq {x : M} {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (u u' : TangentSpace I x) (b : OrthonormalBasis ι ℝ (mfderiv I J f x).ker)
+    (c : OrthonormalBasis κ ℝ (mfderiv I J f x).kerᗮ) :
+    ∑ i, ⟪h.oneillA x u (b i), h.oneillA x u' (b i)⟫_ℝ =
+      ∑ j, ⟪h.oneillA x u (c j), h.oneillA x u' (c j)⟫_ℝ := by
+  -- Expand the horizontal images `A_u bᵢ` in `c` and the vertical images `A_u cⱼ` in `b`.
+  have hb (i : ι) : ⟪h.oneillA x u (b i), h.oneillA x u' (b i)⟫_ℝ =
+      ∑ j, ⟪h.oneillA x u (b i), (c j : TangentSpace I x)⟫_ℝ *
+        ⟪(c j : TangentSpace I x), h.oneillA x u' (b i)⟫_ℝ := by
+    simpa using (c.sum_inner_mul_inner
+      ⟨h.oneillA x u (b i), h.oneillA_apply_mem_orthogonal_ker u (b i).2⟩
+      ⟨h.oneillA x u' (b i), h.oneillA_apply_mem_orthogonal_ker u' (b i).2⟩).symm
+  have hc (j : κ) : ⟪h.oneillA x u (c j), h.oneillA x u' (c j)⟫_ℝ =
+      ∑ i, ⟪h.oneillA x u (c j), (b i : TangentSpace I x)⟫_ℝ *
+        ⟪(b i : TangentSpace I x), h.oneillA x u' (c j)⟫_ℝ := by
+    simpa using (b.sum_inner_mul_inner
+      ⟨h.oneillA x u (c j), h.oneillA_apply_mem_ker u (c j).2⟩
+      ⟨h.oneillA x u' (c j), h.oneillA_apply_mem_ker u' (c j).2⟩).symm
+  simp_rw [hb, hc]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [h.inner_oneillA x u (b i) (c j), real_inner_comm (h.oneillA x u' (b i)),
+    h.inner_oneillA x u' (b i) (c j), neg_mul_neg, real_inner_comm (b i : TangentSpace I x)]
+
 /-- **`A_u` has the same size on the vertical and on the horizontal space.** For orthonormal
 bases `b` of the vertical space and `c` of the horizontal space,
-`∑ᵢ |A_u bᵢ|² = ∑ⱼ |A_u cⱼ|²`. Both sides are `∑ᵢ ∑ⱼ ⟨A_u bᵢ, cⱼ⟩²`, since `A_u` exchanges the
-two spaces and is skew-adjoint. -/
+`∑ᵢ |A_u bᵢ|² = ∑ⱼ |A_u cⱼ|²`. -/
 theorem sum_norm_oneillA_sq_ker_eq {x : M} {ι κ : Type*} [Fintype ι] [Fintype κ]
     (u : TangentSpace I x) (b : OrthonormalBasis ι ℝ (mfderiv I J f x).ker)
     (c : OrthonormalBasis κ ℝ (mfderiv I J f x).kerᗮ) :
     ∑ i, ‖h.oneillA x u (b i)‖ ^ 2 = ∑ j, ‖h.oneillA x u (c j)‖ ^ 2 := by
-  -- Expand each horizontal image `A_u bᵢ` in `c` and each vertical image `A_u cⱼ` in `b`.
-  have hb (i : ι) : ‖h.oneillA x u (b i)‖ ^ 2 =
-      ∑ j, ⟪(c j : TangentSpace I x), h.oneillA x u (b i)⟫_ℝ ^ 2 := by
-    simpa using (c.sum_sq_inner_right
-      ⟨h.oneillA x u (b i), h.oneillA_apply_mem_orthogonal_ker u (b i).2⟩).symm
-  have hc (j : κ) : ‖h.oneillA x u (c j)‖ ^ 2 =
-      ∑ i, ⟪(b i : TangentSpace I x), h.oneillA x u (c j)⟫_ℝ ^ 2 := by
-    simpa using (b.sum_sq_inner_right
-      ⟨h.oneillA x u (c j), h.oneillA_apply_mem_ker u (c j).2⟩).symm
-  simp_rw [hb, hc]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [real_inner_comm, ← neg_sq, inner_oneillA, neg_neg]
+  simpa only [real_inner_self_eq_norm_sq] using h.sum_inner_oneillA_ker_eq u u b c
+
+/-- In an orthonormal basis `(cⱼ)` of the horizontal space,
+`oneillAInnerForm x u u' = 2 ∑ⱼ ⟨A_u cⱼ, A_(u') cⱼ⟩`. -/
+theorem oneillAInnerForm_eq_two_mul_sum {x : M} {κ : Type*} [Fintype κ]
+    (c : OrthonormalBasis κ ℝ (mfderiv I J f x).kerᗮ) (u u' : TangentSpace I x) :
+    h.oneillAInnerForm x u u' = 2 * ∑ j, ⟪h.oneillA x u (c j), h.oneillA x u' (c j)⟫_ℝ := by
+  let b := stdOrthonormalBasis ℝ (mfderiv I J f x).ker
+  rw [h.oneillAInnerForm_eq_sum ((b.prod c).map
+    (mfderiv I J f x).ker.orthogonalDecomposition.symm), Fintype.sum_sum_type]
+  simp [h.sum_inner_oneillA_ker_eq u u' b c, two_mul]
+
+/-- In an orthonormal basis `(bₐ)` of the vertical space,
+`oneillAInnerForm x u u' = 2 ∑ₐ ⟨A_u bₐ, A_(u') bₐ⟩`. -/
+theorem oneillAInnerForm_eq_two_mul_sum_ker {x : M} {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ (mfderiv I J f x).ker) (u u' : TangentSpace I x) :
+    h.oneillAInnerForm x u u' = 2 * ∑ a, ⟪h.oneillA x u (b a), h.oneillA x u' (b a)⟫_ℝ := by
+  rw [h.oneillAInnerForm_eq_two_mul_sum (stdOrthonormalBasis ℝ (mfderiv I J f x).kerᗮ),
+    h.sum_inner_oneillA_ker_eq u u' b (stdOrthonormalBasis ℝ (mfderiv I J f x).kerᗮ)]
 
 /-- **`|A|²` in a horizontal frame.** For every orthonormal basis `(cᵢ)` of the horizontal space,
 `|A|² = ∑ᵢ ∑ⱼ |A_(cᵢ) cⱼ|²`, summed over all ordered pairs. In particular the right side does not
@@ -221,11 +336,6 @@ theorem oneillANormSq_eq_sum_ker {x : M} {ι κ : Type*} [Fintype ι] [Fintype �
     h.oneillANormSq x = ∑ i, ∑ a, ‖h.oneillA x (c i) (b a)‖ ^ 2 := by
   simp only [h.oneillANormSq_eq_sum c, h.sum_norm_oneillA_sq_ker_eq _ b c]
 
-/-- `|A|²` is nonnegative. -/
-theorem oneillANormSq_nonneg (x : M) : 0 ≤ h.oneillANormSq x := by
-  rw [h.oneillANormSq_eq_sum (stdOrthonormalBasis ℝ (mfderiv I J f x).kerᗮ)]
-  positivity
-
 variable [T2Space M]
 
 /-- **`|A|²` is smooth.** -/
@@ -249,7 +359,7 @@ theorem contMDiff_oneillANormSq : ContMDiff I 𝓘(ℝ) ∞ h.oneillANormSq := b
           (E := fun x : M ↦ TangentSpace I x) (hA.clm_bundle_apply₂ (hfr i) (hfr k))
           (hA.clm_bundle_apply₂ (hfr j) (hfr l))).div_const 2
   exact (hsum.congr fun x hx ↦ h.oneillANormSq_eq_sum_chartInvGramMatrix a (hs ▸ hx)).contMDiffAt
-    ((chartAt H a).open_source.mem_nhds (hs ▸ mem_chart_source H a))
+    (hs ▸ (chartAt H a).open_source.mem_nhds (mem_chart_source H a))
 
 /-- `|A|²` is continuous. -/
 theorem continuous_oneillANormSq : Continuous h.oneillANormSq :=
