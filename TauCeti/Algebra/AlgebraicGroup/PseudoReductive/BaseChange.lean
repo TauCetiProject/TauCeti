@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.FiniteType.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.PseudoReductive.Basic
 import Mathlib.RingTheory.Etale.Descent
 import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.Smooth.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Descent
 
 /-!
@@ -29,8 +30,8 @@ Let `G` be a finite-type affine group over a field `k` with coordinate Hopf alge
 The separability hypothesis in the forward direction cannot be omitted: for a nontrivial finite
 purely inseparable extension `K / k`, the Weil restriction `Res_{K/k} 𝔾ₘ` is pseudo-reductive over
 `k` (`TauCeti.Algebra.WeilRestriction.pseudoReductive_multiplicativeGroup`), whereas its base
-change to `AlgebraicClosure k` fails to be pseudo-reductive (`TauCeti.Algebra.WeilRestriction.
-not_pseudoReductive_baseChange_algebraicClosure_of_isPurelyInseparable`).
+change to `AlgebraicClosure k` fails to be pseudo-reductive
+(`WeilRestriction.not_pseudoReductive_baseChange_multiplicativeGroup_of_isPurelyInseparable`).
 
 ## Main declarations
 
@@ -67,9 +68,8 @@ theorem of_baseChange
     (hH : pseudoReductiveCommHopfAlgProperty K
       (FiniteTypeCommHopfAlgCat.baseChange (K := K) H)) :
     pseudoReductiveCommHopfAlgProperty k H := by
-  let _ : Algebra.Smooth K (K ⊗[k] H.obj) := by
-    simpa only [FiniteTypeCommHopfAlgCat.baseChange, CommHopfAlgCat.baseChange,
-      _root_.CommHopfAlgCat.coe_of] using hH.smooth
+  let _ : Algebra.Smooth K (K ⊗[k] H.obj) :=
+    FiniteTypeCommHopfAlgCat.smooth_baseChange_obj hH.smooth
   open FiniteTypeCommHopfAlgCat in
   exact (pseudoReductiveCommHopfAlgProperty_iff k H).mpr
     ⟨Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat (R := k) (S := H.obj) K,
@@ -87,9 +87,10 @@ variable {k K : Type u} [Field k] [Field K] [Algebra k K] [Algebra.IsSeparable k
 theorem baseChange {H : FiniteTypeCommHopfAlgCat.{u, u} k}
     (hH : pseudoReductiveCommHopfAlgProperty k H) :
     pseudoReductiveCommHopfAlgProperty K
-      (FiniteTypeCommHopfAlgCat.baseChange (K := K) H) :=
-  (pseudoReductiveCommHopfAlgProperty_iff K _).mpr
-    ⟨@Algebra.Smooth.baseChange k _ H K _ _ _ _ hH.smooth,
+      (FiniteTypeCommHopfAlgCat.baseChange (K := K) H) := by
+  let _ : Algebra.Smooth k H := hH.smooth
+  exact (pseudoReductiveCommHopfAlgProperty_iff K _).mpr
+    ⟨inferInstance,
       geometricallyConnectedCommHopfAlgProperty.baseChange k K H.obj hH.geometricallyConnected,
       (FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_baseChange_eq_augmentation_iff
         (K := K) H).mpr hH.unipotentRadicalDefiningIdeal_eq_augmentation⟩

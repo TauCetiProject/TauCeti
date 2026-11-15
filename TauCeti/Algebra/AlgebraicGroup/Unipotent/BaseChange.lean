@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Faithful
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Reduced
 import Mathlib.RingTheory.Etale.Descent
+import TauCeti.Algebra.AlgebraicGroup.Smooth.BaseChange
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
@@ -59,109 +60,81 @@ namespace smoothUnipotentCommHopfAlgProperty
 
 variable {k K : Type u} [Field k] [Field K] [Algebra k K]
 
-/-- Along a field extension `K / k`, the universal coefficient matrix of a scalar-extended
-finite-dimensional comodule has unipotent characteristic polynomial `(X - 1) ^ d` if and only if
-the original universal coefficient matrix does. -/
-private theorem coefficientMatrix_baseChange_charpoly_eq_iff
-    {H : Type u} [CommRing H] [HopfAlgebra k H]
-    {M : Type u} [AddCommGroup M] [Module k M] [Comodule k H M]
-    {d : Type*} [Fintype d] [DecidableEq d] (b : Module.Basis d k M) :
-    letI := Comodule.baseChange (R := k) (H := H) (M := M) K
-    (Comodule.coefficientMatrix (C := K ⊗[k] H) (b.baseChange K)).charpoly =
-        ((Polynomial.X - (1 : Polynomial K)) ^ Module.finrank K (K ⊗[k] M)).map
-          (algebraMap K (K ⊗[k] H)) ↔
-      (Comodule.coefficientMatrix (C := H) b).charpoly =
-        ((Polynomial.X - (1 : Polynomial k)) ^ Module.finrank k M).map (algebraMap k H) := by
+/-- For a smooth finite-type commutative Hopf algebra `H`, unipotence of all geometric points is
+equivalent before and after scalar extension along `K / k`: a faithful finite-dimensional
+`H`-comodule remains faithful after base change to `K`, and its universal `(X - 1) ^ d`
+characteristic-polynomial identity is preserved and reflected by
+`Comodule.coefficientMatrix_baseChange_charpoly_eq_iff`. -/
+private theorem forall_isUnipotentPoint_baseChange_iff
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k) (hH : Algebra.Smooth k H) :
+    (∀ g : WithConv (FiniteTypeCommHopfAlgCat.baseChange (K := K) H →ₐ[K] AlgebraicClosure K),
+        HopfAlgebra.IsUnipotentPoint g) ↔
+      ∀ g : WithConv (H →ₐ[k] AlgebraicClosure k), HopfAlgebra.IsUnipotentPoint g := by
+  let _ : Algebra.Smooth k H := hH
+  let _ : IsReduced H := isReduced_of_smooth k H
+  let _ : IsReduced (K ⊗[k] H) := isReduced_of_smooth K (K ⊗[k] H)
+  obtain ⟨M, d, b, hb⟩ := Comodule.exists_isClosedImmersion_coordinateGroupSchemeHom
+    (k := k) (H := H)
+  let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup k
+  let _ : Module.Free k M := Module.Free.of_basis b
+  let _ : Module.Finite k M := Module.Finite.of_basis b
+  have hM : Comodule.IsFaithful (k := k) (H := H) (V := M) :=
+    (Comodule.isFaithful_iff_isClosedImmersion_coordinateGroupSchemeHom b).2 hb
   let _ := Comodule.baseChange (R := k) (H := H) (M := M) K
-  let f : H →+* K ⊗[k] H :=
-    (Algebra.TensorProduct.includeRight : H →ₐ[k] K ⊗[k] H).toRingHom
-  have hmatrix : Comodule.coefficientMatrix (C := K ⊗[k] H) (b.baseChange K) =
-      (Comodule.coefficientMatrix (C := H) b).map f := by
-    rw [Comodule.coefficientMatrix_baseChange]
-    ext i j
-    rw [Matrix.map_apply, Matrix.map_apply, TensorProduct.mk_apply]
-    exact (Algebra.TensorProduct.includeRight_apply _).symm
-  rw [← (Polynomial.map_injective f
-    (Algebra.TensorProduct.includeRight_injective (algebraMap k K).injective)).eq_iff,
-    hmatrix, Matrix.charpoly_map]
-  have hrhs :
-      (((Polynomial.X - (1 : Polynomial k)) ^ Module.finrank k M).map (algebraMap k H)).map f =
+  let bK := b.baseChange K
+  let _ : Module.Free K (K ⊗[k] M) := Module.Free.of_basis bK
+  let _ : Module.Finite K (K ⊗[k] M) := Module.Finite.of_basis bK
+  let p : Polynomial k := (Polynomial.X - 1) ^ Module.finrank k M
+  have hpK : p.map (algebraMap k K) =
+      (Polynomial.X - (1 : Polynomial K)) ^ Module.finrank K (K ⊗[k] M) := by
+    simp [p]
+  constructor
+  · intro hHK g
+    have hC : (Comodule.coefficientMatrix (C := H) b).charpoly = p.map (algebraMap k H) := by
+      rw [← Comodule.coefficientMatrix_baseChange_charpoly_eq_iff (A := K) b p, hpK]
+      simpa only using
+        (geometricallyUnipotentPointsCommHopfAlgProperty.coefficientMatrix_charpoly_eq
+          ((geometricallyUnipotentPointsCommHopfAlgProperty_iff K _).mpr hHK)
+          (FGComoduleCat.of (R := K) (C := K ⊗[k] H) (K ⊗[k] M)) bK)
+    exact (HopfAlgebra.isUnipotentPoint_iff_isUnipotent_pointsAction_of_isFaithful
+      (FGComoduleCat.of (R := k) (C := H) M) hM g).2
+      (Comodule.isUnipotent_pointsAction_of_coefficientMatrix_charpoly_eq g b hC)
+  · intro hHk g
+    have hCK : (Comodule.coefficientMatrix (C := K ⊗[k] H) bK).charpoly =
         ((Polynomial.X - (1 : Polynomial K)) ^ Module.finrank K (K ⊗[k] M)).map
           (algebraMap K (K ⊗[k] H)) := by
-    simp only [Polynomial.map_pow, Polynomial.map_sub, Polynomial.map_X,
-      Polynomial.map_one, Module.finrank_baseChange]
-  rw [hrhs]
+      rw [← hpK, Comodule.coefficientMatrix_baseChange_charpoly_eq_iff (A := K) b p]
+      simpa only [p] using
+        (geometricallyUnipotentPointsCommHopfAlgProperty.coefficientMatrix_charpoly_eq
+          ((geometricallyUnipotentPointsCommHopfAlgProperty_iff k H.obj).mpr hHk)
+          (FGComoduleCat.of (R := k) (C := H) M) b)
+    exact (HopfAlgebra.isUnipotentPoint_iff_isUnipotent_pointsAction_of_isFaithful
+      (FGComoduleCat.of (R := K) (C := K ⊗[k] H) (K ⊗[k] M))
+      (Comodule.IsFaithful.baseChange (K := K) hM) g).2
+      (Comodule.isUnipotent_pointsAction_of_coefficientMatrix_charpoly_eq g bK hCK)
 
 /-- Smooth geometric unipotence is preserved by arbitrary extension of the ground field. -/
 theorem baseChange (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     (hH : smoothUnipotentCommHopfAlgProperty k H) :
     smoothUnipotentCommHopfAlgProperty K
       (FiniteTypeCommHopfAlgCat.baseChange (K := K) H) := by
-  have hH' := (smoothUnipotentCommHopfAlgProperty_iff k H).mp hH
-  rw [smoothUnipotentCommHopfAlgProperty_iff]
-  refine ⟨@Algebra.Smooth.baseChange k _ H K _ _ _ _ hH'.1, ?_⟩
-  obtain ⟨M, d, b, hb⟩ := Comodule.exists_isClosedImmersion_coordinateGroupSchemeHom
-    (k := k) (H := H)
-  let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup k
-  let _ : Module.Free k M := Module.Free.of_basis b
-  let _ : Module.Finite k M := Module.Finite.of_basis b
-  have hM : Comodule.IsFaithful (k := k) (H := H) (V := M) :=
-    (Comodule.isFaithful_iff_isClosedImmersion_coordinateGroupSchemeHom b).2 hb
-  let _ := Comodule.baseChange (R := k) (H := H) (M := M) K
-  let bK := b.baseChange K
-  let _ : Module.Free K (K ⊗[k] M) := Module.Free.of_basis bK
-  let _ : Module.Finite K (K ⊗[k] M) := Module.Finite.of_basis bK
-  let _ : Algebra.Smooth k H := hH'.1
-  let _ : IsReduced H := isReduced_of_smooth k H
-  have hCK : (Comodule.coefficientMatrix (C := K ⊗[k] H) bK).charpoly =
-      ((Polynomial.X - (1 : Polynomial K)) ^ Module.finrank K (K ⊗[k] M)).map
-        (algebraMap K (K ⊗[k] H)) := by
-    rw [coefficientMatrix_baseChange_charpoly_eq_iff (K := K) b]
-    simpa only using
-      (geometricallyUnipotentPointsCommHopfAlgProperty.coefficientMatrix_charpoly_eq
-        ((geometricallyUnipotentPointsCommHopfAlgProperty_iff k H.obj).mpr hH'.2)
-        (FGComoduleCat.of (R := k) (C := H) M) b)
-  intro g
-  apply (HopfAlgebra.isUnipotentPoint_iff_isUnipotent_pointsAction_of_isFaithful
-    (FGComoduleCat.of (R := K) (C := K ⊗[k] H) (K ⊗[k] M))
-    (Comodule.IsFaithful.baseChange (K := K) hM) g).2
-  exact Comodule.isUnipotent_pointsAction_of_coefficientMatrix_charpoly_eq g bK hCK
+  obtain ⟨hsmooth, hunip⟩ := (smoothUnipotentCommHopfAlgProperty_iff k H).mp hH
+  let _ : Algebra.Smooth k H := hsmooth
+  exact (smoothUnipotentCommHopfAlgProperty_iff K _).mpr
+    ⟨inferInstance, (forall_isUnipotentPoint_baseChange_iff H hsmooth).mpr hunip⟩
 
 /-- Smooth geometric unipotence is reflected by arbitrary extension of the ground field. -/
 theorem of_baseChange (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     (hH : smoothUnipotentCommHopfAlgProperty K
       (FiniteTypeCommHopfAlgCat.baseChange (K := K) H)) :
     smoothUnipotentCommHopfAlgProperty k H := by
-  have hH' := (smoothUnipotentCommHopfAlgProperty_iff K
-    (FiniteTypeCommHopfAlgCat.baseChange (K := K) H)).mp hH
-  let _ : Algebra.Smooth K (K ⊗[k] H.obj) := by
-    simpa only [FiniteTypeCommHopfAlgCat.baseChange, CommHopfAlgCat.baseChange,
-      _root_.CommHopfAlgCat.coe_of] using hH'.1
-  rw [smoothUnipotentCommHopfAlgProperty_iff]
-  refine ⟨Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat (R := k) (S := H.obj) K, ?_⟩
-  obtain ⟨M, d, b, hb⟩ := Comodule.exists_isClosedImmersion_coordinateGroupSchemeHom
-    (k := k) (H := H)
-  let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup k
-  let _ : Module.Free k M := Module.Free.of_basis b
-  let _ : Module.Finite k M := Module.Finite.of_basis b
-  have hM : Comodule.IsFaithful (k := k) (H := H) (V := M) :=
-    (Comodule.isFaithful_iff_isClosedImmersion_coordinateGroupSchemeHom b).2 hb
-  let _ := Comodule.baseChange (R := k) (H := H) (M := M) K
-  let bK := b.baseChange K
-  let _ : Module.Free K (K ⊗[k] M) := Module.Free.of_basis bK
-  let _ : Module.Finite K (K ⊗[k] M) := Module.Finite.of_basis bK
-  let _ : IsReduced (K ⊗[k] H.obj) := isReduced_of_smooth K (K ⊗[k] H.obj)
-  have hC : (Comodule.coefficientMatrix (C := H) b).charpoly =
-      ((Polynomial.X - (1 : Polynomial k)) ^ Module.finrank k M).map (algebraMap k H) := by
-    rw [← coefficientMatrix_baseChange_charpoly_eq_iff (K := K) b]
-    simpa only using
-      (geometricallyUnipotentPointsCommHopfAlgProperty.coefficientMatrix_charpoly_eq
-        ((geometricallyUnipotentPointsCommHopfAlgProperty_iff K _).mpr hH'.2)
-        (FGComoduleCat.of (R := K) (C := K ⊗[k] H.obj) (K ⊗[k] M)) bK)
-  intro g
-  apply (HopfAlgebra.isUnipotentPoint_iff_isUnipotent_pointsAction_of_isFaithful
-    (FGComoduleCat.of (R := k) (C := H) M) hM g).2
-  exact Comodule.isUnipotent_pointsAction_of_coefficientMatrix_charpoly_eq g b hC
+  obtain ⟨hsmoothK, hunipK⟩ := (smoothUnipotentCommHopfAlgProperty_iff K _).mp hH
+  let _ : Algebra.Smooth K (K ⊗[k] H.obj) :=
+    FiniteTypeCommHopfAlgCat.smooth_baseChange_obj hsmoothK
+  have hsmooth : Algebra.Smooth k H :=
+    Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat (R := k) (S := H.obj) K
+  exact (smoothUnipotentCommHopfAlgProperty_iff k H).mpr
+    ⟨hsmooth, (forall_isUnipotentPoint_baseChange_iff H hsmooth).mp hunipK⟩
 
 -- The defining simp lemma `smoothUnipotentCommHopfAlgProperty_iff` already simplifies the left-hand
 -- side, so adding `baseChange_iff` to the simp set would violate `simpNF`.

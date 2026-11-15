@@ -34,7 +34,11 @@ geometric unipotence follows from the universal coefficient-matrix argument.
 Triviality of the radical after a field extension descends to the ground field by faithful-flat
 reflection of equality of Hopf ideals.
 
-Equality requires descent of an arbitrary radical candidate over `K` and is not asserted here.
+Equality along separable algebraic extensions is proved in
+`TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Descent`
+(`TauCeti.FiniteTypeCommHopfAlgCat.baseChangeHopfIdeal_unipotentRadicalDefiningIdeal`), whereas it
+can fail along inseparable extensions
+(`WeilRestriction.not_pseudoReductive_baseChange_multiplicativeGroup_of_isPurelyInseparable`).
 
 ## Main declarations
 

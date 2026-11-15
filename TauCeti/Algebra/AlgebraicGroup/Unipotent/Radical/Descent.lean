@@ -144,7 +144,40 @@ private def toScalarTwistTensor {k L : Type u} [Field k] [Field L] [Algebra k L]
     ScalarTwist σ ⊗[k] H :=
   y
 
+/-- Because `Algebra L (ScalarTwist σ)` is `(toScalarTwistRingHom σ).toAlgebra`, its `algebraMap`
+is `toScalarTwistRingHom σ`. -/
+private lemma toScalarTwistRingHom_eq_algebraMap {k L : Type u} [Field k] [Field L] [Algebra k L]
+    (σ : L ≃ₐ[k] L) (c : L) :
+    toScalarTwistRingHom σ c = algebraMap L (ScalarTwist σ) c :=
+  rfl
+
+/-- Because `ScalarTwist σ` inherits its `k`-module structure from `L` and `toScalarTwistRingHom σ`
+is `σ` on the underlying type, viewing `(σ ⊗ id)(c ⊗ h)` in `ScalarTwist σ ⊗[k] H` gives
+`toScalarTwistRingHom σ c ⊗ h`. -/
+private lemma toScalarTwistTensor_map_tmul {k L : Type u} [Field k] [Field L] [Algebra k L]
+    {H : FiniteTypeCommHopfAlgCat.{u, u} k} (σ : L ≃ₐ[k] L) (c : L) (h : H) :
+    toScalarTwistTensor σ (TensorProduct.map σ.toLinearMap LinearMap.id (c ⊗ₜ[k] h)) =
+      toScalarTwistRingHom σ c ⊗ₜ[k] h :=
+  rfl
+
+/-- Viewing an element of `L ⊗[k] H` in `ScalarTwist σ ⊗[k] H` preserves addition because
+`ScalarTwist σ` shares the `Field` and `Algebra k` instances of `L`. -/
+private lemma toScalarTwistTensor_add {k L : Type u} [Field k] [Field L] [Algebra k L]
+    {H : FiniteTypeCommHopfAlgCat.{u, u} k} (σ : L ≃ₐ[k] L) (x y : L ⊗[k] H) :
+    toScalarTwistTensor σ (x + y) = toScalarTwistTensor σ x + toScalarTwistTensor σ y :=
+  rfl
+
 variable {k L : Type u} [Field k] [Field L] [Algebra k L]
+
+/-- Because `baseChange` and `unipotentRadicalDefiningIdeal` depend only on the `Field` and
+`Algebra k` instances on the extension field — which on `ScalarTwist σ` are definitionally those of
+`L`, independent of the auxiliary `Algebra L (ScalarTwist σ)` instance — `toScalarTwistTensor σ`
+preserves and reflects membership in `unipotentRadicalDefiningIdeal`. -/
+private lemma mem_unipotentRadicalDefiningIdeal_scalarTwist_iff
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k) (σ : L ≃ₐ[k] L) (x : L ⊗[k] H) :
+    toScalarTwistTensor σ x ∈ unipotentRadicalDefiningIdeal (baseChange (K := ScalarTwist σ) H) ↔
+      x ∈ unipotentRadicalDefiningIdeal (baseChange (K := L) H) :=
+  Iff.rfl
 
 /-- Viewing `L' := ScalarTwist σ` as an `L`-algebra via `σ : L ≃ₐ[k] L`, the inverse tower
 comparison `(L' ⊗[k] H) → L' ⊗[L] (L ⊗[k] H)` sends `(σ ⊗ id)(z)` to `1 ⊗ z`. -/
@@ -155,23 +188,12 @@ private theorem baseChangeTowerIso_inv_scalarTwist_map_eq_one_tmul
       (1 : ScalarTwist σ) ⊗ₜ[L] z := by
   induction z using TensorProduct.inductionOn with
   | tmul c h =>
-    have htmul : toScalarTwistTensor σ
-          (TensorProduct.map σ.toLinearMap LinearMap.id (c ⊗ₜ[k] h)) =
-        (toScalarTwistRingHom σ c) ⊗ₜ[k] h :=
-      rfl
     have hsmul : toScalarTwistRingHom σ c = c • (1 : ScalarTwist σ) := by
-      change algebraMap L (ScalarTwist σ) c = algebraMap L (ScalarTwist σ) c * 1
-      exact (mul_one _).symm
-    rw [htmul, baseChangeTowerIso_inv_apply, hsmul, TensorProduct.smul_tmul,
+      rw [toScalarTwistRingHom_eq_algebraMap, Algebra.smul_def, mul_one]
+    rw [toScalarTwistTensor_map_tmul, baseChangeTowerIso_inv_apply, hsmul, TensorProduct.smul_tmul,
       TensorProduct.smul_tmul', smul_eq_mul, mul_one]
   | add x y hx hy =>
-    have hadd : toScalarTwistTensor σ
-          (TensorProduct.map σ.toLinearMap LinearMap.id (x + y)) =
-        toScalarTwistTensor σ (TensorProduct.map σ.toLinearMap LinearMap.id x) +
-          toScalarTwistTensor σ (TensorProduct.map σ.toLinearMap LinearMap.id y) := by
-      rw [map_add]
-      rfl
-    rw [hadd, map_add, TensorProduct.tmul_add, hx, hy]
+    rw [map_add, toScalarTwistTensor_add, map_add, TensorProduct.tmul_add, hx, hy]
 
 /-- The defining Hopf ideal of the unipotent radical of `L ⊗[k] H` is stable under every `k`-algebra
 automorphism of the scalar factor `L`. -/
@@ -191,8 +213,7 @@ theorem map_mem_unipotentRadicalDefiningIdeal_baseChange
     rw [hcomp, TensorProduct.map_id, LinearMap.id_apply]
   have hx' : toScalarTwistTensor σ.symm (TensorProduct.map σ.symm.toLinearMap LinearMap.id z) ∈
       unipotentRadicalDefiningIdeal (baseChange (K := ScalarTwist σ.symm) H) := by
-    rw [hz]
-    exact hx
+    rwa [hz, mem_unipotentRadicalDefiningIdeal_scalarTwist_iff]
   rw [← comapOfSurjective_unipotentRadicalDefiningIdeal e.symm,
     HopfIdeal.mem_comapOfSurjective, Iso.symm_hom,
     baseChangeTowerIso_inv_scalarTwist_map_eq_one_tmul H σ.symm z] at hx'
@@ -219,20 +240,6 @@ private theorem baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_of_isGalois [I
       hJ.symm ▸ isUnipotentRadicalCandidate_unipotentRadicalDefiningIdeal (baseChange (K := L) H)
 
 end ArbitraryExtension
-
-private theorem coinvariants_eq_of_eq {F : Type u} [Field F] {B : _root_.CommHopfAlgCat.{u} F}
-    {I J : HopfIdeal F B} (hI : I.IsNormal) (hJ : J.IsNormal) (hIJ : I = J) :
-    CommHopfAlgCat.coinvariants hI = CommHopfAlgCat.coinvariants hJ := by
-  subst hIJ
-  rfl
-
-private theorem eqToHom_comp_coinvariantsι {F : Type u} [Field F]
-    {B : _root_.CommHopfAlgCat.{u} F} {I J : HopfIdeal F B}
-    (hI : I.IsNormal) (hJ : J.IsNormal) (hIJ : I = J) :
-    eqToHom (coinvariants_eq_of_eq hI hJ hIJ) ≫ CommHopfAlgCat.coinvariantsι hJ =
-      CommHopfAlgCat.coinvariantsι hI := by
-  subst hIJ
-  simp
 
 section Separable
 
@@ -326,7 +333,7 @@ def unipotentRadicalCoinvariantsBaseChangeIso (H : FiniteTypeCommHopfAlgCat.{u, 
         (isNormal_unipotentRadicalDefiningIdeal (baseChange (K := K) H)) :=
   CommHopfAlgCat.coinvariantsBaseChangeIso (K := K)
       (isNormal_unipotentRadicalDefiningIdeal H) ≪≫
-    eqToIso (coinvariants_eq_of_eq _ _
+    eqToIso (CommHopfAlgCat.coinvariants_eq_of_eq _ _
       (baseChangeHopfIdeal_unipotentRadicalDefiningIdeal (K := K) H))
 
 /-- The base-change comparison for `G ⧸ R_{u,k}(G)` commutes with the quotient coordinate
@@ -340,7 +347,7 @@ theorem unipotentRadicalCoinvariantsBaseChangeIso_hom_comp_coinvariantsι
       CommHopfAlgCat.baseChangeMap (K := K)
         (CommHopfAlgCat.coinvariantsι (isNormal_unipotentRadicalDefiningIdeal H)) := by
   rw [unipotentRadicalCoinvariantsBaseChangeIso, Iso.trans_hom, eqToIso.hom, Category.assoc,
-    eqToHom_comp_coinvariantsι _ _
+    CommHopfAlgCat.eqToHom_comp_coinvariantsι _ _
       (baseChangeHopfIdeal_unipotentRadicalDefiningIdeal (K := K) H),
     CommHopfAlgCat.coinvariantsBaseChangeIso_hom_comp_coinvariantsι]
 

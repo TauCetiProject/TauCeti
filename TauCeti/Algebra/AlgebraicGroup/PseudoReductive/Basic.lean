@@ -14,11 +14,10 @@ public import TauCeti.RingTheory.Smooth.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.CoordinateBaseChange
 import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Unipotent
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Exactness
+import TauCeti.Algebra.AlgebraicGroup.Reductive.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Characteristic
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Descent
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Isomorphism
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
 
 /-!
 # Pseudo-reductive affine groups
@@ -140,8 +139,7 @@ theorem pseudoReductiveCommHopfAlgProperty_iff_reductive [PerfectField k]
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     pseudoReductiveCommHopfAlgProperty k H ↔ reductiveCommHopfAlgProperty k H := by
   rw [pseudoReductiveCommHopfAlgProperty_iff,
-    reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation,
-    FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_baseChange_eq_augmentation_iff]
+    reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_eq_augmentation]
 
 open FiniteTypeCommHopfAlgCat in
 /-- A faithfully flat quotient of a smooth geometrically connected affine group whose kernel is the

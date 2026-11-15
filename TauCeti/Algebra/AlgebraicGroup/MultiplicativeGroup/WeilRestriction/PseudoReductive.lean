@@ -59,11 +59,10 @@ smoothness and geometric connectedness are `TauCeti.Algebra.WeilRestriction.inst
 * `TauCeti.Algebra.WeilRestriction.pseudoReductive_multiplicativeGroup`: in
   characteristic `p > 0`, `Res_{K/k} 𝔾ₘ` is pseudo-reductive for every finite field extension
   `K / k`.
-* `TauCeti.Algebra.WeilRestriction.
-    not_pseudoReductive_baseChange_algebraicClosure_of_isPurelyInseparable`: for a nontrivial
-  finite purely inseparable extension `K / k`, the geometric fibre of `Res_{K/k} 𝔾ₘ` over
-  `AlgebraicClosure k` is not pseudo-reductive, showing that pseudo-reductivity need not survive
-  inseparable field extensions.
+* `WeilRestriction.not_pseudoReductive_baseChange_multiplicativeGroup_of_isPurelyInseparable`: for
+  a nontrivial finite purely inseparable extension `K / k`, the geometric fibre of `Res_{K/k} 𝔾ₘ`
+  over `AlgebraicClosure k` is not pseudo-reductive, showing that pseudo-reductivity need not
+  survive inseparable field extensions.
 
 ## References
 
@@ -211,7 +210,7 @@ nontrivial finite purely inseparable extension: although `Res_{K/k} 𝔾ₘ` is 
 in positive characteristic (`pseudoReductive_multiplicativeGroup`), its geometric fibre has
 nontrivial unipotent radical. Thus pseudo-reductivity is not preserved by arbitrary inseparable
 field extensions. -/
-theorem not_pseudoReductive_baseChange_algebraicClosure_of_isPurelyInseparable {K : Type u}
+theorem not_pseudoReductive_baseChange_multiplicativeGroup_of_isPurelyInseparable {K : Type u}
     [Field K] [Algebra k K] [FiniteDimensional k K] [IsPurelyInseparable k K]
     (hK : 1 < Module.finrank k K) :
     ¬ pseudoReductiveCommHopfAlgProperty (AlgebraicClosure k)
