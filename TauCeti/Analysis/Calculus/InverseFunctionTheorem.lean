@@ -59,6 +59,8 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
   carries differential identities `dg_z (u i) = v i (g z)` over to `d(g⁻¹)_y (v i y) = u i`.
 * `Set.MapsTo.interior_of_contDiffOn`: a `C¹` map with invertible derivative on the interior of
   `s` and mapping `s` into `t` maps `interior s` into `interior t`.
+* `TauCeti.exists_contDiffAt_graph_of_isInvertible`: a disc `z ↦ (a z, b z)` whose second
+  component has invertible derivative at `z₀` is, near `z₀`, the graph of a map `C^n` at `b z₀`.
 
 ## References
 
@@ -274,6 +276,27 @@ theorem _root_.Set.MapsTo.interior_of_contDiffOn {t : Set F} (h : MapsTo g s t)
   have hd : HasFDerivAt g (e : E →L[𝕂] F) x := he ▸ (hat.differentiableAt hn0).hasFDerivAt
   rw [mem_interior_iff_mem_nhds, ← (hat.hasStrictFDerivAt hd hn0).map_nhds_eq_of_equiv]
   exact mem_map.2 (mem_of_superset hs fun y hy => h hy)
+
+/-- **A transverse disc is a graph.** Let `z ↦ (a z, b z)` be a disc, `C^n` at `z₀` with
+`n ≠ 0`, whose second component `b` has invertible derivative at `z₀`. Then there is a map `g`,
+`C^n` at `b z₀`, with `g (b z₀) = a z₀` whose graph near `b z₀` is covered by the part of the disc
+over any prescribed neighbourhood `U` of `z₀`: every `w` near `b z₀` is `b z` for some `z ∈ U`
+with `a z = g w`.
+
+The map `g` is `a ∘ b⁻¹` for the local inverse of `b` given by the inverse function theorem. -/
+theorem exists_contDiffAt_graph_of_isInvertible {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace 𝕂 G] {a : E → G} {b : E → F} {b' : E →L[𝕂] F} {z₀ : E}
+    (ha : ContDiffAt 𝕂 n a z₀) (hb : ContDiffAt 𝕂 n b z₀) (hb' : HasFDerivAt b b' z₀)
+    (hb'i : b'.IsInvertible) (hn : n ≠ 0) {U : Set E} (hU : U ∈ 𝓝 z₀) :
+    ∃ g : F → G, ContDiffAt 𝕂 n g (b z₀) ∧ g (b z₀) = a z₀ ∧
+      ∀ᶠ w in 𝓝 (b z₀), ∃ z ∈ U, a z = g w ∧ b z = w := by
+  obtain ⟨e, rfl⟩ := hb'i
+  have hσ₀ := hb.localInverse_apply_image hb' hn
+  have hσ := hb.to_localInverse hb' hn
+  refine ⟨a ∘ hb.localInverse hb' hn, (hσ₀ ▸ ha).comp _ hσ, by simp [hσ₀], ?_⟩
+  filter_upwards [(hb.hasStrictFDerivAt hb' hn).eventually_right_inverse,
+    hσ.continuousAt.preimage_mem_nhds (hσ₀ ▸ hU)] with w hw hwU
+  exact ⟨_, hwU, rfl, hw⟩
 
 end TauCeti
 

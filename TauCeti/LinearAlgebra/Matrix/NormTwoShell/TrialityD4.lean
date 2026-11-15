@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.TypeD
 public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover.Reindex
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 
 /-!
 # Numbered signed root orbits of D₄ triality
