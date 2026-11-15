@@ -209,6 +209,16 @@ noncomputable def split (X : C) : (ExactStructure.split C).InjectivePresentation
 
 @[simp] theorem split_K (X : C) : (split X).K = 0 := (rfl)
 
+/-- After identifying the injective term, the tautological presentation starts with the
+identity. -/
+@[simp] theorem split_i (X : C) : (split X).i ≫ eqToHom (split_I X) = 𝟙 X :=
+  Category.comp_id _
+
+/-- After identifying the terms, the tautological presentation ends with the zero map. -/
+@[simp] theorem split_p (X : C) :
+    eqToHom (split_I X).symm ≫ (split X).p ≫ eqToHom (split_K X) = 0 :=
+  (Category.id_comp _).trans (Category.comp_id _)
+
 /-- Mathlib's injective presentation gives a relative injective presentation for the canonical
 exact structure of an abelian category. -/
 noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
@@ -229,6 +239,20 @@ noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
 @[simp] theorem abelian_K {A : Type u} [Category.{v} A] [Abelian A]
     [CategoryTheory.EnoughInjectives A] (X : A) :
     (abelian X).K = cokernel (Injective.ι X) := (rfl)
+
+/-- After identifying the injective term, the presentation starts with Mathlib's chosen
+injective envelope map. -/
+@[simp] theorem abelian_i {A : Type u} [Category.{v} A] [Abelian A]
+    [CategoryTheory.EnoughInjectives A] (X : A) :
+    (abelian X).i ≫ eqToHom (abelian_I X) = Injective.ι X :=
+  Category.comp_id _
+
+/-- After identifying the terms, the presentation ends with the cokernel projection. -/
+@[simp] theorem abelian_p {A : Type u} [Category.{v} A] [Abelian A]
+    [CategoryTheory.EnoughInjectives A] (X : A) :
+    eqToHom (abelian_I X).symm ≫ (abelian X).p ≫ eqToHom (abelian_K X) =
+      cokernel.π (Injective.ι X) :=
+  (Category.id_comp _).trans (Category.comp_id _)
 
 section Comparison
 

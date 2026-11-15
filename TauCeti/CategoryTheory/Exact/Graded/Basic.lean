@@ -331,6 +331,13 @@ theorem refl_equiv (E : GradedExactStructure C) :
     (GradedExactEquiv.refl E).equiv = CategoryTheory.Equivalence.refl :=
   (rfl)
 
+/-- The identity graded exact equivalence commutes with the shift by the canonical identity
+morphism. -/
+@[simp]
+theorem refl_commShift_hom_app (E : GradedExactStructure C) (X : C) :
+    (GradedExactEquiv.refl E).commShift.hom.app X = eqToHom (by simp) :=
+  Category.comp_id _
+
 /-- The inverse of a graded exact equivalence is a graded exact equivalence. -/
 protected def symm (h : GradedExactEquiv E E') : GradedExactEquiv E' E :=
   haveI : h.equiv.symm.functor.Additive := inferInstanceAs h.equiv.inverse.Additive
@@ -360,6 +367,19 @@ protected def symm (h : GradedExactEquiv E E') : GradedExactEquiv E' E :=
 theorem symm_equiv (h : GradedExactEquiv E E') : h.symm.equiv = h.equiv.symm :=
   (rfl)
 
+/-- The shift commutation of the inverse equivalence is the inverse of the original commutation,
+conjugated by the unit and counit of the equivalence. -/
+@[simp]
+theorem symm_commShift_hom_app (h : GradedExactEquiv E E') (X : D) :
+    h.symm.commShift.hom.app X =
+      eqToHom (by simp) ≫
+        h.equiv.inverse.map (E'.shift.functor.map (h.equiv.counitIso.inv.app X)) ≫
+        h.equiv.inverse.map (h.commShift.inv.app (h.equiv.inverse.obj X)) ≫
+        h.equiv.unitIso.inv.app (E.shift.functor.obj (h.equiv.inverse.obj X)) ≫
+        eqToHom (by simp) := by
+  change _ = 𝟙 _ ≫ _ ≫ _ ≫ _ ≫ 𝟙 _
+  simp [GradedExactEquiv.symm]
+
 /-- A composite of graded exact equivalences is a graded exact equivalence, for the composed
 commutation isomorphism. -/
 protected def trans (h : GradedExactEquiv E E') (h' : GradedExactEquiv E' E'') :
@@ -376,6 +396,16 @@ protected def trans (h : GradedExactEquiv E E') (h' : GradedExactEquiv E' E'') :
 theorem trans_equiv (h : GradedExactEquiv E E') (h' : GradedExactEquiv E' E'') :
     (h.trans h').equiv = h.equiv.trans h'.equiv :=
   (rfl)
+
+/-- The shift commutation of a composite equivalence composes the two shift commutations. -/
+@[simp]
+theorem trans_commShift_hom_app (h : GradedExactEquiv E E') (h' : GradedExactEquiv E' E'')
+    (X : C) :
+    (h.trans h').commShift.hom.app X =
+      eqToHom (by simp) ≫ h'.equiv.functor.map (h.commShift.hom.app X) ≫
+        h'.commShift.hom.app (h.equiv.functor.obj X) ≫ eqToHom (by simp) := by
+  change _ = 𝟙 _ ≫ _ ≫ _ ≫ 𝟙 _
+  simp [GradedExactEquiv.trans]
 
 end GradedExactEquiv
 
