@@ -73,6 +73,8 @@ while it vanishes on `Λ` and nowhere else. A point `(x, y)` of the curve with `
 * `PeriodPair.weierstrassCurve_smul`: rescaling the lattice by `c` changes the curve by the
   variable change with `u = c`.
 * `UpperHalfPlane.G_periodPair`: `G k (ℤ τ + ℤ) = 2 ζ(k) E_k(τ)` for `k ≥ 3`.
+* `UpperHalfPlane.mdifferentiable_g₂_periodPair`, `UpperHalfPlane.mdifferentiable_g₃_periodPair`:
+  `g₂(ℤ τ + ℤ)` and `g₃(ℤ τ + ℤ)` are holomorphic in `τ`.
 * `UpperHalfPlane.weierstrassCurve_Δ_periodPair`: the discriminant of the curve of `ℤ τ + ℤ` is
   `(2 π)¹² Δ(τ)`.
 * `PeriodPair.weierstrassCurve_Δ`, `PeriodPair.weierstrassCurve_Δ_ne_zero`: the discriminant is
@@ -155,6 +157,18 @@ lemma g₃_periodPair (τ : ℍ) : τ.periodPair.g₃ = 8 * π ^ 6 / 27 * E₆ �
     ring
   rw [PeriodPair.g₃, G_periodPair τ (by norm_num), Nat.cast_ofNat, hζ]
   ring
+
+open scoped Manifold in
+/-- The lattice invariant `g₂(ℤ τ + ℤ)` is holomorphic in `τ`. -/
+lemma mdifferentiable_g₂_periodPair : MDiff fun τ : ℍ ↦ τ.periodPair.g₂ := by
+  simp only [g₂_periodPair]
+  exact mdifferentiable_const.mul (ModularFormClass.holo E₄)
+
+open scoped Manifold in
+/-- The lattice invariant `g₃(ℤ τ + ℤ)` is holomorphic in `τ`. -/
+lemma mdifferentiable_g₃_periodPair : MDiff fun τ : ℍ ↦ τ.periodPair.g₃ := by
+  simp only [g₃_periodPair]
+  exact mdifferentiable_const.mul (ModularFormClass.holo E₆)
 
 end UpperHalfPlane
 

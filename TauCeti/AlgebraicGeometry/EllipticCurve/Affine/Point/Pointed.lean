@@ -38,6 +38,8 @@ curves with a point of exact order `N`, the moduli problem of the congruence sub
 
 * `TauCeti.PointedWeierstrassCurve.equivVariableChange_smul_point`: the change of variables `C`
   carries the marked point of `C • X` to that of `X`.
+* `TauCeti.PointedWeierstrassCurve.smul_mk_some_eq_mk_some_iff`: a change of variables between
+  affine pointed curves, in coordinates.
 * `TauCeti.PointedWeierstrassCurve.addOrderOf_smul_point`: over a field, changes of variables
   preserve the order of the marked point.
 -/
@@ -101,6 +103,30 @@ theorem smul_point : (C • X).point = (equivVariableChange X.curve C).symm X.po
 theorem equivVariableChange_smul_point : equivVariableChange X.curve C (C • X).point = X.point :=
   Equiv.apply_symm_apply _ _
 
+/-- A change of variables acts on a pointed curve `(W, P)` by `(C • W, Q)`, with `Q` the point
+of `C • W` carried to `P`. -/
+theorem smul_mk (W : WeierstrassCurve R) (P : W.toAffine.Point) :
+    C • (⟨W, P⟩ : PointedWeierstrassCurve R) =
+      ⟨C • W, (equivVariableChange W C).symm P⟩ :=
+  (rfl)
+
+/-- **Changes of variables between affine pointed curves in coordinates.** `C` carries
+`(W, (x, y))` to `(W', (x', y'))` exactly when `C • W = W'` and
+`(x, y) = (u² x' + r, u³ y' + u² s x' + t)`. -/
+theorem smul_mk_some_eq_mk_some_iff {W W' : WeierstrassCurve R} {x y x' y' : R}
+    (h : W.toAffine.Nonsingular x y) (h' : W'.toAffine.Nonsingular x' y') :
+    C • (⟨W, .some x y h⟩ : PointedWeierstrassCurve R) = ⟨W', .some x' y' h'⟩ ↔
+      C • W = W' ∧ (C.u : R) ^ 2 * x' + C.r = x ∧
+        (C.u : R) ^ 3 * y' + (C.u : R) ^ 2 * C.s * x' + C.t = y := by
+  constructor
+  · intro hC
+    obtain rfl : C • W = W' := congrArg curve hC
+    rw [smul_mk, mk_inj, Equiv.symm_apply_eq, equivVariableChange_some, some.injEq] at hC
+    exact ⟨rfl, hC.1.symm, hC.2.symm⟩
+  · rintro ⟨rfl, hx, hy⟩
+    rw [smul_mk, mk_inj, Equiv.symm_apply_eq, equivVariableChange_some, some.injEq]
+    exact ⟨hx.symm, hy.symm⟩
+
 /-- **Changes of variables act on pointed curves**, the action of `C * C'` being that of `C'`
 followed by that of `C`. -/
 instance instMulActionVariableChange :
@@ -121,6 +147,11 @@ variable {F : Type*} [Field F] [DecidableEq F] (C : VariableChange F)
 @[simp]
 theorem addOrderOf_smul_point : addOrderOf (C • X).point = addOrderOf X.point := by
   rw [smul_point, ← coe_addEquivVariableChange_symm, AddEquiv.addOrderOf_eq]
+
+/-- Over a field, a change of variables preserves which multiples of the marked point vanish. -/
+@[simp]
+theorem nsmul_smul_point_eq_zero_iff (n : ℕ) : n • (C • X).point = 0 ↔ n • X.point = 0 := by
+  rw [smul_point, ← coe_addEquivVariableChange_symm, ← map_nsmul, AddEquiv.map_eq_zero_iff]
 
 variable (F) in
 /-- The **elliptic curves over `F` with a marked point of exact order `N`**, as a sub-action of the

@@ -79,6 +79,8 @@ how `G₂^W` is compared with series built from Mathlib's `EisensteinSeries.G2`.
   `TauCeti.EisensteinSeries.weightedG2_single_slash` for a single residue.
 * `TauCeti.EisensteinSeries.weightedG2_comp_neg`: the series is unchanged when the residues are
   negated.
+* `TauCeti.EisensteinSeries.mdifferentiable_weierstrassP_periodPair_div`: the division values
+  `z ↦ ℘((b₀ z + b₁) / N; ℤ z + ℤ)` are holomorphic on `ℍ`.
 * `TauCeti.EisensteinSeries.weightedG2_mdifferentiable`: holomorphy on `ℍ`.
 * `TauCeti.EisensteinSeries.isBoundedAtImInfty_weightedG2_slash`: every `SL(2, ℤ)`-translate is
   bounded at `i∞`.
@@ -403,9 +405,10 @@ private lemma tendstoLocallyUniformly_weierstrassP_divisionPoint (b : Fin 2 → 
   exact mul_le_mul_of_nonneg_left
     (Real.rpow_le_rpow_of_nonpos (by positivity) hl (by norm_num)) (by positivity)
 
-/-- Each division value of `℘` is holomorphic on `ℍ`. -/
-private lemma mdifferentiable_weierstrassP_divisionPoint (b : Fin 2 → ℤ) :
-    MDiff (fun z : ℍ ↦ ℘[z.periodPair] (divisionPoint N b z)) :=
+/-- **The division values of `℘` are holomorphic**: for `b ∈ ℤ²`, the function
+`z ↦ ℘((b₀ z + b₁) / N; ℤ z + ℤ)` is holomorphic on `ℍ`. -/
+theorem mdifferentiable_weierstrassP_periodPair_div (b : Fin 2 → ℤ) :
+    MDiff fun z : ℍ ↦ ℘[z.periodPair] (((b 0 : ℂ) * z + b 1) / N) :=
   TauCeti.UpperHalfPlane.mdifferentiable_of_tendstoLocallyUniformly
     (tendstoLocallyUniformly_weierstrassP_divisionPoint b) (Eventually.of_forall fun _ ↦
       UpperHalfPlane.mdifferentiable_iff.mpr (DifferentiableOn.fun_sum fun y _ ↦
@@ -414,8 +417,8 @@ private lemma mdifferentiable_weierstrassP_divisionPoint (b : Fin 2 → ℤ) :
 
 /-- **The weighted weight-two series is holomorphic on `ℍ`.** -/
 theorem weightedG2_mdifferentiable (W : (Fin 2 → ZMod N) → ℂ) : MDiff (weightedG2 W) := by
-  have h (a : Fin 2 → ZMod N) := mdifferentiable_weierstrassP_divisionPoint (N := N) (lift a)
-  simp only [divisionPoint_lift] at h
+  have h (a : Fin 2 → ZMod N) := mdifferentiable_weierstrassP_periodPair_div (N := N) (lift a)
+  simp only [lift_eq, Int.cast_natCast] at h
   have hsum : MDiff fun z : ℍ ↦ ∑ a, W a *
       ℘[z.periodPair] (((a 0).val * (z : ℂ) + (a 1).val) / N) := by
     convert MDifferentiable.sum (t := Finset.univ)

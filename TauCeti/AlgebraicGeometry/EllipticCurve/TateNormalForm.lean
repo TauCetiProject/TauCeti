@@ -151,6 +151,12 @@ theorem isUnit_of_isUnit_tateNormalForm_Δ {a b : R} (h : IsUnit (tateNormalForm
 theorem equation_tateNormalForm_zero : (tateNormalForm a b).toAffine.Equation 0 0 :=
   Affine.equation_zero.mpr (tateNormalForm_a₆ a b)
 
+/-- The point `(0, 0)` of the Tate normal form is nonsingular when `b ≠ 0`: the partial derivative
+in `Y` takes the value `b` there. -/
+theorem nonsingular_tateNormalForm_zero {b : R} (hb : b ≠ 0) :
+    (tateNormalForm a b).toAffine.Nonsingular 0 0 :=
+  ⟨equation_tateNormalForm_zero a b, Or.inr (by simpa [Affine.evalEval_polynomialY] using hb)⟩
+
 /-- The Tate normal form commutes with base change. -/
 @[simp]
 theorem map_tateNormalForm {A : Type*} [CommRing A] (φ : R →+* A) :
