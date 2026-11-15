@@ -6,10 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.FiniteModuleTopology
-public import Mathlib.Analysis.Normed.Operator.NormedSpace
-public import Mathlib.Topology.MetricSpace.Ultra.Basic
-
-import TauCeti.RingTheory.Huber.Normed
 
 /-!
 # Strict morphisms out of a finite module over a Tate ring
@@ -29,17 +25,10 @@ ring — where finiteness of the target already gives the noetherian hypothesis 
 localised topologically. The open mapping theorem it rests on is Henkel's, credited in
 `TauCeti.RingTheory.Huber.OpenMapping`.
 
-For modules carrying complete norms over a nontrivially normed field `K`, over a complete
-ultrametric normed `K`-algebra (which is a Tate ring), strictness makes an injective linear map a
-topological embedding, hence bounded below.
-
-## Main results
+## Main result
 
 * `LinearMap.isStrictMap_of_module_finite`: a linear map from a finite module to a noetherian
   module, over a complete Hausdorff Tate ring, is strict.
-* `LinearMap.antilipschitz_of_injective_of_isNoetherian`: over a complete ultrametric normed
-  algebra, an injective linear map between complete normed modules into a noetherian module is
-  antilipschitz.
 
 ## References
 
@@ -76,32 +65,6 @@ theorem isStrictMap_of_module_finite (f : M →ₗ[A] N) : Topology.IsStrictMap 
   have hcont : Continuous f := IsModuleTopology.continuous_of_linearMap f
   exact f.isStrictMap_of_isClosed_range_of_isTateRing hcont.continuousAt
     (TauCeti.Huber.isClosed_of_isNoetherian (LinearMap.range f))
-
-end LinearMap
-
-namespace LinearMap
-
-variable (K : Type*) {R M N : Type*} [NontriviallyNormedField K]
-  [NormedCommRing R] [NormedAlgebra K R] [IsUltrametricDist R] [CompleteSpace R]
-  [NormedAddCommGroup M] [NormedSpace K M] [CompleteSpace M] [Module R M]
-  [IsScalarTower K R M] [ContinuousSMul R M]
-  [NormedAddCommGroup N] [NormedSpace K N] [CompleteSpace N] [Module R N]
-  [IsScalarTower K R N] [ContinuousSMul R N] [IsNoetherian R N]
-
-include K in
-/-- **Injective linear maps into noetherian modules are bounded below.** Let `R` be a complete
-ultrametric normed algebra over a nontrivially normed field `K`, and let `M` and `N` be complete
-normed `K`-spaces which are topological `R`-modules, with `N` noetherian over `R`. Every injective
-`R`-linear map `f : M → N` is antilipschitz, so `‖x‖ ≤ C ‖f x‖` for some `C`. -/
-theorem antilipschitz_of_injective_of_isNoetherian (f : M →ₗ[R] N)
-    (hf : Function.Injective f) : ∃ C, AntilipschitzWith C f := by
-  have := TauCeti.Huber.IsTateRing.of_normedAlgebra K R
-  -- `M` embeds in the noetherian module `N`, so it is finite.
-  have := isNoetherian_of_injective f hf
-  have hemb : IsEmbedding f :=
-    isEmbedding_iff_isStrictMap_injective.mpr ⟨f.isStrictMap_of_module_finite, hf⟩
-  exact (f.restrictScalars K).antilipschitz_of_comap_nhds_le
-    (by simpa using (hemb.nhds_eq_comap 0).ge)
 
 end LinearMap
 

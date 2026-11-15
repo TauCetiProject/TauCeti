@@ -13,6 +13,7 @@ import Mathlib.RingTheory.Polynomial.RationalRoot
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 import TauCeti.Algebra.Module.LocalizedModule.Lift
 import TauCeti.Analysis.Normed.Group.Quotient
+import TauCeti.Analysis.Normed.Module.Finite.Basic
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basis
 import TauCeti.RingTheory.Affinoid.Continuity
 import TauCeti.RingTheory.Affinoid.MaximumModulus
@@ -20,7 +21,7 @@ import TauCeti.RingTheory.Affinoid.MinimalPolynomial
 import TauCeti.RingTheory.Affinoid.NoetherNormalization
 import TauCeti.RingTheory.Affinoid.PowerBounded
 import TauCeti.RingTheory.Huber.Normed
-import TauCeti.RingTheory.Huber.StrictMorphism
+import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniqueFactorization
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.WeaklyStable
@@ -138,7 +139,7 @@ private theorem exists_linearMap_injective_norm_le_mul_supSeminorm
   let θ : (Fin m → T) →ₗ[T] (Fin m → Frac n) :=
     LinearMap.pi fun j ↦ Algebra.linearMap T (Frac n) ∘ₗ LinearMap.proj j
   have hθ : Function.Injective θ := fun x y h ↦
-    funext fun j ↦ IsFractionRing.injective T (Frac n) (congr_fun h j)
+    funext fun j ↦ IsFractionRing.injective T (Frac n) (by simpa [θ] using congr_fun h j)
   have : IsLocalizedModule (nonZeroDivisors T) (θ.restrictScalars T) := by
     rw [LinearMap.restrictScalars_self]
     infer_instance
@@ -210,16 +211,11 @@ theorem exists_norm_le_mul_supSeminorm [IsReduced A] (hA : IsAffinoidAlgebra K A
   -- `A` embeds in the product of these quotients.
   let Ψ : A →ₗ[A] ((𝔭 : minimalPrimes A) → A ⧸ 𝔭.1) :=
     LinearMap.pi fun 𝔭 ↦ (Ideal.Quotient.mkₐ A 𝔭.1).toLinearMap
+  have hΨf (f : A) (𝔭 : minimalPrimes A) : Ψ f 𝔭 = Ideal.Quotient.mk 𝔭.1 f := by simp [Ψ]
   have hΨ : Function.Injective Ψ := by
-    rw [← LinearMap.ker_eq_bot, eq_bot_iff]
-    intro f hf
-    have hf' : f ∈ sInf (minimalPrimes A) := Submodule.mem_sInf.mpr fun 𝔭 h𝔭 ↦
-      Ideal.Quotient.eq_zero_iff_mem.mp (congr_fun (LinearMap.mem_ker.mp hf) ⟨𝔭, h𝔭⟩)
-    rw [minimalPrimes, Ideal.sInf_minimalPrimes] at hf'
-    obtain ⟨n, hn⟩ := hf'
-    exact (Submodule.mem_bot A).mpr (IsReduced.eq_zero f ⟨n, (Submodule.mem_bot A).mp hn⟩)
-  have (𝔭 : minimalPrimes A) : ContinuousSMul A (A ⧸ 𝔭.1) :=
-    continuousSMul_of_algebraMap A _ continuous_quot_mk
+    convert Ideal.injective_pi_quotient_mk_minimalPrimes A using 1
+    ext f 𝔭
+    simp [hΨf]
   obtain ⟨C₀, hC₀⟩ := Ψ.antilipschitz_of_injective_of_isNoetherian K hΨ
   -- A single constant dominates the constants of all quotients.
   let D := 1 + ∑ 𝔭, C 𝔭
@@ -232,8 +228,10 @@ theorem exists_norm_le_mul_supSeminorm [IsReduced A] (hA : IsAffinoidAlgebra K A
   have hle : C 𝔭 ≤ D := by
     have := Finset.single_le_sum (fun 𝔮 _ ↦ (hC 𝔮).le) (Finset.mem_univ 𝔭)
     linarith
-  exact mul_le_mul hle (hA.supSeminorm_map_le (hA.quotient 𝔭.1) (Ideal.Quotient.mkₐ K 𝔭.1) f)
-    (supSeminorm_nonneg _) hD.le
+  have hsup := hA.supSeminorm_map_le (hA.quotient 𝔭.1) (Ideal.Quotient.mkₐ K 𝔭.1) f
+  rw [Ideal.Quotient.mkₐ_eq_mk] at hsup
+  rw [hΨf]
+  exact mul_le_mul hle hsup (supSeminorm_nonneg _) hD.le
 
 /-- **Reduced affinoid algebras are uniform.** In a reduced affinoid algebra with a complete
 ultrametric algebra norm, the set of power-bounded elements is bounded. -/
