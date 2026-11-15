@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
-public import TauCeti.MeasureTheory.Integral.Circle.Integral
+import TauCeti.MeasureTheory.Integral.Circle.Integral
 
 /-!
 # Weakly holomorphic functions are holomorphic
