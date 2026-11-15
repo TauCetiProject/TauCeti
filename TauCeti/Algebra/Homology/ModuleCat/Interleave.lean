@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.LinearAlgebra.Basis.Defs
+public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.Algebra.Homology.Interleave
 
 /-!
@@ -17,7 +18,10 @@ bases of ranks `m₁ q`, `m₂ q` and `m₃ q`, and maps making up an interleave
 `ChainComplex.interleave`. This file assembles bases of the terms of that complex. The rank in
 degree `n` is `ChainComplex.interleave.rank`, which is `m₁ q`, `m₂ q` or `m₃ q` according as
 `n = 3q + 2`, `3q + 1` or `3q`, and it has finite support when the three rank functions do
-(`ChainComplex.interleave.finite_setOf_rank_ne_zero`).
+(`ChainComplex.interleave.finite_setOf_rank_ne_zero`). Over a commutative ring, the basis-change
+determinant between two interleaved bases in each degree is the basis-change determinant of the
+corresponding component family (`ChainComplex.interleave.det_basis_of_eq_three_mul_add_two` and its
+two companions).
 
 The main application is the based long exact homology sequence, whose Reidemeister torsion is
 the correction term in Milnor's multiplicativity formula
@@ -29,6 +33,10 @@ the correction term in Milnor's multiplicativity formula
 * `ChainComplex.interleave.basis`: the basis of the interleaved complex in each degree.
 * `ChainComplex.interleave.XIso₁_hom_basis` and its two companions: the basis vectors are the given
   ones under the identifications of the terms.
+* `ChainComplex.interleave.det_basis_of_eq_three_mul_add_two`,
+  `ChainComplex.interleave.det_basis_of_eq_three_mul_add_one`,
+  `ChainComplex.interleave.det_basis_of_eq_three_mul`: the basis-change determinants of interleaved
+  bases in degrees `3q + 2`, `3q + 1` and `3q`.
 * `ChainComplex.interleave.boundaryEquiv₁`, `boundaryEquiv₂`, `boundaryEquiv₃`: the identifications
   of the boundaries in degrees `3q + 2`, `3q + 1` and `3q` with `range (δ q)`, `range (f q)` and
   `range (g q)`.
@@ -85,11 +93,11 @@ theorem finite_setOf_rank_ne_zero (h₁ : {q | m₁ q ≠ 0}.Finite) (h₂ : {q 
 
 end Rank
 
+section Basis
+
 variable {R : Type*} [Ring R] {X₁ X₂ X₃ : ℤ → ModuleCat R} {f : ∀ q, X₁ q ⟶ X₂ q}
   {g : ∀ q, X₂ q ⟶ X₃ q} {δ : ∀ q, X₃ (q + 1) ⟶ X₁ q} (hfg : ∀ q, f q ≫ g q = 0)
   (hgδ : ∀ q, g (q + 1) ≫ δ q = 0) (hδf : ∀ q, δ q ≫ f q = 0)
-
-section Basis
 
 variable {m₁ m₂ m₃ : ℤ → ℕ} (b₁ : ∀ q, Basis (Fin (m₁ q)) R (X₁ q))
   (b₂ : ∀ q, Basis (Fin (m₂ q)) R (X₂ q)) (b₃ : ∀ q, Basis (Fin (m₃ q)) R (X₃ q))
@@ -137,7 +145,79 @@ theorem XIso₃_hom_basis {n q : ℤ} (h : n = 3 * q) (i : Fin (rank m₁ m₂ m
 
 end Basis
 
+section Det
+
+variable {R : Type*} [CommRing R] {X₁ X₂ X₃ : ℤ → ModuleCat R} {f : ∀ q, X₁ q ⟶ X₂ q}
+  {g : ∀ q, X₂ q ⟶ X₃ q} {δ : ∀ q, X₃ (q + 1) ⟶ X₁ q} (hfg : ∀ q, f q ≫ g q = 0)
+  (hgδ : ∀ q, g (q + 1) ≫ δ q = 0) (hδf : ∀ q, δ q ≫ f q = 0)
+
+/-- In degree `n = 3q + 2`, the basis-change determinant between two interleaved bases is the
+basis-change determinant of `b₁ q` and `b₁' q`. -/
+theorem det_basis_of_eq_three_mul_add_two {m₁ m₂ m₃ : ℤ → ℕ}
+    (b₁ b₁' : ∀ q, Basis (Fin (m₁ q)) R (X₁ q))
+    (b₂ b₂' : ∀ q, Basis (Fin (m₂ q)) R (X₂ q))
+    (b₃ b₃' : ∀ q, Basis (Fin (m₃ q)) R (X₃ q)) {n q : ℤ} (h : n = 3 * q + 2) :
+    (basis hfg hgδ hδf b₁ b₂ b₃ n).det (basis hfg hgδ hδf b₁' b₂' b₃' n) =
+      (b₁ q).det (b₁' q) := by
+  have hb (c₁ : ∀ q, Basis (Fin (m₁ q)) R (X₁ q)) (c₂ : ∀ q, Basis (Fin (m₂ q)) R (X₂ q))
+      (c₃ : ∀ q, Basis (Fin (m₃ q)) R (X₃ q)) :
+      basis hfg hgδ hδf c₁ c₂ c₃ n =
+        ((c₁ q).reindex (finCongr (rank_of_eq_three_mul_add_two h).symm)).map
+          (XIso₁ hfg hgδ hδf n q h).symm.toLinearEquiv :=
+    Basis.eq_of_apply_eq fun k ↦
+      (XIso₁ hfg hgδ hδf n q h).toLinearEquiv.injective (by simp)
+  rw [hb b₁ b₂ b₃, hb b₁' b₂' b₃', Basis.det_map, Basis.det_reindex]
+  congr 1
+  ext k
+  simp
+
+/-- In degree `n = 3q + 1`, the basis-change determinant between two interleaved bases is the
+basis-change determinant of `b₂ q` and `b₂' q`. -/
+theorem det_basis_of_eq_three_mul_add_one {m₁ m₂ m₃ : ℤ → ℕ}
+    (b₁ b₁' : ∀ q, Basis (Fin (m₁ q)) R (X₁ q))
+    (b₂ b₂' : ∀ q, Basis (Fin (m₂ q)) R (X₂ q))
+    (b₃ b₃' : ∀ q, Basis (Fin (m₃ q)) R (X₃ q)) {n q : ℤ} (h : n = 3 * q + 1) :
+    (basis hfg hgδ hδf b₁ b₂ b₃ n).det (basis hfg hgδ hδf b₁' b₂' b₃' n) =
+      (b₂ q).det (b₂' q) := by
+  have hb (c₁ : ∀ q, Basis (Fin (m₁ q)) R (X₁ q)) (c₂ : ∀ q, Basis (Fin (m₂ q)) R (X₂ q))
+      (c₃ : ∀ q, Basis (Fin (m₃ q)) R (X₃ q)) :
+      basis hfg hgδ hδf c₁ c₂ c₃ n =
+        ((c₂ q).reindex (finCongr (rank_of_eq_three_mul_add_one h).symm)).map
+          (XIso₂ hfg hgδ hδf n q h).symm.toLinearEquiv :=
+    Basis.eq_of_apply_eq fun k ↦
+      (XIso₂ hfg hgδ hδf n q h).toLinearEquiv.injective (by simp)
+  rw [hb b₁ b₂ b₃, hb b₁' b₂' b₃', Basis.det_map, Basis.det_reindex]
+  congr 1
+  ext k
+  simp
+
+/-- In degree `n = 3q`, the basis-change determinant between two interleaved bases is the
+basis-change determinant of `b₃ q` and `b₃' q`. -/
+theorem det_basis_of_eq_three_mul {m₁ m₂ m₃ : ℤ → ℕ}
+    (b₁ b₁' : ∀ q, Basis (Fin (m₁ q)) R (X₁ q))
+    (b₂ b₂' : ∀ q, Basis (Fin (m₂ q)) R (X₂ q))
+    (b₃ b₃' : ∀ q, Basis (Fin (m₃ q)) R (X₃ q)) {n q : ℤ} (h : n = 3 * q) :
+    (basis hfg hgδ hδf b₁ b₂ b₃ n).det (basis hfg hgδ hδf b₁' b₂' b₃' n) =
+      (b₃ q).det (b₃' q) := by
+  have hb (c₁ : ∀ q, Basis (Fin (m₁ q)) R (X₁ q)) (c₂ : ∀ q, Basis (Fin (m₂ q)) R (X₂ q))
+      (c₃ : ∀ q, Basis (Fin (m₃ q)) R (X₃ q)) :
+      basis hfg hgδ hδf c₁ c₂ c₃ n =
+        ((c₃ q).reindex (finCongr (rank_of_eq_three_mul h).symm)).map
+          (XIso₃ hfg hgδ hδf n q h).symm.toLinearEquiv :=
+    Basis.eq_of_apply_eq fun k ↦
+      (XIso₃ hfg hgδ hδf n q h).toLinearEquiv.injective (by simp)
+  rw [hb b₁ b₂ b₃, hb b₁' b₂' b₃', Basis.det_map, Basis.det_reindex]
+  congr 1
+  ext k
+  simp
+
+end Det
+
 section Boundaries
+
+variable {R : Type*} [Ring R] {X₁ X₂ X₃ : ℤ → ModuleCat R} {f : ∀ q, X₁ q ⟶ X₂ q}
+  {g : ∀ q, X₂ q ⟶ X₃ q} {δ : ∀ q, X₃ (q + 1) ⟶ X₁ q} (hfg : ∀ q, f q ≫ g q = 0)
+  (hgδ : ∀ q, g (q + 1) ≫ δ q = 0) (hδf : ∀ q, δ q ≫ f q = 0)
 
 /-- Under `XIso₁`, the boundaries of `ChainComplex.interleave` in degree `n = 3q + 2` are the
 image of `δ q`. -/

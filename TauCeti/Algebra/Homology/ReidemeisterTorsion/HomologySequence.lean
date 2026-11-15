@@ -14,6 +14,7 @@ import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
 import TauCeti.Algebra.Homology.ModuleCat.ShortExact
 import TauCeti.Algebra.Homology.ShortComplex.Splitting
+import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.LinearAlgebra.Alternating.Append
 import TauCeti.LinearAlgebra.Exact
 
@@ -37,11 +38,13 @@ exchanges between the boundaries of `S.X₃` and `S.X₁` and the images of the 
 homology: in degree `j + 1`, the exponent of `-1` is
 `dim B₃,ⱼ₊₁ · dim im Hⱼ₊₁(S.f) + (dim B₃,ⱼ₊₁ + dim im Hⱼ₊₁(S.g)) · dim B₁,ⱼ`.
 
-The proof chooses bases of the images of the maps in `H` and lifts them simultaneously on homology
+In the bounded case (where the chain ranks, and hence the homology ranks, have finite support), the
+proof chooses bases of the images of the maps in `H` and lifts them simultaneously on homology
 and on chains via `CategoryTheory.ShortComplex.ShortExact.moduleCat_exists_d_eq_of_δ_eq`. For the
-resulting adapted homology bases `(h₁', h₂', h₃')`, the torsion of `H` is `1`
-(`ChainComplex.reidemeisterTorsion_interleave_eq_one_of_exact`), while the boundaries of `S.X₂`
-decompose through the two short exact sequences of `TauCeti.Algebra.Homology.ModuleCat.ShortExact`
+resulting adapted homology bases `(h₁', h₂', h₃')`, finite support of the homology ranks implies
+that the torsion of `H` is `1` (`ChainComplex.reidemeisterTorsion_interleave_eq_one_of_exact`),
+while the boundaries of `S.X₂` decompose through the boundary short exact sequences of
+`TauCeti.Algebra.Homology.ModuleCat.Basic` and `TauCeti.Algebra.Homology.ModuleCat.ShortExact`
 so that the bracket of `S.X₂` factors into the brackets of `S.X₁` and `S.X₃` up to the six-block
 Koszul sign (`AlternatingMap.map_append_append_append_comm`). Passing from `(h₁', h₂', h₃')` back
 to `(h₁, h₂, h₃)` by the basis-change formulas on homology and on `ChainComplex.interleave`
@@ -49,11 +52,12 @@ to `(h₁, h₂, h₃)` by the basis-change formulas on homology and on `ChainCo
 `τ(H, (h₁, h₂, h₃))`.
 
 When the homology bases `(h₁, h₃, h₂)` are compatible in every degree, the connecting morphisms
-vanish, `τ(H) = 1`
+vanish; when in addition the homology ranks have finite support, `τ(H) = 1`
 (`CategoryTheory.ShortComplex.ShortExact.reidemeisterTorsion_homologySequenceComplex_eq_one`), and
-the torsion of `S.X₂` is `ε · τ(S.X₁) · τ(S.X₃)`
-(`HomologicalComplex.reidemeisterTorsionWithHomology_eq_mul_of_shortExact_of_homology`). This
-specializes further to short exact sequences with one acyclic outer term
+in general the torsion of `S.X₂` is `ε · τ(S.X₁) · τ(S.X₃)`
+(`HomologicalComplex.reidemeisterTorsionWithHomology_eq_mul_of_shortExact_of_homology`, with both
+sides vanishing when `S.X₂` is unbounded). This specializes further to short exact sequences with
+one acyclic outer term
 (`HomologicalComplex.reidemeisterTorsionWithHomology_eq_mul_of_shortExact_of_acyclic_X₃`,
 `HomologicalComplex.reidemeisterTorsionWithHomology_eq_mul_of_shortExact_of_acyclic_X₁`) and to
 biproducts `C₁ ⊞ C₃` (`HomologicalComplex.reidemeisterTorsionWithHomology_biprod`).
@@ -66,8 +70,9 @@ biproducts `C₁ ⊞ C₃` (`HomologicalComplex.reidemeisterTorsionWithHomology_
   complex based by boundary bases followed by their lifts has torsion `1`.
 * `CategoryTheory.ShortComplex.ShortExact.reidemeisterTorsion_homologySequenceComplex_ne_zero`,
   `reidemeisterTorsion_homologySequenceComplex_eq_mul_finprod_det`, and
-  `reidemeisterTorsion_homologySequenceComplex_eq_one`: nonvanishing, basis change, and triviality
-  (for compatible homology bases) of the torsion of the based long exact homology sequence.
+  `reidemeisterTorsion_homologySequenceComplex_eq_one`: nonvanishing (when the homology ranks have
+  finite support), basis change, and triviality (for compatible homology bases of finitely
+  supported rank) of the torsion of the based long exact homology sequence.
 * `HomologicalComplex.reidemeisterTorsionWithHomology_eq_mul_of_shortExact`: Milnor's
   multiplicativity formula for torsion with homology bases in a short exact sequence.
 * `HomologicalComplex.reidemeisterTorsionWithHomology_eq_mul_of_shortExact_of_homology`: the case
@@ -99,60 +104,6 @@ section Interleave
 variable {F : Type*} [Field F] {X₁ X₂ X₃ : ℤ → ModuleCat F} {f : ∀ q, X₁ q ⟶ X₂ q}
   {g : ∀ q, X₂ q ⟶ X₃ q} {δ : ∀ q, X₃ (q + 1) ⟶ X₁ q} (hfg : ∀ q, f q ≫ g q = 0)
   (hgδ : ∀ q, g (q + 1) ≫ δ q = 0) (hδf : ∀ q, δ q ≫ f q = 0)
-
-private theorem det_interleave_basis_of_eq_three_mul_add_two {m₁ m₂ m₃ : ℤ → ℕ}
-    (b₁ b₁' : ∀ q, Basis (Fin (m₁ q)) F (X₁ q))
-    (b₂ b₂' : ∀ q, Basis (Fin (m₂ q)) F (X₂ q))
-    (b₃ b₃' : ∀ q, Basis (Fin (m₃ q)) F (X₃ q)) {n q : ℤ} (h : n = 3 * q + 2) :
-    (interleave.basis hfg hgδ hδf b₁ b₂ b₃ n).det (interleave.basis hfg hgδ hδf b₁' b₂' b₃' n) =
-      (b₁ q).det (b₁' q) := by
-  have hb (c₁ : ∀ q, Basis (Fin (m₁ q)) F (X₁ q)) (c₂ : ∀ q, Basis (Fin (m₂ q)) F (X₂ q))
-      (c₃ : ∀ q, Basis (Fin (m₃ q)) F (X₃ q)) :
-      interleave.basis hfg hgδ hδf c₁ c₂ c₃ n =
-        ((c₁ q).reindex (finCongr (interleave.rank_of_eq_three_mul_add_two h).symm)).map
-          (interleave.XIso₁ hfg hgδ hδf n q h).symm.toLinearEquiv :=
-    Basis.eq_of_apply_eq fun k ↦
-      (interleave.XIso₁ hfg hgδ hδf n q h).toLinearEquiv.injective (by simp)
-  rw [hb b₁ b₂ b₃, hb b₁' b₂' b₃', Basis.det_map, Basis.det_reindex]
-  congr 1
-  ext k
-  simp
-
-private theorem det_interleave_basis_of_eq_three_mul_add_one {m₁ m₂ m₃ : ℤ → ℕ}
-    (b₁ b₁' : ∀ q, Basis (Fin (m₁ q)) F (X₁ q))
-    (b₂ b₂' : ∀ q, Basis (Fin (m₂ q)) F (X₂ q))
-    (b₃ b₃' : ∀ q, Basis (Fin (m₃ q)) F (X₃ q)) {n q : ℤ} (h : n = 3 * q + 1) :
-    (interleave.basis hfg hgδ hδf b₁ b₂ b₃ n).det (interleave.basis hfg hgδ hδf b₁' b₂' b₃' n) =
-      (b₂ q).det (b₂' q) := by
-  have hb (c₁ : ∀ q, Basis (Fin (m₁ q)) F (X₁ q)) (c₂ : ∀ q, Basis (Fin (m₂ q)) F (X₂ q))
-      (c₃ : ∀ q, Basis (Fin (m₃ q)) F (X₃ q)) :
-      interleave.basis hfg hgδ hδf c₁ c₂ c₃ n =
-        ((c₂ q).reindex (finCongr (interleave.rank_of_eq_three_mul_add_one h).symm)).map
-          (interleave.XIso₂ hfg hgδ hδf n q h).symm.toLinearEquiv :=
-    Basis.eq_of_apply_eq fun k ↦
-      (interleave.XIso₂ hfg hgδ hδf n q h).toLinearEquiv.injective (by simp)
-  rw [hb b₁ b₂ b₃, hb b₁' b₂' b₃', Basis.det_map, Basis.det_reindex]
-  congr 1
-  ext k
-  simp
-
-private theorem det_interleave_basis_of_eq_three_mul {m₁ m₂ m₃ : ℤ → ℕ}
-    (b₁ b₁' : ∀ q, Basis (Fin (m₁ q)) F (X₁ q))
-    (b₂ b₂' : ∀ q, Basis (Fin (m₂ q)) F (X₂ q))
-    (b₃ b₃' : ∀ q, Basis (Fin (m₃ q)) F (X₃ q)) {n q : ℤ} (h : n = 3 * q) :
-    (interleave.basis hfg hgδ hδf b₁ b₂ b₃ n).det (interleave.basis hfg hgδ hδf b₁' b₂' b₃' n) =
-      (b₃ q).det (b₃' q) := by
-  have hb (c₁ : ∀ q, Basis (Fin (m₁ q)) F (X₁ q)) (c₂ : ∀ q, Basis (Fin (m₂ q)) F (X₂ q))
-      (c₃ : ∀ q, Basis (Fin (m₃ q)) F (X₃ q)) :
-      interleave.basis hfg hgδ hδf c₁ c₂ c₃ n =
-        ((c₃ q).reindex (finCongr (interleave.rank_of_eq_three_mul h).symm)).map
-          (interleave.XIso₃ hfg hgδ hδf n q h).symm.toLinearEquiv :=
-    Basis.eq_of_apply_eq fun k ↦
-      (interleave.XIso₃ hfg hgδ hδf n q h).toLinearEquiv.injective (by simp)
-  rw [hb b₁ b₂ b₃, hb b₁' b₂' b₃', Basis.det_map, Basis.det_reindex]
-  congr 1
-  ext k
-  simp
 
 /-- Replacing the bases `(b₁, b₂, b₃)` of an interleaved chain complex `ChainComplex.interleave` by
 `(b₁', b₂', b₃')` multiplies its Reidemeister torsion by the alternating determinants of the three
@@ -192,21 +143,21 @@ theorem reidemeisterTorsion_interleave_eq_mul_finprod_det {m₁ m₂ m₃ : ℤ 
       have he₀ : e (0, q) = q * 3 := by simp [e]
       rw [he₀]
       dsimp only [gF]
-      rw [det_interleave_basis_of_eq_three_mul hfg hgδ hδf b₁ b₁' b₂ b₂' b₃ b₃' (q := q)
+      rw [interleave.det_basis_of_eq_three_mul hfg hgδ hδf b₁ b₁' b₂ b₂' b₃ b₃' (q := q)
         (by omega), (Int.negOnePow_eq_iff _ q).2 ⟨q, by omega⟩]
   have h₁ : (∏ᶠ q : ℤ, gF (e (1, q))) = ∏ᶠ q : ℤ, (b₂ q).det (b₂' q) ^ ((q + 1).negOnePow : ℤ) :=
     finprod_congr fun q ↦ by
       have he₁ : e (1, q) = q * 3 + 1 := by simp [e]
       rw [he₁]
       dsimp only [gF]
-      rw [det_interleave_basis_of_eq_three_mul_add_one hfg hgδ hδf b₁ b₁' b₂ b₂' b₃ b₃' (q := q)
+      rw [interleave.det_basis_of_eq_three_mul_add_one hfg hgδ hδf b₁ b₁' b₂ b₂' b₃ b₃' (q := q)
         (by omega), (Int.negOnePow_eq_iff _ (q + 1)).2 ⟨q, by omega⟩]
   have h₂ : (∏ᶠ q : ℤ, gF (e (2, q))) = ∏ᶠ q : ℤ, (b₁ q).det (b₁' q) ^ (q.negOnePow : ℤ) :=
     finprod_congr fun q ↦ by
       have he₂ : e (2, q) = q * 3 + 2 := by simp [e]
       rw [he₂]
       dsimp only [gF]
-      rw [det_interleave_basis_of_eq_three_mul_add_two hfg hgδ hδf b₁ b₁' b₂ b₂' b₃ b₃' (q := q)
+      rw [interleave.det_basis_of_eq_three_mul_add_two hfg hgδ hδf b₁ b₁' b₂ b₂' b₃ b₃' (q := q)
         (by omega), (Int.negOnePow_eq_iff _ q).2 ⟨q + 1, by omega⟩]
   rw [h₀, h₁, h₂]
   ring
@@ -469,10 +420,10 @@ private theorem surjective_and_injective_of_compatible_homology {m₁ m₃ : ℤ
     rw [← LinearMap.ker_eq_bot, ← hex, hδ i, ModuleCat.hom_zero, LinearMap.range_zero]
   exact ⟨hg, hδ, hf⟩
 
-/-- When the homology bases `(b₁, b₃, b₂)` of a bounded short exact sequence of chain complexes are
-compatible in every degree, so that `b₂ i` consists of the images under `Hᵢ(S.f)` of `b₁ i`
-followed by lifts through `Hᵢ(S.g)` of `b₃ i`, the based long exact homology sequence has
-Reidemeister torsion `1`. -/
+/-- When the homology bases `(b₁, b₃, b₂)` of a short exact sequence of chain complexes are
+compatible in every degree—so that `b₂ i` consists of the images under `Hᵢ(S.f)` of `b₁ i`
+followed by lifts through `Hᵢ(S.g)` of `b₃ i`—and the homology ranks have finite support, the
+based long exact homology sequence has Reidemeister torsion `1`. -/
 theorem reidemeisterTorsion_homologySequenceComplex_eq_one {m₁ m₃ : ℤ → ℕ}
     (b₁ : ∀ i, Basis (Fin (m₁ i)) F (S.X₁.homology i))
     (b₃ : ∀ i, Basis (Fin (m₃ i)) F (S.X₃.homology i))
@@ -677,17 +628,13 @@ private theorem torsionBracketWithHomology_shortExact
       (Fin.append (cyclesMap S.g (j + 1) ∘ z₂₂₁) z₃₂₀ ∘ Fin.cast hm₃₁.symm) hy₃' b₃₀ _ ht₀ hn₃]
   -- Reorder the six blocks of the `S.X₂` family into the `S.X₁` blocks followed by the `S.X₃`
   -- blocks, extracting the Koszul sign via `AlternatingMap.map_append_append_append_comm`.
-  have comp_append {A B : ModuleCat F} (φ : A ⟶ B) {m n : ℕ} (u : Fin m → A) (v : Fin n → A) :
-      φ.hom ∘ Fin.append u v = Fin.append (φ.hom ∘ u) (φ.hom ∘ v) := by
-    ext k
-    induction k using Fin.addCases <;> simp
   have hy₂_vec : (fun k ↦ S.X₂.iCycles (j + 1)
       ((Fin.append (cyclesMap S.f (j + 1) ∘ z₁₂₁) z₂₂₁ ∘ Fin.cast hm₂₁.symm) k)) =
       Fin.append (fun k ↦ (S.f.f (j + 1)).hom ((S.X₁.iCycles (j + 1)).hom (z₁₂₁ k)))
         (fun k ↦ (S.X₂.iCycles (j + 1)).hom (z₂₂₁ k)) ∘ Fin.cast hm₂₁.symm := by
-    ext k
-    obtain ⟨l, rfl⟩ := (finCongr hm₂₁).surjective k
-    induction l using Fin.addCases <;> simp
+    change (S.X₂.iCycles (j + 1)).hom ∘ _ = _
+    rw [Fin.comp_append_comp_cast]
+    simp [Function.comp_def]
   have hsw := ((c₂ (j + 1)).reindex (finCongr hN)).det.map_append_append_append_comm
     (Fin.append (fun k ↦ (S.f.f (j + 1)).hom (b₁₁ k))
       (fun k ↦ (S.f.f (j + 1)).hom ((S.X₁.iCycles (j + 1)).hom (z₁₁₁ k))))
@@ -714,8 +661,8 @@ private theorem torsionBracketWithHomology_shortExact
             (fun k ↦ (S.X₂.iCycles (j + 1)).hom (z₂₂₁ k))))
         (Fin.append (fun k ↦ (S.f.f (j + 1)).hom (s₁₀ k)) (Fin.append w₀ t₀)) ∘
         Fin.cast (by omega)) ∘ (finCongr hN : Fin (n₁ (j + 1) + n₃ (j + 1)) → _) := by
-    rw [hy₂_vec, Fin.append_cast_right, Fin.append_assoc _ w₀ t₀, Fin.append_cast_left,
-      Fin.append_cast_right]
+    simp only [hy₂_vec, Fin.append_assoc, Fin.append_cast_left, Fin.append_cast_right,
+      Fin.comp_cast_comp_cast]
     rfl
   -- Factor the reordered determinant along `Basis.ofExactLift` and identify the `S.X₁` and `S.X₃`
   -- families block by block.
@@ -739,10 +686,8 @@ private theorem torsionBracketWithHomology_shortExact
     have hy₁_vec : (fun k ↦ S.X₁.iCycles (j + 1)
         ((Fin.append z₁₁₁ z₁₂₁ ∘ Fin.cast hm₁₁.symm) k)) =
         Fin.append ((S.X₁.iCycles (j + 1)).hom ∘ z₁₁₁) ((S.X₁.iCycles (j + 1)).hom ∘ z₁₂₁) ∘
-          Fin.cast hm₁₁.symm := by
-      ext k
-      obtain ⟨l, rfl⟩ := (finCongr hm₁₁).surjective k
-      induction l using Fin.addCases <;> simp
+          Fin.cast hm₁₁.symm :=
+      Fin.comp_append_comp_cast (S.X₁.iCycles (j + 1)).hom z₁₁₁ z₁₂₁ hm₁₁.symm
     have hf_eq :
         Fin.append
           (Fin.append
@@ -754,9 +699,8 @@ private theorem torsionBracketWithHomology_shortExact
           Fin.append (Fin.append (fun k ↦ (b₁₁ k : S.X₁.X (j + 1)))
             (fun k ↦ S.X₁.iCycles (j + 1) ((Fin.append z₁₁₁ z₁₂₁ ∘ Fin.cast hm₁₁.symm) k))) s₁₀) ∘
           Fin.cast hn₁ := by
-      rw [hy₁_vec, Fin.append_cast_right, Fin.append_cast_left, ← Function.comp_assoc,
-        comp_append (S.f.f (j + 1)), comp_append (S.f.f (j + 1)), comp_append (S.f.f (j + 1)),
-        Fin.append_assoc (fun k ↦ (S.f.f (j + 1)).hom (b₁₁ k)), Fin.append_cast_left]
+      simp only [hy₁_vec, Fin.comp_append, Fin.comp_append_comp_cast, Fin.append_assoc,
+        Fin.append_cast_left, Fin.append_cast_right, Fin.comp_cast_comp_cast]
       rfl
     simpa only [Function.comp_apply, hl, Fin.append_left] using congrFun hf_eq i
   · intro i
@@ -765,10 +709,9 @@ private theorem torsionBracketWithHomology_shortExact
     have hy₃_vec : (fun k ↦ S.X₃.iCycles (j + 1)
         ((Fin.append (cyclesMap S.g (j + 1) ∘ z₂₂₁) z₃₂₀ ∘ Fin.cast hm₃₁.symm) k)) =
         Fin.append (fun k ↦ (S.X₃.iCycles (j + 1)).hom (cyclesMap S.g (j + 1) (z₂₂₁ k)))
-          ((S.X₃.iCycles (j + 1)).hom ∘ z₃₂₀) ∘ Fin.cast hm₃₁.symm := by
-      ext k
-      obtain ⟨l, rfl⟩ := (finCongr hm₃₁).surjective k
-      induction l using Fin.addCases <;> simp
+          ((S.X₃.iCycles (j + 1)).hom ∘ z₃₂₀) ∘ Fin.cast hm₃₁.symm :=
+      Fin.comp_append_comp_cast (S.X₃.iCycles (j + 1)).hom (cyclesMap S.g (j + 1) ∘ z₂₂₁) z₃₂₀
+        hm₃₁.symm
     have hg₁ : (S.g.f (j + 1)).hom ∘ (fun k ↦ (S.X₂.d (j + 1 + 1) (j + 1)).hom (t₁ k)) =
         fun k ↦ (b₃₁ k : S.X₃.X (j + 1)) :=
       funext fun k ↦ (S.g.comm_apply _ _ _).symm.trans (ht₁ k)
@@ -786,10 +729,8 @@ private theorem torsionBracketWithHomology_shortExact
           (fun k ↦ S.X₃.iCycles (j + 1)
             ((Fin.append (cyclesMap S.g (j + 1) ∘ z₂₂₁) z₃₂₀ ∘ Fin.cast hm₃₁.symm) k)))
           (fun k ↦ (S.g.f (j + 1)).hom (t₀ k)) ∘ Fin.cast hn₃ := by
-      rw [hy₃_vec, comp_append (S.g.f (j + 1)), comp_append (S.g.f (j + 1)),
-        comp_append (S.g.f (j + 1)), hg₁, hg₂, hg₃, Fin.append_assoc,
-        Fin.append_cast_right, Fin.append_cast_left, Fin.append_assoc, Fin.append_assoc,
-        Fin.append_cast_right]
+      simp only [hy₃_vec, Fin.comp_append, Fin.comp_append_comp_cast, hg₁, hg₂, hg₃,
+        Fin.append_assoc, Fin.append_cast_left, Fin.append_cast_right, Fin.comp_cast_comp_cast]
       rfl
     simpa only [Function.comp_apply, hr, Fin.append_right] using congrFun hg_eq i
 
@@ -1149,9 +1090,11 @@ theorem reidemeisterTorsionWithHomology_eq_mul_of_shortExact
 /-- **Multiplicativity of torsion with compatible homology bases.**
 Let `0 ⟶ S.X₁ ⟶ S.X₂ ⟶ S.X₃ ⟶ 0` be a short exact sequence of chain complexes with compatible
 chain bases `(c₁, c₃, c₂)` and compatible homology bases `(h₁, h₃, h₂)`, so that `h₂ i` lists the
-images under `Hᵢ(S.f)` of `h₁ i` followed by lifts through `Hᵢ(S.g)` of `h₃ i`. Then `τ(H) = 1` and
-`τ(S.X₂, c₂, h₂) = ε · τ(S.X₁, c₁, h₁) · τ(S.X₃, c₃, h₃)`, with the sign `ε` given by the
-dimensions of the boundaries and homology groups of `S.X₁` and `S.X₃`. -/
+images under `Hᵢ(S.f)` of `h₁ i` followed by lifts through `Hᵢ(S.g)` of `h₃ i`. When the homology
+ranks have finite support, `τ(H) = 1`, and unconditionally
+`τ(S.X₂, c₂, h₂) = ε · τ(S.X₁, c₁, h₁) · τ(S.X₃, c₃, h₃)` (both sides vanish when `S.X₂` is
+unbounded), with the sign `ε` given by the dimensions of the boundaries and homology groups of
+`S.X₁` and `S.X₃`. -/
 theorem reidemeisterTorsionWithHomology_eq_mul_of_shortExact_of_homology
     {S : ShortComplex (ChainComplex (ModuleCat F) ℤ)} (hS : S.ShortExact)
     {n₁ n₃ m₁ m₃ : ℤ → ℕ}

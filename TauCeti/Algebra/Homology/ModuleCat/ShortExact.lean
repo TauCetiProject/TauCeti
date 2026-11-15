@@ -13,12 +13,13 @@ public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
 Let `0 ⟶ S.X₁ ⟶ S.X₂ ⟶ S.X₃ ⟶ 0` be a short exact sequence of homological complexes of modules,
 and let `c.Rel i j`. When `S.X₃` is not exact in degree `i`, the image of the boundary map from
-`LinearMap.range (S.X₁.d i j).hom` into `LinearMap.range (S.X₂.d i j).hom` is smaller than the
-kernel of the boundary map onto `LinearMap.range (S.X₃.d i j).hom`: an element of `S.X₁.X j` whose
-image in `S.X₂.X j` is a boundary is a cycle of `S.X₁`, and its homology class is the image under
-the connecting map `hS.δ i j hij` of a homology class in `S.X₃.homology i`. Consequently the
-preimage `(LinearMap.range (S.X₂.d i j).hom).comap (S.f.f j).hom` sits in two short exact sequences
-of `R`-modules:
+`LinearMap.range (S.X₁.d i j).hom` into `LinearMap.range (S.X₂.d i j).hom` can be smaller than the
+kernel of the boundary map onto `LinearMap.range (S.X₃.d i j).hom`, with the discrepancy measured by
+`LinearMap.range (hS.δ i j hij).hom`: an element of `S.X₁.X j` whose image in `S.X₂.X j` is a
+boundary is a cycle of `S.X₁`, and its homology class is the image under the connecting map
+`hS.δ i j hij` of a homology class in `S.X₃.homology i`. Consequently the preimage
+`(LinearMap.range (S.X₂.d i j).hom).comap (S.f.f j).hom` sits in two short exact sequences of
+`R`-modules:
 
 * `0 → range (S.X₁.d i j) → comap (S.f.f j) (range (S.X₂.d i j)) → range (hS.δ i j hij) → 0`
   (`CategoryTheory.ShortComplex.ShortExact.exact_inclusion_comapRangeHomologyClass`,
@@ -37,10 +38,6 @@ homology, computed on classes of elements in `TauCeti.exists_δ_kernelCokernelSe
 
 ## Main declarations
 
-* `HomologicalComplex.Hom.comapBoundaryMap`,
-  `HomologicalComplex.Hom.exact_comapBoundaryMap_boundaryMap`,
-  `HomologicalComplex.Hom.boundaryMap_surjective`: exactness of the preimage of boundaries with the
-  boundary map, and surjectivity of the boundary map of a degreewise surjective chain map.
 * `CategoryTheory.ShortComplex.ShortExact.comapRangeHomologyClass`,
   `CategoryTheory.ShortComplex.ShortExact.exact_inclusion_comapRangeHomologyClass`,
   `CategoryTheory.ShortComplex.ShortExact.comapRangeHomologyClass_surjective`: the homology class
@@ -53,63 +50,6 @@ homology, computed on classes of elements in `TauCeti.exists_δ_kernelCokernelSe
 public section
 
 open CategoryTheory Limits
-
-namespace HomologicalComplex.Hom
-
-variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
-  {K L M : HomologicalComplex (ModuleCat R) c}
-
-/-- A chain map sends boundaries into the preimage of the target boundaries. -/
-theorem range_d_le_comap_range_d (φ : K ⟶ L) (i j : ι) :
-    LinearMap.range (K.d i j).hom ≤ (LinearMap.range (L.d i j).hom).comap (φ.f j).hom := by
-  rintro _ ⟨x, rfl⟩
-  exact ⟨(φ.f i).hom x, φ.comm_apply i j x⟩
-
-/-- A chain map `φ : K ⟶ L` restricts to a linear map from the preimage in `K.X j` of the
-boundaries `LinearMap.range (L.d i j).hom` into `LinearMap.range (L.d i j).hom`. -/
-def comapBoundaryMap (φ : K ⟶ L) (i j : ι) :
-    (LinearMap.range (L.d i j).hom).comap (φ.f j).hom →ₗ[R] LinearMap.range (L.d i j).hom :=
-  (φ.f j).hom.restrict fun _ h ↦ h
-
-/-- `Hom.comapBoundaryMap` acts as the chain map on underlying elements. -/
-@[simp]
-theorem coe_comapBoundaryMap (φ : K ⟶ L) (i j : ι)
-    (x : (LinearMap.range (L.d i j).hom).comap (φ.f j).hom) :
-    (φ.comapBoundaryMap i j x : L.X j) = (φ.f j).hom x := by
-  simp [comapBoundaryMap]
-
-/-- If `φ` is injective in degree `j`, then `φ.comapBoundaryMap i j` is injective. -/
-theorem comapBoundaryMap_injective (φ : K ⟶ L) (i : ι) {j : ι}
-    (hφ : Function.Injective (φ.f j).hom) : Function.Injective (φ.comapBoundaryMap i j) :=
-  fun _ _ hxy ↦ Subtype.ext (hφ (congrArg Subtype.val hxy))
-
-/-- A chain map that is surjective in degree `i` is surjective on the images of the differentials
-`L.X i ⟶ L.X j` and `M.X i ⟶ M.X j`. -/
-theorem boundaryMap_surjective (ψ : L ⟶ M) {i : ι} (j : ι)
-    (hψ : Function.Surjective (ψ.f i).hom) : Function.Surjective (ψ.boundaryMap i j) := by
-  rintro ⟨_, y, rfl⟩
-  obtain ⟨x, rfl⟩ := hψ y
-  refine ⟨⟨(L.d i j).hom x, x, rfl⟩, Subtype.ext ?_⟩
-  rw [ψ.coe_boundaryMap]
-  simpa using (ψ.comm_apply i j x).symm
-
-/-- If `K ⟶ L ⟶ M` is exact in degree `j`, then `φ.comapBoundaryMap i j` and `ψ.boundaryMap i j`
-form an exact pair at `LinearMap.range (L.d i j).hom`. -/
-theorem exact_comapBoundaryMap_boundaryMap {φ : K ⟶ L} {ψ : L ⟶ M} (i : ι) {j : ι}
-    (hj : Function.Exact (φ.f j).hom (ψ.f j).hom) :
-    Function.Exact (φ.comapBoundaryMap i j) (ψ.boundaryMap i j) := by
-  intro b
-  constructor
-  · intro hb
-    have hb' : (ψ.f j).hom b.1 = 0 := by simpa [ψ.coe_boundaryMap] using congrArg Subtype.val hb
-    obtain ⟨a, ha⟩ := (hj b.1).1 hb'
-    exact ⟨⟨a, by simpa only [Submodule.mem_comap, ha] using b.2⟩, Subtype.ext ha⟩
-  · rintro ⟨a, rfl⟩
-    refine Subtype.ext ?_
-    rw [ψ.coe_boundaryMap, φ.coe_comapBoundaryMap]
-    exact hj.apply_apply_eq_zero a.1
-
-end HomologicalComplex.Hom
 
 namespace CategoryTheory.ShortComplex.ShortExact
 
