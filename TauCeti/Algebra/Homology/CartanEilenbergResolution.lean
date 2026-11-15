@@ -267,7 +267,9 @@ lemma cartanEilenbergResolutionπ_eq : cartanEilenbergResolutionπ K = rowπ K 0
 @[reassoc (attr := simp)]
 lemma rowι_π : rowι K 0 ≫ cartanEilenbergResolutionπ K = 0 := rowι_rowπ K 0
 
-@[reassoc (attr := simp)]
+/-- The augmentation vanishes on the image of the differential. Not a simp lemma: `d_succ` and
+`rowι_π` prove it. -/
+@[reassoc]
 lemma d_comp_π : (cartanEilenbergResolution K).d 1 0 ≫ cartanEilenbergResolutionπ K = 0 := by
   rw [d_succ K 0, Category.assoc, rowι_π, comp_zero]
 
