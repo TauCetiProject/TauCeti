@@ -80,25 +80,6 @@ section Regularity
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
 
-/-- The localized parametrix symbol `ψ(x) b(x, ξ)`. -/
-private def localize (ψ : 𝓢(CoordinateSpace n, ℂ)) (b : Symbol n W V (-m)) : Symbol n W V (-m) :=
-  inclusion (zero_add (-m)).le
-    ((ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) ((ψ.smooth ⊤).smul contDiff_const)).comp
-      b)
-
-omit [CompleteSpace V] [CompleteSpace W] in
-private theorem coefficient_localize (ψ : 𝓢(CoordinateSpace n, ℂ)) (b : Symbol n W V (-m))
-    (x ξ : CoordinateSpace n) :
-    (localize ψ b).coefficient (x, ξ) = ψ x • b.coefficient (x, ξ) := by
-  simp [localize, coefficient_inclusion, ContinuousLinearMap.smul_comp]
-
-omit [CompleteSpace V] [CompleteSpace W] in
-private theorem hasCompactSpatialSupport_localize {ψ : 𝓢(CoordinateSpace n, ℂ)}
-    (hψ : HasCompactSupport ψ) (b : Symbol n W V (-m)) :
-    (localize ψ b).HasCompactSpatialSupport :=
-  hasCompactSpatialSupport_iff.2 ⟨tsupport ψ, hψ, fun x hx ξ ↦ by
-    simp [coefficient_localize, image_eq_zero_of_notMem_tsupport hx]⟩
-
 variable {a : Symbol n V W m} {b : Symbol n W V (-m)} {ψ : 𝓢(CoordinateSpace n, ℂ)}
   {p : Symbol n V W m}
 
@@ -113,15 +94,15 @@ private theorem exists_toDistr_quantizeSobolev_localize
     ∃ (R : Symbol n V V μ) (hR : R.HasCompactSpatialSupport), ∀ (r : ℝ)
       (u : H^{r}(CoordinateSpace n, V)),
         smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr =
-          ((localize ψ b).quantizeSobolev (hasCompactSpatialSupport_localize hψ b) (r - m)
+          ((smulSpatial ψ b).quantizeSobolev (hasCompactSpatialSupport_smulSpatial hψ b) (r - m)
             (p.quantizeSobolev hp r u)).toDistr - (R.quantizeSobolev hR r u).toDistr := by
   have hψ' : ContDiff ℝ ∞ (ψ : CoordinateSpace n → ℂ) := ψ.smooth ⊤
   set ψs := ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) (hψ'.smul contDiff_const)
   have hψs : ψs.HasCompactSpatialSupport :=
     (hasCompactSpatialSupport_ofSpatial_iff _).2 hψ.smul_right
-  have hq := hasCompactSpatialSupport_localize hψ b
+  have hq := hasCompactSpatialSupport_smulSpatial hψ b
   have hqp := hq.sharp hp
-  have hsmooth := isSmoothing_sharp_sub_ofSpatial hab hψ' (coefficient_localize ψ b) hp hpa
+  have hsmooth := isSmoothing_sharp_sub_ofSpatial hab hψ' (coefficient_smulSpatial ψ b) hp hpa
   obtain ⟨R, hR⟩ := isSmoothing_iff.1 hsmooth μ
   have hRc : R.HasCompactSpatialSupport :=
     (hqp.sub (hψs.inclusion _)).of_coefficient_eq hR
@@ -155,7 +136,7 @@ theorem memSobolev_smulLeftCLM_of_memSobolev_quantizeSobolev
     MemSobolev (s + m) 2 (smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr) := by
   obtain ⟨R, hR, hψu⟩ := exists_toDistr_quantizeSobolev_localize hab hψ hp hpa (r - (s + m))
   rw [hψu r u, toDistr_quantizeSobolev_congr rfl
-    (hasCompactSpatialSupport_localize hψ b) (hasCompactSpatialSupport_localize hψ b)
+    (hasCompactSpatialSupport_smulSpatial hψ b) (hasCompactSpatialSupport_smulSpatial hψ b)
     (MemSobolev.toBesselPotentialSpace_toDistr hu).symm]
   have hmem {t : ℝ} (f : H^{t}(CoordinateSpace n, V)) (ht : t = s + m) :
       MemSobolev (s + m) 2 f.toDistr :=
@@ -180,7 +161,7 @@ theorem exists_norm_smulLeftCLM_le
       ‖BesselPotentialSpace.smulLeftCLM (s + m) ψ u‖ ≤
         C * (‖p.quantizeSobolev hp (s + m) u‖ + ‖BesselPotentialSpace.inclusion hr u‖) := by
   obtain ⟨R, hR, hψu⟩ := exists_toDistr_quantizeSobolev_localize hab hψ hp hpa (r - (s + m))
-  set Q := (localize ψ b).quantizeSobolev (hasCompactSpatialSupport_localize hψ b) (s + m - m)
+  set Q := (smulSpatial ψ b).quantizeSobolev (hasCompactSpatialSupport_smulSpatial hψ b) (s + m - m)
   set T := R.quantizeSobolev hR r
   refine ⟨max ‖Q‖ ‖T‖, fun u ↦ ?_⟩
   -- `ψ u = Q (Op(p) u) - T u`, compared in `H^{s + m}`.

@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 Let `a` be a symbol of order `m` on `ℝⁿ` with compact spatial support, so that its quantization
 is a bounded operator `Op(a) : H^r → H^{r - m}` on the Bessel-potential spaces `H^r = H^{r,2}(ℝⁿ)`
 for every real `r` (`TauCeti.Symbol.quantizeSobolev`). This file shows that `Op(a)` is
-**pseudolocal** at the level of Sobolev regularity: near a point it loses exactly `m` derivatives
+**pseudolocal** at the level of Sobolev regularity: near a point it loses at most `m` derivatives
 of the regularity that its argument has near that point, whatever that argument does elsewhere.
 Precisely, let `φ` and `χ` be Schwartz functions, `χ` compactly supported and equal to `1` on a
 neighbourhood of `tsupport φ`, and let `u ∈ H^r`.
@@ -45,9 +45,9 @@ first involve derivatives of `χ`, which vanish near `K`. Hence
 `Op(c) u = Op(c) (χ u) - Op(c # χ - c ∘ χ) u`
 (`TauCeti.Symbol.exists_isSmoothing_toDistr_quantizeSobolev_eq_smulLeftCLM_sub`). The first
 term lies in `H^{s - m}` by the Sobolev mapping theorem applied to `χ u ∈ H^s`, and the second
-lies in every `H^t`. For the pseudolocality of `a`, apply this to the symbol `c = φ a`, which
-vanishes outside `tsupport φ` and quantizes to `φ Op(a)`
-(`TauCeti.Symbol.quantizeSobolev_eq_smulLeftCLM_comp`).
+lies in every `H^t`. For the pseudolocality of `a`, apply this to the symbol `c = φ a`
+(`TauCeti.Symbol.smulSpatial`), which vanishes outside `tsupport φ` and quantizes to `φ Op(a)`
+(`TauCeti.Symbol.quantizeSobolev_smulSpatial`).
 
 ## References
 
@@ -89,17 +89,6 @@ theorem memSobolev_quantizeSobolev_of_memSobolev_smulLeftCLM {c : Symbol n V W m
   exact (c.quantizeSobolev hc s _).memSobolev_toDistr.sub
     (hsm.memSobolev_toDistr_quantizeSobolev hR r (s - m) u)
 
-omit [CompleteSpace V] [CompleteSpace W] in
-/-- The symbol `φ(x) a(x, ξ)`, of the same order as `a`, with compact spatial support if `a` has
-one. -/
-private theorem exists_coefficient_eq_smul {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
-    (φ : 𝓢(CoordinateSpace n, ℂ)) :
-    ∃ b : Symbol n V W m, b.HasCompactSpatialSupport ∧
-      ∀ x ξ, b.coefficient (x, ξ) = φ x • a.coefficient (x, ξ) := by
-  set F := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ W) ((φ.smooth ⊤).smul contDiff_const)
-  exact ⟨inclusion (zero_add m).le (F.comp a), (ha.comp_left F).inclusion _, fun x ξ ↦ by
-    simp [F, ContinuousLinearMap.smul_comp]⟩
-
 variable {a : Symbol n V W m} {φ χ : 𝓢(CoordinateSpace n, ℂ)}
 
 /-- **Pseudolocality in Sobolev regularity.** Let `a` be a symbol of order `m` with compact
@@ -112,11 +101,11 @@ theorem memSobolev_smulLeftCLM_quantizeSobolev_of_memSobolev_smulLeftCLM
     (hu : MemSobolev s 2 (smulLeftCLM V (χ : CoordinateSpace n → ℂ) u.toDistr)) :
     MemSobolev (s - m) 2
       (smulLeftCLM W (φ : CoordinateSpace n → ℂ) (a.quantizeSobolev ha r u).toDistr) := by
-  obtain ⟨b, hb, hab⟩ := exists_coefficient_eq_smul ha φ
   rw [← BesselPotentialSpace.toDistr_smulLeftCLM, ← ContinuousLinearMap.comp_apply,
-    ← quantizeSobolev_eq_smulLeftCLM_comp ha hb hab]
-  exact memSobolev_quantizeSobolev_of_memSobolev_smulLeftCLM hb
-    (fun x hx ξ ↦ by rw [hab, image_eq_zero_of_notMem_tsupport hx, zero_smul]) hχ hχφ hu
+    ← quantizeSobolev_smulSpatial ha φ (ha.smulSpatial φ)]
+  exact memSobolev_quantizeSobolev_of_memSobolev_smulLeftCLM (ha.smulSpatial φ)
+    (fun x hx ξ ↦ by rw [coefficient_smulSpatial, image_eq_zero_of_notMem_tsupport hx, zero_smul])
+    hχ hχφ hu
 
 /-- **The pseudolocal estimate.** Let `a` be a symbol of order `m` with compact spatial support,
 and let the Schwartz function `χ` have compact support and equal `1` on a neighbourhood of
@@ -129,11 +118,11 @@ theorem exists_norm_smulLeftCLM_quantizeSobolev_le (ha : a.HasCompactSpatialSupp
       ‖BesselPotentialSpace.smulLeftCLM (s - m) φ (a.quantizeSobolev ha s u)‖ ≤
         C * (‖BesselPotentialSpace.smulLeftCLM s χ u‖ +
           ‖BesselPotentialSpace.inclusion hrs u‖) := by
-  obtain ⟨b, hb, hab⟩ := exists_coefficient_eq_smul ha φ
-  obtain ⟨C, hC⟩ := exists_norm_quantizeSobolev_le_smulLeftCLM hb
-    (fun x hx ξ ↦ by rw [hab, image_eq_zero_of_notMem_tsupport hx, zero_smul]) hχ hχφ hrs
+  obtain ⟨C, hC⟩ := exists_norm_quantizeSobolev_le_smulLeftCLM (ha.smulSpatial φ)
+    (fun x hx ξ ↦ by rw [coefficient_smulSpatial, image_eq_zero_of_notMem_tsupport hx, zero_smul])
+    hχ hχφ hrs
   refine ⟨C, fun u ↦ ?_⟩
-  rw [← ContinuousLinearMap.comp_apply, ← quantizeSobolev_eq_smulLeftCLM_comp ha hb hab]
+  rw [← ContinuousLinearMap.comp_apply, ← quantizeSobolev_smulSpatial ha φ (ha.smulSpatial φ)]
   exact hC u
 
 /-- **Quantizations preserve local smoothness.** Let `a` be a symbol of order `m` with compact
