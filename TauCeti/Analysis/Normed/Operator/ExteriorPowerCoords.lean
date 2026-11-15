@@ -30,7 +30,7 @@ In degrees zero and one the compound matrices are identified explicitly, through
 coordinate equivalences `exteriorPower.piZeroContinuousEquiv` with the coordinate line and
 `exteriorPower.piOneContinuousEquiv` with the original coordinate space.
 
-For concatenated coordinate spaces `Fin (a + d) → 𝕜`, `TauCeti.exteriorPower.piProdInlL` and
+For concatenated coordinate spaces `Fin (a + d) → 𝕜`, `TauCeti.exteriorPower.piProdInclL` and
 `TauCeti.exteriorPower.piProdProjL` are the continuous bidegree-`(p, q)` Künneth inclusions and
 projections between `Fin (a.choose p * d.choose q) → 𝕜` and `Fin ((a + d).choose n) → 𝕜`. They
 resolve the identity over `p + q = n` and intertwine compound matrices of block-diagonal operators
@@ -165,10 +165,10 @@ namespace TauCeti.exteriorPower
 
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜]
 
-/-- `TauCeti.exteriorPower.piProdInl` as a continuous linear operator between coordinate spaces. -/
-noncomputable def piProdInlL (a d p q n : ℕ) (h : p + q = n) :
+/-- `TauCeti.exteriorPower.piProdIncl` as a continuous linear operator between coordinate spaces. -/
+noncomputable def piProdInclL (a d p q n : ℕ) (h : p + q = n) :
     (Fin (a.choose p * d.choose q) → 𝕜) →L[𝕜] (Fin ((a + d).choose n) → 𝕜) :=
-  ⟨piProdInl 𝕜 a d p q n h, (piProdInl 𝕜 a d p q n h).continuous_on_pi⟩
+  ⟨piProdIncl 𝕜 a d p q n h, (piProdIncl 𝕜 a d p q n h).continuous_on_pi⟩
 
 /-- `TauCeti.exteriorPower.piProdProj` as a continuous linear operator between coordinate spaces. -/
 noncomputable def piProdProjL (a d p q n : ℕ) :
@@ -176,10 +176,10 @@ noncomputable def piProdProjL (a d p q n : ℕ) :
   ⟨piProdProj 𝕜 a d p q n, (piProdProj 𝕜 a d p q n).continuous_on_pi⟩
 
 @[simp]
-theorem coe_piProdInlL (a d p q n : ℕ) (h : p + q = n) :
-    (piProdInlL 𝕜 a d p q n h :
+theorem coe_piProdInclL (a d p q n : ℕ) (h : p + q = n) :
+    (piProdInclL 𝕜 a d p q n h :
       (Fin (a.choose p * d.choose q) → 𝕜) →ₗ[𝕜] (Fin ((a + d).choose n) → 𝕜)) =
-      piProdInl 𝕜 a d p q n h :=
+      piProdIncl 𝕜 a d p q n h :=
   (rfl)
 
 @[simp]
@@ -190,8 +190,8 @@ theorem coe_piProdProjL (a d p q n : ℕ) :
   (rfl)
 
 @[simp]
-theorem piProdInlL_apply (a d p q n : ℕ) (h : p + q = n) (v : Fin (a.choose p * d.choose q) → 𝕜) :
-    piProdInlL 𝕜 a d p q n h v = piProdInl 𝕜 a d p q n h v :=
+theorem piProdInclL_apply (a d p q n : ℕ) (h : p + q = n) (v : Fin (a.choose p * d.choose q) → 𝕜) :
+    piProdInclL 𝕜 a d p q n h v = piProdIncl 𝕜 a d p q n h v :=
   (rfl)
 
 @[simp]
@@ -201,37 +201,50 @@ theorem piProdProjL_apply (a d p q n : ℕ) (v : Fin ((a + d).choose n) → 𝕜
 
 variable {𝕜}
 
-/-- `piProdProjL` is left inverse to `piProdInlL` in matching bidegree. -/
+/-- `piProdProjL` is left inverse to `piProdInclL` in matching bidegree. -/
 @[simp]
-theorem piProdProjL_comp_piProdInlL_self (a d p q n : ℕ) (h : p + q = n) :
-    (piProdProjL 𝕜 a d p q n).comp (piProdInlL 𝕜 a d p q n h) =
+theorem piProdProjL_comp_piProdInclL_self (a d p q n : ℕ) (h : p + q = n) :
+    (piProdProjL 𝕜 a d p q n).comp (piProdInclL 𝕜 a d p q n h) =
       ContinuousLinearMap.id 𝕜 (Fin (a.choose p * d.choose q) → 𝕜) :=
-  ContinuousLinearMap.coe_injective (piProdProj_comp_piProdInl_self a d p q n h)
+  ContinuousLinearMap.coe_injective (piProdProj_comp_piProdIncl_self a d p q n h)
 
-/-- `piProdProjL` vanishes on the image of `piProdInlL` in any differing bidegree. -/
-theorem piProdProjL_comp_piProdInlL_of_ne {a d p' q' p q n : ℕ} (h : p + q = n)
+/-- `piProdProjL` vanishes on the image of `piProdInclL` in any differing bidegree. -/
+theorem piProdProjL_comp_piProdInclL_of_ne {a d p' q' p q n : ℕ} (h : p + q = n)
     (hne : p ≠ p' ∨ q ≠ q') :
-    (piProdProjL 𝕜 a d p' q' n).comp (piProdInlL 𝕜 a d p q n h) = 0 :=
-  ContinuousLinearMap.coe_injective (piProdProj_comp_piProdInl_of_ne h hne)
+    (piProdProjL 𝕜 a d p' q' n).comp (piProdInclL 𝕜 a d p q n h) = 0 :=
+  ContinuousLinearMap.coe_injective (piProdProj_comp_piProdIncl_of_ne h hne)
+
+/-- `piProdProjL` vanishes outside total degree `n`. -/
+theorem piProdProjL_eq_zero_of_add_ne {a d p q n : ℕ} (h : p + q ≠ n) :
+    piProdProjL 𝕜 a d p q n = 0 :=
+  ContinuousLinearMap.coe_injective (piProdProj_eq_zero_of_add_ne h)
 
 /-- The continuous Künneth projections and inclusions resolve the identity of
 `Fin ((a + d).choose n) → 𝕜`. -/
-theorem sum_piProdInlL_comp_piProdProjL (a d n : ℕ) :
+theorem sum_piProdInclL_comp_piProdProjL (a d n : ℕ) :
     ∑ i : Fin (n + 1),
-      (piProdInlL 𝕜 a d i (n - i) n (by omega)).comp (piProdProjL 𝕜 a d i (n - i) n) =
+      (piProdInclL 𝕜 a d i (n - i) n (by omega)).comp (piProdProjL 𝕜 a d i (n - i) n) =
     ContinuousLinearMap.id 𝕜 (Fin ((a + d).choose n) → 𝕜) := by
   apply ContinuousLinearMap.coe_injective
   simpa only [ContinuousLinearMap.toLinearMap_sum, ContinuousLinearMap.toLinearMap_comp,
-    coe_piProdInlL, coe_piProdProjL, ContinuousLinearMap.coe_id] using
-    sum_piProdInl_comp_piProdProj (R := 𝕜) a d n
+    coe_piProdInclL, coe_piProdProjL, ContinuousLinearMap.coe_id] using
+    sum_piProdIncl_comp_piProdProj (R := 𝕜) a d n
 
-/-- In the top degree `a + d`, `piProdInlL` and `piProdProjL` in bidegree `(a, d)` are two-sided
-inverses. -/
+/-- When `a ≤ p`, `d ≤ q` and `p + q = n`, `piProdInclL` is left inverse to `piProdProjL` in
+bidegree `(p, q)`. -/
+theorem piProdInclL_comp_piProdProjL_of_le {a d p q n : ℕ} (ha : a ≤ p) (hd : d ≤ q)
+    (h : p + q = n) :
+    (piProdInclL 𝕜 a d p q n h).comp (piProdProjL 𝕜 a d p q n) =
+      ContinuousLinearMap.id 𝕜 (Fin ((a + d).choose n) → 𝕜) :=
+  ContinuousLinearMap.coe_injective (piProdIncl_comp_piProdProj_of_le ha hd h)
+
+/-- In the top degree `a + d`, `piProdInclL` is left inverse to `piProdProjL` in bidegree
+`(a, d)`. -/
 @[simp]
-theorem piProdInlL_comp_piProdProjL_top (a d : ℕ) :
-    (piProdInlL 𝕜 a d a d (a + d) rfl).comp (piProdProjL 𝕜 a d a d (a + d)) =
+theorem piProdInclL_comp_piProdProjL_top (a d : ℕ) :
+    (piProdInclL 𝕜 a d a d (a + d) rfl).comp (piProdProjL 𝕜 a d a d (a + d)) =
       ContinuousLinearMap.id 𝕜 (Fin ((a + d).choose (a + d)) → 𝕜) :=
-  ContinuousLinearMap.coe_injective (piProdInl_comp_piProdProj_top a d)
+  piProdInclL_comp_piProdProjL_of_le le_rfl le_rfl rfl
 
 private theorem toLinearMap_splitCoords_blockDiag {a a' d d' : ℕ}
     (f : (Fin a → 𝕜) →L[𝕜] (Fin a' → 𝕜)) (g : (Fin d → 𝕜) →L[𝕜] (Fin d' → 𝕜)) :
@@ -247,21 +260,21 @@ private theorem toLinearMap_splitCoords_blockDiag {a a' d d' : ℕ}
     LinearEquiv.coe_toLinearMap, splitCoords_apply, splitCoords_symm_apply,
     LinearEquiv.piFinAppend_apply, LinearEquiv.piFinAppend_symm_apply, LinearMap.prodMap_apply]
 
-/-- `piProdInlL` intertwines the Kronecker product of compound matrices with the compound matrix
+/-- `piProdInclL` intertwines the Kronecker product of compound matrices with the compound matrix
 of a block-diagonal operator formed with `splitCoords`. -/
-theorem exteriorPowerCoords_splitCoords_comp_piProdInlL {a a' d d' : ℕ}
+theorem exteriorPowerCoords_splitCoords_comp_piProdInclL {a a' d d' : ℕ}
     (f : (Fin a → 𝕜) →L[𝕜] (Fin a' → 𝕜)) (g : (Fin d → 𝕜) →L[𝕜] (Fin d' → 𝕜))
     (p q n : ℕ) (h : p + q = n) :
     (((splitCoords (𝕜 := 𝕜) a' d').symm.toContinuousLinearMap.comp
         ((f.prodMap g).comp (splitCoords (𝕜 := 𝕜) a d).toContinuousLinearMap)).exteriorPowerCoords
-        n).comp (piProdInlL 𝕜 a d p q n h) =
-      (piProdInlL 𝕜 a' d' p q n h).comp
+        n).comp (piProdInclL 𝕜 a d p q n h) =
+      (piProdInclL 𝕜 a' d' p q n h).comp
         ((f.exteriorPowerCoords p).kronecker (g.exteriorPowerCoords q)) := by
   apply ContinuousLinearMap.coe_injective
   rw [ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.toLinearMap_comp,
     ContinuousLinearMap.coe_exteriorPowerCoords, toLinearMap_splitCoords_blockDiag,
-    coe_piProdInlL, ContinuousLinearMap.toLinearMap_kronecker_eq]
-  exact exteriorPowerCoords_piFinAppend_comp_piProdInl
+    coe_piProdInclL, ContinuousLinearMap.toLinearMap_kronecker_eq]
+  exact exteriorPowerCoords_piFinAppend_comp_piProdIncl
     (f : (Fin a → 𝕜) →ₗ[𝕜] (Fin a' → 𝕜)) (g : (Fin d → 𝕜) →ₗ[𝕜] (Fin d' → 𝕜)) p q n h
 
 /-- `piProdProjL` intertwines the compound matrix of a block-diagonal operator formed with

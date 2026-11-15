@@ -67,11 +67,12 @@ theorem coe_wedgeTensor_tmul (p q n : ℕ) (h : p + q = n) (a : ⋀[R]^p M) (b :
 
 /-- On pure exterior products, `wedgeTensor` concatenates the left and right vector families. -/
 @[simp]
-theorem wedgeTensor_tmul_ιMulti (p q : ℕ) (u : Fin p → M) (v : Fin q → N) :
-    wedgeTensor R M N p q (p + q) rfl
+theorem wedgeTensor_tmul_ιMulti (p q n : ℕ) (h : p + q = n) (u : Fin p → M) (v : Fin q → N) :
+    wedgeTensor R M N p q n h
       (_root_.exteriorPower.ιMulti R p u ⊗ₜ _root_.exteriorPower.ιMulti R q v) =
-    _root_.exteriorPower.ιMulti R (p + q)
-      (Fin.append (LinearMap.inl R M N ∘ u) (LinearMap.inr R M N ∘ v)) := by
+    _root_.exteriorPower.ιMulti R n
+      (Fin.append (LinearMap.inl R M N ∘ u) (LinearMap.inr R M N ∘ v) ∘ Fin.cast h.symm) := by
+  subst h
   apply Subtype.ext
   simp [coe_wedgeTensor_tmul, ExteriorAlgebra.ιMulti_mul_ιMulti]
 
@@ -155,6 +156,15 @@ def prodProj (p q n : ℕ) : ⋀[R]^n (M × N) →ₗ[R] ⋀[R]^p M ⊗[R] ⋀[R
     (ExteriorAlgebra.prodEquivTensor R M N).toLinearMap ∘ₗ
     (⋀[R]^n (M × N)).subtype
 
+/-- `prodProj` maps `x` through `ExteriorAlgebra.prodEquivTensor` and projects each tensor factor
+onto its homogeneous component. -/
+theorem prodProj_apply (p q n : ℕ) (x : ⋀[R]^n (M × N)) :
+    prodProj R M N p q n x =
+      TensorProduct.map (proj R M p) (proj R N q)
+        ((GradedTensorProduct.of R (fun i ↦ ⋀[R]^i M) (fun i ↦ ⋀[R]^i N)).symm
+          (ExteriorAlgebra.prodEquivTensor R M N x)) :=
+  (rfl)
+
 /-- On the wedge product of `a` and `b`, `prodProj` projects `a` and `b` onto degrees `p'` and
 `q'`. -/
 @[simp]
@@ -162,9 +172,9 @@ theorem prodProj_wedgeTensor_tmul (p' q' p q n : ℕ) (h : p + q = n)
     (a : ⋀[R]^p M) (b : ⋀[R]^q N) :
     prodProj R M N p' q' n (wedgeTensor R M N p q n h (a ⊗ₜ b)) =
       proj R M p' a ⊗ₜ proj R N q' b := by
-  simp only [prodProj, LinearMap.comp_apply, Submodule.coe_subtype, coe_wedgeTensor_tmul,
-    ← ExteriorAlgebra.prodEquivTensor_symm_tmul, AlgEquiv.toLinearMap_apply,
-    AlgEquiv.apply_symm_apply, LinearEquiv.coe_toLinearMap, GradedTensorProduct.tmul,
+  simp only [prodProj_apply, coe_wedgeTensor_tmul,
+    ← ExteriorAlgebra.prodEquivTensor_symm_tmul,
+    AlgEquiv.apply_symm_apply, GradedTensorProduct.tmul,
     GradedTensorProduct.of_symm_of, TensorProduct.map_tmul]
 
 /-- `prodProj` is left inverse to `wedgeTensor` in matching bidegree. -/
@@ -205,7 +215,7 @@ theorem sum_wedgeTensor_prodProj (n : ℕ) (x : ⋀[R]^n (M × N)) :
     ∑ i : Fin (n + 1),
       wedgeTensor R M N i (n - i) n (by omega) (prodProj R M N i (n - i) n x) = x := by
   apply Subtype.ext
-  rw [Submodule.coe_sum]
+  simp_rw [Submodule.coe_sum, prodProj_apply]
   have h := sum_coe_wedgeTensor_map_proj n
     ((GradedTensorProduct.of R (fun i ↦ ⋀[R]^i M) (fun i ↦ ⋀[R]^i N)).symm
       (ExteriorAlgebra.prodEquivTensor R M N x))
@@ -265,8 +275,8 @@ private theorem prodProj_pi_comp_sum_wedgeTensor (n : ℕ) :
           LinearMap.proj (R := R) (φ := fun j : Fin (n + 1) ↦ ⋀[R]^j M ⊗[R] ⋀[R]^(n - j) N) i) =
     LinearMap.id :=
   LinearMap.ext fun z ↦ funext fun i ↦ by
-    simp only [LinearMap.comp_apply, LinearMap.pi_apply, LinearMap.sum_apply, map_sum,
-      LinearMap.id_apply]
+    simp only [LinearMap.comp_apply, LinearMap.pi_apply, LinearMap.sum_apply,
+      LinearMap.proj_apply, map_sum, LinearMap.id_apply]
     rw [Finset.sum_eq_single i]
     · simp
     · intro j _ hji
