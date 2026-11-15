@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Lagrangian.TotallyReal
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Totally real embeddings
@@ -23,7 +24,8 @@ assumes half-dimensionality or a nonempty source.
 ## Main declarations
 
 * `IsTotallyRealEmbedding`: a native `C^n` embedding with maximal totally real tangent images.
-* `IsMaximalTotallyRealMap.mfderiv_injective`: half-dimensionality forces immersion pointwise.
+* `IsMaximalTotallyRealMap.mfderiv_injective`: half-dimensionality forces immersion pointwise;
+  `IsMaximalTotallyRealMap.fderiv_writtenInExtChartAt_injective` reads this in extended charts.
 * `isTotallyRealEmbedding_of_contMDiff`: construct embeddings without supplying immersion.
 * `SmoothTwoForm.IsNondegenerate.IsLagrangianMap.isTotallyRealEmbedding`: the pointwise tame
   comparison with an independently supplied `C^n` embedding.
@@ -97,6 +99,15 @@ theorem IsMaximalTotallyRealMap.mfderiv_injective
   (h x).injective_of_two_mul_finrank_eq
     ((A (f x)).injective.comp (LinearMap.range (mfderiv I' I f x).toLinearMap).subtype_injective)
     (by simpa only [finrank_tangentSpace] using hdim)
+
+/-- Read in the extended charts at `x₀` and `f x₀`, the derivative at `x₀` of a maximal totally
+real map of half the ambient dimension, differentiable at `x₀`, is injective. -/
+theorem IsMaximalTotallyRealMap.fderiv_writtenInExtChartAt_injective
+    [FiniteDimensional ℝ F] [I'.Boundaryless] (h : IsMaximalTotallyRealMap I' I A f)
+    (hdim : 2 * finrank ℝ F = finrank ℝ E) {x₀ : N} (hf : MDifferentiableAt I' I f x₀) :
+    Function.Injective (fderiv ℝ (writtenInExtChartAt I' I x₀ f) (extChartAt I' x₀ x₀)) := by
+  rw [writtenInExtChartAt, ← hf.mfderiv_eq_fderiv_extChartAt_conj rfl]
+  exact h.mfderiv_injective hdim x₀
 
 /-- A totally real `C^n` embedding has half the ambient dimension, and its tangent images are
 maximal totally real. The structure field imposes no regularity on the almost complex field. -/

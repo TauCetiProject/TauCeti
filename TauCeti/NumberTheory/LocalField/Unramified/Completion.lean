@@ -34,10 +34,10 @@ Every automorphism of `E^{ur}/E` preserves the valuation, so it is uniformly con
 extends uniquely to a continuous `E`-algebra automorphism of `Breve E`. This gives the action
 `TauCeti.MaxUnramifiedCompletion.galAction` of `Gal(E^{ur}/E)` on `Breve E`, and the Frobenius
 `σ` of `Breve E` is the extension `TauCeti.MaxUnramifiedCompletion.frobenius` of the arithmetic
-Frobenius of `E^{ur}`, which raises every root of every polynomial `X^{q^n} − X` to the `q`-th
-power. The field `Breve E` with its Frobenius is the base over which the structure theory of
-reductive groups over a local field (Bruhat–Tits theory, the Kottwitz homomorphism, isocrystals)
-is developed.
+Frobenius of `E^{ur}`, which raises every root of every polynomial `X^{q^n} − X` with `n ≠ 0` to
+the `q`-th power. The field `Breve E` with its Frobenius is the base over which the structure
+theory of reductive groups over a local field (Bruhat–Tits theory, the Kottwitz homomorphism,
+isocrystals) is developed.
 
 ## Main definitions
 
@@ -203,8 +203,8 @@ theorem galAction_injective : Function.Injective (galAction (E := E)) := by
 
 variable (E) in
 /-- **The arithmetic Frobenius `σ` of `Breve E`**: the continuous extension to `Breve E` of the
-arithmetic Frobenius of `E^{ur}/E`. It raises every root of every polynomial `X^{q^n} − X` to the
-`q`-th power (`frobenius_coe_of_pow_natCard_pow_eq_self`). -/
+arithmetic Frobenius of `E^{ur}/E`. It raises every root of every polynomial `X^{q^n} − X` with
+`n ≠ 0` to the `q`-th power (`frobenius_coe_of_pow_natCard_pow_eq_self`). -/
 def frobenius : Breve E ≃ₐ[E] Breve E :=
   galAction (unramifiedFrobenius E)
 
