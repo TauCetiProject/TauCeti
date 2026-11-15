@@ -252,6 +252,27 @@ theorem squareClassEquiv_apply (e : K ≃+* L) (d : SquareClassGroup K) :
     e.squareClassEquiv d = e.toRingHom.squareClassMap d :=
   (rfl)
 
+/-- The linear map underlying the square-class equivalence is the functorial pushforward. -/
+@[simp]
+theorem toLinearMap_squareClassEquiv (e : K ≃+* L) :
+    e.squareClassEquiv.toLinearMap = e.toRingHom.squareClassMap :=
+  (rfl)
+
+/-- The identity field isomorphism induces the identity square-class equivalence. -/
+@[simp]
+theorem squareClassEquiv_refl :
+    (RingEquiv.refl K).squareClassEquiv = LinearEquiv.refl (ZMod 2) (SquareClassGroup K) := by
+  ext d
+  simp [squareClassEquiv_apply]
+
+/-- Composition of field isomorphisms induces composition of square-class equivalences. -/
+theorem squareClassEquiv_trans {M : Type*} [Field M] (e : K ≃+* L) (f : L ≃+* M) :
+    (e.trans f).squareClassEquiv = e.squareClassEquiv.trans f.squareClassEquiv := by
+  ext d
+  simpa only [squareClassEquiv_apply, LinearEquiv.trans_apply, toRingHom_trans',
+    LinearMap.comp_apply] using
+    LinearMap.congr_fun (RingHom.squareClassMap_comp f.toRingHom e.toRingHom) d
+
 /-- Inverting a field isomorphism inverts its square-class equivalence. -/
 @[simp]
 theorem squareClassEquiv_symm (e : K ≃+* L) :
