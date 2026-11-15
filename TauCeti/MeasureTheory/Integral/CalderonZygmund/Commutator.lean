@@ -14,6 +14,7 @@ import TauCeti.MeasureTheory.Integral.DistRpow
 import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Truncation
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.LpSeminorm.Clipping
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.SpanningSets
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 
@@ -73,10 +74,10 @@ bounds `‖h‖_p` by `‖h^#‖_p` for `h ∈ Lᵖ`, and `(M(‖·‖^q))^{1/q}
 `Lᵖ` bound for `T` they give `‖[b, T] f‖_p ≤ C ‖b‖_{BMO} ‖f‖_p` as soon as `[b, T] f ∈ Lᵖ`. This a
 priori integrability holds for the clipped multipliers `bₖ = max (-k) (min k b)`, whose BMO
 seminorm is at most `2 ‖b‖_{BMO}` (`TauCeti.bmoSeminorm_max_min_le`), and for the bounded
-truncations `fₖ = 1_{Sₖ} f` with `Sₖ = B(0, k) ∩ {‖f‖ ≤ k}`. As `k → ∞`, `fₖ → f` and `bₖ fₖ → b f`
-in `L²` by dominated convergence, so `T fₖ → T f` and `T (bₖ fₖ) → T (b f)` almost everywhere along
-a subsequence, and the uniform bound passes to `[b, T] f` by Fatou's lemma. In dimension `0` the
-commutator vanishes.
+truncations `fₖ = 1_{Sₖ} f` with `Sₖ = spanningSets volume k ∩ {‖f‖ ≤ k}`. As `k → ∞`,
+`fₖ → f` and `bₖ fₖ → b f` in `L²` by dominated convergence, so `T fₖ → T f` and
+`T (bₖ fₖ) → T (b f)` almost everywhere along a subsequence, and the uniform bound passes to
+`[b, T] f` by Fatou's lemma. In dimension `0` the commutator vanishes.
 
 ## Main declarations
 
@@ -558,6 +559,11 @@ theorem exists_sharpMaximalFunction_smul_sub_le_of_norm_sub_le_mul_rpow {F : Typ
   rw [ENNReal.coe_toNNReal hC]
   exact setLAverage_enorm_smul_sub_sub_setAverage_le T hKm hδ hK hrep hs hsq hT hb hM f g hg hx
 
+/-- The constant in the `Lᵖ` Fefferman–Stein inequality `eLpNorm_le_eLpNorm_sharpMaximalFunction`
+in dimension `n`. -/
+private noncomputable def feffermanSteinConst (n : ℕ) (p : ℝ) : ℝ≥0∞ :=
+  ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * n + 2) * p)) ^ (1 / p)
+
 /-- **Integrating a sharp function estimate.** Let `1 < p` and `0 < q < p`. If `h ∈ Lᵖ` satisfies
 
 `h^# ≤ c ((M(‖u‖^q))^{1/q} + (M(‖v‖^q))^{1/q})`
@@ -572,7 +578,7 @@ private theorem eLpNorm_le_of_sharpMaximalFunction_le {F : Type*} [NormedAddComm
       c * (maximalFunction volume (fun y => ‖u y‖ₑ ^ q) x ^ q⁻¹ +
         maximalFunction volume (fun y => ‖v y‖ₑ ^ q) x ^ q⁻¹)) :
     eLpNorm h (ENNReal.ofReal p) volume ≤
-      ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) * c *
+      feffermanSteinConst (Fintype.card ι) p * c *
         maximalFunctionConst (Fintype.card ι) (p / q) ^ (1 / p) *
           (eLpNorm u (ENNReal.ofReal p) volume + eLpNorm v (ENNReal.ofReal p) volume) := by
   have hpR : (ENNReal.ofReal p).toReal = p := ENNReal.toReal_ofReal (by linarith)
@@ -581,21 +587,21 @@ private theorem eLpNorm_le_of_sharpMaximalFunction_le {F : Type*} [NormedAddComm
   set Mv : (ι → ℝ) → ℝ≥0∞ := fun x => maximalFunction volume (fun y => ‖v y‖ₑ ^ q) x ^ q⁻¹
   have hcard : Module.finrank ℝ (ι → ℝ) = Fintype.card ι := Module.finrank_fintype_fun_eq_card ℝ
   calc eLpNorm h (ENNReal.ofReal p) volume
-      ≤ ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) *
+      ≤ feffermanSteinConst (Fintype.card ι) p *
           eLpNorm (sharpMaximalFunction volume h) (ENNReal.ofReal p) volume := by
-        simpa only [hpR] using
+        simpa only [hpR, feffermanSteinConst] using
           eLpNorm_le_eLpNorm_sharpMaximalFunction hh hp'.le le_rfl hp' ENNReal.ofReal_ne_top
-    _ ≤ ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) *
+    _ ≤ feffermanSteinConst (Fintype.card ι) p *
           eLpNorm (fun x => c * (Mu + Mv) x) (ENNReal.ofReal p) volume := by
         gcongr
         exact eLpNorm_mono_eNorm (measurable_sharpMaximalFunction _ _).aestronglyMeasurable
           fun x => by simpa only [eNorm_eq_self, Pi.add_apply, Mu, Mv] using hbound x
-    _ ≤ ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) *
+    _ ≤ feffermanSteinConst (Fintype.card ι) p *
           (c * (eLpNorm Mu (ENNReal.ofReal p) volume + eLpNorm Mv (ENNReal.ofReal p) volume)) := by
         rw [eLpNorm_const_mul_ennreal_of_pos (by positivity)]
         gcongr
         exact eLpNorm_add_le hp'.le
-    _ ≤ ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) *
+    _ ≤ feffermanSteinConst (Fintype.card ι) p *
           (c * (maximalFunctionConst (Fintype.card ι) (p / q) ^ (1 / p) *
               eLpNorm u (ENNReal.ofReal p) volume +
             maximalFunctionConst (Fintype.card ι) (p / q) ^ (1 / p) *
@@ -623,44 +629,24 @@ private theorem eLpNorm_smul_sub_le_of_sharpMaximalFunction_le {F : Type*} [Norm
       c * (maximalFunction volume (fun y => ‖T f y‖ₑ ^ q) x ^ q⁻¹ +
         maximalFunction volume (fun y => ‖f y‖ₑ ^ q) x ^ q⁻¹)) :
     eLpNorm (fun y => b y • T f y - T g y) (ENNReal.ofReal p) volume ≤
-      ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) * c *
+      feffermanSteinConst (Fintype.card ι) p * c *
         maximalFunctionConst (Fintype.card ι) (p / q) ^ (1 / p) * (Aₚ + 1) *
           eLpNorm f (ENNReal.ofReal p) volume := by
   have hTmem (u : Lp E 2 (volume : Measure (ι → ℝ))) (hu : MemLp u (ENNReal.ofReal p) volume) :
       MemLp (T u) (ENNReal.ofReal p) volume :=
     (hTp u).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hu.eLpNorm_lt_top)
   calc eLpNorm (fun y => b y • T f y - T g y) (ENNReal.ofReal p) volume
-      ≤ ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) * c *
+      ≤ feffermanSteinConst (Fintype.card ι) p * c *
           maximalFunctionConst (Fintype.card ι) (p / q) ^ (1 / p) *
             (eLpNorm (T f) (ENNReal.ofReal p) volume + eLpNorm f (ENNReal.ofReal p) volume) :=
         eLpNorm_le_of_sharpMaximalFunction_le hp hq hqp ((hb.smul (hTmem f hf)).sub (hTmem g hg))
           (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) c hbound
-    _ ≤ ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) * c *
+    _ ≤ feffermanSteinConst (Fintype.card ι) p * c *
           maximalFunctionConst (Fintype.card ι) (p / q) ^ (1 / p) *
             (Aₚ * eLpNorm f (ENNReal.ofReal p) volume + eLpNorm f (ENNReal.ofReal p) volume) := by
         gcongr
         exact hTp f
     _ = _ := by ring
-
-omit [Nonempty ι] [NormedSpace ℝ E] in
-/-- **Dominated convergence in `L²`.** If `uₖ → u` pointwise, eventually at every point, with
-`‖uₖ‖ ≤ ‖u‖`, and `v ∈ L²` is a representative of `u`, then `uₖ → v` in `L²`. -/
-private theorem tendsto_toLp_of_norm_le {us : ℕ → (ι → ℝ) → E}
-    (hus : ∀ k, MemLp (us k) 2 volume) {v : Lp E 2 (volume : Measure (ι → ℝ))}
-    {u : (ι → ℝ) → E} (hv : v =ᵐ[volume] u) (hle : ∀ k y, ‖us k y‖ ≤ ‖u y‖)
-    (hlim : ∀ y, ∀ᶠ k in atTop, us k y = u y) :
-    Tendsto (fun k => (hus k).toLp (us k)) atTop (𝓝 v) := by
-  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
-  refine (tendsto_eLpNorm_sub_of_ae_tendsto (C := 2) (by simp)
-    (.of_forall fun k => (hus k).aestronglyMeasurable) ((Lp.memLp v).ae_eq hv)
-    (.of_forall fun k => .of_forall fun y => ?_)
-    (.of_forall fun y => tendsto_const_nhds.congr' ((hlim y).mono fun k hk => hk.symm))).congr
-    fun k => eLpNorm_congr_ae ((hus k).coeFn_toLp.sub hv).symm
-  calc ‖us k y - u y‖ₑ ≤ ‖us k y‖ₑ + ‖u y‖ₑ := eNorm_sub_le
-    _ ≤ (2 : ℝ≥0) * ‖u y‖ₑ := by
-      rw [ENNReal.coe_ofNat, two_mul]
-      gcongr
-      exact eNorm_le_iff_norm_le.2 (hle k y)
 
 omit [Nonempty ι] in
 /-- **Passing to the limit in commutators.** Let `bₖ → b` pointwise and `fₖ → f`, `gₖ → g` in
@@ -707,34 +693,12 @@ private theorem smul_sub_ae_eq_zero_of_isEmpty [IsEmpty ι] {F : Type*} [NormedA
   filter_upwards [Lp.coeFn_smul (b x₀) (T f)] with y hy
   rw [hTg, hy, Pi.smul_apply, Subsingleton.elim y x₀, sub_self, Pi.zero_apply]
 
-omit [Nonempty ι] [NormedSpace ℝ E] in
-/-- **Bounded truncations of an `L²` function.** The functions `fₖ = 1_{Sₖ} f`, where
-`Sₖ = B(0, k) ∩ {‖f‖ ≤ k}`, are bounded by `k`, vanish off `B(0, k)`, are dominated by `‖f‖`, and
-eventually equal `f` at every point. -/
-private theorem exists_seq_norm_le_eventually_eq (f : Lp E 2 (volume : Measure (ι → ℝ))) :
-    ∃ fs : ℕ → (ι → ℝ) → E, (∀ k, AEStronglyMeasurable (fs k) volume) ∧
-      (∀ (k : ℕ) y, ‖fs k y‖ ≤ k) ∧ (∀ (k : ℕ) y, y ∉ ball (0 : ι → ℝ) k → fs k y = 0) ∧
-      (∀ k y, ‖fs k y‖ ≤ ‖f y‖) ∧ ∀ y, ∀ᶠ k : ℕ in atTop, fs k y = f y := by
-  have hfm : StronglyMeasurable f := Lp.stronglyMeasurable f
-  set S : ℕ → Set (ι → ℝ) := fun k => ball 0 k ∩ {y | ‖f y‖ ≤ k}
-  refine ⟨fun k => (S k).indicator f, fun k => (hfm.indicator (measurableSet_ball.inter
-    (measurableSet_le hfm.norm.measurable measurable_const))).aestronglyMeasurable,
-    fun k y => ?_, fun k y hy => indicator_of_notMem (s := S k) (fun h => hy h.1) _,
-    fun k y => norm_indicator_le_norm_self _ _, fun y => ?_⟩
-  · by_cases hy : y ∈ S k
-    · simpa [indicator_of_mem hy] using hy.2
-    · simp [indicator_of_notMem hy]
-  · refine (eventually_gt_atTop ⌈max ‖y‖ ‖f y‖⌉₊).mono fun k hk => ?_
-    have hk' := Nat.lt_of_ceil_lt hk
-    exact indicator_of_mem (s := S k) ⟨mem_ball_zero_iff.2 ((le_max_left _ _).trans_lt hk'),
-      ((le_max_right _ _).trans_lt hk').le⟩ _
-
 omit [Nonempty ι] in
 /-- **Reduction to bounded data.** Let `g = b f` with `f, g ∈ L²`. If, for every `k`, the
 commutator with the clipped multiplier `bₖ = max (-k) (min k b)` satisfies
 `‖bₖ T F - T G‖_p ≤ B ‖F‖_p` for all `F, G ∈ L² ∩ Lᵖ` with `G = bₖ F`, then
-`‖b T f - T g‖_p ≤ B ‖f‖_p`. The data are approximated by bounded truncations supported in balls,
-and the estimate passes to the limit by `eLpNorm_smul_sub_le_of_tendsto`. -/
+`‖b T f - T g‖_p ≤ B ‖f‖_p`. The data are approximated by bounded truncations supported in sets of
+finite measure, and the estimate passes to the limit by `eLpNorm_smul_sub_le_of_tendsto`. -/
 private theorem eLpNorm_smul_sub_le_of_forall_max_min {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 volume)
     {p : ℝ≥0∞} {b : (ι → ℝ) → ℝ} (hb : AEStronglyMeasurable b volume)
@@ -747,16 +711,24 @@ private theorem eLpNorm_smul_sub_le_of_forall_max_min {F : Type*} [NormedAddComm
   set bs : ℕ → (ι → ℝ) → ℝ := fun k y => max (-(k : ℝ)) (min k (b y))
   have hbsm (k : ℕ) : AEStronglyMeasurable (bs k) volume :=
     (by fun_prop : Continuous fun t : ℝ => max (-(k : ℝ)) (min k t)).comp_aestronglyMeasurable hb
-  have hbs_lim (y : ι → ℝ) : ∀ᶠ k : ℕ in atTop, bs k y = b y :=
-    (eventually_ge_atTop ⌈|b y|⌉₊).mono fun k hk =>
-      max_neg_min_eq_self_of_abs_le (Nat.ceil_le.1 hk)
-  obtain ⟨fs, hfsm, hfs_bd, hfs_supp, hfs_le, hfs_lim⟩ := exists_seq_norm_le_eventually_eq f
-  -- A bounded function supported in a ball lies in every `Lʳ`.
+  have hbs_lim (y : ι → ℝ) : Tendsto (fun k => bs k y) atTop (𝓝 (b y)) :=
+    tendsto_const_nhds.congr' ((eventually_ge_atTop ⌈|b y|⌉₊).mono fun k hk =>
+      (max_neg_min_eq_self_of_abs_le (Nat.ceil_le.1 hk)).symm)
+  -- Truncate `f` to `Sₖ ∩ {‖f‖ ≤ k}`, where the `Sₖ` are spanning sets of finite measure.
+  have hfm := Lp.stronglyMeasurable f
+  set fs : ℕ → (ι → ℝ) → E := fun k => (spanningSets volume k ∩ {y | ‖f y‖ ≤ k}).indicator f
+  have hfsm (k : ℕ) : AEStronglyMeasurable (fs k) volume :=
+    (hfm.indicator (measurableSet_spanningSets_inter_norm_le hfm k)).aestronglyMeasurable
+  have hfs_bd (k : ℕ) (y : ι → ℝ) : ‖fs k y‖ ≤ k := by
+    by_cases hy : y ∈ spanningSets volume k ∩ {y | ‖f y‖ ≤ k} <;> simp_all [fs]
+  have hfs_supp (k : ℕ) (y : ι → ℝ) (hy : y ∉ spanningSets volume k) : fs k y = 0 :=
+    indicator_of_notMem (s := spanningSets volume k ∩ _) (fun h => hy h.1) _
+  -- A bounded function supported in a spanning set lies in every `Lʳ`.
   have hmem {u : (ι → ℝ) → E} (k : ℕ) (c : ℝ) (hu : AEStronglyMeasurable u volume)
-      (hc : ∀ y, ‖u y‖ ≤ c) (hsupp : ∀ y, y ∉ ball (0 : ι → ℝ) k → u y = 0) (r : ℝ≥0∞) :
+      (hc : ∀ y, ‖u y‖ ≤ c) (hsupp : ∀ y, y ∉ spanningSets volume k → u y = 0) (r : ℝ≥0∞) :
       MemLp u r volume :=
     (memLp_top_of_bound hu c (.of_forall hc)).mono_exponent_of_measure_support_ne_top hsupp
-      measure_ball_lt_top.ne le_top
+      (measure_spanningSets_lt_top volume k).ne le_top
   have hfs (k : ℕ) (r : ℝ≥0∞) : MemLp (fs k) r volume :=
     hmem k k (hfsm k) (hfs_bd k) (hfs_supp k) r
   have hgs (k : ℕ) (r : ℝ≥0∞) : MemLp (fun y => bs k y • fs k y) r volume := by
@@ -766,15 +738,17 @@ private theorem eLpNorm_smul_sub_le_of_forall_max_min {F : Type*} [NormedAddComm
       exact mul_le_mul ((abs_max_min_le _ _).trans_eq (Nat.abs_cast k)) (hfs_bd k y)
         (norm_nonneg _) (Nat.cast_nonneg _)
     · simp [hfs_supp k y hy]
-  refine eLpNorm_smul_sub_le_of_tendsto T hbsm hb
-    (fun y => tendsto_const_nhds.congr' ((hbs_lim y).mono fun k hk => hk.symm))
-    (tendsto_toLp_of_norm_le (fun k => hfs k 2) EventuallyEq.rfl hfs_le hfs_lim)
-    (tendsto_toLp_of_norm_le (fun k => hgs k 2) hg (fun k y => ?_)
-      (fun y => ((hbs_lim y).and (hfs_lim y)).mono fun k hk => by simp only [hk.1, hk.2]))
+  refine eLpNorm_smul_sub_le_of_tendsto T hbsm hb hbs_lim
+    (tendsto_toLp_of_ae_tendsto_of_norm_le (by simp) (fun k => hfs k 2) EventuallyEq.rfl
+      (fun k => .of_forall fun y => norm_indicator_le_norm_self _ y)
+      (.of_forall (tendsto_indicator_spanningSets_inter_norm_le f)))
+    (tendsto_toLp_of_ae_tendsto_of_norm_le (by simp) (fun k => hgs k 2) hg
+      (fun k => .of_forall fun y => ?_)
+      (.of_forall fun y => (hbs_lim y).smul (tendsto_indicator_spanningSets_inter_norm_le f y)))
     fun k => ?_
   · simp only [norm_smul, Real.norm_eq_abs]
-    exact mul_le_mul (abs_max_min_le_abs (Nat.cast_nonneg k) (b y)) (hfs_le k y)
-      (norm_nonneg _) (abs_nonneg _)
+    exact mul_le_mul (abs_max_min_le_abs (Nat.cast_nonneg k) (b y))
+      (norm_indicator_le_norm_self _ _) (norm_nonneg _) (abs_nonneg _)
   calc _ ≤ B * eLpNorm ((hfs k 2).toLp (fs k)) p volume :=
         hB k _ _ ((hfs k _).ae_eq (hfs k 2).coeFn_toLp.symm)
           ((hgs k _).ae_eq (hgs k 2).coeFn_toLp.symm)
@@ -782,7 +756,8 @@ private theorem eLpNorm_smul_sub_le_of_forall_max_min {F : Type*} [NormedAddComm
     _ ≤ B * eLpNorm f p volume := by
         gcongr
         rw [eLpNorm_congr_ae (hfs k 2).coeFn_toLp]
-        exact eLpNorm_mono_eNorm (hfsm k) fun y => eNorm_le_iff_norm_le.2 (hfs_le k y)
+        exact eLpNorm_mono_eNorm (hfsm k) fun y =>
+          eNorm_le_iff_norm_le.2 (norm_indicator_le_norm_self _ _)
 
 omit [Nonempty ι] in
 /-- **The Coifman–Rochberg–Weiss theorem.** Let `1 ≤ s < p`, `δ > 0`, and let `A`, `Aₚ`, `C₀` be
@@ -795,8 +770,9 @@ in its first variable,
 
 `‖K x y - K x' y‖ ≤ C₀ dist x x' ^ δ dist y x' ^ (-(n + δ))` whenever `dist y x' > 2 dist x x'`,
 
-and such that `‖T h‖_s ≤ A ‖h‖_s` and `‖T h‖_p ≤ Aₚ ‖h‖_p` for `h ∈ L²`. Let `b` be locally
-integrable with `‖b‖_{BMO} ≤ M`, and let `f, g ∈ L²` with `g = b f`. Then the commutator
+and such that `‖T h‖_s ≤ A ‖h‖_s` and `‖T h‖_p ≤ Aₚ ‖h‖_p` for `h ∈ L²`. Let `b` be almost
+everywhere strongly measurable with `‖b‖_{BMO} ≤ M`, and let `f, g ∈ L²` with `g = b f`. Then the
+commutator
 `[b, T] f = b T f - T (b f)` satisfies
 
 `‖[b, T] f‖_p ≤ C M ‖f‖_p`.
@@ -818,7 +794,7 @@ theorem exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow {F : Type*}
         eLpNorm (T h) (ENNReal.ofReal s) volume ≤ A * eLpNorm h (ENNReal.ofReal s) volume) →
       (∀ h : Lp E 2 (volume : Measure (ι → ℝ)),
         eLpNorm (T h) (ENNReal.ofReal p) volume ≤ Aₚ * eLpNorm h (ENNReal.ofReal p) volume) →
-      ∀ {b : (ι → ℝ) → ℝ} {M : ℝ≥0}, LocallyIntegrable b volume → bmoSeminorm b volume ≤ M →
+      ∀ {b : (ι → ℝ) → ℝ} {M : ℝ≥0}, AEStronglyMeasurable b volume → bmoSeminorm b volume ≤ M →
       ∀ (f g : Lp E 2 (volume : Measure (ι → ℝ))), g =ᵐ[volume] (fun y => b y • f y) →
         eLpNorm (fun y => b y • T f y - T g y) (ENNReal.ofReal p) volume ≤
           C * M * eLpNorm f (ENNReal.ofReal p) volume := by
@@ -833,28 +809,27 @@ theorem exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow {F : Type*}
   have hqp : q < p := by simp only [q]; linarith
   obtain ⟨C₁, hC₁⟩ := exists_sharpMaximalFunction_smul_sub_le_of_norm_sub_le_mul_rpow
     (ι := ι) (E := E) (F := F) hs hsq A C₀ hδ
-  set C : ℝ≥0∞ := ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) *
+  set C : ℝ≥0∞ := feffermanSteinConst (Fintype.card ι) p *
     C₁ * 2 * maximalFunctionConst (Fintype.card ι) (p / q) ^ (1 / p) * (Aₚ + 1)
   have hC : C ≠ ∞ := by
     have hp0 : 0 ≤ 1 / p := one_div_nonneg.2 (by linarith)
-    simp only [C]
+    simp only [C, feffermanSteinConst]
     refine ENNReal.mul_ne_top (ENNReal.mul_ne_top (ENNReal.mul_ne_top (ENNReal.mul_ne_top
       (ENNReal.rpow_ne_top_of_nonneg hp0 ENNReal.ofReal_ne_top) (by simp)) (by simp))
       (ENNReal.rpow_ne_top_of_nonneg hp0 (maximalFunctionConst_ne_top _ _))) (by simp)
   refine ⟨C.toNNReal, fun T K hKm hK hrep hT hTp b M hb hM f g hg => ?_⟩
   rw [ENNReal.coe_toNNReal hC]
-  have hbm := hb.aestronglyMeasurable
-  refine eLpNorm_smul_sub_le_of_forall_max_min T hbm hg fun k F G hF hG hGF => ?_
+  refine eLpNorm_smul_sub_le_of_forall_max_min T hb hg fun k F G hF hG hGF => ?_
   -- The clipped multiplier has `‖bₖ‖_{BMO} ≤ 2 M`.
   have hbk : bmoSeminorm (fun y => max (-(k : ℝ)) (min k (b y))) volume ≤
       ((2 * M : ℝ≥0) : ℝ≥0∞) :=
-    (bmoSeminorm_max_min_le hbm k).trans (by push_cast; gcongr)
-  calc _ ≤ ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p)) ^ (1 / p) *
+    (bmoSeminorm_max_min_le hb k).trans (by push_cast; gcongr)
+  calc _ ≤ feffermanSteinConst (Fintype.card ι) p *
           (C₁ * ((2 * M : ℝ≥0) : ℝ≥0∞)) * maximalFunctionConst (Fintype.card ι) (p / q) ^ (1 / p) *
             (Aₚ + 1) * eLpNorm F (ENNReal.ofReal p) volume :=
         eLpNorm_smul_sub_le_of_sharpMaximalFunction_le T (by linarith) (by linarith) hqp hTp
-          (hbm.memLp_top_max_min k) hF hG _
-          (hC₁ T hKm hK hrep hT ((hbm.memLp_top_max_min k).locallyIntegrable le_top) hbk _ _ hGF)
+          (hb.memLp_top_max_min k) hF hG _
+          (hC₁ T hKm hK hrep hT ((hb.memLp_top_max_min k).locallyIntegrable le_top) hbk _ _ hGF)
     _ = C * M * eLpNorm F (ENNReal.ofReal p) volume := by
         simp only [C]
         push_cast
