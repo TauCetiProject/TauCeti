@@ -16,55 +16,23 @@ import TauCeti.RingTheory.KrullDimension.Module
 /-!
 # Maximal Cohen–Macaulay modules over local hypersurfaces
 
-Let `w` be a nonzerodivisor in the maximal ideal of a Noetherian local ring `S`, so that the
-hypersurface quotient `R = S ⧸ (w)` is again a Noetherian local ring of Krull dimension
-`dim S - 1`. Restriction of scalars along `S → R` preserves the depth of any finite `R`-module
-(`IsLocalRing.depth_eq_depth_of_surjective`), so a finite `R`-module `M` is maximal Cohen–Macaulay
-over `R` if and only if `dim S ≤ depth_S M + 1`
-(`Module.isMaximalCohenMacaulay_quotient_span_singleton_iff_ringKrullDim_le_depth_succ`).
-
-Combined with the Auslander–Buchsbaum formula `pd_S M + depth_S M = depth S`
-(`ModuleCat.projectiveDimension_add_depth_eq_depth`), this yields the homological characterization
-behind Eisenbud's matrix factorization theorem:
-
-* If `M` is maximal Cohen–Macaulay over `R` and has finite projective dimension over `S`, then
-  `pd_S M ≤ 1` (`Module.IsMaximalCohenMacaulay.hasProjectiveDimensionLE_restrictScalars`).
-* Conversely, if `S` is Cohen–Macaulay and `pd_S M ≤ 1`, then `M` is maximal Cohen–Macaulay over
-  `R` (`Module.isMaximalCohenMacaulay_of_hasProjectiveDimensionLE_restrictScalars`).
-* When `S` is a regular local ring and `w ≠ 0`, `S` is Cohen–Macaulay of finite global dimension,
-  so a finite `R`-module `M` is maximal Cohen–Macaulay if and only if its restriction of scalars
-  to `S` has projective dimension at most `1`
-  (`TauCeti.IsRegularLocalRing.isMaximalCohenMacaulay_quotient_iff_hasProjectiveDimensionLE`),
-  and for nonzero `M` this projective dimension equals `1`.
-
-## Main results
-
-* `Module.isCohenMacaulay_quotient_span_singleton_iff`: for an `S`-regular element `w` with local
-  quotient `S ⧸ (w)`, `S ⧸ (w)` is Cohen–Macaulay if and only if `S` is Cohen–Macaulay.
-* `Module.isMaximalCohenMacaulay_quotient_span_singleton_iff_ringKrullDim_le_depth_succ`: maximal
-  Cohen–Macaulayness over `S ⧸ (w)` in terms of depth over `S` and `ringKrullDim S`.
-* `Module.IsMaximalCohenMacaulay.hasProjectiveDimensionLE_restrictScalars` and
-  `Module.isMaximalCohenMacaulay_of_hasProjectiveDimensionLE_restrictScalars`: the two directions
-  of the Auslander–Buchsbaum comparison with `pd_S M ≤ 1`.
-* `TauCeti.IsRegularLocalRing.isMaximalCohenMacaulay_quotient_iff_hasProjectiveDimensionLE`:
-  over a local hypersurface in a regular local ring, maximal Cohen–Macaulayness of a finite module
-  is equivalent to projective dimension at most `1` over the ambient regular local ring.
-* `TauCeti.IsRegularLocalRing.projectiveDimension_restrictScalars_eq_one_of_isMaximalCohenMacaulay`:
-  a nonzero finite maximal Cohen–Macaulay module over `S ⧸ (w)` has projective dimension `1` over
-  `S`.
+For an `S`-regular element `w` in the maximal ideal of a Noetherian local ring `S` with quotient
+`R = S ⧸ (w)`, scalar restriction preserves depth, so a finite `R`-module `M` is maximal
+Cohen–Macaulay over `R` iff `dim S ≤ depth_S M + 1`
+(`Module.isMaximalCohenMacaulay_quotient_span_singleton_iff_ringKrullDim_le_depth_succ`). By
+Auslander–Buchsbaum, over a regular local ring `S` (`w ≠ 0`) this is equivalent to
+`HasProjectiveDimensionLE M_S 1`
+(`TauCeti.IsRegularLocalRing.isMaximalCohenMacaulay_quotient_iff_hasProjectiveDimensionLE`).
 
 ## References
 
-* David Eisenbud, *Homological algebra on a complete intersection, with an application to group
+* D. Eisenbud, *Homological algebra on a complete intersection, with an application to group
   representations*, Trans. Amer. Math. Soc. **260** (1980), Sections 5–6.
-* Winfried Bruns and Jürgen Herzog, *Cohen–Macaulay Rings*, Cambridge Studies in Advanced
-  Mathematics **39** (1993), Theorem 2.1.3 and Section 2.2.
+* W. Bruns and J. Herzog, *Cohen–Macaulay Rings*, Cambridge Univ. Press (1993), Sections 2.1–2.2.
 -/
 
 public section
-
 universe v u
-
 open CategoryTheory IsLocalRing
 open scoped Pointwise
 
@@ -72,8 +40,7 @@ namespace TauCeti.IsLocalRing
 
 variable {S : Type u} [CommRing S] [_root_.IsLocalRing S] {w : S}
 
-/-- The quotient of a local ring by a principal ideal contained in the maximal ideal is a local
-ring. -/
+/-- The quotient of a local ring by a principal ideal in the maximal ideal is a local ring. -/
 theorem quotient_span_singleton (hwm : w ∈ maximalIdeal S) :
     _root_.IsLocalRing (S ⧸ Ideal.span {w}) := by
   have hne : Ideal.span {w} ≠ ⊤ := fun h ↦
@@ -81,8 +48,7 @@ theorem quotient_span_singleton (hwm : w ∈ maximalIdeal S) :
   have : Nontrivial (S ⧸ Ideal.span {w}) := Ideal.Quotient.nontrivial_iff.2 hne
   exact .of_surjective' (Ideal.Quotient.mk (Ideal.span {w})) Ideal.Quotient.mk_surjective
 
-/-- If the quotient `S ⧸ (w)` of a local ring `S` is a local ring (hence nontrivial), then `w` lies
-in the maximal ideal of `S`. -/
+/-- If `S ⧸ (w)` is a local ring, then `w` lies in the maximal ideal of `S`. -/
 theorem mem_maximalIdeal_of_isLocalRing_quotient_span_singleton
     [_root_.IsLocalRing (S ⧸ Ideal.span {w})] : w ∈ maximalIdeal S :=
   le_maximalIdeal (Ideal.Quotient.nontrivial_iff.1 inferInstance) (Ideal.mem_span_singleton_self w)
@@ -97,8 +63,7 @@ variable {S : Type u} [CommRing S] [IsLocalRing S] [IsNoetherianRing S] {w : S}
   [IsLocalRing (S ⧸ Ideal.span {w})]
 
 /-- **Cohen–Macaulayness modulo a regular element.** For an `S`-regular element `w` of a Noetherian
-local ring `S` with local quotient `S ⧸ (w)`, the hypersurface ring `S ⧸ (w)` is Cohen–Macaulay if
-and only if `S` is Cohen–Macaulay. -/
+local ring `S` with local quotient `S ⧸ (w)`, `S ⧸ (w)` is Cohen–Macaulay iff `S` is. -/
 theorem isCohenMacaulay_quotient_span_singleton_iff (hw : IsSMulRegular S w) :
     IsCohenMacaulay (S ⧸ Ideal.span {w}) (S ⧸ Ideal.span {w}) ↔ IsCohenMacaulay S S := by
   have hwm : w ∈ maximalIdeal S :=
@@ -118,9 +83,27 @@ theorem IsCohenMacaulay.quotient_span_singleton (hS : IsCohenMacaulay S S)
 
 variable [Small.{v} S]
 
+private theorem depth_restrictScalars_quotient (M : ModuleCat.{v} (S ⧸ Ideal.span {w}))
+    [Module.Finite (S ⧸ Ideal.span {w}) M] :
+    depth ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) =
+      depth (ModuleCat.of (S ⧸ Ideal.span {w}) M) := by
+  let _ : Module S M := Module.compHom M (Ideal.Quotient.mk (Ideal.span {w}))
+  have _ : IsScalarTower S (S ⧸ Ideal.span {w}) M := .of_algebraMap_smul fun _ _ ↦ rfl
+  exact depth_eq_depth_of_surjective Ideal.Quotient.mk_surjective
+
+omit [IsLocalRing S] [IsNoetherianRing S] [IsLocalRing (S ⧸ Ideal.span {w})] [Small.{v} S] in
+private theorem exists_projectiveDimension_eq_natCast {N : ModuleCat.{v} S} [Nontrivial N]
+    (hpd : projectiveDimension N ≠ ⊤) : ∃ p : ℕ, projectiveDimension N = p := by
+  have hbot : projectiveDimension N ≠ ⊥ := fun h ↦
+    not_subsingleton N (ModuleCat.subsingleton_of_isZero ((projectiveDimension_eq_bot_iff N).1 h))
+  obtain ⟨p₀, hp₀⟩ := WithBot.ne_bot_iff_exists.1 hbot
+  obtain ⟨p, rfl⟩ := (ENat.ne_top_iff_exists (n := p₀)).1 fun h ↦
+    hpd (hp₀.symm.trans (by rw [h, WithBot.coe_top]))
+  exact ⟨p, hp₀.symm⟩
+
 /-- Over a Noetherian local ring `S` and an `S`-regular element `w` with local quotient
-`R = S ⧸ (w)`, a finite `R`-module `M` is maximal Cohen–Macaulay over `R` if and only if its
-restriction of scalars `M_S` satisfies `ringKrullDim S ≤ depth M_S + 1`. -/
+`R = S ⧸ (w)`, a finite `R`-module `M` is maximal Cohen–Macaulay over `R` iff
+`ringKrullDim S ≤ depth_S M + 1`. -/
 theorem isMaximalCohenMacaulay_quotient_span_singleton_iff_ringKrullDim_le_depth_succ
     (hw : IsSMulRegular S w) (M : ModuleCat.{v} (S ⧸ Ideal.span {w}))
     [Module.Finite (S ⧸ Ideal.span {w}) M] :
@@ -132,49 +115,31 @@ theorem isMaximalCohenMacaulay_quotient_span_singleton_iff_ringKrullDim_le_depth
     isNoetherianRing_of_surjective S _ _ Ideal.Quotient.mk_surjective
   have hwm : w ∈ maximalIdeal S :=
     TauCeti.IsLocalRing.mem_maximalIdeal_of_isLocalRing_quotient_span_singleton
-  have hdim : ringKrullDim (S ⧸ Ideal.span {w}) + 1 = ringKrullDim S :=
-    ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim hw hwm
-  let _ : Module S M := Module.compHom M (Ideal.Quotient.mk (Ideal.span {w}))
-  have _ : IsScalarTower S (S ⧸ Ideal.span {w}) M := .of_algebraMap_smul fun _ _ ↦ rfl
-  have hdepth : depth ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) =
-      depth (ModuleCat.of (S ⧸ Ideal.span {w}) M) :=
-    depth_eq_depth_of_surjective Ideal.Quotient.mk_surjective
-  rw [isMaximalCohenMacaulay_iff_ringKrullDim_le_depth, ← hdim, hdepth]
-  -- Both `ringKrullDim (S ⧸ (w))` and `1` are non-top in `WithBot ℕ∞`; cancel `+ 1`.
+  rw [isMaximalCohenMacaulay_iff_ringKrullDim_le_depth,
+    ← ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim hw hwm,
+    depth_restrictScalars_quotient]
   refine ⟨fun h ↦ by gcongr, fun h ↦ ?_⟩
-  obtain ⟨d, hd⟩ : ∃ d : ℕ, ringKrullDim (S ⧸ Ideal.span {w}) = d := by
-    obtain ⟨d, hd⟩ := exists_supportDim_eq_natCast
-      (R := S ⧸ Ideal.span {w}) (M := S ⧸ Ideal.span {w})
-    exact ⟨d, (supportDim_self_eq_ringKrullDim (R := S ⧸ Ideal.span {w})).symm.trans hd⟩
-  rw [hd] at h ⊢
+  obtain ⟨d, hd⟩ := exists_supportDim_eq_natCast
+    (R := S ⧸ Ideal.span {w}) (M := S ⧸ Ideal.span {w})
+  rw [← supportDim_self_eq_ringKrullDim, hd] at h ⊢
   induction hdep : depth (ModuleCat.of (S ⧸ Ideal.span {w}) M) using ENat.recTopCoe with
   | top => exact le_top
   | coe k =>
     rw [hdep] at h
-    exact_mod_cast (by exact_mod_cast h : d + 1 ≤ k + 1) |> Nat.le_of_succ_le_succ
+    exact_mod_cast Nat.le_of_succ_le_succ (by exact_mod_cast h : d + 1 ≤ k + 1)
 
-/-- For a nonzero finite maximal Cohen–Macaulay module `M` over `S ⧸ (w)`, the depth of `M` over
-`S` satisfies `depth_S M + 1 = ringKrullDim S`. -/
+/-- For a nonzero finite maximal Cohen–Macaulay module `M` over `S ⧸ (w)`,
+`depth_S M + 1 = ringKrullDim S`. -/
 theorem IsMaximalCohenMacaulay.depth_restrictScalars_add_one_eq_ringKrullDim
     (hw : IsSMulRegular S w) {M : ModuleCat.{v} (S ⧸ Ideal.span {w})}
     [Module.Finite (S ⧸ Ideal.span {w}) M] [Nontrivial M]
     (hM : IsMaximalCohenMacaulay (S ⧸ Ideal.span {w}) M) :
     (depth ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) :
       WithBot ℕ∞) + 1 = ringKrullDim S := by
-  have : IsNoetherianRing (S ⧸ Ideal.span {w}) :=
-    isNoetherianRing_of_surjective S _ _ Ideal.Quotient.mk_surjective
-  have hwm : w ∈ maximalIdeal S :=
+  rw [depth_restrictScalars_quotient, hM.depth_eq]
+  exact ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim hw
     TauCeti.IsLocalRing.mem_maximalIdeal_of_isLocalRing_quotient_span_singleton
-  let _ : Module S M := Module.compHom M (Ideal.Quotient.mk (Ideal.span {w}))
-  have _ : IsScalarTower S (S ⧸ Ideal.span {w}) M := .of_algebraMap_smul fun _ _ ↦ rfl
-  have hdepth : depth ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) =
-      depth (ModuleCat.of (S ⧸ Ideal.span {w}) M) :=
-    depth_eq_depth_of_surjective Ideal.Quotient.mk_surjective
-  rw [hdepth, hM.depth_eq]
-  exact ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim hw hwm
 
-/-- The `S`-depth of a nonzero finite maximal Cohen–Macaulay `S ⧸ (w)`-module over a Noetherian
-local ring is a natural number (equal to `ringKrullDim (S ⧸ (w))`). -/
 private theorem IsMaximalCohenMacaulay.exists_depth_restrictScalars_eq_natCast
     {M : ModuleCat.{v} (S ⧸ Ideal.span {w})} [Module.Finite (S ⧸ Ideal.span {w}) M] [Nontrivial M]
     (hM : IsMaximalCohenMacaulay (S ⧸ Ideal.span {w}) M) :
@@ -184,18 +149,12 @@ private theorem IsMaximalCohenMacaulay.exists_depth_restrictScalars_eq_natCast
     isNoetherianRing_of_surjective S _ _ Ideal.Quotient.mk_surjective
   obtain ⟨k, hk⟩ := exists_supportDim_eq_natCast
     (R := S ⧸ Ideal.span {w}) (M := S ⧸ Ideal.span {w})
-  let _ : Module S M := Module.compHom M (Ideal.Quotient.mk (Ideal.span {w}))
-  have _ : IsScalarTower S (S ⧸ Ideal.span {w}) M := .of_algebraMap_smul fun _ _ ↦ rfl
-  refine ⟨k, ?_⟩
-  rw [show depth ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) =
-      depth (ModuleCat.of (S ⧸ Ideal.span {w}) M) from
-    depth_eq_depth_of_surjective Ideal.Quotient.mk_surjective, hM.depth_eq,
-    ← supportDim_self_eq_ringKrullDim, hk]
+  exact ⟨k, by rw [depth_restrictScalars_quotient, hM.depth_eq,
+    ← supportDim_self_eq_ringKrullDim, hk]⟩
 
-/-- **Auslander–Buchsbaum bound for maximal Cohen–Macaulay hypersurface modules.** Let `w` be an
-`S`-regular element of a Noetherian local ring `S` with local quotient `S ⧸ (w)`. If a finite
-`S ⧸ (w)`-module `M` is maximal Cohen–Macaulay and has finite projective dimension over `S`, then
-its projective dimension over `S` is at most `1`. -/
+/-- **Auslander–Buchsbaum bound for maximal Cohen–Macaulay hypersurface modules.** If a finite
+maximal Cohen–Macaulay `S ⧸ (w)`-module `M` has finite projective dimension over `S`, then
+`pd_S M ≤ 1`. -/
 theorem IsMaximalCohenMacaulay.hasProjectiveDimensionLE_restrictScalars
     (hw : IsSMulRegular S w) {M : ModuleCat.{v} (S ⧸ Ideal.span {w})}
     [Module.Finite (S ⧸ Ideal.span {w}) M]
@@ -207,40 +166,25 @@ theorem IsMaximalCohenMacaulay.hasProjectiveDimensionLE_restrictScalars
   let M' := (ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M
   cases subsingleton_or_nontrivial M
   · have : Subsingleton M' := ‹Subsingleton M›
-    have hproj : CategoryTheory.Projective M' := (ModuleCat.isZero_of_subsingleton M').projective
-    have : HasProjectiveDimensionLE M' 0 :=
-      (projective_iff_hasProjectiveDimensionLE_zero M').1 hproj
+    have : HasProjectiveDimensionLE M' 0 := (projective_iff_hasProjectiveDimensionLE_zero M').1
+      (ModuleCat.isZero_of_subsingleton M').projective
     exact hasProjectiveDimensionLT_of_ge M' 1 2 (by omega)
-  · have : Module.Finite S M' :=
-      ((Ideal.Quotient.mk (Ideal.span {w})).finite_restrictScalars_iff
-        Ideal.Quotient.mk_surjective M).2 ‹_›
+  · have : Module.Finite S M' := ((Ideal.Quotient.mk (Ideal.span {w})).finite_restrictScalars_iff
+      Ideal.Quotient.mk_surjective M).2 ‹_›
     have : Nontrivial M' := ‹Nontrivial M›
-    have hab := ModuleCat.projectiveDimension_add_depth_eq_depth M' hpd
-    have hle : (depth (ModuleCat.of S S) : WithBot ℕ∞) ≤ ringKrullDim S :=
-      depth_le_supportDim.trans (by rw [supportDim_self_eq_ringKrullDim])
-    have hdimM : (depth M' : WithBot ℕ∞) + 1 = ringKrullDim S :=
-      hM.depth_restrictScalars_add_one_eq_ringKrullDim hw
-    have hsum : projectiveDimension M' + (depth M' : WithBot ℕ∞) ≤
-        (depth M' : WithBot ℕ∞) + 1 :=
-      hab.le.trans (hle.trans hdimM.symm.le)
-    -- Since `depth M = ringKrullDim (S ⧸ (w))` is a natural number, cancel `depth M'`.
+    have hsum : projectiveDimension M' + (depth M' : WithBot ℕ∞) ≤ (depth M' : WithBot ℕ∞) + 1 :=
+      (ModuleCat.projectiveDimension_add_depth_eq_depth M' hpd).le.trans <|
+        (depth_le_supportDim.trans (supportDim_self_eq_ringKrullDim (R := S)).le).trans
+          (hM.depth_restrictScalars_add_one_eq_ringKrullDim hw).symm.le
     obtain ⟨k, hk⟩ := hM.exists_depth_restrictScalars_eq_natCast
-    have hbot : projectiveDimension M' ≠ ⊥ := by
-      rw [ne_eq, projectiveDimension_eq_bot_iff]
-      exact fun h ↦ not_subsingleton M' (ModuleCat.subsingleton_of_isZero h)
-    obtain ⟨p0, hp0⟩ := WithBot.ne_bot_iff_exists.1 hbot
-    have hp0_top : p0 ≠ ⊤ := fun h ↦ hpd (hp0.symm.trans (by rw [h, WithBot.coe_top]))
-    obtain ⟨p, rfl⟩ := ENat.ne_top_iff_exists.1 hp0_top
-    have hp : p ≤ 1 := by
-      rw [← hp0, hk] at hsum
-      have hnat : p + k ≤ k + 1 := by exact_mod_cast hsum
-      omega
-    exact (projectiveDimension_le_iff M' 1).1 (by rw [← hp0]; exact_mod_cast hp)
+    obtain ⟨p, hp⟩ := exists_projectiveDimension_eq_natCast hpd
+    rw [hp, hk] at hsum
+    have hnat : p + k ≤ k + 1 := by exact_mod_cast hsum
+    exact (projectiveDimension_le_iff M' 1).1 (hp ▸ by exact_mod_cast (by omega : p ≤ 1))
 
 /-- **Maximal Cohen–Macaulayness from projective dimension at most one.** Over a Noetherian
-Cohen–Macaulay local ring `S` and an `S`-regular element `w` with local quotient `S ⧸ (w)`, every
-finite `S ⧸ (w)`-module of projective dimension at most `1` over `S` is maximal Cohen–Macaulay
-over `S ⧸ (w)`. -/
+Cohen–Macaulay local ring `S`, every finite `S ⧸ (w)`-module with `pd_S M ≤ 1` is maximal
+Cohen–Macaulay over `S ⧸ (w)`. -/
 theorem isMaximalCohenMacaulay_of_hasProjectiveDimensionLE_restrictScalars
     (hS : IsCohenMacaulay S S) (hw : IsSMulRegular S w)
     (M : ModuleCat.{v} (S ⧸ Ideal.span {w})) [Module.Finite (S ⧸ Ideal.span {w}) M]
@@ -250,16 +194,13 @@ theorem isMaximalCohenMacaulay_of_hasProjectiveDimensionLE_restrictScalars
   let M' := (ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M
   cases subsingleton_or_nontrivial M
   · exact isMaximalCohenMacaulay_of_subsingleton
-  · have : Module.Finite S M' :=
-      ((Ideal.Quotient.mk (Ideal.span {w})).finite_restrictScalars_iff
-        Ideal.Quotient.mk_surjective M).2 ‹_›
+  · have : Module.Finite S M' := ((Ideal.Quotient.mk (Ideal.span {w})).finite_restrictScalars_iff
+      Ideal.Quotient.mk_surjective M).2 ‹_›
     have : Nontrivial M' := ‹Nontrivial M›
     have hpd_le : projectiveDimension M' ≤ 1 := by
       simpa only [Nat.cast_one] using (projectiveDimension_le_iff M' 1).2 inferInstance
-    have hpd_top : projectiveDimension M' ≠ ⊤ :=
-      (lt_of_le_of_lt ((projectiveDimension_le_iff M' 1).2 inferInstance)
-        (WithBot.coe_lt_coe.2 (ENat.natCast_lt_top 1))).ne
-    have hab := ModuleCat.projectiveDimension_add_depth_eq_depth M' hpd_top
+    have hab := ModuleCat.projectiveDimension_add_depth_eq_depth M'
+      (hpd_le.trans_lt (WithBot.coe_lt_coe.2 (ENat.natCast_lt_top 1))).ne
     rw [hS.depth_eq, supportDim_self_eq_ringKrullDim] at hab
     rw [isMaximalCohenMacaulay_quotient_span_singleton_iff_ringKrullDim_le_depth_succ hw, ← hab,
       add_comm]
@@ -285,8 +226,7 @@ variable [Small.{v} S]
 
 /-- **Homological characterization of maximal Cohen–Macaulay modules on a hypersurface.** Over a
 local hypersurface `S ⧸ (w)` (`w ≠ 0`) in a regular local ring `S`, a finite `S ⧸ (w)`-module `M`
-is maximal Cohen–Macaulay if and only if its restriction of scalars to `S` has projective
-dimension at most `1`. -/
+is maximal Cohen–Macaulay iff `HasProjectiveDimensionLE M_S 1`. -/
 theorem isMaximalCohenMacaulay_quotient_iff_hasProjectiveDimensionLE
     (hw : w ≠ 0) (M : ModuleCat.{v} (S ⧸ Ideal.span {w}))
     [Module.Finite (S ⧸ Ideal.span {w}) M] :
@@ -299,14 +239,12 @@ theorem isMaximalCohenMacaulay_quotient_iff_hasProjectiveDimensionLE
   refine ⟨fun hM ↦ hM.hasProjectiveDimensionLE_restrictScalars hreg ?_,
     fun _ ↦ Module.isMaximalCohenMacaulay_of_hasProjectiveDimensionLE_restrictScalars
       isCohenMacaulay hreg M⟩
-  have : HasProjectiveDimensionLE M' (maximalIdeal S).spanFinrank :=
-    hasProjectiveDimensionLE (_root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := S)).ge M'
-  have hle : projectiveDimension M' ≤ (maximalIdeal S).spanFinrank :=
-    (projectiveDimension_le_iff M' _).2 this
-  exact (lt_of_le_of_lt hle (WithBot.coe_lt_coe.2 (ENat.natCast_lt_top _))).ne
+  have hle := (projectiveDimension_le_iff M' (maximalIdeal S).spanFinrank).2
+    (hasProjectiveDimensionLE (_root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := S)).ge M')
+  exact (hle.trans_lt (WithBot.coe_lt_coe.2 (ENat.natCast_lt_top _))).ne
 
 /-- A nonzero finite maximal Cohen–Macaulay module over a local hypersurface `S ⧸ (w)` (`w ≠ 0`)
-in a regular local ring `S` has projective dimension exactly `1` over `S`. -/
+in a regular local ring `S` has projective dimension `1` over `S`. -/
 theorem projectiveDimension_restrictScalars_eq_one_of_isMaximalCohenMacaulay
     (hw : w ≠ 0) {M : ModuleCat.{v} (S ⧸ Ideal.span {w})}
     [Module.Finite (S ⧸ Ideal.span {w}) M] [Nontrivial M]
@@ -314,33 +252,22 @@ theorem projectiveDimension_restrictScalars_eq_one_of_isMaximalCohenMacaulay
     projectiveDimension
       ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) = 1 := by
   have := isDomain (R := S)
-  have hreg : IsSMulRegular S w := .of_ne_zero hw
   let M' := (ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M
-  have : Module.Finite S M' :=
-    ((Ideal.Quotient.mk (Ideal.span {w})).finite_restrictScalars_iff
-      Ideal.Quotient.mk_surjective M).2 ‹_›
+  have : Module.Finite S M' := ((Ideal.Quotient.mk (Ideal.span {w})).finite_restrictScalars_iff
+    Ideal.Quotient.mk_surjective M).2 ‹_›
   have : Nontrivial M' := ‹Nontrivial M›
-  have : HasProjectiveDimensionLE M' 1 :=
-    (isMaximalCohenMacaulay_quotient_iff_hasProjectiveDimensionLE hw M).1 hM
+  have hle := (projectiveDimension_le_iff M' 1).2
+    ((isMaximalCohenMacaulay_quotient_iff_hasProjectiveDimensionLE hw M).1 hM)
   have hpd_top : projectiveDimension M' ≠ ⊤ :=
-    (lt_of_le_of_lt ((projectiveDimension_le_iff M' 1).2 this)
-      (WithBot.coe_lt_coe.2 (ENat.natCast_lt_top 1))).ne
+    (hle.trans_lt (WithBot.coe_lt_coe.2 (ENat.natCast_lt_top 1))).ne
   have hab := ModuleCat.projectiveDimension_add_depth_eq_depth M' hpd_top
-  have hdimM : (depth M' : WithBot ℕ∞) + 1 = ringKrullDim S :=
-    hM.depth_restrictScalars_add_one_eq_ringKrullDim hreg
-  rw [depth_eq_ringKrullDim, ← hdimM, add_comm] at hab
-  -- Cancel `depth M'` in `WithBot ℕ∞` by lifting `depth M'` to `ℕ`.
+  rw [depth_eq_ringKrullDim, ← hM.depth_restrictScalars_add_one_eq_ringKrullDim (.of_ne_zero hw),
+    add_comm] at hab
   obtain ⟨k, hdep⟩ := hM.exists_depth_restrictScalars_eq_natCast
-  have hbot : projectiveDimension M' ≠ ⊥ := by
-    rw [ne_eq, projectiveDimension_eq_bot_iff]
-    exact fun h ↦ not_subsingleton M' (ModuleCat.subsingleton_of_isZero h)
-  obtain ⟨p0, hp0⟩ := WithBot.ne_bot_iff_exists.1 hbot
-  have hp0_top : p0 ≠ ⊤ := fun h ↦ hpd_top (hp0.symm.trans (by rw [h, WithBot.coe_top]))
-  obtain ⟨p, rfl⟩ := ENat.ne_top_iff_exists.1 hp0_top
+  obtain ⟨p, hp⟩ := Module.exists_projectiveDimension_eq_natCast hpd_top
   change projectiveDimension M' = 1
-  rw [← hp0, hdep] at hab
-  rw [← hp0]
+  rw [hp, hdep] at hab
   have hnat : k + p = k + 1 := by exact_mod_cast hab
-  exact_mod_cast (by omega : p = 1)
+  exact hp.trans (by exact_mod_cast (by omega : p = 1))
 
 end TauCeti.IsRegularLocalRing
