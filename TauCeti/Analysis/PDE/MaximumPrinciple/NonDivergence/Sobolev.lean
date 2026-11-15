@@ -25,7 +25,9 @@ Hessians close to `D²u` in `Lᵖ(K)`
 coefficients, `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv ≤ f + N ‖D²v - D²u‖` almost everywhere, where `N` depends only on the
 dimension and a bound for the entries of the coefficients. So `v` is a classical supersolution
 with a right-hand side whose positive part is at most `‖f⁺‖_{Lᵖ} + η` in `Lᵖ`. No regularity or
-measurability of the coefficients is needed.
+measurability of the coefficients is needed. In the same way, a strong solution of
+`|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` is approximated by smooth `v` with `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv| ≤ g` and
+`‖g‖_{Lᵖ} ≤ ‖f‖_{Lᵖ} + η`, so that two-sided estimates for classical solutions pass to strong ones.
 
 Shifting `v` up by `ζ` and dividing by `1 + 3 ζ` absorbs the error `η` in the right-hand side: the
 result `w` lies between `ū / (1 + 3 ζ)` and `(ū + 2 ζ) / (1 + 3 ζ)` on `K`, and its right-hand side
@@ -37,6 +39,8 @@ the form in which the Krylov–Safonov estimates consume supersolutions.
 * `TauCeti.PDE.exists_contDiff_abs_sub_le_and_sum_mul_fderiv_fderiv_le_of_wkp`: a strong
   supersolution is uniformly approximated by smooth classical supersolutions whose right-hand
   sides have nearly the same `Lᵖ` norm of the positive part.
+* `TauCeti.PDE.exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_le_of_wkp`: the same for
+  strong solutions of `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f`, with a two-sided bound on the principal part.
 * `TauCeti.PDE.exists_contDiff_div_le_and_sum_mul_fderiv_fderiv_le_of_wkp`: the rescaled
   approximations, classical supersolutions whose right-hand sides obey a given `Lᵖ` bound for
   `f⁺`.
@@ -61,6 +65,66 @@ namespace PDE
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
+/-- **Approximation of a strong solution, with the error in the principal part.** Let
+`u ∈ W^{2,p}(Ω)`, `p < ∞`, have a representative `ū` continuous on `Ω`, let `K ⊆ Ω` be compact and
+`S ⊆ K`, with coefficient entries bounded by `Λ` almost everywhere on `S`. For every `η > 0` there
+are a smooth function `v` with `|v - ū| ≤ η` on `K` and a nonnegative function `e` with
+`‖e‖_{Lᵖ(S)} ≤ η` bounding `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv - ∑ᵢⱼ aⁱʲ (D²u)ᵢⱼ|` almost everywhere on `S`. -/
+private theorem exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_sub_le_of_wkp
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞) {Ω : Opens (EuclideanSpace ℝ ι)}
+    (u : Wkp volume Ω p 2) {ū : EuclideanSpace ℝ ι → ℝ} (hcont : ContinuousOn ū Ω)
+    (hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω] ū)
+    {K S : Set (EuclideanSpace ℝ ι)} (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hSK : S ⊆ K)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {Λ : ℝ}
+    (ha : ∀ᵐ x ∂volume.restrict S, ∀ i j, |a x i j| ≤ Λ) {η : ℝ} (hη : 0 < η) :
+    ∃ v e : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ (⊤ : ℕ∞) v ∧ (∀ y ∈ K, |v y - ū y| ≤ η) ∧
+      (∀ x, 0 ≤ e x) ∧ eLpNorm e p (volume.restrict S) ≤ ENNReal.ofReal η ∧
+      ∀ᵐ x ∂volume.restrict S, |∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ v) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) -
+          ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i| ≤ e x := by
+  -- `N` bounds the contraction with `a` of an endomorphism of norm one.
+  set N : ℝ := (Fintype.card ι : ℝ) ^ 2 * max Λ 0 + 1
+  have hN : 0 < N := by positivity
+  have hN1 : 1 ≤ N := le_add_of_nonneg_left (by positivity)
+  obtain ⟨v, hv, hvK, hvH⟩ := Wkp.exists_contDiff_abs_sub_le_and_eLpNorm_fderiv_gradient_sub_le hp
+    u hcont hū hK hKΩ (div_pos hη hN)
+  set D : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι :=
+    fun x ↦ fderiv ℝ (∇ v) x - Wkp.iteratedGradient 1 u x
+  have hD : AEStronglyMeasurable D (volume.restrict S) :=
+    (measurable_fderiv ℝ (∇ v)).aestronglyMeasurable.sub ((Lp.aestronglyMeasurable _).mono_measure
+      (Measure.restrict_mono (hSK.trans hKΩ) le_rfl))
+  refine ⟨v, fun x ↦ N * ‖D x‖, hv, fun y hy ↦ (hvK y hy).trans (div_le_self hη.le hN1),
+    fun x ↦ by positivity, ?_, ?_⟩
+  · calc eLpNorm (fun x ↦ N * ‖D x‖) p (volume.restrict S)
+        = ENNReal.ofReal N * eLpNorm (fun x ↦ ‖D x‖) p (volume.restrict S) := by
+          rw [show (fun x ↦ N * ‖D x‖) = N • fun x ↦ ‖D x‖ by ext; simp, eLpNorm_const_smul,
+            Real.eNorm_eq_ofReal hN.le]
+      _ ≤ ENNReal.ofReal N * ENNReal.ofReal (η / N) := by
+          rw [eLpNorm_norm _ hD]
+          gcongr
+          exact (eLpNorm_mono_measure _ (Measure.restrict_mono hSK le_rfl)).trans hvH
+      _ = ENNReal.ofReal η := by rw [← ENNReal.ofReal_mul hN.le, mul_div_cancel₀ _ hN.ne']
+  -- Off a null set of `S`, the principal parts of `v` and `u` differ by at most `N ‖D‖`.
+  filter_upwards [ha] with x hax
+  -- The principal part of `v` is the contraction of `fderiv (∇ v) x = D²u(x) + D x` with `a x`.
+  have hLx : ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ v) x
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
+        ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i +
+          ∑ i, ∑ j, a x i j * D x (EuclideanSpace.single j 1) i := by
+    simp only [D, ← Finset.sum_add_distrib, ← mul_add]
+    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [← hessianOperator_single_apply ((contDiff_infty.1 hv 2).contDiffAt), ← fderiv_gradient]
+    simp
+  rw [hLx, add_sub_cancel_left]
+  refine (Matrix.abs_sum_sum_mul_apply_single_le _ _).trans ?_
+  refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
+  calc ∑ i, ∑ j, |a x i j| ≤ ∑ _i : ι, ∑ _j : ι, max Λ 0 :=
+        Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ (hax i j).trans
+          (le_max_left _ _)
+    _ ≤ N := by
+        simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+        nlinarith [le_max_right Λ 0]
+
 /-- **Approximation of a strong supersolution by classical ones.** Let `u ∈ W^{2,p}(Ω)`, `p < ∞`,
 have a representative `ū` continuous on `Ω`, let `K ⊆ Ω` be compact and `S ⊆ K`, and suppose that
 `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` almost everywhere on `S` for the weak Hessian, with coefficient entries
@@ -83,65 +147,62 @@ theorem exists_contDiff_abs_sub_le_and_sum_mul_fderiv_fderiv_le_of_wkp {p : ℝ�
         (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ g x) ∧
       eLpNorm (fun x ↦ (g x)⁺) p (volume.restrict S) ≤
         eLpNorm (fun x ↦ (f x)⁺) p (volume.restrict S) + ENNReal.ofReal η := by
-  -- `N` bounds the contraction with `a` of an endomorphism of norm one.
-  set N : ℝ := (Fintype.card ι : ℝ) ^ 2 * max Λ 0 + 1
-  have hN : 0 < N := by positivity
-  have hN1 : 1 ≤ N := le_add_of_nonneg_left (by positivity)
-  obtain ⟨v, hv, hvK, hvH⟩ := Wkp.exists_contDiff_abs_sub_le_and_eLpNorm_fderiv_gradient_sub_le hp
-    u hcont hū hK hKΩ (div_pos hη hN)
-  set D : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι :=
-    fun x ↦ fderiv ℝ (∇ v) x - Wkp.iteratedGradient 1 u x
+  obtain ⟨v, e, hv, hvK, he0, he, hLe⟩ :=
+    exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_sub_le_of_wkp hp u hcont hū hK hKΩ
+      hSK ha hη
   set L : EuclideanSpace ℝ ι → ℝ := fun x ↦ ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ v) x
     (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
-  -- Off a null set of `S`, the principal part of `v` exceeds that of `u` by at most `N ‖D‖`.
-  have hL : ∀ᵐ x ∂volume.restrict S, L x ≤ (f x)⁺ + N * ‖D x‖ := by
-    filter_upwards [hf, ha] with x hfx hax
-    -- `L x` is the contraction of `fderiv (∇ v) x = D²u(x) + D x` with `a x`.
-    have hLx : L x =
-        ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i +
-          ∑ i, ∑ j, a x i j * D x (EuclideanSpace.single j 1) i := by
-      simp only [L, D, ← Finset.sum_add_distrib, ← mul_add]
-      refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-      rw [← hessianOperator_single_apply ((contDiff_infty.1 hv 2).contDiffAt), ← fderiv_gradient]
-      simp
-    have hD : ∑ i, ∑ j, a x i j * D x (EuclideanSpace.single j 1) i ≤ N * ‖D x‖ := by
-      refine (le_abs_self _).trans ((Matrix.abs_sum_sum_mul_apply_single_le _ _).trans ?_)
-      refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
-      calc ∑ i, ∑ j, |a x i j| ≤ ∑ _i : ι, ∑ _j : ι, max Λ 0 :=
-            Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ (hax i j).trans
-              (le_max_left _ _)
-        _ ≤ N := by
-            simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-            nlinarith [le_max_right Λ 0]
-    rw [hLx]
-    exact add_le_add (hfx.trans (le_max_left _ _)) hD
-  refine ⟨v, fun x ↦ max (L x) ((f x)⁺ + N * ‖D x‖), hv,
-    fun y hy ↦ (hvK y hy).trans (div_le_self hη.le hN1), fun x _ ↦ le_max_left _ _, ?_⟩
+  refine ⟨v, fun x ↦ max (L x) ((f x)⁺ + e x), hv, hvK, fun x _ ↦ le_max_left _ _, ?_⟩
   -- Almost everywhere on `S` the maximum is its nonnegative second argument.
-  have hae : (fun x ↦ (max (L x) ((f x)⁺ + N * ‖D x‖))⁺) =ᵐ[volume.restrict S]
-      (fun x ↦ (f x)⁺) + N • fun x ↦ ‖D x‖ := by
-    filter_upwards [hL] with x hx
-    rw [max_eq_right hx, posPart_eq_self.2 (by positivity)]
-    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-  have hD : AEStronglyMeasurable D (volume.restrict S) :=
-    (measurable_fderiv ℝ (∇ v)).aestronglyMeasurable.sub ((Lp.aestronglyMeasurable _).mono_measure
-      (Measure.restrict_mono (hSK.trans hKΩ) le_rfl))
-  have hDK : eLpNorm (fun x ↦ ‖D x‖) p (volume.restrict S) ≤ ENNReal.ofReal (η / N) := by
-    rw [eLpNorm_norm _ hD]
-    exact (eLpNorm_mono_measure _ (Measure.restrict_mono hSK le_rfl)).trans hvH
-  calc _ = eLpNorm ((fun x ↦ (f x)⁺) + N • fun x ↦ ‖D x‖) p (volume.restrict S) :=
-        eLpNorm_congr_ae hae
-    _ ≤ eLpNorm (fun x ↦ (f x)⁺) p (volume.restrict S) +
-          ‖N‖ₑ * eLpNorm (fun x ↦ ‖D x‖) p (volume.restrict S) := by
-        rw [← eLpNorm_const_smul]
-        exact eLpNorm_add_le Fact.out
-    _ ≤ eLpNorm (fun x ↦ (f x)⁺) p (volume.restrict S) +
-          ENNReal.ofReal N * ENNReal.ofReal (η / N) := by
-        rw [Real.eNorm_eq_ofReal hN.le]
-        gcongr
-    _ = eLpNorm (fun x ↦ (f x)⁺) p (volume.restrict S) + ENNReal.ofReal η := by
-        rw [← ENNReal.ofReal_mul hN.le, mul_div_cancel₀ _ hN.ne']
+  have hae : (fun x ↦ (max (L x) ((f x)⁺ + e x))⁺) =ᵐ[volume.restrict S]
+      (fun x ↦ (f x)⁺) + e := by
+    filter_upwards [hf, hLe] with x hfx hx
+    have hle : L x ≤ (f x)⁺ + e x := by linarith [(abs_le.1 hx).2, le_posPart (f x)]
+    rw [max_eq_right hle, posPart_eq_self.2 (add_nonneg (posPart_nonneg _) (he0 x))]
+    simp only [Pi.add_apply]
+  calc _ = eLpNorm ((fun x ↦ (f x)⁺) + e) p (volume.restrict S) := eLpNorm_congr_ae hae
+    _ ≤ eLpNorm (fun x ↦ (f x)⁺) p (volume.restrict S) + eLpNorm e p (volume.restrict S) :=
+        eLpNorm_add_le Fact.out
+    _ ≤ _ := by gcongr
 
+/-- **Approximation of a strong solution by classical ones.** Let `u ∈ W^{2,p}(Ω)`, `p < ∞`, have a
+representative `ū` continuous on `Ω`, let `K ⊆ Ω` be compact and `S ⊆ K`, and suppose that
+`|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` almost everywhere on `S` for the weak Hessian, with `f ∈ Lᵖ(S)` and
+coefficient entries bounded by `Λ` almost everywhere on `S`. For every `η > 0` there are a smooth
+function `v` with `|v - ū| ≤ η` on `K` and a function `g ∈ Lᵖ(S)` with `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv| ≤ g` at
+every point of `S` and `‖g‖_{Lᵖ(S)} ≤ ‖f‖_{Lᵖ(S)} + η`. The coefficients need not be measurable. -/
+theorem exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_le_of_wkp {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] (hp : p ≠ ∞) {Ω : Opens (EuclideanSpace ℝ ι)} (u : Wkp volume Ω p 2)
+    {ū : EuclideanSpace ℝ ι → ℝ} (hcont : ContinuousOn ū Ω)
+    (hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω] ū)
+    {K S : Set (EuclideanSpace ℝ ι)} (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hSK : S ⊆ K)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {Λ : ℝ}
+    (ha : ∀ᵐ x ∂volume.restrict S, ∀ i j, |a x i j| ≤ Λ)
+    {f : EuclideanSpace ℝ ι → ℝ} (hfp : MemLp f p (volume.restrict S))
+    (hf : ∀ᵐ x ∂volume.restrict S,
+      |∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i| ≤ f x)
+    {η : ℝ} (hη : 0 < η) :
+    ∃ v g : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ (⊤ : ℕ∞) v ∧ (∀ y ∈ K, |v y - ū y| ≤ η) ∧
+      (∀ x ∈ S, |∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ v) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ g x) ∧
+      MemLp g p (volume.restrict S) ∧
+      eLpNorm g p (volume.restrict S) ≤ eLpNorm f p (volume.restrict S) + ENNReal.ofReal η := by
+  obtain ⟨v, e, hv, hvK, -, he, hLe⟩ :=
+    exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_sub_le_of_wkp hp u hcont hū hK hKΩ
+      hSK ha hη
+  set L : EuclideanSpace ℝ ι → ℝ := fun x ↦ ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ v) x
+    (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
+  -- Almost everywhere on `S` the maximum is its second argument.
+  have hae : (fun x ↦ max |L x| (f x + e x)) =ᵐ[volume.restrict S] f + e := by
+    filter_upwards [hf, hLe] with x hfx hx
+    have h := abs_sub_abs_le_abs_sub (L x)
+      (∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i)
+    rw [max_eq_right (by linarith)]
+    simp only [Pi.add_apply]
+  refine ⟨v, fun x ↦ max |L x| (f x + e x), hv, hvK, fun x _ ↦ le_max_left _ _,
+    (hfp.add (memLp_iff.2 (he.trans_lt ENNReal.ofReal_lt_top))).ae_eq hae.symm, ?_⟩
+  rw [eLpNorm_congr_ae hae]
+  exact (eLpNorm_add_le Fact.out).trans (by gcongr)
 
 /-- **Rescaled approximation of a strong supersolution.** Let `u ∈ W^{2,p}(Ω)`, `p < ∞`, have a
 representative `ū` continuous on `Ω`, let `K ⊆ Ω` be compact and `S ⊆ K`, and suppose that
