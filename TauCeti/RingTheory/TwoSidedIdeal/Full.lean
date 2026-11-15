@@ -5,20 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.TwoSidedIdeal.Span
+public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 import Mathlib.Algebra.BigOperators.Pi
 
 /-!
 # Sets generating the unit two-sided ideal
 
-A subset `s` of a ring generates the unit two-sided ideal, `TwoSidedIdeal.span s = ⊤`, exactly when
-`1` is a finite sum of products `a * x * b` with `x ∈ s`. For a single idempotent `e` this is the
-condition that `e` is **full**, the hypothesis under which the corner ring `eRe` is Morita
-equivalent to `R`.
+A subset `s` of an associative ring generates the unit two-sided ideal,
+`TwoSidedIdeal.span s = ⊤`, exactly when `1` is a finite sum of products `a * x * b` with `x ∈ s`.
+For a single idempotent `e` this is the condition that `e` is **full**, the hypothesis under which
+the corner ring `eRe` is Morita equivalent to `R`.
 
 This file records how the condition behaves under the operations used to build full idempotents:
 it is carried forward along any unital ring homomorphism, and in a finite product of rings it
-holds exactly when it holds in every factor.
+holds exactly when it holds in every factor. These permanence results also hold for
+nonassociative rings.
 
 ## Main results
 
@@ -43,28 +44,27 @@ theorem span_image_eq_top {R S F : Type*} [NonAssocRing R] [NonAssocRing S] [Fun
   rw [hs] at hle
   exact eq_top _ (by simpa using (mem_comap f).mp (hle (mem_top R (x := 1))))
 
-/-- **A subset of a finite product of rings generates exactly when it does in every factor.** -/
+/-- A subset of a finite product of nonassociative rings generates the unit two-sided ideal
+exactly when its image in every factor does. -/
 theorem span_eq_top_iff_forall_span_image_eval_eq_top {ι : Type*} [Finite ι] {A : ι → Type*}
-    [∀ i, Ring (A i)] {s : Set (∀ i, A i)} :
+    [∀ i, NonAssocRing (A i)] {s : Set (∀ i, A i)} :
     span s = ⊤ ↔ ∀ i, span (Function.eval i '' s) = ⊤ := by
   classical
   refine ⟨fun hs i ↦ span_image_eq_top (Pi.evalRingHom A i) hs, fun h ↦ ?_⟩
   have := Fintype.ofFinite ι
-  -- Each factor's unit, extended by zero, lies in the span of `s`: since
-  -- `Pi.single i (a * x i * b) = Pi.single i a * x * Pi.single i b`, the preimage of `span s`
-  -- under `Pi.single i` contains the span of the `i`-th image. These units sum to `1`.
+  -- Extension by zero is a nonunital ring homomorphism. Its preimage of `span s` contains
+  -- the coordinate image of `s`, since multiplying by `Pi.single i 1` isolates that coordinate.
   have hsingle (i : ι) : Pi.single i 1 ∈ span s := by
-    let H : AddSubgroup (A i) := (span s).asIdeal.toAddSubgroup.comap (AddMonoidHom.single A i)
-    have hH : (span (Function.eval i '' s) : Set (A i)) ⊆ H := by
-      refine TauCeti.TwoSidedIdeal.coe_span_subset_addSubgroup_iff.mpr ?_
-      rintro a _ ⟨x, hx, rfl⟩ b
-      have heq : (Pi.single i (a * x i * b) : ∀ j, A j) = Pi.single i a * x * Pi.single i b := by
-        rw [Pi.single_mul, Pi.single_mul_left]
-      simp only [H, AddSubgroup.mem_comap, AddMonoidHom.single_apply, Submodule.mem_toAddSubgroup,
-        mem_asIdeal, heq]
-      exact mul_mem_right _ _ _ (mul_mem_left _ _ _ (subset_span hx))
-    have h1 : (1 : A i) ∈ H := hH (by simp [h i])
-    simpa [H] using h1
+    let f : A i →ₙ+* ∀ j, A j :=
+      { AddMonoidHom.single A i, MulHom.single i with toFun := Pi.single i }
+    have hf (a : A i) : f a = Pi.single i a := (rfl)
+    have hle : span (Function.eval i '' s) ≤ (span s).comap f := by
+      refine span_le.mpr ?_
+      rintro _ ⟨x, hx, rfl⟩
+      apply (mem_comap f).mpr
+      simpa only [hf, Function.eval, ← Pi.single_mul_left, one_mul] using
+        (span s).mul_mem_left (Pi.single i 1) x (subset_span hx)
+    simpa only [hf] using (mem_comap f).mp (hle ((h i).symm ▸ mem_top (A i)))
   apply eq_top
   rw [← Finset.univ_sum_single (1 : ∀ i, A i)]
   exact sum_mem fun i _ ↦ hsingle i

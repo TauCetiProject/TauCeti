@@ -180,6 +180,17 @@ theorem coeff_X_pow_mul_add (p : OreExtension σ δ) (m n : ℕ) (hp : p.natDegr
     rw [pow_succ', mul_assoc, Nat.add_right_comm m 1 n, coeff_X_mul_succ, ih,
       coeff_eq_zero_of_natDegree_lt h, map_zero, add_zero, Function.iterate_succ_apply']
 
+/-- The top coefficient of `Xⁿ * C b` is `σⁿ b`. -/
+@[simp]
+theorem coeff_X_pow_mul_C_self (n : ℕ) (b : R) :
+    coeff (X ^ n * C (σ := σ) (δ := δ) b) n = (σ : R → R)^[n] b := by
+  simpa using coeff_X_pow_mul_add (C (σ := σ) (δ := δ) b) n 0 (by simp)
+
+/-- The monomial `Xⁿ * C b` with its coefficient on the right has degree at most `n`. -/
+theorem natDegree_X_pow_mul_C_le (n : ℕ) (b : R) :
+    natDegree (X ^ n * C (σ := σ) (δ := δ) b) ≤ n := by
+  simpa using natDegree_X_pow_mul_le (C (σ := σ) (δ := δ) b) n
+
 /-- Multiplication preserves the sum of the degree bounds, without injectivity assumptions. -/
 theorem natDegree_mul_le (p q : OreExtension σ δ) :
     (p * q).natDegree ≤ p.natDegree + q.natDegree := by

@@ -183,14 +183,6 @@ variable (k : Type u) [Field k] [Algebra (ZMod 3) k]
 
 attribute [local instance] standardComodule
 
-private theorem weightCharacter_injective :
-    Function.Injective fun a : Fin 7 ↦ SplitTorus.weightCharacter (weight a) := by
-  intro a b h
-  apply weight_injective
-  funext i
-  simpa only [SplitTorus.toAdd_weightCharacter] using
-    congrArg (fun χ : Multiplicative (Fin 2 →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
-
 private theorem single_mem_of_apply_ne_zero
     (N : Subcomodule k (CommHopfAlgCat.baseChange (K := k) coordinateHopfAlgebra) (Fin 7 → k))
     {v : Fin 7 → k} (hv : v ∈ N) {a : Fin 7} (ha : v a ≠ 0) : Pi.single a (1 : k) ∈ N := by

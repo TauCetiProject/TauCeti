@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.HalfPlane
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.FromTo
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.VertexAngle
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Isometry
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.ConjJ
 import Mathlib.Analysis.Calculus.Deriv.Star
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
@@ -37,7 +38,6 @@ is acute; this is the convexity condition for gluing a triangle to its mirror im
 
 ## Main declarations
 
-* `TauCeti.UpperHalfPlane.isometry_J_smul`: the action of `UpperHalfPlane.J` is an isometry.
 * `TauCeti.UpperHalfPlane.imaginaryAxisReflection`: reflection in the imaginary axis, the action
   of `UpperHalfPlane.J`.
 * `TauCeti.UpperHalfPlane.geodesicReflection`: reflection in `geodesicLine g`, obtained by
@@ -89,13 +89,6 @@ open scoped MatrixGroups Pointwise OnePoint Real ComplexConjugate
 
 namespace TauCeti.UpperHalfPlane
 
-/-- The orientation-reversing involution `UpperHalfPlane.J : z ↦ -conj z` acts on `ℍ` by an
-isometry. -/
-theorem isometry_J_smul : Isometry (J • · : ℍ → ℍ) :=
-  Isometry.of_dist_eq fun z w ↦ by
-    rw [UpperHalfPlane.dist_eq, UpperHalfPlane.dist_eq, coe_J_smul, coe_J_smul, dist_neg_neg,
-      Complex.dist_conj_conj, J_smul_im, J_smul_im]
-
 /-- Reflection in the imaginary axis of the upper half-plane, `x + iy ↦ -x + iy`, packaged as
 an isometry. It is the action of Mathlib's orientation-reversing involution
 `UpperHalfPlane.J : GL (Fin 2) ℝ` (`imaginaryAxisReflection_apply`). -/
@@ -104,7 +97,7 @@ def imaginaryAxisReflection : ℍ ≃ᵢ ℍ where
   invFun z := J • z
   left_inv z := by simp only [smul_smul, ← sq, J_sq, one_smul]
   right_inv z := by simp only [smul_smul, ← sq, J_sq, one_smul]
-  isometry_toFun := isometry_J_smul
+  isometry_toFun := isometry_smul ℍ J
 
 /-- Reflection in the imaginary axis is the action of `UpperHalfPlane.J`. -/
 theorem imaginaryAxisReflection_apply (z : ℍ) : imaginaryAxisReflection z = J • z :=
@@ -309,6 +302,18 @@ theorem extGeodesicReflection_inl (g : PSL(2, ℝ)) (z : ℍ) :
 theorem extGeodesicReflection_inr (g : PSL(2, ℝ)) (ξ : OnePoint ℝ) :
     extGeodesicReflection g (.inr ξ) = .inr (g • J • g⁻¹ • ξ) :=
   (rfl)
+
+/-- The extended reflection maps points of `ℍ` to points of `ℍ`. -/
+@[simp]
+theorem isLeft_extGeodesicReflection (g : PSL(2, ℝ)) (p : ℍ ⊕ OnePoint ℝ) :
+    (extGeodesicReflection g p).isLeft = p.isLeft := by
+  rcases p with z | ξ <;> simp
+
+/-- The extended reflection maps ideal points to ideal points. -/
+@[simp]
+theorem isRight_extGeodesicReflection (g : PSL(2, ℝ)) (p : ℍ ⊕ OnePoint ℝ) :
+    (extGeodesicReflection g p).isRight = p.isRight := by
+  rcases p with z | ξ <;> simp
 
 /-- Reflection in the geodesic line of `g` is reflection in the imaginary axis conjugated by
 `g`. -/
@@ -561,6 +566,13 @@ composite of the extended reflections. -/
 def geodesicReflectionComp (g h : PSL(2, ℝ)) : PSL(2, ℝ) :=
   g * pslConjJ (g⁻¹ * h) * h⁻¹
 
+-- The body of `geodesicReflectionComp` is not `@[expose]`d, so downstream modules rewrite with
+-- this.
+/-- The product of two geodesic reflections, unfolded. -/
+theorem geodesicReflectionComp_def (g h : PSL(2, ℝ)) :
+    geodesicReflectionComp g h = g * pslConjJ (g⁻¹ * h) * h⁻¹ :=
+  (rfl)
+
 /-- The product of two geodesic reflections acts on `ℍ ∪ ∂ℍ` as the composite of the
 reflections. -/
 theorem geodesicReflectionComp_smul_eq_extGeodesicReflection (g h : PSL(2, ℝ))
@@ -700,7 +712,6 @@ private theorem center_neg_of_vertexAngle_lt {a b c : ℍ ⊕ OnePoint ℝ} {m �
     have hξ := hab.smul_zero_eq
     rw [one_smul] at hξ
     subst hξ
-    have hy := im_toComplex_nonneg c
     simp [Complex.normSq_apply] at ham hcm
     nlinarith
 

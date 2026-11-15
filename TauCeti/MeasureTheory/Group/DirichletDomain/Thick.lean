@@ -116,7 +116,7 @@ theorem isBounded_dirichletDomain_inter_thickPart (hs : IsFundamentalDomain G s 
     rw [measure_iUnion (fun m n hmn ↦ by simpa using hdisj 1 m n (.inr hmn))
       fun _ ↦ measurableSet_ball]
     exact top_unique <| (ENNReal.tsum_const_eq_top_of_ne_zero hc).symm.le.trans <|
-      ENNReal.tsum_le_tsum fun _ ↦ hball _
+      _root_.tsum_le_tsum fun _ ↦ hball _
   exact hμs (top_unique (htop ▸ hle))
 
 /-- **The thick part of the orbit space of a lattice is compact.** Let `G` act isometrically and

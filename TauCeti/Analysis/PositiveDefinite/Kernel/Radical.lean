@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PositiveDefinite.Kernel.Finsupp
-import TauCeti.Analysis.Matrix.PosSemidef
+import TauCeti.Analysis.Matrix.PosSemidef.Basic
 
 /-!
 # The kernel of a positive-definite kernel Gram form

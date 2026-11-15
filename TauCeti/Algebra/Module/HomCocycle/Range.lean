@@ -36,7 +36,7 @@ noncomputable def rangeHomEquivCocycles (f : P₁ →ₗ[A] P₀) :
     (f.rangeRestrict.lcomp k N).codRestrict _ fun h ↦ by
       apply mem_ker.mpr
       ext x
-      simp only [lcomp_apply, Submodule.subtype_apply, zero_apply]
+      simp only [lcomp_apply, Submodule.subtype_apply, LinearMap.zero_apply]
       have hx : f.rangeRestrict x.val = 0 := Subtype.ext (mem_ker.mp x.property)
       simp only [hx, map_zero]
   apply LinearEquiv.ofBijective F
@@ -49,7 +49,8 @@ noncomputable def rangeHomEquivCocycles (f : P₁ →ₗ[A] P₀) :
       intro x hx
       have hx' : x ∈ ker f := by simpa using hx
       have hz := LinearMap.congr_fun (mem_ker.mp h.property) ⟨x, hx'⟩
-      exact mem_ker.mpr (by simpa only [lcomp_apply, zero_apply, Submodule.subtype_apply] using hz)
+      exact mem_ker.mpr (by simpa only [lcomp_apply, LinearMap.zero_apply,
+        Submodule.subtype_apply] using hz)
     refine ⟨f.rangeRestrict.liftOfSurjective f.surjective_rangeRestrict ⟨h.val, hh⟩, ?_⟩
     apply Subtype.ext
     ext x

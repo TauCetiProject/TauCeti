@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.RelationalConfiguration
+public import TauCeti.ModelTheory.RelationalConfiguration.Basic
 public import Mathlib.MeasureTheory.Group.Defs
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
@@ -35,7 +35,7 @@ measure on configurations over `ℕ` is determined by its windows
 
 The finitely supported permutations of `ℕ` act on configurations over `ℕ` by relabelling
 (`TauCeti.RelationalConfiguration.instMulActionFinitaryPerm`, in
-`TauCeti.ModelTheory.RelationalConfiguration`), and every exchangeable law on
+`TauCeti.ModelTheory.RelationalConfiguration.Basic`), and every exchangeable law on
 configurations over `ℕ` is invariant under this action. Ergodicity of the action on such a law,
 Mathlib's `ErgodicSMul`, is the relational counterpart of the ergodicity of exchangeable arrays.
 

@@ -42,42 +42,27 @@ theorem isFinite_map (hF : IsFunctionField k F) (hF' : IsFunctionField k F')
     {x : F} (hx : x ≠ 0) {x' : F'} (hx' : x' ≠ 0)
     (h : algebraMap F F' x = x') (hxt : Transcendental k x) :
     IsFinite (map hF hF' hx hx' h) := by
-  have hxt' : Transcendental k x' := by
-    rw [← h]
-    exact (transcendental_algebraMap_iff (algebraMap F F').injective).mpr hxt
   let f := map hF hF' hx hx' h
   have hproper : IsProper f := by
     have : IsProper (f ≫ (twoChartModel hF hx ↘ Spec (.of k))) := by
       rw [(Scheme.Hom.isOver_iff (Spec (.of k))).mp
         (inferInstance : f.IsOver (Spec (.of k)))]
-      exact isProper hxt'
+      infer_instance
     exact IsProper.of_comp f (twoChartModel hF hx ↘ Spec (.of k))
-  let 𝒰 : (twoChartModel hF' hx').OpenCover := Scheme.Cover.mkOfCovers Bool
-    (fun b ↦ b.rec (Spec (.of (holomorphyRing {P : Place k F' | x'⁻¹ ∈ P.integers})))
-      (Spec (.of (holomorphyRing {P : Place k F' | x' ∈ P.integers}))))
-    (fun b ↦ match b with | false => ιInfinity hF' hx' | true => ιFinite hF' hx')
-    (fun p ↦ by
-      rcases (Set.ext_iff.mp (range_ιFinite_union_range_ιInfinity hF' hx') p).mpr trivial with
-        ⟨q, rfl⟩ | ⟨q, rfl⟩
-      exacts [⟨true, q, rfl⟩, ⟨false, q, rfl⟩])
-    (fun b ↦ by cases b <;> infer_instance)
   have hqf : LocallyQuasiFinite f := by
     have hloc : IsZariskiLocalAtSource @LocallyQuasiFinite :=
       @HasRingHomProperty.instIsZariskiLocalAtSource _ RingHom.QuasiFinite
         instHasRingHomPropertyLocallyQuasiFiniteQuasiFinite
-    apply hloc.of_openCover 𝒰
+    apply hloc.of_openCover (chartCover hF' hx')
     intro b
     cases b
-    -- The two Bool cases reduce to the named infinity and finite chart inclusions.
-    · change LocallyQuasiFinite (ιInfinity hF' hx' ≫ f)
-      rw [ιInfinity_map]
-      have : IsFinite (Spec.map (CommRingCat.ofHom (infinityChartMap (k := k) h))) :=
-        isFinite_specMap_infinityChartMap hF' hxt h
-      infer_instance
-    · change LocallyQuasiFinite (ιFinite hF' hx' ≫ f)
-      rw [ιFinite_map]
+    · rw [chartCover_f_false, ιFinite_map]
       have : IsFinite (Spec.map (CommRingCat.ofHom (finiteChartMap (k := k) h))) :=
         isFinite_specMap_finiteChartMap hF' hxt h
+      infer_instance
+    · rw [chartCover_f_true, ιInfinity_map]
+      have : IsFinite (Spec.map (CommRingCat.ofHom (infinityChartMap (k := k) h))) :=
+        isFinite_specMap_infinityChartMap hF' hxt h
       infer_instance
   exact IsFinite.of_isProper_of_locallyQuasiFinite f
 

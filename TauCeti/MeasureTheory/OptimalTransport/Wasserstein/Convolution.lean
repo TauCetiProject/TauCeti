@@ -67,7 +67,7 @@ variable {G : Type u} [AddMonoid G] [MeasurableSpace G] [MeasurableAdd₂ G] [Ps
 common probability law does not increase the `p`-Wasserstein distance, when the ground distance is
 invariant under right addition. -/
 theorem wassersteinEDist_conv_right_le [IsIsometricVAdd Gᵃᵒᵖ G]
-    (hd : Measurable fun z : G × G ↦ edist z.1 z.2) (μ ν : Measure G) [SigmaFinite μ]
+    (hd : Measurable fun z : G × G ↦ edist z.1 z.2) (μ ν : Measure G)
     (η : Measure G) [IsProbabilityMeasure η] :
     wassersteinEDist p (μ ∗ η) (ν ∗ η) ≤ wassersteinEDist p μ ν :=
   wassersteinEDist_map_prod_le hd hd measurable_add (fun z ↦ (isometry_add_right z).lipschitzWith)
@@ -105,18 +105,18 @@ variable {G : Type u} [AddGroup G] [MeasurableSpace G] [MeasurableAdd G] [Pseudo
 common element preserves their Wasserstein distance. -/
 @[simp]
 theorem wassersteinEDist_map_add_right [IsIsometricVAdd Gᵃᵒᵖ G]
-    (hd : Measurable fun z : G × G ↦ edist z.1 z.2) (a : G) (μ ν : Measure G) :
+    (a : G) (μ ν : Measure G) :
     wassersteinEDist p (μ.map (· + a)) (ν.map (· + a)) = wassersteinEDist p μ ν :=
-  wassersteinEDist_map_eq hd (MeasurableEquiv.addRight a).measurableEmbedding
+  wassersteinEDist_map_eq (MeasurableEquiv.addRight a).measurableEmbedding
     (isometry_add_right a) μ ν
 
 /-- In a group whose ground distance is invariant under left addition, translating two laws by a
 common element preserves their Wasserstein distance. -/
 @[simp]
 theorem wassersteinEDist_map_add_left [IsIsometricVAdd G G]
-    (hd : Measurable fun z : G × G ↦ edist z.1 z.2) (a : G) (μ ν : Measure G) :
+    (a : G) (μ ν : Measure G) :
     wassersteinEDist p (μ.map (a + ·)) (ν.map (a + ·)) = wassersteinEDist p μ ν :=
-  wassersteinEDist_map_eq hd (MeasurableEquiv.addLeft a).measurableEmbedding
+  wassersteinEDist_map_eq (MeasurableEquiv.addLeft a).measurableEmbedding
     (isometry_add_left a) μ ν
 
 end Translation
@@ -131,8 +131,8 @@ theorem wassersteinEDist_map_add_right_le_enorm [MeasurableAdd E]
     (hd : Measurable fun z : E × E ↦ edist z.1 z.2) (μ : Measure E) [IsProbabilityMeasure μ]
     (a : E) : wassersteinEDist p μ (μ.map (· + a)) ≤ ‖a‖ₑ := by
   refine (wassersteinEDist_map_le hd (measurable_add_const a).aemeasurable p).trans ?_
-  simp only [edist_eq_enorm_neg_add, neg_add_cancel_left]
-  simpa using eLpNorm_le_of_ae_enorm_bound (p := p) (μ := μ) (f := fun _ : E ↦ ‖a‖ₑ)
+  simp only [eDist_eq_eNorm_neg_add, neg_add_cancel_left]
+  simpa using eLpNorm_le_of_ae_eNorm_bound (p := p) (μ := μ) (f := fun _ : E ↦ ‖a‖ₑ)
     aestronglyMeasurable_const (.of_forall fun _ ↦ le_rfl)
 
 end NormedGroup
@@ -171,8 +171,8 @@ theorem enorm_le_lintegral_edist_of_isCoupling_map_add_right [MeasurableAdd E] {
         hπ.integral_comp_fst (hFm n).aestronglyMeasurable,
         integral_map ha.aemeasurable (hFm n).aestronglyMeasurable]
     rw [hint]
-    refine enorm_integral_le_lintegral_enorm _ |>.trans (lintegral_mono fun z ↦ ?_)
-    rw [edist_comm, edist_dist, Real.enorm_eq_ofReal_abs]
+    refine eNorm_integral_le_lintegral_eNorm _ |>.trans (lintegral_mono fun z ↦ ?_)
+    rw [edist_comm, edist_dist, Real.eNorm_eq_ofReal_abs]
     refine ENNReal.ofReal_le_ofReal ((hFl n _ _).trans ?_)
     rw [← map_sub, dist_eq_norm]
     exact (ℓ.le_opNorm _).trans (by simpa using mul_le_mul_of_nonneg_right hℓ (norm_nonneg _))
@@ -191,7 +191,7 @@ theorem enorm_le_lintegral_edist_of_isCoupling_map_add_right [MeasurableAdd E] {
       refine tendsto_const_nhds.congr' ?_
       filter_upwards [hev (x + a), hev x] with n h₁ h₂
       simp [h₁, h₂]
-  have := (continuous_enorm.tendsto _).comp hlim
+  have := (continuous_eNorm.tendsto _).comp hlim
   simpa using le_of_tendsto' this hstep
 
 /-- **The Wasserstein distance to a translate.** On a real seminormed space, a probability law and
@@ -205,7 +205,7 @@ theorem wassersteinEDist_map_add_right_eq_enorm [MeasurableAdd E]
   have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
   calc ‖a‖ₑ ≤ ∫⁻ z, edist z.1 z.2 ∂π := enorm_le_lintegral_edist_of_isCoupling_map_add_right hπ
     _ = eLpNorm (fun z : E × E ↦ edist z.1 z.2) 1 π := by
-        simp [eLpNorm_one_eq_lintegral_enorm hd.aestronglyMeasurable]
+        simp [eLpNorm_one_eq_lintegral_eNorm hd.aestronglyMeasurable]
     _ ≤ eLpNorm (fun z : E × E ↦ edist z.1 z.2) p π :=
         eLpNorm_le_eLpNorm_of_exponent_le hp
 

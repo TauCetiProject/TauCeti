@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Basic
+import TauCeti.Algebra.BigOperators.Finset.SDiff
 
 /-!
 # Recutting a rectangle that ends where a pentagon starts
@@ -204,8 +205,6 @@ theorem recutRightEqLeft_toRectangleDecomposition
     exact (D.rightLeftRecut_geometry hcommon hrectangle hpentagon hturn).1.symm
   · simp only [recutRightEqLeft,
       GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left, rightLeftRecut]
-  · simp only [recutRightEqLeft,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_second_right, rightLeftRecut]
 
 /-- The promoted decomposition is an empty-rectangle recut of the original composite domain. -/
 theorem isRecut_recutRightEqLeft (D : GridRectanglePentagonDecomposition a s x z)
@@ -243,7 +242,7 @@ theorem recutRightEqLeft_geometry (D : GridRectanglePentagonDecomposition a s x 
     E.rectangle.top = D.rectangle.top ∧
         s ∈ Grid.cIco E.pentagon.bottom E.pentagon.top := by
   let E := D.recutRightEqLeft hcommon hrectangle hpentagon hturn
-  obtain ⟨hright, hptop, hrtop, hturn'⟩ :=
+  obtain ⟨_, hptop, hrtop, hturn'⟩ :=
     D.rightLeftRecut_geometry hcommon hrectangle hpentagon hturn
   refine ⟨?_, ?_, ?_, ?_⟩
   · simp only [recutRightEqLeft, GridPentagonRectangleDecomposition.pentagon,
@@ -419,12 +418,11 @@ private theorem rightLeftOverlapPartner_injective :
   have hD := G.rightLeftOverlapPartner_isRecut C D
   have hE := G.rightLeftOverlapPartner_isRecut C E
   rw [← h] at hE
-  obtain ⟨honeD, hfD, hsD⟩ := G.rightLeftOverlapSource_recut_data C D.val D.property
-  obtain ⟨honeE, hfE, hsE⟩ := G.rightLeftOverlapSource_recut_data C E.val E.property
-  have hbackD := hD.symm honeD hfD hsD
-  have hbackE := hE.symm honeE hfE hsE
+  obtain ⟨_, hfD, hsD⟩ := G.rightLeftOverlapSource_recut_data C D.val D.property
+  obtain ⟨_, hfE, hsE⟩ := G.rightLeftOverlapSource_recut_data C E.val E.property
+  have hbackD := hD.symm hfD hsD
+  have hbackE := hE.symm hfE hsE
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridRectanglePentagonDecomposition.toRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone
@@ -501,12 +499,9 @@ theorem add_sum_rectanglePentagonWeight_eq_add_sum_iff_sdiff_rightLeftOverlap
           G.rectanglePentagonWeight C R D =
         B + ∑ E ∈ G.pentagonRectangleDecompositions C x z \ G.rightLeftOverlapPartners C x z,
           G.pentagonRectangleWeight C R E := by
-  rw [← Finset.sum_sdiff (G.rightLeftOverlapSources_subset C)
-      (f := G.rectanglePentagonWeight C R),
-    ← Finset.sum_sdiff (G.rightLeftOverlapPartners_subset C)
-      (f := G.pentagonRectangleWeight C R),
-    G.sum_rectanglePentagonWeight_rightLeftOverlapSources_eq_sum_partners C x z R,
-    ← add_assoc, ← add_assoc]
-  exact add_right_cancel_iff
+  exact Finset.add_sum_eq_add_sum_iff_sdiff
+    (G.rightLeftOverlapSources_subset C)
+    (G.rightLeftOverlapPartners_subset C)
+    (G.sum_rectanglePentagonWeight_rightLeftOverlapSources_eq_sum_partners C x z R)
 
 end TauCeti.GridDiagram

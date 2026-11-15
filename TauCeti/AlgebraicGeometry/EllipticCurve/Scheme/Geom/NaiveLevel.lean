@@ -13,7 +13,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.PointsDivisor
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ZModProdAut
-import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 import TauCeti.AlgebraicGeometry.IdealSheaf.Product
 
 /-!
@@ -189,7 +188,6 @@ theorem mem_naiveLocus_iff {h : H.left} :
 /-- For a finite group `A`, the naive locus is open: it is the complement of the finitely many
 closed sets where some `u a` with `a ≠ 1` meets the closed image of the zero section. -/
 theorem isOpen_naiveLocus [Finite A] : IsOpen (naiveLocus u) := by
-  have := E.zero.isClosedImmersion_of_comp_eq_id E.zero_comp
   have h : naiveLocus u = ⋂ a ∈ {a : A | a ≠ 1}, ((u a).left ⁻¹' Set.range E.zero)ᶜ := by
     ext h
     simp only [naiveLocus, Set.mem_ofPred_eq, Set.mem_iInter, Set.mem_compl_iff, Set.mem_preimage]
@@ -347,7 +345,7 @@ theorem IsFiberwiseInjective.pointsDivisor_eq_iInf_ker [Fintype A]
   intro a b hab
   apply disjoint_iff.mpr
   apply SetLike.coe_injective
-  simpa only [Set.inf_eq_inter, Set.bot_eq_empty, TopologicalSpace.Closeds.coe_inf,
+  simpa only [Set.bot_eq_empty, TopologicalSpace.Closeds.coe_inf,
     TopologicalSpace.Closeds.coe_bot, coe_support_ker_left] using
     (hφ.disjoint_range hab).eq_bot
 

@@ -103,7 +103,7 @@ theorem isTOrthogonalFamily_one_iff [IsUltrametricDist M] {e : I → M} :
       ∀ (s : Finset I) (a : I → R), ‖∑ i ∈ s, a i • e i‖₊ = s.sup fun i ↦ ‖a i • e i‖₊ := by
   simp only [isTOrthogonalFamily_def, one_mul]
   exact forall₂_congr fun s a ↦
-    ⟨fun h ↦ le_antisymm (Finset.nnnorm_sum_le_sup_nnnorm s _) h, ge_of_eq⟩
+    ⟨fun h ↦ le_antisymm (Finset.nnNorm_sum_le_sup_nnNorm s _) h, ge_of_eq⟩
 
 end Defs
 
@@ -143,8 +143,8 @@ theorem comp (he : IsTOrthogonalFamily R t e) {f : J → I} (hf : Function.Injec
 /-- The image of a `t`-orthogonal family under a linear isometry is `t`-orthogonal. -/
 theorem map [SeminormedAddCommGroup N] [Module R N] (he : IsTOrthogonalFamily R t e)
     (u : M →ₗᵢ[R] N) : IsTOrthogonalFamily R t (u ∘ e) := fun s a ↦ by
-  have hterm (i : I) : ‖a i • u (e i)‖₊ = ‖a i • e i‖₊ := by rw [← map_smul, u.nnnorm_map]
-  simpa only [Function.comp_apply, hterm, ← map_smul, ← map_sum, u.nnnorm_map] using he s a
+  have hterm (i : I) : ‖a i • u (e i)‖₊ = ‖a i • e i‖₊ := by rw [← map_smul, u.nnNorm_map]
+  simpa only [Function.comp_apply, hterm, ← map_smul, ← map_sum, u.nnNorm_map] using he s a
 
 /-- **`t`-orthogonality of unconditional sums**: if `x` is the unconditional sum of the
 `a i • e i` for a `t`-orthogonal family `e`, then `t` times the norm of each term is at most
@@ -233,14 +233,49 @@ theorem mul_max_nnnorm_le_nnnorm_smul_add [NormedField K] [NormedAddCommGroup M]
     · simp
     have : c • w + z = c • (w - (-c⁻¹) • z) := by
       rw [smul_sub, smul_smul, mul_neg, mul_inv_cancel₀ hc, neg_smul, one_smul, sub_neg_eq_add]
-    rw [this, nnnorm_smul, nnnorm_smul, mul_left_comm]
+    rw [this, nnNorm_smul, nnNorm_smul, mul_left_comm]
     exact mul_le_mul_of_nonneg_left (hw _ (F.smul_mem _ hz)) zero_le
   rw [mul_max_of_nonneg _ _ zero_le]
   refine max_le h₁ ?_
   rcases le_or_gt ‖z‖₊ ‖c • w‖₊ with h | h
   · exact (mul_le_mul_of_nonneg_left h zero_le).trans h₁
-  · rw [IsUltrametricDist.nnnorm_add_eq_max_of_nnnorm_ne_nnnorm h.ne, max_eq_right h.le]
+  · rw [IsUltrametricDist.nnNorm_add_eq_max_of_nnNorm_ne_nnNorm h.ne, max_eq_right h.le]
     exact mul_le_of_le_one_left zero_le hr
+
+/-- Adjoining a vector orthogonal to the span of a finite orthogonal family preserves
+orthogonality. Zero vectors are allowed. -/
+theorem IsTOrthogonalFamily.finCons [NormedField K] [NormedAddCommGroup M]
+    [NormedSpace K M] [IsUltrametricDist M] {n : ℕ} {e : Fin n → M}
+    (he : IsTOrthogonalFamily K 1 e) {w : M}
+    (hw : ∀ z ∈ Submodule.span K (Set.range e), ‖w‖ ≤ ‖w - z‖) :
+    IsTOrthogonalFamily K 1 (Fin.cons w e) := by
+  classical
+  have hbound (a : Fin (n + 1) → K) (i : Fin (n + 1)) :
+      ‖a i • Fin.cons (α := fun _ ↦ M) w e i‖ ≤
+        ‖∑ j, a j • Fin.cons (α := fun _ ↦ M) w e j‖ := by
+    have hz : ∑ j, a j.succ • e j ∈ Submodule.span K (Set.range e) :=
+      Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem _ _
+        (Submodule.subset_span (Set.mem_range_self j))
+    have hmax := mul_max_nnnorm_le_nnnorm_smul_add (r := 1) le_rfl
+      (fun z hz ↦ by simp only [one_mul]; exact_mod_cast hw z hz) (a 0) hz
+    simp only [one_mul] at hmax
+    have hmax' : max ‖a 0 • w‖ ‖∑ j, a j.succ • e j‖ ≤
+        ‖a 0 • w + ∑ j, a j.succ • e j‖ := by exact_mod_cast hmax
+    rw [Fin.sum_univ_succ]
+    refine Fin.cases (by simpa using (le_max_left _ _).trans hmax') (fun j ↦ ?_) i
+    have hj := he.mul_norm_smul_le (Finset.mem_univ j) (fun j ↦ a j.succ)
+    simp only [NNReal.coe_one, one_mul] at hj
+    simpa only [Fin.cons_succ, Fin.cons_zero] using
+      hj.trans ((le_max_right _ _).trans hmax')
+  intro s a
+  simp only [one_mul]
+  refine Finset.sup_le fun i hi ↦ ?_
+  have h := hbound (fun j ↦ if j ∈ s then a j else 0) i
+  have h' : ‖a i • Fin.cons (α := fun _ ↦ M) w e i‖ ≤
+      ‖∑ j ∈ s, a j • Fin.cons (α := fun _ ↦ M) w e j‖ := by
+    simpa only [hi, ite_true, ite_smul, zero_smul, Finset.sum_ite_mem,
+      Finset.univ_inter] using h
+  exact_mod_cast h'
 
 /-- If each `e N` is `T (N + 1) / T N`-orthogonal to the span of the previous vectors, for a
 non-increasing sequence `T` of positive constants at most one, then in an ultrametric space

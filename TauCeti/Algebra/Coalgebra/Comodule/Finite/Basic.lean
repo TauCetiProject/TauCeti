@@ -13,12 +13,12 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Zero
 
 This file packages finitely generated right comodules over a coalgebra as a full subcategory
 of `ComoduleCat`. An object of `FGComoduleCat R C` is a right `C`-comodule whose underlying
-`R`-module is finitely generated; over a field this is the finite-dimensional comodule
-category requested by the reductive-groups roadmap.
+`R`-module is finitely generated; over a field this is the category of finite-dimensional
+comodules.
 
-This is a small Layer 1 prerequisite for the finite-dimensional representation category of an
-affine group scheme: later tensor products, duals, matrix coefficients, and Tannakian
-reconstruction should be built on this full subcategory rather than on all comodules.
+Morphisms inherit their additive monoid and `R`-module structures from the ambient comodule
+category through the full-subcategory hom equivalence. The resulting `homLinearEquiv` exposes
+this identification as a linear equivalence over a commutative semiring.
 
 ## Main definitions
 
@@ -27,6 +27,7 @@ reconstruction should be built on this full subcategory rather than on all comod
   comodule isomorphisms.
 * `TauCeti.FGComoduleCat`: finitely generated right comodules as a full subcategory.
 * `TauCeti.FGComoduleCat.incl`: the inclusion into all comodules.
+* `TauCeti.FGComoduleCat.homLinearEquiv`: the linear identification with ambient morphisms.
 * `forget₂ (FGComoduleCat R C) (ComoduleCat R C)`: the forgetful functor to all comodules.
 * `forget₂ (FGComoduleCat R C) (SemimoduleCat R)`: the forgetful functor to semimodules.
 * `TauCeti.FGComoduleCat.of`: build a finitely generated bundled comodule from unbundled data.
@@ -34,15 +35,12 @@ reconstruction should be built on this full subcategory rather than on all comod
   comodules.
 * `TauCeti.FGComoduleCat.isoOfLinearEquiv`: build an isomorphism from a coaction-compatible
   linear equivalence.
-* `TauCeti.FGComoduleCat.isZero_zero`: `FGComoduleCat.zero` is a zero object.
 * `HasZeroObject (FGComoduleCat R C)`.
 
 ## References
 
-This supplies the finite-dimensional-category part of
-`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1 target "Comodules over a coalgebra/Hopf
-algebra". The construction follows Mathlib's `FGModuleCat` pattern: finite objects are a full
-subcategory defined by the object property `Module.Finite`.
+The construction follows Mathlib's `FGModuleCat` pattern: finite objects are a full subcategory
+defined by the object property `Module.Finite`.
 -/
 
 @[expose] public section
@@ -122,6 +120,54 @@ instance (M : FGComoduleCat.{u, v, w} R C) : Comodule R C M :=
 /-- The underlying module of a finitely generated comodule is finitely generated. -/
 instance (M : FGComoduleCat.{u, v, w} R C) : Module.Finite R M :=
   M.property
+
+/-- Morphisms of finitely generated comodules inherit their additive monoid structure
+from the ambient comodule category. -/
+instance homAddCommMonoid (M N : FGComoduleCat.{u, v, w} R C) : AddCommMonoid (M ⟶ N) :=
+  (InducedCategory.homEquiv (X := M) (Y := N)).addCommMonoid
+
+/-- Morphisms of finitely generated comodules inherit their module structure
+from the ambient comodule category. -/
+instance homModule (M N : FGComoduleCat.{u, v, w} R C) : Module R (M ⟶ N) :=
+  (InducedCategory.homEquiv (X := M) (Y := N)).addEquiv.module R
+
+/-- Morphisms between finitely generated comodules are linearly equivalent to their
+underlying morphisms in the ambient comodule category. -/
+@[no_expose]
+def homLinearEquiv (M N : FGComoduleCat.{u, v, w} R C) :
+    (M ⟶ N) ≃ₗ[R] (M.obj ⟶ N.obj) :=
+  AddEquiv.linearEquiv R (α := M ⟶ N) (β := M.obj ⟶ N.obj)
+    (InducedCategory.homEquiv (X := M) (Y := N)).addEquiv
+
+/-- The ambient morphism of the zero morphism is zero. -/
+@[simp]
+theorem hom_zero {M N : FGComoduleCat.{u, v, w} R C} : (0 : M ⟶ N).hom = 0 :=
+  rfl
+
+/-- Taking the ambient morphism preserves addition. -/
+@[simp]
+theorem hom_add {M N : FGComoduleCat.{u, v, w} R C} (f g : M ⟶ N) :
+    (f + g).hom = f.hom + g.hom :=
+  rfl
+
+/-- Taking the ambient morphism preserves scalar multiplication. -/
+-- Rewrite the induced-category projection before simp descends into its scalar-action wrapper.
+@[simp↓]
+theorem hom_smul {M N : FGComoduleCat.{u, v, w} R C} (r : R) (f : M ⟶ N) :
+    (r • f).hom = r • f.hom :=
+  rfl
+
+/-- The forward morphism identification forgets the finite-generation wrapper. -/
+@[simp]
+theorem homLinearEquiv_apply {M N : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
+    homLinearEquiv M N f = f.hom :=
+  (rfl)
+
+/-- The inverse morphism identification restores the finite-generation wrapper. -/
+@[simp]
+theorem homLinearEquiv_symm_apply {M N : FGComoduleCat.{u, v, w} R C} (f : M.obj ⟶ N.obj) :
+    (homLinearEquiv M N).symm f = ObjectProperty.homMk f :=
+  (rfl)
 
 /-- The inclusion from finitely generated comodules to all comodules. -/
 abbrev incl : FGComoduleCat.{u, v, w} R C ⥤ ComoduleCat.{u, v, w} R C :=
@@ -208,6 +254,23 @@ theorem ofHom_apply {M N : Type w} [AddCommMonoid M] [Module R M] [Comodule R C 
     ofHom (R := R) (C := C) f m = f m :=
   rfl
 
+/-- The zero morphism acts as the zero function. -/
+@[simp]
+theorem zero_apply {M N : FGComoduleCat.{u, v, w} R C} (m : M) : (0 : M ⟶ N) m = 0 :=
+  rfl
+
+/-- Addition of morphisms acts by pointwise addition. -/
+@[simp]
+theorem add_apply {M N : FGComoduleCat.{u, v, w} R C} (f g : M ⟶ N) (m : M) :
+    (f + g) m = f m + g m :=
+  rfl
+
+/-- Scalar multiplication of morphisms acts pointwise. -/
+@[simp]
+theorem smul_apply {M N : FGComoduleCat.{u, v, w} R C} (r : R) (f : M ⟶ N) (m : M) :
+    (r • f) m = r • f m :=
+  rfl
+
 /-- Build an isomorphism of finitely generated comodules from a linear equivalence of the
 underlying modules whose *forward* map respects the coactions.
 
@@ -259,53 +322,6 @@ theorem isoOfLinearEquiv_inv_apply {M N : FGComoduleCat.{u, v, w} R C} (e : M �
       Comodule.coact (R := R) (C := C) (M := N) ∘ₗ e.toLinearMap) (n : N) :
     (isoOfLinearEquiv e h).inv n = e.symm n :=
   rfl
-
-variable (R C)
-
-/-- The bundled finitely generated zero right comodule. -/
-def zero : FGComoduleCat.{u, v, w} R C :=
-  ⟨ComoduleCat.zero R C, ComoduleCat.finite_zero R C⟩
-
-/-- The ambient comodule underlying the finitely generated zero comodule is the zero comodule. -/
-@[simp]
-theorem zero_obj : (zero R C : FGComoduleCat.{u, v, w} R C).obj = ComoduleCat.zero R C :=
-  rfl
-
-/-- The named finitely generated zero comodule is a zero object. -/
-theorem isZero_zero : IsZero (zero R C : FGComoduleCat.{u, v, w} R C) :=
-  IsZero.of_full_of_faithful_of_isZero (ComoduleCat.isFG (R := R) (C := C)).ι (zero R C)
-    (ComoduleCat.isZero_zero R C)
-
-/-- Any morphism from the named finitely generated zero comodule is zero. -/
-theorem zero_hom_eq_zero (M : FGComoduleCat.{u, v, w} R C) (f : zero R C ⟶ M) : f = 0 :=
-  (isZero_zero (R := R) (C := C)).eq_of_src f 0
-
-/-- Any morphism to the named finitely generated zero comodule is zero. -/
-theorem hom_zero_eq_zero (M : FGComoduleCat.{u, v, w} R C) (f : M ⟶ zero R C) : f = 0 :=
-  (isZero_zero (R := R) (C := C)).eq_of_tgt f 0
-
-/-- The canonical morphism out of the named finitely generated zero comodule is the zero
-morphism. -/
-@[simp]
-theorem isZero_zero_to (M : FGComoduleCat.{u, v, w} R C) :
-    (isZero_zero (R := R) (C := C)).to_ M = 0 :=
-  zero_hom_eq_zero (R := R) (C := C) M _
-
-/-- The canonical morphism into the named finitely generated zero comodule is the zero morphism. -/
-@[simp]
-theorem isZero_zero_from (M : FGComoduleCat.{u, v, w} R C) :
-    (isZero_zero (R := R) (C := C)).from_ M = 0 :=
-  hom_zero_eq_zero (R := R) (C := C) M _
-
-/-- Morphisms from the named finitely generated zero comodule are unique. -/
-@[ext]
-theorem zero_hom_ext {M : FGComoduleCat.{u, v, w} R C} (f g : zero R C ⟶ M) : f = g :=
-  (isZero_zero (R := R) (C := C)).eq_of_src f g
-
-/-- Morphisms to the named finitely generated zero comodule are unique. -/
-@[ext]
-theorem hom_zero_ext {M : FGComoduleCat.{u, v, w} R C} (f g : M ⟶ zero R C) : f = g :=
-  (isZero_zero (R := R) (C := C)).eq_of_tgt f g
 
 end FGComoduleCat
 

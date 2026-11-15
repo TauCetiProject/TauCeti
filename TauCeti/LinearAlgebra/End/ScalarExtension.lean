@@ -165,7 +165,7 @@ theorem mapValue_mul (f : A →ₐ[R] B) (φ ψ : Module.End A (A ⊗[R] M)) :
   refine (eq_mapValue f (φ * ψ) (mapValue f φ * mapValue f ψ) ?_).symm
   refine LinearMap.ext fun z ↦ ?_
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
-    Module.End.mul_apply, mapValue_rTensor_apply]
+    _root_.mul_apply_eq_comp, mapValue_rTensor_apply]
 
 /-- Base change preserves the zero endomorphism. -/
 @[simp]

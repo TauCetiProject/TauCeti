@@ -99,7 +99,7 @@ def abelJacobiMap : yoneda.obj (Over.mk f) ⋙ uliftFunctor.{u + 1} ⟶
 /-- The Abel–Jacobi map sends a `T`-point `x` to the quotient of the Abel map at its graph by the
 Abel map at the graph of the base point, that is, to the class of `𝒪(Γₓ - x₀_T)`. -/
 lemma abelJacobiMap_app_apply {T : (Over S)ᵒᵖ} (x : T.unop ⟶ Over.mk f) :
-    ConcreteCategory.hom (C := Type (u + 1)) (X := uliftFunctor.{u + 1}.obj (T.unop ⟶ Over.mk f))
+    ConcreteCategory.hom (C := Type (u + 1)) (X := ULift.{u + 1} (T.unop ⟶ Over.mk f))
       (Y := ToType ((relativePicardPresheaf f).obj T)) ((abelJacobiMap f hx₀).app T)
       (ULift.up x) =
       (abelMap f).app T (ULift.up ((graphDivisor f).app T x)) /
@@ -109,7 +109,7 @@ lemma abelJacobiMap_app_apply {T : (Over S)ᵒᵖ} (x : T.unop ⟶ Over.mk f) :
 /-- **The Abel–Jacobi map sends the base point to the identity**: `𝒪(x₀_T - x₀_T) = 𝒪`. -/
 @[simp]
 lemma abelJacobiMap_app_basePoint (T : (Over S)ᵒᵖ) :
-    ConcreteCategory.hom (C := Type (u + 1)) (X := uliftFunctor.{u + 1}.obj (T.unop ⟶ Over.mk f))
+    ConcreteCategory.hom (C := Type (u + 1)) (X := ULift.{u + 1} (T.unop ⟶ Over.mk f))
       (Y := ToType ((relativePicardPresheaf f).obj T)) ((abelJacobiMap f hx₀).app T)
       (ULift.up (basePoint hx₀ T.unop)) = 1 := by
   rw [abelJacobiMap_app_apply, div_self']

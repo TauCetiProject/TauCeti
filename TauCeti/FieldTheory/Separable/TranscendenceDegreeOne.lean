@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.SeparablyGenerated
+public import TauCeti.FieldTheory.Separable.GeometricallyReduced
 import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
@@ -20,6 +20,8 @@ simple field `k(x)`.
 This is the one-variable form of Mathlib's
 `exists_isTranscendenceBasis_and_isSeparable_of_perfectField`.  It is useful for passing from
 abstract separable generation to constructions that require a single separating parameter.
+The same holds over an imperfect base field when the extension is geometrically reduced, by
+`TauCeti.exists_isTranscendenceBasis_and_isSeparable_of_isGeometricallyReduced`.
 
 An element outside the image of the base field with an exponential-characteristic power in
 that image rules out every separating element, even over an imperfect base field.
@@ -42,17 +44,12 @@ universe u v
 
 variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
 
-/-- A finitely generated extension of transcendence degree one over a perfect field has a
-**separating element**: an element `x` transcendental over the base such that the extension is
-separable algebraic over `k(x)`.
-
-This is the singleton form of
-`exists_isTranscendenceBasis_and_isSeparable_of_perfectField`. -/
-theorem exists_transcendental_and_isSeparable_adjoin_of_perfectField
-    [PerfectField k] [Algebra.EssFiniteType k F] (htr : Algebra.trdeg k F = 1) :
+/-- A finite separating transcendence basis of an extension of transcendence degree one consists
+of a single separating element. -/
+private theorem exists_transcendental_and_isSeparable_adjoin_of_finset
+    (htr : Algebra.trdeg k F = 1) {s : Finset F} (hs : IsTranscendenceBasis k ((↑) : s → F))
+    (hsep : Algebra.IsSeparable (adjoin k (s : Set F)) F) :
     ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
-  obtain ⟨s, hs, hsep⟩ :=
-    exists_isTranscendenceBasis_and_isSeparable_of_perfectField k F
   have hcard : s.card = 1 := by
     have h := hs.cardinalMk_eq_trdeg.trans htr
     have h' : (s.card : Cardinal.{v}) = (1 : Cardinal.{v}) := by
@@ -62,6 +59,33 @@ theorem exists_transcendental_and_isSeparable_adjoin_of_perfectField
   refine ⟨x, hs.1.transcendental ⟨x, by simp⟩, ?_⟩
   rw [Finset.coe_singleton] at hsep
   exact hsep
+
+/-- A finitely generated extension of transcendence degree one over a perfect field has a
+**separating element**: an element `x` transcendental over the base such that the extension is
+separable algebraic over `k(x)`.
+
+This is the singleton form of
+`exists_isTranscendenceBasis_and_isSeparable_of_perfectField`. -/
+theorem exists_transcendental_and_isSeparable_adjoin_of_perfectField
+    [PerfectField k] [Algebra.EssFiniteType k F] (htr : Algebra.trdeg k F = 1) :
+    ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F :=
+  have ⟨_, hs, hsep⟩ := exists_isTranscendenceBasis_and_isSeparable_of_perfectField k F
+  exists_transcendental_and_isSeparable_adjoin_of_finset htr hs hsep
+
+/-- A finitely generated **geometrically reduced** extension of transcendence degree one has a
+separating element: an element `x` transcendental over the base such that the extension is
+separable algebraic over `k(x)`. Unlike
+`TauCeti.exists_transcendental_and_isSeparable_adjoin_of_perfectField`, the base field may be
+imperfect.
+
+This is the singleton form of
+`TauCeti.exists_isTranscendenceBasis_and_isSeparable_of_isGeometricallyReduced`. -/
+theorem exists_transcendental_and_isSeparable_adjoin_of_isGeometricallyReduced
+    [Algebra.EssFiniteType k F] [Algebra.IsGeometricallyReduced k F]
+    (htr : Algebra.trdeg k F = 1) :
+    ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F :=
+  have ⟨_, hs, hsep⟩ := exists_isTranscendenceBasis_and_isSeparable_of_isGeometricallyReduced k F
+  exists_transcendental_and_isSeparable_adjoin_of_finset htr hs hsep
 
 /-- **A purely inseparable element outside `k` rules out separating elements**: if `α ∈ F` is not
 in `k` but some power `α ^ q ^ n`, `q` the exponential characteristic of `k`, is, then `F` is

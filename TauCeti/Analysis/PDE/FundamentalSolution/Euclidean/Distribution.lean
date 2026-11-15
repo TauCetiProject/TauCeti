@@ -79,11 +79,7 @@ theorem locallyIntegrable_newtonianKernel (n : ℕ) :
   · rcases h with rfl | rfl
     · rw [newtonianKernel_zero_function]
       exact locallyIntegrable_zero
-    · have hzero : newtonianKernel 2 = 0 := by
-        funext x
-        rw [newtonianKernel_def]
-        norm_num
-      rw [hzero]
+    · rw [newtonianKernel_two]
       exact locallyIntegrable_zero
   · have hn : n = 1 ∨ 3 ≤ n := by omega
     rcases hn with rfl | hn
@@ -122,6 +118,23 @@ theorem locallyIntegrable_newtonianKernel (n : ℕ) :
         apply AEMeasurable.aestronglyMeasurable
         measurability
 
+/-- The Fréchet derivative of the Newtonian kernel is locally integrable in dimensions zero
+and two, where the kernel is identically zero. -/
+private lemma locallyIntegrable_fderiv_newtonianKernel_of_eq_zero_or_two (n : ℕ)
+    (h : n = 0 ∨ n = 2) :
+    LocallyIntegrable (fun x => fderiv ℝ (newtonianKernel n) x) := by
+  rcases h with rfl | rfl
+  · rw [newtonianKernel_zero_function]
+    simp only [fderiv_zero]
+    simpa only [Pi.zero_apply] using
+      (locallyIntegrable_const (μ := volume)
+        (0 : EuclideanSpace ℝ (Fin 0) →L[ℝ] ℝ))
+  · rw [newtonianKernel_two]
+    simp only [fderiv_zero]
+    simpa only [Pi.zero_apply] using
+      (locallyIntegrable_const (μ := volume)
+        (0 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ))
+
 /-- The Fréchet derivative of the Newtonian kernel is locally integrable in every dimension.
 
 In dimensions zero and two it is identically zero; in dimensions one and at least three its
@@ -129,21 +142,7 @@ radial order is `1 - n`, strictly below the ambient dimension. -/
 theorem locallyIntegrable_fderiv_newtonianKernel (n : ℕ) :
     LocallyIntegrable (fun x => fderiv ℝ (newtonianKernel n) x) := by
   by_cases h : n = 0 ∨ n = 2
-  · rcases h with rfl | rfl
-    · rw [newtonianKernel_zero_function]
-      simp only [fderiv_zero]
-      simpa only [Pi.zero_apply] using
-        (locallyIntegrable_const (μ := volume)
-          (0 : EuclideanSpace ℝ (Fin 0) →L[ℝ] ℝ))
-    · have hzero : newtonianKernel 2 = 0 := by
-        funext x
-        rw [newtonianKernel_def]
-        norm_num
-      rw [hzero]
-      simp only [fderiv_zero]
-      simpa only [Pi.zero_apply] using
-        (locallyIntegrable_const (μ := volume)
-          (0 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ))
+  · exact locallyIntegrable_fderiv_newtonianKernel_of_eq_zero_or_two n h
   · have hn : n = 1 ∨ 3 ≤ n := by omega
     have hn1 : 1 ≤ n := by omega
     have hn2 : n ≠ 2 := by omega
@@ -176,9 +175,8 @@ theorem locallyIntegrable_fderiv_newtonianKernel (n : ℕ) :
       have hg : Measurable g := by
         dsimp [g]
         fun_prop
-      have hfg : (fun x => fderiv ℝ (newtonianKernel n) x) =ᵐ[volume] g := by
-        filter_upwards [hae] with x hx
-        exact fderiv_newtonianKernel n hn2 hx
+      have hfg : (fun x => fderiv ℝ (newtonianKernel n) x) =ᵐ[volume] g :=
+        ae_of_all _ (fderiv_newtonianKernel n hn2)
       exact hg.aestronglyMeasurable.congr hfg.symm
 
 /-- The distribution induced by the Newtonian kernel on all of Euclidean space in dimensions

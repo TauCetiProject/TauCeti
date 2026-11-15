@@ -124,9 +124,8 @@ theorem iSupIndep_gradeBy (f : H → ι) : iSupIndep (gradeBy R N f) := by
 
 /-- A homogeneous series is finitely supported if the period is bounded above on its fibre. -/
 theorem finite_support_of_mem_gradeBy {f : H → ι} {i : ι} (hf : BddAbove (N '' (f ⁻¹' {i})))
-    {a : NovikovSeries R H N} (ha : a ∈ gradeBy R N f i) : a.support.Finite := by
-  obtain ⟨C, hC⟩ := hf
-  exact (a.finite_le C).subset fun h hh => ⟨mem_support.1 hh, hC ⟨h, ha hh, rfl⟩⟩
+    {a : NovikovSeries R H N} (ha : a ∈ gradeBy R N f i) : a.support.Finite :=
+  finite_support_of_bddAbove_image (hf.mono (image_mono ha))
 
 /-- A finitely supported series is a finite sum of homogeneous series. -/
 theorem ofFinsupp_mem_iSup_gradeBy (f : H → ι) (x : H →₀ R) :

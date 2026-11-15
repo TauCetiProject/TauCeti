@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.RingDivision
+public import Mathlib.Algebra.Polynomial.Taylor
+import Mathlib.Algebra.Polynomial.BigOperators
+import TauCeti.Algebra.Polynomial.Taylor
 
 /-!
 # Root multiplicities in reciprocal coordinates
@@ -38,7 +41,22 @@ degree of `p`: the reversal is `p` read in the reciprocal coordinate.
 
 The file also records how reversal interacts with products of monic polynomials and with the
 binomials `X ^ n - C a`, which together compute the reverse of a characteristic polynomial that
-factors into such binomials.
+factors into such binomials, and that reflection at a sum of degree bounds is multiplicative on
+finite products (`Polynomial.reflect_prod`), which computes the reflection of a determinant of
+polynomials term by term. The reverse of a scalar multiple of a product of linear factors with
+nonzero roots is again such a product in the reciprocal roots
+(`Polynomial.reverse_C_mul_prod_X_sub_C`). Reflection at a degree bound stays within that bound,
+also after a coefficient map, and its coefficient at the bound is the constant coefficient.
+The reverse of
+`(X - C a) ^ n` is `(1 - C a * X) ^ n`, and over a nontrivial ring its factor `1 - X` (for `a = 1`)
+is nonzero.
+
+Finally, reflecting the difference `p(X) - p(X - a)` at a bound on the degree of `p`, its first
+coefficient past the degree drop is `natDegree p * a * leadingCoeff p`: the top terms cancel and
+the subleading term is read off from the Taylor expansion of `p` at `-a`.
+
+Over a semifield, translating by `τ` and reflecting at a degree bound `d` sends the root `a⁻¹ + τ`
+of `p` to the root `a` of `(taylor τ p).reflect d` (`Polynomial.isRoot_reflect_taylor_iff`).
 -/
 
 public section
@@ -132,6 +150,38 @@ theorem reflect_pow [Semiring R] (p : R[X]) {N : ℕ} (hN : p.natDegree ≤ N) (
     rw [pow_succ, Nat.succ_mul, reflect_mul _ _ (natDegree_pow_le_of_le k hN) hN,
       ih, pow_succ]
 
+/-- Reflection of a finite product, at the sum of degree bounds for its factors, is the product
+of the reflections of the factors at their bounds. -/
+theorem reflect_prod [CommSemiring R] {ι : Type*} (s : Finset ι) (f : ι → R[X]) (N : ι → ℕ)
+    (h : ∀ i ∈ s, (f i).natDegree ≤ N i) :
+    (∏ i ∈ s, f i).reflect (∑ i ∈ s, N i) = ∏ i ∈ s, (f i).reflect (N i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => rw [Finset.prod_empty, Finset.prod_empty, Finset.sum_empty, ← C_1, reflect_C,
+      pow_zero, mul_one]
+  | insert a s ha ih =>
+    have hs : (∏ i ∈ s, f i).natDegree ≤ ∑ i ∈ s, N i :=
+      (natDegree_prod_le _ _).trans <|
+        Finset.sum_le_sum fun i hi ↦ h i (Finset.mem_insert_of_mem hi)
+    rw [Finset.prod_insert ha, Finset.prod_insert ha, Finset.sum_insert ha,
+      reflect_mul _ _ (h a (Finset.mem_insert_self a s)) hs,
+      ih fun i hi ↦ h i (Finset.mem_insert_of_mem hi)]
+
+/-- Reflection at a bound on the degree stays within that bound. -/
+theorem natDegree_reflect_le_of_natDegree_le [Semiring R] {p : R[X]} {N : ℕ}
+    (hN : p.natDegree ≤ N) : (p.reflect N).natDegree ≤ N :=
+  natDegree_reflect_le.trans (max_le le_rfl hN)
+
+/-- Reflection at a bound on the degree, followed by a coefficient map, stays within that bound. -/
+theorem natDegree_map_reflect_le_of_natDegree_le [Semiring R] [Semiring S] (f : R →+* S)
+    {p : R[X]} {N : ℕ} (hN : p.natDegree ≤ N) : ((p.reflect N).map f).natDegree ≤ N :=
+  natDegree_map_le.trans (natDegree_reflect_le_of_natDegree_le hN)
+
+/-- The coefficient of the reflection at the bound itself is the constant coefficient. -/
+theorem coeff_reflect_self [Semiring R] (p : R[X]) (N : ℕ) :
+    (p.reflect N).coeff N = p.coeff 0 := by
+  rw [coeff_reflect, revAt_le le_rfl, Nat.sub_self]
+
 /-- Reflection exchanges an invertible root with its inverse, preserving its multiplicity.
 The degree bound can exceed the actual degree, and the zero polynomial is included. -/
 @[simp]
@@ -177,6 +227,22 @@ theorem rootMultiplicity_reflect [CommRing R] (p : R[X]) {N : ℕ}
     exact heval (by rw [h, eval_zero])
   rw [hfactor, rootMultiplicity_mul_X_sub_C_pow hres,
     rootMultiplicity_eq_zero (by simpa only [IsRoot.def] using heval), zero_add]
+
+/-- Over a field, reflection exchanges the multiplicity at a nonzero point with the multiplicity of
+the original polynomial at its inverse. -/
+@[simp]
+theorem rootMultiplicity_reflect_eq_inv [Field R] (p : R[X]) {N : ℕ} (hN : p.natDegree ≤ N)
+    {t : R} (ht : t ≠ 0) :
+    (p.reflect N).rootMultiplicity t = p.rootMultiplicity t⁻¹ := by
+  simpa only [Units.val_inv_eq_inv_val, Units.val_mk0, inv_inv] using
+    p.rootMultiplicity_reflect hN (Units.mk0 t⁻¹ (inv_ne_zero ht))
+
+/-- In a division semiring, a nonzero point is a root of a polynomial exactly when its inverse is
+a root of the reflection. -/
+theorem isRoot_reflect_inv_iff [DivisionSemiring R] (p : R[X]) {N : ℕ} (hN : p.natDegree ≤ N)
+    {t : R} (ht : t ≠ 0) :
+    (p.reflect N).IsRoot t⁻¹ ↔ p.IsRoot t := by
+  simpa only [IsRoot.def, eval₂_id] using p.eval₂_inv_reflect_eq_zero_iff (RingHom.id R) ht hN
 
 /-- The excess of a reflection bound over the degree of a nonzero polynomial is exactly
 the multiplicity of zero in its reflection. -/
@@ -243,6 +309,28 @@ theorem reverse_multiset_prod_of_monic [CommSemiring R] {s : Multiset R[X]}
       reverse_mul (by rw [hp.leadingCoeff, hprod.leadingCoeff, one_mul]; exact one_ne_zero),
       ih hs']
 
+/-- The reverse of `(X - C a) ^ n` is `(1 - C a * X) ^ n`. -/
+@[simp]
+theorem reverse_X_sub_C_pow [CommRing R] (a : R) (n : ℕ) :
+    ((X - C a) ^ n).reverse = (1 - C a * X) ^ n := by
+  nontriviality R
+  have h := reverse_X_pow_sub_C 1 a
+  rw [pow_one] at h
+  have h' := reverse_multiset_prod_of_monic (s := Multiset.replicate n (X - C a))
+    fun p hp ↦ Multiset.eq_of_mem_replicate hp ▸ monic_X_sub_C a
+  rwa [Multiset.prod_replicate, Multiset.map_replicate, h, Multiset.prod_replicate] at h'
+
+/-- The reverse of `(X - 1) ^ n` is `(1 - X) ^ n`. This is the form `reverse_X_sub_C_pow` takes
+after `C 1` simplifies to `1`, as in `LinearMap.charpoly_one`. -/
+@[simp]
+theorem reverse_X_sub_one_pow [CommRing R] (n : ℕ) :
+    ((X - 1 : R[X]) ^ n).reverse = (1 - X) ^ n := by
+  simpa using reverse_X_sub_C_pow (1 : R) n
+
+/-- Over a nontrivial ring, the polynomial `1 - X` is nonzero. -/
+theorem one_sub_X_ne_zero [Ring R] [Nontrivial R] : (1 - X : R[X]) ≠ 0 :=
+  fun h ↦ by simpa using congrArg (eval 0) h
+
 /-- The reversal of a polynomial takes the value of the leading coefficient at `0`. -/
 @[simp]
 theorem eval_zero_reverse [Semiring R] (p : R[X]) : p.reverse.eval 0 = p.leadingCoeff := by
@@ -261,5 +349,56 @@ theorem eval_reverse_of_ne_zero [Field R] (p : R[X]) {w : R} (hw : w ≠ 0) :
   have h := eval₂_reverse_mul_pow (RingHom.id R) w⁻¹ p
   rw [invOf_eq_inv, inv_inv, eval₂_id, eval₂_id, inv_pow] at h
   rw [← h, mul_comm, inv_mul_cancel_right₀ (pow_ne_zero _ hw)]
+
+/-- Reflected at a bound `N` on the degree of `p`, the difference `p(X) - p(X - a)` has
+coefficient `natDegree p * a * leadingCoeff p` in degree `N - natDegree p + 1`. -/
+theorem coeff_reflect_sub_comp_X_sub_C [CommRing R] (p : R[X]) {N : ℕ} (hp : p.natDegree ≤ N)
+    (a : R) :
+    (reflect N (p - p.comp (X - C a))).coeff (N - p.natDegree + 1) =
+      p.natDegree * a * p.leadingCoeff := by
+  rcases Nat.eq_zero_or_pos p.natDegree with h0 | hpos
+  · rw [eq_C_of_natDegree_eq_zero h0]
+    simp
+  -- Passing from `p` to `p(X - a)` lowers the subleading coefficient by that amount.
+  have h := nextCoeff_taylor p (-a)
+  rw [nextCoeff_of_natDegree_pos (by rwa [natDegree_taylor]), natDegree_taylor,
+    nextCoeff_of_natDegree_pos hpos, taylor_apply, map_neg, ← sub_eq_add_neg] at h
+  rw [coeff_reflect, revAt_le (by omega), show N - (N - p.natDegree + 1) = p.natDegree - 1 by
+    omega, coeff_sub, h]
+  ring
+
+/-- Translating by `τ` and reflecting at a degree bound `d` sends the root `a⁻¹ + τ` of `p` to
+the root `a` of `(taylor τ p).reflect d`, for nonzero `a`, when `natDegree p ≤ d`. -/
+theorem isRoot_reflect_taylor_iff {K : Type*} [Semifield K] {p : K[X]} {d : ℕ}
+    (hp : p.natDegree ≤ d) (τ : K) {a : K} (ha : a ≠ 0) :
+    ((taylor τ p).reflect d).IsRoot a ↔ p.IsRoot (a⁻¹ + τ) := by
+  let : Invertible a⁻¹ := invertibleOfNonzero (inv_ne_zero ha)
+  have h := eval₂_reflect_eq_zero_iff (RingHom.id K) a⁻¹ d (taylor τ p) (by simpa using hp)
+  simpa [IsRoot.def, eval₂_id, taylor_apply, eval_comp] using h
+
+/-- Reversing a scalar multiple of a product of linear factors with nonzero roots gives the
+scalar times the product of the reciprocal linear factors: reversal replaces each root `r i` by
+its reciprocal and multiplies the original scalar by `∏ i ∈ s, -r i`. Only the roots indexed
+by `s` need be nonzero. -/
+theorem reverse_C_mul_prod_X_sub_C {K ι : Type*} [Field K] (s : Finset ι) (r : ι → K) (c : K)
+    (hr0 : ∀ i ∈ s, r i ≠ 0) :
+    (C c * ∏ i ∈ s, (X - C (r i))).reverse =
+      C (c * ∏ i ∈ s, -r i) * ∏ i ∈ s, (X - C (r i)⁻¹) := by
+  have hrev : (∏ i ∈ s, (X - C (r i))).reverse = ∏ i ∈ s, (1 - C (r i) * X) := by
+    have h := reverse_multiset_prod_of_monic (s := s.val.map fun i ↦ X - C (r i))
+      (by simp [monic_X_sub_C])
+    have hf (i : ι) : (X - C (r i)).reverse = 1 - C (r i) * X := by
+      simpa using reverse_X_pow_sub_C 1 (r i)
+    rw [Finset.prod, Finset.prod, h, Multiset.map_map]
+    exact congrArg Multiset.prod (Multiset.map_congr rfl fun i _ ↦ hf i)
+  have hlin (i : ι) (hi : i ∈ s) :
+      1 - C (r i) * X = C (-r i) * (X - C (r i)⁻¹) := by
+    rw [mul_sub, ← C_mul, neg_mul, mul_inv_cancel₀ (hr0 i hi)]
+    simp [C_neg]
+    ring
+  conv_lhs => rw [reverse_mul_of_domain, reverse_C, hrev]
+  rw [Finset.prod_congr rfl hlin]
+  simp only [Finset.prod_mul_distrib, ← map_prod]
+  rw [← mul_assoc, ← C_mul]
 
 end Polynomial

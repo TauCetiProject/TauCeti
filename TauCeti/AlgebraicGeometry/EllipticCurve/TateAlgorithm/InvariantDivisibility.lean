@@ -12,8 +12,10 @@ import Mathlib.Tactic.Ring
 # Divisibility of Weierstrass invariants in Tate normal forms
 
 The coefficient bounds in the late branches of Tate's algorithm imply these bounds on the
-Weierstrass invariants. They are polynomial identities over any commutative ring. The Step 8–10
-discriminant bounds in `TateAlgorithm.LateDiscriminant` use them.
+Weierstrass invariants. They are polynomial identities over any commutative ring. The bounds on
+`b₄`, `b₆`, and `b₈` carry an exponent shift `n`, so that one statement covers both the Step 8
+normal form and the stronger Step 10 normal form. The Step 8–10 discriminant bounds in
+`TateAlgorithm.LateDiscriminant` use them.
 
 ## Reference
 
@@ -36,9 +38,9 @@ theorem pow_two_dvd_b₂ (h₁ : ϖ ∣ W.a₁) (h₂ : ϖ ^ 2 ∣ W.a₂) :
   rw [b₂, hu, hv]
   ring
 
-/-- If `ϖ ∣ a₁`, `ϖ² ∣ a₃`, and `ϖ³ ∣ a₄`, then `ϖ³ ∣ b₄`. -/
-theorem pow_three_dvd_b₄ (h₁ : ϖ ∣ W.a₁) (h₃ : ϖ ^ 2 ∣ W.a₃)
-    (h₄ : ϖ ^ 3 ∣ W.a₄) : ϖ ^ 3 ∣ W.b₄ := by
+/-- If `ϖ ∣ a₁`, `ϖⁿ ∣ a₃`, and `ϖⁿ⁺¹ ∣ a₄`, then `ϖⁿ⁺¹ ∣ b₄`. -/
+theorem pow_add_one_dvd_b₄ {n : ℕ} (h₁ : ϖ ∣ W.a₁) (h₃ : ϖ ^ n ∣ W.a₃)
+    (h₄ : ϖ ^ (n + 1) ∣ W.a₄) : ϖ ^ (n + 1) ∣ W.b₄ := by
   obtain ⟨u, hu⟩ := h₁
   obtain ⟨v, hv⟩ := h₃
   obtain ⟨w, hw⟩ := h₄
@@ -46,25 +48,26 @@ theorem pow_three_dvd_b₄ (h₁ : ϖ ∣ W.a₁) (h₃ : ϖ ^ 2 ∣ W.a₃)
   rw [b₄, hu, hv, hw]
   ring
 
-/-- If `ϖ² ∣ a₃` and `ϖ⁴ ∣ a₆`, then `ϖ⁴ ∣ b₆`. -/
-theorem pow_four_dvd_b₆ (h₃ : ϖ ^ 2 ∣ W.a₃) (h₆ : ϖ ^ 4 ∣ W.a₆) :
-    ϖ ^ 4 ∣ W.b₆ := by
+/-- If `ϖⁿ⁺² ∣ a₃` and `ϖⁿ⁺⁴ ∣ a₆`, then `ϖⁿ⁺⁴ ∣ b₆`. -/
+theorem pow_add_four_dvd_b₆ {n : ℕ} (h₃ : ϖ ^ (n + 2) ∣ W.a₃) (h₆ : ϖ ^ (n + 4) ∣ W.a₆) :
+    ϖ ^ (n + 4) ∣ W.b₆ := by
   obtain ⟨u, hu⟩ := h₃
   obtain ⟨v, hv⟩ := h₆
-  refine ⟨u ^ 2 + 4 * v, ?_⟩
+  refine ⟨ϖ ^ n * u ^ 2 + 4 * v, ?_⟩
   rw [b₆, hu, hv]
   ring
 
-/-- The Step 8 coefficient bounds imply `ϖ⁶ ∣ b₈`. -/
-theorem pow_six_dvd_b₈ (h₁ : ϖ ∣ W.a₁) (h₂ : ϖ ^ 2 ∣ W.a₂)
-    (h₃ : ϖ ^ 2 ∣ W.a₃) (h₄ : ϖ ^ 3 ∣ W.a₄) (h₆ : ϖ ^ 4 ∣ W.a₆) :
-    ϖ ^ 6 ∣ W.b₈ := by
+/-- If `ϖ ∣ a₁`, `ϖ² ∣ a₂`, `ϖⁿ⁺² ∣ a₃`, `ϖⁿ⁺³ ∣ a₄`, and `ϖⁿ⁺⁴ ∣ a₆`, then `ϖⁿ⁺⁶ ∣ b₈`.
+The case `n = 0` is the Step 8 normal form, and `n = 1` is the Step 10 normal form. -/
+theorem pow_add_six_dvd_b₈ {n : ℕ} (h₁ : ϖ ∣ W.a₁) (h₂ : ϖ ^ 2 ∣ W.a₂)
+    (h₃ : ϖ ^ (n + 2) ∣ W.a₃) (h₄ : ϖ ^ (n + 3) ∣ W.a₄) (h₆ : ϖ ^ (n + 4) ∣ W.a₆) :
+    ϖ ^ (n + 6) ∣ W.b₈ := by
   obtain ⟨u, hu⟩ := h₁
   obtain ⟨v, hv⟩ := h₂
   obtain ⟨w, hw⟩ := h₃
   obtain ⟨x, hx⟩ := h₄
   obtain ⟨y, hy⟩ := h₆
-  refine ⟨u ^ 2 * y + 4 * v * y - u * w * x + v * w ^ 2 - x ^ 2, ?_⟩
+  refine ⟨u ^ 2 * y + 4 * v * y + ϖ ^ n * (v * w ^ 2 - u * w * x - x ^ 2), ?_⟩
   rw [b₈, hu, hv, hw, hx, hy]
   ring
 

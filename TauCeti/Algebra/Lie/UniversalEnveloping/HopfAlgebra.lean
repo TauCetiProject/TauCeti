@@ -26,7 +26,7 @@ representations is handled by Mathlib's `Coalgebra.Repr.mul`.
 
 * `TauCeti.UniversalEnvelopingAlgebra.instHopfAlgebra`: the canonical Hopf algebra structure.
 * `TauCeti.UniversalEnvelopingAlgebra.hopfAlgebraStructAntipode_eq_antipode`: the Hopf
-  antipode is `TauCeti.UniversalEnvelopingAlgebra.antipode`.
+  antipode is `UniversalEnvelopingAlgebra.antipode`.
 
 ## References
 
@@ -47,7 +47,8 @@ variable (R : Type u) [CommRing R]
 variable (L : Type v) [LieRing L] [LieAlgebra R L]
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
-local notation "convAntipode" => (toConv (antipode R) : WithConv (U →ₗ[R] U))
+local notation "convAntipode" => (toConv (_root_.UniversalEnvelopingAlgebra.antipode R) :
+    WithConv (U →ₗ[R] U))
 local notation "convId" => (toConv LinearMap.id : WithConv (U →ₗ[R] U))
 
 /-- The sum manipulation common to the two convolution computations below: an inner sum that
@@ -71,20 +72,23 @@ private theorem antipodeConv_mul_idConv_mul_apply (a b : U)
         (convAntipode * convId) b := by
   let ra := Coalgebra.Repr.arbitrary R a
   let rb := Coalgebra.Repr.arbitrary R b
-  have hra : ∑ i ∈ ra.index, antipode R (ra.left i) * ra.right i =
+  have hra : ∑ i ∈ ra.index, _root_.UniversalEnvelopingAlgebra.antipode R
+      (ra.left i) * ra.right i =
       (Coalgebra.counit (R := R) a) • (1 : U) := by
     rw [← ha]
     simpa using
-      (ra.convMul_apply (toConv (antipode R)) (toConv LinearMap.id)).symm
+      (ra.convMul_apply (toConv (_root_.UniversalEnvelopingAlgebra.antipode R))
+        (toConv LinearMap.id)).symm
   rw [Coalgebra.Repr.convMul_apply (ra.mul rb)
     convAntipode convId, rb.convMul_apply convAntipode convId]
   simp only [Coalgebra.Repr.mul_index, Coalgebra.Repr.mul_left,
     Coalgebra.Repr.mul_right,
-    UniversalEnvelopingAlgebra.antipode_mul_antidistrib, LinearMap.id_apply,
+    _root_.UniversalEnvelopingAlgebra.antipode_mul_antidistrib, LinearMap.id_apply,
     Finset.sum_product]
   rw [Finset.sum_comm]
   exact sum_sum_mul_mul_eq_smul_sum R L ra.index rb.index
-    (fun i => antipode R (ra.left i)) ra.right (fun j => antipode R (rb.left j)) rb.right _ hra
+    (fun i => _root_.UniversalEnvelopingAlgebra.antipode R (ra.left i)) ra.right
+    (fun j => _root_.UniversalEnvelopingAlgebra.antipode R (rb.left j)) rb.right _ hra
 
 private theorem idConv_mul_antipodeConv_mul_apply (a b : U)
     (hb : (convId * convAntipode) b =
@@ -94,20 +98,22 @@ private theorem idConv_mul_antipodeConv_mul_apply (a b : U)
         (convId * convAntipode) a := by
   let ra := Coalgebra.Repr.arbitrary R a
   let rb := Coalgebra.Repr.arbitrary R b
-  have hrb : ∑ j ∈ rb.index, rb.left j * antipode R (rb.right j) =
+  have hrb : ∑ j ∈ rb.index, rb.left j * _root_.UniversalEnvelopingAlgebra.antipode R
+      (rb.right j) =
       (Coalgebra.counit (R := R) b) • (1 : U) := by
     rw [← hb]
     simpa using
-      (rb.convMul_apply (toConv LinearMap.id) (toConv (antipode R))).symm
+      (rb.convMul_apply (toConv LinearMap.id)
+        (toConv (_root_.UniversalEnvelopingAlgebra.antipode R))).symm
   rw [Coalgebra.Repr.convMul_apply (ra.mul rb)
     convId convAntipode, ra.convMul_apply convId convAntipode]
   simp only [Coalgebra.Repr.mul_index, Coalgebra.Repr.mul_left,
     Coalgebra.Repr.mul_right,
-    UniversalEnvelopingAlgebra.antipode_mul_antidistrib, LinearMap.id_apply,
+    _root_.UniversalEnvelopingAlgebra.antipode_mul_antidistrib, LinearMap.id_apply,
     Finset.sum_product]
   exact sum_sum_mul_mul_eq_smul_sum R L rb.index ra.index
-    rb.left (fun j => antipode R (rb.right j)) ra.left
-    (fun i => antipode R (ra.right i)) _ hrb
+    rb.left (fun j => _root_.UniversalEnvelopingAlgebra.antipode R (rb.right j)) ra.left
+    (fun i => _root_.UniversalEnvelopingAlgebra.antipode R (ra.right i)) _ hrb
 
 /-- A linear endomorphism that agrees with `a ↦ ε a • 1` on scalars and on the canonical Lie
 generators, and whose agreement set is closed under multiplication, agrees with it everywhere:
@@ -149,11 +155,11 @@ private theorem idConv_mul_antipodeConv_apply (a : U) :
 
 /-- A universal enveloping algebra with its standard bialgebra structure is a Hopf algebra.
 
-The antipode is `TauCeti.UniversalEnvelopingAlgebra.antipode`, the linear endomorphism underlying
-the anti-automorphism `antipodeEquiv`: it reverses products and negates every canonical Lie
-generator. -/
+The antipode is `UniversalEnvelopingAlgebra.antipode`, the linear endomorphism underlying
+the anti-automorphism `UniversalEnvelopingAlgebra.antipodeEquiv`: it reverses the order of
+products and negates every canonical Lie generator. -/
 noncomputable instance instHopfAlgebra : HopfAlgebra R U :=
-  HopfAlgebra.ofConvInverse (antipode R)
+  HopfAlgebra.ofConvInverse (_root_.UniversalEnvelopingAlgebra.antipode R)
     (by
       apply WithConv.ext
       apply LinearMap.ext
@@ -171,6 +177,6 @@ noncomputable instance instHopfAlgebra : HopfAlgebra R U :=
 antipode constructed independently of the bialgebra structure. -/
 theorem hopfAlgebraStructAntipode_eq_antipode :
     HopfAlgebraStruct.antipode R (A := U) =
-      UniversalEnvelopingAlgebra.antipode R := rfl
+      _root_.UniversalEnvelopingAlgebra.antipode R := rfl
 
 end TauCeti.UniversalEnvelopingAlgebra

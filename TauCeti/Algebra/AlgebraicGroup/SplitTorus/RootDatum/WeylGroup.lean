@@ -131,7 +131,7 @@ private noncomputable def coordinatePermRootDatumAutHom :
     apply RootPairing.Equiv.weightHom_injective (coordinateRootDatum σ)
     apply LinearEquiv.ext
     intro x
-    simp only [RootPairing.Equiv.weightHom_apply, map_mul, LinearEquiv.mul_apply,
+    simp only [RootPairing.Equiv.weightHom_apply, map_mul, _root_.mul_apply_eq_comp,
       RootPairing.Equiv.weightEquiv_apply, coordinatePermRootDatumAut_weightMap_apply]
     simpa only [Equiv.Perm.mul_def, LinearEquiv.trans_apply] using
       congrArg (fun g : (σ →₀ ℤ) ≃ₗ[ℤ] (σ →₀ ℤ) ↦ g x)

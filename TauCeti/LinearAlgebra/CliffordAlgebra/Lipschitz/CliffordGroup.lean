@@ -44,6 +44,8 @@ Scalar units lie in the Lipschitz group as soon as some vector is anisotropic.
 * `CliffordAlgebra.mem_spinGroup_iff_unitary_even_and_involute_act_ι_mem_range_ι`: under the
   same hypotheses, Mathlib's Spin group consists of the even unitary elements whose twisted
   conjugation preserves the vectors, with no reference to the Lipschitz closure.
+* `CliffordAlgebra.mem_spinGroup_iff_unitary_and_mem_even_and_conj_mem`: the same
+  characterization with the twisted conjugation replaced by plain conjugation.
 
 ## References
 
@@ -169,5 +171,18 @@ theorem mem_spinGroup_iff_unitary_even_and_involute_act_ι_mem_range_ι (hQ : Q.
         rw [Unitary.val_toUnits_apply]
         exact Unitary.mul_star_self_of_mem hunit)
     simpa only [Unitary.val_toUnits_apply, hinv] using hact m
+
+/-- For a nondegenerate form representing a unit, an element lies in the Spin group exactly when
+it is unitary, even, and its conjugation `y ↦ x * y * star x` preserves the vectors. On even
+elements the twisted conjugation of
+`mem_spinGroup_iff_unitary_even_and_involute_act_ι_mem_range_ι` is this plain conjugation. -/
+theorem mem_spinGroup_iff_unitary_and_mem_even_and_conj_mem (hQ : Q.Nondegenerate)
+    (hv : ∃ v, IsUnit (Q v)) {x : CliffordAlgebra Q} :
+    x ∈ spinGroup Q ↔ x ∈ unitary (CliffordAlgebra Q) ∧ x ∈ even Q ∧
+      ∀ y ∈ LinearMap.range (ι Q), x * y * star x ∈ LinearMap.range (ι Q) := by
+  rw [mem_spinGroup_iff_unitary_even_and_involute_act_ι_mem_range_ι Q hQ hv]
+  refine and_congr_right fun _ ↦ and_congr_right fun he ↦ ?_
+  rw [involute_eq_of_mem_even (by rw [← even_toSubmodule Q]; exact he)]
+  exact ⟨fun h ↦ by rintro _ ⟨m, rfl⟩; exact h m, fun h m ↦ h _ ⟨m, rfl⟩⟩
 
 end CliffordAlgebra

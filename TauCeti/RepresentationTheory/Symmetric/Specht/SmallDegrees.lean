@@ -30,7 +30,7 @@ open TauCeti
 
 /-- The degrees of the Specht modules of `S₄`, indexed by their decreasing row lengths. -/
 theorem finrank_spechtModule_four (μ : Nat.Partition 4) :
-    Module.finrank ℚ (spechtModule μ) =
+    Module.finrank ℚ (spechtModule (R := ℚ) μ) =
       match μ.parts.sort (· ≥ ·) with
       | [4] => 1
       | [3, 1] => 3
@@ -51,7 +51,7 @@ theorem finrank_spechtModule_four (μ : Nat.Partition 4) :
 
 /-- The degrees of the Specht modules of `S₅`, indexed by their decreasing row lengths. -/
 theorem finrank_spechtModule_five (μ : Nat.Partition 5) :
-    Module.finrank ℚ (spechtModule μ) =
+    Module.finrank ℚ (spechtModule (R := ℚ) μ) =
       match μ.parts.sort (· ≥ ·) with
       | [5] => 1
       | [4, 1] => 4

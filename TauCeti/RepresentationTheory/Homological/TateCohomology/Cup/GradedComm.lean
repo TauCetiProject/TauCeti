@@ -5,6 +5,7 @@ Authors: Codex, Claude
 -/
 module
 
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Associativity
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Delta
 
 /-!
@@ -32,6 +33,8 @@ sequences split `k`-linearly (`TauCeti.TateCohomology.δ_cup_of_leftInverse`). T
 * `TauCeti.TateCohomology.cupH0_eq_flip_cup0H`: graded commutativity in bidegree `(p, 0)`.
 * `TauCeti.TateCohomology.cup0H_eq_flip_cupH0`: graded commutativity in bidegree `(0, q)`.
 * `TauCeti.TateCohomology.cup_gradedComm`: graded commutativity in all integer bidegrees.
+* `TauCeti.TateCohomology.cup_right_comm`: `(x ∪ y) ∪ z` and `(x ∪ z) ∪ y` agree up to the Koszul
+  sign `(-1) ^ (q * s)` and the structure isomorphisms of the coefficient modules.
 
 ## References
 
@@ -186,5 +189,23 @@ theorem cup_gradedComm (M N : Rep k G) {p q r : ℤ} (h : p + q = r) (x : tateCo
     | succ m ih =>
       exact cup_gradedComm_of_add_one M N (Int.negSucc_lt_zero _) h x
         (ih (dimensionShiftDown N) (by omega)) y
+
+/-- **Right commutativity of the iterated cup product.** Cupping `x ∪ y` with `z` and cupping
+`x ∪ z` with `y` agree up to the Koszul sign `(-1) ^ (q * s)` and the associators and braiding
+identifying the coefficient modules `(M ⊗ N) ⊗ P` and `(M ⊗ P) ⊗ N`. -/
+theorem cup_right_comm (M N P : Rep k G) {p q s r₁ r₁' r : ℤ} (h₁ : p + q = r₁)
+    (h₂ : p + s = r₁') (h : r₁ + s = r) (h' : r₁' + q = r)
+    (x : tateCohomology M p) (y : tateCohomology N q) (z : tateCohomology P s) :
+    (tateCohomologyFunctor r).map (α_ M P N).inv
+      ((tateCohomologyFunctor r).map (M ◁ (β_ N P).hom)
+        ((tateCohomologyFunctor r).map (α_ M N P).hom
+          (cup (M ⊗ N) P r₁ s r h (cup M N p q r₁ h₁ x y) z))) =
+      (q * s).negOnePow • cup (M ⊗ P) N r₁' q r h' (cup M P p s r₁' h₂ x z) y := by
+  -- Reassociate so that graded commutativity can exchange the last two factors.
+  have hA := cup_assoc M P N h₂ (add_comm s q) h' x z y
+  rw [cup_assoc M N P h₁ rfl h x y z, ← cup_map_right, cup_gradedComm, Units.smul_def,
+    map_zsmul, map_zsmul, ← Units.smul_def]
+  rw [← hA, ← ModuleCat.comp_apply, ← Functor.map_comp, Iso.hom_inv_id,
+    (tateCohomologyFunctor r).map_id, ModuleCat.id_apply]
 
 end TauCeti.TateCohomology

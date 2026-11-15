@@ -46,17 +46,22 @@ end TauCeti
                                  if l.startswith(ORIGINS)))
         assert origin["total"] == 3 and origin["truncated"] is False, origin
         records = origin["records"]
-        assert sum(r.get("unknown") == "private_or_generated" for r in records) == 1, records
+        assert not any("unknown" in r for r in records), records
         new = "".join("simpNF " + r["report_name"] + "\n" for r in records)
         emitted = locations(result.stdout, new, "TauCeti.Probe\n", root, 3)
         known = [f for f in emitted["findings"] if "path" in f]
-        assert len(known) == 2, emitted
+        assert len(known) == 3, emitted
         assert {f["path"] for f in known} == {"TauCeti/Probe.lean"}, emitted
-        assert {f["line"] for f in known} == {5, 6}, emitted
-        assert all(f["column"] == 17 for f in known), emitted
-        assert {f["declaration"] for f in known} == {'TauCeti.«λ.雪»', 'TauCeti.«quote"slash\\»'}
+        # The private theorem keeps its defining module and its own range.
+        private = [f for f in known if f["declaration"].startswith("_private.TauCeti.Probe.")]
+        assert len(private) == 1 and private[0]["declaration"].endswith(".TauCeti.privateProbe"), emitted
+        assert private[0]["line"] == 7 and private[0]["column"] == 25, emitted
+        public = [f for f in known if f not in private]
+        assert {f["line"] for f in public} == {5, 6}, emitted
+        assert all(f["column"] == 17 for f in public), emitted
+        assert {f["declaration"] for f in public} == {'TauCeti.«λ.雪»', 'TauCeti.«quote"slash\\»'}
         print(LOCATIONS + json.dumps(emitted, ensure_ascii=True))
-        print("Real Lean escaped/Unicode/private origin smoke test passed")
+        print("Real Lean escaped/Unicode/private origin check passed")
 
 
 if __name__ == "__main__":

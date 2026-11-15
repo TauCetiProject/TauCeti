@@ -160,7 +160,7 @@ theorem det_hasseDeriv_sum_mul_toMvPolynomial {i : σ} {D : Fin m → σ →₀ 
         of (fun k j ↦ hasseDeriv (D k) (f j)) *
           (of fun (l : Fin m) j ↦ (Polynomial.hasseDeriv l (g j)).toMvPolynomial i)ᵀ := by
     ext1 k l
-    simp [mul_apply, hasseDeriv_add_single_mul_toMvPolynomial (hD k) (hf _)]
+    simp [Matrix.mul_apply, hasseDeriv_add_single_mul_toMvPolynomial (hD k) (hf _)]
   -- The second factor is the Hasse matrix of `g` mapped entrywise by `toMvPolynomial i`.
   have hg : (of fun (l : Fin m) j ↦ (Polynomial.hasseDeriv l (g j)).toMvPolynomial i) =
       (Polynomial.toMvPolynomial i).mapMatrix

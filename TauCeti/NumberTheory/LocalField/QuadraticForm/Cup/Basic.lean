@@ -36,11 +36,13 @@ Kummer cup is then `ε • κ`, where `ε ∈ ZMod 2` is the Hilbert symbol `(a,
 
 public section
 
+universe u
+
 namespace TauCeti
 
 open _root_.ContinuousCohomology
 
-variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
+variable {K : Type u} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Invertible (2 : K)]
 
 /-- **Kummer cups over a local field are read off Hilbert symbols**: `(a) ∪ (b) = (c) ∪ (d)` in

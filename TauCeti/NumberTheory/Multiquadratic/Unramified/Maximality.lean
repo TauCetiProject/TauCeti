@@ -76,9 +76,7 @@ theorem exists_mem_candidateGenusField_sq_eq_intCast_of_subset {d a : ℤ} (hd :
     {u : Finset ℤ} (huprod : ∏ P ∈ u, P = fundamentalDiscriminant a)
     (hsub : u ⊆ genusPrimeDiscriminants hd) :
     ∃ z ∈ candidateGenusField hd, z ^ 2 = ((a : ℤ) : ℂ) := by
-  have hu : ∀ P ∈ u, IsPrimeDiscriminant P := fun P hP =>
-    (genusPrimeDiscriminants_spec hd).1 P (hsub hP)
-  obtain ⟨z, hzmem, hz⟩ := exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq hu huprod
+  obtain ⟨z, hzmem, hz⟩ := exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq huprod
     (L := ℂ) (fun P => genusFieldRoot hd ⟨P.val, hsub P.property⟩) fun P => by simp
   refine ⟨z, adjoin_le_iff.mpr ?_ hzmem, ?_⟩
   · rintro _ ⟨P, rfl⟩
@@ -260,6 +258,6 @@ theorem exists_isUnramifiedIn_and_finrank_eq_two_pow_card {d : ℤ} (hd : Square
   · rw [← candidateGenusFieldBase_def hd]
     exact finrank_candidateGenusFieldBase hd hnsq
   · rw [← candidateGenusFieldBase_def hd]
-    exact fun q hq _ => isUnramifiedIn_candidateGenusField hd hnsq q
+    exact fun q _ _ => isUnramifiedIn_candidateGenusField hd q
 
 end TauCeti.Multiquadratic

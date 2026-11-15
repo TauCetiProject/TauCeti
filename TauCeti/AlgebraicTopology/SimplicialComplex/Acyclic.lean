@@ -17,9 +17,9 @@ Let `K` be a simplicial complex with linearly ordered vertices, and let `v` be a
 `c` of `K` all of whose vertices are smaller than `v`, and such that adjoining `v` to `c` gives a
 face of `K`, has a *cone* `c * v`, the cell with vertex set `c ∪ {v}`, in which `v` is the last
 vertex. Extending linearly, and sending the cells that cannot be coned off to zero, gives the
-cone operator `TauCeti.OrderedSimplicialChain.cone`, built from the cone on a cell
-`AbstractSimplicialComplex.RealizationCell.cone`. On chains supported on cells that can be
-coned off it satisfies the cone identities
+cone operator `TauCeti.OrderedSimplicialChain.cone` over any coefficient semiring, built from the
+cone on a cell `AbstractSimplicialComplex.RealizationCell.cone`. Over a coefficient ring, on chains
+supported on cells that can be coned off it satisfies the cone identities
 
 * `∂ (z * v) = ε(z) [v] - z` in degree `0`, where `ε` sums the coefficients;
 * `∂ (z * v) = (∂ z) * v + (-1) ^ (n + 1) z` in degree `n ≥ 1`.
@@ -73,7 +73,9 @@ variable {ι : Type u} [LinearOrder ι] {K : AbstractSimplicialComplex ι}
 
 namespace OrderedSimplicialChain
 
-variable (R : Type v) [Ring R]
+section Semiring
+
+variable (R : Type v) [Semiring R]
 
 /-- The **cone operator** with cone vertex `v` on ordered simplicial `n`-chains: a cell all of
 whose vertices are smaller than `v`, and to which `v` can be adjoined, goes to its cone
@@ -99,6 +101,10 @@ theorem cone_single_of_not {v : ι} {n : ℕ} (c : RealizationCell K n)
     (h : ¬((∀ w ∈ c.1.1, w < v) ∧ insert v c.1.1 ∈ K)) (a : R) :
     cone R v n (single c a) = 0 := by
   simp [cone, h]
+
+end Semiring
+
+variable {R : Type v} [Ring R]
 
 /-- **The cone identity in degree `0`.** For a `0`-chain supported on vertices smaller than `v`
 and joined to `v` by an edge, the boundary of its cone is its augmentation times `[v]`, minus the

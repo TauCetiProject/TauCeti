@@ -171,7 +171,8 @@ theorem map_subtype_id_comp_corestriction (A : Rep.{u} k G) (n : ℕ) :
     rfl
   rw [← map_unit_comp_coindIso_hom, Category.assoc, coindIso_hom_comp_corestriction, ← map_id_comp,
     TauCeti.Rep.resCoindAdjunction_unit_app_comp_coindResAdjunction_counit_app, hsmul,
-    Functor.map_nsmul, Functor.map_nsmul, CategoryTheory.Functor.map_id]
+    CategoryTheory.Functor.map_nsmul, CategoryTheory.Functor.map_nsmul,
+      CategoryTheory.Functor.map_id]
   exact congrArg (S.index • ·) (CategoryTheory.Functor.map_id _ _)
 
 /-- A class in `Hⁿ(G, A)` whose restriction to the finite-index subgroup `S` vanishes is killed by
@@ -233,11 +234,6 @@ private theorem res_map_restrictCoind_comp_counit :
   ((resCoindAdjunction k φ₁.range.subtype).homEquiv_counit _ _ _).symm.trans
     (Equiv.symm_apply_apply _ _)
 
-private theorem resCoindAdjunction_counit_app_hom_apply
-    {D E : Type u} [Group D] [Group E] (f : D →* E) (N : Rep k D) (x : coind f N) :
-    ((resCoindAdjunction k f).counit.app N).hom x = x.1 1 :=
-  rfl
-
 private theorem evalOne_hom_apply (f : coindComp φ₁ φ₂ M) :
     (evalOne φ₁ φ₂ M).hom f = f.1 1 :=
   rfl
@@ -250,7 +246,8 @@ private theorem restrictCoind_hom_apply_coe (f : coindComp φ₁ φ₂ M) (b : B
       g.hom ((res φ₂ (coindComp φ₁ φ₂ M)).ρ b f))
     (res_map_restrictCoind_comp_counit φ₁ φ₂ M)
   rw [Rep.hom_comp, Representation.IntertwiningMap.comp_apply, Rep.resMap_hom_apply,
-    hom_comm_apply, resCoindAdjunction_counit_app_hom_apply, evalOne_hom_apply] at h
+    hom_comm_apply, Rep.resCoindAdjunction_counit_app_hom_apply,
+    evalOne_hom_apply] at h
   simpa only [res_obj_ρ, MonoidHom.coe_comp, Function.comp_apply, Rep.of_ρ,
     Representation.coind_apply_coe_apply, one_mul] using h
 
@@ -297,7 +294,7 @@ private theorem coindTrace_hom_apply_coe [φ₁.range.FiniteIndex] (f : coindCom
         res φ₂.range.subtype M => g.hom ((coindComp φ₁ φ₂ M).ρ c f))
     (res_map_coindTrace_comp_counit φ₁ φ₂ M)
   rw [Rep.hom_comp, Representation.IntertwiningMap.comp_apply, Rep.resMap_hom_apply,
-    hom_comm_apply, resCoindAdjunction_counit_app_hom_apply,
+    hom_comm_apply, Rep.resCoindAdjunction_counit_app_hom_apply,
     traceRestrictRange_hom_apply] at h
   have h' : ((coindTrace φ₁ φ₂ M).hom f).1 c =
       (traceRestrict φ₁ φ₂ M).hom ((coindComp φ₁ φ₂ M).ρ c f) := by
@@ -335,7 +332,7 @@ private theorem coindTrace_comp_counit [φ₁.range.FiniteIndex] [φ₂.range.Fi
       (Quotient.mk (QuotientGroup.rightRel (φ₂.comp φ₁).range) x).out
     simp only [F, Subgroup.coe_subtype] at this ⊢
     rw [this]
-    simp only [MonoidHom.comp_apply, Subgroup.coe_subtype, ← Module.End.mul_apply, ← map_mul,
+    simp only [MonoidHom.comp_apply, Subgroup.coe_subtype, ← _root_.mul_apply_eq_comp, ← map_mul,
       mul_inv_rev, inv_mul_cancel_right]
   calc _ = ∑ x : Quotient (QuotientGroup.rightRel φ₂.range) ×
         Quotient (QuotientGroup.rightRel φ₁.range), F (φ₂ x.2.out * x.1.out) := by
@@ -343,7 +340,7 @@ private theorem coindTrace_comp_counit [φ₁.range.FiniteIndex] [φ₂.range.Fi
         refine Finset.sum_congr rfl fun p _ => ?_
         rw [coindTrace_hom_apply_coe, map_sum]
         refine Finset.sum_congr rfl fun q _ => ?_
-        simp only [F, ← Module.End.mul_apply, ← map_mul, mul_inv_rev]
+        simp only [F, ← _root_.mul_apply_eq_comp, ← map_mul, mul_inv_rev]
     _ = _ := Fintype.sum_bijective _
       (MonoidHom.mk_mul_out_bijective φ₁ φ₂ (by simp [φ₂.ker_eq_bot h₂]))
       _ _ fun _ => hF _
@@ -506,12 +503,15 @@ theorem zmultiples_map_subtype_eq_top {p : ℕ} [Fact p.Prime] {A : Rep k G} {n 
   have hm0 : addOrderOf v ≠ 0 := (addOrderOf_pos v).ne'
   have hi0 : S.index ≠ 0 := Subgroup.index_ne_zero_of_finite
   have hval : padicValNat p S.index + b ≤ padicValNat p (addOrderOf v * S.index) := by
-    rw [← padicValNat_dvd_iff_le (mul_ne_zero hm0 hi0)]
+    simp only [Nat.padicValNat_def] at hu ⊢
+    rw [← _root_.multiplicity_dvd_iff_le (mul_ne_zero hm0 hi0)]
     refine dvd_trans ?_ ((hu.trans (addOrderOf_dvd_of_nsmul_eq_zero hm)))
-    rw [← S.index_mul_card, hb, padicValNat.mul hi0 (pow_ne_zero _ (Fact.out : p.Prime).ne_zero),
-      padicValNat.prime_pow]
-  rw [padicValNat.mul hm0 hi0] at hval
-  have hpb : p ^ b ∣ addOrderOf v := (padicValNat_dvd_iff_le hm0).2 (by omega)
+    rw [← S.index_mul_card, hb,
+      Nat.multiplicity_mul hi0 (pow_ne_zero _ (Fact.out : p.Prime).ne_zero),
+      Nat.multiplicity_prime_pow]
+  simp only [Nat.padicValNat_def] at hval
+  rw [Nat.multiplicity_mul hm0 hi0] at hval
+  have hpb : p ^ b ∣ addOrderOf v := (_root_.multiplicity_dvd_iff_le hm0).2 (by omega)
   have hord : addOrderOf v = Nat.card (groupCohomology (res S.subtype A) n) := by
     rw [hcard, hb]
     exact Nat.dvd_antisymm (hb ▸ hcard ▸ addOrderOf_dvd_natCard v) hpb

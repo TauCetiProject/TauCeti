@@ -56,7 +56,7 @@ variable {V : Type*} [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
 
 /-- The local spinor norm restricted to the derived special orthogonal reference subgroup. -/
 def OrthogonalCompactOpens.localSpinorNorm (hQ : Q.Nondegenerate) (p : Nat.Primes) :
-    U.specialOrthogonal p →* Multiplicative (SquareClassGroup ℚ_[p]) :=
+    U.specialOrthogonal p →* (ℚ_[p]ˣ ⧸ Subgroup.square ℚ_[p]ˣ) :=
   (CliffordAlgebra.spinorNorm (Q.baseChange ℚ_[p])
     (QuadraticForm.Nondegenerate.baseChange hQ)).comp (U.specialOrthogonal p).subtype
 
@@ -71,13 +71,13 @@ theorem OrthogonalCompactOpens.localSpinorNorm_apply (hQ : Q.Nondegenerate)
 /-- The reference subgroup in the local square-class group is the image of the derived special
 orthogonal reference subgroup under the spinor norm. -/
 def OrthogonalCompactOpens.localSpinorNormImage (hQ : Q.Nondegenerate) (p : Nat.Primes) :
-    Subgroup (Multiplicative (SquareClassGroup ℚ_[p])) :=
+    Subgroup ((ℚ_[p]ˣ ⧸ Subgroup.square ℚ_[p]ˣ)) :=
   (U.localSpinorNorm hQ p).range
 
 /-- Membership in the local spinor-norm image is witnessed by a point of the derived special
 orthogonal reference subgroup. -/
 theorem OrthogonalCompactOpens.mem_localSpinorNormImage_iff (hQ : Q.Nondegenerate)
-    (p : Nat.Primes) (x : Multiplicative (SquareClassGroup ℚ_[p])) :
+    (p : Nat.Primes) (x : (ℚ_[p]ˣ ⧸ Subgroup.square ℚ_[p]ˣ)) :
     x ∈ U.localSpinorNormImage hQ p ↔
       ∃ g : U.specialOrthogonal p,
         CliffordAlgebra.spinorNorm (Q.baseChange ℚ_[p])
@@ -88,14 +88,9 @@ theorem OrthogonalCompactOpens.mem_localSpinorNormImage_iff (hQ : Q.Nondegenerat
 theorem OrthogonalCompactOpens.isOpen_localSpinorNormImage (hQ : Q.Nondegenerate)
     (p : Nat.Primes) :
     IsOpen (U.localSpinorNormImage hQ p :
-      Set (Multiplicative (SquareClassGroup ℚ_[p]))) := by
-  let : DiscreteTopology (SquareClassGroup ℚ_[p]) :=
-    QuotientAddGroup.discreteTopology (by
-      -- `SquareClassGroup` is the additive quotient of `Additive ℚ_[p]ˣ` by
-      -- `(Subgroup.square ℚ_[p]ˣ).toAddSubgroup`. Both `Additive` and `Subgroup.toAddSubgroup`
-      -- are identity wrappers on carriers and topology, so this `change` is definitional
-      -- unfolding to the multiplicative statement about the square subgroup of `ℚ_[p]ˣ`.
-      change IsOpen (Subgroup.square ℚ_[p]ˣ : Set ℚ_[p]ˣ)
+      Set ((ℚ_[p]ˣ ⧸ Subgroup.square ℚ_[p]ˣ))) := by
+  let : DiscreteTopology (ℚ_[p]ˣ ⧸ Subgroup.square ℚ_[p]ˣ) :=
+    QuotientGroup.discreteTopology (by
       rw [square_eq_range_powMonoidHom]
       exact isOpen_range_powMonoidHom (K := ℚ_[p]) (n := 2) two_ne_zero)
   exact isOpen_discrete _

@@ -73,6 +73,11 @@ theorem coe_orbitFace {τ σ : Φ.cones} (h : τ ≤ σ) :
     (Φ.orbitFace h : PointedCone ℝ V) = τ.1 :=
   (rfl)
 
+/-- A cone viewed as a face of itself is the top face. -/
+@[simp]
+theorem orbitFace_refl (σ : Φ.cones) : Φ.orbitFace (le_rfl : σ ≤ σ) = ⊤ :=
+  (rfl)
+
 /-- A map of the chart diagram sends the stratum of a face of the smaller cone into the stratum of
 the same cone, viewed as a face of the larger cone. -/
 private theorem analyticAffineChartDiagram_map_mem_affineConeOrbit {τ σ : Φ.cones} (f : τ ⟶ σ)
@@ -245,6 +250,33 @@ theorem mem_range_analyticAffineChartι_iff {σ τ : Φ.cones} {x : Φ.analyticR
     exact (Φ.smul_analyticAffineChartι hΦ t τ _).symm.trans
       (congrArg (t • ·) (Φ.analyticAffineChartι_distinguishedPoint hΦ h))
 
+/-- The affine orbit of `σ` in any containing chart parametrizes the entire global orbit.
+The parametrization is the affine chart inclusion, independent of coordinate choices. -/
+noncomputable def analyticConeOrbitChartEquiv (σ : Φ.cones) {υ : Φ.cones} (h : σ ≤ υ) :
+    affineConeOrbit Φ.lattice (Φ.orbitFace h) ≃ Φ.analyticConeOrbit hΦ σ :=
+  ((Φ.isOpenEmbedding_analyticAffineChartι hΦ υ).isEmbedding.homeomorphImage
+    (affineConeOrbit Φ.lattice (Φ.orbitFace h))).toEquiv.trans (Set.equivOfEq (by
+      rw [← Φ.preimage_analyticAffineChartι_analyticConeOrbit hΦ h,
+        image_preimage_eq_inter_range]
+      exact inter_eq_left.mpr fun _ hx ↦ (Φ.mem_range_analyticAffineChartι_iff hΦ hx).2 h))
+
+/-- The affine parametrization of a global orbit is given by the affine chart inclusion. -/
+@[simp]
+theorem coe_analyticConeOrbitChartEquiv_apply (σ : Φ.cones) {υ : Φ.cones} (h : σ ≤ υ)
+    (x : affineConeOrbit Φ.lattice (Φ.orbitFace h)) :
+    (Φ.analyticConeOrbitChartEquiv hΦ σ h x : Φ.analyticRealization hΦ) =
+      Φ.analyticAffineChartι hΦ υ x.1 :=
+  (rfl)
+
+/-- Applying the affine chart inclusion to the inverse orbit parametrization recovers
+the point. -/
+@[simp]
+theorem analyticAffineChartι_analyticConeOrbitChartEquiv_symm_apply
+    (σ : Φ.cones) {υ : Φ.cones} (h : σ ≤ υ) (x : Φ.analyticConeOrbit hΦ σ) :
+    Φ.analyticAffineChartι hΦ υ ((Φ.analyticConeOrbitChartEquiv hΦ σ h).symm x).1 = x.1 := by
+  simpa only [coe_analyticConeOrbitChartEquiv_apply] using
+    congrArg Subtype.val ((Φ.analyticConeOrbitChartEquiv hΦ σ h).apply_symm_apply x)
+
 /-! ### The orbit–cone correspondence -/
 
 /-- The orbits of the cones partition the analytic realization: every point lies in the orbit of a
@@ -334,6 +366,18 @@ theorem closure_analyticConeOrbit (τ : Φ.cones) :
   obtain ⟨σ, hx⟩ := Φ.exists_mem_analyticConeOrbit hΦ x
   rw [Φ.mem_closure_analyticConeOrbit_iff hΦ hx, mem_iUnion₂]
   exact ⟨fun h ↦ ⟨σ, h, hx⟩, fun ⟨σ', h, hx'⟩ ↦ Φ.eq_of_mem_analyticConeOrbit hΦ hx' hx ▸ h⟩
+
+/-- Every global cone orbit is locally closed in the analytic realization. -/
+theorem isLocallyClosed_analyticConeOrbit (σ : Φ.cones) :
+    IsLocallyClosed (Φ.analyticConeOrbit hΦ σ) := by
+  let := affinePointTopology (Φ.analyticChartGenerators σ).2
+  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+  have hι := Φ.isOpenEmbedding_analyticAffineChartι hΦ σ
+  have hc := isLocallyClosed_affineConeOrbit Φ.lattice hσ (⊤ : σ.1.Face)
+    (Φ.analyticChartGenerators σ).2
+  rw [← Φ.analyticAffineChart_str_eq σ] at hc
+  rw [analyticConeOrbit_def]
+  exact hc.image hι.isInducing hι.isOpen_range.isLocallyClosed
 
 /-- Under the orbit–cone correspondence, inclusion of cones is the reverse of the closure order
 on orbits. -/

@@ -48,6 +48,8 @@ The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter
   `IsScalarTower` and `SMulCommClass`.
 * `TauCeti.CStarAction.ConvolutionAlgebra.instStarRing`: the twisted involution makes it a ⋆-ring,
   and it is a ⋆-module over `ℂ`.
+* `TauCeti.CStarAction.ConvolutionAlgebra.ofConv_mul_smulRight_apply`: the formula for the right
+  product `f ⋆ (φ ⊗ e)` with an elementary function, after the substitution `r = s * t⁻¹`.
 -/
 
 public section
@@ -228,6 +230,16 @@ theorem linearEquiv_apply (f : ConvolutionAlgebra α μ) : linearEquiv α μ f =
 theorem linearEquiv_symm_apply (f : C_c(G, A)) : (linearEquiv α μ).symm f = toConv f :=
   (rfl)
 
+/-- The elementary function `s ↦ φ s • e` of a real compactly supported function `φ` and a
+coefficient `e`, as an element of the convolution algebra. -/
+def smulRight (φ : C_c(G, ℝ)) (e : A) : ConvolutionAlgebra α μ :=
+  toConv (φ.compLeft (ContinuousLinearMap.toSpanSingleton ℝ e))
+
+@[simp]
+theorem ofConv_smulRight_apply (φ : C_c(G, ℝ)) (e : A) (s : G) :
+    (smulRight φ e : ConvolutionAlgebra α μ).ofConv s = φ s • e := by
+  simp [smulRight, CompactlySupportedContinuousMap.compLeft_apply]
+
 /-! ### Convolution product -/
 
 section Mul
@@ -265,6 +277,33 @@ instance instNonUnitalRing : NonUnitalRing (ConvolutionAlgebra α μ) where
   mul_assoc f g h := by ext1; simp [convolution_assoc]
 
 end Mul
+
+/-! ### Products with elementary functions -/
+
+section SMulRight
+
+/-- The right product with an elementary function, after substituting `r = s * t⁻¹`:
+`(f ⋆ (φ ⊗ e)) s = ∫ t, φ t • c(t) • (f (s * t⁻¹) * α (s * t⁻¹) e) ∂μ`. -/
+theorem ofConv_mul_smulRight_apply [IsTopologicalGroup G] [LocallyCompactSpace G]
+    [BorelSpace G] [μ.IsHaarMeasure] (f : ConvolutionAlgebra α μ)
+    (φ : C_c(G, ℝ)) (e : A) (s : G) :
+    (f * smulRight φ e).ofConv s = ∫ t, φ t • (Measure.modularCharacter t : ℝ) •
+      (f.ofConv (s * t⁻¹) * α (s * t⁻¹) e) ∂μ := by
+  set g := f.ofConv
+  have hinv := integral_inv_eq_integral_modularCharacter_smul (μ := μ)
+    (f := fun t => φ t • (g (s * t⁻¹) * α (s * t⁻¹) e)) (by fun_prop)
+    φ.hasCompactSupport.smul_right
+  simp only [inv_inv] at hinv
+  calc (f * smulRight φ e).ofConv s = ∫ r, φ (r⁻¹ * s) • (g r * α r e) ∂μ := by
+        simp only [ofConv_mul, convolution_apply, ofConv_smulRight_apply, g]
+        congr 1 with r
+        rw [← Complex.coe_smul, map_smul, Complex.coe_smul, mul_smul_comm]
+    _ = ∫ t, φ t⁻¹ • (g (s * t) * α (s * t) e) ∂μ := by
+        rw [← integral_mul_left_eq_self _ s]
+        simp [mul_inv_rev, mul_assoc]
+    _ = _ := by rw [hinv]; simp_rw [smul_comm (Measure.modularCharacter _ : ℝ) (φ _)]
+
+end SMulRight
 
 /-! ### Twisted involution -/
 

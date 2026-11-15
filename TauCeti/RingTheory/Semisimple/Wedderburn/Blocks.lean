@@ -36,7 +36,7 @@ The bridge between the two descriptions is the endomorphism ring of the regular 
 
 and each factor is a *simple* ring, because an isotypic component is a finite power of one simple
 module and so has a matrix endomorphism ring
-(`TauCeti.isSimpleRing_moduleEnd_of_isIsotypic`).  A presentation `R ≃+* ∏ᵢ Aᵢ` by simple rings
+(`IsIsotypic.isSimpleRing_moduleEnd`).  A presentation `R ≃+* ∏ᵢ Aᵢ` by simple rings
 gives a second such product decomposition of `Rᵐᵒᵖ`, so
 `RingEquiv.exists_equiv_factors` matches the two index types. Composing with
 `TauCeti.simpleSubmoduleClassesEquiv`, which identifies the isotypic components of `R` with the
@@ -111,7 +111,7 @@ theorem _root_.RingEquiv.nonempty_equiv_simpleSubmoduleClasses_of_pi (e : R ≃+
     rintro ⟨c, hc⟩
     have : Nontrivial c := Submodule.nontrivial_iff_ne_bot.mpr (bot_lt_isotypicComponents hc).ne'
     have : IsSemisimpleModule R c := by obtain ⟨S, _, rfl⟩ := hc; infer_instance
-    exact isSimpleRing_moduleEnd_of_isIsotypic (IsIsotypic.isotypicComponents hc)
+    exact (IsIsotypic.isotypicComponents hc).isSimpleRing_moduleEnd
   let f := ((RingEquiv.op e).trans (RingEquiv.piMulOpposite A)).symm.trans
     ((RingEquiv.moduleEndSelf R).trans (IsSemisimpleModule.endRingEquiv R R))
   obtain ⟨σ, -⟩ := f.exists_equiv_factors

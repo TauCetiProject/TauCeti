@@ -55,9 +55,6 @@ The ground-level norm of a restriction is its instance `W = U`, `W' = U'`.
 * J. S. Milne, *Class Field Theory*, Chapter II, 1.29–1.30 (the norm along a subgroup).
 -/
 
--- The signature of `groundNorm` follows the blueprint `Suggested.lean` of the Tau Ceti
--- `ClassFieldTheory` roadmap (`namespace LayerRestriction`).
-
 public noncomputable section
 
 namespace TauCeti.ClassFieldTheory
@@ -131,7 +128,7 @@ theorem levelNorm_top_apply_coe (h : W' ≤ ⊤) (x : F.level W') :
         Subgroup.topEquiv_apply]
     refine ⟨⟨_, QuotientGroup.eq.1 (he.symm.trans (e q).out_eq.symm)⟩, ?_⟩
     rw [mul_inv_cancel_left]
-  rw [hw, map_mul, Module.End.mul_apply, F.mem_level.1 x.2 w w.2]
+  rw [hw, map_mul, mul_apply_eq_comp, F.mem_level.1 x.2 w w.2]
 
 /-- The norm from a level to itself is the identity. -/
 @[simp]

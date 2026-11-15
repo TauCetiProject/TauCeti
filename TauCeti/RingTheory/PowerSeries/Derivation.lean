@@ -111,8 +111,8 @@ noncomputable def mkDerivationEquiv [IsHausdorff (Ideal.span {(X : R⟦X⟧)}) M
   .symm
     { invFun := mkDerivation R
       toFun D := D X
-      map_add' _ _ := Derivation.add_apply ..
-      map_smul' _ _ := Derivation.smul_apply ..
+      map_add' _ _ := _root_.add_apply ..
+      map_smul' _ _ := _root_.smul_apply ..
       left_inv _ := derivation_ext <| mkDerivation_X _
       right_inv := mkDerivation_X }
 

@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Kernel.CutNorm
+public import TauCeti.Dynamics.Ergodic.MeasurePreserving
 public import TauCeti.MeasureTheory.Measure.MapRestrictDensity
 
 /-!
@@ -30,7 +31,7 @@ the cut norm already dominates every `[0, 1]`-test integral with no loss of cons
 factor of `4` (`cutNormSigned_le_four_mul_cutNorm`) and give only a comparison, not an equality;
 the sharp `abs_testIntegral_le_cutNorm` is what makes the invariance exact.
 
-This is the analytic gate in front of the arbitrary-carrier triangle inequality for the cut
+This is the analytic input to the arbitrary-carrier triangle inequality for the cut
 distance (Janson, Lemma 6.5). There a coupling of three carriers is built over the middle one, and
 the two outer cut norms have to be compared with cut norms computed on the glued space along its
 coordinate projections; those projections are measure preserving, and the comparison needed is
@@ -49,8 +50,6 @@ exactly the direction proved here. The triangle inequality itself is not proved 
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), §4 and Lemma 6.5.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §8.2.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 — the cut norm and its full basic
-  API, as the prerequisite named there for the arbitrary-carrier triangle inequality.
 -/
 
 public section
@@ -81,7 +80,7 @@ theorem rectIntegral_comap_eq_testIntegral [IsFiniteMeasure ν]
     (hf : MeasurePreserving f ν μ) (K : SymmKernel Ω μ) (S T : Set Ω') :
     (K.comap f hf.measurable ν).rectIntegral ν S T =
       K.testIntegral μ (mapRestrictDensity f ν μ S) (mapRestrictDensity f ν μ T) := by
-  let _ := isFiniteMeasure_of_measurePreserving hf
+  have := hf.isFiniteMeasure
   have hu : Measurable (mapRestrictDensity f ν μ S) := measurable_mapRestrictDensity f ν μ S
   have hv : Measurable (mapRestrictDensity f ν μ T) := measurable_mapRestrictDensity f ν μ T
   have hu1 : ∀ x, mapRestrictDensity f ν μ S x ∈ Icc (-1 : ℝ) 1 := fun x =>
@@ -94,7 +93,8 @@ theorem rectIntegral_comap_eq_testIntegral [IsFiniteMeasure ν]
       ∫ y in T, K (f x) (f y) ∂ν = K.partialIntegral μ (mapRestrictDensity f ν μ T) (f x) := by
     intro x
     rw [partialIntegral_def]
-    exact (integral_mapRestrictDensity_mul hf T (g := fun b => K (f x) b)
+    exact (integral_mapRestrictDensity_mul hf.aemeasurable hf.map_eq.le T
+      (g := fun b => K (f x) b)
       (K.measurable.comp (measurable_const.prodMk measurable_id)).aestronglyMeasurable).symm
   calc (K.comap f hf.measurable ν).rectIntegral ν S T
       = ∫ x in S, ∫ y in T, K (f x) (f y) ∂ν ∂ν := by
@@ -104,7 +104,7 @@ theorem rectIntegral_comap_eq_testIntegral [IsFiniteMeasure ν]
         simp only [hinner]
     _ = ∫ a, mapRestrictDensity f ν μ S a *
           K.partialIntegral μ (mapRestrictDensity f ν μ T) a ∂μ :=
-        (integral_mapRestrictDensity_mul hf S
+        (integral_mapRestrictDensity_mul hf.aemeasurable hf.map_eq.le S
           (K.measurable_partialIntegral μ hv).aestronglyMeasurable).symm
     _ = K.testIntegral μ (mapRestrictDensity f ν μ S) (mapRestrictDensity f ν μ T) :=
         (K.testIntegral_eq_integral_partialIntegral μ

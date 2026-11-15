@@ -17,20 +17,23 @@ public import Mathlib.RingTheory.SimpleRing.Defs
 -- power, the dimension of a matrix algebra, the simplicity of the endomorphism ring of an isotypic
 -- module, and the isotypic decomposition over a simple Artinian algebra are all internal to the
 -- arguments below. The matrix algebras and opposites in the statement of
--- `TauCeti.IsSimpleRing.nonempty_algEquiv_matrix_mulOpposite_end` are already in scope through the
--- public imports above.
+-- `IsSimpleRing.nonempty_algEquiv_matrix_mulOpposite_end` are already in scope through the public
+-- imports above.
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import TauCeti.RingTheory.Semisimple.IsotypicEnd
 import TauCeti.RingTheory.Semisimple.SimpleArtinian
+import TauCeti.RingTheory.SimpleRing.FiniteDimensional
 
 /-!
 # The endomorphism algebra of a module over a simple Artinian algebra
 
-Let `K` be a field, let `R` be a finite-dimensional **simple** `K`-algebra and let `M` be an
-`R`-module which is finite-dimensional over `K`. All simple `R`-modules are isomorphic, to a fixed
-minimal left ideal `S`, and `M` is a direct sum of `k` copies of `S`
-(`TauCeti.IsIsotypicOfType.of_isSimpleRing`), so
+Let `K` be a field, let `R` be a **simple** `K`-algebra and let `M` be an `R`-module which is
+finite-dimensional over `K`. The algebra `R` is not assumed finite-dimensional: when `M ≠ 0`, `R`
+acts faithfully on `M` and so is finite-dimensional over `K`
+(`IsSimpleRing.finiteDimensional_of_nontrivial`), and when `M = 0` the statements below hold
+trivially. For `M ≠ 0`, all simple `R`-modules are isomorphic, to a fixed minimal left ideal `S`,
+and `M` is a direct sum of `k` copies of `S` (`IsIsotypicOfType.of_isSimpleRing`), so
 
   `End_R M ≃ₐ[K] Mat_k(End_R S)`,
 
@@ -59,11 +62,11 @@ theorem in `TauCeti/Algebra/CentralSimple/Centralizer/Basic.lean`.
 
 ## Main results
 
-* `TauCeti.IsSimpleRing.finrank_end_mul_finrank_eq_sq`: the dimension identity
+* `IsSimpleRing.finrank_end_mul_finrank_eq_sq`: the dimension identity
   `finrank K (End_R M) * finrank K R = (finrank K M)²`.
-* `TauCeti.IsSimpleRing.moduleEnd`: `End_R M` is a simple ring, for `M` a nonzero module finite
+* `IsSimpleRing.moduleEnd`: `End_R M` is a simple ring, for `M` a nonzero module finite
   over a simple Artinian ring `R`.
-* `TauCeti.IsSimpleRing.nonempty_algEquiv_matrix_mulOpposite_end`: the matrix comparison
+* `IsSimpleRing.nonempty_algEquiv_matrix_mulOpposite_end`: the matrix comparison
   `Mₐ(R) ≃ₐ[K] M_b((End_R M)ᵐᵒᵖ)`.
 
 ## Implementation notes
@@ -80,15 +83,11 @@ is `1 * 2 = 2` while `(finrank K M)² = 1`.
 
 ## References
 
-This supplies the module-theoretic engine of the Layer 5 centralizer theorem of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12, and T. Y. Lam, *A First Course in
 Noncommutative Rings*, GTM 131, Chapter 1.
 -/
 
 public section
-
-namespace TauCeti
 
 open Module
 
@@ -105,19 +104,18 @@ is the matrix ring `Mat_k(End_R S)` over the division ring of Schur's lemma, wit
 
 No base field is involved: `M` is a power `Sᵏ` of a minimal left ideal `S` of `R` because `R` is
 simple Artinian and `M` is finite over `R`.  That is the only use made of simplicity of `R`, so
-this is the specialization of `TauCeti.isSimpleRing_moduleEnd_of_isIsotypic` along
+this is the specialization of `IsIsotypic.isSimpleRing_moduleEnd` along
 `IsSimpleRing.isIsotypic`. -/
 theorem moduleEnd [Nontrivial M] : IsSimpleRing (Module.End R M) :=
-  isSimpleRing_moduleEnd_of_isIsotypic (_root_.IsSimpleRing.isIsotypic R M)
+  (isIsotypic R M).isSimpleRing_moduleEnd
 
 end Simplicity
 
 variable (K : Type*) [Field K] {R : Type*} [Ring R] [IsSimpleRing R] [Algebra K R]
-  [FiniteDimensional K R]
 
 section Aux
 
-variable (S : Submodule R R) [IsSimpleModule R S]
+variable [FiniteDimensional K R] (S : Submodule R R) [IsSimpleModule R S]
 variable (M : Type*) [AddCommGroup M] [Module K M] [Module R M] [IsScalarTower K R M]
   [FiniteDimensional K M]
 
@@ -131,8 +129,7 @@ private theorem exists_algEquiv_matrix_end :
   have : Module.Finite R M := Module.Finite.of_restrictScalars_finite K R M
   obtain ⟨k, ⟨e⟩⟩ := (IsIsotypicOfType.of_isSimpleRing R (↥S) M).linearEquiv_fun
   refine ⟨k, ?_, ⟨(e.conjAlgEquiv K).trans (endVecAlgEquivMatrixEnd (Fin k) K R (↥S))⟩⟩
-  rw [(e.restrictScalars K).finrank_eq, Module.finrank_pi_fintype, Finset.sum_const,
-    Finset.card_univ, Fintype.card_fin, smul_eq_mul]
+  simp [(e.restrictScalars K).finrank_eq, Module.finrank_pi_fintype]
 
 end Aux
 
@@ -140,17 +137,24 @@ variable {M : Type*} [AddCommGroup M] [Module K M] [Module R M] [IsScalarTower K
   [FiniteDimensional K M]
 
 /-- **The dimension of the endomorphism algebra of a module over a simple Artinian algebra.** For a
-finite-dimensional simple `K`-algebra `R` and an `R`-module `M` finite-dimensional over `K`,
+simple `K`-algebra `R` and an `R`-module `M` finite-dimensional over `K`,
 
   `finrank K (End_R M) * finrank K R = (finrank K M)²`.
 
-Both sides are `k² * m² * d²` in the notation of the module docstring: `M` is `Sᵏ` and `R` is `Sᵐ`
-for a minimal left ideal `S` with `finrank K S = m * d`, where `d = finrank K (End_R S)`.
+When `M ≠ 0`, both sides are `k² * m² * d²` in the notation of the module docstring: `M` is `Sᵏ`
+and `R` is `Sᵐ` for a minimal left ideal `S` with `finrank K S = m * d`, where
+`d = finrank K (End_R S)`. When `M = 0`, both `End_R M` and `M` are zero, so both sides are `0`.
 
-The identity determines `finrank K (End_R M)` outright, since `finrank K R ≠ 0`; it is stated as a
-product rather than a quotient to stay inside `ℕ`. -/
+For `M ≠ 0` the identity determines `finrank K (End_R M)` outright, since then `R` is
+finite-dimensional and `finrank K R ≠ 0`; it is stated as a product rather than a quotient to stay
+inside `ℕ`. -/
 theorem finrank_end_mul_finrank_eq_sq :
     finrank K (Module.End R M) * finrank K R = finrank K M ^ 2 := by
+  rcases subsingleton_or_nontrivial M with hM | hM
+  · rw [Module.finrank_zero_of_subsingleton (M := M),
+      Module.finrank_zero_of_subsingleton (M := Module.End R M)]
+    simp
+  have := finiteDimensional_of_nontrivial K (R := R) (M := M)
   have : IsArtinianRing R := IsArtinianRing.of_finite K R
   obtain ⟨S, hS⟩ := IsAtomic.exists_atom (Submodule R R)
   rw [← isSimpleModule_iff_isAtom] at hS
@@ -179,7 +183,7 @@ theorem finrank_end_mul_finrank_eq_sq :
   ring
 
 /-- **Matrices over a simple algebra are matrices over the opposite of an endomorphism algebra.**
-For a finite-dimensional simple `K`-algebra `R` and an `R`-module `M` finite-dimensional over `K`,
+For a simple `K`-algebra `R` and an `R`-module `M` finite-dimensional over `K`,
 
   `Mₐ(R) ≃ₐ[K] M_b((End_R M)ᵐᵒᵖ)`  with  `a = finrank K M`, `b = finrank K R`.
 
@@ -189,14 +193,20 @@ so if `R` and `(End_R M)ᵐᵒᵖ` are central over `K` they have the same Braue
 theorem nonempty_algEquiv_matrix_mulOpposite_end :
     Nonempty (Matrix (Fin (finrank K M)) (Fin (finrank K M)) R ≃ₐ[K]
       Matrix (Fin (finrank K R)) (Fin (finrank K R)) (Module.End R M)ᵐᵒᵖ) := by
+  rcases subsingleton_or_nontrivial M with hM | hM
+  · rw [Module.finrank_zero_of_subsingleton (M := M)]
+    have : Subsingleton (Matrix (Fin 0) (Fin 0) R) := inferInstance
+    have : Subsingleton (Module.End R M) := inferInstance
+    have : Subsingleton (Module.End R M)ᵐᵒᵖ := inferInstance
+    have : Subsingleton (Matrix (Fin (finrank K R)) (Fin (finrank K R)) (Module.End R M)ᵐᵒᵖ) :=
+      inferInstance
+    exact ⟨default⟩
+  have := finiteDimensional_of_nontrivial K (R := R) (M := M)
   have hdim : finrank K (Fin (finrank K R) → M) = finrank K (Fin (finrank K M) → R) := by
-    simp only [Module.finrank_pi_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
-      smul_eq_mul, mul_comm]
+    simp [Module.finrank_pi_fintype, mul_comm]
   obtain ⟨e⟩ := nonempty_linearEquiv_of_finrank_eq (R := R) K hdim
   exact ⟨(matrixAlgEquivEndVecMulOpposite K).trans <|
     (AlgEquiv.op (e.symm.conjAlgEquiv K)).trans <|
       (AlgEquiv.op (endVecAlgEquivMatrixEnd _ K R M)).trans AlgEquiv.mopMatrix.symm⟩
 
 end IsSimpleRing
-
-end TauCeti

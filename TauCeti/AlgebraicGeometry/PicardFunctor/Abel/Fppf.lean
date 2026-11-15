@@ -71,7 +71,7 @@ lemma abelJacobiMapOfDegreeToPicZeroFppf_app_apply (d : ℕ) {T : (Over S)ᵒᵖ
     (D : ((relativeEffectiveCartierDegreeSubfunctor f d).toFunctor ⋙
       uliftFunctor.{u + 1}).obj T) :
     ConcreteCategory.hom (C := Type (u + 1))
-        (X := uliftFunctor.{u + 1}.obj
+        (X := ULift.{u + 1}
           ((relativeEffectiveCartierDegreeSubfunctor f d).obj T))
         (Y := ToType ((relativePicardDegreeZeroFppfSheaf f).obj.obj T))
         ((abelJacobiMapOfDegreeToPicZeroFppf f hx₀ d).app T) D =
@@ -110,7 +110,7 @@ image of its existing degree-zero Picard class. -/
 lemma abelJacobiMapToPicZeroFppf_app_apply {T : (Over S)ᵒᵖ}
     (x : (yoneda.obj (Over.mk f) ⋙ uliftFunctor.{u + 1}).obj T) :
     ConcreteCategory.hom (C := Type (u + 1))
-        (X := uliftFunctor.{u + 1}.obj (T.unop ⟶ Over.mk f))
+        (X := ULift.{u + 1} (T.unop ⟶ Over.mk f))
         (Y := ToType ((relativePicardDegreeZeroFppfSheaf f).obj.obj T))
         ((abelJacobiMapToPicZeroFppf f hx₀).app T) x =
       (relativePicardDegreeZeroToFppfSheaf f).app T
@@ -124,10 +124,11 @@ lemma abelJacobiMapToPicZeroFppf_app_apply {T : (Over S)ᵒᵖ}
     relativePicardDegreeZeroToFppfSheafOfMul_app_apply]
 
 /-- **The Abel–Jacobi map into the degree-zero Picard fppf sheaf sends the base point to zero.** -/
-@[simp]
+-- Use the base-point value before the general section formula expands the sheafification map.
+@[simp↓]
 theorem abelJacobiMapToPicZeroFppf_app_basePoint (T : (Over S)ᵒᵖ) :
     ConcreteCategory.hom (C := Type (u + 1))
-      (X := uliftFunctor.{u + 1}.obj (T.unop ⟶ Over.mk f))
+      (X := ULift.{u + 1} (T.unop ⟶ Over.mk f))
       (Y := ToType ((relativePicardDegreeZeroFppfSheaf f).obj.obj T))
       ((abelJacobiMapToPicZeroFppf f hx₀).app T)
       (ULift.up (basePoint hx₀ T.unop)) = 0 := by

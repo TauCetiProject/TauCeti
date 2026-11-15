@@ -134,9 +134,9 @@ def isColimitMapCoconeSingularHomology [Fintype G] [CategoryWithHomology C] (n :
   -- `C(B; R)`. By `TopCat.actionFunctor_obj` and `cocone_pt` (both `rfl`), these are the acted-on
   -- object and the cocone point of `F.mapCocone hG.cocone`.
   have : IsIso (Fintype.card G • 𝟙 ((E.actionFunctor G ⋙ F).obj (SingleObj.star G))) :=
-    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj E).isIso_nsmul_id_obj _ R
+    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj E).isIso_smul_id_obj _ R
   have : IsIso (Fintype.card G • 𝟙 (F.mapCocone hG.cocone).pt) :=
-    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj B).isIso_nsmul_id_obj _ R
+    (singularChainComplexFunctor C ⋙ (evaluation _ _).obj B).isIso_smul_id_obj _ R
   refine SingleObj.isColimitMapCoconeOfTransfer (F.mapCocone hG.cocone)
     (hG.isCoveringMap.singularTransfer hG.finite_fiber R)
     (HomologicalComplex.homologyFunctor C _ n) ?_ ?_

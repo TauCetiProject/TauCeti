@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Group.Affine
-public import TauCeti.CategoryTheory.Monoidal.Mod
+public import TauCeti.CategoryTheory.Monoidal.Mod.Basic
 public import TauCeti.Geometry.Toric.Algebraic.DenseTorus
 public import TauCeti.Geometry.Toric.Algebraic.TorusAction.Internal
 

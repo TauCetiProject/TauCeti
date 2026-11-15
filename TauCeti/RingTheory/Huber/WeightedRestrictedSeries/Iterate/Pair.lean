@@ -25,6 +25,8 @@ The weights need not be finite and the base need not be Tate, complete, or Hausd
 The underlying ring isomorphism is `TauCeti.Huber.iterateRingEquiv`, and the plus rings satisfy
 the generator characterization `Pair.weighted_completion_plus_le_comap`.
 `Pair.Hom.IsTopologicallyFiniteType.comp` uses the splitting to flatten iterated presentations.
+`Pair.exists_iterate_pairHoms` compares the weighted completion over concatenated weights with
+the iterated completion by an open quotient morphism, together with the first-block embedding.
 
 ## References
 
@@ -176,5 +178,54 @@ theorem iterateSplitHom_comp_weightedCompletionHom :
   apply Hom.ext
   ext a
   simp [algebraMap_completion_weightedRestrictedSubring_apply]
+
+end TauCeti.Huber.Pair
+
+namespace TauCeti.Huber.Pair
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+  {U : Pair A}
+
+/-- Iterating weighted completions: the weighted completion over `R` followed by the weights `W`
+and the extra unweighted variables is compared with the weighted completion over the concatenated
+weights by an open quotient morphism `e` from the latter to the iterated completion. The morphism
+`ι` embeds the first completion into the concatenated one as the first block of variables, so that
+`e ∘ ι` is the coefficient inclusion and `ι` preserves the coefficients from `A`. Moreover `e`
+sends the last variables to the corresponding variables of the iterated completion. -/
+theorem exists_iterate_pairHoms {k n m : ℕ} {R : Fin k → Set A}
+    (hR : IsWeightFamily R) {W : Fin n → Set A}
+    (hZ : IsWeightFamily (Fin.append R (Fin.append W fun _ : Fin m ↦ ({1} : Set A))))
+    (hWD : IsWeightFamily (Fin.append
+      (fun i ↦ algebraMap A (Completion (weightedRestrictedSubring R hR)) '' W i)
+      fun _ : Fin m ↦ ({1} : Set (Completion (weightedRestrictedSubring R hR))))) :
+    ∃ (e : Pair.Hom (U.weighted hZ).completion
+        (((U.weighted hR).completion).weighted hWD).completion)
+      (ι : Pair.Hom (U.weighted hR).completion (U.weighted hZ).completion),
+      IsOpenQuotientMap e.toRingHom ∧
+      (∀ j, e.toRingHom (weightedX _ hZ (Fin.natAdd k j) : weightedRestrictedSubring _ hZ) =
+        (weightedX _ hWD j : weightedRestrictedSubring _ hWD)) ∧
+      (∀ a, e.toRingHom (ι.toRingHom a) =
+        algebraMap _ (Completion (weightedRestrictedSubring _ hWD)) a) ∧
+      (∀ a : A, ι.toRingHom (algebraMap A (Completion (weightedRestrictedSubring R hR)) a) =
+        algebraMap A (Completion (weightedRestrictedSubring _ hZ)) a) := by
+  have hRZ : ∀ i, Fin.append R (Fin.append W fun _ : Fin m ↦ ({1} : Set A))
+      (Fin.castAdd (n + m) i) = R i := fun i ↦ by simp
+  have hZW : ∀ j, algebraMap A (Completion (weightedRestrictedSubring R hR)) ''
+      Fin.append R (Fin.append W fun _ : Fin m ↦ ({1} : Set A)) (Fin.natAdd k j) =
+        Fin.append (fun i ↦ algebraMap A (Completion (weightedRestrictedSubring R hR)) '' W i)
+          (fun _ : Fin m ↦ ({1} : Set (Completion (weightedRestrictedSubring R hR)))) j :=
+    image_algebraMap_append_append_weights R W
+  refine ⟨U.iterateSplitHom hR hWD hZ hRZ hZW,
+    (U.iterateJoinHom hR hWD hZ hRZ hZW).comp
+      ((U.weighted hR).completion.weightedCompletionHom hWD),
+    (U.isQuotientMapping_iterateSplitHom hR hWD hZ hRZ hZW).isOpenQuotientMap, fun j ↦ ?_,
+    fun a ↦ ?_, fun a ↦ ?_⟩
+  · rw [Pair.Hom.toRingHom_iterateSplitHom, iterateSplitHom_coe_weightedX, iterateVar_natAdd]
+  · have heι : (U.iterateSplitHom hR hWD hZ hRZ hZW).comp ((U.iterateJoinHom hR hWD hZ hRZ hZW).comp
+        ((U.weighted hR).completion.weightedCompletionHom hWD)) =
+          (U.weighted hR).completion.weightedCompletionHom hWD := by
+      simp [← Pair.Hom.comp_assoc]
+    simpa using RingHom.congr_fun (congrArg Pair.Hom.toRingHom heι) a
+  · simp [algebraMap_completion_weightedRestrictedSubring_apply]
 
 end TauCeti.Huber.Pair

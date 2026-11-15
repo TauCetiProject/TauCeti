@@ -46,6 +46,8 @@ linear-equivalence invariants, so the same bound holds for every divisor.
   whenever `L(E - A)` is nonzero.
 * `TauCeti.Divisor.degree_add_one_sub_genus_le_dim`: **Riemann's theorem** (Theorem 1.4.17),
   `ℓ(D) ≥ deg D + 1 - g`, over an arbitrary constant field.
+* `TauCeti.genus_eq_zero_of_finiteDimensional`: the genus of a finite extension of `k`, which is
+  not a function field, evaluates to zero.
 * `TauCeti.exists_degree_add_one_sub_dim_eq_genus`: the genus is attained (Corollary 1.4.16);
   `TauCeti.exists_degree_add_one_sub_dim_eq_genus_of_pos` attains a positive genus over any
   constant field.
@@ -106,13 +108,12 @@ private theorem exists_growth_ladder (hF : IsFunctionField k F) :
     ?_, ?_, ?_⟩
   · have h := Divisor.degree_poles hF (Units.mk0 x hx0) hx
     rwa [Units.val_mk0, hnrank] at h
-  · exact Finset.sum_nonneg fun i _ ↦
-      WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_poles hF (c i))
+  · exact Finset.sum_nonneg fun i _ ↦ Divisor.poles_nonneg hF (c i)
   · intro l
     have hC : ∀ i, Divisor.poles hF (c i) ≤ ∑ j : Fin n, Divisor.poles hF (c j) :=
       fun i ↦ Finset.single_le_sum
         (f := fun j : Fin n ↦ Divisor.poles hF (c j))
-        (fun j _ ↦ WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_poles hF (c j)))
+        (fun j _ ↦ Divisor.poles_nonneg hF (c j))
         (Finset.mem_univ i)
     have hli : LinearIndependent k⟮x⟯ fun i ↦ (c i : F) := by
       have hfun : (fun i ↦ (c i : F)) = ⇑u := funext hcval
@@ -161,8 +162,7 @@ theorem Divisor.bddAbove_range_degree_sub_dim (hF : IsFunctionField k F) :
   -- Choose `l` large enough that `L(l • B - A⁺)` is nonzero.
   obtain ⟨l, hlge⟩ : ∃ l : ℕ, Divisor.degree C + Divisor.degree A⁺ ≤ (l : ℤ) :=
     ⟨(Divisor.degree C + Divisor.degree A⁺).toNat, Int.self_le_toNat _⟩
-  have hposA : (0 : Divisor k F) ≤ A⁺ :=
-    WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_posPart A)
+  have hposA : (0 : Divisor k F) ≤ A⁺ := posPart_nonneg A
   have hdrop := Divisor.dim_le_dim_add_degree_sub hF (sub_le_self (l • B) hposA)
   rw [Divisor.degree_sub, hdeg l] at hdrop
   have hbig : (l : ℤ) + 1 ≤ (n : ℤ) * (l + 1) :=
@@ -216,6 +216,28 @@ theorem genus_le {c : ℕ}
   refine csSup_le (Set.range_nonempty _) ?_
   rintro _ ⟨D, rfl⟩
   exact Int.toNat_le.mpr (h D)
+
+/-- **A finite extension of the base field has genus zero.**  Such an `F` is not an algebraic
+function field (all its elements are algebraic over `k`), so this is the value the definition of
+`TauCeti.genus` takes in that degenerate case: `F` has no places, since a valuation trivial on `k`
+is trivial on every algebraic element, so the only divisor is `0`, and `ℓ(0)` is the dimension of
+`F` over `k`, which is at least `1`. -/
+@[simp]
+theorem genus_eq_zero_of_finiteDimensional [FiniteDimensional k F] : genus k F = 0 := by
+  have hP : IsEmpty (Place k F) := ⟨fun P ↦ by
+    obtain ⟨f, hf⟩ := P.ord_surjective 1
+    exact one_ne_zero
+      (hf.symm.trans (P.ord_eq_zero_of_isAlgebraic (Algebra.IsAlgebraic.isAlgebraic f)))⟩
+  have hD : ∀ D : Divisor k F, D = 0 := fun D ↦ by
+    ext P
+    exact (hP.false P).elim
+  refine Nat.le_zero.mp (genus_le fun D ↦ ?_)
+  rw [hD D, Divisor.degree_zero, Divisor.dim_def]
+  have hpos : 0 < Module.finrank k (riemannRochSpace (0 : Divisor k F)) :=
+    Module.finrank_pos_iff_exists_ne_zero.mpr
+      ⟨⟨1, one_mem_riemannRochSpace_iff.mpr le_rfl⟩, by simp⟩
+  push_cast
+  omega
 
 /-- **Riemann's theorem** (Stichtenoth, Theorem 1.4.17), in the form that unwinds the definition
 of the genus: `deg D + 1 - ℓ(D) ≤ g` for every divisor `D`. -/

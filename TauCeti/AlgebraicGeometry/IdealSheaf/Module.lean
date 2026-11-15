@@ -30,7 +30,8 @@ kernel is the ideal `I(U)` (Mathlib's `Scheme.IdealSheafData.ker_subschemeι_app
 * `Scheme.IdealSheafData.submodule I`: the submodule `I ⊆ 𝒪_X` of the sheaf of modules `𝒪_X`;
 * `Scheme.IdealSheafData.sheaf I`: the ideal sheaf as an `𝒪_X`-module, with its inclusion
   `Scheme.IdealSheafData.sheafι I : I ⟶ 𝒪_X`, which is injective on sections
-  (`sheafι_app_injective`) with image `sections I U` over `U` (`range_sheafι_app`), and
+  (`sheafι_app_injective`) with image `sections I U` over `U` (`range_sheafι_app`), the ideal
+  `I(U)ⁿ` for the power `Iⁿ` over an affine open `U` (`range_sheafι_app_pow`), and
   `Scheme.IdealSheafData.sectionMk` building a section of `I` from an element of `sections I U`;
 * `Scheme.IdealSheafData.sheafLift`: a morphism into `𝒪_X` whose sections lie in `I` factors
   through `I`;
@@ -147,15 +148,21 @@ lemma sheafι_app_injective (U : X.Opens) : Function.Injective (Scheme.Modules.H
 /-- The image of the sections of the ideal sheaf in `Γ(X, U)` is `sections I U`. -/
 @[simp]
 lemma range_sheafι_app (U : X.Opens) :
-    Set.range (Scheme.Modules.Hom.app I.sheafι U) = (I.sections U : Set Γ(X, U)) := by
-  ext s
-  exact ⟨fun ⟨t, ht⟩ ↦ ht ▸ I.sheafι_app_mem U t, fun hs ↦ ⟨I.sectionMk s hs, rfl⟩⟩
+    Set.range (Scheme.Modules.Hom.app I.sheafι U) = (I.sections U : Set Γ(X, U)) :=
+  I.submodule.toSubmodule.range_ι_app (op U)
+
+/-- Over an affine open `U`, the sections of `Iⁿ` are the regular functions in the ideal
+`I(U)ⁿ`. -/
+theorem range_sheafι_app_pow (U : X.affineOpens) (n : ℕ) :
+    Set.range (Scheme.Modules.Hom.app (I ^ n).sheafι U) = ((I.ideal U ^ n : Ideal Γ(X, U)) :
+      Set Γ(X, U)) := by
+  rw [range_sheafι_app, sections_eq_ideal, ideal_pow, Pi.pow_apply]
 
 /-- A morphism `M ⟶ 𝒪_X` all of whose sections lie in `I` factors through the ideal sheaf `I`. -/
 def sheafLift {M : X.Modules} (φ : M ⟶ SheafOfModules.unit X.ringCatSheaf)
     (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ I.sections U) :
     M ⟶ I.sheaf :=
-  TauCeti.SheafOfModules.liftToSubmodule I.submodule φ fun U s ↦ hφ U.unop s
+  I.submodule.lift φ fun U s ↦ hφ U.unop s
 
 /-- `sheafLift` factors `φ` through `I`: composing it with the inclusion `I ⟶ 𝒪_X` recovers
 `φ`. -/
@@ -163,7 +170,7 @@ def sheafLift {M : X.Modules} (φ : M ⟶ SheafOfModules.unit X.ringCatSheaf)
 lemma sheafLift_ι {M : X.Modules} (φ : M ⟶ SheafOfModules.unit X.ringCatSheaf)
     (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ I.sections U) :
     I.sheafLift φ hφ ≫ I.sheafι = φ :=
-  TauCeti.SheafOfModules.liftToSubmodule_ι _ _ _
+  SheafOfModules.Submodule.lift_ι _ _ _
 
 /-- Every regular function is a section of the unit ideal sheaf, which cuts out the empty closed
 subscheme. -/

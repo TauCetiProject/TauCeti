@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
+import TauCeti.FieldTheory.Finite.PowNeOne
 
 /-!
 # Perfectness of special linear groups
@@ -14,12 +15,26 @@ Over a field containing a nonzero element whose square is not one, the special l
 on any finite coordinate type is perfect. Conjugation by the determinant-one diagonal matrix
 with entries `a` and `a⁻¹` rescales a transvection by `a²`. Every transvection is consequently
 a commutator, and transvections generate the special linear group. The hypothesis holds over
-every infinite field; it excludes the small-field exceptions in rank two.
+every infinite field and every finite field with at least four elements; it excludes the
+small-field exceptions in rank two.
+
+On three or more coordinates no hypothesis on the field is needed: for distinct `i`, `k`, `j` the
+type-`A` commutator relation `⁅xᵢₖ(c), xₖⱼ(1)⁆ = xᵢⱼ(c)` exhibits every transvection as a
+commutator, so the special linear group is perfect over every field.
 
 The commutator calculation generalizes Mathlib's `Matrix.commutator_diag2_transvection`
 and the perfectness statement generalizes `Matrix.SL2.commutator_eq_top` to arbitrary finite
 coordinate types. Generation is reused from
 `Matrix.SpecialLinearGroup.closure_range_toSpecialLinearGroup_eq_top_of_field`.
+
+## Main results
+
+* `Matrix.SpecialLinearGroup.commutator_eq_top`: perfectness over a field containing a nonzero
+  element whose square is not one.
+* `Matrix.SpecialLinearGroup.commutator_eq_top_of_four_le_natCard`: perfectness over a field with
+  at least four elements.
+* `Matrix.SpecialLinearGroup.commutator_eq_top_of_three_le_card`: perfectness on at least three
+  coordinates over every field.
 
 ## References
 
@@ -81,5 +96,32 @@ theorem commutator_eq_top {a : F} (ha : a ≠ 0) (hasq : a ^ 2 ≠ 1) :
   rintro _ ⟨⟨i, j, hij, c⟩, rfl⟩
   rw [TransvectionStruct.toSpecialLinearGroup_mk]
   exact transvection_mem_commutator hij ha hasq c
+
+/-- The special linear group over a field with at least four elements is perfect, in every finite
+rank. -/
+theorem commutator_eq_top_of_four_le_natCard (hF : 4 ≤ Nat.card F) :
+    commutator (SpecialLinearGroup ι F) = ⊤ :=
+  have ⟨_, ha, hasq⟩ := TauCeti.FiniteField.exists_ne_zero_pow_ne_one two_ne_zero hF
+  commutator_eq_top ha hasq
+
+/-- A transvection `xᵢⱼ(c)` is a commutator as soon as a third index `k` is available: it is
+`⁅xᵢₖ(c), xₖⱼ(1)⁆`. -/
+theorem transvection_mem_commutator_of_ne {A : Type*} [CommRing A] {k : ι} (hij : i ≠ j)
+    (hik : i ≠ k) (hkj : k ≠ j) (c : A) :
+    transvection hij c ∈ commutator (SpecialLinearGroup ι A) := by
+  rw [← mul_one c, ← commutatorElement_transvection hik hkj hij]
+  exact Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
+
+/-- The special linear group on at least three coordinates is perfect over every field. -/
+theorem commutator_eq_top_of_three_le_card (h : 3 ≤ Fintype.card ι) :
+    commutator (SpecialLinearGroup ι F) = ⊤ := by
+  apply le_antisymm le_top
+  rw [← closure_range_toSpecialLinearGroup_eq_top_of_field (ι := ι) (K := F),
+    Subgroup.closure_le]
+  rintro _ ⟨⟨i, j, hij, c⟩, rfl⟩
+  obtain ⟨k, hki, hkj⟩ :=
+    ENat.exists_ne_ne_of_three_le (by simpa [ENat.card_eq_coe_fintype_card] using h) i j
+  rw [TransvectionStruct.toSpecialLinearGroup_mk]
+  exact transvection_mem_commutator_of_ne hij hki.symm hkj c
 
 end Matrix.SpecialLinearGroup

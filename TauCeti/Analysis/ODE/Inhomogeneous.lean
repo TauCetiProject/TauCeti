@@ -39,7 +39,7 @@ theorem existsUnique_hasDerivAt_add (B : X →L[ℝ] X) {f : ℝ → X} (hf : Co
     ((differentiable_exp_smul_const ℝ B).continuous.comp continuous_neg).clm_apply hf
   let u : ℝ → X := fun t ↦ exp (t • B) (exp ((-t₀) • B) x + ∫ s in t₀..t, g s)
   have hinv (t : ℝ) (z : X) : exp (t • B) (exp ((-t) • B) z) = z := by
-    rw [← comp_apply, ← TauCeti.exp_add_smul]
+    rw [← ContinuousLinearMap.exp_add_smul_apply]
     simp
   have hcomm (t : ℝ) (z : X) : exp (t • B) (B z) = B (exp (t • B) z) := by
     exact congrArg (fun C : X →L[ℝ] X ↦ C z)

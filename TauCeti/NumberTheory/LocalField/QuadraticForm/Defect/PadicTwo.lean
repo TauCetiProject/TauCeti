@@ -93,7 +93,7 @@ the defect exponent of a nonsquare unit. -/
 private theorem defectExponent_five :
     defectExponent (Units.mk0 (5 : ℚ_[2]) (by norm_num)) = 2 := by
   have hsq : ¬IsSquare (Units.mk0 (5 : ℚ_[2]) (by norm_num)) :=
-    fun h => Padic.not_isSquare_five (isSquare_units_val_iff.mpr h)
+    fun h => Padic.not_isSquare_five (Units.isSquare_coe_iff.mpr h)
   have hval : valuation ℚ_[2] ((Units.mk0 (5 : ℚ_[2]) (by norm_num) : ℚ_[2]ˣ) : ℚ_[2]) = 1 :=
     Padic.valuation_eq_one_of_coe_eq (u := padicIntUnitFive) coe_padicIntUnitFive.symm
   refine le_antisymm ?_ ?_
@@ -220,7 +220,7 @@ theorem defectExponent_padicTwoSquareClassRep (i : Fin 8) :
         _root_.Padic.valuation_p_pow_mul_intCast 1 hm, Nat.cast_one]
     rw [defectExponent_of_odd (hv ▸ odd_one), hv, WithTop.coe_one]
   fin_cases i
-  · exact defectExponent_eq_top_iff.mpr (isSquare_units_val_iff.mp ⟨1, by simp⟩)
+  · exact defectExponent_eq_top_iff.mpr (Units.isSquare_coe_iff.mp ⟨1, by simp⟩)
   · exact defectExponent_of_serreEps_eq_one_padicTwo (u := -1) (by simp) serreEps_neg_one
   · exact defectExponent_of_serreEps_eq_zero_of_serreOmega_eq_one_padicTwo (u := padicIntUnitFive)
       (by simp [coe_padicIntUnitFive]) (serreEps_eq_zero_of_coe_eq_five val_padicIntUnitFive)

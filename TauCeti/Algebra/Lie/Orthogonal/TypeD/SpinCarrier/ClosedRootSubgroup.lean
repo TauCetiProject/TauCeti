@@ -39,9 +39,7 @@ vacuum. The generic Kostant root-subgroup criterion then makes the coordinate ma
 * J. E. Humphreys, *Linear Algebraic Groups*, Section 26.
 * R. W. Carter, *Simple Groups of Lie Type*, Sections 4.4 and 7.1.
 
-This supplies the closed-root-subgroup component of the type-`D` pinning required by Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Its downstream consumer is milestone L0 of the
-CFSGStatement roadmap.
+This supplies the closed-root-subgroup component of a type-`D` pinning.
 -/
 
 public section
@@ -147,7 +145,7 @@ private theorem rep_rootGenerator_sq_apply_latticeBasis (k : Fin n ⊕ Fin n) :
       f ((latticeBasis n (basisIndex n (rootSourceSet n hn k)) : lattice n) :
         ExteriorAlgebra ℚ (polarization n).W))
     ((polarization n).typeDSpinRep_rootGenerator_sq (polarizationBasis n) hn k)
-  simpa only [rep, pow_two, Module.End.mul_apply, LinearMap.zero_apply] using h
+  simpa only [rep, pow_two, mul_apply_eq_comp, LinearMap.zero_apply] using h
 
 /-- The coordinate morphism of every numbered type-`D` full-spin root subgroup is surjective. -/
 theorem rootSubgroupCoordinateMap_surjective (k : Fin n ⊕ Fin n) :

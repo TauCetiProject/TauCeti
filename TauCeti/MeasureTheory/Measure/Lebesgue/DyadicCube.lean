@@ -19,7 +19,7 @@ For `k : ℤ` and `m : ι → ℤ`, the **dyadic cube** of level `k` at position
 (`TauCeti.dyadicCube`). The cubes of a fixed level partition `ι → ℝ`, the cube of level `k`
 containing `x` being `Q(k, ⌊x / 2ᵏ⌋)` (`TauCeti.dyadicIndex`), and the levels are nested: two
 dyadic cubes are either disjoint or one contains the other. Together with the **Lebesgue
-differentiation theorem along dyadic cubes**, which says that the averages of an integrable
+differentiation theorem along dyadic cubes**, which says that the averages of a locally integrable
 function over the dyadic cubes containing `x` converge to its value at `x` as the level tends to
 `-∞`, this is what the stopping-time arguments of harmonic analysis need, starting with the
 Calderón–Zygmund decomposition.
@@ -33,13 +33,22 @@ Mathlib's differentiation theorem along closed balls with moving centres.
 
 * `TauCeti.dyadicIndex`, `TauCeti.dyadicCube`, `TauCeti.dyadicCube_eq_pi`: dyadic cubes and the
   position of the cube of a given level containing a point.
+* `TauCeti.dyadicCube_nonempty`, `TauCeti.centre_mem_dyadicCube`: dyadic cubes are nonempty, and
+  contain their centres.
 * `TauCeti.dyadicIndex_add_one`, `TauCeti.dyadicCube_subset_dyadicCube`,
   `TauCeti.dyadicCube_subset_or_disjoint`, `TauCeti.disjoint_dyadicCube`: the nesting of the
   dyadic levels.
 * `TauCeti.closure_dyadicCube`: the closure of a dyadic cube is a closed sup-norm ball.
-* `TauCeti.volume_closedBall_eq_zero_of_nonpos`: a closed ball of nonpositive radius is null.
+* `TauCeti.ball_subset_dyadicCube`: a dyadic cube contains the open sup-norm ball of half its side
+  length around its centre.
+* `TauCeti.dist_lt_of_mem_dyadicCube`: two points of a cube of level `k` are at sup distance less
+  than `2ᵏ`.
 * `TauCeti.volume_dyadicCube`, `TauCeti.volume_dyadicCube_add_one`: a cube of level `k` has
   volume `(2ᵏ)ⁿ`, so its parent is `2ⁿ` times larger.
+* `TauCeti.exists_forall_lt_of_mul_volume_dyadicCube_lt`: in positive dimension, the dyadic cubes
+  `Q` with `δ |Q| < a`, for `δ ≠ 0` and `a` finite, have bounded level.
+* `TauCeti.exists_subset_pairwiseDisjoint_forall_dyadicCube_subset`: in a family of dyadic cubes
+  of bounded level, the maximal cubes are pairwise disjoint and contain every cube of the family.
 * `TauCeti.ae_tendsto_setLAverage_dyadicCube`: the Lebesgue differentiation theorem along dyadic
   cubes.
 
@@ -77,6 +86,11 @@ variable {j k : ℤ} {m m' : ι → ℤ} {x y : ι → ℝ}
 @[simp]
 theorem mem_dyadicCube : x ∈ dyadicCube k m ↔ dyadicIndex k x = m :=
   Iff.rfl
+
+/-- In dimension zero every dyadic cube is the whole space. -/
+@[simp]
+theorem dyadicCube_eq_univ [IsEmpty ι] (k : ℤ) (m : ι → ℤ) : dyadicCube k m = univ :=
+  eq_univ_of_forall fun _ => mem_dyadicCube.2 (Subsingleton.elim _ _)
 
 /-- Every point lies in the dyadic cube of each level indexed by its own dyadic index. -/
 theorem mem_dyadicCube_dyadicIndex (k : ℤ) (x : ι → ℝ) : x ∈ dyadicCube k (dyadicIndex k x) :=
@@ -118,9 +132,25 @@ theorem dyadicCube_subset_dyadicCube (hjk : j ≤ k) (hx : x ∈ dyadicCube j m)
     dyadicCube j m ⊆ dyadicCube k (dyadicIndex k x) :=
   fun _ hy => dyadicIndex_eq_of_le hjk (hy.trans hx.symm)
 
-/-- Two dyadic cubes of the same level are disjoint unless they are equal. -/
-theorem disjoint_dyadicCube (h : m ≠ m') : Disjoint (dyadicCube k m) (dyadicCube k m') :=
-  Set.disjoint_left.2 fun _ hx hx' => h (hx.symm.trans hx')
+/-- Dyadic cubes are nonempty: the cube `Q(k, m)` contains its corner `m 2ᵏ`. -/
+theorem dyadicCube_nonempty (k : ℤ) (m : ι → ℤ) : (dyadicCube k m).Nonempty :=
+  ⟨fun i => m i * 2 ^ k, funext fun i => by
+    rw [dyadicIndex_apply, mul_div_cancel_right₀ _ (zpow_ne_zero k two_ne_zero), Int.floor_intCast]⟩
+
+/-- The centre `(m + 1/2) 2ᵏ` of a dyadic cube lies in it. -/
+theorem centre_mem_dyadicCube (k : ℤ) (m : ι → ℤ) :
+    (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) ∈ dyadicCube k m := by
+  rw [dyadicCube_eq_pi]
+  intro i _
+  have h := zpow_pos (two_pos : (0 : ℝ) < 2) k
+  constructor <;> nlinarith
+
+/-- Two dyadic cubes of the same level are disjoint if and only if they are distinct. -/
+@[simp]
+theorem disjoint_dyadicCube : Disjoint (dyadicCube k m) (dyadicCube k m') ↔ m ≠ m' := by
+  refine ⟨fun h hm => ?_, fun h => Set.disjoint_left.2 fun _ hx hx' => h (hx.symm.trans hx')⟩
+  subst hm
+  exact (dyadicCube_nonempty k m).ne_empty (disjoint_self.1 h)
 
 /-- Of two dyadic cubes, either the one of lower level is contained in the other or they are
 disjoint. -/
@@ -130,6 +160,35 @@ theorem dyadicCube_subset_or_disjoint (hjk : j ≤ k) (m m' : ι → ℤ) :
   rintro ⟨x, hxj, hxk⟩
   rw [← mem_dyadicCube.1 hxk]
   exact dyadicCube_subset_dyadicCube hjk hxj
+
+/-- **Maximal dyadic cubes.** In a family `T` of dyadic cubes, recorded by level and position, whose
+levels are bounded above, the cubes maximal for inclusion form a pairwise disjoint subfamily `T'`,
+and every cube of `T` lies in a cube of `T'`. -/
+theorem exists_subset_pairwiseDisjoint_forall_dyadicCube_subset {T : Set (ℤ × (ι → ℤ))} {N : ℤ}
+    (hT : ∀ p ∈ T, p.1 ≤ N) :
+    ∃ T' ⊆ T, T'.PairwiseDisjoint (fun p => dyadicCube p.1 p.2) ∧
+      ∀ p ∈ T, ∃ p' ∈ T', dyadicCube p.1 p.2 ⊆ dyadicCube p'.1 p'.2 := by
+  -- `T'` consists of the cubes of `T` contained in no cube of `T` of higher level.
+  refine ⟨{p ∈ T | ∀ p' ∈ T, dyadicCube p.1 p.2 ⊆ dyadicCube p'.1 p'.2 → p'.1 ≤ p.1},
+    sep_subset _ _, ?_, fun p hp => ?_⟩
+  · have key : ∀ p ∈ {p ∈ T | ∀ p' ∈ T, dyadicCube p.1 p.2 ⊆ dyadicCube p'.1 p'.2 → p'.1 ≤ p.1},
+        ∀ p' ∈ T, p.1 ≤ p'.1 → p ≠ p' → Disjoint (dyadicCube p.1 p.2) (dyadicCube p'.1 p'.2) := by
+      intro p hp p' hp' hle hne
+      refine (dyadicCube_subset_or_disjoint hle p.2 p'.2).resolve_left fun hsub => hne ?_
+      -- A cube of `T'` inside another cube of `T` has the same level, hence is equal to it.
+      have heq : p.1 = p'.1 := le_antisymm hle (hp.2 p' hp' hsub)
+      rw [← heq] at hsub
+      exact Prod.ext heq (not_not.1 fun h =>
+        (dyadicCube_nonempty _ _).ne_empty ((disjoint_dyadicCube.2 h).eq_bot_of_le hsub))
+    intro p hp p' hp' hne
+    rcases le_total p.1 p'.1 with h | h
+    · exact key p hp p' hp'.1 h hne
+    · exact (key p' hp' p hp.1 h hne.symm).symm
+  · -- The cube of `T` containing `p` of greatest level is maximal.
+    obtain ⟨j₀, ⟨p₀, hp₀T, rfl, hp₀⟩, hmax⟩ := Int.exists_greatest_of_bdd
+      (P := fun j => ∃ p' ∈ T, p'.1 = j ∧ dyadicCube p.1 p.2 ⊆ dyadicCube p'.1 p'.2)
+      ⟨N, fun j ⟨p', hp', hpj, _⟩ => hpj ▸ hT p' hp'⟩ ⟨p.1, p, hp, rfl, subset_rfl⟩
+    exact ⟨p₀, ⟨hp₀T, fun p' hp' hsub => hmax _ ⟨p', hp', rfl, hp₀.trans hsub⟩⟩, hp₀⟩
 
 section Fintype
 
@@ -150,6 +209,17 @@ theorem dyadicCube_subset_closedBall (k : ℤ) (m : ι → ℤ) :
   rw [closedBall_dyadicCenter, dyadicCube_eq_pi]
   exact pi_mono fun _ _ => Ico_subset_Icc_self
 
+/-- A dyadic cube contains the open sup-norm ball around its centre whose radius is half its side
+length. -/
+theorem ball_subset_dyadicCube (k : ℤ) (m : ι → ℤ) :
+    ball (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) (2 ^ k / 2) ⊆ dyadicCube k m := by
+  intro x hx
+  rw [dyadicCube_eq_pi]
+  intro i _
+  have hi := (dist_le_pi_dist x _ i).trans_lt hx
+  rw [Real.dist_eq, abs_sub_lt_iff] at hi
+  constructor <;> linarith
+
 /-- Up to a null set, a dyadic cube is the closed sup-norm ball around its centre whose radius is
 half its side length. -/
 theorem dyadicCube_ae_eq_closedBall (k : ℤ) (m : ι → ℤ) :
@@ -163,20 +233,23 @@ theorem closure_dyadicCube (k : ℤ) (m : ι → ℤ) :
     closure (dyadicCube k m) = closedBall (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) (2 ^ k / 2) := by
   have h2 : (0 : ℝ) < 2 ^ k := zpow_pos two_pos k
   rw [closedBall_dyadicCenter, dyadicCube_eq_pi, closure_pi_set]
-  exact pi_congr rfl fun i _ => closure_Ico (by nlinarith)
+  exact pi_congr rfl fun i _ => closure_Ico (mul_lt_mul_of_pos_right (lt_add_one _) h2).ne
 
-/-- A closed sup-norm ball of nonpositive radius in `ℝⁿ`, `n ≥ 1`, is Lebesgue-null. -/
-theorem volume_closedBall_eq_zero_of_nonpos [Nonempty ι] (c : ι → ℝ) {r : ℝ} (hr : r ≤ 0) :
-    volume (closedBall c r) = 0 :=
-  measure_mono_null (closedBall_subset_closedBall hr) (by rw [closedBall_zero]; simp)
+/-- Two points of a dyadic cube of level `k` are at sup distance less than its side length `2ᵏ`. -/
+theorem dist_lt_of_mem_dyadicCube (hx : x ∈ dyadicCube k m) (hy : y ∈ dyadicCube k m) :
+    dist x y < 2 ^ k := by
+  rw [dyadicCube_eq_pi] at hx hy
+  rw [dist_pi_lt_iff (zpow_pos two_pos k)]
+  intro i
+  have hxi := hx i (mem_univ i)
+  have hyi := hy i (mem_univ i)
+  rw [Real.dist_eq, abs_sub_lt_iff]
+  constructor <;> nlinarith [hxi.1, hxi.2, hyi.1, hyi.2]
 
 /-- A dyadic cube of level `k` has volume `(2ᵏ)ⁿ`. -/
 theorem volume_dyadicCube (k : ℤ) (m : ι → ℤ) :
     volume (dyadicCube k m) = ENNReal.ofReal ((2 ^ k) ^ Fintype.card ι) := by
-  have h (i : ι) : ((m i : ℝ) + 1) * 2 ^ k - m i * 2 ^ k = 2 ^ k := by ring
-  rw [dyadicCube_eq_pi, Real.volume_pi_Ico]
-  simp_rw [h]
-  rw [Finset.prod_const, Finset.card_univ, ENNReal.ofReal_pow (by positivity)]
+  simp [dyadicCube_eq_pi, Real.volume_pi_Ico, add_one_mul, ENNReal.ofReal_pow, zpow_nonneg]
 
 /-- Dyadic cubes have positive volume. -/
 theorem volume_dyadicCube_pos (k : ℤ) (m : ι → ℤ) : 0 < volume (dyadicCube k m) := by
@@ -191,9 +264,7 @@ theorem volume_dyadicCube_ne_top (k : ℤ) (m : ι → ℤ) : volume (dyadicCube
 /-- Passing to the next dyadic level multiplies the volume of a cube by `2ⁿ`. -/
 theorem volume_dyadicCube_add_one (k : ℤ) (m m' : ι → ℤ) :
     volume (dyadicCube (k + 1) m') = 2 ^ Fintype.card ι * volume (dyadicCube k m) := by
-  rw [volume_dyadicCube, volume_dyadicCube, zpow_add_one₀ two_ne_zero, mul_comm _ (2 : ℝ),
-    mul_pow, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow zero_le_two,
-    ENNReal.ofReal_ofNat]
+  simp [volume_dyadicCube, zpow_add_one₀, mul_pow, ENNReal.ofReal_mul, mul_comm]
 
 /-- In positive dimension, dyadic cubes become arbitrarily large as the level tends to `+∞`. -/
 theorem tendsto_volume_dyadicCube_atTop [Nonempty ι] (m : ℤ → ι → ℤ) :
@@ -205,11 +276,23 @@ theorem tendsto_volume_dyadicCube_atTop [Nonempty ι] (m : ℤ → ι → ℤ) :
   obtain ⟨n, hn⟩ := exists_nat_gt b
   exact ⟨n, hn.le.trans <| by exact_mod_cast (Nat.lt_two_pow_self).le⟩
 
-/-- **Lebesgue's differentiation theorem along dyadic cubes**: for an integrable `g`, at almost
-every `x` the averages of `g` over the dyadic cubes containing `x` converge to `g x` as the level
-tends to `-∞`. -/
-theorem ae_tendsto_setLAverage_dyadicCube {g : (ι → ℝ) → ℝ≥0∞} (hg : AEMeasurable g)
-    (hg' : ∫⁻ x, g x ≠ ∞) :
+/-- In positive dimension, the dyadic cubes `Q` with `δ |Q| < a`, for `δ ≠ 0` and `a` finite, have
+bounded level. -/
+theorem exists_forall_lt_of_mul_volume_dyadicCube_lt [Nonempty ι] {a δ : ℝ≥0∞} (hδ : δ ≠ 0)
+    (ha : a ≠ ∞) : ∃ N : ℤ, ∀ (k : ℤ) (m : ι → ℤ), δ * volume (dyadicCube k m) < a → k < N := by
+  have h : Tendsto (fun k : ℤ => δ * volume (dyadicCube k fun _ : ι => (0 : ℤ))) atTop (𝓝 ∞) := by
+    have h := ENNReal.Tendsto.const_mul (a := δ)
+      (tendsto_volume_dyadicCube_atTop fun _ (_ : ι) => (0 : ℤ)) (.inl ENNReal.top_ne_zero)
+    rwa [ENNReal.mul_top hδ] at h
+  obtain ⟨N, hN⟩ := eventually_atTop.1 ((tendsto_order.1 h).1 a ha.lt_top)
+  refine ⟨N, fun k m hk => lt_of_not_ge fun hNk => ?_⟩
+  have hlt := hN k hNk
+  rw [volume_dyadicCube] at hlt hk
+  exact (hlt.trans hk).false
+
+/-- Lebesgue's differentiation theorem along dyadic cubes for an integrable `g`. -/
+private theorem ae_tendsto_setLAverage_dyadicCube_of_lintegral_ne_top {g : (ι → ℝ) → ℝ≥0∞}
+    (hg : AEMeasurable g) (hg' : ∫⁻ x, g x ≠ ∞) :
     ∀ᵐ x, Tendsto (fun k => ⨍⁻ y in dyadicCube k (dyadicIndex k x), g y ∂volume) atBot
       (𝓝 (g x)) := by
   let c : ℤ → (ι → ℝ) → ι → ℝ := fun k x i => ((dyadicIndex k x i : ℝ) + 2⁻¹) * 2 ^ k
@@ -230,6 +313,34 @@ theorem ae_tendsto_setLAverage_dyadicCube {g : (ι → ℝ) → ℝ≥0∞} (hg 
   simp only [Function.comp_apply, setLAverage_eq]
   rw [setLIntegral_congr (dyadicCube_ae_eq_closedBall k (dyadicIndex k x)),
     measure_congr (dyadicCube_ae_eq_closedBall k (dyadicIndex k x))]
+
+/-- **Lebesgue's differentiation theorem along dyadic cubes**: for a locally integrable `g`, at
+almost every `x` the averages of `g` over the dyadic cubes containing `x` converge to `g x` as the
+level tends to `-∞`. -/
+theorem ae_tendsto_setLAverage_dyadicCube {g : (ι → ℝ) → ℝ≥0∞} (hg : LocallyIntegrable g) :
+    ∀ᵐ x, Tendsto (fun k => ⨍⁻ y in dyadicCube k (dyadicIndex k x), g y ∂volume) atBot
+      (𝓝 (g x)) := by
+  -- On each cube `Q` of level `0`, apply the integrable case to `g` restricted to `Q`; the cubes
+  -- of level at most `0` containing a point of `Q` lie in `Q`.
+  have hQ (m : ι → ℤ) : ∀ᵐ x, x ∈ dyadicCube 0 m → Tendsto
+      (fun k => ⨍⁻ y in dyadicCube k (dyadicIndex k x), g y ∂volume) atBot (𝓝 (g x)) := by
+    have hm := measurableSet_dyadicCube (0 : ℤ) m
+    have hint : ∫⁻ x, (dyadicCube 0 m).indicator g x ≠ ∞ := by
+      rw [lintegral_indicator hm]
+      refine ne_top_of_le_ne_top ?_ (lintegral_mono_set (dyadicCube_subset_closedBall 0 m))
+      simpa only [eNorm_eq_self] using (hg.integrableOn_isCompact (isCompact_closedBall _ _)).2.ne
+    filter_upwards [ae_tendsto_setLAverage_dyadicCube_of_lintegral_ne_top
+      (hg.aestronglyMeasurable.aemeasurable.indicator hm) hint]
+      with x hx hxm
+    rw [indicator_of_mem hxm] at hx
+    refine hx.congr' ?_
+    filter_upwards [eventually_le_atBot 0] with k hk
+    have hsub : dyadicCube k (dyadicIndex k x) ⊆ dyadicCube 0 m := by
+      simpa only [mem_dyadicCube.1 hxm] using
+        dyadicCube_subset_dyadicCube hk (mem_dyadicCube_dyadicIndex k x)
+    simp only [setLAverage_eq]
+    rw [setLIntegral_indicator hm, inter_eq_right.2 hsub]
+  filter_upwards [ae_all_iff.2 hQ] with x hx using hx _ (mem_dyadicCube_dyadicIndex 0 x)
 
 end Fintype
 

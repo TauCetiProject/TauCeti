@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Gamma.Cdf
 public import TauCeti.Probability.Hazard
+import TauCeti.Probability.Distributions.Gamma.PDF
 
 /-!
 # The Gamma hazard
@@ -39,12 +40,7 @@ theorem hasDerivAt_neg_log_one_sub_cdf_gammaMeasure
   apply hasDerivAt_neg_log_one_sub_cdf ?_ (cdf_gammaMeasure_lt_one ha hr x)
   apply hasDerivAt_cdf_of_eq_withDensity (gammaMeasure_eq_withDensity_ofReal a r)
     (measurable_gammaPDFReal a r).aemeasurable (ae_of_all _ (gammaPDFReal_nonneg ha hr))
-  have hc : ContinuousAt (fun t => r ^ a / Real.Gamma a * t ^ (a - 1) *
-      Real.exp (-(r * t))) x :=
-    (continuousAt_const.mul (Real.continuousAt_rpow_const x (a - 1) (.inl hx.ne'))).mul
-      (by fun_prop)
-  exact hc.congr_of_eventuallyEq
-    ((eventually_gt_nhds hx).mono fun t ht => gammaPDFReal_of_nonneg ht.le)
+  exact (continuousOn_gammaPDFReal a r).continuousAt (Ioi_mem_nhds hx)
 
 /-- The Gamma hazard is integrable on every compact interval, including across zero. -/
 theorem intervalIntegrable_gammaPDFReal_div_one_sub_cdf

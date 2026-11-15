@@ -24,7 +24,9 @@ common endpoints,
 `μ(Λ ⊕ Λ', Γ ⊕ Γ') = μ(Λ, Γ) + μ(Λ', Γ')`,
 
 where `TauCeti.TotallyRealPath.prod` is the direct sum of two paths. The direct sum of two loops
-is built from the direct sum of the underlying paths.
+is built from the direct sum of the underlying paths. These direct-sum constructions are defined
+for complex seminormed spaces; the Maslov index results use finite-dimensional complex normed
+spaces.
 
 The two ingredients are multiplicative. The Maslov phase of a direct sum is the product of the two
 phases, `ρ(L₀ ⊕ L₀', L ⊕ L') = ρ(L₀, L) ρ(L₀', L')`, because an automorphism carrying `L₀` to `L`
@@ -132,8 +134,10 @@ end IsMaximalTotallyReal
 
 namespace TotallyRealPath
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+section
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
+  {E' : Type*} [SeminormedAddCommGroup E'] [NormedSpace ℂ E']
 
 /-- The path of coordinate subspaces of a pair of paths of maximal totally real subspaces: the
 direct sum `Λ ⊕ Λ'` of `t ↦ Λ t` and `t ↦ Λ' t`, in the product of the ambient spaces. -/
@@ -166,7 +170,10 @@ theorem prod_apply (Λ : TotallyRealPath E) (Λ' : TotallyRealPath E') (t : I) :
     Λ.prod Λ' t = (Λ t).prod (Λ' t) :=
   (rfl)
 
-variable [FiniteDimensional ℂ E] [FiniteDimensional ℂ E']
+end
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] [FiniteDimensional ℂ E']
 
 /-- **The direct-sum axiom of the relative Maslov index:**
 `μ(Λ ⊕ Λ', Γ ⊕ Γ') = μ(Λ, Γ) + μ(Λ', Γ')`. -/
@@ -188,8 +195,10 @@ end TotallyRealPath
 
 namespace TotallyRealLoop
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+section
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
+  {E' : Type*} [SeminormedAddCommGroup E'] [NormedSpace ℂ E']
 
 /-- The loop of coordinate subspaces of a pair of loops of maximal totally real subspaces: the
 direct sum `Λ ⊕ Λ'` of `t ↦ Λ t` and `t ↦ Λ' t`, in the product of the ambient spaces. -/
@@ -207,7 +216,10 @@ theorem prod_apply (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') (t : I) :
     Λ.prod Λ' t = (Λ t).prod (Λ' t) :=
   (rfl)
 
-variable [FiniteDimensional ℂ E] [FiniteDimensional ℂ E']
+end
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] [FiniteDimensional ℂ E']
 
 /-- **The loop of Maslov phases of a direct sum is the product of the two loops of Maslov
 phases:** read as a complex number, the phase of the direct sum at `t` is the product of the two

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Nonarchimedean.OpenAddSubgroupBasis
+public import TauCeti.Topology.Algebra.Nonarchimedean.OpenSubgroupBasis
 
 /-!
 # A first-countable nonarchimedean group has a decreasing basis of open subgroups
@@ -51,7 +51,7 @@ that basis.
 
 Countable generation of `𝓝 0` and `FirstCountableTopology G` are in fact equivalent under these
 hypotheses, since `NonarchimedeanAddGroup` extends `IsTopologicalAddGroup`:
-`TauCeti.SeparatelyContinuousAdd.toFirstCountableTopology` gives one direction and
+`TauCeti.ContinuousConstVAdd.toFirstCountableTopology` gives one direction and
 `FirstCountableTopology.nhds_generated_countable` the other. The `𝓝 0` form is stated because it
 is the one the proof consumes. -/
 theorem exists_antitone_basis_openAddSubgroup [(𝓝 (0 : G)).IsCountablyGenerated]

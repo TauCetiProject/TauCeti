@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.PID
 public import TauCeti.Algebra.MonoidAlgebra.Basis
+public import TauCeti.LinearAlgebra.Basis.SumCoords
+public import TauCeti.LinearAlgebra.Charpoly.Quotient
 public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Rep.OfMulAction
 public import TauCeti.RepresentationTheory.Subrepresentation
@@ -35,6 +37,7 @@ basis. For empty `X`, both subrepresentations are zero and are still complementa
 Over a field, the character of the augmentation subrepresentation is the character of the induced
 free-module action minus the trivial character, provided `X` is finite and nonempty. The identity
 holds even when the characteristic divides `|X|`, so the invariant line is not a complement.
+Likewise its characteristic polynomial times `X - 1` is the characteristic polynomial on `k[X]`.
 These constructions underlie the standard representation of the symmetric group.
 
 ## Main definitions and results
@@ -45,14 +48,18 @@ These constructions underlie the standard representation of the symmetric group.
   when the permutation set is nonempty.
 * `TauCeti.permutationSum` and `TauCeti.invariantLine`: the sum of the standard basis and its span.
 * `TauCeti.invariantLineEquivTrivial`: the invariant line as the trivial representation on `k`.
-* `MonoidAlgebra.ker_sumCoords_basis_eq_span`: the augmentation kernel is spanned by
-  differences of standard basis vectors from a fixed one.
 * `TauCeti.isCompl_invariantLine_augmentationSubrepresentation_iff`: the two subrepresentations
   are complementary exactly when `X` is empty or its cardinality is a unit in the coefficient ring.
 * `TauCeti.ofMulActionEquivProdAugmentation`: the explicit splitting as trivial plus augmentation.
+* `TauCeti.augmentationProjectionOfIsUnit`: the equivariant projection onto the augmentation
+  subrepresentation along the invariant line.
+* `TauCeti.dualRestrict_augmentationSubrepresentation_eq_zero_iff`: the linear forms vanishing on
+  the augmentation subrepresentation are the multiples of the coefficient sum.
 * `TauCeti.finrank_augmentationSubrepresentation`: the dimension is `|X| - 1`.
 * `TauCeti.character_augmentationSubrepresentation`: the character is the free-module character
   minus `1`.
+* `TauCeti.charpoly_augmentationSubrepresentation_mul_X_sub_one`: the characteristic polynomial
+  times `X - 1` is the free-module characteristic polynomial.
 
 ## Implementation notes
 
@@ -145,7 +152,7 @@ theorem forget₂_map_permutationAugmentation :
 
 /-- For a nonempty permutation set, augmentation is surjective. -/
 instance permutationAugmentation_epi [Nonempty X] : Epi (permutationAugmentation k G X) :=
-  (Rep.epi_iff_surjective _).2 (MonoidAlgebra.sumCoords_basis_surjective (k := k) (X := X))
+  (Rep.epi_iff_surjective _).2 (MonoidAlgebra.basis X k).sumCoords_surjective
 
 end AugmentationMap
 
@@ -170,10 +177,46 @@ instance [Finite X] :
     rw [hbot]
     infer_instance
   · rw [toSubmodule_augmentationSubrepresentation,
-      MonoidAlgebra.ker_sumCoords_basis_eq_span k X (Classical.arbitrary X)]
+      (MonoidAlgebra.basis X k).ker_sumCoords_eq_span (Classical.arbitrary X)]
     exact Module.Finite.span_of_finite k (Set.finite_range _)
 
 end SubrepRing
+
+/-! ### Linear forms on the augmentation subrepresentation -/
+
+section DualRestrict
+
+variable {k : Type*} [CommRing k] {G X : Type*} [Monoid G] [MulAction G X]
+
+/-- The coefficient sum vanishes on the augmentation subrepresentation. -/
+@[simp]
+theorem dualRestrict_augmentationSubrepresentation_sumCoords :
+    (augmentationSubrepresentation k G X).toSubmodule.dualRestrict
+      (MonoidAlgebra.basis X k).sumCoords = 0 :=
+  LinearMap.ext fun v ↦ by
+    rw [Submodule.dualRestrict_apply, LinearMap.zero_apply]
+    exact mem_augmentationSubrepresentation_iff.1 v.2
+
+/-- A linear form on `k[X]` vanishes on the augmentation subrepresentation exactly when it is a
+multiple of the coefficient sum. No hypothesis on `k` or `X` is needed. -/
+theorem dualRestrict_augmentationSubrepresentation_eq_zero_iff
+    {φ : Module.Dual k (MonoidAlgebra k X)} :
+    (augmentationSubrepresentation k G X).toSubmodule.dualRestrict φ = 0 ↔
+      φ ∈ k ∙ (MonoidAlgebra.basis X k).sumCoords := by
+  refine ⟨fun hφ ↦ ?_, fun hφ ↦ ?_⟩
+  · rcases isEmpty_or_nonempty X with hX | hX
+    · exact Submodule.mem_span_singleton.2 ⟨0, (MonoidAlgebra.basis X k).ext fun x ↦ hX.elim x⟩
+    -- `φ` takes the same value on every standard basis vector, since it kills their differences.
+    refine Submodule.mem_span_singleton.2
+      ⟨φ (MonoidAlgebra.single hX.some 1), (MonoidAlgebra.basis X k).ext fun x ↦ ?_⟩
+    have hx := LinearMap.congr_fun hφ
+      ⟨_, single_sub_single_mem_augmentationSubrepresentation (G := G) x hX.some⟩
+    rw [Submodule.dualRestrict_apply, LinearMap.zero_apply, map_sub, sub_eq_zero] at hx
+    simp [hx]
+  · obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hφ
+    rw [map_smul, dualRestrict_augmentationSubrepresentation_sumCoords, smul_zero]
+
+end DualRestrict
 
 /-! ### The augmentation sequence -/
 
@@ -424,7 +467,7 @@ theorem finrank_augmentationSubrepresentation :
     simpa [MonoidAlgebra.coeff_smul_apply, hcoord, hi] using this
   have hspan : LinearMap.ker (MonoidAlgebra.basis X k).sumCoords =
       Submodule.span k (Set.range d) := by
-    rw [MonoidAlgebra.ker_sumCoords_basis_eq_span k X x₀]
+    rw [(MonoidAlgebra.basis X k).ker_sumCoords_eq_span x₀]
     apply le_antisymm
     · refine Submodule.span_le.mpr ?_
       rintro _ ⟨x, rfl⟩
@@ -587,6 +630,49 @@ theorem coe_ofMulActionEquivProdAugmentation_apply_snd (h : IsUnit (Fintype.card
     ← ofMulActionEquivProdAugmentation_symm_apply k G X h,
     (ofMulActionEquivProdAugmentation k G X h).symm_apply_apply]
 
+/-- When `|X|` is a unit in a ring, the **projection of `k[X]` onto the augmentation
+subrepresentation** along the invariant line: the second component of the splitting
+`TauCeti.ofMulActionEquivProdAugmentation`. Unlike `TauCeti.augmentationProjection`, which
+projects along the line of a chosen basis vector, it is equivariant. -/
+noncomputable def augmentationProjectionOfIsUnit (h : IsUnit (Fintype.card X : k)) :
+    MonoidAlgebra k X →ₗ[k] (augmentationSubrepresentation k G X).toSubmodule :=
+  LinearMap.snd k k _ ∘ₗ (ofMulActionEquivProdAugmentation k G X h).toLinearMap
+
+/-- The equivariant projection is the augmentation component of the splitting. -/
+theorem augmentationProjectionOfIsUnit_apply (h : IsUnit (Fintype.card X : k))
+    (v : MonoidAlgebra k X) :
+    augmentationProjectionOfIsUnit k G X h v = (ofMulActionEquivProdAugmentation k G X h v).2 :=
+  (rfl)
+
+/-- The projection onto the augmentation subrepresentation subtracts the average coefficient
+from every coordinate. -/
+@[simp]
+theorem coe_augmentationProjectionOfIsUnit_apply (h : IsUnit (Fintype.card X : k))
+    (v : MonoidAlgebra k X) :
+    (augmentationProjectionOfIsUnit k G X h v : MonoidAlgebra k X) =
+      v - ((MonoidAlgebra.basis X k).sumCoords v * Ring.inverse (Fintype.card X : k)) •
+        permutationSum k X := by
+  rw [augmentationProjectionOfIsUnit_apply, coe_ofMulActionEquivProdAugmentation_apply_snd]
+
+/-- The projection onto the augmentation subrepresentation is a retraction of its inclusion. -/
+@[simp]
+theorem augmentationProjectionOfIsUnit_coe (h : IsUnit (Fintype.card X : k))
+    (v : (augmentationSubrepresentation k G X).toSubmodule) :
+    augmentationProjectionOfIsUnit k G X h v = v :=
+  Subtype.ext <| by
+    rw [coe_augmentationProjectionOfIsUnit_apply, mem_augmentationSubrepresentation_iff.1 v.2,
+      zero_mul, zero_smul, sub_zero]
+
+/-- The projection onto the augmentation subrepresentation is equivariant. -/
+theorem isIntertwiningMap_augmentationProjectionOfIsUnit (h : IsUnit (Fintype.card X : k)) :
+    Representation.IsIntertwiningMap (Representation.ofMulAction k G X)
+      (augmentationSubrepresentation k G X).toRepresentation
+      (augmentationProjectionOfIsUnit k G X h) :=
+  ⟨fun g v ↦ by
+    rw [augmentationProjectionOfIsUnit_apply, augmentationProjectionOfIsUnit_apply,
+      ← Representation.Equiv.coe_toIntertwiningMap, Representation.IntertwiningMap.isIntertwining]
+    rfl⟩
+
 end Splitting
 
 end RingScalars
@@ -646,6 +732,37 @@ theorem character_augmentationSubrepresentation [Finite X] [Nonempty X] (g : G) 
     LinearMap.trace_restrict_eq_of_forall_mem _ _ hmem
   simp only [Representation.character]
   rw [← hrestrict, key, map_sub, htraceσ]
+
+/-- **The characteristic polynomial of the augmentation subrepresentation** times `X - 1` is the
+characteristic polynomial of `g` on `k[X]`. The factor `X - 1` is the characteristic polynomial of
+the trivial one-dimensional quotient of `k[X]` by the augmentation subrepresentation, so, as for
+the character, no hypothesis on `|X|` in `k` is needed. -/
+theorem charpoly_augmentationSubrepresentation_mul_X_sub_one [Finite X] [Nonempty X] (g : G) :
+    ((augmentationSubrepresentation k G X).toRepresentation g).charpoly * (Polynomial.X - 1) =
+      (Representation.ofMulAction k G X g).charpoly := by
+  have := Fintype.ofFinite X
+  have : Module.Finite k (MonoidAlgebra k X) := Module.Finite.of_basis (MonoidAlgebra.basis X k)
+  set W := (augmentationSubrepresentation k G X).toSubmodule
+  have hW : W ≤ W.comap (Representation.ofMulAction k G X g) := fun _ hv ↦
+    (augmentationSubrepresentation k G X).apply_mem_toSubmodule g hv
+  -- The action is trivial on the quotient by the augmentation subrepresentation, since it
+  -- preserves the sum of the coefficients.
+  have hQ : W.mapQ W _ hW = 1 := by
+    refine Submodule.linearMap_qext _ (LinearMap.ext fun v ↦ ?_)
+    simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.mkQ_apply, Submodule.mapQ_apply,
+      one_apply_eq_self, Submodule.Quotient.eq, W, toSubmodule_augmentationSubrepresentation,
+      LinearMap.mem_ker, map_sub, sumCoords_basis_ofMulAction, sub_self]
+  have hfin : Module.finrank k (MonoidAlgebra k X ⧸ W) = 1 := by
+    have h := W.finrank_quotient_add_finrank
+    rw [finrank_augmentationSubrepresentation,
+      Module.finrank_eq_card_basis (MonoidAlgebra.basis X k)] at h
+    have := Fintype.card_pos (α := X)
+    omega
+  have hres : (Representation.ofMulAction k G X g).restrict hW =
+      (augmentationSubrepresentation k G X).toRepresentation g :=
+    (Subrepresentation.toRepresentation_apply _ g).symm
+  rw [LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W _ hW, hQ, hres,
+    LinearMap.charpoly_one, hfin, pow_one]
 
 end Field
 

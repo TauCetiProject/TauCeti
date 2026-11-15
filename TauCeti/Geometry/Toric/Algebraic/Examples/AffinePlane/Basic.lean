@@ -325,8 +325,8 @@ private theorem snd_eq_zero_of_isFaceOf_affinePlaneBlowUpLowerCone
     (hx : x ∈ σ) : x.2 = 0 := by
   -- The face is spanned by the generators of the lower cone which it contains.
   have hle : σ ≤ PointedCone.hull ℝ {((1 : Fin 1 → ℝ), (0 : Fin 1 → ℝ))} := by
-    refine (PointedCone.Face.eq_hull_inter_of_eq_hull ⟨σ, hσ⟩ _
-      affinePlaneBlowUpLowerCone_def).le.trans (Submodule.span_mono ?_)
+    refine (hσ.eq_hull_inter_of_eq_hull affinePlaneBlowUpLowerCone_def).le.trans
+      (Submodule.span_mono ?_)
     rintro y ⟨rfl | rfl, hy⟩
     exacts [rfl, absurd hy h]
   obtain ⟨r, -, rfl⟩ := PointedCone.mem_hull_singleton.1 (hle hx)
@@ -339,8 +339,8 @@ private theorem fst_eq_zero_of_isFaceOf_affinePlaneBlowUpUpperCone
     (hx : x ∈ σ) : x.1 = 0 := by
   -- The face is spanned by the generators of the upper cone which it contains.
   have hle : σ ≤ PointedCone.hull ℝ {((0 : Fin 1 → ℝ), (1 : Fin 1 → ℝ))} := by
-    refine (PointedCone.Face.eq_hull_inter_of_eq_hull ⟨σ, hσ⟩ _
-      affinePlaneBlowUpUpperCone_def).le.trans (Submodule.span_mono ?_)
+    refine (hσ.eq_hull_inter_of_eq_hull affinePlaneBlowUpUpperCone_def).le.trans
+      (Submodule.span_mono ?_)
     rintro y ⟨rfl | rfl, hy⟩
     exacts [rfl, absurd hy h]
   obtain ⟨r, -, rfl⟩ := PointedCone.mem_hull_singleton.1 (hle hx)

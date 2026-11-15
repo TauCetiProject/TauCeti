@@ -30,6 +30,8 @@ the grading is the augmentation followed by the structure map `R → Γ_R(M)`.
   direct sum.
 * `DividedPowerAlgebra.instGradedAlgebra`: the resulting `ℕ`-graded algebra structure.
 * `DividedPowerAlgebra.decompose_dp`: `dp R d m` is homogeneous of degree `d`.
+* `DividedPowerAlgebra.decompose_prod_dp`: a product `∏ⱼ dp R aⱼ vⱼ` with `∑ⱼ aⱼ = d` is its own
+  degree-`d` component.
 * `DividedPowerAlgebra.homogeneousProj`: the linear projection onto the degree-`d` piece.
 * `DividedPowerAlgebra.coe_decompose_map`: the functorial map preserves the grading.
 * `DividedPowerAlgebra.coe_decompose_apply_zero`: the degree-zero component is
@@ -150,6 +152,15 @@ theorem decompose_dp (d : ℕ) (m : M) :
     DirectSum.decompose (homogeneousSubmodule (R := R) (M := M)) (dp R d m) =
       DirectSum.of _ d ⟨dp R d m, dp_mem_homogeneousSubmodule d m⟩ :=
   DirectSum.decompose_of_mem _ _
+
+/-- The degree-`d` component of a product of divided powers of total degree `d` is the product
+itself. -/
+theorem decompose_prod_dp {ι : Type*} [Fintype ι] {d : ℕ} (v : ι → M) (a : ι → ℕ)
+    (ha : ∑ j, a j = d) :
+    DirectSum.decompose (homogeneousSubmodule (R := R) (M := M)) (∏ j, dp R (a j) (v j)) d =
+      ⟨∏ j, dp R (a j) (v j), prod_dp_mem_homogeneousSubmodule_of_sum_eq v a ha⟩ :=
+  Subtype.ext <|
+    DirectSum.decompose_of_mem_same _ (prod_dp_mem_homogeneousSubmodule_of_sum_eq v a ha)
 
 variable (R M) in
 /-- The linear projection of `Γ_R(M)` onto its degree-`d` piece, sending `x` to its degree-`d`

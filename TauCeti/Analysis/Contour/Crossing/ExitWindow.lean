@@ -119,7 +119,7 @@ theorem exitCapWindow_lower_lt {γ : ℝ → ℂ} {s : ℂ} {t₀ δ ε : ℝ} {
     (hγ : ContinuousOn γ (Icc (t₀ - δ) t₀)) (hεL : ε ≤ ‖γ (t₀ - δ) - s‖) :
     (exitCapWindow γ s t₀ δ ε L_R L_L).lower < t₀ := by
   rw [exitCapWindow_lower]
-  exact firstExitTimeLeft_lt hδ hγ h_at hε hεL
+  exact firstExitTimeLeft_lt hδ hγ (by simpa [h_at] using hε) hεL
 
 /-- **The right exit time is strictly right of the crossing.**  The mirror image of
 `exitCapWindow_lower_lt` on the right half of the ambient window. -/
@@ -128,7 +128,7 @@ theorem lt_exitCapWindow_upper {γ : ℝ → ℂ} {s : ℂ} {t₀ δ ε : ℝ} {
     (hγ : ContinuousOn γ (Icc t₀ (t₀ + δ))) (hεR : ε ≤ ‖γ (t₀ + δ) - s‖) :
     t₀ < (exitCapWindow γ s t₀ δ ε L_R L_L).upper := by
   rw [exitCapWindow_upper]
-  exact lt_firstExitTimeRight hδ hγ h_at hε hεR
+  exact lt_firstExitTimeRight hδ hγ (by simpa [h_at] using hε) hεR
 
 /-- **The left endpoint chord has the prescribed norm.**  At the left first-exit time the curve
 sits exactly on the circle of radius `ε ≥ 0` about `s`. -/
@@ -137,7 +137,7 @@ theorem norm_sub_exitCapWindow_lower_eq {γ : ℝ → ℂ} {s : ℂ} {t₀ δ ε
     (hγ : ContinuousOn γ (Icc (t₀ - δ) t₀)) (hεL : ε ≤ ‖γ (t₀ - δ) - s‖) :
     ‖γ (exitCapWindow γ s t₀ δ ε L_R L_L).lower - s‖ = ε := by
   rw [exitCapWindow_lower]
-  exact norm_at_firstExitTimeLeft_eq hδ hγ h_at hε hεL
+  exact norm_sub_firstExitTimeLeft_eq hδ hγ (by simpa [h_at] using hε) hεL
 
 /-- **The right endpoint chord has the prescribed norm.**  The mirror image of
 `norm_sub_exitCapWindow_lower_eq`; together they put both endpoints on one circle about `s`. -/
@@ -146,7 +146,7 @@ theorem norm_sub_exitCapWindow_upper_eq {γ : ℝ → ℂ} {s : ℂ} {t₀ δ ε
     (hγ : ContinuousOn γ (Icc t₀ (t₀ + δ))) (hεR : ε ≤ ‖γ (t₀ + δ) - s‖) :
     ‖γ (exitCapWindow γ s t₀ δ ε L_R L_L).upper - s‖ = ε := by
   rw [exitCapWindow_upper]
-  exact norm_at_firstExitTimeRight_eq hδ hγ h_at hε hεR
+  exact norm_sub_firstExitTimeRight_eq hδ hγ (by simpa [h_at] using hε) hεR
 
 /-- The bundled cap of an exit-time window, spelled through the window's own endpoints: once the
 left endpoint chord has norm `ε`, it is the circular cap of that chord's radius sweeping from the
@@ -394,9 +394,10 @@ theorem exists_common_exitCapWindows_radius {γ : ℝ → ℂ} {s : ℂ} {T : Fi
 
 /-- **The Cauchy principal value on an exit-time window.**  Around an interior crossing of a
 piecewise-`C¹` immersion, there is an ambient radius `R` and nonzero one-sided tangent limits such
-that every smaller ambient window containing no other crossing has the following property.  For
-each positive spatial exit radius reached on both sides, the Cauchy-kernel principal value on the
-generally asymmetric interval between the two first exits is
+that every smaller ambient window inside `(a, b]` has the following property; no crossing-uniqueness
+hypothesis on the window is required.  For each positive spatial exit radius reached on both sides,
+the Cauchy-kernel principal value on the generally asymmetric interval between the two first exits
+is
 
 `i * (arg (-L_L / (γ(lower) - s)) + arg ((γ(upper) - s) / L_R))`.
 
@@ -409,7 +410,6 @@ theorem exists_radius_hasCauchyPVAt_exitCapWindow {γ : ℝ → ℂ} {s : ℂ} {
     ∃ R > 0, ∃ L_R L_L : ℂ, L_R ≠ 0 ∧ L_L ≠ 0 ∧
       Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L_R) ∧ Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L) ∧
       ∀ δ : ℝ, 0 < δ → δ ≤ R → a < t₀ - δ → t₀ + δ ≤ b →
-      (∀ t ∈ Icc (t₀ - δ) (t₀ + δ), γ t = s → t = t₀) →
       ∀ ε : ℝ, 0 < ε → ε ≤ ‖γ (t₀ - δ) - s‖ → ε ≤ ‖γ (t₀ + δ) - s‖ →
       HasCauchyPVAt γ (exitCapWindow γ s t₀ δ ε L_R L_L).lower
         (exitCapWindow γ s t₀ δ ε L_R L_L).upper (fun z ↦ (z - s)⁻¹) s
@@ -420,7 +420,7 @@ theorem exists_radius_hasCauchyPVAt_exitCapWindow {γ : ℝ → ℂ} {s : ℂ} {
   obtain ⟨R, hR, L_R, L_L, hL_R, hL_L, h_R, h_L, hspec⟩ :=
     exists_radius_perWindow_tendsto_log_norm_add_arg h_imm ht₀ h_at
   refine ⟨R, hR, L_R, L_L, hL_R, hL_L, h_R, h_L, ?_⟩
-  intro δ hδ hδR ha hb h_unique ε hε hεL hεR
+  intro δ hδ hδR ha hb ε hε hεL hεR
   let W := exitCapWindow γ s t₀ δ ε L_R L_L
   have hγ : ContinuousOn γ (Icc (t₀ - δ) (t₀ + δ)) :=
     h_imm.continuousOn.mono (by
@@ -448,15 +448,9 @@ theorem exists_radius_hasCauchyPVAt_exitCapWindow {γ : ℝ → ℂ} {s : ℂ} {
     exact hupper_mem.2
   have htend := hspec W.lower W.upper
     (by linarith) hlt htu (by linarith) (ha.trans_le hW_lower) (hW_upper.trans hb)
-    (fun t ht heq => h_unique t
-      ⟨hW_lower.trans ht.1, ht.2.trans hW_upper⟩ heq)
   refine HasCauchyPVAt.intro ?_ ?_
   · filter_upwards [self_mem_nhdsWithin] with η hη
     exact intervalIntegrable_inv_sub_truncated
-      (h_imm.continuousOn.mono (by
-        rw [uIcc_of_le hab.le, uIcc_of_le (hlt.le.trans htu.le)]
-        exact Icc_subset_Icc (by linarith [ha, hlower_mem.1])
-          (hupper_mem.2.trans hb)))
       (h_imm.isPiecewiseC1On.intervalIntegrable_deriv.mono_set (by
         rw [uIcc_of_le (hlt.le.trans htu.le), uIcc_of_le hab.le]
         exact Icc_subset_Icc (by linarith [ha, hlower_mem.1]) (hupper_mem.2.trans hb))) hη

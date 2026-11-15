@@ -11,13 +11,14 @@ public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 /-!
 # `ℤ/k` and the `k`-th roots of unity
 
-A primitive `k`-th root of unity generates the group of all `k`-th roots of unity, so Mathlib's
-`IsPrimitiveRoot.zmodEquivZPowers`, which identifies `ℤ/k` with the powers of a chosen primitive
-root, identifies it with the whole of `μ_k`.
+A primitive `k`-th root of unity in a commutative monoid generates the group `μ_k` of all `k`-th
+roots of unity as soon as that group is cyclic (as it is over any domain), so `μ_k` has exactly `k`
+elements and Mathlib's `zmodAddEquivOfGenerator` identifies `ℤ/k` with the whole of `μ_k`.
 
-Both halves are in Mathlib — `IsPrimitiveRoot.zmodEquivZPowers` and `IsPrimitiveRoot.zpowers_eq` —
-but not the composite, which is what a consumer phrased in terms of `μ_k` rather than a chosen
-generator needs.
+Mathlib has `IsPrimitiveRoot.zmodEquivZPowers`, which identifies `ℤ/k` with the powers of a
+primitive root in a commutative ring, and proves that the powers exhaust `μ_k` over a domain
+(`IsPrimitiveRoot.zpowers_eq`), but not the composite, which is what a consumer phrased in terms of
+`μ_k` rather than a chosen generator needs.
 
 Independently of any primitive root, `μ_k` of any commutative monoid is killed by `k`, so written
 additively it is a `ZMod k`-module.
@@ -38,7 +39,12 @@ their additive homomorphisms to `ZMod n`.
   `n`-th roots of unity.
 * `TauCeti.hasEnoughRootsOfUnity_multiplicative_zmod_exponent`: `Multiplicative (ZMod n)` has
   enough `e`-th roots of unity for the exponent `e` of any additive monoid killed by `n`.
-* `IsPrimitiveRoot.zmodEquivRootsOfUnity`: `ℤ/k ≃+ Additive (μ_k)`, given a primitive `k`-th root.
+* `IsPrimitiveRoot.natCard_rootsOfUnity_of_isCyclic`: a cyclic `μ_k` containing a primitive `k`-th
+  root has `k` elements.
+* `IsPrimitiveRoot.zpowers_eq_of_isCyclic`: a primitive `k`-th root generates `μ_k` once `μ_k` is
+  cyclic.
+* `IsPrimitiveRoot.zmodEquivRootsOfUnity`: `ℤ/k ≃+ Additive (μ_k)`, given a primitive `k`-th root
+  and a cyclic `μ_k`.
 * `IsPrimitiveRoot.coe_zmodEquivRootsOfUnity_apply_intCast` and
   `IsPrimitiveRoot.coe_zmodEquivRootsOfUnity_apply_natCast`: it sends `i` to `ζ ^ i`.
 * `IsPrimitiveRoot.zmodEquivRootsOfUnity_symm_apply_zpow` and
@@ -50,12 +56,13 @@ their additive homomorphisms to `ZMod n`.
 Apache-2.0) @ `a302aeacd86053f9d5f991fbbf664e1cc1051d08`, source file
 `projects/HasseWeil/HasseWeil/HasseBound/WeilPairing/RootsOfUnity.lean`, declaration
 `rootsOfUnity_addEquiv_zmod`. Three changes: the direction is reversed to start from `ZMod k`, so
-that it reads like `IsPrimitiveRoot.zmodEquivZPowers` which it extends; the base is a domain rather
-than a field, which is all `zpowers_eq` asks for; and the four characterising lemmas below — the
-equivalence and its inverse, each at an integer and at a natural exponent — are added, none of
-which the source has. The remaining declarations of this file — the `ZMod k`-module structure on
-`μ_k` written additively and the roots of unity of `Multiplicative (ZMod n)` — have no counterpart
-in that source.
+that it reads like `IsPrimitiveRoot.zmodEquivZPowers` which it extends; the base is generalised from
+a field to any commutative monoid whose `k`-th roots of unity form a cyclic group, which is all
+`zpowers_eq_of_isCyclic` asks for; and the four characterising lemmas below — the equivalence and
+its inverse, each at an integer and at a natural exponent — are added, none of which the source
+has. The remaining declarations of this file — `natCard_rootsOfUnity_of_isCyclic`,
+`zpowers_eq_of_isCyclic`, the `ZMod k`-module structure on `μ_k` written additively and the roots
+of unity of `Multiplicative (ZMod n)` — have no counterpart in that source.
 -/
 
 public section
@@ -80,8 +87,7 @@ namespace ZMod
 is the additive order of `1 : ZMod n`, which is `n`. -/
 theorem isPrimitiveRoot_ofAdd_one (n : ℕ) :
     IsPrimitiveRoot (Multiplicative.ofAdd (1 : ZMod n)) n := by
-  have := IsPrimitiveRoot.orderOf (Multiplicative.ofAdd (1 : ZMod n))
-  rwa [orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one] at this
+  simpa using IsPrimitiveRoot.orderOf (Multiplicative.ofAdd (1 : ZMod n))
 
 end ZMod
 
@@ -103,40 +109,64 @@ finite abelian groups, `CommGroup.exists_apply_ne_one_of_hasEnoughRootsOfUnity` 
 theorem hasEnoughRootsOfUnity_multiplicative_zmod_exponent {n : ℕ} [NeZero n] {M : Type*}
     [AddMonoid M] (hM : ∀ x : M, n • x = 0) :
     HasEnoughRootsOfUnity (Multiplicative (ZMod n)) (Monoid.exponent (Multiplicative M)) :=
-  HasEnoughRootsOfUnity.of_dvd _ (Monoid.exponent_dvd_of_forall_pow_eq_one fun g => by
-    rw [← ofAdd_toAdd g, ← ofAdd_nsmul, hM, ofAdd_zero])
+  HasEnoughRootsOfUnity.of_dvd _ <|
+    Monoid.exponent_multiplicative (G := M) ▸ AddMonoid.exponent_dvd_of_forall_nsmul_eq_zero hM
 
 end TauCeti
 
 namespace IsPrimitiveRoot
 
-variable {R : Type*} [CommRing R] [IsDomain R] {k : ℕ} [NeZero k] {ζ : Rˣ}
+variable {M : Type*} [CommMonoid M] {k : ℕ} [NeZero k] [IsCyclic (rootsOfUnity k M)] {ζ : Mˣ}
+
+/-- **`μ_k` has exactly `k` elements once it is cyclic and contains a primitive `k`-th root**.
+This extends Mathlib's `IsPrimitiveRoot.card_rootsOfUnity'` from domains, where `μ_k` is always
+cyclic, to any commutative monoid. -/
+theorem natCard_rootsOfUnity_of_isCyclic (h : IsPrimitiveRoot ζ k) :
+    Nat.card (rootsOfUnity k M) = k :=
+  have : HasEnoughRootsOfUnity M k := ⟨⟨ζ, coe_units_iff.2 h⟩, ‹_›⟩
+  HasEnoughRootsOfUnity.natCard_rootsOfUnity M k
+
+/-- **A primitive `k`-th root of unity generates `μ_k` once `μ_k` is cyclic**. This extends
+Mathlib's `IsPrimitiveRoot.zpowers_eq` from domains, where `μ_k` is always cyclic, to any
+commutative monoid. -/
+theorem zpowers_eq_of_isCyclic (h : IsPrimitiveRoot ζ k) :
+    Subgroup.zpowers ζ = rootsOfUnity k M := by
+  have hcard := h.natCard_rootsOfUnity_of_isCyclic
+  have : Finite (rootsOfUnity k M) := Nat.finite_of_card_ne_zero (hcard.trans_ne (NeZero.ne k))
+  refine Subgroup.eq_of_le_of_card_ge (Subgroup.zpowers_le_of_mem h.pow_eq_one) ?_
+  rw [hcard, Nat.card_zpowers, h.eq_orderOf]
 
 /-- **`ℤ/k` is the group of `k`-th roots of unity**, written additively, once a primitive `k`-th
-root of unity is chosen: that root generates `μ_k`, so `zmodEquivZPowers` already lands on all of
-it. -/
+root of unity is chosen and `μ_k` is cyclic (as it is over a domain): that root then generates
+`μ_k`, which therefore has `k` elements, so `zmodAddEquivOfGenerator` applies to it. -/
 noncomputable def zmodEquivRootsOfUnity (h : IsPrimitiveRoot ζ k) :
-    ZMod k ≃+ Additive (rootsOfUnity k R) :=
-  h.zmodEquivZPowers.trans (MulEquiv.toAdditive (MulEquiv.subgroupCongr h.zpowers_eq))
+    ZMod k ≃+ Additive (rootsOfUnity k M) :=
+  zmodAddEquivOfGenerator (g := Additive.ofMul ⟨ζ, h.mem_rootsOfUnity⟩)
+    (fun x => by
+      obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.1 (h.zpowers_eq_of_isCyclic.ge x.toMul.2)
+      refine ⟨i, Additive.toMul.injective (Subtype.ext ?_)⟩
+      rwa [toMul_zsmul, Subgroup.coe_zpow, toMul_ofMul])
+    ((Nat.card_congr Additive.toMul).trans h.natCard_rootsOfUnity_of_isCyclic)
 
 /-- **The equivalence sends the class of an integer `i` to `ζ ^ i`**, which determines it on all
 of `ZMod k` since every class is the class of an integer. -/
 @[simp]
 theorem coe_zmodEquivRootsOfUnity_apply_intCast (h : IsPrimitiveRoot ζ k) (i : ℤ) :
-    ((h.zmodEquivRootsOfUnity (i : ZMod k)).toMul : Rˣ) = ζ ^ i := by
-  simp [zmodEquivRootsOfUnity]
+    ((h.zmodEquivRootsOfUnity (i : ZMod k)).toMul : Mˣ) = ζ ^ i := by
+  rw [zmodEquivRootsOfUnity, zmodAddEquivOfGenerator_apply_intCast, toMul_zsmul,
+    Subgroup.coe_zpow, toMul_ofMul]
 
 /-- **The equivalence sends the class of a natural number `i` to `ζ ^ i`**, the natural-exponent
 reading of `coe_zmodEquivRootsOfUnity_apply_intCast`. -/
 @[simp]
 theorem coe_zmodEquivRootsOfUnity_apply_natCast (h : IsPrimitiveRoot ζ k) (i : ℕ) :
-    ((h.zmodEquivRootsOfUnity (i : ZMod k)).toMul : Rˣ) = ζ ^ i := by
+    ((h.zmodEquivRootsOfUnity (i : ZMod k)).toMul : Mˣ) = ζ ^ i := by
   simpa using coe_zmodEquivRootsOfUnity_apply_intCast h i
 
 /-- **The inverse sends `ζ ^ i` back to the class of `i`**, for an integer exponent. -/
 @[simp]
 theorem zmodEquivRootsOfUnity_symm_apply_zpow (h : IsPrimitiveRoot ζ k) (i : ℤ)
-    (hi : ζ ^ i ∈ rootsOfUnity k R) :
+    (hi : ζ ^ i ∈ rootsOfUnity k M) :
     h.zmodEquivRootsOfUnity.symm (Additive.ofMul ⟨ζ ^ i, hi⟩) = (i : ZMod k) :=
   (AddEquiv.symm_apply_eq _).2 (Additive.toMul.injective (Subtype.ext
     (coe_zmodEquivRootsOfUnity_apply_intCast h i).symm))
@@ -144,7 +174,7 @@ theorem zmodEquivRootsOfUnity_symm_apply_zpow (h : IsPrimitiveRoot ζ k) (i : �
 /-- **The inverse sends `ζ ^ i` back to the class of `i`**, for a natural exponent. -/
 @[simp]
 theorem zmodEquivRootsOfUnity_symm_apply_pow (h : IsPrimitiveRoot ζ k) (i : ℕ)
-    (hi : ζ ^ i ∈ rootsOfUnity k R) :
+    (hi : ζ ^ i ∈ rootsOfUnity k M) :
     h.zmodEquivRootsOfUnity.symm (Additive.ofMul ⟨ζ ^ i, hi⟩) = (i : ZMod k) :=
   (AddEquiv.symm_apply_eq _).2 (Additive.toMul.injective (Subtype.ext
     (coe_zmodEquivRootsOfUnity_apply_natCast h i).symm))

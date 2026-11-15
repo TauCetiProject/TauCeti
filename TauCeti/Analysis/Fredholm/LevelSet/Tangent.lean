@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.LevelSet.Basic
-public import TauCeti.Analysis.Normed.Operator.Splitting
+public import TauCeti.Analysis.Normed.Operator.Splitting.Basic
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 
 /-!

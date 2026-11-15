@@ -13,18 +13,19 @@ public import TauCeti.GroupTheory.Coxeter.Length
 
 Let `cs : CoxeterSystem M W` be a Coxeter system and `φ : W →* G` a homomorphism of groups, so
 that the images `φ (s i)` of the simple reflections are involutions satisfying the braid
-relations of `M`. Let `ℓ g` be the least number of letters of a word whose image is `g`. Suppose
-that
+relations of `M`. For `g` in the image of `φ`, let `ℓ g` be the least number of letters of a word
+whose image is `g`. Suppose that
 
 * each product `φ (s i) * φ (s i')` has order exactly `M i i'`, and
 * the images satisfy the **exchange condition**: if a word `ω` of least length spells `g` and
   `ℓ (g * φ (s i)) ≤ ℓ g`, then `g * φ (s i)` is spelled by `ω` with one of its letters deleted.
 
 Then `φ` is injective (`CoxeterSystem.injective_of_exchange`) and preserves lengths
-(`CoxeterSystem.length_eq_of_exchange`), so `G` is the Coxeter group of `M`, with the images of the
-simple reflections as generators; `CoxeterSystem.ofExchange` is that Coxeter system on `G`. This
-is the characterization of Coxeter systems by the exchange condition (Bourbaki, Chapter IV, §1,
-no. 6, Theorem 1).
+(`CoxeterSystem.length_eq_of_exchange`). These conclusions require no assumption on `ℓ` outside
+the image of `φ`. If every element of `G` is spelled by a word, then `G` is the Coxeter group of
+`M`, with the images of the simple reflections as generators; `CoxeterSystem.ofExchange` is that
+Coxeter system on `G`. This is the characterization of Coxeter systems by the exchange condition
+(Bourbaki, Chapter IV, §1, no. 6, Theorem 1).
 
 The exchange condition is stated with `≤` as in Bourbaki: no parity of lengths in `G` is assumed,
 so the hypothesis covers multiplications that do not change the length, and the conclusion rules
@@ -37,8 +38,8 @@ Call a word *minimal* if it has least length among the words with the same image
 statement is that two minimal words of the same length with the same image have the same product
 in `W`. It is proved by induction on the length, following Humphreys.
 
-If the two words end with the same letter, cancel it. Otherwise they end with letters `p ≠ q`, and
-the exchange condition applied to the first word `x` and the letter `q` deletes one letter of `x`.
+Write the final letters of the two words as `p` and `q`. The exchange condition applied to the
+first word `x` and the letter `q` deletes one letter of `x`.
 Unless the deleted letter is the first one, the result followed by `q` shares its first letter
 with `x` and its last letter with the second word, and induction concludes. If the first letter is
 deleted, `x` may be replaced by `x.tail ++ [q]`, which ends with the alternating pair `p q`;
@@ -95,16 +96,16 @@ private theorem map_mul_simple_eq {a b : W} {i : B} (h : φ a = φ (b * s i)) :
 
 /-- A word is at least as long as the length of its image. -/
 private theorem length_le
-    (hℓ : ∀ g, IsLeast {n | ∃ ω : List B, φ (π ω) = g ∧ ω.length = n} (ℓ g)) (ω : List B) :
+    (hℓ : ∀ w, IsLeast {n | ∃ ω : List B, φ (π ω) = φ w ∧ ω.length = n} (ℓ (φ w))) (ω : List B) :
     ℓ (φ (π ω)) ≤ ω.length :=
   (hℓ _).2 ⟨ω, rfl, rfl⟩
 
 /-- A prefix of a minimal word is minimal. -/
 private theorem minimal_left
-    (hℓ : ∀ g, IsLeast {n | ∃ ω : List B, φ (π ω) = g ∧ ω.length = n} (ℓ g))
+    (hℓ : ∀ w, IsLeast {n | ∃ ω : List B, φ (π ω) = φ w ∧ ω.length = n} (ℓ (φ w)))
     {ω₁ ω₂ : List B} (h : ℓ (φ (π (ω₁ ++ ω₂))) = (ω₁ ++ ω₂).length) :
     ℓ (φ (π ω₁)) = ω₁.length := by
-  obtain ⟨ω, hω, hlen⟩ := (hℓ (φ (π ω₁))).1
+  obtain ⟨ω, hω, hlen⟩ := (hℓ (π ω₁)).1
   have hle := length_le φ ℓ hℓ (ω ++ ω₂)
   rw [cs.wordProd_append, map_mul, hω, ← map_mul, ← cs.wordProd_append, h] at hle
   simp only [List.length_append] at hle
@@ -112,10 +113,10 @@ private theorem minimal_left
 
 /-- A suffix of a minimal word is minimal. -/
 private theorem minimal_right
-    (hℓ : ∀ g, IsLeast {n | ∃ ω : List B, φ (π ω) = g ∧ ω.length = n} (ℓ g))
+    (hℓ : ∀ w, IsLeast {n | ∃ ω : List B, φ (π ω) = φ w ∧ ω.length = n} (ℓ (φ w)))
     {ω₁ ω₂ : List B} (h : ℓ (φ (π (ω₁ ++ ω₂))) = (ω₁ ++ ω₂).length) :
     ℓ (φ (π ω₂)) = ω₂.length := by
-  obtain ⟨ω, hω, hlen⟩ := (hℓ (φ (π ω₂))).1
+  obtain ⟨ω, hω, hlen⟩ := (hℓ (π ω₂)).1
   have hle := length_le φ ℓ hℓ (ω₁ ++ ω)
   rw [cs.wordProd_append, map_mul, hω, ← map_mul, ← cs.wordProd_append, h] at hle
   simp only [List.length_append] at hle
@@ -123,7 +124,7 @@ private theorem minimal_right
 
 /-- A minimal word is reduced in `W`. -/
 private theorem isReduced_of_minimal
-    (hℓ : ∀ g, IsLeast {n | ∃ ω : List B, φ (π ω) = g ∧ ω.length = n} (ℓ g))
+    (hℓ : ∀ w, IsLeast {n | ∃ ω : List B, φ (π ω) = φ w ∧ ω.length = n} (ℓ (φ w)))
     {ω : List B} (h : ℓ (φ (π ω)) = ω.length) : cs.IsReduced ω := by
   obtain ⟨ω', hω', heq⟩ := cs.exists_isReduced (π ω)
   have hle := length_le φ ℓ hℓ ω'
@@ -142,7 +143,7 @@ private def WordsAgree (r : ℕ) : Prop :=
 
 /-- Cancel a common last letter. -/
 private theorem wordsAgree_append_singleton
-    (hℓ : ∀ g, IsLeast {n | ∃ ω : List B, φ (π ω) = g ∧ ω.length = n} (ℓ g))
+    (hℓ : ∀ w, IsLeast {n | ∃ ω : List B, φ (π ω) = φ w ∧ ω.length = n} (ℓ (φ w)))
     {r : ℕ} (ih : WordsAgree (cs := cs) φ ℓ r) {x y : List B} {a : B}
     (hx : x.length = r) (hy : y.length = r) (hmin : ℓ (φ (π (x ++ [a]))) = r + 1)
     (heq : φ (π (x ++ [a])) = φ (π (y ++ [a]))) :
@@ -157,7 +158,7 @@ private theorem wordsAgree_append_singleton
 
 /-- Cancel a common first letter. -/
 private theorem wordsAgree_cons
-    (hℓ : ∀ g, IsLeast {n | ∃ ω : List B, φ (π ω) = g ∧ ω.length = n} (ℓ g))
+    (hℓ : ∀ w, IsLeast {n | ∃ ω : List B, φ (π ω) = φ w ∧ ω.length = n} (ℓ (φ w)))
     {r : ℕ} (ih : WordsAgree (cs := cs) φ ℓ r) {x y : List B} {a : B}
     (hx : x.length = r) (hy : y.length = r) (hmin : ℓ (φ (π (a :: x))) = r + 1)
     (heq : φ (π (a :: x)) = φ (π (a :: y))) :
@@ -174,7 +175,7 @@ private theorem wordsAgree_cons
 image, either they have the same product, or `x.tail ++ [q]` is a word with the same image as `x`
 and the same product as `y ++ [q]`. -/
 private theorem exchange_step
-    (hℓ : ∀ g, IsLeast {n | ∃ ω : List B, φ (π ω) = g ∧ ω.length = n} (ℓ g))
+    (hℓ : ∀ w, IsLeast {n | ∃ ω : List B, φ (π ω) = φ w ∧ ω.length = n} (ℓ (φ w)))
     (hexch : ∀ (ω : List B) (i : B), ℓ (φ (π ω)) = ω.length →
       ℓ (φ (π ω * s i)) ≤ ω.length → ∃ j < ω.length, φ (π (ω.eraseIdx j)) = φ (π ω * s i))
     {r : ℕ} (ih : WordsAgree (cs := cs) φ ℓ r) {x y : List B} {q : B}
@@ -215,7 +216,7 @@ image, one of them minimal, have the same product: their common length is the or
 rotation, so they are the two sides of a braid relation. -/
 private theorem wordProd_alternatingWord_eq_of_minimal
     (horder : ∀ i i', orderOf (φ (s i) * φ (s i')) = M i i')
-    (hℓ : ∀ g, IsLeast {n | ∃ ω : List B, φ (π ω) = g ∧ ω.length = n} (ℓ g))
+    (hℓ : ∀ w, IsLeast {n | ∃ ω : List B, φ (π ω) = φ w ∧ ω.length = n} (ℓ (φ w)))
     {p q : B} {m : ℕ} (hm : 0 < m)
     (hmin : ℓ (φ (π (alternatingWord q p m))) = m)
     (heq : φ (π (alternatingWord q p m)) = φ (π (alternatingWord p q m))) :
@@ -244,7 +245,7 @@ image. The induction is on `n`: the exchange step either concludes or lengthens 
 suffix by one letter, with the roles of `p` and `q` exchanged. -/
 private theorem alternating_induction
     (horder : ∀ i i', orderOf (φ (s i) * φ (s i')) = M i i')
-    (hℓ : ∀ g, IsLeast {n | ∃ ω : List B, φ (π ω) = g ∧ ω.length = n} (ℓ g))
+    (hℓ : ∀ w, IsLeast {n | ∃ ω : List B, φ (π ω) = φ w ∧ ω.length = n} (ℓ (φ w)))
     (hexch : ∀ (ω : List B) (i : B), ℓ (φ (π ω)) = ω.length →
       ℓ (φ (π ω * s i)) ≤ ω.length → ∃ j < ω.length, φ (π (ω.eraseIdx j)) = φ (π ω * s i))
     {r : ℕ} (ih : WordsAgree (cs := cs) φ ℓ r) :
@@ -298,7 +299,7 @@ private theorem alternating_induction
 /-- **Minimal words of the same length with the same image have the same product.** -/
 private theorem wordsAgree
     (horder : ∀ i i', orderOf (φ (s i) * φ (s i')) = M i i')
-    (hℓ : ∀ g, IsLeast {n | ∃ ω : List B, φ (π ω) = g ∧ ω.length = n} (ℓ g))
+    (hℓ : ∀ w, IsLeast {n | ∃ ω : List B, φ (π ω) = φ w ∧ ω.length = n} (ℓ (φ w)))
     (hexch : ∀ (ω : List B) (i : B), ℓ (φ (π ω)) = ω.length →
       ℓ (φ (π ω * s i)) ≤ ω.length → ∃ j < ω.length, φ (π (ω.eraseIdx j)) = φ (π ω * s i))
     (r : ℕ) : WordsAgree (cs := cs) φ ℓ r := by
@@ -314,18 +315,15 @@ private theorem wordsAgree
     · simp at hy
     have hx' : x'.length = r := by simpa using hx
     have hy' : y'.length = r := by simpa using hy
-    by_cases hpq : p = q
-    · subst hpq
-      exact wordsAgree_append_singleton φ ℓ hℓ ih hx' hy' hmin heq
-    · have h := alternating_induction φ ℓ horder hℓ hexch ih r le_rfl x' p q hx' y' hy'
-      rw [Nat.add_sub_cancel_left] at h
-      exact h hmin heq
+    have h := alternating_induction φ ℓ horder hℓ hexch ih r le_rfl x' p q hx' y' hy'
+    rw [Nat.add_sub_cancel_left] at h
+    exact h hmin heq
 
 /-- **A word reduced in `W` is minimal.** At the first letter where a prefix stops being minimal,
 the exchange condition would produce a shorter word with the same product in `W`. -/
 private theorem minimal_of_isReduced
     (horder : ∀ i i', orderOf (φ (s i) * φ (s i')) = M i i')
-    (hℓ : ∀ g, IsLeast {n | ∃ ω : List B, φ (π ω) = g ∧ ω.length = n} (ℓ g))
+    (hℓ : ∀ w, IsLeast {n | ∃ ω : List B, φ (π ω) = φ w ∧ ω.length = n} (ℓ (φ w)))
     (hexch : ∀ (ω : List B) (i : B), ℓ (φ (π ω)) = ω.length →
       ℓ (φ (π ω * s i)) ≤ ω.length → ∃ j < ω.length, φ (π (ω.eraseIdx j)) = φ (π ω * s i))
     {ω : List B} (hω : cs.IsReduced ω) : ℓ (φ (π ω)) = ω.length := by
@@ -358,13 +356,14 @@ private theorem minimal_of_isReduced
 
 /-- **A homomorphism satisfying the exchange condition preserves lengths.** Let `φ : W →* G` be a
 homomorphism out of a Coxeter group such that each `φ (s i) * φ (s i')` has order `M i i'`, let
-`ℓ g` be the least length of a word whose image is `g`, and suppose that the images of the simple
-reflections satisfy the exchange condition: whenever a word `ω` of least length spells `g` and
+`ℓ g` be the least length of a word whose image is `g` for each `g` in the image of `φ`, and
+suppose that the images of the simple reflections satisfy the exchange condition: whenever a word
+`ω` of least length spells `g` and
 `ℓ (g * φ (s i)) ≤ ℓ g`, deleting some letter of `ω` spells `g * φ (s i)`. Then
-`ℓ (φ w) = cs.length w`. -/
+`ℓ (φ w) = cs.length w`. No assumption is made on `ℓ` outside the image of `φ`. -/
 theorem length_eq_of_exchange
     (horder : ∀ i i', orderOf (φ (s i) * φ (s i')) = M i i')
-    (hℓ : ∀ g, IsLeast {n | ∃ ω : List B, φ (π ω) = g ∧ ω.length = n} (ℓ g))
+    (hℓ : ∀ w, IsLeast {n | ∃ ω : List B, φ (π ω) = φ w ∧ ω.length = n} (ℓ (φ w)))
     (hexch : ∀ (ω : List B) (i : B), ℓ (φ (π ω)) = ω.length →
       ℓ (φ (π ω * s i)) ≤ ω.length → ∃ j < ω.length, φ (π (ω.eraseIdx j)) = φ (π ω * s i))
     (w : W) : ℓ (φ w) = cs.length w := by
@@ -376,7 +375,7 @@ the braid relations are the only relations among the generators `φ (s i)`: unde
 `CoxeterSystem.length_eq_of_exchange`, an element of `W` with trivial image has length `0`. -/
 theorem injective_of_exchange
     (horder : ∀ i i', orderOf (φ (s i) * φ (s i')) = M i i')
-    (hℓ : ∀ g, IsLeast {n | ∃ ω : List B, φ (π ω) = g ∧ ω.length = n} (ℓ g))
+    (hℓ : ∀ w, IsLeast {n | ∃ ω : List B, φ (π ω) = φ w ∧ ω.length = n} (ℓ (φ w)))
     (hexch : ∀ (ω : List B) (i : B), ℓ (φ (π ω)) = ω.length →
       ℓ (φ (π ω * s i)) ≤ ω.length → ∃ j < ω.length, φ (π (ω.eraseIdx j)) = φ (π ω * s i)) :
     Function.Injective φ := by
@@ -386,18 +385,11 @@ theorem injective_of_exchange
   rw [hw, hℓ1, eq_comm, length_eq_zero_iff] at hlen
   exact hlen
 
-/-- A homomorphism satisfying the exchange condition is surjective: every element of `G` is
-spelled by a word. -/
-private theorem surjective_of_exchange
-    (hℓ : ∀ g, IsLeast {n | ∃ ω : List B, φ (π ω) = g ∧ ω.length = n} (ℓ g)) :
-    Function.Surjective φ := fun g ↦ by
-  obtain ⟨ω, hω, -⟩ := (hℓ g).1
-  exact ⟨π ω, hω⟩
-
 variable (cs) in
 /-- **The Coxeter system defined by the exchange condition.** Under the hypotheses of
-`CoxeterSystem.length_eq_of_exchange`, the homomorphism `φ : W →* G` is an isomorphism, and
-transporting `cs` along it makes `G` a Coxeter group whose simple reflections are the images
+`CoxeterSystem.length_eq_of_exchange`, with least word lengths given for every element of `G`,
+the homomorphism `φ : W →* G` is an isomorphism. Transporting `cs` along it makes `G` a Coxeter
+group whose simple reflections are the images
 `φ (s i)` (`CoxeterSystem.ofExchange_simple`) and whose length function is `ℓ`
 (`CoxeterSystem.length_ofExchange`). -/
 noncomputable def ofExchange
@@ -407,7 +399,9 @@ noncomputable def ofExchange
       ℓ (φ (π ω * s i)) ≤ ω.length → ∃ j < ω.length, φ (π (ω.eraseIdx j)) = φ (π ω * s i)) :
     CoxeterSystem M G :=
   cs.map (MulEquiv.ofBijective φ
-    ⟨injective_of_exchange φ ℓ horder hℓ hexch, surjective_of_exchange φ ℓ hℓ⟩)
+    ⟨injective_of_exchange φ ℓ horder (fun w ↦ hℓ (φ w)) hexch, fun g ↦ by
+      obtain ⟨ω, hω, -⟩ := (hℓ g).1
+      exact ⟨π ω, hω⟩⟩)
 
 /-- The simple reflections of `CoxeterSystem.ofExchange` are the images of those of `cs`. -/
 @[simp]

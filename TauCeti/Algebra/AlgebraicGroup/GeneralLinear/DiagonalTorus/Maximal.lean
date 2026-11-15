@@ -28,6 +28,10 @@ subgroups to equality of their defining Hopf ideals.
 This statement is stronger than maximality among tori: every torus is reduced and commutative,
 whereas the competing subgroup below need not itself be a torus or connected.
 
+This is the standard maximal-torus example for `GL_n`. It is the torus whose coordinate roots and
+Weyl group are described in `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Datum` and
+`TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.WeylGroup`.
+
 ## Main declarations
 
 * `TauCeti.GeneralLinear.diagonalTorusDefiningIdeal`: the Hopf ideal cutting out the diagonal
@@ -47,8 +51,10 @@ whereas the competing subgroup below need not itself be a torus or connected.
 * `TauCeti.GeneralLinear.isMaximalTorus_diagonalTorusDefiningIdeal`: the diagonal torus is a
   maximal torus in the Hopf-ideal API.
 
-This supplies the standard `GL_n` maximal-torus example for Layer 7, "Borel subgroups, maximal
-tori", of the ReductiveGroups roadmap.
+## References
+
+* J. S. Milne, *Algebraic Groups* (2017), Example 12.6 and Section 21.1.
+* J. E. Humphreys, *Linear Algebraic Groups* (1975), Sections 15.3 and 16.1.
 -/
 
 public section

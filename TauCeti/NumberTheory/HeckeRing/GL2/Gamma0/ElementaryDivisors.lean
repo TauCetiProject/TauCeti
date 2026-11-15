@@ -124,23 +124,22 @@ theorem mem_doubleCoset_natDiagGL_of_primitive [NeZero N] (m : ℕ) (x : GL (Fin
   rw [← DoubleCoset.doubleCoset_eq_of_mem hy, DoubleCoset.doubleCoset_eq_of_mem hdc]
   exact DoubleCoset.mem_doubleCoset_self _ _ _
 
-/-- **Elements of `Δ₀(N)` with the same elementary divisors share a `Γ₀(N)`-double coset.** If
-`α, β ∈ Δ₀(N)` have integral matrices `A, B` of equal determinant, and an integer divides all
-entries of `A` exactly when it divides all entries of `B`, then `β ∈ Γ₀(N) α Γ₀(N)`. -/
-theorem mem_doubleCoset_of_det_eq_of_dvd_iff [NeZero N] {α β : GL (Fin 2) ℚ}
-    (hα : α ∈ Delta0 N) (hβ : β ∈ Delta0 N) {A B : Matrix (Fin 2) (Fin 2) ℤ}
-    (hA : (α : Matrix (Fin 2) (Fin 2) ℚ) = A.map (Int.cast : ℤ → ℚ))
-    (hB : (β : Matrix (Fin 2) (Fin 2) ℚ) = B.map (Int.cast : ℤ → ℚ)) (hdet : B.det = A.det)
-    (hdvd : ∀ e : ℤ, (∀ i j, e ∣ A i j) ↔ ∀ i j, e ∣ B i j) :
-    β ∈ DoubleCoset.doubleCoset α ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)) := by
-  obtain ⟨A₁, hA₁, hαdet, hAN, hAunit⟩ := (mem_Delta0_iff N).mp hα
-  obtain rfl : A = A₁ := Matrix.map_injective Int.cast_injective (hA.symm.trans hA₁)
-  obtain ⟨B₁, hB₁, -, hBN, hBunit⟩ := (mem_Delta0_iff N).mp hβ
-  obtain rfl : B = B₁ := Matrix.map_injective Int.cast_injective (hB.symm.trans hB₁)
-  have hAco : Int.gcd (A 0 0) N = 1 := Int.isUnit_intCast_iff_gcd_eq_one.mp hAunit
-  have hA_det_pos : 0 < A.det := by
-    rw [← Int.cast_pos (R := ℚ), Int.cast_det, ← hA]
-    exact hαdet
+/-- **Dividing two matrices with the same divisibility pattern by their common content.** If
+`A, B` have equal determinant, positive for `A`, the same entrywise divisors, and the `Δ₀(N)`
+shape (`N ∣ · 1 0`, upper-left entry coprime to `N`), then there are a content `d` and primitive
+matrices `A₀, B₀` of the same shape and equal determinant with `A = d • A₀` and `B = d • B₀`. -/
+private lemma exists_primitive_quotients_of_dvd_iff {A B : Matrix (Fin 2) (Fin 2) ℤ}
+    (hdet : B.det = A.det) (hdvd : ∀ e : ℤ, (∀ i j, e ∣ A i j) ↔ ∀ i j, e ∣ B i j)
+    (hA_det_pos : 0 < A.det) (hAN : (N : ℤ) ∣ A 1 0) (hAco : Int.gcd (A 0 0) N = 1)
+    (hBN : (N : ℤ) ∣ B 1 0) (hBco : Int.gcd (B 0 0) N = 1) :
+    ∃ (d : ℕ) (A₀ B₀ : Matrix (Fin 2) (Fin 2) ℤ), (∀ i j, A i j = (d : ℤ) * A₀ i j) ∧
+      (∀ i j, B i j = (d : ℤ) * B₀ i j) ∧ 0 < A₀.det ∧ B₀.det = A₀.det ∧
+      (N : ℤ) ∣ A₀ 1 0 ∧ Int.gcd (A₀ 0 0) N = 1 ∧
+      (∀ p : ℕ, p.Prime → ¬((p : ℤ) ∣ A₀ 0 0 ∧ (p : ℤ) ∣ A₀ 0 1 ∧ (p : ℤ) ∣ A₀ 1 0 ∧
+        (p : ℤ) ∣ A₀ 1 1)) ∧
+      (N : ℤ) ∣ B₀ 1 0 ∧ Int.gcd (B₀ 0 0) N = 1 ∧
+      (∀ p : ℕ, p.Prime → ¬((p : ℤ) ∣ B₀ 0 0 ∧ (p : ℤ) ∣ B₀ 0 1 ∧ (p : ℤ) ∣ B₀ 1 0 ∧
+        (p : ℤ) ∣ B₀ 1 1)) := by
   -- divide both witnesses by the gcd `d` of the entries of `A`, which divides those of `B` too
   set d : ℕ := Nat.gcd (Nat.gcd (A 0 0).natAbs (A 0 1).natAbs)
     (Nat.gcd (A 1 0).natAbs (A 1 1).natAbs) with hd_def
@@ -167,7 +166,7 @@ theorem mem_doubleCoset_of_det_eq_of_dvd_iff [NeZero N] {α β : GL (Fin 2) ℚ}
   have hB₀N : (N : ℤ) ∣ Matrix.of B₀ 1 0 :=
     hdN.symm.dvd_of_dvd_mul_left (hB₀_eq 1 0 ▸ hBN)
   have hB₀co : Int.gcd (Matrix.of B₀ 0 0) N = 1 := by
-    have h := Int.isCoprime_iff_gcd_eq_one.mpr (Int.isUnit_intCast_iff_gcd_eq_one.mp hBunit)
+    have h := Int.isCoprime_iff_gcd_eq_one.mpr hBco
     rw [hB₀_eq] at h
     exact Int.isCoprime_iff_gcd_eq_one.mp h.of_mul_left_right
   -- a prime dividing `B₀` entrywise would give a common divisor of `B`, hence of `A`, beyond `d`
@@ -182,13 +181,37 @@ theorem mem_doubleCoset_of_det_eq_of_dvd_iff [NeZero N] {α β : GL (Fin 2) ℚ}
     have hpA : ∀ i j, (p : ℤ) ∣ A₀ i j := fun i j ↦
       (mul_dvd_mul_iff_left hd_ne).mp (hA₀_eq i j ▸ (hdvd _).mpr hpB i j)
     exact hA₀_prim p hp ⟨hpA 0 0, hpA 0 1, hpA 1 0, hpA 1 1⟩
+  exact ⟨d, A₀, Matrix.of B₀, hA₀_eq, hB₀_eq, hA₀_det_pos, hdet₀, hA₀N, hA₀co, hA₀_prim, hB₀N,
+    hB₀co, hB₀_prim⟩
+
+/-- **Elements of `Δ₀(N)` with the same elementary divisors share a `Γ₀(N)`-double coset.** If
+`α, β ∈ Δ₀(N)` have integral matrices `A, B` of equal determinant, and an integer divides all
+entries of `A` exactly when it divides all entries of `B`, then `β ∈ Γ₀(N) α Γ₀(N)`. -/
+theorem mem_doubleCoset_of_det_eq_of_dvd_iff [NeZero N] {α β : GL (Fin 2) ℚ}
+    (hα : α ∈ Delta0 N) (hβ : β ∈ Delta0 N) {A B : Matrix (Fin 2) (Fin 2) ℤ}
+    (hA : (α : Matrix (Fin 2) (Fin 2) ℚ) = A.map (Int.cast : ℤ → ℚ))
+    (hB : (β : Matrix (Fin 2) (Fin 2) ℚ) = B.map (Int.cast : ℤ → ℚ)) (hdet : B.det = A.det)
+    (hdvd : ∀ e : ℤ, (∀ i j, e ∣ A i j) ↔ ∀ i j, e ∣ B i j) :
+    β ∈ DoubleCoset.doubleCoset α ((Gamma0 N).map (mapGL ℚ)) ((Gamma0 N).map (mapGL ℚ)) := by
+  obtain ⟨A₁, hA₁, hαdet, hAN, hAunit⟩ := (mem_Delta0_iff N).mp hα
+  obtain rfl : A = A₁ := Matrix.map_injective Int.cast_injective (hA.symm.trans hA₁)
+  obtain ⟨B₁, hB₁, -, hBN, hBunit⟩ := (mem_Delta0_iff N).mp hβ
+  obtain rfl : B = B₁ := Matrix.map_injective Int.cast_injective (hB.symm.trans hB₁)
+  have hAco : Int.gcd (A 0 0) N = 1 := Int.isUnit_intCast_iff_gcd_eq_one.mp hAunit
+  have hA_det_pos : 0 < A.det := by
+    rw [← Int.cast_pos (R := ℚ), Int.cast_det, ← hA]
+    exact hαdet
+  obtain ⟨d, A₀, B₀, hA₀_eq, hB₀_eq, hA₀_det_pos, hdet₀, hA₀N, hA₀co, hA₀_prim, hB₀N, hB₀co,
+      hB₀_prim⟩ :=
+    exists_primitive_quotients_of_dvd_iff N hdet hdvd hA_det_pos hAN hAco hBN
+      (Int.isUnit_intCast_iff_gcd_eq_one.mp hBunit)
   -- both primitive quotients lie in the double coset of `diag(1, m₀)`
   obtain ⟨m₀, hm₀⟩ : ∃ m₀ : ℕ, A₀.det = (m₀ : ℤ) :=
     ⟨A₀.det.natAbs, (Int.natAbs_of_nonneg hA₀_det_pos.le).symm⟩
   have hA₀_ne : (A₀.map (Int.cast : ℤ → ℚ)).det ≠ 0 := by
     rw [← Int.cast_det]
     exact_mod_cast hA₀_det_pos.ne'
-  have hB₀_ne : ((Matrix.of B₀).map (Int.cast : ℤ → ℚ)).det ≠ 0 := by
+  have hB₀_ne : ((B₀).map (Int.cast : ℤ → ℚ)).det ≠ 0 := by
     rw [← Int.cast_det, hdet₀]
     exact_mod_cast hA₀_det_pos.ne'
   set x₀ : GL (Fin 2) ℚ := Matrix.GeneralLinearGroup.mkOfDetNeZero _ hA₀_ne
@@ -197,7 +220,7 @@ theorem mem_doubleCoset_of_det_eq_of_dvd_iff [NeZero N] {α β : GL (Fin 2) ℚ}
     (Matrix.GeneralLinearGroup.val_mkOfDetNeZero _ _) hA₀N hA₀co
     (by rw [Matrix.GeneralLinearGroup.val_mkOfDetNeZero, ← Int.cast_det, hm₀]; norm_cast)
     hA₀_prim
-  have hy₀ := mem_doubleCoset_natDiagGL_of_primitive N m₀ y₀ (Matrix.of B₀)
+  have hy₀ := mem_doubleCoset_natDiagGL_of_primitive N m₀ y₀ (B₀)
     (Matrix.GeneralLinearGroup.val_mkOfDetNeZero _ _) hB₀N hB₀co
     (by rw [Matrix.GeneralLinearGroup.val_mkOfDetNeZero, ← Int.cast_det, hdet₀, hm₀]; norm_cast)
     hB₀_prim

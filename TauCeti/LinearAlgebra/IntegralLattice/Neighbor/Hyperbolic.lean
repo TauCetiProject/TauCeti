@@ -172,7 +172,7 @@ private theorem form_neighborHyperbolicFwd {p : ℚ} (hp : p ≠ 0) (v a : V)
   have hva : L.form v a = L.form a v := L.isSymm.eq v a
   have hvY : L.form v Y.1 = L.form Y.1 v := L.isSymm.eq v Y.1
   have haY : L.form a Y.1 = L.form Y.1 a := L.isSymm.eq a Y.1
-  simp only [orthogonalSum_form, orthogonalSumForm_apply, hyperbolicPlane_form_apply,
+  simp only [orthogonalSum_form, LinearMap.BilinForm.prod_apply, hyperbolicPlane_form_apply,
     neighborHyperbolicFwd_fst, neighborHyperbolicFwd_snd_zero, neighborHyperbolicFwd_snd_one,
     map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hva, hvY, haY]
   field_simp
@@ -313,7 +313,7 @@ theorem nonempty_isometry_orthogonalSum_hyperbolicPlane_neighbor (hL : L.IsEven)
         (L.neighborHyperbolicBwd p v (u • w : L)) (L.neighborHyperbolicFwd_comp_bwd hp _ _)
         (L.neighborHyperbolicBwd_comp_fwd hp _ _)
       map_app' X Y := (L.form_neighborHyperbolicFwd hp _ _ X Y).trans (by
-        simp only [orthogonalSum_form, orthogonalSumForm_apply, neighbor_form]) }
+        simp only [orthogonalSum_form, LinearMap.BilinForm.prod_apply, neighbor_form]) }
   refine ⟨Isometry.symm ⟨e, le_antisymm ?_ fun Y hY ↦ ?_⟩⟩
   · rintro _ ⟨X, hX, rfl⟩
     exact neighborHyperbolicFwd_mem hv hc' hs' hk hX

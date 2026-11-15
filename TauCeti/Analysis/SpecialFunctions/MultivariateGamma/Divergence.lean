@@ -192,8 +192,7 @@ private theorem exists_closedBall_subset_posDef_bounds (B : Matrix (Fin p) (Fin 
             (B * (A : Matrix (Fin p) (Fin p) ℝ)).trace ≤ τ := by
   let A₀ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
     ⟨1, Matrix.isHermitian_iff_isSelfAdjoint.1 Matrix.isHermitian_one⟩
-  obtain ⟨ε, hε, hball⟩ :=
-    Metric.isOpen_iff.1 (isOpen_setOfPred_posDefMatrix p) A₀ Matrix.PosDef.one
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 (isOpen_posDefMatrix p) A₀ Matrix.PosDef.one
   set r := min (ε / 2) (δ / 3)
   have hr0 : 0 < r := lt_min (half_pos hε) (by positivity)
   set K := Metric.closedBall A₀ r
@@ -284,7 +283,7 @@ theorem lintegral_posDef_det_rpow_mul_exp_neg_trace_mul_eq_top_of_dotProduct_mul
         rw [ENNReal.tsum_mul_right, hsum,
           ENNReal.top_mul (Metric.measure_closedBall_pos _ _ hr0).ne']
     _ ≤ _ := by
-        refine le_trans (ENNReal.tsum_le_tsum fun k => ?_)
+        refine le_trans (tsum_le_tsum fun k => ?_)
           (tsum_setLIntegral_add_smul_le (by fun_prop) hvv hrE hKP hE0)
         rw [← setLIntegral_const]
         exact setLIntegral_mono' Metric.isClosed_closedBall.measurableSet (hbound k)
@@ -316,12 +315,12 @@ theorem not_integrableOn_posDef_det_rpow_mul_exp_neg_trace_mul (hB : B.IsHermiti
         (A : Matrix (Fin p) (Fin p) ℝ).PosDef} (symmetricLebesgue p) := by
   intro h
   have hfin := h.2
-  rw [hasFiniteIntegral_iff_enorm] at hfin
+  rw [hasFiniteIntegral_iff_eNorm] at hfin
   refine hfin.ne ?_
   rw [← lintegral_posDef_det_rpow_mul_exp_neg_trace_mul_eq_top hB hBpd ha]
   -- On the cone the determinant is positive, so the integrand is its own norm.
   refine setLIntegral_congr_fun (measurableSet_posDefMatrix p) fun A hA => ?_
-  exact Real.enorm_eq_ofReal
+  exact Real.eNorm_eq_ofReal
     (mul_nonneg (Real.rpow_nonneg (Matrix.PosDef.det_pos hA).le _) (exp_nonneg _))
 
 end TauCeti

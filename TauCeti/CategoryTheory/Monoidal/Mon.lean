@@ -33,6 +33,8 @@ commutativity.
   monoid homomorphism.
 * `CategoryTheory.MonObj.tensorHom_whisker_one_comp_mul`: a monoid homomorphism out of `M ⊗ N`
   is the product of its restrictions along `m ↦ m ⊗ 1` and `n ↦ 1 ⊗ n`.
+* `CategoryTheory.MonObj.braiding_inv_whiskerRight_mul`: in a commutative monoid object, a
+  scalar `f a` may multiply on either side.
 * `CategoryTheory.Adjunction.isMonHom_homEquiv_iff`: along a monoidal adjunction `F ⊣ G`, the
   transpose `M ⟶ G N` of a morphism `F M ⟶ N` is a monoid homomorphism exactly when the
   morphism is compatible with the unit and multiplication of `M` transported by the oplax
@@ -169,6 +171,11 @@ theorem tensorHom_whisker_one_comp_mul [BraidedCategory C] [MonObj M] [MonObj N]
   rw [← tensorHom_comp_tensorHom, ← tensorHom_comp_tensorHom, Category.assoc, Category.assoc,
     ← IsMonHom.mul_hom, whiskerLeft_one_tensorHom_whiskerRight_one_mul_assoc]
   simp
+
+/-- Multiplying by `f a` on the left or on the right agrees in a commutative monoid object. -/
+theorem braiding_inv_whiskerRight_mul [BraidedCategory C] {A B : C} [MonObj B] [IsCommMonObj B]
+    (f : A ⟶ B) : (β_ A B).inv ≫ f ▷ B ≫ μ = B ◁ f ≫ μ := by
+  rw [← BraidedCategory.braiding_inv_naturality_right_assoc, IsCommMonObj.mul_comm']
 
 end TensorHom
 

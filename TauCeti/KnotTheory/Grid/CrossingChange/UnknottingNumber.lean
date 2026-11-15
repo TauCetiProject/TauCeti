@@ -131,17 +131,21 @@ theorem unknottingNumber_eq_zero_iff {L : GridLink} : L.unknottingNumber = 0 ↔
 theorem unknottingNumber_unknot : unknot.unknottingNumber = 0 :=
   unknottingNumber_eq_zero_iff.mpr rfl
 
+/-- Two grid links differing by a crossing change are at distance at most one in the crossing
+change graph. -/
+theorem IsCrossingChange.edist_le_one {L L' : GridLink} (h : IsCrossingChange L L') :
+    crossingChangeGraph.edist L L' ≤ 1 := by
+  rw [SimpleGraph.edist_le_one_iff_adj_or_eq]
+  by_cases hne : L = L'
+  · exact Or.inr hne
+  · exact Or.inl ⟨hne, h⟩
+
 /-- A crossing change changes the unknotting number by at most one. -/
 theorem IsCrossingChange.unknottingNumber_le {L L' : GridLink} (h : IsCrossingChange L L') :
-    L.unknottingNumber ≤ L'.unknottingNumber + 1 := by
-  have hLL' : crossingChangeGraph.edist L L' ≤ 1 := by
-    rw [SimpleGraph.edist_le_one_iff_adj_or_eq]
-    by_cases hne : L = L'
-    · exact Or.inr hne
-    · exact Or.inl ⟨hne, h⟩
+    L.unknottingNumber ≤ L'.unknottingNumber + 1 :=
   calc L.unknottingNumber ≤ crossingChangeGraph.edist L L' + L'.unknottingNumber :=
         SimpleGraph.edist_triangle
-    _ ≤ 1 + L'.unknottingNumber := by gcongr
+    _ ≤ 1 + L'.unknottingNumber := by gcongr; exact h.edist_le_one
     _ = L'.unknottingNumber + 1 := add_comm _ _
 
 /-- Exchanging a cyclically adjacent interleaving pair of columns of a grid diagram changes the

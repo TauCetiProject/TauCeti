@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Polynomial.IntegralNormalization
 import Mathlib.Algebra.Order.Group.Finset
 import Mathlib.Basic.Sign.Basic
 import TauCeti.Algebra.Polynomial.Eval.Sign
+import TauCeti.RingTheory.Polynomial.Monic.Normalization
 
 /-! # Polynomial sign counts and Tarski queries
 
@@ -372,19 +373,19 @@ section Field
 
 variable {R : Type*} [Field R] [LinearOrder R]
 
-/-- **Clearing the leading coefficient of the root polynomial.** The distinct roots of the monic
-polynomial `p.integralNormalization` are those of `p` multiplied by the leading coefficient `a`
-of `p`. Hence a Tarski query of `p` equals one of `p.integralNormalization` against any `r`
-whose sign at `a * x` agrees with the sign of `q` at each root `x` of `p`. -/
-theorem tarskiQuery_integralNormalization {p q r : R[X]} (hp : p ≠ 0)
+/-- **Clearing the leading coefficient of the root polynomial.** For `p ≠ 0`, the distinct roots of
+the monic polynomial `p.integralNormalization` are those of `p` multiplied by the leading
+coefficient `a` of `p`. Hence a Tarski query of `p` equals one of `p.integralNormalization` against
+any `r` whose sign at `a * x` agrees with the sign of `q` at each root `x` of `p`. For `p = 0` there
+are no roots to compare: `p.integralNormalization` is again `0`, and both queries vanish. -/
+theorem tarskiQuery_integralNormalization {p q r : R[X]}
     (h : ∀ x, p.eval x = 0 → sign (r.eval (p.leadingCoeff * x)) = sign (q.eval x)) :
     tarskiQuery p.integralNormalization r = tarskiQuery p q := by
   classical
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp [tarskiQuery_zero_left]
   have ha : p.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hp
-  have hroots : p.integralNormalization.roots = p.roots.map (p.leadingCoeff * ·) := by
-    rw [← roots_C_mul _ ha, mul_comm, integralNormalization_mul_C_leadingCoeff,
-      roots_scaleRoots _ (isUnit_iff_ne_zero.mpr ha)]
-  rw [tarskiQuery_eq_sum, tarskiQuery_eq_sum, hroots, Multiset.toFinset_map,
+  rw [tarskiQuery_eq_sum, tarskiQuery_eq_sum, roots_integralNormalization, Multiset.toFinset_map,
     Finset.sum_image fun x _ y _ hxy => mul_left_cancel₀ ha hxy]
   refine Finset.sum_congr rfl fun x hx => ?_
   rw [h x (isRoot_of_mem_roots (Multiset.mem_toFinset.mp hx)).eq_zero]

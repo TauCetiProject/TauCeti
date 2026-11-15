@@ -121,12 +121,15 @@ theorem transportCost_prod_add (hc₁ : Measurable c₁) (hc₂ : Measurable c�
             lintegral_map hc₂ (measurable_snd.prodMap measurable_snd)]
           exact (lintegral_add_left hm₁ _).symm
 
+omit [IsProbabilityMeasure ν₁] [IsProbabilityMeasure ν₂] in
 /-- Rearranging the product of two optimal plans gives an optimal plan for the additively
 separable cost on the product problem. -/
 protected theorem IsOptimalCoupling.prod (hc₁ : Measurable c₁) (hc₂ : Measurable c₂)
     (h₁ : IsOptimalCoupling c₁ π₁ μ₁ ν₁) (h₂ : IsOptimalCoupling c₂ π₂ μ₂ ν₂) :
     IsOptimalCoupling (fun z : (X₁ × X₂) × Y₁ × Y₂ ↦ c₁ (z.1.1, z.2.1) + c₂ (z.1.2, z.2.2))
       ((π₁.prod π₂).map fun w ↦ ((w.1.1, w.2.1), (w.1.2, w.2.2))) (μ₁.prod μ₂) (ν₁.prod ν₂) := by
+  let : IsProbabilityMeasure ν₁ := h₁.toIsCoupling.isProbabilityMeasure_right
+  let : IsProbabilityMeasure ν₂ := h₂.toIsCoupling.isProbabilityMeasure_right
   have : IsProbabilityMeasure π₁ := h₁.toIsCoupling.isProbabilityMeasure
   have : IsProbabilityMeasure π₂ := h₂.toIsCoupling.isProbabilityMeasure
   refine ⟨h₁.toIsCoupling.prodProdProdComm h₂.toIsCoupling, ?_⟩

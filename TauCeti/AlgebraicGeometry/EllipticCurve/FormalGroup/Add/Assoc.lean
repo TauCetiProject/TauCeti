@@ -12,6 +12,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.PairSubst
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Unit
 import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.ThirdPoint
+import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
 
 /-!
 # The chord group law over the fraction field of the series ring
@@ -76,8 +77,9 @@ all four chord additions of the assembly.
 
 The assembly also runs two specializations of the three parameters where the source runs one.
 The source separates the middle parameter from the third with `X_ne_X`, a syntactic argument; the
-corresponding hypothesis here is `q₂ ≠ ι(q₃)`, which no syntactic argument reaches, so `χ'` sends
-the middle parameter to `X` and the other two to `0` exactly as `χ` does for the first.
+corresponding hypothesis here is `q₂ ≠ ι(q₃)`, which no syntactic argument reaches, so the second
+substitution `g'` of `subst_formalAdd_assoc_of_subst_separates` sends the middle parameter to
+`X` and the third to `0`, exactly as the first substitution `g` does for the first parameter.
 
 The statement is adapted rather than transcribed, because this repository states the `w`-equation
 differently. Stoll carries a second copy of the equation as a private `def mvWStepAt` and phrases
@@ -246,8 +248,7 @@ private theorem subst_subst_formalInverse_eq_zero {σ' : Type*}
 
 /-! ### The parametrized point -/
 
-variable [IsDomain O]
-
+variable [IsDomain O] in
 /-- Over a domain the `w`-expansion at a nonzero parameter with vanishing constant coefficient is
 itself nonzero: it factors as `q ^ 3 * u(q)`, and `u` has constant coefficient `1`. -/
 private theorem subst_formalW_ne_zero {q : MvPowerSeries σ O} (hq : constantCoeff q = 0)
@@ -276,8 +277,10 @@ Every parametrized point of this file needs its `w`-coordinate invertible in `KK
 form `subst_formalW_ne_zero` is actually used in. -/
 theorem algebraMap_subst_formalW_ne_zero {q : MvPowerSeries σ O}
     (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
-    algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) ≠ 0 := fun h ↦
-  W.subst_formalW_ne_zero hq hq0
+    algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) ≠ 0 := fun h ↦ by
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
+  exact W.subst_formalW_ne_zero hq hq0
     (IsFractionRing.injective (MvPowerSeries σ O) KK (by rw [h, map_zero]))
 
 /-- The point of the base-changed curve carried by the parameter `q`: the solution `(q, w(q))` of
@@ -305,26 +308,31 @@ theorem thetaPoint_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0) {q : MvPowerSeri
   (rfl)
 
 variable [DecidableEq KK] in
-/-- **The chord addition of parametrized points**: `θ(q₁) + θ(q₂) = θ(F(q₁, q₂))`.
-
-The two parametrized points lie on `fracCurve W`, the chord through them meets the curve again at
-the parameter `z₃`, and the addition series is exactly the reflection of that third point. So the
-group law of an honest Weierstrass curve, applied to the two points, computes `F(q₁, q₂)`. -/
-private theorem thetaPoint_add (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+/-- The sum of the parametrized points `θ(q₁)` and `θ(q₂)` is the point with affine coordinates
+`(T / w(T), (1 - a₁ T - a₃ w(T)) / w(T))`, where `T` is the third root of the chord. -/
+private theorem thetaPoint_add_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q₁ q₂ : MvPowerSeries σ O} (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
     (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0)
     (hN : subst (pairSubstitution q₁ q₂)
       (formalIntercept W) ≠ 0)
     (hx : q₁ * PowerSeries.subst q₂ (formalW W) - q₂ * PowerSeries.subst q₁ (formalW W) ≠ 0)
-    (hF : constantCoeff (subst (pairSubstitution q₁ q₂) (formalAdd W)) = 0)
-    (hF0 : subst (pairSubstitution q₁ q₂)
-      (formalAdd W) ≠ 0) :
-    W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 := by
+    {Tp : MvPowerSeries σ O} (hTp : Tp = subst (pairSubstitution q₁ q₂) (formalThirdRoot W)) :
+    ∃ h₃ : (fracCurve W σ KK).toAffine.Nonsingular
+      (algebraMap (MvPowerSeries σ O) KK Tp /
+        algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst Tp (formalW W)))
+      ((1 - (fracCurve W σ KK).a₁ * algebraMap (MvPowerSeries σ O) KK Tp -
+        (fracCurve W σ KK).a₃ *
+          algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst Tp (formalW W))) /
+        algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst Tp (formalW W))),
+      W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = Affine.Point.some _ _ h₃ := by
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
   classical
   set ρ := algebraMap (MvPowerSeries σ O) KK
   have hinj : Function.Injective ρ := IsFractionRing.injective (MvPowerSeries σ O) KK
   set Λp := subst (pairSubstitution q₁ q₂) (formalSlope W)
   set Np := subst (pairSubstitution q₁ q₂) (formalIntercept W)
+  subst hTp
   set Tp := subst (pairSubstitution q₁ q₂) (formalThirdRoot W)
   set w₁ := PowerSeries.subst q₁ (formalW W)
   set w₂ := PowerSeries.subst q₂ (formalW W)
@@ -372,15 +380,43 @@ private theorem thetaPoint_add (hΔ : (fracCurve W σ KK).Δ ≠ 0)
       W.algebraMap_subst_formalW_wEquation (KK := KK)
         (PowerSeries.HasSubst.of_constantCoeff_zero h₂)
   -- the honest group law of `fracCurve W`, applied to the two points
+  have hns₁ := chord_point_nonsingular (fracCurve W σ KK) hwq₁ hw₁0 hΔ
+  have hns₂ := chord_point_nonsingular (fracCurve W σ KK) hwq₂ hw₂0 hΔ
   obtain ⟨h₃, hadd⟩ := chord_point_add (fracCurve W σ KK) hwq₁ hwq₂ hslope hNint hT₃ hwTeq hA
-    hw₁0 hw₂0 hwT0 hxρ
-    (chord_point_nonsingular (fracCurve W σ KK) hwq₁ hw₁0 hΔ)
-    (chord_point_nonsingular (fracCurve W σ KK) hwq₂ hw₂0 hΔ)
-  -- `hadd` is stated with the coordinates written out, and `thetaPoint` is *by definition* that
-  -- `Affine.Point.some`, so this folds the definition back. Unlike the reshapes above this one
-  -- really is a definitional equality, and it breaks if `thetaPoint` is ever restated.
-  refine Eq.trans (show W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 =
-    Affine.Point.some _ _ h₃ from hadd) ?_
+    hwT0 hxρ hns₁ hns₂
+  rw [W.thetaPoint_eq_some hΔ h₁ hq₁0 hns₁, W.thetaPoint_eq_some hΔ h₂ hq₂0 hns₂]
+  exact ⟨h₃, hadd⟩
+
+/-- The point with affine coordinates `(T / w(T), (1 - a₁ T - a₃ w(T)) / w(T))`, for `T` the third
+root of the chord of `θ(q₁)` and `θ(q₂)`, is the parametrized point of the addition series
+`F(q₁, q₂)`. -/
+private theorem some_eq_thetaPoint_formalAdd (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+    {q₁ q₂ : MvPowerSeries σ O} (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
+    (hN : subst (pairSubstitution q₁ q₂)
+      (formalIntercept W) ≠ 0)
+    (hF : constantCoeff (subst (pairSubstitution q₁ q₂) (formalAdd W)) = 0)
+    (hF0 : subst (pairSubstitution q₁ q₂)
+      (formalAdd W) ≠ 0)
+    {Tp : MvPowerSeries σ O} (hTp : Tp = subst (pairSubstitution q₁ q₂) (formalThirdRoot W))
+    (h₃ : (fracCurve W σ KK).toAffine.Nonsingular
+      (algebraMap (MvPowerSeries σ O) KK Tp /
+        algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst Tp (formalW W)))
+      ((1 - (fracCurve W σ KK).a₁ * algebraMap (MvPowerSeries σ O) KK Tp -
+        (fracCurve W σ KK).a₃ *
+          algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst Tp (formalW W))) /
+        algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst Tp (formalW W)))) :
+    Affine.Point.some _ _ h₃ = W.thetaPoint hΔ hF hF0 := by
+  classical
+  subst hTp
+  -- `h₃` is reverted so that the `set`s rewrite its type along with the goal, which depends on it
+  revert h₃
+  set ρ := algebraMap (MvPowerSeries σ O) KK
+  set Tp := subst (pairSubstitution q₁ q₂) (formalThirdRoot W)
+  set wT := PowerSeries.subst Tp (formalW W)
+  intro h₃
+  have hTp0 : Tp ≠ 0 := subst_pair_formalThirdRoot_ne_zero W h₁ h₂ hN
+  have hTc : constantCoeff Tp = 0 := constantCoeff_subst_pair_formalThirdRoot W h₁ h₂
+  have hwT0 : ρ wT ≠ 0 := W.algebraMap_subst_formalW_ne_zero hTc hTp0
   -- identify the third point with the point of parameter `F(q₁, q₂)`
   set sp := PowerSeries.subst Tp (PowerSeries.invOfUnit (formalInverseDenom W) 1)
   have hu : ρ (PowerSeries.subst Tp (formalInverseDenom W)) * ρ sp = 1 := by
@@ -408,6 +444,26 @@ private theorem thetaPoint_add (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     field_simp
   · rw [hwFeq, div_eq_div_iff hwT0 (neg_ne_zero.mpr (mul_ne_zero hwT0 hsp0))]
     linear_combination (-(ρ wT)) * hu + (ρ wT * ρ sp) * hueq
+
+variable [DecidableEq KK] in
+/-- **The chord addition of parametrized points**: `θ(q₁) + θ(q₂) = θ(F(q₁, q₂))`.
+
+The two parametrized points lie on `fracCurve W`, the chord through them meets the curve again at
+the parameter `z₃`, and the addition series is exactly the reflection of that third point. So the
+group law of an honest Weierstrass curve, applied to the two points, computes `F(q₁, q₂)`. -/
+private theorem thetaPoint_add (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+    {q₁ q₂ : MvPowerSeries σ O} (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
+    (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0)
+    (hN : subst (pairSubstitution q₁ q₂)
+      (formalIntercept W) ≠ 0)
+    (hx : q₁ * PowerSeries.subst q₂ (formalW W) - q₂ * PowerSeries.subst q₁ (formalW W) ≠ 0)
+    (hF : constantCoeff (subst (pairSubstitution q₁ q₂) (formalAdd W)) = 0)
+    (hF0 : subst (pairSubstitution q₁ q₂)
+      (formalAdd W) ≠ 0) :
+    W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 := by
+  classical
+  obtain ⟨h₃, hadd⟩ := thetaPoint_add_eq_some W hΔ h₁ h₂ hq₁0 hq₂0 hN hx rfl
+  exact hadd.trans (some_eq_thetaPoint_formalAdd W hΔ h₁ h₂ hN hF hF0 rfl h₃)
 
 /-- **The parametrized point of the inverted parameter is the negative**: `θ(ι(q)) = -θ(q)`.
 
@@ -484,6 +540,8 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
     (hne₂ : q₁ ≠ PowerSeries.subst q₂ (formalInverse W)) :
     subst (pairSubstitution q₁ q₂)
       (formalIntercept W) ≠ 0 := by
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
   classical
   intro h0
   set ρ := algebraMap (MvPowerSeries σ O) KK
@@ -533,6 +591,8 @@ private theorem thetaPoint_add_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     (hF0 : subst (pairSubstitution q₁ q₂)
       (formalAdd W) ≠ 0) :
     W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 := by
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
   have hN := W.pair_intercept_ne_zero_of_ne hΔ h₁ h₂ hq₁0 hq₂0 hne₁ hne₂
   refine W.thetaPoint_add hΔ h₁ h₂ hq₁0 hq₂0 hN ?_ hF hF0
   rw [subst_pair_formalIntercept_mul_sub W h₁ h₂]
@@ -554,13 +614,14 @@ theorem thetaPoint_add_of_subst_separates (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     (hF : constantCoeff (subst (pairSubstitution q₁ q₂) (formalAdd W)) = 0)
     (hF0 : subst (pairSubstitution q₁ q₂)
       (formalAdd W) ≠ 0) :
-    W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 :=
-  W.thetaPoint_add_of_ne hΔ h₁ h₂ hq₁0 hq₂0 (ne_of_subst_eq_X_of_subst_eq_zero hg₁ hg₂)
+    W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 := by
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
+  exact W.thetaPoint_add_of_ne hΔ h₁ h₂ hq₁0 hq₂0 (ne_of_subst_eq_X_of_subst_eq_zero hg₁ hg₂)
     (ne_of_subst_eq_X_of_subst_eq_zero hg₁ (subst_subst_formalInverse_eq_zero W hg h₂ hg₂)) hF hF0
 
 /-! ### Associativity -/
 
-omit [IsDomain O] in
 /-- A curve with nonzero discriminant stays nonsingular over a fraction field of its series ring:
 `Δ` is carried there by the injective maps `C` and `algebraMap (MvPowerSeries σ O) KK`. -/
 theorem fracCurve_Δ_ne_zero (hΔ : W.Δ ≠ 0) : (fracCurve W σ KK).Δ ≠ 0 := by
@@ -568,6 +629,50 @@ theorem fracCurve_Δ_ne_zero (hΔ : W.Δ ≠ 0) : (fracCurve W σ KK).Δ ≠ 0 :
     map_ne_zero_iff _ (IsFractionRing.injective (MvPowerSeries σ O) KK), ← c_eq_algebraMap,
     map_ne_zero_iff _ C_injective]
   exact hΔ
+
+/-- **Associativity of the addition series, from two separating substitutions.**
+
+If a substitution `g` sends `q₁` to `X` and `q₂`, `q₃` to `0`, and a substitution `g'` sends `q₂`
+to `X` and `q₃` to `0`, then each of the four chord additions in the two bracketings is licensed by
+`thetaPoint_add_of_subst_separates`, both bracketings compute `θ(q₁) + θ(q₂) + θ(q₃)`, and
+injectivity of `θ` gives `F(F(q₁, q₂), q₃) = F(q₁, F(q₂, q₃))`. -/
+private theorem subst_formalAdd_assoc_of_subst_separates (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+    {g g' : σ → MvPowerSeries Unit O} (hg : HasSubst g) (hg' : HasSubst g')
+    {q₁ q₂ q₃ : MvPowerSeries σ O} (hc₁ : constantCoeff q₁ = 0) (hc₂ : constantCoeff q₂ = 0)
+    (hc₃ : constantCoeff q₃ = 0) (h10 : q₁ ≠ 0) (h20 : q₂ ≠ 0) (h30 : q₃ ≠ 0)
+    (hg1 : subst g q₁ = PowerSeries.X) (hg2 : subst g q₂ = 0) (hg3 : subst g q₃ = 0)
+    (hg'2 : subst g' q₂ = PowerSeries.X) (hg'3 : subst g' q₃ = 0) :
+    subst (pairSubstitution (subst (pairSubstitution q₁ q₂) (formalAdd W)) q₃) (formalAdd W) =
+      subst (pairSubstitution q₁ (subst (pairSubstitution q₂ q₃) (formalAdd W))) (formalAdd W) := by
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
+  classical
+  -- the two inner sums
+  set F₁₂ := subst (pairSubstitution q₁ q₂) (formalAdd W)
+  set F₂₃ := subst (pairSubstitution q₂ q₃) (formalAdd W)
+  have hF₁₂c : constantCoeff F₁₂ = 0 := constantCoeff_subst_pair_formalAdd W hc₁ hc₂
+  have hF₂₃c : constantCoeff F₂₃ = 0 := constantCoeff_subst_pair_formalAdd W hc₂ hc₃
+  have hgF₁₂ : subst g F₁₂ = PowerSeries.X := subst_subst_pair_formalAdd_eq_X W hg hc₁ hc₂ hg1 hg2
+  have hgF₂₃ : subst g F₂₃ = 0 := subst_subst_pair_formalAdd_eq_zero W hg hc₂ hc₃ hg2 hg3
+  -- each inner sum is nonzero, via the specialization separating its own two parameters
+  have hF₁₂0 : F₁₂ ≠ 0 := subst_pair_formalAdd_ne_zero W hg hc₁ hc₂ hg1 hg2
+  have hF₂₃0 : F₂₃ ≠ 0 := subst_pair_formalAdd_ne_zero W hg' hc₂ hc₃ hg'2 hg'3
+  -- the two bracketed sums are again legitimate parameters
+  have hLc := constantCoeff_subst_eq_zero (hasSubst_pair hF₁₂c hc₃)
+    (by rintro (j | j) <;> simp [hF₁₂c, hc₃]) (constantCoeff_formalAdd W)
+  have hRc := constantCoeff_subst_eq_zero (hasSubst_pair hc₁ hF₂₃c)
+    (by rintro (j | j) <;> simp [hF₂₃c, hc₁]) (constantCoeff_formalAdd W)
+  have hL0 := subst_pair_formalAdd_ne_zero W hg hF₁₂c hc₃ hgF₁₂ hg3
+  have hR0 := subst_pair_formalAdd_ne_zero W hg hc₁ hF₂₃c hg1 hgF₂₃
+  -- the θ-chain: both bracketings compute the same sum of three points, each addition licensed
+  -- by the specialization that separates its two summands
+  have e₁₂ := thetaPoint_add_of_subst_separates W hΔ hg hc₁ hc₂ h10 h20 hg1 hg2 hF₁₂c hF₁₂0
+  have e₂₃ := thetaPoint_add_of_subst_separates W hΔ hg' hc₂ hc₃ h20 h30 hg'2 hg'3 hF₂₃c hF₂₃0
+  have eL := thetaPoint_add_of_subst_separates W hΔ hg hF₁₂c hc₃ hF₁₂0 h30 hgF₁₂ hg3 hLc hL0
+  have eR := thetaPoint_add_of_subst_separates W hΔ hg hc₁ hF₂₃c h10 hF₂₃0 hg1 hgF₂₃ hRc hR0
+  have hpts : W.thetaPoint hΔ hLc hL0 = W.thetaPoint hΔ hRc hR0 := by
+    rw [← eL, ← e₁₂, ← eR, ← e₂₃, add_assoc]
+  exact thetaPoint_inj W hΔ hLc hRc hL0 hR0 hpts
 
 /-- **Associativity of the addition series for the universal curve.**
 
@@ -591,75 +696,28 @@ private theorem assoc_formalAdd_universal :
   classical
   set R := MvPolynomial Coeff ℤ
   set KK := FractionRing (MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
-  -- the specialization separating the first parameter from the other two
-  set χ := coordSpecialize (O := R) (Sum.inl () : Unit ⊕ Unit ⊕ Unit)
-  have hχ : HasSubst χ := hasSubst_coordSpecialize _
   have hΔ := fracCurve_Δ_ne_zero Universal.curve (σ := Unit ⊕ Unit ⊕ Unit) (KK := KK)
     Universal.curve_Δ_ne_zero
-  have hc₁ : constantCoeff (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) = 0 :=
-    constantCoeff_X _
-  have hc₂ : constantCoeff (X (Sum.inr (Sum.inl ())) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) = 0 :=
-    constantCoeff_X _
-  have hc₃ : constantCoeff (X (Sum.inr (Sum.inr ())) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) = 0 :=
-    constantCoeff_X _
   have h10 : (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) ≠ 0 :=
     nonZeroDivisors.ne_zero X_mem_nonZeroDivisors
   have h20 : (X (Sum.inr (Sum.inl ())) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) ≠ 0 :=
     nonZeroDivisors.ne_zero X_mem_nonZeroDivisors
   have h30 : (X (Sum.inr (Sum.inr ())) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) ≠ 0 :=
     nonZeroDivisors.ne_zero X_mem_nonZeroDivisors
+  -- the specialization separating the first parameter from the other two
   have hχ1 := subst_coordSpecialize_X_self (O := R) (Sum.inl () : Unit ⊕ Unit ⊕ Unit)
   have hχ2 := subst_coordSpecialize_X_of_ne (O := R)
     (i := (Sum.inl () : Unit ⊕ Unit ⊕ Unit)) (j := Sum.inr (Sum.inl ())) (by simp)
   have hχ3 := subst_coordSpecialize_X_of_ne (O := R)
     (i := (Sum.inl () : Unit ⊕ Unit ⊕ Unit)) (j := Sum.inr (Sum.inr ())) (by simp)
   -- the specialization separating the middle parameter from the other two
-  set χ' := coordSpecialize (O := R) (Sum.inr (Sum.inl ()) : Unit ⊕ Unit ⊕ Unit)
-  have hχ' : HasSubst χ' := hasSubst_coordSpecialize _
   have hχ'2 := subst_coordSpecialize_X_self (O := R) (Sum.inr (Sum.inl ()) : Unit ⊕ Unit ⊕ Unit)
   have hχ'3 := subst_coordSpecialize_X_of_ne (O := R)
     (i := (Sum.inr (Sum.inl ()) : Unit ⊕ Unit ⊕ Unit)) (j := Sum.inr (Sum.inr ())) (by simp)
-  -- the two inner sums
-  set F₁₂ := subst (pairSubstitution (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
-    (X (Sum.inr (Sum.inl ())))) (formalAdd Universal.curve)
-  set F₂₃ := subst (pairSubstitution
-    (X (Sum.inr (Sum.inl ())) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
-    (X (Sum.inr (Sum.inr ())))) (formalAdd Universal.curve)
-  have hF₁₂c : constantCoeff F₁₂ = 0 :=
-    constantCoeff_subst_pair_formalAdd Universal.curve (constantCoeff_X _)
-        (constantCoeff_X _)
-  have hF₂₃c : constantCoeff F₂₃ = 0 :=
-    constantCoeff_subst_pair_formalAdd Universal.curve (constantCoeff_X _)
-        (constantCoeff_X _)
-  have hχF₁₂ : subst χ F₁₂ = PowerSeries.X :=
-    subst_subst_pair_formalAdd_eq_X Universal.curve hχ hc₁ hc₂ hχ1 hχ2
-  have hχF₂₃ : subst χ F₂₃ = 0 :=
-    subst_subst_pair_formalAdd_eq_zero Universal.curve hχ hc₂ hc₃ hχ2 hχ3
-  -- each inner sum is nonzero, via the specialization separating its own two parameters
-  have hF₁₂0 : F₁₂ ≠ 0 := subst_pair_formalAdd_ne_zero Universal.curve hχ hc₁ hc₂ hχ1 hχ2
-  have hF₂₃0 : F₂₃ ≠ 0 := subst_pair_formalAdd_ne_zero Universal.curve hχ' hc₂ hc₃ hχ'2 hχ'3
-  -- the two bracketed sums are again legitimate parameters
-  have hLc := constantCoeff_subst_eq_zero (hasSubst_pair hF₁₂c hc₃)
-    (by rintro (j | j) <;> simp [hF₁₂c]) (constantCoeff_formalAdd Universal.curve)
-  have hRc := constantCoeff_subst_eq_zero (hasSubst_pair hc₁ hF₂₃c)
-    (by rintro (j | j) <;> simp [hF₂₃c]) (constantCoeff_formalAdd Universal.curve)
-  have hL0 := subst_pair_formalAdd_ne_zero Universal.curve hχ hF₁₂c hc₃ hχF₁₂ hχ3
-  have hR0 := subst_pair_formalAdd_ne_zero Universal.curve hχ hc₁ hF₂₃c hχ1 hχF₂₃
-  -- the θ-chain: both bracketings compute the same sum of three points, each addition licensed
-  -- by the specialization that separates its two summands
-  have e₁₂ := thetaPoint_add_of_subst_separates Universal.curve (KK := KK) hΔ hχ hc₁ hc₂ h10 h20
-    hχ1 hχ2 hF₁₂c hF₁₂0
-  have e₂₃ := thetaPoint_add_of_subst_separates Universal.curve (KK := KK) hΔ hχ' hc₂ hc₃ h20 h30
-    hχ'2 hχ'3 hF₂₃c hF₂₃0
-  have eL := thetaPoint_add_of_subst_separates Universal.curve (KK := KK) hΔ hχ hF₁₂c hc₃ hF₁₂0
-    h30 hχF₁₂ hχ3 hLc hL0
-  have eR := thetaPoint_add_of_subst_separates Universal.curve (KK := KK) hΔ hχ hc₁ hF₂₃c h10
-    hF₂₃0 hχ1 hχF₂₃ hRc hR0
-  have hpts : Universal.curve.thetaPoint hΔ hLc hL0 = Universal.curve.thetaPoint hΔ hRc hR0 := by
-    rw [← eL, ← e₁₂, ← eR, ← e₂₃, add_assoc]
-  exact thetaPoint_inj Universal.curve hΔ hLc hRc hL0 hR0 hpts
+  exact subst_formalAdd_assoc_of_subst_separates Universal.curve hΔ (hasSubst_coordSpecialize _)
+    (hasSubst_coordSpecialize _) (constantCoeff_X _) (constantCoeff_X _) (constantCoeff_X _)
+    h10 h20 h30 hχ1 hχ2 hχ3 hχ'2 hχ'3
 
-omit [IsDomain O] in
 /-- **Associativity of the chord addition series**, for every Weierstrass curve over every
 commutative ring: `F(F(t₁, t₂), t₃) = F(t₁, F(t₂, t₃))`.
 

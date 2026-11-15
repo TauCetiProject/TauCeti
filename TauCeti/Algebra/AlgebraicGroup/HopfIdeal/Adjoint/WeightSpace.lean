@@ -24,6 +24,13 @@ The argument factors the matrix computations of
 criterion through the injective closed-subgroup differential. This supplies the common
 entrywise criterion used in classical pinnings.
 
+The comodule criterion needs the torus coordinates indexed in the universe of the base ring.
+`mem_adjointWeightSpace_iff_of_weightTorusCoordinateBialgHom` states it for coordinates indexed
+by any finite type over a base ring in any universe, as for the `Fin r` weight tori of the
+explicit Chevalley carriers, and `adjointWeightSpace_eq_bot_of_weightTorusCoordinateBialgHom`
+deduces that a weight space vanishes when the generic matrix entries of that weight vanish in the
+quotient.
+
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §§21.1 and 24.6.
@@ -195,6 +202,134 @@ theorem mem_adjointWeightSpace_iff_of_weightTorus
       (toConv π.toAlgHom), Derivation.tangentScalarExtensionEquiv_tmul, one_smul,
     Derivation.tangentScalarExtensionEquiv_tmul,
     adDerivation_universalWeightTorus_eq_iff I w π hπ]
+
+end
+
+section SmallWeights
+
+/-! ### Torus coordinates in any universe
+
+The criterion above indexes the torus coordinates by a type in the universe of the base ring,
+which the universal torus point requires. For a finite index type in any universe, relabelling
+along an equivalence with `ULift (Fin r)` moves the characters into that universe without
+changing them. -/
+
+noncomputable section
+
+universe v
+
+variable {R : Type u} [CommRing R] {n : ℕ} {τ : Type v}
+variable (I : HopfIdeal R (GeneralLinear.coordinateHopfAlgebra R n))
+
+variable [Fintype τ]
+variable [Module.Finite R
+  (Bialgebra.CotangentSpace R (GeneralLinear.coordinateHopfAlgebra R n ⧸ I.toIdeal))]
+variable [Module.Projective R
+  (Bialgebra.CotangentSpace R (GeneralLinear.coordinateHopfAlgebra R n ⧸ I.toIdeal))]
+
+/-- `mem_adjointWeightSpace_iff_of_weightTorus` for a weight torus with coordinates indexed by
+any finite type, over a base ring in any universe: membership in the adjoint weight space of `α`
+is equivalent to vanishing of every tangent-matrix entry whose weight difference is not `α`. -/
+theorem mem_adjointWeightSpace_iff_of_weightTorusCoordinateBialgHom (w : Fin n → τ → ℤ)
+    (π : (GeneralLinear.coordinateHopfAlgebra R n ⧸ I.toIdeal) →ₐc[R]
+      MonoidAlgebra R (Multiplicative (τ →₀ ℤ)))
+    (hπ : π.comp (Bialgebra.Quotient.mkBialgHom I.toIdeal) =
+      GeneralLinear.weightTorusCoordinateBialgHom (S := R) w)
+    (α : Multiplicative (τ →₀ ℤ))
+    (x : Module.Dual R
+      (Bialgebra.CotangentSpace R (GeneralLinear.coordinateHopfAlgebra R n ⧸ I.toIdeal))) :
+    x ∈ Derivation.adjointWeightSpace π α ↔
+      ∀ i j : Fin n, SplitTorus.weightCharacter (w i - w j) ≠ α →
+        GeneralLinear.tangentMatrix n
+          (quotientLieHom I (Derivation.cotangentLinearEquiv (B := R) x)) i j = 0 := by
+  let e : τ ≃ ULift.{u} (Fin (Fintype.card τ)) := (Fintype.equivFin τ).trans Equiv.ulift.symm
+  let eM := AddEquiv.toMultiplicative (Finsupp.domCongr (M := ℤ) e)
+  let π' := (MonoidAlgebra.domCongrBialgEquiv R R eM).toBialgHom.comp π
+  have hπ' : π'.comp (Bialgebra.Quotient.mkBialgHom I.toIdeal) =
+      (GeneralLinear.weightTorusCoordinateMap (fun a i ↦ w a (e.symm i))).hom := by
+    rw [BialgHom.comp_assoc, hπ,
+      GeneralLinear.domCongrBialgEquiv_comp_weightTorusCoordinateBialgHom,
+      GeneralLinear.hom_weightTorusCoordinateMap]
+  rw [← Derivation.adjointWeightSpace_domCongr eM π α,
+    mem_adjointWeightSpace_iff_of_weightTorus I _ π' hπ']
+  have hchar (a b : Fin n) :
+      SplitTorus.weightCharacter ((fun i ↦ w a (e.symm i)) - fun i ↦ w b (e.symm i)) =
+        eM (SplitTorus.weightCharacter (w a - w b)) :=
+    (SplitTorus.toMultiplicative_domCongr_weightCharacter e (w a - w b)).symm
+  simp only [hchar, ne_eq, eM.injective.eq_iff]
+
+/-- **Vanishing adjoint weight spaces from vanishing coordinates.** If every generic matrix entry
+whose weight difference is `α` vanishes in the quotient coordinate algebra, the adjoint weight
+space of `α` is zero. -/
+theorem adjointWeightSpace_eq_bot_of_weightTorusCoordinateBialgHom (w : Fin n → τ → ℤ)
+    (π : (GeneralLinear.coordinateHopfAlgebra R n ⧸ I.toIdeal) →ₐc[R]
+      MonoidAlgebra R (Multiplicative (τ →₀ ℤ)))
+    (hπ : π.comp (Bialgebra.Quotient.mkBialgHom I.toIdeal) =
+      GeneralLinear.weightTorusCoordinateBialgHom (S := R) w)
+    (α : Multiplicative (τ →₀ ℤ))
+    (h : ∀ i j : Fin n, SplitTorus.weightCharacter (w i - w j) = α →
+      Bialgebra.Quotient.mkBialgHom (R := R) I.toIdeal (GeneralLinear.genericMatrix R n i j) = 0) :
+    Derivation.adjointWeightSpace π α = ⊥ := by
+  classical
+  -- A weight vector has tangent matrix supported on the entries of weight difference `α`, and a
+  -- tangent vector kills the coordinates that vanish in the quotient.
+  refine (Submodule.eq_bot_iff _).mpr fun x hx ↦ ?_
+  have hentry := (mem_adjointWeightSpace_iff_of_weightTorusCoordinateBialgHom I w π hπ α x).mp hx
+  apply (Derivation.cotangentLinearEquiv (B := R)).injective
+  apply quotientLieHom_injective I
+  apply (GeneralLinear.tangentLinearEquivMatrix n).injective
+  simp only [GeneralLinear.tangentLinearEquivMatrix_apply]
+  ext i j
+  simp only [map_zero, Matrix.zero_apply]
+  by_cases hij : SplitTorus.weightCharacter (w i - w j) = α
+  · have hzero := h i j hij
+    rw [GeneralLinear.genericMatrix_apply] at hzero
+    have hqzero : Ideal.Quotient.mkₐ R I.toIdeal
+        ((GeneralLinear.coordinateHopfAlgebraAlgEquiv R n)
+          ((GeneralLinear.coordinateRingMap R n) (MvPolynomial.X (i, j)))) = 0 := by
+      simpa only [Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.mkₐ_eq_mk] using hzero
+    simp only [GeneralLinear.tangentMatrix_apply, quotientLieHom_apply_apply, hqzero, map_zero]
+    -- The tangent vector is evaluated through the counit-algebra identification, which
+    -- preserves zero.
+    exact map_zero _
+  · exact hentry i j hij
+
+end
+
+end SmallWeights
+
+section
+
+variable {R : Type u} [CommRing R] {n : ℕ} {σ : Type u} [Fintype σ]
+
+/-- For a Hopf algebra presented as a quotient of the coordinate algebra of `GLₙ`,
+adjoint weight-space membership is equivalent to vanishing of the ambient tangent-matrix
+entries of every other weight. The quotient map may be supplied as a named morphism. -/
+theorem mem_adjointWeightSpace_iff_of_weightTorus_of_eq
+    (I : HopfIdeal R (GeneralLinear.coordinateHopfAlgebra R n)) (w : Fin n → σ → ℤ)
+    {G : CommHopfAlgCat R}
+    (hG : G = CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R n) I)
+    (q : GeneralLinear.coordinateHopfAlgebra R n ⟶ G)
+    (hq : q ≫ (eqToIso hG).hom =
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n) I)
+    (π : G ⟶ (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup σ)).obj)
+    (hπ : q ≫ π = GeneralLinear.weightTorusCoordinateMap (R := R) w)
+    [Module.Finite R (Bialgebra.CotangentSpace R G)]
+    [Module.Projective R (Bialgebra.CotangentSpace R G)]
+    (α : Multiplicative (σ →₀ ℤ)) (x : Module.Dual R (Bialgebra.CotangentSpace R G)) :
+    x ∈ Derivation.adjointWeightSpace π.hom α ↔
+      ∀ a b, SplitTorus.weightCharacter (w a - w b) ≠ α →
+        GeneralLinear.tangentMatrix n
+          (derivationComp (B := R) q.hom (Derivation.cotangentLinearEquiv (B := R) x)) a b = 0 := by
+  subst hG
+  simp only [eqToIso_refl, Iso.refl_hom, Category.comp_id] at hq
+  rw [hq] at hπ ⊢
+  rw [CommHopfAlgCat.hom_mkQuotient]
+  have hπ' : π.hom.comp (Bialgebra.Quotient.mkBialgHom I.toIdeal) =
+      (GeneralLinear.weightTorusCoordinateMap (R := R) w).hom := by
+    rw [← CommHopfAlgCat.hom_mkQuotient, ← _root_.CommHopfAlgCat.hom_comp, hπ]
+  simpa only [quotientLieHom_apply] using
+    mem_adjointWeightSpace_iff_of_weightTorus I w π.hom hπ' α x
 
 end
 

@@ -14,7 +14,7 @@ public import Mathlib.Topology.Path
 The mapping-path space of `f : C(B, K)` consists of a point of `B` and a path starting
 at its image. It has the subspace topology from `B × C(I, K)`, with the compact-open
 topology on paths. Constant paths include `B` into this replacement; shrinking the
-path by `γ(t) ↦ γ(s * t)` gives a strong deformation back to that inclusion.
+path by `γ(t) ↦ γ(s * t)` is a strong deformation retraction onto the image of that inclusion.
 
 Commutative squares act on replacements, compatibly with the source projection,
 endpoint and shrinking homotopy. These constructions require no separation or
@@ -76,9 +76,11 @@ theorem endpoint_comp_incl : (endpoint f).comp (incl f) = f := by
   ext
   rfl
 
-/-- Shrink a path toward its starting point, keeping the source coordinate fixed. -/
+/-- Shrink a path toward its starting point, keeping the source coordinate fixed. This fixes the
+constant paths throughout, so it is a strong deformation retraction onto the image of `incl f`. -/
 def shrinkHomotopy :
-    ContinuousMap.Homotopy ((incl f).comp (proj f)) (ContinuousMap.id _) where
+    ContinuousMap.HomotopyRel ((incl f).comp (proj f)) (ContinuousMap.id _)
+      (Set.range (incl f)) where
   toFun q := ⟨(q.2.val.1, ⟨fun t ↦ q.2.val.2 (q.1 * t),
     q.2.val.2.continuous.comp
       ((continuous_const.mul continuous_subtype_val).subtype_mk _)⟩), by
@@ -101,6 +103,10 @@ def shrinkHomotopy :
     · rfl
     · ext t
       simp
+  prop' s := by
+    rintro _ ⟨b, rfl⟩
+    -- Shrinking a constant path returns the same constant path, by construction.
+    rfl
 
 @[simp]
 theorem shrinkHomotopy_point (s : I) (p : MappingPathSpace f) :
@@ -113,18 +119,15 @@ theorem shrinkHomotopy_path (s t : I) (p : MappingPathSpace f) :
 /-- The shrinking homotopy fixes every constant-path inclusion throughout. -/
 @[simp]
 theorem shrinkHomotopy_incl (s : I) (b : B) :
-    shrinkHomotopy f (s, incl f b) = incl f b := by
-  apply Subtype.ext
-  apply Prod.ext rfl
-  ext
-  rfl
+    shrinkHomotopy f (s, incl f b) = incl f b :=
+  (shrinkHomotopy f).eq_fst s ⟨b, rfl⟩
 
 /-- The constant-path inclusion is a homotopy equivalence, inverse to projection. -/
 def homotopyEquiv : ContinuousMap.HomotopyEquiv B (MappingPathSpace f) where
   toFun := incl f
   invFun := proj f
   left_inv := by rw [proj_comp_incl]
-  right_inv := ⟨shrinkHomotopy f⟩
+  right_inv := ⟨(shrinkHomotopy f).toHomotopy⟩
 
 @[simp]
 theorem homotopyEquiv_apply (b : B) : homotopyEquiv f b = incl f b := (rfl)
@@ -174,7 +177,7 @@ theorem map_comp_incl (a : C(B, B')) (b : C(K, K')) (h : b.comp f = f'.comp a) :
   apply Subtype.ext
   apply Prod.ext
   · rfl
-  · ext t
+  · ext _
     exact ContinuousMap.congr_fun h x
 
 @[simp]

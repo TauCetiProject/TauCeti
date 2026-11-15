@@ -7,7 +7,7 @@ module
 
 import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Character
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Basic
-import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.RankParity
+import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Rank.Parity
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.ElementaryAbelian
 public import TauCeti.Topology.Algebra.GroupExtension.ZModFour
 
@@ -152,7 +152,7 @@ theorem cyclicTwoClass_ne_zero : cyclicTwoClass ≠ 0 := fun h ↦
 are nonzero, and `H²(ℤ/2, 𝔽₂)` is a line over `𝔽₂`, whose only nonzero scalar is `1`. -/
 theorem cupFp_cyclicTwoClass_self_eq_zmodFourExtensionClass :
     cupFp 2 (Multiplicative (ZMod 2)) cyclicTwoClass cyclicTwoClass = zmodFourExtensionClass := by
-  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_nonzero' _ cupFp_cyclicTwoClass_self_ne_zero).1
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' _ cupFp_cyclicTwoClass_self_ne_zero).1
     (finrank_cohomFp_two_multiplicative_zmod 2) zmodFourExtensionClass
   have hc0 : c ≠ 0 := by
     rintro rfl

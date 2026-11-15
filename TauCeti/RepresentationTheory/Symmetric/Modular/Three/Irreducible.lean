@@ -67,8 +67,8 @@ private theorem action_eq_one_or_sign (ρ : Representation k (Equiv.Perm (Fin 3)
   have hT : T.toLinearMap = ρ t := rfl
   have hTapply (x : V) : T x = ρ t x := rfl
   have hsq (x : V) : T (T x) = x := by
-    simp only [hTapply, ← Module.End.mul_apply, ← map_mul, ht, map_one,
-      Module.End.one_apply]
+    simp only [hTapply, ← mul_apply_eq_comp, ← map_mul, ht, map_one,
+      one_apply_eq_self]
   -- Schur makes `T - 1` either zero or injective; `(T - 1)(T + 1) = 0` then fixes the sign.
   rcases IsIrreducible.injective_or_eq_zero (T - 1) with hinj | hzero
   · have hneg (x : V) : T x = -x := by

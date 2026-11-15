@@ -16,6 +16,9 @@ The universal property of a biproduct identifies morphisms out of it with famili
 morphisms out of its summands. In a linear category this is a linear equivalence, so finiteness
 and rank of the Hom module can be read summand by summand. Dually, morphisms into a biproduct
 are families of morphisms into its summands.
+
+Scalars also pull out of the morphism `biproduct.matrix m` between biproducts assembled from a
+matrix `m` of morphisms between the summands (`CategoryTheory.Limits.biproduct.matrix_smul`).
 -/
 
 public section
@@ -109,3 +112,18 @@ theorem finrank_homTo_biproduct [Fintype J] [StrongRankCondition k]
   rw [(homToBiproductLinearEquiv k X Y).finrank_eq, Module.finrank_pi_fintype]
 
 end TauCeti
+
+namespace CategoryTheory.Limits
+
+variable {C : Type*} [Category* C] [Preadditive C] [HasFiniteBiproducts C]
+  {R : Type*} [Semiring R] [Linear R C] {J : Type*} [Finite J] {K : Type} [Finite K]
+  {f : J → C} {g : K → C}
+
+/-- Scalars pull out of the morphism of biproducts assembled from a matrix of morphisms. -/
+@[simp]
+theorem biproduct.matrix_smul (r : R) (m : ∀ j k, f j ⟶ g k) :
+    biproduct.matrix (fun j k ↦ r • m j k) = r • biproduct.matrix m := by
+  ext
+  simp
+
+end CategoryTheory.Limits

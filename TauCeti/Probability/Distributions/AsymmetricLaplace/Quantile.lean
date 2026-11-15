@@ -97,7 +97,7 @@ theorem strictMonoOn_quantile_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r)
 /-- The asymmetric Laplace quantile is continuous on the interior probability levels. -/
 theorem continuousOn_quantile_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) :
     ContinuousOn (asymmetricLaplaceMeasure m l r).quantile (Ioo 0 1) :=
-  Measure.continuousOn_quantile _ (continuous_cdf_asymmetricLaplaceMeasure hl hr)
+  Measure.continuousOn_quantile _
     ((strictMono_cdf_asymmetricLaplaceMeasure hl hr).strictMonoOn _)
 
 /-- Asymmetric Laplace quantiles tend to minus infinity as the level decreases to zero. -/

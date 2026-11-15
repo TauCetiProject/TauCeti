@@ -105,7 +105,7 @@ theorem isCofinite (hmap : ∀ i, σ.map i ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
     Γ.IsCofinite :=
-  have : DiscreteTopology Γ := TauCeti.discreteTopology_of_locallyFinite_smul
+  have : DiscreteTopology Γ := TauCeti.discreteTopology_of_locallyFinite_smul (fun _ ↦ by fun_prop)
     (P.nonempty_interior_carrier.mono interior_subset) hlf
   (σ.isFundamentalDomain_carrier hmap hlf hdisj).isCofinite_of_volume_ne_top
     P.volume_carrier_ne_top

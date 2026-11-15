@@ -13,7 +13,7 @@ public import Mathlib.Algebra.Ring.NegOnePow
 # Bigraded Poincaré series
 
 This file defines the Poincaré series of a finite-dimensional bigraded vector space, together
-with its total dimension and Alexander-graded Euler characteristic.
+with its total dimension and its Alexander- and Maslov-graded Euler characteristics.
 
 ## Main definitions
 
@@ -21,6 +21,9 @@ with its total dimension and Alexander-graded Euler characteristic.
 * `TauCeti.Bigraded.IsDiagonal`: a series whose nonzero coefficients lie in bidegrees `(d, d)`.
 * `TauCeti.Bigraded.totalDim`: the total dimension, as a ring homomorphism.
 * `TauCeti.Bigraded.euler`: the Alexander-graded Euler characteristic.
+* `TauCeti.Bigraded.maslovEuler`: the Maslov-graded Euler characteristic, which agrees with
+  `TauCeti.Bigraded.euler` on a series without coefficients on one side of the diagonal exactly
+  when the series is diagonal (`TauCeti.Bigraded.euler_eq_maslovEuler_iff_isDiagonal`).
 -/
 
 public section
@@ -114,6 +117,132 @@ noncomputable def euler : Series →+* ℤ[T;T⁻¹] :=
 theorem euler_single (m a : ℤ) (r : ℕ) :
     euler (single (m, a) r) = (r : ℤ[T;T⁻¹]) * single a (m.negOnePow : ℤ) :=
   liftNCRingHom_single _ _ _ _ _
+
+/-- The coefficient of `T^a` in the Alexander-graded Euler characteristic is the alternating sum
+of the dimensions in Alexander grading `a`. -/
+theorem coeff_euler (P : Series) (a : ℤ) :
+    (euler P).coeff a =
+      P.coeff.sum fun g c ↦ if g.2 = a then (g.1.negOnePow : ℤ) * c else 0 := by
+  induction P using AddMonoidAlgebra.induction_linear with
+  | zero => simp
+  | add P Q hP hQ =>
+    rw [map_add, coeff_add, Finsupp.add_apply, hP, hQ, coeff_add,
+      Finsupp.sum_add_index' (by simp) (fun _ _ _ ↦ by split_ifs <;> simp [mul_add])]
+  | single g r =>
+    obtain ⟨m, a'⟩ := g
+    rw [euler_single, coeff_single, Finsupp.sum_single_index (by simp),
+      AddMonoidAlgebra.natCast_def, single_mul_single, zero_add, coeff_single, Finsupp.single_apply]
+    split_ifs <;> simp_all [mul_comm]
+
+/-- The Maslov-graded Euler characteristic, as a monoid homomorphism on bidegrees: bidegree
+`(m, a)` contributes `(-1)^m T^m`. -/
+noncomputable def maslovEulerMonoidHom : Multiplicative (ℤ × ℤ) →* ℤ[T;T⁻¹] where
+  toFun g := single g.toAdd.1 (g.toAdd.1.negOnePow : ℤ)
+  map_one' := rfl
+  map_mul' g h := by
+    simp only [toAdd_mul, Prod.fst_add, Int.negOnePow_add, Units.val_mul, single_mul_single]
+
+/-- The Maslov-graded Euler characteristic of a finite-dimensional bigraded vector space: the
+Laurent polynomial whose `T^m` coefficient is `(-1)^m` times the total dimension in Maslov
+grading `m`. Equivalently, it is the Poincaré polynomial of the Maslov grading alone, evaluated at
+`-T`.
+
+It agrees with the Alexander-graded `TauCeti.Bigraded.euler` on diagonal series. -/
+noncomputable def maslovEuler : Series →+* ℤ[T;T⁻¹] :=
+  liftNCRingHom (Nat.castRingHom _) maslovEulerMonoidHom fun _ _ => Commute.all _ _
+
+/-- The Maslov-graded Euler characteristic of a series concentrated in one bidegree. -/
+@[simp]
+theorem maslovEuler_single (m a : ℤ) (r : ℕ) :
+    maslovEuler (single (m, a) r) = (r : ℤ[T;T⁻¹]) * single m (m.negOnePow : ℤ) :=
+  liftNCRingHom_single _ _ _ _ _
+
+/-- The coefficient of `T^m` in the Maslov-graded Euler characteristic is `(-1)^m` times the
+total dimension in Maslov grading `m`. -/
+theorem coeff_maslovEuler (P : Series) (m : ℤ) :
+    (maslovEuler P).coeff m =
+      P.coeff.sum fun g c ↦ if g.1 = m then (g.1.negOnePow : ℤ) * c else 0 := by
+  induction P using AddMonoidAlgebra.induction_linear with
+  | zero => simp
+  | add P Q hP hQ =>
+    rw [map_add, coeff_add, Finsupp.add_apply, hP, hQ, coeff_add,
+      Finsupp.sum_add_index' (by simp) (fun _ _ _ ↦ by split_ifs <;> simp [mul_add])]
+  | single g r =>
+    obtain ⟨m', a⟩ := g
+    rw [maslovEuler_single, coeff_single, Finsupp.sum_single_index (by simp),
+      AddMonoidAlgebra.natCast_def, single_mul_single, zero_add, coeff_single,
+      Finsupp.single_apply]
+    split_ifs <;> simp_all [mul_comm]
+
+/-- **The two Euler characteristics agree exactly on diagonal series**, for a series with no
+coefficients strictly on one side of the diagonal: none strictly below it (bidegrees `(m, a)` with
+`a < m`), or none strictly above it (bidegrees with `m < a`). Some such triangularity hypothesis is
+needed: the series with coefficient one in bidegrees `(0, 2)` and `(2, 0)` has equal Euler
+characteristics `1 + T^2` but is not diagonal. -/
+theorem euler_eq_maslovEuler_iff_isDiagonal (P : Series)
+    (hP : (∀ m a : ℤ, a < m → P.coeff (m, a) = 0) ∨ ∀ m a : ℤ, m < a → P.coeff (m, a) = 0) :
+    euler P = maslovEuler P ↔ IsDiagonal P := by
+  classical
+  constructor
+  · intro h
+    by_contra hdiag
+    obtain ⟨m, a, hma, hc⟩ : ∃ m a : ℤ, m ≠ a ∧ P.coeff (m, a) ≠ 0 := by
+      simpa [IsDiagonal] using hdiag
+    -- Let `S` be the set of off-diagonal summands, all of which lie on one side of the diagonal.
+    set S := P.coeff.support.filter fun g ↦ g.1 ≠ g.2
+    have hS : (S.image Prod.fst).Nonempty :=
+      ⟨m, Finset.mem_image.mpr
+        ⟨(m, a), Finset.mem_filter.mpr ⟨Finsupp.mem_support_iff.mpr hc, hma⟩, rfl⟩⟩
+    -- Pick a Maslov degree `m₀` of an off-diagonal summand that is not the Alexander degree of any
+    -- off-diagonal summand: the least such Maslov degree if `S` lies above the diagonal, and the
+    -- greatest one if `S` lies below it.
+    obtain ⟨m₀, hm₀S, hm₀⟩ : ∃ m₀ ∈ S.image Prod.fst, ∀ g ∈ S, g.2 ≠ m₀ := by
+      rcases hP with hP | hP
+      · refine ⟨(S.image Prod.fst).min' hS, Finset.min'_mem _ _, fun g hg h2 ↦ ?_⟩
+        obtain ⟨hg, hne⟩ := Finset.mem_filter.mp hg
+        have hle : g.1 ≤ g.2 := not_lt.mp fun hlt ↦ Finsupp.mem_support_iff.mp hg (hP _ _ hlt)
+        have hmin := (S.image Prod.fst).min'_le _
+          (Finset.mem_image_of_mem _ (Finset.mem_filter.mpr ⟨hg, hne⟩))
+        exact hne (le_antisymm hle (h2 ▸ hmin))
+      · refine ⟨(S.image Prod.fst).max' hS, Finset.max'_mem _ _, fun g hg h2 ↦ ?_⟩
+        obtain ⟨hg, hne⟩ := Finset.mem_filter.mp hg
+        have hle : g.2 ≤ g.1 := not_lt.mp fun hlt ↦ Finsupp.mem_support_iff.mp hg (hP _ _ hlt)
+        have hmax := (S.image Prod.fst).le_max' _
+          (Finset.mem_image_of_mem _ (Finset.mem_filter.mpr ⟨hg, hne⟩))
+        exact hne (le_antisymm (h2 ▸ hmax) hle)
+    obtain ⟨g₀, hg₀S, hg₀⟩ := Finset.mem_image.mp hm₀S
+    -- The coefficient of `T^m₀` in the Maslov-graded Euler characteristic counts every summand of
+    -- Maslov degree `m₀` with the same sign, while in the Alexander-graded one only the summand
+    -- in bidegree `(m₀, m₀)` survives. So the two differ by the off-diagonal part in Maslov
+    -- degree `m₀`, which contains the summand `g₀`.
+    have hterm : ∀ g ∈ P.coeff.support,
+        (if g.2 = m₀ then (g.1.negOnePow : ℤ) * P.coeff g else 0) =
+          (if g.1 = m₀ then (g.1.negOnePow : ℤ) * P.coeff g else 0) -
+            (m₀.negOnePow : ℤ) * (if g.1 = m₀ ∧ g.2 ≠ m₀ then (P.coeff g : ℤ) else 0) := by
+      intro g hg
+      by_cases h1 : g.1 = m₀
+      · by_cases h2 : g.2 = m₀ <;> simp [h1, h2]
+      · have h2 : g.2 ≠ m₀ := fun h2 ↦
+          hm₀ g (Finset.mem_filter.mpr ⟨hg, fun h12 ↦ h1 (h12.trans h2)⟩) h2
+        simp [h1, h2]
+    have hcoeff := congrArg (fun f : ℤ[T;T⁻¹] ↦ f.coeff m₀) h
+    simp only [coeff_euler, coeff_maslovEuler, Finsupp.sum] at hcoeff
+    rw [Finset.sum_congr rfl hterm, Finset.sum_sub_distrib, sub_eq_self, ← Finset.mul_sum,
+      mul_eq_zero, Finset.sum_eq_zero_iff_of_nonneg (fun _ _ ↦ by positivity)] at hcoeff
+    rcases hcoeff with hunit | hzero
+    · exact Units.ne_zero _ hunit
+    · have hg₀ne : g₀.2 ≠ m₀ := hm₀ g₀ hg₀S
+      have := hzero g₀ (Finset.mem_filter.mp hg₀S).1
+      simp only [hg₀, hg₀ne, ne_eq, not_false_eq_true, and_self, ite_true] at this
+      exact Finsupp.mem_support_iff.mp (Finset.mem_filter.mp hg₀S).1 (by exact_mod_cast this)
+  · intro hdiag
+    ext a
+    rw [coeff_euler, coeff_maslovEuler]
+    refine Finsupp.sum_congr fun g hg ↦ ?_
+    have : g.1 = g.2 := by
+      by_contra hne
+      exact Finsupp.mem_support_iff.mp hg (hdiag g.1 g.2 hne)
+    simp [this]
 
 end Euler
 

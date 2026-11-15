@@ -125,9 +125,10 @@ theorem trivialF2Map_cup {G H : Type u} [Group G] [Group H]
   apply (trivialF2TopPairing G).cup_map (trivialF2TopPairing H)
   intro a b
   apply (trivialF2Equiv H).injective
-  rw [TopRep.eqToHom_hom_apply (res_trivialF2_hom φ)]
-  simp only [trivialF2TopPairing_bil_apply, TopRep.eqToHom_hom_apply (res_trivialF2_hom φ),
-    trivialF2Equiv_cast, AddEquiv.apply_symm_apply]
+  rw [TopRep.eqToHom_hom_apply (res_trivialF2_hom φ.toMonoidHom)]
+  simp only [trivialF2TopPairing_bil_apply,
+    TopRep.eqToHom_hom_apply (res_trivialF2_hom φ.toMonoidHom), trivialF2Equiv_cast,
+    AddEquiv.apply_symm_apply]
 
 section Unit
 
@@ -283,6 +284,7 @@ theorem trivialF2TopPairing_cup_one_one_explicitH1 (x y : H1 G (trivialF2 G).V) 
   -- application of morphisms of topological modules
   convert key.symm using 2
 
+omit [LocallyCompactSpace G] in
 /-- **The `(1,1)` projection formula with trivial `𝔽₂` coefficients**: degree-two
 corestriction of the cup of a restricted ambient class with a subgroup class is the cup of the
 ambient class with its degree-one corestriction. -/

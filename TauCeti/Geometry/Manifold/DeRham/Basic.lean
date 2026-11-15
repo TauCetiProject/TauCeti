@@ -14,7 +14,10 @@ public import TauCeti.Algebra.Homology.ModuleCat.Basic
 The exterior derivative on smooth real-valued forms defines the nonnegative de Rham cochain
 complex. Its cohomology is Mathlib's categorical homology, with a concrete linear class map from
 closed forms, `HomologicalComplex.moduleCatHomologyClass` of their inclusion. This map is
-surjective and its kernel consists exactly of exact forms; exact forms in degree zero are zero.
+surjective and its kernel consists exactly of exact forms; exact forms in degree zero are zero,
+and exact one-forms are differentials of smooth real functions.
+On a manifold modelled on a finite-dimensional space every alternating form of degree above the
+dimension is zero, so de Rham cohomology vanishes there.
 
 The construction applies to manifolds of class `C²` with corners and does not require finite
 dimensionality, separation, or completeness of the model space.
@@ -103,12 +106,32 @@ theorem exactForms_zero : exactForms I M 0 = ⊥ := (rfl)
 theorem exactForms_succ (k : ℕ) :
     exactForms I M (k + 1) = LinearMap.range (mextDerivₗ I (F := ℝ) k) := (rfl)
 
+/-- An exact smooth real one-form is the differential of a smooth real function.
+This identifies its smooth zero-form primitive with a function and requires no finite
+dimensionality, separation, connectedness, or completeness assumptions. -/
+theorem exists_contMDiff_mextDeriv_eq_of_mem_exactForms {φ : SmoothForm I M ℝ 1}
+    (hφ : φ ∈ exactForms I M 1) :
+    ∃ f : M → ℝ, ContMDiff I 𝓘(ℝ, ℝ) ∞ f ∧
+      mextDeriv (RoughForm.ofFunction I f) = (φ : RoughForm I M ℝ 1) := by
+  rw [exactForms_succ, LinearMap.mem_range] at hφ
+  obtain ⟨ψ, hψ⟩ := hφ
+  have hs := ψ.isSmoothForm
+  rw [RoughForm.eq_ofFunction (ψ : RoughForm I M ℝ 0), isSmoothForm_ofFunction_iff] at hs
+  refine ⟨fun x ↦ (ψ : RoughForm I M ℝ 0) x 0, hs, ?_⟩
+  rw [← RoughForm.eq_ofFunction]
+  simpa only [mextDerivₗ_apply] using congrArg Subtype.val hψ
+
 /-- An exact smooth form is closed. -/
 theorem exactForms_le_closedForms (k : ℕ) : exactForms I M k ≤ closedForms I M k := by
   cases k with
   | zero => simp
   | succ k =>
     exact LinearMap.range_le_ker_iff.mpr (mextDerivₗ_comp_mextDerivₗ I (F := ℝ) k)
+
+/-- The exterior derivative of a smooth form is closed. -/
+theorem mextDerivₗ_mem_closedForms (k : ℕ) (φ : SmoothForm I M ℝ k) :
+    mextDerivₗ I (F := ℝ) k φ ∈ closedForms I M (k + 1) :=
+  exactForms_le_closedForms I (k + 1) (LinearMap.mem_range_self _ φ)
 
 /-- On a manifold of finite dimension at most `k`, every smooth `k`-form is closed. -/
 theorem mem_closedForms_of_finrank_le [FiniteDimensional ℝ E] {k : ℕ}
@@ -190,5 +213,17 @@ theorem ker_mk (k : ℕ) :
   exact mk_eq_zero_iff I k φ
 
 end deRhamCohomology
+
+variable (M) in
+/-- De Rham cohomology vanishes in degrees above the dimension of the model, where every
+alternating form is zero. -/
+theorem subsingleton_deRhamCohomology_of_finrank_lt [FiniteDimensional ℝ E] {k : ℕ}
+    (hk : Module.finrank ℝ E < k) : Subsingleton (deRhamCohomology I M k) := by
+  refine subsingleton_of_forall_eq 0 fun c ↦ ?_
+  obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective I k c
+  -- Each tangent space `TangentSpace I x` is the model space `E`.
+  have hφ : φ = 0 := Subtype.ext <| Subtype.ext <| funext fun x ↦
+    ContinuousAlternatingMap.eq_zero_of_finrank_lt _ (by rw [Fintype.card_fin]; exact hk)
+  rw [hφ, map_zero]
 
 end TauCeti

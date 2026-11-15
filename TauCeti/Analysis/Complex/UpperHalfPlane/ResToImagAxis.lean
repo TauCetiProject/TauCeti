@@ -357,4 +357,9 @@ theorem pow {F : ℍ → ℂ} (hF : EventuallyPosOnImagAxis F) (n : ℕ) :
 
 end EventuallyPosOnImagAxis
 
+/-- Along the vertical ray from `τ₀ ∈ ℍ`, `z - τ₀ = t i`. -/
+theorem coe_ofComplex_add_mul_I_sub (τ₀ : ℍ) {t : ℝ} (ht : 0 < t) :
+    ((ofComplex ((τ₀ : ℂ) + t * Complex.I) : ℍ) : ℂ) - τ₀ = t * Complex.I := by
+  rw [ofComplex_apply_of_im_pos (by simpa using add_pos τ₀.im_pos ht), coe_mk, add_sub_cancel_left]
+
 end UpperHalfPlane

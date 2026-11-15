@@ -100,7 +100,7 @@ theorem IsJordanCurve.not_isPreconnected_compl {C : Set ℂ} (h : IsJordanCurve 
     ¬ IsPreconnected Cᶜ := by
   obtain ⟨p, hp, q, hq, hpq⟩ := not_subsingleton_iff.mp h.not_subsingleton
   obtain ⟨A, B, hA, hB, hAc, hBc, hAB, hApB⟩ :=
-    h.exists_isCompact_isConnected_union_eq_inter_eq_pair hp hq hpq
+    h.exists_isCompact_isConnected_union_eq_inter_eq_pair hp hq
   rw [← hAB]
   refine not_isPreconnected_compl_union_of_not_isPreconnected_inter hA.isClosed hB.isClosed
     hAc.isPreconnected hBc.isPreconnected (hApB ▸ (toFinite _).isBounded) ?_
@@ -144,7 +144,7 @@ theorem IsJordanCurve.subset_closure_connectedComponentIn {C : Set ℂ} (h : IsJ
   intro r hr
   -- cut out of `C` a closed arc `S` whose complement in the curve lies in `ball q r`
   obtain ⟨S, hSC, hS, hpre, hqS, hCS⟩ :=
-    h.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball hq hr
+    h.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball hr
   have hxS : x ∈ Sᶜ := fun hxS => hx (hSC hxS)
   -- `S` does not separate `x` from `y`
   have hyD : y ∈ connectedComponentIn Sᶜ x :=
@@ -188,16 +188,11 @@ theorem IsJordanCurve.disjoint_of_isOpen_of_subset_filledHull {C U : Set ℂ} (h
     (hU : IsOpen U) (hUC : U ⊆ filledHull C) : Disjoint U C := by
   refine disjoint_left.mpr fun z hzU hzC => ?_
   -- a point outside the bounded filled hull lies in an unbounded component
-  obtain ⟨x, hx⟩ : ∃ x, x ∉ filledHull C := by
-    by_contra! hcon
-    exact NormedSpace.unbounded_univ ℝ ℂ
-      ((isBounded_filledHull.mpr h.isCompact.isBounded).subset fun z _ => hcon z)
+  obtain ⟨x, hx⟩ := nonempty_compl_filledHull h.isCompact.isBounded
   -- `z ∈ C` is adherent to that unbounded component, which `U` therefore meets
   obtain ⟨u, huU, hux⟩ := _root_.mem_closure_iff.mp
     (h.subset_closure_connectedComponentIn (fun hxC => hx (subset_filledHull hxC)) hzC)
     _ hU hzU
-  refine hx ?_
-  rw [mem_filledHull_iff, connectedComponentIn_eq hux]
-  exact mem_filledHull_iff.mp (hUC huU)
+  exact hx ((mem_filledHull_iff_of_mem_connectedComponentIn hux).mp (hUC huU))
 
 end TauCeti

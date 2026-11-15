@@ -67,7 +67,7 @@ variable {R N : Type*} [Semiring R] [AddCommGroup N] [Module R N] {A B : Module.
 private theorem apply_mem_ker_pow_of_commute {C : Module.End R N} (hc : Commute A C) {i : ℕ}
     {v : N} (hv : v ∈ ker (A ^ i)) : C v ∈ ker (A ^ i) := by
   rw [mem_ker] at hv ⊢
-  rw [← Module.End.mul_apply, (hc.pow_left i).eq, Module.End.mul_apply, hv, map_zero]
+  rw [← _root_.mul_apply_eq_comp, (hc.pow_left i).eq, _root_.mul_apply_eq_comp, hv, map_zero]
 
 /-- If `A` commutes with `⁅A, B⁆`, then `B` maps `ker (A ^ i)` into `ker (A ^ (i + 1))`. -/
 private theorem apply_mem_ker_pow_succ_of_commute_lie (hc : Commute A ⁅A, B⁆) {i : ℕ} {v : N}
@@ -76,16 +76,18 @@ private theorem apply_mem_ker_pow_succ_of_commute_lie (hc : Commute A ⁅A, B⁆
   rw [mem_ker] at hv hCv ⊢
   -- Both terms of `A ^ (i + 1) * B = B * A ^ (i + 1) + (i + 1) • (A ^ i * ⁅A, B⁆)` applied to
   -- `v` vanish, since `A ^ i` kills `v` and `⁅A, B⁆ v`.
-  have hv' : (A ^ (i + 1)) v = 0 := by rw [pow_succ', Module.End.mul_apply, hv, map_zero]
-  rw [← Module.End.mul_apply, TauCeti.Associative.pow_mul_eq_mul_pow_add_nsmul_of_commutator_eq
+  have hv' : (A ^ (i + 1)) v = 0 := by rw [pow_succ', _root_.mul_apply_eq_comp, hv, map_zero]
+  rw [← _root_.mul_apply_eq_comp, TauCeti.Associative.pow_mul_eq_mul_pow_add_nsmul_of_commutator_eq
     (sub_eq_iff_eq_add'.1 (Ring.lie_def A B).symm) hc (i + 1), Nat.add_sub_cancel]
-  simp only [add_apply, smul_apply, Module.End.mul_apply, hv', hCv, map_zero, smul_zero, add_zero]
+  simp only [LinearMap.add_apply, LinearMap.smul_apply, _root_.mul_apply_eq_comp, hv', hCv,
+    map_zero,
+    smul_zero, add_zero]
 
 /-- `A` maps `ker (A ^ (i + 1))` into `ker (A ^ i)`. -/
 private theorem apply_mem_ker_pow_of_mem_ker_pow_succ {i : ℕ} {v : N}
     (hv : v ∈ ker (A ^ (i + 1))) : A v ∈ ker (A ^ i) := by
   rw [mem_ker] at hv ⊢
-  rwa [← Module.End.mul_apply, ← pow_succ]
+  rwa [← _root_.mul_apply_eq_comp, ← pow_succ]
 
 /-- If `A` commutes with `⁅A, B⁆`, then `A * B` preserves `ker (A ^ i)`. -/
 private theorem mul_apply_mem_ker_pow_of_commute_lie (hc : Commute A ⁅A, B⁆) {i : ℕ} {v : N}
@@ -209,6 +211,6 @@ theorem trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero (hA : IsNilpotent A)
   obtain ⟨n, hn⟩ := hA
   rw [← hconst n, trace_restrict_eq_of_forall_mem]
   intro v
-  simp only [mem_ker, hn, zero_apply]
+  simp only [mem_ker, hn, LinearMap.zero_apply]
 
 end LinearMap

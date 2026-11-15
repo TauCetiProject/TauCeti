@@ -179,15 +179,6 @@ theorem smul_pow_eq_of_mem_fixingSubgroup (hα : (α : SeparableClosure K) ^ n =
     hα]
   exact (IntermediateField.mem_fixingSubgroup_iff _ _).1 hh _ ⟨b, rfl⟩
 
-/-- The `n`th root `α ∈ Kˢ` of `σ b`, carried to `Lˢ` by the identification of separable closures,
-is an `n`th root of `b`. -/
-private theorem units_map_separableClosureRingEquiv_symm_pow_eq
-    (hα : (α : SeparableClosure K) ^ n = σ b) :
-    Units.map (separableClosureRingEquiv K L σ).symm.toMonoidHom α ^ n =
-      Units.map (algebraMap L (SeparableClosure L)).toMonoidHom b := by
-  ext
-  simp [← map_pow, hα]
-
 /-- The cocycle of the Kummer class of `b ∈ Lˣ`, transported from `G_L` to the subgroup fixing
 `σ(L)`, is `h ↦ h α / α` for the image `α ∈ Kˢ` of the chosen root. -/
 private theorem cocyclesMap1_kummerCocycle (hα : (α : SeparableClosure K) ^ n = σ b) :
@@ -197,7 +188,7 @@ private theorem cocyclesMap1_kummerCocycle (hα : (α : SeparableClosure K) ^ n 
         ↥σ.fieldRange.fixingSubgroup →ₜ* AbsoluteGaloisGroup L)
       (kummerCoeffMapSymm K n L σ) continuous_of_discreteTopology
       (kummerCoeffMapSymm_smul K n L σ)
-      ⟨kummerCocycle (units_map_separableClosureRingEquiv_symm_pow_eq hα),
+      ⟨kummerCocycle (units_map_separableClosureRingEquiv_symm_pow_eq σ hα),
         kummerCocycle_mem_Z1 _⟩ =
       subgroupKummerCocycle (N := σ.fieldRange.fixingSubgroup)
         (smul_pow_eq_of_mem_fixingSubgroup hα) := by
@@ -251,7 +242,7 @@ theorem fixingSubgroupKummerEquiv_ofMul_mk (hn : IsUnit (n : K)) {b : Lˣ}
         (smul_pow_eq_of_mem_fixingSubgroup hα)) := by
   have hnL : IsUnit (n : L) := by simpa using hn.map (algebraMap K L)
   rw [fixingSubgroupKummerEquiv_apply, toMul_ofMul, kummerIso_mk,
-    kummerMap_eq_kummerCocycleClass hnL (units_map_separableClosureRingEquiv_symm_pow_eq hα),
+    kummerMap_eq_kummerCocycleClass hnL (units_map_separableClosureRingEquiv_symm_pow_eq σ hα),
     kummerCocycleClass_def, H1pi, QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply,
     explicitMap1_mk, cocyclesMap1_kummerCocycle hα]
 
@@ -415,12 +406,12 @@ action of `Gal(L/K)`. -/
 def quotSMulTopUnitsPowerClassRepresentationEquiv (n : ℕ) :
     ((Representation.ofDistribMulAction ℤ Gal(L/K) (Additive Lˣ)).quotSMulTop
       (n : ℤ)).Equiv
-        (powerClassRepresentation (K := K) (L := L) n).restrictScalarsInt where
+        ((powerClassRepresentation (K := K) (L := L) n).restrictScalars ℤ) where
   toLinearEquiv := (quotSMulTopPowerClassEquiv n).toIntLinearEquiv
   isIntertwining' tau := by
     refine LinearMap.ext fun x ↦ ?_
     simp only [LinearMap.coe_comp, Function.comp_apply, Representation.quotSMulTop_apply,
-      Representation.restrictScalarsInt_apply, powerClassRepresentation_apply]
+      Representation.restrictScalars_apply, powerClassRepresentation_apply]
     -- On `Additive Lˣ`, the action of `tau` is the map induced by `Units.map tau`.
     exact quotSMulTopPowerClassEquiv_map n (Units.map (tau : L →* L)) x
 
@@ -544,12 +535,12 @@ def torsionByUnitsEquivKummerCoeff
     (hN : ∀ g : AbsoluteGaloisGroup K, g ∈ sigma.fieldRange.fixingSubgroup →
       ∀ xi : KummerCoeff K n, g • xi = xi) :
     ((Representation.ofDistribMulAction ℤ Gal(L/K) (Additive Lˣ)).torsionBy n).Equiv
-      (kummerCoeffFiniteRepresentation sigma n hN).restrictScalarsInt := by
+      ((kummerCoeffFiniteRepresentation sigma n hN).restrictScalars ℤ) := by
   refine .mk (AddEquiv.ofBijective _ (bijective_torsionByUnitsToKummerCoeff sigma n hN)
     ).toIntLinearEquiv fun tau ↦ LinearMap.ext fun x ↦ ?_
   obtain ⟨g, rfl⟩ := sigma.restrictNormalHom_surjective tau
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AddEquiv.coe_toIntLinearEquiv,
-    AddEquiv.ofBijective_apply, Representation.restrictScalarsInt_apply]
+    AddEquiv.ofBijective_apply, Representation.restrictScalars_apply]
   rw [kummerCoeffFiniteRepresentation_restrictNormalHom]
   apply Additive.toMul.injective
   ext

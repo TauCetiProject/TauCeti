@@ -48,6 +48,37 @@ universe v
 
 variable (n : ℕ) (hn : 4 ≤ n)
 
+include hn in
+/-- Two spin weights differ by a positive numbered simple root exactly when their basis
+indices are related by the corresponding raising step. -/
+theorem basisWeight_sub_eq_rootGeneratorWeight_iff (i : Fin n)
+    (a b : Fin (dimension n)) :
+    basisWeight n b - basisWeight n a = TypeDStd.rootGeneratorWeight n (.inl i) ↔
+      basisWeight n a i = -1 ∧ b = basisReflection n i a := by
+  have href : basisWeight n (basisReflection n i a) =
+      basisWeight n a - basisWeight n a i • TypeDStd.rootGeneratorWeight n (.inl i) := by
+    funext j
+    simpa only [basisWeight, signSet_basisReflection, Pi.sub_apply, Pi.smul_apply,
+      smul_eq_mul, TypeDStd.rootGeneratorWeight_inl] using
+      DynkinType.typeDSpinWeight_typeDSpinReflection_apply hn i j (signSet n a)
+  constructor
+  · intro h
+    have hi := congrFun h i
+    rw [Pi.sub_apply, TypeDStd.rootGeneratorWeight_inl, CartanMatrix.D_diag] at hi
+    have ha : basisWeight n a i = -1 ∨ basisWeight n a i = 0 ∨ basisWeight n a i = 1 :=
+      DynkinType.typeDSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (signSet n a) i
+    have hb : basisWeight n b i = -1 ∨ basisWeight n b i = 0 ∨ basisWeight n b i = 1 :=
+      DynkinType.typeDSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (signSet n b) i
+    have hneg : basisWeight n a i = -1 := by omega
+    refine ⟨hneg, ?_⟩
+    have hw : basisWeight n b = basisWeight n (basisReflection n i a) := by
+      rw [href, hneg]
+      simpa only [neg_one_smul, sub_neg_eq_add, add_comm] using (sub_eq_iff_eq_add.mp h)
+    exact (Fintype.equivFin (Finset (Fin n))).symm.injective
+      (DynkinType.typeDSpinWeight_injective hw)
+  · rintro ⟨ha, rfl⟩
+    simp only [href, ha, neg_one_smul, sub_neg_eq_add, add_sub_cancel_left]
+
 /-- A signed root-generator column gives the root subgroup's displacement of the corresponding
 coordinate vector, at every parameter over every commutative ring. -/
 theorem rootSubgroupPoints_mulVec_single_sub_of_eq (j : Fin n ⊕ Fin n)

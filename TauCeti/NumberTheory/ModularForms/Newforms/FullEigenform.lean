@@ -106,10 +106,10 @@ theorem heckeUCuspNat_eq_qExpansion_coeff_smul (f : Newform N k) {p : ℕ} (hp :
     have hq' := f.isEigen ⟨q, hq.pos⟩ hqN
     simp only [PNat.mk_coe] at hq'
     -- the `Γ₀(N)` Hecke ring is commutative, so `T_q` commutes with `U_p = T_p`
-    rw [hG, ← Module.End.mul_apply, ← map_mul,
+    rw [hG, ← mul_apply_eq_comp, ← map_mul,
       HeckeCosetModule.mul_comm_of_antiInvolution ℤ (atkinLehnerAntiInvolution N)
         (atkinLehnerAntiInvolution_onHeckeCoset_eq_self N),
-      map_mul, Module.End.mul_apply, hq', map_smul]
+      map_mul, mul_apply_eq_comp, hq', map_smul]
   have hc := f.eq_qExpansion_coeff_one_smul_of_forall_prime_heckeTCuspNat_eq_smul G.2 hGeig
   rw [hGcoe] at hc
   -- the scalar is `a_p(f)`: the first coefficient of `U_p f`

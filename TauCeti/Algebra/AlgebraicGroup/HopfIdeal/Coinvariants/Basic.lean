@@ -413,7 +413,8 @@ noncomputable def IsNormal.coinvariantsSubcoalgebra [Module.Flat R H]
     [Module.Flat R (H ⧸ Subalgebra.toSubmodule I.coinvariants)] (hI : I.IsNormal) :
     Subcoalgebra R H :=
   Subcoalgebra.ofSubmodule (Subalgebra.toSubmodule I.coinvariants) fun _ hc ↦ by
-    rw [Submodule.range_map_subtype_subtype]
+    rw [Submodule.range_map_subtype_subtype _ _
+      (Module.Flat.lTensor_preserves_injective_linearMap _ (Submodule.injective_subtype _))]
     exact ⟨comul_mem_range_lTensor_of_mem_coinvariants hc,
       hI.comul_mem_range_rTensor_of_mem_coinvariants hc⟩
 

@@ -121,7 +121,7 @@ private theorem setLIntegral_ofReal_le_volume_smul_add_smul (hK : Convex ℝ K)
         (hKb.volume_hyperplaneSection_lt_top e _).ne, ofReal_measureReal
         (hLb.volume_hyperplaneSection_lt_top e _).ne]
     exact mul_le_mul_right
-      (volume_hyperplaneSection_rpow_mul_volume_hyperplaneSection_rpow_le e hKm hLm hθ₀ hθ₁ _ _) _
+      (volume_hyperplaneSection_rpow_mul_volume_hyperplaneSection_rpow_le e hLm hθ₀ hθ₁ _ _) _
   -- Change variables along `z`, then apply Cavalieri's formula to the convex set `M`.
   refine (setLIntegral_mono' measurableSet_Ioo hpt).trans ?_
   rw [← lintegral_image_eq_lintegral_abs_deriv_mul measurableSet_Ioo

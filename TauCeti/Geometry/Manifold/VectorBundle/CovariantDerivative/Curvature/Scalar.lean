@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # Scalar curvature of a smooth connection
@@ -31,7 +32,11 @@ boundary are not required.
 
 For the convention
 `R(w,u)v = κ (⟨u,v⟩ w - ⟨w,v⟩ u)`, the scalar curvature is `n (n - 1) κ` in
-real dimension `n`.
+real dimension `n`. Consequently, in dimension at least two, a function `κ` for which the curvature
+has this form near a point is differentiable there
+(`CovariantDerivative.mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub`).
+Likewise, a function `a` with `Ric = a g` near a point is smooth there, in every dimension
+(`CovariantDerivative.contMDiffAt_of_eventually_ricciTensor_eq_smul_inner`).
 
 The definition and convention follow J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
 Springer GTM 176 (2018), Chapter 7.
@@ -40,7 +45,7 @@ Springer GTM 176 (2018), Chapter 7.
 public section
 
 open Bundle
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 noncomputable section
 
@@ -81,18 +86,8 @@ of the chart source; the frame need not be orthonormal. -/
 theorem scalarCurvature_eq_sum_chartInvGramMatrix (a : M) {x : M}
     (hx : x ∈ (chartAt H a).source) :
     cov.scalarCurvature x = ∑ i, ∑ j, chartInvGramMatrix (I := I) a x i j *
-      cov.ricciTensor x (chartLocalFrame (I := I) a i x) (chartLocalFrame (I := I) a j x) := by
-  have hx' : x ∈ (trivializationAt E (TangentSpace I) a).baseSet := by
-    simpa only [TangentBundle.trivializationAt_baseSet] using hx
-  let b := (trivializationAt E (TangentSpace I) a).basisAt (Module.finBasis ℝ E) hx'
-  have hb : ⇑b = fun i ↦ chartLocalFrame (I := I) a i x :=
-    funext fun i ↦ (chartLocalFrame_apply_of_mem_chart_source (I := I) a hx i).symm
-  have hgram : Matrix.gram ℝ b = chartGramMatrix (I := I) a x := by
-    ext i j
-    rw [Matrix.gram_apply, chartGramMatrix_apply, hb]
-  have hinv : (Matrix.gram ℝ b)⁻¹ = chartInvGramMatrix (I := I) a x :=
-    Matrix.inv_eq_left_inv (hgram ▸ chartInvGramMatrix_mul_chartGramMatrix (I := I) a hx)
-  rw [scalarCurvature_apply, TauCeti.bilinFormTrace_eq_sum_inv_gram _ b, hinv, hb]
+      cov.ricciTensor x (chartLocalFrame (I := I) a i x) (chartLocalFrame (I := I) a j x) :=
+  bilinFormTrace_eq_sum_chartInvGramMatrix a hx _
 
 open Riemannian.Tensor in
 /-- The scalar curvature of a smooth connection on the tangent bundle is smooth when the metric is
@@ -155,6 +150,25 @@ theorem scalarCurvature_eq_of_ricciTensor_eq_smul_inner (x : M) (c : ℝ)
   simp only [smul_eq_mul]
   ring
 
+/-- **`Ric = a g` forces `a` to be smooth.** If the Ricci tensor is `a g` near `x`, then `a` is
+smooth at `x`, in every dimension: it is the scalar curvature divided by the dimension `n` when
+`n ≠ 0`, and any function on a zero-dimensional, hence discrete, manifold is smooth. -/
+theorem contMDiffAt_of_eventually_ricciTensor_eq_smul_inner
+    [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)] {a : M → ℝ} {x : M}
+    (ha : ∀ᶠ y in 𝓝 x, cov.ricciTensor y = a y • innerₗ (TangentSpace I y)) :
+    ContMDiffAt I 𝓘(ℝ) ∞ a x := by
+  by_cases hpos : Module.finrank ℝ E = 0
+  · have : Subsingleton E := Module.finrank_zero_iff.mp hpos
+    have : Subsingleton H := I.injective.subsingleton
+    have : DiscreteTopology M := ChartedSpace.discreteTopology H M
+    exact contMDiff_of_discreteTopology.contMDiffAt
+  have hn : (Module.finrank ℝ E : ℝ) ≠ 0 := by exact_mod_cast hpos
+  refine (cov.contMDiff_scalarCurvature.div_const
+    (Module.finrank ℝ E : ℝ)).contMDiffAt.congr_of_eventuallyEq ?_
+  filter_upwards [ha] with y hy
+  rw [cov.scalarCurvature_eq_of_ricciTensor_eq_smul_inner y (a y) hy,
+    TauCeti.finrank_tangentSpace, mul_div_cancel_left₀ _ hn]
+
 /-- Contracting curvature of the form `R(w,u)v = B(u,v)w - B(w,v)u` gives scalar curvature
 `(dim - 1) trace(B)`. -/
 theorem scalarCurvature_eq_of_curvatureTensor_eq_smul_sub (x : M)
@@ -177,6 +191,24 @@ theorem scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ
     map_smul, TauCeti.bilinFormTrace_inner]
   simp only [smul_eq_mul]
   ring
+
+/-- In dimension at least two, a function `κ` for which the curvature tensor has the pointwise
+constant-curvature form `R(w, u)v = κ(y) (⟨u, v⟩ w - ⟨w, v⟩ u)` at every point `y` near `x` is
+differentiable at `x`: near `x` it is the smooth scalar curvature divided by `n (n - 1)`. -/
+theorem mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub
+    [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)]
+    (hdim : 2 ≤ Module.finrank ℝ E) {κ : M → ℝ} {x : M}
+    (hκ : ∀ᶠ y in 𝓝 x, ∀ (w u v : TangentSpace I y),
+      curvature y w u v = κ y • (inner ℝ u v • w - inner ℝ w v • u)) :
+    MDifferentiableAt I 𝓘(ℝ) κ x := by
+  have hn : ((Module.finrank ℝ E : ℝ) * (Module.finrank ℝ E - 1)) ≠ 0 := by
+    have : (2 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hdim
+    nlinarith
+  refine (((cov.contMDiff_scalarCurvature.div_const ((Module.finrank ℝ E : ℝ) *
+    (Module.finrank ℝ E - 1))).mdifferentiable (by simp)) x).congr_of_eventuallyEq ?_
+  filter_upwards [hκ] with y hy
+  rw [cov.scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub y (κ y) hy, eq_div_iff hn]
+  exact mul_comm _ _
 
 end CovariantDerivative
 
@@ -224,36 +256,15 @@ theorem scalarCurvature_rescale_eq_sum {f : M → ℝ} (hf : ContMDiff I 𝓘(�
       (f x)⁻¹ * ∑ j, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
         ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
         (CovariantDerivative.leviCivitaConnection I M).ricciTensor x) (b j) (b j) := by
-  classical
-  -- `b` as a basis, with its orthonormality recorded through the inner products of `g` itself.
-  obtain ⟨b₀, hb₀, hb⟩ : ∃ b₀ : Module.Basis ι ℝ (TangentSpace I x), ⇑b₀ = ⇑b ∧
-      ∀ i j, g.inner x (b₀ i) (b₀ j) = if i = j then 1 else 0 := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    refine ⟨b.toBasis, b.coe_toBasis, fun i j ↦ ?_⟩
-    rw [b.coe_toBasis, ← inner_riemannianBundle]
-    exact orthonormal_iff_ite.1 b.orthonormal i j
-  rw [← hb₀]
-  set s := Real.sqrt (f x)
-  have hs0 : 0 < s := Real.sqrt_pos.2 (hf_pos x)
-  have hss : s⁻¹ * s⁻¹ = (f x)⁻¹ := by rw [← mul_inv, Real.mul_self_sqrt (hf_pos x).le]
+  obtain ⟨b', hb'⟩ := g.exists_orthonormalBasis_rescale hf hf_pos b
+  have hss : (Real.sqrt (f x))⁻¹ * (Real.sqrt (f x))⁻¹ = (f x)⁻¹ := by
+    rw [← mul_inv, Real.mul_self_sqrt (hf_pos x).le]
   rw [scalarCurvature_def]
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
     ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
-  -- Dividing `b` by `√(f x)` gives a basis orthonormal for the rescaled metric at `x`.
-  have hon : Orthonormal ℝ (b₀.unitsSMul fun _ ↦ Units.mk0 s⁻¹ (inv_ne_zero hs0.ne')) := by
-    rw [orthonormal_iff_ite]
-    intro i j
-    simp only [Module.Basis.unitsSMul_apply, Units.smul_def, Units.val_mk0,
-      inner_riemannianBundle, rescale_inner, map_smul, smul_apply, smul_eq_mul, hb]
-    split_ifs
-    · field_simp
-      exact (Real.sq_sqrt (hf_pos x).le).symm
-    · simp
-  rw [CovariantDerivative.scalarCurvature_eq_sum _ x ((b₀.unitsSMul _).toOrthonormalBasis hon),
-    Finset.mul_sum]
+  rw [CovariantDerivative.scalarCurvature_eq_sum _ x b', Finset.mul_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  simp only [Module.Basis.coe_toOrthonormalBasis, Module.Basis.unitsSMul_apply, Units.smul_def,
-    Units.val_mk0, map_smul, LinearMap.smul_apply, smul_eq_mul, ← mul_assoc, hss]
+  simp only [hb', map_smul, LinearMap.smul_apply, smul_eq_mul, ← mul_assoc, hss]
 
 /-- The scalar curvature of a smooth Riemannian metric is a smooth function. -/
 theorem contMDiff_scalarCurvature : ContMDiff I 𝓘(ℝ) ∞ g.scalarCurvature := by

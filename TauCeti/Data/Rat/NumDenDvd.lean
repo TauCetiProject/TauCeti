@@ -25,6 +25,7 @@ the scaling `(A, B) ↦ (r⁴A, r⁶B)` between two integral short Weierstrass e
 * `Rat.num_dvd_of_intCast_eq_mul_intCast`: `a' = r * a` implies `r.num ∣ a'`.
 * `Rat.den_dvd_iff_exists_eq_intCast_div`: for `n ≠ 0`, `r.den ∣ n` exactly when `r = k / n` for
   an integer `k`.
+* `Rat.den_dvd_iff_exists_mul_intCast_eq`: `r.den ∣ a` exactly when `r * a` is an integer.
 -/
 
 public section
@@ -69,6 +70,13 @@ theorem den_dvd_iff_exists_eq_intCast_div {r : ℚ} {n : ℕ} (hn : n ≠ 0) :
   · have h : ((k : ℤ) : ℚ) = r * (n : ℤ) := by
       rw [hk, Int.cast_natCast, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hn)]
     exact Int.natCast_dvd_natCast.mp (den_dvd_of_intCast_eq_mul_intCast r h)
+
+/-- **A rational multiple of an integer is an integer exactly when the denominator divides it**:
+`r.den ∣ a` if and only if `r * a` is an integer. -/
+theorem den_dvd_iff_exists_mul_intCast_eq (r : ℚ) (a : ℤ) :
+    (r.den : ℤ) ∣ a ↔ ∃ z : ℤ, r * a = z := by
+  refine ⟨fun ⟨c, hc⟩ ↦ ⟨r.num * c, ?_⟩, fun ⟨z, hz⟩ ↦ den_dvd_of_intCast_eq_mul_intCast r hz.symm⟩
+  rw [hc, Int.cast_mul, Int.cast_natCast, ← mul_assoc, mul_den_eq_num, Int.cast_mul]
 
 end Rat
 

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 
 /-!
@@ -13,36 +12,38 @@ public import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 
 `ℤ` is integrally closed in `ℚ`, so an algebraic integer that happens to be rational is an
 integer. This file records the numerical reading of that fact: an identity `n · z = m` between an
-algebraic integer `z` and two natural numbers is a divisibility `n ∣ m`. It holds over an
-arbitrary field of characteristic zero, `z = m / n` being the image of a rational number there and
-integrality descending along `algebraMap ℚ k`.
+algebraic integer `z` and two natural numbers is a divisibility `n ∣ m`. It holds in an arbitrary
+ring of characteristic zero, which need not contain `m / n`: scaling the roots of a monic integer
+polynomial `p` killing `z` by `n` gives one with the integer root `m`, so `p (m / n) = 0` in `ℚ`.
 
 ## Main results
 
-* `TauCeti.dvd_of_isIntegral_of_natCast_mul_eq`: if `(n : k) * z = m` with `z` integral over `ℤ`
-  in a field of characteristic zero and `n ≠ 0`, then `n ∣ m`.
+* `IsIntegral.dvd_of_natCast_mul_eq`: if `(n : k) * z = m` with `z` integral over `ℤ` in a ring of
+  characteristic zero, then `n ∣ m`.
 -/
 
 public section
 
-namespace TauCeti
+open Polynomial
 
 /-- **A rational algebraic integer is an integer**, read as a divisibility: if `n · z = m` for
-natural numbers `m` and `n` with `n ≠ 0`, and `z` is integral over `ℤ` in a field of characteristic
-zero, then `n` divides `m`. -/
-theorem dvd_of_isIntegral_of_natCast_mul_eq {k : Type*} [Field k] [CharZero k] {m n : ℕ}
-    {z : k} (hz : IsIntegral ℤ z) (h : (n : k) * z = m) (hn : n ≠ 0) : n ∣ m := by
-  have hnk : (n : k) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have hz' : algebraMap ℚ k ((m : ℚ) / (n : ℚ)) = z := by
-    rw [map_div₀, map_natCast, map_natCast, eq_comm, eq_div_iff hnk, mul_comm]
-    exact h
-  have hq : IsIntegral ℤ ((m : ℚ) / (n : ℚ)) :=
-    isIntegral_algebraMap_iff.mp (hz' ▸ hz)
+natural numbers `m` and `n`, and `z` is integral over `ℤ` in a ring of characteristic zero, then
+`n` divides `m`. -/
+theorem IsIntegral.dvd_of_natCast_mul_eq {k : Type*} [Ring k] [CharZero k] {m n : ℕ} {z : k}
+    (hz : IsIntegral ℤ z) (h : (n : k) * z = m) : n ∣ m := by
+  obtain rfl | hn := eq_or_ne n 0
+  · simp_all [eq_comm]
+  obtain ⟨p, hp, hpz⟩ := hz
+  -- scaling the roots of `p` by `n` moves the root `z` to the integer `n * z = m`
+  have hm : (p.scaleRoots n).eval (m : ℤ) = 0 := by
+    have := scaleRoots_aeval_eq_zero (r := (n : ℤ)) hpz
+    rw [map_natCast, h, ← map_natCast (algebraMap ℤ k), aeval_algebraMap_apply] at this
+    simpa using this
+  -- so `m / n` is a rational root of the monic `p`, hence an integer
+  have hq : IsIntegral ℤ ((m : ℚ) / n) := by
+    refine ⟨p, hp, ?_⟩
+    have := scaleRoots_eval₂_mul (p := p) (algebraMap ℤ ℚ) ((m : ℚ) / n) n
+    simpa [mul_div_cancel₀, aeval_def, hn, hm] using this.symm
   obtain ⟨y, hy⟩ := IsIntegrallyClosed.algebraMap_eq_of_integral hq
-  have hyq : (y : ℚ) * (n : ℚ) = (m : ℚ) := by
-    rw [← eq_intCast (algebraMap ℤ ℚ) y, hy, div_mul_cancel₀]
-    exact Nat.cast_ne_zero.mpr hn
-  refine Int.natCast_dvd_natCast.mp ⟨y, ?_⟩
-  exact_mod_cast (by linarith : (m : ℚ) = (n : ℚ) * (y : ℚ))
-
-end TauCeti
+  rw [eq_intCast] at hy
+  exact (Rat.den_div_natCast_eq_one_iff m n hn).mp (hy ▸ Rat.den_intCast y)

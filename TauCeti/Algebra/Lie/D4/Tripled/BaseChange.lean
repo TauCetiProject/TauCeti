@@ -110,19 +110,19 @@ noncomputable abbrev generatorCoordinateAlgebra :
 noncomputable def generatorCoordinateMap (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
     GeneralLinear.coordinateHopfAlgebra A 24 ⟶ generatorCoordinateAlgebra A j :=
   match j with
-  | .inl i => kostantRootSubgroupBaseChangePresentationCoordinateMap
+  | .inl i => kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
       (TauCeti.serreRootGenerator weightTable.cartanMatrix)
       (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
-      rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A i
+      rep_kostantForm_mem_lattice i (isNilpotent_rep_serreRootGenerator i) latticeBasis A
   | .inr _ => GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A d4TripledWeight
 
 /-- The numbered branches of the generator family are the transported root maps. -/
 @[simp] theorem generatorCoordinateMap_inl (i : Fin 4 ⊕ Fin 4) :
     generatorCoordinateMap A (.inl i) =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (TauCeti.serreRootGenerator weightTable.cartanMatrix)
         (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
-        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A i := (rfl)
+        rep_kostantForm_mem_lattice i (isNilpotent_rep_serreRootGenerator i) latticeBasis A := (rfl)
 
 /-- The final branch of the generator family is the transported weight torus. -/
 @[simp] theorem generatorCoordinateMap_inr :
@@ -272,7 +272,7 @@ noncomputable def baseChangePointsMulEquiv (B : CommAlgCat.{w} A) :
           (baseChangeDefiningIdeal A)) B ≃*
       points B :=
   (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (baseChangeCoordinateIso A) B).trans
-    (pointsPresentation (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
+    (pointsPresentation (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
 
 /-- The base-change points equivalence preserves the ambient invertible matrix. -/
 @[simp]
@@ -317,14 +317,14 @@ theorem baseChangePointsMulEquiv_mapPoints {B C : CommAlgCat.{w} A} (f : B ⟶ C
   simp only [baseChangePointsMulEquiv, MulEquiv.trans_apply]
   rw [CommHopfAlgCat.baseChangeIsoPointsMulEquiv_mapPoints,
     (pointsPresentation
-      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv_mapPoints
+      (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv_mapPoints
       (pointsPresentation
-        (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) C))
-      ((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map f)]
+        (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) C))
+      ((CommAlgCat.restrictScalars (algebraMap ℤ A)).map f)]
   have hring :
-      ((((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map f).hom : ↑B →+* ↑C)) =
+      ((((CommAlgCat.restrictScalars (algebraMap ℤ A)).map f).hom : ↑B →+* ↑C)) =
         (f.hom : ↑B →+* ↑C) := by
-    rw [TauCeti.CommAlgCat.restrictScalars_map, TauCeti.CommAlgCat.restrictScalarsMap_hom]
+    rw [CommAlgCat.restrictScalars_map, CommAlgCat.restrictScalarsMap_hom]
     exact RingHom.ext fun x ↦ AlgHom.restrictScalars_apply ℤ f.hom x
   rw [hring]
 
@@ -410,10 +410,10 @@ theorem mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap (k : Fin 4 ⊕ Fin
     CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 24)
           (baseChangeDefiningIdeal A) ≫
         rootSubgroupToBaseChangeCoordinateMap A k =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (TauCeti.serreRootGenerator weightTable.cartanMatrix)
         (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
-        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A k := by
+        rep_kostantForm_mem_lattice k (isNilpotent_rep_serreRootGenerator k) latticeBasis A := by
   unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
@@ -426,10 +426,10 @@ ambient transported coordinate map. -/
 @[reassoc (attr := simp)]
 theorem coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap (k : Fin 4 ⊕ Fin 4) :
     coordinateMap A ≫ rootSubgroupToBaseChangeCoordinateMap A k =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (TauCeti.serreRootGenerator weightTable.cartanMatrix)
         (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
-        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A k := by
+        rep_kostantForm_mem_lattice k (isNilpotent_rep_serreRootGenerator k) latticeBasis A := by
   rw [coordinateMap]
   exact mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap A k
 
@@ -474,7 +474,7 @@ theorem baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordi
     (TauCeti.serreRootGenerator weightTable.cartanMatrix)
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
-    d4TripledWeight A definingIdeal_def k B q
+    d4TripledWeight A k B q
   rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact h
@@ -505,6 +505,16 @@ theorem mkQuotient_comp_weightTorusIntegralCoordinateMap :
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     d4TripledWeight definingIdeal_def
+
+/-- Composing the integral weight-torus bialgebra map with the quotient map recovers the
+represented weight-torus bialgebra map inside `GL₂₄`. -/
+theorem weightTorusIntegralCoordinateMap_comp_quotient :
+    weightTorusIntegralCoordinateMap.hom.comp
+        (Bialgebra.Quotient.mkBialgHom definingIdeal.toIdeal) =
+      GeneralLinear.weightTorusCoordinateBialgHom (S := ℤ) d4TripledWeight := by
+  rw [← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
+    mkQuotient_comp_weightTorusIntegralCoordinateMap,
+    GeneralLinear.hom_weightTorusCoordinateMap]
 
 /-- On points, the integral factored coordinate map is the named weight torus. -/
 @[simp]
@@ -584,7 +594,7 @@ theorem baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap :
           CommHopfAlgCat.baseChangeMap weightTorusIntegralCoordinateMap ≫
         (_root_.CommHopfAlgCat.ofHom
           (BialgHomClass.toBialgHom
-            (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+            (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
               (G := SplitTorus.characterGroup (Fin 4))))) =
       weightTorusToBaseChangeCoordinateMap A := by
   rw [baseChangeCoordinateIso, weightTorusIntegralCoordinateMap,

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.NumberTheory.NumberField.Basic
+import TauCeti.RingTheory.IntegralClosure.MvPolynomial
 import TauCeti.RingTheory.Japanese
 
 /-!
@@ -15,7 +16,8 @@ Fields are Japanese, with no separability hypothesis on the extension. `ℤ`, th
 `ℚ[X]` and the ring of integers of a number field are Noetherian integrally closed domains of
 characteristic zero, hence Japanese and N-1. For `ℤ` the defining property applies to the fraction
 field `ℚ` rather than `FractionRing ℤ`: the integral closure of `ℤ` in any number field, in any
-universe, is a finite `ℤ`-module.
+universe, is a finite `ℤ`-module. Polynomial rings in finitely many variables over a Noetherian
+Japanese domain are Japanese again, in every characteristic.
 -/
 
 open TauCeti.Ring NumberField
@@ -28,6 +30,12 @@ example (k : Type*) [Field k] : IsN1 k := inferInstance
 example : IsJapanese ℤ := inferInstance
 example : IsJapanese (Polynomial ℚ) := inferInstance
 example (K : Type*) [Field K] [NumberField K] : IsJapanese (𝓞 K) := inferInstance
+
+-- Polynomial rings over Noetherian Japanese domains are Japanese, including over imperfect fields
+-- of characteristic `p`, where inseparable extensions occur.
+example (k : Type*) [Field k] : IsJapanese (Polynomial (Polynomial k)) := inferInstance
+example : IsJapanese (MvPolynomial (Fin 3) ℤ) := inferInstance
+example (K : Type*) [Field K] [NumberField K] : IsJapanese (Polynomial (𝓞 K)) := inferInstance
 
 -- The integral closure of `ℤ` in a number field is finite over `ℤ`, read off from the fraction
 -- field `ℚ` of `ℤ`.

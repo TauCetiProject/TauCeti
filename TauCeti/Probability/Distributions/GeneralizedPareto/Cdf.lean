@@ -42,9 +42,8 @@ theorem cdf_generalizedParetoMeasure_generalizedParetoMap (hs : 0 < s) (ξ e : �
       cdf (expMeasure 1) e := by
   let _ := isProbabilityMeasure_expMeasure one_pos
   let _ := isProbabilityMeasure_generalizedParetoMeasure hs ξ
-  rw [cdf_eq_real, generalizedParetoMeasure_of_pos hs,
-    map_measureReal_apply (measurable_generalizedParetoMap_right s ξ) measurableSet_Iic,
-    cdf_eq_real]
+  rw [generalizedParetoMeasure_of_pos hs,
+    Measure.cdf_map _ _ (measurable_generalizedParetoMap_right s ξ).aemeasurable, cdf_eq_real]
   congr 1
   ext y
   exact (strictMono_generalizedParetoMap hs ξ).le_iff_le
@@ -81,9 +80,8 @@ theorem cdf_generalizedParetoMeasure_eq_one_of_neg_div_le (hs : 0 < s) (hξ : ξ
     apply le_trans _ hx
     rw [generalizedParetoMap_of_shape_ne_zero hξ.ne, div_le_div_right_of_neg hξ]
     nlinarith [mul_pos hs (Real.exp_pos (ξ * e))]
-  rw [cdf_eq_real, generalizedParetoMeasure_of_pos hs,
-    map_measureReal_apply (measurable_generalizedParetoMap_right s ξ) measurableSet_Iic,
-    hpre]
+  rw [generalizedParetoMeasure_of_pos hs,
+    Measure.cdf_map _ _ (measurable_generalizedParetoMap_right s ξ).aemeasurable, hpre]
   simp
 
 /-- The full generalized Pareto cdf, with its lower, zero-shape, and finite-upper-endpoint
@@ -94,7 +92,7 @@ theorem cdf_generalizedParetoMeasure_eq (hs : 0 < s) (ξ x : ℝ) :
       else if 0 < 1 + ξ * x / s then 1 - (1 + ξ * x / s) ^ (-1 / ξ) else 1 := by
   split_ifs with hx hξ hw
   · exact cdf_generalizedParetoMeasure_of_nonpos hs ξ hx
-  · rw [hξ, generalizedParetoMeasure_zero hs, cdf_expMeasure_eq (inv_pos.mpr hs),
+  · rw [hξ, generalizedParetoMeasure_zero, cdf_expMeasure_eq (inv_pos.mpr hs),
       ite_eq_left (le_of_not_ge hx)]
     congr 2
     ring
@@ -121,7 +119,7 @@ theorem cdf_generalizedParetoMeasure_lt_one_iff (hs : 0 < s) (hx : 0 ≤ x) :
   · simp [cdf_generalizedParetoMeasure_of_nonpos hs ξ le_rfl, hs]
   by_cases hξ : ξ = 0
   · subst ξ
-    simp [generalizedParetoMeasure_zero hs, cdf_expMeasure_eq (inv_pos.mpr hs),
+    simp [generalizedParetoMeasure_zero, cdf_expMeasure_eq (inv_pos.mpr hs),
       hx.le, Real.exp_pos, hs]
   rw [cdf_generalizedParetoMeasure_eq hs]
   simp only [hx.not_ge, hξ, ↓reduceIte]
@@ -134,7 +132,6 @@ endpoints. -/
 theorem continuous_cdf_generalizedParetoMeasure (hs : 0 < s) (ξ : ℝ) :
     Continuous (cdf (generalizedParetoMeasure s ξ)) := by
   let _ := isProbabilityMeasure_generalizedParetoMeasure hs ξ
-  let _ := nullSingletonClass_generalizedParetoMeasure hs ξ
   exact Measure.continuous_cdf_of_noAtoms _
 
 end TauCeti.Probability

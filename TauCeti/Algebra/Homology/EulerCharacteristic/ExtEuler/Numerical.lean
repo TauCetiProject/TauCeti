@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Descent
-public import TauCeti.LinearAlgebra.SesquilinearForm.NumericalQuotient.Basic
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Map
+public import TauCeti.LinearAlgebra.BilinearMap.IntLinear
+public import TauCeti.LinearAlgebra.SesquilinearForm.NumericalQuotient.Functoriality
 
 /-!
 # Numerical quotients of the Ext-Euler pairing
@@ -18,7 +19,10 @@ applies the separate left and right numerical-quotient construction to it.
 The two subcategories are deliberately kept independent: the Ext-Euler pairing is generally
 nonsymmetric, so its left and right radicals can differ. The generic numerical-quotient API supplies
 the quotient maps, one-sided pairings, functoriality, and the nondegenerate pairing; this file adds
-the Ext-Euler names and the computation rules needed by its users.
+the Ext-Euler names and the computation rules needed by its users. It also shows that the
+numerical Grothendieck groups are invariant under exact functors which are bijective on `Ext` and
+essentially surjective onto the target subcategories, even when the induced maps of exact
+Grothendieck groups are not injective.
 
 ## Main definitions
 
@@ -27,6 +31,9 @@ the Ext-Euler names and the computation rules needed by its users.
 * `TauCeti.ExtEulerLeftNumericalQuotient` and
   `TauCeti.ExtEulerRightNumericalQuotient`: the two numerical Grothendieck groups.
 * `TauCeti.extEulerNumericalPairing`: the induced pairing between those two quotients.
+* `TauCeti.extEulerLeftNumericalEquiv` and `TauCeti.extEulerRightNumericalEquiv`: the
+  identifications of numerical Grothendieck groups induced by an exact functor which is bijective
+  on `Ext` and whose images exhaust the target subcategories up to isomorphism.
 
 ## Main results
 
@@ -37,10 +44,11 @@ the Ext-Euler names and the computation rules needed by its users.
 * `TauCeti.extEulerNumericalPairing_unique` gives its universal characterization, and
   `TauCeti.extEulerNumericalPairing_nondegenerate` records the resulting two-sided
   nondegeneracy.
+* `TauCeti.extEulerNumericalPairing_equiv_equiv`: those identifications preserve the numerical
+  pairing.
 
-This is the ordinary Ext-Euler specialization in Layer 7 of the Grothendieck-groups,
-Cartan-maps, and Euler-forms roadmap. The Laurent/sesquilinear specialization belongs after the
-graded Ext-Euler pairing has descended to graded `K₀`.
+The q-Euler counterpart is in
+`TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Numerical`.
 
 ## References
 
@@ -56,7 +64,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Abelian CategoryTheory.Limits
 
-universe w v u t
+universe w w' v v' u u' t
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {k : Type t} [Field k] [Linear k C]
   [HasExt.{w} C] [LocallySmall.{w} C]
@@ -78,14 +86,14 @@ variable (hP : (ExactStructure.abelian C).IsExtensionClosed P)
 noncomputable def extEulerBilinear :
     ExactK0 ((ExactStructure.abelian C).fullSubcategory P hP) →ₗ[ℤ]
       ExactK0 ((ExactStructure.abelian C).fullSubcategory Q hQ) →ₗ[ℤ] ℤ :=
-  biadditiveToIntBilinear (extEulerPairing hP hQ h)
+  (extEulerPairing hP hQ h).toIntLinearMap₂
 
 @[simp]
 theorem extEulerBilinear_apply
     (x : ExactK0 ((ExactStructure.abelian C).fullSubcategory P hP))
     (y : ExactK0 ((ExactStructure.abelian C).fullSubcategory Q hQ)) :
     extEulerBilinear hP hQ h x y = extEulerPairing hP hQ h x y :=
-  biadditiveToIntBilinear_apply (extEulerPairing hP hQ h) x y
+  (extEulerPairing hP hQ h).toIntLinearMap₂_apply x y
 
 /-- The left numerical quotient of the first exact Grothendieck group for the Ext-Euler pairing. -/
 abbrev ExtEulerLeftNumericalQuotient :=
@@ -229,5 +237,140 @@ theorem extEulerNumericalPairing_unique
     extEulerBilinear_apply] using hc x y
 
 end Pairing
+
+section Functoriality
+
+/-! ### Invariance under exact functors
+
+An exact functor `F : C ⥤ D` which carries `P` and `Q` into `P'` and `Q'` and is bijective on the
+`Ext` groups of every pair in `P × Q` intertwines the two Ext-Euler pairings
+(`TauCeti.extEulerPairing_map_map`). If moreover every object of `P'` and of `Q'` is isomorphic to
+the image of an object of `P`, respectively `Q`, then the induced maps of exact `K₀` are
+surjective, and the numerical Grothendieck groups on both sides are identified. The maps of exact
+`K₀` themselves need not be injective: bijectivity on `Ext` is only required between `P` and `Q`,
+so the restriction of `F` to `P` need not be fully faithful. -/
+
+variable {D : Type u'} [Category.{v'} D] [Abelian D] [Linear k D] [HasExt.{w'} D]
+  [LocallySmall.{w'} D]
+  (F : C ⥤ D) [F.Additive] [F.Linear k] [PreservesFiniteLimits F] [PreservesFiniteColimits F]
+  [P.EssentiallySmall.{w}] [Q.EssentiallySmall.{w}]
+  [P.ContainsZero] [P.IsClosedUnderBinaryProducts]
+  [Q.ContainsZero] [Q.IsClosedUnderBinaryProducts]
+  {P' Q' : ObjectProperty D} [P'.EssentiallySmall.{w'}] [Q'.EssentiallySmall.{w'}]
+  [P'.ContainsZero] [P'.IsClosedUnderBinaryProducts]
+  [Q'.ContainsZero] [Q'.IsClosedUnderBinaryProducts]
+  (hP : (ExactStructure.abelian C).IsExtensionClosed P)
+  (hQ : (ExactStructure.abelian C).IsExtensionClosed Q)
+  (hP' : (ExactStructure.abelian D).IsExtensionClosed P')
+  (hQ' : (ExactStructure.abelian D).IsExtensionClosed Q')
+  (h : IsEulerAdmissibleOn.{w} k P Q) (h' : IsEulerAdmissibleOn.{w'} k P' Q')
+  (hFP : ∀ ⦃X⦄, P X → P' (F.obj X)) (hFQ : ∀ ⦃Y⦄, Q Y → Q' (F.obj Y))
+  (hF : ∀ ⦃X Y⦄, P X → Q Y → ∀ n, Function.Bijective (F.mapExtAddHom.{w, w'} X Y n))
+  (hP'F : P' ≤ P.map F) (hQ'F : Q' ≤ Q.map F)
+
+/-- The `ℤ`-linear map of exact `K₀` induced by `F` on the left subcategories. -/
+private noncomputable abbrev extEulerLeftK0Map :
+    ExactK0 ((ExactStructure.abelian C).fullSubcategory P hP) →ₗ[ℤ]
+      ExactK0 ((ExactStructure.abelian D).fullSubcategory P' hP') :=
+  (ExactK0.map (P'.lift (P.ι ⋙ F) fun X ↦ hFP X.property)
+    ((ExactStructure.abelian C).isConflationExact_lift hP hP' F
+      (ExactStructure.isConflationExact_abelian F) fun X ↦ hFP X.property)).toIntLinearMap
+
+/-- The `ℤ`-linear map of exact `K₀` induced by `F` on the right subcategories. -/
+private noncomputable abbrev extEulerRightK0Map :
+    ExactK0 ((ExactStructure.abelian C).fullSubcategory Q hQ) →ₗ[ℤ]
+      ExactK0 ((ExactStructure.abelian D).fullSubcategory Q' hQ') :=
+  (ExactK0.map (Q'.lift (Q.ι ⋙ F) fun Y ↦ hFQ Y.property)
+    ((ExactStructure.abelian C).isConflationExact_lift hQ hQ' F
+      (ExactStructure.isConflationExact_abelian F) fun Y ↦ hFQ Y.property)).toIntLinearMap
+
+omit [HasExt C] [HasExt D] in
+include hP'F in
+private theorem extEulerLeftK0Map_surjective :
+    Function.Surjective (extEulerLeftK0Map F hP hP' hFP) := by
+  rw [AddMonoidHom.coe_toIntLinearMap]
+  exact ExactK0.map_lift_surjective F hP hP' (ExactStructure.isConflationExact_abelian F)
+    (fun X ↦ hFP X.property) hP'F
+
+omit [HasExt C] [HasExt D] in
+include hQ'F in
+private theorem extEulerRightK0Map_surjective :
+    Function.Surjective (extEulerRightK0Map F hQ hQ' hFQ) := by
+  rw [AddMonoidHom.coe_toIntLinearMap]
+  exact ExactK0.map_lift_surjective F hQ hQ' (ExactStructure.isConflationExact_abelian F)
+    (fun Y ↦ hFQ Y.property) hQ'F
+
+include hF in
+/-- The maps of exact `K₀` induced by `F` preserve the integer-bilinear Ext-Euler forms. -/
+private theorem extEulerBilinear_map_map
+    (x : ExactK0 ((ExactStructure.abelian C).fullSubcategory P hP))
+    (y : ExactK0 ((ExactStructure.abelian C).fullSubcategory Q hQ)) :
+    extEulerBilinear hP' hQ' h' (extEulerLeftK0Map F hP hP' hFP x)
+        (extEulerRightK0Map F hQ hQ' hFQ y) =
+      extEulerBilinear hP hQ h x y := by
+  simp only [AddMonoidHom.coe_toIntLinearMap, extEulerBilinear_apply]
+  exact extEulerPairing_map_map F hP hQ hP' hQ' h' hFP hFQ hF x y
+
+/-- **Invariance of the left numerical Grothendieck group.** An exact functor which is bijective
+on `Ext` between `P` and `Q`, and whose images of `P` and `Q` exhaust `P'` and `Q'` up to
+isomorphism, identifies the left Ext-Euler numerical quotients. -/
+noncomputable def extEulerLeftNumericalEquiv :
+    ExtEulerLeftNumericalQuotient hP hQ h ≃ₗ[ℤ] ExtEulerLeftNumericalQuotient hP' hQ' h' :=
+  leftNumericalEquiv (extEulerBilinear hP hQ h) (extEulerBilinear hP' hQ' h')
+    (extEulerLeftK0Map F hP hP' hFP) (extEulerRightK0Map F hQ hQ' hFQ)
+    (extEulerLeftK0Map_surjective F hP hP' hFP hP'F)
+    (extEulerRightK0Map_surjective F hQ hQ' hFQ hQ'F)
+    (extEulerBilinear_map_map F hP hQ hP' hQ' h h' hFP hFQ hF)
+
+/-- **Invariance of the right numerical Grothendieck group.** An exact functor which is bijective
+on `Ext` between `P` and `Q`, and whose images of `P` and `Q` exhaust `P'` and `Q'` up to
+isomorphism, identifies the right Ext-Euler numerical quotients. -/
+noncomputable def extEulerRightNumericalEquiv :
+    ExtEulerRightNumericalQuotient hP hQ h ≃ₗ[ℤ] ExtEulerRightNumericalQuotient hP' hQ' h' :=
+  rightNumericalEquiv (extEulerBilinear hP hQ h) (extEulerBilinear hP' hQ' h')
+    (extEulerLeftK0Map F hP hP' hFP) (extEulerRightK0Map F hQ hQ' hFQ)
+    (extEulerLeftK0Map_surjective F hP hP' hFP hP'F)
+    (extEulerRightK0Map_surjective F hQ hQ' hFQ hQ'F)
+    (extEulerBilinear_map_map F hP hQ hP' hQ' h h' hFP hFQ hF)
+
+/-- The left numerical equivalence sends the class of `x` to the class of its image under the map
+of exact `K₀` induced by `F`. -/
+@[simp]
+theorem extEulerLeftNumericalEquiv_mk
+    (x : ExactK0 ((ExactStructure.abelian C).fullSubcategory P hP)) :
+    extEulerLeftNumericalEquiv F hP hQ hP' hQ' h h' hFP hFQ hF hP'F hQ'F
+        (extEulerLeftNumericalQuotientMk hP hQ h x) =
+      extEulerLeftNumericalQuotientMk hP' hQ' h'
+        (ExactK0.map (P'.lift (P.ι ⋙ F) fun X ↦ hFP X.property)
+          ((ExactStructure.abelian C).isConflationExact_lift hP hP' F
+            (ExactStructure.isConflationExact_abelian F) fun X ↦ hFP X.property) x) := by
+  rw [extEulerLeftNumericalEquiv, extEulerLeftNumericalQuotientMk,
+    extEulerLeftNumericalQuotientMk, leftNumericalEquiv_mk, AddMonoidHom.coe_toIntLinearMap]
+
+/-- The right numerical equivalence sends the class of `y` to the class of its image under the map
+of exact `K₀` induced by `F`. -/
+@[simp]
+theorem extEulerRightNumericalEquiv_mk
+    (y : ExactK0 ((ExactStructure.abelian C).fullSubcategory Q hQ)) :
+    extEulerRightNumericalEquiv F hP hQ hP' hQ' h h' hFP hFQ hF hP'F hQ'F
+        (extEulerRightNumericalQuotientMk hP hQ h y) =
+      extEulerRightNumericalQuotientMk hP' hQ' h'
+        (ExactK0.map (Q'.lift (Q.ι ⋙ F) fun Y ↦ hFQ Y.property)
+          ((ExactStructure.abelian C).isConflationExact_lift hQ hQ' F
+            (ExactStructure.isConflationExact_abelian F) fun Y ↦ hFQ Y.property) y) := by
+  rw [extEulerRightNumericalEquiv, extEulerRightNumericalQuotientMk,
+    extEulerRightNumericalQuotientMk, rightNumericalEquiv_mk, AddMonoidHom.coe_toIntLinearMap]
+
+/-- The two numerical equivalences induced by `F` preserve the Ext-Euler numerical pairing. -/
+theorem extEulerNumericalPairing_equiv_equiv
+    (x : ExtEulerLeftNumericalQuotient hP hQ h) (y : ExtEulerRightNumericalQuotient hP hQ h) :
+    extEulerNumericalPairing hP' hQ' h'
+        (extEulerLeftNumericalEquiv F hP hQ hP' hQ' h h' hFP hFQ hF hP'F hQ'F x)
+        (extEulerRightNumericalEquiv F hP hQ hP' hQ' h h' hFP hFQ hF hP'F hQ'F y) =
+      extEulerNumericalPairing hP hQ h x y := by
+  rw [extEulerNumericalPairing, extEulerNumericalPairing, extEulerLeftNumericalEquiv,
+    extEulerRightNumericalEquiv, numericalPairing_equiv_equiv]
+
+end Functoriality
 
 end TauCeti

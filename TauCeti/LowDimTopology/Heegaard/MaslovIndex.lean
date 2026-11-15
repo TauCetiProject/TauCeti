@@ -65,6 +65,8 @@ number of `∂D ∩ α` with `∂E ∩ β`, computed once along the `α`-curves 
 * `TauCeti.HeegaardRegionSystem.maslovIndex_one`: the Maslov index of the whole surface is
   `∑ χ(R) - #(α ∩ β) + 2n`, so it is two for a closed surface of genus `n`
   (`TauCeti.HeegaardRegionSystem.maslovIndex_one_eq_two`).
+* `TauCeti.HeegaardRegionSystem.maslovIndex_mem_zmultiples_inv_four`: every Maslov index is an
+  integer multiple of `1 / 4`, since every corner contributes a quarter.
 * `TauCeti.HeegaardRegionSystem.IsDomainBetween.eulerMeasure_add_half_hammingDist_le_maslovIndex`:
   a nonnegative domain from `x` to `y` has a corner at the points of `x` and of `y` on every
   `α`-curve where they differ, so its Maslov index is at least its Euler measure plus half the
@@ -136,6 +138,12 @@ theorem pointMeasure_apply_beta (D : Region → ℤ) (p : Point) :
   rcases H.crossingCompatible p with ⟨h₁, h₂, h₃, h₄⟩ | ⟨h₁, h₂, h₃, h₄⟩ <;>
     · rw [h₁, h₂, h₃, h₄]
       ring
+
+/-- Every point measure is an integer multiple of `1 / 4`. -/
+theorem pointMeasure_apply_mem_zmultiples_inv_four (D : Region → ℤ) (p : Point) :
+    H.pointMeasure D p ∈ AddSubgroup.zmultiples (4⁻¹ : ℚ) :=
+  AddSubgroup.mem_zmultiples_iff.mpr ⟨∑ i, D (H.cornerRegion p i), by
+    rw [pointMeasure_apply_eq_sum, zsmul_eq_mul, div_eq_mul_inv, Int.cast_sum]⟩
 
 /-- The point measure `n_x(D) = ∑ᵢ n_{xᵢ}(D)` of a domain `D` at a generator `x`. -/
 def generatorPointMeasure (x : H.Generator) : (Region → ℤ) →+ ℚ where
@@ -372,6 +380,25 @@ theorem maslovIndex_one_eq_two {χ : Region → ℤ}
   have hχ' : ∑ r, (χ r : ℚ) - Fintype.card Point = 2 - 2 * n := by exact_mod_cast hχ
   rw [maslovIndex_one]
   linarith
+
+variable (H) in
+/-- Every Euler measure is an integer multiple of `1 / 4`. -/
+theorem eulerMeasure_mem_zmultiples_inv_four (χ : Region → ℤ) (D : Region → ℤ) :
+    H.eulerMeasure χ D ∈ AddSubgroup.zmultiples (4⁻¹ : ℚ) :=
+  AddSubgroup.mem_zmultiples_iff.mpr ⟨∑ r, D r * (4 * χ r - H.cornerCount r), by
+    rw [eulerMeasure_apply, zsmul_eq_mul]
+    push_cast
+    rw [sum_mul]
+    exact sum_congr rfl fun r _ => by ring⟩
+
+variable (H) in
+/-- Every combinatorial Maslov index is an integer multiple of `1 / 4`. -/
+theorem maslovIndex_mem_zmultiples_inv_four (χ : Region → ℤ) (x y : H.Generator)
+    (D : Region → ℤ) : H.maslovIndex χ x y D ∈ AddSubgroup.zmultiples (4⁻¹ : ℚ) := by
+  rw [maslovIndex_apply, generatorPointMeasure_apply, generatorPointMeasure_apply]
+  exact add_mem (add_mem (H.eulerMeasure_mem_zmultiples_inv_four χ D)
+    (sum_mem fun i _ => H.pointMeasure_apply_mem_zmultiples_inv_four D _))
+    (sum_mem fun i _ => H.pointMeasure_apply_mem_zmultiples_inv_four D _)
 
 end EulerMeasure
 

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.EpiMono
-public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.HasPullback
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Section
 
 /-!
 # Pullbacks of split epimorphisms
@@ -20,7 +20,8 @@ canonical morphism
 T ⟶ X ×[S] T
 ```
 
-whose projections are `g ≫ s` and `𝟙 T`. The construction is packaged as
+whose projections are `g ≫ s` and `𝟙 T`, that is, the section `pullbackSection` induced by the
+lift `g ≫ s` of `g` through `f`. The construction is packaged as
 `CategoryTheory.SplitEpi.pullback`; its projection formulas characterize it uniquely, and
 together with the original section it forms a pullback square
 (`CategoryTheory.SplitEpi.isPullback_pullback_section`). The file also records naturality in
@@ -28,10 +29,7 @@ both the split epimorphism and the base-change morphism, and supplies the corres
 low-priority `IsSplitEpi` instance.
 
 For a scheme over a field, a rational point is precisely such a chosen section of the
-structure morphism. Thus this construction supplies base change of rational points, as
-required by the displayed `x₀.baseChange K` and base-change compatibility target in
-`TauCetiRoadmap/JacobianChallenge/README.md`. No formalization is vendored; the
-construction is the universal property of Mathlib's `pullback`.
+structure morphism, so this construction is base change of rational points.
 -/
 
 public section
@@ -54,13 +52,13 @@ The resulting section of `pullback.snd f g` has first projection `g ≫ h.sectio
 and second projection the identity of `T`. -/
 noncomputable def pullback (h : SplitEpi f) {T : C} (g : T ⟶ S) [HasPullback f g] :
     SplitEpi (Limits.pullback.snd f g) where
-  section_ := Limits.pullback.lift (g ≫ h.section_) (𝟙 T) (by simp)
-  id := Limits.pullback.lift_snd _ _ _
+  section_ := pullbackSection f g (g ≫ h.section_) (by simp)
+  id := pullbackSection_snd _ _ _ _
 
-/-- The section underlying `SplitEpi.pullback` is the canonical pullback lift. -/
+/-- The section underlying `SplitEpi.pullback` is the section of `pullback.snd f g` induced by
+the lift `g ≫ h.section_` of `g` through `f`. -/
 lemma pullback_section_def (h : SplitEpi f) {T : C} (g : T ⟶ S) [HasPullback f g] :
-    (h.pullback g).section_ =
-      Limits.pullback.lift (g ≫ h.section_) (𝟙 T) (by simp) :=
+    (h.pullback g).section_ = pullbackSection f g (g ≫ h.section_) (by simp) :=
   (rfl)
 
 /-- The first projection of a pulled-back section is the original section after
@@ -68,7 +66,7 @@ the base-change morphism. -/
 @[reassoc (attr := simp)]
 lemma pullback_section_fst (h : SplitEpi f) {T : C} (g : T ⟶ S) [HasPullback f g] :
     (h.pullback g).section_ ≫ Limits.pullback.fst f g = g ≫ h.section_ := by
-  simp only [pullback_section_def, Limits.pullback.lift_fst]
+  rw [pullback_section_def, pullbackSection_fst]
 
 /-- A pulled-back section is the base change of the original section: the square formed by
 `(h.pullback g).section_`, `g`, the first projection and `h.section_` is a pullback square. -/
@@ -83,47 +81,34 @@ lemma eq_pullback_section (h : SplitEpi f) {T : C} (g : T ⟶ S) [HasPullback f 
     (t : T ⟶ Limits.pullback f g) (hfst : t ≫ Limits.pullback.fst f g = g ≫ h.section_)
     (hsnd : t ≫ Limits.pullback.snd f g = 𝟙 T) :
     t = (h.pullback g).section_ := by
-  apply Limits.pullback.hom_ext
-  · rw [hfst, pullback_section_fst]
-  · rw [hsnd, (h.pullback g).id]
+  ext <;> simp [hfst, hsnd]
 
 /-- Pullback of chosen sections is natural in morphisms of split epimorphisms.
 
 Here `i : X ⟶ Y` lies over `S`, and `h.section_ ≫ i = h'.section_` says that it
 preserves the chosen sections. The induced map of pullbacks then preserves their
 pulled-back sections. -/
+@[reassoc]
 lemma pullback_section_naturality {Y : C} {f' : Y ⟶ S} (h : SplitEpi f)
     (h' : SplitEpi f') (i : X ⟶ Y) (hi : f = i ≫ f')
     (hsection : h.section_ ≫ i = h'.section_) {T : C} (g : T ⟶ S)
     [HasPullback f g] [HasPullback f' g] : (h.pullback g).section_ ≫
         Limits.pullback.map f g f' g i (𝟙 T) (𝟙 S) (by simp [hi]) (by simp) =
       (h'.pullback g).section_ := by
-  apply Limits.pullback.hom_ext
-  · simp [Limits.pullback.map, Category.assoc, hsection]
-  · simp [Limits.pullback.map, Category.assoc]
+  ext <;> simp [hsection]
 
 /-- Pullback of a chosen section is natural in the base-change morphism.
 
-For `k : T' ⟶ T`, the canonical map from the pullback along `k ≫ g` to the
-pullback along `g` carries the section over `T'` to the section over `T`
-precomposed with `k`. -/
-lemma pullback_section_map (h : SplitEpi f) {T T' : C} (g : T ⟶ S) (k : T' ⟶ T)
-    [HasPullback f g] [HasPullback f (k ≫ g)] : (h.pullback (k ≫ g)).section_ ≫
-        Limits.pullback.map f (k ≫ g) f g (𝟙 X) k (𝟙 S) (by simp) (by simp) =
+For `k : T' ⟶ T` over `S`, base change of the second factor along `k` carries the section over
+`T'` to the section over `T` precomposed with `k`. -/
+@[reassoc]
+lemma pullback_section_comp_mapSnd (h : SplitEpi f) {T T' : C} (g : T ⟶ S) (g' : T' ⟶ S)
+    (k : T' ⟶ T) (hk : k ≫ g = g') [HasPullback f g] [HasPullback f g'] :
+    (h.pullback g').section_ ≫ Limits.pullback.mapSnd f g g' k hk =
       k ≫ (h.pullback g).section_ := by
-  apply Limits.pullback.hom_ext
-  · simp [Limits.pullback.map, Category.assoc]
-  · simp [Limits.pullback.map, Category.assoc]
-
-/-- Naturality of a pulled-back section when the base-change composite is given by an equal
-morphism. This form is convenient for morphisms in an over category. -/
-lemma pullback_section_map_of_eq (h : SplitEpi f) {T T' : C} (g : T ⟶ S)
-    (g' : T' ⟶ S) (k : T' ⟶ T) (w : k ≫ g = g') [HasPullback f g] [HasPullback f g'] :
-    (h.pullback g').section_ ≫
-        Limits.pullback.map f g' f g (𝟙 X) k (𝟙 S) (by simp) (by simp [← w]) =
-      k ≫ (h.pullback g).section_ := by
-  subst g'
-  exact h.pullback_section_map g k
+  subst hk
+  simpa only [pullback_section_def, Category.assoc] using
+    pullbackSection_comp_mapSnd f g _ k rfl (g ≫ h.section_) (by simp)
 
 end SplitEpi
 

@@ -116,6 +116,32 @@ end HomotopyCategory
 
 variable {S w}
 
+/-- In the homotopy category, shifting the rank-one factorization
+`S --a--> S --b--> S` by one exchanges `a` and `b`. -/
+noncomputable def shiftRankOneIso (a b : S) (h : a * b = w) :
+    ((nullHomotopic (S := S) (w := w)).quotientFunctor.obj (rankOne a b h))⟦(1 : ℤ)⟧ ≅
+      (nullHomotopic (S := S) (w := w)).quotientFunctor.obj
+        (rankOne b a (by rw [mul_comm, h])) :=
+  ((HomotopyCategory.parityShiftCompQuotientFunctorIso S w).app (rankOne a b h)).symm ≪≫
+    (nullHomotopic (S := S) (w := w)).quotientFunctor.mapIso (parityShiftRankOneIso a b h)
+
+/-- The forward rank-one shift comparison is induced by the parity-shift comparison. -/
+@[simp]
+theorem shiftRankOneIso_hom (a b : S) (h : a * b = w) :
+    (shiftRankOneIso a b h).hom =
+      (HomotopyCategory.parityShiftCompQuotientFunctorIso S w).inv.app (rankOne a b h) ≫
+        (nullHomotopic (S := S) (w := w)).quotientFunctor.map
+          (parityShiftRankOneIso a b h).hom := (rfl)
+
+/-- The inverse rank-one shift comparison is induced by the inverse parity-shift comparison. -/
+@[simp]
+theorem shiftRankOneIso_inv (a b : S) (h : a * b = w) :
+    (shiftRankOneIso a b h).inv =
+      (nullHomotopic (S := S) (w := w)).quotientFunctor.map
+          (parityShiftRankOneIso a b h).inv ≫
+        (HomotopyCategory.parityShiftCompQuotientFunctorIso S w).hom.app (rankOne a b h) :=
+  (rfl)
+
 /-- The componentwise split injective presentation `X ⟶ diskSum X ⟶ X[1]` of a matrix
 factorization: its middle term is the contractible disk sum on the components of `X`, and its
 cokernel term is the parity shift of `X`. -/

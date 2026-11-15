@@ -82,4 +82,43 @@ theorem IsExhaustiveGradedSimpleFamily.exists_iso_of_concentrated
 
 end Exhaustive
 
+section Pairs
+
+variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
+  {𝒜 : ℤ → Submodule k A} {I : Type uI} [Module.Finite k A]
+
+/-- A property of pairs which is invariant under isomorphisms and internal shifts and can be
+tested on finite-dimensional simples in either variable is detected on an exhaustive family
+of simples up to shift. -/
+theorem IsExhaustiveGradedSimpleFamily.prop_on_pairs
+    {S : I → (gradedFiniteModules 𝒜).FullSubcategory} (hS : IsExhaustiveGradedSimpleFamily S)
+    (P : GradedModuleCat.{uA} 𝒜 → GradedModuleCat.{uA} 𝒜 → Prop)
+    (hiso : ∀ {X X' Y Y'}, P X Y → (X ≅ X') → (Y ≅ Y') → P X' Y')
+    (hshift : ∀ {X Y}, P X Y → ∀ d, P (X.shiftObj d) Y)
+    (hshiftRight : ∀ {X Y}, P X Y → ∀ d, P X (Y.shiftObj d))
+    (hleft : ∀ Y, (∀ T : GradedModuleCat.{uA} 𝒜, Module.Finite k T → Simple T → P T Y) →
+      ∀ X : GradedModuleCat.{uA} 𝒜, Module.Finite k X → P X Y)
+    (hright : ∀ X, (∀ T : GradedModuleCat.{uA} 𝒜, Module.Finite k T → Simple T → P X T) →
+      ∀ Y : GradedModuleCat.{uA} 𝒜, Module.Finite k Y → P X Y)
+    (h : ∀ i j, P (S i).obj (S j).obj)
+    {X Y : GradedModuleCat.{uA} 𝒜} (hX : gradedFiniteModules 𝒜 X)
+    (hY : gradedFiniteModules 𝒜 Y) : P X Y := by
+  have hshiftSimple (T : GradedModuleCat.{uA} 𝒜) (hTfin : Module.Finite k T)
+      (hT : Simple T) : ∃ i d, Nonempty (T ≅ (S i).obj.shiftObj d) := by
+    have := hTfin
+    exact (isExhaustiveGradedSimpleFamily_iff S).1 hS
+      ⟨T, gradedFiniteModules_iff.2 (Module.Finite.of_restrictScalars_finite k A T)⟩ hT
+  have : Module.Finite A X := gradedFiniteModules_iff.1 hX
+  have : Module.Finite A Y := gradedFiniteModules_iff.1 hY
+  have : Module.Finite k X := Module.Finite.trans A X
+  have : Module.Finite k Y := Module.Finite.trans A Y
+  refine hleft Y (fun T hTfin hT ↦ ?_) X inferInstance
+  obtain ⟨i, d, ⟨φ⟩⟩ := hshiftSimple T hTfin hT
+  refine hiso (hshift ?_ d) φ.symm (Iso.refl Y)
+  refine hright (S i).obj (fun T' hT'fin hT' ↦ ?_) Y inferInstance
+  obtain ⟨j, d', ⟨φ'⟩⟩ := hshiftSimple T' hT'fin hT'
+  exact hiso (hshiftRight (h i j) d') (Iso.refl _) φ'.symm
+
+end Pairs
+
 end TauCeti

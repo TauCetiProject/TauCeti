@@ -7,9 +7,9 @@ module
 
 public import Mathlib.RingTheory.LaurentSeries
 public import Mathlib.Algebra.Lie.Subalgebra
-public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.RingTheory.Derivation.Localization
 public import TauCeti.RingTheory.LaurentSeries.Derivative
+public import TauCeti.RingTheory.PowerSeries.Coordinate.Infinitesimal
 
 /-!
 # Continuous derivations of formal Laurent series
@@ -19,11 +19,12 @@ derivative `TauCeti.laurentSeriesDerivation K`. This file shows that the continu
 `K`-derivations `F → F` are exactly the multiples `a • D` with `a : F`, and that `a = δ X` is
 the value of such a derivation `δ` at the parameter `X = single 1 1`.
 
-The algebraic part of the argument holds for every derivation: `δ` agrees with `δ X • D` on the
-rational functions `K(X)`, since both are derivations of the fraction field of `K[X]` with the
-same value at `X`. Continuity then extends the agreement from `K(X)` to `F`, because `K(X)` is
-dense in `F` (`LaurentSeries.coe_range_dense`) and two continuous maps to the Hausdorff space `F`
-that agree on a dense subset are equal.
+The algebraic part holds for every derivation `δ : F → M` into an `F`-module: on the rational
+functions `K(X)`, it agrees with `f ↦ D f • δ X`, since both are derivations of the fraction field
+of `K[X]` with the same value at `X`. When `M` is Hausdorff with continuous scalar multiplication,
+continuity extends this agreement to `F`, since `K(X)` is dense in `F`
+(`LaurentSeries.coe_range_dense`) and continuous maps to a Hausdorff space that agree on a dense
+subset are equal.
 
 The continuous derivations form an `F`-submodule `TauCeti.continuousDerivations K` of
 `Derivation K F F`, which `TauCeti.continuousDerivationsEquiv K` identifies with `F` itself.
@@ -32,11 +33,18 @@ and coefficient formula are defined in `LaurentSeries.Derivative`. The subalgebr
 embedded power-series ring and its maximal ideal are respectively `K⟦X⟧ D` and `X K⟦X⟧ D`. These
 classifications hold in every characteristic.
 
+The vector fields `X K⟦X⟧ D` are the infinitesimal coordinate changes. The infinitesimal
+substitutions `1 + ε a D` of `K[ε]⟦X⟧`, for `a ∈ X K⟦X⟧`
+(`TauCeti.infinitesimalSubstitutions`), correspond to the vector fields `a D`, and the
+`ε`-coefficient of such a substitution on a power series `f` is the value of its vector field at
+`f`. Composition of substitutions corresponds to addition of vector fields.
+
 ## Main results
 
 * `Polynomial.aeval_single_one_eq_algebraMap`: a polynomial evaluated at `X = single 1 1` is its
   image as a Laurent series.
-* `Derivation.apply_coe_ratFunc`: on rational functions every `K`-derivation `δ` is `δ X • D`.
+* `Derivation.apply_coe_ratFunc`: on rational functions every module-valued `K`-derivation
+  satisfies `δ r = D r • δ X`.
 * `Derivation.eq_smul_laurentSeriesDerivation`: a continuous derivation `δ` equals `δ X • D`.
 * `TauCeti.continuous_smul_laurentSeriesDerivation`: conversely every `a • D` is continuous.
 * `Derivation.continuous_iff_exists_eq_smul_laurentSeriesDerivation`: a derivation is continuous
@@ -44,12 +52,21 @@ classifications hold in every characteristic.
   multiple is unique.
 * `Derivation.apply_eq_laurentSeriesDerivation_smul` and
   `Derivation.continuous_iff_exists_apply_eq_laurentSeriesDerivation_smul`: the same
-  classification for derivations into any `F`-module with its module topology, `δ f = D f • δ X`.
+  classification for derivations into any Hausdorff `F`-module with continuous scalar
+  multiplication, `δ f = D f • δ X`.
 * `TauCeti.continuousDerivations`: the `F`-submodule of continuous derivations, and
   `TauCeti.continuousDerivationsEquiv`: its identification with `F` sending `a` to `a • D`.
 * `TauCeti.continuousDerivationsLieSubalgebra`: continuous derivations as a Lie subalgebra.
 * `TauCeti.mem_powerSeriesPreservingDerivations_iff` and
-  `TauCeti.mem_maximalIdealPreservingDerivations_iff`: the two coefficient classifications.
+  `TauCeti.mem_maximalIdealPreservingDerivations_iff`: the two coefficient classifications, and
+  `TauCeti.powerSeriesPreservingDerivationsEquiv` and
+  `TauCeti.maximalIdealPreservingDerivationsEquiv`: the `K`-linear parametrizations `a ↦ a D` by
+  `K⟦X⟧` and by its ideal `(X)`.
+* `TauCeti.infinitesimalSubstitutionsEquivDerivations`: the isomorphism from the group of
+  infinitesimal substitutions of `K[ε]⟦X⟧` to the additive group `X K⟦X⟧ D`, sending `1 + ε a D`
+  to `a D`.
+* `TauCeti.infinitesimalSubstitutions_apply_map_eq_iff`: `σ f = f + ε g` exactly when `g` is the
+  value at `f` of the vector field of `σ`.
 -/
 
 public section
@@ -92,58 +109,47 @@ variable {K : Type*} [Field K]
 
 namespace Derivation
 
-/-- On rational functions, every `K`-derivation `δ` of `K⸨X⸩` agrees with `δ X • D`, where `D` is
-the formal derivative: both are derivations of `K(X)` with the same value at `X`. -/
-theorem apply_coe_ratFunc (δ : Derivation K K⸨X⸩ K⸨X⸩) (r : RatFunc K) :
-    δ r = δ (single 1 1) * TauCeti.laurentSeriesDerivation K r := by
-  set δ' := δ (single 1 1) • TauCeti.laurentSeriesDerivation K
+/-- On rational functions, every `K`-derivation `δ : K⸨X⸩ → M` into a `K⸨X⸩`-module agrees
+with `f ↦ D f • δ X`, where `D` is the formal derivative. -/
+theorem apply_coe_ratFunc {M : Type*} [AddCommGroup M] [Module K⸨X⸩ M] [Module K M]
+    [IsScalarTower K K⸨X⸩ M] (δ : Derivation K K⸨X⸩ M) (r : RatFunc K) :
+    δ r = TauCeti.laurentSeriesDerivation K r • δ (single 1 1) := by
+  -- Restrict scalars along the rational-function embedding for localization uniqueness.
+  let : Module (RatFunc K) M := Module.compHom M (algebraMap (RatFunc K) K⸨X⸩)
+  set δ' := (LinearMap.toSpanSingleton K⸨X⸩ M (δ (single 1 1))).compDer
+    (TauCeti.laurentSeriesDerivation K)
   have hX : δ (single 1 1) = δ' (single 1 1) := by simp [δ']
   have h := IsLocalization.eq_of_leibniz (nonZeroDivisors K[X])
     (δ₁ := fun r : RatFunc K ↦ δ r) (δ₂ := fun r : RatFunc K ↦ δ' r)
-    (fun x y ↦ by simp only [map_mul, leibniz, Algebra.smul_def, Algebra.algebraMap_self,
-      RingHom.id_apply])
-    (fun x y ↦ by simp only [map_mul, leibniz, Algebra.smul_def, Algebra.algebraMap_self,
-      RingHom.id_apply])
+    (fun x y ↦ by simp [leibniz, MulAction.compHom_smul_def])
+    (fun x y ↦ by simp [leibniz, MulAction.compHom_smul_def])
     fun p ↦ by
       simp only [← IsScalarTower.algebraMap_apply, ← aeval_single_one_eq_algebraMap, map_aeval,
         hX]
   simpa [δ'] using congrFun h r
 
-/-- **Continuous derivations of Laurent series.** A `K`-derivation `δ` of `K⸨X⸩` that is continuous
-for the valuation topology is the multiple `δ X • D` of the formal derivative `D`. -/
-theorem eq_smul_laurentSeriesDerivation (δ : Derivation K K⸨X⸩ K⸨X⸩) (hδ : Continuous δ) :
-    δ = δ (single 1 1) • TauCeti.laurentSeriesDerivation K := by
-  refine DFunLike.coe_injective <|
-    LaurentSeries.coe_range_dense.equalizer hδ
-      (TauCeti.continuous_smul_laurentSeriesDerivation _) ?_
-  funext r
-  rw [Function.comp_apply, Function.comp_apply, apply_coe_ratFunc, smul_apply, smul_eq_mul]
-
-/-- A `K`-derivation of `K⸨X⸩` is continuous for the valuation topology if and only if it is a
-multiple of the formal derivative. -/
-theorem continuous_iff_exists_eq_smul_laurentSeriesDerivation {δ : Derivation K K⸨X⸩ K⸨X⸩} :
-    Continuous δ ↔ ∃ a : K⸨X⸩, δ = a • TauCeti.laurentSeriesDerivation K := by
-  refine ⟨fun hδ ↦ ⟨_, δ.eq_smul_laurentSeriesDerivation hδ⟩, ?_⟩
-  rintro ⟨a, rfl⟩
-  exact TauCeti.continuous_smul_laurentSeriesDerivation a
+section Module
 
 variable {M : Type*} [AddCommGroup M] [Module K⸨X⸩ M] [Module K M]
-  [IsScalarTower K K⸨X⸩ M] [TopologicalSpace M] [IsModuleTopology K⸨X⸩ M]
+  [IsScalarTower K K⸨X⸩ M] [TopologicalSpace M] [T2Space M] [ContinuousSMul K⸨X⸩ M]
 
 /-- **Continuous derivations of Laurent series into a topological module.** A `K`-derivation
-`δ : K⸨X⸩ → M` into a `K⸨X⸩`-module with its module topology that is continuous for the valuation
-topology satisfies `δ f = D f • δ X`, where `D` is the formal derivative. -/
+`δ : K⸨X⸩ → M` into a Hausdorff `K⸨X⸩`-module with continuous scalar multiplication that is
+continuous for the valuation topology satisfies `δ f = D f • δ X`, where `D` is the formal
+derivative. -/
 theorem apply_eq_laurentSeriesDerivation_smul (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ)
     (f : K⸨X⸩) : δ f = TauCeti.laurentSeriesDerivation K f • δ (single 1 1) := by
-  let b := Module.Free.chooseBasis K⸨X⸩ M
-  refine b.ext_elem fun i ↦ ?_
-  -- Each coordinate of `δ` is a continuous derivation of `K⸨X⸩` into itself.
-  have hc : Continuous ((b.coord i).compDer δ) :=
-    (IsModuleTopology.continuous_of_linearMap (b.coord i)).comp hδ
-  simpa [mul_comm] using congr($(((b.coord i).compDer δ).eq_smul_laurentSeriesDerivation hc) f)
+  have h : (δ : K⸨X⸩ → M) = fun g ↦ LaurentSeries.derivative K g • δ (single 1 1) :=
+    LaurentSeries.coe_range_dense.equalizer hδ
+      (LaurentSeries.continuous_derivative.smul continuous_const) <| by
+      funext r
+      simpa only [Function.comp_apply, TauCeti.laurentSeriesDerivation_apply]
+        using δ.apply_coe_ratFunc r
+  simpa only [TauCeti.laurentSeriesDerivation_apply] using congrFun h f
 
-/-- A `K`-derivation of `K⸨X⸩` into a `K⸨X⸩`-module with its module topology is continuous if and
-only if it is `f ↦ D f • m` for some `m`, where `D` is the formal derivative. -/
+/-- A `K`-derivation of `K⸨X⸩` into a Hausdorff `K⸨X⸩`-module with continuous scalar
+multiplication is continuous if and only if it is `f ↦ D f • m` for some `m`, where `D` is the
+formal derivative. -/
 theorem continuous_iff_exists_apply_eq_laurentSeriesDerivation_smul {δ : Derivation K K⸨X⸩ M} :
     Continuous δ ↔ ∃ m : M, ∀ f, δ f = TauCeti.laurentSeriesDerivation K f • m := by
   refine ⟨fun hδ ↦ ⟨_, δ.apply_eq_laurentSeriesDerivation_smul hδ⟩, ?_⟩
@@ -152,6 +158,24 @@ theorem continuous_iff_exists_apply_eq_laurentSeriesDerivation_smul {δ : Deriva
     funext fun f ↦ by simp [hm]
   rw [h]
   exact LaurentSeries.continuous_derivative.smul continuous_const
+
+end Module
+
+/-- **Continuous derivations of Laurent series.** A `K`-derivation `δ` of `K⸨X⸩` that is continuous
+for the valuation topology is the multiple `δ X • D` of the formal derivative `D`. -/
+theorem eq_smul_laurentSeriesDerivation (δ : Derivation K K⸨X⸩ K⸨X⸩) (hδ : Continuous δ) :
+    δ = δ (single 1 1) • TauCeti.laurentSeriesDerivation K := by
+  refine Derivation.ext fun f ↦ ?_
+  simpa only [smul_apply, smul_eq_mul, mul_comm] using
+    δ.apply_eq_laurentSeriesDerivation_smul hδ f
+
+/-- A `K`-derivation of `K⸨X⸩` is continuous for the valuation topology if and only if it is a
+multiple of the formal derivative. -/
+theorem continuous_iff_exists_eq_smul_laurentSeriesDerivation {δ : Derivation K K⸨X⸩ K⸨X⸩} :
+    Continuous δ ↔ ∃ a : K⸨X⸩, δ = a • TauCeti.laurentSeriesDerivation K := by
+  refine ⟨fun hδ ↦ ⟨_, δ.eq_smul_laurentSeriesDerivation hδ⟩, ?_⟩
+  rintro ⟨a, rfl⟩
+  exact TauCeti.continuous_smul_laurentSeriesDerivation a
 
 end Derivation
 
@@ -224,7 +248,7 @@ noncomputable def powerSeriesPreservingDerivations :
     refine ⟨?_, fun f ↦ ?_⟩
     · exact (continuousDerivationsLieSubalgebra K).smul_mem c hδ
     · obtain ⟨g, hg⟩ := hδp f
-      exact ⟨c • g, by simp only [Derivation.smul_apply, hg, PowerSeries.coe_smul]⟩
+      exact ⟨c • g, by simp only [_root_.smul_apply, hg, PowerSeries.coe_smul]⟩
   lie_mem' := by
     rintro δ ε ⟨hδ, hδp⟩ ⟨hε, hεp⟩
     refine ⟨?_, fun f ↦ ?_⟩
@@ -257,7 +281,7 @@ theorem mem_powerSeriesPreservingDerivations_iff {δ : Derivation K K⸨X⸩ K�
   · rintro ⟨a, rfl⟩
     refine ⟨continuous_smul_laurentSeriesDerivation _, fun f ↦ ?_⟩
     exact ⟨a * PowerSeries.derivative f, by
-      simp only [Derivation.smul_apply, smul_eq_mul, laurentSeriesDerivation_apply,
+      simp only [_root_.smul_apply, smul_eq_mul, laurentSeriesDerivation_apply,
         PowerSeries.coe_mul, PowerSeries.coe_derivative]⟩
 
 variable (K) in
@@ -273,14 +297,14 @@ noncomputable def maximalIdealPreservingDerivations :
     refine ⟨hδ.add hε, fun f ↦ ?_⟩
     obtain ⟨g, hg⟩ := hδp f
     obtain ⟨h, hh⟩ := hεp f
-    exact ⟨g + h, by simp only [Derivation.add_apply, hg, hh, mul_add, PowerSeries.coe_add]⟩
+    exact ⟨g + h, by simp only [_root_.add_apply, hg, hh, mul_add, PowerSeries.coe_add]⟩
   smul_mem' := by
     rintro c δ ⟨hδ, hδp⟩
     refine ⟨?_, fun f ↦ ?_⟩
     · exact (continuousDerivationsLieSubalgebra K).smul_mem c hδ
     · obtain ⟨g, hg⟩ := hδp f
       exact ⟨c • g, by
-        simp only [Derivation.smul_apply, hg, mul_smul_comm, PowerSeries.coe_smul]⟩
+        simp only [_root_.smul_apply, hg, mul_smul_comm, PowerSeries.coe_smul]⟩
   lie_mem' := by
     rintro δ ε ⟨hδ, hδp⟩ ⟨hε, hεp⟩
     refine ⟨?_, fun f ↦ ?_⟩
@@ -319,7 +343,7 @@ theorem mem_maximalIdealPreservingDerivations_iff {δ : Derivation K K⸨X⸩ K�
   · rintro ⟨a, rfl⟩
     refine ⟨continuous_smul_laurentSeriesDerivation _, fun f ↦ ?_⟩
     refine ⟨a * PowerSeries.derivative (PowerSeries.X * f), ?_⟩
-    simp only [Derivation.smul_apply, smul_eq_mul, laurentSeriesDerivation_apply,
+    simp only [_root_.smul_apply, smul_eq_mul, laurentSeriesDerivation_apply,
       PowerSeries.coe_mul, PowerSeries.coe_derivative, mul_assoc]
 
 /-- Maximal-ideal-preserving continuous Laurent vector fields preserve power series. -/
@@ -328,5 +352,144 @@ theorem maximalIdealPreservingDerivations_le_powerSeriesPreservingDerivations :
   intro δ hδ
   obtain ⟨a, rfl⟩ := mem_maximalIdealPreservingDerivations_iff.mp hδ
   exact mem_powerSeriesPreservingDerivations_iff.mpr ⟨PowerSeries.X * a, rfl⟩
+
+section Infinitesimal
+
+open DualNumber PowerSeries
+
+variable (K) in
+/-- The power-series-preserving continuous Laurent vector fields are parametrized by `K⟦X⟧`,
+through the `K`-linear isomorphism `a ↦ a D`. -/
+noncomputable def powerSeriesPreservingDerivationsEquiv :
+    K⟦X⟧ ≃ₗ[K] powerSeriesPreservingDerivations K :=
+  LinearEquiv.ofBijective
+    { toFun a := ⟨(a : K⸨X⸩) • laurentSeriesDerivation K,
+        mem_powerSeriesPreservingDerivations_iff.2 ⟨a, rfl⟩⟩
+      map_add' a b := by
+        ext1
+        simp [add_smul]
+      map_smul' c a := by
+        ext1
+        simp [smul_assoc] }
+    ⟨fun a b h ↦ ofPowerSeries_injective <|
+        smul_laurentSeriesDerivation_inj.1 (Subtype.ext_iff.1 h),
+      fun δ ↦ by
+        obtain ⟨a, ha⟩ := mem_powerSeriesPreservingDerivations_iff.1 δ.2
+        exact ⟨a, Subtype.ext ha.symm⟩⟩
+
+/-- `TauCeti.powerSeriesPreservingDerivationsEquiv` sends `a` to the vector field `a D`. -/
+@[simp]
+theorem coe_powerSeriesPreservingDerivationsEquiv_apply (a : K⟦X⟧) :
+    (powerSeriesPreservingDerivationsEquiv K a : Derivation K K⸨X⸩ K⸨X⸩) =
+      (a : K⸨X⸩) • laurentSeriesDerivation K :=
+  (rfl)
+
+/-- The inverse of `TauCeti.powerSeriesPreservingDerivationsEquiv` evaluates a vector field at
+the parameter `X = single 1 1`. -/
+@[simp]
+theorem coe_powerSeriesPreservingDerivationsEquiv_symm_apply
+    (δ : powerSeriesPreservingDerivations K) :
+    (((powerSeriesPreservingDerivationsEquiv K).symm δ : K⟦X⟧) : K⸨X⸩) =
+      (δ : Derivation K K⸨X⸩ K⸨X⸩) (single 1 1) := by
+  obtain ⟨a, rfl⟩ := (powerSeriesPreservingDerivationsEquiv K).surjective δ
+  simp
+
+/-- The vector field `a D` preserves the maximal ideal of `K⟦X⟧` for every `a ∈ X K⟦X⟧`. -/
+theorem smul_laurentSeriesDerivation_mem_maximalIdealPreservingDerivations {a : K⟦X⟧}
+    (ha : a ∈ Ideal.span {(PowerSeries.X : K⟦X⟧)}) :
+    (a : K⸨X⸩) • laurentSeriesDerivation K ∈ maximalIdealPreservingDerivations K := by
+  obtain ⟨b, rfl⟩ := Ideal.mem_span_singleton'.1 ha
+  exact mem_maximalIdealPreservingDerivations_iff.2 ⟨b, by rw [mul_comm]⟩
+
+variable (K) in
+/-- The maximal-ideal-preserving continuous Laurent vector fields are parametrized by the ideal
+`(X)` of `K⟦X⟧`, through the `K`-linear isomorphism `a ↦ a D`. -/
+noncomputable def maximalIdealPreservingDerivationsEquiv :
+    Ideal.span {(PowerSeries.X : K⟦X⟧)} ≃ₗ[K] maximalIdealPreservingDerivations K :=
+  LinearEquiv.ofBijective
+    { toFun a := ⟨((a : K⟦X⟧) : K⸨X⸩) • laurentSeriesDerivation K,
+        smul_laurentSeriesDerivation_mem_maximalIdealPreservingDerivations a.2⟩
+      map_add' a b := by
+        ext1
+        simp [add_smul]
+      map_smul' c a := by
+        ext1
+        simp [smul_assoc] }
+    ⟨fun a b h ↦ Subtype.ext <| ofPowerSeries_injective <|
+        smul_laurentSeriesDerivation_inj.1 (Subtype.ext_iff.1 h),
+      fun δ ↦ by
+        obtain ⟨a, ha⟩ := mem_maximalIdealPreservingDerivations_iff.1 δ.2
+        exact ⟨⟨PowerSeries.X * a, Ideal.mem_span_singleton.2 (dvd_mul_right _ _)⟩,
+          Subtype.ext ha.symm⟩⟩
+
+/-- `TauCeti.maximalIdealPreservingDerivationsEquiv` sends `a` to the vector field `a D`. -/
+@[simp]
+theorem coe_maximalIdealPreservingDerivationsEquiv_apply
+    (a : Ideal.span {(PowerSeries.X : K⟦X⟧)}) :
+    (maximalIdealPreservingDerivationsEquiv K a : Derivation K K⸨X⸩ K⸨X⸩) =
+      ((a : K⟦X⟧) : K⸨X⸩) • laurentSeriesDerivation K :=
+  (rfl)
+
+/-- The inverse of `TauCeti.maximalIdealPreservingDerivationsEquiv` evaluates a vector field at
+the parameter `X = single 1 1`. -/
+@[simp]
+theorem coe_maximalIdealPreservingDerivationsEquiv_symm_apply
+    (δ : maximalIdealPreservingDerivations K) :
+    (((maximalIdealPreservingDerivationsEquiv K).symm δ : K⟦X⟧) : K⸨X⸩) =
+      (δ : Derivation K K⸨X⸩ K⸨X⸩) (single 1 1) := by
+  obtain ⟨a, rfl⟩ := (maximalIdealPreservingDerivationsEquiv K).surjective δ
+  simp
+
+variable (K) in
+/-- The infinitesimal substitutions of `K[ε]⟦X⟧` are identified with the maximal-ideal-preserving
+continuous vector fields of `K⸨X⸩`: the substitution `1 + ε a D` corresponds to the vector field
+`a D`, for `a ∈ X K⟦X⟧`. Composition of substitutions corresponds to addition of vector fields. -/
+noncomputable def infinitesimalSubstitutionsEquivDerivations :
+    infinitesimalSubstitutions K ≃* Multiplicative (maximalIdealPreservingDerivations K) :=
+  (infinitesimalSubstitutionsEquiv K).symm.trans
+    (AddEquiv.toMultiplicative (maximalIdealPreservingDerivationsEquiv K).toAddEquiv)
+
+/-- The vector field of an infinitesimal substitution `σ` is `a D`, where `a` is the
+`ε`-coefficient of `σ X`. -/
+@[simp]
+theorem coe_toAdd_infinitesimalSubstitutionsEquivDerivations_apply
+    (σ : infinitesimalSubstitutions K) :
+    ((infinitesimalSubstitutionsEquivDerivations K σ).toAdd : Derivation K K⸨X⸩ K⸨X⸩) =
+      ((mk fun n ↦ (coeff n ((σ : (DualNumber K)⟦X⟧ ≃ₐ[DualNumber K] (DualNumber K)⟦X⟧)
+        PowerSeries.X)).snd : K⟦X⟧) : K⸨X⸩) • laurentSeriesDerivation K := by
+  simp [infinitesimalSubstitutionsEquivDerivations]
+
+/-- The infinitesimal substitution of a vector field `a D` is `1 + ε a D`. -/
+@[simp]
+theorem coe_infinitesimalSubstitutionsEquivDerivations_symm_apply
+    (δ : Multiplicative (maximalIdealPreservingDerivations K)) :
+    ((infinitesimalSubstitutionsEquivDerivations K).symm δ :
+        (DualNumber K)⟦X⟧ ≃ₐ[DualNumber K] (DualNumber K)⟦X⟧) =
+      infinitesimalSubstAlgEquiv ε eps_pow_two
+        (map (algebraMap K (DualNumber K))
+          ((maximalIdealPreservingDerivationsEquiv K).symm δ.toAdd)) := by
+  simp [infinitesimalSubstitutionsEquivDerivations]
+
+/-- The `ε`-coefficient of an infinitesimal substitution `σ` on a power series `f` is the image
+of `f` under the vector field `δ` of `σ`: `σ f = f + ε g` exactly when `g = δ f`. -/
+theorem infinitesimalSubstitutions_apply_map_eq_iff (σ : infinitesimalSubstitutions K)
+    (f g : K⟦X⟧) :
+    (σ : (DualNumber K)⟦X⟧ ≃ₐ[DualNumber K] (DualNumber K)⟦X⟧)
+        (map (algebraMap K (DualNumber K)) f) =
+      map (algebraMap K (DualNumber K)) f +
+        (ε : DualNumber K) • map (algebraMap K (DualNumber K)) g ↔
+    (g : K⸨X⸩) =
+      ((infinitesimalSubstitutionsEquivDerivations K σ).toAdd : Derivation K K⸨X⸩ K⸨X⸩) f := by
+  -- `g ↦ ε g` is injective on power series: compare `ε`-coefficients.
+  have hε : Function.Injective fun g : K⟦X⟧ ↦
+      (ε : DualNumber K) • map (algebraMap K (DualNumber K)) g := fun g h hgh ↦ by
+    ext n
+    simpa [TrivSqZeroExt.algebraMap_eq_inl] using congr((coeff n $hgh).snd)
+  obtain ⟨a, rfl⟩ := (infinitesimalSubstitutionsEquiv K).surjective σ
+  rw [infinitesimalSubstitutionsEquiv_apply_map, add_right_inj, hε.eq_iff, eq_comm,
+    ← (ofPowerSeries_injective (Γ := ℤ) (R := K)).eq_iff]
+  simp [infinitesimalSubstitutionsEquivDerivations, mul_comm]
+
+end Infinitesimal
 
 end TauCeti

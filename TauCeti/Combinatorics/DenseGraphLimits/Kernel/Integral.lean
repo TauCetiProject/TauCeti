@@ -40,6 +40,7 @@ happens before integration.
 ## Main results
 
 * the additive and scaling laws for `rectIntegral`, and its `L¹` bound;
+* `rectIntegral_toMeasurable` — a rectangle integral is unchanged by passing to measurable hulls;
 * `rectIntegral_uniformOn_univ` — on a finite carrier with the uniform measure, a rectangle
   integral is a normalized finite sum;
 * `testIntegral_indicator_one` — testing against indicators recovers a rectangle integral;
@@ -80,6 +81,13 @@ theorem rectIntegral_eq_setIntegral_setIntegral [IsFiniteMeasure μ]
     K.rectIntegral μ S T = ∫ x in S, ∫ y in T, K x y ∂μ ∂μ := by
   rw [rectIntegral_def]
   exact setIntegral_prod _ K.integrable_uncurry.integrableOn
+
+/-- A rectangle integral does not change when the two sets are replaced by measurable hulls. -/
+theorem rectIntegral_toMeasurable [IsFiniteMeasure μ] (K : SymmKernel Ω μ) (S T : Set Ω) :
+    K.rectIntegral μ S T =
+      K.rectIntegral μ (toMeasurable μ S) (toMeasurable μ T) := by
+  simp only [rectIntegral_def, ← Measure.prod_restrict,
+    Measure.restrict_toMeasurable (measure_ne_top μ _)]
 
 @[simp]
 theorem rectIntegral_empty_left (K : SymmKernel Ω μ) (T : Set Ω) :

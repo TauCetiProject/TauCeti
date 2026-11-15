@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.CrossedProduct.Inflation
-public import TauCeti.FieldTheory.GaloisCohomology.UnitsRestriction
+public import TauCeti.FieldTheory.GaloisCohomology.Units.Restriction
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Subextension
 
 /-!
@@ -34,13 +34,15 @@ public section
 
 noncomputable section
 
+universe u
+
 namespace TauCeti
 
 namespace TwoCocycle
 
 open ContCohomology
 
-variable {K L : Type} [Field K] [Field L] [Algebra K L]
+variable {K L : Type u} [Field K] [Field L] [Algebra K L]
   (σ : L →ₐ[K] SeparableClosure K)
   (E : IntermediateField K (SeparableClosure K)) [FiniteDimensional K E] [Normal K E]
   (F : IntermediateField L (SeparableClosure L)) [FiniteDimensional L F] [Normal L F]
@@ -73,7 +75,7 @@ the original inflated cohomology class, with the canonical units-coefficient tra
 theorem inflateClass_galoisResUnits :
     galoisResUnits K L σ 2 (c.inflateClass E) = d.inflateClass F := by
   -- Assemble local compactness directly; generic instance search explores expensive alternatives.
-  have hloc (P : Type) [Field P] : LocallyCompactSpace (AbsoluteGaloisGroup P) :=
+  have hloc (P : Type u) [Field P] : LocallyCompactSpace (AbsoluteGaloisGroup P) :=
     have : R1Space (AbsoluteGaloisGroup P) := @T2Space.r1Space _ _ krullTopology_t2
     have : WeaklyLocallyCompactSpace (AbsoluteGaloisGroup P) :=
       ⟨fun _ ↦ ⟨Set.univ, isCompact_univ, Filter.univ_mem⟩⟩

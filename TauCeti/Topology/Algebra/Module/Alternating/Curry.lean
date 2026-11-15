@@ -20,6 +20,8 @@ vector from `AlternatingMap.curryLeft`.
 
 * `ContinuousAlternatingMap.map_insertNth'`: the alternating insertion-sign formula.
 * `ContinuousAlternatingMap.curryLeftTopological`: the norm-free interior product.
+* `ContinuousAlternatingMap.curryLeftTopologicalLinear`: the interior product with a fixed
+  vector, as a linear map of alternating maps over any scalars acting on the codomain.
 * `ContinuousAlternatingMap.curryLeftTopological_curryLeftTopological`: inserting the same vector
   twice gives zero.
 
@@ -109,6 +111,53 @@ theorem curryLeftTopological_curryLeftTopological {n : ℕ}
   apply toAlternatingMap_injective
   simp
 
+section Linear
+
+variable (S : Type*) [Semiring S] [Module S N] [ContinuousConstSMul S N] [SMulCommClass R S N]
+
+/-- The interior product with a fixed vector `x`, as a linear map of alternating maps over any
+scalars acting on the codomain. -/
+noncomputable def curryLeftTopologicalLinear {n : ℕ} (x : M) :
+    (M [⋀^Fin (n + 1)]→L[R] N) →ₗ[S] M [⋀^Fin n]→L[R] N where
+  toFun f := curryLeftTopological f x
+  map_add' f g := by
+    ext v
+    simp
+  map_smul' c f := by
+    ext v
+    simp
+
+@[simp]
+theorem curryLeftTopologicalLinear_apply {n : ℕ} (x : M) (f : M [⋀^Fin (n + 1)]→L[R] N) :
+    curryLeftTopologicalLinear S x f = curryLeftTopological f x :=
+  (rfl)
+
+/-- The interior product is additive in the inserted vector. -/
+theorem curryLeftTopologicalLinear_add {n : ℕ} (x y : M) :
+    (curryLeftTopologicalLinear S (x + y) :
+        (M [⋀^Fin (n + 1)]→L[R] N) →ₗ[S] M [⋀^Fin n]→L[R] N) =
+      curryLeftTopologicalLinear S x + curryLeftTopologicalLinear S y := by
+  ext f v
+  simp
+
+end Linear
+
 end Curry
+
+section CurryNeg
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [TopologicalSpace M]
+  [AddCommGroup N] [Module R N] [TopologicalSpace N]
+  [IsTopologicalAddGroup N] [ContinuousConstSMul R N]
+  (S : Type*) [Semiring S] [Module S N] [ContinuousConstSMul S N] [SMulCommClass R S N]
+
+/-- The interior product with `-x` is the negative of the interior product with `x`. -/
+theorem curryLeftTopologicalLinear_neg {n : ℕ} (x : M) :
+    (curryLeftTopologicalLinear S (-x) :
+        (M [⋀^Fin (n + 1)]→L[R] N) →ₗ[S] M [⋀^Fin n]→L[R] N) =
+      -curryLeftTopologicalLinear S x := by
+  ext f v
+  simp
+
+end CurryNeg
 
 end ContinuousAlternatingMap

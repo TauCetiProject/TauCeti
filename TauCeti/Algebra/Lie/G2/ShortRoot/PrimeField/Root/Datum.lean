@@ -20,7 +20,7 @@ This file rewrites the scheme-point and matrix-point equations against
 `DynkinType.G2.simplyConnectedRootDatum`, identifying the carrier's generator weights with the
 named positive and negative simple roots in Bourbaki numbering.  The corresponding integral
 equations live in
-`TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.RootDatum`; the results here concern the
+`TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.Root.Datum`; the results here concern the
 separately generated carrier over `𝔽₃`, whose defining ideal can be strictly larger than the
 reduction of the integral defining ideal.
 
@@ -43,7 +43,7 @@ pinned group scheme is asserted.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate IX.
 
 The formal organization follows
-`TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.RootDatum`.
+`TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.Root.Datum`.
 
 -/
 

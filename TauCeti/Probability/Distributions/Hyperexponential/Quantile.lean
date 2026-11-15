@@ -47,8 +47,7 @@ theorem sum_exp_quantile_hyperexponentialMeasure
     ∑ i, (p.weights i : ℝ) * exp (-(r i * (hyperexponentialMeasure p r).quantile u)) =
       1 - u := by
   let _ := isProbabilityMeasure_hyperexponentialMeasure hr
-  have hroot := Measure.cdf_quantile (hyperexponentialMeasure p r)
-    (Measure.continuous_cdf_of_noAtoms _) hu.1 hu.2
+  have hroot := Measure.cdf_quantile_of_noAtoms (hyperexponentialMeasure p r) hu.1 hu.2
   rw [cdf_hyperexponentialMeasure_eq hr,
     ite_eq_right (quantile_hyperexponentialMeasure_pos hr hu).not_ge] at hroot
   linarith
@@ -74,7 +73,7 @@ theorem strictMonoOn_quantile_hyperexponentialMeasure
     (hr : ∀ i, 0 < p.weights i → 0 < r i) :
     StrictMonoOn (hyperexponentialMeasure p r).quantile (Ioo 0 1) := by
   let _ := isProbabilityMeasure_hyperexponentialMeasure hr
-  exact Measure.strictMonoOn_quantile _ (Measure.continuous_cdf_of_noAtoms _)
+  exact Measure.strictMonoOn_quantile_of_noAtoms _
 
 /-- The hyperexponential quantile is continuous at every interior probability level. -/
 theorem continuousOn_quantile_hyperexponentialMeasure
@@ -89,14 +88,10 @@ theorem tendsto_quantile_hyperexponentialMeasure_nhdsGT_zero
     (hr : ∀ i, 0 < p.weights i → 0 < r i) :
     Tendsto (fun u ↦ ((hyperexponentialMeasure p r).quantile u : EReal))
       (𝓝[>] 0) (𝓝 0) := by
-  apply EReal.tendsto_coe.2
-  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
-  · filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
-    exact ha.trans (quantile_hyperexponentialMeasure_pos hr hu)
-  · have hc := (cdf_hyperexponentialMeasure_pos_iff hr).2 (half_pos hb)
-    filter_upwards [Ioo_mem_nhdsGT hc] with u hu
-    exact ((Measure.quantile_le_iff _ hu.1 (hu.2.trans_le (cdf_le_one _ _))).2 hu.2.le).trans_lt
-      (half_lt_self hb)
+  let _ := isProbabilityMeasure_hyperexponentialMeasure hr
+  exact Measure.tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos _
+    ((ae_pos_hyperexponentialMeasure p r).mono fun _ hx ↦ hx.le)
+    (fun _ hx ↦ (cdf_hyperexponentialMeasure_pos_iff hr).2 hx)
 
 /-- As the level increases to one, the quantile tends to positive infinity. -/
 theorem tendsto_quantile_hyperexponentialMeasure_nhdsLT_one

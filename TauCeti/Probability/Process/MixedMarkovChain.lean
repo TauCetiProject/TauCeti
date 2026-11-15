@@ -328,7 +328,7 @@ theorem mixedMarkovChainWith_of_forall_cond [Countable α] [MeasurableSingletonC
         {ω | ∀ i : Fin (n + 1), X i.val ω = w i} := by rw [hμ]
     _ = ∑' b, μ (f ⁻¹' {b}) * μ[|f ⁻¹' {b}] {ω | ∀ i : Fin (n + 1), X i.val ω = w i} := by
         rw [Measure.sum_apply₀ _ (hμ.symm ▸ hA)]
-        simp only [Measure.smul_apply, smul_eq_mul]
+        simp only [_root_.smul_apply, smul_eq_mul]
     _ = ∑' b, μ (f ⁻¹' {b}) * ∫⁻ ω, G ω ∂μ[|f ⁻¹' {b}] := by
         refine tsum_congr fun b => ?_
         by_cases hb : μ (f ⁻¹' {b}) = 0

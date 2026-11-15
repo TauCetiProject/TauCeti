@@ -302,6 +302,19 @@ theorem linearPart_comp (g : AInfinityHom BB CC) (f : AInfinityHom AA BB) :
   rw [LinearMap.comp_apply, linearPart_apply, taylor_comp, LinearMap.comp_apply,
     barMap_ofLetter, linearPart_apply g]
 
+/-- An `A∞` morphism whose linear part is the identity has Taylor map `letter` on the words of
+length at most one. -/
+theorem taylor_apply_eq_letter_of_linearPart_eq_id {AA' : AInfinityAlgebra R A}
+    {f : AInfinityHom AA AA'} (hf : f.linearPart = LinearMap.id) :
+    ∀ z ∈ ReducedTensorWords.filtration R A 1, f.taylor z = ReducedTensorWords.letter R A z := by
+  have h : (f.taylor - ReducedTensorWords.letter R A) ∘ₗ ReducedTensorWords.ofLetter R A = 0 :=
+    LinearMap.ext fun a ↦ by
+      rw [LinearMap.comp_apply, LinearMap.sub_apply, ← linearPart_apply, hf, LinearMap.id_apply,
+        ReducedTensorWords.letter_ofLetter, sub_self, LinearMap.zero_apply]
+  intro z hz
+  rw [← sub_eq_zero, ← LinearMap.sub_apply]
+  exact ReducedTensorWords.apply_eq_zero_of_mem_filtration_one R A h z hz
+
 end AInfinityHom
 
 end TauCeti

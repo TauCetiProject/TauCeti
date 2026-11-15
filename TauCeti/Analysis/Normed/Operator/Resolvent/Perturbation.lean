@@ -21,6 +21,9 @@ This file turns that observation into the three facts a perturbation theorem nee
 point survives, the perturbed resolvent is `R(lambda, A) (I - B R(lambda, A))⁻¹`, and it obeys
 the bound `r / (1 - ‖B‖ r)`.
 
+The scalar field may be any nontrivially normed field. The continuous endomorphism algebra
+is assumed to have summable geometric series, as it does on Banach spaces.
+
 All the statements take an upper bound `r` for `‖R(lambda, A)‖` rather than that norm itself,
 because that is the form in which callers have their information: a semigroup growth bound
 `(omega, M)` supplies `r = M / (lambda - omega)`, and the conclusion then reads
@@ -51,16 +54,17 @@ open _root_.LinearPMap (
   IsResolventAt resolvent_eq_of_isResolventAt resolvent_mem_domain resolvent_smul_sub_apply
   smul_sub_apply_resolvent)
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
-  {A : X →ₗ.[ℝ] X} {lambda r : ℝ}
+variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup X]
+  [NormedSpace 𝕜 X] [HasSummableGeomSeries (X →L[𝕜] X)]
+  {A : X →ₗ.[𝕜] X} {lambda : 𝕜} {r : ℝ}
 
 /-- **The inverse of a small bounded perturbation.** If `lambda` lies in the resolvent set of `A`
 and the bounded operator `B` satisfies `‖B‖ * r < 1` for some bound `r` on `‖R(lambda, A)‖`, then
 `R(lambda, A) (I - B R(lambda, A))⁻¹` inverts `lambda • I - (B + A)`. -/
 theorem _root_.ContinuousLinearMap.isResolventAt_vadd
-    (B : X →L[ℝ] X) (h : lambda ∈ A.resolventSet)
+    (B : X →L[𝕜] X) (h : lambda ∈ A.resolventSet)
     (hr : ‖A.resolvent lambda‖ ≤ r) (hB : ‖B‖ * r < 1) :
-    IsResolventAt ((B : X →ₗ[ℝ] X) +ᵥ A) lambda
+    IsResolventAt ((B : X →ₗ[𝕜] X) +ᵥ A) lambda
       (A.resolvent lambda * Ring.inverse (1 - B * A.resolvent lambda)) := by
   apply B.isResolventAt_vadd_of_norm_mul_resolvent_lt_one h
   exact lt_of_le_of_lt (norm_mul_le _ _)
@@ -70,18 +74,18 @@ theorem _root_.ContinuousLinearMap.isResolventAt_vadd
 resolvent set of `A` and the bounded operator `B` satisfies `‖B‖ * r < 1` for some bound `r` on
 `‖R(lambda, A)‖`, then `lambda` lies in the resolvent set of `B +ᵥ A`. -/
 theorem _root_.ContinuousLinearMap.mem_resolventSet_vadd
-    (B : X →L[ℝ] X) (h : lambda ∈ A.resolventSet)
+    (B : X →L[𝕜] X) (h : lambda ∈ A.resolventSet)
     (hr : ‖A.resolvent lambda‖ ≤ r) (hB : ‖B‖ * r < 1) :
-    lambda ∈ ((B : X →ₗ[ℝ] X) +ᵥ A).resolventSet :=
+    lambda ∈ ((B : X →ₗ[𝕜] X) +ᵥ A).resolventSet :=
   (B.isResolventAt_vadd h hr hB).mem_resolventSet
 
 /-- **The perturbed resolvent in closed form.** Under the hypotheses of
 `ContinuousLinearMap.mem_resolventSet_vadd`, the resolvent of `B +ᵥ A` is
 `R(lambda, A) (I - B R(lambda, A))⁻¹`. -/
 theorem _root_.ContinuousLinearMap.resolvent_vadd
-    (B : X →L[ℝ] X) (h : lambda ∈ A.resolventSet)
+    (B : X →L[𝕜] X) (h : lambda ∈ A.resolventSet)
     (hr : ‖A.resolvent lambda‖ ≤ r) (hB : ‖B‖ * r < 1) :
-    ((B : X →ₗ[ℝ] X) +ᵥ A).resolvent lambda =
+    ((B : X →ₗ[𝕜] X) +ᵥ A).resolvent lambda =
       A.resolvent lambda * Ring.inverse (1 - B * A.resolvent lambda) :=
   resolvent_eq_of_isResolventAt (B.isResolventAt_vadd h hr hB)
 
@@ -89,14 +93,14 @@ theorem _root_.ContinuousLinearMap.resolvent_vadd
 `ContinuousLinearMap.mem_resolventSet_vadd`, the resolvent of `B +ᵥ A` is bounded by
 `r / (1 - ‖B‖ r)`. -/
 theorem _root_.ContinuousLinearMap.norm_resolvent_vadd_le
-    (B : X →L[ℝ] X) (h : lambda ∈ A.resolventSet)
+    (B : X →L[𝕜] X) (h : lambda ∈ A.resolventSet)
     (hr : ‖A.resolvent lambda‖ ≤ r) (hB : ‖B‖ * r < 1) :
-    ‖((B : X →ₗ[ℝ] X) +ᵥ A).resolvent lambda‖ ≤ r / (1 - ‖B‖ * r) := by
+    ‖((B : X →ₗ[𝕜] X) +ᵥ A).resolvent lambda‖ ≤ r / (1 - ‖B‖ * r) := by
   have hrnonneg : 0 ≤ r := (norm_nonneg _).trans hr
   have hden : 0 < 1 - ‖B‖ * r := by linarith
   have hp := B.mem_resolventSet_vadd h hr hB
   refine ContinuousLinearMap.opNorm_le_bound _ (div_nonneg hrnonneg hden.le) fun y => ?_
-  set x : X := ((B : X →ₗ[ℝ] X) +ᵥ A).resolvent lambda y
+  set x : X := ((B : X →ₗ[𝕜] X) +ᵥ A).resolvent lambda y
   have hmem : x ∈ A.domain := resolvent_mem_domain hp y
   have hy : lambda • x - (B x + A ⟨x, hmem⟩) = y := by
     have := smul_sub_apply_resolvent hp y

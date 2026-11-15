@@ -164,17 +164,11 @@ theorem mul_mul_transpose_of_mem_generatedPointsSubgroup
     (A : Type w) [CommRing A] [Algebra R A]
     {g : Matrix.GeneralLinearGroup (Fin n) A} (hg : g ∈ generatedPointsSubgroup n f A) :
     (g : Matrix (Fin n) (Fin n) A) * C.map (algebraMap R A) *
-      (g : Matrix (Fin n) (Fin n) A)ᵀ = C.map (algebraMap R A) := by
-  have hsub := generatedPointsSubgroup_le_hopfIdealPointsSubgroup n f
-    ((CommHopfAlgCat.le_commonKernelHopfIdeal_iff f _).1
-      (constantFormDefiningHopfIdeal_le_commonKernelHopfIdeal n f C hf)) A hg
-  rw [mem_hopfIdealPointsSubgroup_iff] at hsub
-  have hmem : ((pointsMulEquiv (R := R) n).symm g) ∈
-      CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R n)
-        (ConstantForm.definingHopfIdeal R n C) (CommAlgCat.of R A) :=
-    (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mpr hsub
-  rw [ConstantForm.mem_definingPointsSubgroup_iff, MulEquiv.apply_symm_apply] at hmem
-  exact hmem
+      (g : Matrix (Fin n) (Fin n) A)ᵀ = C.map (algebraMap R A) :=
+  ConstantForm.mul_mul_transpose_of_mem_hopfIdealPointsSubgroup le_rfl
+    (generatedPointsSubgroup_le_hopfIdealPointsSubgroup n f
+      ((CommHopfAlgCat.le_commonKernelHopfIdeal_iff f _).1
+        (constantFormDefiningHopfIdeal_le_commonKernelHopfIdeal n f C hf)) A hg)
 
 end ConstantForm
 

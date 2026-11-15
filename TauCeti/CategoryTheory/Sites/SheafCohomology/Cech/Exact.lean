@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
+
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 public import TauCeti.Algebra.Homology.Functor.Resolution
@@ -52,6 +54,8 @@ left and right terms agree up to a shift of one degree, by the degreewise lemmas
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_shortExact`: for a coefficient sequence
   short exact at the terminal object and at finite products of members, acyclicity of the middle
   and right terms implies acyclicity of the left term.
+* `TauCeti.CategoryTheory.quasiIso_cechAugmentation_X₃_of_shortExact`: for such a coefficient
+  sequence, acyclicity of the left and middle terms implies acyclicity of the right term.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_resolution`: a presheaf with a resolution by
   acyclic presheaves, exact at the terminal object and at the finite products of members, is
   acyclic.
@@ -81,7 +85,7 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
 `U (a 0) × ⋯ × U (a n)`. -/
 private def cechEvalIso (n : ℕ) :
     cechComplexFunctor U ⋙ HomologicalComplex.eval A (ComplexShape.up ℕ) n ≅
-      (Functor.whiskeringLeft (Discrete (Fin (n + 1) → ι)) Cᵒᵖ A).obj
+      (CategoryTheory.Functor.whiskeringLeft (Discrete (Fin (n + 1) → ι)) Cᵒᵖ A).obj
         (Discrete.functor (fun a ↦ op (∏ᶜ fun j ↦ U (a j)))) ⋙ lim :=
   NatIso.ofComponents (fun P ↦
     let e : ((cechComplexFunctor U).obj P).X n ≅
@@ -96,8 +100,8 @@ private def cechEvalIso (n : ℕ) :
     -- chosen-limit instances; `erw` also normalizes those instances.
     erw [Iso.trans_hom, Iso.trans_hom, Iso.refl_hom, Iso.refl_hom,
       Category.id_comp, Category.id_comp]
-    dsimp only [Functor.comp_map, HomologicalComplex.eval_map,
-      Functor.whiskeringLeft_obj_obj, Functor.whiskeringLeft_obj_map]
+    dsimp only [CategoryTheory.Functor.comp_map, HomologicalComplex.eval_map,
+      CategoryTheory.Functor.whiskeringLeft_obj_obj, CategoryTheory.Functor.whiskeringLeft_obj_map]
     erw [Category.assoc, HasLimit.isoOfNatIso_hom_π, Category.assoc, limMap_π,
       HasLimit.isoOfNatIso_hom_π_assoc]
     simp only [Discrete.compNatIsoDiscrete, Iso.symm_hom, Discrete.natIso_inv_app,
@@ -152,7 +156,8 @@ theorem shortExact_map_cechComplexFunctor (S : ShortComplex (Cᵒᵖ ⥤ A))
     (S.map (cechComplexFunctor U)).ShortExact := by
   refine HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦ ?_
   -- in degree `n`, the sequence of Čech complexes is the product of the evaluations of `S`
-  have h := (ShortComplex.shortExact_of_forall_evaluation (S.map ((Functor.whiskeringLeft
+  have h :=
+    (ShortComplex.shortExact_of_forall_evaluation (S.map ((CategoryTheory.Functor.whiskeringLeft
     (Discrete (Fin (n + 1) → ι)) Cᵒᵖ A).obj (Discrete.functor fun a ↦ op (∏ᶜ fun j ↦ U (a j)))))
       fun a ↦ hS n a.as).map_of_exact lim
   exact ShortComplex.shortExact_of_iso (S.mapNatIso (cechEvalIso U n).symm) h
@@ -185,6 +190,21 @@ theorem quasiIso_cechAugmentation_of_shortExact (S : ShortComplex (Cᵒᵖ ⥤ A
   HomologicalComplex.HomologySequence.quasiIso_τ₁ (cechAugmentationShortComplexHom U hT S)
     (hST.map_of_exact (HomologicalComplex.single A (ComplexShape.up ℕ) 0))
     (shortExact_map_cechComplexFunctor U S hSU) h₂ h₃
+
+/-- **Čech acyclicity passes to the cokernel of a locally short exact coefficient sequence.**
+If a sequence of presheaves is short exact at the terminal object and at every finite product of
+members of `U`, and `U` is acyclic for the left and middle presheaves, then `U` is acyclic for the
+right presheaf as well. Exactness at other objects is not required. -/
+theorem quasiIso_cechAugmentation_X₃_of_shortExact (S : ShortComplex (Cᵒᵖ ⥤ A))
+    (hST : (S.map ((evaluation Cᵒᵖ A).obj (op T))).ShortExact)
+    (hSU : ∀ (n : ℕ) (a : Fin (n + 1) → ι),
+      (S.map ((evaluation Cᵒᵖ A).obj (op (∏ᶜ fun j ↦ U (a j))))).ShortExact)
+    (h₁ : QuasiIso (cechAugmentation U hT S.X₁))
+    (h₂ : QuasiIso (cechAugmentation U hT S.X₂)) :
+    QuasiIso (cechAugmentation U hT S.X₃) :=
+  HomologicalComplex.HomologySequence.quasiIso_τ₃ (cechAugmentationShortComplexHom U hT S)
+    (hST.map_of_exact (HomologicalComplex.single A (ComplexShape.up ℕ) 0))
+    (shortExact_map_cechComplexFunctor U S hSU) h₁ h₂
 
 /-! ### Acyclic resolutions
 
@@ -284,7 +304,7 @@ theorem quasiIso_cechAugmentation_of_resolution {P : Cᵒᵖ ⥤ A} {K : Cᵒᵖ
     ε.shortExact_map_augmentationShortComplex ((hεU n a).quasiIsoAt 0) ((hεU n a).quasiIsoAt 1)
   have hKC (k : ℕ) :
       QuasiIso (cechAugmentation U hT (K.cyclesShortComplex k (k + 1)).X₂) := by
-    rw [Functor.cyclesShortComplex_X₂]
+    rw [CategoryTheory.Functor.cyclesShortComplex_X₂]
     exact hK k
   have hKA : QuasiIso (cechAugmentation U hT ε.augmentationShortComplex.X₂) := by
     rw [NatTrans.augmentationShortComplex_X₂]
@@ -298,30 +318,25 @@ theorem quasiIso_cechAugmentation_of_resolution {P : Cᵒᵖ ⥤ A} {K : Cᵒᵖ
           (cechAugmentation U hT (K ⋙ HomologicalComplex.cyclesFunctor A _ (k + 1))) 0) := by
         have h := mono_homologyMap_cechAugmentation_X₁_zero U hT (hcT (k + 1))
           (hcU (k + 1)) ((hKC (k + 1)).quasiIsoAt 0)
-        rw [Functor.cyclesShortComplex_X₁] at h
-        exact h
+        rwa [CategoryTheory.Functor.cyclesShortComplex_X₁] at h
       constructor
       · have h := quasiIsoAt_cechAugmentation_X₁_zero U hT haT haU (hKA.quasiIsoAt 0)
           (by rw [NatTrans.augmentationShortComplex_X₃]; exact hmono 0)
-        rw [NatTrans.augmentationShortComplex_X₁] at h
-        exact h
+        rwa [NatTrans.augmentationShortComplex_X₁] at h
       · intro k
         have h := quasiIsoAt_cechAugmentation_X₁_zero U hT (hcT (k + 1)) (hcU (k + 1))
           ((hKC (k + 1)).quasiIsoAt 0)
-          (by rw [Functor.cyclesShortComplex_X₃]; exact hmono (k + 1))
-        rw [Functor.cyclesShortComplex_X₁] at h
-        exact h
+          (by rw [CategoryTheory.Functor.cyclesShortComplex_X₃]; exact hmono (k + 1))
+        rwa [CategoryTheory.Functor.cyclesShortComplex_X₁] at h
     | succ n ih =>
       constructor
       · have h := quasiIsoAt_cechAugmentation_X₁_succ U hT haT haU hKA
           (by rw [NatTrans.augmentationShortComplex_X₃]; exact ih.2 0)
-        rw [NatTrans.augmentationShortComplex_X₁] at h
-        exact h
+        rwa [NatTrans.augmentationShortComplex_X₁] at h
       · intro k
         have h := quasiIsoAt_cechAugmentation_X₁_succ U hT (hcT (k + 1)) (hcU (k + 1)) (hKC (k + 1))
-          (by rw [Functor.cyclesShortComplex_X₃]; exact ih.2 (k + 1))
-        rw [Functor.cyclesShortComplex_X₁] at h
-        exact h
+          (by rw [CategoryTheory.Functor.cyclesShortComplex_X₃]; exact ih.2 (k + 1))
+        rwa [CategoryTheory.Functor.cyclesShortComplex_X₁] at h
   rw [quasiIso_iff]
   exact fun n ↦ (key n).1
 

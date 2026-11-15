@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
 public import TauCeti.RepresentationTheory.Induction.Mackey.Basic
+import TauCeti.Algebra.BigOperators.RightInverse
 
 /-!
 # The Mackey double-coset formula for low-degree corestriction
@@ -255,7 +256,7 @@ theorem explicitMackeyTerm0_eq_of_mk_eq {s s' : G}
     (h : DoubleCoset.mk V U s = DoubleCoset.mk V U s') :
     explicitMackeyTerm0 G M U V s = explicitMackeyTerm0 G M U V s' := by
   let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
-  refine AddMonoidHom.ext fun m => eq_of_sum_doubleCoset_rep_eq V U
+  refine AddMonoidHom.ext fun m => Function.RightInverse.eq_of_sum_eq DoubleCoset.out_eq'
     (fun s => explicitMackeyTerm0 G M U V s m) (fun r hr => ?_) h
   rw [← explicitCor0_mackey G M U V r hr m,
     ← explicitCor0_mackey G M U V Quotient.out DoubleCoset.out_eq' m]
@@ -343,14 +344,14 @@ theorem explicitCor1_mackey (x : H1 U M) :
       coe_cocyclesCor1]
     refine (cochainsCor1_mackeyTransversal G M U V r hr f k).trans
       (Finset.sum_congr rfl fun D _ => ?_)
-    rw [coe_cocyclesCor1, cocyclesMap1_coe, Subgroup.coe_continuousMackeyToH]
+    rw [coe_cocyclesCor1, coe_cocyclesMap1, Subgroup.coe_continuousMackeyToH]
 
 /-- **The degree-one Mackey summand depends only on the double coset** `VsU` of `s`. -/
 theorem explicitMackeyTerm1_eq_of_mk_eq {s s' : G}
     (h : DoubleCoset.mk V U s = DoubleCoset.mk V U s') :
     explicitMackeyTerm1 G M U V hU s = explicitMackeyTerm1 G M U V hU s' := by
   let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
-  refine AddMonoidHom.ext fun x => eq_of_sum_doubleCoset_rep_eq V U
+  refine AddMonoidHom.ext fun x => Function.RightInverse.eq_of_sum_eq DoubleCoset.out_eq'
     (fun s => explicitMackeyTerm1 G M U V hU s x) (fun r hr => ?_) h
   rw [← explicitCor1_mackey G M U V r hr hU x,
     ← explicitCor1_mackey G M U V Quotient.out DoubleCoset.out_eq' hU x]
@@ -456,14 +457,14 @@ theorem explicitCor2_mackey (x : H2 U M) :
       coe_cocyclesCor2]
     refine (cochainsCor2_mackeyTransversal G M U V r hr f k l).trans
       (Finset.sum_congr rfl fun D _ => ?_)
-    rw [coe_cocyclesCor2, cocyclesMap2_coe, Subgroup.coe_continuousMackeyToH]
+    rw [coe_cocyclesCor2, coe_cocyclesMap2, Subgroup.coe_continuousMackeyToH]
 
 /-- **The degree-two Mackey summand depends only on the double coset** `VsU` of `s`. -/
 theorem explicitMackeyTerm2_eq_of_mk_eq {s s' : G}
     (h : DoubleCoset.mk V U s = DoubleCoset.mk V U s') :
     explicitMackeyTerm2 G M U V hU s = explicitMackeyTerm2 G M U V hU s' := by
   let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
-  refine AddMonoidHom.ext fun x => eq_of_sum_doubleCoset_rep_eq V U
+  refine AddMonoidHom.ext fun x => Function.RightInverse.eq_of_sum_eq DoubleCoset.out_eq'
     (fun s => explicitMackeyTerm2 G M U V hU s x) (fun r hr => ?_) h
   rw [← explicitCor2_mackey G M U V r hr hU x,
     ← explicitCor2_mackey G M U V Quotient.out DoubleCoset.out_eq' hU x]

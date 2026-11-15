@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.LinearAlgebra.Matrix.IdealEntries
@@ -78,6 +79,8 @@ a relation between `C` and `Cᵀ`.
   `inclusion_def` exposing the quotient-spectrum presentations.
 * `TauCeti.ConstantForm.mem_definingPointsSubgroup_iff`: an ambient point is cut out exactly
   when its matrix `M` satisfies `M C Mᵀ = C`.
+* `TauCeti.ConstantForm.mul_mul_transpose_of_mem_hopfIdealPointsSubgroup`: every matrix point of
+  a subgroup cut out by a Hopf ideal containing the form relations satisfies `M C Mᵀ = C`.
 
 ## References
 
@@ -423,6 +426,25 @@ theorem mem_definingPointsSubgroup_iff
     GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear n g.ofConv
   rw [← hg]
   exact definingHopfIdeal_toIdeal_le_ker_iff R n C g.ofConv
+
+variable {R n C} in
+/-- **Every matrix point of a subgroup cut out by a Hopf ideal containing the form relations
+preserves the form**: `g C gᵀ = C`. This is the criterion through which a carrier whose defining
+Hopf ideal contains `definingHopfIdeal R n C` shows that all its points preserve `C`. -/
+theorem mul_mul_transpose_of_mem_hopfIdealPointsSubgroup
+    {I : HopfIdeal R (GeneralLinear.coordinateHopfAlgebra R n)} (hI : definingHopfIdeal R n C ≤ I)
+    {g : Matrix.GeneralLinearGroup (Fin n) A}
+    (hg : g ∈ GeneralLinear.hopfIdealPointsSubgroup n I A) :
+    (g : Matrix (Fin n) (Fin n) A) * C.map (algebraMap R A) * (g : Matrix (Fin n) (Fin n) A)ᵀ =
+      C.map (algebraMap R A) := by
+  have h := GeneralLinear.hopfIdealPointsSubgroup_le_of_le n hI A hg
+  rw [GeneralLinear.mem_hopfIdealPointsSubgroup_iff] at h
+  have hmem : (GeneralLinear.pointsMulEquiv (R := R) n).symm g ∈
+      CommHopfAlgCat.quotientPointsSubgroup (GeneralLinear.coordinateHopfAlgebra R n)
+        (definingHopfIdeal R n C) (CommAlgCat.of R A) :=
+    (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mpr h
+  rw [mem_definingPointsSubgroup_iff, MulEquiv.apply_symm_apply] at hmem
+  exact hmem
 
 end Points
 

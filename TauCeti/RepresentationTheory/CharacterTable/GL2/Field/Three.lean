@@ -15,9 +15,12 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NormalForm
 -- Non-public: a root of `X² - X - 1` in the quadratic extension.
 import TauCeti.FieldTheory.Quadratic
 -- Non-public: the canonical additive character is nontrivial.
-import TauCeti.NumberTheory.LegendreSymbol.Complex
+import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 -- Non-public: multiplicative characters take the value `1` or `-1` at `-1`.
 import TauCeti.Algebra.Ring.Hom
+-- Non-public: a quadratic extension of a field with three elements, to remove `E` from the table.
+import Mathlib.Algebra.CharP.CharAndCard
+import Mathlib.FieldTheory.Finite.Extension
 
 /-!
 # The character table of `GL₂(𝔽₃)`
@@ -89,6 +92,8 @@ row 4 according to the sign in `ζ + ζ³ = ±i√2`.
 * `TauCeti.exists_equiv_submatrix_GL2CharacterTable_eq_gl2FieldThreeCharacterTable`: the
   parametrized character table of `GL₂(F)` is `TauCeti.gl2FieldThreeCharacterTable` up to an
   enumeration of its rows.
+* `TauCeti.exists_equiv_submatrix_characterTable_eq_gl2FieldThreeCharacterTable`: the same for
+  `TauCeti.characterTable ℂ (GL (Fin 2) F)`, whose statement no longer mentions an extension `E`.
 
 ## References
 
@@ -211,18 +216,6 @@ end Columns
 variable {F : Type} [Field F] [Fintype F] {E : Type*} [Field E] [Algebra F E]
   [Algebra.IsQuadraticExtension F E]
 
-/-- A quadratic extension of a field with three elements contains a root of `X² - X - 1`. -/
-private theorem exists_units_mul_self_eq_add_one (hF : Fintype.card F = 3) :
-    ∃ u : Eˣ, (u : E) * u = u + 1 := by
-  obtain ⟨-, -, -, hroot⟩ := fieldThree_facts hF
-  obtain ⟨x, hx⟩ := exists_mul_self_eq_of_finite E (t := (1 : F)) (d := -1)
-    (fun a => by simpa using hroot a)
-  have hx' : x * x = x + 1 := by simpa using hx
-  have hx0 : x ≠ 0 := by
-    rintro rfl
-    simp at hx'
-  exact ⟨Units.mk0 x hx0, hx'⟩
-
 /-- The normal forms of the eight columns of the table, for a root `u ∈ E` of `X² - X - 1`: the
 two central elements, the elliptic elements attached to `u ^ 2`, `u` and `-u`, the two Jordan
 blocks, and the diagonal matrix `diag(1, -1)`. -/
@@ -300,7 +293,7 @@ private theorem exists_linear_row (α : Fˣ →* ℂˣ) :
       (conjRepGLFinTwo (gl2FieldThreeClassIndex F j)) = gl2FieldThreeCharacterTable k j := by
   simp only [GL2CharacterParam.coe_classFunction_linear, character_GL2Linear]
   obtain hα | hα : (α (-1) : ℂ) = 1 ∨ (α (-1) : ℂ) = -1 :=
-    ((Units.coeHom ℂ).comp α).map_neg_one_eq_one_or_eq_neg_one
+    map_neg_one_eq_one_or_eq_neg_one ((Units.coeHom ℂ).comp α)
   · refine ⟨0, fun j => ?_⟩
     fin_cases j <;> simp [det_companionGL, hα]
   · refine ⟨1, fun j => ?_⟩
@@ -315,7 +308,7 @@ private theorem exists_steinbergTwist_row (hF : Fintype.card F = 3) {u : Eˣ}
   simp only [character_conjRepGLFinTwo_gl2FieldThreeClassIndex hF hu (GL2Steinberg F),
     character_GL2Steinberg_gl2FieldThreeNormalForm hF hu]
   obtain hα | hα : (α (-1) : ℂ) = 1 ∨ (α (-1) : ℂ) = -1 :=
-    ((Units.coeHom ℂ).comp α).map_neg_one_eq_one_or_eq_neg_one
+    map_neg_one_eq_one_or_eq_neg_one ((Units.coeHom ℂ).comp α)
   · refine ⟨5, fun j => ?_⟩
     fin_cases j <;> simp [det_companionGL, hα]
   · refine ⟨6, fun j => ?_⟩
@@ -340,9 +333,9 @@ private theorem exists_principalSeries_row (hF : Fintype.card F = 3) {u : Eˣ}
       · exact Units.ext h
   have hprod : (α (-1) : ℂ) * β (-1) = -1 ∧ (β (-1) : ℂ) + α (-1) = 0 := by
     have ha : (α (-1) : ℂ) = 1 ∨ (α (-1) : ℂ) = -1 :=
-      ((Units.coeHom ℂ).comp α).map_neg_one_eq_one_or_eq_neg_one
+      map_neg_one_eq_one_or_eq_neg_one ((Units.coeHom ℂ).comp α)
     have hb : (β (-1) : ℂ) = 1 ∨ (β (-1) : ℂ) = -1 :=
-      ((Units.coeHom ℂ).comp β).map_neg_one_eq_one_or_eq_neg_one
+      map_neg_one_eq_one_or_eq_neg_one ((Units.coeHom ℂ).comp β)
     rcases ha with ha | ha <;> rcases hb with hb | hb <;> simp_all
   have hab : (1 : Fˣ) ≠ -1 := fun h => h1 (by simpa using congrArg Units.val h)
   refine ⟨7, fun j => ?_⟩
@@ -373,7 +366,7 @@ private theorem cuspidal_apply_gl2FieldThreeNormalForm (hF : Fintype.card F = 3)
         -((θ u : ℂ) ^ 5 + (θ u : ℂ) ^ 15), -1, -(θ u : ℂ) ^ 4, 0] j := by
   obtain ⟨-, h1, -, -⟩ := fieldThree_facts hF
   obtain ⟨hu1, hu2, hu3, hu4, hu5⟩ := units_facts hF hu
-  have hψ := primitiveChar_to_Complex_ne_one F
+  have hψ := (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one
   -- the scalar `-1` of `F`, as a unit of `E`, is `u ^ 4`
   have hneg : Units.map (algebraMap F E : F →* E) (-1) = u ^ 4 := by
     rw [hu4]
@@ -489,7 +482,13 @@ theorem exists_equiv_submatrix_GL2CharacterTable_eq_gl2FieldThreeCharacterTable
     ∃ e : Fin 8 ≃ GL2CharacterParam F E,
       (GL2CharacterTable F E).submatrix e (conjClassesGLFinTwoEquiv ∘ gl2FieldThreeClassIndex F) =
         gl2FieldThreeCharacterTable := by
-  obtain ⟨u, hu⟩ := exists_units_mul_self_eq_add_one (E := E) hF
+  obtain ⟨x, hx⟩ := exists_mul_self_eq_of_finite E (1 : F) (-1)
+  have hx' : x * x = x + 1 := by simpa using hx
+  have hx0 : x ≠ 0 := by
+    rintro rfl
+    simp at hx'
+  let u := Units.mk0 x hx0
+  have hu : (u : E) * u = u + 1 := by simpa only [u, Units.val_mk0] using hx'
   -- every row of the parametrized table is a row of the explicit matrix
   have hrow : ∀ i : GL2CharacterParam F E, ∃ k, ∀ j,
       GL2CharacterTable F E i (conjClassesGLFinTwoEquiv (gl2FieldThreeClassIndex F j)) =
@@ -507,5 +506,28 @@ theorem exists_equiv_submatrix_GL2CharacterTable_eq_gl2FieldThreeCharacterTable
     gl2FieldThreeCharacterTable hrow
   rw [natCard_GL2CharacterParam, hF, Nat.card_fin]
   norm_num
+
+/-- **The character table of `GL₂(𝔽₃)`**: for a field `F` with three elements, some enumeration of
+the rows of `TauCeti.characterTable ℂ (GL (Fin 2) F)`, read in the columns labelled by
+`TauCeti.gl2FieldThreeClassIndex`, is the explicit matrix `TauCeti.gl2FieldThreeCharacterTable`.
+
+Unlike `TauCeti.exists_equiv_submatrix_GL2CharacterTable_eq_gl2FieldThreeCharacterTable`, whose
+rows are labelled by parameters attached to a quadratic extension `E` of `F`, this statement
+involves no extension: its rows are those of `TauCeti.characterTable`, to which the parameters are
+matched by `TauCeti.GL2CharacterTable_eq_submatrix_characterTable`. -/
+theorem exists_equiv_submatrix_characterTable_eq_gl2FieldThreeCharacterTable
+    (hF : Fintype.card F = 3) :
+    ∃ σ : Fin 8 ≃ Fin (Nat.card (ConjClasses (GL (Fin 2) F))),
+      (characterTable ℂ (GL (Fin 2) F)).submatrix σ
+          (conjClassesGLFinTwoEquiv ∘ gl2FieldThreeClassIndex F) =
+        gl2FieldThreeCharacterTable := by
+  have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
+  have : CharP F 3 := charP_of_card_eq_prime hF
+  let E := FiniteField.Extension F 3 2
+  have : Algebra.IsQuadraticExtension F E := ⟨FiniteField.finrank_extension F 3 2⟩
+  obtain ⟨e, he⟩ := exists_equiv_submatrix_GL2CharacterTable_eq_gl2FieldThreeCharacterTable E hF
+  refine ⟨e.trans ((GL2CharacterParam.equivIrreducibleCharacters F E).trans
+    (finEquivIrreducibleCharacters ℂ (GL (Fin 2) F)).symm), ?_⟩
+  rwa [GL2CharacterTable_eq_submatrix_characterTable, submatrix_submatrix] at he
 
 end TauCeti

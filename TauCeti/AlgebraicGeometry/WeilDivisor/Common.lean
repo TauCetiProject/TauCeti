@@ -38,8 +38,8 @@ noncomputable section
 private lemma exists_inf (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) :
     ∃ F : EffectiveDivisorOfDegree X (degree ((D : WeilDivisor X) ⊓ E)).toNat,
       (F : WeilDivisor X) = (D : WeilDivisor X) ⊓ E :=
-  ⟨⟨(D : WeilDivisor X) ⊓ E, D.isEffective.inf E.isEffective,
-    (Int.toNat_of_nonneg (D.isEffective.inf E.isEffective).degree_nonneg).symm⟩, rfl⟩
+  ⟨⟨(D : WeilDivisor X) ⊓ E, le_inf D.coe_nonneg E.coe_nonneg,
+    (Int.toNat_of_nonneg (degree_nonneg (le_inf D.coe_nonneg E.coe_nonneg))).symm⟩, rfl⟩
 
 /-- The common effective part of two fixed-degree effective divisors.
 
@@ -68,8 +68,8 @@ lemma multiplicityFinsupp_inf (D : EffectiveDivisorOfDegree X d)
   ext x
   rw [multiplicityFinsupp_apply, coeff_inf, Finsupp.inf_apply, multiplicityFinsupp_apply,
     multiplicityFinsupp_apply]
-  have hD := (isEffective_iff (D : WeilDivisor X)).mp D.isEffective x
-  have hE := (isEffective_iff (E : WeilDivisor X)).mp E.isEffective x
+  have hD := coeff_nonneg D.coe_nonneg x
+  have hE := coeff_nonneg E.coe_nonneg x
   omega
 
 /-- The symmetric-power representative of the common part is the pointwise minimum of

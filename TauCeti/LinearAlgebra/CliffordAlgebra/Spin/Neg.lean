@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Neg
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.BaseChange
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Center
@@ -27,7 +29,10 @@ sends the central element `-1` to `-1`.
 Over the reals this compares a Spin group built from a positive-definite form with the Clifford
 algebra of the negative-definite form, in which vectors satisfy `c(v)² = -|v|²`. There is no
 algebra isomorphism between the full Clifford algebras of `Q` and `-Q` in general, so the comparison
-necessarily passes through the even subalgebras.
+necessarily passes through the even subalgebras. After extension of scalars to an algebra
+containing a square root `u` of `-1`, such as `ℂ`, the full algebras are identified by
+`CliffordAlgebra.equivNeg`, `ι m ↦ u • ι m`; on scalar-extended Spin elements it agrees with
+`CliffordAlgebra.spinGroupEquivNeg`.
 
 A Spin element is a product of an even number of vectors of invertible norm
 (`CliffordAlgebra.exists_even_length_list_of_spinGroup`). The same vectors, read in the Clifford
@@ -42,6 +47,9 @@ algebra of `-Q`, conjugate vectors in the same way, which is what identifies the
 * `CliffordAlgebra.spinVectorAction_spinGroupEquivNeg`: the isomorphism preserves the vector
   actions.
 * `CliffordAlgebra.spinGroupEquivNeg_negOne`: the isomorphism sends `-1` to `-1`.
+* `CliffordAlgebra.equivNeg_spinGroupBaseChange`: after extension of scalars to an algebra
+  containing `u` with `u * u = -1`, the full-algebra isomorphism `CliffordAlgebra.equivNeg`
+  restricts on Spin elements to the scalar extension of `spinGroupEquivNeg`.
 
 ## References
 
@@ -203,5 +211,20 @@ theorem spinGroupEquivNeg_negOne {K : Type*} [Field K] [Module K M] [Invertible 
   apply Subtype.ext
   rw [coe_spinGroupEquivNeg_apply, h, map_neg, map_one, spinGroup.coe_negOne, NegMemClass.coe_neg,
     OneMemClass.coe_one]
+
+/-- After extension of scalars to an algebra `A` containing `u` with `u * u = -1`, the full-algebra
+isomorphism `CliffordAlgebra.equivNeg` of the extended Clifford algebras of `Q` and `-Q`, which
+sends `ι m` to `u • ι m`, restricts on scalar-extended Spin elements to the scalar extension of
+`spinGroupEquivNeg`. Over `ℂ`, this compares `v ↦ i v` with the real comparison of the Spin groups
+of `Q` and `-Q`; on a product of two vectors both carry the sign of
+`coe_spinGroupEquivNeg_apply_of_coe_eq_ι_mul_ι`. -/
+theorem equivNeg_spinGroupBaseChange {A : Type*} [CommRing A] [Algebra R A] {u : A}
+    (hu : u * u = -1) (x : spinGroup Q) :
+    equivNeg (Q.baseChange A) ((-Q).baseChange A) (QuadraticForm.baseChange_neg Q) hu
+        (spinGroupBaseChange (A := A) Q x : CliffordAlgebra (Q.baseChange A)) =
+      (spinGroupBaseChange (A := A) (-Q) (spinGroupEquivNeg Q x) :
+        CliffordAlgebra ((-Q).baseChange A)) := by
+  rw [coe_spinGroupBaseChange_apply, coe_spinGroupBaseChange_apply, coe_spinGroupEquivNeg_apply,
+    ← coe_spinGroupToEven_apply, equivNeg_ofBaseChangeAux]
 
 end CliffordAlgebra

@@ -56,7 +56,7 @@ theorem quantile_map_cast_hypergeometricMeasure_eq_iff (hK : K ≤ N) (hn : n �
           if j ≤ n then
             (K.choose j : ℝ) * ((N - K).choose (n - j) : ℝ) / (N.choose n : ℝ)
           else 0 := by
-    rw [← Set.Iic_def, hypergeometricMeasure_real_Iic_eq_sum hK hn]
+    rw [← Set.Iic_def, hypergeometricMeasure_real_Iic_eq_sum hK]
   constructor <;> intro h
   · simpa only [hcumulative] using h
   · simpa only [hcumulative] using h
@@ -64,7 +64,7 @@ theorem quantile_map_cast_hypergeometricMeasure_eq_iff (hK : K ≤ N) (hn : n �
 private theorem hypergeometricMeasure_real_singleton_pos (hK : K ≤ N) (hn : n ≤ N)
     {k : ℕ} (hk : k ≤ K ∧ k ≤ n ∧ n - k ≤ N - K) :
     0 < (hypergeometricMeasure N K n).real {k} := by
-  rw [measureReal_def, hypergeometricMeasure_singleton hK hn]
+  rw [measureReal_def, hypergeometricMeasure_singleton hK]
   exact ENNReal.toReal_pos ((hypergeometricWeight_ne_zero_iff N K n k).2 hk)
     (hypergeometricWeight_ne_top N K n k hn)
 
@@ -82,7 +82,7 @@ theorem quantile_map_cast_hypergeometricMeasure_eq_lower (hK : K ≤ N) (hn : n 
   · intro j hj
     simp only [Set.mem_ofPred_eq] at hj
     by_contra hnot
-    have hzero := hypergeometricMeasure_real_Iic_eq_zero_of_lt_lower hK hn
+    have hzero := hypergeometricMeasure_real_Iic_eq_zero_of_lt_lower hK
       (lt_of_not_ge hnot)
     rw [hzero] at hj
     exact hu.1.not_ge hj
@@ -94,25 +94,8 @@ theorem quantile_map_cast_hypergeometricMeasure_eq_upper (hK : K ≤ N) (hn : n 
     (hlevel : 1 - (hypergeometricMeasure N K n).real {min K n} < u) :
     ((hypergeometricMeasure N K n).map (Nat.cast : ℕ → ℝ)).quantile u = min K n := by
   let _ := isProbabilityMeasure_hypergeometricMeasure hK hn
-  rw [Measure.quantile_map_natCast_eq_iff _ hu]
-  constructor
-  · simp only [Set.mem_ofPred_eq]
-    rw [hypergeometricMeasure_real_Iic_eq_one_of_upper_le hK hn le_rfl]
-    exact hu.2.le
-  · intro j hj
-    simp only [Set.mem_ofPred_eq] at hj
-    by_contra hnot
-    have hsubset : (Iic j : Set ℕ) ⊆ ({min K n} : Set ℕ)ᶜ := by
-      intro i hi
-      simp only [mem_compl_iff, mem_singleton_iff]
-      exact ne_of_lt (hi.trans_lt (lt_of_not_ge hnot))
-    have hmass : (hypergeometricMeasure N K n).real (Iic j) ≤
-        1 - (hypergeometricMeasure N K n).real {min K n} := by
-      calc
-        _ ≤ (hypergeometricMeasure N K n).real ({min K n} : Set ℕ)ᶜ :=
-          measureReal_mono hsubset
-        _ = _ := probReal_compl_eq_one_sub .of_discrete
-    exact (not_le_of_gt hlevel) (hj.trans hmass)
+  exact Measure.quantile_map_natCast_eq_of_measureReal_Iic_eq_one _ hu
+    (hypergeometricMeasure_real_Iic_eq_one_of_upper_le hK hn le_rfl) hlevel
 
 /-- As the level tends to zero from above, valid hypergeometric quantiles tend to the smallest
 possible marked count `n - (N - K)`. -/

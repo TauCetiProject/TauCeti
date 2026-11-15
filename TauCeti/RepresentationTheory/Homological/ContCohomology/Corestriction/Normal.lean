@@ -160,7 +160,7 @@ theorem trivialF2CorMap_comp_trivialF2ResMap_eq_sum (t : G ⧸ U → G)
     rintro X rfl hX'
     rw [eqToHom_refl, Category.id_comp]
   rw [trivialF2CorMap_def, trivialF2ResMap_def, Category.assoc, Category.assoc,
-    hres _ (ofDiscreteModule_trivialF2 G) (res_trivialF2 G U)]
+    hres _ (ofDiscreteModule_trivialF2 G) (res_trivialF2_hom U.subtype)]
   simp only [← eqToHom_conjNormalMap_eqToHom, ← Preadditive.comp_sum, ← Preadditive.sum_comp]
   -- Compared in term mode: the codomains `Hⁿ(U, res_U M)` and `Hⁿ(U, M)` of `res ∘ cor` and of
   -- the sum of the conjugations agree only up to `res_ofDiscreteModule`.

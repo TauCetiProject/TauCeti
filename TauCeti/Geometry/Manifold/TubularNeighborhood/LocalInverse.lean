@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Euclidean
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.SmoothMap
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Local inverses to normal addition

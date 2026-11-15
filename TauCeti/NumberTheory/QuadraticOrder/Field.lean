@@ -124,6 +124,17 @@ private theorem numberFieldOrder_ne_maximal_of_not_isFundamentalDiscr (D : ℤ)
     exact numberFieldOrder_ne_maximal_of_not_isFundamentalDiscr D hD hfund hmax
   · exact numberFieldOrder_eq_maximal_of_isFundamentalDiscr D hD
 
+/-- **The order `ℤ[(D + √D)/2]` is the ring of integers exactly when `D` is fundamental.** The
+subalgebra `TauCeti.QuadraticOrder.toSubalgebra D` of the model `ℚ(√D)` is the integral closure
+of `ℤ` if and only if `D` is a fundamental discriminant. -/
+theorem toSubalgebra_eq_integralClosure_iff (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1)
+    [Fact (¬ IsSquare D)] :
+    toSubalgebra D hD = integralClosure ℤ (QuadraticAlgebra ℚ (D : ℚ) 0) ↔
+      Int.IsFundamentalDiscr D := by
+  rw [← numberFieldOrder_eq_maximal_iff D hD, ← numberFieldOrder_toSubalgebra,
+    ← GlobalNumberFields.maximalNumberFieldOrder_toSubalgebra]
+  exact ⟨GlobalNumberFields.NumberFieldOrder.ext, congrArg _⟩
+
 end TauCeti.QuadraticOrder
 
 

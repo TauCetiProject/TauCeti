@@ -13,6 +13,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 public import TauCeti.Algebra.Coalgebra.Convolution
+public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
 /-!
 # Infrastructure for Hopf spectra
@@ -111,25 +112,6 @@ end CommHopfAlgCat
 
 namespace TauCeti
 
-/-- Finite morphisms of schemes respect isomorphisms. -/
-instance isFinite_respectsIso :
-    MorphismProperty.RespectsIso (@IsFinite : MorphismProperty Scheme.{u}) :=
-  MorphismProperty.respectsIso_of_isStableUnderComposition
-    (fun _ _ f (_ : IsIso f) ↦ inferInstance)
-
-/-- Flat morphisms of schemes respect isomorphisms. -/
-instance flat_respectsIso :
-    MorphismProperty.RespectsIso (@Flat : MorphismProperty Scheme.{u}) :=
-  MorphismProperty.respectsIso_of_isStableUnderComposition
-    (fun _ _ f (_ : IsIso f) ↦ inferInstance)
-
-/-- Morphisms of schemes locally of finite presentation respect isomorphisms. -/
-instance locallyOfFinitePresentation_respectsIso :
-    MorphismProperty.RespectsIso
-      (@LocallyOfFinitePresentation : MorphismProperty Scheme.{u}) :=
-  MorphismProperty.respectsIso_of_isStableUnderComposition
-    (fun _ _ f (_ : IsIso f) ↦ inferInstance)
-
 /-- The scheme underlying the Hopf spectrum of `H` is its ordinary spectrum. -/
 @[simp↓]
 lemma hopfSpec_obj_X_left (H : CommHopfAlgCat.{u} R) :
@@ -153,15 +135,20 @@ lemma hopfSpec_obj_X_hom (H : CommHopfAlgCat.{u} R) :
         exact heq_of_eq (AlgebraicGeometry.algSpec_obj_hom
           (R := CommRingCat.of R) (Opposite.op (CommAlgCat.of R H))))
 
-/-- A morphism property that respects isomorphisms holds for the structural morphism of a Hopf
-spectrum exactly when it holds for the spectrum map induced by the algebra structure map. -/
+/-- A morphism property holds for the structural morphism of a Hopf spectrum exactly when it holds
+for the spectrum map induced by the algebra structure map. -/
 theorem morphismProperty_hopfSpec_obj_X_hom_iff
-    (P : MorphismProperty Scheme.{u}) [P.RespectsIso] (H : CommHopfAlgCat.{u} R) :
+    (P : MorphismProperty Scheme.{u}) (H : CommHopfAlgCat.{u} R) :
     P (((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (op H)).X.hom) ↔
       P (Spec.map (CommRingCat.ofHom (algebraMap R H))) := by
-  rw [hopfSpec_obj_X_hom]
-  rw [MorphismProperty.cancel_left_of_respectsIso
-    (P := P) (eqToHom (hopfSpec_obj_X_left R H))]
+  have h : ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (op H)).X.hom ≍
+      Spec.map (CommRingCat.ofHom (algebraMap R H)) := by
+    rw [hopfSpec_obj_X_hom]
+    exact eqToHom_comp_heq _ _
+  -- The two schemes agree by `hopfSpec_obj_X_left`, so the heterogeneous equality is an equality.
+  cases hopfSpec_obj_X_left R H
+  rw [eq_of_heq h]
+  rfl
 
 /-- The multiplication source of a Hopf spectrum is the standard affine fibre product of two
 copies of its underlying spectrum over the base. -/

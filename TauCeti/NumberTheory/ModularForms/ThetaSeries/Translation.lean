@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.SlashActions
-public import TauCeti.Algebra.Module.ZLattice.Integral
+public import TauCeti.Algebra.Module.ZLattice.Level
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
@@ -26,7 +26,7 @@ behaviour of theta series under the translations `T ^ n : τ ↦ τ + n` of the 
   `Θ_L(τ + 1) = Θ_L(τ)`, that is `Θ_L ∣[k] T = Θ_L` in every weight `k`, and `θ_{γ+L}` is invariant
   under `T ^ N` as soon as `N ‖γ‖² / 2 ∈ ℤ`; when some `N > 0` works for every `γ ∈ L^∨` (for
   instance when `L` is a full lattice in a finite-dimensional space), the least one is the level
-  of `L`.
+  of `L` (`ZLattice.IsEven.thetaCoset_slash_T_pow_level`).
 * If `L` is only **integral** and `γ ∈ L^∨`, then `‖γ + v‖² ≡ ‖γ‖² (mod 1)`, which gives the same
   statements for even translations: `θ_{γ+L}(τ + 2) = exp (2 π i ‖γ‖²) θ_{γ+L}(τ)` and
   `Θ_L ∣[k] T ^ 2 = Θ_L`. Integrality does not give period `1`: the theta series of `ℤ ⊆ ℝ` is
@@ -45,8 +45,9 @@ identities hold termwise.
   only on the coset `γ + L`.
 * `ZLattice.IsEven.thetaCoset_slash_T_zpow`, `ZLattice.IsEven.thetaSeries_slash_T`: the
   translation law for even lattices.
-* `ZLattice.IsEven.thetaCoset_slash_T_zpow_eq_self`: invariance of `θ_{γ+L}` under `T ^ N` when
-  `N ‖γ‖² / 2 ∈ ℤ`.
+* `ZLattice.IsEven.thetaCoset_slash_T_zpow_eq_self`,
+  `ZLattice.IsEven.thetaCoset_slash_T_pow_level`: invariance of `θ_{γ+L}` under `T ^ N` when
+  `N ‖γ‖² / 2 ∈ ℤ`, and in particular under `T ^ level L`.
 * `ZLattice.IsIntegral.thetaCoset_slash_T_zpow_two_mul`,
   `ZLattice.IsIntegral.thetaSeries_slash_T_sq`: the translation law for integral lattices.
 
@@ -185,6 +186,45 @@ theorem thetaCoset_slash_T_zpow_eq_self (hL : IsEven L) (hγ : γ ∈ dual L) (k
     simpa only [mul_zero, exp_zero, mul_assoc] using exp_pi_mul_I_mul_eq_of_sub_eq
       (a := ((‖γ‖ ^ 2 : ℝ) : ℂ) * N) (b := 0) (by rw [sub_zero, mul_comm]; exact_mod_cast hm)
   rw [hL.thetaCoset_slash_T_zpow hγ, h1, one_smul]
+
+/-- For an even lattice `L` and `γ ∈ L^∨`, every integer multiple of `level L` is a period of
+`θ_{γ+L}`. -/
+theorem thetaCoset_intCast_vadd_of_level_dvd (hL : IsEven L) (hγ : γ ∈ dual L) {N : ℤ}
+    (hN : (level L : ℤ) ∣ N) (τ : ℍ) :
+    thetaCoset L γ ((N : ℝ) +ᵥ τ) = thetaCoset L γ τ := by
+  obtain ⟨d, rfl⟩ := hN
+  refine thetaCoset_vadd_eq_self L γ (fun v hv ↦ ?_) τ
+  obtain ⟨m, hm⟩ := hL.exists_natCast_mul_norm_add_sq_eq hγ (exists_level_mul_norm_sq_eq hγ) hv
+  exact ⟨m * d, by push_cast; linear_combination (d : ℝ) * hm⟩
+
+/-- For an even lattice `L` and `γ ∈ L^∨`, `θ_{γ+L}` has period `level L`. -/
+@[simp]
+theorem thetaCoset_level_vadd (hL : IsEven L) (hγ : γ ∈ dual L) (τ : ℍ) :
+    thetaCoset L γ ((level L : ℝ) +ᵥ τ) = thetaCoset L γ τ := by
+  simpa using hL.thetaCoset_intCast_vadd_of_level_dvd hγ dvd_rfl τ
+
+/-- For an even lattice `L` and `γ ∈ L^∨`, `θ_{γ+L}` is invariant under `T ^ N` in every weight
+whenever `(level L : ℤ) ∣ N`. -/
+theorem thetaCoset_slash_T_zpow_of_level_dvd (hL : IsEven L) (hγ : γ ∈ dual L) (k : ℤ)
+    {N : ℤ} (hN : (level L : ℤ) ∣ N) :
+    thetaCoset L γ ∣[k] (ModularGroup.T ^ N) = thetaCoset L γ := by
+  obtain ⟨d, rfl⟩ := hN
+  obtain ⟨m, hm⟩ := exists_level_mul_norm_sq_eq hγ
+  exact hL.thetaCoset_slash_T_zpow_eq_self hγ k
+    ⟨m * d, by push_cast; linear_combination (d : ℝ) * hm⟩
+
+/-- For an even lattice `L` and `γ ∈ L^∨`, `θ_{γ+L}` is invariant under `T ^ (level L : ℤ)` in
+every weight. -/
+theorem thetaCoset_slash_T_zpow_level (hL : IsEven L) (hγ : γ ∈ dual L) (k : ℤ) :
+    thetaCoset L γ ∣[k] (ModularGroup.T ^ (level L : ℤ)) = thetaCoset L γ :=
+  hL.thetaCoset_slash_T_zpow_of_level_dvd hγ k dvd_rfl
+
+/-- For an even lattice `L` and `γ ∈ L^∨`, `θ_{γ+L}` is invariant under `T ^ level L` in every
+weight. -/
+@[simp]
+theorem thetaCoset_slash_T_pow_level (hL : IsEven L) (hγ : γ ∈ dual L) (k : ℤ) :
+    thetaCoset L γ ∣[k] (ModularGroup.T ^ level L) = thetaCoset L γ := by
+  rw [← zpow_natCast, hL.thetaCoset_slash_T_zpow_level hγ k]
 
 end IsEven
 

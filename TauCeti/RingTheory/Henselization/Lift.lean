@@ -47,15 +47,13 @@ universe. The compatible maps `B → S` are assembled by the shared construction
 
 * [Stacks Project, Lemma 15.12.1](https://stacks.math.columbia.edu/tag/0A02), the universal
   property of the henselization of a pair.
-* The Stacks Project, Lemma 15.11.5, uniqueness of sections modulo an ideal in the Jacobson
-  radical.
+* The uniqueness of sections modulo an ideal in the Jacobson radical is the last paragraph of the
+  proof of the same lemma, [Stacks Project, Lemma 15.12.1](https://stacks.math.columbia.edu/tag/0A02).
 -/
 
 public section
 
-open CategoryTheory Limits TensorProduct
-
-universe u v w
+universe u v
 
 namespace TauCeti.Henselization
 
@@ -95,7 +93,8 @@ variable (J) in
 private theorem stageLift_comp (hIJ : I.map (algebraMap R S) ≤ J)
     {B C : Neighbourhood.{u, u} I} (f : B ⟶ C) :
     (stageLift J hIJ C).comp f.hom.hom = stageLift J hIJ B :=
-  B.property.algHom_ext (hIJ.trans HenselianRing.jac)
+  B.property.algHom_ext (hIJ.trans (show J ≤ Ideal.jacobson ⊥ by
+    simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (I := J))))
 
 /-- The `R`-algebra map from the henselization of `(R, I)` to a henselian pair `(S, J)` with
 `IS ⊆ J`. It is the unique `R`-algebra map (`existsUnique_lift`). -/
@@ -105,13 +104,15 @@ noncomputable def lift (hIJ : I.map (algebraMap R S) ≤ J) : algebra I →ₐ[R
 /-- Every `R`-algebra map from the henselization of `(R, I)` to a henselian pair `(S, J)` with
 `IS ⊆ J` is `lift`. -/
 theorem eq_lift (hIJ : I.map (algebraMap R S) ≤ J) (f : algebra I →ₐ[R] S) : f = lift hIJ :=
-  algHom_ext_of_map_le_jacobson (hIJ.trans HenselianRing.jac)
+  algHom_ext_of_map_le_jacobson (hIJ.trans (show J ≤ Ideal.jacobson ⊥ by
+    simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (I := J))))
 
 /-- On the stage of an étale neighbourhood `B`, `lift` restricts to any `R`-algebra map
 `B → S`: there is exactly one such map. -/
 theorem lift_comp_stage (hIJ : I.map (algebraMap R S) ≤ J) (B : Neighbourhood.{u, u} I)
     (φ : B.obj →ₐ[R] S) : (lift hIJ).comp (stage I B) = φ :=
-  B.property.algHom_ext (hIJ.trans HenselianRing.jac)
+  B.property.algHom_ext (hIJ.trans (show J ≤ Ideal.jacobson ⊥ by
+    simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (I := J))))
 
 /-- On the stage of an étale neighbourhood `B`, `lift` agrees with any `R`-algebra map
 `B → S`. -/
@@ -159,6 +160,10 @@ end Henselian
 -- The henselization along the zero ideal does nothing.
 example : Nonempty (algebra (⊥ : Ideal R) ≃ₐ[R] R) :=
   ⟨algEquivOfHenselianRing ⊥⟩
+
+-- A henselian pair is fixed by henselization.
+example (I : Ideal R) [HenselianRing R I] : Nonempty (algebra I ≃ₐ[R] R) :=
+  ⟨algEquivOfHenselianRing I⟩
 
 -- The ordinary henselization of the finite field `𝔽₅` is `𝔽₅`.
 example : Nonempty (algebra (⊥ : Ideal (ZMod 5)) ≃ₐ[ZMod 5] ZMod 5) :=

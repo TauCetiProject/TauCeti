@@ -21,7 +21,7 @@ descent engine `AddCommGroup.fg_of_descent'` turns those two into finite generat
 Finiteness of the torsion subgroup comes out of the same two inputs and is Mathlib's
 `WeierstrassCurve.Affine.finite_torsion`.
 
-The statements are named for their conclusions, per the roadmap: no declaration is called
+The statements are named for their conclusions: no declaration is called
 `mordellWeil`, and the classical name appears in docstrings only.
 
 ## Main results

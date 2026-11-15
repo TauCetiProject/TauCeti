@@ -33,6 +33,8 @@ zero and returns `0`.
 * `CovariantDerivative.ricciTensor_eq_smul_schoutenTensor_add`: `Ric = (n - 2) P + (tr_g P) g`.
 * `CovariantDerivative.schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub`: constant
   curvature `κ` gives `P = (κ / 2) g`.
+* `CovariantDerivative.schoutenTensor_eq_zero_of_curvatureTensor_eq_zero`: zero curvature gives
+  `P = 0`.
 * `CovariantDerivative.mdifferentiableAt_schoutenTensor_apply`: for a smooth metric, `P` pairs
   differentiable vector fields to differentiable functions.
 
@@ -130,6 +132,13 @@ theorem IsMetricCompatible.schoutenTensor_isSymm
     rw [RingHom.id_apply, schoutenTensor_apply, schoutenTensor_apply,
       IsMetricCompatible.ricciTensor_comm (cov := cov) hcov ht x u v, real_inner_comm u v]⟩
 
+/-- A point with zero curvature tensor has zero Schouten tensor. -/
+theorem schoutenTensor_eq_zero_of_curvatureTensor_eq_zero (x : M) (h : curvature x = 0) :
+    cov.schoutenTensor x = 0 := by
+  ext u v
+  simp [cov.ricciTensor_eq_zero_of_curvatureTensor_eq_zero x h,
+    cov.scalarCurvature_eq_zero_of_curvatureTensor_eq_zero x h]
+
 /-- The Schouten tensor of the constant-curvature model
 `R(w,u)v = κ (⟨u,v⟩ w - ⟨w,v⟩ u)` is `(κ / 2) g`, in dimension at least `3`. -/
 theorem schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ)
@@ -158,5 +167,18 @@ theorem mdifferentiableAt_schoutenTensor_apply
     cov.contMDiff_scalarCurvature.mdifferentiableAt (by simp)
   exact mdifferentiableAt_const.mul ((cov.mdifferentiableAt_ricciTensor_apply hσ hτ).sub
     ((hS.mul mdifferentiableAt_const).mul (TauCeti.Manifold.mdifferentiableAt_inner hσ hτ)))
+
+/-- For a smooth metric, the Schouten tensor of a smooth connection pairs two vector fields that
+are `C^∞` at `x` to a function that is `C^∞` at `x`. -/
+theorem contMDiffAt_schoutenTensor_apply
+    [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)]
+    {σ τ : Π x : M, TangentSpace I x} {x : M} (hσ : CMDiffAt ∞ (T% σ) x)
+    (hτ : CMDiffAt ∞ (T% τ) x) :
+    ContMDiffAt I 𝓘(ℝ) ∞ (fun y ↦ cov.schoutenTensor y (σ y) (τ y)) x := by
+  simp only [schoutenTensor_apply, TauCeti.finrank_tangentSpace, div_eq_mul_inv]
+  exact contMDiffAt_const.mul ((cov.contMDiffAt_ricciTensor_apply hσ hτ).sub
+    ((cov.contMDiff_scalarCurvature.contMDiffAt.mul contMDiffAt_const).mul
+      (ContMDiffAt.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x)
+        (b := id) hσ hτ)))
 
 end CovariantDerivative

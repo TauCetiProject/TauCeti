@@ -120,7 +120,7 @@ theorem form_e8PowLattice_basisFun (k : ℕ) (a b : Fin k) (i j : Fin 8) :
       if a = b then (((CartanMatrix.E 8) i j : ℤ) : ℚ) else 0 := by
   rw [← Pi.basisFun_apply, ← Pi.basisFun_apply]
   rw [e8PowLattice, form_ofGramMatrix_basisFun_basisFun]
-  simp [e8PowGram, one_apply]
+  simp [e8PowGram, Matrix.one_apply]
 
 /-- The carrier of `E₈^k` is the integral span of its standard basis. -/
 theorem e8PowLattice_carrier (k : ℕ) :

@@ -129,18 +129,11 @@ lemma subgroupFiberOrbitMapOfLE_comp {H K L : Subgroup (deck p)} (hHK : H ≤ K)
   intro e
   rfl
 
-/-- A subgroup fibre-orbit quotient is subsingleton exactly when that subgroup acts
-transitively on the fibre. -/
-lemma subgroupFiberOrbitQuotient_subsingleton_iff (H : Subgroup (deck p)) :
-    Subsingleton (SubgroupFiberOrbitQuotient H b) ↔
-      MulAction.IsPretransitive H (p ⁻¹' {b}) := by
-  exact (MulAction.pretransitive_iff_subsingleton_quotient H (p ⁻¹' {b})).symm
-
 /-- If the full deck group acts transitively on a fibre, then the quotient of that fibre by
 the full deck subgroup is a subsingleton. -/
 lemma subsingleton_subgroupFiberOrbitQuotient_top [MulAction.IsPretransitive (deck p) (p ⁻¹' {b})] :
     Subsingleton (SubgroupFiberOrbitQuotient (⊤ : Subgroup (deck p)) b) := by
-  rw [subgroupFiberOrbitQuotient_subsingleton_iff]
+  rw [← MulAction.pretransitive_iff_subsingleton_quotient]
   refine MulAction.IsPretransitive.mk ?_
   intro e e'
   rcases MulAction.exists_smul_eq (deck p) e e' with ⟨φ, hφ⟩
@@ -306,7 +299,7 @@ lemma subgroupFiberOrbitQuotientEquiv_mapOfLE (h : E ≃ₜ F) (hpq : ∀ e, q (
   rfl
 
 /-- Quotienting a fibre by the trivial deck subgroup gives the fibre itself. -/
-noncomputable def subgroupFiberOrbitQuotientBotEquiv :
+def subgroupFiberOrbitQuotientBotEquiv :
     SubgroupFiberOrbitQuotient (⊥ : Subgroup (deck p)) b ≃ p ⁻¹' {b} :=
   TauCeti.MulAction.orbitRelQuotientBotEquiv (G := deck p) (X := p ⁻¹' {b})
 

@@ -16,7 +16,7 @@ An orthonormal basis `e` of an inner product space `V` identifies `V` with its d
 coordinates of `e`. That pairing is the **bilinear** form `⟪J v, u⟫`, for `J` the coordinatewise
 conjugation of `TauCeti/Analysis/InnerProductSpace/Conjugation.lean`, because the
 conjugate-linearity of `J` cancels the conjugate-linearity of the first argument of the inner
-product (`TauCeti.toBasis_toDual_apply`).
+product (`OrthonormalBasis.toBasis_toDual_apply`).
 
 Feeding that identification into Mathlib's contraction `dualTensorHomEquivOfBasis`, which turns
 `Module.Dual 𝕜 V ⊗[𝕜] V` into the endomorphisms of `V`, contracts the tensor square:
@@ -35,22 +35,23 @@ be.
 
 ## Main definitions
 
-* `TauCeti.tensorSquareEquivEnd`: the contraction `V ⊗[𝕜] V ≃ₗ[𝕜] (V →ₗ[𝕜] V)`.
+* `OrthonormalBasis.tensorSquareEquivEnd`: the contraction `V ⊗[𝕜] V ≃ₗ[𝕜] (V →ₗ[𝕜] V)`.
 
 ## Main statements
 
-* `TauCeti.toBasis_toDual_apply`: the dual vector that an orthonormal basis attaches to `v` pairs
-  against `u` as `⟪J v, u⟫`. This is the bridge between Mathlib's contraction and the conjugation.
-* `TauCeti.tensorSquareEquivEnd_tmul_apply` and `TauCeti.tensorSquareEquivEnd_symm_apply`: the two
-  directions on generators. Everything downstream goes through these rather than through the
-  definition.
+* `OrthonormalBasis.toBasis_toDual_apply`: the dual vector that an orthonormal basis attaches to
+  `v` pairs against `u` as `⟪J v, u⟫`. This is the bridge between Mathlib's contraction and the
+  conjugation.
+* `OrthonormalBasis.tensorSquareEquivEnd_tmul_apply` and
+  `OrthonormalBasis.tensorSquareEquivEnd_symm_apply`: the two directions on generators. Everything
+  downstream goes through these rather than through the definition.
 -/
 
 public section
 
 open scoped InnerProductSpace TensorProduct
 
-namespace TauCeti
+namespace OrthonormalBasis
 
 variable {𝕜 ι V : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
   [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] (e : OrthonormalBasis ι 𝕜 V)
@@ -60,8 +61,8 @@ coordinates of `e` the dual vector `Module.Basis.toDual` attaches to `v` is `u �
 `⟪J v, u⟫`: the inner product is conjugate-linear in its first argument and `J` is
 conjugate-linear, so the two conjugations cancel and the pairing is `𝕜`-bilinear. -/
 @[simp]
-theorem toBasis_toDual_apply (v u : V) : e.toBasis.toDual v u = ⟪conjugation e v, u⟫_𝕜 := by
-  have hb : ∀ i : ι, e.toBasis.toDual v (e i) = ⟪conjugation e v, e i⟫_𝕜 := fun i ↦ by
+theorem toBasis_toDual_apply (v u : V) : e.toBasis.toDual v u = ⟪e.conjugation v, u⟫_𝕜 := by
+  have hb : ∀ i : ι, e.toBasis.toDual v (e i) = ⟪e.conjugation v, e i⟫_𝕜 := fun i ↦ by
     have h := Module.Basis.toDual_apply_left e.toBasis v i
     rw [OrthonormalBasis.coe_toBasis] at h
     rw [h, OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.repr_apply_apply,
@@ -85,7 +86,7 @@ argument against `v` through the bilinear form `⟪J v, -⟫` of the basis and s
 result. -/
 @[simp]
 theorem tensorSquareEquivEnd_tmul_apply (v w u : V) :
-    tensorSquareEquivEnd e (v ⊗ₜ[𝕜] w) u = ⟪conjugation e v, u⟫_𝕜 • w := by
+    e.tensorSquareEquivEnd (v ⊗ₜ[𝕜] w) u = ⟪e.conjugation v, u⟫_𝕜 • w := by
   rw [tensorSquareEquivEnd, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
     LinearEquiv.refl_apply, dualTensorHomEquivOfBasis_apply, dualTensorHom_apply,
     Module.Basis.toDualEquiv_apply, toBasis_toDual_apply]
@@ -94,14 +95,14 @@ theorem tensorSquareEquivEnd_tmul_apply (v w u : V) :
 `∑ i, e i ⊗ₜ A (e i)` of the pure tensors recording where `A` sends each basis vector. -/
 @[simp]
 theorem tensorSquareEquivEnd_symm_apply (A : V →ₗ[𝕜] V) :
-    (tensorSquareEquivEnd e).symm A = ∑ i, e i ⊗ₜ[𝕜] A (e i) := by
+    e.tensorSquareEquivEnd.symm A = ∑ i, e i ⊗ₜ[𝕜] A (e i) := by
   rw [LinearEquiv.symm_apply_eq, map_sum]
   refine LinearMap.ext fun u ↦ ?_
   rw [LinearMap.sum_apply]
   calc A u = A (∑ i, ⟪e i, u⟫_𝕜 • e i) := by rw [e.sum_repr' u]
-    _ = ∑ i, tensorSquareEquivEnd e (e i ⊗ₜ[𝕜] A (e i)) u := by
+    _ = ∑ i, e.tensorSquareEquivEnd (e i ⊗ₜ[𝕜] A (e i)) u := by
         rw [map_sum]
         exact Finset.sum_congr rfl fun i _ ↦ by
           rw [tensorSquareEquivEnd_tmul_apply, conjugation_basis, map_smul]
 
-end TauCeti
+end OrthonormalBasis

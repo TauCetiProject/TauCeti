@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.LinearMap.End
+public import Mathlib.Algebra.Module.Submodule.Ker
+public import Mathlib.Algebra.Module.Equiv.Basic
 import Mathlib.Tactic.Abel
 
 /-!
@@ -19,6 +21,8 @@ original one is. The construction requires no freeness, finiteness or projectivi
 The evaluation and intertwining lemmas describe the extension without unfolding it. The affine
 formula `LinearMap.splitEnd_one_sub` is useful for characteristic polynomials, while the
 construction and its unit criterion also underlie determinants on finite projective modules.
+`LinearMap.kerSplitEndEquiv` identifies the kernel of an extension with the original kernel;
+in particular, extending by the identity does not add generalized spectral vectors at zero.
 -/
 
 public section
@@ -39,7 +43,8 @@ def splitEnd (π : F →ₗ[R] M) (σ : M →ₗ[R] F) (h : π ∘ₗ σ = id) :
   map_mul' f g := by
     have h' (x : M) : π (σ x) = x := congr($h x)
     ext x
-    simp only [add_apply, comp_apply, sub_apply, Module.End.one_apply, Module.End.mul_apply,
+    simp only [LinearMap.add_apply, comp_apply, LinearMap.sub_apply, _root_.one_apply_eq_self,
+      _root_.mul_apply_eq_comp,
       map_add, map_sub, h']
     abel
 
@@ -66,6 +71,42 @@ variable [AddCommGroup M] [Module R M]
 theorem comp_splitEnd (f : Module.End R M) :
     π ∘ₗ splitEnd π σ h f = f ∘ₗ π := by
   simp [splitEnd_apply, comp_add, comp_sub, ← comp_assoc, h, Module.End.one_eq_id]
+
+/-- The retraction and section identify the kernel of an extension by the identity with
+its original kernel. No freeness or finiteness hypothesis is needed. -/
+def kerSplitEndEquiv (f : Module.End R M) :
+    ker (splitEnd π σ h f) ≃ₗ[R] ker f := by
+  have h' (x : M) : π (σ x) = x := congr($h x)
+  have hπ (x : ker (splitEnd π σ h f)) : f (π x) = 0 := by
+    have hx := congr($(comp_splitEnd π σ h f) x)
+    simpa only [comp_apply, mem_ker.mp x.property, map_zero] using hx.symm
+  refine LinearEquiv.ofLinearMap
+    ((π.comp (ker (splitEnd π σ h f)).subtype).codRestrict _ fun x ↦ hπ x)
+    ((σ.comp (ker f).subtype).codRestrict _ ?_) ?_ ?_
+  · intro x
+    have hx := congr($(splitEnd_comp π σ h f) x)
+    simpa only [mem_ker, comp_apply, Submodule.subtype_apply,
+      mem_ker.mp x.property, map_zero] using hx
+  · ext x
+    exact h' x
+  · ext x
+    have hx := mem_ker.mp x.property
+    simp only [splitEnd_apply, LinearMap.add_apply, LinearMap.sub_apply, comp_apply,
+      _root_.one_apply_eq_self,
+      hπ x, map_zero, zero_add, sub_eq_zero] at hx
+    exact hx.symm
+
+/-- The kernel equivalence for an extension applies the retraction. -/
+@[simp]
+theorem coe_kerSplitEndEquiv_apply (f : Module.End R M) (x : ker (splitEnd π σ h f)) :
+    (kerSplitEndEquiv π σ h f x : M) = π x :=
+  (rfl)
+
+/-- The inverse kernel equivalence for an extension applies the section. -/
+@[simp]
+theorem coe_kerSplitEndEquiv_symm_apply (f : Module.End R M) (x : ker f) :
+    ((kerSplitEndEquiv π σ h f).symm x : F) = σ x :=
+  (rfl)
 
 /-- Extending an endomorphism is an affine operation around the identity. -/
 theorem splitEnd_eq_one_add (f : Module.End R M) :

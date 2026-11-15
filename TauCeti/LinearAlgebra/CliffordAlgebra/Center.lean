@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
-public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
 import Mathlib.Algebra.Central.Basic
 import Mathlib.LinearAlgebra.Projection
@@ -106,7 +106,7 @@ end CommRing
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
 
-private theorem center_even_component_is_scalar [FiniteDimensional K V] [NeZero (2 : K)]
+private theorem center_even_component_is_scalar [NeZero (2 : K)]
     (hQ : Q.Nondegenerate) (hV : Odd (finrank K V)) {x : CliffordAlgebra Q}
     (hxEven : x ∈ evenOdd Q 0) (hxCenter : x ∈ Subalgebra.center K (CliffordAlgebra Q)) :
     ∃ a : K, x = algebraMap K (CliffordAlgebra Q) a := by

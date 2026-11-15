@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import Mathlib.Data.Matrix.Basic
+import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.Order.Partition.Finpartition
 
 /-!
 # Triadic polyads
@@ -16,7 +18,8 @@ three canonically oriented role pairs. Its support is computed from this data: i
 role-ordered injective triples in the chosen cells whose coordinate pairs have the chosen colors.
 Thus a polyad carries no independently chosen support. Conversely, an injective triple determines
 the unique polyad `Polyad3.ofTriple` whose support contains it, so the supports of distinct
-polyads are disjoint.
+polyads are disjoint and split every finite set of injective triples
+(`Polyad3.sum_card_inter_support`).
 
 The three pair supports expose the colored bigraphs whose arbitrary subgraphs form subpolyads.
 The `faceKey` convention translates colors indexed by role pairs to the omitted-coordinate
@@ -98,6 +101,14 @@ theorem mem_support (P : Polyad3 S) (x : {x : Fin 3 → V // Function.Injective 
         S.pairColors.colorOfPair (x.1 0) (x.1 2) = some P.color₀₂ ∧
         S.pairColors.colorOfPair (x.1 1) (x.1 2) = some P.color₁₂ :=
   mem_polyadSupport
+
+/-- The support of a polyad has at most as many triples as the product of its three cells. -/
+theorem card_support_le (P : Polyad3 S) : #P.support ≤ #P.c₀ * #P.c₁ * #P.c₂ := by
+  rw [mul_assoc, ← card_product, ← card_product]
+  refine card_le_card_of_injOn (fun x ↦ (x.1 0, x.1 1, x.1 2)) (fun x hx ↦ ?_)
+    (Fin.injective_apply_zero_one_two.comp Subtype.val_injective).injOn
+  obtain ⟨h₀, h₁, h₂, -⟩ := (P.mem_support x).1 hx
+  simp [h₀, h₁, h₂]
 
 /-- Two polyads are equal when their three cells and three pair colors agree. -/
 @[ext]
@@ -367,6 +378,27 @@ theorem mem_support_iff_eq_ofTriple {P : Polyad3 S}
     (S.vertexPart.part_eq_of_mem P.hc₁ h₁).symm (S.vertexPart.part_eq_of_mem P.hc₂ h₂).symm
     k₀₁.2.2.symm k₀₂.2.2.symm k₁₂.2.2.symm
 
+/-- **Polyads under a refined skeleton.** If the vertex cells of `T` refine those of `S` and the
+pair colors of `S` factor through those of `T`, then two injective triples with the same polyad
+over `T` have the same polyad over `S`. -/
+theorem ofTriple_eq_ofTriple_of_le {κ' : Type*} {T : PairSkeleton3 κ' V}
+    (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ)
+    (hf : ∀ p, S.pairColors.color p = f (T.pairColors.color p))
+    {x y : {x : Fin 3 → V // Function.Injective x}} (h : ofTriple T x = ofTriple T y) :
+    ofTriple S x = ofTriple S y := by
+  exact ext_data (Finpartition.part_eq_part_of_le hV (congrArg c₀ h))
+    (Finpartition.part_eq_part_of_le hV (congrArg c₁ h))
+    (Finpartition.part_eq_part_of_le hV (congrArg c₂ h))
+    (by simpa [hf] using congrArg (f ∘ color₀₁) h) (by simpa [hf] using congrArg (f ∘ color₀₂) h)
+    (by simpa [hf] using congrArg (f ∘ color₁₂) h)
+
+/-- Relabeling the pair palette does not change which injective triples share a polyad. -/
+theorem ofTriple_relabel_eq_ofTriple_relabel_iff {κ' : Type*} (e : κ ≃ κ')
+    {x y : {x : Fin 3 → V // Function.Injective x}} :
+    ofTriple (S.relabel e) x = ofTriple (S.relabel e) y ↔ ofTriple S x = ofTriple S y :=
+  ⟨ofTriple_eq_ofTriple_of_le (S.relabel_vertexPart e).le e.symm fun p ↦ by simp,
+    ofTriple_eq_ofTriple_of_le (S.relabel_vertexPart e).ge e fun p ↦ by simp⟩
+
 open Function in
 /-- Distinct polyads over the same lower skeleton have disjoint supports. -/
 theorem pairwise_disjoint_support :
@@ -374,6 +406,28 @@ theorem pairwise_disjoint_support :
   intro P Q hPQ
   refine disjoint_left.2 fun x hP hQ ↦ hPQ ?_
   rw [mem_support_iff_eq_ofTriple.1 hP, mem_support_iff_eq_ofTriple.1 hQ]
+
+/-- The polyad supports over a lower skeleton partition the injective triples, so they split
+every finite set of injective triples. -/
+theorem sum_card_inter_support [Fintype κ] (s : Finset {x : Fin 3 → V // Function.Injective x}) :
+    ∑ P : Polyad3 S, #(s ∩ P.support) = #s := by
+  classical
+  rw [card_eq_sum_card_fiberwise (s := s) (f := ofTriple S) (t := univ) fun _ _ ↦ mem_univ _]
+  refine sum_congr rfl fun P _ ↦ congrArg card ?_
+  ext x
+  rw [mem_inter, mem_filter, mem_support_iff_eq_ofTriple, eq_comm]
+
+/-- Summing a function of the polyad of each injective triple over all injective triples gives
+the support-weighted sum of that function over the polyads. -/
+theorem sum_comp_ofTriple [Fintype κ] {M : Type*} [AddCommMonoid M] (φ : Polyad3 S → M) :
+    ∑ x, φ (ofTriple S x) = ∑ P : Polyad3 S, #P.support • φ P := by
+  classical
+  rw [← sum_fiberwise univ (ofTriple S)]
+  refine sum_congr rfl fun P _ ↦ ?_
+  rw [sum_congr rfl fun x hx ↦ by rw [(mem_filter.1 hx).2], sum_const]
+  congr 2
+  ext x
+  rw [mem_filter, mem_support_iff_eq_ofTriple, eq_comm, and_iff_right (mem_univ x)]
 
 end Polyad3
 

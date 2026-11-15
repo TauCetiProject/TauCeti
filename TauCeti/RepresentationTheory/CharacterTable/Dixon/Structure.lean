@@ -16,16 +16,15 @@ theorem that licenses the substitution is this one: at a good Dixon prime the ce
 `ZMod p [G]` looks exactly like the centre of `ℂ[G]`, namely a product of `r` copies of the
 coefficient field, `r` the number of conjugacy classes.
 
-Two of the three arithmetic conditions in `TauCeti.IsGoodDixonPrime` are what make this work:
-`p ∤ |G|` and `Monoid.exponent G ∣ p - 1`. The first makes `|G|` invertible modulo `p`; the second
-says `g ^ p = g` for every `g : G`, so that `ZMod p` already contains the eigenvalues of every
-group element. Dixon's size bound plays no part here -- it is about the lift back to
-characteristic zero, not about the modular computation.
+The arithmetic condition `Monoid.exponent G ∣ p - 1` says `g ^ p = g` for every `g : G`, so that
+`ZMod p` already contains the eigenvalues of every group element. For finite `G` this also
+forces `p ∤ |G|`, by Cauchy's theorem. Dixon's size bound plays no part here -- it is about the
+lift back to characteristic zero, not about the modular computation.
 
 Everything is inherited from
 `TauCeti/RepresentationTheory/CharacterTable/FiniteField.lean`, which proves the statement for an
-arbitrary finite coefficient field satisfying those two conditions; `ZMod p` has `p` elements, so
-`g ^ Fintype.card (ZMod p) = g` is exactly the exponent condition.
+arbitrary finite coefficient field satisfying that power-map condition. Since `ZMod p` has `p`
+elements, `g ^ Fintype.card (ZMod p) = g` is exactly the exponent condition.
 
 ## Main results
 
@@ -59,17 +58,6 @@ theorem pow_prime_eq_self (hp : IsGoodDixonPrime G p) (g : G) : g ^ p = g := by
   calc g ^ p = g ^ (p - 1 + 1) := by rw [Nat.sub_add_cancel hp.prime.one_lt.le]
     _ = g := by rw [pow_succ, h1, one_mul]
 
-/-- The two hypotheses that `TauCeti.pow_card_eq_self_of_mem_center` runs on, read off a good
-Dixon prime: `|G|` is invertible in `ZMod p`, and the `|ZMod p|`-th power map fixes `G`. -/
-private theorem splitting_hypotheses (hp : IsGoodDixonPrime G p) :
-    haveI := hp.neZero
-    ((Nat.card G : ZMod p) ≠ 0) ∧ ∀ g : G, g ^ Fintype.card (ZMod p) = g := by
-  have := hp.neZero
-  refine ⟨?_, fun g => ?_⟩
-  · exact hp.natCast_natCard_ne_zero
-  · rw [ZMod.card]
-    exact hp.pow_prime_eq_self g
-
 /-- **The modular centre is fixed by the Frobenius.** Every central element `y` of `ZMod p [G]`
 satisfies `y ^ p = y`; equivalently, the central characters take values in the prime field rather
 than in a proper extension of it. This is the mechanism behind the structure theorem. -/
@@ -79,8 +67,7 @@ theorem center_pow_prime (hp : IsGoodDixonPrime G p) {y : MonoidAlgebra (ZMod p)
   have := hp.fact_prime
   have := hp.neZero
   have := hp.finite
-  obtain ⟨hcard, hexp⟩ := hp.splitting_hypotheses
-  have h := pow_card_eq_self_of_mem_center hcard hexp hy
+  have h := pow_card_eq_self_of_mem_center (by simpa using hp.pow_prime_eq_self) hy
   rwa [ZMod.card] at h
 
 /-- **The good-prime structure theorem.** At a good Dixon prime the centre of `ZMod p [G]` is the
@@ -96,8 +83,7 @@ theorem nonempty_center_algEquiv_conjClasses (hp : IsGoodDixonPrime G p) :
   have := hp.fact_prime
   have := hp.neZero
   have := hp.finite
-  obtain ⟨hcard, hexp⟩ := hp.splitting_hypotheses
-  exact TauCeti.nonempty_center_algEquiv_conjClasses hcard hexp
+  exact TauCeti.nonempty_center_algEquiv_conjClasses (by simpa using hp.pow_prime_eq_self)
 
 /-- The good-prime structure theorem with the factors indexed by `Fin r` rather than by the
 conjugacy classes themselves: the shape in which the finite-field linear algebra of the

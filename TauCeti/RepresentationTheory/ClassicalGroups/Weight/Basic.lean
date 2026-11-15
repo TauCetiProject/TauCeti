@@ -157,7 +157,7 @@ theorem map_weightSpace_le_of_commute {ρ : Representation k (GL (Fin n) k) W} (
   intro w hw
   simp only [Submodule.mem_comap, mem_weightSpace_iff] at hw ⊢
   intro t
-  rw [← Module.End.mul_apply, ← (hφ t).eq, Module.End.mul_apply, hw t, map_smul]
+  rw [← mul_apply_eq_comp, ← (hφ t).eq, mul_apply_eq_comp, hw t, map_smul]
 
 end CommRing
 

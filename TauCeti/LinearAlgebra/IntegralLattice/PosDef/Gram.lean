@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Algebra.Order.Ring.Star
 public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
+public import TauCeti.LinearAlgebra.IntegralLattice.Rationalization
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 import Mathlib.Algebra.Order.Module.Rat
 import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
@@ -36,6 +37,8 @@ rational congruence (`TauCeti.Matrix.posDef_map_ratCast_iff`) and clearing denom
   when the integral Gram matrix of a carrier basis is.
 * `TauCeti.IntegralLattice.isPosDef_iff_posDef_integralNorm`: a lattice is positive definite
   exactly when its integral norm form is.
+* `TauCeti.IntegralLattice.IsPosDef.isPosDef_ofIntegralForm_restrict`: the restriction of a positive
+  definite lattice to a submodule of its carrier is positive definite.
 * `TauCeti.IntegralLattice.isPosDef_iff_posDef_map_gramMatrix`: a lattice is positive definite
   exactly when its Gram matrix, cast to `ℝ`, is.
 * `TauCeti.IntegralLattice.isPosDef_iff_posDef_baseChange`: a lattice is positive definite exactly
@@ -72,6 +75,19 @@ theorem isPosDef_iff_posDef_integralNorm : L.IsPosDef ↔ L.integralNorm.PosDef 
     LinearMap.BilinForm.posDef_toQuadraticMap_iff_matrix b _ L.isSymm_integralForm,
     L.gramMatrix_eq_toMatrix]
 
+/-- **A sublattice of a positive definite lattice is positive definite**, in the form of the
+rationalized restriction of the integral form to a submodule of the carrier. -/
+theorem IsPosDef.isPosDef_ofIntegralForm_restrict {L : IntegralLattice V} (hL : L.IsPosDef)
+    (S : Submodule ℤ L) :
+    (ofIntegralForm (L.integralForm.restrict S) (L.isSymm_integralForm.restrict S)).IsPosDef := by
+  rw [isPosDef_iff_posDef_integralNorm]
+  intro y hy
+  obtain ⟨t, rfl⟩ := (ofIntegralForm.carrierEquiv _ _).surjective y
+  rw [integralNorm_apply, ofIntegralForm.integralForm_carrierEquiv,
+    LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply, ← integralNorm_apply]
+  refine (L.isPosDef_iff_posDef_integralNorm.1 hL) _ fun ht ↦ hy ?_
+  rw [Submodule.coe_eq_zero.1 ht, LinearEquiv.map_zero]
+
 /-- **A lattice is positive definite exactly when its real form is**, and more generally when
 its rational form remains positive definite after base change to a linearly ordered commutative
 rational algebra whose structure map preserves order. -/
@@ -81,7 +97,7 @@ theorem isPosDef_iff_posDef_baseChange {K : Type*} [CommRing K] [LinearOrder K]
   have := L.finiteDimensional
   (L.form.posDef_toQuadraticMap_baseChange_iff (K := K)).symm
 
-variable {K : Type*} [Field K] [LinearOrder K] [StarRing K] [TrivialStar K] [StarOrderedRing K]
+variable {K : Type*} [Field K] [LinearOrder K] [StarRing K] [StarOrderedRing K]
 
 /-- **A lattice is positive definite exactly when its Gram matrix, cast to `ℝ`, is positive
 definite**, and more generally its cast to any linearly ordered field `K` whose order is the star

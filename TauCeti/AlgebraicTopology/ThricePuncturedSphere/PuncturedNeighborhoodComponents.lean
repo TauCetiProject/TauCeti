@@ -56,6 +56,8 @@ lift of `α_q` that starts at the point numbered `i`.
   at `q`.
 * `IsCoveringMap.sameCycle_monodromyTriple_σ0_iff_joinedIn` and its analogues at `1` and `∞`:
   equivalently, exactly when those endpoints are joined by a path inside `p ⁻¹' D_q*`.
+* `IsCoveringMap.sameCycle_monodromyTriple_σ0_of_isPathConnected` and its analogues at `1` and
+  `∞`: if `p ⁻¹' D_q*` is path connected, then `σ_q` is a single cycle.
 * `IsCoveringMap.sameCycleQuotientσ0EquivConnectedComponents`,
   `IsCoveringMap.sameCycleQuotientσ1EquivConnectedComponents`,
   `IsCoveringMap.sameCycleQuotientσinfEquivConnectedComponents`: the cycles of `σ_q` are the
@@ -184,6 +186,14 @@ theorem _root_.IsCoveringMap.monodromy_αZero_mem_preimage (e : p ⁻¹' {basePt
     (hp.monodromy (.mk αZero) e : E) ∈ p ⁻¹' puncturedNeighborhoodZero :=
   monodromy_mem_preimage hp zeroBasePt.2 e
 
+/-- **One sheet over `0` gives a single cycle.** If the preimage of the punctured neighborhood
+of `0` is path connected, then any two sheets lie in the same cycle of `σ0`. -/
+theorem _root_.IsCoveringMap.sameCycle_monodromyTriple_σ0_of_isPathConnected
+    (hS : IsPathConnected (p ⁻¹' puncturedNeighborhoodZero)) (i j : Fin n) :
+    (hp.monodromyTriple ν).σ0.SameCycle i j :=
+  (hp.sameCycle_monodromyTriple_σ0_iff_joinedIn ν i j).2 <|
+    hS.joinedIn _ (hp.monodromy_αZero_mem_preimage _) _ (hp.monodromy_αZero_mem_preimage _)
+
 /-- **The points over `0`.** The cycles of the first permutation `σ0` of the monodromy
 triple are in bijection with the connected components of the preimage of the punctured
 neighborhood `{z | ‖z‖ < 1/2}` of `0`. The cycle of a sheet `i` goes to the component of
@@ -237,6 +247,14 @@ theorem _root_.IsCoveringMap.monodromy_αOne_mem_preimage (e : p ⁻¹' {basePt}
     (hp.monodromy (.mk αOne) e : E) ∈ p ⁻¹' puncturedNeighborhoodOne :=
   monodromy_mem_preimage hp oneBasePt.2 e
 
+/-- **One sheet over `1` gives a single cycle.** If the preimage of the punctured neighborhood
+of `1` is path connected, then any two sheets lie in the same cycle of `σ1`. -/
+theorem _root_.IsCoveringMap.sameCycle_monodromyTriple_σ1_of_isPathConnected
+    (hS : IsPathConnected (p ⁻¹' puncturedNeighborhoodOne)) (i j : Fin n) :
+    (hp.monodromyTriple ν).σ1.SameCycle i j :=
+  (hp.sameCycle_monodromyTriple_σ1_iff_joinedIn ν i j).2 <|
+    hS.joinedIn _ (hp.monodromy_αOne_mem_preimage _) _ (hp.monodromy_αOne_mem_preimage _)
+
 /-- **The points over `1`.** The cycles of the second permutation `σ1` of the monodromy
 triple are in bijection with the connected components of the preimage of the punctured
 neighborhood `{z | ‖z - 1‖ < 1/2}` of `1`. The cycle of a sheet `i` goes to the component of
@@ -289,6 +307,14 @@ theorem _root_.IsCoveringMap.sameCycle_monodromyTriple_σinf_iff_joinedIn (i j :
 theorem _root_.IsCoveringMap.monodromy_αPlus_mem_preimage (e : p ⁻¹' {basePt}) :
     (hp.monodromy (.mk αPlus) e : E) ∈ p ⁻¹' puncturedNeighborhoodInf :=
   monodromy_mem_preimage hp infBasePt.2 e
+
+/-- **One sheet over `∞` gives a single cycle.** If the preimage of the punctured neighborhood
+of `∞` is path connected, then any two sheets lie in the same cycle of `σinf`. -/
+theorem _root_.IsCoveringMap.sameCycle_monodromyTriple_σinf_of_isPathConnected
+    (hS : IsPathConnected (p ⁻¹' puncturedNeighborhoodInf)) (i j : Fin n) :
+    (hp.monodromyTriple ν).σinf.SameCycle i j :=
+  (hp.sameCycle_monodromyTriple_σinf_iff_joinedIn ν i j).2 <|
+    hS.joinedIn _ (hp.monodromy_αPlus_mem_preimage _) _ (hp.monodromy_αPlus_mem_preimage _)
 
 /-- **The points over `∞`.** The cycles of the third permutation `σinf` of the monodromy
 triple are in bijection with the connected components of the preimage of the punctured

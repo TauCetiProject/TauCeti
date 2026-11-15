@@ -11,24 +11,27 @@ public import Mathlib.MeasureTheory.VectorMeasure.Decomposition.Jordan
 # Jordan decomposition of a difference of measures, eventwise
 
 The positive part of the Jordan decomposition of a signed measure `s` has total mass equal to
-the largest value of `s` on a set, and its negative part the largest value of `-s`. For a
-difference `μ - ν` of two finite measures these are the largest excess `μ A - ν A` and the
-largest excess `ν A - μ A` over measurable events `A`. For two finite measures of the same total
-mass the two parts have equal mass.
+the largest value of `s` on a set, and its negative part the largest value of `-s`; the two
+masses agree exactly when `s` vanishes on the whole space. For a difference `μ - ν` of two
+finite measures these are the largest excess `μ A - ν A` and the largest excess `ν A - μ A` over
+measurable events `A`, and they agree exactly when `μ` and `ν` have the same total mass.
 
 These masses compute Mathlib's total variation distance `etvDist μ ν` through measurable events;
-see `TauCeti.MeasureTheory.Measure.TotalVariation`.
+see `TauCeti.MeasureTheory.Measure.TotalVariation.Basic`.
 
 ## Main declarations
 
 * `MeasureTheory.SignedMeasure.toJordanDecomposition_posPart_univ_eq_iSup` and
   `MeasureTheory.SignedMeasure.toJordanDecomposition_negPart_univ_eq_iSup`: the masses of the
   positive and negative parts as suprema of `s` and `-s`;
+* `MeasureTheory.SignedMeasure.toJordanDecomposition_posPart_univ_eq_negPart_univ_iff`: the two
+  parts have equal mass if and only if `s univ = 0`;
 * `MeasureTheory.Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup` and
   `MeasureTheory.Measure.toJordanDecomposition_toSignedMeasure_sub_negPart_univ_eq_iSup`: the
   same masses for `μ - ν`, as largest excesses over measurable events;
-* `MeasureTheory.Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ`:
-  for finite measures of equal total mass the two parts have equal mass.
+* `MeasureTheory.Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ_iff`
+  states that, for finite measures, the two parts of `μ - ν` have equal mass if and only if
+  `μ univ = ν univ`.
 -/
 public section
 
@@ -45,15 +48,14 @@ namespace SignedMeasure
 over all sets (`s` vanishes on non-measurable sets, so they do not contribute). -/
 theorem toJordanDecomposition_posPart_univ_eq_iSup (s : SignedMeasure α) :
     s.toJordanDecomposition.posPart univ = ⨆ A : Set α, ENNReal.ofReal (s A) := by
-  set j := s.toJordanDecomposition with hj
-  obtain ⟨S, hS, hpos, hneg⟩ := j.mutuallySingular
+  set j := s.toJordanDecomposition
   refine le_antisymm ?_ (iSup_le fun A => ?_)
-  · -- The positive part is carried by `Sᶜ`, where `s` agrees with it.
-    have hSc : ENNReal.ofReal (s Sᶜ) = j.posPart univ := by
-      rw [s.apply_eq_posPart_real_sub_negPart_real hS.compl, ← hj, measureReal_def j.negPart,
-        hneg, ENNReal.toReal_zero, sub_zero, ofReal_measureReal, ← measure_add_measure_compl hS,
-        hpos, zero_add]
-    exact hSc ▸ le_iSup (fun A => ENNReal.ofReal (s A)) Sᶜ
+  · -- The positive part is `s` restricted to the positive set `i` of a Hahn decomposition.
+    obtain ⟨i, hi, hi₀, -, hpos, -⟩ := s.toJordanDecomposition_spec
+    calc
+      j.posPart univ = ENNReal.ofReal (s i) := by
+        rw [hpos, ← ofReal_measureReal, toMeasureOfZeroLE_real_apply _ hi₀ hi .univ, inter_univ]
+      _ ≤ ⨆ A : Set α, ENNReal.ofReal (s A) := le_iSup (fun A => ENNReal.ofReal (s A)) i
   · by_cases hA : MeasurableSet A
     · calc
         ENNReal.ofReal (s A) ≤ ENNReal.ofReal (j.posPart.real A) := by
@@ -69,6 +71,14 @@ over all sets. -/
 theorem toJordanDecomposition_negPart_univ_eq_iSup (s : SignedMeasure α) :
     s.toJordanDecomposition.negPart univ = ⨆ A : Set α, ENNReal.ofReal (-s A) := by
   simpa [toJordanDecomposition_neg] using (-s).toJordanDecomposition_posPart_univ_eq_iSup
+
+/-- The positive and negative parts of the Jordan decomposition of `s` have equal total mass if
+and only if `s` vanishes on the whole space. -/
+@[simp]
+theorem toJordanDecomposition_posPart_univ_eq_negPart_univ_iff (s : SignedMeasure α) :
+    s.toJordanDecomposition.posPart univ = s.toJordanDecomposition.negPart univ ↔
+      s univ = 0 := by
+  rw [s.apply_eq_posPart_real_sub_negPart_real .univ, sub_eq_zero, measureReal_eq_measureReal_iff]
 
 end SignedMeasure
 
@@ -96,19 +106,14 @@ theorem toJordanDecomposition_toSignedMeasure_sub_negPart_univ_eq_iSup :
   rw [← neg_sub, SignedMeasure.toJordanDecomposition_neg, JordanDecomposition.neg_negPart,
     toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup]
 
-/-- For finite measures of equal total mass, the positive and negative parts of the Jordan
-decomposition of `μ - ν` have equal total mass. -/
-theorem toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ
-    (h : μ univ = ν univ) :
+/-- The positive and negative parts of the Jordan decomposition of `μ - ν` have equal total mass
+if and only if the finite measures `μ` and `ν` have equal total mass. -/
+theorem toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ_iff :
     (μ.toSignedMeasure - ν.toSignedMeasure).toJordanDecomposition.posPart univ =
-      (μ.toSignedMeasure - ν.toSignedMeasure).toJordanDecomposition.negPart univ := by
-  set s := μ.toSignedMeasure - ν.toSignedMeasure
-  have hs : s univ = 0 := by
-    rw [toSignedMeasure_sub_apply MeasurableSet.univ, measureReal_def, measureReal_def, h,
-      sub_self]
-  rw [s.apply_eq_posPart_real_sub_negPart_real MeasurableSet.univ, sub_eq_zero,
-    measureReal_def, measureReal_def] at hs
-  exact (ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) (measure_ne_top _ _)).1 hs
+        (μ.toSignedMeasure - ν.toSignedMeasure).toJordanDecomposition.negPart univ ↔
+      μ univ = ν univ := by
+  rw [SignedMeasure.toJordanDecomposition_posPart_univ_eq_negPart_univ_iff,
+    toSignedMeasure_sub_apply .univ, sub_eq_zero, measureReal_eq_measureReal_iff]
 
 end Measure
 

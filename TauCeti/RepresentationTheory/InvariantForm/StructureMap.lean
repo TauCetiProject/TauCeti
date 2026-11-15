@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-public import TauCeti.LinearAlgebra.Complex.SesquilinearForm
+public import TauCeti.LinearAlgebra.SesquilinearForm.Balance
+public import TauCeti.LinearAlgebra.SesquilinearForm.Separating
 public import TauCeti.RepresentationTheory.InvariantForm.Hermitian
 public import TauCeti.RepresentationTheory.QuaternionicStructure
 public import TauCeti.RepresentationTheory.RealForm
@@ -59,7 +60,7 @@ guess `B x y = H (K x) y` is bilinear, invariant and nondegenerate for free, but
 rule only if `H` is compatible with `K` in the sense `H (K x) (K y) = conj (H x y)`, which an
 arbitrary invariant `H` need not be.  Replacing `H` by the **balanced** form
 `LinearMap.balance H K x y = H x y + conj (H (K x) (K y))` of
-`TauCeti/LinearAlgebra/Complex/SesquilinearForm.lean` -- still invariant, Hermitian and positive
+`TauCeti/LinearAlgebra/SesquilinearForm/Balance.lean` -- still invariant, Hermitian and positive
 definite, since `K` is bijective -- makes it compatible, and then `B x y = H (K x) y` flips by the
 sign that `K ∘ K` carries: symmetric for a real structure, alternating for a quaternionic one.
 Against a fixed `H` the two directions assemble into the existence criteria
@@ -82,7 +83,7 @@ available -- by Haar averaging for a compact group as much as by summation for a
   quaternionic structure produces a nondegenerate invariant alternating form the same way.**
 * `Representation.isInvariantSesqForm_balance`: **balancing an invariant sesquilinear form
   against an equivariant map leaves it invariant**, which is what makes the balanced form of
-  `TauCeti/LinearAlgebra/Complex/SesquilinearForm.lean` usable on a representation.
+  `TauCeti/LinearAlgebra/SesquilinearForm/Balance.lean` usable on a representation.
 * `Representation.exists_isRealStructure_iff` and
   `Representation.exists_isQuaternionicStructure_iff`: against a positive definite invariant
   Hermitian form, an irreducible finite-dimensional representation has a real, respectively a
@@ -456,11 +457,11 @@ private theorem exists_isInvariantForm_flip_of_sq_eq_smul {H : V →ₗ⋆[ℂ] 
   · -- Left separation: a vector killed by `B` has `balance H K (K x) (K x) = 0`.
     intro x hx
     by_contra hx0
-    exact balance_apply_self_ne_zero hHnonneg hdef K (hKne hx0) (by simpa using hx (K x))
+    exact balance_apply_self_ne_zero hHnonneg K (hdef _ (hKne hx0)) (by simpa using hx (K x))
   · -- Right separation: pairing against `K y` gives `balance H K y y = 0`.
     intro y hy
     by_contra hy0
-    refine balance_apply_self_ne_zero hHnonneg hdef K hy0 ?_
+    refine balance_apply_self_ne_zero hHnonneg K (hdef _ hy0) ?_
     have h := hy (K y)
     rw [LinearMap.comp_apply, hKsq y, map_smulₛₗ, LinearMap.smul_apply, Complex.conj_ofReal,
       smul_eq_mul, mul_eq_zero] at h

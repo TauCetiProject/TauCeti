@@ -14,7 +14,9 @@ public import TauCeti.MeasureTheory.Function.LpSeminorm.Multiplier
 
 A *Laurent operator* is multiplication by an essentially bounded symbol on `L²` of the circle;
 in the Fourier basis `e_n = exp (2πinx/T)` it has the bi-infinite Toeplitz matrix of the Fourier
-coefficients of its symbol. This file characterizes Laurent operators in two ways.
+coefficients of its symbol. Concretely, `⟪e_m, e_n b⟫ = b̂(m - n)` for every `b ∈ L²`
+(`TauCeti.inner_fourierBasis_multiplicationOperator_fourierLp`). This file characterizes Laurent
+operators in two ways.
 
 * `TauCeti.eLpNorm_top_le_of_forall_mem_span_fourier`: the **multiplier criterion**. If a
   measurable function `a` satisfies `‖a q‖_p ≤ C ‖q‖_p` for every trigonometric polynomial `q`,
@@ -39,7 +41,7 @@ A. Böttcher and B. Silbermann, *Analysis of Toeplitz Operators*, second edition
 public section
 
 open MeasureTheory AddCircle Set Submodule
-open scoped ENNReal
+open scoped ENNReal InnerProductSpace
 
 namespace TauCeti
 
@@ -69,6 +71,15 @@ theorem eLpNorm_top_le_of_forall_mem_span_fourier {p : ℝ≥0∞} [Fact (1 ≤ 
   rw [ContinuousLinearMap.coe_coe, eLpNorm_congr_ae hae,
     eLpNorm_congr_ae (Filter.EventuallyEq.rfl.mul hae)]
   exact h q hq
+
+/-- The matrix coefficient `⟪e_m, e_n b⟫` of multiplication by the Fourier monomial `e_n` is the
+Fourier coefficient `b̂(m - n)`. -/
+theorem inner_fourierBasis_multiplicationOperator_fourierLp (b : Lp ℂ 2 (haarAddCircle (T := T)))
+    (m n : ℤ) :
+    ⟪fourierBasis (T := T) m, Lp.multiplicationOperator (fourierLp (T := T) ∞ n) b⟫_ℂ =
+      fourierCoeff b (m - n) := by
+  rw [← HilbertBasis.repr_apply_apply, fourierBasis_repr, Lp.multiplicationOperator_apply,
+    fourierCoeff_fourierLp_smul]
 
 /-- An operator on circle `L²` commuting with the bilateral shift, multiplication by `e_1`, sends
 each Fourier mode `e_n` to `e_n b`, where `b = W e_0`. -/
@@ -153,11 +164,11 @@ theorem commute_multiplicationOperator_fourierLp_one_iff
   have hb : eLpNorm (⇑b) ∞ haarAddCircle ≤ ‖W‖ₑ := by
     refine eLpNorm_top_le_of_forall_mem_span_fourier (p := 2) ENNReal.ofNat_ne_top
       (Lp.aestronglyMeasurable b) fun q hq ↦ ?_
-    rw [← eLpNorm_congr_ae (coeFn_apply_toLp_of_commute hW hq), ← Lp.enorm_def,
+    rw [← eLpNorm_congr_ae (coeFn_apply_toLp_of_commute hW hq), ← Lp.eNorm_def,
       ← eLpNorm_congr_ae (ContinuousMap.coeFn_toLp (E := ℂ) (p := 2) (𝕜 := ℂ) haarAddCircle q),
-      ← Lp.enorm_def]
+      ← Lp.eNorm_def]
     exact W.le_opENorm _
-  have hb_mem : MemLp (⇑b) ∞ haarAddCircle := memLp_iff.2 (hb.trans_lt enorm_lt_top)
+  have hb_mem : MemLp (⇑b) ∞ haarAddCircle := memLp_iff.2 (hb.trans_lt eNorm_lt_top)
   -- `W` agrees with multiplication by `b` on the Fourier basis, whose span is dense.
   refine ⟨hb_mem.toLp b, ContinuousLinearMap.ext_on
     (dense_iff_topologicalClosure_eq_top.2 (fourierBasis (T := T)).dense_span) ?_⟩

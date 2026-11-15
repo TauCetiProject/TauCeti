@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.KullbackLeibler.Variational
-public import TauCeti.MeasureTheory.Measure.TotalVariation
+public import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 import Mathlib.Probability.Moments.SubGaussian
 
 /-!
@@ -65,7 +65,7 @@ theorem two_mul_sq_measureReal_sub_le_klDiv [IsProbabilityMeasure μ] [IsProbabi
   simp only [Pi.sub_apply]
   rw [integral_const_mul, integral_sub (hXint μ) (integrable_const _),
     integral_const, probReal_univ, smul_eq_mul, one_mul, hXmean μ, hXmean ν]
-  simp only [cgf, mgf, sub_zero, nnnorm_one, NNReal.coe_pow, NNReal.coe_div,
+  simp only [cgf, mgf, sub_zero, nnNorm_one, NNReal.coe_pow, NNReal.coe_div,
     NNReal.coe_ofNat, hXmean ν] at hcgf
   dsimp [t] at *
   nlinarith
@@ -86,7 +86,7 @@ theorem two_mul_sq_measureReal_sub_le_mul_klDiv [IsFiniteMeasure μ] [IsFiniteMe
   have hprob (ρ : Measure α) (hρ : ρ univ = μ univ) :
       IsProbabilityMeasure (c⁻¹ • ρ) := by
     constructor
-    rw [Measure.smul_apply, ENNReal.smul_def, smul_eq_mul, ENNReal.coe_inv hcN, hρ, ← hc]
+    rw [_root_.smul_apply, ENNReal.smul_def, smul_eq_mul, ENNReal.coe_inv hcN, hρ, ← hc]
     exact ENNReal.inv_mul_cancel hc0 ENNReal.coe_ne_top
   let := hprob μ rfl
   let := hprob ν hmass.symm

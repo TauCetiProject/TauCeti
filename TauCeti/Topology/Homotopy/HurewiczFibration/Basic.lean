@@ -18,8 +18,9 @@ universe implies it for every smaller one (`TauCeti.IsHurewiczFibration.down`), 
 lifting property depends on the space only up to homeomorphism.
 
 Every Hurewicz fibration is a Serre fibration (`TauCeti.IsHurewiczFibration.mem_serreFibrations`),
-since the cubes are test spaces.  Homeomorphisms and product projections are Hurewicz fibrations,
-and Hurewicz fibrations are closed under composition and base change.
+since the cubes are test spaces.  Homeomorphisms, product projections and maps to a subsingleton
+are Hurewicz fibrations, and Hurewicz fibrations are closed under composition, products and base
+change.
 
 ## Main definitions
 
@@ -31,10 +32,14 @@ and Hurewicz fibrations are closed under composition and base change.
 * `TauCeti.isHurewiczFibration_iff`: the characterization by the homotopy lifting property.
 * `TauCeti.IsHurewiczFibration.mem_serreFibrations`: a Hurewicz fibration is a Serre fibration.
 * `TauCeti.IsHurewiczFibration.comp`: Hurewicz fibrations are closed under composition.
+* `TauCeti.IsHurewiczFibration.prodMap`: the product of two Hurewicz fibrations is one.
 * `TauCeti.IsHurewiczFibration.pullback`: the base change of a Hurewicz fibration along any map is
   a Hurewicz fibration.
-* `Homeomorph.isHurewiczFibration`, `TauCeti.isHurewiczFibration_fst`: homeomorphisms and product
-  projections are Hurewicz fibrations.
+* `TauCeti.IsHurewiczFibration.comp_subtypeVal`: the restriction of a Hurewicz fibration to a
+  subset of the total space closed under joining by paths is a Hurewicz fibration.
+* `Homeomorph.isHurewiczFibration`, `TauCeti.isHurewiczFibration_fst`,
+  `TauCeti.isHurewiczFibration_of_subsingleton`: homeomorphisms, product projections and maps to a
+  subsingleton are Hurewicz fibrations.
 
 ## References
 
@@ -97,6 +102,12 @@ theorem comp {C : Type v'} [TopologicalSpace C] {q : B → C} (hq : IsHurewiczFi
     (hp : IsHurewiczFibration.{w} p) : IsHurewiczFibration.{w} (q ∘ p) :=
   ⟨hq.1.comp hp.1, fun A _ ↦ (hq.2 A).comp (hp.2 A) hp.1⟩
 
+/-- The product of two Hurewicz fibrations is a Hurewicz fibration. -/
+theorem prodMap {E' : Type u'} {B' : Type v'} [TopologicalSpace E'] [TopologicalSpace B']
+    {q : E' → B'} (hp : IsHurewiczFibration.{w} p) (hq : IsHurewiczFibration.{w} q) :
+    IsHurewiczFibration.{w} (Prod.map p q) :=
+  ⟨hp.1.prodMap hq.1, fun A _ ↦ (hp.2 A).prodMap (hq.2 A)⟩
+
 /-- The base change of a Hurewicz fibration along any continuous map is a Hurewicz fibration. -/
 theorem pullback {B' : Type v'} [TopologicalSpace B'] (hp : IsHurewiczFibration.{w} p)
     (g : C(B', B)) :
@@ -108,7 +119,20 @@ theorem comp_homeomorph {E' : Type u'} [TopologicalSpace E'] (hp : IsHurewiczFib
     (e : E' ≃ₜ E) : IsHurewiczFibration.{w} (p ∘ e) :=
   hp.comp e.isHurewiczFibration
 
+/-- The restriction of a Hurewicz fibration to a subset of the total space that is closed under
+joining by paths, for instance a union of path components, is a Hurewicz fibration. -/
+theorem comp_subtypeVal (hp : IsHurewiczFibration.{w} p) {S : Set E}
+    (hS : ∀ ⦃e e' : E⦄, e ∈ S → Joined e e' → e' ∈ S) :
+    IsHurewiczFibration.{w} (p ∘ Subtype.val : S → B) :=
+  ⟨hp.1.comp continuous_subtype_val,
+    fun A _ ↦ HasHomotopyLiftingProperty.comp_subtypeVal (hp.2 A) hS⟩
+
 end IsHurewiczFibration
+
+/-- A map to a subsingleton space is a Hurewicz fibration. -/
+theorem isHurewiczFibration_of_subsingleton [Subsingleton B] : IsHurewiczFibration.{w} p :=
+  ⟨continuous_of_const fun _ _ ↦ Subsingleton.elim _ _,
+    fun A _ ↦ hasHomotopyLiftingProperty_of_subsingleton A⟩
 
 /-- The projection `B × F → B` is a Hurewicz fibration. -/
 theorem isHurewiczFibration_fst (F : Type u') [TopologicalSpace F] :

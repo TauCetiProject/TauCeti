@@ -69,7 +69,7 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open IsDedekindDomain NumberField ContCohomology
+open IsDedekindDomain _root_.NumberField ContCohomology
 
 variable {K : Type} [Field K] [NumberField K]
   (U : Subgroup (AbsoluteGaloisGroup K)) [U.FiniteIndex]

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Manifold
+public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Map
 public import TauCeti.Analysis.Complex.Fuchsian.Conj
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Conj
 public import TauCeti.Geometry.Manifold.Complex.Chart
@@ -39,7 +40,9 @@ is assumed discrete: discreteness of `Γ'` follows
 
 * `Subgroup.compactifiedQuotientConj`: the map of compactified quotients induced by conjugation,
   with the identity and composition laws `Subgroup.compactifiedQuotientConj_one` and
-  `Subgroup.compactifiedQuotientConj_comp`.
+  `Subgroup.compactifiedQuotientConj_comp`. Conjugation by an element of `Γ` induces the identity
+  (`Subgroup.compactifiedQuotientConj_of_mem`), and conjugation commutes with the maps induced by
+  inclusions (`Subgroup.compactifiedQuotientMap_compactifiedQuotientConj`).
 * `Subgroup.CompactifiedQuotient.continuous_compactifiedQuotientConj` and
   `Subgroup.CompactifiedQuotient.mdifferentiable_compactifiedQuotientConj`: it is continuous and
   holomorphic.
@@ -120,6 +123,39 @@ theorem compactifiedQuotientConj_comp {Γ'' : Subgroup PSL(2, ℝ)} {g' : PSL(2,
   | ofCusp C =>
       simp only [comp_apply, compactifiedQuotientConj_ofCusp]
       rw [← Equiv.trans_apply, cuspOrbitConjEquiv_trans]
+
+/-- Conjugation by an element of `Γ` induces the identity of the compactified quotient of `Γ`:
+`g • z` lies in the orbit of `z`, and `g • c` in the orbit of `c`. -/
+theorem compactifiedQuotientConj_of_mem (hg : g ∈ Γ) (h : ConjAct.toConjAct g • Γ = Γ) :
+    compactifiedQuotientConj h = id := by
+  funext x
+  cases x with
+  | ofQuotient p =>
+      induction p using Quotient.inductionOn' with
+      | h z =>
+        rw [compactifiedQuotientConj_ofQuotient, id, Quotient.mk''_eq_mk,
+          quotientConjHomeomorph_mk]
+        exact congrArg _ (Quotient.sound (orbitRel_apply.mpr (mem_orbit z (⟨g, hg⟩ : Γ))))
+  | ofCusp C =>
+      obtain ⟨c, rfl⟩ := cuspOrbitMk_surjective C
+      rw [compactifiedQuotientConj_ofCusp, id, cuspOrbitConjEquiv_cuspOrbitMk]
+      exact congrArg _ ((cuspOrbitMk_eq_iff _ _).mpr (mem_orbit (c : OnePoint ℝ) (⟨g, hg⟩ : Γ)))
+
+/-- **Conjugation commutes with the maps induced by inclusions.** If `g` conjugates `Δ ≤ Γ` to
+`Δ' ≤ Γ'`, then mapping to the compactified quotient of `Γ` and conjugating there agrees with
+conjugating on the compactified quotient of `Δ` and then mapping to that of `Γ'`. -/
+theorem compactifiedQuotientMap_compactifiedQuotientConj {Δ Δ' : Subgroup PSL(2, ℝ)}
+    (hΔ : ConjAct.toConjAct g • Δ = Δ') (hΓ : ConjAct.toConjAct g • Γ = Γ') (hle : Δ ≤ Γ)
+    (hle' : Δ' ≤ Γ') (x : Δ.CompactifiedQuotient) :
+    compactifiedQuotientMap hle' (compactifiedQuotientConj hΔ x) =
+      compactifiedQuotientConj hΓ (compactifiedQuotientMap hle x) := by
+  cases x with
+  | ofQuotient p =>
+      induction p using Quotient.inductionOn' with
+      | h z => simp [TauCeti.Setoid.map_of_le_mk]
+  | ofCusp C =>
+      obtain ⟨c, rfl⟩ := cuspOrbitMk_surjective C
+      simp
 
 namespace CompactifiedQuotient
 

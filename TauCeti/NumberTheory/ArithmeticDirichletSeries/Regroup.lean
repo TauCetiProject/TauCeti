@@ -57,13 +57,9 @@ fails under cancellation, as the rejection test
 `TauCeti.exists_forall_normCoeff_nonneg_not_forall_nonneg` records. That test is a statement about
 `TauCeti.normCoeff` alone, so it lives with that definition rather than here.
 
-## Roadmap role
-
-This is Layer **1.2** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`; the required worked
-example 9 accompanies it in `TauCeti/NumberTheory/ArithmeticDirichletSeries/NormCoeff.lean`. The
-exact value of the abscissa for the trivial weight is deliberately not proved here: its divergence
-input is the Layer 5 ideal count of
-`TauCeti/NumberTheory/ArithmeticDirichletSeries/Estimates.lean`.
+The exact value of the abscissa for the trivial weight is not proved here: its divergence input is
+the linear ideal count of `TauCeti/NumberTheory/ArithmeticDirichletSeries/Estimates.lean`, where
+it is `TauCeti.abscissaOfAbsConv_normCoeff_one`.
 
 ## References
 

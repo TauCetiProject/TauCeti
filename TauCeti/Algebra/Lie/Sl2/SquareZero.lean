@@ -189,12 +189,12 @@ theorem mul_apply_of_eq_zsmul (hEE : E * E = 0) (hFF : F * F = 0) (hEFE : E * F 
   -- Applying the two idempotents to `hbase` isolates the outer two eigenvalues.
   have k1 : ((1 : ℤ) - m) • ((E * F) v) = 0 := by
     have hap := congrArg (fun w => (E * F) w) hbase
-    simp only [map_sub, map_zsmul, ← Module.End.mul_apply, hPP, hPQ, LinearMap.zero_apply,
+    simp only [map_sub, map_zsmul, ← mul_apply_eq_comp, hPP, hPQ, LinearMap.zero_apply,
       sub_zero] at hap
     rw [sub_smul, one_smul, ← hap, sub_self]
   have k2 : ((1 : ℤ) + m) • ((F * E) v) = 0 := by
     have hap := congrArg (fun w => (F * E) w) hbase
-    simp only [map_sub, map_zsmul, ← Module.End.mul_apply, hQQ, hQP, LinearMap.zero_apply,
+    simp only [map_sub, map_zsmul, ← mul_apply_eq_comp, hQQ, hQP, LinearMap.zero_apply,
       zero_sub] at hap
     rw [add_smul, one_smul, ← hap, add_neg_cancel]
   have hPv : m ≠ 1 → (E * F) v = 0 := fun hm => by

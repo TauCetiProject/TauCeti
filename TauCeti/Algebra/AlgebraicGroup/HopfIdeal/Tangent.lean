@@ -25,8 +25,7 @@ Lie algebra morphism and characterizes its image: it consists exactly of the cou
 derivations of `H` which vanish on `I`.
 
 Thus the Lie algebra of the closed subgroup is canonically a Lie subalgebra of the Lie algebra of
-the ambient group. This is the coordinate-Hopf-algebra form of the ReductiveGroups roadmap's
-Layer 2 target "the Lie algebra of a closed subgroup".
+the ambient group.
 
 ## Main declarations
 
@@ -311,7 +310,7 @@ theorem lieSubalgebra_augmentation :
   have hx := hd (x - algebraMap R H (Coalgebra.counit (R := R) x)) (by
     rw [mem_toIdeal, mem_augmentation]
     simp)
-  simpa only [map_sub, d.map_algebraMap, sub_zero, Derivation.zero_apply] using hx
+  simpa only [map_sub, d.map_algebraMap, sub_zero, _root_.zero_apply] using hx
 
 /-- The tangent Lie algebra cut out by a join of Hopf ideals consists of the derivations
 belonging to both tangent Lie algebras. -/

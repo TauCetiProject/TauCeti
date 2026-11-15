@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.ZLattice.Family.Basic
+public import TauCeti.Algebra.Module.ZLattice.Family.LinearEquivProd
 public import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
@@ -65,18 +65,16 @@ theorem periodBasis_equivFun_mem_span_iff (y : Y) (v : E) :
     Basis.mem_span_iff_repr_mem]
   simp
 
-/-- The period translation relation, read in the period frame: the classes of `(y, v)` and
-`(y', v')` agree exactly when `y = y'` and the period coordinates of `v` and `v'` at `y` have the
-same class modulo the standard lattice. -/
-private theorem orbitRel_periodAddAction_iff {p q : Y × E} :
-    letI := periodAddAction P
-    AddAction.orbitRel Λ (Y × E) p q ↔ p.1 = q.1 ∧
-      (Submodule.Quotient.mk ((periodBasis P b hinj q.1).equivFun p.2) :
-        (ι → ℝ) ⧸ span ℤ (range (Pi.basisFun ℝ ι))) =
-        Submodule.Quotient.mk ((periodBasis P b hinj q.1).equivFun q.2) := by
-  let _ := periodAddAction P
-  rw [AddAction.orbitRel_apply, mem_orbit_periodAddAction_iff, Submodule.Quotient.eq,
-    ← map_sub, periodBasis_equivFun_mem_span_iff]
+/-- The period coordinate map carries the period lattice onto the standard integral lattice. -/
+theorem map_range_periodBasis_equivFun (y : Y) :
+    (LinearMap.range (P y)).map
+        ((periodBasis P b hinj y).equivFun.restrictScalars ℤ).toLinearMap =
+      span ℤ (range (Pi.basisFun ℝ ι)) := by
+  ext v
+  rw [Submodule.mem_map_equiv]
+  simpa only [LinearEquiv.restrictScalars_symm_apply, LinearEquiv.apply_symm_apply] using
+    (periodBasis_equivFun_mem_span_iff P b hinj y
+      ((periodBasis P b hinj y).equivFun.symm v)).symm
 
 variable [TopologicalSpace Y]
 
@@ -118,35 +116,30 @@ noncomputable def torusFamilyHomeomorphProd (hcont : ∀ l, Continuous fun y ↦
       Basis.equivFun_symm_apply] using
       ((continuous_periodBasis_equivFunL_symm P b hinj hcont).comp continuous_fst).clm_apply
         continuous_snd
-  { toFun := Quotient.lift
-      (fun p ↦ (p.1, Submodule.Quotient.mk ((periodBasis P b hinj p.1).equivFun p.2)))
-      fun p q h ↦ by
-        obtain ⟨h₁, h₂⟩ := (orbitRel_periodAddAction_iff P b hinj).1 h
-        rw [h₁]
-        exact Prod.ext rfl h₂
-    invFun r := Quotient.liftOn' r.2
-      (fun x ↦ Quotient.mk _ (r.1, (periodBasis P b hinj r.1).equivFun.symm x))
-      (fun x x' h ↦ Quotient.sound <| (orbitRel_periodAddAction_iff P b hinj).2
-        ⟨rfl, by
-          rw [LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
-          exact (Submodule.Quotient.eq _).2 ((Submodule.quotientRel_def _).1 h)⟩)
-    left_inv := by
-      rintro ⟨p⟩
-      exact congrArg (Quotient.mk _)
-        (Prod.ext rfl ((periodBasis P b hinj p.1).equivFun.symm_apply_apply p.2))
-    right_inv := by
-      rintro ⟨y, z⟩
-      induction z using Submodule.Quotient.induction_on with | H x => ?_
-      beta_reduce
-      rw [← Submodule.Quotient.mk''_eq_mk, Quotient.liftOn'_mk'', Quotient.lift_mk,
-        LinearEquiv.apply_symm_apply, Submodule.Quotient.mk''_eq_mk]
-    continuous_toFun := Continuous.quotient_lift
-      (continuous_fst.prodMk ((span ℤ _).isOpenQuotientMap_mkQ.continuous.comp hfwd)) _
+  let e := (torusFamilyLinearEquivProd P (span ℤ (range (Pi.basisFun ℝ ι)))
+      (fun y ↦ (periodBasis P b hinj y).equivFun.restrictScalars ℤ)
+      (map_range_periodBasis_equivFun P b hinj)).trans
+    ((Equiv.refl Y).prodCongr (span ℤ _).orbitRelQuotientAddEquiv.toEquiv)
+  { toEquiv := e
+    continuous_toFun := by
+      have hq : Topology.IsQuotientMap (Quotient.mk (AddAction.orbitRel Λ (Y × E))) :=
+        isQuotientMap_quotient_mk'
+      apply hq.continuous_iff.2
+      convert continuous_fst.prodMk
+        ((span ℤ (range (Pi.basisFun ℝ ι))).isOpenQuotientMap_mkQ.continuous.comp hfwd) using 1
+      funext p
+      rcases p with ⟨y, v⟩
+      simp [e, comp_def]
     continuous_invFun := by
       -- `Y × ℝ^ι → Y × ℝ^ι/ℤ^ι` is an open quotient map, so continuity can be checked upstairs.
       refine (IsOpenQuotientMap.id.prodMap
         (span ℤ (range (Pi.basisFun ℝ ι))).isOpenQuotientMap_mkQ).continuous_comp_iff.1 ?_
-      exact continuous_quot_mk.comp (continuous_fst.prodMk hbwd) }
+      have hq : Continuous (Quotient.mk (AddAction.orbitRel Λ (Y × E))) :=
+        continuous_quotient_mk'
+      convert hq.comp (continuous_fst.prodMk hbwd) using 1
+      funext p
+      rcases p with ⟨y, v⟩
+      simp [e, comp_def] }
 
 variable (hcont : ∀ l, Continuous fun y ↦ P y l)
 
@@ -155,14 +148,19 @@ of `v` at `y`. -/
 @[simp] theorem torusFamilyHomeomorphProd_mk (p : Y × E) :
     letI := periodAddAction P
     torusFamilyHomeomorphProd P b hinj hcont (Quotient.mk _ p) =
-      (p.1, Submodule.Quotient.mk ((periodBasis P b hinj p.1).equivFun p.2)) := (rfl)
+      (p.1, Submodule.Quotient.mk ((periodBasis P b hinj p.1).equivFun p.2)) := by
+  let _ := periodAddAction P
+  rcases p with ⟨y, v⟩
+  simp [torusFamilyHomeomorphProd]
 
 /-- The inverse homeomorphism sends `y` and the class of `x` to the class of
 `(y, ∑ i, x i • P y (b i))`. -/
 @[simp] theorem torusFamilyHomeomorphProd_symm_mk (y : Y) (x : ι → ℝ) :
     letI := periodAddAction P
     (torusFamilyHomeomorphProd P b hinj hcont).symm (y, Submodule.Quotient.mk x) =
-      Quotient.mk _ (y, (periodBasis P b hinj y).equivFun.symm x) := (rfl)
+      Quotient.mk _ (y, (periodBasis P b hinj y).equivFun.symm x) := by
+  let _ := periodAddAction P
+  simp [torusFamilyHomeomorphProd]
 
 /-- The homeomorphism lies over the parameter space. -/
 @[simp] theorem fst_torusFamilyHomeomorphProd

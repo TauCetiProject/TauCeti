@@ -131,7 +131,6 @@ theorem algebraSmooth_quotient_kernelHopfIdeal_iff_surjective_derivationCompLieH
     (f : H ⟶ K) (hf : Function.Injective f.hom) :
     Algebra.Smooth k (K ⧸ (kernelHopfIdeal f).toIdeal) ↔
       Function.Surjective (derivationCompLieHom (B := k) f.hom) := by
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   have hdim := ringKrullDim_kernel_add_eq_of_injective f hf
   have hH := (HopfAlgebra.smooth_iff_finrank_lie_eq_ringKrullDim (k := k) (H := H)).mp
     (inferInstance : Algebra.Smooth k H)
@@ -140,7 +139,7 @@ theorem algebraSmooth_quotient_kernelHopfIdeal_iff_surjective_derivationCompLieH
   rw [HopfAlgebra.smooth_iff_finrank_lie_eq_ringKrullDim, finrank_kernelLie]
   let df := (derivationCompLieHom (B := k) f.hom).toLinearMap
   have hrank := df.finrank_range_add_finrank_ker
-  rw [← finrank_toSubmodule, LieHom.ker_toSubmodule]
+  rw [← LieSubmodule.finrank_toSubmodule, LieHom.ker_toSubmodule]
   constructor
   · intro hker
     have hsum : Module.finrank k (LinearMap.ker df) +

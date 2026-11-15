@@ -123,10 +123,14 @@ theorem gen_notMem_range (hmin : minpoly ℤ θ = X ^ 2 - C d) :
   rw [hq, minpoly_rat_quadratic hmin, natDegree_X_pow_sub_C] at h1
   norm_num at h1
 
-/-- The generator of a quadratic presentation is **nonzero**: it is irrational
-(`gen_notMem_range`), whereas `0` is rational. -/
-theorem coe_gen_ne_zero (hmin : minpoly ℤ θ = X ^ 2 - C d) : (θ : K) ≠ 0 := fun h0 =>
-  gen_notMem_range hmin ⟨0, by rw [map_zero, h0]⟩
+omit [NumberField K] in
+/-- The generator of a quadratic presentation is **nonzero**. -/
+theorem coe_gen_ne_zero (hmin : minpoly ℤ θ = X ^ 2 - C d) : (θ : K) ≠ 0 := fun h0 => by
+  -- were `θ = 0`, its minimal polynomial over `ℤ` would have degree at most `1`, not `2`
+  have hθ : θ = 0 := Subtype.ext h0
+  have := minpoly.min ℤ θ monic_X (by rw [hθ]; simp)
+  rw [hmin, degree_X, degree_X_pow_sub_C (by norm_num)] at this
+  norm_num at this
 
 /-- **Every element of a quadratic field is `b + aθ`** for rationals `a, b`. -/
 theorem exists_eq_add_mul_gen (hmin : minpoly ℤ θ = X ^ 2 - C d)
@@ -136,19 +140,25 @@ theorem exists_eq_add_mul_gen (hmin : minpoly ℤ θ = X ^ 2 - C d)
   exact Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul ℚ K
     (gen_notMem_range hmin) x
 
-/-- **The radicand of a quadratic presentation is not a rational square.** Were `d = q²`, the
-factorization `(θ - q)(θ + q) = θ² - d = 0` would force `θ = ±q ∈ ℚ`. -/
+omit [NumberField K] in
+/-- **The radicand of a quadratic presentation is not a rational square.** -/
 theorem not_isSquare_radicand (hmin : minpoly ℤ θ = X ^ 2 - C d) :
     ¬ IsSquare (((d : ℤ) : ℚ)) := by
-  rintro ⟨q, hq⟩
-  have hθ : (θ : K) ^ 2 = algebraMap ℚ K ((d : ℤ) : ℚ) := coe_gen_sq_ratCast hmin
-  have hq' : algebraMap ℚ K ((d : ℤ) : ℚ) = algebraMap ℚ K q * algebraMap ℚ K q := by
-    rw [← map_mul, ← hq]
-  have hfac : ((θ : K) - algebraMap ℚ K q) * ((θ : K) + algebraMap ℚ K q) = 0 := by
-    linear_combination hθ + hq'
-  rcases mul_eq_zero.mp hfac with h | h
-  · exact gen_notMem_range hmin ⟨q, by linear_combination -h⟩
-  · exact gen_notMem_range hmin ⟨-q, by rw [map_neg]; linear_combination -h⟩
+  intro h
+  -- were `d = m²`, the factorization `(θ - m)(θ + m) = θ² - d = 0` would force `θ = ±m`, whose
+  -- minimal polynomial over `ℤ` has degree `1`, not `2`
+  obtain ⟨m, hm⟩ := Rat.isSquare_intCast_iff.mp h
+  have hfac : (θ - algebraMap ℤ (𝓞 K) m) * (θ + algebraMap ℤ (𝓞 K) m) = 0 := by
+    have hsq := gen_sq hmin
+    rw [hm, map_mul] at hsq
+    linear_combination hsq
+  obtain ⟨c, hc⟩ : ∃ c : ℤ, aeval θ (X - C c) = 0 := by
+    rcases mul_eq_zero.mp hfac with h | h
+    · exact ⟨m, by simp; linear_combination h⟩
+    · exact ⟨-m, by simp; linear_combination h⟩
+  have := minpoly.min ℤ θ (monic_X_sub_C c) hc
+  rw [hmin, degree_X_sub_C, degree_X_pow_sub_C (by norm_num)] at this
+  norm_num at this
 
 /-- An irrational square root of an integer presents a quadratic field: if `z : K` is irrational
 and `z² = n` for an integer `n`, then `z` is an algebraic integer with minimal polynomial `X² - n`

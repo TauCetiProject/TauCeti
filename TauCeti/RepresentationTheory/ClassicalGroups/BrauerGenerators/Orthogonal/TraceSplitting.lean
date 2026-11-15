@@ -168,7 +168,7 @@ theorem ker_orthogonalTraceProjection (hn : IsUnit (n : k)) :
 theorem isIdempotentElem_orthogonalTraceProjection (hn : IsUnit (n : k)) :
     IsIdempotentElem (orthogonalTraceProjection k n hn) := by
   refine LinearMap.ext fun x => ?_
-  rw [Module.End.mul_apply, orthogonalTraceProjection_apply, orthogonalTraceProjection_apply,
+  rw [mul_apply_eq_comp, orthogonalTraceProjection_apply, orthogonalTraceProjection_apply,
     map_smul, orthogonalCap_comp_orthogonalCup_apply, smul_eq_mul, ← mul_assoc, hn.val_inv_mul,
     one_mul]
 
@@ -328,7 +328,7 @@ noncomputable def orthogonalTraceTensors :
     refine iSup_le fun i => iSup_le fun j => iSup_le fun hij => ?_
     rintro _ ⟨y, rfl⟩
     have h := LinearMap.congr_fun (commute_orthogonalCupCapAt_tensorPower k n d g hij).eq y
-    rw [Module.End.mul_apply, Module.End.mul_apply] at h
+    rw [mul_apply_eq_comp, mul_apply_eq_comp] at h
     rw [Submodule.mem_comap, ← h]
     exact Submodule.mem_iSup_of_mem i <| Submodule.mem_iSup_of_mem j <|
       Submodule.mem_iSup_of_mem hij <| LinearMap.mem_range_self _ _
@@ -388,7 +388,7 @@ theorem isCompl_harmonicTensors_iSup_range_orthogonalCupCapAt :
   have h := LinearMap.isCompl_iInf_ker_iSup_range_of_isHermitian_toMatrix
     (tensorPowerBasis k n d)
     (fun p : {p : Fin d × Fin d // p.1 ≠ p.2} => orthogonalCupCapAt k n d p.1.1 p.1.2)
-    fun p => isHermitian_toMatrix_orthogonalCupCapAt p.2
+    fun _ => isHermitian_toMatrix_orthogonalCupCapAt
   simpa only [iInf_subtype, iSup_subtype, iInf_prod, iSup_prod, harmonicTensors_def] using h
 
 /-- **The trace splitting of the orthogonal tensor power.** Over a star-ordered field the harmonic

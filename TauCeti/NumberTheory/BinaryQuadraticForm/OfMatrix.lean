@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Basic
+import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.QuadraticDiscriminant
 
 /-!
@@ -38,8 +39,10 @@ of determinant `n` by the Hurwitz class numbers `H(4 n - t²)`.
 * `TauCeti.BinaryQuadraticForm.discrim_ofMatrix`: the discriminant of `Q_M` is
   `tr(M)² - 4 det M`.
 * `TauCeti.BinaryQuadraticForm.ofMatrix_conj`: `Q_{γ M γ⁻¹} = γ • Q_M` for `γ ∈ SL(2, R)`.
-* `TauCeti.BinaryQuadraticForm.ofMatrix_inj_of_trace_eq`: an integer `2 × 2` matrix is determined
-  by its trace and its form `Q_M`.
+* `TauCeti.BinaryQuadraticForm.ofMatrix_inj_of_trace_eq`: when `2` is not a zero divisor, a
+  `2 × 2` matrix is determined by its trace and its form `Q_M`.
+* `TauCeti.BinaryQuadraticForm.mem_stabilizer_ofMatrix_iff_commute`: when `2` is not a zero
+  divisor, the automorphs of `Q_M` in `SL(2, R)` are the elements commuting with `M`.
 
 ## References
 
@@ -108,20 +111,51 @@ theorem eval_ofMatrix_eq_eval_fixpointPolynomial (g : GL (Fin 2) R) (z : R) :
 /-- Conjugation by `γ ∈ SL(2, R)` acts on `Q_M` as `γ` acts on forms: `Q_{γ M γ⁻¹} = γ • Q_M`. -/
 theorem ofMatrix_conj (γ : SL(2, R)) (M : Matrix (Fin 2) (Fin 2) R) :
     ofMatrix (γ * M * γ⁻¹ : Matrix (Fin 2) (Fin 2) R) = γ • ofMatrix M := by
-  simp only [BinaryQuadraticForm.ext_iff, SpecialLinearGroup.coe_inv, adjugate_fin_two, ofMatrix_a,
-    ofMatrix_b, ofMatrix_c, smul_a, smul_b, smul_c, mul_apply, Fin.sum_univ_two, of_apply,
-    cons_val', cons_val_zero, cons_val_one]
+  simp only [Matrix.mul_apply, Fin.sum_univ_two, of_apply, BinaryQuadraticForm.ext_iff,
+    SpecialLinearGroup.coe_inv, adjugate_fin_two, ofMatrix_a, ofMatrix_b, ofMatrix_c, smul_a,
+    smul_b, smul_c, cons_val', cons_val_zero, cons_val_one]
   refine ⟨?_, ?_, ?_⟩ <;> ring
 
-/-- Over `ℤ`, a `2 × 2` matrix is determined by its trace and its form `Q_M`. -/
-theorem ofMatrix_inj_of_trace_eq {M N : Matrix (Fin 2) (Fin 2) ℤ} (h : M.trace = N.trace) :
-    ofMatrix M = ofMatrix N ↔ M = N := by
+/-- When `2` is not a zero divisor in `R`, for instance over `ℤ`, `ℤ_p` or a field of
+characteristic other than two, a `2 × 2` matrix is determined by its trace and its form `Q_M`. -/
+theorem ofMatrix_inj_of_trace_eq (h2 : IsLeftRegular (2 : R)) {M N : Matrix (Fin 2) (Fin 2) R}
+    (h : M.trace = N.trace) : ofMatrix M = ofMatrix N ↔ M = N := by
   refine ⟨fun hMN ↦ ?_, congrArg ofMatrix⟩
-  -- the form gives `c`, `b` and `d - a`, and the trace gives `a + d`
+  -- the form gives `c`, `b` and `d - a`, and the trace gives `a + d`, hence `2 a`
   simp only [BinaryQuadraticForm.ext_iff, ofMatrix_a, ofMatrix_b, ofMatrix_c, neg_inj] at hMN
   rw [trace_fin_two, trace_fin_two] at h
+  obtain ⟨h₁₀, h₁₁, h₀₁⟩ := hMN
+  have h₂ : 2 * M 0 0 = 2 * N 0 0 := by linear_combination h - h₁₁
+  have h₀₀ : M 0 0 = N 0 0 := h2 h₂
+  have h₁₁' : M 1 1 = N 1 1 := by linear_combination h₁₁ + h₀₀
   ext i j
-  fin_cases i <;> fin_cases j <;> lia
+  fin_cases i <;> fin_cases j
+  exacts [h₀₀, h₀₁, h₁₀, h₁₁']
+
+/-- An element `γ ∈ SL(2, R)` commuting with `M` fixes the form `Q_M`. -/
+theorem smul_ofMatrix_eq_self_of_commute {γ : SL(2, R)} {M : Matrix (Fin 2) (Fin 2) R}
+    (h : Commute (γ : Matrix (Fin 2) (Fin 2) R) M) : γ • ofMatrix M = ofMatrix M := by
+  rw [← ofMatrix_conj, h.eq, Matrix.mul_assoc, ← SpecialLinearGroup.coe_mul, mul_inv_cancel,
+    SpecialLinearGroup.coe_one, Matrix.mul_one]
+
+/-- When `2` is not a zero divisor in `R`, an element `γ ∈ SL(2, R)` fixes the form `Q_M` exactly
+when it commutes with `M`: conjugation by `γ` preserves the trace, and a matrix is determined by
+its trace and its form. -/
+theorem mem_stabilizer_ofMatrix_iff_commute (h2 : IsLeftRegular (2 : R)) {γ : SL(2, R)}
+    {M : Matrix (Fin 2) (Fin 2) R} :
+    γ ∈ MulAction.stabilizer SL(2, R) (ofMatrix M) ↔ Commute (γ : Matrix (Fin 2) (Fin 2) R) M := by
+  rw [MulAction.mem_stabilizer_iff]
+  refine ⟨fun hγ ↦ ?_, smul_ofMatrix_eq_self_of_commute⟩
+  have hinv : ((γ⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) * γ = 1 := by
+    rw [← SpecialLinearGroup.coe_mul, inv_mul_cancel, SpecialLinearGroup.coe_one]
+  have hconj : (γ : Matrix (Fin 2) (Fin 2) R) * M * ((γ⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) =
+      M := by
+    refine (ofMatrix_inj_of_trace_eq h2 ?_).mp ?_
+    · rw [trace_mul_cycle, hinv, Matrix.one_mul]
+    · rw [ofMatrix_conj, hγ]
+  rw [commute_iff_eq]
+  conv_rhs => rw [← hconj]
+  rw [Matrix.mul_assoc _ _ (γ : Matrix (Fin 2) (Fin 2) R), hinv, Matrix.mul_one]
 
 /-- If an integral form has discriminant `t² - 4 n`, then `t` and its middle coefficient have the
 same parity. -/

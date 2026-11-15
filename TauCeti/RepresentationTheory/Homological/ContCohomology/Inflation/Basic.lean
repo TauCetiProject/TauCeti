@@ -651,6 +651,37 @@ theorem explicitInfRes2_exact (hN : IsOpen (N : Set G))
     rw [groupCohomology.apply_mul_snd_of_isCocycle₂_of_vanishing hf hR,
       groupCohomology.apply_mul_fst_of_isCocycle₂_of_vanishing hf hR hL]
 
+omit [ContinuousMul G] in
+/-- Second step of the injectivity of inflation in degree two: if a continuous cochain `c` on `G`
+has coboundary `F`, a function pulled back from `G ⧸ N` and valued in `N`-fixed points, and
+`H¹(N, M)` vanishes, then `c` can be corrected by a coboundary to a continuous cochain `k` with
+the same coboundary that is constant, equal to `F (1, 1)`, on `N`. -/
+private theorem exists_continuous_cochain_const_on_normal [Subsingleton (H1 N M)] {c : G → M}
+    (hc : Continuous c) {F : (G ⧸ N) × (G ⧸ N) → M} (hfix : ∀ n : N, (n : G) • F (1, 1) = F (1, 1))
+    (hcF : ∀ g h : G, g • c h - c (g * h) + c g = F ((g : G ⧸ N), (h : G ⧸ N))) :
+    ∃ k : G → M, Continuous k ∧ (∀ g h : G, g • k h - k (g * h) + k g = F (g, h)) ∧
+      ∀ n : N, k n = F (1, 1) := by
+  -- On `N`, `c - F (1, 1)` is a continuous `1`-cocycle, hence a coboundary.
+  have hz : (fun n : N ↦ c n - F (1, 1)) ∈ Z1 N M := by
+    refine mem_Z1_iff.2 ⟨(hc.comp continuous_subtype_val).sub continuous_const, fun n n' ↦ ?_⟩
+    have h := hcF n n'
+    rw [quotientMk_coe_eq_one, quotientMk_coe_eq_one] at h
+    simp only [Subgroup.coe_mul, Subgroup.smul_def, smul_sub]
+    rw [hfix]
+    linear_combination (norm := abel) -h
+  obtain ⟨m, hm⟩ := mem_B1_iff.1 (H1pi_eq_zero_iff.1 (Subsingleton.elim
+    ((⟨_, hz⟩ : Z1 N M) : H1 N M) 0))
+  -- `k = c - d⁰ m` has the same coboundary as `c` and is constant, equal to `F (1, 1)`, on `N`.
+  refine ⟨fun g ↦ c g - (g • m - m),
+    hc.sub ((continuous_id.smul continuous_const).sub continuous_const), fun g h ↦ ?_, fun n ↦ ?_⟩
+  · rw [← hcF]
+    simp only [smul_sub, mul_smul]
+    abel
+  · have h := hm n
+    simp only [Subgroup.smul_def] at h
+    simp only [h]
+    abel
+
 variable (G M N) in
 /-- **Injectivity of inflation in degree two** when `H¹(N, M)` vanishes: for a normal subgroup
 `N` of `G` (not necessarily open) and coefficients `M` of any topology on whose `N`-fixed points
@@ -680,31 +711,10 @@ theorem explicitInfl2_injective [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgro
     have hF1' (g : G) : F (1, (g : G ⧸ N)) = F (1, 1) := by
       simp only [hF]
       rw [map_one_fst_of_mem_Z2 f.2]
-    set m₀ := F (1, 1)
-    -- On `N`, `c - m₀` is a continuous `1`-cocycle, hence a coboundary.
-    have hz : (fun n : N ↦ c n - m₀) ∈ Z1 N M := by
-      refine mem_Z1_iff.2 ⟨(hc.comp continuous_subtype_val).sub continuous_const, fun n n' ↦ ?_⟩
-      have h := hcF n n'
-      rw [quotientMk_coe_eq_one, quotientMk_coe_eq_one] at h
-      simp only [Subgroup.coe_mul, Subgroup.smul_def, smul_sub]
-      have hfix : (n : G) • m₀ = m₀ :=
-        (FixedPoints.mem_addSubgroup N M _).1
-          ((f : (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (1, 1)).2 n
-      rw [hfix]
-      linear_combination (norm := abel) -h
-    obtain ⟨m, hm⟩ := mem_B1_iff.1 (H1pi_eq_zero_iff.1 (Subsingleton.elim
-      ((⟨_, hz⟩ : Z1 N M) : H1 N M) 0))
-    -- `k = c - d⁰ m` has the same coboundary as `c` and is constant, equal to `m₀`, on `N`.
-    set k : G → M := fun g ↦ c g - (g • m - m) with hk
-    have hdk (g h : G) : g • k h - k (g * h) + k g = F ((g : G ⧸ N), (h : G ⧸ N)) := by
-      rw [← hcF]
-      simp only [hk, smul_sub, mul_smul]
-      abel
-    have hkN (n : N) : k n = m₀ := by
-      have h := hm n
-      simp only [Subgroup.smul_def] at h
-      simp only [hk, h]
-      abel
+    have hfix (n : N) : (n : G) • F (1, 1) = F (1, 1) :=
+      (FixedPoints.mem_addSubgroup N M _).1
+        ((f : (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (1, 1)).2 n
+    obtain ⟨k, hkc, hdk, hkN⟩ := exists_continuous_cochain_const_on_normal hc hfix hcF
     have hright (g : G) (n : N) : k (g * n) = k g := by
       have h := hdk g n
       rw [quotientMk_coe_eq_one, hkN, hF1] at h
@@ -723,7 +733,7 @@ theorem explicitInfl2_injective [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgro
       fun a b hab ↦ Subtype.ext <| by
         simpa using (hright a ⟨a⁻¹ * b, QuotientGroup.leftRel_apply.1 hab⟩).symm
     refine H2pi_eq_zero_iff.2 (mem_B2_iff'.2 ⟨e, (QuotientGroup.isQuotientMap_mk N).continuous_iff.2
-      (((hc.sub ((continuous_id.smul continuous_const).sub continuous_const))).subtype_mk _),
+      (hkc.subtype_mk _),
       fun a b ↦ ?_⟩)
     induction a using QuotientGroup.induction_on with
     | H g =>

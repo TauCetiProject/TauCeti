@@ -14,7 +14,7 @@ import TauCeti.MeasureTheory.Measure.OpenPos
 Let `a` be measurable and uniformly elliptic on a connected open set `Ω ⊆ ℝⁿ`, `n ≥ 1`, with
 constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak subsolution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0` in `Ω`,
 
 meaning `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`. This file proves the **strong maximum
 principle**: if `u ≤ M` almost everywhere on `Ω` and `u` comes essentially arbitrarily close to
@@ -137,28 +137,17 @@ private theorem UniformlyEllipticOn.ae_ball_value_eq_of_frequently_sub_lt [Nonem
       _ = 0 + ε := by field_simp; ring
   have havg : ⨍ x in ball y (2 * r), W1p.value w x ^ p₀ ∂mu = 0 :=
     (Real.rpow_eq_zero hA0 (inv_ne_zero hp₀.ne')).1 (hA.antisymm (Real.rpow_nonneg hA0 _))
-  -- `w^{p₀}` is integrable on `B(y, 2r)`, as `w ∈ L²` there and `p₀ ≤ 2`.
-  have hint : IntegrableOn (fun x => W1p.value w x ^ p₀) (ball y (2 * r)) mu := by
-    have hmem : MemLp (W1p.value w) (ENNReal.ofReal p₀) (mu.restrict (ball y (2 * r))) :=
-      ((Lp.memLp _).mono_measure (Measure.restrict_mono h2U le_rfl)).mono_exponent
-        ((ENNReal.ofReal_le_ofReal hp₀2).trans_eq (ENNReal.ofReal_ofNat 2))
-    refine (hmem.integrable_norm_rpow (ENNReal.ofReal_pos.2 hp₀).ne'
-      ENNReal.ofReal_ne_top).congr ?_
-    filter_upwards [hw02] with x hx
-    rw [ENNReal.toReal_ofReal hp₀.le, Real.norm_of_nonneg hx]
-  rw [setAverage_eq, smul_eq_mul, mul_eq_zero, inv_eq_zero] at havg
-  have hzero := (integral_eq_zero_iff_of_nonneg_ae
-    (hw02.mono fun x hx => Real.rpow_nonneg hx _) hint).1
-    (havg.resolve_left (measureReal_ball_pos mu y (by linarith)).ne')
+  have hzero := ae_eq_zero_of_setAverage_rpow_eq_zero hp₀
+    ((ENNReal.ofReal_le_ofReal hp₀2).trans_eq (ENNReal.ofReal_ofNat 2))
+    (measure_ball_pos mu y (by linarith)).ne' measure_ball_lt_top.ne
+    ((Lp.memLp _).mono_measure (Measure.restrict_mono h2U le_rfl)) hw02 havg
   filter_upwards [ae_restrict_of_ae_restrict_of_subset hr2 hzero,
-    ae_restrict_of_ae_restrict_of_subset hr2 hw02,
-    ae_restrict_of_ae_restrict_of_subset (hr2.trans h2U) hwv] with x h1 h2 h3
-  have := (Real.rpow_eq_zero h2 hp₀.ne').1 h1
+    ae_restrict_of_ae_restrict_of_subset (hr2.trans h2U) hwv] with x h1 h2
   linarith
 
 /-- **The strong maximum principle for weak subsolutions.** Let `a` be measurable and uniformly
 elliptic on a connected open set `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak
-subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`.
+subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`.
 Suppose that `u ≤ M` almost everywhere on `Ω`, and that `M` is the essential supremum of `u` on
 every ball about a point `y ∈ Ω`: for every ball `B(y, ρ) ⊆ Ω` and every `ε > 0`, `u > M - ε` on
 a subset of `B(y, ρ)` of positive measure. Then `u = M` almost everywhere on `Ω`. -/
@@ -220,7 +209,7 @@ theorem UniformlyEllipticOn.ae_value_eq_of_frequently_sub_lt [Nonempty ι]
 
 /-- **The strong maximum principle for weak subsolutions, compact form.** Let `a` be measurable
 and uniformly elliptic on a connected open set `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a
-weak subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`. If `u ≤ M` almost everywhere on `Ω` and the essential
+weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`. If `u ≤ M` almost everywhere on `Ω` and the essential
 supremum of `u` on a compact `K ⊆ Ω` is `M`, that is, `u > M - ε` on a subset of `K` of positive
 measure for every `ε > 0`, then `u = M` almost everywhere on `Ω`. -/
 theorem UniformlyEllipticOn.ae_value_eq_of_frequently_sub_lt_of_isCompact [Nonempty ι]
@@ -258,7 +247,7 @@ theorem UniformlyEllipticOn.ae_value_eq_of_frequently_sub_lt_of_isCompact [Nonem
 
 /-- **The strong minimum principle for weak supersolutions.** Let `a` be measurable and uniformly
 elliptic on a connected open set `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak
-supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`.
+supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`.
 Suppose that `m ≤ u` almost everywhere on `Ω`, and that `m` is the essential infimum of `u` on
 every ball about a point `y ∈ Ω`: for every ball `B(y, ρ) ⊆ Ω` and every `ε > 0`, `u < m + ε` on
 a subset of `B(y, ρ)` of positive measure. Then `u = m` almost everywhere on `Ω`. -/
@@ -281,7 +270,7 @@ theorem UniformlyEllipticOn.ae_value_eq_of_frequently_lt_add [Nonempty ι]
       linarith [hu v hv])
     (by filter_upwards [hm, hneg] with x hx hxn; rw [hxn, Pi.neg_apply]; linarith) hy
     fun ρ hρ hρΩ ε hε => ((hfreq ρ hρ hρΩ ε hε).and_eventually
-      (ae_restrict_of_ae_restrict_of_subset hρΩ hneg)).mono fun x ⟨hx, hxn⟩ => by
+      (ae_restrict_of_ae_restrict_of_subset hρΩ hneg)).mono fun x ⟨_, hxn⟩ => by
         rw [hxn, Pi.neg_apply]; linarith
   filter_upwards [hmax, hneg] with x hx hxn
   rw [hxn, Pi.neg_apply] at hx
@@ -289,7 +278,7 @@ theorem UniformlyEllipticOn.ae_value_eq_of_frequently_lt_add [Nonempty ι]
 
 /-- **The strong minimum principle for weak supersolutions, compact form.** Let `a` be measurable
 and uniformly elliptic on a connected open set `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a
-weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`. If `m ≤ u` almost everywhere on `Ω` and the essential
+weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`. If `m ≤ u` almost everywhere on `Ω` and the essential
 infimum of `u` on a compact `K ⊆ Ω` is `m`, that is, `u < m + ε` on a subset of `K` of positive
 measure for every `ε > 0`, then `u = m` almost everywhere on `Ω`. -/
 theorem UniformlyEllipticOn.ae_value_eq_of_frequently_lt_add_of_isCompact [Nonempty ι]
@@ -311,7 +300,7 @@ theorem UniformlyEllipticOn.ae_value_eq_of_frequently_lt_add_of_isCompact [Nonem
       linarith [hu v hv])
     (by filter_upwards [hm, hneg] with x hx hxn; rw [hxn, Pi.neg_apply]; linarith) hK hKΩ
     fun ε hε => ((hfreq ε hε).and_eventually (ae_restrict_of_ae_restrict_of_subset hKΩ hneg)).mono
-      fun x ⟨hx, hxn⟩ => by rw [hxn, Pi.neg_apply]; linarith
+      fun x ⟨_, hxn⟩ => by rw [hxn, Pi.neg_apply]; linarith
   filter_upwards [hmax, hneg] with x hx hxn
   rw [hxn, Pi.neg_apply] at hx
   linarith

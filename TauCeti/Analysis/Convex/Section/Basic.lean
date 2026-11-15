@@ -89,16 +89,21 @@ theorem convexOn_convexSection_add_linearMap (hu : ConvexOn ℝ Ω u) (L : E →
   ((hu.subset convexSection_subset (convex_convexSection hu)).add
     (L.convexOn (convex_convexSection hu))).add_const c
 
+/-- If `u y` lies above the plane through `(x, u x)` with slope `ℓ` (the supporting plane at `x`),
+then a section `convexSection Ω u x ℓ h` containing `y` has positive height `h`. -/
+theorem pos_of_mem_convexSection (hℓy : u x + (ℓ y - ℓ x) ≤ u y)
+    (hy : y ∈ convexSection Ω u x ℓ h) : 0 < h := by
+  have hb := hy.2
+  simp only [map_sub] at hb
+  linarith
+
 /-- A supporting slope gives a nonempty section exactly at positive heights. -/
 theorem convexSection_nonempty_iff (hx : x ∈ Ω)
     (hℓ : ∀ y ∈ Ω, u x + (ℓ y - ℓ x) ≤ u y) :
     (convexSection Ω u x ℓ h).Nonempty ↔ 0 < h := by
   constructor
   · rintro ⟨y, hy⟩
-    have := hℓ y hy.1
-    have hb := hy.2
-    simp only [map_sub] at hb
-    linarith
+    exact pos_of_mem_convexSection (hℓ y hy.1) hy
   · intro hh
     exact ⟨x, by simp [mem_convexSection_iff, hx, hh]⟩
 
@@ -235,6 +240,14 @@ theorem eq_of_mem_frontier_convexSection (hΩ : IsOpen Ω) (hu : ContinuousOn u 
     (not_lt.1 fun hlt => hy.2 ⟨hyΩ, hlt⟩)
   simpa only [add_assoc] using (mem_convexSection_iff.1
     (closure_convexSection_inter_subset hu hℓ (lt_add_of_pos_right h hε) ⟨hy.1, hyΩ⟩)).2
+
+/-- A section of height at most `H` lies in the section of height `H`, so it inherits its
+boundedness and the inclusion of its closure in the domain. -/
+theorem isBounded_convexSection_and_closure_subset_of_le [Bornology E] {H : ℝ} (hhH : h ≤ H)
+    (hH : Bornology.IsBounded (convexSection Ω u x ℓ H) ∧ closure (convexSection Ω u x ℓ H) ⊆ Ω) :
+    Bornology.IsBounded (convexSection Ω u x ℓ h) ∧ closure (convexSection Ω u x ℓ h) ⊆ Ω :=
+  ⟨hH.1.subset (convexSection_mono_height hhH),
+    (closure_mono (convexSection_mono_height hhH)).trans hH.2⟩
 
 end Topology
 

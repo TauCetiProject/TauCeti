@@ -21,8 +21,8 @@ used as a type of isomorphism classes. This file crosses it once.
 The same gap is crossed once more to descend functions to such a skeleton: a function on the full
 subcategory that is invariant under isomorphism in the ambient category descends to the skeleton.
 
-Its consumers are `TauCeti.SimpleFDRepClasses` and `TauCeti.AlgebraicGeometry.LineBundleClass`,
-the types of isomorphism classes of simple representations and of line bundles.
+This is how types of isomorphism classes are built from the skeleton of a full subcategory, for
+example the isomorphism classes of simple representations or of line bundles.
 
 ## Main results
 
@@ -38,32 +38,28 @@ public section
 
 namespace CategoryTheory
 
-attribute [local instance] isIsomorphicSetoid
-
 universe u v w
 
 namespace ObjectProperty
 
+variable {C : Type u} [Category.{v} C] (P : ObjectProperty C)
+
 /-- Two objects of a full subcategory define the same point of its skeleton exactly when the
 underlying objects are isomorphic. -/
-theorem toSkeleton_eq_toSkeleton_iff_nonempty_iso {C : Type u} [Category.{v} C]
-    (P : ObjectProperty C) {X Y : C} (hX : P X) (hY : P Y) :
-    toSkeleton (⟨X, hX⟩ : P.FullSubcategory) = toSkeleton ⟨Y, hY⟩ ↔ Nonempty (X ≅ Y) := by
-  rw [CategoryTheory.toSkeleton_eq_toSkeleton_iff]
-  exact ⟨fun ⟨e⟩ ↦ ⟨P.ι.mapIso e⟩, fun ⟨e⟩ ↦ ⟨ObjectProperty.isoMk _ e⟩⟩
+theorem toSkeleton_eq_toSkeleton_iff_nonempty_iso {X Y : C} (hX : P X) (hY : P Y) :
+    toSkeleton (⟨X, hX⟩ : P.FullSubcategory) = toSkeleton ⟨Y, hY⟩ ↔ Nonempty (X ≅ Y) :=
+  toSkeleton_eq_toSkeleton_iff.trans P.fullyFaithfulι.isoEquiv.nonempty_congr
 
 /-- Descend a function on a full subcategory that is invariant under isomorphism of the underlying
 objects of the ambient category to the skeleton of the full subcategory. -/
-noncomputable def skeletonLift {C : Type u} [Category.{v} C] (P : ObjectProperty C)
-    {α : Sort w} (f : P.FullSubcategory → α)
+def skeletonLift {α : Sort w} (f : P.FullSubcategory → α)
     (hf : ∀ X Y : P.FullSubcategory, Nonempty (X.obj ≅ Y.obj) → f X = f Y) :
     Skeleton P.FullSubcategory → α :=
-  Quotient.lift f fun X Y e ↦ e.elim fun i ↦ hf X Y ⟨P.ι.mapIso i⟩
+  Quotient.lift f fun X Y e ↦ hf X Y (e.map P.ι.mapIso)
 
 /-- Applying `skeletonLift` to the class of `X` recovers the original function at `X`. -/
 @[simp]
-theorem skeletonLift_toSkeleton {C : Type u} [Category.{v} C] (P : ObjectProperty C)
-    {α : Sort w} {f : P.FullSubcategory → α}
+theorem skeletonLift_toSkeleton {α : Sort w} {f : P.FullSubcategory → α}
     {hf : ∀ X Y : P.FullSubcategory, Nonempty (X.obj ≅ Y.obj) → f X = f Y}
     (X : P.FullSubcategory) :
     P.skeletonLift f hf (toSkeleton X) = f X :=

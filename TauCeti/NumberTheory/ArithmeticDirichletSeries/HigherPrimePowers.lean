@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.VonMangoldt
+import TauCeti.NumberTheory.NumberField.Ideal.LogNorm
 
 /-!
 # Crude prime counts and the higher prime powers of a number field
@@ -58,16 +59,14 @@ contributes at most `log x`.  Since a higher prime power of norm at most `x` has
 * `TauCeti.primePowerSummatory_indicator_isLittleO`: its specialization to the higher prime powers
   whose base lies in a prescribed set of primes.
 
-## Roadmap role
+## Use
 
-This is the prime and prime-power half of Layer **5.1** together with Layer **5.2** of
-`TauCetiRoadmap/ArithmeticDirichletSeries/README.md`, whose target 5.2 asks for "the generic
-`O(√x log² x)` estimate under the standard logarithmic prime-power weight" and for the
-hypotheses needed by other arithmetic weights.  Layer 10.2 consumes it as the named estimate
-turning an asymptotic for `ψ` into one for `ϑ`; the roadmap's own accounting there requires only
-the `o(x)` corollary.
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Prime/Psi.lean` consumes the estimate as
+`TauCeti.standardPrimePowerRemoval`, which turns an asymptotic for `ψ` into one for `ϑ`; only the
+`o(x)` corollary is needed there.
 
-The ideal-counting half of Layer 5.1 is a separate estimate: it is analytic, resting on Mathlib's
+The linear ideal count of `TauCeti/NumberTheory/ArithmeticDirichletSeries/Estimates.lean` is a
+separate estimate: it is analytic, resting on Mathlib's
 `NumberField.Ideal.tendsto_norm_le_div_atTop₀`, and is not needed here.
 
 ## References
@@ -94,14 +93,10 @@ variable {K : Type*} [Field K] [NumberField K]
 theorem two_pow_card_le_absNorm {I : Ideal (𝓞 K)} (hI : I ≠ 0)
     {s : Finset (Ideal (𝓞 K))} (hprime : ∀ P ∈ s, Prime P) (hdvd : ∀ P ∈ s, P ∣ I) :
     2 ^ s.card ≤ Ideal.absNorm I := by
-  have hprod : (∏ P ∈ s, P) ∣ I := Finset.prod_primes_dvd I hprime hdvd
   calc 2 ^ s.card = ∏ _P ∈ s, 2 := by rw [Finset.prod_const]
     _ ≤ ∏ P ∈ s, Ideal.absNorm P :=
         Finset.prod_le_prod fun P hP ↦ one_lt_absNorm_of_prime (hprime P hP)
-    _ = Ideal.absNorm (∏ P ∈ s, P) := (map_prod Ideal.absNorm _ _).symm
-    _ ≤ Ideal.absNorm I :=
-        Nat.le_of_dvd (Nat.pos_of_ne_zero (Ideal.absNorm_eq_zero_iff.not.mpr hI))
-          (map_dvd Ideal.absNorm hprod)
+    _ ≤ Ideal.absNorm I := prod_absNorm_le_absNorm hI hprime hdvd
 
 /-- The **crude prime count**: there are at most `[K:ℚ] / log 2 · x log x` height-one primes of
 absolute norm at most `x`.
@@ -370,10 +365,12 @@ multiple of the standard logarithmic weight on the higher prime powers has `o(x)
 function. -/
 theorem primePowerSummatory_isLittleO_of_le_higherPrimePowerWeight
     (K : Type*) [Field K] [NumberField K] {E : Type*} [NormedAddCommGroup E]
-    {w : IdealPrimePower K → E} {C : ℝ} (hC : 0 ≤ C)
+    {w : IdealPrimePower K → E} {C : ℝ}
     (hw : ∀ A, ‖w A‖ ≤ C * higherPrimePowerWeight A) :
     (fun x ↦ primePowerSummatory K w x) =o[atTop] fun x : ℝ ↦ x :=
-  (primePowerSummatory_isBigO_of_le_higherPrimePowerWeight K hC hw).trans_isLittleO
+  (primePowerSummatory_isBigO_of_le_higherPrimePowerWeight K (abs_nonneg C)
+    (fun A ↦ (hw A).trans (mul_le_mul_of_nonneg_right (le_abs_self C)
+      (higherPrimePowerWeight_nonneg A)))).trans_isLittleO
     isLittleO_sqrt_mul_log_sq
 
 /-- Restricting to the prime powers whose base lies in a set `S` of primes only removes
@@ -384,7 +381,7 @@ theorem primePowerSummatory_indicator_isLittleO (K : Type*) [Field K] [NumberFie
     (fun x ↦ primePowerSummatory K
         ({A : IdealPrimePower K | primePowerBase A ∈ S}.indicator higherPrimePowerWeight) x)
       =o[atTop] fun x : ℝ ↦ x :=
-  primePowerSummatory_isLittleO_of_le_higherPrimePowerWeight K zero_le_one
+  primePowerSummatory_isLittleO_of_le_higherPrimePowerWeight K
     fun A ↦ by
       rw [norm_indicator_eq_indicator_norm, one_mul]
       exact Set.indicator_apply_le'

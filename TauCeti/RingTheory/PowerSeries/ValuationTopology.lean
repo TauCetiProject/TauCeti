@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.LaurentSeries.Convergence
-public import TauCeti.RingTheory.LaurentSeries.Substitution
+public import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 
 /-!

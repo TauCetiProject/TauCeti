@@ -134,20 +134,50 @@ theorem iCycles_lift_f_zero (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic)
     completeResolutionComplexIso_inv_f, Functor.mapHomologicalComplex_map_f, Category.comp_id]
   simpa using h
 
+/-- The lift induces the given morphism of cycles in degree zero. -/
+@[simp]
+theorem cyclesMap_lift (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic)
+    (f : P.cycles 0 ⟶ Q.cycles 0) : HomologicalComplex.cyclesMap (lift hP hQ f) 0 = f := by
+  rw [← cancel_mono (Q.iCycles 0)]
+  simp
+
+private theorem preimageHom_zero (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic) :
+    preimageHom hP hQ (0 : P ⟶ Q) = 0 :=
+  ((IsGorensteinProjective.{v} A).ι.mapHomologicalComplex _).map_injective
+    (by simp [map_preimageHom])
+
+/-- A homotopy between the preimages of two maps in the exact category, carried to modules by
+the inclusion and transported along the identifications of the complexes. -/
+private noncomputable def homotopyOfPreimageHom (hP : P.IsTotallyAcyclic)
+    (hQ : Q.IsTotallyAcyclic) {φ ψ : P ⟶ Q}
+    (H : Homotopy (preimageHom hP hQ φ) (preimageHom hP hQ ψ)) : Homotopy φ ψ :=
+  (Homotopy.ofEq (by simp [map_preimageHom])).trans
+    ((((IsGorensteinProjective.{v} A).ι.mapHomotopy H).compLeft
+      (completeResolutionComplexIso hP).inv).compRight (completeResolutionComplexIso hQ).hom
+      |>.trans (Homotopy.ofEq (by simp [map_preimageHom])))
+
 /-- Two maps of totally acyclic complexes lifting the same morphism of the cycles in degree zero
 are homotopic. -/
 noncomputable def liftHomotopy (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic)
     (f : P.cycles 0 ⟶ Q.cycles 0) (φ ψ : P ⟶ Q) (hφ : P.iCycles 0 ≫ φ.f 0 = f ≫ Q.iCycles 0)
     (hψ : P.iCycles 0 ≫ ψ.f 0 = f ≫ Q.iCycles 0) : Homotopy φ ψ :=
-  -- The homotopy between the preimages in the exact category, carried to modules by the
-  -- inclusion and transported along the identifications of the complexes.
-  let H := (IsGorensteinProjective.{v} A).ι.mapHomotopy
+  homotopyOfPreimageHom hP hQ
     (CompleteResolution.liftHomotopy (ObjectProperty.homMk f) (preimageHom hP hQ φ)
       (preimageHom hP hQ ψ) (ObjectProperty.hom_ext _ (by simpa [preimageHom_f_hom] using hφ))
       (ObjectProperty.hom_ext _ (by simpa [preimageHom_f_hom] using hψ)))
-  (Homotopy.ofEq (by simp [map_preimageHom])).trans
-    (((H.compLeft (completeResolutionComplexIso hP).inv).compRight
-      (completeResolutionComplexIso hQ).hom).trans (Homotopy.ofEq (by simp [map_preimageHom])))
+
+/-- **The homotopy criterion** for totally acyclic complexes: a map whose morphism of cycles in
+degree zero factors through a relatively projective Gorenstein-projective module, that is, a
+finitely generated projective module, is null-homotopic. -/
+noncomputable def homotopyZero (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic) (φ : P ⟶ Q)
+    (hφ : (GorensteinProjectiveModuleCat.exactStructure.{v} A).projectiveInjective.FactorsThrough
+      (ObjectProperty.homMk (HomologicalComplex.cyclesMap φ 0) :
+        hP.completeResolution.Z 0 ⟶ hQ.completeResolution.Z 0)) :
+    Homotopy φ 0 :=
+  homotopyOfPreimageHom hP hQ
+    ((CompleteResolution.liftHomotopyZero (preimageHom hP hQ φ)
+      (ObjectProperty.hom_ext _ (by simp [preimageHom_f_hom])) hφ).trans
+      (Homotopy.ofEq (preimageHom_zero hP hQ).symm))
 
 /-- **Uniqueness of complete resolutions up to homotopy.** Totally acyclic complexes with
 isomorphic cycles in degree zero are homotopy equivalent; in particular any two complete

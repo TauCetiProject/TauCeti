@@ -16,7 +16,9 @@ public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 block actions, quadratic-form splitting and global bounds from local quadratic-form bounds.
 This module proves symmetry of the extension for invariant symmetric blocks, without a
 completeness assumption, and obtains the global form bounds from finite-dimensional
-restricted point-spectrum containment.
+restricted point-spectrum containment. For an invariant block, every real eigenvalue of the
+extension is either the scalar `κ` or an eigenvalue of the original operator carried by the
+block, so the extension can move the spectrum off the block wherever it is convenient.
 
 ## Provenance
 
@@ -76,5 +78,27 @@ theorem le_re_inner_reducedExtension_self_of_pointSpectrumIn (T : E →L[𝕜] E
   T.le_re_inner_reducedExtension_self W hW
     (r := c) (κ := κ) hκ
     (fun _ hy => hT.le_re_inner_apply_self_of_pointSpectrumIn hW hspec hy) x
+
+/-- Along an invariant subspace `W`, every real eigenvalue of the reduced extension
+`A P_W + κ P_{Wᗮ}` is either `κ` or an eigenvalue of `A` with an eigenvector in `W`. -/
+theorem restrictedPointSpectrum_reducedExtension_subset (A : E →L[𝕜] E)
+    {W : Submodule 𝕜 E} [W.HasOrthogonalProjection] (hW : ∀ x ∈ W, A x ∈ W) (κ : ℝ) :
+    Module.End.restrictedPointSpectrum (A.reducedExtension W κ : E →ₗ[𝕜] E) ⊤ ⊆
+      insert κ (Module.End.restrictedPointSpectrum (A : E →ₗ[𝕜] E) W) := by
+  intro μ hμ
+  obtain ⟨x, -, hx0, hx⟩ := Module.End.mem_restrictedPointSpectrum_iff.mp hμ
+  rw [coe_coe] at hx
+  by_cases hx' : Wᗮ.starProjection x = 0
+  · -- The eigenvector lies in `W`, where the extension agrees with `A`.
+    have hxW : x ∈ W := by
+      simpa [Submodule.orthogonal_orthogonal] using Wᗮ.starProjection_apply_eq_zero_iff.mp hx'
+    refine Or.inr (Module.End.mem_restrictedPointSpectrum hxW hx0 ?_)
+    rwa [coe_coe, ← A.reducedExtension_apply_of_mem W κ hxW]
+  · -- The `Wᗮ` component of the eigenvector equation reads `κ x'' = μ x''`.
+    have h := congrArg Wᗮ.starProjection hx
+    rw [reducedExtension_apply, map_add, map_smul, map_smul,
+      W.starProjection_orthogonal_apply_eq_zero (hW _ (W.starProjection_apply_mem x)), zero_add,
+      Wᗮ.starProjection_eq_self_iff.mpr (Wᗮ.starProjection_apply_mem x)] at h
+    exact Or.inl (by exact_mod_cast (smul_left_injective 𝕜 hx' h).symm)
 
 end ContinuousLinearMap

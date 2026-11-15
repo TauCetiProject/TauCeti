@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdicCompletion.Exactness
+public import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
 public import Mathlib.RingTheory.AdicCompletion.Noetherian
 public import TauCeti.RingTheory.AdicCompletion.Pi
+import TauCeti.RingTheory.AdicCompletion.Pow
+import TauCeti.RingTheory.Ideal.GoingUp
+import TauCeti.RingTheory.LocalRing.Monogenic
 
 /-!
-# Adic completeness of finite modules
+# Adic completion of finite modules
 
 Over an `I`-adically complete Noetherian ring, every finitely generated module is `I`-adically
 complete. Precompleteness passes along surjective linear maps, because the adic completion functor
@@ -22,12 +25,23 @@ ring.
 This is what makes a finite algebra over a complete Noetherian ring Henselian along the extended
 ideal, the input for lifting idempotents in such an algebra.
 
+Over any commutative ring, the completion of a finite module is generated over the completed ring
+by the image of the module, so linear maps over the completed ring out of it are determined by
+their restrictions to the module.
+
 ## Main results
 
 * `IsPrecomplete.of_surjective`: adic precompleteness passes along a surjective linear map.
 * `IsPrecomplete.of_finite`: a finite module over an adically precomplete ring is precomplete.
 * `IsAdicComplete.of_finite`: a finite module over an adically complete Noetherian ring is
   complete.
+* `IsPrecomplete.of_finite_of_isLocalRing`: a finite local algebra over a precomplete local ring
+  is precomplete at its own maximal ideal, without a Noetherian hypothesis.
+* `IsAdicComplete.of_finite_of_isLocalRing`: a finite local algebra over a complete Noetherian
+  local ring is complete at its own maximal ideal.
+* `AdicCompletion.linearMap_ext_of_finite`: a linear map over the completion out of the completion
+  of a finite module is determined on the image of the module, since
+  `AdicCompletion.ofTensorProduct` is surjective.
 
 ## References
 
@@ -60,5 +74,44 @@ theorem IsPrecomplete.of_finite [IsPrecomplete I R] [Module.Finite R M] : IsPrec
 /-- A finite module over an `I`-adically complete Noetherian ring is `I`-adically complete. -/
 theorem IsAdicComplete.of_finite [IsNoetherianRing R] [IsAdicComplete I R] [Module.Finite R M] :
     IsAdicComplete I M where
-  toIsHausdorff := IsHausdorff.of_le_jacobson I M (IsAdicComplete.le_jacobson_bot I)
+  toIsHausdorff := IsHausdorff.of_le_jacobson I M (IsAdicComplete.le_jacobson I)
   toIsPrecomplete := IsPrecomplete.of_finite I M
+
+/-- A finite local algebra over a precomplete local ring is precomplete for its own maximal
+ideal, without a Noetherian hypothesis. The two maximal-ideal-adic filtrations are cofinal. -/
+theorem IsPrecomplete.of_finite_of_isLocalRing (R S : Type*) [CommRing R] [IsLocalRing R]
+    [IsPrecomplete (IsLocalRing.maximalIdeal R) R]
+    [CommRing S] [IsLocalRing S] [Algebra R S] [Module.Finite R S] :
+    IsPrecomplete (IsLocalRing.maximalIdeal S) S := by
+  have : IsPrecomplete (IsLocalRing.maximalIdeal R) S := .of_finite _ _
+  have : IsPrecomplete ((IsLocalRing.maximalIdeal R).map (algebraMap R S)) S :=
+    IsPrecomplete.map_algebraMap_iff.mpr inferInstance
+  obtain ⟨n, hn⟩ := TauCeti.IsLocalRing.exists_maximalIdeal_pow_le_map (R := R) (S := S)
+  exact IsPrecomplete.of_pow_le_of_pow_le (l := 1) hn (by
+    rw [pow_one]
+    exact Ideal.map_le_iff_le_comap.mpr
+      (Ideal.comap_eq_maximalIdeal_of_isIntegral (IsLocalRing.maximalIdeal S)).ge)
+
+/-- A finite local algebra over a complete Noetherian local ring is complete for its own
+maximal ideal. The two maximal-ideal-adic filtrations are cofinal, even when the extension is
+ramified. -/
+theorem IsAdicComplete.of_finite_of_isLocalRing (R S : Type*) [CommRing R] [IsLocalRing R]
+    [IsNoetherianRing R] [IsAdicComplete (IsLocalRing.maximalIdeal R) R]
+    [CommRing S] [IsLocalRing S] [Algebra R S] [Module.Finite R S] :
+    IsAdicComplete (IsLocalRing.maximalIdeal S) S := by
+  have : IsNoetherianRing S := .of_finite R S
+  exact {
+    toIsHausdorff := inferInstance
+    toIsPrecomplete := IsPrecomplete.of_finite_of_isLocalRing R S }
+
+variable {M} in
+/-- Linear maps over the completion out of the completion of a finite module are determined by
+their values on the image of the module. -/
+theorem AdicCompletion.linearMap_ext_of_finite [Module.Finite R M] {P : Type*} [AddCommGroup P]
+    [Module (AdicCompletion I R) P] {g₁ g₂ : AdicCompletion I M →ₗ[AdicCompletion I R] P}
+    (h : ∀ x, g₁ (of I M x) = g₂ (of I M x)) : g₁ = g₂ := by
+  refine LinearMap.ext fun y ↦ ?_
+  obtain ⟨t, rfl⟩ := ofTensorProduct_surjective_of_finite I M y
+  induction t using TensorProduct.inductionOn with
+  | tmul a x => simp [ofTensorProduct_tmul, h]
+  | add s t hs ht => simp [hs, ht]

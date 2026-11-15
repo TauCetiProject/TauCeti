@@ -16,7 +16,7 @@ public import TauCeti.Topology.Algebra.Group.Units
 # The identity component of the real unit group
 
 The positive units of `ℝ` form the identity component of the real unit group. This file provides
-their preconnectedness and identifies `Subgroup.connectedComponentOfOne ℝˣ` with
+their openness and preconnectedness and identifies `Subgroup.connectedComponentOfOne ℝˣ` with
 `Units.posSubgroup ℝ`.
 -/
 
@@ -25,6 +25,11 @@ public section
 open Set
 
 namespace Units
+
+/-- The positive real units form an open subgroup. -/
+theorem isOpen_posSubgroup_real : IsOpen (Units.posSubgroup ℝ : Set ℝˣ) := by
+  rw [Units.coe_posSubgroup]
+  exact isOpen_Ioi.preimage Units.continuous_val
 
 /-- The positive real units form a preconnected set. -/
 theorem isPreconnected_posSubgroup_real :
@@ -36,9 +41,7 @@ theorem isPreconnected_posSubgroup_real :
 theorem connectedComponentOfOne_real :
     Subgroup.connectedComponentOfOne ℝˣ = Units.posSubgroup ℝ := by
   apply le_antisymm
-  · apply Subgroup.connectedComponentOfOne_le_of_isOpen
-    rw [Units.coe_posSubgroup]
-    exact isOpen_Ioi.preimage Units.continuous_val
+  · exact Subgroup.connectedComponentOfOne_le_of_isOpen isOpen_posSubgroup_real
   · intro u hu
     exact isPreconnected_posSubgroup_real.subset_connectedComponent (by simp) hu
 

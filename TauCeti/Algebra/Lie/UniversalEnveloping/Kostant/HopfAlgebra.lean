@@ -350,4 +350,12 @@ universal-enveloping antipode. -/
 theorem kostantForm_antipode (e : I → L) (h : J → L) :
     HopfAlgebra.antipode ℤ (A := K e h) = kostantFormAntipodeLinearMap e h := rfl
 
+/-- Including the integral Hopf antipode in the rational enveloping algebra gives the
+rational universal-enveloping antipode. -/
+theorem coe_antipode_kostantForm (e : I → L) (h : J → L) (a : K e h) :
+    ((HopfAlgebra.antipode ℤ a : K e h) : U) =
+      _root_.UniversalEnvelopingAlgebra.antipode ℚ (a : U) := by
+  rw [kostantForm_antipode, coe_kostantFormAntipodeLinearMap_apply,
+    hopfAlgebraStructAntipode_eq_antipode]
+
 end TauCeti.UniversalEnvelopingAlgebra
