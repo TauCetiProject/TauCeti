@@ -139,6 +139,33 @@ theorem vonMisesFisherPDF_of_neg (m : sphere (0 : E) 1) {κ : ℝ} (hκ : κ < 0
   rw [vonMisesFisherPDF, vonMisesFisherPDFReal_of_neg m hκ]
   exact ENNReal.ofReal_zero
 
+/-- The real natural-parameter von Mises--Fisher density is nonnegative, including in dimension
+zero. -/
+theorem vonMisesFisherNaturalPDFReal_nonneg (η : E) (x : sphere (0 : E) 1) :
+    0 ≤ vonMisesFisherNaturalPDFReal η x :=
+  div_nonneg (exp_pos _).le (integral_nonneg fun _ ↦ (exp_pos _).le)
+
+/-- The real direction/concentration von Mises--Fisher density is nonnegative for every
+concentration. -/
+theorem vonMisesFisherPDFReal_nonneg (m : sphere (0 : E) 1) (κ : ℝ) (x : sphere (0 : E) 1) :
+    0 ≤ vonMisesFisherPDFReal m κ x := by
+  rw [vonMisesFisherPDFReal]
+  split_ifs
+  exacts [vonMisesFisherNaturalPDFReal_nonneg _ x, le_rfl]
+
+/-- The real value of the extended natural-parameter density is the real density. -/
+@[simp]
+theorem toReal_vonMisesFisherNaturalPDF (η : E) (x : sphere (0 : E) 1) :
+    (vonMisesFisherNaturalPDF η x).toReal = vonMisesFisherNaturalPDFReal η x :=
+  ENNReal.toReal_ofReal (vonMisesFisherNaturalPDFReal_nonneg η x)
+
+/-- The real value of the extended direction/concentration density is the real density for
+every concentration. -/
+@[simp]
+theorem toReal_vonMisesFisherPDF (m : sphere (0 : E) 1) (κ : ℝ) (x : sphere (0 : E) 1) :
+    (vonMisesFisherPDF m κ x).toReal = vonMisesFisherPDFReal m κ x :=
+  ENNReal.toReal_ofReal (vonMisesFisherPDFReal_nonneg m κ x)
+
 /-- The natural-parameter von Mises--Fisher density is measurable. -/
 @[fun_prop]
 theorem measurable_vonMisesFisherNaturalPDF (η : E) :
