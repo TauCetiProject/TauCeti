@@ -15,11 +15,12 @@ import TauCeti.RingTheory.RootsOfUnity.PartialFractions
 # Distribution of nonpositive-weight polylogarithms
 
 In every nonpositive integer weight `n ≤ 0`, the polylogarithm `Li_n(z)` is a rational function
-with sole pole at `z = 1`, so its multiplicative distribution relation holds on the full
-complement `{z : ℂ | z ^ m ≠ 1}` of the `m`-th roots of unity—strictly larger than the `m`-ray
-star-slit domain `Ω_m = {z : ℂ | 1 - z ^ m ∈ Complex.slitPlane}` required in positive weights:
+with sole pole at `z = 1`, so its multiplicative distribution relation
 `polylog n (z ^ m) = m ^ (n - 1) * ∑ j ∈ Finset.range m, polylog n (ζ ^ j * z)`
-for any primitive `m`-th root of unity `ζ`.
+for any primitive `m`-th root of unity `ζ` holds on the full complement `{z : ℂ | z ^ m ≠ 1}` of
+the `m`-th roots of unity. For `m ≥ 1`, this domain strictly contains the principal cut-free
+domain `Ω_m = {z : ℂ | 1 - z ^ m ∈ Complex.slitPlane}` used in positive weights to keep `z ^ m`
+and all `ζ ^ j * z` off the branch cut `[1, ∞)` (where `polylog` is analytic).
 
 In weight zero, this is the root-of-unity partial-fraction identity
 `IsPrimitiveRoot.sum_pow_mul_div_one_sub`, carrying the normalization factor `m ^ (-1) = 1 / m`.
@@ -66,7 +67,7 @@ theorem polylog_zero_weight_pow_of_isPrimitiveRoot {m : ℕ} {ζ z : ℂ}
 
 /-- Distribution in weight `-r` (`r : ℕ`) over a primitive `m`-th root of unity on
 `{z : ℂ | z ^ m ≠ 1}`. -/
-theorem polylog_neg_nat_pow_of_isPrimitiveRoot (r : ℕ) {m : ℕ} {ζ z : ℂ}
+private theorem polylog_neg_nat_pow_of_isPrimitiveRoot (r : ℕ) {m : ℕ} {ζ z : ℂ}
     (hζ : IsPrimitiveRoot ζ m) (hz : z ^ m ≠ 1) :
     polylog (-(r : ℤ)) (z ^ m) =
       (m : ℂ) ^ (-(r : ℤ) - 1) * ∑ j ∈ Finset.range m, polylog (-(r : ℤ)) (ζ ^ j * z) := by
@@ -105,7 +106,7 @@ theorem polylog_neg_nat_pow_of_isPrimitiveRoot (r : ℕ) {m : ℕ} {ζ z : ℂ}
       rw [← mul_assoc, mul_comm z, mul_assoc, Finset.mul_sum]
       congr 1
       refine Finset.sum_congr rfl fun j _ => ?_
-      exact mul_deriv_polylog_neg_nat_comp_const_mul r (ζ ^ j) (hζz_ne j)
+      exact mul_deriv_polylog_neg_nat_comp_const_mul r (ζ ^ j) z
     rw [hrhs] at hderiv
     have hexp :
         (m : ℂ)⁻¹ * (m : ℂ) ^ (-(r : ℤ) - 1) = (m : ℂ) ^ (-((r + 1 : ℕ) : ℤ) - 1) := by

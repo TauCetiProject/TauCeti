@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.Analysis.Calculus.Deriv.CompMul
 import Mathlib.Analysis.Calculus.Deriv.ZPow
 
 /-!
@@ -155,12 +156,12 @@ theorem mul_deriv_polylog_neg_nat_comp_const_mul_pow (r m : ℕ) (c : ℂ) {z : 
       (m : ℂ) * polylog (-((r + 1 : ℕ) : ℤ)) (c * z ^ m) := by
   simpa using mul_deriv_polylog_neg_nat_comp_const_mul_zpow r m c (by simpa using hcz)
 
-/-- The Euler differential operator commutes with linear rescaling `w ↦ c * w` away from the pole
-`c * z = 1`. -/
-theorem mul_deriv_polylog_neg_nat_comp_const_mul (r : ℕ) (c : ℂ) {z : ℂ} (hcz : c * z ≠ 1) :
+/-- The Euler differential operator commutes with linear rescaling `w ↦ c * w`. This holds even at
+the totalised pole because `deriv` commutes unconditionally with scalar multiplication. -/
+theorem mul_deriv_polylog_neg_nat_comp_const_mul (r : ℕ) (c z : ℂ) :
     z * deriv (fun w => polylog (-(r : ℤ)) (c * w)) z =
       polylog (-((r + 1 : ℕ) : ℤ)) (c * z) := by
-  simpa using mul_deriv_polylog_neg_nat_comp_const_mul_pow r 1 c (by simpa using hcz)
+  rw [deriv_comp_mul_left, smul_eq_mul, ← mul_assoc, mul_comm z c, ← polylog_neg_nat_succ]
 
 /-- The Euler differential operator scales by `m` under `w ↦ w ^ m` away from `z ^ m = 1`. -/
 theorem mul_deriv_polylog_neg_nat_comp_pow (r m : ℕ) {z : ℂ} (hz : z ^ m ≠ 1) :

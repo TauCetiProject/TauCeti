@@ -32,7 +32,7 @@ Because the Euler differential operator `z ↦ z * deriv · z` anticommutes with
   and `z ≠ 1`.
 * `TauCeti.Polylog.polylog_inversion_of_nonpos`, `TauCeti.Polylog.polylog_inv_of_nonpos`: unified
   nonpositive-weight inversion formulas for `n ≤ 0`, `z ≠ 0`, and `z ≠ 1`.
-* `TauCeti.Polylog.polylog_neg_one_inv`: weight `-1` is invariant under `z ↦ z⁻¹` for `z ≠ 1`.
+* `TauCeti.Polylog.polylog_neg_one_inv`: weight `-1` is invariant under `z ↦ z⁻¹`.
 
 ## References
 
@@ -59,55 +59,44 @@ theorem polylog_zero_weight_inv {z : ℂ} (hz0 : z ≠ 0) (hz1 : z ≠ 1) :
     polylog 0 z⁻¹ = -1 - polylog 0 z := by
   linear_combination polylog_zero_weight_add_inv hz0 hz1
 
+/-- Applying the Euler differential operator to `polylog (-r) w + (-1) ^ r * polylog (-r) w⁻¹ = c`
+on `{w | w ≠ 0 ∧ w ≠ 1}` kills the constant `c` and flips the sign of the `w⁻¹` term, giving
+`polylog (-(r + 1)) z + (-1) ^ (r + 1) * polylog (-(r + 1)) z⁻¹ = 0` for all `z ≠ 1`. -/
+private theorem polylog_neg_nat_succ_add_pow_mul_inv_of_eq_const (r : ℕ) (c : ℂ)
+    (h : ∀ {w : ℂ}, w ≠ 0 → w ≠ 1 →
+      polylog (-(r : ℤ)) w + (-1 : ℂ) ^ r * polylog (-(r : ℤ)) w⁻¹ = c)
+    {z : ℂ} (hz1 : z ≠ 1) :
+    polylog (-((r + 1 : ℕ) : ℤ)) z + (-1 : ℂ) ^ (r + 1) * polylog (-((r + 1 : ℕ) : ℤ)) z⁻¹ = 0 := by
+  rcases eq_or_ne z 0 with rfl | hz0
+  · simp
+  · have hU : IsOpen {w : ℂ | w ≠ 0 ∧ w ≠ 1} := isOpen_ne.inter isOpen_ne
+    have heq :
+        (fun w : ℂ => polylog (-(r : ℤ)) w + (-1 : ℂ) ^ r * polylog (-(r : ℤ)) w⁻¹) =ᶠ[nhds z]
+          fun _ : ℂ => c :=
+      Filter.eventuallyEq_of_mem (hU.mem_nhds ⟨hz0, hz1⟩) fun _ hw => h hw.1 hw.2
+    have hderiv := congrArg (z * ·) heq.deriv_eq
+    have hdiff1 : DifferentiableAt ℂ (polylog (-(r : ℤ))) z :=
+      (analyticAt_polylog_neg_nat r hz1).differentiableAt
+    have hdiff2 : DifferentiableAt ℂ (fun w : ℂ => polylog (-(r : ℤ)) w⁻¹) z := by
+      simpa only [Function.comp_def] using
+        (analyticAt_polylog_neg_nat r (inv_ne_one.mpr hz1)).differentiableAt.comp z
+          (differentiableAt_inv hz0)
+    rw [deriv_const, mul_zero, deriv_fun_add hdiff1 (hdiff2.const_mul _),
+      deriv_const_mul _ hdiff2] at hderiv
+    have h1 := polylog_neg_nat_succ r z
+    have h2 := mul_deriv_polylog_neg_nat_comp_inv r hz1
+    linear_combination (norm := (rw [pow_succ]; ring)) h1 + hderiv - (-1 : ℂ) ^ r * h2
+
 /-- In strictly negative weights `-(r + 1)`, `polylog (-(r + 1)) z + (-1) ^ (r + 1) *
 polylog (-(r + 1)) z⁻¹ = 0` for every `z ≠ 1` (including `z = 0`). -/
-theorem polylog_neg_nat_succ_add_pow_mul_inv (r : ℕ) {z : ℂ} (hz1 : z ≠ 1) :
+private theorem polylog_neg_nat_succ_add_pow_mul_inv (r : ℕ) {z : ℂ} (hz1 : z ≠ 1) :
     polylog (-((r + 1 : ℕ) : ℤ)) z + (-1 : ℂ) ^ (r + 1) * polylog (-((r + 1 : ℕ) : ℤ)) z⁻¹ = 0 := by
   induction r generalizing z with
   | zero =>
-    rcases eq_or_ne z 0 with rfl | hz0
-    · simp
-    · have hU : IsOpen {w : ℂ | w ≠ 0 ∧ w ≠ 1} := isOpen_ne.inter isOpen_ne
-      have heq :
-          (fun w : ℂ => polylog 0 w + polylog 0 w⁻¹) =ᶠ[nhds z] fun _ : ℂ => (-1 : ℂ) :=
-        Filter.eventuallyEq_of_mem (hU.mem_nhds ⟨hz0, hz1⟩) fun w hw =>
-          polylog_zero_weight_add_inv hw.1 hw.2
-      have hderiv := congrArg (z * ·) heq.deriv_eq
-      have hdiff1 : DifferentiableAt ℂ (polylog 0) z := by
-        simpa using (analyticAt_polylog_neg_nat 0 hz1).differentiableAt
-      have hdiff2 : DifferentiableAt ℂ (fun w : ℂ => polylog 0 w⁻¹) z := by
-        simpa [Function.comp_def] using
-          (analyticAt_polylog_neg_nat 0 (inv_ne_one.mpr hz1)).differentiableAt.comp z
-            (differentiableAt_inv hz0)
-      rw [deriv_const, mul_zero, deriv_fun_add hdiff1 hdiff2, mul_add] at hderiv
-      have h1 : z * deriv (polylog 0) z = polylog (-((0 + 1 : ℕ) : ℤ)) z := by
-        simpa using (polylog_neg_nat_succ 0 z).symm
-      have h2 : z * deriv (fun w : ℂ => polylog 0 w⁻¹) z = -polylog (-((0 + 1 : ℕ) : ℤ)) z⁻¹ := by
-        simpa using mul_deriv_polylog_neg_nat_comp_inv 0 hz1
-      rw [h1, h2] at hderiv
-      simpa [pow_one] using hderiv
+    exact polylog_neg_nat_succ_add_pow_mul_inv_of_eq_const 0 (-1)
+      (fun hw0 hw1 => by simpa using polylog_zero_weight_add_inv hw0 hw1) hz1
   | succ r ih =>
-    rcases eq_or_ne z 0 with rfl | hz0
-    · simp
-    · have hU : IsOpen {w : ℂ | w ≠ 0 ∧ w ≠ 1} := isOpen_ne.inter isOpen_ne
-      have heq :
-          (fun w : ℂ =>
-              polylog (-((r + 1 : ℕ) : ℤ)) w +
-                (-1 : ℂ) ^ (r + 1) * polylog (-((r + 1 : ℕ) : ℤ)) w⁻¹) =ᶠ[nhds z]
-            fun _ : ℂ => (0 : ℂ) :=
-        Filter.eventuallyEq_of_mem (hU.mem_nhds ⟨hz0, hz1⟩) fun w hw => ih hw.2
-      have hderiv := congrArg (z * ·) heq.deriv_eq
-      have hdiff1 : DifferentiableAt ℂ (polylog (-((r + 1 : ℕ) : ℤ))) z :=
-        (analyticAt_polylog_neg_nat (r + 1) hz1).differentiableAt
-      have hdiff2 : DifferentiableAt ℂ (fun w : ℂ => polylog (-((r + 1 : ℕ) : ℤ)) w⁻¹) z := by
-        simpa only [Function.comp_def] using
-          (analyticAt_polylog_neg_nat (r + 1) (inv_ne_one.mpr hz1)).differentiableAt.comp z
-            (differentiableAt_inv hz0)
-      rw [deriv_const, mul_zero, deriv_fun_add hdiff1 (hdiff2.const_mul _),
-        deriv_const_mul _ hdiff2, mul_add, ← mul_assoc, mul_comm z ((-1 : ℂ) ^ (r + 1)),
-        mul_assoc, ← polylog_neg_nat_succ (r + 1) z,
-        mul_deriv_polylog_neg_nat_comp_inv (r + 1) hz1] at hderiv
-      linear_combination (norm := (rw [pow_succ]; ring)) hderiv
+    exact polylog_neg_nat_succ_add_pow_mul_inv_of_eq_const (r + 1) 0 (fun _ hw1 => ih hw1) hz1
 
 /-- In strictly negative integer weight `n < 0`, `polylog n z + (-1) ^ n * polylog n z⁻¹ = 0` for
 every `z ≠ 1` (including `z = 0`). -/
@@ -149,10 +138,12 @@ theorem polylog_inv_of_nonpos {n : ℤ} (hn : n ≤ 0) {z : ℂ} (hz0 : z ≠ 0)
   · simp only [hn'.ne, ↓reduceIte, zero_sub, ← neg_mul]
     exact polylog_inv_of_neg hn' hz1
 
-/-- Weight `-1` is invariant under `z ↦ z⁻¹` away from `z = 1`. -/
-theorem polylog_neg_one_inv {z : ℂ} (hz1 : z ≠ 1) :
+/-- Weight `-1` is invariant under `z ↦ z⁻¹`. -/
+theorem polylog_neg_one_inv (z : ℂ) :
     polylog (-1) z⁻¹ = polylog (-1) z := by
-  simpa using polylog_inv_of_neg (n := -1) (by omega) hz1
+  rcases eq_or_ne z 1 with rfl | hz1
+  · simp
+  · simpa using polylog_inv_of_neg (n := -1) (by omega) hz1
 
 -- Weight-zero inversion at `z = 2`, `z = I`, and `z = -3` gives `-1`.
 example : polylog 0 (2 : ℂ) + polylog 0 (2 : ℂ)⁻¹ = -1 ∧
