@@ -13,6 +13,8 @@ public import TauCeti.Algebra.Module.ZLattice.Dual
 public import TauCeti.MeasureTheory.Group.FundamentalDomain
 public import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
+import Mathlib.MeasureTheory.Group.Integral
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 
 /-!
@@ -60,6 +62,8 @@ dilates of the unit ball, shows that a full lattice in a real normed space of di
 * `ZLattice.covolume_span_sq_eq_det_gram`: in particular `covolume (span ℤ (range b)) ^ 2` is the
   Gram determinant of the basis `b` of the ambient space.
 * `ZLattice.covolume_dual`: `covolume L^∨ = (covolume L)⁻¹`.
+* `ZLattice.integral_eq_covolume_smul_of_hasSum`: an integrable function whose periodization over
+  `L` is a constant `c` has integral `covolume L • c`.
 * `ZLattice.covolume_comap_continuousLinearEquiv`: the covolume of the pullback of `L` along a
   continuous linear automorphism `A` is `|det A|⁻¹ * covolume L`.
 * `ZLattice.volume_image_eq_measure_div_covolume`: the image of `s` under the coordinates of a
@@ -176,6 +180,26 @@ theorem _root_.ZLattice.covolume_le_abs_det_mul_measureReal (L : Submodule ℤ E
     _ = |b₀.det b| * μ.real (ZSpan.fundamentalDomain b₀) := by
       rw [ZLattice.covolume_eq_measure_fundamentalDomain _ μ (ZSpan.isAddFundamentalDomain b μ),
         ZSpan.measureReal_fundamentalDomain b μ b₀]
+
+/-- **Unfolding over a lattice.** If the periodization `x ↦ ∑ m : L, f (m + x)` of an integrable
+function `f` is a constant `c`, then `∫ f = covolume L • c`: the translates of a fundamental
+domain tile the space, and the periodization integrates to `c` times the volume of the domain. -/
+theorem _root_.ZLattice.integral_eq_covolume_smul_of_hasSum (L : Submodule ℤ E)
+    [DiscreteTopology L] [IsZLattice ℝ L] {μ : Measure E} [μ.IsAddHaarMeasure] {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {f : E → F} (hf : Integrable f μ)
+    {c : F} (h : ∀ x, HasSum (fun m : L ↦ f (m + x)) c) :
+    ∫ x, f x ∂μ = ZLattice.covolume L μ • c := by
+  have : MeasurableVAdd L E := (inferInstance : MeasurableVAdd L.toAddSubgroup E)
+  have : VAddInvariantMeasure L E μ := (inferInstance : VAddInvariantMeasure L.toAddSubgroup E μ)
+  have hD := ZLattice.isAddFundamentalDomain (Free.chooseBasis ℤ L) μ
+  set D := ZSpan.fundamentalDomain ((Free.chooseBasis ℤ L).ofZLatticeBasis ℝ)
+  -- Exchange the sum over `L` with the integral over `D`.
+  have hswap : ∫ x in D, ∑' m : L, f (m +ᵥ x) ∂μ = ∑' m : L, ∫ x in D, f (m +ᵥ x) ∂μ := by
+    refine integral_tsum (fun m ↦ (hf.comp_add_left (m : E)).aestronglyMeasurable.restrict) ?_
+    rw [← hD.lintegral_eq_tsum'' fun x ↦ ‖f x‖ₑ]
+    exact hf.hasFiniteIntegral.ne
+  rw [hD.integral_eq_tsum'' f hf, ← hswap, ZLattice.covolume_eq_measure_fundamentalDomain L μ hD]
+  simp_rw [Submodule.vadd_def, vadd_eq_add, (h _).tsum_eq, setIntegral_const]
 
 end NormedSpace
 

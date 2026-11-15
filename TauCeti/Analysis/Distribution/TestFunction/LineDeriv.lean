@@ -168,8 +168,11 @@ theorem lineDeriv_lineDerivOp_comm (φ : 𝓓(Ω, F)) (v w x : E) :
 /-- **A test function times a function smooth on `Ω` is a test function.** If `g` is smooth on
 `Ω`, with no condition off `Ω`, and `φ ∈ 𝓓(Ω, F)`, then `x ↦ g x • φ x` is again a test function
 on `Ω`: it is smooth on `Ω` and vanishes on the open complement of `tsupport φ`, and these two
-open sets cover `E`. -/
-theorem exists_coe_eq_smul_of_contDiffOn {g : E → ℝ} (hg : ContDiffOn ℝ ∞ g Ω) (φ : 𝓓(Ω, F)) :
+open sets cover `E`. The function `g` may take values in any normed field acting on `F`, such as
+`ℂ` for complex test functions. -/
+theorem exists_coe_eq_smul_of_contDiffOn {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F] {g : E → 𝕜}
+    (hg : ContDiffOn ℝ ∞ g Ω) (φ : 𝓓(Ω, F)) :
     ∃ ψ : 𝓓(Ω, F), ⇑ψ = fun x => g x • φ x := by
   have hsmooth : ContDiff ℝ ∞ fun x => g x • φ x := by
     refine contDiff_of_contDiffOn_union_of_isOpen (hg.smul φ.contDiff.contDiffOn)
