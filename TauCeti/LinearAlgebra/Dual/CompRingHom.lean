@@ -93,7 +93,7 @@ theorem compRingHom_id (L : Dual R (ι → R)) : L.compRingHom (RingHom.id R) = 
   exact (Pi.basisFun R ι).ext fun i ↦ by simp
 
 /-- Successive coefficient transports compose. -/
-theorem compRingHom_comp (L : Dual R (ι → R)) (f : R →+* S) (g : S →+* T) :
+theorem compRingHom_compRingHom (L : Dual R (ι → R)) (f : R →+* S) (g : S →+* T) :
     (L.compRingHom f).compRingHom g = L.compRingHom (g.comp f) := by
   classical
   exact (Pi.basisFun T ι).ext fun i ↦ by simp
@@ -188,12 +188,12 @@ variable {A R S ι : Type*} [CommSemiring A] [Semiring R] [Semiring S]
 
 /-- A coefficient homomorphism commuting with the base-ring maps preserves evaluation
 on base-ring points. -/
-theorem compRingHom_apply_algebraMap_of_comp_eq (L : Dual R (ι → R)) (f : R →+* S)
-    (hf : f.comp (algebraMap A R) = algebraMap A S) (x : ι → A) :
+theorem compRingHom_apply_algebraMap_of_commutes (L : Dual R (ι → R)) (f : R →+* S)
+    (hf : ∀ a, f (algebraMap A R a) = algebraMap A S a) (x : ι → A) :
     L.compRingHom f (algebraMap A S ∘ x) = f (L (algebraMap A R ∘ x)) := by
   have h : algebraMap A S ∘ x = f ∘ (algebraMap A R ∘ x) := by
     ext i
-    exact (RingHom.congr_fun hf (x i)).symm
+    exact (hf (x i)).symm
   rw [h, compRingHom_apply_comp]
 
 /-- Transport along an algebra homomorphism commutes with evaluation on points over the
@@ -203,8 +203,8 @@ theorem compRingHom_apply_algebraMap {F : Type*} [FunLike F R S] [AlgHomClass F 
     (L : Dual R (ι → R)) (f : F) (x : ι → A) :
     L.compRingHom (f : R →+* S) (algebraMap A S ∘ x) =
       f (L (algebraMap A R ∘ x)) := by
-  exact L.compRingHom_apply_algebraMap_of_comp_eq (f : R →+* S)
-    (RingHom.ext (AlgHomClass.commutes f)) x
+  exact L.compRingHom_apply_algebraMap_of_commutes (f : R →+* S)
+    (AlgHomClass.commutes f) x
 
 /-- Evaluation on base-ring coordinates commutes with transport by an algebra homomorphism. -/
 @[simp]
@@ -224,10 +224,17 @@ variable {A R S ι : Type*} [CommSemiring A] [CommSemiring R] [Semiring S]
 /-- Extension of coefficients in an algebra tower preserves evaluation on base-ring points. -/
 @[simp]
 theorem compRingHom_algebraMap_apply_algebraMap (L : Dual R (ι → R)) (x : ι → A) :
+    L.compRingHom (algebraMap R S) (algebraMap A S ∘ x) =
+      algebraMap R S (L (algebraMap A R ∘ x)) :=
+  L.compRingHom_apply_algebraMap_of_commutes (algebraMap R S)
+    (fun a ↦ (IsScalarTower.algebraMap_apply A R S a).symm) x
+
+/-- Evaluation on base-ring coordinates commutes with extension along an algebra tower. -/
+@[simp]
+theorem compRingHom_algebraMap_apply_algebraMap_fun (L : Dual R (ι → R)) (x : ι → A) :
     L.compRingHom (algebraMap R S) (fun i ↦ algebraMap A S (x i)) =
       algebraMap R S (L (fun i ↦ algebraMap A R (x i))) :=
-  L.compRingHom_apply_algebraMap_of_comp_eq (algebraMap R S)
-    (IsScalarTower.algebraMap_eq A R S).symm x
+  L.compRingHom_algebraMap_apply_algebraMap x
 
 end ScalarTower
 
@@ -263,9 +270,8 @@ theorem det_pi_compRingHom (L : ι → Dual R (ι → R)) (f : R →+* S) :
 
 /-- An injective homomorphism into an integral domain preserves and reflects linear
 independence of forms. The system need not be square, nor have finitely many forms. -/
-@[simp]
-theorem linearIndependent_compRingHom_iff [IsDomain S] (L : κ → Dual R (ι → R))
-    (f : R →+* S) (hf : Function.Injective f) :
+theorem linearIndependent_compRingHom_iff_of_injective [IsDomain S]
+    {L : κ → Dual R (ι → R)} {f : R →+* S} (hf : Function.Injective f) :
     LinearIndependent S (fun i ↦ (L i).compRingHom f) ↔ LinearIndependent R L := by
   classical
   cases nonempty_fintype ι
@@ -287,6 +293,18 @@ theorem linearIndependent_compRingHom_iff [IsDomain S] (L : κ → Dual R (ι �
 
 end CommRing
 
+section Field
+
+variable {R S ι κ : Type*} [Field R] [CommRing S] [IsDomain S] [Finite ι]
+
+/-- Transport from a field preserves and reflects linear independence of forms. -/
+@[simp]
+theorem linearIndependent_compRingHom_iff {L : κ → Dual R (ι → R)} {f : R →+* S} :
+    LinearIndependent S (fun i ↦ (L i).compRingHom f) ↔ LinearIndependent R L :=
+  linearIndependent_compRingHom_iff_of_injective f.injective
+
+end Field
+
 section Examples
 
 variable {K F E ι κ : Type*} [Field K] [Field F] [Field E]
@@ -296,14 +314,13 @@ variable {K F E ι κ : Type*} [Field K] [Field F] [Field E]
 example (L : κ → Dual F (ι → F)) (hL : LinearIndependent F L) (f : F →ₐ[K] E)
     (σ : E ≃ₐ[K] E) :
     LinearIndependent E (fun i ↦ ((L i).compRingHom f.toRingHom).compRingHom σ.toRingHom) := by
-  rw [linearIndependent_compRingHom_iff _ σ.toRingHom σ.injective]
-  exact (linearIndependent_compRingHom_iff L f.toRingHom f.injective).2 hL
+  simpa using hL
 
 -- On base-field points, the new value is the conjugate of the extended original value.
 example (L : Dual F (ι → F)) (f : F →ₐ[K] E) (σ : E ≃ₐ[K] E) (x : ι → K) :
     (L.compRingHom ((σ : E →+* E).comp (f : F →+* E)))
       (fun i ↦ algebraMap K E (x i)) = σ (f (L (fun i ↦ algebraMap K F (x i)))) := by
-  rw [← compRingHom_comp]
+  rw [← compRingHom_compRingHom]
   simp
 
 end Examples
