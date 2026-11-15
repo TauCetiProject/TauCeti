@@ -93,7 +93,7 @@ namespace Symbol
 
 variable {n : ℕ} {m : ℝ}
 
-/-! ### The localized parametrix symbol -/
+/-! ### The localized parametrix symbol and the norm bound of the estimates -/
 
 section Localize
 
@@ -116,6 +116,22 @@ private theorem hasCompactSpatialSupport_localize {ψ : 𝓢(CoordinateSpace n, 
     (localize ψ b).HasCompactSpatialSupport :=
   hasCompactSpatialSupport_iff.2 ⟨tsupport ψ, hψ, fun x hx ξ ↦ by
     simp [coefficient_localize, image_eq_zero_of_notMem_tsupport hx]⟩
+
+/-- The norm bound behind both interior estimates: `‖Q x - T y‖ ≤ max ‖Q‖ ‖T‖ (‖x‖ + ‖y‖)`, with
+`Q x` and `T y` moved to a common Bessel-potential space `H^{s,p}`. -/
+private theorem norm_copy_sub_copy_le [CompleteSpace V] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SeminormedAddCommGroup F]
+    [NormedSpace ℂ F] {s t t' : ℝ} (Q : E →L[ℂ] H^{t, p}(CoordinateSpace n, V))
+    (T : F →L[ℂ] H^{t', p}(CoordinateSpace n, V)) (x : E) (y : F) (ht : t = s) (ht' : t' = s) :
+    ‖(Q x).copy s ht - (T y).copy s ht'‖ ≤ max ‖Q‖ ‖T‖ * (‖x‖ + ‖y‖) :=
+  calc _ ≤ ‖Q x‖ + ‖T y‖ := by
+        simpa only [BesselPotentialSpace.norm_copy] using
+          norm_sub_le ((Q x).copy s ht) ((T y).copy s ht')
+    _ ≤ ‖Q‖ * ‖x‖ + ‖T‖ * ‖y‖ := add_le_add (Q.le_opNorm x) (T.le_opNorm y)
+    _ ≤ _ := by
+      rw [mul_add]
+      gcongr
+      exacts [le_max_left _ _, le_max_right _ _]
 
 end Localize
 
@@ -218,14 +234,7 @@ theorem exists_norm_smulLeftCLM_le
       hψu (s + m) u]
     congr 1
     exact toDistr_quantizeSobolev_congr rfl hR hR (by simp)
-  calc ‖BesselPotentialSpace.smulLeftCLM (s + m) ψ u‖ ≤ ‖X‖ + ‖Y‖ := hXY ▸ norm_sub_le X Y
-    _ ≤ ‖Q‖ * ‖p.quantizeSobolev hp (s + m) u‖ + ‖T‖ * ‖BesselPotentialSpace.inclusion hr u‖ := by
-      rw [BesselPotentialSpace.norm_copy, BesselPotentialSpace.norm_copy]
-      exact add_le_add (Q.le_opNorm _) (T.le_opNorm _)
-    _ ≤ _ := by
-      rw [mul_add]
-      gcongr
-      exacts [le_max_left _ _, le_max_right _ _]
+  exact hXY ▸ norm_copy_sub_copy_le Q T _ _ _ _
 
 end Regularity
 
@@ -351,15 +360,7 @@ theorem exists_norm_le_of_toDistr_eq_smulLeftCLM
       BesselPotentialSpace.toDistr_copy _ (by ring), hψu (s + m) u]
     congr 1
     exact toDistr_quantizeBesselPotentialSpace_congr rfl hR hR hp hp_top (by simp)
-  calc ‖v‖ ≤ ‖X‖ + ‖Y‖ := hXY ▸ norm_sub_le X Y
-    _ ≤ ‖Q‖ * ‖c.quantizeBesselPotentialSpace hc (s + m) p u‖ +
-        ‖T‖ * ‖BesselPotentialSpace.inclusion hr u‖ := by
-      rw [BesselPotentialSpace.norm_copy, BesselPotentialSpace.norm_copy]
-      exact add_le_add (Q.le_opNorm _) (T.le_opNorm _)
-    _ ≤ _ := by
-      rw [mul_add]
-      gcongr
-      exacts [le_max_left _ _, le_max_right _ _]
+  exact hXY ▸ norm_copy_sub_copy_le Q T _ _ _ _
 
 end BesselPotentialSpace
 
