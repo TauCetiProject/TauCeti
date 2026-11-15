@@ -17,7 +17,8 @@ For a short exact sequence of sheaves of modules, the Yoneda product with its
 extension class defines connecting maps on the supported cohomology presheaves.
 These maps commute with open restriction and with morphisms of short exact
 sequences, and give an exact coefficient sequence. A flasque middle term makes
-its positive-degree connecting maps dimension-shift isomorphisms. Read through
+its positive-degree connecting maps dimension-shift isomorphisms, and a flasque first
+term makes the positive-degree maps induced by `F₂ ⟶ F₃` isomorphisms. Read through
 the identification of degree-zero supported cohomology with supported sections,
 the degree-zero connecting map `Γ_S(-, F₃) ⟶ H_S¹(-, F₁)` is exact after
 `Γ_S(-, F₂) ⟶ Γ_S(-, F₃)`, and surjective when the middle term is flasque.
@@ -163,6 +164,23 @@ instance isIso_supportedModuleHPresheafδ_succ (hT : T.ShortExact)
     · obtain ⟨z, rfl⟩ := Ext.covariant_sequence_exact₃ _ hT x rfl hx
       rw [Subsingleton.elim z 0, Ext.zero_comp]
     · exact Ext.covariant_sequence_exact₁ _ hT x (Subsingleton.elim _ _) rfl
+  exact NatIso.isIso_of_isIso_app _
+
+/-- A flasque kernel makes the positive-degree morphism `H_Sⁿ⁺¹(-, F₂) ⟶ H_Sⁿ⁺¹(-, F₃)` induced
+by `F₂ ⟶ F₃` an isomorphism of supported cohomology presheaves. -/
+theorem isIso_supportedModuleHPresheafFunctor_map_g_succ (hT : T.ShortExact)
+    [TopCat.Presheaf.IsFlasque T.X₁.obj] (n : ℕ) :
+    IsIso ((supportedModuleHPresheafFunctor S (n + 1)).map T.g) := by
+  have (W : (Opens X)ᵒᵖ) :
+      IsIso (((supportedModuleHPresheafFunctor S (n + 1)).map T.g).app W) := by
+    rw [ConcreteCategory.isIso_iff_bijective]
+    -- The component is the Yoneda postcomposition map, with an explicit Ext domain.
+    change Function.Bijective ((Ext.mk₀ T.g).postcomp
+      ((S.supportedFreeModuleSheafFunctor R).obj W.unop) (add_zero (n + 1)))
+    refine ⟨(injective_iff_map_eq_zero _).2 (fun x hx ↦ ?_), fun x ↦ ?_⟩
+    · obtain ⟨z, rfl⟩ := Ext.covariant_sequence_exact₂ _ hT x hx
+      rw [Subsingleton.elim z 0, Ext.zero_comp]
+    · exact Ext.covariant_sequence_exact₃ _ hT x rfl (Subsingleton.elim _ _)
   exact NatIso.isIso_of_isIso_app _
 
 /-- The degree-zero connecting morphism `Γ_S(-, F₃) ⟶ H_S¹(-, F₁)` of a short exact sequence
