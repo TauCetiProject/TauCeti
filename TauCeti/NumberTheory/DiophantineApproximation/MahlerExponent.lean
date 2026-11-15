@@ -10,10 +10,10 @@ public import Mathlib.Analysis.Polynomial.Norm
 public import TauCeti.NumberTheory.DiophantineApproximation.LinearFormExponent
 import Mathlib.FieldTheory.PrimitiveElement
 import TauCeti.NumberTheory.NumberField.House
+import TauCeti.Algebra.Field.LinearFractional
 import TauCeti.Algebra.Polynomial.Homogenize
 import TauCeti.Analysis.Polynomial.L1Norm
 import TauCeti.Analysis.Polynomial.SupNorm.Basic
-import TauCeti.Data.Rat.NumDenDvd
 import TauCeti.FieldTheory.Minpoly.Primitive
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
@@ -241,66 +241,14 @@ private theorem mahlerExponent_mul_add_div_mul_add_le_of_int (n : ℕ) {ξ : ℝ
           exact mul_le_mul_of_nonneg_left (supNorm_linearFormPoly_le x)
             (pow_nonneg (add_nonneg g.l1Norm_nonneg k.l1Norm_nonneg) n)
 
-/-- Mahler's exponent is invariant under a Möbius transformation with integer coefficients and
-nonzero determinant, away from its pole: the inverse transformation has matrix
-`(d, -b; -c, a)`. -/
-private theorem mahlerExponent_mul_add_div_mul_add_of_int (n : ℕ) {ξ : ℝ} {a b c d : ℤ}
-    (hdet : (a : ℝ) * d - b * c ≠ 0) (h : (c : ℝ) * ξ + d ≠ 0) :
-    mahlerExponent n ((a * ξ + b) / (c * ξ + d)) = mahlerExponent n ξ := by
-  refine le_antisymm (mahlerExponent_mul_add_div_mul_add_le_of_int n a b c d h) ?_
-  set η : ℝ := (a * ξ + b) / (c * ξ + d)
-  have e : η * (c * ξ + d) = a * ξ + b := div_mul_cancel₀ _ h
-  have hη : ((-c : ℤ) : ℝ) * η + a ≠ 0 := by
-    intro h0
-    push_cast at h0
-    exact hdet (by linear_combination (c * ξ + d) * h0 + c * e)
-  have hξ : ((d : ℝ) * η + ((-b : ℤ) : ℝ)) / (((-c : ℤ) : ℝ) * η + a) = ξ := by
-    rw [div_eq_iff hη]
-    push_cast
-    linear_combination e
-  have := mahlerExponent_mul_add_div_mul_add_le_of_int n d (-b) (-c) a hη
-  rwa [hξ] at this
-
 /-- Mahler's exponent `wₙ` is invariant under a Möbius transformation `ξ ↦ (a ξ + b) / (c ξ + d)`
 with rational coefficients and nonzero determinant `a d - b c`. At the pole `ξ = -d / c`, where
 Lean's convention `x / 0 = 0` applies, both sides vanish because both points are rational. -/
 theorem mahlerExponent_mul_add_div_mul_add (n : ℕ) (ξ : ℝ) {a b c d : ℚ}
     (h : a * d - b * c ≠ 0) :
-    mahlerExponent n ((a * ξ + b) / (c * ξ + d)) = mahlerExponent n ξ := by
-  by_cases hξ : (c : ℝ) * ξ + d = 0
-  · -- The pole `ξ = -d / c` is rational, and so is its image `0`.
-    have hc : c ≠ 0 := by
-      rintro rfl
-      have hd : d = 0 := by exact_mod_cast (by simpa using hξ : (d : ℝ) = 0)
-      simp [hd] at h
-    have hxq : ξ = ((-d / c : ℚ) : ℝ) := by
-      have hc' : (c : ℝ) ≠ 0 := Rat.cast_ne_zero.2 hc
-      push_cast
-      field_simp
-      linarith
-    rw [hξ, div_zero, hxq, ← Rat.cast_zero, mahlerExponent_ratCast, mahlerExponent_ratCast]
-  -- Clear the denominators of the coefficients by multiplying them all by `m`.
-  have hint (q : ℚ) {m : ℕ} (hq : q.den ∣ m) : ∃ z : ℤ, (z : ℝ) = m * q := by
-    obtain ⟨z, hz⟩ := (Rat.den_dvd_iff_exists_mul_intCast_eq q m).1 (by exact_mod_cast hq)
-    exact ⟨z, by rw [mul_comm]; exact_mod_cast hz.symm⟩
-  set m : ℕ := a.den * b.den * c.den * d.den
-  have hm : (m : ℝ) ≠ 0 := by positivity
-  obtain ⟨a', ha'⟩ := hint a (m := m) ⟨b.den * c.den * d.den, by ring⟩
-  obtain ⟨b', hb'⟩ := hint b (m := m) ⟨a.den * c.den * d.den, by ring⟩
-  obtain ⟨c', hc'⟩ := hint c (m := m) ⟨a.den * b.den * d.den, by ring⟩
-  obtain ⟨d', hd'⟩ := hint d (m := m) ⟨a.den * b.den * c.den, by ring⟩
-  have hdet : (a' : ℝ) * d' - b' * c' ≠ 0 := by
-    have : ((a * d - b * c : ℚ) : ℝ) ≠ 0 := Rat.cast_ne_zero.2 h
-    push_cast at this
-    rw [ha', hb', hc', hd', show (m : ℝ) * a * (m * d) - m * b * (m * c) =
-      m ^ 2 * (a * d - b * c) by ring]
-    exact mul_ne_zero (pow_ne_zero _ hm) this
-  have hden : (c' : ℝ) * ξ + d' = m * (c * ξ + d) := by rw [hc', hd']; ring
-  have hnum : (a' : ℝ) * ξ + b' = m * (a * ξ + b) := by rw [ha', hb']; ring
-  have key : ((a : ℝ) * ξ + b) / (c * ξ + d) = (a' * ξ + b') / (c' * ξ + d') := by
-    rw [hden, hnum, mul_div_mul_left _ _ hm]
-  rw [key]
-  exact mahlerExponent_mul_add_div_mul_add_of_int n hdet (by rw [hden]; exact mul_ne_zero hm hξ)
+    mahlerExponent n ((a * ξ + b) / (c * ξ + d)) = mahlerExponent n ξ :=
+  apply_mul_add_div_mul_add_eq_of_ratCast_eq_of_int_le (mahlerExponent_ratCast n)
+    (fun _ a' b' c' d' _ ht ↦ mahlerExponent_mul_add_div_mul_add_le_of_int n a' b' c' d' ht) ξ h
 
 /-- Adding a rational number does not change Mahler's exponent. -/
 @[simp]

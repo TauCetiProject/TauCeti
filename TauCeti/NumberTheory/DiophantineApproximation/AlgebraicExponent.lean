@@ -446,9 +446,8 @@ private theorem mobius_mem_algebraicApproximations {n : ℕ} {ξ w w' : ℝ} {a 
   calc ‖((((a : ℝ) * ξ + b) / ((c : ℝ) * ξ + d) : ℝ) : ℂ) - β‖
       ≤ K₁ * H ^ (-w - 1) := hβ_le.trans (mul_le_mul_of_nonneg_left hle hK₁)
     _ = K₁ * K₂ ^ (w' + 1) * K₂ ^ (-w' - 1) * H ^ (-w - 1) := by
-        rw [mul_assoc K₁, ← Real.rpow_add hK₂]
-        ring_nf
-        simp
+        rw [mul_assoc K₁, ← Real.rpow_add hK₂, show w' + 1 + (-w' - 1) = 0 by ring,
+          Real.rpow_zero, mul_one]
     _ ≤ H ^ (w - w') * K₂ ^ (-w' - 1) * H ^ (-w - 1) := by gcongr
     _ = (K₂ * H) ^ (-w' - 1) := by
         rw [mul_right_comm, ← Real.rpow_add hH₀, hexp, mul_comm, Real.mul_rpow hK₂.le hH₀.le]
@@ -505,72 +504,18 @@ private theorem algebraicApproximationExponent_le_mul_add_div_mul_add_of_int (n 
         le_algebraicApproximationExponent_of_infinite
           (infinite_algebraicApproximations_of_mobius_int (by linarith) (by linarith) hdet hξ hw)
 
-/-- Koksma's exponent is invariant under a Möbius transformation with integer coefficients and
-nonzero determinant away from its pole. -/
-private theorem algebraicApproximationExponent_mul_add_div_mul_add_of_int (n : ℕ) {ξ : ℝ}
-    {a b c d : ℤ} (hdet : a * d - b * c ≠ 0) (hξ : (c : ℝ) * ξ + d ≠ 0) :
-    algebraicApproximationExponent n ((a * ξ + b) / (c * ξ + d)) =
-      algebraicApproximationExponent n ξ := by
-  refine le_antisymm ?_ (algebraicApproximationExponent_le_mul_add_div_mul_add_of_int n hdet hξ)
-  set η : ℝ := (a * ξ + b) / (c * ξ + d)
-  have hdetR : (a : ℝ) * d - b * c ≠ 0 := by exact_mod_cast hdet
-  have hη : ((-c : ℤ) : ℝ) * η + a ≠ 0 := by
-    simpa using neg_mul_moebius_add_ne_zero hdetR hξ
-  have hinv : ((d : ℝ) * η + ((-b : ℤ) : ℝ)) / (((-c : ℤ) : ℝ) * η + a) = ξ := by
-    simpa [sub_eq_add_neg] using moebius_inv_moebius hdetR hξ
-  have hdet' : d * a - (-b) * (-c) ≠ 0 := fun h0 ↦ hdet (by linear_combination h0)
-  have := algebraicApproximationExponent_le_mul_add_div_mul_add_of_int n (ξ := η) hdet' hη
-  rwa [hinv] at this
-
 /-- **Möbius invariance of Koksma's exponent.** For rational `a, b, c, d` with `a d - b c ≠ 0`,
 `w*ₙ((a ξ + b) / (c ξ + d)) = w*ₙ(ξ)`. At the pole `ξ = -d / c`, where Lean's convention
 `x / 0 = 0` applies, both sides vanish because both points are rational. -/
 theorem algebraicApproximationExponent_mul_add_div_mul_add (n : ℕ) (ξ : ℝ) {a b c d : ℚ}
     (h : a * d - b * c ≠ 0) :
     algebraicApproximationExponent n ((a * ξ + b) / (c * ξ + d)) =
-      algebraicApproximationExponent n ξ := by
-  by_cases hξ : (c : ℝ) * ξ + d = 0
-  · -- At the pole `ξ = -d / c`, both `ξ` and its image `0` are rational.
-    have hc : c ≠ 0 := by
-      rintro rfl
-      have hd : d = 0 := by exact_mod_cast (by simpa using hξ : (d : ℝ) = 0)
-      simp [hd] at h
-    have hxq : ξ = ((-d / c : ℚ) : ℝ) := by
-      have hc' : (c : ℝ) ≠ 0 := Rat.cast_ne_zero.2 hc
-      push_cast
-      field_simp
-      linarith
-    rw [hξ, div_zero, hxq, ← Rat.cast_zero, algebraicApproximationExponent_ratCast,
-      algebraicApproximationExponent_ratCast]
-  -- Scale `(a, b, c, d)` by the product `m` of their denominators to obtain integer coefficients.
-  have hscale (q : ℚ) (k : ℕ) : ((q.num * (k : ℤ) : ℤ) : ℝ) = ((q.den * k : ℕ) : ℝ) * q := by
-    have hQ : ((q.num * (k : ℤ) : ℤ) : ℚ) = (q.den * k : ℕ) * q := by
-      push_cast
-      linear_combination (k : ℚ) * (Rat.mul_den_eq_num q).symm
-    exact_mod_cast hQ
-  set m : ℕ := a.den * b.den * c.den * d.den
-  have hm : (m : ℝ) ≠ 0 := by positivity
-  let a' : ℤ := a.num * ((b.den * c.den * d.den : ℕ) : ℤ)
-  let b' : ℤ := b.num * ((a.den * c.den * d.den : ℕ) : ℤ)
-  let c' : ℤ := c.num * ((a.den * b.den * d.den : ℕ) : ℤ)
-  let d' : ℤ := d.num * ((a.den * b.den * c.den : ℕ) : ℤ)
-  have ha' : (a' : ℝ) = m * a := by rw [hscale]; push_cast [m]; ring
-  have hb' : (b' : ℝ) = m * b := by rw [hscale]; push_cast [m]; ring
-  have hc' : (c' : ℝ) = m * c := by rw [hscale]; push_cast [m]; ring
-  have hd' : (d' : ℝ) = m * d := by rw [hscale]; push_cast [m]; ring
-  have hdet : a' * d' - b' * c' ≠ 0 := fun h0 ↦ by
-    have hR : ((a * d - b * c : ℚ) : ℝ) ≠ 0 := Rat.cast_ne_zero.2 h
-    push_cast at hR
-    have h0R : (a' : ℝ) * d' - b' * c' = 0 := by exact_mod_cast h0
-    rw [ha', hb', hc', hd'] at h0R
-    exact mul_ne_zero (pow_ne_zero 2 hm) hR (by linear_combination h0R)
-  have hden : (c' : ℝ) * ξ + d' = m * (c * ξ + d) := by rw [hc', hd']; ring
-  have hnum : (a' : ℝ) * ξ + b' = m * (a * ξ + b) := by rw [ha', hb']; ring
-  have key : ((a : ℝ) * ξ + b) / (c * ξ + d) = (a' * ξ + b') / (c' * ξ + d') := by
-    rw [hden, hnum, mul_div_mul_left _ _ hm]
-  rw [key]
-  exact algebraicApproximationExponent_mul_add_div_mul_add_of_int n hdet
-    (by rw [hden]; exact mul_ne_zero hm hξ)
+      algebraicApproximationExponent n ξ :=
+  OrderDual.toDual.injective <| apply_mul_add_div_mul_add_eq_of_ratCast_eq_of_int_le
+    (f := fun t ↦ OrderDual.toDual (algebraicApproximationExponent n t))
+    (fun q ↦ congrArg OrderDual.toDual (algebraicApproximationExponent_ratCast n q))
+    (fun _ _ _ _ _ hdet ht ↦
+      algebraicApproximationExponent_le_mul_add_div_mul_add_of_int n hdet ht) ξ h
 
 /-- Adding a rational number does not change Koksma's exponent. -/
 @[simp]

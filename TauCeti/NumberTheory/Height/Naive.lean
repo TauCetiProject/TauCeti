@@ -298,7 +298,7 @@ theorem naiveHeight_mul_add_div_mul_add_le (x : F) {a b c d : ℤ} (hdet : a * d
     ((supNorm_le_l1Norm Q).trans (l1Norm_aeval_homogenize_le P P.natDegree g₁ g₂)).trans
       (mul_le_mul_of_nonneg_left
         (pow_le_pow_left₀ (add_nonneg g₁.l1Norm_nonneg g₂.l1Norm_nonneg) hg _) P.supNorm_nonneg)
-  calc naiveHeight y = (primitiveMinpoly y).supNorm := rfl
+  calc naiveHeight y = (primitiveMinpoly y).supNorm := naiveHeight_def y
     _ ≤ 2 ^ Q.natDegree * Q.supNorm := supNorm_le_two_pow_mul_supNorm_of_dvd hdvd hQ0
     _ ≤ 2 ^ P.natDegree * (P.supNorm * S ^ P.natDegree) :=
         mul_le_mul (pow_le_pow_right₀ one_le_two hQdeg) hQsup Q.supNorm_nonneg (by positivity)

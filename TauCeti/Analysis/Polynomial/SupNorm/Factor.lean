@@ -97,19 +97,13 @@ theorem mul_supNorm_le_two_pow_mul_supNorm_mul (p q : ℂ[X]) :
     p.supNorm * q.supNorm ≤ 2 ^ (p * q).natDegree * (p * q).supNorm := by
   simpa [Fin.prod_univ_two] using prod_supNorm_le_two_pow_mul_supNorm_prod Finset.univ ![p, q]
 
-/-- Binary Gelfond bound over any seminormed ring admitting a norm-preserving ring homomorphism
-into `ℂ` (such as `ℤ` or `ℝ` via `Int.castRingHom ℂ` or `Complex.ofRealHom`). -/
+/-- Binary Gelfond bound over any seminormed commutative ring admitting a norm-preserving ring
+homomorphism into `ℂ` (such as `ℤ` or `ℝ` via `Int.castRingHom ℂ` or `Complex.ofRealHom`). -/
 theorem mul_supNorm_le_two_pow_mul_supNorm_mul_of_ringHomIsometric
-    {R : Type*} [SeminormedRing R] (φ : R →+* ℂ) [RingHomIsometric φ] (p q : R[X]) :
+    {R : Type*} [SeminormedCommRing R] (φ : R →+* ℂ) [RingHomIsometric φ] (p q : R[X]) :
     p.supNorm * q.supNorm ≤ 2 ^ (p * q).natDegree * (p * q).supNorm := by
-  calc p.supNorm * q.supNorm
-      = (p.map φ).supNorm * (q.map φ).supNorm := by simp
-    _ ≤ 2 ^ (p.map φ * q.map φ).natDegree * (p.map φ * q.map φ).supNorm :=
-        mul_supNorm_le_two_pow_mul_supNorm_mul _ _
-    _ = 2 ^ ((p * q).map φ).natDegree * (p * q).supNorm := by rw [← Polynomial.map_mul, supNorm_map]
-    _ ≤ 2 ^ (p * q).natDegree * (p * q).supNorm :=
-        mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two natDegree_map_le)
-          (supNorm_nonneg _)
+  simpa [Fin.prod_univ_two] using
+    prod_supNorm_le_two_pow_mul_supNorm_prod_of_ringHomIsometric φ Finset.univ ![p, q]
 
 /-- Every divisor `p` of a nonzero integer polynomial `q` has coefficient sup norm at most
 `2 ^ q.natDegree * q.supNorm`. -/

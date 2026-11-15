@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharZero.Defs
 public import Mathlib.Algebra.Field.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
+import TauCeti.Data.Rat.NumDenDvd
 
 /-!
 # Linear fractional transformations over a field
@@ -33,6 +35,10 @@ the disc coordinates centred at a point and at its image, in
 * `TauCeti.neg_mul_moebius_add_ne_zero`, `TauCeti.moebius_inv_moebius`: away from the pole
   `c * t + d = 0`, the adjugate transformation `y ↦ (d * y - b) / (-c * y + a)` has nonzero
   denominator at `y = (a * t + b) / (c * t + d)` and recovers `t` when `a * d - b * c ≠ 0`.
+* `TauCeti.apply_mul_add_div_mul_add_eq_of_ratCast_eq_of_int_le`: a function on a
+  characteristic-zero field that is constant on `ℚ` and nonincreasing under nonsingular integer
+  linear fractional transformations away from their poles is invariant under all nonsingular
+  rational linear fractional transformations, including at the pole.
 * `TauCeti.crossRatio_comp_eq_of_sub_eq_div`: maps with factorized differences preserve
   cross-ratios.
 * `TauCeti.div_sub_inv_sub_div_sq_eq_div_sub_sub_div`: the partial-fraction identity for a pole
@@ -85,6 +91,65 @@ theorem moebius_inv_moebius {𝕜 : Type*} [Field 𝕜] {a b c d t : 𝕜}
     (d * ((a * t + b) / (c * t + d)) - b) / (-c * ((a * t + b) / (c * t + d)) + a) = t := by
   rw [div_eq_iff (neg_mul_moebius_add_ne_zero hdet hjt)]
   linear_combination (div_mul_cancel₀ (a * t + b) hjt)
+
+/-- **Invariance under rational linear fractional transformations from a one-sided integer bound.**
+Let `f : 𝕜 → α` be a function from a characteristic-zero field into a partial order that takes a
+common value `v` on all rational numbers and satisfies `f ((a t + b) / (c t + d)) ≤ f t` for every
+integer matrix `(a, b; c, d)` of nonzero determinant away from its pole `c t + d = 0`. Then
+`f ((a t + b) / (c t + d)) = f t` for every rational matrix `(a, b; c, d)` of nonzero determinant,
+including at the pole `c t + d = 0` where Lean's convention `x / 0 = 0` sends `t = -d / c` to
+`0`. -/
+theorem apply_mul_add_div_mul_add_eq_of_ratCast_eq_of_int_le
+    {𝕜 α : Type*} [Field 𝕜] [CharZero 𝕜] [PartialOrder α] {f : 𝕜 → α} {v : α}
+    (hrat : ∀ q : ℚ, f q = v)
+    (hle : ∀ (t : 𝕜) {a b c d : ℤ}, a * d - b * c ≠ 0 → (c : 𝕜) * t + d ≠ 0 →
+      f (((a : 𝕜) * t + b) / ((c : 𝕜) * t + d)) ≤ f t)
+    (t : 𝕜) {a b c d : ℚ} (hdet : a * d - b * c ≠ 0) :
+    f (((a : 𝕜) * t + b) / ((c : 𝕜) * t + d)) = f t := by
+  by_cases ht : (c : 𝕜) * t + d = 0
+  · -- At the pole `t = -d / c`, both `t` and its image `0` are rational.
+    have hc : c ≠ 0 := by
+      rintro rfl
+      have hd : d = 0 := by exact_mod_cast (by simpa using ht : (d : 𝕜) = 0)
+      exact hdet (by simp [hd])
+    have htq : t = ((-d / c : ℚ) : 𝕜) := by
+      have hc' : (c : 𝕜) ≠ 0 := Rat.cast_ne_zero.2 hc
+      rw [Rat.cast_div, Rat.cast_neg, eq_div_iff hc']
+      linear_combination ht
+    rw [ht, div_zero, htq, ← Rat.cast_zero, hrat, hrat]
+  -- Clear denominators of `a, b, c, d` by multiplying by `m = a.den * b.den * c.den * d.den`.
+  set m : ℕ := a.den * b.den * c.den * d.den
+  have hm_pos : 0 < m := mul_pos (mul_pos (mul_pos a.pos b.pos) c.pos) d.pos
+  have hm : (m : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hm_pos.ne'
+  have hint (q : ℚ) (hq : q.den ∣ m) : ∃ z : ℤ, (z : 𝕜) = m * q := by
+    obtain ⟨z, hz⟩ := (Rat.den_dvd_iff_exists_mul_intCast_eq q m).1 (Int.natCast_dvd_natCast.2 hq)
+    exact ⟨z, by simpa [mul_comm] using (congrArg (Rat.cast (K := 𝕜)) hz).symm⟩
+  obtain ⟨a', ha'⟩ := hint a ⟨b.den * c.den * d.den, by ring⟩
+  obtain ⟨b', hb'⟩ := hint b ⟨a.den * c.den * d.den, by ring⟩
+  obtain ⟨c', hc'⟩ := hint c ⟨a.den * b.den * d.den, by ring⟩
+  obtain ⟨d', hd'⟩ := hint d ⟨a.den * b.den * c.den, by ring⟩
+  have hdet' : a' * d' - b' * c' ≠ 0 := fun h0 ↦ by
+    have hK : ((a * d - b * c : ℚ) : 𝕜) ≠ 0 := Rat.cast_ne_zero.2 hdet
+    push_cast at hK
+    have h0K : (a' : 𝕜) * d' - b' * c' = 0 := by exact_mod_cast h0
+    rw [ha', hb', hc', hd'] at h0K
+    exact mul_ne_zero (pow_ne_zero 2 hm) hK (by linear_combination h0K)
+  have hden : (c' : 𝕜) * t + d' = m * (c * t + d) := by rw [hc', hd']; ring
+  have hnum : (a' : 𝕜) * t + b' = m * (a * t + b) := by rw [ha', hb']; ring
+  have ht' : (c' : 𝕜) * t + d' ≠ 0 := by rw [hden]; exact mul_ne_zero hm ht
+  rw [show ((a : 𝕜) * t + b) / ((c : 𝕜) * t + d) = ((a' : 𝕜) * t + b') / ((c' : 𝕜) * t + d') by
+    rw [hden, hnum, mul_div_mul_left _ _ hm]]
+  -- Apply the integer bound to `(a', b'; c', d')` and to its adjugate `(d', -b'; -c', a')`.
+  refine le_antisymm (hle t hdet' ht') ?_
+  set u : 𝕜 := ((a' : 𝕜) * t + b') / ((c' : 𝕜) * t + d')
+  have hdetK : (a' : 𝕜) * d' - b' * c' ≠ 0 := by exact_mod_cast hdet'
+  have hu : ((-c' : ℤ) : 𝕜) * u + a' ≠ 0 := by
+    simpa using neg_mul_moebius_add_ne_zero hdetK ht'
+  have hinv : ((d' : 𝕜) * u + (-b' : ℤ)) / (((-c' : ℤ) : 𝕜) * u + a') = t := by
+    simpa [sub_eq_add_neg] using moebius_inv_moebius hdetK ht'
+  have hdet_inv : d' * a' - (-b') * (-c') ≠ 0 := fun h0 ↦ hdet' (by linear_combination h0)
+  have := hle u hdet_inv hu
+  rwa [hinv] at this
 
 /-- **Maps with factorized difference quotients preserve cross-ratios.** If
 `φ s - φ t = κ * (s - t) / (d s * d t)` for all `s` and `t` in `S`, with `κ` and the values of `d`
