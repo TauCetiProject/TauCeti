@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Basic
 public import TauCeti.Analysis.Complex.Fuchsian.TriangleOrder.Group
+public import TauCeti.NumberTheory.Modular.Generators
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
 import TauCeti.Analysis.Complex.UpperHalfPlane.Rho
-import TauCeti.NumberTheory.Modular.Generators
 
 /-!
 # The level-one modular group as the triangle group `Δ(3, 2, ∞)`
@@ -34,6 +34,11 @@ with `x ↦ S T`, `y ↦ S` and `z ↦ T⁻¹`; the cusp entry `∞` is encoded 
 imposes no relation. The typed angle triple `(3, 2, ∞)` also counts the elliptic orbits of the
 level-one group from the polygon: there are exactly two, the orbits of `ρ` and `i`.
 
+Precomposing with the mirror automorphism of `Δ(3, 2, ∞)` gives the presentation with
+`x ↦ U = S T⁻¹`, `y ↦ S` and `z ↦ T`, in which the cusp generator is `T` itself rather than its
+inverse. In this normalization the action of `PSL(2, ℤ)` on the cosets of a finite-index subgroup
+is a permutation triple whose third permutation is the action of `T`.
+
 ## Main declarations
 
 * `TauCeti.ModularGroup.triangle`: the triangle with vertices `ρ`, `i`, `∞`.
@@ -45,6 +50,8 @@ level-one group from the polygon: there are exactly two, the orbits of `ρ` and 
 * `TauCeti.ModularGroup.triangleGroup_triangle`: its triangle group is the effective level-one
   group `psl2zToPSL2R.range`.
 * `TauCeti.ModularGroup.triangleGroupEquiv`: the presentation `Δ(3, 2, ∞) ≃* PSL(2, ℤ)`.
+* `TauCeti.ModularGroup.modularEquiv`: the presentation `Δ(3, 2, ∞) ≃* PSL(2, ℤ)` sending
+  `x`, `y`, `z` to `U = S T⁻¹`, `S` and `T`.
 * `TauCeti.ModularGroup.natCard_ellipticOrbits_psl2zToPSL2RRange`: the effective level-one group
   has two elliptic orbits.
 
@@ -325,6 +332,39 @@ theorem triangleGroupEquiv_y :
 theorem triangleGroupEquiv_z :
     triangleGroupEquiv (TriangleGroup.z 3 2 0) = (_root_.ModularGroup.T : PSL(2, ℤ))⁻¹ :=
   TriangleGroup.lift_z ..
+
+/-- The modular triangle homomorphism is bijective, by comparison with the geometric
+presentation precomposed with the mirror automorphism. -/
+theorem modularHom_bijective : Function.Bijective modularHom := by
+  have h : modularHom = (TriangleGroup.mirror.trans triangleGroupEquiv).toMonoidHom := by
+    apply TriangleGroup.hom_ext <;> simp [U_def, mul_assoc]
+  rw [h]
+  exact (TriangleGroup.mirror.trans triangleGroupEquiv).bijective
+
+/-- **The presentation of the modular group by its cusp generator.** `PSL(2, ℤ)` is the triangle
+group `Δ(3, 2, ∞)` with `x`, `y`, `z` sent to `U = S T⁻¹`, `S` and `T`, the elements of orders `3`,
+`2` and `∞` that the permutation action on the cosets of a finite-index subgroup turns into a
+permutation triple. It is `TauCeti.ModularGroup.triangleGroupEquiv` precomposed with the mirror
+automorphism `TauCeti.TriangleGroup.mirror`. -/
+def modularEquiv : TriangleGroup 3 2 0 ≃* PSL(2, ℤ) :=
+  MulEquiv.ofBijective modularHom modularHom_bijective
+
+/-- The presentation `modularEquiv : Δ(3, 2, ∞) ≃* PSL(2, ℤ)` sends `x` to `U = S T⁻¹`. -/
+@[simp]
+theorem modularEquiv_x : modularEquiv (TriangleGroup.x 3 2 0) = (U : PSL(2, ℤ)) := by
+  exact modularHom_x
+
+/-- The presentation `modularEquiv : Δ(3, 2, ∞) ≃* PSL(2, ℤ)` sends `y` to `S`. -/
+@[simp]
+theorem modularEquiv_y :
+    modularEquiv (TriangleGroup.y 3 2 0) = (_root_.ModularGroup.S : PSL(2, ℤ)) := by
+  exact modularHom_y
+
+/-- The presentation `modularEquiv : Δ(3, 2, ∞) ≃* PSL(2, ℤ)` sends `z` to `T`. -/
+@[simp]
+theorem modularEquiv_z :
+    modularEquiv (TriangleGroup.z 3 2 0) = (_root_.ModularGroup.T : PSL(2, ℤ)) := by
+  exact modularHom_z
 
 /-- **The elliptic orbits of the modular group**, from its triangle: the effective level-one group
 has exactly two elliptic orbits, one for each finite vertex `ρ` and `i` of the modular

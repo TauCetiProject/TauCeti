@@ -44,7 +44,7 @@ That packaging exists precisely so that statements about `T_n` have one spelling
 
 Adapted from the AINTLIB `LeanModularForms` project
 (`HeckeRIngs/GL2/Newforms/Basic.lean`, Chris Birkbeck, Apache-2.0): the predicate `IsEigenform`,
-renamed per the roadmap's prescribed spelling and restated over `heckeTCuspNat`. The source's
+renamed to `IsEigenformAwayFromLevel` and restated over `heckeTCuspNat`. The source's
 all-`n` variant `IsFullEigenform`, its bundled `Eigenform` structure and that structure's
 accessors are deliberately not ported — the consumers here need the predicate.
 -/

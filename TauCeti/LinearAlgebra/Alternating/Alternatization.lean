@@ -25,7 +25,8 @@ variable {R M N ι ι' : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [Add
   [Module R N] [Fintype ι] [DecidableEq ι] [Fintype ι'] [DecidableEq ι']
 
 /-- Alternatization commutes with reindexing the arguments along an equivalence. -/
-theorem alternatization_domDomCongr (e : ι ≃ ι') (m : MultilinearMap R (fun _ : ι ↦ M) N) :
+theorem alternatization_domDomCongr (e : ι ≃ ι') (m : MultilinearMap (RingHom.id R) (fun _ : ι ↦ M)
+    N) :
     (m.domDomCongr e).alternatization = m.alternatization.domDomCongr e := by
   ext v
   simp only [alternatization_apply, AlternatingMap.domDomCongr_apply, domDomCongr_apply]

@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.Data.Finset.Inversions
+
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Signs of permutations, inversions, and signed-sum reindexing
@@ -16,8 +19,9 @@ sign of `σ` is `(-1)` raised to the number of inversions. Mathlib exposes the s
 `Equiv.Perm.sign_eq_prod_prod_Ioi`; this file turns that product into the cardinality of the
 finite set of inversions, which is the form met by combinatorial permutation counts. It also
 counts the inversions created by inserting a value at the first position and records the sign of a
-shuffle of two ordered blocks. Finally, it uses the sign of a block swap to
-reindex signed sums over permutations when rotating index blocks.
+shuffle of two ordered blocks, and that of a permutation reordering any number of consecutive
+blocks. Finally, it uses the sign of a block swap to reindex signed sums over permutations when
+rotating index blocks.
 
 ## Main results
 
@@ -29,6 +33,10 @@ reindex signed sums over permutations when rotating index blocks.
 * `TauCeti.sign_shuffle`: the sign of a shuffle permutation is a power of `-1`.
 * `TauCeti.sign_finAddFlip_trans_finCongr`: the block swap of `Fin (m + n)`, which exchanges the
   first `m` indices with the last `n`, has sign `(-1) ^ (m * n)`.
+* `Equiv.Perm.blockPerm` and `Equiv.Perm.sign_blockPerm`: the permutation of consecutive blocks of
+  sizes `d i` that lists them in the order of a permutation `σ`, and its sign
+  `(-1) ^ ∑ d (σ i) * d (σ j)` over the pairs `i < j` inverted by `σ`; it is even when all the
+  sizes are even (`Equiv.Perm.sign_blockPerm_of_even`).
 * `TauCeti.sum_sign_smul_permCongr_mul`: reindexing a signed sum over permutations along an
   equivalence followed by right multiplication.
 * `TauCeti.sum_sign_smul_rotate_blocks`: reindexing a signed sum over permutations along a
@@ -296,3 +304,91 @@ theorem sum_sign_smul_rotate_blocks {γ M : Type*} [AddCommGroup M] {k l m : ℕ
     _ = _ := (sum_sign_smul_permCongr_mul c B f).trans (by rw [hB])
 
 end TauCeti
+
+/-! ### Permutations of consecutive blocks -/
+
+namespace Equiv.Perm
+
+open _root_.Finset TauCeti
+
+variable {k : ℕ}
+
+/-- The permutation of `Fin (∑ i, d i)` comparing two listings of consecutive blocks of sizes
+`d i`. Block `i` of the listing in the order `σ 0, σ 1, …`, which has size `d (σ i)`, is sent to
+block `σ i` of the listing in the order `0, 1, …`, preserving the order within each block
+(`Equiv.Perm.blockPerm_apply`). -/
+def blockPerm (σ : Equiv.Perm (Fin k)) (d : Fin k → ℕ) : Equiv.Perm (Fin (∑ i, d i)) :=
+  (finCongr (Equiv.sum_comp σ d).symm).trans
+    (finSigmaFinEquiv.symm.trans ((Equiv.sigmaCongrLeft σ).trans finSigmaFinEquiv))
+
+/-- `blockPerm σ d` sends entry `a` of block `i` of the listing in the order of `σ` to entry `a` of
+block `σ i` of the listing in the natural order. -/
+@[simp]
+theorem blockPerm_apply (σ : Equiv.Perm (Fin k)) (d : Fin k → ℕ) (i : Fin k) (a : Fin (d (σ i))) :
+    blockPerm σ d (Fin.cast (Equiv.sum_comp σ d) (finSigmaFinEquiv ⟨i, a⟩)) =
+      finSigmaFinEquiv ⟨σ i, a⟩ := by
+  simp [blockPerm]
+
+/-- The sign of a permutation of consecutive blocks. Each pair of blocks whose order `σ`
+reverses contributes the sign `(-1) ^ (d (σ i) * d (σ j))`: the inversions of `blockPerm σ d`
+are exactly the pairs of entries taken from such a pair of blocks. -/
+theorem sign_blockPerm (σ : Equiv.Perm (Fin k)) (d : Fin k → ℕ) :
+    Equiv.Perm.sign (blockPerm σ d) =
+      (-1) ^ ∑ p ∈ univ.inversions σ, d (σ p.1) * d (σ p.2) := by
+  rw [sign_eq_neg_one_pow_card_inversion, inversions_univ]
+  congr 1
+  -- Positions in the listing in the order of `σ`, and their images under `blockPerm σ d`.
+  set ψ : ((i : Fin k) × Fin (d (σ i))) ≃ Fin (∑ i, d i) :=
+    finSigmaFinEquiv.trans (finCongr (Equiv.sum_comp σ d))
+  have hψ (x y) : ψ x < ψ y ↔ x.1 < y.1 ∨ x.1 = y.1 ∧ (x.2 : ℕ) < y.2 := by
+    rw [← finSigmaFinEquiv_lt_finSigmaFinEquiv_iff]
+    simp [ψ, Fin.lt_def]
+  have hτ (x) : blockPerm σ d (ψ x) = finSigmaFinEquiv ⟨σ x.1, x.2⟩ := by
+    obtain ⟨i, a⟩ := x
+    simp [ψ]
+  -- The inversions of `blockPerm σ d` are the pairs of entries of two blocks inverted by `σ`.
+  have hinv (x y) : (ψ x < ψ y ∧ blockPerm σ d (ψ y) < blockPerm σ d (ψ x)) ↔
+      x.1 < y.1 ∧ σ y.1 < σ x.1 := by
+    rw [hψ, hτ, hτ, finSigmaFinEquiv_lt_finSigmaFinEquiv_iff]
+    constructor
+    · rintro ⟨h | ⟨h, h'⟩, h₂ | ⟨h₂, h₂'⟩⟩
+      · exact ⟨h, h₂⟩
+      · exact absurd h₂ (σ.injective.ne h.ne')
+      · simp only at h₂
+        rw [h] at h₂
+        exact absurd h₂ (lt_irrefl _)
+      · simp only at h₂'
+        omega
+    · rintro ⟨h, h₂⟩
+      exact ⟨Or.inl h, Or.inl h₂⟩
+  have hcard : ∑ p ∈ univ.inversions σ, d (σ p.1) * d (σ p.2) =
+      #((univ.inversions σ).sigma fun p ↦ (univ : Finset (Fin (d (σ p.1)) × Fin (d (σ p.2))))) := by
+    simp [card_sigma]
+  rw [hcard]
+  -- Pairs of entries correspond to pairs of blocks together with a position in each.
+  let g (xy : ((i : Fin k) × Fin (d (σ i))) × ((i : Fin k) × Fin (d (σ i)))) :
+      (p : Fin k × Fin k) × (Fin (d (σ p.1)) × Fin (d (σ p.2))) :=
+    ⟨(xy.1.1, xy.2.1), (xy.1.2, xy.2.2)⟩
+  refine card_nbij' (fun pq ↦ g (ψ.symm pq.1, ψ.symm pq.2))
+    (fun x ↦ (ψ ⟨x.1.1, x.2.1⟩, ψ ⟨x.1.2, x.2.2⟩)) ?_ ?_ ?_ ?_
+  · rintro ⟨p, q⟩ h
+    obtain ⟨x, rfl⟩ := ψ.surjective p
+    obtain ⟨y, rfl⟩ := ψ.surjective q
+    simp only [coe_filter, mem_univ, true_and, Set.mem_ofPred_eq] at h
+    simpa [g, mem_inversions] using (hinv x y).1 h
+  · rintro ⟨⟨i, j⟩, a, c⟩ h
+    simp only [coe_sigma, Set.mem_sigma_iff, mem_coe, mem_inversions, mem_univ, true_and] at h
+    simpa using (hinv ⟨i, a⟩ ⟨j, c⟩).2 h.1
+  · rintro ⟨p, q⟩ -
+    simp [g]
+  · rintro ⟨⟨i, j⟩, a, c⟩ -
+    simp only [Equiv.symm_apply_apply]
+    rfl
+
+/-- A permutation of consecutive blocks of even sizes is even. -/
+theorem sign_blockPerm_of_even (σ : Equiv.Perm (Fin k)) {d : Fin k → ℕ} (hd : ∀ i, Even (d i)) :
+    Equiv.Perm.sign (blockPerm σ d) = 1 := by
+  rw [sign_blockPerm]
+  exact Even.neg_one_pow (even_sum _ fun p _ ↦ (hd _).mul_right _)
+
+end Equiv.Perm

@@ -200,6 +200,16 @@ theorem coe_splitTorusLeviMulEquiv_apply (A : CommAlgCat.{w} R)
     CommHopfAlgCat.Hom.mapPointsFunctor_comp, NatTrans.comp_app]
   rfl
 
+/-- The diagonal-torus point of the image of a dynamic-Levi point under the inverse of
+`splitTorusLeviMulEquiv` is the underlying ambient point. -/
+@[simp]
+theorem diagonalTorusPoints_splitTorusLeviMulEquiv_symm (A : CommAlgCat.{w} R)
+    (g : Cocharacter.levi A (dynamicCocharacter (R := R))) :
+    diagonalTorusPoints ((splitTorusLeviMulEquiv A).symm g) =
+      (g : WithConv (coordinateHopfAlgebra R 2 →ₐ[R] A)) := by
+  rw [← coe_splitTorusLeviMulEquiv_apply]
+  exact congrArg Subtype.val ((splitTorusLeviMulEquiv A).apply_symm_apply g)
+
 /-! ## The dynamic unipotent subgroup -/
 
 /-- The positive root-subgroup point map, with codomain restricted to the dynamic unipotent
@@ -232,6 +242,16 @@ theorem coe_additiveUnipotentMulEquiv_apply (A : CommAlgCat.{w} R)
       rootSubgroupPoints (by decide : (0 : Fin 2) ≠ 1) f := by
   unfold additiveUnipotentMulEquiv additiveToUnipotent
   rfl
+
+/-- The positive root-subgroup point of the image of a dynamic unipotent point under the inverse of
+`additiveUnipotentMulEquiv` is the underlying ambient point. -/
+@[simp]
+theorem rootSubgroupPoints_additiveUnipotentMulEquiv_symm (A : CommAlgCat.{w} R)
+    (g : Cocharacter.unipotent A (dynamicCocharacter (R := R))) :
+    rootSubgroupPoints (by decide : (0 : Fin 2) ≠ 1) ((additiveUnipotentMulEquiv A).symm g) =
+      (g : WithConv (coordinateHopfAlgebra R 2 →ₐ[R] A)) := by
+  rw [← coe_additiveUnipotentMulEquiv_apply]
+  exact congrArg Subtype.val ((additiveUnipotentMulEquiv A).apply_symm_apply g)
 
 /-- The additive-group coordinate Hopf algebra represents the dynamic unipotent functor for
 `t ↦ diag(t, 1)`. -/

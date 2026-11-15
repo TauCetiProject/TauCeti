@@ -406,7 +406,7 @@ theorem IsGeneratorMatrix.vecMul_encodingEquiv_symm_apply (hG : C.IsGeneratorMat
 /-- The matrix whose rows are the vectors of a basis of `C` is a generator matrix for `C`. -/
 theorem isGeneratorMatrix_of_basis (b : Module.Basis ρ F C) :
     C.IsGeneratorMatrix (Matrix.of fun r ↦ (b r : ι → F)) := by
-  rw [isGeneratorMatrix_def, generatedBy_eq_span_rows, Matrix.of_row]
+  rw [isGeneratorMatrix_def, generatedBy_eq_span_rows, Matrix.row_of]
   exact (Submodule.span_range_subtype_eq_top_iff C fun r ↦ (b r).2).1 b.span_eq
 
 omit [Fintype ρ] in

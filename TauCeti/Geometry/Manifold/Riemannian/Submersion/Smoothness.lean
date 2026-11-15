@@ -77,14 +77,12 @@ theorem contMDiff_starProjection_orthogonal_ker (hn : n + 1 ≤ ∞) :
       have hX := (e.contMDiffOn_localFrame_baseSet (I := I) n
         (Module.finBasis ℝ E) j).contMDiffAt
         (e.open_baseSet.mem_nhds hx)
-      have hf := ((h.isSubmersion.contMDiff.of_le hn) x)
+      have hf := h.isSubmersion.contMDiff x
       have hdf : ContMDiffAt I (J.prod 𝓘(ℝ, F)) n
           (fun y ↦ TotalSpace.mk' F (f y)
-            (mfderiv I J f y (e.localFrame (Module.finBasis ℝ E) j y))) x := by
-        -- Express the tangent-map composition as the bundled differential applied to the frame.
-        simpa only [Function.comp_def, tangentMap] using
-          (hf.contMDiffAt_tangentMap le_rfl).comp x hX
-      have hlift := hf.mfderiv_adjoint_apply
+            (mfderiv I J f y (e.localFrame (Module.finBasis ℝ E) j y))) x :=
+        hf.mfderiv_apply_sectionAlong hX hn
+      have hlift := (hf.of_le hn).mfderiv_adjoint_apply
         (W := fun y ↦ mfderiv I J f y (e.localFrame (Module.finBasis ℝ E) j y)) hdf
       simpa only [Function.id_def, ← h.horizontalLift_apply, h.horizontalLift_mfderiv]
         using hlift.contMDiffWithinAt)
@@ -98,13 +96,8 @@ theorem contMDiff_starProjection_ker (hn : n + 1 ≤ ∞) :
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
         x (mfderiv I J f x).ker.starProjection) := by
-  -- Supply the arbitrary-order tangent-bundle instance from IsManifold I (n + 1) M, as above.
-  let := TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := n)
-  have hid : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
-        x (ContinuousLinearMap.id ℝ (TangentSpace I x))) :=
-    (TauCeti.contMDiff_hom_bundle_iff _).mpr contMDiff_id
+  have hid := TauCeti.contMDiff_id_endomorphism
+    (I := I) (M := M) (F₁ := E) (V := TangentSpace I) (n := n)
   refine (hid.sub_section (h.contMDiff_starProjection_orthogonal_ker hn)).congr fun x ↦ ?_
   simp only [Pi.sub_apply, Submodule.starProjection_orthogonal]
   congr 1

@@ -46,7 +46,7 @@ the `q`-invariant would be at least `4`. (For `f = 1` the coordinate `2` at `x�
   `TauCeti.demushkinQ_presentedProP_demushkinWordNeTwo`,
   `TauCeti.demushkinQ_presentedProP_demushkinWordNeTwo_of_eq_pow`: the `q`-invariant of the
   `q ≠ 2` normal form vanishes exactly when `q = 0`, is `p^{v_p(q)}` for `q ≠ 0`, and is `q` when
-  `q` is a positive power of `p`.
+  `q` is a power of `p`.
 * `TauCeti.demushkinQ_presentedProP_demushkinWordTwoOdd`,
   `TauCeti.demushkinQ_presentedProP_demushkinWordTwoOddTop`,
   `TauCeti.demushkinQ_presentedProP_demushkinWordTwoEven`: the dyadic normal forms have
@@ -114,36 +114,36 @@ section NeTwo
 
 variable {q : ℕ}
 
-/-- **The `q`-invariant of the `q ≠ 2` normal form vanishes exactly when `q = 0`**: for `p ∣ q`,
-if `⟨x₁, …, xₙ ∣ x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)⟩` is a Demushkin group, its `q`-invariant is `0`
+/-- **The `q`-invariant of the `q ≠ 2` normal form vanishes exactly when `q = 0`**: if
+`⟨x₁, …, xₙ ∣ x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)⟩` is a Demushkin group, its `q`-invariant is `0`
 if and only if `q = 0`. -/
-theorem demushkinQ_presentedProP_demushkinWordNeTwo_eq_zero_iff (hq : p ∣ q)
+theorem demushkinQ_presentedProP_demushkinWordNeTwo_eq_zero_iff
     (hG : IsDemushkin p (presentedProP p (Fin n) {demushkinWordNeTwo q n (freeProPGen p n)})) :
     demushkinQ hG = 0 ↔ q = 0 := by
   have hn : 0 < n := by simpa using hG.card_pos_presentedProP
   have hw : (exponentSum p (Fin n) (freeProPGen p n 0)).toAdd ⟨0, hn⟩ = 1 := by simp
-  rw [demushkinQ_presentedProP_eq_zero_iff hw (toAdd_exponentSum_demushkinWordNeTwo p q) hG
-    (map_dvd (Nat.castRingHom ℤ_[p]) hq), Nat.cast_eq_zero]
+  rw [demushkinQ_presentedProP_eq_zero_iff hw (toAdd_exponentSum_demushkinWordNeTwo p q) hG,
+    Nat.cast_eq_zero]
 
-/-- **The `q`-invariant of the `q ≠ 2` normal form is `p^{v_p(q)}`**: for `p ∣ q` and `q ≠ 0`, if
+/-- **The `q`-invariant of the `q ≠ 2` normal form is `p^{v_p(q)}`**: for `q ≠ 0`, if
 `⟨x₁, …, xₙ ∣ x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)⟩` is a Demushkin group, its `q`-invariant is
 `p ^ padicValNat p q`. -/
 @[simp]
-theorem demushkinQ_presentedProP_demushkinWordNeTwo (hq : p ∣ q) (hq0 : q ≠ 0)
+theorem demushkinQ_presentedProP_demushkinWordNeTwo (hq0 : q ≠ 0)
     (hG : IsDemushkin p (presentedProP p (Fin n) {demushkinWordNeTwo q n (freeProPGen p n)})) :
     demushkinQ hG = p ^ padicValNat p q := by
   have hn : 0 < n := by simpa using hG.card_pos_presentedProP
   have hw : (exponentSum p (Fin n) (freeProPGen p n 0)).toAdd ⟨0, hn⟩ = 1 := by simp
   rw [demushkinQ_presentedProP_eq_pow_valuation hw (toAdd_exponentSum_demushkinWordNeTwo p q) hG
-    (map_dvd (Nat.castRingHom ℤ_[p]) hq) (Nat.cast_ne_zero.2 hq0), PadicInt.valuation_natCast]
+    (Nat.cast_ne_zero.2 hq0), PadicInt.valuation_natCast]
 
-/-- **The `q ≠ 2` normal form with parameter `q = p^f`, `f ≥ 1`, has `q`-invariant `q`**: if
+/-- **The `q ≠ 2` normal form with parameter `q = p^f` has `q`-invariant `q`**: if
 `⟨x₁, …, xₙ ∣ x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)⟩` is a Demushkin group, its `q`-invariant is `q`. -/
-theorem demushkinQ_presentedProP_demushkinWordNeTwo_of_eq_pow {f : ℕ} (hq : q = p ^ f) (hf : 0 < f)
+theorem demushkinQ_presentedProP_demushkinWordNeTwo_of_eq_pow {f : ℕ} (hq : q = p ^ f)
     (hG : IsDemushkin p (presentedProP p (Fin n) {demushkinWordNeTwo q n (freeProPGen p n)})) :
     demushkinQ hG = q := by
   subst hq
-  rw [demushkinQ_presentedProP_demushkinWordNeTwo (dvd_pow_self p hf.ne')
+  rw [demushkinQ_presentedProP_demushkinWordNeTwo
     (pow_ne_zero f (Fact.out : p.Prime).ne_zero) hG, Nat.padicValNat_def,
       Nat.multiplicity_prime_pow]
 
@@ -170,7 +170,7 @@ theorem demushkinQ_presentedProP_demushkinWordTwoOdd (hf : 0 < f)
     rw [toAdd_exponentSum_demushkinWordTwoOdd, smul_add, smul_smul, ← pow_succ',
       Nat.sub_add_cancel hf]
   have h2 : (2 : ℤ_[2]).valuation = 1 := PadicInt.valuation_p
-  rw [demushkinQ_presentedProP_eq_pow_valuation hw hr hG (dvd_refl _) two_ne_zero, h2, pow_one]
+  rw [demushkinQ_presentedProP_eq_pow_valuation hw hr hG two_ne_zero, h2, pow_one]
 
 /-- **The `q = 2`, `n` odd normal form at level `f = ∞` has `q`-invariant `2`**: if
 `⟨x₁, …, xₙ ∣ x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)⟩` is a Demushkin group, its `q`-invariant is `2`. -/
@@ -182,7 +182,7 @@ theorem demushkinQ_presentedProP_demushkinWordTwoOddTop
   have hw : (exponentSum 2 (Fin n) (freeProPGen 2 n 0)).toAdd ⟨0, hn⟩ = 1 := by simp
   have h2 : (2 : ℤ_[2]).valuation = 1 := PadicInt.valuation_p
   rw [demushkinQ_presentedProP_eq_pow_valuation hw (toAdd_exponentSum_demushkinWordTwoOddTop 2) hG
-    (dvd_refl _) two_ne_zero, h2, pow_one]
+    two_ne_zero, h2, pow_one]
 
 /-- **The `q = 2`, `n` even normal form has `q`-invariant `2`**: for `4 ∣ a` and `f ≥ 1`, if
 `⟨x₁, …, xₙ ∣ x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)⟩` is a Demushkin group, its
@@ -214,7 +214,7 @@ theorem demushkinQ_presentedProP_demushkinWordTwoEven {a : ℕ} (ha : 4 ∣ a) (
     rw [PadicInt.valuation_mul two_ne_zero u.ne_zero, PadicInt.valuation_eq_zero_of_isUnit u.isUnit,
       add_zero]
     exact PadicInt.valuation_p
-  rw [demushkinQ_presentedProP_eq_pow_valuation hw hr hG (by rw [hq]; exact dvd_mul_right _ _)
+  rw [demushkinQ_presentedProP_eq_pow_valuation hw hr hG
     (by rw [hq]; exact mul_ne_zero two_ne_zero u.ne_zero), hq, hval, pow_one]
 
 end Two

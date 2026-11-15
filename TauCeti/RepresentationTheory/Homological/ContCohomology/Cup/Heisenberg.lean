@@ -247,24 +247,24 @@ theorem apply_commutatorElement_of_smul_eq_self (g g' : G) :
     AddMonoidHom.add_apply, AddMonoidHom.neg_apply]
   abel
 
-include hh htrivM htrivA htrivP in
-/-- **The value of a Heisenberg cochain on a power**, for trivial actions:
+include hh htrivA htrivP in
+/-- **The value of a Heisenberg cochain on a power**, for trivial actions on `A` and `P`:
 `h (g ^ n) = n • h g + (n.choose 2) • μ (a g) (b g)`. Besides the linear term `n • h g`, the
 `n`-th power picks up the diagonal value `μ (a g) (b g)` of the cup pairing, once for each of the
 `n.choose 2` pairs of factors. -/
 theorem apply_pow_of_smul_eq_self (g : G) (n : ℕ) :
     h (g ^ n) = n • h g + (n.choose 2) • μ ((a : G → M) g) ((b : G → A) g) := by
-  have ha_mul := map_mul_of_smul_eq_self_of_mem_Z1 htrivM a.2
-  have ha_pow : ∀ n : ℕ, (a : G → M) (g ^ n) = n • (a : G → M) g := fun n => by
+  have hb_mul := map_mul_of_smul_eq_self_of_mem_Z1 htrivA b.2
+  have hb_pow : ∀ n : ℕ, (b : G → A) (g ^ n) = n • (b : G → A) g := fun n => by
     induction n with
-    | zero => rw [pow_zero, zero_smul, groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 a.2).2]
-    | succ n ih => rw [pow_succ, ha_mul, ih, succ_nsmul]
+    | zero => rw [pow_zero, zero_smul, groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 b.2).2]
+    | succ n ih => rw [pow_succ, hb_mul, ih, succ_nsmul]
   induction n with
   | zero =>
     rw [pow_zero, hh.apply_one, zero_smul, Nat.choose_zero_succ, zero_smul, add_zero]
   | succ n ih =>
-    rw [pow_succ, hh.apply_mul_of_smul_eq_self htrivA htrivP, ih, ha_pow, map_nsmul,
-      AddMonoidHom.nsmul_apply, Nat.choose_succ_succ, Nat.choose_one_right]
+    rw [pow_succ', hh.apply_mul_of_smul_eq_self htrivA htrivP, ih, hb_pow, map_nsmul,
+      Nat.choose_succ_succ, Nat.choose_one_right]
     simp only [add_nsmul, one_nsmul]
     abel
 

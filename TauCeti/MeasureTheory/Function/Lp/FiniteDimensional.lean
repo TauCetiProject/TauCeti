@@ -91,6 +91,6 @@ theorem eLpNorm_le_sum_enorm_mul_eLpNorm_coord (b : Module.Basis ι 𝕜 F)
         (Filter.Eventually.of_forall fun x ↦ ?_)
       · exact ((b.coord i).continuous_of_finiteDimensional.comp_aestronglyMeasurable
           hg).smul_const (b i)
-      · rw [enorm_smul, mul_comm]
+      · rw [eNorm_smul, mul_comm]
 
 end Module.Basis
