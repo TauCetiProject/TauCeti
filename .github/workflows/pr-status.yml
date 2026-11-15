@@ -6,11 +6,18 @@ name: PR status
 # at a time and keeps only the newest waiting run, cancelling the others before they take a runner.
 # Each fresh scan reconciles every PR touched since its saved watermark
 # (scripts/pr_status/batch.py), so an event whose own run was collapsed away is still covered by the
-# run that replaced it. The price is latency: an update waits out a one-minute debounce (see the
-# job's `environment`) and then the run ahead of it, typically one to three minutes in all.
+# run that replaced it. A collapsed run ends `cancelled` within seconds and never takes a runner, so
+# at busy times most runs of this workflow show as cancelled; that is expected.
+# The price is latency. An update waits out a one-minute debounce (see the job's `environment`),
+# then for the batch ahead of it to finish, then for a GitHub-hosted runner, then for its own batch.
+# With a few thousand open PRs a batch takes about 15-25 minutes, and when the hosted pool is
+# saturated the runner wait alone can exceed an hour, so a label can lag its event by ten minutes
+# to about two hours.
 # Failed runs retain unfinished work and quota deadlines in a verified artifact;
 # the next run resumes without replaying its successful prefix.
-# pr-labels.yml keeps the hourly reconcile-all sweep of labels and the manual re-sync.
+# pr-labels.yml keeps the hourly backstop sweep of labels and the manual re-sync.
+# This job stays on GitHub-hosted runners: it mints the repository App token, and Fleet guests
+# receive only the workflow token and the narrow CI Apps.
 
 on:
   # Retry retained work even after the final PR event of a quiet period.
@@ -34,11 +41,18 @@ permissions:
 jobs:
   reconcile:
     # Meaningful PR events plus periodic/manual recovery; other events skip.
+    # Lifecycle label writes are skipped: labels.py writes them from this batch (the list is its
+    # STATUS_LABELS), and they are outputs rather than inputs, so waking on them only replaced the
+    # pending run and painted a cancelled check on the PR head. Labels that are inputs
+    # (self-tested, hold, keep, roadmap/*, ...) still wake the batch.
     if: >
       github.repository == 'TauCetiProject/TauCeti' && (
         ((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main')
         || (github.event_name == 'pull_request_target'
-          && (github.event.action != 'edited' || github.event.changes.base != null))
+          && (github.event.action != 'edited' || github.event.changes.base != null)
+          && !((github.event.action == 'labeled' || github.event.action == 'unlabeled')
+               && contains(fromJSON('["awaiting-CI","awaiting-review","review-in-progress","ci-failed","awaiting-author","merge-check-failed","needs-human-review","awaiting-dependency","on-hold","ready-to-merge"]'),
+                    github.event.label.name)))
         || (github.event_name == 'workflow_run'
             && ((github.event.workflow_run.name == 'pr-build'
                  && contains(fromJSON('["pull_request_target", "workflow_dispatch", "repository_dispatch"]'),
