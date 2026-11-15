@@ -371,16 +371,12 @@ private theorem exists_mem_gaugeFixedKernel_sectionValue_eq (i : D.ToType) (c : 
     ∃ y ∈ gaugeFixedKernel x, ∃ ξ : ℂ → ℂ, Continuous ξ ∧ ∀ w, w ≠ i.1 →
       sectionValue y w = sectionValue x w * (c / (w - i.1) ^ ((i.2 : ℕ) + 1) + ξ w) := by
   have hxi (k : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w k := contDiff_euclidean.1 hx k
-  obtain ⟨n, v, hv, hv₀, hvf⟩ := exists_contDiffAt_sectionValue_eq_pow_mul (k := ⊤) le_top
+  obtain ⟨v, hv, -, hvf⟩ := exists_contDiffAt_sectionValue_eq_pow_mul_of_order (k := ⊤) le_top
     (hxi 0) (hxi 1) ((hxi 2).differentiable (by simp)) ((hxi 3).differentiable (by simp)) hhol
-    hD.exists_ne_zero i.1
-  obtain ⟨v', hv', hv₀', hvf'⟩ := isZeroMultiplicity_iff.1 hD i.1
-  have hn : D.count i.1 = n := eq_of_eventually_sub_pow_mul_eq hv' hv₀' hv.continuousAt hv₀ (by
-    filter_upwards [hvf, hvf'] with w hw hw'
-    rw [← hw, ← hw'])
+    (isZeroMultiplicity_iff.1 hD i.1)
   obtain ⟨y, hy, hy₂, hker, ξ, hξ, hyξ⟩ :=
     exists_gaugeFixedOperator_eq_zero_sectionValue_eq_mul_div_pow_add hx hhol hlim hv hvf
-      (i.2.isLt.trans_eq hn) c
+      i.2.isLt c
   exact ⟨y, mem_gaugeFixedKernel.2 ⟨hy.of_le (by simp), hy₂, hker⟩, ξ, hξ.continuous, hyξ⟩
 
 /-- **Kernel elements with independent principal parts.** Choose, for each point `⟨a, j⟩` of `D`
@@ -398,9 +394,7 @@ private theorem exists_linearIndependent :
   set c : D.ToType → ℂ := fun i ↦ g (i, 0) + g (i, 1) * I
   suffices hc : ∀ i, c i = 0 by
     rintro ⟨i, b⟩
-    have h := hc i
-    simp only [c, Complex.ext_iff, add_re, ofReal_re, mul_re, I_re, mul_zero, ofReal_im, I_im,
-      mul_one, sub_self, add_zero, zero_re, add_im, mul_im, zero_add, zero_im] at h
+    have h : g (i, 0) = 0 ∧ g (i, 1) = 0 := by simpa [c, Complex.ext_iff] using hc i
     fin_cases b
     exacts [h.1, h.2]
   -- Off the zeros of `α`, the polar terms of the combination sum to a continuous function.
