@@ -16,6 +16,7 @@ public import Mathlib.RingTheory.PowerSeries.Trunc
 import TauCeti.RingTheory.MvPowerSeries.Order
 -- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
 import TauCeti.RingTheory.PowerSeries.Evaluation
+import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
 import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
@@ -79,8 +80,9 @@ of a completed group algebra attached to two topological generators.
   series obtained by evaluating a finite truncation.
 * `PowerSeries.order_subst`: `ord (f (φ)) = ord φ * ord f` when `φ` has zero constant
   coefficient.
-* `PowerSeries.subst_eq_zero_iff`: substitution of a nonzero `φ` of zero constant coefficient
-  has trivial kernel.
+* `PowerSeries.subst_eq_zero_iff` and `PowerSeries.subst_ne_zero_of_ne_zero`: substitution of a
+  nonzero series of zero constant coefficient (univariate or multivariate) has trivial kernel, so
+  its composite into any fraction ring is injective (`PowerSeries.injective_substAlgHom_coe`).
 * `PowerSeries.toNat_order_ne_zero`: such a `φ` has positive integer order.
 * `PowerSeries.transcendental_of_constantCoeff_eq_zero`: such a `φ` is transcendental over the
   coefficients.
@@ -255,6 +257,35 @@ theorem subst_eq_zero_iff (hφ : constantCoeff φ = 0) (hφ₀ : φ ≠ 0) {f : 
   have h₁ : φ.order ≠ ⊤ := order_eq_top.not.mpr hφ₀
   rw [← order_eq_top, ← order_eq_top (φ := f), order_subst hφ]
   exact WithTop.mul_eq_top_iff.trans (by tauto)
+
+/-- Substituting a nonzero multivariate power series `q` of zero constant coefficient into a
+nonzero power series over a ring without zero divisors produces a nonzero series. -/
+theorem subst_ne_zero_of_ne_zero {σ : Type*} {q : MvPowerSeries σ R}
+    (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0) {f : R⟦X⟧} (hf : f ≠ 0) :
+    f.subst q ≠ 0 := by
+  have hc0 : MvPowerSeries.constantCoeff (f.divXPowOrder.subst q) ≠ 0 := by
+    rw [constantCoeff_subst_of_constantCoeff_zero hq, Algebra.algebraMap_self_apply]
+    exact constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hf
+  have hu : f.divXPowOrder.subst q ≠ 0 := fun h ↦ hc0 (by simp [h])
+  rw [← X_pow_order_mul_divXPowOrder (f := f), subst_mul (.of_constantCoeff_zero hq),
+    subst_pow (.of_constantCoeff_zero hq), subst_X (.of_constantCoeff_zero hq)]
+  exact mul_ne_zero (pow_ne_zero _ hq0) hu
+
+/-- Over an integral domain `R₀`, substituting a nonzero multivariate power series `q` of zero
+constant coefficient into `R₀⟦X⟧`, followed by the algebra map into a fraction ring `L` of
+`MvPowerSeries σ R₀`, is injective. -/
+theorem injective_substAlgHom_coe {R₀ : Type*} [CommRing R₀] [IsDomain R₀] {σ : Type*}
+    {q : MvPowerSeries σ R₀} (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0)
+    {L : Type*} [CommRing L] [Algebra R₀ L] [Algebra (MvPowerSeries σ R₀) L]
+    [IsScalarTower R₀ (MvPowerSeries σ R₀) L] [IsFractionRing (MvPowerSeries σ R₀) L] :
+    Function.Injective
+      ((IsScalarTower.toAlgHom R₀ (MvPowerSeries σ R₀) L).comp
+        (substAlgHom (R := R₀) (.of_constantCoeff_zero hq))) := by
+  refine (injective_iff_map_eq_zero _).mpr fun f hf ↦ ?_
+  by_contra hf0
+  rw [AlgHom.comp_apply, IsScalarTower.coe_toAlgHom', coe_substAlgHom,
+    map_eq_zero_iff _ (IsFractionRing.injective (MvPowerSeries σ R₀) L)] at hf
+  exact subst_ne_zero_of_ne_zero hq hq0 hf0 hf
 
 /-- A nonzero power series `φ` of zero constant coefficient is transcendental over the
 coefficients: evaluating a polynomial at `φ` is substituting `φ` into it, which is injective. -/

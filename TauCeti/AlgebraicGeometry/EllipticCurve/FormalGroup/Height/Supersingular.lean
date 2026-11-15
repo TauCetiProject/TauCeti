@@ -8,23 +8,23 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Isogeny.Differential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Isogeny.Hom
-import Mathlib.FieldTheory.IsAlgClosed.Classification
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Supersingular
 import Mathlib.RingTheory.Ideal.Maximal
 import Mathlib.RingTheory.Ideal.Quotient.Basic
 import Mathlib.Tactic.ComputeDegree
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.IsAlgClosed
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Multiplicative
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Supersingular
-import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 
 /-!
 # The formal-group height of elliptic and singular Weierstrass curves
 
 Let `W` be an elliptic curve over a field `K` and `Ê` its formal group law. For a nonzero integer
 `n`, the formal power series of the multiplication-by-`n` isogeny `[n] : W → W` is the
-`n`-multiplication series `[n]_Ê` (`TauCeti.Isogeny.formalSeries_mulByIntIsogenyOfNeZero`), and the
+`n`-multiplication series `[n]_Ê` (`TauCeti.Isogeny.formalSeries_mulByIntIsogeny`), and the
 order of vanishing of an isogeny's formal series is its inseparable degree
 (`TauCeti.Isogeny.order_formalSeries`). Hence the order of `[n]_Ê` equals the inseparable degree of
 `[n]` (`WeierstrassCurve.order_zsmulSeries_formalGroup`). Over any nontrivial commutative ring,
@@ -95,7 +95,7 @@ multiplication-by-`n` isogeny. -/
 theorem order_zsmulSeries_formalGroup {n : ℤ} (hn : n ≠ 0) :
     ((formalGroup W).zsmulSeries n).order =
       (TauCeti.Isogeny.mulByIntIsogenyOfNeZero W.toAffine hn).inseparableDegree := by
-  rw [← TauCeti.Isogeny.formalSeries_mulByIntIsogenyOfNeZero W hn,
+  rw [← TauCeti.Isogeny.formalSeries_mulByIntIsogeny W _,
     TauCeti.Isogeny.order_formalSeries]
 
 /-- **The order of `[n]_Ê` (`n : ℕ`) is the inseparable degree of `[n]`.** -/
@@ -175,17 +175,9 @@ theorem isSupersingular_iff_height_formalGroup_eq_two [CharP K p] :
     classical
     have htop : (formalGroup W).height 0 = ⊤ := (formalGroup W).height_eq_top_iff.mpr (by simp)
     refine iff_of_false (fun hss ↦ ?_) (by rw [htop]; exact ENat.top_ne_natCast 2)
-    let L := AlgebraicClosure K
-    have hdeg : (Polynomial.X ^ 2 + Polynomial.C (algebraMap K L W.a₃) * Polynomial.X -
-        Polynomial.C (algebraMap K L W.a₆) : Polynomial L).degree = 2 := by compute_degree!
-    obtain ⟨y, hy⟩ := IsAlgClosed.exists_root _ (by rw [hdeg]; decide)
-    have heq : (W.baseChange L).toAffine.Equation 0 y := by
-      rw [Affine.equation_iff]
-      simp only [Polynomial.IsRoot, Polynomial.eval_sub, Polynomial.eval_add,
-        Polynomial.eval_mul, Polynomial.eval_pow, Polynomial.eval_X, Polynomial.eval_C] at hy
-      simp only [WeierstrassCurve.baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆]
-      linear_combination hy
-    have hns : (W.baseChange L).toAffine.Nonsingular 0 y := Affine.equation_iff_nonsingular.mp heq
+    obtain ⟨y, heq⟩ := (W.baseChange (AlgebraicClosure K)).toAffine.exists_point_on_curve 0
+    have hns : (W.baseChange (AlgebraicClosure K)).toAffine.Nonsingular 0 y :=
+      Affine.equation_iff_nonsingular.mp heq
     exact Affine.Point.some_ne_zero hns (isSupersingular_iff_forall.mp hss _ (zero_nsmul _))
 
 /-- **An elliptic curve in prime characteristic `p` has formal-group height `1` or `2`.** -/

@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.LaurentSeries.Derivative
 public import TauCeti.RingTheory.LaurentSeries.Rescale
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 public import TauCeti.RingTheory.PowerSeries.Substitution
+-- Proof-only: multivariate power series over a field form an integral domain.
+import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
 
 /-!
 # Substitution into formal Laurent series
@@ -16,8 +18,9 @@ public import TauCeti.RingTheory.PowerSeries.Substitution
 Let `K` be a field and `φ ∈ K⟦X⟧` a nonzero power series with zero constant coefficient. Mathlib's
 `PowerSeries.subst` substitutes `φ` into power series, `f ↦ f (φ)`. Since `φ` is nonzero, this
 is injective (`PowerSeries.subst_eq_zero_iff`), and so it extends uniquely to a `K`-algebra map
-`f ↦ f (φ)` of the fraction field `K⸨X⸩`. This file constructs that extension and computes its
-effect on orders, valuations and coefficients.
+`f ↦ f (φ)` of the fraction field `K⸨X⸩`. This file constructs that extension (along with the
+multivariate analogue `TauCeti.LaurentSeries.liftLaurentSubst` into
+`FractionRing (MvPowerSeries σ K)`) and computes its effect on orders, valuations and coefficients.
 
 Writing a Laurent series as `f = X ^ N * f₊` with `N ∈ ℤ` and `f₊ ∈ K⟦X⟧`, the substitution is
 `f (φ) = φ ^ N * f₊ (φ)`, for every such representation
@@ -37,12 +40,16 @@ substitution of the image of `φ` into the image of `f`.
 
 * `TauCeti.LaurentSeries.substAlgHom`: the substitution `f ↦ f (φ)` as a `K`-algebra map
   `K⸨X⸩ →ₐ[K] K⸨X⸩`.
+* `TauCeti.LaurentSeries.liftLaurentSubst`: extension of `PowerSeries.subst q` for a nonzero
+  multivariate series `q ∈ MvPowerSeries σ K` of zero constant coefficient to a `K`-algebra map
+  `K⸨X⸩ →ₐ[K] FractionRing (MvPowerSeries σ K)`.
 * `TauCeti.LaurentSeries.substAlgEquiv`: the substitution automorphism `f ↦ f (φ)` of a formal
   coordinate `φ`.
 
 ## Main results
 
-* `TauCeti.LaurentSeries.substAlgHom_coe`: on power series it is `PowerSeries.subst`.
+* `TauCeti.LaurentSeries.substAlgHom_coe` and `TauCeti.LaurentSeries.liftLaurentSubst_coe`: on
+  power series they agree with `PowerSeries.subst`.
 * `TauCeti.LaurentSeries.substAlgHom_single_mul_coe`: `(X ^ N * f₊) (φ) = φ ^ N * f₊ (φ)`.
 * `TauCeti.LaurentSeries.orderTop_substAlgHom`: `ord (f (φ)) = ord φ * ord f`.
 * `TauCeti.LaurentSeries.valuation_substAlgHom`: `v (f (φ)) = v f ^ ord φ`.
@@ -76,6 +83,26 @@ open HahnSeries PowerSeries WithZero
 namespace TauCeti.LaurentSeries
 
 variable {K : Type*} [Field K]
+
+/-- Extension of `PowerSeries.subst q`, for a nonzero multivariate power series `q` with zero
+constant coefficient, from `K⟦X⟧` to a `K`-algebra homomorphism
+`K⸨X⸩ →ₐ[K] FractionRing (MvPowerSeries σ K)`. -/
+noncomputable def liftLaurentSubst {σ : Type*} {q : MvPowerSeries σ K}
+    (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0) :
+    K⸨X⸩ →ₐ[K] FractionRing (MvPowerSeries σ K) :=
+  IsFractionRing.liftAlgHom (PowerSeries.injective_substAlgHom_coe hq hq0)
+
+/-- On power series, `liftLaurentSubst` agrees with `PowerSeries.subst` followed by the canonical
+map into `FractionRing (MvPowerSeries σ K)`. -/
+@[simp]
+theorem liftLaurentSubst_coe {σ : Type*} {q : MvPowerSeries σ K}
+    (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0) (f : K⟦X⟧) :
+    liftLaurentSubst hq hq0 (f : K⸨X⸩) =
+      algebraMap (MvPowerSeries σ K) (FractionRing (MvPowerSeries σ K)) (f.subst q) := by
+  rw [liftLaurentSubst, IsFractionRing.coe_liftAlgHom, ← _root_.LaurentSeries.coe_algebraMap,
+    IsFractionRing.lift_algebraMap]
+  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.comp_apply,
+    IsScalarTower.coe_toAlgHom', coe_substAlgHom]
 
 variable {φ : K⟦X⟧} (hφ : constantCoeff φ = 0) (hφ₀ : φ ≠ 0)
 

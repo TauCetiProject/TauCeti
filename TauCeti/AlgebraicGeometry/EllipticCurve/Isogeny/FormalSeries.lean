@@ -18,7 +18,8 @@ with zero constant coefficient. It is nonzero, including for inseparable isogeni
 
 `Isogeny.formalSeries` is this actual expansion, characterized by
 `Isogeny.coe_formalSeries`. Pullback of every rational function is Laurent substitution
-by this series (`Isogeny.functionFieldLaurentExpansion_fieldPullback`), and identity and
+by this series (`Isogeny.functionFieldLaurentExpansion_fieldPullback`), an isogeny is
+determined by its formal series (`Isogeny.formalSeries_injective`), and identity and
 composition induce identity and composition of series. This supplies the local action
 from the actual function-field map, without assuming a formal-group homomorphism or a
 convergence theorem.
@@ -36,7 +37,10 @@ open scoped LaurentSeries PowerSeries WithZero
 namespace TauCeti.Isogeny
 
 variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K}
-  (φ : Isogeny W₁.toAffine W₂.toAffine)
+
+section
+
+variable (φ : Isogeny W₁.toAffine W₂.toAffine)
 
 private theorem exists_powerSeries_constantCoeff_zero_of_infinityPlace_lt_one
     (f : W₂.toAffine.FunctionField) (hf : W₂.toAffine.infinityPlace f < 1) :
@@ -166,5 +170,27 @@ theorem formalSeries_comp {W₃ : WeierstrassCurve K}
   rw [coe_formalSeries, comp_fieldPullback, AlgHom.comp_apply,
     φ.functionFieldLaurentExpansion_fieldPullback,
     ← ψ.coe_formalSeries, LaurentSeries.substAlgHom_coe]
+
+end
+
+/-- **An isogeny is determined by its formal series.** -/
+theorem formalSeries_injective :
+    Function.Injective (formalSeries (W₁ := W₁) (W₂ := W₂)) := by
+  intro φ ψ h
+  refine Isogeny.ext (AlgHom.ext fun x ↦ ?_)
+  rw [← φ.fieldPullback_algebraMap, ← ψ.fieldPullback_algebraMap]
+  apply W₁.functionFieldLaurentExpansion.injective
+  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+  rw [φ.functionFieldLaurentExpansion_fieldPullback, ψ.functionFieldLaurentExpansion_fieldPullback]
+  exact congrArg
+    (fun s : {s : K⟦X⟧ // PowerSeries.constantCoeff s = 0 ∧ s ≠ 0} ↦
+      LaurentSeries.substAlgHom s.2.1 s.2.2 _)
+    (Subtype.ext (a1 := ⟨φ.formalSeries, φ.constantCoeff_formalSeries, φ.formalSeries_ne_zero⟩)
+      (a2 := ⟨ψ.formalSeries, ψ.constantCoeff_formalSeries, ψ.formalSeries_ne_zero⟩) h)
+
+@[simp]
+theorem formalSeries_inj {φ ψ : Isogeny W₁.toAffine W₂.toAffine} :
+    φ.formalSeries = ψ.formalSeries ↔ φ = ψ :=
+  formalSeries_injective.eq_iff
 
 end TauCeti.Isogeny

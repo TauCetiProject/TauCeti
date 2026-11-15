@@ -72,24 +72,6 @@ namespace WeierstrassCurve
 
 variable {K : Type*} [Field K] (W : WeierstrassCurve K)
 
-/-- Under `functionFieldLaurentExpansion`, the generic ordinate expands to `-1 / w(X)`. -/
-theorem functionFieldLaurentExpansion_genericY_eq_neg_one_div_formalW :
-    W.functionFieldLaurentExpansion W.toAffine.genericY = -1 / (formalW W : K⸨X⸩) := by
-  have hw : (formalW W : K⸨X⸩) = -(W.functionFieldLaurentExpansion W.toAffine.genericY)⁻¹ := by
-    simpa [map_neg, map_inv₀] using W.functionFieldLaurentExpansion_neg_inv_genericY.symm
-  rw [hw, div_neg, div_inv_eq_mul, neg_mul, one_mul, neg_neg]
-
-/-- Under `functionFieldLaurentExpansion`, the generic abscissa expands to `X / w(X)`. -/
-theorem functionFieldLaurentExpansion_genericX_eq_X_div_formalW :
-    W.functionFieldLaurentExpansion W.toAffine.genericX =
-      (PowerSeries.X : K⟦X⟧) / (formalW W : K⸨X⸩) := by
-  have hy : W.functionFieldLaurentExpansion W.toAffine.genericY ≠ 0 :=
-    (map_ne_zero W.functionFieldLaurentExpansion).mpr W.toAffine.genericY_ne_zero
-  have hparam := W.functionFieldLaurentExpansion_neg_genericX_div_genericY
-  rw [map_div₀, map_neg, div_eq_iff hy,
-    W.functionFieldLaurentExpansion_genericY_eq_neg_one_div_formalW] at hparam
-  linear_combination -hparam
-
 private theorem coe_formalInvariantDifferentialDenom :
     (W.formalInvariantDifferentialDenom : K⸨X⸩) =
       1 - algebraMap K K⸨X⸩ W.a₁ * (PowerSeries.X : K⟦X⟧) -

@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Ideal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Supersingular
 import Mathlib.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
+import TauCeti.RingTheory.QuotSMulTop
 import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
@@ -199,10 +200,7 @@ theorem isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff (hp : p.Prime)
     simp only [List.ofFn_succ, Fin.val_natAdd, Fin.val_zero, add_zero, List.map_cons,
       isWeaklyRegular_cons_iff]
     rw [← hu]
-    have : Subsingleton (QuotSMulTop (u : R ⧸ I) (M ⧸ (I • ⊤ : Submodule R M))) := by
-      rw [QuotSMulTop, Submodule.Quotient.subsingleton_iff, eq_top_iff]
-      exact fun x _ ↦ Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mpr
-        ⟨(↑u⁻¹ : R ⧸ I) • x, trivial, by rw [← mul_smul, u.mul_inv, one_smul]⟩
+    have := QuotSMulTop.subsingleton_of_isUnit (M := M ⧸ (I • ⊤ : Submodule R M)) u.isUnit
     exact ⟨u.isSMulRegular _, IsWeaklyRegular.of_subsingleton _⟩
 
 /-- **Landweber regularity for an elliptic curve reduces to `(p, A)`.** For an elliptic curve `W`

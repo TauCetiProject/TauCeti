@@ -12,6 +12,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 -- Proof-only: base change preserves the degree of an isogeny.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
+-- Proof-only: the tautological point of an isogeny is the pushed generic point.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.GenericPoint
 
 /-!
 # Faithful additive base change of morphisms of elliptic curves
@@ -38,9 +40,10 @@ and the identification of morphisms with their tautological points in `Isogeny.H
   composition and addition.
 * `TauCeti.Isogeny.Hom.degree_map`: preservation of the degree.
 * `TauCeti.Isogeny.Hom.pointMap_map`: compatibility with the action on points.
-* `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_map`: compatibility of the action on points of the
-  base changes `W⁄L` and `W⁄M` with Mathlib's point map along an algebra homomorphism `L →ₐ[F] M`;
-  for an automorphism of `L` over `F` this is Galois equivariance.
+* `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_map` and
+  `TauCeti.Isogeny.Hom.pointMap_ofIsogeny_map_genericPoint`: compatibility of the action on points
+  of base changes with Mathlib's point map along algebra homomorphisms, including at images of the
+  generic point; for an automorphism of `L` over `F` this is Galois equivariance.
 
 ## References
 
@@ -297,6 +300,51 @@ theorem pointMap_map_algebraMap_map {L M : Type*} [Field L] [Field M] [Algebra F
   · exact (congrArg _ (pointMap_map _ _ P)).trans (Point.map_eq_cast_mapAlong σ _).symm
 
 end PointMap
+
+/-- For any `F`-algebra homomorphism `E : F(V₁) →ₐ[F] K` into a field, the base-changed isogeny
+`φ.baseChange K` acts on `Point.map E V₁.toAffine.genericPoint` by
+`Point.map E φ.pullback.tautologicalPoint`. Because `E` is injective on `F(V₁)`, no denominator in
+`F[V₁]` vanishes at `(E x₁, E y₁)`. -/
+theorem pointMap_ofIsogeny_map_genericPoint {V₁ V₂ : WeierstrassCurve F}
+    [V₁.IsElliptic] [V₂.IsElliptic] (φ : Isogeny V₁.toAffine V₂.toAffine) [DecidableEq K]
+    [Algebra F K] (E : V₁.toAffine.FunctionField →ₐ[F] K) :
+    (ofIsogeny (φ.baseChange K)).pointMap (Point.map E V₁.toAffine.genericPoint) =
+      Point.map E φ.pullback.tautologicalPoint := by
+  let ι := algebraMap F K
+  have hP₁ : (V₁.toAffine.map ι).Nonsingular (E V₁.toAffine.genericX)
+      (E V₁.toAffine.genericY) := by
+    rw [genericX_def, genericY_def]
+    exact equation_iff_nonsingular.mp (CoordinateRing.equation_of_algHom
+      (E.comp (IsScalarTower.toAlgHom F V₁.toAffine.CoordinateRing V₁.toAffine.FunctionField)))
+  have hP₂ : (V₂.toAffine.map ι).Nonsingular
+      (E (φ.fieldPullback V₂.toAffine.genericX)) (E (φ.fieldPullback V₂.toAffine.genericY)) := by
+    rw [genericX_def, genericY_def]
+    exact equation_iff_nonsingular.mp (CoordinateRing.equation_of_algHom
+      ((E.comp φ.fieldPullback).comp
+        (IsScalarTower.toAlgHom F V₂.toAffine.CoordinateRing V₂.toAffine.FunctionField)))
+  have hsrc : Point.map E V₁.toAffine.genericPoint =
+      (Point.some (E V₁.toAffine.genericX) (E V₁.toAffine.genericY) hP₁ :
+        (V₁.toAffine.map ι).Point) := by
+    rw [genericPoint_eq_some, Point.map_some]; rfl
+  have hdst : Point.map E φ.pullback.tautologicalPoint =
+      (Point.some (E (φ.fieldPullback V₂.toAffine.genericX))
+        (E (φ.fieldPullback V₂.toAffine.genericY)) hP₂ : (V₂.toAffine.map ι).Point) := by
+    rw [Isogeny.tautologicalPoint_eq_map_genericPoint, Point.map_map, genericPoint_eq_some,
+      Point.map_some]; rfl
+  -- `Isogeny.baseChange` (`abbrev` for `φ.map ι`) is typed over the semireducible `def`
+  -- `WeierstrassCurve.baseChange`, which `dsimp`/`rw` do not unfold inside `Hom.ofIsogeny`'s
+  -- implicit curve parameters under `implicit` transparency.
+  change (ofIsogeny (φ.map ι)).pointMap (Point.map E V₁.toAffine.genericPoint) =
+    Point.map E φ.pullback.tautologicalPoint
+  rw [hsrc, hdst, pointMap_eq_iff, tautologicalPoint_ofIsogeny,
+    Isogeny.tautologicalPoint_eq_map_genericPoint, genericPoint_eq_some, Point.map_some,
+    Point.equivBaseChangeSelf_some, some_sub_baseChange_mem_polePoints_iff,
+    coe_pointEquivDegreeOnePlace_some]
+  refine ⟨?_, ?_⟩
+  · rw [← FunctionField.map_genericX V₂.toAffine ι, map_fieldPullback_map, Place.valuation_ofPrime]
+    exact valuation_pointPlace_map_sub_lt_one E _ _
+  · rw [← FunctionField.map_genericY V₂.toAffine ι, map_fieldPullback_map, Place.valuation_ofPrime]
+    exact valuation_pointPlace_map_sub_lt_one E _ _
 
 end TauCeti.Isogeny.Hom
 
