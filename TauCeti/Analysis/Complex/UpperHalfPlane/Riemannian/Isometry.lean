@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.PoincareMetric
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Manifold
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
+import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
@@ -17,9 +18,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 Mathlib's action `UpperHalfPlane.glAction` of `GL(2, ℝ)` on the complex upper half-plane `ℍ` sends
 `z` to `(a z + b) / (c z + d)` when `det g > 0` and to `(a conj z + b) / (c conj z + d)` when
 `det g < 0`. Every element of `GL(2, ℝ)` acts on `ℍ` by a real-analytic diffeomorphism for the
-real manifold structure `𝓘(ℝ, ℂ)`: positive-determinant matrices act holomorphically, the
-reflection `UpperHalfPlane.J : z ↦ -conj z` is the restriction of a continuous real-linear
-involution of `ℂ`, and negative-determinant matrices factor through `J`.
+real manifold structure `𝓘(ℝ, ℂ)` (`TauCeti.UpperHalfPlane.instContMDiffConstSMulGLReal`).
 
 In the singleton inclusion chart, the real differential at `z` is Mathlib's
 `UpperHalfPlane.smulFDeriv g z`, namely complex multiplication by `det g / (c z + d) ^ 2` followed
@@ -36,18 +35,16 @@ The resulting group homomorphism `TauCeti.UpperHalfPlane.glToIsom` descends to `
 
 ## Main definitions
 
-* `UpperHalfPlane.instContMDiffConstSMulGLReal`, `UpperHalfPlane.instContMDiffConstSMulPGLReal`,
-  `UpperHalfPlane.instContMDiffConstSMulSL2Real`, `UpperHalfPlane.instContMDiffConstSMulPSL2Real`:
-  `GL(2, ℝ)`, `PGL(2, ℝ)`, `SL(2, R)`, and `PSL(2, R)` act on `ℍ` by real-analytic maps.
 * `TauCeti.UpperHalfPlane.glToIsom`, `TauCeti.UpperHalfPlane.pglToIsom`,
   `TauCeti.UpperHalfPlane.slToIsom`, `TauCeti.UpperHalfPlane.pslToIsom`: group homomorphisms from
   `GL(2, ℝ)`, `PGL(2, ℝ)`, `SL(2, R)`, and `PSL(2, R)` into `Isom 𝓘(ℝ, ℂ) ℍ`.
 
 ## Main results
 
-* `UpperHalfPlane.tangentSpaceCastModel_mfderiv_smul` and `UpperHalfPlane.inner_smulFDeriv`: in the
-  inclusion chart, the differential of `w ↦ g • w` at `z` is `UpperHalfPlane.smulFDeriv g z` and
-  preserves the Euclidean inner product divided by squared imaginary part.
+* `UpperHalfPlane.tangentSpaceCastModel_mfderiv_smul` and
+  `UpperHalfPlane.inner_smulFDeriv_div_im_sq`: in the inclusion chart, the differential of
+  `w ↦ g • w` at `z` is `UpperHalfPlane.smulFDeriv g z` and preserves the Euclidean inner product
+  divided by squared imaginary part.
 * `TauCeti.UpperHalfPlane.pglToIsom_injective` and `TauCeti.UpperHalfPlane.pslToIsom_injective`:
   the projective homomorphisms into `Isom 𝓘(ℝ, ℂ) ℍ` are injective.
 * `TauCeti.UpperHalfPlane.isPretransitive_isom`: `Isom 𝓘(ℝ, ℂ) ℍ` acts transitively on `ℍ`.
@@ -62,71 +59,11 @@ The resulting group homomorphism `TauCeti.UpperHalfPlane.glToIsom` descends to `
 public section
 
 open Bundle Manifold
-open scoped ComplexConjugate ContDiff Manifold MatrixGroups UpperHalfPlane
+open scoped ContDiff Manifold MatrixGroups UpperHalfPlane
 
 noncomputable section
 
 namespace UpperHalfPlane
-
-/-- The reflection `UpperHalfPlane.J : z ↦ -conj z` is real-analytic on `ℍ`. -/
-private theorem contMDiff_J_smul {n : ℕ∞ω} : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n (J • · : ℍ → ℍ) := by
-  apply ContMDiff.of_comp_isOpenEmbedding isOpenEmbedding_coe
-  have hcoe : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n UpperHalfPlane.coe := fun _ ↦ contMDiffAt_extChartAt
-  have hfun : UpperHalfPlane.coe ∘ (J • · : ℍ → ℍ) = (-Complex.conjCLE : ℂ →L[ℝ] ℂ) ∘
-      UpperHalfPlane.coe := by
-    funext z
-    simp [coe_J_smul]
-  rw [hfun]
-  exact (-Complex.conjCLE : ℂ →L[ℝ] ℂ).contDiff.contMDiff.comp hcoe
-
-/-- Every element of `GL(2, ℝ)` acts on `ℍ` by a real-analytic map (and hence smoothly of every
-order `n : ℕ∞ω`). -/
-instance instContMDiffConstSMulGLReal {n : ℕ∞ω} :
-    ContMDiffConstSMul 𝓘(ℝ, ℂ) n (GL (Fin 2) ℝ) ℍ where
-  contMDiff_const_smul g := by
-    -- Positive-determinant matrices act holomorphically; negative-determinant ones factor via `J`.
-    have hpos {h : GL (Fin 2) ℝ} (hh : 0 < h.det.val) :
-        ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n (h • · : ℍ → ℍ) := by
-      simpa only [modelWithCornersSelf_restrictScalars] using
-        ((UpperHalfPlane.contMDiff_smul (n := ω) hh).restrictScalars ℝ).of_le le_top
-    rcases g.det.ne_zero.lt_or_gt with hg | hg
-    · have hJg : 0 < (J * g).det.val := by simpa using hg
-      have hcomp : (g • · : ℍ → ℍ) = (J • ·) ∘ ((J * g) • ·) := by
-        funext z
-        simp [smul_smul, ← mul_assoc, ← sq]
-      rw [hcomp]
-      exact contMDiff_J_smul.comp (hpos hJg)
-    · exact hpos hg
-
-/-- Every element of `PGL(2, ℝ)` acts on `ℍ` by a real-analytic map. -/
-instance instContMDiffConstSMulPGLReal {n : ℕ∞ω} :
-    ContMDiffConstSMul 𝓘(ℝ, ℂ) n PGL(2, ℝ) ℍ where
-  contMDiff_const_smul q := by
-    induction q using Matrix.ProjGenLinGroup.induction_on with | mk g =>
-    simpa only [pglMk_smul] using contMDiff_const_smul (I := 𝓘(ℝ, ℂ)) (n := n) g
-
-/-- Every element of `SL(2, R)` acts on `ℍ` by a real-analytic map. -/
-instance instContMDiffConstSMulSL2Real {R : Type*} [CommRing R] [Algebra R ℝ] {n : ℕ∞ω} :
-    ContMDiffConstSMul 𝓘(ℝ, ℂ) n SL(2, R) ℍ where
-  contMDiff_const_smul g := by
-    simpa only [MulAction.compHom_smul_def] using
-      contMDiff_const_smul (I := 𝓘(ℝ, ℂ)) (n := n) (Matrix.SpecialLinearGroup.mapGL ℝ g)
-
-/-- Every element of `PSL(2, R)` acts on `ℍ` by a real-analytic map. -/
-instance instContMDiffConstSMulPSL2Real {R : Type*} [CommRing R] [Algebra R ℝ] {n : ℕ∞ω} :
-    ContMDiffConstSMul 𝓘(ℝ, ℂ) n PSL(2, R) ℍ where
-  contMDiff_const_smul q := by
-    refine QuotientGroup.induction_on q fun g ↦ ?_
-    simpa only [pslMk_smul] using contMDiff_const_smul (I := 𝓘(ℝ, ℂ)) (n := n) g
-
-/-- The Poincaré norm of a tangent vector at `z` is its Euclidean norm in the inclusion chart
-divided by `Im z`. -/
-theorem poincareRiemannianMetric_norm (z : ℍ) (v : TangentSpace 𝓘(ℝ, ℂ) z) :
-    ‖v‖ = ‖tangentSpaceCastModel 𝓘(ℝ, ℂ) z v‖ / z.im := by
-  -- The ambient tangent-space inner product is the installed Poincaré metric.
-  have hinner : inner ℝ v v = TauCeti.UpperHalfPlane.poincareRiemannianMetric.inner z v v := rfl
-  rw [norm_eq_sqrt_real_inner, hinner, poincareRiemannianMetric_inner, real_inner_self_eq_norm_sq,
-    Real.sqrt_div (sq_nonneg _), Real.sqrt_sq (norm_nonneg _), Real.sqrt_sq z.im_pos.le]
 
 /-- In the tangent coordinates of the inclusion chart, the real differential of `w ↦ g • w` at `z`
 is `UpperHalfPlane.smulFDeriv g z`. -/
@@ -140,16 +77,13 @@ theorem tangentSpaceCastModel_mfderiv_smul (z : ℍ) (g : GL (Fin 2) ℝ)
   rw [hmdiff.tangentSpaceCastModel_mfderiv_apply]
   have hlocal : writtenInExtChartAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) z (g • · : ℍ → ℍ)
       =ᶠ[nhds (z : ℂ)] fun w : ℂ ↦ ((g • ofComplex w : ℍ) : ℂ) := by
-    filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds z.im_pos] with w _
-    have hchart (p : ℍ) : extChartAt 𝓘(ℝ, ℂ) (g • z) p = (p : ℂ) := by simp
-    simp only [writtenInExtChartAt, Function.comp_apply, hchart]
-    congr 2
+    simpa [Function.comp_def] using z.writtenInExtChartAt_eventuallyEq 𝓘(ℝ, ℂ) (g • · : ℍ → ℍ)
   have hchart : extChartAt 𝓘(ℝ, ℂ) z z = (z : ℂ) := by simp
   rw [hchart, hlocal.fderiv_eq, (hasStrictFDerivAt_smul g z).hasFDerivAt.fderiv]
 
 /-- `UpperHalfPlane.smulFDeriv g z` preserves the Euclidean inner product divided by squared
 imaginary part. -/
-theorem inner_smulFDeriv (z : ℍ) (g : GL (Fin 2) ℝ) (u w : ℂ) :
+theorem inner_smulFDeriv_div_im_sq (z : ℍ) (g : GL (Fin 2) ℝ) (u w : ℂ) :
     inner ℝ (smulFDeriv g z u) (smulFDeriv g z w) / (g • z).im ^ 2 =
       inner ℝ u w / z.im ^ 2 := by
   have hσ (x y : ℂ) : inner ℝ ((σ g : ℂ ≃L[ℝ] ℂ) x) ((σ g : ℂ ≃L[ℝ] ℂ) y) = inner ℝ x y := by
@@ -185,12 +119,9 @@ open _root_.UpperHalfPlane
 private def glIsom (g : GL (Fin 2) ℝ) : Isom 𝓘(ℝ, ℂ) ℍ where
   toDiffeomorph := Diffeomorph.constSmul 𝓘(ℝ, ℂ) ∞ g
   inner_mfderiv' z v w := by
-    have hinner (x : ℍ) (u₁ u₂ : TangentSpace 𝓘(ℝ, ℂ) x) :
-        inner ℝ u₁ u₂ = poincareRiemannianMetric.inner x u₁ u₂ := rfl
-    rw [hinner, hinner, Diffeomorph.coe_constSmul,
-      poincareRiemannianMetric_inner, poincareRiemannianMetric_inner,
+    rw [Diffeomorph.coe_constSmul, (g • z).inner_tangentSpace, z.inner_tangentSpace,
       z.tangentSpaceCastModel_mfderiv_smul g v, z.tangentSpaceCastModel_mfderiv_smul g w]
-    exact z.inner_smulFDeriv g _ _
+    exact z.inner_smulFDeriv_div_im_sq g _ _
 
 @[simp]
 private theorem glIsom_apply (g : GL (Fin 2) ℝ) (z : ℍ) : glIsom g z = g • z := by
@@ -251,6 +182,13 @@ theorem pglToIsom_apply (q : PGL(2, ℝ)) (z : ℍ) : pglToIsom q z = q • z :=
 theorem pglToIsom_symm_apply (q : PGL(2, ℝ)) (z : ℍ) : (pglToIsom q).symm z = q⁻¹ • z := by
   rw [← RiemannianIsometry.inv_apply, ← map_inv, pglToIsom_apply]
 
+/-- The underlying diffeomorphism of `pglToIsom q` is `Diffeomorph.constSmul 𝓘(ℝ, ℂ) ∞ q`. -/
+@[simp]
+theorem toDiffeomorph_pglToIsom (q : PGL(2, ℝ)) :
+    (pglToIsom q).toDiffeomorph = Diffeomorph.constSmul 𝓘(ℝ, ℂ) ∞ q := by
+  ext z
+  simp
+
 /-- `PGL(2, ℝ)` embeds faithfully into the Riemannian isometry group of `ℍ`. -/
 theorem pglToIsom_injective : Function.Injective pglToIsom :=
   fun _ _ h ↦ eq_of_smul_eq_smul fun z : ℍ ↦ by
@@ -271,6 +209,13 @@ theorem slToIsom_apply {R : Type*} [CommRing R] [Algebra R ℝ] (g : SL(2, R)) (
 theorem slToIsom_symm_apply {R : Type*} [CommRing R] [Algebra R ℝ] (g : SL(2, R)) (z : ℍ) :
     (slToIsom g).symm z = g⁻¹ • z := by
   rw [← RiemannianIsometry.inv_apply, ← map_inv, slToIsom_apply]
+
+/-- The underlying diffeomorphism of `slToIsom g` is `Diffeomorph.constSmul 𝓘(ℝ, ℂ) ∞ g`. -/
+@[simp]
+theorem toDiffeomorph_slToIsom {R : Type*} [CommRing R] [Algebra R ℝ] (g : SL(2, R)) :
+    (slToIsom g).toDiffeomorph = Diffeomorph.constSmul 𝓘(ℝ, ℂ) ∞ g := by
+  ext z
+  simp
 
 /-- Restricting `glToIsom` along `mapGL ℝ` gives `slToIsom`. -/
 @[simp]
@@ -301,6 +246,13 @@ theorem pslToIsom_apply {R : Type*} [CommRing R] [Algebra R ℝ] (q : PSL(2, R))
 theorem pslToIsom_symm_apply {R : Type*} [CommRing R] [Algebra R ℝ] (q : PSL(2, R)) (z : ℍ) :
     (pslToIsom q).symm z = q⁻¹ • z := by
   rw [← RiemannianIsometry.inv_apply, ← map_inv, pslToIsom_apply]
+
+/-- The underlying diffeomorphism of `pslToIsom q` is `Diffeomorph.constSmul 𝓘(ℝ, ℂ) ∞ q`. -/
+@[simp]
+theorem toDiffeomorph_pslToIsom {R : Type*} [CommRing R] [Algebra R ℝ] (q : PSL(2, R)) :
+    (pslToIsom q).toDiffeomorph = Diffeomorph.constSmul 𝓘(ℝ, ℂ) ∞ q := by
+  ext z
+  simp
 
 /-- Restricting `pglToIsom` along the canonical inclusion `toPGL : PSL(2, ℝ) →* PGL(2, ℝ)` gives
 `pslToIsom`. -/

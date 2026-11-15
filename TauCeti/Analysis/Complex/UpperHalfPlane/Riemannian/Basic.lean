@@ -30,7 +30,8 @@ Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 3.
 ## Main results
 
 * `TauCeti.UpperHalfPlane.poincareRiemannianMetric`: the Poincaré metric, with tangent-coordinate
-  formula `UpperHalfPlane.poincareRiemannianMetric_inner`.
+  formulas `UpperHalfPlane.poincareRiemannianMetric_inner`, `UpperHalfPlane.inner_tangentSpace`,
+  and `UpperHalfPlane.norm_tangentSpace`.
 * `UpperHalfPlane.riemannianVolume_eq_volume`: the Riemannian volume of the Poincaré metric is
   Mathlib's invariant measure `volume`.
 -/
@@ -153,6 +154,23 @@ instance instIsContMDiffRiemannianBundle : IsContMDiffRiemannianBundle 𝓘(ℝ,
 instance instIsContinuousRiemannianBundle :
     IsContinuousRiemannianBundle ℂ (fun z : ℍ ↦ TangentSpace 𝓘(ℝ, ℂ) z) :=
   Bundle.instIsContinuousRiemannianBundle poincareRiemannianMetric.toContinuousRiemannianMetric
+
+/-- The inner product on `TangentSpace 𝓘(ℝ, ℂ) z` is the Euclidean inner product in the inclusion
+chart divided by `z.im ^ 2`. -/
+theorem _root_.UpperHalfPlane.inner_tangentSpace (z : ℍ) (v w : TangentSpace 𝓘(ℝ, ℂ) z) :
+    inner ℝ v w =
+      inner ℝ (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v)
+        (tangentSpaceCastModel 𝓘(ℝ, ℂ) z w) / z.im ^ 2 :=
+  -- `instRiemannianBundle` installs `poincareRiemannianMetric`, so the tangent-space inner product
+  -- is `poincareRiemannianMetric.inner` by definition.
+  _root_.UpperHalfPlane.poincareRiemannianMetric_inner z v w
+
+/-- The Poincaré norm of a tangent vector at `z` is its Euclidean norm in the inclusion chart
+divided by `Im z`. -/
+theorem _root_.UpperHalfPlane.norm_tangentSpace (z : ℍ) (v : TangentSpace 𝓘(ℝ, ℂ) z) :
+    ‖v‖ = ‖tangentSpaceCastModel 𝓘(ℝ, ℂ) z v‖ / z.im := by
+  rw [norm_eq_sqrt_real_inner, z.inner_tangentSpace v v, real_inner_self_eq_norm_sq,
+    Real.sqrt_div (sq_nonneg _), Real.sqrt_sq (norm_nonneg _), Real.sqrt_sq z.im_pos.le]
 
 /-- In the inclusion chart, the Gram matrix of the Poincaré tensor is `im⁻²` times the Euclidean
 Gram matrix of the model basis. -/

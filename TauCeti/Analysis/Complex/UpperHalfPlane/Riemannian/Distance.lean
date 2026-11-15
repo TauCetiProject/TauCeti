@@ -9,7 +9,9 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Riemannian.Isometry
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Distance
 
 /-!
@@ -69,20 +71,12 @@ Identifying `edist` with `riemannianEDist` immediately implies that
 
 public section
 
-open Bundle Manifold MeasureTheory Set
+open Bundle Manifold Set
 open scoped ContDiff ENNReal Manifold MatrixGroups NNReal UpperHalfPlane
 
 noncomputable section
 
 namespace UpperHalfPlane
-
-private theorem contMDiff_logIm :
-    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℝ) ∞ (fun z : ℍ ↦ Real.log z.im) := by
-  intro z
-  have hcoe : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ UpperHalfPlane.coe z := contMDiffAt_extChartAt
-  have him : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℝ) ∞ UpperHalfPlane.im z :=
-    Complex.imCLM.contMDiff.contMDiffAt.comp z hcoe
-  exact (Real.contDiffAt_log.2 z.im_ne_zero).contMDiffAt.comp z him
 
 private theorem norm_mfderiv_logIm_le (z : ℍ) (v : TangentSpace 𝓘(ℝ, ℂ) z) :
     ‖mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℝ) (fun w : ℍ ↦ Real.log w.im) z v‖ ≤ (1 : ℝ≥0) * ‖v‖ := by
@@ -90,23 +84,21 @@ private theorem norm_mfderiv_logIm_le (z : ℍ) (v : TangentSpace 𝓘(ℝ, ℂ)
       ‖tangentSpaceCastModel 𝓘(ℝ, ℝ) (Real.log z.im)
         (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℝ) (fun w : ℍ ↦ Real.log w.im) z v)‖ :=
     norm_tangentSpace_vectorSpace
-  rw [hcast, ((contMDiff_logIm z).mdifferentiableAt (by simp)
+  rw [hcast, ((TauCeti.UpperHalfPlane.contMDiff_log_im (n := ∞) z).mdifferentiableAt (by simp)
     |>.tangentSpaceCastModel_mfderiv_apply v)]
   have hlocal : writtenInExtChartAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℝ) z (fun w : ℍ ↦ Real.log w.im)
       =ᶠ[nhds (z : ℂ)] fun w : ℂ ↦ Real.log w.im := by
-    filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds z.im_pos] with w hw
-    simp only [writtenInExtChartAt, Function.comp_apply, extChartAt_model_space_eq_id,
-      PartialEquiv.refl_coe, id_eq, ← coe_im]
-    congr 2
-    exact (extChartAt 𝓘(ℝ, ℂ) z).right_inv (by simpa using hw)
+    filter_upwards [z.writtenInExtChartAt_eventuallyEq 𝓘(ℝ, ℝ) (fun w : ℍ ↦ Real.log w.im),
+      isOpen_upperHalfPlaneSet.mem_nhds z.im_pos] with w hw hpos
+    simpa [ofComplex_apply_of_im_pos hpos] using hw
   have hchart : extChartAt 𝓘(ℝ, ℂ) z z = (z : ℂ) := by simp
   have hfderiv : HasFDerivAt (fun w : ℂ ↦ Real.log w.im)
       ((z.im)⁻¹ • (Complex.imCLM : ℂ →L[ℝ] ℝ)) (z : ℂ) :=
     (Real.hasDerivAt_log z.im_ne_zero).comp_hasFDerivAt (z : ℂ) Complex.imCLM.hasFDerivAt
-  rw [hchart, hlocal.fderiv_eq, hfderiv.fderiv, smul_apply,
-    Complex.imCLM_apply, smul_eq_mul, Real.norm_eq_abs, abs_mul, abs_inv, abs_of_pos z.im_pos,
-    NNReal.coe_one, one_mul, z.poincareRiemannianMetric_norm v, div_eq_inv_mul]
-  exact mul_le_mul_of_nonneg_left (Complex.abs_im_le_norm _) (inv_nonneg.2 z.im_pos.le)
+  rw [hchart, hlocal.fderiv_eq, hfderiv.fderiv, z.norm_tangentSpace v]
+  simpa [abs_of_pos z.im_pos, div_eq_inv_mul] using
+    mul_le_mul_of_nonneg_left (Complex.abs_im_le_norm (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v))
+      (inv_nonneg.2 z.im_pos.le)
 
 /-- The map `z ↦ log (Im z)` does not increase Riemannian extended distance from the Poincaré
 upper half-plane to the Euclidean real line. -/
@@ -114,7 +106,7 @@ theorem edist_log_im_le_riemannianEDist (z w : ℍ) :
     edist (Real.log z.im) (Real.log w.im) ≤ Manifold.riemannianEDist 𝓘(ℝ, ℂ) z w := by
   rw [IsRiemannianManifold.out (I := 𝓘(ℝ, ℝ)), ← one_mul (Manifold.riemannianEDist 𝓘(ℝ, ℂ) z w),
     ← ENNReal.coe_one]
-  exact TauCeti.Manifold.riemannianEDist_le_mul (contMDiff_logIm.of_le (by simp)) one_ne_zero
+  exact TauCeti.Manifold.riemannianEDist_le_mul TauCeti.UpperHalfPlane.contMDiff_log_im one_ne_zero
     norm_mfderiv_logIm_le z w
 
 end UpperHalfPlane
@@ -127,10 +119,8 @@ private theorem contMDiff_geodesicLine_one {n : ℕ∞ω} :
     ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) n (geodesicLine (1 : PSL(2, ℝ))) := by
   apply ContMDiff.of_comp_isOpenEmbedding isOpenEmbedding_coe
   have hfun : UpperHalfPlane.coe ∘ geodesicLine (1 : PSL(2, ℝ)) =
-      fun t : ℝ ↦ (Real.exp t : ℂ) * Complex.I := by
-    funext t
-    rw [Function.comp_apply, geodesicLine_one_apply, coe_mk]
-    apply Complex.ext <;> simp [Complex.exp_ofReal_re]
+      fun t : ℝ ↦ (Real.exp t : ℂ) * Complex.I :=
+    funext coe_geodesicLine_one
   rw [hfun, contMDiff_iff_contDiff]
   exact (Complex.ofRealCLM.contDiff.comp Real.contDiff_exp).mul contDiff_const
 
@@ -146,17 +136,13 @@ theorem contMDiff_geodesicLine {n : ℕ∞ω} (g : PSL(2, ℝ)) :
 
 private theorem norm_mfderiv_geodesicLine_one (t : ℝ) (v : TangentSpace 𝓘(ℝ, ℝ) t) :
     ‖mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) (geodesicLine (1 : PSL(2, ℝ))) t v‖ = ‖v‖ := by
-  rw [poincareRiemannianMetric_norm,
+  rw [norm_tangentSpace,
     ((contMDiff_geodesicLine_one (n := ∞) t).mdifferentiableAt (by simp)
       |>.tangentSpaceCastModel_mfderiv_apply v)]
   have hwritten : writtenInExtChartAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) t (geodesicLine (1 : PSL(2, ℝ))) =
       fun s : ℝ ↦ (Real.exp s : ℂ) * Complex.I := by
     funext s
-    have hchart (p : ℍ) : extChartAt 𝓘(ℝ, ℂ) (geodesicLine (1 : PSL(2, ℝ)) t) p = (p : ℂ) := by simp
-    rw [writtenInExtChartAt, Function.comp_apply, Function.comp_apply, hchart]
-    simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_symm, PartialEquiv.refl_coe, id_eq,
-      geodesicLine_one_apply, coe_mk]
-    apply Complex.ext <;> simp [Complex.exp_ofReal_re]
+    simp [writtenInExtChartAt, coe_geodesicLine_one]
   have hchart : extChartAt 𝓘(ℝ, ℝ) t t = t := by simp
   have hfderiv : HasFDerivAt (fun s : ℝ ↦ (Real.exp s : ℂ) * Complex.I)
       ((1 : ℝ →L[ℝ] ℝ).smulRight ((Real.exp t : ℂ) * Complex.I)) t :=
@@ -165,9 +151,8 @@ private theorem norm_mfderiv_geodesicLine_one (t : ℝ) (v : TangentSpace 𝓘(�
     simp [geodesicLine_one_apply]
   have hv : ‖tangentSpaceCastModel 𝓘(ℝ, ℝ) t v‖ = ‖v‖ :=
     (norm_tangentSpace_vectorSpace (x := t) (v := v)).symm
-  rw [hwritten, hchart, hfderiv.fderiv, ContinuousLinearMap.smulRight_apply,
-    one_apply_eq_self, norm_smul, norm_mul, Complex.norm_real, Complex.norm_I, mul_one,
-    Real.norm_of_nonneg (Real.exp_pos t).le, hv, him, mul_div_cancel_right₀ _ (Real.exp_ne_zero t)]
+  rw [hwritten, hchart, hfderiv.fderiv]
+  simp [him, hv, Real.exp_ne_zero t]
 
 /-- Every parametrised geodesic line `geodesicLine g` has differential preserving norms at every
 parameter `t : ℝ`. -/
@@ -192,13 +177,9 @@ theorem norm_curveVelocity_geodesicLine (g : PSL(2, ℝ)) (t : ℝ) :
 (which is `0` when `b < a`). -/
 @[simp]
 theorem pathELength_geodesicLine (g : PSL(2, ℝ)) (a b : ℝ) :
-    Manifold.pathELength 𝓘(ℝ, ℂ) (geodesicLine g) a b = ENNReal.ofReal (b - a) := by
-  have hunit (t : ℝ) : ‖mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) (geodesicLine g) t (1 : ℝ)‖ₑ = 1 := by
-    rw [← ofReal_norm, ← Manifold.curveVelocity_apply, norm_curveVelocity_geodesicLine,
-      ENNReal.ofReal_one]
-  rw [Manifold.pathELength_eq_lintegral_mfderiv_Icc]
-  refine (MeasureTheory.setLIntegral_congr_fun measurableSet_Icc fun t _ ↦ hunit t).trans ?_
-  rw [MeasureTheory.setLIntegral_one, Real.volume_Icc]
+    Manifold.pathELength 𝓘(ℝ, ℂ) (geodesicLine g) a b = ENNReal.ofReal (b - a) :=
+  TauCeti.Manifold.pathELength_eq_of_norm_curveVelocity_eq_one fun t _ ↦
+    norm_curveVelocity_geodesicLine g t
 
 end TauCeti.UpperHalfPlane
 
@@ -213,10 +194,9 @@ instance isRiemannianManifold_upperHalfPlane : IsRiemannianManifold 𝓘(ℝ, �
     obtain ⟨g, hz, hw⟩ := exists_geodesicLine_zero_eq_and_dist_eq z w
     apply le_antisymm
     · have himz : Real.log (g⁻¹ • z).im = 0 := by
-        rw [← hz, smul_geodesicLine, inv_mul_cancel, geodesicLine_one_apply, mk_im, Real.log_exp]
+        simpa only [hz] using log_im_inv_smul_geodesicLine g 0
       have himw : Real.log (g⁻¹ • w).im = dist z w := by
-        conv_lhs => rw [← hw]
-        rw [smul_geodesicLine, inv_mul_cancel, geodesicLine_one_apply, mk_im, Real.log_exp]
+        simpa only [hw] using log_im_inv_smul_geodesicLine g (dist z w)
       have hed : edist z w = edist (Real.log (g⁻¹ • z).im) (Real.log (g⁻¹ • w).im) := by
         rw [himz, himw, edist_dist, edist_dist, Real.dist_eq, zero_sub, abs_neg,
           abs_of_nonneg dist_nonneg]
@@ -256,18 +236,15 @@ namespace TauCeti.UpperHalfPlane
 /-- The metric-space structure `MetricSpace.ofRiemannianMetric 𝓘(ℝ, ℂ) ℍ` induced by the Poincaré
 Riemannian metric equals Mathlib's `MetricSpace ℍ`. -/
 theorem metricSpace_ofRiemannianMetric_eq :
-    MetricSpace.ofRiemannianMetric 𝓘(ℝ, ℂ) ℍ = (inferInstance : MetricSpace ℍ) := by
-  apply MetricSpace.ext
-  ext z w
-  exact (IsRiemannianManifold.dist_eq_toReal_riemannianEDist 𝓘(ℝ, ℂ) z w).symm
+    MetricSpace.ofRiemannianMetric 𝓘(ℝ, ℂ) ℍ = (inferInstance : MetricSpace ℍ) :=
+  MetricSpace.ofRiemannianMetric_eq 𝓘(ℝ, ℂ) ℍ
 
 /-- The Riemannian distance of the Poincaré metric on `ℍ` is complete, matching the `complete`
 field of `TauCeti.HyperbolicMetric`. -/
 theorem completeSpace_of_riemannianMetric :
     @CompleteSpace ℍ
-      (MetricSpace.ofRiemannianMetric 𝓘(ℝ, ℂ) ℍ).toPseudoMetricSpace.toUniformSpace := by
-  rw [metricSpace_ofRiemannianMetric_eq]
-  infer_instance
+      (MetricSpace.ofRiemannianMetric 𝓘(ℝ, ℂ) ℍ).toPseudoMetricSpace.toUniformSpace :=
+  MetricSpace.completeSpace_ofRiemannianMetric 𝓘(ℝ, ℂ) ℍ
 
 end TauCeti.UpperHalfPlane
 

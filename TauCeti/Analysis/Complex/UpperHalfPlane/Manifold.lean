@@ -10,27 +10,33 @@ public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 
 import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Analysis.Polynomial.SymmetricPower
 import TauCeti.Topology.DiscreteSeparation
 
 /-!
-# Analyticity through `ofComplex`
+# Smoothness and analyticity through `ofComplex`
 
-Near `τ`, the chart of `ℍ` at `τ` reads a function `f` as its extension `f ∘ ofComplex`. A
-function holomorphic on the upper half-plane, extended to `ℂ` by `ofComplex`, is
-analytic at every point of the open upper half-plane, and a locally uniform limit of holomorphic
-functions on `ℍ` is holomorphic. Holomorphy on `ℍ` is also invariant under the Möbius action of
-a positive-determinant real matrix, the biholomorphism `UpperHalfPlane.mdifferentiable_smul`
-exhibits. Polynomial functions of the coordinate, such as `z ↦ P(z, 1)` for a binary form `P`,
-are holomorphic, and so are the coefficients of a product `∏ (X - aᵢ(τ))` of linear factors
-whose roots `aᵢ` are holomorphic.
+Near `τ`, the chart of `ℍ` at `τ` reads a function `f` as its extension `f ∘ ofComplex`
+(`comp_chartAt_symm_eventuallyEq` and `UpperHalfPlane.writtenInExtChartAt_eventuallyEq`), and the
+real coordinate functions `z ↦ Im z` and `z ↦ log (Im z)` are real-analytic (`contMDiff_im`,
+`contMDiff_log_im`). A function holomorphic on the upper half-plane, extended to `ℂ` by
+`ofComplex`, is analytic at every point of the open upper half-plane, and a locally uniform limit
+of holomorphic functions on `ℍ` is holomorphic. Holomorphy on `ℍ` is also invariant under the
+Möbius action of a positive-determinant real matrix, the biholomorphism
+`UpperHalfPlane.mdifferentiable_smul` exhibits. Polynomial functions of the coordinate, such as
+`z ↦ P(z, 1)` for a binary form `P`, are holomorphic, and so are the coefficients of a product
+`∏ (X - aᵢ(τ))` of linear factors whose roots `aᵢ` are holomorphic.
 
 ## Main declarations
 
-* `TauCeti.UpperHalfPlane.comp_chartAt_symm_eventuallyEq` — near `τ`, a function read in the
-  chart of `ℍ` at `τ` is its extension by `ofComplex`.
+* `TauCeti.UpperHalfPlane.comp_chartAt_symm_eventuallyEq` and
+  `UpperHalfPlane.writtenInExtChartAt_eventuallyEq` — near `τ`, a function read in the chart of `ℍ`
+  at `τ` is its extension by `ofComplex`.
+* `TauCeti.UpperHalfPlane.contMDiff_im` and `TauCeti.UpperHalfPlane.contMDiff_log_im` — `Im` and
+  `log ∘ Im` are real-analytic on `ℍ`.
 * `TauCeti.UpperHalfPlane.analyticAt_comp_ofComplex`.
 * `MvPolynomial.mdifferentiable_aeval_coe` — `z ↦ P(z, 1)` is holomorphic for a polynomial `P`
   in two variables.
@@ -52,7 +58,7 @@ public section
 
 open Filter Topology UpperHalfPlane
 
-open scoped Manifold MatrixGroups
+open scoped ContDiff Manifold MatrixGroups
 
 namespace TauCeti.UpperHalfPlane
 
@@ -65,6 +71,33 @@ theorem comp_chartAt_symm_eventuallyEq {α : Type*} (f : ℍ → α) (τ : ℍ) 
   congr 1
   ext
   simpa using (chartAt ℂ τ).right_inv hwt
+
+/-- In the inclusion chart of `ℍ` at `z` for the real manifold structure `𝓘(ℝ, ℂ)`,
+`writtenInExtChartAt 𝓘(ℝ, ℂ) J z f` agrees near `(z : ℂ)` with
+`extChartAt J (f z) ∘ f ∘ ofComplex`. -/
+theorem _root_.UpperHalfPlane.writtenInExtChartAt_eventuallyEq (z : ℍ)
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {H : Type*} [TopologicalSpace H] (J : ModelWithCorners ℝ E H)
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H N] (f : ℍ → N) :
+    writtenInExtChartAt 𝓘(ℝ, ℂ) J z f =ᶠ[𝓝 (z : ℂ)] extChartAt J (f z) ∘ f ∘ ofComplex := by
+  filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds z.im_pos] with w hw
+  have hsymm : (extChartAt 𝓘(ℝ, ℂ) z).symm w = ofComplex w := by
+    apply UpperHalfPlane.ext
+    rw [ofComplex_apply_of_im_pos hw, coe_mk]
+    simpa using (extChartAt 𝓘(ℝ, ℂ) z).right_inv (by simpa using hw)
+  simp only [writtenInExtChartAt, Function.comp_apply, hsymm]
+
+/-- The imaginary-part coordinate `z ↦ Im z` is real-analytic on `ℍ` (and hence `C^n` of every
+order `n : ℕ∞ω`). -/
+theorem contMDiff_im {n : ℕ∞ω} :
+    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℝ) n UpperHalfPlane.im := fun z ↦
+  Complex.imCLM.contMDiff.contMDiffAt.comp z contMDiffAt_extChartAt
+
+/-- The logarithmic height `z ↦ log (Im z)` is real-analytic on `ℍ` (and hence `C^n` of every
+order `n : ℕ∞ω`). -/
+theorem contMDiff_log_im {n : ℕ∞ω} :
+    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℝ) n (fun z : ℍ ↦ Real.log z.im) := fun z ↦
+  (Real.contDiffAt_log.2 z.im_ne_zero).contMDiffAt.comp z (contMDiff_im z)
 
 /-- For a polynomial `P` in two variables with coefficients mapping to `ℂ`, the function
 `z ↦ P(z, 1)` is holomorphic on `ℍ`. -/

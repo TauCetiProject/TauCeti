@@ -19,7 +19,7 @@ the same geometry are identified by a Riemannian isometry, such as the upper hal
 two-dimensional upper half-space, `isomCongr` transports any action by Riemannian isometries of one
 model to the other.
 
-This file records `TauCeti.RiemannianIsometry.isomCongr`, its pointwise and intertwining formulas,
+This file records `TauCeti.RiemannianIsometry.isomCongr`, its pointwise formula,
 its functoriality on the groupoid of Riemannian isometries (`isomCongr_refl`, `isomCongr_trans`,
 `isomCongr_symm`), and its naturality against the forgetful homomorphism `toDiff` into the
 self-diffeomorphism group through `Diffeomorph.diffCongr`.
@@ -31,9 +31,8 @@ self-diffeomorphism group through `Diffeomorph.diffCongr`.
 
 ## Main results
 
-* `TauCeti.RiemannianIsometry.isomCongr_apply_apply` and
-  `TauCeti.RiemannianIsometry.isomCongr_apply_apply_self`: the pointwise action
-  `e.isomCongr Φ y = e (Φ (e.symm y))` and intertwining identity `e.isomCongr Φ (e x) = e (Φ x)`.
+* `TauCeti.RiemannianIsometry.isomCongr_apply_apply`: the pointwise action
+  `e.isomCongr Φ y = e (Φ (e.symm y))`.
 * `TauCeti.RiemannianIsometry.isomCongr_refl`, `TauCeti.RiemannianIsometry.isomCongr_trans`, and
   `TauCeti.RiemannianIsometry.isomCongr_symm`: functoriality of `isomCongr`.
 * `TauCeti.RiemannianIsometry.toDiff_comp_isomCongr` and
@@ -93,16 +92,6 @@ theorem isomCongr_apply (e : RiemannianIsometry I J M N) (Φ : Isom I M) :
 theorem isomCongr_apply_apply (e : RiemannianIsometry I J M N) (Φ : Isom I M) (y : N) :
     e.isomCongr Φ y = e (Φ (e.symm y)) := by
   simp [isomCongr_apply]
-
-/-- Conjugation intertwines `Φ` and `e.isomCongr Φ` along `e`: `e.isomCongr Φ (e x) = e (Φ x)`. -/
-theorem isomCongr_apply_apply_self (e : RiemannianIsometry I J M N) (Φ : Isom I M) (x : M) :
-    e.isomCongr Φ (e x) = e (Φ x) := by
-  simp
-
-/-- The inverse of `e.isomCongr Φ` is `e.isomCongr Φ⁻¹`. -/
-theorem isomCongr_inv (e : RiemannianIsometry I J M N) (Φ : Isom I M) :
-    (e.isomCongr Φ)⁻¹ = e.isomCongr Φ⁻¹ :=
-  (map_inv e.isomCongr Φ).symm
 
 /-- Conjugating by the identity Riemannian isometry is the identity group isomorphism. -/
 @[simp]

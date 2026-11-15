@@ -41,15 +41,17 @@ reverses the axis (`geodesicLine_mul_pslS`).
 
 * `TauCeti.UpperHalfPlane.geodesicLine g` — the imaginary axis in its upward unit-speed
   parametrisation, moved by `g`: the map `t ↦ g • UpperHalfPlane.mk ⟨0, exp t⟩ _`.
-  `geodesicLine_one_apply` and `geodesicLine_zero` give its value at `g = 1` and at `t = 0`.
+  `geodesicLine_one_apply`, `coe_geodesicLine_one`, and `geodesicLine_zero` give its value at
+  `g = 1` and at `t = 0`.
 * `TauCeti.UpperHalfPlane.isometry_geodesicLine` — `geodesicLine g` is an isometric embedding
   of `ℝ`, hence injective (`geodesicLine_injective`).
 * `TauCeti.UpperHalfPlane.dist_geodesicLine` — the distance between two of its points is
   `|s - t|`.
 * `TauCeti.UpperHalfPlane.smul_geodesicLine` — further translating a geodesic line by `h` gives
-  the geodesic line of `h * g`, pointwise; `TauCeti.UpperHalfPlane.smul_range_geodesicLine` is
-  the same fact at the level of the line as a set, so these lines are permuted, not merely
-  mapped into each other, by the `PSL(2, ℝ)`-action.
+  the geodesic line of `h * g`, pointwise (`log_im_inv_smul_geodesicLine` recovers the arc-length
+  parameter via `log ∘ Im` after moving back by `g⁻¹`);
+  `TauCeti.UpperHalfPlane.smul_range_geodesicLine` is the same fact at the level of the line as a
+  set, so these lines are permuted, not merely mapped into each other, by the `PSL(2, ℝ)`-action.
 * `TauCeti.UpperHalfPlane.exists_geodesicLine_zero_eq` — a geodesic line through any prescribed
   point of `ℍ`.
 * `TauCeti.UpperHalfPlane.range_geodesicLine_one` and `TauCeti.UpperHalfPlane.range_geodesicLine`
@@ -96,6 +98,12 @@ theorem geodesicLine_one_apply (t : ℝ) :
     geodesicLine (1 : PSL(2, ℝ)) t = UpperHalfPlane.mk ⟨0, Real.exp t⟩ (Real.exp_pos t) := by
   simp [geodesicLine_def]
 
+/-- In complex coordinates, `geodesicLine 1 t` is `exp t * I`. -/
+theorem coe_geodesicLine_one (t : ℝ) :
+    (geodesicLine (1 : PSL(2, ℝ)) t : ℂ) = Real.exp t * Complex.I := by
+  rw [geodesicLine_one_apply, UpperHalfPlane.coe_mk]
+  apply Complex.ext <;> simp [Complex.exp_ofReal_re]
+
 /-- The point `i t` of the imaginary axis, as `geodesicLine 1 (log t)`, for `t > 0`. -/
 theorem coe_geodesicLine_one_log {t : ℝ} (ht : 0 < t) :
     (geodesicLine (1 : PSL(2, ℝ)) (Real.log t) : ℂ) = ⟨0, t⟩ := by
@@ -122,6 +130,12 @@ theorem geodesicLine_zero (g : PSL(2, ℝ)) : geodesicLine g 0 = g • UpperHalf
 theorem smul_geodesicLine (h g : PSL(2, ℝ)) (t : ℝ) :
     h • geodesicLine g t = geodesicLine (h * g) t := by
   simp [geodesicLine_def, mul_smul]
+
+/-- Moving `geodesicLine g t` back to the imaginary axis by `g⁻¹` and taking `log ∘ Im` recovers
+the arc-length parameter `t`. -/
+theorem log_im_inv_smul_geodesicLine (g : PSL(2, ℝ)) (t : ℝ) :
+    Real.log (g⁻¹ • geodesicLine g t).im = t := by
+  rw [smul_geodesicLine, inv_mul_cancel, geodesicLine_one_apply, mk_im, Real.log_exp]
 
 /-- The same fact as `smul_geodesicLine`, at the level of the line as a set: the `PSL(2, ℝ)`-action
 permutes these lines rather than merely mapping into their union. -/
