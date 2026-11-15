@@ -127,12 +127,26 @@ lemma singularHomologyIsoOfContractibleSpace_hom [ContractibleSpace P.snd] (k : 
     (P.singularHomologyIsoOfContractibleSpace R k).hom = P.singularHomologyπ R (k + 1) :=
   (rfl)
 
-/-- If the subspace of a pair is contractible, the connecting morphism `Hₖ₊₁(X, A) ⟶ Hₖ(A)`
-vanishes. -/
-theorem singularHomologyδ_eq_zero_of_contractibleSpace [ContractibleSpace P.snd] (k : ℕ) :
-    P.singularHomologyδ R (k + 1) k = 0 :=
+variable {P} in
+/-- **Naturality of `Hₖ₊₁(X) ≅ Hₖ₊₁(X, A)`** for contractible subspaces, in maps of pairs. -/
+@[reassoc]
+lemma singularHomologyIsoOfContractibleSpace_hom_naturality {P' : TopPair.{w}} (f : P ⟶ P')
+    [ContractibleSpace P.snd] [ContractibleSpace P'.snd] (k : ℕ) :
+    ((AlgebraicTopology.singularHomologyFunctor A (k + 1)).obj R).map (Hom.fst f) ≫
+        (P'.singularHomologyIsoOfContractibleSpace R k).hom =
+      (P.singularHomologyIsoOfContractibleSpace R k).hom ≫ singularHomologyMap f R (k + 1) :=
+  -- `singularHomologyFunctor` unfolds to the homology of the singular simplicial set, which is the
+  -- source of the quotient map `singularHomologyπ`, so this is `singularHomologyπ_naturality` up to
+  -- that unfolding.
+  singularHomologyπ_naturality f R (k + 1)
+
+/-- If the subspace of a pair is contractible, the connecting morphism `Hₙ(X, A) ⟶ Hₘ(A)`,
+`m + 1 = n`, vanishes. -/
+@[simp]
+theorem singularHomologyδ_eq_zero_of_contractibleSpace [ContractibleSpace P.snd] (n m : ℕ)
+    (h : m + 1 = n := by lia) : P.singularHomologyδ R n m h = 0 :=
   P.singularHomologyδ_eq_zero_of_isZero R
-    (isZero_reducedSingularHomologyFunctor_of_contractibleSpace R P.snd k)
+    (isZero_reducedSingularHomologyFunctor_of_contractibleSpace R P.snd m) h
 
 end TopPair
 

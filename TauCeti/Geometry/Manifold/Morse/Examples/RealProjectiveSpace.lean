@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Morse.SpectralSequence
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.AlgebraicTopology.Singular.Contractible
-public import TauCeti.AlgebraicTopology.Singular.ReducedRelative
 
 /-!
 # The critical-band spectral sequence of real projective space
@@ -46,22 +45,25 @@ differential is injective and the second page vanishes at the maximum.
 
 ## Main results
 
-* `TauCeti.nonempty_realProjectiveMomentSpectralSequence_page_two_X_iso` and
-  `TauCeti.isZero_realProjectiveMomentSpectralSequence_page_two_X`: the first page.
-* `TauCeti.realProjectiveMomentSpectralSequence_page_two_d_neg_two_one_eq_zero` and
-  `TauCeti.nonempty_realProjectiveMomentSpectralSequence_page_three_X_zero_zero_iso`: the first
+* `nonempty_realProjectiveMomentSpectralSequence_page_two_X_iso` and
+  `isZero_realProjectiveMomentSpectralSequence_page_two_X`: the first page.
+* `realProjectiveMomentSpectralSequence_page_two_d_neg_two_one_eq_zero` and
+  `nonempty_realProjectiveMomentSpectralSequence_page_three_X_zero_zero_iso`: the first
   differential from the saddle to the minimum vanishes, and the minimum survives to the second
   page.
-* `TauCeti.mono_realProjectiveMomentSpectralSequence_page_two_d`,
-  `TauCeti.nonempty_cokernel_realProjectiveMomentSpectralSequence_page_two_d_iso`,
-  `TauCeti.nonempty_cokernel_realProjectiveMomentSpectralSequence_int_page_two_d_iso` and
-  `TauCeti.realProjectiveMomentSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_two_smul`: on
-  `ℝℙ²`, the first differential from the maximum to the saddle is injective with cokernel `R / 2R`,
-  so `ℤ/2` integrally, where it is multiplication by `±2`.
-* `TauCeti.isZero_realProjectiveMomentSpectralSequence_page_three_X_neg_four_two`,
-  `TauCeti.nonempty_realProjectiveMomentSpectralSequence_page_three_X_neg_two_one_iso` and
-  `TauCeti.nonempty_realProjectiveMomentSpectralSequence_int_page_three_X_neg_two_one_iso`: the
+* On `ℝℙ²`, the first differential from the maximum to the saddle is injective with cokernel
+  `R / 2R` (`mono_realProjectiveMomentSpectralSequence_two_page_two_d_neg_four_two` and
+  `nonempty_cokernel_realProjectiveMomentSpectralSequence_two_page_two_d_neg_four_two_iso`), so
+  `ℤ/2` integrally
+  (`nonempty_cokernel_realProjectiveMomentSpectralSequence_two_int_page_two_d_neg_four_two_iso`),
+  where it is multiplication by `±2`:
+  `realProjectiveMomentSpectralSequence_two_int_page_two_d_neg_four_two_eq_two_smul_or_neg_two_smul`
+* `isZero_realProjectiveMomentSpectralSequence_two_page_three_X_neg_four_two`,
+  `nonempty_realProjectiveMomentSpectralSequence_two_page_three_X_neg_two_one_iso` and
+  `nonempty_realProjectiveMomentSpectralSequence_two_int_page_three_X_neg_two_one_iso`: the
   second page of `ℝℙ²` at the maximum and the saddle.
+
+All of these are in the `TauCeti` namespace.
 
 ## References
 
@@ -363,7 +365,8 @@ private theorem page_two_d_eq :
 the spectral sequence of the critical-band filtration of `ℝℙ²` with coefficients in a ring `R` on
 which right multiplication by `2` is injective, the differential from `(-4, 2)`, the copy of `R` of
 the maximum, to `(-2, 1)`, the copy of `R` of the saddle, is a monomorphism. -/
-theorem mono_realProjectiveMomentSpectralSequence_page_two_d (h2 : IsRightRegular (2 : R)) :
+theorem mono_realProjectiveMomentSpectralSequence_two_page_two_d_neg_four_two
+    (h2 : IsRightRegular (2 : R)) :
     Mono (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).page 2).d
       (-4, 2) (-2, 1)) := by
   have := mono_singularHomologyδ_upperTriple R h2
@@ -371,7 +374,7 @@ theorem mono_realProjectiveMomentSpectralSequence_page_two_d (h2 : IsRightRegula
   infer_instance
 
 /-- **The first differential from the maximum to the saddle has cokernel `R / 2R`.** -/
-theorem nonempty_cokernel_realProjectiveMomentSpectralSequence_page_two_d_iso :
+theorem nonempty_cokernel_realProjectiveMomentSpectralSequence_two_page_two_d_neg_four_two_iso :
     Nonempty (cokernel (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).page 2).d
       (-4, 2) (-2, 1)) ≅ ModuleCat.of R (R ⧸ R ∙ (2 : R))) := by
   rw [page_two_d_eq]
@@ -379,16 +382,18 @@ theorem nonempty_cokernel_realProjectiveMomentSpectralSequence_page_two_d_iso :
     cokernelSingularHomologyδUpperTripleIso R⟩
 
 /-- **The integral first differential from the maximum to the saddle has cokernel `ℤ/2`.** -/
-theorem nonempty_cokernel_realProjectiveMomentSpectralSequence_int_page_two_d_iso :
+theorem nonempty_cokernel_realProjectiveMomentSpectralSequence_two_int_page_two_d_neg_four_two_iso :
     Nonempty (cokernel (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).d
       (-4, 2) (-2, 1)) ≅ ModuleCat.of ℤ (ZMod 2)) := by
-  obtain ⟨e⟩ := nonempty_cokernel_realProjectiveMomentSpectralSequence_page_two_d_iso ℤ
+  obtain ⟨e⟩ :=
+    nonempty_cokernel_realProjectiveMomentSpectralSequence_two_page_two_d_neg_four_two_iso ℤ
   exact ⟨e ≪≫ (Int.quotientSpanNatEquivZMod 2).toAddEquiv.toIntLinearEquiv.toModuleIso⟩
 
 /-- **The first differential from the maximum to the saddle is multiplication by `±2`.** Whatever
 identifications of the objects `(-4, 2)` and `(-2, 1)` of the first page with `ℤ` are chosen, the
 differential between them becomes multiplication by `2` or by `-2`. -/
-theorem realProjectiveMomentSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_two_smul
+theorem
+    realProjectiveMomentSpectralSequence_two_int_page_two_d_neg_four_two_eq_two_smul_or_neg_two_smul
     (e₁ : ((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).X (-4, 2) ≅
       ModuleCat.of ℤ ℤ)
     (e₂ : ((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 2).X (-2, 1) ≅
@@ -402,7 +407,8 @@ theorem realProjectiveMomentSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_tw
   -- An endomorphism of `ℤ` is multiplication by its value `m` at `1`, with cokernel `ℤ/m`.
   set m := φ.hom 1
   have hφ : φ.hom = LinearMap.toSpanSingleton ℤ ℤ m := LinearMap.ext_ring (by simp [m])
-  obtain ⟨e⟩ := nonempty_cokernel_realProjectiveMomentSpectralSequence_int_page_two_d_iso
+  obtain ⟨e⟩ :=
+    nonempty_cokernel_realProjectiveMomentSpectralSequence_two_int_page_two_d_neg_four_two_iso
   have hcard : Nat.card (ZMod 2) = m.natAbs :=
     calc Nat.card (ZMod 2) = Nat.card (cokernel φ : ModuleCat ℤ) :=
           Nat.card_congr
@@ -423,11 +429,11 @@ theorem realProjectiveMomentSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_tw
 spectral sequence of the critical-band filtration of `ℝℙ²` with coefficients in a ring `R` on
 which right multiplication by `2` is injective, the object at `(-4, 2)` of the maximum is zero: the
 first differential out of it is injective. -/
-theorem isZero_realProjectiveMomentSpectralSequence_page_three_X_neg_four_two
+theorem isZero_realProjectiveMomentSpectralSequence_two_page_three_X_neg_four_two
     (h2 : IsRightRegular (2 : R)) :
     IsZero (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).page 3).X (-4, 2)) := by
   set K := (realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).page 2
-  have := mono_realProjectiveMomentSpectralSequence_page_two_d R h2
+  have := mono_realProjectiveMomentSpectralSequence_two_page_two_d_neg_four_two R h2
   refine IsZero.of_iso ?_ ((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).iso 2 3
     (-4, 2)).symm
   refine IsZero.of_iso ?_ (K.homologyIsoSc' (-6, 3) (-4, 2) (-2, 1)
@@ -444,11 +450,12 @@ theorem isZero_realProjectiveMomentSpectralSequence_page_three_X_neg_four_two
 spectral sequence of the critical-band filtration of `ℝℙ²` with coefficients in a ring `R`, the
 object at `(-2, 1)` of the saddle is the cokernel `R / 2R` of the first differential from the
 maximum. -/
-theorem nonempty_realProjectiveMomentSpectralSequence_page_three_X_neg_two_one_iso :
+theorem nonempty_realProjectiveMomentSpectralSequence_two_page_three_X_neg_two_one_iso :
     Nonempty (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).page 3).X (-2, 1) ≅
       ModuleCat.of R (R ⧸ R ∙ (2 : R))) := by
   set K := (realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).page 2
-  obtain ⟨e⟩ := nonempty_cokernel_realProjectiveMomentSpectralSequence_page_two_d_iso R
+  obtain ⟨e⟩ :=
+    nonempty_cokernel_realProjectiveMomentSpectralSequence_two_page_two_d_neg_four_two_iso R
   exact ⟨((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).iso 2 3 (-2, 1)).symm ≪≫
     K.isoHomologyι (-2, 1) (0, 0) (next_page_two (-2, 1) (0, 0) (by norm_num) (by norm_num))
       (realProjectiveMomentSpectralSequence_page_two_d_neg_two_one_eq_zero _) ≪≫
@@ -459,10 +466,10 @@ theorem nonempty_realProjectiveMomentSpectralSequence_page_three_X_neg_two_one_i
 /-- **The integral second page at the saddle is `ℤ/2`.** On the second page (numbered `3`) of the
 spectral sequence of the critical-band filtration of `ℝℙ²` with integer coefficients, the object
 at `(-2, 1)` of the saddle is `ℤ/2`. -/
-theorem nonempty_realProjectiveMomentSpectralSequence_int_page_three_X_neg_two_one_iso :
+theorem nonempty_realProjectiveMomentSpectralSequence_two_int_page_three_X_neg_two_one_iso :
     Nonempty (((realProjectiveMomentSpectralSequence 2 (ModuleCat.of ℤ ℤ)).page 3).X (-2, 1) ≅
       ModuleCat.of ℤ (ZMod 2)) := by
-  obtain ⟨e⟩ := nonempty_realProjectiveMomentSpectralSequence_page_three_X_neg_two_one_iso ℤ
+  obtain ⟨e⟩ := nonempty_realProjectiveMomentSpectralSequence_two_page_three_X_neg_two_one_iso ℤ
   exact ⟨e ≪≫ (Int.quotientSpanNatEquivZMod 2).toAddEquiv.toIntLinearEquiv.toModuleIso⟩
 
 end Plane

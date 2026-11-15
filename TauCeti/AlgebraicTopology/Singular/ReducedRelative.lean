@@ -155,15 +155,15 @@ theorem isZero_singularHomology_zero [PathConnectedSpace P.fst] [Nonempty P.snd]
   exact IsZero.of_epi_zero ((toSSetPair.obj P).right.homology R 0) _
 
 /-- **The connecting morphism vanishes when the subspace has no reduced homology**: if the reduced
-homology of `A` vanishes in degree `k`, then `Hₖ(A) ⟶ Hₖ(X)` is a monomorphism, so the connecting
-morphism `Hₖ₊₁(X, A) ⟶ Hₖ(A)` is zero. -/
-theorem singularHomologyδ_eq_zero_of_isZero {k : ℕ}
-    (h₀ : IsZero ((reducedSingularHomologyFunctor R k).obj P.snd)) :
-    P.singularHomologyδ R (k + 1) k = 0 :=
+homology of `A` vanishes in degree `m`, then `Hₘ(A) ⟶ Hₘ(X)` is a monomorphism, so the connecting
+morphism `Hₙ(X, A) ⟶ Hₘ(A)`, `m + 1 = n`, is zero. -/
+theorem singularHomologyδ_eq_zero_of_isZero {n m : ℕ}
+    (h₀ : IsZero ((reducedSingularHomologyFunctor R m).obj P.snd)) (h : m + 1 = n := by lia) :
+    P.singularHomologyδ R n m h = 0 :=
   -- `TopCat.Hom.mono_singularHomologyMap_of_isZero` is stated with `singularHomologyFunctor`, whose
   -- map is `SSet.homologyMap` of the singular simplicial sets by definition.
   (P.map.mono_singularHomologyMap_of_isZero R h₀).right_cancellation _ _
-    ((P.singularHomologyδ_comp R (k + 1) k).trans zero_comp.symm)
+    ((P.singularHomologyδ_comp R n m h).trans zero_comp.symm)
 
 /-- **The quotient map to relative homology is an isomorphism when the subspace is acyclic in the
 adjacent degrees**: if the reduced homology of `A` vanishes in degrees `k` and `k + 1`, then

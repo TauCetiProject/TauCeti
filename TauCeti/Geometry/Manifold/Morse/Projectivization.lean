@@ -788,7 +788,7 @@ theorem isCriticalBandCut_projectiveMomentFunction_natCast :
 
 /-- With the standard weights `w i = i`, a point outside the affine open `v₀ ≠ 0` has value at
 least `1`. -/
-theorem one_le_projectiveMomentFunction_natCast {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)}
+theorem one_le_projectiveMomentFunction_natCast_of_notMem_affineOpen {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)}
     (hx : x ∉ affineOpen 0) :
     1 ≤ projectiveMomentFunction 𝕜 (fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ)) x :=
   le_projectiveMomentFunction_of_notMem_affineOpen
