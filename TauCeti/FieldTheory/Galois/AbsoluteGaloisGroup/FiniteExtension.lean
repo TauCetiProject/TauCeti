@@ -548,7 +548,7 @@ theorem exists_le_hasEnoughRootsOfUnity (p : ℕ) [NeZero (p : K)]
     InfiniteGalois.fixedField_fixingSubgroup E, inferInstance, ?_⟩
   · exact OpenSubgroup.toSubgroup_le.1 <|
       (IntermediateField.fixingSubgroup_antitone le_sup_left).trans
-        (toSubgroup_eq_fixingSubgroup_of_fixedField_eq rfl).ge
+        (toSubgroup_eq_fixingSubgroup_of_fixedField_eq (U := W) rfl).ge
   · have hζE : IsPrimitiveRoot
         (⟨ζ, (le_sup_right : K⟮ζ⟯ ≤ E) (mem_adjoin_simple_self K ζ)⟩ : E) p :=
       hζ.of_map_of_injective (f := E.val) Subtype.val_injective

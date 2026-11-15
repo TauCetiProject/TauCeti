@@ -71,14 +71,21 @@ env:
 
 jobs:
   # The existing picker applies class-specific preferences and shared build caps.
+  # Existing PR assessment handles self-tested labels; no runner is needed to recognise them.
   # Merge groups and manual PR requests without an immutable head use cloud pools.
   pick-runner:
     if: >-
-      (github.event.action != 'labeled' && github.event.action != 'unlabeled') ||
-      github.event.label.name == 'self-tested' || (contains(github.event.pull_request.labels.*.name, 'self-tested') && contains(fromJSON('["full-lint", "lint-repair"]'), github.event.label.name))
+      ((github.event.action != 'labeled' && github.event.action != 'unlabeled') ||
+       github.event.label.name == 'self-tested' ||
+       (contains(github.event.pull_request.labels.*.name, 'self-tested') &&
+        contains(fromJSON('["full-lint", "lint-repair"]'), github.event.label.name))) &&
+      !(github.event_name == 'pull_request_target' &&
+        contains(github.event.pull_request.labels.*.name, 'self-tested') &&
+        !contains(github.event.pull_request.labels.*.name, 'full-lint') &&
+        !contains(github.event.pull_request.labels.*.name, 'lint-repair') &&
+        !startsWith(github.event.pull_request.head.ref, 'lint-repair/'))
     uses: ./.github/workflows/pick-runner.yml
     with:
-      pr-number: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.number || github.event_name == 'workflow_dispatch' && fromJSON(inputs.pr) || 0 }}
       fleet-staging: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
       fleet-pr: ${{ github.event_name == 'pull_request_target' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-pr-approved') }}
       pr-head: ${{ github.event.pull_request.head.sha || github.event.client_payload.head_sha || '' }}
@@ -89,8 +96,6 @@ jobs:
       actions: read
       contents: read  # immutable fleet selector checkout
     secrets:
-      SELF_TESTED_APP_ID: ${{ secrets.APP_ID }}
-      SELF_TESTED_APP_KEY: ${{ secrets.APP_PRIVATE_KEY }}
       FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
       TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
 
@@ -104,7 +109,7 @@ jobs:
       actions: read
       id-token: write  # telemetry-only grant stays outside candidate namespaces
     needs: pick-runner
-    if: ${{ !cancelled() && needs.pick-runner.result != 'skipped' && needs.pick-runner.outputs.skip-pr-build != 'true' }}
+    if: ${{ !cancelled() && needs.pick-runner.result != 'skipped' }}
     # PR fleet targets name the shared group and PR class; GitHub assigns the
     # next matching runner, including replacements on another enrolled host.
     # Picker outputs remain attempt-scoped. Staging retains exact guest labels
