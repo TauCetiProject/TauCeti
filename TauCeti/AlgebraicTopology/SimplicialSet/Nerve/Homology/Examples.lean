@@ -27,7 +27,7 @@ covariant homology from cohomology via universal coefficients.
 
 ## References
 
-* [Daniel Quillen, *Higher algebraic K-theory: I*][quillen1973]
+* D. Quillen, *Higher algebraic K-theory: I*, Lecture Notes in Math. 341 (1973), §1, p. 91.
 -/
 
 public noncomputable section
@@ -39,6 +39,8 @@ namespace TauCeti
 
 private abbrev G₂ : Type := Multiplicative (ZMod 2)
 private abbrev C₂ : Type := SingleObj G₂
+-- `(nerve C₂) _⦋n⦌` is `ComposableArrows C₂ n` (`nerve_obj`), and morphisms in `SingleObj G₂` are
+-- elements of `G₂` by definition.
 private abbrev toNerve₂ {n : ℕ} (σ : ComposableArrows C₂ n) : (nerve C₂) _⦋n⦌ := σ
 private def mapG₂ {m : ℕ} (τ : ComposableArrows C₂ m) {i j : Fin (m + 1)} (f : i ⟶ j) : G₂ :=
   τ.map f
@@ -151,31 +153,34 @@ private lemma paritySimplex_two_face_eq (k : Fin 3)
   obtain ⟨_, hx⟩ := (CategoryTheory.nerve.mem_range_σ_iff _ 0).mp hi
   exact hne (mapG₂_eq_one_of_totalArrow _ 0 hx)
 
+@[simp] private lemma default_nonDegenerate_val (n : ℕ) :
+    ((default : (nerve C₂).nonDegenerate n).1 : ComposableArrows C₂ n) = paritySimplex n := rfl
+
+private lemma ιNormalizedCategoryChainComplex_paritySimplex_two_d :
+    let M : C₂ ⥤ ModuleCat ℤ := (Functor.const C₂).obj (ModuleCat.of ℤ ℤ)
+    ιNormalizedCategoryChainComplex M (paritySimplex 2) ≫
+      (normalizedCategoryChainComplex C₂ M).d 2 1 =
+      (2 : ℤ) • ιNormalizedCategoryChainComplex M (paritySimplex 1) := by
+  intro M
+  have hd₀ := paritySimplex_two_face_eq 0 (by decide)
+  have hd₂ := paritySimplex_two_face_eq 2 (by decide)
+  let f (σ : ComposableArrows C₂ 1) :
+      ModuleCat.of ℤ ℤ ⟶ (normalizedCategoryChainComplex C₂ M).X 1 :=
+    ιNormalizedCategoryChainComplex M σ
+  rw [ιNormalizedCategoryChainComplex_d, Fin.sum_univ_two]
+  simpa [f, M, ιNormalizedCategoryChainComplex_eq_zero _ _ δ₁_paritySimplex_two_degenerate,
+    two_zsmul] using congrArg₂ (· + ·) (congrArg f hd₀) (congrArg f hd₂)
+
 /-- For `G = Multiplicative (ZMod 2)` with trivial integral coefficients, degree-`2` category
 homology `H₂(BG, ℤ)` vanishes (contrasting with `H²(ℤ/2, ℤ) ≅ ℤ/2`). -/
 theorem isZero_categoryHomology_singleObj_zmod_two_int_two :
     IsZero (categoryHomology (SingleObj (Multiplicative (ZMod 2)))
       ((Functor.const _).obj (ModuleCat.of ℤ ℤ)) 2) := by
-  let R : ModuleCat ℤ := ModuleCat.of ℤ ℤ
-  let M : C₂ ⥤ ModuleCat ℤ := (Functor.const C₂).obj R
+  let R : ModuleCat ℤ := ModuleCat.of ℤ ℤ; let M : C₂ ⥤ ModuleCat ℤ := (Functor.const C₂).obj R
   let e₂ := normalizedCategoryChainComplexXIsoOfUnique M 2
   let e₁ := normalizedCategoryChainComplexXIsoOfUnique M 1
-  have hdef (n : ℕ) : nerveNonDegSimplex (default : (nerve C₂).nonDegenerate n) =
-      paritySimplex n := nerveNonDegSimplex_mk _ _
-  have hd₀ : (nerve C₂).δ 0 (paritySimplex 2) = paritySimplex 1 :=
-    paritySimplex_two_face_eq 0 (by decide)
-  have hd₂ : (nerve C₂).δ 2 (paritySimplex 2) = paritySimplex 1 :=
-    paritySimplex_two_face_eq 2 (by decide)
   have hd : e₂.hom ≫ (normalizedCategoryChainComplex C₂ M).d 2 1 = ((2 : ℤ) • 𝟙 R) ≫ e₁.hom := by
-    dsimp only [e₂, e₁]
-    rw [normalizedCategoryChainComplexXIsoOfUnique_hom,
-      normalizedCategoryChainComplexXIsoOfUnique_hom, hdef 2, hdef 1,
-      ιNormalizedCategoryChainComplex_d, Fin.sum_univ_two]
-    dsimp only [M, Functor.const_obj_obj, Functor.const_obj_map]
-    simp only [Category.id_comp, Fin.val_zero, Fin.val_one, zero_add, Nat.reduceAdd, pow_one,
-      neg_smul, one_smul, neg_one_sq, Fin.succ_zero_eq_one, Fin.succ_one_eq_two]
-    rw [ιNormalizedCategoryChainComplex_eq_zero M _ δ₁_paritySimplex_two_degenerate,
-      neg_zero, zero_add, Preadditive.zsmul_comp, Category.id_comp, two_zsmul, hd₀, hd₂]
+    simp [e₂, e₁, M, R, ιNormalizedCategoryChainComplex_paritySimplex_two_d]
   have hmono₂ : Mono ((2 : ℤ) • 𝟙 R) :=
     (ModuleCat.mono_iff_injective _).mpr fun a b (hab : (2 : ℤ) * a = 2 * b) ↦
       mul_left_cancel₀ (by decide : (2 : ℤ) ≠ 0) hab
@@ -197,17 +202,14 @@ private lemma zpowers_gen_g₂ (x : G₂) :
 
 /-- Second group cohomology `H²(ℤ/2, ℤ)` with trivial integral action is isomorphic to `ℤ/2`. -/
 def groupCohomologyTrivialZModTwoIntTwoIso :
-    groupCohomology (Rep.trivial ℤ (Multiplicative (ZMod 2)) ℤ) 2 ≅
-      ModuleCat.of ℤ (ZMod 2) := by
-  let A₀ := Rep.trivial ℤ G₂ ℤ
-  let g₀ : G₂ := Multiplicative.ofAdd (1 : ZMod 2)
+    groupCohomology (Rep.trivial ℤ (Multiplicative (ZMod 2)) ℤ) 2 ≅ ModuleCat.of ℤ (ZMod 2) := by
+  let A₀ := Rep.trivial ℤ G₂ ℤ; let g₀ : G₂ := Multiplicative.ofAdd (1 : ZMod 2)
   let S := Rep.FiniteCyclicGroup.normHomCompSub A₀ g₀
   have hcard : Fintype.card G₂ = 2 := by decide
   have hf (x : ℤ) : S.f.hom x = 2 * x := by
     simp [S, A₀, Rep.FiniteCyclicGroup.normHomCompSub, Rep.norm, Representation.norm, hcard,
       two_mul]
-  let K := LinearMap.ker S.g.hom
-  let R₀ := LinearMap.range S.moduleCatToCycles
+  let K := LinearMap.ker S.g.hom; let R₀ := LinearMap.range S.moduleCatToCycles
   let φ : K →ₗ[ℤ] ZMod 2 := (Algebra.linearMap ℤ (ZMod 2)).comp K.subtype
   have hR₀ : R₀ ≤ LinearMap.ker φ := by
     rintro _ ⟨x, rfl⟩

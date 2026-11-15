@@ -47,14 +47,12 @@ private def map (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) (i j : Fi
     (hij : i ≤ j) : obj F Y i ⟶ obj F Y j :=
   if hj : j.val < n + 1 then
     have hi : i.val < n + 1 := lt_of_le_of_lt hij hj
-    eqToHom (obj_of_lt F Y i hi) ≫
-      F.map (homOfLE (Fin.mk_le_mk.mpr (Fin.le_def.mp hij))) ≫
+    eqToHom (obj_of_lt F Y i hi) ≫ F.map (homOfLE (Fin.mk_le_mk.mpr (Fin.le_def.mp hij))) ≫
       eqToHom (obj_of_lt F Y j hj).symm
   else if hi : i.val < n + 1 then
     eqToHom (obj_of_lt F Y i hi) ≫ F.map (homOfLE (Fin.le_last ⟨i.val, hi⟩)) ≫ g ≫
       eqToHom (obj_of_not_lt F Y j hj).symm
-  else
-    eqToHom (obj_of_not_lt F Y i hi) ≫ eqToHom (obj_of_not_lt F Y j hj).symm
+  else eqToHom (obj_of_not_lt F Y i hi) ≫ eqToHom (obj_of_not_lt F Y j hj).symm
 
 private lemma map_id (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) (i : Fin (n + 2)) :
     map F g i i le_rfl = 𝟙 (obj F Y i) := by unfold map; split_ifs <;> simp
@@ -119,26 +117,14 @@ def postcomp (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) : Composable
 @[simp] theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_postcomp {D : Type*}
     [Category* D] (Φ : C ⥤ D) (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
     (Φ.mapComposableArrows (n + 1)).obj (F.postcomp g) =
-      ((Φ.mapComposableArrows n).obj F).postcomp (Φ.map g) := by
-  let FΦ : ComposableArrows D n := (Φ.mapComposableArrows n).obj F
-  refine ext_of_totalArrow fun i j hij ↦ (totalArrow_mapComposableArrows_obj ..).trans ?_
-  induction j using Fin.lastCases with
-  | last =>
-    induction i using Fin.lastCases with
-    | last =>
-      rw [totalArrow_self, totalArrow_self]
-      have hY : Φ.obj ((F.postcomp g).obj (Fin.last (n + 1))) =
-          (FΦ.postcomp (Φ.map g)).obj (Fin.last (n + 1)) := by simp [FΦ]
-      exact Quiver.Total.ext hY hY ((conj_eqToHom_iff_heq _ _ hY hY).mp (by simp))
-    | cast i =>
-      rw [totalArrow_postcomp_castSucc_last, FΦ.totalArrow_postcomp_castSucc_last]
-      simp [FΦ, Functor.mapComposableArrows]
-  | cast j =>
-    induction i using Fin.lastCases with
-    | last => exact (Nat.not_lt.mpr hij j.isLt).elim
-    | cast i =>
-      have hij' : i ≤ j := Fin.castSucc_le_castSucc_iff.mp hij
-      rw [totalArrow_postcomp_castSucc_castSucc _ _ _ _ hij',
-        FΦ.totalArrow_postcomp_castSucc_castSucc _ _ _ hij', totalArrow_mapComposableArrows_obj]
+      ((Φ.mapComposableArrows n).obj F).postcomp (Φ.map g) :=
+  ext_last_of_totalArrow
+    (fun i j hij ↦ by
+      rw [totalArrow_mapComposableArrows_obj, totalArrow_postcomp_castSucc_castSucc _ _ i j hij,
+        totalArrow_postcomp_castSucc_castSucc _ _ i j hij, totalArrow_mapComposableArrows_obj])
+    (fun i ↦ by
+      rw [totalArrow_mapComposableArrows_obj, totalArrow_postcomp_castSucc_last,
+        totalArrow_postcomp_castSucc_last]
+      simp [Functor.mapComposableArrows])
 
 end CategoryTheory.ComposableArrows

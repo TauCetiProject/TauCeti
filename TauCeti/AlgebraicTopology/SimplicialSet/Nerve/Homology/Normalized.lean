@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.AlgebraicTopology.DoldKan.Normalized
 public import Mathlib.AlgebraicTopology.DoldKan.SplitSimplicialObject
-public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Nondegenerate
 public import Mathlib.AlgebraicTopology.SimplicialSet.Splitting
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Homology.Basic
 
@@ -28,7 +27,7 @@ abelian) is isomorphic to Dold-Kan's `normalizedMooreComplex`.
 
 ## References
 
-* [Daniel Quillen, *Higher algebraic K-theory: I*][quillen1973]
+* D. Quillen, *Higher algebraic K-theory: I*, Lecture Notes in Math. 341 (1973), §1, p. 91.
 * [Paul G. Goerss, John F. Jardine, *Simplicial Homotopy Theory*][goerss-jardine-2009]
 -/
 
@@ -43,63 +42,47 @@ namespace TauCeti
 
 section Splitting
 
-variable {C : Type u} [Category.{v} C] {A : Type u'} [Category.{v'} A]
-
-/-- Underlying chain of `n` composable arrows of a nondegenerate `n`-simplex of `nerve C`. -/
-def nerveNonDegSimplex {n : ℕ} (y : (nerve C).nonDegenerate n) : ComposableArrows C n := y.1
-
-@[simp] lemma nerveNonDegSimplex_mk {n : ℕ} (σ : ComposableArrows C n)
-    (hσ : (σ : (nerve C) _⦋n⦌) ∈ (nerve C).nonDegenerate n) :
-    nerveNonDegSimplex ⟨σ, hσ⟩ = σ := (rfl)
-
-variable [HasCoproducts.{max u v} A]
-
-private lemma ιCategorySimplicialObject_map_of_epi {m n : ℕ} (M : C ⥤ A) (φ : ⦋n⦌ ⟶ ⦋m⦌)
-    [Epi φ] (σ : ComposableArrows C m) :
-    ιCategorySimplicialObject M σ ≫ (categorySimplicialObject C M).map φ.op =
-      eqToHom (by rw [CategoryTheory.nerve.map_obj, SimplexCategory.toOrderHom_zero_of_epi]) ≫
-        ιCategorySimplicialObject M ((nerve C).map φ.op σ) := by
-  rw [ιCategorySimplicialObject_map]
-  refine congrArg (· ≫ _) (eq_of_heq ?_)
-  have hz : φ.toOrderHom 0 = 0 := SimplexCategory.toOrderHom_zero_of_epi φ
-  have hm : M.map (σ.map (homOfLE (Fin.zero_le (φ.toOrderHom 0)))) ≍ 𝟙 (M.obj (σ.obj 0)) := by
-    generalize φ.toOrderHom 0 = z at hz ⊢; subst hz
-    rw [Subsingleton.elim (homOfLE (Fin.zero_le (0 : Fin (m + 1)))) (𝟙 0), σ.map_id, M.map_id]
-  exact hm.trans (eqToHom_heq_id_dom _ _ _).symm
+variable {C : Type u} [Category.{v} C] {A : Type u'} [Category.{v'} A] [HasCoproducts.{max u v} A]
 
 variable (C) in
 /-- Canonical `SimplicialObject.Splitting` of `categorySimplicialObject C M` indexed by
 `(nerve C).nonDegenerate n`. -/
 def categorySimplicialObjectSplitting (M : C ⥤ A) :
     (categorySimplicialObject C M).Splitting where
-  N n := ∐ fun y : (nerve C).nonDegenerate n ↦ M.obj ((nerveNonDegSimplex y).obj 0)
-  ι n := Sigma.desc fun y ↦ ιCategorySimplicialObject M (nerveNonDegSimplex y)
+  N n := ∐ fun y : (nerve C).nonDegenerate n ↦ M.obj ((y.1 : ComposableArrows C n).obj 0)
+  ι n := Sigma.desc fun y ↦ ιCategorySimplicialObject M y.1
   isColimit' := fun ⟨⟨n⟩⟩ ↦ by
+    let hc := ((nerve C).splitting.cofan (op ⦋n⦌)).isColimit_cofanTypes_iff.mpr
+      ⟨(nerve C).splitting.isColimit (op ⦋n⦌)⟩
     let e : (Σ I : SimplicialObject.Splitting.IndexSet (op ⦋n⦌),
         (nerve C).nonDegenerate I.1.unop.len) ≃ ComposableArrows C n :=
-      CofanTypes.equivOfIsColimit (((nerve C).splitting.cofan (op ⦋n⦌)).isColimit_cofanTypes_iff.mpr
-        ⟨(nerve C).splitting.isColimit (op ⦋n⦌)⟩)
-    have he : ∀ (I : SimplicialObject.Splitting.IndexSet (op ⦋n⦌))
-        (y : (nerve C).nonDegenerate I.1.unop.len),
-        e ⟨I, y⟩ = (nerve C).map I.e.op (nerveNonDegSimplex y) := fun _ _ ↦ rfl
-    have hEq : ∀ p : Σ I : SimplicialObject.Splitting.IndexSet (op ⦋n⦌),
-        (nerve C).nonDegenerate I.1.unop.len,
-        M.obj ((nerveNonDegSimplex p.2).obj 0) = M.obj ((e p).obj 0) := fun ⟨I, y⟩ ↦ by
-      rw [he, CategoryTheory.nerve.map_obj, SimplexCategory.toOrderHom_zero_of_epi]
+      CofanTypes.equivOfIsColimit hc
+    -- `((nerve C).splitting.cofan (op ⦋n⦌)).cofanTypes.inj I` applies `(nerve C).map I.e.op`.
+    have he (I : SimplicialObject.Splitting.IndexSet (op ⦋n⦌))
+        (y : (nerve C).nonDegenerate I.1.unop.len) : e ⟨I, y⟩ = (nerve C).map I.e.op y.1 :=
+      CofanTypes.equivOfIsColimit_apply hc I y
+    have hEq (p : Σ I : SimplicialObject.Splitting.IndexSet (op ⦋n⦌),
+        (nerve C).nonDegenerate I.1.unop.len) :
+        M.obj ((p.2.1 : ComposableArrows C p.1.1.unop.len).obj 0) = M.obj ((e p).obj 0) :=
+      congrArg M.obj (((congrArg (·.obj 0) (he p.1 p.2)).trans
+        (CategoryTheory.nerve.map_obj p.1.e p.2.1 0)).trans
+          (congrArg (p.2.1 : ComposableArrows C _).obj
+            (SimplexCategory.toOrderHom_zero_of_epi p.1.e))).symm
     refine (SimplicialObject.Splitting.cofan' _ _ _ (op ⦋n⦌)).isColimitOfIsColimitSigma
       (fun I y ↦ Sigma.ι (fun z : (nerve C).nonDegenerate I.1.unop.len ↦
-        M.obj ((nerveNonDegSimplex z).obj 0)) y) (fun _ ↦ coproductIsCoproduct _) ?_
+        M.obj ((z.1 : ComposableArrows C I.1.unop.len).obj 0)) y)
+      (fun _ ↦ coproductIsCoproduct _) ?_
     refine IsColimit.ofIsoColimit
       ((categorySimplicialObjectXCofan M n).isColimitOfEquiv
         (isColimitCategorySimplicialObjectXCofan M n) e fun p ↦ eqToIso (hEq p))
       (Cofan.ext (Iso.refl _) fun ⟨I, y⟩ ↦ ?_)
     dsimp only [Cofan.mk_pt, Limits.cofan_mk_inj, SimplicialObject.Splitting.cofan', Iso.refl_hom,
       eqToIso.hom]
-    exact (Category.comp_id _).trans ((Category.assoc _ _ _).symm.trans
-      ((congrArg (· ≫ (categorySimplicialObject C M).map I.e.op)
+    exact (Category.comp_id _).trans (((Category.assoc _ _ _).symm.trans
+      (congrArg (· ≫ (categorySimplicialObject C M).map I.e.op)
         (Sigma.ι_comp_desc (fun z : (nerve C).nonDegenerate I.1.unop.len ↦
-          ιCategorySimplicialObject M (nerveNonDegSimplex z)) y)).trans
-        (ιCategorySimplicialObject_map_of_epi M I.e (nerveNonDegSimplex y)))).symm
+          ιCategorySimplicialObject M z.1) y))).trans
+      (ιCategorySimplicialObject_map_of_epi M I.e y.1)).symm
 
 end Splitting
 
@@ -149,8 +132,8 @@ instance isSplitMono_fromNormalizedCategoryChainComplex (M : C ⥤ A) :
 
 @[reassoc (attr := simp)]
 lemma fromNormalizedCategoryChainComplex_f_toNormalizedCategoryChainComplex_f (M : C ⥤ A) (n : ℕ) :
-    (fromNormalizedCategoryChainComplex C M).f n ≫
-      (toNormalizedCategoryChainComplex C M).f n = 𝟙 _ := by simp [← HomologicalComplex.comp_f]
+    (fromNormalizedCategoryChainComplex C M).f n ≫ (toNormalizedCategoryChainComplex C M).f n =
+      𝟙 _ := by simp [← HomologicalComplex.comp_f]
 
 @[reassoc (attr := simp)] lemma toNormalizedCategoryChainComplex_fromNormalizedCategoryChainComplex
     (M : C ⥤ A) :
@@ -159,9 +142,8 @@ lemma fromNormalizedCategoryChainComplex_f_toNormalizedCategoryChainComplex_f (M
 
 @[reassoc (attr := simp)]
 lemma toNormalizedCategoryChainComplex_f_fromNormalizedCategoryChainComplex_f (M : C ⥤ A) (n : ℕ) :
-    (toNormalizedCategoryChainComplex C M).f n ≫
-      (fromNormalizedCategoryChainComplex C M).f n = PInfty.f n := by
-  simp [← HomologicalComplex.comp_f]
+    (toNormalizedCategoryChainComplex C M).f n ≫ (fromNormalizedCategoryChainComplex C M).f n =
+      PInfty.f n := by simp [← HomologicalComplex.comp_f]
 
 @[simp] lemma homotopyEquivNormalizedCategoryChainComplex_hom (M : C ⥤ A) :
     (homotopyEquivNormalizedCategoryChainComplex C M).hom =
@@ -203,40 +185,38 @@ lemma ιNormalizedCategoryChainComplex_eq_zero (M : C ⥤ A) {n : ℕ} (σ : Com
   rw [← PInfty_toNormalizedCategoryChainComplex, HomologicalComplex.comp_f, ← Category.assoc]
   obtain _ | n := n
   · exact (SSet.degenerate_zero _ ▸ hσ).elim
-  · let σ' : (nerve C) _⦋n + 1⦌ := σ
+  · -- Bind `σ` at type `(nerve C) _⦋n + 1⦌` (defeq to `ComposableArrows C (n + 1)` by `nerve_obj`).
+    let σ' : (nerve C) _⦋n + 1⦌ := σ
     have hσ' : σ' ∈ (nerve C).degenerate (n + 1) := hσ
     rw [SSet.degenerate_eq_iUnion_range_σ, Set.mem_iUnion] at hσ'
     obtain ⟨i, τ, hτ⟩ := hσ'
-    have hτ' : ((nerve C).σ i τ : ComposableArrows C (n + 1)) = σ := hτ
-    have h0 : ιCategoryChainComplex M ((nerve C).σ i τ) ≫
+    let τ' : ComposableArrows C n := τ
+    have hτ' : ((nerve C).σ i τ' : ComposableArrows C (n + 1)) = σ := hτ
+    have h0 : ιCategoryChainComplex M ((nerve C).σ i τ') ≫
         (PInfty : categoryChainComplex C M ⟶ categoryChainComplex C M).f (n + 1) = 0 :=
-      (congrArg (· ≫ _) (ιCategorySimplicialObject_σ M i τ).symm).trans
-        ((Category.assoc _ _ _).trans
-          ((congrArg (_ ≫ ·) (σ_comp_PInfty (categorySimplicialObject C M) i)).trans comp_zero))
+      (ιCategorySimplicialObject_σ_assoc M i τ' _).symm.trans
+        ((congrArg (_ ≫ ·) (σ_comp_PInfty (categorySimplicialObject C M) i)).trans comp_zero)
     exact (congrArg (· ≫ _) (hτ' ▸ h0)).trans zero_comp
 
 private lemma ιNormalizedCategoryChainComplex_eq_ι (M : C ⥤ A) {n : ℕ}
-    (y : (nerve C).nonDegenerate n) :
-    ιNormalizedCategoryChainComplex M (nerveNonDegSimplex y) =
-      Sigma.ι (fun z : (nerve C).nonDegenerate n ↦ M.obj ((nerveNonDegSimplex z).obj 0)) y := by
+    (y : (nerve C).nonDegenerate n) : ιNormalizedCategoryChainComplex M y.1 =
+      Sigma.ι (fun z : (nerve C).nonDegenerate n ↦
+        M.obj ((z.1 : ComposableArrows C n).obj 0)) y := by
   let s := categorySimplicialObjectSplitting C M
-  have hP : PInfty.f n ≫ s.toNondegComplex.f n = s.toNondegComplex.f n := by
-    rw [← HomologicalComplex.comp_f, s.PInfty_toNondegComplex]
-  have hId : s.fromNondegComplex.f n ≫ s.toNondegComplex.f n = 𝟙 (s.nondegComplex.X n) := by
-    rw [← HomologicalComplex.comp_f, s.fromNondegComplex_toNondegComplex, HomologicalComplex.id_f]
-  have hs : s.ι n ≫ s.toNondegComplex.f n = 𝟙 (s.N n) :=
-    (congrArg (s.ι n ≫ ·) hP.symm).trans ((Category.assoc _ _ _).symm.trans
-      ((congrArg (· ≫ s.toNondegComplex.f n) (s.fromNondegComplex_f n).symm).trans hId))
-  exact (congrArg (· ≫ s.toNondegComplex.f n)
+  have hs : s.ι n ≫ (toNormalizedCategoryChainComplex C M).f n = 𝟙 (s.N n) := by
+    rw [← PInfty_toNormalizedCategoryChainComplex, HomologicalComplex.comp_f, ← Category.assoc,
+      ← s.fromNondegComplex_f n]
+    exact fromNormalizedCategoryChainComplex_f_toNormalizedCategoryChainComplex_f M n
+  exact (congrArg (· ≫ (toNormalizedCategoryChainComplex C M).f n)
     (Sigma.ι_comp_desc (fun z : (nerve C).nonDegenerate n ↦
-      ιCategorySimplicialObject M (nerveNonDegSimplex z)) y)).symm.trans
+      ιCategorySimplicialObject M z.1) y)).symm.trans
     ((Category.assoc _ _ _).trans ((congrArg (Sigma.ι _ y ≫ ·) hs).trans (Category.comp_id _)))
 
 /-- Cofan presenting `(normalizedCategoryChainComplex C M).X n` over `(nerve C).nonDegenerate n`. -/
 abbrev cofanNormalizedCategoryChainComplex (M : C ⥤ A) (n : ℕ) :
-    Cofan (fun y : (nerve C).nonDegenerate n ↦ M.obj ((nerveNonDegSimplex y).obj 0)) :=
+    Cofan (fun y : (nerve C).nonDegenerate n ↦ M.obj ((y.1 : ComposableArrows C n).obj 0)) :=
   Cofan.mk ((normalizedCategoryChainComplex C M).X n)
-    (fun y ↦ ιNormalizedCategoryChainComplex M (nerveNonDegSimplex y))
+    (fun y ↦ ιNormalizedCategoryChainComplex M y.1)
 
 /-- `cofanNormalizedCategoryChainComplex M n` is a coproduct colimit. -/
 def isColimitCofanNormalizedCategoryChainComplex (M : C ⥤ A) (n : ℕ) :
@@ -255,9 +235,9 @@ def isColimitCofanNormalizedCategoryChainComplex (M : C ⥤ A) (n : ℕ) :
 /-- Isomorphism onto degree-`n` normalized chains when `(nerve C).nonDegenerate n` is `Unique`. -/
 def normalizedCategoryChainComplexXIsoOfUnique (M : C ⥤ A) (n : ℕ)
     [Unique ((nerve C).nonDegenerate n)] :
-    M.obj ((nerveNonDegSimplex (default : (nerve C).nonDegenerate n)).obj 0) ≅
+    M.obj (((default : (nerve C).nonDegenerate n).1 : ComposableArrows C n).obj 0) ≅
       (normalizedCategoryChainComplex C M).X n where
-  hom := ιNormalizedCategoryChainComplex M (nerveNonDegSimplex default)
+  hom := ιNormalizedCategoryChainComplex M (default : (nerve C).nonDegenerate n).1
   inv := Cofan.IsColimit.desc (isColimitCofanNormalizedCategoryChainComplex M n)
     fun y ↦ eqToHom (by rw [Subsingleton.elim y default])
   hom_inv_id := (Cofan.IsColimit.fac (isColimitCofanNormalizedCategoryChainComplex M n)
@@ -265,16 +245,19 @@ def normalizedCategoryChainComplexXIsoOfUnique (M : C ⥤ A) (n : ℕ)
   inv_hom_id := Cofan.IsColimit.hom_ext (isColimitCofanNormalizedCategoryChainComplex M n) _ _
     fun y ↦ by
       obtain rfl : y = default := Subsingleton.elim _ _
-      exact (Category.assoc _ _ _).symm.trans
-        ((congrArg (· ≫ _) ((Cofan.IsColimit.fac (isColimitCofanNormalizedCategoryChainComplex M n)
-          (fun z ↦ eqToHom (by rw [Subsingleton.elim z default])) default).trans
-            (eqToHom_refl _ _))).trans
-          ((Category.id_comp _).trans (Category.comp_id _).symm))
+      rw [← Category.assoc, Cofan.IsColimit.fac]; simp
 
 @[simp] lemma normalizedCategoryChainComplexXIsoOfUnique_hom (M : C ⥤ A) (n : ℕ)
     [Unique ((nerve C).nonDegenerate n)] :
     (normalizedCategoryChainComplexXIsoOfUnique M n).hom =
-      ιNormalizedCategoryChainComplex M (nerveNonDegSimplex default) := (rfl)
+      ιNormalizedCategoryChainComplex M (default : (nerve C).nonDegenerate n).1 := by rfl
+
+@[reassoc (attr := simp)]
+lemma ιNormalizedCategoryChainComplex_normalizedCategoryChainComplexXIsoOfUnique_inv (M : C ⥤ A)
+    (n : ℕ) [Unique ((nerve C).nonDegenerate n)] (y : (nerve C).nonDegenerate n) :
+    ιNormalizedCategoryChainComplex M y.1 ≫ (normalizedCategoryChainComplexXIsoOfUnique M n).inv =
+      eqToHom (by rw [Subsingleton.elim y default]) := by
+  exact Cofan.IsColimit.fac (isColimitCofanNormalizedCategoryChainComplex M n) _ y
 
 section Homology
 
@@ -292,7 +275,15 @@ instance quasiIso_fromNormalizedCategoryChainComplex (M : C ⥤ A) :
 `normalizedCategoryChainComplex C M`. -/
 def normalizedCategoryHomologyIso (M : C ⥤ A) (n : ℕ) :
     categoryHomology C M n ≅ (normalizedCategoryChainComplex C M).homology n :=
-  asIso (HomologicalComplex.homologyMap (toNormalizedCategoryChainComplex C M) n)
+  (homotopyEquivNormalizedCategoryChainComplex C M).toHomologyIso n
+
+@[simp] lemma normalizedCategoryHomologyIso_hom (M : C ⥤ A) (n : ℕ) :
+    (normalizedCategoryHomologyIso M n).hom =
+      HomologicalComplex.homologyMap (toNormalizedCategoryChainComplex C M) n := (rfl)
+
+@[simp] lemma normalizedCategoryHomologyIso_inv (M : C ⥤ A) (n : ℕ) :
+    (normalizedCategoryHomologyIso M n).inv =
+      HomologicalComplex.homologyMap (fromNormalizedCategoryChainComplex C M) n := (rfl)
 
 end Homology
 
