@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.Rank
 public import TauCeti.NumberTheory.Height.Arakelov.Subspace.Covolume
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Slice
 
-import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.NumberTheory.GeometryOfNumbers.MinkowskiSecond
 import TauCeti.NumberTheory.Height.Extraction
 
@@ -60,10 +60,10 @@ Over `ℚ` (`D = 1`, `r₂ = 0`, `discr ℚ = 1`), the sup-height bound speciali
   of successive minima of `W.integerLattice` with respect to `W.supSlice` and
   `W.euclideanBallSlice`.
 * `Submodule.exists_linearIndependent_integerPoints_prod_absoluteProjectiveTupleHeight_le`,
-  `Submodule.exists_basis_integerPoints_prod_absoluteProjectiveTupleHeight_le`,
+  `Submodule.exists_basis_mem_range_algebraMap_prod_absoluteProjectiveTupleHeight_le`,
   `Submodule.exists_linearIndependent_integerPoints_prod_height2_le`, and
-  `Submodule.exists_basis_integerPoints_prod_height2_le`: `K`-linearly independent integral tuples
-  and `K`-bases of `W` of bounded sup height and Euclidean height.
+  `Submodule.exists_basis_mem_range_algebraMap_prod_height2_le`: `K`-linearly independent integral
+  tuples and `K`-bases of `W` of bounded sup height and Euclidean height.
 * `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_absoluteProjectiveTupleHeight_le`,
   `Matrix.exists_basis_ker_mulVecLin_prod_absoluteProjectiveTupleHeight_le`,
   `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_height2_le`, and
@@ -234,10 +234,6 @@ private theorem rpow_sqrt_abs_discr (k : ℕ) :
   congr 1
   ring
 
-private theorem pow_rpow_inv_nat {a : ℝ} (ha : 0 ≤ a) (n D : ℕ) :
-    (a ^ n) ^ (D : ℝ)⁻¹ = a ^ ((n : ℝ) / D) := by
-  rw [← Real.rpow_natCast a n, ← Real.rpow_mul ha, div_eq_mul_inv]
-
 /-- Distributes the `[K : ℚ]`-th root across `A * √|discr K| ^ k * H ^ [K : ℚ]`. -/
 private theorem mul_sqrt_discr_pow_mul_pow_rpow_inv {A H : ℝ} (hA : 0 ≤ A) (hH : 0 ≤ H) (k : ℕ) :
     (A * √|(discr K : ℝ)| ^ k * H ^ finrank ℚ K) ^ (finrank ℚ K : ℝ)⁻¹ =
@@ -309,14 +305,8 @@ theorem prod_successiveMin_integerLattice_euclideanBallSlice_le :
         √|(discr K : ℝ)| ^ finrank K W * W.subspaceHeight ^ finrank ℚ K := by
   let ω₁ := volume.real (ball (0 : EuclideanSpace ℝ (Fin (finrank K W))) 1)
   let ω₂ := volume.real (ball (0 : EuclideanSpace ℝ (Fin (2 * finrank K W))) 1)
-  have hω₁ : 0 < ω₁ := by
-    dsimp only [ω₁]
-    rw [TauCeti.volume_real_unitBall]
-    exact div_pos (Real.rpow_pos_of_pos Real.pi_pos _) (Real.Gamma_pos_of_pos (by positivity))
-  have hω₂ : 0 < ω₂ := by
-    dsimp only [ω₂]
-    rw [TauCeti.volume_real_unitBall]
-    exact div_pos (Real.rpow_pos_of_pos Real.pi_pos _) (Real.Gamma_pos_of_pos (by positivity))
+  have hω₁ : 0 < ω₁ := Metric.measureReal_ball_pos volume 0 one_pos
+  have hω₂ : 0 < ω₂ := Metric.measureReal_ball_pos volume 0 one_pos
   have hmink :
       (∏ i, ZLattice.successiveMin W.integerLattice W.euclideanBallSlice i) *
           (ω₁ ^ nrRealPlaces K * ω₂ ^ nrComplexPlaces K) ≤
@@ -401,12 +391,12 @@ theorem exists_linearIndependent_integerPoints_prod_absoluteProjectiveTupleHeigh
           |(discr K : ℝ)| ^ ((finrank K W : ℝ) / (2 * finrank ℚ K)) *
           W.subspaceHeight := by
         rw [mul_sqrt_discr_pow_mul_pow_rpow_inv (by positivity) hH_nn,
-          pow_rpow_inv_nat (by positivity), Nat.cast_mul]
+          ← Real.rpow_natCast_mul (by positivity), ← div_eq_mul_inv, Nat.cast_mul]
 
 /-- `Basis` packaging of
 `Submodule.exists_linearIndependent_integerPoints_prod_absoluteProjectiveTupleHeight_le`: `W` admits
 a `K`-basis `b` with coordinates in `𝓞 K` satisfying the sup-height product bound. -/
-theorem exists_basis_integerPoints_prod_absoluteProjectiveTupleHeight_le :
+theorem exists_basis_mem_range_algebraMap_prod_absoluteProjectiveTupleHeight_le :
     ∃ b : Basis (Fin (finrank K W)) K W,
       (∀ j i, (b j : ι → K) i ∈ range (algebraMap (𝓞 K) K)) ∧
       ∏ j, absoluteProjectiveTupleHeight (b j : ι → K) ≤
@@ -459,11 +449,12 @@ theorem exists_linearIndependent_integerPoints_prod_height2_le :
           W.subspaceHeight := by
         rw [mul_sqrt_discr_pow_mul_pow_rpow_inv (by positivity) hH_nn,
           Real.mul_rpow (by positivity) (by positivity),
-          pow_rpow_inv_nat (by positivity), pow_rpow_inv_nat (by positivity)]
+          ← Real.rpow_natCast_mul (by positivity), ← Real.rpow_natCast_mul (by positivity),
+          ← div_eq_mul_inv, ← div_eq_mul_inv]
 
 /-- `Basis` packaging of `Submodule.exists_linearIndependent_integerPoints_prod_height2_le`: `W`
 admits a `K`-basis `b` with coordinates in `𝓞 K` satisfying the Euclidean-height product bound. -/
-theorem exists_basis_integerPoints_prod_height2_le :
+theorem exists_basis_mem_range_algebraMap_prod_height2_le :
     ∃ b : Basis (Fin (finrank K W)) K W,
       (∀ j i, (b j : ι → K) i ∈ range (algebraMap (𝓞 K) K)) ∧
       ∏ j, height2 (b j : ι → K) ≤

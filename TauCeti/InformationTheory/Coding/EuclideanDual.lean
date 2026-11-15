@@ -13,11 +13,12 @@ public import Mathlib.FieldTheory.Finiteness
 # Euclidean duals of linear codes
 
 A linear code on a finite coordinate type is a submodule of the corresponding function space.
-Its Euclidean dual consists of the words whose dot product with every codeword vanishes. This
-file gives that construction its order-theoretic API and proves that dot-product duality is an
-involution over a field. In particular, the dimensions of a code and its dual add to the number
-of coordinates, and over a finite field their cardinalities multiply to the cardinality of the
-whole word space.
+Its Euclidean dual consists of the words whose dot product with every codeword vanishes; in
+particular, the kernel of `A.mulVecLin` is the Euclidean dual of the row span of `A`
+(`Matrix.ker_mulVecLin_eq_euclideanDual_span_range_row`). This file gives that construction its
+order-theoretic API and proves that dot-product duality is an involution over a field. In
+particular, the dimensions of a code and its dual add to the number of coordinates, and over a
+finite field their cardinalities multiply to the cardinality of the whole word space.
 
 A code is self-orthogonal when it lies in its Euclidean dual and self-dual when it equals it.
 These are predicates on the code itself rather than a new bundled type, so the full `Submodule`
@@ -254,3 +255,17 @@ theorem IsSelfDual.natCard_eq {C : Submodule K (ι → K)} (hC : IsSelfDual C) :
 end Field
 
 end Submodule
+
+namespace Matrix
+
+/-- Over a commutative semiring, the kernel of `A.mulVecLin` is the Euclidean dual of the row span
+of `A`. The row index type need not be finite. -/
+theorem ker_mulVecLin_eq_euclideanDual_span_range_row {R m ι : Type*} [CommSemiring R] [Fintype ι]
+    (A : Matrix m ι R) :
+    LinearMap.ker A.mulVecLin = (Submodule.span R (Set.range A.row)).euclideanDual := by
+  ext x
+  rw [LinearMap.mem_ker, mulVecLin_apply, Submodule.mem_euclideanDual_span]
+  simp only [Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff]
+  simp only [funext_iff, mulVec_apply, row_apply', Pi.zero_apply]
+
+end Matrix

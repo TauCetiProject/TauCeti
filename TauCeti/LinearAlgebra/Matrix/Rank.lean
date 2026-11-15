@@ -37,7 +37,7 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   `(p + 1) × (p + 1)` minor vanishes.
 * `Matrix.finrank_ker_mulVecLin` and
   `Matrix.finrank_ker_mulVecLin_of_linearIndependent_rows`: the kernel dimension of a matrix
-  over a field, in general and when its rows are linearly independent.
+  over an integral domain in general, and over a field when its rows are linearly independent.
 * `Matrix.ker_mulVecLin_eq_span_of_dotProduct_eq_zero`: for an independent family `x` orthogonal
   to the independent rows of a matrix `A`, with complementary sizes, the kernel of `A` is the span
   of `x`.
@@ -195,11 +195,11 @@ end LinearIndependent
 
 section KernelDimension
 
-/-- Over a field, the kernel of a matrix has dimension equal to its number of columns minus its
-rank. The row index type need not be finite. -/
-theorem finrank_ker_mulVecLin {K m ι : Type*} [Field K] [Fintype ι]
-    (A : Matrix m ι K) :
-    Module.finrank K (LinearMap.ker A.mulVecLin) = Fintype.card ι - A.rank := by
+/-- Over an integral domain, the kernel of a matrix has dimension equal to its number of columns
+minus its rank. The row index type need not be finite. -/
+theorem finrank_ker_mulVecLin {R m ι : Type*} [CommRing R] [IsDomain R] [Fintype ι]
+    (A : Matrix m ι R) :
+    Module.finrank R (LinearMap.ker A.mulVecLin) = Fintype.card ι - A.rank := by
   have h := A.mulVecLin.finrank_range_add_finrank_ker
   rw [← rank, Module.finrank_fintype_fun_eq_card] at h
   omega

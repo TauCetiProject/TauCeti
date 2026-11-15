@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Body
+public import TauCeti.Analysis.Convex.Body
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SubspaceLattice
 
-import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 import TauCeti.Analysis.Convex.Gauge.Basic
 import TauCeti.LinearAlgebra.Basis.Submodule
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
@@ -16,7 +15,6 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.CubeSlice
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Basic
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ConvexBody
-import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.PoissonSummation
 
 /-!
 # Local archimedean slices in the Euclidean Minkowski span of a subspace
@@ -50,8 +48,12 @@ Two symmetric convex bodies in `W.euclideanSpan` govern the archimedean geometry
 
 ## Main definitions
 
-* `Submodule.realPlaceSpan W w`, `Submodule.complexPlaceSpan W w`: the local real and complex
-  subspaces spanned by `W` at an infinite place `w`.
+* `Submodule.realPlaceSpan W w`, `Submodule.complexPlaceSpan W w`, `Submodule.placeSpanProd W`:
+  the local real and complex subspaces spanned by `W` at an infinite place `w`, and their `L²`
+  product across all infinite places.
+* `Submodule.euclideanSpanEquivPlaceProd W`, `Submodule.placeCoordsEquiv W`: the linear isometry
+  equivalence from `W.euclideanSpan` onto `W.placeSpanProd` and the corresponding Cartesian
+  product linear equivalence.
 * `Submodule.mixedCoords W`: the `ℝ`-linear coordinate map
   `W.euclideanSpan →ₗ[ℝ] (ι → mixedSpace K)`.
 * `Submodule.supSlice W`: the central slice in `W.euclideanSpan` of the local unit cubes and
@@ -63,18 +65,23 @@ Two symmetric convex bodies in `W.euclideanSpan` govern the archimedean geometry
 
 * `Submodule.finrank_realPlaceSpan`, `Submodule.finrank_complexPlaceSpan`,
   `Submodule.finrank_real_complexPlaceSpan`: dimensions of the local place subspaces.
+* `Submodule.measurePreserving_placeCoordsEquiv` and
+  `Submodule.volume_preimage_placeCoordsEquiv_pi_prod`: `W.placeCoordsEquiv` preserves subspace
+  Haar measure and factors volumes of placewise product sets.
 * `Submodule.mixedCoords_injective` and `Submodule.mixedCoords_eq_piMap_mixedEmbedding`:
   injectivity of `W.mixedCoords` and its compatibility with `mixedEmbedding K` on
   `W.integerLattice`.
 * `Submodule.two_pow_mul_pi_pow_le_volume_supSlice` and
   `Submodule.two_pow_mul_pi_pow_le_volume_real_supSlice`: the volume of `W.supSlice` is at least
   `2 ^ (finrank K W * nrRealPlaces K) * π ^ (finrank K W * nrComplexPlaces K)`.
-* `Submodule.volume_real_euclideanBallSlice`: the real volume of `W.euclideanBallSlice` is
-  `ω_k ^ nrRealPlaces K * ω_{2k} ^ nrComplexPlaces K`.
+* `Submodule.volume_euclideanBallSlice` and `Submodule.volume_real_euclideanBallSlice`: the volume
+  of `W.euclideanBallSlice` is `ω_k ^ nrRealPlaces K * ω_{2k} ^ nrComplexPlaces K`.
 * `Submodule.gauge_supSlice`, `Submodule.gauge_euclideanBallSlice`,
+  `Submodule.mem_smul_supSlice_iff`, `Submodule.mem_smul_euclideanBallSlice_iff`,
   `Submodule.apply_le_gauge_supSlice_of_mem_integerLattice`, and
-  `Submodule.sqrt_sum_norm_embedding_sq_le_gauge_euclideanBallSlice`: gauge formulas for
-  `W.supSlice` and `W.euclideanBallSlice` and the resulting archimedean bounds on integral points.
+  `Submodule.sqrt_sum_norm_embedding_sq_le_gauge_euclideanBallSlice`: gauge and dilation formulas
+  for `W.supSlice` and `W.euclideanBallSlice` and the resulting archimedean bounds on integral
+  points.
 
 ## References
 
@@ -91,33 +98,13 @@ noncomputable section
 
 open ENNReal MeasureTheory Metric Module NumberField NumberField.InfinitePlace
   NumberField.mixedEmbedding Set
-open scoped Pointwise Real RealInnerProductSpace
+open scoped Pointwise Real
 
 namespace Submodule
 
 section LocalPlaceSpans
 
 variable {K : Type*} [Field K] {ι : Type*}
-
-/-- Helper computing the dimension of the `F`-span in `EuclideanSpace F ι` of the image of a
-`K`-subspace `W` along a field homomorphism `φ : K →+* F`. -/
-private theorem finrank_span_toLp_ringHom [Finite ι] {F : Type*} [RCLike F]
-    (φ : K →+* F) (W : Submodule K (ι → K)) :
-    finrank F
-        (span F ((fun v : ι → K ↦ WithLp.toLp 2 fun i ↦ φ (v i)) '' (W : Set (ι → K)))) =
-      finrank K W := by
-  let : Algebra K F := φ.toAlgebra
-  have : IsScalarTower K F F := IsScalarTower.of_algebraMap_eq' rfl
-  let f : (ι → K) →ₗ[K] EuclideanSpace F ι :=
-    (WithLp.linearEquiv 2 F (ι → F)).symm.toLinearMap.restrictScalars K ∘ₗ Pi.algebraMap ι K F
-  let b := finBasis K W
-  have hspan : span F ((fun v : ι → K ↦ WithLp.toLp 2 fun i ↦ φ (v i)) '' (W : Set (ι → K))) =
-      span F (range fun j ↦ f (b j)) := b.span_image f
-  have hli : LinearIndependent F (fun j ↦ f (b j)) := by
-    have h1 : LinearIndependent F (fun j i ↦ algebraMap K F ((b j : ι → K) i)) :=
-      (linearIndependent_algebraMap_comp_iff (R := K) (S := F)).mpr b.linearIndependent_coe_basis
-    exact h1.map' (WithLp.linearEquiv 2 F (ι → F)).symm.toLinearMap (LinearEquiv.ker _)
-  rw [hspan, finrank_span_eq_card hli, Fintype.card_fin]
 
 /-- The real subspace of `EuclideanSpace ℝ ι` spanned by the embeddings of `W` at a real infinite
 place `w`. -/
@@ -137,12 +124,45 @@ theorem toLp_mem_realPlaceSpan {W : Submodule K (ι → K)} {v : ι → K} (hv :
     (WithLp.toLp 2 fun i ↦ embedding_of_isReal w.2 (v i)) ∈ W.realPlaceSpan w :=
   subset_span ⟨v, hv, rfl⟩
 
+/-- `W.realPlaceSpan w` is contained in a real submodule `U` if and only if the real-place
+Euclidean embedding of every vector of `W` belongs to `U`. -/
+@[simp]
+theorem realPlaceSpan_le_iff {W : Submodule K (ι → K)} {w : {w : InfinitePlace K // w.IsReal}}
+    {U : Submodule ℝ (EuclideanSpace ℝ ι)} :
+    W.realPlaceSpan w ≤ U ↔
+      ∀ v ∈ W, (WithLp.toLp 2 fun i ↦ embedding_of_isReal w.2 (v i)) ∈ U := by
+  rw [realPlaceSpan_def, span_le, image_subset_iff]
+  rfl
+
+/-- The local real span of the zero subspace is zero. -/
+@[simp]
+theorem realPlaceSpan_bot (w : {w : InfinitePlace K // w.IsReal}) :
+    (⊥ : Submodule K (ι → K)).realPlaceSpan w = ⊥ := by
+  rw [realPlaceSpan_def, bot_coe, image_singleton, span_singleton_eq_bot]
+  ext1 i
+  simp
+
+/-- `Submodule.realPlaceSpan` is monotone in the subspace. -/
+@[gcongr]
+theorem realPlaceSpan_mono {W₁ W₂ : Submodule K (ι → K)} (h : W₁ ≤ W₂)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    W₁.realPlaceSpan w ≤ W₂.realPlaceSpan w :=
+  realPlaceSpan_le_iff.2 fun _ hv ↦ toLp_mem_realPlaceSpan (h hv) w
+
 /-- `W.realPlaceSpan w` has real dimension `finrank K W`. -/
 @[simp]
 theorem finrank_realPlaceSpan [Finite ι] (W : Submodule K (ι → K))
     (w : {w : InfinitePlace K // w.IsReal}) :
-    finrank ℝ (W.realPlaceSpan w) = finrank K W :=
-  finrank_span_toLp_ringHom (embedding_of_isReal w.2) W
+    finrank ℝ (W.realPlaceSpan w) = finrank K W := by
+  let e : (ι → ℝ) ≃ₗ[ℝ] EuclideanSpace ℝ ι := (WithLp.linearEquiv 2 ℝ (ι → ℝ)).symm
+  have himg :
+      ((fun v : ι → K ↦ WithLp.toLp 2 fun i ↦ embedding_of_isReal w.2 (v i)) ''
+          (W : Set (ι → K))) =
+        e.toLinearMap ''
+          ((fun (v : ι → K) i ↦ embedding_of_isReal w.2 (v i)) '' (W : Set (ι → K))) := by
+    simp [e, Set.image_image]
+  rw [realPlaceSpan_def, himg, ← Submodule.map_span, e.finrank_map_eq,
+    W.finrank_span_image_ringHom (embedding_of_isReal w.2)]
 
 /-- The complex subspace of `EuclideanSpace ℂ ι` spanned by the embeddings of `W` at a complex
 infinite place `w`. -/
@@ -163,12 +183,43 @@ theorem toLp_mem_complexPlaceSpan {W : Submodule K (ι → K)} {v : ι → K} (h
     (WithLp.toLp 2 fun i ↦ w.1.embedding (v i)) ∈ W.complexPlaceSpan w :=
   subset_span ⟨v, hv, rfl⟩
 
+/-- `W.complexPlaceSpan w` is contained in a complex submodule `U` if and only if the complex-place
+Euclidean embedding of every vector of `W` belongs to `U`. -/
+@[simp]
+theorem complexPlaceSpan_le_iff {W : Submodule K (ι → K)}
+    {w : {w : InfinitePlace K // w.IsComplex}} {U : Submodule ℂ (EuclideanSpace ℂ ι)} :
+    W.complexPlaceSpan w ≤ U ↔
+      ∀ v ∈ W, (WithLp.toLp 2 fun i ↦ w.1.embedding (v i)) ∈ U := by
+  rw [complexPlaceSpan_def, span_le, image_subset_iff]
+  rfl
+
+/-- The local complex span of the zero subspace is zero. -/
+@[simp]
+theorem complexPlaceSpan_bot (w : {w : InfinitePlace K // w.IsComplex}) :
+    (⊥ : Submodule K (ι → K)).complexPlaceSpan w = ⊥ := by
+  rw [complexPlaceSpan_def, bot_coe, image_singleton, span_singleton_eq_bot]
+  ext1 i
+  simp
+
+/-- `Submodule.complexPlaceSpan` is monotone in the subspace. -/
+@[gcongr]
+theorem complexPlaceSpan_mono {W₁ W₂ : Submodule K (ι → K)} (h : W₁ ≤ W₂)
+    (w : {w : InfinitePlace K // w.IsComplex}) :
+    W₁.complexPlaceSpan w ≤ W₂.complexPlaceSpan w :=
+  complexPlaceSpan_le_iff.2 fun _ hv ↦ toLp_mem_complexPlaceSpan (h hv) w
+
 /-- `W.complexPlaceSpan w` has complex dimension `finrank K W`. -/
 @[simp]
 theorem finrank_complexPlaceSpan [Finite ι] (W : Submodule K (ι → K))
     (w : {w : InfinitePlace K // w.IsComplex}) :
-    finrank ℂ (W.complexPlaceSpan w) = finrank K W :=
-  finrank_span_toLp_ringHom w.1.embedding W
+    finrank ℂ (W.complexPlaceSpan w) = finrank K W := by
+  let e : (ι → ℂ) ≃ₗ[ℂ] EuclideanSpace ℂ ι := (WithLp.linearEquiv 2 ℂ (ι → ℂ)).symm
+  have himg :
+      ((fun v : ι → K ↦ WithLp.toLp 2 fun i ↦ w.1.embedding (v i)) '' (W : Set (ι → K))) =
+        e.toLinearMap '' ((fun (v : ι → K) i ↦ w.1.embedding (v i)) '' (W : Set (ι → K))) := by
+    simp [e, Set.image_image]
+  rw [complexPlaceSpan_def, himg, ← Submodule.map_span, e.finrank_map_eq,
+    W.finrank_span_image_ringHom w.1.embedding]
 
 /-- Viewed as a real subspace of `EuclideanSpace ℂ ι`, `W.complexPlaceSpan w` has real dimension
 `2 * finrank K W`. -/
@@ -184,50 +235,51 @@ end LocalPlaceSpans
 
 section PlaceIsometry
 
-variable {K : Type*} [Field K] [NumberField K] {ι : Type*}
+variable {K : Type*} [Field K] {ι : Type*}
 
-open scoped Classical in
 /-- `L²` product of the local subspaces `W.realPlaceSpan w` and
 `(W.complexPlaceSpan w).restrictScalars ℝ` across all infinite places of `K`. -/
-private abbrev placeSpanProd (W : Submodule K (ι → K)) : Type _ :=
+abbrev placeSpanProd (W : Submodule K (ι → K)) : Type _ :=
   WithLp 2
     ((PiLp 2 fun w : {w : InfinitePlace K // w.IsReal} ↦ W.realPlaceSpan w) ×
      (PiLp 2 fun w : {w : InfinitePlace K // w.IsComplex} ↦
        (W.complexPlaceSpan w).restrictScalars ℝ))
 
-private instance instSecondCountableRealPlaceSpan [Countable ι] (W : Submodule K (ι → K))
+instance instSecondCountableRealPlaceSpan [Countable ι] (W : Submodule K (ι → K))
     (w : {w : InfinitePlace K // w.IsReal}) :
     SecondCountableTopology (W.realPlaceSpan w) :=
   TopologicalSpace.secondCountableTopology_induced
     (W.realPlaceSpan w) (EuclideanSpace ℝ ι) Subtype.val
 
-private instance instSecondCountableComplexPlaceSpan [Countable ι] (W : Submodule K (ι → K))
+instance instSecondCountableComplexPlaceSpan [Countable ι] (W : Submodule K (ι → K))
     (w : {w : InfinitePlace K // w.IsComplex}) :
     SecondCountableTopology ((W.complexPlaceSpan w).restrictScalars ℝ) :=
   TopologicalSpace.secondCountableTopology_induced
     ((W.complexPlaceSpan w).restrictScalars ℝ) (EuclideanSpace ℂ ι) Subtype.val
 
+variable [NumberField K]
+
 open Classical in
-private instance instBorelSpaceRealPlaceProd [Countable ι] (W : Submodule K (ι → K)) :
+instance instBorelSpaceRealPlaceProd [Countable ι] (W : Submodule K (ι → K)) :
     BorelSpace (PiLp 2 fun w : {w : InfinitePlace K // w.IsReal} ↦ W.realPlaceSpan w) :=
   PiLp.borelSpace 2
 
 open Classical in
-private instance instBorelSpaceComplexPlaceProd [Countable ι] (W : Submodule K (ι → K)) :
+instance instBorelSpaceComplexPlaceProd [Countable ι] (W : Submodule K (ι → K)) :
     BorelSpace
       (PiLp 2 fun w : {w : InfinitePlace K // w.IsComplex} ↦
         (W.complexPlaceSpan w).restrictScalars ℝ) :=
   PiLp.borelSpace 2
 
 open Classical in
-private instance instSecondCountableRealPlaceProd [Countable ι] (W : Submodule K (ι → K)) :
+instance instSecondCountableRealPlaceProd [Countable ι] (W : Submodule K (ι → K)) :
     SecondCountableTopology
       (PiLp 2 fun w : {w : InfinitePlace K // w.IsReal} ↦ W.realPlaceSpan w) :=
   inferInstance
 
 open Classical in
-private instance instBorelSpacePlaceSpanProd [Countable ι] (W : Submodule K (ι → K)) :
-    BorelSpace (placeSpanProd W) :=
+instance instBorelSpacePlaceSpanProd [Countable ι] (W : Submodule K (ι → K)) :
+    BorelSpace W.placeSpanProd :=
   WithLp.borelSpace 2 _ _
 
 variable [Fintype ι]
@@ -279,14 +331,8 @@ private def ambientPlaceIsometryEquiv :
               ‖(euclidean.toMixed K (x i)).1 w‖ ^ 2) +
             ∑ w : {w : InfinitePlace K // w.IsComplex},
               ‖(euclidean.toMixed K (x i)).2 w‖ ^ 2 := by
-        rw [← real_inner_self_eq_norm_sq (x i),
-          ← TauCeti.NumberField.mixedEmbedding.mixedInner_toMixed,
-          TauCeti.NumberField.mixedEmbedding.mixedInner_def]
-        congr 1
-        · refine Finset.sum_congr rfl fun w _ ↦ ?_
-          rw [Real.norm_eq_abs, sq_abs, sq]
-        · refine Finset.sum_congr rfl fun w _ ↦ ?_
-          rw [Complex.mul_conj, Complex.ofReal_re, Complex.normSq_eq_norm_sq]
+        rw [WithLp.prod_norm_sq_eq_of_L2, PiLp.norm_sq_eq_of_L2, PiLp.norm_sq_eq_of_L2]
+        simp [euclidean.toMixed]
       simp_rw [hcoord, Finset.sum_add_distrib]
       congr 1
       · rw [Finset.sum_comm]
@@ -311,38 +357,57 @@ private def placeProductSubmodule (W : Submodule K (ι → K)) :
     (WithLp.linearEquiv 2 ℝ _).toLinearMap
 
 open scoped Classical in
-/-- `placeProductSubmodule W` is isometrically equivalent to `placeSpanProd W`. -/
-private def placeProductEquivProd (W : Submodule K (ι → K)) :
-    placeProductSubmodule W ≃ₗᵢ[ℝ] placeSpanProd W where
+/-- Linear equivalence between `placeProductSubmodule W` and `W.placeSpanProd`. -/
+private def placeProductLinearEquiv (W : Submodule K (ι → K)) :
+    placeProductSubmodule W ≃ₗ[ℝ] W.placeSpanProd where
   toFun y := WithLp.toLp 2
     (WithLp.toLp 2 fun w ↦
       ⟨(WithLp.ofLp (y : placeAmbientProd K ι)).1 w, y.2.1 w (mem_univ w)⟩,
      WithLp.toLp 2 fun w ↦
       ⟨(WithLp.ofLp (y : placeAmbientProd K ι)).2 w, y.2.2 w (mem_univ w)⟩)
-  -- Addition, scalar multiplication, and projections act coordinatewise through `WithLp`/subtypes.
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
+  map_add' x y := by
+    apply WithLp.ofLp_injective 2
+    refine Prod.ext ?_ ?_ <;> ext1 w <;> ext1 <;> ext1 i <;> simp
+  map_smul' r x := by
+    apply WithLp.ofLp_injective 2
+    refine Prod.ext ?_ ?_ <;> ext1 w <;> ext1 <;> ext1 i <;> simp
   invFun z :=
     ⟨WithLp.toLp 2
       (WithLp.toLp 2 fun w ↦ ((WithLp.ofLp z).1 w : EuclideanSpace ℝ ι),
        WithLp.toLp 2 fun w ↦ ((WithLp.ofLp z).2 w : EuclideanSpace ℂ ι)),
      ⟨fun w _ ↦ ((WithLp.ofLp z).1 w).2, fun w _ ↦ ((WithLp.ofLp z).2 w).2⟩⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  norm_map' y := by
-    refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp ?_
-    rw [← Submodule.norm_coe y, WithLp.prod_norm_sq_eq_of_L2, WithLp.prod_norm_sq_eq_of_L2,
-      PiLp.norm_sq_eq_of_L2, PiLp.norm_sq_eq_of_L2,
-      PiLp.norm_sq_eq_of_L2, PiLp.norm_sq_eq_of_L2]
-    simp
+  left_inv y := by
+    ext1
+    apply WithLp.ofLp_injective 2
+    refine Prod.ext ?_ ?_ <;> ext1 w <;> ext1 i <;> simp
+  right_inv z := by
+    apply WithLp.ofLp_injective 2
+    refine Prod.ext ?_ ?_ <;> ext1 w <;> ext1 <;> ext1 i <;> simp
+
+open scoped Classical in
+/-- `placeProductSubmodule W` is isometrically equivalent to `W.placeSpanProd`. -/
+private def placeProductEquivProd (W : Submodule K (ι → K)) :
+    placeProductSubmodule W ≃ₗᵢ[ℝ] W.placeSpanProd :=
+  { placeProductLinearEquiv W with
+    norm_map' y := by
+      refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp ?_
+      rw [← Submodule.norm_coe y, WithLp.prod_norm_sq_eq_of_L2, WithLp.prod_norm_sq_eq_of_L2,
+        PiLp.norm_sq_eq_of_L2, PiLp.norm_sq_eq_of_L2,
+        PiLp.norm_sq_eq_of_L2, PiLp.norm_sq_eq_of_L2]
+      simp [placeProductLinearEquiv] }
 
 open scoped Classical in
 /-- `ambientPlaceIsometryEquiv` maps `W.euclideanSpan` onto `placeProductSubmodule W`. -/
 private theorem map_euclideanSpan_eq_placeProductSubmodule (W : Submodule K (ι → K)) :
-    W.euclideanSpan.map ambientPlaceIsometryEquiv.toLinearEquiv.toLinearMap =
+    W.euclideanSpan.map
+        (ambientPlaceIsometryEquiv (K := K) (ι := ι) :
+          (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) →ₗ[ℝ] placeAmbientProd K ι) =
       placeProductSubmodule W := by
-  have hle : W.euclideanSpan.map ambientPlaceIsometryEquiv.toLinearEquiv.toLinearMap ≤
-      placeProductSubmodule W := by
+  have hle :
+      W.euclideanSpan.map
+          (ambientPlaceIsometryEquiv (K := K) (ι := ι) :
+            (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) →ₗ[ℝ] placeAmbientProd K ι) ≤
+        placeProductSubmodule W := by
     rw [map_le_iff_le_comap, euclideanSpan_le_iff]
     intro v hv
     refine ⟨fun w _ ↦ ?_, fun w _ ↦ ?_⟩
@@ -373,52 +438,103 @@ private theorem map_euclideanSpan_eq_placeProductSubmodule (W : Submodule K (ι 
   exact eq_of_le_of_finrank_eq hle hdim
 
 open scoped Classical in
-/-- Canonical linear isometry between `W.euclideanSpan` and `placeSpanProd W`. -/
-private def euclideanSpanEquivPlaceProd (W : Submodule K (ι → K)) :
-    W.euclideanSpan ≃ₗᵢ[ℝ] placeSpanProd W :=
+/-- Canonical linear isometry equivalence between `W.euclideanSpan` and `W.placeSpanProd`. -/
+def euclideanSpanEquivPlaceProd (W : Submodule K (ι → K)) :
+    W.euclideanSpan ≃ₗᵢ[ℝ] W.placeSpanProd :=
   ((LinearIsometryEquiv.submoduleMap W.euclideanSpan ambientPlaceIsometryEquiv).trans
     (LinearIsometryEquiv.ofEq _ _ (map_euclideanSpan_eq_placeProductSubmodule W))).trans
     (placeProductEquivProd W)
 
 open scoped Classical in
+/-- Evaluation of the real-place component of `W.euclideanSpanEquivPlaceProd x` at `(w, i)`. -/
+@[simp]
+theorem coe_euclideanSpanEquivPlaceProd_fst (W : Submodule K (ι → K))
+    (x : W.euclideanSpan) (w : {w : InfinitePlace K // w.IsReal}) (i : ι) :
+    (((W.euclideanSpanEquivPlaceProd x).fst w : W.realPlaceSpan w) : EuclideanSpace ℝ ι) i =
+      (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)).1 w := by
+  simp [euclideanSpanEquivPlaceProd, placeProductEquivProd, placeProductLinearEquiv]
+  simp [ambientPlaceIsometryEquiv, ambientPlaceLinearEquiv]
+
+open scoped Classical in
+/-- Evaluation of the complex-place component of `W.euclideanSpanEquivPlaceProd x` at `(w, i)`. -/
+@[simp]
+theorem coe_euclideanSpanEquivPlaceProd_snd (W : Submodule K (ι → K))
+    (x : W.euclideanSpan) (w : {w : InfinitePlace K // w.IsComplex}) (i : ι) :
+    (((W.euclideanSpanEquivPlaceProd x).snd w :
+        (W.complexPlaceSpan w).restrictScalars ℝ) : EuclideanSpace ℂ ι) i =
+      (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)).2 w := by
+  simp [euclideanSpanEquivPlaceProd, placeProductEquivProd, placeProductLinearEquiv]
+  simp [ambientPlaceIsometryEquiv, ambientPlaceLinearEquiv]
+
+open scoped Classical in
 /-- Linear equivalence from `W.euclideanSpan` to the Cartesian product of the real-place and
 complex-place local Euclidean subspaces. -/
-private def placeCoordsEquiv (W : Submodule K (ι → K)) :
+def placeCoordsEquiv (W : Submodule K (ι → K)) :
     W.euclideanSpan ≃ₗ[ℝ]
       (∀ w : {w : InfinitePlace K // w.IsReal}, W.realPlaceSpan w) ×
       (∀ w : {w : InfinitePlace K // w.IsComplex},
         (W.complexPlaceSpan w).restrictScalars ℝ) :=
-  ((euclideanSpanEquivPlaceProd W).toLinearEquiv.trans
+  (W.euclideanSpanEquivPlaceProd.toLinearEquiv.trans
     (WithLp.linearEquiv 2 ℝ _)).trans
     ((WithLp.linearEquiv 2 ℝ _).prodCongr (WithLp.linearEquiv 2 ℝ _))
 
 open scoped Classical in
-private theorem coe_placeCoordsEquiv_fst (W : Submodule K (ι → K))
+/-- Evaluation of the real-place component of `W.placeCoordsEquiv x` at `(w, i)`. -/
+@[simp]
+theorem coe_placeCoordsEquiv_fst (W : Submodule K (ι → K))
     (x : W.euclideanSpan) (w : {w : InfinitePlace K // w.IsReal}) (i : ι) :
-    (((placeCoordsEquiv W x).1 w : W.realPlaceSpan w) : EuclideanSpace ℝ ι) i =
-      (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)).1 w :=
-  rfl
+    (((W.placeCoordsEquiv x).1 w : W.realPlaceSpan w) : EuclideanSpace ℝ ι) i =
+      (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)).1 w := by
+  simp [placeCoordsEquiv]
 
 open scoped Classical in
-private theorem coe_placeCoordsEquiv_snd (W : Submodule K (ι → K))
+/-- Evaluation of the complex-place component of `W.placeCoordsEquiv x` at `(w, i)`. -/
+@[simp]
+theorem coe_placeCoordsEquiv_snd (W : Submodule K (ι → K))
     (x : W.euclideanSpan) (w : {w : InfinitePlace K // w.IsComplex}) (i : ι) :
-    (((placeCoordsEquiv W x).2 w :
+    (((W.placeCoordsEquiv x).2 w :
         (W.complexPlaceSpan w).restrictScalars ℝ) : EuclideanSpace ℂ ι) i =
-      (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)).2 w :=
-  rfl
+      (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)).2 w := by
+  simp [placeCoordsEquiv]
+
+open scoped Classical in
+/-- Euclidean norm of the real-place component `(W.placeCoordsEquiv x).1 w`. -/
+theorem norm_placeCoordsEquiv_fst (W : Submodule K (ι → K)) (x : W.euclideanSpan)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    ‖(W.placeCoordsEquiv x).1 w‖ =
+      √(∑ i : ι,
+        normAtPlace w.1
+          (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2) := by
+  rw [← Submodule.norm_coe, ← Real.sqrt_sq (norm_nonneg _), PiLp.norm_sq_eq_of_L2]
+  congr 1
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [coe_placeCoordsEquiv_fst, normAtPlace_apply_of_isReal w.2]
+
+open scoped Classical in
+/-- Euclidean norm of the complex-place component `(W.placeCoordsEquiv x).2 w`. -/
+theorem norm_placeCoordsEquiv_snd (W : Submodule K (ι → K)) (x : W.euclideanSpan)
+    (w : {w : InfinitePlace K // w.IsComplex}) :
+    ‖(W.placeCoordsEquiv x).2 w‖ =
+      √(∑ i : ι,
+        normAtPlace w.1
+          (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2) := by
+  rw [← Submodule.norm_coe, ← Real.sqrt_sq (norm_nonneg _), PiLp.norm_sq_eq_of_L2]
+  congr 1
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [coe_placeCoordsEquiv_snd, normAtPlace_apply_of_isComplex w.2]
 
 open Classical in
-private instance instMeasureSpacePlaceSpanProd (W : Submodule K (ι → K)) :
-    MeasureSpace (placeSpanProd W) :=
+instance instMeasureSpacePlaceSpanProd (W : Submodule K (ι → K)) :
+    MeasureSpace W.placeSpanProd :=
   measureSpaceOfInnerProductSpace
 
 open Classical in
-/-- `placeCoordsEquiv W` is measure-preserving between the subspace volume on `W.euclideanSpan`
+/-- `W.placeCoordsEquiv` is measure-preserving between the subspace volume on `W.euclideanSpan`
 and the product of the subspace volumes on `W.realPlaceSpan w` and `W.complexPlaceSpan w`. -/
-private theorem measurePreserving_placeCoordsEquiv (W : Submodule K (ι → K)) :
-    MeasurePreserving (placeCoordsEquiv W) volume volume := by
+theorem measurePreserving_placeCoordsEquiv (W : Submodule K (ι → K)) :
+    MeasurePreserving W.placeCoordsEquiv volume volume := by
   have hmp₁ := LinearIsometryEquiv.measurePreserving
-    (E := W.euclideanSpan) (F := placeSpanProd W) (euclideanSpanEquivPlaceProd W)
+    (E := W.euclideanSpan) (F := W.placeSpanProd) W.euclideanSpanEquivPlaceProd
   have hmp :=
     ((PiLp.volume_preserving_symm_measurableEquiv_toLp
         fun w : {w : InfinitePlace K // w.IsReal} ↦ ↥(W.realPlaceSpan w)).prod
@@ -431,13 +547,13 @@ private theorem measurePreserving_placeCoordsEquiv (W : Submodule K (ι → K)) 
 
 open Classical in
 /-- Volume of a product of local measurable sets across the real and complex places pulled back
-along `placeCoordsEquiv W`. -/
-private theorem volume_preimage_placeCoordsEquiv_pi_prod (W : Submodule K (ι → K))
+along `W.placeCoordsEquiv`. -/
+theorem volume_preimage_placeCoordsEquiv_pi_prod (W : Submodule K (ι → K))
     {Sr : ∀ w : {w : InfinitePlace K // w.IsReal}, Set (W.realPlaceSpan w)}
     {Sc : ∀ w : {w : InfinitePlace K // w.IsComplex},
       Set ((W.complexPlaceSpan w).restrictScalars ℝ)}
     (hSr : ∀ w, MeasurableSet (Sr w)) (hSc : ∀ w, MeasurableSet (Sc w)) :
-    volume (placeCoordsEquiv W ⁻¹' ((univ.pi Sr) ×ˢ (univ.pi Sc))) =
+    volume (W.placeCoordsEquiv ⁻¹' ((univ.pi Sr) ×ˢ (univ.pi Sc))) =
       (∏ w, volume (Sr w)) * ∏ w, volume (Sc w) := by
   rw [(measurePreserving_placeCoordsEquiv W).measure_preimage
       ((MeasurableSet.univ_pi hSr).prod (MeasurableSet.univ_pi hSc)).nullMeasurableSet,
@@ -461,8 +577,8 @@ def mixedCoords : W.euclideanSpan →ₗ[ℝ] (ι → mixedSpace K) :=
 @[simp]
 theorem mixedCoords_apply (x : W.euclideanSpan) (i : ι) :
     W.mixedCoords x i =
-      euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i) :=
-  (rfl)
+      euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i) := by
+  simp [mixedCoords]
 
 /-- `W.mixedCoords` is injective. -/
 theorem mixedCoords_injective : Function.Injective W.mixedCoords := by
@@ -499,22 +615,14 @@ private theorem setOf_supSlice_eq_preimage :
     TauCeti.NumberField.mixedEmbedding.closedBall_zero_eq_setOf_forall_normAtPlace_le,
     mem_ofPred_eq, mixedCoords_apply]
 
+open Classical in
 /-- The central slice in `W.euclideanSpan` of the product of local unit cubes `[-1, 1]^ι` at real
 places and unit polydiscs at complex places, as a `ConvexBody`. -/
-def supSlice : ConvexBody W.euclideanSpan where
-  carrier := {x | ∀ (i : ι) (w : InfinitePlace K),
-    normAtPlace w (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ≤ 1}
-  convex' := by
-    classical
-    rw [setOf_supSlice_eq_preimage]
-    exact (convex_closedBall 0 1).linear_preimage W.mixedCoords
-  isCompact' := by
-    classical
-    rw [setOf_supSlice_eq_preimage]
-    exact (LinearMap.isClosedEmbedding_of_injective
-      (LinearMap.ker_eq_bot.2 W.mixedCoords_injective)).isCompact_preimage
-      (isCompact_closedBall 0 1)
-  nonempty' := ⟨0, by simp⟩
+def supSlice : ConvexBody W.euclideanSpan :=
+  ConvexBody.ofEqPreimageClosedBall
+    {x | ∀ (i : ι) (w : InfinitePlace K),
+      normAtPlace w (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ≤ 1}
+    W.mixedCoords_injective (setOf_supSlice_eq_preimage W)
 
 variable {W}
 
@@ -524,8 +632,9 @@ theorem coe_supSlice :
     (W.supSlice : Set W.euclideanSpan) =
       {x : W.euclideanSpan | ∀ (i : ι) (w : InfinitePlace K),
         normAtPlace w
-          (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ≤ 1} :=
-  (rfl)
+          (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ≤ 1} := by
+  classical
+  exact ConvexBody.coe_ofEqPreimageClosedBall _ _ _
 
 /-- Membership in `W.supSlice`. -/
 @[simp]
@@ -533,34 +642,45 @@ theorem mem_supSlice {x : W.euclideanSpan} :
     x ∈ W.supSlice ↔
       ∀ (i : ι) (w : InfinitePlace K),
         normAtPlace w
-          (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ≤ 1 :=
-  Iff.rfl
+          (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ≤ 1 := by
+  rw [← SetLike.mem_coe, coe_supSlice, mem_ofPred_eq]
 
 /-- `W.supSlice` is symmetric about the origin. -/
 theorem neg_mem_supSlice {x : W.euclideanSpan} : -x ∈ W.supSlice ↔ x ∈ W.supSlice := by
-  have hneg (i : ι) :
-      euclidean.toMixed K
-          (((-x : W.euclideanSpan) : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i) =
-        -euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i) := by
-    rw [← mixedCoords_apply, ← mixedCoords_apply, map_neg, Pi.neg_apply]
-  simp only [mem_supSlice, hneg, normAtPlace_neg]
+  classical
+  exact ConvexBody.neg_mem_of_coe_eq_preimage_closedBall
+    (coe_supSlice.trans (setOf_supSlice_eq_preimage W))
 
 variable (W) in
 /-- The origin lies in the interior of `W.supSlice`. -/
 theorem zero_mem_interior_supSlice : (0 : W.euclideanSpan) ∈ interior (W.supSlice : Set _) := by
   classical
-  rw [coe_supSlice, setOf_supSlice_eq_preimage]
-  exact mem_interior_iff_mem_nhds.2 <| Filter.mem_of_superset
-    ((isOpen_ball.preimage W.mixedCoords.continuous_of_finiteDimensional).mem_nhds (by simp))
-    (preimage_mono ball_subset_closedBall)
+  exact ConvexBody.zero_mem_interior_of_coe_eq_preimage_closedBall
+    (coe_supSlice.trans (setOf_supSlice_eq_preimage W))
 
 open scoped Classical in
 /-- The gauge of `W.supSlice` is the sup norm of `W.mixedCoords x` in `ι → mixedSpace K`, i.e., the
 maximum of `normAtPlace w (toMixed K (x i))` over all coordinates `i` and infinite places `w`. -/
 theorem gauge_supSlice (x : W.euclideanSpan) :
-    gauge (W.supSlice : Set W.euclideanSpan) x = ‖W.mixedCoords x‖ := by
-  rw [coe_supSlice, setOf_supSlice_eq_preimage, LinearMap.gauge_preimage,
-    gauge_closedBall zero_le_one, div_one]
+    gauge (W.supSlice : Set W.euclideanSpan) x = ‖W.mixedCoords x‖ :=
+  ConvexBody.gauge_of_coe_eq_preimage_closedBall
+    (coe_supSlice.trans (setOf_supSlice_eq_preimage W)) x
+
+/-- For `0 ≤ t`, the dilate `t • W.supSlice` consists of the points `x ∈ W.euclideanSpan` with
+`normAtPlace w (toMixed K (x i)) ≤ t` at every coordinate `i` and infinite place `w`. -/
+theorem mem_smul_supSlice_iff {t : ℝ} (ht : 0 ≤ t) {x : W.euclideanSpan} :
+    x ∈ t • (W.supSlice : Set W.euclideanSpan) ↔
+      ∀ (i : ι) (w : InfinitePlace K),
+        normAtPlace w
+          (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ≤ t := by
+  classical
+  rw [ConvexBody.mem_smul_iff_norm_le_of_coe_eq_preimage_closedBall
+      (coe_supSlice.trans (setOf_supSlice_eq_preimage W)) W.mixedCoords_injective ht,
+    pi_norm_le_iff_of_nonneg ht]
+  refine forall_congr' fun i ↦ ?_
+  rw [← mem_closedBall_zero_iff,
+    TauCeti.NumberField.mixedEmbedding.closedBall_zero_eq_setOf_forall_normAtPlace_le,
+    mem_ofPred_eq, mixedCoords_apply]
 
 /-- At every coordinate `i` and infinite place `w`, the archimedean absolute value of the integral
 point corresponding to `a ∈ W.integerLattice` is bounded by `gauge W.supSlice a`. -/
@@ -589,7 +709,7 @@ theorem two_pow_mul_pi_pow_le_volume_supSlice :
       Set ((W.complexPlaceSpan w).restrictScalars ℝ) :=
     fun w ↦ {u | ∀ i, ‖(u : EuclideanSpace ℂ ι) i‖ ≤ 1}
   have hpre : (W.supSlice : Set W.euclideanSpan) =
-      placeCoordsEquiv W ⁻¹' ((univ.pi Sr) ×ˢ (univ.pi Sc)) := by
+      W.placeCoordsEquiv ⁻¹' ((univ.pi Sr) ×ˢ (univ.pi Sc)) := by
     ext x
     simp only [coe_supSlice, Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_prod, Set.mem_univ_pi,
       Sr, Sc]
@@ -656,36 +776,12 @@ variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι]
   (W : Submodule K (ι → K))
 
 open scoped Classical in
-private theorem norm_placeCoordsEquiv_fst (x : W.euclideanSpan)
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    ‖(placeCoordsEquiv W x).1 w‖ =
-      √(∑ i : ι,
-        normAtPlace w.1
-          (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2) := by
-  rw [← Submodule.norm_coe, ← Real.sqrt_sq (norm_nonneg _), PiLp.norm_sq_eq_of_L2]
-  congr 1
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [coe_placeCoordsEquiv_fst, normAtPlace_apply_of_isReal w.2]
-
-open scoped Classical in
-private theorem norm_placeCoordsEquiv_snd (x : W.euclideanSpan)
-    (w : {w : InfinitePlace K // w.IsComplex}) :
-    ‖(placeCoordsEquiv W x).2 w‖ =
-      √(∑ i : ι,
-        normAtPlace w.1
-          (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2) := by
-  rw [← Submodule.norm_coe, ← Real.sqrt_sq (norm_nonneg _), PiLp.norm_sq_eq_of_L2]
-  congr 1
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [coe_placeCoordsEquiv_snd, normAtPlace_apply_of_isComplex w.2]
-
-open scoped Classical in
 private theorem setOf_euclideanBallSlice_eq_preimage :
     {x : W.euclideanSpan | ∀ w : InfinitePlace K,
         √(∑ i : ι,
           normAtPlace w
             (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2) ≤ 1} =
-      (placeCoordsEquiv W).toLinearMap ⁻¹' closedBall 0 1 := by
+      W.placeCoordsEquiv.toLinearMap ⁻¹' closedBall 0 1 := by
   ext x
   simp only [mem_ofPred_eq, mem_preimage, LinearEquiv.coe_coe, mem_closedBall_zero_iff,
     Prod.norm_def, max_le_iff, pi_norm_le_iff_of_nonneg zero_le_one,
@@ -693,27 +789,20 @@ private theorem setOf_euclideanBallSlice_eq_preimage :
   exact ⟨fun hx ↦ ⟨fun w ↦ hx w.1, fun w ↦ hx w.1⟩, fun ⟨hr, hc⟩ w ↦
     w.isReal_or_isComplex.elim (fun hw ↦ hr ⟨w, hw⟩) (fun hw ↦ hc ⟨w, hw⟩)⟩
 
+open scoped Classical in
 /-- The central slice in `W.euclideanSpan` of the product of closed unit Euclidean balls at the
 infinite places of `K`, as a `ConvexBody`. -/
-def euclideanBallSlice : ConvexBody W.euclideanSpan where
-  carrier := {x : W.euclideanSpan | ∀ w : InfinitePlace K,
-    √(∑ i : ι,
-      normAtPlace w
-        (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2) ≤ 1}
-  convex' := by
-    classical
-    rw [setOf_euclideanBallSlice_eq_preimage]
-    exact (convex_closedBall 0 1).linear_preimage (placeCoordsEquiv W).toLinearMap
-  isCompact' := by
-    classical
-    rw [setOf_euclideanBallSlice_eq_preimage]
-    exact (LinearMap.isClosedEmbedding_of_injective
-      (LinearMap.ker_eq_bot.2 (placeCoordsEquiv W).injective)).isCompact_preimage
-      (isCompact_closedBall 0 1)
-  nonempty' := ⟨0, by simp⟩
+def euclideanBallSlice : ConvexBody W.euclideanSpan :=
+  ConvexBody.ofEqPreimageClosedBall
+    {x : W.euclideanSpan | ∀ w : InfinitePlace K,
+      √(∑ i : ι,
+        normAtPlace w
+          (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2) ≤ 1}
+    W.placeCoordsEquiv.injective (setOf_euclideanBallSlice_eq_preimage W)
 
 variable {W}
 
+open scoped Classical in
 /-- Carrier of `W.euclideanBallSlice`. -/
 @[simp]
 theorem coe_euclideanBallSlice :
@@ -722,7 +811,7 @@ theorem coe_euclideanBallSlice :
         √(∑ i : ι,
           normAtPlace w
             (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2) ≤ 1} :=
-  (rfl)
+  ConvexBody.coe_ofEqPreimageClosedBall _ _ _
 
 /-- Membership in `W.euclideanBallSlice`. -/
 @[simp]
@@ -731,29 +820,23 @@ theorem mem_euclideanBallSlice {x : W.euclideanSpan} :
       ∀ w : InfinitePlace K,
         √(∑ i : ι,
           normAtPlace w
-            (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2) ≤ 1 :=
-  Iff.rfl
+            (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2) ≤ 1 := by
+  rw [← SetLike.mem_coe, coe_euclideanBallSlice, mem_ofPred_eq]
 
 /-- `W.euclideanBallSlice` is symmetric about the origin. -/
 theorem neg_mem_euclideanBallSlice {x : W.euclideanSpan} :
     -x ∈ W.euclideanBallSlice ↔ x ∈ W.euclideanBallSlice := by
-  have hneg (i : ι) :
-      euclidean.toMixed K
-          (((-x : W.euclideanSpan) : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i) =
-        -euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i) := by
-    rw [← mixedCoords_apply, ← mixedCoords_apply, map_neg, Pi.neg_apply]
-  simp only [mem_euclideanBallSlice, hneg, normAtPlace_neg]
+  classical
+  exact ConvexBody.neg_mem_of_coe_eq_preimage_closedBall
+    (coe_euclideanBallSlice.trans (setOf_euclideanBallSlice_eq_preimage W))
 
 variable (W) in
 /-- The origin lies in the interior of `W.euclideanBallSlice`. -/
 theorem zero_mem_interior_euclideanBallSlice :
     (0 : W.euclideanSpan) ∈ interior (W.euclideanBallSlice : Set _) := by
   classical
-  rw [coe_euclideanBallSlice, setOf_euclideanBallSlice_eq_preimage]
-  exact mem_interior_iff_mem_nhds.2 <| Filter.mem_of_superset
-    ((isOpen_ball.preimage
-      (placeCoordsEquiv W).toLinearMap.continuous_of_finiteDimensional).mem_nhds (by simp))
-    (preimage_mono ball_subset_closedBall)
+  exact ConvexBody.zero_mem_interior_of_coe_eq_preimage_closedBall
+    (coe_euclideanBallSlice.trans (setOf_euclideanBallSlice_eq_preimage W))
 
 /-- The gauge of `W.euclideanBallSlice` is the supremum over all infinite places `w` of the local
 Euclidean norm `√(∑ i, normAtPlace w (toMixed K (x i)) ^ 2)`. -/
@@ -765,9 +848,10 @@ theorem gauge_euclideanBallSlice (x : W.euclideanSpan) :
             (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2) := by
   classical
   have hgauge :
-      gauge (W.euclideanBallSlice : Set W.euclideanSpan) x = ‖placeCoordsEquiv W x‖ := by
-    rw [coe_euclideanBallSlice, setOf_euclideanBallSlice_eq_preimage, LinearMap.gauge_preimage,
-      gauge_closedBall zero_le_one, div_one, LinearEquiv.coe_coe]
+      gauge (W.euclideanBallSlice : Set W.euclideanSpan) x = ‖W.placeCoordsEquiv x‖ := by
+    simpa only [LinearEquiv.coe_coe] using
+      ConvexBody.gauge_of_coe_eq_preimage_closedBall
+        (coe_euclideanBallSlice.trans (setOf_euclideanBallSlice_eq_preimage W)) x
   set g : InfinitePlace K → ℝ := fun w ↦
     √(∑ i : ι,
       normAtPlace w
@@ -782,13 +866,31 @@ theorem gauge_euclideanBallSlice (x : W.euclideanSpan) :
     · rw [norm_placeCoordsEquiv_snd]
       exact le_ciSup (Set.finite_range g).bddAbove w.1
   · refine ciSup_le fun w ↦ ?_
+    dsimp only [g]
     obtain hw | hw := w.isReal_or_isComplex
-    · rw [show g w = ‖(placeCoordsEquiv W x).1 ⟨w, hw⟩‖ from
-        (norm_placeCoordsEquiv_fst W x ⟨w, hw⟩).symm]
-      exact (norm_le_pi_norm (placeCoordsEquiv W x).1 ⟨w, hw⟩).trans (le_max_left _ _)
-    · rw [show g w = ‖(placeCoordsEquiv W x).2 ⟨w, hw⟩‖ from
-        (norm_placeCoordsEquiv_snd W x ⟨w, hw⟩).symm]
-      exact (norm_le_pi_norm (placeCoordsEquiv W x).2 ⟨w, hw⟩).trans (le_max_right _ _)
+    · exact (norm_placeCoordsEquiv_fst W x ⟨w, hw⟩).symm.trans_le
+        ((norm_le_pi_norm (W.placeCoordsEquiv x).1 ⟨w, hw⟩).trans (le_max_left _ _))
+    · exact (norm_placeCoordsEquiv_snd W x ⟨w, hw⟩).symm.trans_le
+        ((norm_le_pi_norm (W.placeCoordsEquiv x).2 ⟨w, hw⟩).trans (le_max_right _ _))
+
+/-- For `0 ≤ t`, the dilate `t • W.euclideanBallSlice` consists of the points `x ∈ W.euclideanSpan`
+with `√(∑ i, normAtPlace w (toMixed K (x i)) ^ 2) ≤ t` at every infinite place `w`. -/
+theorem mem_smul_euclideanBallSlice_iff {t : ℝ} (ht : 0 ≤ t) {x : W.euclideanSpan} :
+    x ∈ t • (W.euclideanBallSlice : Set W.euclideanSpan) ↔
+      ∀ w : InfinitePlace K,
+        √(∑ i : ι,
+          normAtPlace w
+            (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2) ≤ t := by
+  classical
+  rw [ConvexBody.mem_smul_iff_norm_le_of_coe_eq_preimage_closedBall
+      (coe_euclideanBallSlice.trans (setOf_euclideanBallSlice_eq_preimage W))
+      W.placeCoordsEquiv.injective ht,
+    LinearEquiv.coe_coe, Prod.norm_def, max_le_iff,
+    pi_norm_le_iff_of_nonneg ht, pi_norm_le_iff_of_nonneg ht]
+  simp only [norm_placeCoordsEquiv_fst, norm_placeCoordsEquiv_snd]
+  exact ⟨fun ⟨hr, hc⟩ w ↦
+      w.isReal_or_isComplex.elim (fun hw ↦ hr ⟨w, hw⟩) (fun hw ↦ hc ⟨w, hw⟩),
+    fun hx ↦ ⟨fun w ↦ hx w.1, fun w ↦ hx w.1⟩⟩
 
 /-- At every infinite place `w`, the local Euclidean norm of the integral point corresponding to
 `a ∈ W.integerLattice` is bounded by `gauge W.euclideanBallSlice a`. -/
@@ -818,13 +920,12 @@ theorem sqrt_sum_norm_embedding_sq_le_gauge_euclideanBallSlice {a : W.euclideanS
   exact le_ciSup (Set.finite_range g).bddAbove w
 
 variable (W) in
-/-- **Exact real volume of `W.euclideanBallSlice`.** It is `ω_k ^ r₁ * ω_{2k} ^ r₂`, where
+/-- **Exact volume of `W.euclideanBallSlice`.** It is `ω_k ^ r₁ * ω_{2k} ^ r₂`, where
 `k = finrank K W` and `ω_a` is the volume of the `a`-dimensional unit Euclidean ball. -/
-theorem volume_real_euclideanBallSlice :
-    volume.real (W.euclideanBallSlice : Set W.euclideanSpan) =
-      volume.real (ball (0 : EuclideanSpace ℝ (Fin (finrank K W))) 1) ^ nrRealPlaces K *
-        volume.real (ball (0 : EuclideanSpace ℝ (Fin (2 * finrank K W))) 1) ^
-          nrComplexPlaces K := by
+theorem volume_euclideanBallSlice :
+    volume (W.euclideanBallSlice : Set W.euclideanSpan) =
+      volume (ball (0 : EuclideanSpace ℝ (Fin (finrank K W))) 1) ^ nrRealPlaces K *
+        volume (ball (0 : EuclideanSpace ℝ (Fin (2 * finrank K W))) 1) ^ nrComplexPlaces K := by
   classical
   have hpi :
       closedBall
@@ -837,22 +938,39 @@ theorem volume_real_euclideanBallSlice :
         (univ.pi fun w ↦ closedBall (0 : (W.complexPlaceSpan w).restrictScalars ℝ) 1) := by
     ext z
     simp [Prod.norm_def, pi_norm_le_iff_of_nonneg zero_le_one]
-  have hvol :
-      volume (W.euclideanBallSlice : Set W.euclideanSpan) =
-        (∏ w : {w : InfinitePlace K // w.IsReal}, volume (closedBall (0 : W.realPlaceSpan w) 1)) *
-          ∏ w : {w : InfinitePlace K // w.IsComplex},
-            volume (closedBall (0 : (W.complexPlaceSpan w).restrictScalars ℝ) 1) := by
-    rw [coe_euclideanBallSlice, setOf_euclideanBallSlice_eq_preimage, hpi, LinearEquiv.coe_coe,
-      volume_preimage_placeCoordsEquiv_pi_prod W (fun _ ↦ measurableSet_closedBall)
-        (fun _ ↦ measurableSet_closedBall)]
-  rw [measureReal_def, hvol, ENNReal.toReal_mul, ENNReal.toReal_prod, ENNReal.toReal_prod]
-  congr 1
-  · simp_rw [← measureReal_def, TauCeti.volume_real_unitClosedBall, finrank_realPlaceSpan,
-      Finset.prod_const, Finset.card_univ, TauCeti.volume_real_unitBall,
+  have hr (w : {w : InfinitePlace K // w.IsReal}) :
+      volume (closedBall (0 : W.realPlaceSpan w) 1) =
+        volume (ball (0 : EuclideanSpace ℝ (Fin (finrank K W))) 1) := by
+    rw [Measure.addHaar_unitClosedBall_eq_addHaar_unitBall,
+      ← ofReal_measureReal measure_ball_lt_top.ne,
+      ← ofReal_measureReal (μ := volume)
+        (s := ball (0 : EuclideanSpace ℝ (Fin (finrank K W))) 1) measure_ball_lt_top.ne,
+      TauCeti.volume_real_unitBall, TauCeti.volume_real_unitBall, finrank_realPlaceSpan,
       finrank_euclideanSpace_fin]
-  · simp_rw [← measureReal_def, TauCeti.volume_real_unitClosedBall, finrank_real_complexPlaceSpan,
-      Finset.prod_const, Finset.card_univ, TauCeti.volume_real_unitBall,
+  have hc (w : {w : InfinitePlace K // w.IsComplex}) :
+      volume (closedBall (0 : (W.complexPlaceSpan w).restrictScalars ℝ) 1) =
+        volume (ball (0 : EuclideanSpace ℝ (Fin (2 * finrank K W))) 1) := by
+    rw [Measure.addHaar_unitClosedBall_eq_addHaar_unitBall,
+      ← ofReal_measureReal measure_ball_lt_top.ne,
+      ← ofReal_measureReal (μ := volume)
+        (s := ball (0 : EuclideanSpace ℝ (Fin (2 * finrank K W))) 1) measure_ball_lt_top.ne,
+      TauCeti.volume_real_unitBall, TauCeti.volume_real_unitBall, finrank_real_complexPlaceSpan,
       finrank_euclideanSpace_fin]
+  rw [coe_euclideanBallSlice, setOf_euclideanBallSlice_eq_preimage, hpi, LinearEquiv.coe_coe,
+    volume_preimage_placeCoordsEquiv_pi_prod W (fun _ ↦ measurableSet_closedBall)
+      (fun _ ↦ measurableSet_closedBall)]
+  simp [hr, hc]
+
+variable (W) in
+/-- **Exact real volume of `W.euclideanBallSlice`.** It is `ω_k ^ r₁ * ω_{2k} ^ r₂`, where
+`k = finrank K W` and `ω_a` is the volume of the `a`-dimensional unit Euclidean ball. -/
+theorem volume_real_euclideanBallSlice :
+    volume.real (W.euclideanBallSlice : Set W.euclideanSpan) =
+      volume.real (ball (0 : EuclideanSpace ℝ (Fin (finrank K W))) 1) ^ nrRealPlaces K *
+        volume.real (ball (0 : EuclideanSpace ℝ (Fin (2 * finrank K W))) 1) ^
+          nrComplexPlaces K := by
+  rw [measureReal_def, volume_euclideanBallSlice, ENNReal.toReal_mul, ENNReal.toReal_pow,
+    ENNReal.toReal_pow, ← measureReal_def, ← measureReal_def]
 
 end EuclideanBallSlice
 

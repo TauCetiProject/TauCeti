@@ -22,7 +22,9 @@ We first bound the relative Arakelov height of a Plücker vector, including
 dependent families with the projective zero convention. Taking degree roots
 gives the absolute Euclidean bound for vectors and subspaces, both for linearly
 independent generators (`Submodule.subspaceHeight_le_prod`) and for arbitrary
-finite families of nonzero generators (`Submodule.subspaceHeight_span_range_le_prod_of_ne_zero`).
+finite spanning families (`Submodule.relativeSubspaceArakelovHeight_span_range_le_prod`,
+`Submodule.subspaceHeight_span_range_le_prod_arakelovMulHeight_rpow`, and for nonzero generators
+`Submodule.subspaceHeight_span_range_le_prod_of_ne_zero`).
 
 ## References
 
@@ -116,32 +118,6 @@ theorem subspaceHeight_le_prod {p : ℕ} {x : Fin p → ι → K}
   rw [subspaceHeight_span_range hx]
   exact height2_plucker_le_prod x
 
-/-- The absolute Euclidean height of the span of a finite family of nonzero vectors is at most
-the product of their Euclidean heights, without assuming linear independence. Zero vectors are
-excluded because `height2 0 = 0` whereas every subspace has positive height. -/
-theorem subspaceHeight_span_range_le_prod_of_ne_zero {m : Type*} [Fintype m]
-    {x : m → ι → K} (hx : ∀ i, x i ≠ 0) :
-    subspaceHeight (span K (range x)) ≤ ∏ i, height2 (x i) := by
-  classical
-  -- Extract a maximal linearly independent subfamily `x ∘ a` with the same span; the remaining
-  -- nonzero vectors each have `height2 ≥ 1`.
-  obtain ⟨κ, a, ha, hspan, hli⟩ := exists_linearIndependent' K x
-  have : Finite κ := Finite.of_injective a ha
-  let _ := Fintype.ofFinite κ
-  let e := Fintype.equivFin κ
-  have hli' : LinearIndependent K ((x ∘ a) ∘ e.symm) := hli.comp _ e.symm.injective
-  have hrange : range ((x ∘ a) ∘ e.symm) = range (x ∘ a) := by
-    rw [range_comp (x ∘ a) e.symm, Equiv.range_eq_univ, image_univ]
-  calc subspaceHeight (span K (range x))
-      = subspaceHeight (span K (range ((x ∘ a) ∘ e.symm))) := by rw [hrange, hspan]
-    _ ≤ ∏ j, height2 (((x ∘ a) ∘ e.symm) j) := subspaceHeight_le_prod hli'
-    _ = ∏ k : κ, height2 (x (a k)) := e.symm.prod_comp fun k ↦ height2 (x (a k))
-    _ = ∏ i ∈ Finset.univ.map ⟨a, ha⟩, height2 (x i) :=
-        (Finset.prod_map Finset.univ ⟨a, ha⟩ fun i ↦ height2 (x i)).symm
-    _ ≤ ∏ i, height2 (x i) :=
-        Finset.prod_le_prod_of_subset_of_one_le₀ (Finset.subset_univ _)
-          (fun _ _ ↦ height2_nonneg _) fun i _ _ ↦ one_le_height2_of_ne_zero (hx i)
-
 /-- The relative Arakelov height of a subspace is bounded by the product of
 relative Arakelov heights of its basis vectors. -/
 theorem relativeSubspaceArakelovHeight_le_prod {U : Submodule K (ι → K)} {p : ℕ}
@@ -149,5 +125,60 @@ theorem relativeSubspaceArakelovHeight_le_prod {U : Submodule K (ι → K)} {p :
     relativeSubspaceArakelovHeight U ≤ ∏ i, arakelovMulHeight (b i : ι → K) := by
   rw [relativeSubspaceArakelovHeight_eq_arakelovMulHeight_plucker b]
   exact arakelovMulHeight_plucker_le_prod _
+
+/-- The relative Arakelov height of the span of a finite family of vectors is at most the product
+of their relative Arakelov heights, without assuming linear independence or nonvanishing
+(`arakelovMulHeight 0 = 1`). -/
+theorem relativeSubspaceArakelovHeight_span_range_le_prod {m : Type*} [Fintype m]
+    (x : m → ι → K) :
+    relativeSubspaceArakelovHeight (span K (range x)) ≤ ∏ i, arakelovMulHeight (x i) := by
+  classical
+  -- Extract a maximal linearly independent subfamily `x ∘ a` with the same span; the remaining
+  -- vectors each satisfy `1 ≤ arakelovMulHeight (x i)`.
+  obtain ⟨κ, a, ha, hspan, hli⟩ := exists_linearIndependent' K x
+  have : Finite κ := Finite.of_injective a ha
+  let _ := Fintype.ofFinite κ
+  let e := Fintype.equivFin κ
+  have hli' : LinearIndependent K ((x ∘ a) ∘ e.symm) := hli.comp _ e.symm.injective
+  have hrange : range ((x ∘ a) ∘ e.symm) = range (x ∘ a) := by
+    rw [range_comp (x ∘ a) e.symm, Equiv.range_eq_univ, image_univ]
+  calc relativeSubspaceArakelovHeight (span K (range x))
+      = relativeSubspaceArakelovHeight (span K (range ((x ∘ a) ∘ e.symm))) := by
+        rw [hrange, hspan]
+    _ = arakelovMulHeight (plucker ((x ∘ a) ∘ e.symm)) :=
+        relativeSubspaceArakelovHeight_span_range hli'
+    _ ≤ ∏ j, arakelovMulHeight (((x ∘ a) ∘ e.symm) j) :=
+        arakelovMulHeight_plucker_le_prod _
+    _ = ∏ k : κ, arakelovMulHeight (x (a k)) :=
+        e.symm.prod_comp fun k ↦ arakelovMulHeight (x (a k))
+    _ = ∏ i ∈ Finset.univ.map ⟨a, ha⟩, arakelovMulHeight (x i) :=
+        (Finset.prod_map Finset.univ ⟨a, ha⟩ fun i ↦ arakelovMulHeight (x i)).symm
+    _ ≤ ∏ i, arakelovMulHeight (x i) :=
+        Finset.prod_le_prod_of_subset_of_one_le₀ (Finset.subset_univ _)
+          (fun _ _ ↦ arakelovMulHeight_nonneg _) fun i _ _ ↦ one_le_arakelovMulHeight (x i)
+
+/-- The absolute Euclidean height of the span of a finite family of vectors is at most the product
+of the `[K : ℚ]`-th roots of their relative Arakelov heights, without assuming linear independence
+or nonvanishing (`arakelovMulHeight 0 = 1`). -/
+theorem subspaceHeight_span_range_le_prod_arakelovMulHeight_rpow {m : Type*} [Fintype m]
+    (x : m → ι → K) :
+    subspaceHeight (span K (range x)) ≤
+      ∏ i, arakelovMulHeight (x i) ^ (finrank ℚ K : ℝ)⁻¹ := by
+  refine le_of_pow_le_pow_left₀ (Module.finrank_pos (R := ℚ) (M := K)).ne'
+    (Finset.prod_nonneg fun i _ ↦ Real.rpow_nonneg (arakelovMulHeight_nonneg (x i)) _) ?_
+  rw [subspaceHeight_pow_finrank, ← Finset.prod_pow]
+  refine (relativeSubspaceArakelovHeight_span_range_le_prod x).trans_eq ?_
+  exact Finset.prod_congr rfl fun i _ ↦
+    (Real.rpow_inv_natCast_pow (arakelovMulHeight_nonneg _) finrank_pos.ne').symm
+
+/-- The absolute Euclidean height of the span of a finite family of nonzero vectors is at most
+the product of their Euclidean heights, without assuming linear independence. Zero vectors are
+excluded because `height2 0 = 0` whereas every subspace has positive height. -/
+theorem subspaceHeight_span_range_le_prod_of_ne_zero {m : Type*} [Fintype m]
+    {x : m → ι → K} (hx : ∀ i, x i ≠ 0) :
+    subspaceHeight (span K (range x)) ≤ ∏ i, height2 (x i) := by
+  refine (subspaceHeight_span_range_le_prod_arakelovMulHeight_rpow x).trans_eq ?_
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  simpa only [one_div, ite_eq_right (hx i)] using arakelovMulHeight_eq_height2 (x i)
 
 end Submodule

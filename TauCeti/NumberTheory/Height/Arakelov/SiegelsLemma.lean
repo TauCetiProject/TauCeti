@@ -334,11 +334,10 @@ theorem exists_ne_zero_height2_le {K : Type*} [Field K] [NumberField K] {m ι : 
       height2 (fun j ↦ (x j : K)) ≤
         √(Fintype.card ι) * |(discr K : ℝ)| ^ ((1 : ℝ) / (2 * finrank ℚ K)) *
           (∏ i, height2 (L i)) ^ ((Fintype.card ι : ℝ) - Fintype.card m)⁻¹ := by
-  have hrow : (Matrix.of L).row = L := funext fun i ↦ funext fun j ↦ rfl
   obtain ⟨x, hx0, hxker, hxle⟩ :=
     Matrix.exists_ne_zero_mulVec_eq_zero_height2_le_of_row_ne_zero (A := Matrix.of L) hcard
-      (hrow.symm ▸ hL)
-  refine ⟨x, hx0, fun i ↦ ?_, hrow ▸ hxle⟩
+      (by simpa only [Matrix.row_of] using hL)
+  refine ⟨x, hx0, fun i ↦ ?_, by simpa only [Matrix.row_of] using hxle⟩
   simpa [Matrix.mulVec, dotProduct] using congrFun hxker i
 
 end TauCeti
