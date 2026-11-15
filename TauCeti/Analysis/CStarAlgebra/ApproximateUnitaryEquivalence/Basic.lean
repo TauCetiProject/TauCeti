@@ -181,7 +181,7 @@ theorem postcomp_nonUnital [CStarAlgebra C] (h : ApproximatelyUnitarilyEquivalen
       _ = ρ ((u : B) * b) * (ρ (star (u : B)) + (1 - ρ 1)) := by rw [h0l, add_zero, ← map_mul]
       _ = ρ ((u : B) * b) * ρ (star (u : B)) + ρ ((u : B) * b) * (1 - ρ 1) := by rw [mul_add]
       _ = ρ ((u : B) * b * star (u : B)) := by rw [h0r, add_zero, ← map_mul]
-  change ‖w * ρ (φ a) * star w - ρ (ψ a)‖ < ε
+  simp only [NonUnitalStarAlgHom.comp_apply]
   rw [hconj, ← map_sub]
   exact (NonUnitalStarAlgHom.norm_apply_le ρ _).trans_lt (hu a ha)
 

@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Star.NonUnitalSubalgebra
 public import Mathlib.Analysis.CStarAlgebra.Classes
 public import Mathlib.Analysis.CStarAlgebra.Hom
-public import Mathlib.Order.DirectedInverseSystem
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
+public import TauCeti.Algebra.Star.DirectedSystem
 import Mathlib.Topology.DenseEmbedding
 import Mathlib.Topology.Order.MonotoneConvergence
 
@@ -25,17 +25,19 @@ errors on propagating stagewise-dense sets `F n ⊆ A n` and `G n ⊆ B n`.
 
 The construction factors through a one-sided approximate-cocone theorem (`IsApproxCocone.hom`),
 which builds a `⋆`-homomorphism `C →⋆ₙₐ[ℂ] D` with a quantitative tail-error bound whenever stage
-maps `ξ n : A n →⋆ₙₐ[ℂ] D` satisfy `‖ξ (n + 1) (α n a) - ξ n a‖ ≤ τ n` on `F n` with `Summable τ`.
+maps `ξ n : A n →⋆ₙₐ[ℂ] D` satisfy `‖ξ (n + 1) (α n a) - ξ n a‖ ≤ τ n` on `F n` with `Summable τ`,
+descending the pointwise limit cocone via the exact universal lift `IsSeqColimitCone.lift`.
 Applying `IsApproxCocone.hom` in both directions and checking the two composite identities on
 dense stage elements yields `IsApproximateIntertwining.equiv` together with its forward and
 backward tail estimates.
 
 ## Main definitions and results
 
-* `TauCeti.seqTransHom`: composite connecting `⋆`-homomorphisms `A m →⋆ₙₐ[R] A n` for `m ≤ n`.
-* `TauCeti.IsSeqColimitCone`: predicate characterizing a compatible colimit cone into a C⋆-algebra
-  by density of the union of stage images and convergence of stage norms along `seqTransHom`,
-  with constructors `.const`, `.of_isometry`, `.of_subalgebra`, and `.of_norm_eq_ciInf`.
+* `TauCeti.IsSeqColimitCone` and `TauCeti.IsSeqColimitCone.lift`: predicate characterizing a
+  compatible colimit cone into a C⋆-algebra by density of the union of stage images and convergence
+  of stage norms along `seqTransHom`, with universal lift `lift` (`lift_apply`, `lift_comp`,
+  `lift_unique`) and constructors `.const`, `.of_isometry`, `.of_subalgebra`, and
+  `.of_norm_eq_ciInf`.
 * `TauCeti.IsApproxCocone` and `TauCeti.IsApproxCocone.hom`: one-sided limit `⋆`-homomorphism from
   an approximate cocone, with uniqueness and tail estimate `IsApproxCocone.norm_hom_sub_le`.
 * `TauCeti.IsApproximateIntertwining` and `TauCeti.IsApproximateIntertwining.equiv`: two-sided
@@ -56,71 +58,6 @@ open Filter Topology
 open scoped CStarAlgebra
 
 namespace TauCeti
-
-section SeqTransHom
-
-variable {R : Type*} [Monoid R] {A : ℕ → Type*}
-  [∀ n, NonUnitalNonAssocSemiring (A n)] [∀ n, DistribMulAction R (A n)] [∀ n, StarAddMonoid (A n)]
-
-/-- The composite connecting `⋆`-homomorphism `A m →⋆ₙₐ[R] A n` for `m ≤ n` obtained by iterating
-a sequential system `α : ∀ k, A k →⋆ₙₐ[R] A (k + 1)`. -/
-def seqTransHom (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) {m n : ℕ} (h : m ≤ n) : A m →⋆ₙₐ[R] A n :=
-  Nat.leRecOn (motive := fun k ↦ A m →⋆ₙₐ[R] A k) h (fun {k} f ↦ (α k).comp f) (.id R (A m))
-
-@[simp]
-theorem seqTransHom_self (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) {n : ℕ} (h : n ≤ n) :
-    seqTransHom α h = .id R (A n) := by
-  cases Subsingleton.elim h n.le_refl
-  exact Nat.leRecOn_self (motive := fun k ↦ A n →⋆ₙₐ[R] A k)
-    (next := fun {k} f ↦ (α k).comp f) (NonUnitalStarAlgHom.id R (A n))
-
-theorem seqTransHom_succ (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) {m n : ℕ} (h : m ≤ n)
-    (h' : m ≤ n + 1) : seqTransHom α h' = (α n).comp (seqTransHom α h) := by
-  cases Subsingleton.elim h' (Nat.le_add_right_of_le h)
-  exact Nat.leRecOn_succ (motive := fun k ↦ A m →⋆ₙₐ[R] A k) h
-    (next := fun {k} f ↦ (α k).comp f) (NonUnitalStarAlgHom.id R (A m))
-
-@[simp]
-theorem seqTransHom_le_succ (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) (n : ℕ) :
-    seqTransHom α (Nat.le_succ n) = α n := by
-  rw [seqTransHom_succ α le_rfl (Nat.le_succ n), seqTransHom_self, NonUnitalStarAlgHom.comp_id]
-
-theorem seqTransHom_comp (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) {i j k : ℕ} (hij : i ≤ j)
-    (hjk : j ≤ k) :
-    (seqTransHom α hjk).comp (seqTransHom α hij) = seqTransHom α (hij.trans hjk) := by
-  induction k, hjk using Nat.le_induction with
-  | base => rw [seqTransHom_self, NonUnitalStarAlgHom.id_comp]
-  | succ k hjk ih =>
-    rw [seqTransHom_succ α hjk, seqTransHom_succ α (hij.trans hjk),
-      NonUnitalStarAlgHom.comp_assoc, ih]
-
-@[simp]
-theorem seqTransHom_comp_apply (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) {i j k : ℕ} (hij : i ≤ j)
-    (hjk : j ≤ k) (a : A i) :
-    seqTransHom α hjk (seqTransHom α hij a) = seqTransHom α (hij.trans hjk) a :=
-  DFunLike.congr_fun (seqTransHom_comp α hij hjk) a
-
-theorem seqTransHom_comp_step (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) {m n : ℕ} (h : m + 1 ≤ n) :
-    (seqTransHom α h).comp (α m) = seqTransHom α (Nat.le_of_succ_le h) := by
-  rw [← seqTransHom_comp α (Nat.le_succ m) h, seqTransHom_le_succ]
-
-instance directedSystem_seqTransHom (α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)) :
-    DirectedSystem (F := A) (fun _ _ h ↦ ⇑(seqTransHom α h)) where
-  map_self _ a := by simp
-  map_map _ _ _ hij hjk a := seqTransHom_comp_apply α hij hjk a
-
-/-- If a family of subsets `F n ⊆ A n` is preserved by each step map `α n`, then it is preserved
-by all composite transition maps `seqTransHom α h`. -/
-theorem seqTransHom_mem {α : ∀ n, A n →⋆ₙₐ[R] A (n + 1)} {F : ∀ n, Set (A n)}
-    (hF : ∀ n, ∀ a ∈ F n, α n a ∈ F (n + 1)) {m n : ℕ} (h : m ≤ n) {a : A m} (ha : a ∈ F m) :
-    seqTransHom α h a ∈ F n := by
-  induction n, h using Nat.le_induction with
-  | base => simpa using ha
-  | succ k hmk ih =>
-    rw [seqTransHom_succ α hmk]
-    exact hF k _ ih
-
-end SeqTransHom
 
 section ColimitCone
 
@@ -213,6 +150,15 @@ theorem const (C : Type*) [NonUnitalCStarAlgebra C] :
     simp_rw [hconst]
     exact tendsto_const_nhds
 
+private theorem comp_seqTransHom_of_comp_eq {D : Type*} [NonUnitalCStarAlgebra D]
+    {ξ : ∀ n, A n →⋆ₙₐ[ℂ] D} (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n) {m n : ℕ} (h : m ≤ n)
+    (a : A m) : ξ n (seqTransHom α h a) = ξ m a := by
+  induction n, h using Nat.le_induction with
+  | base => simp
+  | succ k hmk ih =>
+    rw [seqTransHom_succ α hmk, NonUnitalStarAlgHom.comp_apply,
+      ← NonUnitalStarAlgHom.comp_apply (ξ (k + 1)), hξ k, ih]
+
 /-- Any compatible cone of isometric `⋆`-homomorphisms whose ranges have dense union is a
 sequential colimit cone. -/
 theorem of_isometry (hcomp : ∀ n, (ι (n + 1)).comp (α n) = ι n)
@@ -221,14 +167,8 @@ theorem of_isometry (hcomp : ∀ n, (ι (n + 1)).comp (α n) = ι n)
   comp_eq := hcomp
   dense_iUnion_range := hdense
   tendsto_norm n a := by
-    have hcomp_iter {m k : ℕ} (h : m ≤ k) (x : A m) : ι k (seqTransHom α h x) = ι m x := by
-      induction k, h using Nat.le_induction with
-      | base => simp
-      | succ k hmk ih =>
-        rw [seqTransHom_succ α hmk, NonUnitalStarAlgHom.comp_apply,
-          ← NonUnitalStarAlgHom.comp_apply (ι (k + 1)), hcomp k, ih]
     have hnorm (k : ℕ) : ‖seqTransHom α (Nat.le_add_right n k) a‖ = ‖ι n a‖ := by
-      rw [← hiso (n + k), hcomp_iter]
+      rw [← hiso (n + k), comp_seqTransHom_of_comp_eq hcomp]
     simp_rw [hnorm]
     exact tendsto_const_nhds
 
@@ -255,6 +195,139 @@ theorem hom_ext {D : Type*} [NonUnitalCStarAlgebra D] (hι : IsSeqColimitCone α
     exact h n a
   ext x
   exact heq (hι.dense_iUnion_range x)
+
+private theorem norm_le_of_comp_eq {D : Type*} [NonUnitalCStarAlgebra D]
+    (hι : IsSeqColimitCone α ι) {ξ : ∀ n, A n →⋆ₙₐ[ℂ] D}
+    (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n) (n : ℕ) (a : A n) : ‖ξ n a‖ ≤ ‖ι n a‖ :=
+  ge_of_tendsto' (hι.tendsto_norm n a) fun k ↦ by
+    rw [← comp_seqTransHom_of_comp_eq hξ (Nat.le_add_right n k) a]
+    exact NonUnitalStarAlgHom.norm_apply_le _ _
+
+/-- Induced contractive map on the dense subtype `↥(⋃ n, Set.range (ι n))`. -/
+private noncomputable def unionFun {D : Type*} [NonUnitalCStarAlgebra D]
+    (ι : ∀ n, A n →⋆ₙₐ[ℂ] C) (ξ : ∀ n, A n →⋆ₙₐ[ℂ] D) (u : ↥(⋃ n, Set.range (ι n))) : D := by
+  classical
+  exact ξ (Set.mem_iUnion.mp u.2).choose (Set.mem_iUnion.mp u.2).choose_spec.choose
+
+private theorem unionFun_apply {D : Type*} [NonUnitalCStarAlgebra D]
+    (hι : IsSeqColimitCone α ι) {ξ : ∀ n, A n →⋆ₙₐ[ℂ] D}
+    (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n) (n : ℕ) (a : A n)
+    (hu : ι n a ∈ ⋃ m, Set.range (ι m)) :
+    unionFun ι ξ ⟨ι n a, hu⟩ = ξ n a := by
+  classical
+  dsimp only [unionFun]
+  set m := (Set.mem_iUnion.mp hu).choose
+  set b := (Set.mem_iUnion.mp hu).choose_spec.choose
+  have hmb : ι m b = ι n a := (Set.mem_iUnion.mp hu).choose_spec.choose_spec
+  let N := max m n
+  have hN : ι N (seqTransHom α (le_max_left m n) b - seqTransHom α (le_max_right m n) a) = 0 := by
+    rw [map_sub, hι.comp_seqTransHom_apply, hι.comp_seqTransHom_apply, hmb, sub_self]
+  have h0 : ξ N (seqTransHom α (le_max_left m n) b - seqTransHom α (le_max_right m n) a) = 0 :=
+    norm_le_zero_iff.mp <| (hι.norm_le_of_comp_eq hξ N _).trans (by simp [hN])
+  rw [map_sub, comp_seqTransHom_of_comp_eq hξ, comp_seqTransHom_of_comp_eq hξ, sub_eq_zero] at h0
+  exact h0
+
+private theorem lipschitzWith_unionFun {D : Type*} [NonUnitalCStarAlgebra D]
+    (hι : IsSeqColimitCone α ι) {ξ : ∀ n, A n →⋆ₙₐ[ℂ] D}
+    (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n) :
+    LipschitzWith 1 (unionFun ι ξ) := by
+  refine LipschitzWith.of_dist_le_mul ?_
+  rintro ⟨_, hu₁⟩ ⟨_, hu₂⟩
+  rcases Set.mem_iUnion.mp hu₁ with ⟨n₁, a₁, rfl⟩
+  rcases Set.mem_iUnion.mp hu₂ with ⟨n₂, a₂, rfl⟩
+  rw [NNReal.coe_one, one_mul, dist_eq_norm,
+    hι.unionFun_apply hξ n₁ a₁ hu₁, hι.unionFun_apply hξ n₂ a₂ hu₂,
+    ← comp_seqTransHom_of_comp_eq hξ (le_max_left n₁ n₂) a₁,
+    ← comp_seqTransHom_of_comp_eq hξ (le_max_right n₁ n₂) a₂, ← map_sub]
+  refine (hι.norm_le_of_comp_eq hξ (max n₁ n₂) _).trans ?_
+  rw [map_sub, hι.comp_seqTransHom_apply, hι.comp_seqTransHom_apply, Subtype.dist_eq, dist_eq_norm]
+
+/-- Universal property of a sequential colimit cone: any compatible family of stage
+`⋆`-homomorphisms `ξ : ∀ n, A n →⋆ₙₐ[ℂ] D` descends to a `⋆`-homomorphism `C →⋆ₙₐ[ℂ] D`. -/
+noncomputable def lift {D : Type*} [NonUnitalCStarAlgebra D] (hι : IsSeqColimitCone α ι)
+    (ξ : ∀ n, A n →⋆ₙₐ[ℂ] D) (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n) : C →⋆ₙₐ[ℂ] D := by
+  let hd : DenseRange ((↑) : ↥(⋃ n, Set.range (ι n)) → C) :=
+    hι.dense_iUnion_range.denseRange_val
+  let hi : IsUniformInducing ((↑) : ↥(⋃ n, Set.range (ι n)) → C) :=
+    isometry_subtype_coe.isUniformInducing
+  have huc : UniformContinuous (unionFun ι ξ) := (hι.lipschitzWith_unionFun hξ).uniformContinuous
+  have cont : Continuous ((hi.isDenseInducing hd).extend (unionFun ι ξ)) :=
+    (uniformContinuous_uniformly_extend hi hd huc).continuous
+  have hext : ∀ u : ↥(⋃ n, Set.range (ι n)),
+      (hi.isDenseInducing hd).extend (unionFun ι ξ) ↑u = unionFun ι ξ u :=
+    uniformly_extend_of_ind hi hd huc
+  have hstage (n : ℕ) (a : A n) :
+      (hi.isDenseInducing hd).extend (unionFun ι ξ) (ι n a) = ξ n a := by
+    have hu : ι n a ∈ ⋃ m, Set.range (ι m) := Set.mem_iUnion.mpr ⟨n, a, rfl⟩
+    exact (hext ⟨ι n a, hu⟩).trans (hι.unionFun_apply hξ n a hu)
+  exact
+    { toFun := (hi.isDenseInducing hd).extend (unionFun ι ξ)
+      map_zero' := by rw [← map_zero (ι 0), hstage 0 0, map_zero]
+      map_add' := by
+        refine hd.induction_on₂
+          (isClosed_eq (cont.comp continuous_add)
+            ((cont.comp continuous_fst).add (cont.comp continuous_snd))) ?_
+        rintro ⟨_, u₁⟩ ⟨_, u₂⟩
+        rcases Set.mem_iUnion.mp u₁ with ⟨n₁, a₁, rfl⟩
+        rcases Set.mem_iUnion.mp u₂ with ⟨n₂, a₂, rfl⟩
+        dsimp only
+        rw [← hι.comp_seqTransHom_apply (le_max_left n₁ n₂) a₁,
+          ← hι.comp_seqTransHom_apply (le_max_right n₁ n₂) a₂, ← map_add,
+          hstage, hstage, hstage, map_add]
+      map_mul' := by
+        refine hd.induction_on₂
+          (isClosed_eq (cont.comp continuous_mul)
+            ((cont.comp continuous_fst).mul (cont.comp continuous_snd))) ?_
+        rintro ⟨_, u₁⟩ ⟨_, u₂⟩
+        rcases Set.mem_iUnion.mp u₁ with ⟨n₁, a₁, rfl⟩
+        rcases Set.mem_iUnion.mp u₂ with ⟨n₂, a₂, rfl⟩
+        dsimp only
+        rw [← hι.comp_seqTransHom_apply (le_max_left n₁ n₂) a₁,
+          ← hι.comp_seqTransHom_apply (le_max_right n₁ n₂) a₂, ← map_mul,
+          hstage, hstage, hstage, map_mul]
+      map_smul' c x := by
+        refine hd.induction_on x
+          (isClosed_eq (cont.comp (continuous_const_smul c))
+            ((continuous_const_smul c).comp cont)) ?_
+        rintro ⟨_, u⟩
+        rcases Set.mem_iUnion.mp u with ⟨n, a, rfl⟩
+        dsimp only [MonoidHom.id_apply]
+        rw [← map_smul, hstage, hstage, map_smul]
+      map_star' x := by
+        refine hd.induction_on x
+          (isClosed_eq (cont.comp continuous_star) (continuous_star.comp cont)) ?_
+        rintro ⟨_, u⟩
+        rcases Set.mem_iUnion.mp u with ⟨n, a, rfl⟩
+        dsimp only
+        rw [← map_star, hstage, hstage, map_star] }
+
+/-- Evaluating `hι.lift ξ hξ` on a stage element `ι n a` recovers `ξ n a`. -/
+@[simp]
+theorem lift_apply {D : Type*} [NonUnitalCStarAlgebra D] (hι : IsSeqColimitCone α ι)
+    (ξ : ∀ n, A n →⋆ₙₐ[ℂ] D) (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n) (n : ℕ) (a : A n) :
+    hι.lift ξ hξ (ι n a) = ξ n a := by
+  let hd : DenseRange ((↑) : ↥(⋃ m, Set.range (ι m)) → C) :=
+    hι.dense_iUnion_range.denseRange_val
+  let hi : IsUniformInducing ((↑) : ↥(⋃ m, Set.range (ι m)) → C) :=
+    isometry_subtype_coe.isUniformInducing
+  have hu : ι n a ∈ ⋃ m, Set.range (ι m) := Set.mem_iUnion.mpr ⟨n, a, rfl⟩
+  exact (uniformly_extend_of_ind hi hd
+    (hι.lipschitzWith_unionFun hξ).uniformContinuous ⟨ι n a, hu⟩).trans
+    (hι.unionFun_apply hξ n a hu)
+
+/-- Composing `hι.lift ξ hξ` with the `n`-th cone map recovers `ξ n`. -/
+@[simp]
+theorem lift_comp {D : Type*} [NonUnitalCStarAlgebra D] (hι : IsSeqColimitCone α ι)
+    (ξ : ∀ n, A n →⋆ₙₐ[ℂ] D) (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n) (n : ℕ) :
+    (hι.lift ξ hξ).comp (ι n) = ξ n :=
+  NonUnitalStarAlgHom.ext (hι.lift_apply ξ hξ n)
+
+/-- Uniqueness of the lifted `⋆`-homomorphism out of a sequential colimit cone. -/
+theorem lift_unique {D : Type*} [NonUnitalCStarAlgebra D] (hι : IsSeqColimitCone α ι)
+    {ξ : ∀ n, A n →⋆ₙₐ[ℂ] D} (hξ : ∀ n, (ξ (n + 1)).comp (α n) = ξ n)
+    {Φ : C →⋆ₙₐ[ℂ] D} (hΦ : ∀ n a, Φ (ι n a) = ξ n a) :
+    Φ = hι.lift ξ hξ :=
+  hι.hom_ext fun n a ↦ (hΦ n a).trans (hι.lift_apply ξ hξ n a).symm
 
 end IsSeqColimitCone
 
@@ -410,121 +483,17 @@ private theorem stageHom_seqTransHom (hc : IsApproxCocone α ξ F τ) {m n : ℕ
   tendsto_nhds_unique (hc.tendsto_evalAt_stageHom n _)
     ((hc.tendsto_evalAt_stageHom m a).congr' (evalAt_eventuallyEq_seqTransHom h a).symm)
 
-private theorem norm_stageHom_le (hc : IsApproxCocone α ξ F τ) (hι : IsSeqColimitCone α ι)
-    (n : ℕ) (a : A n) : ‖hc.stageHom n a‖ ≤ ‖ι n a‖ :=
-  le_of_tendsto_of_tendsto (hc.tendsto_stageHom n a).norm (hι.tendsto_norm n a) <|
-    Eventually.of_forall fun _ ↦ NonUnitalStarAlgHom.norm_apply_le _ _
-
-/-- Induced contractive map on the dense subtype `↥(⋃ n, Set.range (ι n))`. -/
-private noncomputable def unionFun (hc : IsApproxCocone α ξ F τ)
-    (ι : ∀ n, A n →⋆ₙₐ[ℂ] C) (u : ↥(⋃ n, Set.range (ι n))) : D := by
-  classical
-  exact hc.stageHom (Set.mem_iUnion.mp u.2).choose (Set.mem_iUnion.mp u.2).choose_spec.choose
-
-private theorem unionFun_apply (hc : IsApproxCocone α ξ F τ) (hι : IsSeqColimitCone α ι)
-    (n : ℕ) (a : A n) (hu : ι n a ∈ ⋃ m, Set.range (ι m)) :
-    hc.unionFun ι ⟨ι n a, hu⟩ = hc.stageHom n a := by
-  classical
-  dsimp only [unionFun]
-  set m := (Set.mem_iUnion.mp hu).choose
-  set b := (Set.mem_iUnion.mp hu).choose_spec.choose
-  have hmb : ι m b = ι n a := (Set.mem_iUnion.mp hu).choose_spec.choose_spec
-  let N := max m n
-  have hN : ι N (seqTransHom α (le_max_left m n) b - seqTransHom α (le_max_right m n) a) = 0 := by
-    rw [map_sub, hι.comp_seqTransHom_apply, hι.comp_seqTransHom_apply, hmb, sub_self]
-  have h0 : hc.stageHom N
-      (seqTransHom α (le_max_left m n) b - seqTransHom α (le_max_right m n) a) = 0 :=
-    norm_le_zero_iff.mp <| (hc.norm_stageHom_le hι N _).trans (by simp [hN])
-  rw [map_sub, hc.stageHom_seqTransHom, hc.stageHom_seqTransHom, sub_eq_zero] at h0
-  exact h0
-
-private theorem lipschitzWith_unionFun (hc : IsApproxCocone α ξ F τ) (hι : IsSeqColimitCone α ι) :
-    LipschitzWith 1 (hc.unionFun ι) := by
-  refine LipschitzWith.of_dist_le_mul fun u₁ u₂ ↦ ?_
-  rcases Set.mem_iUnion.mp u₁.2 with ⟨n₁, a₁, h₁⟩
-  rcases Set.mem_iUnion.mp u₂.2 with ⟨n₂, a₂, h₂⟩
-  have hu₁ : hc.unionFun ι u₁ = hc.stageHom n₁ a₁ := by
-    conv_lhs => rw [show u₁ = ⟨ι n₁ a₁, h₁.symm ▸ u₁.2⟩ from Subtype.ext h₁.symm]
-    exact hc.unionFun_apply hι n₁ a₁ _
-  have hu₂ : hc.unionFun ι u₂ = hc.stageHom n₂ a₂ := by
-    conv_lhs => rw [show u₂ = ⟨ι n₂ a₂, h₂.symm ▸ u₂.2⟩ from Subtype.ext h₂.symm]
-    exact hc.unionFun_apply hι n₂ a₂ _
-  rw [NNReal.coe_one, one_mul, dist_eq_norm, hu₁, hu₂,
-    ← hc.stageHom_seqTransHom (le_max_left n₁ n₂) a₁,
-    ← hc.stageHom_seqTransHom (le_max_right n₁ n₂) a₂, ← map_sub]
-  refine (hc.norm_stageHom_le hι (max n₁ n₂) _).trans ?_
-  rw [map_sub, hι.comp_seqTransHom_apply, hι.comp_seqTransHom_apply, h₁, h₂, Subtype.dist_eq,
-    dist_eq_norm]
+private theorem stageHom_comp (hc : IsApproxCocone α ξ F τ) (n : ℕ) :
+    (hc.stageHom (n + 1)).comp (α n) = hc.stageHom n := by
+  ext a
+  simpa only [NonUnitalStarAlgHom.comp_apply, seqTransHom_le_succ] using
+    hc.stageHom_seqTransHom (Nat.le_succ n) a
 
 /-- The `⋆`-homomorphism `C →⋆ₙₐ[ℂ] D` induced by an approximate cocone on a sequential colimit
 cone. -/
 noncomputable def hom (hc : IsApproxCocone α ξ F τ) (hι : IsSeqColimitCone α ι) :
-    C →⋆ₙₐ[ℂ] D := by
-  let hd : DenseRange ((↑) : ↥(⋃ n, Set.range (ι n)) → C) :=
-    hι.dense_iUnion_range.denseRange_val
-  let hi : IsUniformInducing ((↑) : ↥(⋃ n, Set.range (ι n)) → C) :=
-    isometry_subtype_coe.isUniformInducing
-  have huc : UniformContinuous (hc.unionFun ι) := (hc.lipschitzWith_unionFun hι).uniformContinuous
-  have cont : Continuous ((hi.isDenseInducing hd).extend (hc.unionFun ι)) :=
-    (uniformContinuous_uniformly_extend hi hd huc).continuous
-  have hext : ∀ u : ↥(⋃ n, Set.range (ι n)),
-      (hi.isDenseInducing hd).extend (hc.unionFun ι) ↑u = hc.unionFun ι u :=
-    uniformly_extend_of_ind hi hd huc
-  have hstage (n : ℕ) (a : A n) :
-      (hi.isDenseInducing hd).extend (hc.unionFun ι) (ι n a) = hc.stageHom n a := by
-    have hu : ι n a ∈ ⋃ m, Set.range (ι m) := Set.mem_iUnion.mpr ⟨n, a, rfl⟩
-    exact (hext ⟨ι n a, hu⟩).trans (hc.unionFun_apply hι n a hu)
-  exact
-    { toFun := (hi.isDenseInducing hd).extend (hc.unionFun ι)
-      map_zero' := by rw [← map_zero (ι 0), hstage 0 0, map_zero]
-      map_add' := by
-        refine hd.induction_on₂
-          (isClosed_eq (cont.comp continuous_add)
-            ((cont.comp continuous_fst).add (cont.comp continuous_snd))) ?_
-        rintro ⟨_, u₁⟩ ⟨_, u₂⟩
-        rcases Set.mem_iUnion.mp u₁ with ⟨n₁, a₁, rfl⟩
-        rcases Set.mem_iUnion.mp u₂ with ⟨n₂, a₂, rfl⟩
-        dsimp only
-        rw [← hι.comp_seqTransHom_apply (le_max_left n₁ n₂) a₁,
-          ← hι.comp_seqTransHom_apply (le_max_right n₁ n₂) a₂, ← map_add,
-          hstage, hstage, hstage, map_add]
-      map_mul' := by
-        refine hd.induction_on₂
-          (isClosed_eq (cont.comp continuous_mul)
-            ((cont.comp continuous_fst).mul (cont.comp continuous_snd))) ?_
-        rintro ⟨_, u₁⟩ ⟨_, u₂⟩
-        rcases Set.mem_iUnion.mp u₁ with ⟨n₁, a₁, rfl⟩
-        rcases Set.mem_iUnion.mp u₂ with ⟨n₂, a₂, rfl⟩
-        dsimp only
-        rw [← hι.comp_seqTransHom_apply (le_max_left n₁ n₂) a₁,
-          ← hι.comp_seqTransHom_apply (le_max_right n₁ n₂) a₂, ← map_mul,
-          hstage, hstage, hstage, map_mul]
-      map_smul' c x := by
-        refine hd.induction_on x
-          (isClosed_eq (cont.comp (continuous_const_smul c))
-            ((continuous_const_smul c).comp cont)) ?_
-        rintro ⟨_, u⟩
-        rcases Set.mem_iUnion.mp u with ⟨n, a, rfl⟩
-        dsimp only [MonoidHom.id_apply]
-        rw [← map_smul, hstage, hstage, map_smul]
-      map_star' x := by
-        refine hd.induction_on x
-          (isClosed_eq (cont.comp continuous_star) (continuous_star.comp cont)) ?_
-        rintro ⟨_, u⟩
-        rcases Set.mem_iUnion.mp u with ⟨n, a, rfl⟩
-        dsimp only
-        rw [← map_star, hstage, hstage, map_star] }
-
-private theorem hom_ι_eq_stageHom (hc : IsApproxCocone α ξ F τ) (hι : IsSeqColimitCone α ι)
-    (n : ℕ) (a : A n) : hc.hom hι (ι n a) = hc.stageHom n a := by
-  let hd : DenseRange ((↑) : ↥(⋃ m, Set.range (ι m)) → C) :=
-    hι.dense_iUnion_range.denseRange_val
-  let hi : IsUniformInducing ((↑) : ↥(⋃ m, Set.range (ι m)) → C) :=
-    isometry_subtype_coe.isUniformInducing
-  have hu : ι n a ∈ ⋃ m, Set.range (ι m) := Set.mem_iUnion.mpr ⟨n, a, rfl⟩
-  exact (uniformly_extend_of_ind hi hd
-    (hc.lipschitzWith_unionFun hι).uniformContinuous ⟨ι n a, hu⟩).trans
-    (hc.unionFun_apply hι n a hu)
+    C →⋆ₙₐ[ℂ] D :=
+  hι.lift hc.stageHom hc.stageHom_comp
 
 /-- On every stage element `a : A n`, the forward images `ξ (n + k) (seqTransHom α _ a)` converge
 in norm to `hc.hom hι (ι n a)`. -/
@@ -532,7 +501,7 @@ theorem tendsto_hom (hc : IsApproxCocone α ξ F τ) (hι : IsSeqColimitCone α 
     (n : ℕ) (a : A n) :
     Tendsto (fun k ↦ ξ (n + k) (seqTransHom α (Nat.le_add_right n k) a))
       atTop (𝓝 (hc.hom hι (ι n a))) := by
-  rw [hc.hom_ι_eq_stageHom hι]
+  rw [hom, hι.lift_apply]
   exact hc.tendsto_stageHom n a
 
 /-- Uniqueness of the limit `⋆`-homomorphism induced by an approximate cocone. -/
@@ -706,7 +675,7 @@ private theorem backward_comp_forward (h : IsApproximateIntertwining α β φ ψ
           (h.summable_δ.tendsto_atTop_zero.comp hshift₂)
     exact tendsto_nhds_unique hlim₁ hlim₂
   refine hιA.hom_ext fun n a ↦ ?_
-  change Ψ (Φ (ιA n a)) = ιA n a
+  simp only [NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.coe_id, id_eq]
   refine sub_eq_zero.mp <| norm_le_zero_iff.mp <| le_of_forall_pos_le_add fun r hr ↦ ?_
   obtain ⟨k, x, hxF, hax⟩ := h.approx_A n a (r / 2) (half_pos hr)
   rw [zero_add, ← hιA.comp_seqTransHom_apply (Nat.le_add_right n k) a]
@@ -774,7 +743,7 @@ private theorem forward_comp_backward (h : IsApproximateIntertwining α β φ ψ
           (h.summable_ε.tendsto_atTop_zero.comp hshift)
     exact tendsto_nhds_unique hlim₁ hlim₂
   refine hιB.hom_ext fun n b ↦ ?_
-  change Φ (Ψ (ιB n b)) = ιB n b
+  simp only [NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.coe_id, id_eq]
   refine sub_eq_zero.mp <| norm_le_zero_iff.mp <| le_of_forall_pos_le_add fun r hr ↦ ?_
   obtain ⟨k, y, hyG, hby⟩ := h.approx_B n b (r / 2) (half_pos hr)
   rw [zero_add, ← hιB.comp_seqTransHom_apply (Nat.le_add_right n k) b]

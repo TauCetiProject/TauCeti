@@ -107,6 +107,20 @@ variable {A B : ℕ → Type*} [∀ n, CStarAlgebra (A n)] [∀ n, CStarAlgebra 
   {α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)} {β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1)}
   {φ₀ : ∀ n, A n →⋆ₙₐ[ℂ] B (n + 1)} {ψ₀ : ∀ n, B n →⋆ₙₐ[ℂ] A n}
 
+private theorem exists_conjHom_comp_sub_le {X Y Z : Type*}
+    [NonUnitalCStarAlgebra X] [CStarAlgebra Y] [CStarAlgebra Z]
+    {f : X →⋆ₙₐ[ℂ] Y} {g : Y →⋆ₙₐ[ℂ] Z} {h : X →⋆ₙₐ[ℂ] Z}
+    (hgf : ApproximatelyUnitarilyEquivalent (g.comp f) h)
+    (w : unitary Y) (S : Finset X) {ε : ℝ} (hε : 0 < ε) :
+    ∃ u : unitary Z, ∀ x ∈ S, ‖conjHom u g (conjHom w f x) - h x‖ ≤ ε := by
+  have hEq : ApproximatelyUnitarilyEquivalent (g.comp (conjHom w f)) h :=
+    ((ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp w f).postcomp_nonUnital g).trans hgf
+  obtain ⟨u, hu⟩ := (approximatelyUnitarilyEquivalent_def _ _).mp hEq S ε hε
+  refine ⟨u, fun x hx ↦ ?_⟩
+  simpa only [conjHom, NonUnitalStarAlgHom.comp_apply,
+    StarAlgEquiv.toNonUnitalStarAlgHom_apply, Unitary.conjStarAlgAut_apply,
+    Unitary.coe_star] using (hu x hx).le
+
 open Classical in
 private noncomputable def zigZagZero
     (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1))
@@ -116,19 +130,12 @@ private noncomputable def zigZagZero
   let G₀ : Finset (B 0) := denseSeed β 0
   let u₀ : unitary (A 0) := 1
   let F₀ : Finset (A 0) := G₀.image (conjHom u₀ (ψ₀ 0)) ∪ denseSeed α 0
-  let hB₀ : ApproximatelyUnitarilyEquivalent ((φ₀ 0).comp (conjHom u₀ (ψ₀ 0))) (β 0) :=
-    ((ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp u₀ (ψ₀ 0)).postcomp_nonUnital
-      (φ₀ 0)).trans (hφψ 0)
-  let hex := (approximatelyUnitarilyEquivalent_def _ _).mp hB₀ G₀ ((1 / 2 : ℝ) ^ 0) (by positivity)
+  let hv := exists_conjHom_comp_sub_le (hφψ 0) u₀ G₀ (ε := (1 / 2 : ℝ) ^ 0) (by positivity)
   { u := u₀
-    v := hex.choose
+    v := hv.choose
     F := F₀
     G := G₀
-    norm_φ_ψ_sub_le := fun b hb ↦ by
-      have hb' := (hex.choose_spec b hb).le
-      simpa only [conjHom, NonUnitalStarAlgHom.comp_apply,
-        StarAlgEquiv.toNonUnitalStarAlgHom_apply, Unitary.conjStarAlgAut_apply,
-        Unitary.coe_star] using hb' }
+    norm_φ_ψ_sub_le := hv.choose_spec }
 
 open Classical in
 private noncomputable def zigZagSucc
@@ -139,28 +146,28 @@ private noncomputable def zigZagSucc
     (n : ℕ) (s : ZigZagStage β φ₀ ψ₀ n) : ZigZagStage β φ₀ ψ₀ (n + 1) :=
   let G' : Finset (B (n + 1)) :=
     s.G.image (β n) ∪ s.F.image (conjHom s.v (φ₀ n)) ∪ denseSeed β (n + 1)
-  let hA : ApproximatelyUnitarilyEquivalent ((ψ₀ (n + 1)).comp (conjHom s.v (φ₀ n))) (α n) :=
-    ((ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp s.v (φ₀ n)).postcomp_nonUnital
-      (ψ₀ (n + 1))).trans (hψφ n)
-  let hexA := (approximatelyUnitarilyEquivalent_def _ _).mp hA s.F ((1 / 2 : ℝ) ^ n) (by positivity)
-  let u' : unitary (A (n + 1)) := hexA.choose
+  let hu := exists_conjHom_comp_sub_le (hψφ n) s.v s.F (ε := (1 / 2 : ℝ) ^ n) (by positivity)
+  let u' : unitary (A (n + 1)) := hu.choose
   let F' : Finset (A (n + 1)) :=
     s.F.image (α n) ∪ G'.image (conjHom u' (ψ₀ (n + 1))) ∪ denseSeed α (n + 1)
-  let hB : ApproximatelyUnitarilyEquivalent
-      ((φ₀ (n + 1)).comp (conjHom u' (ψ₀ (n + 1)))) (β (n + 1)) :=
-    ((ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp u' (ψ₀ (n + 1))).postcomp_nonUnital
-      (φ₀ (n + 1))).trans (hφψ (n + 1))
-  let hexB := (approximatelyUnitarilyEquivalent_def _ _).mp hB G'
-    ((1 / 2 : ℝ) ^ (n + 1)) (by positivity)
+  let hv := exists_conjHom_comp_sub_le (hφψ (n + 1)) u' G'
+    (ε := (1 / 2 : ℝ) ^ (n + 1)) (by positivity)
   { u := u'
-    v := hexB.choose
+    v := hv.choose
     F := F'
     G := G'
-    norm_φ_ψ_sub_le := fun b hb ↦ by
-      have hb' := (hexB.choose_spec b hb).le
-      simpa only [conjHom, NonUnitalStarAlgHom.comp_apply,
-        StarAlgEquiv.toNonUnitalStarAlgHom_apply, Unitary.conjStarAlgAut_apply,
-        Unitary.coe_star] using hb' }
+    norm_φ_ψ_sub_le := hv.choose_spec }
+
+private theorem zigZagSucc_norm_ψ_φ_sub_le
+    (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1))
+    (φ₀ : ∀ n, A n →⋆ₙₐ[ℂ] B (n + 1)) (ψ₀ : ∀ n, B n →⋆ₙₐ[ℂ] A n)
+    (hψφ : ∀ n, ApproximatelyUnitarilyEquivalent ((ψ₀ (n + 1)).comp (φ₀ n)) (α n))
+    (hφψ : ∀ n, ApproximatelyUnitarilyEquivalent ((φ₀ n).comp (ψ₀ n)) (β n))
+    (n : ℕ) (s : ZigZagStage β φ₀ ψ₀ n) {a : A n} (ha : a ∈ s.F) :
+    ‖conjHom (zigZagSucc α β φ₀ ψ₀ hψφ hφψ n s).u (ψ₀ (n + 1)) (conjHom s.v (φ₀ n) a) - α n a‖ ≤
+      (1 / 2 : ℝ) ^ n :=
+  (exists_conjHom_comp_sub_le (hψφ n) s.v s.F (ε := (1 / 2 : ℝ) ^ n)
+    (by positivity)).choose_spec a ha
 
 private noncomputable def zigZag
     (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1))
@@ -170,6 +177,15 @@ private noncomputable def zigZag
     ∀ n, ZigZagStage β φ₀ ψ₀ n
   | 0 => zigZagZero α β φ₀ ψ₀ hφψ
   | n + 1 => zigZagSucc α β φ₀ ψ₀ hψφ hφψ n (zigZag α β φ₀ ψ₀ hψφ hφψ n)
+
+private theorem zigZag_succ
+    (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1))
+    (φ₀ : ∀ n, A n →⋆ₙₐ[ℂ] B (n + 1)) (ψ₀ : ∀ n, B n →⋆ₙₐ[ℂ] A n)
+    (hψφ : ∀ n, ApproximatelyUnitarilyEquivalent ((ψ₀ (n + 1)).comp (φ₀ n)) (α n))
+    (hφψ : ∀ n, ApproximatelyUnitarilyEquivalent ((φ₀ n).comp (ψ₀ n)) (β n)) (n : ℕ) :
+    zigZag α β φ₀ ψ₀ hψφ hφψ (n + 1) =
+      zigZagSucc α β φ₀ ψ₀ hψφ hφψ n (zigZag α β φ₀ ψ₀ hψφ hφψ n) :=
+  rfl
 
 /-- Given sequential systems `(A, α)` and `(B, β)` of separable unital C⋆-algebras and stage maps
 `φ₀ n : A n →⋆ₙₐ[ℂ] B (n + 1)` and `ψ₀ n : B n →⋆ₙₐ[ℂ] A n` whose triangles commute up to
@@ -188,14 +204,16 @@ theorem IsApproximateIntertwining.exists_of_approximatelyUnitarilyEquivalent
         (fun n ↦ (F n : Set (A n))) (fun n ↦ (G n : Set (B n)))
         (fun n ↦ (1 / 2 : ℝ) ^ n) (fun n ↦ (1 / 2 : ℝ) ^ n) := by
   classical
-  let z := zigZag α β φ₀ ψ₀ hψφ hφψ
-  have hseedA (m : ℕ) : denseSeed α m ⊆ (z m).F := by
+  have hseedA (m : ℕ) : denseSeed α m ⊆ (zigZag α β φ₀ ψ₀ hψφ hφψ m).F := by
     cases m <;> exact Finset.subset_union_right
-  have hseedB (m : ℕ) : denseSeed β m ⊆ (z m).G := by
+  have hseedB (m : ℕ) : denseSeed β m ⊆ (zigZag α β φ₀ ψ₀ hψφ hφψ m).G := by
     cases m with
     | zero => exact Finset.Subset.refl _
     | succ m => exact Finset.subset_union_right
-  refine ⟨fun n ↦ (z n).u, fun n ↦ (z n).v, fun n ↦ (z n).F, fun n ↦ (z n).G, ?_⟩
+  refine ⟨fun n ↦ (zigZag α β φ₀ ψ₀ hψφ hφψ n).u,
+    fun n ↦ (zigZag α β φ₀ ψ₀ hψφ hφψ n).v,
+    fun n ↦ (zigZag α β φ₀ ψ₀ hψφ hφψ n).F,
+    fun n ↦ (zigZag α β φ₀ ψ₀ hψφ hφψ n).G, ?_⟩
   refine
     { mapsTo_α := fun n a ha ↦ Finset.mem_coe.mpr <|
         Finset.mem_union_left _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ ha))
@@ -213,17 +231,10 @@ theorem IsApproximateIntertwining.exists_of_approximatelyUnitarilyEquivalent
       approx_A := exists_approx_of_denseSeed_subset α hseedA
       approx_B := exists_approx_of_denseSeed_subset β hseedB
       norm_ψ_φ_sub_le := fun n a ha ↦ by
-        let s := z n
-        let hA : ApproximatelyUnitarilyEquivalent ((ψ₀ (n + 1)).comp (conjHom s.v (φ₀ n))) (α n) :=
-          ((ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp s.v (φ₀ n)).postcomp_nonUnital
-            (ψ₀ (n + 1))).trans (hψφ n)
-        have hexA := (approximatelyUnitarilyEquivalent_def _ _).mp hA s.F
-          ((1 / 2 : ℝ) ^ n) (by positivity)
-        have ha' := (hexA.choose_spec a ha).le
-        simpa only [z, zigZag, zigZagSucc, s, conjHom, NonUnitalStarAlgHom.comp_apply,
-          StarAlgEquiv.toNonUnitalStarAlgHom_apply, Unitary.conjStarAlgAut_apply,
-          Unitary.coe_star] using ha'
-      norm_φ_ψ_sub_le := fun n b hb ↦ (z n).norm_φ_ψ_sub_le b hb
+        dsimp only
+        rw [zigZag_succ]
+        exact zigZagSucc_norm_ψ_φ_sub_le α β φ₀ ψ₀ hψφ hφψ n _ (Finset.mem_coe.mp ha)
+      norm_φ_ψ_sub_le := fun n b hb ↦ (zigZag α β φ₀ ψ₀ hψφ hφψ n).norm_φ_ψ_sub_le b hb
       summable_δ := summable_geometric_two
       summable_ε := summable_geometric_two }
 
