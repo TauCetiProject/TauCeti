@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Helly
+public import TauCeti.Combinatorics.Graph.Serre.Convex.Basic
+public import TauCeti.Combinatorics.Graph.Serre.Dist
 public import Mathlib.Data.List.NodupEquivFin
 public import Mathlib.SetTheory.Cardinal.Finite
 
@@ -31,10 +32,11 @@ go to `a`, `b` and `c`, each dart crossed from `a` to `m` is crossed along both 
 
 In an acyclic graph the darts crossed from `a` to `b` and the vertices between them are those of
 a reduced path from `a` to `b`, when there is one, since it is a shortest path. The vertices
-between two vertices then form a convex set, so in a tree Helly's theorem for subtrees gives a
-vertex between any two of three given vertices. It is unique because a vertex between `a` and `b`
-is determined by its distance from `a`, and for a median `m` the three equations of betweenness
-force `2 dist a m = dist a b + dist a c - dist b c`.
+between `a` and `b` then form a convex set, and for a third vertex `c` in the same component, a
+vertex of this set nearest to `c` lies between any two of `a`, `b` and `c`: a reduced path from `c`
+to it continues to `a` and to `b` without backtracking. This median is unique because a vertex
+between `a` and `b` is determined by its distance from `a`, and for a median `m` the three
+equations of betweenness force `2 dist a m = dist a b + dist a c - dist b c`.
 
 ## Main definitions
 
@@ -50,11 +52,13 @@ force `2 dist a m = dist a b + dist a c - dist b c`.
   from `a` to `b` are the darts of a reduced path `p` from `a` to `b`.
 * `TauCeti.SerreGraph.IsAcyclic.natCard_crosses`: in an acyclic graph, `dist a b` darts are
   crossed from `a` to `b`.
+* `TauCeti.SerreGraph.IsAcyclic.crosses_or_crosses`: in an acyclic graph, a dart crossed from `a`
+  to `b` is crossed from `a` to `c` or from `c` to `b`, for every vertex `c` joined to `a`.
 * `TauCeti.SerreGraph.IsAcyclic.crosses_iff_crosses_or_crosses`: in an acyclic graph, the darts
   crossed from `a` to `b` are those crossed from `a` to `m` or from `m` to `b`, for `m` between
   `a` and `b`.
-* `TauCeti.SerreGraph.IsTree.existsUnique_isBetween`: three vertices of a tree have a unique
-  median.
+* `TauCeti.SerreGraph.IsAcyclic.existsUnique_isBetween`: in an acyclic graph, three vertices joined
+  by paths have a unique median.
 
 ## References
 
@@ -200,17 +204,17 @@ theorem Crosses.dist_pos (h : Γ.Crosses a b e) : 0 < Γ.dist a b := by
 @[simp] theorem not_crosses_self (a : Γ.V) (e : Γ.E) : ¬Γ.Crosses a a e :=
   fun h => h.dist_pos.ne' (dist_self a)
 
-/-- A dart and its reverse are not both crossed from `a` to `b`. -/
-theorem Crosses.not_crosses_rev (h : Γ.Crosses a b e) : ¬Γ.Crosses a b (Γ.rev e) := fun h' => by
+/-- If a dart is crossed from `a` to some vertex, then its reverse is not crossed from `a` to any
+vertex: the dart leads away from `a`. -/
+theorem Crosses.not_crosses_rev (h : Γ.Crosses a b e) : ¬Γ.Crosses a c (Γ.rev e) := fun h' => by
   have := h.dist_tgt
   have := h'.dist_tgt
   rw [src_rev, tgt_rev] at this
   lia
 
 /-- A dart crossed from `a` to `m` is not crossed from `m` to any vertex: it leads towards `m`. -/
-theorem Crosses.not_crosses_right (h : Γ.Crosses a m e) : ¬Γ.Crosses m b e := fun h' => by
-  simp only [crosses_iff, isBetween_iff] at h h'
-  grind [dist_comm]
+theorem Crosses.not_crosses_right (h : Γ.Crosses a m e) : ¬Γ.Crosses m b e := by
+  simpa using (crosses_rev.mpr h).not_crosses_rev
 
 /-- If `m` lies between `a` and `b`, then a dart crossed from `a` to `m` is crossed from `a` to
 `b`. -/
@@ -255,6 +259,12 @@ theorem crosses_iff_exists_length_eq_dist :
   obtain ⟨q, r, -, h⟩ := h.exists_cons_comp_length_eq_dist
   exact ⟨_, h, by simp⟩
 
+/-- A dart crossed from `a` to `b` is crossed from its source to `b`. -/
+theorem Crosses.crosses_src (h : Γ.Crosses a b e) : Γ.Crosses (Γ.src e) b e := by
+  obtain ⟨q, r, -, hqr⟩ := h.exists_cons_comp_length_eq_dist
+  rw [← Quiver.Path.comp_toPath_eq_cons, Quiver.Path.comp_assoc] at hqr
+  exact Path.crosses_of_length_eq_dist (length_eq_dist_of_comp_right hqr) (by simp)
+
 /-- A vertex `x ≠ b` between `a` and `b` is the source of a dart crossed from `a` to `b`. -/
 theorem exists_crosses_of_isBetween (hx : Γ.IsBetween a x b) (hxb : x ≠ b) :
     ∃ e : Γ.E, Γ.Crosses a b e ∧ Γ.src e = x := by
@@ -283,23 +293,35 @@ theorem IsAcyclic.crosses_iff_mem_darts (h : Γ.IsAcyclic) {p : Γ.Path a b}
   obtain ⟨q, hq, heq⟩ := crosses_iff_exists_length_eq_dist.mp he
   rwa [h.eq_of_isReduced hp (Path.isReduced_of_length_le_dist hq.le)]
 
+/-- In an acyclic graph, a dart crossed from `a` to `b` is crossed from `a` to `c` or from `c` to
+`b`, for every vertex `c` joined to `a`. -/
+theorem IsAcyclic.crosses_or_crosses (h : Γ.IsAcyclic) (he : Γ.Crosses a b e)
+    (hc : Nonempty (Γ.Path a c)) : Γ.Crosses a c e ∨ Γ.Crosses c b e := by
+  obtain ⟨p⟩ := hc
+  obtain ⟨q⟩ := he.isBetween_src.nonempty_path
+  -- The reduced path from `a` to `b` only uses darts of the reduced paths through `c`.
+  have hp := Path.isReduced_reduce Γ p
+  have hq := Path.isReduced_reduce Γ (p.reverse.comp q)
+  have hr := (h.darts_sublist (Path.isReduced_reduce Γ q) ((Path.reduce Γ p).comp
+    (Path.reduce Γ (p.reverse.comp q)))).subset
+    ((h.crosses_iff_mem_darts (Path.isReduced_reduce Γ q)).mp he)
+  rw [Path.darts_comp, List.mem_append] at hr
+  exact hr.imp (h.crosses_iff_mem_darts hp).mpr (h.crosses_iff_mem_darts hq).mpr
+
 /-- In an acyclic graph, if `m` lies between `a` and `b`, then a dart is crossed from `a` to `b`
 exactly when it is crossed from `a` to `m` or from `m` to `b`. -/
 theorem IsAcyclic.crosses_iff_crosses_or_crosses (h : Γ.IsAcyclic) (hm : Γ.IsBetween a m b) :
-    Γ.Crosses a b e ↔ Γ.Crosses a m e ∨ Γ.Crosses m b e := by
-  refine ⟨fun he => ?_, fun he => he.elim hm.crosses_of_crosses_left hm.crosses_of_crosses_right⟩
-  obtain ⟨p, hp, hmp⟩ := isBetween_iff_exists_length_eq_dist.mp hm
-  obtain ⟨q, r, rfl⟩ := p.exists_eq_comp_of_mem_vertices hmp
-  have := (h.crosses_iff_mem_darts (Path.isReduced_of_length_le_dist hp.le)).mp he
-  rw [Path.darts_comp, List.mem_append] at this
-  exact this.imp (Path.crosses_of_length_eq_dist (length_eq_dist_of_comp_left hp))
-    (Path.crosses_of_length_eq_dist (length_eq_dist_of_comp_right hp))
+    Γ.Crosses a b e ↔ Γ.Crosses a m e ∨ Γ.Crosses m b e :=
+  ⟨fun he => h.crosses_or_crosses he hm.nonempty_path_left,
+    fun he => he.elim hm.crosses_of_crosses_left hm.crosses_of_crosses_right⟩
 
-/-- In an acyclic graph, a dart crossed from `a` to `b` is determined by its source. -/
-theorem IsAcyclic.eq_of_crosses_of_src_eq (h : Γ.IsAcyclic) {e e' : Γ.E} (he : Γ.Crosses a b e)
-    (he' : Γ.Crosses a b e') (hs : Γ.src e = Γ.src e') : e = e' := by
-  -- The two shortest paths through `e` and through `e'` coincide, and so do their prefixes.
-  obtain ⟨q, r, hq, hqr⟩ := he.exists_cons_comp_length_eq_dist
+/-- In an acyclic graph, a dart crossed to `b`, from any vertex, is determined by its source. -/
+theorem IsAcyclic.eq_of_crosses_of_src_eq (h : Γ.IsAcyclic) {a' : Γ.V} {e e' : Γ.E}
+    (he : Γ.Crosses a b e) (he' : Γ.Crosses a' b e') (hs : Γ.src e = Γ.src e') : e = e' := by
+  -- Both darts are crossed from their common source to `b`; the shortest paths through them
+  -- coincide, and so do their prefixes.
+  replace he' : Γ.Crosses (Γ.src e) b e' := hs ▸ he'.crosses_src
+  obtain ⟨q, r, hq, hqr⟩ := he.crosses_src.exists_cons_comp_length_eq_dist
   obtain ⟨q', r', hq', hqr'⟩ := he'.exists_cons_comp_length_eq_dist
   have := congrArg (Path.darts Γ) (h.eq_of_isReduced (Path.isReduced_of_length_le_dist hqr.le)
     (Path.isReduced_of_length_le_dist hqr'.le))
@@ -336,29 +358,21 @@ theorem IsAcyclic.natCard_crosses (h : Γ.IsAcyclic) (a b : Γ.V) :
 `b`, for every vertex `c` joined to `a`. -/
 theorem IsAcyclic.isBetween_or_isBetween (h : Γ.IsAcyclic) (hx : Γ.IsBetween a x b)
     (hc : Nonempty (Γ.Path a c)) : Γ.IsBetween a x c ∨ Γ.IsBetween c x b := by
-  obtain ⟨p⟩ := hc
-  obtain ⟨q⟩ := hx.nonempty_path
   rcases eq_or_ne x b with rfl | hxb
-  · exact .inr (isBetween_right ⟨p.reverse.comp q⟩)
+  · obtain ⟨p⟩ := hc
+    obtain ⟨q⟩ := hx.nonempty_path_left
+    exact .inr (isBetween_right ⟨p.reverse.comp q⟩)
   obtain ⟨e, he, rfl⟩ := exists_crosses_of_isBetween hx hxb
-  -- The reduced path from `a` to `b` is the reduction of the reduced paths through `c`.
-  have hp := Path.isReduced_reduce Γ p
-  have hq := Path.isReduced_reduce Γ (p.reverse.comp q)
-  have hr := (Path.darts_reduce_sublist Γ
-    ((Path.reduce Γ p).comp (Path.reduce Γ (p.reverse.comp q)))).subset
-    ((h.crosses_iff_mem_darts (Path.isReduced_reduce Γ _)).mp he)
-  rw [Path.darts_comp, List.mem_append] at hr
-  exact hr.imp (fun he => ((h.crosses_iff_mem_darts hp).mpr he).isBetween_src)
-    (fun he => ((h.crosses_iff_mem_darts hq).mpr he).isBetween_src)
+  exact (h.crosses_or_crosses he hc).imp Crosses.isBetween_src Crosses.isBetween_src
 
 /-- In an acyclic graph, the vertices between two vertices form a convex set. -/
 theorem IsAcyclic.isConvex_setOf_isBetween (h : Γ.IsAcyclic) (a b : Γ.V) :
     Γ.IsConvex {x | Γ.IsBetween a x b} := by
-  refine isConvex_iff.mpr fun u hu v hv p hp e he => ?_
-  rcases h.isBetween_or_isBetween ((h.crosses_iff_mem_darts hp).mpr he).isBetween_src
-    hu.symm.nonempty_path_right with hw | hw
-  · exact hu.trans_left hw.symm
-  · exact hv.trans_left hw
+  -- They are the vertices of a reduced path from `a` to `b`.
+  refine isConvex_iff.mpr fun u (hu : Γ.IsBetween a u b) v hv => ?_
+  obtain ⟨p⟩ := hu.nonempty_path
+  simp only [Set.mem_ofPred_eq, h.isBetween_iff_mem_vertices (Path.isReduced_reduce Γ p)] at hu hv ⊢
+  exact isConvex_iff.mp (h.isConvex_setOf_mem_vertices _) u hu v hv
 
 /-- In an acyclic graph, a vertex between `a` and `b` is determined by its distance from `a`. -/
 theorem IsAcyclic.eq_of_isBetween_of_dist_eq (h : Γ.IsAcyclic) {y : Γ.V}
@@ -369,25 +383,40 @@ theorem IsAcyclic.eq_of_isBetween_of_dist_eq (h : Γ.IsAcyclic) {y : Γ.V}
   · exact (dist_eq_zero_iff h'.2.1).mp (by lia)
   · exact ((dist_eq_zero_iff h'.1).mp (by lia)).symm
 
+/-- In an acyclic graph, three vertices joined by paths have a unique median: a vertex lying
+between any two of them. -/
+theorem IsAcyclic.existsUnique_isBetween (h : Γ.IsAcyclic) (hab : Nonempty (Γ.Path a b))
+    (hac : Nonempty (Γ.Path a c)) :
+    ∃! m : Γ.V, Γ.IsBetween a m b ∧ Γ.IsBetween b m c ∧ Γ.IsBetween a m c := by
+  -- A vertex `m` between `a` and `b` nearest to `c` is a median: the reduced path from `c` to `m`
+  -- meets the convex set of vertices between `a` and `b` only at its end, so it continues without
+  -- backtracking to `a` and to `b`.
+  obtain ⟨m, hm : Γ.IsBetween a m b, hmin⟩ :=
+    exists_forall_dist_le (C := {x | Γ.IsBetween a x b}) ⟨a, isBetween_left hab⟩ c
+  obtain ⟨p⟩ := hac
+  obtain ⟨q⟩ := hm.nonempty_path_left
+  have hq := Path.isReduced_reduce Γ (p.reverse.comp q)
+  have key (x : Γ.V) (hx : Γ.IsBetween a x b) : Γ.IsBetween x m c := by
+    obtain ⟨r⟩ := hx.nonempty_path_left
+    refine ((h.isBetween_iff_mem_vertices ((h.isConvex_setOf_isBetween a b).isReduced_comp hm hx hq
+      (fun e he => h.src_notMem_of_forall_dist_le hmin hq (List.mem_of_mem_getLast? he))
+      (Path.isReduced_reduce Γ (q.reverse.comp r)))).mpr ?_).symm
+    simp [Quiver.Path.start_mem_vertices]
+  have hma := key a (isBetween_left hab)
+  have hmb := key b (isBetween_right hab)
+  refine ⟨m, ⟨hm, hmb, hma⟩, fun m' ⟨hab', hbc', hac'⟩ => h.eq_of_isBetween_of_dist_eq hab' hm ?_⟩
+  -- The distance from `a` to a median is determined by the distances between `a`, `b` and `c`.
+  have := Γ.dist_comm b m
+  have := Γ.dist_comm b m'
+  simp only [isBetween_iff] at hm hmb hma hab' hbc' hac'
+  lia
+
 /-! ### Trees -/
 
 /-- Three vertices of a tree have a unique median: a vertex lying between any two of them. -/
 theorem IsTree.existsUnique_isBetween (h : Γ.IsTree) (a b c : Γ.V) :
-    ∃! m : Γ.V, Γ.IsBetween a m b ∧ Γ.IsBetween b m c ∧ Γ.IsBetween a m c := by
-  -- The three sets of vertices between two of `a`, `b`, `c` are convex and pairwise meet.
-  have hp := h.nonempty_path
-  obtain ⟨m, ⟨hab, hbc⟩, hac⟩ := h.inter_inter_nonempty (h.isAcyclic.isConvex_setOf_isBetween a b)
-    (h.isAcyclic.isConvex_setOf_isBetween b c) (h.isAcyclic.isConvex_setOf_isBetween a c)
-    ⟨b, isBetween_right (hp a b), isBetween_left (hp b c)⟩
-    ⟨a, isBetween_left (hp a b), isBetween_left (hp a c)⟩
-    ⟨c, isBetween_right (hp b c), isBetween_right (hp a c)⟩
-  refine ⟨m, ⟨hab, hbc, hac⟩, fun m' ⟨hab', hbc', hac'⟩ =>
-    h.isAcyclic.eq_of_isBetween_of_dist_eq hab' hab ?_⟩
-  -- The distance from `a` to a median is determined by the distances between `a`, `b` and `c`.
-  have := Γ.dist_comm b m
-  have := Γ.dist_comm b m'
-  simp only [Set.mem_ofPred_eq, isBetween_iff] at hab hbc hac hab' hbc' hac'
-  lia
+    ∃! m : Γ.V, Γ.IsBetween a m b ∧ Γ.IsBetween b m c ∧ Γ.IsBetween a m c :=
+  h.isAcyclic.existsUnique_isBetween (h.nonempty_path a b) (h.nonempty_path a c)
 
 end SerreGraph
 
