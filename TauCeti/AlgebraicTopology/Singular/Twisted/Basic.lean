@@ -1152,6 +1152,7 @@ contravariant `Hom(-, M)`. -/
 instance isSplitMono_twistedChainsMap_app [Mono f] (k : SimplexCategoryᵒᵖ) :
     IsSplitMono ((twistedChainsMap f L).app k) :=
   TauCeti.isSplitMono_sigmaMap' (fun σ ↦ L.obj (initialVertex σ)) ((TopCat.toSSet.map f).app k)
+    ((mono_iff_injective _).1 inferInstance)
 
 /-- A monomorphism of spaces induces a degreewise split monomorphism of twisted chain
 complexes. -/
