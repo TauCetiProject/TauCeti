@@ -111,7 +111,8 @@ polynomial in the Morse inequalities.
 * `TauCeti.criticalCount` and `TauCeti.totalCriticalCount`: the extended counts of critical
   points, with `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
-  `TauCeti.IsMorse.criticalCount_neg`.
+  `TauCeti.IsMorse.criticalCount_neg`; in a band, the critical points of `-f` are those of `f`
+  with complementary index (`TauCeti.IsMorse.setOf_neg_band_eq`).
 * `TauCeti.criticalCount_zero_ne_zero` and `TauCeti.IsMorse.criticalCount_finrank_ne_zero`: on a
   nonempty compact manifold the minimum is a critical point of index `0` and, for a Morse function,
   the maximum is one of index the dimension.
@@ -1125,6 +1126,21 @@ theorem IsMorse.criticalCount_neg (hf : IsMorse I f) {j : ℕ} (hj : j ≤ Modul
   have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
     hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   omega
+
+/-- **Critical points of `-f` in a band.** The critical points of index `i` of `-f` with values
+in `(-b, -a]` are the critical points of the Morse function `f` with values in `[a, b)` and
+complementary index `dim M - i`. -/
+theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :
+    {x ∈ criticalPoints I (-f) ∩ (-f) ⁻¹' Ioc (-b) (-a) | manifoldMorseIndex I (-f) x = i} =
+      {x ∈ criticalPoints I f ∩ f ⁻¹' Ico a b |
+        manifoldMorseIndex I f x + i = Module.finrank ℝ E} := by
+  ext x
+  simp only [criticalPoints_neg, mem_ofPred_eq, mem_inter_iff, mem_preimage, Pi.neg_apply,
+    mem_Ioc, mem_Ico, neg_lt_neg_iff, neg_le_neg_iff]
+  constructor <;> rintro ⟨⟨hx, h₁, h₂⟩, h₃⟩ <;>
+  · have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+      hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+    exact ⟨⟨hx, h₂, h₁⟩, by omega⟩
 
 /-- **Signed counts of `f` and `-f`.** For a Morse function `f` on a manifold of dimension `m`, the
 signed counts `∑ᵢ (-1)ⁱ cᵢ` of the critical points of `-f` and of `f` differ by the factor `(-1)ᵐ`,

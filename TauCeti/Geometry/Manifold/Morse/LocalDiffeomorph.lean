@@ -31,6 +31,8 @@ preimages of those of `f`, with the same nondegeneracy and indices.
   nondegenerate critical points.
 * `IsLocalDiffeomorphAt.manifoldMorseIndex_comp`: at a critical point the Morse index of `f ∘ π`
   at `x` is that of `f` at `π x`.
+* `TauCeti.IsMorse.comp_isLocalDiffeomorph`: a Morse function pulls back to a Morse function along
+  a smooth local diffeomorphism, for instance to an open submanifold.
 
 ## References
 
@@ -87,3 +89,24 @@ theorem manifoldMorseIndex_comp
     morseIndex_congr_of_eventuallyEq (hcomp f), hpt]
 
 end IsLocalDiffeomorphAt
+
+namespace TauCeti
+
+variable {E H M M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace M'] [ChartedSpace H M'] [IsManifold I ∞ M] [IsManifold I ∞ M'] {π : M → M'}
+  {f : M' → ℝ}
+
+/-- **Morse functions pull back along local diffeomorphisms.** If `π` is a smooth local
+diffeomorphism and `f` is a Morse function, then `f ∘ π` is a Morse function: its critical points
+are the preimages of those of `f`, where it is nondegenerate exactly when `f` is. In particular
+the restriction of a Morse function to an open submanifold is a Morse function. -/
+theorem IsMorse.comp_isLocalDiffeomorph (hf : IsMorse I f) (hπ : IsLocalDiffeomorph I I ∞ π) :
+    IsMorse I (f ∘ π) := by
+  refine isMorse_iff.2 ⟨hf.contMDiff.comp hπ.contMDiff, fun x hx ↦ ?_⟩
+  rw [(hπ x).isManifoldNondegenerateCriticalPoint_comp_iff (by simp)]
+  exact hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+    (((hπ x).mem_criticalPoints_comp_iff (by simp)).1
+      (mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero.2 hx))
+
+end TauCeti
