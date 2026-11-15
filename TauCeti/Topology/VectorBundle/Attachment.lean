@@ -26,6 +26,12 @@ the disc-sphere pair with the Thom pair (`TauCeti.isIso_singularHomologyMap_disc
 `TauCeti.isIso_singularCohomologyMap_discSpherePairMap`), the relative homology and cohomology of
 `(Z, X)` are those of the Thom pair `(E, E₀)`.
 
+More generally, if a space `T` strong deformation retracts onto a closed subset `A` with a disc
+bundle attached along `S(E)` by a closed embedding of `D(E)` into `T`, then the relative homology
+of `(T, A)` is that of `(D(E), S(E))`
+(`TauCeti.exists_isIso_singularHomologyMap_of_homotopyRel_attach_discBundle`): the retraction
+identifies `(T, A)` with the attachment, to which the result above applies.
+
 This is how the attachment of a disc bundle is seen by homology. For instance, crossing a critical
 level of a Morse–Bott function attaches, up to homotopy, the negative disc bundle of each critical
 submanifold on the level to the sublevel below it; with `X` that lower sublevel and `Z` its union
@@ -51,6 +57,9 @@ radius `1/2`. So excision for the open cover of `Z` by `N` and the complement of
   sphere bundle induces isomorphisms `Hₙ(D(E), S(E)) ≅ Hₙ(Z, X)`.
 * `TauCeti.isIso_singularCohomologyMap_of_attach_discBundle`: the same in cohomology,
   `Hⁿ(Z, X) ≅ Hⁿ(D(E), S(E))`.
+* `TauCeti.exists_isIso_singularHomologyMap_of_homotopyRel_attach_discBundle`: a space which
+  strong deformation retracts onto a subset with a disc bundle attached has the relative homology
+  of the disc-sphere pair.
 
 ## References
 
@@ -527,5 +536,113 @@ theorem isIso_singularCohomologyMap_of_attach_discBundle :
     (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (subsetToThickening φ) n) _
 
 end Attach
+
+/-! ### Deformation retracts with an attached disc bundle -/
+
+section Deformation
+
+variable [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F] [∀ b, NormedSpace ℝ (E b)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
+  {Y : Type w} [TopologicalSpace Y] {A T D : Set Y} {g : TotalSpace F E → Y}
+
+/-- Attaching a disc bundle, for subsets of an ambient space: if `g` restricts to a closed
+embedding of `D(E)` with image `D`, sending a point of `D(E)` into the closed set `A` exactly when
+it lies in `S(E)`, then for `A ⊆ Z ⊆ A ∪ D` with `D ⊆ Z` the map of pairs `(D(E), S(E)) ⟶ (Z, A)`
+induced by `g` is an isomorphism on relative homology. -/
+private lemma exists_isIso_singularHomologyMap_attach_discBundle_subset
+    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) (hA : IsClosed A) {Z : Set Y}
+    (hAZ : A ⊆ Z) (hDZ : D ⊆ Z) (hZ : Z ⊆ A ∪ D)
+    (hg : IsClosedEmbedding ((discBundle F E).domRestrict g)) (hgD : g '' discBundle F E = D)
+    (hgA : ∀ v ∈ discBundle F E, g v ∈ A ↔ v ∈ sphereBundle F E) :
+    ∃ ψ : discSpherePair F E ⟶ TopPair.ofInclusion (X := TopCat.of Y) hAZ,
+      (∀ v : discBundle F E, Subtype.val (TopPair.Hom.fst ψ v) = g v) ∧
+      ∀ {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ),
+        IsIso (TopPair.singularHomologyMap ψ R n) := by
+  have hgZ (v : discBundle F E) : g v ∈ Z := hDZ (hgD ▸ mem_image_of_mem g v.2)
+  -- The corestriction `φ` of `g` attaches the disc bundle to `A` inside `Z`.
+  let φ : C(discBundle F E, Z) := ⟨fun v ↦ ⟨g v, hgZ v⟩, hg.continuous.subtype_mk _⟩
+  have hmem {x : Z} (hx : (x : Y) ∈ D) : ∃ v : discBundle F E, φ v = x := by
+    obtain ⟨v, hv, hvx⟩ := (hgD ▸ hx : (x : Y) ∈ g '' discBundle F E)
+    exact ⟨⟨v, hv⟩, Subtype.ext hvx⟩
+  have hφ : IsClosedEmbedding φ := by
+    refine (isClosedEmbedding_iff _).2 ⟨(IsEmbedding.subtypeVal.of_comp_iff).1 hg.isEmbedding, ?_⟩
+    have hrange : range φ = Subtype.val ⁻¹' D :=
+      Subset.antisymm (range_subset_iff.2 fun v ↦ hgD ▸ mem_image_of_mem g v.2) fun _ hx ↦ hmem hx
+    rw [hrange]
+    have hD : IsClosed D := hgD ▸ range_domRestrict g _ ▸ hg.isClosed_range
+    exact hD.preimage continuous_subtype_val
+  have hφA (v : discBundle F E) (hv : (v : TotalSpace F E) ∈ sphereBundle F E) : (φ v : Y) ∈ A :=
+    (hgA v v.2).2 hv
+  let ψ := TopPair.ofInclusionMap (X := TopCat.of (TotalSpace F E)) (Y := TopCat.of Y)
+    (sphereBundle_subset_discBundle F E) hAZ φ hφA
+  refine ⟨ψ, fun v ↦ congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply
+    (X := TopCat.of (TotalSpace F E)) (Y := TopCat.of Y) (hst := sphereBundle_subset_discBundle F E)
+    (hst' := hAZ) φ hφA v), fun R n ↦ ?_⟩
+  -- Presented as a map into the pair `(Z, A)` of a subset of `Z`, `ψ` attaches a disc bundle.
+  let e := TopPair.ofSubsetPreimageValIso (X := TopCat.of Y) hAZ
+  have hfst : TopPair.Hom.fst (ψ ≫ e.inv) = TopCat.ofHom φ := by
+    rw [TopPair.Hom.fst_comp, TopPair.ofSubsetPreimageValIso_inv_fst, TopPair.ofInclusionMap_fst]
+    -- The identity is that of `TopCat.of Z`, which `Category.comp_id` does not recognise through
+    -- the ambient space of the pair; both sides unfold to `TopCat.ofHom φ`.
+    rfl
+  have : IsIso (TopPair.singularHomologyMap (ψ ≫ e.inv) R n) :=
+    isIso_singularHomologyMap_of_attach_discBundle (f := ψ ≫ e.inv) (hnorm := hnorm)
+      (hf := by rw [hfst]; exact hφ) (hX := hA.preimage continuous_subtype_val)
+      (hfX := fun v hv ↦ (hgA v v.2).1 (by rw [hfst] at hv; exact hv))
+      (hfcover := by
+        rw [hfst]
+        exact eq_univ_of_forall fun x ↦ (hZ x.2).imp id fun hx ↦ hmem hx) R n
+  have : IsIso (TopPair.singularHomologyMap e.hom R n) :=
+    TopPair.isIso_singularHomologyMap e.hom e.inv
+      (by rw [Iso.hom_inv_id]; exact TopPair.Homotopy.refl _)
+      (by rw [Iso.inv_hom_id]; exact TopPair.Homotopy.refl _) R n
+  have hψ : ψ = (ψ ≫ e.inv) ≫ e.hom := by simp
+  rw [hψ, TopPair.singularHomologyMap_comp]
+  infer_instance
+
+/-- **A deformation retract onto a disc bundle attachment.** Let `E → B` be a real vector bundle
+whose fibre norm is continuous on the total space, let `A ⊆ T` be subsets of a space `Y` with `A`
+closed, and let `g` restrict to a closed embedding of the disc bundle `D(E)` into `Y` with image a
+subset `D` of `T`, sending a point of `D(E)` into `A` exactly when it lies in the sphere bundle
+`S(E)`. If `T` strong deformation retracts onto `A ∪ D`, through a retraction `r` and a homotopy
+`G` from it to the identity fixing `A ∪ D`, then `g` induces a map of pairs
+`(D(E), S(E)) ⟶ (T, A)` which is an isomorphism `Hₙ(D(E), S(E)) ≅ Hₙ(T, A)` on relative singular
+homology, with coefficients in any abelian category with coproducts, in every degree. -/
+theorem exists_isIso_singularHomologyMap_of_homotopyRel_attach_discBundle
+    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) (hAT : A ⊆ T) (hA : IsClosed A)
+    (hg : IsClosedEmbedding ((discBundle F E).domRestrict g)) (hgD : g '' discBundle F E = D)
+    (hDT : D ⊆ T) (hgA : ∀ v ∈ discBundle F E, g v ∈ A ↔ v ∈ sphereBundle F E)
+    (r : C(T, ↥(T ∩ (A ∪ D))))
+    (G : ((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel (ContinuousMap.id T)
+      {x | (x : Y) ∈ A ∪ D}) :
+    ∃ ψ : discSpherePair F E ⟶ TopPair.ofInclusion (X := TopCat.of Y) hAT,
+      (∀ v : discBundle F E, Subtype.val (TopPair.Hom.fst ψ v) = g v) ∧
+      ∀ {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ),
+        IsIso (TopPair.singularHomologyMap ψ R n) := by
+  have hAZ : A ⊆ T ∩ (A ∪ D) := fun x hx ↦ ⟨hAT hx, Or.inl hx⟩
+  have hZT : T ∩ (A ∪ D) ⊆ T := inter_subset_left
+  -- The disc bundle is attached to `A` inside `T ∩ (A ∪ D) = A ∪ D`, which includes into `T`.
+  obtain ⟨ψ₀, hψ₀, hiso⟩ := exists_isIso_singularHomologyMap_attach_discBundle_subset hnorm hA hAZ
+    (fun x hx ↦ ⟨hDT hx, Or.inr hx⟩) inter_subset_right hg hgD hgA
+  let ψ₁ :
+      TopPair.ofInclusion (X := TopCat.of Y) hAZ ⟶ TopPair.ofInclusion (X := TopCat.of Y) hAT :=
+    TopPair.ofInclusionMap hAZ hAT (ContinuousMap.inclusion hZT) fun _ hx ↦ hx
+  refine ⟨ψ₀ ≫ ψ₁, fun v ↦ ?_, fun R n ↦ ?_⟩
+  · have h₁ := TopPair.ofInclusionMap_fst_apply (X := TopCat.of Y) (Y := TopCat.of Y)
+      (hst := hAZ) (hst' := hAT) (ContinuousMap.inclusion hZT) (fun _ hx ↦ hx)
+      (TopPair.Hom.fst ψ₀ v)
+    exact (congrArg Subtype.val h₁).trans (hψ₀ v)
+  -- `ψ₁` induces isomorphisms since `T` deformation retracts onto `A ∪ D`.
+  have hset : {x : ↥T | (x : Y) ∈ T ∩ (A ∪ D)} = {x : ↥T | (x : Y) ∈ A ∪ D} := by
+    ext x
+    exact ⟨And.right, fun h ↦ ⟨x.2, h⟩⟩
+  have : IsIso (TopPair.singularHomologyMap ψ₁ R n) :=
+    TopPair.isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel
+      (X := TopCat.of Y) hAZ hZT r (hset ▸ G) R n
+  have := hiso R n
+  rw [TopPair.singularHomologyMap_comp]
+  infer_instance
+
+end Deformation
 
 end TauCeti
