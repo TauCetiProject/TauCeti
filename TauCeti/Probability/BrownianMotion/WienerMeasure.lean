@@ -16,7 +16,7 @@ import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.Probability.Distributions.Gaussian.CharFun
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
-import TauCeti.MeasureTheory.Constructions.BorelSpace.ContinuousMap
+import TauCeti.MeasureTheory.Measure.ContinuousMap
 import TauCeti.Probability.BrownianMotion.Countable
 import TauCeti.Probability.Process.Indistinguishable
 import TauCeti.Probability.Process.Kolmogorov
@@ -298,8 +298,8 @@ theorem eq_of_isPreBrownianReal_eval {W₁ W₂ : Measure C(ℝ≥0, ℝ)}
     (h₁ : IsPreBrownianReal (fun t (ω : C(ℝ≥0, ℝ)) ↦ ω t) W₁)
     (h₂ : IsPreBrownianReal (fun t (ω : C(ℝ≥0, ℝ)) ↦ ω t) W₂) :
     W₁ = W₂ := by
-  have : IsProbabilityMeasure W₁ := h₁.isGaussianProcess.isProbabilityMeasure
-  exact measure_eq_of_finset_eval_map_eq fun I ↦
+  have : IsProbabilityMeasure W₂ := h₂.isGaussianProcess.isProbabilityMeasure
+  exact continuousMap_measure_ext_of_forall_finset_map_restrict_eq fun I ↦
     (h₁.hasLaw I).map_eq.trans (h₂.hasLaw I).map_eq.symm
 
 end TauCeti
