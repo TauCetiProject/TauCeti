@@ -516,7 +516,7 @@ theorem divisorSheafZeroIso_inv_app_apply (U : Opens X)
 /-- **`h⁰(0) = 1`.** On a compact connected Riemann surface the global sections of `𝒪_0` form a
 one-dimensional complex vector space. -/
 @[simp]
-theorem finrank_divisorSheaf_zero [CompactSpace X] [ConnectedSpace X] :
+theorem finrank_divisorSheaf_zero [IsManifold 𝓘(ℂ) 1 X] [CompactSpace X] [ConnectedSpace X] :
     Module.finrank ℂ ((divisorSheaf (0 : WeilDivisor X)).obj.obj (op ⊤)) = 1 :=
   (((sheafToPresheaf _ _).mapIso (divisorSheafZeroIso X)).app
     (op ⊤)).toLinearEquiv.finrank_eq.trans
