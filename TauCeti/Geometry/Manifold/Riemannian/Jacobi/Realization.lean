@@ -157,10 +157,9 @@ theorem IsJacobiFieldOn.exists_geodesicVariation_of_isCompact_of_subset
   · let cov := leviCivitaConnection I M
     let p := γ a
     let v := curveVelocityWithin I γ s a
-    let φ : ℝ → ℝ := fun t ↦ 1 * t + (-a)
-    have hmaps : MapsTo φ s (geodesicInterval I M p v) := fun t ht ↦ by
-      simpa only [φ, one_mul, ← sub_eq_add_neg] using
-        hJ.isGeodesicCurveOn.sub_mem_geodesicInterval_of_isPreconnected hs ha ht
+    let φ : ℝ → ℝ := fun t ↦ t - a
+    have hmaps : MapsTo φ s (geodesicInterval I M p v) :=
+      fun _ ht ↦ hJ.isGeodesicCurveOn.sub_mem_geodesicInterval_of_isPreconnected hs ha ht
     have hK₀ : IsCompact (φ '' K) := hK.image (by fun_prop)
     have hdom : φ '' K ⊆ geodesicInterval I M p v :=
       image_subset_iff.mpr (hKs.trans hmaps)
@@ -175,11 +174,12 @@ theorem IsJacobiFieldOn.exists_geodesicVariation_of_isCompact_of_subset
       hF₀.comp (contMDiff_iff_contDiff.mpr
         (by fun_prop : ContDiff ℝ ∞ fun z : ℝ × ℝ ↦ (z.1, φ z.2))).contMDiffOn
         fun _ hz ↦ ⟨hz.1, hz.2⟩
-    have hF_geod : ∀ q ∈ U, IsGeodesicCurveOn I (F q) V := fun q hq ↦
-      (hgeod₀ q hq).comp_affine 1 (-a) hV.uniqueDiffOn fun _ hr ↦ hr
-    have hcurve_max : EqOn γ (maximalGeodesic I M p v ∘ φ) s := fun t ht ↦ by
-      simpa only [Function.comp_apply, φ, one_mul, ← sub_eq_add_neg] using
-        (hJ.isGeodesicCurveOn.maximalGeodesic_sub_eq_of_isPreconnected hs ha ht).symm
+    have hF_geod : ∀ q ∈ U, IsGeodesicCurveOn I (F q) V := fun q hq ↦ by
+      simpa only [F, φ, Function.comp_def, one_mul, ← sub_eq_add_neg] using
+        (hgeod₀ q hq).comp_affine 1 (-a) hV.uniqueDiffOn
+          fun _ hr ↦ by simpa only [V, φ, mem_preimage, one_mul, ← sub_eq_add_neg] using hr
+    have hcurve_max : EqOn γ (fun t ↦ maximalGeodesic I M p v (φ t)) s :=
+      fun _ ht ↦ (hJ.isGeodesicCurveOn.maximalGeodesic_sub_eq_of_isPreconnected hs ha ht).symm
     have hF0_eq : EqOn (F 0) γ s := fun t ht ↦
       (congrFun hbase (φ t)).trans (hcurve_max ht).symm
     -- Pull `variationField I F₀` back along `φ` via `tangentSpaceCast` and match initial data at
@@ -187,27 +187,12 @@ theorem IsJacobiFieldOn.exists_geodesicVariation_of_isCompact_of_subset
     -- to the same model space `E` as `TangentSpace I (maximalGeodesic I M p v (φ t))`.
     let X : ∀ t, TangentSpace I (γ t) := fun t ↦
       tangentSpaceCast I (maximalGeodesic I M p v (φ t)) (γ t) (variationField I F₀ (φ t))
-    have hX : IsJacobiFieldOn I γ X s :=
-      hW₀.comp_affine_of_eqOn 1 (-a) hJ.uniqueDiffOn hmaps hcurve_max
-    have hzero : φ a = 0 := by simp [φ]
-    have hXa : X a = J a := by
-      have h1 : HEq (X a) (variationField I F₀ (φ a)) :=
-        TauCeti.heq_tangentSpaceCast (hcurve_max ha).symm _
-      have h2 : HEq (variationField I F₀ (φ a)) (J a) := by
-        rw [hzero]
-        exact heq_of_eq hW₀_0
-      exact eq_of_heq (h1.trans h2)
-    have hDXa : alongCurveWithin cov γ X s a = alongCurveWithin cov γ J s a := by
-      have hD1 :=
-        hW₀.heq_alongCurveWithin_comp_affine_of_eqOn 1 (-a) hJ.uniqueDiffOn hmaps hcurve_max ha
-      rw [one_smul] at hD1
-      have hD2 : HEq (alongCurveWithin cov (maximalGeodesic I M p v) (variationField I F₀)
-          (geodesicInterval I M p v) (φ a)) (alongCurveWithin cov γ J s a) := by
-        rw [hzero]
-        exact heq_of_eq hDW₀_0
-      exact eq_of_heq (hD1.trans hD2)
+    obtain ⟨hXa, hDXa⟩ := Prod.mk.inj
+      (hW₀.prodMk_alongCurveWithin_comp_sub_const_eq_of_eqOn_of_heq
+        hJ.uniqueDiffOn hmaps hcurve_max ha (heq_of_eq hW₀_0) (heq_of_eq hDW₀_0))
     have hXJ : ∀ t ∈ s, X t = J t := fun _ ht ↦
-      hX.eq_of_eq_of_alongCurveWithin_eq hJ hs ha hXa hDXa ht
+      (hW₀.comp_sub_const_of_eqOn a hJ.uniqueDiffOn hmaps
+        hcurve_max).eq_of_eq_of_alongCurveWithin_eq hJ hs ha hXa hDXa ht
     refine ⟨F, U, V, hU, hV, h0U, hKV, hF_smooth, hF_geod, hF0_eq, fun t ht ↦ ?_⟩
     have hvar : variationField I F t = variationField I F₀ (φ t) := by
       rw [variationField_def, variationField_def]

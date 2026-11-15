@@ -6,15 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Space
-import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Extension
 import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Flow
 import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Reparametrization
 import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Smoothness
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.InitialData
-import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.Section.LinearFamily
 
 /-!
 # Jacobi fields with prescribed initial data
@@ -105,37 +103,18 @@ theorem IsGeodesicCurveOn.exists_isJacobiFieldOn
     ∃ X : ∀ t, TangentSpace I (γ t),
       IsJacobiFieldOn I γ X s ∧ X a = u ∧
       alongCurveWithin (leviCivitaConnection I M) γ X s a = w := by
-  let cov := leviCivitaConnection I M
   let p := γ a
   let v := curveVelocityWithin I γ s a
   obtain ⟨V₀, hV₀, hu₀, hw₀⟩ := exists_isJacobiFieldOn_maximalGeodesic_initialData p v u w
-  have hmaps : MapsTo (fun t : ℝ ↦ 1 * t + (-a)) s (geodesicInterval I M p v) := fun t ht ↦ by
-    simpa only [one_mul, ← sub_eq_add_neg] using
-      hγ.sub_mem_geodesicInterval_of_isPreconnected hs ha ht
-  have hcurve : EqOn γ (maximalGeodesic I M p v ∘ fun t : ℝ ↦ 1 * t + (-a)) s := fun t ht ↦ by
-    simpa only [Function.comp_apply, one_mul, ← sub_eq_add_neg] using
-      (hγ.maximalGeodesic_sub_eq_of_isPreconnected hs ha ht).symm
-  let X : ∀ t, TangentSpace I (γ t) := fun t ↦
-    tangentSpaceCast I (maximalGeodesic I M p v (1 * t + (-a))) (γ t) (V₀ (1 * t + (-a)))
-  have hX : IsJacobiFieldOn I γ X s :=
-    hV₀.comp_affine_of_eqOn 1 (-a) hγ.uniqueDiffOn hmaps hcurve
-  have hzero : 1 * a + (-a) = 0 := by ring
-  have hXa : X a = u := by
-    have h1 : HEq (X a) (V₀ (1 * a + (-a))) :=
-      TauCeti.heq_tangentSpaceCast (hcurve ha).symm _
-    have h2 : HEq (V₀ (1 * a + (-a))) u := by
-      rw [hzero]
-      exact heq_of_eq hu₀
-    exact eq_of_heq (h1.trans h2)
-  have hDXa : alongCurveWithin cov γ X s a = w := by
-    have hD1 := hV₀.heq_alongCurveWithin_comp_affine_of_eqOn 1 (-a) hγ.uniqueDiffOn hmaps hcurve ha
-    rw [one_smul] at hD1
-    have hD2 : HEq (alongCurveWithin cov (maximalGeodesic I M p v) V₀
-        (geodesicInterval I M p v) (1 * a + (-a))) w := by
-      rw [hzero]
-      exact heq_of_eq hw₀
-    exact eq_of_heq (hD1.trans hD2)
-  exact ⟨X, hX, hXa, hDXa⟩
+  have hmaps : MapsTo (fun t : ℝ ↦ t - a) s (geodesicInterval I M p v) :=
+    fun _ ht ↦ hγ.sub_mem_geodesicInterval_of_isPreconnected hs ha ht
+  have hcurve : EqOn γ (fun t ↦ maximalGeodesic I M p v (t - a)) s :=
+    fun _ ht ↦ (hγ.maximalGeodesic_sub_eq_of_isPreconnected hs ha ht).symm
+  obtain ⟨hXa, hDXa⟩ := Prod.mk.inj
+    (hV₀.prodMk_alongCurveWithin_comp_sub_const_eq_of_eqOn_of_heq
+      hγ.uniqueDiffOn hmaps hcurve ha (heq_of_eq hu₀) (heq_of_eq hw₀))
+  exact ⟨fun t ↦ tangentSpaceCast I (maximalGeodesic I M p v (t - a)) (γ t) (V₀ (t - a)),
+    hV₀.comp_sub_const_of_eqOn a hγ.uniqueDiffOn hmaps hcurve, hXa, hDXa⟩
 
 /-- Along a geodesic on a nondegenerate closed interval `[a, b]`, every initial value and initial
 covariant derivative at `a` is attained by a Jacobi field on `[a, b]`. -/
@@ -220,41 +199,6 @@ theorem finrank_jacobiFieldSpace
 
 /-! ### Smooth dependence on initial data -/
 
-omit [T2Space M] in
-/-- Any family of sections along a geodesic `γ` on `s` depending linearly on a finite-dimensional
-parameter space `D`, whose evaluations at fixed parameters in `D` are smooth along `γ`, is jointly
-smooth on `univ ×ˢ s`. -/
-private theorem contMDiffOn_totalSpaceMk_of_linear_sectionAlong
-    {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [FiniteDimensional ℝ D]
-    {γ : ℝ → M} {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s)
-    (W : D → ∀ t, TangentSpace I (γ t))
-    (L : (t : ℝ) → t ∈ s → D →ₗ[ℝ] TangentSpace I (γ t))
-    (hWL : ∀ (d : D) (t : ℝ) (ht : t ∈ s), W d t = L t ht d)
-    (hsec : ∀ d : D, ContMDiffOn 𝓘(ℝ, ℝ) I.tangent ∞
-      (fun t ↦ TotalSpace.mk' E (γ t) (W d t)) s) :
-    ContMDiffOn 𝓘(ℝ, D × ℝ) I.tangent ∞
-      (fun q : D × ℝ ↦ TotalSpace.mk' E (γ q.2) (W q.1 q.2)) (univ ×ˢ s) := by
-  let b := Module.finBasis ℝ D
-  have hbase : ContMDiffOn 𝓘(ℝ, D × ℝ) I ∞ (fun q : D × ℝ ↦ γ q.2) (univ ×ˢ s) :=
-    hγ.contMDiffOn_infty.comp contDiff_snd.contMDiff.contMDiffOn (fun _ hq ↦ hq.2)
-  have hterm (i : Fin (Module.finrank ℝ D)) :
-      ContMDiffOn 𝓘(ℝ, D × ℝ) I.tangent ∞
-        (fun q : D × ℝ ↦ TotalSpace.mk' E (γ q.2) (b.repr q.1 i • W (b i) q.2))
-        (univ ×ˢ s) := by
-    have hcoeff : ContMDiffOn 𝓘(ℝ, D × ℝ) 𝓘(ℝ, ℝ) ∞ (fun q : D × ℝ ↦ b.repr q.1 i) (univ ×ˢ s) :=
-      (((b.coord i).toContinuousLinearMap.comp
-        (ContinuousLinearMap.fst ℝ D ℝ)).contMDiff).contMDiffOn
-    exact hcoeff.smul_totalSpace ((hsec (b i)).comp
-      contDiff_snd.contMDiff.contMDiffOn (fun _ hq ↦ hq.2))
-  refine (ContMDiffOn.sum_sectionAlong (b := fun q : D × ℝ ↦ γ q.2) Finset.univ
-    (fun i q ↦ b.repr q.1 i • W (b i) q.2) hbase fun i _ ↦ hterm i).congr ?_
-  intro q hq
-  refine congrArg (TotalSpace.mk' E (γ q.2)) ?_
-  rw [hWL q.1 q.2 hq.2]
-  conv_lhs => rw [← b.sum_repr q.1]
-  rw [map_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, hWL (b i) q.2 hq.2]
-
 /-- **Smooth dependence of Jacobi fields on initial data.** Along a geodesic on a preconnected
 parameter set `s`, the tangent-bundle lift of the Jacobi field with prescribed initial data at
 `a ∈ s` is jointly smooth in the initial data and the parameter on `univ ×ˢ s`. -/
@@ -265,11 +209,10 @@ theorem contMDiffOn_jacobiInitialDataEquiv_symm
       (fun q : (TangentSpace I (γ a) × TangentSpace I (γ a)) × ℝ ↦
         TotalSpace.mk' E (γ q.2) (((jacobiInitialDataEquiv hγ hs ha).symm q.1).val q.2))
       (univ ×ˢ s) :=
-  contMDiffOn_totalSpaceMk_of_linear_sectionAlong hγ
+  TauCeti.contMDiffOn_totalSpaceMk_of_linear
     (fun d t ↦ ((jacobiInitialDataEquiv hγ hs ha).symm d).val t)
-    (fun t ht ↦ ((LinearMap.fst ℝ _ _).comp (jacobiInitialData hγ ht)).comp
-      (jacobiInitialDataEquiv hγ hs ha).symm.toLinearMap)
-    (fun _ _ _ ↦ by simp)
+    (fun _ ht ↦ ⟨((LinearMap.fst ℝ _ _).comp (jacobiInitialData hγ ht)).comp
+      (jacobiInitialDataEquiv hγ hs ha).symm.toLinearMap, fun _ ↦ by simp⟩)
     (fun _ ↦ (isJacobiFieldOn_of_mem_jacobiFieldSpace _).contMDiffOn_infty)
 
 /-- **Smooth dependence of the covariant derivative on Jacobi initial data.** Along a geodesic on
@@ -285,12 +228,11 @@ theorem contMDiffOn_alongCurveWithin_jacobiInitialDataEquiv_symm
           (alongCurveWithin (leviCivitaConnection I M) γ
             ((jacobiInitialDataEquiv hγ hs ha).symm q.1).val s q.2))
       (univ ×ˢ s) :=
-  contMDiffOn_totalSpaceMk_of_linear_sectionAlong hγ
+  TauCeti.contMDiffOn_totalSpaceMk_of_linear
     (fun d t ↦ alongCurveWithin (leviCivitaConnection I M) γ
       ((jacobiInitialDataEquiv hγ hs ha).symm d).val s t)
-    (fun t ht ↦ ((LinearMap.snd ℝ _ _).comp (jacobiInitialData hγ ht)).comp
-      (jacobiInitialDataEquiv hγ hs ha).symm.toLinearMap)
-    (fun _ _ _ ↦ by simp)
+    (fun _ ht ↦ ⟨((LinearMap.snd ℝ _ _).comp (jacobiInitialData hγ ht)).comp
+      (jacobiInitialDataEquiv hγ hs ha).symm.toLinearMap, fun _ ↦ by simp⟩)
     (fun _ ↦ (isJacobiFieldOn_of_mem_jacobiFieldSpace _).contMDiffOn_alongCurveWithin_infty)
 
 end TauCeti.Manifold
