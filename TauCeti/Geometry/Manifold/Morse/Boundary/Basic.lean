@@ -55,8 +55,6 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   `ZMod 2`-module on the critical points.
 * `IsMorseSmale.morseBoundary_single_apply`: the boundary of a critical point has the trajectory
   counts as coefficients.
-* `IsMorseSmale.morseIndex_eq_add_one_of_morseBoundary_single_apply_ne_zero`: the boundary lowers
-  the Morse index by one.
 
 ## References
 
@@ -278,13 +276,6 @@ coefficient `morseBoundaryCoeff`: the number of trajectories from `p` to `q` mod
 theorem morseBoundary_single_apply (p q : criticalPoints 𝓘(ℝ, E) f) (a : ZMod 2) :
     h.morseBoundary hf (Finsupp.single p a) q = a * h.morseBoundaryCoeff hf p q := by
   rw [morseBoundary_apply, Finsupp.sum_single_index (zero_mul _)]
-
-/-- The mod-two Morse boundary lowers the Morse index by one: the coefficient of `q` in the
-boundary of `p` vanishes unless `ind p = ind q + 1`. -/
-theorem morseIndex_eq_add_one_of_morseBoundary_single_apply_ne_zero
-    {p q : criticalPoints 𝓘(ℝ, E) f} (hpq : h.morseBoundary hf (Finsupp.single p 1) q ≠ 0) :
-    manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 :=
-  h.morseIndex_eq_add_one_of_morseBoundaryCoeff_ne_zero hf (by simpa using hpq)
 
 end IsMorseSmale
 

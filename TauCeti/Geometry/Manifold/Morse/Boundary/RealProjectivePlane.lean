@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Boundary.Complex
+public import TauCeti.Geometry.Manifold.Morse.Boundary.ChainComplex
 public import TauCeti.Geometry.Manifold.Morse.Boundary.UniqueExtremum
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 
@@ -26,8 +26,8 @@ pseudo-gradient `X` adapted to this function.
   from the only critical point of index `2`; its unstable manifold is a line, whose two halves both
   go to the only critical point of index `0`.
 * So the mod-two Morse boundary vanishes, and the mod-two Morse complex is `𝔽₂ → 𝔽₂ → 𝔽₂` with
-  zero differentials, whose homology is the mod-two homology of `ℝℙ²`: one copy of `𝔽₂` in each
-  degree `0`, `1` and `2`.
+  zero differentials. Its homology is `𝔽₂` in degrees `0`, `1` and `2` and zero above, the
+  mod-two homology of `ℝℙ²`.
 
 Over `ℤ` the same two pairs of trajectories give the differentials `±2` from the maximum to the
 saddle and `0` from the saddle to the minimum, recovering `H₁(ℝℙ²; ℤ) = ℤ/2`: the two trajectories
@@ -44,7 +44,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   differ by one there are exactly two trajectories.
 * `IsMorseSmale.morseBoundary_projectiveMomentFunction_real`: the mod-two Morse boundary is zero.
 * `IsMorseSmale.finrank_homology_morseComplex_projectiveMomentFunction_real`: the mod-two Morse
-  homology has dimension `1` in degrees `0`, `1` and `2`, and `0` above.
+  homology has dimension `1` in degrees `0`, `1` and `2` and dimension `0` above.
 
 ## References
 
@@ -56,7 +56,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 public section
 
-open Function
+open Function Module
 open scoped LinearAlgebra.Projectivization Manifold
 
 namespace TauCeti
@@ -121,11 +121,11 @@ theorem morseBoundary_projectiveMomentFunction_real : h.morseBoundary hf = 0 := 
     (subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 2)
     (subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 0)
 
-/-- **The mod-two Morse homology of `ℝℙ²`.** For every pseudo-gradient adapted to the moment
-function on the real projective plane, the mod-two Morse homology is one copy of `ZMod 2` in each
-degree `0`, `1` and `2`, and zero above: the mod-two homology of `ℝℙ²`. -/
-theorem finrank_homology_morseComplex_projectiveMomentFunction_real (k : ℕ) :
-    Module.finrank (ZMod 2) ((h.morseComplex hf).homology k) = if k ≤ 2 then 1 else 0 := by
+/-- **The mod-two Morse homology of `ℝℙ²`.** For distinct weights, so that the moment function on
+the real projective plane is Morse, and every pseudo-gradient adapted to it, the mod-two Morse
+homology has dimension `1` in degrees `0`, `1` and `2`, and dimension `0` in higher degrees. -/
+theorem finrank_homology_morseComplex_projectiveMomentFunction_real (n : ℕ) :
+    finrank (ZMod 2) ((h.morseComplex hf).homology n) = if n ≤ 2 then 1 else 0 := by
   rw [h.finrank_homology_morseComplex_of_morseBoundary_eq_zero hf
       (h.morseBoundary_projectiveMomentFunction_real hf),
     criticalCount_projectiveMomentFunction_real (isMorse_projectiveMomentFunction_iff.1 hf)]

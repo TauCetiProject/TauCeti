@@ -109,7 +109,8 @@ polynomial in the Morse inequalities.
 * `TauCeti.IsMorse.exists_regular_sublevel_partition`: on a compact manifold, regular values
   cutting the values of a Morse function into bands with at most one critical value each.
 * `TauCeti.criticalCount` and `TauCeti.totalCriticalCount`: the extended counts of critical
-  points, with `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
+  points, with `TauCeti.natCard_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount`,
+  `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
   `TauCeti.IsMorse.criticalCount_neg`.
 * `TauCeti.criticalCount_zero_ne_zero` and `TauCeti.IsMorse.criticalCount_finrank_ne_zero`: on a
@@ -919,21 +920,20 @@ theorem criticalCount_def (j : ℕ) :
     criticalCount I f j = {x ∈ criticalPoints I f | manifoldMorseIndex I f x = j}.encard :=
   (rfl)
 
-/-- The critical points of index `j`, as a subset of the critical points, have as many elements as
-the critical count in index `j`. -/
-theorem natCard_preimage_manifoldMorseIndex_eq_toNat_criticalCount (j : ℕ) :
-    Nat.card ((fun p : criticalPoints I f ↦ manifoldMorseIndex I f p) ⁻¹' {j}) =
-      (criticalCount I f j).toNat := by
-  rw [Nat.card_coe_set_eq, ← ncard_image_of_injective _ Subtype.val_injective, criticalCount_def,
-    ← ncard_def]
-  congr 1
-  ext x
-  simp [and_comm]
-
 /-- The number of critical points of a given index is at most the number of critical points. -/
 theorem criticalCount_le_totalCriticalCount (j : ℕ) :
     criticalCount I f j ≤ totalCriticalCount I f :=
   encard_le_encard (sep_subset _ _)
+
+/-- The number of critical points of index `j` is the cardinality of the type of critical points
+of index `j`; both are `0` when there are infinitely many. -/
+@[simp]
+theorem natCard_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount (j : ℕ) :
+    Nat.card {p : criticalPoints I f // manifoldMorseIndex I f p = j} =
+      (criticalCount I f j).toNat := by
+  rw [Nat.card_congr (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ criticalPoints I f)
+    (manifoldMorseIndex I f · = j)), criticalCount_def, ← ncard_def]
+  exact Nat.card_coe_set_eq {x | x ∈ criticalPoints I f ∧ manifoldMorseIndex I f x = j}
 
 /-- A function and its negation have the same number of critical points. -/
 @[simp]
