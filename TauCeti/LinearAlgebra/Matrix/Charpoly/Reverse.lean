@@ -32,7 +32,8 @@ the dimension.
 * `Matrix.coeff_charpolyRev`: the `k`-th coefficient is `(-1) ^ k` times the sum of the `k × k`
   principal minors. In particular the constant coefficient is `1` and the coefficient in degree
   `Fintype.card ι` is `(-1) ^ Fintype.card ι * det A`.
-* `Matrix.eval_one_charpolyRev`: the value of `det (1 - X A)` at `X = 1` is `det (1 - A)`.
+* `Matrix.eval_charpolyRev_eq_det_one_sub_smul`: the value of `det (1 - X A)` at `X = t` is
+  `det (1 - t A)`; at `X = 1` this is `Matrix.eval_one_charpolyRev`.
 * `Matrix.charpolyRev_map`, `Matrix.charpolyRev_transpose`, `Matrix.charpolyRev_reindex`:
   functoriality in the coefficient ring and invariance under transposition and relabelling.
 * `Matrix.charpolyRev_eq_charpolyRev_iff`: for matrices of the same size, `det (1 - X A)`
@@ -107,13 +108,18 @@ theorem coeff_charpolyRev_card (A : Matrix ι ι R) :
     det_eq_sign_charpoly_coeff]
   simp [← mul_assoc, ← mul_pow]
 
-/-- Evaluating `det (1 - X A)` at `X = 1` gives `det (1 - A)`. -/
-@[simp]
-theorem eval_one_charpolyRev (A : Matrix ι ι R) : A.charpolyRev.eval 1 = (1 - A).det := by
+/-- Evaluating `det (1 - X A)` at `X = t` gives `det (1 - t A)`. -/
+theorem eval_charpolyRev_eq_det_one_sub_smul (A : Matrix ι ι R) (t : R) :
+    A.charpolyRev.eval t = (1 - t • A).det := by
   rw [charpolyRev, ← coe_evalRingHom, RingHom.map_det]
   congr 1
   ext i j
-  by_cases h : i = j <;> simp [h]
+  by_cases h : i = j <;> simp [h, Matrix.smul_apply, smul_eq_mul, mul_comm t]
+
+/-- Evaluating `det (1 - X A)` at `X = 1` gives `det (1 - A)`. -/
+@[simp]
+theorem eval_one_charpolyRev (A : Matrix ι ι R) : A.charpolyRev.eval 1 = (1 - A).det := by
+  rw [eval_charpolyRev_eq_det_one_sub_smul, one_smul]
 
 /-- **The Fredholm resolvent of a matrix.** The `m`-th coefficient of the adjugate of `1 - X A`
 is `∑ k ∈ range (m + 1), c k • A ^ (m - k)`, where `c k` is the `k`-th coefficient of
