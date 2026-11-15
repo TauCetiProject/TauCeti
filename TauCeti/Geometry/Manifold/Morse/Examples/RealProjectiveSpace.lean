@@ -406,12 +406,7 @@ theorem realProjectiveMomentSpectralSequence_page_two_d_eq_two_smul_or_neg_two_s
     (realProjectiveMomentSpectralSequence_page_two_d_eq_zero_of_odd N
       (by change Odd (j - 1); rw [hk]; exact_mod_cast hkodd)) ≪≫
     cokernel.mapIso _ φ e e' (by simp [hφ])
-  have hcard := Nat.card_congr i.toLinearEquiv.toEquiv
-  rw [ModuleCat.natCard_cokernel_int, ModuleCat.coe_of, Nat.card_zmod] at hcard
-  have hφ' : φ = φ.hom 1 • 𝟙 _ := by ext; simp
-  rcases Int.natAbs_eq_iff.1 hcard.symm with h | h
-  · exact .inl (by rw [hφ', h, Nat.cast_ofNat])
-  · exact .inr (by rw [hφ', h, Nat.cast_ofNat])
+  exact ModuleCat.eq_smul_id_or_eq_neg_smul_id_of_cokernel_iso_zmod (n := 2) φ i.symm
 
 /-- **The first differential out of an even band is `2`.** For even `j` with `2 ≤ j ≤ N`, there
 are identifications of the objects at `(-2j, j)` and `(-2(j - 1), j - 1)` on the first page of

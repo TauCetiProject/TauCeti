@@ -247,9 +247,7 @@ theorem groupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} (ZMod 2)}
 /-- The positive subgroup is smooth over its prime field. -/
 instance algebraSmooth_coordinateHopfAlgebra : Algebra.Smooth (ZMod 2) coordinateHopfAlgebra := by
   let : ∀ j, IsReduced (generatorCodomain j) := by
-    rintro (_ | ⟨⟩)
-    · exact AdditiveGroup.isReduced_coordinateHopfAlgebra (ZMod 2)
-    · exact inferInstance
+    rintro (_ | ⟨⟩) <;> exact inferInstance
   exact (smoothCommHopfAlgProperty_iff _).mp
     (CommHopfAlgCat.smoothCommHopfAlgProperty_quotient_commonKernelHopfIdeal_of_perfectField
       generator)
