@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Topology.Order.Basic
-public import Mathlib.Geometry.Manifold.LocalDiffeomorph
-import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Topology.Order.IntermediateValue
 
 /-!
@@ -21,9 +19,9 @@ measured by `ψ`, lie in an open set `O ⊆ C`. If the reading `ψ ∘ u` has de
 `κ` wherever `u` takes values in `C`, and `κ s ≤ η`, then `u` maps the whole ball into `C`, and
 `ψ ∘ u` is `κ`-Lipschitz from the centre (`TauCeti.mapsTo_ball_of_norm_fderiv_comp_le`).
 
-For a map `u` into a manifold, differentiable on the ball, and a partial diffeomorphism `φ` onto an
-open subset of `V`, the same holds with `ψ = φ` and `O` the interior of a closed set
-`C ⊆ φ.source` (`PartialDiffeomorph.mapsTo_ball_of_norm_fderiv_comp_le`).
+For a map `u` into a manifold and a partial diffeomorphism `φ` onto an open subset of `V`, the case
+`ψ = φ` is `PartialDiffeomorph.mapsTo_ball_of_norm_fderiv_comp_le` in
+`TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv`.
 
 This is the continuity argument that keeps the image of a small disc in a single chart of a
 manifold once the derivative of the map, read in that chart, is controlled: the derivative bound
@@ -35,7 +33,6 @@ bounded in terms of an intrinsic quantity, such as the energy density of a Floer
 public section
 
 open Filter Metric Set Topology
-open scoped Manifold
 
 namespace TauCeti
 
@@ -136,25 +133,5 @@ theorem mapsTo_ball_of_norm_fderiv_comp_le {u : F → M} {ψ : M → V} {C O : S
   have hp1 : p 1 = y := by simp [hp_def]
   rw [hp1] at h1C h1ψ
   exact ⟨h1C, by simpa using h1ψ⟩
-
-/-- **A map whose chart reading has bounded derivative stays in the chart.** Let `φ` be a partial
-diffeomorphism from a manifold `M` onto an open subset of `V`, `C ⊆ φ.source` closed, and `u`
-differentiable on the ball `B_s(y₀)` with `u y₀ ∈ C`. Suppose that every `x ∈ C` with
-`‖φ x - φ (u y₀)‖ < η` lies in the interior of `C`. If `‖d(φ ∘ u)‖ ≤ κ` at every point of the ball
-where `u` takes values in `C`, and `κ s ≤ η` with `0 < η`, then `u` maps the ball into `C`. -/
-theorem _root_.PartialDiffeomorph.mapsTo_ball_of_norm_fderiv_comp_le {E H : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    [ChartedSpace H M] {n : WithTop ℕ∞} (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V n) (hn : n ≠ 0)
-    {u : F → M} {C : Set M} {y₀ : F} {s κ η : ℝ} (hC : IsClosed C) (hCφ : C ⊆ φ.source)
-    (hu : MDifferentiableOn 𝓘(ℝ, F) I u (ball y₀ s)) (hy₀ : u y₀ ∈ C)
-    (hCO : ∀ x ∈ C, ‖φ x - φ (u y₀)‖ < η → x ∈ interior C)
-    (hd : ∀ y ∈ ball y₀ s, u y ∈ C → ‖fderiv ℝ (φ ∘ u) y‖ ≤ κ)
-    (hη : 0 < η) (hκs : κ * s ≤ η) :
-    MapsTo u (ball y₀ s) C :=
-  (TauCeti.mapsTo_ball_of_norm_fderiv_comp_le hC isOpen_interior interior_subset
-    (φ.contMDiffOn.continuousOn.mono hCφ) hu.continuousOn hy₀ hCO
-    (fun y hy hyC ↦ ⟨mdifferentiableAt_iff_differentiableAt.1
-      ((φ.mdifferentiableAt hn (hCφ hyC)).comp y
-        (hu.mdifferentiableAt (isOpen_ball.mem_nhds hy))), hd y hy hyC⟩) hη hκs).1
 
 end TauCeti

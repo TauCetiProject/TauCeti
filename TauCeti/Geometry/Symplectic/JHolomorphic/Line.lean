@@ -38,6 +38,9 @@ energy and elliptic estimates.
   in the complex coordinate, the derivatives in the directions `1` and `i` are `∂s` and `∂t`.
 * `LinearMap.apply_stdComplexLine`: a real-linear map is determined by its values on the
   coordinate vectors.
+* `ContinuousLinearMap.opNorm_le_norm_apply_stdComplexLineReal_add`: the operator norm of a
+  continuous linear map out of `ℝ × ℝ` is at most the sum of the norms of its values on the
+  coordinate vectors.
 * `TauCeti.isComplexLinearMap_stdComplexLine_iff`: complex-linearity out of the standard
   complex line is equivalent to the coordinate Cauchy--Riemann equation
   `F (0, 1) = J (F (1, 0))`.
@@ -146,6 +149,19 @@ lemma AlmostComplexStructure.product_apply_stdComplexLineImag :
 lemma stdComplexLine_eq_smul_real_add_smul_imag (z : ℝ × ℝ) :
     z = z.1 • stdComplexLineReal + z.2 • stdComplexLineImag := by
   ext <;> simp [stdComplexLineReal, stdComplexLineImag]
+
+/-- A continuous linear map out of `ℝ × ℝ`, with its sup norm, has operator norm at most the sum of
+the norms of its values on the two coordinate vectors. -/
+lemma _root_.ContinuousLinearMap.opNorm_le_norm_apply_stdComplexLineReal_add {E : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] (L : ℝ × ℝ →L[ℝ] E) :
+    ‖L‖ ≤ ‖L stdComplexLineReal‖ + ‖L stdComplexLineImag‖ := by
+  refine L.opNorm_le_bound (by positivity) fun v ↦ ?_
+  have hv : L v = v.1 • L stdComplexLineReal + v.2 • L stdComplexLineImag := by
+    rw [← map_smul, ← map_smul, ← map_add, ← stdComplexLine_eq_smul_real_add_smul_imag]
+  rw [hv, add_mul]
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, mul_comm]
+  · exact mul_le_mul_of_nonneg_left (norm_fst_le v) (norm_nonneg _)
+  · exact mul_le_mul_of_nonneg_left (norm_snd_le v) (norm_nonneg _)
 
 section Linear
 

@@ -96,12 +96,13 @@ theorem hofer_of_continuousOn_closedBall (x : X) {ε : ℝ} (hε : 0 < ε) {ϕ :
 /-- **Hofer's lemma for a quadratic density.** Let `e` be continuous and nonnegative on the
 closed ball of radius `3 ε` about `x`. Then there are `0 < ε' ≤ ε` and a point `x'` within `2 ε`
 of `x` with `ε² e(x) ≤ ε'² e(x')` and `e ≤ 4 e(x')` on the closed ball of radius `ε'` about `x'`.
-This is `TauCeti.hofer_of_continuousOn_closedBall` for `√e`; it applies to densities that scale
-by `ε²` under rescaling, such as the energy density of a map from the plane. -/
+It applies to densities that scale by `ε²` under rescaling, such as the energy density of a map
+from the plane. -/
 theorem hofer_sq_of_continuousOn_closedBall (x : X) {ε : ℝ} (hε : 0 < ε) {e : X → ℝ}
     (he : ContinuousOn e (closedBall x (3 * ε))) (he₀ : ∀ y ∈ closedBall x (3 * ε), 0 ≤ e y) :
     ∃ ε' > 0, ∃ x' : X, ε' ≤ ε ∧ dist x' x ≤ 2 * ε ∧ ε ^ 2 * e x ≤ ε' ^ 2 * e x' ∧
       ∀ y, dist x' y ≤ ε' → e y ≤ 4 * e x' := by
+  -- Apply `hofer_of_continuousOn_closedBall` to `√e`.
   obtain ⟨ε', hε', x', hε'ε, hx'x, hx, hball⟩ := hofer_of_continuousOn_closedBall x hε he.sqrt
     fun _ _ ↦ Real.sqrt_nonneg _
   have hx' : 0 ≤ e x' := he₀ x' (mem_closedBall.2 (by linarith))

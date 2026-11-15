@@ -12,6 +12,8 @@ import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Analysis.Calculus.MeanValue.Trapping
+import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # Differentials of a partial diffeomorphism
@@ -46,6 +48,10 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
   the transition `ψ ∘ φ⁻¹` is differentiable.
 * `PartialDiffeomorph.fderiv_comp_symm_eq_comp`: the derivatives of transitions compose, the
   chain rule `D(ψ ∘ φ⁻¹) = D(ψ ∘ χ⁻¹) ∘ D(χ ∘ φ⁻¹)`.
+* `PartialDiffeomorph.exists_pos_forall_mem_interior`: a compact set in the interior of a set
+  `C ⊆ φ.source` has a uniform margin in `C`, measured in the chart `φ`.
+* `PartialDiffeomorph.mapsTo_ball_of_norm_fderiv_comp_le`: a map from a ball whose reading in the
+  chart `φ` has bounded derivative while it stays in `C` maps the whole ball into `C`.
 -/
 
 public section
@@ -160,5 +166,51 @@ theorem fderiv_comp_symm_eq_comp (ψ : PartialDiffeomorph I 𝓘(𝕜, G'') M G'
   rw [← heq.fderiv_eq, fderiv_comp (φ x) h₁ (χ.differentiableAt_comp_symm φ hn hχ hφ), hχx]
 
 end Transition
+
+section Trapping
+
+open Metric Set
+
+variable {E' H'' M' V : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'']
+  {I' : ModelWithCorners ℝ E' H''} [TopologicalSpace M'] [ChartedSpace H'' M']
+  [NormedAddCommGroup V] [NormedSpace ℝ V] {m : WithTop ℕ∞}
+
+/-- In a partial diffeomorphism `φ` into a normed space, a compact set `A` in the interior of
+`C ⊆ φ.source` has a margin: there is `η > 0` such that every point of `C` within `η` of a point
+of `A`, measured in `φ`, lies in the interior of `C`. -/
+theorem exists_pos_forall_mem_interior (φ : PartialDiffeomorph I' 𝓘(ℝ, V) M' V m)
+    {A C : Set M'} (hA : IsCompact A) (hAC : A ⊆ interior C) (hCφ : C ⊆ φ.source) :
+    ∃ η > 0, ∀ a ∈ A, ∀ x ∈ C, ‖φ x - φ a‖ < η → x ∈ interior C := by
+  have hAφ : A ⊆ φ.source := hAC.trans (interior_subset.trans hCφ)
+  have hT : IsCompact (φ '' A) := hA.image_of_continuousOn (φ.contMDiffOn.continuousOn.mono hAφ)
+  have hU : IsOpen (φ '' interior C) := by
+    simpa using φ.toOpenPartialHomeomorph.isOpen_image_of_subset_source isOpen_interior
+      (by simpa using interior_subset.trans hCφ)
+  obtain ⟨η, hη, hsub⟩ := hT.exists_thickening_subset_open hU (image_mono hAC)
+  refine ⟨η, hη, fun a ha x hx hxa ↦ ?_⟩
+  obtain ⟨c, hc, hcx⟩ := hsub (mem_thickening_iff.2 ⟨φ a, mem_image_of_mem φ ha, by
+    rwa [dist_eq_norm]⟩)
+  rwa [← φ.toPartialEquiv.injOn (hCφ (interior_subset hc)) (hCφ hx) hcx]
+
+/-- **A map whose chart reading has bounded derivative stays in the chart.** Let `φ` be a partial
+diffeomorphism from a manifold `M'` onto an open subset of `V`, `C ⊆ φ.source` closed, and `u`
+differentiable on the ball `B_s(y₀)` with `u y₀ ∈ C`. Suppose that every `x ∈ C` with
+`‖φ x - φ (u y₀)‖ < η` lies in the interior of `C`. If `‖d(φ ∘ u)‖ ≤ κ` at every point of the ball
+where `u` takes values in `C`, and `κ s ≤ η` with `0 < η`, then `u` maps the ball into `C`. -/
+theorem mapsTo_ball_of_norm_fderiv_comp_le {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (φ : PartialDiffeomorph I' 𝓘(ℝ, V) M' V m) (hm : m ≠ 0) {u : G → M'} {C : Set M'} {y₀ : G}
+    {s κ η : ℝ} (hC : IsClosed C) (hCφ : C ⊆ φ.source)
+    (hu : MDifferentiableOn 𝓘(ℝ, G) I' u (ball y₀ s)) (hy₀ : u y₀ ∈ C)
+    (hCO : ∀ x ∈ C, ‖φ x - φ (u y₀)‖ < η → x ∈ interior C)
+    (hd : ∀ y ∈ ball y₀ s, u y ∈ C → ‖fderiv ℝ (φ ∘ u) y‖ ≤ κ)
+    (hη : 0 < η) (hκs : κ * s ≤ η) :
+    MapsTo u (ball y₀ s) C :=
+  (TauCeti.mapsTo_ball_of_norm_fderiv_comp_le hC isOpen_interior interior_subset
+    (φ.contMDiffOn.continuousOn.mono hCφ) hu.continuousOn hy₀ hCO
+    (fun y hy hyC ↦ ⟨mdifferentiableAt_iff_differentiableAt.1
+      ((φ.mdifferentiableAt hm (hCφ hyC)).comp y
+        (hu.mdifferentiableAt (isOpen_ball.mem_nhds hy))), hd y hy hyC⟩) hη hκs).1
+
+end Trapping
 
 end PartialDiffeomorph

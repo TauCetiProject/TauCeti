@@ -16,6 +16,7 @@ import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 
 /-!
 # Curvature of Hamiltonian perturbations and the Floer energy identity
@@ -71,7 +72,13 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   `SymplecticForm.setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le`: the energy controls the
   perturbed derivative, pointwise and in `L²`.
 * `SymplecticForm.norm_fderiv_stdComplexLineReal_sq_le`: the energy density and the Hamiltonian
-  vector field control `‖∂_s u‖²`.
+  vector field control `‖∂_s u‖²`; `SymplecticForm.norm_fderiv_sq_le_of_isComplexLinearMap` and
+  `SymplecticForm.floerEnergyDensity_le_of_isComplexLinearMap` compare the energy density with the
+  whole derivative and with `‖∂_s u‖²`, and
+  `SymplecticForm.exists_forall_norm_fderiv_sq_le_and_floerEnergyDensity_le` makes these
+  comparisons uniform over a compact window of tamed structures.
+* `SymplecticForm.continuousOn_floerEnergyDensity_of_continuousOn_hamiltonianOneForm`: the energy
+  density of a `C¹` map is continuous where the Hamiltonian one-form is continuous along its graph.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
 * `SymplecticForm.floerEnergyDensity_add_hamiltonianCurvature_eq`: for a `C²` map, the energy
   density plus the curvature is the exterior derivative of the one-form `K(u) + λ(u)`, where
@@ -331,6 +338,17 @@ theorem contDiffOn_hamiltonianOneForm (ω : SymplecticForm V) {P : Type*} [Norme
       ).contDiffWithinAt
   exact (contDiffOn_const.smulRight (hX hKs)).add (contDiffOn_const.smulRight (hX hKt))
 
+/-- On an open set `W ⊆ (ℝ × ℝ) × V`, the Hamiltonian one-form of a perturbation
+`K = K_s ds + K_t dt` with `C^(n+1)` coefficients is `Cⁿ`. -/
+theorem contDiffOn_hamiltonianOneForm_uncurry (ω : SymplecticForm V) {Ks Kt : ℝ × ℝ → V → ℝ}
+    {W : Set ((ℝ × ℝ) × V)} {n : WithTop ℕ∞} (hW : IsOpen W)
+    (hKs : ContDiffOn ℝ (n + 1) (uncurry Ks) W) (hKt : ContDiffOn ℝ (n + 1) (uncurry Kt) W) :
+    ContDiffOn ℝ n (fun q : (ℝ × ℝ) × V ↦ ω.hamiltonianOneForm Ks Kt q.1 q.2) W :=
+  (ω.contDiffOn_hamiltonianOneForm (P := ℝ) (Ks := fun _ ↦ Ks) (Kt := fun _ ↦ Kt)
+    (isOpen_univ.prod hW) (hKs.comp contDiffOn_snd fun _ hq ↦ hq.2)
+    (hKt.comp contDiffOn_snd fun _ hq ↦ hq.2)).comp
+    (contDiffOn_const (c := (0 : ℝ)).prodMk contDiffOn_id) fun _ hq ↦ ⟨mem_univ _, hq⟩
+
 /-- The perturbed derivative is `du - X_K(u)`. -/
 theorem perturbedFDeriv_eq_sub (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V)
     (z : ℝ × ℝ) :
@@ -582,6 +600,115 @@ theorem norm_fderiv_stdComplexLineReal_sq_le (ω : SymplecticForm V)
   rw [div_eq_mul_one_div 2 c, mul_assoc]
   linarith
 
+/-- **The energy density bounds the whole derivative.** Let `u` solve the Floer equation at `z`
+for an almost complex structure `J` with `a ‖v‖² ≤ ω(v, J v)` and `‖J v‖ ≤ M ‖v‖`, where `0 < a`,
+and let the Hamiltonian one-form `X_K` at `(z, u z)` have norm at most `N`. Then
+`‖du(z)‖² ≤ 4 (1 + M²) / a · ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t}) + 2 N²`. -/
+theorem norm_fderiv_sq_le_of_isComplexLinearMap (ω : SymplecticForm V)
+    {J : AlmostComplexStructure V} {a M N : ℝ} (ha : 0 < a)
+    (hJa : ∀ v, a * ‖v‖ ^ 2 ≤ ω v (J v)) (hJM : ∀ v, ‖J v‖ ≤ M * ‖v‖)
+    (hN : ‖ω.hamiltonianOneForm Ks Kt z (u z)‖ ≤ N)
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    ‖fderiv ℝ u z‖ ^ 2 ≤
+      4 * (1 + M ^ 2) / a * ω.floerEnergyDensity Ks Kt u z + 2 * N ^ 2 := by
+  set P := ω.perturbedFDeriv Ks Kt u z with hPdef
+  have hcomp := ω.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity ha.le hJa hJM h
+  have hP : ‖P‖ ≤ ‖P stdComplexLineReal‖ + ‖P stdComplexLineImag‖ :=
+    P.opNorm_le_norm_apply_stdComplexLineReal_add
+  have hd : ‖fderiv ℝ u z‖ ≤ ‖P‖ + N := by
+    have : fderiv ℝ u z = P + ω.hamiltonianOneForm Ks Kt z (u z) := by
+      rw [hPdef, ω.perturbedFDeriv_eq_sub, sub_add_cancel]
+    rw [this]
+    exact (norm_add_le _ _).trans (by gcongr)
+  have hP2 : ‖P‖ ^ 2 ≤ 2 * (1 + M ^ 2) / a * ω.floerEnergyDensity Ks Kt u z := by
+    rw [← hPdef] at hcomp
+    have hsq : ‖P‖ ^ 2 ≤ 2 * (‖P stdComplexLineReal‖ ^ 2 + ‖P stdComplexLineImag‖ ^ 2) := by
+      nlinarith [norm_nonneg P, norm_nonneg (P stdComplexLineReal),
+        norm_nonneg (P stdComplexLineImag), sq_nonneg (‖P stdComplexLineReal‖ -
+          ‖P stdComplexLineImag‖)]
+    rw [div_mul_eq_mul_div, le_div_iff₀ ha]
+    nlinarith [mul_le_mul_of_nonneg_left hsq ha.le]
+  have h0 : 0 ≤ ‖P‖ + N := (norm_nonneg _).trans hd
+  have : ‖fderiv ℝ u z‖ ^ 2 ≤ 2 * ‖P‖ ^ 2 + 2 * N ^ 2 := by
+    nlinarith [norm_nonneg (fderiv ℝ u z), norm_nonneg P, sq_nonneg (‖P‖ - N)]
+  calc ‖fderiv ℝ u z‖ ^ 2 ≤ 2 * ‖P‖ ^ 2 + 2 * N ^ 2 := this
+    _ ≤ 2 * (2 * (1 + M ^ 2) / a * ω.floerEnergyDensity Ks Kt u z) + 2 * N ^ 2 := by gcongr
+    _ = _ := by ring
+
+/-- For a solution of the Floer equation at `z` for `J` with `ω(v, J v) ≤ b ‖v‖²`, and a
+Hamiltonian one-form of norm at most `N` at `(z, u z)`, the energy density is at most
+`2 b (‖∂ₛu(z)‖² + N²)`. -/
+theorem floerEnergyDensity_le_of_isComplexLinearMap (ω : SymplecticForm V)
+    {J : AlmostComplexStructure V} {b N : ℝ} (hb : 0 ≤ b) (hJb : ∀ v, ω v (J v) ≤ b * ‖v‖ ^ 2)
+    (hN : ‖ω.hamiltonianOneForm Ks Kt z (u z)‖ ≤ N)
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    ω.floerEnergyDensity Ks Kt u z ≤
+      2 * b * (‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 + N ^ 2) := by
+  rw [ω.floerEnergyDensity_eq_of_isComplexLinearMap h, perturbedFDeriv_apply_stdComplexLineReal]
+  set d := fderiv ℝ u z stdComplexLineReal
+  set X := ω.hamiltonianVectorField (Ks z) (u z)
+  -- `X_{K_s}` is the value of the one-form `X_K` on the unit vector `(1, 0)`.
+  have hX : ‖X‖ ≤ N := by
+    have h1 : ω.hamiltonianOneForm Ks Kt z (u z) stdComplexLineReal = X := by
+      simp [hamiltonianOneForm_apply, X]
+    rw [← h1]
+    refine ((ω.hamiltonianOneForm Ks Kt z (u z)).le_opNorm _).trans ?_
+    simpa [stdComplexLineReal_eq, Prod.norm_def] using hN
+  have h0 : 0 ≤ N := (norm_nonneg _).trans hN
+  have hdX : ‖d - X‖ ^ 2 ≤ 2 * (‖d‖ ^ 2 + N ^ 2) := by
+    have := norm_sub_le d X
+    nlinarith [norm_nonneg (d - X), norm_nonneg d, norm_nonneg X, sq_nonneg (‖d‖ - ‖X‖)]
+  calc ω (d - X) (J (d - X)) ≤ b * ‖d - X‖ ^ 2 := hJb _
+    _ ≤ b * (2 * (‖d‖ ^ 2 + N ^ 2)) := by gcongr
+    _ = _ := by ring
+
+/-- **The energy density and the derivative are comparable over a compact window.** Let `J(z, x)`
+be continuous and tamed by `ω`, and the Hamiltonian one-form `X_K(z, x)` continuous, for
+`(z, x)` in `D × K` with `D ⊆ ℝ × ℝ` and `K ⊆ V` compact. There is a constant `L ≥ 0` such that
+every solution `u` of the Floer equation for `J(z, u)` at a point `z ∈ D` with `u z ∈ K` satisfies
+`‖du(z)‖² ≤ L (e + 1)` and `e ≤ L (‖∂ₛu(z)‖² + 1)`, where
+`e = ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t})` is its energy density at `z`. -/
+theorem exists_forall_norm_fderiv_sq_le_and_floerEnergyDensity_le (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {D : Set (ℝ × ℝ)} {K : Set V}
+    (hD : IsCompact D) (hK : IsCompact K)
+    (hJ : ContinuousOn (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+      (D ×ˢ K))
+    (hX : ContinuousOn (fun p : (ℝ × ℝ) × V ↦ ω.hamiltonianOneForm Ks Kt p.1 p.2) (D ×ˢ K))
+    (hJt : ∀ z ∈ D, ∀ x ∈ K, ω.Tames (J z x)) :
+    ∃ L ≥ 0, ∀ ⦃u : ℝ × ℝ → V⦄ ⦃z : ℝ × ℝ⦄, z ∈ D → u z ∈ K →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V) →
+      ‖fderiv ℝ u z‖ ^ 2 ≤ L * (ω.floerEnergyDensity Ks Kt u z + 1) ∧
+        ω.floerEnergyDensity Ks Kt u z ≤ L * (‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 + 1) := by
+  have hDK : IsCompact (D ×ˢ K) := hD.prod hK
+  obtain ⟨a, ha, b, hb, hab⟩ := ω.exists_pos_forall_mul_norm_sq_le_associatedBilinForm
+    (J := fun p : (ℝ × ℝ) × V ↦ J p.1 p.2) hDK hJ fun p hp ↦ hJt _ hp.1 _ hp.2
+  obtain ⟨M, hM⟩ := hDK.exists_bound_of_continuousOn hJ
+  obtain ⟨N, hN⟩ := hDK.exists_bound_of_continuousOn hX
+  set M' := max M 0
+  set N' := max N 0
+  refine ⟨4 * (1 + M' ^ 2) / a + 2 * N' ^ 2 + 2 * b * (1 + N' ^ 2), by positivity,
+    fun u z hz hu h ↦ ?_⟩
+  have hp : (z, u z) ∈ D ×ˢ K := ⟨hz, hu⟩
+  have hJM : ∀ v, ‖J z (u z) v‖ ≤ M' * ‖v‖ := fun v ↦
+    ((J z (u z)).toLinearMap.toContinuousLinearMap.le_opNorm v).trans
+      (mul_le_mul_of_nonneg_right ((hM _ hp).trans (le_max_left _ _)) (norm_nonneg _))
+  have hNz : ‖ω.hamiltonianOneForm Ks Kt z (u z)‖ ≤ N' := (hN _ hp).trans (le_max_left _ _)
+  have he0 : 0 ≤ ω.floerEnergyDensity Ks Kt u z := ω.floerEnergyDensity_nonneg (hJt z hz _ hu) h
+  have h₁ := ω.norm_fderiv_sq_le_of_isComplexLinearMap ha (fun v ↦ (hab _ hp v).1) hJM hNz h
+  have h₂ := ω.floerEnergyDensity_le_of_isComplexLinearMap hb (fun v ↦ (hab _ hp v).2) hNz h
+  have hc : 0 ≤ 4 * (1 + M' ^ 2) / a := by positivity
+  constructor
+  · nlinarith [sq_nonneg N', mul_nonneg hb (sq_nonneg N')]
+  · set d := ‖fderiv ℝ u z stdComplexLineReal‖
+    have hd0 : 0 ≤ d ^ 2 := sq_nonneg d
+    calc ω.floerEnergyDensity Ks Kt u z ≤ 2 * b * (d ^ 2 + N' ^ 2) := h₂
+      _ ≤ 2 * b * (1 + N' ^ 2) * (d ^ 2 + 1) := by
+        nlinarith [mul_nonneg (mul_nonneg hb (sq_nonneg N')) hd0]
+      _ ≤ _ := by gcongr; nlinarith [sq_nonneg N']
+
 /-- **The energy density plus the curvature is exact.** For a `C²` map `u` into a symplectic
 vector space and a perturbation `K = K_s ds + K_t dt`, the Floer energy density plus the
 curvature `R_K(u)` is the exterior derivative `∂_s α_t - ∂_t α_s` of the one-form
@@ -711,21 +838,33 @@ theorem lintegral_floerEnergyDensity_comp_add_right (ω : SymplecticForm V)
 
 variable {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
 
+/-- For a map `u` that is `C¹` on an open set `U` of the domain, and a Hamiltonian one-form
+continuous on a set `W` containing the graph of `u` over `U`, the Floer energy density of `u` is
+continuous on `U`. -/
+theorem continuousOn_floerEnergyDensity_of_continuousOn_hamiltonianOneForm
+    (ω : SymplecticForm V) {U : Set (ℝ × ℝ)} {W : Set ((ℝ × ℝ) × V)} (hU : IsOpen U)
+    (hu : ContDiffOn ℝ 1 u U)
+    (hX : ContinuousOn (fun q : (ℝ × ℝ) × V ↦ ω.hamiltonianOneForm Ks Kt q.1 q.2) W)
+    (hUW : ∀ z ∈ U, (z, u z) ∈ W) :
+    ContinuousOn (ω.floerEnergyDensity Ks Kt u) U := by
+  have hP : ContinuousOn (fun z ↦ ω.perturbedFDeriv Ks Kt u z) U := by
+    simp_rw [perturbedFDeriv_eq_sub]
+    exact (hu.continuousOn_fderiv_of_isOpen hU le_rfl).sub
+      (hX.comp (continuousOn_id.prodMk hu.continuousOn) hUW)
+  exact (ω.continuousOn_apply_comp (hP.clm_apply (continuousOn_const (c := stdComplexLineReal)))
+    (hP.clm_apply (continuousOn_const (c := stdComplexLineImag)))).congr fun z _ ↦
+      floerEnergyDensity_def ω Ks Kt u z
+
 /-- For a map and perturbation data that are `C¹` over an open set `U` of the domain, the Floer
 energy density is continuous on `U`. -/
 theorem continuousOn_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ × ℝ)} (hU : IsOpen U)
     (hu : ContDiffOn ℝ 1 u U) (hKs : ContDiffOn ℝ 1 (uncurry Ks) (U ×ˢ univ))
     (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ)) :
-    ContinuousOn (ω.floerEnergyDensity Ks Kt u) U := by
-  have hdu := hu.continuousOn_fderiv_of_isOpen hU le_rfl
-  refine (ω.continuousOn_apply_comp
-    ((hdu.clm_apply (continuousOn_const (c := stdComplexLineReal))).sub
-      (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hu.continuousOn hKs))
-    ((hdu.clm_apply (continuousOn_const (c := stdComplexLineImag))).sub
-      (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hu.continuousOn hKt))).congr
-    fun z _ ↦ ?_
-  simp only [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
-    perturbedFDeriv_apply_stdComplexLineImag, Pi.sub_apply]
+    ContinuousOn (ω.floerEnergyDensity Ks Kt u) U :=
+  ω.continuousOn_floerEnergyDensity_of_continuousOn_hamiltonianOneForm hU hu
+    (ω.contDiffOn_hamiltonianOneForm_uncurry (n := 0) (hU.prod isOpen_univ) (by simpa using hKs)
+      (by simpa using hKt)).continuousOn
+    fun _ hz ↦ ⟨hz, mem_univ _⟩
 
 /-- For perturbation data that is `C¹` over an open set `U` of the domain, the curvature evaluated
 along a map continuous on `U` is continuous on `U`. -/

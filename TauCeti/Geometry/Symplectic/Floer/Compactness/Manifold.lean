@@ -39,8 +39,11 @@ continuous limit with values in `C`, `#Z δ ≤ A` for a threshold `δ > 0` depe
 data, and at least the energy `δ` concentrates at every point of `Z`.
 
 Here the image of the solutions is assumed to stay in a single chart. Gromov–Floer compactness on
-a closed manifold also needs the mean-value inequality to localize the images of small discs of
-small energy into charts; that step is not treated here.
+a closed manifold also needs the mean-value inequality to localize the images of small squares of
+small energy into charts; it is
+`SmoothTwoForm.IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_mapsTo_iUnion`
+in `TauCeti.Geometry.Symplectic.Floer.Compactness.MeanValue`. Patching the chart-local limits into
+a limit in `M` is not treated here.
 
 ## References
 
@@ -100,6 +103,22 @@ theorem floerEnergyDensity_comp_and_isComplexLinearMap (hω : ω.IsNondegenerate
 variable {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
   {J' : ℝ × ℝ → V → AlmostComplexStructure V}
 
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
+/-- In a chart `φ` pulling `ω₀` back to `ω` on `C ⊆ φ.source`, the family `J'` reading `J` in the
+chart is tamed by `ω₀` over `D × φ(C)` wherever `J` is tamed by `ω` over `D × C`. -/
+theorem tames_of_mem_image (hω : ω.IsNondegenerate)
+    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {D : Set (ℝ × ℝ)} {C : Set M}
+    (hφ : ∀ x ∈ C, ∀ v w : TangentSpace I x,
+      ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
+    (hJJ' : ∀ z ∈ D, ∀ x ∈ C,
+      IsComplexLinearMap (J z x) (J' z (φ x)) (mvfderiv I φ x).toLinearMap)
+    (hCφ : C ⊆ φ.source) (hJt : ∀ z ∈ D, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (J z x)) :
+    ∀ z ∈ D, ∀ y ∈ φ '' C, ω₀.Tames (J' z y) := by
+  rintro z hz _ ⟨x, hx, rfl⟩
+  exact tames_of_isComplexLinearMap_mvfderiv hω
+    (φ.bijective_mvfderiv (by simp) (hCφ hx)).surjective (hφ x hx) (hJJ' z hz x hx)
+    (hJt z hz x hx)
+
 /-- **Floer solutions of bounded energy in a symplectic chart converge off finitely many bubbling
 points.** Let `φ` be a smooth partial diffeomorphism from `M` onto an open subset of `V`, and let
 `D ⊆ ℝ × ℝ` and `C ⊆ φ.source` be compact. Let `φ` pull the symplectic form `ω₀` back to the
@@ -145,15 +164,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset (hω : ω.
         TendstoLocallyUniformlyOn (fun n ↦ φ ∘ u (ψ n)) (φ ∘ v) atTop (Ω \ ↑Z) ∧
         ∀ y ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (ψ n) y) atTop (𝓝 (v y)) := by
   have hφC : IsCompact (φ '' C) := hC.image_of_continuousOn (φ.contMDiffOn.continuousOn.mono hCφ)
-  -- In the chart, `J'` is tamed by `ω₀` over `D × φ(C)`.
-  have hJ't : ∀ z ∈ D, ∀ y ∈ φ '' C, ω₀.Tames (J' z y) := by
-    rintro z hz _ ⟨x, hx, rfl⟩
-    exact tames_of_isComplexLinearMap_mvfderiv hω
-      (φ.bijective_mvfderiv (by simp) (hCφ hx)).surjective (hφ x hx) (hJJ' z hz x hx)
-      (hJt z hz x hx)
   obtain ⟨δ, hδ, hconv⟩ := ω₀.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
     (Ks := fun z y ↦ Ks z (φ.symm y)) (Kt := fun z y ↦ Kt z (φ.symm y)) hW hKs hKt hJ' hD hφC
-    hDCW hJ't
+    hDCW (tames_of_mem_image hω φ hφ hJJ' hCφ hJt)
   refine ⟨δ, hδ, fun Ω u A hΩ hΩD hu hfl huC hint hA ↦ ?_⟩
   -- At each point of `Ω`, the chart transports the Floer equation and the energy density.
   have hpt (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) :=
