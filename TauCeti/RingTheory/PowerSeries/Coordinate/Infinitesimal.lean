@@ -46,8 +46,7 @@ generators `ε₁ = inl ε` and `ε₂ = ε` satisfy `ε₁ ^ 2 = ε₂ ^ 2 = 0`
 linearly independent over `R`, `a b' - b a'` is the unique series `c ∈ R⟦X⟧` with
 `⁅σ₁, σ₂⁆ = 1 + ε₁ ε₂ c D`
 (`TauCeti.iteratedDualNumber_infinitesimalSubstAlgEquiv_commutator_eq_iff`), pinning the
-operator-commutator sign (explicitly distinguished from `-(a b' - b a')` at `a = X, b = X ^ 2`
-whenever `(2 : R) ≠ 0`).
+operator-commutator sign.
 
 Over the dual numbers `R[ε]` of a commutative ring `R`, the infinitesimal substitutions are the
 `R[ε]`-algebra automorphisms of `R[ε]⟦X⟧` that reduce to the identity modulo `ε` and preserve the
@@ -158,6 +157,11 @@ theorem infinitesimalSubstAlgEquiv_zero (he : e ^ 2 = 0) :
     infinitesimalSubstAlgEquiv e he 0 = 1 :=
   AlgEquiv.ext fun f ↦ by simp
 
+@[simp]
+theorem infinitesimalSubstAlgEquiv_zero_left (he : (0 : S) ^ 2 = 0) (a : S⟦X⟧) :
+    infinitesimalSubstAlgEquiv 0 he a = 1 :=
+  AlgEquiv.ext fun f ↦ by simp
+
 /-- For a fixed square-zero `e`, infinitesimal substitutions compose by adding their parameters:
 `1 + e (a + b) D = (1 + e a D) (1 + e b D)`. -/
 theorem infinitesimalSubstAlgEquiv_add (he : e ^ 2 = 0) (a b : S⟦X⟧) :
@@ -169,6 +173,11 @@ theorem infinitesimalSubstAlgEquiv_add (he : e ^ 2 = 0) (a b : S⟦X⟧) :
 theorem infinitesimalSubstAlgEquiv_symm (he : e ^ 2 = 0) (a : S⟦X⟧) :
     (infinitesimalSubstAlgEquiv e he a).symm = infinitesimalSubstAlgEquiv e he (-a) := by
   simp only [infinitesimalSubstAlgEquiv, AlgEquiv.ofAlgHom_symm, neg_neg]
+
+@[simp]
+theorem infinitesimalSubstAlgEquiv_inv (he : e ^ 2 = 0) (a : S⟦X⟧) :
+    (infinitesimalSubstAlgEquiv e he a)⁻¹ = infinitesimalSubstAlgEquiv e he (-a) := by
+  rw [AlgEquiv.aut_inv, infinitesimalSubstAlgEquiv_symm]
 
 /-- The commutator of infinitesimal substitutions: for square-zero `e₁, e₂`, the group commutator
 `⁅σ₁, σ₂⁆ = σ₁ σ₂ σ₁⁻¹ σ₂⁻¹` of `σ₁ = 1 + e₁ a D` and `σ₂ = 1 + e₂ b D`, with multiplication given
@@ -250,6 +259,11 @@ theorem substAlgEquiv_infinitesimal {e : S} (he : e ^ 2 = 0) {a : S⟦X⟧}
 @[simp]
 theorem infinitesimal_zero {e : S} (he : e ^ 2 = 0) :
     infinitesimal e he 0 (map_zero _) = 1 :=
+  FormalCoordinate.ext (by simp)
+
+@[simp]
+theorem infinitesimal_zero_left (he : (0 : S) ^ 2 = 0) {a : S⟦X⟧} (ha : constantCoeff a = 0) :
+    infinitesimal 0 he a ha = 1 :=
   FormalCoordinate.ext (by simp)
 
 /-- For a fixed square-zero `e`, infinitesimal formal coordinates compose by adding parameters. -/
@@ -464,7 +478,7 @@ private theorem snd_snd_coeff_inl_eps_mul_eps_smul_map (g : R⟦X⟧) (n : ℕ) 
     snd_snd_smul_inl_eps_mul_eps]
 
 /-- Over `R[ε][ε]`, the `inl ε * ε` coordinate of `(1 + (inl ε * ε) c D) X` is `c`. -/
-theorem snd_snd_coeff_infinitesimalSubstAlgEquiv_inl_eps_mul_eps_X (c : R⟦X⟧) (n : ℕ) :
+private theorem snd_snd_coeff_infinitesimalSubstAlgEquiv_inl_eps_mul_eps_X (c : R⟦X⟧) (n : ℕ) :
     (coeff n
       (infinitesimalSubstAlgEquiv ((inl (ε : R[ε]) : R[ε][ε]) * ε) inl_eps_mul_eps_pow_two
         (map (algebraMap R R[ε][ε]) c) X)).snd.snd = coeff n c := by
@@ -503,7 +517,7 @@ theorem iteratedDualNumber_infinitesimalSubstAlgEquiv_commutator_apply_map (a b 
         ((inl (ε : R[ε]) : R[ε][ε]) * ε) •
           map (algebraMap R R[ε][ε]) (⁅mkDerivation R a, mkDerivation R b⁆ f) := by
   rw [iteratedDualNumber_infinitesimalSubstAlgEquiv_commutator, infinitesimalSubstAlgEquiv_apply,
-    mkDerivation_bracket, mkDerivation_apply, smul_eq_mul, mul_comm (d⁄dX f)]
+    lie_mkDerivation, mkDerivation_apply, smul_eq_mul, mul_comm (d⁄dX f)]
   simp [derivative_map]
 
 /-- The `inl ε * ε` coordinate of the `n`-th coefficient of `⁅1 + (inl ε) a D, 1 + ε b D⁆ f` for
@@ -519,20 +533,6 @@ theorem snd_snd_coeff_iteratedDualNumber_commutator_apply_map (a b f : R⟦X⟧)
     snd_snd_coeff_inl_eps_mul_eps_smul_map]
   simp [algebraMap_eq_inl']
 
-/-- Reading off the `inl ε * ε` coordinate of `⁅1 + (inl ε) a D, 1 + ε b D⁆ X` over `R[ε][ε]`
-recovers `a b' - b a'`. -/
-theorem mk_snd_snd_coeff_iteratedDualNumber_commutator_X (a b : R⟦X⟧) :
-    (mk fun n ↦
-      (coeff n
-        (⁅infinitesimalSubstAlgEquiv (inl (ε : R[ε])) inl_eps_pow_two
-            (map (algebraMap R R[ε][ε]) a),
-          infinitesimalSubstAlgEquiv (ε : R[ε][ε]) eps_pow_two
-            (map (algebraMap R R[ε][ε]) b)⁆ X)).snd.snd) =
-      a * d⁄dX b - b * d⁄dX a := by
-  ext n
-  rw [coeff_mk, iteratedDualNumber_infinitesimalSubstAlgEquiv_commutator,
-    snd_snd_coeff_infinitesimalSubstAlgEquiv_inl_eps_mul_eps_X]
-
 /-- Because `inl ε * ε` is part of an `R`-basis of `R[ε][ε]`, `a b' - b a'` is the unique power
 series `c ∈ R⟦X⟧` such that `⁅1 + (inl ε) a D, 1 + ε b D⁆ = 1 + (inl ε * ε) c D`. -/
 theorem iteratedDualNumber_infinitesimalSubstAlgEquiv_commutator_eq_iff (a b c : R⟦X⟧) :
@@ -545,22 +545,6 @@ theorem iteratedDualNumber_infinitesimalSubstAlgEquiv_commutator_eq_iff (a b c :
   exact ⟨fun h ↦
     (iteratedDualNumber_infinitesimalSubstAlgEquiv_inl_eps_mul_eps_injective h).symm,
     fun h ↦ h ▸ rfl⟩
-
-/-- When `(2 : R) ≠ 0`, the commutator of `1 + (inl ε) X D` and `1 + ε X² D` over `R[ε][ε]` is
-strictly distinct from `1 + (inl ε * ε) (X² d⁄dX X - X d⁄dX (X²)) D`, witnessing the
-operator-commutator sign `a b' - b a'`. -/
-theorem iteratedDualNumber_infinitesimalSubstAlgEquiv_commutator_X_X_sq_ne_neg
-    (h2 : (2 : R) ≠ 0) :
-    ⁅infinitesimalSubstAlgEquiv (inl (ε : R[ε])) inl_eps_pow_two (map (algebraMap R R[ε][ε]) X),
-      infinitesimalSubstAlgEquiv (ε : R[ε][ε]) eps_pow_two (map (algebraMap R R[ε][ε]) (X ^ 2))⁆ ≠
-      infinitesimalSubstAlgEquiv ((inl (ε : R[ε]) : R[ε][ε]) * ε) inl_eps_mul_eps_pow_two
-        (map (algebraMap R R[ε][ε]) (X ^ 2 * d⁄dX X - X * d⁄dX (X ^ 2))) := by
-  intro h
-  rw [iteratedDualNumber_infinitesimalSubstAlgEquiv_commutator_eq_iff, sq (X : R⟦X⟧),
-    Derivation.leibniz, smul_eq_mul, derivative_X, mul_one] at h
-  have hneg : -(X ^ 2 : R⟦X⟧) = X ^ 2 := by linear_combination h
-  have hcoeff : (-1 : R) = 1 := by simpa using congrArg (coeff 2) hneg
-  exact h2 (by linear_combination -hcoeff)
 
 end IteratedDualNumber
 

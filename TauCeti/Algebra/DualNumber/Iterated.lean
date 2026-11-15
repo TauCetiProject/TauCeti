@@ -123,14 +123,6 @@ by `Fin 2 × Fin 2` via `(i, j) ↦ (inl ε) ^ i * ε ^ j`. -/
 noncomputable def iteratedDualNumberBasis : Module.Basis (Fin 2 × Fin 2) R R[ε][ε] :=
   (dualNumberBasis R).smulTower (dualNumberBasis R[ε])
 
-/-- The iterated dual numbers `R[ε][ε]` are a finite `R`-module (of rank four). -/
-instance iteratedDualNumberModuleFinite : Module.Finite R R[ε][ε] :=
-  Module.Finite.of_basis (iteratedDualNumberBasis R)
-
-/-- The iterated dual numbers `R[ε][ε]` are a free `R`-module on `{1, inl ε, ε, ε • ε}`. -/
-instance iteratedDualNumberModuleFree : Module.Free R R[ε][ε] :=
-  Module.Free.of_basis (iteratedDualNumberBasis R)
-
 /-- Over a semiring satisfying the strong rank condition, the iterated dual numbers `R[ε][ε]`
 have `R`-rank four. -/
 @[simp]
@@ -202,12 +194,10 @@ variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
 
 /-- Two `R`-algebra homomorphisms out of `R[ε][ε]` are equal when they agree on `inl ε` and `ε`. -/
 theorem iteratedDualNumber_algHom_ext ⦃f g : R[ε][ε] →ₐ[R] A⦄
-    (h₁ : f (inl ε) = g (inl ε)) (h₂ : f ε = g ε) : f = g := by
-  have hinl : f.comp (inlAlgHom R R[ε] R[ε]) = g.comp (inlAlgHom R R[ε] R[ε]) :=
-    DualNumber.algHom_ext (by simpa using h₁)
-  refine DualNumber.algHom_ext' hinl ?_
-  ext x
-  simp [← inl_mul_eq_smul, show f (inl x) = g (inl x) from congr($hinl x), h₂]
+    (h₁ : f (inl ε) = g (inl ε)) (h₂ : f ε = g ε) : f = g :=
+  AlgHom.toLinearMap_injective <|
+    iteratedDualNumber_linearMap_ext (by simp) (by simpa using h₁) (by simpa using h₂)
+      (by simp [h₁, h₂])
 
 /-- Universal property of the iterated dual numbers: `R`-algebra homomorphisms `R[ε][ε] →ₐ[R] A`
 correspond bijectively to pairs `(e₁, e₂)` of commuting square-zero elements of `A`. -/
@@ -306,14 +296,14 @@ theorem iteratedDualNumberSwap_smul_eps :
 
 @[simp]
 theorem iteratedDualNumberSwap_symm :
-    (iteratedDualNumberSwap R).symm = iteratedDualNumberSwap R :=
-  (rfl)
+    (iteratedDualNumberSwap R).symm = iteratedDualNumberSwap R := by
+  rw [iteratedDualNumberSwap, AlgEquiv.ofAlgHom_symm]
 
 /-- Applying `TauCeti.iteratedDualNumberSwap` twice is the identity. -/
 @[simp]
 theorem iteratedDualNumberSwap_apply_apply (z : R[ε][ε]) :
-    iteratedDualNumberSwap R (iteratedDualNumberSwap R z) = z :=
-  congr($(iteratedDualNumberSwapHom_comp_self R) z)
+    iteratedDualNumberSwap R (iteratedDualNumberSwap R z) = z := by
+  simpa only [iteratedDualNumberSwap_symm] using (iteratedDualNumberSwap R).symm_apply_apply z
 
 @[simp]
 theorem fst_fst_iteratedDualNumberSwap (z : R[ε][ε]) :
@@ -467,8 +457,8 @@ noncomputable def iteratedDualNumberMvPolynomialQuotientAlgEquiv :
   -- so we rewrite via `liftₐ_comp` before `simp` unfolds `liftₐ_apply`.
   have hlift (p : MvPolynomial (Fin 2) R) :
       Ideal.Quotient.liftₐ I (MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])]) hI
-        (Ideal.Quotient.mkₐ R I p) = MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p :=
-    congr($(Ideal.Quotient.liftₐ_comp I _ hI) p)
+        (Ideal.Quotient.mkₐ R I p) = MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p := by
+    simpa only [AlgHom.comp_apply] using congr($(Ideal.Quotient.liftₐ_comp I _ hI) p)
   AlgEquiv.ofAlgHom
     (Ideal.Quotient.liftₐ I (MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])]) hI)
     (iteratedDualNumberLift ⟨(Ideal.Quotient.mkₐ R I (MvPolynomial.X 0),

@@ -9,7 +9,9 @@ public import Mathlib.Algebra.DualNumber
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.Basis.Fin
 public import Mathlib.RingTheory.Artinian.Module
+import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.RingTheory.DualNumber
+import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
 # Basic properties of dual numbers
@@ -17,7 +19,7 @@ import Mathlib.RingTheory.DualNumber
 The coordinatewise scalar action on dual numbers commutes with multiplication. These
 instances make bilinear multiplication and convolution available with that module structure.
 Dual numbers over an Artinian ring are also Artinian, using their product module structure, and
-they are a finite module over their coefficient ring.
+dual numbers over a finite or free module are again finite or free.
 Multiplication by `ε` is exact over any semiring. Over any ring, each element
 `1 + inr c` is a unit with inverse `1 - inr c`.
 Algebra maps on dual numbers evaluate in terms of their restriction to constants and
@@ -63,10 +65,12 @@ instance dualNumberIsScalarTower {R B : Type*} [Monoid R] [Semiring B]
   smul_assoc r x y := by
     ext <;> simp [smul_eq_mul, smul_add, smul_mul_assoc]
 
-variable {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
-
+-- Kept at `[Algebra R B]` rather than `[DistribMulAction R B]`: weakening this lets
+-- `PiTensorProduct.instNonUnitalNonAssocSemiring` fire before `PiTensorProduct.instSemiring` on
+-- `⨂[R] _ : ι, R[ε]`, breaking `SMulCommClass` synthesis for `LinearMap.mulLeft R`.
 /-- Coordinatewise scalar multiplication commutes with left multiplication of dual numbers. -/
-instance dualNumberSMulCommClass : SMulCommClass R (DualNumber B) (DualNumber B) where
+instance dualNumberSMulCommClass {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B] :
+    SMulCommClass R (DualNumber B) (DualNumber B) where
   smul_comm r x y := by
     ext <;> simp [smul_eq_mul, smul_add]
 
@@ -74,6 +78,16 @@ instance dualNumberSMulCommClass : SMulCommClass R (DualNumber B) (DualNumber B)
 instance dualNumberIsArtinianRing {R : Type*} [Ring R] [IsArtinianRing R] :
     IsArtinianRing (DualNumber R) :=
   isArtinian_of_tower R (inferInstanceAs (IsArtinian R (R × R)))
+
+/-- Dual numbers over a finite `R`-module form a finite `R`-module. -/
+instance dualNumberModuleFinite {R B : Type*} [Semiring R] [AddCommMonoid B] [Module R B]
+    [Module.Finite R B] : Module.Finite R (DualNumber B) :=
+  inferInstanceAs (Module.Finite R (B × B))
+
+/-- Dual numbers over a free `R`-module form a free `R`-module. -/
+instance dualNumberModuleFree {R B : Type*} [Semiring R] [AddCommMonoid B] [Module R B]
+    [Module.Free R B] : Module.Free R (DualNumber B) :=
+  inferInstanceAs (Module.Free R (B × B))
 
 /-- Multiplication by `ε` on the dual numbers is exact. -/
 theorem dualNumber_mul_eps_exact {R : Type*} [Semiring R] :
@@ -153,14 +167,6 @@ theorem dualNumberBasis_zero : dualNumberBasis R 0 = 1 :=
 @[simp]
 theorem dualNumberBasis_one : dualNumberBasis R 1 = eps :=
   Module.Basis.finTwoProd_one R
-
-/-- The dual numbers are a finite module over their coefficient ring, with basis `1, ε`. -/
-instance dualNumberModuleFinite : Module.Finite R (DualNumber R) :=
-  Module.Finite.of_basis (dualNumberBasis R)
-
-/-- The dual numbers are a free module over their coefficient ring, with basis `1, ε`. -/
-instance dualNumberModuleFree : Module.Free R (DualNumber R) :=
-  Module.Free.of_basis (dualNumberBasis R)
 
 variable {R}
 
