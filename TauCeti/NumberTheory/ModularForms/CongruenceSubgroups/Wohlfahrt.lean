@@ -321,20 +321,19 @@ example :
       Gamma 4 ≤ Γ ∧
       ¬ Gamma 2 ≤ Γ := by
   have hneg : (-1 : SL(2, ℤ)) ∉ oddGamma2Lift := fun ⟨_, h00⟩ ↦ absurd h00 (by decide)
-  have hneg2 : (-1 : SL(2, ℤ)) ∈ Gamma 2 := by rw [Gamma_mem]; decide
+  have hneg2 : (-1 : SL(2, ℤ)) ∈ Gamma 2 := neg_one_mem_Gamma_iff.mpr dvd_rfl
   have hwith : oddGamma2Lift.withCenter = Gamma 2 := by
-    refine le_antisymm (Subgroup.withCenter_le_iff.mpr ⟨fun _ h ↦ h.1, fun z hz ↦ ?_⟩) fun γ hγ ↦ ?_
-    · rcases mem_center_iff_eq_one_or_eq_neg_one.mp hz with rfl | rfl
-      · exact one_mem _
-      · exact hneg2
-    · obtain ⟨k, hk⟩ := (mem_Gamma_iff_dvd.mp hγ).1
-      rcases Int.even_or_odd k with ⟨m, rfl⟩ | ⟨m, rfl⟩
-      · exact oddGamma2Lift.le_withCenter ⟨hγ,
-          (ZMod.intCast_eq_intCast_iff_dvd_sub (γ 0 0) 1 4).mpr ⟨-m, by omega⟩⟩
-      · refine Subgroup.mem_withCenter_iff_exists_eq_or_eq_neg.mpr
-          ⟨-γ, ⟨by simpa using mul_mem hneg2 hγ, ?_⟩, Or.inr (neg_neg γ).symm⟩
-        rw [coe_neg, Matrix.neg_apply]
-        exact (ZMod.intCast_eq_intCast_iff_dvd_sub (-(γ 0 0)) 1 4).mpr ⟨m + 1, by omega⟩
+    refine le_antisymm
+      (Subgroup.withCenter_le_iff.mpr ⟨fun _ h ↦ h.1, center_le_iff_neg_one_mem.mpr hneg2⟩)
+      fun γ hγ ↦ ?_
+    obtain ⟨k, hk⟩ := (mem_Gamma_iff_dvd.mp hγ).1
+    rcases Int.even_or_odd k with ⟨m, rfl⟩ | ⟨m, rfl⟩
+    · exact oddGamma2Lift.le_withCenter ⟨hγ,
+        (ZMod.intCast_eq_intCast_iff_dvd_sub (γ 0 0) 1 4).mpr ⟨-m, by omega⟩⟩
+    · refine Subgroup.mem_withCenter_iff_exists_eq_or_eq_neg.mpr
+        ⟨-γ, ⟨by simpa using mul_mem hneg2 hγ, ?_⟩, Or.inr (neg_neg γ).symm⟩
+      rw [coe_neg, Matrix.neg_apply]
+      exact (ZMod.intCast_eq_intCast_iff_dvd_sub (-(γ 0 0)) 1 4).mpr ⟨m + 1, by omega⟩
   have hT2 : ModularGroup.T ^ 2 ∈ oddGamma2Lift :=
     ⟨by simpa using ModularGroup_T_pow_mem_Gamma 2 2 dvd_rfl,
       by simp [sq, ModularGroup.coe_T, Matrix.mul_apply, Fin.sum_univ_two]⟩

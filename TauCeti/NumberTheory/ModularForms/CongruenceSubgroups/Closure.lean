@@ -200,11 +200,9 @@ theorem congruenceClosure_withCenter (Γ : Subgroup SL(2, ℤ)) :
       ⟨congruenceClosure_mono Γ.le_withCenter,
         Γ.center_le_withCenter.trans Γ.withCenter.le_congruenceClosure⟩)
   by_cases hneg : (-1 : SL(2, ℤ)) ∈ Γ.congruenceClosure
-  · refine Γ.congruenceClosure.le_withCenter (mem_congruenceClosure_iff.mpr fun Δ hΔ hle ↦ ?_)
-    refine mem_congruenceClosure_iff.mp hγ Δ hΔ (withCenter_le_iff.mpr ⟨hle, fun z hz ↦ ?_⟩)
-    rcases mem_center_iff_eq_one_or_eq_neg_one.mp hz with rfl | rfl
-    · exact one_mem Δ
-    · exact mem_congruenceClosure_iff.mp hneg Δ hΔ hle
+  · exact Γ.congruenceClosure.le_withCenter (mem_congruenceClosure_iff.mpr fun Δ hΔ hle ↦
+      mem_congruenceClosure_iff.mp hγ Δ hΔ (withCenter_le_iff.mpr
+        ⟨hle, center_le_iff_neg_one_mem.mpr (mem_congruenceClosure_iff.mp hneg Δ hΔ hle)⟩))
   · rw [mem_congruenceClosure_iff] at hneg
     push Not at hneg
     obtain ⟨Δ₀, hΔ₀, hle₀, hneg₀⟩ := hneg
@@ -215,8 +213,7 @@ theorem congruenceClosure_withCenter (Γ : Subgroup SL(2, ℤ)) :
     · exact Γ.congruenceClosure.le_withCenter
         (mem_congruenceClosure_of_mem_withCenter_of_mem hΔ₀ hle₀ hneg₀ hγ hδ)
     · have hneg_mem : (-1 : SL(2, ℤ)) ∈ Γ.withCenter.congruenceClosure :=
-        Γ.withCenter.le_congruenceClosure (Γ.center_le_withCenter
-          (mem_center_iff_eq_one_or_eq_neg_one.mpr (Or.inr rfl)))
+        Γ.withCenter.le_congruenceClosure (center_le_iff_neg_one_mem.mp Γ.center_le_withCenter)
       have hδ' : δ ∈ Γ.withCenter.congruenceClosure := by simpa using mul_mem hneg_mem hγ
       exact mem_withCenter_iff_exists_eq_or_eq_neg.mpr
         ⟨δ, mem_congruenceClosure_of_mem_withCenter_of_mem hΔ₀ hle₀ hneg₀ hδ' hδ, Or.inr rfl⟩
@@ -337,14 +334,13 @@ theorem congruenceClosure_eq_withCenter_of_not_isCongruenceSubgroup {Γ : Subgro
     ⟨ne_zero_of_dvd_ne_zero (mul_ne_zero two_ne_zero hwith.strictLevel_ne_zero)
       Γ.strictLevel_dvd_two_mul_strictLevel_withCenter⟩
   have hle : Γ.congruenceClosure ≤ Γ.withCenter := congruenceClosure_le hwith Γ.le_withCenter
-  refine le_antisymm hle (withCenter_le_iff.mpr ⟨Γ.le_congruenceClosure, fun z hz ↦ ?_⟩)
-  rcases mem_center_iff_eq_one_or_eq_neg_one.mp hz with rfl | rfl
-  · exact one_mem _
-  · by_contra hneg
-    have heq : Γ.congruenceClosure = Γ := by
-      have hinf := inf_withCenter_eq_of_le Γ.le_congruenceClosure fun h ↦ absurd h hneg
-      rwa [inf_eq_left.mpr hle] at hinf
-    exact hnot (heq ▸ isCongruenceSubgroup_congruenceClosure Γ)
+  refine le_antisymm hle
+    (withCenter_le_iff.mpr ⟨Γ.le_congruenceClosure, center_le_iff_neg_one_mem.mpr ?_⟩)
+  by_contra hneg
+  have heq : Γ.congruenceClosure = Γ := by
+    have hinf := inf_withCenter_eq_of_le Γ.le_congruenceClosure fun h ↦ absurd h hneg
+    rwa [inf_eq_left.mpr hle] at hinf
+  exact hnot (heq ▸ isCongruenceSubgroup_congruenceClosure Γ)
 
 /-- Any lift `Γ` of a projective congruence group (that is, `IsCongruenceSubgroup Γ.withCenter`)
 has congruence closure equal either to `Γ` (when `Γ` is congruence) or to `Γ·{±I}` (when `Γ` is
@@ -449,7 +445,7 @@ theorem congruenceClosure_Gamma1 (N : ℕ) : (Gamma1 N).congruenceClosure = Gamm
     exact (Gamma1_is_congruence N).congruenceClosure_eq
 
 example : (-1 : SL(2, ℤ)) ∉ (Gamma 3).congruenceClosure := by
-  rw [congruenceClosure_Gamma, Gamma_mem]
+  rw [congruenceClosure_Gamma, neg_one_mem_Gamma_iff]
   decide
 
 end CongruenceSubgroup
