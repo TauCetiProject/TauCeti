@@ -163,7 +163,7 @@ theorem universalGSpaceCellularGroupHomologyIso_hom_comp_homologyMap_standardRes
         HomologicalComplex.homologyMap
           ((((Rep.coinvariantsTensor k G).obj A).mapHomologicalComplex _).map f) n)
     (universalGSpaceCellularResolutionToStandard_def k G).symm).trans
-    (_root_.Rep.groupHomologyIso_hom_comp_homologyMap A
+    (A.groupHomologyIso_hom_comp_homologyMap
       (universalGSpaceCellularResolution k G) (Rep.standardResolution k G)
       (universalGSpaceCellularResolutionToStandard k G)
       (universalGSpaceCellularResolutionToStandard_f_zero_comp_π k G) n)

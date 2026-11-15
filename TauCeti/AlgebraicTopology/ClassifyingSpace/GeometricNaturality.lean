@@ -165,56 +165,6 @@ theorem universalGSpaceCellularComplexIso_inv_naturality (φ : G →* H) :
     Category.assoc, ← CategoryTheory.Functor.map_comp, Iso.hom_inv_id,
     CategoryTheory.Functor.map_id, Category.comp_id]
 
-/-- In degree zero, `universalGSpaceCellularComplexMap` preserves the cellular augmentation
-expressed through ordered chains. -/
-@[reassoc]
-theorem universalGSpaceCellularComplexMap_f_zero_comp_augmentation (φ : G →* H) :
-    (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
-        (Rep.resFunctor φ).map
-          (((universalGSpaceCellularComplexIso k H).hom ≫
-            universalGSpaceAugmentation k H).f 0) =
-      ((universalGSpaceCellularComplexIso k G).hom ≫
-        universalGSpaceAugmentation k G).f 0 := by
-  have hnat :
-      (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
-          (Rep.resFunctor φ).map ((universalGSpaceCellularComplexIso k H).hom.f 0) =
-        (universalGSpaceCellularComplexIso k G).hom.f 0 ≫
-          (φ.universalGSpaceChainMap (k := k)).f 0 :=
-    HomologicalComplex.congr_hom
-      (φ.universalGSpaceCellularComplexIso_hom_naturality (k := k)) 0
-  let cMap : (universalGSpaceChainComplex k G).X 0 ⟶
-      Rep.res φ (Rep.ofMulAction k H ((indexedJoin fun _ : ℕ => H).RealizationCell 0)) :=
-    (φ.universalGSpaceChainMap (k := k)).f 0
-  let toRep : (universalGSpaceChainComplex k G).X 0 ⟶
-      Rep.res φ (Rep.ofMulAction k H ((indexedJoin fun _ : ℕ => H).RealizationCell 0)) :=
-    (φ.universalGSpaceCellMulActionHom 0).toRepRes
-  let augH : Rep.res φ (Rep.ofMulAction k H ((indexedJoin fun _ : ℕ => H).RealizationCell 0)) ⟶
-      Rep.trivial k G k :=
-    (Rep.resFunctor φ).map ((universalGSpaceAugmentation k H).f 0)
-  let pAugH : Rep.res φ (Rep.ofMulAction k H ((indexedJoin fun _ : ℕ => H).RealizationCell 0)) ⟶
-      Rep.trivial k G k :=
-    (Rep.resFunctor φ).map
-      (permutationAugmentation k H ((indexedJoin fun _ : ℕ => H).RealizationCell 0))
-  let pAugG : (universalGSpaceChainComplex k G).X 0 ⟶ Rep.trivial k G k :=
-    permutationAugmentation k G ((indexedJoin fun _ : ℕ => G).RealizationCell 0)
-  let augG : (universalGSpaceChainComplex k G).X 0 ⟶ Rep.trivial k G k :=
-    (universalGSpaceAugmentation k G).f 0
-  have hcMap : cMap = toRep := φ.universalGSpaceChainMap_f 0
-  have haugH : augH = pAugH :=
-    congrArg ((Rep.resFunctor φ).map ·) (universalGSpaceAugmentation_f_zero k H)
-  have haug :
-      (φ.universalGSpaceChainMap (k := k)).f 0 ≫
-          (Rep.resFunctor φ).map ((universalGSpaceAugmentation k H).f 0) =
-        (universalGSpaceAugmentation k G).f 0 :=
-    calc cMap ≫ augH
-        = toRep ≫ pAugH := by rw [hcMap, haugH]
-      _ = pAugG :=
-          MulActionHom.toRepRes_comp_permutationAugmentation (φ.universalGSpaceCellMulActionHom 0)
-      _ = augG := (universalGSpaceAugmentation_f_zero k G).symm
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, CategoryTheory.Functor.map_comp,
-    ← Category.assoc, hnat, Category.assoc, haug]
-  rfl
-
 end MonoidHom
 
 namespace TauCeti

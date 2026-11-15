@@ -248,24 +248,6 @@ theorem not_isIso_forget₂_mapHomologicalComplex_map_universalGSpaceChainComple
       (universalGSpaceToStandardComplex (G := G) k)).mp
       (forget₂_mapHomologicalComplex_map_universalGSpaceChainComplexToStandardComplex k G ▸ h)
 
-/-- For a nontrivial coefficient ring `k`, the degree-zero component of
-`universalGSpaceChainComplexToStandardComplex` is not injective on underlying elements: distinct
-index copies `(0, g)` and `(1, g)` of a group element `g` have the same standard generator. -/
-theorem not_injective_universalGSpaceChainComplexToStandardComplex_f_zero [Nontrivial k] :
-    ¬ Function.Injective ((universalGSpaceChainComplexToStandardComplex k G).f 0).hom := by
-  intro hinj
-  have : Mono (universalGSpaceToStandardHom k G 0 ≫ (Rep.standardComplex.xIso k G 0).inv) :=
-    universalGSpaceChainComplexToStandardComplex_f k G 0 ▸ (Rep.mono_iff_injective _).2 hinj
-  have hhom : Function.Injective ⇑(universalGSpaceToStandardHom k G 0).hom.toLinearMap :=
-    (Rep.mono_iff_injective (universalGSpaceToStandardHom k G 0)).1
-      (mono_of_mono (universalGSpaceToStandardHom k G 0) (Rep.standardComplex.xIso k G 0).inv)
-  rw [universalGSpaceToStandardHom_hom_toLinearMap] at hhom
-  refine not_injective_universalGSpaceToStandard_zero (G := G) k fun x y hxy ↦ ?_
-  apply (MonoidAlgebra.coeffLinearEquiv k).symm.injective
-  apply hhom
-  simpa only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.apply_symm_apply] using hxy
-
 /-- For any group `G` and nontrivial coefficient ring `k`, the join-to-standard chain map
 `universalGSpaceChainComplexToStandardComplex` is **not** an isomorphism of chain complexes in
 `Rep k G`. -/
