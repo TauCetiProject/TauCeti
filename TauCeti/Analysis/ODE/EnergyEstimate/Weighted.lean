@@ -12,7 +12,7 @@ import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 
 /-!
-# Exponential weights below the spectral gap
+# Exponentially weighted trajectory operators
 
 Let `w : ℝ → ℝ` be a weight with derivative `w'`. Multiplication by `exp w` identifies the
 weighted space `L²_w = {u | exp w • u ∈ L²}` with `L²`, and it conjugates the trajectory
@@ -41,14 +41,50 @@ and `δ±`. For a bounded-below weight the conclusions are:
   `α ‖v‖ ≤ ‖A± v‖` this gives the decay `‖v s‖ ≤ C exp (-δ |s|)` at every rate `0 ≤ δ < α`
   (`TauCeti.exists_forall_norm_le_mul_exp_neg_mul_abs`).
 
-The proof compares indices. Multiplying by `exp (w 0 - w)`, which is bounded, sends weighted
-solutions to unweighted ones, so the kernel of `D_{A - w'}` is contained in that of `D_A`; dually,
-the kernel of the formal adjoint of `D_A` is contained in that of `D_{A - w'}`. The two operators
+For these statements the proof compares indices. Multiplying by `exp (w 0 - w)`, which is
+bounded, sends weighted solutions to unweighted ones, so the kernel of `D_{A - w'}` is contained in
+that of `D_A`; dually, the kernel of the formal adjoint of `D_A` is contained in that of
+`D_{A - w'}`. The two operators
 are joined through trajectory operators with hyperbolic limits, so they have the same index
 (`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_of_forall_hasLyapunovForm`), and both
 inclusions of finite-dimensional spaces are equalities. Pointwise decay then follows because a
 square-integrable path whose derivative is bounded by a multiple of its norm is bounded
 (`TauCeti.norm_sq_le_exp_mul_integral_norm_sq`).
+
+**Weights beyond the spectral gap.** For symmetric limits the index of the weighted operator is
+computed for every weight that is not exceptional, that is, whose slope `δ±` at `±∞` is not an
+eigenvalue of `A±`. Since `A± - δ± • id` is then invertible, the Morse-index formula
+`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank`
+applies to `A - w' • id`, and the index is `n(A⁻, δ⁻) - n(A⁺, δ⁺)`, with `n(B, δ)` the number of
+eigenvalues of `B` below `δ` counted with multiplicity
+(`TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id`). So the index depends on the weight
+only through the eigenvalues lying between its slopes and those of another weight: as the weight
+forces more decay, each eigenvalue of `A⁺` above the old slope `δ⁺` and below the new one, and each
+eigenvalue of `A⁻` below `δ⁻` and above the new slope, lowers the index by its multiplicity
+(`TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id_add_finrank_add_finrank`, with the
+single crossings `index_trajectoryOperator_sub_smul_id_add_finrank_eigenspace_of_atTop` and
+`index_trajectoryOperator_sub_smul_id_add_finrank_eigenspace_of_atBot`).
+
+The limits may be degenerate. Along a trajectory between critical manifolds of a Morse–Bott
+function the limits are Hessians with a kernel, the tangent spaces of the critical manifolds, and
+the unweighted operator is not Fredholm. A small decay weight `δ log (cosh s)`, with `δ` below
+the nonzero eigenvalues of the limits in absolute value, gives index
+`n⁻(A⁻) - n⁻(A⁺) - dim ker A⁺`
+(`TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id_of_neg_of_pos`).
+
+## Main results
+
+* `TauCeti.squareIntegrableSolutions_sub_smul_id`,
+  `TauCeti.squareIntegrableSolutions_neg_adjoint_add_smul_id`: weights below the spectral gaps
+  change neither kernel nor cokernel.
+* `TauCeti.exists_forall_norm_le_mul_exp_neg`, `TauCeti.exists_forall_norm_le_mul_exp_neg_mul_abs`:
+  square-integrable solutions decay exponentially.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id`: the index for a non-exceptional
+  weight.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id_add_finrank_add_finrank`: the index
+  drops by the multiplicities of the eigenvalues crossed by the slopes of the weight.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id_of_neg_of_pos`: the index for a small
+  decay weight at degenerate limits.
 
 ## References
 
@@ -271,3 +307,217 @@ theorem exists_forall_norm_le_mul_exp_neg_mul_abs (hA : Continuous A)
 end Hyperbolic
 
 end TauCeti
+
+namespace TauCeti.WeakDerivStep
+
+/-! ### The index for arbitrary weights and the crossing of exceptional weights -/
+
+section Index
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {A : ℝ → E →L[ℝ] E} {Aminus Aplus : E →L[ℝ] E}
+
+/-- **The index of an exponentially weighted trajectory operator.** Let `A` be a continuous
+family of operators on a finite-dimensional real inner product space with symmetric limits `A±`
+at `±∞`, and let `w'` be a continuous function with limits `δ±` at `±∞`, the slope of a weight
+`w`. Multiplication by `exp w` conjugates the trajectory operator `u ↦ u' + A u` on the weighted
+spaces `{u | exp w • u ∈ W^{1,2}}` and `{u | exp w • u ∈ L²}` to the trajectory operator of
+`A - w' • id` on the unweighted spaces. If the weight is not exceptional, that is, `δ±` is not an
+eigenvalue of `A±`, then the index of this operator is `n(A⁻, δ⁻) - n(A⁺, δ⁺)`, where
+`n(B, δ)` is the number of eigenvalues of `B` below `δ`, counted with multiplicity.
+
+Nothing is assumed about the spectral gaps of `A±`: the limits may have zero or any other
+eigenvalue, as long as it differs from the slope of the weight at that end. -/
+theorem index_trajectoryOperator_sub_smul_id (hA : Continuous A) {w' : ℝ → ℝ}
+    (hw' : Continuous w') (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric)
+    (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus)) {δminus δplus : ℝ}
+    (hw'bot : Tendsto w' atBot (𝓝 δminus)) (hw'top : Tendsto w' atTop (𝓝 δplus))
+    (hδminus : ¬Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) δminus)
+    (hδplus : ¬Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) δplus)
+    (BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) BL).index =
+      (Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio δminus)) :
+          ℤ) -
+        Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio δplus)) := by
+  set I := ContinuousLinearMap.id ℝ E
+  -- Away from its eigenvalues, `T - δ • id` is injective, hence bounded below.
+  have hbelow {T : E →L[ℝ] E} {δ : ℝ} (h : ¬Module.End.HasEigenvalue (T : E →ₗ[ℝ] E) δ) :
+      ∃ α > 0, ∀ v, α * ‖v‖ ≤ ‖(T - δ • I) v‖ := by
+    refine antilipschitzWith_iff_exists_mul_le_norm.1
+      ((((T - δ • I : E →L[ℝ] E) : E →ₗ[ℝ] E).injective_iff_antilipschitz.1 ?_).imp
+        fun _ hK ↦ hK.2)
+    rw [← LinearMap.ker_eq_bot, eq_bot_iff]
+    intro v hv
+    have hv' : v ∈ Module.End.eigenspace (T : E →ₗ[ℝ] E) δ := by
+      rw [Module.End.mem_eigenspace_iff]
+      simpa [I, sub_eq_zero] using hv
+    rwa [not_not.mp (mt Module.End.hasEigenvalue_iff.2 h)] at hv'
+  have hsym {T : E →L[ℝ] E} (hT : (T : E →ₗ[ℝ] E).IsSymmetric) (δ : ℝ) :
+      ((T - δ • I : E →L[ℝ] E) : E →ₗ[ℝ] E).IsSymmetric := by
+    simpa [I] using hT.sub (LinearMap.IsSymmetric.id.smul (conj_trivial δ))
+  -- Over `ℝ` the coercion `RCLike.ofReal` of the shift lemma is the identity.
+  have hshift (T : E →L[ℝ] E) (δ : ℝ) :
+      Module.End.pointSpectralSubspace ((T - δ • I : E →L[ℝ] E) : E →ₗ[ℝ] E) (Iio 0) =
+        Module.End.pointSpectralSubspace (T : E →ₗ[ℝ] E) (Iio δ) := by
+    rw [show ((T - δ • I : E →L[ℝ] E) : E →ₗ[ℝ] E) = (T : E →ₗ[ℝ] E) - δ • LinearMap.id by
+      ext; simp [I]]
+    refine (Module.End.pointSpectralSubspace_sub_smul_id (𝕜 := ℝ) δ).trans ?_
+    congr 1
+    ext μ
+    simp
+  obtain ⟨αm, hαm, hm⟩ := hbelow hδminus
+  obtain ⟨αp, hαp, hp⟩ := hbelow hδplus
+  rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
+      (hA.sub (hw'.smul continuous_const)) (hsym hsymminus δminus) (hsym hsymplus δplus)
+      (lt_min hαm hαp)
+      (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (hm v))
+      (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (hp v))
+      (hbot.sub (hw'bot.smul_const _)) (htop.sub (hw'top.smul_const _)) BL hBL,
+    hshift, hshift]
+
+/-- **The index jumps at exceptional weights.** Compare two weights whose slopes tend to
+`δ±₁` and `δ±₂`, with `δ⁻₂ ≤ δ⁻₁` and `δ⁺₁ ≤ δ⁺₂`, so that the second forces at least as much
+decay as the first at both ends, neither of them exceptional. Then the index of the more strongly
+weighted trajectory operator is smaller by the number of eigenvalues of `A⁻` in `[δ⁻₂, δ⁻₁)` and
+of `A⁺` in `[δ⁺₁, δ⁺₂)`, counted with multiplicity: these are the eigenvalues crossed by the
+slopes as the weight increases. -/
+theorem index_trajectoryOperator_sub_smul_id_add_finrank_add_finrank (hA : Continuous A)
+    {w₁' w₂' : ℝ → ℝ} (hw₁' : Continuous w₁') (hw₂' : Continuous w₂')
+    (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric) (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    {δminus₁ δplus₁ δminus₂ δplus₂ : ℝ}
+    (hw₁'bot : Tendsto w₁' atBot (𝓝 δminus₁)) (hw₁'top : Tendsto w₁' atTop (𝓝 δplus₁))
+    (hw₂'bot : Tendsto w₂' atBot (𝓝 δminus₂)) (hw₂'top : Tendsto w₂' atTop (𝓝 δplus₂))
+    (hminus : δminus₂ ≤ δminus₁) (hplus : δplus₁ ≤ δplus₂)
+    (hδminus₁ : ¬Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) δminus₁)
+    (hδplus₁ : ¬Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) δplus₁)
+    (hδminus₂ : ¬Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) δminus₂)
+    (hδplus₂ : ¬Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) δplus₂)
+    (BL₁ BL₂ : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hBL₁ : BL₁ =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w₁' s • ContinuousLinearMap.id ℝ E)
+    (hBL₂ : BL₂ =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w₂' s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) BL₂).index +
+        Module.finrank ℝ
+          (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Ico δminus₂ δminus₁)) +
+        Module.finrank ℝ
+          (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ico δplus₁ δplus₂)) =
+      (trajectoryOperator (p := 2) BL₁).index := by
+  rw [index_trajectoryOperator_sub_smul_id hA hw₁' hsymminus hsymplus hbot htop hw₁'bot hw₁'top
+      hδminus₁ hδplus₁ BL₁ hBL₁,
+    index_trajectoryOperator_sub_smul_id hA hw₂' hsymminus hsymplus hbot htop hw₂'bot hw₂'top
+      hδminus₂ hδplus₂ BL₂ hBL₂,
+    ← Iio_union_Ico_eq_Iio hminus, ← Iio_union_Ico_eq_Iio hplus,
+    Module.End.finrank_pointSpectralSubspace_union
+      ((Iio_disjoint_Ici le_rfl).mono_right Ico_subset_Ici_self),
+    Module.End.finrank_pointSpectralSubspace_union
+      ((Iio_disjoint_Ici le_rfl).mono_right Ico_subset_Ici_self)]
+  push_cast
+  ring
+
+/-- **Crossing one exceptional weight at `+∞`.** If two weights have the same slope at `-∞`,
+and their slopes `δ⁺₁ < δ⁺₂` at `+∞` enclose exactly one eigenvalue `μ` of `A⁺`, then the index of
+the more strongly weighted trajectory operator is smaller by the multiplicity of `μ`. -/
+theorem index_trajectoryOperator_sub_smul_id_add_finrank_eigenspace_of_atTop (hA : Continuous A)
+    {w₁' w₂' : ℝ → ℝ} (hw₁' : Continuous w₁') (hw₂' : Continuous w₂')
+    (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric) (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    {δminus δplus₁ δplus₂ μ : ℝ}
+    (hw₁'bot : Tendsto w₁' atBot (𝓝 δminus)) (hw₁'top : Tendsto w₁' atTop (𝓝 δplus₁))
+    (hw₂'bot : Tendsto w₂' atBot (𝓝 δminus)) (hw₂'top : Tendsto w₂' atTop (𝓝 δplus₂))
+    (hμ : μ ∈ Ioo δplus₁ δplus₂)
+    (hcross : ∀ ν ∈ Icc δplus₁ δplus₂, Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) ν → ν = μ)
+    (hδminus : ¬Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) δminus)
+    (BL₁ BL₂ : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hBL₁ : BL₁ =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w₁' s • ContinuousLinearMap.id ℝ E)
+    (hBL₂ : BL₂ =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w₂' s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) BL₂).index +
+        Module.finrank ℝ (Module.End.eigenspace (Aplus : E →ₗ[ℝ] E) μ) =
+      (trajectoryOperator (p := 2) BL₁).index := by
+  have hne (ν : ℝ) (hν : ν ∈ Icc δplus₁ δplus₂) (hνμ : ν ≠ μ) :
+      ¬Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) ν :=
+    fun h ↦ hνμ (hcross ν hν h)
+  rw [← index_trajectoryOperator_sub_smul_id_add_finrank_add_finrank hA hw₁' hw₂' hsymminus
+      hsymplus hbot htop hw₁'bot hw₁'top hw₂'bot hw₂'top le_rfl (hμ.1.trans hμ.2).le hδminus
+      (hne _ (left_mem_Icc.2 (hμ.1.trans hμ.2).le) hμ.1.ne) hδminus
+      (hne _ (right_mem_Icc.2 (hμ.1.trans hμ.2).le) hμ.2.ne') BL₁ BL₂ hBL₁ hBL₂,
+    Ico_self, Module.End.pointSpectralSubspace_empty, finrank_bot,
+    Module.End.pointSpectralSubspace_eq_eigenspace (Ioo_subset_Ico_self hμ)
+      fun ν hν ↦ hcross ν (Ico_subset_Icc_self hν)]
+  simp [RCLike.ofReal_real_eq_id]
+
+/-- **Crossing one exceptional weight at `-∞`.** If two weights have the same slope at `+∞`,
+and their slopes `δ⁻₂ < δ⁻₁` at `-∞` enclose exactly one eigenvalue `μ` of `A⁻`, then the index of
+the more strongly weighted trajectory operator is smaller by the multiplicity of `μ`. -/
+theorem index_trajectoryOperator_sub_smul_id_add_finrank_eigenspace_of_atBot (hA : Continuous A)
+    {w₁' w₂' : ℝ → ℝ} (hw₁' : Continuous w₁') (hw₂' : Continuous w₂')
+    (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric) (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    {δminus₁ δminus₂ δplus μ : ℝ}
+    (hw₁'bot : Tendsto w₁' atBot (𝓝 δminus₁)) (hw₁'top : Tendsto w₁' atTop (𝓝 δplus))
+    (hw₂'bot : Tendsto w₂' atBot (𝓝 δminus₂)) (hw₂'top : Tendsto w₂' atTop (𝓝 δplus))
+    (hμ : μ ∈ Ioo δminus₂ δminus₁)
+    (hcross : ∀ ν ∈ Icc δminus₂ δminus₁, Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) ν → ν = μ)
+    (hδplus : ¬Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) δplus)
+    (BL₁ BL₂ : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hBL₁ : BL₁ =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w₁' s • ContinuousLinearMap.id ℝ E)
+    (hBL₂ : BL₂ =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w₂' s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) BL₂).index +
+        Module.finrank ℝ (Module.End.eigenspace (Aminus : E →ₗ[ℝ] E) μ) =
+      (trajectoryOperator (p := 2) BL₁).index := by
+  have hne (ν : ℝ) (hν : ν ∈ Icc δminus₂ δminus₁) (hνμ : ν ≠ μ) :
+      ¬Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) ν :=
+    fun h ↦ hνμ (hcross ν hν h)
+  rw [← index_trajectoryOperator_sub_smul_id_add_finrank_add_finrank hA hw₁' hw₂' hsymminus
+      hsymplus hbot htop hw₁'bot hw₁'top hw₂'bot hw₂'top (hμ.1.trans hμ.2).le le_rfl
+      (hne _ (right_mem_Icc.2 (hμ.1.trans hμ.2).le) hμ.2.ne') hδplus
+      (hne _ (left_mem_Icc.2 (hμ.1.trans hμ.2).le) hμ.1.ne) hδplus BL₁ BL₂ hBL₁ hBL₂,
+    Ico_self, Module.End.pointSpectralSubspace_empty, finrank_bot,
+    Module.End.pointSpectralSubspace_eq_eigenspace (Ioo_subset_Ico_self hμ)
+      fun ν hν ↦ hcross ν (Ico_subset_Icc_self hν)]
+  simp [RCLike.ofReal_real_eq_id]
+
+/-- **The decay-weighted index at degenerate limits.** Let the limits `A±` be symmetric, possibly
+with a kernel, as for the linearized operator along a trajectory between critical manifolds of a
+Morse–Bott function. Take a weight whose slope tends to `-δ` at `-∞` and to `δ` at `+∞`, such as
+`δ log (cosh s)`, for some `δ > 0` smaller than every nonzero eigenvalue of `A±` in absolute value
+on the relevant side: `A⁻` has no eigenvalue in `[-δ, 0)` and `A⁺` none in `(0, δ]`. Then the
+weighted trajectory operator has index `n⁻(A⁻) - (n⁻(A⁺) + dim ker A⁺)`: the decay weight
+counts the kernel of `A⁺` with the negative eigenvalues, and not that of `A⁻`. -/
+theorem index_trajectoryOperator_sub_smul_id_of_neg_of_pos (hA : Continuous A) {w' : ℝ → ℝ}
+    (hw' : Continuous w') (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric)
+    (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus)) {δ : ℝ} (hδ : 0 < δ)
+    (hw'bot : Tendsto w' atBot (𝓝 (-δ))) (hw'top : Tendsto w' atTop (𝓝 δ))
+    (hgapminus : ∀ μ ∈ Ico (-δ) 0, ¬Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) μ)
+    (hgapplus : ∀ μ ∈ Ioc 0 δ, ¬Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) μ)
+    (BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) BL).index =
+      (Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)) : ℤ) -
+        Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iic 0)) := by
+  have hminus : Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio (-δ)) =
+      Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0) := by
+    rw [← Iio_union_Ico_eq_Iio (neg_nonpos.2 hδ.le), Module.End.pointSpectralSubspace_union,
+      Module.End.pointSpectralSubspace_eq_bot_iff.2 hgapminus, sup_bot_eq]
+  have hplus : Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio δ) =
+      Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iic 0) := by
+    rw [← Iic_union_Ioo_eq_Iio hδ, Module.End.pointSpectralSubspace_union,
+      Module.End.pointSpectralSubspace_eq_bot_iff.2 fun μ hμ ↦ hgapplus μ (Ioo_subset_Ioc_self hμ),
+      sup_bot_eq]
+  rw [index_trajectoryOperator_sub_smul_id hA hw' hsymminus hsymplus hbot htop hw'bot hw'top
+      (hgapminus _ ⟨le_rfl, neg_neg_iff_pos.2 hδ⟩) (hgapplus _ ⟨hδ, le_rfl⟩) BL hBL,
+    hminus, hplus]
+
+end Index
+
+end TauCeti.WeakDerivStep
