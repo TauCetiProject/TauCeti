@@ -49,6 +49,8 @@ uses it, and the lattices of root data are the case of free `ℤ`-modules of fin
 * `TauCeti.CartanDatum.pairing_reflection_coreflection`: the two reflections preserve the pairing.
 * `TauCeti.CartanDatum.coreflection_simpleTorus`:
   `sᵢ(dⱼ hⱼ) = dⱼ hⱼ − aᵢⱼ dᵢ hᵢ`, by symmetrizability.
+* `TauCeti.CartanDatum.braidLength_eq_coxeterMatrixOfGeneralizedCartanMatrix`: the braid lengths
+  are the entries of the Coxeter matrix of the generalized Cartan matrix.
 * `TauCeti.CartanDatum.Hom.weightMap`: the induced map of weight lattices, the transpose of a
   morphism, which carries roots to roots (`TauCeti.CartanDatum.Hom.weightMap_root`).
 * `TauCeti.CartanDatum.Hom.cartan_eq`, `TauCeti.CartanDatum.Hom.map_coreflection` and
@@ -289,6 +291,18 @@ lemma braidLength_eq_zero_iff {i j : ι} (hij : i ≠ j) :
   have := two_le_coxeterOrder hmem
   rw [D.braidLength_of_le hle] at h
   omega
+
+/-- The braid lengths are the entries of the Coxeter matrix
+`TauCeti.coxeterMatrixOfGeneralizedCartanMatrix` of the generalized Cartan matrix. -/
+lemma braidLength_eq_coxeterMatrixOfGeneralizedCartanMatrix (i j : ι) :
+    D.braidLength i j = coxeterMatrixOfGeneralizedCartanMatrix D.cartan i j := by
+  rcases eq_or_ne i j with rfl | hij
+  · simp
+  rcases le_or_gt (D.cartan i j * D.cartan j i) 3 with h | h
+  · rw [D.braidLength_of_le h, coxeterMatrixOfGeneralizedCartanMatrix_apply_of_lt_four _ hij
+      (by omega)]
+  · rw [D.braidLength_of_ne_of_lt hij h, coxeterMatrixOfGeneralizedCartanMatrix_apply_of_four_le _
+      hij (by omega)]
 
 end CartanDatum
 

@@ -46,6 +46,9 @@ roots, and there the two simple reflections commute
   reflections.
 * `TauCeti.coxeterMatrixOfCartanMatrix` performs that translation on an arbitrary matrix whose
   diagonal is `2` and whose off-diagonal Cartan products lie in `{0, 1, 2, 3}`.
+* `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix` performs it on an arbitrary integer matrix,
+  sending the Cartan products `c ≥ 4` of distinct nodes to an infinite order; this is the Coxeter
+  matrix of the Weyl group of a Kac–Moody realization.
 * `TauCeti.coxeterMatrixOfBase` is the Coxeter matrix of a base, indexed by its simple roots.
 
 ## Main results
@@ -186,6 +189,72 @@ lemma coxeterMatrixOfCartanMatrix_apply_eq_two_iff {B : Type*} (A : Matrix B B �
     coxeterMatrixOfCartanMatrix A hdiag hmem i j = 2 ↔ A i j = 0 := by
   rw [coxeterMatrixOfCartanMatrix_apply, coxeterOrder_eq_two_iff, mul_eq_zero]
   exact or_iff_left_iff_imp.mpr (hsymm j i)
+
+/-- **The Coxeter matrix of a generalized Cartan matrix.** Off the diagonal, the entry at a pair of
+nodes is read off their Cartan product `c = A i j * A j i`: it is `TauCeti.coxeterOrder c`, that is
+`2`, `3`, `4`, `6` for `c = 0`, `1`, `2`, `3`, when `c < 4`, and `0`, Mathlib's encoding of an
+infinite order, when `c ≥ 4`. The diagonal entries are `1`.
+
+For a generalized Cartan matrix the Cartan product of two distinct nodes is a nonnegative integer,
+and the product of the two simple reflections of a realization has infinite order exactly when it
+is at least `4`, as in affine type `A₁⁽¹⁾`, where it is `4`. This is why the value `4`, which
+`TauCeti.coxeterOrder` sends to `1` for two proportional roots of a finite root pairing, is sent
+to `0` here. Unlike `TauCeti.coxeterMatrixOfCartanMatrix`, the construction needs no hypothesis on
+the matrix. The body is not exposed: `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne`
+is the entry API off the diagonal, and `CoxeterMatrix.diagonal` gives the diagonal. -/
+def coxeterMatrixOfGeneralizedCartanMatrix {B : Type*} [DecidableEq B] (A : Matrix B B ℤ) :
+    CoxeterMatrix B where
+  M := .of fun i j ↦
+    if i = j then 1 else if A i j * A j i < 4 then coxeterOrder (A i j * A j i) else 0
+  isSymm := by
+    ext i j
+    simp [Matrix.transpose_apply, eq_comm, mul_comm]
+  diagonal i := by simp
+  off_diagonal i j hij := by
+    simp only [Matrix.of_apply, hij, ite_false]
+    split_ifs
+    · unfold coxeterOrder
+      split_ifs <;> omega
+    · omega
+
+section GeneralizedCartanMatrix
+
+variable {B : Type*} [DecidableEq B] (A : Matrix B B ℤ)
+
+/-- The entry of the Coxeter matrix of a generalized Cartan matrix at two distinct nodes:
+`TauCeti.coxeterOrder` of their Cartan product when it is less than `4`, and `0` otherwise. -/
+lemma coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne {i j : B} (hij : i ≠ j) :
+    coxeterMatrixOfGeneralizedCartanMatrix A i j =
+      if A i j * A j i < 4 then coxeterOrder (A i j * A j i) else 0 := by
+  simp [coxeterMatrixOfGeneralizedCartanMatrix, hij]
+
+/-- Two distinct nodes of Cartan product less than `4` carry the entry `TauCeti.coxeterOrder` of
+that product. -/
+lemma coxeterMatrixOfGeneralizedCartanMatrix_apply_of_lt_four {i j : B} (hij : i ≠ j)
+    (h : A i j * A j i < 4) :
+    coxeterMatrixOfGeneralizedCartanMatrix A i j = coxeterOrder (A i j * A j i) := by
+  rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne A hij, ite_eq_left h]
+
+/-- Two distinct nodes of Cartan product at least `4` carry the entry `0`, an infinite order. -/
+lemma coxeterMatrixOfGeneralizedCartanMatrix_apply_of_four_le {i j : B} (hij : i ≠ j)
+    (h : 4 ≤ A i j * A j i) : coxeterMatrixOfGeneralizedCartanMatrix A i j = 0 := by
+  rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne A hij, ite_eq_right (not_lt.mpr h)]
+
+/-- **In finite type the two constructions agree**: when the Cartan products of distinct nodes
+lie in `{0, 1, 2, 3}`, the Coxeter matrix of the generalized Cartan matrix is
+`TauCeti.coxeterMatrixOfCartanMatrix`. -/
+lemma coxeterMatrixOfGeneralizedCartanMatrix_eq_coxeterMatrixOfCartanMatrix
+    (hdiag : ∀ i, A i i = 2) (hmem : ∀ i j, i ≠ j → A i j * A j i ∈ ({0, 1, 2, 3} : Set ℤ)) :
+    coxeterMatrixOfGeneralizedCartanMatrix A = coxeterMatrixOfCartanMatrix A hdiag hmem := by
+  ext i j
+  rcases eq_or_ne i j with rfl | hij
+  · simp
+  · have h := hmem i j hij
+    simp only [mem_insert_iff, mem_singleton_iff] at h
+    rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_lt_four A hij (by omega),
+      coxeterMatrixOfCartanMatrix_apply]
+
+end GeneralizedCartanMatrix
 
 end OfCartanMatrix
 

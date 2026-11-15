@@ -1,0 +1,67 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.RingTheory.Polynomial.Chebyshev
+public import Mathlib.Algebra.Order.Ring.Defs
+
+/-!
+# Growth of the rescaled Chebyshev polynomials of the second kind from `2` on
+
+Mathlib's rescaled Chebyshev polynomials of the second kind `Polynomial.Chebyshev.S R n` take the
+value `n + 1` at `2` (`Polynomial.Chebyshev.S_eval_two`). This file shows that at every point
+`t ≥ 2` of an ordered commutative ring they grow at least as fast: the values `Sₙ(t)`, `n ≥ 0`,
+increase by at least `1` at each step, so `n + 1 ≤ Sₙ(t)`.
+
+The values `Sₙ(t)` are the coefficients of the powers of a product of two reflections whose
+Cartan product is `t + 2`. For `t ≥ 2` the product is a shear or a hyperbolic transformation,
+and the growth proved here shows that it has infinite order.
+
+## Main results
+
+* `Polynomial.Chebyshev.eval_S_add_one_le`: `Sₙ(t) + 1 ≤ Sₙ₊₁(t)` for `t ≥ 2` and `n ≥ 0`.
+* `Polynomial.Chebyshev.natCast_add_one_le_eval_S`: `n + 1 ≤ Sₙ(t)` for `t ≥ 2` and `n ≥ 0`.
+-/
+
+public section
+
+namespace Polynomial.Chebyshev
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] {t : R}
+
+/-- Both growth statements at once, so that the induction can use the positivity of `Sₙ(t)`. -/
+private theorem eval_S_add_one_le_and (ht : 2 ≤ t) (n : ℕ) :
+    (S R n).eval t + 1 ≤ (S R (n + 1)).eval t ∧ (n + 1 : R) ≤ (S R n).eval t := by
+  induction n with
+  | zero => simp [S_zero, S_one]; linarith
+  | succ n ih =>
+    obtain ⟨h₁, h₂⟩ := ih
+    have hrec : (S R ((n + 1 : ℕ) + 1)).eval t =
+        t * (S R ((n + 1 : ℕ) : ℤ)).eval t - (S R n).eval t := by
+      have := S_add_two R (n : ℤ)
+      push_cast at this ⊢
+      rw [show (n : ℤ) + 1 + 1 = n + 2 by ring, this]
+      simp
+    push_cast at hrec ⊢
+    -- `Sₙ₊₂(t) = t Sₙ₊₁(t) - Sₙ(t) ≥ 2 Sₙ₊₁(t) - Sₙ(t)`, since `Sₙ₊₁(t) ≥ 0`.
+    have hpos : 0 ≤ (S R ((n : ℤ) + 1)).eval t := by
+      have : (0 : R) ≤ n := Nat.cast_nonneg n
+      linarith
+    have hmul : 2 * (S R ((n : ℤ) + 1)).eval t ≤ t * (S R ((n : ℤ) + 1)).eval t :=
+      mul_le_mul_of_nonneg_right ht hpos
+    constructor <;> linarith
+
+/-- At a point `t ≥ 2` the values `Sₙ(t)` increase by at least `1` at each step. -/
+theorem eval_S_add_one_le (ht : 2 ≤ t) (n : ℕ) :
+    (S R n).eval t + 1 ≤ (S R (n + 1)).eval t :=
+  (eval_S_add_one_le_and ht n).1
+
+/-- At a point `t ≥ 2` the value `Sₙ(t)` is at least its value `n + 1` at `2`. -/
+theorem natCast_add_one_le_eval_S (ht : 2 ≤ t) (n : ℕ) :
+    (n + 1 : R) ≤ (S R n).eval t :=
+  (eval_S_add_one_le_and ht n).2
+
+end Polynomial.Chebyshev
