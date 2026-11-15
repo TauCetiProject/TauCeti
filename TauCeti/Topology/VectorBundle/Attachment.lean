@@ -134,29 +134,6 @@ private lemma isOpen_thickening (hρ : Continuous ρ) (hφ : IsClosedEmbedding �
 
 /-! ### The collar deformations -/
 
-/-- The factor by which the radial push `TauCeti.radialPush 2⁻¹` at time `t` rescales a vector of
-gauge `x`. -/
-private def collarScale (t : I) (x : ℝ) : ℝ :=
-  1 - t + t * (2⁻¹⁻¹ * min 1 (2⁻¹ / x))
-
-private lemma collarScale_nonneg (t : I) {x : ℝ} (hx : 0 ≤ x) : 0 ≤ collarScale t x := by
-  have hm : 0 ≤ min 1 (2⁻¹ / x) := le_min zero_le_one (by positivity)
-  rw [collarScale]
-  nlinarith [t.2.1, t.2.2]
-
-private lemma collarScale_le_three (t : I) (x : ℝ) : collarScale t x ≤ 3 := by
-  have hm := min_le_left 1 (2⁻¹ / x)
-  rw [collarScale]
-  nlinarith [t.2.1, t.2.2]
-
-private lemma collarScale_one (t : I) : collarScale t 1 = 1 := by
-  norm_num [collarScale]
-
-/-- On a nonnegative real number, the radial push multiplies by the collar scale. -/
-private lemma radialPush_eq_collarScale_mul (t : I) {x : ℝ} (hx : 0 ≤ x) :
-    radialPush (2⁻¹ : ℝ) t x = collarScale t x * x := by
-  rw [radialPush_eq_smul, smul_eq_mul, Real.norm_of_nonneg hx, collarScale]
-
 variable [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F] [∀ b, AddCommGroup (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
   (hρ : IsFiberGauge ρ)
@@ -165,35 +142,31 @@ variable [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F] [∀ b,
 bundle: at time one it pushes every vector of gauge at least `1/2` out to the sphere bundle and
 doubles the smaller ones. -/
 private def discCollar : C(I × gaugeDiscBundle ρ, gaugeDiscBundle ρ) where
-  toFun p := ⟨TotalSpace.mk' F p.2.1.proj (collarScale p.1 (ρ p.2) • p.2.1.2), by
-    rw [mem_gaugeDiscBundle, hρ.smul_of_nonneg (collarScale_nonneg _ (hρ.nonneg _)),
-      ← radialPush_eq_collarScale_mul _ (hρ.nonneg _)]
+  toFun p := ⟨TotalSpace.mk' F p.2.1.proj (radialPushScale 2⁻¹ p.1 (ρ p.2) • p.2.1.2), by
+    rw [mem_gaugeDiscBundle, hρ.smul_of_nonneg (radialPushScale_nonneg _ _ (hρ.nonneg _)),
+      ← radialPush_eq_radialPushScale_mul _ (hρ.nonneg _)]
     exact radialPush_le_one _ (mem_gaugeDiscBundle.1 p.2.2)⟩
   continuous_toFun := by
     have hv : Continuous fun p : I × gaugeDiscBundle ρ ↦ (p.2 : TotalSpace F E) :=
       continuous_subtype_val.comp continuous_snd
-    have ht : Continuous fun p : I × gaugeDiscBundle ρ ↦ (p.1 : ℝ) :=
-      continuous_subtype_val.comp continuous_fst
     -- The collar rescales each vector by a factor in `[0, 3]`, continuous off the zero section.
     refine Continuous.subtype_mk
       (hv.smul_totalSpace_of_norm_le (C := 3) (fun p ↦ ?_) fun p hp ↦ ?_) _
-    · rw [Real.norm_of_nonneg (collarScale_nonneg _ (hρ.nonneg _))]
-      exact collarScale_le_three _ _
-    · simp only [collarScale]
-      exact (continuousAt_const.sub ht.continuousAt).add (ht.continuousAt.mul
-        (continuousAt_const.mul (continuousAt_const.min (continuousAt_const.div
-          (hρ.continuous.comp hv).continuousAt (hρ.pos hp).ne'))))
+    · rw [Real.norm_of_nonneg (radialPushScale_nonneg _ _ (hρ.nonneg _))]
+      exact (radialPushScale_le (by norm_num) _ _).trans_eq (by norm_num)
+    · exact (continuousAt_radialPushScale _ (hρ.pos hp).ne').comp
+        (continuousAt_fst.prodMk (hρ.continuous.comp hv).continuousAt)
 
 private lemma coe_discCollar (t : I) (v : gaugeDiscBundle ρ) :
     (discCollar hρ (t, v) : TotalSpace F E) =
-      TotalSpace.mk' F v.1.proj (collarScale t (ρ v) • v.1.2) :=
+      TotalSpace.mk' F v.1.proj (radialPushScale 2⁻¹ t (ρ v) • v.1.2) :=
   rfl
 
 /-- The gauge of the collar deformation is the radial push of the gauge. -/
 private lemma apply_discCollar (t : I) (v : gaugeDiscBundle ρ) :
     ρ (discCollar hρ (t, v)) = radialPush (2⁻¹ : ℝ) t (ρ v) := by
-  rw [coe_discCollar, hρ.smul_of_nonneg (collarScale_nonneg t (hρ.nonneg _)),
-    radialPush_eq_collarScale_mul t (hρ.nonneg _)]
+  rw [coe_discCollar, hρ.smul_of_nonneg (radialPushScale_nonneg _ t (hρ.nonneg _)),
+    radialPush_eq_radialPushScale_mul t (hρ.nonneg _)]
 
 /-- The collar deformation keeps the outer collar in place at every time. -/
 private lemma discCollar_mem_outerCollar (t : I) {v : gaugeDiscBundle ρ} (hv : v ∈ outerCollar ρ) :
@@ -212,12 +185,13 @@ private lemma discCollar_one_mem_gaugeSphereBundle {v : gaugeDiscBundle ρ}
 private lemma discCollar_of_mem_gaugeSphereBundle (t : I) {v : gaugeDiscBundle ρ}
     (hv : (v : TotalSpace F E) ∈ gaugeSphereBundle ρ) : discCollar hρ (t, v) = v := by
   apply Subtype.ext
-  rw [coe_discCollar, mem_gaugeSphereBundle.1 hv, collarScale_one, one_smul]
+  rw [coe_discCollar, mem_gaugeSphereBundle.1 hv,
+    radialPushScale_one (by norm_num) (by norm_num), one_smul]
 
 /-- At time zero the collar deformation is the identity. -/
 private lemma discCollar_zero (v : gaugeDiscBundle ρ) : discCollar hρ (0, v) = v := by
   apply Subtype.ext
-  simp [coe_discCollar, collarScale]
+  simp [coe_discCollar]
 
 /-- The collar deformation of the disc bundle as a homotopy from the identity. -/
 private def discCollarHomotopy :
