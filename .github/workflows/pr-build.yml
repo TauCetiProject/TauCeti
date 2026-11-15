@@ -185,10 +185,10 @@ jobs:
             /tauceti.toml
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@11e608b37033d5a3e775786b14a8ae97603d949a
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2e715e060777c57cb634987090139964547b6fc8
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 11e608b37033d5a3e775786b14a8ae97603d949a
+          tools-ref: 2e715e060777c57cb634987090139964547b6fc8
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
@@ -1683,10 +1683,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@11e608b37033d5a3e775786b14a8ae97603d949a
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2e715e060777c57cb634987090139964547b6fc8
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 11e608b37033d5a3e775786b14a8ae97603d949a
+          tools-ref: 2e715e060777c57cb634987090139964547b6fc8
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
