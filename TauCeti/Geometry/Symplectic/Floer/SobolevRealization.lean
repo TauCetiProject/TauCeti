@@ -28,7 +28,9 @@ range: the Fredholm property of `D_u` minus the finiteness of its cokernel.
   `(v, v_s, v_t) ↦ v_s + J(z, u z) v_t + A(z) v`, so that on the jet `(ξ, ∂s ξ, ∂t ξ)` of a section
   it gives `D_u ξ` (`TauCeti.SymplecticForm.floerJetCoeff_jet`).
 * `TauCeti.SymplecticForm.floerSobolevOperator` is the resulting operator on the Sobolev space
-  `TauCeti.CylinderSobolev.H1`. On the jet of a test section it is `D_u ξ`
+  `TauCeti.CylinderSobolev.H1` (`TauCeti.SymplecticForm.floerSobolevOperator_def`). It acts
+  pointwise by the coefficient field (`TauCeti.SymplecticForm.coeFn_floerSobolevOperator`), and on
+  the jet of a test section it is `D_u ξ`
   (`TauCeti.SymplecticForm.floerSobolevOperator_jetL_ae_eq`), provided its coefficients are
   essentially bounded on the cylinder.
 * Along a Floer trajectory of `K = H_t dt`, whose loops and slice defect `∂t u - X_{H_t}(u)`
@@ -99,6 +101,24 @@ def floerSobolevOperator (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) : H1 V →L[ℝ] Lp V 2 stripMeasure :=
   (jetOperator (ω.floerJetCoeff J Ks Kt u)).comp (H1 V).subtypeL
 
+/-- The definition of the Sobolev realization of the linearized Floer operator: the first-order
+operator `TauCeti.CylinderSobolev.jetOperator` of the coefficient field on jets, restricted to
+`TauCeti.CylinderSobolev.H1`. -/
+theorem floerSobolevOperator_def (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) :
+    ω.floerSobolevOperator J Ks Kt u =
+      (jetOperator (ω.floerJetCoeff J Ks Kt u)).comp (H1 V).subtypeL :=
+  (rfl)
+
+/-- When the coefficients of `D_u` are essentially bounded on the cylinder, the Sobolev realization
+of the linearized Floer operator acts pointwise on an `L²` jet `x ∈ H1` by the coefficient field. -/
+theorem coeFn_floerSobolevOperator (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
+    {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    (hM : MemLp (ω.floerJetCoeff J Ks Kt u) ∞ stripMeasure) (x : H1 V) :
+    ω.floerSobolevOperator J Ks Kt u x =ᵐ[stripMeasure]
+      fun z ↦ ω.floerJetCoeff J Ks Kt u z ((x : Lp (V × V × V) 2 stripMeasure) z) :=
+  coeFn_jetOperator hM x
+
 /-- On the jet of a test section `ξ`, the Sobolev realization of the linearized Floer operator is
 `D_u ξ`, when the coefficients of `D_u` are essentially bounded on the cylinder. -/
 theorem floerSobolevOperator_jetL_ae_eq (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
@@ -106,9 +126,9 @@ theorem floerSobolevOperator_jetL_ae_eq (ω : SymplecticForm V) {J : ℝ × ℝ 
     (hM : MemLp (ω.floerJetCoeff J Ks Kt u) ∞ stripMeasure) (ξ : testSection V) :
     ω.floerSobolevOperator J Ks Kt u ⟨jetL V ξ, jetL_mem_H1 ξ⟩ =ᵐ[stripMeasure]
       ω.floerLinearization J Ks Kt u ξ := by
-  filter_upwards [jetOperator_jetL_ae_eq hM ξ] with z hz
-  rw [floerSobolevOperator, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, hz,
-    floerJetCoeff_jet]
+  filter_upwards [coeFn_floerSobolevOperator ω hM ⟨jetL V ξ, jetL_mem_H1 ξ⟩, coeFn_jetL ξ]
+    with z h₁ h₂
+  rw [h₁, h₂, floerJetCoeff_jet]
 
 /-- The norm of the coefficient field on jets is at most `1 + ‖J(z, u z)‖ + ‖A(z)‖`. -/
 private theorem norm_floerJetCoeff_le (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
@@ -202,9 +222,10 @@ theorem memLp_floerJetCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
     rw [show sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u = _ from
       funext (sliceDefect_def _ u)]
     exact h₁.sub (hX.continuous.comp (continuous_snd.prodMk hu.continuous))
-  obtain ⟨Cu, hCu⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc hu.continuous
-    huxm huxp
-  obtain ⟨Cδ, hCδ⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc hδc hδm hδp
+  obtain ⟨Cu, hCu⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc
+    hu.continuous.continuousOn huxm huxp
+  obtain ⟨Cδ, hCδ⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc hδc.continuousOn hδm
+    hδp
   set K : Set (ℝ × V) := Icc 0 1 ×ˢ Metric.closedBall 0 Cu
   have hK : IsCompact K := isCompact_Icc.prod (isCompact_closedBall 0 Cu)
   obtain ⟨BJ, hBJ⟩ := hK.exists_bound_of_continuousOn hJ.continuous.continuousOn

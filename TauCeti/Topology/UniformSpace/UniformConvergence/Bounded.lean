@@ -15,7 +15,7 @@ import Mathlib.Topology.Order.Compact
 /-!
 # Boundedness on a strip from uniform convergence at both ends
 
-A continuous map `f` on a strip `ℝ × T`, with `T` compact, that converges uniformly in the second
+A map `f` continuous on a strip `ℝ × T`, with `T` compact, that converges uniformly in the second
 variable as the first tends to `-∞` and to `+∞` is bounded on the strip
 (`TauCeti.exists_forall_norm_le_of_tendstoUniformlyOn`). No continuity of the limits is needed: far
 enough out, `f (s, t)` is within `2` of the value at the end of a compact piece `[Rm, Rp] × T`,
@@ -31,10 +31,11 @@ open Filter Set
 
 namespace TauCeti
 
-/-- A continuous map on a strip `ℝ × T`, with `T` compact, that converges uniformly on `T` as the
+/-- A map continuous on a strip `ℝ × T`, with `T` compact, that converges uniformly on `T` as the
 first variable tends to `-∞` and to `+∞` is bounded on the strip. -/
 theorem exists_forall_norm_le_of_tendstoUniformlyOn {β E : Type*} [TopologicalSpace β]
-    [SeminormedAddCommGroup E] {T : Set β} (hT : IsCompact T) {f : ℝ × β → E} (hf : Continuous f)
+    [SeminormedAddCommGroup E] {T : Set β} (hT : IsCompact T) {f : ℝ × β → E}
+    (hf : ContinuousOn f (univ ×ˢ T))
     {gm gp : β → E} (hm : TendstoUniformlyOn (fun s t ↦ f (s, t)) gm atBot T)
     (hp : TendstoUniformlyOn (fun s t ↦ f (s, t)) gp atTop T) :
     ∃ C, ∀ s, ∀ t ∈ T, ‖f (s, t)‖ ≤ C := by
@@ -42,7 +43,7 @@ theorem exists_forall_norm_le_of_tendstoUniformlyOn {β E : Type*} [TopologicalS
   obtain ⟨Rp, hRp⟩ := eventually_atTop.1 ((Metric.tendstoUniformlyOn_iff.1 hp) 1 one_pos)
   set R := max Rm Rp
   obtain ⟨C, hC⟩ := ((isCompact_Icc (a := Rm) (b := R)).prod hT).exists_bound_of_continuousOn
-    hf.continuousOn
+    (hf.mono (prod_mono (subset_univ _) subset_rfl))
   refine ⟨C + 2, fun s t ht ↦ ?_⟩
   -- Near an end, `f (s, t)` is within `2` of `f (r, t)`, through the limit `g t`.
   have hnear : ∀ (g : β → E) (r : ℝ), r ∈ Icc Rm R → dist (g t) (f (s, t)) < 1 →

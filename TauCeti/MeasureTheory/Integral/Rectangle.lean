@@ -9,11 +9,11 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
-public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.MeasureTheory.Measure.Haar.Prod
 
 /-!
 # Integrals over closed rectangles in the plane
@@ -45,13 +45,14 @@ a doubly (twisted) periodic map are used.
   segments `[a₁, b₁] × {t}`.
 * `TauCeti.neg_mul_setIntegral_le_setIntegral_deriv_mul`: for a monotone `C¹` profile `β` and
   `-B(t) ≤ f`, the lower bound `-(β(b₁) - β(a₁)) ∫ B ≤ ∫∫ β'(s) f`.
-* `TauCeti.lintegral_strip_shift`, `TauCeti.lintegral_Icc_neg_one_two_le`,
-  `TauCeti.eLpNorm_Icc_neg_one_two_le`: for a function of period one in the second coordinate,
-  integrals over the horizontal strips `ℝ × [k, k + 1]` agree, and those over `ℝ × [-1, 2]` are
-  controlled by those over the fundamental strip `ℝ × [0, 1]`.
+* `TauCeti.setLIntegral_univ_prod_Icc_add_one_eq`,
+  `TauCeti.setLIntegral_univ_prod_Icc_neg_one_two_le`, `TauCeti.eLpNorm_Icc_neg_one_two_le`: for a
+  function of period one in the second coordinate, integrals over the horizontal strips
+  `ℝ × [k, k + 1]` agree, and those over `ℝ × [-1, 2]` are controlled by those over the fundamental
+  strip `ℝ × [0, 1]`.
 
-Lebesgue measure on `ℝ × ℝ` is recorded as an additive Haar measure, hence translation invariant;
-instance search does not see through `volume` to the product measure.
+Translation invariance of Lebesgue measure on `ℝ × ℝ` comes from
+`TauCeti.isAddHaarMeasure_volume_prod`.
 -/
 
 public section
@@ -60,11 +61,6 @@ open Set MeasureTheory
 open scoped ENNReal
 
 namespace TauCeti
-
-/-- Lebesgue measure on the plane `ℝ × ℝ` is an additive Haar measure, so in particular it is
-invariant under translations. -/
-instance isAddHaarMeasure_volume_real_prod : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure :=
-  Measure.prod.instIsAddHaarMeasure _ _
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {a₁ b₁ a₂ b₂ : ℝ}
@@ -246,7 +242,7 @@ theorem neg_mul_setIntegral_le_setIntegral_deriv_mul {β : ℝ → ℝ} (hβ : C
 
 /-- For a function invariant under translation by `(0, k)`, the integrals over the strips
 `ℝ × [k, k + 1]` and `ℝ × [0, 1]` agree. -/
-theorem lintegral_strip_shift {g : ℝ × ℝ → ℝ≥0∞} (k : ℝ)
+theorem setLIntegral_univ_prod_Icc_add_one_eq {g : ℝ × ℝ → ℝ≥0∞} (k : ℝ)
     (hg : ∀ z, g (z + ((0 : ℝ), k)) = g z) :
     ∫⁻ z in univ ×ˢ Icc k (k + 1), g z = ∫⁻ z in univ ×ˢ Icc 0 1, g z := by
   have hφ := measurePreserving_add_right (volume : Measure (ℝ × ℝ)) ((0 : ℝ), k)
@@ -259,7 +255,7 @@ theorem lintegral_strip_shift {g : ℝ × ℝ → ℝ≥0∞} (k : ℝ)
 
 /-- For a function of period one in `t`, the integral over `ℝ × [-1, 2]` is at most three times
 the integral over the strip `ℝ × [0, 1]`. -/
-theorem lintegral_Icc_neg_one_two_le {g : ℝ × ℝ → ℝ≥0∞}
+theorem setLIntegral_univ_prod_Icc_neg_one_two_le {g : ℝ × ℝ → ℝ≥0∞}
     (hg : ∀ s t, g (s, t + 1) = g (s, t)) :
     ∫⁻ z in univ ×ˢ Icc (-1) 2, g z ≤ 3 * ∫⁻ z in univ ×ˢ Icc 0 1, g z := by
   have h₁ : ∀ z, g (z + ((0 : ℝ), (1 : ℝ))) = g z := fun ⟨s, t⟩ ↦ by simpa using hg s t
@@ -282,7 +278,7 @@ theorem lintegral_Icc_neg_one_two_le {g : ℝ × ℝ → ℝ≥0∞}
           ∫⁻ z in univ ×ˢ Icc 1 (1 + 1), g z :=
         (lintegral_union_le _ _ _).trans (add_le_add_left (lintegral_union_le _ _ _) _)
     _ = 3 * ∫⁻ z in univ ×ˢ Icc 0 1, g z := by
-        rw [lintegral_strip_shift _ hm₁, lintegral_strip_shift _ h₁]
+        rw [setLIntegral_univ_prod_Icc_add_one_eq _ hm₁, setLIntegral_univ_prod_Icc_add_one_eq _ h₁]
         ring
 
 /-- For a function of period one in `t`, the `L²` norm over `ℝ × [-1, 2]` is at most twice the
@@ -293,7 +289,7 @@ theorem eLpNorm_Icc_neg_one_two_le {F : Type*} [NormedAddCommGroup F] {f : ℝ �
       2 * eLpNorm f 2 (volume.restrict (univ ×ˢ Icc 0 1)) := by
   rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hfm.restrict,
     eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hfm.restrict]
-  have h := lintegral_Icc_neg_one_two_le (g := fun z ↦ ‖f z‖ₑ ^ (2 : ℝ≥0∞).toReal)
+  have h := setLIntegral_univ_prod_Icc_neg_one_two_le (g := fun z ↦ ‖f z‖ₑ ^ (2 : ℝ≥0∞).toReal)
     fun s t ↦ by simp only [hf]
   calc (∫⁻ z in univ ×ˢ Icc (-1) 2, ‖f z‖ₑ ^ (2 : ℝ≥0∞).toReal) ^ (1 / (2 : ℝ≥0∞).toReal)
       ≤ (3 * ∫⁻ z in univ ×ˢ Icc 0 1, ‖f z‖ₑ ^ (2 : ℝ≥0∞).toReal) ^ (1 / (2 : ℝ≥0∞).toReal) :=
