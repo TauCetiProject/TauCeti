@@ -91,6 +91,14 @@ theorem ofLagrangianChart_apply {S₀ S₁ : Matrix n n ℝ} (S : Path S₀ S₁
     (hS : ∀ t, (S t).IsSymm) (t : I) : ofLagrangianChart S hS t = (S t).lagrangianChart :=
   (rfl)
 
+/-- The chart path of a constant path of matrices is the constant path at its chart subspace. -/
+@[simp]
+theorem ofLagrangianChart_refl {S₀ : Matrix n n ℝ} (hS : ∀ t, (Path.refl S₀ t).IsSymm) :
+    ofLagrangianChart (Path.refl S₀) hS =
+      (TotallyRealLoop.const (E := EuclideanSpace ℂ n)
+        (isMaximalTotallyReal_lagrangianChart (hS 0))).toTotallyRealPath :=
+  ext fun t ↦ (ofLagrangianChart_apply _ _ t).trans (by simp)
+
 /-- Reversing a chart path is the chart path of the reversed path of matrices. -/
 @[simp]
 theorem ofLagrangianChart_symm {S₀ S₁ : Matrix n n ℝ} (S : Path S₀ S₁)
@@ -288,12 +296,9 @@ theorem transverseMaslovIndex_toTotallyRealPath (Λ : TotallyRealLoop (Euclidean
     Λ.toTotallyRealPath.transverseMaslovIndex hS₀ hS₀ (by simpa using h₀)
       (by rw [toTotallyRealPath_apply, ← Λ.toFun_zero_eq_toFun_one]; exact h₀) =
       Λ.maslovIndex := by
-  have hconst : TotallyRealPath.ofLagrangianChart (Path.refl S₀) (fun _ ↦ hS₀) =
-      (const (E := EuclideanSpace ℂ n)
-        (isMaximalTotallyReal_lagrangianChart hS₀)).toTotallyRealPath :=
-    TotallyRealPath.ext fun t ↦ (TotallyRealPath.ofLagrangianChart_apply _ _ t).trans (by simp)
   rw [TotallyRealPath.transverseMaslovIndex_eq_relativeMaslovIndex _ (Path.refl S₀) fun _ ↦ hS₀]
-  refine (TotallyRealPath.relativeMaslovIndex_congr_right hconst _ _).trans ?_
+  refine (TotallyRealPath.relativeMaslovIndex_congr_right
+    (TotallyRealPath.ofLagrangianChart_refl _) _ _).trans ?_
   rw [relativeMaslovIndex_toTotallyRealPath Λ _ (by simpa using h₀), maslovIndex_const, sub_zero]
 
 end TotallyRealLoop
