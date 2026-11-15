@@ -98,19 +98,11 @@ namespace TauCeti.Place
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
-section OnePlace
+section BaseChangeHelpers
 
-variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
-  [Algebra k F] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [Algebra F F']
-  [IsScalarTower k k' F'] [IsScalarTower k F F']
-  [FiniteDimensional F F'] [Algebra.IsSeparable F F']
-  (P : Place k F) (P' : Place k' F') (hP : P'.restrict k F = P)
+variable {k F F' : Type*} [Field k] [Field F] [Field F'] [Algebra k F] [Algebra F F']
+  (P : Place k F)
 
-/-! ### Trace-dual expansions and the completed complementary module -/
-
-omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F']
-  [IsScalarTower k k' F'] [IsScalarTower k F F']
-  [FiniteDimensional F F'] [Algebra.IsSeparable F F'] in
 private theorem trace_tmul_mul_smul (a : P.Completion) (x b y : F') :
     Algebra.trace P.Completion (P.Completion ⊗[F] F') ((a ⊗ₜ[F] x) * (1 ⊗ₜ[F] b)) •
         ((1 : P.Completion) ⊗ₜ[F] y) =
@@ -120,6 +112,40 @@ private theorem trace_tmul_mul_smul (a : P.Completion) (x b y : F') :
   rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha, map_smul, Algebra.trace_baseChange_tmul]
   simp only [smul_eq_mul, TensorProduct.smul_tmul', mul_one, mul_comm a,
     ← Algebra.smul_def, TensorProduct.smul_tmul]
+
+/-- On the image of `P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F'`, the
+trace pairing with an element of the local-model complementary module takes values in
+`P.completionPlace.integers`. -/
+private theorem trace_completionIntegersSemilocalToField_mul_mem {d : F'}
+    (hd : d ∈ Submodule.traceDual P.integers F (1 : Submodule (integralClosure P.integers F') F'))
+    (t : P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F') :
+    Algebra.trace P.Completion (P.Completion ⊗[F] F')
+        (completionIntegersSemilocalToField F' P t * (1 ⊗ₜ d)) ∈
+      (algebraMap P.completionPlace.integers P.Completion).range := by
+  induction t using TensorProduct.inductionOn with
+  | add t u ht hu =>
+    rw [map_add, add_mul, map_add]
+    exact add_mem ht hu
+  | tmul a x =>
+    obtain ⟨r, hr⟩ := Submodule.mem_traceDual.mp hd _ (Submodule.mem_one.mpr ⟨x, rfl⟩)
+    rw [ValuationSubring.algebraMap_apply] at hr
+    refine ⟨a * algebraMap P.integers P.completionPlace.integers r, ?_⟩
+    rw [map_mul, ValuationSubring.algebraMap_apply, ValuationSubring.algebraMap_apply,
+      P.algebraMap_completionIntegersAlgebra, P.completionIntegersEmbedding_apply, hr,
+      Algebra.traceForm_apply, mul_comm d, trace_completionIntegersSemilocalToField_tmul_mul]
+    rfl
+
+end BaseChangeHelpers
+
+section OnePlace
+
+variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
+  [Algebra k F] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [Algebra F F']
+  [IsScalarTower k k' F'] [IsScalarTower k F F']
+  [FiniteDimensional F F'] [Algebra.IsSeparable F F']
+  (P : Place k F) (P' : Place k' F') (hP : P'.restrict k F = P)
+
+/-! ### Trace-dual expansions and the completed complementary module -/
 
 private theorem sum_trace_mul_smul_completionEmbedding_eq_of_isIntegral
     [Algebra.IsIntegral k k'] {ι : Type*} [Fintype ι] (b y : ι → F')
@@ -163,31 +189,6 @@ theorem sum_trace_mul_smul_completionEmbedding_eq {ι : Type*} [Fintype ι] (b y
     ∑ i, Algebra.trace P.Completion P'.Completion
       (z * P'.completionEmbedding (b i)) • P'.completionEmbedding (y i) = z)
     (P.completionExtensionAlgebra_restrictScalars P' hP)) h₀
-
-omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F']
-  [IsScalarTower k k' F'] [IsScalarTower k F F']
-  [FiniteDimensional F F'] [Algebra.IsSeparable F F'] in
-/-- On the image of `P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F'`, the
-trace pairing with an element of the local-model complementary module takes values in
-`P.completionPlace.integers`. -/
-private theorem trace_completionIntegersSemilocalToField_mul_mem {d : F'}
-    (hd : d ∈ Submodule.traceDual P.integers F (1 : Submodule (integralClosure P.integers F') F'))
-    (t : P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F') :
-    Algebra.trace P.Completion (P.Completion ⊗[F] F')
-        (completionIntegersSemilocalToField F' P t * (1 ⊗ₜ d)) ∈
-      (algebraMap P.completionPlace.integers P.Completion).range := by
-  induction t using TensorProduct.inductionOn with
-  | add t u ht hu =>
-    rw [map_add, add_mul, map_add]
-    exact add_mem ht hu
-  | tmul a x =>
-    obtain ⟨r, hr⟩ := Submodule.mem_traceDual.mp hd _ (Submodule.mem_one.mpr ⟨x, rfl⟩)
-    rw [ValuationSubring.algebraMap_apply] at hr
-    refine ⟨a * algebraMap P.integers P.completionPlace.integers r, ?_⟩
-    rw [map_mul, ValuationSubring.algebraMap_apply, ValuationSubring.algebraMap_apply,
-      P.algebraMap_completionIntegersAlgebra, P.completionIntegersEmbedding_apply, hr,
-      Algebra.traceForm_apply, mul_comm d, trace_completionIntegersSemilocalToField_tmul_mul]
-    rfl
 
 private theorem completionEmbedding_mem_traceDual_of_isIntegral [Algebra.IsIntegral k k'] {d : F'}
     (hd : d ∈ Submodule.traceDual P.integers F (1 : Submodule (integralClosure P.integers F') F')) :
@@ -538,37 +539,32 @@ theorem mem_traceDual_completionIntegers_iff_valuation_le {z : P'.Completion} :
       Ideal.span {δ} := (Ideal.span_singleton_generator _).symm
   have hδL : algebraMap P'.completionPlace.integers P'.Completion δ ≠ 0 :=
     algebraMap_ne_zero_of_differentIdeal_eq_span (K := P.Completion) (L := P'.Completion) hδ
-  have hδ0 : δ ≠ 0 := fun h ↦ hδL (by simp [h])
-  have hC : ∀ c : P'.completionPlace.integers,
-      algebraMap P'.completionPlace.integers P'.Completion c ∈ P'.completionPlace.integers :=
-    fun c ↦ c.2
   have hord : P'.completionPlace.ord (algebraMap P'.completionPlace.integers P'.Completion δ) =
       differentExponent k F P' := by
-    rw [P'.completionPlace.ord_algebraMap_eq_multiplicity_center hC hδ0,
-      IsLocalRing.eq_maximalIdeal (P'.completionPlace.center hC).isMaximal, ← hδ,
+    rw [P'.completionPlace.ord_algebraMap_eq_multiplicity_center (fun c ↦ c.2)
+        (fun h ↦ hδL (by simp [h])),
+      IsLocalRing.eq_maximalIdeal (P'.completionPlace.center (fun c ↦ c.2)).isMaximal, ← hδ,
       P.multiplicity_differentIdeal_completionIntegers P' hP]
   have hvδ : P'.completionPlace.valuation
       (algebraMap P'.completionPlace.integers P'.Completion δ) =
         WithZero.exp (-(differentExponent k F P' : ℤ)) := by
     rw [P'.completionPlace.valuation_eq_exp_neg_ord hδL, hord]
-  rw [mem_traceDual_one_iff_mul_of_differentIdeal_eq_span hδ]
-  have hmem : z * algebraMap P'.completionPlace.integers P'.Completion δ ∈
-      (1 : Submodule P'.completionPlace.integers P'.Completion) ↔
-        P'.completionPlace.valuation
-          (z * algebraMap P'.completionPlace.integers P'.Completion δ) ≤ 1 := by
-    rw [Submodule.mem_one, ← P'.completionPlace.mem_integers_iff]
+  rw [mem_traceDual_one_iff_mul_of_differentIdeal_eq_span hδ, Submodule.mem_one]
+  have hmem : (∃ b : P'.completionPlace.integers, algebraMap _ P'.Completion b =
+        z * algebraMap P'.completionPlace.integers P'.Completion δ) ↔
+      P'.completionPlace.valuation (z * algebraMap P'.completionPlace.integers P'.Completion δ) ≤
+        1 := by
+    rw [← P'.completionPlace.mem_integers_iff]
     exact ⟨fun ⟨b, hb⟩ ↦ hb ▸ b.2, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
   rw [hmem, map_mul, hvδ]
-  constructor
-  · intro hle
-    calc P'.completionPlace.valuation z
+  refine ⟨fun hle ↦ ?_, fun hle ↦ ?_⟩
+  · calc P'.completionPlace.valuation z
         = P'.completionPlace.valuation z * WithZero.exp (-(differentExponent k F P' : ℤ)) *
             WithZero.exp (differentExponent k F P' : ℤ) := by
           rw [mul_assoc, ← WithZero.exp_add, neg_add_cancel, WithZero.exp_zero, mul_one]
       _ ≤ 1 * WithZero.exp (differentExponent k F P' : ℤ) := by gcongr
       _ = WithZero.exp (differentExponent k F P' : ℤ) := one_mul _
-  · intro hle
-    calc P'.completionPlace.valuation z * WithZero.exp (-(differentExponent k F P' : ℤ))
+  · calc P'.completionPlace.valuation z * WithZero.exp (-(differentExponent k F P' : ℤ))
         ≤ WithZero.exp (differentExponent k F P' : ℤ) *
             WithZero.exp (-(differentExponent k F P' : ℤ)) := by gcongr
       _ = 1 := by rw [← WithZero.exp_add, add_neg_cancel, WithZero.exp_zero]

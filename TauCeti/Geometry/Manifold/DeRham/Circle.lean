@@ -10,9 +10,8 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 
-import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.Complex.Circle
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Parametrization
 import TauCeti.Geometry.Manifold.Orientation.TopForm
 import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
@@ -120,11 +119,8 @@ theorem coe_circleAngularClosedForm :
 theorem circleAngularForm_apply_curveVelocity_circleExp (t : ℝ) :
     circleAngularForm (Circle.exp t) (fun _ ↦ Manifold.curveVelocity (𝓡 1) Circle.exp t) =
       (1 : ℝ) := by
-  -- in the plane, the velocity of `t ↦ exp (t i)` is `i exp (t i)`
-  have hd : HasDerivAt (fun s : ℝ ↦ Complex.exp (s * Complex.I))
-      (Complex.exp (t * Complex.I) * Complex.I) t := by
-    simpa using ((Complex.ofRealCLM.hasDerivAt (x := t)).mul_const Complex.I).cexp
-  -- and `dθ` evaluates to `cos² t + sin² t = 1` on it
+  -- in the plane, the velocity of `t ↦ exp (t i)` is `i exp (t i)`, and `dθ` evaluates to
+  -- `cos² t + sin² t = 1` on it
   have h1 : (Complex.exp (t * Complex.I)).re * (Complex.exp (t * Complex.I) *
       Complex.I).im - (Complex.exp (t * Complex.I)).im *
         (Complex.exp (t * Complex.I) * Complex.I).re = 1 := by
@@ -141,7 +137,9 @@ theorem circleAngularForm_apply_curveVelocity_circleExp (t : ℝ) :
         ((contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero).mdifferentiableWithinAt
   rw [circleAngularForm_def, mpullback_apply]
   simp only [← hv]
-  simp only [Manifold.curveVelocity_eq_deriv, Function.comp_def, Circle.coe_exp, hd.deriv]
+  simp only [Manifold.curveVelocity_eq_deriv, Function.comp_def]
+  rw [(hasDerivAt_coe_circleExp t).deriv]
+  simp only [Circle.coe_exp, mul_comm Complex.I]
   exact (planeAngularForm_apply _ _).trans h1
 
 /-- Along the standard parametrization `t ↦ exp (t i)` of the circle, the angular form integrates

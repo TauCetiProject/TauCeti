@@ -147,6 +147,15 @@ theorem algebraMap_completionExtensionAlgebra :
     algebraMap P.Completion P'.Completion = P.completionExtension P' hP :=
   RingHom.algebraMap_toAlgebra _
 
+/-- Through the completed extension, the embedding of `F'` in its completion is semilinear over
+the embedding of `F` in its completion. -/
+theorem completionEmbedding_smul (c : F) (y : F') :
+    letI := P.completionExtensionAlgebra P' hP
+    P'.completionEmbedding (c • y) = P.completionEmbedding c • P'.completionEmbedding y := by
+  let _ := P.completionExtensionAlgebra P' hP
+  rw [Algebra.smul_def, Algebra.smul_def, map_mul, algebraMap_completionExtensionAlgebra,
+    completionExtension_completionEmbedding]
+
 /-- The extended embedding respects the original embeddings of the constant fields. -/
 theorem completionExtension_algebraMap (c : k) :
     P.completionExtension P' hP (algebraMap k P.Completion c) =
@@ -377,11 +386,13 @@ abbrev restrictScalars (P' : Place k' F') : Place k F' where
 
 variable {k}
 
+/-- Restricting the constant field does not change the underlying valuation. -/
 @[simp]
 theorem valuation_restrictScalars (P' : Place k' F') :
     (P'.restrictScalars k).valuation = P'.valuation :=
   (rfl)
 
+/-- Restricting the constant field does not change the completion embedding of `F'`. -/
 @[simp]
 theorem completionEmbedding_restrictScalars (P' : Place k' F') (x : F') :
     (P'.restrictScalars k).completionEmbedding x = P'.completionEmbedding x :=
@@ -389,6 +400,7 @@ theorem completionEmbedding_restrictScalars (P' : Place k' F') (x : F') :
 
 variable [Algebra.IsIntegral F F']
 
+/-- Restricting the constant field to `k` commutes with restricting the place to `F / k`. -/
 @[simp]
 theorem restrict_restrictScalars (P' : Place k' F') :
     (P'.restrictScalars k).restrict k F = P'.restrict k F := by
@@ -397,6 +409,7 @@ theorem restrict_restrictScalars (P' : Place k' F') :
   rw [(P'.restrictScalars k).mem_integers_iff]
   exact P'.mem_integers_iff.mp ((mem_integers_restrict_iff k F P' x).mp hx)
 
+/-- Restricting the constant field of the upper place does not change `completionExtension`. -/
 theorem completionExtension_restrictScalars (P : Place k F) (P' : Place k' F')
     (hP : P'.restrict k F = P) :
     P.completionExtension (P'.restrictScalars k)
@@ -407,6 +420,8 @@ theorem completionExtension_restrictScalars (P : Place k F) (P' : Place k' F')
     fun x ↦ (P.completionExtension_completionEmbedding _ _ x).trans
       (P'.completionEmbedding_restrictScalars (algebraMap F F' x))
 
+/-- Restricting the constant field of the upper place does not change
+`completionExtensionAlgebra`. -/
 theorem completionExtensionAlgebra_restrictScalars (P : Place k F) (P' : Place k' F')
     (hP : P'.restrict k F = P) :
     P.completionExtensionAlgebra (P'.restrictScalars k)
