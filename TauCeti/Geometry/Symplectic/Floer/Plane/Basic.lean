@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
+public import TauCeti.Analysis.Complex.RealChart
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
@@ -29,7 +30,11 @@ two planes (`TauCeti.Floer.PSSPlane`):
 
 Writing `ε = ±1` for the sign of the end, the end lift is `φ(z) = exp (2π ε z)`
 (`TauCeti.Floer.PSSPlane.cylindricalEndLift`), which is holomorphic and preserves the orientation
-`ds ∧ dt`.
+`ds ∧ dt`. In the real coordinates `ℝ × ℝ ≃ ℂ` it is `1`-periodic in `t`
+(`TauCeti.Floer.PSSPlane.realChart_cylindricalEndLift_add_one`), injective on every set whose
+angular coordinates differ by less than one
+(`TauCeti.Floer.PSSPlane.injOn_realChart_cylindricalEndLift`), and has positive Jacobian
+determinant (`TauCeti.Floer.PSSPlane.det_fderiv_realChart_cylindricalEndLift_pos`).
 It is inverted on `ℂ ∖ {0}` by the end coordinate `ζ(w) = ε log w / (2π)`
 (`TauCeti.Floer.PSSPlane.endCoord`), up to an integer shift of the angular coordinate `t`. The
 signed longitudinal coordinate is `ε s = log ‖w‖ / (2π)` for both planes
@@ -249,6 +254,50 @@ theorem im_endCoord_eq_neg_endSign_mul (p : PSSPlane) (w : ℂ) :
   simp [im_endCoord, ThricePuncturedSphere.Puncture.im_endCoord, ← Complex.ofReal_ofNat,
     Complex.arg_mul_real]
   ring
+
+/-! ### The end lift in real coordinates -/
+
+open TauCeti.Complex (realChart realChart_mk) in
+/-- The end lift in real coordinates is `1`-periodic in the angular coordinate. -/
+@[simp]
+theorem realChart_cylindricalEndLift_add_one (p : PSSPlane) (s t : ℝ) :
+    realChart p.cylindricalEndLift (s, t + 1) = realChart p.cylindricalEndLift (s, t) := by
+  rw [realChart_mk, realChart_mk]
+  exact congrArg Complex.equivRealProdCLM (p.periodic_cylindricalEndLift s t)
+
+open TauCeti.Complex (realChart) in
+/-- The end lift in real coordinates is injective on every set whose angular coordinates differ
+by less than one, such as a band `ℝ × [t₀, t₀ + 1)`: two points with the same image differ by an
+integer multiple of `i`. -/
+theorem injOn_realChart_cylindricalEndLift (p : PSSPlane) {s : Set (ℝ × ℝ)}
+    (hs : ∀ a ∈ s, ∀ b ∈ s, |a.2 - b.2| < 1) : InjOn (realChart p.cylindricalEndLift) s := by
+  intro a ha b hb hab
+  have hab' := congrArg Complex.equivRealProdCLM.symm hab
+  simp only [TauCeti.Complex.equivRealProdCLM_symm_realChart] at hab'
+  obtain ⟨k, hk⟩ := p.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm a)
+  obtain ⟨l, hl⟩ := p.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm b)
+  rw [hab', hl] at hk
+  -- The real parts agree, and the imaginary parts differ by the integer `l - k`.
+  have hre := congrArg Complex.re hk
+  have him := congrArg Complex.im hk
+  simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im,
+    Complex.intCast_re, Complex.intCast_im, Complex.I_re, Complex.I_im,
+    Complex.equivRealProdCLM_symm_apply_re, Complex.equivRealProdCLM_symm_apply_im] at hre him
+  have hlt : |((l - k : ℤ) : ℝ)| < 1 := by
+    have h := hs a ha b hb
+    push_cast
+    rwa [show a.2 - b.2 = l - k by linarith] at h
+  rw [← Int.cast_abs, ← Int.cast_one, Int.cast_lt, Int.abs_lt_one_iff, sub_eq_zero] at hlt
+  subst hlt
+  exact Prod.ext (by linarith) (by linarith)
+
+open TauCeti.Complex (realChart) in
+/-- The end lift preserves orientation in real coordinates: its Jacobian determinant is
+positive. -/
+theorem det_fderiv_realChart_cylindricalEndLift_pos (p : PSSPlane) (z : ℝ × ℝ) :
+    0 < (fderiv ℝ (realChart p.cylindricalEndLift) z).det := by
+  rw [TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)]
+  simp [Complex.normSq_pos, Real.pi_ne_zero, p.cylindricalEndLift_ne_zero]
 
 section Periodic
 

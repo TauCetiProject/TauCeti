@@ -81,6 +81,9 @@ discs into the energy of a whole PSS plane.
 
 ## Main results
 
+* `TauCeti.Floer.PSSPlane.perturbationPullback_realChart_cylindricalEndLift_of_le`: a
+  perturbation that is `H(t) dt` on the part `ε s ≥ T₀` of the end pulls back there along the end
+  lift in real coordinates to `H(t) dt`.
 * `TauCeti.SmoothTwoForm.hamiltonianCurvature_pssPlaneEndComponent`: the curvature in end
   coordinates is `ε β'(ε s - 1) H(t)`.
 * `TauCeti.SmoothTwoForm.hamiltonianCurvature_pssPlaneEndComponent_eq_zero`: it vanishes outside
@@ -121,6 +124,30 @@ open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
 open scoped Topology
 
 namespace TauCeti
+
+namespace Floer.PSSPlane
+
+/-- **A perturbation that is `H(t) dt` far out on the end, in real coordinates.** Let `K` be
+`H(t) dt` on the part `ε s ≥ T₀` of the end, for a period-one `H`. At a point `ζ = (s, t)` with
+`ε s ≥ T₀`, the pullback of `K` along the end lift in real coordinates sends a tangent vector
+`v = (σ, τ)` of the cylinder to `τ H(t)`. -/
+theorem perturbationPullback_realChart_cylindricalEndLift_of_le {X : Type*} (p : PSSPlane)
+    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : ℝ → X → ℝ} {T₀ : ℝ}
+    (hKH : ∀ w x, T₀ ≤ p.endSign * (p.endCoord w).re →
+      K w x = H (p.endCoord w).im x • p.endAngularForm w)
+    (hH : Periodic H 1) {ζ : ℝ × ℝ} (hζ : T₀ ≤ p.endSign * ζ.1) (v : ℝ × ℝ) (x : X) :
+    perturbationPullback (realChart p.cylindricalEndLift)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) v ζ x =
+      v.2 * H ζ.2 x := by
+  obtain ⟨k, hk⟩ := p.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm ζ)
+  have hp : H (ζ.2 + k) x = H ζ.2 x := by simpa using congrFun (hH.int_mul k ζ.2) x
+  rw [perturbationPullback_realChart _ (p.hasDerivAt_cylindricalEndLift _),
+    hKH _ x (by simpa using hζ), smul_apply, ← deriv_cylindricalEndLift,
+    endAngularForm_cylindricalEndLift, hk]
+  simp [hp, mul_comm]
+
+end Floer.PSSPlane
 
 namespace SmoothTwoForm
 
@@ -211,46 +238,6 @@ private theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLine
       fun z x ↦ smoothTransition (p.endSign * z.1 - 1) * H z.2 x := by
   rw [perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineImag,
     endComponent_I hH]
-
-/-- The end lift in real coordinates is injective on every set whose angular coordinates differ
-by less than one, such as a band `ℝ × [t₀, t₀ + 1)`: two points with the same image differ by an
-integer multiple of `i`. -/
-theorem _root_.TauCeti.Floer.PSSPlane.injOn_realChart_cylindricalEndLift (p : PSSPlane)
-    {s : Set (ℝ × ℝ)} (hs : ∀ a ∈ s, ∀ b ∈ s, |a.2 - b.2| < 1) :
-    InjOn (realChart p.cylindricalEndLift) s := by
-  intro a ha b hb hab
-  have hπ := Real.pi_pos
-  rw [realChart_apply, realChart_apply] at hab
-  have hab' := Complex.equivRealProdCLM.injective hab
-  rw [cylindricalEndLift_def, cylindricalEndLift_def, Complex.exp_eq_exp_iff_exists_int] at hab'
-  obtain ⟨n, hn⟩ := hab'
-  have hn' : ((n : ℂ) * (2 * π * Complex.I)).re = 0 ∧
-      ((n : ℂ) * (2 * π * Complex.I)).im = 2 * π * n := by
-    exact ⟨by simp, by simp [mul_comm]⟩
-  have hre := congrArg Complex.re hn
-  have him := congrArg Complex.im hn
-  simp only [Complex.re_ofReal_mul, Complex.im_ofReal_mul, Complex.add_re, Complex.add_im,
-    Complex.equivRealProdCLM_symm_apply_re, Complex.equivRealProdCLM_symm_apply_im, hn'.1, hn'.2,
-    add_zero] at hre him
-  have hε := p.endSign_mul_endSign
-  -- The angular coordinates differ by `ε n`, which lies strictly between `-1` and `1`.
-  have hd : a.2 - b.2 = p.endSign * n := by
-    have h : 2 * π * (p.endSign * (a.2 - b.2)) = 2 * π * n := by linear_combination him
-    have h' := mul_left_cancel₀ (by positivity : (2 * π : ℝ) ≠ 0) h
-    linear_combination p.endSign * h' - (a.2 - b.2) * hε
-  have hlt : |(n : ℝ)| < 1 := by
-    have h := hs a ha b hb
-    rwa [hd, abs_mul, abs_endSign, one_mul] at h
-  have hn0 : n = 0 := by
-    rw [← Int.cast_abs] at hlt
-    exact Int.abs_lt_one_iff.1 (by exact_mod_cast hlt)
-  have h1 : a.1 = b.1 := by
-    have h : 2 * π * p.endSign * a.1 = 2 * π * p.endSign * b.1 := by linear_combination hre
-    exact mul_left_cancel₀ (by simp [Real.pi_ne_zero, p.endSign_ne_zero]) h
-  have h2 : a.2 = b.2 := by
-    rw [hn0, Int.cast_zero, mul_zero] at hd
-    linarith
-  exact Prod.ext h1 h2
 
 /-- The end lift is injective on the band `endStrip p`, whose angular coordinate ranges over one
 period. -/
@@ -368,14 +355,6 @@ theorem abs_integral_hamiltonianCurvature_pssPlanePerturbation_le (ω : SmoothTw
     (ω.lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le hH hHs hB u)
 
 /-! ### The energy identity on the discs of the plane -/
-
-/-- The end lift preserves orientation in real coordinates: its Jacobian determinant is
-positive. -/
-theorem _root_.TauCeti.Floer.PSSPlane.det_fderiv_realChart_cylindricalEndLift_pos (p : PSSPlane)
-    (z : ℝ × ℝ) :
-    0 < (fderiv ℝ (realChart p.cylindricalEndLift) z).det := by
-  rw [TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)]
-  simp [Complex.normSq_pos, Real.pi_ne_zero, p.cylindricalEndLift_ne_zero]
 
 /-- The band `ε t ∈ (-1/2, 1/2]` and the closed interval `[-1/2, 1/2]` differ by a null set. -/
 private theorem preimage_endSign_mul_ae_eq (p : PSSPlane) :
