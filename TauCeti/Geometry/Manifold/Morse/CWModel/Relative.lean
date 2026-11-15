@@ -216,10 +216,9 @@ theorem IsMorse.exists_relCWComplex_sum_range_monomial_upperBandPair_eq_add_mul 
             (1 + X) * ∑ i ∈ Finset.range n, monomial i (finrank k
               (LinearMap.range ((cellularChainComplex (univ : Set Y) V).d (i + 1) i).hom)) := by
   -- The band of `f` relative to its upper level is the band of `-f` relative to its lower level.
+  obtain ⟨h₁, h₂, h₃, h₄⟩ := hf.neg_band hcompact ha hb
   obtain ⟨Y, _, _, B, _, hfin, c, h⟩ :=
-    hf.neg.exists_relCWComplex_sum_range_monomial_bandPair_eq_add_mul (neg_le_neg hab)
-      (by rwa [preimage_neg_Icc_neg]) (isRegularValue_neg_iff.2 (by rwa [neg_neg]))
-      (isRegularValue_neg_iff.2 (by rwa [neg_neg]))
+    h₁.exists_relCWComplex_sum_range_monomial_bandPair_eq_add_mul (neg_le_neg hab) h₂ h₃ h₄
   refine ⟨Y, _, ‹_›, B, ‹_›, hfin,
     fun m ↦ ⟨(c m).some.trans (Set.equivOfEq (hf.setOf_neg_band_eq a b m))⟩, fun V _ n hn ↦ ?_⟩
   rw [← bandPair_neg]

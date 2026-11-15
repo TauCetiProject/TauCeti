@@ -770,30 +770,6 @@ The band of `-f` between `-b` and `-a` is the band of `f` relative to its upper 
 upper band pair `(f⁻¹[a, b], f⁻¹(b))`, with the critical points counted by their complementary
 index. -/
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
-/-- The critical points of index `i` of `-f` with values in `(-b, -a]` are the critical points of
-`f` with values in `[a, b)` and complementary index `dim M - i`. -/
-theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :
-    {x ∈ criticalPoints I (-f) ∩ (-f) ⁻¹' Ioc (-b) (-a) | manifoldMorseIndex I (-f) x = i} =
-      {x ∈ criticalPoints I f ∩ f ⁻¹' Ico a b | manifoldMorseIndex I f x + i = finrank ℝ E} := by
-  ext x
-  simp only [criticalPoints_neg, mem_ofPred_eq, mem_inter_iff, mem_preimage, Pi.neg_apply,
-    mem_Ioc, mem_Ico, neg_lt_neg_iff, neg_le_neg_iff]
-  constructor <;> rintro ⟨⟨hx, h₁, h₂⟩, h₃⟩ <;>
-  · have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-    exact ⟨⟨hx, h₂, h₁⟩, by omega⟩
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
-/-- The hypotheses on `f` over `[a, b]` hold for `-f` over `[-b, -a]`. -/
-private theorem IsMorse.neg_band (hf : IsMorse I f) {a b : ℝ}
-    (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
-    (hb : IsRegularValue I 𝓘(ℝ) f b) :
-    IsMorse I (-f) ∧ IsCompact ((-f) ⁻¹' Icc (-b) (-a)) ∧ IsRegularValue I 𝓘(ℝ) (-f) (-b) ∧
-      IsRegularValue I 𝓘(ℝ) (-f) (-a) :=
-  ⟨hf.neg, by rwa [preimage_neg_Icc_neg], isRegularValue_neg_iff.2 (by rwa [neg_neg]),
-    isRegularValue_neg_iff.2 (by rwa [neg_neg])⟩
-
 /-- **Finiteness of relative homology for a cobordism relative to its outgoing boundary.** Let `f`
 be a Morse function, and `a ≤ b` regular values with compact band `f⁻¹[a, b]`. Then the relative
 singular homology `Hₙ(f⁻¹[a, b], f⁻¹(b); V)` of the band relative to its upper level is
