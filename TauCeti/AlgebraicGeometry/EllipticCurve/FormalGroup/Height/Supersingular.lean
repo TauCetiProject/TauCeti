@@ -31,7 +31,8 @@ When `K` has prime characteristic `p`, `[p]` has degree `p² = deg_s [p] · deg_
 
 Consequently the formal group of every elliptic curve over a field of prime characteristic `p` has
 height `1` or `2` (in particular at most `2`), extending the characteristic `2` and `3` results of
-`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic` to every prime.
+`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Char.Two` and
+`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Char.Three` to every prime.
 
 ## Main results
 

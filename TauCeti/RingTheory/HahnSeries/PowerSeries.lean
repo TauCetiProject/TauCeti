@@ -16,6 +16,8 @@ scalar tower `S → A⟦X⟧ → A⟦Γ⟧`.
 
 ## Main results
 
+* `HahnSeries.ofPowerSeries_comp_algebraMap`: composing `HahnSeries.ofPowerSeries` with
+  `algebraMap S A⟦X⟧` recovers `algebraMap S A⟦Γ⟧`.
 * `TauCeti.hahnSeries_isScalarTower_powerSeries`: the algebra actions of `S` on `A⟦X⟧` and on
   Hahn series `A⟦Γ⟧` form a scalar tower.
 -/
@@ -23,6 +25,17 @@ scalar tower `S → A⟦X⟧ → A⟦Γ⟧`.
 public section
 
 open scoped PowerSeries
+
+namespace HahnSeries
+
+/-- Composing `HahnSeries.ofPowerSeries` with `algebraMap S A⟦X⟧` recovers `algebraMap S A⟦Γ⟧`. -/
+@[simp]
+theorem ofPowerSeries_comp_algebraMap {Γ A S : Type*} [Semiring Γ] [PartialOrder Γ]
+    [IsStrictOrderedRing Γ] [CommSemiring A] [CommSemiring S] [Algebra S A⟦X⟧] :
+    (ofPowerSeries Γ A).comp (algebraMap S A⟦X⟧) = algebraMap S (HahnSeries Γ A) :=
+  RingHom.ext fun s ↦ (algebraMap_apply' Γ s).symm
+
+end HahnSeries
 
 namespace TauCeti
 

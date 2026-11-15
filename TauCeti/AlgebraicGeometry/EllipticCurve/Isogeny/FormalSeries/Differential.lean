@@ -109,11 +109,6 @@ section Differential
 
 variable {W₁ W₂ : WeierstrassCurve K}
 
-private theorem ofPowerSeries_algebraMap_mvPowerSeries (c : K) :
-    ofPowerSeries ℤ K (algebraMap K (MvPowerSeries Unit K) c) = algebraMap K K⸨X⸩ c := by
-  rw [← LaurentSeries.coe_algebraMap]
-  exact (IsScalarTower.algebraMap_apply K K⟦X⟧ K⸨X⸩ c).symm
-
 private theorem ofPowerSeries_subst_formalInvariantDifferentialDenom (W : WeierstrassCurve K)
     {q₀ : K⟦X⟧} (hs : PowerSeries.HasSubst q₀) :
     ofPowerSeries ℤ K (PowerSeries.subst q₀ W.formalInvariantDifferentialDenom) =
@@ -125,7 +120,7 @@ private theorem ofPowerSeries_subst_formalInvariantDifferentialDenom (W : Weiers
         3 * algebraMap K K⸨X⸩ W.a₆ * (ofPowerSeries ℤ K (PowerSeries.subst q₀ W.formalW)) ^ 2 := by
   rw [W.subst_formalInvariantDifferentialDenom hs]
   simp only [Algebra.smul_def, map_sub, map_one, map_mul, map_pow, map_ofNat,
-    ofPowerSeries_algebraMap_mvPowerSeries]
+    ← HahnSeries.algebraMap_apply' ℤ]
 
 private theorem functionFieldLaurentExpansion_fieldPullback_coords [W₂.IsElliptic]
     (φ : Isogeny W₁.toAffine W₂.toAffine) :
@@ -250,7 +245,7 @@ theorem subst_formalSeries_invariantDifferential_mul_derivative_of_pullbackDiffe
   apply ofPowerSeries_injective (Γ := ℤ) (R := K)
   rw [← hlhs, hexp, map_mul, map_mul, AlgHom.commutes, map_inv₀, ← mul_assoc, ← mul_assoc,
     inv_mul_cancel₀ hed₂, one_mul, mul_assoc, hrhs, Algebra.smul_def, map_mul,
-    ofPowerSeries_algebraMap_mvPowerSeries]
+    ← HahnSeries.algebraMap_apply' ℤ]
 
 /-- **The pullback scalar of the invariant differential is the linear coefficient of
 `φ.formalSeries`** (Silverman IV.4.2(a)): if `φ^* ω₂ = c • ω₁`, then

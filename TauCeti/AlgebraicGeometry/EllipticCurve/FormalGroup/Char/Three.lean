@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Supersingular
 import Mathlib.Tactic.ReduceModChar
 
 /-!

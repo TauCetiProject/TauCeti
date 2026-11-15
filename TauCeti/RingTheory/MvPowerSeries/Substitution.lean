@@ -404,8 +404,8 @@ theorem coeff_subst_X_smul_X (t : O) (f : MvPowerSeries (Fin 2) O) (n : ℕ) :
   rw [Finset.mem_range] at hb
   have h0 : emb b 0 = n - b := by simp [emb]
   have h1 : emb b 1 = b := by simp [emb]
-  rw [coeff_prod_X_smul_X, h0, h1, ite_eq_left (by omega), smul_eq_mul]
-  rfl
+  have hemb : emb b = Finsupp.single 0 (n - b) + Finsupp.single 1 b := by simp [emb]
+  rw [coeff_prod_X_smul_X, h0, h1, ite_eq_left (by omega), smul_eq_mul, hemb]
 
 /-- Swapping the variables of a two-variable series `f(X, Y)`: the coefficient of `XⁱYʲ` in
 `f(Y, X)` is the coefficient of `XʲYⁱ` in `f`. -/

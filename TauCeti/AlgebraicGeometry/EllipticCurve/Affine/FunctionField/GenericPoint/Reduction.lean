@@ -12,6 +12,8 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map.Basic
 -- Proof-only: a nontrivial valuation bounded by `1` on a Dedekind domain is adic up to equivalence.
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
+-- Proof-only: congruence subfield of two ring homomorphisms at a valuation.
+import TauCeti.RingTheory.Valuation.SubLtOne
 
 /-!
 # The reduction of the generic point
@@ -37,6 +39,8 @@ compared.
 * `WeierstrassCurve.Affine.valuation_pointPlace_genericX_sub_lt_one` and
   `WeierstrassCurve.Affine.valuation_pointPlace_genericY_sub_lt_one`: `x - a` and `y - b` vanish
   at the place of `(a, b)`.
+* `WeierstrassCurve.Affine.valuation_pointPlace_genericPoint_map_sub_lt_one`: every `z ∈ F(W)`
+  reduces to its own constant value at the generic-point place of `W⁄F(W)`.
 * `WeierstrassCurve.Affine.reductionOfDegreeEqOne_genericPoint`: the generic point reduces to `P`
   at the place of `P`.
 * `WeierstrassCurve.Affine.isEquiv_comap_pointPlace_map`: the place of a point transported along
@@ -73,6 +77,37 @@ theorem valuation_pointPlace_genericY_sub_lt_one {x y : F} (h : W.Equation x y) 
   rw [← algebraMap_YClass, Place.valuation_ofPrime_algebraMap_lt_one_iff,
     CoordinateRing.pointPlace_asIdeal]
   exact Ideal.subset_span (Set.mem_insert_of_mem _ rfl)
+
+/-- **Every rational function on `W` reduces to its own constant value at the generic-point place of
+`W⁄F(W)`**: `FunctionField.map W (algebraMap F F(W)) z - z` vanishes at the place of
+`(genericX W, genericY W)`. -/
+theorem valuation_pointPlace_genericPoint_map_sub_lt_one
+    (h : (W.map (algebraMap F W.FunctionField)).Equation (genericX W) (genericY W))
+    (z : W.FunctionField) :
+    (Place.ofPrime W.FunctionField (W.map (algebraMap F W.FunctionField)).FunctionField
+      (CoordinateRing.pointPlace h)).valuation
+        (FunctionField.map W (algebraMap F W.FunctionField) z -
+          algebraMap W.FunctionField
+            (W.map (algebraMap F W.FunctionField)).FunctionField z) < 1 := by
+  set P := Place.ofPrime W.FunctionField (W.map (algebraMap F W.FunctionField)).FunctionField
+    (CoordinateRing.pointPlace h)
+  let S := P.valuation.subLtOneSubfield (FunctionField.map W (algebraMap F W.FunctionField))
+    (algebraMap W.FunctionField (W.map (algebraMap F W.FunctionField)).FunctionField)
+    (Valuation.IsTrivialOn.valuation_algebraMap_le_one P.valuation)
+  suffices hz : z ∈ S from Valuation.mem_subLtOneSubfield.mp hz
+  let A : Subalgebra F W.FunctionField :=
+    { S.toSubring with
+      algebraMap_mem' := fun a ↦ by simp [S, FunctionField.map_algebraMap] }
+  have hle : Algebra.adjoin F {genericX W, genericY W} ≤ A := by
+    rw [Algebra.adjoin_le_iff]
+    rintro _ (rfl | rfl)
+    · simpa [A, S, P, FunctionField.map_genericX] using
+        valuation_pointPlace_genericX_sub_lt_one (W.map (algebraMap F W.FunctionField)) h
+    · simpa [A, S, P, FunctionField.map_genericY] using
+        valuation_pointPlace_genericY_sub_lt_one (W.map (algebraMap F W.FunctionField)) h
+  obtain ⟨num, den, _, rfl⟩ := IsFractionRing.div_surjective (A := W.CoordinateRing) z
+  exact S.div_mem (hle (algebraMap_mem_adjoin_genericX_genericY W num))
+    (hle (algebraMap_mem_adjoin_genericX_genericY W den))
 
 section BaseChange
 

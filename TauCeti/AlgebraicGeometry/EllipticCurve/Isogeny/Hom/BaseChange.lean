@@ -12,6 +12,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 -- Proof-only: base change preserves the degree of an isogeny.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
+-- Proof-only: the tautological point of an isogeny is the image of the generic point along `φ^*`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.GenericPoint
 
 /-!
 # Faithful additive base change of morphisms of elliptic curves
@@ -41,6 +43,8 @@ and the identification of morphisms with their tautological points in `Isogeny.H
 * `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_map`: compatibility of the action on points of the
   base changes `W⁄L` and `W⁄M` with Mathlib's point map along an algebra homomorphism `L →ₐ[F] M`;
   for an automorphism of `L` over `F` this is Galois equivariance.
+* `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_genericPoint`: evaluating a morphism base-changed
+  to `F(W₁)` at the generic point of `W₁` recovers its tautological point.
 
 ## References
 
@@ -295,6 +299,39 @@ theorem pointMap_map_algebraMap_map {L M : Type*} [Field L] [Field M] [Algebra F
   · rw [map_map]
     exact congr_arg_heq (fun g ↦ h.map g) σ.comp_algebraMap
   · exact (congrArg _ (pointMap_map _ _ P)).trans (Point.map_eq_cast_mapAlong σ _).symm
+
+omit [DecidableEq F] in
+/-- **Evaluating a base-changed morphism at the generic point recovers its tautological point.** -/
+@[simp]
+theorem pointMap_map_algebraMap_genericPoint (h : Hom W₁ W₂) :
+    (h.map (algebraMap F W₁.FunctionField)).pointMap (genericPoint W₁) =
+      h.tautologicalPoint := by
+  classical
+  rcases eq_zero_or_exists_ofIsogeny h with rfl | ⟨φ, rfl⟩
+  · rw [zero_map, tautologicalPoint_zero]
+    exact zero_pointMap _
+  let hN : (W₁.map (algebraMap F W₁.FunctionField)).Nonsingular W₁.genericX W₁.genericY :=
+    nonsingular_genericX_genericY W₁
+  let hN₂ : (W₂.map (algebraMap F W₁.FunctionField)).Nonsingular
+      (φ.fieldPullback W₂.genericX) (φ.fieldPullback W₂.genericY) :=
+    (W₂.baseChange_nonsingular φ.fieldPullback.injective ..).mpr
+      (nonsingular_genericX_genericY W₂)
+  have hQ : ((ofIsogeny φ).tautologicalPoint :
+      (W₂.map (algebraMap F W₁.FunctionField)).Point) = .some _ _ hN₂ := by
+    rw [tautologicalPoint_ofIsogeny, Isogeny.tautologicalPoint_eq_map_genericPoint,
+      genericPoint_eq_some, Point.map_some]
+  suffices hs : ((ofIsogeny φ).map (algebraMap F W₁.FunctionField)).pointMap
+      (.some W₁.genericX W₁.genericY hN) = .some _ _ hN₂ by
+    exact (congrArg _ (genericPoint_eq_some W₁)).trans (hs.trans hQ.symm)
+  rw [ofIsogeny_map, pointMap_eq_iff, tautologicalPoint_ofIsogeny,
+    Isogeny.tautologicalPoint_eq_map_genericPoint, genericPoint_eq_some,
+    Point.map_some, Point.equivBaseChangeSelf_some,
+    some_sub_baseChange_mem_polePoints_iff,
+    coe_pointEquivDegreeOnePlace_some _ hN]
+  simp only [← FunctionField.map_genericX, ← FunctionField.map_genericY,
+    map_fieldPullback_map]
+  exact ⟨valuation_pointPlace_genericPoint_map_sub_lt_one W₁ hN.1 _,
+    valuation_pointPlace_genericPoint_map_sub_lt_one W₁ hN.1 _⟩
 
 end PointMap
 

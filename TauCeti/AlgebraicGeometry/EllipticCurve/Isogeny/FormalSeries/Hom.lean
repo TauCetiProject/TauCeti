@@ -55,8 +55,6 @@ formal group (`TauCeti.Isogeny.formalSeries_mulByIntIsogeny`,
   `TauCeti.Isogeny.formalSeries_mulByIntIsogenyOfNeZero`: the formal series of `[n]` on an
   elliptic curve is `(formalGroup W).zsmulSeries n` (and `(formalGroup W).nsmulSeries n` for
   natural `n`).
-* `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_genericPoint`: evaluating a morphism base-changed
-  to `K(W₁)` at the generic point of `W₁` recovers its tautological point.
 
 ## References
 
@@ -241,8 +239,8 @@ private theorem nonsingular_formalPointRep (W : WeierstrassCurve K) [W.IsEllipti
     (W.toProjective.equation_neg_one_iff_wEquation q (PowerSeries.subst q (formalW W))).mpr
       (W.subst_formalW_wEquation (.of_constantCoeff_zero' hq))
   have hcurve : (W.map (algebraMap K K⟦X⟧)).map (ofPowerSeries ℤ K) = W⁄K⸨X⸩ := by
-    rw [WeierstrassCurve.baseChange, WeierstrassCurve.map_map]
-    rfl
+    rw [WeierstrassCurve.baseChange, WeierstrassCurve.map_map,
+      HahnSeries.ofPowerSeries_comp_algebraMap]
   simpa only [hcurve, formalPointRep] using heq.map (ofPowerSeries ℤ K)
 
 private theorem formalPointRep_eq_of_toAffine_eq (W : WeierstrassCurve K) [W.IsElliptic]
@@ -264,18 +262,6 @@ private theorem formalPointRep_eq_of_toAffine_eq (W : WeierstrassCurve K) [W.IsE
   simpa only [formalPointRep, Function.comp_apply, Pi.smul_apply, Units.smul_def, smul_eq_mul,
     Matrix.cons_val_zero, hu1, one_mul] using h0.symm
 
-private theorem hasSubst_unitSumUnit_pair {q₁ q₂ : K⟦X⟧}
-    (hq₁ : PowerSeries.constantCoeff q₁ = 0) (hq₂ : PowerSeries.constantCoeff q₂ = 0) :
-    MvPowerSeries.HasSubst (![q₁, q₂] ∘ TauCeti.unitSumUnitEquivFinTwo) :=
-  MvPowerSeries.hasSubst_of_constantCoeff_zero <| by
-    rintro (⟨⟨⟩⟩ | ⟨⟨⟩⟩)
-    · rw [← MvPowerSeries.coeff_zero_eq_constantCoeff_apply, ← PowerSeries.coeff_def (n := 0) rfl,
-        PowerSeries.coeff_zero_eq_constantCoeff_apply]
-      simpa using hq₁
-    · rw [← MvPowerSeries.coeff_zero_eq_constantCoeff_apply, ← PowerSeries.coeff_def (n := 0) rfl,
-        PowerSeries.coeff_zero_eq_constantCoeff_apply]
-      simpa using hq₂
-
 /-- Specializing `dblAddXYZ_formalW_eq_smul` along two power series `q₁, q₂ ∈ K⟦X⟧` with vanishing
 constant coefficient. -/
 private theorem dblAddXYZ_formalW_powerSeries_eq_smul (W : WeierstrassCurve K) {q₁ q₂ : K⟦X⟧}
@@ -289,7 +275,8 @@ private theorem dblAddXYZ_formalW_powerSeries_eq_smul (W : WeierstrassCurve K) {
         ![MvPowerSeries.subst ![q₁, q₂] (formalGroup W).toPowerSeries, -1,
           PowerSeries.subst (MvPowerSeries.subst ![q₁, q₂] (formalGroup W).toPowerSeries)
             W.formalW] := by
-  have hs := hasSubst_unitSumUnit_pair hq₁ hq₂
+  have hs := (PowerSeries.hasSubst_pair hq₁ hq₂).comp_tendstoCofinite
+    TauCeti.unitSumUnitEquivFinTwo
   let ev : MvPowerSeries (Unit ⊕ Unit) K →+* K⟦X⟧ := (MvPowerSeries.substAlgHom hs).toRingHom
   have hev_curve : (W.toProjective.map (algebraMap K (MvPowerSeries (Unit ⊕ Unit) K))).map ev =
       W.toProjective.map (algebraMap K K⟦X⟧) :=
@@ -362,7 +349,9 @@ private theorem toAffine_formalPointRep_add [DecidableEq K⸨X⸩] (W : Weierstr
         formalPointRep W (MvPowerSeries.subst ![q₁, q₂] (formalGroup W).toPowerSeries) := by
     have hcurve : (W.toProjective.map (algebraMap K K⟦X⟧)).map (ofPowerSeries ℤ K) =
         (W⁄K⸨X⸩).toProjective :=
-      congrArg WeierstrassCurve.toProjective (W.map_map _ _)
+      congrArg WeierstrassCurve.toProjective (by
+        rw [WeierstrassCurve.baseChange, WeierstrassCurve.map_map,
+          HahnSeries.ofPowerSeries_comp_algebraMap])
     have hmap := Projective.map_dblAddXYZ (W' := W.toProjective.map (algebraMap K K⟦X⟧))
       (ofPowerSeries ℤ K) ![q₁, -1, PowerSeries.subst q₁ W.formalW]
       ![q₂, -1, PowerSeries.subst q₂ W.formalW]
@@ -536,151 +525,6 @@ end FormalPointAddition
 section FormalGroupHom
 
 variable {K : Type*} [Field K]
-
-/-- The subring of `K(W)` consisting of elements `a` where `FunctionField.map W ι a - a` has
-valuation `< 1` at the generic point of `W⁄K(W)`. -/
-private noncomputable def genericPointResidueSubring (W : WeierstrassCurve.Affine K)
-    [W.IsElliptic] {hN : (W.map (algebraMap K W.FunctionField)).Nonsingular
-      (Affine.genericX W) (Affine.genericY W)} :
-    Subring W.FunctionField :=
-  let L := W.FunctionField
-  let ι := algebraMap K L
-  let P := Place.ofPrime L (W.map ι).FunctionField (Affine.CoordinateRing.pointPlace hN.1)
-  let v := P.valuation
-  let f : L →+* (W.map ι).FunctionField := Affine.FunctionField.map W ι
-  let c : L →+* (W.map ι).FunctionField := algebraMap L (W.map ι).FunctionField
-  have hv_const (a : L) : v (c a) ≤ 1 := by
-    by_cases ha : a = 0
-    · simp [c, ha]
-    · exact le_of_eq (P.isTrivialOn.1 a ha)
-  { carrier := {a | v (f a - c a) < 1}
-    mul_mem' := fun {a b} ha hb ↦ by
-      simp only [Set.mem_ofPred_eq] at ha hb ⊢
-      have hfb : v (f b) ≤ 1 := by
-        have hsplit : f b = (f b - c b) + c b := by ring
-        rw [hsplit]
-        exact (v.map_add _ _).trans (max_le hb.le (hv_const b))
-      have hmul : f a * f b - c a * c b = (f a - c a) * f b + (f b - c b) * c a := by ring
-      rw [map_mul, map_mul, hmul]
-      refine v.map_add_lt ?_ ?_
-      · rw [map_mul]
-        exact (mul_le_of_le_one_right zero_le hfb).trans_lt ha
-      · rw [map_mul]
-        exact (mul_le_of_le_one_right zero_le (hv_const a)).trans_lt hb
-    one_mem' := by simp
-    add_mem' := fun {a b} ha hb ↦ by
-      simp only [Set.mem_ofPred_eq] at ha hb ⊢
-      have hadd : f a + f b - (c a + c b) = (f a - c a) + (f b - c b) := by ring
-      rw [map_add, map_add, hadd]
-      exact v.map_add_lt ha hb
-    zero_mem' := by simp
-    neg_mem' := fun {a} ha ↦ by
-      simp only [Set.mem_ofPred_eq] at ha ⊢
-      have hneg : -f a - -c a = -(f a - c a) := by ring
-      rwa [map_neg, map_neg, hneg, Valuation.map_neg] }
-
-private theorem mem_genericPointResidueSubring_iff (W : WeierstrassCurve.Affine K)
-    [W.IsElliptic] {hN : (W.map (algebraMap K W.FunctionField)).Nonsingular
-      (Affine.genericX W) (Affine.genericY W)} {a : W.FunctionField} :
-    a ∈ genericPointResidueSubring W (hN := hN) ↔
-      (Place.ofPrime W.FunctionField (W.map (algebraMap K W.FunctionField)).FunctionField
-        (Affine.CoordinateRing.pointPlace hN.1)).valuation
-        (Affine.FunctionField.map W (algebraMap K W.FunctionField) a -
-          algebraMap W.FunctionField (W.map (algebraMap K W.FunctionField)).FunctionField a) <
-        1 :=
-  Iff.rfl
-
-private theorem inv_mem_genericPointResidueSubring (W : WeierstrassCurve.Affine K)
-    [W.IsElliptic] {hN : (W.map (algebraMap K W.FunctionField)).Nonsingular
-      (Affine.genericX W) (Affine.genericY W)} {a : W.FunctionField}
-    (ha : a ∈ genericPointResidueSubring W (hN := hN)) :
-    a⁻¹ ∈ genericPointResidueSubring W (hN := hN) := by
-  rw [mem_genericPointResidueSubring_iff] at ha ⊢
-  set P := Place.ofPrime W.FunctionField (W.map (algebraMap K W.FunctionField)).FunctionField
-    (Affine.CoordinateRing.pointPlace hN.1)
-  set v := P.valuation
-  set f : W.FunctionField →+* (W.map (algebraMap K W.FunctionField)).FunctionField :=
-    Affine.FunctionField.map W (algebraMap K W.FunctionField)
-  set c : W.FunctionField →+* (W.map (algebraMap K W.FunctionField)).FunctionField :=
-    algebraMap W.FunctionField (W.map (algebraMap K W.FunctionField)).FunctionField
-  by_cases ha0 : a = 0
-  · simp [ha0]
-  have hvc : v (c a) = 1 := P.isTrivialOn.1 a ha0
-  have hvf : v (f a) = 1 := by
-    have hsplit : f a = c a + (f a - c a) := by ring
-    rw [hsplit, v.map_add_of_distinct_val (hvc ▸ ha.ne')]
-    exact (max_eq_left (hvc.symm ▸ ha.le)).trans hvc
-  have hfa0 : f a ≠ 0 := (map_ne_zero_iff f f.injective).mpr ha0
-  have hca0 : c a ≠ 0 := (map_ne_zero_iff c c.injective).mpr ha0
-  have hinv : f a⁻¹ - c a⁻¹ = -(f a - c a) / (f a * c a) := by
-    rw [map_inv₀, map_inv₀]
-    field_simp [hfa0, hca0]
-    ring
-  rwa [hinv, map_div₀, Valuation.map_neg, map_mul, hvf, hvc, mul_one, div_one]
-
-/-- On `W⁄K(W)`, every element `z ∈ K(W)` takes its own constant value at the place of the generic
-point: `FunctionField.map W ι z - z` vanishes there. -/
-private theorem valuation_pointPlace_genericPoint_map_sub_lt_one (W : WeierstrassCurve.Affine K)
-    [W.IsElliptic]
-    (hN : (W.map (algebraMap K W.FunctionField)).Nonsingular
-      (Affine.genericX W) (Affine.genericY W))
-    (z : W.FunctionField) :
-    (Place.ofPrime W.FunctionField (W.map (algebraMap K W.FunctionField)).FunctionField
-      (Affine.CoordinateRing.pointPlace hN.1)).valuation
-        (Affine.FunctionField.map W (algebraMap K W.FunctionField) z -
-          algebraMap W.FunctionField
-            (W.map (algebraMap K W.FunctionField)).FunctionField z) < 1 := by
-  let S : Subfield W.FunctionField :=
-    { genericPointResidueSubring W (hN := hN) with
-      inv_mem' := fun _ hx ↦ inv_mem_genericPointResidueSubring W (hN := hN) hx }
-  suffices hmem : z ∈ S from hmem
-  let A : Subalgebra K W.FunctionField :=
-    { S.toSubring with
-      algebraMap_mem' := fun a ↦ by
-        simp [S, genericPointResidueSubring, Affine.FunctionField.map_algebraMap] }
-  have hle : Algebra.adjoin K {Affine.genericX W, Affine.genericY W} ≤ A := by
-    rw [Algebra.adjoin_le_iff]
-    rintro _ (rfl | rfl)
-    · simpa [A, S, genericPointResidueSubring, Affine.FunctionField.map_genericX] using
-        Affine.valuation_pointPlace_genericX_sub_lt_one (W.map (algebraMap K W.FunctionField)) hN.1
-    · simpa [A, S, genericPointResidueSubring, Affine.FunctionField.map_genericY] using
-        Affine.valuation_pointPlace_genericY_sub_lt_one (W.map (algebraMap K W.FunctionField)) hN.1
-  have hcoord (r : W.CoordinateRing) : algebraMap W.CoordinateRing W.FunctionField r ∈ S :=
-    hle (Affine.algebraMap_mem_adjoin_genericX_genericY W r)
-  obtain ⟨num, den, _, rfl⟩ := IsFractionRing.div_surjective (A := W.CoordinateRing) z
-  exact S.div_mem (hcoord num) (hcoord den)
-
-/-- **Evaluating a base-changed morphism at the generic point recovers its tautological point.** -/
-@[simp]
-theorem Hom.pointMap_map_algebraMap_genericPoint {W₁ W₂ : WeierstrassCurve.Affine K}
-    [W₁.IsElliptic] [W₂.IsElliptic] (f : Hom W₁ W₂) :
-    (f.map (algebraMap K W₁.FunctionField)).pointMap (Affine.genericPoint W₁) =
-      f.tautologicalPoint := by
-  rcases Hom.eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩
-  · rw [Hom.zero_map, Hom.tautologicalPoint_zero]
-    exact Hom.zero_pointMap _
-  let hN : (W₁.map (algebraMap K W₁.FunctionField)).Nonsingular W₁.genericX W₁.genericY :=
-    Affine.nonsingular_genericX_genericY W₁
-  let hN₂ : (W₂.map (algebraMap K W₁.FunctionField)).Nonsingular
-      (φ.fieldPullback W₂.genericX) (φ.fieldPullback W₂.genericY) :=
-    (W₂.baseChange_nonsingular φ.fieldPullback.injective ..).mpr
-      (Affine.nonsingular_genericX_genericY W₂)
-  have hQ : ((Hom.ofIsogeny φ).tautologicalPoint :
-      (W₂.map (algebraMap K W₁.FunctionField)).Point) = .some _ _ hN₂ := by
-    rw [Hom.tautologicalPoint_ofIsogeny, Isogeny.tautologicalPoint_eq_map_genericPoint,
-      Affine.genericPoint_eq_some, Affine.Point.map_some]
-  suffices hs : ((Hom.ofIsogeny φ).map (algebraMap K W₁.FunctionField)).pointMap
-      (.some W₁.genericX W₁.genericY hN) = .some _ _ hN₂ by
-    exact (congrArg _ (Affine.genericPoint_eq_some W₁)).trans (hs.trans hQ.symm)
-  rw [Hom.ofIsogeny_map, Hom.pointMap_eq_iff, Hom.tautologicalPoint_ofIsogeny,
-    Isogeny.tautologicalPoint_eq_map_genericPoint, Affine.genericPoint_eq_some,
-    Affine.Point.map_some, Affine.Point.equivBaseChangeSelf_some,
-    Affine.some_sub_baseChange_mem_polePoints_iff,
-    Affine.coe_pointEquivDegreeOnePlace_some _ hN]
-  simp only [← Affine.FunctionField.map_genericX, ← Affine.FunctionField.map_genericY,
-    map_fieldPullback_map]
-  exact ⟨valuation_pointPlace_genericPoint_map_sub_lt_one W₁ hN _,
-    valuation_pointPlace_genericPoint_map_sub_lt_one W₁ hN _⟩
 
 /-- On `W₁⁄K⸨X⸩`, the point action of an isogeny sends the formal point `[q : -1 : w₁(q)]` to
 `[φ.formalSeries(q) : -1 : w₂(φ.formalSeries(q))]`. -/
