@@ -174,7 +174,8 @@ private lemma twistedHomologyπ_comp_coefficientMap_comp_twistedCellularCyclesι
 lemma twistedCellularDifferential_eq_twistedSkeletonBaseTripleδ_comp (n : ℕ) :
     twistedCellularDifferential C L n =
       twistedSkeletonBaseTripleδ C L n ≫ twistedCellularCyclesι C L n := by
-  rw [twistedCellularDifferential_eq, twistedSkeletonBaseTripleδ,
+  rw [twistedCellularDifferential_eq_twistedHomologyδ_comp_twistedHomologyπ,
+    twistedSkeletonBaseTripleδ,
     (skeletonBaseTriple C n).twistedHomologyδ_eq_comp_twistedHomologyπ _ (n + 1) n rfl]
   -- Both sides begin with the connecting morphism of the pair `(Xⁿ⁺¹, Xⁿ)`. The outer and inner
   -- pairs of the triple are `skeletonPair C n` and `skeletonBasePair C n` only after unfolding the
@@ -286,7 +287,13 @@ private lemma twistedCellularCycles_exact (n : ℕ) :
         τ₂ := eqToHom (twistedCellularChainComplex_X C L (n + 1)).symm
         τ₃ := (skeletonBasePair C n).twistedHomologyCoefficientMap
           (skeletonPairSubspaceSystemIso C L (n + 1)).hom n ≫ twistedCellularCyclesιX C L n
-        comm₁₂ := by simp [twistedCellularCyclesιX]; rfl
+        comm₁₂ := (Category.id_comp _).trans (by
+          dsimp only [twistedCellularCyclesιX]
+          rw [twistedCellularCyclesι_succ]
+          -- The two `eqToHom`s start at `twistedCellularChainGroup C L (n + 1)` and at the
+          -- homology of the triple's outer pair; these are the same object only after unfolding
+          -- the pair constructors, so `rfl` rather than `rw` closes the goal.
+          rfl)
         comm₂₃ := by
           -- `change` projects the components of `ShortComplex.mk` and reduces the index
           -- `n + 1 - 1` to `n`; rewriting with `Nat.add_sub_cancel` instead fails because the
@@ -319,7 +326,7 @@ lemma skeletonBaseTriple_twistedHomology_exact_inner (n : ℕ) :
       τ₂ := (skeletonBasePair C n).twistedHomologyCoefficientMap
         (skeletonPairSubspaceSystemIso C L (n + 1)).hom n
       τ₃ := 𝟙 _
-      comm₁₂ := (Category.id_comp _).trans (by dsimp only; unfold twistedSkeletonBaseTripleδ; rfl)
+      comm₁₂ := (Category.id_comp _).trans (twistedSkeletonBaseTripleδ_def C L n)
       comm₂₃ := (by
         dsimp only
         unfold twistedHomologySkeletonBasePairToSucc

@@ -21,10 +21,11 @@ connecting morphisms of the triples `(Xⁿ⁺¹, Xⁿ, Xⁿ⁻¹)` of consecutiv
 Consecutive differentials compose to zero for the same reason as for constant coefficients: the
 triple connecting morphism factors as the connecting morphism `Hₙ₊₁(Xⁿ⁺¹, Xⁿ; L) ⟶ Hₙ(Xⁿ; L)` of
 the pair `(Xⁿ⁺¹, Xⁿ)` followed by `Hₙ(Xⁿ; L) ⟶ Hₙ(Xⁿ, Xⁿ⁻¹; L)`
-(`TauCeti.twistedCellularDifferential_eq`), and `Hₙ₊₁(Xⁿ⁺¹; L) ⟶ Hₙ₊₁(Xⁿ⁺¹, Xⁿ; L) ⟶ Hₙ(Xⁿ; L)`
-are consecutive maps in the long exact sequence of that pair. The only new ingredient is the
-canonical comparison between restricting `L` to `Xⁿ⁺¹` and then to `Xⁿ`, and restricting it to
-`Xⁿ` directly (`TauCeti.skeletonPairSubspaceSystemIso`).
+(`TauCeti.twistedCellularDifferential_eq_twistedHomologyδ_comp_twistedHomologyπ`), and
+`Hₙ₊₁(Xⁿ⁺¹; L) ⟶ Hₙ₊₁(Xⁿ⁺¹, Xⁿ; L) ⟶ Hₙ(Xⁿ; L)` are consecutive maps in the long exact
+sequence of that pair. The only new ingredient is the canonical comparison between restricting `L`
+to `Xⁿ⁺¹` and then to `Xⁿ`, and restricting it to `Xⁿ` directly
+(`TauCeti.skeletonPairSubspaceSystemIso`).
 
 The homology of this complex is computed in
 `TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Homology`. With coefficients in the local
@@ -125,7 +126,7 @@ lemma twistedCellularDifferential_def (n : ℕ) :
 /-- The cellular differential is the connecting morphism `Hₙ₊₁(Xⁿ⁺¹, Xⁿ; L) ⟶ Hₙ(Xⁿ; L)` of the
 pair `(Xⁿ⁺¹, Xⁿ)`, followed by the map `Hₙ(Xⁿ; L) ⟶ Hₙ(Xⁿ, Xⁿ⁻¹; L)` and the coefficient
 identification. -/
-lemma twistedCellularDifferential_eq (n : ℕ) :
+lemma twistedCellularDifferential_eq_twistedHomologyδ_comp_twistedHomologyπ (n : ℕ) :
     twistedCellularDifferential C L n =
       (skeletonPair C (n + 1)).twistedHomologyδ (skeletonSystem C L (n + 1 + 1)) (n + 1) n rfl ≫
         (skeletonPair C n).twistedHomologyπ
@@ -156,7 +157,8 @@ private lemma twistedHomologyπ_comp_coefficientMap_comp_twistedHomologyδ (n : 
 @[reassoc (attr := simp)]
 lemma twistedCellularDifferential_comp_twistedCellularDifferential (n : ℕ) :
     twistedCellularDifferential C L (n + 1) ≫ twistedCellularDifferential C L n = 0 := by
-  rw [twistedCellularDifferential_eq, twistedCellularDifferential_eq]
+  rw [twistedCellularDifferential_eq_twistedHomologyδ_comp_twistedHomologyπ,
+    twistedCellularDifferential_eq_twistedHomologyδ_comp_twistedHomologyπ]
   simp only [Category.assoc]
   -- As above, the middle composite is only matched up to unfolding the pair constructors.
   erw [← Category.assoc _ ((skeletonPair C (n + 1)).twistedHomologyδ _ (n + 1) n rfl),
