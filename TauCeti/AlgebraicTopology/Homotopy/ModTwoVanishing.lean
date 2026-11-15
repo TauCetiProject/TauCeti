@@ -7,12 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.TwoDivisible
 public import TauCeti.AlgebraicTopology.Homotopy.NConnectedCover
-import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
-import TauCeti.AlgebraicTopology.EilenbergMacLane.LoopSpace
 import TauCeti.AlgebraicTopology.EilenbergMacLane.UniquelyDivisible
 import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Basic
-import TauCeti.AlgebraicTopology.Singular.Coefficients.ModTwo
-import TauCeti.AlgebraicTopology.Singular.Fibration.Comparison
 import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 
 /-!
@@ -31,16 +27,14 @@ homotopy group at a time, along the Whitehead tower.
 * **First homotopy group.** If `Z` is `(n - 1)`-connected, `n ≥ 2`, the Hurewicz isomorphism
   `πₙ(Z) ≅ Hₙ(Z; ℤ)` and the coefficient sequence `ℤ → ℤ → ℤ/2` make `πₙ(Z)` uniquely
   two-divisible as soon as `Hₙ(Z; 𝔽₂)` and `Hₙ₊₁(Z; 𝔽₂)` vanish
-  (`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_mod_two`).
+  (`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two`).
 * **One step up the tower.** If moreover `Z` is Hausdorff and has the mod-two homology of a point,
   then so does its `n`-connected cover `Z⟨n⟩`
   (`TauCeti.subsingleton_singularHomology_nConnectedCover`).
-  The projection `Z⟨n⟩ → Z` is a fibration whose fibres are homotopy equivalent to a
-  `K(πₙ(Z), n - 1)` space, which has the mod-two homology of a point because `πₙ(Z)` is uniquely
-  two-divisible
-  (`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible`). A
-  Serre fibration whose fibres have the homology of a point is a homology isomorphism
-  (`TauCeti.TopCat.isIso_singularHomologyMap_of_isZero_fiber`).
+  The projection `Z⟨n⟩ → Z` is a fibration whose fibres are `K(πₙ(Z), n - 1)` spaces
+  (`TauCeti.isEilenbergMacLaneSpace_fiber_nConnectedCoverProj`). Since `πₙ(Z)` is uniquely
+  two-divisible, such a fibration is a mod-two homology isomorphism
+  (`TauCeti.isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber`).
 * **The induction.** The cover `Z⟨n⟩` is `n`-connected and has the homotopy groups of `Z` above
   `n`, so the first step applies to it in degree `n + 1`. Each stage is replaced by its CW
   approximation, which is Hausdorff and changes neither homotopy nor homology.
@@ -82,12 +76,8 @@ private theorem isUniquelyTwoDivisible_homotopyGroup_of_connected
     (hZ : ∀ k, k ≠ 0 → k < n + 2 → Subsingleton (π_ k Z z))
     (hZ₂ : ∀ i, Subsingleton (((singularChains (ZMod 2)).obj (TopCat.of Z)).homology (i + 1))) :
     IsUniquelyTwoDivisible (Additive (π_ (n + 2) Z z)) := by
-  -- The Hurewicz step takes integral homology with coefficients in the integer module `ℤ/2`.
-  refine isUniquelyTwoDivisible_homotopyGroup_of_isZero_mod_two (fun k hk ↦ ?_)
-    (((TopCat.of Z).isZero_singularHomology_modTwo_iff' _).2
-      (@ModuleCat.isZero_of_subsingleton _ _ _ (hZ₂ (n + 1))))
-    (((TopCat.of Z).isZero_singularHomology_modTwo_iff' _).2
-      (@ModuleCat.isZero_of_subsingleton _ _ _ (hZ₂ (n + 2))))
+  refine isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two (fun k hk ↦ ?_)
+    (hZ₂ (n + 1)) (hZ₂ (n + 2))
   rcases eq_or_ne k 0 with rfl | hk0
   · exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero z).1 inferInstance
   · exact hZ k hk0 hk
@@ -104,35 +94,17 @@ theorem subsingleton_singularHomology_nConnectedCover (X : TopCat.{0}) [T2Space 
       (i + 1)) := by
   -- `πₘ₊₂(X)` is uniquely two-divisible, by the Hurewicz theorem.
   have hπ := isUniquelyTwoDivisible_homotopyGroup_of_connected x m hX hX₂
-  -- `X` with its higher homotopy groups killed is a `K(πₘ₊₂(X), m + 2)` space.
-  have hK := (isEilenbergMacLaneSpace_killHomotopyGroups (m + 2) X x hX).of_mulEquiv
-    (MulEquiv.multiplicativeAdditive _).symm
-  have := hK.pathConnectedSpace
-  -- Every fibre of the projection is homotopy equivalent to the loop space of that space, a
-  -- `K(πₘ₊₂(X), m + 1)` space.
-  have hfib (b : X) : ∃ y, IsEilenbergMacLaneSpace (Multiplicative (Additive (π_ (m + 2) X x)))
-      (m + 1) ((nConnectedCoverProj (m + 2) X x).fiber b) y := by
-    -- The projection is the source projection of the mapping-path fibre.
-    have hset : ⇑(nConnectedCoverProj (m + 2) X x) ⁻¹' {b} =
-        MappingPathFiber.proj (killHomotopyGroupsIncl (m + 2 + 1) X x).hom
-          (killHomotopyGroupsIncl (m + 2 + 1) X x x) ⁻¹' {b} := by
-      ext z
-      simp only [Set.mem_preimage, Set.mem_singleton_iff, MappingPathFiber.proj_apply]
-      exact Iff.of_eq (congrArg (· = b) (TopCat.Hom.homotopyFiberProj_apply _ x z))
-    let e := ((Homeomorph.setCongr hset).toHomotopyEquiv.trans
-      (MappingPathFiber.projFiberHomotopyEquivLoopSpace _ _ b
-        (PathConnectedSpace.somePath _ _))).symm
-    exact ⟨e (Path.refl _), hK.loopSpace.of_homotopyEquiv e _⟩
-  have hiso := TauCeti.TopCat.isIso_singularHomologyMap_of_isZero_fiber
-    (serreFibrations_nConnectedCoverProj (m + 2) X x) (ZMod 2) (i + 1)
-    (fun b ↦ (hfib b).choose_spec.pathConnectedSpace) fun b q hq0 _ ↦ by
-      obtain ⟨q, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq0
-      -- `TopCat.of` of the carrier of the fibre is the fibre itself, up to unfolding.
-      exact @ModuleCat.isZero_of_subsingleton _ _ _
-        ((hfib b).choose_spec.subsingleton_singularHomology_of_isUniquelyTwoDivisible hπ q)
-  exact ModuleCat.subsingleton_of_isZero <|
-    (@ModuleCat.isZero_of_subsingleton _ _ _ (hX₂ i)).of_iso
-      (@asIso _ _ _ _ _ hiso)
+  -- Every fibre of the projection is a `K(πₘ₊₂(X), m + 1)` space, so it has the mod-two
+  -- homology of a point and the projection is a mod-two homology isomorphism.
+  have := isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber (ZMod 2) (m := 2)
+    (by decide) ((isUniquelyTwoDivisible_iff _).1 hπ)
+    (serreFibrations_nConnectedCoverProj (m + 2) X x)
+    (fun b ↦ (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x m hX b).imp fun _ h ↦
+      h.of_mulEquiv (MulEquiv.multiplicativeAdditive _).symm) (i + 1)
+  exact (subsingleton_singularChains_homology_iff_isZero _ _ _).2 <|
+    ((subsingleton_singularChains_homology_iff_isZero _ _ _).1 (hX₂ i)).of_iso
+      (asIso (((singularHomologyFunctor (ModuleCat.{0} (ZMod 2)) (i + 1)).obj
+        (ModuleCat.of (ZMod 2) (ZMod 2))).map (nConnectedCoverProj (m + 2) X x)))
 
 /-- The induction along the Whitehead tower: for an `(n + 1)`-connected space with the mod-two
 homology of a point, every homotopy group `π_{N + 2}` with `N ≥ n` is uniquely two-divisible. The
@@ -157,13 +129,14 @@ private theorem isUniquelyTwoDivisible_homotopyGroup_of_add (d : ℕ) :
     have hf : f.IsWeakHomotopyEquivalence :=
       isWeakHomotopyEquivalence_cwApproximationMap (TopCat.of Z) z
     -- `f` identifies the homotopy groups of `X` at `x₀` with those of `Z` at `z`.
-    have hπ (k : ℕ) [NeZero k] : Nonempty (π_ k X x₀ ≃* π_ k Z z) :=
-      (nonempty_homotopyGroupMulEquiv (N := Fin k) (x := f x₀) (y := z)).map
-        (MulEquiv.ofBijective (HomotopyGroup.mapHom f rfl) (hf.bijective k x₀)).trans
+    let e (k : ℕ) [NeZero k] : π_ k X x₀ ≃* π_ k Z z :=
+      MulEquiv.ofBijective
+        (HomotopyGroup.mapHom f (cwApproximationMap_cwApproximationBasepoint (TopCat.of Z) z))
+        ((HomotopyGroup.bijective_map_congr rfl rfl _).1 (hf.bijective k x₀))
     have hX : ∀ k, k ≠ 0 → k < n + 2 → Subsingleton (π_ k X x₀) := fun k hk0 hk ↦ by
       have : NeZero k := ⟨hk0⟩
       have := hZ k hk0 hk
-      exact (hπ k).some.toEquiv.subsingleton
+      exact (e k).toEquiv.subsingleton
     -- The `(n + 2)`-connected cover `C` of `X` is `(n + 2)`-connected and mod-two acyclic.
     let C := nConnectedCover (n + 2) X x₀
     let c₀ := nConnectedCoverBasepoint (n + 2) X x₀
@@ -171,14 +144,17 @@ private theorem isUniquelyTwoDivisible_homotopyGroup_of_add (d : ℕ) :
       subsingleton_homotopyGroup_nConnectedCover_of_pathConnectedSpace (n + 2) X x₀ c₀
         (by omega)
     -- `f` is a homology isomorphism, so `X` is mod-two acyclic.
-    have hX₂ (i : ℕ) : Subsingleton (((singularChains (ZMod 2)).obj X).homology (i + 1)) :=
-      ModuleCat.subsingleton_of_isZero <| (@ModuleCat.isZero_of_subsingleton _ _ _ (hZ₂ i)).of_iso
-        (@asIso _ _ _ _ _ (hf.isIso_singularHomologyMap (ModuleCat.of (ZMod 2) (ZMod 2)) (i + 1)))
+    have hX₂ (i : ℕ) : Subsingleton (((singularChains (ZMod 2)).obj X).homology (i + 1)) := by
+      have := hf.isIso_singularHomologyMap (ModuleCat.of (ZMod 2) (ZMod 2)) (i + 1)
+      exact (subsingleton_singularChains_homology_iff_isZero _ _ _).2 <|
+        ((subsingleton_singularChains_homology_iff_isZero _ _ _).1 (hZ₂ i)).of_iso
+          (asIso (((singularHomologyFunctor (ModuleCat.{0} (ZMod 2)) (i + 1)).obj
+            (ModuleCat.of (ZMod 2) (ZMod 2))).map (cwApproximationMap (TopCat.of Z) z)))
     have hC₂ := subsingleton_singularHomology_nConnectedCover X x₀ n hX hX₂
     -- The cover has the homotopy groups of `X`, hence of `Z`, above dimension `n + 2`.
     exact (ih (n + 1) c₀ hC hC₂ _ (by omega)).of_addEquiv
       ((nConnectedCoverHomotopyGroupMulEquiv (n + 2) X x₀ _ (by omega)).trans
-        (hπ _).some).toAdditive
+        (e _)).toAdditive
 
 /-- **Mod-two vanishing** (Serre). The homotopy groups `πᵢ(Y)`, `i ≥ 2`, of a simply connected
 space `Y` with the mod-two homology of a point are uniquely two-divisible: multiplication by two

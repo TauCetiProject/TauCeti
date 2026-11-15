@@ -36,6 +36,8 @@ and vanishing on boundaries.
 
 ## Main results
 
+* `TauCeti.subsingleton_singularChains_homology_iff_isZero`: the homology of the chains vanishes
+  exactly when singular homology does.
 * `TauCeti.singularChains_linearMap_ext`, `TauCeti.singularChains_addMonoidHom_ext`: linear maps,
   and additive maps out of the chains with integer coefficients, are determined on simplices.
 * `TauCeti.singularChains_d_simplexChain`: the boundary of a simplex.
@@ -58,6 +60,14 @@ variable (k : Type u) [Ring k]
 /-- The **simplicial singular chain complex** functor with coefficients in the ring `k`. -/
 abbrev singularChains : TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} k) ℕ :=
   (singularChainComplexFunctor (ModuleCat.{u} k)).obj (ModuleCat.of k k)
+
+/-- The homology of the simplicial singular chains vanishes exactly when singular homology with
+coefficients in `k` does. -/
+theorem subsingleton_singularChains_homology_iff_isZero (X : TopCat.{u}) (i : ℕ) :
+    Subsingleton (((singularChains k).obj X).homology i) ↔
+      IsZero (((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).obj X) :=
+  -- Singular homology is, by definition, the homology of `singularChains k`.
+  ModuleCat.isZero_iff_subsingleton.symm
 
 section Singular
 

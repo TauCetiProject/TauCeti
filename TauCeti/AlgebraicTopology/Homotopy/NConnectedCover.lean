@@ -32,7 +32,7 @@ fibration whose fibre over `x` is the loop space of `Pₙ X`, and
 
 No connectivity hypothesis on `X` is needed for these. When `X` is `(n - 1)`-connected, `Pₙ X` is
 an Eilenberg--Mac Lane space `K(πₙ X, n)` (`TauCeti.isEilenbergMacLaneSpace_killHomotopyGroups`),
-so the fibre of `X⟨n⟩ → X` is a `K(πₙ X, n - 1)`
+so every fibre of `X⟨n⟩ → X` is a `K(πₙ X, n - 1)`
 (`TauCeti.isEilenbergMacLaneSpace_fiber_nConnectedCoverProj`). Iterating the construction gives
 the stages of the Whitehead tower of `X`, along which homotopy groups are studied one at a time
 through the fibrations `K(πₙ X, n - 1) → X⟨n⟩ → X`.
@@ -55,7 +55,7 @@ group (`TauCeti.surjective_homotopyGroupMap_killHomotopyGroupsIncl`).
   `TauCeti.nConnectedCoverHomotopyGroupMulEquiv`: `πₖ(X⟨n⟩) ≅ πₖ(X)` for `k > n`, at every point.
 * `TauCeti.nConnectedCoverFiberHomeomorph`: the fibre of `X⟨n⟩ → X` over `x` is a loop space.
 * `TauCeti.isEilenbergMacLaneSpace_fiber_nConnectedCoverProj`: for `n ≥ 2` and `X`
-  `(n - 1)`-connected, that fibre is a `K(πₙ X, n - 1)`.
+  `(n - 1)`-connected, every fibre of `X⟨n⟩ → X` is a `K(πₙ X, n - 1)`.
 
 ## References
 
@@ -264,14 +264,27 @@ theorem nConnectedCoverHomotopyGroupMulEquiv_apply (k : ℕ) [NeZero k] (hk : n 
         (nConnectedCoverProj_nConnectedCoverBasepoint n X x) c :=
   HomotopyGroup.mapHom_apply _ _ c
 
-/-- **The fibre of the `n`-connected cover of an `(n - 1)`-connected space is a `K(πₙ X, n - 1)`**,
-for `n ≥ 2`: it is the loop space of the Eilenberg--Mac Lane space `K(πₙ X, n)` obtained from `X`
-by killing its homotopy groups above `n`. -/
+/-- **Every fibre of the `n`-connected cover of an `(n - 1)`-connected space is a
+`K(πₙ X, n - 1)`**, for `n ≥ 2`: it is homotopy equivalent to the loop space of the
+Eilenberg--Mac Lane space `K(πₙ X, n)` obtained from `X` by killing its homotopy groups above
+`n`. It is then a `K(πₙ X, n - 1)` at each of its points
+(`TauCeti.IsEilenbergMacLaneSpace.of_basepoint`). -/
 theorem isEilenbergMacLaneSpace_fiber_nConnectedCoverProj [PathConnectedSpace X] (m : ℕ)
-    (hX : ∀ k, k ≠ 0 → k < m + 2 → Subsingleton (π_ k X x)) :
-    IsEilenbergMacLaneSpace (π_ (m + 2) X x) (m + 1) ((nConnectedCoverProj (m + 2) X x).fiber x)
-      (TopCat.Hom.homotopyFiberBasepoint _ x) :=
-  (isEilenbergMacLaneSpace_killHomotopyGroups (m + 2) X x hX).loopSpace.of_homotopyEquiv
-    (nConnectedCoverFiberHomeomorph (m + 2) X x).symm.toHomotopyEquiv _
+    (hX : ∀ k, k ≠ 0 → k < m + 2 → Subsingleton (π_ k X x)) (b : X) :
+    ∃ y, IsEilenbergMacLaneSpace (π_ (m + 2) X x) (m + 1)
+      ((nConnectedCoverProj (m + 2) X x).fiber b) y := by
+  have hK := isEilenbergMacLaneSpace_killHomotopyGroups (m + 2) X x hX
+  have := hK.pathConnectedSpace
+  -- The projection is the source projection of the mapping-path fibre.
+  have hset : ⇑(nConnectedCoverProj (m + 2) X x) ⁻¹' {b} =
+      MappingPathFiber.proj (killHomotopyGroupsIncl (m + 2 + 1) X x).hom
+        (killHomotopyGroupsIncl (m + 2 + 1) X x x) ⁻¹' {b} := by
+    ext z
+    rw [Set.mem_preimage, Set.mem_preimage, MappingPathFiber.proj_apply,
+      ← TopCat.Hom.homotopyFiberProj_apply _ x z]
+  let e := ((Homeomorph.setCongr hset).toHomotopyEquiv.trans
+    (MappingPathFiber.projFiberHomotopyEquivLoopSpace _ _ b
+      (PathConnectedSpace.somePath _ _))).symm
+  exact ⟨e (Path.refl _), hK.loopSpace.of_homotopyEquiv e _⟩
 
 end TauCeti
