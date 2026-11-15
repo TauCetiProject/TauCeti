@@ -22,7 +22,7 @@ over whose concentric circles `f` is continuous. When `f` has interior singulari
 
 public section
 
-open Filter Metric Real Set Topology
+open Metric Real Set Topology
 
 /-- If `f : ℂ → E` is continuous on a set `s` that is a neighbourhood of `sphere c |R|`, then
 `Real.circleAverage f c` is continuous at `R` (including when `f` has singularities inside

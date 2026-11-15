@@ -53,7 +53,7 @@ and `logDeriv g` on the open disc `ball c R` purely in terms of the boundary mod
 
 public section
 
-open Complex Filter MeasureTheory Metric Real Set Topology
+open Complex Filter Metric Real Set Topology
 
 /-! ### Herglotz formula for holomorphic branches of the logarithm -/
 

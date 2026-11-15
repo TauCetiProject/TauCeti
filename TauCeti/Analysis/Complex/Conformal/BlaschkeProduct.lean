@@ -367,4 +367,3 @@ theorem AnalyticOnNhd.exists_blaschkeProduct_div_mul_eq {g : ℂ → ℂ} {r : �
         ← hd_def, hprod x] using hx hxU
     exact fun z hz ↦ hg.eqOn_of_preconnected_of_frequently_eq hB_an
       (convex_closedBall 0 r).isPreconnected h0_mem hfreq hz
-

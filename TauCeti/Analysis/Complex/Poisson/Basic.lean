@@ -71,7 +71,7 @@ theorem poissonKernel_le_of_le_dist {c w y : ℂ} {R d : ℝ}
 
 end TauCeti
 
-open Complex MeasureTheory Metric Real
+open Metric Real
 
 /-- Nonnegative circle-integrable real boundary data on `sphere c |R|` have nonnegative
 Herglotz–Riesz real part at every point `w ∈ ball c |R|`. -/

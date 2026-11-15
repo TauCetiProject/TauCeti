@@ -91,7 +91,7 @@ normalized multipliers (`AnalyticOnNhd.sInf_max_sSup_log_norm_eq_proximity_top`)
 
 public section
 
-open Complex Filter MeasureTheory Metric Real Set Topology
+open Complex Filter Metric Real Set Topology
 
 namespace TauCeti
 

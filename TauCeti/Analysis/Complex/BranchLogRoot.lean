@@ -498,4 +498,3 @@ theorem AnalyticOnNhd.exists_eqOn_exp_comp_closedBall {g : ℂ → ℂ} {c w₀ 
   have hexpz : Complex.exp (L₀ z) = g z := hL₀exp hzc
   simp only [Function.comp_apply, Complex.exp_add, Complex.exp_sub, hexpz, hexpc, hw₀]
   exact div_mul_cancel₀ (g z) (hn c (mem_closedBall_self hR))
-
