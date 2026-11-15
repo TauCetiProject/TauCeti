@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
 import Mathlib.Tactic.NormNum.LegendreSymbol
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 
 /-!
 # Values of fundamental-discriminant characters
@@ -41,11 +42,11 @@ since the two differ by `1` or `4`, both squares prime to `n`. -/
 theorem jacobiSym_fundamentalDiscriminant (d : ℤ) {n : ℕ} (hn : Odd n) :
     jacobiSym (fundamentalDiscriminant d) n = jacobiSym d n := by
   obtain ⟨c, hc, hcd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
-  have hcop : c.gcd n = 1 := by
+  have hcop : IsCoprime c n := by
     rcases hc with rfl | rfl
-    · exact Int.gcd_one_left n
-    · exact hn.coprime_two_left
-  rw [← hcd, jacobiSym.mul_left, jacobiSym.sq_one' hcop, one_mul]
+    · exact isCoprime_one_left
+    · exact Nat.isCoprime_iff_coprime.mpr hn.coprime_two_left
+  rw [← hcd, jacobiSym_sq_mul_of_isCoprime hcop]
 
 /-- At an odd prime `p`, `fundamentalDiscriminant d` has the same Legendre symbol as `d`,
 including `0` at primes dividing `d`. -/
@@ -71,22 +72,6 @@ theorem isSquare_fundamentalDiscriminant_zmod_iff (d : ℤ) {n : ℕ} (hn : Odd 
       ((c : ZMod n) ^ 2 * (d : ZMod n)) = (d : ZMod n) := by
     rw [← mul_assoc, ← mul_pow, hu.val_inv_mul, one_pow, one_mul]
   exact hinv ▸ (IsSquare.sq ((hu.unit⁻¹ : Units (ZMod n)) : ZMod n)).mul h
-
-/-- At an odd natural number `n`, the character of `fundamentalDiscriminant d` equals
-`jacobiSym d n`, including `0` when `n` is not coprime to `d`. -/
-theorem fundamentalDiscriminantChar_fundamentalDiscriminant_natCast_eq_jacobiSym {d : ℤ}
-    (hD : Int.IsFundamentalDiscr (fundamentalDiscriminant d)) {n : ℕ} (hn : Odd n) :
-    fundamentalDiscriminantChar (fundamentalDiscriminant d) hD (n : ℤ) = jacobiSym d n := by
-  rw [fundamentalDiscriminantChar_natCast_eq_jacobiSym hD hn,
-    jacobiSym_fundamentalDiscriminant d hn]
-
-/-- At an odd prime `p`, the character of `fundamentalDiscriminant d` equals `legendreSym p d`,
-including `0` when `p ∣ d`. -/
-theorem fundamentalDiscriminantChar_fundamentalDiscriminant_natCast_eq_legendreSym {d : ℤ}
-    (hD : Int.IsFundamentalDiscr (fundamentalDiscriminant d)) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
-    fundamentalDiscriminantChar (fundamentalDiscriminant d) hD (p : ℤ) = legendreSym p d := by
-  rw [fundamentalDiscriminantChar_natCast_eq_legendreSym hD hp,
-    legendreSym_fundamentalDiscriminant d hp]
 
 -- Simplify these integer evaluations before reducing their casts.
 /-- A prime discriminant gives its previously defined prime-discriminant character. -/

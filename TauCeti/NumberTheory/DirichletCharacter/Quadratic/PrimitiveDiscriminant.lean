@@ -8,9 +8,7 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSquarefree
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Realization
 import Mathlib.Tactic.NormNum.LegendreSymbol
-import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Dyadic.Classification
-import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic.FundamentalDiscriminant
 import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Values
 
@@ -48,9 +46,8 @@ certifies that `D` (hence `d`) is not a square modulo `n`.
   agreement with `fundamentalDiscriminantCharCast R D hD` at a nonzero level `N` forces
   `χ.conductor = |D|`.
 * `DirichletCharacter.changeLevel_apply_eq_fundamentalDiscriminantCharCast`,
-  `DirichletCharacter.natAbs_eq_conductor_changeLevel_and_forall_isCoprime_iff`,
-  `DirichletCharacter.conductor_ite_changeLevel`: naturality of the primitive discriminant under
-  `changeLevel`.
+  `DirichletCharacter.natAbs_eq_conductor_changeLevel_and_forall_isCoprime_iff`: naturality of the
+  primitive discriminant under `changeLevel`.
 * `MulChar.IsQuadratic.existsUnique_squarefree_apply_eq`: unique squarefree-radicand form at any
   nonzero level.
 * `DirichletCharacter.apply_natCast_eq_jacobiSym_of_forall_isCoprime`,
@@ -69,19 +66,6 @@ public section
 open TauCeti.Multiquadratic
 
 namespace DirichletCharacter
-
-/-- Lifting a Dirichlet character to a nonzero multiple of its level preserves the signed
-conductor `if χ (-1) = 1 then χ.conductor else -χ.conductor`. -/
-theorem conductor_ite_changeLevel {S : Type*} [CommMonoidWithZero S]
-    {N M : ℕ} [NeZero M] (hNM : N ∣ M) (χ : DirichletCharacter S N)
-    [Decidable (changeLevel hNM χ (-1) = 1)] [Decidable (χ (-1) = 1)] :
-    (if changeLevel hNM χ (-1) = 1 then ((changeLevel hNM χ).conductor : ℤ)
-      else -((changeLevel hNM χ).conductor : ℤ)) =
-      if χ (-1) = 1 then (χ.conductor : ℤ) else -(χ.conductor : ℤ) := by
-  have : NeZero N := ⟨fun hN ↦ NeZero.ne M (Nat.eq_zero_of_zero_dvd (hN ▸ hNM))⟩
-  rw [conductor_changeLevel]
-  exact ite_congr (congrArg (· = 1) (changeLevel_apply_neg_one hNM χ))
-    (fun _ ↦ rfl) (fun _ ↦ rfl)
 
 section CommRing
 
@@ -136,11 +120,8 @@ theorem _root_.MulChar.IsQuadratic.existsUnique_isFundamentalDiscr_apply_eq
         ∀ n : ℤ, IsCoprime n N → χ n = fundamentalDiscriminantCharCast R D hD n := by
   classical
   have : NeZero χ.conductor := ⟨χ.conductor_ne_zero⟩
-  have hqp : χ.primitiveCharacter.IsQuadratic :=
-    (isQuadratic_changeLevel_iff χ.conductor_dvd_level).mp
-      (by rwa [changeLevel_primitiveCharacter])
   obtain ⟨D, hD, habs, hvalp⟩ :=
-    χ.primitiveCharacter_isPrimitive.exists_isFundamentalDiscr_apply_eq hqp
+    χ.primitiveCharacter_isPrimitive.exists_isFundamentalDiscr_apply_eq hχ.primitiveCharacter
   have hval : ∀ n : ℤ, IsCoprime n N → χ n = fundamentalDiscriminantCharCast R D hD n :=
     fun n hn ↦ (primitiveCharacter_apply_of_isCoprime χ hn).symm.trans (hvalp n)
   refine ⟨D, ⟨hD, habs, hval⟩, ?_⟩
