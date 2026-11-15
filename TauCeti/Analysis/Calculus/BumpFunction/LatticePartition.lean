@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
@@ -44,8 +45,13 @@ The construction is a product of one-dimensional bumps
 * `TauCeti.latticeWeight`: the summable weight `∏ᵢ (1 + |dᵢ|)⁻²` on `ℤⁿ`, which dominates the
   lattice sums of `(1 + ‖x - j‖²)⁻ⁿ` uniformly in `x`
   (`TauCeti.tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le`).
+* `TauCeti.contDiff_latticeBump_sub`, `TauCeti.hasTemperateGrowth_latticeBump_sub`: the
+  translates `χ(· - j)` are smooth and of temperate growth, and
+  `TauCeti.exists_norm_iteratedFDeriv_latticeBump_sub_le` bounds their derivatives independently
+  of `j`.
 * `TauCeti.norm_iteratedFDeriv_sum_latticeBump_sub_le`: the finite sums of translates of `χ` have
-  derivatives bounded independently of the set of translates.
+  derivatives bounded independently of the set of translates; so do these sums minus `1`
+  (`TauCeti.norm_iteratedFDeriv_sum_latticeBump_sub_sub_one_le`).
 -/
 
 public section
@@ -203,6 +209,17 @@ theorem hasCompactSupport_latticeBump : HasCompactSupport (latticeBump n) :=
   HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall 0 √n)
     (subset_tsupport _ |>.trans tsupport_latticeBump_subset)
 
+/-- The integer translates of the bump are smooth. -/
+theorem contDiff_latticeBump_sub {k : ℕ∞} (j : Fin n → ℤ) :
+    ContDiff ℝ k fun y ↦ latticeBump n (y - latticePoint j) :=
+  contDiff_latticeBump.comp (contDiff_id.sub contDiff_const)
+
+/-- The integer translates of the bump have temperate growth. -/
+theorem hasTemperateGrowth_latticeBump_sub (j : Fin n → ℤ) :
+    (fun y ↦ latticeBump n (y - latticePoint j)).HasTemperateGrowth :=
+  (hasCompactSupport_latticeBump.comp_homeomorph
+    (Homeomorph.subRight (latticePoint j))).hasTemperateGrowth (contDiff_latticeBump_sub j)
+
 /-- A translate `χ(x - c)` of the bump is nonzero only on the closed ball of radius `√n` about
 `c`. -/
 theorem mem_closedBall_of_latticeBump_sub_ne_zero {x c : EuclideanSpace ℝ (Fin n)}
@@ -351,6 +368,14 @@ theorem exists_norm_iteratedFDeriv_latticeBump_le (k : ℕ) :
     (by exact_mod_cast le_top)).bounded_above_of_compact_support
     (hasCompactSupport_latticeBump.iteratedFDeriv k)
 
+/-- The integer translates of `latticeBump n` have derivatives bounded independently of the
+translation. -/
+theorem exists_norm_iteratedFDeriv_latticeBump_sub_le (k : ℕ) :
+    ∃ B, ∀ (j : Fin n → ℤ) (y : EuclideanSpace ℝ (Fin n)),
+      ‖iteratedFDeriv ℝ k (fun y ↦ latticeBump n (y - latticePoint j)) y‖ ≤ B := by
+  obtain ⟨B, hB⟩ := exists_norm_iteratedFDeriv_latticeBump_le (n := n) k
+  exact ⟨B, fun j y ↦ by rw [iteratedFDeriv_comp_sub]; exact hB _⟩
+
 /-- A derivative of the translate of `latticeBump n` to the lattice point `j` is bounded by the
 weight `(1 + ‖y - j‖²)⁻ⁿ`, with a constant independent of `j`. -/
 theorem norm_iteratedFDeriv_latticeBump_sub_le {k : ℕ} {B : ℝ}
@@ -386,13 +411,30 @@ theorem norm_iteratedFDeriv_sum_latticeBump_sub_le {k : ℕ} {B : ℝ}
       B * (1 + (n : ℝ)) ^ n * (8 ^ n * ∑' d : Fin n → ℤ, latticeWeight d) := by
   have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
   rw [iteratedFDeriv_sum (f := fun j y ↦ latticeBump n (y - latticePoint j)) fun j _ ↦
-    (contDiff_latticeBump (k := (k : ℕ∞))).comp (contDiff_id.sub contDiff_const),
-    Finset.sum_apply]
+    contDiff_latticeBump_sub (k := (k : ℕ∞)) j, Finset.sum_apply]
   refine (norm_sum_le _ _).trans ?_
   refine (Finset.sum_le_sum fun j _ ↦ norm_iteratedFDeriv_latticeBump_sub_le hB j y).trans ?_
   rw [← Finset.mul_sum]
   gcongr
   exact ((summable_one_add_norm_sub_latticePoint_sq_pow_inv y).sum_le_tsum s
     fun _ _ ↦ by positivity).trans (tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le y)
+
+/-- The finite sums of translates of `latticeBump n`, minus `1`, have derivatives bounded
+independently of the finite set of lattice points. -/
+theorem norm_iteratedFDeriv_sum_latticeBump_sub_sub_one_le {k : ℕ} {B : ℝ}
+    (hB : ∀ y, ‖iteratedFDeriv ℝ k (latticeBump n) y‖ ≤ B) (s : Finset (Fin n → ℤ))
+    (y : EuclideanSpace ℝ (Fin n)) :
+    ‖iteratedFDeriv ℝ k (fun y ↦ ∑ j ∈ s, latticeBump n (y - latticePoint j) - 1) y‖ ≤
+      B * (1 + (n : ℝ)) ^ n * (8 ^ n * ∑' d : Fin n → ℤ, latticeWeight d) + 1 := by
+  have hs : ContDiff ℝ k fun y ↦ ∑ j ∈ s, latticeBump n (y - latticePoint j) :=
+    ContDiff.sum fun j _ ↦ contDiff_latticeBump_sub j
+  have e : (fun y ↦ ∑ j ∈ s, latticeBump n (y - latticePoint j) - 1) =
+      (fun y ↦ ∑ j ∈ s, latticeBump n (y - latticePoint j)) - fun _ ↦ (1 : ℝ) := rfl
+  rw [e, iteratedFDeriv_sub_apply hs.contDiffAt contDiff_const.contDiffAt]
+  refine (norm_sub_le _ _).trans (add_le_add
+    (norm_iteratedFDeriv_sum_latticeBump_sub_le hB s y) ?_)
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  · simp [iteratedFDeriv_const_of_ne hk]
 
 end TauCeti

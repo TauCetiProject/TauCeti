@@ -222,8 +222,7 @@ private theorem norm_iteratedFDeriv_latticeBump_mul_le {n : ℕ} {Cχ : ℝ}
       (fun y ↦ latticeBump n (y - latticePoint j) * latticeBump n (y - latticePoint j')) x‖ ≤
         2 ^ p * (Cχ * Cχ) := fun p hp x ↦ by
     have := (mul ℝ ℝ).norm_iteratedFDeriv_le_two_pow_mul_of_bilinear (opNorm_mul_le ℝ ℝ)
-      (contDiff_latticeBump.comp (contDiff_id.sub contDiff_const))
-      (contDiff_latticeBump.comp (contDiff_id.sub contDiff_const))
+      (contDiff_latticeBump_sub j) (contDiff_latticeBump_sub j')
       (hχ' (latticePoint j)) (hχ' (latticePoint j')) hp x
     simpa only [mul_apply', Function.comp_def, id] using this
   exact (hφ p hp x).trans
@@ -253,8 +252,7 @@ private theorem norm_fourier_cutoff_bilinear_le {n : ℕ} {F G U : Type*} [Norme
     norm_iteratedFDeriv_latticeBump_mul_le hχ j j' hp x
   have hcont : ContDiff ℝ N (fun y ↦ latticeBump n (y - latticePoint j) *
       latticeBump n (y - latticePoint j')) :=
-    (contDiff_latticeBump.comp (contDiff_id.sub contDiff_const)).mul
-      (contDiff_latticeBump.comp (contDiff_id.sub contDiff_const))
+    (contDiff_latticeBump_sub j).mul (contDiff_latticeBump_sub j')
   have hsupp : tsupport (fun x ↦ (latticeBump n (x - latticePoint j) *
       latticeBump n (x - latticePoint j')) • B (f x) (g x)) ⊆ closedBall (latticePoint j) √n :=
     closure_minimal (fun x hx ↦ mem_closedBall_of_latticeBump_sub_ne_zero

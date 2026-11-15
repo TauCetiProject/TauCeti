@@ -43,7 +43,8 @@ than every power of the distance: the commutator identity
 
 `(x - z)ⱼ (p # b) = p # ((y - z)ⱼ b) + i (∂_{ξⱼ} p) # b`,
 
-which comes from the commutator of `Op(p)` with a coordinate function, trades a factor `(x - j)ₖ`
+which comes from the commutator of `Op(p)` with a coordinate function
+(`TauCeti.Symbol.coordSub_smul_coefficient_sharp`), trades a factor `(x - j)ₖ`
 for a frequency derivative of `p` or a factor bounded on the support of `aⱼ`. So every mixed
 derivative of `p # aⱼ` is bounded by `C ⟨x - j⟩^(-2n) ⟨ξ⟩^(m' + m - |β|)`, and these bounds are
 summable over the lattice uniformly in `x`. The series `c = ∑ⱼ p # aⱼ` therefore converges, with
@@ -102,7 +103,7 @@ private theorem exists_locally_summable_iteratedFDeriv (a : ι → Symbol n V W 
     {C : List (Fin n) → List (Fin n) → ℝ} (hC0 : ∀ α β, 0 ≤ C α β)
     (hC : ∀ α β i x ξ, ‖mixedDeriv α β (a i).coefficient x ξ‖ ≤
       C α β * w i x * (1 + ‖ξ‖ ^ 2) ^ ((μ - β.length) / 2))
-    (q₀ : CoordinateSpace n × CoordinateSpace n) : ∃ r > 0, ∀ k : ℕ,
+    (q₀ : CoordinateSpace n × CoordinateSpace n) : ∃ r > 0, ∀ k : ℕ, (k : ℕ∞) ≤ ⊤ →
       ∃ u : ι → ℝ, Summable u ∧ ∀ i, ∀ q ∈ ball q₀ r,
         ‖iteratedFDeriv ℝ k (a i).coefficient q‖ ≤ u i := by
   obtain ⟨v, hv, hvw⟩ := hloc q₀.1
@@ -110,7 +111,7 @@ private theorem exists_locally_summable_iteratedFDeriv (a : ι → Symbol n V W 
     C ((List.ofFn r).filterMap Sum.getLeft?) ((List.ofFn r).filterMap Sum.getRight?) *
       (2 : ℝ) ^ |μ - ((List.ofFn r).filterMap Sum.getRight?).length| *
       (1 + ‖q₀.2‖ ^ 2) ^ ((μ - ((List.ofFn r).filterMap Sum.getRight?).length) / 2)
-  refine ⟨1, one_pos, fun k ↦ ⟨fun i ↦ K k * v i, hv.mul_left (K k), fun i q hq ↦ ?_⟩⟩
+  refine ⟨1, one_pos, fun k _ ↦ ⟨fun i ↦ K k * v i, hv.mul_left (K k), fun i q hq ↦ ?_⟩⟩
   rw [mem_ball, Prod.dist_eq, max_lt_iff] at hq
   have hq₁ : q.1 ∈ ball q₀.1 1 := hq.1
   have hq₂ : ‖q.2 - q₀.2‖ ≤ 1 := by
@@ -134,20 +135,20 @@ private theorem exists_locally_summable_iteratedFDeriv (a : ι → Symbol n V W 
 /-- The mixed derivatives of a series of symbols whose Fréchet derivatives have locally summable
 bounds are the sums of the mixed derivatives. -/
 private theorem mixedDeriv_tsum_coefficient (a : ι → Symbol n V W μ)
-    (hloc : ∀ q₀ : CoordinateSpace n × CoordinateSpace n, ∃ r > 0, ∀ k : ℕ,
+    (hloc : ∀ q₀ : CoordinateSpace n × CoordinateSpace n, ∃ r > 0, ∀ k : ℕ, (k : ℕ∞) ≤ ⊤ →
       ∃ u : ι → ℝ, Summable u ∧ ∀ i, ∀ q ∈ ball q₀ r,
         ‖iteratedFDeriv ℝ k (a i).coefficient q‖ ≤ u i)
     (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (fun q ↦ ∑' i, (a i).coefficient q) x ξ =
       ∑' i, mixedDeriv α β (a i).coefficient x ξ := by
   obtain ⟨r, hr, hu⟩ := hloc (x, ξ)
-  obtain ⟨u, hus, hu⟩ := hu (mixedDirections α β).length
+  obtain ⟨u, hus, hu⟩ := hu (mixedDirections α β).length le_top
   have hs : Summable fun i ↦ iteratedFDeriv ℝ (mixedDirections α β).length
       (a i).coefficient (x, ξ) :=
     .of_norm_bounded hus fun i ↦ hu i _ (mem_ball_self hr)
   rw [mixedDeriv_eq_iteratedFDeriv α β ((contDiff_tsum_of_locally_summable
       (fun i ↦ (a i).contDiff_coefficient) hloc).of_le (by exact_mod_cast le_top)),
-    iteratedFDeriv_tsum_of_locally_summable (fun i ↦ (a i).contDiff_coefficient) hloc,
+    iteratedFDeriv_tsum_of_locally_summable (fun i ↦ (a i).contDiff_coefficient) hloc le_top,
     ← ContinuousMultilinearMap.apply_apply (𝕜 := ℝ), (ContinuousMultilinearMap.apply ℝ _ _
       _).map_tsum hs]
   refine tsum_congr fun i ↦ ?_
@@ -280,44 +281,32 @@ private theorem IsBallFamily.map_frequencyDeriv (hc : IsBallFamily z r c) (j : F
     rw [mixedDeriv_frequencyDeriv, order_sub_one_sub_length]
     exact hC i x ξ
 
-/-- The function `y ↦ (y - z)ⱼ id` multiplying a symbol by the `j`-th coordinate of the
-displacement from `z`. -/
-private def coordSub (z : CoordinateSpace n) (j : Fin n) (y : CoordinateSpace n) : W →L[ℂ] W :=
-  (y - z) j • ContinuousLinearMap.id ℂ W
-
 private theorem hasFDerivAt_coordSub (z : CoordinateSpace n) (j : Fin n) (y : CoordinateSpace n) :
-    HasFDerivAt (coordSub (W := W) z j)
+    HasFDerivAt (fun y' : CoordinateSpace n ↦ (y' - z) j • ContinuousLinearMap.id ℂ W)
       ((EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).smulRight
         (ContinuousLinearMap.id ℂ W)) y := by
   have h := ((EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).hasFDerivAt (x := y)).sub_const
     (z j)
   convert h.smul_const (ContinuousLinearMap.id ℂ W) using 1
   funext y'
-  simp [coordSub, sub_smul]
-
-private theorem contDiff_coordSub (z : CoordinateSpace n) (j : Fin n) :
-    ContDiff ℝ ∞ (coordSub (W := W) z j) := by
-  have h : coordSub (W := W) z j = fun y ↦
-      (EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ) (y - z) • ContinuousLinearMap.id ℂ W :=
-    rfl
-  rw [h]
-  exact ((EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).contDiff.comp
-    (contDiff_id.sub contDiff_const)).smul contDiff_const
+  simp [sub_smul]
 
 /-- The coordinate derivatives of `y ↦ (y - z)ⱼ id` are bounded by `max r 1` on the closed ball
 of radius `r` about `z`. -/
 private theorem norm_coordinateDeriv_coordSub_le {z x : CoordinateSpace n} {r : ℝ}
     (hx : dist x z ≤ r) (j : Fin n) (s : List (Fin n)) :
-    ‖coordinateDeriv s (coordSub (W := W) z j) x‖ ≤ max r 1 := by
+    ‖coordinateDeriv s (fun y : CoordinateSpace n ↦ (y - z) j • ContinuousLinearMap.id ℂ W) x‖ ≤
+      max r 1 := by
   have hid : ‖ContinuousLinearMap.id ℂ W‖ ≤ 1 := ContinuousLinearMap.norm_id_le
-  have h1 (l : Fin n) : coordinateDeriv [l] (coordSub (W := W) z j) =
+  have h1 (l : Fin n) : coordinateDeriv [l]
+      (fun y : CoordinateSpace n ↦ (y - z) j • ContinuousLinearMap.id ℂ W) =
       fun _ ↦ (EuclideanSpace.single l (1 : ℝ)) j • ContinuousLinearMap.id ℂ W := by
     funext y
     rw [coordinateDeriv_cons, coordinateDeriv_nil, (hasFDerivAt_coordSub z j y).fderiv]
     simp
   rcases List.eq_nil_or_concat' s with rfl | ⟨s, l, rfl⟩
   · refine le_max_of_le_left ?_
-    rw [coordinateDeriv_nil, coordSub, norm_smul]
+    rw [coordinateDeriv_nil, norm_smul]
     calc ‖(x - z) j‖ * ‖ContinuousLinearMap.id ℂ W‖ ≤ ‖x - z‖ * 1 :=
           mul_le_mul (PiLp.norm_apply_le (x - z) j) hid (norm_nonneg _) (norm_nonneg _)
       _ ≤ r := by rw [mul_one, ← dist_eq_norm]; exact hx
@@ -332,15 +321,11 @@ private theorem norm_coordinateDeriv_coordSub_le {z x : CoordinateSpace n} {r : 
     · rw [coordinateDeriv_const _ hs, Pi.zero_apply, norm_zero]
       exact zero_le_one.trans (le_max_right _ _)
 
-/-- The symbol of multiplication by `(y - z)ⱼ`. -/
-private def coordSubSymbol (z : CoordinateSpace n) (j : Fin n) : Symbol n W W 0 :=
-  ofSpatial (coordSub z j) (contDiff_coordSub z j)
-
 /-- Multiplying the members of a ball family by the `j`-th coordinate of the displacement from
 their centres gives a ball family. -/
 private theorem IsBallFamily.comp_coordSubSymbol (hc : IsBallFamily z r c) (j : Fin n) :
     IsBallFamily z r fun i ↦ (coordSubSymbol (z i) j).comp (c i) := by
-  refine ⟨fun i x ξ hx ↦ by simp [coordSubSymbol, hc.1 i x ξ hx], fun α β ↦ ?_⟩
+  refine ⟨fun i x ξ hx ↦ by simp [coefficient_comp, hc.1 i x ξ hx], fun α β ↦ ?_⟩
   choose D hD using hc.2
   set K := (β.sublists'.revzip.map fun t =>
     (α.sublists'.revzip.map fun s => max r 1 * D s.2 t.2).sum).sum
@@ -352,11 +337,14 @@ private theorem IsBallFamily.comp_coordSubSymbol (hc : IsBallFamily z r c) (j : 
         ‖mixedDeriv s t (coordSubSymbol (W := W) (z i) j).coefficient x ξ‖ ≤
           max r 1 * (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - t.length) / 2) := by
       have hco : (coordSubSymbol (W := W) (z i) j).coefficient =
-          fun p ↦ Symbol.coordSub (z i) j p.1 := funext (coefficient_ofSpatial _ _)
+          fun p ↦ (p.1 - z i) j • ContinuousLinearMap.id ℂ W :=
+        funext (coefficient_coordSubSymbol _ _)
       rcases eq_or_ne t [] with rfl | ht
-      · rw [hco, mixedDeriv_nil_comp_fst]
+      · rw [hco, mixedDeriv_nil_comp_fst
+          (fun y : CoordinateSpace n ↦ (y - z i) j • ContinuousLinearMap.id ℂ W)]
         simpa using norm_coordinateDeriv_coordSub_le hx j s
-      · rw [hco, mixedDeriv_comp_fst _ s ht, norm_zero]
+      · rw [hco, mixedDeriv_comp_fst
+          (fun y : CoordinateSpace n ↦ (y - z i) j • ContinuousLinearMap.id ℂ W) s ht, norm_zero]
         positivity
     refine (norm_mixedDeriv_comp_le (m' := 0) (C := fun _ _ ↦ max r 1)
       (coordSubSymbol (z i) j).contDiff_coefficient (c i).contDiff_coefficient hC
@@ -426,6 +414,26 @@ end BallFamily
 
 section Decay
 
+/-- Expanding one factor `‖v‖²` in coordinates:
+`‖v‖ ^ (2 (N + 1)) F = ∑ⱼ ‖v‖ ^ (2N) (vⱼ² F)`. -/
+private theorem norm_pow_two_mul_succ_mul_eq_sum (v : CoordinateSpace n) (N : ℕ) (F : ℝ) :
+    ‖v‖ ^ (2 * (N + 1)) * F = ∑ j, ‖v‖ ^ (2 * N) * (v j ^ 2 * F) := by
+  rw [← Finset.mul_sum, ← Finset.sum_mul, ← EuclideanSpace.real_norm_sq_eq]
+  ring
+
+/-- Bounds `F ≤ C₀ w` and `‖v‖ ^ (2N) F ≤ C₁ w` combine to the weighted bound
+`F ≤ 2 ^ (N - 1) (C₀ + C₁) w ((1 + ‖v‖²) ^ N)⁻¹`. -/
+private theorem le_mul_one_add_norm_sq_pow_inv {v : CoordinateSpace n} {N : ℕ} {F C₀ C₁ w : ℝ}
+    (hF : 0 ≤ F) (h₀ : F ≤ C₀ * w) (h₁ : ‖v‖ ^ (2 * N) * F ≤ C₁ * w) :
+    F ≤ 2 ^ (N - 1) * (C₀ + C₁) * w * ((1 + ‖v‖ ^ 2) ^ N)⁻¹ := by
+  rw [← div_eq_mul_inv, le_div_iff₀ (by positivity), mul_comm F]
+  calc (1 + ‖v‖ ^ 2) ^ N * F ≤ 2 ^ (N - 1) * (1 ^ N + (‖v‖ ^ 2) ^ N) * F :=
+        mul_le_mul_of_nonneg_right (add_pow_le zero_le_one (by positivity) N) hF
+    _ = 2 ^ (N - 1) * (F + ‖v‖ ^ (2 * N) * F) := by rw [one_pow, ← pow_mul]; ring
+    _ ≤ 2 ^ (N - 1) * (C₀ * w + C₁ * w) :=
+        mul_le_mul_of_nonneg_left (add_le_add h₀ h₁) (by positivity)
+    _ = 2 ^ (N - 1) * (C₀ + C₁) * w := by ring
+
 variable {ι : Type*} {z : ι → CoordinateSpace n} {r : ℝ}
 
 /-- The Fourier transforms of the position slices of a ball family are bounded by `D ⟨ξ⟩ ^ m`,
@@ -483,9 +491,8 @@ private theorem IsBallFamily.exists_norm_pow_mul_norm_fourier_le (N : ℕ) :
       rw [sq_abs]
       ring
     calc ‖η‖ ^ (2 * (N + 1)) * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖
-        = ∑ j, ‖η‖ ^ (2 * N) * (η j ^ 2 * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖) := by
-          rw [← Finset.mul_sum, ← Finset.sum_mul, ← EuclideanSpace.real_norm_sq_eq]
-          ring
+        = ∑ j, ‖η‖ ^ (2 * N) * (η j ^ 2 * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖) :=
+          norm_pow_two_mul_succ_mul_eq_sum η N _
       _ ≤ ∑ j, ((2 * π) ^ 2)⁻¹ * (D j * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :=
           Finset.sum_le_sum fun j _ ↦ by
             rw [hj, mul_left_comm]
@@ -506,23 +513,14 @@ private theorem IsBallFamily.exists_norm_fourier_le_rpow {c : ι → Symbol n V 
   set F := ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖
   set w := (1 + ‖ξ‖ ^ 2) ^ (m / 2)
   have hη : 1 ≤ 1 + ‖η‖ ^ 2 := le_add_of_nonneg_right (by positivity)
-  have hpow : (1 + ‖η‖ ^ 2) ^ N * F ≤ 2 ^ (N - 1) * (D₀ + D) * w := by
-    calc (1 + ‖η‖ ^ 2) ^ N * F ≤ 2 ^ (N - 1) * (1 ^ N + (‖η‖ ^ 2) ^ N) * F :=
-          mul_le_mul_of_nonneg_right (add_pow_le zero_le_one (by positivity) N) (norm_nonneg _)
-      _ = 2 ^ (N - 1) * (F + ‖η‖ ^ (2 * N) * F) := by rw [one_pow, ← pow_mul]; ring
-      _ ≤ 2 ^ (N - 1) * (D₀ * w + D * w) :=
-          mul_le_mul_of_nonneg_left (add_le_add (hD₀ i η ξ) (hD i η ξ)) (by positivity)
-      _ = 2 ^ (N - 1) * (D₀ + D) * w := by ring
-  have hN : (1 + ‖η‖ ^ 2) ^ (-(N : ℝ)) ≤ (1 + ‖η‖ ^ 2) ^ (-s / 2) :=
-    Real.rpow_le_rpow_of_exponent_le hη (by linarith [Nat.le_ceil (s / 2)])
-  have hpos : 0 < (1 + ‖η‖ ^ 2) ^ N := by positivity
-  calc F = ((1 + ‖η‖ ^ 2) ^ N * F) * (1 + ‖η‖ ^ 2) ^ (-(N : ℝ)) := by
-        rw [Real.rpow_neg (by positivity), Real.rpow_natCast, mul_comm, ← mul_assoc,
-          inv_mul_cancel₀ hpos.ne', one_mul]
-    _ ≤ (2 ^ (N - 1) * (D₀ + D) * w) * (1 + ‖η‖ ^ 2) ^ (-s / 2) :=
-        mul_le_mul hpow hN (by positivity) (by
-          have := (mul_nonneg hpos.le (norm_nonneg _)).trans hpow
-          exact this)
+  have hF := le_mul_one_add_norm_sq_pow_inv (norm_nonneg _) (hD₀ i η ξ) (hD i η ξ)
+  have hinv : 0 < ((1 + ‖η‖ ^ 2) ^ N)⁻¹ := by positivity
+  -- `((1 + ‖η‖²) ^ N)⁻¹ = (1 + ‖η‖²) ^ (-N) ≤ (1 + ‖η‖²) ^ (-s / 2)` since `N ≥ s / 2`.
+  have hN : ((1 + ‖η‖ ^ 2) ^ N)⁻¹ ≤ (1 + ‖η‖ ^ 2) ^ (-s / 2) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_neg (by positivity)]
+    exact Real.rpow_le_rpow_of_exponent_le hη (by linarith [Nat.le_ceil (s / 2)])
+  exact hF.trans (mul_le_mul_of_nonneg_left hN
+    ((mul_nonneg_iff_of_pos_right hinv).1 ((norm_nonneg _).trans hF)))
 
 end Decay
 
@@ -583,81 +581,6 @@ private theorem IsBallFamily.exists_norm_sharp_le {p : Symbol n W U m'} (hp : p.
     (K * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2))) (.of_forall hbound)).trans_eq ?_
   rw [integral_const_mul]
   ring
-
-/-- Multiplying a symbol by a real function `f` of the position before quantizing multiplies the
-quantization by `f`. -/
-private theorem quantizeSchwartzValue_ofSpatial_smul_id_comp (a : Symbol n V W m)
-    {f : CoordinateSpace n → ℝ} (hf : ContDiff ℝ ∞ fun x ↦ f x • ContinuousLinearMap.id ℂ W)
-    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue ((ofSpatial (fun x ↦ f x • ContinuousLinearMap.id ℂ W) hf).comp
-      a).coefficient u x = (f x : ℂ) • quantizeSchwartzValue a.coefficient u x := by
-  rw [quantizeSchwartzValue_congr_left (b := (f x : ℂ) • a.coefficient) (fun ξ ↦ by
-      rw [coefficient_comp, coefficient_ofSpatial, ContinuousLinearMap.smul_comp,
-        ContinuousLinearMap.id_comp, Pi.smul_apply, Complex.coe_smul]),
-    quantizeSchwartzValue_smul_left]
-
-/-- Multiplying by `(y - z)ⱼ` before quantizing multiplies the quantization by `(x - z)ⱼ`. -/
-private theorem quantizeSchwartzValue_coordSubSymbol_comp (a : Symbol n V W m)
-    (z : CoordinateSpace n) (j : Fin n) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue ((coordSubSymbol z j).comp a).coefficient u x =
-      ((x - z) j : ℂ) • quantizeSchwartzValue a.coefficient u x :=
-  quantizeSchwartzValue_ofSpatial_smul_id_comp a _ u x
-
-/-- **Commutator with a coordinate function.** For a symbol `b` with compact spatial support,
-`(x - z)ⱼ (p # b) = p # ((y - z)ⱼ b) + i (∂_{ξⱼ} p) # b`: multiplying `Op(p) (Op(b) u)` by
-`(x - z)ⱼ` either falls on `Op(b) u` or differentiates `p` in the frequency. -/
-private theorem coordSub_smul_coefficient_sharp [CompleteSpace V] [CompleteSpace W]
-    [CompleteSpace U] (p : Symbol n W U m') {b : Symbol n V W m} (hb : b.HasCompactSpatialSupport)
-    (z : CoordinateSpace n) (j : Fin n) (x ξ : CoordinateSpace n) :
-    ((x - z) j : ℂ) • (p.sharp b hb).coefficient (x, ξ) =
-      (p.sharp ((coordSubSymbol z j).comp b) (hb.comp_left _)).coefficient (x, ξ) +
-        Complex.I • ((frequencyDeriv j p).sharp b hb).coefficient (x, ξ) := by
-  set L := (coordSubSymbol z j).comp (p.sharp b hb)
-  set R := p.sharp ((coordSubSymbol z j).comp b) (hb.comp_left _) +
-    Complex.I • inclusion (by linarith) ((frequencyDeriv j p).sharp b hb)
-  have hLR : L.coefficient = R.coefficient := by
-    refine coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u _ ↦ funext fun y ↦ ?_
-    set w := (hb.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
-      (b.contDiff_quantizeSchwartzValue u)
-    have hb' := hb.comp_left (coordSubSymbol z j)
-    set w' := (hb'.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
-      (((coordSubSymbol z j).comp b).contDiff_quantizeSchwartzValue u)
-    have hw : ∀ y', w y' = quantizeSchwartzValue b.coefficient u y' :=
-      HasCompactSupport.toSchwartzMap_toFun _ _
-    have hw' : w' = SchwartzMap.smulLeftCLM W (fun y' : CoordinateSpace n ↦ y' j) w -
-        ((z j : ℝ) : ℂ) • w := by
-      ext y'
-      have hg : (fun y' : CoordinateSpace n ↦ y' j).HasTemperateGrowth :=
-        (EuclideanSpace.proj j).hasTemperateGrowth
-      rw [HasCompactSupport.toSchwartzMap_toFun, quantizeSchwartzValue_coordSubSymbol_comp,
-        sub_apply, SchwartzMap.smulLeftCLM_apply_apply hg, smul_apply, hw, PiLp.sub_apply,
-        Complex.ofReal_sub, sub_smul, RCLike.real_smul_eq_coe_smul (K := ℂ)]
-      rfl
-    obtain ⟨C, -, hC⟩ := p.exists_bound_coefficient_slice y
-    have hmeas : AEStronglyMeasurable (fun ξ ↦ p.coefficient (y, ξ)) :=
-      (p.continuous_coefficient_slice y).aestronglyMeasurable
-    have e₁ : quantizeSchwartzValue (p.sharp b hb).coefficient u y =
-        quantizeSchwartzValue p.coefficient w y :=
-      quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb u y
-    have e₂ : quantizeSchwartzValue
-        (p.sharp ((coordSubSymbol z j).comp b) (hb.comp_left _)).coefficient u y =
-          quantizeSchwartzValue p.coefficient w' y :=
-      quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue _ u y
-    have e₃ : quantizeSchwartzValue ((frequencyDeriv j p).sharp b hb).coefficient u y =
-        quantizeSchwartzValue (frequencyDeriv j p).coefficient w y :=
-      quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb u y
-    rw [quantizeSchwartzValue_coordSubSymbol_comp, e₁, coefficient_add,
-      quantizeSchwartzValue_coefficient_add, coefficient_smul, quantizeSchwartzValue_smul_left,
-      coefficient_inclusion, e₂, e₃, hw', sub_eq_add_neg (SchwartzMap.smulLeftCLM W _ w),
-      ← neg_smul, quantizeSchwartzValue_add_right hmeas hC, quantizeSchwartzValue_smul_right,
-      PiLp.sub_apply, Complex.ofReal_sub, sub_smul,
-      Complex.coe_smul, p.ofLp_smul_quantizeSchwartzValue j w y,
-      neg_smul]
-    abel
-  calc ((x - z) j : ℂ) • (p.sharp b hb).coefficient (x, ξ) = L.coefficient (x, ξ) := by
-        simp [L, coordSubSymbol, coordSub, RCLike.real_smul_eq_coe_smul (K := ℂ)]
-    _ = R.coefficient (x, ξ) := congrFun hLR _
-    _ = _ := by simp [R]
 
 variable [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
 
@@ -738,9 +661,8 @@ private theorem IsBallFamily.exists_norm_sub_pow_mul_norm_sharp_le (N : ℕ) :
         ((hC j i x ξ).trans (mul_le_mul_of_nonneg_left hwC (hC0 j)))).trans_eq (by ring)
     calc ‖x - z i‖ ^ (2 * (N + 1)) * ‖(p.sharp (c i) hci).coefficient (x, ξ)‖
         = ∑ j, ‖x - z i‖ ^ (2 * N) * (((x - z i) j) ^ 2 *
-            ‖(p.sharp (c i) hci).coefficient (x, ξ)‖) := by
-          rw [← Finset.mul_sum, ← Finset.sum_mul, ← EuclideanSpace.real_norm_sq_eq]
-          ring
+            ‖(p.sharp (c i) hci).coefficient (x, ξ)‖) :=
+          norm_pow_two_mul_succ_mul_eq_sum (x - z i) N _
       _ ≤ ∑ j, (A j + 2 * B j + C j) * w := Finset.sum_le_sum fun j _ ↦ hj j
       _ = _ := by rw [Finset.sum_mul]
 
@@ -812,21 +734,9 @@ private theorem IsBallFamily.exists_norm_mixedDeriv_sharp_le {p : Symbol n W U m
   obtain ⟨C₁, hC₁0, hC₁⟩ :=
     IsBallFamily.exists_norm_sub_pow_mul_norm_mixedDeriv_sharp_le n α β hp hc
   refine ⟨2 ^ (n - 1) * (C₀ + C₁), by positivity, fun i x ξ ↦ ?_⟩
-  set F := ‖mixedDeriv α β (p.sharp (c i) (hc.hasCompactSpatialSupport i)).coefficient x ξ‖
-  set w := (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2)
   have h₀ := hC₀ i x ξ
-  have h₁ := hC₁ i x ξ
   rw [mul_zero, pow_zero, one_mul] at h₀
-  have hpos : 0 < (1 + ‖x - z i‖ ^ 2) ^ n := by positivity
-  have hle : (1 + ‖x - z i‖ ^ 2) ^ n * F ≤ 2 ^ (n - 1) * (C₀ + C₁) * w := by
-    calc (1 + ‖x - z i‖ ^ 2) ^ n * F ≤ 2 ^ (n - 1) * (1 ^ n + (‖x - z i‖ ^ 2) ^ n) * F :=
-          mul_le_mul_of_nonneg_right (add_pow_le zero_le_one (by positivity) n) (norm_nonneg _)
-      _ = 2 ^ (n - 1) * (F + ‖x - z i‖ ^ (2 * n) * F) := by rw [one_pow, ← pow_mul]; ring
-      _ ≤ 2 ^ (n - 1) * (C₀ * w + C₁ * w) :=
-          mul_le_mul_of_nonneg_left (add_le_add h₀ h₁) (by positivity)
-      _ = 2 ^ (n - 1) * (C₀ + C₁) * w := by ring
-  rw [mul_right_comm, ← div_eq_mul_inv, le_div_iff₀ hpos, mul_comm F]
-  exact hle
+  exact (le_mul_one_add_norm_sq_pow_inv (norm_nonneg _) h₀ (hC₁ i x ξ)).trans_eq (by ring)
 
 end Sharp
 
@@ -836,46 +746,17 @@ section Composition
 
 variable [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
 
-/-- Translates of `latticeBump n` have derivatives bounded independently of the translation. -/
-private theorem exists_norm_iteratedFDeriv_latticeBump_sub_le (k : ℕ) :
-    ∃ B, ∀ (j : Fin n → ℤ) (y : CoordinateSpace n),
-      ‖iteratedFDeriv ℝ k (fun y ↦ latticeBump n (y - latticePoint j)) y‖ ≤ B := by
-  obtain ⟨B, hB⟩ := exists_norm_iteratedFDeriv_latticeBump_le (n := n) k
-  exact ⟨B, fun j y ↦ by rw [iteratedFDeriv_comp_sub]; exact hB _⟩
-
 omit [CompleteSpace V] [CompleteSpace W] in
 /-- The cut-off pieces `χ(x - j) a(x, ξ)` of a uniform symbol `a` form a ball family centred at
 the lattice points, with radius `√n`. -/
 private theorem isBallFamily_latticeBump_comp {a : Symbol n V W m} (ha : a.IsUniform) :
     IsBallFamily (fun j : Fin n → ℤ ↦ latticePoint j) √n fun j ↦
       (ofSpatial (fun x ↦ latticeBump n (x - latticePoint j) • ContinuousLinearMap.id ℂ W)
-        ((contDiff_latticeBump.comp (contDiff_id.sub contDiff_const)).smul contDiff_const)).comp
-        a :=
+        ((contDiff_latticeBump_sub j).smul contDiff_const)).comp a :=
   isBallFamily_ofSpatial_comp _ _ (fun j y ↦ latticeBump n (y - latticePoint j))
-    (fun _ ↦ contDiff_latticeBump.comp (contDiff_id.sub contDiff_const))
-    exists_norm_iteratedFDeriv_latticeBump_sub_le
+    contDiff_latticeBump_sub exists_norm_iteratedFDeriv_latticeBump_sub_le
     (fun _ _ hx ↦ by_contra fun h ↦ (mem_closedBall.1
       (mem_closedBall_of_latticeBump_sub_ne_zero h)).not_gt hx) ha
-
-/-- Within distance one of `x`, the weight `(1 + ‖y - j‖²)⁻ⁿ` is at most `4ⁿ` times its value at
-`x`. -/
-private theorem one_add_norm_sub_sq_pow_inv_le {x y : CoordinateSpace n} (hy : y ∈ ball x 1)
-    (z : CoordinateSpace n) :
-    ((1 + ‖y - z‖ ^ 2) ^ n)⁻¹ ≤ 4 ^ n * ((1 + ‖x - z‖ ^ 2) ^ n)⁻¹ := by
-  have hxy : ‖x - y‖ ≤ 1 := by
-    rw [← dist_eq_norm, dist_comm]
-    exact (mem_ball.1 hy).le
-  have h : 1 + ‖x - z‖ ^ 2 ≤ 4 * (1 + ‖y - z‖ ^ 2) := by
-    have h₁ := one_add_norm_add_sq_le (x - y) (y - z)
-    rw [sub_add_sub_cancel] at h₁
-    have h₂ : 1 + ‖x - y‖ ^ 2 ≤ 2 := by nlinarith [norm_nonneg (x - y)]
-    calc 1 + ‖x - z‖ ^ 2 ≤ 2 * ((1 + ‖x - y‖ ^ 2) * (1 + ‖y - z‖ ^ 2)) := h₁
-      _ ≤ 2 * (2 * (1 + ‖y - z‖ ^ 2)) := by gcongr
-      _ = 4 * (1 + ‖y - z‖ ^ 2) := by ring
-  have hpos : 0 < (1 + ‖y - z‖ ^ 2) ^ n := by positivity
-  have hpos' : 0 < (1 + ‖x - z‖ ^ 2) ^ n := by positivity
-  rw [← div_eq_mul_inv, inv_eq_one_div, div_le_div_iff₀ hpos hpos', one_mul, ← mul_pow]
-  exact pow_le_pow_left₀ (by positivity) h n
 
 omit [CompleteSpace V] in
 /-- The quantization of `p # (χ(· - j) a)` is `Op(p)` applied to `χ(· - j) Op(a) u`. -/
@@ -886,15 +767,12 @@ private theorem quantizeSchwartzValue_sharp_latticeBump_comp (p : Symbol n W U m
       ((isBallFamily_latticeBump_comp ha).hasCompactSpatialSupport j)).coefficient u x =
       quantizeSchwartzValue p.coefficient (SchwartzMap.smulLeftCLM W
         (fun y ↦ latticeBump n (y - latticePoint j)) (quantizeUniformCLM a ha u)) x := by
-  have htg : (fun y ↦ latticeBump n (y - latticePoint j)).HasTemperateGrowth :=
-    (hasCompactSupport_latticeBump.comp_homeomorph
-      (Homeomorph.subRight (latticePoint j))).hasTemperateGrowth
-      (contDiff_latticeBump.comp (contDiff_id.sub contDiff_const))
   rw [quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue]
   congr 1
   ext y
   rw [HasCompactSupport.toSchwartzMap_toFun, quantizeSchwartzValue_ofSpatial_smul_id_comp,
-    SchwartzMap.smulLeftCLM_apply_apply htg, Complex.coe_smul, quantizeUniformCLM_apply]
+    SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub j), Complex.coe_smul,
+    quantizeUniformCLM_apply]
 
 /-- **Composition of uniform symbols.** If `p` and `a` are symbols of orders `m'` and `m` whose
 estimates hold uniformly in the position, then `Op(p) ∘ Op(a)` is the quantization of a symbol of
@@ -909,10 +787,26 @@ theorem IsUniform.exists_quantizeUniformCLM_comp {p : Symbol n W U m'} (hp : p.I
     (hfam.hasCompactSpatialSupport j)
   set w : (Fin n → ℤ) → CoordinateSpace n → ℝ := fun j x ↦
     ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹
+  -- Within distance one of `x` the weight is at most `4ⁿ` times its value at `x` (Peetre).
+  have hw (x y : CoordinateSpace n) (hy : y ∈ ball x 1) (j : Fin n → ℤ) :
+      w j y ≤ 4 ^ n * w j x := by
+    have hyx : ‖y - latticePoint j - (x - latticePoint j)‖ ≤ 1 := by
+      rw [sub_sub_sub_cancel_right, ← dist_eq_norm]
+      exact (mem_ball.1 hy).le
+    have e (v : CoordinateSpace n) :
+        (1 + ‖v‖ ^ 2) ^ (-(2 * n : ℝ) / 2) = ((1 + ‖v‖ ^ 2) ^ n)⁻¹ := by
+      rw [neg_div, mul_div_cancel_left₀ _ two_ne_zero, Real.rpow_neg (by positivity),
+        Real.rpow_natCast]
+    have h4 : (2 : ℝ) ^ |-(2 * n : ℝ)| = 4 ^ n := by
+      rw [abs_neg, abs_of_nonneg (by positivity), show (2 * n : ℝ) = ((2 * n : ℕ) : ℝ) by
+        push_cast; ring, Real.rpow_natCast, pow_mul]
+      norm_num
+    have h := one_add_norm_sq_rpow_le_of_norm_sub_le_one hyx (-(2 * n : ℝ))
+    rwa [e, e, h4] at h
   obtain ⟨b, hb, hbsum⟩ := exists_isUniform_hasSum_coefficient F w (fun _ _ ↦ by positivity)
     (fun x ↦ ⟨fun j ↦ 4 ^ n * w j x,
       (summable_one_add_norm_sub_latticePoint_sq_pow_inv x).mul_left _,
-      fun j y hy ↦ one_add_norm_sub_sq_pow_inv_le hy _⟩)
+      fun j y hy ↦ hw x y hy j⟩)
     tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le
     (hfam.exists_norm_mixedDeriv_sharp_le hp)
   have hord : m' + (0 + m) = m' + m := by ring
@@ -927,10 +821,13 @@ theorem IsUniform.exists_quantizeUniformCLM_comp {p : Symbol n W U m'} (hp : p.I
     (summable_one_add_norm_sub_latticePoint_sq_pow_inv x) (hC · x) u).unique ?_).symm
   -- The lattice partition of unity converges in Schwartz space, on which `Op(p)` is continuous.
   simp only [F, quantizeSchwartzValue_sharp_latticeBump_comp p ha u x]
-  simpa using (SchwartzMap.hasSum_smulLeftCLM_latticeBump_sub (F := W)
+  have h := (SchwartzMap.hasSum_smulLeftCLM_latticeBump_sub (F := W)
     (quantizeUniformCLM a ha u)).mapL ((BoundedContinuousFunction.evalCLM ℂ x) ∘L
       (SchwartzMap.toBoundedContinuousFunctionCLM ℂ (CoordinateSpace n) U) ∘L
         quantizeUniformCLM p hp)
+  simp only [ContinuousLinearMap.comp_apply, BoundedContinuousFunction.evalCLM_apply,
+    SchwartzMap.toBoundedContinuousFunctionCLM_apply, quantizeUniformCLM_apply] at h
+  exact h
 
 end Composition
 
