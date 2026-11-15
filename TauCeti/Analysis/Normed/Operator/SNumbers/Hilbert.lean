@@ -80,30 +80,11 @@ private instance :
     Nonempty {p : (ℓ²(ℕ, 𝕜) →L[𝕜] E) × (F →L[𝕜] ℓ²(ℕ, 𝕜)) // ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1} :=
   ⟨⟨0, by simp, by simp⟩⟩
 
-/-- Multiplying by the norms of two contractions does not increase a bound. -/
-private theorem nnnorm_mul_mul_nnnorm_le {B : G →L[𝕜] H} {A : E →L[𝕜] F} (hB : ‖B‖ ≤ 1)
-    (hA : ‖A‖ ≤ 1) (x : ℝ≥0) : ‖B‖₊ * x * ‖A‖₊ ≤ x := by
-  have hA' : ‖A‖₊ ≤ 1 := mod_cast hA
-  have hB' : ‖B‖₊ ≤ 1 := mod_cast hB
-  calc ‖B‖₊ * x * ‖A‖₊ ≤ 1 * x * 1 := by gcongr
-    _ = x := by simp
-
-/-- Rescaling a map of nonzero norm by the inverse of its norm gives a map of norm one. -/
-private theorem norm_inv_norm_smul {A : E →L[𝕜] F} (hA : ‖A‖ ≠ 0) :
-    ‖(‖A‖ : 𝕜)⁻¹ • A‖ = 1 := by
-  rw [norm_smul, norm_inv, RCLike.norm_ofReal, abs_norm, inv_mul_cancel₀ hA]
-
-/-- A compression of `T` by contractions has approximation numbers at most `‖T‖`. -/
-private theorem singularValue_comp_comp_le_nnnorm {T : E →L[𝕜] F} {A : ℓ²(ℕ, 𝕜) →L[𝕜] E}
-    {B : F →L[𝕜] ℓ²(ℕ, 𝕜)} (hA : ‖A‖ ≤ 1) (hB : ‖B‖ ≤ 1) (n : ℕ) :
-    (B ∘L T ∘L A).singularValue n ≤ ‖T‖₊ :=
-  (B.singularValue_comp_comp_le T A n).trans
-    ((nnnorm_mul_mul_nnnorm_le hB hA _).trans (T.singularValue_le_nnnorm n))
-
 private theorem bddAbove_range_singularValue_comp_comp (T : E →L[𝕜] F) (n : ℕ) :
     BddAbove (Set.range fun p : {p : (ℓ²(ℕ, 𝕜) →L[𝕜] E) × (F →L[𝕜] ℓ²(ℕ, 𝕜)) //
       ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1} ↦ (p.1.2 ∘L T ∘L p.1.1).singularValue n) :=
-  ⟨‖T‖₊, Set.forall_mem_range.mpr fun p ↦ singularValue_comp_comp_le_nnnorm p.2.1 p.2.2 n⟩
+  ⟨‖T‖₊, Set.forall_mem_range.mpr fun p ↦
+    (singularValue_comp_comp_le_of_norm_le_one p.2.2 p.2.1 T n).trans (T.singularValue_le_nnnorm n)⟩
 
 /-- Every compression of `T` by contractions bounds `hₙ(T)` from below. -/
 theorem singularValue_comp_comp_le_hilbertNumber_of_norm_le_one (T : E →L[𝕜] F)
@@ -166,7 +147,7 @@ theorem singularValue_comp_comp_le_hilbertNumber (B : F →L[𝕜] ℓ²(ℕ, �
       ≤ ‖B‖₊ * (‖A‖₊ * T.hilbertNumber n) := by
         gcongr
         exact T.singularValue_comp_comp_le_hilbertNumber_of_norm_le_one
-          (norm_inv_norm_smul hA₀).le (norm_inv_norm_smul hB₀).le n
+          (by simp [norm_smul, inv_mul_cancel₀ hA₀]) (by simp [norm_smul, inv_mul_cancel₀ hB₀]) n
     _ = ‖B‖₊ * T.hilbertNumber n * ‖A‖₊ := by ring
 
 /-- **Ratio form.** `hₙ(T)` is the supremum of `aₙ(B ∘ T ∘ A) / (‖B‖ ‖A‖)` over all nonzero
@@ -202,8 +183,7 @@ theorem hilbertNumber_eq_iSup_div (T : E →L[𝕜] F) (n : ℕ) :
 /-- The Hilbert numbers are bounded by the approximation numbers. -/
 theorem hilbertNumber_le_singularValue (T : E →L[𝕜] F) (n : ℕ) :
     T.hilbertNumber n ≤ T.singularValue n :=
-  hilbertNumber_le_iff.mpr fun A B hA hB ↦
-    (B.singularValue_comp_comp_le T A n).trans (nnnorm_mul_mul_nnnorm_le hB hA _)
+  hilbertNumber_le_iff.mpr fun _ _ hA hB ↦ singularValue_comp_comp_le_of_norm_le_one hB hA T n
 
 /-- The Hilbert numbers are bounded by the operator norm. -/
 theorem hilbertNumber_le_nnnorm (T : E →L[𝕜] F) (n : ℕ) : T.hilbertNumber n ≤ ‖T‖₊ :=
@@ -224,14 +204,15 @@ theorem hilbertNumber_zero (T : E →L[𝕜] F) : T.hilbertNumber 0 = ‖T‖₊
   have hBTA : (B ∘L T ∘L A) e = (‖T x‖ : 𝕜) • e := by
     simp [A, B, inner_self_eq_norm_sq_to_K, he, hgx]
   have hA : ‖A‖₊ = ‖x‖₊ := by simp [A, ← NNReal.coe_inj, he]
+  have hen : ‖e‖₊ = 1 := NNReal.coe_eq_one.mp he
+  have hgn : ‖g‖₊ ≤ 1 := mod_cast hg
   have hB : ‖B‖₊ ≤ 1 := by
     rw [nnNorm_smulRight_apply]
-    have : ‖e‖₊ = 1 := NNReal.coe_eq_one.mp he
-    simpa [this] using (show ‖g‖₊ ≤ 1 from mod_cast hg)
+    simpa [hen] using hgn
   calc ‖T x‖₊ = ‖(B ∘L T ∘L A) e‖₊ := by
         rw [hBTA, nnNorm_smul, ← NNReal.coe_inj]; simp [he]
     _ ≤ ‖B ∘L T ∘L A‖₊ := by
-        simpa [show ‖e‖₊ = 1 from NNReal.coe_eq_one.mp he] using (B ∘L T ∘L A).le_opNNNorm e
+        simpa [hen] using (B ∘L T ∘L A).le_opNNNorm e
     _ = (B ∘L T ∘L A).singularValue 0 := (singularValue_zero _).symm
     _ ≤ ‖B‖₊ * T.hilbertNumber 0 * ‖A‖₊ := singularValue_comp_comp_le_hilbertNumber B T A 0
     _ ≤ 1 * T.hilbertNumber 0 * ‖x‖₊ := by rw [hA]; gcongr
@@ -262,7 +243,7 @@ theorem hilbertNumber_add_le (S T : E →L[𝕜] F) (n : ℕ) :
     exact ((B ∘L S ∘L A).singularValue_add_le _ n).trans <| add_le_add
       (S.singularValue_comp_comp_le_hilbertNumber_of_norm_le_one hA hB n)
       (((B ∘L T ∘L A).singularValue_zero).symm.trans_le
-        (singularValue_comp_comp_le_nnnorm hA hB 0))
+        ((singularValue_comp_comp_le_of_norm_le_one hB hA T 0).trans (T.singularValue_le_nnnorm 0)))
 
 /-- **Two-sided ideal inequality.** `hₙ(B T A) ≤ ‖B‖ hₙ(T) ‖A‖`. -/
 theorem hilbertNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G) (A : E →L[𝕜] F) (n : ℕ) :
@@ -274,8 +255,8 @@ theorem hilbertNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G) (A 
         singularValue_comp_comp_le_hilbertNumber _ T _ n
       _ ≤ (‖B'‖₊ * ‖B‖₊) * T.hilbertNumber n * (‖A‖₊ * ‖A'‖₊) := by
         gcongr <;> exact opNNNorm_comp_le _ _
-      _ = ‖B'‖₊ * (‖B‖₊ * T.hilbertNumber n * ‖A‖₊) * ‖A'‖₊ := by ring
-      _ ≤ ‖B‖₊ * T.hilbertNumber n * ‖A‖₊ := nnnorm_mul_mul_nnnorm_le hB' hA' _
+      _ ≤ (1 * ‖B‖₊) * T.hilbertNumber n * (‖A‖₊ * 1) := by gcongr <;> assumption_mod_cast
+      _ = ‖B‖₊ * T.hilbertNumber n * ‖A‖₊ := by ring
 
 /-- **Euclidean normalization.** The identity of `ℓ₂^{n+1}` has `hₙ = 1`. -/
 theorem hilbertNumber_id_euclideanSpace (n : ℕ) :
@@ -302,8 +283,7 @@ theorem hilbertNumber_id_euclideanSpace (n : ℕ) :
     simp only [I, id_comp, ← comp_assoc, A, B, L.adjoint_comp_self, one_def]
   calc (1 : ℝ≥0) = I.singularValue n := by simp [I, singularValue_id, hrank]
     _ = (A ∘L (B ∘L I ∘L A) ∘L B).singularValue n := by rw [hid]
-    _ ≤ ‖A‖₊ * (B ∘L I ∘L A).singularValue n * ‖B‖₊ := singularValue_comp_comp_le _ _ _ n
-    _ ≤ (B ∘L I ∘L A).singularValue n := nnnorm_mul_mul_nnnorm_le hA hB _
+    _ ≤ (B ∘L I ∘L A).singularValue n := singularValue_comp_comp_le_of_norm_le_one hA hB _ n
     _ ≤ I.hilbertNumber n := I.singularValue_comp_comp_le_hilbertNumber_of_norm_le_one hA hB n
 
 end ContinuousLinearMap
