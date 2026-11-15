@@ -247,6 +247,32 @@ private theorem mem_inter_of_mem_puncturedSphereTruncation (ha : ∀ i, a i ≠ 
     z ∈ U ∩ {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} :=
   ⟨hTU hz, fun i ↦ ne_of_mem_puncturedSphereTruncation (ha i) hz⟩
 
+/-- The real chart of the end lift of the input `i` maps the closed rectangle
+`[1, R] × [-1/2, 1/2]` into every neighbourhood `U` of the truncation, off the input punctures. -/
+private theorem realChart_add_mul_cylindricalEndLift_zero_mem_inter (ha : ∀ i, a i ≠ 0)
+    (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {U : Set (ℝ × ℝ)}
+    (hTU : Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R ⊆ U) (i : ι)
+    {z : ℝ × ℝ} (hz : z ∈ Icc 1 R ×ˢ Icc (-1 / 2 : ℝ) (1 / 2)) :
+    realChart (fun w ↦ c i + a i * zero.cylindricalEndLift w) z ∈
+      U ∩ {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} :=
+  mem_inter_of_mem_puncturedSphereTruncation ha hTU (by
+    rw [equivRealProdCLM_symm_realChart]
+    exact add_mul_cylindricalEndLift_zero_mem_puncturedSphereTruncation hsep hout
+      (by simpa using hz.1.1) (by simpa using hz.1.2))
+
+/-- The real chart of the output end lift maps the closed rectangle `[-R, -1] × [-1/2, 1/2]` into
+every neighbourhood `U` of the truncation, off the input punctures. -/
+private theorem realChart_cylindricalEndLift_inf_mem_inter (ha : ∀ i, a i ≠ 0)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {U : Set (ℝ × ℝ)}
+    (hTU : Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R ⊆ U)
+    {z : ℝ × ℝ} (hz : z ∈ Icc (-R) (-1) ×ˢ Icc (-1 / 2 : ℝ) (1 / 2)) :
+    realChart inf.cylindricalEndLift z ∈ U ∩ {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} :=
+  mem_inter_of_mem_puncturedSphereTruncation ha hTU (by
+    rw [equivRealProdCLM_symm_realChart]
+    exact cylindricalEndLift_inf_mem_puncturedSphereTruncation hout (by simpa using hz.1.1)
+      (by simpa using hz.1.2))
+
 section Coordinates
 
 variable [Fintype ι] {X : Type*} {H : ι → ℝ → X → ℝ} {Hout : ℝ → X → ℝ}
@@ -394,10 +420,8 @@ theorem integrableOn_hamiltonianCurvature_puncturedSpherePerturbation_puncturedS
     rcases o with _ | i
     · exact ω.integrableOn_hamiltonianCurvature_image_realChart_Icc_prod_Ico
         (contDiff_cylindricalEndLift inf 2) (injOn_realChart_cylindricalEndLift_inf (-R) (-1)) hΩ
-        (fun z hz ↦ mem_inter_of_mem_puncturedSphereTruncation ha hTU (by
-          rw [equivRealProdCLM_symm_realChart]
-          exact cylindricalEndLift_inf_mem_puncturedSphereTruncation hout (by simpa using hz.1.1)
-            (by simpa using hz.1.2))) hP (hu.mono inter_subset_left)
+        (fun _ ↦ realChart_cylindricalEndLift_inf_mem_inter ha hout hTU) hP
+        (hu.mono inter_subset_left)
         (g := fun s ↦ smoothTransition (-s - 1))
         (smoothTransition.contDiff.comp (f := fun s : ℝ ↦ -s - 1) (by fun_prop)) hHouts
         fun z hz x v ↦
@@ -405,10 +429,8 @@ theorem integrableOn_hamiltonianCurvature_puncturedSpherePerturbation_puncturedS
     · exact ω.integrableOn_hamiltonianCurvature_image_realChart_Icc_prod_Ico
         (contDiff_const.add (contDiff_const.mul (contDiff_cylindricalEndLift zero 2)))
         (injOn_realChart_add_mul_cylindricalEndLift_zero (ha i) 1 R) hΩ
-        (fun z hz ↦ mem_inter_of_mem_puncturedSphereTruncation ha hTU (by
-          rw [equivRealProdCLM_symm_realChart]
-          exact add_mul_cylindricalEndLift_zero_mem_puncturedSphereTruncation hsep hout
-            (by simpa using hz.1.1) (by simpa using hz.1.2))) hP (hu.mono inter_subset_left)
+        (fun _ ↦ realChart_add_mul_cylindricalEndLift_zero_mem_inter ha hsep hout hTU i) hP
+        (hu.mono inter_subset_left)
         (g := fun s ↦ smoothTransition (s - 1))
         (smoothTransition.contDiff.comp (f := fun s : ℝ ↦ s - 1) (by fun_prop)) (hHs i)
         fun z hz x v ↦ puncturedSpherePerturbation_add_mul_cylindricalEndLift_zero_of_mem hH ha
@@ -467,10 +489,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_inputEndPiece
     (by norm_num : (-1 / 2 : ℝ) ≤ 1 / 2)
     (injOn_realChart_add_mul_cylindricalEndLift_zero (ha i) 1 R)
     (hU.inter (isOpen_setOf_forall_equivRealProdCLM_symm_ne c))
-    (fun z hz ↦ mem_inter_of_mem_puncturedSphereTruncation ha hTU (by
-      rw [equivRealProdCLM_symm_realChart]
-      exact add_mul_cylindricalEndLift_zero_mem_puncturedSphereTruncation hsep hout
-        (by simpa using hz.1.1) (by simpa using hz.1.2)))
+    (fun _ ↦ realChart_add_mul_cylindricalEndLift_zero_mem_inter ha hsep hout hTU i)
     ((contMDiffOn_puncturedSpherePerturbation hH hHs hHout hHouts ha).mono
       (prod_mono inter_subset_right subset_rfl)) (hu.mono inter_subset_left)
     (g := fun s ↦ smoothTransition (s - 1))
@@ -508,10 +527,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_outputEndPiece
     (contDiff_cylindricalEndLift inf 2) (by linarith : -R ≤ -1)
     (by norm_num : (-1 / 2 : ℝ) ≤ 1 / 2) (injOn_realChart_cylindricalEndLift_inf (-R) (-1))
     (hU.inter (isOpen_setOf_forall_equivRealProdCLM_symm_ne c))
-    (fun z hz ↦ mem_inter_of_mem_puncturedSphereTruncation ha hTU (by
-      rw [equivRealProdCLM_symm_realChart]
-      exact cylindricalEndLift_inf_mem_puncturedSphereTruncation hout (by simpa using hz.1.1)
-        (by simpa using hz.1.2)))
+    (fun _ ↦ realChart_cylindricalEndLift_inf_mem_inter ha hout hTU)
     ((contMDiffOn_puncturedSpherePerturbation hH hHs hHout hHouts ha).mono
       (prod_mono inter_subset_right subset_rfl)) (hu.mono inter_subset_left)
     (g := fun s ↦ smoothTransition (-s - 1))

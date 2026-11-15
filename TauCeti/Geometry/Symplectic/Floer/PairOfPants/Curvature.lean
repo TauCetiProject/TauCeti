@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Basic
+import TauCeti.Geometry.Symplectic.Floer.Manifold.RealChart
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.MeasureTheory.Integral.Prod
@@ -57,11 +58,12 @@ which is only continuous on a truncation of `S` at nonnegative heights, over tha
 
 The same decomposition of `S` into its core, where `K` vanishes, and the three ends integrates
 the energy identity over the truncation `S_R` of `S`
-(`TauCeti.ThricePuncturedSphere.truncation`), where every `±s ≤ R`. On each end the rectangle
-identity `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity` applies in cylinder
-coordinates; the boundary terms along the angular sides cancel by periodicity, and those on the
-circles `±s = 1` vanish with the cutoff. For `R ≥ 1` and a map `u` which is `C¹` on an open set
-containing `S_R`, for instance on `S`, this gives
+(`TauCeti.ThricePuncturedSphere.truncation`), where every `±s ≤ R`. On each end the energy
+identity over the image of a rectangle under the end lift,
+`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_image_realChart_Icc_prod_Ico`,
+applies in cylinder coordinates; the boundary terms along the angular sides cancel by
+periodicity, and those on the circles `±s = 1` vanish with the cutoff. For `R ≥ 1` and a map `u`
+which is `C¹` on an open set containing `S_R`, for instance on `S`, this gives
 
 `∫_{S_R} E = ∫_{S_R} u^*ω + β(R - 1) ∑ q, ±∫₀¹ H_q(t, u(φ_q(±R + i t))) dt - ∫_{S_R} R_K(u)`,
 
@@ -540,105 +542,19 @@ section Energy
 
 variable [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M}
 
-/-- The cylinder-coordinate half of the energy identity over a rectangle of an end, for a
-manifold target: over the strip `[a₁, b₁] × [-1/2, 1/2)`, contained in an open set `U` on which
-the end sign times the first coordinate is positive and which the end chart maps into a set where
-`u` is `C¹`, the pulled-back Floer energy is the symplectic area, plus the Hamiltonian boundary
-terms, minus the integrated curvature. -/
-private theorem IsNondegenerate.integral_floerEnergyDensity_endChart_rect
-    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {u : ℝ × ℝ → M}
-    {V : Set (ℝ × ℝ)} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u V)
-    {q : Puncture} {a₁ b₁ : ℝ} (hab : a₁ ≤ b₁) {U : Set (ℝ × ℝ)} (hUo : IsOpen U)
-    (hU₁ : ∀ {z : ℝ × ℝ}, z.1 ∈ Icc a₁ b₁ → z ∈ U)
-    (hpos : ∀ {z : ℝ × ℝ}, z ∈ U → 0 < q.endSign * z.1)
-    (hUV : ∀ {z : ℝ × ℝ}, z ∈ U → endChart q z ∈ V)
-    (hE : IntegrableOn (ω.floerEnergyDensity (pairOfPantsEndComponent H q 1)
-      (pairOfPantsEndComponent H q Complex.I) (u ∘ endChart q))
-      (Icc a₁ b₁ ×ˢ Ico (-1 / 2 : ℝ) (1 / 2))) :
-    ∫ w in Icc a₁ b₁ ×ˢ Ico (-1 / 2 : ℝ) (1 / 2),
-        ω.floerEnergyDensity (pairOfPantsEndComponent H q 1) (pairOfPantsEndComponent H q Complex.I)
-          (u ∘ endChart q) w =
-      (∫ w in Icc a₁ b₁ ×ˢ Ico (-1 / 2 : ℝ) (1 / 2),
-          (SmoothBundleForm.eval₂ ω ((u ∘ endChart q) w)
-            (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ endChart q) w stdComplexLineReal)
-            (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ endChart q) w stdComplexLineImag) : ℝ)) +
-        ((∫ t in (-1 / 2 : ℝ)..1 / 2,
-            smoothTransition (q.endSign * b₁ - 1) * H q t (u (endChart q (b₁, t)))) -
-          ∫ t in (-1 / 2 : ℝ)..1 / 2,
-            smoothTransition (q.endSign * a₁ - 1) * H q t (u (endChart q (a₁, t)))) -
-        ∫ w in Icc a₁ b₁ ×ˢ Ico (-1 / 2 : ℝ) (1 / 2),
-          ω.hamiltonianCurvature (pairOfPantsEndComponent H q 1)
-            (pairOfPantsEndComponent H q Complex.I) w ((u ∘ endChart q) w) := by
-  -- The half-open strip and the closed rectangle differ by a null set.
-  have hae : Icc a₁ b₁ ×ˢ Ico (-1 / 2 : ℝ) (1 / 2) =ᵐ[volume]
-      Icc ((a₁, -1 / 2) : ℝ × ℝ) (b₁, 1 / 2) := by
-    rw [Icc_prod_eq, Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ico_ae_eq_Icc
-  simp only [setIntegral_congr_set hae]
-  have hIccU : Icc ((a₁, -1 / 2) : ℝ × ℝ) (b₁, 1 / 2) ⊆ U := fun z hz => hU₁ (by
-    rw [Icc_prod_eq] at hz
-    exact hz.1)
-  -- In the cylinder coordinates the datum is `β(±s - 1) H_q(t) dt`, and its curvature is the
-  -- continuous function `±β'(±s - 1) H_q(t)`.
-  have hu' : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 (u ∘ endChart q) U :=
-    hu.comp (contDiff_endChart q 1).contMDiff.contMDiffOn fun _ hw => hUV hw
-  have hKs : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
-      (uncurry (pairOfPantsEndComponent H q 1)) (U ×ˢ univ) :=
-    (contMDiffOn_const (c := (0 : ℝ))).congr fun p hp =>
-      pairOfPantsEndComponent_one_of_pos (hpos hp.1) p.2
-  have hβH : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 fun p : (ℝ × ℝ) × M =>
-      smoothTransition (q.endSign * p.1.1 - 1) * H q p.1.2 p.2 :=
-    ((smoothTransition.contDiff.comp (f := fun z : ℝ × ℝ => q.endSign * z.1 - 1)
-      (by fun_prop)).contMDiff.comp contMDiff_fst).smul
-      ((hHs q).comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd))
-  have hKt : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
-      (uncurry (pairOfPantsEndComponent H q Complex.I)) (U ×ˢ univ) :=
-    hβH.contMDiffOn.congr fun p hp => pairOfPantsEndComponent_I_of_pos (hH q) (hpos hp.1) p.2
-  have hR : IntegrableOn (fun w ↦ ω.hamiltonianCurvature (pairOfPantsEndComponent H q 1)
-      (pairOfPantsEndComponent H q Complex.I) w ((u ∘ endChart q) w))
-      (Icc ((a₁, -1 / 2) : ℝ × ℝ) (b₁, 1 / 2)) := by
-    refine ContinuousOn.integrableOn_compact isCompact_Icc ?_
-    refine ((continuousOn_endSign_mul_deriv_smoothTransition_mul hHs
-      hu.continuousOn q).mono fun w hw ↦ hUV (hIccU hw)).congr fun w hw ↦ ?_
-    exact ω.hamiltonianCurvature_pairOfPantsEndComponent (hH q) (hpos (hIccU hw))
-      ((((hHs q).comp (contMDiff_id.prodMk contMDiff_const)).contDiff.differentiable
-        one_ne_zero) w.2)
-  rw [hω.integral_floerEnergyDensity hUo hu' hKs hKt (Prod.mk_le_mk.2 ⟨hab, by norm_num⟩) hIccU
-    (hE.congr_set_ae hae.symm) hR]
-  -- The `ds` components vanish, and the `dt` components are `β(±s - 1) H_q(t)`.
-  have hs₀ (c : ℝ) : ∫ s in a₁..b₁, pairOfPantsEndComponent H q 1 (s, c)
-      ((u ∘ endChart q) (s, c)) = 0 := by
-    rw [intervalIntegral.integral_congr (g := fun _ => 0) fun s hs => ?_,
-      intervalIntegral.integral_zero]
-    rw [uIcc_of_le hab] at hs
-    exact pairOfPantsEndComponent_one_of_pos (hpos (hU₁ (z := (s, c)) hs)) _
-  have ht {c : ℝ} (hc : c ∈ Icc a₁ b₁) :
-      ∫ t in (-1 / 2 : ℝ)..1 / 2,
-          pairOfPantsEndComponent H q Complex.I (c, t) ((u ∘ endChart q) (c, t)) =
-        ∫ t in (-1 / 2 : ℝ)..1 / 2,
-          smoothTransition (q.endSign * c - 1) * H q t (u (endChart q (c, t))) :=
-    intervalIntegral.integral_congr fun t _ =>
-      pairOfPantsEndComponent_I_of_pos (hH q) (hpos (hU₁ (z := (c, t)) hc)) _
-  rw [hs₀, hs₀, ht (c := a₁) ⟨le_rfl, hab⟩, ht (c := b₁) ⟨hab, le_rfl⟩]
-  ring
-
 /-- **The energy identity over a rectangle of an end, for a manifold target.** Over the image in
-`S` of a rectangle `[a₁, b₁] × [-1/2, 1/2)` of the part `±s > 1/2` of the end `q`, over which the
-Floer energy density is integrable, the Floer energy is the symplectic area, plus the integrals of
-the Hamiltonian term `β(±s - 1) H_q(t)` over the outgoing boundary circle minus the incoming one,
-minus the integrated curvature. The map `u` need only be `C¹` on an open set `V` containing the
-image of the whole strip `[a₁, b₁] × ℝ`. -/
+`S` of a rectangle `[a₁, b₁] × [-1/2, 1/2)` of the part `±s > 1/2` of the end `q`, the Floer energy
+is the symplectic area, plus the integrals of the Hamiltonian term `β(±s - 1) H_q(t)` over the
+outgoing boundary circle minus the incoming one, minus the integrated curvature. The map `u` need
+only be `C¹` on an open set `V` containing the image of the whole strip `[a₁, b₁] × ℝ`. This is
+`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_image_realChart_Icc_prod_Ico`
+for the end lift, in whose coordinates the datum is `β(±s - 1) H_q(t) dt`. -/
 private theorem IsNondegenerate.integral_floerEnergyDensity_image_endChart
     (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {u : ℝ × ℝ → M}
     {V : Set (ℝ × ℝ)} (hVo : IsOpen V) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u V)
     {q : Puncture} {a₁ b₁ : ℝ} (hab : a₁ ≤ b₁) (ha : 1 / 2 < q.endSign * a₁)
-    (hb : 1 / 2 < q.endSign * b₁) (hV : ∀ z : ℝ × ℝ, z.1 ∈ Icc a₁ b₁ → endChart q z ∈ V)
-    (hE : IntegrableOn (ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
-      (endChart q '' (Icc a₁ b₁ ×ˢ Ico (-1 / 2) (1 / 2)))) :
+    (hb : 1 / 2 < q.endSign * b₁) (hV : ∀ z : ℝ × ℝ, z.1 ∈ Icc a₁ b₁ → endChart q z ∈ V) :
     ∫ z in endChart q '' (Icc a₁ b₁ ×ˢ Ico (-1 / 2) (1 / 2)), ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -654,76 +570,45 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_endChart
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
-  set s : Set (ℝ × ℝ) := Icc a₁ b₁ ×ˢ Ico (-1 / 2) (1 / 2)
-  set U : Set (ℝ × ℝ) := {z | 1 / 2 < q.endSign * z.1} ∩ endChart q ⁻¹' V
-  have hUo : IsOpen U := (isOpen_lt continuous_const (continuous_const.mul continuous_fst)).inter
-    (hVo.preimage (contDiff_endChart q 0).continuous)
   -- The rectangle lies in the part `±s > 1/2` of the end.
-  have hU₁ {z : ℝ × ℝ} (hz : z.1 ∈ Icc a₁ b₁) : z ∈ U := by
-    have h₀ : 1 / 2 < q.endSign * z.1 := by
-      obtain ⟨h₁, h₂⟩ := hz
-      rcases endSign_eq_one_or_eq_neg_one q with h | h <;> rw [h] at ha hb ⊢ <;> linarith
-    exact ⟨h₀, hV z hz⟩
-  have hsU {z : ℝ × ℝ} (hz : z ∈ s) : z ∈ U := hU₁ hz.1
-  have hpos {z : ℝ × ℝ} (hz : z ∈ U) : 0 < q.endSign * z.1 := by
-    have h : 1 / 2 < q.endSign * z.1 := hz.1
-    linarith
-  have hS {z : ℝ × ℝ} (hz : z ∈ U) := endChart_mem_thricePuncturedSphereReal (hpos hz)
-  have hmeas : MeasurableSet s := measurableSet_Icc.prod measurableSet_Ico
-  have hinj : InjOn (endChart q) s :=
-    (injOn_endChart q).mono fun z hz => mem_endStrip_iff.2 ⟨(hsU hz).1, hz.2⟩
-  have hφ (w : ℝ × ℝ) : DifferentiableAt ℝ (endChart q) w :=
-    (hasFDerivAt_endChart q w).differentiableAt
-  have hud {w : ℝ × ℝ} (hw : w ∈ U) : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (endChart q w) :=
-    (hu.contMDiffAt (hVo.mem_nhds hw.2)).mdifferentiableAt one_ne_zero
-  have htgt {w : ℝ × ℝ} (hw : w ∈ U) (v : ℂ) :=
-    mdifferentiableAt_pairOfPantsPerturbation_target hH hHs (hS hw) (u (endChart q w)) v
-  -- The energy density, in the coordinates of the end, is integrable over the rectangle.
-  have hE' : IntegrableOn (ω.floerEnergyDensity (pairOfPantsEndComponent H q 1)
-      (pairOfPantsEndComponent H q Complex.I) (u ∘ endChart q)) s := by
-    have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-    refine ((integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume hmeas
-      (fun w _ ↦ (hφ w).hasFDerivAt.hasFDerivWithinAt) hinj _).1 hE).congr_fun
-      (fun w hw ↦ ?_) hmeas
-    have h := ω.floerEnergyDensity_perturbationPullback
-      (Ks := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (Kt := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-      (hφ w) (hud (hsU hw)) (htgt (hsU hw) 1) (htgt (hsU hw) Complex.I)
-    rw [perturbationPullback_endChart, perturbationPullback_endChart,
-      equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag] at h
-    rw [h]
-    simp only [smul_eq_mul, abs_of_nonneg (det_fderiv_endChart_nonneg q w)]
-  -- Change variables to the cylinder coordinates of the end, in each of the three integrals.
-  rw [ω.integral_eval₂_mfderiv_stdComplexLine_image hmeas hinj (fun w _ => hφ w)
-      (fun w _ => det_fderiv_endChart_nonneg q w) (fun w hw => hud (hsU hw)),
-    ω.integral_floerEnergyDensity_image hmeas hinj (fun w _ => hφ w)
-      (fun w _ => det_fderiv_endChart_nonneg q w) (fun w hw => hud (hsU hw))
-      (fun w hw => htgt (hsU hw) 1) (fun w hw => htgt (hsU hw) _),
-    ω.integral_hamiltonianCurvature_image hmeas hinj
-      (fun w _ => (contDiff_endChart q 2).contDiffAt)
-      (fun w _ => det_fderiv_endChart_nonneg q w)
-      (fun w hw => differentiableAt_pairOfPantsPerturbation_domain hH hHs (hS (hsU hw)) _ 1)
-      (fun w hw => differentiableAt_pairOfPantsPerturbation_domain hH hHs (hS (hsU hw)) _ _)
-      (fun w hw => htgt (hsU hw) 1) (fun w hw => htgt (hsU hw) _),
-    perturbationPullback_endChart, perturbationPullback_endChart,
-    equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]
-  exact hω.integral_floerEnergyDensity_endChart_rect hH hHs hu hab hUo hU₁ hpos (fun hw ↦ hw.2) hE'
+  have hhalf {z : ℝ × ℝ} (hz : z.1 ∈ Icc a₁ b₁) : 1 / 2 < q.endSign * z.1 := by
+    obtain ⟨h₁, h₂⟩ := hz
+    rcases endSign_eq_one_or_eq_neg_one q with h | h <;> rw [h] at ha hb ⊢ <;> linarith
+  have hpos {z : ℝ × ℝ} (hz : z.1 ∈ Icc a₁ b₁) : 0 < q.endSign * z.1 := by
+    linarith [hhalf hz]
+  have hinj : InjOn (endChart q) (Icc a₁ b₁ ×ˢ Ico (-1 / 2) (1 / 2)) :=
+    (injOn_endChart q).mono fun z hz => mem_endStrip_iff.2 ⟨hhalf hz.1, hz.2⟩
+  have hVS (z : ℝ × ℝ) (hz : z ∈ Icc a₁ b₁ ×ˢ Icc (-1 / 2 : ℝ) (1 / 2)) :
+      endChart q z ∈ V ∩ thricePuncturedSphereReal :=
+    ⟨hV z hz.1, endChart_mem_thricePuncturedSphereReal (hpos hz.1)⟩
+  have hP : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+      (fun p : (ℝ × ℝ) × M ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm p.1) p.2)
+      ((V ∩ thricePuncturedSphereReal) ×ˢ univ) := fun ⟨z, x⟩ hz ↦
+    ((contMDiffAt_pairOfPantsPerturbation hH hHs
+      ⟨_, mem_thricePuncturedSphereReal_iff.1 hz.1.2⟩ x).comp (z, x)
+      ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _
+        contMDiffAt_fst).prodMk contMDiffAt_snd)).contMDiffWithinAt
+  rw [endChart_eq_realChart] at hinj hVS ⊢
+  rw [hω.integral_floerEnergyDensity_image_realChart_Icc_prod_Ico
+    (contDiff_cylindricalEndLift q 2) hab (by norm_num) hinj
+    (hVo.inter isOpen_thricePuncturedSphereReal) hVS hP (hu.mono inter_subset_left)
+    (g := fun s ↦ smoothTransition (q.endSign * s - 1))
+    (smoothTransition.contDiff.comp (f := fun s : ℝ ↦ q.endSign * s - 1) (by fun_prop)) (hHs q)
+    fun z hz x v ↦ by
+      simpa using pairOfPantsPerturbation_cylindricalEndLift_of_pos (hH q)
+        (z := Complex.equivRealProdCLM.symm z) (by simpa using hpos hz.1) x v,
+    intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul]
 
 /-- **The energy identity on an end piece, for a manifold target.** Over the end piece
-`1 ≤ ±s ≤ R` of the end `q`, over which the Floer energy density is integrable, the Floer energy
-is the symplectic area, plus `±β(R - 1)` times the integral of `H_q(t)` over the boundary circle
-`±s = R`, minus the integrated curvature, for a map `u` which is `C¹` on an open set containing
-the image of the part `0 < ±s ≤ R` of the end. -/
+`1 ≤ ±s ≤ R` of the end `q`, the Floer energy is the symplectic area, plus `±β(R - 1)` times the
+integral of `H_q(t)` over the boundary circle `±s = R`, minus the integrated curvature, for a map
+`u` which is `C¹` on an open set containing the image of the part `0 < ±s ≤ R` of the end. -/
 private theorem IsNondegenerate.integral_floerEnergyDensity_image_endPiece
     (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {u : ℝ × ℝ → M}
     {R : ℝ} {V : Set (ℝ × ℝ)} (hVo : IsOpen V) {q : Puncture}
     (hV : ∀ z : ℝ × ℝ, 0 < q.endSign * z.1 → q.endSign * z.1 ≤ R → endChart q z ∈ V)
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u V) (hR : 1 ≤ R)
-    (hE : IntegrableOn (ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
-      (endChart q '' endPiece q R)) :
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u V) (hR : 1 ≤ R) :
     ∫ z in endChart q '' endPiece q R, ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -741,20 +626,20 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_endPiece
   · have hpiece : endPiece q R = Icc 1 R ×ˢ Ico (-1 / 2) (1 / 2) := by
       ext ⟨s, t⟩
       simp [endPiece, h]
-    rw [hpiece] at hE ⊢
+    rw [hpiece]
     rw [hω.integral_floerEnergyDensity_image_endChart hH hHs hVo hu hR
       (by rw [h]; norm_num) (by rw [h]; linarith)
-      (fun z hz ↦ hV z (by rw [h]; linarith [hz.1]) (by rw [h]; linarith [hz.2])) hE]
+      (fun z hz ↦ hV z (by rw [h]; linarith [hz.1]) (by rw [h]; linarith [hz.2]))]
     simp only [h, one_mul, sub_self, smoothTransition.zero, zero_mul,
       intervalIntegral.integral_zero, sub_zero, intervalIntegral.integral_const_mul]
   · have hpiece : endPiece q R = Icc (-R) (-1) ×ˢ Ico (-1 / 2) (1 / 2) := by
       ext ⟨s, t⟩
       simp only [endPiece, h, mem_prod, mem_ofPred_eq, mem_Icc]
       constructor <;> rintro ⟨⟨h₁, h₂⟩, h₃⟩ <;> exact ⟨⟨by linarith, by linarith⟩, h₃⟩
-    rw [hpiece] at hE ⊢
+    rw [hpiece]
     rw [hω.integral_floerEnergyDensity_image_endChart hH hHs hVo hu (by linarith)
       (by rw [h]; linarith) (by rw [h]; norm_num)
-      (fun z hz ↦ hV z (by rw [h]; linarith [hz.2]) (by rw [h]; linarith [hz.1])) hE]
+      (fun z hz ↦ hV z (by rw [h]; linarith [hz.2]) (by rw [h]; linarith [hz.1]))]
     simp only [h, neg_mul, one_mul, neg_neg, sub_self, smoothTransition.zero, zero_mul,
       intervalIntegral.integral_zero, zero_sub, intervalIntegral.integral_const_mul]
     ring
@@ -851,8 +736,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
         (u z)
   rw [hsplit _ hE, hsplit _ harea, hsplit _ hcurv, hCE, hCR,
     Finset.sum_congr rfl fun q _ => hω.integral_floerEnergyDensity_image_endPiece hH hHs hVo
-      (fun z h₀ h₁ ↦ hTV (endChart_mem_preimage_truncationAt hR₀ h₀ h₁)) hu (hR q)
-      (hE.mono_set (hAT q)),
+      (fun z h₀ h₁ ↦ hTV (endChart_mem_preimage_truncationAt hR₀ h₀ h₁)) hu (hR q),
     Finset.sum_sub_distrib, Finset.sum_add_distrib]
   -- By periodicity, each boundary circle may be integrated over `[0, 1]`.
   have hbd (q : Puncture) :
