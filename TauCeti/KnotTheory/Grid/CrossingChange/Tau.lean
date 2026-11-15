@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.CrossingChange.Grading
+public import TauCeti.KnotTheory.Grid.CrossingChange.UnknottingNumber
 public import TauCeti.KnotTheory.Grid.Homology.Commutation.Tau
+public import TauCeti.KnotTheory.Grid.Move.Tau
 import TauCeti.KnotTheory.Grid.CrossingChange.Homotopy.Equation
 
 /-!
@@ -37,8 +39,15 @@ homotopy equations are in `CrossingChange/Homotopy/Equation.lean`. Together they
 assumption that `GH⁻` is non-torsion is needed here: the two composites show that `GH⁻(G)` and
 `GH⁻(G')` are torsion together, and then both invariants vanish. With `O_a` off the arc of column
 `b`, the markings of `G'` are in the first order and exchanging its columns returns `G`, so
-`τ(G) ≤ τ(G') ≤ τ(G) + 1`. In either case `τ` changes by at most one. This is the inequality from
-which the bound of `|τ|` by the unknotting number follows.
+`τ(G) ≤ τ(G') ≤ τ(G) + 1`. In either case `τ` changes by at most one. A row cross-commutation is
+a column cross-commutation of the diagonal reflections, which preserve `τ`, so `τ` changes by at
+most one across every cross-commutation.
+
+On grid links this says that `τ` changes by at most one across a crossing change. Summing along a
+shortest path in the crossing change graph, `|τ(L) - τ(L')|` is at most the number of crossing
+changes needed to pass from `L` to `L'`. Since the unknot has `τ = 0`, this gives
+`|τ(K)| ≤ u(K)`: the unknotting number of a grid knot is at least `|τ|`. With the values of `τ` on
+torus knots, this is the lower bound of the Milnor conjecture.
 
 ## Main results
 
@@ -49,6 +58,14 @@ which the bound of `|τ|` by the unknotting number follows.
   `τ(G) ≤ τ(G') ≤ τ(G) + 1` across every crossing change with `O_a` off the arc of column `b`.
 * `TauCeti.GridDiagram.IsKnot.abs_tau_swapColumns_sub_tau_le_one`: `|τ(G') - τ(G)| ≤ 1` across
   every crossing change.
+* `TauCeti.GridDiagram.IsCrossCommutation.abs_tau_sub_tau_le_one`: `|τ(G') - τ(G)| ≤ 1` across
+  every cross-commutation, of rows or of columns.
+* `TauCeti.GridLink.IsCrossingChange.abs_tau_sub_tau_le_one`: `τ` changes by at most one across a
+  crossing change of grid knots.
+* `TauCeti.GridLink.IsKnot.natAbs_tau_sub_tau_le_edist`: `|τ(L) - τ(L')|` is at most the
+  crossing change distance from `L` to `L'`.
+* `TauCeti.GridLink.IsKnot.natAbs_tau_le_unknottingNumber`: **`|τ(K)| ≤ u(K)`**, the unknotting
+  number of a grid knot bounds `|τ|`.
 
 ## References
 
@@ -157,6 +174,79 @@ theorem abs_tau_swapColumns_sub_tau_le_one {a : Fin n}
 
 end IsKnot
 
+variable {n : ℕ} {G G' : GridDiagram n} (K : Type*) [CommRing K] [CharP K 2]
+
+/-- **The crossing change inequality for `τ`**, for every cross-commutation: if the knot grids `G`
+and `G'` differ by exchanging two adjacent interleaving columns or rows, then `τ` changes by at
+most one, over every commutative ring of characteristic two. A row cross-commutation is a column
+cross-commutation of the diagonal reflections, and the reflection preserves `τ`. -/
+theorem IsCrossCommutation.abs_tau_sub_tau_le_one (h : G.IsCrossCommutation G') (hG : G.IsKnot)
+    (hG' : G'.IsKnot) : |hG'.tau K - hG.tau K| ≤ 1 := by
+  rcases (isCrossCommutation_iff G G').mp h with h | h
+  · obtain ⟨a, ha, rfl⟩ := (isRowCrossCommutation_iff G G').mp h
+    -- Transport the column inequality along the diagonal reflection, which preserves `τ`.
+    have hT := G.isKnot_transpose.mpr hG
+    have key := hT.abs_tau_swapColumns_sub_tau_le_one K
+      ((columnsInterleaving_transpose G _ _).mpr ha)
+    rwa [← (hG.unblockedHomologyIsomorphic_transpose K).tau_eq,
+      ← (hG'.unblockedHomologyIsomorphic_transpose K).tau_eq.trans
+        (IsKnot.tau_eq_of_eq _ K (swapRows_transpose G _ _))] at key
+  · obtain ⟨a, ha, rfl⟩ := (isColumnCrossCommutation_iff G G').mp h
+    exact hG.abs_tau_swapColumns_sub_tau_le_one K ha
+
 end GridDiagram
+
+namespace GridLink
+
+section CommRing
+
+variable (K : Type*) [CommRing K] [CharP K 2]
+
+/-- **The crossing change inequality for `τ` of grid knots**: if the grid knots `L` and `L'`
+differ by a crossing change, then `|τ(L') - τ(L)| ≤ 1`, over every commutative ring of
+characteristic two. -/
+theorem IsCrossingChange.abs_tau_sub_tau_le_one {L L' : GridLink} (h : L.IsCrossingChange L')
+    (hL : L.IsKnot) (hL' : L'.IsKnot) : |hL'.tau K - hL.tau K| ≤ 1 := by
+  obtain ⟨n, G, G', hGG', rfl, rfl⟩ := (isCrossingChange_iff L L').mp h
+  rw [IsKnot.tau_toGridLink, IsKnot.tau_toGridLink]
+  exact hGG'.abs_tau_sub_tau_le_one K _ _
+
+/-- Along a walk of crossing changes between grid knots, `τ` changes by at most the length of the
+walk. -/
+private theorem natAbs_tau_sub_tau_le_length {L L' : GridLink} (p : crossingChangeGraph.Walk L L')
+    (hL : L.IsKnot) (hL' : L'.IsKnot) : (hL'.tau K - hL.tau K).natAbs ≤ p.length := by
+  induction p with
+  | nil => simp
+  | @cons L M L' hadj p ih =>
+    have hM : M.IsKnot := by
+      rw [isKnot_def, (crossingChangeGraph_adj.mp hadj).2.componentCount_eq, ← isKnot_def]
+      exact hL
+    have h₁ := (crossingChangeGraph_adj.mp hadj).2.abs_tau_sub_tau_le_one K hL hM
+    have h₂ := ih hM hL'
+    rw [abs_le] at h₁
+    rw [SimpleGraph.Walk.length_cons]
+    omega
+
+/-- **`τ` is `1`-Lipschitz for the crossing change distance**: for grid knots `L` and `L'`,
+`|τ(L') - τ(L)|` is at most the least number of crossing changes turning `L` into `L'`, over every
+commutative ring of characteristic two. -/
+theorem IsKnot.natAbs_tau_sub_tau_le_edist {L L' : GridLink} (hL : L.IsKnot) (hL' : L'.IsKnot) :
+    ((hL'.tau K - hL.tau K).natAbs : ℕ∞) ≤ crossingChangeGraph.edist L L' := by
+  by_cases h : crossingChangeGraph.edist L L' = ⊤
+  · simp [h]
+  obtain ⟨p, hp⟩ := SimpleGraph.exists_walk_of_edist_ne_top h
+  rw [← hp]
+  exact_mod_cast natAbs_tau_sub_tau_le_length K p hL hL'
+
+end CommRing
+
+/-- **The unknotting number bounds `τ`**: a grid knot `L` has `|τ(L)| ≤ u(L)`, over every field of
+characteristic two. This is the inequality from which the lower bound of the Milnor conjecture
+follows. -/
+theorem IsKnot.natAbs_tau_le_unknottingNumber (K : Type*) [Field K] [CharP K 2] {L : GridLink}
+    (hL : L.IsKnot) : ((hL.tau K).natAbs : ℕ∞) ≤ L.unknottingNumber := by
+  simpa [unknottingNumber_def] using hL.natAbs_tau_sub_tau_le_edist K isKnot_unknot
+
+end GridLink
 
 end TauCeti
