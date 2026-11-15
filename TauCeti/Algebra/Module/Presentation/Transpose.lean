@@ -21,8 +21,8 @@ import TauCeti.RingTheory.FittingIdeal.Matrix
 # Transposed presentations and their Fitting ideals
 
 Let `R` and `S` be commutative rings connected by a ring isomorphism `σ : S ≃+* R` (such as the
-contragredient involution `# : R^# ≃+* R` on a group ring or character group ring), and let
-`P₁ →f P₀ → M → 0` be a presentation of an `R`-module `M`. Applying the contragredient dual
+contragredient involution `# : R^# ≃+* R` on a commutative group ring or character group ring), and
+let `P₁ →f P₀ → M → 0` be a presentation of an `R`-module `M`. Applying the contragredient dual
 `P^* = ContragredientDual σ P` reverses `f` into an `S`-linear map `f^* : P₀^* →ₗ[S] P₁^*`. Its
 cokernel
 
@@ -38,9 +38,11 @@ vanishes (`PresentationTranspose.subsingleton_id`) while the transpose of `fst` 
 `S` (`PresentationTranspose.fstEquiv`).
 
 When `f` comes from a quadratic presentation `P` of `M` with relation matrix `P.rel`, the transpose
-carries a canonical quadratic presentation over `S` with relation matrix `P.relᵀ.map σ.symm`
-(`PresentationTranspose.quadraticPresentation`), and therefore its zeroth Fitting ideal over `S`
-is `σ⁻¹(Fitt₀(M))` (`PresentationTranspose.fittingIdeal_eq`, Dasgupta–Kakde Lemma 6.1). More
+carries a canonical quadratic presentation over `S` with relation matrix `P.relᵀ.map σ.symm` up to
+canonical index identification (`PresentationTranspose.quadraticPresentation`), of determinant
+`σ⁻¹(det P.rel)` (`PresentationTranspose.det_quadraticPresentation_rel`), and therefore its zeroth
+Fitting ideal over `S` is `σ⁻¹(Fitt₀(M))` (`PresentationTranspose.fittingIdeal_eq`, Dasgupta–Kakde
+Lemma 6.1). More
 generally, if `P₁ →f P₀ → M → 0` is an exact presentation by finitely generated projective
 `R`-modules of constant ranks `t` and `t + s` (without assuming `P₁` or `P₀` free), localizing at
 maximal ideals of `R` reduces to the free case (`PresentationTranspose.fittingIdeal_eq_of_free`)
@@ -62,13 +64,16 @@ Dasgupta–Kakde equation (171)).
 * `TauCeti.PresentationTranspose.fstEquiv` and `TauCeti.PresentationTranspose.mulLeftEquiv`:
   explicit identifications `PresentationTranspose σ (LinearMap.fst R R R) ≃ₗ[S] S` and
   `PresentationTranspose σ (LinearMap.mulLeft R a) ≃ₗ[S] S ⧸ Ideal.span {σ.symm a}`.
-* `TauCeti.PresentationTranspose.quadraticPresentation`: the quadratic presentation over `S` with
-  matrix `P.relᵀ.map σ.symm` attached to a quadratic presentation `P` over `R`.
+* `TauCeti.PresentationTranspose.quadraticPresentation`: the quadratic presentation over `S`
+  attached to a quadratic presentation `P` over `R`, with relation matrix `P.relᵀ.map σ.symm` up
+  to `quadraticPresentation_size`.
 
 ## Main results
 
-* `TauCeti.PresentationTranspose.fittingIdeal_eq`: for a quadratic presentation `P` of a finite
-  `R`-module `M`, `Fitt₀_S(PresentationTranspose σ (Matrix.toLin' P.rel)) = σ⁻¹(Fitt₀_R(M))`.
+* `TauCeti.PresentationTranspose.det_quadraticPresentation_rel` and
+  `TauCeti.PresentationTranspose.fittingIdeal_eq`: for a quadratic presentation `P` of a finite
+  `R`-module `M`, the transposed relation determinant is `σ⁻¹(det P.rel)` and
+  `Fitt₀_S(PresentationTranspose σ (Matrix.toLin' P.rel)) = σ⁻¹(Fitt₀_R(M))`.
 * `TauCeti.PresentationTranspose.fittingIdeal_toLin'_eq_minorsIdeal` and
   `TauCeti.PresentationTranspose.fittingIdeal_eq_of_free`: the free excess-generators formula
   identifying `Fitt₀_S(M^tr)` with the `t × t` minors of the transposed matrix and with
@@ -493,8 +498,7 @@ namespace PresentationTranspose
 /-- **Quadratic presentation of the transpose.** If `P` is a quadratic presentation of `M` over
 `R` with square relation matrix `P.rel`, then `PresentationTranspose σ (Matrix.toLin' P.rel)` is
 quadratically presented over `S` of the same size `P.size` with relation matrix
-`P.relᵀ.map σ.symm`. -/
-@[expose]
+`P.relᵀ.map σ.symm` up to `quadraticPresentation_size`. -/
 def quadraticPresentation (σ : S ≃+* R) (P : QuadraticPresentation R M) :
     QuadraticPresentation S (PresentationTranspose σ (Matrix.toLin' P.rel)) :=
   QuadraticPresentation.ofExact P.size_pos
@@ -510,8 +514,36 @@ theorem quadraticPresentation_size (σ : S ≃+* R) (P : QuadraticPresentation R
 
 @[simp]
 theorem quadraticPresentation_rel (σ : S ≃+* R) (P : QuadraticPresentation R M) :
-    (quadraticPresentation σ P).rel = P.relᵀ.map σ.symm :=
-  ContragredientDual.toMatrix_map_toLin' σ P.rel
+    (quadraticPresentation σ P).rel =
+      Matrix.reindex (finCongr (quadraticPresentation_size σ P)).symm
+        (finCongr (quadraticPresentation_size σ P)).symm (P.relᵀ.map σ.symm) := by
+  ext i j
+  simp [quadraticPresentation]
+  rfl
+
+/-- The relation matrix of `quadraticPresentation σ P` has determinant `σ⁻¹(det P.rel)`. -/
+theorem det_quadraticPresentation_rel (σ : S ≃+* R) (P : QuadraticPresentation R M) :
+    (quadraticPresentation σ P).rel.det = σ.symm P.rel.det := by
+  rw [quadraticPresentation_rel, Matrix.det_reindex_self, ← P.rel.det_transpose]
+  exact ((σ.symm : R →+* S).map_det P.relᵀ).symm
+
+/-- The generator map of `quadraticPresentation σ P` sends `v` to the linear combination of the
+classes of the coordinate projections in `PresentationTranspose σ (Matrix.toLin' P.rel)`. -/
+theorem quadraticPresentation_gen_apply (σ : S ≃+* R) (P : QuadraticPresentation R M)
+    (v : Fin (quadraticPresentation σ P).size → S) :
+    (quadraticPresentation σ P).gen v =
+      ∑ i : Fin P.size, v ((finCongr (quadraticPresentation_size σ P)).symm i) •
+        mk σ (Matrix.toLin' P.rel) (ContragredientDual.ofDual (LinearMap.proj i)) := by
+  have h (w : Fin P.size → S) :
+      mk σ (Matrix.toLin' P.rel)
+        (((Pi.basisFun R (Fin P.size)).contragredientDual σ).equivFun.symm w) =
+        ∑ i : Fin P.size, w i •
+          mk σ (Matrix.toLin' P.rel) (ContragredientDual.ofDual (LinearMap.proj i)) := by
+    rw [Module.Basis.equivFun_symm_apply, map_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [map_smul, Module.Basis.contragredientDual_apply]
+    congr 2
+  exact h v
 
 /-- **Fitting ideal of a transposed quadratic presentation** (Dasgupta–Kakde, Lemma 6.1): for a
 quadratic presentation `P` of a finite `R`-module `M`,
@@ -519,15 +551,8 @@ quadratic presentation `P` of a finite `R`-module `M`,
 theorem fittingIdeal_eq (σ : S ≃+* R) (P : QuadraticPresentation R M) [Module.Finite R M] :
     TauCeti.fittingIdeal S (PresentationTranspose σ (Matrix.toLin' P.rel)) 0 =
       Ideal.map σ.symm (TauCeti.fittingIdeal R M 0) := by
-  let Mrel : Matrix (Fin P.size) (Fin P.size) S := (quadraticPresentation σ P).rel
-  have hMrel : Mrel = P.relᵀ.map σ.symm := quadraticPresentation_rel σ P
-  have hdet : Mrel.det = σ.symm P.rel.det := by
-    rw [hMrel, ← P.rel.det_transpose]
-    simp [Matrix.det_apply', map_sum σ.symm, map_prod σ.symm]
-  rw [(quadraticPresentation σ P).fittingIdeal_eq, P.fittingIdeal_eq]
-  -- Align the index type `(quadraticPresentation σ P).size` with `P.size`.
-  change Ideal.span {Mrel.det} = Ideal.map σ.symm (Ideal.span {P.rel.det})
-  rw [hdet, Ideal.map_span, Set.image_singleton]
+  rw [(quadraticPresentation σ P).fittingIdeal_eq, P.fittingIdeal_eq,
+    det_quadraticPresentation_rel, Ideal.map_span, Set.image_singleton]
 
 /-- For an `m × t` matrix `A` over `R`, the zeroth Fitting ideal over `S` of the transpose of
 `Matrix.toLin' A : (Fin t → R) →ₗ[R] (Fin m → R)` is the ideal of `t × t` minors of the transposed

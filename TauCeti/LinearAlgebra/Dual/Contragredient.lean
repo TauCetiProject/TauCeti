@@ -10,9 +10,6 @@ public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RingTheory.Finiteness.Projective
 
-import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
-import TauCeti.Algebra.HopfAlgebra.Antipode
-
 /-!
 # The contragredient dual along a ring isomorphism
 
@@ -22,10 +19,12 @@ Let `σ : S ≃+* R` be a ring isomorphism of commutative semirings and `M` an `
 
   `(s • φ) x = φ (σ s • x) = σ s * φ x`.
 
-For a group algebra `R = S = O[G]` with `σ = #` the antipode `g ↦ g⁻¹`, this is the contragredient
-action `(g • φ) x = φ (g⁻¹ • x)`. More generally, when `R = R_Ψ` is a character group ring and
-`S = R^# = R_{Ψ⁻¹}` is its conjugate under `# : R^# ≃+* R`, it gives the `R^#`-module structure on
-`Hom_R(M, R)` used by Dasgupta and Kakde to form transposed presentations.
+For the group algebra `R = S = O[G]` of a commutative group `G` over a commutative semiring `O`,
+with `σ = #` the antipode `g ↦ g⁻¹`, this is the contragredient action `(g • φ) x = φ (g⁻¹ • x)`.
+More generally, when `O` is a commutative ring, `G` is a commutative group, `R = R_Ψ` is a
+character group ring, and `S = R^# = R_{Ψ⁻¹}` is its conjugate under `# : R^# ≃+* R`, it gives the
+`R^#`-module structure on `Hom_R(M, R)` used by Dasgupta and Kakde to form transposed
+presentations.
 
 Precomposition turns an `R`-linear map `f : M →ₗ[R] N` contravariantly into an `S`-linear map
 `ContragredientDual.map σ f : ContragredientDual σ N →ₗ[S] ContragredientDual σ M`. Because `σ` is
@@ -447,12 +446,12 @@ end MatrixAndProjective
 
 section Examples
 
--- Over `O[G]` with `σ = #` the antipode `g ↦ g⁻¹`, the contragredient action of `g` on `id`
--- evaluates at `1` to `g⁻¹`.
-example {O G : Type*} [CommRing O] [CommGroup G] (g : G) :
-    let σ := (TauCeti.HopfAlgebra.antipodeAlgEquiv (R := O) (A := MonoidAlgebra O G)).toRingEquiv
-    (MonoidAlgebra.of O G g • ofDual (σ := σ) LinearMap.id) 1 = MonoidAlgebra.of O G g⁻¹ := by
-  simp [MonoidAlgebra.of_apply]
+-- Under the coordinate swap `σ = RingEquiv.prodComm` on `R × R`, the contragredient action of
+-- `(1, 0)` on `id` evaluates at `1` to `(0, 1)`.
+example {R : Type*} [CommRing R] :
+    (((1, 0) : R × R) • ofDual (σ := (RingEquiv.prodComm : R × R ≃+* R × R)) LinearMap.id) 1 =
+      (0, 1) := by
+  simp
 
 -- For `σ = id`, the contragredient dual recovers the ordinary dual action `(s • φ) x = s * φ x`.
 example {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
@@ -460,25 +459,14 @@ example {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
     (s • φ) x = s * φ x :=
   smul_apply_eq_mul s φ x
 
--- When `O` is nontrivial and `g⁻¹ ≠ g`, the contragredient action `(g • id) 1 = g⁻¹` differs
--- from the ordinary dual value `(g • id) 1 = g`.
-example {O G : Type*} [CommRing O] [Nontrivial O] [CommGroup G] (g : G) (hg : g⁻¹ ≠ g) :
-    (MonoidAlgebra.of O G g •
-      ofDual (σ := (TauCeti.HopfAlgebra.antipodeAlgEquiv
-        (R := O) (A := MonoidAlgebra O G)).toRingEquiv) LinearMap.id) 1 ≠
-      (MonoidAlgebra.of O G g • (LinearMap.id : Module.Dual (MonoidAlgebra O G) _)) 1 := by
+-- When `R` is nontrivial, the contragredient action `((1, 0) • id) 1 = (0, 1)` along
+-- `RingEquiv.prodComm` differs from the ordinary dual value `((1, 0) • id) 1 = (1, 0)`.
+example {R : Type*} [CommRing R] [Nontrivial R] :
+    (((1, 0) : R × R) • ofDual (σ := (RingEquiv.prodComm : R × R ≃+* R × R)) LinearMap.id) 1 ≠
+      (((1, 0) : R × R) • (LinearMap.id : Module.Dual (R × R) (R × R))) 1 := by
   intro h
-  have h1 : (MonoidAlgebra.of O G g •
-      ofDual (σ := (TauCeti.HopfAlgebra.antipodeAlgEquiv
-        (R := O) (A := MonoidAlgebra O G)).toRingEquiv) LinearMap.id) 1 =
-      MonoidAlgebra.of O G g⁻¹ := by
-    simp [MonoidAlgebra.of_apply]
-  have h2 : (MonoidAlgebra.of O G g • (LinearMap.id : Module.Dual (MonoidAlgebra O G) _)) 1 =
-      MonoidAlgebra.of O G g := by
-    simp [MonoidAlgebra.of_apply]
-  rw [h1, h2, MonoidAlgebra.of_apply, MonoidAlgebra.of_apply] at h
-  have hcoeff := congrArg (fun x : MonoidAlgebra O G ↦ x.coeff g) h
-  simp [MonoidAlgebra.coeff_single, hg] at hcoeff
+  have hfst := congrArg Prod.fst h
+  simp at hfst
 
 end Examples
 

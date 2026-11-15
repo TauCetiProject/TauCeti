@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
 public import TauCeti.LinearAlgebra.Dual.BaseChange
 
+import TauCeti.LinearAlgebra.TensorProduct.Quotient
+
 /-!
 # Base change of the Auslander–Bridger transpose over commutative rings
 
@@ -15,9 +17,9 @@ Let `R` be a commutative ring, `A` a commutative `R`-algebra, and `f : P₁ →�
 between finitely generated projective `R`-modules. For a finitely generated projective module `P`,
 scalar extension commutes with linear duality:
 `A ⊗[R] Hom_R(P, R) ≃ₗ[A] Hom_A(A ⊗[R] P, A)` (`TauCeti.Module.Dual.baseChangeEvaluationEquiv`).
-Applying right exactness of the tensor product to the defining cokernel sequence
-`Hom_R(P₀, R) → Hom_R(P₁, R) → Tr f → 0` therefore identifies the base change of the transpose
-with the transpose of the base-changed map:
+Applying cokernel scalar extension (`LinearMap.cokernelBaseChangeEquiv`) to the defining cokernel
+sequence `Hom_R(P₀, R) → Hom_R(P₁, R) → Tr f → 0` therefore identifies the base change of the
+transpose with the transpose of the base-changed map:
 
   `A ⊗[R] AuslanderReitenTranspose f ≃ₗ[A] AuslanderReitenTranspose (f.baseChange A)`.
 
@@ -92,97 +94,91 @@ theorem mkLinear_apply (f : P₁ →ₗ[R] P₀) (φ : Module.Dual R P₁) :
 theorem mkLinear_surjective (f : P₁ →ₗ[R] P₀) : Function.Surjective (mkLinear f) :=
   mk_surjective f
 
-variable (A : Type*) [CommRing A] [Algebra R A]
+private def cokernelDualMapEquiv {S Q₀ Q₁ : Type*} [CommRing S]
+    [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
+    (p : Q₁ →ₗ[S] Q₀) :
+    AuslanderReitenTranspose p ≃ₗ[S] Module.Dual S Q₁ ⧸ LinearMap.range p.dualMap :=
+  let σ := (RingEquiv.toOpposite S).symm
+  have := RingHomInvPair.of_ringEquiv σ
+  have := RingHomInvPair.of_ringEquiv_symm σ
+  let eDual : Module.Dual S Q₁ ≃ₛₗ[(σ : Sᵐᵒᵖ →+* S)] Module.Dual S Q₁ :=
+    { toFun := id
+      invFun := id
+      left_inv _ := rfl
+      right_inv _ := rfl
+      map_add' _ _ := rfl
+      map_smul' r φ := LinearMap.ext fun x ↦ mul_comm (φ x) r.unop }
+  have he : (LinearMap.range (p.lcomp Sᵐᵒᵖ S)).map eDual.toLinearMap =
+      LinearMap.range p.dualMap := by
+    ext φ
+    simp [eDual, LinearMap.lcomp_apply', LinearMap.dualMap_apply']
+  let eQuot := quotientEquiv p (LinearMap.range p.dualMap) eDual he
+  { toFun := eQuot
+    invFun := eQuot.symm
+    left_inv := eQuot.left_inv
+    right_inv := eQuot.right_inv
+    map_add' := map_add eQuot
+    map_smul' s y := by
+      rw [← op_smul_eq_smul p s y, eQuot.map_smulₛₗ]
+      simp [σ] }
 
-private def toBaseChangeAux (f : P₁ →ₗ[R] P₀) :
-    AuslanderReitenTranspose f →ₗ[R] AuslanderReitenTranspose (f.baseChange A) := by
-  let N := AuslanderReitenTranspose (f.baseChange A)
-  letI : Module Rᵐᵒᵖ N :=
-    Module.compHom N (RingEquiv.toOpposite R).symm.toRingHom
-  let g : Module.Dual R P₁ →ₗ[Rᵐᵒᵖ] N :=
-    { toFun φ := mk (f.baseChange A) (Module.Dual.baseChange A φ)
-      map_add' φ ψ := by simp [map_add]
-      map_smul' r φ := by
-        have hφ : Module.Dual.baseChange A (r • φ) =
-            algebraMap R A r.unop • Module.Dual.baseChange A φ :=
-          LinearMap.restrictScalars_injective R <| TensorProduct.ext' fun a x ↦ by
-            simp [MulOpposite.smul_eq_mul_unop, Algebra.smul_def, mul_left_comm, mul_comm]
-        -- Unfold the pulled-back `Rᵐᵒᵖ`-action on `N` to the underlying `R`-action.
-        change mk (f.baseChange A) (Module.Dual.baseChange A (r • φ)) =
-          r.unop • mk (f.baseChange A) (Module.Dual.baseChange A φ)
-        rw [hφ, ← mkLinear_apply, map_smul, algebraMap_smul, mkLinear_apply] }
-  have hg (ψ : Module.Dual R P₀) : g (f.lcomp Rᵐᵒᵖ R ψ) = 0 := by
-    have hcomp : Module.Dual.baseChange A (f.lcomp Rᵐᵒᵖ R ψ) =
-        (f.baseChange A).lcomp Aᵐᵒᵖ A (Module.Dual.baseChange A ψ) :=
-      LinearMap.restrictScalars_injective R <| TensorProduct.ext' fun a x ↦ by simp
-    simp [g, hcomp]
-  let L := lift f g hg
-  exact
-    { toFun := L
-      map_add' := map_add L
-      map_smul' r y := by
-        rw [← op_smul_eq_smul f r y]
-        exact L.map_smul (MulOpposite.op r) y }
+@[simp]
+private theorem cokernelDualMapEquiv_mk {S Q₀ Q₁ : Type*} [CommRing S]
+    [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
+    (p : Q₁ →ₗ[S] Q₀) (φ : Module.Dual S Q₁) :
+    cokernelDualMapEquiv p (mk p φ) = Submodule.Quotient.mk φ := by
+  have := RingHomInvPair.of_ringEquiv (RingEquiv.toOpposite S).symm
+  have := RingHomInvPair.of_ringEquiv_symm (RingEquiv.toOpposite S).symm
+  exact quotientEquiv_mk p _ _
+    (by ext ψ; simp [LinearMap.lcomp_apply', LinearMap.dualMap_apply']) φ
+
+@[simp]
+private theorem cokernelDualMapEquiv_symm_mk {S Q₀ Q₁ : Type*} [CommRing S]
+    [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
+    (p : Q₁ →ₗ[S] Q₀) (φ : Module.Dual S Q₁) :
+    (cokernelDualMapEquiv p).symm (Submodule.Quotient.mk φ) = mk p φ := by
+  apply (cokernelDualMapEquiv p).injective
+  simp
+
+variable (A : Type*) [CommRing A] [Algebra R A]
 
 /-- The canonical `A`-linear comparison map
 `A ⊗[R] AuslanderReitenTranspose f →ₗ[A] AuslanderReitenTranspose (f.baseChange A)`, sending
 `a ⊗ [φ]` to `a • [φ_A]`. No finiteness or projectivity is needed to form this map. -/
 def baseChangeHom (f : P₁ →ₗ[R] P₀) :
     A ⊗[R] AuslanderReitenTranspose f →ₗ[A] AuslanderReitenTranspose (f.baseChange A) :=
-  (toBaseChangeAux A f).liftBaseChange A
+  (cokernelDualMapEquiv (f.baseChange A)).symm.toLinearMap ∘ₗ
+    Submodule.mapQ _ _ (TauCeti.Module.Dual.baseChangeEvaluation (R := R) (A := A) (M := P₁))
+      (by
+        have hcomp :
+            (TauCeti.Module.Dual.baseChangeEvaluation (R := R) (A := A) (M := P₁)).comp
+              (f.dualMap.baseChange A) =
+              (f.baseChange A).dualMap.comp
+                (TauCeti.Module.Dual.baseChangeEvaluation (R := R) (A := A) (M := P₀)) := by
+          ext a ψ
+          simp
+        rw [← Submodule.map_le_iff_le_comap, ← LinearMap.range_comp, hcomp]
+        exact LinearMap.range_comp_le_range _ _) ∘ₗ
+    (f.dualMap.cokernelBaseChangeEquiv (S := A)).toLinearMap ∘ₗ
+    ((cokernelDualMapEquiv f).baseChange R A _ _).toLinearMap
 
 @[simp]
 theorem baseChangeHom_tmul_mk (f : P₁ →ₗ[R] P₀) (a : A) (φ : Module.Dual R P₁) :
     baseChangeHom A f (a ⊗ₜ[R] mk f φ) =
       a • mk (f.baseChange A) (Module.Dual.baseChange A φ) := by
-  simp only [baseChangeHom, LinearMap.liftBaseChange_tmul, toBaseChangeAux, LinearMap.coe_mk,
-    AddHom.coe_mk, lift_mk]
+  have heval : TauCeti.Module.Dual.baseChangeEvaluation (R := R) (A := A) (M := P₁) (a ⊗ₜ[R] φ) =
+      a • Module.Dual.baseChange A φ := by
+    have ha : a ⊗ₜ[R] φ = a • (1 ⊗ₜ[R] φ) := by rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+    rw [ha, map_smul, TauCeti.Module.Dual.baseChangeEvaluation_one_tmul]
+  simp only [baseChangeHom, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.baseChange_tmul, cokernelDualMapEquiv_mk, LinearMap.cokernelBaseChangeEquiv_tmul,
+    Submodule.mapQ_apply, heval]
+  rw [Submodule.Quotient.mk_smul, map_smul, cokernelDualMapEquiv_symm_mk]
 
 section FiniteProjective
 
 variable [Module.Finite R P₀] [Module.Projective R P₀]
   [Module.Finite R P₁] [Module.Projective R P₁]
-
-private def ofBaseChangeHom (f : P₁ →ₗ[R] P₀) :
-    AuslanderReitenTranspose (f.baseChange A) →ₗ[A] A ⊗[R] AuslanderReitenTranspose f := by
-  letI : Module Aᵐᵒᵖ (A ⊗[R] AuslanderReitenTranspose f) :=
-    Module.compHom (A ⊗[R] AuslanderReitenTranspose f) (RingEquiv.toOpposite A).symm.toRingHom
-  let e₁ := TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := R) (A := A) (M := P₁)
-  let g : Module.Dual A (A ⊗[R] P₁) →ₗ[Aᵐᵒᵖ] A ⊗[R] AuslanderReitenTranspose f :=
-    { toFun Φ := (mkLinear f).baseChange A (e₁.symm Φ)
-      map_add' Φ Ψ := by simp
-      map_smul' a Φ := by
-        have ha : a • Φ = a.unop • Φ := LinearMap.ext fun z ↦ mul_comm (Φ z) a.unop
-        -- Unfold the pulled-back `Aᵐᵒᵖ`-action on `A ⊗[R] AuslanderReitenTranspose f`.
-        change (mkLinear f).baseChange A (e₁.symm (a • Φ)) =
-          a.unop • (mkLinear f).baseChange A (e₁.symm Φ)
-        rw [ha, map_smul, map_smul] }
-  have hg (Ψ : Module.Dual A (A ⊗[R] P₀)) : g ((f.baseChange A).lcomp Aᵐᵒᵖ A Ψ) = 0 := by
-    let e₀ := TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := R) (A := A) (M := P₀)
-    obtain ⟨w, rfl⟩ := e₀.surjective Ψ
-    induction w using TensorProduct.inductionOn with
-    | tmul a ψ =>
-      have hcomp : (f.baseChange A).lcomp Aᵐᵒᵖ A (e₀ (a ⊗ₜ[R] ψ)) =
-          e₁ (a ⊗ₜ[R] f.lcomp Rᵐᵒᵖ R ψ) :=
-        LinearMap.restrictScalars_injective R <| TensorProduct.ext' fun b x ↦ by simp [e₀, e₁]
-      simp [g, hcomp]
-    | add u v hu hv =>
-      rw [map_add, map_add, map_add, hu, hv, add_zero]
-  let L := lift (f.baseChange A) g hg
-  exact
-    { toFun := L
-      map_add' := map_add L
-      map_smul' a y := by
-        rw [← op_smul_eq_smul (f.baseChange A) a y]
-        exact L.map_smul (MulOpposite.op a) y }
-
-private theorem ofBaseChangeHom_mk_eval (f : P₁ →ₗ[R] P₀) (a : A) (φ : Module.Dual R P₁) :
-    ofBaseChangeHom A f
-      (mk (f.baseChange A)
-        (TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := R) (A := A) (M := P₁) (a ⊗ₜ[R] φ))) =
-      a ⊗ₜ[R] mk f φ := by
-  simp only [ofBaseChangeHom, LinearMap.coe_mk, AddHom.coe_mk, lift_mk,
-    LinearEquiv.symm_apply_apply, LinearMap.baseChange_tmul, mkLinear_apply]
 
 /-- **Base change commutes with the transpose of a finite projective presentation.** For a
 commutative ring `R`, a commutative `R`-algebra `A`, and a linear map `f : P₁ →ₗ[R] P₀` between
@@ -190,40 +186,46 @@ finitely generated projective `R`-modules, `A ⊗[R] Tr f` is canonically `A`-li
 to `Tr (f.baseChange A)`. -/
 def baseChangeEquiv (f : P₁ →ₗ[R] P₀) :
     A ⊗[R] AuslanderReitenTranspose f ≃ₗ[A] AuslanderReitenTranspose (f.baseChange A) :=
-  LinearEquiv.ofLinearMap (baseChangeHom A f) (ofBaseChangeHom A f)
-    (LinearMap.ext fun y ↦ by
-      induction y using induction_on with | h Φ => ?_
-      let e₁ := TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := R) (A := A) (M := P₁)
-      obtain ⟨z, rfl⟩ := e₁.surjective Φ
-      induction z using TensorProduct.inductionOn with
-      | tmul a φ =>
-        have heval : e₁ (a ⊗ₜ[R] φ) = a • Module.Dual.baseChange A φ :=
-          LinearMap.restrictScalars_injective R <| TensorProduct.ext' fun b x ↦ by
-            simp [e₁, Algebra.smul_def, mul_comm, mul_assoc]
-        rw [LinearMap.comp_apply, LinearMap.id_apply, ofBaseChangeHom_mk_eval,
-          baseChangeHom_tmul_mk, ← mkLinear_apply, ← map_smul, mkLinear_apply, heval]
-      | add u v hu hv =>
-        simp only [LinearMap.comp_apply, LinearMap.id_apply, map_add] at hu hv ⊢
-        rw [hu, hv])
-    (LinearMap.ext fun z ↦ by
-      induction z using TensorProduct.inductionOn with
-      | tmul a t =>
-        induction t using induction_on with | h φ => ?_
-        let e₁ := TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := R) (A := A) (M := P₁)
-        have heval : a • Module.Dual.baseChange A φ = e₁ (a ⊗ₜ[R] φ) :=
-          LinearMap.restrictScalars_injective R <| TensorProduct.ext' fun b x ↦ by
-            simp [e₁, Algebra.smul_def, mul_comm, mul_assoc]
-        rw [LinearMap.comp_apply, LinearMap.id_apply, baseChangeHom_tmul_mk,
-          ← mkLinear_apply, ← map_smul, mkLinear_apply, heval, ofBaseChangeHom_mk_eval]
-      | add u v hu hv =>
-        simp only [LinearMap.comp_apply, LinearMap.id_apply, map_add] at hu hv ⊢
-        rw [hu, hv])
+  (cokernelDualMapEquiv f).baseChange R A _ _ ≪≫ₗ
+    f.dualMap.cokernelBaseChangeEquiv ≪≫ₗ
+    Submodule.Quotient.equiv _ _
+      (TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := R) (A := A) (M := P₁))
+      (by
+        have hcomp :
+            (TauCeti.Module.Dual.baseChangeEvaluationEquiv
+              (R := R) (A := A) (M := P₁)).toLinearMap.comp (f.dualMap.baseChange A) =
+              (f.baseChange A).dualMap.comp
+                (TauCeti.Module.Dual.baseChangeEvaluationEquiv
+                  (R := R) (A := A) (M := P₀)).toLinearMap := by
+          ext a ψ
+          simp
+        rw [← LinearMap.range_comp, hcomp,
+          LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)]) ≪≫ₗ
+    (cokernelDualMapEquiv (f.baseChange A)).symm
+
+/-- The underlying linear map of `baseChangeEquiv` is `baseChangeHom`. -/
+@[simp]
+theorem baseChangeEquiv_toLinearMap (f : P₁ →ₗ[R] P₀) :
+    (baseChangeEquiv A f).toLinearMap = baseChangeHom A f := by
+  apply TensorProduct.AlgebraTensorModule.ext
+  intro a y
+  induction y using induction_on with | _ φ => ?_
+  simp [baseChangeEquiv, baseChangeHom, Submodule.Quotient.equiv_apply]
 
 @[simp]
 theorem baseChangeEquiv_tmul_mk (f : P₁ →ₗ[R] P₀) (a : A) (φ : Module.Dual R P₁) :
     baseChangeEquiv A f (a ⊗ₜ[R] mk f φ) =
-      a • mk (f.baseChange A) (Module.Dual.baseChange A φ) :=
-  baseChangeHom_tmul_mk A f a φ
+      a • mk (f.baseChange A) (Module.Dual.baseChange A φ) := by
+  rw [← LinearEquiv.coe_coe, baseChangeEquiv_toLinearMap, baseChangeHom_tmul_mk]
+
+/-- The inverse of `baseChangeEquiv` carries the class of a base-changed functional `φ_A` back to
+`1 ⊗ [φ]`. -/
+@[simp]
+theorem baseChangeEquiv_symm_mk_baseChange (f : P₁ →ₗ[R] P₀) (φ : Module.Dual R P₁) :
+    (baseChangeEquiv A f).symm (mk (f.baseChange A) (Module.Dual.baseChange A φ)) =
+      1 ⊗ₜ[R] mk f φ := by
+  apply (baseChangeEquiv A f).injective
+  simp
 
 end FiniteProjective
 
