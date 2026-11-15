@@ -8,11 +8,12 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.NumberTheory.Padics.PadicVal.Defs
 public import Mathlib.Order.Filter.AtTopBot.Basic
+import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
 /-!
-# Sublinear growth of the `p`-adic valuation of natural numbers
+# Growth and interval sums of the `p`-adic valuation of natural numbers
 
 Since `p ^ padicValNat p n ∣ n`, the valuation `padicValNat p n` is at most logarithmic in `n`.
 This file records the consequence that any fixed multiple of it, shifted by any constant, is
@@ -31,6 +32,12 @@ The logarithmic form of the bound, `padicValNat p n * log p ≤ log n` (so in pa
 `padicValNat p n ≤ log n / log 2`), bounds the exponents of an
 integer composed of finitely many primes by its logarithm, as needed for gaps between such
 integers and for exponential Diophantine equations.
+
+Finally, for `p ≠ 1`, truncating `padicValNat p h` at height `k` counts the powers `p ^ i`
+(`1 ≤ i ≤ k`) dividing `h` (`TauCeti.min_padicValNat_eq_sum_Icc`), summing those truncated
+valuations over `1 ≤ h < m` gives `∑_{i = 1}^k ⌊(m - 1) / p ^ i⌋`
+(`TauCeti.sum_Ico_min_padicValNat`), and when `a ≤ padicValNat p n` shifting `n - 1` to `n` adds
+`a` (`TauCeti.sum_Icc_sub_one_div_pow_add`).
 -/
 
 public section
@@ -116,5 +123,49 @@ theorem padicValNat_le_log_div_log_two (p n : ℕ) :
   refine le_trans ?_ (padicValNat_mul_log_le_log p n)
   gcongr
   exact_mod_cast hp
+
+/-- For `p ≠ 1` and `h ≠ 0`, `min k (padicValNat p h)` counts the powers `p ^ i` (`1 ≤ i ≤ k`)
+dividing `h`. -/
+theorem min_padicValNat_eq_sum_Icc {p h : ℕ} (hp : p ≠ 1) (hh : h ≠ 0) (k : ℕ) :
+    min k (padicValNat p h) = ∑ i ∈ Finset.Icc 1 k, if p ^ i ∣ h then 1 else 0 := by
+  have hflt : {i ∈ Finset.Icc 1 k | p ^ i ∣ h} = Finset.Icc 1 (min k (padicValNat p h)) := by
+    ext i
+    simp only [Finset.mem_filter, Finset.mem_Icc, Nat.pow_dvd_iff_le_multiplicity hp hh,
+      ← Nat.padicValNat_def, le_min_iff, and_assoc]
+  rw [Finset.sum_boole, Nat.cast_id, hflt, Nat.card_Icc]
+  omega
+
+/-- For `p ≠ 1`, summing `min k (padicValNat p h)` over `1 ≤ h < m` equals
+`∑_{i = 1}^k ⌊(m - 1) / p ^ i⌋`. -/
+theorem sum_Ico_min_padicValNat {p : ℕ} (hp : p ≠ 1) (m k : ℕ) :
+    (∑ h ∈ Finset.Ico 1 m, min k (padicValNat p h)) =
+      ∑ i ∈ Finset.Icc 1 k, (m - 1) / p ^ i := by
+  have hcongr : ∑ h ∈ Finset.Ico 1 m, min k (padicValNat p h) =
+      ∑ h ∈ Finset.Ico 1 m, ∑ i ∈ Finset.Icc 1 k, if p ^ i ∣ h then 1 else 0 :=
+    Finset.sum_congr rfl fun h hh ↦
+      min_padicValNat_eq_sum_Icc hp (by have := (Finset.mem_Ico.mp hh).1; omega) k
+  have hset : Finset.Ico 1 m = Finset.Ioc 0 (m - 1) := by
+    ext x; simp only [Finset.mem_Ico, Finset.mem_Ioc]; omega
+  rw [hcongr, Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [hset, Finset.sum_boole, Nat.cast_id, Nat.Ioc_filter_dvd_card_eq_div]
+
+/-- When `a ≤ padicValNat p n`, each `p ^ i` (`1 ≤ i ≤ a`) divides `n`, so replacing `n - 1` by `n`
+in `∑_{i = 1}^a ⌊(n - 1) / p ^ i⌋` increases the sum by `a`. -/
+theorem sum_Icc_sub_one_div_pow_add {p n a : ℕ} (ha : a ≤ padicValNat p n) :
+    (∑ i ∈ Finset.Icc 1 a, (n - 1) / p ^ i) + a = ∑ i ∈ Finset.Icc 1 a, n / p ^ i := by
+  rcases a.eq_zero_or_pos with rfl | hapos
+  · simp
+  have hpv : 0 < padicValNat p n := hapos.trans_le ha
+  have hp1 : p ≠ 1 := by rintro rfl; simp [Nat.padicValNat_def] at hpv
+  have hn : 0 < n := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0, Nat.padicValNat_def] at hpv
+  have h1 : ∑ i ∈ Finset.Icc 1 a, n / p ^ i = ∑ i ∈ Finset.Icc 1 a, ((n - 1) / p ^ i + 1) := by
+    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    have hdvd : p ^ i ∣ n := (Nat.pow_dvd_iff_le_multiplicity hp1 hn.ne').mpr
+      (Nat.padicValNat_def ▸ Nat.cast_le.mpr ((Finset.mem_Icc.mp hi).2.trans ha))
+    have hs := Nat.succ_div_of_dvd ((Nat.sub_add_cancel hn).symm ▸ hdvd)
+    rwa [Nat.sub_add_cancel hn] at hs
+  rw [h1, Finset.sum_add_distrib, Finset.sum_const, Nat.card_Icc, smul_eq_mul, mul_one]
+  omega
 
 end TauCeti
