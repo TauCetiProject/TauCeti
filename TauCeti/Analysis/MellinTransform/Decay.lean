@@ -5,101 +5,49 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.MellinTransform
+public import Mathlib.Analysis.MellinInversion
 
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Fourier.Decay
-import Mathlib.Analysis.MellinInversion
 
 /-!
 # Mellin decay on vertical strips
 
-A compactly supported `C^N` function whose closed support avoids zero
+A function of class `C^N` on the positive half-line whose positive closed support
+`tsupport f ∩ Ioi 0` is compact
 has Mellin transform of size `O((1 + |Im s|)⁻ᴺ)`, uniformly as `Re s` ranges over any
-compact set. Negative or mixed support is allowed: the Mellin transform integrates only over
-the positive half-line. In particular, smooth test functions have faster-than-polynomial decay on
-vertical strips, as needed for absolutely convergent explicit formulas.
+compact set. The Mellin transform integrates only over the positive half-line, so negative-side
+support need not be bounded or separated from zero. In particular, smooth functions with compact
+positive support separated from zero have decay of every finite order on vertical strips.
+This decay is used in absolutely convergent explicit formulas.
 
-The logarithmic substitution turns the Mellin transform into the Fourier transform of
-`u ↦ exp(-σu) • f(exp(-u))`. On a compact set of parameters `σ`, joint `C^N` regularity
-bounds the derivatives in `u` through order `N` on one common compact support. The finite-order
-Fourier decay bound then gives the result without assuming an additional derivative or
-completeness of the target space.
+Mellin transforms on vertical lines are Fourier transforms in the logarithmic coordinate.
+The estimate holds for complex normed-space targets without assuming completeness.
 
 The finite-order statement is motivated by the `C¹` bump estimate
 [MellinOfPsi in PNT+](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/a6eae76b4b06abf85b456a5491ff7a983879b9c8/PrimeNumberTheoremAnd/MellinCalculus.lean#L398).
 -/
 
-@[expose] public noncomputable section
+public noncomputable section
 
 open Set MeasureTheory
 open scoped FourierTransform
 
 namespace TauCeti
 
-section RealSpace
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-private lemma continuous_slice_iteratedFDeriv {N n : ℕ} {H : ℝ × ℝ → E}
-    (hH : ContDiff ℝ N H) (hn : n ≤ N) :
-    Continuous (fun p : ℝ × ℝ ↦ iteratedFDeriv ℝ n (fun u ↦ H (p.1, u)) p.2) := by
-  have heq (p : ℝ × ℝ) :
-      iteratedFDeriv ℝ n (fun u ↦ H (p.1, u)) p.2 =
-        (iteratedFDeriv ℝ n H p).compContinuousLinearMap
-          (fun _ ↦ ContinuousLinearMap.inr ℝ ℝ ℝ) := by
-    have hc : ContDiff ℝ N (fun q : ℝ × ℝ ↦ H ((p.1, 0) + q)) :=
-      hH.comp (contDiff_const.add contDiff_id)
-    have hi := (ContinuousLinearMap.inr ℝ ℝ ℝ).iteratedFDeriv_comp_right hc p.2
-      (by exact_mod_cast hn)
-    simpa only [Function.comp_def, ContinuousLinearMap.inr_apply, Prod.mk_add_mk,
-      add_zero, zero_add, iteratedFDeriv_comp_add_left, Prod.eta] using hi
-  simp_rw [heq]
-  exact (ContinuousMultilinearMap.continuous_precomp
-    (fun _ : Fin n ↦ ContinuousLinearMap.inr ℝ ℝ ℝ)).comp
-      (hH.continuous_iteratedFDeriv (by exact_mod_cast hn))
-
-private lemma uniform_slice_bound {N : ℕ} {H : ℝ × ℝ → E}
-    (hH : ContDiff ℝ N H) {K S : Set ℝ} (hK : IsCompact K) (hS : IsCompact S)
-    (hsupp : ∀ σ ∈ K, tsupport (fun u ↦ H (σ, u)) ⊆ S) :
-    ∃ C > 0, ∀ σ ∈ K, ∀ n ≤ N, ∀ u,
-      ‖iteratedFDeriv ℝ n (fun v ↦ H (σ, v)) u‖ ≤ C := by
-  have hb (n : Fin (N + 1)) : ∃ C : ℝ, ∀ p ∈ K ×ˢ S,
-      ‖iteratedFDeriv ℝ (n : ℕ) (fun v ↦ H (p.1, v)) p.2‖ ≤ C :=
-    (hK.prod hS).exists_bound_of_continuousOn
-      (continuous_slice_iteratedFDeriv hH (by omega)).continuousOn
-  choose C hC using hb
-  let B : ℝ := 1 + ∑ n : Fin (N + 1), |C n|
-  have hB : 0 < B := by dsimp [B]; positivity
-  refine ⟨B, hB, fun σ hσ n hn u ↦ ?_⟩
-  by_cases hu : u ∈ S
-  · let i : Fin (N + 1) := ⟨n, by omega⟩
-    calc
-      _ ≤ C i := hC i (σ, u) ⟨hσ, hu⟩
-      _ ≤ |C i| := le_abs_self _
-      _ ≤ ∑ j : Fin (N + 1), |C j| :=
-        Finset.single_le_sum (fun j _ ↦ abs_nonneg (C j)) (Finset.mem_univ i)
-      _ ≤ B := by dsimp [B]; linarith
-  · have hz : iteratedFDeriv ℝ n (fun v ↦ H (σ, v)) u = 0 := by
-      apply Function.notMem_support.mp
-      intro hm
-      exact hu (hsupp σ hσ (support_iteratedFDeriv_subset n hm))
-    rw [hz, norm_zero]
-    exact hB.le
-
-end RealSpace
-
 section ComplexSpace
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-private lemma contDiff_weighted_log (N : ℕ) {f : ℝ → F} (hf : ContDiff ℝ N f) :
+private lemma contDiff_weighted_log (N : ℕ) {f : ℝ → F} (hf : ContDiffOn ℝ N f (Ioi 0)) :
     ContDiff ℝ N (fun p : ℝ × ℝ ↦
       (Real.exp (-p.1 * p.2) : ℂ) • f (Real.exp (-p.2))) := by
   have he : ContDiff ℝ N (fun p : ℝ × ℝ ↦ (Real.exp (-p.1 * p.2) : ℂ)) := by
     have hr : ContDiff ℝ N (fun p : ℝ × ℝ ↦ Real.exp (-p.1 * p.2)) := by
       fun_prop
     exact Complex.ofRealCLM.contDiff.comp hr
-  exact he.smul (hf.comp (by fun_prop))
+  exact he.smul (hf.comp_contDiff (by fun_prop) (fun _ ↦ Real.exp_pos _))
 
 end ComplexSpace
 
@@ -107,19 +55,18 @@ section Support
 
 variable {F : Type*} [Zero F] [SMulZeroClass ℂ F]
 
-private lemma compact_log_support {f : ℝ → F} (hc : HasCompactSupport f)
-    (hp : 0 ∉ tsupport f) :
+private lemma compact_log_support {f : ℝ → F} (hc : IsCompact (tsupport f ∩ Ioi 0)) :
     ∃ S : Set ℝ, IsCompact S ∧ ∀ σ : ℝ,
       tsupport (fun u ↦ (Real.exp (-σ * u) : ℂ) • f (Real.exp (-u))) ⊆ S := by
-  let S : Set ℝ := (fun x ↦ -Real.log x) '' tsupport f
+  let S : Set ℝ := (fun x ↦ -Real.log x) '' (tsupport f ∩ Ioi 0)
   have hS : IsCompact S := hc.image_of_continuousOn
-    (Real.continuousOn_log.neg.mono fun x hx ↦ (ne_of_mem_of_not_mem hx hp : x ≠ 0))
+    (Real.continuousOn_log.neg.mono fun x hx ↦ ne_of_gt hx.2)
   refine ⟨S, hS, fun σ ↦ closure_minimal ?_ hS.isClosed⟩
   intro u hu
   have hn : f (Real.exp (-u)) ≠ 0 := by
     intro h
     exact hu (by simp [h])
-  refine ⟨Real.exp (-u), subset_closure hn, ?_⟩
+  refine ⟨Real.exp (-u), ⟨subset_closure hn, Real.exp_pos _⟩, ?_⟩
   simp
 
 end Support
@@ -157,16 +104,27 @@ section Family
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 private lemma weighted_log_family_data {N : ℕ} {f : ℝ → E}
-    (hf : ContDiff ℝ N f) (hc : HasCompactSupport f) (hp : 0 ∉ tsupport f)
+    (hf : ContDiffOn ℝ N f (Ioi 0)) (hc : IsCompact (tsupport f ∩ Ioi 0))
     {K : Set ℝ} (hK : IsCompact K) :
     ∃ S : Set ℝ, IsCompact S ∧ ∃ C > 0,
       (∀ σ : ℝ, tsupport (fun u ↦ (Real.exp (-σ * u) : ℂ) • f (Real.exp (-u))) ⊆ S) ∧
       (∀ σ ∈ K, ∀ n ≤ N, ∀ u,
         ‖iteratedFDeriv ℝ n (fun v ↦ (Real.exp (-σ * v) : ℂ) • f (Real.exp (-v))) u‖ ≤ C) := by
-  obtain ⟨S, hS, hsupp⟩ := compact_log_support hc hp
+  obtain ⟨S, hS, hsupp⟩ := compact_log_support hc
   have hH := contDiff_weighted_log N hf
-  obtain ⟨D, hD, hbound⟩ := uniform_slice_bound hH hK hS (fun σ _ ↦ hsupp σ)
-  exact ⟨S, hS, D, hD, hsupp, hbound⟩
+  obtain ⟨D, hD, hbound⟩ := hH.contDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen
+    isOpen_univ (hK.prod hS) (subset_univ _)
+  refine ⟨S, hS, D + 1, by positivity, hsupp, fun σ hσ n hn u ↦ ?_⟩
+  by_cases hu : u ∈ S
+  · exact (hH.contDiffAt.norm_iteratedFDeriv_prod_right_le n (by exact_mod_cast hn)).trans
+      ((hbound n hn (σ, u) ⟨hσ, hu⟩).trans (le_add_of_nonneg_right zero_le_one))
+  · have hz : iteratedFDeriv ℝ n (fun v ↦
+        (Real.exp (-σ * v) : ℂ) • f (Real.exp (-v))) u = 0 := by
+      apply Function.notMem_support.mp
+      intro hm
+      exact hu (hsupp σ (support_iteratedFDeriv_subset n hm))
+    rw [hz, norm_zero]
+    positivity
 
 end Family
 
@@ -174,13 +132,15 @@ section Endpoint
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- The Mellin transform of a compactly supported `C^N` function supported away from zero decays
-with order `N` in the imaginary direction, uniformly over any compact set of real parts. -/
+/-- If a function is `C^N` on the positive half-line and its positive closed support is compact,
+its Mellin transform decays
+with order `N` in the imaginary direction, uniformly over any compact set of real parts.
+No restriction on the negative-side values or regularity is required. -/
 theorem exists_one_add_abs_im_pow_mul_norm_mellin_le {N : ℕ} {f : ℝ → E}
-    (hf : ContDiff ℝ N f) (hc : HasCompactSupport f) (hp : 0 ∉ tsupport f)
+    (hf : ContDiffOn ℝ N f (Ioi 0)) (hc : IsCompact (tsupport f ∩ Ioi 0))
     {K : Set ℝ} (hK : IsCompact K) :
     ∃ C > 0, ∀ s : ℂ, s.re ∈ K → (1 + |s.im|) ^ N * ‖mellin f s‖ ≤ C := by
-  obtain ⟨S, hS, D, hD, hsupp, hbound⟩ := weighted_log_family_data hf hc hp hK
+  obtain ⟨S, hS, D, hD, hsupp, hbound⟩ := weighted_log_family_data hf hc hK
   let C : ℝ := (2 * Real.pi) ^ N * (2 ^ N * (D * volume.real S))
   have hC : 0 ≤ C := by dsimp [C]; positivity
   refine ⟨1 + C, add_pos_of_pos_of_nonneg zero_lt_one hC, fun s hs ↦ ?_⟩
