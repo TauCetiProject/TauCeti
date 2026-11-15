@@ -49,6 +49,8 @@ estimates follow in a basis of `F`.
 * `TauCeti.exists_eLpNorm_top_le_mul_eLpNormWkp_one`: the order-one `L^∞` bound for `q > 2`.
 * `TauCeti.MemWkpLoc.memLpLoc_of_inv_sub_inv_le`: the embedding `W^{1,q}_loc ⊂ L^s_loc`.
 * `TauCeti.MemWkpLoc.of_succ_of_inv_sub_inv_le`: order lowering `W^{k+1,q}_loc ⊂ W^{k,s}_loc`.
+* `TauCeti.MemWkpLoc.of_add_of_inv_sub_inv_le`: its iterate `W^{k+m,q}_loc ⊂ W^{m,s}_loc` for
+  `1/q - 1/s ≤ k/2`.
 * `TauCeti.exists_eLpNormWkp_le_mul_eLpNormWkp_succ`: the estimate for order lowering.
 * `TauCeti.MemWkpLoc.exists_two_lt_memWkpLoc_one_of_two_lt_mul`: for `kp > 2`, membership in
   `W^{1,r}_loc` for some finite `r > 2`.
@@ -57,6 +59,7 @@ estimates follow in a basis of `F`.
   `kp > 2`.
 * `TauCeti.exists_eLpNorm_top_le_mul_eLpNormWkp_of_two_lt_mul`: the local `L^∞` bound for
   `kp > 2`.
+* `TauCeti.MemWkpLoc.memLpLoc_top_of_two_lt_mul`: local boundedness of `W^{k,p}_loc` for `kp > 2`.
 
 ## References
 
@@ -191,6 +194,50 @@ theorem MemWkpLoc.of_succ_of_inv_sub_inv_le (hu : MemWkpLoc q Ω (k + 1) u) (hq 
     exact memWkpLoc_succ_iff_of_isOpen.2
       ⟨(hu.of_le (by omega)).memLpLoc_of_inv_sub_inv_le hq hqs hgap, D, hD, ih hDk⟩
 
+/-- **The Sobolev embedding at every order.** If `1 ≤ q ≤ s < ∞` and `1/q - 1/s ≤ k/2`, then
+`W^{k+m,q}_loc(Ω, F) ⊂ W^{m,s}_loc(Ω, F)`. At `m = 0` this is `W^{k,q}_loc ⊂ L^s_loc`. -/
+theorem MemWkpLoc.of_add_of_inv_sub_inv_le {m : ℕ} (hu : MemWkpLoc q Ω (k + m) u) (hq : 1 ≤ q)
+    (hqs : q ≤ s) (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ k / 2) : MemWkpLoc s Ω m u := by
+  -- Each step lowers the order by one and replaces `1/q` by `max (1/q - 1/2) (1/s)`.
+  induction k generalizing q with
+  | zero =>
+    have hq0 : (0 : ℝ) < q := zero_lt_one.trans_le (by exact_mod_cast hq)
+    have hsq : (q : ℝ)⁻¹ ≤ (s : ℝ)⁻¹ := by
+      have : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ 0 := by simpa using hgap
+      linarith
+    have hs0 : (0 : ℝ) < s := hq0.trans_le (by exact_mod_cast hqs)
+    have hsq' : (s : ℝ) ≤ q := (inv_le_inv₀ hq0 hs0).1 hsq
+    have hs : s = q := le_antisymm (by exact_mod_cast hsq') hqs
+    subst hs
+    simpa using hu
+  | succ k ih =>
+    have hq0 : (0 : ℝ) < q := zero_lt_one.trans_le (by exact_mod_cast hq)
+    have hs0 : (0 : ℝ) < s := hq0.trans_le (by exact_mod_cast hqs)
+    set r : ℝ := max ((q : ℝ)⁻¹ - 2⁻¹) (s : ℝ)⁻¹ with hr
+    have hr0 : 0 < r := lt_max_of_lt_right (inv_pos.2 hs0)
+    let q₁ : ℝ≥0 := ⟨r⁻¹, (inv_pos.2 hr0).le⟩
+    have hq₁ : (q₁ : ℝ)⁻¹ = r := inv_inv r
+    have hq₁0 : (0 : ℝ) < q₁ := inv_pos.2 hr0
+    have hrq : r ≤ (q : ℝ)⁻¹ :=
+      max_le (by linarith) ((inv_le_inv₀ hs0 hq0).2 (by exact_mod_cast hqs))
+    have hqq₁ : q ≤ q₁ := by
+      rw [← NNReal.coe_le_coe, ← inv_le_inv₀ hq₁0 hq0, hq₁]
+      exact hrq
+    have hq₁s : q₁ ≤ s := by
+      rw [← NNReal.coe_le_coe, ← inv_le_inv₀ hs0 hq₁0, hq₁]
+      exact le_max_right _ _
+    have hu' : MemWkpLoc q Ω (k + m + 1) u := by rwa [show k + m + 1 = k + 1 + m by omega]
+    refine ih (hu'.of_succ_of_inv_sub_inv_le hq hqq₁ ?_) (hq.trans hqq₁) hq₁s ?_
+    · rw [hq₁]
+      linarith [le_max_left ((q : ℝ)⁻¹ - 2⁻¹) (s : ℝ)⁻¹]
+    · rw [hq₁]
+      push_cast at hgap
+      rcases max_cases ((q : ℝ)⁻¹ - 2⁻¹) (s : ℝ)⁻¹ with ⟨h, -⟩ | ⟨h, -⟩
+      · rw [hr, h]
+        linarith
+      · rw [hr, h, sub_self]
+        positivity
+
 /-- **The estimate for order lowering.** Let `1 ≤ q ≤ s < ∞` with `1/q - 1/s ≤ 1/2`, and let `V`
 have compact closure inside the open set `W ⊆ ℂ`. There is a constant `C` such that every
 `u : ℂ → F` satisfies `‖u‖_{W^{k,s}(V)} ≤ C ‖u‖_{W^{k+1,q}(W)}`. -/
@@ -292,5 +339,17 @@ theorem exists_eLpNorm_top_le_mul_eLpNormWkp_of_two_lt_mul {p : ℝ≥0∞} (hp 
     calc eLpNorm u ∞ (volume.restrict V) ≤ C₂ * eLpNormWkp s W' k u := hC₂ u
       _ ≤ C₂ * (C₁ * eLpNormWkp p W (k + 1) u) := by gcongr; exact hC₁ u
       _ = (C₂ * C₁ : ℝ≥0) * eLpNormWkp p W (k + 1) u := by push_cast; ring
+
+/-- **Local boundedness for `kp > 2`.** If `1 ≤ p ≤ ∞` and `2 < k p`, every
+`u ∈ W^{k,p}_loc(Ω, F)` is locally essentially bounded on `Ω`. -/
+theorem MemWkpLoc.memLpLoc_top_of_two_lt_mul {p : ℝ≥0∞} (hp : 1 ≤ p)
+    (hkp : 2 < (k : ℝ≥0∞) * p) (hu : MemWkpLoc p Ω k u) : MemLpLoc ∞ Ω u := by
+  refine memLpLoc_iff.2 fun K hKΩ hK => ?_
+  obtain ⟨W, hKW, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
+  have hKc : closure K = K := hK.isClosed.closure_eq
+  obtain ⟨C, hC⟩ := exists_eLpNorm_top_le_mul_eLpNormWkp_of_two_lt_mul (F := F) (W := W) hp hkp
+    (by rwa [hKc]) (by rwa [hKc])
+  exact memLp_iff.2 ((hC u).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top
+    (lt_top_iff_ne_top.2 (hu.eLpNormWkp_ne_top_of_closure_subset hWc hWΩ))))
 
 end TauCeti

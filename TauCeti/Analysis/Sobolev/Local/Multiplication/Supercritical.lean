@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Function.Holder
-import TauCeti.Analysis.Sobolev.Local.Norm
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Holder
 
@@ -38,9 +37,6 @@ only, which pairs with no finite exponent of the other factor.
 
 ## Main declarations
 
-* `TauCeti.MemWkpLoc.of_add_of_inv_sub_inv_le`: the Sobolev embedding lowering the order by `k`,
-  `W^{k+m,q}_loc ⊂ W^{m,s}_loc` for `1/q - 1/s ≤ k/2`.
-* `TauCeti.MemWkpLoc.memLpLoc_top_of_two_lt_mul`: local boundedness of `W^{k,p}_loc` for `kp > 2`.
 * `TauCeti.MemWkpLoc.memLpLoc_bilin_of_two_lt_add_mul`: `B(f, g) ∈ L^p_loc` for
   `(a + b) p > 2`.
 * `TauCeti.MemWkpLoc.bilin_of_two_lt_add_mul`: `B(f, g) ∈ W^{c,p}_loc` for
@@ -66,63 +62,6 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimen
   [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
   [NormedAddCommGroup H] [NormedSpace ℝ H]
   {Ω : Opens ℂ}
-
-/-- **The Sobolev embedding at every order.** If `1 ≤ q ≤ s < ∞` and `1/q - 1/s ≤ k/2`, then
-`W^{k+m,q}_loc(Ω, F) ⊂ W^{m,s}_loc(Ω, F)`. At `m = 0` this is `W^{k,q}_loc ⊂ L^s_loc`. -/
-theorem MemWkpLoc.of_add_of_inv_sub_inv_le {q s : ℝ≥0} {k m : ℕ} {u : ℂ → F}
-    (hu : MemWkpLoc q Ω (k + m) u) (hq : 1 ≤ q) (hqs : q ≤ s)
-    (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ k / 2) : MemWkpLoc s Ω m u := by
-  -- Each step lowers the order by one and replaces `1/q` by `max (1/q - 1/2) (1/s)`.
-  induction k generalizing q with
-  | zero =>
-    have hq0 : (0 : ℝ) < q := zero_lt_one.trans_le (by exact_mod_cast hq)
-    have hsq : (q : ℝ)⁻¹ ≤ (s : ℝ)⁻¹ := by
-      have : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ 0 := by simpa using hgap
-      linarith
-    have hs0 : (0 : ℝ) < s := hq0.trans_le (by exact_mod_cast hqs)
-    have hsq' : (s : ℝ) ≤ q := (inv_le_inv₀ hq0 hs0).1 hsq
-    have hs : s = q := le_antisymm (by exact_mod_cast hsq') hqs
-    subst hs
-    simpa using hu
-  | succ k ih =>
-    have hq0 : (0 : ℝ) < q := zero_lt_one.trans_le (by exact_mod_cast hq)
-    have hs0 : (0 : ℝ) < s := hq0.trans_le (by exact_mod_cast hqs)
-    set r : ℝ := max ((q : ℝ)⁻¹ - 2⁻¹) (s : ℝ)⁻¹ with hr
-    have hr0 : 0 < r := lt_max_of_lt_right (inv_pos.2 hs0)
-    let q₁ : ℝ≥0 := ⟨r⁻¹, (inv_pos.2 hr0).le⟩
-    have hq₁ : (q₁ : ℝ)⁻¹ = r := inv_inv r
-    have hq₁0 : (0 : ℝ) < q₁ := inv_pos.2 hr0
-    have hrq : r ≤ (q : ℝ)⁻¹ :=
-      max_le (by linarith) ((inv_le_inv₀ hs0 hq0).2 (by exact_mod_cast hqs))
-    have hqq₁ : q ≤ q₁ := by
-      rw [← NNReal.coe_le_coe, ← inv_le_inv₀ hq₁0 hq0, hq₁]
-      exact hrq
-    have hq₁s : q₁ ≤ s := by
-      rw [← NNReal.coe_le_coe, ← inv_le_inv₀ hs0 hq₁0, hq₁]
-      exact le_max_right _ _
-    have hu' : MemWkpLoc q Ω (k + m + 1) u := by rwa [show k + m + 1 = k + 1 + m by omega]
-    refine ih (hu'.of_succ_of_inv_sub_inv_le hq hqq₁ ?_) (hq.trans hqq₁) hq₁s ?_
-    · rw [hq₁]
-      linarith [le_max_left ((q : ℝ)⁻¹ - 2⁻¹) (s : ℝ)⁻¹]
-    · rw [hq₁]
-      push_cast at hgap
-      rcases max_cases ((q : ℝ)⁻¹ - 2⁻¹) (s : ℝ)⁻¹ with ⟨h, -⟩ | ⟨h, -⟩
-      · rw [hr, h]
-        linarith
-      · rw [hr, h, sub_self]
-        positivity
-
-/-- **Local boundedness for `kp > 2`.** If `1 ≤ p ≤ ∞` and `2 < k p`, every
-`u ∈ W^{k,p}_loc(Ω, F)` is locally essentially bounded on `Ω`. -/
-theorem MemWkpLoc.memLpLoc_top_of_two_lt_mul {p : ℝ≥0∞} {k : ℕ} {u : ℂ → F} (hp : 1 ≤ p)
-    (hkp : 2 < (k : ℝ≥0∞) * p) (hu : MemWkpLoc p Ω k u) : MemLpLoc ∞ Ω u := by
-  refine memLpLoc_iff.2 fun K hKΩ hK => ?_
-  obtain ⟨W, hKW, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
-  have hKc : closure K = K := hK.isClosed.closure_eq
-  obtain ⟨C, hC⟩ := exists_eLpNorm_top_le_mul_eLpNormWkp_of_two_lt_mul (F := F) (W := W) hp hkp
-    (by rwa [hKc]) (by rwa [hKc])
-  exact memLp_iff.2 ((hC u).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top
-    (lt_top_iff_ne_top.2 (hu.eLpNormWkp_ne_top_of_closure_subset hWc hWΩ))))
 
 /-- The Sobolev embedding `W^{m,p}_loc ⊂ L^s_loc` in terms of the reciprocal `t = 1/s`, which is
 how the exponents of products are chosen below. -/
@@ -155,6 +94,40 @@ private theorem inv_inv_ofReal_add_le {t t' : ℝ} (ht : 0 ≤ t) (ht' : 0 ≤ t
   rw [inv_inv, inv_inv, ← ENNReal.ofReal_add ht ht']
   exact ENNReal.ofReal_le_one.2 h
 
+/-- Without local boundedness of a factor of order `m`, that is for `m p ≤ 2`, the reciprocal
+exponent satisfies `m/2 ≤ 1/p`. -/
+private theorem div_two_le_inv_of_not_two_lt_mul {p : ℝ≥0} (hp0 : (0 : ℝ) < p) {m : ℕ}
+    (h : ¬ 2 < (m : ℝ≥0∞) * p) : (m : ℝ) / 2 ≤ (p : ℝ)⁻¹ := by
+  have : (m : ℝ) * p ≤ 2 := by
+    rw [not_lt] at h
+    exact_mod_cast h
+  rw [div_le_iff₀ two_pos, inv_mul_eq_div, le_div_iff₀ hp0]
+  linarith
+
+/-- The reciprocal exponents for the Leibniz step. For `0 < x < 1` there is `T : ℕ → ℝ` with
+`0 < T m ≤ x ≤ T m + m/2` for every `m`, and `T m + T n ≤ 1` whenever `2x < m + n`. With
+`x = 1/p`, a factor of order `m` then lies in `L^{1/T m}_loc`, and Hölder's inequality applies
+to the pairs of orders in the Leibniz rule. -/
+private theorem exists_leibniz_inv_exponents {x : ℝ} (hx0 : 0 < x) (hx1 : x < 1) :
+    ∃ T : ℕ → ℝ, (∀ m, 0 < T m) ∧ (∀ m, T m ≤ x) ∧ (∀ m : ℕ, x ≤ T m + m / 2) ∧
+      ∀ m n : ℕ, 2 * x < m + n → T m + T n ≤ 1 := by
+  -- Take `T m = max (x - m/2) δ`, where the floor `δ > 0` keeps every exponent finite.
+  set δ : ℝ := x * (1 - x) / 2 with hδ_def
+  have hδ : 0 < δ := by
+    rw [hδ_def]
+    nlinarith
+  have hδx : δ ≤ x := by
+    rw [hδ_def]
+    nlinarith
+  have hxδ : x + δ ≤ 1 := by
+    rw [hδ_def]
+    nlinarith
+  refine ⟨fun m => max (x - m / 2) δ, fun m => lt_max_of_lt_right hδ,
+    fun m => max_le (by linarith [m.cast_nonneg (α := ℝ)]) hδx,
+    fun m => by linarith [le_max_left (x - m / 2) δ], fun m n hmn => ?_⟩
+  simp only [max_def]
+  split_ifs <;> linarith
+
 /-- **Products of local Sobolev maps in `Lᵖ`.** Let `1 ≤ p` and let `f ∈ W^{a,p}_loc(Ω, F)` and
 `g ∈ W^{b,p}_loc(Ω, G)` with `(a + b) p > 2`. Then `B(f, g)` is in `L^p_loc(Ω, H)`. -/
 theorem MemWkpLoc.memLpLoc_bilin_of_two_lt_add_mul (B : F →L[ℝ] G →L[ℝ] H) {p : ℝ≥0}
@@ -162,32 +135,22 @@ theorem MemWkpLoc.memLpLoc_bilin_of_two_lt_add_mul (B : F →L[ℝ] G →L[ℝ] 
     (hg : MemWkpLoc p Ω b g) (hab : 2 < ((a + b : ℕ) : ℝ≥0) * p) :
     MemLpLoc p Ω (fun z => B (f z) (g z)) := by
   have hp1 : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast hp
+  -- Hölder's inequality on each compact set, for any exponents `s`, `t` with `1/s + 1/t = 1/p`.
+  have holder {s t : ℝ≥0∞} [ENNReal.HolderTriple s t p] (hfs : MemLpLoc s Ω f)
+      (hgt : MemLpLoc t Ω g) : MemLpLoc p Ω (fun z => B (f z) (g z)) :=
+    memLpLoc_iff.2 fun K hKΩ hK => B.memLp_of_bilin (p : ℝ≥0∞)
+      (memLpLoc_iff.1 hfs K hKΩ hK) (memLpLoc_iff.1 hgt K hKΩ hK)
   -- If one factor is locally bounded, Hölder's inequality with `L^∞` suffices.
   by_cases ha : 2 < (a : ℝ≥0∞) * p
-  · have hfi := hf.memLpLoc_top_of_two_lt_mul hp1 ha
-    exact memLpLoc_iff.2 fun K hKΩ hK => B.memLp_of_bilin (p : ℝ≥0∞)
-      (memLpLoc_iff.1 hfi K hKΩ hK) (memLpLoc_iff.1 hg.memLpLoc K hKΩ hK)
+  · exact holder (hf.memLpLoc_top_of_two_lt_mul hp1 ha) hg.memLpLoc
   by_cases hb : 2 < (b : ℝ≥0∞) * p
-  · have hgi := hg.memLpLoc_top_of_two_lt_mul hp1 hb
-    exact memLpLoc_iff.2 fun K hKΩ hK => B.memLp_of_bilin (p : ℝ≥0∞)
-      (memLpLoc_iff.1 hf.memLpLoc K hKΩ hK) (memLpLoc_iff.1 hgi K hKΩ hK)
+  · exact holder hf.memLpLoc (hg.memLpLoc_top_of_two_lt_mul hp1 hb)
   -- Otherwise `1/p - a/2` and `1/p - b/2` are nonnegative with sum below `1/p`, and raising both
   -- by half the defect gives reciprocal exponents summing to `1/p`.
   have hp0 : (0 : ℝ) < p := zero_lt_one.trans_le (by exact_mod_cast hp)
+  have hxa := div_two_le_inv_of_not_two_lt_mul hp0 ha
+  have hxb := div_two_le_inv_of_not_two_lt_mul hp0 hb
   set x : ℝ := (p : ℝ)⁻¹ with hx
-  have hx0 : 0 < x := inv_pos.2 hp0
-  have hxa : (a : ℝ) / 2 ≤ x := by
-    have : (a : ℝ) * p ≤ 2 := by
-      rw [not_lt] at ha
-      exact_mod_cast ha
-    rw [hx, div_le_iff₀ two_pos, inv_mul_eq_div, le_div_iff₀ hp0]
-    linarith
-  have hxb : (b : ℝ) / 2 ≤ x := by
-    have : (b : ℝ) * p ≤ 2 := by
-      rw [not_lt] at hb
-      exact_mod_cast hb
-    rw [hx, div_le_iff₀ two_pos, inv_mul_eq_div, le_div_iff₀ hp0]
-    linarith
   have hxab : 2 * x < a + b := by
     have : (2 : ℝ) < (a + b) * p := by exact_mod_cast hab
     rw [hx, ← div_eq_mul_inv, div_lt_iff₀ hp0]
@@ -207,8 +170,7 @@ theorem MemWkpLoc.memLpLoc_bilin_of_two_lt_add_mul (B : F →L[ℝ] G →L[ℝ] 
     congr 1
     rw [htf_def, htg_def, hε_def]
     ring
-  exact memLpLoc_iff.2 fun K hKΩ hK => B.memLp_of_bilin (p : ℝ≥0∞)
-    (memLpLoc_iff.1 hfs K hKΩ hK) (memLpLoc_iff.1 hgs K hKΩ hK)
+  exact holder hfs hgs
 
 /-- **Products of local Sobolev maps with three orders.** Let `1 < p`, let
 `f ∈ W^{a,p}_loc(Ω, F)` and `g ∈ W^{b,p}_loc(Ω, G)`, and let `c ≤ a`, `c ≤ b` with
@@ -225,8 +187,8 @@ theorem MemWkpLoc.bilin_of_two_lt_add_mul [CompleteSpace H] (B : F →L[ℝ] G �
     obtain ⟨b, rfl⟩ : ∃ b', b = b' + 1 := ⟨b - 1, by omega⟩
     obtain ⟨Df, hDf, hDfa⟩ := hf.exists_weakFDeriv_of_isOpen
     obtain ⟨Dg, hDg, hDgb⟩ := hg.exists_weakFDeriv_of_isOpen
-    -- The reciprocal exponent for a factor of order `m` is `T m = max (1/p - m/2) δ`, where the
-    -- floor `δ > 0` keeps every exponent finite.
+    -- A factor of order `m` is placed in `L^{1/T m}_loc`, for the exponents `T` of
+    -- `exists_leibniz_inv_exponents` at `x = 1/p`.
     have hp0 : (0 : ℝ) < p := zero_lt_one.trans (by exact_mod_cast hp)
     set x : ℝ := (p : ℝ)⁻¹ with hx
     have hx0 : 0 < x := inv_pos.2 hp0
@@ -239,24 +201,9 @@ theorem MemWkpLoc.bilin_of_two_lt_add_mul [CompleteSpace H] (B : F →L[ℝ] G �
       have : (2 : ℝ) < ((a + 1 + (b + 1) - (c + 1) : ℕ) : ℝ) * p := by exact_mod_cast habc
       rw [hx, ← div_eq_mul_inv, div_lt_iff₀ hp0]
       nlinarith
-    set δ : ℝ := x * (1 - x) / 2 with hδ_def
-    have hδ : 0 < δ := by
-      rw [hδ_def]
-      nlinarith
-    have hδx : δ ≤ x := by
-      rw [hδ_def]
-      nlinarith
-    have hxδ : x + δ ≤ 1 := by
-      rw [hδ_def]
-      nlinarith
-    let T : ℕ → ℝ := fun m => max (x - m / 2) δ
-    have hT0 (m : ℕ) : 0 < T m := lt_max_of_lt_right hδ
-    have hTx (m : ℕ) : T m ≤ x := max_le (by linarith [m.cast_nonneg (α := ℝ)]) hδx
-    have hxT (m : ℕ) : x ≤ T m + m / 2 := by
-      linarith [le_max_left (x - m / 2) δ]
-    have hsum (m n : ℕ) (hmn : 2 * x < m + n) : T m + T n ≤ 1 := by
-      simp only [T, max_def]
-      split_ifs <;> linarith
+    obtain ⟨T, hT0, hTx, hxT, hsum⟩ := exists_leibniz_inv_exponents hx0 hx1
+    -- These local `Fact` instances supply the `[Fact (1 ≤ _)]` arguments of
+    -- `HasWeakFDerivOn.bilin_of_memLp` below.
     have hP (m : ℕ) : Fact (1 ≤ (ENNReal.ofReal (T m))⁻¹) :=
       ⟨one_le_inv_ofReal ((hTx m).trans hx1.le)⟩
     have hfP := hf.memLpLoc_inv_ofReal hp.le (hT0 _) (hTx _) (hxT _)
