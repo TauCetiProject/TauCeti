@@ -86,7 +86,7 @@ theorem isOpenEmbedding_fatClassifyingSpaceMap_restrict (hU : IsOpen (U : Set X)
     IsOpenEmbedding (fatClassifyingSpaceMap (restrict U)
       (isEmbedding_mapTotal_restrict U).continuous) := by
   rw [fatClassifyingSpaceMap_eq]
-  exact fatRealization.isOpenEmbedding_map_of_range_eq_preimage (coarseAugmentation G X)
+  exact functorTensor.isOpenEmbedding_map_of_range_eq_preimage (coarseAugmentation G X)
     (V := Quotient.mk _ '' (U : Set X))
     (fun _ => isOpenEmbedding_topologicalNerveMap_restrict U hU _)
     (range_topologicalNerveMap_restrict U)
@@ -97,6 +97,6 @@ theorem preimage_coarseMap_eq_range_fatClassifyingSpaceMap_restrict :
     coarseMap G X ⁻¹' (Quotient.mk _ '' (U : Set X)) =
       range (fatClassifyingSpaceMap (restrict U) (isEmbedding_mapTotal_restrict U).continuous) := by
   rw [coarseMap_eq_augment, fatClassifyingSpaceMap_eq]
-  exact fatRealization.preimage_augment_eq_range_map _ (range_topologicalNerveMap_restrict U)
+  exact functorTensor.preimage_augment_eq_range_map _ (range_topologicalNerveMap_restrict U)
 
 end TauCeti.ActionGroupoid

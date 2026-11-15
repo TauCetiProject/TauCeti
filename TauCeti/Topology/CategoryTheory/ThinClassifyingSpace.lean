@@ -17,16 +17,21 @@ space* `TauCeti.thinClassifyingSpace C` is the full (thin) geometric realization
 operators while retaining all isotropy arrows in `topologicalNerve C`.
 
 Because `CategoryTheory.ComposableArrows` inherits `T₃` separation and second countability from
-`Quiver.Total C` (`TauCeti.Topology.CategoryTheory.ComposableArrows`) and `TauCeti.thinRealization`
-is `T₄`, paracompact, Lindelöf, and compactly generated whenever its levels are `T₃` and Lindelöf
-(`TauCeti.AlgebraicTopology.ThinRealization.Skeleton`), typeclass search automatically synthesizes
+`Quiver.Total C` (`TauCeti.Topology.CategoryTheory.ComposableArrows`), `TauCeti.thinRealization` is
+`T₄`, paracompact, and Lindelöf whenever its levels are `T₃` and Lindelöf
+(`TauCeti.AlgebraicTopology.ThinRealization.Skeleton`), and `TauCeti.thinRealization` is compactly
+generated whenever its cells `Xₙ × Δⁿ` are compactly generated—which holds here because second
+countability makes the nerve levels first countable—typeclass search automatically synthesizes
 `T4Space (thinClassifyingSpace C)`, `ParacompactSpace (thinClassifyingSpace C)`,
 `LindelofSpace (thinClassifyingSpace C)`, and `UCompactlyGeneratedSpace (thinClassifyingSpace C)`
-whenever `[T3Space (Quiver.Total C)] [SecondCountableTopology (Quiver.Total C)]`—in particular for
+whenever `[T3Space (Quiver.Total C)] [SecondCountableTopology (Quiver.Total C)]`, in particular for
 every Lie groupoid or topological groupoid whose total arrow space is second-countable and `T₃`. For
-`σ`-compact or compact Hausdorff topological categories without second countability, combining
-`CategoryTheory.ComposableArrows.sigmaCompactSpace` with `TauCeti.thinRealization.instT4Space`
-supplies the same separation and paracompactness properties.
+`σ`-compact topological categories with `[T3Space (Quiver.Total C)]` and `[T2Space C]` (or compact
+Hausdorff ones) without second countability, combining
+`CategoryTheory.ComposableArrows.sigmaCompactSpace` (under its source, target, unit, and composition
+continuity hypotheses `hs`, `ht`, `hu`, `hc`) with `TauCeti.thinRealization.instT4Space` and
+`TauCeti.thinRealization.instLindelofSpace` supplies the `T₄`, Lindelöf, and paracompactness
+properties.
 
 This module also provides:
 * the natural quotient comparison map `TauCeti.fatToThinClassifyingSpace : fatClassifyingSpace C ⟶
@@ -36,9 +41,11 @@ This module also provides:
 * the coarse projection `TauCeti.thinClassifyingSpace.coarseMap` of a topological groupoid,
   compatible with `fatClassifyingSpace.coarseMap` and proved to be a quotient map when units are
   continuous (`TauCeti.thinClassifyingSpace.isQuotientMap_coarseMap`);
-* open and closed embeddings and coarse-preimage homeomorphisms for saturated open and closed full
-  subgroupoids (`CategoryTheory.ObjectProperty.thinClassifyingSpaceRestrictionHomeomorph`,
-  `CategoryTheory.ObjectProperty.thinClassifyingSpaceClosedRestrictionHomeomorph`).
+* open and closed embeddings
+  (`CategoryTheory.ObjectProperty.isOpenEmbedding_thinClassifyingSpaceMap_ι`,
+  `CategoryTheory.ObjectProperty.isClosedEmbedding_thinClassifyingSpaceMap_ι`) and the unified
+  coarse-preimage homeomorphism for saturated full subgroupoids whose inclusion induces an
+  embedding (`CategoryTheory.ObjectProperty.thinClassifyingSpaceRestrictionHomeomorph`).
 
 ## References
 
@@ -97,16 +104,19 @@ variable {C}
 theorem thinClassifyingSpace.hom_ext {Z : TopCat.{max u v}} {g h : thinClassifyingSpace C ⟶ Z}
     (H : ∀ (n : SimplexCategory) (F : ComposableArrows C n.len)
       (t : SimplexCategory.toTop.obj n),
-        g (thinRealization.ι (topologicalNerve C) n (F, t)) =
-          h (thinRealization.ι (topologicalNerve C) n (F, t))) : g = h :=
-  thinRealization.hom_ext (topologicalNerve C) H
+        g (functorTensor.ι SimplexCategory.toTop (topologicalNerve C) n (F, t)) =
+          h (functorTensor.ι SimplexCategory.toTop (topologicalNerve C) n (F, t))) : g = h :=
+  functorTensor.hom_ext H
 
+/-- `fatToThinClassifyingSpace` sends each fat characteristic simplex to the corresponding thin
+characteristic simplex. -/
+-- Simplify before the functor-object types in the characteristic map are normalized.
 @[simp↓]
 theorem fatToThinClassifyingSpace_ι (m : SemiSimplexCategory)
     (F : ComposableArrows C (SemiSimplexCategory.toSimplexCategory.obj m).len)
     (t : SemiSimplexCategory.toTop.obj m) :
-    fatToThinClassifyingSpace C (fatRealization.ι _ m (F, t)) =
-      thinRealization.ι (topologicalNerve C)
+    fatToThinClassifyingSpace C (functorTensor.ι SemiSimplexCategory.toTop _ m (F, t)) =
+      functorTensor.ι SimplexCategory.toTop (topologicalNerve C)
         (SemiSimplexCategory.toSimplexCategory.obj m) (F, t) :=
   thinRealization.fatToThin_ι (topologicalNerve C) m F t
 
@@ -115,19 +125,23 @@ variable {D : Type u} [Category.{v} D] [TopologicalSpace (Quiver.Total D)]
 /-- The map of thin classifying spaces induced by a functor continuous on total arrows. -/
 def thinClassifyingSpaceMap (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunctor.mapTotal) :
     thinClassifyingSpace C ⟶ thinClassifyingSpace D :=
-  thinRealization.map (topologicalNerveMap Φ hΦ)
+  functorTensor.map SimplexCategory.toTop (topologicalNerveMap Φ hΦ)
 
+/-- `thinClassifyingSpaceMap` is the `functorTensor.map` of `topologicalNerveMap`. -/
 theorem thinClassifyingSpaceMap_eq (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunctor.mapTotal) :
-    thinClassifyingSpaceMap Φ hΦ = thinRealization.map (topologicalNerveMap Φ hΦ) :=
+    thinClassifyingSpaceMap Φ hΦ =
+      functorTensor.map SimplexCategory.toTop (topologicalNerveMap Φ hΦ) :=
   (rfl)
 
 /-- `thinClassifyingSpaceMap` acts on characteristic maps by applying `Φ` to strings of composable
 arrows. -/
 theorem thinClassifyingSpaceMap_ι (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunctor.mapTotal)
     (n : SimplexCategory) (F : ComposableArrows C n.len) (t : SimplexCategory.toTop.obj n) :
-    thinClassifyingSpaceMap Φ hΦ (thinRealization.ι (topologicalNerve C) n (F, t)) =
-      thinRealization.ι (topologicalNerve D) n ((Φ.mapComposableArrows n.len).obj F, t) :=
-  (thinRealization.map_ι (topologicalNerveMap Φ hΦ) n F t).trans
+    thinClassifyingSpaceMap Φ hΦ
+        (functorTensor.ι SimplexCategory.toTop (topologicalNerve C) n (F, t)) =
+      functorTensor.ι SimplexCategory.toTop (topologicalNerve D) n
+        ((Φ.mapComposableArrows n.len).obj F, t) :=
+  (functorTensor.map_ι SimplexCategory.toTop (topologicalNerveMap Φ hΦ) n F t).trans
     (by rw [topologicalNerveMap_app_apply])
 
 /-- Two functors that agree on strings of composable arrows induce the same map of thin classifying
@@ -137,24 +151,27 @@ theorem thinClassifyingSpaceMap_eq_of_mapComposableArrows_obj {Φ Ψ : C ⥤ D}
     (h : ∀ n F, (Φ.mapComposableArrows n).obj F = (Ψ.mapComposableArrows n).obj F) :
     thinClassifyingSpaceMap Φ hΦ = thinClassifyingSpaceMap Ψ hΨ :=
   thinClassifyingSpace.hom_ext fun n F t ↦ (thinClassifyingSpaceMap_ι Φ hΦ n F t).trans <|
-    (congrArg (fun F ↦ thinRealization.ι (topologicalNerve D) n (F, t)) (h n.len F)).trans
-      (thinClassifyingSpaceMap_ι Ψ hΨ n F t).symm
+    (congrArg (fun F ↦ functorTensor.ι SimplexCategory.toTop (topologicalNerve D) n (F, t))
+      (h n.len F)).trans (thinClassifyingSpaceMap_ι Ψ hΨ n F t).symm
 
 variable (C) in
+/-- The identity functor induces the identity map on thin classifying spaces. -/
 @[simp]
 theorem thinClassifyingSpaceMap_id :
     thinClassifyingSpaceMap (𝟭 C) (Prefunctor.mapTotal_id (Q := C) ▸ continuous_id) =
       𝟙 (thinClassifyingSpace C) :=
-  (congrArg thinRealization.map (topologicalNerveMap_id C)).trans thinRealization.map_id
+  (congrArg (functorTensor.map SimplexCategory.toTop) (topologicalNerveMap_id C)).trans
+    (functorTensor.map_id SimplexCategory.toTop _)
 
+/-- Composition of continuous functors induces composition of maps on thin classifying spaces. -/
 theorem thinClassifyingSpaceMap_comp {E : Type u} [Category.{v} E]
     [TopologicalSpace (Quiver.Total E)] (Φ : C ⥤ D) (Ψ : D ⥤ E)
     (hΦ : Continuous Φ.toPrefunctor.mapTotal) (hΨ : Continuous Ψ.toPrefunctor.mapTotal) :
     thinClassifyingSpaceMap (Φ ⋙ Ψ) (Prefunctor.mapTotal_comp Φ.toPrefunctor Ψ.toPrefunctor ▸
         hΨ.comp hΦ) =
       thinClassifyingSpaceMap Φ hΦ ≫ thinClassifyingSpaceMap Ψ hΨ :=
-  (congrArg thinRealization.map (topologicalNerveMap_comp Φ Ψ hΦ hΨ)).trans
-    (thinRealization.map_comp _ _)
+  (congrArg (functorTensor.map SimplexCategory.toTop) (topologicalNerveMap_comp Φ Ψ hΦ hΨ)).trans
+    (functorTensor.map_comp SimplexCategory.toTop _ _)
 
 /-- Naturality of `fatToThinClassifyingSpace` with respect to continuous functors. -/
 theorem fatToThinClassifyingSpace_naturality (Φ : C ⥤ D)
@@ -172,18 +189,22 @@ def thinClassifyingSpaceHomotopy (Φ : unitInterval → C ⥤ D)
     (hΦ : Continuous fun p : unitInterval × Quiver.Total C ↦ (Φ p.1).toPrefunctor.mapTotal p.2) :
     ContinuousMap.Homotopy (thinClassifyingSpaceMap (Φ 0) (hΦ.comp (.prodMk_right 0))).hom
       (thinClassifyingSpaceMap (Φ 1) (hΦ.comp (.prodMk_right 1))).hom :=
-  thinRealization.homotopy
+  functorTensor.homotopy SimplexCategory.toTop
     (fun s ↦ topologicalNerveMap (Φ s) (hΦ.comp (.prodMk_right s)))
     fun _ ↦ (ComposableArrows.continuous_uncurry_mapComposableArrows_obj hΦ).congr
       fun p ↦ (topologicalNerveMap_app_apply _ _ _ p.2).symm
 
+/-- Evaluation of `thinClassifyingSpaceHomotopy` on a characteristic simplex `(F, t)` at time
+`s`. -/
 theorem thinClassifyingSpaceHomotopy_apply_ι (Φ : unitInterval → C ⥤ D)
     (hΦ : Continuous fun p : unitInterval × Quiver.Total C ↦ (Φ p.1).toPrefunctor.mapTotal p.2)
     (s : unitInterval) (n : SimplexCategory) (F : ComposableArrows C n.len)
     (t : SimplexCategory.toTop.obj n) :
-    thinClassifyingSpaceHomotopy Φ hΦ (s, thinRealization.ι (topologicalNerve C) n (F, t)) =
-      thinRealization.ι (topologicalNerve D) n (((Φ s).mapComposableArrows n.len).obj F, t) :=
-  (thinRealization.homotopy_apply_ι
+    thinClassifyingSpaceHomotopy Φ hΦ
+        (s, functorTensor.ι SimplexCategory.toTop (topologicalNerve C) n (F, t)) =
+      functorTensor.ι SimplexCategory.toTop (topologicalNerve D) n
+        (((Φ s).mapComposableArrows n.len).obj F, t) :=
+  (functorTensor.homotopy_apply_ι SimplexCategory.toTop
     (fun s ↦ topologicalNerveMap (Φ s) (hΦ.comp (.prodMk_right s))) _ s n F t).trans
     (by rw [topologicalNerveMap_app_apply])
 
@@ -193,64 +214,54 @@ variable {C : Type u} [Category.{u} C] [IsGroupoid C] [TopologicalSpace C]
   [TopologicalSpace (Quiver.Total C)]
   (hs : Continuous (Quiver.Total.left : Quiver.Total C → C))
 
-/-- The simplicial coarse augmentation of `topologicalNerve C` sending a string of composable
-arrows to the isomorphism class of its initial vertex. -/
-def coarseAugmentation :
-    topologicalNerve C ⟶ (Functor.const _).obj (TopCat.of (Quotient (isIsomorphicSetoid C))) where
-  app _ := TopCat.ofHom ⟨fun F ↦ Quotient.mk _ (F.obj 0),
-    continuous_quot_mk.comp (ComposableArrows.continuous_obj hs 0)⟩
-  naturality _ _ f := by
-    ext F
-    exact F.quotient_mk_obj
-      ((SimplexCategory.toCat.map f.unop).toFunctor.obj (0 : Fin (_ + 1)))
-
-@[simp↓]
-theorem coarseAugmentation_app_apply (Δ : SimplexCategoryᵒᵖ) (F : (topologicalNerve C).obj Δ) :
-    (coarseAugmentation hs).app Δ F = Quotient.mk (isIsomorphicSetoid C) (F.obj 0) :=
-  (rfl)
-
 /-- The coarse projection from the thin classifying space of a groupoid to its orbit space of
 isomorphism classes. -/
 def coarseMap : thinClassifyingSpace C ⟶ TopCat.of (Quotient (isIsomorphicSetoid C)) :=
-  thinRealization.augment (coarseAugmentation hs)
+  functorTensor.augment SimplexCategory.toTop (topologicalNerve.coarseAugmentation hs)
 
+/-- `coarseMap` is induced by `topologicalNerve.coarseAugmentation`. -/
 theorem coarseMap_eq_augment :
-    coarseMap hs = thinRealization.augment (coarseAugmentation hs) :=
+    coarseMap hs =
+      functorTensor.augment SimplexCategory.toTop (topologicalNerve.coarseAugmentation hs) :=
   (rfl)
 
+/-- A point of a simplex projects to the isomorphism class of its initial vertex. -/
+-- Simplify before the functor-object types in the characteristic map are normalized.
 @[simp↓]
 theorem coarseMap_ι (n : SimplexCategory) (F : ComposableArrows C n.len)
     (t : SimplexCategory.toTop.obj n) :
-    coarseMap hs (thinRealization.ι (topologicalNerve C) n (F, t)) =
+    coarseMap hs (functorTensor.ι SimplexCategory.toTop (topologicalNerve C) n (F, t)) =
       Quotient.mk (isIsomorphicSetoid C) (F.obj 0) :=
-  (thinRealization.augment_ι (coarseAugmentation hs) n F t).trans
-    (coarseAugmentation_app_apply hs (op n) F)
+  (functorTensor.augment_ι SimplexCategory.toTop (topologicalNerve.coarseAugmentation hs) n F
+    t).trans (topologicalNerve.coarseAugmentation_app_apply hs (op n) F)
 
 /-- The fat coarse projection factors through `fatToThinClassifyingSpace` and the thin coarse
 projection. -/
 theorem fatToThinClassifyingSpace_comp_coarseMap :
-    fatToThinClassifyingSpace C ≫ coarseMap hs = fatClassifyingSpace.coarseMap hs :=
-  fatClassifyingSpace.hom_ext fun m F t ↦
-    (congrArg (coarseMap hs) (fatToThinClassifyingSpace_ι m F t)).trans <|
-      (coarseMap_ι hs _ F t).trans (fatClassifyingSpace.coarseMap_ι hs m F t).symm
+    fatToThinClassifyingSpace C ≫ coarseMap hs = fatClassifyingSpace.coarseMap hs := by
+  rw [fatToThinClassifyingSpace, coarseMap_eq_augment, fatClassifyingSpace.coarseMap_eq_augment]
+  exact thinRealization.fatToThin_comp_augment (topologicalNerve.coarseAugmentation hs)
+
+/-- Underlying-function form of `fatToThinClassifyingSpace_comp_coarseMap`. -/
+theorem coarseMap_comp_fatToThinClassifyingSpace :
+    ⇑(coarseMap hs) ∘ ⇑(fatToThinClassifyingSpace C) = ⇑(fatClassifyingSpace.coarseMap hs) :=
+  funext fun z ↦ ConcreteCategory.congr_hom (fatToThinClassifyingSpace_comp_coarseMap hs) z
 
 /-- Every orbit occurs in the image of the thin coarse projection. -/
-theorem coarseMap_surjective : Function.Surjective (coarseMap hs) := by
-  have heq : ⇑(coarseMap hs) ∘ ⇑(fatToThinClassifyingSpace C) =
-      ⇑(fatClassifyingSpace.coarseMap hs) :=
-    funext fun z ↦ ConcreteCategory.congr_hom (fatToThinClassifyingSpace_comp_coarseMap hs) z
-  exact Function.Surjective.of_comp (heq.symm ▸ fatClassifyingSpace.coarseMap_surjective hs)
+theorem coarseMap_surjective : Function.Surjective (coarseMap hs) :=
+  Function.Surjective.of_comp
+    ((coarseMap_comp_fatToThinClassifyingSpace hs).symm ▸
+      fatClassifyingSpace.coarseMap_surjective hs)
 
 /-- With continuous units, the coarse projection from `thinClassifyingSpace C` to the orbit space
 is a quotient map. -/
 theorem isQuotientMap_coarseMap
     (hu : Continuous fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C)) :
-    IsQuotientMap (coarseMap hs) := by
-  have heq : ⇑(coarseMap hs) ∘ ⇑(fatToThinClassifyingSpace C) =
-      ⇑(fatClassifyingSpace.coarseMap hs) :=
-    funext fun z ↦ ConcreteCategory.congr_hom (fatToThinClassifyingSpace_comp_coarseMap hs) z
-  exact IsQuotientMap.of_comp (fatToThinClassifyingSpace C).hom.continuous
-    (coarseMap hs).hom.continuous (heq.symm ▸ fatClassifyingSpace.isQuotientMap_coarseMap hs hu)
+    IsQuotientMap (coarseMap hs) :=
+  IsQuotientMap.of_comp (fatToThinClassifyingSpace C).hom.continuous
+    (coarseMap hs).hom.continuous
+    ((coarseMap_comp_fatToThinClassifyingSpace hs).symm ▸
+      fatClassifyingSpace.isQuotientMap_coarseMap hs hu)
 
 end thinClassifyingSpace
 
@@ -265,34 +276,16 @@ variable {C : Type u} [Category.{u} C] [IsGroupoid C]
   (P : ObjectProperty C) [P.IsClosedUnderIsomorphisms]
   (hs : Continuous (Quiver.Total.left : Quiver.Total C → C))
 
-/-- In every simplicial degree, the nerve of a saturated full subgroupoid is the preimage under the
-coarse augmentation of the corresponding subset of isomorphism classes. -/
-theorem range_topologicalNerveMap_ι_simplex (Δ : SimplexCategoryᵒᵖ) :
-    range ((TauCeti.topologicalNerveMap P.ι P.continuous_mapTotal_ι).app Δ) =
-      (TauCeti.thinClassifyingSpace.coarseAugmentation hs).app Δ ⁻¹'
-        (Quotient.mk (isIsomorphicSetoid C) '' {x | P x}) := by
-  rw [TauCeti.coe_topologicalNerveMap_app]
-  refine (P.range_mapComposableArrows_ι_of_isClosedUnderIsomorphisms _).trans ?_
-  ext F
-  constructor
-  · intro hF
-    exact ⟨F.obj 0, hF,
-      (TauCeti.thinClassifyingSpace.coarseAugmentation_app_apply hs Δ F).symm⟩
-  · rintro ⟨x, hx, h⟩
-    obtain ⟨e⟩ := Quotient.exact
-      (h.trans (TauCeti.thinClassifyingSpace.coarseAugmentation_app_apply hs Δ F))
-    exact P.prop_of_iso e hx
-
 include hs in
 /-- The inclusion of a saturated open full subgroupoid induces an open embedding on thin
 classifying spaces. -/
 theorem isOpenEmbedding_thinClassifyingSpaceMap_ι (hP : IsOpen {x | P x}) :
     IsOpenEmbedding (TauCeti.thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι) := by
   rw [TauCeti.thinClassifyingSpaceMap_eq]
-  refine TauCeti.thinRealization.isOpenEmbedding_map_of_range_eq_preimage
-    (TauCeti.thinClassifyingSpace.coarseAugmentation hs)
+  refine TauCeti.functorTensor.isOpenEmbedding_map_of_range_eq_preimage
+    (TauCeti.topologicalNerve.coarseAugmentation hs)
     (V := Quotient.mk (isIsomorphicSetoid C) '' {x | P x})
-    (fun Δ ↦ ?_) (P.range_topologicalNerveMap_ι_simplex hs)
+    (fun Δ ↦ ?_) (P.range_topologicalNerveMap_ι hs)
   rw [TauCeti.coe_topologicalNerveMap_app]
   exact P.isOpenEmbedding_mapComposableArrows_ι hs hP Δ.unop.len
 
@@ -302,10 +295,10 @@ classifying spaces. -/
 theorem isClosedEmbedding_thinClassifyingSpaceMap_ι (hP : IsClosed {x | P x}) :
     IsClosedEmbedding (TauCeti.thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι) := by
   rw [TauCeti.thinClassifyingSpaceMap_eq]
-  refine TauCeti.thinRealization.isClosedEmbedding_map_of_range_eq_preimage
-    (TauCeti.thinClassifyingSpace.coarseAugmentation hs)
+  refine TauCeti.functorTensor.isClosedEmbedding_map_of_range_eq_preimage
+    (TauCeti.topologicalNerve.coarseAugmentation hs)
     (V := Quotient.mk (isIsomorphicSetoid C) '' {x | P x})
-    (fun Δ ↦ ?_) (P.range_topologicalNerveMap_ι_simplex hs)
+    (fun Δ ↦ ?_) (P.range_topologicalNerveMap_ι hs)
   rw [TauCeti.coe_topologicalNerveMap_app]
   exact P.isClosedEmbedding_mapComposableArrows_ι hs hP Δ.unop.len
 
@@ -316,58 +309,42 @@ theorem preimage_coarseMap_eq_range_thinClassifyingSpaceMap_ι :
         (Quotient.mk (isIsomorphicSetoid C) '' {x | P x}) =
       range (TauCeti.thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι) := by
   rw [TauCeti.thinClassifyingSpace.coarseMap_eq_augment, TauCeti.thinClassifyingSpaceMap_eq]
-  exact TauCeti.thinRealization.preimage_augment_eq_range_map _ _
-    (P.range_topologicalNerveMap_ι_simplex hs)
+  exact TauCeti.functorTensor.preimage_augment_eq_range_map _
+    (P.range_topologicalNerveMap_ι hs)
 
-/-- The thin classifying space of a saturated open restriction is homeomorphic to the corresponding
-coarse-map preimage, with its subspace topology. -/
-def thinClassifyingSpaceRestrictionHomeomorph (hP : IsOpen {x | P x}) :
+/-- Whenever the inclusion of a saturated full subgroupoid induces a topological embedding on thin
+classifying spaces (for instance via `isOpenEmbedding_thinClassifyingSpaceMap_ι` or
+`isClosedEmbedding_thinClassifyingSpaceMap_ι`), its thin classifying space is homeomorphic to the
+corresponding coarse-map preimage with its subspace topology. -/
+def thinClassifyingSpaceRestrictionHomeomorph
+    (h : IsEmbedding (TauCeti.thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι)) :
     TauCeti.thinClassifyingSpace P.FullSubcategory ≃ₜ
       (TauCeti.thinClassifyingSpace.coarseMap hs ⁻¹'
         (Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :=
-  (P.isOpenEmbedding_thinClassifyingSpaceMap_ι hs hP).isEmbedding.toHomeomorph.trans
+  h.toHomeomorph.trans
     (Homeomorph.setCongr (P.preimage_coarseMap_eq_range_thinClassifyingSpaceMap_ι hs).symm)
 
+/-- Coercing `thinClassifyingSpaceRestrictionHomeomorph` to the ambient thin classifying space gives
+`thinClassifyingSpaceMap P.ι`. -/
+-- Rewrite before simplification normalizes the dependent TopCat carriers.
 @[simp↓]
-theorem thinClassifyingSpaceRestrictionHomeomorph_apply_val (hP : IsOpen {x | P x})
+theorem thinClassifyingSpaceRestrictionHomeomorph_apply_val
+    (h : IsEmbedding (TauCeti.thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι))
     (z : TauCeti.thinClassifyingSpace P.FullSubcategory) :
-    (P.thinClassifyingSpaceRestrictionHomeomorph hs hP z).val =
+    (P.thinClassifyingSpaceRestrictionHomeomorph hs h z).val =
       TauCeti.thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι z :=
   (rfl)
 
+/-- Applying `thinClassifyingSpaceMap P.ι` after the inverse of
+`thinClassifyingSpaceRestrictionHomeomorph` recovers the ambient point. -/
+-- The classifying-space map also has dependent TopCat carriers.
 @[simp↓]
 theorem thinClassifyingSpaceMap_ι_thinClassifyingSpaceRestrictionHomeomorph_symm_apply
-    (hP : IsOpen {x | P x})
+    (h : IsEmbedding (TauCeti.thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι))
     (z : TauCeti.thinClassifyingSpace.coarseMap hs ⁻¹'
       (Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :
     TauCeti.thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι
-      ((P.thinClassifyingSpaceRestrictionHomeomorph hs hP).symm z) = z.val :=
-  congrArg Subtype.val ((P.thinClassifyingSpaceRestrictionHomeomorph hs hP).apply_symm_apply z)
-
-/-- The thin classifying space of a saturated closed restriction is homeomorphic to the
-corresponding coarse-map preimage, with its subspace topology. -/
-def thinClassifyingSpaceClosedRestrictionHomeomorph (hP : IsClosed {x | P x}) :
-    TauCeti.thinClassifyingSpace P.FullSubcategory ≃ₜ
-      (TauCeti.thinClassifyingSpace.coarseMap hs ⁻¹'
-        (Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :=
-  (P.isClosedEmbedding_thinClassifyingSpaceMap_ι hs hP).isEmbedding.toHomeomorph.trans
-    (Homeomorph.setCongr (P.preimage_coarseMap_eq_range_thinClassifyingSpaceMap_ι hs).symm)
-
-@[simp↓]
-theorem thinClassifyingSpaceClosedRestrictionHomeomorph_apply_val (hP : IsClosed {x | P x})
-    (z : TauCeti.thinClassifyingSpace P.FullSubcategory) :
-    (P.thinClassifyingSpaceClosedRestrictionHomeomorph hs hP z).val =
-      TauCeti.thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι z :=
-  (rfl)
-
-@[simp↓]
-theorem thinClassifyingSpaceMap_ι_thinClassifyingSpaceClosedRestrictionHomeomorph_symm_apply
-    (hP : IsClosed {x | P x})
-    (z : TauCeti.thinClassifyingSpace.coarseMap hs ⁻¹'
-      (Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :
-    TauCeti.thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι
-      ((P.thinClassifyingSpaceClosedRestrictionHomeomorph hs hP).symm z) = z.val :=
-  congrArg Subtype.val
-    ((P.thinClassifyingSpaceClosedRestrictionHomeomorph hs hP).apply_symm_apply z)
+      ((P.thinClassifyingSpaceRestrictionHomeomorph hs h).symm z) = z.val :=
+  congrArg Subtype.val ((P.thinClassifyingSpaceRestrictionHomeomorph hs h).apply_symm_apply z)
 
 end CategoryTheory.ObjectProperty

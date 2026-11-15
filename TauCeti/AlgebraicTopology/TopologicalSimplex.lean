@@ -54,10 +54,6 @@ universe u
 
 namespace SimplexCategory
 
-/-- `SimplexCategory` has countably many objects, indexed by their length. -/
-instance countable : Countable SimplexCategory :=
-  Function.Injective.countable (f := SimplexCategory.len) fun _ _ ↦ SimplexCategory.ext
-
 /-- Every topological simplex is compact, being a universe lift of a standard simplex on a finite
 type. -/
 instance compactSpace (n : SimplexCategory) : CompactSpace (toTop.{u}.obj n) :=
