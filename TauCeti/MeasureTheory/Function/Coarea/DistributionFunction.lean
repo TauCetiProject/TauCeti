@@ -181,86 +181,21 @@ private theorem ae_hasDerivAt_measureReal_Iic_zero_of_mutuallySingular {σ : Mea
       mono' _ _ huv := measureReal_mono (Iic_subset_Iic.2 huv)
       right_continuous' u := by
         rw [← continuousWithinAt_Ioi_iff_Ici, ContinuousWithinAt]
-        have hI : (⋂ r > u, Iic r) = Iic u :=
-          Subset.antisymm (fun y hy ↦ le_of_forall_gt_imp_ge_of_dense fun r hru ↦
-              mem_iInter₂.1 hy r hru)
-            fun y hy ↦ mem_iInter₂.2 fun r hru ↦ hy.trans hru.le
+        have hI : (⋂ r > u, Iic r) = Iic u := Subset.antisymm
+          (fun _ hy ↦ le_of_forall_gt_imp_ge_of_dense fun r hru ↦ mem_iInter₂.1 hy r hru)
+          (fun _ hy ↦ mem_iInter₂.2 fun _ hru ↦ hy.trans hru.le)
         have hlim := tendsto_measure_biInter_gt (μ := σ) (s := Iic) (a := u)
-          (fun _ _ ↦ nullMeasurableSet_Iic) (fun _ _ _ hij ↦ Iic_subset_Iic.2 hij)
+          (fun _ _ ↦ nullMeasurableSet_Iic) (fun _ _ _ ↦ Iic_subset_Iic.2)
           ⟨u + 1, by linarith, measure_ne_top σ _⟩
         rw [hI] at hlim
         exact (ENNReal.tendsto_toReal (measure_ne_top σ _)).comp hlim }
-  have hS : S.measure = σ := by
-    refine S.measure.ext_of_Ioc σ fun a b hab ↦ ?_
+  have hS : S.measure = σ := S.measure.ext_of_Ioc σ fun a b hab ↦ by
     rw [S.measure_Ioc, ← Iic_sdiff_Iic]
     change ENNReal.ofReal (σ.real (Iic b) - σ.real (Iic a)) = σ (Iic b \ Iic a)
     rw [← measureReal_sdiff (Iic_subset_Iic.2 hab.le) measurableSet_Iic, ofReal_measureReal]
   filter_upwards [S.ae_hasDerivAt,
-    Measure.rnDeriv_eq_zero_of_mutuallySingular hσ Measure.AbsolutelyContinuous.rfl] with t ht h0
+    Measure.rnDeriv_eq_zero_of_mutuallySingular hσ .rfl] with t ht h0
   simpa [S, hS, h0] using ht
-
-/-- Pushing volume on `{h > c} ∩ {Dh = 0}` forward along `h` gives a finite Borel measure on `ℝ`
-mutually singular with respect to Lebesgue measure when `h '' {Dh = 0}` is Lebesgue-null. -/
-private theorem exists_isFiniteMeasure_mutuallySingular_criticalSlab
-    (hh : AEMeasurable h volume) {c : ℝ} (hc : volume {x | c < h x} ≠ ∞)
-    (hcrit : volume (h '' {x | fderiv ℝ h x = 0}) = 0) :
-    ∃ σ : Measure ℝ, IsFiniteMeasure σ ∧ σ ⟂ₘ volume ∧
-      ∀ {u v : ℝ}, c < u → u ≤ v →
-        volume (h ⁻¹' Ioc u v ∩ ({x | c < h x} ∩ {x | fderiv ℝ h x = 0})) = σ (Ioc u v) := by
-  set C := {x | fderiv ℝ h x = 0}
-  have hC : MeasurableSet C := (measurableSet_singleton 0).preimage (measurable_fderiv ℝ h)
-  let Ac : Set E := {x | c < h x} ∩ C
-  have hAc : NullMeasurableSet Ac volume :=
-    (nullMeasurableSet_lt aemeasurable_const hh).inter hC.nullMeasurableSet
-  let ν : Measure E := volume.restrict Ac
-  have : IsFiniteMeasure ν :=
-    ⟨(Measure.restrict_apply_univ Ac).trans_lt (lt_of_le_of_lt (measure_mono inter_subset_left)
-      hc.lt_top)⟩
-  let σ : Measure ℝ := Measure.map h ν
-  have hσ_fin : IsFiniteMeasure σ := by
-    refine ⟨?_⟩
-    rw [Measure.map_apply_of_aemeasurable hh.restrict MeasurableSet.univ]
-    exact measure_lt_top ν _
-  refine ⟨σ, hσ_fin, ?_, fun _ _ ↦ ?_⟩
-  · let N := toMeasurable volume (h '' C)
-    have hN : MeasurableSet N := measurableSet_toMeasurable volume (h '' C)
-    have hσNc : σ Nᶜ = 0 := by
-      rw [Measure.map_apply_of_aemeasurable hh.restrict hN.compl, Measure.restrict_apply₀' hAc]
-      have hemp : h ⁻¹' Nᶜ ∩ Ac = ∅ := eq_empty_of_forall_notMem fun x ⟨hxN, _, hxC⟩ ↦
-        hxN (subset_toMeasurable volume (h '' C) ⟨x, hxC, rfl⟩)
-      rw [hemp, measure_empty]
-    exact ⟨Nᶜ, hN.compl, hσNc, by rw [compl_compl, measure_toMeasurable, hcrit]⟩
-  · rw [Measure.map_apply_of_aemeasurable hh.restrict measurableSet_Ioc,
-      Measure.restrict_apply₀' hAc]
-
-/-- Between levels `u ≤ v` above `c`, the drop in `{h > ·}` is at most the regular level integral
-plus the singular critical-slab measure. -/
-private theorem volume_setOf_lt_le_add_criticalSlab {c u v : ℝ} (hu : c < u)
-    {σ : Measure ℝ}
-    (hσ : volume (h ⁻¹' Ioc u v ∩ ({x | c < h x} ∩ {x | fderiv ℝ h x = 0})) = σ (Ioc u v)) :
-    volume {x | u < h x} ≤
-      (volume {x | v < h x} +
-        ∫⁻ t in Ioc u v, ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t},
-          ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1]) + σ (Ioc u v) := by
-  set R := {x | fderiv ℝ h x ≠ 0}
-  set Ac := {x | c < h x} ∩ {x | fderiv ℝ h x = 0}
-  have hcov : {x | u < h x} ⊆ ({x | v < h x} ∪ (h ⁻¹' Ioc u v ∩ R)) ∪ (h ⁻¹' Ioc u v ∩ Ac) := by
-    intro x hx
-    rcases lt_or_ge v (h x) with hvx | hvx
-    · exact Or.inl (Or.inl hvx)
-    · by_cases hxR : x ∈ R
-      · exact Or.inl (Or.inr ⟨⟨hx, hvx⟩, hxR⟩)
-      · exact Or.inr ⟨⟨hx, hvx⟩, hu.trans hx, by simpa [R] using hxR⟩
-  rw [← volume_preimage_inter_setOf_fderiv_ne_zero measurableSet_Ioc, ← hσ]
-  calc volume {x | u < h x}
-      ≤ volume (({x | v < h x} ∪ (h ⁻¹' Ioc u v ∩ R)) ∪ (h ⁻¹' Ioc u v ∩ Ac)) :=
-        measure_mono hcov
-    _ ≤ volume ({x | v < h x} ∪ (h ⁻¹' Ioc u v ∩ R)) + volume (h ⁻¹' Ioc u v ∩ Ac) :=
-        measure_union_le _ _
-    _ ≤ (volume {x | v < h x} + volume (h ⁻¹' Ioc u v ∩ R)) +
-          volume (h ⁻¹' Ioc u v ∩ Ac) := by
-        gcongr
-        exact measure_union_le _ _
 
 /-- When `h '' {Dh = 0}` has Lebesgue measure zero, `-μ'(t) ≤ m(t)` at almost every `t > c`, for a
 fixed `c > 0`. -/
@@ -273,29 +208,56 @@ private theorem ae_ofReal_neg_deriv_le_setLIntegral_inv_enorm_fderiv_of_lt
         ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}, ‖fderiv ℝ h x‖ₑ⁻¹
           ∂μHE[finrank ℝ E - 1] := by
   set R := {x | fderiv ℝ h x ≠ 0}
+  set C := {x | fderiv ℝ h x = 0}
+  set Ac := {x | c < h x} ∩ C
   set m : ℝ → ℝ≥0∞ := fun t ↦ ∫⁻ x in R ∩ h ⁻¹' {t}, ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1]
   set μr : ℝ → ℝ := fun s ↦ volume.real {x | s < h x}
-  obtain ⟨σ, hσ_fin, hσ_sing, hσ_slab⟩ :=
-    exists_isFiniteMeasure_mutuallySingular_criticalSlab hh (hfin c hc) hcrit
   have hR : MeasurableSet R := (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ h)
+  have hAc : NullMeasurableSet Ac volume := (nullMeasurableSet_lt aemeasurable_const hh).inter
+    ((measurableSet_singleton 0).preimage (measurable_fderiv ℝ h)).nullMeasurableSet
+  let ν : Measure E := volume.restrict Ac
+  have : IsFiniteMeasure ν := ⟨(Measure.restrict_apply_univ Ac).trans_lt
+    ((measure_mono inter_subset_left).trans_lt (hfin c hc).lt_top)⟩
+  let σ : Measure ℝ := Measure.map h ν
+  have : IsFiniteMeasure σ :=
+    ⟨by rw [Measure.map_apply_of_aemeasurable hh.restrict .univ]; exact measure_lt_top ν _⟩
+  have hσ_sing : σ ⟂ₘ volume := by
+    let N := toMeasurable volume (h '' C)
+    refine ⟨Nᶜ, (measurableSet_toMeasurable _ _).compl, ?_,
+      by rw [compl_compl, measure_toMeasurable, hcrit]⟩
+    rw [Measure.map_apply_of_aemeasurable hh.restrict (measurableSet_toMeasurable _ _).compl,
+      Measure.restrict_apply₀' hAc, eq_empty_of_forall_notMem
+        (fun x (hx : x ∈ h ⁻¹' Nᶜ ∩ Ac) ↦ hx.1 (subset_toMeasurable _ _ ⟨x, hx.2.2, rfl⟩)),
+      measure_empty]
   have hm : AEMeasurable m := by
-    have := aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt (F := ℝ) volume
-      hR.nullMeasurableSet
-      (fun x hx ↦ (TauCeti.differentiableAt_of_fderiv_ne_zero hx).hasFDerivAt.hasFDerivWithinAt)
-      (measurable_fderiv ℝ h).eNorm.inv
-    simpa only [finrank_self, Pi.inv_apply] using this
+    simpa only [finrank_self, Pi.inv_apply] using
+      aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt (F := ℝ) volume hR.nullMeasurableSet
+        (fun _ hx ↦ (TauCeti.differentiableAt_of_fderiv_ne_zero hx).hasFDerivAt.hasFDerivWithinAt)
+        (measurable_fderiv ℝ h).eNorm.inv
   have hmc : ∫⁻ t in Ioi c, m t ≠ ∞ := by
     rw [← volume_preimage_inter_setOf_fderiv_ne_zero measurableSet_Ioi]
-    exact ne_top_of_le_ne_top (hfin c hc) (measure_mono fun x hx ↦ hx.1)
+    exact ne_top_of_le_ne_top (hfin c hc) (measure_mono fun _ hx ↦ hx.1)
   have hfinite : ∀ᵐ t ∂volume.restrict (Ioi c), m t < ∞ := ae_lt_top' hm.restrict hmc
   let g : ℝ → ℝ := (Ioi c).indicator fun t ↦ (m t).toReal
   have hg : Integrable g := IntegrableOn.integrable_indicator
     (integrable_toReal_of_lintegral_ne_top hm.restrict hmc) measurableSet_Ioi
-  -- Above `c`, `μr + ∫_c g + σ (-∞, ·]` is monotone.
   have hmono : MonotoneOn (fun u ↦ μr u + (∫ t in c..u, g t) + σ.real (Iic u)) (Ioi c) :=
     fun u hu v _ huv ↦ by
-      have hsub : Ioc u v ⊆ Ioi c := fun t ht ↦ hu.trans ht.1
-      have hvol := volume_setOf_lt_le_add_criticalSlab hu (hσ_slab hu huv)
+      have hsub : Ioc u v ⊆ Ioi c := fun _ ht ↦ hu.trans ht.1
+      have hcov : {x | u < h x} ⊆ ({x | v < h x} ∪ (h ⁻¹' Ioc u v ∩ R)) ∪ (h ⁻¹' Ioc u v ∩ Ac) := by
+        intro x hx
+        rcases lt_or_ge v (h x) with hvx | hvx
+        · exact .inl (.inl hvx)
+        · by_cases hxR : x ∈ R
+          · exact .inl (.inr ⟨⟨hx, hvx⟩, hxR⟩)
+          · exact .inr ⟨⟨hx, hvx⟩, hu.trans hx, by simpa [R, C] using hxR⟩
+      have hvol : volume {x | u < h x} ≤ (volume {x | v < h x} + ∫⁻ t in Ioc u v, m t) +
+          σ (Ioc u v) := by
+        rw [← volume_preimage_inter_setOf_fderiv_ne_zero measurableSet_Ioc,
+          Measure.map_apply_of_aemeasurable hh.restrict measurableSet_Ioc,
+          Measure.restrict_apply₀' hAc]
+        exact (measure_mono hcov).trans ((measure_union_le _ _).trans
+          (add_le_add_left (measure_union_le _ _) _))
       have hm_uv : ∫⁻ t in Ioc u v, m t ≠ ∞ := ne_top_of_le_ne_top hmc (lintegral_mono_set hsub)
       have hv_fin : volume {x | v < h x} ≠ ∞ := hfin v ((hc.trans hu).trans_le huv)
       have hreal := ENNReal.toReal_mono
@@ -307,24 +269,22 @@ private theorem ae_ofReal_neg_deriv_le_setLIntegral_inv_enorm_fderiv_of_lt
           setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ indicator_of_mem (hsub ht) _,
           integral_toReal hm.restrict (ae_restrict_of_ae_restrict_of_subset hsub hfinite)]
       have hσ_uv : (σ (Ioc u v)).toReal = σ.real (Iic v) - σ.real (Iic u) := by
-        rw [← Iic_sdiff_Iic]
-        exact measureReal_sdiff (Iic_subset_Iic.2 huv) measurableSet_Iic
+        rw [← Iic_sdiff_Iic]; exact measureReal_sdiff (Iic_subset_Iic.2 huv) measurableSet_Iic
       have hadd := intervalIntegral.integral_add_adjacent_intervals (a := c) (b := u) (c := v)
         hg.intervalIntegrable hg.intervalIntegrable
       simp only [μr, measureReal_def] at hσ_uv ⊢
       linarith [hreal, hint, hσ_uv, hadd]
-  have hμr : AntitoneOn μr (Ioi 0) := fun u hu v _ huv ↦
-    measureReal_mono (fun x hx ↦ huv.trans_lt hx) (hfin u hu)
+  have hμr : AntitoneOn μr (Ioi 0) := fun u hu _ _ huv ↦
+    measureReal_mono (fun _ hx ↦ huv.trans_lt hx) (hfin u hu)
   filter_upwards [hμr.neg.ae_differentiableWithinAt_of_mem,
     LocallyIntegrable.ae_hasDerivAt_integral hg.locallyIntegrable,
     ae_hasDerivAt_measureReal_Iic_zero_of_mutuallySingular hσ_sing] with t hdiff hderiv hS hct
   have hdμ : DifferentiableAt ℝ μr t := by
     simpa using ((hdiff (hc.trans hct)).differentiableAt (Ioi_mem_nhds (hc.trans hct))).neg
-  have hacc : AccPt t (𝓟 (Ioi c)) := isOpen_Ioi.preperfect t hct
-  have hnonneg :=
-    (((hdμ.hasDerivAt.add (hderiv c)).add hS).hasDerivWithinAt).nonneg_of_monotoneOn hacc hmono
-  have hgt : g t = (m t).toReal := indicator_of_mem hct _
-  rw [hgt, add_zero] at hnonneg
+  have hnonneg := (((hdμ.hasDerivAt.add (hderiv c)).add hS).hasDerivWithinAt).nonneg_of_monotoneOn
+    (isOpen_Ioi.preperfect t hct) hmono
+  dsimp only [g] at hnonneg
+  rw [indicator_of_mem hct, add_zero] at hnonneg
   exact (ENNReal.ofReal_le_ofReal (by linarith : -deriv μr t ≤ (m t).toReal)).trans
     ENNReal.ofReal_toReal_le
 
