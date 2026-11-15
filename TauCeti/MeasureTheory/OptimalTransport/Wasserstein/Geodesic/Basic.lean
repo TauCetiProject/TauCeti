@@ -356,23 +356,15 @@ theorem exists_isGeodesicSegment_timeMarginal {η : Measure C(I, X)}
       (hasFiniteMoment μ)).2 ?_
     rw [← h0, hW]
     exact ENNReal.mul_ne_top (edist_ne_top 0 t) hμν
-  obtain ⟨γ, hγ⟩ : ∃ γ : I → WassersteinSpace p X,
-      ∀ t, ((γ t : ProbabilityMeasure X) : Measure X) = η.timeMarginal t :=
-    ⟨fun t ↦ mk (η.timeMarginal t).toProbabilityMeasure (hmom t),
-      fun t ↦ by simp⟩
-  have hγ0 : γ 0 = μ := ext (ProbabilityMeasure.toMeasure_injective ((hγ 0).trans h0))
-  have hγ1 : γ 1 = ν := ext (ProbabilityMeasure.toMeasure_injective ((hγ 1).trans h1))
-  have hdist (s t : I) : dist (γ s) (γ t) = |(s : ℝ) - t| * dist (γ 0) (γ 1) := by
-    rw [hγ0, hγ1, dist_def, dist_def, hγ, hγ, hW, ENNReal.toReal_mul, edist_dist,
-      ENNReal.toReal_ofReal dist_nonneg, Subtype.dist_eq, Real.dist_eq]
-  -- The curve is Lipschitz, hence a path; it is then a geodesic path by `hdist`.
-  have hc : (⟨γ, (LipschitzWith.of_dist_le_mul (K := (dist (γ 0) (γ 1)).toNNReal)
-      fun s t ↦ by rw [hdist, Real.coe_toNNReal _ dist_nonneg, Subtype.dist_eq, Real.dist_eq,
-        mul_comm]).continuous⟩ : C(I, WassersteinSpace p X)) ∈ geodesicPaths _ :=
-    mem_geodesicPaths_iff.2 hdist
-  have hseg := mem_geodesicPaths_iff_isGeodesicSegment.1 hc
-  simp only [ContinuousMap.coe_mk, hγ0, hγ1] at hseg
-  exact ⟨_, hseg, fun t ↦ by rw [IccExtend_val, hγ]⟩
+  let γ (t : I) : WassersteinSpace p X := mk (η.timeMarginal t).toProbabilityMeasure (hmom t)
+  have hγ (t : I) : ((γ t : ProbabilityMeasure X) : Measure X) = η.timeMarginal t := by simp [γ]
+  have hγe (t : I) (ρ : WassersteinSpace p X) (h : η.timeMarginal t = ρ) : γ t = ρ :=
+    ext (ProbabilityMeasure.toMeasure_injective ((hγ t).trans h))
+  -- The curve `γ ∘ projIcc` is a geodesic segment by `hW`, with no detour through paths.
+  refine ⟨fun t ↦ γ (projIcc 0 1 zero_le_one t), ⟨by simpa using hγe 0 μ h0,
+    by simpa using hγe 1 ν h1, fun s hs t ht ↦ ?_⟩, fun t ↦ by simp [hγ]⟩
+  rw [projIcc_of_mem _ hs, projIcc_of_mem _ ht, dist_def, dist_def, hγ, hγ, hW, ENNReal.toReal_mul,
+    edist_dist, ENNReal.toReal_ofReal dist_nonneg, Subtype.dist_eq, Real.dist_eq]
 
 /-- **`P_p (X)` is a geodesic space.** On a Polish geodesic space, the space of probability
 measures with finite `p`-th moment, with the `p`-Wasserstein distance, is a geodesic space for
@@ -419,20 +411,8 @@ theorem exists_ae_mem_geodesicPaths_of_isGeodesicSegment (hp1 : 1 < p) (hp : p �
   have hle : W ^ p.toReal ≤ ∫⁻ c, edist (c 0) (c 1) ^ p.toReal ∂η := by
     have hcost := wassersteinEDist_timeMarginal_rpow_le_lintegral_edist η hp0 hp
     rwa [hmarg 0, hmarg 1, Icc.coe_zero, Icc.coe_one, h.source, h.target] at hcost
-  -- Each path costs at most its action, and the two expectations agree, so almost every path
-  -- has minimal action and is a geodesic.
-  have hpath : ∀ᵐ c : C(I, X) ∂η, edist (c 0) (c 1) ^ p.toReal ≤
-      curveAction p.toReal (IccExtend zero_le_one c) 0 1 :=
-    hηAC.mono fun c hc ↦ hc.edist_rpow_le_curveAction_IccExtend hr.le
-  have hae := ae_eq_of_ae_le_of_lintegral_le hpath
-    (ne_top_of_le_ne_top (hηA ▸ hA ▸ hW) (lintegral_mono_ae hpath))
-    (measurable_curveAction_IccExtend zero_le_one _ _ _).aemeasurable (by rw [hηA, hA]; exact hle)
-  have hgeo : ∀ᵐ c ∂η, c ∈ geodesicPaths X := by
-    filter_upwards [hηAC, hae] with c hc hce
-    rw [mem_geodesicPaths_iff_isGeodesicSegment]
-    have hc' := hc.isGeodesicSegment_of_curveAction_le hr
-      (by rw [IccExtend_left, IccExtend_right]; exact hce.symm.le)
-    rwa [IccExtend_left, IccExtend_right] at hc'
+  have hgeo := ae_mem_geodesicPaths_of_lintegral_curveAction_le hr hηAC
+    (by rw [hηA, hA]; exact hW) (by rw [hηA, hA]; exact hle)
   refine ⟨η, hηP, hgeo, hmarg, ENNReal.rpow_left_injective (ENNReal.toReal_pos hp0 hp).ne' ?_⟩
   dsimp only
   rw [← lintegral_curveAction_eq_eLpNorm_rpow hgeo hp0 hp, hηA, hA]
