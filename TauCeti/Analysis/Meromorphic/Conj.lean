@@ -16,8 +16,8 @@ import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 For `f : ℂ → ℂ`, the reflected function `conj ∘ f ∘ conj` is again holomorphic, meromorphic, in
 meromorphic normal form, and has the same order, at the reflected point. Mathlib records the
 differentiable case as `DifferentiableAt.conj_conj`; this file supplies the analytic, meromorphic,
-and normal-form versions together with the invariance of `meromorphicOrderAt` and
-`toMeromorphicNFAt`.
+and normal-form versions together with the invariance of `meromorphicOrderAt` and the commutation
+of `toMeromorphicNFAt` with reflection.
 
 These are the statements needed to transport the analytic properties of a completed L-function and
 its continued L-function to its dual, whose completed function is the reflection of the original
@@ -26,8 +26,8 @@ one.
 ## Main results
 
 * `AnalyticAt.conj_conj`, `TauCeti.analyticAt_conj_conj_iff`: reflection preserves analyticity.
-* `MeromorphicAt.conj_conj`, `TauCeti.meromorphicAt_conj_conj_iff`, `Meromorphic.conj_conj`:
-  reflection preserves meromorphy.
+* `MeromorphicAt.conj_conj`, `TauCeti.meromorphicAt_conj_conj_iff`, `Meromorphic.conj_conj`,
+  `TauCeti.meromorphic_conj_conj_iff`: reflection preserves meromorphy.
 * `TauCeti.meromorphicOrderAt_conj_conj`: reflection preserves the order of a meromorphic
   function.
 * `MeromorphicNFAt.conj_conj`, `TauCeti.meromorphicNFAt_conj_conj_iff`,
@@ -71,6 +71,12 @@ theorem TauCeti.meromorphicAt_conj_conj_iff :
 /-- If `f` is meromorphic on `ℂ`, then so is `conj ∘ f ∘ conj`. -/
 theorem Meromorphic.conj_conj (hf : Meromorphic f) : Meromorphic (conj ∘ f ∘ conj) :=
   fun _ ↦ TauCeti.meromorphicAt_conj_conj_iff.2 (hf _)
+
+/-- A function `f` is meromorphic on `ℂ` iff `conj ∘ f ∘ conj` is meromorphic on `ℂ`. -/
+@[simp]
+theorem TauCeti.meromorphic_conj_conj_iff :
+    Meromorphic (conj ∘ f ∘ conj) ↔ Meromorphic f :=
+  ⟨fun hf ↦ by simpa [Function.comp_def] using hf.conj_conj, Meromorphic.conj_conj⟩
 
 /-- Reflection across the real axis preserves the order of a meromorphic function:
 the order of `conj ∘ f ∘ conj` at `x` is the order of `f` at `conj x`. -/

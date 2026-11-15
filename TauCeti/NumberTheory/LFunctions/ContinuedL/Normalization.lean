@@ -50,8 +50,8 @@ theorem analytic_invGammaFactor (s : ℂ) :
   simp [AnalyticLFunctionData.invGammaFactor_def]
 
 /-- **Normalization shift of `continuedL`.** Passing from an arithmetic normalization of weight `w`
-to its analytic normalization shifts `continuedL` by `+w / 2` at every point of `ℂ`, including at
-cancelled and uncancelled poles. -/
+to its analytic normalization shifts `continuedL` by `+w / 2` at every point of `ℂ`, both on and
+off the support of `polarOrder`. -/
 @[simp]
 theorem analytic_continuedL_apply (s : ℂ) :
     T.analytic.continuedL s = T.arithmetic.continuedL (s + (T.weight : ℂ) / 2) := by
@@ -106,12 +106,14 @@ theorem analytic_continuedL :
   funext T.analytic_continuedL_apply
 
 /-- Translation preserves the meromorphic order of `continuedL` at the shifted point. -/
+@[simp]
 theorem meromorphicOrderAt_analytic_continuedL (s : ℂ) :
     meromorphicOrderAt T.analytic.continuedL s =
       meromorphicOrderAt T.arithmetic.continuedL (s + (T.weight : ℂ) / 2) := by
   rw [T.analytic_continuedL, meromorphicOrderAt_comp_add_const_eq_meromorphicOrderAt]
 
 /-- Translation preserves analyticity of `continuedL` at the shifted point. -/
+@[simp]
 theorem analyticAt_analytic_continuedL_iff (s : ℂ) :
     AnalyticAt ℂ T.analytic.continuedL s ↔
       AnalyticAt ℂ T.arithmetic.continuedL (s + (T.weight : ℂ) / 2) := by

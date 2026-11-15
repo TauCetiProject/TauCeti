@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LFunctions.ContinuedL.Basic
 public import TauCeti.NumberTheory.LFunctions.ContinuedL.RiemannZeta
 public import TauCeti.NumberTheory.LFunctions.Dirichlet.Basic
 
@@ -16,62 +15,46 @@ For every primitive Dirichlet character `χ` modulo `N`, `(dirichletData χ hχ)
 Mathlib's `χ.LFunction` on all of `ℂ`:
 
 * When `N = 1`, `dirichletData χ hχ = riemannZetaData` and `χ.LFunction = riemannZeta`.
-* When `N ≠ 1`, `χ ≠ 1` has `polarOrder = 0`, so both `(dirichletData χ hχ).continuedL` and
-  `χ.LFunction` are entire and agree with the Dirichlet series `LSeries (↗χ)` on `1 < s.re`.
+* When `N ≠ 1`, `(dirichletData χ hχ).polarOrder = 0`, so `continuedL` reduces to the pointwise
+  quotient `χ.completedLFunction s / χ.gammaFactor s`, matching
+  `DirichletCharacter.LFunction_eq_completed_div_gammaFactor` everywhere (including at gamma poles).
 -/
 
 public section
 
-open Complex Set Topology
+open Complex
 
 namespace TauCeti.LFunctions
-
-section General
-
-variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive)
 
 /-- **The continued L-function of `dirichletData χ hχ` is `χ.LFunction`**, for every primitive
 Dirichlet character `χ` (both principal modulo `1` and nonprincipal). -/
 @[simp]
-theorem dirichletData_continuedL : (dirichletData χ hχ).continuedL = χ.LFunction := by
+theorem dirichletData_continuedL {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
+    (hχ : χ.IsPrimitive) : (dirichletData χ hχ).continuedL = χ.LFunction := by
   by_cases hN : N = 1
   · subst N
     rw [dirichletData_modOne, riemannZetaData_continuedL, DirichletCharacter.LFunction_modOne_eq]
-  · have hne : χ ≠ 1 := fun h1 ↦ hN (hχ.eq_one_iff.mp h1)
-    have hmc := dirichletData_hasMeromorphicContinuation χ hχ
-    have hda := dirichletData_hasDirichletAgreement χ hχ
-    have han_cont : AnalyticOnNhd ℂ (dirichletData χ hχ).continuedL univ := fun z _ ↦
-      hmc.analyticAt_continuedL_of_polarOrder_eq_zero (by simp [hN])
-    have han_L : AnalyticOnNhd ℂ χ.LFunction univ :=
-      Complex.analyticOnNhd_univ_iff_differentiable.mpr
-        (DirichletCharacter.differentiable_LFunction hne)
-    have hev : (dirichletData χ hχ).continuedL =ᶠ[𝓝 (2 : ℂ)] χ.LFunction := by
-      filter_upwards [(isOpen_lt continuous_const Complex.continuous_re).mem_nhds
-        (by norm_num : (1 : ℝ) < (2 : ℂ).re)] with z hz
-      rw [hda.continuedL_eq_LSeries hmc hz, DirichletCharacter.LFunction_eq_LSeries χ hz]
-      exact LSeries_congr (fun {n} hn ↦ dirichletData_coeff_of_ne_zero χ hχ hn) z
-    exact funext fun s ↦
-      han_cont.eqOn_of_preconnected_of_eventuallyEq han_L isPreconnected_univ (mem_univ (2 : ℂ))
-        hev (mem_univ s)
+  · ext s
+    have hN0 : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+    have hpow : (N : ℂ) ^ (-s / 2) * (N : ℂ) ^ (s / 2) = 1 := by
+      rw [← cpow_add _ _ hN0]
+      have hz : -s / 2 + s / 2 = 0 := by ring
+      rw [hz, cpow_zero]
+    rw [(dirichletData χ hχ).continuedL_eq_of_polarOrder_eq_zero (by simp [hN]),
+      dirichletData_conductor, PNat.mk_coe, dirichletData_completed,
+      AnalyticLFunctionData.invGammaFactor_def, dirichletData_gammaFactor, ← mul_assoc, hpow,
+      one_mul, ← div_eq_mul_inv, ← χ.LFunction_eq_completed_div_gammaFactor s (.inr hN)]
 
-/-- Pointwise form of `dirichletData_continuedL`. -/
-theorem dirichletData_continuedL_apply (s : ℂ) :
-    (dirichletData χ hχ).continuedL s = χ.LFunction s :=
-  congrFun (dirichletData_continuedL χ hχ) s
+/-! ### Checks -/
 
 /-- For a nonprincipal primitive character `χ ≠ 1`, `(dirichletData χ hχ).continuedL` is entire. -/
-theorem differentiable_dirichletData_continuedL (hne : χ ≠ 1) :
+example {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive) (hne : χ ≠ 1) :
     Differentiable ℂ (dirichletData χ hχ).continuedL := by
   rw [dirichletData_continuedL]
   exact DirichletCharacter.differentiable_LFunction hne
 
-end General
-
-/-! ### Checks -/
-
-/-- For a non-real primitive character (such as a character whose square is nontrivial), `d.dual`
-carries the conjugate character `χ⁻¹ ≠ χ`, so the asymmetric functional equation relates `χ` to
-`χ⁻¹` rather than to `χ` itself. -/
+/-- On the dual record `(dirichletData χ hχ).dual`, `continuedL` recovers the L-function
+`χ⁻¹.LFunction` of the inverse character. -/
 example {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive) :
     (dirichletData χ hχ).dual.continuedL = χ⁻¹.LFunction := by
   rw [dirichletData_dual, dirichletData_continuedL]
