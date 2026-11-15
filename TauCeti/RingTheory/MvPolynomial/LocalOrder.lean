@@ -82,7 +82,7 @@ theorem natCast_le_orderAt_pointToPoint_iff_le_pow (I : Ideal (MvPolynomial σ k
     (n : ℕ) :
     (n : ℕ∞) ≤ I.orderAt (pointToPoint a) ↔ I ≤ vanishingIdeal k {a} ^ n := by
   simp_rw [natCast_le_orderAt_pointToPoint_iff, ← mem_pow_vanishingIdeal_singleton_iff]
-  rfl
+  exact IsConcreteLE.le_iff.symm
 
 end Ideal
 

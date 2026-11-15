@@ -151,14 +151,10 @@ theorem derivativeIdeal_span_singleton_X_pow_succ (i : σ) {n : ℕ}
     rw [SetLike.mem_coe, mem_span_singleton, hderiv]
     exact (dvd_mul_left _ _).mul_right _
   · -- `Xᵢ ^ n` is `(n + 1)⁻¹` times the partial derivative of `Xᵢ ^ (n + 1)` in `Xᵢ`.
-    rw [span_singleton_le_iff_mem]
-    have hmem : pderiv i ((X i : MvPolynomial σ R) ^ (n + 1)) ∈
-        span (insert (X i ^ (n + 1)) (Set.range fun j ↦ pderiv j ((X i : MvPolynomial σ R) ^
-          (n + 1)))) :=
-      subset_span (Set.mem_insert_of_mem _ (Set.mem_range_self i))
-    have := mul_mem_left _ (C ((hn.unit⁻¹ : Rˣ) : R)) hmem
-    rwa [hderiv, Pi.single_eq_same, mul_one, ← mul_assoc, ← C_mul, hn.val_inv_mul, C_1,
-      one_mul] at this
+    refine (span_singleton_le_iff_mem _).mpr ((unit_mul_mem_iff_mem _ (hn.map C)).mp ?_)
+    have h := hderiv i
+    rw [Pi.single_eq_same, mul_one] at h
+    exact h ▸ subset_span (Set.mem_insert_of_mem _ (Set.mem_range_self i))
 
 /-- In characteristic `p`, the derivative ideal of `(Xᵢ ^ p)` is `(Xᵢ ^ p)` itself: every
 partial derivative of `Xᵢ ^ p` vanishes. -/
@@ -208,6 +204,7 @@ private theorem natCast_add_two_le_orderAt_of_le_orderAt_derivativeIdeal [CharZe
 /-- In characteristic zero, the derivative ideal lowers the order of an ideal at a rational
 point by exactly one. An ideal of order zero keeps order zero, and the zero ideal keeps infinite
 order. -/
+@[simp]
 theorem orderAt_derivativeIdeal_pointToPoint [CharZero k] (I : Ideal (MvPolynomial σ k))
     (a : σ → k) :
     I.derivativeIdeal.orderAt (pointToPoint a) = I.orderAt (pointToPoint a) - 1 := by
@@ -222,6 +219,7 @@ theorem orderAt_derivativeIdeal_pointToPoint [CharZero k] (I : Ideal (MvPolynomi
 
 /-- In characteristic zero, the `n`-th iterated derivative ideal lowers the order of an ideal at
 a rational point by exactly `n`, truncated at zero. -/
+@[simp]
 theorem orderAt_derivativeIdeal_iterate_pointToPoint [CharZero k] (I : Ideal (MvPolynomial σ k))
     (a : σ → k) (n : ℕ) :
     (derivativeIdeal^[n] I).orderAt (pointToPoint a) = I.orderAt (pointToPoint a) - n := by
