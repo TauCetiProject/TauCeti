@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Ideal
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.Normed.Ring.Basic
@@ -56,8 +55,6 @@ the off-diagonal products `d_i^* d_j` (`i ≠ j`) are uniformly small, whereas t
   quasicentral approximation neighborhoods of `I`, characterized by
   `hasBasis_quasicentralApproximateUnit`, `mem_quasicentralApproximateUnit_iff`, and the universal
   property `isQuasicentralApproximateUnit_iff_neBot_and_le`.
-* `TauCeti.CStarAlgebra.norm_sum_sq_le`: C⋆-identity bound on the squared norm of a finite sum in a
-  C⋆-ring with bounded diagonal norms and off-diagonal products `star (d i) * d j`.
 * `TwoSidedIdeal.exists_mem_nonneg_norm_le_one_norm_mul_sub_lt_norm_commutator_lt`,
   `TwoSidedIdeal.quasicentralApproximateUnit_neBot`,
   `TwoSidedIdeal.isQuasicentralApproximateUnit_quasicentralApproximateUnit`, and
@@ -318,23 +315,23 @@ theorem isQuasicentralApproximateUnit_bot_iff {l : Filter A} :
   ⟨fun hl => hl.neBot.eq_pure_iff.mpr (hl.eventually_mem.mono fun _ h => by simpa using h),
    fun h => h ▸ IsQuasicentralApproximateUnit.bot_pure_zero⟩
 
-/-- A quasicentral approximate unit for `⊤` is an increasing approximate unit of `A` along which
-all commutators tend to `0`. -/
+/-- A quasicentral approximate unit for `⊤` is precisely an increasing approximate unit of `A`. -/
+@[simp]
 theorem isQuasicentralApproximateUnit_top_iff {l : Filter A} :
-    (⊤ : TwoSidedIdeal A).IsQuasicentralApproximateUnit l ↔
-      l.IsIncreasingApproximateUnit ∧ ∀ a : A, Tendsto (fun e => e * a - a * e) l (𝓝 0) :=
-  ⟨fun hl => ⟨{ neBot := hl.neBot
-                tendsto_mul_left := fun _ => hl.tendsto_mul_left trivial
-                tendsto_mul_right := fun _ => hl.tendsto_mul_right trivial
-                eventually_nonneg := hl.eventually_nonneg
-                eventually_norm := hl.eventually_norm }, hl.tendsto_commutator⟩,
-   fun ⟨hl, hc⟩ => { neBot := hl.neBot
-                     eventually_mem := Eventually.of_forall fun _ => trivial
-                     eventually_nonneg := hl.eventually_nonneg
-                     eventually_norm := hl.eventually_norm
-                     tendsto_mul_right := fun _ => hl.tendsto_mul_right _
-                     tendsto_mul_left := fun _ => hl.tendsto_mul_left _
-                     tendsto_commutator := hc }⟩
+    (⊤ : TwoSidedIdeal A).IsQuasicentralApproximateUnit l ↔ l.IsIncreasingApproximateUnit :=
+  ⟨fun hl => { neBot := hl.neBot
+               tendsto_mul_left := fun _ => hl.tendsto_mul_left trivial
+               tendsto_mul_right := fun _ => hl.tendsto_mul_right trivial
+               eventually_nonneg := hl.eventually_nonneg
+               eventually_norm := hl.eventually_norm },
+   fun hl => { neBot := hl.neBot
+               eventually_mem := Eventually.of_forall fun _ => trivial
+               eventually_nonneg := hl.eventually_nonneg
+               eventually_norm := hl.eventually_norm
+               tendsto_mul_right := fun _ => hl.tendsto_mul_right _
+               tendsto_mul_left := fun _ => hl.tendsto_mul_left _
+               tendsto_commutator := fun a => by
+                 simpa only [sub_self] using (hl.tendsto_mul_right a).sub (hl.tendsto_mul_left a) }⟩
 
 /-- Pushing a filter `l : Filter I` on a closed two-sided ideal `I` forward to `A` yields a
 quasicentral approximate unit of `I` if and only if `l` is an increasing approximate unit of `I`
@@ -361,10 +358,7 @@ end Basic
 /-- In a unital C⋆-algebra, `pure 1` is a quasicentral approximate unit for `⊤`. -/
 theorem IsQuasicentralApproximateUnit.top_pure_one {A : Type*} [CStarAlgebra A] [PartialOrder A]
     [StarOrderedRing A] : (⊤ : TwoSidedIdeal A).IsQuasicentralApproximateUnit (pure 1) :=
-  isQuasicentralApproximateUnit_top_iff.mpr
-    ⟨.pure_one A, fun a => by
-      simpa only [one_mul, mul_one, sub_self] using
-        tendsto_pure_nhds (fun e : A => e * a - a * e) 1⟩
+  isQuasicentralApproximateUnit_top_iff.mpr (.pure_one A)
 
 /-- In a commutative C⋆-algebra, every increasing approximate unit of a closed two-sided ideal
 pushed forward to the ambient algebra is automatically quasicentral. -/
@@ -571,44 +565,6 @@ theorem quasicentralApproximateUnit_bot :
 
 end CanonicalFilter
 
-end TwoSidedIdeal
-
-namespace TauCeti.CStarAlgebra
-
-/-- C⋆-identity estimate on the squared norm of a finite sum in a C⋆-ring: if every term `d i`
-(`i ∈ s`) has norm at most `C` and every off-diagonal product `star (d i) * d j` (`i ≠ j`) has norm
-at most `η` (`0 ≤ η`), then `‖∑ i ∈ s, d i‖ ^ 2 ≤ s.card * C ^ 2 + s.card ^ 2 * η`. -/
-theorem norm_sum_sq_le {A ι : Type*} [NonUnitalNormedRing A] [StarRing A] [CStarRing A]
-    {s : Finset ι} {d : ι → A} {C η : ℝ} (hη : 0 ≤ η)
-    (hd : ∀ i ∈ s, ‖d i‖ ≤ C)
-    (hoff : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → ‖star (d i) * d j‖ ≤ η) :
-    ‖∑ i ∈ s, d i‖ ^ 2 ≤ (s.card : ℝ) * C ^ 2 + (s.card : ℝ) ^ 2 * η := by
-  classical
-  have hterm : ∀ i ∈ s, ∀ j ∈ s,
-      ‖star (d i) * d j‖ ≤ (if i = j then C ^ 2 else 0) + η := by
-    intro i hi j hj
-    split_ifs with hij
-    · subst hij
-      rw [CStarRing.norm_star_mul_self, ← sq]
-      exact (pow_le_pow_left₀ (norm_nonneg _) (hd i hi) 2).trans (le_add_of_nonneg_right hη)
-    · simpa only [zero_add] using hoff i hi j hj hij
-  calc ‖∑ i ∈ s, d i‖ ^ 2
-      = ‖∑ i ∈ s, ∑ j ∈ s, star (d i) * d j‖ := by
-        rw [sq, ← CStarRing.norm_star_mul_self, star_sum, Finset.sum_mul]
-        simp_rw [Finset.mul_sum]
-    _ ≤ ∑ i ∈ s, ∑ j ∈ s, ‖star (d i) * d j‖ :=
-        (norm_sum_le _ _).trans (Finset.sum_le_sum fun _ _ => norm_sum_le _ _)
-    _ ≤ ∑ i ∈ s, ∑ j ∈ s, ((if i = j then C ^ 2 else 0) + η) :=
-        Finset.sum_le_sum fun i hi => Finset.sum_le_sum fun j hj => hterm i hi j hj
-    _ = (s.card : ℝ) * C ^ 2 + (s.card : ℝ) ^ 2 * η := by
-        simp only [Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.sum_const, nsmul_eq_mul]
-        rw [Finset.sum_ite_of_true fun _ hx => hx, Finset.sum_const, nsmul_eq_mul]
-        ring
-
-end TauCeti.CStarAlgebra
-
-namespace TwoSidedIdeal
-
 section Existence
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
@@ -623,23 +579,20 @@ private theorem exists_next_quasicentral_step (I : TwoSidedIdeal A) [IsClosed (I
       (∀ x ∈ G, ‖v * (x : A) - x‖ < ε ∧ ‖(x : A) * v - x‖ < ε) ∧
       (∀ i < n, ∀ a ∈ F,
         ‖star (u i * a - a * u i) * (v * a - a * v)‖ ≤ δ * (‖a‖ + 1)) := by
-  let S := I.toNonUnitalStarSubalgebra
-  let l₀ : Filter S := CStarAlgebra.approximateUnit S
-  have hl₀ : l₀.IsIncreasingApproximateUnit := CStarAlgebra.increasingApproximateUnit S
+  let l₀ : Filter I := CStarAlgebra.approximateUnit I
+  have hl₀ : l₀.IsIncreasingApproximateUnit := CStarAlgebra.increasingApproximateUnit I
   have := hl₀.neBot
-  have hmul_l {y : A} (hy : y ∈ I) : Tendsto (fun v : S => y * (v : A)) l₀ (𝓝 y) :=
-    (continuous_subtype_val.tendsto ⟨y, I.mem_toNonUnitalStarSubalgebra.mpr hy⟩).comp
-      (hl₀.tendsto_mul_left ⟨y, I.mem_toNonUnitalStarSubalgebra.mpr hy⟩)
-  have hmul_r {y : A} (hy : y ∈ I) : Tendsto (fun v : S => (v : A) * y) l₀ (𝓝 y) :=
-    (continuous_subtype_val.tendsto ⟨y, I.mem_toNonUnitalStarSubalgebra.mpr hy⟩).comp
-      (hl₀.tendsto_mul_right ⟨y, I.mem_toNonUnitalStarSubalgebra.mpr hy⟩)
-  have hG : ∀ᶠ v : S in l₀, ∀ x ∈ G,
+  have hmul_l {y : A} (hy : y ∈ I) : Tendsto (fun v : I => y * (v : A)) l₀ (𝓝 y) :=
+    (continuous_subtype_val.tendsto ⟨y, hy⟩).comp (hl₀.tendsto_mul_left ⟨y, hy⟩)
+  have hmul_r {y : A} (hy : y ∈ I) : Tendsto (fun v : I => (v : A) * y) l₀ (𝓝 y) :=
+    (continuous_subtype_val.tendsto ⟨y, hy⟩).comp (hl₀.tendsto_mul_right ⟨y, hy⟩)
+  have hG : ∀ᶠ v : I in l₀, ∀ x ∈ G,
       ‖(v : A) * (x : A) - x‖ < ε ∧ ‖(x : A) * (v : A) - x‖ < ε :=
     G.eventually_all.mpr fun x _ =>
       ((Metric.tendsto_nhds.mp (hmul_r x.2) ε hε).and
         (Metric.tendsto_nhds.mp (hmul_l x.2) ε hε)).mono fun v ⟨hr, hl⟩ =>
         ⟨by simpa only [dist_eq_norm] using hr, by simpa only [dist_eq_norm] using hl⟩
-  have hF : ∀ᶠ v : S in l₀, ∀ i ∈ Finset.range n, ∀ a ∈ F,
+  have hF : ∀ᶠ v : I in l₀, ∀ i ∈ Finset.range n, ∀ a ∈ F,
       ‖star (u i * a - a * u i) * ((v : A) * a - a * (v : A))‖ ≤ δ * (‖a‖ + 1) := by
     refine (Finset.range n).eventually_all.mpr fun i hi => F.eventually_all.mpr fun a _ => ?_
     have hui : u i ∈ I := hu i (Finset.mem_range.mp hi)
@@ -663,7 +616,7 @@ private theorem exists_next_quasicentral_step (I : TwoSidedIdeal A) [IsClosed (I
       _ = δ * (‖a‖ + 1) := by ring
   obtain ⟨v, ⟨hv₀, hv₁⟩, hvG, hvF⟩ :=
     ((hl₀.eventually_nonneg.and hl₀.eventually_norm).and (hG.and hF)).exists
-  exact ⟨v.1, I.mem_toNonUnitalStarSubalgebra.mp v.2, Subtype.coe_le_coe.mpr hv₀,
+  exact ⟨v.1, v.2, Subtype.coe_le_coe.mpr hv₀,
     by rwa [AddSubgroupClass.coe_norm] at hv₁, hvG,
     fun i hi a ha => hvF i (Finset.mem_range.mpr hi) a ha⟩
 
