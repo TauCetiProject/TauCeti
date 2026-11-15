@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Functor
-public import TauCeti.RingTheory.GradedAlgebra.Localization
+public import TauCeti.RingTheory.GradedAlgebra.Localization.Basic
 
 /-!
 # Twisting sheaves along localizations in degree zero
