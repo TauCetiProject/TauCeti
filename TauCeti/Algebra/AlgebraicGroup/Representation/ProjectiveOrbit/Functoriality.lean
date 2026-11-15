@@ -97,44 +97,48 @@ theorem specPointsHomEquiv_toProjectiveOrbit (m : M) (hm : Module.IsUnimodular k
   exact congrArg ULift.up <| Over.OverMorphism.ext <|
     congrArg (· ≫ toProjectiveOrbit (H := H) m hm) (TauCeti.CommHopfAlgCat.mapMulEquiv_left g)
 
+section OrbitProjection
+
+variable (I : HopfIdeal k H) (m : M) (hm : Module.IsUnimodular k m)
+  (e : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m hm)
+
 /-- **Canonical quotient projection `Spec H ⟶ projectiveOrbitScheme m hm`** induced by an
 isomorphism `e : fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf m hm`. -/
-noncomputable def projectiveOrbitQuotientProjection (I : HopfIdeal k H)
-    (m : M) (hm : Module.IsUnimodular k m)
-    (e : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m hm) :
+noncomputable def projectiveOrbitQuotientProjection :
     Spec (.of H) ⟶ projectiveOrbitScheme (H := H) m hm :=
   (CommHopfAlgCat.representedQuotientProjection H I
     (e ≪≫ projectiveOrbitPointsSheafIsoPointsSheaf m hm)).left
 
 /-- `projectiveOrbitQuotientProjection` is a morphism over `Spec k`. -/
 @[reassoc (attr := simp)]
-theorem projectiveOrbitQuotientProjection_toSpec (I : HopfIdeal k H)
-    (m : M) (hm : Module.IsUnimodular k m)
-    (e : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m hm) :
+theorem projectiveOrbitQuotientProjection_toSpec :
     projectiveOrbitQuotientProjection I m hm e ≫ projectiveOrbitToSpec (H := H) m hm =
       Spec.map (CommRingCat.ofHom (algebraMap k H)) :=
   Over.w _
 
 /-- Every `projectiveOrbitQuotientProjection` is surjective on underlying schemes. -/
-instance instSurjectiveProjectiveOrbitQuotientProjection (I : HopfIdeal k H)
-    (m : M) (hm : Module.IsUnimodular k m)
-    (e : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m hm) :
+instance instSurjectiveProjectiveOrbitQuotientProjection :
     Surjective (projectiveOrbitQuotientProjection I m hm e) :=
   CommHopfAlgCat.instSurjectiveRepresentedQuotientProjectionLeft H I
     (e ≪≫ projectiveOrbitPointsSheafIsoPointsSheaf m hm)
+
+end OrbitProjection
+
+section ChevalleySingleOrbit
+
+variable [_root_.IsReduced H] (I : HopfIdeal k H) (m : M) (hm : Module.IsUnimodular k m)
+  (hcoset : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
+    (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
+        CommHopfAlgCat.quotientPointsSubgroup H I A) = QuotientGroup.mk h ↔
+      ∃ c : Aˣ, ∀ φ : Module.Dual k M,
+        h.ofConv (matrixCoefficient (C := H) φ m) =
+          c * g.ofConv (matrixCoefficient (C := H) φ m))
 
 /-- For a reduced group `G` and Chevalley's representing isomorphism
 `fppfHomogeneousQuotientIsoProjectiveOrbitPoints`, the descended quotient projection in
 `Over (Spec k)` is `toProjectiveOrbit` over `Spec k`. -/
 @[simp]
-theorem representedQuotientProjection_fppfHomogeneousQuotientIsoProjectiveOrbitPoints
-    [_root_.IsReduced H] (I : HopfIdeal k H) (m : M) (hm : Module.IsUnimodular k m)
-    (hcoset : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
-      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
-          CommHopfAlgCat.quotientPointsSubgroup H I A) = QuotientGroup.mk h ↔
-        ∃ c : Aˣ, ∀ φ : Module.Dual k M,
-          h.ofConv (matrixCoefficient (C := H) φ m) =
-            c * g.ofConv (matrixCoefficient (C := H) φ m)) :
+theorem representedQuotientProjection_fppfHomogeneousQuotientIsoProjectiveOrbitPoints :
     CommHopfAlgCat.representedQuotientProjection H I
       (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset ≪≫
         projectiveOrbitPointsSheafIsoPointsSheaf m hm) =
@@ -150,14 +154,7 @@ theorem representedQuotientProjection_fppfHomogeneousQuotientIsoProjectiveOrbitP
 /-- For a reduced group `G` and Chevalley's representing isomorphism
 `fppfHomogeneousQuotientIsoProjectiveOrbitPoints`, the underlying scheme morphism of
 `representedQuotientProjection` is `toProjectiveOrbit`. -/
-theorem representedQuotientProjection_fppfHomogeneousQuotientIsoProjectiveOrbitPoints_left
-    [_root_.IsReduced H] (I : HopfIdeal k H) (m : M) (hm : Module.IsUnimodular k m)
-    (hcoset : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
-      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
-          CommHopfAlgCat.quotientPointsSubgroup H I A) = QuotientGroup.mk h ↔
-        ∃ c : Aˣ, ∀ φ : Module.Dual k M,
-          h.ofConv (matrixCoefficient (C := H) φ m) =
-            c * g.ofConv (matrixCoefficient (C := H) φ m)) :
+theorem representedQuotientProjection_fppfHomogeneousQuotientIsoProjectiveOrbitPoints_left :
     (CommHopfAlgCat.representedQuotientProjection H I
       (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset ≪≫
         projectiveOrbitPointsSheafIsoPointsSheaf m hm)).left =
@@ -168,14 +165,7 @@ theorem representedQuotientProjection_fppfHomogeneousQuotientIsoProjectiveOrbitP
 /-- For a reduced group `G`, `projectiveOrbitQuotientProjection` on Chevalley's representing
 isomorphism `fppfHomogeneousQuotientIsoProjectiveOrbitPoints` is `toProjectiveOrbit`. -/
 @[simp]
-theorem projectiveOrbitQuotientProjection_fppfHomogeneousQuotientIsoProjectiveOrbitPoints
-    [_root_.IsReduced H] (I : HopfIdeal k H) (m : M) (hm : Module.IsUnimodular k m)
-    (hcoset : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
-      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
-          CommHopfAlgCat.quotientPointsSubgroup H I A) = QuotientGroup.mk h ↔
-        ∃ c : Aˣ, ∀ φ : Module.Dual k M,
-          h.ofConv (matrixCoefficient (C := H) φ m) =
-            c * g.ofConv (matrixCoefficient (C := H) φ m)) :
+theorem projectiveOrbitQuotientProjection_fppfHomogeneousQuotientIsoProjectiveOrbitPoints :
     projectiveOrbitQuotientProjection I m hm
       (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset) =
       toProjectiveOrbit (H := H) m hm :=
@@ -186,13 +176,6 @@ theorem projectiveOrbitQuotientProjection_fppfHomogeneousQuotientIsoProjectiveOr
 agrees with `projectiveOrbitTranslation`. -/
 @[simp]
 theorem representedQuotientTranslation_fppfHomogeneousQuotientIsoProjectiveOrbitPoints_hom_left
-    [_root_.IsReduced H] (I : HopfIdeal k H) (m : M) (hm : Module.IsUnimodular k m)
-    (hcoset : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
-      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
-          CommHopfAlgCat.quotientPointsSubgroup H I A) = QuotientGroup.mk h ↔
-        ∃ c : Aˣ, ∀ φ : Module.Dual k M,
-          h.ofConv (matrixCoefficient (C := H) φ m) =
-            c * g.ofConv (matrixCoefficient (C := H) φ m))
     (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) :
     (CommHopfAlgCat.representedQuotientTranslation H I
       (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset ≪≫
@@ -221,13 +204,6 @@ theorem representedQuotientTranslation_fppfHomogeneousQuotientIsoProjectiveOrbit
 `g ∈ G(k)` agrees with `(projectiveOrbitTranslation m hm g).inv`. -/
 @[simp]
 theorem representedQuotientTranslation_fppfHomogeneousQuotientIsoProjectiveOrbitPoints_inv_left
-    [_root_.IsReduced H] (I : HopfIdeal k H) (m : M) (hm : Module.IsUnimodular k m)
-    (hcoset : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
-      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
-          CommHopfAlgCat.quotientPointsSubgroup H I A) = QuotientGroup.mk h ↔
-        ∃ c : Aˣ, ∀ φ : Module.Dual k M,
-          h.ofConv (matrixCoefficient (C := H) φ m) =
-            c * g.ofConv (matrixCoefficient (C := H) φ m))
     (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) :
     (CommHopfAlgCat.representedQuotientTranslation H I
       (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset ≪≫
@@ -238,6 +214,8 @@ theorem representedQuotientTranslation_fppfHomogeneousQuotientIsoProjectiveOrbit
   exact
     representedQuotientTranslation_fppfHomogeneousQuotientIsoProjectiveOrbitPoints_hom_left
       I m hm hcoset g⁻¹
+
+end ChevalleySingleOrbit
 
 end SingleOrbit
 
@@ -263,11 +241,15 @@ noncomputable def projectiveOrbitQuotientMap (hJI : J ≤ I)
     (eI ≪≫ projectiveOrbitPointsSheafIsoPointsSheaf m₁ hm₁)
     (eJ ≪≫ projectiveOrbitPointsSheafIsoPointsSheaf m₂ hm₂)).left
 
+section MapLemmas
+
+variable (hJI : J ≤ I)
+  (eI : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m₁ hm₁)
+  (eJ : CommHopfAlgCat.fppfHomogeneousQuotient H J ≅ projectiveOrbitPointsSheaf (H := H) m₂ hm₂)
+
 /-- `projectiveOrbitQuotientMap` preserves the structural morphism to `Spec k`. -/
 @[reassoc (attr := simp)]
-theorem projectiveOrbitQuotientMap_toSpec (hJI : J ≤ I)
-    (eI : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m₁ hm₁)
-    (eJ : CommHopfAlgCat.fppfHomogeneousQuotient H J ≅ projectiveOrbitPointsSheaf (H := H) m₂ hm₂) :
+theorem projectiveOrbitQuotientMap_toSpec :
     projectiveOrbitQuotientMap hJI eI eJ ≫ projectiveOrbitToSpec (H := H) m₂ hm₂ =
       projectiveOrbitToSpec (H := H) m₁ hm₁ :=
   Over.w _
@@ -275,15 +257,23 @@ theorem projectiveOrbitQuotientMap_toSpec (hJI : J ≤ I)
 /-- `projectiveOrbitQuotientMap` commutes with the canonical projections
 `projectiveOrbitQuotientProjection` from `Spec H`. -/
 @[reassoc (attr := simp)]
-theorem projectiveOrbitQuotientProjection_comp_map (hJI : J ≤ I)
-    (eI : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m₁ hm₁)
-    (eJ : CommHopfAlgCat.fppfHomogeneousQuotient H J ≅ projectiveOrbitPointsSheaf (H := H) m₂ hm₂) :
+theorem projectiveOrbitQuotientProjection_comp_map :
     projectiveOrbitQuotientProjection I m₁ hm₁ eI ≫ projectiveOrbitQuotientMap hJI eI eJ =
       projectiveOrbitQuotientProjection J m₂ hm₂ eJ :=
   congrArg Over.Hom.left <|
     CommHopfAlgCat.representedQuotientProjection_comp_map H hJI
       (eI ≪≫ projectiveOrbitPointsSheafIsoPointsSheaf m₁ hm₁)
       (eJ ≪≫ projectiveOrbitPointsSheafIsoPointsSheaf m₂ hm₂)
+
+/-- **Surjectivity of subgroup-induced projective-orbit quotient maps.** Every
+`projectiveOrbitQuotientMap hJI eI eJ` is surjective, without reducedness assumptions on `G`. -/
+instance instSurjectiveProjectiveOrbitQuotientMap :
+    Surjective (projectiveOrbitQuotientMap hJI eI eJ) :=
+  CommHopfAlgCat.instSurjectiveRepresentedQuotientMapLeft H hJI
+    (eI ≪≫ projectiveOrbitPointsSheafIsoPointsSheaf m₁ hm₁)
+    (eJ ≪≫ projectiveOrbitPointsSheafIsoPointsSheaf m₂ hm₂)
+
+end MapLemmas
 
 /-- On a single projective-orbit model, `projectiveOrbitQuotientMap` for `le_refl I` is the
 identity morphism. -/
@@ -315,23 +305,43 @@ noncomputable def projectiveOrbitQuotientIso (I : HopfIdeal k H)
       (e₁ ≪≫ projectiveOrbitPointsSheafIsoPointsSheaf m₁ hm₁)
       (e₂ ≪≫ projectiveOrbitPointsSheafIsoPointsSheaf m₂ hm₂)
 
+section IsoLemmas
+
+variable (I : HopfIdeal k H)
+  (e₁ : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m₁ hm₁)
+  (e₂ : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m₂ hm₂)
+
 /-- The forward morphism of `projectiveOrbitQuotientIso` is `projectiveOrbitQuotientMap` for
 `le_refl I`. -/
 @[simp]
-theorem projectiveOrbitQuotientIso_hom (I : HopfIdeal k H)
-    (e₁ : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m₁ hm₁)
-    (e₂ : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m₂ hm₂) :
+theorem projectiveOrbitQuotientIso_hom :
     (projectiveOrbitQuotientIso I e₁ e₂).hom = projectiveOrbitQuotientMap (le_refl I) e₁ e₂ := by
   simp [projectiveOrbitQuotientIso, projectiveOrbitQuotientMap]
 
 /-- The inverse morphism of `projectiveOrbitQuotientIso` is `projectiveOrbitQuotientMap` in the
 reverse direction. -/
 @[simp]
-theorem projectiveOrbitQuotientIso_inv (I : HopfIdeal k H)
-    (e₁ : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m₁ hm₁)
-    (e₂ : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m₂ hm₂) :
+theorem projectiveOrbitQuotientIso_inv :
     (projectiveOrbitQuotientIso I e₁ e₂).inv = projectiveOrbitQuotientMap (le_refl I) e₂ e₁ := by
   simp [projectiveOrbitQuotientIso, projectiveOrbitQuotientMap]
+
+/-- Swapping the two projective-orbit models inverts `projectiveOrbitQuotientIso`. -/
+@[simp]
+theorem projectiveOrbitQuotientIso_symm :
+    (projectiveOrbitQuotientIso I e₁ e₂).symm = projectiveOrbitQuotientIso I e₂ e₁ := by
+  ext : 1
+  simp
+
+/-- Canonical comparison isomorphisms between projective-orbit models compose transitively. -/
+@[simp]
+theorem projectiveOrbitQuotientIso_trans
+    (e₃ : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m₃ hm₃) :
+    projectiveOrbitQuotientIso I e₁ e₂ ≪≫ projectiveOrbitQuotientIso I e₂ e₃ =
+      projectiveOrbitQuotientIso I e₁ e₃ := by
+  ext : 1
+  simp
+
+end IsoLemmas
 
 /-- Comparing a projective-orbit model with itself gives the identity isomorphism. -/
 @[simp]
@@ -342,43 +352,27 @@ theorem projectiveOrbitQuotientIso_refl (I : HopfIdeal k H)
   ext : 1
   simp
 
-/-- Swapping the two projective-orbit models inverts `projectiveOrbitQuotientIso`. -/
-@[simp]
-theorem projectiveOrbitQuotientIso_symm (I : HopfIdeal k H)
-    (e₁ : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m₁ hm₁)
-    (e₂ : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m₂ hm₂) :
-    (projectiveOrbitQuotientIso I e₁ e₂).symm = projectiveOrbitQuotientIso I e₂ e₁ := by
-  ext : 1
-  simp
+section ChevalleySubgroupMaps
 
-/-- Canonical comparison isomorphisms between projective-orbit models compose transitively. -/
-@[simp]
-theorem projectiveOrbitQuotientIso_trans (I : HopfIdeal k H)
-    (e₁ : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m₁ hm₁)
-    (e₂ : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m₂ hm₂)
-    (e₃ : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m₃ hm₃) :
-    projectiveOrbitQuotientIso I e₁ e₂ ≪≫ projectiveOrbitQuotientIso I e₂ e₃ =
-      projectiveOrbitQuotientIso I e₁ e₃ := by
-  ext : 1
-  simp
+variable [_root_.IsReduced H] (hJI : J ≤ I)
+  (hcoset₁ : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
+    (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
+        CommHopfAlgCat.quotientPointsSubgroup H I A) = QuotientGroup.mk h ↔
+      ∃ c : Aˣ, ∀ φ : Module.Dual k M₁,
+        h.ofConv (matrixCoefficient (C := H) φ m₁) =
+          c * g.ofConv (matrixCoefficient (C := H) φ m₁))
+  (hcoset₂ : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
+    (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
+        CommHopfAlgCat.quotientPointsSubgroup H J A) = QuotientGroup.mk h ↔
+      ∃ c : Aˣ, ∀ φ : Module.Dual k M₂,
+        h.ofConv (matrixCoefficient (C := H) φ m₂) =
+          c * g.ofConv (matrixCoefficient (C := H) φ m₂))
 
 /-- For a reduced group `G` and Chevalley models of `G/P` and `G/Q` (`J ≤ I`),
 `projectiveOrbitQuotientMap` commutes with the orbit projections `toProjectiveOrbit` from
 `Spec H`. -/
 @[reassoc (attr := simp)]
-theorem toProjectiveOrbit_projectiveOrbitQuotientMap [_root_.IsReduced H] (hJI : J ≤ I)
-    (hcoset₁ : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
-      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
-          CommHopfAlgCat.quotientPointsSubgroup H I A) = QuotientGroup.mk h ↔
-        ∃ c : Aˣ, ∀ φ : Module.Dual k M₁,
-          h.ofConv (matrixCoefficient (C := H) φ m₁) =
-            c * g.ofConv (matrixCoefficient (C := H) φ m₁))
-    (hcoset₂ : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
-      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
-          CommHopfAlgCat.quotientPointsSubgroup H J A) = QuotientGroup.mk h ↔
-        ∃ c : Aˣ, ∀ φ : Module.Dual k M₂,
-          h.ofConv (matrixCoefficient (C := H) φ m₂) =
-            c * g.ofConv (matrixCoefficient (C := H) φ m₂)) :
+theorem toProjectiveOrbit_projectiveOrbitQuotientMap :
     toProjectiveOrbit (H := H) m₁ hm₁ ≫
         projectiveOrbitQuotientMap hJI
           (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m₁ hm₁ hcoset₁)
@@ -392,19 +386,7 @@ theorem toProjectiveOrbit_projectiveOrbitQuotientMap [_root_.IsReduced H] (hJI :
 
 /-- For a reduced group `G`, `projectiveOrbitQuotientMap` on Chevalley models is uniquely
 characterized among all scheme morphisms by compatibility with `toProjectiveOrbit`. -/
-theorem eq_projectiveOrbitQuotientMap_iff [_root_.IsReduced H] (hJI : J ≤ I)
-    (hcoset₁ : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
-      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
-          CommHopfAlgCat.quotientPointsSubgroup H I A) = QuotientGroup.mk h ↔
-        ∃ c : Aˣ, ∀ φ : Module.Dual k M₁,
-          h.ofConv (matrixCoefficient (C := H) φ m₁) =
-            c * g.ofConv (matrixCoefficient (C := H) φ m₁))
-    (hcoset₂ : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
-      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
-          CommHopfAlgCat.quotientPointsSubgroup H J A) = QuotientGroup.mk h ↔
-        ∃ c : Aˣ, ∀ φ : Module.Dual k M₂,
-          h.ofConv (matrixCoefficient (C := H) φ m₂) =
-            c * g.ofConv (matrixCoefficient (C := H) φ m₂))
+theorem eq_projectiveOrbitQuotientMap_iff
     (f : projectiveOrbitScheme (H := H) m₁ hm₁ ⟶ projectiveOrbitScheme (H := H) m₂ hm₂) :
     f = projectiveOrbitQuotientMap hJI
           (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m₁ hm₁ hcoset₁)
@@ -425,19 +407,6 @@ theorem eq_projectiveOrbitQuotientMap_iff [_root_.IsReduced H] (hJI : J ≤ I)
 intertwines rational orbit translations `projectiveOrbitTranslation`. -/
 @[reassoc]
 theorem projectiveOrbitTranslation_hom_projectiveOrbitQuotientMap
-    [_root_.IsReduced H] (hJI : J ≤ I)
-    (hcoset₁ : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
-      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
-          CommHopfAlgCat.quotientPointsSubgroup H I A) = QuotientGroup.mk h ↔
-        ∃ c : Aˣ, ∀ φ : Module.Dual k M₁,
-          h.ofConv (matrixCoefficient (C := H) φ m₁) =
-            c * g.ofConv (matrixCoefficient (C := H) φ m₁))
-    (hcoset₂ : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
-      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
-          CommHopfAlgCat.quotientPointsSubgroup H J A) = QuotientGroup.mk h ↔
-        ∃ c : Aˣ, ∀ φ : Module.Dual k M₂,
-          h.ofConv (matrixCoefficient (C := H) φ m₂) =
-            c * g.ofConv (matrixCoefficient (C := H) φ m₂))
     (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) :
     (projectiveOrbitTranslation (H := H) m₁ hm₁ g).hom ≫
         projectiveOrbitQuotientMap hJI
@@ -460,19 +429,6 @@ theorem projectiveOrbitTranslation_hom_projectiveOrbitQuotientMap
 also intertwines inverse rational orbit translations. -/
 @[reassoc]
 theorem projectiveOrbitTranslation_inv_projectiveOrbitQuotientMap
-    [_root_.IsReduced H] (hJI : J ≤ I)
-    (hcoset₁ : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
-      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
-          CommHopfAlgCat.quotientPointsSubgroup H I A) = QuotientGroup.mk h ↔
-        ∃ c : Aˣ, ∀ φ : Module.Dual k M₁,
-          h.ofConv (matrixCoefficient (C := H) φ m₁) =
-            c * g.ofConv (matrixCoefficient (C := H) φ m₁))
-    (hcoset₂ : ∀ (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := H) A),
-      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) A ⧸
-          CommHopfAlgCat.quotientPointsSubgroup H J A) = QuotientGroup.mk h ↔
-        ∃ c : Aˣ, ∀ φ : Module.Dual k M₂,
-          h.ofConv (matrixCoefficient (C := H) φ m₂) =
-            c * g.ofConv (matrixCoefficient (C := H) φ m₂))
     (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) :
     (projectiveOrbitTranslation (H := H) m₁ hm₁ g).inv ≫
         projectiveOrbitQuotientMap hJI
@@ -486,15 +442,7 @@ theorem projectiveOrbitTranslation_inv_projectiveOrbitQuotientMap
     ← Iso.symm_hom, ← projectiveOrbitTranslation_inv_eq_symm]
   exact projectiveOrbitTranslation_hom_projectiveOrbitQuotientMap hJI hcoset₁ hcoset₂ g⁻¹
 
-/-- **Surjectivity of subgroup-induced projective-orbit quotient maps.** Every
-`projectiveOrbitQuotientMap hJI eI eJ` is surjective, without reducedness assumptions on `G`. -/
-instance instSurjectiveProjectiveOrbitQuotientMap (hJI : J ≤ I)
-    (eI : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m₁ hm₁)
-    (eJ : CommHopfAlgCat.fppfHomogeneousQuotient H J ≅ projectiveOrbitPointsSheaf (H := H) m₂ hm₂) :
-    Surjective (projectiveOrbitQuotientMap hJI eI eJ) :=
-  CommHopfAlgCat.instSurjectiveRepresentedQuotientMapLeft H hJI
-    (eI ≪≫ projectiveOrbitPointsSheafIsoPointsSheaf m₁ hm₁)
-    (eJ ≪≫ projectiveOrbitPointsSheafIsoPointsSheaf m₂ hm₂)
+end ChevalleySubgroupMaps
 
 /-- **Properness descends from `G/P` to `G/Q` for `P ⊆ Q`.** For closed subgroups `P ⊆ Q` defined
 by Hopf ideals `I` and `J` with `J ≤ I`, if a projective orbit scheme representing `G/P` is proper
