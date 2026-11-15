@@ -161,6 +161,21 @@ theorem commutator_liftQuotientPoint_apply_mkQuotient
   rw [mkQuotient_apply]
   exact heval.symm
 
+/-- The quotient point factoring an ambient point `g` is `f` exactly when `g` is the inclusion of
+`f`. -/
+lemma liftQuotientPoint_eq_iff (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
+    (g : HopfAlgebra.points (R := R) (H := H) A)
+    (hg : ∀ h : H, h ∈ I → g.ofConv h = 0)
+    (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
+    liftQuotientPoint H I A g hg = f ↔ g = quotientPointsHom H I A f := by
+  constructor
+  · rintro rfl
+    rw [quotientPointsHom_liftQuotientPoint]
+  · intro h
+    apply quotientPointsHom_injective H I A
+    rw [quotientPointsHom_liftQuotientPoint, h]
+
 /-- A point of the ambient Hopf algebra lies in the image of quotient points if and only if it
 kills the Hopf ideal. -/
 lemma mem_range_quotientPointsHom_iff (H : _root_.CommHopfAlgCat.{v} R)

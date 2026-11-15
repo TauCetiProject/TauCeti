@@ -46,7 +46,8 @@ ambient group.
 * `TauCeti.HopfIdeal.quotientPointConjugation`: conjugation by a normalizing point, restricted to
   the subgroup, as a bialgebra endomorphism of its coordinate algebra.
 * `TauCeti.CommHopfAlgCat.mapDomain_pointConjugation_mem_conjugate_iff`: the pointwise
-  interpretation of the conjugated ideal.
+  interpretation of the conjugated ideal, and `TauCeti.CommHopfAlgCat.mul_mul_inv_mem_conjugate_iff`
+  its form on rational points.
 * `TauCeti.HopfIdeal.conjugate_eq_self_of_mem_quotientPointsSubgroup`: a subgroup's own
   rational points fix its defining ideal, without reducedness assumptions.
 * `TauCeti.HopfIdeal.mem_normalizer_quotientPointsSubgroup_of_conjugate_eq_self`: fixing
@@ -370,6 +371,15 @@ theorem pointConjugation_mem_conjugate_iff
       x ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I A := by
   rw [← HopfAlgebra.mapDomain_pointConjugationBialgEquiv]
   exact mapDomain_pointConjugation_mem_conjugate_iff I g A x
+
+/-- On rational points, conjugation by `g` carries the points of `I` exactly onto the points of
+the conjugated ideal: `gxg⁻¹` lies in `gNg⁻¹` if and only if `x` lies in `N`. -/
+theorem mul_mul_inv_mem_conjugate_iff (I : HopfIdeal R H) (g x : WithConv (H →ₐ[R] R)) :
+    g * x * g⁻¹ ∈
+        quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) (I.conjugate g) (CommAlgCat.of R R) ↔
+      x ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I (CommAlgCat.of R R) := by
+  simpa only [Algebra.ofId_self, AlgHom.mapValue_id, MonoidHom.id_apply] using
+    pointConjugation_mem_conjugate_iff I g (CommAlgCat.of R R) x
 
 /-- A Hopf ideal whose points are the `g`-conjugates of the points of `I` is the conjugate of
 `I` by `g`. -/
