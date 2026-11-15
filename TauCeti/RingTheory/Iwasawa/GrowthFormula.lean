@@ -14,11 +14,13 @@ public import TauCeti.RingTheory.Polynomial.Distinguished
 import TauCeti.NumberTheory.Padics.RingHoms
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
-import TauCeti.RingTheory.Iwasawa.CyclotomicGrowth
+import TauCeti.RingTheory.Jacobson.Finite
 import TauCeti.RingTheory.Jacobson.NilpotentAction
+import TauCeti.RingTheory.LocalRing.Basic
 import TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow
+import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Charpoly
-import TauCeti.RingTheory.PowerSeries.Weierstrass.Norm
+import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 
 /-!
 # Iwasawa's growth formula
@@ -52,11 +54,11 @@ The proof combines three facts.
 * The kernels `M[ν_{n,n₀}]` increase with `n`, so they stabilize because `M` is noetherian; the
   stable kernel is a finite `Λ`-module, so its order is a power of `p`
   (`TauCeti.exists_natCard_eq_pow_of_natCast_mem_jacobson`).
-* On `O⟦X⟧ ⧸ (F_M)`, the cyclotomic factor `ξ_{n+1}` acts as `p` times a unit once
+* On `O[X] ⧸ (F_M)`, the cyclotomic factor `ξ_{n+1}` acts as `p` times a unit once
   `n > e deg F_M`
-  (`Polynomial.IsDistinguishedAt.associated_norm_mk_cyclotomic_prime_pow_comp_X_add_one`), so
-  for `n₀ ≤ n + 1` the resultant `Res(F_M, ν_{n,n₀})` gains the factor `p ^ λ`, of valuation
-  `e λ`, at each step.
+  (`Polynomial.IsDistinguishedAt.sq_dvd_aeval_cyclotomic_prime_pow_comp_X_add_one_sub`), so
+  for `n₀ ≤ n + 1` the resultant `Res(F_M, ν_{n,n₀})`, the norm of `ν_{n,n₀}` on
+  `O[X] ⧸ (F_M)`, gains the factor `p ^ λ`, of valuation `e λ`, at each step.
 
 The finiteness hypothesis is where the cyclotomic cutoff of the module enters: it fails for
 `M = Λ ⧸ (ξ_j)` as soon as `n₀ ≤ j`. The assumption that `(p)` is a power of `𝔪`
@@ -237,57 +239,73 @@ theorem exists_forall_torsionBy_growthTransition_eq (p n₀ : ℕ) (M : Type*)
   obtain ⟨N, hN⟩ := monotone_stabilizes_iff_noetherian.2 inferInstance f
   exact ⟨N, fun n hn ↦ (hN n hn).symm⟩
 
-/-- **The resultants with the transition polynomials grow by `p ^ deg F` per level.** Let `O` be
-`I`-adically complete with `I ^ e ⊆ (p)` and `p` in the Jacobson radical, and let `F` be
-distinguished at `I`. For `n₀ ≤ n + 1`, `n > e deg F` and `m ≥ n`, `Res(F, ν_{m,n₀})` is
-associated to `Res(F, ν_{n,n₀}) p ^ (deg F (m - n))`. -/
-theorem associated_resultant_growthTransition {p : ℕ} [Fact p.Prime] {I : Ideal O}
-    [IsAdicComplete I O] {F : O[X]} (hF : F.IsDistinguishedAt I) {e : ℕ}
-    (hI : I ^ e ≤ Ideal.span {(p : O)}) (hpO : (p : O) ∈ (⊥ : Ideal O).jacobson) {n₀ n m : ℕ}
-    (h₀ : n₀ ≤ n + 1) (hn : F.natDegree * e < n) (hm : n ≤ m) :
+/-- On `O[X] ⧸ (F)`, the norm of `ξ_{n+1}` is associated to `p ^ deg F` once `n > e deg F`: there
+`ξ_{n+1}` is `p` times `1 + p c`, a unit because `p` lies in the Jacobson radical. -/
+private theorem associated_norm_mk_cyclotomic_prime_pow_comp_X_add_one {p : ℕ} [Fact p.Prime]
+    {I : Ideal O} {F : O[X]} (hF : F.IsDistinguishedAt I) {e : ℕ}
+    (hI : I ^ e ≤ Ideal.span {(p : O)}) (hpO : (p : O) ∈ Ring.jacobson O) {n : ℕ}
+    (hn : F.natDegree * e < n) :
+    Associated
+      (Algebra.norm O (AdjoinRoot.mk F ((Polynomial.cyclotomic (p ^ (n + 1)) O).comp
+        (Polynomial.X + 1))))
+      ((p : O) ^ F.natDegree) := by
+  nontriviality O
+  have := hF.monic.finite_adjoinRoot
+  have := hF.monic.free_adjoinRoot
+  obtain ⟨c, hc⟩ := hF.sq_dvd_aeval_cyclotomic_prime_pow_comp_X_add_one_sub hI
+    (AdjoinRoot.aeval_eq F ▸ AdjoinRoot.mk_self) hn
+  rw [AdjoinRoot.aeval_eq, sub_eq_iff_eq_add] at hc
+  have hunit : IsUnit (1 + (p : AdjoinRoot F) * c) := by
+    have := TauCeti.Ring.algebraMap_mem_jacobson (A := AdjoinRoot F) hpO
+    rw [map_natCast] at this
+    simpa [add_comm] using Ring.mem_jacobson_iff.1 this c
+  rw [show AdjoinRoot.mk F ((Polynomial.cyclotomic (p ^ (n + 1)) O).comp (Polynomial.X + 1)) =
+      algebraMap O _ p * (1 + p * c) by rw [hc, map_natCast]; ring,
+    map_mul, Algebra.norm_algebraMap, (AdjoinRoot.powerBasis' hF.monic).finrank,
+    AdjoinRoot.powerBasis'_dim]
+  exact associated_mul_unit_left _ _ (hunit.map _)
+
+/-- **The resultants with the transition polynomials grow by `p ^ deg F` per level.** Let
+`I ^ e ⊆ (p)` with `p` in the Jacobson radical of `O`, and let `F` be distinguished at `I`. For
+`n₀ ≤ n + 1`, `n > e deg F` and `m ≥ n`, `Res(F, ν_{m,n₀})` is associated to
+`Res(F, ν_{n,n₀}) p ^ (deg F (m - n))`. -/
+theorem associated_resultant_growthTransition {p : ℕ} [Fact p.Prime] {I : Ideal O} {F : O[X]}
+    (hF : F.IsDistinguishedAt I) {e : ℕ} (hI : I ^ e ≤ Ideal.span {(p : O)})
+    (hpO : (p : O) ∈ Ring.jacobson O) {n₀ n m : ℕ} (h₀ : n₀ ≤ n + 1) (hn : F.natDegree * e < n)
+    (hm : n ≤ m) :
     Associated (F.resultant (growthTransition p O n₀ m))
       (F.resultant (growthTransition p O n₀ n) * (p : O) ^ (F.natDegree * (m - n))) := by
-  have H := hF.isWeierstrassFactorizationAt
-  have hcoe : ((∏ j ∈ Finset.Ico n m,
-      (Polynomial.cyclotomic (p ^ (j + 1)) O).comp (Polynomial.X + 1) : O[X]) : O⟦X⟧) =
-      ∏ j ∈ Finset.Ico n m,
-        ((Polynomial.cyclotomic (p ^ (j + 1)) O).comp (Polynomial.X + 1) : O⟦X⟧) :=
-    map_prod Polynomial.coeToPowerSeries.ringHom _ _
-  rw [← H.norm_mk_coe_eq_resultant, ← H.norm_mk_coe_eq_resultant,
-    ← growthTransition_mul_prod h₀ hm, Polynomial.coe_mul, map_mul, map_mul, hcoe]
-  exact (hF.associated_norm_mk_prod_cyclotomic_prime_pow_comp_X_add_one hI hpO hn m).mul_left _
+  -- The resultants are the norms on `O[X] ⧸ (F)`, which is free of rank `deg F` over `O`.
+  rw [← AdjoinRoot.norm_mk_eq_resultant hF.monic, ← AdjoinRoot.norm_mk_eq_resultant hF.monic,
+    ← growthTransition_mul_prod h₀ hm, map_mul, map_mul, map_prod, map_prod, pow_mul,
+    ← Nat.card_Ico n m, ← Finset.prod_const]
+  exact .mul_left _ (Associated.prod _ _ _ fun j hj ↦
+    associated_norm_mk_cyclotomic_prime_pow_comp_X_add_one hF hI hpO
+      (hn.trans_le (Finset.mem_Ico.1 hj).1))
 
-variable [IsDomain O] [IsDiscreteValuationRing O] [IsAdicComplete (maximalIdeal O) O]
+variable [IsDomain O] [IsDiscreteValuationRing O]
 
-/-- **The invariants under the transitions have eventually constant `p`-power order.** Let `O` be
-a complete discrete valuation ring with finite residue field, in whose maximal ideal the prime
-`p` lies, and let `M` be a finitely generated `O⟦X⟧`-module. If the quotients `M ⧸ ν_{n,n₀} M` are
-finite for all large `n`, then there is `κ` with `#M[ν_{n,n₀}] = p ^ κ` for all large `n`. -/
-theorem exists_natCard_torsionBy_growthTransition_eq [Finite (ResidueField O)] {p : ℕ}
-    [Fact p.Prime] (hp : (p : O) ∈ maximalIdeal O) {M : Type*} [AddCommGroup M]
-    [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M] {n₀ : ℕ}
-    (hfin : ∀ᶠ n in atTop, Finite (QuotSMulTop (growthTransition p O n₀ n : O⟦X⟧) M)) :
-    ∃ κ : ℕ, ∀ᶠ n in atTop,
-      Nat.card (torsionBy O⟦X⟧ M (growthTransition p O n₀ n : O⟦X⟧)) = p ^ κ := by
-  obtain ⟨N₁, hN₁⟩ := exists_forall_torsionBy_growthTransition_eq (O := O) p n₀ M
-  obtain ⟨N₂, hN₂⟩ := eventually_atTop.1 hfin
-  set N := max N₁ N₂
-  -- `p` is a non-unit of the local ring `O⟦X⟧`, so it lies in its Jacobson radical.
-  have hpΛ : ((p : ℕ) : O⟦X⟧) ∈ Ring.jacobson O⟦X⟧ := by
-    rw [← Ideal.jacobson_bot]
-    refine maximalIdeal_le_jacobson _ ((mem_maximalIdeal _).2 fun hu ↦ ?_)
-    rw [isUnit_iff_constantCoeff, map_natCast] at hu
-    exact (mem_maximalIdeal _).1 hp hu
-  -- The stable kernel `M[ν_{N,n₀}]` is a finite `O⟦X⟧`-module, so its order is a power of `p`.
-  have := finite_torsionBy_of_finite_quotSMulTop (monic_growthTransition n₀ N)
-    (hN₂ N (le_max_right _ _))
-  obtain ⟨κ, hκ⟩ := exists_natCard_eq_pow_of_natCast_mem_jacobson
-    (N := torsionBy O⟦X⟧ M (growthTransition p O n₀ N : O⟦X⟧)) hpΛ
-  refine ⟨κ, (eventually_ge_atTop N).mono fun n hn ↦ ?_⟩
-  rw [(hN₁ n (le_of_max_le_left hn)).trans (hN₁ N (le_max_left _ _)).symm, hκ]
+/-- `#(O ⧸ (a)) = q ^ v` for `a` associated to `ϖ ^ v`, where `ϖ` is a uniformizer of the
+discrete valuation ring `O` and `q` is the order of its residue field. -/
+private theorem natCard_quotient_span_of_associated_pow {ϖ a : O} (hϖ : Irreducible ϖ) {v : ℕ}
+    (ha : Associated a (ϖ ^ v)) :
+    Nat.card (O ⧸ Ideal.span {a}) = Nat.card (ResidueField O) ^ v := by
+  rw [Ideal.span_singleton_eq_span_singleton.2 ha, ← Ideal.span_singleton_pow,
+    ← hϖ.maximalIdeal_eq, TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow]
+
+/-- `#(O ⧸ (a p ^ k)) = #(O ⧸ (a)) q ^ (e k)` when `(p) = 𝔪 ^ e`, where `q` is the order of the
+residue field of the discrete valuation ring `O`. -/
+private theorem natCard_quotient_span_mul_natCast_pow {p e : ℕ}
+    (hpe : Ideal.span {(p : O)} = maximalIdeal O ^ e) (a : O) (k : ℕ) :
+    Nat.card (O ⧸ Ideal.span {a * (p : O) ^ k}) =
+      Nat.card (O ⧸ Ideal.span {a}) * Nat.card (ResidueField O) ^ (e * k) := by
+  -- The order of a quotient of the Dedekind domain `O` is multiplicative in the ideal.
+  rw [← Ideal.span_singleton_mul_span_singleton, ← Ideal.span_singleton_pow, hpe, ← pow_mul,
+    ← Submodule.cardQuot_apply, cardQuot_mul, Submodule.cardQuot_apply, Submodule.cardQuot_apply,
+    TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow]
 
 /-- **The order of `O ⧸ Res(F, ν_{n,n₀})` grows by `q ^ (e deg F)` per level.** Let `O` be a
-complete discrete valuation ring with maximal ideal `𝔪` and residue field of order `q`, in which
+discrete valuation ring with maximal ideal `𝔪` and residue field of order `q`, in which
 `(p) = 𝔪 ^ e` with `e ≥ 1` for the prime `p`, and let `F` be distinguished. If `n₀ ≤ N + 1` and
 `N > e deg F`, then `#(O ⧸ Res(F, ν_{n,n₀})) = #(O ⧸ Res(F, ν_{N,n₀})) q ^ (e deg F (n - N))` for
 every `n ≥ N`. -/
@@ -300,12 +318,38 @@ theorem natCard_quotient_resultant_growthTransition {p : ℕ} [Fact p.Prime] {e 
         Nat.card (ResidueField O) ^ (e * F.natDegree * (n - N)) := by
   have hpm : (p : O) ∈ maximalIdeal O :=
     Ideal.pow_le_self he.ne' (hpe ▸ Ideal.mem_span_singleton_self _)
-  have hres := associated_resultant_growthTransition hF hpe.ge (maximalIdeal_le_jacobson _ hpm) h₀
-    hN hn
-  rw [Ideal.span_singleton_eq_span_singleton.2 hres, ← Ideal.span_singleton_mul_span_singleton,
-    ← Ideal.span_singleton_pow, hpe, ← pow_mul, ← Submodule.cardQuot_apply, cardQuot_mul,
-    Submodule.cardQuot_apply, Submodule.cardQuot_apply,
-    TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow, mul_assoc]
+  have hres := associated_resultant_growthTransition hF hpe.ge
+    (ringJacobson_eq_maximalIdeal O ▸ hpm) h₀ hN hn
+  rw [Ideal.span_singleton_eq_span_singleton.2 hres, natCard_quotient_span_mul_natCast_pow hpe,
+    mul_assoc]
+
+variable [IsAdicComplete (maximalIdeal O) O]
+
+/-- **The kernels of the transition polynomials have eventually constant `p`-power order.** Let
+`O` be a complete discrete valuation ring with finite residue field, in whose maximal ideal the
+prime `p` lies, and let `M` be a finitely generated `O⟦X⟧`-module. If the quotients
+`M ⧸ ν_{n,n₀} M` are finite for all large `n`, then there is `κ` with `#M[ν_{n,n₀}] = p ^ κ` for
+all large `n`. -/
+theorem exists_natCard_torsionBy_growthTransition_eq [Finite (ResidueField O)] {p : ℕ}
+    [Fact p.Prime] (hp : (p : O) ∈ maximalIdeal O) {M : Type*} [AddCommGroup M]
+    [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M] {n₀ : ℕ}
+    (hfin : ∀ᶠ n in atTop, Finite (QuotSMulTop (growthTransition p O n₀ n : O⟦X⟧) M)) :
+    ∃ κ : ℕ, ∀ᶠ n in atTop,
+      Nat.card (torsionBy O⟦X⟧ M (growthTransition p O n₀ n : O⟦X⟧)) = p ^ κ := by
+  obtain ⟨N₁, hN₁⟩ := exists_forall_torsionBy_growthTransition_eq (O := O) p n₀ M
+  obtain ⟨N₂, hN₂⟩ := eventually_atTop.1 hfin
+  set N := max N₁ N₂
+  -- `p` is a non-unit of the local ring `O⟦X⟧`, so it lies in its Jacobson radical.
+  have hpΛ : ((p : ℕ) : O⟦X⟧) ∈ Ring.jacobson O⟦X⟧ := by
+    simpa [ringJacobson_eq_maximalIdeal, TauCeti.PowerSeries.maximalIdeal_eq_comap_constantCoeff]
+      using hp
+  -- The stable kernel `M[ν_{N,n₀}]` is a finite `O⟦X⟧`-module, so its order is a power of `p`.
+  have := finite_torsionBy_of_finite_quotSMulTop (monic_growthTransition n₀ N)
+    (hN₂ N (le_max_right _ _))
+  obtain ⟨κ, hκ⟩ := exists_natCard_eq_pow_of_natCast_mem_jacobson
+    (N := torsionBy O⟦X⟧ M (growthTransition p O n₀ N : O⟦X⟧)) hpΛ
+  refine ⟨κ, (eventually_ge_atTop N).mono fun n hn ↦ ?_⟩
+  rw [(hN₁ n (le_of_max_le_left hn)).trans (hN₁ N (le_max_left _ _)).symm, hκ]
 
 /-- **Iwasawa's growth formula.** Let `O` be a complete discrete valuation ring with maximal ideal
 `𝔪` and residue field of order `p ^ f`, in which `(p) = 𝔪 ^ e` for the prime `p`, and let `M`
@@ -322,12 +366,7 @@ theorem exists_natCard_quotSMulTop_growthTransition_eq {p : ℕ} [Fact p.Prime] 
           ν) := by
   have hp := (Fact.out : p.Prime)
   have : Finite (ResidueField O) := Nat.finite_of_card_ne_zero (hq ▸ (pow_pos hp.pos f).ne')
-  -- The residue field has order `p ^ f`, so it has characteristic `p`: `p` lies in `𝔪`.
-  have hpm : (p : O) ∈ maximalIdeal O := by
-    have h : ((p : ResidueField O)) ^ f = 0 := by
-      simpa [hq] using card_nsmul_eq_zero' (x := (1 : ResidueField O))
-    rw [← residue_eq_zero_iff, map_natCast]
-    exact eq_zero_of_pow_eq_zero h
+  have hpm := natCast_mem_maximalIdeal_of_card_residueField_eq_pow hq
   have he : 0 < e := Nat.pos_of_ne_zero fun h ↦ by
     rw [h, pow_zero, Ideal.one_eq_top, Ideal.span_singleton_eq_top] at hpe
     exact (mem_maximalIdeal _).1 hpm hpe
@@ -345,18 +384,23 @@ theorem exists_natCard_quotSMulTop_growthTransition_eq {p : ℕ} [Fact p.Prime] 
     (resultant_charPoly_ne_zero_of_finite_quotSMulTop (hN₁ N hN₁N).2) hϖ
   refine ⟨κ + f * v - f * muInvariant O M * D - e * f * l * N, ?_⟩
   filter_upwards [eventually_ge_atTop N] with n hn
+  obtain ⟨hκn, hfinn⟩ := hN₁ n (by omega)
+  -- The resultant term at level `n` has order `q ^ (v + e λ (n - N))`.
+  have hres : Nat.card (O ⧸ Ideal.span {(charPoly O M).resultant (growthTransition p O n₀ n)}) =
+      Nat.card (ResidueField O) ^ v *
+        Nat.card (ResidueField O) ^ (e * (charPoly O M).natDegree * (n - N)) := by
+    rw [natCard_quotient_resultant_growthTransition he hpe isDistinguishedAt_charPoly (by omega)
+      (by rwa [← lambdaInvariant_def]) hn, natCard_quotient_span_of_associated_pow hϖ hv]
   -- The Euler quotient formula at level `n`, with every factor a power of `p`.
   have heuler := natCard_quotSMulTop_div_natCard_torsionBy
-    (isDistinguishedAt_growthTransition hpm n₀ n) (hN₁ n (by omega)).2
-  rw [(hN₁ n (by omega)).1, natCard_quotient_resultant_growthTransition he hpe
-      isDistinguishedAt_charPoly (by omega) (by rwa [← lambdaInvariant_def]) hn,
-    Ideal.span_singleton_eq_span_singleton.2 hv, ← Ideal.span_singleton_pow,
-    ← hϖ.maximalIdeal_eq, TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow,
-    ← pow_add, hq,
-    div_eq_iff (by exact_mod_cast (pow_pos hp.pos κ).ne')] at heuler
+    (isDistinguishedAt_growthTransition hpm n₀ n) hfinn
+  rw [hκn, hres, hq, div_eq_iff (by exact_mod_cast (pow_pos hp.pos κ).ne')] at heuler
   rw [heuler]
-  push_cast
-  rw [← pow_mul, ← pow_mul, ← pow_add, ← pow_add, ← zpow_natCast]
+  trans (p : ℚ) ^ ((f * (muInvariant O M * (growthTransition p O n₀ n).natDegree) + f * v +
+    f * (e * (charPoly O M).natDegree * (n - N)) + κ : ℕ) : ℤ)
+  · rw [zpow_natCast]
+    push_cast
+    ring
   congr 1
   -- Compare the exponents, using `deg ν_{n,n₀} = pⁿ - D`.
   have hdeg : ((growthTransition p O n₀ n).natDegree : ℤ) = p ^ n - D := by

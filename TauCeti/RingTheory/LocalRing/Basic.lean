@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Coprime.Basic
 public import Mathlib.RingTheory.LocalRing.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import Mathlib.Data.Int.GCD
+import Mathlib.GroupTheory.OrderOfElement
 
 /-!
 # Basic facts about local rings
@@ -38,6 +39,8 @@ characteristic two the idempotent criterion identifies the zeros of the Artin–
   two elements, every unit is congruent to `1` modulo the maximal ideal, and
   `IsLocalRing.two_mem_maximalIdeal_of_card_residueField_eq_two`: `2` lies in the maximal ideal,
   and `IsLocalRing.isUnit_three_of_card_residueField_eq_two`: `3` is a unit.
+* `IsLocalRing.natCast_mem_maximalIdeal_of_card_residueField_eq_pow`: when the residue field has
+  `p ^ f` elements, `p` lies in the maximal ideal.
 * `AlgHom.ker_isMaximal_residueField`: the kernel of an algebra map from a possibly
   noncommutative algebra to the residue field of a commutative local ring is a maximal ideal.
 -/
@@ -134,6 +137,16 @@ theorem IsLocalRing.isUnit_three_of_card_residueField_eq_two {R : Type*} [CommRi
     (IsLocalRing.mem_maximalIdeal _).mp
       (IsLocalRing.two_mem_maximalIdeal_of_card_residueField_eq_two hR)
   exact_mod_cast Nat.Coprime.isUnit_natCast (m := 3) (n := 2) (by decide) (by exact_mod_cast h2)
+
+/-- When the residue field of a commutative local ring has `p ^ f` elements, `p` lies in the
+maximal ideal: the residue field has characteristic `p`. -/
+theorem IsLocalRing.natCast_mem_maximalIdeal_of_card_residueField_eq_pow {R : Type*} [CommRing R]
+    [IsLocalRing R] {p f : ℕ} (hR : Nat.card (IsLocalRing.ResidueField R) = p ^ f) :
+    (p : R) ∈ IsLocalRing.maximalIdeal R := by
+  have h : (p : IsLocalRing.ResidueField R) ^ f = 0 := by
+    simpa [hR] using card_nsmul_eq_zero' (x := (1 : IsLocalRing.ResidueField R))
+  rw [← IsLocalRing.residue_eq_zero_iff, map_natCast]
+  exact eq_zero_of_pow_eq_zero h
 
 /-- The kernel of a map from a possibly noncommutative `A`-algebra to the residue field of a
 commutative local ring `A` is a maximal ideal: the map is surjective, since the residue field is
