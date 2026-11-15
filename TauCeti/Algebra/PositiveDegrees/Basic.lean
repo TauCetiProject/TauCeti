@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Mei contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
@@ -24,7 +24,8 @@ graded objects can be defined by finite coefficient sums.
 
 This file proves sharpness and finiteness of the addition fibers, supplies Mathlib's
 `Finset.HasAntidiagonal` interface on the positive monoid, and constructs the standard
-example of the nonnegative orthant in a finite power of `ℤ`, graded by coordinate sum.
+examples of the nonnegative integers, the nonnegative orthant in a finite power of `ℤ`
+(graded by coordinate sum), and the natural numbers `PositiveDegrees.naturals`.
 
 Adapted from `Mei/Algebra/PositiveDegrees/Basic.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
@@ -245,6 +246,28 @@ theorem mem_orthant_monoid {ι : Type*} [Fintype ι] {n : ι → ℤ} :
 @[simp]
 theorem orthant_degree {ι : Type*} [Fintype ι] (n : ι → ℤ) :
     (orthant ι).degree n = ∑ i, n i := (rfl)
+
+/-- The natural numbers with their canonical inclusion into `ℤ` as degree. -/
+def naturals : PositiveDegrees ℕ where
+  monoid := ⊤
+  degree := Nat.castAddMonoidHom ℤ
+  degree_pos := by
+    intro n _ hne
+    change 0 < (n : ℤ)
+    omega
+  finite_le k := by
+    apply (Finset.range (k + 1)).finite_toSet.subset
+    intro n hn
+    simp only [Finset.mem_coe, Finset.mem_range]
+    exact Nat.lt_succ_of_le (Int.ofNat_le.mp hn.2)
+
+/-- Every natural number belongs to the allowed monoid of `PositiveDegrees.naturals`. -/
+@[simp]
+theorem mem_naturals_monoid {n : ℕ} : n ∈ naturals.monoid := trivial
+
+/-- The degree of a natural number in `PositiveDegrees.naturals` is its integer cast. -/
+@[simp]
+theorem naturals_degree (n : ℕ) : naturals.degree n = n := (rfl)
 
 end PositiveDegrees
 end TauCeti

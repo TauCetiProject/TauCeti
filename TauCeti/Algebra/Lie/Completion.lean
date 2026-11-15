@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
@@ -242,5 +242,13 @@ theorem toCompletion_toLinearMap :
   simp only [projectionLinear, LinearMap.comp_apply, LinearEquiv.coe_coe,
     ModuleTower.limπ_apply, LieIdeal.mkQ_apply]
   rw [ModuleTower.coe_toLimQuotients_apply Js hs x k, quotientEquiv_π]
+
+/-- Any representative of the module tower projection computes the Lie quotient projection. -/
+theorem completionProjection_of_representative (k : ℕ) (x : completion I hI) (a : L)
+    (ha : ModuleTower.quotientsπ Js hs k a = (ModuleTower.quotients Js hs).limπ k x) :
+    completionProjection I hI k x = (I k).mkQ a := by
+  change projectionLinear I hI k x = (I k).mkQ a
+  simp only [projectionLinear, LinearMap.comp_apply, LinearEquiv.coe_coe, ← ha,
+    quotientEquiv_π, LieIdeal.mkQ_apply]
 
 end LieIdeal
