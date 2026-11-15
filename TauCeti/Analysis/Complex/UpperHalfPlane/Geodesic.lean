@@ -135,7 +135,7 @@ theorem smul_geodesicLine (h g : PSL(2, ℝ)) (t : ℝ) :
 the arc-length parameter `t`. -/
 theorem log_im_inv_smul_geodesicLine (g : PSL(2, ℝ)) (t : ℝ) :
     Real.log (g⁻¹ • geodesicLine g t).im = t := by
-  rw [smul_geodesicLine, inv_mul_cancel, geodesicLine_one_apply, mk_im, Real.log_exp]
+  simp [smul_geodesicLine, geodesicLine_one_apply]
 
 /-- The same fact as `smul_geodesicLine`, at the level of the line as a set: the `PSL(2, ℝ)`-action
 permutes these lines rather than merely mapping into their union. -/

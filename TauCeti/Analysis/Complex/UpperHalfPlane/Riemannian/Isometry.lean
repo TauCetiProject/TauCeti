@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Manifold
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
-import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
-import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Riemannian isometries of the Poincaré upper half-plane
@@ -74,12 +73,9 @@ theorem tangentSpaceCastModel_mfderiv_smul (z : ℍ) (g : GL (Fin 2) ℝ)
       smulFDeriv g z (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v) := by
   have hmdiff : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • · : ℍ → ℍ) z :=
     (contMDiff_const_smul (I := 𝓘(ℝ, ℂ)) (n := ∞) g z).mdifferentiableAt (by simp)
-  rw [hmdiff.tangentSpaceCastModel_mfderiv_apply]
-  have hlocal : writtenInExtChartAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) z (g • · : ℍ → ℍ)
-      =ᶠ[nhds (z : ℂ)] fun w : ℂ ↦ ((g • ofComplex w : ℍ) : ℂ) := by
-    simpa [Function.comp_def] using z.writtenInExtChartAt_eventuallyEq 𝓘(ℝ, ℂ) (g • · : ℍ → ℍ)
-  have hchart : extChartAt 𝓘(ℝ, ℂ) z z = (z : ℂ) := by simp
-  rw [hchart, hlocal.fderiv_eq, (hasStrictFDerivAt_smul g z).hasFDerivAt.fderiv]
+  rw [z.tangentSpaceCastModel_mfderiv_apply hmdiff v]
+  simpa [Function.comp_def] using
+    DFunLike.congr_fun (hasStrictFDerivAt_smul g z).hasFDerivAt.fderiv _
 
 /-- `UpperHalfPlane.smulFDeriv g z` preserves the Euclidean inner product divided by squared
 imaginary part. -/
@@ -89,7 +85,7 @@ theorem inner_smulFDeriv_div_im_sq (z : ℍ) (g : GL (Fin 2) ℝ) (u w : ℂ) :
   have hσ (x y : ℂ) : inner ℝ ((σ g : ℂ ≃L[ℝ] ℂ) x) ((σ g : ℂ ≃L[ℝ] ℂ) y) = inner ℝ x y := by
     simp only [σ]
     split_ifs
-    · rfl
+    · simp
     · exact Complex.conjLIE.inner_map_map x y
   set α : ℂ := (g.det.val : ℂ) / denom g z ^ 2
   have hmul (x y : ℂ) : inner ℝ (x * α) (y * α) = Complex.normSq α * inner ℝ x y := by

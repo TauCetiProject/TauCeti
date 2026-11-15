@@ -12,8 +12,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Cur
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Congr
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Curvature
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Distance
-import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
-import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
 
 /-!
@@ -119,17 +117,17 @@ private theorem differential_halfSpaceEquiv (z : ℍ) (v : TangentSpace 𝓘(ℝ
     tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) (halfSpaceEquiv z)
         (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) halfSpaceEquiv z v) =
       equivRealProdLp (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v) := by
-  rw [(contMDiff_halfSpaceEquiv.mdifferentiableAt (by simp)).tangentSpaceCastModel_mfderiv_apply]
-  have hlocal : writtenInExtChartAt 𝓘(ℝ, ℂ) 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) z halfSpaceEquiv
-      =ᶠ[nhds (z : ℂ)] equivRealProdLp := by
-    filter_upwards [z.writtenInExtChartAt_eventuallyEq 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) halfSpaceEquiv,
-      _root_.UpperHalfPlane.isOpen_upperHalfPlaneSet.mem_nhds z.im_pos] with w hw hpos
-    simpa [UpperHalfSpace.chartAt_apply, coe_halfSpaceEquiv,
-      _root_.UpperHalfPlane.ofComplex_apply_of_im_pos hpos] using hw
-  have hchart : extChartAt 𝓘(ℝ, ℂ) z z = (z : ℂ) := by simp
-  rw [hchart, hlocal.fderiv_eq, equivRealProdLp.hasFDerivAt.fderiv]
-  -- The continuous linear map underlying the isometry has the same pointwise application.
-  rfl
+  have hmdiff : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) halfSpaceEquiv z :=
+    (contMDiff_halfSpaceEquiv z).mdifferentiableAt (by simp)
+  have hfderiv : HasFDerivAt
+      (extChartAt 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) (halfSpaceEquiv z) ∘ halfSpaceEquiv ∘
+        _root_.UpperHalfPlane.ofComplex)
+      equivRealProdLp.toContinuousLinearMap (z : ℂ) :=
+    equivRealProdLp.hasFDerivAt.congr_of_eventuallyEq <|
+      by simpa [Function.comp_def, UpperHalfSpace.chartAt_apply, coe_halfSpaceEquiv] using
+        (_root_.UpperHalfPlane.eventuallyEq_coe_comp_ofComplex z.im_pos).fun_comp equivRealProdLp
+  rw [z.tangentSpaceCastModel_mfderiv_apply hmdiff v, hfderiv.fderiv]
+  simp
 
 /-- The coordinate identification `x + iy ↦ (x, y)` is a Riemannian isometry from the
 Poincaré upper half-plane to the two-dimensional hyperbolic upper half-space. -/

@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Riemannian.Isometry
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.ArcLength
@@ -79,19 +78,17 @@ namespace UpperHalfPlane
 
 private theorem norm_mfderiv_logIm_le (z : ℍ) (v : TangentSpace 𝓘(ℝ, ℂ) z) :
     ‖mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℝ) (fun w : ℍ ↦ Real.log w.im) z v‖ ≤ (1 : ℝ≥0) * ‖v‖ := by
-  rw [norm_tangentSpace_vectorSpace, NormedSpace.fromTangentSpace,
-    ((TauCeti.UpperHalfPlane.contMDiff_log_im (n := ∞) z).mdifferentiableAt (by simp)
-      |>.tangentSpaceCastModel_mfderiv_apply v)]
-  have hlocal : writtenInExtChartAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℝ) z (fun w : ℍ ↦ Real.log w.im)
-      =ᶠ[nhds (z : ℂ)] fun w : ℂ ↦ Real.log w.im := by
-    filter_upwards [z.writtenInExtChartAt_eventuallyEq 𝓘(ℝ, ℝ) (fun w : ℍ ↦ Real.log w.im),
-      isOpen_upperHalfPlaneSet.mem_nhds z.im_pos] with w hw hpos
-    simpa [ofComplex_apply_of_im_pos hpos] using hw
-  have hchart : extChartAt 𝓘(ℝ, ℂ) z z = (z : ℂ) := by simp
-  have hfderiv : HasFDerivAt (fun w : ℂ ↦ Real.log w.im)
+  have hmdiff : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℝ) (fun w : ℍ ↦ Real.log w.im) z :=
+    (TauCeti.UpperHalfPlane.contMDiff_log_im (n := ∞) z).mdifferentiableAt (by simp)
+  have hfderiv : HasFDerivAt
+      (extChartAt 𝓘(ℝ, ℝ) (Real.log z.im) ∘ (fun w : ℍ ↦ Real.log w.im) ∘ ofComplex)
       ((z.im)⁻¹ • (Complex.imCLM : ℂ →L[ℝ] ℝ)) (z : ℂ) :=
-    (Real.hasDerivAt_log z.im_ne_zero).comp_hasFDerivAt (z : ℂ) Complex.imCLM.hasFDerivAt
-  rw [hchart, hlocal.fderiv_eq, hfderiv.fderiv, z.norm_tangentSpace v]
+    ((Real.hasDerivAt_log z.im_ne_zero).comp_hasFDerivAt (z : ℂ)
+      Complex.imCLM.hasFDerivAt).congr_of_eventuallyEq <|
+      by simpa [Function.comp_def] using
+        (eventuallyEq_coe_comp_ofComplex z.im_pos).fun_comp (fun w : ℂ ↦ Real.log w.im)
+  rw [norm_tangentSpace_vectorSpace, NormedSpace.fromTangentSpace,
+    z.tangentSpaceCastModel_mfderiv_apply hmdiff v, hfderiv.fderiv, z.norm_tangentSpace v]
   simpa [abs_of_pos z.im_pos, div_eq_inv_mul] using
     mul_le_mul_of_nonneg_left (Complex.abs_im_le_norm (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v))
       (inv_nonneg.2 z.im_pos.le)
@@ -166,10 +163,12 @@ theorem norm_mfderiv_geodesicLine (g : PSL(2, ℝ)) (t : ℝ) (v : TangentSpace 
 @[simp]
 theorem norm_curveVelocity_geodesicLine (g : PSL(2, ℝ)) (t : ℝ) :
     ‖Manifold.curveVelocity 𝓘(ℝ, ℂ) (geodesicLine g) t‖ = 1 := by
-  rw [Manifold.curveVelocity_apply]
-  exact (norm_mfderiv_geodesicLine g t _).trans <|
-    norm_tangentSpace_vectorSpace.trans <|
-      (congrArg norm (NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) t _)).trans norm_one
+  have hvel : Manifold.curveVelocity 𝓘(ℝ, ℂ) (geodesicLine g) t =
+      mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) (geodesicLine g) t ((NormedSpace.fromTangentSpace t).symm 1) := by
+    rw [Manifold.curveVelocity_apply]
+    exact congrArg _ (NormedSpace.fromTangentSpace_symm_apply t 1).symm
+  rw [hvel, norm_mfderiv_geodesicLine, norm_tangentSpace_vectorSpace]
+  simp
 
 /-- On any interval `[a, b]`, `geodesicLine g` has Poincaré path length `ENNReal.ofReal (b - a)`
 (which is `0` when `b < a`). -/
@@ -196,8 +195,8 @@ instance isRiemannianManifold_upperHalfPlane : IsRiemannianManifold 𝓘(ℝ, �
       have himw : Real.log (g⁻¹ • w).im = dist z w := by
         simpa only [hw] using log_im_inv_smul_geodesicLine g (dist z w)
       have hed : edist z w = edist (Real.log (g⁻¹ • z).im) (Real.log (g⁻¹ • w).im) := by
-        rw [himz, himw, edist_dist, edist_dist, Real.dist_eq, zero_sub, abs_neg,
-          abs_of_nonneg dist_nonneg]
+        rw [himz, himw]
+        simp [edist_dist, Real.dist_eq, abs_of_nonneg dist_nonneg]
       calc edist z w
           = edist (Real.log (g⁻¹ • z).im) (Real.log (g⁻¹ • w).im) := hed
         _ ≤ Manifold.riemannianEDist 𝓘(ℝ, ℂ) (g⁻¹ • z) (g⁻¹ • w) :=
