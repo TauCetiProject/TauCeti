@@ -48,9 +48,10 @@ act on a lattice glued from copies of `D₄`.
   powers give `TauCeti.IntegralLattice.checkerboardScalarIsometry`, realizing every unit of `F₄` on
   the checkerboard discriminant group.
 * `TauCeti.DynkinType.typeD4Triality`: the triality isometry of the root lattice of type `D₄`,
-  permuting the simple-root coordinates by `trialityPermD4` (`typeD4Triality_single`), with
-  induced glue-alphabet isometry `TauCeti.DynkinType.typeD4TrialityGlueAlphabetIsometry` cycling
-  the Conway--Sloane labels by `TauCeti.DynkinType.typeD4TrialityLabelPerm` (`1 ↦ 2 ↦ 3 ↦ 1`).
+  permuting the simple-root coordinates by `trialityPermD4` (`typeD4Triality_single`), whose
+  induced glue-alphabet isometry cycles the Conway--Sloane labels by
+  `TauCeti.DynkinType.typeD4TrialityLabelPerm` (`1 ↦ 2 ↦ 3 ↦ 1`,
+  `glueAlphabetIsometryOfIsometry_typeD4Triality_glueLabelEquiv`).
 * `TauCeti.DynkinType.discriminantGroupEquiv_typeD4Triality_glueAlphabetIsometry`: on the `D₄` glue
   alphabet, read in `F₄`, it is multiplication by `ω²`; its powers give every nonzero scaling
   (`discriminantGroupEquiv_typeD4Triality_pow_glueAlphabetIsometry`).
@@ -371,7 +372,7 @@ theorem typeD4Triality_pow_three : typeD4Triality ht ^ 3 = 1 := by
 
 /-- **The Conway--Sloane label permutation of `D₄` triality**: the 3-cycle `1 ↦ 2 ↦ 3 ↦ 1` fixing
 `0` (`s ↦ v ↦ c ↦ s`). -/
-def typeD4TrialityLabelPerm : Equiv.Perm (Fin 4) :=
+@[expose] def typeD4TrialityLabelPerm : Equiv.Perm (Fin 4) :=
   Equiv.swap 1 2 * Equiv.swap 2 3
 
 @[simp]
@@ -390,72 +391,36 @@ theorem typeD4TrialityLabelPerm_three : typeD4TrialityLabelPerm 3 = 1 := by deci
 @[simp]
 theorem typeD4TrialityLabelPerm_pow_three : typeD4TrialityLabelPerm ^ 3 = 1 := by decide
 
-/-- **The self-isometry of the `D₄` glue alphabet induced by `typeD4Triality`**, transporting its
-discriminant quadratic isometry along `glueAlphabetIsometry`. -/
-noncomputable def typeD4TrialityGlueAlphabetIsometry :
-    FiniteQuadraticModule.Isometry ((D 4).glueAlphabet ht) ((D 4).glueAlphabet ht) :=
-  ((D 4).glueAlphabetIsometry (valid_D.mpr le_rfl) ht).trans <|
-    ((typeD4Triality ht).discriminantQuadraticIsometry ((D 4).isEven_rootLattice ht)).trans
-      ((D 4).glueAlphabetIsometry (valid_D.mpr le_rfl) ht).symm
-
-/-- `typeD4TrialityGlueAlphabetIsometry` is compatible with the discriminant action of
-`typeD4Triality` through `glueAlphabetIsometry`. -/
-theorem glueAlphabetIsometry_typeD4TrialityGlueAlphabetIsometry (hv : (D 4).Valid)
-    (x : (D 4).glueAlphabet ht) :
-    (D 4).glueAlphabetIsometry hv ht (typeD4TrialityGlueAlphabetIsometry ht x) =
-      (typeD4Triality ht).discriminantQuadraticIsometry ((D 4).isEven_rootLattice ht)
-        ((D 4).glueAlphabetIsometry hv ht x) := by
-  rw [typeD4TrialityGlueAlphabetIsometry, QuadraticMap.IsometryEquiv.trans_apply,
-    QuadraticMap.IsometryEquiv.trans_apply, QuadraticMap.IsometryEquiv.apply_symm_apply]
+/-- In rank four, the Conway--Sloane labels `0, 1, 2, 3` map under
+`zmodTwoProdAddEquivCheckerboardDiscriminantGroup` to `0`, spinor, vector, and cospinor. -/
+private theorem zmodTwoProdAddEquiv_glueLabelEquiv_D4 (i : Fin 4) :
+    zmodTwoProdAddEquivCheckerboardDiscriminantGroup 4 (by decide)
+        (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_even 4 ht (by decide))
+          ((D 4).glueLabelEquiv ht i)) =
+      ![0, checkerboardSpinorClass 4, checkerboardVectorClass 4,
+        checkerboardCospinorClass 4] i := by
+  have hi := congrArg (zmodTwoProdAddEquivCheckerboardDiscriminantGroup 4 (by decide))
+    (glueLabelEquiv_D_of_even 4 ht (by decide) i)
+  fin_cases i <;> exact hi.trans (by simp)
 
 /-- **Triality cycles the nonzero Conway--Sloane `D₄` labels by `1 ↦ 2 ↦ 3 ↦ 1` (`s ↦ v ↦ c ↦ s`)**
 and fixes `0`. -/
 @[simp]
-theorem typeD4TrialityGlueAlphabetIsometry_glueLabelEquiv (i : Fin 4) :
-    typeD4TrialityGlueAlphabetIsometry ht ((D 4).glueLabelEquiv ht i) =
+theorem glueAlphabetIsometryOfIsometry_typeD4Triality_glueLabelEquiv (hv₁ hv₂ : (D 4).Valid)
+    (i : Fin 4) :
+    glueAlphabetIsometryOfIsometry hv₁ hv₂ (typeD4Triality ht) ((D 4).glueLabelEquiv ht i) =
       (D 4).glueLabelEquiv ht (typeD4TrialityLabelPerm i) := by
-  apply EquivLike.injective ((D 4).glueAlphabetIsometry (valid_D.mpr le_rfl) ht)
-  rw [glueAlphabetIsometry_typeD4TrialityGlueAlphabetIsometry]
+  apply EquivLike.injective ((D 4).glueAlphabetIsometry hv₂ ht)
+  rw [glueAlphabetIsometry_glueAlphabetIsometryOfIsometry]
   refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
-  rw [glueAlphabetIsometry_D_apply_of_even 4 (valid_D.mpr le_rfl) ht (by decide),
-    glueAlphabetIsometry_D_apply_of_even 4 (valid_D.mpr le_rfl) ht (by decide), typeD4Triality,
+  rw [glueAlphabetIsometry_D_apply_of_even 4 hv₁ ht (by decide),
+    glueAlphabetIsometry_D_apply_of_even 4 hv₂ ht (by decide), typeD4Triality,
     Isometry.discriminantGroupEquiv_conjMulEquiv_apply]
-  apply congrArg (rootLatticeIsometryCheckerboard 4 le_rfl ht).symm.discriminantGroupEquiv
-  -- The carrier of the Klein four model is `ZMod 2 × ZMod 2` only up to unfolding, so
-  -- `glueLabelEquiv_D_of_even` is applied in term mode.
-  refine (congrArg checkerboardTriality.discriminantGroupEquiv
-    (congrArg (zmodTwoProdAddEquivCheckerboardDiscriminantGroup 4 (by decide))
-      (glueLabelEquiv_D_of_even 4 ht (by decide) i))).trans ?_
-  refine Eq.trans ?_
-    (congrArg (zmodTwoProdAddEquivCheckerboardDiscriminantGroup 4 (by decide))
-      (glueLabelEquiv_D_of_even 4 ht (by decide) (typeD4TrialityLabelPerm i))).symm
-  match i with
-  | 0 =>
-    have h0 : (((0 / 2 : ℕ) : ZMod 2), ((0 % 2 : ℕ) : ZMod 2)) = 0 := rfl
-    rw [Fin.val_zero, typeD4TrialityLabelPerm_zero, Fin.val_zero, h0, map_zero, map_zero]
-  | 1 =>
-    have h1 : (((1 / 2 : ℕ) : ZMod 2), ((1 % 2 : ℕ) : ZMod 2)) = (0, 1) := rfl
-    have h2 : (((2 / 2 : ℕ) : ZMod 2), ((2 % 2 : ℕ) : ZMod 2)) = (1, 0) := rfl
-    rw [typeD4TrialityLabelPerm_one, Fin.val_one, Fin.val_two, h1, h2,
-      zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_zero_one,
-      zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_zero,
-      discriminantGroupEquiv_checkerboardTriality_checkerboardSpinorClass]
-  | 2 =>
-    have h2 : (((2 / 2 : ℕ) : ZMod 2), ((2 % 2 : ℕ) : ZMod 2)) = (1, 0) := rfl
-    have h3 : ((((3 : Fin 4).val / 2 : ℕ) : ZMod 2), ((((3 : Fin 4).val % 2 : ℕ) : ZMod 2))) =
-        (1, 1) := rfl
-    rw [typeD4TrialityLabelPerm_two, Fin.val_two, h2, h3,
-      zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_zero,
-      zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_one,
-      discriminantGroupEquiv_checkerboardTriality_checkerboardVectorClass]
-  | 3 =>
-    have h3 : ((((3 : Fin 4).val / 2 : ℕ) : ZMod 2), ((((3 : Fin 4).val % 2 : ℕ) : ZMod 2))) =
-        (1, 1) := rfl
-    have h1 : (((1 / 2 : ℕ) : ZMod 2), ((1 % 2 : ℕ) : ZMod 2)) = (0, 1) := rfl
-    rw [typeD4TrialityLabelPerm_three, Fin.val_one, h3, h1,
-      zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_one,
-      zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_zero_one,
-      discriminantGroupEquiv_checkerboardTriality_checkerboardCospinorClass]
+  apply congrArg
+    (rootLatticeIsometryCheckerboard 4 (valid_D.mp hv₂) ht).symm.discriminantGroupEquiv
+  rw [zmodTwoProdAddEquiv_glueLabelEquiv_D4 ht i,
+    zmodTwoProdAddEquiv_glueLabelEquiv_D4 ht (typeD4TrialityLabelPerm i)]
+  fin_cases i <;> simp
 
 variable (hv : (D 4).Valid) {F : Type*} [Field F] [Finite F] (hF : Nat.card F = 4) {ω : F}
   (hω : ω ^ 2 + ω + 1 = 0)

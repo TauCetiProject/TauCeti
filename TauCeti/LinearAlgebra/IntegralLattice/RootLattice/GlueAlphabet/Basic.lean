@@ -53,6 +53,10 @@ group for even `n`.
   binary coordinate alphabet `ℤ/2` with quadratic map `x ↦ x² / 4`.
 * `TauCeti.DynkinType.glueAlphabet_congr`, `glueAlphabetIsometry_ofEq`: equal types have equal
   alphabets, compatibly with the glue isometries and `rootLatticeIsometryOfEq`.
+* `TauCeti.DynkinType.glueAlphabetIsometryOfIsometry`,
+  `TauCeti.DynkinType.glueAlphabetIsometry_glueAlphabetIsometryOfIsometry`: a root-lattice isometry
+  between valid simply-laced types induces an isometry of their glue alphabets, compatibly with
+  `glueAlphabetIsometry`.
 * `TauCeti.DynkinType.isNondegenerate_glueAlphabet`, `natCard_glueAlphabet`: the alphabet is
   nondegenerate, of order `|det t.cartanMatrix|`.
 
@@ -301,6 +305,42 @@ theorem glueAlphabetIsometry_ofEq {t s : DynkinType} (h : t = s) (hv : t.Valid) 
   refine Eq.trans ?_ (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm
   rw [Isometry.discriminantGroupEquiv_refl]
   -- Both sides are `t.glueAlphabetIsometry hv ht x`, the validity proofs being equal.
+  rfl
+
+/-- **An isometry of root lattices induces an isometry of glue alphabets**, transporting its
+discriminant quadratic isometry along `TauCeti.DynkinType.glueAlphabetIsometry`. -/
+noncomputable def glueAlphabetIsometryOfIsometry {t s : DynkinType} (hv : t.Valid) (hvs : s.Valid)
+    {ht : t.IsSimplyLaced} {hs : s.IsSimplyLaced}
+    (f : IntegralLattice.Isometry (t.rootLattice ht) (s.rootLattice hs)) :
+    FiniteQuadraticModule.Isometry (t.glueAlphabet ht) (s.glueAlphabet hs) :=
+  (t.glueAlphabetIsometry hv ht).trans
+    ((f.discriminantQuadraticIsometry (t.isEven_rootLattice ht)).trans
+      (s.glueAlphabetIsometry hvs hs).symm)
+
+/-- `glueAlphabetIsometryOfIsometry` is compatible with the discriminant action of `f` through
+`glueAlphabetIsometry`. -/
+theorem glueAlphabetIsometry_glueAlphabetIsometryOfIsometry {t s : DynkinType} (hv : t.Valid)
+    (hvs : s.Valid) {ht : t.IsSimplyLaced} {hs : s.IsSimplyLaced}
+    (f : IntegralLattice.Isometry (t.rootLattice ht) (s.rootLattice hs))
+    (x : t.glueAlphabet ht) :
+    s.glueAlphabetIsometry hvs hs (glueAlphabetIsometryOfIsometry hv hvs f x) =
+      f.discriminantQuadraticIsometry (t.isEven_rootLattice ht)
+        (t.glueAlphabetIsometry hv ht x) := by
+  rw [glueAlphabetIsometryOfIsometry, FiniteQuadraticModule.Isometry.trans_apply,
+    FiniteQuadraticModule.Isometry.trans_apply]
+  exact QuadraticMap.IsometryEquiv.apply_symm_apply _ _
+
+/-- The identity root-lattice isometry induces the identity on the glue alphabet. -/
+@[simp]
+theorem glueAlphabetIsometryOfIsometry_refl (t : DynkinType) (hv : t.Valid)
+    (ht : t.IsSimplyLaced) :
+    glueAlphabetIsometryOfIsometry hv hv (IntegralLattice.Isometry.refl (t.rootLattice ht)) =
+      QuadraticMap.IsometryEquiv.refl (t.glueAlphabet ht).quadratic := by
+  refine DFunLike.ext _ _ fun x ↦ EquivLike.injective (t.glueAlphabetIsometry hv ht) ?_
+  rw [glueAlphabetIsometry_glueAlphabetIsometryOfIsometry]
+  refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
+  rw [Isometry.discriminantGroupEquiv_refl]
+  -- `LinearEquiv.refl` and `QuadraticMap.IsometryEquiv.refl` both act as the identity.
   rfl
 
 /-- **The glue alphabet of a simply-laced type is nondegenerate**, for every rank, valid or

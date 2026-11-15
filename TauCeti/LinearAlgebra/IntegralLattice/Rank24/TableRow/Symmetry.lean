@@ -336,6 +336,17 @@ theorem coupled_mem_glueSubgroup_iff_of_glueWords
   let ψ₀ := piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg
     (hs := r.isSimplyLaced_componentType)
   let ψ : r.glueModule ≃+ r.glueModule := ψ₀.toAddEquiv.trans (AddEquiv.piCongrRight φ)
+  have hψ₀_apply (v : r.glueModule) : ψ₀.toAddEquiv v = ψ₀ v := by
+    rw [LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
+      QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+  -- `r.glueModule` is `FiniteQuadraticModule.pi …`, whose carrier is definitionally the dependent
+  -- function type `∀ k, (r.componentType k).glueAlphabet _`; `congrFun` evaluates equality in
+  -- `r.glueModule` at coordinate `k` so `AddEquiv.piCongrRight_apply` applies.
+  have hψ_apply (v : r.glueModule) (k : Fin r.components.length) :
+      ψ v k = φ k (ψ₀ v k) :=
+    (congrFun (AddEquiv.trans_apply ψ₀.toAddEquiv (AddEquiv.piCongrRight φ) v) k).trans
+      ((AddEquiv.piCongrRight_apply φ (ψ₀.toAddEquiv v) k).trans
+        (congrArg (φ k) (congrFun (hψ₀_apply v) k)))
   have hgen : ∀ v ∈ r.glueGenerators, ψ v ∈ r.glueGenerators := by
     intro v hv
     rw [mem_glueGenerators_iff, encodeGlueWord_def] at hv ⊢
@@ -346,10 +357,7 @@ theorem coupled_mem_glueSubgroup_iff_of_glueWords
           (((r.componentType k).glueLabelEquiv (r.isSimplyLaced_componentType k)).symm (ψ₀ v k))) :=
       congrArg (φ k) (((r.componentType k).glueLabelEquiv
         (r.isSimplyLaced_componentType k)).apply_symm_apply _).symm
-    -- Unfold `ψ` to `k ↦ φ k (ψ₀ v k)` at component `k`.
-    change (((r.componentType k).glueLabelEquiv (r.isSimplyLaced_componentType k)).symm
-      (φ k (ψ₀ v k))).val = _
-    rw [hk, hδ k]
+    rw [hψ_apply, hk, hδ k]
     refine congrArg (δ k) ?_
     rw [List.getD_eq_getElem?_getD, List.getElem?_ofFn, dite_eq_left (g k).isLt, Option.getD_some,
       Fin.eta, piGlueAlphabetCongr_apply]
@@ -360,6 +368,7 @@ theorem coupled_mem_glueSubgroup_iff_of_glueWords
   have hf_inj : Function.Injective
       (fun x : r.glueSubgroup ↦ (⟨ψ x.1, hle x.2⟩ : r.glueSubgroup)) :=
     fun a b h ↦ Subtype.ext (ψ.injective (congrArg Subtype.val h))
+  rw [← funext (hψ_apply w)]
   refine ⟨fun hw ↦ ?_, fun hw ↦ hle hw⟩
   obtain ⟨⟨v, hv⟩, hv_eq⟩ := Finite.surjective_of_injective hf_inj ⟨ψ w, hw⟩
   exact ψ.injective (congrArg Subtype.val hv_eq) ▸ hv
