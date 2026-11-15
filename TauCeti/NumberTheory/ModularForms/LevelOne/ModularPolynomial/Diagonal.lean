@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 public import TauCeti.NumberTheory.ModularForms.LevelOne.ModularPolynomial.Basic
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
+import TauCeti.NumberTheory.BinaryQuadraticForm.Content
 import TauCeti.NumberTheory.ModularForms.LevelOne.WeaklyHolomorphic
 import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 
@@ -317,25 +318,6 @@ theorem isIntegral_of_aeval_diagModularPolynomial_eq_zero {A : Type*} [CommRing 
     (isIntegral_leadingCoeff_smul (diagModularPolynomial n) x hx) (↑u⁻¹ : ℤ)
   rwa [smul_smul, ← hu, Units.inv_mul, one_smul] at h
 
-/-- Dividing three integers `(a, b, c)` (`a ≠ 0`) by `g = gcd(a, gcd(b, c))` yields a triple with
-an explicit Bézout relation `u * (a / g) + v * (b / g) + w * (c / g) = 1`. -/
-private theorem exists_bezout_of_ediv_gcd {a b c : ℤ} (ha : a ≠ 0) :
-    let g : ℕ := a.gcd (b.gcd c)
-    ∃ u v w : ℤ, u * (a / g) + v * (b / g) + w * (c / g) = 1 := by
-  let h : ℕ := b.gcd c
-  let g : ℕ := a.gcd h
-  have hg_pos : 0 < g := Nat.gcd_pos_of_pos_left _ (Int.natAbs_pos.2 ha)
-  have hda : (g : ℤ) * (a / g) = a := Int.mul_ediv_cancel' (Int.gcd_dvd_left a h)
-  have hgh : (g : ℤ) ∣ (h : ℤ) := Int.gcd_dvd_right a h
-  have hdb : (g : ℤ) * (b / g) = b := Int.mul_ediv_cancel' (hgh.trans (Int.gcd_dvd_left b c))
-  have hdc : (g : ℤ) * (c / g) = c := Int.mul_ediv_cancel' (hgh.trans (Int.gcd_dvd_right b c))
-  have h1 : (g : ℤ) = a * Int.gcdA a h + (h : ℤ) * Int.gcdB a h := Int.gcd_eq_gcd_ab a h
-  have h2 : (h : ℤ) = b * Int.gcdA b c + c * Int.gcdB b c := Int.gcd_eq_gcd_ab b c
-  refine ⟨Int.gcdA a h, Int.gcdB a h * Int.gcdA b c, Int.gcdB a h * Int.gcdB b c,
-    mul_left_cancel₀ (Nat.cast_ne_zero.2 hg_pos.ne') ?_⟩
-  linear_combination -h1 - Int.gcdB a h * h2 + Int.gcdA a h * hda +
-    Int.gcdB a h * Int.gcdA b c * hdb + Int.gcdB a h * Int.gcdB b c * hdc
-
 /-- Every integral quadratic relation `a τ² + b τ + c = 0` (`a ≠ 0`) for `τ ∈ ℍ` can be divided by
 `±gcd(a, b, c)` to obtain a primitive relation with `a' > 0` and `4 a' c' - b'^2 > 0`. -/
 private theorem exists_primitive_pos_quadratic {τ : ℍ} {a b c : ℤ} (ha : a ≠ 0)
@@ -344,23 +326,25 @@ private theorem exists_primitive_pos_quadratic {τ : ℍ} {a b c : ℤ} (ha : a 
       0 < 4 * a' * c' - b' ^ 2 ∧ (a' : ℂ) * τ ^ 2 + b' * τ + c' = 0 := by
   wlog ha_pos : 0 < a generalizing a b c
   · exact @this (-a) (-b) (-c) (neg_ne_zero.2 ha) (by push_cast; linear_combination -hτ) (by omega)
-  let h : ℕ := b.gcd c
-  let g : ℕ := a.gcd h
-  have hg_pos : 0 < g := Nat.gcd_pos_of_pos_left _ (Int.natAbs_pos.2 ha)
-  let a' := a / g; let b' := b / g; let c' := c / g
-  have hda : (g : ℤ) * a' = a := Int.mul_ediv_cancel' (Int.gcd_dvd_left a h)
-  have hgh : (g : ℤ) ∣ (h : ℤ) := Int.gcd_dvd_right a h
-  have hdb : (g : ℤ) * b' = b := Int.mul_ediv_cancel' (hgh.trans (Int.gcd_dvd_left b c))
-  have hdc : (g : ℤ) * c' = c := Int.mul_ediv_cancel' (hgh.trans (Int.gcd_dvd_right b c))
-  have ha'_pos : 0 < a' := pos_of_mul_pos_right (hda.symm ▸ ha_pos) (by positivity)
-  have hτ' : (a' : ℂ) * τ ^ 2 + b' * τ + c' = 0 := by
-    have hmul : (g : ℂ) * ((a' : ℂ) * τ ^ 2 + b' * τ + c') = 0 := by
-      have haC : (g : ℂ) * a' = a := by exact_mod_cast hda
-      have hbC : (g : ℂ) * b' = b := by exact_mod_cast hdb
-      have hcC : (g : ℂ) * c' = c := by exact_mod_cast hdc
+  let f : BinaryQuadraticForm ℤ := ⟨a, b, c⟩
+  have hf0 : f ≠ 0 := fun h ↦ ha (by simpa using congrArg BinaryQuadraticForm.a h)
+  have hg_pos : 0 < f.content := f.content_pos_iff.2 hf0
+  let p := f.primPart
+  have hda : (f.content : ℤ) * p.a = a := by
+    rw [f.primPart_a]; exact Int.mul_ediv_cancel' f.content_dvd_a
+  have hdb : (f.content : ℤ) * p.b = b := by
+    rw [f.primPart_b]; exact Int.mul_ediv_cancel' f.content_dvd_b
+  have hdc : (f.content : ℤ) * p.c = c := by
+    rw [f.primPart_c]; exact Int.mul_ediv_cancel' f.content_dvd_c
+  have ha'_pos : 0 < p.a := pos_of_mul_pos_right (hda.symm ▸ ha_pos) (by positivity)
+  have hτ' : (p.a : ℂ) * τ ^ 2 + p.b * τ + p.c = 0 := by
+    have hmul : (f.content : ℂ) * ((p.a : ℂ) * τ ^ 2 + p.b * τ + p.c) = 0 := by
+      have haC : (f.content : ℂ) * p.a = a := by exact_mod_cast hda
+      have hbC : (f.content : ℂ) * p.b = b := by exact_mod_cast hdb
+      have hcC : (f.content : ℂ) * p.c = c := by exact_mod_cast hdc
       linear_combination hτ + τ ^ 2 * haC + τ * hbC + hcC
     exact (mul_eq_zero.1 hmul).resolve_left (Nat.cast_ne_zero.2 hg_pos.ne')
-  have hD_pos : 0 < 4 * a' * c' - b' ^ 2 := by
+  have hD_pos : 0 < 4 * p.a * p.c - p.b ^ 2 := by
     have him := congrArg Complex.im hτ'
     have hre := congrArg Complex.re hτ'
     simp only [sq, Complex.add_im, Complex.mul_im, Complex.intCast_re, Complex.intCast_im,
@@ -368,13 +352,14 @@ private theorem exists_primitive_pos_quadratic {τ : ℍ} {a b c : ℤ} (ha : a 
     simp only [sq, Complex.add_re, Complex.mul_re, Complex.intCast_re, Complex.intCast_im,
       zero_mul, sub_zero, coe_re, coe_im, Complex.zero_re] at hre
     have him_pos : 0 < τ.im := τ.im_pos
-    have haR : (0 : ℝ) < a' := Int.cast_pos.2 ha'_pos
-    have hlin : (2 * (a' : ℝ) * τ.re + b') * τ.im = 0 := by linarith
-    have h2ab : 2 * (a' : ℝ) * τ.re + b' = 0 := (mul_eq_zero.1 hlin).resolve_right him_pos.ne'
-    have hDR : (0 : ℝ) < ((4 * a' * c' - b' ^ 2 : ℤ) : ℝ) := by
+    have haR : (0 : ℝ) < p.a := Int.cast_pos.2 ha'_pos
+    have hlin : (2 * (p.a : ℝ) * τ.re + p.b) * τ.im = 0 := by linarith
+    have h2ab : 2 * (p.a : ℝ) * τ.re + p.b = 0 := (mul_eq_zero.1 hlin).resolve_right him_pos.ne'
+    have hDR : (0 : ℝ) < ((4 * p.a * p.c - p.b ^ 2 : ℤ) : ℝ) := by
       push_cast; nlinarith [mul_pos haR him_pos]
     exact Int.cast_pos.1 hDR
-  exact ⟨a', b', c', ha'_pos, exists_bezout_of_ediv_gcd ha, hD_pos, hτ'⟩
+  exact ⟨p.a, p.b, p.c, ha'_pos, (f.isPrimitive_primPart hf0).exists_linearCombination_eq_one,
+    hD_pos, hτ'⟩
 
 /-- Every point `τ ∈ ℍ` satisfying a primitive equation `a' τ² + b' τ + c' = 0` (`a' > 0`) is fixed
 by a primitive integral matrix of non-square positive determinant. -/
