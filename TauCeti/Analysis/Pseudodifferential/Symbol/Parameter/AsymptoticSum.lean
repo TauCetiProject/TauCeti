@@ -184,11 +184,12 @@ theorem parameterCutoff_eq_comp (t : ℝ) :
   rcases eq_or_ne t 0 with rfl | ht
   · simp [parameterCutoff_def]
   simp only [Function.comp_apply, parameterCutoff_def, parameterDilation_apply, norm_smul,
-    Real.norm_eq_abs, abs_inv, abs_pow, sq_abs, one_pow, div_one]
+    Real.norm_eq_abs, abs_inv, abs_pow, one_pow, div_one]
   congr 1
   have ha : |t| ^ 4 = t ^ 4 := by rw [show (4 : ℕ) = 2 * 2 from rfl, pow_mul, sq_abs, ← pow_mul]
   field_simp
   rw [ha]
+  ring
 
 /-- The cutoff does not depend on the position, so neither do its derivatives. -/
 private theorem iteratedFDeriv_parameterCutoff_mk (t : ℝ) (k : ℕ) (x ξ : CoordinateSpace n)
@@ -298,7 +299,8 @@ theorem exists_norm_parameterIteratedFDeriv_parameterCutoff_le (k : ℕ) :
   calc ‖parameterIteratedFDeriv i (parameterCutoff 1) q‖ *
         ‖parameterDilation n (t⁻¹ * w / w')‖ ^ i
       ≤ B * 1 ^ i := mul_le_mul (hB i hi q)
-        (pow_le_pow_left₀ (norm_nonneg _) (norm_parameterDilation_le_one ((abs_of_nonneg hr0).trans_le hr1)) i)
+        (pow_le_pow_left₀ (norm_nonneg _) (norm_parameterDilation_le_one
+          ((abs_of_nonneg hr0).trans_le hr1)) i)
         (by positivity) hB0
     _ = B := by rw [one_pow, mul_one]
 

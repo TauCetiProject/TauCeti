@@ -251,7 +251,7 @@ theorem parameterIteratedFDeriv_zero {A : Type*} [NormedAddCommGroup A] [NormedS
   ext v
   simp [parameterIteratedFDeriv_apply]
 
-@[to_fun]
+@[to_fun parameterIteratedFDeriv_fun_add]
 theorem parameterIteratedFDeriv_add {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A] (k : ℕ)
     {f g : (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hf : ContDiffAt ℝ k f p)
@@ -261,7 +261,7 @@ theorem parameterIteratedFDeriv_add {A : Type*} [NormedAddCommGroup A] [NormedSp
   ext v
   simp [parameterIteratedFDeriv_apply, iteratedFDeriv_add_apply hf hg]
 
-@[to_fun]
+@[to_fun parameterIteratedFDeriv_fun_sub]
 theorem parameterIteratedFDeriv_sub {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A] (k : ℕ)
     {f g : (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hf : ContDiffAt ℝ k f p)
@@ -271,7 +271,7 @@ theorem parameterIteratedFDeriv_sub {A : Type*} [NormedAddCommGroup A] [NormedSp
   ext v
   simp [parameterIteratedFDeriv_apply, iteratedFDeriv_sub_apply hf hg]
 
-@[to_fun]
+@[to_fun parameterIteratedFDeriv_fun_sum]
 theorem parameterIteratedFDeriv_sum {A ι : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
     (k : ℕ) (s : Finset ι) {f : ι → (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hf : ∀ j ∈ s, ContDiffAt ℝ k (f j) p) :
@@ -286,7 +286,7 @@ theorem parameterIteratedFDeriv_fun_zero {A : Type*} [NormedAddCommGroup A] [Nor
       0 :=
   parameterIteratedFDeriv_zero k p
 
-@[to_fun (attr := simp)]
+@[to_fun (attr := simp) parameterIteratedFDeriv_fun_neg]
 theorem parameterIteratedFDeriv_neg {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A] (k : ℕ)
     (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A)
     (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
@@ -294,9 +294,10 @@ theorem parameterIteratedFDeriv_neg {A : Type*} [NormedAddCommGroup A] [NormedSp
   ext v
   simp [parameterIteratedFDeriv_apply, iteratedFDeriv_neg_apply]
 
-@[to_fun]
+@[to_fun parameterIteratedFDeriv_fun_const_smul]
 theorem parameterIteratedFDeriv_const_smul {A R : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
-    [DistribSMul R A] [SMulCommClass ℝ R A] [ContinuousConstSMul R A] (k : ℕ) (c : R) {f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
+    [DistribSMul R A] [SMulCommClass ℝ R A] [ContinuousConstSMul R A] (k : ℕ) (c : R)
+    {f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hf : ContDiffAt ℝ k f p) :
     parameterIteratedFDeriv k (c • f) p = c • parameterIteratedFDeriv k f p := by
   ext v
