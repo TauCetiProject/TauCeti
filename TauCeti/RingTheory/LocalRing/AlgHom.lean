@@ -12,13 +12,13 @@ import TauCeti.Algebra.Algebra.Hom
 /-!
 # Algebra homomorphisms of local algebras
 
-Over any commutative semiring `k`, every `k`-algebra augmentation `R →ₐ[k] k` of a local `k`-algebra
-`R` (not assumed commutative) reflects units (`AlgHom.isLocalHom_self`), so whenever a `k`-algebra
-`S` admits a `k`-algebra augmentation `S →ₐ[k] k`, every `k`-algebra homomorphism `R →ₐ[k] S` out of
-`R` automatically reflects units (`AlgHom.isLocalHom_of_algHom`). When `k` is a field, `R` admits at
-most one `k`-algebra homomorphism `R →ₐ[k] k` (`AlgHom.subsingleton_of_isLocalRing`), and every
-`k`-algebra homomorphism `R →ₐ[k] S` commutes with any augmentations on `R` and `S`
-(`AlgHom.comp_eq_of_isLocalRing`).
+Over any commutative semiring `k`, every `k`-algebra augmentation `R →ₐ[k] k` of a local
+`k`-algebra `R` (not assumed commutative) reflects units (`AlgHom.isLocalHom_to_ring`), so whenever
+a `k`-algebra `S` admits a `k`-algebra augmentation `S →ₐ[k] k`, every `k`-algebra homomorphism
+`R →ₐ[k] S` out of `R` automatically reflects units (`AlgHom.isLocalHom_of_algHom`). When `k` is a
+field, `R` admits at most one `k`-algebra homomorphism `R →ₐ[k] k`
+(`AlgHom.subsingleton_of_isLocalRing`), and every `k`-algebra homomorphism `R →ₐ[k] S` commutes with
+any augmentations on `R` and `S` (`AlgHom.comp_eq_of_isLocalRing`).
 
 In the commutative case, over an arbitrary commutative base semiring `k`, let `G` be a subset of `R`
 such that every element of `R` differs from a scalar in `k` by an element of `Ideal.span G`. If two
@@ -35,8 +35,8 @@ generating set of `maximalIdeal R` with a local `k`-algebra homomorphism `φ : R
 
 ## Main results
 
-* `AlgHom.isLocalHom_self`: any `k`-algebra augmentation `R →ₐ[k] k` of a local `k`-algebra over a
-  commutative semiring `k` reflects units.
+* `AlgHom.isLocalHom_to_ring`: any `k`-algebra augmentation `R →ₐ[k] k` of a local `k`-algebra over
+  a commutative semiring `k` reflects units.
 * `AlgHom.isLocalHom_of_algHom`: any `φ : R →ₐ[k] S` from a local `k`-algebra into a `k`-algebra
   admitting `S →ₐ[k] k` reflects units.
 * `AlgHom.subsingleton_of_isLocalRing`: `R →ₐ[k] k` is a subsingleton for a local `k`-algebra `R`
@@ -63,7 +63,7 @@ section Augmentation
 
 /-- Over any commutative semiring `k`, every `k`-algebra augmentation `R →ₐ[k] k` of a local ring
 `R` (not assumed commutative) reflects units. -/
-instance isLocalHom_self {k R : Type*} [CommSemiring k] [Ring R] [IsLocalRing R] [Algebra k R]
+instance isLocalHom_to_ring {k R : Type*} [CommSemiring k] [Ring R] [IsLocalRing R] [Algebra k R]
     (ε : R →ₐ[k] k) : IsLocalHom ε where
   map_nonunit r hr := by
     have : Nontrivial k := (algebraMap k R).domain_nontrivial
@@ -122,7 +122,7 @@ theorem isLocalHom_of_algHom {k R S : Type*} [CommSemiring k] [Ring R] [IsLocalR
 `k`-algebra is the maximal ideal of `R`. -/
 theorem ker_eq_maximalIdeal {k R : Type*} [Field k] [CommRing R] [IsLocalRing R] [Algebra k R]
     (ε : R →ₐ[k] k) : RingHom.ker ε = IsLocalRing.maximalIdeal R :=
-  IsLocalRing.ker_eq_maximalIdeal ε.toRingHom ε.surjective_self
+  IsLocalRing.ker_eq_maximalIdeal ε.toRingHom ε.surjective_to_ring
 
 /-- If a commutative local `k`-algebra `R` over a commutative ring `k` admits a `k`-algebra
 augmentation `R →ₐ[k] k`, then `k` surjects onto `ResidueField R`. -/

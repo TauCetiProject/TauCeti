@@ -35,7 +35,11 @@ maps:
   4. `φ.stalkMap x ≫ evalHom I X x = evalHom J Y (φ.base x)` at every point `x : X`.
 * Any presheafed-space morphism satisfying these equivalent conditions automatically induces local
   homomorphisms on all stalks (`isLocalHom_stalkMap_of_c_app_top_algebraMap`) and acts on sections
-  by pointwise precomposition with `φ.base` (`c_app_apply_of_c_app_top_algebraMap`). The
+  by pointwise precomposition with `φ.base` (`c_app_apply_of_c_app_top_algebraMap`). Whenever
+  `φ.base` is complex analytic (globally or near `x`), `φ` agrees with `locallyRingedSpaceMap`
+  (`locallyRingedSpaceMap_base_toHom_of_c_app_top_algebraMap`,
+  `locallyRingedSpaceMap_base_of_c_app_top_algebraMap`) and its `ℂ`-algebra stalk map agrees with
+  `stalkPullbackAlgHom` (`stalkAlgHomOfCAppTopAlgebraMap_eq_stalkPullbackAlgHom`). The
   `ℂ`-linearity hypothesis is essential: composing section pullback with complex conjugation along
   an antiholomorphic map gives a `LocallyRingedSpace` morphism that fixes only real constants.
 * When `Y` is modelled directly on `𝓘(ℂ, E')` for finite-dimensional `E'` (and `X` is an arbitrary
@@ -45,9 +49,7 @@ maps:
   (`OpenPartialHomeomorph.base_eq_symm_sum_of_c_app_top_algebraMap`). More generally, for any
   finite-dimensional boundaryless complex manifold `(Y, J)`, pulling back extended-chart coordinates
   shows independently of charts that `φ.base` is complex analytic
-  (`contMDiff_base_of_c_app_top_algebraMap`) and that `locallyRingedSpaceMap φ.base _` recovers `φ`
-  (`locallyRingedSpaceMap_base_toHom_of_c_app_top_algebraMap` and
-  `locallyRingedSpaceMap_base_of_c_app_top_algebraMap`).
+  (`contMDiff_base_of_c_app_top_algebraMap`).
 * `holomorphicMapLocalRingedEquivalence` packages this into a bijection between bundled analytic
   maps `C^ω⟮I, X; J, Y⟯` and `ℂ`-linear morphisms `locallyRingedSpace I X ⟶ locallyRingedSpace J Y`,
   compatible with identity, composition, open restriction, and the stalk-level germ equivalence
@@ -96,7 +98,9 @@ private theorem map_eqToHom_apply {U V : Opens X} (h : U = V)
     toFun I X (op V) (((holomorphicStructureSheaf I X).obj.map (eqToHom h.symm).op).hom s) x =
       toFun I X (op U) s ⟨x.1, Eq.mpr congr(x.1 ∈ $h) x.2⟩ := by subst h; simp
 
-private theorem toPresheafedSpace_hom_ext {W : PresheafedSpace CommRingCat}
+/-- Two presheafed-space morphisms from `(locallyRingedSpace I X).toPresheafedSpace` to `W` are
+equal if they agree on underlying continuous maps and pointwise on all pulled-back sections. -/
+theorem toPresheafedSpace_hom_ext {W : PresheafedSpace CommRingCat}
     {α β : (locallyRingedSpace I X).toPresheafedSpace ⟶ W} (w : α.base = β.base)
     (h : ∀ (U : Opens W) (s : W.presheaf.obj (op U)) (x : ↥((Opens.map β.base).obj U)),
       toFun I X (op ((Opens.map α.base).obj U)) ((α.c.app (op U)).hom s)
@@ -107,7 +111,9 @@ private theorem toPresheafedSpace_hom_ext {W : PresheafedSpace CommRingCat}
     rw [CommRingCat.hom_comp, RingHom.comp_apply]
     exact (map_eqToHom_apply congr((Opens.map $w).obj U) _ x).trans (h U s x)
 
-private theorem locallyRingedSpace_hom_ext {W : LocallyRingedSpace}
+/-- Two locally ringed space morphisms from `locallyRingedSpace I X` to `W` are equal if they agree
+on underlying continuous maps and pointwise on all pulled-back sections. -/
+theorem locallyRingedSpace_hom_ext {W : LocallyRingedSpace}
     {α β : locallyRingedSpace I X ⟶ W} (w : α.base = β.base)
     (h : ∀ (U : Opens W) (s : W.presheaf.obj (op U)) (x : ↥((Opens.map β.base).obj U)),
       toFun I X (op ((Opens.map α.base).obj U)) ((α.c.app (op U)).hom s)
@@ -116,30 +122,50 @@ private theorem locallyRingedSpace_hom_ext {W : LocallyRingedSpace}
     α = β :=
   LocallyRingedSpace.Hom.ext' (toPresheafedSpace_hom_ext w h)
 
+private theorem presheafedSpace_comp_c_app_apply
+    {A B C : PresheafedSpace CommRingCat} (φ : A ⟶ B) (ψ : B ⟶ C)
+    (U : Opens C) (s : C.presheaf.obj (op U)) :
+    ((φ ≫ ψ).c.app (op U)).hom s =
+      (φ.c.app (op ((Opens.map ψ.base).obj U))).hom ((ψ.c.app (op U)).hom s) := by
+  rw [PresheafedSpace.comp_c_app]
+  exact CommRingCat.comp_apply (ψ.c.app (op U)) (φ.c.app (op ((Opens.map ψ.base).obj U))) s
+
+private theorem locallyRingedSpace_comp_c_app_apply
+    {A B C : LocallyRingedSpace} (φ : A ⟶ B) (ψ : B ⟶ C)
+    (U : Opens C) (s : C.presheaf.obj (op U)) :
+    ((φ ≫ ψ).c.app (op U)).hom s =
+      (φ.c.app (op ((Opens.map ψ.base).obj U))).hom ((ψ.c.app (op U)).hom s) :=
+  presheafedSpace_comp_c_app_apply φ.toHom ψ.toHom U s
+
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] {H' : Type*} [TopologicalSpace H']
   {J : ModelWithCorners ℂ E' H'} {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
   {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E''] {H'' : Type*} [TopologicalSpace H'']
   {K : ModelWithCorners ℂ E'' H''} {Z : Type} [TopologicalSpace Z] [ChartedSpace H'' Z]
+
+private theorem stalkMap_mk_homOfContMDiff (f : X → Y) (hf : ContMDiff I J ω f) (x : X) :
+    (({ base := TopCat.ofHom ⟨f, hf.continuous⟩, c := (homOfContMDiff I X f hf).hom } :
+        (locallyRingedSpace I X).toPresheafedSpace ⟶
+          (locallyRingedSpace J Y).toPresheafedSpace).stalkMap x).hom =
+      stalkPrecomp I X f hf x := by
+  let φ : (locallyRingedSpace I X).toPresheafedSpace ⟶
+      (locallyRingedSpace J Y).toPresheafedSpace :=
+    { base := TopCat.ofHom ⟨f, hf.continuous⟩, c := (homOfContMDiff I X f hf).hom }
+  ext s; obtain ⟨U, hx, g, rfl⟩ := (holomorphicStructureSheaf J Y).presheaf.exists_germ_eq s
+  refine (PresheafedSpace.stalkMap_germ_apply φ U x hx g).trans ?_
+  refine (congrArg (((holomorphicStructureSheaf I X).presheaf.germ
+      ((Opens.map φ.base).obj U) x hx).hom) ?_).trans
+    (stalkPrecomp_germ I X f hf x U hx g).symm
+  exact (congrArg (fun k ↦ k.hom g) (homOfContMDiff_app I X f hf (op U))).trans
+    (CommRingCat.ofHom_apply (precomp I X f hf (op U)) g)
 
 /-- A complex analytic map `f : X → Y` induces a morphism of holomorphic locally ringed spaces. -/
 @[expose]
 def locallyRingedSpaceMap (f : X → Y) (hf : ContMDiff I J ω f) :
     locallyRingedSpace I X ⟶ locallyRingedSpace J Y where
   toHom := { base := TopCat.ofHom ⟨f, hf.continuous⟩, c := (homOfContMDiff I X f hf).hom }
-  prop x := ⟨fun s hs ↦ by
-    obtain ⟨U, hx, g, rfl⟩ := (holomorphicStructureSheaf J Y).presheaf.exists_germ_eq s
-    let φ : (locallyRingedSpace I X).toPresheafedSpace ⟶
-        (locallyRingedSpace J Y).toPresheafedSpace :=
-      { base := TopCat.ofHom ⟨f, hf.continuous⟩, c := (homOfContMDiff I X f hf).hom }
-    have h1 :
-        (φ.stalkMap x).hom (((holomorphicStructureSheaf J Y).presheaf.germ U (f x) hx).hom g) =
-          (((holomorphicStructureSheaf I X).presheaf.germ
-            ((Opens.map φ.base).obj U) x hx).hom) (precomp I X f hf (op U) g) :=
-      (PresheafedSpace.stalkMap_germ_apply φ U x hx g).trans <|
-        congrArg _ (by rw [show φ.c.app (op U) = _ from homOfContMDiff_app I X f hf (op U)]; rfl)
-    rw [isUnit_stalk_iff] at hs ⊢
-    exact fun h0 ↦ hs <| (congrArg (eval I X x) h1).trans <| (eval_germ I X _ x hx _).trans <|
-      (precomp_apply I X f hf (op U) g ⟨x, hx⟩).trans ((eval_germ J Y U (f x) hx g).symm.trans h0)⟩
+  prop x := by
+    rw [stalkMap_mk_homOfContMDiff f hf x, ← stalkPullback_eq_stalkPrecomp f hf x]
+    exact isLocalHom_stalkPullback _
 
 /-- The underlying continuous map of `locallyRingedSpaceMap f hf` is `f`. -/
 @[simp]
@@ -164,11 +190,10 @@ theorem locallyRingedSpaceMap_c_app_apply (f : X → Y) (hf : ContMDiff I J ω f
     toFun I X (op ((Opens.map (locallyRingedSpaceMap f hf).base).obj U))
         (((locallyRingedSpaceMap f hf).c.app (op U)).hom s) x =
       toFun J Y (op U) s ⟨f x.1, x.2⟩ := by
-  have hs : (((locallyRingedSpaceMap f hf).c.app (op U)).hom s :
-      (holomorphicStructureSheaf I X).obj.obj
-        (op ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj U))) =
-      precomp I X f hf (op U) s := by rw [locallyRingedSpaceMap_c_app]; rfl
-  exact (congrArg (fun t ↦ toFun I X _ t ⟨x.1, x.2⟩) hs).trans
+  have hc : ((locallyRingedSpaceMap f hf).c.app (op U)).hom s = precomp I X f hf (op U) s :=
+    (congrArg (fun k ↦ k.hom s) (locallyRingedSpaceMap_c_app f hf (op U))).trans
+      (CommRingCat.ofHom_apply (precomp I X f hf (op U)) s)
+  exact (congrArg (fun t ↦ toFun I X _ t x) hc).trans
     (precomp_apply I X f hf (op U) s ⟨x.1, x.2⟩)
 
 /-- `locallyRingedSpaceMap f hf` preserves complex scalar sections on every open `U : Opens Y`. -/
@@ -177,19 +202,15 @@ theorem locallyRingedSpaceMap_c_app_algebraMap (f : X → Y) (hf : ContMDiff I J
     ((locallyRingedSpaceMap f hf).c.app (op U)).hom (algebraMap ℂ _ c) =
       algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj
         (op ((Opens.map (locallyRingedSpaceMap f hf).base).obj U))) c :=
-  ext fun x ↦ (locallyRingedSpaceMap_c_app_apply f hf U _ x).trans <|
-    (algebraMap_apply (op U) c ⟨f x.1, x.2⟩).trans (algebraMap_apply _ c x).symm
+  (congrArg (fun k ↦ k.hom (algebraMap ℂ _ c)) (locallyRingedSpaceMap_c_app f hf (op U))).trans <|
+    (CommRingCat.ofHom_apply (precomp I X f hf (op U)) _).trans
+      (precomp_algebraMap f hf (op U) c)
 
 /-- On stalks at `x`, `locallyRingedSpaceMap f hf` acts by `stalkPrecomp I X f hf x`. -/
 @[simp]
 theorem locallyRingedSpaceMap_stalkMap (f : X → Y) (hf : ContMDiff I J ω f) (x : X) :
-    ((locallyRingedSpaceMap f hf).stalkMap x).hom = stalkPrecomp I X f hf x := by
-  ext s; obtain ⟨U, hx, g, rfl⟩ := (holomorphicStructureSheaf J Y).presheaf.exists_germ_eq s
-  refine (PresheafedSpace.stalkMap_germ_apply (locallyRingedSpaceMap f hf).toHom U x hx g).trans ?_
-  refine (congrArg (((holomorphicStructureSheaf I X).presheaf.germ
-      ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj U) x hx).hom) ?_).trans
-    (stalkPrecomp_germ I X f hf x U hx g).symm
-  rw [locallyRingedSpaceMap_c_app]; rfl
+    ((locallyRingedSpaceMap f hf).stalkMap x).hom = stalkPrecomp I X f hf x :=
+  stalkMap_mk_homOfContMDiff f hf x
 
 /-- The stalk map of `locallyRingedSpaceMap f hf` at `x` commutes with `evalHom`. -/
 @[reassoc (attr := simp)]
@@ -206,30 +227,32 @@ variable (I X) in
 theorem locallyRingedSpaceMap_id :
     locallyRingedSpaceMap (I := I) (J := I) (id : X → X) contMDiff_id =
       𝟙 (locallyRingedSpace I X) :=
-  locallyRingedSpace_hom_ext rfl fun U s x ↦
-    (locallyRingedSpaceMap_c_app_apply (I := I) (J := I) (id : X → X) contMDiff_id
-        U s ⟨x.1, x.2⟩).trans <| by
-      simp only [LocallyRingedSpace.id_toHom, PresheafedSpace.id_c_app]
-      exact (map_eqToHom_apply rfl s x).symm
+  locallyRingedSpace_hom_ext (by ext; rfl) fun U s x ↦ by
+    rw [locallyRingedSpaceMap_c_app_apply (I := I) (J := I) (id : X → X) contMDiff_id U s
+      ⟨x.1, x.2⟩]
+    have hid : ((𝟙 (locallyRingedSpace I X) : locallyRingedSpace I X ⟶
+        locallyRingedSpace I X).c.app (op U)).hom s = s :=
+      (congrArg (fun k ↦ k.hom s)
+        ((PresheafedSpace.id_c_app (locallyRingedSpace I X).toPresheafedSpace (op U)).trans
+          ((holomorphicStructureSheaf I X).presheaf.map_id (op U)))).trans
+        (CommRingCat.id_apply _ s)
+    exact (congrArg (fun t ↦ toFun I X (op U) t ⟨x.1, x.2⟩) hid).symm
 
 /-- `locallyRingedSpaceMap` is covariantly functorial under composition of analytic maps. -/
 theorem locallyRingedSpaceMap_comp {f : X → Y} (hf : ContMDiff I J ω f)
     {g : Y → Z} (hg : ContMDiff J K ω g) :
     locallyRingedSpaceMap (g ∘ f) (hg.comp hf) =
       locallyRingedSpaceMap f hf ≫ locallyRingedSpaceMap g hg :=
-  locallyRingedSpace_hom_ext rfl fun U s x ↦ by
-    have hcomp : (((locallyRingedSpaceMap f hf ≫ locallyRingedSpaceMap g hg).c.app (op U)).hom s :
-        (holomorphicStructureSheaf I X).obj.obj
-          (op ((Opens.map (locallyRingedSpaceMap f hf).base).obj
-            ((Opens.map (locallyRingedSpaceMap g hg).base).obj U)))) =
-        ((locallyRingedSpaceMap f hf).c.app
-          (op ((Opens.map (locallyRingedSpaceMap g hg).base).obj U))).hom
-          (((locallyRingedSpaceMap g hg).c.app (op U)).hom s) := rfl
-    exact (locallyRingedSpaceMap_c_app_apply (g ∘ f) (hg.comp hf) U s ⟨x.1, x.2⟩).trans
-      ((congrArg (fun t ↦ toFun I X _ t ⟨x.1, x.2⟩) hcomp).trans
-        ((locallyRingedSpaceMap_c_app_apply f hf
-            ((Opens.map (locallyRingedSpaceMap g hg).base).obj U) _ ⟨x.1, x.2⟩).trans
-          (locallyRingedSpaceMap_c_app_apply g hg U s ⟨f x.1, x.2⟩))).symm
+  locallyRingedSpace_hom_ext (by ext; rfl) fun U s x ↦ by
+    have h₁ := locallyRingedSpaceMap_c_app_apply (g ∘ f) (hg.comp hf) U s ⟨x.1, x.2⟩
+    have h₂ := locallyRingedSpaceMap_c_app_apply f hf
+      ((Opens.map (locallyRingedSpaceMap g hg).base).obj U)
+      (((locallyRingedSpaceMap g hg).c.app (op U)).hom s) ⟨x.1, x.2⟩
+    have h₃ := locallyRingedSpaceMap_c_app_apply g hg U s ⟨f x.1, x.2⟩
+    exact h₁.trans <| h₃.symm.trans <| h₂.symm.trans <|
+      congrArg (fun t ↦ toFun I X _ t x)
+        (locallyRingedSpace_comp_c_app_apply (locallyRingedSpaceMap f hf)
+          (locallyRingedSpaceMap g hg) U s).symm
 
 /-- Inclusion of an open subset induces an open immersion of holomorphic locally ringed spaces. -/
 instance instIsOpenImmersionLocallyRingedSpaceMapSubtypeVal (U : Opens X) :
@@ -330,26 +353,81 @@ theorem smoothLocallyRingedSpaceIso_hom_base :
 theorem smoothLocallyRingedSpaceIso_inv_base :
     (smoothLocallyRingedSpaceIso I X).inv.base = 𝟙 (TopCat.of X) := (rfl)
 
+/-- On sections over `U`, `(smoothLocallyRingedSpaceIso I X).hom` is the inverse section equivalence
+`(smoothSectionsEquiv I X U).symm`. -/
+@[simp]
+theorem smoothLocallyRingedSpaceIso_hom_c_app (U : Opens X) :
+    (smoothLocallyRingedSpaceIso I X).hom.c.app (op U) =
+      CommRingCat.ofHom (smoothSectionsEquiv I X U).symm.toRingHom := by
+  have heq : (eqToHom (TopCat.Presheaf.Pushforward.id_eq
+      (holomorphicStructureSheaf I X).presheaf).symm).app (op U) = 𝟙 _ :=
+    (eqToHom_app _ _).trans (eqToHom_refl _ _)
+  exact (congrArg ((smoothSheafIso I X).inv.hom.app (op U) ≫ ·) heq).trans <|
+    (Category.comp_id _).trans (smoothSheafIso_inv_app U)
+
+/-- On sections over `U`, `(smoothLocallyRingedSpaceIso I X).inv` is the section equivalence
+`smoothSectionsEquiv I X U`. -/
+@[simp]
+theorem smoothLocallyRingedSpaceIso_inv_c_app (U : Opens X) :
+    (smoothLocallyRingedSpaceIso I X).inv.c.app (op U) =
+      CommRingCat.ofHom (smoothSectionsEquiv I X U).toRingHom := by
+  let k : (holomorphicStructureSheaf I X).presheaf.obj (op U) ⟶
+      (ChartedSpace.locallyRingedSpace I X).presheaf.obj (op U) :=
+    (eqToHom (TopCat.Presheaf.Pushforward.id_eq
+      (holomorphicStructureSheaf I X).presheaf)).app (op U) ≫
+      (smoothSheafIso I X).hom.hom.app (op U)
+  have h₁ : (holomorphicStructureSheaf I X).presheaf.map (eqToHom rfl : op U ⟶ op U) = 𝟙 _ :=
+    (congrArg _ (eqToHom_refl _ _)).trans ((holomorphicStructureSheaf I X).presheaf.map_id (op U))
+  have h₂ : (eqToHom (TopCat.Presheaf.Pushforward.id_eq
+      (holomorphicStructureSheaf I X).presheaf)).app (op U) = 𝟙 _ :=
+    (eqToHom_app _ _).trans (eqToHom_refl _ _)
+  have h₃ : k = CommRingCat.ofHom (smoothSectionsEquiv I X U).toRingHom :=
+    (congrArg (· ≫ (smoothSheafIso I X).hom.hom.app (op U)) h₂).trans <|
+      (Category.id_comp _).trans (smoothSheafIso_hom_app U)
+  exact (TopCat.Presheaf.toPushforwardOfIso_app (Iso.refl (TopCat.of X))
+      (eqToIso (TopCat.Presheaf.Pushforward.id_eq (holomorphicStructureSheaf I X).presheaf) ≪≫
+        (sheafToPresheaf _ _).mapIso (smoothSheafIso I X)).hom (op U)).trans <|
+    (congrArg (· ≫ k) h₁).trans <| (Category.id_comp k).trans h₃
+
+/-- On stalks at `x`, `(smoothLocallyRingedSpaceIso I X).hom` agrees with
+`(smoothStalkIso I X x).inv`. -/
+@[simp]
+theorem smoothLocallyRingedSpaceIso_hom_stalkMap (x : X) :
+    (smoothLocallyRingedSpaceIso I X).hom.stalkMap x = (smoothStalkIso I X x).inv := by
+  apply CommRingCat.hom_ext
+  apply RingHom.ext
+  intro s
+  obtain ⟨U, hx, g, rfl⟩ := (smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.exists_germ_eq s
+  have h₁ := LocallyRingedSpace.stalkMap_germ_apply (smoothLocallyRingedSpaceIso I X).hom U x hx g
+  have h₂ := congrArg (fun k ↦ k.hom g) (smoothLocallyRingedSpaceIso_hom_c_app I X U)
+  exact h₁.trans <| (congrArg (((holomorphicStructureSheaf I X).presheaf.germ U x hx).hom)
+    (h₂.trans (CommRingCat.ofHom_apply _ g))).trans (smoothStalkIso_inv_germ x U hx g).symm
+
+/-- On stalks at `x`, `(smoothLocallyRingedSpaceIso I X).inv` agrees with
+`(smoothStalkIso I X x).hom`. -/
+@[simp]
+theorem smoothLocallyRingedSpaceIso_inv_stalkMap (x : X) :
+    (smoothLocallyRingedSpaceIso I X).inv.stalkMap x = (smoothStalkIso I X x).hom := by
+  apply CommRingCat.hom_ext
+  apply RingHom.ext
+  intro s
+  obtain ⟨U, hx, g, rfl⟩ := (holomorphicStructureSheaf I X).presheaf.exists_germ_eq s
+  have h₁ := LocallyRingedSpace.stalkMap_germ_apply (smoothLocallyRingedSpaceIso I X).inv U x hx g
+  have h₂ := congrArg (fun k ↦ k.hom g) (smoothLocallyRingedSpaceIso_inv_c_app I X U)
+  exact h₁.trans <| (congrArg (((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.germ U x hx).hom)
+    (h₂.trans (CommRingCat.ofHom_apply _ g))).trans (smoothStalkIso_hom_germ x U hx g).symm
+
 /-- On sections over `U`, `(smoothLocallyRingedSpaceIso I X).hom` preserves pointwise values. -/
 theorem smoothLocallyRingedSpaceIso_hom_c_app_apply (U : Opens X)
     (s : (smoothSheafCommRing I 𝓘(ℂ) X ℂ).obj.obj (op U)) (x : U) :
     toFun I X (op U) (((smoothLocallyRingedSpaceIso I X).hom.c.app (op U)).hom s) x =
       (s : C^∞⟮I, U; 𝓘(ℂ), ℂ⟯) x := by
-  have heq : ((eqToHom (TopCat.Presheaf.Pushforward.id_eq
-      (holomorphicStructureSheaf I X).presheaf).symm).app (op U)) =
-      𝟙 ((holomorphicStructureSheaf I X).presheaf.obj (op U)) :=
-    (eqToHom_app _ (op U)).trans (eqToHom_refl _ _)
-  -- Unfold `isoOfComponents` on `c.app (op U)` across `Pushforward.id_eq` before rewriting.
-  have h1 : (((smoothLocallyRingedSpaceIso I X).hom.c.app (op U)).hom s :
-      (holomorphicStructureSheaf I X).obj.obj (op U)) =
-      ((eqToHom (TopCat.Presheaf.Pushforward.id_eq
-        (holomorphicStructureSheaf I X).presheaf).symm).app (op U)).hom
-        (((smoothSheafIso I X).inv.hom.app (op U)).hom s) := rfl
-  have h : (((smoothLocallyRingedSpaceIso I X).hom.c.app (op U)).hom s :
-      (holomorphicStructureSheaf I X).obj.obj (op U)) = (smoothSectionsEquiv I X U).symm s :=
-    h1.trans <| (congrArg (fun k ↦ CommRingCat.Hom.hom k _) heq).trans
-      (congrArg (fun k ↦ CommRingCat.Hom.hom k s) (smoothSheafIso_inv_app U))
-  rw [h]; exact smoothSectionsEquiv_symm_apply U s x
+  have hc : ((smoothLocallyRingedSpaceIso I X).hom.c.app (op U)).hom s =
+      (smoothSectionsEquiv I X U).symm s :=
+    (congrArg (fun k ↦ k.hom s) (smoothLocallyRingedSpaceIso_hom_c_app I X U)).trans
+      (CommRingCat.ofHom_apply (smoothSectionsEquiv I X U).symm.toRingHom s)
+  exact (congrArg (fun t ↦ toFun I X (op U) t x) hc).trans
+    (smoothSectionsEquiv_symm_apply U s x)
 
 /-- On sections over `U`, `(smoothLocallyRingedSpaceIso I X).inv` preserves pointwise values. -/
 theorem smoothLocallyRingedSpaceIso_inv_c_app_apply (U : Opens X)
@@ -357,23 +435,12 @@ theorem smoothLocallyRingedSpaceIso_inv_c_app_apply (U : Opens X)
     DFunLike.coe (F := C^∞⟮I, U; 𝓘(ℂ), ℂ⟯)
         (((smoothLocallyRingedSpaceIso I X).inv.c.app (op U)).hom s) x =
       toFun I X (op U) s x := by
-  let t : (smoothSheafCommRing I 𝓘(ℂ) X ℂ).obj.obj (op U) :=
-    ((smoothLocallyRingedSpaceIso I X).inv.c.app (op U)).hom s
-  have hid := congrArg (fun k ↦ toFun I X (op U) (k.hom s) x) <| PresheafedSpace.congr_app
-    (congrArg LocallyRingedSpace.Hom.toHom (smoothLocallyRingedSpaceIso I X).hom_inv_id) (op U)
-  have hcomp : ((((smoothLocallyRingedSpaceIso I X).hom ≫
-      (smoothLocallyRingedSpaceIso I X).inv).c.app (op U)).hom s :
-      (holomorphicStructureSheaf I X).obj.obj (op U)) =
-      ((smoothLocallyRingedSpaceIso I X).hom.c.app (op U)).hom t := rfl
-  refine (smoothLocallyRingedSpaceIso_hom_c_app_apply I X U t x).symm.trans <|
-    ((congrArg (fun u ↦ toFun I X (op U) u x) hcomp).symm.trans hid).trans ?_
-  rw [CommRingCat.hom_comp, RingHom.comp_apply]
-  refine (congrArg (fun k : (locallyRingedSpace I X).presheaf.obj (op U) ⟶ _ ↦ toFun I X (op U)
-      (k.hom (((LocallyRingedSpace.Hom.toHom (𝟙 (locallyRingedSpace I X))).c.app (op U)).hom s)) x)
-    ((congrArg (locallyRingedSpace I X).presheaf.map (eqToHom_refl _ _)).trans
-      (CategoryTheory.Functor.map_id _ _))).trans ?_
-  simp only [CommRingCat.hom_id, LocallyRingedSpace.id_toHom, PresheafedSpace.id_c_app]
-  exact map_eqToHom_apply rfl s x
+  have hc : ((smoothLocallyRingedSpaceIso I X).inv.c.app (op U)).hom s =
+      smoothSectionsEquiv I X U s :=
+    (congrArg (fun k ↦ k.hom s) (smoothLocallyRingedSpaceIso_inv_c_app I X U)).trans
+      (CommRingCat.ofHom_apply (smoothSectionsEquiv I X U).toRingHom s)
+  exact (congrArg (fun t : C^∞⟮I, U; 𝓘(ℂ), ℂ⟯ ↦ t x) hc).trans
+    (smoothSectionsEquiv_apply U s x)
 
 variable {I X} {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] [FiniteDimensional ℂ E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'} [J.Boundaryless]
@@ -387,25 +454,34 @@ theorem locallyRingedSpaceMap_comp_smoothLocallyRingedSpaceIso_hom
     locallyRingedSpaceMap f hf ≫ (smoothLocallyRingedSpaceIso J Y).hom =
       (smoothLocallyRingedSpaceIso I X).hom ≫
         ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp)) :=
-  locallyRingedSpace_hom_ext rfl fun U s x ↦ by
-    have hlhs : (((locallyRingedSpaceMap f hf ≫
-        (smoothLocallyRingedSpaceIso J Y).hom).c.app (op U)).hom s :
-        (holomorphicStructureSheaf I X).obj.obj
-          (op ((Opens.map (locallyRingedSpaceMap f hf).base).obj U))) =
-        ((locallyRingedSpaceMap f hf).c.app (op U)).hom
-          (((smoothLocallyRingedSpaceIso J Y).hom.c.app (op U)).hom s) := rfl
-    have hrhs : ((((smoothLocallyRingedSpaceIso I X).hom ≫
-        ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))).c.app (op U)).hom s :
-        (holomorphicStructureSheaf I X).obj.obj
-          (op ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj U))) =
-        ((smoothLocallyRingedSpaceIso I X).hom.c.app
-          (op ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj U))).hom
-          (((ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))).c.app (op U)).hom s) := rfl
-    exact (congrArg (fun t ↦ toFun I X _ t ⟨x.1, x.2⟩) hlhs).trans <|
-      (locallyRingedSpaceMap_c_app_apply f hf U _ ⟨x.1, x.2⟩).trans <|
-        (smoothLocallyRingedSpaceIso_hom_c_app_apply J Y U s ⟨f x.1, x.2⟩).trans
-          ((congrArg (fun t ↦ toFun I X _ t x) hrhs).trans
-            (smoothLocallyRingedSpaceIso_hom_c_app_apply I X _ _ x)).symm
+  locallyRingedSpace_hom_ext (by ext; rfl) fun U s x ↦ by
+    have hL₁ := locallyRingedSpace_comp_c_app_apply
+      (locallyRingedSpaceMap f hf) (smoothLocallyRingedSpaceIso J Y).hom U s
+    have hL₂ := locallyRingedSpaceMap_c_app_apply f hf U
+      (((smoothLocallyRingedSpaceIso J Y).hom.c.app (op U)).hom s) ⟨x.1, x.2⟩
+    have hL₃ := smoothLocallyRingedSpaceIso_hom_c_app_apply J Y U s ⟨f x.1, x.2⟩
+    have hR₁ := locallyRingedSpace_comp_c_app_apply
+      (smoothLocallyRingedSpaceIso I X).hom
+      (ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))) U s
+    have hR₂ := smoothLocallyRingedSpaceIso_hom_c_app_apply I X
+      ((Opens.map (ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))).base).obj U)
+      (((ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))).c.app (op U)).hom s) x
+    have hR₃ :
+        (((ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))).c.app (op U)).hom s).1 x =
+          s.1 ⟨f x.1, x.2⟩ := by
+      have hxU : f x.1 ∈ U := x.2
+      have hev := congrArg (fun k ↦ k.hom
+        (((smoothSheafCommRing J 𝓘(ℂ) Y ℂ).presheaf.germ U (f x.1) hxU).hom s))
+        (ChartedSpace.stalkMap_locallyRingedSpaceMap_evalHom f (hf.of_le (by simp)) x.1)
+      have hgerm := LocallyRingedSpace.stalkMap_germ_apply
+        (ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))) U x.1 hxU s
+      have hev' := (congrArg (smoothSheafCommRing.evalHom I 𝓘(ℂ) X ℂ x.1).hom hgerm).symm.trans <|
+        (CommRingCat.comp_apply _ _ _).symm.trans hev
+      exact (smoothSheafCommRing.evalHom_germ I 𝓘(ℂ) X ℂ _ x.1 hxU _).symm.trans <|
+        hev'.trans (smoothSheafCommRing.evalHom_germ J 𝓘(ℂ) Y ℂ U (f x.1) hxU s)
+    exact (congrArg (fun t ↦ toFun I X _ t ⟨x.1, x.2⟩) hL₁).trans <|
+      hL₂.trans <| hL₃.trans <| hR₃.symm.trans <| hR₂.symm.trans <|
+        (congrArg (fun t ↦ toFun I X _ t x) hR₁).symm
 
 end SmoothComparison
 
@@ -415,6 +491,22 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [Top
   {I : ModelWithCorners ℂ E H} {X : Type} [TopologicalSpace X] [ChartedSpace H X]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] {H' : Type*} [TopologicalSpace H']
   {J : ModelWithCorners ℂ E' H'} {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
+
+/-- If the stalk map of a presheafed-space morphism `φ` at `x.1` commutes with evaluation, then
+`φ.c.app (op U)` acts at `x` by pointwise precomposition with `φ.base`. -/
+theorem c_app_apply_of_stalkMap_evalHom
+    (φ : (locallyRingedSpace I X).toPresheafedSpace ⟶
+      (locallyRingedSpace J Y).toPresheafedSpace)
+    (U : Opens Y) (g : (holomorphicStructureSheaf J Y).obj.obj (op U))
+    (x : ↥((Opens.map φ.base).obj U))
+    (h : φ.stalkMap x.1 ≫ evalHom I X x.1 = evalHom J Y (φ.base x.1)) :
+    toFun I X (op ((Opens.map φ.base).obj U)) ((φ.c.app (op U)).hom g) x =
+      toFun J Y (op U) g ⟨φ.base x.1, x.2⟩ := by
+  have hev := congrArg (fun k ↦ k.hom
+      (((holomorphicStructureSheaf J Y).presheaf.germ U (φ.base x.1) x.2).hom g)) h
+  rw [CommRingCat.hom_comp, RingHom.comp_apply, evalHom_hom_apply, evalHom_hom_apply,
+    PresheafedSpace.stalkMap_germ_apply φ U x.1 x.2 g] at hev
+  exact (eval_germ I X _ x.1 x.2 _).symm.trans (hev.trans (eval_germ J Y U (φ.base x.1) x.2 g))
 
 /-- Four equivalent formulations of `ℂ`-linearity for a presheafed-space morphism between
 holomorphic ringed spaces: preserving constants on all opens, preserving constants on global
@@ -450,17 +542,10 @@ theorem c_app_algebraMap_tfae
     rw [CommRingCat.hom_comp, RingHom.comp_apply]
     exact (evalHom_hom_apply x (ψ s)).trans
       ((eval_algHom_apply ψ s).trans (evalHom_hom_apply (φ.base x) s).symm)
-  tfae_have 4 → 2 := fun h c ↦ ext fun x ↦ by
-    have hxY : φ.base x.1 ∈ (⊤ : Opens Y) := x.2
-    have hev := congrArg (fun k ↦ k.hom
-        (((holomorphicStructureSheaf J Y).presheaf.germ ⊤ (φ.base x.1) hxY).hom (algebraMap ℂ _ c)))
-      (h x.1)
-    rw [CommRingCat.hom_comp, RingHom.comp_apply, evalHom_hom_apply, evalHom_hom_apply,
-      PresheafedSpace.stalkMap_germ_apply φ ⊤ x.1 hxY] at hev
-    exact (eval_germ I X _ x.1 x.2 _).symm.trans <| hev.trans <|
-      (eval_germ J Y ⊤ (φ.base x.1) hxY _).trans <|
-        (algebraMap_apply (op ⊤) c ⟨φ.base x.1, hxY⟩).trans
-          (algebraMap_apply (op ((Opens.map φ.base).obj ⊤)) c x).symm
+  tfae_have 4 → 2 := fun h c ↦ ext fun x ↦
+    (c_app_apply_of_stalkMap_evalHom φ ⊤ (algebraMap ℂ _ c) x (h x.1)).trans <|
+      (algebraMap_apply (op ⊤) c ⟨φ.base x.1, x.2⟩).trans
+        (algebraMap_apply (op ((Opens.map φ.base).obj ⊤)) c x).symm
   tfae_finish
 
 section TopAlgebraMap
@@ -482,7 +567,7 @@ def stalkAlgHomOfCAppTopAlgebraMap (x : X) :
 /-- Coercing `stalkAlgHomOfCAppTopAlgebraMap φ hφ x` to a ring homomorphism recovers
 `(φ.stalkMap x).hom`. -/
 @[simp]
-theorem coe_stalkAlgHomOfCAppTopAlgebraMap (x : X) :
+theorem toRingHom_stalkAlgHomOfCAppTopAlgebraMap (x : X) :
     (stalkAlgHomOfCAppTopAlgebraMap φ hφ x :
       (holomorphicStructureSheaf J Y).presheaf.stalk (φ.base x) →+*
         (holomorphicStructureSheaf I X).presheaf.stalk x) = (φ.stalkMap x).hom := (rfl)
@@ -515,15 +600,50 @@ sections over every open `U : Opens Y` by pointwise precomposition with `φ.base
 theorem c_app_apply_of_c_app_top_algebraMap (U : Opens Y)
     (g : (holomorphicStructureSheaf J Y).obj.obj (op U)) (x : ↥((Opens.map φ.base).obj U)) :
     toFun I X (op ((Opens.map φ.base).obj U)) ((φ.c.app (op U)).hom g) x =
-      toFun J Y (op U) g ⟨φ.base x.1, x.2⟩ := by
-  have hev := congrArg (fun k ↦ k.hom
-      (((holomorphicStructureSheaf J Y).presheaf.germ U (φ.base x.1) x.2).hom g))
-    (((c_app_algebraMap_tfae φ).out 2 4 rfl rfl).1 hφ x.1)
-  rw [CommRingCat.hom_comp, RingHom.comp_apply, evalHom_hom_apply, evalHom_hom_apply,
-    PresheafedSpace.stalkMap_germ_apply φ U x.1 x.2 g] at hev
-  exact (eval_germ I X _ x.1 x.2 _).symm.trans (hev.trans (eval_germ J Y U (φ.base x.1) x.2 g))
+      toFun J Y (op U) g ⟨φ.base x.1, x.2⟩ :=
+  c_app_apply_of_stalkMap_evalHom φ U g x (((c_app_algebraMap_tfae φ).out 2 4 rfl rfl).1 hφ x.1)
+
+/-- If the base map of a `ℂ`-linear presheafed-space morphism `φ` is complex analytic, then `φ`
+equals `(locallyRingedSpaceMap φ.base hf).toHom` on both points and sections. -/
+theorem locallyRingedSpaceMap_base_toHom_of_c_app_top_algebraMap
+    (hf : ContMDiff I J ω φ.base) :
+    (locallyRingedSpaceMap (X := X) (Y := Y) φ.base hf).toHom = φ :=
+  toPresheafedSpace_hom_ext rfl fun U g x ↦
+    (locallyRingedSpaceMap_c_app_apply (X := X) (Y := Y) φ.base hf U g ⟨x.1, x.2⟩).trans
+      (c_app_apply_of_c_app_top_algebraMap φ hφ U g x).symm
+
+/-- If the base map of a `ℂ`-linear presheafed-space morphism `φ` is complex analytic near `x : X`,
+then its `ℂ`-algebra stalk map at `x` coincides with `stalkPullbackAlgHom hf`. -/
+theorem stalkAlgHomOfCAppTopAlgebraMap_eq_stalkPullbackAlgHom (x : X)
+    (hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω φ.base w) :
+    stalkAlgHomOfCAppTopAlgebraMap φ hφ x =
+      stalkPullbackAlgHom (X := X) (Y := Y) hf := by
+  ext s
+  apply toFilterGerm_nhds_injective x
+  obtain ⟨U, hxU, g, rfl⟩ := (holomorphicStructureSheaf J Y).presheaf.exists_germ_eq s
+  let gExt : Y → ℂ := Function.extend Subtype.val (toFun J Y (op U) g) 0
+  have hgExt (z : U) : toFun J Y (op U) g z = gExt z :=
+    (Subtype.val_injective.extend_apply _ (0 : Y → ℂ) z).symm
+  have hxX : x ∈ (Opens.map φ.base).obj U := hxU
+  rw [stalkAlgHomOfCAppTopAlgebraMap_apply, stalkPullbackAlgHom_apply,
+    PresheafedSpace.stalkMap_germ_apply φ U x hxU g, toFilterGerm_stalkPullback,
+    toFilterGerm_germ le_rfl hxU g gExt hgExt, Germ.coe_compTendsto]
+  exact toFilterGerm_germ le_rfl hxX ((φ.c.app (op U)).hom g) (gExt ∘ φ.base) fun w ↦
+    (c_app_apply_of_c_app_top_algebraMap φ hφ U g w).trans (hgExt ⟨φ.base w.1, w.2⟩)
 
 end TopAlgebraMap
+
+/-- If the base map of a `ℂ`-linear morphism `φ : locallyRingedSpace I X ⟶ locallyRingedSpace J Y`
+is complex analytic, then `φ` equals `locallyRingedSpaceMap φ.base hf` on both points and
+sections. -/
+theorem locallyRingedSpaceMap_base_of_c_app_top_algebraMap
+    (φ : locallyRingedSpace I X ⟶ locallyRingedSpace J Y)
+    (hφ : ∀ c : ℂ, (φ.c.app (op ⊤)).hom (algebraMap ℂ _ c) =
+      algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj ⊤))) c)
+    (hf : ContMDiff I J ω φ.base) :
+    locallyRingedSpaceMap (X := X) (Y := Y) φ.base hf = φ :=
+  LocallyRingedSpace.Hom.ext'
+    (locallyRingedSpaceMap_base_toHom_of_c_app_top_algebraMap φ.toHom hφ hf)
 
 variable (I X) in
 /-- The identity morphism on `(locallyRingedSpace I X).toPresheafedSpace` preserves complex scalar
@@ -553,12 +673,9 @@ theorem comp_c_app_algebraMap {E'' : Type*} [NormedAddCommGroup E''] [NormedSpac
     (U : Opens Z) (c : ℂ) :
     ((φ ≫ ψ).c.app (op U)).hom (algebraMap ℂ _ c) =
       algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj
-        (op ((Opens.map (φ ≫ ψ).base).obj U))) c := by
-  -- Unfold `(φ ≫ ψ).c.app (op U)` across `TopCat.Presheaf.pushforward` before rewriting.
-  have hcomp : ((φ ≫ ψ).c.app (op U)).hom (algebraMap ℂ _ c) =
-      (φ.c.app (op ((Opens.map ψ.base).obj U))).hom
-        ((ψ.c.app (op U)).hom (algebraMap ℂ _ c)) := rfl
-  exact hcomp.trans ((congrArg _ (hψ U c)).trans (hφ ((Opens.map ψ.base).obj U) c))
+        (op ((Opens.map (φ ≫ ψ).base).obj U))) c :=
+  (presheafedSpace_comp_c_app_apply φ ψ U (algebraMap ℂ _ c)).trans <|
+    (congrArg _ (hψ U c)).trans (hφ ((Opens.map ψ.base).obj U) c)
 
 end CLinearity
 
@@ -616,40 +733,9 @@ theorem contMDiff_base_of_c_app_top_algebraMap : ContMDiff I J ω φ.base := by
   have hw_src : φ.base w.1 ∈ (extChartAt J y₀).source := by rw [extChartAt_source]; exact w.2
   rw [Function.comp_apply, hG_eq w, (extChartAt J y₀).left_inv hw_src]
 
-/-- Every `ℂ`-linear morphism of holomorphic presheafed spaces into a finite-dimensional
-boundaryless complex manifold `Y` is equal to `(locallyRingedSpaceMap φ.base _).toHom` on both
-points and sections. -/
-theorem locallyRingedSpaceMap_base_toHom_of_c_app_top_algebraMap :
-    (locallyRingedSpaceMap (X := X) (Y := Y) φ.base
-      (contMDiff_base_of_c_app_top_algebraMap φ hφ)).toHom = φ :=
-  toPresheafedSpace_hom_ext rfl fun U g x ↦
-    (locallyRingedSpaceMap_c_app_apply (X := X) (Y := Y) φ.base _ U g ⟨x.1, x.2⟩).trans
-      (c_app_apply_of_c_app_top_algebraMap φ hφ U g x).symm
-
-/-- At every point `x : X`, the `ℂ`-algebra stalk map of a `ℂ`-linear presheafed-space morphism
-`φ : (locallyRingedSpace I X).toPresheafedSpace ⟶ (locallyRingedSpace J Y).toPresheafedSpace`
-coincides with `stalkPullbackAt` along `φ.base`. -/
-theorem stalkAlgHomOfCAppTopAlgebraMap_eq_stalkPullbackAt (x : X) :
-    stalkAlgHomOfCAppTopAlgebraMap φ hφ x =
-      stalkPullbackAt (X := X) (Y := Y)
-        (Eventually.of_forall fun _ ↦ (contMDiff_base_of_c_app_top_algebraMap φ hφ).contMDiffAt)
-        rfl := by
-  have hcm := contMDiff_base_of_c_app_top_algebraMap φ hφ
-  have hstalk : φ.stalkMap x = (locallyRingedSpaceMap (X := X) (Y := Y) φ.base hcm).stalkMap x :=
-    (PresheafedSpace.stalkMap.congr_hom φ
-      (locallyRingedSpaceMap (X := X) (Y := Y) φ.base hcm).toHom
-      (locallyRingedSpaceMap_base_toHom_of_c_app_top_algebraMap φ hφ).symm x).trans <|
-      (congrArg (· ≫ (locallyRingedSpaceMap (X := X) (Y := Y) φ.base hcm).stalkMap x)
-        (eqToHom_refl _ _)).trans (Category.id_comp _)
-  rw [stalkPullbackAt_eq_stalkPrecompAlgHom (X := X) (Y := Y) φ.base hcm x]
-  exact AlgHom.toRingHom_injective ((coe_stalkAlgHomOfCAppTopAlgebraMap φ hφ x).trans
-    ((congrArg ConcreteCategory.hom hstalk).trans
-      ((locallyRingedSpaceMap_stalkMap (X := X) (Y := Y) φ.base hcm x).trans
-        (coe_stalkPrecompAlgHom I X φ.base hcm x).symm)))
-
-/-- When `𝒪_{X, x}` is maximal-ideal separated (`IsHausdorff`), the local germ equivalence
-`analyticMapGermEquivStalkAlgHom` applied to `stalkAlgHomOfCAppTopAlgebraMap φ hφ x` recovers the
-germ of `φ.base` at `x`. -/
+/-- When `𝒪_{X, x}` is maximal-ideal separated (`IsHausdorff`), the inverse
+`(analyticMapGermEquivStalkAlgHom x (φ.base x)).symm` applied to
+`stalkAlgHomOfCAppTopAlgebraMap φ hφ x` recovers the germ of `φ.base` at `x`. -/
 theorem analyticMapGermEquivStalkAlgHom_symm_stalkAlgHomOfCAppTopAlgebraMap (x : X)
     [IsHausdorff (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x))
       ((holomorphicStructureSheaf I X).presheaf.stalk x)] :
@@ -658,21 +744,11 @@ theorem analyticMapGermEquivStalkAlgHom_symm_stalkAlgHomOfCAppTopAlgebraMap (x :
       AnalyticMapGerm.mk (X := X) (Y := Y) φ.base
         (Eventually.of_forall fun _ ↦ (contMDiff_base_of_c_app_top_algebraMap φ hφ).contMDiffAt)
         rfl := by
-  rw [stalkAlgHomOfCAppTopAlgebraMap_eq_stalkPullbackAt,
-    analyticMapGermEquivStalkAlgHom_symm_stalkPullbackAt]
+  rw [stalkAlgHomOfCAppTopAlgebraMap_eq_stalkPullbackAlgHom φ hφ x
+      (Eventually.of_forall fun _ ↦ (contMDiff_base_of_c_app_top_algebraMap φ hφ).contMDiffAt),
+    analyticMapGermEquivStalkAlgHom_symm_stalkPullbackAlgHom]
 
 end PresheafedRecovery
-
-/-- Every `ℂ`-linear morphism `φ : locallyRingedSpace I X ⟶ locallyRingedSpace J Y` into a
-finite-dimensional boundaryless complex manifold `Y` is equal to `locallyRingedSpaceMap φ.base _`
-on both points and sections. -/
-theorem locallyRingedSpaceMap_base_of_c_app_top_algebraMap
-    (φ : locallyRingedSpace I X ⟶ locallyRingedSpace J Y)
-    (hφ : ∀ c : ℂ, (φ.c.app (op ⊤)).hom (algebraMap ℂ _ c) =
-      algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj ⊤))) c) :
-    locallyRingedSpaceMap (X := X) (Y := Y) φ.base
-      (contMDiff_base_of_c_app_top_algebraMap φ.toHom hφ) = φ :=
-  LocallyRingedSpace.Hom.ext' (locallyRingedSpaceMap_base_toHom_of_c_app_top_algebraMap φ.toHom hφ)
 
 /-- A morphism `φ : locallyRingedSpace I X ⟶ locallyRingedSpace J Y` into a finite-dimensional
 boundaryless complex manifold `Y` is induced by a unique complex-analytic map `f : C^ω⟮I, X; J, Y⟯`
@@ -684,7 +760,8 @@ theorem existsUnique_contMDiffMap_locallyRingedSpaceMap_eq_iff
         algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj U))) c :=
   ⟨fun ⟨f, h, _⟩ U c ↦ h ▸ locallyRingedSpaceMap_c_app_algebraMap f f.contMDiff U c, fun hφ ↦
     ⟨⟨φ.base, contMDiff_base_of_c_app_top_algebraMap φ.toHom (hφ ⊤)⟩,
-      locallyRingedSpaceMap_base_of_c_app_top_algebraMap φ (hφ ⊤), by
+      locallyRingedSpaceMap_base_of_c_app_top_algebraMap φ (hφ ⊤)
+        (contMDiff_base_of_c_app_top_algebraMap φ.toHom (hφ ⊤)), by
       rintro _ rfl; exact ContMDiffMap.ext fun _ ↦ rfl⟩⟩
 
 variable (I X J Y) in
@@ -703,7 +780,8 @@ def holomorphicMapLocalRingedEquivalence :
     locallyRingedSpaceMap_c_app_algebraMap f f.contMDiff⟩
   invFun φ := ⟨φ.1.base, contMDiff_base_of_c_app_top_algebraMap φ.1.toHom (φ.2 ⊤)⟩
   left_inv _ := ContMDiffMap.ext fun _ ↦ rfl
-  right_inv φ := Subtype.ext (locallyRingedSpaceMap_base_of_c_app_top_algebraMap φ.1 (φ.2 ⊤))
+  right_inv φ := Subtype.ext (locallyRingedSpaceMap_base_of_c_app_top_algebraMap φ.1 (φ.2 ⊤)
+    (contMDiff_base_of_c_app_top_algebraMap φ.1.toHom (φ.2 ⊤)))
 
 /-- In the forward direction, `holomorphicMapLocalRingedEquivalence` sends `f` to
 `locallyRingedSpaceMap f f.contMDiff`. -/

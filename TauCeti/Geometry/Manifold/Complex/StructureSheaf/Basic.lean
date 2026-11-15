@@ -38,9 +38,11 @@ The function coercions and algebra instance use the bundled analytic-map represe
 Pointwise computation is provided by section evaluation lemmas, and restriction along inclusions of
 open sets is bundled as the `ℂ`-algebra homomorphism `restrictAlgHom`.
 The sheaf of modules has exactly the same underlying presheaf of functions.
-Evaluation of germs gives a surjective ring homomorphism from each stalk to `ℂ`.
-Holomorphic maps induce morphisms to the pushed-forward structure sheaf by precomposition,
-and pull back holomorphic germs (`stalkPrecomp`), functorially and preserving their values.
+Constant global sections give each stalk a canonical `ℂ`-algebra structure (`instAlgebraStalk`).
+Evaluation of germs gives a surjective `ℂ`-algebra homomorphism from each stalk to `ℂ` (`eval`,
+`evalAlgHom`). Holomorphic maps induce morphisms to the pushed-forward structure sheaf by
+precomposition, and pull back holomorphic germs (`stalkPrecomp`, `stalkPrecompAlgHom`),
+functorially and preserving their values.
 
 The sheaf construction follows `smoothSheafCommRing` in
 `Mathlib/Geometry/Manifold/Sheaf/Smooth.lean` by Heather Macbeth and Adam Topaz, using
@@ -332,6 +334,48 @@ theorem eval_surjective (x : X) : Function.Surjective (eval I X x) := by
 instance (x : X) : Nontrivial ((holomorphicStructureSheaf I X).presheaf.stalk x) :=
   (eval_surjective I X x).nontrivial
 
+/-- Constant global holomorphic sections make each stalk of the holomorphic structure sheaf a
+`ℂ`-algebra. -/
+instance instAlgebraStalk (x : X) :
+    Algebra ℂ ((holomorphicStructureSheaf I X).presheaf.stalk x) :=
+  (((holomorphicStructureSheaf I X).presheaf.germ ⊤ x trivial).hom.comp
+    (algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ⊤)))).toAlgebra
+
+/-- Taking the germ of a constant holomorphic section on any open neighbourhood of `x` gives the
+corresponding `ℂ`-scalar in the stalk at `x`. -/
+@[simp]
+theorem germ_algebraMap (U : Opens X) (x : X) (hx : x ∈ U) (c : ℂ) :
+    (no_index (ConcreteCategory.hom ((holomorphicStructureSheaf I X).presheaf.germ U x hx)))
+      (algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op U)) c) =
+      algebraMap ℂ ((holomorphicStructureSheaf I X).presheaf.stalk x) c := by
+  rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
+    ← (holomorphicStructureSheaf I X).presheaf.germ_res_apply (homOfLE (le_top : U ≤ ⊤)) x hx,
+    presheaf_map_algebraMap]
+
+/-- Evaluating a scalar germ at its base point returns the scalar. -/
+@[simp]
+theorem eval_algebraMap (x : X) (c : ℂ) :
+    eval I X x (algebraMap ℂ ((holomorphicStructureSheaf I X).presheaf.stalk x) c) = c := by
+  have hx : x ∈ (⊤ : Opens X) := trivial
+  rw [← germ_algebraMap I X ⊤ x hx c, eval_germ]
+  exact algebraMap_apply (op ⊤) c ⟨x, hx⟩
+
+/-- Evaluation of holomorphic germs at their base point, as a `ℂ`-algebra homomorphism. -/
+def evalAlgHom (x : X) : (holomorphicStructureSheaf I X).presheaf.stalk x →ₐ[ℂ] ℂ where
+  __ := eval I X x
+  commutes' := eval_algebraMap I X x
+
+/-- Coercing `evalAlgHom` to a ring homomorphism recovers `eval`. -/
+@[simp]
+theorem toRingHom_evalAlgHom (x : X) :
+    (evalAlgHom I X x : (holomorphicStructureSheaf I X).presheaf.stalk x →+* ℂ) = eval I X x :=
+  (rfl)
+
+/-- `evalAlgHom` acts on germs by `eval`. -/
+@[simp]
+theorem evalAlgHom_apply (x : X) (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    evalAlgHom I X x s = eval I X x s := (rfl)
+
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'}
   {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
@@ -450,6 +494,43 @@ theorem stalkPrecomp_id (x : X) : stalkPrecomp I X id contMDiff_id x = RingHom.i
   obtain ⟨U, hx, g, rfl⟩ := (holomorphicStructureSheaf I X).presheaf.exists_germ_eq s
   exact stalkPrecomp_germ I X id contMDiff_id x U hx g
 
+/-- Precomposition on stalks along a globally analytic map fixes `ℂ`-scalars. -/
+@[simp]
+theorem stalkPrecomp_algebraMap (f : X → Y) (hf : ContMDiff I J ω f) (x : X) (c : ℂ) :
+    stalkPrecomp I X f hf x (algebraMap ℂ _ c) = algebraMap ℂ _ c := by
+  have hxY : f x ∈ (⊤ : Opens Y) := trivial
+  have hxX : x ∈ (Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj ⊤ := hxY
+  rw [← germ_algebraMap J Y ⊤ (f x) hxY c, stalkPrecomp_germ, precomp_algebraMap]
+  exact germ_algebraMap I X _ x hxX c
+
+/-- Stalk precomposition along a complex analytic map, bundled as a `ℂ`-algebra homomorphism. -/
+def stalkPrecompAlgHom (f : X → Y) (hf : ContMDiff I J ω f) (x : X) :
+    (holomorphicStructureSheaf J Y).presheaf.stalk (f x) →ₐ[ℂ]
+      (holomorphicStructureSheaf I X).presheaf.stalk x where
+  __ := stalkPrecomp I X f hf x
+  commutes' := stalkPrecomp_algebraMap I X f hf x
+
+/-- Coercing `stalkPrecompAlgHom` to a ring homomorphism recovers `stalkPrecomp`. -/
+@[simp]
+theorem toRingHom_stalkPrecompAlgHom (f : X → Y) (hf : ContMDiff I J ω f) (x : X) :
+    (stalkPrecompAlgHom I X f hf x :
+      (holomorphicStructureSheaf J Y).presheaf.stalk (f x) →+*
+        (holomorphicStructureSheaf I X).presheaf.stalk x) = stalkPrecomp I X f hf x := (rfl)
+
+variable {I X} in
+/-- `stalkPrecompAlgHom` acts on germs by `stalkPrecomp`. -/
+@[simp]
+theorem stalkPrecompAlgHom_apply (f : X → Y) (hf : ContMDiff I J ω f) (x : X)
+    (s : (holomorphicStructureSheaf J Y).presheaf.stalk (f x)) :
+    stalkPrecompAlgHom I X f hf x s = stalkPrecomp I X f hf x s := (rfl)
+
+/-- `stalkPrecompAlgHom` along the identity map is `AlgHom.id`. -/
+@[simp]
+theorem stalkPrecompAlgHom_id (x : X) :
+    stalkPrecompAlgHom I X id contMDiff_id x =
+      AlgHom.id ℂ ((holomorphicStructureSheaf I X).presheaf.stalk x) :=
+  AlgHom.ext fun s ↦ by simp [stalkPrecompAlgHom_apply]
+
 variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E'']
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℂ E'' H''}
   {Z : Type} [TopologicalSpace Z] [ChartedSpace H'' Z]
@@ -465,6 +546,13 @@ theorem stalkPrecomp_comp (g : Y → Z) (hg : ContMDiff J K ω g) (f : X → Y)
   exact (stalkPrecomp_germ I X (g ∘ f) (hg.comp hf) x U hx h).trans
     (stalkPrecomp_germ I X f hf x ((Opens.map (TopCat.ofHom ⟨g, hg.continuous⟩)).obj U) hx
       (precomp J Y g hg (op U) h)).symm
+
+/-- `stalkPrecompAlgHom` along `g ∘ f` is the reverse composite of `stalkPrecompAlgHom`s. -/
+theorem stalkPrecompAlgHom_comp (g : Y → Z) (hg : ContMDiff J K ω g) (f : X → Y)
+    (hf : ContMDiff I J ω f) (x : X) :
+    stalkPrecompAlgHom I X (g ∘ f) (hg.comp hf) x =
+      (stalkPrecompAlgHom I X f hf x).comp (stalkPrecompAlgHom J Y g hg (f x)) :=
+  AlgHom.ext (stalkPrecomp_comp I X g hg f hf x)
 
 end holomorphicStructureSheaf
 
