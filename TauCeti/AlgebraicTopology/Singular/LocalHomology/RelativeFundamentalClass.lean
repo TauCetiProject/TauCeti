@@ -149,14 +149,13 @@ private lemma isCompact_preimage_compl_collarPart [CompactSpace X] {t : ℝ} (ht
 
 /-- **The relative homology vanishes above the dimension of the interior.** Let `ι : M → X` be an
 open embedding of a Hausdorff space modelled on a real normed space of dimension `n` into a compact
-Hausdorff space, whose complement `∂X` is collared. Then `Hₖ(X, ∂X) = 0` for `k > n`, written as
+space, whose complement `∂X` is collared. Then `Hₖ(X, ∂X) = 0` for `k > n`, written as
 the local homology `Hₖ(X, X ∖ ι(M))`. By the collar comparison and excision along `ι`, it is the
 local homology of `M` along the compact set `ι⁻¹(Kₜ)`, which vanishes above the dimension. -/
-theorem IsCollar.isZero_localHomology_range [CompactSpace X] [T2Space X] {E : Type}
+theorem IsCollar.isZero_localHomology_range [CompactSpace X] [T2Space M] {E : Type}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
     {Λ : Type} [Ring Λ] (R : ModuleCat.{0} Λ) {n : ℕ} (hn : finrank ℝ E = n) {k : ℕ}
     (hk : n < k) : IsZero (localHomology R (range ι) k) := by
-  have := hι.isEmbedding.t2Space
   have ht : (0 : ℝ) < 1 := one_pos
   have := hc.isIso_localHomologyRestriction_compl_collarPart R hιf ht k
   have := isIso_localHomologyMap R ⟨ι, hι.continuous⟩ hι rfl
