@@ -253,9 +253,6 @@ private theorem exists_contDiff_gaugeFixedOperator_eq_zero_principalPart_triangu
   obtain ⟨G₀, hG₀, H₀, hH₀, hy₀⟩ :=
     exists_sectionValue_eq_mul_add_exp_mul_of_mem_gaugeFixedKernel hp hq hhol hν hνeq
       (mem_gaugeFixedKernel.2 ⟨hy.of_le (by simp), hy₂, hker⟩)
-  have hdec_y : ∃ G₀ : ℂ → ℂ, Continuous G₀ ∧ ∃ H₀ : ℂ → ℂ, Differentiable ℂ H₀ ∧
-      ∀ w, sectionValue y w = sectionValue x w * G₀ w + exp (ν w) * H₀ w :=
-    ⟨G₀, hG₀.continuous, H₀, hH₀, hy₀⟩
   -- Near `z`, `δα = α ξ + e^ν (c R)` on `{z}ᶜ`, hence on all of `𝓝 z` by continuity.
   have hpt {w : ℂ} (hw : sectionValue x w = exp (ν w) * ((w - z) ^ D.count z * g w))
       (hwz : w ≠ z) :
@@ -273,22 +270,17 @@ private theorem exists_contDiff_gaugeFixedOperator_eq_zero_principalPart_triangu
     ((contDiff_sectionValue (hxi 2) (hxi 3)).continuous.continuousAt.mul
       hξ.continuous.continuousAt).add
       (hν.continuous.cexp.continuousAt.mul (continuousAt_const.mul hR.continuousAt))
-  have hz_eq : sectionValue y z = sectionValue x z * ξ z + exp (ν z) * (c * R z) :=
-    tendsto_nhds_unique (hlhs.mono_left (nhdsWithin_le_nhds (s := {z}ᶜ)))
-      ((hrhs.mono_left (nhdsWithin_le_nhds (s := {z}ᶜ))).congr'
-        (by filter_upwards [nhdsWithin_le_nhds hαg, self_mem_nhdsWithin] with w hw hwz
-            exact (hpt hw hwz).symm))
   have hloc_z : ∀ᶠ w in 𝓝 z,
       sectionValue y w = sectionValue x w * ξ w + exp (ν w) * (c * R w) := by
-    filter_upwards [hαg] with w hw
-    by_cases hwz : w = z
-    · exact hwz ▸ hz_eq
-    · exact hpt hw hwz
+    refine (hlhs.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hrhs).1 ?_
+    filter_upwards [eventually_nhdsWithin_of_eventually_nhds hαg, self_mem_nhdsWithin]
+      with w hw hwz
+    exact hpt hw hwz
   have hpz {k : ℕ} (hk : k < D.count z) :
       principalPart x ν y z k = c * iteratedDeriv k R z := by
     rw [principalPart_eq_iteratedDeriv_of_eventuallyEq (H := fun w ↦ c * R w) hD hν.continuous
-      hdec_y hξ.continuous.continuousAt (analyticAt_const.mul hR) hloc_z hk,
-      iteratedDeriv_const_mul_field]
+      ⟨G₀, hG₀.continuous, H₀, hH₀, hy₀⟩ hξ.continuous.continuousAt (analyticAt_const.mul hR)
+      hloc_z hk, iteratedDeriv_const_mul_field]
   refine ⟨y, hy, hy₂, hker, ?_, fun k hk ↦ ?_, fun z' hz' k hk ↦ ?_⟩
   · rw [hpz hm', div_mul_cancel₀ a hRm']
   · rw [hpz (hk.trans hm'), hRk k hk, mul_zero]
@@ -299,9 +291,38 @@ private theorem exists_contDiff_gaugeFixedOperator_eq_zero_principalPart_triangu
         sectionValue x w * (c / (w - z) ^ (j + 1) + ξ w) + exp (ν w) * 0 := by
       filter_upwards [isOpen_ne.mem_nhds hz'] with w hw
       rw [hyξ w hw, mul_zero, add_zero]
-    rw [principalPart_eq_iteratedDeriv_of_eventuallyEq (H := fun _ ↦ 0) hD hν.continuous hdec_y
-      hGz' analyticAt_const hloc_z' hk]
+    rw [principalPart_eq_iteratedDeriv_of_eventuallyEq (H := fun _ ↦ 0) hD hν.continuous
+      ⟨G₀, hG₀.continuous, H₀, hH₀, hy₀⟩ hGz' analyticAt_const hloc_z' hk]
     simp
+
+/-- If `y` has principal-part jet `a` at `i = ⟨z, m'⟩`, vanishing lower-order jets at `z`, and
+vanishing principal parts away from `z`, then every nonzero entry of
+`(j ↦ principalPart x ν y j.1 j.2) - Pi.single i a` lies over the same point `z` with strictly
+larger jet order. -/
+private theorem eq_and_lt_of_principalPart_sub_single_ne_zero [DecidableEq (Multiset.ToType D)]
+    {ν : ℂ → ℂ} {y : ℂ → EuclideanSpace ℝ (Fin 4)} {i j : Multiset.ToType D} {a : ℂ}
+    (hp_eq : principalPart x ν y i.1 i.2 = a)
+    (hp_lt : ∀ k < (i.2 : ℕ), principalPart x ν y i.1 k = 0)
+    (hp_ne : ∀ z' ≠ i.1, ∀ k < D.count z', principalPart x ν y z' k = 0)
+    (h : principalPart x ν y j.1 j.2 - (Pi.single i a : Multiset.ToType D → ℂ) j ≠ 0) :
+    j.1 = i.1 ∧ (i.2 : ℕ) < j.2 := by
+  have hji : j.1 = i.1 := by
+    by_contra hne
+    have hji_ne : j ≠ i := fun hij ↦ hne (congrArg Sigma.fst hij)
+    exact h (by simp [hp_ne j.1 hne j.2 j.2.2, Pi.single_eq_of_ne hji_ne])
+  refine ⟨hji, lt_of_not_ge fun hle ↦ h ?_⟩
+  rcases hle.eq_or_lt with heq | hlt
+  · obtain rfl : j = i := by
+      rcases i with ⟨z, k, hk⟩
+      rcases j with ⟨z', k', hk'⟩
+      dsimp at hji heq
+      subst hji heq
+      rfl
+    simp [hp_eq]
+  · have hji_ne : j ≠ i :=
+      fun hij ↦ hlt.ne (congrArg (fun p : Multiset.ToType D ↦ (p.2 : ℕ)) hij)
+    generalize (j.2 : ℕ) = k at hlt ⊢
+    rw [hji, hp_lt k hlt, Pi.single_eq_of_ne hji_ne, sub_zero]
 
 /-- **Surjectivity of the principal-part map.** Let `x` be a smooth field satisfying the
 holomorphicity rows `∂bar_a α = 0` with `|α|² → 1` at infinity and zero divisor `D`, and let `ν`
@@ -337,44 +358,15 @@ theorem principalPartMap_surjective (hx : ContDiff ℝ ∞ x)
         rw [← Finset.univ_sum_single u]
         refine Submodule.sum_mem _ fun j _ ↦ ?_
         by_cases huj : u j = 0
-        · rw [huj, Pi.single_zero]
-          exact zero_mem _
-        · have hji : j.1 = i.1 := by
-            by_contra hne
-            have hji_ne : j ≠ i := fun h ↦ hne (congrArg Sigma.fst h)
-            exact huj (by simp [u, Φ, v₀, hp_ne j.1 hne j.2 j.2.2, Pi.single_eq_of_ne hji_ne])
-          have hij_lt : (i.2 : ℕ) < j.2 := by
-            rcases lt_trichotomy (j.2 : ℕ) i.2 with hlt | heq | hgt
-            · have hji_ne : j ≠ i := fun h ↦ by
-                subst h
-                exact lt_irrefl _ hlt
-              exfalso
-              apply huj
-              have hp0 : principalPart x ν y₀ j.1 j.2 = 0 := by
-                rcases i with ⟨zi, ki⟩
-                rcases j with ⟨zj, kj⟩
-                dsimp at hji hlt ⊢
-                subst hji
-                exact hp_lt kj hlt
-              simp [u, Φ, v₀, hp0, Pi.single_eq_of_ne hji_ne]
-            · have hji_eq : j = i := by
-                rcases i with ⟨z, k, hk⟩
-                rcases j with ⟨z', k', hk'⟩
-                dsimp at hji heq
-                subst hji heq
-                rfl
-              exfalso
-              apply huj
-              subst hji_eq
-              simp [u, Φ, v₀, hp_eq]
-            · exact hgt
+        · simp [huj]
+        · obtain ⟨hji, hij_lt⟩ := eq_and_lt_of_principalPart_sub_single_ne_zero hp_eq hp_lt hp_ne
+            (by simpa [u, Φ, v₀] using huj)
           have hd_lt : D.count j.1 - 1 - j.2 < d := by
             have := j.2.2
-            have := congrArg (fun z ↦ D.count z) hji
+            have := congrArg D.count hji
             omega
-          exact ih (D.count j.1 - 1 - j.2) hd_lt j rfl (u j)
-      have hsub : Φ v₀ - u = Pi.single i a := sub_sub_cancel _ _
-      exact hsub ▸ sub_mem (LinearMap.mem_range_self Φ v₀) hu_mem
+          exact ih _ hd_lt j rfl (u j)
+      exact sub_sub_cancel (Φ v₀) (Pi.single i a) ▸ sub_mem (LinearMap.mem_range_self Φ v₀) hu_mem
   intro g
   rw [← LinearMap.mem_range, ← Finset.univ_sum_single g]
   exact Submodule.sum_mem _ fun i _ ↦ hsingle _ i rfl (g i)
@@ -407,18 +399,6 @@ theorem principalPartMap_bijective (hx : ContDiff ℝ ∞ x)
     principalPartMap_surjective hx hhol hlim hD (hν.differentiable (by norm_num)) hνeq hdec
       hVsmooth⟩
 
-private theorem exists_sectionValue_eq_mul_add_exp_mul_continuous_of_mem_gaugeFixedKernel
-    {ν : ℂ → ℂ} (hx : ContDiff ℝ ∞ x)
-    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) (hν : Differentiable ℝ ν)
-    (hνeq : ∀ w, conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2)
-    (y) (hy : y ∈ gaugeFixedKernel x) :
-    ∃ G : ℂ → ℂ, Continuous G ∧ ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
-      ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w := by
-  have hi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := contDiff_euclidean.1 hx i
-  obtain ⟨G, hG, H, hH, hGH⟩ := exists_sectionValue_eq_mul_add_exp_mul_of_mem_gaugeFixedKernel
-    ((hi 2).differentiable (by simp)) ((hi 3).differentiable (by simp)) hhol hν hνeq hy
-  exact ⟨G, hG.continuous, H, hH, hGH⟩
-
 /-- **The principal-part isomorphism on the gauge-fixed kernel.** At a smooth field `x` with
 `∂bar_a α = 0`, `|α|² → 1` at infinity, zero divisor `D`, and a `C²` integrating factor `ν`, the
 principal-part map identifies `gaugeFixedKernel x` linearly over `ℝ` with `D → ℂ`, the real
@@ -431,9 +411,12 @@ noncomputable def gaugeFixedKernelPrincipalPartEquiv (hx : ContDiff ℝ ∞ x)
     (hνeq : ∀ w, conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2) :
     gaugeFixedKernel x ≃ₗ[ℝ] Multiset.ToType D → ℂ :=
   LinearEquiv.ofBijective
-    (principalPartMap hD hν.continuous
-      (exists_sectionValue_eq_mul_add_exp_mul_continuous_of_mem_gaugeFixedKernel hx hhol
-        (hν.differentiable (by norm_num)) hνeq))
+    (principalPartMap hD hν.continuous fun _ hy ↦
+      (exists_sectionValue_eq_mul_add_exp_mul_of_mem_gaugeFixedKernel
+        ((contDiff_euclidean.1 hx 2).differentiable (by simp))
+        ((contDiff_euclidean.1 hx 3).differentiable (by simp))
+        hhol (hν.differentiable (by norm_num)) hνeq hy).imp fun _ ↦
+          And.imp_left ContDiff.continuous)
     (principalPartMap_bijective hx hhol hlim hD hν hνeq _
       (fun _ hy ↦ mem_gaugeFixedKernel.1 hy)
       fun _ hy hy₂ hker ↦ mem_gaugeFixedKernel.2 ⟨hy.of_le (by simp), hy₂, hker⟩)
@@ -475,28 +458,25 @@ theorem contDiff_of_mem_gaugeFixedKernel (hx : ContDiff ℝ ∞ x)
     (contDiff_connectionCoeff ((hxi 0).of_le (by simp)) ((hxi 1).of_le (by simp)))
   -- The subspace `W` of smooth `L²` kernel elements surjects onto `D → ℂ` while `gaugeFixedKernel`
   -- injects into `D → ℂ`, forcing `y ∈ W`.
-  let W : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) :=
-    { carrier := {u | ContDiff ℝ ∞ u ∧ MemLp u 2 volume ∧ ∀ w, gaugeFixedOperator x u w = 0}
-      add_mem' := fun {u₁ u₂} hu₁ hu₂ ↦ ⟨hu₁.1.add hu₂.1, hu₁.2.1.add hu₂.2.1, fun w ↦ by
-        rw [gaugeFixedOperator_add x (hu₁.1.differentiable (by simp) w)
-          (hu₂.1.differentiable (by simp) w), hu₁.2.2 w, hu₂.2.2 w, add_zero]⟩
-      zero_mem' := ⟨contDiff_zero_fun, MemLp.zero, fun w ↦ by simp⟩
-      smul_mem' := fun t {u} hu ↦ ⟨hu.1.const_smul t, hu.2.1.const_smul t, fun w ↦ by
-        rw [gaugeFixedOperator_smul, hu.2.2 w, smul_zero]⟩ }
-  have hWle : W ≤ gaugeFixedKernel x :=
-    fun u hu ↦ mem_gaugeFixedKernel.2 ⟨hu.1.of_le (by simp), hu.2.1, hu.2.2⟩
+  let S : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) :=
+    { carrier := {u | ContDiff ℝ ∞ u}
+      add_mem' := fun (hu₁ : ContDiff ℝ ∞ _) hu₂ ↦ hu₁.add hu₂
+      zero_mem' := show ContDiff ℝ ∞ 0 from contDiff_zero_fun
+      smul_mem' := fun t _ (hu : ContDiff ℝ ∞ _) ↦ hu.const_smul t }
+  let W : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) := gaugeFixedKernel x ⊓ S
   have hdecW (u) (hu : u ∈ W) :=
-    exists_sectionValue_eq_mul_add_exp_mul_continuous_of_mem_gaugeFixedKernel hx hhol
-      (hν.differentiable (by norm_num)) hνeq u (hWle hu)
+    (exists_sectionValue_eq_mul_add_exp_mul_of_mem_gaugeFixedKernel hp hq hhol
+      (hν.differentiable (by norm_num)) hνeq hu.1).imp fun _ ↦ And.imp_left ContDiff.continuous
   obtain ⟨u, hu_eq⟩ := principalPartMap_surjective hx hhol hlim hmult
-    (hν.differentiable (by norm_num)) hνeq hdecW (fun u hu hu₂ huk ↦ ⟨hu, hu₂, huk⟩)
+    (hν.differentiable (by norm_num)) hνeq hdecW
+    (fun _ hu hu₂ huk ↦ ⟨mem_gaugeFixedKernel.2 ⟨hu.of_le (by simp), hu₂, huk⟩, hu⟩)
     (gaugeFixedKernelPrincipalPartEquiv hx hhol hlim hmult hν hνeq ⟨y, hy⟩)
-  have h_inj : (⟨u.1, hWle u.2⟩ : gaugeFixedKernel x) = ⟨y, hy⟩ := by
+  have h_inj : (⟨u.1, u.2.1⟩ : gaugeFixedKernel x) = ⟨y, hy⟩ := by
     apply (gaugeFixedKernelPrincipalPartEquiv hx hhol hlim hmult hν hνeq).injective
     ext i
     simpa using congrFun hu_eq i
   have hy_eq : u.1 = y := congrArg Subtype.val h_inj
-  exact hy_eq ▸ u.2.1
+  exact hy_eq ▸ u.2.2
 
 /-- **The kernel of `L_x` has real dimension `2 |D|`.** Let `x` be a smooth field satisfying the
 holomorphicity rows `∂bar_a α = 0` with `|α|² → 1` at infinity, whose section has zero divisor

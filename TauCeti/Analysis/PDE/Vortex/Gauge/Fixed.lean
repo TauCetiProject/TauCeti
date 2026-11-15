@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.Vortex.Deformation
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import Mathlib.Analysis.InnerProductSpace.Dual
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The gauge-fixed vortex operator at a general field
@@ -814,18 +815,18 @@ theorem integral_mul_gaugeAdjoint {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {f 
   · exact ((hf.continuous.mul (continuous_gaugeAdjoint hx hy)).integrable_of_hasCompactSupport
       hfc.mul_right).sub (hint 0 1)
 
-/-- **`L_x*` is the formal adjoint of the gauge-fixed operator**: `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`
-for a continuous field `x`, a compactly supported `C¹` variation `y` and a `C¹` field `η`. -/
-theorem integral_inner_gaugeFixedOperator {x y η : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hx : Continuous x) (hy : ContDiff ℝ 1 y) (hyc : HasCompactSupport y)
-    (hη : ContDiff ℝ 1 η) :
+private theorem integral_inner_gaugeFixedOperator_of_hasCompactSupport_or
+    {x y η : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) (hy : ContDiff ℝ 1 y)
+    (hη : ContDiff ℝ 1 η) (hc : HasCompactSupport y ∨ HasCompactSupport η) :
     ∫ z, ⟪gaugeFixedOperator x y z, η z⟫ ∂μ = ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ := by
   have hyi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ y w i :=
     ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy :)
   have hηi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ η w i :=
     ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hη :)
-  have hyic (i : Fin 4) : HasCompactSupport fun w ↦ y w i :=
-    hyc.comp_left (g := EuclideanSpace.proj (𝕜 := ℝ) i) (map_zero _)
+  have hmulc (i j : Fin 4) : HasCompactSupport fun w ↦ y w i * η w j :=
+    hc.elim
+      (fun hyc ↦ (hyc.comp_left (g := EuclideanSpace.proj (𝕜 := ℝ) i) (map_zero _)).mul_right)
+      (fun hηc ↦ (hηc.comp_left (g := EuclideanSpace.proj (𝕜 := ℝ) j) (map_zero _)).mul_left)
   set V₁ : ℂ → ℝ := fun w ↦ y w 0 * η w 0 - y w 1 * η w 1 + y w 2 * η w 2 + y w 3 * η w 3
   set V₂ : ℂ → ℝ := fun w ↦ y w 1 * η w 0 + y w 0 * η w 1 - y w 3 * η w 2 + y w 2 * η w 3
   have hV₁ : ContDiff ℝ 1 V₁ := by
@@ -835,66 +836,41 @@ theorem integral_inner_gaugeFixedOperator {x y η : ℂ → EuclideanSpace ℝ (
     have := hyi; have := hηi
     fun_prop
   have hV₁c : HasCompactSupport V₁ :=
-    ((((hyic 0).mul_right.sub (hyic 1).mul_right).add (hyic 2).mul_right).add (hyic 3).mul_right)
+    (((hmulc 0 0).sub (hmulc 1 1)).add (hmulc 2 2)).add (hmulc 3 3)
   have hV₂c : HasCompactSupport V₂ :=
-    ((((hyic 1).mul_right.add (hyic 0).mul_right).sub (hyic 3).mul_right).add (hyic 2).mul_right)
-  have hint (V : ℂ → ℝ) (hV : ContDiff ℝ 1 V) (hVc : HasCompactSupport V) (v : ℂ) :
-      Integrable (fun z ↦ fderiv ℝ V z v) μ :=
-    ((hV.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
-      (hVc.fderiv_apply (𝕜 := ℝ) v)
-  have hmain : Integrable (fun z ↦ ⟪y z, gaugeFixedAdjoint x η z⟫) μ := by
-    refine (hy.continuous.inner
-      (continuous_gaugeFixedAdjoint hx hη)).integrable_of_hasCompactSupport
-        (hyc.mono fun z hz ↦ fun hyz ↦ hz (by simp [hyz]))
+    (((hmulc 1 0).add (hmulc 0 1)).sub (hmulc 3 2)).add (hmulc 2 3)
+  have hmainc : HasCompactSupport fun z ↦ ⟪y z, gaugeFixedAdjoint x η z⟫ :=
+    hc.elim (fun hyc ↦ hyc.mono fun z hz hyz ↦ hz (by simp [hyz]))
+      (fun hηc ↦ (hasCompactSupport_gaugeFixedAdjoint (x := x) hηc).mono
+        fun z hz hLz ↦ hz (by simp [hLz]))
+  have hmain : Integrable (fun z ↦ ⟪y z, gaugeFixedAdjoint x η z⟫) μ :=
+    (hy.continuous.inner (continuous_gaugeFixedAdjoint hx hη)).integrable_of_hasCompactSupport
+      hmainc
   have h (z : ℂ) : ⟪gaugeFixedOperator x y z, η z⟫ = ⟪y z, gaugeFixedAdjoint x η z⟫ +
       fderiv ℝ V₁ z 1 + fderiv ℝ V₂ z I :=
     inner_gaugeFixedOperator_eq (hy.differentiable one_ne_zero z) (hη.differentiable one_ne_zero z)
   simp_rw [h]
-  rw [integral_add _ (hint V₂ hV₂ hV₂c I), integral_add hmain (hint V₁ hV₁ hV₁c 1),
+  rw [integral_add _ (integrable_fderiv_apply_of_hasCompactSupport hV₂ hV₂c I),
+    integral_add hmain (integrable_fderiv_apply_of_hasCompactSupport hV₁ hV₁c 1),
     integral_fderiv_apply_eq_zero_of_hasCompactSupport hV₁ hV₁c,
     integral_fderiv_apply_eq_zero_of_hasCompactSupport hV₂ hV₂c, add_zero, add_zero]
-  exact hmain.add (hint V₁ hV₁ hV₁c 1)
+  exact hmain.add (integrable_fderiv_apply_of_hasCompactSupport hV₁ hV₁c 1)
+
+/-- **`L_x*` is the formal adjoint of the gauge-fixed operator**: `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`
+for a continuous field `x`, a compactly supported `C¹` variation `y` and a `C¹` field `η`. -/
+theorem integral_inner_gaugeFixedOperator {x y η : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : Continuous x) (hy : ContDiff ℝ 1 y) (hyc : HasCompactSupport y)
+    (hη : ContDiff ℝ 1 η) :
+    ∫ z, ⟪gaugeFixedOperator x y z, η z⟫ ∂μ = ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ :=
+  integral_inner_gaugeFixedOperator_of_hasCompactSupport_or hx hy hη (.inl hyc)
 
 /-- **`L_x` is the formal adjoint of `L_x*`**: `∫ ⟪y, L_x* η⟫ = ∫ ⟪L_x y, η⟫` for a continuous
 field `x`, a `C¹` variation `y` and a compactly supported `C¹` field `η`. -/
 theorem integral_inner_gaugeFixedAdjoint {x y η : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx : Continuous x) (hy : ContDiff ℝ 1 y) (hη : ContDiff ℝ 1 η)
     (hηc : HasCompactSupport η) :
-    ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪gaugeFixedOperator x y z, η z⟫ ∂μ := by
-  have hyi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ y w i :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy :)
-  have hηi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ η w i :=
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hη :)
-  have hηic (i : Fin 4) : HasCompactSupport fun w ↦ η w i :=
-    hηc.comp_left (g := EuclideanSpace.proj (𝕜 := ℝ) i) (map_zero _)
-  set V₁ : ℂ → ℝ := fun w ↦ y w 0 * η w 0 - y w 1 * η w 1 + y w 2 * η w 2 + y w 3 * η w 3
-  set V₂ : ℂ → ℝ := fun w ↦ y w 1 * η w 0 + y w 0 * η w 1 - y w 3 * η w 2 + y w 2 * η w 3
-  have hV₁ : ContDiff ℝ 1 V₁ := by
-    have := hyi; have := hηi
-    fun_prop
-  have hV₂ : ContDiff ℝ 1 V₂ := by
-    have := hyi; have := hηi
-    fun_prop
-  have hV₁c : HasCompactSupport V₁ :=
-    ((((hηic 0).mul_left.sub (hηic 1).mul_left).add (hηic 2).mul_left).add (hηic 3).mul_left)
-  have hV₂c : HasCompactSupport V₂ :=
-    ((((hηic 0).mul_left.add (hηic 1).mul_left).sub (hηic 2).mul_left).add (hηic 3).mul_left)
-  have hint (V : ℂ → ℝ) (hV : ContDiff ℝ 1 V) (hVc : HasCompactSupport V) (v : ℂ) :
-    Integrable (fun z ↦ fderiv ℝ V z v) μ :=
-    ((hV.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
-      (hVc.fderiv_apply (𝕜 := ℝ) v)
-  have hmain : Integrable (fun z ↦ ⟪gaugeFixedOperator x y z, η z⟫) μ :=
-    ((continuous_gaugeFixedOperator hx hy).inner hη.continuous).integrable_of_hasCompactSupport
-      (hηc.mono fun z hz hyz ↦ hz (by simp [hyz]))
-  have h (z : ℂ) : ⟪y z, gaugeFixedAdjoint x η z⟫ = ⟪gaugeFixedOperator x y z, η z⟫ -
-      fderiv ℝ V₁ z 1 - fderiv ℝ V₂ z I := by
-    linarith [inner_gaugeFixedOperator_eq (x := x) (hy.differentiable one_ne_zero z)
-      (hη.differentiable one_ne_zero z)]
-  simp_rw [h]
-  rw [integral_sub _ (hint V₂ hV₂ hV₂c I), integral_sub hmain (hint V₁ hV₁ hV₁c 1),
-    integral_fderiv_apply_eq_zero_of_hasCompactSupport hV₁ hV₁c,
-    integral_fderiv_apply_eq_zero_of_hasCompactSupport hV₂ hV₂c, sub_zero, sub_zero]
-  exact hmain.sub (hint V₁ hV₁ hV₁c 1)
+    ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪gaugeFixedOperator x y z, η z⟫ ∂μ :=
+  (integral_inner_gaugeFixedOperator_of_hasCompactSupport_or hx hy hη (.inr hηc)).symm
 
 end Adjoint
 
@@ -933,7 +909,7 @@ def gaugeFixedKernelToLp (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
   map_add' y v := MemLp.toLp_add (mem_gaugeFixedKernel.1 y.2).2.1 (mem_gaugeFixedKernel.1 v.2).2.1
   map_smul' t y := MemLp.toLp_const_smul t (mem_gaugeFixedKernel.1 y.2).2.1
 
-@[simp]
+/-- `gaugeFixedKernelToLp` sends a kernel element to its `L²` equivalence class. -/
 theorem gaugeFixedKernelToLp_apply (y : gaugeFixedKernel x) :
     gaugeFixedKernelToLp x y = (mem_gaugeFixedKernel.1 y.2).2.1.toLp y := (rfl)
 
@@ -941,6 +917,13 @@ theorem gaugeFixedKernelToLp_apply (y : gaugeFixedKernel x) :
 theorem coeFn_gaugeFixedKernelToLp (y : gaugeFixedKernel x) :
     ⇑(gaugeFixedKernelToLp x y) =ᵐ[volume] (y : ℂ → EuclideanSpace ℝ (Fin 4)) :=
   (mem_gaugeFixedKernel.1 y.2).2.1.coeFn_toLp
+
+/-- The `L²` norm of a kernel element is `√(∫ ‖y z‖²)`. -/
+theorem norm_gaugeFixedKernelToLp (y : gaugeFixedKernel x) :
+    ‖gaugeFixedKernelToLp x y‖ = √(∫ z, ‖(y : ℂ → EuclideanSpace ℝ (Fin 4)) z‖ ^ 2) := by
+  rw [gaugeFixedKernelToLp_apply, Lp.norm_toLp,
+    (mem_gaugeFixedKernel.1 y.2).2.1.eLpNorm_two_eq_ofReal_sqrt_integral,
+    ENNReal.toReal_ofReal (Real.sqrt_nonneg _)]
 
 /-- Kernel elements are continuous, so they are determined by their `L²` classes. -/
 theorem gaugeFixedKernelToLp_injective (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
