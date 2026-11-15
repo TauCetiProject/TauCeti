@@ -12,19 +12,20 @@ import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.DoubleBond
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Orthogonal
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coefficient
-import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # The Weyl quotient of Chevalley data outside type G₂
 
-For every Chevalley datum of type other than G₂ over a field, the kernel of its Weyl
-projection is exactly its actual character-lattice torus. Consequently the quotient of
-`weylSubgroup` by that torus is the Weyl group of the pinned root datum. The equivalence
-sends the class of each pinned simple Weyl representative to its simple reflection.
+For every Chevalley datum of type other than G₂ over a nontrivial commutative ring,
+the quotient of `weylSubgroup` by its actual character-lattice torus is the Weyl group of
+the pinned root datum. The equivalence sends the class of each pinned simple Weyl
+representative to its simple reflection. Over a field, the kernel of the native Weyl
+projection is exactly that torus.
 
 The argument uses the native rank-one square, single-bond and double-bond braid relations.
 Modulo the torus, the pinned representatives satisfy the Coxeter presentation; the induced map back
-from the Weyl group is inverse to the quotient projection. No point-generation theorem,
+from the Weyl group is surjective by generation and injective by reduction to a residue
+field. Over fields its inverse agrees with the native Weyl projection. No point-generation theorem,
 Bruhat decomposition, infinitude assumption, or surjectivity of the full-weight torus
 parametrization is needed. In particular, the result applies to adjoint data and finite
 fields. Type G₂ still requires the additional length-six relation.
@@ -174,6 +175,120 @@ private theorem quotientSection_simple (hs : t ≠ .G2) (i : Fin t.rank) :
   simpa only [quotientSection, weylCoxeterSystem_simple,
     coe_simpleSupportEquivSimplyConnectedBase, Equiv.symm_apply_apply] using h
 
+private theorem quotientSection_surjective (hs : t ≠ .G2) :
+    Function.Surjective (D.quotientSection A hs) := by
+  have hdense : Subgroup.closure ((D.weylSubgroup A).subtype ⁻¹'
+      (Set.range (D.torusPoints A) ∪
+        Set.range (fun i => D.weylElement (t.simpleIndex ht i) A 1))) = ⊤ := by
+    rw [D.weylSubgroup_def]
+    exact Subgroup.closure_preimage_eq_top _
+  have hrange : (D.quotientSection A hs).range.comap (QuotientGroup.mk' H) = ⊤ := by
+    apply top_unique
+    rw [← hdense, Subgroup.closure_le]
+    rintro ⟨x, hx⟩ (⟨s, rfl⟩ | ⟨i, rfl⟩)
+    · have htorus : (QuotientGroup.mk' H) ⟨D.torusPoints A s, hx⟩ = 1 := by
+        rw [QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff,
+          Subgroup.mem_subgroupOf, MonoidHom.mem_range]
+        exact ⟨s, rfl⟩
+      -- Expose the comap membership hidden by the set coercion in closure_le.
+      change (QuotientGroup.mk' H) ⟨D.torusPoints A s, hx⟩ ∈
+        (D.quotientSection A hs).range
+      rw [htorus]
+      exact (D.quotientSection A hs).range.one_mem
+    · exact ⟨_, D.quotientSection_simple A hs i⟩
+  intro q
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective H q
+  have hg : g ∈ (D.quotientSection A hs).range.comap (QuotientGroup.mk' H) := by
+    rw [hrange]
+    trivial
+  exact hg
+
+private theorem quotientSection_injective [Nontrivial A] (hs : t ≠ .G2) :
+    Function.Injective (D.quotientSection A hs) := by
+  -- A residue field detects the Weyl word, without requiring a projection over rings.
+  obtain ⟨M, hM⟩ := Ideal.exists_maximal A
+  let : M.IsMaximal := hM
+  let := Ideal.Quotient.field M
+  let f := (D.pointsPresentation A).map (D.pointsPresentation (A ⧸ M)) (Ideal.Quotient.mk M)
+  have hw (i : Fin t.rank) : f (D.weylElement (t.simpleIndex ht i) A 1) =
+      D.weylElement (t.simpleIndex ht i) (A ⧸ M) 1 := by
+    apply Subtype.ext
+    exact (GeneralLinear.IntegralPointsPresentation.coe_map
+      (D.pointsPresentation A) (D.pointsPresentation (A ⧸ M)) (Ideal.Quotient.mk M) _).trans
+        (by simpa only [map_one] using
+          D.map_weylElement (Ideal.Quotient.mk M) (t.simpleIndex ht i) 1)
+  -- Restrict scalar extension to the Weyl subgroups using their defining generators.
+  have hf : N ≤ (D.weylSubgroup (A ⧸ M)).comap f := by
+    rw [D.weylSubgroup_def, Subgroup.closure_le]
+    rintro x (⟨s, rfl⟩ | ⟨i, rfl⟩)
+    · -- Expose the comap membership hidden by the set coercion in closure_le.
+      change f (D.torusPoints A s) ∈ D.weylSubgroup (A ⧸ M)
+      simpa only [f, D.map_torusPoints] using
+        D.torusPoints_mem_weylSubgroup (A ⧸ M) _
+    · -- Likewise expose membership before rewriting the mapped representative.
+      change f (D.weylElement (t.simpleIndex ht i) A 1) ∈ D.weylSubgroup (A ⧸ M)
+      rw [hw]
+      exact D.weylElement_mem_weylSubgroup (A ⧸ M) i
+  let φ : N →* D.weylSubgroup (A ⧸ M) :=
+    (f.comp (D.weylSubgroup A).subtype).codRestrict _ (fun g => hf g.property)
+  -- Torus points still project trivially, so the residue-field projection descends.
+  have hker : H ≤ ((D.weylProjection (A ⧸ M)).comp φ).ker := by
+    intro g hg
+    rw [Subgroup.mem_subgroupOf, MonoidHom.mem_range] at hg
+    obtain ⟨s, hsg⟩ := hg
+    have hg : g = ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ :=
+      Subtype.ext hsg.symm
+    rw [hg, MonoidHom.mem_ker, MonoidHom.comp_apply]
+    -- Evaluate the locally defined restriction φ; the remaining proof field is irrelevant.
+    change D.weylProjection (A ⧸ M) ⟨f (D.torusPoints A s), _⟩ = 1
+    simp only [f, D.map_torusPoints, D.weylProjection_torusPoints]
+  let p : Q →* (t.simplyConnectedRootDatum ht).weylGroup :=
+    QuotientGroup.lift H ((D.weylProjection (A ⧸ M)).comp φ) hker
+  -- The descended map is a left inverse, as can be checked on simple reflections.
+  have hp : p.comp (D.quotientSection A hs) = MonoidHom.id _ := by
+    apply (weylCoxeterSystem (t.simplyConnectedRootDatum ht)
+      (t.simplyConnectedBase ht)).ext_simple
+    intro a
+    obtain ⟨i, rfl⟩ := (t.simpleSupportEquivSimplyConnectedBase ht).surjective a
+    simp only [MonoidHom.comp_apply, MonoidHom.id_apply, weylCoxeterSystem_simple,
+      coe_simpleSupportEquivSimplyConnectedBase, D.quotientSection_simple]
+    simp only [simpleClass, p, QuotientGroup.lift_mk', MonoidHom.comp_apply]
+    -- Evaluate φ on the simple lift before applying the scalar-extension equation.
+    change D.weylProjection (A ⧸ M)
+      ⟨f (D.weylElement (t.simpleIndex ht i) A 1), _⟩ = _
+    simp only [hw, D.weylProjection_weylElement]
+  exact Function.LeftInverse.injective (fun w => DFunLike.congr_fun hp w)
+
+/-- The quotient of a Chevalley datum's Weyl subgroup by its actual torus is the Weyl
+group of the pinned root datum, over every nontrivial commutative ring, outside type G₂. -/
+def weylQuotientEquivOfNeG2 [Nontrivial A] (hs : t ≠ .G2) :
+    Q ≃* (t.simplyConnectedRootDatum ht).weylGroup :=
+  (MulEquiv.ofBijective (D.quotientSection A hs)
+    ⟨D.quotientSection_injective A hs, D.quotientSection_surjective A hs⟩).symm
+
+/-- The inverse Weyl quotient equivalence sends a pinned simple reflection to the class
+of its pinned Weyl representative. -/
+@[simp↓]
+theorem weylQuotientEquivOfNeG2_symm_ofIdx [Nontrivial A] (hs : t ≠ .G2)
+    (i : Fin t.rank) :
+    (D.weylQuotientEquivOfNeG2 A hs).symm
+        (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) =
+      QuotientGroup.mk
+        ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩ :=
+  D.quotientSection_simple A hs i
+
+/-- The Weyl quotient equivalence sends the class of a pinned simple Weyl representative
+to its simple reflection. -/
+@[simp↓]
+theorem weylQuotientEquivOfNeG2_mk_weylElement [Nontrivial A] (hs : t ≠ .G2)
+    (i : Fin t.rank) :
+    D.weylQuotientEquivOfNeG2 A hs
+        (QuotientGroup.mk
+          ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩) =
+      RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) := by
+  apply (D.weylQuotientEquivOfNeG2 A hs).eq_symm_apply.mp
+  exact (D.weylQuotientEquivOfNeG2_symm_ofIdx A hs i).symm
+
 end
 
 noncomputable section
@@ -222,31 +337,12 @@ theorem ker_weylProjection_of_ne_G2 (hs : t ≠ .G2) :
       Subtype.ext hsg.symm
     rw [hg, MonoidHom.mem_ker, D.weylProjection_torusPoints]
 
-/-- The quotient of a Chevalley datum's Weyl subgroup by its actual torus is the Weyl
-group of the pinned root datum, over every field, outside type G₂. -/
-def weylQuotientEquivOfNeG2 (hs : t ≠ .G2) :
-    Nₖ ⧸ Hₖ ≃* (t.simplyConnectedRootDatum ht).weylGroup :=
-  (QuotientGroup.quotientMulEquivOfEq (D.ker_weylProjection_of_ne_G2 K hs).symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective (D.weylProjection K)
-      (D.weylProjection_surjective K))
-
 /-- The Weyl quotient equivalence is induced by the native Weyl projection. -/
 @[simp]
 theorem weylQuotientEquivOfNeG2_mk (hs : t ≠ .G2) (g : Nₖ) :
     D.weylQuotientEquivOfNeG2 K hs (QuotientGroup.mk g) = D.weylProjection K g := by
-  simp only [weylQuotientEquivOfNeG2, MulEquiv.trans_apply,
-    QuotientGroup.quotientMulEquivOfEq_mk,
-    TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
-
-/-- The Weyl quotient equivalence sends the class of a pinned simple Weyl representative
-to its simple reflection. -/
-@[simp↓]
-theorem weylQuotientEquivOfNeG2_mk_weylElement (hs : t ≠ .G2) (i : Fin t.rank) :
-    D.weylQuotientEquivOfNeG2 K hs
-        (QuotientGroup.mk
-          ⟨D.weylElement (t.simpleIndex ht i) K 1, D.weylElement_mem_weylSubgroup K i⟩) =
-      RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) := by
-  rw [D.weylQuotientEquivOfNeG2_mk, D.weylProjection_weylElement]
+  apply (D.weylQuotientEquivOfNeG2 K hs).eq_symm_apply.mp
+  exact (D.quotientSection_weylProjection K hs g).symm
 
 /-- The inverse Weyl quotient equivalence sends a Weyl projection to its quotient class. -/
 @[simp]
@@ -255,16 +351,6 @@ theorem weylQuotientEquivOfNeG2_symm_weylProjection (hs : t ≠ .G2) (g : Nₖ) 
       QuotientGroup.mk g := by
   apply (D.weylQuotientEquivOfNeG2 K hs).symm_apply_eq.mpr
   exact (D.weylQuotientEquivOfNeG2_mk K hs g).symm
-
-/-- The inverse Weyl quotient equivalence sends a pinned simple reflection to the class
-of its pinned Weyl representative. -/
-@[simp↓]
-theorem weylQuotientEquivOfNeG2_symm_ofIdx (hs : t ≠ .G2) (i : Fin t.rank) :
-    (D.weylQuotientEquivOfNeG2 K hs).symm
-        (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) =
-      QuotientGroup.mk
-        ⟨D.weylElement (t.simpleIndex ht i) K 1, D.weylElement_mem_weylSubgroup K i⟩ := by
-  rw [← D.weylProjection_weylElement K i, D.weylQuotientEquivOfNeG2_symm_weylProjection]
 
 end
 
