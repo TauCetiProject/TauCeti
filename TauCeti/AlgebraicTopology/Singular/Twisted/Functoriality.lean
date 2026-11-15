@@ -213,6 +213,24 @@ def fstPullbackCompIso :
       (Hom.fst_comp f g)) ≪≫
     (LocalCoefficientSystem.pullbackCompIso (Hom.fst f).hom (Hom.fst g).hom).app K
 
+/-- The comparison `TopPair.fstPullbackCompIso` is the identity on every fibre. -/
+@[simp]
+lemma fstPullbackCompIso_hom_app (x : FundamentalGroupoid P.fst) :
+    (fstPullbackCompIso f g K).hom.app x = 𝟙 _ := by
+  -- What remains composes an identity with an `eqToHom` between definitionally equal fibres.
+  simp only [fstPullbackCompIso, Iso.trans_hom, NatTrans.comp_app, Iso.app_hom,
+    LocalCoefficientSystem.pullbackCompIso_hom_app_app, eqToIso.hom, eqToHom_app]
+  rfl
+
+/-- The inverse of the comparison `TopPair.fstPullbackCompIso` is the identity on every fibre. -/
+@[simp]
+lemma fstPullbackCompIso_inv_app (x : FundamentalGroupoid P.fst) :
+    (fstPullbackCompIso f g K).inv.app x = 𝟙 _ := by
+  -- What remains composes an identity with an `eqToHom` between definitionally equal fibres.
+  simp only [fstPullbackCompIso, Iso.trans_inv, NatTrans.comp_app, Iso.app_inv,
+    LocalCoefficientSystem.pullbackCompIso_inv_app_app, eqToIso.inv, eqToHom_app]
+  rfl
+
 /-- Maps of relative twisted chain complexes respect composition of maps of pairs, after the
 canonical comparison between pullback along a composite and iterated pullback. -/
 @[simp, reassoc]
@@ -302,6 +320,18 @@ lemma twistedHomologyMap_id
       P.twistedHomologyCoefficientMap (fstPullbackIdIso P L).hom k :=
   congrArg (fun φ ↦ HomologicalComplex.homologyMap φ k)
     (twistedChainComplexMap_id L)
+
+variable {f} in
+/-- Equal maps of pairs induce the same map on relative twisted homology, after the canonical
+identification of their pulled-back coefficient systems. -/
+lemma twistedHomologyMap_congr {f' : P ⟶ Q} (h : f = f') (k : ℕ) :
+    twistedHomologyMap f L k =
+      P.twistedHomologyCoefficientMap
+          (eqToHom (congrArg (fun g : P ⟶ Q ↦
+            (LocalCoefficientSystem.pullback (Hom.fst g).hom).obj L) h)) k ≫
+        twistedHomologyMap f' L k := by
+  subst h
+  simp
 
 /-- The composition law for maps on relative twisted homology. -/
 @[simp, reassoc]
