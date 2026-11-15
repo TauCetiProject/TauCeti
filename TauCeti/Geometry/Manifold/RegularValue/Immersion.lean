@@ -1,0 +1,129 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+public import TauCeti.Geometry.Manifold.RegularValue
+import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Opens
+import TauCeti.Geometry.Manifold.RegularValue.Level
+
+/-!
+# Maps of injective differential into regular levels
+
+Let `c` be a regular value of a map `f : M → F` from a boundaryless manifold, modelled on a
+finite-dimensional space `E`, to a finite-dimensional space `F`, with `f` of class `C¹` at the
+points of the level `f⁻¹(c)`. The level is then a manifold of dimension `dim E - dim F`
+(`TauCeti.isManifold_regularLevel`).
+
+A `C¹` map `g : P → M` with values in the level, from a manifold of that dimension, covers the
+level near the image `g q₀` of every interior point `q₀` at which its differential is injective:
+the points of the level close to `g q₀` are all values of `g`. Indeed, `g` is a `C¹` map into the
+level for its regular-level atlas, whose differential at `q₀` is an injective linear map between
+spaces of the same dimension. By the inverse function theorem it is a local diffeomorphism at
+`q₀`, and the image of a neighbourhood of `q₀` is a neighbourhood of `g q₀` in the level.
+
+The case of curves is a regular curve in a level of dimension one. For instance, near a point of
+a regular curve contained in the zero set of a function on a surface which is regular along that
+zero set, every zero of the function lies on the curve.
+
+## Main results
+
+* `TauCeti.IsRegularValue.eventually_mem_range`: a `C¹` map into the level, from a manifold of
+  the dimension of the level, with injective differential at an interior point `q₀`, covers the
+  level near `g q₀`.
+* `TauCeti.IsRegularValue.eventually_mem_image_of_curveVelocity_ne_zero`: a `C¹` curve on an
+  open parameter set, with values in a level of dimension one and nonzero velocity at `s₀`,
+  covers the level near its value at `s₀`.
+
+## References
+
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
+  Springer, 2013, Corollary 5.14 (regular level sets) and Theorem 4.5 (the inverse function
+  theorem for manifolds).
+-/
+
+public section
+
+open Filter Function Module Set Topology
+open scoped ContDiff Manifold
+
+namespace TauCeti
+
+variable {𝕜 : Type*} [RCLike 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  {f : M → F} {c : F}
+
+/-- **A map of injective differential into a regular level covers it locally.** Let `c` be a
+regular value of `f : M → F`, with `f` of class `C¹` at the points of the level `f⁻¹(c)`, and let
+`g : P → M` be a `C¹` map with values in the level, from a manifold `P` of the dimension
+`dim E - dim F` of the level. If `q₀` is an interior point of `P` at which the differential of `g`
+is injective, then every point of the level close enough to `g q₀` is a value of `g`. -/
+theorem IsRegularValue.eventually_mem_range (hreg : IsRegularValue I 𝓘(𝕜, F) f c)
+    (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) 1 f x)
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
+    {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 G H'}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace H' P] [IsManifold J 1 P]
+    (hdim : finrank 𝕜 G + finrank 𝕜 F = finrank 𝕜 E)
+    {g : P → M} (hg : ContMDiff J I 1 g) (hgc : ∀ q, f (g q) = c) {q₀ : P}
+    (hinj : Injective (mfderiv J I g q₀)) (hq₀ : J.IsInteriorPoint q₀) :
+    ∀ᶠ x in 𝓝 (g q₀), f x = c → x ∈ range g := by
+  have : CompleteSpace G := FiniteDimensional.completeSpace 𝕜 G
+  have hn : finrank 𝕜 E - finrank 𝕜 F = finrank 𝕜 G := by omega
+  let := regularLevelChartedSpace hf hreg hn
+  have := isManifold_regularLevel le_rfl hf hreg hn
+  have hi := (isImmersionOfComplement_coe_regularLevel le_rfl hf hreg hn).isImmersion
+  let g' : P → {x : M // f x = c} := fun q ↦ ⟨g q, hgc q⟩
+  have hg' : ContMDiff J 𝓘(𝕜, Fin (finrank 𝕜 G) → 𝕜) 1 g' :=
+    (ContMDiff.iff_comp_isImmersion hi).2 ⟨hg.continuous.subtype_mk _, hg⟩
+  have hinj' : Injective (mfderiv J 𝓘(𝕜, Fin (finrank 𝕜 G) → 𝕜) g' q₀) := by
+    -- Expose the factorization through the subtype so that mfderiv_comp matches syntactically.
+    rw [show g = Subtype.val ∘ g' from rfl, mfderiv_comp q₀
+      (hi.contMDiff.mdifferentiableAt one_ne_zero) (hg'.mdifferentiableAt one_ne_zero),
+      ContinuousLinearMap.coe_comp] at hinj
+    exact hinj.of_comp
+  have hloc : IsLocalDiffeomorphAt J 𝓘(𝕜, Fin (finrank 𝕜 G) → 𝕜) 1 g' q₀ :=
+    isLocalDiffeomorphAt_of_injective_mfderiv hg'.contMDiffOn isOpen_univ (mem_univ q₀) hq₀
+      le_rfl hinj' (by simp)
+  have hmem : ∀ᶠ y in 𝓝 (g' q₀), y ∈ range g' :=
+    hloc.localInverse_eventuallyEq_right.mono fun y hy ↦ ⟨hloc.localInverse y, hy⟩
+  rw [nhds_subtype_eq_comap, eventually_comap] at hmem
+  filter_upwards [hmem] with x hx hxc
+  obtain ⟨q, hq⟩ := hx ⟨x, hxc⟩ rfl
+  exact ⟨q, congrArg Subtype.val hq⟩
+
+/-- **A regular curve in a regular level of dimension one covers it locally.** Let `c` be a
+regular value of `f : M → F`, with `f` of class `C¹` at the points of the level `f⁻¹(c)`, which
+has dimension `dim E - dim F = 1`. Let `δ` be a curve which is `C¹` on an open parameter set `S`
+and maps `S` into the level. If the velocity of `δ` at `s₀ ∈ S` is nonzero, then every point of
+the level close enough to `δ s₀` is the value of `δ` at a parameter in `S`. -/
+theorem IsRegularValue.eventually_mem_image_of_curveVelocity_ne_zero
+    (hreg : IsRegularValue I 𝓘(𝕜, F) f c) (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) 1 f x)
+    (hdim : finrank 𝕜 F + 1 = finrank 𝕜 E) {δ : 𝕜 → M} {S : Set 𝕜} (hS : IsOpen S)
+    (hδ : ContMDiffOn 𝓘(𝕜, 𝕜) I 1 δ S) (hδc : ∀ s ∈ S, f (δ s) = c) {s₀ : 𝕜} (hs₀ : s₀ ∈ S)
+    (hv : Manifold.curveVelocity I δ s₀ ≠ 0) :
+    ∀ᶠ x in 𝓝 (δ s₀), f x = c → x ∈ δ '' S := by
+  let U : TopologicalSpace.Opens 𝕜 := ⟨S, hS⟩
+  have hd : MDifferentiableAt 𝓘(𝕜, 𝕜) I δ s₀ :=
+    (hδ.contMDiffAt (hS.mem_nhds hs₀)).mdifferentiableAt one_ne_zero
+  have hinj : Injective (mfderiv 𝓘(𝕜, 𝕜) I (δ ∘ (Subtype.val : U → 𝕜)) ⟨s₀, hs₀⟩) := by
+    intro v w hvw
+    rw [Manifold.mfderiv_comp_subtype_val_apply, Manifold.mfderiv_comp_subtype_val_apply,
+      (Manifold.hasMFDerivAt_curveVelocity hd).mfderiv] at hvw
+    exact smul_left_injective 𝕜 hv hvw
+  have hmem := hreg.eventually_mem_range hf (by rw [finrank_self, add_comm, hdim])
+    (hδ.comp_contMDiff contMDiff_subtype_val fun q ↦ q.2) (fun q ↦ hδc q q.2) hinj
+    BoundarylessManifold.isInteriorPoint
+  filter_upwards [hmem] with x hx hxc
+  obtain ⟨q, rfl⟩ := hx hxc
+  exact mem_image_of_mem δ q.2
+
+end TauCeti

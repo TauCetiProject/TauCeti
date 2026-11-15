@@ -47,7 +47,6 @@ private theorem fisherSnedecorMap_preimage_Iic_ae (hm : 0 < m) (hn : 0 < n) {x :
       Iic (fisherSnedecorMapInv m n x) := by
   filter_upwards [ae_mem_Ioo_betaMeasure (m / 2) (n / 2)] with u hu
   simp only [mem_preimage, mem_Iic]
-  apply propext
   have hden : 0 < n + m * x := add_pos hn (mul_pos hm hx)
   have h_inv := fisherSnedecorMap_mapInv (x := x) (ne_of_gt hm) (ne_of_gt hn)
     (ne_of_gt hden)
@@ -71,7 +70,6 @@ theorem cdf_fisherSnedecorMeasure_eq (hm : 0 < m) (hn : 0 < n) (x : ℝ) :
     rw [cdf_eq_real]
     have hpre : (Iic x : Set ℝ) =ᵐ[fisherSnedecorMeasure m n] ∅ := by
       filter_upwards [ae_mem_Ioi_fisherSnedecorMeasure m n] with y hy
-      apply propext
       constructor
       · intro hyx
         exact (not_lt_of_ge (hyx.trans hx)) hy

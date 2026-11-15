@@ -39,6 +39,8 @@ every `v : E` has the complex coordinates `⟪b j, v⟫`:
 
 * `OrthonormalBasis.toBasis_coord`: the coordinate functional `b.toBasis.coord i` is
   `innerₛₗ 𝕜 (b i)`.
+* `OrthonormalBasis.subsingleton_of_isEmpty`: a space with an orthonormal basis indexed by an
+  empty type is trivial.
 * `OrthonormalBasis.repr_apply_of_eigenbasis`: in an orthonormal eigenbasis of a linear map `S`,
   the coordinates of `S x` are those of `x` scaled by the eigenvalues.
 * `TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval`: for a vector `v` and a prescribed
@@ -93,6 +95,11 @@ theorem toBasis_coord_real {F : Type*} [NormedAddCommGroup F] [InnerProductSpace
     b.toBasis.coord i = innerₗ F (b i) := by
   ext v
   simp only [toBasis_coord, innerₛₗ_apply_apply, innerₗ_apply_apply]
+
+/-- The space carrying an orthonormal basis indexed by an empty type is trivial. -/
+theorem subsingleton_of_isEmpty [IsEmpty ι] (b : OrthonormalBasis ι 𝕜 E) : Subsingleton E :=
+  haveI := Module.Finite.of_basis b.toBasis
+  Module.finrank_zero_iff.mp (by rw [Module.finrank_eq_card_basis b.toBasis, Fintype.card_eq_zero])
 
 /-- The coordinates of `S x` in an orthonormal eigenbasis of `S` are the coordinates of `x`
 scaled by the eigenvalues. -/

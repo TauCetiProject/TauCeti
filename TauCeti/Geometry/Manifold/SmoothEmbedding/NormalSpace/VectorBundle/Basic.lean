@@ -59,9 +59,9 @@ private structure NormalChartData (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
 private theorem nonempty_normalChartData (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) :
     Nonempty (NormalChartData (P := P) f hn x₀) := by
-  let : CompleteSpace E := FiniteDimensional.complete 𝕜 E
-  let : CompleteSpace V := FiniteDimensional.complete 𝕜 V
-  let : CompleteSpace P := FiniteDimensional.complete 𝕜 P
+  let : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
+  let : CompleteSpace V := FiniteDimensional.completeSpace 𝕜 V
+  let : CompleteSpace P := FiniteDimensional.completeSpace 𝕜 P
   obtain ⟨Q, -, U, hU, hxU, hcharts, hInv, -⟩ :=
     f.exists_contMDiffOn_inTangentCoordinates_quotientRangeCoordinate
       (m := 0) (by simpa using ENat.one_le_iff_ne_zero_withTop.mpr hn) (by simp) x₀
@@ -273,8 +273,8 @@ private theorem NormalChartData.contMDiffOn_coordChangeL {m : ℕ∞ω}
     ContMDiffOn I 𝓘(𝕜, P →L[𝕜] P) m
       (fun x => ((d₀.trivialization f hn).coordChangeL 𝕜 (d₁.trivialization f hn) x :
         P →L[𝕜] P)) (d₀.baseSet ∩ d₁.baseSet) := by
-  let : CompleteSpace E := FiniteDimensional.complete 𝕜 E
-  let : CompleteSpace P := FiniteDimensional.complete 𝕜 P
+  let : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
+  let : CompleteSpace P := FiniteDimensional.completeSpace 𝕜 P
   exact f.contMDiffOn_normalSpaceTrivializationOfComplement_coordChangeL
     x₀ x₁ d₀.baseSet d₁.baseSet d₀.isOpen_baseSet d₁.isOpen_baseSet
       d₀.subset_charts d₁.subset_charts d₀.complement d₁.complement hm

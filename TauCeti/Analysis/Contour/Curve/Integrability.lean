@@ -12,8 +12,7 @@ public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 
 A piecewise-`C¹` curve has interval-integrable derivative. Multiplying that derivative by a
 continuous function along the compact curve image therefore gives an interval-integrable contour
-integrand. This file packages that Layer 0 conclusion of the contour-integration roadmap for
-vector-valued integrands over `ℂ`.
+integrand. This file packages that conclusion for vector-valued integrands over `ℂ`.
 
 The main theorem assumes continuity on the exact image `γ '' [[a, b]]`; a companion form accepts
 continuity on any set containing that image.
@@ -42,7 +41,7 @@ variable {γ : ℝ → ℂ} {f : ℂ → E} {a b : ℝ}
 
 /-- Along a piecewise-`C¹` curve, the product of the curve velocity with a function continuous on
 the curve image is interval-integrable. This is the vector-valued contour integrand
-`t ↦ deriv γ t • f (γ t)` from Layer 0 of the contour-integration roadmap. -/
+`t ↦ deriv γ t • f (γ t)`. -/
 theorem _root_.TauCeti.IsPiecewiseC1On.intervalIntegrable_deriv_smul_comp
     (hγ : IsPiecewiseC1On γ a b) (hf : ContinuousOn f (γ '' uIcc a b)) :
     IntervalIntegrable (fun t ↦ deriv γ t • f (γ t)) volume a b :=

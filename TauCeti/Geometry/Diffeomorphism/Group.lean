@@ -43,6 +43,8 @@ topological group (`Diffeomorph.isTopologicalGroup`, in
   operations act by composition, the identity, and the inverse diffeomorphism.
 * `Diffeomorph.contMDiff_mul_apply`, `Diffeomorph.contMDiff_list_prod_apply`: pointwise products
   of jointly smooth families of self-diffeomorphisms are jointly smooth.
+* `Diffeomorph.contMDiff_zpow_apply`: the integer powers of a jointly smooth family of
+  self-diffeomorphisms with jointly smooth inverses are jointly smooth.
 * `Function.Semiconj.diffeomorph_zpow_right`: a map intertwining two self-diffeomorphisms
   intertwines all of their integer powers.
 -/
@@ -219,6 +221,20 @@ theorem contMDiff_list_prod_apply (l : List (P → M ≃ₘ^n⟮I, I⟯ M))
     simp only [List.map_cons, List.prod_cons]
     exact contMDiff_mul_apply (g := fun p ↦ (l.map (· p)).prod) (hl f List.mem_cons_self)
       (ih fun g hg ↦ hl g (List.mem_cons_of_mem f hg))
+
+/-- The integer powers of a jointly `C^m` family of self-diffeomorphisms whose inverses are also
+jointly `C^m` are jointly `C^m`. -/
+theorem contMDiff_zpow_apply {f : P → M ≃ₘ^n⟮I, I⟯ M}
+    (hf : ContMDiff (I'.prod I) I m fun q : P × M ↦ f q.1 q.2)
+    (hf' : ContMDiff (I'.prod I) I m fun q : P × M ↦ (f q.1).symm q.2) (k : ℤ) :
+    ContMDiff (I'.prod I) I m fun q : P × M ↦ (f q.1 ^ k) q.2 := by
+  induction k using Int.induction_on with
+  | zero => simpa using contMDiff_snd
+  | succ k ih =>
+    simpa only [zpow_add_one] using contMDiff_mul_apply (f := fun p ↦ f p ^ (k : ℤ)) ih hf
+  | pred k ih =>
+    simpa only [zpow_sub_one] using
+      contMDiff_mul_apply (f := fun p ↦ f p ^ (-k : ℤ)) (g := fun p ↦ (f p)⁻¹) ih hf'
 
 end SmoothFamily
 

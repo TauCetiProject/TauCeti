@@ -381,7 +381,7 @@ theorem isHomogeneous_relations :
     rw [← ker_mk, RingHom.mem_ker] at hp
     have := congrArg φ hp
     rw [← RingHom.comp_apply, hφ, map_zero] at this
-    simpa using congrArg (fun q ↦ Polynomial.coeff q n) this
+    simpa using congrArg (fun q ↦ AddMonoidAlgebra.coeff q n) this
   rwa [← MvPolynomial.weightedDecomposition.decompose'_apply] at key
 
 /-- The **grading of the Lazard ring** by homological degree: `Lₙ` consists of the classes of the

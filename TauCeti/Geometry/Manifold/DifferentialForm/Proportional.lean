@@ -47,7 +47,7 @@ theorem contMDiff_of_eq_fun_smul (hα : ∀ x, α.1 x ≠ 0)
   have heval (γ : SmoothForm I M ℝ 1) :
       ContMDiffAt I 𝓘(ℝ) ∞ (fun y ↦ degreeOneEquiv γ y (V y)) x := by
     have h := ((degreeOneEquiv γ).contMDiff x).clm_bundle_apply hV
-    rw [contMDiffAt_section] at h
+    rw [contMDiffAt_section_iff] at h
     simpa only [Trivial.eq_trivialization M ℝ, Trivial.trivialization_apply] using h
   have hne : degreeOneEquiv α x (V x) ≠ 0 := by
     simpa only [V, FiberBundle.extend_apply_self] using hv

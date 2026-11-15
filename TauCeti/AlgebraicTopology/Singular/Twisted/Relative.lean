@@ -405,20 +405,7 @@ lemma twistedHomologyπ_comp_twistedHomologyCoefficientMap
     {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (f : L ⟶ K) (k : ℕ) :
     P.twistedHomologyπ L k ≫ P.twistedHomologyCoefficientMap f k =
       LocalCoefficientSystem.twistedHomologyCoefficientMap f k ≫ P.twistedHomologyπ K k := by
-  calc
-    _ = HomologicalComplex.homologyMap
-          (P.twistedChainComplexπ L ≫ P.twistedChainComplexCoefficientMap f) k :=
-      (HomologicalComplex.homologyMap_comp _ _ _).symm
-    _ = HomologicalComplex.homologyMap
-          (LocalCoefficientSystem.twistedChainComplexCoefficientMap f ≫
-            P.twistedChainComplexπ K) k :=
-      congrArg (fun φ ↦ HomologicalComplex.homologyMap φ k)
-        (P.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap f)
-    _ = _ := by
-      simpa only [LocalCoefficientSystem.twistedHomologyCoefficientMap] using
-        HomologicalComplex.homologyMap_comp
-          (LocalCoefficientSystem.twistedChainComplexCoefficientMap f)
-          (P.twistedChainComplexπ K) k
+  simp [← HomologicalComplex.homologyMap_comp]
 
 /-- The identity coefficient morphism induces the identity on relative twisted homology. -/
 @[simp]
@@ -438,6 +425,15 @@ lemma twistedHomologyCoefficientMap_comp
   (congrArg (fun φ ↦ HomologicalComplex.homologyMap φ k)
       (P.twistedChainComplexCoefficientMap_comp f g)).trans
     (HomologicalComplex.homologyMap_comp _ _ _)
+
+/-- An isomorphism of local coefficient systems induces isomorphisms on relative twisted
+homology. -/
+instance isIso_twistedHomologyCoefficientMap {K : LocalCoefficientSystem.{u, v, max v w} R P.fst}
+    (f : L ⟶ K) [IsIso f] (k : ℕ) : IsIso (P.twistedHomologyCoefficientMap f k) :=
+  ⟨P.twistedHomologyCoefficientMap (inv f) k, by
+    rw [← twistedHomologyCoefficientMap_comp, IsIso.hom_inv_id, twistedHomologyCoefficientMap_id],
+    by rw [← twistedHomologyCoefficientMap_comp, IsIso.inv_hom_id,
+      twistedHomologyCoefficientMap_id]⟩
 
 @[reassoc (attr := simp)]
 lemma twistedHomologyMap_comp_twistedHomologyπ (k : ℕ) :
@@ -464,8 +460,8 @@ lemma twistedHomologyδ_naturality_coefficient
     P.twistedHomologyδ L n m h ≫
         LocalCoefficientSystem.twistedHomologyCoefficientMap
           ((LocalCoefficientSystem.pullback P.map.hom).map f) m =
-      P.twistedHomologyCoefficientMap f n ≫ P.twistedHomologyδ K n m h := by
-  exact HomologicalComplex.HomologySequence.δ_naturality
+      P.twistedHomologyCoefficientMap f n ≫ P.twistedHomologyδ K n m h :=
+  HomologicalComplex.HomologySequence.δ_naturality
     (P.twistedChainComplexShortComplexCoefficientMap f)
     (P.shortExact_twistedChainComplexShortComplex L)
     (P.shortExact_twistedChainComplexShortComplex K) n m (by simpa)

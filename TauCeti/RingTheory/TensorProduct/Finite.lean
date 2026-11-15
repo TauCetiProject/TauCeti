@@ -7,9 +7,11 @@ module
 
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.TensorProduct.Finite
+import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.LinearAlgebra.TensorProduct.Pi
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 import Mathlib.RingTheory.Finiteness.Cardinality
+import Mathlib.RingTheory.TensorProduct.Free
 
 /-!
 # Finiteness of tensor products over a larger scalar ring
@@ -28,6 +30,8 @@ such a module is onto the scalars, so it exhibits `M` as a quotient of the tenso
 * `Module.Finite.of_tensorProduct_left`: if `M ⊗[R] N` is finite and `N` is free and nonzero,
   then `M` is finite.
 * `Module.Finite.of_tensorProduct_self`: a free module whose tensor square is finite is finite.
+* `Module.Finite.of_baseChange`: a free module whose base change to a nontrivial algebra is finite
+  is finite.
 -/
 
 public section
@@ -63,5 +67,14 @@ theorem of_tensorProduct_self [Module.Free R M] (h : Module.Finite R (M ⊗[R] M
   obtain hM | hM := subsingleton_or_nontrivial M
   · infer_instance
   · exact of_tensorProduct_left h
+
+/-- A free module whose base change to a nontrivial algebra is finite is itself finite: the
+base change of a basis is a basis of the same index type. -/
+theorem of_baseChange {R S N : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
+    [Nontrivial S] [AddCommMonoid N] [Module R N] [Module.Free R N]
+    (h : Module.Finite S (S ⊗[R] N)) : Module.Finite R N := by
+  let b := Module.Free.chooseBasis R N
+  have := Module.Finite.finite_basis (Algebra.TensorProduct.basis S b)
+  exact Module.Finite.of_basis b
 
 end Module.Finite
