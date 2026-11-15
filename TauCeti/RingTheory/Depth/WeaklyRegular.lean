@@ -160,9 +160,8 @@ theorem exists_isWeaklyRegular_of_le_depth (I : Ideal R) (M : ModuleCat.{v} R) [
     rintro _ ⟨rs, hrs, hmem, rfl⟩
     exact_mod_cast Nat.le_of_lt_succ (hcon rs hrs hmem)
   -- Its first `n` terms are again weakly regular.
-  rw [← List.take_append_drop n rs, isWeaklyRegular_append_iff] at hreg
   exact ⟨rs.take n, List.length_take_of_le hlen, fun r hr ↦ hmem r (List.mem_of_mem_take hr),
-    hreg.1⟩
+    hreg.take n⟩
 
 end Ideal
 

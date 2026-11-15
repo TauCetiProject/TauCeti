@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Regular.RegularSequence
 public import TauCeti.RingTheory.FormalGroup.Height.Basic
+import Mathlib.Data.Fin.Tuple.Take
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.Regular.RegularSequence
@@ -70,9 +71,10 @@ congruence `η_R(v_n) ≡ η_L(v_n)` modulo `I_n`
 * `FormalGroup.heightIdeal_eq_span`: `I_n = (v₀, …, v_(n-1))` for commutative `F`.
 * `FormalGroup.heightIdeal_succ_eq_top_iff`: `I_(n+1) = R` for commutative `F` exactly when `v_n`
   is a unit modulo `I_n`.
-* `FormalGroup.isWeaklyRegular_ofFn_coeff_nsmulSeries_iff_of_heightIdeal_succ_eq_top`: when
-  `I_(n+1)(F) = R`, Landweber's sequence `(v₀, …, v_(m-1))` for `m ≥ n` is weakly regular on `M`
-  iff `(v₀, …, v_(n-1))` is.
+* `FormalGroup.isWeaklyRegular_ofFn_coeff_nsmulSeries_iff_of_heightIdeal_succ_eq_top` and
+  `FormalGroup.forall_isWeaklyRegular_ofFn_coeff_nsmulSeries_iff_of_heightIdeal_succ_eq_top`: when
+  `I_(n+1)(F) = R`, Landweber's sequence `(v₀, …, v_(m-1))` for `m ≥ n` (and hence for all `m`) is
+  weakly regular on `M` iff `(v₀, …, v_(n-1))` is.
 * `FormalGroup.heightIdeal_eq_bot_iff_le_height` and `FormalGroup.heightIdeal_eq_top_iff_height_lt`:
   over a field of characteristic `p`, `I_n = 0` when `F` has height at least `n`, and `I_n = K`
   otherwise.
@@ -328,6 +330,21 @@ theorem isWeaklyRegular_ofFn_coeff_nsmulSeries_iff_of_heightIdeal_succ_eq_top (h
     simp only [Fin.val_zero]
     exact RingTheory.Sequence.IsWeaklyRegular.cons_of_isUnit_mk
       ((F.heightIdeal_succ_eq_top_iff hp n).mp hI) _
+
+/-- **All-length Landweber regularity criterion when `I_(n+1)(F) = R`.** For a commutative formal
+group law `F` with `I_(n+1)(F) = ⊤`, a prime `p`, and an `R`-module `M`, the Landweber sequence
+`(v₀, …, v_(m-1))` is weakly regular on `M` for every `m : ℕ` if and only if `(v₀, …, v_(n-1))` is
+weakly regular on `M`. -/
+theorem forall_isWeaklyRegular_ofFn_coeff_nsmulSeries_iff_of_heightIdeal_succ_eq_top (hp : p.Prime)
+    (M : Type*) [AddCommGroup M] [Module R M] {n : ℕ} (hI : F.heightIdeal p (n + 1) = ⊤) :
+    (∀ m : ℕ, RingTheory.Sequence.IsWeaklyRegular M
+        (List.ofFn fun i : Fin m ↦ PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p))) ↔
+      RingTheory.Sequence.IsWeaklyRegular M
+        (List.ofFn fun i : Fin n ↦ PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p)) :=
+  ⟨fun h ↦ h n, fun hn m ↦ Fin.ofFn_take_eq_take_ofFn (le_max_right n m)
+    (fun i : Fin (max n m) ↦ PowerSeries.coeff (p ^ (i : ℕ)) (F.nsmulSeries p)) ▸
+    ((F.isWeaklyRegular_ofFn_coeff_nsmulSeries_iff_of_heightIdeal_succ_eq_top hp M
+      (le_max_left n m) hI).mpr hn).take m⟩
 
 omit [F.IsComm] in
 /-- The height ideals of a formal group law are finitely generated. -/

@@ -508,8 +508,9 @@ The `y`-coordinate `-1 / w(q)` already pins down `w(q)`, and the `x`-coordinate 
 pins down `q`. -/
 theorem thetaPoint_inj (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q₁ q₂ : MvPowerSeries σ O} (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
-    (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0)
-    (h : W.thetaPoint hΔ h₁ hq₁0 = W.thetaPoint hΔ h₂ hq₂0) : q₁ = q₂ := by
+    (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0) :
+    W.thetaPoint hΔ h₁ hq₁0 = W.thetaPoint hΔ h₂ hq₂0 ↔ q₁ = q₂ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by subst h; rfl⟩
   classical
   set ρ := algebraMap (MvPowerSeries σ O) KK with hρ
   have hinj : Function.Injective ρ := IsFractionRing.injective (MvPowerSeries σ O) KK
@@ -571,9 +572,9 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
     rw [W.subst_formalInverse_eq hs₂]
     exact neg_ne_zero.mpr (mul_ne_zero hq₂0 hs0)
   rcases hcase with hc | hc
-  · exact hne₁ (W.thetaPoint_inj hΔ h₁ h₂ hq₁0 hq₂0 hc)
+  · exact hne₁ ((W.thetaPoint_inj hΔ h₁ h₂ hq₁0 hq₂0).mp hc)
   · rw [← W.thetaPoint_neg hΔ h₂ hq₂0 hi hi0] at hc
-    exact hne₂ (W.thetaPoint_inj hΔ h₁ hi hq₁0 hi0 hc)
+    exact hne₂ ((W.thetaPoint_inj hΔ h₁ hi hq₁0 hi0).mp hc)
 
 variable [DecidableEq KK] in
 /-- **The chord addition of parametrized points, from distinctness alone**: `θ(q₁) + θ(q₂) =
@@ -672,7 +673,7 @@ private theorem subst_formalAdd_assoc_of_subst_separates (hΔ : (fracCurve W σ 
   have eR := thetaPoint_add_of_subst_separates W hΔ hg hc₁ hF₂₃c h10 hF₂₃0 hg1 hgF₂₃ hRc hR0
   have hpts : W.thetaPoint hΔ hLc hL0 = W.thetaPoint hΔ hRc hR0 := by
     rw [← eL, ← e₁₂, ← eR, ← e₂₃, add_assoc]
-  exact thetaPoint_inj W hΔ hLc hRc hL0 hR0 hpts
+  exact (thetaPoint_inj W hΔ hLc hRc hL0 hR0).mp hpts
 
 /-- **Associativity of the addition series for the universal curve.**
 

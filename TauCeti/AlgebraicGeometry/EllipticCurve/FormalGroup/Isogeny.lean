@@ -10,8 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.FormalSeries
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Hom
 public import TauCeti.RingTheory.FormalGroup.ZSMul
-import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.FormalPoint
-import TauCeti.RingTheory.MvPowerSeries.Rename
+import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Projective
 
 /-!
 # Formal-group addition and multiplication by `n` for morphisms of elliptic curves
@@ -29,8 +28,8 @@ parameter `z = -x / y` to a power series `φ.formalSeries ∈ K⟦X⟧`
 
 2. **Addition and scalar multiplication.** When `W₂` is elliptic, the Bosma–Lenstra projective
    addition law `dblAddXYZ` evaluated at the formal points `[q : -1 : w(q)]` over `K⸨X⸩`
-   (`WeierstrassCurve.dblAddXYZ_subst_formalW_eq_smul`) shows that `(f + g).formalSeries` is the
-   formal-group sum of `f.formalSeries` and `g.formalSeries` in `formalGroup W₂`
+   (`WeierstrassCurve.formalThetaPoint_add`) shows that `(f + g).formalSeries` is the formal-group
+   sum of `f.formalSeries` and `g.formalSeries` in `formalGroup W₂`
    (`TauCeti.Isogeny.Hom.formalSeries_add`). Packaging this as an additive homomorphism
    `Hom.toFormalGroupPoint : Hom W₁ W₂ →+ (formalGroup W₂).Point Unit` gives the formal series of
    natural and integer multiples of morphisms (`TauCeti.Isogeny.Hom.formalSeries_nsmul`,
@@ -41,7 +40,8 @@ parameter `z = -x / y` to a power series `φ.formalSeries ∈ K⟦X⟧`
    Combining this with `TauCeti.Isogeny.order_formalSeries` identifies the order of
    `(formalGroup W).nsmulSeries n` with the inseparable degree of `[n]`
    (`WeierstrassCurve.order_nsmulSeries_formalGroup`), in every characteristic and without assuming
-   `K` is perfect.
+   `K` is perfect, and base-changing to residue fields shows `[n]` on `formalGroup W` is nonzero
+   for `n ≠ 0` over any nontrivial commutative ring.
 
 ## Main definitions
 
@@ -60,9 +60,11 @@ parameter `z = -x / y` to a power series `φ.formalSeries ∈ K⟦X⟧`
 * `WeierstrassCurve.order_zsmulSeries_formalGroup` and
   `WeierstrassCurve.order_nsmulSeries_formalGroup`: for an elliptic curve `W` over a field and
   `n ≠ 0`, the order of `[n]` on `formalGroup W` equals the inseparable degree of `[n]`.
-* `WeierstrassCurve.zsmulSeries_formalGroup_ne_zero` and
-  `WeierstrassCurve.nsmulSeries_formalGroup_ne_zero`: for an elliptic curve `W` over a field and
-  `n ≠ 0`, `[n]` on `formalGroup W` is nonzero in every characteristic.
+* `WeierstrassCurve.zsmulSeries_formalGroup_ne_zero`,
+  `WeierstrassCurve.zsmulSeries_formalGroup_eq_zero_iff`,
+  `WeierstrassCurve.nsmulSeries_formalGroup_ne_zero`, and
+  `WeierstrassCurve.nsmulSeries_formalGroup_eq_zero_iff`: for an elliptic curve `W` over a
+  nontrivial commutative ring, `[n]` on `formalGroup W` vanishes if and only if `n = 0`.
 
 ## References
 
@@ -90,17 +92,11 @@ theorem formalSeries_negIsogeny (W : WeierstrassCurve K) :
   apply (formalSeries_eq_iff _ _).mpr
   rw [W.formalGroup_addInvX, W.formalInverse_def]
   set E := W.functionFieldLaurentExpansion
-  have hy : E W.toAffine.genericY ≠ 0 :=
-    (map_ne_zero_iff E E.injective).mpr W.toAffine.genericY_ne_zero
-  -- Express `E x` and `-1` in terms of `E y` via the local parameter `X = -x / y` and `w = -1 / y`.
-  have hx : E W.toAffine.genericX = -((PowerSeries.X : K⟦X⟧) : K⸨X⸩) * E W.toAffine.genericY := by
-    have hp := W.functionFieldLaurentExpansion_neg_genericX_div_genericY
-    rw [map_div₀, map_neg] at hp
-    linear_combination -E W.toAffine.genericY * hp - div_mul_cancel₀ (E W.toAffine.genericX) hy
-  have hw : -1 = (W.formalW : K⸨X⸩) * E W.toAffine.genericY := by
-    have h1 := W.functionFieldLaurentExpansion_neg_inv_genericY
-    rw [map_neg, map_inv₀] at h1
-    linear_combination E W.toAffine.genericY * h1 + inv_mul_cancel₀ hy
+  have hy : E W.toAffine.genericY ≠ 0 := W.functionFieldLaurentExpansion_genericY_ne_zero
+  have hx : E W.toAffine.genericX = -(((PowerSeries.X : K⟦X⟧) : K⸨X⸩) * E W.toAffine.genericY) :=
+    W.functionFieldLaurentExpansion_genericX_eq_neg_X_mul_functionFieldLaurentExpansion_genericY
+  have hw : E W.toAffine.genericY * (W.formalW : K⸨X⸩) = -1 :=
+    W.functionFieldLaurentExpansion_genericY_mul_formalW
   have hd : (W.formalInverseDenom : K⸨X⸩) *
       (PowerSeries.invOfUnit W.formalInverseDenom 1 : K⸨X⸩) = 1 := by
     simpa only [map_mul, map_one] using
@@ -116,12 +112,13 @@ theorem formalSeries_negIsogeny (W : WeierstrassCurve K) :
       ← IsScalarTower.algebraMap_apply K K⟦X⟧ K⸨X⸩,
       ← IsScalarTower.algebraMap_apply K K⟦X⟧ K⸨X⸩,
       _root_.LaurentSeries.coe_algebraMap]
-    linear_combination (algebraMap K K⸨X⸩ W.a₃) * hw
+    linear_combination -(algebraMap K K⸨X⸩ W.a₃) * hw
   have hden0 : -E W.toAffine.genericY * (W.formalInverseDenom : K⸨X⸩) ≠ 0 :=
     mul_ne_zero (neg_ne_zero.mpr hy) (left_ne_zero_of_mul_eq_one hd)
   rw [map_div₀ ((negIsogeny W.toAffine).fieldPullback),
     map_neg ((negIsogeny W.toAffine).fieldPullback), fieldPullback_negIsogeny_genericX,
-    map_div₀ E, map_neg E, hden, hx, map_neg, map_mul, eq_div_iff hden0]
+    map_div₀ E, map_neg E, hden, hx, neg_neg, map_neg (ofPowerSeries ℤ K),
+    map_mul (ofPowerSeries ℤ K), eq_div_iff hden0]
   linear_combination ((PowerSeries.X : K⟦X⟧) : K⸨X⸩) * E W.toAffine.genericY * hd
 
 /-- **Negation of a morphism composes its formal series with the formal inverse of `W₂`.** -/
@@ -131,115 +128,6 @@ theorem Hom.formalSeries_neg {W₁ W₂ : WeierstrassCurve K} (f : Hom W₁.toAf
   rw [Hom.neg_def, Hom.formalSeries_comp, Hom.formalSeries_ofIsogeny, formalSeries_negIsogeny]
 
 end Negation
-
-/-! ### Formal projective points and the Bosma–Lenstra addition law -/
-
-section FormalPoint
-
--- The affine point `[q : -1 : w(q)]` on `fracCurve W σ KK`, defined uniformly for `q = 0` and
--- `q ≠ 0`.
-private noncomputable def formalThetaPoint {K : Type*} [Field K] (W : WeierstrassCurve K)
-    {σ : Type*} (KK : Type*) [Field KK] [Algebra (MvPowerSeries σ K) KK]
-    (q : MvPowerSeries σ K) : (fracCurve W σ KK).toAffine.Point :=
-  Projective.Point.toAffine (fracCurve W σ KK).toProjective
-    (algebraMap (MvPowerSeries σ K) KK ∘ ![q, -1, PowerSeries.subst q W.formalW])
-
-private theorem formalThetaPoint_zero {K : Type*} [Field K] (W : WeierstrassCurve K)
-    {σ : Type*} (KK : Type*) [Field KK] [Algebra (MvPowerSeries σ K) KK] :
-    formalThetaPoint W KK (0 : MvPowerSeries σ K) = 0 := by
-  have hw0 : PowerSeries.subst (0 : MvPowerSeries σ K) W.formalW = 0 :=
-    PowerSeries.subst_zero_of_constantCoeff_zero W.constantCoeff_formalW
-  exact Projective.Point.toAffine_of_Z_eq_zero (by simp [hw0])
-
-private theorem formalThetaPoint_eq_some {K : Type*} [Field K] (W : WeierstrassCurve K)
-    [W.IsElliptic] {σ : Type*} (KK : Type*) [Field KK] [Algebra (MvPowerSeries σ K) KK]
-    [IsFractionRing (MvPowerSeries σ K) KK] {q : MvPowerSeries σ K}
-    (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
-    ∃ hns : (fracCurve W σ KK).toAffine.Nonsingular
-      (algebraMap (MvPowerSeries σ K) KK q /
-        algebraMap (MvPowerSeries σ K) KK (PowerSeries.subst q W.formalW))
-      (-1 / algebraMap (MvPowerSeries σ K) KK (PowerSeries.subst q W.formalW)),
-      formalThetaPoint W KK q = .some _ _ hns := by
-  have hΔ' := W.fracCurve_Δ_ne_zero (σ := σ) (KK := KK) W.isUnit_Δ.ne_zero
-  have hz : (algebraMap (MvPowerSeries σ K) KK ∘ ![q, -1, PowerSeries.subst q W.formalW]) 2 ≠ 0 :=
-    W.algebraMap_subst_formalW_ne_zero hq hq0
-  have hN := (Projective.nonsingular_of_Z_ne_zero hz).mp (W.nonsingular_algebraMap_comp hΔ' hq)
-  exact ⟨by simpa using hN,
-    (W.toAffine_algebraMap_comp_eq_thetaPoint hΔ' hq hq0).trans
-      (W.thetaPoint_eq_some hΔ' hq hq0 (by simpa using hN))⟩
-
-private theorem formalThetaPoint_inj {K : Type*} [Field K] (W : WeierstrassCurve K)
-    [W.IsElliptic] {σ : Type*} (KK : Type*) [Field KK] [Algebra (MvPowerSeries σ K) KK]
-    [IsFractionRing (MvPowerSeries σ K) KK] {q₁ q₂ : MvPowerSeries σ K}
-    (hq₁ : constantCoeff q₁ = 0) (hq₂ : constantCoeff q₂ = 0)
-    (h : formalThetaPoint W KK q₁ = formalThetaPoint W KK q₂) : q₁ = q₂ := by
-  have hΔ' := W.fracCurve_Δ_ne_zero (σ := σ) (KK := KK) W.isUnit_Δ.ne_zero
-  rcases eq_or_ne q₁ 0 with rfl | hq₁0
-  · rcases eq_or_ne q₂ 0 with rfl | hq₂0
-    · rfl
-    · obtain ⟨_, hθ⟩ := formalThetaPoint_eq_some W KK hq₂ hq₂0
-      rw [formalThetaPoint_zero W KK, hθ] at h
-      simp at h
-  · rcases eq_or_ne q₂ 0 with rfl | hq₂0
-    · obtain ⟨_, hθ⟩ := formalThetaPoint_eq_some W KK hq₁ hq₁0
-      rw [formalThetaPoint_zero W KK, hθ] at h
-      simp at h
-    · rw [formalThetaPoint, formalThetaPoint,
-        W.toAffine_algebraMap_comp_eq_thetaPoint hΔ' hq₁ hq₁0,
-        W.toAffine_algebraMap_comp_eq_thetaPoint hΔ' hq₂ hq₂0] at h
-      exact W.thetaPoint_inj hΔ' hq₁ hq₂ hq₁0 hq₂0 h
-
-private theorem formalThetaPoint_add {K : Type*} [Field K] (W : WeierstrassCurve K)
-    [W.IsElliptic] {σ : Type*} (KK : Type*) [Field KK] [DecidableEq KK]
-    [Algebra (MvPowerSeries σ K) KK] [IsFractionRing (MvPowerSeries σ K) KK]
-    {q₁ q₂ : MvPowerSeries σ K} (hq₁ : constantCoeff q₁ = 0) (hq₂ : constantCoeff q₂ = 0) :
-    formalThetaPoint W KK q₁ + formalThetaPoint W KK q₂ =
-      formalThetaPoint W KK (subst ![q₁, q₂] (formalGroup W).toPowerSeries) := by
-  set ρ := algebraMap (MvPowerSeries σ K) KK
-  have hΔ' := W.fracCurve_Δ_ne_zero (σ := σ) (KK := KK) W.isUnit_Δ.ne_zero
-  -- Identify the `Unit ⊕ Unit` pair substitution of `formalAdd W` with the `Fin 2` substitution
-  -- of `(formalGroup W).toPowerSeries`.
-  set G := subst ![q₁, q₂] (formalGroup W).toPowerSeries
-  have hFG : subst (pairSubstitution q₁ q₂) (formalAdd W) = G := by
-    dsimp only [G]
-    rw [formalGroup_toPowerSeries, MvPowerSeries.subst_rename unitSumUnitEquivFinTwo _
-      (hasSubst_of_constantCoeff_zero (Fin.forall_fin_two.mpr ⟨hq₁, hq₂⟩))]
-    congr 1
-    funext i
-    rcases i with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simp
-  -- Push the pair-substituted Bosma–Lenstra identity from `MvPowerSeries σ K` into `KK`;
-  -- its scalar factor `-Y` is a unit, so `dblAddXYZ` represents the affine group-law sum.
-  have hdbl := W.dblAddXYZ_subst_formalW_eq_smul hq₁ hq₂
-  rw [hFG] at hdbl
-  have hu : IsUnit
-      (-ρ ((W.toProjective.map (algebraMap K (MvPowerSeries σ K))).dblAddY
-        ![q₁, -1, PowerSeries.subst q₁ W.formalW]
-        ![q₂, -1, PowerSeries.subst q₂ W.formalW])) :=
-    ((W.isUnit_dblAddY_subst_formalW hq₁ hq₂).map ρ).neg
-  have hN₁ := W.nonsingular_algebraMap_comp hΔ' hq₁
-  have hN₂ := W.nonsingular_algebraMap_comp hΔ' hq₂
-  have hD : (fracCurve W σ KK).toProjective.dblAddXYZ
-      (ρ ∘ ![q₁, -1, PowerSeries.subst q₁ W.formalW])
-      (ρ ∘ ![q₂, -1, PowerSeries.subst q₂ W.formalW]) =
-      hu.unit • (ρ ∘ ![G, -1, PowerSeries.subst G W.formalW]) := by
-    have hmap : (fracCurve W σ KK).toProjective =
-        (W.toProjective.map (algebraMap K (MvPowerSeries σ K))).map ρ :=
-      congrArg WeierstrassCurve.toProjective ((fracCurve_def W σ KK).trans (W.map_map _ _).symm)
-    rw [hmap, Projective.map_dblAddXYZ, hdbl]
-    funext k
-    fin_cases k <;> simp [Units.smul_def, IsUnit.unit_spec]
-  have hD0 : (fracCurve W σ KK).toProjective.dblAddXYZ
-      (ρ ∘ ![q₁, -1, PowerSeries.subst q₁ W.formalW])
-      (ρ ∘ ![q₂, -1, PowerSeries.subst q₂ W.formalW]) ≠ 0 := by
-    rw [hD]
-    intro h0
-    exact hu.ne_zero (by simpa [Units.smul_def, IsUnit.unit_spec] using congrFun h0 1)
-  rw [formalThetaPoint, formalThetaPoint, formalThetaPoint,
-    ← Projective.Point.toAffine_add hN₁ hN₂,
-    ← Projective.Point.toAffine_of_equiv (Projective.dblAddXYZ_equiv_add hN₁ hN₂ hD0), hD,
-    Projective.Point.toAffine_of_equiv ⟨hu.unit, rfl⟩]
-
-end FormalPoint
 
 /-! ### Formal-group addition and scalar multiplication on `Hom` -/
 
@@ -269,11 +157,12 @@ private theorem map_functionFieldLaurentExpansion_tautologicalPoint
         W₁.functionFieldLaurentExpansion.toRingHom.injective f.tautologicalPoint =
       AddEquiv.cast (M := fun V : WeierstrassCurve K⸨X⸩ ↦ V.toAffine.Point)
         (map_baseChange_functionFieldLaurentExpansion_eq_fracCurve W₁ W₂).symm
-        (formalThetaPoint W₂ K⸨X⸩ f.formalSeries) := by
+        (W₂.formalThetaPoint K⸨X⸩ f.formalSeries) := by
   rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩
   · rw [tautologicalPoint_zero, Affine.Point.mapAlong_zero, formalSeries_zero,
-      formalThetaPoint_zero W₂ K⸨X⸩, _root_.map_zero]
-  · obtain ⟨hns, hθ⟩ := formalThetaPoint_eq_some W₂ K⸨X⸩ φ.constantCoeff_formalSeries
+      W₂.formalThetaPoint_zero K⸨X⸩, _root_.map_zero]
+  · have hΔ := W₂.fracCurve_Δ_ne_zero (σ := Unit) (KK := K⸨X⸩) W₂.isUnit_Δ.ne_zero
+    obtain ⟨hns, hθ⟩ := W₂.formalThetaPoint_eq_some hΔ φ.constantCoeff_formalSeries
       φ.formalSeries_ne_zero
     rw [formalSeries_ofIsogeny, hθ, AddEquiv.cast_apply,
       Affine.Point.cast_some (map_baseChange_functionFieldLaurentExpansion_eq_fracCurve W₁ W₂).symm,
@@ -319,12 +208,13 @@ theorem formalSeries_add (f g : Hom W₁.toAffine W₂.toAffine) :
     (f + g).formalSeries =
       subst ![f.formalSeries, g.formalSeries] (formalGroup W₂).toPowerSeries := by
   classical
+  have hΔ := W₂.fracCurve_Δ_ne_zero (σ := Unit) (KK := K⸨X⸩) W₂.isUnit_Δ.ne_zero
   have hfg0 : ∀ i : Fin 2, constantCoeff (![f.formalSeries, g.formalSeries] i) = 0 :=
     Fin.forall_fin_two.mpr ⟨f.constantCoeff_formalSeries, g.constantCoeff_formalSeries⟩
-  refine formalThetaPoint_inj W₂ K⸨X⸩ (f + g).constantCoeff_formalSeries
+  refine (W₂.formalThetaPoint_inj hΔ (f + g).constantCoeff_formalSeries
     (constantCoeff_subst_eq_zero (hasSubst_of_constantCoeff_zero hfg0) hfg0
-      (formalGroup W₂).zero_constantCoeff) ?_
-  rw [← formalThetaPoint_add W₂ K⸨X⸩ f.constantCoeff_formalSeries g.constantCoeff_formalSeries]
+      (formalGroup W₂).zero_constantCoeff)).mp ?_
+  rw [← W₂.formalThetaPoint_add hΔ f.constantCoeff_formalSeries g.constantCoeff_formalSeries]
   have hf := map_functionFieldLaurentExpansion_tautologicalPoint f
   have hg := map_functionFieldLaurentExpansion_tautologicalPoint g
   have hfg := map_functionFieldLaurentExpansion_tautologicalPoint (f + g)
@@ -343,13 +233,6 @@ noncomputable def toFormalGroupPoint :
 @[simp]
 theorem val_toFormalGroupPoint (f : Hom W₁.toAffine W₂.toAffine) :
     (f.toFormalGroupPoint).val = f.formalSeries := (rfl)
-
-/-- The formal-group point of `ofIsogeny φ` has underlying series `φ.formalSeries`. -/
-@[simp]
-theorem toFormalGroupPoint_ofIsogeny (φ : Isogeny W₁.toAffine W₂.toAffine) :
-    (ofIsogeny φ).toFormalGroupPoint =
-      ⟨φ.formalSeries, .of_constantCoeff_zero φ.constantCoeff_formalSeries⟩ :=
-  Subtype.ext (formalSeries_ofIsogeny φ)
 
 /-- `Hom.toFormalGroupPoint` is injective. -/
 theorem toFormalGroupPoint_injective :
@@ -375,16 +258,6 @@ theorem toFormalGroupPoint_id (W : WeierstrassCurve K) [W.IsElliptic] :
     (Hom.id W.toAffine).toFormalGroupPoint = (formalGroup W).tautologicalPoint :=
   Subtype.ext ((val_toFormalGroupPoint _).trans
     ((formalSeries_id W).trans (formalGroup W).val_tautologicalPoint.symm))
-
-omit [W₂.IsElliptic] in
-/-- Composition of morphisms substitutes `f.formalSeries` into `g`'s formal-group point. -/
-theorem toFormalGroupPoint_comp {W₃ : WeierstrassCurve K} [W₃.IsElliptic]
-    (g : Hom W₂.toAffine W₃.toAffine) (f : Hom W₁.toAffine W₂.toAffine) :
-    (g.comp f).toFormalGroupPoint =
-      ⟨PowerSeries.subst f.formalSeries g.formalSeries,
-        .of_constantCoeff_zero (PowerSeries.constantCoeff_subst_eq_zero
-          f.constantCoeff_formalSeries _ g.constantCoeff_formalSeries)⟩ :=
-  Subtype.ext (formalSeries_comp g f)
 
 /-- **For an elliptic target `W₂`, natural scalar multiplication of a morphism composes its formal
 series with `nsmulSeries n`.** -/
@@ -454,20 +327,49 @@ theorem _root_.WeierstrassCurve.order_nsmulSeries_formalGroup {n : ℕ} (hn : n 
       (mulByIntIsogenyOfNeZero W.toAffine (Nat.cast_ne_zero.mpr hn)).inseparableDegree := by
   rw [← FormalGroup.zsmulSeries_natCast, W.order_zsmulSeries_formalGroup (Nat.cast_ne_zero.mpr hn)]
 
-/-- **For an elliptic curve `W` over a field and `n ≠ 0`, `(formalGroup W).zsmulSeries n` is
-nonzero**, in every characteristic. -/
+end MulByInt
+
+section NontrivialRing
+
+variable {R : Type*} [CommRing R] [Nontrivial R] (W : WeierstrassCurve R) [W.IsElliptic]
+
+/-- **For an elliptic curve `W` over a nontrivial commutative ring and `n ≠ 0`,
+`(formalGroup W).zsmulSeries n` is nonzero**, in every characteristic. -/
 theorem _root_.WeierstrassCurve.zsmulSeries_formalGroup_ne_zero {n : ℤ} (hn : n ≠ 0) :
     (formalGroup W).zsmulSeries n ≠ 0 := by
-  have h := (mulByIntIsogenyOfNeZero W.toAffine hn).formalSeries_ne_zero
-  rwa [formalSeries_mulByIntIsogeny W _] at h
+  obtain ⟨𝔪, h𝔪⟩ := Ideal.exists_maximal R
+  let : Field (R ⧸ 𝔪) := Ideal.Quotient.field 𝔪
+  intro h0
+  have hmap : (formalGroup (W.map (Ideal.Quotient.mk 𝔪))).zsmulSeries n = 0 := by
+    rw [W.map_formalGroup, ← (formalGroup W).map_zsmulSeries, h0, map_zero]
+  have hfield :=
+    (mulByIntIsogenyOfNeZero (W.map (Ideal.Quotient.mk 𝔪)).toAffine hn).formalSeries_ne_zero
+  rw [formalSeries_mulByIntIsogeny (W.map (Ideal.Quotient.mk 𝔪)) _] at hfield
+  exact hfield hmap
 
-/-- **For an elliptic curve `W` over a field and `n ≠ 0`, `(formalGroup W).nsmulSeries n` is
-nonzero**, in every characteristic. -/
+/-- **For an elliptic curve `W` over a nontrivial commutative ring,
+`(formalGroup W).zsmulSeries n = 0` if and only if `n = 0`.** -/
+@[simp]
+theorem _root_.WeierstrassCurve.zsmulSeries_formalGroup_eq_zero_iff {n : ℤ} :
+    (formalGroup W).zsmulSeries n = 0 ↔ n = 0 :=
+  ⟨fun h ↦ by_contra fun hn ↦ W.zsmulSeries_formalGroup_ne_zero hn h,
+    fun h ↦ by simp [h]⟩
+
+/-- **For an elliptic curve `W` over a nontrivial commutative ring and `n ≠ 0`,
+`(formalGroup W).nsmulSeries n` is nonzero**, in every characteristic. -/
 theorem _root_.WeierstrassCurve.nsmulSeries_formalGroup_ne_zero {n : ℕ} (hn : n ≠ 0) :
     (formalGroup W).nsmulSeries n ≠ 0 := by
   rw [← FormalGroup.zsmulSeries_natCast]
   exact W.zsmulSeries_formalGroup_ne_zero (Nat.cast_ne_zero.mpr hn)
 
-end MulByInt
+/-- **For an elliptic curve `W` over a nontrivial commutative ring,
+`(formalGroup W).nsmulSeries n = 0` if and only if `n = 0`.** -/
+@[simp]
+theorem _root_.WeierstrassCurve.nsmulSeries_formalGroup_eq_zero_iff {n : ℕ} :
+    (formalGroup W).nsmulSeries n = 0 ↔ n = 0 :=
+  ⟨fun h ↦ by_contra fun hn ↦ W.nsmulSeries_formalGroup_ne_zero hn h,
+    fun h ↦ by simp [h]⟩
+
+end NontrivialRing
 
 end TauCeti.Isogeny

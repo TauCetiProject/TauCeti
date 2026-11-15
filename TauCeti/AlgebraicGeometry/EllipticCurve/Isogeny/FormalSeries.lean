@@ -306,15 +306,9 @@ formal series is nonzero** (Silverman II.4.2(c), III.5 and IV.4.2(b)). -/
 theorem coeff_one_formalSeries_ne_zero_iff_isSeparable :
     PowerSeries.coeff 1 φ.formalSeries ≠ 0 ↔
       Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField := by
-  rw [← φ.order_formalSeries_eq_one_iff_isSeparable]
-  constructor
-  · intro h1
-    refine le_antisymm ?_ (PowerSeries.one_le_order_iff_constCoeff_eq_zero.mpr
-      φ.constantCoeff_formalSeries)
-    exact PowerSeries.order_le (n := 1) h1
-  · intro hord
-    have hto : φ.formalSeries.order.toNat = 1 := by simp [hord]
-    exact hto ▸ PowerSeries.coeff_order φ.formalSeries_ne_zero
+  rw [← φ.order_formalSeries_eq_one_iff_isSeparable, ← Nat.cast_one (R := ℕ∞),
+    PowerSeries.order_eq_nat]
+  simp
 
 end Order
 
