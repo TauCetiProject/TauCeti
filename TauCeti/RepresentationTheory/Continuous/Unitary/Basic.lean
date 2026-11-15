@@ -15,10 +15,11 @@ public import TauCeti.RepresentationTheory.Continuous.Subrepresentation
 This file defines when a continuous representation preserves a real or complex inner product. It
 characterizes unitarity through norm preservation, isometries, and Mathlib's `unitary` submonoid of
 continuous linear operators, and records the basic inner-product identities, the coefficient bound,
-and that unitarity passes to restrictions.
+and that unitarity passes to restrictions. For a group, each action map of a unitary representation
+is bundled as a linear isometric equivalence, `IsUnitary.toLinearIsometryEquiv`, and the adjoint of
+an intertwining map between unitary representations intertwines them in the reverse direction,
+`ContIntertwiningMap.adjoint`.
 
-The definition and its API implement the unitarity-predicate milestone in Layer 1 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/roadmap/representation-theory/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md).
 The operator characterizations reuse Mathlib's adjoint and unitary-operator theory.
 
 The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapters 2–4.
@@ -27,8 +28,6 @@ The mathematical development follows Daniel Bump, *Lie Groups*, second edition, 
 public section
 
 open scoped InnerProductSpace
-
-namespace TauCeti
 
 namespace ContRepresentation
 
@@ -83,6 +82,15 @@ theorem norm_map (hπ : IsUnitary π) (g : G) (v : V) :
     ‖π g v‖ = ‖v‖ :=
   (isUnitary_iff_norm_map π).mp hπ g v
 
+/-- Every action operator of a unitary representation has operator norm at most `1`. -/
+theorem norm_le_one (hπ : IsUnitary π) (g : G) : ‖π g‖ ≤ 1 :=
+  (π g).opNorm_le_bound zero_le_one fun v ↦ by simp [hπ.norm_map]
+
+/-- The action operators of a unitary representation are uniformly bounded, in the form taken
+by the integrated-form API. -/
+theorem exists_norm_le (hπ : IsUnitary π) : ∃ C, ∀ g, ‖π g‖ ≤ C :=
+  ⟨1, hπ.norm_le_one⟩
+
 /-- Every action map of a unitary representation is an isometry. -/
 theorem isometry (hπ : IsUnitary π) (g : G) : Isometry (π g) :=
   (isUnitary_iff_isometry π).mp hπ g
@@ -127,7 +135,7 @@ end IsUnitary
 /-- The trivial continuous representation is unitary. -/
 theorem isUnitary_trivial :
     IsUnitary (ContRepresentation.trivial 𝕜 G V) := by
-  intro g v w
+  intro _ v w
   simp
 
 end Monoid
@@ -179,6 +187,29 @@ theorem inner_map_right (hπ : IsUnitary π) (g : G) (v w : V) :
     ⟪v, π g w⟫_𝕜 = ⟪π g⁻¹ v, w⟫_𝕜 := by
   simpa only [ContRepresentation.self_inv_apply] using hπ.inner_map_map g (π g⁻¹ v) w
 
+omit [CompleteSpace V] in
+/-- The inner product of two translates of vectors by a unitary group representation depends only
+on the relative position `g⁻¹ * h` of the group elements. -/
+theorem inner_map_inv_mul (hπ : IsUnitary π) (g h : G) (v w : V) :
+    ⟪v, π (g⁻¹ * h) w⟫_𝕜 = ⟪π g v, π h w⟫_𝕜 := by
+  rw [map_mul, ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply, hπ.inner_map_right,
+    inv_inv]
+
+omit [CompleteSpace V] in
+/-- An action map of a unitary group representation, as a linear isometric equivalence of the
+representation space. Its inverse is the action of the inverse group element. -/
+noncomputable def toLinearIsometryEquiv (hπ : IsUnitary π) (g : G) : V ≃ₗᵢ[𝕜] V :=
+  LinearIsometryEquiv.ofSurjective
+    { toLinearMap := (π g : V →ₗ[𝕜] V), norm_map' := hπ.norm_map g }
+    fun v ↦ ⟨π g⁻¹ v, ContRepresentation.self_inv_apply π g v⟩
+
+omit [CompleteSpace V] in
+/-- The linear isometric equivalence of a unitary action map applies as that action map. -/
+@[simp]
+theorem coe_toLinearIsometryEquiv (hπ : IsUnitary π) (g : G) :
+    ⇑(hπ.toLinearIsometryEquiv g) = π g :=
+  (rfl)
+
 /-- The adjoint of a unitary action operator is the action of the inverse group element. -/
 @[simp]
 theorem adjoint_eq_inv (hπ : IsUnitary π) (g : G) :
@@ -193,4 +224,38 @@ end Group
 
 end ContRepresentation
 
-end TauCeti
+namespace ContIntertwiningMap
+
+variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+  [CompleteSpace V] [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [CompleteSpace W]
+  {π : ContRepresentation 𝕜 G V} {ρ : ContRepresentation 𝕜 G W}
+
+/-- **The adjoint of an intertwining map between unitary representations** intertwines them in the
+reverse direction: the adjoint of each action operator is the action of the inverse element. -/
+noncomputable def adjoint (T : ContIntertwiningMap π ρ) (hπ : π.IsUnitary) (hρ : ρ.IsUnitary) :
+    ContIntertwiningMap ρ π where
+  toContinuousLinearMap := ContinuousLinearMap.adjoint T.toContinuousLinearMap
+  isIntertwining' g := by
+    simpa only [ContinuousLinearMap.adjoint_comp, hπ.adjoint_eq_inv, hρ.adjoint_eq_inv,
+      inv_inv] using (congrArg ContinuousLinearMap.adjoint (T.isIntertwining' g⁻¹)).symm
+
+/-- The underlying operator of the adjoint intertwining map is the adjoint operator. -/
+@[simp]
+theorem toContinuousLinearMap_adjoint (T : ContIntertwiningMap π ρ) (hπ : π.IsUnitary)
+    (hρ : ρ.IsUnitary) :
+    (T.adjoint hπ hρ).toContinuousLinearMap = ContinuousLinearMap.adjoint T.toContinuousLinearMap :=
+  (rfl)
+
+/-- The adjoint intertwining map applies as the adjoint operator. -/
+@[simp]
+theorem adjoint_apply (T : ContIntertwiningMap π ρ) (hπ : π.IsUnitary) (hρ : ρ.IsUnitary) (w : W) :
+    T.adjoint hπ hρ w = ContinuousLinearMap.adjoint T.toContinuousLinearMap w :=
+  (rfl)
+
+/-- Taking the adjoint of an intertwining map twice returns the original map. -/
+@[simp]
+theorem adjoint_adjoint (T : ContIntertwiningMap π ρ) (hπ : π.IsUnitary) (hρ : ρ.IsUnitary) :
+    (T.adjoint hπ hρ).adjoint hρ hπ = T :=
+  ext <| ContinuousLinearMap.adjoint_adjoint T.toContinuousLinearMap
+
+end ContIntertwiningMap

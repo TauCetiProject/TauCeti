@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.LocalDegree
+public import TauCeti.NumberTheory.LocalField.Norm.Basic
 
 /-!
 # Normalized absolute values under extension of adic completions
 
-Let `R ⊆ B` be infinite Dedekind domains with finite quotients and fraction fields `K ⊆ L`.
+Let `R ⊆ B` be Dedekind domains with finite quotients and fraction fields `K ⊆ L`.
 For height-one primes `w ∣ v`, the canonical map `K_v → L_w` raises the residue-cardinality
 normalized absolute value to the local degree `[L_w : K_v]`. In particular, this map need
 not preserve the norm.
@@ -24,6 +25,9 @@ related by
 
 * `IsDedekindDomain.HeightOneSpectrum.norm_adicCompletionExtension`: the normalized
   absolute value under the canonical extension of completions.
+* `IsDedekindDomain.HeightOneSpectrum.norm_norm_adicCompletion`: the field norm preserves
+  normalized absolute values. This uses `TauCeti.normalizedValuationWithZero_norm` together
+  with the residue-cardinality formula.
 
 ## References
 
@@ -32,23 +36,23 @@ related by
 
 public section
 
-open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField
+open TauCeti IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField
 open scoped AdicCompletionExtension
 
-namespace TauCeti
+namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
-  [Ring.HasFiniteQuotients R] [Infinite R]
+  [Ring.HasFiniteQuotients R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
   {B : Type*} [CommRing B] [IsDedekindDomain B] [Algebra R B]
-  [Ring.HasFiniteQuotients B] [Infinite B]
+  [Ring.HasFiniteQuotients B]
   {L : Type*} [Field L] [Algebra K L] [Algebra R L] [IsScalarTower R K L]
   [Algebra B L] [IsFractionRing B L] [IsScalarTower R B L]
 
 /-- The normalized absolute value of the image in `L_w` is the normalized absolute value in
 `K_v` raised to the local degree `[L_w : K_v]`. No Galois hypothesis is needed. -/
 @[simp]
-theorem _root_.IsDedekindDomain.HeightOneSpectrum.norm_adicCompletionExtension
+theorem norm_adicCompletionExtension
     (v : HeightOneSpectrum R) (w : HeightOneSpectrum B)
     [w.asIdeal.LiesOver v.asIdeal] (x : v.adicCompletion K) :
     ‖v.adicCompletionExtension K L w x‖ =
@@ -73,4 +77,30 @@ theorem _root_.IsDedekindDomain.HeightOneSpectrum.norm_adicCompletionExtension
   congr 1
   ring
 
-end TauCeti
+/-- The field norm between adic completions preserves the residue-cardinality normalized
+absolute value. This differs from extension of scalars, which raises it to the local degree. -/
+@[simp]
+theorem norm_norm_adicCompletion
+    (v : HeightOneSpectrum R) (w : HeightOneSpectrum B)
+    [w.asIdeal.LiesOver v.asIdeal] (x : w.adicCompletion L) :
+    ‖Algebra.norm (v.adicCompletion K) x‖ = ‖x‖ := by
+  have : Finite (R ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  have : Finite (B ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
+  have := finite_of_valuativeExtension (v.adicCompletion K) (w.adicCompletion L)
+  have hval : Valued.v (Algebra.norm (v.adicCompletion K) x) =
+      Valued.v x ^ w.asIdeal.inertiaDeg R := by
+    simpa only [normalizedValuationWithZero_adicCompletion, inertiaDegree_def,
+      finrank_residueField_adicCompletion, inv_pow, inv_inj] using
+      normalizedValuationWithZero_norm (K := v.adicCompletion K) x
+  by_cases hx : x = 0
+  · simp [hx]
+  have hcard : w.asIdeal.absNorm = v.asIdeal.absNorm ^ w.asIdeal.inertiaDeg R := by
+    simpa only [natCard_residueField_adicCompletion_eq_absNorm] using
+      natCard_residueField_adicCompletion_eq_pow_inertiaDeg (K := K) (L := L) v w
+  rw [FinitePlace.norm_def, FinitePlace.norm_def, hval, map_pow,
+    WithZeroMulInt.toNNReal_neg_apply _ (by simpa using hx),
+    WithZeroMulInt.toNNReal_neg_apply _ (by simpa using hx)]
+  simp only [hcard, Nat.cast_pow, NNReal.coe_zpow,
+    ← zpow_natCast, ← zpow_mul, mul_comm]
+
+end IsDedekindDomain.HeightOneSpectrum

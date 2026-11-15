@@ -37,9 +37,7 @@ makes the coefficient submodule of a finite free comodule stable under comultipl
 
 ## References
 
-This is the standard coefficient-coalgebra computation; see Sweedler, *Hopf Algebras*,
-Chapter 2. It supplies a prerequisite for `ReductiveGroups/README.md` in TauCetiRoadmap,
-Layer 1, "Finite-dimensional subcoalgebras".
+This is the standard coefficient-coalgebra computation; see Sweedler, *Hopf Algebras*, Chapter 2.
 -/
 
 public section

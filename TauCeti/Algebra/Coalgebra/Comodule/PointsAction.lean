@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
-import TauCeti.LinearAlgebra.End.ScalarExtension
+import TauCeti.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Bialgebra.Convolution
 public import Mathlib.RepresentationTheory.Basic
+import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # The points action of a comodule
@@ -22,15 +24,24 @@ pushing the coaction coefficients through `g`, `A`-linearly. The two comodule ax
 are exactly the two monoid-action laws: the counit law sends the convolution unit to
 the identity, and coassociativity sends convolution products to composites. (The
 upgrade to automorphisms over a Hopf algebra is in
-`TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction`, with the group of
+`TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic`, with the group of
 points.) On the comodule attached to a group-like element `x`, this action is scalar
 multiplication by `g x`.
 
-This is the comodule-to-representation direction of the "representations = comodules"
-dictionary (ReductiveGroups roadmap, Layer 1): it realizes a comodule as an action of
-the functor of points on scalar extensions of `V`.
+This is the comodule-to-representation direction of the "representations = comodules" dictionary: it
+realizes a comodule as an action of the functor of points on scalar extensions of `V`.
+
+A regular one-cochain `b : V ⊗[R] H` can likewise be evaluated at any point by pushing its
+`H`-factor through the point. Evaluation at the universal tensor-factor points recovers the
+tensor expressions in the regular cocycle identity.
 
 ## Main declarations
+
+* `TauCeti.Comodule.pointCochain`: evaluation of a regular one-cochain at a point.
+* `TauCeti.Comodule.rTensor_pointCochain`: this evaluation is natural in the value algebra.
+* `TauCeti.Comodule.pointCochain_includeLeft` and
+  `TauCeti.Comodule.endOfPoint_includeLeft_pointCochain_includeRight`: cochain evaluation at the
+  universal pair of points.
 
 * `TauCeti.Comodule.endOfPoint`: the endomorphism of `A ⊗[R] V` attached to a point.
 * `TauCeti.Comodule.endOfPoint_corestrict`: compatibility with corestriction in the coalgebra.
@@ -42,6 +53,8 @@ the functor of points on scalar extensions of `V`.
   convolution monoid of points on the scalar extension.
 * `TauCeti.Comodule.baseChange_comp_endOfPoint`: the action is functorial in the
   comodule.
+* `TauCeti.Comodule.Hom.map_endOfPoint_baseChange_eq_iff`: injective comodule morphisms
+  preserve and reflect subspace stabilizers after flat scalar extension.
 * `BialgHom.baseChange_comp_endOfPoint_regular`: bialgebra morphisms intertwine regular actions.
 * `TauCeti.Comodule.map_endOfPoint_eq_of_mapsTo`: inverse points preserving a submodule
   carry it onto itself.
@@ -60,6 +73,53 @@ namespace TauCeti
 namespace Comodule
 
 open Coalgebra WithConv _root_.TensorProduct
+
+section Cochain
+
+variable {R H V A : Type*} [CommSemiring R]
+
+variable [Semiring H] [Algebra R H] [AddCommMonoid V] [Module R V]
+  [CommSemiring A] [Algebra R A]
+
+variable (V) in
+/-- The value at an `A`-point `g` of a regular one-cochain `b : V ⊗[R] H`: the `H`-factor of `b`
+is pushed through `g`, and the result is read in the scalar extension `A ⊗[R] V`. -/
+noncomputable def pointCochain (g : H →ₐ[R] A) : V ⊗[R] H →ₗ[R] A ⊗[R] V :=
+  (TensorProduct.comm R V A).toLinearMap ∘ₗ LinearMap.lTensor V g.toLinearMap
+
+variable (V) in
+theorem pointCochain_apply (g : H →ₐ[R] A) (b : V ⊗[R] H) :
+    pointCochain V g b = TensorProduct.comm R V A (LinearMap.lTensor V g.toLinearMap b) :=
+  (rfl)
+
+variable (V) in
+@[simp]
+theorem pointCochain_tmul (g : H →ₐ[R] A) (v : V) (h : H) :
+    pointCochain V g (v ⊗ₜ[R] h) = g h ⊗ₜ[R] v := by
+  simp [pointCochain]
+
+variable (V) in
+/-- Evaluating the cochain of `x : H ⊗[R] V` at a point `g` pushes the `H`-factor of `x` through
+`g`. At the universal point `g = AlgHom.id R H` this recovers `x`. -/
+@[simp]
+theorem pointCochain_comm (g : H →ₐ[R] A) (x : H ⊗[R] V) :
+    pointCochain V g (TensorProduct.comm R H V x) = LinearMap.rTensor V g.toLinearMap x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul h v => simp
+  | add x₁ x₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+
+variable (V) in
+/-- Evaluation of regular cochains is natural in the value algebra. -/
+@[simp]
+theorem rTensor_pointCochain {B : Type*} [CommSemiring B] [Algebra R B] (φ : A →ₐ[R] B)
+    (g : H →ₐ[R] A) (b : V ⊗[R] H) :
+    LinearMap.rTensor V φ.toLinearMap (pointCochain V g b) = pointCochain V (φ.comp g) b := by
+  induction b using TensorProduct.inductionOn with
+  | tmul v h => simp
+  | add b₁ b₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+
+end Cochain
+
 
 section Coalgebra
 
@@ -82,6 +142,13 @@ lemma endOfPoint_tmul (g : H →ₐ[R] A) (a : A) (v : V) :
     endOfPoint V g (a ⊗ₜ[R] v) =
       a • TensorProduct.comm R V A (LinearMap.lTensor V g.toLinearMap (coact v)) := by
   simp [endOfPoint]
+
+/-- Every algebra-valued point fixes the scalar extension of a rationally fixed vector. -/
+lemma endOfPoint_tmul_of_coact_eq_tmul_one {v : V}
+    (hv : coact (R := R) (C := H) v = v ⊗ₜ[R] (1 : H))
+    (g : H →ₐ[R] A) (a : A) :
+    endOfPoint V g (a ⊗ₜ[R] v) = a ⊗ₜ[R] v := by
+  simp [endOfPoint_tmul, hv, TensorProduct.smul_tmul']
 
 section BaseChange
 
@@ -106,7 +173,8 @@ lemma rTensor_comp_endOfPoint (φ : A →ₐ[R] A') (g : H →ₐ[R] A) :
   simp only [LinearMap.coe_comp, Function.comp_apply,
     LinearEquiv.coe_toLinearMap] at hc
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
-    LinearMap.rTensor_tmul, endOfPoint_tmul, rTensor_algHom_smul, hc, AlgHom.toLinearMap_apply]
+    LinearMap.rTensor_tmul, endOfPoint_tmul, AlgHom.rTensor_toLinearMap_apply_smul, hc,
+    AlgHom.toLinearMap_apply]
 
 end BaseChange
 
@@ -134,9 +202,67 @@ lemma baseChange_comp_endOfPoint (f : Hom R H V W) (g : H →ₐ[R] A) :
     endOfPoint_tmul, map_smul, LinearMap.baseChange_tmul, hc, Hom.map_coact_apply,
     Hom.coe_toLinearMap]
 
+/-- An injective comodule morphism preserves and reflects the stabilizer of a subspace
+after flat scalar extension. Thus a subspace has the same stabilizer in a subrepresentation
+and in the ambient representation. -/
+theorem Hom.map_endOfPoint_baseChange_eq_iff [Module.Flat R A]
+    (f : Hom R H V W) (hf : Function.Injective f) (L : Submodule R V)
+    (g : H →ₐ[R] A) :
+    ((L.map f.toLinearMap).baseChange A).map (endOfPoint W g) =
+        (L.map f.toLinearMap).baseChange A ↔
+      (L.baseChange A).map (endOfPoint V g) = L.baseChange A := by
+  have hinj : Function.Injective (f.toLinearMap.baseChange A) :=
+    Module.Flat.lTensor_preserves_injective_linearMap f.toLinearMap hf
+  rw [Submodule.baseChange_map, ← Submodule.map_comp,
+    ← baseChange_comp_endOfPoint, Submodule.map_comp]
+  exact (Submodule.map_injective_of_injective hinj).eq_iff
+
 end Functorial
 
 end Coalgebra
+
+section Universal
+
+variable {R H V : Type*} [CommSemiring R]
+
+/-! ### Cochains at the universal pair of points
+
+For a commutative bialgebra `H`, the two tensor-factor inclusions `H → H ⊗[R] H` form the
+universal pair of points, whose convolution product is the comultiplication
+(`TauCeti.Bialgebra.comulPoint_eq_include_mul`). The values of a cochain at these points recover
+the two tensors appearing in the regular cocycle identity. The left-point evaluation only
+requires an algebra, and the coaction formula only requires a coalgebra over that algebra. -/
+
+variable [CommSemiring H] [Algebra R H] [AddCommMonoid V] [Module R V]
+
+variable (V) in
+/-- The value of a cochain `b` at the left universal point is `b ⊗ 1`, read in
+`(H ⊗[R] H) ⊗[R] V`. -/
+theorem pointCochain_includeLeft (b : V ⊗[R] H) :
+    pointCochain V (Algebra.TensorProduct.includeLeft (S := R)) b =
+      TensorProduct.comm R V _ (TensorProduct.assoc R V H H (b ⊗ₜ[R] 1)) := by
+  induction b using TensorProduct.inductionOn with
+  | add b₁ b₂ h₁ h₂ => simp only [map_add, TensorProduct.add_tmul, h₁, h₂]
+  | tmul v y => simp
+
+variable [Coalgebra R H] [Comodule R H V]
+
+/-- The left universal point acts on the value of a cochain `b` at the right universal point by
+the coaction on the `V`-factor of `b`. -/
+theorem endOfPoint_includeLeft_pointCochain_includeRight (b : V ⊗[R] H) :
+    endOfPoint V (Algebra.TensorProduct.includeLeft (S := R))
+        (pointCochain V Algebra.TensorProduct.includeRight b) =
+      TensorProduct.comm R V _ (TensorProduct.assoc R V H H
+        ((coact (R := R) (C := H) (M := V)).rTensor H b)) := by
+  induction b using TensorProduct.inductionOn with
+  | add b₁ b₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+  | tmul v y =>
+    rw [pointCochain_tmul, endOfPoint_tmul, LinearMap.rTensor_tmul]
+    induction coact (R := R) (C := H) (M := V) v using TensorProduct.inductionOn with
+    | add c₁ c₂ h₁ h₂ => simp only [map_add, TensorProduct.add_tmul, smul_add, h₁, h₂]
+    | tmul w z => simp [TensorProduct.smul_tmul', mul_comm]
+
+end Universal
 
 section Corestrict
 
@@ -403,6 +529,26 @@ lemma pointsRepresentation_apply (g : WithConv (H →ₐ[R] A)) :
   rfl
 
 end Bialgebra
+
+section HopfAlgebra
+
+variable {R H V A : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
+  [AddCommMonoid V] [Module R V] [Comodule R H V]
+  [CommSemiring A] [Algebra R A]
+
+variable (V) in
+/-- The inverse point action cancels the point action on the left. -/
+lemma endOfPoint_inv_comp (g : WithConv (H →ₐ[R] A)) :
+    endOfPoint V (g⁻¹).ofConv ∘ₗ endOfPoint V g.ofConv = LinearMap.id := by
+  simpa only [inv_mul_cancel, endOfPoint_convOne] using (endOfPoint_convMul V g⁻¹ g).symm
+
+variable (V) in
+/-- The inverse point action cancels the point action on the right. -/
+lemma endOfPoint_comp_inv (g : WithConv (H →ₐ[R] A)) :
+    endOfPoint V g.ofConv ∘ₗ endOfPoint V (g⁻¹).ofConv = LinearMap.id := by
+  simpa only [inv_inv] using endOfPoint_inv_comp V g⁻¹
+
+end HopfAlgebra
 
 section Regular
 

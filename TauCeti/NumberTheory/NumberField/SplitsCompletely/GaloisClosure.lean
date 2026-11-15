@@ -107,13 +107,8 @@ theorem ncard_primesOver_eq_finrank_iff_forall_stabilizer_eq_bot (p : Ideal (�
     [p.IsPrime] :
     (p.primesOver (𝓞 M)).ncard = finrank K M ↔
       ∀ Q ∈ p.primesOver (𝓞 M), MulAction.stabilizer (M ≃ₐ[K] M) Q = ⊥ := by
-  rw [IsFractionRing.finrank_eq (𝓞 K) K (𝓞 M) M,
-    Ideal.ncard_primesOver_eq_finrank_iff_forall_ramificationIdx_eq_one_and_inertiaDeg_eq_one]
-  refine forall₂_congr fun Q ⟨_, _⟩ ↦ ?_
-  -- the decomposition group of `Q` has order `e * f`
-  rw [← mul_eq_one, ← Subgroup.card_eq_one, Ideal.card_stabilizer_eq p Q,
-    Ideal.ramificationIdxIn_eq_ramificationIdx p Q (M ≃ₐ[K] M),
-    Ideal.inertiaDegIn_eq_inertiaDeg p Q (M ≃ₐ[K] M)]
+  rw [← IsGaloisGroup.card_eq_finrank (M ≃ₐ[K] M) K M,
+    ncard_primesOver_eq_natCard_iff_forall_stabilizer_eq_bot]
 
 /-- **Complete splitting in a compositum.** A prime `p` of `𝓞 K` splits completely in `E₁ ⊔ E₂`
 exactly when it splits completely in `E₁` and in `E₂`. -/

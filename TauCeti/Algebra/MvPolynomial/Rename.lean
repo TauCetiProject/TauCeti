@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Rename
 public import Mathlib.Algebra.MvPolynomial.Division
+public import Mathlib.Algebra.Polynomial.Eval.Coeff
 public import Mathlib.Algebra.Ring.CompTypeclasses
 
 /-!
@@ -17,6 +18,9 @@ ring equivalence. Mathlib's `RingHomInvPair.of_ringEquiv` and
 `RingHomInvPair.of_ringEquiv_symm` are deliberately not instances, so this file registers them
 for `MvPolynomial.renameEquiv`. This lets semilinear equivalences over variable renaming be used
 and inverted without requiring downstream local instances.
+
+Injective variable renaming reindexes the native coefficient vector along the induced embedding
+of exponent vectors.
 
 Along an injective renaming `f : σ → τ`, Mathlib's `MvPolynomial.killCompl` sets the variables
 outside the range of `f` to zero. When exactly one variable `X a` is discarded, the polynomials
@@ -29,15 +33,44 @@ it kills are exactly the multiples of `X a`.
 
 ## Main results
 
+* `MvPolynomial.coeff_rename_eq_embDomain`: injective renaming embeds the coefficient vector
+  along the induced map of exponents.
 * `MvPolynomial.killCompl_X_of_notMem_range`: a variable outside the range of an injective
   renaming is killed by `killCompl`.
 * `MvPolynomial.killCompl_eq_zero_iff_X_dvd`: when the range of the renaming is the complement of
   a single variable `X a`, discarding that variable kills exactly the multiples of `X a`.
+* `Polynomial.map_eval_map_rename`: for a polynomial family with coefficients in `MvPolynomial`,
+  specializing after renaming the parameters along `f` is specializing at the composite point.
 -/
 
 public section
 
 namespace MvPolynomial
+
+variable {R σ τ : Type*} [CommSemiring R]
+
+/-- Injective variable renaming reindexes the native coefficient vector by the induced
+embedding of exponent vectors. -/
+theorem coeff_rename_eq_embDomain (p : MvPolynomial σ R) {f : σ → τ}
+    (hf : Function.Injective f) :
+    AddMonoidAlgebra.coeff (rename f p) =
+      (AddMonoidAlgebra.coeff p).embDomain
+        ⟨Finsupp.mapDomain f, Finsupp.mapDomain_injective hf⟩ := by
+  classical
+  let e : (σ →₀ ℕ) ↪ (τ →₀ ℕ) :=
+    ⟨Finsupp.mapDomain f, Finsupp.mapDomain_injective hf⟩
+  ext d
+  by_cases hd : ∃ a, e a = d
+  · obtain ⟨a, rfl⟩ := hd
+    rw [Finsupp.embDomain_apply_self]
+    -- Since `MvPolynomial` abbreviates `AddMonoidAlgebra`, `.coeff` is its native coefficient
+    -- evaluation, and `e a` reduces to `a.mapDomain f`. Expose this form to apply
+    -- `coeff_rename_embDomain`.
+    change (rename f p).coeff (a.mapDomain f) = p.coeff a
+    simpa only [Finsupp.embDomain_eq_mapDomain, Function.Embedding.coeFn_mk] using
+      coeff_rename_embDomain ⟨f, hf⟩ p a
+  · rw [Finsupp.embDomain_of_notMem_range e _ d hd]
+    exact coeff_rename_eq_zero f p d (fun a ha ↦ (hd ⟨a, ha⟩).elim)
 
 variable {σ τ R : Type*} [CommSemiring R] {f : σ → τ} (hf : Function.Injective f) {a : τ}
 
@@ -77,6 +110,20 @@ theorem killCompl_eq_zero_iff_X_dvd (ha : Set.range f = {a}ᶜ) (p : MvPolynomia
     rw [map_mul, killCompl_X_of_notMem_range hf hna, zero_mul]
 
 end MvPolynomial
+
+namespace Polynomial
+
+/-- Renaming the parameters of a polynomial family `P : (MvPolynomial σ R)[X]` along `f` and then
+specializing them at `y` is specializing `P` at `y ∘ f`. -/
+theorem map_eval_map_rename {σ τ R : Type*} [CommSemiring R] (f : σ → τ)
+    (P : (MvPolynomial σ R)[X]) (y : τ → R) :
+    (P.map (MvPolynomial.rename (R := R) f).toRingHom).map (MvPolynomial.eval y) =
+      P.map (MvPolynomial.eval (y ∘ f)) := by
+  rw [Polynomial.map_map]
+  congr 1
+  ext <;> simp
+
+end Polynomial
 
 namespace TauCeti
 

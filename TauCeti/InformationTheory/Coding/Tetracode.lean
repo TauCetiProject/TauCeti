@@ -87,11 +87,14 @@ theorem euclideanDual_tetracode : tetracode.euclideanDual = tetracode := by
   rw [tetracode_def, ← Matrix.checkedBy_eq_euclideanDual_generatedBy,
     checkedBy_tetracodeGenerator, ← tetracode_def]
 
+/-- The tetracode is Euclidean self-dual. -/
+theorem isSelfDual_tetracode : tetracode.IsSelfDual :=
+  Submodule.isSelfDual_iff.mpr euclideanDual_tetracode.symm
+
 /-- The tetracode has dimension two over the ternary field. -/
 @[simp]
 theorem finrank_tetracode : Module.finrank (ZMod 3) tetracode = 2 := by
-  have h := Submodule.two_mul_finrank_eq_card_of_eq_euclideanDual
-    euclideanDual_tetracode.symm
+  have h := isSelfDual_tetracode.two_mul_finrank_eq_card
   norm_num at h
   omega
 
@@ -129,7 +132,7 @@ theorem weightDistribution_tetracode (w : ℕ) :
       if w = 0 then 1 else if w = 3 then 8 else 0 := by
   simpa only [SetLike.coe_sort_coe, natCard_tetracode, Nat.reduceSub] using
     weightDistribution_eq_of_constant_weight (Set.toFinite _) tetracode.zero_mem
-      (by decide : 3 ≠ 0) (fun _ hx hx0 ↦
+      (fun _ hx hx0 ↦
         hammingNorm_eq_three_of_mem_tetracode_of_ne_zero hx hx0) w
 
 /-- The homogeneous weight enumerator of the tetracode is `X^4 + 8XY^3`. -/

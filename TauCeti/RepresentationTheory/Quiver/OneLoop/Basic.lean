@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Quiver.Basic
+public import Mathlib.Combinatorics.Quiver.Path
 public import Mathlib.Data.Fintype.Basic
 
 /-!
@@ -17,21 +17,15 @@ algebra is the infinite-dimensional `k[X]`
 (`TauCeti.RepresentationTheory.Quiver.OneLoop.PathAlgebra`), and it has infinite representation
 type over every field (`TauCeti.RepresentationTheory.Quiver.OneLoop.FiniteRepType`).
 
-This file carries only the vertex and arrow data, so that both of those developments can rest on
-it without one depending on the other.
+This file defines the vertex and arrow data and classifies paths by their length, independently
+of the algebra and representation theory.
 
 ## Main definitions
 
 * `TauCeti.Quiver.OneLoop`: the vertex type, a singleton, with a `Quiver` instance whose only
   arrow type is `PUnit`.
 * `TauCeti.Quiver.OneLoop.loop`: the unique arrow, from the vertex to itself.
-
-## References
-
-This file supplies the vertex and arrow data of the loop-quiver worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, alongside the generalized
-Kronecker quiver of `TauCeti.RepresentationTheory.Quiver.Kronecker.Basic` and the `D₄` quiver of
-`TauCeti.RepresentationTheory.Quiver.D4.Basic`.
+* `TauCeti.Quiver.OneLoop.totalPathEquivNat`: paths are classified by their length.
 -/
 
 public section
@@ -49,10 +43,6 @@ inductive OneLoop : Type
 
 namespace OneLoop
 
-instance : Fintype OneLoop where
-  elems := {vertex}
-  complete x := by cases x; simp
-
 instance : Unique OneLoop where
   default := vertex
   uniq x := by cases x; rfl
@@ -65,6 +55,39 @@ instance (a b : OneLoop) : Subsingleton (a ⟶ b) :=
 
 /-- The unique loop in the one-loop quiver. -/
 def loop : (vertex : OneLoop) ⟶ vertex := PUnit.unit
+
+private def pathOfLength : ℕ → _root_.Quiver.Path (vertex : OneLoop) vertex
+  | 0 => .nil
+  | n + 1 => (pathOfLength n).cons loop
+
+@[simp]
+private theorem length_pathOfLength (n : ℕ) : (pathOfLength n).length = n := by
+  induction n <;> simp [pathOfLength, *]
+
+/-- Paths in the one-loop quiver are classified by their length. -/
+def totalPathEquivNat : (Σ a b : OneLoop, _root_.Quiver.Path a b) ≃ ℕ where
+  toFun x := x.2.2.length
+  invFun n := ⟨vertex, vertex, pathOfLength n⟩
+  left_inv := by
+    rintro ⟨⟨⟩, b, p⟩
+    induction p with
+    | nil => rfl
+    | @cons b c p e ih =>
+      cases b; cases c
+      obtain rfl := Subsingleton.elim e loop
+      simp_all [pathOfLength]
+  right_inv := length_pathOfLength
+
+/-- The path classification sends each path to its length. -/
+@[simp]
+theorem totalPathEquivNat_apply (x : Σ a b : OneLoop, _root_.Quiver.Path a b) :
+    totalPathEquivNat x = x.2.2.length := (rfl)
+
+/-- The canonical path associated with `n` has length `n`. -/
+@[simp]
+theorem length_totalPathEquivNat_symm (n : ℕ) :
+    (totalPathEquivNat.symm n).2.2.length = n :=
+  totalPathEquivNat.apply_symm_apply n
 
 end OneLoop
 

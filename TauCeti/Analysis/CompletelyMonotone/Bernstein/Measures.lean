@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.CompletelyMonotone.Closure
-public import TauCeti.Analysis.CompletelyMonotone.Integral
+public import TauCeti.Analysis.CompletelyMonotone.Integral.Basic
 -- Non-public: the bundled Laplace kernel and its integrability.
 import TauCeti.Analysis.CompletelyMonotone.Laplace.Kernel
 
@@ -28,7 +28,7 @@ downstream in the Bernstein-theorem file, not here. This file supplies only the 
 infrastructure.
 
 These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean` and
-`CompletelyMonotone/Integral.lean`.
+`CompletelyMonotone/Integral/Basic.lean`.
 
 ## Main declarations
 
@@ -61,8 +61,6 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
   Bernstein-kernel to Laplace-kernel error tends to `0`.
 
 ## References
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem milestone).
 
 * D. Chafaï, *Aspects of the Bernstein theorem* (2013).
 * R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions* (de Gruyter, 2nd ed. 2012), Ch. 1.
@@ -115,7 +113,7 @@ lemma continuousOn_chafaiDensity {n : ℕ} (hf : ContDiffOn ℝ (n : WithTop ℕ
       t ^ (n - 1) * iteratedDerivWithin n f (Ici 0) t :=
     funext (chafaiDensity_of_ne_zero hn f)
   rw [heq]
-  exact (continuousOn_const.mul ((continuousOn_pow _).mono fun _ _ => trivial)).mul
+  exact (continuousOn_const.mul (continuous_pow _).continuousOn).mul
     (hf.continuousOn_iteratedDerivWithin le_rfl (uniqueDiffOn_Ici 0))
 
 /-- The `n`-th Chafaï approximating measure `σ_n` for the Bernstein representation, with density
@@ -192,7 +190,7 @@ private lemma chafaiDensity_succ_succ_sub_succ (f : ℝ → ℝ) (m : ℕ) (t : 
     ring
   rw [hfact]
   have hfact_ne : (m.factorial : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
-  have hsucc_ne : ((m : ℝ) + 1) ≠ 0 := by positivity
+  have _ : ((m : ℝ) + 1) ≠ 0 := by positivity
   have hneg : (-1 : ℝ) ^ (m + 2) = (-1) ^ (m + 1) * (-1) := pow_succ (-1) (m + 1)
   rw [hneg]
   field_simp
@@ -531,7 +529,8 @@ private lemma chafaiDensity_ibp_identity (f : ℝ → ℝ) {m : ℕ}
   have hF_deriv : ∀ t ∈ Ioo 0 T, HasDerivAt F
       (chafaiDensity f (m + 2) t - chafaiDensity f (m + 1) t) t := fun t ht => by
     have hg : HasDerivAt g (iteratedDerivWithin (m + 2) f (Ici 0) t) t :=
-      ContDiffOn.hasDerivAt_iteratedDerivWithin hf (uniqueDiffOn_Ici 0) (Ici_mem_nhds ht.1)
+      hf.hasDerivAt_iteratedDerivWithin (mod_cast (m + 1).lt_succ_self)
+        (Ici_mem_nhds ht.1)
     exact (chafaiDensity_succ_succ_sub_succ f m t).symm ▸
       (hasDerivAt_pow (m + 1) t).mul (hg.const_mul _)
   -- Both density branches are interval-integrable, so the difference is too.
@@ -725,7 +724,7 @@ lemma chafaiRescaled_lintegral_coe_le (f : ℝ → ℝ) (hcm : IsCompletelyMonot
       ∫⁻ p : ℝ≥0, ENNReal.ofReal (p : ℝ) ∂(chafaiRescaled f n) ≤
         ENNReal.ofReal (-derivWithin f (Ici 0) 0) := by
   intro n
-  have hderiv_nonneg : 0 ≤ -derivWithin f (Ici 0) 0 := by
+  have _ : 0 ≤ -derivWithin f (Ici 0) 0 := by
     linarith [hcm.derivWithin_nonpos le_rfl]
   rcases lt_or_ge n 2 with hn | hn
   · interval_cases n
@@ -776,7 +775,7 @@ private lemma chafai_kernel_density_eq (f : ℝ → ℝ) (n : ℕ) (hn : 2 ≤ n
     ∫ t in Ioi x, (-1 : ℝ) ^ n / ↑(n - 1).factorial *
       (t - x) ^ (n - 1) * iteratedDerivWithin n f (Ici 0) t := by
   have hn0 : n ≠ 0 := by omega
-  have hn1 : ¬ n ≤ 1 := by omega
+  have _ : ¬ n ≤ 1 := by omega
   have hsubset : Ioi x ⊆ Ioi 0 := Ioi_subset_Ioi hx
   have hvanish : ∀ t ∈ Ioi 0 \ Ioi x,
       bernsteinKernel n x (((n : ℝ) - 1) / t) * chafaiDensity f n t = 0 := by
@@ -860,7 +859,7 @@ private lemma ibp_finite_interval (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
     hu_cont hg_cont hu_deriv hg_deriv hu'_int hg'_int
   have hu0 : u x = 0 := by simp [u, sub_self, zero_pow hk]
   rw [hu0, zero_mul, sub_zero] at hibp
-  have h1 : ∫ t in x..T, (-1 : ℝ) ^ (k + 1) / ↑k.factorial * (t - x) ^ k *
+  have _ : ∫ t in x..T, (-1 : ℝ) ^ (k + 1) / ↑k.factorial * (t - x) ^ k *
         iteratedDerivWithin (k + 1) f (Ici 0) t =
       ∫ t in x..T, u t * g' t :=
     intervalIntegral.integral_congr_ae (ae_of_all _ fun t _ => by ring)
@@ -1269,7 +1268,7 @@ private lemma exp_neg_mul_sub_one_sub_pow_le (u : ℝ) (hu_nn : 0 ≤ u) (hu_lt_
     have hu_sq : u ^ (1 + 1) = u ^ 2 := by ring
     rw [abs_of_nonneg hu_nn, hu_sq] at hlog
     linarith [(abs_le.mp hlog).1]
-  set b := ↑m * u ^ 2 / (1 - u) with hb_def
+  set b := ↑m * u ^ 2 / (1 - u) with _hb_def
   have hb_nn : 0 ≤ b := div_nonneg (mul_nonneg (Nat.cast_nonneg m) (sq_nonneg u)) h1u.le
   have hmu_nn : 0 ≤ ↑m * u := mul_nonneg (Nat.cast_nonneg m) hu_nn
   -- `exp` sits above its tangent line at `0`, so the exponential gap is at most `b`.
@@ -1368,7 +1367,8 @@ private lemma kernel_uniform_conv (x : ℝ) (hx : 0 < x) (ε : ℝ) (hε : 0 < �
     linarith [bernsteinKernel_nonneg n x p]
 
 /-- Bernstein-to-Laplace replacement against a uniformly finite sequence of measures. -/
-lemma integral_bernsteinKernel_sub_laplaceKernel_tendsto_zero_of_mass_bound (σ : ℕ → Measure ℝ≥0)
+lemma integral_bernsteinKernel_sub_laplaceKernel_tendsto_zero_of_mass_bound
+    {C : ℝ} (σ : ℕ → Measure ℝ≥0)
     (hmass : ∀ᶠ n in atTop, (σ n) univ ≤ ENNReal.ofReal C) (x : ℝ) (hx : 0 ≤ x) :
     Tendsto (fun n => ∫ p : ℝ≥0,
         (bernsteinKernel n x (p : ℝ) - Real.exp (-(x * (p : ℝ)))) ∂(σ n))

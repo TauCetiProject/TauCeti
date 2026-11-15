@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Algebra.Group.Shrink
 import Mathlib.Topology.Maps.Proper.Basic
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Descent
 
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.Lift
@@ -21,6 +23,31 @@ A minimal relation (`Subgroup.exists_minimal_isClosed_le`) therefore supplies co
 finite-level solutions. The existing inverse-limit assembly gives
 `isProjective_of_hasPGroupSolutions`, without finite generation of `G`. Compactness is applied to
 fibers in `A`; the sets of level solutions need not be finite.
+
+Conversely, a projective pro-`p` group solves every finite embedding problem with `p`-group kernel
+(`hasPGroupSolutions_of_isProjective`): its finite quotients are `p`-groups, so such a problem is a
+lifting problem against a surjection of finite `p`-groups. For a pro-`p` group the two conditions
+are therefore equivalent (`isProjective_iff_hasPGroupSolutions`), and projectivity does not depend
+on the universes of the groups it quantifies over.
+
+## Main definitions
+
+* `TauCeti.IsProjective`: every continuous homomorphism into a quotient of a profinite pro-`p`
+  group lifts continuously.
+
+## Main results
+
+* `TauCeti.isProjective_of_hasPGroupSolutions`: solving the finite embedding problems with
+  `p`-group kernel gives projectivity.
+* `TauCeti.hasPGroupSolutions_of_isProjective`: a projective pro-`p` group solves the finite
+  embedding problems with `p`-group kernel.
+* `TauCeti.isProjective_iff_hasPGroupSolutions`: for a pro-`p` group, projectivity is equivalent
+  to solving the finite embedding problems with `p`-group kernel.
+
+## References
+
+* J.-P. Serre, *Galois Cohomology*, Chapter I, §3.4 and §5.9.
+* L. Ribes and P. Zalesskii, *Profinite Groups*, Section 7.6.
 -/
 
 public section
@@ -42,6 +69,18 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 variable {A : Type v} [Group A] [TopologicalSpace A] [IsTopologicalGroup A]
   [CompactSpace A]
 
+omit [IsTopologicalGroup G] [IsTopologicalGroup A] in
+/-- **The projection of a closed surjective relation is a quotient map.** If `A` is compact, a
+closed subgroup `H` of `A × G` whose projection to `G` is surjective has a quotient-map projection
+`H → G`: it is the restriction to `H` of the closed map `A × G → G`. -/
+private theorem isQuotientMap_snd_subtype (H : Subgroup (A × G))
+    (hclosed : IsClosed (H : Set (A × G))) (hsurj : ∀ g : G, ∃ a : A, (a, g) ∈ H) :
+    Topology.IsQuotientMap ((MonoidHom.snd A G).comp H.subtype) :=
+  (isClosedMap_snd_of_compactSpace.comp hclosed.isClosedMap_subtype_val).isQuotientMap
+    (continuous_snd.comp continuous_subtype_val) fun g ↦ by
+      obtain ⟨a, ha⟩ := hsurj g
+      exact ⟨⟨(a, g), ha⟩, rfl⟩
+
 /-- A surjective closed relation admits a continuous selection in each finite quotient. -/
 private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutions p G)
     (hA : IsProP p A) (H : Subgroup (A × G)) (hclosed : IsClosed (H : Set (A × G)))
@@ -49,19 +88,13 @@ private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutio
     ∃ δ : G →ₜ* A ⧸ U.toSubgroup,
       ∀ g : G, ∃ a : A, (a, g) ∈ H ∧ QuotientGroup.mk' U.toSubgroup a = δ g := by
   classical
-  -- Stage 1: the projection `s : H → G` is surjective and, as `A` is compact, a closed map,
-  -- hence a quotient map.
+  -- Stage 1: the projection `s : H → G` is a quotient map (`isQuotientMap_snd_subtype`).
   let s : H →* G := (MonoidHom.snd A G).comp H.subtype
   have hs_apply (x : H) : s x = (x : A × G).2 := by
     simp only [s, MonoidHom.comp_apply, Subgroup.coe_subtype, MonoidHom.coe_snd]
-  have hs : Function.Surjective s := by
-    intro g
-    obtain ⟨a, ha⟩ := hsurj g
-    exact ⟨⟨(a, g), ha⟩, hs_apply _⟩
-  have hscont : Continuous s := continuous_snd.comp continuous_subtype_val
-  have hsquot : Topology.IsQuotientMap s :=
-    (isClosedMap_snd_of_compactSpace.comp hclosed.isClosedMap_subtype_val).isQuotientMap
-      hscont hs
+  have hsquot : Topology.IsQuotientMap s := isQuotientMap_snd_subtype H hclosed hsurj
+  have hs : Function.Surjective s := hsquot.surjective
+  have hscont : Continuous s := hsquot.continuous
   -- Stage 2: reduce the first coordinate modulo `U`, giving `t : H → A ⧸ U` with range
   -- `t.range`, and quotient `t.range` further by the image `K` of `ker s`; the composite
   -- `π : H → t.range ⧸ K` is continuous into a finite discrete group.
@@ -77,28 +110,23 @@ private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutio
     exact (QuotientGroup.eq_one_iff (τ h)).mpr (Subgroup.mem_map.mpr ⟨h, hh, rfl⟩)
   -- Stage 3: `π` kills `ker s`, so it descends along the quotient map `s` to a continuous
   -- `β : G → t.range ⧸ K`.
-  let β := s.liftOfSurjective hs ⟨π, hle⟩
-  have hβ (h : H) : β (s h) = π h := by
-    simp only [β, MonoidHom.liftOfSurjective, MonoidHom.liftOfRightInverse_comp_apply]
   have hπcont : Continuous π :=
     QuotientGroup.continuous_mk.comp
       ((QuotientGroup.continuous_mk.comp
         (continuous_fst.comp continuous_subtype_val)).subtype_mk _)
-  have hβcont : Continuous β := hsquot.continuous_iff.mpr <| by
-    have heq : (β : G → _) ∘ s = π := funext hβ
-    rw [heq]
-    exact hπcont
+  let β := ContinuousMonoidHom.liftOfIsQuotientMap ⟨s, hscont⟩ hsquot ⟨π, hπcont⟩ hle
+  have hβ (h : H) : β (s h) = π h :=
+    ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply ⟨s, hscont⟩ hsquot ⟨π, hπcont⟩ hle h
   -- Stage 4: `K` is a `p`-group inside the `p`-group `A ⧸ U`, so `HasPGroupSolutions` lifts `β`
   -- through `t.range ↠ t.range ⧸ K` to `γ : G → t.range`; `δ` is `γ` followed by the inclusion.
   obtain ⟨γ, hγ, hγβ⟩ := hG.exists_comp_eq (QuotientGroup.mk' K)
     (QuotientGroup.mk'_surjective K)
-    (((isProP_iff.mp hA U).to_subgroup t.range).to_subgroup _) β
-    ((MonoidHom.continuous_iff_isOpen_ker _).mp hβcont)
+    (((isProP_iff.mp hA U).to_subgroup t.range).to_subgroup _) β.toMonoidHom
+    ((MonoidHom.continuous_iff_isOpen_ker _).mp β.continuous)
   let δ : G →ₜ* A ⧸ U.toSubgroup :=
     ⟨t.range.subtype.comp γ,
       continuous_subtype_val.comp (γ.continuous_iff_isOpen_ker.mpr hγ)⟩
-  refine ⟨δ, ?_⟩
-  intro g
+  refine ⟨δ, fun g ↦ ?_⟩
   -- Stage 5: over `g`, pick `h ∈ H` with `s h = g`; then `τ h` and `γ g` agree modulo
   -- `K = τ (ker s)`, so correcting `h` by an element of `ker s` gives a point of `H` over `g`
   -- whose first coordinate reduces to `δ g`.
@@ -192,5 +220,55 @@ theorem IsProjective.of_equiv {p : ℕ} (hG : IsProjective.{u, v, w} p G) {H : T
   obtain ⟨φ, hφ⟩ := hG A B hA α hα (f.comp (e : G →ₜ* H))
   refine ⟨φ.comp (e.symm : H →ₜ* G), ContinuousMonoidHom.ext fun h ↦ ?_⟩
   simpa using DFunLike.congr_fun hφ (e.symm h)
+
+/-! ### The converse for pro-`p` groups -/
+
+/-- **A projective pro-`p` group solves every finite embedding problem with `p`-group kernel.**
+The universes `v` and `w` in which `G` is assumed projective are arbitrary.
+
+The pro-`p` hypothesis cannot be dropped. `G = PSL₂(𝔽₅)` is perfect, so every continuous
+homomorphism from it to a pro-`2` group is trivial and `G` is projective at `p = 2`; but the
+problem given by `SL₂(𝔽₅) ↠ G`, with kernel of order `2` and `π = id`, has no solution, since
+`-1` is the only involution of `SL₂(𝔽₅)` while `G` has involutions. -/
+theorem hasPGroupSolutions_of_isProjective {p : ℕ} (hGp : IsProP p G)
+    (hG : IsProjective.{u, v, w} p G) : HasPGroupSolutions p G := by
+  refine hasPGroupSolutions_iff.mpr fun P hP ↦ ?_
+  -- `E` is a finite `p`-group, so the problem is a lifting problem against `α`.
+  have hE : IsPGroup p P.E := P.isPGroup_E hGp hP
+  let _ : TopologicalSpace P.Q := ⊥
+  have : DiscreteTopology P.Q := ⟨rfl⟩
+  have hπ : Continuous P.π := P.π.continuous_iff_isOpen_ker.mpr P.isOpen_ker_π
+  -- Move `E` and `Q` into the universes `v` and `w`, with the discrete topology, and lift `π`
+  -- against `α` there.
+  let eE : Shrink.{v} P.E ≃* P.E := Shrink.mulEquiv
+  let eQ : Shrink.{w} P.Q ≃* P.Q := Shrink.mulEquiv
+  let _ : TopologicalSpace (Shrink.{v} P.E) := ⊥
+  have : DiscreteTopology (Shrink.{v} P.E) := ⟨rfl⟩
+  have : Finite (Shrink.{v} P.E) := Finite.of_equiv P.E eE.symm.toEquiv
+  let _ : TopologicalSpace (Shrink.{w} P.Q) := ⊥
+  have : DiscreteTopology (Shrink.{w} P.Q) := ⟨rfl⟩
+  let α : Shrink.{v} P.E →ₜ* Shrink.{w} P.Q :=
+    ⟨eQ.symm.toMonoidHom.comp (P.α.comp eE.toMonoidHom), continuous_of_discreteTopology⟩
+  let f : G →ₜ* Shrink.{w} P.Q :=
+    ⟨eQ.symm.toMonoidHom.comp P.π, (continuous_of_discreteTopology (f := eQ.symm)).comp hπ⟩
+  obtain ⟨φ, hφ⟩ := hG.exists_continuous_lift (hE.of_equiv eE.symm).isProP α
+    (eQ.symm.surjective.comp (P.α_surjective.comp eE.surjective)) f
+  refine ⟨eE.toMonoidHom.comp φ.toMonoidHom,
+    FiniteEmbeddingProblem.isSolution_iff.mpr ⟨?_, ?_⟩⟩
+  · rw [MonoidHom.ker_comp_of_injective _ _ eE.injective]
+    exact (MonoidHom.continuous_iff_isOpen_ker _).mp φ.continuous
+  · ext g
+    have h := DFunLike.congr_fun hφ g
+    simp only [α, f, ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.coe_mk,
+      MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom] at h
+    exact eQ.symm.injective h
+
+/-- **Projectivity of a pro-`p` group is solvability of its finite `p`-embedding problems.** A
+pro-`p` group is projective exactly when it solves every finite embedding problem with `p`-group
+kernel. Since the right-hand side does not mention the universes `v` and `w`, neither does
+projectivity of a pro-`p` group. -/
+theorem isProjective_iff_hasPGroupSolutions {p : ℕ} (hGp : IsProP p G) :
+    IsProjective.{u, v, w} p G ↔ HasPGroupSolutions p G :=
+  ⟨hasPGroupSolutions_of_isProjective hGp, isProjective_of_hasPGroupSolutions⟩
 
 end TauCeti

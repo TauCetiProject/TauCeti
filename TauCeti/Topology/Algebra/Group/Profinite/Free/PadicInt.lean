@@ -123,12 +123,6 @@ end freeProP
 
 variable (p : ℕ) [Fact p.Prime] {X : Type} [Unique X]
 
-/-- The free pro-`p` group on one generator is topologically finitely generated. -/
-theorem isTopologicallyFinitelyGenerated_freeProP_of_unique :
-    IsTopologicallyFinitelyGenerated (freeProP p X) :=
-  (isTopologicallyFinitelyGenerated_congr (freeProP.equivPadicInt p X)).mpr
-    (isTopologicallyFinitelyGenerated_multiplicative_padicInt p)
-
 /-- The free pro-`p` group on one generator has topological generator rank one. -/
 -- Not `@[simp]`: the general `@[simp]` lemma `topologicalGeneratorRank_freeProP` (for finite `X`)
 -- together with `Cardinal.mk_fintype` and `Fintype.card_unique` already normalises this left-hand

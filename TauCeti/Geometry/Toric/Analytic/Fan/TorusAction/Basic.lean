@@ -36,7 +36,7 @@ variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
 
 /-- The affine chart of a fan inherits the coordinate-free torus action on its complex points. -/
 noncomputable instance analyticAffineChartMulAction (σ : Φ.cones) :
-    MulAction (ComplexTorus N) ((Φ.analyticAffineChartDiagram hΦ).obj σ) := by
+    MulAction (ComplexTorus N) ((Φ.analyticAffineChartDiagram).obj σ) := by
   -- The chart's carrier is definitionally the complex-point type of the dual semigroup.
   change MulAction (ComplexTorus N)
     (AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1))
@@ -46,9 +46,9 @@ noncomputable instance analyticAffineChartMulAction (σ : Φ.cones) :
 coordinate-free complex torus. -/
 -- `analyticAffineChartDiagram_map` simplifies the left side, so this is an explicit rewrite rule.
 theorem analyticAffineChartDiagram_map_smul {τ σ : Φ.cones} (f : τ ⟶ σ)
-    (t : ComplexTorus N) (x : (Φ.analyticAffineChartDiagram hΦ).obj τ) :
-    (Φ.analyticAffineChartDiagram hΦ).map f (t • x) =
-      t • (Φ.analyticAffineChartDiagram hΦ).map f x := by
+    (t : ComplexTorus N) (x : (Φ.analyticAffineChartDiagram).obj τ) :
+    (Φ.analyticAffineChartDiagram).map f (t • x) =
+      t • (Φ.analyticAffineChartDiagram).map f x := by
   -- Use the public map equations because the face-map definitions are not exposed.
   rw [analyticAffineChartDiagram_map_apply, analyticAffineChartDiagram_map_apply,
     ← faceAffinePointMap_def Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f))]
@@ -57,8 +57,8 @@ theorem analyticAffineChartDiagram_map_smul {τ σ : Φ.cones} (f : τ ⟶ σ)
 
 /-- Equal representatives in two affine charts remain equal after torus translation. -/
 private theorem analyticAffineChartι_smul_eq_of_eq {σ τ : Φ.cones}
-    (x : (Φ.analyticAffineChartDiagram hΦ).obj σ)
-    (y : (Φ.analyticAffineChartDiagram hΦ).obj τ) (t : ComplexTorus N)
+    (x : (Φ.analyticAffineChartDiagram).obj σ)
+    (y : (Φ.analyticAffineChartDiagram).obj τ) (t : ComplexTorus N)
     (h : Φ.analyticAffineChartι hΦ σ x = Φ.analyticAffineChartι hΦ τ y) :
     Φ.analyticAffineChartι hΦ σ (t • x) = Φ.analyticAffineChartι hΦ τ (t • y) := by
   obtain ⟨z, hzσ, hzτ⟩ :=
@@ -80,7 +80,7 @@ noncomputable instance : SMul (ComplexTorus N) (Φ.analyticRealization hΦ) wher
 /-- The global action agrees with the affine action in every chart. -/
 @[simp]
 theorem smul_analyticAffineChartι (t : ComplexTorus N) (σ : Φ.cones)
-    (x : (Φ.analyticAffineChartDiagram hΦ).obj σ) :
+    (x : (Φ.analyticAffineChartDiagram).obj σ) :
     t • Φ.analyticAffineChartι hΦ σ x =
       Φ.analyticAffineChartι hΦ σ (t • x) := by
   let e := Φ.exists_analyticAffineChartι_apply_eq hΦ (Φ.analyticAffineChartι hΦ σ x)
@@ -101,9 +101,8 @@ noncomputable instance : MulAction (ComplexTorus N) (Φ.analyticRealization hΦ)
 
 /-- The coordinate-free torus acts jointly continuously on each analytic affine chart. -/
 instance (σ : Φ.cones) :
-    ContinuousSMul (ComplexTorus N) ((Φ.analyticAffineChartDiagram hΦ).obj σ) := by
-  let hreg := (isRegular_iff.mp hΦ) σ.1 σ.2
-  let g := Φ.analyticChartGenerators σ hreg
+    ContinuousSMul (ComplexTorus N) ((Φ.analyticAffineChartDiagram).obj σ) := by
+  let g := Φ.analyticChartGenerators σ
   -- The chart topology is definitionally its chosen monomial-embedding topology.
   change letI := affinePointTopology g.2
     ContinuousSMul (ComplexTorus N)
@@ -113,7 +112,7 @@ instance (σ : Φ.cones) :
 /-- The analytic realization carries the continuous action of its complex torus. -/
 instance : ContinuousSMul (ComplexTorus N) (Φ.analyticRealization hΦ) := by
   refine ⟨?_⟩
-  let q : (Σ σ, (Φ.analyticAffineChartDiagram hΦ).obj σ) → Φ.analyticRealization hΦ :=
+  let q : (Σ σ, (Φ.analyticAffineChartDiagram).obj σ) → Φ.analyticRealization hΦ :=
     fun x ↦ (Φ.analyticGlueData hΦ).ι x.1 x.2
   have hq : IsOpenQuotientMap q := (Φ.analyticGlueData hΦ).isOpenQuotientMap_sigma_ι
   have hId : IsOpenQuotientMap (id : ComplexTorus N → ComplexTorus N) :=
@@ -129,11 +128,11 @@ instance : ContinuousSMul (ComplexTorus N) (Φ.analyticRealization hΦ) := by
     ← analyticAffineChartι_def]
   simp only [Prod.swap]
   -- The chart inclusion is definitionally the underlying map of its `TopCat` morphism.
-  change Continuous (fun a : ((Φ.analyticAffineChartDiagram hΦ).obj σ) ×
+  change Continuous (fun a : ((Φ.analyticAffineChartDiagram).obj σ) ×
     ComplexTorus N ↦ a.2 • Φ.analyticAffineChartι hΦ σ a.1)
   simp only [smul_analyticAffineChartι]
   have hmul := (continuous_smul (M := ComplexTorus N)
-    (X := (Φ.analyticAffineChartDiagram hΦ).obj σ)).comp
+    (X := (Φ.analyticAffineChartDiagram).obj σ)).comp
       (Homeomorph.prodComm _ _).continuous
   exact (Φ.analyticAffineChartι hΦ σ).hom.continuous_toFun.comp hmul
 

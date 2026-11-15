@@ -55,15 +55,21 @@ itself becomes the **twisted regular representation**, which realizes every fact
   action rather than of the lift.
 * `TauCeti.IsProjectiveRep.toMonoidHom` and `TauCeti.IsProjectiveRep.of_monoidHom`: the projective
   representations with trivial factor set are exactly the linear representations.
+* `TauCeti.IsProjectiveRep.tensorProduct`: the tensor product of two projective representations is
+  projective with the product factor set.
+* `TauCeti.IsProjectiveRep.comp`: a projective representation inflates along a homomorphism, with
+  the pulled-back factor set.
 * `TauCeti.exists_isProjectiveRep`: every normalized factor set is the factor set of a projective
   representation.
 
-## References
+## Implementation notes
 
-This builds the projective-representation half of Layer 7 of the
-[induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/RepresentationTheory/InductionRestriction/README.md),
-whose `IsProjectiveRep` is the notion defined here. That roadmap spells the factor set uncurried;
-it is curried here to match `TauCeti.IsFactorSet` and the twisted monoid algebra that consume it.
+Factor sets use the curried form `α : G → G → kˣ`: `α g h` is the scalar attached to the ordered
+pair `(g, h)`. This is the convention of `TauCeti.IsFactorSet` and `TauCeti.twistedMonoidAlgebra`,
+whose basis elements multiply as `e g * e h = (α g h : k) • e (g * h)`. Thus the twisted algebra
+and the lift use the same left-action convention.
+
+## References
 
 * G. Karpilovsky, *Projective Representations of Finite Groups*, Marcel Dekker (1985), Ch. 1 and 3.
 * I. M. Isaacs, *Character Theory of Finite Groups*, AMS Chelsea (1976), Ch. 11.
@@ -131,8 +137,7 @@ theorem rescale (h : IsProjectiveRep ρ α) (c : G → kˣ) (hc : c 1 = 1) :
     { cocycle g₁ g₂ g₃ := by
         rw [← mul_assoc g₁ g₂ g₃]
         exact rescale_cocycle_aux (h.isFactorSet.cocycle g₁ g₂ g₃)
-      one_left g := by simp [hc, h.isFactorSet.one_left]
-      one_right g := by simp [hc, h.isFactorSet.one_right] }
+      one_left g := by simp [hc, h.isFactorSet.one_left] }
   map_one := by
     refine LinearEquiv.ext fun x ↦ ?_
     rw [LinearEquiv.trans_apply, LinearEquiv.smulOfUnit_apply, h.map_one, hc]
@@ -164,6 +169,42 @@ itself. -/
 @[simp]
 theorem coe_toMonoidHom (h : IsProjectiveRep ρ (1 : G → G → kˣ)) : ⇑h.toMonoidHom = ρ :=
   (rfl)
+
+/-- **The tensor product of two projective representations** is a projective representation whose
+factor set is the product of the two factor sets. In particular a projective representation
+tensored with one carrying the inverse factor set is a linear representation. -/
+theorem tensorProduct {V' : Type*} [AddCommMonoid V'] [Module k V'] {ρ' : G → V' ≃ₗ[k] V'}
+    {α' : G → G → kˣ} (h : IsProjectiveRep ρ α) (h' : IsProjectiveRep ρ' α') :
+    IsProjectiveRep (fun g ↦ TensorProduct.congr (ρ g) (ρ' g)) (α * α') where
+  isFactorSet := have := h.isFactorSet; have := h'.isFactorSet; inferInstance
+  map_one := by
+    rw [h.map_one, h'.map_one, LinearEquiv.one_eq_refl, LinearEquiv.one_eq_refl,
+      TensorProduct.congr_refl_refl, LinearEquiv.one_eq_refl]
+  mul_apply g₁ g₂ x := by
+    have hc (g : G) (y : TensorProduct k V V') : TensorProduct.congr (ρ g) (ρ' g) y
+        = TensorProduct.map (ρ g : V →ₗ[k] V) (ρ' g : V' →ₗ[k] V') y :=
+      congr($(TensorProduct.toLinearMap_congr (ρ g) (ρ' g)) y)
+    calc TensorProduct.congr (ρ g₁) (ρ' g₁) (TensorProduct.congr (ρ g₂) (ρ' g₂) x)
+        = TensorProduct.map ((ρ g₁ : V →ₗ[k] V) * (ρ g₂ : V →ₗ[k] V))
+            ((ρ' g₁ : V' →ₗ[k] V') * (ρ' g₂ : V' →ₗ[k] V')) x := by
+          rw [← mul_apply_eq_comp, ← TensorProduct.congr_mul, ← LinearEquiv.coe_toLinearMap,
+            TensorProduct.toLinearMap_congr, LinearEquiv.coe_toLinearMap_mul,
+            LinearEquiv.coe_toLinearMap_mul]
+      _ = TensorProduct.map ((α g₁ g₂ : k) • (ρ (g₁ * g₂) : V →ₗ[k] V))
+            ((α' g₁ g₂ : k) • (ρ' (g₁ * g₂) : V' →ₗ[k] V')) x := by
+          rw [h.toLinearMap_mul, h'.toLinearMap_mul]
+      _ = ((α * α') g₁ g₂ : k) • TensorProduct.congr (ρ (g₁ * g₂)) (ρ' (g₁ * g₂)) x := by
+          rw [TensorProduct.map_smul_left, TensorProduct.map_smul_right, smul_smul, hc,
+            Pi.mul_apply, Pi.mul_apply, Units.val_mul, mul_comm, LinearMap.smul_apply]
+
+/-- **Inflation of a projective representation.** Pulling a projective representation of `G`
+back along a homomorphism `f : H →* G` gives a projective representation of `H` whose factor set
+is the pullback of the factor set. -/
+theorem comp {H : Type*} [Monoid H] (h : IsProjectiveRep ρ α) (f : H →* G) :
+    IsProjectiveRep (fun g ↦ ρ (f g)) fun g₁ g₂ ↦ α (f g₁) (f g₂) where
+  isFactorSet := have := h.isFactorSet; IsFactorSet.comp f α
+  map_one := (congrArg ρ f.map_one).trans h.map_one
+  mul_apply g₁ g₂ x := by rw [h.mul_apply, map_mul]
 
 end IsProjectiveRep
 
@@ -211,12 +252,6 @@ theorem of_map_one_mul_apply (h₁ : ρ 1 = 1)
         obtain ⟨y, rfl⟩ := (ρ g).surjective x
         have hy := h₂ 1 g y
         rw [h₁, one_mul] at hy
-        simpa [Units.smul_def] using hy.symm
-      one_right g := by
-        refine FaithfulSMul.eq_of_smul_eq_smul fun x : V ↦ ?_
-        obtain ⟨y, rfl⟩ := (ρ g).surjective x
-        have hy := h₂ g 1 y
-        rw [h₁, mul_one] at hy
         simpa [Units.smul_def] using hy.symm }
   map_one := h₁
   mul_apply := h₂

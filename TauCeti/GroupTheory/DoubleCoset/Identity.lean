@@ -24,11 +24,13 @@ outside `H`.
 
 * `TauCeti.doubleCosetMk_eq_mk_iff_mem`: the double cosets of `s` and `a` agree exactly when
   `s ∈ H a K`.
-* `TauCeti.doubleCoset_one_eq_mul` and `TauCeti.doubleCoset_one_self`: the identity double coset is
-  `H * K`, which for `K = H` is `H`.
+* `TauCeti.doubleCoset_one_eq_mul` and `TauCeti.doubleCoset_one_self`: the double coset of `1`
+  with respect to sets `s` and `t` is `s * t`, which for a submonoid `s = t = H` is `H`.
 * `TauCeti.doubleCosetMk_eq_mk_one_iff`: the double coset of `s` is the identity one exactly when
   `s ∈ H * K`.
 * `TauCeti.doubleCosetMk_eq_mk_one_iff_mem`: for `K = H`, that condition is `s ∈ H`.
+* `TauCeti.subsingleton_doubleCosetQuotient_iff`: the identity double coset is the only one
+  exactly when `H * K` is the whole group.
 -/
 
 public section
@@ -48,17 +50,19 @@ theorem doubleCosetMk_eq_mk_iff_mem (H K : Subgroup G) (a s : G) :
   rw [eq_comm, DoubleCoset.eq, DoubleCoset.mem_doubleCoset]
   simp
 
-/-- **The identity double coset is the set `H * K`**: multiplying `1` by `H` on the left and `K` on
-the right leaves the product of the two subgroups. -/
-theorem doubleCoset_one_eq_mul (H K : Subgroup G) :
-    DoubleCoset.doubleCoset (1 : G) (H : Set G) (K : Set G) = (H : Set G) * K := by
+/-- **The identity double coset is the set `s * t`**: multiplying `1` by `s` on the left and `t` on
+the right leaves the pointwise product of the two sets. -/
+theorem doubleCoset_one_eq_mul {α : Type*} [MulOneClass α] (s t : Set α) :
+    DoubleCoset.doubleCoset (1 : α) s t = s * t := by
   simp [DoubleCoset.doubleCoset]
 
-/-- **The identity double coset of `H \ G / H` is `H` itself.**  This is
-`TauCeti.doubleCoset_one_eq_mul` for `K = H`, where the set `H * H` is `H`. -/
+/-- **The identity double coset of a submonoid `H` with itself is `H`.**  This is
+`TauCeti.doubleCoset_one_eq_mul` for `s = t = H`, where the set `H * H` is `H`; in particular, the
+identity double coset of `H \ G / H` is `H` for a subgroup `H`. -/
 @[simp]
-theorem doubleCoset_one_self (H : Subgroup G) :
-    DoubleCoset.doubleCoset (1 : G) (H : Set G) (H : Set G) = (H : Set G) := by
+theorem doubleCoset_one_self {M S : Type*} [Monoid M] [SetLike S M] [SubmonoidClass S M]
+    (H : S) :
+    DoubleCoset.doubleCoset (1 : M) (H : Set M) (H : Set M) = (H : Set M) := by
   rw [doubleCoset_one_eq_mul, coe_mul_coe]
 
 /-- **A double coset is the identity one exactly when its representative lies in `H * K`**:
@@ -73,5 +77,20 @@ theorem doubleCosetMk_eq_mk_one_iff (H K : Subgroup G) (s : G) :
 theorem doubleCosetMk_eq_mk_one_iff_mem (H : Subgroup G) (s : G) :
     DoubleCoset.mk H H s = DoubleCoset.mk H H 1 ↔ s ∈ H := by
   rw [doubleCosetMk_eq_mk_one_iff, coe_mul_coe, SetLike.mem_coe]
+
+/-- The chosen representative of the identity double coset of `H` lies in `H`. -/
+theorem _root_.Subgroup.doubleCoset_out_mk_one_mem (H : Subgroup G) :
+    (DoubleCoset.mk H H 1).out ∈ H :=
+  (doubleCosetMk_eq_mk_one_iff_mem H _).mp (DoubleCoset.out_eq' _)
+
+/-- **There is a single double coset exactly when `H * K` is the whole group**: `H \ G / K` has
+at most one element if and only if every element of `G` is a product of an element of `H` and an
+element of `K`. -/
+theorem subsingleton_doubleCosetQuotient_iff (H K : Subgroup G) :
+    Subsingleton (DoubleCoset.Quotient (H : Set G) (K : Set G)) ↔
+      (H : Set G) * (K : Set G) = Set.univ := by
+  simp_rw [subsingleton_iff_forall_eq (DoubleCoset.mk H K 1), Set.eq_univ_iff_forall,
+    ← doubleCosetMk_eq_mk_one_iff]
+  exact ⟨fun h s ↦ h _, fun h q ↦ DoubleCoset.out_eq' q ▸ h q.out⟩
 
 end TauCeti

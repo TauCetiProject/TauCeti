@@ -15,7 +15,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Bruhat
 public import TauCeti.RepresentationTheory.CharacterTable.GL2.PrincipalSeries.Basic
 -- The Mackey irreducibility criterion `TauCeti.simple_indFDRep_iff`, its predicate
 -- `TauCeti.MackeyDisjoint`, and the Mackey subgroup the predicate is stated on.
-public import TauCeti.RepresentationTheory.Induction.Mackey.Irreducible
+public import TauCeti.RepresentationTheory.Induction.Mackey.Split
 -- `TauCeti.irreducibleCharacters`, the set the off-diagonal principal series are shown to belong
 -- to.
 public import TauCeti.RepresentationTheory.CharacterTable.Table
@@ -26,14 +26,21 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Bruhat
 -- Mackey condition are simple; its passage to `CategoryTheory.Simple` comes with
 -- `TauCeti.RepresentationTheory.CharacterTable.Table` above.
 import TauCeti.RepresentationTheory.Irreducible
+-- Non-public: the naturality of induced characters `TauCeti.character_indFDRep_mulEquiv` and the
+-- determination of a representation by its character `FDRep.nonempty_iso_of_character_eq` compare
+-- the principal series over two isomorphic fields; the field structure, the ring isomorphism and
+-- the finiteness of `Shrink` supply the small model.
+import TauCeti.RepresentationTheory.Induction.Character
+import TauCeti.RepresentationTheory.CharacterTable.Determined
+import Mathlib.Algebra.Field.Shrink
+import Mathlib.Algebra.Ring.Shrink
+import Mathlib.Data.Fintype.Shrink
 
 /-!
 # The principal series of `GL₂(𝔽_q)` is irreducible exactly off the diagonal
 
 The principal series `Ind_B^{GL₂}(α ⊗ β)` of `GL₂(𝔽_q)` is irreducible if and only if the two
-characters `α, β : 𝔽_qˣ → ℂˣ` are distinct. This file proves that, the last of the three
-statements the character-theory roadmap asks of the principal series; the other two, its
-definition and its dimension `q + 1`, are in
+characters `α, β : 𝔽_qˣ → ℂˣ` are distinct. Its definition and its dimension `q + 1` are in
 `TauCeti/RepresentationTheory/CharacterTable/GL2/PrincipalSeries/Basic.lean`.
 
 The proof is the Mackey irreducibility criterion `TauCeti.simple_indFDRep_iff` run against the
@@ -65,32 +72,32 @@ to `(γ, δ) = (α, β)` gives the required criterion `α ≠ β`.
   exactly when their parameter pairs are swapped.
 * `TauCeti.GL2Borel.mackeyDisjoint_weyl_iff`: the single Mackey condition, at the Weyl element,
   holds exactly when `α ≠ β`.
+* `TauCeti.character_GL2PrincipalSeries_mapEquiv` and
+  `TauCeti.nonempty_iso_res_GL2PrincipalSeries_mapEquiv`: a ring isomorphism `e : F ≃+* F'`
+  carries the principal series of `GL₂(F')` to that of `GL₂(F)` with the pulled-back characters.
+* `TauCeti.simple_GL2PrincipalSeries_comp_unitsMap_iff`: irreducibility is invariant under such
+  a transport.
 * `TauCeti.simple_GL2PrincipalSeries_iff`: **the principal series `Ind_B^{GL₂}(α ⊗ β)` is
-  irreducible if and only if `α ≠ β`.**
+  irreducible if and only if `α ≠ β`**, for a finite field in any universe.
 * `TauCeti.character_GL2PrincipalSeries_mem_irreducibleCharacters`: for `α ≠ β`, its character is
   an irreducible character of `GL₂(F)`.
 
 ## Implementation notes
 
-The universe of `F` is pinned to `Type` in the representation-theoretic statements, unlike in
-`TauCeti/RepresentationTheory/CharacterTable/GL2/PrincipalSeries/Basic.lean`, where the principal
-series is defined for `F : Type u`. The Mackey criterion `TauCeti.simple_indFDRep_iff` asks for
-the coefficient field and the group to lie in the *same* universe, and the coefficient field here
-is `ℂ : Type`; pinning `F : Type` is what puts `GL (Fin 2) F` there too. The criterion therefore
-covers finite fields presented by a `Type`-valued representative — every finite field has one, up
-to a ring isomorphism, namely `GaloisField p n` — but it does not apply *directly* to a finite
-field declared in some `Type u` with `u ≠ 0`; such a presentation first has to be transported
-along a ring isomorphism with a small model, or wait for the upstream generalization described
-next. The purely group-theoretic lemmas about the Weyl conjugation keep both an arbitrary universe
-and an arbitrary commutative ring.
+The Mackey criterion `TauCeti.simple_indFDRep_iff` and the predicate `TauCeti.MackeyDisjoint`
+it consumes are both stated for a coefficient field and a group in one universe
+`{k G : Type u}`, and the coefficient field here is `ℂ : Type`. The Mackey argument is therefore
+run only for `F : Type`, where `GL (Fin 2) F` lies in `Type` too. The purely group-theoretic
+lemmas about the Weyl conjugation keep both an arbitrary universe and an arbitrary commutative
+ring.
 
-That pin is not a choice this file could make differently. The predicate
-`TauCeti.MackeyDisjoint` is itself declared for a field and a group in one universe, so the very
-statement of the Mackey condition at `ℂ` and `GL (Fin 2) F` needs `F : Type`; and the criterion
-that consumes it ends at Mathlib's `FDRep.simple_iff_end_is_rank_one`, which is stated for
-`{k : Type u} {G : Type u}`. Relaxing the pin therefore means an upstream generalization of that
-Mathlib lemma, not a change here. `TauCeti/RepresentationTheory/CharacterTable/GL2/Steinberg.lean`
-records the same obstruction for the companion criterion `FDRep.simple_iff_char_is_norm_one`.
+A finite field `F : Type u` is reached from its small model `Shrink.{0} F : Type` along the ring
+isomorphism `Shrink.ringEquiv`. Over a ring isomorphism `e`, the naturality of induced characters
+under the group isomorphism `GL₂(e)` (`TauCeti.character_indFDRep_mulEquiv`) identifies the
+characters of the two principal series; characters determine representations in characteristic zero
+(`FDRep.nonempty_iso_of_character_eq`), and restriction along a group isomorphism is an equivalence
+of categories (`Action.resEquiv`), which preserves and reflects simple objects. Composition with the
+bijection `Units.map e` preserves the condition `α ≠ β`.
 
 Mackey disjointness is unfolded through `TauCeti.mackeyDisjoint_iff_finrank_eq_zero` and Schur's
 lemma rather than by exhibiting intertwiners by hand: both sides of the Mackey condition at `w`
@@ -105,9 +112,6 @@ torus.
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9, "The Borel and the principal series": the target `simple_GL2PrincipalSeries_iff`, whose
-  name is the roadmap's.
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42, §7.3, Proposition 23.
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 5.
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, Lecture 5.2.
@@ -218,7 +222,7 @@ This characterization supplies the Weyl-cell contribution to the principal-serie
 number. -/
 @[simp]
 theorem nonempty_iso_mackey_weyl_iff (α β γ δ : Fˣ →* ℂˣ) :
-    Nonempty (resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
+    Nonempty (Subgroup.resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
           (GL2Borel F)).subgroupOf (GL2Borel F)) (GL2BorelRep F α β) ≅
         (Action.res (FGModuleCat ℂ)
           (mackeyToH (GL2WeylElement F) (GL2Borel F) (GL2Borel F))).obj (GL2BorelRep F γ δ))
@@ -226,7 +230,7 @@ theorem nonempty_iso_mackey_weyl_iff (α β γ δ : Fˣ →* ℂˣ) :
   rw [GL2BorelRep_def, GL2BorelRep_def, GL2Borel.linearRep_def,
     GL2Borel.linearRep_def, ← FDRep.ofLinearCharacter_def,
     ← FDRep.ofLinearCharacter_def]
-  -- `resFDRep` is a reducible abbreviation for this `Action.res`; `rw` does not unfold the
+  -- `Subgroup.resFDRep` is a reducible abbreviation for this `Action.res`; `rw` does not unfold the
   -- abbreviation when searching for `FDRep.actionRes_obj_ofLinearCharacter`.
   change Nonempty
     ((Action.res (FGModuleCat ℂ)
@@ -263,7 +267,7 @@ the Bruhat decomposition this is the whole content of
 theorem mackeyDisjoint_weyl_iff (α β : Fˣ →* ℂˣ) :
     MackeyDisjoint (GL2BorelRep F α β) (GL2WeylElement F) ↔ α ≠ β := by
   classical
-  have hres : Simple (resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
+  have hres : Simple (Subgroup.resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
       (GL2Borel F)).subgroupOf (GL2Borel F)) (GL2BorelRep F α β)) :=
     simple_of_finrank_eq_one _ (finrank_GL2BorelRep F α β)
   have hconj : Simple ((Action.res (FGModuleCat ℂ)
@@ -280,22 +284,16 @@ end CommRing
 
 end GL2Borel
 
-/-! ### The irreducibility criterion -/
+/-! ### The irreducibility criterion over a small field -/
 
 section FiniteField
 
 variable (F : Type) [Field F] [Fintype F]
 
-/-- **The principal series is irreducible exactly off the diagonal.** For a finite field `F` and
-characters `α, β : Fˣ → ℂˣ`, the parabolically induced representation `Ind_B^{GL₂}(α ⊗ β)` of
-`GL₂(F)` is irreducible if and only if `α ≠ β`.
-
-Together with `TauCeti.finrank_GL2PrincipalSeries` this produces the `(q + 1)`-dimensional family
-of the character table of `GL₂(𝔽_q)`; at `α = β` the induced representation is the reducible one
-whose two constituents are the linear character `α ∘ det` and a twist of the Steinberg
-representation. -/
-@[simp]
-theorem simple_GL2PrincipalSeries_iff (α β : Fˣ →* ℂˣ) :
+/-- The irreducibility criterion for a field in `Type`, where the Mackey criterion applies directly
+because `GL (Fin 2) F` and `ℂ` lie in one universe. `TauCeti.simple_GL2PrincipalSeries_iff`
+transports it to a finite field in an arbitrary universe. -/
+private theorem simple_GL2PrincipalSeries_iff_of_type (α β : Fˣ →* ℂˣ) :
     Simple (GL2PrincipalSeries F α β) ↔ α ≠ β := by
   rw [GL2PrincipalSeries_def, simple_indFDRep_iff (GL2BorelRep F α β)]
   constructor
@@ -309,6 +307,87 @@ theorem simple_GL2PrincipalSeries_iff (α β : Fˣ →* ℂˣ) :
       DoubleCoset.mem_doubleCoset.mp (GL2Borel.mem_doubleCoset_weyl_of_notMem hs)
     exact (mackeyDisjoint_mul_left_mul_right_iff _ hb₁ hb₂ _).mpr
       ((GL2Borel.mackeyDisjoint_weyl_iff α β).mpr hne)
+
+end FiniteField
+
+/-! ### Transport along a ring isomorphism -/
+
+section RingEquiv
+
+variable {F : Type u} {F' : Type v} [Field F] [Fintype F] [Field F'] [Fintype F'] (e : F ≃+* F')
+
+/-- **The principal-series character is natural in the field.** For a ring isomorphism
+`e : F ≃+* F'` of finite fields, the character of `Ind_B^{GL₂}(α ⊗ β)` over `F'` at the image of
+`g` under `GL₂(e)` is the character over `F` at `g` of the principal series of the pulled-back
+characters `α ∘ e` and `β ∘ e`. -/
+theorem character_GL2PrincipalSeries_mapEquiv (α β : F'ˣ →* ℂˣ) (g : GL (Fin 2) F) :
+    (GL2PrincipalSeries F' α β).character (GeneralLinearGroup.mapEquiv (Fin 2) e g) =
+      (GL2PrincipalSeries F (α.comp (Units.map (e : F →* F')))
+        (β.comp (Units.map (e : F →* F')))).character g := by
+  set φ := GeneralLinearGroup.mapEquiv (Fin 2) e
+  have hmem : ∀ y : GL (Fin 2) F, φ y ∈ GL2Borel F' ↔ y ∈ GL2Borel F := fun y => by
+    simp [φ]
+  -- `GL₂(e)` carries the Borel subgroup onto the Borel subgroup, and the diagonal entries of the
+  -- image are the images under `e` of the diagonal entries.
+  have hdiag : ∀ y : GL2Borel F, GL2Borel.diag ⟨φ y, (hmem y).2 y.2⟩ =
+      (Units.map (e : F →* F') (GL2Borel.diag y).1, Units.map (e : F →* F') (GL2Borel.diag y).2) :=
+    fun y => by ext <;> simp [φ]
+  rw [GL2PrincipalSeries_def, GL2PrincipalSeries_def]
+  exact character_indFDRep_mulEquiv φ hmem _ _ (fun y => by simp [hdiag]) g
+
+/-- **The principal series is natural in the field.** Restricting the principal series of
+`GL₂(F')` along the isomorphism `GL₂(e) : GL₂(F) ≃* GL₂(F')` gives the principal series of `GL₂(F)`
+of the pulled-back characters `α ∘ e` and `β ∘ e`. -/
+theorem nonempty_iso_res_GL2PrincipalSeries_mapEquiv (α β : F'ˣ →* ℂˣ) :
+    Nonempty ((Action.res (FGModuleCat ℂ)
+        (GeneralLinearGroup.mapEquiv (Fin 2) e : GL (Fin 2) F →* GL (Fin 2) F')).obj
+        (GL2PrincipalSeries F' α β) ≅
+      GL2PrincipalSeries F (α.comp (Units.map (e : F →* F'))) (β.comp (Units.map (e : F →* F')))) :=
+  FDRep.nonempty_iso_of_character_eq _ _ (funext fun g => by
+    rw [FDRep.character_actionRes]
+    exact character_GL2PrincipalSeries_mapEquiv e α β g)
+
+/-- **Irreducibility of the principal series is invariant under a ring isomorphism of the field.**
+For `e : F ≃+* F'` and characters `α, β : F'ˣ →* ℂˣ`, the principal series
+`Ind_B^{GL₂}((α ∘ e) ⊗ (β ∘ e))` of `GL₂(F)` is simple if and only if the principal series
+`Ind_B^{GL₂}(α ⊗ β)` of `GL₂(F')` is simple. -/
+theorem simple_GL2PrincipalSeries_comp_unitsMap_iff (α β : F'ˣ →* ℂˣ) :
+    Simple (GL2PrincipalSeries F (α.comp (Units.map (e : F →* F')))
+        (β.comp (Units.map (e : F →* F')))) ↔ Simple (GL2PrincipalSeries F' α β) := by
+  -- Restriction along a group isomorphism is an equivalence of categories, so it preserves and
+  -- reflects simple objects.
+  obtain ⟨i⟩ := nonempty_iso_res_GL2PrincipalSeries_mapEquiv e α β
+  rw [← Simple.iff_of_iso i]
+  -- The functor of `Action.resEquiv` is restriction along the same isomorphism
+  -- (`Action.resEquiv_functor`); it carries the `IsEquivalence` instance.
+  exact simple_obj_iff
+    (Action.resEquiv (FGModuleCat ℂ) (GeneralLinearGroup.mapEquiv (Fin 2) e)).functor _
+
+end RingEquiv
+
+/-! ### The irreducibility criterion -/
+
+section FiniteField
+
+variable (F : Type u) [Field F] [Fintype F]
+
+/-- **The principal series is irreducible exactly off the diagonal.** For a finite field `F` and
+characters `α, β : Fˣ → ℂˣ`, the parabolically induced representation `Ind_B^{GL₂}(α ⊗ β)` of
+`GL₂(F)` is irreducible if and only if `α ≠ β`.
+
+Together with `TauCeti.finrank_GL2PrincipalSeries` this produces the `(q + 1)`-dimensional family
+of the character table of `GL₂(𝔽_q)`; at `α = β` the induced representation is the reducible one
+whose two constituents are the linear character `α ∘ det` and a twist of the Steinberg
+representation. -/
+@[simp]
+theorem simple_GL2PrincipalSeries_iff (α β : Fˣ →* ℂˣ) :
+    Simple (GL2PrincipalSeries F α β) ↔ α ≠ β := by
+  -- Transport to the small model `Shrink F : Type`, where the Mackey criterion applies.
+  let e : Shrink.{0} F ≃+* F := Shrink.ringEquiv.{0} F
+  have he : Function.Surjective (Units.map (e : Shrink.{0} F →* F)) := fun u =>
+    ⟨Units.map (e.symm : F →* Shrink.{0} F) u, by ext; simp⟩
+  rw [← simple_GL2PrincipalSeries_comp_unitsMap_iff e, simple_GL2PrincipalSeries_iff_of_type,
+    ne_eq, ne_eq, MonoidHom.cancel_right he]
 
 /-- **The principal series with `α ≠ β` are irreducible characters of `GL₂(F)`.** -/
 -- Not `@[simp]`: `simp` already proves this from the `@[simp]` lemmas

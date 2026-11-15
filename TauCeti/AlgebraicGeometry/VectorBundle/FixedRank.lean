@@ -1,0 +1,493 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
+public import TauCeti.AlgebraicGeometry.VectorBundle.Functoriality
+public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
+
+/-!
+# Finite locally free sheaves of fixed rank
+
+A finite locally free sheaf has a locally constant rank, which need not be constant on a
+disconnected scheme. This file packages the sheaves whose rank is constantly `r` as the full
+subcategory `FiniteLocallyFreeSheaf.FixedRank X r`. The package is stable under arbitrary
+pullback, tensor products and direct sums, and the free sheaf on a universe lift of `Fin r` gives
+its standard object.
+
+In rank one, fixed-rank finite locally free sheaves are exactly invertible sheaves. The
+equivalence `InvertibleSheaf.fixedRankOneEquiv` is the identity on underlying sheaves and
+morphisms; it only changes which equivalent rank-one condition is bundled with the object.
+
+## Main declarations
+
+* `FiniteLocallyFreeSheaf.isConstantRank`: the property that the rank is constantly `r`;
+* `FiniteLocallyFreeSheaf.FixedRank X r`: finite locally free sheaves of fixed rank `r`;
+* `FiniteLocallyFreeSheaf.FixedRank.pullback`: pullback of fixed-rank sheaves, with its identity
+  and composition comparisons `FixedRank.pullbackId` and `FixedRank.pullbackComp`;
+* `FiniteLocallyFreeSheaf.FixedRank.twist`: the twist `E ⊗ L` of a fixed-rank sheaf by an
+  invertible sheaf, with its isomorphisms `FixedRank.twistCongr`, `FixedRank.twistTrivialIso` and
+  `FixedRank.twistTensorProductIso`;
+* `FiniteLocallyFreeSheaf.FixedRank.tensor`: the tensor product of fixed-rank sheaves of ranks `r`
+  and `s`, of rank `r * s`;
+* `FiniteLocallyFreeSheaf.FixedRank.biprod`: the direct sum of fixed-rank sheaves of ranks `r` and
+  `s`, of rank `r + s`, with `FixedRank.biprodObjIso` identifying its underlying sheaf with the
+  direct sum of the underlying sheaves;
+* `InvertibleSheaf.fixedRankOneEquiv`: the equivalence between invertible sheaves and finite
+  locally free sheaves of fixed rank one.
+-/
+
+public section
+
+open CategoryTheory MonoidalCategory
+
+namespace TauCeti
+
+namespace AlgebraicGeometry
+
+open _root_.AlgebraicGeometry
+
+universe u
+
+noncomputable section
+
+variable {X : Scheme.{u}}
+
+namespace FiniteLocallyFreeSheaf
+
+/-- The property that a finite locally free sheaf has rank `r` at every point. -/
+def isConstantRank (X : Scheme.{u}) (r : ℕ) : ObjectProperty (FiniteLocallyFreeSheaf X) :=
+  fun E ↦ ∀ x, E.rank x = r
+
+/-- A finite locally free sheaf has constant rank `r` exactly when its rank is `r` at every
+point. -/
+@[simp]
+theorem isConstantRank_iff (E : FiniteLocallyFreeSheaf X) (r : ℕ) :
+    isConstantRank X r E ↔ ∀ x, E.rank x = r :=
+  Iff.rfl
+
+/-- Constant rank is preserved by isomorphisms of finite locally free sheaves. -/
+instance (X : Scheme.{u}) (r : ℕ) : (isConstantRank X r).IsClosedUnderIsomorphisms where
+  of_iso {E F} e hE := by
+    intro x
+    rw [← hE x]
+    exact (congrArg (fun q : LocallyConstant X ℕ ↦ q x) (rank_eq_of_iso
+      ((Scheme.Modules.isFiniteLocallyFree X).ι.mapIso e))).symm
+
+/-- The full category of finite locally free sheaves of rank `r` at every point of `X`. -/
+abbrev FixedRank (X : Scheme.{u}) (r : ℕ) : Type _ :=
+  (isConstantRank X r).FullSubcategory
+
+namespace FixedRank
+
+variable (X : Scheme.{u}) (r : ℕ)
+
+/-- Forget that a finite locally free sheaf has fixed rank. -/
+abbrev toFiniteLocallyFree : FixedRank X r ⥤ FiniteLocallyFreeSheaf X :=
+  ObjectProperty.ι _
+
+variable {X} {r}
+
+/-- The rank of a fixed-rank finite locally free sheaf is its bundled rank at every point. -/
+@[simp]
+theorem rank_apply (E : FixedRank X r) (x : X) : E.obj.rank x = r :=
+  E.property x
+
+variable (X) (r)
+
+/-- The free sheaf on a universe lift of `Fin r`, as a finite locally free sheaf of fixed rank
+`r`. -/
+def free : FixedRank X r :=
+  ⟨FiniteLocallyFreeSheaf.free X (ULift.{u} (Fin r)), fun x ↦ by simp⟩
+
+/-- Forgetting the fixed rank of the standard free sheaf gives the free finite locally free
+sheaf on a universe lift of `Fin r`. -/
+@[simp]
+theorem free_obj :
+    (free X r).obj = FiniteLocallyFreeSheaf.free X (ULift.{u} (Fin r)) :=
+  (rfl)
+
+variable {X} {r}
+
+/-- Pullback of finite locally free sheaves of fixed rank. -/
+def pullback {Y : Scheme.{u}} (f : X ⟶ Y) : FixedRank Y r ⥤ FixedRank X r :=
+  (isConstantRank X r).lift
+    ((isConstantRank Y r).ι ⋙ FiniteLocallyFreeSheaf.pullback f)
+    fun E x ↦ by simp
+
+/-- The underlying finite locally free sheaf of a fixed-rank pullback is the ordinary pullback. -/
+@[simp]
+theorem pullback_obj_obj {Y : Scheme.{u}} (f : X ⟶ Y) (E : FixedRank Y r) :
+    ((pullback f).obj E).obj = (FiniteLocallyFreeSheaf.pullback f).obj E.obj :=
+  (rfl)
+
+/-- Pullback acts on morphisms of fixed-rank sheaves by the ordinary pullback functor. -/
+@[simp]
+theorem pullback_map_hom {Y : Scheme.{u}} (f : X ⟶ Y) {E F : FixedRank Y r}
+    (g : E ⟶ F) :
+    ((pullback f).map g).hom =
+      eqToHom (pullback_obj_obj f E) ≫ (FiniteLocallyFreeSheaf.pullback f).map g.hom ≫
+        eqToHom (pullback_obj_obj f F).symm :=
+  (rfl)
+
+variable (X r) in
+/-- Pullback of fixed-rank sheaves along the identity is naturally isomorphic to the identity
+functor. On underlying finite locally free sheaves it is `FiniteLocallyFreeSheaf.pullbackId`. -/
+def pullbackId : pullback (r := r) (𝟙 X) ≅ 𝟭 (FixedRank X r) :=
+  NatIso.ofComponents
+    (fun E ↦ ObjectProperty.isoMk _ ((FiniteLocallyFreeSheaf.pullbackId X).app E.obj))
+    -- Morphisms of fixed-rank sheaves are those of the underlying finite locally free sheaves.
+    fun φ ↦ ObjectProperty.hom_ext _
+      ((FiniteLocallyFreeSheaf.pullbackId X).hom.naturality φ.hom)
+
+variable (X r) in
+/-- On underlying finite locally free sheaves, the identity comparison of fixed-rank pullback is
+`FiniteLocallyFreeSheaf.pullbackId`. -/
+@[simp]
+theorem pullbackId_hom_app_hom (E : FixedRank X r) :
+    ((pullbackId X r).hom.app E).hom =
+      eqToHom (pullback_obj_obj (𝟙 X) E) ≫ (FiniteLocallyFreeSheaf.pullbackId X).hom.app E.obj :=
+  (Category.id_comp _).symm
+
+variable (X r) in
+/-- On underlying finite locally free sheaves, the inverse identity comparison of fixed-rank
+pullback is the inverse of `FiniteLocallyFreeSheaf.pullbackId`. -/
+@[simp]
+theorem pullbackId_inv_app_hom (E : FixedRank X r) :
+    ((pullbackId X r).inv.app E).hom =
+      (FiniteLocallyFreeSheaf.pullbackId X).inv.app E.obj ≫
+        eqToHom (pullback_obj_obj (𝟙 X) E).symm :=
+  (Category.comp_id _).symm
+
+/-- Pullback of fixed-rank sheaves along a composite is naturally isomorphic to successive
+pullback. On underlying finite locally free sheaves it is `FiniteLocallyFreeSheaf.pullbackComp`. -/
+def pullbackComp {Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    pullback (r := r) g ⋙ pullback f ≅ pullback (f ≫ g) :=
+  NatIso.ofComponents
+    (fun E ↦ ObjectProperty.isoMk _ ((FiniteLocallyFreeSheaf.pullbackComp f g).app E.obj))
+    -- Morphisms of fixed-rank sheaves are those of the underlying finite locally free sheaves.
+    fun φ ↦ ObjectProperty.hom_ext _
+      ((FiniteLocallyFreeSheaf.pullbackComp f g).hom.naturality φ.hom)
+
+/-- On underlying finite locally free sheaves, the composition comparison of fixed-rank pullback
+is `FiniteLocallyFreeSheaf.pullbackComp`. -/
+@[simp]
+theorem pullbackComp_hom_app_hom {Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (E : FixedRank Z r) :
+    ((pullbackComp f g).hom.app E).hom =
+      eqToHom (by simp only [Functor.comp_obj, pullback_obj_obj]) ≫
+        (FiniteLocallyFreeSheaf.pullbackComp f g).hom.app E.obj ≫
+        eqToHom (pullback_obj_obj (f ≫ g) E).symm :=
+  ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
+
+/-- On underlying finite locally free sheaves, the inverse composition comparison of fixed-rank
+pullback is the inverse of `FiniteLocallyFreeSheaf.pullbackComp`. -/
+@[simp]
+theorem pullbackComp_inv_app_hom {Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (E : FixedRank Z r) :
+    ((pullbackComp f g).inv.app E).hom =
+      eqToHom (pullback_obj_obj (f ≫ g) E) ≫
+        (FiniteLocallyFreeSheaf.pullbackComp f g).inv.app E.obj ≫
+        eqToHom (by simp only [Functor.comp_obj, pullback_obj_obj]) :=
+  ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
+
+/-- The twist `E ⊗ L` of a finite locally free sheaf `E` of constant rank `r` by an invertible
+sheaf `L`. It has constant rank `r · 1 = r`. -/
+def twist (E : FixedRank X r) (L : InvertibleSheaf X) : FixedRank X r :=
+  ⟨E.obj ⊗ (InvertibleSheaf.toFiniteLocallyFree X).obj L, fun x ↦ by
+    rw [rank_tensor_apply, rank_apply, InvertibleSheaf.rank_toFiniteLocallyFree_apply, mul_one]⟩
+
+/-- The underlying sheaf of the twist `E ⊗ L` is the tensor product of the underlying sheaves. -/
+@[simp]
+theorem twist_obj_obj (E : FixedRank X r) (L : InvertibleSheaf X) :
+    (E.twist L).obj.obj = E.obj.obj ⊗ L.obj :=
+  (rfl)
+
+/-- Twisting transports isomorphisms in both factors: `E ≅ F` and `L ≅ M` give
+`E ⊗ L ≅ F ⊗ M`. -/
+def twistCongr {E F : FixedRank X r} {L M : InvertibleSheaf X} (e : E ≅ F) (f : L ≅ M) :
+    E.twist L ≅ F.twist M :=
+  ObjectProperty.isoMk _
+    (tensorIso ((toFiniteLocallyFree X r).mapIso e)
+      ((InvertibleSheaf.toFiniteLocallyFree X).mapIso f))
+
+/-- On underlying sheaves, `twistCongr e f` is the tensor product of the underlying
+isomorphisms. -/
+@[simp]
+theorem twistCongr_hom_hom_hom {E F : FixedRank X r} {L M : InvertibleSheaf X} (e : E ≅ F)
+    (f : L ≅ M) : (twistCongr e f).hom.hom.hom =
+      eqToHom (twist_obj_obj E L) ≫ (e.hom.hom.hom ⊗ₘ f.hom.hom) ≫
+        eqToHom (twist_obj_obj F M).symm :=
+  ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
+
+/-- On underlying sheaves, the inverse of `twistCongr e f` is the tensor product of the
+underlying inverse isomorphisms. -/
+@[simp]
+theorem twistCongr_inv_hom_hom {E F : FixedRank X r} {L M : InvertibleSheaf X} (e : E ≅ F)
+    (f : L ≅ M) : (twistCongr e f).inv.hom.hom =
+      eqToHom (twist_obj_obj F M) ≫ (e.inv.hom.hom ⊗ₘ f.inv.hom) ≫
+        eqToHom (twist_obj_obj E L).symm :=
+  ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
+
+/-- Twisting by the trivial line bundle is the identity: `E ⊗ 𝒪_X ≅ E`. -/
+def twistTrivialIso (E : FixedRank X r) : E.twist (InvertibleSheaf.trivial X) ≅ E :=
+  ObjectProperty.isoMk _
+    (whiskerLeftIso E.obj
+        (ObjectProperty.isoMk (Scheme.Modules.isFiniteLocallyFree X)
+          (InvertibleSheaf.trivialObjIsoUnit X) :
+          (InvertibleSheaf.toFiniteLocallyFree X).obj (InvertibleSheaf.trivial X) ≅ 𝟙_ _) ≪≫
+      ρ_ E.obj)
+
+/-- On underlying sheaves, `twistTrivialIso E` identifies `𝒪_X` with the monoidal unit and then
+applies the right unitor. -/
+@[simp]
+theorem twistTrivialIso_hom_hom_hom (E : FixedRank X r) :
+    (twistTrivialIso E).hom.hom.hom =
+      eqToHom (twist_obj_obj E _) ≫
+        (E.obj.obj ◁ (InvertibleSheaf.trivialObjIsoUnit X).hom ≫ (ρ_ E.obj.obj).hom) :=
+  (Category.id_comp _).symm
+
+/-- On underlying sheaves, the inverse of `twistTrivialIso E` is the inverse right unitor followed
+by the identification of the monoidal unit with `𝒪_X`. -/
+@[simp]
+theorem twistTrivialIso_inv_hom_hom (E : FixedRank X r) :
+    (twistTrivialIso E).inv.hom.hom =
+      ((ρ_ E.obj.obj).inv ≫ E.obj.obj ◁ (InvertibleSheaf.trivialObjIsoUnit X).inv) ≫
+        eqToHom (twist_obj_obj E _).symm :=
+  (Category.comp_id _).symm
+
+/-- Twisting twice is twisting by the tensor product: `(E ⊗ L) ⊗ M ≅ E ⊗ (L ⊗ M)`. -/
+def twistTensorProductIso (E : FixedRank X r) (L M : InvertibleSheaf X) :
+    (E.twist L).twist M ≅ E.twist (InvertibleSheaf.tensorProduct L M) :=
+  ObjectProperty.isoMk _
+    (α_ _ _ _ ≪≫ whiskerLeftIso E.obj
+      (ObjectProperty.isoMk (Scheme.Modules.isFiniteLocallyFree X)
+        (InvertibleSheaf.tensorProductObjIso L M).symm))
+
+/-- On underlying sheaves, `twistTensorProductIso E L M` is the associator followed by the
+identification of `L ⊗ M` with the tensor product of line bundles. -/
+@[simp]
+theorem twistTensorProductIso_hom_hom_hom (E : FixedRank X r) (L M : InvertibleSheaf X) :
+    (twistTensorProductIso E L M).hom.hom.hom =
+      eqToHom (by simp only [twist_obj_obj]) ≫
+        ((α_ E.obj.obj L.obj M.obj).hom ≫
+          E.obj.obj ◁ (InvertibleSheaf.tensorProductObjIso L M).inv) ≫
+        eqToHom (twist_obj_obj E _).symm :=
+  ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
+
+/-- On underlying sheaves, the inverse of `twistTensorProductIso E L M` is the identification of
+the tensor product of line bundles with `L ⊗ M` followed by the inverse associator. -/
+@[simp]
+theorem twistTensorProductIso_inv_hom_hom (E : FixedRank X r) (L M : InvertibleSheaf X) :
+    (twistTensorProductIso E L M).inv.hom.hom =
+      eqToHom (twist_obj_obj E _) ≫
+        (E.obj.obj ◁ (InvertibleSheaf.tensorProductObjIso L M).hom ≫
+          (α_ E.obj.obj L.obj M.obj).inv) ≫
+        eqToHom (by simp only [twist_obj_obj]) :=
+  ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
+
+/-- The tensor product `E ⊗ F` of finite locally free sheaves of constant ranks `r` and `s`, of
+constant rank `r * s`. -/
+def tensor {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) : FixedRank X (r * s) :=
+  ⟨E.obj ⊗ F.obj, fun x ↦ by rw [rank_tensor_apply, rank_apply, rank_apply]⟩
+
+/-- The underlying sheaf of the tensor product `E ⊗ F` is the tensor product of the underlying
+sheaves. -/
+@[simp]
+theorem tensor_obj_obj {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) :
+    (E.tensor F).obj.obj = E.obj.obj ⊗ F.obj.obj :=
+  (rfl)
+
+/-- The direct sum `E ⊞ F` of finite locally free sheaves of constant ranks `r` and `s`, of
+constant rank `r + s`. -/
+def biprod {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) : FixedRank X (r + s) :=
+  ⟨E.obj ⊞ F.obj, fun x ↦ by rw [rank_biprod_apply, rank_apply, rank_apply]⟩
+
+/-- Forgetting the fixed rank of the direct sum `E ⊞ F` gives the direct sum of the underlying
+finite locally free sheaves. -/
+@[simp]
+theorem biprod_obj {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) :
+    (E.biprod F).obj = (E.obj ⊞ F.obj) :=
+  (rfl)
+
+/-- The underlying sheaf of the direct sum `E ⊞ F` is the direct sum of the underlying sheaves. -/
+def biprodObjIso {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) :
+    (E.biprod F).obj.obj ≅ E.obj.obj ⊞ F.obj.obj :=
+  -- The inclusion of finite locally free sheaves preserves binary products, hence biproducts.
+  have := Limits.preservesBinaryBiproducts_of_preservesBinaryProducts
+    (Scheme.Modules.isFiniteLocallyFree X).ι
+  (Scheme.Modules.isFiniteLocallyFree X).ι.mapBiprod E.obj F.obj
+
+/-- The first component of `biprodObjIso` is the first projection of `E ⊞ F`, transported along
+`biprod_obj`. -/
+@[reassoc (attr := simp)]
+theorem biprodObjIso_hom_fst {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) :
+    (biprodObjIso E F).hom ≫ Limits.biprod.fst =
+      eqToHom (congrArg ObjectProperty.FullSubcategory.obj (biprod_obj E F)) ≫
+        (Limits.biprod.fst : E.obj ⊞ F.obj ⟶ E.obj).hom := by
+  simp only [biprodObjIso, Functor.mapBiprod_hom, ObjectProperty.ι_map]
+  exact (Limits.biprod.lift_fst _ _).trans (Category.id_comp _).symm
+
+/-- The second component of `biprodObjIso` is the second projection of `E ⊞ F`, transported along
+`biprod_obj`. -/
+@[reassoc (attr := simp)]
+theorem biprodObjIso_hom_snd {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) :
+    (biprodObjIso E F).hom ≫ Limits.biprod.snd =
+      eqToHom (congrArg ObjectProperty.FullSubcategory.obj (biprod_obj E F)) ≫
+        (Limits.biprod.snd : E.obj ⊞ F.obj ⟶ F.obj).hom := by
+  simp only [biprodObjIso, Functor.mapBiprod_hom, ObjectProperty.ι_map]
+  exact (Limits.biprod.lift_snd _ _).trans (Category.id_comp _).symm
+
+/-- The inverse of `biprodObjIso` restricts on the first summand to the first inclusion of
+`E ⊞ F`, transported along `biprod_obj`. -/
+@[reassoc (attr := simp)]
+theorem inl_biprodObjIso_inv {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) :
+    Limits.biprod.inl ≫ (biprodObjIso E F).inv =
+      (Limits.biprod.inl : E.obj ⟶ E.obj ⊞ F.obj).hom ≫
+        eqToHom (congrArg ObjectProperty.FullSubcategory.obj (biprod_obj E F).symm) := by
+  simp only [biprodObjIso, Functor.mapBiprod_inv, ObjectProperty.ι_map]
+  exact (Limits.biprod.inl_desc _ _).trans (Category.comp_id _).symm
+
+/-- The inverse of `biprodObjIso` restricts on the second summand to the second inclusion of
+`E ⊞ F`, transported along `biprod_obj`. -/
+@[reassoc (attr := simp)]
+theorem inr_biprodObjIso_inv {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) :
+    Limits.biprod.inr ≫ (biprodObjIso E F).inv =
+      (Limits.biprod.inr : F.obj ⟶ E.obj ⊞ F.obj).hom ≫
+        eqToHom (congrArg ObjectProperty.FullSubcategory.obj (biprod_obj E F).symm) := by
+  simp only [biprodObjIso, Functor.mapBiprod_inv, ObjectProperty.ι_map]
+  exact (Limits.biprod.inr_desc _ _).trans (Category.comp_id _).symm
+
+end FixedRank
+
+end FiniteLocallyFreeSheaf
+
+namespace InvertibleSheaf
+
+/-- Regard an invertible sheaf as a finite locally free sheaf of fixed rank one. -/
+def toFixedRankOne (X : Scheme.{u}) :
+    InvertibleSheaf X ⥤ FiniteLocallyFreeSheaf.FixedRank X 1 :=
+  (FiniteLocallyFreeSheaf.isConstantRank X 1).lift (toFiniteLocallyFree X)
+    fun L x ↦ rank_toFiniteLocallyFree_apply L x
+
+/-- The underlying finite locally free sheaf of an invertible sheaf regarded as a fixed-rank
+object is the existing inclusion into finite locally free sheaves. -/
+@[simp]
+theorem toFixedRankOne_obj_obj (X : Scheme.{u}) (L : InvertibleSheaf X) :
+    ((toFixedRankOne X).obj L).obj = (toFiniteLocallyFree X).obj L :=
+  (rfl)
+
+/-- The fixed-rank-one functor acts on morphisms through the existing inclusion of invertible
+sheaves into finite locally free sheaves. -/
+@[simp]
+theorem toFixedRankOne_map_hom (X : Scheme.{u}) {L M : InvertibleSheaf X} (f : L ⟶ M) :
+    ((toFixedRankOne X).map f).hom =
+      eqToHom (toFixedRankOne_obj_obj X L) ≫ (toFiniteLocallyFree X).map f ≫
+        eqToHom (toFixedRankOne_obj_obj X M).symm :=
+  (rfl)
+
+end InvertibleSheaf
+
+namespace FiniteLocallyFreeSheaf.FixedRank
+
+/-- Regard a finite locally free sheaf of fixed rank one as an invertible sheaf. -/
+def toInvertible (X : Scheme.{u}) :
+    FiniteLocallyFreeSheaf.FixedRank X 1 ⥤ InvertibleSheaf X :=
+  (SheafOfModules.isInvertible X).lift
+    ((FiniteLocallyFreeSheaf.isConstantRank X 1).ι ⋙
+      (Scheme.Modules.isFiniteLocallyFree X).ι)
+    fun E ↦ (FiniteLocallyFreeSheaf.isInvertible_iff_forall_rank_eq_one E.obj).mpr E.property
+
+/-- The underlying sheaf of a fixed-rank-one object regarded as invertible is unchanged. -/
+@[simp]
+theorem toInvertible_obj_obj (X : Scheme.{u}) (E : FiniteLocallyFreeSheaf.FixedRank X 1) :
+    ((toInvertible X).obj E).obj = E.obj.obj :=
+  (rfl)
+
+/-- The inverse rank-one functor is the identity on underlying module morphisms. -/
+@[simp]
+theorem toInvertible_map_hom (X : Scheme.{u})
+    {E F : FiniteLocallyFreeSheaf.FixedRank X 1} (f : E ⟶ F) :
+    ((toInvertible X).map f).hom =
+      eqToHom (toInvertible_obj_obj X E) ≫ f.hom.hom ≫
+        eqToHom (toInvertible_obj_obj X F).symm :=
+  (rfl)
+
+end FiniteLocallyFreeSheaf.FixedRank
+
+namespace InvertibleSheaf
+
+/-- Invertible sheaves on `X` are equivalent to finite locally free sheaves of fixed rank one.
+Both functors preserve the underlying sheaves and module morphisms. -/
+def fixedRankOneEquiv (X : Scheme.{u}) :
+    InvertibleSheaf X ≌ FiniteLocallyFreeSheaf.FixedRank X 1 where
+  functor := toFixedRankOne X
+  inverse := FiniteLocallyFreeSheaf.FixedRank.toInvertible X
+  unitIso := NatIso.ofComponents (fun L ↦ ObjectProperty.isoMk _ (Iso.refl L.obj))
+  counitIso := NatIso.ofComponents (fun E ↦ ObjectProperty.isoMk _
+    (ObjectProperty.isoMk _ (Iso.refl E.obj.obj)))
+
+/-- The forward functor of the rank-one equivalence is the canonical inclusion of invertible
+sheaves into fixed-rank finite locally free sheaves. -/
+theorem fixedRankOneEquiv_functor (X : Scheme.{u}) :
+    (fixedRankOneEquiv X).functor = toFixedRankOne X :=
+  (rfl)
+
+/-- The inverse functor of the rank-one equivalence only changes the bundled rank-one witness. -/
+theorem fixedRankOneEquiv_inverse (X : Scheme.{u}) :
+    (fixedRankOneEquiv X).inverse = FiniteLocallyFreeSheaf.FixedRank.toInvertible X :=
+  (rfl)
+
+/-- The forward rank-one equivalence leaves the underlying sheaf unchanged. -/
+@[simp]
+theorem fixedRankOneEquiv_functor_obj_obj (X : Scheme.{u}) (L : InvertibleSheaf X) :
+    ((fixedRankOneEquiv X).functor.obj L).obj.obj = L.obj :=
+  (rfl)
+
+/-- The inverse rank-one equivalence leaves the underlying sheaf unchanged. -/
+@[simp]
+theorem fixedRankOneEquiv_inverse_obj_obj (X : Scheme.{u})
+    (E : FiniteLocallyFreeSheaf.FixedRank X 1) :
+    ((fixedRankOneEquiv X).inverse.obj E).obj = E.obj.obj :=
+  (rfl)
+
+/-- The composite underlying sheaf appearing in the unit of the rank-one equivalence is the
+original sheaf. This equality supplies the transport in the unit's characteristic equation. -/
+theorem fixedRankOneEquiv_unit_obj (X : Scheme.{u}) (L : InvertibleSheaf X) :
+    (((fixedRankOneEquiv X).functor ⋙ (fixedRankOneEquiv X).inverse).obj L).obj = L.obj :=
+  (rfl)
+
+/-- The unit of the rank-one equivalence is the identity map after identifying its target with
+the original underlying sheaf. -/
+@[simp]
+theorem fixedRankOneEquiv_unitIso_hom_app_hom (X : Scheme.{u}) (L : InvertibleSheaf X) :
+    ((fixedRankOneEquiv X).unitIso.hom.app L).hom =
+      eqToHom (fixedRankOneEquiv_unit_obj X L).symm :=
+  (rfl)
+
+/-- The composite underlying sheaf appearing in the counit of the rank-one equivalence is the
+original sheaf. This equality supplies the transport in the counit's characteristic equation. -/
+theorem fixedRankOneEquiv_counit_obj (X : Scheme.{u})
+    (E : FiniteLocallyFreeSheaf.FixedRank X 1) :
+    (((fixedRankOneEquiv X).inverse ⋙ (fixedRankOneEquiv X).functor).obj E).obj.obj = E.obj.obj :=
+  (rfl)
+
+/-- The counit of the rank-one equivalence is the identity map after identifying its source with
+the original underlying sheaf. -/
+@[simp]
+theorem fixedRankOneEquiv_counitIso_hom_app_hom_hom (X : Scheme.{u})
+    (E : FiniteLocallyFreeSheaf.FixedRank X 1) :
+    ((fixedRankOneEquiv X).counitIso.hom.app E).hom.hom =
+      eqToHom (fixedRankOneEquiv_counit_obj X E) :=
+  (rfl)
+
+end InvertibleSheaf
+
+end
+
+end AlgebraicGeometry
+
+end TauCeti

@@ -17,7 +17,7 @@ public import TauCeti.Algebra.BrauerGroup.Group
 -- occurs in the division-algebra statements below; it also supplies the dimension count
 -- `Module.finrank_matrix` used in the proofs.
 public import Mathlib.LinearAlgebra.Dimension.Constructions
--- Non-public: `TauCeti.IsSimpleRing.exists_algEquiv_matrix_centralDivisionRing`, the Wedderburn
+-- Non-public: `IsSimpleRing.exists_algEquiv_matrix_centralDivisionRing`, the Wedderburn
 -- presentation the argument runs on, is used only in the proofs; no statement here mentions it.
 import TauCeti.Algebra.CentralSimple.Wedderburn
 -- Non-public: `TauCeti.card_eq_of_ringEquiv_matrix` and
@@ -37,7 +37,7 @@ to matrices over it. This file closes that gap, and so identifies the identity c
 The missing ingredient is the **uniqueness of the size of a matrix presentation**, proved in
 `TauCeti/RingTheory/Semisimple/MatrixDivisionRing.lean`. Given
 `Mₚ(A) ≃ₐ[K] M_q(K)`, write `A ≃ₐ[K] M_r(D)` for a central division algebra `D`
-(`TauCeti.IsSimpleRing.exists_algEquiv_matrix_centralDivisionRing`). Then `Mₚ(A)` is presented as a
+(`IsSimpleRing.exists_algEquiv_matrix_centralDivisionRing`). Then `Mₚ(A)` is presented as a
 matrix ring over a division ring in two ways, of sizes `p * r` over `D` and `q` over `K`, so
 `TauCeti.card_eq_of_ringEquiv_matrix` forces `p * r = q`. Comparing dimensions,
 `p² · dim_K A = q² = p² r²`, so `dim_K A = r²`, and the Wedderburn dimension count
@@ -60,7 +60,8 @@ hence of the hypothesis that `TauCeti.BrauerGroup.orderOf_mk_eq_two` needs to sh
 * `TauCeti.isBrauerTrivial_iff_finrank_eq_one`: **a central division algebra is Brauer trivial
   exactly when it is the base field**, with `TauCeti.baseFieldAlgEquivOfIsBrauerTrivial` the
   isomorphism this produces and `TauCeti.BrauerGroup.mk_eq_one_iff_finrank_eq_one` the form for
-  classes.
+  classes. Its easy direction holds for every central simple algebra:
+  `TauCeti.BrauerGroup.mk_eq_one_of_finrank_eq_one`.
 
 ## Implementation notes
 
@@ -84,12 +85,8 @@ are for a `CSA.{u, u} K`, an algebra in the universe of its own base field, beca
 
 ## References
 
-This completes the first bullet of Layer 6 ("the API that the identity and inverse rest on") of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md),
-whose Layer 2 asks for the Wedderburn uniqueness this consumes, and it supplies the "`[ℍ]` has
-order 2" step of that roadmap's Hamilton-quaternion worked example. See P. Gille, T. Szamuely,
-*Central Simple Algebras and Galois Cohomology*, CUP (2006), §2.4, and R. S. Pierce, *Associative
-Algebras*, Springer GTM 88 (1982), Chapter 12.
+See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, CUP (2006), §2.4, and
+R. S. Pierce, *Associative Algebras*, Springer GTM 88 (1982), Chapter 12.
 -/
 
 public section
@@ -162,6 +159,17 @@ theorem BrauerGroup.mk_eq_one_iff_isSplittingField :
 
 end CentralSimple
 
+/-! ### One-dimensional algebras -/
+
+/-- **A one-dimensional central simple algebra has identity Brauer class**: the structure map
+identifies it with the base field. -/
+theorem BrauerGroup.mk_eq_one_of_finrank_eq_one {K : Type u} [Field K] (A : CSA.{u, u} K)
+    (h : Module.finrank K A = 1) : BrauerGroup.mk A = 1 :=
+  (BrauerGroup.mk_eq_mk_of_algEquiv (A := A) (B := CSA.base K)
+    (AlgEquiv.ofBijective (_root_.Algebra.ofId K A)
+      (_root_.Algebra.finrank_eq_one_iff_bijective_algebraMap.1 h)).symm).trans
+    BrauerGroup.mk_base
+
 /-! ### The Brauer class of a central division algebra -/
 
 section DivisionRing
@@ -190,10 +198,7 @@ theorem isBrauerTrivial_iff_finrank_eq_one :
     have hn : n = 1 := by exact_mod_cast hlen.symm
     subst hn
     rw [e.toLinearEquiv.finrank_eq, Module.finrank_matrix, Fintype.card_fin, Module.finrank_self]
-  · intro h
-    exact IsBrauerEquivalent.of_algEquiv K (A := CSA.of K D) (B := CSA.base K)
-      (AlgEquiv.ofBijective (_root_.Algebra.ofId K D)
-        (_root_.Algebra.finrank_eq_one_iff_bijective_algebraMap.1 h)).symm
+  · exact fun h => BrauerGroup.mk_eq_one_iff.1 (BrauerGroup.mk_eq_one_of_finrank_eq_one _ h)
 
 /-- **A Brauer-trivial central division algebra is the base field**, as an isomorphism of
 `K`-algebras. This is the division-algebra companion of `TauCeti.baseFieldAlgEquivOfFinite`, with

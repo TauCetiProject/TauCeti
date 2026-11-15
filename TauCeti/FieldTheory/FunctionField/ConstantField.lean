@@ -7,6 +7,9 @@ module
 
 public import Mathlib.FieldTheory.AlgebraicClosure
 public import TauCeti.FieldTheory.FunctionField.Basic
+public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
+import TauCeti.FieldTheory.AlgebraicClosure
+import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
 # The constant field of an algebraic function field
@@ -39,6 +42,8 @@ once `F' / F` is — a theorem, not a hypothesis, and the finiteness that makes 
   `TauCeti.isIntegrallyClosedIn_iff_forall_isAlgebraic`,
   `TauCeti.isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one`: the three faces of the
   exactness hypothesis on the field of constants.
+* `TauCeti.isIntegrallyClosedIn_of_isAlgClosed`: an algebraically closed base field is exact in
+  every domain algebra.
 * `TauCeti.IsFunctionField.algebraicClosure` and
   `TauCeti.isIntegrallyClosedIn_algebraicClosure`: `F` is a function field over its field of
   constants, and there the field of constants is exact; the two are packaged as
@@ -52,7 +57,7 @@ once `F' / F` is — a theorem, not a hypothesis, and the finiteness that makes 
   `F / k`, the base extension `k' / k` is algebraic, and finite once `F' / F` is (Stichtenoth,
   Definition 3.1.1).
 * `TauCeti.IsFunctionField.isAlgebraic_algebraMap_iff_isAlgebraic`: the field of constants of
-  `F' / k'` cuts down along `F ⊆ F'` to the field of constants of `F / k`; for exact bases
+  `F' / k'` cuts down along `F ⊆ F'` to the field of constants of `F / k`; for exact `k`
   `TauCeti.IsFunctionField.algebraMap_mem_range_algebraMap_iff` reads this as `k' ∩ F = k`.
 * `TauCeti.algebraicClosure_ratFunc`: `k` is the field of constants of `k(x)`.
 
@@ -60,7 +65,7 @@ once `F' / F` is — a theorem, not a hypothesis, and the finiteness that makes 
 
 The statements follow Stichtenoth, *Algebraic Function Fields and Codes*, second edition:
 Corollary 1.1.16 for the finiteness of the field of constants, the standing hypothesis of
-Section 1.4 for its exactness, Proposition 1.2.1(d) for the rational function field, and
+Section 1.4 for its exactness, Proposition 1.2.1(d) for the rational function field,
 Definition 3.1.1 for an extension of function fields.
 -/
 
@@ -107,7 +112,8 @@ theorem finiteDimensional_of_isAlgebraic (hF : IsFunctionField k F) (E : Type*) 
 field (Stichtenoth, Corollary 1.1.16). -/
 theorem finiteDimensional_algebraicClosure (hF : IsFunctionField k F) :
     FiniteDimensional k (_root_.algebraicClosure k F) :=
-  hF.finiteDimensional_of_isAlgebraic _
+  have := hF.essFiniteType
+  inferInstance
 
 end IsFunctionField
 
@@ -121,14 +127,6 @@ theorem algebraicClosure_eq_bot_iff_isIntegrallyClosedIn :
     ← algebraicClosure_toSubalgebra, ← IntermediateField.bot_toSubalgebra,
     IntermediateField.toSubalgebra_inj]
 
-/-- The elementwise form of the exactness hypothesis on the field of constants: every element of
-`F` algebraic over `k` is already a constant. This is the field-extension reading of Mathlib's
-`isIntegrallyClosedIn_iff`, whose injectivity clause is automatic here. -/
-theorem isIntegrallyClosedIn_iff_forall_isAlgebraic :
-    IsIntegrallyClosedIn k F ↔ ∀ x : F, IsAlgebraic k x → ∃ c : k, algebraMap k F c = x := by
-  rw [← algebraicClosure_eq_bot_iff_isIntegrallyClosedIn, eq_bot_iff, IsConcreteLE.le_iff]
-  simp [mem_algebraicClosure_iff, IntermediateField.mem_bot]
-
 /-- The exactness hypothesis on the field of constants, read off its degree. -/
 theorem isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one :
     IsIntegrallyClosedIn k F ↔ Module.finrank k (algebraicClosure k F) = 1 := by
@@ -138,7 +136,7 @@ theorem isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one :
 algebraic over `algebraicClosure k F`. -/
 instance isIntegrallyClosedIn_algebraicClosure :
     IsIntegrallyClosedIn (algebraicClosure k F) F :=
-  algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.1 (algebraicClosure.algebraicClosure_eq_bot k F)
+  IsIntegrallyClosedIn.of_isIntegralClosure (R := k)
 
 /-! ### The normalization device -/
 
@@ -216,21 +214,21 @@ theorem IsFunctionField.isAlgebraic_algebraMap_iff_isAlgebraic (hF : IsFunctionF
     mem_algebraicClosure_iff]
   exact isAlgebraic_algebraMap_iff (FaithfulSMul.algebraMap_injective F F')
 
-/-- **The fields of constants of an extension of function fields are identified along the tower
-map `k → k'`** (Stichtenoth, Definition 3.1.1 and the remark following it).  Once `k` is the full
-field of constants of `F / k` and `k'` the full field of constants of `F' / k'`, a function of
-`F` is a constant of `F' / k'` exactly when it is already a constant of `F / k`: inside `F'` the
-two fields of constants meet in `k`, so `k → k'` is the induced inclusion of fields of
-constants. -/
+/-- **The base field `k'` meets `F` exactly in `k`** (Stichtenoth, Definition 3.1.1 and the remark
+following it).  Once `k` is the full field of constants of `F / k`, a function of `F` has image in
+the base field `k'` of `F'` exactly when it already lies in the base field `k` of `F`: inside `F'`
+we have `k' ∩ F = k`.  This concerns membership in the base fields themselves, not in the full
+fields of constants of `F' / k'`, which can be larger than `k'`; exactness of `k'` in `F'` is not
+needed. -/
 theorem IsFunctionField.algebraMap_mem_range_algebraMap_iff (hF : IsFunctionField k F)
-    (hF' : IsFunctionField k' F') (hk : IsIntegrallyClosedIn k F)
-    (hk' : IsIntegrallyClosedIn k' F') {a : F} :
+    (hF' : IsFunctionField k' F') (hk : IsIntegrallyClosedIn k F) {a : F} :
     algebraMap F F' a ∈ Set.range (algebraMap k' F') ↔ a ∈ Set.range (algebraMap k F) := by
-  rw [← IntermediateField.mem_bot (F := k'), ← IntermediateField.mem_bot (F := k),
-    ← algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.2 hk',
-    ← algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.2 hk]
-  simp only [mem_algebraicClosure_iff]
-  exact hF.isAlgebraic_algebraMap_iff_isAlgebraic hF'
+  refine ⟨fun ⟨b, hb⟩ ↦ ?_, fun ⟨c, hc⟩ ↦ ⟨algebraMap k k' c, ?_⟩⟩
+  · -- `a` is algebraic over `k'` (its image is a constant), hence over `k`, hence a constant
+    have h := (hF.isAlgebraic_algebraMap_iff_isAlgebraic hF').mp (hb ▸ isAlgebraic_algebraMap b)
+    exact hk.algebraMap_eq_of_integral h.isIntegral
+  · rw [← hc, ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply,
+      IsScalarTower.algebraMap_apply k F F']
 
 end IsAlgebraic
 
@@ -253,15 +251,8 @@ end Extension
 /-- The field of constants of the rational function field `k(x)` is `k`
 (Stichtenoth, Proposition 1.2.1(d)). -/
 theorem algebraicClosure_ratFunc (K : Type*) [Field K] :
-    algebraicClosure K (RatFunc K) = ⊥ := by
-  refine eq_bot_iff.2 fun f hf ↦ ?_
-  obtain ⟨c, rfl⟩ := not_not.1 fun h ↦
-    RatFunc.transcendental_of_ne_C f h (mem_algebraicClosure_iff.1 hf)
-  rw [← RatFunc.algebraMap_eq_C]
-  exact IntermediateField.algebraMap_mem _ _
+    algebraicClosure K (RatFunc K) = ⊥ :=
+  algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.2 isIntegrallyClosedIn_ratFunc
 
-/-- `k` is integrally closed in the rational function field `k(x)`. -/
-instance isIntegrallyClosedIn_ratFunc : IsIntegrallyClosedIn k (RatFunc k) :=
-  algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.1 (algebraicClosure_ratFunc k)
 
 end TauCeti

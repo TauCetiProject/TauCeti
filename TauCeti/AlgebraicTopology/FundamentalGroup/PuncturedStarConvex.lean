@@ -12,6 +12,11 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.Topology.Homotopy.PuncturedStarConvex
 public import TauCeti.Topology.JordanCurve.Basic
 
+import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.AlgebraicTopology.FundamentalGroup.Product
+import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
+
 /-!
 # The fundamental group of a punctured star-convex set
 
@@ -31,11 +36,32 @@ puncture.
 
 * `StarConvex.sphereFundamentalGroupMulEquiv`: the isomorphism
   `π₁(sphere p r, x) ≃* π₁(V \ {p}, x)` induced by the inclusion.
+* `StarConvex.isSimplyConnected_sdiff_singleton` and
+  `TauCeti.isSimplyConnected_ball_sdiff_singleton`: in dimension greater than two the sphere is
+  simply connected, so `V \ {p}`, and in particular a punctured ball, is simply connected.
 * `StarConvex.fundamentalGroupMulEquivInt`: for `V ⊆ ℂ`, `π₁(V \ {p}, x) ≃* ℤ` at a point `x` of
   the circle `sphere p r`.
 * `Complex.sphereLoop` and `StarConvex.fundamentalGroupMulEquivInt_sphereLoop`: the loop going once
   counterclockwise around `sphere p r` from `p + r` is sent to the generator `ofAdd 1`, so its
   class generates `π₁(V \ {p}, p + r)`.
+* `StarConvex.fundamentalGroup_map_directionFrom_bijective`: the direction map
+  `Complex.directionFrom`, `z ↦ (z - p) / ‖z - p‖` to the unit circle, induces a bijection of
+  fundamental groups at every point of `V \ {p}`, on the circle or off it. Composed with
+  `Circle.fundamentalGroupMulEquiv`, it identifies `π₁(V \ {p}, z)` with `ℤ` by the degree of the
+  direction of a loop.
+* `StarConvex.not_simplyConnectedSpace_diff_singleton` and
+  `Complex.not_simplyConnectedSpace_units`: so `V \ {p}`, and in particular `ℂˣ`, is not simply
+  connected.
+* `StarConvex.isCyclic_fundamentalGroup_diff_singleton`: consequently `π₁(V \ {p}, z)` is cyclic
+  at every point `z`.
+* `StarConvex.fundamentalGroup_map_directionFrom_comp_snd_bijective`: for simply connected `U`,
+  the direction of the second coordinate induces a bijection of fundamental groups at every point
+  of `U × (V \ {p})`. For a punctured ball, composing with `Circle.fundamentalGroupMulEquiv`
+  identifies the fundamental group with `ℤ`
+  (`TauCeti.fundamentalGroupMulEquiv_comp_map_directionFrom_comp_snd_bijective`).
+* `TauCeti.zpowers_loopAround_eq_top`: for simply connected `U`, the loop
+  `t ↦ (u, p + (z - p) e^{2πit})` around the puncture (`Complex.loopAround`) generates
+  `π₁(U × (ball p R \ {p}), (u, z))`.
 
 ## References
 
@@ -74,6 +100,21 @@ theorem _root_.StarConvex.sphereFundamentalGroupMulEquiv_apply (hV : StarConvex 
     hV.sphereFundamentalGroupMulEquiv hr hS x γ =
       FundamentalGroup.map (hV.sphereHomotopyEquiv hr hS).toFun x γ :=
   (rfl)
+
+/-- **A punctured star-convex set is simply connected in dimension at least three.** If `V` is
+star-convex about `p` and contains `sphere p r` with `r > 0`, and `E` has dimension greater than
+two, then `V \ {p}` is simply connected, being homotopy equivalent to that sphere. -/
+theorem _root_.StarConvex.isSimplyConnected_sdiff_singleton (h : 2 < Module.rank ℝ E)
+    (hV : StarConvex ℝ p V) (hr : 0 < r) (hS : sphere p r ⊆ V) :
+    IsSimplyConnected (V \ {p}) :=
+  have := simplyConnectedSpace_sphere h p hr.le
+  (hV.sphereHomotopyEquiv hr hS).symm.simplyConnectedSpace
+
+/-- **A punctured ball is simply connected in dimension at least three.** -/
+theorem isSimplyConnected_ball_sdiff_singleton (h : 2 < Module.rank ℝ E) (p : E) (hr : 0 < r) :
+    IsSimplyConnected (ball p r \ {p}) :=
+  ((convex_ball p r).starConvex (mem_ball_self hr)).isSimplyConnected_sdiff_singleton h
+    (half_pos hr) (sphere_subset_ball (half_lt_self hr))
 
 end NormedSpace
 
@@ -125,12 +166,12 @@ theorem _root_.StarConvex.fundamentalGroupMulEquivInt_sphereLoop (hV : StarConve
       Multiplicative.ofAdd 1 := by
   rw [StarConvex.fundamentalGroupMulEquivInt_def, MulEquiv.trans_apply,
     ← StarConvex.sphereFundamentalGroupMulEquiv_apply, MulEquiv.symm_apply_apply,
-    MulEquiv.trans_apply, TauCeti.FundamentalGroup.homeomorphMulEquiv_apply,
+    MulEquiv.trans_apply, FundamentalGroup.homeomorphMulEquiv_apply,
     FundamentalGroup.mapOfEq_apply, ← Path.Homotopic.Quotient.mk_map,
     ← Path.Homotopic.Quotient.mk_cast]
   -- Transported to `Circle`, the loop is `Circle.expLoop`, up to the basepoint equation
   -- `sphereCircleHomeomorph p hr ((sphereCircleHomeomorph p hr).symm 1) = 1`.
-  have key : ∀ (y : Circle) (hy : y = 1) (γ : Path y y), (∀ t, γ t = Circle.expLoop t) →
+  have key : ∀ (y : Circle) (_ : y = 1) (γ : Path y y), (∀ t, γ t = Circle.expLoop t) →
       Circle.fundamentalGroupMulEquiv y
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) = Multiplicative.ofAdd 1 := by
     rintro y rfl γ hγ
@@ -147,6 +188,110 @@ theorem _root_.StarConvex.not_simplyConnectedSpace_diff_singleton (hV : StarConv
   haveI := (hV.fundamentalGroupMulEquivInt hr hS x).toEquiv.nontrivial
   not_simplyConnectedSpace_of_nontrivial_fundamentalGroup (hV.sphereHomotopyEquiv hr hS x)
 
+/-- **The punctured complex plane is not simply connected**, in its guise as the unit group
+`ℂˣ`. -/
+theorem _root_.Complex.not_simplyConnectedSpace_units : ¬ SimplyConnectedSpace ℂˣ := fun _ ↦
+  -- `{z : ℂ // z ≠ 0}`, the codomain of `unitsHomeomorphNeZero`, is the subtype of `{0}ᶜ`.
+  let e : ℂˣ ≃ₜ ↥((univ : Set ℂ) \ {0}) :=
+    unitsHomeomorphNeZero.trans (Homeomorph.setCongr (compl_eq_univ_sdiff ({0} : Set ℂ)))
+  (starConvex_univ 0).not_simplyConnectedSpace_diff_singleton one_pos (subset_univ _)
+    e.symm.toHomotopyEquiv.simplyConnectedSpace
+
+/-- **The direction map of a punctured star-convex set is bijective on fundamental groups.** If
+`V` is star-convex about `p` and contains a circle about `p`, then `z ↦ (z - p) / ‖z - p‖` induces
+a bijection `π₁(V \ {p}, z) → π₁(Circle, (z - p) / ‖z - p‖)` at every point `z`, not only on the
+circle. It is the forward map of the homotopy equivalence `StarConvex.sphereHomotopyEquiv`, inverted
+and followed by the parametrization of the circle by `Circle`. -/
+theorem _root_.StarConvex.fundamentalGroup_map_directionFrom_bijective (hV : StarConvex ℝ p V)
+    (hr : 0 < r) (hS : sphere p r ⊆ V) (z : ↥(V \ {p})) :
+    Function.Bijective (FundamentalGroup.map (p.directionFrom V) z) := by
+  have h : ((hV.sphereHomotopyEquiv hr hS).symm.trans
+      (sphereCircleHomeomorph p hr).toHomotopyEquiv).toFun = p.directionFrom V := by
+    ext z
+    have hr' : (r : ℂ) ≠ 0 := by exact_mod_cast hr.ne'
+    simp
+    field_simp
+  rw [← h]
+  exact ContinuousMap.HomotopyEquiv.fundamentalGroup_map_bijective _ z
+
+/-- **The fundamental group of a punctured star-convex subset of `ℂ` is cyclic** at every point,
+on the circle about the puncture or off it, since the direction map embeds it in `π₁(Circle)`. -/
+theorem _root_.StarConvex.isCyclic_fundamentalGroup_diff_singleton (hV : StarConvex ℝ p V)
+    (hr : 0 < r) (hS : sphere p r ⊆ V) (z : ↥(V \ {p})) :
+    IsCyclic (FundamentalGroup ↥(V \ {p}) z) :=
+  have : IsCyclic (FundamentalGroup Circle (p.directionFrom V z)) :=
+    isCyclic_of_injective (Circle.fundamentalGroupMulEquiv _).toMonoidHom
+      (Circle.fundamentalGroupMulEquiv _).injective
+  isCyclic_of_injective _ (hV.fundamentalGroup_map_directionFrom_bijective hr hS z).injective
+
 end Complex
+
+section Product
+
+variable {U : Type*} [TopologicalSpace U] [SimplyConnectedSpace U] {V : Set ℂ} {p : ℂ} {r R : ℝ}
+
+/-- **Loops in a simply connected space times a punctured star-convex set are detected by the
+direction of their second coordinate.** If `U` is simply connected and `V` is star-convex about `p`
+and contains a circle about `p`, then `(u, z) ↦ (z - p) / ‖z - p‖` induces a bijection of
+fundamental groups at every point of `U × (V \ {p})`. -/
+theorem _root_.StarConvex.fundamentalGroup_map_directionFrom_comp_snd_bijective
+    (hV : StarConvex ℝ p V) (hr : 0 < r) (hS : sphere p r ⊆ V) (a : U × ↥(V \ {p})) :
+    Function.Bijective
+      (FundamentalGroup.map ((p.directionFrom V).comp ContinuousMap.snd) a) := by
+  obtain ⟨u, z⟩ := a
+  have : Unique (FundamentalGroup U u) := uniqueOfSubsingleton 1
+  -- the first factor of `π₁(U × (V \ {p})) ≃* π₁(U) × π₁(V \ {p})` is trivial
+  have hsnd : Function.Bijective
+      (FundamentalGroup.map (ContinuousMap.snd : C(U × ↥(V \ {p}), _)) (u, z)) := by
+    have h := (Equiv.uniqueProd _ _).bijective.comp (FundamentalGroup.prodMulEquiv u z).bijective
+    simp only [Function.comp_def, FundamentalGroup.prodMulEquiv_apply] at h
+    exact h
+  have hcomp : ⇑(FundamentalGroup.map ((p.directionFrom V).comp ContinuousMap.snd) (u, z)) =
+      FundamentalGroup.map (p.directionFrom V) z ∘ FundamentalGroup.map ContinuousMap.snd (u, z) :=
+    funext fun γ => CategoryTheory.End.ext (FundamentalGroupoid.map_comp_map _ _ γ.asHom)
+  rw [hcomp]
+  exact (hV.fundamentalGroup_map_directionFrom_bijective hr hS z).comp hsnd
+
+/-- **The degree of the direction identifies `π₁(U × (ball p R \ {p}))` with `ℤ`.** For simply
+connected `U`, the direction of the second coordinate followed by
+`Circle.fundamentalGroupMulEquiv` is a bijective homomorphism from `π₁(U × (ball p R \ {p}), a)` to
+`Multiplicative ℤ`, at every base point `a`. -/
+theorem fundamentalGroupMulEquiv_comp_map_directionFrom_comp_snd_bijective
+    (a : U × ↥(ball p R \ {p})) :
+    Function.Bijective ((Circle.fundamentalGroupMulEquiv _).toMonoidHom.comp
+      (FundamentalGroup.map ((p.directionFrom (ball p R)).comp ContinuousMap.snd) a)) := by
+  have hR : 0 < R := (norm_nonneg _).trans_lt (mem_ball_iff_norm.1 a.2.2.1)
+  exact (Circle.fundamentalGroupMulEquiv _).bijective.comp
+    (((convex_ball p R).starConvex
+      (mem_ball_self hR)).fundamentalGroup_map_directionFrom_comp_snd_bijective (half_pos hR)
+      (sphere_subset_ball (half_lt_self hR)) a)
+
+/-- **The fundamental group of a simply connected space times a punctured disc is generated by the
+loop around the puncture.** For simply connected `U`, the class of
+`t ↦ (u, p + (z - p) e^{2πit})` generates `π₁(U × (ball p R \ {p}), (u, z))`. Its direction has
+degree one, and the degree of the direction identifies the group with `ℤ`
+(`TauCeti.fundamentalGroupMulEquiv_comp_map_directionFrom_comp_snd_bijective`). -/
+@[simp]
+theorem zpowers_loopAround_eq_top (u : U) (z : ↥(ball p R \ {p})) :
+    Subgroup.zpowers (FundamentalGroup.fromPath
+      (Path.Homotopic.Quotient.mk ((Path.refl u).prod (p.loopAround z)))) = ⊤ := by
+  let d := (p.directionFrom (ball p R)).comp (ContinuousMap.snd : C(U × ↥(ball p R \ {p}), _))
+  -- the degree of the direction, a bijective homomorphism to `ℤ`
+  let W := (Circle.fundamentalGroupMulEquiv _).toMonoidHom.comp (FundamentalGroup.map d (u, z))
+  have hW : Function.Bijective W :=
+    fundamentalGroupMulEquiv_comp_map_directionFrom_comp_snd_bijective (u, z)
+  set γ := FundamentalGroup.fromPath
+    (Path.Homotopic.Quotient.mk ((Path.refl u).prod (p.loopAround z)))
+  have hγ : W γ = Multiplicative.ofAdd 1 := by
+    refine (Circle.fundamentalGroupMulEquiv_fromPath _).trans (congrArg _ ?_)
+    refine Circle.degree_eq_of_sub_eq _
+      (θ := fun t => Complex.arg (p.directionFrom (ball p R) z) + 2 * Real.pi * t)
+      (by fun_prop) (fun t => ?_) (by simp)
+    ext
+    rw [Circle.exp_add, Circle.coe_mul, Circle.exp_arg]
+    simp [d, Complex.norm_exp, div_mul_eq_mul_div]
+  exact (MulEquiv.ofBijective W hW).zpowers_eq_top_of_apply_eq_ofAdd_one hγ
+
+end Product
 
 end TauCeti

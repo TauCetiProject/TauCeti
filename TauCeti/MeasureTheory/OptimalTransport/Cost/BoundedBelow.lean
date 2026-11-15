@@ -11,6 +11,7 @@ public import Mathlib.Topology.Instances.EReal.Lemmas
 public import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 public import TauCeti.MeasureTheory.OptimalTransport.Coupling
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
+import TauCeti.Data.EReal.Operations
 
 /-!
 # Transport costs bounded below by integrable marginal terms
@@ -219,7 +220,7 @@ theorem lowerSemicontinuous_planCostBddBelow
       (fun π : Coupling μp νp =>
         ((∫⁻ z, h.residual z ∂(π.1.toMeasure) : ENNReal) : EReal) + A + B) Set.univ := by
     apply hsub.comp continuous_subtype_val.continuousOn
-    intro π hπ; simp
+    intro π _; simp
   have hcomp' : LowerSemicontinuous
       (fun π : Coupling μp νp =>
         ((∫⁻ z, h.residual z ∂(π.1.toMeasure) : ENNReal) : EReal) + A + B) :=
@@ -258,6 +259,19 @@ theorem le_transportCostBddBelow {d : EReal} (h : IntegrableSplitLowerBound c μ
     (hd : ∀ π hπ, d ≤ planCostBddBelow π hπ h) :
     d ≤ transportCostBddBelow c μ ν h :=
   le_iInf₂ hd
+
+/-- Subtracting the split lower bound reduces the signed primal problem to the nonnegative
+transport problem. The marginal correction is finite even when the optimum is infinite or the
+feasible set is empty. -/
+theorem transportCostBddBelow_eq_transportCost_residual_add_integral_add_integral
+    (h : IntegrableSplitLowerBound c μ ν) :
+    transportCostBddBelow c μ ν h = (transportCost h.residual μ ν : EReal) +
+      (((∫ x, h.fst x ∂μ) + ∫ y, h.snd y ∂ν : ℝ) : EReal) := by
+  have hadd (r : EReal) (a : ℝ) : r + (a : EReal) = r - ((-a : ℝ) : EReal) := by
+    simp only [EReal.coe_neg, sub_eq_add_neg, neg_neg]
+  rw [transportCostBddBelow_def, transportCost_def]
+  simp_rw [planCostBddBelow_def, add_assoc, ← EReal.coe_add, hadd,
+    EReal.iInf_sub_coe, ← EReal.coe_ennreal_iInf]
 
 private theorem residual_add_lowerBoundParts
     (h k : IntegrableSplitLowerBound c μ ν) (z : X × Y) :
@@ -302,113 +316,67 @@ private theorem residual_add_lowerBoundParts
   rw [max_eq_left (sub_nonneg.2 hh), max_eq_left (sub_nonneg.2 hk)]
   grind [max_zero_sub_max_neg_zero_eq_self]
 
+/-- The residuals of two split lower bounds on a coupling differ by the marginal integrals of the
+positive and negative parts of the change of normalization. -/
+private theorem lintegral_residual_add_lintegral_eq
+    (h k : IntegrableSplitLowerBound c μ ν) (hπ : IsCoupling π μ ν) :
+    (∫⁻ z, h.residual z ∂π) + (∫⁻ x, ENNReal.ofReal (h.fst x - k.fst x) ∂μ) +
+        (∫⁻ y, ENNReal.ofReal (h.snd y - k.snd y) ∂ν) =
+      (∫⁻ z, k.residual z ∂π) + (∫⁻ x, ENNReal.ofReal (-(h.fst x - k.fst x)) ∂μ) +
+        (∫⁻ y, ENNReal.ofReal (-(h.snd y - k.snd y)) ∂ν) := by
+  have hfx : Integrable (fun x ↦ h.fst x - k.fst x) μ := h.integrable_fst.sub k.integrable_fst
+  have hfy : Integrable (fun y ↦ h.snd y - k.snd y) ν := h.integrable_snd.sub k.integrable_snd
+  have hfxm : AEMeasurable (fun x ↦ ENNReal.ofReal (h.fst x - k.fst x)) μ :=
+    hfx.aestronglyMeasurable.aemeasurable.ennreal_ofReal
+  have hfym : AEMeasurable (fun y ↦ ENNReal.ofReal (h.snd y - k.snd y)) ν :=
+    hfy.aestronglyMeasurable.aemeasurable.ennreal_ofReal
+  have hnfxm : AEMeasurable (fun x ↦ ENNReal.ofReal (-(h.fst x - k.fst x))) μ :=
+    hfx.neg.aestronglyMeasurable.aemeasurable.ennreal_ofReal
+  have hnfym : AEMeasurable (fun y ↦ ENNReal.ofReal (-(h.snd y - k.snd y))) ν :=
+    hfy.neg.aestronglyMeasurable.aemeasurable.ennreal_ofReal
+  -- Pull all four parts back to the coupling through its two fixed marginals.
+  have hpxmap := hπ.lintegral_comp_fst hfxm
+  have hpymap := hπ.lintegral_comp_snd hfym
+  have hnxmap := hπ.lintegral_comp_fst hnfxm
+  have hnymap := hπ.lintegral_comp_snd hnfym
+  let mpfst : MeasurePreserving Prod.fst π μ := ⟨measurable_fst, hπ.fst_eq⟩
+  let mpsnd : MeasurePreserving Prod.snd π ν := ⟨measurable_snd, hπ.snd_eq⟩
+  have hfxmp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (h.fst z.1 - k.fst z.1)) π :=
+    hfxm.comp_quasiMeasurePreserving mpfst.quasiMeasurePreserving
+  have hfymp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (h.snd z.2 - k.snd z.2)) π :=
+    hfym.comp_quasiMeasurePreserving mpsnd.quasiMeasurePreserving
+  have hnfxmp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (-(h.fst z.1 - k.fst z.1))) π :=
+    hnfxm.comp_quasiMeasurePreserving mpfst.quasiMeasurePreserving
+  have hnfymp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (-(h.snd z.2 - k.snd z.2))) π :=
+    hnfym.comp_quasiMeasurePreserving mpsnd.quasiMeasurePreserving
+  -- Integrate the pointwise residual balance after adjoining those four parts.
+  rw [← hpxmap, ← hpymap, ← hnxmap, ← hnymap,
+    ← lintegral_add_right' _ hfxmp, ← lintegral_add_right' _ hfymp,
+    ← lintegral_add_right' _ hnfxmp, ← lintegral_add_right' _ hnfymp]
+  apply lintegral_congr
+  intro z
+  simpa [sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+    residual_add_lowerBoundParts h k z
+
 /-- On a coupling, the signed plan cost is independent of the chosen split lower bound. -/
 theorem planCostBddBelow_congr_lowerBound
     (h k : IntegrableSplitLowerBound c μ ν) (hπ : IsCoupling π μ ν) :
     planCostBddBelow π hπ h = planCostBddBelow π hπ k := by
   simp only [planCostBddBelow]
   -- Split the change of normalization into its positive and negative marginal parts.
-  let fx : X → ℝ := fun x ↦ h.fst x - k.fst x
-  let fy : Y → ℝ := fun y ↦ h.snd y - k.snd y
-  let px : ℝ≥0∞ := ∫⁻ x, ENNReal.ofReal (fx x) ∂μ
-  let nx : ℝ≥0∞ := ∫⁻ x, ENNReal.ofReal (-fx x) ∂μ
-  let py : ℝ≥0∞ := ∫⁻ y, ENNReal.ofReal (fy y) ∂ν
-  let ny : ℝ≥0∞ := ∫⁻ y, ENNReal.ofReal (-fy y) ∂ν
-  have hfx : Integrable fx μ := h.integrable_fst.sub k.integrable_fst
-  have hfy : Integrable fy ν := h.integrable_snd.sub k.integrable_snd
-  have hpx : px ≠ ⊤ := hfx.lintegral_lt_top.ne
-  have hnx : nx ≠ ⊤ := hfx.neg.lintegral_lt_top.ne
-  have hpy : py ≠ ⊤ := hfy.lintegral_lt_top.ne
-  have hny : ny ≠ ⊤ := hfy.neg.lintegral_lt_top.ne
-  have hfxm : AEMeasurable (fun x ↦ ENNReal.ofReal (fx x)) μ :=
-    hfx.aestronglyMeasurable.aemeasurable.ennreal_ofReal
-  have hfym : AEMeasurable (fun y ↦ ENNReal.ofReal (fy y)) ν :=
-    hfy.aestronglyMeasurable.aemeasurable.ennreal_ofReal
-  have hnfxm : AEMeasurable (fun x ↦ ENNReal.ofReal (-fx x)) μ :=
-    hfx.neg.aestronglyMeasurable.aemeasurable.ennreal_ofReal
-  have hnfym : AEMeasurable (fun y ↦ ENNReal.ofReal (-fy y)) ν :=
-    hfy.neg.aestronglyMeasurable.aemeasurable.ennreal_ofReal
-  -- Pull all four parts back to the coupling through its two fixed marginals.
-  have hpxmap : ∫⁻ z, ENNReal.ofReal (fx z.1) ∂π = px := by
-    have hm : AEMeasurable (fun x ↦ ENNReal.ofReal (fx x)) π.fst := by
-      rwa [hπ.fst_eq]
-    dsimp only [px]
-    rw [← hπ.fst_eq]
-    exact (lintegral_map' hm measurable_fst.aemeasurable).symm
-  have hpymap : ∫⁻ z, ENNReal.ofReal (fy z.2) ∂π = py := by
-    have hm : AEMeasurable (fun y ↦ ENNReal.ofReal (fy y)) π.snd := by
-      rwa [hπ.snd_eq]
-    dsimp only [py]
-    rw [← hπ.snd_eq]
-    exact (lintegral_map' hm measurable_snd.aemeasurable).symm
-  have hnxmap : ∫⁻ z, ENNReal.ofReal (-fx z.1) ∂π = nx := by
-    have hm : AEMeasurable (fun x ↦ ENNReal.ofReal (-fx x)) π.fst := by
-      rwa [hπ.fst_eq]
-    dsimp only [nx]
-    rw [← hπ.fst_eq]
-    exact (lintegral_map' hm measurable_fst.aemeasurable).symm
-  have hnymap : ∫⁻ z, ENNReal.ofReal (-fy z.2) ∂π = ny := by
-    have hm : AEMeasurable (fun y ↦ ENNReal.ofReal (-fy y)) π.snd := by
-      rwa [hπ.snd_eq]
-    dsimp only [ny]
-    rw [← hπ.snd_eq]
-    exact (lintegral_map' hm measurable_snd.aemeasurable).symm
-  let mpfst : MeasurePreserving Prod.fst π μ := ⟨measurable_fst, hπ.fst_eq⟩
-  let mpsnd : MeasurePreserving Prod.snd π ν := ⟨measurable_snd, hπ.snd_eq⟩
-  have hfxmp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (fx z.1)) π :=
-    hfxm.comp_quasiMeasurePreserving mpfst.quasiMeasurePreserving
-  have hfymp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (fy z.2)) π :=
-    hfym.comp_quasiMeasurePreserving mpsnd.quasiMeasurePreserving
-  have hnfxmp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (-fx z.1)) π :=
-    hnfxm.comp_quasiMeasurePreserving mpfst.quasiMeasurePreserving
-  have hnfymp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (-fy z.2)) π :=
-    hnfym.comp_quasiMeasurePreserving mpsnd.quasiMeasurePreserving
-  -- Integrate the pointwise residual balance after adjoining those four parts.
-  have hres : (∫⁻ z, h.residual z ∂π) + px + py =
-      (∫⁻ z, k.residual z ∂π) + nx + ny := by
-    rw [← hpxmap, ← hpymap, ← hnxmap, ← hnymap,
-      ← lintegral_add_right' _ hfxmp, ← lintegral_add_right' _ hfymp,
-      ← lintegral_add_right' _ hnfxmp, ← lintegral_add_right' _ hnfymp]
-    apply lintegral_congr
-    intro z
-    simpa [fx, fy, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
-      residual_add_lowerBoundParts h k z
-  have hdiff : px.toReal - nx.toReal + (py.toReal - ny.toReal) =
-      (∫ x, h.fst x ∂μ) + (∫ y, h.snd y ∂ν) -
-        ((∫ x, k.fst x ∂μ) + (∫ y, k.snd y ∂ν)) := by
-    rw [← integral_eq_lintegral_pos_part_sub_lintegral_neg_part hfx,
-      ← integral_eq_lintegral_pos_part_sub_lintegral_neg_part hfy]
-    simp only [fx, fy, integral_sub h.integrable_fst k.integrable_fst,
-      integral_sub h.integrable_snd k.integrable_snd]
-    ring
-  have hres' :
-      ((∫⁻ z, h.residual z ∂π : ℝ≥0∞) : EReal) +
-          ((px.toReal + py.toReal : ℝ) : EReal) =
-        ((∫⁻ z, k.residual z ∂π : ℝ≥0∞) : EReal) +
-          ((nx.toReal + ny.toReal : ℝ) : EReal) := by
-    simpa [EReal.coe_ennreal_add, EReal.coe_add, EReal.coe_ennreal_toReal, hpx, hnx, hpy, hny,
-      add_assoc] using congrArg (fun t : ℝ≥0∞ ↦ (t : EReal)) hres
-  -- Recombine the positive/negative parts with the finite marginal integrals.
-  calc
-    ((∫⁻ z, h.residual z ∂π : ℝ≥0∞) : EReal) +
-          ((∫ x, h.fst x ∂μ : ℝ) : EReal) + ((∫ y, h.snd y ∂ν : ℝ) : EReal) =
-        (((∫⁻ z, h.residual z ∂π : ℝ≥0∞) : EReal) +
-          ((px.toReal + py.toReal : ℝ) : EReal)) +
-          (((∫ x, h.fst x ∂μ) + (∫ y, h.snd y ∂ν) -
-            (px.toReal + py.toReal) : ℝ) : EReal) := by
-            simp only [← EReal.coe_add, add_assoc]
-            ring_nf
-    _ = (((∫⁻ z, k.residual z ∂π : ℝ≥0∞) : EReal) +
-          ((nx.toReal + ny.toReal : ℝ) : EReal)) +
-          (((∫ x, h.fst x ∂μ) + (∫ y, h.snd y ∂ν) -
-            (px.toReal + py.toReal) : ℝ) : EReal) := by
-            rw [hres']
-    _ = ((∫⁻ z, k.residual z ∂π : ℝ≥0∞) : EReal) +
-          ((∫ x, k.fst x ∂μ : ℝ) : EReal) + ((∫ y, k.snd y ∂ν : ℝ) : EReal) := by
-            simp only [← EReal.coe_add, add_assoc]
-            congr 1
-            norm_cast
-            linarith
+  have hfx : Integrable (fun x ↦ h.fst x - k.fst x) μ :=
+    h.integrable_fst.sub k.integrable_fst
+  have hfy : Integrable (fun y ↦ h.snd y - k.snd y) ν :=
+    h.integrable_snd.sub k.integrable_snd
+  refine EReal.coe_add_add_eq_of_add_add_eq hfx.lintegral_lt_top.ne hfx.neg.lintegral_lt_top.ne
+    hfy.lintegral_lt_top.ne hfy.neg.lintegral_lt_top.ne (lintegral_residual_add_lintegral_eq h k hπ)
+    ?_
+  simp only [Pi.neg_apply]
+  rw [← integral_eq_lintegral_pos_part_sub_lintegral_neg_part hfx,
+    ← integral_eq_lintegral_pos_part_sub_lintegral_neg_part hfy,
+    integral_sub h.integrable_fst k.integrable_fst,
+    integral_sub h.integrable_snd k.integrable_snd]
+  ring
 
 /-- The signed transport cost is independent of the chosen integrable split lower bound. -/
 theorem transportCostBddBelow_congr_lowerBound
@@ -416,17 +384,6 @@ theorem transportCostBddBelow_congr_lowerBound
     transportCostBddBelow c μ ν h = transportCostBddBelow c μ ν k := by
   simp only [transportCostBddBelow]
   exact iInf_congr fun π ↦ iInf_congr fun hπ ↦ planCostBddBelow_congr_lowerBound h k hπ
-
-private theorem coe_iInf_ennreal {ι : Sort*} (f : ι → ℝ≥0∞) :
-    ((⨅ i, f i : ℝ≥0∞) : EReal) = ⨅ i, (f i : EReal) := by
-  apply le_antisymm
-  · exact le_iInf fun i ↦ EReal.coe_ennreal_le_coe_ennreal_iff.2 (iInf_le f i)
-  · have hnonneg : 0 ≤ (⨅ i, (f i : EReal)) :=
-      le_iInf fun i ↦ EReal.coe_ennreal_nonneg (f i)
-    rw [← EReal.coe_toENNReal hnonneg]
-    exact EReal.coe_ennreal_le_coe_ennreal_iff.2 <| le_iInf fun i ↦
-      (EReal.toENNReal_le_toENNReal (iInf_le (fun j ↦ (f j : EReal)) i)).trans_eq
-        EReal.toENNReal_coe
 
 /-- For a nonnegative `ℝ≥0∞`-valued cost, the bounded-below signed interface agrees exactly
 with the original nonnegative transport cost, for any valid split lower bound. -/
@@ -437,10 +394,10 @@ theorem transportCostBddBelow_coe_eq_transportCost (c : X × Y → ℝ≥0∞)
       (transportCost c μ ν : EReal) := by
   rw [transportCostBddBelow_congr_lowerBound h
     (IntegrableSplitLowerBound.ofNonneg (fun _ ↦ EReal.coe_ennreal_nonneg _) μ ν)]
-  rw [transportCost_def, coe_iInf_ennreal]
+  rw [transportCost_def, EReal.coe_ennreal_iInf]
   apply iInf_congr
   intro π
-  rw [coe_iInf_ennreal]
+  rw [EReal.coe_ennreal_iInf]
   simp only [planCostBddBelow, IntegrableSplitLowerBound.residual,
     IntegrableSplitLowerBound.ofNonneg,
     Pi.zero_apply, sub_zero,

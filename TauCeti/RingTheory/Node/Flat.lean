@@ -8,9 +8,8 @@ module
 public import TauCeti.RingTheory.Node.Basic
 public import TauCeti.Topology.PureDimension
 public import Mathlib.RingTheory.AdjoinRoot
-public import Mathlib.RingTheory.KrullDimension.Basic
+import TauCeti.RingTheory.KrullDimension.Quotient
 import TauCeti.RingTheory.Ideal.GoingDown
-import TauCeti.RingTheory.KrullDimension.Equidimensional
 import TauCeti.RingTheory.KrullDimension.Integral
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import TauCeti.RingTheory.Flat.NonZeroDivisors

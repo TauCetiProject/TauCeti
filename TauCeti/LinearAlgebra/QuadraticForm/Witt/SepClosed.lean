@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.SepClosed
-public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Ring
+public import TauCeti.LinearAlgebra.QuadraticForm.Witt.BaseChange
 
 /-!
 # The Witt ring of a separably closed field
@@ -24,7 +24,11 @@ public section
 
 namespace TauCeti
 
-variable {K : Type*} [Field K] [IsSepClosed K] [Invertible (2 : K)]
+variable {K : Type*} [Field K] [Invertible (2 : K)]
+
+section
+
+variable [IsSepClosed K]
 
 /-- A Witt class over a separably closed field vanishes if its rank modulo two does. -/
 theorem WittRing.eq_zero_of_dimMod2_eq_zero_of_isSepClosed {x : WittRing K}
@@ -35,9 +39,7 @@ theorem WittRing.eq_zero_of_dimMod2_eq_zero_of_isSepClosed {x : WittRing K}
   obtain ⟨m, hm⟩ := heven
   have hq : q = m • hyperbolicClass K :=
     RegularFormClass.rank_injective_of_isSepClosed (by
-      rw [← RegularFormClass.rankHom_apply (m • hyperbolicClass K), map_nsmul,
-        RegularFormClass.rankHom_apply, rank_hyperbolicClass]
-      simpa [hm, nsmul_eq_mul] using (Nat.mul_two m).symm)
+      rw [rank_nsmul_hyperbolicClass, hm, two_mul])
   rw [hq, map_nsmul, wittClass_hyperbolicClass, smul_zero]
 
 /-- Dimension modulo two is an isomorphism for the Witt ring of a separably closed field. -/
@@ -52,5 +54,30 @@ theorem WittRing.equivZModTwoOfIsSepClosed_apply (x : WittRing K) :
     WittRing.equivZModTwoOfIsSepClosed x = WittRing.dimMod2 x := by
   unfold WittRing.equivZModTwoOfIsSepClosed
   exact RingEquiv.ofBijective_apply _ _ x
+
+end
+
+variable {L M : Type*} [Field L] [Field M] [Algebra K L]
+variable [Invertible (2 : L)]
+
+/-- Scalar extension to a separably closed field kills exactly the even-dimensional Witt classes. -/
+theorem WittRing.baseChange_eq_zero_iff_dimMod2_eq_zero [IsSepClosed L] (x : WittRing K) :
+    WittRing.baseChange (L := L) x = 0 ↔ WittRing.dimMod2 x = 0 := by
+  constructor
+  · exact WittRing.dimMod2_eq_zero_of_baseChange_eq_zero
+  · intro h
+    apply WittRing.eq_zero_of_dimMod2_eq_zero_of_isSepClosed
+    simpa only [WittRing.dimMod2_baseChange] using h
+
+/-- Equality after scalar extension implies equality after extension to any separably closed field.
+No map between the two extension fields is required. -/
+theorem WittRing.baseChange_eq_of_baseChange_eq_of_isSepClosed
+    [Algebra K M] [Invertible (2 : M)] [IsSepClosed M] {x y : WittRing K}
+    (h : WittRing.baseChange (L := L) x = WittRing.baseChange (L := L) y) :
+    WittRing.baseChange (L := M) x = WittRing.baseChange (L := M) y := by
+  have hsub : WittRing.baseChange (L := L) (x - y) = 0 := by simp [h]
+  have hdim := WittRing.dimMod2_eq_zero_of_baseChange_eq_zero hsub
+  have hc := (WittRing.baseChange_eq_zero_iff_dimMod2_eq_zero (L := M) (x - y)).mpr hdim
+  simpa only [map_sub, sub_eq_zero] using hc
 
 end TauCeti

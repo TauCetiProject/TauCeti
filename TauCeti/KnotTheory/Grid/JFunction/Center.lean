@@ -60,12 +60,9 @@ square there too.
 
 ## References
 
-This supplies a prerequisite for `CombinatorialHeegaardFloer/README.md` in TauCetiRoadmap,
-Lane G.2, "Gradings. The `J`-function, `M_O`, `M_X`, `A`; integer-valuedness of `A`;
-grading-change formulas across a rectangle." The convention that the markings sit at the centers
-of their squares while a grid state sits on the grid lines is that of Ozsváth--Stipsicz--Szabó,
-*Grid Homology for Knots and Links*, Chapters 3.1--3.2 and 4.1 for the placement convention, and
-Chapter 4.3 for the grading pairing.
+The convention that the markings sit at the centers of their squares while a grid state sits on the
+grid lines is that of Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters
+3.1--3.2 and 4.1 for the placement convention, and Chapter 4.3 for the grading pairing.
 
 * [TauCeti pull request #3135](https://github.com/TauCetiProject/TauCeti/pull/3135),
   whose square-centered marking convention and rotation-noninvariance argument this correction
@@ -376,7 +373,7 @@ theorem JO_eq_card (x : GridState n) :
       (((Finset.univ.filter fun p : Fin n × Fin n => p.1 ≤ p.2 ∧ x p.1 ≤ G.O p.2).card +
         (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ G.O p.1 < x p.2).card : ℕ) :
           ℚ) / 2 := by
-  rw [JO_def, OSet, GridPoint.JCenter_def, GridState.JNumCenter_pointSet_eq_card]
+  rw [JO_def, OSet_def, GridPoint.JCenter_def, GridState.JNumCenter_pointSet_eq_card]
 
 /-- The `X`-marking pairing as a column-index count. -/
 theorem JX_eq_card (x : GridState n) :
@@ -384,7 +381,7 @@ theorem JX_eq_card (x : GridState n) :
       (((Finset.univ.filter fun p : Fin n × Fin n => p.1 ≤ p.2 ∧ x p.1 ≤ G.X p.2).card +
         (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ G.X p.1 < x p.2).card : ℕ) :
           ℚ) / 2 := by
-  rw [JX_def, XSet, GridPoint.JCenter_def, GridState.JNumCenter_pointSet_eq_card]
+  rw [JX_def, XSet_def, GridPoint.JCenter_def, GridState.JNumCenter_pointSet_eq_card]
 
 /-- `JO` is invariant under reflecting the diagram and state across the diagonal. -/
 theorem JO_transpose (x : GridState n) :

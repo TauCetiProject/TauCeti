@@ -71,7 +71,7 @@ theorem exists_mem_connectedComponentOfOne_ideleClassNorm_eq (t : ℝ≥0ˣ) :
   obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
   -- An element `x` of normalized absolute value `√t`; its square `x * x` has absolute value `t`
   -- and is positive at a real place.
-  obtain ⟨x, hx⟩ := exists_infiniteCompletionNormalizedAbsValue_eq w
+  obtain ⟨x, hx⟩ := exists_completionNormalizedAbsValue_eq w
     (Real.sqrt_nonneg ((t : ℝ≥0) : ℝ))
   have hx0 : x ≠ 0 := by
     rintro rfl

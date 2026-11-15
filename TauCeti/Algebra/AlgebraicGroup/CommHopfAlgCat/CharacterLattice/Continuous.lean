@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterLattice.Basic
+import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
 # Continuity of the absolute-Galois action on geometric characters

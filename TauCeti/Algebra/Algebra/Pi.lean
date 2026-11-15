@@ -6,7 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 -- Public: `Pi.evalAlgHom` and `AlgHom.eq_piEvalAlgHom` both occur in the statements below.
+public import Mathlib.Algebra.Algebra.Pi
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.StdBasis
+public import Mathlib.RingTheory.Finiteness.Defs
+public import Mathlib.RingTheory.TensorProduct.Maps
+public import Mathlib.SetTheory.Cardinal.Finite
+import Mathlib.LinearAlgebra.TensorProduct.Pi
+import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # The algebra homomorphisms out of a finite power of the base ring
@@ -16,17 +25,56 @@ Mathlib's `AlgHom.eq_piEvalAlgHom` says that every `R`-algebra homomorphism `(ι
 coordinate evaluation `Pi.evalAlgHom R _ s`. Distinct coordinates give distinct evaluations, since
 they disagree on `Pi.single s 1`, so the evaluations enumerate those homomorphisms **without
 repetition**: `Pi.evalAlgHomEquiv` packages that as an equivalence `ι ≃ ((ι → R) →ₐ[R] R)`.
+More generally, `AlgHom.sigmaEquivPi` identifies algebra maps from a finite product into a
+nontrivial semiring without zero divisors with maps from one factor, precomposed with its
+projection.
 
 The injectivity half, `Pi.evalAlgHom_injective`, is what Mathlib does not record, and it is what
 makes the equivalence useful for counting: a split commutative algebra has exactly as many
 characters as it has factors. The Burnside--Dixon--Schneider algorithm consumes it in that form, to
 count the central characters of a group algebra whose centre has been split into coordinates.
 
+For any algebra over a field, `AlgHom.surjective_pi_of_injective` supplies finite
+interpolation at distinct augmentations, without commutativity or finite generation. It follows
+from Mathlib's `linearIndependent_monoidHom` (Dedekind independence) and
+`span_flip_eq_top_iff_linearIndependent` (finite duality). This supplies polynomial interpolation
+on finite Weyl orbits for the Harish-Chandra central-character theorem.
+
+Over any nontrivial commutative semiring, an algebra map `φ : (ι → T) →ₐ[T] (κ → T)` whose matrix
+entries `φ (Pi.single i 1) j` are all `0` or `1` is induced by a map of index sets `κ → ι`
+(`AlgHom.exists_apply_eq_comp_of_entries`). This computes equalizers of algebra maps between split
+algebras.
+
+For a finite-dimensional algebra over a field, `TauCeti.AlgHom.pi_bijective_of_injective`
+identifies evaluation at a finite family of distinct characters with the function algebra,
+provided those characters separate elements. The same evaluation, at all characters, is bijective
+as soon as there are at least as many characters as the dimension
+(`TauCeti.AlgHom.pi_id_bijective_of_finrank_le_card`): such an algebra is split, a finite product
+of copies of the base field. This is how a finite scheme over a field with as many rational points
+as its degree is shown to be étale.
+
+When a family of characters `χ` of `C` and a finite family `ψ` of characters of `D` identify `C`
+and `D` with function algebras, `Algebra.TensorProduct.eq_of_pi_bijective` says that the products
+`Algebra.TensorProduct.lift (χ i) (ψ j)` separate the elements of `C ⊗[R] D`: they are the
+coordinates of `C ⊗[R] D ≅ (ι → R) ⊗[R] (κ → R) ≅ (κ → ι → R)`.
+
 ## Main definitions
 
+* `AlgHom.surjective_pi_of_injective`: distinct finitely many augmentations admit arbitrary
+  simultaneous values.
+* `AlgHom.exists_apply_eq_comp_of_entries`: an algebra map `(ι → T) →ₐ[T] (κ → T)` whose matrix
+  entries are all `0` or `1` is induced by a map `κ → ι`.
+* `AlgHom.exists_eq_comp_piEvalAlgHom`: an algebra homomorphism from a finite product of algebras
+  into a domain factors through one of the projections.
+* `AlgHom.sigmaEquivPi`: maps from a finite product into a nontrivial semiring without zero divisors
+  are precisely maps from one factor, precomposed with its projection.
 * `Pi.evalAlgHom_injective`: distinct coordinates give distinct evaluation homomorphisms.
 * `Pi.evalAlgHomEquiv`: the coordinates of `ι → R` are exactly the `R`-algebra homomorphisms
   `(ι → R) →ₐ[R] R`.
+* `Algebra.TensorProduct.eq_of_pi_bijective`: characters identifying `C` and `D` with function
+  algebras give separating characters of `C ⊗[R] D`.
+* `TauCeti.AlgHom.pi_id_bijective_of_finrank_le_card`: a finite-dimensional algebra over a field
+  with at least as many characters as its dimension is the algebra of functions on its characters.
 -/
 
 public section
@@ -63,3 +111,209 @@ theorem evalAlgHomEquiv_apply (s : ι) :
   (rfl)
 
 end Pi
+
+namespace AlgHom
+
+/-- Distinct finitely many augmentations to the ground field admit arbitrary simultaneous
+values: their product algebra homomorphism is surjective. -/
+theorem surjective_pi_of_injective {K A ι : Type*} [Field K] [Semiring A] [Algebra K A]
+    [_root_.Finite ι] (f : ι → A →ₐ[K] K) (hf : Function.Injective f) :
+    Function.Surjective (AlgHom.pi f) := by
+  have hli : LinearIndependent K (fun i : ι ↦ (f i : A → K)) :=
+    (linearIndependent_monoidHom A K).comp
+      (fun i ↦ (f i).toRingHom.toMonoidHom)
+      (fun i j hij ↦ hf <| AlgHom.ext fun x ↦ congrArg (fun m : A →* K ↦ m x) hij)
+  have hspan : Submodule.span K (Set.range (AlgHom.pi f).toLinearMap) = ⊤ :=
+    span_flip_eq_top_iff_linearIndependent.mpr hli
+  have hr : LinearMap.range (AlgHom.pi f).toLinearMap = ⊤ := by
+    simpa only [← LinearMap.coe_range, Submodule.span_eq] using hspan
+  exact LinearMap.range_eq_top.mp hr
+
+/-- An algebra map between function algebras whose matrix entries `φ (Pi.single i 1) j` are all `0`
+or `1` is induced by a map of the index sets. -/
+theorem exists_apply_eq_comp_of_entries {T ι κ : Type*} [CommSemiring T] [Nontrivial T]
+    [_root_.Finite ι] [DecidableEq ι] (φ : (ι → T) →ₐ[T] (κ → T))
+    (hφ : ∀ i j, φ (Pi.single i 1) j = 0 ∨ φ (Pi.single i 1) j = 1) :
+    ∃ u : κ → ι, ∀ s j, φ s j = s (u j) := by
+  have := Fintype.ofFinite ι
+  have hsum (j : κ) : ∑ i, φ (Pi.single i 1) j = 1 := by
+    have h1 : ∑ i, (Pi.single i 1 : ι → T) = 1 := by
+      simpa using Finset.univ_sum_single (1 : ι → T)
+    rw [← Finset.sum_apply, ← map_sum, h1, map_one, Pi.one_apply]
+  have hone (j : κ) : ∃ i, φ (Pi.single i 1) j = 1 := by
+    by_contra! h
+    have h0 (i : ι) : φ (Pi.single i 1) j = 0 := (hφ i j).resolve_right (h i)
+    exact one_ne_zero ((hsum j).symm.trans (by simp [h0]))
+  choose u hu using hone
+  refine ⟨u, fun s j ↦ ?_⟩
+  have hs : s = ∑ i, s i • (Pi.single i 1 : ι → T) := by
+    conv_lhs => rw [← Finset.univ_sum_single s]
+    simp [← Pi.single_smul']
+  have hφs : φ s j = ∑ i, s i * φ (Pi.single i 1) j := by
+    conv_lhs => rw [hs]
+    rw [map_sum, Finset.sum_apply]
+    exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, Pi.smul_apply, smul_eq_mul]
+  rw [hφs, Finset.sum_eq_single (u j) (fun i _ hi ↦ ?_) (by simp), hu j, mul_one]
+  have hprod : (Pi.single i 1 : ι → T) * Pi.single (u j) 1 = 0 := by
+    ext k
+    by_cases hk : k = i
+    · subst hk
+      simp [hi]
+    · simp [Pi.single_apply, hk]
+  have h0 := congrFun (congrArg φ hprod) j
+  simp [hu j] at h0
+  simp [h0]
+
+
+/-- **An algebra homomorphism from a finite product into a domain factors through a projection.**
+For a finite family of `R`-algebras `A i` and an `R`-algebra `B` without zero divisors, every
+`φ : (Π i, A i) →ₐ[R] B` is `ψ ∘ Pi.evalAlgHom R A i` for some `i` and `ψ : A i →ₐ[R] B`. This
+generalises Mathlib's `AlgHom.eq_piEvalAlgHom`, the case `A i = B = R`. -/
+theorem exists_eq_comp_piEvalAlgHom {R ι : Type*} [CommSemiring R] [_root_.Finite ι]
+    {A : ι → Type*} [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] {B : Type*} [Semiring B]
+    [Algebra R B] [NoZeroDivisors B] [Nontrivial B] (φ : (Π i, A i) →ₐ[R] B) :
+    ∃ i, ∃ ψ : A i →ₐ[R] B, φ = ψ.comp (Pi.evalAlgHom R A i) := by
+  classical
+  have := Fintype.ofFinite ι
+  have h1 := map_one φ
+  rw [← Finset.univ_sum_single (1 : Π i, A i), map_sum] at h1
+  simp only [Pi.one_apply] at h1
+  obtain ⟨i, hi⟩ : ∃ i, φ (Pi.single i 1) ≠ 0 := by
+    by_contra! h
+    simp_all
+  have h2 : ∀ j ≠ i, φ (Pi.single j 1) = 0 := by
+    refine fun j hj ↦ (eq_zero_or_eq_zero_of_mul_eq_zero ?_).resolve_left hi
+    rw [← map_mul]
+    convert map_zero φ
+    ext k
+    by_cases hk : k = i
+    · subst hk
+      simp [hj]
+    · simp [hk]
+  have h3 : φ (Pi.single i 1) = 1 := by rwa [Fintype.sum_eq_single i h2] at h1
+  -- `φ` only sees the `i`-th coordinate: the other summands of `x` are killed by `Pi.single j 1`.
+  have h4 (x : Π i, A i) : φ x = φ (Pi.single i (x i)) := by
+    conv_lhs => rw [← Finset.univ_sum_single x, map_sum]
+    refine Fintype.sum_eq_single i fun j hj ↦ ?_
+    rw [← mul_one (x j), Pi.single_mul, map_mul, h2 j hj, mul_zero]
+  refine ⟨i,
+    { toFun a := φ (Pi.single i a)
+      map_one' := h3
+      map_mul' a b := by rw [Pi.single_mul, map_mul]
+      map_zero' := by simp
+      map_add' a b := by rw [Pi.single_add, map_add]
+      commutes' r := by rw [← Pi.algebraMap_apply ι A r i, ← h4, AlgHom.commutes] },
+    AlgHom.ext h4⟩
+
+/-- Maps from a finite product into a nontrivial domain are precisely maps from one factor,
+precomposed with the corresponding projection. This includes the empty product, which has no
+maps to a nontrivial domain. -/
+noncomputable def sigmaEquivPi {R ι : Type*} [CommSemiring R] [_root_.Finite ι]
+    (A : ι → Type*) [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
+    (B : Type*) [Semiring B] [Algebra R B] [NoZeroDivisors B] [Nontrivial B] :
+    (Σ i, A i →ₐ[R] B) ≃ ((Π i, A i) →ₐ[R] B) := by
+  classical
+  refine Equiv.ofBijective (fun f ↦ f.2.comp (Pi.evalAlgHom R A f.1)) ⟨?_, ?_⟩
+  · rintro ⟨i, φ⟩ ⟨j, ψ⟩ h
+    have hij : i = j := by
+      by_contra hne
+      have := DFunLike.congr_fun h (Pi.single i 1)
+      simp [Ne.symm hne] at this
+    subst j
+    congr 1
+    ext a
+    have := DFunLike.congr_fun h (Pi.single i a)
+    simpa using this
+  · intro φ
+    obtain ⟨i, ψ, rfl⟩ := φ.exists_eq_comp_piEvalAlgHom
+    exact ⟨⟨i, ψ⟩, rfl⟩
+
+/-- The factor-map equivalence is composition with coordinate evaluation. -/
+@[simp]
+theorem sigmaEquivPi_apply {R ι : Type*} [CommSemiring R] [_root_.Finite ι]
+    (A : ι → Type*) [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
+    (B : Type*) [Semiring B] [Algebra R B] [NoZeroDivisors B] [Nontrivial B]
+    (i : ι) (φ : A i →ₐ[R] B) :
+    sigmaEquivPi A B ⟨i, φ⟩ = φ.comp (Pi.evalAlgHom R A i) :=
+  (rfl)
+
+end AlgHom
+
+open scoped TensorProduct
+
+namespace Algebra.TensorProduct
+
+variable {R C D ι κ : Type*} [CommSemiring R] [Semiring C] [Algebra R C] [Semiring D]
+  [Algebra R D] [_root_.Finite κ]
+
+/-- If a family of characters `χ` of `C` and a finite family `ψ` of characters of `D`
+identify `C` and `D` with the function algebras `ι → R` and `κ → R`, then the characters
+`lift (χ i) (ψ j)` separate the elements of `C ⊗[R] D`: through
+`C ⊗[R] D ≅ (ι → R) ⊗[R] (κ → R) ≅ (κ → ι → R)` they are the coordinates. -/
+theorem eq_of_pi_bijective {χ : ι → C →ₐ[R] R} {ψ : κ → D →ₐ[R] R}
+    (hχ : Function.Bijective (AlgHom.pi χ)) (hψ : Function.Bijective (AlgHom.pi ψ))
+    {x y : C ⊗[R] D}
+    (h : ∀ i j,
+      lift (χ i) (ψ j) (fun _ _ ↦ .all _ _) x = lift (χ i) (ψ j) (fun _ _ ↦ .all _ _) y) :
+    x = y := by
+  classical
+  have := Fintype.ofFinite κ
+  let F := (_root_.TensorProduct.congr (AlgEquiv.ofBijective _ hχ).toLinearEquiv
+    (AlgEquiv.ofBijective _ hψ).toLinearEquiv).trans
+      (_root_.TensorProduct.piScalarRight R R (ι → R) κ)
+  have hF (z : C ⊗[R] D) (i : ι) (j : κ) :
+      F z j i = lift (χ i) (ψ j) (fun _ _ ↦ .all _ _) z := by
+    induction z using _root_.TensorProduct.inductionOn with
+    | tmul c d => simp [F, _root_.TensorProduct.piScalarRightHom_tmul, mul_comm]
+    | add z z' hz hz' =>
+        simp only [map_add, Pi.add_apply] at hz hz' ⊢
+        rw [hz, hz']
+  exact F.injective <| funext fun j ↦ funext fun i ↦ by rw [hF, hF, h]
+
+end Algebra.TensorProduct
+
+namespace TauCeti
+
+variable {K A ι : Type*} [Field K] [Ring A] [Algebra K A]
+  [Module.Finite K A]
+
+/-- Evaluation at distinct characters that separate elements identifies a finite-dimensional
+algebra with the algebra of functions on the character index set. -/
+theorem AlgHom.pi_bijective_of_injective (χ : ι → A →ₐ[K] K)
+    (hχ : Function.Injective χ) (hinj : Function.Injective (AlgHom.pi χ)) :
+    Function.Bijective (AlgHom.pi χ) := by
+  classical
+  let := Finite.algHom K A K
+  let := Finite.of_injective χ hχ
+  let := Fintype.ofFinite ι
+  have hle : Module.finrank K (ι → K) ≤ Module.finrank K A := by
+    have h := (Nat.card_le_card_of_injective χ hχ).trans
+      (card_algHom_le_finrank K A K)
+    simpa [Module.finrank_pi] using h
+  have hdim : Module.finrank K A = Module.finrank K (ι → K) :=
+    le_antisymm (LinearMap.finrank_le_finrank_of_injective
+      (f := (AlgHom.pi χ).toLinearMap) hinj) hle
+  exact ⟨hinj,
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      (f := (AlgHom.pi χ).toLinearMap) hdim).mp hinj⟩
+
+/-- **A finite-dimensional algebra with as many characters as its dimension is split.** If a
+finite-dimensional algebra `A` over a field `K` has at least `finrank K A` characters
+`A →ₐ[K] K`, then evaluation at all of them identifies `A` with the algebra of `K`-valued functions
+on its characters. -/
+theorem AlgHom.pi_id_bijective_of_finrank_le_card
+    (h : Module.finrank K A ≤ Nat.card (A →ₐ[K] K)) :
+    Function.Bijective (AlgHom.pi fun χ : A →ₐ[K] K ↦ χ) := by
+  classical
+  let := Finite.algHom K A K
+  let := Fintype.ofFinite (A →ₐ[K] K)
+  have hsurj := _root_.AlgHom.surjective_pi_of_injective (fun χ : A →ₐ[K] K ↦ χ)
+    Function.injective_id
+  have hdim : Module.finrank K A = Module.finrank K ((A →ₐ[K] K) → K) :=
+    le_antisymm (by simpa [Module.finrank_pi] using h)
+      (LinearMap.finrank_le_finrank_of_surjective
+        (f := (AlgHom.pi fun χ : A →ₐ[K] K ↦ χ).toLinearMap) hsurj)
+  exact ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    (f := (AlgHom.pi fun χ : A →ₐ[K] K ↦ χ).toLinearMap) hdim).mpr hsurj, hsurj⟩
+
+end TauCeti

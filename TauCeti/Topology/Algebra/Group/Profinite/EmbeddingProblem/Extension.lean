@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.Projective
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Extension
+public import TauCeti.Topology.Algebra.GroupExtension.Splitting
 
 /-!
 # Extensions of a projective pro-`p` group split
@@ -39,7 +40,9 @@ in `TauCeti.Topology.Algebra.Group.Profinite.Free.Extension` is the instance of 
 
 public section
 
-namespace TauCeti
+namespace GroupExtension
+
+open TauCeti
 
 universe u v
 
@@ -57,19 +60,19 @@ variable [T2Space G] {M : Type*} [Group M] [TopologicalSpace M]
 `1 → M → E → G → 1` of topological groups with profinite total group and pro-`p` kernel, over a
 projective pro-`p` Hausdorff group `G`, has a continuous homomorphic section: the total group is
 pro-`p`, and projectivity lifts the identity of `G` through the projection. -/
-theorem _root_.GroupExtension.exists_splitting_continuous_of_isProjective
+theorem exists_splitting_continuous_of_isProjective
     (S : GroupExtension M E G) (hinl : Continuous S.inl) (hrh : Continuous S.rightHom)
     (hM : IsProP p M) (hG : IsProP p G) (hproj : IsProjective.{u, v, u} p G) :
     ∃ s : S.Splitting, Continuous ⇑s := by
-  have hE : IsProP p E := S.isProP hinl hrh hM hG
-  -- The projection, bundled with its continuity; it evaluates as `S.rightHom` by construction.
-  let π : E →ₜ* G := ⟨S.rightHom, hrh⟩
-  have hπ : ∀ z, π z = S.rightHom z := fun _ ↦ rfl
-  obtain ⟨s, hs⟩ :=
-    hproj.exists_continuous_lift hE π S.rightHom_surjective (ContinuousMonoidHom.id G)
-  exact ⟨GroupExtension.Splitting.mk s.toMonoidHom fun y ↦ by
-    simpa [hπ] using DFunLike.congr_fun hs y, s.continuous⟩
+  have hE : IsProP p E :=
+    S.isProP hinl (MonoidHom.isOpenQuotientMap_of_isQuotientMap
+      (Topology.IsQuotientMap.of_surjective_continuous S.rightHom_surjective hrh)).isOpenMap hM hG
+  obtain ⟨σ, hσ⟩ := hproj.exists_continuous_lift hE ⟨S.rightHom, hrh⟩ S.rightHom_surjective
+    (ContinuousMonoidHom.id G)
+  obtain ⟨s, hs, -⟩ := S.exists_splitting_continuous_of_comp_eq_id σ
+    (congrArg ContinuousMonoidHom.toMonoidHom hσ)
+  exact ⟨s, hs⟩
 
 end Splitting
 
-end TauCeti
+end GroupExtension

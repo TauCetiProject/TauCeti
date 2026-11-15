@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
-import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue
+import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Harnack's inequality in every dimension
@@ -74,12 +75,11 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.le_div_pow_mul_of_nonneg
       ball_subset_closedBall
   have hle : ∫ z in ball x r, u z ∂μ ≤ ∫ z in ball y s, u z ∂μ :=
     setIntegral_mono_set hint ((ae_restrict_iff' measurableSet_ball).2 (ae_of_all _ hnonneg))
-      (ball_subset_ball' hxy).eventuallyLE
+      (ball_subset_ball' hxy).eventuallySubset
   rw [(hu.mono (closedBall_subset_closedBall' hxy)).setIntegral_ball_eq,
     hu.setIntegral_ball_eq] at hle
-  simp only [smul_eq_mul, measureReal_def, μ.addHaar_ball_of_pos x hr,
-    μ.addHaar_ball_of_pos y hs, ENNReal.toReal_mul,
-    ENNReal.toReal_ofReal (pow_nonneg hr.le _), ENNReal.toReal_ofReal (pow_nonneg hs.le _)] at hle
+  simp only [smul_eq_mul, μ.addHaar_real_ball_of_pos x hr, μ.addHaar_real_ball_of_pos y hs,
+    measureReal_def] at hle
   have hB : 0 < (μ (ball 0 1)).toReal :=
     ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
   rw [div_pow, div_mul_eq_mul_div, le_div_iff₀ (by positivity)]
@@ -154,7 +154,7 @@ private lemma exists_forall_isHarnackPair {K U : Set E} (hK : IsCompact K) (hU :
   refine hK.induction_on
     (p := fun t ↦ ∃ C, 0 ≤ C ∧ ∀ z ∈ t ∩ U, IsHarnackPair U z x₀ C ∧ IsHarnackPair U x₀ z C)
     ⟨0, le_rfl, by simp⟩ (fun t t' htt' ⟨C, hC, h⟩ ↦ ⟨C, hC, fun z hz ↦ h z ⟨htt' hz.1, hz.2⟩⟩)
-    (fun t t' ⟨C, hC, h⟩ ⟨C', hC', h'⟩ ↦ ⟨max C C', le_max_of_le_left hC, ?_⟩) (fun z hz ↦ ?_)
+    (fun t t' ⟨C, hC, h⟩ ⟨C', _, h'⟩ ↦ ⟨max C C', le_max_of_le_left hC, ?_⟩) (fun z hz ↦ ?_)
   · rintro w ⟨hw | hw, hwU⟩
     · exact ⟨(h w ⟨hw, hwU⟩).1.mono hx₀U (le_max_left _ _),
         (h w ⟨hw, hwU⟩).2.mono hwU (le_max_left _ _)⟩
@@ -163,7 +163,7 @@ private lemma exists_forall_isHarnackPair {K U : Set E} (hK : IsCompact K) (hU :
   -- Near `z ∈ K`, compare with `z` by the local estimate and then `z` with `x₀`.
   have hzU := hKU hz
   obtain ⟨C₁, hC₁, h₁⟩ := exists_isHarnackPair hU hUc hzU hx₀U
-  obtain ⟨C₂, hC₂, h₂⟩ := exists_isHarnackPair hU hUc hx₀U hzU
+  obtain ⟨C₂, _, h₂⟩ := exists_isHarnackPair hU hUc hx₀U hzU
   refine ⟨_, nhdsWithin_le_nhds (eventually_isHarnackPair hU hzU),
     3 ^ finrank ℝ E * max C₁ C₂, by positivity, fun w ⟨hw, _⟩ ↦
       ⟨(hw.1.trans (by positivity) h₁).mono hx₀U ?_, ?_⟩⟩

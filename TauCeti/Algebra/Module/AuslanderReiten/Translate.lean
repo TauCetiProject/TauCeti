@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
 public import TauCeti.LinearAlgebra.Dual.RightAction
+public import TauCeti.Algebra.Module.Dual.Indecomposable
 
 /-!
 # The Auslander--Reiten translate
 
 For an algebra `A` over a commutative semiring `k`, the **duality** `D = Hom_k(-, k)` turns a right
-`A`-module into a left `A`-module, by `TauCeti.dualRightAction`.  This file applies that duality to
-the Auslander--Reiten transpose to define the **Auslander--Reiten translate**
+`A`-module into a left `A`-module, by `TauCeti.linearMapRightAction`.  This file applies that
+duality to the Auslander--Reiten transpose to define the **Auslander--Reiten translate**
 
 `τ M = D (Tr M)`
 
@@ -26,6 +26,10 @@ The translate is attached to a *presentation*, not directly to `M`: like the tra
 well defined only because a minimal projective presentation is unique up to isomorphism of the whole
 diagram.  `TauCeti.IsMinimalProjectivePresentation.nonempty_linearEquiv_auslanderReitenTranslate` is
 that statement, and it is what licenses the notation `τ M`.
+
+AR duality itself, and the bijection it yields from non-projective indecomposables to non-injective
+indecomposables with inverse `Tr D`, is **not proved here**: it needs finite-dimensional
+hypotheses and stable morphism spaces.
 
 ## Main definitions
 
@@ -48,10 +52,12 @@ that statement, and it is what licenses the notation `τ M`.
   for a finitely generated left-hand source and a transpose projective over the base, the converse
   holds too — **the translate vanishes exactly on the projective modules** — so that `τ` assigns a
   nonzero module to every non-projective one.
+* `TauCeti.AuslanderReitenTranslate.isIndecomposableModule_iff`: when the transpose is reflexive
+  over a commutative base ring, the translate is indecomposable exactly when the transpose is.
 
 ## Implementation notes
 
-`TauCeti.dualRightAction` is a plain ring homomorphism rather than a `Module` instance on every
+`TauCeti.linearMapRightAction` is a plain ring homomorphism rather than a `Module` instance on every
 dual, for the reasons recorded in `TauCeti/LinearAlgebra/Dual/RightAction.lean`; the single
 `Module` instance built from it is the one on the translate, whose underlying transpose pins the
 right-module structure being dualized.
@@ -63,22 +69,10 @@ finite-dimensionality of a dual are inherited verbatim and are not restated here
 `A`-action is new, and it is described by the single lemma
 `TauCeti.AuslanderReitenTranslate.smul_apply`.
 
-The name `arTranslate` is deliberately left free: the roadmap pins it for the *object-level*
-translate `arTranslate k Q M` of a representation, which this presentation-level construction will
-supply once the stable category is available.
+The shorter name `arTranslate` is not used, so that it stays available for an *object-level*
+translate of a quiver representation, which needs the stable category and is not formalised here.
 
 ## References
-
-This is the `arTranslate M = D (Tr M)` construction of sublayer 6D, "the AR translate `τ = D Tr`
-and AR duality", of Layer 6 of
-[the quiver-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md),
-which names it as the composite of the transpose of sublayer 6C with the duality
-`D = Hom_k(-, k)`, "well-defined only up to projectives, through minimal presentations and duality
-on finite-dimensional modules".
-
-AR duality itself, and the bijection it yields from non-projective indecomposables to non-injective
-indecomposables with inverse `Tr D`, is **not proved here**: it needs the finite-dimensional
-hypotheses and the stable morphism spaces that sublayer 6C supplies.
 
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*, Cambridge
   University Press (1995), Section IV.1.
@@ -101,7 +95,7 @@ variable {P₀ : Type v} {P₁ : Type w} [AddCommMonoid P₀] [Module A P₀]
 
 /-- The **Auslander--Reiten translate** `τ = D Tr` attached to a linear map `p₁ : P₁ → P₀`: the
 `k`-dual of its Auslander--Reiten transpose.  The transpose is a right `A`-module, so
-`TauCeti.dualRightAction` makes the translate a left `A`-module.
+`TauCeti.linearMapRightAction` makes the translate a left `A`-module.
 
 When `p₁` is the first map of a minimal projective presentation `P₁ → P₀ → M → 0`, this is the
 Auslander--Reiten translate of `M`: no exactness or projectivity is needed to form it, and
@@ -118,14 +112,14 @@ variable {p₁ : P₁ →ₗ[A] P₀}
 
 instance : Module A (AuslanderReitenTranslate k p₁) :=
   Module.compHom (Module.Dual k (AuslanderReitenTranspose p₁))
-    (dualRightAction k (AuslanderReitenTranspose p₁))
+    (linearMapRightAction k (AuslanderReitenTranspose p₁) k)
 
 /-- The `A`-action on the translate is precomposition with the right action on the transpose. -/
 @[simp]
 theorem smul_apply (a : A) (φ : AuslanderReitenTranslate k p₁)
     (x : AuslanderReitenTranspose p₁) :
     (a • φ) x = φ (MulOpposite.op a • x) :=
-  dualRightAction_apply_apply k (AuslanderReitenTranspose p₁) a φ x
+  linearMapRightAction_apply_apply k (AuslanderReitenTranspose p₁) k a φ x
 
 /-- Scalars from `k` act on the translate through `A`, so the two actions on it are the layered
 ones: the `k`-action is the restriction of the `A`-action along the algebra map. -/
@@ -249,5 +243,23 @@ theorem nonempty_linearEquiv_auslanderReitenTranslate (h : IsMinimalProjectivePr
 end Comparison
 
 end IsMinimalProjectivePresentation
+
+namespace AuslanderReitenTranslate
+
+variable {P₀ : Type v} {P₁ : Type w} [AddCommGroup P₀] [Module A P₀]
+  [AddCommGroup P₁] [Module A P₁] (p₁ : P₁ →ₗ[A] P₀)
+
+/-- For a transpose reflexive over the base, the translate is indecomposable exactly when
+the transpose is. In particular this applies to finite-dimensional transposes over a field. -/
+@[simp]
+theorem isIndecomposableModule_iff (K : Type*) [CommRing K] [Algebra K A]
+    [Module.IsReflexive K (AuslanderReitenTranspose p₁)] :
+    IsIndecomposableModule A (AuslanderReitenTranslate K p₁) ↔
+      IsIndecomposableModule Aᵐᵒᵖ (AuslanderReitenTranspose p₁) :=
+  LinearEquiv.isIndecomposableModule_iff_of_dual (A := A)
+    (N := AuslanderReitenTranspose p₁) (Q := AuslanderReitenTranslate K p₁)
+    (LinearEquiv.refl K _) (fun a φ x ↦ smul_apply a φ x)
+
+end AuslanderReitenTranslate
 
 end TauCeti

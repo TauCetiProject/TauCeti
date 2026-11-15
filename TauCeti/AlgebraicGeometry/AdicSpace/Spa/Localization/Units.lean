@@ -182,13 +182,8 @@ private theorem exists_isUnit_ringHomOfRationalSubsetSubset_of_notMem_supp
   set e := spaCompletedLocalizationHomeomorph P Aplus hP T s S hden
   -- the points of `Spa (A⟨T/s⟩, A_U⁺)` off the support of `f` form an open neighbourhood of the
   -- point over `x`, which therefore contains a rational neighbourhood `W`
-  have hN : IsOpen {w : spa (completedPlusSubring P Aplus T s S hden) | f ∉ supp w.1} := by
-    have : {w : spa (completedPlusSubring P Aplus T s S hden) | f ∉ supp w.1} =
-        Subtype.val ⁻¹' basicOpen f f := by
-      ext w
-      simp [ValuativeRel.vle_refl]
-    rw [this]
-    exact (isOpen_basicOpen f f).preimage continuous_subtype_val
+  have hN : IsOpen {w : spa (completedPlusSubring P Aplus T s S hden) | f ∉ supp w.1} :=
+    isOpen_setOf_notMem_supp _ f
   obtain ⟨W, hW, hxW, hWN⟩ :=
     (isTopologicalBasis_spaRationalFamily _).exists_subset_of_mem_open hf hN
   -- its image in `Spa (A, A⁺)` is a rational subset `R(T'/s')`, necessarily inside `R(T/s)`

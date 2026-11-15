@@ -6,34 +6,258 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Actions
+public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.Algebra.Group.Submonoid.MulAction
+public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.Algebra.Monoid.Defs
+public import Mathlib.Topology.Algebra.MulAction
+public import Mathlib.Topology.Constructions
+public import Mathlib.Topology.LocallyFinite
+
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Transfer instances for restricted and properly discontinuous actions
 
 This file records generic instances for actions on a topological space that typeclass search
-cannot otherwise reach. A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
+cannot otherwise reach, and continuity of maps equal to fixed-element scalar actions.
+A trivial action, fixing every point, is jointly continuous for any topologies.
+A continuous monoid action on a Hausdorff space has closed fixed sets, both of single elements and
+of the whole monoid, and a group action with continuous orbit maps on a `T₁` space has closed
+point stabilisers. If every orbit of a group action is open, then every orbit is also closed.
+A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
 an ambient scalar action; and a properly discontinuous action has `Finite` point stabilisers.
 It also records that a properly discontinuous scalar family on a nonempty σ-compact space is
-countable.
+countable, and that the translates of a compact set under it form a locally finite family.
+Conversely, for a scalar action of a `T₁` topological space `G` with continuous orbit maps, local
+finiteness of the translates of any nonempty set forces the topology on `G` to be discrete.
+Likewise, a nonempty open set disjoint from all of its nontrivial translates forces the acting
+group, with any topology for which the orbit maps are continuous, to be discrete, and on such a
+set the orbit projection is an open embedding.
 
 ## Main results
 
+* `TauCeti.continuousSMul_of_forall_smul_eq_self`: a trivial action is jointly continuous.
 * `Submonoid.continuousConstSMul` and `TauCeti.Subgroup.continuousConstSMul`: continuity
   in the point is inherited by a submonoid, hence by a subgroup.
-* `SubMulAction.properlyDiscontinuousSMul`: proper discontinuity is inherited by every invariant
-  subspace.
+* `Continuous.properlyDiscontinuousSMul`: proper discontinuity pulls back along a continuous
+  equivariant map; in particular (`SubMulAction.properlyDiscontinuousSMul`) it is inherited by
+  every invariant subspace.
+* `TauCeti.properlyDiscontinuousSMul_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a
+  properly discontinuous subgroup `H` acts properly discontinuously.
+* `TauCeti.isOpen_setOf_forall_smul_mem`: under a continuous action of a compact space, the
+  points whose whole orbit lies in an open set form an open set.
+* `TauCeti.isClosed_stabilizer`: the stabilizer of a point with continuous orbit map in a `T₁`
+  space is closed.
+* `TauCeti.isClosed_orbit_of_forall_isOpen_orbit`: if every orbit of a group action is open,
+  then every orbit is closed.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
   finite point stabilisers, as an instance rather than as `Set.Finite` of the carrier.
 * `TauCeti.countable_of_properlyDiscontinuousSMul`: a properly discontinuous scalar family on a
   nonempty σ-compact space is countable.
+* `TauCeti.locallyFinite_smul_of_isCompact`: under a properly discontinuous action on a weakly
+  locally compact space, the translates of a compact set form a locally finite family.
+* `TauCeti.discreteTopology_of_locallyFinite_smul`: if the translates of a nonempty set under an
+  action with continuous orbit maps are locally finite, then the acting group is discrete.
+* `TauCeti.isClosed_iUnion_smul_of_isCompact`: the union of the translates of a closed compact set
+  under such an action of a group is closed.
+* `TauCeti.isOpenEmbedding_quotientMk_domRestrict_of_disjoint_smul`: the orbit projection is an
+  open embedding on an open set disjoint from its nontrivial translates.
+* `TauCeti.discreteTopology_of_disjoint_smul`: the existence of a nonempty such open set makes the
+  acting group discrete.
 -/
 
 public section
 
 namespace TauCeti
+
+open Topology
+open scoped Pointwise
+
+/-- A map equal to the action of a fixed scalar is continuous. -/
+theorem continuous_of_eq_smul {G M : Type*} [TopologicalSpace M] [SMul G M]
+    [ContinuousConstSMul G M] (g : G) {f : M → M} (hf : ∀ m : M, f m = g • m) :
+    Continuous f :=
+  (continuous_const_smul g).congr fun m => (hf m).symm
+
+/-- A trivial action, with `g • m = m` for all `g` and `m`, is jointly continuous for any
+topologies on the scalars and on the space acted on. -/
+theorem continuousSMul_of_forall_smul_eq_self {G M : Type*} [TopologicalSpace G]
+    [TopologicalSpace M] [SMul G M] (h : ∀ (g : G) (m : M), g • m = m) : ContinuousSMul G M :=
+  ⟨continuous_snd.congr fun p ↦ (h p.1 p.2).symm⟩
+
+/-- The fixed set of an element acting continuously on a Hausdorff space is closed. -/
+theorem isClosed_fixedBy {M X : Type*} [Monoid M] [MulAction M X] [TopologicalSpace X]
+    [T2Space X] [ContinuousConstSMul M X] (g : M) : IsClosed (MulAction.fixedBy X g) :=
+  isClosed_eq (continuous_const_smul g) continuous_id
+
+/-- The common fixed set of a monoid acting continuously on a Hausdorff space is closed. -/
+theorem isClosed_fixedPoints_of_continuousConstSMul {M X : Type*} [Monoid M]
+    [MulAction M X] [TopologicalSpace X] [T2Space X] [ContinuousConstSMul M X] :
+    IsClosed (MulAction.fixedPoints M X) := by
+  rw [MulAction.fixed_eq_iInter_fixedBy]
+  exact isClosed_iInter isClosed_fixedBy
+
+/-- The stabilizer of a point is closed when its orbit map `g ↦ g • x` is continuous and points
+are closed: it is the preimage of `{x}` under the orbit map. -/
+theorem isClosed_stabilizer {G X : Type*} [Group G] [MulAction G X] [TopologicalSpace G]
+    [TopologicalSpace X] [T1Space X] {x : X} (hx : Continuous fun g : G ↦ g • x) :
+    IsClosed (MulAction.stabilizer G x : Set G) :=
+  isClosed_singleton.preimage hx
+
+/-- Under a jointly continuous action of a compact space, the points whose whole orbit lies in an
+open set `s` form an open set. For a group action, this set is the largest invariant subset of
+`s`. -/
+theorem isOpen_setOf_forall_smul_mem {G X : Type*} [SMul G X] [TopologicalSpace G]
+    [CompactSpace G] [TopologicalSpace X] [ContinuousSMul G X] {s : Set X} (hs : IsOpen s) :
+    IsOpen {x : X | ∀ g : G, g • x ∈ s} :=
+  isOpen_forall_prodMk_mem (ι := id) continuous_id
+    (hs.preimage (continuous_snd.smul continuous_fst))
+
+/-- If every orbit of a group action is open, then every orbit is also closed: its complement is
+the union of the other orbits. -/
+theorem isClosed_orbit_of_forall_isOpen_orbit {G X : Type*} [Group G] [MulAction G X]
+    [TopologicalSpace X] (h : ∀ x : X, IsOpen (MulAction.orbit G x)) (x : X) :
+    IsClosed (MulAction.orbit G x) := by
+  refine isOpen_compl_iff.1 (isOpen_iff_mem_nhds.2 fun z hz ↦ ?_)
+  refine Filter.mem_of_superset ((h z).mem_nhds (MulAction.mem_orbit_self z)) fun w hw hwx ↦ hz ?_
+  rw [← (MulAction.orbit_eq_iff.2 hw).symm.trans (MulAction.orbit_eq_iff.2 hwx)]
+  exact MulAction.mem_orbit_self z
+
+section DisjointTranslates
+
+open Set
+
+variable {G X : Type*} [Group G] [MulAction G X] {U : Set X}
+
+/-- The orbit projection is injective on a set disjoint from each of its nontrivial translates. -/
+theorem injOn_quotientMk_of_disjoint_smul
+    (hU : ∀ g : G, g ≠ 1 → Disjoint (g • U) U) :
+    Set.InjOn (Quotient.mk'' : X → MulAction.orbitRel.Quotient G X) U := by
+  intro x hx y hy hxy
+  obtain ⟨g, rfl⟩ :=
+    MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp (Quotient.exact hxy))
+  have hg_one : g = 1 := by
+    by_contra hg_ne
+    exact Set.disjoint_left.mp (hU g hg_ne) (Set.smul_mem_smul_set hy) hx
+  rw [hg_one, one_smul]
+
+variable [TopologicalSpace X] [ContinuousConstSMul G X]
+
+/-- On an open set disjoint from each of its nontrivial translates, the orbit projection is an
+open embedding. Thus this set is an honest open chart in the orbit space, not merely a set of
+orbit representatives. -/
+theorem isOpenEmbedding_quotientMk_domRestrict_of_disjoint_smul (hU_open : IsOpen U)
+    (hU : ∀ g : G, g ≠ 1 → Disjoint (g • U) U) :
+    IsOpenEmbedding
+      (U.domRestrict (Quotient.mk'' : X → MulAction.orbitRel.Quotient G X)) := by
+  refine .of_continuous_injective_isOpenMap
+    (continuous_quot_mk.comp continuous_subtype_val) ?_
+    (MulAction.isOpenQuotientMap_quotientMk.isOpenMap.domRestrict hU_open)
+  intro x y hxy
+  exact Subtype.ext (injOn_quotientMk_of_disjoint_smul hU x.2 y.2 hxy)
+
+end DisjointTranslates
+
+section DisjointTranslatesAdd
+
+open Set
+
+variable {A X : Type*} [AddGroup A] [AddAction A X] {U : Set X}
+
+/-- The additive orbit projection is injective on a set disjoint from each of its nontrivial
+translates. -/
+theorem injOn_quotientMk_of_disjoint_vadd
+    (hU : ∀ a : A, a ≠ 0 → Disjoint (a +ᵥ U) U) :
+    Set.InjOn (Quotient.mk'' : X → AddAction.orbitRel.Quotient A X) U := by
+  intro x hx y hy hxy
+  obtain ⟨a, rfl⟩ :=
+    AddAction.mem_orbit_iff.mp (AddAction.orbitRel_apply.mp (Quotient.exact hxy))
+  have ha_zero : a = 0 := by
+    by_contra ha_ne
+    exact Set.disjoint_left.mp (hU a ha_ne) (Set.vadd_mem_vadd_set hy) hx
+  rw [ha_zero, zero_vadd]
+
+variable [TopologicalSpace X] [ContinuousConstVAdd A X]
+
+/-- On an open set disjoint from each of its nontrivial additive translates, the additive orbit
+projection is an open embedding. -/
+theorem isOpenEmbedding_quotientMk_domRestrict_of_disjoint_vadd (hU_open : IsOpen U)
+    (hU : ∀ a : A, a ≠ 0 → Disjoint (a +ᵥ U) U) :
+    IsOpenEmbedding
+      (U.domRestrict (Quotient.mk'' : X → AddAction.orbitRel.Quotient A X)) := by
+  refine .of_continuous_injective_isOpenMap
+    (continuous_quot_mk.comp continuous_subtype_val) ?_
+    (AddAction.isOpenQuotientMap_quotientMk.isOpenMap.domRestrict hU_open)
+  intro x y hxy
+  exact Subtype.ext (injOn_quotientMk_of_disjoint_vadd hU x.2 y.2 hxy)
+
+end DisjointTranslatesAdd
+
+section DiscreteTopology
+
+open Set
+
+variable {G X : Type*} [Group G] [TopologicalSpace G] [TopologicalSpace X] [MulAction G X]
+  {U : Set X}
+
+/-- **Discreteness from a disjoint open translate.** If a group with a topology acts with continuous
+orbit maps and some nonempty open set is disjoint from all of its translates by nonidentity
+elements, then the group is discrete. -/
+@[to_additive
+/-- **Discreteness from a disjoint open translate.** If an additive group with a topology acts with
+continuous orbit maps and some nonempty open set is disjoint from all of its translates by nonzero
+elements, then the group is discrete. -/]
+theorem discreteTopology_of_disjoint_smul (hcont : ∀ x : X, Continuous fun g : G ↦ g • x)
+    (hU_open : IsOpen U) (hU_nonempty : U.Nonempty) (hU : ∀ g : G, g ≠ 1 → Disjoint (g • U) U) :
+    DiscreteTopology G := by
+  refine discreteTopology_iff_isOpen_singleton.mpr fun g₀ ↦ ?_
+  -- The elements carrying `g₀⁻¹ • x` back into `U` form an open set equal to `{g₀}`.
+  obtain ⟨x, hx⟩ := hU_nonempty
+  have heq : (fun g : G ↦ g • g₀⁻¹ • x) ⁻¹' U = {g₀} := by
+    ext g
+    simp only [Set.mem_preimage, Set.mem_singleton_iff]
+    constructor
+    · intro hgx
+      by_contra hg_ne
+      have hne : g * g₀⁻¹ ≠ 1 := fun h ↦ hg_ne (mul_inv_eq_one.mp h)
+      exact Set.disjoint_left.mp (hU _ hne) (Set.smul_mem_smul_set hx) (by rwa [mul_smul])
+    · rintro rfl
+      simpa using hx
+  rw [← heq]
+  exact hU_open.preimage (hcont _)
+
+end DiscreteTopology
+
+section LocallyFiniteTranslates
+
+variable {G X : Type*} [TopologicalSpace G] [T1Space G] [TopologicalSpace X] [SMul G X]
+  {S : Set X}
+
+/-- **Local finiteness of the translates of a nonempty set forces the acting group to be
+discrete.**
+
+The set need not be open, closed, or compact, and the action need not be faithful or a group
+action: only continuity of the orbit maps is used. This is the discreteness criterion for a group
+whose translates of a fundamental polygon form a locally finite tessellation. -/
+@[to_additive
+/-- **Local finiteness of the translates of a nonempty set forces the acting additive group to be
+discrete.** Only continuity of the orbit maps is used. -/]
+theorem discreteTopology_of_locallyFinite_smul (hcont : ∀ x : X, Continuous fun g : G ↦ g • x)
+    (hS : S.Nonempty) (hlocal : LocallyFinite fun g : G ↦ g • S) : DiscreteTopology G := by
+  obtain ⟨x, hx⟩ := hS
+  refine discreteTopology_iff_isOpen_singleton.mpr fun g₀ ↦ ?_
+  obtain ⟨U, hU, hfinite⟩ := hlocal (g₀ • x)
+  let V : Set G := (fun g ↦ g • x) ⁻¹' U
+  have hV : V ∈ nhds g₀ := (hcont x).continuousAt hU
+  have hVF : V ⊆ {g : G | (g • S ∩ U).Nonempty} := by
+    intro g hg
+    exact ⟨g • x, ⟨x, hx, rfl⟩, hg⟩
+  exact isOpen_singleton_of_finite_mem_nhds g₀ (Filter.mem_of_superset hV hVF) hfinite
+
+end LocallyFiniteTranslates
 
 /-- A submonoid inherits continuity in the point from an ambient continuous action. -/
 @[to_additive
@@ -53,19 +277,59 @@ instance continuousConstSMul {G X : Type*} [Group G] [TopologicalSpace X] [SMul 
 
 end Subgroup
 
+open scoped Pointwise in
+/-- **Conjugation preserves proper discontinuity**: if `H'` is the conjugate `g H g⁻¹` of a
+subgroup `H` acting properly discontinuously, then `H'` acts properly discontinuously, since
+`g k g⁻¹` moves `K` to meet `L` exactly when `k` moves `g⁻¹ • K` to meet `g⁻¹ • L`. -/
+theorem properlyDiscontinuousSMul_of_conjAct_smul_eq {G X : Type*} [Group G] [TopologicalSpace X]
+    [MulAction G X] [ContinuousConstSMul G X] {H H' : _root_.Subgroup G} {g : G}
+    [ProperlyDiscontinuousSMul H X] (h : ConjAct.toConjAct g • H = H') :
+    ProperlyDiscontinuousSMul H' X where
+  finite_disjoint_inter_image {K L} hK hL := by
+    subst h
+    let φ : H → (ConjAct.toConjAct g • H : _root_.Subgroup G) := fun k ↦
+      ⟨g * k * g⁻¹, by
+        simpa [ConjAct.toConjAct_smul] using
+          _root_.Subgroup.smul_mem_pointwise_smul _ (ConjAct.toConjAct g) H k.2⟩
+    refine ((ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := H)
+      (hK.image (continuous_const_smul g⁻¹)) (hL.image (continuous_const_smul g⁻¹))).image
+        φ).subset ?_
+    intro k hk
+    have hk' : g⁻¹ * k * g ∈ H := by
+      have := _root_.Subgroup.mem_pointwise_smul_iff_inv_smul_mem.mp k.2
+      rwa [← ConjAct.toConjAct_inv, ConjAct.toConjAct_smul, inv_inv] at this
+    refine ⟨⟨g⁻¹ * k * g, hk'⟩, ?_, Subtype.ext (by simp [φ, mul_assoc])⟩
+    -- a point `x ∈ K` with `k • x ∈ L` gives `g⁻¹ • x ∈ g⁻¹ • K` moved into `g⁻¹ • L`
+    obtain ⟨_, ⟨x, hx, rfl⟩, hxL⟩ := hk
+    refine ⟨g⁻¹ • ((k : G) • x), ⟨g⁻¹ • x, ⟨x, hx, rfl⟩, ?_⟩, ⟨_, hxL, rfl⟩⟩
+    simp [_root_.Subgroup.smul_def, mul_smul]
+
 end TauCeti
+
+/-- **Proper discontinuity pulls back along continuous equivariant maps.** If `f : X → Y` is
+continuous and commutes with the actions of `G`, and `G` acts properly discontinuously on `Y`,
+then `G` acts properly discontinuously on `X`: an element moving a compact `K` to meet a compact
+`L` moves the compact `f '' K` to meet `f '' L`. -/
+@[to_additive
+/-- **Proper discontinuity pulls back along continuous equivariant maps.** If `f : X → Y` is
+continuous and commutes with the additive actions of `G`, and `G` acts properly discontinuously
+on `Y`, then `G` acts properly discontinuously on `X`. -/]
+theorem Continuous.properlyDiscontinuousSMul {G X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [SMul G X] [SMul G Y] [ProperlyDiscontinuousSMul G Y] {f : X → Y}
+    (hf : Continuous f) (hsmul : ∀ (g : G) (x : X), f (g • x) = g • f x) :
+    ProperlyDiscontinuousSMul G X where
+  finite_disjoint_inter_image {K L} hK hL := by
+    refine (ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := G) (hK.image hf)
+      (hL.image hf)).subset ?_
+    rintro g ⟨_, ⟨x, hx, rfl⟩, hxL⟩
+    exact ⟨f (g • x), ⟨f x, ⟨x, hx, rfl⟩, (hsmul g x).symm⟩, ⟨g • x, hxL, rfl⟩⟩
 
 namespace SubMulAction
 
 /-- A properly discontinuous action remains properly discontinuous on every invariant subspace. -/
 theorem properlyDiscontinuousSMul {G X : Type*} [TopologicalSpace X] [SMul G X]
-    [ProperlyDiscontinuousSMul G X] (S : SubMulAction G X) : ProperlyDiscontinuousSMul G S where
-  finite_disjoint_inter_image {K L} hK hL := by
-    refine (ProperlyDiscontinuousSMul.finite_disjoint_inter_image
-      (hK.image continuous_subtype_val) (hL.image continuous_subtype_val)).subset ?_
-    rintro g ⟨y, ⟨x, hx, hxy⟩, hy⟩
-    exact
-      ⟨(y : X), ⟨(x : X), ⟨x, hx, rfl⟩, congrArg Subtype.val hxy⟩, ⟨y, hy, rfl⟩⟩
+    [ProperlyDiscontinuousSMul G X] (S : SubMulAction G X) : ProperlyDiscontinuousSMul G S :=
+  continuous_subtype_val.properlyDiscontinuousSMul fun _ _ ↦ rfl
 
 end SubMulAction
 
@@ -113,5 +377,44 @@ theorem countable_of_properlyDiscontinuousSMul (G : Type*) {T : Type*} [Topologi
       fun g _ ↦ ?_
   obtain ⟨n, hn⟩ := mem_iUnion.mp (iUnion_compactCovering T ▸ mem_univ (g • x₀))
   exact mem_iUnion.mpr ⟨n, g • x₀, ⟨x₀, mem_insert _ _, rfl⟩, mem_insert_of_mem _ hn⟩
+
+section LocallyFinite
+
+open scoped Pointwise
+
+variable {Γ T : Type*} [TopologicalSpace T] [SMul Γ T] [ProperlyDiscontinuousSMul Γ T]
+  {S : Set T}
+
+/-- **The translates of a compact set under a properly discontinuous action are locally
+finite**, in the sense of Katok (*Fuchsian groups, geodesic flows on surfaces of constant negative
+curvature and symbolic coding of geodesics*, Clay Math. Proc. 10 (2010), Definition 8.2, p. 27):
+every point has a neighbourhood meeting only finitely many of them. -/
+@[to_additive
+/-- **The translates of a compact set under a properly discontinuous additive action are locally
+finite.** -/]
+theorem locallyFinite_smul_of_isCompact [WeaklyLocallyCompactSpace T] (hS : IsCompact S) :
+    LocallyFinite fun γ : Γ ↦ γ • S := fun x ↦
+  let ⟨K, hK, hKx⟩ := exists_compact_mem_nhds x
+  ⟨K, hKx, properlyDiscontinuousSMul_iff.1 ‹_› hS hK⟩
+
+end LocallyFinite
+
+section IsClosedIUnion
+
+open scoped Pointwise
+
+variable {G T : Type*} [TopologicalSpace T] [Group G] [MulAction G T] [ContinuousConstSMul G T]
+  [ProperlyDiscontinuousSMul G T] [WeaklyLocallyCompactSpace T] {S : Set T}
+
+/-- **The union of the translates of a closed compact set under a properly discontinuous action
+is closed.** -/
+@[to_additive
+/-- **The union of the translates of a closed compact set under a properly discontinuous additive
+action is closed.** -/]
+theorem isClosed_iUnion_smul_of_isCompact (hS : IsCompact S) (hS' : IsClosed S) :
+    IsClosed (⋃ g : G, g • S) :=
+  (locallyFinite_smul_of_isCompact hS).isClosed_iUnion fun g ↦ hS'.smul g
+
+end IsClosedIUnion
 
 end TauCeti

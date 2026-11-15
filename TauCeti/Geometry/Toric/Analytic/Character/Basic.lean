@@ -11,6 +11,9 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import TauCeti.Algebra.Group.FreeAbelianCharacter
+import Mathlib.Algebra.Category.Grp.Injective
+import Mathlib.Analysis.Complex.Polynomial.Basic
+import TauCeti.FieldTheory.IsAlgClosed.Units
 
 /-!
 # Integral characters on the complex torus
@@ -33,6 +36,10 @@ torus points.  Given an identification of the character lattice with a free abel
 * `TauCeti.Toric.ComplexTorus`: its coordinate-free complex torus.
 * `TauCeti.Toric.characterEvaluation`: evaluation of a character as a homomorphism on the torus.
 * `TauCeti.Toric.complexTorusMap`: the torus map induced by an additive map of lattices.
+* `TauCeti.Toric.complexTorusMap_surjective`: a surjection of lattices induces a surjection of
+  tori.
+* `TauCeti.Toric.mem_ker_complexTorusMap_mk'_iff`: the kernel of the torus map of a quotient
+  lattice `N ⧸ H` is the subtorus trivial on the characters vanishing on `H`.
 * `TauCeti.Toric.exists_characterEvaluation_ne`: integral characters separate torus points.
 * `Module.Basis.integralCharacterRepr`: the free presentation of the character lattice dual to an
   integral basis of `N`.
@@ -142,6 +149,53 @@ theorem complexTorusMap_comp (g : N' →+ N'') (f : N →+ N') :
   apply AddChar.ext
   intro m
   rfl
+
+/-- A surjective map onto a projective lattice induces a map of complex tori with a section,
+itself induced by a section of the lattice map. -/
+theorem exists_complexTorusMap_comp_complexTorusMap_eq_id [Module.Projective ℤ N'] {f : N →+ N'}
+    (hf : Function.Surjective f) :
+    ∃ g : N' →+ N, (complexTorusMap f).comp (complexTorusMap g) = MonoidHom.id _ := by
+  obtain ⟨s, hs⟩ := Module.projective_lifting_property f.toIntLinearMap LinearMap.id hf
+  refine ⟨s.toAddMonoidHom, ?_⟩
+  rw [← complexTorusMap_comp, ← complexTorusMap_id]
+  exact congrArg complexTorusMap (AddMonoidHom.ext fun n ↦ LinearMap.congr_fun hs n)
+
+/-- A surjective lattice map induces a surjective map of complex tori: the dual map on integral
+characters is injective, and characters with values in the divisible group `ℂˣ` extend along
+injective homomorphisms. -/
+theorem complexTorusMap_surjective {f : N →+ N'} (hf : Function.Surjective f) :
+    Function.Surjective (complexTorusMap f) := by
+  intro y
+  have : DivisibleBy (Additive ℂˣ) ℕ :=
+    ⟨RootableBy.root (A := ℂˣ), RootableBy.root_zero (A := ℂˣ),
+      fun a hn ↦ RootableBy.root_cancel (A := ℂˣ) a hn⟩
+  have : DivisibleBy (Additive ℂˣ) ℤ := AddGroup.divisibleByIntOfDivisibleByNat _
+  obtain ⟨h, hh⟩ := Module.Baer.extension_property_addMonoidHom
+    (Module.Baer.of_divisible (Additive ℂˣ))
+    (AddMonoidHom.compHom' f : IntegralCharacter N' →+ IntegralCharacter N)
+    (fun m₁ m₂ hm ↦ AddMonoidHom.ext fun n ↦ by
+      obtain ⟨a, rfl⟩ := hf n
+      exact DFunLike.congr_fun hm a)
+    (AddChar.toAddMonoidHomEquiv y)
+  refine ⟨AddChar.toAddMonoidHomEquiv.symm h, DFunLike.ext _ _ fun m ↦ ?_⟩
+  have := DFunLike.congr_fun hh m
+  rw [complexTorusMap_apply, characterEvaluation_apply]
+  simpa using congrArg Additive.toMul this
+
+/-- A torus point lies in the kernel of the torus map induced by the quotient by a sublattice `H`
+exactly when it is trivial on every integral character vanishing on `H`. -/
+theorem mem_ker_complexTorusMap_mk'_iff (H : AddSubgroup N) (x : ComplexTorus N) :
+    x ∈ (complexTorusMap (QuotientAddGroup.mk' H)).ker ↔
+      ∀ m : IntegralCharacter N, H ≤ m.ker → x m = 1 := by
+  rw [MonoidHom.mem_ker, AddChar.ext_iff]
+  refine ⟨fun hx m hm ↦ ?_, fun hx m ↦ hx _ fun n hn ↦ ?_⟩
+  · -- A character vanishing on `H` is pulled back from the quotient lattice.
+    have hlift : AddMonoidHom.compHom' (QuotientAddGroup.mk' H) (QuotientAddGroup.lift H m hm) =
+        m := by
+      ext n
+      simp
+    simpa [hlift] using hx (QuotientAddGroup.lift H m hm)
+  · simp [(QuotientAddGroup.eq_zero_iff n).2 hn]
 
 /-- Integral characters separate distinct points of the coordinate-free complex torus. -/
 theorem exists_characterEvaluation_ne {x y : ComplexTorus N} (h : x ≠ y) :

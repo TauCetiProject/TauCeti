@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdjoinRoot
-public import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
+public import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Computable
 
 /-!
@@ -20,17 +19,22 @@ computations on finite lists of integers; multiplication convolves coefficient l
 `TauCeti.Polynomial.mulCoeffList` and then applies the computable cyclotomic reduction from
 `TauCeti.RingTheory.Polynomial.Cyclotomic.Computable`.
 
+The coefficient accessor is additive (`TauCeti.Cyclotomic.coeffAddHom`), and multiplying by an
+integer cast scales each coordinate (`TauCeti.Cyclotomic.coeff_intCast_mul`, and
+`TauCeti.Cyclotomic.coeff_zsmul` for the scalar form).
+
 The ring is identified with Mathlib's `AdjoinRoot (Polynomial.cyclotomic e ℤ)`.  For nonzero `e`,
 evaluation at `exp (2 * π * I / e)` then gives the distinguished embedding into `ℂ` used to state
 the correctness of exact character-table computations.
 
-The interface followed here is the one blueprinted in the character-theory roadmap
-(`RepresentationTheory/CharacterTheory/README.md` in TauCetiRoadmap, Layer 6: "Exact cyclotomic
-arithmetic", whose `Suggested.lean` pins `Cyclotomic e` with its `CommRing` instance, the
-generator `ζ_e` as the class of `X`, the reduction to `ZMod p`, and the *pinned* embedding into
-`ℂ` as a ring homomorphism together with its injectivity).  The choice of `exp (2 * π * I / e)`
-for that pin, of descending coefficient lists as the representation, and the identification with
-`AdjoinRoot` rather than the roadmap's `CyclotomicRing e ℤ ℚ` are this file's.
+A ring homomorphism out of `Cyclotomic e` is determined by the image of `ζ`
+(`TauCeti.Cyclotomic.ringHom_ext`).  Evaluating at a root of the cyclotomic polynomial gives a ring
+homomorphism (`TauCeti.Cyclotomic.evalRingHom`); `TauCeti.Cyclotomic.evalCoeffs` evaluates a
+coefficient list by Horner's rule.  Evaluation specialises to the reduction modulo a prime `p` at a
+primitive `e`-th root in `ZMod p` (`TauCeti.Cyclotomic.reduce`, bundled as
+`TauCeti.Cyclotomic.reduceRingHom`) and to the complex embedding
+`TauCeti.Cyclotomic.complexEmbedding`, which is injective
+(`TauCeti.Cyclotomic.complexEmbedding_injective`).
 -/
 
 public section
@@ -92,11 +96,11 @@ theorem coeffs_ofCoeffList (e : ℕ) (l : List ℤ) :
 `Φ_e`, the polynomial it presents having degree less than `φ e` already. -/
 theorem coeffs_ofCoeffList_of_length_eq {l : List ℤ} (h : l.length = e.totient) :
     (ofCoeffList e l).coeffs = l :=
-  eq_of_length_eq_of_ofCoeffList_eq (by simp [h])
+  eq_of_length_eq_of_ofCoeffList_reverse_eq (by simp [h])
     (by
-      rw [coeffs_ofCoeffList, ofCoeffList_modByCyclotomic]
+      rw [coeffs_ofCoeffList, ofCoeffList_reverse_modByCyclotomic]
       exact (modByMonic_eq_self_iff (cyclotomic.monic e ℤ)).2
-        (by rw [degree_cyclotomic]; simpa [h] using degree_ofCoeffList_lt l))
+        (by rw [degree_cyclotomic]; simpa [h] using degree_ofCoeffList_reverse_lt l))
 
 /-- An exact cyclotomic integer is rebuilt from its own coefficient list. -/
 @[simp]
@@ -140,13 +144,13 @@ that the proofs which need it can rewrite rather than appeal to definitional unf
 them is `simp`: they unfold arithmetic into coefficient lists, which is the opposite direction to
 the normal form everything else is stated in. -/
 
-/-- Zero is the empty coefficient list. -/
+/-- Zero is the reduction `ofCoeffList e []` of the empty coefficient list. -/
 theorem zero_def : (0 : Cyclotomic e) = ofCoeffList e [] := rfl
 
-/-- One is the coefficient list `[1]`. -/
+/-- One is the reduction `ofCoeffList e [1]` of the coefficient list `[1]`. -/
 theorem one_def : (1 : Cyclotomic e) = ofCoeffList e [1] := rfl
 
-/-- An integer cast is its singleton coefficient list. -/
+/-- An integer cast is the reduction `ofCoeffList e [z]` of its singleton coefficient list. -/
 theorem intCast_def (z : ℤ) : (z : Cyclotomic e) = ofCoeffList e [z] := rfl
 
 /-- Addition adds coefficient lists entrywise. -/
@@ -156,33 +160,33 @@ theorem add_def (x y : Cyclotomic e) :
 /-- Negation negates every coefficient. -/
 theorem neg_def (x : Cyclotomic e) : -x = ofCoeffList e (x.coeffs.map (-·)) := rfl
 
-/-- `TauCeti.Cyclotomic.neg` is the negation of the `Neg` instance. -/
-theorem neg_eq (x : Cyclotomic e) : neg x = -x := rfl
-
 /-- Multiplication convolves coefficient lists and reduces modulo `Φ_e`. -/
 theorem mul_def (x y : Cyclotomic e) :
     x * y = ofCoeffList e (mulCoeffList x.coeffs y.coeffs) := rfl
 
 /-- The polynomial represented by an exact cyclotomic integer. -/
 noncomputable def toPolynomial (x : Cyclotomic e) : ℤ[X] :=
-  TauCeti.Polynomial.ofCoeffList x.coeffs
+  Polynomial.ofCoeffList x.coeffs.reverse
 
 /-- The coordinates of an exact cyclotomic integer are the coefficients of its canonical
 polynomial representative. -/
 @[simp]
 theorem coeff_toPolynomial (x : Cyclotomic e) (j : ℕ) : x.toPolynomial.coeff j = x.coeff j := by
-  rw [toPolynomial, TauCeti.Polynomial.coeff_ofCoeffList, coeff]
+  rw [toPolynomial, Polynomial.coeff_ofCoeffList, coeff]
 
 /-- The comparison map from computable cyclotomic integers to Mathlib's quotient by `Φ_e`. -/
 noncomputable def toAdjoinRoot (x : Cyclotomic e) : AdjoinRoot (cyclotomic e ℤ) :=
   AdjoinRoot.mk _ x.toPolynomial
 
-private theorem degree_toPolynomial_lt (x : Cyclotomic e) :
+/-- The canonical representative has degree strictly less than the cyclotomic polynomial. -/
+theorem degree_toPolynomial_lt (x : Cyclotomic e) :
     x.toPolynomial.degree < (cyclotomic e ℤ).degree := by
   rw [degree_cyclotomic]
-  simpa [toPolynomial] using degree_ofCoeffList_lt x.coeffs
+  simpa [toPolynomial] using degree_ofCoeffList_reverse_lt x.coeffs
 
-private theorem modByMonic_toPolynomial (x : Cyclotomic e) :
+/-- The canonical representative is already reduced modulo the cyclotomic polynomial. -/
+@[simp]
+theorem toPolynomial_modByMonic (x : Cyclotomic e) :
     x.toPolynomial %ₘ cyclotomic e ℤ = x.toPolynomial :=
   (modByMonic_eq_self_iff (cyclotomic.monic e ℤ)).2 x.degree_toPolynomial_lt
 
@@ -190,20 +194,19 @@ private theorem modByMonic_toPolynomial (x : Cyclotomic e) :
 theorem toAdjoinRoot_injective : Function.Injective (toAdjoinRoot : Cyclotomic e → _) := by
   intro x y h
   have h' := congrArg (AdjoinRoot.modByMonicHom (cyclotomic.monic e ℤ)) h
-  simp only [toAdjoinRoot, AdjoinRoot.modByMonicHom_mk, modByMonic_toPolynomial] at h'
+  simp only [toAdjoinRoot, AdjoinRoot.modByMonicHom_mk, toPolynomial_modByMonic] at h'
   exact ext_coeffs
-    (eq_of_length_eq_of_ofCoeffList_eq (x.length_coeffs.trans y.length_coeffs.symm) h')
+    (eq_of_length_eq_of_ofCoeffList_reverse_eq (x.length_coeffs.trans y.length_coeffs.symm) h')
 
 /-- The comparison map sends the exact cyclotomic integer built from a coefficient list to the
 class of the polynomial with those coefficients: reduction modulo `Φ_e` is invisible in the
 quotient. -/
 @[simp]
 theorem toAdjoinRoot_ofCoeffList (l : List ℤ) :
-    toAdjoinRoot (ofCoeffList e l) = AdjoinRoot.mk _ (TauCeti.Polynomial.ofCoeffList l) := by
-  rw [toAdjoinRoot, toPolynomial, coeffs_ofCoeffList, ofCoeffList_modByCyclotomic,
-    AdjoinRoot.mk_eq_mk]
-  rw [modByMonic_eq_sub_mul_div, sub_sub_cancel_left]
-  exact dvd_neg.mpr (dvd_mul_right _ _)
+    toAdjoinRoot (ofCoeffList e l) = AdjoinRoot.mk _ (Polynomial.ofCoeffList l.reverse) := by
+  rw [toAdjoinRoot, toPolynomial, coeffs_ofCoeffList, ofCoeffList_reverse_modByCyclotomic,
+    ← AdjoinRoot.modByMonicHom_mk (cyclotomic.monic e ℤ)]
+  exact AdjoinRoot.mk_leftInverse (cyclotomic.monic e ℤ) _
 
 @[simp]
 theorem toAdjoinRoot_zero : toAdjoinRoot (0 : Cyclotomic e) = 0 := by
@@ -213,7 +216,7 @@ theorem toAdjoinRoot_zero : toAdjoinRoot (0 : Cyclotomic e) = 0 := by
 @[simp]
 theorem toAdjoinRoot_one : toAdjoinRoot (1 : Cyclotomic e) = 1 := by
   rw [one_def, toAdjoinRoot_ofCoeffList]
-  simp [TauCeti.Polynomial.ofCoeffList_cons]
+  simp [Polynomial.ofCoeffList_cons]
 
 @[simp]
 theorem toAdjoinRoot_add (x y : Cyclotomic e) :
@@ -222,73 +225,46 @@ theorem toAdjoinRoot_add (x y : Cyclotomic e) :
   rw [← map_add]
   congr 1
   simpa [sub_eq_add_neg, toPolynomial] using
-    (ofCoeffList_zipWith_sub (-1 : ℤ) (x.length_coeffs.trans y.length_coeffs.symm))
+    (ofCoeffList_reverse_zipWith_sub (-1 : ℤ) (x.length_coeffs.trans y.length_coeffs.symm))
 
 @[simp]
 theorem toAdjoinRoot_neg (x : Cyclotomic e) :
     toAdjoinRoot (-x) = -toAdjoinRoot x := by
-  rw [neg_def, toAdjoinRoot_ofCoeffList, toAdjoinRoot, toPolynomial, ofCoeffList_map_neg, map_neg]
+  rw [neg_def, toAdjoinRoot_ofCoeffList, toAdjoinRoot, toPolynomial,
+    ← List.map_reverse, Polynomial.ofCoeffList_map_neg, map_neg]
 
 @[simp]
 theorem toAdjoinRoot_mul (x y : Cyclotomic e) :
     toAdjoinRoot (x * y) = toAdjoinRoot x * toAdjoinRoot y := by
   rw [mul_def, toAdjoinRoot_ofCoeffList, toAdjoinRoot, toAdjoinRoot, ← map_mul,
-    ofCoeffList_mulCoeffList]
+    ofCoeffList_reverse_mulCoeffList]
   simp only [toPolynomial]
 
-instance : CommRing (Cyclotomic e) where
-  add := add
-  add_assoc a b c := toAdjoinRoot_injective (by simp only [toAdjoinRoot_add, add_assoc])
-  zero := zero e
-  zero_add a := toAdjoinRoot_injective (by
-    simp only [toAdjoinRoot_add, toAdjoinRoot_zero, zero_add])
-  add_zero a := toAdjoinRoot_injective (by
-    simp only [toAdjoinRoot_add, toAdjoinRoot_zero, add_zero])
-  nsmul := @nsmulRec (Cyclotomic e) ⟨zero e⟩ ⟨add⟩
-  add_comm a b := toAdjoinRoot_injective (by simp only [toAdjoinRoot_add, add_comm])
-  mul := mul
-  mul_assoc a b c := toAdjoinRoot_injective (by simp only [toAdjoinRoot_mul, mul_assoc])
-  one := one e
-  one_mul a := toAdjoinRoot_injective (by
-    simp only [toAdjoinRoot_mul, toAdjoinRoot_one, one_mul])
-  mul_one a := toAdjoinRoot_injective (by
-    simp only [toAdjoinRoot_mul, toAdjoinRoot_one, mul_one])
-  npow := @npowRec (Cyclotomic e) ⟨one e⟩ ⟨mul⟩
-  zero_mul a := toAdjoinRoot_injective (by
-    simp only [toAdjoinRoot_mul, toAdjoinRoot_zero, zero_mul])
-  mul_zero a := toAdjoinRoot_injective (by
-    simp only [toAdjoinRoot_mul, toAdjoinRoot_zero, mul_zero])
-  left_distrib a b c := toAdjoinRoot_injective (by
-    simp only [toAdjoinRoot_add, toAdjoinRoot_mul, left_distrib])
-  right_distrib a b c := toAdjoinRoot_injective (by
-    simp only [toAdjoinRoot_add, toAdjoinRoot_mul, right_distrib])
-  natCast n := ofCoeffList e [n]
-  natCast_zero := toAdjoinRoot_injective (by
-    rw [toAdjoinRoot_ofCoeffList, toAdjoinRoot_zero]
-    simp [TauCeti.Polynomial.ofCoeffList_cons])
-  natCast_succ n := toAdjoinRoot_injective (by
-    rw [toAdjoinRoot_ofCoeffList, toAdjoinRoot_add, toAdjoinRoot_ofCoeffList,
-      toAdjoinRoot_one]
-    simp [TauCeti.Polynomial.ofCoeffList_cons])
-  neg := neg
-  sub := fun x y => add x (neg y)
-  zsmul := @zsmulRec (Cyclotomic e) ⟨zero e⟩ ⟨add⟩ ⟨neg⟩
-    (@nsmulRec (Cyclotomic e) ⟨zero e⟩ ⟨add⟩)
-  sub_eq_add_neg := by intros; rfl
-  zsmul_zero' := by intros; rfl
-  zsmul_succ' := by intros; rfl
-  zsmul_neg' := by intros; rfl
-  neg_add_cancel a := toAdjoinRoot_injective (by
-    rw [toAdjoinRoot_add, neg_eq, toAdjoinRoot_neg, toAdjoinRoot_zero, neg_add_cancel])
-  intCast z := ofCoeffList e [z]
-  intCast_ofNat n := rfl
-  intCast_negSucc n := toAdjoinRoot_injective (by
-    -- The structure is still being assembled, so spell out its pending cast field.
-    change toAdjoinRoot (ofCoeffList e [Int.negSucc n]) =
-      toAdjoinRoot (neg (ofCoeffList e [(n + 1 : ℕ)]))
-    rw [toAdjoinRoot_ofCoeffList, neg_eq, toAdjoinRoot_neg, toAdjoinRoot_ofCoeffList]
-    simp [TauCeti.Polynomial.ofCoeffList_cons])
-  mul_comm a b := toAdjoinRoot_injective (by simp only [toAdjoinRoot_mul, mul_comm])
+/-- The commutative ring structure on exact cyclotomic integers, with executable arithmetic on
+canonical coefficient vectors. -/
+instance : CommRing (Cyclotomic e) := fast_instance% by
+  -- Transport the laws using `Function.Injective.commRing`; normalization keeps the operations
+  -- computable.
+  have hn (n : ℕ) (x : Cyclotomic e) :
+      toAdjoinRoot (nsmulRec n x) = n • toAdjoinRoot x := by
+    induction n with
+    | zero => simpa only [nsmulRec, zero_nsmul] using toAdjoinRoot_zero (e := e)
+    | succ n ih => simp only [nsmulRec, toAdjoinRoot_add, ih, succ_nsmul]
+  refine Function.Injective.commRing toAdjoinRoot toAdjoinRoot_injective
+    toAdjoinRoot_zero toAdjoinRoot_one toAdjoinRoot_add toAdjoinRoot_mul toAdjoinRoot_neg
+    (fun x y => ?_) hn (fun n x => ?_) (fun x n => ?_) (fun n => ?_) (fun z => ?_)
+  · exact (toAdjoinRoot_add x (-y)).trans (by rw [toAdjoinRoot_neg, sub_eq_add_neg])
+  -- The ring laws are not available yet, so use the primitive recursion and cast instances.
+  · change toAdjoinRoot (zsmulRec nsmulRec n x) = n • toAdjoinRoot x
+    cases n <;> simp only [zsmulRec, hn, toAdjoinRoot_neg, Int.ofNat_eq_natCast, natCast_zsmul,
+      negSucc_zsmul]
+  · change toAdjoinRoot (npowRec n x) = toAdjoinRoot x ^ n
+    induction n with
+    | zero => simp [npowRec]
+    | succ n ih => simp [npowRec, toAdjoinRoot_mul, ih, pow_succ]
+  · change toAdjoinRoot (ofCoeffList e [(n : ℤ)]) = n
+    simp [toAdjoinRoot_ofCoeffList, Polynomial.ofCoeffList_cons]
+  · simp [intCast_def, toAdjoinRoot_ofCoeffList, Polynomial.ofCoeffList_cons]
 
 /-- Every coordinate of `0` vanishes, its canonical representative being the zero polynomial. -/
 @[simp]
@@ -299,21 +275,67 @@ theorem coeff_zero (j : ℕ) : (0 : Cyclotomic e).coeff j = 0 := by
   rw [← coeff_toPolynomial, eq_zero_of_dvd_of_degree_lt hdvd (degree_toPolynomial_lt _),
     Polynomial.coeff_zero]
 
+/-- An integer has only a constant power-basis coordinate when the conductor is nonzero. -/
+@[simp]
+theorem coeff_intCast [NeZero e] (z : ℤ) (j : ℕ) :
+    (z : Cyclotomic e).coeff j = if j = 0 then z else 0 := by
+  rw [← coeff_toPolynomial, intCast_def, toPolynomial, coeffs_ofCoeffList,
+    ofCoeffList_reverse_modByCyclotomic]
+  have hdegree : (Polynomial.C z).degree < (cyclotomic e ℤ).degree :=
+    lt_of_le_of_lt Polynomial.degree_C_le
+      (degree_cyclotomic_pos e ℤ (Nat.pos_of_ne_zero (NeZero.ne e)))
+  simp only [TauCeti.Polynomial.ofCoeffList_reverse_cons, List.reverse_nil,
+    Polynomial.ofCoeffList_nil,
+    List.length_nil, pow_zero, mul_one, add_zero]
+  rw [(modByMonic_eq_self_iff (cyclotomic.monic e ℤ)).mpr hdegree]
+  exact Polynomial.coeff_C
+
+/-- A natural number has only a constant power-basis coordinate when the conductor is nonzero. -/
+@[simp]
+theorem coeff_natCast [NeZero e] (n j : ℕ) :
+    (n : Cyclotomic e).coeff j = if j = 0 then (n : ℤ) else 0 := by
+  exact_mod_cast coeff_intCast (e := e) (n : ℤ) j
+
+/-- The power-basis coordinate of `1` is the Kronecker delta at `0` when the conductor is
+nonzero. -/
+@[simp]
+theorem coeff_one [NeZero e] (j : ℕ) : (1 : Cyclotomic e).coeff j = if j = 0 then 1 else 0 := by
+  exact_mod_cast coeff_intCast (e := e) 1 j
+
+/-- A numeral at least `2` has only a constant power-basis coordinate when the conductor is
+nonzero. -/
+@[simp]
+theorem coeff_ofNat [NeZero e] (n : ℕ) [n.AtLeastTwo] (j : ℕ) :
+    (ofNat(n) : Cyclotomic e).coeff j = if j = 0 then ofNat(n) else 0 :=
+  coeff_natCast (e := e) n j
+
 /-- **Multiplication by an integer constant scales every coefficient.**  A constant multiple
 raises no power of `ζ`, so no reduction modulo `Φ_e` takes place. -/
 @[simp]
 theorem coeffs_intCast_mul (z : ℤ) (x : Cyclotomic e) :
     ((z : Cyclotomic e) * x).coeffs = x.coeffs.map (z * ·) := by
   have hmul : (z : Cyclotomic e) * x = ofCoeffList e (x.coeffs.map (z * ·)) := by
-    have hz : TauCeti.Polynomial.ofCoeffList [z] = Polynomial.C z := by
-      simp [TauCeti.Polynomial.ofCoeffList_cons]
+    have hz : Polynomial.ofCoeffList [z].reverse = Polynomial.C z := by
+      simp [Polynomial.ofCoeffList_cons]
     refine toAdjoinRoot_injective ?_
     rw [toAdjoinRoot_mul, intCast_def,
       toAdjoinRoot_ofCoeffList, toAdjoinRoot_ofCoeffList, hz,
-      TauCeti.Polynomial.ofCoeffList_map_mul_left, map_mul]
+      ← List.map_reverse, Polynomial.ofCoeffList_map_mul, map_mul]
     rfl
   rw [hmul]
   exact coeffs_ofCoeffList_of_length_eq (by simp)
+
+/-- Multiplication by a natural-number constant scales every coefficient. -/
+@[simp]
+theorem coeffs_natCast_mul (n : ℕ) (x : Cyclotomic e) :
+    ((n : Cyclotomic e) * x).coeffs = x.coeffs.map ((n : ℤ) * ·) := by
+  exact_mod_cast coeffs_intCast_mul (n : ℤ) x
+
+/-- Multiplication by a numeral at least `2` scales every coefficient. -/
+@[simp]
+theorem coeffs_ofNat_mul (n : ℕ) [n.AtLeastTwo] (x : Cyclotomic e) :
+    ((ofNat(n) : Cyclotomic e) * x).coeffs = x.coeffs.map (ofNat(n) * ·) :=
+  coeffs_natCast_mul n x
 
 /-! ## Comparison with `AdjoinRoot` -/
 
@@ -329,17 +351,81 @@ noncomputable def toAdjoinRootRingHom : Cyclotomic e →+* AdjoinRoot (cyclotomi
 theorem toAdjoinRootRingHom_apply (x : Cyclotomic e) :
     toAdjoinRootRingHom x = toAdjoinRoot x := (rfl)
 
+/-- The additive map reading a single power-basis coefficient. -/
+noncomputable def coeffAddHom (e j : ℕ) : Cyclotomic e →+ ℤ :=
+  ((Polynomial.lcoeff ℤ j).toAddMonoidHom.comp
+    (AdjoinRoot.modByMonicHom (Polynomial.cyclotomic.monic e ℤ)).toAddMonoidHom).comp
+      toAdjoinRootRingHom.toAddMonoidHom
+
+/-- The coefficient map agrees with the coefficient-vector accessor. -/
+@[simp]
+theorem coeffAddHom_apply (x : Cyclotomic e) (j : ℕ) : coeffAddHom e j x = x.coeff j := by
+  simp [coeffAddHom, toAdjoinRoot, coeff_toPolynomial]
+
+/-- Addition adds power-basis coefficients. -/
+@[simp]
+theorem coeff_add (x y : Cyclotomic e) (j : ℕ) :
+    (x + y).coeff j = x.coeff j + y.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_add x y
+
+/-- Negation negates every power-basis coefficient. -/
+@[simp]
+theorem coeff_neg (x : Cyclotomic e) (j : ℕ) :
+    (-x).coeff j = -x.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_neg x
+
+/-- Subtraction subtracts power-basis coefficients. -/
+@[simp]
+theorem coeff_sub (x y : Cyclotomic e) (j : ℕ) :
+    (x - y).coeff j = x.coeff j - y.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_sub x y
+
+/-- Natural scalar multiplication scales every power-basis coefficient. -/
+@[simp↓]
+theorem coeff_nsmul (n : ℕ) (x : Cyclotomic e) (j : ℕ) :
+    (n • x).coeff j = n • x.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_nsmul n x
+
+/-- Integer scalar multiplication scales every power-basis coefficient. -/
+@[simp↓]
+theorem coeff_zsmul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
+    (z • x).coeff j = z • x.coeff j := by
+  simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_zsmul z x
+
+/-- Multiplying by an integer cast scales every power-basis coefficient. -/
+@[simp]
+theorem coeff_intCast_mul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
+    ((z : Cyclotomic e) * x).coeff j = z * x.coeff j := by
+  simpa [zsmul_eq_mul] using (coeffAddHom e j).map_zsmul z x
+
+/-- Multiplying by a natural-number cast scales every power-basis coefficient. -/
+@[simp]
+theorem coeff_natCast_mul (n : ℕ) (x : Cyclotomic e) (j : ℕ) :
+    ((n : Cyclotomic e) * x).coeff j = n * x.coeff j := by
+  exact_mod_cast coeff_intCast_mul (n : ℤ) x j
+
+/-- Multiplying by a numeral at least `2` scales every power-basis coefficient. -/
+@[simp]
+theorem coeff_ofNat_mul (n : ℕ) [n.AtLeastTwo] (x : Cyclotomic e) (j : ℕ) :
+    ((ofNat(n) : Cyclotomic e) * x).coeff j = ofNat(n) * x.coeff j :=
+  coeff_natCast_mul n x j
+
+/-- A finite sum adds power-basis coefficients. -/
+@[simp]
+theorem coeff_sum {ι : Type*} (s : Finset ι) (f : ι → Cyclotomic e) (j : ℕ) :
+    (∑ i ∈ s, f i).coeff j = ∑ i ∈ s, (f i).coeff j := by
+  simpa only [coeffAddHom_apply] using map_sum (coeffAddHom e j) f s
+
 /-- Every class modulo `Φ_e` has an exact coefficient-vector representative. -/
 theorem toAdjoinRoot_surjective : Function.Surjective (toAdjoinRoot : Cyclotomic e → _) := by
   intro z
   obtain ⟨p, rfl⟩ := AdjoinRoot.mk_surjective z
   refine ⟨ofCoeffList e p.coeffList, ?_⟩
-  rw [toAdjoinRoot_ofCoeffList, TauCeti.Polynomial.ofCoeffList_coeffList]
+  rw [toAdjoinRoot_ofCoeffList, Polynomial.ofCoeffList_reverse_coeffList]
 
 private theorem toAdjoinRootRingHom_bijective :
     Function.Bijective (toAdjoinRootRingHom (e := e)) :=
-  ⟨fun _ _ h => toAdjoinRoot_injective (by simpa using h),
-    fun z => (toAdjoinRoot_surjective z).imp fun _ h => by simpa using h⟩
+  ⟨toAdjoinRoot_injective, toAdjoinRoot_surjective⟩
 
 /-- Exact cyclotomic integers are the quotient `ℤ[X] / (Φ_e)`. -/
 noncomputable def equivAdjoinRoot :
@@ -355,8 +441,8 @@ theorem equivAdjoinRoot_apply (x : Cyclotomic e) : equivAdjoinRoot x = toAdjoinR
 
 @[simp]
 theorem toAdjoinRoot_zeta : toAdjoinRoot (zeta e) = AdjoinRoot.root (cyclotomic e ℤ) := by
-  have hX : TauCeti.Polynomial.ofCoeffList ([1, 0] : List ℤ) = X := by
-    simp [TauCeti.Polynomial.ofCoeffList_cons]
+  have hX : Polynomial.ofCoeffList ([1, 0] : List ℤ).reverse = X := by
+    simp [Polynomial.ofCoeffList_cons]
   rw [zeta, toAdjoinRoot_ofCoeffList, hX, AdjoinRoot.mk_X]
 
 @[simp]
@@ -367,7 +453,8 @@ theorem equivAdjoinRoot_symm_root :
 /-- A ring homomorphism out of the exact cyclotomic integers is determined by the image of the
 distinguished generator `ζ`: the integers admit a unique ring homomorphism, and `ζ` generates
 everything else. -/
-theorem ringHom_ext {R : Type*} [CommRing R] {g₁ g₂ : Cyclotomic e →+* R}
+@[ext high]
+theorem ringHom_ext {R : Type*} [Semiring R] {g₁ g₂ : Cyclotomic e →+* R}
     (h : g₁ (zeta e) = g₂ (zeta e)) : g₁ = g₂ := by
   have key : g₁.comp (equivAdjoinRoot (e := e)).symm.toRingHom
       = g₂.comp (equivAdjoinRoot (e := e)).symm.toRingHom :=
@@ -394,7 +481,7 @@ theorem evalRingHom_apply {R : Type*} [CommRing R] (f : ℤ →+* R) (r : R)
 theorem evalRingHom_ofCoeffList {R : Type*} [CommRing R] (f : ℤ →+* R) (r : R)
     (hr : (cyclotomic e ℤ).eval₂ f r = 0) (l : List ℤ) :
     evalRingHom f r hr (ofCoeffList e l) =
-      (TauCeti.Polynomial.ofCoeffList l).eval₂ f r := by
+      (Polynomial.ofCoeffList l.reverse).eval₂ f r := by
   rw [evalRingHom, RingHom.comp_apply, toAdjoinRootRingHom_apply, toAdjoinRoot_ofCoeffList,
     AdjoinRoot.lift_mk]
 
@@ -418,51 +505,42 @@ computation because it works directly on the finite list. -/
     (x : Cyclotomic e) : R :=
   x.coeffs.foldl (fun y a => y * r + f a) 0
 
-private theorem eval₂_ofCoeffList {R : Type*} [CommRing R] (f : ℤ →+* R) (r : R)
-    (l : List ℤ) :
-    (TauCeti.Polynomial.ofCoeffList l).eval₂ f r =
-      l.foldl (fun y a => y * r + f a) 0 := by
-  induction l using List.reverseRecOn with
-  | nil => simp
-  | append_singleton l a ih =>
-    rw [TauCeti.Polynomial.ofCoeffList_concat, eval₂_add, eval₂_mul, eval₂_X, eval₂_C,
-      List.foldl_append, ih]
-    rfl
-
 /-- Direct coefficient-list evaluation agrees with polynomial evaluation. -/
-theorem evalCoeffs_eq_eval₂ {R : Type*} [CommRing R] (f : ℤ →+* R) (r : R)
+theorem evalCoeffs_eq_eval₂ {R : Type*} [Semiring R] (f : ℤ →+* R) (r : R)
     (x : Cyclotomic e) :
     evalCoeffs f r x = x.toPolynomial.eval₂ f r := by
-  rw [evalCoeffs, toPolynomial, eval₂_ofCoeffList]
+  rw [evalCoeffs, toPolynomial, TauCeti.Polynomial.eval₂_ofCoeffList_reverse]
+
+/-- Mapping a Horner evaluation through a ring homomorphism maps the coefficients and the
+point of evaluation. The semirings need not be commutative. -/
+theorem _root_.RingHom.map_evalCoeffs {R S : Type*} [Semiring R] [Semiring S]
+    (g : R →+* S) (f : ℤ →+* R) (r : R) (x : Cyclotomic e) :
+    g (evalCoeffs f r x) = evalCoeffs (g.comp f) (g r) x := by
+  rw [evalCoeffs_eq_eval₂, Polynomial.hom_eval₂, evalCoeffs_eq_eval₂]
+
+/-- The bundled evaluation at a root of the cyclotomic polynomial is the Horner evaluation
+`TauCeti.Cyclotomic.evalCoeffs`. -/
+theorem evalRingHom_eq_evalCoeffs {R : Type*} [CommRing R] (f : ℤ →+* R) (r : R)
+    (hr : (cyclotomic e ℤ).eval₂ f r = 0) (x : Cyclotomic e) :
+    evalRingHom f r hr x = evalCoeffs f r x := by
+  rw [evalRingHom_apply, evalCoeffs_eq_eval₂]
 
 /-- Horner's rule in closed form: coefficient-list evaluation is the sum of the evaluated
 coordinates against the powers of `r`, one term for each element of the power basis. -/
-theorem evalCoeffs_eq_sum {R : Type*} [CommRing R] (f : ℤ →+* R) (r : R) (x : Cyclotomic e) :
+theorem evalCoeffs_eq_sum {R : Type*} [Semiring R] (f : ℤ →+* R) (r : R) (x : Cyclotomic e) :
     evalCoeffs f r x = ∑ j : Fin e.totient, f (x.coeff j) * r ^ (j : ℕ) := by
-  rw [evalCoeffs_eq_eval₂]
-  have hdeg : x.toPolynomial.degree < (e.totient : WithBot ℕ) :=
-    (degree_lt_iff_coeff_zero _ _).2 fun m hm => by
-      rw [coeff_toPolynomial]; exact coeff_eq_zero_of_totient_le x hm
-  rcases Nat.eq_zero_or_pos e.totient with h | h
-  · have hempty : (Finset.univ : Finset (Fin e.totient)) = ∅ :=
-      Finset.eq_empty_of_forall_notMem fun j => absurd j.isLt (by omega)
-    have hzero : x.toPolynomial = 0 :=
-      Polynomial.ext fun m => by
-        rw [coeff_toPolynomial, Polynomial.coeff_zero]
-        exact coeff_eq_zero_of_totient_le x (by omega)
-    rw [hzero, hempty]
-    simp
-  · have hnat : x.toPolynomial.natDegree < e.totient := by
-      rcases eq_or_ne x.toPolynomial 0 with h0 | h0
-      · simpa [h0] using h
-      · exact (natDegree_lt_iff_degree_lt h0).2 hdeg
-    rw [eval₂_eq_sum_range' f hnat,
-      Fin.sum_univ_eq_sum_range (fun j => f (x.coeff j) * r ^ j) e.totient]
-    exact Finset.sum_congr rfl fun j _ => by rw [coeff_toPolynomial]
+  rw [evalCoeffs_eq_eval₂, eval₂_eq_sum,
+    Fin.sum_univ_eq_sum_range (fun j => f (x.coeff j) * r ^ j) e.totient]
+  rw [Polynomial.sum_eq_of_subset (fun j a => f a * r ^ j) (by simp)
+    (s := Finset.range e.totient)]
+  · simp only [coeff_toPolynomial]
+  · intro j hj
+    exact Finset.mem_range.mpr (lt_of_not_ge fun h =>
+      (mem_support_iff.mp hj) (by rw [coeff_toPolynomial]; exact x.coeff_eq_zero_of_totient_le h))
 
 /-- Reduction of exact cyclotomic integers in `ZMod p`, evaluated at a chosen residue `r`.
-When `r` is an `e`-th primitive root, `TauCeti.Cyclotomic.reduceRingHom` packages this as a ring
-homomorphism. -/
+When `p` is prime and `r` is a primitive `e`-th root, `TauCeti.Cyclotomic.reduceRingHom` packages
+this as a ring homomorphism. -/
 @[expose] def reduce (p : ℕ) (r : ZMod p) (x : Cyclotomic e) : ZMod p :=
   evalCoeffs (Int.castRingHom (ZMod p)) r x
 
@@ -471,63 +549,88 @@ theorem reduce_eq_sum (p : ℕ) (r : ZMod p) (x : Cyclotomic e) :
     reduce p r x = ∑ j : Fin e.totient, ((x.coeff j : ℤ) : ZMod p) * r ^ (j : ℕ) :=
   evalCoeffs_eq_sum _ _ _
 
+/-- Reduction of `0` is `0`, for every residue. -/
+@[simp]
+theorem reduce_zero (p : ℕ) (r : ZMod p) : reduce p r (0 : Cyclotomic e) = 0 := by
+  simp [reduce_eq_sum]
+
+/-- Reduction is additive, for every residue: it is additive in the coordinates. -/
+@[simp]
+theorem reduce_add (p : ℕ) (r : ZMod p) (x y : Cyclotomic e) :
+    reduce p r (x + y) = reduce p r x + reduce p r y := by
+  simp [reduce_eq_sum, coeff_add, Finset.sum_add_distrib, add_mul]
+
+/-- Reduction commutes with negation, for every residue. -/
+@[simp]
+theorem reduce_neg (p : ℕ) (r : ZMod p) (x : Cyclotomic e) :
+    reduce p r (-x) = -reduce p r x := by
+  simp [reduce_eq_sum, coeff_neg]
+
 /-- Reduction at an `e`-th primitive root in a prime field is a ring homomorphism. -/
 noncomputable def reduceRingHom (p : ℕ) [Fact p.Prime] [NeZero e]
     (r : ZMod p) (hr : IsPrimitiveRoot r e) : Cyclotomic e →+* ZMod p :=
-  evalRingHom (Int.castRingHom (ZMod p)) r <| by
-    rw [← eval_map, map_cyclotomic]
-    exact hr.isRoot_cyclotomic (NeZero.pos e)
+  evalRingHom (Int.castRingHom (ZMod p)) r (hr.eval₂_cyclotomic _)
 
-@[simp]
+-- Not `@[simp]`: `reduce p r` is multiplicative only when `r` is a root of the cyclotomic
+-- polynomial, so it has no `simp` API of its own, and rewriting `reduceRingHom` to it would stop
+-- `simp` from using `map_mul` and `map_add`.
 theorem reduceRingHom_apply (p : ℕ) [Fact p.Prime] [NeZero e]
     (r : ZMod p) (hr : IsPrimitiveRoot r e) (x : Cyclotomic e) :
     reduceRingHom p r hr x = reduce p r x := by
-  rw [reduceRingHom, reduce, evalRingHom, RingHom.comp_apply, toAdjoinRootRingHom_apply,
-    toAdjoinRoot, AdjoinRoot.lift_mk, evalCoeffs_eq_eval₂]
+  rw [reduceRingHom, evalRingHom_eq_evalCoeffs, reduce]
 
-/-- Reduction at an `e`-th primitive root sends the distinguished generator `ζ` to that root. -/
+/-- Reduction at a root of the cyclotomic polynomial, over any modulus, sends the distinguished
+generator `ζ` to that root. -/
 @[simp]
-theorem reduce_zeta (p : ℕ) [Fact p.Prime] [NeZero e] (r : ZMod p) (hr : IsPrimitiveRoot r e) :
+theorem reduce_zeta {p : ℕ} {r : ZMod p}
+    (hr : (cyclotomic e ℤ).eval₂ (Int.castRingHom (ZMod p)) r = 0) :
     reduce p r (zeta e) = r := by
-  rw [← reduceRingHom_apply p r hr, reduceRingHom, evalRingHom_zeta]
+  rw [reduce, ← evalRingHom_eq_evalCoeffs _ _ hr, evalRingHom_zeta]
 
 /-! ## The distinguished complex embedding -/
 
-/-- The distinguished complex primitive `e`-th root `exp (2πi/e)`. -/
+/-- The distinguished complex `e`-th root of unity `exp (2πi/e)`.  It is primitive for `e ≠ 0`
+(`TauCeti.Cyclotomic.isPrimitiveRoot_complexRoot`); at `e = 0` it is `exp 0 = 1`. -/
 noncomputable def complexRoot (e : ℕ) : ℂ := Complex.exp (2 * Real.pi * Complex.I / e)
 
-/-- For nonzero `e`, the distinguished root `TauCeti.Cyclotomic.complexRoot e = exp (2πi/e)` is a
-primitive `e`-th root of unity.  This is what pins which complex root `ζ` names, and hence which
-embedding `TauCeti.Cyclotomic.complexEmbedding` is. -/
+/-- The defining equation `complexRoot e = exp (2πi/e)` of the distinguished complex root. -/
+theorem complexRoot_def (e : ℕ) : complexRoot e = Complex.exp (2 * Real.pi * Complex.I / e) :=
+  (rfl)
+
+/-- For nonzero `e`, the distinguished root `TauCeti.Cyclotomic.complexRoot e` is a primitive
+`e`-th root of unity.  Which primitive root it is, and hence which embedding
+`TauCeti.Cyclotomic.complexEmbedding` is, is fixed by the definition `exp (2πi/e)`. -/
 theorem isPrimitiveRoot_complexRoot [NeZero e] : IsPrimitiveRoot (complexRoot e) e :=
   Complex.isPrimitiveRoot_exp e (NeZero.ne e)
 
-/-- Complex conjugation sends the distinguished primitive root to its inverse.  The `(e - 1)`-st
-power `TauCeti.Cyclotomic.conj_complexRoot_eq_pow_sub_one` is the simp normal form, since it stays
-inside the subring generated by the root. -/
-theorem conj_complexRoot [NeZero e] :
-    starRingEnd ℂ (complexRoot e) = (complexRoot e)⁻¹ :=
-  (Complex.inv_eq_conj (isPrimitiveRoot_complexRoot.norm'_eq_one (NeZero.ne e))).symm
+/-- Complex conjugation sends the distinguished root `complexRoot e` to its inverse.  The root is
+primitive for `e ≠ 0` (`TauCeti.Cyclotomic.isPrimitiveRoot_complexRoot`), and `complexRoot 0 = 1`.
+The `(e - 1)`-st power `TauCeti.Cyclotomic.conj_complexRoot_eq_pow_sub_one` is the simp normal
+form, since it stays inside the subring generated by the root. -/
+theorem conj_complexRoot :
+    starRingEnd ℂ (complexRoot e) = (complexRoot e)⁻¹ := by
+  rcases eq_or_ne e 0 with rfl | he
+  · simp [complexRoot]
+  have : NeZero e := ⟨he⟩
+  exact (Complex.inv_eq_conj (isPrimitiveRoot_complexRoot.norm'_eq_one he)).symm
 
-/-- Complex conjugation sends the distinguished primitive root to its `(e - 1)`-st power. -/
+/-- Complex conjugation sends the distinguished root `complexRoot e` to its `(e - 1)`-st power.
+For `e = 0` both sides are `1`. -/
 @[simp]
-theorem conj_complexRoot_eq_pow_sub_one [NeZero e] :
+theorem conj_complexRoot_eq_pow_sub_one :
     starRingEnd ℂ (complexRoot e) = complexRoot e ^ (e - 1) := by
+  rcases eq_or_ne e 0 with rfl | he
+  · simp [complexRoot]
+  have : NeZero e := ⟨he⟩
   rw [conj_complexRoot]
   apply inv_eq_of_mul_eq_one_right
   rw [← pow_succ', Nat.sub_add_cancel (NeZero.pos e)]
   exact isPrimitiveRoot_complexRoot.pow_eq_one
 
-/-- The distinguished complex root annihilates the integral cyclotomic polynomial. -/
-theorem eval₂_cyclotomic_complexRoot [NeZero e] :
-    (cyclotomic e ℤ).eval₂ (Int.castRingHom ℂ) (complexRoot e) = 0 := by
-  rw [← eval_map, map_cyclotomic]
-  exact (isPrimitiveRoot_complexRoot (e := e)).isRoot_cyclotomic (NeZero.pos e)
-
 /-- The pinned embedding of exact cyclotomic integers into `ℂ`, sending `ζ` to
 `exp (2πi/e)`. -/
 noncomputable def complexEmbedding [NeZero e] : Cyclotomic e →+* ℂ :=
-  evalRingHom (Int.castRingHom ℂ) (complexRoot e) eval₂_cyclotomic_complexRoot
+  evalRingHom (Int.castRingHom ℂ) (complexRoot e) (isPrimitiveRoot_complexRoot.eval₂_cyclotomic _)
 
 /-- The pinned embedding evaluates the canonical polynomial representative at `exp (2πi/e)`. -/
 theorem complexEmbedding_apply [NeZero e] (x : Cyclotomic e) :
@@ -535,9 +638,8 @@ theorem complexEmbedding_apply [NeZero e] (x : Cyclotomic e) :
   rw [complexEmbedding, evalRingHom_apply, aeval_def, algebraMap_int_eq]
 
 @[simp]
-theorem complexEmbedding_zeta [NeZero e] : complexEmbedding (zeta e) = complexRoot e := by
-  rw [complexEmbedding, zeta, evalRingHom_ofCoeffList]
-  simp [TauCeti.Polynomial.ofCoeffList_cons]
+theorem complexEmbedding_zeta [NeZero e] : complexEmbedding (zeta e) = complexRoot e :=
+  evalRingHom_zeta _ _ _
 
 /-- The distinguished complex realization of exact cyclotomic integers is injective. -/
 theorem complexEmbedding_injective [NeZero e] :
@@ -556,8 +658,8 @@ theorem complexEmbedding_injective [NeZero e] :
   apply toAdjoinRoot_injective
   rw [toAdjoinRoot, hp, map_zero, toAdjoinRoot_zero]
 
-/-! The exact arithmetic reduces in the kernel.  In `Cyclotomic 5`, `ζ⁵ = 1`; reduction at
-`2 : ZMod 5`, a primitive fourth root, sends `ζ + 1` to `3`. -/
+/-! The exact arithmetic reduces in the kernel.  In `Cyclotomic 5`, `ζ₅⁵ = 1`; in `Cyclotomic 4`,
+reduction at `2 : ZMod 5`, a primitive fourth root, sends `ζ₄ + 1` to `3`. -/
 
 example : (zeta 5 ^ 5).coeffs = (1 : Cyclotomic 5).coeffs := by decide
 

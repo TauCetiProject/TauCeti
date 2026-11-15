@@ -41,10 +41,9 @@ division-polynomial point, and `Isogeny/BaseChange.lean` carries a pullback alon
 field by carrying its point. The identity and Frobenius pullbacks instead come directly from their
 underlying ring maps.
 
-This is the opening milestone of Layer 1 of the elliptic-curves roadmap. The definition is the
-coordinate-ring form of D. Angdinata's function-field definition of an isogeny. The geometric
-interpretation follows Silverman, *The Arithmetic of Elliptic Curves*, II.2.4. No ellipticity or
-normality assumption is needed to state the data.
+The definition is the coordinate-ring form of D. Angdinata's function-field definition of an
+isogeny. The geometric interpretation follows Silverman, *The Arithmetic of Elliptic Curves*,
+II.2.4. No ellipticity or normality assumption is needed to state the data.
 -/
 
 public section
@@ -143,6 +142,19 @@ structure Isogeny (W₁ W₂ : WeierstrassCurve.Affine F) where
   mapsInfinity : pullback.MapsInfinity
 
 namespace Isogeny
+
+/-- Isogenies with equal target curves agree after transport if their pullbacks agree on
+both affine coordinates. -/
+theorem eq_of_pullback_coords
+    {U V V' : WeierstrassCurve.Affine F} (e : V = V')
+    (φ : Isogeny U V) (ψ : Isogeny U V')
+    (hx : φ.pullback (AdjoinRoot.of V.polynomial X) =
+      ψ.pullback (AdjoinRoot.of V'.polynomial X))
+    (hy : φ.pullback (AdjoinRoot.root V.polynomial) =
+      ψ.pullback (AdjoinRoot.root V'.polynomial)) :
+    (e ▸ φ) = ψ := by
+  subst V'
+  exact Isogeny.ext (CoordinateRing.algHom_ext hx hy)
 
 /-- The identity isogeny. -/
 noncomputable def id (W : WeierstrassCurve.Affine F) : Isogeny W W where

@@ -5,9 +5,9 @@ Authors: Claude, Codex
 -/
 module
 
-public import Mathlib.RepresentationTheory.Coinduced
+public import TauCeti.RepresentationTheory.Coinduced
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 import all TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
 import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
@@ -21,6 +21,9 @@ module `TauCeti.DiscreteCoind` in the categorical language of smooth discrete re
 and compares it with Mathlib's algebraic coinduction `Representation.coind`. The unbundled module
 `TauCeti.coind` is transported to the categorical language through the smooth-discrete dictionary
 (`TauCeti.toSmoothDiscrete`, `TauCeti.ofSmoothDiscrete`).
+The local-constancy criterion and linear comparison with algebraic coinduction only need
+separately continuous multiplication on `G`; the linear comparison works over a semiring with no
+topology on the scalars.
 
 ## Main definitions
 
@@ -33,7 +36,13 @@ and compares it with Mathlib's algebraic coinduction `Representation.coind`. The
 * `TauCeti.coindTraceHom`: for finite-index `U`, the trace as a morphism of smooth discrete
   `G`-representations;
 * `TauCeti.discreteCoindEquivAlgebraic`: for an open subgroup `U`, the linear equivalence between
-  locally constant coinduction and Mathlib's `Representation.coindV`.
+  locally constant coinduction and Mathlib's `Representation.coindV`;
+* `TauCeti.discreteCoindAddEquivAlgebraic`: for a discrete group `G`, a subgroup `U`, and an
+  arbitrary `DistribMulAction U M`, the additive equivalence
+  `DiscreteCoind G U M ≃+ Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)`; the coefficient
+  action need not be restricted from `G`;
+* `TauCeti.algebraicCoindCounit`: evaluation at `1` on algebraic coinduction with its discrete
+  topology, for comparing the two restriction–evaluation Shapiro maps.
 
 ## Main results
 
@@ -56,16 +65,6 @@ universe u v w
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
-local instance instDiscreteTopologyOfSmoothDiscreteCoind
-    {R : Type u} [Ring R] [TopologicalSpace R] {G : Type v} [Monoid G] [TopologicalSpace G]
-    (A : SmoothDiscreteTopRep.{u, v, w} R G) : DiscreteTopology A.obj.V :=
-  A.property.discreteTopology
-
-local instance instContinuousSMulOfSmoothDiscreteCoind
-    {R : Type u} [Ring R] [TopologicalSpace R] {G : Type v} [Group G]
-    [TopologicalSpace G] [IsTopologicalGroup G] (A : SmoothDiscreteTopRep.{u, v, w} R G) :
-    ContinuousSMul G A.obj.V := A.property.continuousSMul
-
 variable (R : Type u) [Ring R] [TopologicalSpace R]
   (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   (U : Subgroup G)
@@ -81,25 +80,19 @@ noncomputable abbrev coindDiscreteRep (A : DiscreteRep.{u, v, w} R U) :
 noncomputable def coindDiscreteFunctor :
     DiscreteRep.{u, v, w} R U ⥤ DiscreteRep.{u, v, max v w} R G where
   obj := coindDiscreteRep R G U
-  map {A B} f :=
+  map f :=
     (DiscreteCoind.map f.toLinearMap
-      (DiscreteRep.equivariant f)).intertwiningMap_of_isIntertwiningMap _ _ fun g a => by
-        apply DiscreteCoind.ext
-        intro x
-        rfl
-  map_id A := Representation.IntertwiningMap.ext (LinearMap.ext fun a =>
-    DiscreteCoind.ext fun g => by rfl)
-  map_comp f f' := Representation.IntertwiningMap.ext (LinearMap.ext fun a =>
-    DiscreteCoind.ext fun g => by rfl)
-
-private theorem coindDiscreteFunctor_obj_impl (A : DiscreteRep.{u, v, w} R U) :
-    (coindDiscreteFunctor R G U).obj A = coindDiscreteRep R G U A := rfl
+      (DiscreteRep.equivariant f)).intertwiningMap_of_isIntertwiningMap _ _ fun g a =>
+        DiscreteCoind.map_smul f.toLinearMap (DiscreteRep.equivariant f) g a
+  map_id _ := Representation.IntertwiningMap.ext DiscreteCoind.map_id
+  map_comp f f' := Representation.IntertwiningMap.ext
+    (DiscreteCoind.map_comp_map f.toLinearMap (DiscreteRep.equivariant f)
+      f'.toLinearMap (DiscreteRep.equivariant f')).symm
 
 /-- The object part of discrete coinduction is the locally constant coinduced representation. -/
 @[simp]
 theorem coindDiscreteFunctor_obj (A : DiscreteRep.{u, v, w} R U) :
-    (coindDiscreteFunctor R G U).obj A = coindDiscreteRep R G U A :=
-  coindDiscreteFunctor_obj_impl R G U A
+    (coindDiscreteFunctor R G U).obj A = coindDiscreteRep R G U A := (rfl)
 
 private theorem coindDiscreteFunctor_map_apply_impl {A B : DiscreteRep.{u, v, w} R U}
     (f : A ⟶ B) (a : DiscreteCoind G U A.V) (g : G) :
@@ -154,36 +147,26 @@ noncomputable def coindCounit (A : SmoothDiscreteTopRep.{u, v, w} R U) :
     ext f
     exact DiscreteCoind.eval_smul u f
 
-private theorem coindCounit_apply_impl (A : SmoothDiscreteTopRep.{u, v, w} R U)
-    (f : DiscreteCoind G U A.obj.V) : coindCounit R G U A f = f 1 := rfl
-
 -- `dsimp% only` on the left-hand side: see the comment on `coindDiscreteFunctor_map_apply`.
 /-- The counit of coinduction evaluates a coinduced function at the identity. -/
 @[simp]
 theorem coindCounit_apply (A : SmoothDiscreteTopRep.{u, v, w} R U)
     (f : DiscreteCoind G U A.obj.V) : (dsimp% only (coindCounit R G U A f)) = f 1 :=
-  coindCounit_apply_impl R G U A f
+  DiscreteCoind.evalLinear_apply f
 
 /-- The trace packaged as a morphism of smooth discrete `G`-representations for a finite-index
 subgroup `U`. -/
 noncomputable def coindTraceHom [U.FiniteIndex]
     (A : SmoothDiscreteTopRep.{u, v, max v w} R G) :
-    (coindTopRep R G U
-      (⟨TopRep.res (U.subtype : U →* G) A.obj,
-        A.property.res continuous_subtype_val⟩ : SmoothDiscreteTopRep R U)).obj ⟶ A.obj := by
-  letI : DiscreteTopology A.obj.V := A.property.discreteTopology
-  letI : ContinuousSMul G A.obj.V := A.property.continuousSMul
-  let X := coindTopRep R G U
-    (⟨TopRep.res (U.subtype : U →* G) A.obj,
-      A.property.res continuous_subtype_val⟩ : SmoothDiscreteTopRep R U)
-  letI : DiscreteTopology X.obj.V := X.property.discreteTopology
-  exact CategoryTheory.ConcreteCategory.ofHom
+    (coindTopRep R G U (smoothDiscreteResTopRep U A)).obj ⟶ A.obj :=
+  CategoryTheory.ConcreteCategory.ofHom
     { toContinuousLinearMap :=
         ⟨DiscreteCoind.traceLinear (R := R) G U A.obj.V, continuous_of_discreteTopology⟩
       isIntertwining' g := by
         ext f
         exact map_smul (DiscreteCoind.trace G U A.obj.V) g f }
 
+/-- The trace morphism `coindTraceHom` acts on underlying functions as `DiscreteCoind.trace`. -/
 @[simp]
 theorem coindTraceHom_apply [U.FiniteIndex]
     (A : SmoothDiscreteTopRep.{u, v, max v w} R G) (f : DiscreteCoind G U A.obj.V) :
@@ -216,7 +199,7 @@ private theorem coindFunctor_map_apply_impl {A B : SmoothDiscreteTopRep.{u, v, w
   change (show DiscreteCoind G U B.obj.V from
     ((toSmoothDiscrete R G).map
       ((coindDiscreteFunctor R G U).map ((ofSmoothDiscrete R U).map f))).hom.hom a) g = _
-  have htop := toSmoothDiscrete_map_hom_apply (R := R) (G := G)
+  have htop := toSmoothDiscrete_map_hom_hom_apply (R := R) (G := G)
     ((coindDiscreteFunctor R G U).map ((ofSmoothDiscrete R U).map f)) a
   -- The dictionary lemma returns an equality in the underlying carrier; identifying that carrier
   -- with `DiscreteCoind` makes point evaluation at `g` well typed.
@@ -245,83 +228,29 @@ theorem coindFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w} R U}
 
 private noncomputable def coindCounitApp (A : SmoothDiscreteTopRep.{u, v, max v w} R U) :
     (coindFunctor.{u, v, max v w} R G U ⋙ smoothDiscreteResFunctor R G U).obj A ⟶ (𝟭 _).obj A :=
-  ObjectProperty.homMk
-    (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, max v w} R U ↦ X.obj)
-        ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
-          (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A)))) ≫
-      TopRep.ofHom (coindCounit R G U A))
+  ObjectProperty.homMk (TopRep.ofHom (coindCounit R G U A))
 
-private theorem coindCounit_cast_naturality {A B : SmoothDiscreteTopRep.{u, v, max v w} R U}
-    (f : A ⟶ B) (hA : ((smoothDiscreteResFunctor R G U).obj ((coindFunctor R G U).obj A)).obj.V =
-      (TopRep.res (U.subtype : U →* G) (coindTopRep R G U A).obj).V)
-    (hB : ((smoothDiscreteResFunctor R G U).obj ((coindFunctor R G U).obj B)).obj.V =
-      (TopRep.res (U.subtype : U →* G) (coindTopRep R G U B).obj).V)
-    (a : ((smoothDiscreteResFunctor R G U).obj ((coindFunctor R G U).obj A)).obj) :
-    coindCounit R G U B
-        (cast hB (((smoothDiscreteResFunctor R G U).map ((coindFunctor R G U).map f)).hom.hom a)) =
-      f.hom.hom (coindCounit R G U A (cast hA a)) := by
-  -- The restricted map is the coinduced map conjugated by casts: read
-  -- `smoothDiscreteResFunctor_map_apply` backwards and turn its transports into casts. The carrier
-  -- equations come from `smoothDiscreteResFunctor_obj`: the carrier of `TopRep.res` is the
-  -- original one by definition.
-  have hres (X : SmoothDiscreteTopRep.{u, v, max v w} R G) :
-      ((smoothDiscreteResFunctor R G U).obj X).obj.V = X.obj.V :=
-    congrArg (·.obj.V) (smoothDiscreteResFunctor_obj R G U X)
-  have hmap : ((smoothDiscreteResFunctor R G U).map ((coindFunctor R G U).map f)).hom.hom a =
-      cast (hres _).symm (((coindFunctor R G U).map f).hom.hom (cast (hres _) a)) := by
-    -- `rw`, not `simp`: `simp` does not rewrite the composite, since it is not type-correct at the
-    -- transparency `simp` checks implicit arguments with (the restricted object carries a
-    -- continuity proof for `Subtype.val` where one for `U.subtype` is expected).
-    rw [← smoothDiscreteResFunctor_map_apply R G U ((coindFunctor R G U).map f) (cast (hres _) a),
-      ← TopRep.hom_comp, ← TopRep.hom_comp, TopRep.comp_apply, TopRep.comp_apply,
-      TopRep.eqToHom_hom_apply, TopRep.eqToHom_hom_apply]
-    simp only [cast_cast, cast_eq]
-  rw [hmap, cast_cast]
-  -- `coindFunctor_map_apply` takes an element of `DiscreteCoind G U A.obj.V`. The ascription
-  -- types the transported element by the carrier of `coindTopRep`, which unfolds to it, so that
-  -- the transports in `h` stay type-correct when rewritten into casts. `dsimp only` removes the
-  -- `have` that the lemma's `show … from` elaborates to.
-  have h := coindFunctor_map_apply R G U f (cast hA a : (coindTopRep R G U A).obj.V) 1
-  dsimp only at h
-  -- After the rewrites `h` is the goal up to unfolding `coindCounit`, which evaluates at `1` by
-  -- definition (`coindCounit_apply_impl` is `rfl`): its argument lies in the carrier of the
-  -- restriction of `coindTopRep`, which unfolds to `DiscreteCoind`.
-  rwa [← TopRep.hom_comp, ← TopRep.hom_comp, TopRep.comp_apply, TopRep.comp_apply,
-    TopRep.eqToHom_hom_apply, TopRep.eqToHom_hom_apply, cast_cast] at h
-
+-- The explicit universes in `coindCounitApp.{u, v, w}` below
+-- fix `w`, which the arguments determine only through `max v w`. Without them, elaborating these
+-- statements compares types in which `w` is still unsolved, and each comparison unfolds
+-- `smoothDiscreteResFunctor`.
 private theorem coindCounitApp_naturality {A B : SmoothDiscreteTopRep.{u, v, max v w} R U}
     (f : A ⟶ B) :
     (coindFunctor.{u, v, max v w} R G U ⋙ smoothDiscreteResFunctor R G U).map f ≫
-        coindCounitApp R G U B =
-      coindCounitApp R G U A ≫ (𝟭 (SmoothDiscreteTopRep.{u, v, max v w} R U)).map f := by
+        coindCounitApp.{u, v, w} R G U B =
+      coindCounitApp.{u, v, w} R G U A ≫ (𝟭 (SmoothDiscreteTopRep.{u, v, max v w} R U)).map f := by
   ext a
-  -- Both functors are opaque here, so their objects are identified with `coindTopRep` and
-  -- `TopRep.res` only through the public object lemmas. Every transport along those equations
-  -- is a cast of carriers, and the two public map computations close the square pointwise.
-  dsimp only [coindCounitApp, Functor.comp_map, Functor.id_map,
-    ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom, TopRep.hom_comp,
-    TopRep.hom_ofHom, ContIntertwiningMap.toContinuousLinearMap_comp,
-    ContinuousLinearMap.comp_apply, ContIntertwiningMap.toContinuousLinearMap_apply]
-  rw [TopRep.eqToHom_hom_apply, TopRep.eqToHom_hom_apply]
-  -- `(… :)` elaborates the lemma before unifying it with the goal; propagating the goal into its
-  -- carrier equations first is about ten times slower.
-  exact (coindCounit_cast_naturality R G U f _ _ a :)
+  -- Both composites send `a` to `f (a 1)` by definition: the counit evaluates at `1`.
+  rfl
 
 /-- Evaluation at `1`, natural in the smooth discrete coefficient representation. -/
 noncomputable def coindCounitNatTrans :
     coindFunctor.{u, v, max v w} R G U ⋙ smoothDiscreteResFunctor R G U ⟶
       𝟭 (SmoothDiscreteTopRep.{u, v, max v w} R U) where
-  app := coindCounitApp R G U
+  app := coindCounitApp.{u, v, w} R G U
   -- `(… :)` elaborates the lemma before unifying it with the field's type; propagating that type
   -- into it first is about ten times slower.
   naturality _ _ f := (coindCounitApp_naturality R G U f :)
-
-private theorem coindCounitNatTrans_app_hom_impl (A : SmoothDiscreteTopRep.{u, v, max v w} R U) :
-    ((coindCounitNatTrans R G U).app A).hom =
-      eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, max v w} R U ↦ X.obj)
-        ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
-          (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A)))) ≫
-        TopRep.ofHom (coindCounit R G U A) := rfl
 
 -- A pre-lemma (`simp↓`): otherwise `Functor.comp_obj` and `Functor.id_obj` rewrite the implicit
 -- source and target of the component first, and the left-hand side no longer matches. `dsimp%` does
@@ -337,8 +266,9 @@ theorem coindCounitNatTrans_app_apply (A : SmoothDiscreteTopRep.{u, v, max v w} 
           ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
             (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A))).symm)).hom) f =
       f 1 := by
-  rw [← TopRep.hom_comp, coindCounitNatTrans_app_hom_impl, eqToHom_trans_assoc, eqToHom_refl,
-    Category.id_comp, TopRep.hom_ofHom, coindCounit_apply]
+  -- The object equations in the `eqToHom` transport hold by definition in this module, so the
+  -- transport reduces to the identity and the claim is the evaluation formula `coindCounit_apply`.
+  exact coindCounit_apply R G U A f
 
 end Bundled
 
@@ -354,7 +284,7 @@ attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 section LocallyConstant
 
 variable (R : Type u) [Semiring R]
-  (G : Type v) [Group G] [TopologicalSpace G] [ContinuousMul G]
+  (G : Type v) [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
 
 /-- An algebraically coinduced function from an open subgroup is locally constant when the
 coefficient action is continuous and the coefficient space is discrete. -/
@@ -367,42 +297,34 @@ theorem isLocallyConstant_representationCoindV (U : OpenSubgroup G)
     IsLocallyConstant f.1 :=
   isLocallyConstant_of_apply_mul U.isOpen f.2
 
-end LocallyConstant
-
-variable (R : Type u) [Ring R] [TopologicalSpace R]
-  (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  (U : OpenSubgroup G)
-  (A : SmoothDiscreteTopRep.{u, v, w} R U.toSubgroup)
-
-local instance : DiscreteTopology A.obj.V := A.property.discreteTopology
-local instance : ContinuousSMul U.toSubgroup A.obj.V := A.property.continuousSMul
-local instance : SMulCommClass U.toSubgroup R A.obj.V := TopRep.smulCommClass A.obj
-local instance : SMulCommClass G R (DiscreteCoind G U.toSubgroup A.obj.V) :=
-  DiscreteCoind.instSMulCommClass (G := G) (U := U.toSubgroup) (A := A.obj.V)
+variable (U : OpenSubgroup G)
+  (A : Type w) [AddCommGroup A] [Module R A] [TopologicalSpace A] [DiscreteTopology A]
+  [DistribMulAction U.toSubgroup A] [SMulCommClass U.toSubgroup R A]
+  [ContinuousSMul U.toSubgroup A]
 
 /-- For an open subgroup, locally constant coinduction is linearly equivalent to Mathlib's
 algebraic `Representation.coindV`, which carries the action `Representation.coind`. Both
 directions preserve the underlying function on `G`.
 
 Openness is used only in the inverse direction: it makes every algebraically coinduced function
-locally constant. -/
-noncomputable def discreteCoindEquivAlgebraic :
-    DiscreteCoind G U.toSubgroup A.obj.V ≃ₗ[R]
+locally constant. Only separately continuous multiplication on `G` is needed; no topology on the
+scalar semiring is required. -/
+def discreteCoindEquivAlgebraic :
+    DiscreteCoind G U.toSubgroup A ≃ₗ[R]
       Representation.coindV U.toSubgroup.subtype
-        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) where
+        (Representation.ofDistribMulAction R U.toSubgroup A) where
   toFun f := ⟨f, fun u g ↦ DiscreteCoind.apply_mul f u g⟩
-  invFun f := DiscreteCoind.mk G U.toSubgroup A.obj.V f.1
-    (isLocallyConstant_representationCoindV R G U f) fun u g ↦ by
-      simpa using f.2 u g
-  left_inv f := DiscreteCoind.ext fun _ ↦ rfl
-  right_inv f := Subtype.ext rfl
+  invFun f := DiscreteCoind.mk G U.toSubgroup A f.1
+    (isLocallyConstant_representationCoindV R G U f) f.2
+  left_inv _ := DiscreteCoind.ext fun _ ↦ rfl
+  right_inv _ := Subtype.ext rfl
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
 /-- The comparison sends a locally constant coinduced function to the same underlying
 algebraically coinduced function. -/
 @[simp]
-theorem discreteCoindEquivAlgebraic_apply (f : DiscreteCoind G U.toSubgroup A.obj.V) (g : G) :
+theorem discreteCoindEquivAlgebraic_apply (f : DiscreteCoind G U.toSubgroup A) (g : G) :
     (discreteCoindEquivAlgebraic R G U A f).1 g = f g := (rfl)
 
 /-- The inverse comparison sends an algebraically coinduced function to the same underlying
@@ -410,36 +332,41 @@ function, now equipped with its automatic local constancy. -/
 @[simp]
 theorem discreteCoindEquivAlgebraic_symm_apply
     (f : Representation.coindV U.toSubgroup.subtype
-      (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) (g : G) :
+      (Representation.ofDistribMulAction R U.toSubgroup A)) (g : G) :
     (discreteCoindEquivAlgebraic R G U A).symm f g = f.1 g := (rfl)
 
 /-- The locally constant/algebraic coinduction comparison intertwines the right-translation
 actions of `G`. -/
 @[simp]
 theorem discreteCoindEquivAlgebraic_smul (g : G)
-    (f : DiscreteCoind G U.toSubgroup A.obj.V) :
+    (f : DiscreteCoind G U.toSubgroup A) :
     discreteCoindEquivAlgebraic R G U A (g • f) =
       Representation.coind U.toSubgroup.subtype
-        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) g
+        (Representation.ofDistribMulAction R U.toSubgroup A) g
         (discreteCoindEquivAlgebraic R G U A f) := by
   apply Subtype.ext
   funext x
-  simp only [Representation.coind_apply, discreteCoindEquivAlgebraic_apply,
-    DiscreteCoind.coe_smul]
-  -- The membership proof inside Mathlib's `coind_apply` blocks `LinearMap.restrict_coe_apply`,
-  -- so the remaining right translation `f (x * g)` is closed definitionally.
-  rfl
+  rw [Representation.coind_apply_coe_apply]
+  simp only [discreteCoindEquivAlgebraic_apply, DiscreteCoind.coe_smul]
+
+end LocallyConstant
+
+variable (R : Type u) [Ring R] [TopologicalSpace R]
+  (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  (U : OpenSubgroup G)
+  (A : SmoothDiscreteTopRep.{u, v, w} R U.toSubgroup)
+
+local instance : ContinuousSMul U.toSubgroup A.obj.V := A.property.continuousSMul
 
 variable [CompactSpace G]
 
 /-- Mathlib's algebraic coinduction, equipped with the discrete topology and the continuous
 actions transported from locally constant coinduction. -/
 noncomputable abbrev algebraicCoindDiscreteRep : DiscreteRep.{u, v, max v w} R G := by
-  let e := discreteCoindEquivAlgebraic R G U A
+  let e := discreteCoindEquivAlgebraic R G U A.obj.V
   let V := Representation.coindV U.toSubgroup.subtype
     (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)
-  letI : TopologicalSpace
-      V := ⊥
+  letI : TopologicalSpace V := ⊥
   letI : DiscreteTopology V := ⟨rfl⟩
   letI : DistribMulAction G V := e.symm.toAddEquiv.distribMulAction G
   letI : SMulCommClass G R V := ⟨fun g r f ↦ by
@@ -474,7 +401,7 @@ theorem algebraicCoindDiscreteRep_ρ :
   -- The action is transported along `e.symm` for `e := discreteCoindEquivAlgebraic`, so
   -- `g • f = e (g • e.symm f)` by `Equiv.smul_def`; `discreteCoindEquivAlgebraic_smul`
   -- computes the right-hand side.
-  refine ((discreteCoindEquivAlgebraic R G U A).symm.toEquiv.smul_def g f).trans ?_
+  refine ((discreteCoindEquivAlgebraic R G U A.obj.V).symm.toEquiv.smul_def g f).trans ?_
   simp
 
 /-- Algebraic coinduction from an open subgroup, regarded as a smooth discrete topological
@@ -482,73 +409,189 @@ representation. -/
 noncomputable abbrev algebraicCoindAsSmooth : SmoothDiscreteTopRep.{u, v, max v w} R G :=
   (toSmoothDiscrete R G).obj (algebraicCoindDiscreteRep R G U A)
 
+/-- Evaluation at `1` on algebraic coinduction, with the discrete topology. Over a commutative
+ring this is the counit of Mathlib's restriction–coinduction adjunction. -/
+noncomputable def algebraicCoindCounit :
+    ContIntertwiningMap
+      (TopRep.res U.toSubgroup.subtype (algebraicCoindAsSmooth R G U A).obj).ρ A.obj.ρ where
+  toContinuousLinearMap :=
+    ⟨LinearMap.proj 1 ∘ₗ
+      (Representation.coindV U.toSubgroup.subtype
+        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)).subtype,
+      continuous_of_discreteTopology⟩
+  isIntertwining' u := by
+    ext f
+    let f' : Representation.coindV U.toSubgroup.subtype
+      (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) := f
+    -- The smooth-discrete dictionary preserves the carrier and its action; name that action
+    -- before applying the algebraic representation equality.
+    change ((algebraicCoindDiscreteRep R G U A).ρ (u : G) f').1 1 = A.obj.ρ u (f'.1 1)
+    rw [algebraicCoindDiscreteRep_ρ, Representation.coind_apply_coe_apply]
+    simpa only [one_mul, mul_one, Subgroup.coe_subtype] using
+      (f'.2 u 1).trans (TopRep.distribMulAction_smul A.obj u (f'.1 1))
+
+/-- The algebraic counit evaluates the underlying equivariant function at `1`. -/
+@[simp]
+theorem algebraicCoindCounit_apply
+    (f : Representation.coindV U.toSubgroup.subtype
+      (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) :
+    (dsimp% only (algebraicCoindCounit R G U A f)) = f.1 1 := (rfl)
+
 /-- The discrete representation isomorphism underlying the topological/algebraic comparison. -/
 private noncomputable def discreteCoindIsoAlgebraic :
     coindDiscreteRep R G U.toSubgroup ((ofSmoothDiscrete R U.toSubgroup).obj A) ≅
       algebraicCoindDiscreteRep R G U A where
-  hom := (discreteCoindEquivAlgebraic R G U A).toLinearMap.intertwiningMap_of_isIntertwiningMap
-    _ _ fun g f ↦ discreteCoindEquivAlgebraic_smul R G U A g f
+  hom :=
+    (discreteCoindEquivAlgebraic R G U A.obj.V).toLinearMap.intertwiningMap_of_isIntertwiningMap
+      _ _ fun g f ↦ discreteCoindEquivAlgebraic_smul R G U A.obj.V g f
   inv :=
-    { toLinearMap := (discreteCoindEquivAlgebraic R G U A).symm.toLinearMap
+    { toLinearMap := (discreteCoindEquivAlgebraic R G U A.obj.V).symm.toLinearMap
       isIntertwining' :=
-        (discreteCoindEquivAlgebraic R G U A).isIntertwining_symm_isIntertwining fun g ↦
-          LinearMap.ext (discreteCoindEquivAlgebraic_smul R G U A g) }
+        (discreteCoindEquivAlgebraic R G U A.obj.V).isIntertwining_symm_isIntertwining fun g ↦
+          LinearMap.ext (discreteCoindEquivAlgebraic_smul R G U A.obj.V g) }
   hom_inv_id := Representation.IntertwiningMap.ext
-    (LinearMap.ext (discreteCoindEquivAlgebraic R G U A).symm_apply_apply)
+    (LinearMap.ext (discreteCoindEquivAlgebraic R G U A.obj.V).symm_apply_apply)
   inv_hom_id := Representation.IntertwiningMap.ext
-    (LinearMap.ext (discreteCoindEquivAlgebraic R G U A).apply_symm_apply)
+    (LinearMap.ext (discreteCoindEquivAlgebraic R G U A.obj.V).apply_symm_apply)
 
 /-- Locally constant topological coinduction from an open subgroup agrees with Mathlib's
 algebraic coinduction. The isomorphism is the identity on the underlying equivariant functions. -/
 noncomputable def topologicalCoindIsoAlgebraic :
-    coindTopRep R G U.toSubgroup A ≅ algebraicCoindAsSmooth R G U A := by
-  exact (toSmoothDiscrete R G).mapIso (discreteCoindIsoAlgebraic R G U A)
-
-private theorem topologicalCoindIsoAlgebraic_hom_hom_hom_apply_coe_impl
-    (f : DiscreteCoind G U.toSubgroup A.obj.V) (g : G) :
-    ((topologicalCoindIsoAlgebraic R G U A).hom.hom.hom f).1 g =
-      (discreteCoindEquivAlgebraic R G U A f).1 g := by
-  rw [topologicalCoindIsoAlgebraic, Functor.mapIso_hom]
-  have h := toSmoothDiscrete_map_hom_apply
-    (R := R) (G := G) (discreteCoindIsoAlgebraic R G U A).hom f
-  exact congrArg (fun b ↦ b.1 g) h
-
--- The codomain carrier `(coindTopRep R G U.toSubgroup A).obj.V` is `DiscreteCoind` only up to
--- unfolding the `toSmoothDiscrete` dictionary, and no lemma can rewrite a type; the `show`
--- names that carrier so that evaluation at `g` elaborates, exactly as in
--- `coindFunctor_map_apply_impl`.
-private theorem topologicalCoindIsoAlgebraic_inv_hom_hom_apply_coe_impl
-    (f : Representation.coindV U.toSubgroup.subtype
-      (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) (g : G) :
-    (show DiscreteCoind G U.toSubgroup A.obj.V from
-      (topologicalCoindIsoAlgebraic R G U A).inv.hom.hom f) g =
-        (discreteCoindEquivAlgebraic R G U A).symm f g := by
-  rw [topologicalCoindIsoAlgebraic, Functor.mapIso_inv]
-  have h := toSmoothDiscrete_map_hom_apply
-    (R := R) (G := G) (discreteCoindIsoAlgebraic R G U A).inv f
-  -- The dictionary lemma is an equality in the unfolded carrier; view it in `DiscreteCoind` to
-  -- evaluate at `g`.
-  exact congrArg (fun b ↦ (show DiscreteCoind G U.toSubgroup A.obj.V from b) g) h
+    coindTopRep R G U.toSubgroup A ≅ algebraicCoindAsSmooth R G U A :=
+  (toSmoothDiscrete R G).mapIso (discreteCoindIsoAlgebraic R G U A)
 
 /-- The forward map of the topological/algebraic comparison leaves every value unchanged. -/
 @[simp]
 theorem topologicalCoindIsoAlgebraic_hom_hom_hom_apply_coe
     (f : DiscreteCoind G U.toSubgroup A.obj.V) (g : G) :
-    ((topologicalCoindIsoAlgebraic R G U A).hom.hom.hom f).1 g = f g :=
-  (topologicalCoindIsoAlgebraic_hom_hom_hom_apply_coe_impl R G U A f g).trans
-    (discreteCoindEquivAlgebraic_apply R G U A f g)
+    ((topologicalCoindIsoAlgebraic R G U A).hom.hom.hom f).1 g = f g := by
+  rw [topologicalCoindIsoAlgebraic, Functor.mapIso_hom]
+  have h := toSmoothDiscrete_map_hom_hom_apply
+    (R := R) (G := G) (discreteCoindIsoAlgebraic R G U A).hom f
+  exact (congrArg (fun b ↦ b.1 g) h).trans (discreteCoindEquivAlgebraic_apply R G U A.obj.V f g)
 
+-- The codomain carrier `(coindTopRep R G U.toSubgroup A).obj.V` is `DiscreteCoind` only up to
+-- unfolding the `toSmoothDiscrete` dictionary, and no lemma can rewrite a type; the `show`
+-- names that carrier so that evaluation at `g` elaborates, exactly as in
+-- `coindFunctor_map_apply_impl`.
 /-- The inverse map of the topological/algebraic comparison leaves every value unchanged. -/
 @[simp]
 theorem topologicalCoindIsoAlgebraic_inv_hom_hom_apply_coe
     (f : Representation.coindV U.toSubgroup.subtype
       (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) (g : G) :
-    -- `show` names the `DiscreteCoind` carrier, as in the auxiliary lemma above.
     (show DiscreteCoind G U.toSubgroup A.obj.V from
-      (topologicalCoindIsoAlgebraic R G U A).inv.hom.hom f) g = f.1 g :=
-  (topologicalCoindIsoAlgebraic_inv_hom_hom_apply_coe_impl R G U A f g).trans
-    (discreteCoindEquivAlgebraic_symm_apply R G U A f g)
+      (topologicalCoindIsoAlgebraic R G U A).inv.hom.hom f) g = f.1 g := by
+  rw [topologicalCoindIsoAlgebraic, Functor.mapIso_inv]
+  have h := toSmoothDiscrete_map_hom_hom_apply
+    (R := R) (G := G) (discreteCoindIsoAlgebraic R G U A).inv f
+  -- The dictionary lemma is an equality in the unfolded carrier; view it in `DiscreteCoind` to
+  -- evaluate at `g`.
+  exact (congrArg (fun b ↦ (show DiscreteCoind G U.toSubgroup A.obj.V from b) g) h).trans
+    (discreteCoindEquivAlgebraic_symm_apply R G U A.obj.V f g)
+
+variable {R G} in
+/-- The topological/algebraic coinduction comparison preserves the evaluation counit. -/
+@[reassoc]
+theorem topologicalCoindIsoAlgebraic_hom_comp_counit
+    (B : SmoothDiscreteTopRep.{u, v, max v w} R U.toSubgroup) :
+    (TopRep.resFunctor U.toSubgroup.subtype).map
+        (topologicalCoindIsoAlgebraic R G U B).hom.hom ≫
+      TopRep.ofHom (algebraicCoindCounit R G U B) =
+        TopRep.ofHom (coindCounit R G U.toSubgroup B) := by
+  ext f
+  let f' : DiscreteCoind G U.toSubgroup B.obj.V := f
+  -- Restriction preserves the underlying map; its bundled carrier must be named to apply
+  -- the two counits' point-evaluation lemmas.
+  change algebraicCoindCounit R G U B ((topologicalCoindIsoAlgebraic R G U B).hom.hom.hom f') =
+    coindCounit R G U.toSubgroup B f'
+  exact (algebraicCoindCounit_apply R G U B _).trans
+    ((topologicalCoindIsoAlgebraic_hom_hom_hom_apply_coe R G U B f' 1).trans
+      (coindCounit_apply R G U.toSubgroup B f').symm)
 
 end AlgebraicComparison
+
+section AlgebraicCounit
+
+universe u v w
+
+variable {R : Type u} [CommRing R] [TopologicalSpace R]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  (U : OpenSubgroup G) (A : SmoothDiscreteTopRep.{u, v, max v w} R U.toSubgroup)
+
+attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
+
+/-- The continuous algebraic evaluation counit is the counit of Mathlib's algebraic
+restriction–coinduction adjunction after forgetting continuity. -/
+theorem algebraicCoindCounit_toLinearMap :
+    (algebraicCoindCounit R G U A).toContinuousLinearMap.toLinearMap =
+      ((Rep.resCoindAdjunction R U.toSubgroup.subtype).counit.app
+        (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V))).hom.toLinearMap := by
+  ext f
+  let f' : Representation.coindV U.toSubgroup.subtype
+    (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) := f
+  exact (algebraicCoindCounit_apply R G U A f').trans
+    (Rep.resCoindAdjunction_counit_app_hom_apply (k := R) U.toSubgroup.subtype
+      (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) f').symm
+
+end AlgebraicCounit
+
+section DiscreteAlgebraicComparison
+
+universe u v
+
+variable (G : Type u) (M : Type v) [Group G] [TopologicalSpace G] [DiscreteTopology G]
+  [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  (U : Subgroup G) [DistribMulAction U M] [ContinuousSMul U M]
+
+/-- For a discrete group `G`, a subgroup `U`, and an arbitrary `DistribMulAction U M`, the
+additive equivalence `DiscreteCoind G U M ≃+ Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)`.
+The coefficient action need not be restricted from `G`. -/
+noncomputable def discreteCoindAddEquivAlgebraic :
+    DiscreteCoind G U M ≃+ Rep.coind U.subtype
+      (Rep.ofDistribMulAction ℤ U M) :=
+  (discreteCoindEquivAlgebraic ℤ G ⟨U, isOpen_discrete _⟩ M).toAddEquiv
+
+/-- The additive coinduction comparison preserves every value of the underlying function. -/
+theorem discreteCoindAddEquivAlgebraic_apply (f : DiscreteCoind G U M) (g : G) :
+    (discreteCoindAddEquivAlgebraic G M U f).1 g = f g :=
+  discreteCoindEquivAlgebraic_apply ℤ G ⟨U, isOpen_discrete _⟩ M f g
+
+/-- The inverse additive coinduction comparison preserves every value of the underlying
+algebraically coinduced function. -/
+theorem discreteCoindAddEquivAlgebraic_symm_apply
+    (f : Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)) (g : G) :
+    (discreteCoindAddEquivAlgebraic G M U).symm f g = f.1 g := by
+  -- Name the unbundled carrier so inference preserves the caller's coefficient action.
+  let f' : Representation.coindV U.subtype (Representation.ofDistribMulAction ℤ U M) := f
+  exact discreteCoindEquivAlgebraic_symm_apply ℤ G ⟨U, isOpen_discrete _⟩ M f' g
+
+/-- The additive coinduction comparison intertwines right translation. -/
+@[simp↓]
+theorem discreteCoindAddEquivAlgebraic_smul (g : G) (f : DiscreteCoind G U M) :
+    discreteCoindAddEquivAlgebraic G M U (g • f) =
+      (Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)).ρ g
+        (discreteCoindAddEquivAlgebraic G M U f) :=
+  discreteCoindEquivAlgebraic_smul ℤ G ⟨U, isOpen_discrete _⟩ M g f
+
+end DiscreteAlgebraicComparison
+
+section DiscreteAlgebraicCounit
+
+universe u v
+
+variable (G : Type u) (M : Type (max u v)) [Group G] [TopologicalSpace G] [DiscreteTopology G]
+  [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  (U : Subgroup G) [DistribMulAction U M] [ContinuousSMul U M]
+
+/-- The algebraic restriction–coinduction counit evaluates at the identity after the additive
+coinduction comparison. The coefficient universe contains the group universe, as required by
+the restriction–coinduction adjunction. -/
+theorem discreteCoindAddEquivAlgebraic_eval (f : DiscreteCoind G U M) :
+    ((Rep.resCoindAdjunction ℤ U.subtype).counit.app
+      (Rep.ofDistribMulAction ℤ U M)).hom (discreteCoindAddEquivAlgebraic G M U f) = f 1 := by
+  exact (Rep.resCoindAdjunction_counit_app_hom_apply U.subtype _ _).trans
+    (discreteCoindAddEquivAlgebraic_apply G M U f 1)
+
+end DiscreteAlgebraicCounit
 
 end TauCeti

@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Algebra.BigOperators.Finprod
-public import TauCeti.GroupTheory.GroupAction.Stabilizer
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 public import TauCeti.NumberTheory.BinaryQuadraticForm.OfMatrix
 public import TauCeti.NumberTheory.HurwitzClassNumber
@@ -61,6 +61,8 @@ Popa and Zagier state it for matrices modulo `±1`, summing over the classes of 
 
 * `TauCeti.BinaryQuadraticForm.ofMatrix_conjAct_smul`: `Q_{γ M γ⁻¹} = γ • Q_M`, for the conjugation
   action.
+* `TauCeti.BinaryQuadraticForm.smul_eq_iff_ofConjAct_smul_ofMatrix_eq`: two matrices of the same
+  trace are conjugate by `γ` exactly when `γ` carries one form to the other.
 * `TauCeti.BinaryQuadraticForm.card_stabilizer_ofMatrix`: the stabiliser of `Q_M` has the order of
   the centraliser of `M` in `SL(2, ℤ)`.
 * `TauCeti.BinaryQuadraticForm.apply_one_zero_ne_zero_of_mem_traceDetFiber`: in an elliptic fibre,
@@ -102,6 +104,15 @@ theorem ofMatrix_conjAct_smul (g : ConjAct SL(2, R)) (M : Matrix (Fin 2) (Fin 2)
 
 end CommRing
 
+/-- Over `ℤ`, conjugation between two matrices of the same trace is detected on their forms:
+`g M g⁻¹ = N` exactly when `g • Q_M = Q_N`. -/
+theorem smul_eq_iff_ofConjAct_smul_ofMatrix_eq {M N : Matrix (Fin 2) (Fin 2) ℤ}
+    (h : M.trace = N.trace) (g : ConjAct SL(2, ℤ)) :
+    g • M = N ↔ ofConjAct g • ofMatrix M = ofMatrix N := by
+  rw [← ofMatrix_inj_of_trace_eq (IsRegular.of_ne_zero two_ne_zero).left
+      ((trace_specialLinearGroup_smul g M).trans h),
+    ofMatrix_conjAct_smul]
+
 /-- **The automorphism weights agree**: the stabiliser of `Q_M` in `SL(2, ℤ)` has the order of the
 centraliser of `M` in `SL(2, ℤ)`, that is of its stabiliser under conjugation. -/
 theorem card_stabilizer_ofMatrix (M : Matrix (Fin 2) (Fin 2) ℤ) :
@@ -109,7 +120,8 @@ theorem card_stabilizer_ofMatrix (M : Matrix (Fin 2) (Fin 2) ℤ) :
   -- conjugation preserves the trace, and a matrix is determined by its trace and its form, so
   -- `γ` centralises `M` exactly when it fixes `Q_M`
   card_stabilizer_congr (ofConjAct (G := SL(2, ℤ))) M (ofMatrix_conjAct_smul · M) fun g ↦
-    (ofMatrix_inj_of_trace_eq (trace_specialLinearGroup_smul g M)).1
+    (ofMatrix_inj_of_trace_eq (IsRegular.of_ne_zero two_ne_zero).left
+      (trace_specialLinearGroup_smul g M)).1
 
 variable {t n : ℤ} {D : ℕ} [NeZero D]
 
@@ -140,8 +152,8 @@ private theorem ofMatrix_toFiber (h : t ^ 2 - 4 * n = -D) (f : posDef D) :
 private theorem ofMatrix_coe_injective :
     Function.Injective fun M : traceDetFiber (Fin 2) t n ↦
       ofMatrix (M : Matrix (Fin 2) (Fin 2) ℤ) :=
-  fun M N hMN ↦ Subtype.ext <| (ofMatrix_inj_of_trace_eq <|
-    (mem_traceDetFiber.1 M.2).1.trans (mem_traceDetFiber.1 N.2).1.symm).1 hMN
+  fun M N hMN ↦ Subtype.ext <| (ofMatrix_inj_of_trace_eq (IsRegular.of_ne_zero two_ne_zero).left
+    ((mem_traceDetFiber.1 M.2).1.trans (mem_traceDetFiber.1 N.2).1.symm)).1 hMN
 
 private theorem toFiber_ofMatrix (h : t ^ 2 - 4 * n = -D) (M : traceDetFiber (Fin 2) t n)
     (hM : ofMatrix (M : Matrix (Fin 2) (Fin 2) ℤ) ∈ posDef D) : toFiber h ⟨_, hM⟩ = M :=

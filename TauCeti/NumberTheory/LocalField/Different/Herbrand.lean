@@ -26,6 +26,8 @@ Herbrand shift. This is the trace input to the Herbrand-shifted norm inclusion i
 
 * `TauCeti.intTrace_mem_maximalIdeal_pow_succ_of_mem_psiNat`: the integral trace carries
   `𝓂[L] ^ (ψℕ_{L/K}(n) + 1)` into `𝓂[K] ^ (n + 1)`.
+* `TauCeti.trace_mem_maximalIdeal_pow_succ`: when `[L : K] ≥ 2` and `G_{v+1} = Gal(L/K)`,
+  the trace carries `𝓂[L] ^ v` into `𝓂[K] ^ (v + 1)`.
 
 ## References
 
@@ -65,19 +67,8 @@ private theorem ramificationIndex_mul_succ_le (n : ℕ) :
     simp only [g, Nat.cast_zero]
     ring
   -- Hilbert's formula, truncated at `m`: `∑_{i ≤ m} (#G_i - 1) ≤ d(L/K)`.
-  obtain ⟨N, hN⟩ := exists_forall_lowerRamificationGroup_eq_bot K L
-  have hsupp : Function.support (fun i : ℕ ↦ g i - 1) ⊆
-      ↑(Finset.range (max (m + 1) N.toNat)) := by
-    intro i hi
-    simp only [Function.mem_support, ne_eq] at hi
-    simp only [Finset.coe_range, Set.mem_Iio]
-    by_contra h
-    have hbot : lowerRamificationGroup K L i = ⊥ := hN i (by omega)
-    exact hi (by simp only [g, hbot, Subgroup.card_bot, Nat.sub_self])
-  have htrunc : ∑ i ∈ Finset.range (m + 1), (g i - 1) ≤ differentExponent K L := by
-    rw [differentExponent_eq_finsum_lowerRamificationGroup,
-      finsum_eq_sum_of_support_subset _ hsupp]
-    exact Finset.sum_le_sum_of_subset (Finset.range_subset_range.2 (le_max_left _ _))
+  have htrunc : ∑ i ∈ Finset.range (m + 1), (g i - 1) ≤ differentExponent K L :=
+    sum_range_card_lowerRamificationGroup_sub_one_le_differentExponent K L (m + 1)
   have hsub : ∑ i ∈ Finset.range (m + 1), (g i - 1) + (m + 1) =
       ∑ i ∈ Finset.range (m + 1), g i := by
     calc ∑ i ∈ Finset.range (m + 1), (g i - 1) + (m + 1)
@@ -93,6 +84,31 @@ theorem intTrace_mem_maximalIdeal_pow_succ_of_mem_psiNat {n : ℕ} {x : 𝒪[L]}
     (hx : x ∈ 𝓂[L] ^ (psiNat K L n + 1)) :
     Algebra.intTrace 𝒪[K] 𝒪[L] x ∈ 𝓂[K] ^ (n + 1) :=
   intTrace_mem_maximalIdeal_pow_of_mem hx (ramificationIndex_mul_succ_le n)
+
+/-- If `[L : K] ≥ 2` and `G_{v+1} = Gal(L/K)`, the trace carries `𝓂[L] ^ v` into
+`𝓂[K] ^ (v + 1)`: Hilbert's formula, truncated at `v + 1`, gives
+`d(L/K) ≥ (v + 2) ([L : K] - 1)`. -/
+theorem trace_mem_maximalIdeal_pow_succ (h2 : 2 ≤ Module.finrank K L) {v : ℕ}
+    (hG : lowerRamificationGroup K L (v + 1) = ⊤) {w : 𝒪[L]} (hw : w ∈ 𝓂[L] ^ v) :
+    Algebra.trace 𝒪[K] 𝒪[L] w ∈ 𝓂[K] ^ (v + 1) := by
+  have hGi (i : ℕ) (hi : i ≤ v + 1) : lowerRamificationGroup K L i = ⊤ :=
+    top_le_iff.1 (hG ▸ lowerRamificationGroup_antitone K L (by omega))
+  have he : ramificationIndex K L = Module.finrank K L :=
+    (isTotallyRamified_iff_ramificationIndex_eq_finrank K L).1 <|
+      (lowerRamificationGroup_zero_eq_top_iff K L).1 (by simpa using hGi 0 (by omega))
+  have hd : (v + 2) * (Module.finrank K L - 1) ≤ differentExponent K L := by
+    have hsum := sum_range_card_lowerRamificationGroup_sub_one_le_differentExponent K L (v + 2)
+    rwa [Finset.sum_congr rfl fun i hi ↦ by
+        rw [hGi i (by simp only [Finset.mem_range] at hi; omega), Subgroup.card_top,
+          IsGalois.card_aut_eq_finrank],
+      Finset.sum_const, Finset.card_range, smul_eq_mul] at hsum
+  rw [← Algebra.intTrace_eq_trace]
+  refine intTrace_mem_maximalIdeal_pow_of_mem hw ?_
+  obtain ⟨m, hm⟩ := Nat.exists_eq_add_of_le h2
+  have hm1 : 2 + m - 1 = m + 1 := by omega
+  rw [he, hm]
+  rw [hm, hm1] at hd
+  nlinarith
 
 end Trace
 

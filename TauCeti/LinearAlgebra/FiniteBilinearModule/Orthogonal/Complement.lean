@@ -21,7 +21,8 @@ H⊥⊥ = H + rad(A).
 For a nondegenerate `A` the file also has the cardinality identity `|H| |H⊥| = |A|`, which is
 unavailable without nondegeneracy, together with its two consequences: double orthogonal
 complementation is the identity, and a Lagrangian subgroup has order whose square is the order of
-the ambient group.
+the ambient group. Since multiplication by an integer `n` is self-adjoint, the same identity shows
+that the orthogonal complement of the `n`-torsion `A[n]` is `nA`.
 
 The file closes with the degeneracy of a restricted pairing.  Restricting the pairing to a
 subgroup `S` makes exactly the vectors of `S ∩ S⊥` degenerate:
@@ -44,6 +45,8 @@ orthogonal quotient `H⊥ / (H ∩ H⊥)` of
   cardinality identity `|H| |H⊥| = |A|` for a nondegenerate module.
 * `TauCeti.FiniteBilinearModule.IsLagrangian.card_sq`: a Lagrangian subgroup of a nondegenerate
   module has squared order `|A|`.
+* `TauCeti.FiniteBilinearModule.IsNondegenerate.orthogonalComplement_ker_zsmul`: in a
+  nondegenerate module, `A[n]⊥ = nA`.
 * `TauCeti.FiniteBilinearModule.addSubgroupOf_orthogonalComplement_le_radical_restrict`: the
   part of `H` lying in `H⊥` is degenerate for the restricted pairing.
 
@@ -144,6 +147,23 @@ theorem IsNondegenerate.orthogonalComplement_orthogonalComplement
     apply Nat.mul_right_cancel (Nat.card_pos (α := A.orthogonalComplement H))
     exact hH.trans hHperp.symm
   exact hcard.symm.le
+
+/-- **The orthogonal complement of the `n`-torsion is `nA`** in a nondegenerate finite bilinear
+module. Multiplication by `n` is self-adjoint, so `nA` pairs trivially with the `n`-torsion `A[n]`,
+and the orders agree because `|A[n]| |nA| = |A| = |A[n]| |A[n]⊥|`. -/
+theorem IsNondegenerate.orthogonalComplement_ker_zsmul (hA : A.IsNondegenerate) (n : ℤ) :
+    A.orthogonalComplement (zsmulAddGroupHom (α := A) n).ker =
+      (zsmulAddGroupHom (α := A) n).range := by
+  symm
+  refine AddSubgroup.eq_of_le_of_card_ge ?_ ?_
+  · rintro _ ⟨y, rfl⟩
+    refine (A.mem_orthogonalComplement_iff _ _).2 fun h hh ↦ ?_
+    rw [zsmulAddGroupHom_apply, A.pairing_comm, map_zsmul, ← A.pairing_comm, ← map_zsmul,
+      ← zsmulAddGroupHom_apply, AddMonoidHom.mem_ker.mp hh, map_zero]
+  · have h := IsNondegenerate.card_mul_card_orthogonalComplement A hA
+      (zsmulAddGroupHom (α := A) n).ker
+    rw [← AddSubgroup.card_ker_mul_card_range (zsmulAddGroupHom (α := A) n)] at h
+    exact (Nat.mul_left_cancel Nat.card_pos h).le
 
 /-- Orthogonal complementation commutes with mapping to the radical quotient. -/
 @[simp]

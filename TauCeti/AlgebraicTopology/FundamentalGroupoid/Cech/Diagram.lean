@@ -82,4 +82,20 @@ lemma cechCocone_ι_app (s : CechIndex ι) :
     eqToHom_map]
   rfl
 
+/-- The map induced by the inclusion of the intersection indexed by `s` is the leg at `s` of the
+canonical Čech cocone, transported along `cechDiagram_obj`. -/
+lemma map_subtypeVal_eq_cechCocone_ι_app (s : CechIndex ι) :
+    _root_.FundamentalGroupoid.fundamentalGroupoidFunctor.map
+        (TopCat.ofHom (ContinuousMap.subtypeVal (cechIntersection U s : Set X))) =
+      eqToHom (cechDiagram_obj U s).symm ≫ (cechCocone U).ι.app s := by
+  have hinc : eqToHom (cechTopDiagram_obj U s).symm ≫ cechInclusion U s =
+      (TopCat.ofHom (ContinuousMap.subtypeVal (cechIntersection U s : Set X)) :
+        TopCat.of (cechIntersection U s) ⟶ X) := by
+    ext x
+    exact cechInclusion_apply U s x
+  -- The cocone point is by definition the fundamental groupoid of `X`.
+  have hpt : eqToHom (cechCocone_pt U) = 𝟙 ((cechCocone U).pt) := rfl
+  rw [← hinc, ← cechCocone_ι_app, hpt]
+  exact (Category.assoc _ _ _).symm.trans (Category.comp_id _)
+
 end TauCeti.FundamentalGroupoid

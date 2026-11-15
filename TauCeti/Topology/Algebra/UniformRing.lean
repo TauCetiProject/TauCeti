@@ -5,32 +5,31 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.RingTheory.RingHom.Flat
 public import Mathlib.Topology.Algebra.UniformRing
+public import TauCeti.Topology.Algebra.Star.Completion
 
 /-!
-# Ring homomorphisms out of a completion
+# Completions of uniform topological rings
 
-Results about `UniformSpace.Completion` as a *ring*. Those about the completion itself live in
-the root `UniformSpace.Completion` namespace they extend; `RingHom.completionCoe_comp_heq`, whose
-subject is the homomorphism being followed by the coercion, lives in `RingHom` so that it is
-available by dot notation on that map.
+Results about `UniformSpace.Completion` as a ring: extensionality for continuous ring
+homomorphisms, comparison across equal uniformities, the identification of a complete
+Hausdorff ring with its completion, and the ring and star structures on completions of nonunital
+rings.
 
 `UniformSpace.Completion.ringHom_ext_of_continuous` is `UniformSpace.Completion.ext` for ring
 homomorphisms: two continuous ring homomorphisms out of `Completion R` that agree after composing
 with the coercion from `R` are equal. `R` is a topological ring carrying a compatible uniform
 additive-group structure, and nothing more: neither `CompleteSpace` nor `T0Space` is required, and
-`R` need not be commutative. It lives here because it is a statement about the completion functor
-rather than about any ring being completed, and it is what lets
-consumers state uniqueness on the base ring instead of on the completion.
+`R` need not be commutative. This extensionality principle lets consumers state uniqueness on
+the base ring instead of on the completion.
 
 ## The completion of a complete separated ring is itself
 
 `UniformSpace.Completion.completeRingEquivSelf`: for a complete Hausdorff topological ring
 `S`, the extension of the identity is a ring isomorphism `UniformSpace.Completion S ≃+* S`.
-The ring homomorphism is `UniformSpace.Completion.extensionHom`; its underlying function is
-that of the uniform bijection `UniformCompletion.completeEquivSelf` — the equality is
-recorded as `coe_extensionHom_id` — which supplies bijectivity. The name follows
-`UniformCompletion.completeEquivSelf`.
+Its underlying function is that of the uniform bijection `UniformCompletion.completeEquivSelf`,
+and its inverse is the canonical map from `S` into its completion.
 
 The rest of the self-equivalence material is read off that identification. The isomorphism
 is uniformly continuous
@@ -41,13 +40,33 @@ uniformly continuous because it *is* the canonical map into the completion. Over
 convenience: it is what makes the completion an `R`-algebra in the first place, since that is
 what `UniformSpace.Completion.algebra` requires.
 
-The declarations live in the root `UniformSpace.Completion` namespace they extend, following
-this repository's convention for lemmas about external types.
+## Completions of nonunital rings and star structures
+
+Mathlib's `UniformSpace.Completion.ring` completes unital topological rings. Completions of
+nonunital rings arise as soon as an algebra without unit is completed, for example the convolution
+algebra of compactly supported functions on a noncompact group. Following Mathlib's construction
+for rings, multiplication extends by continuity to the completion of any uniform space with a
+multiplication, `UniformSpace.Completion.instMul`, and the inclusion is multiplicative when
+multiplication is continuous, `UniformSpace.Completion.coe_mul'`. The axioms of a nonunital
+topological ring, and compatibility with scalars, pass to the completion. For a ring with unit
+the multiplication is Mathlib's.
+
+The star operation on the completion of a uniform additive group, and its star monoid and star
+module laws, are in `TauCeti.Topology.Algebra.Star.Completion`. For a nonunital topological ring
+with continuous star, the star ring law passes to the completion as well.
+
+## Comparison across equal uniformities
 
 `RingHom.completionCoe_comp_heq` compares the coercion for two *equal* uniformities on the same
-ring: following a fixed map by the coercion gives heterogeneously equal composites. It is stated
-here rather than where it is consumed because nothing in it is specific to any particular ring
-being completed.
+ring: following a fixed map by the coercion gives heterogeneously equal composites. It uses `HEq`
+because the completion types depend on their uniformities.
+
+`TauCeti.completionRingHom_heq_of_uniformSpace_eq` transports the characterization of a continuous
+ring homomorphism between completions across equal source and target uniformities. The completed
+rings may be noncommutative, and the fixed source of their structure maps may be a nonassociative
+semiring. `TauCeti.ringHom_flat_of_completion_heq` transports flatness across such a heterogeneous
+equality of maps, and `TauCeti.ringHom_flat_of_heq_of_uniformSpace_eq` gives the same transport for
+maps from a fixed commutative ring into completions.
 
 ## Main definitions
 
@@ -56,20 +75,37 @@ being completed.
 * `UniformSpace.Completion.completeAlgEquivSelf`: the same map as an `R`-algebra equivalence,
   for a complete Hausdorff topological `R`-algebra `S` whose scalar multiplication by `R` is
   uniformly continuous (`UniformContinuousConstSMul R S`).
+* `UniformSpace.Completion.mapAlgEquiv`: the `R`-algebra isomorphism of completions induced by
+  an `R`-algebra isomorphism that is continuous in both directions.
 
 ## Main results
 
 * `RingHom.completionCoe_comp_heq`: equal uniformities on the codomain give heterogeneously equal
   composites with the coercion into the completion.
-
+* `TauCeti.completionRingHom_heq_of_uniformSpace_eq`: compares continuous ring homomorphisms
+  between completions for equal source and target uniformities.
+* `TauCeti.ringHom_flat_of_completion_heq` and
+  `TauCeti.ringHom_flat_of_heq_of_uniformSpace_eq`: transport flatness across heterogeneous map
+  equalities between completions, or from a fixed ring into completions.
 * `UniformSpace.Completion.ringHom_ext_of_continuous`: two continuous ring homomorphisms out of
   a completion that agree on the image of the coercion are equal.
 * `UniformSpace.Completion.continuous_mapRingEquiv` and
   `UniformSpace.Completion.continuous_mapRingEquiv_symm`: the isomorphism of completions induced
   by a topological ring isomorphism is continuous in both directions.
+* `UniformSpace.Completion.mapAlgEquiv_coe` and `UniformSpace.Completion.continuous_mapAlgEquiv`:
+  the algebra isomorphism of completions extends the given isomorphism and is continuous.
+* `UniformSpace.Completion.mapAlgEquiv_symm` and
+  `UniformSpace.Completion.continuous_mapAlgEquiv_symm`: its inverse is the algebra isomorphism
+  induced by the inverse, and is continuous.
+* `UniformSpace.Completion.mapAlgEquiv_refl` and `UniformSpace.Completion.mapAlgEquiv_trans`:
+  the lift to completions is functorial; `UniformSpace.Completion.toRingEquiv_mapAlgEquiv`
+  identifies its underlying ring isomorphism with `UniformSpace.Completion.mapRingEquiv`.
 * `UniformSpace.Completion.coe_completeRingEquivSelf` and
   `UniformSpace.Completion.coe_completeRingEquivSelf_symm`: the isomorphism is
   `UniformCompletion.completeEquivSelf` and its inverse is the coercion into the completion.
+* `UniformSpace.Completion.instNonUnitalRing` and `UniformSpace.Completion.instStarRing`: the
+  completion of a nonunital topological ring is a nonunital ring, and a star ring when the star
+  operation is continuous.
 * `UniformSpace.Completion.uniformContinuous_completeRingEquivSelf` and
   `UniformSpace.Completion.uniformContinuous_completeRingEquivSelf_symm`: both directions are
   uniformly continuous, hence continuous by `UniformContinuous.continuous`.
@@ -126,17 +162,211 @@ variable {α β : Type*} [Ring α] [UniformSpace α] [IsTopologicalRing α] [IsU
 
 /-- The ring isomorphism of completions induced by a topological ring isomorphism is continuous:
 its underlying map is `UniformSpace.Completion.map`. -/
+@[fun_prop, continuity]
 theorem continuous_mapRingEquiv (f : α ≃+* β) (hf : Continuous f) (hf' : Continuous f.symm) :
     Continuous (mapRingEquiv f hf hf') :=
   continuous_map.congr fun x ↦ (mapRingEquiv_apply f hf hf' x).symm
 
 /-- The inverse of the ring isomorphism of completions induced by a topological ring isomorphism
 is continuous. -/
+@[fun_prop, continuity]
 theorem continuous_mapRingEquiv_symm (f : α ≃+* β) (hf : Continuous f) (hf' : Continuous f.symm) :
     Continuous (mapRingEquiv f hf hf').symm :=
   continuous_map.congr fun x ↦ (mapRingEquiv_symm_apply f hf hf' x).symm
 
 end MapRingEquiv
+
+section MapAlgEquiv
+
+variable {R : Type*} [CommSemiring R]
+  {α β : Type*} [Ring α] [UniformSpace α] [IsTopologicalRing α] [IsUniformAddGroup α]
+  [Algebra R α] [UniformContinuousConstSMul R α]
+  [Ring β] [UniformSpace β] [IsTopologicalRing β] [IsUniformAddGroup β]
+  [Algebra R β] [UniformContinuousConstSMul R β]
+
+/-- An `R`-algebra isomorphism `α ≃ₐ[R] β` between topological rings, continuous in both
+directions, lifts to an `R`-algebra isomorphism between their completions. Its underlying ring
+isomorphism is `UniformSpace.Completion.mapRingEquiv` (`toRingEquiv_mapAlgEquiv`). -/
+noncomputable def mapAlgEquiv (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm) :
+    Completion α ≃ₐ[R] Completion β :=
+  .ofRingEquiv (f := mapRingEquiv f.toRingEquiv (by rwa [AlgEquiv.coe_toRingEquiv])
+      (by rwa [AlgEquiv.toRingEquiv_symm, AlgEquiv.coe_toRingEquiv])) fun r ↦ by
+    simp [mapRingEquiv_apply, algebraMap_def,
+      map_coe (uniformContinuous_addMonoidHom_of_continuous (f := f) hf)]
+
+/-- The ring isomorphism underlying `mapAlgEquiv f` is `UniformSpace.Completion.mapRingEquiv`. -/
+@[simp]
+theorem toRingEquiv_mapAlgEquiv (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm) :
+    (mapAlgEquiv f hf hf').toRingEquiv = mapRingEquiv f.toRingEquiv
+      (by rwa [AlgEquiv.coe_toRingEquiv])
+      (by rwa [AlgEquiv.toRingEquiv_symm, AlgEquiv.coe_toRingEquiv]) :=
+  (rfl)
+
+/-- The algebra isomorphism of completions induced by `f` is `UniformSpace.Completion.map f`. -/
+theorem mapAlgEquiv_apply (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm)
+    (x : Completion α) : mapAlgEquiv f hf hf' x = Completion.map f x := by
+  rw [← AlgEquiv.coe_toRingEquiv (mapAlgEquiv f hf hf'), toRingEquiv_mapAlgEquiv,
+    mapRingEquiv_apply, AlgEquiv.coe_toRingEquiv]
+
+/-- The inverse of the algebra isomorphism of completions induced by `f` is
+`UniformSpace.Completion.map f.symm`. -/
+theorem mapAlgEquiv_symm_apply (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm)
+    (y : Completion β) : (mapAlgEquiv f hf hf').symm y = Completion.map f.symm y := by
+  rw [← AlgEquiv.coe_toRingEquiv (mapAlgEquiv f hf hf').symm, AlgEquiv.symm_toRingEquiv,
+    toRingEquiv_mapAlgEquiv, mapRingEquiv_symm_apply, AlgEquiv.toRingEquiv_symm,
+    AlgEquiv.coe_toRingEquiv]
+
+/-- The inverse of the algebra isomorphism of completions induced by `f` is the one induced by
+`f.symm`. -/
+@[simp]
+theorem mapAlgEquiv_symm (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm) :
+    (mapAlgEquiv f hf hf').symm = mapAlgEquiv f.symm hf' (by rwa [AlgEquiv.symm_symm]) :=
+  AlgEquiv.ext fun y ↦ by rw [mapAlgEquiv_symm_apply, mapAlgEquiv_apply]
+
+/-- The algebra isomorphism of completions induced by `f` extends `f`. -/
+@[simp]
+theorem mapAlgEquiv_coe (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm) (a : α) :
+    mapAlgEquiv f hf hf' a = (f a : Completion β) := by
+  rw [mapAlgEquiv_apply, map_coe (uniformContinuous_addMonoidHom_of_continuous (f := f) hf)]
+
+/-- The algebra isomorphism of completions induced by a topological algebra isomorphism is
+continuous. -/
+@[fun_prop, continuity]
+theorem continuous_mapAlgEquiv (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm) :
+    Continuous (mapAlgEquiv f hf hf') :=
+  continuous_map.congr fun x ↦ (mapAlgEquiv_apply f hf hf' x).symm
+
+/-- The inverse of the algebra isomorphism of completions induced by a topological algebra
+isomorphism is continuous. -/
+@[fun_prop, continuity]
+theorem continuous_mapAlgEquiv_symm (f : α ≃ₐ[R] β) (hf : Continuous f)
+    (hf' : Continuous f.symm) : Continuous (mapAlgEquiv f hf hf').symm :=
+  continuous_map.congr fun y ↦ (mapAlgEquiv_symm_apply f hf hf' y).symm
+
+/-- The identity algebra isomorphism lifts to the identity of the completion. -/
+@[simp]
+theorem mapAlgEquiv_refl :
+    mapAlgEquiv (AlgEquiv.refl : α ≃ₐ[R] α) continuous_id continuous_id = AlgEquiv.refl :=
+  AlgEquiv.ext fun x ↦ congrFun map_id x
+
+variable {γ : Type*} [Ring γ] [UniformSpace γ] [IsTopologicalRing γ] [IsUniformAddGroup γ]
+  [Algebra R γ] [UniformContinuousConstSMul R γ]
+
+/-- Lifting algebra isomorphisms to completions respects composition. -/
+theorem mapAlgEquiv_trans (f : α ≃ₐ[R] β) (g : β ≃ₐ[R] γ) (hf : Continuous f)
+    (hf' : Continuous f.symm) (hg : Continuous g) (hg' : Continuous g.symm) :
+    mapAlgEquiv (f.trans g) ((hg.comp hf).congr fun a ↦ (f.trans_apply g a).symm)
+        ((hf'.comp hg').congr fun c ↦ (f.symm_trans_apply g c).symm) =
+      (mapAlgEquiv f hf hf').trans (mapAlgEquiv g hg hg') :=
+  AlgEquiv.ext <| congrFun <| ext (continuous_mapAlgEquiv _ _ _)
+    ((continuous_mapAlgEquiv g hg hg').comp (continuous_mapAlgEquiv f hf hf')) fun a ↦ by
+      rw [mapAlgEquiv_coe, AlgEquiv.trans_apply, AlgEquiv.trans_apply, mapAlgEquiv_coe,
+        mapAlgEquiv_coe]
+
+end MapAlgEquiv
+
+/-! ## Completions of nonunital rings and star structures -/
+
+noncomputable section NonUnital
+
+open IsDenseInducing Function
+
+/-! ### Multiplication -/
+
+section Mul
+
+variable {α : Type*} [UniformSpace α]
+
+/-- Multiplication on the completion: the extension by continuity of multiplication on the dense
+image of `α`. For a ring with unit it is Mathlib's `UniformSpace.Completion.mul`. -/
+instance instMul [Mul α] : Mul (Completion α) :=
+  ⟨curry <| (isDenseInducing_coe.prodMap isDenseInducing_coe).extend ((↑) ∘ uncurry (· * ·))⟩
+
+/-- The inclusion into the completion is multiplicative, without assuming a unit. -/
+@[norm_cast]
+theorem coe_mul' [Mul α] [ContinuousMul α] (a b : α) :
+    ((a * b : α) : Completion α) = a * b :=
+  ((isDenseInducing_coe.prodMap isDenseInducing_coe).extend_eq
+      ((continuous_coe α).comp continuous_mul) (a, b)).symm
+
+variable [NonUnitalNonAssocRing α] [IsTopologicalRing α] [IsUniformAddGroup α]
+
+/-- Multiplication on the completion of a nonunital topological ring is continuous. -/
+instance instContinuousMulOfNonUnital : ContinuousMul (Completion α) where
+  continuous_mul := by
+    let m := (AddMonoidHom.mul : α →+ α →+ α).compr₂ toCompl
+    have : Continuous fun p : α × α => m p.1 p.2 := (continuous_coe α).comp continuous_mul
+    have di : IsDenseInducing (toCompl : α → Completion α) := isDenseInducing_coe
+    exact (di.extend_Z_bilin di this :)
+
+/-- The completion of a nonunital, nonassociative topological ring is a nonunital,
+nonassociative ring. -/
+instance instNonUnitalNonAssocRing : NonUnitalNonAssocRing (Completion α) where
+  zero_mul a :=
+    Completion.induction_on a (isClosed_eq (by fun_prop) continuous_const)
+      fun a => by rw [← coe_zero, ← coe_mul', zero_mul]
+  mul_zero a :=
+    Completion.induction_on a (isClosed_eq (by fun_prop) continuous_const)
+      fun a => by rw [← coe_zero, ← coe_mul', mul_zero]
+  left_distrib a b c :=
+    Completion.induction_on₃ a b c (isClosed_eq (by fun_prop) (by fun_prop))
+      fun a b c => by simp only [← coe_add, ← coe_mul', mul_add]
+  right_distrib a b c :=
+    Completion.induction_on₃ a b c (isClosed_eq (by fun_prop) (by fun_prop))
+      fun a b c => by simp only [← coe_add, ← coe_mul', add_mul]
+
+/-- The completion of a nonunital topological ring is a topological ring. -/
+instance instIsTopologicalRing : IsTopologicalRing (Completion α) where
+
+/-- Scalars that associate with multiplication on `α` associate with it on the completion. -/
+instance instIsScalarTowerMul {R : Type*} [Monoid R] [DistribMulAction R α]
+    [UniformContinuousConstSMul R α] [IsScalarTower R α α] :
+    IsScalarTower R (Completion α) (Completion α) where
+  smul_assoc r a b :=
+    Completion.induction_on₂ a b (isClosed_eq (by fun_prop) (by fun_prop))
+      fun a b => by simp only [smul_eq_mul, ← coe_smul, ← coe_mul', smul_mul_assoc]
+
+/-- Scalars that commute with multiplication on `α` commute with it on the completion. -/
+instance instSMulCommClassMul {R : Type*} [Monoid R] [DistribMulAction R α]
+    [UniformContinuousConstSMul R α] [SMulCommClass R α α] :
+    SMulCommClass R (Completion α) (Completion α) where
+  smul_comm r a b :=
+    Completion.induction_on₂ a b (isClosed_eq (by fun_prop) (by fun_prop))
+      fun a b => by simp only [smul_eq_mul, ← coe_smul, ← coe_mul', mul_smul_comm]
+
+end Mul
+
+section NonUnitalRing
+
+variable {α : Type*} [UniformSpace α] [NonUnitalRing α] [IsTopologicalRing α]
+  [IsUniformAddGroup α]
+
+/-- The completion of a nonunital topological ring is a nonunital ring. -/
+instance instNonUnitalRing : NonUnitalRing (Completion α) where
+  __ : NonUnitalNonAssocRing (Completion α) := inferInstance
+  mul_assoc a b c :=
+    Completion.induction_on₃ a b c (isClosed_eq (by fun_prop) (by fun_prop))
+      fun a b c => by simp only [← coe_mul', mul_assoc]
+
+end NonUnitalRing
+
+/-! ### Star rings -/
+
+section StarRing
+
+variable {α : Type*} [UniformSpace α] [NonUnitalNonAssocRing α] [IsTopologicalRing α]
+  [IsUniformAddGroup α] [StarRing α] [ContinuousStar α]
+
+/-- The completion of a nonunital topological star ring with continuous star is a star ring. -/
+instance instStarRing : StarRing (Completion α) where
+  star_add := star_add
+  star_mul a b :=
+    Completion.induction_on₂ a b (isClosed_eq (by fun_prop) (by fun_prop))
+      fun a b => by simp only [← coe_mul', ← coe_star, star_mul]
+
+end StarRing
+
+end NonUnital
 
 variable (S : Type*) [Ring S] [UniformSpace S] [IsTopologicalRing S] [IsUniformAddGroup S]
   [CompleteSpace S] [T0Space S]
@@ -218,3 +448,98 @@ theorem coe_completeAlgEquivSelf_symm :
 end Algebra
 
 end UniformSpace.Completion
+
+namespace TauCeti
+
+/-- Two completion ring homomorphisms are heterogeneously equal when their source and target
+uniformities agree and the first map satisfies the characterization that uniquely determines the
+second. The rings being completed need not be commutative, and the fixed source of the structure
+maps need only be a nonassociative semiring. -/
+theorem completionRingHom_heq_of_uniformSpace_eq
+    {A S S' : Type*} [NonAssocSemiring A] [Ring S] [Ring S']
+    {u₁ u₂ : UniformSpace S} (hu : u₂ = u₁) {v₁ v₂ : UniformSpace S'} (hv : v₂ = v₁)
+    (g₁ : @IsUniformAddGroup S u₁ _) (g₂ : @IsUniformAddGroup S u₂ _)
+    (t₁ : @IsTopologicalRing S u₁.toTopologicalSpace _)
+    (t₂ : @IsTopologicalRing S u₂.toTopologicalSpace _)
+    (g₁' : @IsUniformAddGroup S' v₁ _) (g₂' : @IsUniformAddGroup S' v₂ _)
+    (t₁' : @IsTopologicalRing S' v₁.toTopologicalSpace _)
+    (t₂' : @IsTopologicalRing S' v₂.toTopologicalSpace _) :
+    let B₁ := @UniformSpace.Completion S u₁
+    let B₂ := @UniformSpace.Completion S u₂
+    let C₁ := @UniformSpace.Completion S' v₁
+    let C₂ := @UniformSpace.Completion S' v₂
+    let b₁ := @UniformSpace.Completion.ring S _ u₁ t₁ g₁
+    let b₂ := @UniformSpace.Completion.ring S _ u₂ t₂ g₂
+    let c₁ := @UniformSpace.Completion.ring S' _ v₁ t₁' g₁'
+    let c₂ := @UniformSpace.Completion.ring S' _ v₂ t₂' g₂'
+    ∀ (f₂ : @RingHom B₂ C₂ b₂.toNonAssocSemiring c₂.toNonAssocSemiring)
+      (f₁ : @RingHom B₁ C₁ b₁.toNonAssocSemiring c₁.toNonAssocSemiring)
+      (a₂ : @RingHom A B₂ _ b₂.toNonAssocSemiring)
+      (a₁ : @RingHom A B₁ _ b₁.toNonAssocSemiring)
+      (d₂ : @RingHom A C₂ _ c₂.toNonAssocSemiring)
+      (d₁ : @RingHom A C₁ _ c₁.toNonAssocSemiring),
+      @Continuous B₂ C₂ (@UniformSpace.Completion.uniformSpace S u₂).toTopologicalSpace
+        (@UniformSpace.Completion.uniformSpace S' v₂).toTopologicalSpace f₂ →
+      HEq a₂ a₁ → HEq d₂ d₁ → f₂.comp a₂ = d₂ →
+      (∀ f : @RingHom B₁ C₁ b₁.toNonAssocSemiring c₁.toNonAssocSemiring,
+        @Continuous B₁ C₁
+          (@UniformSpace.Completion.uniformSpace S u₁).toTopologicalSpace
+          (@UniformSpace.Completion.uniformSpace S' v₁).toTopologicalSpace f →
+        f.comp a₁ = d₁ → f = f₁) →
+      HEq f₂ f₁ := by
+  subst hu
+  subst hv
+  dsimp only
+  intro f₂ f₁ a₂ a₁ d₂ d₁ hf₂ ha hd hcomp₂ huniq
+  apply heq_of_eq
+  apply huniq f₂ hf₂
+  rw [← eq_of_heq ha, hcomp₂, eq_of_heq hd]
+
+/-- Flatness passes across a heterogeneous equality between ring homomorphisms of completions
+whose source and target uniformities agree. -/
+theorem ringHom_flat_of_completion_heq
+    {S S' : Type*} [CommRing S] [CommRing S']
+    {u₁ u₂ : UniformSpace S} (hu : u₂ = u₁) {v₁ v₂ : UniformSpace S'} (hv : v₂ = v₁)
+    (g₁ : @IsUniformAddGroup S u₁ _) (g₂ : @IsUniformAddGroup S u₂ _)
+    (t₁ : @IsTopologicalRing S u₁.toTopologicalSpace _)
+    (t₂ : @IsTopologicalRing S u₂.toTopologicalSpace _)
+    (g₁' : @IsUniformAddGroup S' v₁ _) (g₂' : @IsUniformAddGroup S' v₂ _)
+    (t₁' : @IsTopologicalRing S' v₁.toTopologicalSpace _)
+    (t₂' : @IsTopologicalRing S' v₂.toTopologicalSpace _) :
+    let R₁ := @UniformSpace.Completion S u₁
+    let R₂ := @UniformSpace.Completion S u₂
+    let B₁ := @UniformSpace.Completion S' v₁
+    let B₂ := @UniformSpace.Completion S' v₂
+    let r₁ := @UniformSpace.Completion.commRing S _ u₁ g₁ t₁
+    let r₂ := @UniformSpace.Completion.commRing S _ u₂ g₂ t₂
+    let b₁ := @UniformSpace.Completion.commRing S' _ v₁ g₁' t₁'
+    let b₂ := @UniformSpace.Completion.commRing S' _ v₂ g₂' t₂'
+    ∀ (f₂ : @RingHom R₂ B₂ r₂.toNonAssocSemiring b₂.toNonAssocSemiring)
+      (f₁ : @RingHom R₁ B₁ r₁.toNonAssocSemiring b₁.toNonAssocSemiring),
+      HEq f₂ f₁ → @RingHom.Flat R₂ B₂ r₂ b₂ f₂ →
+        @RingHom.Flat R₁ B₁ r₁ b₁ f₁ := by
+  subst hu
+  subst hv
+  -- With both uniformities identified, the completion ring structures also agree.
+  exact fun _ _ hf hflat ↦ hf.eq ▸ hflat
+
+/-- Flatness of a ring homomorphism from `A` into a completion passes across a heterogeneous
+equality with a ring homomorphism into the completion for an equal uniformity. This is the
+fixed-source form of `TauCeti.ringHom_flat_of_completion_heq`: `A` keeps its ring structure, and
+only the uniformity of `S`, hence its completion, varies. For instance, it compares the canonical
+maps from `A` into two completions of a localisation `S` whose uniformities agree. -/
+theorem ringHom_flat_of_heq_of_uniformSpace_eq {A S : Type*} [CommRing A] [CommRing S]
+    {u₁ u₂ : UniformSpace S} (hu : u₂ = u₁) (g₁ : @IsUniformAddGroup S u₁ _)
+    (g₂ : @IsUniformAddGroup S u₂ _) (t₁ : @IsTopologicalRing S u₁.toTopologicalSpace _)
+    (t₂ : @IsTopologicalRing S u₂.toTopologicalSpace _) :
+    let B₁ := @UniformSpace.Completion S u₁
+    let B₂ := @UniformSpace.Completion S u₂
+    let b₁ := @UniformSpace.Completion.commRing S _ u₁ g₁ t₁
+    let b₂ := @UniformSpace.Completion.commRing S _ u₂ g₂ t₂
+    ∀ (f₂ : @RingHom A B₂ _ b₂.toNonAssocSemiring) (f₁ : @RingHom A B₁ _ b₁.toNonAssocSemiring),
+      HEq f₂ f₁ → @RingHom.Flat A B₂ _ b₂ f₂ → @RingHom.Flat A B₁ _ b₁ f₁ := by
+  subst hu
+  -- with the uniformities identified, both completions carry the same ring structure
+  exact fun _ _ hf hflat ↦ hf.eq ▸ hflat
+
+end TauCeti

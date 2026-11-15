@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
+public import Mathlib.Data.SetLike.Fintype
+public import Mathlib.GroupTheory.Index
 public import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
@@ -13,7 +15,9 @@ public import TauCeti.Algebra.Group.Subgroup.Map
 
 This file characterizes membership in the orbit of a subgroup under conjugation and transports
 that orbit across a group isomorphism. A conjugate of `H ≤ G` is the image of `H` under
-`MulAut.conj g` for some `g : G`.
+`MulAut.conj g` for some `g : G`. The number of conjugates is the normalizer index. Consequently,
+a conjugation-invariant sum over subgroups can be grouped by their conjugacy classes with
+that multiplicity.
 
 ## Main definitions
 
@@ -23,6 +27,14 @@ that orbit across a group isomorphism. A conjugate of `H ≤ G` is the image of 
 ## Main results
 
 * `TauCeti.mem_orbit_conjAct_iff`: orbit membership is subgroup conjugation.
+* `Subgroup.index_normalizer_eq_ncard_orbit`: the number of conjugates is the index of the
+  normalizer.
+* `Subgroup.ncard_orbit_mul_relIndex_normalizer`: multiplying the number of conjugates by
+  `[N_G(H) : H]` gives `[G : H]`.
+* `TauCeti.sum_subgroups_eq_sum_conjugacy`: group a conjugation-invariant sum by subgroup
+  conjugacy classes.
+* `Subgroup.exists_map_conj_comap_eq_iff`: the preimages of two subgroups under a group
+  isomorphism are conjugate exactly when the subgroups are.
 -/
 
 public section
@@ -44,6 +56,64 @@ theorem mem_orbit_conjAct_iff {G : Type*} [Group G] {H H' : Subgroup G} :
 end TauCeti
 
 open scoped Pointwise
+
+namespace Subgroup
+
+/-- The number of conjugates of a subgroup is the index of its normalizer. -/
+theorem index_normalizer_eq_ncard_orbit {G : Type*} [Group G] (H : Subgroup G) :
+    (normalizer (H : Set G)).index = (MulAction.orbit (ConjAct G) H).ncard := by
+  have hstab : normalizer (H : Set G) =
+      (MulAction.stabilizer (ConjAct G) H).comap ConjAct.toConjAct.toMonoidHom := by
+    ext g
+    exact conjAct_pointwise_smul_iff.symm
+  calc
+    (normalizer (H : Set G)).index = (MulAction.stabilizer (ConjAct G) H).index :=
+      (congrArg Subgroup.index hstab).trans
+        ((MulAction.stabilizer (ConjAct G) H).index_comap_of_surjective
+          ConjAct.toConjAct.surjective)
+    _ = _ := MulAction.index_stabilizer (ConjAct G) H
+
+/-- The number of conjugates of `H` times `[N_G(H) : H]` is `[G : H]`. -/
+theorem ncard_orbit_mul_relIndex_normalizer {G : Type*} [Group G] (H : Subgroup G) :
+    (MulAction.orbit (ConjAct G) H).ncard * H.relIndex (normalizer (H : Set G)) = H.index := by
+  rw [← H.index_normalizer_eq_ncard_orbit, mul_comm]
+  exact relIndex_mul_index le_normalizer
+
+end Subgroup
+
+namespace TauCeti
+
+open scoped Classical in
+/-- A conjugation-invariant sum over subgroups can be grouped by conjugacy classes, weighted
+by the normalizer index of each representative. -/
+theorem sum_subgroups_eq_sum_conjugacy {G M : Type*} [Group G] [Fintype G]
+    [AddCommMonoid M] (f : Subgroup G → M)
+    (hf : ∀ (g : G) (H : Subgroup G), f (H.map (MulAut.conj g)) = f H) :
+    ∑ H : Subgroup G, f H =
+      ∑ ω : MulAction.orbitRel.Quotient (ConjAct G) (Subgroup G),
+        (Subgroup.normalizer (ω.out : Set G)).index • f ω.out := by
+  classical
+  rw [← Fintype.sum_fiberwise
+    (Quotient.mk'' : Subgroup G → MulAction.orbitRel.Quotient (ConjAct G) (Subgroup G))]
+  apply Finset.sum_congr rfl
+  intro ω _
+  have hvalue (H : Subgroup G) (hH : Quotient.mk'' H = ω) : f H = f ω.out := by
+    have hmem : H ∈ MulAction.orbit (ConjAct G) ω.out := by
+      rw [← MulAction.orbitRel.Quotient.orbit_eq_orbit_out ω Quotient.out_eq']
+      exact MulAction.orbitRel.Quotient.mem_orbit.mpr hH
+    obtain ⟨g, rfl⟩ := mem_orbit_conjAct_iff.mp hmem
+    exact hf g ω.out
+  have hcard : Nat.card {H : Subgroup G // Quotient.mk'' H = ω} =
+      (Subgroup.normalizer (ω.out : Set G)).index := by
+    rw [Subgroup.index_normalizer_eq_ncard_orbit, ← Nat.card_coe_set_eq]
+    exact Nat.card_congr (Equiv.subtypeEquivRight fun H ↦ by
+      rw [← MulAction.orbitRel.Quotient.orbit_eq_orbit_out ω Quotient.out_eq']
+      exact MulAction.orbitRel.Quotient.mem_orbit.symm)
+  rw [Finset.sum_congr rfl
+    (fun (H : {H : Subgroup G // Quotient.mk'' H = ω}) _ ↦ hvalue H.1 H.2),
+    Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card, hcard]
+
+end TauCeti
 
 namespace MulEquiv
 
@@ -101,3 +171,25 @@ theorem conjugateSubgroupsEquiv_symm_apply {G G' : Type*} [Group G] [Group G']
   rfl
 
 end MulEquiv
+
+namespace Subgroup
+
+variable {G Γ : Type*} [Group G] [Group Γ]
+
+/-- **Conjugacy of subgroups is pulled back along group isomorphisms.** For an isomorphism
+`e : G ≃* Γ`, the preimages of two subgroups of `Γ` are conjugate in `G` exactly when the
+subgroups themselves are conjugate in `Γ`. -/
+theorem exists_map_conj_comap_eq_iff (e : G ≃* Γ) (H K : Subgroup Γ) :
+    (∃ σ : G, (H.comap (e : G →* Γ)).map (MulAut.conj σ : G →* G) = K.comap (e : G →* Γ)) ↔
+      ∃ τ : Γ, H.map (MulAut.conj τ : Γ →* Γ) = K := by
+  have key (σ : G) : (H.comap (e : G →* Γ)).map (MulAut.conj σ : G →* G) =
+      (H.map (MulAut.conj (e σ) : Γ →* Γ)).comap (e : G →* Γ) := by
+    -- The commuting square of conjugation with `e.symm`, conjugating by `e.symm (e σ) = σ`.
+    rw [comap_equiv_eq_map_symm, comap_equiv_eq_map_symm]
+    simpa only [MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, MulEquiv.symm_apply_apply] using
+      (map_map_conj H (e.symm : Γ →* G) (e σ)).symm
+  have hinj : Function.Injective (comap (e : G →* Γ)) := comap_injective e.surjective
+  refine ⟨fun ⟨σ, hσ⟩ ↦ ⟨e σ, hinj (by rwa [← key])⟩, fun ⟨τ, hτ⟩ ↦ ⟨e.symm τ, ?_⟩⟩
+  rw [key, MulEquiv.apply_symm_apply, hτ]
+
+end Subgroup

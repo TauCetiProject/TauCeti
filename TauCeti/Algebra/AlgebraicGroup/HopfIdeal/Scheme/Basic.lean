@@ -40,8 +40,10 @@ in the same universe, which is reflected in all scheme-level declarations in thi
   `quotientSpecι` is a closed immersion.
 * `TauCeti.CommHopfAlgCat.quotientSpecMapOfLe`: the closed subgroup morphism induced by
   `I ≤ J`.
-* `TauCeti.FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec`: a finite-type Hopf
-  algebra has quotient group schemes locally of finite type over `Spec R`.
+* `CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec`: for `I ≤ J`, the subgroup scheme of
+  `Spec (H ⧸ I)` cut out by the image of `J` is that of `J`.
+* `CommHopfAlgCat.locallyOfFiniteType_quotientSpec`: a finite-type commutative Hopf algebra has
+  quotient group schemes locally of finite type over `Spec R`.
 
 ## References
 
@@ -52,6 +54,8 @@ algebra API together with Mathlib's affine `Spec` and closed-immersion APIs.
 -/
 
 public section
+
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
 
 open CategoryTheory
 
@@ -92,6 +96,14 @@ lemma quotientSpecι_def (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
     quotientSpecι H I =
       (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (mkQuotient H I).op :=
   (rfl)
+
+/-- A morphism into a quotient Hopf spectrum, followed by its inclusion, is represented by
+precomposing the coordinate morphism with the quotient map. -/
+lemma hopfSpec_map_comp_quotientSpecι {H K : _root_.CommHopfAlgCat.{u} R}
+    (I : HopfIdeal R H) (f : quotient H I ⟶ K) :
+    (hopfSpec (CommRingCat.of R)).map f.op ≫ quotientSpecι H I =
+      (hopfSpec (CommRingCat.of R)).map (mkQuotient H I ≫ f).op := by
+  rw [quotientSpecι_def, op_comp, Functor.map_comp]
 
 /-- Transporting a quotient spectrum along an equality of Hopf ideals and then including it into
 the ambient Hopf spectrum gives the original quotient-spectrum inclusion. -/
@@ -161,29 +173,78 @@ lemma quotientSpecMapOfLe_comp (H : _root_.CommHopfAlgCat.{u} R)
     ← (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map_comp,
     ← op_comp, quotientMapOfLe_comp]
 
+section RelativeQuotient
+
+/-! ### Quotients of quotients
+
+For Hopf ideals `I ≤ J` of `H`, the closed subgroup scheme cut out by the image of `J` in
+`Spec (H ⧸ I)` is the one cut out by `J` in `Spec H`. As for
+`CommHopfAlgCat.Hom.quotientIsoQuotientQuotient`, the statements take the quotient morphism
+`q : H ⟶ H ⧸ I` together with `hq : q = mkQuotient H I`, so that they apply verbatim to a
+coordinate map that is only propositionally the quotient morphism. -/
+
+variable {H : _root_.CommHopfAlgCat.{u} R} {I J : HopfIdeal R H}
+
+/-- The closed subgroup scheme of `Spec (H ⧸ I)` cut out by the image of `J` is the one cut out by
+`J` in `Spec H`. -/
+noncomputable def _root_.CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec
+    (q : H ⟶ CommHopfAlgCat.quotient H I) (hq : q = CommHopfAlgCat.mkQuotient H I)
+    (hIJ : I ≤ J) :
+    quotientSpec (CommHopfAlgCat.quotient H I) (J.map q.hom) ≅ quotientSpec H J :=
+  (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso (q.quotientIsoQuotientQuotient hq hIJ).op
+
+/-- `CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec` is the image under `hopfSpec` of the
+opposite of the third isomorphism `CommHopfAlgCat.Hom.quotientIsoQuotientQuotient`. -/
+lemma _root_.CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec_def
+    (q : H ⟶ CommHopfAlgCat.quotient H I) (hq : q = CommHopfAlgCat.mkQuotient H I)
+    (hIJ : I ≤ J) :
+    q.quotientSpecQuotientIsoQuotientSpec hq hIJ =
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso
+        (q.quotientIsoQuotientQuotient hq hIJ).op :=
+  (rfl)
+
+/-- Under `CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec`, the inclusion of the subgroup
+scheme of `J` into that of `I` is the inclusion of the subgroup scheme of the image of `J` into
+`Spec (H ⧸ I)`. -/
+@[reassoc (attr := simp)]
+theorem _root_.CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec_hom_comp_quotientSpecMapOfLe
+    (q : H ⟶ CommHopfAlgCat.quotient H I) (hq : q = CommHopfAlgCat.mkQuotient H I)
+    (hIJ : I ≤ J) :
+    (q.quotientSpecQuotientIsoQuotientSpec hq hIJ).hom ≫ quotientSpecMapOfLe H hIJ =
+      quotientSpecι (CommHopfAlgCat.quotient H I) (J.map q.hom) := by
+  rw [CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec_def, quotientSpecMapOfLe_def,
+    quotientSpecι_def, Functor.mapIso_hom, Iso.op_hom,
+    ← (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map_comp, ← op_comp]
+  congr 2
+  rw [← cancel_epi (CommHopfAlgCat.mkQuotient H I),
+    CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe_assoc,
+    CommHopfAlgCat.Hom.mkQuotient_comp_quotientIsoQuotientQuotient_hom, hq]
+
+end RelativeQuotient
+
 end CommHopfAlgCat
 
-namespace FiniteTypeCommHopfAlgCat
+end TauCeti
 
-open AlgebraicGeometry
+namespace CommHopfAlgCat
+
+open AlgebraicGeometry TauCeti TauCeti.CommHopfAlgCat
+
+universe u
 
 variable {R : Type u} [CommRing R]
 
-/-- If `H` is a finite-type commutative Hopf algebra, then the group scheme represented by
+/-- If the commutative Hopf algebra `H` is of finite type, then the group scheme represented by
 `H ⧸ I` is locally of finite type over `Spec R`. No finite-generation hypothesis on `I` is
 needed. -/
-instance locallyOfFiniteType_quotientSpec (H : FiniteTypeCommHopfAlgCat.{u, u} R)
-    (I : HopfIdeal R H) :
-    LocallyOfFiniteType (CommHopfAlgCat.quotientSpec H.obj I).X.hom := by
-  let Q := quotient H I
-  let : Algebra.FiniteType R (H ⧸ I.toIdeal) := Q.property
+instance locallyOfFiniteType_quotientSpec (H : _root_.CommHopfAlgCat.{u} R)
+    [Algebra.FiniteType R H] (I : HopfIdeal R H) :
+    LocallyOfFiniteType (quotientSpec H I).X.hom := by
   -- Mathlib's `specOverSpec` has a documented `OverClass` instance diamond. A standalone
   -- rewrite lemma for this structural morphism selects the other instance path, after which
-  -- typeclass search cannot use `Q.property`; `change` preserves the local finite-type instance.
+  -- typeclass search cannot use the finite-type instance of `H ⧸ I`; `change` keeps it usable.
   change LocallyOfFiniteType
     (Spec (CommRingCat.of (H ⧸ I.toIdeal)) ↘ Spec (CommRingCat.of R))
   infer_instance
 
-end FiniteTypeCommHopfAlgCat
-
-end TauCeti
+end CommHopfAlgCat

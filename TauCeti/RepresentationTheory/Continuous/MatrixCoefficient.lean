@@ -26,40 +26,37 @@ matrix coefficients built from different continuity proofs are equal by proof ir
 
 ## Main definitions
 
-* `TauCeti.ContRepresentation.matrixCoeff`: the matrix coefficient `g ↦ ⟪π g v, w⟫` as an element
+* `ContRepresentation.matrixCoeff`: the matrix coefficient `g ↦ ⟪π g v, w⟫` as an element
   of `C(G, 𝕜)`.
-* `TauCeti.ContRepresentation.matrixCoeffₛₗ`: the matrix coefficients of a fixed representation
+* `ContRepresentation.matrixCoeffₛₗ`: the matrix coefficients of a fixed representation
   bundled as a sesquilinear map `V →ₗ⋆[𝕜] V →ₗ[𝕜] C(G, 𝕜)`, in Mathlib's `innerₛₗ` convention.
 
 ## Main statements
 
-* `TauCeti.ContRepresentation.matrixCoeff_apply_mul_eq_sum`: in an orthonormal basis, matrix
+* `ContRepresentation.matrixCoeff_apply_mul_eq_sum`: in an orthonormal basis, matrix
   coefficients multiply like matrices, `π_{ik}(g * h) = ∑ j, π_{ij}(g) · π_{jk}(h)`.
-* `TauCeti.ContRepresentation.matrixCoeff_comp_mulRight` and
-  `TauCeti.ContRepresentation.matrixCoeff_comp_mulLeft`: right and left translates of a matrix
+* `ContRepresentation.matrixCoeff_comp_mulRight` and
+  `ContRepresentation.matrixCoeff_comp_mulLeft`: right and left translates of a matrix
   coefficient of `π` are again matrix coefficients of `π`. This is the `G × G`-action that
   structures the span of the matrix coefficients.
-* `TauCeti.ContRepresentation.star_matrixCoeff`: the conjugate of a matrix coefficient of a
+* `ContRepresentation.star_matrixCoeff`: the conjugate of a matrix coefficient of a
   unitary representation is a matrix coefficient composed with inversion.
-* `TauCeti.ContRepresentation.matrixCoeff_trivial`: the matrix coefficients of the trivial
+* `ContRepresentation.matrixCoeff_trivial`: the matrix coefficients of the trivial
   representation are constant.
-* `TauCeti.ContRepresentation.norm_matrixCoeff_le`: the uniform bound `‖v‖ * ‖w‖` for a unitary
+* `ContRepresentation.norm_matrixCoeff_le`: the uniform bound `‖v‖ * ‖w‖` for a unitary
   representation.
 
-The algebra of matrix coefficients is the Layer 3 milestone of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap); it is what makes the
+This algebra makes the
 span of the matrix coefficients of a fixed representation a translation-stable subspace of `C(G)`,
 stable under conjugation followed by inversion of the argument, and it feeds the Schur
-orthogonality relations of Layer 4. Conjugation alone leaves that span in general: it produces a
-matrix coefficient of the contragredient representation, which is not built here. The mathematical
+orthogonality relations. Conjugation alone leaves that span in general: it produces a
+matrix coefficient of the contragredient representation. The mathematical
 development follows Daniel Bump, *Lie Groups*, second edition, Chapters 2–4.
 -/
 
 public section
 
 open scoped InnerProductSpace
-
-namespace TauCeti
 
 namespace ContRepresentation
 
@@ -278,5 +275,3 @@ theorem norm_matrixCoeff_le (π : ContRepresentation 𝕜 G V) (hπ : Continuous
 end CompactDomain
 
 end ContRepresentation
-
-end TauCeti

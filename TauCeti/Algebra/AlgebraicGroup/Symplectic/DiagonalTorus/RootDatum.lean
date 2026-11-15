@@ -211,7 +211,7 @@ variable {m : ℕ}
 
 /-- Classical coordinates carry the pinned type `Cₘ` character lattice to the character lattice
 of the diagonal torus. -/
-private noncomputable def characterEquiv (m : ℕ) :
+noncomputable def characterEquiv (m : ℕ) :
     (Fin m → ℤ) ≃ₗ[ℤ] (ULift.{u} (Fin m) →₀ ℤ) :=
   (TypeC.classicalWeightEquiv m).trans
     ((LinearEquiv.funCongrLeft ℤ ℤ Equiv.ulift).trans
@@ -223,7 +223,10 @@ private noncomputable def cocharacterEquiv (m : ℕ) :
     (Fin m → ℤ) ≃ₗ[ℤ] (ULift.{u} (Fin m) → ℤ) :=
   (TypeC.classicalCoweightEquiv m).trans (LinearEquiv.funCongrLeft ℤ ℤ Equiv.ulift)
 
-private lemma characterEquiv_weight (a : Fin m) :
+/-- Each classical type-C weight becomes the corresponding coordinate character of the
+diagonal torus. -/
+@[simp]
+lemma characterEquiv_weight (a : Fin m) :
     characterEquiv.{u} m (TypeC.weight m a) = Finsupp.single (ULift.up a) 1 := by
   ext b
   simp [characterEquiv, Finsupp.single_apply, Pi.single_apply, ULift.ext_iff, eq_comm]
@@ -640,13 +643,8 @@ theorem charOfPoint_ofAdd_diagonalRootDatum_root (r : RootSubgroupIndex m)
     DiagonalizableGroup.charOfPoint t.ofConv
         (Multiplicative.ofAdd ((diagonalRootDatum.{u} m).root r)) =
       r.character (GeneralLinear.diagonalTorusCoordinates (SplitTorus.pointsMulEquiv t)) := by
-  have hw (x : ULift.{u} (Fin m) →₀ ℤ) :
-      Multiplicative.ofAdd x = SplitTorus.weightCharacter ⇑x := by
-    apply Multiplicative.toAdd.injective
-    ext j
-    rw [SplitTorus.toAdd_weightCharacter, toAdd_ofAdd]
   classical
-  rw [hw, SplitTorus.charOfPoint_weightCharacter]
+  rw [← SplitTorus.weightCharacter_coe, SplitTorus.charOfPoint_weightCharacter]
   cases r with
   | positiveLong i => simp [Finsupp.single_eq_pi_single, sq]
   | negativeLong i =>

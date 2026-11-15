@@ -58,7 +58,8 @@ translates into the solvability of the norm equation `b = x² - ay²` and into t
   **bilinearity of the quaternion symbol**.
 * `TauCeti.BrauerGroup.quaternionClassOnSquareClasses`: the symbol as a pairing of square classes,
   which is symmetric and bilinear (`quaternionClassOnSquareClasses_comm`,
-  `quaternionClassOnSquareClasses_add_left`, `quaternionClassOnSquareClasses_add_right`).
+  `quaternionClassOnSquareClasses_add_left`, `quaternionClassOnSquareClasses_add_right`) with
+  `2`-torsion values (`quaternionClassOnSquareClasses_sq`).
 * `TauCeti.BrauerGroup.quaternionClass_congr`: isometric binary forms `⟨a,b⟩ ≅ ⟨c,d⟩`
   have equal symbols `[(a,b)] = [(c,d)]`.
 
@@ -177,13 +178,29 @@ theorem quaternionClass_comm (a b : Kˣ) : quaternionClass a b = quaternionClass
 theorem quaternionClass_mul_sq_right (a b c : Kˣ) :
     quaternionClass a (b * c ^ 2) = quaternionClass a b := by
   rw [mul_comm b (c ^ 2)]
-  exact quaternionClass_eq_of_algEquiv (QuaternionAlgebra.rescaleJEquiv (a : K) (b : K) c)
+  exact quaternionClass_eq_of_algEquiv (QuaternionAlgebra.rescaleJEquiv (a : K) 0 (b : K) c)
 
 /-- The quaternion symbol is invariant under multiplying its first argument by a square. -/
 theorem quaternionClass_mul_sq_left (a b c : Kˣ) :
     quaternionClass (a * c ^ 2) b = quaternionClass a b := by
   rw [mul_comm a (c ^ 2)]
   exact quaternionClass_eq_of_algEquiv (QuaternionAlgebra.rescaleIEquiv (a : K) (b : K) c)
+
+/-- Inverting the second argument does not change a quaternion symbol. -/
+@[simp]
+theorem quaternionClass_inv_right (a b : Kˣ) :
+    quaternionClass a b⁻¹ = quaternionClass a b := by
+  calc
+    quaternionClass a b⁻¹ = quaternionClass a (b * (b⁻¹) ^ 2) := by
+      congr 2
+      group
+    _ = quaternionClass a b := quaternionClass_mul_sq_right a b b⁻¹
+
+/-- Inverting the first argument does not change a quaternion symbol. -/
+@[simp]
+theorem quaternionClass_inv_left (a b : Kˣ) :
+    quaternionClass a⁻¹ b = quaternionClass a b := by
+  rw [quaternionClass_comm, quaternionClass_inv_right, quaternionClass_comm]
 
 /-- **The quaternion symbol is its own inverse**: quaternion conjugation is an isomorphism of
 `ℍ[K,a,b]` with its opposite algebra. -/
@@ -257,11 +274,35 @@ theorem quaternionClass_mul_left (a b c : Kˣ) :
   rw [quaternionClass_comm, quaternionClass_mul, quaternionClass_comm a,
     quaternionClass_comm b]
 
+/-- The quaternion symbol of a power in the second argument is the power of the symbol:
+`[(a, bⁿ)] = [(a, b)]ⁿ`. -/
+theorem quaternionClass_pow_right (a b : Kˣ) (n : ℕ) :
+    quaternionClass a (b ^ n) = quaternionClass a b ^ n := by
+  induction n with
+  | zero => rw [pow_zero, pow_zero, quaternionClass_one_right]
+  | succ n ih => rw [pow_succ, quaternionClass_mul, ih, pow_succ]
+
 /-- `[(a,a)] = [(a,-1)]`, since `a = (-1) · (-a)` and `[(a,-a)] = 1`. -/
 theorem quaternionClass_self (a : Kˣ) : quaternionClass a a = quaternionClass a (-1) :=
   calc quaternionClass a a = quaternionClass a (-1 * -a) := by rw [neg_one_mul, neg_neg]
     _ = quaternionClass a (-1) * quaternionClass a (-a) := quaternionClass_mul a (-1) (-a)
     _ = quaternionClass a (-1) := by rw [quaternionClass_neg_self, mul_one]
+
+/-- The symbol `[(-a/c, -b/c)]` expanded by bilinearity:
+`[(a,b)] · [(a,c)] · [(b,c)] · [(-1,abc)] · [(-1,-1)]`. This is the symbol identity behind
+the ternary case of Lam's Clifford--Hasse comparison. -/
+theorem quaternionClass_neg_inv_mul_neg_inv_mul (a b c : Kˣ) :
+    quaternionClass (-c⁻¹ * a) (-c⁻¹ * b) =
+      quaternionClass a b * quaternionClass a c * quaternionClass b c *
+        quaternionClass (-1) (a * b * c) * quaternionClass (-1) (-1) := by
+  have hsq (x y : Kˣ) (z : BrauerGroup K) :
+      quaternionClass x y * (quaternionClass x y * z) = z := by
+    rw [← mul_assoc, ← pow_two, quaternionClass_sq, one_mul]
+  rw [neg_eq_neg_one_mul c⁻¹]
+  simp only [quaternionClass_mul, quaternionClass_mul_left, quaternionClass_inv_left,
+    quaternionClass_inv_right, quaternionClass_self c, quaternionClass_comm c (-1),
+    quaternionClass_comm c b, quaternionClass_comm a (-1)]
+  simp only [mul_comm, mul_assoc, mul_left_comm, hsq]
 
 /-! ### The symbol on square classes -/
 
@@ -332,6 +373,13 @@ theorem quaternionClassOnSquareClasses_zero_right (x : SquareClassGroup K) :
     quaternionClassOnSquareClasses x 0 = 1 := by
   rw [quaternionClassOnSquareClasses_comm, quaternionClassOnSquareClasses_zero_left]
 
+/-- The square-class pairing takes `2`-torsion values. -/
+@[simp]
+theorem quaternionClassOnSquareClasses_sq (x y : SquareClassGroup K) :
+    quaternionClassOnSquareClasses x y ^ 2 = 1 := by
+  rw [← squareClass_toMul_out x, ← squareClass_toMul_out y,
+    quaternionClassOnSquareClasses_squareClass, quaternionClass_sq]
+
 /-! ### Invariance under isometry of binary forms -/
 
 /-- **The quaternion symbol is an invariant of the binary form `⟨a,b⟩`**: isometric binary forms
@@ -340,7 +388,7 @@ makes the Hasse invariant well defined on isometry classes. -/
 theorem quaternionClass_congr {a b c d : Kˣ}
     (h : (weightedSumSquares K ![(a : K), b]).Equivalent (weightedSumSquares K ![(c : K), d])) :
     quaternionClass a b = quaternionClass c d :=
-  let ⟨e⟩ := QuaternionAlgebra.nonempty_algEquiv_of_equivalent_binary (a : K) b c d h
+  let ⟨e⟩ := QuaternionAlgebra.nonempty_algEquiv_of_equivalent_binary h
   quaternionClass_eq_of_algEquiv e
 
 end BrauerGroup

@@ -17,7 +17,9 @@ import Mathlib.Tactic.FinCases
 
 Binary Hamming weights detect Euclidean orthogonality: the dot product is the parity of the
 intersection of supports, and the weight of a sum subtracts twice that intersection. Consequently,
-a binary linear code whose weights are all divisible by four is self-orthogonal.
+a binary linear code whose weights are all divisible by four is self-orthogonal, and two codewords
+in a binary additive code of minimum nonzero weight at least `d` coincide whenever they share
+enough nonzero coordinates (`TauCeti.eq_of_mem_of_hammingNorm_add_lt`).
 
 An even code is characterized by membership of the all-ones word in its dual. In particular,
 a binary self-dual code is even and contains the all-ones word. These facts supply the elementary
@@ -71,6 +73,13 @@ theorem dotProduct_one_eq_hammingNorm (x : ι → ZMod 2) :
     x ⬝ᵥ (1 : ι → ZMod 2) = (hammingNorm x : ZMod 2) := by
   simp [dotProduct_eq_card_support_inter, hammingNorm]
 
+/-- The coordinates of the `0`/`1` lift of a binary word sum to its weight. -/
+theorem sum_val_eq_hammingNorm (x : ι → ZMod 2) : ∑ i, (x i).val = hammingNorm x := by
+  simp only [hammingNorm, Finset.card_filter]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  generalize x i = a
+  fin_cases a <;> rfl
+
 /-- The sum of two binary words of weights divisible by four again has weight divisible by
 four exactly when the two words are orthogonal. -/
 @[simp]
@@ -79,6 +88,23 @@ theorem four_dvd_hammingNorm_add_iff {x y : ι → ZMod 2}
     4 ∣ hammingNorm (x + y) ↔ x ⬝ᵥ y = 0 := by
   rw [dotProduct_eq_card_support_inter, ZMod.natCast_eq_zero_iff]
   have h := hammingNorm_add_add_two_mul_card_support_inter x y
+  omega
+
+/-- In a binary additive code whose nonzero codewords have Hamming weight at least `d`, two
+codewords whose supports both contain `s` are equal whenever the sum of their weights is strictly
+less than `d + 2 * s.card`. -/
+theorem eq_of_mem_of_hammingNorm_add_lt {S : Type*} [SetLike S (ι → ZMod 2)]
+    [AddSubgroupClass S (ι → ZMod 2)] {C : S} {d : ℕ}
+    (hd : ∀ z ∈ C, z ≠ 0 → d ≤ hammingNorm z) {x y : ι → ZMod 2} (hx : x ∈ C) (hy : y ∈ C)
+    {s : Finset ι} (hs : ∀ i ∈ s, x i ≠ 0 ∧ y i ≠ 0)
+    (hcard : hammingNorm x + hammingNorm y < d + 2 * s.card) : x = y := by
+  by_contra hxy
+  have hd_le : d ≤ hammingNorm (x + y) :=
+    (funext fun i ↦ CharTwo.sub_eq_add (x i) (y i) : x - y = x + y) ▸
+      hd (x - y) (sub_mem hx hy) (sub_ne_zero.mpr hxy)
+  have hinter : s.card ≤ (Finset.univ.filter fun i ↦ x i ≠ 0 ∧ y i ≠ 0).card :=
+    Finset.card_le_card fun i hi ↦ Finset.mem_filter.mpr ⟨Finset.mem_univ i, hs i hi⟩
+  have hnorm := hammingNorm_add_add_two_mul_card_support_inter x y
   omega
 
 namespace BinaryCode
@@ -129,14 +155,14 @@ theorem isEven_iff_le_singleParityCheckCode :
   simp only [hsum, ZMod.natCast_eq_zero_iff_even]
 
 /-- Every self-orthogonal binary code is even. -/
-theorem isEven_of_le_euclideanDual (hC : C ≤ C.euclideanDual) : IsEven C := by
+theorem isEven_of_isSelfOrthogonal (hC : C.IsSelfOrthogonal) : IsEven C := by
   intro x hx
-  have h := Submodule.mem_euclideanDual.mp (hC hx) x hx
+  have h := Submodule.isSelfOrthogonal_iff.mp hC x hx x hx
   simpa [ZMod.natCast_eq_zero_iff_even] using h
 
 /-- A doubly-even binary linear code is self-orthogonal. -/
-theorem IsDoublyEven.le_euclideanDual (hC : IsDoublyEven C) : C ≤ C.euclideanDual := by
-  rw [Submodule.le_euclideanDual_self_iff]
+theorem IsDoublyEven.isSelfOrthogonal (hC : IsDoublyEven C) : C.IsSelfOrthogonal := by
+  rw [Submodule.isSelfOrthogonal_iff]
   intro x hx y hy
   rw [dotProduct_eq_card_support_inter, ZMod.natCast_eq_zero_iff]
   have hxy := hammingNorm_add_add_two_mul_card_support_inter x y
@@ -146,10 +172,9 @@ theorem IsDoublyEven.le_euclideanDual (hC : IsDoublyEven C) : C ≤ C.euclideanD
   omega
 
 /-- A self-dual binary code contains the all-ones word. -/
-theorem one_mem_of_eq_euclideanDual (hC : C = C.euclideanDual) :
-    (1 : ι → ZMod 2) ∈ C := by
-  rw [hC]
-  exact isEven_iff_one_mem_euclideanDual.mp (isEven_of_le_euclideanDual hC.le)
+theorem one_mem_of_isSelfDual (hC : C.IsSelfDual) : (1 : ι → ZMod 2) ∈ C := by
+  rw [← hC.euclideanDual_eq]
+  exact isEven_iff_one_mem_euclideanDual.mp (isEven_of_isSelfOrthogonal hC.isSelfOrthogonal)
 
 end BinaryCode
 

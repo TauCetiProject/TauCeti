@@ -9,7 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Basic
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
-import TauCeti.CategoryTheory.Comma.Over
+import TauCeti.AlgebraicGeometry.AffineGroupScheme.FiniteType
 
 /-!
 # The general linear group scheme
@@ -21,10 +21,11 @@ linear group is the determinant localization
 
 Applying relative spectrum to the bundled coordinate Hopf algebra gives an affine group scheme
 over `Spec R`. This file presents its underlying scheme canonically as the spectrum of the raw
-determinant localization. Under that presentation, the structural morphism, unit,
-multiplication, and inversion are induced contravariantly by the algebra structure map, counit,
-comultiplication, and antipode, respectively. The multiplication source is identified with the
-spectrum of the tensor square of the raw coordinate ring.
+determinant localization. Under that presentation, the structural morphism is induced
+contravariantly by the algebra structure map.
+
+A Hopf ideal of the coordinate Hopf algebra cuts out a closed subgroup of the group scheme, and
+the file records its inclusion.
 
 For a same-universe commutative `R`-algebra `A`, Mathlib's spectrum-points equivalence followed by
 `GeneralLinear.pointsMulEquiv` identifies scheme-valued points with invertible matrices over `A`.
@@ -38,15 +39,11 @@ lie in the same universe, so this file uses that same-universe setting.
 ## Main declarations
 
 * `TauCeti.GeneralLinear.groupScheme`: the general linear group scheme over `Spec R`.
-* `TauCeti.GeneralLinear.hopfIdealInclusion`: the generic closed immersion into `GL_n`
-  cut out by a Hopf ideal.
-* `TauCeti.GeneralLinear.groupSchemeSpecIso`: its canonical raw-coordinate presentation.
-* `TauCeti.GeneralLinear.groupSchemeMulSourceIso`: the tensor-coordinate presentation of the
-  multiplication source.
-* `TauCeti.GeneralLinear.groupScheme_one_left`,
-  `TauCeti.GeneralLinear.groupScheme_mul_left`, and
-  `TauCeti.GeneralLinear.groupScheme_inv_left`: the raw-coordinate formulas for the group
-  operations.
+* `TauCeti.GeneralLinear.hopfIdealInclusion`: the inclusion into `GL_n` of the subgroup cut out
+  by a Hopf ideal, a closed immersion by
+  `TauCeti.GeneralLinear.isClosedImmersion_hopfIdealInclusion`.
+* `TauCeti.GeneralLinear.groupSchemeSpecIso`: the canonical raw-coordinate presentation of the
+  group scheme.
 * `TauCeti.GeneralLinear.isAffine_groupScheme` and
   `TauCeti.GeneralLinear.locallyOfFiniteType_groupScheme`: affineness and local finite type over
   the base.
@@ -82,7 +79,7 @@ universe u
 
 namespace GeneralLinear
 
-open AlgebraicGeometry MonObj MonoidalCategory WithConv
+open AlgebraicGeometry MonObj MonoidalCategory
 
 variable (R : Type u) [CommRing R] (n : ℕ)
 
@@ -108,38 +105,23 @@ noncomputable def hopfIdealInclusion
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
     CommHopfAlgCat.quotientSpec (coordinateHopfAlgebra R n) I ⟶ groupScheme R n :=
   CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R n) I ≫
-    (eqToIso (groupScheme_def R n).symm).hom
+    eqToHom (groupScheme_def R n).symm
 
 /-- A Hopf-ideal inclusion is the quotient-spectrum inclusion followed by the named
 identification with `GL_n`. -/
 theorem hopfIdealInclusion_def (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
     hopfIdealInclusion R n I =
       CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R n) I ≫
-        (eqToIso (groupScheme_def R n).symm).hom := by
+        eqToHom (groupScheme_def R n).symm := by
   rw [hopfIdealInclusion]
 
 /-- Every subgroup of `GL_n` cut out by a Hopf ideal is closed. -/
 instance isClosedImmersion_hopfIdealInclusion
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
     IsClosedImmersion (hopfIdealInclusion R n I).hom.hom.left := by
-  let c := (CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R n) I).hom.hom.left
-  let e := ((eqToIso (groupScheme_def R n).symm).hom).hom.hom.left
-  have hc : IsClosedImmersion c := by infer_instance
-  have hce : IsClosedImmersion (c ≫ e) :=
-    (MorphismProperty.cancel_right_of_respectsIso _ c e).2 hc
-  rw [hopfIdealInclusion_def]
-  simpa only [Grp.comp', Mon.comp_hom', Over.comp_left] using hce
-
-/-- A subgroup of `GL_n` cut out by a Hopf ideal is locally of finite type over the base. -/
-instance locallyOfFiniteType_hopfIdealQuotientSpec
-    (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
-    LocallyOfFiniteType
-      (CommHopfAlgCat.quotientSpec (coordinateHopfAlgebra R n) I).X.hom :=
-  FiniteTypeCommHopfAlgCat.locallyOfFiniteType_quotientSpec
-    (⟨coordinateHopfAlgebra R n,
-      inferInstanceAs (Algebra.FiniteType R (coordinateHopfAlgebra R n))⟩ :
-      FiniteTypeCommHopfAlgCat R)
-    I
+  rw [hopfIdealInclusion_def, CommHopfAlgCat.quotientSpecι_def,
+    CommHopfAlgCat.isClosedImmersion_hopfSpec_map_comp_eqToHom_iff (groupScheme_def R n)]
+  exact CommHopfAlgCat.mkQuotient_surjective _ I
 
 /-- The scheme underlying the general linear group scheme is the spectrum of its bundled
 coordinate Hopf algebra. -/
@@ -157,6 +139,25 @@ noncomputable def groupSchemeSpecIso :
     Scheme.Spec.mapIso
       (coordinateHopfAlgebraAlgEquiv R n).toRingEquiv.toCommRingCatIso.op
 
+/-- The raw-coordinate presentation map in terms of the bundled coordinate Hopf algebra. -/
+lemma groupSchemeSpecIso_hom :
+    (groupSchemeSpecIso R n).hom =
+      eqToHom (groupScheme_X_left R n) ≫
+        Spec.map (CommRingCat.ofHom (coordinateHopfAlgebraAlgEquiv R n).toAlgHom) := by
+  simp only [groupSchemeSpecIso, Iso.trans_hom, eqToIso.hom, Functor.mapIso_hom,
+    Iso.op_hom, Scheme.Spec_map, Quiver.Hom.unop_op, RingEquiv.toCommRingCatIso_hom,
+    AlgEquiv.toRingEquiv_toRingHom, AlgEquiv.toAlgHom_toRingHom]
+
+/-- The inverse raw-coordinate presentation map in terms of the bundled coordinate Hopf
+algebra. -/
+lemma groupSchemeSpecIso_inv :
+    (groupSchemeSpecIso R n).inv =
+      Spec.map (CommRingCat.ofHom (coordinateHopfAlgebraAlgEquiv R n).symm.toAlgHom) ≫
+        eqToHom (groupScheme_X_left R n).symm := by
+  simp only [groupSchemeSpecIso, Iso.trans_inv, eqToIso.inv, Functor.mapIso_inv,
+    Iso.op_inv, Scheme.Spec_map, Quiver.Hom.unop_op, RingEquiv.toCommRingCatIso_inv,
+    AlgEquiv.toRingEquiv_symm, AlgEquiv.toRingEquiv_toRingHom, AlgEquiv.toAlgHom_toRingHom]
+
 private lemma groupScheme_X_hom_bundled :
     (groupScheme R n).X.hom =
       eqToHom (groupScheme_X_left R n) ≫
@@ -167,7 +168,6 @@ private lemma groupScheme_X_hom_bundled :
 
 /-- The structural morphism of the general linear group scheme is induced by the algebra
 structure map on the determinant localization. -/
-@[simp]
 lemma groupScheme_X_hom :
     (groupScheme R n).X.hom =
       (groupSchemeSpecIso R n).hom ≫
@@ -187,182 +187,16 @@ lemma groupScheme_X_hom :
       ext r
       exact (coordinateHopfAlgebraAlgEquiv R n).commutes r |>.symm
 
-/-- The tensor square of the raw coordinate ring is identified with the tensor square of the
-bundled coordinate Hopf algebra. -/
-private noncomputable def coordinateTensorAlgEquiv :
-    CoordinateRing R n ⊗[R] CoordinateRing R n ≃ₐ[R]
-      coordinateHopfAlgebra R n ⊗[R] coordinateHopfAlgebra R n :=
-  Algebra.TensorProduct.congr
-    (coordinateHopfAlgebraAlgEquiv R n) (coordinateHopfAlgebraAlgEquiv R n)
-
--- These three equalities are the coordinate-specific boundary between the bundled Hopf
--- operations used by `hopfSpec` and the raw determinant-localization operations exposed here.
-private lemma coordinateHopfAlgebra_counitAlgHom :
-    Bialgebra.counitAlgHom R (coordinateHopfAlgebra R n) =
-      (counit R n).comp (coordinateHopfAlgebraAlgEquiv R n).symm := by
-  ext x
-  simpa only [Bialgebra.counitAlgHom_apply, AlgHom.comp_apply,
-    AlgEquiv.coe_toAlgHom, AlgEquiv.apply_symm_apply] using
-    (coordinateHopfAlgebra_counit_apply R n
-      ((coordinateHopfAlgebraAlgEquiv R n).symm x))
-
-private lemma coordinateHopfAlgebra_comulAlgHom :
-    Bialgebra.comulAlgHom R (coordinateHopfAlgebra R n) =
-      (coordinateTensorAlgEquiv R n).toAlgHom.comp
-        ((comul R n).comp (coordinateHopfAlgebraAlgEquiv R n).symm) := by
-  ext x
-  simpa only [Bialgebra.comulAlgHom_apply, AlgHom.comp_apply,
-    AlgEquiv.coe_toAlgHom, AlgEquiv.apply_symm_apply, coordinateTensorAlgEquiv,
-    Algebra.TensorProduct.congr_apply] using
-      (coordinateHopfAlgebra_comul_apply R n
-        ((coordinateHopfAlgebraAlgEquiv R n).symm x))
-
-private lemma coordinateHopfAlgebra_antipodeAlgHom :
-    HopfAlgebra.antipodeAlgHom R (coordinateHopfAlgebra R n) =
-      (coordinateHopfAlgebraAlgEquiv R n).toAlgHom.comp
-        ((antipode R n).comp (coordinateHopfAlgebraAlgEquiv R n).symm) := by
-  ext x
-  simpa only [HopfAlgebra.antipodeAlgHom_apply, AlgHom.comp_apply,
-    AlgEquiv.coe_toAlgHom, AlgEquiv.apply_symm_apply] using
-    (coordinateHopfAlgebra_antipode_apply R n
-      ((coordinateHopfAlgebraAlgEquiv R n).symm x))
-
-private lemma groupScheme_tensor_X_left_bundled :
-    ((groupScheme R n).X ⊗ (groupScheme R n).X).left =
-      Limits.pullback
-        (Spec.map (CommRingCat.ofHom
-          (algebraMap R (coordinateHopfAlgebra R n))))
-        (Spec.map (CommRingCat.ofHom
-          (algebraMap R (coordinateHopfAlgebra R n)))) := by
-  unfold groupScheme
-  convert hopfSpec_obj_tensor_X_left R (coordinateHopfAlgebra R n) using 1
-
-/-- The multiplication source is canonically the spectrum of the tensor square of the raw
-determinant-localization coordinate ring. This combines the fibre-product presentation of the
-product over `Spec R`, the standard affine pullback isomorphism, and the coordinate equivalence on
-both tensor factors. -/
-noncomputable def groupSchemeMulSourceIso :
-    ((groupScheme R n).X ⊗ (groupScheme R n).X).left ≅
-      Spec (CommRingCat.of (CoordinateRing R n ⊗[R] CoordinateRing R n)) :=
-  eqToIso (groupScheme_tensor_X_left_bundled R n) ≪≫
-    pullbackSpecIso R (coordinateHopfAlgebra R n) (coordinateHopfAlgebra R n) ≪≫
-    Scheme.Spec.mapIso (coordinateTensorAlgEquiv R n).toRingEquiv.toCommRingCatIso.op
-
-private lemma groupScheme_one_left_bundled :
-    η[(groupScheme R n).X].left =
-      Spec.map (CommRingCat.ofHom
-        (Bialgebra.counitAlgHom R (coordinateHopfAlgebra R n))) ≫
-      eqToHom (groupScheme_X_left R n).symm := by
-  unfold groupScheme
-  convert hopfSpec_obj_one_left R (coordinateHopfAlgebra R n) using 1
-
-private lemma groupScheme_mul_left_bundled :
-    μ[(groupScheme R n).X].left =
-      eqToHom (groupScheme_tensor_X_left_bundled R n) ≫
-        (pullbackSpecIso R (coordinateHopfAlgebra R n)
-          (coordinateHopfAlgebra R n)).hom ≫
-        Spec.map (CommRingCat.ofHom
-          (Bialgebra.comulAlgHom R (coordinateHopfAlgebra R n))) ≫
-        eqToHom (groupScheme_X_left R n).symm := by
-  unfold groupScheme
-  convert hopfSpec_obj_mul_left R (coordinateHopfAlgebra R n) using 1
-
-private lemma groupScheme_inv_left_bundled :
-    ι[(groupScheme R n).X].left =
-      eqToHom (groupScheme_X_left R n) ≫
-        Spec.map (CommRingCat.ofHom
-          (HopfAlgebra.antipodeAlgHom R (coordinateHopfAlgebra R n))) ≫
-        eqToHom (groupScheme_X_left R n).symm := by
-  unfold groupScheme
-  convert hopfSpec_obj_inv_left R (coordinateHopfAlgebra R n) using 1
-
-/-- The unit of the general linear group scheme is induced by the raw coordinate counit. -/
-@[simp]
-lemma groupScheme_one_left :
-    η[(groupScheme R n).X].left =
-      Spec.map (CommRingCat.ofHom (counit R n)) ≫
-        (groupSchemeSpecIso R n).inv := by
-  rw [groupScheme_one_left_bundled, groupSchemeSpecIso]
-  simp only [Iso.trans_inv, eqToIso.inv,
-    Functor.mapIso_inv, Iso.op_inv, Scheme.Spec_map, Quiver.Hom.unop_op,
-    RingEquiv.toCommRingCatIso_inv]
-  rw [← Category.assoc]
-  apply (cancel_mono (eqToHom (groupScheme_X_left R n).symm)).2
-  rw [← Spec.map_comp]
-  rw [Spec.map_inj]
-  rw [← CommRingCat.ofHom_comp]
-  exact congrArg (fun f : coordinateHopfAlgebra R n →ₐ[R] R ↦
-    CommRingCat.ofHom (f : coordinateHopfAlgebra R n →+* R))
-    (coordinateHopfAlgebra_counitAlgHom R n)
-
-/-- Multiplication on the general linear group scheme is induced by the raw matrix-multiplication
-comultiplication. The source presentation fixes the tensor-factor order representing ordinary
-matrix multiplication. -/
-@[simp]
-lemma groupScheme_mul_left :
-    μ[(groupScheme R n).X].left =
-      (groupSchemeMulSourceIso R n).hom ≫
-        Spec.map (CommRingCat.ofHom (comul R n)) ≫
-        (groupSchemeSpecIso R n).inv := by
-  rw [groupScheme_mul_left_bundled, groupSchemeMulSourceIso, groupSchemeSpecIso]
-  simp only [Iso.trans_hom, eqToIso.hom, Functor.mapIso_hom, Iso.op_hom,
-    Scheme.Spec_map, Quiver.Hom.unop_op, RingEquiv.toCommRingCatIso_hom,
-    Iso.trans_inv, eqToIso.inv, Functor.mapIso_inv, Iso.op_inv,
-    RingEquiv.toCommRingCatIso_inv, Category.assoc]
-  apply (cancel_epi (eqToHom (groupScheme_tensor_X_left_bundled R n))).2
-  apply (cancel_epi
-    (pullbackSpecIso R (coordinateHopfAlgebra R n)
-      (coordinateHopfAlgebra R n)).hom).2
-  simp only [← Category.assoc]
-  apply (cancel_mono (eqToHom (groupScheme_X_left R n).symm)).2
-  rw [← Spec.map_comp, ← Spec.map_comp]
-  rw [Spec.map_inj]
-  rw [← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp]
-  exact congrArg
-    (fun f : coordinateHopfAlgebra R n →ₐ[R]
-      coordinateHopfAlgebra R n ⊗[R] coordinateHopfAlgebra R n ↦
-        CommRingCat.ofHom (f : coordinateHopfAlgebra R n →+*
-          coordinateHopfAlgebra R n ⊗[R] coordinateHopfAlgebra R n))
-    (coordinateHopfAlgebra_comulAlgHom R n)
-
-/-- Inversion on the general linear group scheme is induced by the raw inverse-matrix antipode. -/
-@[simp]
-lemma groupScheme_inv_left :
-    ι[(groupScheme R n).X].left =
-      (groupSchemeSpecIso R n).hom ≫
-        Spec.map (CommRingCat.ofHom (antipode R n)) ≫
-        (groupSchemeSpecIso R n).inv := by
-  rw [groupScheme_inv_left_bundled, groupSchemeSpecIso]
-  simp only [Iso.trans_hom, eqToIso.hom, Functor.mapIso_hom, Iso.op_hom,
-    Scheme.Spec_map, Quiver.Hom.unop_op, RingEquiv.toCommRingCatIso_hom,
-    Iso.trans_inv, eqToIso.inv, Functor.mapIso_inv, Iso.op_inv,
-    RingEquiv.toCommRingCatIso_inv, Category.assoc]
-  apply (cancel_epi (eqToHom (groupScheme_X_left R n))).2
-  simp only [← Category.assoc]
-  apply (cancel_mono (eqToHom (groupScheme_X_left R n).symm)).2
-  rw [← Spec.map_comp, ← Spec.map_comp]
-  rw [Spec.map_inj]
-  rw [← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp]
-  exact congrArg
-    (fun f : coordinateHopfAlgebra R n →ₐ[R] coordinateHopfAlgebra R n ↦
-      CommRingCat.ofHom (f : coordinateHopfAlgebra R n →+* coordinateHopfAlgebra R n))
-    (coordinateHopfAlgebra_antipodeAlgHom R n)
-
 /-- The general linear group scheme is affine. -/
-instance isAffine_groupScheme : IsAffine (groupScheme R n).X.left := by
-  exact .of_isIso (groupSchemeSpecIso R n).hom
+instance isAffine_groupScheme : IsAffine (groupScheme R n).X.left :=
+  .of_isIso (groupSchemeSpecIso R n).hom
 
 /-- The structural morphism of the general linear group scheme is locally of finite type. -/
 instance locallyOfFiniteType_groupScheme :
     LocallyOfFiniteType (groupScheme R n).X.hom := by
-  rw [groupScheme_X_hom]
-  let : LocallyOfFiniteType (groupSchemeSpecIso R n).hom :=
-    locallyOfFiniteType_of_isOpenImmersion _
-  let : LocallyOfFiniteType
-      (Spec.map (CommRingCat.ofHom (algebraMap R (CoordinateRing R n)))) := by
-    rw [← AlgebraicGeometry.specOverSpec_over]
-    infer_instance
-  exact locallyOfFiniteType_comp _ _
+  rw [groupScheme_def]
+  exact (algebraFiniteType_iff_locallyOfFiniteType_hopfSpec R (coordinateHopfAlgebra R n)).mp
+    inferInstance
 
 section SchemePoints
 
@@ -381,7 +215,8 @@ noncomputable def groupSchemePointMulEquiv :
     (coordinateHopfAlgebra R n) A (groupScheme_def R n)
 
 /-- The underlying map of the spectrum point associated to an algebra point. -/
-@[simp]
+-- Not `@[simp]`: `simp` rewrites with it but then cannot close its own statement, since the two
+-- `eqToHom` endpoints come out in different forms; use it by name.
 lemma groupSchemePointMulEquiv_apply_left
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     (groupSchemePointMulEquiv n A f).left =
@@ -416,8 +251,8 @@ lemma schemePointsMulEquiv_apply
   rw [schemePointsMulEquiv, MulEquiv.trans_apply, pointsMulEquiv_apply,
     pointToGeneralLinear_apply]
 
-/-- Evaluating the scheme-points equivalence on a point presented by `groupSchemePointMulEquiv`
-recovers the canonical algebra point. -/
+/-- A scheme point presented by an algebra point corresponds to the invertible matrix of that
+algebra point under `schemePointsMulEquiv`. -/
 @[simp]
 theorem schemePointsMulEquiv_groupSchemePointMulEquiv
     (q : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
@@ -427,7 +262,6 @@ theorem schemePointsMulEquiv_groupSchemePointMulEquiv
 
 /-- The inverse scheme-points equivalence sends an invertible matrix to the spectrum map induced
 by its canonical coordinate-algebra point. -/
-@[simp]
 lemma schemePointsMulEquiv_symm_apply (g : Matrix.GeneralLinearGroup (Fin n) A) :
     (schemePointsMulEquiv n A).symm g =
       groupSchemePointMulEquiv n A
@@ -446,20 +280,9 @@ theorem schemePointsMulEquiv_mapValue (φ : A →ₐ[R] B)
         ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
             (Spec (CommRingCat.of R)) ≫ p) =
       Matrix.GeneralLinearGroup.map φ.toRingHom (schemePointsMulEquiv n A p) := by
-  let q : WithConv (coordinateHopfAlgebra R n →ₐ[R] A) :=
-    (groupSchemePointMulEquiv n A).symm p
-  have hpre :
-      (groupSchemePointMulEquiv n B).symm
-          ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
-            (Spec (CommRingCat.of R)) ≫ p) =
-        HopfAlgebra.mapPoints (H := coordinateHopfAlgebra R n)
-          (CommAlgCat.ofHom φ) q := by
-    simpa only [q, groupSchemePointMulEquiv] using
-      CommHopfAlgCat.mapMulEquivOfPresentation_mapValue
-        (coordinateHopfAlgebra R n) φ (groupScheme_def R n) p
-  simp only [schemePointsMulEquiv, MulEquiv.trans_apply]
-  rw [hpre, HopfAlgebra.mapPoints_apply, ← AlgHom.mapValue_apply]
-  exact pointsMulEquiv_mapValue n φ q
+  unfold schemePointsMulEquiv groupSchemePointMulEquiv
+  exact CommHopfAlgCat.mapMulEquivOfPresentation_symm_trans_mapValue
+    (coordinateHopfAlgebra R n) φ (groupScheme_def R n) _ _ _ (pointsMulEquiv_mapValue n φ) p
 
 end SchemePoints
 

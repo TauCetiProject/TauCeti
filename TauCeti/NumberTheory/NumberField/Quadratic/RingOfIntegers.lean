@@ -10,6 +10,9 @@ public import TauCeti.NumberTheory.NumberField.Internal.QuadraticIntegralBasis
 public import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
 public import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
+import Mathlib.NumberTheory.SumTwoSquares
+import TauCeti.NumberTheory.LegendreSymbol.NormForm
+import TauCeti.Algebra.Squarefree
 import TauCeti.RingTheory.Norm.Quadratic
 import TauCeti.NumberTheory.NumberField.IntegralSqrt
 
@@ -33,6 +36,10 @@ The same coordinates give the **norm form** of `K`: writing the trace as `A` and
 coordinate as `B`, the norm of `z` is `(A² - d·B²)/4`, and the factor `4` disappears when
 `d ≢ 1 (mod 4)` because the coordinates are then integers.
 
+Reducing the norm form modulo a prime `p ∣ d` shows that an algebraic integer of norm `-1` makes
+`-1` a square modulo `p`. So no algebraic integer, and in particular no unit, has norm `-1` when
+some prime `p ≡ 3 (mod 4)` divides `d`.
+
 ## Main results
 
 * `NumberField.adjoin_gen_eq_top_of_mod_four_ne_one`: `𝓞 K = ℤ[θ]` for `d % 4 ≠ 1`.
@@ -41,8 +48,17 @@ coordinate as `B`, the norm of `z` is `(A² - d·B²)/4`, and the factor `4` dis
 * `NumberField.minpoly_halfGen`: the minimal polynomial of `(1+θ)/2` is `X² - X + (1-d)/4`.
 * `NumberField.adjoin_rat_halfGen_eq_top`: `(1+θ)/2` generates `K` over `ℚ`.
 * `NumberField.discr_eq_of_squarefree_of_mod_four_eq_one`: `discr K = d` for `d ≡ 1`.
+* `TauCeti.NumberField.prod_dvd_natAbs_of_mod_four_eq_one` and
+  `TauCeti.NumberField.prod_dvd_two_mul_natAbs_of_mod_four_ne_one`: a finite set of primes
+  dividing the discriminant of `ℚ(√d)` has product dividing `|d|` (for `d ≡ 1`) or `2 |d|`
+  (otherwise).
 * `NumberField.exists_sq_sub_mul_sq_eq_four_mul_norm`: the norm form `4·N(z) = A² - d·B²`, and
   `NumberField.exists_sq_sub_mul_sq_eq_norm_of_mod_four_ne_one`: `N(z) = A² - d·B²` for `d ≢ 1`.
+* `TauCeti.NumberField.isSquare_neg_one_of_norm_eq_neg_one`: an algebraic integer of norm `-1`
+  makes `-1` a square modulo every prime dividing `d`.
+* `TauCeti.NumberField.norm_ne_neg_one_of_mod_four_eq_three_of_dvd`: if a natural number
+  `p ≡ 3 (mod 4)` divides `d` (so some prime factor of `p` is `≡ 3 (mod 4)`), no algebraic
+  integer has norm `-1`.
 -/
 
 public section
@@ -85,7 +101,7 @@ private theorem den_eq_one_of_squarefree_mul_sq_isInt {d : ℤ} (hd : Squarefree
   have hb1 : (B.den : ℤ) = 1 := by
     rcases Int.isUnit_iff.mp hunit with h1 | h1
     · exact h1
-    · have hpos : (0 : ℤ) < (B.den : ℤ) := by exact_mod_cast B.pos
+    · have _hpos : (0 : ℤ) < (B.den : ℤ) := by exact_mod_cast B.pos
       omega
   exact_mod_cast hb1
 
@@ -184,7 +200,7 @@ private theorem exists_half_int_coords (hmin : minpoly ℤ θ = X ^ 2 - C d)
     ∃ A B N : ℤ, (z : K) = algebraMap ℚ K ((A : ℚ) / 2) + algebraMap ℚ K ((B : ℚ) / 2) * (θ : K)
       ∧ A ^ 2 - d * B ^ 2 = 4 * N := by
   have hfr := finrank_rat_eq_two hmin hgen
-  obtain ⟨bs, hbs, hb⟩ := Internal.exists_basis_eq_one_self_of_notMem_range_of_isIntegral
+  obtain ⟨bs, hbs, _⟩ := Internal.exists_basis_eq_one_self_of_notMem_range_of_isIntegral
     hfr (gen_notMem_range hmin) θ.isIntegral_coe
   set a := bs.repr (z : K) 0
   set c := bs.repr (z : K) 1
@@ -247,8 +263,8 @@ theorem adjoin_rat_halfGen_eq_top (hmin : minpoly ℤ θ = X ^ 2 - C d)
 `X² - X + (1 - d)/4`. -/
 theorem minpoly_halfGen (hmin : minpoly ℤ θ = X ^ 2 - C d) (hd4 : d % 4 = 1) :
     minpoly ℤ (halfGen hmin hd4) = X ^ 2 - X + C ((1 - d) / 4) := by
-  set ω := halfGen hmin hd4 with hω
-  set c : ℤ := (1 - d) / 4 with hc
+  set ω := halfGen hmin hd4
+  set c : ℤ := (1 - d) / 4
   have h4 : 4 * c = 1 - d := by omega
   have hmonic : (X ^ 2 - X + C c : ℤ[X]).Monic := by
     simpa using (isMonicOfDegree_sub_add_two (R := ℤ) 1 c).monic
@@ -351,14 +367,6 @@ theorem discr_eq_of_squarefree_of_mod_four_eq_one (hmin : minpoly ℤ θ = X ^ 2
   have hspan := span_eq_top_of_int_repr hbs' hb (exists_int_repr_one hmin hgen hsf hd4)
   exact_mod_cast discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int bs hb hspan hdd
 
-/-- From squarefreeness and `d % 4 ≠ 1`, the residue is `2` or `3` (it is never `0`, as `4 ∤ d`). -/
-private theorem mod_four_eq_two_or_three (hsf : Squarefree d) (hd4 : d % 4 ≠ 1) :
-    d % 4 = 2 ∨ d % 4 = 3 := by
-  have hnd4 : ¬ (4 : ℤ) ∣ d := fun h => by
-    have h2 : IsUnit (2 : ℤ) := hsf 2 (by rw [(by norm_num : (2 : ℤ) * 2 = 4)]; exact h)
-    rw [Int.isUnit_iff] at h2; omega
-  omega
-
 /-- The norm of the generator is `-d`: the constant coefficient of `minpoly ℚ θ = X² - d`, up to
 the sign `(-1)^2`. -/
 private theorem norm_gen_eq_neg_radicand (hmin : minpoly ℤ θ = X ^ 2 - C d)
@@ -408,7 +416,8 @@ theorem exists_sq_sub_mul_sq_eq_four_mul_norm (hmin : minpoly ℤ θ = X ^ 2 - C
 theorem exists_sq_sub_mul_sq_eq_norm_of_mod_four_ne_one (hmin : minpoly ℤ θ = X ^ 2 - C d)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) (hd4 : d % 4 ≠ 1) (z : 𝓞 K) :
     ∃ A B : ℤ, A ^ 2 - d * B ^ 2 = Algebra.norm ℤ z := by
-  obtain ⟨A, B, hz⟩ := exists_int_repr hmin hgen hsf (mod_four_eq_two_or_three hsf hd4) z
+  obtain ⟨A, B, hz⟩ := exists_int_repr hmin hgen hsf
+    (TauCeti.Int.emod_four_eq_two_or_three_of_squarefree hsf hd4) z
   refine ⟨A, B, ?_⟩
   have hzK : (z : K) = algebraMap ℚ K (A : ℚ) + algebraMap ℚ K (B : ℚ) * (θ : K) := by
     rw [hz]
@@ -431,7 +440,8 @@ theorem adjoin_gen_eq_top_of_mod_four_ne_one :
     Algebra.adjoin ℤ {θ} = (⊤ : Subalgebra ℤ (𝓞 K)) := by
   rw [eq_top_iff]
   rintro z -
-  obtain ⟨k, l, hkl⟩ := exists_int_repr hmin hgen hsf (mod_four_eq_two_or_three hsf hd4) z
+  obtain ⟨k, l, hkl⟩ := exists_int_repr hmin hgen hsf
+    (TauCeti.Int.emod_four_eq_two_or_three_of_squarefree hsf hd4) z
   rw [hkl]
   exact add_mem (zsmul_mem (one_mem _) k)
     (zsmul_mem (Algebra.subset_adjoin (Set.mem_singleton θ)) l)
@@ -442,7 +452,7 @@ include hmin hgen hsf hd4 in
 `ℤ[θ]` — see `adjoin_gen_eq_top_of_mod_four_ne_one`. -/
 theorem discr_eq_four_mul_of_mod_four_ne_one : NumberField.discr K = 4 * d := by
   have hfr := finrank_rat_eq_two hmin hgen
-  have hd4' := mod_four_eq_two_or_three hsf hd4
+  have hd4' := TauCeti.Int.emod_four_eq_two_or_three_of_squarefree hsf hd4
   obtain ⟨bs, hbs, hb⟩ := Internal.exists_basis_eq_one_self_of_notMem_range_of_isIntegral
     hfr (gen_notMem_range hmin) θ.isIntegral_coe
   -- Discriminant of `{1, θ}` is `4d` (`discr_one_gen`); `{1, θ}` spans `𝓞 K` over `ℤ`.
@@ -452,3 +462,72 @@ theorem discr_eq_four_mul_of_mod_four_ne_one : NumberField.discr K = 4 * d := by
   exact discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int bs hb hspan hdd
 
 end NumberField
+
+namespace TauCeti.NumberField
+
+variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
+
+/-- If `d ≡ 1 (mod 4)`, then a finite set of primes dividing the discriminant of `ℚ(√d)` has
+product dividing `|d|`. -/
+theorem prod_dvd_natAbs_of_mod_four_eq_one
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    (hsf : Squarefree d) (hd4 : d % 4 = 1) {s : Finset ℕ}
+    (hpprime : ∀ p ∈ s, p.Prime) (hdvddiscr : ∀ p ∈ s, (p : ℤ) ∣ NumberField.discr K) :
+    (∏ p ∈ s, p) ∣ d.natAbs := by
+  have hdisc : NumberField.discr K = d :=
+    NumberField.discr_eq_of_squarefree_of_mod_four_eq_one hmin hgen hsf hd4
+  exact Finset.prod_primes_dvd d.natAbs (fun p hp => (hpprime p hp).prime) fun p hp => by
+    simpa [hdisc] using Int.natAbs_dvd_natAbs.mpr (hdvddiscr p hp)
+
+/-- If `d ≢ 1 (mod 4)`, then a finite set of primes dividing the discriminant of `ℚ(√d)` has
+product dividing `2 * |d|`. -/
+theorem prod_dvd_two_mul_natAbs_of_mod_four_ne_one
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    (hsf : Squarefree d) (hd4 : d % 4 ≠ 1) {s : Finset ℕ}
+    (hpprime : ∀ p ∈ s, p.Prime) (hdvddiscr : ∀ p ∈ s, (p : ℤ) ∣ NumberField.discr K) :
+    (∏ p ∈ s, p) ∣ 2 * d.natAbs := by
+  have hdisc : NumberField.discr K = 4 * d :=
+    NumberField.discr_eq_four_mul_of_mod_four_ne_one hmin hgen hsf hd4
+  exact Finset.prod_primes_dvd (2 * d.natAbs) (fun p hp => (hpprime p hp).prime)
+    fun p hp => by
+      have h4 : p ∣ 4 * d.natAbs := by
+        simpa [hdisc, Int.natAbs_mul] using Int.natAbs_dvd_natAbs.mpr (hdvddiscr p hp)
+      rcases ((hpprime p hp).dvd_mul).mp h4 with h' | h'
+      · -- `4 = 2 ^ 2` exposes the power that `dvd_of_dvd_pow` needs to conclude `p ∣ 2`
+        have h22 : p ∣ 2 ^ 2 := by simpa using h'
+        exact ((hpprime p hp).dvd_of_dvd_pow h22).mul_right _
+      · exact h'.mul_left 2
+
+/-- **An algebraic integer of norm `-1` makes `-1` a square modulo every prime dividing the
+radicand.** For `p ∣ d`, the norm `(A² - d B²) / 4` of an algebraic integer is congruent to the
+square `(A / 2)²` modulo an odd prime `p`. -/
+theorem isSquare_neg_one_of_norm_eq_neg_one (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) {p : ℕ} [Fact p.Prime]
+    (hpd : (p : ℤ) ∣ d) {z : 𝓞 K} (hz : Algebra.norm ℚ (z : K) = -1) :
+    IsSquare (-1 : ZMod p) := by
+  obtain ⟨A, B, hAB⟩ := exists_sq_sub_mul_sq_eq_four_mul_norm hmin hgen hsf z
+  have hzℤ : Algebra.norm ℤ z = -1 := by exact_mod_cast (Algebra.coe_norm_int z).trans hz
+  have h := jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq (n := -1) hpd (by simp)
+    (by rw [hAB, hzℤ])
+  rw [← jacobiSym.legendreSym.to_jacobiSym, legendreSym.eq_one_iff p (by simp)] at h
+  exact_mod_cast h
+
+/-- **No algebraic integer has norm `-1` when a natural number `p ≡ 3 (mod 4)` divides the
+radicand**: such a `p` is squarefree, so it has a prime factor `q ≡ 3 (mod 4)`, and `-1` is not a
+square modulo `q`. In particular no unit of `𝓞 K` has norm `-1`. -/
+theorem norm_ne_neg_one_of_mod_four_eq_three_of_dvd (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) {p : ℕ}
+    (hp : p % 4 = 3) (hpd : (p : ℤ) ∣ d) (z : 𝓞 K) : Algebra.norm ℚ (z : K) ≠ -1 := fun hz => by
+  have hsqf : Squarefree p := Int.squarefree_natCast.mp (hsf.squarefree_of_dvd hpd)
+  obtain ⟨q, hq, hq3⟩ : ∃ q ∈ p.primeFactors, q % 4 = 3 := by
+    by_contra h
+    push Not at h
+    exact (ZMod.isSquare_neg_one_iff' hsqf).mp
+      ((ZMod.isSquare_neg_one_iff_forall_mem_primeFactors_mod_four_ne_three hsqf).mpr h) dvd_rfl hp
+  have : Fact q.Prime := ⟨Nat.prime_of_mem_primeFactors hq⟩
+  have hqd : (q : ℤ) ∣ d :=
+    (Int.natCast_dvd_natCast.mpr (Nat.dvd_of_mem_primeFactors hq)).trans hpd
+  exact ZMod.exists_sq_eq_neg_one_iff.mp (isSquare_neg_one_of_norm_eq_neg_one hmin hgen hsf hqd hz)
+    hq3
+
+end TauCeti.NumberField

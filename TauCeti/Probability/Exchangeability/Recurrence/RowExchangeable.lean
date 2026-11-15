@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.DiaconisFreedman
-public import TauCeti.Probability.Exchangeability.Recurrence.LastExit
+public import TauCeti.Probability.Recurrent.SuccessorArray
 -- Non-public: finite-dimensional determinacy of a law is used only inside the proofs below.
 import Mathlib.Probability.Process.FiniteDimensionalLaws
 -- Non-public: the convergence of masses of eventually coinciding events is used only in a proof.
@@ -437,7 +437,7 @@ theorem MarkovExchangeable.rowExchangeable_visitedSuccessorProcess [IsFiniteMeas
   have := h.measurableSingletonClass
   have hSA : ∀ p, AEMeasurable (visitedSuccessorProcess X p) μ :=
     aemeasurable_visitedSuccessorProcess h.aemeasurable
-  rw [rowExchangeable_iff_forall_prodCongrRight_mem_finitary (AEMeasurable.of_eval hSA)]
+  rw [rowExchangeable_iff_forall_prodCongrRight_mem_finitary]
   intro π hπ
   have hsupp : {p : α × ℕ | π p.1 p.2 ≠ p.2}.Finite := by
     rw [← Equiv.Perm.compl_fixedBy_prodCongrRight]

@@ -57,14 +57,6 @@ domain, since the size of `deriv f z₀` is not free once the image is required 
 * `TauCeti.eqOn_id_of_isNormalizedRiemannMapOn_ball` — the normalized Riemann map of the disc at
   the origin is the identity.
 
-## Coordination with upstream Mathlib
-
-The Riemann mapping theorem is being formalized upstream at
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), which proves the
-L0–L3 prerequisites internally as private lemmas. As with the rest of this development's L0–L3
-material, the declarations here are an explicitly **temporary shim**: delete them and refactor
-downstream consumers onto the exported Mathlib versions once those land.
-
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Ch. 6 §1.
@@ -164,15 +156,17 @@ end IsNormalizedRiemannMapOn
 subset `Ω` of `ℂ` carries, at each of its points `z₀`, a holomorphic bijection onto the open unit
 disc sending `z₀` to `0` with positive real derivative there.
 
-The extremal map of `TauCeti.exists_isMaxOn_norm_deriv_of_isSimplyConnected` already fixes the base
-point and is onto by `TauCeti.surjOn_ball_of_isMaxOn`; only a rotation is needed to make its
-derivative positive. -/
+The extremal map of `TauCeti.exists_isMaxOn_norm_deriv_of_hasHolomorphicSquareRoots` already fixes
+the base point and is onto by `TauCeti.surjOn_ball_of_isMaxOn`; only a rotation is needed to make
+its derivative positive. -/
 theorem exists_isNormalizedRiemannMapOn (hΩo : IsOpen Ω) (hΩc : IsSimplyConnected Ω)
     (hΩ : Ω ≠ univ) (hz₀ : z₀ ∈ Ω) :
     ∃ f : ℂ → ℂ, IsNormalizedRiemannMapOn f Ω z₀ := by
-  obtain ⟨g, hg, hmax⟩ := exists_isMaxOn_norm_deriv_of_isSimplyConnected hΩc hΩo hΩ hz₀
+  obtain ⟨g, hg, hmax⟩ := exists_isMaxOn_norm_deriv_of_hasHolomorphicSquareRoots
+    (hΩc.hasHolomorphicSquareRoots hΩo) hΩo hΩc.isPathConnected.isConnected.isPreconnected hΩ hz₀
   have hbij : BijOn g Ω (ball (0 : ℂ) 1) :=
-    ⟨hg.mapsTo, hg.injOn, surjOn_ball_of_isMaxOn hΩo hΩc hz₀ hg hmax⟩
+    ⟨hg.mapsTo, hg.injOn,
+      surjOn_ball_of_isMaxOn hΩo (hΩc.hasHolomorphicSquareRoots hΩo) hz₀ hg hmax⟩
   have hc : deriv g z₀ ≠ 0 := hg.deriv_ne_zero hΩo hz₀
   have hcpos : 0 < ‖deriv g z₀‖ := norm_pos_iff.mpr hc
   -- The rotation that turns `deriv g z₀` into its own modulus.

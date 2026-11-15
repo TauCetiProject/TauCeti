@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.KrullTopology
 public import TauCeti.NumberTheory.Cyclotomic.Adjoin
+public import TauCeti.RingTheory.RootsOfUnity.Action
 public import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
@@ -16,9 +18,25 @@ character `IsPrimitiveRoot.autToPow`. No Galois, normality or separability hypot
 only that `M` contains a primitive `m`-th root of unity — although when `M / K` is Galois this
 subgroup is `Gal(M/K(μ_m))`, which is the reading the crossing argument uses.
 
+Without a primitive root, the same subgroup is the kernel of the action of `Aut(M/K)` on the
+group `μ_m(M)`. The index divides `φ(#μ_m(M))` for every `m`: if `μ_m(M)` is finite it is cyclic,
+and `φ(#μ_m(M))` is the order of its automorphism group; otherwise `#μ_m(M) = 0` and `φ 0 = 0`. For
+a prime `p` this index is prime to `p`: adjoining the
+`p`-th roots of unity is a step of degree prime to `p`, the reduction step in the Kummer-theoretic
+proofs of class field theory.
+
 ## Main results
 
 * `IsPrimitiveRoot.fixingSubgroup_adjoin_nth_roots_eq_ker_autToPow`
+* `IsPrimitiveRoot.isOpen_ker_autToPow`, `IsPrimitiveRoot.isOpen_ker_comp_autToPow`: the kernel of
+  the cyclotomic character, and of every additive character read on it, is open in the Krull
+  topology.
+* `IntermediateField.fixingSubgroup_adjoin_nth_roots_eq_ker`: the fixers of `K(μ_m)` are the
+  automorphisms acting trivially on `μ_m(M)`.
+* `IntermediateField.index_fixingSubgroup_adjoin_nth_roots_dvd_totient`: their index divides
+  `φ(#μ_m(M))`.
+* `IntermediateField.coprime_index_fixingSubgroup_adjoin_nth_roots`: for a prime `p`, their index
+  is prime to `p`.
 
 ## References
 
@@ -46,3 +64,83 @@ theorem IsPrimitiveRoot.fixingSubgroup_adjoin_nth_roots_eq_ker_autToPow
   simp only [← AlgEquiv.smul_def]
   rw [IntermediateField.forall_mem_adjoin_smul_eq_self_iff]
   simp [AlgEquiv.smul_def]
+
+/-- **The kernel of the cyclotomic character is open** in the Krull topology: it fixes the finite
+extension `K(μ_m) = K(ζ)`. -/
+theorem IsPrimitiveRoot.isOpen_ker_autToPow {K M : Type*} [Field K] [Field M] [Algebra K M]
+    {m : ℕ} [NeZero m] {ζ : M} (hζ : IsPrimitiveRoot ζ m) :
+    IsOpen ((hζ.autToPow K).ker : Set Gal(M/K)) := by
+  have : FiniteDimensional K K⟮ζ⟯ :=
+    adjoin.finiteDimensional ((hζ.isIntegral (NeZero.pos m)).tower_top (A := K))
+  rw [← hζ.fixingSubgroup_adjoin_nth_roots_eq_ker_autToPow,
+    ← hζ.adjoin_singleton_eq_adjoin_nth_roots]
+  exact K⟮ζ⟯.fixingSubgroup_isOpen
+
+/-- **A character of `(ℤ / m)ˣ` read on the cyclotomic character has open kernel**: its kernel
+contains the open kernel of the cyclotomic character (`IsPrimitiveRoot.isOpen_ker_autToPow`). Use
+it to feed such a character to constructions that require a continuous character of `Gal(M/K)`. -/
+theorem IsPrimitiveRoot.isOpen_ker_comp_autToPow {K M A : Type*} [Field K] [Field M]
+    [Algebra K M] [AddZeroClass A] {m : ℕ} [NeZero m] {ζ : M} (hζ : IsPrimitiveRoot ζ m)
+    (ψ : Additive (ZMod m)ˣ →+ A) :
+    IsOpen ((ψ.comp (hζ.autToPow K).toAdditive).ker : Set (Additive Gal(M/K))) := by
+  refine AddSubgroup.isOpen_mono (H₁ := Subgroup.toAddSubgroup (hζ.autToPow K).ker)
+    (fun g hg ↦ ?_) (hζ.isOpen_ker_autToPow.preimage continuous_toMul)
+  have hu : hζ.autToPow K g.toMul = 1 := hg
+  rw [AddMonoidHom.mem_ker, AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, hu,
+    ofMul_one, map_zero]
+
+namespace IntermediateField
+
+variable {K M : Type*} [Field K] [Field M] [Algebra K M]
+
+/-- **The fixers of `K(μ_m)` are the automorphisms acting trivially on `μ_m(M)`.** Unlike
+`IsPrimitiveRoot.fixingSubgroup_adjoin_nth_roots_eq_ker_autToPow`, this needs no primitive root:
+the action on the group `μ_m(M)` replaces the cyclotomic character. -/
+theorem fixingSubgroup_adjoin_nth_roots_eq_ker (m : ℕ) :
+    (adjoin K {b : M | b ^ m = 1}).fixingSubgroup =
+      (MulDistribMulAction.toMulAut (M ≃ₐ[K] M) (rootsOfUnity m M)).ker := by
+  ext σ
+  rw [MonoidHom.mem_ker, mem_fixingSubgroup_iff]
+  simp only [← AlgEquiv.smul_def]
+  rw [forall_mem_adjoin_smul_eq_self_iff]
+  refine ⟨fun h ↦ MulEquiv.ext fun ζ ↦ Subtype.ext <| Units.ext ?_, fun h b hb ↦ ?_⟩
+  · simpa [AlgEquiv.smul_units_def] using h _ ((mem_rootsOfUnity' m _).1 ζ.2)
+  · -- A root of unity is a unit, except when `m = 0` and `b = 0`, which every `σ` fixes.
+    rcases eq_or_ne b 0 with rfl | hb0
+    · exact smul_zero σ
+    · have hζ : Units.mk0 b hb0 ∈ rootsOfUnity m M := (mem_rootsOfUnity' m _).2 hb
+      have := congrArg (fun f : MulAut (rootsOfUnity m M) ↦ ((f ⟨_, hζ⟩ : rootsOfUnity m M) : Mˣ))
+        h
+      simpa [AlgEquiv.smul_units_def] using congrArg Units.val this
+
+/-- **The index of `Aut(M/K(μ_m))` divides `φ(#μ_m(M))`.** When `μ_m(M)` is finite it is cyclic,
+and `φ(#μ_m(M))` is the order of its automorphism group, through whose action `Aut(M/K(μ_m))` is
+the kernel; otherwise `#μ_m(M) = 0` and `φ 0 = 0`, so the statement holds trivially. -/
+theorem index_fixingSubgroup_adjoin_nth_roots_dvd_totient (m : ℕ) :
+    (adjoin K {b : M | b ^ m = 1}).fixingSubgroup.index ∣
+      (Nat.card (rootsOfUnity m M)).totient := by
+  rcases finite_or_infinite (rootsOfUnity m M) with hfin | hinf
+  · -- a finite group of roots of unity in a field is cyclic, also for `m = 0`
+    have : IsCyclic (rootsOfUnity m M) := isCyclic_subgroup_units _
+    rw [fixingSubgroup_adjoin_nth_roots_eq_ker, Subgroup.index_ker, ← IsCyclic.card_mulAut]
+    exact Subgroup.card_subgroup_dvd_card _
+  · rw [Nat.card_eq_zero_of_infinite, Nat.totient_zero]
+    exact dvd_zero _
+
+/-- **Adjoining the `p`-th roots of unity is a step of degree prime to `p`**: for a prime `p`, the
+index of `Aut(M/K(μ_p))` in `Aut(M/K)` is prime to `p`. It divides `φ(#μ_p(M))`, and
+`#μ_p(M) ≤ p`. -/
+theorem coprime_index_fixingSubgroup_adjoin_nth_roots {p : ℕ} (hp : p.Prime) :
+    (adjoin K {b : M | b ^ p = 1}).fixingSubgroup.index.Coprime p := by
+  have : NeZero p := ⟨hp.ne_zero⟩
+  have hdvd := index_fixingSubgroup_adjoin_nth_roots_dvd_totient (K := K) (M := M) p
+  have hpos : 0 < Nat.card (rootsOfUnity p M) := Nat.card_pos
+  have hlt : (Nat.card (rootsOfUnity p M)).totient < p := by
+    rcases (Nat.one_le_iff_ne_zero.2 hpos.ne').eq_or_lt with h | h
+    · rw [← h, Nat.totient_one]
+      exact hp.one_lt
+    · exact (Nat.totient_lt _ h).trans_le (card_rootsOfUnity M p)
+  exact (Nat.coprime_of_lt_prime (Nat.pos_of_dvd_of_pos hdvd (Nat.totient_pos.2 hpos)).ne'
+    ((Nat.le_of_dvd (Nat.totient_pos.2 hpos) hdvd).trans_lt hlt) hp).symm
+
+end IntermediateField

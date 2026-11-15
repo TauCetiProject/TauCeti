@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Basic
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic
-public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Functor
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Representability
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
 
 /-!
@@ -16,6 +17,9 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
 The weight-parabolic subgroup scheme of `GL_N` represents the dynamic parabolic attached to the
 cocharacter `t ↦ diag(t ^ w i)`. On points, both descriptions say exactly that the `(i,j)` entry
 vanishes whenever `w i < w j`.
+
+The dynamic defining Hopf ideal equals the explicit matrix ideal, so the comparison
+also identifies the infinitesimal subgroup structure.
 
 ## Main declarations
 
@@ -28,9 +32,6 @@ vanishes whenever `w i < w j`.
 
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
-
-This completes representability of the weight-cocharacter parabolic in the dynamic route of
-Layer 7, "Structure theory", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -43,24 +44,6 @@ universe u v
 
 variable (R : Type u) [CommRing R] {N : ℕ}
 
-private theorem mapWeightParabolic_id (w : Fin N → ℤ) (A : CommAlgCat.{v} R)
-    (g : Cocharacter.parabolic A (weightCocharacter (R := R) w)) :
-    Cocharacter.mapParabolic (weightCocharacter (R := R) w) (𝟙 A) g = g := by
-  apply Subtype.ext
-  rw [Cocharacter.coe_mapParabolic_apply, CommAlgCat.hom_id,
-    AlgHom.mapValue_id, MonoidHom.id_apply]
-
-private theorem mapWeightParabolic_comp (w : Fin N → ℤ)
-    {A B C : CommAlgCat.{v} R} (φ : A ⟶ B) (ψ : B ⟶ C)
-    (g : Cocharacter.parabolic A (weightCocharacter (R := R) w)) :
-    Cocharacter.mapParabolic (weightCocharacter (R := R) w) (φ ≫ ψ) g =
-      Cocharacter.mapParabolic (weightCocharacter (R := R) w) ψ
-        (Cocharacter.mapParabolic (weightCocharacter (R := R) w) φ g) := by
-  apply Subtype.ext
-  rw [Cocharacter.coe_mapParabolic_apply, Cocharacter.coe_mapParabolic_apply,
-    Cocharacter.coe_mapParabolic_apply, CommAlgCat.hom_comp,
-    AlgHom.mapValue_comp, MonoidHom.comp_apply]
-
 private theorem mem_weightParabolicSubgroup_iff (w : Fin N → ℤ)
     (A : CommAlgCat.{v} R)
     (g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N) A) :
@@ -69,14 +52,6 @@ private theorem mem_weightParabolicSubgroup_iff (w : Fin N → ℤ)
       g ∈ Cocharacter.parabolic A (weightCocharacter (R := R) w) := by
   rw [mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular,
     mem_parabolic_weightCocharacter_iff]
-
-private theorem coe_mapWeightParabolic_apply (w : Fin N → ℤ)
-    {A B : CommAlgCat.{v} R} (φ : A ⟶ B)
-    (g : Cocharacter.parabolic A (weightCocharacter (R := R) w)) :
-    (Cocharacter.mapParabolic (weightCocharacter (R := R) w) φ g :
-      HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N) B) =
-      HopfAlgebra.mapPoints (H := coordinateHopfAlgebra R N) φ g :=
-  Cocharacter.coe_mapParabolic_apply (weightCocharacter (R := R) w) φ g
 
 section Points
 
@@ -102,9 +77,7 @@ noncomputable def weightParabolicPointsIso (w : Fin N → ℤ) :
   CommHopfAlgCat.quotientPointsSubgroupRepresentingIso
     (coordinateHopfAlgebra R N) (weightParabolicDefiningHopfIdeal R w)
     (fun A ↦ Cocharacter.parabolic A (weightCocharacter (R := R) w))
-    (fun φ ↦ Cocharacter.mapParabolic (weightCocharacter (R := R) w) φ)
-    (mapWeightParabolic_id R w) (mapWeightParabolic_comp R w)
-    (mem_weightParabolicSubgroup_iff R w) (coe_mapWeightParabolic_apply R w)
+    (mem_weightParabolicSubgroup_iff R w)
 
 /-- The ambient point underlying the represented dynamic-parabolic point is induced by the
 quotient coordinate map. -/
@@ -125,9 +98,7 @@ theorem coe_weightParabolicPointsIso_hom_app_apply (w : Fin N → ℤ)
     (CommHopfAlgCat.coe_quotientPointsSubgroupRepresentingIso_hom_app_apply
       (coordinateHopfAlgebra R N) (weightParabolicDefiningHopfIdeal R w)
       (fun B ↦ Cocharacter.parabolic B (weightCocharacter (R := R) w))
-      (fun φ ↦ Cocharacter.mapParabolic (weightCocharacter (R := R) w) φ)
-      (mapWeightParabolic_id R w) (mapWeightParabolic_comp R w)
-      (mem_weightParabolicSubgroup_iff R w) (coe_mapWeightParabolic_apply R w)
+      (mem_weightParabolicSubgroup_iff R w)
       (CommAlgCat.of R A) f) using 1
   rfl
 
@@ -145,9 +116,20 @@ theorem quotientPointsHom_weightParabolicPointsIso_inv_app_apply (w : Fin N → 
     (CommHopfAlgCat.quotientPointsHom_quotientPointsSubgroupRepresentingIso_inv_app_apply
       (coordinateHopfAlgebra R N) (weightParabolicDefiningHopfIdeal R w)
       (fun B ↦ Cocharacter.parabolic B (weightCocharacter (R := R) w))
-      (fun φ ↦ Cocharacter.mapParabolic (weightCocharacter (R := R) w) φ)
-      (mapWeightParabolic_id R w) (mapWeightParabolic_comp R w)
-      (mem_weightParabolicSubgroup_iff R w) (coe_mapWeightParabolic_apply R w)
+      (mem_weightParabolicSubgroup_iff R w)
       (CommAlgCat.of R A) g) using 1
+
+/-- The dynamic parabolic ideal of a diagonal weight cocharacter equals the explicit
+weight-parabolic matrix ideal, including its scheme structure. -/
+@[simp]
+theorem parabolicDefiningHopfIdeal_weightCocharacter (w : Fin N → ℤ) :
+    Cocharacter.parabolicDefiningHopfIdeal (weightCocharacter (R := R) w) =
+      weightParabolicDefiningHopfIdeal R w := by
+  apply HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq
+    (H := coordinateHopfAlgebra R N)
+  intro A
+  ext g
+  rw [Cocharacter.quotientPointsSubgroup_parabolicDefiningHopfIdeal]
+  exact (mem_weightParabolicDefiningPointsSubgroup_iff R w g).symm
 
 end TauCeti.GeneralLinear.Dynamic

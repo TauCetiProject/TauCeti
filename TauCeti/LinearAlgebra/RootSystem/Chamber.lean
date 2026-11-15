@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
 # The dominant chamber of a base
@@ -35,38 +36,48 @@ Weyl-invariant.
 
 ## Main definitions
 
-* `TauCeti.IsRegularWeight` is regularity of a weight: no coroot functional vanishes on it.
-* `TauCeti.dominantChamber` is the closed dominant chamber of a base.
-* `TauCeti.openDominantChamber` is its open counterpart.
+* `RootPairing.IsRegularWeight` is regularity of a weight: no coroot functional vanishes on it.
+* `RootPairing.dominantChamber` is the closed dominant chamber of a base.
+* `RootPairing.openDominantChamber` is its open counterpart.
 
 ## Main results
 
-* `TauCeti.isRegularWeight_smul`: regularity is invariant under the Weyl group.
-* `TauCeti.mem_openDominantChamber_of_isRegularWeight` and
-  `TauCeti.isRegularWeight_of_mem_openDominantChamber`: the strictly dominant weights are exactly
-  the regular dominant ones.
-* `TauCeti.exists_mem_dominantChamber_of_finite_weylGroup` and
-  `TauCeti.exists_mem_dominantChamber`: every weight is Weyl-conjugate into the closed dominant
+* `RootPairing.isRegularWeight_smul`: regularity is invariant under the Weyl group.
+* `RootPairing.smul_dominantChamber` and `RootPairing.smul_openDominantChamber`: an automorphism
+  of the root pairing carries both chambers of a base to those of the transported base.
+* `RootPairing.mem_openDominantChamber_of_isRegularWeight` and
+  `RootPairing.isRegularWeight_of_mem_openDominantChamber`: strict dominance is equivalent to
+  regular dominance.
+* `RootPairing.exists_mem_dominantChamber_of_finite_weylGroup` and
+  `RootPairing.exists_mem_dominantChamber`: every weight is Weyl-conjugate into the closed dominant
   chamber.
-* `TauCeti.iUnion_smul_dominantChamber_eq_univ`: the Weyl translates of the closed dominant
+* `RootPairing.iUnion_smul_dominantChamber_eq_univ`: the Weyl translates of the closed dominant
   chamber cover the weight space.
-* `TauCeti.ofIdx_smul_notMem_dominantChamber` and
-  `TauCeti.ofIdx_smul_ne_of_mem_openDominantChamber`: a simple reflection moves every point of the
-  open dominant chamber, and moves it out of the closed chamber.
-* `TauCeti.mem_dominantChamber_iff_forall_mem_posRoots` and
-  `TauCeti.mem_openDominantChamber_iff_forall_mem_posRoots`: the two chambers are cut out by all of
-  the positive coroot functionals, not just the simple ones.
+* `RootPairing.ofIdx_smul_notMem_dominantChamber` and
+  `RootPairing.ofIdx_smul_ne_of_mem_openDominantChamber`: a simple reflection moves every point
+  of the open dominant chamber, and moves it out of the closed chamber.
+* `RootPairing.mem_dominantChamber_iff_forall_mem_posRoots` and
+  `RootPairing.mem_openDominantChamber_iff_forall_mem_posRoots`: both chambers are cut out by
+  all of the positive coroot functionals, not just the simple ones.
+* `RootPairing.root'_pos_of_isPos` and `RootPairing.root'_neg_of_not_isPos`: on the coweight
+  space, where the simple roots are positive, so are the positive roots, and the negative roots
+  are negative.
+* `RootPairing.Base.exists_forall_root'_eq`: over a field the simple roots take arbitrary
+  prescribed values at some point of the coweight space.
 
 ## Implementation notes
 
-The roadmap states this layer over `ℝ`. Nothing in the argument uses completeness, division, or
-the archimedean property, so the statements here are made over an arbitrary linearly ordered
-commutative ring; `ℝ` and `ℚ` are the intended instances.
+The chamber definitions use a preorder on the coefficient ring. Each closure lemma assumes
+only the monotonicity of addition or multiplication it needs. Reflection sign changes and
+nonnegative coroot expansions use only ordered addition; strict positivity of the expansions
+also uses a partial order. The orbit-maximization argument needs a linear order compatible with
+addition on an integral domain, which is then of characteristic zero, but no compatibility of the
+order with multiplication.
 
 The maximization argument is proved as `exists_mem_dominantChamber_of_finite_weylGroup`, which
-asks for no root-system assumption: on top of the standing `Finite ι`, `P.IsCrystallographic` and
-`P.IsReduced` hypotheses that the positive-root permutation step needs, it assumes only
-`Finite P.weylGroup`. The roadmap-signature `exists_mem_dominantChamber` is the root-system case,
+does not require the roots to span: it assumes `Finite P.weylGroup` directly, together with
+`Finite ι`, `P.IsCrystallographic` and `P.IsReduced` for the positive-root permutation step.
+The theorem `exists_mem_dominantChamber` is the root-system case,
 where that finiteness comes from `RootPairing.finite_weylGroup`.
 
 Regularity quantifies over *all* root indices, not just the positive ones. The two are equivalent,
@@ -80,20 +91,15 @@ which is automatic over a field.
 
 ## References
 
-This file implements the chamber definitions of Layer 4 ("Weyl chambers as cones") and the
-existence half of its fundamental-domain item (`exists_mem_dominantChamber`) in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, following the target signatures in
-that roadmap's `Suggested.lean`. Uniqueness of the dominant representative is not proved here.
-
 The argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and Representation
 Theory*, GTM 9, Ch. III, §10.3.
 -/
 
 public section
 
-namespace TauCeti
+namespace RootPairing
 
-open Pointwise Set
+open Pointwise Set TauCeti
 
 universe u v w x
 
@@ -107,10 +113,10 @@ variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
 of the walls `ker αᵢ^∨`. -/
 def IsRegularWeight (x : M) : Prop := ∀ i, P.coroot' i x ≠ 0
 
-/-- The defining condition of `TauCeti.IsRegularWeight`, as an `Iff`: the predicate is not exposed,
-so this is how it is introduced and eliminated outside this file.
+/-- The defining condition of `RootPairing.IsRegularWeight`, as an `Iff`: this introduces and
+eliminates the predicate without unfolding it outside this file.
 
-Not a `simp` lemma: unfolding the predicate would take `TauCeti.isRegularWeight_smul` out of
+Not a `simp` lemma: unfolding the predicate would take `RootPairing.isRegularWeight_smul` out of
 simp-normal form, and would dissolve `IsRegularWeight` out of the goals its own API is stated
 about. Use it explicitly, as `rw [isRegularWeight_iff]` or `simp [isRegularWeight_iff]`. -/
 lemma isRegularWeight_iff (x : M) : IsRegularWeight P x ↔ ∀ i, P.coroot' i x ≠ 0 := Iff.rfl
@@ -121,16 +127,17 @@ zero. -/
 @[simp]
 lemma isRegularWeight_smul (w : P.weylGroup) (x : M) :
     IsRegularWeight P (w • x) ↔ IsRegularWeight P x := by
-  refine ⟨fun h i ↦ ?_, fun h i ↦ ?_⟩
-  · rw [← RootPairing.coroot'_weylGroupToPerm_smul P w i x]
-    exact h _
-  · have h' := h ((P.weylGroupToPerm w).symm i)
-    rw [← RootPairing.coroot'_weylGroupToPerm_smul P w _ x, Equiv.apply_symm_apply] at h'
-    exact h'
+  simpa only [isRegularWeight_iff, _root_.Equiv.symm_symm, coroot'_weylGroupToPerm_smul] using
+    (P.weylGroupToPerm w).symm.forall_congr_left
+      (p := fun i ↦ P.coroot' i (w • x) ≠ 0)
 
 /-! ### The dominant chamber -/
 
-variable [LinearOrder R] (b : P.Base)
+variable (b : P.Base)
+
+section Preorder
+
+variable [Preorder R]
 
 /-- The closed dominant chamber of a base: the weights on which every simple coroot is
 nonnegative. -/
@@ -149,10 +156,61 @@ lemma mem_dominantChamber (x : M) :
 lemma mem_openDominantChamber (x : M) :
     x ∈ openDominantChamber P b ↔ ∀ i ∈ b.support, 0 < P.coroot' i x := Iff.rfl
 
+/-- **An automorphism carries the closed dominant chamber of a base to that of the transported
+base.** -/
+theorem smul_dominantChamber (g : P.Aut) :
+    g • dominantChamber P b = dominantChamber P (b.map g) := by
+  classical
+  ext x
+  simp only [mem_smul_set_iff_inv_smul_mem, mem_dominantChamber, coroot'_smul,
+    Equiv.indexEquiv_inv, Equiv.Perm.inv_def, _root_.Equiv.symm_symm, Equiv.indexHom_apply,
+    Base.support_map_eq, Finset.forall_mem_image]
+
+/-- **An automorphism carries the open dominant chamber of a base to that of the transported
+base.** -/
+theorem smul_openDominantChamber (g : P.Aut) :
+    g • openDominantChamber P b = openDominantChamber P (b.map g) := by
+  classical
+  ext x
+  simp only [mem_smul_set_iff_inv_smul_mem, mem_openDominantChamber, coroot'_smul,
+    Equiv.indexEquiv_inv, Equiv.Perm.inv_def, _root_.Equiv.symm_symm, Equiv.indexHom_apply,
+    Base.support_map_eq, Finset.forall_mem_image]
+
 /-- The open dominant chamber is contained in the closed one. -/
 lemma openDominantChamber_subset_dominantChamber :
     openDominantChamber P b ⊆ dominantChamber P b :=
   fun _ hx i hi ↦ (hx i hi).le
+
+/-- The origin is dominant. -/
+lemma zero_mem_dominantChamber : (0 : M) ∈ dominantChamber P b := by
+  simp
+
+/-- The closed dominant chamber is closed under addition. -/
+lemma add_mem_dominantChamber [IsOrderedAddMonoid R] {x y : M} (hx : x ∈ dominantChamber P b)
+    (hy : y ∈ dominantChamber P b) : x + y ∈ dominantChamber P b :=
+  fun i hi ↦ by simpa using add_nonneg (hx i hi) (hy i hi)
+
+/-- The closed dominant chamber is closed under nonnegative scaling. -/
+lemma smul_mem_dominantChamber [PosMulMono R] {t : R} (ht : 0 ≤ t) {x : M}
+    (hx : x ∈ dominantChamber P b) :
+    t • x ∈ dominantChamber P b :=
+  fun i hi ↦ by simpa using mul_nonneg ht (hx i hi)
+
+/-- The open dominant chamber is closed under addition. -/
+lemma add_mem_openDominantChamber [AddLeftStrictMono R] {x y : M} (hx : x ∈ openDominantChamber P b)
+    (hy : y ∈ openDominantChamber P b) : x + y ∈ openDominantChamber P b :=
+  fun i hi ↦ by simpa using add_pos (hx i hi) (hy i hi)
+
+/-- The open dominant chamber is closed under positive scaling. -/
+lemma smul_mem_openDominantChamber [PosMulStrictMono R] {t : R} (ht : 0 < t) {x : M}
+    (hx : x ∈ openDominantChamber P b) : t • x ∈ openDominantChamber P b :=
+  fun i hi ↦ by simpa using mul_pos ht (hx i hi)
+
+end Preorder
+
+section PartialOrder
+
+variable [PartialOrder R]
 
 /-- A dominant weight is strictly dominant as soon as it is regular: nonnegativity that is never
 an equality is positivity. -/
@@ -161,57 +219,45 @@ lemma mem_openDominantChamber_of_isRegularWeight {x : M} (hx : x ∈ dominantCha
   (mem_openDominantChamber P b x).mpr fun i hi ↦
     lt_of_le_of_ne ((mem_dominantChamber P b x).mp hx i hi) (Ne.symm (hreg i))
 
-/-- The origin is dominant. -/
-lemma zero_mem_dominantChamber : (0 : M) ∈ dominantChamber P b := by
-  simp
+end PartialOrder
 
-variable [IsStrictOrderedRing R]
+section Reflections
 
-/-- The closed dominant chamber is closed under addition. -/
-lemma add_mem_dominantChamber {x y : M} (hx : x ∈ dominantChamber P b)
-    (hy : y ∈ dominantChamber P b) : x + y ∈ dominantChamber P b :=
-  fun i hi ↦ by simpa using add_nonneg (hx i hi) (hy i hi)
+variable [Preorder R] [IsOrderedAddMonoid R]
 
-/-- The closed dominant chamber is closed under nonnegative scaling. -/
-lemma smul_mem_dominantChamber {t : R} (ht : 0 ≤ t) {x : M} (hx : x ∈ dominantChamber P b) :
-    t • x ∈ dominantChamber P b :=
-  fun i hi ↦ by simpa using mul_nonneg ht (hx i hi)
-
-/-- The open dominant chamber is closed under addition. -/
-lemma add_mem_openDominantChamber {x y : M} (hx : x ∈ openDominantChamber P b)
-    (hy : y ∈ openDominantChamber P b) : x + y ∈ openDominantChamber P b :=
-  fun i hi ↦ by simpa using add_pos (hx i hi) (hy i hi)
-
-/-- The open dominant chamber is closed under positive scaling. -/
-lemma smul_mem_openDominantChamber {t : R} (ht : 0 < t) {x : M}
-    (hx : x ∈ openDominantChamber P b) : t • x ∈ openDominantChamber P b :=
-  fun i hi ↦ by simpa using mul_pos ht (hx i hi)
-
-/-- A simple reflection carries every point of the open dominant chamber out of the closed
-dominant chamber, since it reverses the sign of the corresponding simple coroot. -/
+/-- A simple reflection carries a weight out of the closed dominant chamber whenever its
+corresponding simple coroot is positive on that weight. -/
 theorem ofIdx_smul_notMem_dominantChamber {i : ι} (hi : i ∈ b.support) {x : M}
-    (hx : x ∈ openDominantChamber P b) :
+    (hx : 0 < P.coroot' i x) :
     RootPairing.weylGroup.ofIdx P i • x ∉ dominantChamber P b := by
   intro hmem
   have h := hmem i hi
-  rw [_root_.RootPairing.weylGroup.ofIdx_smul, _root_.RootPairing.Equiv.reflection_smul,
-    RootPairing.coroot'_reflection_self] at h
-  have := hx i hi
-  linarith
+  simp only [weylGroup.ofIdx_smul, Equiv.reflection_smul, coroot'_reflection_self,
+    neg_nonneg] at h
+  exact hx.not_ge h
 
-/-- No simple reflection fixes a point of the open dominant chamber: it would otherwise stay in
-the closed dominant chamber. -/
+omit [IsOrderedAddMonoid R] in
+/-- No simple reflection fixes a point of the open dominant chamber. This needs only a preorder on
+the coefficient ring, with no compatibility with addition. -/
 theorem ofIdx_smul_ne_of_mem_openDominantChamber {i : ι} (hi : i ∈ b.support) {x : M}
     (hx : x ∈ openDominantChamber P b) :
     RootPairing.weylGroup.ofIdx P i • x ≠ x := by
   intro hfix
-  refine ofIdx_smul_notMem_dominantChamber P b hi hx ?_
-  rw [hfix]
-  exact openDominantChamber_subset_dominantChamber P b hx
+  -- A fixed point is moved by the multiple `⟨x, αᵢ^∨⟩ • αᵢ` of the simple root `αᵢ` to itself,
+  -- and the simple roots are linearly independent, so the positive coefficient is zero.
+  have hsmul : P.coroot' i x • P.root i = 0 := by
+    rw [RootPairing.weylGroup.ofIdx_smul, RootPairing.Equiv.reflection_smul,
+      RootPairing.reflection_apply, sub_eq_self] at hfix
+    exact hfix
+  have hzero : P.coroot' i x = 0 :=
+    b.linearIndepOn_root.smul_left_injective ⟨i, hi⟩ (by simpa using hsmul)
+  exact (hx i hi).ne' hzero
+
+end Reflections
 
 section Finite
 
-variable [Finite ι]
+variable [Finite ι] [CharZero R] [IsDomain R]
 
 /-- The sum of the coroot functionals indexed by the positive roots, evaluated at `x`. Up to the
 factor two this is the pairing of `x` with the Weyl vector on the coroot side; all that is used
@@ -250,27 +296,34 @@ private lemma posCorootSum_reflection {i : ι} (hi : i ∈ b.support) (x : M) :
 
 section FiniteWeylGroup
 
-variable [Finite P.weylGroup]
+variable [LinearOrder R] [IsOrderedAddMonoid R] [Finite P.weylGroup]
 
+omit [CharZero R] in
 /-- **Every weight is Weyl-conjugate into the closed dominant chamber**, for a crystallographic
 reduced pairing with finitely many roots whose Weyl group is finite. Maximizing `posCorootSum`
 along the orbit produces the dominant representative. -/
 theorem exists_mem_dominantChamber_of_finite_weylGroup (x : M) :
     ∃ w : P.weylGroup, w • x ∈ dominantChamber P b := by
+  -- A nontrivial linearly ordered additive group is torsion free, so the ring has characteristic
+  -- zero.
+  have : CharZero R := CharZero.of_hasUniqueDiv R R
   obtain ⟨w, hw⟩ := Finite.exists_max fun w : P.weylGroup ↦ posCorootSum P b (w • x)
   refine ⟨w, fun i hi ↦ ?_⟩
   have hsmul : (RootPairing.weylGroup.ofIdx P i * w) • x = P.reflection i (w • x) := by
     simp [mul_smul]
   have hle := hw (RootPairing.weylGroup.ofIdx P i * w)
   rw [hsmul, posCorootSum_reflection P b hi] at hle
-  linarith
+  rw [sub_le_self_iff, two_mul, ← two_nsmul] at hle
+  exact (nsmul_nonneg_iff (by decide : 2 ≠ 0)).mp hle
 
+omit [CharZero R] in
 /-- Every Weyl orbit meets the closed dominant chamber. -/
 theorem orbit_inter_dominantChamber_nonempty (x : M) :
     (MulAction.orbit P.weylGroup x ∩ dominantChamber P b).Nonempty := by
   obtain ⟨w, hw⟩ := exists_mem_dominantChamber_of_finite_weylGroup P b x
   exact ⟨w • x, ⟨w, rfl⟩, hw⟩
 
+omit [CharZero R] in
 /-- **The Weyl translates of the closed dominant chamber cover the weight space.** -/
 theorem iUnion_smul_dominantChamber_eq_univ :
     ⋃ w : P.weylGroup, w • dominantChamber P b = (univ : Set M) := by
@@ -281,10 +334,12 @@ theorem iUnion_smul_dominantChamber_eq_univ :
 
 end FiniteWeylGroup
 
+omit [CharZero R] in
 /-- **Every weight is Weyl-conjugate into the closed dominant chamber.** Together with the
 uniqueness of that representative this says the closed dominant chamber is a fundamental domain
 for the Weyl group. -/
-theorem exists_mem_dominantChamber [P.IsRootSystem] (x : M) :
+theorem exists_mem_dominantChamber [LinearOrder R] [IsOrderedAddMonoid R] [P.IsRootSystem]
+    (x : M) :
     ∃ w : P.weylGroup, w • x ∈ dominantChamber P b :=
   letI := RootPairing.finite_weylGroup P
   exists_mem_dominantChamber_of_finite_weylGroup P b x
@@ -293,18 +348,22 @@ end Finite
 
 section PosRoots
 
-variable [Finite ι] [P.IsCrystallographic] [P.IsReduced] [P.flip.IsReduced]
+variable [CharZero R] [IsDomain R] [Finite ι]
+  [P.IsCrystallographic] [P.IsReduced] [P.flip.IsReduced]
 
 variable {x : M}
+
+section Preorder
+
+variable [Preorder R] [IsOrderedAddMonoid R]
 
 /-- Every positive coroot functional is nonnegative on the closed dominant chamber. -/
 theorem coroot'_nonneg_of_mem_posRoots (hx : x ∈ dominantChamber P b) {i : ι}
     (hi : i ∈ posRoots P b) : 0 ≤ P.coroot' i x := by
   obtain ⟨f, -, hsum⟩ := exists_coroot'_eq_sum_nat_of_mem_posRoots P b hi
   rw [hsum, LinearMap.sum_apply]
-  simp only [LinearMap.smul_apply, smul_eq_mul]
-  exact Finset.sum_nonneg fun j hj ↦
-    mul_nonneg (by positivity) ((mem_dominantChamber P b x).mp hx j hj)
+  simp only [LinearMap.smul_apply, Nat.cast_smul_eq_nsmul]
+  exact Finset.sum_nonneg fun j hj ↦ nsmul_nonneg (hx j hj) _
 
 /-- Every negative coroot functional is nonpositive on the closed dominant chamber. -/
 theorem coroot'_nonpos_of_mem_negRoots (hx : x ∈ dominantChamber P b) {i : ι}
@@ -314,6 +373,17 @@ theorem coroot'_nonpos_of_mem_negRoots (hx : x ∈ dominantChamber P b) {i : ι}
   rw [RootPairing.coroot'_reflectionPerm_self] at h
   simpa using h
 
+/-- **The closed dominant chamber is cut out by the positive coroot functionals**, not just by the
+simple ones. -/
+theorem mem_dominantChamber_iff_forall_mem_posRoots :
+    x ∈ dominantChamber P b ↔ ∀ i ∈ posRoots P b, 0 ≤ P.coroot' i x := by
+  refine ⟨fun hx _ hi ↦ coroot'_nonneg_of_mem_posRoots P b hx hi, fun h ↦ ?_⟩
+  exact (mem_dominantChamber P b x).mpr fun i hi ↦ h i (support_subset_posRoots P b hi)
+
+end Preorder
+
+variable [PartialOrder R] [IsOrderedAddMonoid R]
+
 /-- Every positive coroot functional is positive on the open dominant chamber. -/
 theorem coroot'_pos_of_mem_posRoots (hx : x ∈ openDominantChamber P b) {i : ι}
     (hi : i ∈ posRoots P b) : 0 < P.coroot' i x := by
@@ -321,9 +391,9 @@ theorem coroot'_pos_of_mem_posRoots (hx : x ∈ openDominantChamber P b) {i : ι
   obtain ⟨f, ⟨j, hj, hfj⟩, hsum⟩ := exists_coroot'_eq_sum_nat_of_mem_posRoots P b hi
   have hx' := (mem_openDominantChamber P b x).mp hx
   rw [hsum, LinearMap.sum_apply]
-  simp only [LinearMap.smul_apply, smul_eq_mul]
-  refine Finset.sum_pos' (fun k hk ↦ mul_nonneg (by positivity) (hx' k hk).le) ⟨j, hj, ?_⟩
-  exact mul_pos (by exact_mod_cast Nat.pos_of_ne_zero hfj) (hx' j hj)
+  simp only [LinearMap.smul_apply, Nat.cast_smul_eq_nsmul]
+  exact Finset.sum_pos' (fun k hk ↦ nsmul_nonneg (hx' k hk).le _) ⟨j, hj,
+    nsmul_pos (hx' j hj) hfj⟩
 
 /-- Every negative coroot functional is negative on the open dominant chamber. -/
 theorem coroot'_neg_of_mem_negRoots (hx : x ∈ openDominantChamber P b) {i : ι}
@@ -342,13 +412,6 @@ theorem isRegularWeight_of_mem_openDominantChamber (hx : x ∈ openDominantChamb
   · exact (coroot'_pos_of_mem_posRoots P b hx hi).ne'
   · exact (coroot'_neg_of_mem_negRoots P b hx hi).ne
 
-/-- **The closed dominant chamber is cut out by the positive coroot functionals**, not just by the
-simple ones. -/
-theorem mem_dominantChamber_iff_forall_mem_posRoots :
-    x ∈ dominantChamber P b ↔ ∀ i ∈ posRoots P b, 0 ≤ P.coroot' i x := by
-  refine ⟨fun hx _ hi ↦ coroot'_nonneg_of_mem_posRoots P b hx hi, fun h ↦ ?_⟩
-  exact (mem_dominantChamber P b x).mpr fun i hi ↦ h i (support_subset_posRoots P b hi)
-
 /-- **The open dominant chamber is cut out by the positive coroot functionals**, not just by the
 simple ones. -/
 theorem mem_openDominantChamber_iff_forall_mem_posRoots :
@@ -358,4 +421,51 @@ theorem mem_openDominantChamber_iff_forall_mem_posRoots :
 
 end PosRoots
 
-end TauCeti
+/-! ### Root functionals on the coweight space -/
+
+section RootValues
+
+variable [CharZero R] [PartialOrder R] [IsOrderedAddMonoid R] {P b} {x : N}
+
+/-- **A positive root is positive wherever the simple roots are.** This is the root-side
+counterpart of `RootPairing.coroot'_pos_of_mem_posRoots`; it needs no reducedness, as a positive
+root is a nonnegative combination of the simple roots. -/
+theorem root'_pos_of_isPos (hx : ∀ i ∈ b.support, 0 < P.root' i x) {j : ι} (hj : b.IsPos j) :
+    0 < P.root' j x := by
+  obtain ⟨f, -, hf⟩ := exists_root_eq_sum_nat_of_mem_posRoots P b ((mem_posRoots P b j).mpr hj)
+  -- some simple root occurs in the expansion, because a root is never zero
+  obtain ⟨k, hk, hfk⟩ : ∃ k ∈ b.support, f k ≠ 0 := by
+    by_contra! H
+    exact P.ne_zero j (hf.trans (Finset.sum_eq_zero fun k hk ↦ by simp [H k hk]))
+  simp only [root', hf, map_sum, map_nsmul, LinearMap.sum_apply, LinearMap.smul_apply]
+  exact Finset.sum_pos' (fun i hi ↦ nsmul_nonneg (hx i hi).le _)
+    ⟨k, hk, nsmul_pos (hx k hk) hfk⟩
+
+/-- **A negative root is negative wherever the simple roots are positive.** -/
+theorem root'_neg_of_not_isPos (hx : ∀ i ∈ b.support, 0 < P.root' i x) {j : ι}
+    (hj : ¬ b.IsPos j) : P.root' j x < 0 := by
+  let := P.indexNeg
+  simpa [root', root_neg_index] using root'_pos_of_isPos hx ((Base.IsPos.neg_iff_not b j).mpr hj)
+
+end RootValues
+
+end RootPairing
+
+namespace RootPairing
+
+variable {ι R M N : Type*} [Field R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing ι R M N} (b : P.Base)
+
+/-- **The simple roots take arbitrary prescribed values** at some point of the coweight space:
+they are linearly independent and the pairing is perfect. -/
+theorem Base.exists_forall_root'_eq (c : ι → R) : ∃ x : N, ∀ i ∈ b.support, P.root' i x = c i := by
+  have hli := b.linearIndepOn_root.linearIndependent
+  obtain ⟨φ, hφ⟩ := LinearMap.exists_extend ((Module.Basis.span hli).constr R fun i ↦ c i)
+  refine ⟨P.flip.toPerfPair.symm φ, fun i hi ↦ ?_⟩
+  have h := LinearMap.congr_fun hφ (Module.Basis.span hli ⟨i, hi⟩)
+  rw [Module.Basis.constr_basis, LinearMap.comp_apply, Submodule.subtype_apply,
+    Module.Basis.span_apply] at h
+  rw [← h, ← LinearMap.flip_apply (m := P.root i), ← flip_toLinearMap,
+    ← LinearMap.toPerfPair_apply, LinearEquiv.apply_symm_apply]
+
+end RootPairing

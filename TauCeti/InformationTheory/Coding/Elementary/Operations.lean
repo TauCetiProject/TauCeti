@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.Coding.Elementary.Basic
-public import TauCeti.InformationTheory.Coding.Puncture
+public import TauCeti.InformationTheory.Coding.Puncture.Basic
 
 /-!
 # Coordinate operations on repetition codes

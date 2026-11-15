@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Basic
-public import TauCeti.RingTheory.Idempotents.Corner
+public import TauCeti.RingTheory.Idempotents.Corner.Basic
 
 /-!
 # The graded Cartan matrix of a zigzag algebra
@@ -76,10 +76,8 @@ corners `e_i Z e_j` over `i`, together with the resulting numerical comparison
 
 ## References
 
-This is the graded Cartan matrix of Layer 3 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`.  See Huerfano--Khovanov, *A category for the
-adjoint representation*, Section 3, and Ehrig--Tubbenhauer, *Algebraic properties of zigzag
-algebras*, Section 2.
+See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, and
+Ehrig--Tubbenhauer, *Algebraic properties of zigzag algebras*, Section 2.
 -/
 
 public section
@@ -90,7 +88,11 @@ open PathAlgebra DoubledQuiver Polynomial
 
 universe u w
 
-variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V) [Finite V]
+variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V)
+
+section Finite
+
+variable [Finite V]
 
 /-! ### The corners of a zigzag algebra -/
 
@@ -98,13 +100,13 @@ variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V) [Finite V]
 multiplying it by `e_i` on the left and by `e_j` on the right. -/
 noncomputable def zigzagCornerMap (i j : V) :
     nonisolatedZigzagQuotient k G →ₗ[k] nonisolatedZigzagQuotient k G :=
-  cornerMap k (zigzagVertexIdempotent k G i) (zigzagVertexIdempotent k G j)
+  LinearMap.mulLeftRight k (zigzagVertexIdempotent k G i, zigzagVertexIdempotent k G j)
 
 @[simp]
 theorem zigzagCornerMap_apply (i j : V) (x : nonisolatedZigzagQuotient k G) :
     zigzagCornerMap k G i j x =
       zigzagVertexIdempotent k G i * x * zigzagVertexIdempotent k G j :=
-  cornerMap_apply k _ _ x
+  LinearMap.mulLeftRight_apply _ _ _
 
 /-- **The corner `e_i Z e_j` of a zigzag algebra**, as a `k`-submodule of the relation quotient:
 the elements which `e_i` fixes on the left and `e_j` fixes on the right. -/
@@ -455,6 +457,8 @@ theorem isSymm_zigzagGradedCartanMatrix : (zigzagGradedCartanMatrix k G).IsSymm 
         fun hji => h hji.symm,
         zigzagGradedCartanMatrix_apply_of_ne_of_not_adj k G hne h]
 
+end Finite
+
 section EvaluationAtZero
 
 variable [DecidableEq V]
@@ -462,7 +466,7 @@ variable [DecidableEq V]
 /-- **At `q = 0` the graded Cartan matrix is the identity matrix.** Only the degree-zero vertex
 idempotents survive this specialization. -/
 @[simp]
-theorem zigzagGradedCartanMatrix_map_eval_zero :
+theorem zigzagGradedCartanMatrix_map_eval_zero [Finite V] :
     (zigzagGradedCartanMatrix k G).map (eval 0) = 1 := by
   ext i j
   rw [Matrix.map_apply, zigzagGradedCartanMatrix_apply_eq_sum, Matrix.one_apply]
@@ -500,7 +504,7 @@ include hns
 
 section Decidable
 
-variable [DecidableEq V] [DecidableRel G.Adj]
+variable [Finite V] [DecidableEq V] [DecidableRel G.Adj]
 
 /-- **The entrywise graded Cartan formula.** The diagonal entries are `1 + q²`, the entries over an
 edge are `q`, and all the others vanish. -/

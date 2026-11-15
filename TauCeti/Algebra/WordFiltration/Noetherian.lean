@@ -16,7 +16,7 @@ Let `f : M →ₗ[R] A` be a linear family of generators of an algebra `A` and l
 **filtered-to-graded transfer of the Noetherian property**: if the associated graded ring
 `TauCeti.Algebra.wordFiltration.AssociatedGraded f` is left Noetherian and the filtration is
 exhaustive, then `A` is left Noetherian. The specialization to the PBW filtration of a universal
-enveloping algebra is `TauCeti/Algebra/Lie/UniversalEnveloping/PBW/Noetherian.lean`; it is the
+enveloping algebra is `TauCeti/Algebra/Lie/UniversalEnveloping/PBW/Noetherian/Basic.lean`; it is the
 companion of the domain transfer in `TauCeti/Algebra/WordFiltration/Domain.lean`, which has the
 same shape and the same two inputs.
 

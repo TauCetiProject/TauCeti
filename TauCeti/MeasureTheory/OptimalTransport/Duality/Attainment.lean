@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.MetricSpace.Polish
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Certificate
 import TauCeti.MeasureTheory.OptimalTransport.CTransform.CyclicalMonotonicity
-import TauCeti.MeasureTheory.OptimalTransport.Existence
+import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 
 /-!
 # Dual attainment for bounded continuous costs

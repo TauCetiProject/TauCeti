@@ -16,7 +16,8 @@ A **projective presentation** of a module `M` is an exact sequence `P₁ → P�
 `P₁` projective. It is **minimal** when both of its maps are as small as they can be: `P₀ → M` is a
 projective cover (`TauCeti.IsProjectiveCover`) and `P₁` covers the syzygy `ker (P₀ → M)`, again as
 a projective cover. This file supplies the predicate `TauCeti.IsMinimalProjectivePresentation` and
-the comparison theorem that makes it useful.
+the comparison theorem that makes it useful. The dual notion of a minimal injective copresentation
+is in `TauCeti/Algebra/Module/Injective/Copresentation/Basic.lean`.
 
 The minimality is packaged as two superfluous kernels rather than as a nested
 `TauCeti.IsProjectiveCover`, because the second cover is a map into the submodule `ker p₀` and
@@ -97,14 +98,6 @@ submodule need not be closed under negation, as `ℕ ⊆ ℤ` shows — so over 
 
 ## References
 
-This implements the projective half of sublayer 6B, "minimal projective/injective presentations",
-of Layer 6 of
-[the quiver-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md),
-the prerequisite it names for the transpose `Tr` and the Auslander-Reiten translate `τ = D Tr`
-("it is well-defined only up to projectives, through minimal presentations and duality on
-finite-dimensional modules"). The injective co-presentation is the remaining half, as the injective
-envelope is the remaining half of `TauCeti/Algebra/Module/ProjectiveCover/Basic.lean`.
-
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*, Cambridge
   University Press (1995), Section I.2 and Section IV.1.
 * I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
@@ -152,6 +145,18 @@ theorem surjective (h : IsMinimalProjectivePresentation p₁ p₀) : Function.Su
 `P₀`. -/
 theorem exact (h : IsMinimalProjectivePresentation p₁ p₀) : Function.Exact p₁ p₀ :=
   LinearMap.exact_iff.mpr h.range_eq_ker.symm
+
+/-- Replacing the presented module by an isomorphic module preserves minimality. -/
+theorem comp_linearEquiv {N : Type*} [AddCommMonoid N] [Module R N]
+    (h : IsMinimalProjectivePresentation p₁ p₀) (e : M ≃ₗ[R] N) :
+    IsMinimalProjectivePresentation p₁ (e.toLinearMap ∘ₗ p₀) where
+  isProjectiveCover :=
+    { projective := h.isProjectiveCover.projective
+      surjective := e.surjective.comp h.surjective
+      isSuperfluous_ker := by simpa using h.isProjectiveCover.isSuperfluous_ker }
+  projective := h.projective
+  range_eq_ker := by simpa using h.range_eq_ker
+  isSuperfluous_ker := h.isSuperfluous_ker
 
 /-- The left-hand map of a presentation lands in the syzygy. -/
 theorem apply_mem_ker (h : IsMinimalProjectivePresentation p₁ p₀) (x : P₁) :

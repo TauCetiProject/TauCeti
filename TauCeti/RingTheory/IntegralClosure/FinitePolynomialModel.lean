@@ -18,7 +18,7 @@ import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 -- Proof-only, and NOT redundant with `DedekindDomain.Overring` below, which imports it plainly
 -- and so re-exports nothing. This supplies the `IsFractionRing` instance on a subalgebra of the
 -- fraction field, which `finite_of_fraction_model` needs; removing it fails to synthesize.
-import Mathlib.RingTheory.DedekindDomain.AdicValuation
+import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 import TauCeti.RingTheory.Adjoin.Tower
 import TauCeti.RingTheory.DedekindDomain.Overring
 import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
@@ -69,7 +69,7 @@ namespace IsIntegralClosure
 
 section
 
-variable {F R A K : Type*} [CommRing F] [CommRing R] [CommRing A] [Field K]
+variable {F R A K : Type*} [CommSemiring F] [CommRing R] [CommRing A] [Field K]
   [Algebra F R] [Algebra F A] [Algebra F K] [Algebra R K] [Algebra A K]
   [IsScalarTower F R K] [IsScalarTower F A K]
 
@@ -91,7 +91,9 @@ theorem finite_of_fraction_model
     { carrier := B
       mul_mem' := B.mul_mem
       add_mem' := B.add_mem
-      algebraMap_mem' := Set.algebraMap_mem_adjoin_image _ hs }
+      algebraMap_mem' x := by
+        simpa using (IsScalarTower.toAlgHom F A K).apply_mem_adjoin_image R
+          (by simp [hs] : x ∈ Algebra.adjoin F (s : Set A)) }
   let integrallyClosedB : IsIntegrallyClosed B := Subalgebra.isIntegrallyClosed_overring D
   let fractionRingB : IsFractionRing B K := inferInstanceAs (IsFractionRing D K)
   let isIntegralClosure : IsIntegralClosure B R K := IsIntegralClosure.of_isIntegrallyClosed B R K
@@ -101,7 +103,7 @@ end
 
 section
 
-variable {F R A K L C : Type*} [CommRing F] [CommRing R] [CommRing A]
+variable {F R A K L C : Type*} [CommSemiring F] [CommRing R] [CommRing A]
   [Field K] [Field L] [CommRing C]
   [Algebra F R] [Algebra F A] [Algebra F L] [Algebra R L]
   [Algebra A K] [Algebra A L] [Algebra K L]
@@ -140,10 +142,7 @@ include K in
 /-- A separating polynomial model integral over the base yields a finite normalization. -/
 theorem finite_of_polynomial_model (e : F[X] ≃ₐ[F] A)
     (hint : ∀ x : A, IsIntegral R (algebraMap A L x)) : Module.Finite R C := by
-  let nontrivial : Nontrivial A := e.symm.toRingHom.domain_nontrivial
-  let noZeroDivisors : NoZeroDivisors A := Function.Injective.noZeroDivisors e.symm
-    e.symm.injective e.symm.map_zero e.symm.map_mul
-  let domain : IsDomain A := NoZeroDivisors.to_isDomain A
+  let domain : IsDomain A := e.symm.toMulEquiv.isDomain F[X]
   let principal : IsPrincipalIdealRing A :=
     IsPrincipalIdealRing.of_surjective e.toRingHom e.surjective
   let dedekind : IsDedekindDomain A := inferInstance

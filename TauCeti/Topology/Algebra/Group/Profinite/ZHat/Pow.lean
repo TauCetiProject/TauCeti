@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Component
+public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Decomposition
 
 /-!
 # Profinite powers
@@ -25,7 +25,10 @@ exponent modulo `n`.
 
 On a pro-`ℓ` group, Tau Ceti's `ℓ`-adic power `TauCeti.IsProP.padicPow` is the same operation
 seen through the `ℓ`-adic component of the exponent: `x ^ᶻ a` is the `ℓ`-adic power of `x` by
-`zHat.component ℓ a` (`TauCeti.zpowHat_eq_padicPow_component`).
+`zHat.component ℓ a` (`TauCeti.zpowHat_eq_padicPow_component`). In particular, on the additive
+group of `ℤ_[ℓ]` itself, written multiplicatively, the profinite power by `a` is multiplication by
+`zHat.component ℓ a`, and on the product `∏ ℓ, ℤ_[ℓ]` it is multiplication by the image of `a`
+under the decomposition `zHat.ringEquivPiPadicInt : ℤ̂ ≃+* ∏ ℓ, ℤ_[ℓ]`.
 
 ## Main definitions
 
@@ -52,6 +55,9 @@ seen through the `ℓ`-adic component of the exponent: `x ^ᶻ a` is the `ℓ`-a
   natural power by the residue of the exponent modulo `n`.
 * `TauCeti.zpowHat_eq_padicPow_component`: on a pro-`ℓ` group the profinite power is the
   `ℓ`-adic power by the `ℓ`-adic component of the exponent.
+* `TauCeti.ofAdd_zpowHat_padicInt`, `TauCeti.ofAdd_zpowHat_pi_padicInt`: on `ℤ_[ℓ]` and on
+  `∏ ℓ, ℤ_[ℓ]`, the profinite power is multiplication by the `ℓ`-adic component of the exponent,
+  respectively by its image in `∏ ℓ, ℤ_[ℓ]`.
 
 ## References
 
@@ -154,6 +160,14 @@ theorem map_zpowHat {F : Type*} [FunLike F G H] [MonoidHomClass F G H] [Continuo
 
 end Map
 
+/-- A continuous action by group endomorphisms commutes with profinite powers. -/
+@[simp]
+theorem smul_zpowHat {Γ : Type*} [Monoid Γ] [MulDistribMulAction Γ G]
+    [ContinuousConstSMul Γ G] (γ : Γ) (x : G) (a : Additive zHat.{u}) :
+    γ • x ^ᶻ a = (γ • x) ^ᶻ a :=
+  map_zpowHat
+    (⟨MulDistribMulAction.toMonoidHom G γ, continuous_const_smul γ⟩ : G →ₜ* G) x a
+
 /-- Profinite powers commute with conjugation. -/
 @[simp]
 theorem conj_zpowHat (g x : G) (a : Additive zHat.{u}) :
@@ -251,5 +265,40 @@ theorem zpowHat_eq_padicPow_component {ℓ : ℕ} [Fact ℓ.Prime] (hG : IsProP 
     (fun n ↦ by simp only [Function.comp_apply, map_intCast, hG.padicPow_intCast]) a).symm
 
 end Group
+
+section PadicInt
+
+open Multiplicative
+
+open scoped zHat
+
+/-- **Profinite powers in `ℤ_[ℓ]`.** In the additive group of `ℤ_[ℓ]`, written multiplicatively,
+the profinite power by `a` is multiplication by the `ℓ`-adic component of `a`. -/
+@[simp]
+theorem ofAdd_zpowHat_padicInt {ℓ : ℕ} [Fact ℓ.Prime] (r : ℤ_[ℓ]) (a : Additive zHat.{u}) :
+    ofAdd r ^ᶻ a = ofAdd (r * zHat.component ℓ a) := by
+  have h := (isProP_multiplicative_padicInt ℓ).padicPow_ofAdd_apply_one (AddMonoidHom.mulLeft r)
+    (continuous_const.mul continuous_id) (zHat.component ℓ a)
+  rw [AddMonoidHom.coe_mulLeft, mul_one] at h
+  rw [zpowHat_eq_padicPow_component (isProP_multiplicative_padicInt ℓ), h]
+
+/-- **Profinite powers in `∏ ℓ, ℤ_[ℓ]`.** In the additive group of the product of the `ℓ`-adic
+integers over all primes, written multiplicatively, the profinite power by `a` is multiplication by
+the image of `a` under the decomposition `zHat.ringEquivPiPadicInt : ℤ̂ ≃+* ∏ ℓ, ℤ_[ℓ]`. -/
+@[simp]
+theorem ofAdd_zpowHat_pi_padicInt (r : ∀ ℓ : Nat.Primes, ℤ_[ℓ]) (a : Additive zHat.{u}) :
+    ofAdd r ^ᶻ a = ofAdd (r * zHat.ringEquivPiPadicInt a) := by
+  refine toAdd.injective (funext fun ℓ ↦ ?_)
+  -- Each coordinate projection is a continuous homomorphism, so it preserves profinite powers.
+  let f : Multiplicative (∀ ℓ : Nat.Primes, ℤ_[ℓ]) →ₜ* Multiplicative ℤ_[ℓ] :=
+    ⟨AddMonoidHom.toMultiplicative (Pi.evalAddMonoidHom (fun ℓ : Nat.Primes ↦ ℤ_[ℓ]) ℓ),
+      continuous_ofAdd.comp ((continuous_apply ℓ).comp continuous_toAdd)⟩
+  -- The values of `f`, unfolded once.
+  have hf (y : Multiplicative (∀ ℓ : Nat.Primes, ℤ_[ℓ])) : (f y).toAdd = y.toAdd ℓ := rfl
+  have hr : f (ofAdd r) = ofAdd (r ℓ) := rfl
+  rw [← hf, map_zpowHat f, hr, ofAdd_zpowHat_padicInt]
+  simp only [toAdd_ofAdd, Pi.mul_apply, zHat.ringEquivPiPadicInt_apply]
+
+end PadicInt
 
 end TauCeti

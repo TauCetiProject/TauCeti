@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
 public import TauCeti.Algebra.Lie.Symplectic.Basic
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Scheme
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.ConstantForm
+public import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 
 /-!
 # The full-weight type-C carrier preserves the standard alternating form
@@ -63,12 +65,6 @@ The file follows the type-`A` counterpart
 `TauCeti/Algebra/Lie/SpecialLinear/StandardCarrier/DeterminantOne.lean`, which proves the same
 containment for the special linear group; the class-two exponential computation and the symplectic
 matrix identities are specific to this file.
-
-This advances Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`: the full-weight type `C` carrier is now proved to lie
-in the expected pinned ambient group. Its consumer is milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`, which needs a simply connected pinned carrier for the
-`C_n(q)` family.
 -/
 
 public section
@@ -92,9 +88,9 @@ standard lattice. Its columns are the coefficients of the images of the basis ve
 integral because the generator preserves the lattice. -/
 noncomputable def rootIntMatrix (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     Matrix (Fin ((n + 1) + (n + 1))) (Fin ((n + 1) + (n + 1))) ℤ :=
-  (latticeBasis n).toMatrix fun s =>
-    ⟨rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator n k)) (latticeBasis n s),
-      rep_rootGenerator_mem_lattice n k (latticeBasis n s).2⟩
+  TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix
+    (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
+    (rep_kostantForm_mem_lattice n) k (latticeBasis n)
 
 /-- A numbered root generator acts on a coordinate basis vector by the corresponding column of
 `TauCeti.SpStd.rootIntMatrix`. -/
@@ -105,15 +101,7 @@ theorem rep_rootGenerator_latticeBasis_eq_sum (k : Fin (n + 1) ⊕ Fin (n + 1))
       ∑ r, rootIntMatrix n k r s •
         ((latticeBasis n r : (lattice n).toAddSubgroup) :
           (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) := by
-  have h := ((latticeBasis n).sum_toMatrix_smul_self
-    (fun s => (⟨rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator n k))
-        (latticeBasis n s),
-      rep_rootGenerator_mem_lattice n k (latticeBasis n s).2⟩ :
-        (lattice n).toAddSubgroup)) s).symm
-  have h' := congrArg
-    (fun w : (lattice n).toAddSubgroup => (w : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ)) h
-  simp only [AddSubmonoidClass.coe_finsetSum] at h'
-  exact h'
+  exact TauCeti.UniversalEnvelopingAlgebra.rep_rootGenerator_basis_eq_sum _ _ _ _ _ _ _ _
 
 /-- Extending an entry of `TauCeti.SpStd.rootIntMatrix` to `ℚ` recovers the corresponding entry of
 the rational matrix of the root generator, at the standard indices enumerated by the coordinate
@@ -124,7 +112,8 @@ theorem intCast_rootIntMatrix (k : Fin (n + 1) ⊕ Fin (n + 1))
       (rootGenerator n k :
         Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ)
         (finSumFinEquiv.symm r) (finSumFinEquiv.symm s) := by
-  rw [rootIntMatrix, Module.Basis.toMatrix_apply, intCast_latticeBasis_repr]
+  rw [rootIntMatrix, TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix,
+    Module.Basis.toMatrix_apply, intCast_latticeBasis_repr]
   -- Reduce the coercion of the anonymous constructor before rewriting under it.
   dsimp only
   rw [rep_ι_apply, coe_latticeBasis]
@@ -164,50 +153,15 @@ private theorem rootIntMatrix_mul_JFin_add_eq_zero (k : Fin (n + 1) ⊕ Fin (n +
 
 private theorem rootIntMatrix_mul_self_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     rootIntMatrix n k * rootIntMatrix n k = 0 := by
-  have hsq := pow_two_rep_rootGenerator_eq_zero n k
-  have hG : (rootGenerator n k :
-      Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ) *
-      (rootGenerator n k : Matrix _ _ ℚ) = 0 := by
-    ext a b
-    have h := DFunLike.congr_fun hsq (Pi.single b (1 : ℚ))
-    rw [pow_two, Module.End.mul_apply, rep_ι_apply, rep_ι_apply,
-      Matrix.mulVec_mulVec] at h
-    simp only [LinearMap.zero_apply] at h
-    have := congrFun h a
-    simpa [Matrix.mulVec_single] using this
   refine Matrix.map_injective (f := ((Int.castRingHom ℚ : ℤ →+* ℚ) : ℤ → ℚ))
     Int.cast_injective ?_
   simp only [Matrix.map_zero _ (map_zero (Int.castRingHom ℚ))]
   rw [← RingHom.mapMatrix_apply, map_mul]
   simp only [RingHom.mapMatrix_apply, Int.coe_castRingHom]
-  rw [map_rootIntMatrix, Matrix.submatrix_mul_equiv, hG]
+  rw [map_rootIntMatrix, Matrix.submatrix_mul_equiv, rootGenerator_mul_self_eq_zero]
   simp
 
 /-! ### The two generator matrices preserve the form -/
-
-private theorem diagonal_mul_mul_transpose_diagonal {N : ℕ} {A : Type*} [CommRing A]
-    (d : Fin N → A) (Jm : Matrix (Fin N) (Fin N) A)
-    (hd : ∀ r c, d r * Jm r c * d c = Jm r c) :
-    Matrix.diagonal d * Jm * (Matrix.diagonal d)ᵀ = Jm := by
-  ext r c
-  rw [Matrix.diagonal_transpose, Matrix.mul_diagonal, Matrix.diagonal_mul]
-  exact hd r c
-
-private theorem one_add_smul_mul_mul_transpose {N : ℕ} {A : Type*} [CommRing A]
-    (Jm Y : Matrix (Fin N) (Fin N) A) (t : A)
-    (hskew : Y * Jm + Jm * Yᵀ = 0) (hsq : Y * Y = 0) :
-    (1 + t • Y) * Jm * (1 + t • Y)ᵀ = Jm := by
-  have hYJ : Y * Jm = -(Jm * Yᵀ) := by
-    rw [eq_neg_iff_add_eq_zero]
-    exact hskew
-  have hcube : Y * Jm * Yᵀ = 0 := by
-    rw [hYJ, Matrix.neg_mul, Matrix.mul_assoc, ← Matrix.transpose_mul, hsq,
-      Matrix.transpose_zero, Matrix.mul_zero, neg_zero]
-  simp only [Matrix.transpose_add, Matrix.transpose_one, Matrix.transpose_smul,
-    Matrix.add_mul, Matrix.mul_add, Matrix.one_mul, Matrix.mul_one, Matrix.smul_mul,
-    Matrix.mul_smul]
-  rw [hcube, smul_zero, add_zero, hYJ, smul_neg]
-  abel
 
 /-- **A numbered root generator is skew-adjoint for the transported alternating form**, over every
 value ring: `X J + J Xᵀ = 0`. -/
@@ -243,64 +197,36 @@ private theorem rootCoordinateMap_symplectic (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     (GeneralLinear.genericMatrix ℤ ((n + 1) + (n + 1))).map
         (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator n)
           (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
+          (rep_kostantForm_mem_lattice n) k
           (isNilpotent_rep_rootGenerator n k) (latticeBasis n)).hom.toAlgHom *
         (TauCeti.JFin (n + 1) ℤ).map
           (algebraMap ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) *
         ((GeneralLinear.genericMatrix ℤ ((n + 1) + (n + 1))).map
           (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator n)
             (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-            (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
+            (rep_kostantForm_mem_lattice n) k
             (isNilpotent_rep_rootGenerator n k) (latticeBasis n)).hom.toAlgHom)ᵀ =
       (TauCeti.JFin (n + 1) ℤ).map
         (algebraMap ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) := by
   have ht :=
     map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul
       (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
+      (rep_kostantForm_mem_lattice n) k
       (isNilpotent_rep_rootGenerator n k) (latticeBasis n) (rootIntMatrix n k)
       (nilpotencyClass_rep_rootGenerator n k).le (rep_rootGenerator_latticeBasis_eq_sum n k)
   rw [ht, TauCeti.JFin_map (n + 1) (algebraMap ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))]
-  exact one_add_smul_mul_mul_transpose _ _ _ (rootIntMatrix_map_mul_JFin_add_eq_zero n k)
+  exact Matrix.one_add_smul_mul_mul_transpose _ _ _ (rootIntMatrix_map_mul_JFin_add_eq_zero n k)
     (rootIntMatrix_map_mul_self_eq_zero n k)
 
 /-! ### The weight torus preserves the form -/
-
-private theorem map_genericMatrix_weightTorusCoordinateMap :
-    (GeneralLinear.genericMatrix ℤ ((n + 1) + (n + 1))).map
-        (GeneralLinear.weightTorusCoordinateMap (R := ℤ) (basisWeight n)).hom.toAlgHom =
-      Matrix.diagonal fun a => MonoidAlgebra.single
-        (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (basisWeight n a))) 1 := by
-  apply Matrix.ext
-  intro a c
-  rw [Matrix.map_apply, GeneralLinear.genericMatrix_apply]
-  simp only [BialgHom.coe_toAlgHom]
-  rw [GeneralLinear.weightTorusCoordinateMap_X, Matrix.diagonal_apply]
 
 /-- The weight at the symplectic partner of a coordinate is the negative of the weight at the
 coordinate: the standard weights come in the pairs `ε_a` and `-ε_a`. -/
 private theorem basisWeight_inr_eq_neg (x : Fin (n + 1)) :
     basisWeight n (finSumFinEquiv (Sum.inr x)) =
       -basisWeight n (finSumFinEquiv (Sum.inl x)) := by
-  funext j
   rw [basisWeight_apply, basisWeight_apply, Equiv.symm_apply_apply, Equiv.symm_apply_apply,
-    weight_inr, Pi.neg_apply, weight_inl]
-
-/-- The weight-torus characters at a coordinate and at its symplectic partner are inverse to
-each other, because their weights sum to zero. -/
-private theorem torusCharacter_mul_partner (x : Fin (n + 1)) :
-    (MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm
-        (basisWeight n (finSumFinEquiv (Sum.inl x))))) (1 : ℤ)) *
-      (MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm
-        (basisWeight n (finSumFinEquiv (Sum.inr x))))) (1 : ℤ)) = 1 := by
-  rw [MonoidAlgebra.single_mul_single, mul_one, ← ofAdd_add]
-  have hz : Finsupp.equivFunOnFinite.symm (basisWeight n (finSumFinEquiv (Sum.inl x))) +
-      Finsupp.equivFunOnFinite.symm (basisWeight n (finSumFinEquiv (Sum.inr x))) = 0 := by
-    rw [basisWeight_inr_eq_neg]
-    ext j
-    simp
-  rw [hz]
-  rfl
+    weight_inr, weight_inl]
 
 private theorem torusCoordinateMap_symplectic :
     (GeneralLinear.genericMatrix ℤ ((n + 1) + (n + 1))).map
@@ -315,11 +241,11 @@ private theorem torusCoordinateMap_symplectic :
         (algebraMap ℤ
           (DiagonalizableGroup.coordinateRing ℤ
             (SplitTorus.characterGroup (Fin (n + 1)))).obj) := by
-  rw [map_genericMatrix_weightTorusCoordinateMap,
+  rw [GeneralLinear.map_genericMatrix_weightTorusCoordinateMap,
     TauCeti.JFin_map (n + 1)
       (algebraMap ℤ
         (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup (Fin (n + 1)))).obj)]
-  refine diagonal_mul_mul_transpose_diagonal _ _ ?_
+  refine Matrix.diagonal_mul_mul_transpose_diagonal _ _ ?_
   intro r c
   -- Name the two indices through the enumeration of the coordinate basis, so that the entry of
   -- the transported form is an entry of Mathlib's `Matrix.J`.
@@ -340,15 +266,16 @@ private theorem torusCoordinateMap_symplectic :
       rcases eq_or_ne x y with rfl | hxy
       · simp only [Matrix.J, Matrix.fromBlocks_apply₁₂, Matrix.neg_apply, Matrix.one_apply_eq,
           mul_neg, mul_one, neg_mul, neg_inj]
-        exact torusCharacter_mul_partner n x
+        rw [basisWeight_inr_eq_neg]
+        exact SplitTorus.single_weightCharacter_mul_single_weightCharacter_neg _
       · simp [Matrix.J, hxy]
   | inr x =>
     cases b with
     | inl y =>
       rcases eq_or_ne x y with rfl | hxy
       · simp only [Matrix.J, Matrix.fromBlocks_apply₂₁, Matrix.one_apply_eq, mul_one]
-        rw [mul_comm]
-        exact torusCharacter_mul_partner n x
+        rw [mul_comm, basisWeight_inr_eq_neg]
+        exact SplitTorus.single_weightCharacter_mul_single_weightCharacter_neg _
       · simp [Matrix.J, hxy]
     | inr y => simp [Matrix.J]
 
@@ -359,12 +286,9 @@ private theorem torusCoordinateMap_symplectic :
 factor through `Sp_(2n+2)`. -/
 theorem symplecticDefiningHopfIdeal_le_definingIdeal :
     Symplectic.definingHopfIdeal ℤ (n + 1) ≤ definingIdeal n := by
-  rw [definingIdeal_def, TauCeti.UniversalEnvelopingAlgebra.le_kostantToralDefiningIdeal_iff]
-  refine ⟨fun k => ?_, ?_⟩
-  · exact ConstantForm.definingHopfIdeal_toIdeal_le_ker_of_map_genericMatrix_mul_mul_transpose
-      ℤ _ _ _ (rootCoordinateMap_symplectic n k)
-  · exact ConstantForm.definingHopfIdeal_toIdeal_le_ker_of_map_genericMatrix_mul_mul_transpose
-      ℤ _ _ _ (torusCoordinateMap_symplectic n)
+  rw [definingIdeal_def]
+  exact UniversalEnvelopingAlgebra.constantFormDefiningHopfIdeal_le_kostantToralDefiningIdeal
+    _ _ _ _ _ _ _ _ _ (rootCoordinateMap_symplectic n) (torusCoordinateMap_symplectic n)
 
 /-- Every matrix-valued point of the full-weight type `C_(n+1)` carrier preserves the standard
 alternating form. -/
@@ -372,18 +296,11 @@ theorem mem_GLSymplecticFin_of_mem_points {A : Type v} [CommRing A]
     {g : Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A} (hg : g ∈ points n A) :
     g ∈ TauCeti.GLSymplecticFin (n + 1) A := by
   rw [points_def] at hg
-  have hsp := GeneralLinear.hopfIdealPointsSubgroup_le_of_le ((n + 1) + (n + 1))
-    (symplecticDefiningHopfIdeal_le_definingIdeal n) A hg
-  rw [GeneralLinear.mem_hopfIdealPointsSubgroup_iff] at hsp
-  have hmem : ((GeneralLinear.pointsMulEquiv (R := ℤ) ((n + 1) + (n + 1))).symm g) ∈
-      CommHopfAlgCat.quotientPointsSubgroup
-        (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1)))
-        (Symplectic.definingHopfIdeal ℤ (n + 1)) (CommAlgCat.of ℤ A) :=
-    (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mpr hsp
-  rw [ConstantForm.mem_definingPointsSubgroup_iff, TauCeti.JFin_map,
-    MulEquiv.apply_symm_apply] at hmem
+  have h := ConstantForm.mul_mul_transpose_of_mem_hopfIdealPointsSubgroup
+    (symplecticDefiningHopfIdeal_le_definingIdeal n) hg
+  rw [TauCeti.JFin_map] at h
   rw [TauCeti.GLSymplecticFin.mem_iff]
-  exact hmem
+  exact h
 
 /-- The canonical morphism from the full-weight type `C_(n+1)` carrier to `Sp_(2n+2)`, induced by
 the containment of defining Hopf ideals. -/
@@ -407,6 +324,5 @@ theorem toSymplectic_comp_inclusion :
   rw [toSymplectic, Symplectic.inclusion_def, GeneralLinear.hopfIdealInclusion_def,
     carrierι_def, TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupSchemeι_def,
     ← Category.assoc, CommHopfAlgCat.quotientSpecMapOfLe_comp_quotientSpecι]
-  simp
 
 end TauCeti.SpStd

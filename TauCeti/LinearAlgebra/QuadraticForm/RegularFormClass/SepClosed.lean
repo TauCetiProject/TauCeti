@@ -17,9 +17,9 @@ same rank are isometric. Thus rank completely determines a `RegularFormClass`.
 ## References
 
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Chapter II, §3.
-* `QuadraticForm.equivalent_weightedSumSquares_of_isSepClosed` supplies the normalization to
-  the standard sum of squares; Mathlib's analogous algebraically closed classification is
-  `QuadraticForm.equivalent_weightedSumSquares_of_isAlgClosed`.
+* `QuadraticForm.equivalent_of_finrank_eq_of_isSepClosed` supplies the classification of regular
+  forms by dimension; Mathlib's analogous algebraically closed classification is
+  `QuadraticForm.equivalent_of_isAlgClosed`.
 -/
 
 public section
@@ -36,17 +36,9 @@ theorem RegularFormClass.rank_injective_of_isSepClosed :
   | _ p =>
     induction y using Quotient.inductionOn with
     | _ q =>
-      have hp := (presentedForm p).equivalent_weightedSumSquares_of_isSepClosed
-        ((QuadraticMap.nondegenerate_associated_iff (Q := presentedForm p)).2
-          (nondegenerate_presentedForm p)).1
-      have hq := (presentedForm q).equivalent_weightedSumSquares_of_isSepClosed
-        ((QuadraticMap.nondegenerate_associated_iff (Q := presentedForm q)).2
-          (nondegenerate_presentedForm q)).1
-      rcases p with ⟨n, w⟩
-      rcases q with ⟨m, v⟩
-      have h' : n = m := by simpa only [RegularFormClass.rank_mk] using h
-      subst m
-      apply RegularFormClass.mk_eq_mk_iff.mpr
-      exact hp.trans hq.symm
+      refine RegularFormClass.mk_eq_mk_iff.mpr <|
+        (presentedForm p).equivalent_of_finrank_eq_of_isSepClosed (presentedForm q)
+          (nondegenerate_presentedForm p) (nondegenerate_presentedForm q) ?_
+      simpa using h
 
 end TauCeti

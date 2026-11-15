@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.EquationalCriterion
-public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.NormTrace
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.Trace
 public import TauCeti.RingTheory.DedekindDomain.Different.DualFamily
 
 /-!
@@ -43,6 +43,9 @@ All in the namespace `IsDedekindDomain.HeightOneSpectrum`, as they take the plac
   ideals, as the extension of the global trace dual along `𝒪 L → 𝒪_w`.
 * `map_differentIdeal_eq_differentIdeal_adicCompletionIntegers`: the different ideal commutes
   with completion.
+* `differentIdeal_integralSemilocal`: the different, extended to the integral semilocal algebra
+  `𝒪_v ⊗[𝒪 K] 𝒪 L` and read through `TauCeti.integralSemilocalEquiv`, is the product of the local
+  differents at the places above `v`.
 
 ## References
 
@@ -200,9 +203,10 @@ theorem extended_dual_one_eq_dual_one_adicCompletionIntegers :
   have hdual : ((FractionalIdeal.dual (𝒪 K) K (1 : FractionalIdeal (𝒪 L)⁰ L)) : Set L) =
       Submodule.traceDual (𝒪 K) K (1 : Submodule (𝒪 L) L) := by
     ext x
-    rw [SetLike.mem_coe, SetLike.mem_coe, ← FractionalIdeal.mem_coe, FractionalIdeal.coe_dual_one]
-  rw [← FractionalIdeal.coeToSubmodule_inj, FractionalIdeal.coe_extended_eq_span, hmap, hdual,
-    FractionalIdeal.coe_dual_one]
+    rw [SetLike.mem_coe, SetLike.mem_coe, ← FractionalIdeal.mem_coeToSubmodule,
+      FractionalIdeal.coeToSubmodule_dual_one]
+  rw [← FractionalIdeal.coeToSubmodule_inj, FractionalIdeal.coeToSubmodule_extended_eq_span,
+    hmap, hdual, FractionalIdeal.coeToSubmodule_dual_one]
   exact span_traceDual_one_eq_traceDual_one_adicCompletionIntegers v w
 
 /-- **The different commutes with completion.** The different ideal of `𝒪 L` over `𝒪 K` generates
@@ -218,5 +222,40 @@ theorem map_differentIdeal_eq_differentIdeal_adicCompletionIntegers :
     coeIdeal_differentIdeal (v.adicCompletionIntegers K) (v.adicCompletion K) (w.adicCompletion L)
       (w.adicCompletionIntegers L), map_inv₀, FractionalIdeal.extendedHom'_apply,
     extended_dual_one_eq_dual_one_adicCompletionIntegers v w]
+
+/-- **The different of the integral semilocal algebra, read componentwise.** Extend the different
+of `𝒪 L` over `𝒪 K` to the integral semilocal algebra `𝒪_v ⊗[𝒪 K] 𝒪 L` and transport it along the
+integral semilocal decomposition `𝒪_v ⊗[𝒪 K] 𝒪 L ≃ ∏_{w ∣ v} 𝒪_w`: the result is the product of
+the differents of the local extensions `𝒪_w / 𝒪_v`. The tensor product is not a domain, so the
+left-hand side is the extended ideal rather than a different ideal of its own. -/
+theorem differentIdeal_integralSemilocal :
+    ((differentIdeal (𝒪 K) (𝒪 L)).map
+        (Algebra.TensorProduct.includeRight :
+          𝒪 L →ₐ[𝒪 K] v.adicCompletionIntegers K ⊗[𝒪 K] 𝒪 L)).map
+        (integralSemilocalEquiv L v) =
+      Ideal.pi fun u ↦
+        differentIdeal (v.adicCompletionIntegers K) (u.1.adicCompletionIntegers L) := by
+  have hmap : ((differentIdeal (𝒪 K) (𝒪 L)).map
+        (Algebra.TensorProduct.includeRight :
+          𝒪 L →ₐ[𝒪 K] v.adicCompletionIntegers K ⊗[𝒪 K] 𝒪 L)).map
+        (integralSemilocalEquiv L v) = (differentIdeal (𝒪 K) (𝒪 L)).map
+        ((integralSemilocalEquiv L v).toRingEquiv.toRingHom.comp
+          (Algebra.TensorProduct.includeRight : 𝒪 L →ₐ[𝒪 K] _).toRingHom) :=
+    Ideal.map_map (Algebra.TensorProduct.includeRight : 𝒪 L →ₐ[𝒪 K] _).toRingHom
+      (integralSemilocalEquiv L v).toRingEquiv.toRingHom
+  rw [hmap]
+  apply Ideal.piOrderIso.injective
+  funext u
+  let hu : u.1.asIdeal.LiesOver v.asIdeal := u.2
+  -- Read the order isomorphism as the tuple of images under the factor projections.
+  simp only [Ideal.piOrderIso, OrderIso.symm_mk, RelIso.coe_fn_mk,
+    Equiv.coe_fn_symm_mk, RingEquiv.toRingHom_eq_coe, AlgEquiv.toRingEquiv_toRingHom,
+    AlgHom.toRingHom_eq_coe]
+  rw [Ideal.map_evalRingHom_pi, Ideal.map_map,
+    ← map_differentIdeal_eq_differentIdeal_adicCompletionIntegers v u.1]
+  -- At `u`, the composite sends `x` to `1 · x`, the image of `x` in `𝒪_u`.
+  congr 1
+  ext x
+  simp
 
 end IsDedekindDomain.HeightOneSpectrum

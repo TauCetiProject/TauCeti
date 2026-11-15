@@ -7,6 +7,8 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Primitive
 public import Mathlib.GroupTheory.SpecificGroups.Alternating
+public import TauCeti.GroupTheory.Perm.Partition
+import Mathlib.GroupTheory.GroupAction.Transitive
 
 /-!
 # Transporting permutation groups along an equivalence
@@ -16,7 +18,8 @@ An equivalence `e : α ≃ β` induces the group isomorphism `Equiv.permCongrHom
 `G.map e.permCongrHom.toMonoidHom ≤ Equiv.Perm β`. The two subgroups are the same permutation
 group written in two numberings of the points. This file records that the invariants of a
 permutation group which do not depend on the numbering are unchanged: containment in the
-alternating group, transitivity, and primitivity. (The order is `Subgroup.card_map_of_injective`.)
+alternating group, transitivity, primitivity, and full cycle types.
+(The order is `Subgroup.card_map_of_injective`.)
 
 The same invariants may also be read off the image of a permutation representation instead of
 the acting group: an action of `G` on `α` and the action of the subgroup
@@ -32,6 +35,7 @@ the acting group: an action of `G` on `α` and the action of the subgroup
 * `Equiv.isPretransitive_inf_alternatingGroup_map_permCongrHom_iff`: transport preserves
   transitivity of the even part of a subgroup.
 * `Equiv.isPreprimitive_map_permCongrHom_iff`: transport preserves primitivity.
+* `Equiv.image_fullCycleType_map_permCongrHom`: transport preserves the full cycle-type set.
 * `MulAction.isPretransitive_range_toPermHom_iff`, `MulAction.isPreprimitive_range_toPermHom_iff`:
   a group action and its image in the permutations are transitive, respectively primitive,
   together.
@@ -48,14 +52,14 @@ variable {α β : Type*}
 /-- Conjugation by a permutation is the transport automorphism induced by that permutation. -/
 theorem conj_eq_permCongrHom (τ : Perm α) : MulAut.conj τ = τ.permCongrHom := by
   ext σ x
-  simp [MulAut.conj_apply, Equiv.permCongrHom_coe]
+  simp [MulAut.conj_apply, permCongrHom_coe]
 
 /-- The equivalence `e`, read as an equivariant map from the permutation representation of `G`
 to that of its transport. -/
 private def permCongrHomMulActionHom (e : α ≃ β) (G : Subgroup (Perm α)) :
     α →ₑ[e.permCongrHom.subgroupMap G] β where
   toFun := e
-  map_smul' g x := by simp [Subgroup.smul_def, Equiv.permCongrHom_coe]
+  map_smul' g x := by simp [Subgroup.smul_def, permCongrHom_coe]
 
 /-- Transport along an equivalence preserves transitivity. -/
 theorem isPretransitive_map_permCongrHom_iff (e : α ≃ β) (G : Subgroup (Perm α)) :
@@ -78,9 +82,24 @@ theorem map_permCongrHom_eq_map_conj (e e' : α ≃ β) (G : Subgroup (Perm α))
   rw [Subgroup.map_map]
   congr 1
   ext σ x
-  simp [Equiv.permCongrHom_coe]
+  simp [permCongrHom_coe]
 
 variable [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β]
+
+-- Rewrite the complete cycle-type image before the subgroup-map coercion unfolds.
+/-- Transporting a permutation subgroup along a numbering preserves its full cycle types,
+including the parts contributed by fixed points. -/
+@[simp↓]
+theorem image_fullCycleType_map_permCongrHom (e : α ≃ β) (G : Subgroup (Perm α)) :
+    Perm.fullCycleType '' (G.map e.permCongrHom.toMonoidHom : Set (Perm β)) =
+      Perm.fullCycleType '' (G : Set (Perm α)) := by
+  ext t
+  simp only [Set.mem_image]
+  constructor
+  · rintro ⟨_, ⟨σ, hσ, rfl⟩, ht⟩
+    exact ⟨σ, hσ, (Perm.fullCycleType_permCongr e σ).symm.trans ht⟩
+  · rintro ⟨σ, hσ, rfl⟩
+    exact ⟨e.permCongrHom σ, ⟨σ, hσ, rfl⟩, Perm.fullCycleType_permCongr e σ⟩
 
 /-- Transport along an equivalence carries the even part of a permutation subgroup to the
 even part of its transport. -/
@@ -115,8 +134,8 @@ theorem isPretransitive_inf_alternatingGroup_map_permCongrHom_iff (e : α ≃ β
 preserves the sign of every permutation. -/
 theorem map_permCongrHom_le_alternatingGroup_iff (e : α ≃ β) (G : Subgroup (Perm α)) :
     G.map e.permCongrHom.toMonoidHom ≤ alternatingGroup β ↔ G ≤ alternatingGroup α := by
-  simp [IsConcreteLE.le_iff, Equiv.Perm.mem_alternatingGroup,
-    Equiv.permCongrHom_coe, Equiv.Perm.sign_permCongr]
+  simp [IsConcreteLE.le_iff, Perm.mem_alternatingGroup,
+    permCongrHom_coe, Perm.sign_permCongr]
 
 end Equiv
 

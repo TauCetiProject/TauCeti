@@ -30,13 +30,23 @@ directly with `curveVelocity`.
   on an arbitrary parameter set, squared speed and speed are constant on each connected
   component.
 * `TauCeti.Manifold.IsGeodesicCurveOn.energy_eq`: the energy of a geodesic segment is
-  `(b - a) ‖γ'(a)‖² / 2`.
+  `(b - a) ‖curveVelocityWithin I γ s a‖² / 2`, on any parameter set `s` containing the segment.
 * `TauCeti.Manifold.IsGeodesicCurve.inner_curveVelocity_self_eq`: an all-time geodesic has the
   same squared speed at any two parameters.
 * `TauCeti.Manifold.IsGeodesicCurve.norm_curveVelocity_eq`: an all-time geodesic has the same
   speed at any two parameters.
-* `TauCeti.Manifold.inner_curveVelocity_maximalGeodesic_self`: the squared speed of a maximal
-  geodesic is that of its initial velocity.
+* `TauCeti.Manifold.IsGeodesicCurve.energy_eq`: the energy of an all-time geodesic between `a`
+  and `b` is `(b - a) ‖curveVelocity I γ a‖² / 2`.
+* `TauCeti.Manifold.inner_curveVelocity_maximalGeodesic_self`: on its maximal interval, the
+  squared speed of a maximal geodesic is that of its initial velocity.
+* `TauCeti.Manifold.norm_curveVelocity_maximalGeodesic`: on its maximal interval, its speed
+  is the norm of the initial velocity.
+* `TauCeti.Manifold.curveVelocity_maximalGeodesic_eq_zero`: on its maximal interval, velocity
+  vanishes exactly when the initial velocity vanishes.
+* `TauCeti.Manifold.curveVelocity_maximalGeodesic_ne_zero`: its velocity vanishes nowhere on
+  its maximal interval when its initial velocity is nonzero.
+* `TauCeti.Manifold.energy_maximalGeodesic`: hence its energy between two parameters of its
+  maximal interval is `(b - a) ‖v‖² / 2`.
 
 ## References
 
@@ -61,7 +71,6 @@ variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {s : Set ℝ}
@@ -83,17 +92,16 @@ theorem IsGeodesicCurveOn.inner_curveVelocityWithin_self_eq
   · intro t ht
     have hcoord := differentiableWithinAt_sectionCoord_curveVelocityWithin γ h.uniqueDiffOn
       h.contMDiffOn ht (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
-    exact hmetric.differentiableWithinAt_inner (h.uniqueDiffOn t ht)
-      (h.mdifferentiableOn t ht) hcoord hcoord
+    exact hmetric.differentiableWithinAt_inner (h.mdifferentiableOn t ht) hcoord hcoord
   · intro t ht
     have hcoord := differentiableWithinAt_sectionCoord_curveVelocityWithin γ h.uniqueDiffOn
       h.contMDiffOn ht (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
-    have hprod := hmetric.hasDerivWithinAt_inner_alongCurveWithin (h.uniqueDiffOn t ht)
+    have hprod := hmetric.hasDerivWithinAt_inner_alongCurveWithin
       (h.mdifferentiableOn t ht) hcoord hcoord
     have hderiv : HasDerivWithinAt (fun r ↦
         inner ℝ (curveVelocityWithin I γ s r) (curveVelocityWithin I γ s r)) 0 s t :=
       hprod.congr_deriv (by
-        rw [h.alongCurveWithin_curveVelocityWithin_eq_zero t ht]
+        rw [← accelerationWithin_def, h.accelerationWithin_eq_zero t ht]
         simp)
     simpa using hderiv.hasFDerivWithinAt.fderivWithin (h.uniqueDiffOn t ht)
   · exact ha
@@ -142,22 +150,36 @@ theorem IsGeodesicCurveOn.norm_curveVelocityWithin_eq_of_mem_connectedComponentI
   rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner,
     h.inner_curveVelocityWithin_self_eq_of_mem_connectedComponentIn hb]
 
+/-- Nonzero velocity propagates along each connected component of a geodesic's parameter set. -/
+theorem IsGeodesicCurveOn.curveVelocityWithin_ne_zero_of_mem_connectedComponentIn
+    (h : IsGeodesicCurveOn I γ s) {a b : ℝ} (hb : b ∈ connectedComponentIn s a)
+    (ha : curveVelocityWithin I γ s a ≠ 0) : curveVelocityWithin I γ s b ≠ 0 := by
+  apply norm_ne_zero_iff.1
+  rw [← h.norm_curveVelocityWithin_eq_of_mem_connectedComponentIn hb]
+  exact norm_ne_zero_iff.2 ha
+
+/-- Nonzero velocity at one parameter of a geodesic on a preconnected set implies nonzero
+velocity at every parameter of that set. -/
+theorem IsGeodesicCurveOn.curveVelocityWithin_ne_zero
+    (h : IsGeodesicCurveOn I γ s) (hconn : IsPreconnected s) {a b : ℝ}
+    (ha : a ∈ s) (hb : b ∈ s) (hv : curveVelocityWithin I γ s a ≠ 0) :
+    curveVelocityWithin I γ s b ≠ 0 :=
+  h.curveVelocityWithin_ne_zero_of_mem_connectedComponentIn
+    (hconn.subset_connectedComponentIn ha Subset.rfl hb) hv
+
 /-- **The energy of a geodesic segment.** A geodesic has constant speed, so its energy between
-`a` and `b` is `(b - a) ‖γ'(a)‖² / 2`. -/
-theorem IsGeodesicCurveOn.energy_eq (h : IsGeodesicCurveOn I γ s)
-    (hs : IsOpen s) {a b : ℝ} (hsub : uIcc a b ⊆ s) :
-    energy I γ a b = (b - a) * ‖curveVelocity I γ a‖ ^ 2 / 2 := by
-  have key : EqOn (fun t ↦ ‖curveVelocity I γ t‖ ^ 2) (fun _ ↦ ‖curveVelocity I γ a‖ ^ 2)
-      (uIcc a b) := by
-    intro t ht
-    have ht' : t ∈ connectedComponentIn s a :=
-      isPreconnected_uIcc.subset_connectedComponentIn left_mem_uIcc hsub ht
-    simp only
-    rw [← curveVelocityWithin_of_mem_nhds (hs.mem_nhds (hsub ht)),
-      ← curveVelocityWithin_of_mem_nhds (hs.mem_nhds (hsub left_mem_uIcc)),
-      h.norm_curveVelocityWithin_eq_of_mem_connectedComponentIn ht']
-  rw [energy_def, intervalIntegral.integral_congr key, intervalIntegral.integral_const,
-    smul_eq_mul]
+`a` and `b` is `(b - a) ‖curveVelocityWithin I γ s a‖² / 2` whenever the parameter set `s`
+contains the interval between them. The speed is that of the within-set velocity, so `s` need not
+be open: this applies to geodesic segments on closed intervals. -/
+theorem IsGeodesicCurveOn.energy_eq (h : IsGeodesicCurveOn I γ s) {a b : ℝ}
+    (hsub : uIcc a b ⊆ s) :
+    energy I γ a b = (b - a) * ‖curveVelocityWithin I γ s a‖ ^ 2 / 2 := by
+  have key : EqOn (fun t ↦ ‖curveVelocityWithin I γ s t‖ ^ 2)
+      (fun _ ↦ ‖curveVelocityWithin I γ s a‖ ^ 2) (uIcc a b) := fun t ht ↦ by
+    rw [h.norm_curveVelocityWithin_eq_of_mem_connectedComponentIn
+      (isPreconnected_uIcc.subset_connectedComponentIn left_mem_uIcc hsub ht)]
+  rw [energy_eq_integral_curveVelocityWithin γ hsub, intervalIntegral.integral_congr key,
+    intervalIntegral.integral_const, smul_eq_mul, mul_div_assoc]
 
 /-- An all-time geodesic has the same squared speed, expressed using the unrestricted
 `curveVelocity`, at every two parameters. -/
@@ -179,6 +201,21 @@ theorem IsGeodesicCurve.norm_curveVelocity_eq
     IsGeodesicCurveOn.norm_curveVelocityWithin_eq
       ((isGeodesicCurveOn_univ (I := I) (γ := γ)).mpr h) isPreconnected_univ
       (Set.mem_univ a) (Set.mem_univ b)
+
+/-- An all-time geodesic with nonzero velocity at one parameter has nonzero velocity at every
+parameter. -/
+theorem IsGeodesicCurve.curveVelocity_ne_zero (h : IsGeodesicCurve I γ) {a b : ℝ}
+    (ha : curveVelocity I γ a ≠ 0) : curveVelocity I γ b ≠ 0 := by
+  simpa only [curveVelocityWithin_univ] using
+    ((isGeodesicCurveOn_univ (I := I) (γ := γ)).mpr h).curveVelocityWithin_ne_zero
+      isPreconnected_univ (mem_univ a) (mem_univ b) (by simpa using ha)
+
+/-- The energy of an all-time geodesic between `a` and `b` is `(b - a) ‖γ'(a)‖² / 2`, expressed
+using the unrestricted `curveVelocity`. -/
+theorem IsGeodesicCurve.energy_eq (h : IsGeodesicCurve I γ) (a b : ℝ) :
+    energy I γ a b = (b - a) * ‖curveVelocity I γ a‖ ^ 2 / 2 := by
+  simpa only [curveVelocityWithin_univ] using
+    ((isGeodesicCurveOn_univ (I := I) (γ := γ)).mpr h).energy_eq (subset_univ _)
 
 end TauCeti.Manifold
 
@@ -211,6 +248,40 @@ theorem inner_curveVelocity_maximalGeodesic_self [T2Space M]
   have hinitial := congrArg (fun z : TangentBundle I M ↦ inner ℝ z.2 z.2) hgeo.initial_eq
   rw [curveVelocityWithin_of_mem_nhds hzero_nhds] at hinitial
   exact hsquared.trans hinitial
+
+/-- The speed of a maximal geodesic equals the norm of its initial velocity throughout its
+maximal interval. -/
+@[simp]
+theorem norm_curveVelocity_maximalGeodesic [T2Space M] {p : M} {v : TangentSpace I p} {t : ℝ}
+    (ht : t ∈ geodesicInterval I M p v) :
+    ‖curveVelocity I (maximalGeodesic I M p v) t‖ = ‖v‖ := by
+  rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner,
+    inner_curveVelocity_maximalGeodesic_self ht]
+
+/-- The velocity of a maximal geodesic vanishes in its maximal interval exactly when its initial
+velocity vanishes. -/
+@[simp]
+theorem curveVelocity_maximalGeodesic_eq_zero [T2Space M] {p : M} {v : TangentSpace I p} {t : ℝ}
+    (ht : t ∈ geodesicInterval I M p v) :
+    curveVelocity I (maximalGeodesic I M p v) t = 0 ↔ v = 0 := by
+  rw [← norm_eq_zero, norm_curveVelocity_maximalGeodesic ht, norm_eq_zero]
+
+/-- A maximal geodesic with nonzero initial velocity has nonzero velocity at every point of its
+maximal interval. -/
+theorem curveVelocity_maximalGeodesic_ne_zero [T2Space M] {p : M} {v : TangentSpace I p} {t : ℝ}
+    (hv : v ≠ 0) (ht : t ∈ geodesicInterval I M p v) :
+    curveVelocity I (maximalGeodesic I M p v) t ≠ 0 :=
+  (curveVelocity_maximalGeodesic_eq_zero ht).not.2 hv
+
+/-- On any subinterval of its maximal interval, the energy of a maximal geodesic is half the
+squared norm of its initial velocity times the duration. -/
+theorem energy_maximalGeodesic [T2Space M] {p : M} {v : TangentSpace I p} {a b : ℝ}
+    (ha : a ∈ geodesicInterval I M p v) (hb : b ∈ geodesicInterval I M p v) :
+    energy I (maximalGeodesic I M p v) a b = (b - a) * ‖v‖ ^ 2 / 2 := by
+  rw [(isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn.energy_eq
+      (isPreconnected_geodesicInterval.ordConnected.uIcc_subset ha hb),
+    curveVelocityWithin_of_mem_nhds (isOpen_geodesicInterval.mem_nhds ha),
+    norm_curveVelocity_maximalGeodesic ha]
 
 end TauCeti.Manifold
 

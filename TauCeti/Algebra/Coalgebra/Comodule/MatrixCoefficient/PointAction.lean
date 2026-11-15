@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
 public import TauCeti.LinearAlgebra.GeneralLinearGroup.Unipotent
@@ -46,11 +46,10 @@ found on geometric points to an actual flag by subcomodules.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
 
-This is the point-separation bridge in Layer 5, "Lie–Kolchin; solvable groups", of the
-ReductiveGroups roadmap. Lie–Kolchin produces a basis in which every geometric point acts
-triangularly; for a unipotent group the diagonal characters are trivial, and the results here
-turn that pointwise statement into the upper-unitriangular comodule flag used to embed the group
-in `Uₙ`.
+This is the point-separation bridge for the Lie–Kolchin theorem. Lie–Kolchin produces a basis in
+which every geometric point acts triangularly; for a unipotent group the diagonal characters are
+trivial, and the results here turn that pointwise statement into the upper-unitriangular comodule
+flag used to embed the group in `Uₙ`.
 -/
 
 public section
@@ -112,13 +111,15 @@ the comodule unipotent. -/
 theorem isUnipotent_pointsAction_of_coefficientMatrix_charpoly_eq
     {k : Type u} [Field k] {H : Type v} [CommRing H] [HopfAlgebra k H]
     {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M]
-    [Module.Free k M] [Module.Finite k M] {L : Type x} [CommRing L] [Algebra k L]
+    {L : Type x} [CommRing L] [Algebra k L]
     (g : WithConv (H →ₐ[k] L)) {ι : Type y} [Fintype ι] [DecidableEq ι] (b : Basis ι k M)
     (hCcharpoly : (coefficientMatrix (C := H) b).charpoly =
       ((Polynomial.X - (1 : Polynomial k)) ^ Module.finrank k M).map
         (algebraMap k H)) :
     LinearMap.GeneralLinearGroup.IsUnipotent
       (LinearMap.GeneralLinearGroup.ofLinearEquiv (pointsAction M g)) := by
+  have := Module.Free.of_basis b
+  have := Module.Finite.of_basis b
   let C := coefficientMatrix (C := H) b
   let d := Module.finrank k M
   let P : Polynomial k := (Polynomial.X - 1) ^ d

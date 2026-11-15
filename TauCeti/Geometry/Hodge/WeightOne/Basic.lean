@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Basic.Complex.IZPow
 public import TauCeti.Geometry.Hodge.WeilOperator
-public import TauCeti.Geometry.Symplectic.Complex.Complexification
+public import TauCeti.Geometry.Symplectic.Complex.Projection
 public import TauCeti.LinearAlgebra.Eigenspace.Transport
 
 /-!
@@ -20,7 +21,7 @@ This file identifies the `i`- and `-i`-eigenspaces of the Weil operator with `H^
 `H^{0,1}`. It then transfers those identifications to the scalar extension of the real almost
 complex structure constructed in `TauCeti.Geometry.Hodge.WeilOperator`. In weight one without
 effectivity, the two eigenspaces aggregate all Hodge components according to their first index
-modulo two.
+modulo two, so the identifications with `H^{1,0}` and `H^{0,1}` characterize effectivity.
 
 Conversely, an almost complex structure on a real vector space determines an effective pure Hodge
 structure of weight one on its complexification. Its Hodge components are the `i`- and
@@ -42,6 +43,12 @@ original complex vector space. The almost-complex structure reuses
 * `TauCeti.Hodge.HodgeStructureOn.eigenspace_weilOperator_I` and
   `TauCeti.Hodge.HodgeStructureOn.eigenspace_weilOperator_neg_I`: for an effective structure, the
   two eigenspaces of the Weil operator are the two Hodge components.
+* `TauCeti.Hodge.HodgeStructureOn.eigenspace_weilOperator_I_eq_iSup` and
+  `TauCeti.Hodge.HodgeStructureOn.eigenspace_weilOperator_neg_I_eq_iSup`: in general, the two
+  eigenspaces are spanned by the Hodge components `H^{p,1-p}` with `p` odd, respectively even.
+* `TauCeti.Hodge.HodgeStructureOn.isEffective_iff_eigenspace_weilOperator_I` and
+  `TauCeti.Hodge.HodgeStructureOn.isEffective_iff_eigenspace_weilOperator_neg_I`: either
+  eigenspace comparison holds exactly for effective structures.
 * `TauCeti.Hodge.HodgeStructureOn.eigenspace_baseChange_realAlmostComplexStructure_I` and
   `TauCeti.Hodge.HodgeStructureOn.eigenspace_baseChange_realAlmostComplexStructure_neg_I`: the same
   comparison on the literal complexification of the real form.
@@ -132,6 +139,59 @@ theorem eigenspace_weilOperator_neg_I (hs : HodgeStructureOn W ω 1) (heff : hs.
     (fun x hx ↦ by simpa only [neg_smul] using hs.weilOperator_apply_of_mem_piece_zero hx)
     (fun x hx ↦ hs.weilOperator_apply_of_mem_piece_one hx) ?_
   exact (neg_ne_self.mpr Complex.I_ne_zero).symm
+
+/-- In weight one, without assuming effectivity, the `i`-eigenspace of the Weil operator is
+spanned by the Hodge components `H^{p,1-p}` with `p` odd. -/
+theorem eigenspace_weilOperator_I_eq_iSup (hs : HodgeStructureOn W ω 1) :
+    Module.End.eigenspace hs.weilOperator Complex.I = ⨆ p, ⨆ (_ : Odd p), hs.piece p := by
+  have h (p : ℤ) : (2 * p - 1) % 4 = 1 ↔ Odd p := by rw [Int.odd_iff]; omega
+  simp only [eigenspace_weilOperator, Complex.I_zpow_eq_I_iff, h]
+
+/-- In weight one, without assuming effectivity, the `-i`-eigenspace of the Weil operator is
+spanned by the Hodge components `H^{p,1-p}` with `p` even. -/
+theorem eigenspace_weilOperator_neg_I_eq_iSup (hs : HodgeStructureOn W ω 1) :
+    Module.End.eigenspace hs.weilOperator (-Complex.I) = ⨆ p, ⨆ (_ : Even p), hs.piece p := by
+  have h (p : ℤ) : (2 * p - 1) % 4 = 3 ↔ Even p := by rw [Int.even_iff]; omega
+  simp only [eigenspace_weilOperator, Complex.I_zpow_eq_neg_I_iff, h]
+
+/-- A weight-one Hodge structure is effective as soon as, in each negative degree `p`, the
+component `H^{p,1-p}` or its conjugate `H^{1-p,p}` vanishes. -/
+private theorem isEffective_of_forall_neg (hs : HodgeStructureOn W ω 1)
+    (h : ∀ p < 0, hs.piece p = ⊥ ∨ hs.piece (1 - p) = ⊥) : hs.IsEffective := by
+  refine hs.isEffective_iff_piece_eq_bot.2 fun p hp ↦ (h p hp).elim id fun h1 ↦ ?_
+  rw [← sub_sub_cancel 1 p, ← hs.conj_piece, h1, Submodule.map_bot]
+
+/-- **The eigenspace comparison characterizes effectivity.** A weight-one Hodge structure is
+effective exactly when the `i`-eigenspace of its Weil operator is `H^{1,0}`; otherwise that
+eigenspace also contains a nonzero component `H^{p,1-p}` with `p ≠ 1` odd. -/
+theorem isEffective_iff_eigenspace_weilOperator_I (hs : HodgeStructureOn W ω 1) :
+    hs.IsEffective ↔ Module.End.eigenspace hs.weilOperator Complex.I = hs.piece 1 := by
+  refine ⟨hs.eigenspace_weilOperator_I, fun h ↦ ?_⟩
+  have hodd : ∀ q, Odd q → q ≠ 1 → hs.piece q = ⊥ := fun q hq hq1 ↦ by
+    have hle : hs.piece q ≤ hs.piece 1 := by
+      rw [← h, eigenspace_weilOperator_I_eq_iSup]
+      exact le_iSup₂_of_le q hq le_rfl
+    exact Disjoint.eq_bot_of_le (hs.piece_iSupIndep.pairwiseDisjoint hq1) hle
+  refine hs.isEffective_of_forall_neg fun p hp ↦ ?_
+  rcases Int.even_or_odd p with hpe | hpo
+  · exact Or.inr (hodd _ (odd_one.sub_even hpe) (by omega))
+  · exact Or.inl (hodd p hpo (by omega))
+
+/-- A weight-one Hodge structure is effective exactly when the `-i`-eigenspace of its Weil
+operator is `H^{0,1}`; otherwise that eigenspace also contains a nonzero component `H^{p,1-p}`
+with `p ≠ 0` even. -/
+theorem isEffective_iff_eigenspace_weilOperator_neg_I (hs : HodgeStructureOn W ω 1) :
+    hs.IsEffective ↔ Module.End.eigenspace hs.weilOperator (-Complex.I) = hs.piece 0 := by
+  refine ⟨hs.eigenspace_weilOperator_neg_I, fun h ↦ ?_⟩
+  have heven : ∀ q, Even q → q ≠ 0 → hs.piece q = ⊥ := fun q hq hq0 ↦ by
+    have hle : hs.piece q ≤ hs.piece 0 := by
+      rw [← h, eigenspace_weilOperator_neg_I_eq_iSup]
+      exact le_iSup₂_of_le q hq le_rfl
+    exact Disjoint.eq_bot_of_le (hs.piece_iSupIndep.pairwiseDisjoint hq0) hle
+  refine hs.isEffective_of_forall_neg fun p hp ↦ ?_
+  rcases Int.even_or_odd p with hpe | hpo
+  · exact Or.inl (heven p hpe (by omega))
+  · exact Or.inr (heven _ (odd_one.sub_odd hpo) (by omega))
 
 /-- **An effective weight-one Hodge structure is determined by its Weil operator.** Its filtration
 is `⊤` in nonpositive degrees and `⊥` above degree one, while `F¹ = H^{1,0}` is the
@@ -266,6 +326,41 @@ theorem hodgeStructure_piece_eq_bot (J : AlmostComplexStructure V) {p : ℤ}
   by_cases hp : p < 0
   · exact J.isEffective_hodgeStructure.piece_eq_bot_of_neg hp
   · exact J.isEffective_hodgeStructure.piece_eq_bot_of_weight_lt (by omega)
+
+/-- The degree-one Hodge projection of `J` is its holomorphic type projection. -/
+@[simp]
+theorem hodgeStructure_proj_one (J : AlmostComplexStructure V) :
+    J.hodgeStructure.proj 1 = J.holomorphicProjection := by
+  apply J.hodgeStructure.addHom_ext_of_piece
+  intro p x hx
+  by_cases hpone : p = 1
+  · subst p
+    rw [J.hodgeStructure.proj_apply_of_mem hx, holomorphicProjection_def]
+    exact (Submodule.projection_apply_of_mem_left _
+      (J.hodgeStructure_piece_one ▸ hx)).symm
+  by_cases hpzero : p = 0
+  · subst p
+    rw [J.hodgeStructure.proj_apply_eq_zero_of_mem_of_ne hx (by norm_num),
+      holomorphicProjection_def]
+    exact (Submodule.projection_apply_of_mem_right _
+      (J.hodgeStructure_piece_zero ▸ hx)).symm
+  rw [J.hodgeStructure_piece_eq_bot hpzero hpone, Submodule.mem_bot] at hx
+  subst x
+  simp
+
+/-- The degree-zero Hodge projection of `J` is its antiholomorphic type projection. -/
+@[simp]
+theorem hodgeStructure_proj_zero (J : AlmostComplexStructure V) :
+    J.hodgeStructure.proj 0 = J.antiholomorphicProjection := by
+  apply LinearMap.ext
+  intro u
+  rw [antiholomorphicProjection_apply_eq_sub]
+  apply eq_sub_iff_add_eq.mpr
+  have hsum := J.hodgeStructure.sum_proj_eq (S := {0, 1}) u fun p hp ↦ by
+    have hp' : p ≠ 0 ∧ p ≠ 1 := by simpa using hp
+    have hmem := J.hodgeStructure.proj_mem p u
+    simpa only [J.hodgeStructure_piece_eq_bot hp'.1 hp'.2, Submodule.mem_bot] using hmem
+  simpa using hsum
 
 /-- The Weil operator of the Hodge structure associated with `J` is the complex-linear scalar
 extension of `J`. Thus the construction recovers the original almost complex structure after

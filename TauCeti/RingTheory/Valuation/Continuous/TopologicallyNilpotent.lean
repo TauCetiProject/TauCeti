@@ -5,7 +5,10 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.GroupTheory.ArchimedeanDensely
+public import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
+public import Mathlib.Topology.Algebra.ValuativeRel.ValuativeTopology
 public import TauCeti.RingTheory.Valuation.CharacteristicGroup
 public import TauCeti.RingTheory.Valuation.Continuous.Basic
 
@@ -56,9 +59,19 @@ the first.
 * `Valuation.exists_pow_lt_of_isTopologicallyNilpotent`
 * `Valuation.IsContinuous.lt_one_of_isTopologicallyNilpotent`
 * `Valuation.IsContinuous.cofinalValue_of_isTopologicallyNilpotent`
+* `Valuation.HasFullCharacteristicGroup.isContinuous` : a full characteristic group and an
+  open unit ball that is a neighbourhood of `0` imply continuity on a topological ring.
 * `Valuation.HasFullCharacteristicGroup.cofinalValue_of_isTopologicallyNilpotent` :
   cofinality again, with continuity replaced by a full characteristic group plus the open unit
   ball being a neighbourhood of `0` — the `Γ_v = cΓ_v` branch of Theorem 7.10's converse.
+* `Valuation.exists_pow_lt_of_isIntegral` : on an integral extension `S` of `R`, the powers of
+  the value of a topologically nilpotent `ϖ ∈ R` fall below every nonzero value, provided the
+  pullback to `R` is continuous and each value is pushed to at most `1` by a power of `v ϖ`.
+* `IsTopologicallyNilpotent.valuation_lt_one` : for the canonical valuation of a valuative topology
+  (`IsValuativeTopology`), whose open unit ball is a neighbourhood of `0`, a topologically
+  nilpotent element has valuation `< 1`.
+* `TauCeti.isTopologicallyNilpotent_iff_valuation_lt_one` : when moreover the value group is
+  archimedean, the converse holds too, so topological nilpotence is exactly the open unit ball.
 
 ## References
 
@@ -139,6 +152,28 @@ theorem IsContinuous.cofinalValue_of_isTopologicallyNilpotent [ContinuousConstSM
       (by simpa using zero_lt_iff.mpr (div_ne_zero hr.ne' ht.ne'))) ha
   exact ⟨n, by rw [← map_pow, Valuation.restrict_lt_iff_lt_embedding, hemb, map_pow]; exact hn⟩
 
+/-- A valuation with full characteristic group is continuous if its open unit ball is a
+neighbourhood of zero. -/
+theorem HasFullCharacteristicGroup.isContinuous [IsTopologicalRing A] {v : Valuation A Γ₀}
+    (hv : HasFullCharacteristicGroup v) (hU : {a : A | v a < 1} ∈ nhds 0) :
+    v.IsContinuous := by
+  refine (isContinuous_iff_forall_ne_zero v).mpr fun b hb ↦
+    isOpen_iff_mem_nhds.mpr fun x hx ↦ ?_
+  obtain ⟨t, ht, htle⟩ := hv.exists_inv_le (zero_lt_iff.mpr
+    (fun h ↦ hb (v.restrict_eq_zero_iff.mp h)))
+  have ht0 : v t ≠ 0 := fun h ↦ ht (v.restrict_eq_zero_iff.mpr h)
+  have hbound : (v t)⁻¹ ≤ v b := by
+    have := MonoidWithZeroHom.ValueGroup₀.embedding_strictMono.monotone htle
+    simpa using this
+  have hcont : Continuous fun y : A ↦ (y - x) * t := by fun_prop
+  filter_upwards [hcont.continuousAt.preimage_mem_nhds (by simpa using hU)] with y hy
+  have hy' : v (y - x) < (v t)⁻¹ := by
+    have : v (y - x) * v t < (v t)⁻¹ * v t := by simpa [map_mul, ht0] using hy
+    exact lt_of_mul_lt_mul_right this zero_le
+  calc v y = v ((y - x) + x) := by rw [sub_add_cancel]
+    _ ≤ max (v (y - x)) (v x) := v.map_add _ _
+    _ < v b := max_lt (hy'.trans_le hbound) hx
+
 /-- **Full characteristic group makes every topologically nilpotent value cofinal**, given that
 the open unit ball `{a | v a < 1}` is a neighbourhood of `0`.
 
@@ -168,4 +203,87 @@ theorem HasFullCharacteristicGroup.cofinalValue_of_isTopologicallyNilpotent
     simpa only [map_pow, map_inv₀, embedding_restrict] using hgoal
   exact ⟨n, hemb.trans_le htle⟩
 
+section Integral
+
+variable {R S : Type*} [CommRing R] [TopologicalSpace R] [CommRing S] [Algebra R S]
+  [Algebra.IsIntegral R S]
+
+/-- **Cofinality on an integral extension.** Let `S` be integral over `R`, `v` a valuation on `S`
+whose pullback to `R` is continuous, and `ϖ ∈ R` topologically nilpotent with `v ϖ ≠ 0`, such
+that every value of `v` is pushed to at most `1` by a power of `v ϖ`. Then the powers of `v ϖ`
+fall below every nonzero value of `v`.
+
+Since `S` is integral over `R`, contracting `supp v ⊊ supp v + cS` to `R` stays strict
+(`Ideal.under_lt_under_of_integral_mem_sdiff`), so some `a ∈ R` off the support has the form
+`a = y + b' c` with `v y = 0`; continuity of the pullback bounds `v ϖ ^ n` below `v a`, and the
+power of `v ϖ` absorbing `v b'` finishes. -/
+theorem exists_pow_lt_of_isIntegral {v : Valuation S Γ₀}
+    (hu : (v.comap (algebraMap R S)).IsContinuous) {ϖ : R} (hϖ : IsTopologicallyNilpotent ϖ)
+    (hϖ0 : v (algebraMap R S ϖ) ≠ 0) (habs : ∀ b, ∃ m : ℕ, v (algebraMap R S ϖ) ^ m * v b ≤ 1)
+    {c : S} (hc : v c ≠ 0) : ∃ N : ℕ, v (algebraMap R S ϖ) ^ N < v c := by
+  set ι := algebraMap R S
+  -- contracting `supp v ⊊ supp v + cS` to `R` stays strict, as `S` is integral over `R`
+  obtain ⟨a, ha, haq⟩ := IsConcreteLE.exists_of_lt <| Ideal.under_lt_under_of_integral_mem_sdiff
+    (R := R) (le_sup_left : v.supp ≤ v.supp ⊔ Ideal.span {c})
+    ⟨Ideal.mem_sup_right (Ideal.mem_span_singleton_self c), mt (v.mem_supp_iff c).mp hc⟩
+    (Algebra.IsIntegral.isIntegral c)
+  -- so `ι a = y + b' c` with `v y = 0` and `v (ι a) ≠ 0`
+  obtain ⟨y, hy, z, hz, hyz⟩ := Submodule.mem_sup.mp (Ideal.mem_comap.mp ha)
+  obtain ⟨b', rfl⟩ := Ideal.mem_span_singleton'.mp hz
+  have hVa : v (ι a) = v b' * v c := by
+    rw [← hyz, add_comm, Valuation.map_add_supp _ _ hy, map_mul]
+  have hVa0 : v (ι a) ≠ 0 := by rwa [Ideal.mem_comap, Valuation.mem_supp_iff] at haq
+  obtain ⟨m, hm⟩ := habs b'
+  -- continuity of the pullback makes `v (ι ϖ) ^ n < v (ι a)` for large `n`
+  obtain ⟨n, hn⟩ : ∃ n : ℕ, v (ι ϖ) ^ n < v (ι a) := by
+    have h0 : (0 : R) ∈ {x | v.comap ι x < v.comap ι a} := by
+      simpa using zero_lt_iff.mpr hVa0
+    simpa using exists_pow_lt_of_isTopologicallyNilpotent
+      ((isContinuous_def.mp hu a).mem_nhds h0) hϖ
+  refine ⟨n + m, ?_⟩
+  calc v (ι ϖ) ^ (n + m) = v (ι ϖ) ^ n * v (ι ϖ) ^ m := pow_add _ _ _
+    _ < v (ι a) * v (ι ϖ) ^ m := mul_lt_mul_of_pos_right hn (pow_pos (zero_lt_iff.mpr hϖ0) m)
+    _ = v c * (v (ι ϖ) ^ m * v b') := by rw [hVa, mul_comm (v b'), mul_assoc, mul_comm (v b')]
+    _ ≤ v c * 1 := by gcongr
+    _ = v c := mul_one _
+
+end Integral
+
 end Valuation
+
+section ValuativeTopology
+
+open Filter ValuativeRel
+
+variable {R : Type*} [Ring R] [ValuativeRel R] [TopologicalSpace R] [IsValuativeTopology R]
+
+/-- **A topologically nilpotent element has valuation `< 1`** in a valuative topology, since the
+open unit ball is a neighbourhood of `0`. -/
+theorem IsTopologicallyNilpotent.valuation_lt_one {x : R} (hx : IsTopologicallyNilpotent x) :
+    valuation R x < 1 := by
+  obtain ⟨n, hn⟩ := Valuation.exists_pow_lt_of_isTopologicallyNilpotent
+    ((IsValuativeTopology.mem_nhds_zero_iff _).mpr ⟨1, fun _ hz ↦ hz⟩) hx
+  exact not_le.mp fun h ↦ hn.not_ge (one_le_pow₀ h)
+
+namespace TauCeti
+
+/-- **An element of valuation `< 1` is topologically nilpotent** when the value group is
+archimedean: its powers enter every ball `{z | v z < γ}` around `0`. -/
+theorem isTopologicallyNilpotent_of_valuation_lt_one [MulArchimedean (ValueGroupWithZero R)]
+    {x : R} (hx : valuation R x < 1) : IsTopologicallyNilpotent x := by
+  refine (IsValuativeTopology.hasBasis_nhds_zero R).tendsto_right_iff.mpr fun γ _ ↦ ?_
+  obtain ⟨n, hn⟩ := exists_pow_lt₀ hx γ
+  filter_upwards [eventually_ge_atTop n] with m hm
+  rw [map_pow]
+  exact (pow_le_pow_right_of_le_one' hx.le hm).trans_lt hn
+
+/-- **Topological nilpotence is the open unit ball** of a valuative topology with archimedean
+value group. -/
+@[simp]
+theorem isTopologicallyNilpotent_iff_valuation_lt_one [MulArchimedean (ValueGroupWithZero R)]
+    {x : R} : IsTopologicallyNilpotent x ↔ valuation R x < 1 :=
+  ⟨IsTopologicallyNilpotent.valuation_lt_one, isTopologicallyNilpotent_of_valuation_lt_one⟩
+
+end TauCeti
+
+end ValuativeTopology

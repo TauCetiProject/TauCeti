@@ -1,0 +1,98 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Order.Preorder.Chain
+public import TauCeti.Data.Finsupp.Order
+import Mathlib.Data.Finset.Max
+
+/-!
+# Existence of staircase couplings
+
+Two nonnegative finitely supported functions on linear orders with equal total mass admit
+nonnegative joint weights supported on a chain in the coordinatewise product order. This is
+the barycentric existence argument for the staircase triangulation of a product of simplices.
+The index orders are arbitrary, and the coefficients may lie in an ordered additive group
+or a monoid with truncated subtraction, such as `ℕ` or `ℝ≥0`. Normalization to mass one is
+unnecessary.
+
+## References
+
+* C. P. Rourke, B. J. Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2
+  (triangulating products of polyhedra).
+-/
+
+public section
+
+namespace Finsupp
+
+open Finset
+
+variable {α β R : Type*} [LinearOrder α] [LinearOrder β]
+  [AddCommMonoid R] [LinearOrder R] [IsOrderedCancelAddMonoid R]
+  [Sub R] [OrderedSub R] [ExistsAddOfLE R]
+
+omit [LinearOrder α] [LinearOrder β] [LinearOrder R] [IsOrderedCancelAddMonoid R] [Sub R]
+  [OrderedSub R] [ExistsAddOfLE R] in
+/-- Adding the least pair `(a, b)` with weight `c` to a staircase coupling of the residual
+marginals gives a staircase coupling of the original marginals. -/
+theorem exists_nonneg_isChain_mapDomain_of_residual [Preorder α] [Preorder β] [PartialOrder R]
+    [IsOrderedAddMonoid R]
+    {f f' : α →₀ R} {g g' : β →₀ R}
+    {a : α} {b : β} {c : R} (hc : 0 ≤ c) (hfr : single a c + f' = f) (hgr : single b c + g' = g)
+    (ha : ∀ x ∈ f.support, a ≤ x) (hb : ∀ y ∈ g.support, b ≤ y)
+    (hfs : f'.support ⊆ f.support) (hgs : g'.support ⊆ g.support)
+    {w : (α × β) →₀ R} (hw : 0 ≤ w) (hchain : IsChain (· ≤ ·) (w.support : Set (α × β)))
+    (hwf : mapDomain Prod.fst w = f') (hwg : mapDomain Prod.snd w = g') :
+    ∃ w : (α × β) →₀ R, 0 ≤ w ∧ IsChain (· ≤ ·) (w.support : Set (α × β)) ∧
+      mapDomain Prod.fst w = f ∧ mapDomain Prod.snd w = g := by
+  classical
+  -- The support of `w` lies in the product of the residual supports, hence of the supports.
+  have hws : w.support ⊆ f.support ×ˢ g.support := by
+    refine subset_product.trans (product_subset_product ?_ ?_)
+    · rw [← support_mapDomain_of_nonneg hw, hwf]
+      exact hfs
+    · rw [← support_mapDomain_of_nonneg hw, hwg]
+      exact hgs
+  refine ⟨single (a, b) c + w, add_nonneg (single_nonneg.mpr hc) hw, ?_, ?_, ?_⟩
+  · have hsub : ((single (a, b) c + w).support : Set (α × β)) ⊆
+        insert (a, b) (w.support : Set (α × β)) := by
+      rw [← coe_insert, coe_subset, insert_eq]
+      exact support_add.trans (union_subset_union_left support_single_subset)
+    apply (hchain.insert ?_).mono hsub
+    intro p hp _
+    have hp' := mem_product.mp (hws hp)
+    exact Or.inl ⟨ha _ hp'.1, hb _ hp'.2⟩
+  · simpa [mapDomain_add, hwf] using hfr
+  · simpa [mapDomain_add, hwg] using hgr
+
+/-- Nonnegative finite weights of equal total mass have a nonnegative coupling supported
+on a staircase. The two `mapDomain` equations specify its marginals. -/
+theorem exists_nonneg_isChain_mapDomain (f : α →₀ R) (g : β →₀ R)
+    (hf : 0 ≤ f) (hg : 0 ≤ g) (hmass : f.sum (fun _ r => r) = g.sum (fun _ r => r)) :
+    ∃ w : (α × β) →₀ R, 0 ≤ w ∧ IsChain (· ≤ ·) (w.support : Set (α × β)) ∧
+      mapDomain Prod.fst w = f ∧ mapDomain Prod.snd w = g := by
+  classical
+  -- Match the least remaining indices, removing the smaller weight. At least one support
+  -- shrinks at each step, so induction on the sum of the support cardinalities terminates.
+  induction hn : f.support.card + g.support.card using Nat.strong_induction_on
+    generalizing f g with
+  | ind n ih =>
+    -- Zero mass forces both nonnegative marginals to vanish.
+    by_cases hf0 : f = 0
+    · have hg0 : g = 0 := eq_zero_of_sum_eq_zero_of_nonneg hg (by simp [← hmass, hf0])
+      subst f; subst g
+      exact ⟨0, le_rfl, by simp, by simp, by simp⟩
+    have hg0 : g ≠ 0 := fun hg0 =>
+      hf0 (eq_zero_of_sum_eq_zero_of_nonneg hf (by simp [hmass, hg0]))
+    obtain ⟨c, f', g', hc, hf', hg', hfs, hgs, hcard, hmass', hfr, hgr⟩ :=
+      exists_residual_marginals f g hf hg hmass
+        (min'_mem _ (support_nonempty_iff.mpr hf0)) (min'_mem _ (support_nonempty_iff.mpr hg0))
+    obtain ⟨w, hw, hchain, hwf, hwg⟩ := ih _ (hn ▸ hcard) f' g' hf' hg' hmass' rfl
+    exact exists_nonneg_isChain_mapDomain_of_residual hc hfr hgr
+      (fun _ hx => min'_le _ _ hx) (fun _ hy => min'_le _ _ hy) hfs hgs hw hchain hwf hwg
+
+end Finsupp

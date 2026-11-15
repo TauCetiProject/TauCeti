@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.InformationTheory.Coding.Weight.Enumerator
-public import TauCeti.InformationTheory.Coding.DirectSum
+public import TauCeti.InformationTheory.Coding.Additive.DirectSum
 
 /-!
 # Weight enumerators of concatenated codes
@@ -15,7 +15,8 @@ Concatenating words on disjoint coordinate types adds their Hamming weights. For
 sets of words, the homogeneous and one-variable weight enumerators of their concatenation are
 the products of the enumerators of the two sets, and its weight distribution is their convolution.
 No additive or scalar closure, or finiteness of the alphabet, is needed. Thus these formulas apply
-to additive codes as well as linear codes. The linear direct-sum formulas are specializations.
+to additive codes as well as linear codes: the direct-sum formulas for finite additive codes over
+an arbitrary group alphabet and for finite linear codes are both specializations.
 
 The conventions follow Huffman and Pless, *Fundamentals of Error-Correcting Codes*, §1.6 and §7.2,
 and MacWilliams and Sloane, *The Theory of Error-Correcting Codes*, Chapter 5, §2.
@@ -45,6 +46,20 @@ private theorem weightEnumerator_sumElim_eq_sum {ι κ A : Type*}
   rw [Finset.sum_image (fun _ _ _ _ h ↦ e.injective h), Finset.sum_product]
   simp only [← he]
 
+/-- A set of words on `ι ⊕ κ` determined by membership of its two restrictions in `C` and `D` is
+the concatenation image of `C ×ˢ D`. -/
+private theorem image_sumElim_prod_eq {ι κ A : Type*} {C : Set (ι → A)} {D : Set (κ → A)}
+    {S : Set (ι ⊕ κ → A)}
+    (hS : ∀ x, x ∈ S ↔ (fun i ↦ x (.inl i)) ∈ C ∧ (fun j ↦ x (.inr j)) ∈ D) :
+    (fun p : (ι → A) × (κ → A) ↦ Sum.elim p.1 p.2) '' (C ×ˢ D) = S := by
+  ext x
+  simp only [hS, Set.mem_image, Set.mem_prod]
+  constructor
+  · rintro ⟨⟨y, z⟩, h, rfl⟩
+    exact h
+  · intro h
+    exact ⟨(fun i ↦ x (.inl i), fun j ↦ x (.inr j)), h, Sum.elim_comp_inl_inr x⟩
+
 end TauCeti
 
 namespace Set
@@ -60,9 +75,9 @@ theorem weightEnumerator_sumElim (hC : C.Finite) (hD : D.Finite) :
   rw [TauCeti.weightEnumerator_sumElim_eq_sum hC hD]
   simp only [weightEnumerator_eq_sum hC, weightEnumerator_eq_sum hD, Finset.sum_mul_sum]
   apply Finset.sum_congr rfl
-  intro x hx
+  intro x _
   apply Finset.sum_congr rfl
-  intro y hy
+  intro y _
   have hsub : Fintype.card ι + Fintype.card κ - (hammingNorm x + hammingNorm y) =
       (Fintype.card ι - hammingNorm x) + (Fintype.card κ - hammingNorm y) := by
     have : hammingNorm x ≤ Fintype.card ι := hammingNorm_le_card_fintype
@@ -81,7 +96,7 @@ theorem weightPolynomial_sumElim (hC : C.Finite) (hD : D.Finite) :
 theorem weightDistribution_sumElim (hC : C.Finite) (hD : D.Finite) (w : ℕ) :
     ((fun p : (ι → A) × (κ → A) ↦ Sum.elim p.1 p.2) '' (C ×ˢ D)).weightDistribution w =
       ∑ p ∈ Finset.antidiagonal w, C.weightDistribution p.1 * D.weightDistribution p.2 := by
-  have h := congrArg (Polynomial.coeff · w) (weightPolynomial_sumElim hC hD)
+  have h := congrArg (AddMonoidAlgebra.coeff · w) (weightPolynomial_sumElim hC hD)
   simp only [coeff_weightPolynomial, Polynomial.coeff_mul] at h
   exact_mod_cast h
 
@@ -97,17 +112,8 @@ theorem weightEnumerator_directSum (C : Submodule R (ι → R)) (D : Submodule R
     [Finite C] [Finite D] :
     (directSum C D : Set (ι ⊕ κ → R)).weightEnumerator =
       (C : Set (ι → R)).weightEnumerator * (D : Set (κ → R)).weightEnumerator := by
-  have hset : (directSum C D : Set (ι ⊕ κ → R)) =
-      (fun p : (ι → R) × (κ → R) ↦ Sum.elim p.1 p.2) ''
-        ((C : Set (ι → R)) ×ˢ (D : Set (κ → R))) := by
-    ext x
-    simp only [mem_directSum_iff, Set.mem_image, Set.mem_prod, SetLike.mem_coe]
-    constructor
-    · intro h
-      exact ⟨(fun i ↦ x (.inl i), fun j ↦ x (.inr j)), h, Sum.elim_comp_inl_inr x⟩
-    · rintro ⟨⟨y, z⟩, h, rfl⟩
-      exact h
-  rw [hset]
+  rw [← TauCeti.image_sumElim_prod_eq (C := (C : Set (ι → R))) (D := (D : Set (κ → R)))
+    fun _ ↦ mem_directSum_iff]
   exact Set.weightEnumerator_sumElim (Set.toFinite _) (Set.toFinite _)
 
 /-- The one-variable weight enumerator of a direct sum of codes is the product of their
@@ -125,8 +131,43 @@ theorem weightDistribution_directSum (C : Submodule R (ι → R)) (D : Submodule
     (directSum C D : Set (ι ⊕ κ → R)).weightDistribution w =
       ∑ p ∈ Finset.antidiagonal w,
         (C : Set (ι → R)).weightDistribution p.1 * (D : Set (κ → R)).weightDistribution p.2 := by
-  have h := congrArg (Polynomial.coeff · w) (weightPolynomial_directSum C D)
+  have h := congrArg (AddMonoidAlgebra.coeff · w) (weightPolynomial_directSum C D)
   simp only [Set.coeff_weightPolynomial, Polynomial.coeff_mul] at h
   exact_mod_cast h
 
 end Submodule
+
+namespace AddSubgroup
+
+variable {ι κ A : Type*} [Fintype ι] [Fintype κ] [AddGroup A] [DecidableEq A]
+
+/-- The weight enumerator of a direct sum of finite additive codes is the product of their weight
+enumerators. -/
+theorem weightEnumerator_directSum (C : AddSubgroup (ι → A)) (D : AddSubgroup (κ → A))
+    [Finite C] [Finite D] :
+    (C.directSum D : Set (ι ⊕ κ → A)).weightEnumerator =
+      (C : Set (ι → A)).weightEnumerator * (D : Set (κ → A)).weightEnumerator := by
+  rw [← TauCeti.image_sumElim_prod_eq (C := (C : Set (ι → A))) (D := (D : Set (κ → A)))
+    fun _ ↦ mem_directSum_iff]
+  exact Set.weightEnumerator_sumElim (Set.toFinite _) (Set.toFinite _)
+
+/-- The one-variable weight enumerator of a direct sum of finite additive codes is the product of
+their one-variable weight enumerators. -/
+theorem weightPolynomial_directSum (C : AddSubgroup (ι → A)) (D : AddSubgroup (κ → A))
+    [Finite C] [Finite D] :
+    (C.directSum D : Set (ι ⊕ κ → A)).weightPolynomial =
+      (C : Set (ι → A)).weightPolynomial * (D : Set (κ → A)).weightPolynomial := by
+  simp only [← Set.aeval_weightEnumerator, weightEnumerator_directSum, map_mul]
+
+/-- The weight distribution of a direct sum of finite additive codes is the convolution of their
+weight distributions: `A_w(C ⊕ D) = ∑_{i + j = w} A_i(C) A_j(D)`. -/
+theorem weightDistribution_directSum (C : AddSubgroup (ι → A)) (D : AddSubgroup (κ → A))
+    [Finite C] [Finite D] (w : ℕ) :
+    (C.directSum D : Set (ι ⊕ κ → A)).weightDistribution w =
+      ∑ p ∈ Finset.antidiagonal w,
+        (C : Set (ι → A)).weightDistribution p.1 * (D : Set (κ → A)).weightDistribution p.2 := by
+  have h := congrArg (AddMonoidAlgebra.coeff · w) (weightPolynomial_directSum C D)
+  simp only [Set.coeff_weightPolynomial, Polynomial.coeff_mul] at h
+  exact_mod_cast h
+
+end AddSubgroup

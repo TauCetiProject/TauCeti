@@ -16,9 +16,10 @@ chosen algebraic closure. Its fixing subgroup lies in the kernel of the lattice 
 action descends to the automorphism group of the subextension.
 
 Over an imperfect base the chosen normal extension need not be separable, and no Galois claim is
-made. Passing to a finite separable splitting field is a later refinement. The finite normal field
-constructed here is the field-theoretic bridge needed before descending a split torus from the
-algebraic closure, in Layer 4, "Tori: split and non-split", of the ReductiveGroups roadmap.
+made. Passing to a finite separable splitting field is done by
+`TauCeti.GaloisLatticeCat.separableActionField`. Through that refinement, the finite normal field
+constructed here is the field-theoretic input for descending a split torus from the algebraic
+closure (`TauCeti.TorusCommHopfAlgCat.characterLatticeFunctor_essSurj`).
 
 ## Main declarations
 
@@ -42,9 +43,7 @@ universe u
 
 variable {k : Type u} [Field k]
 
-/-- The module structure stored in the bundled representation. -/
-noncomputable local instance actionFieldStoredModule (M : GaloisLatticeCat k) : Module ℤ M.obj :=
-  M.obj.hV2
+attribute [local instance] TauCeti.GaloisLatticeCat.storedModule
 
 /-- A finite normal subextension of the algebraic closure through whose automorphism group the
 action on a Galois lattice factors. -/

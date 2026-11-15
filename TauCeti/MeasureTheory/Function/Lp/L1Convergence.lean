@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Function.Lp.Exponent
 
 /-!
 # `Lᵖ` convergence implies `L¹` convergence on a finite measure space
@@ -14,6 +15,10 @@ On a finite measure space the `Lᵖ` seminorm dominates the `L¹` seminorm up to
 `μ(univ)^(1 - 1/p)`, so a sequence converging in `Lᵖ` converges in `L¹`.  Stated with the `L¹`
 distance written as a lower Lebesgue integral, which is the form consumed by arguments that pass
 an integral identity to a limit.
+
+The finite-set representative version,
+`TauCeti.tendsto_setLIntegral_enorm_sub_of_tendsto_Lp`, lives beside the restriction operator
+in `TauCeti.MeasureTheory.Function.Lp.Restriction` and is available through this module.
 
 ## Main declarations
 
@@ -25,7 +30,7 @@ public section
 
 namespace TauCeti
 
-open Filter MeasureTheory
+open Filter _root_.MeasureTheory
 open scoped ENNReal Topology
 
 /-- **On a finite measure space, `Lᵖ` convergence implies `L¹` convergence.** -/
@@ -35,16 +40,13 @@ theorem tendsto_lintegral_enorm_sub_of_tendsto_Lp {α G ι : Type*} [MeasurableS
     (h : Tendsto f l (𝓝 g)) :
     Tendsto (fun i => ∫⁻ x, ‖f i x - g x‖ₑ ∂ν) l (𝓝 0) := by
   have hL1 : Tendsto
-      (fun i => Measure.LpToL1CLM (𝕜 := ℝ) ν q (f i)) l
-      (𝓝 (Measure.LpToL1CLM (𝕜 := ℝ) ν q g)) :=
-    ((Measure.LpToL1CLM (𝕜 := ℝ) ν q).continuous.tendsto g).comp h
+      (fun i => Lp.ofExponentLEL ℝ G (Fact.out : 1 ≤ q) (f i)) l
+      (𝓝 (Lp.ofExponentLEL ℝ G (Fact.out : 1 ≤ q) g)) :=
+    ((Lp.ofExponentLEL ℝ G Fact.out).continuous.tendsto g).comp h
   rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at hL1
   refine hL1.congr fun i => ?_
-  rw [eLpNorm_one_eq_lintegral_enorm
+  rw [Lp.coeFn_ofExponentLEL, Lp.coeFn_ofExponentLEL, eLpNorm_one_eq_lintegral_eNorm
     ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _))]
-  apply lintegral_congr_ae
-  filter_upwards [Measure.LpToL1CLM_coeFn (𝕜 := ℝ) ν q (f i),
-    Measure.LpToL1CLM_coeFn (𝕜 := ℝ) ν q g] with x hfi hg
-  rw [Pi.sub_apply, hfi, hg]
+  simp only [Pi.sub_apply]
 
 end TauCeti

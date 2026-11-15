@@ -7,10 +7,12 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Norm.Transitivity
-public import Mathlib.RingTheory.Valuation.RamificationGroup
+public import TauCeti.Algebra.Algebra.Tower
+public import TauCeti.FieldTheory.FunctionField.Place.Equiv
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
-public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.FieldTheory.IntermediateField.ScalarTower
+public import TauCeti.RingTheory.Valuation.RamificationGroup
 
 /-!
 # The Galois action on the places lying over a place
@@ -44,6 +46,8 @@ decomposition group, and is identified with Mathlib's `ValuationSubring.decompos
 
 ## Main results
 
+* `TauCeti.Place.equivOfRingEquiv_autCongr_smul`: transport of places along an isomorphism of
+  fields intertwines the actions of the corresponding automorphism groups.
 * `TauCeti.Place.restrictScalars_smul`: the automorphisms of `F'` over an intermediate field of
   `F' / F` act on the places of `F' / k` through the action of the automorphisms over `F`.
 * `TauCeti.Place.valuation_apply_sub_lt_one_of_smul_eq_of_degree_eq_one`: an automorphism fixing
@@ -60,6 +64,12 @@ decomposition group, and is identified with Mathlib's `ValuationSubring.decompos
   `TauCeti.Place.relativeDegree_eq_of_restrict_eq`: `e` and `f` are constant on a fibre, whence
   `TauCeti.Place.ncard_mul_ramificationIdx_mul_relativeDegree_eq_finrank`, the product form
   `r · e · f = [F' : F]` of the fundamental identity (Stichtenoth, Corollary 3.7.2).
+* `TauCeti.Place.ramificationIdxIn_eq_ramificationIdx`: for a finite Galois extension the places
+  over a place `P` of `F` all share one ramification index, which is
+  `TauCeti.Place.ramificationIdxIn` (defined for any algebraic extension in
+  `TauCeti.FieldTheory.FunctionField.Place.Extension.Basic`), with
+  `TauCeti.Place.ramificationIdxIn_mul_sum_fibre_eq` summing `e - 1` over a fibre:
+  `∑_{P' ∣ P} (e(P' ∣ P) - 1) · deg P' = [F' : F] · (1 - 1/e) · deg P`, cleared of the division.
 * `TauCeti.Place.stabilizer_eq_decompositionSubgroup`: the stabilizer of a place is the
   decomposition group of its valuation ring, and
   `TauCeti.Place.ncard_mul_card_stabilizer_eq_finrank` is the orbit--stabilizer count of a
@@ -147,6 +157,13 @@ theorem ord_smul (x : F') : (σ • P).ord x = P.ord (σ.symm x) := by
 theorem ord_smul_apply (x : F') : (σ • P).ord (σ x) = P.ord x := by
   simp
 
+/-- The involution `y ↦ -y` exchanges the orders of `y - c` and `y + c`, for a constant `c` of
+the base field `F`. -/
+theorem ord_smul_sub_eq_ord_add {y : F'} (hσ : σ y = -y) (c : F) :
+    (σ • P).ord (y - algebraMap F F' c) = P.ord (y + algebraMap F F' c) := by
+  have hσsymm : σ.symm y = -y := by rw [AlgEquiv.symm_apply_eq, map_neg, hσ, neg_neg]
+  rw [ord_smul, map_sub, hσsymm, AlgEquiv.commutes, ← neg_add', ord_neg]
+
 /-- Membership in the valuation ring of `σ • P`, read off at `P`. -/
 theorem mem_integers_smul_iff {x : F'} : x ∈ (σ • P).integers ↔ σ.symm x ∈ P.integers := by
   simp
@@ -157,6 +174,17 @@ theorem integers_smul : (σ • P).integers = σ • P.integers := by
   ext x
   rw [mem_integers_smul_iff, ValuationSubring.mem_pointwise_smul_iff_inv_smul_mem]
   rfl
+
+/-- **Transport of places intertwines the actions**: transporting places along the inverse of an
+`F`-isomorphism `e : L ≃ₐ[F] F'` carries the action of `e.autCongr τ` on the places of `F'` to
+the action of `τ` on the places of `L`. -/
+theorem equivOfRingEquiv_autCongr_smul {L : Type*} [Field L] [Algebra k L] [Algebra F L]
+    [IsScalarTower k F L] (e : L ≃ₐ[F] F') (τ : L ≃ₐ[F] L) (Q : Place k F') :
+    equivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
+        e.symm.toRingEquiv_algebraMap_of_tower (e.autCongr τ • Q) =
+      τ • equivOfRingEquiv (RingEquiv.refl k) e.symm.toRingEquiv
+        e.symm.toRingEquiv_algebraMap_of_tower Q :=
+  Place.ext (Valuation.ext fun z ↦ by simp)
 
 /-- **The two actions on places agree**: restricting the scalars of an automorphism of `F'` over
 an intermediate field `E` down to `F` does not change the place it produces. -/
@@ -176,19 +204,31 @@ section Transport
 
 variable (F) (g : P.integers.decompositionSubgroup F)
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- An automorphism fixing `P` leaves the valuation at `P` unchanged. -/
 @[simp]
 theorem valuation_decompositionSubgroup_apply (x : F') :
     P.valuation ((g : F' ≃ₐ[F] F') x) = P.valuation x := by
-  have h : (g : F' ≃ₐ[F] F') • P = P := by
-    have hg : (g : F' ≃ₐ[F] F') ∈ MulAction.stabilizer (F' ≃ₐ[F] F') P := by
-      rw [stabilizer_eq_decompositionSubgroup]
-      exact g.2
-    exact hg
-  calc P.valuation ((g : F' ≃ₐ[F] F') x)
-      = ((g : F' ≃ₐ[F] F') • P).valuation ((g : F' ≃ₐ[F] F') x) := by rw [h]
-    _ = P.valuation x := valuation_smul_apply _ _ _
+  -- the valuation `v_P ∘ σ` has the same valuation ring as `v_P`, and is normalized as `σ` is onto
+  have hint (y : F') : P.valuation ((g : F' ≃ₐ[F] F') y) ≤ 1 ↔ P.valuation y ≤ 1 := by
+    simpa only [mem_integers_iff] using
+      ValuationSubring.decompositionSubgroup_apply_mem_iff P.integers g (x := y)
+  have hsurj : Function.Surjective
+      (P.valuation.comap (((g : F' ≃ₐ[F] F') : F' →+* F'))) := by
+    intro w
+    obtain ⟨y, rfl⟩ := P.valuation_surjective w
+    exact ⟨(g : F' ≃ₐ[F] F').symm y, by simp⟩
+  exact DFunLike.congr_fun (Valuation.eq_of_isEquiv_of_surjective hsurj P.valuation_surjective
+    (Valuation.isEquiv_iff_val_le_one.mpr fun {y} ↦ hint y)) x
 
+omit [Algebra k F] [IsScalarTower k F F'] in
+/-- An automorphism fixing `P` leaves the order at `P` unchanged. -/
+@[simp]
+theorem ord_decompositionSubgroup_apply (x : F') :
+    P.ord ((g : F' ≃ₐ[F] F') x) = P.ord x := by
+  rw [ord_def, ord_def, valuation_decompositionSubgroup_apply]
+
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- An automorphism fixing `P` preserves the valuation ring of `P`. -/
 theorem mem_integers_decompositionSubgroup_apply {x : F'} :
     (g : F' ≃ₐ[F] F') x ∈ P.integers ↔ x ∈ P.integers := by
@@ -220,27 +260,27 @@ end Action
 
 section Restrict
 
-variable [Algebra.IsIntegral F F'] (σ : F' ≃ₐ[F] F') (P : Place k F')
-
 /-- **The action preserves the fibres of restriction**: `σ • P` lies over the same place of
 `F / k` as `P` does, because `σ` fixes `F` pointwise. -/
 @[simp]
-theorem restrict_smul : (σ • P).restrict k F = P.restrict k F := by
-  rw [restrict_eq_iff_exists_ord_eq]
-  refine ⟨ramificationIdx F P, ramificationIdx_pos F P, fun f ↦ ?_⟩
-  rw [ord_smul, AlgEquiv.commutes, ord_algebraMap_restrict k F P f]
+theorem restrict_smul [Algebra.IsIntegral F F'] (σ : F' ≃ₐ[F] F') (P : Place k F') :
+    (σ • P).restrict k F = P.restrict k F :=
+  restrict_map_restrictScalars P σ
 
 /-- The ramification index is invariant under the action. -/
 @[simp]
-theorem ramificationIdx_smul : ramificationIdx F (σ • P) = ramificationIdx F P := by
-  refine ramificationIdx_eq_of_forall_ord_eq k F (σ • P) fun f ↦ ?_
-  rw [restrict_smul, ord_smul, AlgEquiv.commutes, ord_algebraMap_restrict k F P f]
+theorem ramificationIdx_smul (σ : F' ≃ₐ[F] F') (P : Place k F') :
+    ramificationIdx F (σ • P) = ramificationIdx F P := by
+  rw [ramificationIdx_def, ramificationIdx_def]
+  congr 1
+  exact Valuation.ext fun f ↦ by simp [valuation_smul, AlgEquiv.commutes]
 
 /-- The relative degree is invariant under the action: `σ⁻¹` induces an isomorphism of the
 residue field of `σ • P` with the residue field of `P` over the residue field of the place
 below, which is the same for both. -/
 @[simp]
-theorem relativeDegree_smul : relativeDegree k F (σ • P) = relativeDegree k F P := by
+theorem relativeDegree_smul [Algebra.IsIntegral F F'] (σ : F' ≃ₐ[F] F') (P : Place k F') :
+    relativeDegree k F (σ • P) = relativeDegree k F P := by
   rw [relativeDegree_def k F (σ • P), relativeDegree_def k F P]
   refine Algebra.finrank_eq_of_equiv_equiv
     (IsLocalRing.ResidueField.mapEquiv (integersEquivOfEq (restrict_smul σ P)))
@@ -256,6 +296,28 @@ theorem relativeDegree_smul : relativeDegree k F (σ • P) = relativeDegree k F
 
 end Restrict
 
+section Quadratic
+
+variable [FiniteDimensional F F']
+
+/-- A place of a quadratic extension `F' / F` over a place `Q` of degree one which is not fixed by
+an automorphism of `F' / F` has degree one: it and its conjugate are two places over `Q`, so by the
+fundamental inequality each has ramification index and relative degree one. -/
+theorem degree_eq_one_of_smul_ne (hrank : Module.finrank F F' = 2) {Q : Place k F}
+    (hQ : Q.degree = 1) (σ : F' ≃ₐ[F] F') {P : Place k F'} (hP : P.restrict k F = Q)
+    (hne : σ • P ≠ P) : P.degree = 1 := by
+  classical
+  have hsum := sum_ramificationIdx_mul_relativeDegree_le_finrank k F Q {P, σ • P}
+    (by simp [hP])
+  rw [Finset.sum_pair hne.symm, ramificationIdx_smul, relativeDegree_smul, hrank] at hsum
+  have he := ramificationIdx_pos (F := F) P
+  have hf := one_le_relativeDegree k F P
+  have : relativeDegree k F P ≤ 1 := by nlinarith
+  rw [degree_eq_degree_restrict_mul_relativeDegree k F P, hP, hQ]
+  omega
+
+end Quadratic
+
 section Galois
 
 variable [FiniteDimensional F F'] [IsGalois F F']
@@ -270,7 +332,7 @@ theorem exists_smul_eq_of_restrict_eq {P Q : Place k F'} (h : P.restrict k F = Q
   have hcon' : ∀ σ : F' ≃ₐ[F] F', σ • P ≠ Q := fun σ hσ ↦ hcon ⟨σ, hσ⟩
   set s : Finset (Place k F') :=
     (Finset.univ.image fun σ : F' ≃ₐ[F] F' ↦ σ • P) ∪
-      (Finset.univ.image fun σ : F' ≃ₐ[F] F' ↦ σ • Q) with hs
+      (Finset.univ.image fun σ : F' ≃ₐ[F] F' ↦ σ • Q)
   obtain ⟨z, hz⟩ := exists_forall_mem_ord_eq s fun X ↦ if X = Q then 1 else 0
   have hQmem : Q ∈ s :=
     Finset.mem_union_right _ (Finset.mem_image.mpr ⟨1, Finset.mem_univ _, one_smul _ Q⟩)
@@ -320,13 +382,33 @@ theorem setOf_restrict_eq_eq_orbit (P : Place k F') :
   rintro ⟨σ, rfl⟩
   exact restrict_smul σ P
 
+omit [FiniteDimensional F F'] in
 /-- **Orbit--stabilizer for the places over a place**: the number of places of `F' / k` lying
-over the place below `P`, times the order of the stabilizer of `P`, is `[F' : F]`. -/
+over the place below `P`, times the order of the stabilizer of `P`, is `[F' : F]`. For an infinite
+Galois extension both sides are `0` by convention: the fibre is infinite, or it is finite and the
+stabilizer has finite index in an infinite group, hence is infinite. -/
 theorem ncard_mul_card_stabilizer_eq_finrank (P : Place k F') :
     {Q : Place k F' | Q.restrict k F = P.restrict k F}.ncard *
       Nat.card (MulAction.stabilizer (F' ≃ₐ[F] F') P) = Module.finrank F F' := by
-  rw [← Nat.card_coe_set_eq, setOf_restrict_eq_eq_orbit P, ← Nat.card_prod,
-    Nat.card_congr (MulAction.orbitProdStabilizerEquivGroup _ P), IsGalois.card_aut_eq_finrank]
+  by_cases hfd : FiniteDimensional F F'
+  · rw [← Nat.card_coe_set_eq, setOf_restrict_eq_eq_orbit P, ← Nat.card_prod,
+      Nat.card_congr (MulAction.orbitProdStabilizerEquivGroup _ P), IsGalois.card_aut_eq_finrank]
+  · have hinf : Infinite (F' ≃ₐ[F] F') :=
+      not_finite_iff_infinite.mp fun h ↦ hfd (IsGalois.finiteDimensional_of_finite F F')
+    rw [Module.finrank_of_not_finite hfd]
+    by_cases hfib : {Q : Place k F' | Q.restrict k F = P.restrict k F}.Finite
+    swap
+    · rw [Set.Infinite.ncard hfib, zero_mul]
+    have horb : Finite (MulAction.orbit (F' ≃ₐ[F] F') P) :=
+      (hfib.subset (by rintro _ ⟨σ, rfl⟩; exact restrict_smul σ P)).to_subtype
+    rw [mul_eq_zero]
+    refine Or.inr ?_
+    by_contra hstab
+    have hs : Finite (MulAction.stabilizer (F' ≃ₐ[F] F') P) :=
+      Nat.finite_of_card_ne_zero hstab
+    have : Finite (F' ≃ₐ[F] F') :=
+      Finite.of_equiv _ (MulAction.orbitProdStabilizerEquivGroup _ P)
+    exact not_finite (F' ≃ₐ[F] F')
 
 /-- **The ramification index is constant on a fibre** (Stichtenoth, Corollary 3.7.2). -/
 theorem ramificationIdx_eq_of_restrict_eq {P Q : Place k F'}
@@ -356,6 +438,51 @@ theorem ncard_mul_ramificationIdx_mul_relativeDegree_eq_finrank (P : Place k F')
   · rwa [Finset.sum_const, smul_eq_mul, ← Set.ncard_eq_toFinset_card _ hfin] at heq
   · rw [← ramificationIdx_eq_of_restrict_eq (hfin.mem_toFinset.mp hQ),
       ← relativeDegree_eq_of_restrict_eq (hfin.mem_toFinset.mp hQ)]
+
+
+/-- The ramification index of a place of the base is the ramification index of any place above
+it. -/
+theorem ramificationIdxIn_eq_ramificationIdx {P : Place k F} {P' : Place k F'}
+    (hP' : P'.restrict k F = P) : P.ramificationIdxIn F' = ramificationIdx F P' := by
+  have hex : ∃ Q : Place k F', Q.restrict k F = P := ⟨P', hP'⟩
+  rw [ramificationIdxIn_of_exists hex]
+  exact ramificationIdx_eq_of_restrict_eq (by rw [hex.choose_spec, hP'])
+
+/-- **The branch contribution of a Galois fibre**: the places over a place `P` of `F` share one
+ramification index `e` and one relative degree `f`, and there are `[F' : F] / (e f)` of them, so
+
+`∑_{P' ∣ P} (e(P' ∣ P) - 1) · deg P' = [F' : F] · (1 - 1/e) · deg P`.
+
+This is that identity multiplied by `e`, which clears the division.  Summed over the places of `F`
+it turns the degree of the tame different into the branch data `(γ; e₁, …, e_r)` of `F' / F`, whose
+deficit the Hurwitz bound is about. -/
+theorem ramificationIdxIn_mul_sum_fibre_eq {P : Place k F} {P' : Place k F'}
+    (hP' : P'.restrict k F = P) :
+    (P.ramificationIdxIn F' : ℤ) *
+        ∑ Q ∈ (finite_setOf_restrict_eq (k' := k) (F' := F') k F P).toFinset,
+          ((ramificationIdx F Q : ℤ) - 1) * Q.degree =
+      Module.finrank F F' * (((P.ramificationIdxIn F' : ℤ) - 1) * P.degree) := by
+  classical
+  have hfin := finite_setOf_restrict_eq (k' := k) (F' := F') k F P
+  rw [ramificationIdxIn_eq_ramificationIdx hP']
+  have hterm : ∀ Q ∈ hfin.toFinset, ((ramificationIdx F Q : ℤ) - 1) * Q.degree =
+      ((ramificationIdx F P' : ℤ) - 1) * (relativeDegree k F P' * P.degree) := by
+    intro Q hQ
+    have hQP : Q.restrict k F = P := hfin.mem_toFinset.mp hQ
+    have hres : Q.restrict k F = P'.restrict k F := by rw [hQP, hP']
+    have hdeg : (Q.degree : ℤ) = P.degree * relativeDegree k F Q := by
+      rw [← hQP]
+      exact_mod_cast congrArg (Nat.cast : ℕ → ℤ)
+        (degree_eq_degree_restrict_mul_relativeDegree k F Q)
+    rw [ramificationIdx_eq_of_restrict_eq hres, hdeg, relativeDegree_eq_of_restrict_eq hres]
+    ring
+  rw [Finset.sum_congr rfl hterm, Finset.sum_const, nsmul_eq_mul,
+    ← Set.ncard_eq_toFinset_card _ hfin]
+  have hfund := ncard_mul_ramificationIdx_mul_relativeDegree_eq_finrank (k := k) (F := F) P'
+  rw [hP'] at hfund
+  rw [← hfund]
+  push_cast
+  ring
 
 end Galois
 

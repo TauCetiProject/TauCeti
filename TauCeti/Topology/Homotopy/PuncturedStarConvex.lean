@@ -7,7 +7,14 @@ module
 
 public import Mathlib.Analysis.Convex.Star
 public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Normed.Module.Connected
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homotopy.Equiv
+
+import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Topology.Homotopy.HomotopyEquiv
+import TauCeti.Topology.JordanCurve.Basic
 
 /-!
 # A punctured star-convex set retracts onto a sphere about the puncture
@@ -24,6 +31,11 @@ In particular the inclusion of the sphere into `V \ {p}` is a homotopy equivalen
 convex subset of `ℂ` this is the reduction of the fundamental group of a punctured convex domain
 to that of a circle.
 
+In real dimension greater than one, this also gives path connectedness of `V \ {p}`.
+For subsets of `ℂ`, the file records the direction map
+`z ↦ (z - p) / ‖z - p‖` to the unit circle and the loop going once around the puncture of a
+punctured ball.
+
 Connectedness and openness alone do not suffice: a punctured annulus is connected and open but is
 not homotopy equivalent to a circle.
 
@@ -34,6 +46,19 @@ not homotopy equivalent to a circle.
   (`StarConvex.coe_sphereHomotopyEquiv_apply`, `StarConvex.coe_sphereHomotopyEquiv_symm_apply`).
 * `StarConvex.radialHomotopy`: the straight-line deformation from the radial projection to the
   identity, fixing the included sphere pointwise throughout.
+* `TauCeti.complRadialProjection`: the radial projection `Kᶜ → sphere p r`, the restriction of
+  `TauCeti.radialProjectionToSphere` when `p ∈ K` and `r > 0`.
+* `TauCeti.complSingletonHomotopyEquivSphere`: the complement of a point `y` of a real normed
+  space is homotopy equivalent to the unit sphere, by radial projection about `y` followed by
+  translation by `-y`.
+* `Complex.directionFrom`: the direction map `z ↦ (z - p) / ‖z - p‖` from `V \ {p}` to the unit
+  circle, for `V ⊆ ℂ`.
+* `StarConvex.pathConnectedSpace_diff_singleton`: in real dimension greater than one, a
+  punctured star-convex set containing a sphere about the puncture is path connected.
+  Punctured balls are handled by `TauCeti.isPathConnected_ball_sdiff_singleton` in
+  `TauCeti.Analysis.Normed.Module.Connected`.
+* `Complex.loopAround`: the loop `t ↦ p + (z - p) e^{2πit}` going once around the puncture of
+  `ball p R \ {p}`.
 
 ## References
 
@@ -50,7 +75,26 @@ open scoped unitInterval
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {V : Set E} {p : E} {r : ℝ}
+section PseudoMetricSpace
+
+variable {X : Type*} [PseudoMetricSpace X] {V : Set X} {p : X} {r : ℝ}
+
+/-- The inclusion of a sphere of nonzero radius into `V \ {p}`. -/
+def sphereInclusionDiffSingleton (hr : r ≠ 0) (hS : sphere p r ⊆ V) :
+    C(sphere p r, ↥(V \ {p})) :=
+  ContinuousMap.inclusion fun _ hz ↦ ⟨hS hz, ne_of_mem_sphere hz hr⟩
+
+/-- The inclusion of the sphere into `V \ {p}` does not move points. -/
+@[simp]
+theorem coe_sphereInclusionDiffSingleton_apply (hr : r ≠ 0) (hS : sphere p r ⊆ V)
+    (x : sphere p r) : (sphereInclusionDiffSingleton hr hS x : X) = x :=
+  (rfl)
+
+end PseudoMetricSpace
+
+section NormedSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {V K : Set E} {p : E} {r : ℝ}
 
 /-- A point `p + c • (z - p)` with `c > 0` below `1` or below `r / ‖z - p‖` stays in `V \ {p}`:
 it lies on the segment from `p` to `z`, or on the segment from `p` to the radial projection of
@@ -76,27 +120,6 @@ private theorem add_smul_sub_mem_diff (hV : StarConvex ℝ p V) (hr : 0 < r)
   · have h0 : c • (z - p) = 0 := by simpa using h
     exact hzp ((smul_eq_zero.mp h0).resolve_left hc₀.ne')
 
-omit [NormedSpace ℝ E] in
-/-- A sphere of positive radius about `p` inside `V` lies in `V \ {p}`. -/
-private theorem sphere_subset_diff (hr : 0 < r) (hS : sphere p r ⊆ V) :
-    sphere p r ⊆ V \ {p} := fun z hz =>
-  ⟨hS hz, fun h => by
-    rw [mem_singleton_iff] at h
-    subst h
-    simp [hr.ne] at hz⟩
-
-/-- The inclusion of `sphere p r` into `V \ {p}`. -/
-def sphereInclusionDiffSingleton (hr : 0 < r) (hS : sphere p r ⊆ V) :
-    C(sphere p r, ↥(V \ {p})) :=
-  ContinuousMap.inclusion (sphere_subset_diff hr hS)
-
-omit [NormedSpace ℝ E] in
-/-- The inclusion of the sphere into `V \ {p}` does not move points. -/
-@[simp]
-theorem coe_sphereInclusionDiffSingleton_apply (hr : 0 < r) (hS : sphere p r ⊆ V)
-    (x : sphere p r) : (sphereInclusionDiffSingleton hr hS x : E) = x :=
-  (rfl)
-
 /-- Radial projection of `V \ {p}` onto the sphere `sphere p r`. -/
 def radialProjectionToSphere (hr : 0 < r) : C(↥(V \ {p}), sphere p r) where
   toFun z := ⟨p + (r / ‖(z : E) - p‖) • ((z : E) - p), by
@@ -117,10 +140,22 @@ theorem coe_radialProjectionToSphere_apply (hr : 0 < r) (z : ↥(V \ {p})) :
     (radialProjectionToSphere hr z : E) = p + (r / ‖(z : E) - p‖) • ((z : E) - p) :=
   (rfl)
 
+/-- Radial projection from `Kᶜ` to the sphere `sphere p r`, for `p ∈ K` and `r > 0`: the
+restriction of `TauCeti.radialProjectionToSphere` along `Kᶜ ⊆ univ ∖ {p}`. -/
+def complRadialProjection (hp : p ∈ K) (hr : 0 < r) : C(↥Kᶜ, sphere p r) :=
+  (radialProjectionToSphere (V := univ) hr).comp
+    (ContinuousMap.inclusion fun _ hz ↦ ⟨mem_univ _, fun h ↦ hz (mem_singleton_iff.1 h ▸ hp)⟩)
+
+/-- The radial projection onto `sphere p r` is `z ↦ p + (r / ‖z - p‖) • (z - p)`. -/
+@[simp]
+theorem coe_complRadialProjection_apply (hp : p ∈ K) (hr : 0 < r) (z : ↥Kᶜ) :
+    (complRadialProjection hp hr z : E) = p + (r / ‖(z : E) - p‖) • ((z : E) - p) :=
+  coe_radialProjectionToSphere_apply hr _
+
 /-- The straight-line homotopy from the radial projection to the identity of `V \ {p}`. -/
 def _root_.StarConvex.radialHomotopy (hV : StarConvex ℝ p V) (hr : 0 < r)
     (hS : sphere p r ⊆ V) :
-    ((sphereInclusionDiffSingleton hr hS).comp (radialProjectionToSphere hr)).Homotopy
+    ((sphereInclusionDiffSingleton hr.ne' hS).comp (radialProjectionToSphere hr)).Homotopy
       (ContinuousMap.id ↥(V \ {p})) where
   toFun x := ⟨p + ((1 - (x.1 : ℝ)) * (r / ‖(x.2 : E) - p‖) + x.1) • ((x.2 : E) - p), by
     have hd : 0 < ‖(x.2 : E) - p‖ := norm_pos_iff.mpr (sub_ne_zero.mpr x.2.2.2)
@@ -144,7 +179,7 @@ def _root_.StarConvex.radialHomotopy (hV : StarConvex ℝ p V) (hr : 0 < r)
     exact continuous_const.add ((((continuous_const.sub ht).mul hdiv).add ht).smul hsub)
   map_zero_left z := by
     ext
-    simp [radialProjectionToSphere, sphereInclusionDiffSingleton]
+    simp
   map_one_left z := by
     ext
     simp
@@ -162,8 +197,8 @@ theorem _root_.StarConvex.coe_radialHomotopy_apply (hV : StarConvex ℝ p V) (hr
 theorem _root_.StarConvex.radialHomotopy_apply_sphereInclusion
     (hV : StarConvex ℝ p V) (hr : 0 < r) (hS : sphere p r ⊆ V) (t : I)
     (x : sphere p r) :
-    hV.radialHomotopy hr hS (t, sphereInclusionDiffSingleton hr hS x) =
-      sphereInclusionDiffSingleton hr hS x := by
+    hV.radialHomotopy hr hS (t, sphereInclusionDiffSingleton hr.ne' hS x) =
+      sphereInclusionDiffSingleton hr.ne' hS x := by
   ext
   have hx : ‖(x : E) - p‖ = r := by simpa [dist_eq_norm] using x.2
   rw [StarConvex.coe_radialHomotopy_apply, coe_sphereInclusionDiffSingleton_apply, hx,
@@ -176,7 +211,7 @@ is star-convex about `p` and contains the sphere `sphere p r` with `r > 0`, then
 `z ↦ p + (r / ‖z - p‖) • (z - p)`. -/
 def _root_.StarConvex.sphereHomotopyEquiv (hV : StarConvex ℝ p V) (hr : 0 < r)
     (hS : sphere p r ⊆ V) : ContinuousMap.HomotopyEquiv (sphere p r) ↥(V \ {p}) where
-  toFun := sphereInclusionDiffSingleton hr hS
+  toFun := sphereInclusionDiffSingleton hr.ne' hS
   invFun := radialProjectionToSphere hr
   left_inv := by
     -- The radial projection fixes the sphere pointwise.
@@ -201,5 +236,82 @@ theorem _root_.StarConvex.coe_sphereHomotopyEquiv_symm_apply (hV : StarConvex �
     (hr : 0 < r) (hS : sphere p r ⊆ V) (z : ↥(V \ {p})) :
     ((hV.sphereHomotopyEquiv hr hS).symm z : E) = p + (r / ‖(z : E) - p‖) • ((z : E) - p) :=
   (rfl)
+
+/-- The complement of a point `y` of a real normed space is homotopy equivalent to the unit
+sphere: the inclusion of `sphere y 1` into `E ∖ {y}` is a homotopy equivalence, and translation
+by `-y` carries `sphere y 1` onto the unit sphere. -/
+def complSingletonHomotopyEquivSphere (y : E) :
+    ContinuousMap.HomotopyEquiv ({y}ᶜ : Set E) (sphere (0 : E) 1) :=
+  ((Homeomorph.setCongr (compl_eq_univ_sdiff {y})).toHomotopyEquiv.trans
+    ((starConvex_univ y).sphereHomotopyEquiv one_pos (subset_univ _)).symm).trans
+    ((Homeomorph.subRight y).subtype fun z ↦ by simp [mem_sphere_iff_norm]).toHomotopyEquiv
+
+/-- The homotopy equivalence `TauCeti.complSingletonHomotopyEquivSphere` is radial projection
+about `y` onto `sphere y 1`, followed by translation by `-y`. -/
+@[simp]
+theorem coe_complSingletonHomotopyEquivSphere_apply (y : E) (z : ({y}ᶜ : Set E)) :
+    (complSingletonHomotopyEquivSphere y z : E) = ‖(z : E) - y‖⁻¹ • ((z : E) - y) := by
+  simp [complSingletonHomotopyEquivSphere]
+  -- `Homeomorph.setCongr` has no evaluation lemma; it does not move points.
+  rfl
+
+/-- The homotopy inverse of `TauCeti.complSingletonHomotopyEquivSphere` is translation by `y`,
+carrying the unit sphere onto `sphere y 1 ⊆ E ∖ {y}`. -/
+@[simp]
+theorem coe_complSingletonHomotopyEquivSphere_symm_apply (y : E) (z : sphere (0 : E) 1) :
+    ((complSingletonHomotopyEquivSphere y).symm z : E) = z + y := by
+  simp [complSingletonHomotopyEquivSphere]
+  rfl
+
+/-- In a real normed space of dimension greater than one, a punctured star-convex set
+containing a sphere about the puncture is path connected. -/
+theorem _root_.StarConvex.pathConnectedSpace_diff_singleton (hV : StarConvex ℝ p V)
+    (hE : 1 < Module.rank ℝ E) (hr : 0 < r) (hS : sphere p r ⊆ V) :
+    PathConnectedSpace ↥(V \ {p}) := by
+  let := isPathConnected_iff_pathConnectedSpace.1 (isPathConnected_sphere hE p hr.le)
+  exact (hV.sphereHomotopyEquiv hr hS).pathConnectedSpace
+
+
+end NormedSpace
+
+section Complex
+
+variable {V : Set ℂ} {p : ℂ} {r R : ℝ}
+
+/-- The direction `(z - p) / ‖z - p‖` of a point `z` of `V \ {p}` seen from `p`, as a point of the
+unit circle: the normalization `TauCeti.normalizeToSphere` of `z - p`, read in `Circle`. -/
+def _root_.Complex.directionFrom (p : ℂ) (V : Set ℂ) : C(↥(V \ {p}), Circle) :=
+  (sphereCircleHomeomorph 0 one_pos : C(sphere (0 : ℂ) 1, Circle)).comp
+    (normalizeToSphere (fun z : ↥(V \ {p}) ↦ (z : ℂ) - p) (by fun_prop)
+      fun z ↦ sub_ne_zero.2 z.2.2)
+
+@[simp]
+theorem _root_.Complex.coe_directionFrom_apply (p : ℂ) (V : Set ℂ) (z : ↥(V \ {p})) :
+    (p.directionFrom V z : ℂ) = ((z : ℂ) - p) / ‖(z : ℂ) - p‖ := by
+  simp [Complex.directionFrom, NormedSpace.normalize, div_eq_inv_mul]
+
+/-- Rotating a point of a punctured ball about its centre stays in the punctured ball. -/
+private theorem add_mul_exp_mem_ball_diff_singleton {z : ℂ} (hz : z ∈ ball p R \ {p})
+    (θ : ℝ) : p + (z - p) * Complex.exp (θ * Complex.I) ∈ ball p R \ {p} := by
+  have hzp : z - p ≠ 0 := sub_ne_zero.2 hz.2
+  refine ⟨?_, ?_⟩
+  · simpa [mem_ball, dist_eq_norm, Complex.norm_exp_ofReal_mul_I] using hz.1
+  · simp [hzp, Complex.exp_ne_zero]
+
+/-- The loop `t ↦ p + (z - p) e^{2πit}` based at `z`, going once counterclockwise around `p` along
+the circle through `z`, in the punctured ball `ball p R \ {p}`. -/
+def _root_.Complex.loopAround (p : ℂ) (z : ↥(ball p R \ {p})) : Path z z where
+  toFun t := ⟨p + (z - p) * Complex.exp (↑(2 * Real.pi * t) * Complex.I),
+    add_mul_exp_mem_ball_diff_singleton z.2 _⟩
+  continuous_toFun := Continuous.subtype_mk (by fun_prop) _
+  source' := by ext; simp
+  target' := by ext; simp
+
+@[simp]
+theorem _root_.Complex.coe_loopAround_apply (p : ℂ) (z : ↥(ball p R \ {p})) (t : unitInterval) :
+    (p.loopAround z t : ℂ) = p + (z - p) * Complex.exp (↑(2 * Real.pi * t) * Complex.I) :=
+  (rfl)
+
+end Complex
 
 end TauCeti

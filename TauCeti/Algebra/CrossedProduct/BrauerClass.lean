@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.CrossedProduct.CentralSimple
 public import TauCeti.Algebra.CrossedProduct.Cohomologous
+public import TauCeti.Algebra.CrossedProduct.Congr
 public import TauCeti.Algebra.BrauerGroup.Group
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 
@@ -25,6 +26,8 @@ central simple algebra and defines its class in the Brauer group.
 
 * `TauCeti.BrauerGroup.crossedProductClass_eq_of_cohomologous`: cohomologous cocycles have the
   same Brauer class.
+* `TauCeti.BrauerGroup.crossedProductClass_eq_of_algEquiv`: corresponding cocycles over
+  isomorphic coefficient fields have the same Brauer class.
 
 ## References
 
@@ -68,5 +71,17 @@ theorem crossedProductClass_eq_of_cohomologous {z w : TwoCocycle K L} (h : z.Coh
     crossedProductClass z = crossedProductClass w :=
   let ⟨e⟩ := CrossedProduct.nonempty_algEquiv_of_cohomologous h
   mk_eq_mk_of_algEquiv (A := crossedProductCSA z) (B := crossedProductCSA w) e
+
+variable {M : Type v} [Field M] [Algebra K M] [FiniteDimensional K M] [IsGalois K M]
+
+/-- Corresponding cocycles over isomorphic finite Galois extensions have the same Brauer class.
+This permits a crossed-product presentation to be read in an isomorphic splitting field. -/
+theorem crossedProductClass_eq_of_algEquiv (c : TwoCocycle K L) (d : TwoCocycle K M)
+    (e : L ≃ₐ[K] M)
+    (hc : ∀ σ τ, Units.map e.toMonoidHom (c.toFun σ τ) =
+      d.toFun (e.autCongr σ) (e.autCongr τ)) :
+    crossedProductClass c = crossedProductClass d := by
+  rw [crossedProductClass_def, crossedProductClass_def]
+  exact mk_eq_mk_of_algEquiv (CrossedProduct.congr c d e hc)
 
 end TauCeti.BrauerGroup

@@ -35,6 +35,8 @@ orientation, and constructs the choice-independent curve-level invariant
 
 * `WeierstrassCurve.globalMinimalityClass_eq_weierstrassDefectClass`: comparison with an integral
   model.
+* `WeierstrassCurve.globalMinimalityClass_eq_mk0_weierstrassDefectIdeal`: for an integral
+  equation over `K`, the class of its defect ideal.
 * `WeierstrassCurve.globalMinimalityClass_variableChange`: invariance under an admissible change
   of variables.
 * `WeierstrassCurve.IsGlobalMinimal.weierstrassDefectClass_eq_one`: a globally minimal equation
@@ -149,6 +151,16 @@ theorem globalMinimalityClass_eq_weierstrassDefectClass (W : WeierstrassCurve O)
   simpa only [one_smul] using
     globalMinimalityClass_eq_defectClassOfIsIntegral_smul O (W.baseChange K)
       (1 : VariableChange K)
+
+/-- **The curve-level obstruction of an integral equation is the class of its defect ideal.** This
+is `globalMinimalityClass_eq_weierstrassDefectClass` for an equation over `K` that is integral,
+rather than one given as the base change of an equation over `O`. -/
+theorem globalMinimalityClass_eq_mk0_weierstrassDefectIdeal (W : WeierstrassCurve K)
+    [W.IsElliptic] [IsIntegral O W] :
+    globalMinimalityClass O W = ClassGroup.mk0 ⟨weierstrassDefectIdeal O W,
+      mem_nonZeroDivisors_iff_ne_zero.mpr (weierstrassDefectIdeal_ne_bot O W)⟩ := by
+  obtain ⟨V, rfl⟩ := ‹IsIntegral O W›.integral
+  rw [globalMinimalityClass_eq_weierstrassDefectClass, weierstrassDefectClass_def]
 
 /-- The global-minimality obstruction is invariant under an admissible change of variables. -/
 @[simp]

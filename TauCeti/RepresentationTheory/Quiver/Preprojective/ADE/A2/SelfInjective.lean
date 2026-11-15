@@ -122,8 +122,8 @@ theorem preprojectiveA2FrobeniusPairing_basis (i j : Fin 4) :
 scalar needs to be inverted and a commutative base ring suffices. -/
 instance isPerfPair_preprojectiveA2FrobeniusPairing :
     (preprojectiveA2FrobeniusPairing k).IsPerfPair :=
-  (preprojectiveA2Basis k).isPerfPair_of_apply_eq_ite _ preprojectiveA2RightDualIndex
-    (preprojectiveA2FrobeniusPairing_basis k)
+  (preprojectiveA2Basis k).isPerfPair_of_apply_eq_ite (preprojectiveA2Basis k) _
+    preprojectiveA2RightDualIndex (preprojectiveA2FrobeniusPairing_basis k)
 
 /-- **The displayed functional makes the `A₂` preprojective algebra Frobenius.** -/
 theorem isFrobeniusFunctional_preprojectiveA2FrobeniusFunctional :

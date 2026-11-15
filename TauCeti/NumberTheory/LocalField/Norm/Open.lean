@@ -34,6 +34,8 @@ index.
 ## Main results
 
 * `TauCeti.isOpen_normGroup`: `N_{L/K}(Lˣ)` is open in `Kˣ`.
+* `TauCeti.exists_unitFiltration_le_normGroup`: `N_{L/K}(Lˣ)` contains a step of the unit
+  filtration.
 * `TauCeti.finiteIndex_normGroup`: `N_{L/K}(Lˣ)` has finite index in `Kˣ`.
 
 ## References
@@ -100,11 +102,16 @@ private theorem normGroup_mem_nhds_one : (normGroup K L : Set Kˣ) ∈ nhds (1 :
 theorem isOpen_normGroup : IsOpen (normGroup K L : Set Kˣ) :=
   (normGroup K L).isOpen_of_mem_nhds normGroup_mem_nhds_one
 
+/-- The norm group of a finite separable local-field extension contains a step `U(K,n)` of the
+unit filtration. -/
+theorem exists_unitFiltration_le_normGroup : ∃ n, unitFiltration K n ≤ normGroup K L := by
+  obtain ⟨n, -, hn⟩ := hasBasis_nhds_one_unitFiltration.mem_iff.mp <|
+    (isOpen_normGroup (K := K) (L := L)).mem_nhds (normGroup K L).one_mem
+  exact ⟨n, hn⟩
+
 /-- **Norm groups of finite separable local-field extensions have finite index.** -/
 theorem finiteIndex_normGroup : (normGroup K L).FiniteIndex := by
-  have hnhds : (normGroup K L : Set Kˣ) ∈ nhds (1 : Kˣ) :=
-    (isOpen_normGroup (K := K) (L := L)).mem_nhds (normGroup K L).one_mem
-  obtain ⟨i, -, hi⟩ := hasBasis_nhds_one_unitFiltration.mem_iff.mp hnhds
+  obtain ⟨i, hi⟩ := exists_unitFiltration_le_normGroup (K := K) (L := L)
   let m := i + 1
   have hm : unitFiltration K m ≤ normGroup K L :=
     (unitFiltration_antitone (Nat.le_succ i)).trans hi

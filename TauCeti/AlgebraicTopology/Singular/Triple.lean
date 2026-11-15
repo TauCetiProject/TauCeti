@@ -8,7 +8,9 @@ module
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.AlgebraicTopology.Singular.Relative
 public import TauCeti.CategoryTheory.Abelian.DiagramLemmas.CokernelComp
+public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Topology.Category.TopTriple
+import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 
 /-!
 # The long exact sequence of a triple in relative singular homology
@@ -25,6 +27,13 @@ subspace.  The associated long homology sequence is the long exact sequence of t
 
 Each of the three pairs is a functor of the triple, so the three relative homology groups are
 functorial as well, and the connecting morphism is natural for morphisms of triples.
+
+The short exact sequence and its connecting morphism use an abelian coefficient category.  The
+zero composite and the degree-zero epimorphism also hold for preadditive coefficients with
+coproducts and homology.  Exactness at `Hₙ(X, B)` propagates vanishing from `(A, B)` and `(X, A)`
+to `(X, B)` (`TopTriple.isZero_singularHomology_totalPair`), and when `H_{d+1}(X, A) = 0` it
+propagates projectivity over hereditary coefficient categories
+(`TopTriple.projective_singularHomology_totalPair`).
 
 The source is Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
@@ -53,8 +62,7 @@ lemma singularChainComplexπ_comp_innerToTotal :
       SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R ≫
         (totalPair.obj T).singularChainComplexπ R := by
   rw [← innerToTotal_app_fst]
-  exact (((SSetPair.chainComplexFunctorπ C).app R).naturality
-    (TopPair.toSSetPair.map (innerToTotal.app T))).symm
+  exact (TopPair.singularChainComplexπ_pair_naturality (innerToTotal.app T) R).symm
 
 @[reassoc]
 lemma singularChainComplexπ_comp_totalToOuter :
@@ -115,6 +123,28 @@ private noncomputable def singularChainComplexShortComplexMap {T T' : TopTriple.
   comm₂₃ := (Functor.whiskerRight totalToOuter
     (TopPair.toSSetPair ⋙ (SSetPair.chainComplexFunctor C).obj R)).naturality φ
 
+/-- The maps `Hₙ(A, B) ⟶ Hₙ(X, B) ⟶ Hₙ(X, A)` of a triple compose to zero. -/
+@[reassoc (attr := simp)]
+lemma singularHomologyMap_innerToTotal_comp_totalToOuter [CategoryWithHomology C] (n : ℕ) :
+    TopPair.singularHomologyMap (innerToTotal.app T) R n ≫
+      TopPair.singularHomologyMap (totalToOuter.app T) R n = 0 := by
+  simp [← HomologicalComplex.homologyMap_comp,
+    T.singularChainComplexMap_innerToTotal_comp_totalToOuter R]
+
+/-- The map `H₀(X, B) ⟶ H₀(X, A)` at the end of the homology sequence of a triple is an
+epimorphism. -/
+instance [CategoryWithHomology C] :
+    Epi (TopPair.singularHomologyMap (totalToOuter.app T) R 0) := by
+  have hπ : Epi (((outerPair.obj T).singularChainComplexπ R).f 0) :=
+    inferInstanceAs (Epi (((TopPair.toSSetPair.obj (outerPair.obj T)).chainComplexπ R).f 0))
+  -- The two quotient maps share an ambient chain complex through different pairs, so supply
+  -- the epimorphism explicitly rather than asking instance search to identify those forms.
+  have : Epi ((TopPair.singularChainComplexMap (totalToOuter.app T) R).f 0) :=
+    @epi_of_epi_fac _ _ _ _ _ _ _ _ hπ
+      ((HomologicalComplex.comp_f _ _ _).symm.trans
+        (congrArg (fun f ↦ f.f 0) (T.singularChainComplexπ_comp_totalToOuter R)))
+  exact HomologicalComplex.epi_homologyMap_of_epi_of_not_rel _ _ (by simp)
+
 end
 
 section
@@ -146,6 +176,13 @@ noncomputable def singularHomologyδ (n m : ℕ) (h : m + 1 = n := by lia) :
     (outerPair.obj T).singularHomology R n ⟶ (innerPair.obj T).singularHomology R m :=
   (T.shortExact_singularChainComplexShortComplex R).δ n m (by simpa)
 
+/-- The connecting morphism of a triple is the connecting morphism of the short exact sequence of
+relative singular chain complexes of the triple. -/
+lemma singularHomologyδ_def (n m : ℕ) (h : m + 1 = n := by lia) :
+    T.singularHomologyδ R n m h =
+      (T.shortExact_singularChainComplexShortComplex R).δ n m (by simpa) :=
+  (rfl)
+
 @[reassoc (attr := simp)]
 lemma singularHomologyδ_comp (n m : ℕ) (h : m + 1 = n := by lia) :
     T.singularHomologyδ R n m h ≫ TopPair.singularHomologyMap (innerToTotal.app T) R m = 0 :=
@@ -155,13 +192,6 @@ lemma singularHomologyδ_comp (n m : ℕ) (h : m + 1 = n := by lia) :
 lemma comp_singularHomologyδ (n m : ℕ) (h : m + 1 = n := by lia) :
     TopPair.singularHomologyMap (totalToOuter.app T) R n ≫ T.singularHomologyδ R n m h = 0 :=
   (T.shortExact_singularChainComplexShortComplex R).comp_δ n m (by simpa)
-
-@[reassoc (attr := simp)]
-lemma singularHomologyMap_innerToTotal_comp_totalToOuter (n : ℕ) :
-    TopPair.singularHomologyMap (innerToTotal.app T) R n ≫
-      TopPair.singularHomologyMap (totalToOuter.app T) R n = 0 := by
-  simp [← HomologicalComplex.homologyMap_comp,
-    T.singularChainComplexMap_innerToTotal_comp_totalToOuter R]
 
 /-- Exactness at `Hₘ(A, B)` in the long exact sequence of a triple. -/
 lemma singularHomology_exact_inner (n m : ℕ) (h : m + 1 = n := by lia) :
@@ -177,6 +207,49 @@ lemma singularHomology_exact_total (n : ℕ) :
 lemma singularHomology_exact_outer (n m : ℕ) (h : m + 1 = n := by lia) :
     (ShortComplex.mk _ _ (T.comp_singularHomologyδ R n m h)).Exact :=
   (T.shortExact_singularChainComplexShortComplex R).homology_exact₃ n m (by simpa)
+
+/-- **The connecting morphism of a triple is an isomorphism when `(X, B)` is acyclic in the
+adjacent degrees**: if `Hₙ(X, B)` and `Hₘ(X, B)` vanish, then `Hₙ(X, A) ⟶ Hₘ(A, B)` is an
+isomorphism. -/
+theorem isIso_singularHomologyδ_of_isZero (n m : ℕ)
+    (hn : IsZero ((totalPair.obj T).singularHomology R n))
+    (hm : IsZero ((totalPair.obj T).singularHomology R m)) (h : m + 1 = n := by lia) :
+    IsIso (T.singularHomologyδ R n m h) :=
+  (T.shortExact_singularChainComplexShortComplex R).isIso_δ n m (by simpa) hn hm
+
+/-- **Vanishing passes from the inner and outer pairs to the total pair**: if `Hₙ(A, B)` and
+`Hₙ(X, A)` vanish, so does `Hₙ(X, B)`. -/
+theorem isZero_singularHomology_totalPair (n : ℕ)
+    (hinner : IsZero ((innerPair.obj T).singularHomology R n))
+    (houter : IsZero ((outerPair.obj T).singularHomology R n)) :
+    IsZero ((totalPair.obj T).singularHomology R n) :=
+  (T.singularHomology_exact_total R n).isZero_of_both_isZero hinner houter
+
+/-- **Enlarging the subspace by an acyclic pair**: if `Hₙ(A, B)` vanishes, and so does `Hₘ(A, B)`
+for `m + 1 = n`, then `Hₙ(X, B) ⟶ Hₙ(X, A)` is an isomorphism. -/
+theorem isIso_singularHomologyMap_totalToOuter_of_isZero (n : ℕ)
+    (hn : IsZero ((innerPair.obj T).singularHomology R n))
+    (hm : ∀ m, m + 1 = n → IsZero ((innerPair.obj T).singularHomology R m)) :
+    IsIso (TopPair.singularHomologyMap (totalToOuter.app T) R n) := by
+  have : Mono (TopPair.singularHomologyMap (totalToOuter.app T) R n) :=
+    (T.singularHomology_exact_total R n).mono_g (hn.eq_of_src _ _)
+  have : Epi (TopPair.singularHomologyMap (totalToOuter.app T) R n) := by
+    cases n with
+    | zero => infer_instance
+    | succ m => exact (T.singularHomology_exact_outer R (m + 1) m).epi_f ((hm m rfl).eq_of_tgt _ _)
+  exact isIso_of_mono_of_epi _
+
+/-- **Removing an acyclic outer pair**: if `Hₙ(X, A)` and `Hₙ₊₁(X, A)` vanish, then
+`Hₙ(A, B) ⟶ Hₙ(X, B)` is an isomorphism. -/
+theorem isIso_singularHomologyMap_innerToTotal_of_isZero (n : ℕ)
+    (hn : IsZero ((outerPair.obj T).singularHomology R n))
+    (hn' : IsZero ((outerPair.obj T).singularHomology R (n + 1))) :
+    IsIso (TopPair.singularHomologyMap (innerToTotal.app T) R n) := by
+  have : Epi (TopPair.singularHomologyMap (innerToTotal.app T) R n) :=
+    (T.singularHomology_exact_total R n).epi_f (hn.eq_of_tgt _ _)
+  have : Mono (TopPair.singularHomologyMap (innerToTotal.app T) R n) :=
+    (T.singularHomology_exact_inner R (n + 1) n).mono_g (hn'.eq_of_src _ _)
+  exact isIso_of_mono_of_epi _
 
 /-- The connecting morphism of a triple `(X, A, B)` is the connecting morphism of the pair
 `(X, A)` followed by the map `Hₘ(A) ⟶ Hₘ(A, B)`.  This factorization is what makes two consecutive
@@ -208,11 +281,18 @@ lemma singularHomologyδ_naturality {T T' : TopTriple.{w}} (φ : T ⟶ T') (R : 
     (T.shortExact_singularChainComplexShortComplex R)
     (T'.shortExact_singularChainComplexShortComplex R) n m (by simpa)
 
-/-- The map `H₀(X, B) ⟶ H₀(X, A)` at the end of the long exact sequence of a triple is an
-epimorphism. -/
-instance : Epi (TopPair.singularHomologyMap (totalToOuter.app T) R 0) :=
-  have := (T.shortExact_singularChainComplexShortComplex R).epi_g
-  HomologicalComplex.epi_homologyMap_of_epi_of_not_rel _ _ (by simp)
+/-- **Projectivity of top relative homology glues across a triple** in a hereditary abelian
+category: if `H_{d+1}(X, A)` vanishes and both `H_d(A, B)` and `H_d(X, A)` are projective, then
+`0 ⟶ H_d(A, B) ⟶ H_d(X, B) ⟶ H_d(X, A)` is exact with projective image, so `H_d(X, B)` splits as
+a direct sum of two projectives and is projective. -/
+theorem projective_singularHomology_totalPair [∀ V : A, HasProjectiveDimensionLE V 1]
+    (d : ℕ) (h : IsZero ((outerPair.obj T).singularHomology R (d + 1)))
+    [Projective ((innerPair.obj T).singularHomology R d)]
+    [Projective ((outerPair.obj T).singularHomology R d)] :
+    Projective ((totalPair.obj T).singularHomology R d) := by
+  have : Mono (TopPair.singularHomologyMap (innerToTotal.app T) R d) :=
+    (T.singularHomology_exact_inner R (d + 1) d rfl).mono_g (h.eq_of_src _ 0)
+  exact (T.singularHomology_exact_total R d).projective_X₂_of_mono_f
 
 end
 

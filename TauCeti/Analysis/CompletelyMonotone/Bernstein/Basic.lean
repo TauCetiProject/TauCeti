@@ -28,9 +28,10 @@ completely monotone. Continuity at the boundary is kept separate, so the definit
 standard examples whose right derivative blows up at `0`.
 
 A Bernstein function is nondecreasing (its derivative is nonnegative) and concave (its derivative
-is nonincreasing) on `[0, ∞)`; both are recorded below. The class is closed under sums and
-nonnegative scalar multiples, and the basic catalogue — constants, the identity, affine functions
-`t ↦ c + d t` with `c, d ≥ 0`, and the prototype `t ↦ 1 - e^{-x t}` — is built from these.
+is nonincreasing) on `[0, ∞)`; both are recorded below, together with the linear growth bound
+they imply. The class is closed under sums and nonnegative scalar multiples, and the basic
+catalogue — constants, the identity, affine functions `t ↦ c + d t` with `c, d ≥ 0`, and the
+prototype `t ↦ 1 - e^{-x t}` — is built from these.
 
 ## Main declarations
 
@@ -40,6 +41,8 @@ nonnegative scalar multiples, and the basic catalogue — constants, the identit
   `TauCeti.IsBernsteinFunction.monotoneOn`, `TauCeti.IsBernsteinFunction.concaveOn`: a Bernstein
   function is nonnegative, has nonnegative derivative, is nondecreasing, and is concave on
   `[0, ∞)`.
+* `TauCeti.IsBernsteinFunction.apply_le_div_mul_apply`: a Bernstein function grows at most
+  linearly, `f s ≤ (s / t) f t` for `0 < t ≤ s`.
 * `TauCeti.IsBernsteinFunction.congr`: the property depends only on the values on `[0, ∞)`.
 * `TauCeti.IsBernsteinFunction.add`, `TauCeti.IsBernsteinFunction.smul`,
   `TauCeti.IsBernsteinFunction.const_add`, `TauCeti.IsBernsteinFunction.sum`: closure under sums,
@@ -126,6 +129,20 @@ lemma concaveOn (hf : IsBernsteinFunction f) : ConcaveOn ℝ (Ici 0) f := by
   simpa [Function.iterate_succ, Function.iterate_zero, Function.comp_def] using
     hf.deriv_isCompletelyMonotoneOnIoi.deriv_nonpos hx
 
+/-- A Bernstein function grows at most linearly: for `0 < t ≤ s`, `f s ≤ (s / t) f t`. This
+follows from concavity on `[0, ∞)` and nonnegativity of `f 0`. -/
+lemma apply_le_div_mul_apply (hf : IsBernsteinFunction f) {s t : ℝ} (ht : 0 < t)
+    (hts : t ≤ s) : f s ≤ s / t * f t := by
+  have hs : 0 < s := ht.trans_le hts
+  have hb : 0 ≤ 1 - t / s := by rwa [sub_nonneg, div_le_one hs]
+  have h := hf.concaveOn.2 (mem_Ici.mpr hs.le) (mem_Ici.mpr le_rfl)
+    (by positivity : 0 ≤ t / s) hb (by ring)
+  simp only [smul_eq_mul, mul_zero, add_zero, div_mul_cancel₀ t hs.ne'] at h
+  calc f s = s / t * (t / s * f s) := by field_simp
+    _ ≤ s / t * f t := by
+      gcongr
+      linarith [mul_nonneg hb (hf.nonneg le_rfl)]
+
 /-- Being a Bernstein function depends only on the values on `[0, ∞)`. -/
 theorem congr (hf : IsBernsteinFunction f) (h : Set.EqOn g f (Ici 0)) :
     IsBernsteinFunction g := by
@@ -199,7 +216,7 @@ derivative `1`. -/
 theorem isBernsteinFunction_id : IsBernsteinFunction (fun t : ℝ => t) := by
   refine ⟨continuousOn_id, contDiffOn_id, fun t ht => ht, ?_⟩
   have hd : Set.EqOn (deriv (fun t : ℝ => t)) (fun _ => (1 : ℝ)) (Ioi 0) := by
-    intro x hx
+    intro x _
     simp [deriv_id'']
   exact (isCompletelyMonotone_const zero_le_one).isCompletelyMonotoneOnIoi.congr hd
 
@@ -236,7 +253,7 @@ theorem isBernsteinFunction_one_sub_exp_neg_mul {x : ℝ} (hx : 0 ≤ x) :
       ((isCompletelyMonotone_exp_neg_mul hx).smul hx).isCompletelyMonotoneOnIoi
     · have hd : Set.EqOn (deriv (fun t : ℝ => 1 - Real.exp (-x * t)))
           (x • fun t : ℝ => Real.exp (-x * t)) (Ioi 0) := by
-        intro t ht
+        intro t _
         rw [(hderiv t).deriv]
         simp [Pi.smul_apply, smul_eq_mul]
       exact hcm.congr hd

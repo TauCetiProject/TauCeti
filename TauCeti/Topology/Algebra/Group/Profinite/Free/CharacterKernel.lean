@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProP
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CharacterKernel
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Character.Kernel
 
 /-!
 # The kernel of a character of a free pro-`p` group trivial on all generators but one

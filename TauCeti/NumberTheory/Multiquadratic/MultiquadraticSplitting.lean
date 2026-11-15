@@ -49,7 +49,7 @@ private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (
   -- Lift the residue of `R` to an integer `a`, so `R ≡ a (mod Q)`.
   let R : 𝓞 K := integralSqrt (hr i)
   have hbij :=
-    NumberField.bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank Q hsplit
+    Ideal.bijective_algebraMap_int_quotient_of_ncard_primesOver_eq_finrank Q hsplit
   obtain ⟨c, hc⟩ := hbij.surjective (Ideal.Quotient.mk Q R)
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective c
   -- The algebra map `ℤ ⧸ (p) → 𝓞 K ⧸ Q` is `Ideal.quotientMap`, which sends `mk a` to
@@ -60,7 +60,7 @@ private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (
   have hdiff : algebraMap ℤ (𝓞 K) a - R ∈ Q := Ideal.Quotient.eq.mp hc
   -- `(algebraMap a - R)(algebraMap a + R) = algebraMap (a² - d i) ∈ Q`, so `p ∣ a² - d i`.
   have hpd : (p : ℤ) ∣ a ^ 2 - d i := by
-    rw [← Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q]
+    rw [← Ideal.algebraMap_mem_iff_dvd_of_liesOver Q]
     have hfac : algebraMap ℤ (𝓞 K) (a ^ 2 - d i) =
         (algebraMap ℤ (𝓞 K) a - R) * (algebraMap ℤ (𝓞 K) a + R) := by
       rw [map_sub, map_pow, ← integralSqrt_sq (hr i)]; ring
@@ -127,7 +127,7 @@ private theorem map_ne_neg_of_legendreSym_eq_one (d : ℤ) (r : K) (hr : r ^ 2 =
     rw [h1, integralSqrt_sq hr, hAsq, ← map_sub]
   have hfacQ : (R - A) * (R + A) ∈ Q := by
     rw [heq]
-    exact (Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mpr (dvd_sub_comm.mp hpa)
+    exact (Ideal.algebraMap_mem_iff_dvd_of_liesOver Q _).mpr (dvd_sub_comm.mp hpa)
   -- `σ` sends `R ↦ -R` and fixes the integer `A`.
   have hsR : σ • R = - R := by
     apply FaithfulSMul.algebraMap_injective (𝓞 K) K
@@ -148,7 +148,7 @@ private theorem map_ne_neg_of_legendreSym_eq_one (d : ℤ) (r : K) (hr : r ^ 2 =
     exact h2A
   have hpint : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
   rcases hpint.dvd_mul.mp
-      ((Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp h2a) with h2 | ha
+      ((Ideal.algebraMap_mem_iff_dvd_of_liesOver Q _).mp h2a) with h2 | ha
   · exact hodd ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp (by exact_mod_cast h2))
   · exact hpa' ha
 
@@ -196,7 +196,7 @@ private theorem stabilizer_eq_bot_of_forall_legendreSym_eq_one {ι : Type*} (d :
 /-- **The multiquadratic splitting law.** For `K = ℚ(√d₁, …, √dₙ)` generated over `ℚ` by square
 roots `r i` of integers `d i`, and an odd prime `p` dividing none of the `d i`, `p` splits
 completely in `K` iff every `d i` is a quadratic residue mod `p`. -/
-theorem ncard_primesOver_multiquadratic_iff {ι : Type*} [Finite ι] (d : ι → ℤ) (r : ι → K)
+theorem ncard_primesOver_multiquadratic_iff {ι : Type*} (d : ι → ℤ) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
     {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = finrank ℚ K ↔
@@ -204,10 +204,8 @@ theorem ncard_primesOver_multiquadratic_iff {ι : Type*} [Finite ι] (d : ι →
   -- `K` is Galois over `ℚ`: transport the multiquadratic `isGalois` along `htop`.
   have hr' : ∀ i, r i ^ 2 = algebraMap ℚ K ((d i : ℚ)) := by
     intro i; rw [hr i]; simp
-  have : IsGalois ℚ K := by
-    have hg := TauCeti.Multiquadratic.isGalois (K := ℚ) (L := K) (d := fun i => (d i : ℚ)) hr'
-    rw [htop] at hg
-    exact isGalois_iff_isGalois_top.mp hg
+  have : IsGalois ℚ K :=
+    TauCeti.Multiquadratic.isGalois_of_adjoin_eq_top (d := fun i => (d i : ℚ)) hr' htop
   -- Fix a prime `Q` of `𝓞 K` above `p`.
   have hpne : (p : ℤ) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
   have : (span {(p : ℤ)} : Ideal ℤ).IsMaximal :=
@@ -221,7 +219,7 @@ theorem ncard_primesOver_multiquadratic_iff {ι : Type*} [Finite ι] (d : ι →
   have := hQo
   refine ⟨fun hsplit i =>
     legendreSym_eq_one_of_ncard_primesOver_eq_finrank d r hr (hcop i) Q hsplit, fun hqr => ?_⟩
-  rw [ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot K Q]
+  rw [ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot ℚ K (span {(p : ℤ)}) Q]
   exact stabilizer_eq_bot_of_forall_legendreSym_eq_one d r hr htop hodd hqr Q
 
 end

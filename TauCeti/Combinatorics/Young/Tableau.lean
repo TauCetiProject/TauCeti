@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Combinatorics.Young.YoungDiagram
+-- The pigeonhole principle for the labels of a column.
+public import Mathlib.Data.Fintype.Pigeonhole
 public import TauCeti.Combinatorics.Young.Diagram
 
 /-!
@@ -18,12 +20,21 @@ A `μ`-tableau is a bijective filling `t : ↥μ.cells ≃ Fin μ.card` of the c
 label, and identifies the labels lying in a given row, respectively column, with the cells of that
 row, respectively column, of `μ`; counting those labels recovers the row lengths of `μ`
 (`YoungTableau.card_filter_rowIndex_eq`) and their partial sums
-(`YoungTableau.card_filter_rowIndex_lt`).  On top of that it proves the counting lemma
+(`YoungTableau.card_filter_rowIndex_lt`), and the column lengths
+(`YoungTableau.card_filter_colIndex_eq`). The latter gives the pigeonhole lemma
+`YoungTableau.exists_ne_and_apply_eq_of_lt_colLen`: a filling by fewer values than the length of a
+column repeats a value on that column. On top of that it proves the counting lemma
 `YoungTableau.colIndex_lt_rowLen_of_injective`: if the row of a label together with the column of
 its image under a permutation `u` of the labels determine the label, then that pair of indices is
-again a cell of `μ`.  It also defines `YoungTableau.relabel`, the transitive action of
-the permutations of the labels on the tableaux of a fixed shape, which is how two tableaux of the
-same shape are compared.
+again a cell of `μ`.  A second counting lemma,
+`YoungTableau.card_filter_lt_le_card_filter_rowIndex_lt`, bounds a filling of the labels that is
+injective on columns: it takes small values no more often than the row index does, the row filling
+`YoungTableau.rowFilling` being the extreme case.  It also defines `YoungTableau.relabel`, the
+transitive action of the permutations of the labels on the tableaux of a fixed shape, which is how
+two tableaux of the same shape are compared.  Finally it defines `YoungTableau.transpose`, the
+`μᵗ`-tableau obtained by reflecting `t` in the diagonal: rows and columns are exchanged
+(`YoungTableau.rowIndex_transpose`, `YoungTableau.colIndex_transpose`), and transposition commutes
+with relabeling (`YoungTableau.transpose_relabel`).
 
 Note that `YoungTableau μ` is an abbreviation, so that the whole `Equiv` API applies to a tableau
 directly.  As a consequence dot notation on a tableau resolves in the `Equiv` namespace, and the
@@ -39,8 +50,6 @@ requirement.  The three notions are kept distinct.
 ## References
 
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 7.1.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 0.
 -/
 
 public section
@@ -181,6 +190,26 @@ theorem card_filter_rowIndex_eq (t : YoungTableau μ) (i : ℕ) :
   rw [← Fintype.card_subtype, Fintype.card_congr (rowFiberEquiv t i), Fintype.card_coe]
   exact (YoungDiagram.rowLen_eq_card μ).symm
 
+/-- Column `j` of a `μ`-tableau carries `μ.colLen j` labels. -/
+theorem card_filter_colIndex_eq (t : YoungTableau μ) (j : ℕ) :
+    (Finset.univ.filter fun y => colIndex t y = j).card = μ.colLen j := by
+  rw [← Fintype.card_subtype, Fintype.card_congr (colFiberEquiv t j), Fintype.card_coe]
+  exact (YoungDiagram.colLen_eq_card μ).symm
+
+/-- A filling with fewer values than the length of column `j` repeats a value on that column:
+two distinct labels of the column have the same image. -/
+theorem exists_ne_and_apply_eq_of_lt_colLen (t : YoungTableau μ) {α : Type*} [Fintype α]
+    {j : ℕ} (hn : Fintype.card α < μ.colLen j) (p : Fin μ.card → α) :
+    ∃ a b : Fin μ.card, colIndex t a = j ∧ colIndex t b = j ∧ a ≠ b ∧ p a = p b := by
+  classical
+  have hcard : Fintype.card {ℓ : Fin μ.card // colIndex t ℓ = j} = μ.colLen j := by
+    rw [Fintype.card_subtype]
+    exact card_filter_colIndex_eq t j
+  obtain ⟨a, b, hab, hpab⟩ :=
+    Fintype.exists_ne_map_eq_of_card_lt (fun ℓ : {ℓ : Fin μ.card // colIndex t ℓ = j} => p ℓ)
+      (by rw [hcard]; exact hn)
+  exact ⟨a, b, a.2, b.2, fun h => hab (Subtype.ext h), hpab⟩
+
 /-- The labels of a tableau lying in one of its first `k` rows are as many as the cells of the
 shape in its first `k` rows. -/
 theorem card_filter_rowIndex_lt (t : YoungTableau μ) (k : ℕ) :
@@ -314,6 +343,58 @@ theorem colIndex_lt_rowLen_of_injective (t : YoungTableau μ) (u : Equiv.Perm (F
   simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hx
   exact hx.1
 
+/-! ## Fillings injective on columns
+
+A filling `p : Fin μ.card → ℕ` of the labels of a `μ`-tableau is *injective on columns* when the
+value `p x` together with the column of `x` determines `x`.  The counting lemma
+`TauCeti.YoungTableau.card_filter_lt_le_card_filter_rowIndex_lt` is that such a filling takes
+small values no more often than the row index does: for every `m`, at most as many labels satisfy
+`p x < m` as satisfy `rowIndex t x < m`.  The row index is itself injective on columns
+(`TauCeti.YoungTableau.rowIndex_colIndex_injective`), so the bound is sharp.
+
+Reading the labels as the cells carrying them, the filling plays the role of a row function and
+the tableau that of an injection into the cells, so the lemma is the counting core
+`YoungDiagram.card_filter_le_sum_take_rowLens` with the right-hand side counted back by
+`TauCeti.YoungTableau.card_filter_rowIndex_lt`.
+-/
+
+/-- **A filling injective on columns takes small values no more often than the row index does.**
+For every `m`, at most as many labels of a `μ`-tableau satisfy `p x < m` as lie in one of the
+first `m` rows.
+
+As `m` varies, this gives the dominance bound on the content of such a filling: the content is
+dominated by the sequence of row lengths of `μ`, which is the content of the row index itself. -/
+theorem card_filter_lt_le_card_filter_rowIndex_lt (t : YoungTableau μ) {p : Fin μ.card → ℕ}
+    (hp : Function.Injective fun x => (p x, colIndex t x)) (m : ℕ) :
+    (Finset.univ.filter fun x => p x < m).card ≤
+      (Finset.univ.filter fun x => rowIndex t x < m).card := by
+  rw [card_filter_rowIndex_lt]
+  refine YoungDiagram.card_filter_le_sum_take_rowLens μ p
+    (fun x => ((t.symm x : ↥μ.cells) : ℕ × ℕ)) (fun x => (t.symm x).2)
+    (fun x y hxy => t.symm.injective (Subtype.ext hxy)) (fun x y hv hc => ?_) m
+  exact hp (Prod.ext hv (by simpa only [colIndex_def] using hc))
+
+/-! ## The row filling -/
+
+variable {n : ℕ}
+
+/-- **The row filling** of a `μ`-tableau whose shape has at most `n` rows: the row index of a
+label, read as an element of `Fin n`.  It is injective on the columns of `t`
+(`TauCeti.YoungTableau.rowIndex_colIndex_injective`), and the extreme case of the counting lemma
+above: its content is the sequence of row lengths of `μ`. -/
+def rowFilling (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) (x : Fin μ.card) : Fin n :=
+  ⟨rowIndex t x, (rowIndex_lt_colLen_zero t x).trans_le hn⟩
+
+@[simp]
+theorem val_rowFilling (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) (x : Fin μ.card) :
+    (rowFilling t hn x : ℕ) = rowIndex t x :=
+  (rfl)
+
+@[simp]
+theorem rowFilling_eq_iff (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) (x : Fin μ.card)
+    (j : Fin n) : rowFilling t hn x = j ↔ rowIndex t x = (j : ℕ) := by
+  rw [Fin.ext_iff, val_rowFilling]
+
 /-! ## Relabeling -/
 
 /-- The tableau `t` with its labels permuted by `σ`: the cell that `t` labels `k` is labelled
@@ -377,6 +458,60 @@ theorem relabel_relabelPerm (t t' : YoungTableau μ) : relabel (relabelPerm t t'
 /-- Any two tableaux of the same shape differ by a relabeling. -/
 theorem exists_relabel_eq (t t' : YoungTableau μ) : ∃ σ, relabel σ t = t' :=
   ⟨relabelPerm t t', relabel_relabelPerm t t'⟩
+
+/-! ## Transposition -/
+
+/-- The **transpose** of a `μ`-tableau: the `μᵗ`-tableau giving the cell `(j, i)` the label
+that `t` gives to the cell `(i, j)`, read in `Fin μᵗ.card` through
+`YoungDiagram.card_transpose`.  Rows and columns are exchanged: the label `k` lies in row `i` of
+`transpose t` exactly when it lies in column `i` of `t` (`rowIndex_transpose`,
+`colIndex_transpose`). -/
+def transpose (t : YoungTableau μ) : YoungTableau μ.transpose :=
+  μ.transposeCellsEquiv.trans (t.trans (finCongr (YoungDiagram.card_transpose μ).symm))
+
+@[simp]
+theorem transpose_apply (t : YoungTableau μ) (c : ↥μ.transpose.cells) :
+    transpose t c = Fin.cast (YoungDiagram.card_transpose μ).symm (t (μ.transposeCellsEquiv c)) :=
+  (rfl)
+
+@[simp]
+theorem transpose_symm_apply (t : YoungTableau μ) (k : Fin μ.transpose.card) :
+    (transpose t).symm k =
+      μ.transposeCellsEquiv.symm (t.symm (Fin.cast (YoungDiagram.card_transpose μ) k)) :=
+  (rfl)
+
+/-- The row of a label in the transposed tableau is its column in the original one. -/
+@[simp]
+theorem rowIndex_transpose (t : YoungTableau μ) (k : Fin μ.transpose.card) :
+    rowIndex (transpose t) k = colIndex t (Fin.cast (YoungDiagram.card_transpose μ) k) := by
+  rw [rowIndex_def, colIndex_def, transpose_symm_apply,
+    YoungDiagram.transposeCellsEquiv_symm_apply, Prod.fst_swap]
+
+/-- The column of a label in the transposed tableau is its row in the original one. -/
+@[simp]
+theorem colIndex_transpose (t : YoungTableau μ) (k : Fin μ.transpose.card) :
+    colIndex (transpose t) k = rowIndex t (Fin.cast (YoungDiagram.card_transpose μ) k) := by
+  rw [rowIndex_def, colIndex_def, transpose_symm_apply,
+    YoungDiagram.transposeCellsEquiv_symm_apply, Prod.snd_swap]
+
+/-- Transposing a tableau twice gives back its labels: the cell `c` of `μᵗᵗ = μ` carries the
+label that `t` gives it. -/
+theorem transpose_transpose_apply_val (t : YoungTableau μ) (c : ↥μ.transpose.transpose.cells) :
+    (transpose (transpose t) c : ℕ) = t ⟨c, by simpa using c.2⟩ := by
+  simp only [transpose_apply, YoungDiagram.transposeCellsEquiv_apply, Prod.swap_swap,
+    Fin.val_cast]
+
+/-- Distinct tableaux have distinct transposes. -/
+theorem transpose_injective : Function.Injective (transpose (μ := μ)) := fun t t' h =>
+  Equiv.ext fun c => by
+    simpa using congr($h (μ.transposeCellsEquiv.symm c))
+
+/-- Transposition commutes with relabeling, the permutation of the labels being read in
+`Fin μᵗ.card`. -/
+theorem transpose_relabel (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ) :
+    transpose (relabel σ t) =
+      relabel ((finCongr (YoungDiagram.card_transpose μ).symm).permCongr σ) (transpose t) :=
+  Equiv.ext fun c => by simp
 
 /-- Every Young diagram carries a tableau: enumerating its cells is one.
 

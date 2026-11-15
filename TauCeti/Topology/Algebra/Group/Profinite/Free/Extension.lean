@@ -43,11 +43,11 @@ recorded in `TauCeti.Topology.Algebra.Group.Profinite.Free.Cohomology`.
 
 public section
 
-namespace TauCeti
+namespace GroupExtension
 
 universe u
 
-open freeProP
+open TauCeti freeProP
 
 variable {p : ℕ} {X : Type u} {M : Type*} [Group M] [TopologicalSpace M]
   {E : Type u} [Group E] [TopologicalSpace E] [IsTopologicalGroup E] [CompactSpace E]
@@ -58,17 +58,20 @@ extension `1 → M → E → freeProP p X → 1` of topological groups with prof
 pro-`p` kernel, and a preimage `e x` of each generator `of x`, there is a continuous homomorphic
 section sending `of x` to `e x`: the universal property of `freeProP p X` extends `e` to a
 continuous homomorphism, which is a section because both composites agree on the generators. -/
-theorem _root_.GroupExtension.exists_splitting_continuous_freeProP_forall_apply_of_eq
+theorem exists_splitting_continuous_freeProP_forall_apply_of_eq
     (hinl : Continuous S.inl) (hrh : Continuous S.rightHom) (hM : IsProP p M) (e : X → E)
     (he : ∀ x, S.rightHom (e x) = of x) :
     ∃ s : S.Splitting, Continuous ⇑s ∧ ∀ x, s (of x) = e x := by
-  have hE : IsProP p E := S.isProP hinl hrh hM (isProP_freeProP p X)
-  -- The projection, bundled with its continuity; it evaluates as `S.rightHom` by construction.
-  let π : E →ₜ* freeProP p X := ⟨S.rightHom, hrh⟩
-  have hπ : ∀ z, π z = S.rightHom z := fun _ ↦ rfl
-  have hs : π.comp (lift hE e) = ContinuousMonoidHom.id (freeProP p X) :=
-    hom_ext fun x ↦ by simp [hπ, he]
-  exact ⟨GroupExtension.Splitting.mk (lift hE e).toMonoidHom fun y ↦ by
-    simpa [hπ] using DFunLike.congr_fun hs y, (lift hE e).continuous, fun x ↦ lift_of hE e x⟩
+  have hE : IsProP p E :=
+    S.isProP hinl
+      (MonoidHom.isOpenQuotientMap_of_isQuotientMap
+        (Topology.IsQuotientMap.of_surjective_continuous S.rightHom_surjective hrh)).isOpenMap
+      hM (isProP_freeProP p X)
+  have hσ : (⟨S.rightHom, hrh⟩ : E →ₜ* freeProP p X).comp (lift hE e) =
+      ContinuousMonoidHom.id _ :=
+    hom_ext fun x ↦ (congrArg S.rightHom (lift_of hE e x)).trans (he x)
+  obtain ⟨s, hs, hsσ⟩ := S.exists_splitting_continuous_of_comp_eq_id (lift hE e)
+    (congrArg ContinuousMonoidHom.toMonoidHom hσ)
+  exact ⟨s, hs, fun x ↦ (hsσ _).trans (lift_of hE e x)⟩
 
-end TauCeti
+end GroupExtension

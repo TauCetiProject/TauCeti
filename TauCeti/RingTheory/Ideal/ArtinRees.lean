@@ -7,12 +7,16 @@ module
 
 public import Mathlib.RingTheory.Filtration
 
+import TauCeti.RingTheory.Ideal.Operations
+
 /-!
-# Lifting through a surjection with control on the `I`-adic filtration
+# Consequences of the Artin–Rees lemma for `I`-adic filtrations
 
 Mathlib's Artin–Rees lemma, `Ideal.exists_pow_inf_eq_pow_smul`, compares the `I`-adic filtration
-of a module with the filtration it induces on a submodule. This file draws the lifting consequence
-that the adic theory uses.
+of a module with the filtration it induces on a submodule. This file draws two consequences that
+the adic theory uses: lifting through a surjection with control on the filtration, and the
+Artin–Rees lemma for a finitely generated submodule of an arbitrary module, comparing the
+filtration it induces on another submodule with that submodule's `I`-adic filtration.
 
 Fix a submodule `N` of a finite module `M` over a noetherian ring. Then **one shift `k₀` serves
 every surjection onto `N` and every depth at once**: for any module `P` and any surjection
@@ -37,15 +41,19 @@ the Huber development that consumes it.
 * `TauCeti.ArtinRees.exists_controlled_lift`: there is a shift depending only on `I` and the
   submodule — quantified before the surjection — for which every surjection onto that submodule
   admits lifts with control on the `I`-adic filtration.
+* `Ideal.exists_pow_add_smul_inf_eq_pow_smul`: for `N₀` finitely generated and a submodule `L`,
+  one shift `k` gives `I ^ (n + k) • N₀ ⊓ L = I ^ n • (I ^ k • N₀ ⊓ L)` for all `n`; this is the
+  form used to compare natural topologies of finite modules over Huber rings.
 
 ## Provenance
 
 Adapted from AINTLIB's `ArtinRees.controlled_lift`, branch `dev/adic-spaces`, commit `37bbdaeb`,
 Apache-2.0, Chris Birkbeck, `projects/AdicSpaces/Adic spaces/ArtinReesConvergence.lean`, whose
-reference is given there as Wedhorn Lemma 8.31. Note that the TauCeti roadmap assigns that
-number to a different statement — `A⟨X⟩` faithfully flat over `A`, in
-`AdicSpaces/README.md` — so the citation below is the source's own attribution, not a
-roadmap node. Two generalisations:
+reference is given there as Wedhorn Lemma 8.31; the citation below is that source's own
+attribution. That lemma is not itself an Artin–Rees statement: in arXiv:1910.05934v1 it says
+that for a noetherian complete Tate ring `A` the ring `A⟨X⟩` is faithfully flat over `A`, and
+that `A⟨X⟩ / (f - X)` and `A⟨X⟩ / (1 - f X)` are flat over `A` for every `f ∈ A`.
+Two generalisations:
 
 * the source fixes the ambient module to `Fin l → R` and the source of the surjection to
   `Fin k → R`, presenting the map as `∑ j, c j • s j` for a chosen spanning family; here the
@@ -60,7 +68,8 @@ One declaration is not ported: the source's `pi_smul_top_component`, which has n
 
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 8.31.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 8.31 (flatness of
+  `A⟨X⟩`; cited by the AINTLIB source).
 * [C. Birkbeck, *AINTLIB*](https://github.com/CBirkbeck/AINTLIB), branch `dev/adic-spaces`,
   commit `37bbdaeb`, `projects/AdicSpaces/Adic spaces/ArtinReesConvergence.lean`.
 -/
@@ -96,5 +105,29 @@ theorem exists_controlled_lift [IsNoetherianRing R] [Module.Finite R M] (I : Ide
   exact Submodule.mem_map.mp hv_top
 
 end TauCeti.ArtinRees
+
+variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
+
+namespace Ideal
+
+/-- **Artin–Rees for a finitely generated submodule.** If `N₀` is a finitely generated submodule
+over a noetherian ring and `L` is any submodule, there is a shift `k`, depending on `I`, `N₀`
+and `L`, such that `I ^ (n + k) • N₀ ⊓ L` equals `I ^ n • (I ^ k • N₀ ⊓ L)` for every `n`.
+The ambient module need not be finite: only `N₀` is, so Mathlib's
+`Ideal.exists_pow_inf_eq_pow_smul` is applied inside `N₀`.
+In particular `I ^ (n + k) • N₀ ⊓ L ≤ I ^ n • L`; when `L ≤ N₀`, this shows that the
+filtration `N₀` induces on `L` is cofinal in the `I`-adic filtration of `L`. -/
+theorem exists_pow_add_smul_inf_eq_pow_smul [IsNoetherianRing R] (I : Ideal R)
+    {N₀ : Submodule R M} (hN₀ : N₀.FG) (L : Submodule R M) :
+    ∃ k : ℕ, ∀ n : ℕ, I ^ (n + k) • N₀ ⊓ L = I ^ n • (I ^ k • N₀ ⊓ L) := by
+  have : Module.Finite R N₀ := Module.Finite.iff_fg.mpr hN₀
+  obtain ⟨k, hk⟩ := I.exists_pow_inf_eq_pow_smul (L.comap N₀.subtype)
+  refine ⟨k, fun n ↦ ?_⟩
+  -- Artin–Rees inside `N₀`, transported to `M` along the inclusion `N₀ → M`.
+  have h := congrArg (Submodule.map N₀.subtype) (hk (n + k) (Nat.le_add_left k n))
+  rwa [Submodule.map_subtype_smul_top_inf_comap, Nat.add_sub_cancel, Submodule.map_smul'',
+    Submodule.map_subtype_smul_top_inf_comap] at h
+
+end Ideal
 
 end

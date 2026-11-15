@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Basic
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.Flat
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Subsystem.Flat
 
 /-!
 # Flatness of integral Kostant toral closures
@@ -15,6 +14,10 @@ The integral Kostant toral closure is the subgroup of a general linear group gen
 its represented root subgroups and weight torus. The coordinate algebras of these generators
 are torsion-free over `ℤ`, so the common-kernel quotient defining the carrier is torsion-free
 and therefore flat over `ℤ`.
+
+The instance `flat_kostantToralGroupScheme` also applies to
+`TauCeti.DynkinType.ChevalleyDatum.groupScheme`, which abbreviates `kostantToralGroupScheme`
+with the datum's representation, lattice, basis, and actual coordinate weights.
 
 This controls scalar torsion in the integral carrier before comparison with the pinned
 simply connected group scheme. It does not assert that its special fibers are smooth, or
@@ -31,6 +34,8 @@ flatness follows from the common-kernel scalar-torsion criterion.
 -/
 
 public section
+
+open AlgebraicGeometry
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
@@ -55,26 +60,12 @@ instance isTorsionFree_kostantToralCoordinateHopfAlgebra :
     Module.IsTorsionFree ℤ
       (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
         (kostantToralDefiningIdeal e h ρ M hM hnil b wt)) := by
-  let K : I ⊕ Unit → _root_.CommHopfAlgCat ℤ := fun j ↦ match j with
-    | .inl _ => AdditiveGroup.coordinateHopfAlgebra ℤ
-    | .inr _ => (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj
-  let f : ∀ j, GeneralLinear.coordinateHopfAlgebra ℤ n ⟶ K j := fun j ↦ match j with
-    | .inl i => kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b
-    | .inr _ => GeneralLinear.weightTorusCoordinateMap wt
-  have hJ : kostantToralDefiningIdeal e h ρ M hM hnil b wt =
-      CommHopfAlgCat.commonKernelHopfIdeal f := by
-    apply le_antisymm
-    · rw [CommHopfAlgCat.le_commonKernelHopfIdeal_iff]
-      have h := (le_kostantToralDefiningIdeal_iff e h ρ M hM hnil b wt _).mp le_rfl
-      rintro (i | j)
-      · exact h.1 i
-      · exact h.2
-    · rw [le_kostantToralDefiningIdeal_iff]
-      exact ⟨fun i ↦ CommHopfAlgCat.commonKernelHopfIdeal_toIdeal_le_ker f (.inl i),
-        CommHopfAlgCat.commonKernelHopfIdeal_toIdeal_le_ker f (.inr ())⟩
-  rw [hJ]
-  refine @CommHopfAlgCat.isTorsionFree_quotient_commonKernelHopfIdeal ℤ _ _
-    (GeneralLinear.coordinateHopfAlgebra ℤ n) (I ⊕ Unit) K f ?_
-  rintro (i | j) <;> infer_instance
+  rw [← kostantTorusSubsystemDefiningIdeal_univ e h ρ M hM b wt (hnil := hnil)]
+  infer_instance
+
+/-- The structural morphism of an integral Kostant toral closure is flat. -/
+instance flat_kostantToralGroupScheme :
+    Flat (kostantToralGroupScheme e h ρ M hM hnil b wt).X.hom :=
+  (moduleFlat_iff_flat_hopfSpec ℤ _).mp inferInstance
 
 end TauCeti.UniversalEnvelopingAlgebra

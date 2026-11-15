@@ -1,0 +1,249 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.Modules.Algebra.Pushforward
+
+/-!
+# Algebras of functions under pushforward
+
+The lax symmetric monoidal pushforward of module sheaves carries commutative algebras to
+commutative algebras. Its sections on an open are the sections of the original algebra on the
+inverse image, with the same ring operations. In particular, pushing forward the tensor-unit
+algebra gives the algebra of regular functions of a scheme over its base, on the actual
+pushforward of its structure sheaf.
+
+The construction uses Mathlib's `Functor.mapCommMon` and `CommMon.trivial`, together with the
+canonical lax monoidal pushforward of sheaves of modules. The section calculation identifies
+its multiplication with multiplication of regular functions; it is needed to recover coordinate
+algebras from affine morphisms. For `f : X ⟶ Y`, module maps from the free sheaf on `I` to
+`f_* 𝒪_X` are `I`-indexed families of global functions on `X`
+(`AlgebraicGeometry.Scheme.Hom.freeHomPushforwardEquiv`). For `q : T ⟶ Y` and `f : Y ⟶ X`, the
+identification `f_* q_* ≅ (q ≫ f)_*` of lax monoidal functors gives the comparison
+`AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso` of function algebras
+`f_* (q_* 𝒪_T) ≅ (q ≫ f)_* 𝒪_T`.
+
+## References
+
+* The Stacks Project, Tag 01LL (quasi-coherent algebras and relative spectra).
+-/
+
+public section
+
+open CategoryTheory MonoidalCategory Opposite AlgebraicGeometry
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+universe u
+
+noncomputable section
+
+variable {X Y : Scheme.{u}} (f : X ⟶ Y)
+
+-- Expose the object construction so that section-ring carriers compute on inverse images;
+-- all ring operations and restriction comparisons are characterized by the public API.
+-- The `_one`, `_apply`, `_symm_apply`, and `_algebraMap` statements need this computation
+-- to type-check. The propositional `_X` equality cannot supply it during elaboration.
+/-- The algebra of regular functions of `X` over `Y`, carried by the actual pushforward
+`f_* 𝒪_X`. The algebra structure is induced by lax symmetric monoidal pushforward. -/
+@[expose]
+def pushforwardStructureAlgebra : CommMon Y.Modules :=
+  (Scheme.Modules.pushforward f).mapCommMon.obj (CommMon.trivial X.Modules)
+
+/-- The underlying module of the function algebra is the pushforward of the structure sheaf. -/
+@[simp]
+lemma pushforwardStructureAlgebra_X :
+    f.pushforwardStructureAlgebra.X =
+      (Scheme.Modules.pushforward f).obj (𝟙_ X.Modules) :=
+  (rfl)
+
+/-- The unit of the function algebra is the map on regular functions induced by `f`. -/
+@[simp]
+lemma pushforwardStructureAlgebra_one :
+    MonObj.one (X := f.pushforwardStructureAlgebra.X) =
+      _root_.SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom :=
+  (congrArg (Functor.LaxMonoidal.ε (Scheme.Modules.pushforward f) ≫ ·)
+    ((Scheme.Modules.pushforward f).map_id (𝟙_ X.Modules))).trans
+      ((Category.comp_id _).trans (Scheme.Modules.pushforward_ε f))
+
+/-- On each open of the base, the function algebra is the ordinary ring of regular functions
+on the inverse image. -/
+def pushforwardStructureAlgebraSectionsRingEquiv (U : Y.Opens) :
+    Γ(f.pushforwardStructureAlgebra.X, U) ≃+* Γ(X, f ⁻¹ᵁ U) :=
+  f.pushforwardSectionsRingEquiv (CommMon.trivial X.Modules) U |>.trans
+    (X.structureAlgebraSectionsRingEquiv (f ⁻¹ᵁ U))
+
+@[simp]
+lemma pushforwardStructureAlgebraSectionsRingEquiv_apply
+    (U : Y.Opens) (x : Γ(f.pushforwardStructureAlgebra.X, U)) :
+    f.pushforwardStructureAlgebraSectionsRingEquiv U x = x := by
+  exact (X.structureAlgebraSectionsRingEquiv_apply (f ⁻¹ᵁ U)
+    (f.pushforwardSectionsRingEquiv (CommMon.trivial X.Modules) U x)).trans
+      (f.pushforwardSectionsRingEquiv_apply (CommMon.trivial X.Modules) U x)
+
+@[simp]
+lemma pushforwardStructureAlgebraSectionsRingEquiv_symm_apply
+    (U : Y.Opens) (x : Γ(X, f ⁻¹ᵁ U)) :
+    (f.pushforwardStructureAlgebraSectionsRingEquiv U).symm x = x := by
+  exact (f.pushforwardSectionsRingEquiv_symm_apply (CommMon.trivial X.Modules) U
+    ((X.structureAlgebraSectionsRingEquiv (f ⁻¹ᵁ U)).symm x)).trans
+      (X.structureAlgebraSectionsRingEquiv_symm_apply (f ⁻¹ᵁ U) x)
+
+/-- The global functions on `X` are the sections over `Y` of the function algebra: restriction
+to `f ⁻¹ᵁ ⊤ = ⊤`, followed by the inverse section-ring equivalence over `⊤`. -/
+def pushforwardStructureAlgebraΓRingEquiv :
+    Γ(X, ⊤) ≃+* Γ(f.pushforwardStructureAlgebra.X, ⊤) :=
+  (X.presheaf.mapIso (⟨homOfLE le_top, homOfLE (by simp), Subsingleton.elim _ _,
+    Subsingleton.elim _ _⟩ : f ⁻¹ᵁ ⊤ ≅ ⊤).op).commRingCatIsoToRingEquiv.trans
+    (f.pushforwardStructureAlgebraSectionsRingEquiv ⊤).symm
+
+/-- The identification of global functions with global sections of the function algebra is
+restriction to `f ⁻¹ᵁ ⊤`. -/
+@[simp]
+lemma pushforwardStructureAlgebraΓRingEquiv_apply
+    (b : Γ(X, ⊤)) :
+    f.pushforwardStructureAlgebraΓRingEquiv b =
+      (f.pushforwardStructureAlgebraSectionsRingEquiv ⊤).symm
+        (X.presheaf.map (homOfLE (le_top : f ⁻¹ᵁ ⊤ ≤ ⊤)).op b) :=
+  (rfl)
+
+/-- The inverse identification of global sections of the function algebra with global functions
+is restriction from `f ⁻¹ᵁ ⊤` to `⊤`. -/
+@[simp]
+lemma pushforwardStructureAlgebraΓRingEquiv_symm_apply
+    (x : Γ(f.pushforwardStructureAlgebra.X, ⊤)) :
+    f.pushforwardStructureAlgebraΓRingEquiv.symm x =
+      X.presheaf.map (homOfLE (by simp : ⊤ ≤ f ⁻¹ᵁ ⊤)).op
+        (f.pushforwardStructureAlgebraSectionsRingEquiv ⊤ x) :=
+  (rfl)
+
+/-- Module maps from the free sheaf on `I` to the function algebra `f_* 𝒪_X` of a morphism
+`f : X ⟶ Y` are `I`-indexed families of global functions on `X`: a module map goes to the global
+functions on `X` that are its values on the basis sections. -/
+def freeHomPushforwardEquiv (I : Type u) :
+    (SheafOfModules.free (R := Y.ringCatSheaf) I ⟶
+        (Scheme.Modules.pushforward f).obj (𝟙_ X.Modules)) ≃ (I → Γ(X, ⊤)) :=
+  (SheafOfModules.freeHomEquiv _).trans <| Equiv.piCongrRight fun _ ↦
+    { toFun s := f.pushforwardStructureAlgebraΓRingEquiv.symm (s.val (op ⊤))
+      invFun b := PresheafOfModules.sectionsMk
+        (fun U ↦ ((Scheme.Modules.pushforward f).obj (𝟙_ X.Modules)).presheaf.map
+          U.unop.leTop.op (f.pushforwardStructureAlgebraΓRingEquiv b))
+        (fun _ _ _ ↦ (ConcreteCategory.congr_hom
+          (((Scheme.Modules.pushforward f).obj (𝟙_ X.Modules)).presheaf.map_comp _ _) _).symm)
+      left_inv s := PresheafOfModules.sections_ext _ _ fun U ↦
+        (congrArg _ (RingEquiv.apply_symm_apply _ _)).trans (s.property U.unop.leTop.op)
+      -- Over `⊤`, the restriction `homOfLE le_top` is the identity morphism of `⊤`.
+      right_inv b := (congrArg f.pushforwardStructureAlgebraΓRingEquiv.symm
+        (ConcreteCategory.congr_hom (((Scheme.Modules.pushforward f).obj
+          (𝟙_ X.Modules)).presheaf.map_id (op ⊤)) _)).trans (RingEquiv.symm_apply_apply _ b) }
+
+/-- The family of global functions of a module map `𝒪_Y^I ⟶ f_* 𝒪_X` consists of its values on
+the basis sections, viewed as global functions on `X`. -/
+lemma freeHomPushforwardEquiv_apply (I : Type u)
+    (φ : SheafOfModules.free (R := Y.ringCatSheaf) I ⟶
+      (Scheme.Modules.pushforward f).obj (𝟙_ X.Modules)) (i : I) :
+    f.freeHomPushforwardEquiv I φ i =
+      f.pushforwardStructureAlgebraΓRingEquiv.symm
+        ((SheafOfModules.freeHomEquiv _ φ i).val (op ⊤)) :=
+  (rfl)
+
+/-- The structure map on sections of the function algebra is pullback of regular functions
+along the scheme morphism. -/
+@[simp]
+lemma pushforwardStructureAlgebra_algebraMap
+    (U : Y.Opens) (r : Γ(Y, U)) :
+    algebraMap Γ(Y, U) Γ(f.pushforwardStructureAlgebra.X, U) r = f.app U r := by
+  rw [CommMon.sections_algebraMap_def,
+    Scheme.Hom.pushforwardStructureAlgebra_one, Scheme.Modules.sectionsFunctor_ε]
+  rfl
+
+/-- The presheaf of rings underlying the function algebra is naturally the direct image of
+the structure presheaf. -/
+def pushforwardStructureAlgebraPresheafIso :
+    f.pushforwardStructureAlgebra.sectionsPresheaf ≅
+      (TopologicalSpace.Opens.map f.base).op ⋙ X.presheaf :=
+  f.pushforwardSectionsPresheafIso (CommMon.trivial X.Modules) ≪≫
+    Functor.isoWhiskerLeft (TopologicalSpace.Opens.map f.base).op
+      X.structureAlgebraSectionsPresheafIso
+
+/-- The comparison with regular functions is given on each open by the section-ring
+equivalence of the function algebra. -/
+@[simp]
+lemma pushforwardStructureAlgebraPresheafIso_hom_app
+    (U : Y.Opensᵒᵖ) :
+    f.pushforwardStructureAlgebraPresheafIso.hom.app U =
+      (f.pushforwardStructureAlgebraSectionsRingEquiv U.unop).toCommRingCatIso.hom := by
+  dsimp +instances only [Scheme.Hom.pushforwardStructureAlgebra,
+    Scheme.Hom.pushforwardStructureAlgebraPresheafIso, Iso.trans_hom,
+    NatTrans.comp_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app]
+  erw [Scheme.Hom.pushforwardSectionsPresheafIso_hom_app,
+    Scheme.structureAlgebraSectionsPresheafIso_hom_app]
+  rfl
+
+/-- The inverse comparison with regular functions is given on each open by the inverse
+section-ring equivalence of the function algebra. -/
+@[simp]
+lemma pushforwardStructureAlgebraPresheafIso_inv_app
+    (U : Y.Opensᵒᵖ) :
+    f.pushforwardStructureAlgebraPresheafIso.inv.app U =
+      (f.pushforwardStructureAlgebraSectionsRingEquiv U.unop).toCommRingCatIso.inv := by
+  dsimp +instances only [Scheme.Hom.pushforwardStructureAlgebra,
+    Scheme.Hom.pushforwardStructureAlgebraPresheafIso, Iso.trans_inv,
+    NatTrans.comp_app, Functor.isoWhiskerLeft_inv, Functor.whiskerLeft_app]
+  erw [Scheme.Hom.pushforwardSectionsPresheafIso_inv_app,
+    Scheme.structureAlgebraSectionsPresheafIso_inv_app]
+  rfl
+
+/-- The presheaf comparison identifies the algebra's structure map with the actual
+structure-presheaf morphism of the scheme map. -/
+@[reassoc (attr := simp)]
+lemma pushforwardStructureAlgebra_toSectionsPresheaf_comp :
+    f.pushforwardStructureAlgebra.toSectionsPresheaf ≫
+      f.pushforwardStructureAlgebraPresheafIso.hom = f.c := by
+  ext U r
+  rw [NatTrans.comp_app, CommMon.toSectionsPresheaf_app,
+    Scheme.Hom.pushforwardStructureAlgebraPresheafIso_hom_app]
+  exact (f.pushforwardStructureAlgebraSectionsRingEquiv_apply U _).trans
+    (f.pushforwardStructureAlgebra_algebraMap U r)
+
+end
+
+noncomputable section
+
+variable {X Y T : Scheme.{u}}
+
+/-- The function algebra of a composite is the pushforward of the function algebra:
+`f_* (q_* 𝒪_T) ≅ (q ≫ f)_* 𝒪_T` as `𝒪_X`-algebras, for `q : T ⟶ Y` and `f : Y ⟶ X`. It is
+the identification `f_* q_* ≅ (q ≫ f)_*` of lax monoidal functors, applied to the tensor-unit
+algebra of `T`. -/
+def pushforwardStructureAlgebraCompIso (q : T ⟶ Y)
+    (f : Y ⟶ X) :
+    (Scheme.Modules.pushforward f).mapCommMon.obj q.pushforwardStructureAlgebra ≅
+      (q ≫ f).pushforwardStructureAlgebra :=
+  Functor.mapCommMonCompIso.symm.app (CommMon.trivial T.Modules) ≪≫
+    (Functor.mapCommMonNatIso (Scheme.Modules.pushforwardComp q f)).app _
+
+/-- As a morphism of modules, the comparison `f_* (q_* 𝒪_T) ⟶ (q ≫ f)_* 𝒪_T` is the
+identification `f_* q_* ≅ (q ≫ f)_*` of pushforwards. -/
+@[simp]
+lemma pushforwardStructureAlgebraCompIso_hom_hom_hom
+    (q : T ⟶ Y) (f : Y ⟶ X) :
+    (q.pushforwardStructureAlgebraCompIso f).hom.hom.hom =
+      (Scheme.Modules.pushforwardComp q f).hom.app _ :=
+  (rfl)
+
+/-- As a morphism of modules, the comparison `(q ≫ f)_* 𝒪_T ⟶ f_* (q_* 𝒪_T)` is the inverse
+identification of pushforwards. -/
+@[simp]
+lemma pushforwardStructureAlgebraCompIso_inv_hom_hom
+    (q : T ⟶ Y) (f : Y ⟶ X) :
+    (q.pushforwardStructureAlgebraCompIso f).inv.hom.hom =
+      (Scheme.Modules.pushforwardComp q f).inv.app _ :=
+  (rfl)
+
+end
+
+end AlgebraicGeometry.Scheme.Hom

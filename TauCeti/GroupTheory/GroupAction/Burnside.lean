@@ -7,6 +7,11 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.SetTheory.Cardinal.Finite
+public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.Algebra.Group.Action.Sigma
+public import Mathlib.Algebra.Group.Action.Sum
+public import Mathlib.Data.Set.Card
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # Burnside's lemma on a product of two `G`-sets
@@ -18,18 +23,23 @@ Mathlib's Burnside lemma `MulAction.sum_card_fixedBy_eq_card_orbits_mul_card_gro
 `∑ g : G, |X^g| * |Y^g| = |(X × Y) / G| * |G|`.
 
 This is the shape in which Burnside's lemma computes the pairing of two permutation characters.
+For disjoint unions, the analogous counting rules add the fixed-point counts, including for an
+indexed family of sets on which the action leaves the index fixed.
 
 ## Main statements
 
 * `TauCeti.fixedBy_prod`: the fixed points of `g` on `X × Y` are the product of its fixed points
   on `X` and on `Y`.
 * `TauCeti.card_fixedBy_prod`: the corresponding count.
+* `TauCeti.card_fixedBy_sum` and `TauCeti.card_fixedBy_sigma`: fixed-point counts on
+  disjoint unions.
 * `TauCeti.sum_card_fixedBy_mul_card_fixedBy_eq_card_orbits_mul_card_group`: Burnside's lemma
   on `X × Y`.
 
 ## Implementation notes
 
-Everything is phrased with `Nat.card`; Mathlib's Burnside lemma is stated with `Fintype.card` and
+Counts are phrased with `Nat.card`, with `Set.ncard` simp forms for disjoint unions.
+Mathlib's Burnside lemma is stated with `Fintype.card` and
 carries `Fintype` instances for each fixed-point set, which are supplied here from `Finite X` and
 `Finite Y` rather than assumed.
 -/
@@ -58,6 +68,44 @@ theorem card_fixedBy_prod (g : G) :
     Nat.card (fixedBy (X × Y) g) = Nat.card (fixedBy X g) * Nat.card (fixedBy Y g) := by
   rw [fixedBy_prod, Nat.card_congr (Equiv.Set.prod _ _), Nat.card_prod]
 
+variable {X Y}
+
+/-- The fixed points on a disjoint union are counted by the sum of the fixed-point counts,
+provided both fixed-point sets are finite. -/
+theorem card_fixedBy_sum (g : G) [Finite (fixedBy X g)] [Finite (fixedBy Y g)] :
+    Nat.card (fixedBy (X ⊕ Y) g) = Nat.card (fixedBy X g) + Nat.card (fixedBy Y g) := by
+  rw [← Nat.card_sum]
+  exact Nat.card_congr <| Equiv.subtypeSum.trans <| .sumCongr
+    (.subtypeEquivRight fun _ ↦ by simp [mem_fixedBy])
+    (.subtypeEquivRight fun _ ↦ by simp [mem_fixedBy])
+
+/-- The fixed-point count on a disjoint union, in simp normal form. -/
+@[simp]
+theorem ncard_fixedBy_sum (g : G) [Finite (fixedBy X g)] [Finite (fixedBy Y g)] :
+    (fixedBy (X ⊕ Y) g).ncard = (fixedBy X g).ncard + (fixedBy Y g).ncard := by
+  simpa only [Nat.card_coe_set_eq] using card_fixedBy_sum g
+
+/-- For the fiberwise action on an indexed disjoint union, fixed-point counts add over the
+indices, provided each fixed-point set is finite. The monoid fixes the index of each point. -/
+theorem card_fixedBy_sigma {ι : Type*} (X : ι → Type*) [∀ i, MulAction G (X i)]
+    (g : G) [∀ i, Finite (fixedBy (X i) g)] :
+    Nat.card (fixedBy (Σ i, X i) g) = ∑ᶠ i, Nat.card (fixedBy (X i) g) := by
+  have hset : fixedBy (Σ i, X i) g = Set.univ.sigma (fun i ↦ fixedBy (X i) g) := by
+    ext ⟨i, x⟩
+    simp [mem_fixedBy]
+  have hcard : Nat.card (fixedBy (Σ i, X i) g) = Nat.card (Σ i, fixedBy (X i) g) := by
+    rw [hset]
+    exact Nat.card_congr <| (Equiv.Set.sigma _ _).trans <|
+      .sigmaCongrLeft (β := fun i ↦ fixedBy (X i) g) (Equiv.Set.univ ι)
+  rw [hcard, Nat.card_sigma_eq_finsum]
+
+/-- The fixed-point count on a fiberwise indexed disjoint union, in simp normal form. -/
+@[simp]
+theorem ncard_fixedBy_sigma {ι : Type*} (X : ι → Type*) [∀ i, MulAction G (X i)]
+    (g : G) [∀ i, Finite (fixedBy (X i) g)] :
+    (fixedBy (Σ i, X i) g).ncard = ∑ᶠ i, (fixedBy (X i) g).ncard := by
+  simpa only [Nat.card_coe_set_eq] using card_fixedBy_sigma X g
+
 end Monoid
 
 variable [Group G] [MulAction G X] [MulAction G Y]
@@ -70,11 +118,9 @@ theorem sum_card_fixedBy_mul_card_fixedBy_eq_card_orbits_mul_card_group
     ∑ g : G, Nat.card (fixedBy X g) * Nat.card (fixedBy Y g) =
       Nat.card (orbitRel.Quotient G (X × Y)) * Nat.card G := by
   classical
-  have : Fintype (X × Y) := Fintype.ofFinite _
-  have : Fintype (orbitRel.Quotient G (X × Y)) := Fintype.ofFinite _
-  have : ∀ g : G, Fintype (fixedBy (X × Y) g) := fun _ => Fintype.ofFinite _
-  have hburnside := sum_card_fixedBy_eq_card_orbits_mul_card_group G (X × Y)
-  simp only [← Nat.card_eq_fintype_card] at hburnside
-  simpa only [card_fixedBy_prod] using hburnside
+  have := Fintype.ofFinite (X × Y)
+  have := Fintype.ofFinite (orbitRel.Quotient G (X × Y))
+  simpa only [← Nat.card_eq_fintype_card, card_fixedBy_prod] using
+    sum_card_fixedBy_eq_card_orbits_mul_card_group G (X × Y)
 
 end TauCeti

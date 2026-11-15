@@ -24,6 +24,8 @@ punctured limit of this kind already makes `f` meromorphic with at most a simple
 hypothesis.
 Conversely, every such sum is holomorphic off `S`, has these limits and tends to `0` at infinity.
 This gives the characterization `eqOn_sum_div_sub_iff`.
+The same limits show that the coefficients of such a sum are determined by its values on any set
+accumulating at every pole.
 
 This is how one identifies a function from its singularities and its behaviour at infinity. For
 example, the pre-Schwarzian derivative `F'' / F'` of a conformal map `F` from the upper half-plane
@@ -43,6 +45,8 @@ characterization identifies it with the Schwarz--Christoffel expression
   through the limits of `(z - s) * f z`.
 * `TauCeti.Contour.eqOn_sum_div_sub_iff` -- the resulting characterization of the functions
   `z ↦ ∑ s ∈ S, c s / (z - s)` off `S`.
+* `TauCeti.Contour.eq_of_eqOn_sum_div_sub` -- two such sums with the same distinct poles that agree
+  on a set accumulating at every pole have the same coefficients.
 
 ## References
 
@@ -120,6 +124,36 @@ theorem tendsto_sub_mul_sum_div_sub {S : Finset ℂ} (c : ℂ → ℂ) {s : ℂ}
   filter_upwards [self_mem_nhdsWithin] with z hz
   rw [← Finset.add_sum_erase S _ hs, mul_add, mul_div_cancel₀ _ (sub_ne_zero.2 hz)]
 
+/-- For a sum indexed by an injective family of poles `a i`, the product
+`(z - a j) * ∑ i, c i / (z - a i)` tends to `c j` as `z → a j`. -/
+theorem tendsto_sub_mul_sum_div_sub_of_injective {ι : Type*} [Fintype ι] {a : ι → ℂ}
+    (ha : Function.Injective a) (c : ι → ℂ) (j : ι) :
+    Tendsto (fun z => (z - a j) * ∑ i, c i / (z - a i)) (𝓝[≠] a j) (𝓝 (c j)) := by
+  classical
+  have hsum (z : ℂ) : ∑ i, c i / (z - a i) =
+      ∑ s ∈ Finset.univ.image a, Function.extend a c 0 s / (z - s) := by
+    rw [Finset.sum_image fun i _ k _ h => ha h]
+    simp [ha.extend_apply]
+  simp_rw [hsum]
+  simpa [ha.extend_apply] using
+    tendsto_sub_mul_sum_div_sub (Function.extend a c 0) (Finset.mem_image_of_mem a
+      (Finset.mem_univ j))
+
+/-- **Uniqueness of partial-fraction coefficients.** Two partial-fraction sums with the same
+distinct poles `a i` that agree on a set accumulating at every pole have the same
+coefficients. -/
+theorem eq_of_eqOn_sum_div_sub {ι : Type*} [Fintype ι] {a : ι → ℂ}
+    (ha : Function.Injective a) {c d : ι → ℂ} {s : Set ℂ} (hs : ∀ i, AccPt (a i) (𝓟 s))
+    (h : EqOn (fun z => ∑ i, c i / (z - a i)) (fun z => ∑ i, d i / (z - a i)) s) :
+    c = d := by
+  funext j
+  have := accPt_principal_iff_nhdsWithin.mp (hs j)
+  have hle : 𝓝[s \ {a j}] a j ≤ 𝓝[≠] a j := nhdsWithin_mono _ fun _ hz => hz.2
+  refine tendsto_nhds_unique ((tendsto_sub_mul_sum_div_sub_of_injective ha c j).mono_left hle)
+    (((tendsto_sub_mul_sum_div_sub_of_injective ha d j).mono_left hle).congr' ?_)
+  filter_upwards [self_mem_nhdsWithin] with z hz
+  exact congrArg ((z - a j) * ·) (h hz.1).symm
+
 /-! ### Identification by Liouville's theorem -/
 
 /-- **Partial fractions for simple poles.** If `f` is holomorphic off a finite set `S`, has at
@@ -133,7 +167,7 @@ theorem eqOn_sum_residue_div_sub {f : ℂ → ℂ} {S : Finset ℂ}
     (hlim : Tendsto f (cobounded ℂ) (𝓝 0)) :
     EqOn f (fun z => ∑ s ∈ S, residue f s / (z - s)) (↑S)ᶜ := by
   rw [compl_eq_univ_sdiff] at hf ⊢
-  obtain ⟨g, hg, hfg⟩ := exists_simplePoleDecomposition isOpen_univ hf hmero horder
+  obtain ⟨g, hg, hfg⟩ := exists_simplePoleDecomposition hf hmero horder
   -- The entire remainder `g` agrees with `f` minus the principal parts near infinity.
   have hgf : (fun z => f z - ∑ s ∈ S, residue f s / (z - s)) =ᶠ[cobounded ℂ] g := by
     filter_upwards [isBounded_def.mp S.finite_toSet.isBounded] with z hz
@@ -160,7 +194,7 @@ theorem eqOn_sum_div_sub_of_tendsto {f : ℂ → ℂ} {S : Finset ℂ} {c : ℂ 
     exact hf.differentiableAt (hopen.mem_nhds hz)
   intro z hz
   rw [eqOn_sum_residue_div_sub hf hmero
-    (fun s hs => neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul (hmero s hs) (hpole s hs))
+    (fun s hs => neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul (hpole s hs))
     hlim hz]
   refine Finset.sum_congr rfl fun s hs => ?_
   rw [residue_eq_of_tendsto_sub_mul (hmero s hs) (hpole s hs)]

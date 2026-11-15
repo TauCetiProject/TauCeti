@@ -11,7 +11,10 @@ public import Mathlib.RingTheory.LocalProperties.Projective
 public import Mathlib.RingTheory.Localization.Finiteness
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.RingTheory.AdicCompletion.Pi
+public import TauCeti.RingTheory.DiscreteValuationRing.Basic
+public import TauCeti.RingTheory.Subring.Torsion
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
+import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 
 /-!
 # The ring of integers of an extension of local fields is a finite free module
@@ -32,7 +35,11 @@ inverting only the nonzero elements of `𝒪[K]`.
 * `TauCeti.isLocalization_integerRing`: `L` is the localization of `𝒪[L]` at the image of the
   nonzero elements of `𝒪[K]`.
 * `TauCeti.finrank_integerRing`: the rank of `𝒪[L]` over `𝒪[K]` is `[L : K]`.
+* `TauCeti.integerRingIsQuadraticExtension`: `𝒪[L]` is a quadratic extension of `𝒪[K]` when
+  `L/K` is quadratic.
 * `TauCeti.finite_of_valuativeExtension`: `L` is a finite extension of `K`.
+* `TauCeti.ramificationIndex_eq_ramificationIdx_integralClosure`: the intrinsic ramification
+  index agrees with the ideal-theoretic index in the integral closure of `𝒪[K]` in `L`.
 
 ## References
 
@@ -43,6 +50,7 @@ inverting only the nonzero elements of `𝒪[K]`.
 public section
 
 open ValuativeRel IsLocalRing
+open scoped Pointwise
 
 namespace TauCeti
 
@@ -50,13 +58,12 @@ variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
 
-/-- The reduction `𝒪[L] / 𝓂[K] 𝒪[L]` is finite: `𝓂[K] 𝒪[L]` is a nonzero ideal of the discrete
-valuation ring `𝒪[L]`, so it contains a power of `𝓂[L]`, and the residue field of `L` is finite. -/
+/-- The reduction `𝒪[L] / 𝓂[K] 𝒪[L]` is finite: `𝓂[K] 𝒪[L]` is a nonzero ideal of `𝒪[L]`, which
+has finite quotients. -/
 theorem finite_quotient_maximalIdeal_smul_integerRing :
     Finite (𝒪[L] ⧸ (𝓂[K] • ⊤ : Submodule 𝒪[K] 𝒪[L])) := by
   set J := 𝓂[K].map (algebraMap 𝒪[K] 𝒪[L])
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
   have hJ : J ≠ ⊥ := by
     intro h
     have hπJ : algebraMap 𝒪[K] 𝒪[L] π ∈ J := Ideal.mem_map_of_mem _ <|
@@ -64,12 +71,7 @@ theorem finite_quotient_maximalIdeal_smul_integerRing :
         Ideal.mem_span_singleton_self π
     rw [h, Ideal.mem_bot] at hπJ
     exact hπ.ne_zero (FaithfulSMul.algebraMap_injective 𝒪[K] 𝒪[L] (by simpa using hπJ))
-  obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hJ hϖ
-  have : Finite (𝒪[L] ⧸ J) := by
-    rw [IsLocalRing.finite_quotient_iff]
-    refine ⟨n, ?_⟩
-    rw [hn, (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ,
-      Ideal.span_singleton_pow]
+  have : Finite (𝒪[L] ⧸ J) := Ring.HasFiniteQuotients.finiteQuotient hJ
   rw [Ideal.smul_top_eq_map]
   exact .of_equiv _ (Submodule.Quotient.restrictScalarsEquiv 𝒪[K] J).toEquiv.symm
 
@@ -125,9 +127,9 @@ theorem isLocalization_integerRing :
     obtain ⟨a, ha, hax⟩ := exists_algebraMap_mul_mem_integerRing K L x
     refine ⟨⟨⟨_, hax⟩, ⟨_, a, mem_nonZeroDivisors_of_ne_zero ha, rfl⟩⟩, ?_⟩
     -- `algebraMap 𝒪[L] L` is the subring coercion; `change` exposes it so that
-    -- `coe_algebraMap_integerRing` applies.
+    -- `Valuation.HasExtension.val_algebraMap` applies.
     change x * ((algebraMap 𝒪[K] 𝒪[L] a : 𝒪[L]) : L) = algebraMap K L a * x
-    rw [coe_algebraMap_integerRing, mul_comm]
+    rw [Valuation.HasExtension.val_algebraMap, mul_comm]
   exists_of_eq {x y} h := ⟨1, by simpa using Subtype.ext h⟩
 
 /-- The rank of `𝒪[L]` as a free `𝒪[K]`-module is the degree `[L : K]`. -/
@@ -139,9 +141,41 @@ theorem finrank_integerRing : Module.finrank 𝒪[K] 𝒪[L] = Module.finrank K 
   exact (Module.finrank_of_isLocalizedModule_of_free K (nonZeroDivisors 𝒪[K])
     (IsScalarTower.toAlgHom 𝒪[K] 𝒪[L] L).toLinearMap).symm
 
+/-- The ring of integers of a quadratic extension of nonarchimedean local fields is a quadratic
+extension of the ring of integers of the base. -/
+instance integerRingIsQuadraticExtension [Algebra.IsQuadraticExtension K L] :
+    Algebra.IsQuadraticExtension 𝒪[K] 𝒪[L] where
+  finrank_eq_two' :=
+    (finrank_integerRing K L).trans (Algebra.IsQuadraticExtension.finrank_eq_two K L)
+
 /-- An extension of nonarchimedean local fields with compatible valuations is finite. -/
 theorem finite_of_valuativeExtension : Module.Finite K L :=
   have := isLocalization_integerRing K L
   .of_isLocalization 𝒪[K] 𝒪[L] (nonZeroDivisors 𝒪[K])
+
+/-- The intrinsic ramification index of a compatible extension of nonarchimedean local fields
+is the ramification index of the maximal ideal of the integral closure of `𝒪[K]` in `L`.
+The local-ring structure on the integral closure may be any supplied instance. -/
+theorem ramificationIndex_eq_ramificationIdx_integralClosure
+    [IsLocalRing (integralClosure 𝒪[K] L)] :
+    ramificationIndex K L =
+      (maximalIdeal (integralClosure 𝒪[K] L)).ramificationIdx 𝒪[K] := by
+  have := finite_of_valuativeExtension K L
+  let e := integerRingEquivIntegralClosure K L
+  have : IsDiscreteValuationRing (integralClosure 𝒪[K] L) :=
+    IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing e
+  have : (maximalIdeal (integralClosure 𝒪[K] L)).LiesOver 𝓂[K] :=
+    ⟨(IsLocalRing.eq_maximalIdeal
+      (Ideal.IsMaximal.under 𝒪[K] (maximalIdeal (integralClosure 𝒪[K] L)))).symm⟩
+  rw [ramificationIndex_eq_ramificationIdx,
+    ← Ideal.ramificationIdx'_eq_ramificationIdx 𝓂[K]
+      (maximalIdeal (integralClosure 𝒪[K] L)) (IsDiscreteValuationRing.not_a_field 𝒪[K]),
+    ← Ideal.ramificationIdx'_eq_ramificationIdx 𝓂[K] 𝓂[L]
+      (IsDiscreteValuationRing.not_a_field 𝒪[K])]
+  have hcomap : (maximalIdeal (integralClosure 𝒪[K] L)).comap e = 𝓂[L] :=
+    IsLocalRing.eq_maximalIdeal
+      (Ideal.comap_isMaximal_of_surjective e e.surjective)
+  simpa only [hcomap] using
+    𝓂[K].ramificationIdx'_comap_eq e (maximalIdeal (integralClosure 𝒪[K] L))
 
 end TauCeti

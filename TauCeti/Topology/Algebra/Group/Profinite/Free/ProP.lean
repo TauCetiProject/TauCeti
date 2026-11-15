@@ -43,6 +43,8 @@ group is a continuous image of the free pro-`p` group on any finite type with at
 * `TauCeti.isProP_freeProP`: a free pro-`p` group is pro-`p`.
 * `TauCeti.freeProP.topologicalClosure_closure_range_of_eq_top`: the generators generate the
   free pro-`p` group topologically.
+* `TauCeti.freeProP.isMulCommutative_of_subsingleton`: the free pro-`p` group on at most one
+  generator is commutative.
 * `TauCeti.isTopologicallyFinitelyGenerated_freeProP`: for finite `X`, the free pro-`p` group on
   `X` is topologically finitely generated.
 * `TauCeti.freeProP.hom_ext`: homomorphisms agreeing on the generators are equal.
@@ -193,6 +195,15 @@ theorem topologicalClosure_closure_range_of_eq_top (p : ℕ) (X : Type u) :
       freeProC (finiteGroupClassP.{u} p) X → freeProP p X) ∘ freeProC.of = of :=
     funext fun x ↦ freeProC.equivFreeProP_of p x
   rwa [← Set.range_comp, hof] at h
+
+/-- The free pro-`p` group on at most one generator is commutative, being topologically generated
+by pairwise commuting elements. -/
+instance isMulCommutative_of_subsingleton [Subsingleton X] : IsMulCommutative (freeProP p X) := by
+  have : IsMulCommutative (Subgroup.closure (Set.range (of : X → freeProP p X))) :=
+    Subgroup.isMulCommutative_closure ((Set.subsingleton_range _).pairwise _)
+  have : IsMulCommutative (⊤ : Subgroup (freeProP p X)) :=
+    topologicalClosure_closure_range_of_eq_top p X ▸ inferInstance
+  exact .of_comm fun y z ↦ setLike_mul_comm (Subgroup.mem_top y) (Subgroup.mem_top z)
 
 end freeProP
 
@@ -584,7 +595,7 @@ theorem topologicalClosure_closure_insert_insert_image_freeProPGen_eq_top (j k :
   exact Or.inr (Or.inr ⟨i, ⟨hij, hik⟩, rfl⟩)
 
 /-- The value of a homomorphism on the `ℕ`-indexed generators. -/
-theorem map_freeProPGen {K F : Type*} [Group K] [FunLike F (freeProP p (Fin n)) K]
+theorem map_freeProPGen {K F : Type*} [MulOneClass K] [FunLike F (freeProP p (Fin n)) K]
     [MonoidHomClass F (freeProP p (Fin n)) K] (φ : F) (i : ℕ) :
     φ (freeProPGen p n i) = if h : i < n then φ (freeProP.of ⟨i, h⟩) else 1 := by
   split_ifs with h

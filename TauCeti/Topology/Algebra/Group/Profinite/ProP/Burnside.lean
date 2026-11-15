@@ -7,6 +7,7 @@ module
 
 import Mathlib.GroupTheory.Nilpotent
 import Mathlib.Order.Atoms.Finite
+import Mathlib.Topology.Separation.Connected
 import TauCeti.GroupTheory.PGroup
 import TauCeti.Topology.Algebra.Group.Generation
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Step
@@ -109,7 +110,7 @@ theorem eq_top_of_forall_not_le_openNormalSubgroup_index_eq (hG : IsProP p G)
     Subgroup.NormalizerCondition.normal_of_coatom
       M (Group.normalizerCondition_of_isNilpotent (G := Q)) hM
   let _ : M.Normal := hMnormal
-  have hMindex : M.index = p := hQU.index_eq_prime_of_isCoatom hM
+  have hMindex : M.index = p := hQU.isCoatom_iff_index_eq_prime.mp hM
   have hUle : U.toSubgroup ≤ M.comap q := by
     intro x hx
     rw [Subgroup.mem_comap]
@@ -277,17 +278,10 @@ variable {H : Type v} [Group H] [TopologicalSpace H]
 its range is a closed subgroup generating the group together with the Frattini subgroup. -/
 theorem surjective_of_leftInverse_of_ker_le_proPFrattini (hG : IsProP p G) {φ : G →ₜ* H}
     {s : H →ₜ* G} (hs : Function.LeftInverse φ s) (hker : φ.toMonoidHom.ker ≤ proPFrattini p G) :
-    Function.Surjective s := by
-  suffices h : s.toMonoidHom.range = ⊤ by simpa using MonoidHom.range_eq_top.mp h
-  apply hG.eq_top_of_sup_proPFrattini_eq_top
-  · rw [MonoidHom.coe_range]
-    exact hs.isClosed_range φ.continuous s.continuous
-  · refine top_unique fun x _ ↦ ?_
-    have hmem : (s (φ x))⁻¹ * x ∈ φ.toMonoidHom.ker := by
-      simp [MonoidHom.mem_ker, hs (φ x)]
-    have hx := Subgroup.mul_mem_sup
-      (MonoidHom.mem_range.mpr ⟨φ x, rfl⟩ : s (φ x) ∈ s.toMonoidHom.range) (hker hmem)
-    rwa [mul_inv_cancel_left] at hx
+    Function.Surjective s :=
+  hG.surjective_of_surjective_comp_of_ker_le_proPFrattini (s := s.toMonoidHom)
+    (by simpa using hs.isClosed_range φ.continuous s.continuous) (φ := φ.toMonoidHom)
+    (fun y ↦ ⟨y, hs y⟩) hker
 
 /-- **A Frattini cover with a continuous homomorphic section is an isomorphism.** A continuous
 homomorphism `φ : G → H` out of a pro-`p` group `G`, whose kernel lies in the Frattini subgroup

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.RingTheory.MvPolynomial.Basic
+import Mathlib.Tactic.Linarith
 public import TauCeti.KnotTheory.Grid.Differential.Square.Zero
 
 /-!
@@ -38,6 +39,8 @@ two rectangles form a thin annulus through `X_k`, are computed in
 
 ## Main results
 
+* `TauCeti.GridDiagram.left_eq_of_mem_XHomotopyRectangles_X`: a rectangle counted by `H_k` from
+  the `X`-marking state has initial side `k`.
 * `TauCeti.GridDiagram.sum_XHomotopyDecompositions`: the matrix entries of `∂⁻ ∘ H_k + H_k ∘ ∂⁻`
   are the weighted sums over `XHomotopyDecompositions`.
 * `TauCeti.GridDiagram.mem_XHomotopyDecompositions_iff_of_disjoint`: for rectangles covering
@@ -46,6 +49,10 @@ two rectangles form a thin annulus through `X_k`, are computed in
   off-diagonal entries of `∂⁻ ∘ H_k + H_k ∘ ∂⁻` vanish.
 * `TauCeti.GridDiagram.constantCoeff_XHomotopyCoefficient`: setting every variable to zero, a
   matrix coefficient of `H_k` counts the empty rectangles whose only marking is `X_k`.
+* `TauCeti.GridDiagram.alexander_sub_card_OColumns_eq_alexander_sub_one`: `H_k` lowers the
+  Alexander grading by one.
+* `TauCeti.GridDiagram.exists_mem_XHomotopyRectangles_of_mem_support_XHomotopyCoefficient`: every
+  monomial of a matrix coefficient of `H_k` is the weight of a contributing rectangle.
 
 ## References
 
@@ -59,7 +66,7 @@ namespace TauCeti
 
 namespace GridDiagram
 
-open GridRectangleDecomposition
+open GridRectangleDecomposition GridTwoStepDecomposition
 
 variable {n : ℕ} (G : GridDiagram n)
 
@@ -82,6 +89,17 @@ theorem mem_XHomotopyRectangles (k : Fin n) {x y : GridState n}
       r.IsEmpty ∧ r.toGridRectangle.coveredSquares ∩ G.XSet = {(k, G.X k)} := by
   simp [XHomotopyRectangles]
 
+/-- A rectangle counted by the `X`-marking homotopy of column `k` from the `X`-marking state has
+initial side `k`: its initial lower corner is the lower-left corner of the `X`-marked square of
+its initial side column, so it covers that marking. -/
+theorem left_eq_of_mem_XHomotopyRectangles_X {k : Fin n} {y : GridState n}
+    {r : GridRectangleBetween G.X y} (hr : r ∈ G.XHomotopyRectangles k G.X y) : r.left = k := by
+  have hmem : (r.left, r.bottom) ∈ r.toGridRectangle.coveredSquares ∩ G.XSet :=
+    Finset.mem_inter.mpr ⟨r.left_bottom_mem_coveredSquares,
+      (G.mem_XSet _).mpr (GridRectangleBetween.bottom_def r).symm⟩
+  rw [((G.mem_XHomotopyRectangles k r).mp hr).2, Finset.mem_singleton, Prod.mk.injEq] at hmem
+  exact hmem.1
+
 /-- The rectangles counted by `H_k` are empty rectangles. -/
 theorem XHomotopyRectangles_subset_emptyRectangles (k : Fin n) (x y : GridState n) :
     G.XHomotopyRectangles k x y ⊆ GridRectangleBetween.emptyRectangles x y := fun r hr =>
@@ -98,6 +116,20 @@ theorem disjoint_unblockedRectangles_XHomotopyRectangles (k : Fin n) (x y : Grid
   rw [Finset.disjoint_iff_inter_eq_empty, h₂] at h₁
   exact Finset.singleton_ne_empty _ h₁
 
+/-- A rectangle counted by `H_k` lowers the Alexander grading by one, once its weight `V^{O(r)}`
+is charged `-1` per variable, since it covers the single `X`-marking `X_k`: the term
+`V^{O(r)} · y` of `H_k x` has Alexander grading `A(x) - 1`. -/
+theorem alexander_sub_card_OColumns_eq_alexander_sub_one {k : Fin n} {x y : GridState n}
+    {r : GridRectangleBetween x y} (hr : r ∈ G.XHomotopyRectangles k x y) :
+    G.alexander y - ((G.OColumns r.toGridRectangle).card : ℚ) = G.alexander x - 1 := by
+  have hX : G.XSet ∩ r.toGridRectangle.coveredSquares = {(k, G.X k)} := by
+    rw [Finset.inter_comm]
+    exact ((G.mem_XHomotopyRectangles k r).mp hr).2
+  have h := G.alexander_sub_alexander_eq_card_sub_card r
+  rw [hX, Finset.card_singleton, Nat.cast_one] at h
+  rw [G.card_OColumns r.toGridRectangle]
+  linarith
+
 variable (R : Type*) [CommSemiring R]
 
 /-- The matrix coefficient of `H_k` from `x` to `y`: the sum of the weights `V^{O(r)}` of the
@@ -111,6 +143,15 @@ theorem XHomotopyCoefficient_def (k : Fin n) (x y : GridState n) :
     G.XHomotopyCoefficient R k x y =
       ∑ r ∈ G.XHomotopyRectangles k x y, G.OMonomial R r.toGridRectangle := by
   rw [XHomotopyCoefficient]
+
+/-- Every monomial of a matrix coefficient of `H_k` is the weight `V^{O(r)}` of a contributing
+rectangle. -/
+theorem exists_mem_XHomotopyRectangles_of_mem_support_XHomotopyCoefficient {k : Fin n}
+    {x y : GridState n} {d : Fin n →₀ ℕ} (hd : d ∈ (G.XHomotopyCoefficient R k x y).support) :
+    ∃ r ∈ G.XHomotopyRectangles k x y,
+      d = ∑ c ∈ G.OColumns r.toGridRectangle, Finsupp.single c 1 := by
+  rw [XHomotopyCoefficient_def] at hd
+  exact G.exists_mem_of_mem_support_sum_OMonomial R hd
 
 /-- The constant term of a matrix coefficient of `H_k` counts the contributing rectangles that
 carry no `O`-marking either: setting every variable to zero leaves the count of the empty
@@ -127,26 +168,24 @@ polynomial ring: a generator `x` is sent to the sum of the generators `y` weight
 `XHomotopyCoefficient R k x y`. -/
 noncomputable def XHomotopy (k : Fin n) :
     GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
-    Finsupp.equivFunOnFinite.symm fun y => G.XHomotopyCoefficient R k x y
-
-/-- The `X`-marking homotopy sends a generator to its row of matrix coefficients. -/
-theorem XHomotopy_single (k : Fin n) (x : GridState n) :
-    G.XHomotopy R k (Finsupp.single x 1) =
-      Finsupp.equivFunOnFinite.symm fun y => G.XHomotopyCoefficient R k x y := by
-  rw [XHomotopy, Finsupp.linearCombination_single, one_smul]
+  GridChain.matrixMap R (G.XHomotopyCoefficient R k)
 
 /-- The matrix coefficients of the `X`-marking homotopy. -/
 theorem XHomotopy_single_apply (k : Fin n) (x y : GridState n) :
     G.XHomotopy R k (Finsupp.single x 1) y = G.XHomotopyCoefficient R k x y := by
-  rw [XHomotopy_single, Finsupp.equivFunOnFinite_symm_apply_apply]
+  rw [XHomotopy, GridChain.matrixMap_single_apply, one_mul]
+
+/-- The `X`-marking homotopy sends a generator to its row of matrix coefficients. -/
+theorem XHomotopy_single (k : Fin n) (x : GridState n) :
+    G.XHomotopy R k (Finsupp.single x 1) =
+      Finsupp.equivFunOnFinite.symm fun y => G.XHomotopyCoefficient R k x y :=
+  Finsupp.ext fun y => by rw [XHomotopy_single_apply, Finsupp.equivFunOnFinite_symm_apply_apply]
 
 /-- The coefficient formula for the `X`-marking homotopy on an arbitrary chain. -/
 @[simp]
 theorem XHomotopy_apply_apply (k : Fin n) (c : GridChainMinus R n) (y : GridState n) :
-    G.XHomotopy R k c y = c.sum fun x a => a * G.XHomotopyCoefficient R k x y := by
-  rw [XHomotopy, Finsupp.linearCombination_apply]
-  simp [Finsupp.sum_apply]
+    G.XHomotopy R k c y = c.sum fun x a => a * G.XHomotopyCoefficient R k x y :=
+  GridChain.matrixMap_apply_apply R _ c y
 
 /-! ### The two-step decompositions of the anticommutator -/
 
@@ -154,7 +193,8 @@ theorem XHomotopy_apply_apply (k : Fin n) (c : GridChainMinus R n) (y : GridStat
 is counted by the unblocked differential and the other by the `X`-marking homotopy `H_k`. -/
 noncomputable def XHomotopyDecompositions (k : Fin n) (x z : GridState n) :
     Finset (GridRectangleDecomposition x z) :=
-  (decompositionsOf GridRectangleBetween.emptyRectangles x z).filter fun D =>
+  (decompositionsOf GridRectangleBetween.emptyRectangles GridRectangleBetween.emptyRectangles
+      x z).filter fun D =>
     D.first ∈ G.unblockedRectangles x D.middle ∧
         D.second ∈ G.XHomotopyRectangles k D.middle z ∨
       D.first ∈ G.XHomotopyRectangles k x D.middle ∧
@@ -240,7 +280,8 @@ theorem sum_XHomotopyDecompositions (k : Fin n) (x z : GridState n) :
     fun u v => by
       rw [Finset.sum_ite_mem, Finset.inter_eq_right.mpr
         (G.XHomotopyRectangles_subset_emptyRectangles k u v), XHomotopyCoefficient_def]
-  have hsum := sum_decompositionsOf GridRectangleBetween.emptyRectangles x z fun y r₁ r₂ =>
+  have hsum := sum_decompositionsOf GridRectangleBetween.emptyRectangles
+      GridRectangleBetween.emptyRectangles fun y r₁ r₂ =>
     if r₁ ∈ G.unblockedRectangles x y ∧ r₂ ∈ G.XHomotopyRectangles k y z ∨
         r₁ ∈ G.XHomotopyRectangles k x y ∧ r₂ ∈ G.unblockedRectangles y z then
       G.OMonomial R r₁.toGridRectangle * G.OMonomial R r₂.toGridRectangle
@@ -303,45 +344,17 @@ variable [CharP R 2]
 decompositions they count pair off by reordering or by recutting, and paired decompositions have
 the same weight. -/
 theorem sum_XHomotopyDecompositions_eq_zero (k : Fin n) {x z : GridState n} (hzx : z ≠ x) :
-    ∑ D ∈ G.XHomotopyDecompositions k x z, G.unblockedDecompositionWeight R D = 0 := by
-  classical
-  set S := G.XHomotopyDecompositions k x z
-  rw [← Finset.sum_filter_add_sum_filter_not S (fun D => D.HasDisjointSides)]
-  have hdisjoint : ∑ D ∈ S.filter (fun D => D.HasDisjointSides),
-      G.unblockedDecompositionWeight R D = 0 := by
-    refine Finset.sum_involution
-      (fun D hD => D.commute (Finset.mem_filter.mp hD).2) (fun D hD => ?_) (fun D hD _ => ?_)
-      (fun D hD => ?_) (fun D hD => ?_)
-    · rw [G.unblockedDecompositionWeight_commute R D]
-      exact CharTwo.add_self_eq_zero _
-    · exact D.commute_ne _
-    · exact Finset.mem_filter.mpr ⟨G.commute_mem_XHomotopyDecompositions _
-        (Finset.mem_filter.mp hD).1, D.hasDisjointSides_commute _⟩
-    · exact D.commute_commute _
-  have hone : ∀ D ∈ S.filter (fun D => ¬D.HasDisjointSides), D.HasOneCommonSide := fun D hD =>
-    (D.hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left (Finset.mem_filter.mp hD).2
-  have hempty : ∀ D ∈ S.filter (fun D => ¬D.HasDisjointSides),
-      D.first.IsEmpty ∧ D.second.IsEmpty := fun D hD =>
-    G.isEmpty_of_mem_XHomotopyDecompositions (Finset.mem_filter.mp hD).1
-  have hcommon : ∑ D ∈ S.filter (fun D => ¬D.HasDisjointSides),
-      G.unblockedDecompositionWeight R D = 0 := by
-    refine Finset.sum_involution
-      (fun D hD => D.recut (hone D hD) (hempty D hD).1 (hempty D hD).2) (fun D hD => ?_)
-      (fun D hD _ => ?_) (fun D hD => ?_) (fun D hD => ?_)
-    · have hweight : G.unblockedDecompositionWeight R
-          (D.recut (hone D hD) (hempty D hD).1 (hempty D hD).2) =
-            G.unblockedDecompositionWeight R D := by
-        rw [G.unblockedDecompositionWeight_def R, G.unblockedDecompositionWeight_def R]
-        exact (D.isRecut_recut (hone D hD) (hempty D hD).1
-          (hempty D hD).2).isRepartition.OMonomial_mul_OMonomial G R
-      rw [hweight]
-      exact CharTwo.add_self_eq_zero _
-    · exact D.recut_ne _ _ _
-    · exact Finset.mem_filter.mpr ⟨G.recut_mem_XHomotopyDecompositions _ _ _
-        (Finset.mem_filter.mp hD).1,
-        not_hasDisjointSides_of_hasOneCommonSide _ (D.hasOneCommonSide_recut _ _ _)⟩
-    · exact D.recut_recut _ _ _
-  rw [hdisjoint, hcommon, add_zero]
+    ∑ D ∈ G.XHomotopyDecompositions k x z, G.unblockedDecompositionWeight R D = 0 :=
+  GridRectangleDecomposition.sum_eq_zero_of_pairing hzx
+    (fun _ hD => G.isEmpty_of_mem_XHomotopyDecompositions hD)
+    (fun _ hD h => G.commute_mem_XHomotopyDecompositions h hD)
+    (fun _ hD hone hfirst hsecond => G.recut_mem_XHomotopyDecompositions hone hfirst hsecond hD) _
+    (fun D _ h => by
+      rw [G.unblockedDecompositionWeight_commute R D]
+      exact CharTwo.add_self_eq_zero _)
+    (fun D _ hone hfirst hsecond => by
+      rw [G.unblockedDecompositionWeight_recut R D]
+      exact CharTwo.add_self_eq_zero _)
 
 end GridDiagram
 

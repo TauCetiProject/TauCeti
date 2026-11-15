@@ -12,6 +12,7 @@ public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.LocallyConstant.Basic
 import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.RingTheory.RootsOfUnity.Congruence
 
 /-!
 # Tate modules of abelian groups
@@ -46,15 +47,28 @@ introducing an elliptic-curve-specific copy of the inverse-limit machinery.
   `ℤ_p → ZMod (p ^ n)`.
 * `TauCeti.TateModule.continuous_iff`: a map into the Tate module is continuous exactly when
   all its finite-level components are locally constant.
+* `TauCeti.TateModule.continuous_map_apply`: a family of homomorphisms moving each torsion point
+  locally constantly acts jointly continuously on Tate modules.
+* `TauCeti.TateModule.surjective_of_forall_surjective_proj`: a continuous map from a compact
+  space into the Tate module is surjective when each of its components is.
 * `TauCeti.TateModule.proj_surjective`: if the transition maps are surjective, so is every
   projection.
 * `TauCeti.TateModule.nonempty_linearEquiv_of_natCard`: if `A[p^n]` has `(p^n)^r` elements for
   every `n`, then `T_p A ≃ ℤ_p^r`; hence `T_p A` is free of rank `r`
   (`TauCeti.TateModule.free_of_natCard`, `TauCeti.TateModule.finrank_eq_of_natCard`).
+* `TauCeti.TateModule.proj_eq_zero_iff`: the kernel of the projection to `A[p^n]` is
+  `p^n T_p A`. So `T_p A` has no `p`-torsion (`TauCeti.TateModule.eq_zero_of_pow_nsmul_eq_zero`)
+  and only `0` is divisible by every power of `p`
+  (`TauCeti.TateModule.eq_zero_of_forall_exists_eq_pow_nsmul`).
+* `TauCeti.TateModule.eq_one_of_isOfFinOrder_of_forall_proj_eq`: **Serre's lemma**. An
+  endomorphism of finite order of `T_p A` inducing the identity on `A[p^k]`, with `p^k ≥ 3`, is the
+  identity.
 
 ## References
 
 * J. H. Silverman, *The Arithmetic of Elliptic Curves*, III.7.
+* J.-P. Serre and J. Tate, *Good reduction of abelian varieties*, Ann. of Math. 88 (1968),
+  492–517.
 -/
 
 public section
@@ -229,6 +243,35 @@ theorem map_comp {C : Type*} [AddCommGroup C] (g : B →+ C) (f : A →+ B) :
   ext x n
   rfl
 
+/-- A map injective on every torsion level induces an injective map on Tate modules. -/
+theorem map_injective (f : A →+ B)
+    (hf : ∀ n, Function.Injective (levelMap (p := p) f n)) :
+    Function.Injective (map (p := p) f) := by
+  intro x y h
+  exact ext fun n ↦ hf n (by simpa only [proj_map] using congrArg (proj n) h)
+
+/-- If a homomorphism is injective on each torsion level, a Tate-module point lies in its
+image exactly when each component lies in the corresponding finite-level image. Uniqueness
+of the finite-level preimages ensures their compatibility. -/
+theorem mem_range_map_iff (f : A →+ B)
+    (hf : ∀ n, Function.Injective (levelMap (p := p) f n)) (x : TateModule p B) :
+    x ∈ (map f).range ↔ ∀ n, proj n x ∈ (levelMap f n).range := by
+  constructor
+  · rintro ⟨y, rfl⟩ n
+    exact ⟨proj n y, (proj_map f y n).symm⟩
+  · intro hx
+    choose y hy using hx
+    have hcompat (n : ℕ) : tateModuleTransition p A n (y (n + 1)) = y n := by
+      apply hf n
+      apply Subtype.ext
+      simp only [levelMap_apply, tateModuleTransition_apply, map_nsmul]
+      have hnext := congrArg Subtype.val (hy (n + 1))
+      have hnow := congrArg Subtype.val (hy n)
+      simp only [levelMap_apply] at hnext hnow
+      rw [hnext, hnow]
+      exact congrArg Subtype.val (proj_succ x n)
+    exact ⟨mk y hcompat, ext fun n ↦ by simpa only [proj_map, proj_mk] using hy n⟩
+
 end Map
 
 section PadicModule
@@ -289,6 +332,26 @@ def mapLinearMap (f : A →+ B) : TateModule p A →ₗ[ℤ_[p]] TateModule p B 
 @[simp]
 theorem mapLinearMap_apply (f : A →+ B) (x : TateModule p A) : mapLinearMap f x = map f x :=
   (rfl)
+
+/-- An additive equivalence induces a `ℤ_p`-linear equivalence of Tate modules. -/
+def mapLinearEquiv (e : A ≃+ B) : TateModule p A ≃ₗ[ℤ_[p]] TateModule p B :=
+  LinearEquiv.ofLinearMap (mapLinearMap e.toAddMonoidHom)
+    (mapLinearMap e.symm.toAddMonoidHom)
+    (by ext x n; simp)
+    (by ext x n; simp)
+
+/-- The equivalence induced on Tate modules is the map induced by the additive equivalence. -/
+@[simp]
+theorem mapLinearEquiv_apply (e : A ≃+ B) (x : TateModule p A) :
+    mapLinearEquiv e x = map e.toAddMonoidHom x :=
+  (rfl)
+
+/-- The inverse equivalence on Tate modules is induced by the inverse additive equivalence. -/
+@[simp]
+theorem mapLinearEquiv_symm (e : A ≃+ B) :
+    (mapLinearEquiv (p := p) e).symm = mapLinearEquiv e.symm := by
+  ext x n
+  rfl
 
 end Map
 
@@ -378,6 +441,23 @@ theorem continuous_map {B : Type*} [AddCommGroup B] (f : A →+ B) :
     ((levelMap (p := p) f n : TateModuleLevel p A n → TateModuleLevel p B n) ∘ proj n)
   exact (isLocallyConstant_proj (p := p) (A := A) n).comp (levelMap (p := p) f n)
 
+/-- **Homomorphisms moving torsion locally constantly act continuously on Tate modules.** If
+`f : G → (A →+ B)` is a family of homomorphisms parametrised by a topological space `G`, and
+`g ↦ f g x` is locally constant for every `p`-power torsion point `x`, then
+`(g, y) ↦ map (f g) y` is jointly continuous. This is how a profinite Galois group acting on the
+torsion points of `A` acts continuously on `T_p A`. -/
+theorem continuous_map_apply {G : Type*} [TopologicalSpace G] {B : Type*} [AddCommGroup B]
+    {f : G → A →+ B} (hf : ∀ n (x : TateModuleLevel p A n), IsLocallyConstant fun g ↦ f g x) :
+    Continuous fun q : G × TateModule p A ↦ map (p := p) (f q.1) q.2 := by
+  refine continuous_iff.2 fun n ↦ (IsLocallyConstant.iff_eventually_eq _).2 fun q₀ ↦ ?_
+  have hg := (continuous_fst.tendsto q₀).eventually
+    ((IsLocallyConstant.iff_eventually_eq _).1 (hf n (proj n q₀.2)) q₀.1)
+  have hy := (continuous_snd.tendsto q₀).eventually
+    ((IsLocallyConstant.iff_eventually_eq _).1 (isLocallyConstant_proj (p := p) (A := A) n) q₀.2)
+  filter_upwards [hg, hy] with q hgq hyq
+  rw [proj_map, proj_map, hyq]
+  exact Subtype.ext hgq
+
 /-! ### Freeness -/
 
 section Free
@@ -397,6 +477,24 @@ theorem coe_proj_eq_pow_sub_nsmul (x : TateModule p A) {m n : ℕ} (h : m ≤ n)
     (proj m x : A) = p ^ (n - m) • (proj n x : A) := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
   rw [Nat.add_sub_cancel_left, coe_proj_eq_pow_nsmul]
+
+/-- **Surjectivity from the finite levels.** A continuous map from a compact space into a Tate
+module is surjective as soon as each of its components is surjective. -/
+theorem surjective_of_forall_surjective_proj {X : Type*} [TopologicalSpace X] [CompactSpace X]
+    {f : X → TateModule p A} (hf : Continuous f)
+    (h : ∀ n, Function.Surjective fun x ↦ proj n (f x)) : Function.Surjective f := by
+  intro y
+  -- The fibres over the components of `y` form a decreasing family of nonempty closed sets,
+  -- whose intersection is the fibre over `y`.
+  set t : ℕ → Set X := fun n ↦ {x | proj n (f x) = proj n y}
+  -- The level-`n` component determines the level-`m` component for `m ≤ n`.
+  have hsub {m n : ℕ} (hmn : m ≤ n) : t n ⊆ t m := fun x (hx : proj n (f x) = proj n y) ↦
+    Subtype.ext <| by rw [coe_proj_eq_pow_sub_nsmul _ hmn, coe_proj_eq_pow_sub_nsmul y hmn, hx]
+  obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t
+    (fun m n ↦ ⟨max m n, hsub (le_max_left _ _), hsub (le_max_right _ _)⟩)
+    (fun n ↦ h n (proj n y)) (fun n ↦ ((continuous_iff.1 hf n).isClosed_fiber _).isCompact)
+    fun n ↦ (continuous_iff.1 hf n).isClosed_fiber _
+  exact ⟨x, ext fun n ↦ Set.mem_iInter.1 hx n⟩
 
 /-- If every transition map is surjective, then every point of every torsion level is a component
 of a Tate-module point. -/
@@ -599,6 +697,79 @@ theorem finrank_eq_of_natCard : Module.finrank ℤ_[p] (TateModule p A) = r := b
   rw [(nonempty_linearEquiv_of_natCard hcard).some.finrank_eq, Module.finrank_fin_fun]
 
 end Free
+
+/-! ### Divisibility by powers of `p`, and endomorphisms of finite order -/
+
+section Divisibility
+
+/-- **The kernel of the projection to `A[p ^ n]` is `p ^ n T_p A`.** -/
+theorem proj_eq_zero_iff {x : TateModule p A} {n : ℕ} :
+    proj n x = 0 ↔ ∃ y : TateModule p A, x = p ^ n • y := by
+  refine ⟨fun hx ↦ ?_, ?_⟩
+  · -- The component of `y` at level `m` is the component of `x` at level `n + m`.
+    have hmem (m : ℕ) :
+        (proj (n + m) x : A) ∈ AddSubgroup.torsionBy A ((p ^ m : ℕ) : ℤ) := by
+      rw [AddSubgroup.torsionBy.nsmul_iff, ← coe_proj_eq_pow_nsmul, hx, ZeroMemClass.coe_zero]
+    have hcompat (m : ℕ) : p • (proj (n + (m + 1)) x : A) = proj (n + m) x := by
+      rw [← add_assoc]
+      simpa only [tateModuleTransition_apply] using congrArg Subtype.val (proj_succ x (n + m))
+    refine ⟨mk (fun m ↦ ⟨proj (n + m) x, hmem m⟩) fun m ↦
+      Subtype.ext (by rw [tateModuleTransition_apply]; exact hcompat m),
+      ext fun m ↦ Subtype.ext ?_⟩
+    rw [coe_proj_eq_pow_nsmul x m n, add_comm m n, map_nsmul, AddSubgroup.coe_nsmul, proj_mk]
+  · rintro ⟨y, rfl⟩
+    rw [map_nsmul]
+    exact AddSubgroup.torsionBy.nsmul _
+
+/-- **The Tate module has no `p`-torsion.** -/
+theorem eq_zero_of_pow_nsmul_eq_zero {x : TateModule p A} {k : ℕ} (h : p ^ k • x = 0) :
+    x = 0 :=
+  ext fun n ↦ Subtype.ext <| by
+    rw [coe_proj_eq_pow_nsmul x n k, ← AddSubgroup.coe_nsmul, ← map_nsmul, h, map_zero, map_zero,
+      ZeroMemClass.coe_zero, ZeroMemClass.coe_zero]
+
+/-- **Only `0` is divisible by every power of `p` in the Tate module.** -/
+theorem eq_zero_of_forall_exists_eq_pow_nsmul {x : TateModule p A}
+    (h : ∀ n, ∃ y : TateModule p A, x = p ^ n • y) : x = 0 :=
+  ext fun n ↦ by rw [proj_eq_zero_iff.mpr (h n), map_zero]
+
+/-- **Serre's lemma on the Tate module.** An endomorphism of finite order of `T_p A` that induces
+the identity on `A[p ^ k]`, with `p ^ k ≥ 3`, is the identity. -/
+theorem eq_one_of_isOfFinOrder_of_forall_proj_eq [hp : Fact p.Prime]
+    {φ : Module.End ℤ_[p] (TateModule p A)} (hφ : IsOfFinOrder φ) {k : ℕ} (hk : 3 ≤ p ^ k)
+    (hfix : ∀ t, proj k (φ t) = proj k t) : φ = 1 := by
+  have hcast (n : ℕ) (ψ : Module.End ℤ_[p] (TateModule p A)) (t : TateModule p A) :
+      ((n : Module.End ℤ_[p] (TateModule p A)) * ψ) t = n • ψ t := by
+    rw [_root_.mul_apply_eq_comp, _root_.natCast_apply_eq_smul]
+  refine eq_one_of_isOfFinOrder_of_pow_dvd_sub_one hp.out (fun ψ ψ' h ↦ ?_) (fun ψ hψ ↦ ?_) hk hφ
+    ?_
+  · -- `T_p A` has no `p`-torsion, so `p` is left regular in its endomorphism ring.
+    refine LinearMap.ext fun t ↦ sub_eq_zero.mp (eq_zero_of_pow_nsmul_eq_zero (k := 1) ?_)
+    have := LinearMap.congr_fun h t
+    rw [hcast, hcast] at this
+    rw [pow_one, smul_sub, this, sub_self]
+  · -- An endomorphism divisible by every power of `p` has values divisible by every power of `p`.
+    refine LinearMap.ext fun t ↦ eq_zero_of_forall_exists_eq_pow_nsmul fun n ↦ ?_
+    obtain ⟨ψ', rfl⟩ := hψ n
+    exact ⟨ψ' t, by rw [← Nat.cast_pow, hcast]⟩
+  · -- `φ - 1` takes values in `p ^ k T_p A`, which is the image of the injective map `p ^ k`.
+    set g : Module.End ℤ_[p] (TateModule p A) := ((p ^ k : ℕ) : Module.End ℤ_[p] (TateModule p A))
+    have hg : Function.Injective g := fun s t hst ↦ sub_eq_zero.mp
+      (eq_zero_of_pow_nsmul_eq_zero (k := k) (by
+        rw [smul_sub, ← _root_.natCast_apply_eq_smul (F := Module.End ℤ_[p] (TateModule p A)),
+          ← _root_.natCast_apply_eq_smul (F := Module.End ℤ_[p] (TateModule p A))]
+        exact sub_eq_zero.mpr hst))
+    have hrange (t : TateModule p A) : (φ - 1) t ∈ LinearMap.range g := by
+      obtain ⟨y, hy⟩ := (proj_eq_zero_iff (n := k) (x := (φ - 1) t)).mp (by
+        rw [LinearMap.sub_apply, _root_.one_apply_eq_self, map_sub, hfix, sub_self])
+      exact ⟨y, by rw [hy, _root_.natCast_apply_eq_smul]⟩
+    refine ⟨(LinearEquiv.ofInjective g hg).symm.toLinearMap ∘ₗ (φ - 1).codRestrict _ hrange,
+      LinearMap.ext fun t ↦ ?_⟩
+    rw [← Nat.cast_pow, _root_.mul_apply_eq_comp, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      ← LinearEquiv.ofInjective_apply (f := g) (h := hg), LinearEquiv.apply_symm_apply,
+      LinearMap.codRestrict_apply]
+
+end Divisibility
 
 end TateModule
 

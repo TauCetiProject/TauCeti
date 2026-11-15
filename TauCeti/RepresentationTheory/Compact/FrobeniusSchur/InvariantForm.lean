@@ -41,9 +41,9 @@ Two facts about an irreducible representation supply the rest, and both are cons
 `TauCeti/RepresentationTheory/InvariantForm.lean`: a nonzero invariant form on an irreducible
 representation is automatically nondegenerate
 (`TauCeti.Representation.IsInvariantForm.nondegenerate`), which is why the statements below ask for
-nondegeneracy rather than for nonvanishing; and over an algebraically closed field away from
-characteristic two it carries a nonzero invariant symmetric form, a nonzero invariant alternating
-one, or no nonzero invariant form at all
+nondegeneracy rather than for nonvanishing; and over an algebraically closed field it carries a
+nonzero invariant symmetric form, a nonzero invariant alternating one, or no nonzero invariant form
+at all
 (`TauCeti.Representation.exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot`), which is what
 makes the vanishing case `ν₂ = 0` say that there is no invariant form at all.
 
@@ -75,40 +75,29 @@ theorems name.
 
 ## References
 
-This discharges the `frobeniusSchurIndicator_eq_one_iff` and
-`frobeniusSchurIndicator_eq_neg_one_iff` targets of Layer 6b of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-the invariant-form dictionary its
-[`Suggested.lean`](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/Suggested.lean)
-pins on top of the trichotomy. The mathematical development follows Daniel Bump, *Lie Groups*,
+The mathematical development follows Daniel Bump, *Lie Groups*,
 second edition, Chapter 2, and T. Bröcker and T. tom Dieck, *Representations of Compact Lie
 Groups*, Springer GTM 98 (1985), Chapter II.
 -/
 
 public section
 
+open _root_.ContRepresentation
+
 open LinearMap (BilinForm)
 
-open Module TauCeti TauCeti.ContRepresentation
+open Module TauCeti
 
 namespace ContRepresentation
 
-section CompactGroup
-
-variable {G V : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [InnerProductSpace ℂ V] [FiniteDimensional ℂ V]
-
-variable (π : ContRepresentation ℂ G V)
-
-omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G]
-  [BorelSpace G] [FiniteDimensional ℂ V] in
 /-- A count of invariants that is at most `1` is `1` exactly when there is a nonzero invariant form
 of the kind the count records; on an irreducible representation such a form is the same thing as a
 nondegenerate one. This is the shape both the symmetric and the alternating case take. -/
-private theorem finrank_eq_one_iff_exists_nondegenerate {M : Type*} [AddCommGroup M] [Module ℂ M]
-    [FiniteDimensional ℂ M] {S : Submodule ℂ M} {P : BilinForm ℂ V → Prop}
-    (hirr : Representation.IsIrreducible π.toRepresentation) (hle : finrank ℂ S ≤ 1)
+private theorem finrank_eq_one_iff_exists_nondegenerate {G V M : Type*} [Group G]
+    [NormedAddCommGroup V] [InnerProductSpace ℂ V] (π : ContRepresentation ℂ G V)
+    [AddCommGroup M] [Module ℂ M] [FiniteDimensional ℂ M] {S : Submodule ℂ M}
+    {P : BilinForm ℂ V → Prop} (hirr : Representation.IsIrreducible π.toRepresentation)
+    (hle : finrank ℂ S ≤ 1)
     (hiff : (∃ B : BilinForm ℂ V, Representation.IsInvariantForm π.toRepresentation B ∧ P B ∧
         B ≠ 0) ↔ S ≠ ⊥) :
     finrank ℂ S = 1 ↔ ∃ B : BilinForm ℂ V,
@@ -125,7 +114,12 @@ private theorem finrank_eq_one_iff_exists_nondegenerate {M : Type*} [AddCommGrou
     have h1 := Submodule.one_le_finrank_iff.mpr hne
     omega
 
-variable (hπ : Continuous π)
+section CompactGroup
+
+variable {G V : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup V] [InnerProductSpace ℂ V] [FiniteDimensional ℂ V]
+  (π : ContRepresentation ℂ G V) (hπ : Continuous π)
 
 include hπ
 
@@ -171,7 +165,7 @@ theorem frobeniusSchurIndicator_eq_zero_iff (hunitary : IsUnitary π)
   constructor
   · intro h0
     rcases Representation.exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot
-      π.toRepresentation (by norm_num) with
+      π.toRepresentation with
       ⟨B, hB, hB0, hsymm⟩ | ⟨B, hB, hB0, halt⟩ | hbot
     · have h1 := (frobeniusSchurIndicator_eq_one_iff π hπ hunitary hirr).mpr
         ⟨B, hB, hsymm, hB.nondegenerate hB0⟩

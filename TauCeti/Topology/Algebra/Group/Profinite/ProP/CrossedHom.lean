@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Group.CrossedHom
+public import TauCeti.Algebra.Group.CrossedHom
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicUnits
 import Mathlib.NumberTheory.Multiplicity

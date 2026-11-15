@@ -42,17 +42,18 @@ this file names those two parts and records that they multiply to the degree.
 * `TauCeti.Isogeny.separableDegree_comp` and `TauCeti.Isogeny.inseparableDegree_comp`: both are
   multiplicative under composition, matching `degree_comp`.
 * `TauCeti.Isogeny.isSeparable_comp`: a composite of separable isogenies is separable.
+* `TauCeti.Isogeny.isSeparable_comp_iff`: a composite is separable exactly when both factors are.
 * `TauCeti.Isogeny.separableDegree_eq_degree_of_isSeparable` and
   `TauCeti.Isogeny.inseparableDegree_eq_one_of_isSeparable`: a separable isogeny carries its
   whole degree in the separable part.
 * `TauCeti.Isogeny.separableDegree_eq_one_of_isPurelyInseparable` and
   `TauCeti.Isogeny.inseparableDegree_eq_degree_of_isPurelyInseparable`: the purely inseparable
   case, consumed by `separableDegree_frobeniusIsogeny` and
-  `inseparableDegree_frobeniusIsogeny` for the roadmap's Frobenius milestone
-  ("`π_q`, purely inseparable of degree `q`").
-* `TauCeti.Isogeny.separableDegree_eq_one_iff_isPurelyInseparable` and
-  `TauCeti.Isogeny.inseparableDegree_eq_one_iff_isSeparable`:
-  the biconditional forms, for a consumer holding a computed degree rather than an assumed class.
+  `inseparableDegree_frobeniusIsogeny` to compute the purely inseparable degree of Frobenius.
+* `TauCeti.Isogeny.separableDegree_eq_one_iff_isPurelyInseparable`,
+  `TauCeti.Isogeny.inseparableDegree_eq_one_iff_isSeparable` and
+  `TauCeti.Isogeny.separableDegree_eq_degree_iff_isSeparable`: the biconditional forms, for a
+  consumer holding a computed degree rather than an assumed class.
 
 ## Design
 
@@ -62,13 +63,6 @@ applied to the extension `degree` already measures — and a wrapper around it w
 name for one notion without adding a fact. The same holds for pure inseparability, which is
 `IsPurelyInseparable` on the same extension. What is *not* already sayable is the pair of numbers,
 so that is what this file adds.
-
-This follows Layer 1 of `TauCetiRoadmap/EllipticCurves/README.md`, which fixes the convention:
-
-> **Degree and separability are field theory.** `deg φ` is `Module.finrank` of `W₁.FunctionField`
-> over the fraction field of the pulled-back coordinate ring […]; the separable and inseparable
-> degrees, and separability of `φ`, are those of the field extension — Mathlib's existing
-> `FieldTheory`, not a flatness theory of morphisms.
 
 Both definitions are unconditional: no separability hypothesis, so purely inseparable isogenies
 such as Frobenius are covered, matching `Isogeny.finiteDimensional`.
@@ -82,12 +76,8 @@ inseparable law's is on the lower one, so they call `finiteDimensional_of_fieldR
 
 ## Provenance
 
-⚠ *mathlib-track*. `TauCetiRoadmap/EllipticCurves/README.md` tags the Layer-1 first-theory bullet
-— which lists "the separable and inseparable degrees" — as "proven in the shared upstream
-development, consumed and deduplicated when its PRs land". Those degrees are proved in
-D. Angdinata's shared upstream isogeny development in its function-field form, ahead of the
-Mathlib PRs; they are built here in the coordinate-ring form this repository's `Isogeny` uses,
-until those land. The same note appears in `Degree.lean`, `Basic.lean` and `FunctionField.lean`.
+The degrees follow D. Angdinata's isogeny development in its function-field form; here they are
+written in the coordinate-ring form this repository's `Isogeny` uses.
 
 The arithmetic content is Mathlib's — `Field.finSepDegree_mul_finInsepDegree` and the tower laws;
 this file transports it to isogenies along `degree_def`. No AINTLIB material is used: that
@@ -131,14 +121,14 @@ theorem separableDegree_eq_finSepDegree (φ : Isogeny W₁ W₂)
     [Algebra W₂.FunctionField W₁.FunctionField]
     (h : ∀ z, algebraMap W₂.FunctionField W₁.FunctionField z = φ.fieldPullback z) :
     φ.separableDegree = Field.finSepDegree W₂.FunctionField W₁.FunctionField :=
-  (φ.separableDegree_def).trans (TauCeti.AlgHom.finSepDegree_fieldRange φ.fieldPullback h)
+  (φ.separableDegree_def).trans (φ.fieldPullback.finSepDegree_fieldRange h)
 
 /-- **The inseparable degree read off any algebra structure induced by the pullback.** -/
 theorem inseparableDegree_eq_finInsepDegree (φ : Isogeny W₁ W₂)
     [Algebra W₂.FunctionField W₁.FunctionField]
     (h : ∀ z, algebraMap W₂.FunctionField W₁.FunctionField z = φ.fieldPullback z) :
     φ.inseparableDegree = Field.finInsepDegree W₂.FunctionField W₁.FunctionField :=
-  (φ.inseparableDegree_def).trans (TauCeti.AlgHom.finInsepDegree_fieldRange φ.fieldPullback h)
+  (φ.inseparableDegree_def).trans (φ.fieldPullback.finInsepDegree_fieldRange h)
 
 /-- **A separable isogeny induces a separable extension of function fields**, for any algebra
 structure whose structure map is the pullback.
@@ -201,29 +191,33 @@ theorem inseparableDegree_id (W : WeierstrassCurve.Affine F) : (id W).inseparabl
     ((id W).separableDegree_mul_inseparableDegree.trans (degree_id W))
   exact Nat.eq_one_of_mul_eq_one_left h
 
+/-! The four lemmas below eliminate an assumed separability or pure-inseparability instance.
+They are deliberately not `@[simp]`: as simp lemmas they make every `simp` that meets a
+`separableDegree` or `inseparableDegree` run a failing `Algebra.IsSeparable` or
+`IsPurelyInseparable` instance search on the function-field extension, and that search sits at the
+typeclass heartbeat budget, so it times out rather than failing. Concrete isogenies whose class is
+an instance state the specialisations as `@[simp]` lemmas instead, as
+`separableDegree_frobeniusIsogeny` does. -/
+
 /-- **A separable isogeny has separable degree equal to its degree.** -/
-@[simp]
 theorem separableDegree_eq_degree_of_isSeparable (φ : Isogeny W₁ W₂)
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] :
     φ.separableDegree = φ.degree := by
   rw [separableDegree_def, degree_def, Field.finSepDegree_eq_finrank_of_isSeparable]
 
 /-- **A separable isogeny has inseparable degree one.** -/
-@[simp]
 theorem inseparableDegree_eq_one_of_isSeparable (φ : Isogeny W₁ W₂)
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] :
     φ.inseparableDegree = 1 := by
   rw [inseparableDegree_def, Algebra.IsSeparable.finInsepDegree_eq]
 
 /-- **A purely inseparable isogeny has separable degree one.** -/
-@[simp]
 theorem separableDegree_eq_one_of_isPurelyInseparable (φ : Isogeny W₁ W₂)
     [IsPurelyInseparable φ.fieldPullback.fieldRange W₁.FunctionField] :
     φ.separableDegree = 1 := by
   rw [separableDegree_def, IsPurelyInseparable.finSepDegree_eq_one]
 
 /-- **A purely inseparable isogeny carries its whole degree in the inseparable part.** -/
-@[simp]
 theorem inseparableDegree_eq_degree_of_isPurelyInseparable (φ : Isogeny W₁ W₂)
     [IsPurelyInseparable φ.fieldPullback.fieldRange W₁.FunctionField] :
     φ.inseparableDegree = φ.degree := by
@@ -231,7 +225,7 @@ theorem inseparableDegree_eq_degree_of_isPurelyInseparable (φ : Isogeny W₁ W�
 
 /-- **A separable degree of `1` characterises pure inseparability**, not merely follows from it.
 
-The `@[simp]` lemmas above eliminate an assumed instance; this is the way back, for a consumer
+The lemmas above eliminate an assumed instance; this is the way back, for a consumer
 holding a computed degree and wanting the class. Both directions matter once `[n]` and Frobenius
 are in play, where the degree is what gets calculated. -/
 theorem separableDegree_eq_one_iff_isPurelyInseparable (φ : Isogeny W₁ W₂) :
@@ -245,6 +239,14 @@ theorem inseparableDegree_eq_one_iff_isSeparable (φ : Isogeny W₁ W₂) :
     φ.inseparableDegree = 1 ↔
       Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField :=
   φ.inseparableDegree_def ▸ (isSeparable_iff_finInsepDegree_eq_one _ _).symm
+
+/-- **A separable degree equal to the degree characterises separability**, the converse of
+`separableDegree_eq_degree_of_isSeparable`. -/
+theorem separableDegree_eq_degree_iff_isSeparable (φ : Isogeny W₁ W₂) :
+    φ.separableDegree = φ.degree ↔
+      Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField := by
+  rw [separableDegree_def, degree_def]
+  exact Field.finSepDegree_eq_finrank_iff _ _
 
 variable {W₃ : WeierstrassCurve.Affine F}
 
@@ -265,7 +267,7 @@ theorem separableDegree_comp (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W₂) :
   have hc : ∀ z, algebraMap _ _ z = (ψ.comp φ).fieldPullback z :=
     (ψ.comp φ).fieldPullback.algebraMap_toAlgebra_apply
   -- discharges the tower law's `[Algebra.IsAlgebraic E K]` side condition
-  have _ := TauCeti.AlgHom.finiteDimensional_of_fieldRange φ.fieldPullback hφ
+  have _ := φ.fieldPullback.finiteDimensional_of_fieldRange hφ
   rw [(ψ.comp φ).separableDegree_eq_finSepDegree hc, ψ.separableDegree_eq_finSepDegree hψ,
     φ.separableDegree_eq_finSepDegree hφ]
   exact (Field.finSepDegree_mul_finSepDegree_of_isAlgebraic W₃.FunctionField W₂.FunctionField
@@ -290,27 +292,33 @@ theorem inseparableDegree_comp (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W₂)
     (ψ.comp φ).fieldPullback.algebraMap_toAlgebra_apply
   -- the inseparable tower law needs `[Algebra.IsAlgebraic F E]`, the *lower* extension — so the
   -- finiteness required here is `ψ`'s, unlike `separableDegree_comp`, which needs `φ`'s
-  have _ := TauCeti.AlgHom.finiteDimensional_of_fieldRange ψ.fieldPullback hψ
+  have _ := ψ.fieldPullback.finiteDimensional_of_fieldRange hψ
   rw [(ψ.comp φ).inseparableDegree_eq_finInsepDegree hc,
     ψ.inseparableDegree_eq_finInsepDegree hψ, φ.inseparableDegree_eq_finInsepDegree hφ]
   exact (Field.finInsepDegree_mul_finInsepDegree_of_isAlgebraic W₃.FunctionField
     W₂.FunctionField W₁.FunctionField).symm
 
+/-- A composite isogeny is separable if and only if both factors are separable. -/
+@[simp]
+theorem isSeparable_comp_iff (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W₂) :
+    Algebra.IsSeparable (ψ.comp φ).fieldPullback.fieldRange W₁.FunctionField ↔
+      Algebra.IsSeparable ψ.fieldPullback.fieldRange W₂.FunctionField ∧
+        Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField := by
+  rw [← inseparableDegree_eq_one_iff_isSeparable,
+    ← inseparableDegree_eq_one_iff_isSeparable,
+    ← inseparableDegree_eq_one_iff_isSeparable, inseparableDegree_comp, mul_eq_one]
+
 -- Deliberately a theorem rather than a global instance: as an instance it adds two
--- `Algebra.IsSeparable` subgoals to every failing search for the separability of a composite, and
--- `simp` runs that search whenever it tries `separableDegree_eq_degree_of_isSeparable` or
--- `inseparableDegree_eq_one_of_isSeparable` on `(ψ.comp φ).separableDegree`, where it then
--- exceeds the typeclass heartbeat budget instead of failing.
+-- `Algebra.IsSeparable` subgoals to every failing search for the separability of a composite,
+-- which then exceeds the typeclass heartbeat budget instead of failing.
 /-- **A composite of separable isogenies is separable.** This is a theorem, not a global instance;
 a consumer that needs the composite's separability as an instance activates it with
 `attribute [local instance] isSeparable_comp`. -/
 theorem isSeparable_comp (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W₂)
     [Algebra.IsSeparable ψ.fieldPullback.fieldRange W₂.FunctionField]
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] :
-    Algebra.IsSeparable (ψ.comp φ).fieldPullback.fieldRange W₁.FunctionField := by
-  -- the inseparable degree of the composite is the product of two inseparable degrees equal to `1`
-  rw [← inseparableDegree_eq_one_iff_isSeparable, inseparableDegree_comp,
-    ψ.inseparableDegree_eq_one_of_isSeparable, φ.inseparableDegree_eq_one_of_isSeparable, mul_one]
+    Algebra.IsSeparable (ψ.comp φ).fieldPullback.fieldRange W₁.FunctionField :=
+  (isSeparable_comp_iff ψ φ).2 ⟨inferInstance, inferInstance⟩
 
 end Isogeny
 

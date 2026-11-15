@@ -55,6 +55,8 @@ identification.
   computation `|H⊥ / H| · |H|² = |A|`, for a nondegenerate module and an isotropic subgroup.
 * `TauCeti.FiniteBilinearModule.card_orthogonalQuotient_eq_one_iff_isLagrangian`: the quotient of
   an isotropic subgroup is trivial exactly when that subgroup is Lagrangian.
+* `TauCeti.FiniteBilinearModule.subsingleton_orthogonalQuotient_iff_isLagrangian`: the same
+  criterion phrased as `Subsingleton`.
 * `TauCeti.FiniteBilinearModule.Isometry.orthogonalQuotientEquiv`: transport of orthogonal
   quotients along an isometry carrying one subgroup onto another.
 
@@ -254,6 +256,14 @@ theorem card_orthogonalQuotient_eq_one_iff_isLagrangian {H : AddSubgroup A}
   exact ⟨fun h ↦ le_antisymm ((A.isIsotropic_iff_le_orthogonalComplement H).mp hH) h,
     fun h ↦ h ▸ le_rfl⟩
 
+/-- The orthogonal quotient of an isotropic subgroup is a subsingleton exactly when that subgroup
+is Lagrangian. -/
+theorem subsingleton_orthogonalQuotient_iff_isLagrangian {H : AddSubgroup A}
+    (hH : A.IsIsotropic H) :
+    Subsingleton (A.orthogonalQuotient H) ↔ A.IsLagrangian H := by
+  rw [← A.card_orthogonalQuotient_eq_one_iff_isLagrangian hH, Nat.card_eq_one_iff_unique]
+  exact ⟨fun h ↦ ⟨h, inferInstance⟩, And.left⟩
+
 /-! ## Transport along isometries -/
 
 namespace Isometry
@@ -309,17 +319,7 @@ private theorem orthogonalQuotientAddEquiv_orthogonalQuotientMk (f : Isometry A 
     f.orthogonalQuotientAddEquiv H (A.orthogonalQuotientMk H x) =
       B.orthogonalQuotientMk (H.map f.toAddEquiv)
         (Isometry.orthogonalComplementEquiv A f H x) := by
-  have hx : A.orthogonalQuotientMk H x =
-      (Submodule.Quotient.mk x : A.orthogonalQuotient H) := by
-    unfold orthogonalQuotientMk
-    exact quotientOfLeRadicalMk_apply _ _ _ _
-  have hfx : B.orthogonalQuotientMk (H.map f.toAddEquiv)
-      (Isometry.orthogonalComplementEquiv A f H x) =
-      (Submodule.Quotient.mk (Isometry.orthogonalComplementEquiv A f H x) :
-        B.orthogonalQuotient (H.map f.toAddEquiv)) := by
-    unfold orthogonalQuotientMk
-    exact quotientOfLeRadicalMk_apply _ _ _ _
-  rw [hx, hfx]
+  rw [orthogonalQuotientMk_apply, orthogonalQuotientMk_apply]
   -- After replacing the packaged quotient constructors by `Submodule.Quotient.mk`, expose the
   -- underlying quotient equivalence so Mathlib's `equiv_apply` and `mapQ_apply` lemmas match.
   change (Submodule.Quotient.equiv _ _
@@ -390,19 +390,9 @@ theorem orthogonalQuotientEquiv_symm_orthogonalQuotientMk (f : Isometry A B)
           rw [← f.map_pairing, f.apply_symm_apply]
           exact (B.mem_orthogonalComplement_iff K (y : B)).mp y.2 (f x)
             (h ▸ ⟨x, hx, rfl⟩)⟩ := by
-  have hforward :
-      f.orthogonalQuotientEquiv h
-          (A.orthogonalQuotientMk H ⟨f.symm (y : B), by
-            rw [A.mem_orthogonalComplement_iff]
-            intro x hx
-            rw [← f.map_pairing, f.apply_symm_apply]
-            exact (B.mem_orthogonalComplement_iff K (y : B)).mp y.2 (f x)
-              (h ▸ ⟨x, hx, rfl⟩)⟩) =
-        B.orthogonalQuotientMk K y := by
-    rw [orthogonalQuotientEquiv_orthogonalQuotientMk]
-    apply congrArg (B.orthogonalQuotientMk K)
-    exact Subtype.ext (f.apply_symm_apply (y : B))
-  rw [← hforward, (f.orthogonalQuotientEquiv h).symm_apply_apply]
+  conv_rhs => rw [← (f.orthogonalQuotientEquiv h).symm_apply_apply (A.orthogonalQuotientMk H _),
+    orthogonalQuotientEquiv_orthogonalQuotientMk]
+  exact congrArg _ (congrArg _ (Subtype.ext (f.apply_symm_apply (y : B))).symm)
 
 end Isometry
 

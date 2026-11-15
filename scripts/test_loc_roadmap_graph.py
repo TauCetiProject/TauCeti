@@ -18,6 +18,20 @@ def pr(number, title, area, additions, deletions, day="2026-07-01"):
     }
 
 
+class BorsSnapshot(unittest.TestCase):
+    def test_shared_snapshot_includes_bors_and_excludes_prefixed_maintenance(self):
+        prs = graph.snapshot_prs({"prs": [
+            {"number": 1, "title": "[Merged by Bors] - feat: theorem",
+             "merged_at": "2026-07-01T12:00:00Z", "labels": ["roadmap/PDE"],
+             "additions": 100, "deletions": 5},
+            {"number": 2, "title": "[Merged by Bors] - refactor: theorem",
+             "merged_at": "2026-07-01T12:00:00Z", "labels": ["roadmap/PDE"],
+             "additions": 20, "deletions": 2},
+        ]})
+        _, _, _, totals = graph.build_series(prs, today=dt.date(2026, 7, 2))
+        self.assertEqual(totals, {"roadmap/PDE": 95})
+
+
 class RoadmapSeries(unittest.TestCase):
     def test_excludes_maintenance_even_with_area_label(self):
         prs = [

@@ -51,6 +51,13 @@ genuinely new one, the diagram with two caps and two cups;
 `TauCeti.composeDiagram_capCup_capCup_comm` says that this diagram does not depend on the order
 the two copies are stacked in.
 
+Each relation here has a **mirror**, the same stack turned upside down. Reflection in a
+horizontal line carries one to the other: it reverses the stacking
+(`TauCeti.flip_composeDiagram`), leaves the number of loops closing up in the middle alone
+(`TauCeti.middleLoopCount_flip`) and fixes a cap-cup diagram
+(`TauCeti.BrauerDiagram.flip_capCup`), so the `_right` statements below are the reflections of
+their `_left` companions.
+
 Each relation comes with the middle-loop count of every stack it names, so that it is a relation
 for the loop-weighted multiplication `D₁ * D₂ = δ ^ middleLoopCount D₁ D₂ • composeDiagram D₁ D₂`
 of the Brauer algebra on the diagram basis and not only for the underlying matchings. All of the
@@ -149,20 +156,7 @@ Not a `simp` lemma, for the reason given for
 theorem composeDiagram_capCup_capCup_eq_relabel_right (hab : a ≠ b) (c : Fin k) :
     composeDiagram (capCup a b) (capCup b c) =
       (capCup a b).relabel (Equiv.swap a b * Equiv.swap b c) 1 := by
-  obtain rfl | hcb := eq_or_ne c b
-  · rw [capCup_self, composeDiagram_permToBrauer_one_right, Equiv.swap_self,
-      ← Equiv.Perm.one_def, mul_one, BrauerDiagram.relabel_swap_one_capCup]
-  obtain rfl | hca := eq_or_ne c a
-  · rw [Equiv.swap_comm b c, Equiv.swap_mul_self, BrauerDiagram.relabel_one_one, capCup_comm,
-      composeDiagram_capCup_capCup]
-  have hconj : capCup b c =
-      composeDiagram
-        (composeDiagram (permToBrauer (Equiv.swap a b * Equiv.swap b c)) (capCup a b))
-        (permToBrauer (Equiv.swap a b * Equiv.swap b c)⁻¹) := by
-    rw [composeDiagram_assoc, composeDiagram_permToBrauer_conj_capCup,
-      swap_mul_swap_apply_left hab hca, swap_mul_swap_apply_middle hca hcb]
-  rw [hconj, ← composeDiagram_assoc, composeDiagram_capCup_permToBrauer_mul_capCup hab,
-    composeDiagram_permToBrauer_right, inv_inv]
+  simpa using congrArg BrauerDiagram.flip (composeDiagram_capCup_capCup_eq_relabel_left hab c)
 
 /-! ### The relations of two overlapping pairs -/
 
@@ -205,9 +199,11 @@ theorem composeDiagram_permToBrauer_swap_capCup_capCup (hab : a ≠ b) (c : Fin 
     Equiv.swap_mul_self, one_mul]
 
 /-- **The mixed relation `(e * e') * s = e * s'`**, the mirror of
-`TauCeti.composeDiagram_permToBrauer_swap_capCup_capCup`. For consecutive pairs this is Brauer's
-relation `eᵢ eᵢ₊₁ sᵢ = eᵢ sᵢ₊₁`. Once the two pairs are genuinely different, that is once `a ≠ c`,
-no loop closes up in any of the three middles, by
+`TauCeti.composeDiagram_permToBrauer_swap_capCup_capCup`: stacking the diagram of the
+transposition of a pair below the stack of a cap-cup diagram on that pair and one on an
+overlapping pair replaces it by the transposition of the other pair. For consecutive pairs this
+is Brauer's relation `eᵢ eᵢ₊₁ sᵢ = eᵢ sᵢ₊₁`. Once the two pairs are genuinely different, that is
+once `a ≠ c`, no loop closes up in any of the three middles, by
 `TauCeti.middleLoopCount_capCup_capCup_right_of_ne` and
 `TauCeti.middleLoopCount_permToBrauer_right`, so this is that relation for the loop-weighted
 multiplication. On `c = a` the inner stack repeats the pair `{a, b}` and does close up one loop
@@ -219,10 +215,7 @@ Not a `simp` lemma, for the reason given for
 theorem composeDiagram_capCup_capCup_permToBrauer_swap (hab : a ≠ b) (c : Fin k) :
     composeDiagram (composeDiagram (capCup a b) (capCup b c)) (permToBrauer (Equiv.swap a b)) =
       composeDiagram (capCup a b) (permToBrauer (Equiv.swap b c)) := by
-  rw [composeDiagram_capCup_capCup_eq_relabel_right hab, composeDiagram_permToBrauer_right,
-    composeDiagram_permToBrauer_right, BrauerDiagram.relabel_relabel, one_mul, Equiv.Perm.inv_def,
-    Equiv.symm_swap, Equiv.Perm.inv_def, Equiv.symm_swap, ← mul_assoc, Equiv.swap_mul_self,
-    one_mul]
+  simpa using congrArg BrauerDiagram.flip (composeDiagram_permToBrauer_swap_capCup_capCup hab c)
 
 /-! ### The middle loops of two overlapping pairs -/
 
@@ -259,30 +252,16 @@ theorem middleLoopCount_capCup_capCup_left_of_ne (hac : a ≠ c) (b : Fin k) :
 
 /-- **Overlapping pairs close up no loop**, the other way round: with `e_{b,c}` as the right, lower
 factor, so that `e_{a,b}` is stacked above `e_{b,c}`, no loop closes up in the middle either. The
-only middle point keeping both of its arcs in the middle is the shared point `b`, whose cap in the
-upper copy runs to `a`, where the arc of the lower copy leaves for the boundary. -/
+only middle point keeping both of its arcs in the middle is the shared point `b`, whose cup in the
+lower copy runs to `c`, where the arc of the upper copy leaves for the boundary.
+
+The hypothesis is again exactly the one that makes the two pairs different as unordered pairs: on
+`a = c` the two copies are equal and `TauCeti.middleLoopCount_capCup_capCup` counts one loop. -/
 @[simp]
 theorem middleLoopCount_capCup_capCup_right_of_ne (hac : a ≠ c) (b : Fin k) :
     middleLoopCount (capCup a b) (capCup b c) = 0 := by
-  obtain rfl | hba := eq_or_ne b a
-  · rw [capCup_self, middleLoopCount_permToBrauer_left]
-  obtain rfl | hcb := eq_or_ne c b
-  · rw [capCup_self, middleLoopCount_permToBrauer_right]
-  refine middleLoopCount_eq_zero_iff.mpr fun x hx => ?_
-  have hvert := (isMiddleVertex_def _ _ _).mp hx.isMiddleVertex
-  have h₁ : x = a ∨ x = b := (BrauerDiagram.isCap_capCup_inl_iff hba.symm).mp hvert.1
-  have h₂ : x = b ∨ x = c := (BrauerDiagram.isCup_capCup_inr_iff hcb.symm).mp hvert.2
-  have hxb : x = b := by
-    rcases h₁ with h | h
-    · rcases h₂ with h' | h'
-      · exact h'
-      · exact absurd (h.symm.trans h') hac
-    · exact h
-  rw [hxb] at hx
-  exact not_onMiddleLoop_of_isThrough_right
-    ((BrauerDiagram.isThrough_capCup_inr_iff hcb.symm).mpr ⟨hba.symm, hac⟩)
-    (hx.reflTransGen (.single ((middleAdj_def _ _ _ _).mpr
-      (Or.inl (capCup_val_inl_right hba.symm)))))
+  simpa only [BrauerDiagram.flip_capCup, middleLoopCount_capCup_capCup_left_of_ne hac] using
+    middleLoopCount_flip (capCup b c) (capCup a b)
 
 /-- **The outer middle of `e * (e' * e)` closes up no loop.** By
 `TauCeti.composeDiagram_capCup_capCup_eq_relabel_left` the lower factor is `e_{a,b}` with its top
@@ -322,7 +301,8 @@ theorem middleLoopCount_capCup_composeDiagram_capCup_capCup (hcb : c ≠ b) (hca
     ((BrauerDiagram.isThrough_capCup_inl_iff hab).mpr ⟨hca, hcb⟩)
     (hx.reflTransGen (.single ((middleAdj_def _ _ _ _).mpr (Or.inr hval))))
 
-/-- **The outer middle of `(e * e') * e` closes up no loop.** By
+/-- **The outer middle of `(e * e') * e` closes up no loop**, the statement
+`TauCeti.middleLoopCount_capCup_composeDiagram_capCup_capCup` makes about the other bracketing. By
 `TauCeti.composeDiagram_capCup_capCup_eq_relabel_right` the upper factor is `e_{a,b}` with its
 bottom boundary renamed by the three-cycle `a ↦ b ↦ c ↦ a`, so it caps the pair `{b, c}`; the only
 middle point that the lower copy also cups is the shared point `b`, and the cap there runs to `c`,
@@ -332,33 +312,9 @@ either, so no hypothesis on the pair `{a, b}` is needed. -/
 @[simp]
 theorem middleLoopCount_composeDiagram_capCup_capCup_capCup (hcb : c ≠ b) (hca : c ≠ a) :
     middleLoopCount (composeDiagram (capCup a b) (capCup b c)) (capCup a b) = 0 := by
-  obtain rfl | hab := eq_or_ne a b
-  · rw [capCup_self, middleLoopCount_permToBrauer_right]
-  have hsymm : (Equiv.swap a b * Equiv.swap b c).symm b = a :=
-    Equiv.symm_apply_eq _ |>.mpr (swap_mul_swap_apply_left hab hca).symm
-  rw [composeDiagram_capCup_capCup_eq_relabel_right hab]
-  refine middleLoopCount_eq_zero_iff.mpr fun x hx => ?_
-  have hvert := (isMiddleVertex_def _ _ _).mp hx.isMiddleVertex
-  have h₂ : x = a ∨ x = b := (BrauerDiagram.isCup_capCup_inr_iff hab).mp hvert.2
-  have hxb : x = b := by
-    rcases h₂ with h | h
-    · rw [h] at hvert
-      have hcap : (capCup a b).IsCap (Sum.inl c) := by
-        rw [← BrauerDiagram.isCap_relabel_inl (capCup a b)
-          (Equiv.swap a b * Equiv.swap b c) 1 c, swap_mul_swap_apply_right]
-        exact hvert.1
-      rcases (BrauerDiagram.isCap_capCup_inl_iff hab).mp hcap with h' | h'
-      · exact absurd h' hca
-      · exact absurd h' hcb
-    · exact h
-  rw [hxb] at hx
-  have hval : ((capCup a b).relabel (Equiv.swap a b * Equiv.swap b c) 1).val (Sum.inl b) =
-      Sum.inl c := by
-    rw [BrauerDiagram.relabel_val_inl, hsymm, capCup_val_inl_left hab, Sum.map_inl,
-      swap_mul_swap_apply_middle hca hcb]
-  exact not_onMiddleLoop_of_isThrough_right
-    ((BrauerDiagram.isThrough_capCup_inr_iff hab).mpr ⟨hca, hcb⟩)
-    (hx.reflTransGen (.single ((middleAdj_def _ _ _ _).mpr (Or.inl hval))))
+  simpa only [flip_composeDiagram, BrauerDiagram.flip_capCup,
+    middleLoopCount_capCup_composeDiagram_capCup_capCup hcb hca] using
+    middleLoopCount_flip (capCup a b) (composeDiagram (capCup b c) (capCup a b))
 
 /-! ### The relation of two disjoint pairs -/
 

@@ -8,6 +8,8 @@ module
 public import Mathlib.SetTheory.Cardinal.NatCard
 public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Logic.Equiv.Option
+import TauCeti.GroupTheory.GroupAction.Closure
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # The number of orbits of a permutation
@@ -34,8 +36,15 @@ permutations of the same type.
   `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints` of `TauCeti.GroupTheory.Perm.Partition`.
 * `TauCeti.orbitCount_eq_one_of_forall_sameCycle`: a transitive permutation of a nonempty type has
   orbit count one.
+* `TauCeti.exists_not_sameCycle_apply_of_isPretransitive_closure`: if `σ` has more than one
+  orbit but generates a transitive group together with a set `S`, then some member of `S`
+  moves a point to another orbit of `σ`.
 * `Equiv.Perm.orbitCount_le_card`: on a finite type, a permutation has at most as many orbits as
   the type has points, the orbits being the classes of a partition of it.
+* `Equiv.Perm.SameCycle.of_forall_sameCycle_apply`: a permutation moving every point within its
+  cycle of `π` has each of its cycles inside a cycle of `π`.
+* `TauCeti.orbitCount_le_card_orbitRelQuotient`: a subgroup of permutations moving every point
+  within its cycle of `π` has at least as many orbits as `π`.
 * `Equiv.Perm.card_le_orderOf_mul_orbitCount`: conversely, the number of points is at most the
   order of the permutation times its number of orbits, each orbit length dividing the order.
 * `Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount`: the sign is determined by the parity of
@@ -45,9 +54,10 @@ permutations of the same type.
   orbit more than `σ` — the extra orbit is the fixed point `p`.
 * `TauCeti.orbitCount_mul_swap_add_one`: multiplying a permutation by a transposition that moves
   one of its fixed points splices that fixed point into another orbit, so the count drops by one.
-* `List.IsSwapForest.orbitCount_add_length`: iterating the splicing step, the product of a
-  `List.IsSwapForest` list of `n` transpositions on a finite type has `n` orbits fewer than the
-  identity.
+* `List.IsSwapForest.map` transports swap forests along embeddings.
+* `List.IsSwapForest.orbitCount_mul_add_length`: a swap forest of `n` transpositions removes
+  `n` orbits from a permutation fixing its inserted endpoints; `orbitCount_add_length`
+  specializes this to the identity.
 * `TauCeti.orbitCount_add_one_of_merge`: if the orbits of `τ` are the orbits of `σ` with the orbit
   of one point and the orbit of another merged, then `τ` has one orbit fewer.
 
@@ -55,7 +65,7 @@ Composing `TauCeti.orbitCount_add_one_eq_of_semiconj` with `TauCeti.orbitCount_m
 says that adjoining a point to a permutation and immediately splicing it into an existing orbit
 leaves the number of orbits unchanged. That composite is the reason this file exists: it is the
 invariance of the number of components of a link under the stabilization move on braids, in
-`TauCeti/KnotTheory/Markov.lean`.
+`TauCeti/KnotTheory/Markov/Basic.lean`.
 
 ## Implementation notes
 
@@ -70,7 +80,8 @@ The two cross-type results, `TauCeti.orbitCount_add_one_eq_of_semiconj` and
 bijectively onto the orbits of `τ` other than a fixed point `p` of `τ`. Its `SameCycle` hypothesis
 comes from Mathlib's `Equiv.Perm.sameCycle_extendDomain` for adjoining a point. For splicing a
 point into an orbit, a one-step statement is propagated over all integer powers by the private
-lemma `sameCycle_zpow_of_forall_sameCycle_apply`. `TauCeti.orbitCount_add_one_of_merge` does not
+lemma `sameCycle_zpow_of_forall_sameCycle_apply`, whose public form is
+`Equiv.Perm.SameCycle.map_of_forall_sameCycle_apply`. `TauCeti.orbitCount_add_one_of_merge` does not
 go through that lemma: it exhibits the orbits of `τ` as the orbits of `σ` with one class removed
 and finishes through `Equiv.optionSubtypeNe`.
 -/
@@ -111,6 +122,30 @@ theorem orbitCount_eq_one_of_forall_sameCycle [Nonempty α] {σ : Equiv.Perm α}
     ⟨fun q r => Quotient.inductionOn q fun x => Quotient.inductionOn r fun y =>
       Quotient.sound (h x y)⟩
   exact Nat.card_unique
+
+/-- A permutation of a finite type has at most one orbit exactly when any two points lie in the
+same cycle. On a nonempty type this means exactly one orbit, and on the empty type there are
+none. -/
+theorem orbitCount_le_one_iff [Finite α] {σ : Equiv.Perm α} :
+    orbitCount σ ≤ 1 ↔ ∀ x y, σ.SameCycle x y := by
+  rw [orbitCount_def, Finite.card_le_one_iff_subsingleton]
+  refine ⟨fun _ x y ↦ Quotient.exact (Subsingleton.elim (Quotient.mk (SameCycle.setoid σ) x)
+    (Quotient.mk _ y)), fun h ↦ ⟨fun q r ↦ Quotient.inductionOn₂ q r fun x y ↦
+      Quotient.sound (h x y)⟩⟩
+
+/-- If a permutation `σ` with more than one orbit generates, together with a set `S` of
+permutations, a subgroup acting transitively, then some permutation in `S` moves some point to a
+different orbit of `σ`. -/
+theorem exists_not_sameCycle_apply_of_isPretransitive_closure [Nonempty α] {σ : Equiv.Perm α}
+    {S : Set (Equiv.Perm α)} (hconn : MulAction.IsPretransitive (Subgroup.closure (insert σ S)) α)
+    (hσ : orbitCount σ ≠ 1) : ∃ g ∈ S, ∃ x, ¬ σ.SameCycle x (g x) := by
+  by_contra! h
+  refine hσ (orbitCount_eq_one_of_forall_sameCycle fun x y ↦ Quotient.exact
+    (apply_eq_apply_of_isPretransitive_closure (f := Quotient.mk (SameCycle.setoid σ)) ?_
+      hconn x y))
+  rintro g (rfl | hg) z
+  · exact Quotient.sound ⟨-1, by simp⟩
+  · exact (Quotient.sound (h g hg z)).symm
 
 /-- A permutation of a finite type has at most as many orbits as there are points. -/
 theorem _root_.Equiv.Perm.orbitCount_le_card [Finite α] (σ : Equiv.Perm α) :
@@ -255,6 +290,38 @@ private theorem sameCycle_zpow_of_forall_sameCycle_apply {π : Equiv.Perm α}
   | pred k ih =>
     rw [sub_eq_add_neg, zpow_add, hneg, Equiv.Perm.mul_apply]
     exact (hinv x).trans (ih (σ⁻¹ x))
+
+/-- If a map `g` carries every point and its image under `σ` into one cycle of `π`, then it carries
+each cycle of `σ` into a cycle of `π`. -/
+theorem _root_.Equiv.Perm.SameCycle.map_of_forall_sameCycle_apply {π : Equiv.Perm α}
+    {σ : Equiv.Perm β} {g : β → α} (h : ∀ x, π.SameCycle (g x) (g (σ x))) {x y : β}
+    (hxy : σ.SameCycle x y) : π.SameCycle (g x) (g y) := by
+  obtain ⟨i, rfl⟩ := hxy
+  exact sameCycle_zpow_of_forall_sameCycle_apply h i x
+
+/-- If `τ` moves every point within its cycle of `π`, then each cycle of `τ` lies in a cycle of
+`π`. -/
+theorem _root_.Equiv.Perm.SameCycle.of_forall_sameCycle_apply {π τ : Equiv.Perm α}
+    (h : ∀ x, π.SameCycle x (τ x)) {x y : α} (hxy : τ.SameCycle x y) : π.SameCycle x y :=
+  hxy.map_of_forall_sameCycle_apply (g := id) h
+
+/-- If every permutation in a subgroup `H` moves every point within its cycle of `π`, then `H` has
+at least as many orbits as `π`: each orbit of `H` lies in a cycle of `π`. -/
+theorem orbitCount_le_card_orbitRelQuotient [Finite α] {π : Equiv.Perm α}
+    {H : Subgroup (Equiv.Perm α)} (hH : ∀ g ∈ H, ∀ x, π.SameCycle x (g x)) :
+    orbitCount π ≤ Nat.card (MulAction.orbitRel.Quotient H α) := by
+  let f : MulAction.orbitRel.Quotient H α → Quotient (SameCycle.setoid π) :=
+    fun q => Quotient.liftOn' q (fun x => Quotient.mk'' x) fun a b hab => by
+      apply Quotient.sound
+      rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff] at hab
+      obtain ⟨g, rfl⟩ := hab
+      exact (hH g g.2 b).symm
+  have hf : Function.Surjective f := by
+    intro q
+    induction q using Quotient.inductionOn'
+    exact ⟨Quotient.mk'' _, rfl⟩
+  rw [orbitCount_def]
+  exact Nat.card_le_card_of_surjective f hf
 
 /-- The counting step shared by the two results below. A map `F : α → β` whose fibrewise behaviour
 identifies the `σ`-orbits with the `τ`-orbits, and whose image is exactly the complement of a
@@ -411,22 +478,77 @@ moves a point `p ≠ a` fixed by the product of the tail. -/
         (factors.reverse.map (Function.uncurry Equiv.swap)).prod p = p ∧ a ≠ p :=
   Iff.rfl
 
-/-- **A swap forest removes one orbit per factor.** Iterating
-`TauCeti.orbitCount_mul_swap_add_one`, the product of a swap forest of `n` transpositions on a
-finite type has `n` orbits fewer than the identity. -/
+/-- Embedding the endpoints of a swap forest preserves the forest property. -/
+theorem _root_.List.IsSwapForest.map {γ : Type*} [DecidableEq β] [DecidableEq γ]
+    {factors : List (β × β)} (hforest : factors.IsSwapForest) (e : β ↪ γ) :
+    (factors.map (fun factor ↦ (e factor.1, e factor.2))).IsSwapForest := by
+  have hprod : ∀ (pairs : List (β × β)) (x : β),
+      (pairs.map (fun factor ↦ Equiv.swap (e factor.1) (e factor.2))).prod (e x) =
+        e ((pairs.map (Function.uncurry Equiv.swap)).prod x) := by
+    intro pairs x
+    induction pairs with
+    | nil => simp
+    | cons factor pairs ih =>
+        simp only [List.map_cons, List.prod_cons, Equiv.Perm.mul_apply]
+        rw [ih, ← e.injective.map_swap]
+        rfl
+  induction factors with
+  | nil => simp
+  | cons factor factors ih =>
+      rcases factor with ⟨a, p⟩
+      simp only [List.map_cons, List.isSwapForest_cons]
+      refine ⟨ih hforest.1, ?_, fun h ↦ hforest.2.2 (e.injective h)⟩
+      simpa only [← List.map_reverse, List.map_map, Function.comp_def,
+        Function.uncurry_def] using
+        (hprod factors.reverse p).trans (congrArg e hforest.2.1)
+
+/-- **A swap forest splices fixed points into a permutation.** If the permutation fixes the
+second endpoint of every factor, multiplying by the forest removes one orbit per factor. -/
+theorem _root_.List.IsSwapForest.orbitCount_mul_add_length [DecidableEq β] [Finite β]
+    {factors : List (β × β)} (hforest : factors.IsSwapForest) (τ : Equiv.Perm β)
+    (hfix : ∀ factor ∈ factors, τ factor.2 = factor.2) :
+    orbitCount (τ * (factors.reverse.map (Function.uncurry Equiv.swap)).prod) +
+      factors.length = orbitCount τ := by
+  induction factors with
+  | nil => simp
+  | cons factor factors ih =>
+      rcases factor with ⟨a, p⟩
+      have hfixed : (τ * (factors.reverse.map (Function.uncurry Equiv.swap)).prod) p = p := by
+        rw [Equiv.Perm.mul_apply, hforest.2.1]
+        exact hfix (a, p) (by simp)
+      have hstep := orbitCount_mul_swap_add_one hfixed hforest.2.2
+      have htail := ih hforest.1 (fun factor hf ↦ hfix factor (List.mem_cons_of_mem _ hf))
+      simp only [List.reverse_cons, List.map_append, List.prod_append, List.map_singleton,
+        List.prod_singleton, Function.uncurry_apply_pair, List.length_cons, mul_assoc] at hstep ⊢
+      omega
+
+/-- **A swap forest removes one orbit per factor.** The product of a swap forest of `n`
+transpositions on a finite type has `n` orbits fewer than the identity. -/
 theorem _root_.List.IsSwapForest.orbitCount_add_length [DecidableEq β] [Finite β]
     {factors : List (β × β)} (hforest : factors.IsSwapForest) :
     orbitCount (factors.reverse.map (Function.uncurry Equiv.swap)).prod + factors.length =
       Nat.card β := by
-  induction factors with
-  | nil => simp [orbitCount_one]
-  | cons factor factors ih =>
-      rcases factor with ⟨a, p⟩
-      have hstep := orbitCount_mul_swap_add_one hforest.2.1 hforest.2.2
-      have htail := ih hforest.1
-      simp only [List.reverse_cons, List.map_append, List.prod_append, List.map_singleton,
-        List.prod_singleton, Function.uncurry_apply_pair, List.length_cons] at hstep ⊢
-      omega
+  simpa [orbitCount_one] using hforest.orbitCount_mul_add_length 1 (by simp)
+
+/-- **A swap forest splices fixed points on the left.** If a permutation fixes the second
+endpoint of every factor, multiplying by the factors in their listed order removes one orbit
+per factor. -/
+theorem _root_.List.IsSwapForest.orbitCount_prod_mul_add_length [DecidableEq β] [Finite β]
+    {factors : List (β × β)} (hforest : factors.IsSwapForest) (τ : Equiv.Perm β)
+    (hfix : ∀ factor ∈ factors, τ factor.2 = factor.2) :
+    orbitCount ((factors.map (Function.uncurry Equiv.swap)).prod * τ) + factors.length =
+      orbitCount τ := by
+  have hfix' : ∀ factor ∈ factors, τ⁻¹ factor.2 = factor.2 := by
+    intro factor hf
+    apply τ.injective
+    simp [hfix factor hf]
+  have hcount := hforest.orbitCount_mul_add_length τ⁻¹ hfix'
+  have hprod : (factors.reverse.map (Function.uncurry Equiv.swap)).prod =
+      (factors.map (Function.uncurry Equiv.swap)).prod⁻¹ := by
+    rw [List.map_reverse, List.prod_reverse_noncomm, List.map_map]
+    simp only [Function.comp_def, Function.uncurry_def, Equiv.swap_inv]
+  rw [hprod, ← mul_inv_rev, Equiv.Perm.orbitCount_inv, Equiv.Perm.orbitCount_inv] at hcount
+  exact hcount
 
 /-- **Merging two orbits removes one orbit.** If every orbit of `σ` is contained in an orbit of
 `τ`, if two points `a` and `b` lying in different orbits of `σ` lie in one orbit of `τ`, and if no

@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.HighestWeight.FiniteDimensional
 public import TauCeti.Algebra.Lie.HighestWeight.Weight.Lattice
 public import TauCeti.Algebra.Lie.HighestWeight.Weyl.Character
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Dimension
+import TauCeti.Algebra.Lie.Weights.Dimension
 
 /-!
 # The Weyl dimension formula
@@ -40,6 +41,9 @@ passes from the field `K` to the integers through `TauCeti.intCast_coweightPairi
   `dim M · ∏_{α>0} ⟨ρ, α^∨⟩ = ∏_{α>0} ⟨lam + ρ, α^∨⟩` of the dimension formula, in `ℤ`.
 * `TauCeti.finrank_eq_prod_coweightPairing_div`: **the Weyl dimension formula**
   `dim M = ∏_{α>0} ⟨lam + ρ, α^∨⟩ / ⟨ρ, α^∨⟩`, in `ℚ`.
+* `TauCeti.finiteDimensional_irreducibleQuotient_weylVector` and
+  `TauCeti.finrank_irreducibleQuotient_weylVector`: the irreducible module of highest weight `ρ` is
+  finite-dimensional, of dimension `2 ^ ((dim L - dim H) / 2)`.
 
 ## References
 
@@ -55,7 +59,7 @@ open LieAlgebra LieModule Module
 
 universe u v w
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K]
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K] [Invertible (2 : K)]
   [LieRing L] [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
   {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
@@ -80,6 +84,8 @@ theorem finrank_mul_prod_coweightPairing_weylVector_eq :
           coweightPairing (weylVector (IsKilling.rootSystem H) b) i
       = ∏ i ∈ posRootsFinset (IsKilling.rootSystem H) b,
           coweightPairing (lam + weylVector (IsKilling.rootSystem H) b) i := by
+  -- The Weyl character formula fixes the instance `invertibleTwo`.
+  obtain rfl : ‹Invertible (2 : K)› = invertibleTwo := Subsingleton.elim _ _
   have _ := RootPairing.finite_weylGroup (IsKilling.rootSystem H)
   let _ := Fintype.ofFinite (IsKilling.rootSystem H).weylGroup
   have hρ : IsIntegralWeight (weylVector (IsKilling.rootSystem H) b) :=
@@ -87,12 +93,10 @@ theorem finrank_mul_prod_coweightPairing_weylVector_eq :
   have hlam : IsIntegralWeight (lam + weylVector (IsKilling.rootSystem H) b) :=
     hv.isDominantIntegral.isIntegralWeight.add hρ
   -- The character formula for `L(0)`, the second input of the root-pairing statement.
-  have h0 : vermaGenerator b (0 : Dual K H) ≠ 0 :=
-    (isHighestWeightVector_vermaGenerator_zero b).ne_zero
   have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral
     (isDominantIntegral_zero (b := b))
   have hg := formalCharacter_mul_weylDenominator_eq_weylNumerator
-    (isHighestWeightVector_irreducibleQuotientGenerator b (0 : Dual K H) h0)
+    (isHighestWeightVector_irreducibleQuotientGenerator b (0 : Dual K H))
     (lieSpan_irreducibleQuotientGenerator_eq_top b 0)
   have key := sum_coeff_mul_prod_coroot'_weylVector_eq (IsKilling.rootSystem H) b
     rootInvariantForm (formalCharacter_mul_weylDenominator_eq_weylNumerator hv hgen) hg
@@ -124,5 +128,56 @@ theorem finrank_eq_prod_coweightPairing_div :
   exact_mod_cast finrank_mul_prod_coweightPairing_weylVector_eq hv hgen
 
 end HighestWeightModule
+
+/-! ### The module of highest weight `ρ` -/
+
+/-- **The irreducible module of highest weight `ρ` is finite-dimensional**, `ρ` being a dominant
+integral weight. -/
+theorem finiteDimensional_irreducibleQuotient_weylVector (b : (IsKilling.rootSystem H).Base) :
+    FiniteDimensional K (irreducibleQuotient b (weylVector (IsKilling.rootSystem H) b)) :=
+  finiteDimensional_irreducibleQuotient_of_isDominantIntegral isDominantIntegral_weylVector
+
+/-- **The irreducible module of highest weight `ρ` has dimension
+`2 ^ ((dim L - dim H) / 2)`.** In the Weyl dimension formula for `L(ρ)`, every positive-root
+factor is
+
+`⟨ρ + ρ, α^∨⟩ / ⟨ρ, α^∨⟩ = 2`.
+
+The root-space dimension count identifies the number of these factors with
+`(dim L - dim H) / 2`. -/
+@[simp]
+theorem finrank_irreducibleQuotient_weylVector
+    (b : (IsKilling.rootSystem H).Base) :
+    finrank K (irreducibleQuotient b (weylVector (IsKilling.rootSystem H) b)) =
+      2 ^ ((finrank K L - finrank K H) / 2) := by
+  let _ := finiteDimensional_irreducibleQuotient_weylVector b
+  have hdim := finrank_eq_prod_coweightPairing_div
+    (isHighestWeightVector_irreducibleQuotientGenerator b
+      (weylVector (IsKilling.rootSystem H) b))
+    (lieSpan_irreducibleQuotientGenerator_eq_top b
+      (weylVector (IsKilling.rootSystem H) b))
+  have hfactor (i : H.root) :
+      ((coweightPairing
+          (weylVector (IsKilling.rootSystem H) b + weylVector (IsKilling.rootSystem H) b) i : ℤ) :
+        ℚ) /
+          (coweightPairing (weylVector (IsKilling.rootSystem H) b) i : ℚ) = 2 := by
+    rw [coweightPairing_add isDominantIntegral_weylVector.isIntegralWeight
+      isDominantIntegral_weylVector.isIntegralWeight]
+    have hne : (coweightPairing (weylVector (IsKilling.rootSystem H) b) i : ℚ) ≠ 0 := by
+      exact_mod_cast coweightPairing_weylVector_ne_zero i
+    push_cast
+    rw [add_div, div_self hne]
+    norm_num
+  rw [Finset.prod_congr rfl fun i _ ↦ hfactor i, Finset.prod_const] at hdim
+  have hcard :
+      finrank K (irreducibleQuotient b (weylVector (IsKilling.rootSystem H) b)) =
+        2 ^ (posRoots (IsKilling.rootSystem H) b).ncard := by
+    rw [← card_posRootsFinset (IsKilling.rootSystem H) b]
+    exact_mod_cast hdim
+  have hExponent : (finrank K L - finrank K H) / 2 =
+      (posRoots (IsKilling.rootSystem H) b).ncard := by
+    have h := finrank_eq_finrank_cartan_add_two_mul_ncard_posRoots H b
+    omega
+  simpa only [hExponent] using hcard
 
 end TauCeti

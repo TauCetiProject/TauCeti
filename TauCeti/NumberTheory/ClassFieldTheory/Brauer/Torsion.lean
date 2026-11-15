@@ -50,6 +50,15 @@ open ContCohomology
 
 universe u
 
+/-- The absolute Galois group is locally compact, being compact and Hausdorff. Instance search
+does not find this within its default budget under the imports of this file, so it is assembled
+here from the Krull topology being Hausdorff. -/
+local instance {K : Type u} [Field K] : LocallyCompactSpace (AbsoluteGaloisGroup K) :=
+  have : R1Space (AbsoluteGaloisGroup K) := @T2Space.r1Space _ _ krullTopology_t2
+  have : WeaklyLocallyCompactSpace (AbsoluteGaloisGroup K) :=
+    ⟨fun _ ↦ ⟨Set.univ, isCompact_univ, Filter.univ_mem⟩⟩
+  WeaklyLocallyCompactSpace.locallyCompactSpace
+
 variable (n : ℕ) (F : Type u) [Field F]
 
 /-- **The Kummer coefficient map `H²(G_F, μₙ) → Br F`.** It is the Kummer-sequence coefficient
@@ -90,6 +99,15 @@ theorem h2MuToBr_muNRepH2Equiv
               (explicitH2AddEquivContinuousCohomology
                 (AbsoluteGaloisGroup F) (KummerCoeff F n) x))) := by
   rw [h2MuToBr_apply, AddEquiv.symm_apply_apply]
+
+/-- On the explicit model, the Kummer-to-Brauer map is induced by the coefficient inclusion. -/
+theorem h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2
+    (x : H2 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
+    h2MuToBr n F (muNRepH2Equiv n F x) =
+      unitsRepH2Equiv F
+        (explicitCoeff2 _ _ (kummerCoeffInclHom F n) continuous_of_discreteTopology x) := by
+  rw [h2MuToBr_muNRepH2Equiv, h2KummerToUnits_explicitH2AddEquivContinuousCohomology,
+    AddEquiv.symm_apply_apply]
 
 /-- **The map from roots-of-unity cohomology into the Brauer group is injective** when `n` is
 invertible in `F`. -/

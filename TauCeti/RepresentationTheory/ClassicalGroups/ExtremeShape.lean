@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Nat.Factorial.NatCast
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.ExteriorPower
 public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Basic
@@ -72,9 +73,6 @@ of the row-superstandard tableau, which is what `TauCeti.weylModuleOfShape` is d
 * [W. Fulton and J. Harris, *Representation Theory: A First Course*][fulton-harris1991],
   Lecture 6, "Weyl's construction", where `𝕊^{(d)}V = Sym^d V` and `𝕊^{(1^d)}V = ⋀^d V` are the
   two extreme cases of the construction.
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 2, "Young symmetrizers and the Schur functor", whose two remaining deliverables
-  `S^{(d)} V ≅ Symᵈ V` and `S^{(1ᵈ)} V ≅ ⋀ᵈ V` are proved here.
 -/
 
 public section

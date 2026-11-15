@@ -28,19 +28,17 @@ Peter-Weyl theorem and is proved in
 
 * `TauCeti.toLp_mem_classFunctionLp`: a continuous class function on a compact group defines an
   element of `classFunctionLp`.
-* `TauCeti.ContRepresentation.characterLp_mem_classFunctionLp`: the character of a
+* `ContRepresentation.characterLp_mem_classFunctionLp`: the character of a
   finite-dimensional continuous representation is a class function in `L²(G)`.
 
 ## References
 
 * Daniel Bump, *Lie Groups*, second edition, Chapter 2.
-* [Compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-  Layer 6, "Characters span the class functions", whose first half -- the closed subspace
-  `classFunctionLp` (the roadmap's `centralLp`) and the membership
-  `characterLp_mem_classFunctionLp` -- is what this file supplies.
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory
 open scoped ENNReal
@@ -73,7 +71,8 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopo
 /-- **A character is a class function in `L²(G)`.**  The class of the character of a
 finite-dimensional continuous representation of a compact group is fixed by every conjugation,
 the almost-everywhere form of its pointwise invariance on conjugacy classes. -/
-theorem characterLp_mem_classFunctionLp (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
+theorem _root_.ContRepresentation.characterLp_mem_classFunctionLp
+    (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
     characterLp π hπ ∈ classFunctionLp 𝕜 𝕜 2 (haarProb G) := by
   rw [characterLp_def]
   exact toLp_mem_classFunctionLp (𝕜 := 𝕜) 2 (character π hπ) fun g h ↦ character_conj π hπ g h

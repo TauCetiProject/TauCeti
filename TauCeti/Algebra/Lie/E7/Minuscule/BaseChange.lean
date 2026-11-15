@@ -46,6 +46,11 @@ reductive, that its torus is maximal, or that its root datum has been identified
 
 * `TauCeti.E7Minuscule.mkQuotient_comp_baseChangeCoordinateIso_hom`: the coordinate
   isomorphism is compatible with the quotient presentations.
+* `TauCeti.E7Minuscule.coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap`: the factored
+  root-subgroup maps recover the transported ambient root-subgroup maps.
+* `pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_rootSubgroupPoints`:
+  on points over any value algebra, the factored root-subgroup maps give the numbered root
+  matrices.
 * `TauCeti.E7Minuscule.baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap` and
   `TauCeti.E7Minuscule.baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap`: the numbered
   root-subgroup and weight-torus maps are the scalar extensions of their integral coordinate maps.
@@ -87,8 +92,8 @@ full-weight type-`E₇` minuscule carrier along `ℤ → A`. -/
 noncomputable def baseChangeDefiningIdeal :
     HopfIdeal A (GeneralLinear.coordinateHopfAlgebra A 56) :=
   kostantToralBaseChangePresentationIdeal
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight A
 
@@ -103,6 +108,12 @@ of the specialized minuscule carrier into `GL₅₆`. -/
 public noncomputable def coordinateMap :
     GeneralLinear.coordinateHopfAlgebra A 56 ⟶ coordinateHopfAlgebra A :=
   CommHopfAlgCat.mkQuotient _ _
+
+/-- The carrier's ambient coordinate morphism is the quotient by its transported defining ideal. -/
+theorem coordinateMap_def :
+    coordinateMap A = CommHopfAlgCat.mkQuotient
+      (GeneralLinear.coordinateHopfAlgebra A 56) (baseChangeDefiningIdeal A) :=
+  (rfl)
 
 /-- The specialized carrier coordinate morphism is surjective. -/
 theorem coordinateMap_surjective : Function.Surjective (coordinateMap A).hom := by
@@ -127,7 +138,7 @@ variable {B : Type w} [CommRing B] [Algebra A B]
 point of the ambient general linear group. -/
 theorem mapPointsFunctor_coordinateMap_app
     (g : HopfAlgebra.points (R := A) (H := coordinateHopfAlgebra A) (CommAlgCat.of A B)) :
-    (CommHopfAlgCat.mapPointsFunctor (coordinateMap A)).app (CommAlgCat.of A B) g =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap A)).app (CommAlgCat.of A B) g =
       CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra A 56) (baseChangeDefiningIdeal A)
         (CommAlgCat.of A B) g := by
@@ -167,8 +178,8 @@ theorem map_tmul_mem_baseChangeDefiningIdeal_of_mem (s : A)
         (s ⊗ₜ[ℤ] y) ∈ baseChangeDefiningIdeal A := by
   rw [baseChangeDefiningIdeal]
   exact map_tmul_mem_kostantToralBaseChangePresentationIdeal_of_mem
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight A s (definingIdeal_def ▸ hy)
 
@@ -180,8 +191,8 @@ noncomputable def baseChangeCoordinateIso :
       CommHopfAlgCat.baseChange (K := A)
         (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ 56) definingIdeal) :=
   kostantToralBaseChangePresentationIsoOfEq
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight A definingIdeal_def
 
@@ -198,8 +209,8 @@ theorem mkQuotient_comp_baseChangeCoordinateIso_hom :
             (GeneralLinear.coordinateHopfAlgebra ℤ 56) definingIdeal) := by
   rw [baseChangeCoordinateIso]
   exact mkQuotient_comp_kostantToralBaseChangePresentationIsoOfEq_hom
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight A definingIdeal_def
 
@@ -211,8 +222,8 @@ noncomputable def rootSubgroupIntegralCoordinateMap (k : Fin 7 ⊕ Fin 7) :
     CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ 56) definingIdeal ⟶
       AdditiveGroup.coordinateHopfAlgebra ℤ :=
   kostantRootSubgroupToralCoordinateMapOfEq
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight definingIdeal_def k
 
@@ -223,13 +234,13 @@ theorem mkQuotient_comp_rootSubgroupIntegralCoordinateMap (k : Fin 7 ⊕ Fin 7) 
     CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ 56) definingIdeal ≫
         rootSubgroupIntegralCoordinateMap k =
       kostantRootSubgroupCoordinateMap
-        (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-        (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+        (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
         rep_kostantForm_mem_lattice k (isNilpotent_rep_serreRootGenerator k) latticeBasis := by
   rw [rootSubgroupIntegralCoordinateMap]
   exact mkQuotient_comp_kostantRootSubgroupToralCoordinateMapOfEq
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight definingIdeal_def k
 
@@ -242,8 +253,8 @@ theorem hopfSpec_map_rootSubgroupIntegralCoordinateMap_op (k : Fin 7 ⊕ Fin 7) 
         rootSubgroup k ≫ eqToHom groupScheme_def := by
   rw [rootSubgroupIntegralCoordinateMap, rootSubgroup_def]
   exact hopfSpec_map_kostantRootSubgroupToralCoordinateMapOfEq_op
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight definingIdeal_def k
 
@@ -253,27 +264,51 @@ noncomputable def rootSubgroupToBaseChangeCoordinateMap (k : Fin 7 ⊕ Fin 7) :
     CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A 56)
         (baseChangeDefiningIdeal A) ⟶ AdditiveGroup.coordinateHopfAlgebra A :=
   kostantRootSubgroupToralBaseChangePresentationCoordinateMap
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight A k
 
 /-- The factored root-subgroup map recovers its ambient transported coordinate map. -/
 @[simp]
-theorem mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap (k : Fin 7 ⊕ Fin 7) :
-    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 56)
-          (baseChangeDefiningIdeal A) ≫
-        rootSubgroupToBaseChangeCoordinateMap A k =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
-        (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-        (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
-        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A k := by
-  unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
+theorem coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap (k : Fin 7 ⊕ Fin 7) :
+    coordinateMap A ≫ rootSubgroupToBaseChangeCoordinateMap A k =
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+        (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
+        rep_kostantForm_mem_lattice k (isNilpotent_rep_serreRootGenerator k) latticeBasis A := by
+  unfold coordinateMap baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight A k
+
+/-- The specialized root-subgroup coordinate map sends an additive point to the numbered
+minuscule root matrix with the same parameter. -/
+-- Normalize the point before `BialgHom.mapDomain_apply` unfolds the inner map.
+@[simp↓]
+theorem pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_rootSubgroupPoints
+    (i : Fin 7 ⊕ Fin 7) (B : CommAlgCat.{w} A)
+    (q : HopfAlgebra.points (R := A) (H := AdditiveGroup.coordinateHopfAlgebra A) B) :
+    GeneralLinear.pointToGeneralLinear 56
+        (BialgHom.mapDomain (coordinateMap A).hom
+          (WithConv.toConv
+            (q.ofConv.comp (rootSubgroupToBaseChangeCoordinateMap A i).hom.toAlgHom))) =
+      (rootSubgroupPoints i B (AdditiveGroup.gaPointsMulEquiv q) :
+        Matrix.GeneralLinearGroup (Fin 56) B) := by
+  rw [← GeneralLinear.pointsMulEquiv_apply, coe_rootSubgroupPoints]
+  -- Match the named specialized presentation to the generic Kostant point formula.
+  unfold coordinateMap baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
+  convert pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap
+      (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+      (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
+      rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
+      e7MinusculeWeight A i B q using 1
+  congr 1
+  erw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
+  rfl
 
 /-- Under the base-change coordinate isomorphism, the factored `k`th root-subgroup map is the
 scalar extension of its integral coordinate map. -/
@@ -287,8 +322,8 @@ theorem baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap (k : Fin 7 �
   rw [baseChangeCoordinateIso, rootSubgroupIntegralCoordinateMap,
     rootSubgroupToBaseChangeCoordinateMap]
   exact kostantToralBaseChangePresentationIsoOfEq_hom_comp_rootSubgroupBaseChangeMap
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight A definingIdeal_def k
 
@@ -301,8 +336,8 @@ noncomputable def weightTorusIntegralCoordinateMap :
       (DiagonalizableGroup.coordinateRing ℤ
         (SplitTorus.characterGroup (Fin 7))).obj :=
   kostantWeightTorusToralCoordinateMapOfEq
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight definingIdeal_def
 
@@ -315,8 +350,8 @@ theorem mkQuotient_comp_weightTorusIntegralCoordinateMap :
       GeneralLinear.weightTorusCoordinateMap e7MinusculeWeight := by
   rw [weightTorusIntegralCoordinateMap]
   exact mkQuotient_comp_kostantWeightTorusToralCoordinateMapOfEq
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight definingIdeal_def
 
@@ -329,8 +364,8 @@ theorem hopfSpec_map_weightTorusIntegralCoordinateMap_op :
         weightTorus ≫ eqToHom groupScheme_def := by
   rw [weightTorusIntegralCoordinateMap, weightTorus_def]
   exact hopfSpec_map_kostantWeightTorusToralCoordinateMapOfEq_op
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight definingIdeal_def
 
@@ -342,8 +377,8 @@ noncomputable def weightTorusToBaseChangeCoordinateMap :
       (DiagonalizableGroup.coordinateRing A
         (SplitTorus.characterGroup (Fin 7))).obj :=
   kostantWeightTorusToralBaseChangePresentationCoordinateMap
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight A
 
@@ -357,8 +392,8 @@ theorem coordinateMap_comp_weightTorusToBaseChangeCoordinateMap :
   unfold coordinateMap
   unfold baseChangeDefiningIdeal weightTorusToBaseChangeCoordinateMap
   exact mkQuotient_comp_kostantWeightTorusToralBaseChangePresentationCoordinateMap
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight A
 
@@ -370,14 +405,14 @@ theorem baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap :
           CommHopfAlgCat.baseChangeMap weightTorusIntegralCoordinateMap ≫
         (_root_.CommHopfAlgCat.ofHom
           (BialgHomClass.toBialgHom
-            (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+            (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
               (G := SplitTorus.characterGroup (Fin 7))))) =
       weightTorusToBaseChangeCoordinateMap A := by
   rw [baseChangeCoordinateIso, weightTorusIntegralCoordinateMap,
     weightTorusToBaseChangeCoordinateMap]
   exact kostantToralBaseChangePresentationIsoOfEq_hom_comp_weightTorusBaseChangeMap
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight A definingIdeal_def
 
@@ -394,20 +429,20 @@ noncomputable def generatorCoordinateMap (j : Sum (Fin 7 ⊕ Fin 7) Unit) :
     GeneralLinear.coordinateHopfAlgebra A 56 ⟶ generatorCoordinateAlgebra A j :=
   match j with
   | .inl i =>
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
-        (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-        (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
-        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A i
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+        (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
+        rep_kostantForm_mem_lattice i (isNilpotent_rep_serreRootGenerator i) latticeBasis A
   | .inr _ => GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A e7MinusculeWeight
 
 /-- The numbered branches of the generator family are the transported root-subgroup maps. -/
 @[simp]
 theorem generatorCoordinateMap_inl (i : Fin 7 ⊕ Fin 7) :
     generatorCoordinateMap A (.inl i) =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
-        (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-        (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
-        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A i := by
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+        (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
+        rep_kostantForm_mem_lattice i (isNilpotent_rep_serreRootGenerator i) latticeBasis A := by
   simp [generatorCoordinateMap]
 
 /-- The remaining branch of the generator family is the transported weight-torus map. -/
@@ -425,8 +460,8 @@ theorem baseChangeDefiningIdeal_le_commonKernel :
     baseChangeDefiningIdeal A ≤
       CommHopfAlgCat.commonKernelHopfIdeal (generatorCoordinateMap A) := by
   have h := kostantToralBaseChangePresentationIdeal_le_commonKernelHopfIdeal
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight A
   -- Compare the generic family with the named generators branchwise.

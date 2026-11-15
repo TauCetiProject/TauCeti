@@ -9,8 +9,8 @@ public import TauCeti.Algebra.Lie.D4.Tripled.AdmissibleLattice
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Serre.RootGenerator
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Relations
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
 
 /-!
@@ -33,7 +33,8 @@ the twenty-four tripled weights triality acts by
 numbered-symmetry construction on a Kostant toral-closure carrier; its remaining inputs, a linear
 automorphism of the module intertwining the Serre root generators along the permutation and
 acting monomially on the lattice basis, are supplied in
-`TauCeti.Algebra.Lie.D4.Tripled.Triality`, which builds the triality automorphism of the carrier.
+`TauCeti.Algebra.Lie.D4.Tripled.Triality.Basic`, which builds the triality automorphism of the
+carrier.
 
 The character by which the split torus rescales a numbered root subgroup is
 `TauCeti.TypeDStd.rootGeneratorWeight`, a row of the type-`D₄` Cartan matrix, identified with the
@@ -54,6 +55,9 @@ transfer to that pinned group only along such an identification.
 * `TauCeti.D4Tripled.points`: its matrix-valued points over a commutative ring.
 * `TauCeti.D4Tripled.rootSubgroupPoints` and `TauCeti.D4Tripled.weightTorusPoints`: its
   numbered root subgroups and weight torus on matrix-valued points.
+* `TauCeti.D4Tripled.coe_rootSubgroupPoints_inl` and
+  `TauCeti.D4Tripled.coe_rootSubgroupPoints_inr`: a simple-root point of parameter `u` is the
+  matrix `1 + uEᵢ` or `1 + uFᵢ`.
 * `TauCeti.D4Tripled.weightTorus_conj_rootSubgroup` and
   `TauCeti.D4Tripled.weightTorusPoints_conj_rootSubgroupPoints`: the pinning equation on scheme
   points and on matrix-valued points.
@@ -208,17 +212,6 @@ instance isClosedImmersion_weightTorus : IsClosedImmersion weightTorus.hom.hom.l
   TauCeti.UniversalEnvelopingAlgebra.isClosedImmersion_kostantWeightTorusToToral
     _ _ _ _ _ _ _ _ span_range_d4TripledWeight_eq_top
 
-/-- Two morphisms out of the tripled type-`D₄` carrier agree when they agree on its numbered
-root subgroups and represented split torus. -/
-@[ext]
-theorem groupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} ℤ}
-    (f g : groupScheme ⟶
-      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
-    (hroot : ∀ k, rootSubgroup k ≫ f = rootSubgroup k ≫ g)
-    (htorus : weightTorus ≫ f = weightTorus ≫ g) : f = g :=
-  TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupScheme_hom_ext
-    _ _ _ _ _ _ _ _ f g hroot htorus
-
 /-! ## Matrix-valued points -/
 
 /-- The matrix-valued points of the tripled type-`D₄` carrier. -/
@@ -238,7 +231,7 @@ theorem points_def (A : Type v) [CommRing A] :
 
 /-- A matrix is a carrier point exactly when its associated convolution point kills the defining
 Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin 24) A) :
     g ∈ points A ↔
@@ -269,6 +262,40 @@ theorem coe_rootSubgroupPoints (k : Fin 4 ⊕ Fin 4) (A : Type v) [CommRing A]
         ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u) :=
   TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints
     _ _ _ _ _ _ _ _ k A u
+
+/-- A positive simple-root point has matrix `1 + uEᵢ` in the tripled weight basis. -/
+theorem coe_rootSubgroupPoints_inl (i : Fin 4) (A : Type v) [CommRing A]
+    (u : Multiplicative A) :
+    ((rootSubgroupPoints (.inl i) A u : _root_.Matrix.GeneralLinearGroup (Fin 24) A) :
+        _root_.Matrix (Fin 24) (Fin 24) A) =
+      1 + Multiplicative.toAdd u • (raisingMatrix i).map (Int.cast : ℤ → A) := by
+  rw [coe_rootSubgroupPoints]
+  simpa only [MulEquiv.apply_symm_apply] using
+    kostantRootSubgroupMatrix_eq_one_add_smul
+      (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+      (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
+      rep_kostantForm_mem_lattice (.inl i) (isNilpotent_rep_serreRootGenerator (.inl i))
+      latticeBasis (raisingMatrix i)
+      (rep_def ▸ weightTable.nilpotencyClass_rep_serreRootGenerator_le_two (.inl i))
+      (rep_serreRootGenerator_inl_latticeBasis_eq_sum i)
+      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u)
+
+/-- A negative simple-root point has matrix `1 + uFᵢ` in the tripled weight basis. -/
+theorem coe_rootSubgroupPoints_inr (i : Fin 4) (A : Type v) [CommRing A]
+    (u : Multiplicative A) :
+    ((rootSubgroupPoints (.inr i) A u : _root_.Matrix.GeneralLinearGroup (Fin 24) A) :
+        _root_.Matrix (Fin 24) (Fin 24) A) =
+      1 + Multiplicative.toAdd u • (loweringMatrix i).map (Int.cast : ℤ → A) := by
+  rw [coe_rootSubgroupPoints]
+  simpa only [MulEquiv.apply_symm_apply] using
+    kostantRootSubgroupMatrix_eq_one_add_smul
+      (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+      (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
+      rep_kostantForm_mem_lattice (.inr i) (isNilpotent_rep_serreRootGenerator (.inr i))
+      latticeBasis (loweringMatrix i)
+      (rep_def ▸ weightTable.nilpotencyClass_rep_serreRootGenerator_le_two (.inr i))
+      (rep_serreRootGenerator_inr_latticeBasis_eq_sum i)
+      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u)
 
 /-- The split weight torus on matrix-valued points of the tripled type-`D₄` carrier. -/
 noncomputable def weightTorusPoints (A : Type v) [CommRing A] :
@@ -323,7 +350,7 @@ theorem weightTorusPoints_conj_rootSubgroupPoints (k : Fin 4 ⊕ Fin 4) (A : Typ
 
 /-- **Conjugation by the tripled weight torus acts on each numbered root subgroup through its
 positive or negative simple-root character, on scheme points.** -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem weightTorus_conj_rootSubgroup (k : Fin 4 ⊕ Fin 4) (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (SplitTorus.groupScheme ℤ (Fin 4)).X)

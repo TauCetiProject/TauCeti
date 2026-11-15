@@ -69,10 +69,10 @@ private theorem exists_restrict_step (hU : U ≤ Omega) (k : ℕ)
             (by simpa only [one_smul] using
               Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU))
       simpa only [one_mul] using r.le_of_opNorm_le hop (iteratedGradient (k + 1) u)
-    have ht := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k u
+    have ht := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
     have hn := sq_le_sq₀ (norm_nonneg v) (norm_nonneg _) |>.2 hnorm
     have hd := sq_le_sq₀ (norm_nonneg D) (norm_nonneg _) |>.2 hDn
-    have heq := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k
+    have heq := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k
       (mk k v D hweak)
     simp only [lowerOrder_mk, iteratedGradient_mk] at heq
     nlinarith [norm_nonneg (mk k v D hweak), norm_nonneg u]
@@ -86,8 +86,12 @@ private theorem exists_restrict_succ (hU : U ≤ Omega) : ∀ (k : ℕ)
   | zero =>
       intro u
       refine ⟨W1p.restrictL hU u, ?_, ?_, W1p.norm_restrictL_le hU u⟩
-      · simpa only [Nat.reduceAdd, value_one] using W1p.value_restrictL_ae hU u
-      · simpa only [iteratedGradient_zero] using W1p.gradient_restrictL_ae hU u
+      -- Each projection lemma is also instantiated at `W1p.restrictL hU u`: that occurrence is
+      -- typed as `W1p`, which `simp` does not match against the `Wkp … 1` pattern.
+      · simpa only [Nat.reduceAdd, value_one, value_one (W1p.restrictL hU u)] using
+          W1p.value_restrictL_ae hU u
+      · simpa only [iteratedGradient_zero, iteratedGradient_zero (W1p.restrictL hU u)] using
+          W1p.gradient_restrictL_ae hU u
   | succ k ih =>
       intro u
       obtain ⟨v, hv, hDv, hnorm⟩ := ih (lowerOrder (k + 1) u)
@@ -160,6 +164,22 @@ theorem value_restrictL_ae (hU : U ≤ Omega) (k : ℕ) (u : Wkp mu Omega p k) :
     value k (restrictL hU k u) =ᵐ[mu.restrict U] value k u :=
   value_restrictAux_ae hU k u
 
+/-- A Sobolev function on `Omega` whose value agrees almost everywhere on the smaller open set `U`
+with the value of `u` restricts to `u` on `U`. -/
+theorem restrictL_eq_of_value_ae_eq (hU : U ≤ Omega) (k : ℕ) {u : Wkp mu U p k}
+    {w : Wkp mu Omega p k} (hvalw : value k w =ᵐ[mu.restrict U] value k u) :
+    restrictL hU k w = u :=
+  ext k (Lp.ext ((value_restrictL_ae hU k w).trans hvalw))
+
+/-- A Sobolev function on `Omega` with value `g` almost everywhere on `Omega` restricts, on the
+smaller open set `U`, to every `u` with value `g` almost everywhere on `U`. -/
+theorem restrictL_eq_of_value_ae_eq_restrict (hU : U ≤ Omega) (k : ℕ) {u : Wkp mu U p k}
+    {w : Wkp mu Omega p k} {g : E → ℝ} (hw : value k w =ᵐ[mu.restrict Omega] g)
+    (hu : value k u =ᵐ[mu.restrict U] g) : restrictL hU k w = u :=
+  restrictL_eq_of_value_ae_eq hU k
+    (Filter.EventuallyEq.trans (ae_restrict_of_ae_restrict_of_subset
+      (SetLike.coe_subset_coe.2 hU) hw) hu.symm)
+
 /-- Restriction keeps the same highest weak derivative on the smaller domain. -/
 theorem iteratedGradient_restrictL_ae (hU : U ≤ Omega) (k : ℕ)
     (u : Wkp mu Omega p (k + 1)) :
@@ -231,7 +251,9 @@ theorem restrictL_one (hU : U ≤ Omega) :
   apply ContinuousLinearMap.ext
   intro u
   apply W1p.ext_value
-  rw [W1p.value_restrictL hU u]
+  -- `W1p.value_restrictL`'s left-hand side is typed at `W1p`, so `rw` does not find it in this
+  -- `Wkp … 1` goal; the equation is chained on instead.
+  refine Eq.trans ?_ (W1p.value_restrictL hU u).symm
   simpa only [value_one] using value_restrictL hU 1 u
 
 end TauCeti.Wkp

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.ContMDiff.Basic
+public import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
+public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+public import TauCeti.Analysis.Convex.Segment
 
 /-!
 # Smoothness of maps into an open submanifold
@@ -17,7 +19,10 @@ insensitive to whether the codomain is read in the submanifold or in the ambient
 Mathlib records this through `ContMDiffWithinAt.subtypeVal_comp_iff` within a set and through
 `ContMDiffAt.subtypeVal_comp_iff` at a point, both at regularity `∞`. Since smoothness into a
 manifold is a local invariant property at *every* regularity, the same characterizations hold for
-arbitrary `n`; this file supplies them.
+arbitrary `n`; this file supplies them. In a convex open subset of a normed real space, these
+characterizations show that the clamped affine segment is `C^n` on `[0, 1]` at every regularity.
+In the other direction, a map out of an open submanifold that is `C^n` at a point stays `C^n`
+there after extension to the whole manifold, as for Mathlib's `ContMDiff.extend_one`.
 
 ## Main results
 
@@ -25,6 +30,11 @@ arbitrary `n`; this file supplies them.
   `TauCeti.ContMDiffOn.subtypeVal_comp_iff`, and `TauCeti.ContMDiff.subtypeVal_comp_iff`: a map
   into an open submanifold is `C^n` (within a set, at a point, on a set, globally) iff its
   composition with the inclusion is.
+* `ContMDiffAt.extend_subtypeVal`, `TauCeti.contMDiffAt_extend_subtypeVal_iff`: an extension
+  to `M` of a map on an open submanifold is `C^n` at a point of the submanifold exactly when the
+  map is.
+* `TopologicalSpace.Opens.contMDiffOn_convexSegment`: the affine segment in a convex open subset
+  of a normed real space is smooth on `[0, 1]` at every regularity.
 
 ## References
 
@@ -34,8 +44,8 @@ arbitrary `n`; this file supplies them.
 
 public section
 
-open ChartedSpace Set TopologicalSpace
-open scoped ContDiff
+open ChartedSpace Manifold Set TopologicalSpace
+open scoped ContDiff Manifold
 
 namespace TauCeti
 
@@ -80,3 +90,50 @@ theorem ContMDiff.subtypeVal_comp_iff (U : Opens M') (f : M → U) :
    fun h _ => (ContMDiffWithinAt.subtypeVal_comp_iff U f Set.univ _).mpr (h _)⟩
 
 end TauCeti
+
+section Extend
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
+  {n : ℕ∞ω}
+
+/-- **Extending a map from an open submanifold.** If `g : U → M'` is `C^n` at a point `x` of the
+open set `U`, then any extension of `g` to all of `M`, for instance by zero, is `C^n` at `x`: it
+agrees with `g` on the neighbourhood `U` of `x`. -/
+theorem ContMDiffAt.extend_subtypeVal {U : Opens M} {g : U → M'} {x : U}
+    (hg : ContMDiffAt I I' n g x) (e : M → M') :
+    ContMDiffAt I I' n (Subtype.val.extend g e) x := by
+  rw [← contMDiffAt_subtype_iff]
+  refine hg.congr_of_eventuallyEq (Filter.Eventually.of_forall fun z ↦ ?_)
+  exact Subtype.val_injective.extend_apply g e z
+
+/-- A map on an open submanifold `U` is `C^n` at a point of `U` exactly when any of its extensions
+to all of `M` is. -/
+theorem TauCeti.contMDiffAt_extend_subtypeVal_iff {U : Opens M} {g : U → M'} {x : U} (e : M → M') :
+    ContMDiffAt I I' n (Subtype.val.extend g e) x ↔ ContMDiffAt I I' n g x := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.extend_subtypeVal e⟩
+  rw [← contMDiffAt_subtype_iff] at h
+  exact h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun z ↦
+    (Subtype.val_injective.extend_apply g e z).symm)
+
+end Extend
+
+namespace TopologicalSpace.Opens
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+variable (U : Opens F) {n : ℕ∞ω}
+
+/-- The clamped affine segment in a convex open subset is `C^n` on `[0, 1]` for every `n`. -/
+theorem contMDiffOn_convexSegment (hU : Convex ℝ (U : Set F)) (x y : U) :
+    ContMDiffOn (M' := U) 𝓘(ℝ, ℝ) 𝓘(ℝ, F) n
+      ((U : Set F).convexSegment hU x y) (Icc 0 1) := by
+  apply (TauCeti.ContMDiffOn.subtypeVal_comp_iff U _ (Icc 0 1)).mp
+  apply ContMDiffOn.congr _ ((U : Set F).convexSegment_val_eqOn hU x y)
+  exact contMDiffOn_iff_contDiffOn.mpr (AffineMap.contDiff_lineMap _ _).contDiffOn
+
+end TopologicalSpace.Opens

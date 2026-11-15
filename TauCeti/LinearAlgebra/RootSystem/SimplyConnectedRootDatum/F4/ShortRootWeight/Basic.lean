@@ -35,6 +35,8 @@ weight torus of an integral carrier built on this weight diagram be a closed imm
   weight and the short roots of `F₄`.
 * `TauCeti.DynkinType.span_range_f4ShortRootWeight_eq_top`: the weights span the character
   lattice.
+* `TauCeti.DynkinType.exists_f4Length_eq_one_pairing_ne_zero`: every root pairs nontrivially with
+  some short root.
 
 ## References
 
@@ -156,12 +158,32 @@ theorem span_range_f4ShortRootWeight_eq_top :
   rw [Pi.basisFun_apply]
   have h (a : Fin 26) : f4ShortRootWeight a ∈ Submodule.span ℤ (Set.range f4ShortRootWeight) :=
     Submodule.subset_span (Set.mem_range_self a)
-  set S := Submodule.span ℤ (Set.range f4ShortRootWeight) with hS
+  set S := Submodule.span ℤ (Set.range f4ShortRootWeight)
   rw [pi_single_eq_f4ShortRootWeight_sum i]
   fin_cases i
   · exact S.add_mem (h 3) (h 2)
   · exact S.add_mem (S.add_mem (h 2) (h 1)) (h 0)
   · exact S.add_mem (h 1) (h 0)
   · exact h 0
+
+/-- Every F₄ root has a short root pairing nontrivially with it: the short-root weights span the
+root lattice, so they detect every coroot. -/
+theorem exists_f4Length_eq_one_pairing_ne_zero (α : Fin 48) :
+    ∃ β : Fin 48, f4Length β = 1 ∧ f4SimplyConnectedRootDatum.pairing β α ≠ 0 := by
+  let P := f4SimplyConnectedRootDatum
+  by_contra h
+  push Not at h
+  have hφ : P.toLinearMap.flip (P.coroot α) = 0 := by
+    refine LinearMap.ext_on_range span_range_f4ShortRootWeight_eq_top fun a => ?_
+    by_cases ha : f4ShortRootWeight a = 0
+    · simp [ha]
+    · obtain ⟨β, hβ, hroot⟩ := (f4ShortRootWeight_ne_zero_iff_exists_shortRoot a).mp ha
+      have hroot' : P.root β = f4ShortRootWeight a := by
+        simpa only [P, f4SimplyConnectedRootDatum_root] using hroot
+      rw [LinearMap.flip_apply, ← hroot', P.root_coroot_eq_pairing]
+      exact h β hβ
+  have hbad := LinearMap.congr_fun hφ (P.root α)
+  simp only [LinearMap.flip_apply, P.root_coroot_eq_pairing, P.pairing_same] at hbad
+  norm_num at hbad
 
 end TauCeti.DynkinType

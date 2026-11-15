@@ -46,6 +46,7 @@ isomorphic to `S` into the two halves.
   the source of an injective map into `M` and the target of a surjective map out of `M` — each
   contribute at most `M`'s multiplicity.
 * `TauCeti.jordanHolderMultiplicity_prod`: `[M × N : S] = [M : S] + [N : S]`.
+* `TauCeti.jordanHolderMultiplicity_pi`: additivity on a finite product of modules.
 
 ## References
 
@@ -57,16 +58,14 @@ bookkeeping.  The monotonicity and product corollaries below are likewise the mu
 analogues of `Module.length_le_of_injective`, `Module.length_le_of_surjective` and
 `Module.length_prod`.  What is new is that the transports are shown to preserve each factor's
 isomorphism class and not merely the number of factors: the identification of the subquotients is
-`TauCeti.mapSubquotientEquivOfInjective` and `TauCeti.comapSubquotientEquivOfSurjective` of
+`LinearMap.mapSubquotientEquivOfInjective` and `LinearMap.comapSubquotientEquivOfSurjective` of
 `TauCeti/Algebra/Module/Submodule/Quotient.lean`, and the resulting factor-by-factor comparison is
 `TauCeti.isCompositionFactorAt_mapCompositionSeriesOfInjective_iff` and its surjective counterpart
 in `TauCeti/RingTheory/CompositionSeries/Multiplicity.lean`;
 `TauCeti/RingTheory/CompositionSeries/Basic.lean` supplies the transports themselves.
 
 The additivity of `[Pᵢ : Sⱼ]` is what makes the Cartan matrix of a finite-dimensional algebra
-computable, in Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md` ("The Cartan matrix of an
-algebra"); `TauCeti/RingTheory/CompositionSeries/Multiplicity.lean` supplies the multiplicity
+computable; `TauCeti/RingTheory/CompositionSeries/Multiplicity.lean` supplies the multiplicity
 itself.
 
 * Assem, Simson and Skowroński, *Elements of the Representation Theory of Associative Algebras* I,
@@ -195,5 +194,23 @@ theorem jordanHolderMultiplicity_prod [IsNoetherian R M] [IsArtinian R M] [IsNoe
       jordanHolderMultiplicity R M S + jordanHolderMultiplicity R N S :=
   jordanHolderMultiplicity_eq_add_of_exact (LinearMap.inl R M N) (LinearMap.snd R M N)
     (LinearMap.inl_injective) (LinearMap.snd_surjective) Function.Exact.inl_snd
+
+/-- The Jordan-Hölder multiplicity in a finite product is the sum of the multiplicities in
+its factors. This is the multiplicity analogue of `Module.length_pi_of_fintype`. -/
+@[simp]
+theorem jordanHolderMultiplicity_pi : ∀ {ι : Type*} [Fintype ι]
+    (N : ι → Type*) [∀ i, AddCommGroup (N i)] [∀ i, Module R (N i)]
+    [∀ i, IsNoetherian R (N i)] [∀ i, IsArtinian R (N i)],
+    jordanHolderMultiplicity R (∀ i, N i) S = ∑ i, jordanHolderMultiplicity R (N i) S := by
+  apply Fintype.induction_empty_option
+  · intro α β _ e IH N _ _ _ _
+    let _ : Fintype α := .ofEquiv β e.symm
+    rw [← jordanHolderMultiplicity_eq_of_linearEquiv (LinearEquiv.piCongrLeft R N e) S,
+      IH, e.sum_comp (fun i ↦ jordanHolderMultiplicity R (N i) S)]
+  · intro N _ _ _ _
+    simp [jordanHolderMultiplicity_eq_zero_of_subsingleton]
+  · intro ι _ IH N _ _ _ _
+    rw [jordanHolderMultiplicity_eq_of_linearEquiv (LinearEquiv.piOptionEquivProd R) S,
+      jordanHolderMultiplicity_prod, IH, Fintype.sum_option]
 
 end TauCeti

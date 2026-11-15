@@ -34,8 +34,8 @@ For a holomorphic disk `u` in `Sym^g(Σ)` and a basepoint `z` of a Heegaard diag
 multiplicity `n_z(u)` of Ozsváth--Szabó, *Holomorphic disks and topological invariants for closed
 three-manifolds*, Section 2, is the sum of these local orders over the finitely many intersections
 of `u` with `V_z` (`TauCeti.finite_basepointDivisor_intersections_of_isPreconnected`), each of
-which is positive. Forming that sum, and identifying it with the topological intersection number
-of the homotopy class of `u` with `V_z`, are not part of this file.
+which is positive. That sum is `TauCeti.basepointIntersectionNumber`; identifying it with the
+topological intersection number of the homotopy class of `u` with `V_z` is not formalized.
 
 ## Main declarations
 
@@ -48,6 +48,8 @@ of the homotopy class of `u` with `V_z`, are not part of this file.
   `TauCeti.basepointIntersectionOrder_eq_top_iff`: for a curve analytic in the chosen chart at
   `f w`, the order vanishes exactly off `V_z`; for a curve continuous at `w`, it is infinite
   exactly when the curve lies in `V_z` near `w`.
+* `TauCeti.basepointIntersectionOrder_comp`: the order is unchanged by a holomorphic
+  reparametrization with nonzero derivative.
 -/
 
 public section
@@ -124,6 +126,18 @@ theorem basepointIntersectionOrder_eq_top_iff (hf : ContinuousAt f w) :
   · rw [basepointIntersectionOrder_eq_zero_of_notMem hz]
     exact iff_of_false ENat.top_ne_zero.symm fun h => hz h.self_of_nhds
 
+/-- **The intersection order is invariant under holomorphic reparametrization.** If `g` is
+analytic at `w` with nonzero derivative there, then `f ∘ g` meets the basepoint divisor at `w` to
+the same order as `f` does at `g w`. -/
+theorem basepointIntersectionOrder_comp {g : ℂ → ℂ} (hg : AnalyticAt ℂ g w)
+    (hg' : deriv g w ≠ 0) :
+    basepointIntersectionOrder z (f ∘ g) w = basepointIntersectionOrder z f (g w) := by
+  simp only [basepointIntersectionOrder, Function.comp_apply]
+  split_ifs with h
+  · exact analyticOrderAt_comp_of_deriv_ne_zero (f := fun t =>
+      h.choose (symChartAt (K := ℂ) (f (g w)) (f t)) - h.choose_spec.choose) hg hg'
+  · rfl
+
 variable [IsManifold 𝓘(ℂ) 1 α]
 
 /-- A function with nonzero differential keeps a nonzero differential after an
@@ -192,23 +206,37 @@ theorem basepointIntersectionOrder_eq_analyticOrderAt {s : Sym α n} (hf : Conti
 
 /-- **The intersection order may be computed from any affine equation of the divisor.** If `f` is
 continuous at `w` and its coordinates in the chosen chart `C` at a tuple `s` are analytic at `w`,
-with `f w` in the source of `C`, then for any affine equation `ℓ = b`, `ℓ ≠ 0`, of the basepoint
+with `f w` in the source of `C`, then for any affine equation `ℓ = b` of the basepoint
 divisor in `C`, the intersection order of `f` with the divisor at `w` is the order of vanishing of
-`t ↦ ℓ (C (f t)) - b` at `w`. -/
+`t ↦ ℓ (C (f t)) - b` at `w`. (When `f w` lies on the divisor, `ℓ` is automatically nonzero, as the
+divisor is then a proper hyperplane in the chart; a chart disjoint from the divisor is also
+allowed, for instance with `ℓ = 0` and `b = 1`, and both orders are then `0`.) -/
 theorem basepointIntersectionOrder_eq_analyticOrderAt_sub {s : Sym α n} (hf : ContinuousAt f w)
     (hs : f w ∈ (symChartAt (K := ℂ) s).source)
     (ha : AnalyticAt ℂ (fun t => symChartAt (K := ℂ) s (f t)) w)
-    {ℓ : (Fin n → ℂ) →L[ℂ] ℂ} {b : ℂ} (hℓ : ℓ ≠ 0)
+    {ℓ : (Fin n → ℂ) →L[ℂ] ℂ} {b : ℂ}
     (hℓz : ∀ x ∈ (symChartAt (K := ℂ) s).source,
       x ∈ Sym.basepointDivisor z ↔ ℓ (symChartAt (K := ℂ) s x) = b) :
     basepointIntersectionOrder z f w =
       analyticOrderAt (fun t => ℓ (symChartAt (K := ℂ) s (f t)) - b) w := by
   by_cases hz : f w ∈ Sym.basepointDivisor z
-  · refine basepointIntersectionOrder_eq_analyticOrderAt hf hs ha hz (H := fun c => ℓ c - b)
-      ((ℓ.analyticAt _).sub analyticAt_const)
-      (by rwa [fderiv_sub_const, ContinuousLinearMap.fderiv]) ?_
-    filter_upwards [(symChartAt (K := ℂ) s).open_source.mem_nhds hs] with x hx hxz
-    exact sub_eq_zero.2 ((hℓz x hx).1 hxz)
+  · -- Compare with a nonzero affine equation `ℓ' = b'` of the divisor in the chart.
+    obtain ⟨ℓ', b', hℓ', hiff⟩ := exists_continuousLinearMap_ne_zero_mem_iff_symChartAt
+      (K := ℂ) z s ⟨f w, hs, hz⟩
+    have hH : AnalyticAt ℂ (fun c => ℓ' c - b') (symChartAt (K := ℂ) s (f w)) :=
+      (ℓ'.analyticAt _).sub analyticAt_const
+    have hH' : fderiv ℂ (fun c => ℓ' c - b') (symChartAt (K := ℂ) s (f w)) ≠ 0 := by
+      rwa [fderiv_sub_const, ContinuousLinearMap.fderiv]
+    refine (basepointIntersectionOrder_eq_analyticOrderAt hf hs ha hz hH hH' ?_).trans
+      (hH.analyticOrderAt_comp_eq_analyticOrderAt_sub hH' ha ((hℓz _ hs).1 hz) ?_)
+    · filter_upwards [(symChartAt (K := ℂ) s).open_source.mem_nhds hs] with x hx hxz
+      exact sub_eq_zero.2 ((hiff x hx).1 hxz)
+    · filter_upwards [(symChartAt (K := ℂ) s).open_target.mem_nhds
+        ((symChartAt (K := ℂ) s).map_source hs)] with x hx hxb
+      have hx' := (symChartAt (K := ℂ) s).map_target hx
+      have h := (hiff _ hx').1 ((hℓz _ hx').2 (by rwa [(symChartAt (K := ℂ) s).right_inv hx]))
+      rw [(symChartAt (K := ℂ) s).right_inv hx] at h
+      exact sub_eq_zero.2 h
   · rw [basepointIntersectionOrder_eq_zero_of_notMem hz, eq_comm, analyticOrderAt_eq_zero]
     exact Or.inr fun h => hz ((hℓz _ hs).2 (sub_eq_zero.1 h))
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Finrank
 public import TauCeti.FieldTheory.IntermediateField.ExtendRight
+import Mathlib.FieldTheory.RatFunc.IntermediateField
 
 /-!
 # The tower `K⟮g⟯ ⊆ K(x) ⊆ K(W)` over an arbitrary generator

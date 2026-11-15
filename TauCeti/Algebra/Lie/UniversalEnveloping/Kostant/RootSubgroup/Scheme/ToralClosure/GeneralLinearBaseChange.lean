@@ -50,9 +50,9 @@ torus maps lies in the base change of the integral toral carrier; equality is no
   defining ideal in `O(GLₙ/A)`.
 * `kostantToralBaseChangePresentationIso`: its quotient is the base change of the integral toral
   coordinate ring.
-* `kostantRootSubgroupBaseChangePresentationCoordinateMap` and
-  `kostantRootSubgroupToralBaseChangePresentationCoordinateMap`: the transported base change of a
-  root subgroup and its factorization through the transported toral carrier.
+* `kostantRootSubgroupToralBaseChangePresentationCoordinateMap`: the factorization of the
+  base-changed root subgroup `kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap` through the
+  transported toral carrier.
 * `kostantWeightTorusToralBaseChangePresentationCoordinateMap`: the factorization of the
   transported weight-torus coordinate map through the transported carrier.
 * `kostantToralBaseChangePresentationIdeal_le_commonKernelHopfIdeal`: the generated-over-`A`
@@ -78,8 +78,6 @@ torus maps lies in the base change of the integral toral carrier; equality is no
 
 This is the base-change compatibility of the explicit Chevalley--Demazure construction; see
 R. W. Carter, *Simple Groups of Lie Type*, §4.4, and B. Conrad, *Reductive Group Schemes*, §1.
-It advances Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. The resulting carrier over the
-prime field and its algebraic closure is consumed by milestone L0 of the CFSGStatement roadmap.
 
 The formal inputs are Tau Ceti's own coordinate base-change isomorphisms
 `GeneralLinear.coordinateHopfAlgebraBaseChangeIso`,
@@ -200,27 +198,6 @@ theorem mkQuotient_comp_kostantToralBaseChangePresentationIso_hom :
     mkQuotient_comp_kostantToralBaseChangePresentationQuotientIso_hom, Category.assoc,
     mkQuotient_comp_kostantToralBaseChangeIso_hom]
 
-/-- The base change of the `i`th integral root-subgroup coordinate map, transported into the
-coordinate Hopf algebras built directly over `A`. -/
-noncomputable def kostantRootSubgroupBaseChangePresentationCoordinateMap (i : I) :
-    GeneralLinear.coordinateHopfAlgebra A n ⟶ AdditiveGroup.coordinateHopfAlgebra A :=
-  (GeneralLinear.coordinateHopfAlgebraBaseChangeIso ℤ A n).inv ≫
-    CommHopfAlgCat.baseChangeMap
-      (kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b) ≫
-    (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ A).hom
-
-omit [Finite κ] in
-/-- The transported base-changed root-subgroup map is the stated composite of the two coordinate
-base-change isomorphisms with the scalar extension of the map over `ℤ`. -/
-theorem kostantRootSubgroupBaseChangePresentationCoordinateMap_def (i : I) :
-    kostantRootSubgroupBaseChangePresentationCoordinateMap e h ρ M hM hnil b A i =
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso ℤ A n).inv ≫
-        CommHopfAlgCat.baseChangeMap
-          (kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b) ≫
-        (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ A).hom := by
-  unfold kostantRootSubgroupBaseChangePresentationCoordinateMap
-  rfl
-
 /-- The transported base change of the `i`th root-subgroup coordinate map, factored through the
 transported toral carrier. -/
 noncomputable def kostantRootSubgroupToralBaseChangePresentationCoordinateMap (i : I) :
@@ -239,12 +216,12 @@ theorem mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinate
           (kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A) ≫
         kostantRootSubgroupToralBaseChangePresentationCoordinateMap
           e h ρ M hM hnil b wt A i =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap e h ρ M hM hnil b A i := by
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap e h ρ M hM i (hnil i) b A := by
   rw [kostantRootSubgroupToralBaseChangePresentationCoordinateMap, ← Category.assoc,
     mkQuotient_comp_kostantToralBaseChangePresentationQuotientIso_hom, Category.assoc,
     ← Category.assoc (CommHopfAlgCat.mkQuotient _ _),
     mkQuotient_comp_kostantRootSubgroupToralBaseChangeCoordinateMap,
-    kostantRootSubgroupBaseChangePresentationCoordinateMap]
+    kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_def]
 
 /-- The transported base change of the weight-torus coordinate map, factored through the
 transported toral carrier. -/
@@ -274,8 +251,8 @@ theorem mkQuotient_comp_kostantWeightTorusToralBaseChangePresentationCoordinateM
 theorem kostantToralBaseChangePresentationIdeal_toIdeal_le_root_ker (i : I) :
     (kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A).toIdeal ≤
       RingHom.ker
-        (kostantRootSubgroupBaseChangePresentationCoordinateMap
-          e h ρ M hM hnil b A i).hom.toAlgHom.toRingHom :=
+        (kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
+          e h ρ M hM i (hnil i) b A).hom.toAlgHom.toRingHom :=
   CommHopfAlgCat.toIdeal_le_ker_of_mkQuotient_comp
     (mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
       e h ρ M hM hnil b wt A i)
@@ -302,8 +279,8 @@ theorem kostantToralBaseChangePresentationIdeal_le_commonKernelHopfIdeal :
     kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A ≤
       CommHopfAlgCat.commonKernelHopfIdeal (K := K)
         (fun j => match j with
-          | Sum.inl i => kostantRootSubgroupBaseChangePresentationCoordinateMap
-              e h ρ M hM hnil b A i
+          | Sum.inl i => kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
+              e h ρ M hM i (hnil i) b A
           | Sum.inr _ => GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A wt) := by
   dsimp only
   rw [CommHopfAlgCat.le_commonKernelHopfIdeal_iff]
@@ -395,7 +372,7 @@ theorem pointsMulEquiv_kostantRootSubgroupToralCoordinateMapOfEq
     GeneralLinear.pointsMulEquiv n
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra ℤ n) J B
-          ((CommHopfAlgCat.mapPointsFunctor
+          ((CommHopfAlgCat.Hom.mapPointsFunctor
             (kostantRootSubgroupToralCoordinateMapOfEq
               e h ρ M hM hnil b wt hJ i)).app B q)) =
       kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b
@@ -404,7 +381,7 @@ theorem pointsMulEquiv_kostantRootSubgroupToralCoordinateMapOfEq
   -- The additive coordinate Hopf algebra is definitionally this symmetric-algebra model; the
   -- explicit spelling also selects the bundled `CommAlgCat` algebra structure carried by `q`.
   change WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] B) at q
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply,
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     CommHopfAlgCat.quotientPointsHom_apply, GeneralLinear.pointsMulEquiv_apply]
   -- Expose the algebra-hom precomposition hidden by the quotient and point-functor wrappers.
   change GeneralLinear.pointToGeneralLinear n
@@ -482,12 +459,12 @@ theorem pointsMulEquiv_kostantWeightTorusToralCoordinateMapOfEq [Fintype κ]
     GeneralLinear.pointsMulEquiv n
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra ℤ n) J B
-          ((CommHopfAlgCat.mapPointsFunctor
+          ((CommHopfAlgCat.Hom.mapPointsFunctor
             (kostantWeightTorusToralCoordinateMapOfEq
               e h ρ M hM hnil b wt hJ)).app B q)) =
       (@kostantTorusMatrix κ V _ M _ n b wt B _ (Ring.toIntAlgebra B))
         (SplitTorus.pointsMulEquiv q) := by
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply,
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     CommHopfAlgCat.quotientPointsHom_apply, GeneralLinear.pointsMulEquiv_apply]
   -- Expose the algebra-hom precomposition hidden by the quotient and point-functor wrappers.
   change GeneralLinear.pointToGeneralLinear n
@@ -498,7 +475,7 @@ theorem pointsMulEquiv_kostantWeightTorusToralCoordinateMapOfEq [Fintype κ]
             MonoidAlgebra ℤ (SplitTorus.characterGroup κ)))) = _
   rw [mkQuotient_comp_kostantWeightTorusToralCoordinateMapOfEq]
   rw [← GeneralLinear.pointsMulEquiv_apply,
-    ← CommHopfAlgCat.mapPointsFunctor_app_apply,
+    ← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap,
     kostantTorusMatrix_apply]
 
@@ -557,12 +534,11 @@ theorem kostantToralBaseChangePresentationIsoOfEq_hom_comp_rootSubgroupBaseChang
     CommHopfAlgCat.baseChangeFunctor_map,
     mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap]
   simpa only [_root_.CommHopfAlgCat.isoMk_hom] using
-    (kostantRootSubgroupBaseChangePresentationCoordinateMap_def e h ρ M hM hnil b A i).symm
+    (kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_def e h ρ M hM i (hnil i) b A).symm
 
 /-- On points, the transported factored root-subgroup map has the same divided-power exponential
 matrix as its integral source. -/
-theorem pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap
-    (hJ : J = kostantToralDefiningIdeal e h ρ M hM hnil b wt) (i : I)
+theorem pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap (i : I)
     (B : CommAlgCat.{x} A)
     (q : HopfAlgebra.points
       (R := A) (H := AdditiveGroup.coordinateHopfAlgebra A) B) :
@@ -570,13 +546,15 @@ theorem pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra A n)
           (kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A) B
-          ((CommHopfAlgCat.mapPointsFunctor
+          ((CommHopfAlgCat.Hom.mapPointsFunctor
             (kostantRootSubgroupToralBaseChangePresentationCoordinateMap
               e h ρ M hM hnil b wt A i)).app B q)) =
       kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b
         ((@AdditiveGroup.gaPointsMulEquiv ℤ Int.instCommSemiring B _
           (Ring.toIntAlgebra B)).symm (AdditiveGroup.gaPointsMulEquiv q)) := by
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+  -- name the defining ideal `J`, as the transport lemmas below are stated for a named spelling
+  obtain ⟨J, hJ⟩ : ∃ J : HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ n),
+      J = kostantToralDefiningIdeal e h ρ M hM hnil b wt := ⟨_, rfl⟩
   let qTensor :=
     WithConv.toConv (q.ofConv.comp
       (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ A).hom.hom.toAlgHom)
@@ -598,49 +576,16 @@ theorem pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap
       q.ofConv (SymmetricAlgebra.ι A A 1)
     rw [AdditiveGroup.gaScalarTensorBialgEquiv_tmul_ι]
     simp
-  rw [← hparam]
-  calc
-    _ = GeneralLinear.pointsMulEquiv n
-        (CommHopfAlgCat.quotientPointsHom
-          (GeneralLinear.coordinateHopfAlgebra ℤ n) J
-          (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)
-          (CommHopfAlgCat.baseChangeIsoPointsMulEquiv
-            (kostantToralBaseChangePresentationIsoOfEq
-              e h ρ M hM hnil b wt A hJ) B
-            (WithConv.toConv (q.ofConv.comp
-              (kostantRootSubgroupToralBaseChangePresentationCoordinateMap
-                e h ρ M hM hnil b wt A i).hom.toAlgHom)))) := by
-      exact (GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
-        n J (kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A)
-        (kostantToralBaseChangePresentationIsoOfEq e h ρ M hM hnil b wt A hJ)
-        (mkQuotient_comp_kostantToralBaseChangePresentationIsoOfEq_hom
-          e h ρ M hM hnil b wt A hJ) B _).symm
-    _ = GeneralLinear.pointsMulEquiv n
-        (CommHopfAlgCat.quotientPointsHom
-          (GeneralLinear.coordinateHopfAlgebra ℤ n) J
-          (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)
-          (WithConv.toConv (qIntegral.ofConv.comp
-            (kostantRootSubgroupToralCoordinateMapOfEq
-              e h ρ M hM hnil b wt hJ i).hom.toAlgHom))) := by
-      apply congrArg (GeneralLinear.pointsMulEquiv n)
-      apply congrArg (CommHopfAlgCat.quotientPointsHom
-        (GeneralLinear.coordinateHopfAlgebra ℤ n) J
-        (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B))
-      dsimp only [qIntegral, qTensor]
-      exact CommHopfAlgCat.baseChangeIsoPointsMulEquiv_mapPointsFunctor
-        (kostantToralBaseChangePresentationIsoOfEq e h ρ M hM hnil b wt A hJ)
-        (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ A).hom
-        (kostantRootSubgroupToralCoordinateMapOfEq e h ρ M hM hnil b wt hJ i)
-        (kostantRootSubgroupToralBaseChangePresentationCoordinateMap
-          e h ρ M hM hnil b wt A i)
-        (kostantToralBaseChangePresentationIsoOfEq_hom_comp_rootSubgroupBaseChangeMap
-          e h ρ M hM hnil b wt A hJ i) B q
-    _ = _ := by
-      rw [← CommHopfAlgCat.mapPointsFunctor_app_apply]
-      exact
-        pointsMulEquiv_kostantRootSubgroupToralCoordinateMapOfEq
-          e h ρ M hM hnil b wt hJ i
-          (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B) qIntegral
+  rw [← hparam,
+    GeneralLinear.pointsMulEquiv_quotientPointsHom_mapPointsFunctor_of_comp_baseChangeMap
+    n J _ (kostantToralBaseChangePresentationIsoOfEq e h ρ M hM hnil b wt A hJ)
+    (mkQuotient_comp_kostantToralBaseChangePresentationIsoOfEq_hom
+      e h ρ M hM hnil b wt A hJ)
+    (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ A).hom _ _
+    (kostantToralBaseChangePresentationIsoOfEq_hom_comp_rootSubgroupBaseChangeMap
+      e h ρ M hM hnil b wt A hJ i)]
+  exact pointsMulEquiv_kostantRootSubgroupToralCoordinateMapOfEq e h ρ M hM hnil b wt hJ i _
+    qIntegral
 
 /-- Under the transported identification, the factored weight-torus map over `A` is the scalar
 extension of its integral coordinate map. -/
@@ -655,7 +600,7 @@ theorem kostantToralBaseChangePresentationIsoOfEq_hom_comp_weightTorusBaseChange
             (kostantWeightTorusToralCoordinateMapOfEq e h ρ M hM hnil b wt hJ) ≫
         (_root_.CommHopfAlgCat.ofHom
           (BialgHomClass.toBialgHom
-            (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+            (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
               (G := SplitTorus.characterGroup κ)))) =
       kostantWeightTorusToralBaseChangePresentationCoordinateMap e h ρ M hM hnil b wt A := by
   let _ : Epi (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A n)
@@ -688,12 +633,11 @@ theorem pointsMulEquiv_kostantWeightTorusToralBaseChangeCoordinateMap [Fintype �
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra A n)
           (kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A) B
-          ((CommHopfAlgCat.mapPointsFunctor
+          ((CommHopfAlgCat.Hom.mapPointsFunctor
             (kostantWeightTorusToralBaseChangePresentationCoordinateMap
               e h ρ M hM hnil b wt A)).app B q)) =
       (@kostantTorusMatrix κ V _ M _ n b wt B _ (Ring.toIntAlgebra B))
         (SplitTorus.pointsMulEquiv q) := by
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
   let qTensor :=
     WithConv.toConv (q.ofConv.comp
       (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso ℤ A
@@ -712,54 +656,19 @@ theorem pointsMulEquiv_kostantWeightTorusToralBaseChangeCoordinateMap [Fintype �
     congr 1
     -- The diagonalizable coordinate ring unfolds to a monoid algebra, exposing its basis
     -- character to the public scalar-tensor formula.
-    change (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A)
+    change (MonoidAlgebra.scalarTensorBialgEquiv ℤ A)
       (1 ⊗ₜ[ℤ] MonoidAlgebra.single
         (Multiplicative.ofAdd (Finsupp.single j 1)) 1) = _
-    rw [TauCeti.MonoidAlgebra.scalarTensorBialgEquiv_tmul]
+    rw [MonoidAlgebra.scalarTensorBialgEquiv_tmul]
     simp
-  rw [← hparam]
-  calc
-    _ = GeneralLinear.pointsMulEquiv n
-        (CommHopfAlgCat.quotientPointsHom
-          (GeneralLinear.coordinateHopfAlgebra ℤ n) J
-          (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)
-          (CommHopfAlgCat.baseChangeIsoPointsMulEquiv
-            (kostantToralBaseChangePresentationIsoOfEq
-              e h ρ M hM hnil b wt A hJ) B
-            (WithConv.toConv (q.ofConv.comp
-              (kostantWeightTorusToralBaseChangePresentationCoordinateMap
-                e h ρ M hM hnil b wt A).hom.toAlgHom)))) := by
-      exact (GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
-        n J (kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A)
-        (kostantToralBaseChangePresentationIsoOfEq e h ρ M hM hnil b wt A hJ)
-        (mkQuotient_comp_kostantToralBaseChangePresentationIsoOfEq_hom
-          e h ρ M hM hnil b wt A hJ) B _).symm
-    _ = GeneralLinear.pointsMulEquiv n
-        (CommHopfAlgCat.quotientPointsHom
-          (GeneralLinear.coordinateHopfAlgebra ℤ n) J
-          (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)
-          (WithConv.toConv (qIntegral.ofConv.comp
-            (kostantWeightTorusToralCoordinateMapOfEq
-              e h ρ M hM hnil b wt hJ).hom.toAlgHom))) := by
-      apply congrArg (GeneralLinear.pointsMulEquiv n)
-      apply congrArg (CommHopfAlgCat.quotientPointsHom
-        (GeneralLinear.coordinateHopfAlgebra ℤ n) J
-        (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B))
-      dsimp only [qIntegral, qTensor]
-      exact CommHopfAlgCat.baseChangeIsoPointsMulEquiv_mapPointsFunctor
-        (kostantToralBaseChangePresentationIsoOfEq e h ρ M hM hnil b wt A hJ)
-        (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso ℤ A
-          (SplitTorus.characterGroup κ)).hom
-        (kostantWeightTorusToralCoordinateMapOfEq e h ρ M hM hnil b wt hJ)
-        (kostantWeightTorusToralBaseChangePresentationCoordinateMap
-          e h ρ M hM hnil b wt A)
-        (kostantToralBaseChangePresentationIsoOfEq_hom_comp_weightTorusBaseChangeMap
-          e h ρ M hM hnil b wt A hJ) B q
-    _ = _ := by
-      rw [← CommHopfAlgCat.mapPointsFunctor_app_apply]
-      exact
-        pointsMulEquiv_kostantWeightTorusToralCoordinateMapOfEq
-          e h ρ M hM hnil b wt hJ
-          (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B) qIntegral
+  rw [← hparam,
+    GeneralLinear.pointsMulEquiv_quotientPointsHom_mapPointsFunctor_of_comp_baseChangeMap
+    n J _ (kostantToralBaseChangePresentationIsoOfEq e h ρ M hM hnil b wt A hJ)
+    (mkQuotient_comp_kostantToralBaseChangePresentationIsoOfEq_hom
+      e h ρ M hM hnil b wt A hJ)
+    (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso ℤ A (SplitTorus.characterGroup κ)).hom
+    _ _ (kostantToralBaseChangePresentationIsoOfEq_hom_comp_weightTorusBaseChangeMap
+      e h ρ M hM hnil b wt A hJ)]
+  exact pointsMulEquiv_kostantWeightTorusToralCoordinateMapOfEq e h ρ M hM hnil b wt hJ _ qIntegral
 
 end TauCeti.UniversalEnvelopingAlgebra

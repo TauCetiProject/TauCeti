@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.GaloisAction
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
+public import Mathlib.RepresentationTheory.Rep.Basic
 
 /-!
 # The Galois action on the unit filtration
@@ -61,11 +62,13 @@ theorem unitsMap_mem_unitFiltration_iff (σ : L ≃ₐ[K] L) {i : ℕ} {x : Lˣ}
   simp only [Units.coe_map, MonoidHom.coe_ofClass]
   rw [σ.valuation_eq, hsub]
 
+omit [Module.Finite K L] in
 /-- Every automorphism of a finite extension of a nonarchimedean local field maps each step of
 the unit filtration onto itself. -/
 @[simp]
 theorem smul_unitFiltration (σ : L ≃ₐ[K] L) (i : ℕ) :
     σ • unitFiltration L i = unitFiltration L i := by
+  have := finite_of_valuativeExtension K L
   ext x
   rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, AlgEquiv.smul_units_def,
     unitsMap_mem_unitFiltration_iff]
@@ -113,3 +116,33 @@ theorem val_coe_smul_unitFiltration (σ : L ≃ₐ[K] L) {i : ℕ} (x : unitFilt
   (rfl)
 
 end AlgEquiv
+
+namespace TauCeti
+
+open CategoryTheory
+
+universe u
+
+variable (K L : Type u) [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
+
+/-- Inclusion of the valuation-zero units in the multiplicative group, as a morphism of
+integral Galois representations. -/
+def unitFiltrationZeroIncl :
+    Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0) ⟶
+      Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ :=
+  Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
+    (unitFiltration L 0).subtype.toAdditive.toIntLinearMap fun σ x ↦
+      congrArg Additive.ofMul (AlgEquiv.coe_smul_unitFiltration σ x.toMul)
+
+/-- The inclusion is the subgroup inclusion, written additively. -/
+@[simp]
+theorem unitFiltrationZeroIncl_apply (x : Additive (unitFiltration L 0)) :
+    (unitFiltrationZeroIncl K L).hom x = Additive.ofMul (x.toMul : Lˣ) := (rfl)
+
+/-- The inclusion of the valuation-zero units in the multiplicative group is injective. -/
+theorem unitFiltrationZeroIncl_injective : Function.Injective (unitFiltrationZeroIncl K L).hom :=
+  fun _ _ h ↦ Additive.toMul.injective (Subtype.ext (congrArg Additive.toMul h))
+
+end TauCeti

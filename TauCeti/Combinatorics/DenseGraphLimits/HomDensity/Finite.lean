@@ -33,13 +33,11 @@ so that no downstream statement has to carry the correction.
 
 ## One counting convention, not two
 
-`card_injective_hom_eq_labelledCopyCount` identifies the count in the numerator of `injHomDensity`
-with Mathlib's `SimpleGraph.labelledCopyCount`, and `injHomDensity_eq_labelledCopyCount_div` carries
-that to the density itself. This is proved, not assumed, and it is in this file deliberately:
-without it, `injHomDensity` would silently establish a second counting convention alongside
-Mathlib's. `SimpleGraph.Copy F G` is definitionally an injective homomorphism, so the bridge is an
-equivalence of subtypes; note that Mathlib puts the **host** graph first, so the copy count of `F`
-inside `G` is `G.labelledCopyCount F`.
+`injHomDensity_eq_labelledCopyCount_div` rewrites the numerator of `injHomDensity` as Mathlib's
+`SimpleGraph.labelledCopyCount`, through the counting bridge
+`SimpleGraph.card_injective_hom_eq_labelledCopyCount`. Without it, `injHomDensity` would silently
+establish a second counting convention alongside Mathlib's. Note that Mathlib puts the **host**
+graph first, so the copy count of `F` inside `G` is `G.labelledCopyCount F`.
 
 This settles the *numerator*. Mathlib has no hom-density primitive, so nothing here pins the
 `descFactorial` denominator; that convention is chosen here and is pinned later by the unbiasedness
@@ -61,29 +59,33 @@ lemmas downstream modules should use.
 
 ## Main results
 
-* `card_injective_hom_eq_labelledCopyCount`, `injHomDensity_eq_labelledCopyCount_div` — the bridge
-  to Mathlib's counting primitive, at the level of the count and of the density;
-* `card_hom_eq_card_adjPreservingMaps` — homomorphisms are counted by the
-  adjacency-preserving vertex maps;
+* `injHomDensity_eq_labelledCopyCount_div` — the injective density in terms of Mathlib's counting
+  primitive;
+* `injHomDensity_ne_zero_iff` — the injective density is nonzero exactly when an embedded copy of
+  the pattern lies in the host;
 * `homDensityFin_nonneg`, `homDensityFin_le_one`, `injHomDensity_nonneg`, `injHomDensity_le_one` —
   both densities lie in `[0, 1]`, unconditionally. The degenerate cases are included: when the host
   is empty and the pattern is not, numerator and denominator both vanish and `x / 0 = 0` gives `0`.
+* `homDensityFin_bot_left`, `injHomDensity_top_right` — the two normalizations are exact: the
+  edgeless pattern has homomorphism density `1` in every nonempty host, and every pattern has
+  injective density `1` in a complete host with enough vertices.
+* `injHomDensity_top_left_eq_card_hom_div` — the injective density of a complete pattern in terms
+  of all its homomorphisms, since every homomorphism out of a complete graph is injective;
+* `homDensityFin_top_left`, `injHomDensity_top_left` — the densities of a complete pattern on `k`
+  vertices count the `k`-cliques of the host: `t(Kₖ, G) = k! · #cliques / n ^ k` and
+  `t₀(Kₖ, G) = #cliques / (n choose k)`.
+* `homDensityFin_top_fin_two`, `injHomDensity_top_fin_two`, `homDensityFin_top_fin_three`,
+  `injHomDensity_top_fin_three` — the edge and triangle densities in terms of the edges and
+  triangles of the host.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 9a — the finite hom-density
-  estimators. The signatures and the counting-bridge proof are taken from
-  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean` (Layer 9a), generalized here from a
-  `SimpleGraph (Fin m)` host to an arbitrary finite host. The hom-versus-injective closeness bound,
-  the sampling laws, the unbiasedness anchor, and finite-graph graphons are separate targets and are
-  not built here.
-* The roadmap lists this bridge under its migration-backed routes, with an independent proof in
-  `cameronfreer/graphon` (pin `6eccca5`). No material is adapted from that source; the proof here
-  follows `Suggested.lean`.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §5.2.
 -/
 
 public section
+
+open Finset SimpleGraph
 
 namespace TauCeti
 
@@ -124,53 +126,28 @@ theorem injHomDensity_def :
 
 /-! ### The bridge to Mathlib's counting primitive -/
 
-/-- The count in the numerator of `injHomDensity` is Mathlib's labelled copy count.
-
-`SimpleGraph.Copy F G` is definitionally an injective homomorphism, so this is an equivalence of
-subtypes. Mathlib takes the host graph first: `G.labelledCopyCount F` counts copies of `F` inside
-`G`.
-
-This settles the numerator against the existing Mathlib primitive, so `injHomDensity` does not
-introduce a parallel counting convention.
-
-Deliberately not `@[simp]`: the left-hand side is not in simp normal form, since `Nat.card` of a
-`Fintype` rewrites to `Fintype.card`, and the repo's `simpNF` linter rejects the annotation. Stating
-it with a `Fintype.card` left-hand side instead would abandon the `Nat.card` counting convention the
-roadmap pins for these densities. -/
-theorem card_injective_hom_eq_labelledCopyCount :
-    Nat.card {φ : F →g G // Function.Injective φ} = G.labelledCopyCount F := by
-  -- `labelledCopyCount` is defined by `classical exact Fintype.card (Copy H G)`, so unfolding it
-  -- exposes a `Fintype (Copy F G)` that only `classical` provides.
-  classical
-  rw [SimpleGraph.labelledCopyCount, ← Nat.card_eq_fintype_card]
-  exact Nat.card_congr
-    { toFun := fun φ => ⟨φ.1, φ.2⟩
-      invFun := fun c => ⟨c.toHom, c.injective'⟩
-      left_inv := fun _ => rfl
-      right_inv := fun _ => rfl }
-
 /-- The injective homomorphism density in terms of Mathlib's labelled copy count. -/
 theorem injHomDensity_eq_labelledCopyCount_div :
     injHomDensity F G =
       (G.labelledCopyCount F : ℝ) / ((Fintype.card W).descFactorial (Fintype.card V) : ℝ) := by
-  rw [injHomDensity_def, card_injective_hom_eq_labelledCopyCount]
+  rw [injHomDensity_def, F.card_injective_hom_eq_labelledCopyCount G]
 
-/-! ### Homomorphisms as adjacency-preserving vertex maps -/
-
-private def relHomEquivPreservingMaps {α β : Type*} (r : α → α → Prop) (s : β → β → Prop) :
-    (r →r s) ≃ {f : α → β // ∀ a b, r a b → s (f a) (f b)} where
-  toFun φ := ⟨⇑φ, fun _ _ h => φ.map_rel h⟩
-  invFun ψ := ⟨ψ.1, fun {_ _} h => ψ.2 _ _ h⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-omit [Fintype V] [Fintype W] in
-/-- Homomorphisms and adjacency-preserving vertex maps are counted alike. -/
-theorem card_hom_eq_card_adjPreservingMaps :
-    Nat.card (F →g G) = Nat.card {ψ : V → W // ∀ a b, F.Adj a b → G.Adj (ψ a) (ψ b)} :=
-  Nat.card_congr (relHomEquivPreservingMaps F.Adj G.Adj)
-
-variable (F : SimpleGraph V) (G : SimpleGraph W)
+/-- A host graph has nonzero injective homomorphism density exactly when some embedded copy of the
+pattern lies in it. -/
+theorem injHomDensity_ne_zero_iff :
+    injHomDensity F G ≠ 0 ↔ ∃ f : V ↪ W, F.map f ≤ G := by
+  classical
+  by_cases hVW : Fintype.card V ≤ Fintype.card W
+  · have hd : ((Fintype.card W).descFactorial (Fintype.card V) : ℝ) ≠ 0 := by
+      exact_mod_cast (Nat.descFactorial_pos.mpr hVW).ne'
+    rw [injHomDensity_def, SimpleGraph.card_injective_hom_eq_sum_map_le]
+    simp [hd]
+  · -- no embedding exists, and the falling factorial in the denominator vanishes
+    have hz : (Fintype.card W).descFactorial (Fintype.card V) = 0 :=
+      Nat.descFactorial_eq_zero_iff_lt.2 (not_le.1 hVW)
+    simp only [injHomDensity_def, hz, Nat.cast_zero, div_zero, ne_eq, not_true_eq_false, false_iff,
+      not_exists]
+    exact fun f _ => hVW (Fintype.card_le_of_embedding f)
 
 /-! ### Both densities lie in `[0, 1]` -/
 
@@ -185,7 +162,9 @@ No hypothesis is needed. When the host is empty and the pattern is not, numerato
 both vanish and `x / 0 = 0` gives `0`. -/
 theorem homDensityFin_le_one : homDensityFin F G ≤ 1 := by
   refine div_le_one_of_le₀ ?_ (pow_nonneg (Nat.cast_nonneg _) _)
-  exact_mod_cast F.card_hom_le G
+  have h := F.card_hom_le G
+  simp only [Nat.card_eq_fintype_card] at h
+  exact_mod_cast h
 
 /-- The injective homomorphism density is nonnegative. -/
 theorem injHomDensity_nonneg : 0 ≤ injHomDensity F G :=
@@ -197,7 +176,98 @@ particular an embedding `V(F) ↪ V(G)`, and those are counted by the falling fa
 No hypothesis is needed; the degenerate cases behave as for `homDensityFin_le_one`. -/
 theorem injHomDensity_le_one : injHomDensity F G ≤ 1 := by
   refine div_le_one_of_le₀ ?_ (Nat.cast_nonneg _)
-  exact_mod_cast F.card_injective_hom_le G
+  have h := F.card_injective_hom_le G
+  simp only [Nat.card_eq_fintype_card] at h
+  exact_mod_cast h
+
+/-! ### Exact normalizations -/
+
+/-- The homomorphism density of an edgeless pattern in a nonempty host is `1`: every vertex map is
+a homomorphism, and the power `|V(G)| ^ |V(F)|` counts them. -/
+@[simp]
+theorem homDensityFin_bot_left [Nonempty W] : homDensityFin (⊥ : SimpleGraph V) G = 1 := by
+  rw [homDensityFin_def, G.card_bot_hom, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card,
+    Nat.cast_pow]
+  exact div_self (pow_ne_zero _ (Nat.cast_ne_zero.2 Fintype.card_ne_zero))
+
+/-- The injective homomorphism density in a complete host with at least `|V(F)|` vertices is `1`:
+every vertex embedding is a homomorphism, and the falling factorial `(|V(G)|)_{|V(F)|}` counts
+them. -/
+@[simp]
+theorem injHomDensity_top_right (h : Fintype.card V ≤ Fintype.card W) :
+    injHomDensity F (⊤ : SimpleGraph W) = 1 := by
+  rw [injHomDensity_def, F.card_injective_hom_top, Nat.card_eq_fintype_card,
+    Nat.card_eq_fintype_card]
+  exact div_self (Nat.cast_ne_zero.2 (Nat.descFactorial_eq_zero_iff_lt.not.2 h.not_gt))
+
+/-! ### Complete patterns: cliques, edges and triangles -/
+
+/-- The injective homomorphism density of the complete graph on `V` in terms of all homomorphisms:
+every homomorphism out of a complete graph is injective, and the falling factorial
+`(|V(G)|)_{|V|}` splits as `|V|!` times the binomial coefficient. -/
+theorem injHomDensity_top_left_eq_card_hom_div :
+    injHomDensity (⊤ : SimpleGraph V) G =
+      (Nat.card ((⊤ : SimpleGraph V) →g G) : ℝ) /
+        ((Fintype.card V).factorial * (Fintype.card W).choose (Fintype.card V) : ℝ) := by
+  rw [injHomDensity_def, G.card_injective_top_hom, Nat.descFactorial_eq_factorial_mul_choose,
+    Nat.cast_mul]
+
+section Clique
+
+variable [DecidableEq W] [DecidableRel G.Adj]
+
+/-- The homomorphism density of the complete graph on `V`: each `|V|`-clique of the host has
+`|V|!` orderings, out of `|V(G)| ^ |V|` vertex maps. -/
+theorem homDensityFin_top_left :
+    homDensityFin (⊤ : SimpleGraph V) G =
+      (Fintype.card V).factorial * #(G.cliqueFinset (Fintype.card V)) /
+        (Fintype.card W ^ Fintype.card V : ℝ) := by
+  rw [homDensityFin_def, G.card_top_hom, Nat.cast_mul]
+
+/-- The injective homomorphism density of the complete graph on `V` is the proportion of the
+`|V|`-subsets of the host that are cliques: the falling factorial `(|V(G)|)_{|V|}` is `|V|!` times
+the binomial coefficient, and each clique has `|V|!` orderings. -/
+theorem injHomDensity_top_left :
+    injHomDensity (⊤ : SimpleGraph V) G =
+      #(G.cliqueFinset (Fintype.card V)) / ((Fintype.card W).choose (Fintype.card V) : ℝ) := by
+  rw [injHomDensity_top_left_eq_card_hom_div, G.card_top_hom, Nat.cast_mul]
+  exact mul_div_mul_left _ _ (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero _))
+
+/-- The triangle density `t(K₃, G)`: six times the number of triangles of `G`, over `|V(G)| ^ 3`. -/
+theorem homDensityFin_top_fin_three :
+    homDensityFin (⊤ : SimpleGraph (Fin 3)) G =
+      6 * #(G.cliqueFinset 3) / (Fintype.card W ^ 3 : ℝ) := by
+  rw [homDensityFin_top_left, Fintype.card_fin]
+  norm_num [Nat.factorial]
+
+/-- The injective triangle density `t₀(K₃, G)`: the proportion of the `3`-subsets of the host that
+are triangles. -/
+theorem injHomDensity_top_fin_three :
+    injHomDensity (⊤ : SimpleGraph (Fin 3)) G =
+      #(G.cliqueFinset 3) / ((Fintype.card W).choose 3 : ℝ) := by
+  rw [injHomDensity_top_left, Fintype.card_fin]
+
+end Clique
+
+section Edge
+
+variable [DecidableRel G.Adj]
+
+/-- The edge density `t(K₂, G)`: twice the number of edges of `G`, over `|V(G)| ^ 2`. -/
+theorem homDensityFin_top_fin_two :
+    homDensityFin (⊤ : SimpleGraph (Fin 2)) G = 2 * #G.edgeFinset / (Fintype.card W ^ 2 : ℝ) := by
+  rw [homDensityFin_def, G.card_top_fin_two_hom, Fintype.card_fin, Nat.cast_mul, Nat.cast_ofNat]
+
+/-- The injective edge density `t₀(K₂, G)`: the proportion of the pairs of distinct host vertices
+that are edges. -/
+theorem injHomDensity_top_fin_two :
+    injHomDensity (⊤ : SimpleGraph (Fin 2)) G =
+      #G.edgeFinset / ((Fintype.card W).choose 2 : ℝ) := by
+  rw [injHomDensity_top_left_eq_card_hom_div, G.card_top_fin_two_hom, Fintype.card_fin,
+    Nat.factorial_two, Nat.cast_mul, Nat.cast_ofNat]
+  exact mul_div_mul_left _ _ two_ne_zero
+
+end Edge
 
 end DenseGraphLimits
 

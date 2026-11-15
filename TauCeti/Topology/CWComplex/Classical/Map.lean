@@ -12,14 +12,16 @@ public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 
 A cellular map preserves the skeletal filtration of a relative CW complex. This condition
 ensures that the map restricts to each skeleton and to each consecutive skeletal pair, the
-restrictions used to act on cellular chains.
+restrictions used to act on cellular chains. A map carrying the base into the base and the
+characteristic map of every cell onto the characteristic map of a cell of the same dimension is
+cellular (`TauCeti.isCellular_of_map_eq`).
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
 
 public section
 
-open CategoryTheory Topology Topology.RelCWComplex
+open CategoryTheory Metric Topology Topology.RelCWComplex
 
 universe w
 
@@ -46,6 +48,22 @@ lemma IsCellular.comp {C'' : Set Z} [RelCWComplex C'' F]
     (hf : IsCellular C C' f) (hg : IsCellular C' C'' g) :
     IsCellular C C'' (f ≫ g) := fun n _ hx ↦ hg n (hf n hx)
 
+/-- A map of relative CW complexes carrying the base into the base and the characteristic map of
+every cell onto the characteristic map of a cell of the same dimension, on the closed unit ball,
+is cellular. -/
+lemma isCellular_of_map_eq {f : TopCat.of C ⟶ TopCat.of C'}
+    (hD : ∀ x : C, x.1 ∈ D → (f x).1 ∈ E)
+    (hf : ∀ (n : ℕ) (i : cell C n), ∃ i' : cell C' n, ∀ x ∈ closedBall (0 : Fin n → ℝ) 1,
+      ∀ hx : map n i x ∈ C, (f ⟨map n i x, hx⟩).1 = map n i' x) :
+    IsCellular C C' f := by
+  rintro n ⟨x, hxC⟩ (hx : x ∈ skeletonLT C n)
+  change (f ⟨x, hxC⟩).1 ∈ skeletonLT C' n  -- the membership of a subtype point in a set
+  rw [RelCWComplex.mem_skeletonLT_iff] at hx ⊢
+  obtain hxD | ⟨m, hm, i, y, hy, rfl⟩ := hx
+  · exact Or.inl (hD _ hxD)
+  · obtain ⟨i', hi'⟩ := hf m i
+    exact Or.inr ⟨m, hm, i', y, hy, (hi' y (ball_subset_closedBall hy) hxC).symm⟩
+
 variable {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f)
 
 /-- The restriction of a cellular map to the `n`-th stage of the skeletal filtration. -/
@@ -60,14 +78,22 @@ lemma skeletonMap_apply (n : ℕ) (x : skeletonObj C n) :
       ⟨(f ⟨x.1, (skeletonLT C (n : ℕ∞)).subset_complex x.2⟩).1, hf n x.2⟩ := by
   simp [skeletonMap]
 
-/-- Restriction of a cellular map commutes with the inclusions of consecutive skeleta. -/
+/-- Restriction of a cellular map commutes with inclusions of skeleta. -/
 @[reassoc]
-lemma skeletonMap_comp_inclusion (n : ℕ) :
+lemma skeletonMap_comp_inclusion {n m : ℕ} (h : n ≤ m) :
     skeletonMap C C' hf n ≫
-      TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_mono (C := C')
-        (mod_cast n.le_succ))) =
-    TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_mono (C := C)
-      (mod_cast n.le_succ))) ≫ skeletonMap C C' hf (n + 1) := by
+      TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_mono (C := C') (mod_cast h))) =
+    TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_mono (C := C) (mod_cast h))) ≫
+      skeletonMap C C' hf m := by
+  ext x
+  rfl
+
+/-- Restriction of a cellular map commutes with inclusion of a skeleton into the complex. -/
+@[reassoc]
+lemma skeletonMap_comp_inclusion_complex (n : ℕ) :
+    skeletonMap C C' hf n ≫
+      TopCat.ofHom (ContinuousMap.inclusion (skeletonLT C' n).subset_complex) =
+    TopCat.ofHom (ContinuousMap.inclusion (skeletonLT C n).subset_complex) ≫ f := by
   ext x
   rfl
 

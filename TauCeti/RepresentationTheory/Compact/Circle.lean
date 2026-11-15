@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.AddCircle
 public import TauCeti.MeasureTheory.Group.TypeTags
 public import TauCeti.RepresentationTheory.Compact.Character.Basic
-public import TauCeti.RepresentationTheory.LinearCharacter
+public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 import TauCeti.RepresentationTheory.Continuous.Transport
 
 /-!
@@ -97,7 +97,7 @@ The two exhaustion statements are deliberately different in kind. On the carrier
 representation is recovered on the nose, as an equality of representations
 (`ContRepresentation.exists_fourierRep_eq`); on an arbitrary carrier no equality is available, and
 `ContRepresentation.exists_nonempty_equiv_fourierRep` produces a `ContRepresentation.Equiv`
-instead. The passage between them is `TauCeti.ContRepresentation.congr`, the transport of a
+instead. The passage between them is `ContinuousLinearEquiv.congr`, the transport of a
 representation along a continuous linear equivalence of carriers. What is *not* done here is the
 full Peter-Weyl identification of `peterWeylBasis` with `AddCircle.fourierBasis` under the indexing
 equivalence `Σ π, Fin 1 × Fin 1 ≃ ℤ`.
@@ -187,7 +187,7 @@ representation is its own character; this is `Representation.char_ofLinearCharac
 character of `fourierRep T n` with Mathlib's Fourier monomial as an element of
 `C(AddCircle T, ℂ)`, and every fact Mathlib proves about `fourier n` there — its continuity, its
 values, its `L²` norm — transfers to the character. -/
--- Stated unapplied because `TauCeti.ContRepresentation.character_apply` is itself `@[simp]`, so
+-- Stated unapplied because `ContRepresentation.character_apply` is itself `@[simp]`, so
 -- `simpNF` rejects the tag on the pointwise form; the unapplied left-hand side is a subterm of the
 -- pointwise one and rewrites it too. `TauCeti.SU2.character_symPowerModel` is stated likewise.
 @[simp]
@@ -208,7 +208,7 @@ intertwiner `fourierRep T n → fourierRep T m` vanishes: such a map is multipli
 by `TauCeti.fourier_injective`.
 
 This is the hypothesis of the general second orthogonality relation
-`TauCeti.ContRepresentation.character_orthonormal_distinct`. -/
+`ContRepresentation.character_orthonormal_distinct`. -/
 theorem contIntertwiningMap_fourierRep_eq_zero_of_ne (hT : T ≠ 0) {m n : ℤ} (h : m ≠ n)
     (f : ContIntertwiningMap (fourierRep T n) (fourierRep T m)) :
     f.toContinuousLinearMap = 0 := by
@@ -250,8 +250,8 @@ variable [hT : Fact (0 < T)]
 are Haar probability measures on a compact group, and there is only one such. -/
 theorem haarProb_eq_haarAddCircle :
     haarProb (Multiplicative (AddCircle T)) = haarAddCircle :=
-  (eq_haarProb_of_isHaarMeasure_of_isProbabilityMeasure
-    (G := Multiplicative (AddCircle T)) haarAddCircle).symm
+  (Measure.isHaarMeasure_eq_of_isProbabilityMeasure
+    (G := Multiplicative (AddCircle T)) haarAddCircle _).symm
 
 /-- `Multiplicative.ofAdd` carries Mathlib's Haar measure on `AddCircle T` to the normalized Haar
 measure of the circle group, so it transports `L²` of the circle group to `L²(AddCircle T)`. -/
@@ -291,14 +291,13 @@ theorem orthonormal_characterLp_fourierRep :
 -- The general first orthogonality relation returns the diagonal half of `orthonormal_fourier`.
 example (n : ℤ) :
     ‖ContRepresentation.characterLp (fourierRep T n) (continuous_fourierRep T n)‖ = 1 :=
-  ContRepresentation.norm_characterLp_eq_one _ _ (isUnitary_fourierRep T n)
-    (isIrreducible_fourierRep T n)
+  ContRepresentation.norm_characterLp_eq_one _ _ (isIrreducible_fourierRep T n)
 
 -- The general second orthogonality relation returns the off-diagonal half.
 example {m n : ℤ} (h : m ≠ n) :
     ⟪ContRepresentation.characterLp (fourierRep T m) (continuous_fourierRep T m),
       ContRepresentation.characterLp (fourierRep T n) (continuous_fourierRep T n)⟫_ℂ = 0 :=
-  ContRepresentation.character_orthonormal_distinct _ _ _ _ (isUnitary_fourierRep T m)
+  ContRepresentation.character_orthonormal_distinct _ _ _ _
     (contIntertwiningMap_fourierRep_eq_zero_of_ne T hT.out.ne' h)
 
 end TauCeti
@@ -370,8 +369,8 @@ theorem exists_nonempty_equiv_fourierRep
     Representation.IsIrreducible.finrank_eq_one_of_isMulCommutative π.toRepresentation
   obtain ⟨e⟩ : Nonempty (V ≃L[ℂ] ℂ) :=
     FiniteDimensional.nonempty_continuousLinearEquiv_of_finrank_eq (by simp [h1])
-  obtain ⟨n, hn⟩ := exists_fourierRep_eq (TauCeti.ContRepresentation.congr e π)
-    (TauCeti.ContRepresentation.continuous_congr e hπ)
+  obtain ⟨n, hn⟩ := exists_fourierRep_eq (ContinuousLinearEquiv.congr e π)
+    (ContinuousLinearEquiv.continuous_congr e hπ)
   refine ⟨n, ⟨?_⟩⟩
   rw [hn]
   exact π.congrEquiv e

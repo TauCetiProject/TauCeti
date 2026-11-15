@@ -137,7 +137,7 @@ theorem preprojectiveToGinzburgTwoCohomology_preprojectiveMk (x : pathAlgebra k 
           (isDGAlgebra_ginzburgTwoDifferential k).mem_cycles.mpr
             (ginzburgTwoDifferential_ginzburgMap k x)⟩ := by
   rw [preprojectiveToGinzburgTwoCohomology,
-    preprojectiveLift_of_forall_localPreprojectiveRelator_preprojectiveMk, AlgHom.comp_apply,
+    preprojectiveLiftOfForallLocalPreprojectiveRelator_preprojectiveMk, AlgHom.comp_apply,
     Ideal.Quotient.mkₐ_eq_mk]
   exact congrArg _ (Subtype.ext (AlgHom.coe_codRestrict _ _ _ x))
 

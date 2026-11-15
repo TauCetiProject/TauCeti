@@ -40,8 +40,7 @@ formula propagates it from the trivial character to every virtual character.
 * `TauCeti.ClassFunction.natCard_nsmul_mem_indVirtualCharacters_isCyclic`: **Artin's induction
   theorem, sharp form**, through the canonical induced-virtual-character API.
 * `TauCeti.ClassFunction.natCard_nsmul_mem_indCharacterSpanInt_isCyclic`: the non-modular
-  algebraically closed form, including characteristic zero, with the roadmap's literal
-  induced-character-span target.
+  algebraically closed form, including characteristic zero, through the induced-character span.
 * `TauCeti.ClassFunction.natCard_nsmul_one_mem_indVirtualCharacters_isCyclic`: the sharp
   membership statement for the trivial character.
 * `TauCeti.ClassFunction.indVirtualCharacterDirectSumBaseChangeRat_isCyclic_surjective`: rational
@@ -53,10 +52,6 @@ formula propagates it from the trivial character to every virtual character.
   read for the elementary subgroups.
 
 ## References
-
-This proves both parts of the "Artin's induction theorem" item of Layer 6 in
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`: rational surjectivity of the
-direct-sum induction map and `ℤ`-membership of `|G| • χ` in the cyclic-induced subgroup.
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, Springer GTM 42 (1977), Section 9.2,
   Theorem 17 and its corollary.
@@ -94,7 +89,7 @@ cyclic subgroups -- the noncyclic ones have vanishing coefficient -- and in `k`.
 private theorem sum_artinCoeff_cyclicSubgroups_containing_eq_one {k : Type u}
     [AddCommGroupWithOne k] (y : G) :
     (∑ C : CyclicSubgroup G,
-      if _h : y ∈ (C : Subgroup G) then ((C : Subgroup G).artinCoeff : k) else (0 : k)) = 1 := by
+      if _ : y ∈ (C : Subgroup G) then ((C : Subgroup G).artinCoeff : k) else (0 : k)) = 1 := by
   classical
   let _ := Fintype.ofFinite (Subgroup G)
   have hZ : ∑ C ∈ Finset.univ.filter (fun C : Subgroup G => y ∈ C), C.artinCoeff = 1 := by
@@ -117,7 +112,7 @@ private theorem sum_artinCoeff_cyclicSubgroups_containing_eq_one {k : Type u}
       ← Finset.sum_filter, hZ]
   calc
     (∑ C : CyclicSubgroup G,
-        if _h : y ∈ (C : Subgroup G) then ((C : Subgroup G).artinCoeff : k) else (0 : k)) =
+        if _ : y ∈ (C : Subgroup G) then ((C : Subgroup G).artinCoeff : k) else (0 : k)) =
         ((∑ C : CyclicSubgroup G,
           if y ∈ (C : Subgroup G) then (C : Subgroup G).artinCoeff else (0 : ℤ) : ℤ) : k) := by
       push_cast
@@ -136,7 +131,7 @@ theorem natCard_nsmul_one_mem_indVirtualCharacters_isCyclic :
   let _ := Fintype.ofFinite G
   let α : CyclicSubgroup G → (G → k) := fun C ↦
     (C : Subgroup G).artinCoeff • (Nat.card (C : Subgroup G) •
-      indClassFun (C : Subgroup G) (fun _ : (C : Subgroup G) ↦ (1 : k)))
+      Subgroup.indClassFun (C : Subgroup G) (fun _ : (C : Subgroup G) ↦ (1 : k)))
   have hα (C : CyclicSubgroup G) : α C ∈ indVirtualCharacters k G (fun C ↦ IsCyclic C) := by
     exact AddSubgroup.zsmul_mem _ (AddSubgroup.nsmul_mem _
       (indClassFun_mem_indVirtualCharacters C.2 one_mem_virtualCharacters) _) _
@@ -147,11 +142,12 @@ theorem natCard_nsmul_one_mem_indVirtualCharacters_isCyclic :
   simp only [α, Finset.sum_apply, Pi.smul_apply]
   have hnat (C : CyclicSubgroup G) :
       (Nat.card (C : Subgroup G) : k) *
-          indClassFun (C : Subgroup G) (fun _ : (C : Subgroup G) ↦ (1 : k)) g =
-        ∑ x : G, if h : x⁻¹ * g * x ∈ (C : Subgroup G) then
-          (1 : k) else 0 :=
-    natCard_mul_indClassFun
-      (ClassFunction.mem_iff.mpr fun _ _ ↦ rfl) g
+          Subgroup.indClassFun (C : Subgroup G) (fun _ : (C : Subgroup G) ↦ (1 : k)) g =
+        ∑ x : G, if _ : x⁻¹ * g * x ∈ (C : Subgroup G) then
+          (1 : k) else 0 := by
+    simpa only [nsmul_eq_mul] using
+      Subgroup.natCard_nsmul_indClassFun C (f := fun _ : (C : Subgroup G) ↦ (1 : k))
+        (fun _ _ ↦ rfl) g
   simp_rw [← Int.cast_smul_eq_zsmul k, ← Nat.cast_smul_eq_nsmul k,
     smul_eq_mul, hnat]
   simp_rw [Finset.mul_sum]

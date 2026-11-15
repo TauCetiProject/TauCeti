@@ -1,0 +1,476 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Polynomial.RealClosed.Sign
+public import TauCeti.Geometry.RealAlgebraic.SignDetermination.Defs
+public import Mathlib.Algebra.BigOperators.Finprod
+
+/-! # The Cauchy index of a quotient of polynomials
+
+`Polynomial.cauchyJump p q a` is the jump of the rational function `q / p` at `a`. It is zero
+unless `a` is a pole of `q / p` of odd order. At such a pole it is `+1` for a jump from `-∞` to
+`+∞` and `-1` for a jump from `+∞` to `-∞`. The sign of `q / p` immediately to the right of `a`
+is the right-hand sign of `p * q`, so the jump is defined algebraically from root multiplicities
+and `Polynomial.derivSignRight`. It needs no topology and makes sense over any ordered field.
+The jump is `1` exactly at a pole across which the sign of `p * q` changes from negative to
+positive, and `-1` exactly at a pole where it changes from positive to negative. Over an ordered
+field with its order topology, these are the poles at which `q / p` jumps from `-∞` to `+∞`, and
+from `+∞` to `-∞` (`TauCeti.Analysis.Polynomial.CauchyJump`).
+
+`Polynomial.cauchyIndex p q s` sums these jumps over a set `s`. Only roots of `p` contribute, so
+the sum is finite. As for `Polynomial.tarskiQuery p q`, the first argument supplies the
+denominator, and hence the roots. With this convention the index of `p' / p` counts distinct
+roots, and the index of `p' * q / p` on the whole line is the Tarski query `TaQ(q, p)`.
+
+The index depends only on the rational function `q / p`: cancelling a common factor does not
+change it, and neither does reducing `q` modulo `p`. Negating the numerator or the denominator
+reverses it, and scaling either by a constant multiplies it by the sign of the constant.
+Jumps and indices are unchanged when the polynomials and the points are mapped through a strictly
+monotone ring homomorphism. The inversion formula and Euclidean recurrence, including endpoint
+roots, are in `TauCeti.Algebra.Polynomial.Sturm.CauchyIndex.Inversion`.
+
+## Main declarations
+
+* `Polynomial.cauchyJump`: the jump of `q / p` at a point.
+* `Polynomial.cauchyIndex`: the sum of the jumps of `q / p` over a set.
+* `Polynomial.cauchyJump_eq_one_iff`, `Polynomial.cauchyJump_eq_neg_one_iff`: the sign
+  convention, by the one-sided signs of `p * q` at a pole.
+* `Polynomial.cauchyIndex_neg_left`, `Polynomial.cauchyIndex_C_mul_left`,
+  `Polynomial.cauchyIndex_C_mul_right`: negating and scaling the denominator or numerator.
+* `Polynomial.cauchyIndex_mul_right`: cancellation of a common factor.
+* `Polynomial.cauchyIndex_mod`: reduction of the numerator modulo the denominator.
+* `Polynomial.cauchyIndex_map_image`: transport along a strictly monotone ring homomorphism.
+* `Polynomial.cauchyIndex_derivative`: the index of `p' / p` counts distinct roots.
+* `Polynomial.cauchyIndex_derivative_mul_univ`: the whole-line index of `p' * q / p` is
+  `tarskiQuery p q`.
+
+## References
+
+S. Basu, R. Pollack, and M.-F. Roy,
+[Algorithms in Real Algebraic Geometry](https://doi.org/10.1007/3-540-33099-2),
+second edition, §2.2.2 (the Cauchy index and its properties).
+-/
+
+public section
+
+namespace Polynomial
+
+open SignType Set
+
+section Definitions
+
+variable {R : Type*} [CommRing R] [LinearOrder R]
+
+/-- The jump of `q / p` at `a`. It is the right-hand sign of `p * q` at `a` when `a` is a pole
+of `q / p` of odd order, and zero otherwise. -/
+noncomputable def cauchyJump (p q : R[X]) (a : R) : ℤ :=
+  if q.rootMultiplicity a < p.rootMultiplicity a ∧
+      Odd (p.rootMultiplicity a - q.rootMultiplicity a) then
+    ((p * q).derivSignRight a : ℤ)
+  else 0
+
+theorem cauchyJump_def (p q : R[X]) (a : R) :
+    cauchyJump p q a =
+      if q.rootMultiplicity a < p.rootMultiplicity a ∧
+          Odd (p.rootMultiplicity a - q.rootMultiplicity a) then
+        ((p * q).derivSignRight a : ℤ)
+      else 0 := (rfl)
+
+/-- The jump vanishes where `q / p` has no pole. -/
+theorem cauchyJump_of_rootMultiplicity_le {p q : R[X]} {a : R}
+    (h : p.rootMultiplicity a ≤ q.rootMultiplicity a) : cauchyJump p q a = 0 := by
+  simp only [cauchyJump_def, ite_eq_right_iff]
+  exact fun h' => absurd h'.1 (not_lt.mpr h)
+
+/-- The jump vanishes away from the roots of `p`. -/
+theorem cauchyJump_of_eval_ne_zero {p : R[X]} (q : R[X]) {a : R} (ha : p.eval a ≠ 0) :
+    cauchyJump p q a = 0 :=
+  cauchyJump_of_rootMultiplicity_le (by simp [rootMultiplicity_eq_zero ha])
+
+@[simp]
+theorem cauchyJump_zero_left (q : R[X]) (a : R) : cauchyJump 0 q a = 0 :=
+  cauchyJump_of_rootMultiplicity_le (by simp)
+
+@[simp]
+theorem cauchyJump_zero_right (p : R[X]) (a : R) : cauchyJump p 0 a = 0 := by
+  simp [cauchyJump_def]
+
+/-- A constant denominator has no poles. -/
+@[simp]
+theorem cauchyJump_C (c : R) (q : R[X]) (a : R) : cauchyJump (C c) q a = 0 := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  · exact cauchyJump_of_eval_ne_zero q (by simpa using hc)
+
+/-- The Cauchy index of `q / p` on `s`: the sum of the jumps of `q / p` at the points of `s`. -/
+noncomputable def cauchyIndex (p q : R[X]) (s : Set R) : ℤ :=
+  ∑ᶠ x ∈ s, cauchyJump p q x
+
+theorem cauchyIndex_def (p q : R[X]) (s : Set R) :
+    cauchyIndex p q s = ∑ᶠ x ∈ s, cauchyJump p q x := (rfl)
+
+@[simp]
+theorem cauchyIndex_empty (p q : R[X]) : cauchyIndex p q ∅ = 0 := by
+  simp [cauchyIndex_def]
+
+@[simp]
+theorem cauchyIndex_singleton (p q : R[X]) (a : R) : cauchyIndex p q {a} = cauchyJump p q a := by
+  simp [cauchyIndex_def]
+
+@[simp]
+theorem cauchyIndex_zero_left (q : R[X]) (s : Set R) : cauchyIndex 0 q s = 0 := by
+  simp [cauchyIndex_def]
+
+@[simp]
+theorem cauchyIndex_zero_right (p : R[X]) (s : Set R) : cauchyIndex p 0 s = 0 := by
+  simp [cauchyIndex_def]
+
+@[simp]
+theorem cauchyIndex_C (c : R) (q : R[X]) (s : Set R) : cauchyIndex (C c) q s = 0 := by
+  simp [cauchyIndex_def]
+
+section Map
+
+variable {S : Type*} [CommRing S] [LinearOrder S] {f : R →+* S}
+
+/-- Jumps are preserved by mapping the polynomials and the point through a strictly monotone
+ring homomorphism. -/
+@[simp]
+theorem cauchyJump_map (hf : StrictMono f) (p q : R[X]) (a : R) :
+    cauchyJump (p.map f) (q.map f) (f a) = cauchyJump p q a := by
+  rw [cauchyJump_def, cauchyJump_def, ← eq_rootMultiplicity_map hf.injective,
+    ← eq_rootMultiplicity_map hf.injective, ← Polynomial.map_mul, derivSignRight_map _ f hf]
+
+/-- Cauchy indices are preserved by mapping the polynomials and the set through a strictly
+monotone ring homomorphism. -/
+@[simp]
+theorem cauchyIndex_map_image (hf : StrictMono f) (p q : R[X]) (s : Set R) :
+    cauchyIndex (p.map f) (q.map f) (f '' s) = cauchyIndex p q s := by
+  rw [cauchyIndex_def, cauchyIndex_def, finsum_mem_image hf.injective.injOn]
+  simp only [cauchyJump_map hf]
+
+end Map
+
+end Definitions
+
+section OrderedRing
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- Only roots of `p` carry a jump of `q / p`. -/
+theorem support_cauchyJump_subset (p q : R[X]) :
+    Function.support (cauchyJump p q) ⊆ p.roots.toFinset := by
+  intro x hx
+  by_cases hp : p = 0
+  · simp [hp] at hx
+  by_contra hr
+  exact hx (cauchyJump_of_eval_ne_zero q (by simpa [mem_roots hp] using hr))
+
+/-- Only finitely many points carry a jump of `q / p`. -/
+theorem finite_support_cauchyJump (p q : R[X]) : (Function.support (cauchyJump p q)).Finite :=
+  p.roots.toFinset.finite_toSet.subset (support_cauchyJump_subset p q)
+
+/-- Negating the numerator reverses every Cauchy jump. -/
+@[simp]
+theorem cauchyJump_neg_right (p q : R[X]) (a : R) :
+    cauchyJump p (-q) a = -cauchyJump p q a := by
+  simp only [cauchyJump_def, rootMultiplicity_neg, mul_neg, derivSignRight_neg, SignType.coe_neg]
+  split_ifs <;> simp
+
+/-- Negating the numerator reverses the Cauchy index on any set. -/
+@[simp]
+theorem cauchyIndex_neg_right (p q : R[X]) (s : Set R) :
+    cauchyIndex p (-q) s = -cauchyIndex p q s := by
+  simp_rw [cauchyIndex_def, cauchyJump_neg_right, finsum_neg_distrib]
+
+/-- Negating the denominator reverses every Cauchy jump. -/
+@[simp]
+theorem cauchyJump_neg_left (p q : R[X]) (a : R) :
+    cauchyJump (-p) q a = -cauchyJump p q a := by
+  simp only [cauchyJump_def, rootMultiplicity_neg, neg_mul, derivSignRight_neg, SignType.coe_neg]
+  split_ifs <;> simp
+
+/-- Negating the denominator reverses the Cauchy index on any set. -/
+@[simp]
+theorem cauchyIndex_neg_left (p q : R[X]) (s : Set R) :
+    cauchyIndex (-p) q s = -cauchyIndex p q s := by
+  simp_rw [cauchyIndex_def, cauchyJump_neg_left, finsum_neg_distrib]
+
+/-- Scaling the denominator by a constant `c` multiplies every Cauchy jump by the sign
+of `c`. -/
+theorem cauchyJump_C_mul_left (c : R) (p q : R[X]) (a : R) :
+    cauchyJump (C c * p) q a = sign c * cauchyJump p q a := by
+  by_cases hc : c = 0
+  · simp [hc]
+  by_cases hp : p = 0
+  · simp [hp]
+  rw [cauchyJump_def, cauchyJump_def, rootMultiplicity_mul (mul_ne_zero (C_ne_zero.2 hc) hp),
+    rootMultiplicity_C, zero_add, mul_assoc, derivSignRight_mul, derivSignRight_C]
+  split_ifs <;> simp
+
+/-- Scaling the denominator by a constant `c` multiplies the Cauchy index on any set by
+the sign of `c`. -/
+theorem cauchyIndex_C_mul_left (c : R) (p q : R[X]) (s : Set R) :
+    cauchyIndex (C c * p) q s = sign c * cauchyIndex p q s := by
+  simp_rw [cauchyIndex_def, cauchyJump_C_mul_left, mul_finsum_mem]
+
+/-- Scaling the numerator by a constant `c` multiplies every Cauchy jump by the sign
+of `c`. -/
+theorem cauchyJump_C_mul_right (c : R) (p q : R[X]) (a : R) :
+    cauchyJump p (C c * q) a = sign c * cauchyJump p q a := by
+  by_cases hc : c = 0
+  · simp [hc]
+  by_cases hq : q = 0
+  · simp [hq]
+  rw [cauchyJump_def, cauchyJump_def, rootMultiplicity_mul (mul_ne_zero (C_ne_zero.2 hc) hq),
+    rootMultiplicity_C, zero_add, mul_left_comm, derivSignRight_mul, derivSignRight_C]
+  split_ifs <;> simp
+
+/-- Scaling the numerator by a constant `c` multiplies the Cauchy index on any set by
+the sign of `c`. -/
+theorem cauchyIndex_C_mul_right (c : R) (p q : R[X]) (s : Set R) :
+    cauchyIndex p (C c * q) s = sign c * cauchyIndex p q s := by
+  simp_rw [cauchyIndex_def, cauchyJump_C_mul_right, mul_finsum_mem]
+
+/-- **The sign convention of the Cauchy jump.** The jump of `q / p` at `a` is `1` exactly when
+`a` is a pole of `q / p` across which its sign, which is the sign of `p * q`, changes from
+negative on the left to positive on the right. -/
+theorem cauchyJump_eq_one_iff {p q : R[X]} {a : R} :
+    cauchyJump p q a = 1 ↔ q.rootMultiplicity a < p.rootMultiplicity a ∧
+      (p * q).derivSignLeft a = -1 ∧ (p * q).derivSignRight a = 1 := by
+  by_cases hp : p = 0
+  · simp [hp]
+  by_cases hq : q = 0
+  · simp [hq]
+  rw [cauchyJump_def, derivSignLeft_def, rootMultiplicity_mul (mul_ne_zero hp hq)]
+  generalize (p * q).derivSignRight a = s
+  generalize p.rootMultiplicity a = m
+  generalize q.rootMultiplicity a = n
+  by_cases hnm : n < m
+  · -- Across a pole, the parity of the order `m - n` is the parity of `m + n`.
+    have hodd : Odd (m - n) ↔ Odd (m + n) := (Nat.odd_sub hnm.le).trans Nat.odd_add.symm
+    rcases Nat.even_or_odd (m + n) with he | ho
+    · simp only [hnm, hodd, Nat.not_odd_iff_even.mpr he, he.neg_one_pow, one_mul, true_and,
+        and_false, ite_false]
+      cases s <;> decide
+    · simp only [hnm, hodd, ho, ho.neg_one_pow, true_and, and_self, ite_true]
+      cases s <;> decide
+  · simp [hnm]
+
+/-- The jump of `q / p` at `a` is `-1` exactly when `a` is a pole of `q / p` across which its
+sign, which is the sign of `p * q`, changes from positive on the left to negative on the
+right. -/
+theorem cauchyJump_eq_neg_one_iff {p q : R[X]} {a : R} :
+    cauchyJump p q a = -1 ↔ q.rootMultiplicity a < p.rootMultiplicity a ∧
+      (p * q).derivSignLeft a = 1 ∧ (p * q).derivSignRight a = -1 := by
+  rw [← neg_inj, ← cauchyJump_neg_right, neg_neg, cauchyJump_eq_one_iff, rootMultiplicity_neg,
+    mul_neg,
+    derivSignLeft_neg, derivSignRight_neg, neg_inj, neg_eq_iff_eq_neg]
+
+/-- The Cauchy index as a finite sum over the distinct roots of `p` in `s`. -/
+theorem cauchyIndex_eq_sum (p q : R[X]) (s : Set R) [DecidablePred (· ∈ s)] :
+    cauchyIndex p q s = ∑ x ∈ p.roots.toFinset with x ∈ s, cauchyJump p q x := by
+  rw [cauchyIndex_def]
+  refine finsum_mem_eq_sum_of_inter_support_eq _ ?_
+  ext x
+  simp only [mem_inter_iff, Finset.coe_filter, mem_ofPred_eq]
+  exact ⟨fun h => ⟨⟨support_cauchyJump_subset p q h.2, h.1⟩, h.2⟩,
+    fun h => ⟨h.1.2, h.2⟩⟩
+
+omit [IsStrictOrderedRing R] in
+/-- The Cauchy index on a set depends only on which roots of `p` the set contains. -/
+theorem cauchyIndex_congr_of_isRoot {p : R[X]} (q : R[X]) {s t : Set R}
+    (h : ∀ r, p.IsRoot r → (r ∈ s ↔ r ∈ t)) : cauchyIndex p q s = cauchyIndex p q t := by
+  rw [cauchyIndex_def, cauchyIndex_def]
+  refine finsum_mem_inter_support_eq' (cauchyJump p q) s t fun x hx => h x ?_
+  by_contra hr
+  exact hx (cauchyJump_of_eval_ne_zero q hr)
+
+/-- The Cauchy index is additive over disjoint sets. -/
+theorem cauchyIndex_union (p q : R[X]) {s t : Set R} (h : Disjoint s t) :
+    cauchyIndex p q (s ∪ t) = cauchyIndex p q s + cauchyIndex p q t :=
+  finsum_mem_union' h ((finite_support_cauchyJump p q).inter_of_right s)
+    ((finite_support_cauchyJump p q).inter_of_right t)
+
+/-- Adding a point to a set adds the jump at that point to the Cauchy index. -/
+theorem cauchyIndex_insert (p q : R[X]) {a : R} {s : Set R} (h : a ∉ s) :
+    cauchyIndex p q (insert a s) = cauchyJump p q a + cauchyIndex p q s :=
+  finsum_mem_insert' _ h ((finite_support_cauchyJump p q).inter_of_right s)
+
+/-- Splitting an open interval at an interior point adds the jump at that point. -/
+theorem cauchyIndex_Ioo_eq_add {p q : R[X]} {a b c : R} (hab : a < b) (hbc : b < c) :
+    cauchyIndex p q (Ioo a c) =
+      cauchyIndex p q (Ioo a b) + cauchyJump p q b + cauchyIndex p q (Ioo b c) := by
+  have hdisj : Disjoint (Ioc a b) (Ioo b c) :=
+    disjoint_left.mpr fun _ hx hx' ↦ hx'.1.not_ge hx.2
+  rw [← Ioc_union_Ioo_eq_Ioo hab.le hbc, cauchyIndex_union _ _ hdisj,
+    ← insert_right_Ioo hab, cauchyIndex_insert _ _ (by simp)]
+  ring
+
+/-- Cancelling a common nonzero factor of `p` and `q` does not change the jumps of `q / p`. -/
+theorem cauchyJump_mul_right (p q : R[X]) {r : R[X]} (hr : r ≠ 0) (a : R) :
+    cauchyJump (p * r) (q * r) a = cauchyJump p q a := by
+  by_cases hp : p = 0
+  · simp [hp]
+  by_cases hq : q = 0
+  · simp [hq]
+  have hs : p.derivSignRight a * r.derivSignRight a * (q.derivSignRight a * r.derivSignRight a) =
+      p.derivSignRight a * q.derivSignRight a := by
+    have h0 : r.derivSignRight a ≠ 0 := by simpa using hr
+    generalize p.derivSignRight a = s at *
+    generalize q.derivSignRight a = t at *
+    generalize r.derivSignRight a = u at *
+    cases s <;> cases t <;> cases u <;> simp_all
+  simp only [cauchyJump_def, rootMultiplicity_mul (mul_ne_zero hp hr),
+    rootMultiplicity_mul (mul_ne_zero hq hr), Nat.add_sub_add_right, Nat.add_lt_add_iff_right,
+    derivSignRight_mul, hs]
+
+/-- Cancelling a common nonzero factor of `p` and `q` does not change the index of `q / p`. -/
+theorem cauchyIndex_mul_right (p q : R[X]) {r : R[X]} (hr : r ≠ 0) (s : Set R) :
+    cauchyIndex (p * r) (q * r) s = cauchyIndex p q s := by
+  simp only [cauchyIndex_def, cauchyJump_mul_right p q hr]
+
+omit [IsStrictOrderedRing R] in
+/-- Adding a multiple of `p` to `q` does not change the jumps of `q / p`. -/
+theorem cauchyJump_add_mul [IsDomain R] (p q r : R[X]) (a : R) :
+    cauchyJump p (q + p * r) a = cauchyJump p q a := by
+  by_cases hp : p = 0
+  · simp [hp]
+  by_cases hr : r = 0
+  · simp [hr]
+  by_cases hq : q = 0
+  · rw [hq, zero_add, cauchyJump_zero_right]
+    exact cauchyJump_of_rootMultiplicity_le
+      (by rw [rootMultiplicity_mul (mul_ne_zero hp hr)]; omega)
+  rcases lt_or_ge (q.rootMultiplicity a) (p.rootMultiplicity a) with h | h
+  · -- At a pole of `q / p`, the term `p * r` vanishes to higher order than `q`.
+    have hd : (X - C a) ^ (q.rootMultiplicity a + 1) ∣ p * r :=
+      (pow_dvd_pow _ h).trans ((pow_rootMultiplicity_dvd p a).mul_right r)
+    have hpq : p * q ≠ 0 := mul_ne_zero hp hq
+    have hd' : (X - C a) ^ ((p * q).rootMultiplicity a + 1) ∣ p * (p * r) := by
+      rw [rootMultiplicity_mul hpq, add_assoc, pow_add]
+      exact mul_dvd_mul (pow_rootMultiplicity_dvd p a) hd
+    rw [cauchyJump_def, cauchyJump_def, rootMultiplicity_add_eq_left_of_dvd hq hd, mul_add,
+      derivSignRight_add_eq_left_of_dvd hpq hd']
+  · -- Away from poles of `q / p`, there is no pole of `(q + p * r) / p` either.
+    rw [cauchyJump_of_rootMultiplicity_le h]
+    by_cases hs : q + p * r = 0
+    · simp [hs]
+    refine cauchyJump_of_rootMultiplicity_le ((le_min h ?_).trans (rootMultiplicity_add a hs))
+    rw [rootMultiplicity_mul (mul_ne_zero hp hr)]
+    omega
+
+omit [IsStrictOrderedRing R] in
+/-- Adding a multiple of `p` to `q` does not change the index of `q / p`. -/
+theorem cauchyIndex_add_mul [IsDomain R] (p q r : R[X]) (s : Set R) :
+    cauchyIndex p (q + p * r) s = cauchyIndex p q s := by
+  simp only [cauchyIndex_def, cauchyJump_add_mul]
+
+/-- The jumps of `q / p` and of `p / q` at a point add up to half the jump of the one-sided
+signs of `p * q` there. -/
+theorem two_mul_cauchyJump_add_cauchyJump (p q : R[X]) (a : R) :
+    2 * (cauchyJump p q a + cauchyJump q p a) =
+      ((p * q).derivSignRight a : ℤ) - (p * q).derivSignLeft a := by
+  by_cases hp : p = 0
+  · simp [hp]
+  by_cases hq : q = 0
+  · simp [hq]
+  have hl : ((p * q).derivSignLeft a : ℤ) =
+      (-1) ^ (p.rootMultiplicity a + q.rootMultiplicity a) * (p * q).derivSignRight a := by
+    rw [derivSignLeft_def, rootMultiplicity_mul (mul_ne_zero hp hq)]
+    simp
+  rw [hl, cauchyJump_def, cauchyJump_def, mul_comm q p]
+  generalize ((p * q).derivSignRight a : ℤ) = s
+  generalize p.rootMultiplicity a = m
+  generalize q.rootMultiplicity a = n
+  -- Only the side with the larger multiplicity can jump, and only at an odd difference,
+  -- which has the parity of the multiplicity `m + n` of `p * q`.
+  have key (hpar : Prop) [Decidable hpar] (h : hpar ↔ Odd (m + n)) :
+      2 * (if hpar then s else 0) = s - (-1) ^ (m + n) * s := by
+    rcases Nat.even_or_odd (m + n) with he | ho
+    · simp [h, he.neg_one_pow, Nat.not_odd_iff_even.mpr he]
+    · simp [h, ho.neg_one_pow, ho]
+      ring
+  rcases lt_trichotomy n m with h | rfl | h
+  · simpa [h, not_lt_of_gt h] using key _ ((Nat.odd_sub h.le).trans Nat.odd_add.symm)
+  · simp [← two_mul, pow_mul]
+  · simpa [h, not_lt_of_gt h] using key _ ((Nat.odd_sub h.le).trans Nat.odd_add'.symm)
+
+/-- At a root of a nonzero `p`, the jump of `p' * q / p` is the sign of `q`. -/
+theorem cauchyJump_derivative_mul {p : R[X]} (hp : p ≠ 0) (q : R[X]) {a : R}
+    (ha : p.eval a = 0) : cauchyJump p (derivative p * q) a = sign (q.eval a) := by
+  have hm : 0 < p.rootMultiplicity a := (rootMultiplicity_pos hp).mpr ha
+  have hd : derivative p ≠ 0 := by
+    rw [Ne, derivative_eq_zero]
+    intro h
+    rw [eq_C_of_natDegree_eq_zero h, eval_C] at ha
+    exact hp (by rw [eq_C_of_natDegree_eq_zero h, ha, C_0])
+  by_cases hq : q.eval a = 0
+  · rw [hq, sign_zero, SignType.coe_zero]
+    by_cases hq0 : q = 0
+    · simp [hq0]
+    refine cauchyJump_of_rootMultiplicity_le ?_
+    rw [rootMultiplicity_mul (mul_ne_zero hd hq0), derivative_rootMultiplicity_of_root ha]
+    have := (rootMultiplicity_pos hq0).mpr hq
+    omega
+  have hq0 : q ≠ 0 := fun h => hq (by simp [h])
+  have hsp : p.derivSignRight a * p.derivSignRight a = 1 := by
+    have h0 : p.derivSignRight a ≠ 0 := by simpa using hp
+    generalize p.derivSignRight a = u at *
+    cases u <;> simp_all
+  -- `a` is a simple pole of `p' * q / p`.
+  have hpole : p.rootMultiplicity a - 1 < p.rootMultiplicity a ∧
+      Odd (p.rootMultiplicity a - (p.rootMultiplicity a - 1)) :=
+    ⟨Nat.sub_lt hm one_pos, by rw [Nat.sub_sub_self hm]; exact odd_one⟩
+  rw [cauchyJump_def, rootMultiplicity_mul (mul_ne_zero hd hq0),
+    derivative_rootMultiplicity_of_root ha, rootMultiplicity_eq_zero hq, add_zero]
+  simp only [hpole, and_self, ite_true]
+  rw [← mul_assoc, derivSignRight_mul, derivSignRight_mul,
+    derivSignRight_derivative_of_isRoot ha, hsp, one_mul,
+    derivSignRight_eq_sign_eval q hq]
+
+/-- The index of `p' * q / p` on `s` is the sum of the signs of `q` at the distinct roots of
+`p` in `s`. -/
+theorem cauchyIndex_derivative_mul (p q : R[X]) (s : Set R) [DecidablePred (· ∈ s)] :
+    cauchyIndex p (derivative p * q) s =
+      ∑ x ∈ p.roots.toFinset with x ∈ s, (sign (q.eval x) : ℤ) := by
+  by_cases hp : p = 0
+  · simp [hp]
+  rw [cauchyIndex_eq_sum]
+  refine Finset.sum_congr rfl fun x hx => ?_
+  have hx : p.eval x = 0 := (mem_roots hp).mp (Multiset.mem_toFinset.mp (Finset.mem_filter.mp hx).1)
+  exact cauchyJump_derivative_mul hp q hx
+
+/-- The whole-line index of `p' * q / p` is the Tarski query of `q` at the roots of `p`. -/
+theorem cauchyIndex_derivative_mul_univ (p q : R[X]) :
+    cauchyIndex p (derivative p * q) univ = tarskiQuery p q := by
+  classical
+  rw [cauchyIndex_derivative_mul, tarskiQuery_eq_sum]
+  simp
+
+/-- The index of `p' / p` on `s` is the number of distinct roots of `p` in `s`. -/
+theorem cauchyIndex_derivative (p : R[X]) (s : Set R) [DecidablePred (· ∈ s)] :
+    cauchyIndex p (derivative p) s = (p.roots.toFinset.filter (· ∈ s)).card := by
+  simpa using cauchyIndex_derivative_mul p 1 s
+
+end OrderedRing
+
+section Field
+
+variable {R : Type*} [Field R] [LinearOrder R]
+
+/-- Reducing `q` modulo `p` does not change the jumps of `q / p`. -/
+theorem cauchyJump_mod (p q : R[X]) (a : R) : cauchyJump p (q % p) a = cauchyJump p q a := by
+  rw [EuclideanDomain.mod_eq_sub_mul_div, sub_eq_add_neg, ← mul_neg, cauchyJump_add_mul]
+
+/-- Reducing `q` modulo `p` does not change the index of `q / p`. -/
+theorem cauchyIndex_mod (p q : R[X]) (s : Set R) : cauchyIndex p (q % p) s = cauchyIndex p q s := by
+  simp only [cauchyIndex_def, cauchyJump_mod]
+
+end Field
+
+end Polynomial

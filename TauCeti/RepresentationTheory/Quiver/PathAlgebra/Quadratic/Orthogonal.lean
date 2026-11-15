@@ -100,7 +100,6 @@ theorem quadraticOrthogonal_quadraticOrthogonal (R : Submodule k (pathAlgebra k 
     quadraticOrthogonal k Q (quadraticOrthogonal k Q R) = R := by
   let E := grade k Q 2
   let B := gradeTwoPairing k Q
-  let S := R.comap E.subtype
   have horth (T : Submodule k (pathAlgebra k Q)) (hT : T ≤ E) :
       quadraticOrthogonal k Q T =
         (B.orthogonal (T.comap E.subtype)).map E.subtype := by

@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import TauCeti.Probability.Exchangeability.Contractability
-public import TauCeti.Probability.Exchangeability.PathSpace.ProcessShift
+public import TauCeti.Probability.Process.PathLaw.ProcessShift
 import Mathlib.MeasureTheory.MeasurableSpace.Prod
 public import Mathlib.Probability.Independence.Conditional
 import TauCeti.Probability.Independence.Conditional
@@ -202,7 +202,7 @@ private lemma condExp_indicator_eq_of_contractable [IsFiniteMeasure μ]
   have hW : Measurable W := measurable_processShift fun n => hX_meas (m + 1 + n)
   have hW' : Measurable W' :=
     measurable_processCons (hX_meas r) fun n => (measurable_pi_apply n).comp hW
-  exact condExp_indicator_eq_of_law_eq_of_comap_le U W W' hU hW hW'
+  exact condExp_indicator_eq_of_law_eq_of_comap_le U W W' hU hW'
     (pair_law_eq_of_contractable hContr hX_meas r m hrm)
     (comap_le_comap_processCons (fun ω => X r ω) W) hA
 

@@ -14,8 +14,9 @@ public import Mathlib.NumberTheory.ModularForms.QExpansion
 Let `D` be normalized cusp data for a subgroup of `PSL(2, ℝ)`. Pulling a function on the
 upper half-plane back by `D.scaling⁻¹` turns invariance under the cusp stabilizer into
 periodicity by `D.width`. Mathlib's periodic cusp function therefore descends the function to
-the punctured q-disc. If the original function is holomorphic and bounded as the scaled height
-tends to infinity, the descended function extends holomorphically across `q = 0`.
+the punctured q-disc. If the original function is holomorphic at sufficiently large normalized
+heights and bounded as the scaled height tends to infinity, the descended function extends
+holomorphically across `q = 0`.
 
 The construction uses the same q-coordinate as
 `TauCeti.Subgroup.CuspDatum.qCoordinate`. In particular, no choice of representatives of the
@@ -39,7 +40,7 @@ stabilizer quotient occurs.
 
 public noncomputable section
 
-open Function Matrix.ProjectiveSpecialLinearGroup MulAction UpperHalfPlane
+open Filter Function Matrix.ProjectiveSpecialLinearGroup MulAction UpperHalfPlane
 open scoped Complex.UnitDisc ContDiff Manifold MatrixGroups
 
 namespace TauCeti.Subgroup.CuspDatum
@@ -111,11 +112,13 @@ theorem descend_qCoordinate (D : Γ.CuspDatum) (f : ℍ → ℂ)
   rw [descend_apply, coe_qCoordinate, cuspExtension_coordinate D f hf]
 
 /-- The descended function is the unique function on the punctured q-disc whose pullback along
-the normalized q-coordinate is the original invariant function. -/
+the normalized q-coordinate is the original function, which is then invariant. -/
 theorem descend_unique (D : Γ.CuspDatum) (f : ℍ → ℂ)
-    (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
     {F : {q : 𝔻 // q ≠ 0} → ℂ} (hF : ∀ z, F (qCoordinate D z) = f z) :
     F = descend D f := by
+  -- a function with a descent is invariant, the q-coordinate being invariant
+  have hf (g : stabilizer Γ D.cusp) (z : ℍ) : f (g • z) = f z := by
+    rw [← hF, ← hF, qCoordinate_smul]
   funext q
   obtain ⟨z, rfl⟩ := (isOpenQuotientMap_qCoordinate D).surjective q
   rw [hF, descend_qCoordinate D f hf]
@@ -147,24 +150,30 @@ theorem mdifferentiable_descend (D : Γ.CuspDatum) (f : ℍ → ℂ)
         (fun h ↦ q.2 (Complex.UnitDisc.coe_injective h)) q.1.norm_lt_one)
   exact TauCeti.Complex.UnitDisc.mdifferentiable_coe_punctured q
 
-/-- If an invariant holomorphic function is bounded as the normalized scaling coordinate tends
-to `i∞`, then its cusp extension is analytic at `q = 0`. -/
+/-- If an invariant function is holomorphic at all sufficiently large normalized heights and
+bounded as the normalized scaling coordinate tends to `i∞`, then its cusp extension is analytic
+at `q = 0`. -/
 theorem analyticAt_cuspExtension_zero (D : Γ.CuspDatum) (f : ℍ → ℂ)
     (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
-    (hhol : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
+    (hhol : ∀ᶠ z in atImInfty, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (D.scaling⁻¹ • z))
     (hbounded : IsBoundedAtImInfty fun z ↦ f (D.scaling⁻¹ • z)) :
     AnalyticAt ℂ (cuspExtension D f) 0 := by
   rw [cuspExtension]
-  apply UpperHalfPlane.analyticAt_cuspFunction_zero D.width_pos
+  apply TauCeti.UpperHalfPlane.analyticAt_cuspFunction_zero_of_eventually_mdifferentiableAt
+    D.width_pos
     (periodic_comp_ofComplex_inv_smul D f hf)
-  · exact mdifferentiable_inv_smul D f hhol
+  · filter_upwards [hhol] with z hz
+    exact hz.comp z
+      ((contMDiff_const_smul (I := 𝓘(ℂ, ℂ)) (n := ∞) D.scaling⁻¹).mdifferentiable
+        (by simp) z)
   · exact hbounded
 
-/-- For an invariant holomorphic function bounded at the cusp, the value of its holomorphic
-extension at `q = 0` is the limit of the function in the normalized scaling coordinate. -/
+/-- For an invariant function holomorphic sufficiently high and bounded at the cusp, the value
+of its holomorphic extension at `q = 0` is the limit of the function in the normalized scaling
+coordinate. -/
 theorem cuspExtension_zero_eq_valueAtInfty (D : Γ.CuspDatum) (f : ℍ → ℂ)
     (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
-    (hhol : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
+    (hhol : ∀ᶠ z in atImInfty, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (D.scaling⁻¹ • z))
     (hbounded : IsBoundedAtImInfty fun z ↦ f (D.scaling⁻¹ • z)) :
     cuspExtension D f 0 = valueAtInfty (fun z ↦ f (D.scaling⁻¹ • z)) := by
   rw [cuspExtension]
@@ -180,7 +189,8 @@ theorem isBigO_sub_cuspExtension_zero (D : Γ.CuspDatum) (f : ℍ → ℂ)
     (hbounded : IsBoundedAtImInfty fun z ↦ f (D.scaling⁻¹ • z)) :
     (fun z : ℍ ↦ f (D.scaling⁻¹ • z) - cuspExtension D f 0) =O[atImInfty]
       fun z ↦ Real.exp (-2 * Real.pi * z.im / D.width) := by
-  rw [cuspExtension_zero_eq_valueAtInfty D f hf hhol hbounded]
+  rw [cuspExtension_zero_eq_valueAtInfty D f hf
+    (.of_forall fun z ↦ hhol (D.scaling⁻¹ • z)) hbounded]
   apply UpperHalfPlane.exp_decay_sub_atImInfty D.width_pos
     (periodic_comp_ofComplex_inv_smul D f hf)
   · exact mdifferentiable_inv_smul D f hhol

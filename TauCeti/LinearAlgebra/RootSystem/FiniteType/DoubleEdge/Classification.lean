@@ -42,10 +42,10 @@ finite-type Cartan matrix carrying a double edge has a unique valid Dynkin type
 
 ## References
 
-This is the double-edge assembly step in the "classification of finite-type Cartan matrices"
-target of Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The numbering of
-`F₄` is Bourbaki's; see Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI, §4 and
-plate VIII, or J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4.
+This is the double-edge assembly step in the classification of finite-type Cartan matrices. The
+numbering of `F₄` is Bourbaki's; see Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI,
+§4 and plate VIII, or J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*,
+§11.4.
 -/
 
 public section
@@ -175,7 +175,7 @@ private theorem doubleEdgeCartanMatrix_existsUnique_dynkinType (p q : ℕ) (hp :
 
 namespace IsFiniteType
 
-variable {B : Type*} [Fintype B] {A : Matrix B B ℤ}
+variable {B : Type*} {A : Matrix B B ℤ}
 
 /-- **The double-edge branch of the finite-type classification.** A connected finite-type matrix
 containing a double edge has a unique valid Dynkin type. It is one of `Bₙ`, `Cₙ`, or `F₄`. -/
@@ -184,6 +184,8 @@ theorem existsUnique_dynkinType_of_apply_mul_apply_eq_two
     {u v : B} (huv : A u v * A v u = 2) :
     ∃! t : DynkinType, t.Valid ∧
       ∃ e : B ≃ Fin t.rank, ∀ i j, A i j = t.cartanMatrix (e i) (e j) := by
+  have := h.finite
+  have : Fintype B := Fintype.ofFinite B
   obtain ⟨p, q, hp, hq, hadm, e, he⟩ :=
     h.exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_apply_mul_apply_eq_two hconn huv
   obtain ⟨t, ⟨htv, et, het⟩, -⟩ :=

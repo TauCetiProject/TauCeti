@@ -6,16 +6,16 @@ Authors: Kim Morrison
 module
 
 public import TauCeti.FieldTheory.RealClosure.OrderExtension
-public import Mathlib.Algebra.Polynomial.Degree.Operations
-public import Mathlib.RingTheory.AdjoinRoot
+public import Mathlib.RingTheory.PowerBasis
 
 /-! # Polynomial sums of weighted squares
 
 The leading terms of sums of nonnegatively weighted squares cannot cancel.
 This is the degree argument needed for odd-degree order extension.
-`extensionCone.exists_aeval_root_eq` lifts cone certificates in `AdjoinRoot p`
-to polynomial certificates of bounded degree. The imported `extensionCone.map_mem`
-from `OrderExtension` specializes these certificates into any algebra over the base field.
+`PowerBasis.exists_aeval_eq_of_mem_extensionCone` lifts cone certificates in a
+nontrivial algebra with a power basis to polynomial certificates of degree less
+than twice the dimension. The imported `extensionCone.map_mem` from `OrderExtension`
+specializes these certificates into any algebra over the base ring.
 -/
 
 public section
@@ -24,11 +24,15 @@ namespace TauCeti.RealClosure
 
 open Polynomial
 
-variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+variable {R : Type*}
+
+section Degree
+
+variable [CommSemiring R] [LinearOrder R] [IsStrictOrderedRing R] [ExistsAddOfLE R]
 
 /-- A polynomial sum of nonnegatively weighted squares has even degree and
 nonnegative leading coefficient. -/
-private theorem extensionCone.degree {p : K[X]} (hp : p ∈ extensionCone (C : K →+* K[X])) :
+private theorem extensionCone.degree {p : R[X]} (hp : p ∈ extensionCone (C : R →+* R[X])) :
     Even p.natDegree ∧ 0 ≤ p.leadingCoeff := by
   induction hp using extensionCone.induction _ with
   | mem p hp =>
@@ -61,45 +65,54 @@ private theorem extensionCone.degree {p : K[X]} (hp : p ∈ extensionCone (C : K
       exact hp
 
 /-- A polynomial sum of weighted squares has even degree. -/
-theorem extensionCone.even_natDegree {p : K[X]}
-    (hp : p ∈ extensionCone (C : K →+* K[X])) : Even p.natDegree :=
+theorem extensionCone.even_natDegree {p : R[X]}
+    (hp : p ∈ extensionCone (C : R →+* R[X])) : Even p.natDegree :=
   (extensionCone.degree hp).1
 
 /-- A polynomial sum of weighted squares has nonnegative leading coefficient. -/
-theorem extensionCone.leadingCoeff_nonneg {p : K[X]}
-    (hp : p ∈ extensionCone (C : K →+* K[X])) : 0 ≤ p.leadingCoeff :=
+theorem extensionCone.leadingCoeff_nonneg {p : R[X]}
+    (hp : p ∈ extensionCone (C : R →+* R[X])) : 0 ≤ p.leadingCoeff :=
   (extensionCone.degree hp).2
 
+end Degree
+
 /-- Evaluation of a polynomial sum of weighted squares is nonnegative. -/
-theorem extensionCone.eval_nonneg {p : K[X]} (hp : p ∈ extensionCone (C : K →+* K[X]))
-    (x : K) : 0 ≤ p.eval x :=
+theorem extensionCone.eval_nonneg [CommSemiring R] [LinearOrder R] [IsOrderedRing R]
+    [ExistsAddOfLE R] {p : R[X]} (hp : p ∈ extensionCone (C : R →+* R[X]))
+    (x : R) : 0 ≤ p.eval x :=
   extensionCone.map_nonneg C (evalRingHom x).toAddMonoidHom
     (fun a ha q => by simpa using mul_nonneg ha (sq_nonneg (q.eval x))) hp
 
-/-- A weighted-square certificate in a simple algebraic extension lifts to a
-polynomial weighted-square certificate of degree less than twice the defining degree. -/
-theorem extensionCone.exists_aeval_root_eq (p : K[X]) (hdeg : 0 < p.natDegree)
-    {x : AdjoinRoot p} (hx : x ∈ extensionCone (algebraMap K (AdjoinRoot p))) :
-    ∃ q : K[X], q ∈ extensionCone (C : K →+* K[X]) ∧
-      q.natDegree < 2 * p.natDegree ∧ aeval (AdjoinRoot.root p) q = x := by
-  have hp : p ≠ 0 := ne_zero_of_natDegree_gt hdeg
-  have := AdjoinRoot.nontrivial p (natDegree_pos_iff_degree_pos.mp hdeg).ne'
+end TauCeti.RealClosure
+
+namespace PowerBasis
+
+open Polynomial TauCeti.RealClosure
+
+/-- A weighted-square certificate in a nontrivial algebra with a power basis lifts to a
+polynomial weighted-square certificate of degree less than twice the basis dimension. -/
+theorem exists_aeval_eq_of_mem_extensionCone
+    {R S : Type*} [CommRing R] [PartialOrder R] [IsOrderedRing R] [CommRing S]
+    [Algebra R S] [Nontrivial S] (pb : PowerBasis R S)
+    {x : S} (hx : x ∈ extensionCone (algebraMap R S)) :
+    ∃ q : R[X], q ∈ extensionCone (C : R →+* R[X]) ∧
+      q.natDegree < 2 * pb.dim ∧ aeval pb.gen q = x := by
   induction hx using extensionCone.induction _ with
   | mem x hx =>
     obtain ⟨a, ha, y, rfl⟩ := (mem_weightedSquares _).mp hx
-    obtain ⟨q, hq, hy⟩ := (AdjoinRoot.powerBasis hp).exists_eq_aeval y
+    obtain ⟨q, hq, hy⟩ := pb.exists_eq_aeval y
     refine ⟨C a * q ^ 2,
       extensionCone.weightedSquares_subset _ ((mem_weightedSquares _).mpr ⟨a, ha, q, rfl⟩), ?_, ?_⟩
-    · have hq' : q.natDegree < p.natDegree := by
-        simpa only [AdjoinRoot.powerBasis_dim] using hq
-      exact (natDegree_C_mul_le a (q ^ 2)).trans_lt (by rw [natDegree_pow]; omega)
-    · simpa only [map_mul, map_pow, aeval_C, AdjoinRoot.powerBasis_gen] using
-        congrArg (fun z => algebraMap K (AdjoinRoot p) a * z ^ 2) hy.symm
-  | zero => exact ⟨0, zero_mem _, by simpa using Nat.mul_pos (by decide : 0 < 2) hdeg, by simp⟩
+    · exact (natDegree_C_mul_le a (q ^ 2)).trans_lt
+        (natDegree_pow_le.trans_lt (Nat.mul_lt_mul_of_pos_left hq (by decide)))
+    · simpa only [map_mul, map_pow, aeval_C] using
+        congrArg (fun z => algebraMap R S a * z ^ 2) hy.symm
+  | zero =>
+    exact ⟨0, zero_mem _, by simpa using Nat.mul_pos (by decide : 0 < 2) pb.dim_pos, by simp⟩
   | add x y _ _ hx hy =>
     obtain ⟨q, hq, hqd, hqx⟩ := hx
     obtain ⟨r, hr, hrd, hry⟩ := hy
     exact ⟨q + r, add_mem hq hr,
       (natDegree_add_le q r).trans_lt (max_lt hqd hrd), by simp only [map_add, hqx, hry]⟩
 
-end TauCeti.RealClosure
+end PowerBasis

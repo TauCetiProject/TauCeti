@@ -20,13 +20,16 @@ underlying element of the resolution, the transport one degree up. Both rules ar
 two constructions land in degrees that are equal but not definitionally so, as for the total
 degree `m + n` of a cup product built by recursion on `m`. On continuous cohomology the transport
 is `degreeCast`, the isomorphism `continuousCohomology n X ≅ continuousCohomology k X` along an
-equality `n = k`, and a cocycle that is the transport of another has the transported class
-(`π_eq_degreeCast_π`).
+equality `n = k`. It commutes with any family of maps between cohomology groups indexed by the
+degree (`degreeCast_naturality`), and a cocycle that is the transport of another has the
+transported class (`π_eq_degreeCast_π`).
 
 ## Main definitions
 
 * `TauCeti.ContinuousCohomology.degreeCast`: transport of continuous cohomology along an equality
   of degrees.
+* `TauCeti.ContinuousCohomology.cocyclesDegreeCast`: transport of cocycles along an equality of
+  degrees.
 -/
 
 public section
@@ -78,11 +81,58 @@ theorem degreeCast_symm {n k : ℕ} (h : n = k) : (degreeCast X h).symm = degree
   subst h
   simp [degreeCast]
 
+/-- Transport along an equality of degrees does not change a class, read as an element of a
+possibly different type. -/
+theorem degreeCast_hom_apply_heq {n k : ℕ} (h : n = k) (x : continuousCohomology n X) :
+    (degreeCast X h).hom x ≍ x := by
+  subst h
+  simp
+
 /-- Two successive transports are the transport along the composite equality. -/
 @[reassoc (attr := simp)]
 theorem degreeCast_hom_comp_degreeCast_hom {n k l : ℕ} (h : n = k) (h' : k = l) :
     (degreeCast X h).hom ≫ (degreeCast X h').hom = (degreeCast X (h.trans h')).hom := by
   simp [degreeCast]
+
+/-- Two successive transports of a class are its transport along the composite equality. -/
+@[simp]
+theorem degreeCast_hom_degreeCast_hom_apply {n k l : ℕ} (h : n = k) (h' : k = l)
+    (x : continuousCohomology n X) :
+    (degreeCast X h').hom ((degreeCast X h).hom x) = (degreeCast X (h.trans h')).hom x := by
+  subst h h'
+  simp
+
+/-- **Transport along an equality of degrees is natural**: it commutes with any family of maps
+`f n : Hⁿ(G, X) ⟶ Hⁿ(H, Y)` indexed by the degree, such as restriction or a change of
+coefficients. -/
+@[reassoc]
+theorem degreeCast_naturality {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    {Y : TopRep.{max v w} R H} (f : ∀ n, continuousCohomology n X ⟶ continuousCohomology n Y)
+    {n k : ℕ} (h : n = k) :
+    f n ≫ (degreeCast Y h).hom = (degreeCast X h).hom ≫ f k := by
+  subst h
+  simp
+
+/-- Transport of cocycles along an equality of degrees. -/
+noncomputable def cocyclesDegreeCast {n k : ℕ} (h : n = k) :
+    _root_.ContinuousCohomology.cocycles X n ≃ₗ[R]
+      _root_.ContinuousCohomology.cocycles X k := by
+  subst k
+  exact LinearEquiv.refl R _
+
+/-- The underlying cochain of a transported cocycle is the corresponding transport in the
+homogeneous cochain complex. -/
+-- Not a `simp` lemma: `simp` rewrites the implicit carrier
+-- `(TopRep.homogeneousCochains X).X k` on the left-hand side through
+-- `CategoryTheory.Functor.mapHomologicalComplex_obj_X`, so the statement is not in `simp`-normal
+-- form; use it with `rw`.
+theorem iCycles_cocyclesDegreeCast {n k : ℕ} (h : n = k)
+    (z : _root_.ContinuousCohomology.cocycles X n) :
+    (TopRep.homogeneousCochains X).iCycles k (cocyclesDegreeCast h z) =
+      ((TopRep.homogeneousCochains X).XIsoOfEq h).hom
+        ((TopRep.homogeneousCochains X).iCycles n z) := by
+  subst k
+  rfl
 
 /-- **Transport of a class along an equality of degrees.** If the cocycle `z'` of degree `k` is,
 as a homogeneous cochain, the transport of the cocycle `z` of degree `n` along `n = k`, then the
@@ -97,5 +147,13 @@ theorem π_eq_degreeCast_π {n k : ℕ} (h : n = k) (z : _root_.ContinuousCohomo
   subst h
   obtain rfl : z' = z := (TopRep.homogeneousCochains X).iCycles_injective n (by simpa using hz)
   simp
+
+/-- The class of a transported cocycle is the transport of its class. -/
+@[simp]
+theorem π_cocyclesDegreeCast {n k : ℕ} (h : n = k)
+    (z : _root_.ContinuousCohomology.cocycles X n) :
+    _root_.ContinuousCohomology.π X k (cocyclesDegreeCast h z) =
+      (degreeCast X h).hom (_root_.ContinuousCohomology.π X n z) :=
+  π_eq_degreeCast_π h z (cocyclesDegreeCast h z) (iCycles_cocyclesDegreeCast h z)
 
 end TauCeti.ContinuousCohomology

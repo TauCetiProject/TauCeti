@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.ExtendFrom
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Edge
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Vertex
+import TauCeti.Algebra.BigOperators.Finset.Filter
 
 /-!
 # Boundary values of the Schwarz--Christoffel map
@@ -61,6 +62,13 @@ open Complex Filter MeasureTheory Set Topology UpperHalfPlane
 namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
+
+/-- At a point of an interval containing no prevertex with nonzero exponent, the sum of the
+exponents at that point vanishes. -/
+theorem sum_filter_eq_zero_of_mem_Ioo (a e : ι → ℝ) {p q x : ℝ}
+    (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) (hx : x ∈ Ioo p q) :
+    ∑ i with a i = x, e i = 0 := by
+  exact Finset.sum_filter_eq_zero_of_ne fun i _ he hax ↦ ha i he (hax ▸ hx)
 
 /-- The **boundary value of the Schwarz--Christoffel map** at a real point: the value at that
 point of Mathlib's `extendFrom` extension of the normalized primitive from the upper half-plane.
@@ -121,6 +129,44 @@ theorem tendsto_schwarzChristoffelPrimitive_boundary (a e : ι → ℝ)
       (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 (schwarzChristoffelBoundary a e z₀ x)) := by
   rw [schwarzChristoffelBoundary]
   exact tendsto_extendFrom (exists_tendsto_schwarzChristoffelPrimitive_boundary a e z₀ x he)
+
+/-- On the part of the circle of radius `R` in the closed upper half-plane, the primitive extends
+continuously, provided every finite prevertex lies strictly inside the circle (`|a i| < R`). -/
+theorem continuousOn_extendFrom_schwarzChristoffelPrimitive_sphere
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    {R : ℝ} (haR : ∀ i, |a i| < R) :
+    ContinuousOn (extendFrom upperHalfPlaneSet (schwarzChristoffelPrimitive a e z₀))
+      (Metric.sphere 0 R ∩ closure upperHalfPlaneSet) := by
+  classical
+  apply continuousOn_extendFrom
+  · intro z hz
+    exact hz.2
+  · intro z hz
+    by_cases hzH : z ∈ upperHalfPlaneSet
+    · exact ⟨schwarzChristoffelPrimitive a e z₀ z,
+        ((differentiableOn_schwarzChristoffelPrimitive a e z₀ z hzH).differentiableAt
+          (isOpen_upperHalfPlaneSet.mem_nhds hzH)).continuousAt.tendsto.mono_left
+            nhdsWithin_le_nhds⟩
+    · have hzcl : 0 ≤ z.im := by
+        simpa [Complex.closure_setOfPred_lt_im] using hz.2
+      have hzim : z.im = 0 := le_antisymm (not_lt.mp hzH) hzcl
+      have hzreal : (z.re : ℂ) = z := Complex.ext (by simp) (by simp [hzim])
+      have hzabs : |z.re| = R := by
+        have hznorm : ‖z‖ = R := by simpa using hz.1
+        rw [← hzreal, norm_real, Real.norm_eq_abs] at hznorm
+        exact hznorm
+      have hne (i : ι) : a i ≠ z.re := by
+        intro hi
+        have := haR i
+        rw [hi, hzabs] at this
+        exact this.false
+      have hlocal : ∑ i with a i = z.re, e i = 0 := by
+        apply Finset.sum_eq_zero
+        intro i hi
+        exact (hne i (Finset.mem_filter.mp hi).2).elim
+      rw [← hzreal]
+      exact ⟨schwarzChristoffelBoundary a e z₀ z.re,
+        tendsto_schwarzChristoffelPrimitive_boundary a e z₀ z.re (by rw [hlocal]; norm_num)⟩
 
 /-- Changing the base point of the normalized primitive subtracts, from the canonical
 Schwarz--Christoffel boundary map, the value of the primitive at the old base point.  This is the
@@ -253,13 +299,7 @@ theorem continuousOn_schwarzChristoffelBoundary_Icc (a e : ι → ℝ)
   · exact hp
   rcases eq_or_lt_of_le hx.2 with rfl | hxq
   · exact hq
-  have hzero : ∑ i with a i = x, e i = 0 := by
-    apply Finset.sum_eq_zero
-    intro i hi
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi
-    by_contra hei
-    exact ha i hei ⟨hi ▸ hpx, hi ▸ hxq⟩
-  rw [hzero]
+  rw [sum_filter_eq_zero_of_mem_Ioo a e ha ⟨hpx, hxq⟩]
   norm_num
 
 end TauCeti

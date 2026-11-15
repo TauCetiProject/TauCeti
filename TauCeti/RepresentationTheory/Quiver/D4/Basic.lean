@@ -42,9 +42,8 @@ and its Euler and Tits forms, with the twelve positive roots they cut out, in
 
 ## References
 
-This file supplies the vertex and arrow data of the “`D₄` quiver” worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, alongside the generalized
-Kronecker quiver of `TauCeti.RepresentationTheory.Quiver.Kronecker.Basic`. See Derksen--Weyman,
+The orientation used here is `outer i ⟶ center`, with all three arrows pointing into the central
+sink. For background on Dynkin quivers, see Derksen--Weyman,
 *An Introduction to Quiver Representations*, and Assem--Simson--Skowroński, *Elements of the
 Representation Theory of Associative Algebras I*, Ch. II.
 -/
@@ -149,11 +148,11 @@ theorem isEmpty_hom_to_outer (a : D4) (i : Fin 3) : IsEmpty (a ⟶ outer i) := b
 
 /-- The centre is a sink: every arrow of `D₄` ends there. -/
 theorem isSink_center : IsSink center :=
-  (IsSink_def _).mpr isEmpty_hom_from_center
+  (isSink_iff _).mpr isEmpty_hom_from_center
 
 /-- Each outer vertex is a source: every arrow of `D₄` starts at one. -/
 theorem isSource_outer (i : Fin 3) : IsSource (outer i) :=
-  (IsSource_def _).mpr fun a => isEmpty_hom_to_outer a i
+  (isSource_iff _).mpr fun a => isEmpty_hom_to_outer a i
 
 instance instFintypeHom : ∀ a b : D4, Fintype (a ⟶ b)
   | .center, .center => Fintype.ofIsEmpty

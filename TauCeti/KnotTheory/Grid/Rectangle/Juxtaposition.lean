@@ -45,9 +45,7 @@ The following results are in the `TauCeti.GridRectangle` namespace:
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3, "The complexes and
-`∂² = 0`", specifically the overlapping-rectangle case of the juxtaposition proof. The cut
-follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.6.
+The cut follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.6.
 -/
 
 public section

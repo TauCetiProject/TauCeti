@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Compact
+import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
 import TauCeti.MeasureTheory.OptimalTransport.Duality.Attainment
-import TauCeti.MeasureTheory.OptimalTransport.Existence
+import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 
 /-!
 # Kantorovich duality for lower-semicontinuous costs
@@ -28,6 +29,9 @@ decreasing sequence of nonempty closed subsets of the compact coupling set. A pl
 intersection has `c`-cost bounded by the supremum of the approximate optimal values. Applying
 continuous compact duality at every approximation then identifies the original transport cost
 with the supremum of the positive parts of the values of continuous dual-feasible potentials.
+On Polish spaces the approximations are bounded and Lipschitz, so their certifying potentials,
+being conjugate to each other, are bounded and uniformly continuous; the supremum may therefore
+be restricted to bounded continuous potentials.
 
 ## Main statements
 
@@ -38,6 +42,8 @@ with the supremum of the positive parts of the values of continuous dual-feasibl
   the same result as an equality with the supremum of the continuous dual values.
 * `TauCeti.isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous` — strong
   Kantorovich duality on Polish spaces, with the supremum taken over integrable feasible pairs.
+* `TauCeti.isLUB_ofReal_kantorovichDualValue_boundedContinuous_of_lowerSemicontinuous` — the same
+  duality with the supremum taken over feasible pairs of bounded continuous functions.
 
 ## References
 
@@ -54,7 +60,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set
-open scoped ENNReal NNReal Topology
+open scoped BoundedContinuousFunction ENNReal NNReal Topology
 
 namespace TauCeti
 
@@ -79,7 +85,8 @@ primal value `∞`, in which case the continuous dual values are unbounded rathe
 real supremum. -/
 theorem isLUB_ofReal_kantorovichDualValue_continuous_of_lowerSemicontinuous
     (hc : LowerSemicontinuous c) :
-    IsLUB {r : ℝ≥0∞ | ∃ φ ψ, Continuous φ ∧ Continuous ψ ∧ DualFeasible c φ ψ ∧
+    IsLUB {r : ℝ≥0∞ | ∃ φ ψ, Continuous φ ∧ Continuous ψ ∧
+      DualFeasible (fun z ↦ (c z : EReal)) φ ψ ∧
       ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} (transportCost c μ ν) := by
   let : PseudoMetricSpace X := TopologicalSpace.pseudoMetrizableSpacePseudoMetric X
   let : PseudoMetricSpace Y := TopologicalSpace.pseudoMetrizableSpacePseudoMetric Y
@@ -108,8 +115,9 @@ theorem isLUB_ofReal_kantorovichDualValue_continuous_of_lowerSemicontinuous
       (isLUB_kantorovichDualValue_continuous
         (μ := μ) (ν := ν) hcn_cont hcn_nonneg).2 fun r hr ↦ by
           obtain ⟨φ, ψ, hφ, hψ, hfeas, rfl⟩ := hr
-          have hfeas' : DualFeasible c φ ψ :=
-            ((dualFeasible_ofReal_iff hcn_nonneg φ ψ).2 hfeas).mono_cost hcn_le
+          have hfeas' : DualFeasible (fun z ↦ (c z : EReal)) φ ψ :=
+            ((dualFeasible_ofReal_iff hcn_nonneg φ ψ).2 hfeas).mono_cost
+              fun z ↦ EReal.coe_ennreal_le_coe_ennreal_iff.2 (hcn_le z)
           exact (ENNReal.ofReal_le_iff_le_toReal hbtop).1
             (hb ⟨φ, ψ, hφ, hψ, hfeas', rfl⟩)
     have hcost_ne_top : transportCost (fun z ↦ ENNReal.ofReal (cn z)) μ ν ≠ ∞ :=
@@ -125,7 +133,8 @@ values. This formulation remains meaningful when the common value is `∞`. -/
 theorem transportCost_eq_sSup_ofReal_kantorovichDualValue_continuous_of_lowerSemicontinuous
     (hc : LowerSemicontinuous c) :
     transportCost c μ ν = sSup {r : ℝ≥0∞ | ∃ φ ψ, Continuous φ ∧ Continuous ψ ∧
-      DualFeasible c φ ψ ∧ ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} :=
+      DualFeasible (fun z ↦ (c z : EReal)) φ ψ ∧
+      ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} :=
   (isLUB_ofReal_kantorovichDualValue_continuous_of_lowerSemicontinuous hc).sSup_eq.symm
 
 end Compact
@@ -143,7 +152,8 @@ dual values only: an unbounded lower-semicontinuous cost need not have an integr
 optimizer. -/
 theorem isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous
     (hc : LowerSemicontinuous c) :
-    IsLUB {r : ℝ≥0∞ | ∃ φ ψ, Integrable φ μ ∧ Integrable ψ ν ∧ DualFeasible c φ ψ ∧
+    IsLUB {r : ℝ≥0∞ | ∃ φ ψ, Integrable φ μ ∧ Integrable ψ ν ∧
+      DualFeasible (fun z ↦ (c z : EReal)) φ ψ ∧
       ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} (transportCost c μ ν) := by
   let : PseudoMetricSpace X := TopologicalSpace.pseudoMetrizableSpacePseudoMetric X
   let : PseudoMetricSpace Y := TopologicalSpace.pseudoMetrizableSpacePseudoMetric Y
@@ -161,8 +171,9 @@ theorem isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous
       ⟨n, forall_mem_range.2 (lscApproxAux_le_natCast c n)⟩
     obtain ⟨π, φ, ψ, h, -⟩ :=
       exists_isDualCertificate_of_continuous (μ := μ) (ν := ν) hcn_cont hcn_nonneg hcn_bdd
-    have hfeas : DualFeasible c φ ψ :=
-      h.dualFeasible.mono_cost fun z ↦ ofReal_lscApproxAux_le c n z
+    have hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ :=
+      h.dualFeasible.mono_cost fun z ↦
+        EReal.coe_ennreal_le_coe_ennreal_iff.2 (ofReal_lscApproxAux_le c n z)
     have hle := hb ⟨φ, ψ, h.integrable_left, h.integrable_right, hfeas, rfl⟩
     rw [← h.transportCost_eq] at hle
     simpa only [cn, coe_lscApprox_apply] using hle
@@ -172,8 +183,50 @@ positive parts of all integrable dual values. -/
 theorem transportCost_eq_sSup_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous
     (hc : LowerSemicontinuous c) :
     transportCost c μ ν = sSup {r : ℝ≥0∞ | ∃ φ ψ, Integrable φ μ ∧ Integrable ψ ν ∧
-      DualFeasible c φ ψ ∧ ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} :=
+      DualFeasible (fun z ↦ (c z : EReal)) φ ψ ∧
+      ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} :=
   (isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous hc).sSup_eq.symm
+
+/-- **Kantorovich duality over bounded continuous potentials on Polish spaces.** The primal
+transport cost of a nonnegative lower-semicontinuous cost is the least upper bound, in `ℝ≥0∞`, of
+the positive parts of the values of dual-feasible pairs of bounded continuous functions. Both the
+cost and the common value may be infinite.
+
+The bounded continuous pairs form a smaller class than the integrable ones of
+`TauCeti.isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous`, so this is the
+stronger statement. Bounded continuous potentials are the ones that can be tested against weakly
+convergent families of measures. -/
+theorem isLUB_ofReal_kantorovichDualValue_boundedContinuous_of_lowerSemicontinuous
+    (hc : LowerSemicontinuous c) :
+    IsLUB {r : ℝ≥0∞ | ∃ (φ : X →ᵇ ℝ) (ψ : Y →ᵇ ℝ), DualFeasible (fun z ↦ (c z : EReal)) φ ψ ∧
+      ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} (transportCost c μ ν) := by
+  let : PseudoMetricSpace X := TopologicalSpace.pseudoMetrizableSpacePseudoMetric X
+  let : PseudoMetricSpace Y := TopologicalSpace.pseudoMetrizableSpacePseudoMetric Y
+  have : Nonempty X := nonempty_of_isProbabilityMeasure μ
+  have : Nonempty Y := nonempty_of_isProbabilityMeasure ν
+  constructor
+  · rintro r ⟨φ, ψ, hfeas, rfl⟩
+    exact hfeas.ofReal_kantorovichDualValue_le_transportCost (φ.integrable μ) (ψ.integrable ν)
+  · intro b hb
+    rw [transportCost_eq_iSup_transportCost_lscApprox
+      isTightMeasureSet_singleton isTightMeasureSet_singleton hc]
+    refine iSup_le fun n ↦ ?_
+    let cn : X × Y → ℝ := lscApproxAux c n
+    have hcn_nonneg : ∀ z, 0 ≤ cn z := lscApproxAux_nonneg c n
+    obtain ⟨π, φ, ψ, h, hφ, hψ⟩ := exists_isDualCertificate_of_continuous (μ := μ) (ν := ν)
+      (continuous_lscApproxAux c n) hcn_nonneg
+      ⟨n, forall_mem_range.2 (lscApproxAux_le_natCast c n)⟩
+    -- The certifying potentials are `cn`-conjugate, hence bounded and uniformly continuous for
+    -- the chosen metrics, which induce the given topologies by construction (`replaceTopology`).
+    obtain ⟨φ', ψ', rfl, rfl⟩ := exists_boundedContinuousFunction_of_eq_iInf_sub
+      (lipschitzWith_lscApproxAux c n).uniformContinuous hcn_nonneg (lscApproxAux_le_natCast c n)
+      hφ hψ
+    have hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ' ψ' :=
+      h.dualFeasible.mono_cost fun z ↦
+        EReal.coe_ennreal_le_coe_ennreal_iff.2 (ofReal_lscApproxAux_le c n z)
+    have hle := hb ⟨φ', ψ', hfeas, rfl⟩
+    rw [← h.transportCost_eq] at hle
+    simpa only [cn, coe_lscApprox_apply] using hle
 
 end Polish
 

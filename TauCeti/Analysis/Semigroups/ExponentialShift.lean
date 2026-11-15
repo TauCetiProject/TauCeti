@@ -28,11 +28,10 @@ open scoped NNReal
 
 namespace TauCeti.Semigroups
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
 namespace StronglyContinuousSemigroup
 
-omit [CompleteSpace X] in
 /-- The exponential shift of a C₀-semigroup by `lambda`.
 
 At nonnegative time `t`, this is the semigroup `exp (-lambda t) • S(t)`.  It shifts
@@ -59,20 +58,17 @@ def expShift (S : StronglyContinuousSemigroup X) (lambda : ℝ) :
     have h_orbit := S.continuousAt_zero_tendsto x
     simpa [ContinuousAt, S.map_zero_apply] using h_exp.smul h_orbit
 
-omit [CompleteSpace X] in
 /-- The native nonnegative-time operator of the exponential shift. -/
 @[simp]
 theorem expShift_apply (S : StronglyContinuousSemigroup X) (lambda : ℝ) (t : ℝ≥0) :
     S.expShift lambda t = Real.exp (-(lambda * (t : ℝ))) • S t := by
   rw [expShift]; rfl
 
-omit [CompleteSpace X] in
 /-- Pointwise form of `StronglyContinuousSemigroup.expShift_apply`. -/
 theorem expShift_apply_apply (S : StronglyContinuousSemigroup X) (lambda : ℝ) (t : ℝ≥0) (x : X) :
     S.expShift lambda t x = Real.exp (-(lambda * (t : ℝ))) • S t x :=
   by rw [expShift_apply, smul_apply]
 
-omit [CompleteSpace X] in
 /-- The zero exponential shift is the original semigroup. -/
 @[simp]
 theorem expShift_zero (S : StronglyContinuousSemigroup X) :
@@ -80,7 +76,6 @@ theorem expShift_zero (S : StronglyContinuousSemigroup X) :
   ext t x
   simp
 
-omit [CompleteSpace X] in
 /-- Successive exponential shifts add their parameters. -/
 @[simp]
 theorem expShift_expShift (S : StronglyContinuousSemigroup X) (lambda μ : ℝ) :
@@ -91,7 +86,6 @@ theorem expShift_expShift (S : StronglyContinuousSemigroup X) (lambda μ : ℝ) 
   congr 1
   ring_nf
 
-omit [CompleteSpace X] in
 /-- Real-time form of the shifted operator at nonnegative times. -/
 theorem expShift_realOperator_of_nonneg (S : StronglyContinuousSemigroup X)
     (lambda t : ℝ) (ht : 0 ≤ t) :
@@ -99,7 +93,6 @@ theorem expShift_realOperator_of_nonneg (S : StronglyContinuousSemigroup X)
   have ht_coe : ((t.toNNReal : ℝ) = t) := Real.coe_toNNReal t ht
   rw [← ht_coe, realOperator_coe, realOperator_coe, expShift_apply]
 
-omit [CompleteSpace X] in
 /-- Pointwise real-time form of the shifted operator at nonnegative times. -/
 theorem expShift_realOperator_apply_of_nonneg (S : StronglyContinuousSemigroup X)
     (lambda t : ℝ) (ht : 0 ≤ t) (x : X) : (S.expShift lambda).realOperator t x =
@@ -109,7 +102,6 @@ theorem expShift_realOperator_apply_of_nonneg (S : StronglyContinuousSemigroup X
 
 namespace HasGrowthBound
 
-omit [CompleteSpace X] in
 /-- Exponential shifting subtracts the shift parameter from the growth exponent. -/
 theorem expShift {S : StronglyContinuousSemigroup X} {ω M lambda : ℝ}
     (hb : S.HasGrowthBound ω M) : (S.expShift lambda).HasGrowthBound (ω - lambda) M := by
@@ -130,7 +122,6 @@ theorem expShift {S : StronglyContinuousSemigroup X} {ω M lambda : ℝ}
 
 end HasGrowthBound
 
-omit [CompleteSpace X] in
 /-- A semigroup with growth bound `(lambda, 1)` becomes a contraction semigroup after
 exponential shifting by `lambda`. -/
 def expShiftContraction (S : StronglyContinuousSemigroup X) (lambda : ℝ)
@@ -143,7 +134,6 @@ def expShiftContraction (S : StronglyContinuousSemigroup X) (lambda : ℝ)
     rw [sub_self, zero_mul, Real.exp_zero, mul_one] at hbound
     exact hbound
 
-omit [CompleteSpace X] in
 /-- The C₀-semigroup underlying `expShiftContraction` is the exponential shift. -/
 @[simp]
 theorem expShiftContraction_toStronglyContinuousSemigroup
@@ -151,7 +141,6 @@ theorem expShiftContraction_toStronglyContinuousSemigroup
     (S.expShiftContraction lambda hb).toStronglyContinuousSemigroup = S.expShift lambda := by
   rw [expShiftContraction]
 
-omit [CompleteSpace X] in
 /-- Native operator formula for `expShiftContraction`. -/
 @[simp]
 theorem expShiftContraction_apply (S : StronglyContinuousSemigroup X) (lambda : ℝ)

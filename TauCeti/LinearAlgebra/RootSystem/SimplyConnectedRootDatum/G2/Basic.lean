@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
+import Mathlib.LinearAlgebra.Matrix.Dual
 
 /-!
 # The simply connected root datum of type G2
@@ -56,11 +57,7 @@ also make the reflection-stability axioms of `RootPairing` decidable finite calc
 ## References
 
 The coordinates and numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*,
-Plate IX. This is the `G2` branch of Layer 6 in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, following the target signatures in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/Suggested.lean`. The positive-root count is the
-corresponding clause of the `G₂` worked example in the "Worked examples (acceptance criteria)"
-section of that README; it agrees with the count in Bourbaki, Plate IX.
+Plate IX. The positive-root count agrees with the count in Bourbaki, Plate IX.
 -/
 
 public section

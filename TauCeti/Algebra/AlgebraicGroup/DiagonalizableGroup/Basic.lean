@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
-public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
+public import TauCeti.Algebra.Polynomial.Laurent.Basic
 
 /-!
 # The diagonalizable group and its character functor of points
@@ -15,7 +15,7 @@ public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
 For a commutative group `G`, the group algebra `R[G]` is a commutative Hopf algebra in which
 every group element `g` is group-like (`Δ(single g 1) = single g 1 ⊗ single g 1`,
 `ε(single g 1) = 1`, antipode `single g 1 ↦ single g⁻¹ 1`). The associated affine group
-scheme `Spec R[G]` is the *diagonalizable group* `D(G)` of the reductive-groups roadmap.
+scheme `Spec R[G]` is the *diagonalizable group* `D(G)`.
 
 This file records the functor-of-points calculation for `D(G)`: for every commutative
 `R`-algebra `A`, the convolution group of `R`-algebra homomorphisms `R[G] →ₐ[R] A` is the
@@ -25,15 +25,10 @@ inverse `f (single g⁻¹ 1)`), and a character `χ` is sent to the algebra map 
 `MonoidAlgebra.lift`.
 
 Specializing to `G = Multiplicative ℤ` recovers the multiplicative group `𝔾ₘ` on the
-group-algebra presentation `R[Multiplicative ℤ]`: the character read from a point is its value
-on the generator, and this agrees with the canonical Laurent-polynomial `𝔾ₘ` of
-`TauCeti.MultiplicativeGroup` after precomposition by
-`AddMonoidAlgebra.toMultiplicativeAlgEquiv`.
-
-This is a worked-example check for the reductive-groups roadmap (Layer 4, "diagonalizable
-groups and groups of multiplicative type: the anti-equivalence `M ↦ D(M) = Spec k[M]`", and
-the Layer 0 target "R-points as a group"), in the same spirit as the existing multiplicative
-group `𝔾ₘ`.
+group-algebra presentation `R[Multiplicative ℤ]`. A character is determined by its value on
+the generator. For an algebra map, this unit agrees with the one read by
+`TauCeti.laurentEvalEquiv` from `TauCeti.Algebra.Polynomial.Laurent.Basic` after precomposition
+by `AddMonoidAlgebra.toMultiplicativeAlgEquiv`.
 
 ## Main definitions
 
@@ -43,9 +38,9 @@ group `𝔾ₘ`.
   characters `G →* Aˣ`.
 * `TauCeti.DiagonalizableGroup.pointsMulEquiv`: the same equivalence as a multiplicative
   equivalence from the convolution group of points to the character group.
-* `TauCeti.DiagonalizableGroup.multiplicativeGroup_pointEquiv_apply`: the bridge from the
-  `G = Multiplicative ℤ` specialization to the canonical Laurent-polynomial `𝔾ₘ` API of
-  `TauCeti.MultiplicativeGroup`.
+* `TauCeti.DiagonalizableGroup.charOfPoint_ofAdd_one`: the bridge from the
+  `G = Multiplicative ℤ` specialization to the Laurent evaluation equivalence
+  `TauCeti.laurentEvalEquiv`.
 
 ## References
 
@@ -54,8 +49,7 @@ The Hopf algebra structure on a group algebra is Mathlib's
 Livingston's monoid-algebra formalization), and `MonoidAlgebra.lift` is its universal
 property. The convolution group of points and its antipode-driven inverse are Tau Ceti's
 `TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints`, built on the Mathlib convolution monoid of
-Yaël Dillies, Michał Mrugała and Yunzhou Xie. This realizes the diagonalizable-group worked
-example of the Tau Ceti reductive-groups roadmap (Layer 4 and Layer 0).
+Yaël Dillies, Michał Mrugała and Yunzhou Xie.
 -/
 
 public section
@@ -196,9 +190,9 @@ theorem pointsMulEquiv_symm_apply (χ : G →* Aˣ) :
 /-! ### The multiplicative group `𝔾ₘ` as `D(Multiplicative ℤ)`
 
 Specializing to `G = Multiplicative ℤ` recovers the multiplicative group on the group-algebra
-presentation `R[Multiplicative ℤ]`. The canonical `𝔾ₘ` points API remains
-`TauCeti.MultiplicativeGroup.pointEquiv` for Laurent polynomials; the theorem below records how
-the group-algebra presentation compares to it through
+presentation `R[Multiplicative ℤ]`. The equivalence `TauCeti.laurentEvalEquiv` in
+`TauCeti.Algebra.Polynomial.Laurent.Basic` identifies Laurent algebra maps with units.
+The theorem below compares these presentations through
 `AddMonoidAlgebra.toMultiplicativeAlgEquiv`. -/
 
 /-- Evaluating `AddMonoidAlgebra.toMultiplicativeAlgEquiv` on the Laurent generator `T n`:
@@ -210,19 +204,16 @@ private theorem toMultiplicativeAlgEquiv_T (n : ℤ) :
     AddMonoidAlgebra.toMultiplicative, Equiv.coe_fn_mk, LaurentPolynomial.T,
     AddMonoidAlgebra.coeff_single, Finsupp.mapDomain_single, MonoidAlgebra.ofCoeff_single]
 
-/-- The group-algebra presentation of `D(Multiplicative ℤ)` agrees with the
-Laurent-polynomial multiplicative group `𝔾ₘ` of `TauCeti.MultiplicativeGroup`: reading a point
-on the generator `single (ofAdd 1) 1` gives the same unit as first precomposing it with
-`AddMonoidAlgebra.toMultiplicativeAlgEquiv` and then using the canonical
-`TauCeti.MultiplicativeGroup.pointEquiv`. -/
-theorem multiplicativeGroup_pointEquiv_apply
+/-- Reading the unit from a `D(Multiplicative ℤ)`-point at `single (ofAdd 1) 1` agrees with
+`TauCeti.laurentEvalEquiv.symm` after precomposition by
+`AddMonoidAlgebra.toMultiplicativeAlgEquiv`. -/
+theorem charOfPoint_ofAdd_one
     (f : MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A) :
     charOfPoint f (Multiplicative.ofAdd 1) =
-      MultiplicativeGroup.pointEquiv
+      laurentEvalEquiv.symm
         (f.comp (AddMonoidAlgebra.toMultiplicativeAlgEquiv (R := R) R ℤ).toAlgHom) := by
   ext
-  rw [charOfPoint_apply_coe, MultiplicativeGroup.pointEquiv_apply,
-    MultiplicativeGroup.unitOfPoint_val, AlgHom.comp_apply]
+  rw [charOfPoint_apply_coe, laurentEvalEquiv_symm_apply, AlgHom.comp_apply]
   congr 1
   exact (toMultiplicativeAlgEquiv_T 1).symm
 

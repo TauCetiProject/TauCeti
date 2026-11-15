@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.Instances.Quotient
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Topology.Algebra.GroupAction.FreeLocus
+public import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
 # Quotient manifolds of free properly discontinuous actions
@@ -41,6 +42,22 @@ an open invariant subset. The free locus inherits the charts of the ambient mani
   `C^n` maps on a `C^n` manifold is a `C^n` manifold.
 * `TauCeti.isLocalDiffeomorph_quotientMk`: the orbit projection is a `C^n` local
   diffeomorphism.
+* `TauCeti.instIsManifoldAddQuotient`, `TauCeti.isLocalDiffeomorph_addQuotientMk`: the same for
+  additive actions, on Mathlib's additive orbit space `AddAction.orbitRel.Quotient`.
+* `TauCeti.mfderiv_quotientMk_smul_apply`: the derivative of the orbit projection is invariant
+  under the derivatives of the group elements.
+* `TauCeti.exists_trans_eq_of_mem_atlas_quotient`,
+  `TauCeti.exists_trans_eq_of_mem_atlas_addQuotient`: every chart of the orbit space is a local
+  section of the orbit projection followed by a chart of `M`.
+* `TauCeti.exists_symm_eq_quotientMk_of_mem_atlas_quotient`,
+  `TauCeti.exists_symm_eq_addQuotientMk_of_mem_atlas_addQuotient`: so the inverse of every chart
+  of the orbit space is the inverse of a chart of `M` followed by the orbit projection.
+* `TauCeti.symm_eq_quotientMk_of_mem_atlas_quotient`,
+  `TauCeti.quotientMk_apply_of_mem_atlas_quotient`, `TauCeti.chartAt_quotient_symm_eq_quotientMk`,
+  `TauCeti.comp_chartAt_quotient_symm_eventuallyEq`, `TauCeti.eventuallyEq_comp_chartAt_quotient`
+  and their additive versions: for an action on the model space itself, the inverse of every chart
+  of the orbit space is the orbit projection, so a function on the orbit space read in a chart is
+  its pullback.
 * `TauCeti.freeLocus.instChartedSpace`, `TauCeti.freeLocus.instIsManifold` and
   `TauCeti.freeLocus.instContMDiffConstSMul`: the free locus of a properly discontinuous action
   is an open submanifold on which the group acts by `C^n` maps.
@@ -71,17 +88,20 @@ private theorem contMDiffAt_localInverseAt_comp
     (hdeck : ∀ z w, f z = f w → ∃ φ : M → M, ContMDiffAt I I n φ z ∧ φ z = w ∧ f ∘ φ =ᶠ[𝓝 z] f)
     {x z : M} (hz : f z ∈ (hf.localInverseAt x).source) :
     ContMDiffAt I I n (hf.localInverseAt x ∘ f) z := by
-  set L := hf.localInverseAt x
-  obtain ⟨φ, hφ, hφz, hfφ⟩ := hdeck z (L (f z)) (hf.apply_localInverseAt_of_mem hz).symm
-  have hmem : ∀ᶠ z' in 𝓝 z, φ z' ∈ L.target :=
-    hφ.continuousAt.preimage_mem_nhds (hφz ▸ L.open_target.mem_nhds (L.map_source hz))
-  refine hφ.congr_of_eventuallyEq ?_
-  filter_upwards [hmem, hfφ] with z' hz' hfz'
-  have hL : L (L.symm (φ z')) = φ z' := L.right_inv hz'
-  rw [hf.localInverseAt_symm] at hL
-  simpa [← hfz'] using hL
+  obtain ⟨φ, hφ, hφz, hfφ⟩ :=
+    hdeck z (hf.localInverseAt x (f z)) (hf.apply_localInverseAt_of_mem hz).symm
+  exact hφ.congr_of_eventuallyEq
+    (hf.localInverseAt_comp_eventuallyEq hφ.continuousAt (hφz ▸ (hf.localInverseAt x).map_source hz)
+      hfφ)
 
 variable {g : M' → M} (hg : Function.RightInverse g f)
+
+/-- The charts that `f` pushes forward from `M` are the local inverses of `f` at the points chosen
+by the right inverse `g`, followed by the charts of `M` at those points. -/
+theorem atlas_chartedSpaceOfRightInverse :
+    letI := hf.chartedSpaceOfRightInverse (H := H) hg
+    atlas H M' = range fun q ↦ (hf.localInverseAt (g q)).trans (chartAt H (g q)) :=
+  rfl
 
 /-- The charts that a local homeomorphism `f` with `C^n` local deck transformations pushes forward
 from a `C^n` manifold form a `C^n` manifold. -/
@@ -195,6 +215,7 @@ variable [ContMDiffConstSMul I n G M]
 
 /-- Two points in one orbit are related by the action of a group element, a `C^n` deck
 transformation of the orbit projection. -/
+@[to_additive addQuotientMk_deck]
 private theorem quotientMk_deck (z w : M)
     (h : (Quotient.mk (MulAction.orbitRel G M) z) = Quotient.mk (MulAction.orbitRel G M) w) :
     ∃ φ : M → M, ContMDiffAt I I n φ z ∧ φ z = w ∧
@@ -206,8 +227,45 @@ private theorem quotientMk_deck (z w : M)
 variable [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M] [IsCancelSMul G M] [T2Space M]
   [LocallyCompactSpace M]
 
+/-- A chart of the orbit space of a free, properly discontinuous action is a local section of the
+orbit projection followed by a chart of `M`. -/
+@[to_additive exists_trans_eq_of_mem_atlas_addQuotient /-- A chart of the orbit space of a free,
+properly discontinuous additive action is a local section of the orbit projection followed by a
+chart of `M`. -/]
+theorem exists_trans_eq_of_mem_atlas_quotient
+    {e : OpenPartialHomeomorph (MulAction.orbitRel.Quotient G M) H}
+    (he : e ∈ atlas H (MulAction.orbitRel.Quotient G M)) :
+    ∃ (s : OpenPartialHomeomorph (MulAction.orbitRel.Quotient G M) M) (z : M),
+      s.trans (chartAt H z) = e ∧ ∀ x ∈ s.source, Quotient.mk _ (s x) = x := by
+  have hf := (isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul (G := G)
+    (E := M)).isCoveringMap.isLocalHomeomorph
+  rw [hf.atlas_chartedSpaceOfRightInverse Quotient.mk_surjective.hasRightInverse.choose_spec] at he
+  obtain ⟨q, rfl⟩ := he
+  exact ⟨_, _, rfl, fun x hx ↦ hf.apply_localInverseAt_of_mem hx⟩
+
+/-- The inverse of a chart of the orbit space of a free, properly discontinuous action is the
+inverse of a chart of `M` followed by the orbit projection. -/
+@[to_additive exists_symm_eq_addQuotientMk_of_mem_atlas_addQuotient /-- The inverse of a chart of
+the orbit space of a free, properly discontinuous additive action is the inverse of a chart of `M`
+followed by the orbit projection. -/]
+theorem exists_symm_eq_quotientMk_of_mem_atlas_quotient
+    {e : OpenPartialHomeomorph (MulAction.orbitRel.Quotient G M) H}
+    (he : e ∈ atlas H (MulAction.orbitRel.Quotient G M)) :
+    ∃ z : M, ∀ w ∈ e.target, w ∈ (chartAt H z).target ∧
+      e.symm w = Quotient.mk _ ((chartAt H z).symm w) := by
+  obtain ⟨s, z, rfl, hs⟩ := exists_trans_eq_of_mem_atlas_quotient he
+  refine ⟨z, fun w hw ↦ ?_⟩
+  rw [OpenPartialHomeomorph.trans_target] at hw
+  refine ⟨hw.1, ?_⟩
+  -- The local section `s` is inverse to the orbit projection on its source.
+  rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.coe_trans,
+    Function.comp_apply, ← hs _ (s.map_target hw.2), s.right_inv hw.2]
+
 /-- The orbit space of a free, properly discontinuous action by `C^n` maps on a `C^n` manifold is a
 `C^n` manifold, for the charts pushed forward along the orbit projection. -/
+@[to_additive instIsManifoldAddQuotient /-- The orbit space of a free, properly discontinuous
+additive action by `C^n` maps on a `C^n` manifold is a `C^n` manifold, for the charts pushed
+forward along the orbit projection. -/]
 instance instIsManifoldQuotient [IsManifold I n M] :
     IsManifold I n (MulAction.orbitRel.Quotient G M) :=
   (isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul (G := G) (E := M)).isCoveringMap
@@ -216,13 +274,108 @@ instance instIsManifoldQuotient [IsManifold I n M] :
 
 /-- The orbit projection of a free, properly discontinuous action by `C^n` maps on a `C^n` manifold
 is a `C^n` local diffeomorphism. -/
+@[to_additive isLocalDiffeomorph_addQuotientMk /-- The orbit projection of a free, properly
+discontinuous additive action by `C^n` maps on a `C^n` manifold is a `C^n` local
+diffeomorphism. -/]
 theorem isLocalDiffeomorph_quotientMk [IsManifold I n M] :
     IsLocalDiffeomorph I I n (Quotient.mk (MulAction.orbitRel G M)) :=
   (isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul (G := G) (E := M)).isCoveringMap
     |>.isLocalHomeomorph |>.isLocalDiffeomorph_chartedSpaceOfRightInverse
       Quotient.mk_surjective.hasRightInverse.choose_spec (quotientMk_deck (G := G) (M := M))
 
+/-- The derivative of the orbit projection at `g • x`, applied to the derivative of `g • ·` at
+`x`, is the derivative of the orbit projection at `x`: the orbit projection is invariant. -/
+@[to_additive mfderiv_addQuotientMk_vadd_apply /-- The derivative of the additive orbit projection
+at `g +ᵥ x`, applied to the derivative of `g +ᵥ ·` at `x`, is the derivative of the orbit
+projection at `x`: the orbit projection is invariant. -/]
+theorem mfderiv_quotientMk_smul_apply (hn : n ≠ 0) {g : G} {x : M}
+    (hq : MDifferentiableAt I I (Quotient.mk (MulAction.orbitRel G M)) (g • x))
+    (v : TangentSpace I x) :
+    mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) (g • x)
+        (mfderiv I I (g • · : M → M) x v) =
+      mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) x v := by
+  have hinv : Quotient.mk (MulAction.orbitRel G M) ∘ (g • · : M → M) =
+      Quotient.mk (MulAction.orbitRel G M) :=
+    funext fun y ↦ Quotient.sound ⟨g, rfl⟩
+  rw [← ContinuousLinearMap.comp_apply, ← mfderiv_comp x hq
+    ((contMDiff_const_smul (I := I) (n := n) g).mdifferentiable hn x), hinv]
+  -- The two sides differ only in how the tangent space at the orbit of `x` is written.
+  rfl
+
 end Quotient
+
+section QuotientSelf
+
+/-! ### Orbit spaces of actions on the model space
+
+When the action is on the model space `H` itself, with its identity chart, the inverse of every
+chart of the orbit space is the orbit projection on the chart target. So a function on the orbit
+space, read in a chart, is its pullback to `H`. -/
+
+variable [MulAction G H] [ProperlyDiscontinuousSMul G H]
+  [ContinuousConstSMul G H] [IsCancelSMul G H] [T2Space H] [LocallyCompactSpace H]
+
+/-- The inverse of a chart of the orbit space of an action on the model space is the orbit
+projection on the chart target. -/
+@[to_additive symm_eq_addQuotientMk_of_mem_atlas_addQuotient /-- The inverse of a chart of the
+orbit space of an additive action on the model space is the orbit projection on the chart
+target. -/]
+theorem symm_eq_quotientMk_of_mem_atlas_quotient
+    {e : OpenPartialHomeomorph (MulAction.orbitRel.Quotient G H) H}
+    (he : e ∈ atlas H (MulAction.orbitRel.Quotient G H)) {w : H} (hw : w ∈ e.target) :
+    e.symm w = Quotient.mk (MulAction.orbitRel G H) w := by
+  obtain ⟨z, hz⟩ := exists_symm_eq_quotientMk_of_mem_atlas_quotient he
+  simpa [chartAt_self_eq] using (hz w hw).2
+
+/-- A chart of the orbit space of an action on the model space sends each point of its source to
+a representative of that point. -/
+@[to_additive addQuotientMk_apply_of_mem_atlas_addQuotient /-- A chart of the orbit space of an
+additive action on the model space sends each point of its source to a representative of that
+point. -/]
+theorem quotientMk_apply_of_mem_atlas_quotient
+    {e : OpenPartialHomeomorph (MulAction.orbitRel.Quotient G H) H}
+    (he : e ∈ atlas H (MulAction.orbitRel.Quotient G H)) {x : MulAction.orbitRel.Quotient G H}
+    (hx : x ∈ e.source) : Quotient.mk (MulAction.orbitRel G H) (e x) = x := by
+  rw [← symm_eq_quotientMk_of_mem_atlas_quotient he (e.map_source hx), e.left_inv hx]
+
+/-- The inverse of the chart at `x` of the orbit space of an action on the model space is the
+orbit projection on the chart target. -/
+@[to_additive chartAt_addQuotient_symm_eq_addQuotientMk /-- The inverse of the chart at `x` of
+the orbit space of an additive action on the model space is the orbit projection on the chart
+target. -/]
+theorem chartAt_quotient_symm_eq_quotientMk (x : MulAction.orbitRel.Quotient G H) {w : H}
+    (hw : w ∈ (chartAt H x).target) :
+    (chartAt H x).symm w = Quotient.mk (MulAction.orbitRel G H) w :=
+  symm_eq_quotientMk_of_mem_atlas_quotient (chart_mem_atlas H x) hw
+
+/-- The coordinate of `x` in its chart is a representative of `x`. -/
+@[to_additive (attr := simp) addQuotientMk_chartAt_self /-- The coordinate of `x` in its chart is
+a representative of `x`. -/]
+theorem quotientMk_chartAt_self (x : MulAction.orbitRel.Quotient G H) :
+    Quotient.mk (MulAction.orbitRel G H) (chartAt H x x) = x :=
+  quotientMk_apply_of_mem_atlas_quotient (chart_mem_atlas H x) (mem_chart_source H x)
+
+/-- Read in the chart at `x`, a function on the orbit space is its pullback to `H`. -/
+@[to_additive comp_chartAt_addQuotient_symm_eventuallyEq /-- Read in the chart at `x`, a function
+on the orbit space is its pullback to `H`. -/]
+theorem comp_chartAt_quotient_symm_eventuallyEq {F : Type*}
+    (f : MulAction.orbitRel.Quotient G H → F) (x : MulAction.orbitRel.Quotient G H) :
+    f ∘ (chartAt H x).symm =ᶠ[𝓝 (chartAt H x x)] f ∘ Quotient.mk (MulAction.orbitRel G H) := by
+  filter_upwards [(chartAt H x).open_target.mem_nhds
+    ((chartAt H x).map_source (mem_chart_source H x))] with w hw
+  simp [chartAt_quotient_symm_eq_quotientMk x hw]
+
+/-- Near `x`, a function on the orbit space is its pullback to `H` composed with the chart at
+`x`. -/
+@[to_additive eventuallyEq_comp_chartAt_addQuotient /-- Near `x`, a function on the orbit space is
+its pullback to `H` composed with the chart at `x`. -/]
+theorem eventuallyEq_comp_chartAt_quotient {F : Type*}
+    (f : MulAction.orbitRel.Quotient G H → F) (x : MulAction.orbitRel.Quotient G H) :
+    f =ᶠ[𝓝 x] (f ∘ Quotient.mk (MulAction.orbitRel G H)) ∘ chartAt H x := by
+  filter_upwards [(chartAt H x).open_source.mem_nhds (mem_chart_source H x)] with y hy
+  simp [quotientMk_apply_of_mem_atlas_quotient (chart_mem_atlas H x) hy]
+
+end QuotientSelf
 
 /-! ### The free locus -/
 

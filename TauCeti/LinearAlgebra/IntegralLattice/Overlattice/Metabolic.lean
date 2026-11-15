@@ -45,29 +45,17 @@ theorem isMetabolic_discriminantQuadraticModule_iff (hL : L.IsEven) :
         (L.intermediateCarrierOfDiscriminantSubgroup H) :=
       (L.isEven_intermediateCarrierOfDiscriminantSubgroup_iff hL H).2 hH'.1
     refine ⟨⟨L.intermediateCarrierOfDiscriminantSubgroup H, hEven⟩, ?_⟩
-    apply (hEven.isIntegral.toIntegralLattice.isUnimodular_def).2
-    rw [hEven.isIntegral.toIntegralLattice_carrier,
-      hEven.isIntegral.toIntegralLattice_dualCarrier]
     have hLag : L.discriminantBilinearModule.IsLagrangian H := by
       simpa only [L.discriminantQuadraticModule_toFiniteBilinearModule hL] using hH'.2
-    exact congrArg Subtype.val
-      ((L.dual_intermediateCarrierOfDiscriminantSubgroup_eq_self_iff H).2
-        hLag).symm
+    exact hEven.isIntegral.isUnimodular_toIntegralLattice_iff_dual_eq_self.mpr
+      ((L.dual_intermediateCarrierOfDiscriminantSubgroup_eq_self_iff H).mpr hLag)
   · rintro ⟨M, hM⟩
-    have hDual : IntermediateCarrier.dual M.1 = M.1 := by
-      apply Subtype.ext
-      have h := (M.2.isIntegral.toIntegralLattice.isUnimodular_def).1 hM
-      rw [M.2.isIntegral.toIntegralLattice_carrier,
-        M.2.isIntegral.toIntegralLattice_dualCarrier] at h
-      exact h.symm
     apply (L.discriminantQuadraticModule hL).isMetabolic_def.mpr
     refine ⟨L.discriminantSubgroup M.1,
       ((L.discriminantQuadraticModule hL).isLagrangian_def _).mpr ⟨?_, ?_⟩⟩
     · exact (IntermediateCarrier.isEven_iff_isIsotropic_discriminantSubgroup hL M.1).1 M.2
-    · have hLag : L.discriminantBilinearModule.IsLagrangian
-          (L.discriminantSubgroup M.1) :=
-        (IntermediateCarrier.dual_eq_self_iff_isLagrangian M.1).1 hDual
-      simpa only [L.discriminantQuadraticModule_toFiniteBilinearModule hL] using hLag
+    · simpa only [L.discriminantQuadraticModule_toFiniteBilinearModule hL] using
+        M.2.isIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian.mp hM
 
 end IntegralLattice
 

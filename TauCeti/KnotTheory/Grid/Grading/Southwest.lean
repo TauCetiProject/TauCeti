@@ -152,8 +152,6 @@ theorem JNumCenter_pointSet_eq_sum_southwestCount (x m : GridState n) :
   push_cast
   exact Finset.sum_congr rfl fun c _ => by
     have h := m.JNumCenterAt_add_add c (x c)
-    have h' : (m.JNumCenterAt c (x c) : ℤ) + c + x c = n + 2 * m.southwestCount c (x c) := by
-      exact_mod_cast h
     linarith
 
 end GridState
@@ -171,7 +169,7 @@ theorem alexanderTwoℤ_eq_sum_southwestCount (x : GridState n) :
       2 * ∑ c : Fin n, ((G.X.southwestCount c (x c) : ℤ) - G.O.southwestCount c (x c)) +
         ∑ c : Fin n, (G.O.southwestCount c (G.O c) : ℤ) -
           ∑ c : Fin n, (G.X.southwestCount c (G.X c) : ℤ) - ((n : ℤ) - 1) := by
-  simp only [alexanderTwoℤ_def, maslovOℤ_def, maslovXℤ_def, OSet, XSet,
+  simp only [alexanderTwoℤ_def, maslovOℤ_def, maslovXℤ_def, OSet_def, XSet_def,
     GridState.I_self_pointSet_eq_sum_southwestCount,
     GridState.JNumCenter_pointSet_eq_sum_southwestCount, Nat.cast_sum, Finset.sum_sub_distrib,
     Finset.sum_add_distrib, ← Finset.mul_sum]

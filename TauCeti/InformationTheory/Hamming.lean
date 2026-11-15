@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -25,8 +25,9 @@ wt(x + y) + #(supp x ∩ supp y) + #(supp x \ supp (x + y)) = wt x + wt y,
 ```
 
 where the last set consists of the coordinates at which `y` cancels `x`. It follows that weight is
-subadditive and is additive on words with disjoint supports. Scaling coordinatewise by `c`
-intersects the support with `supp c`.
+additive on words with disjoint supports; weight is also subadditive. Scaling coordinatewise by `c`
+intersects the support with `supp c`. The weight of an integer vector, and of its image in any
+additive group with one (such as its reduction modulo `n`), is at most the vector's sum of squares.
 
 The file also records that Hamming weight and distance on a function whose domain is a disjoint
 union split as sums over the two coordinate types. Weight also splits over a retained coordinate
@@ -109,6 +110,15 @@ theorem hammingDist_eq_ncard_support_sub [Fintype ι] [AddGroup A] [DecidableEq 
     (x y : ι → A) : hammingDist x y = (support (y - x)).ncard := by
   rw [hammingDist_eq_hammingNorm_sub', hammingNorm_eq_ncard_support]
 
+/-- Hamming weight is subadditive. -/
+theorem hammingNorm_add_le {β : ι → Type*} [Fintype ι] [∀ i, AddZeroClass (β i)]
+    [∀ i, DecidableEq (β i)] (x y : ∀ i, β i) :
+    hammingNorm (x + y) ≤ hammingNorm x + hammingNorm y := by
+  classical
+  refine (Finset.card_le_card fun i ↦ ?_).trans (Finset.card_union_le _ _)
+  simp only [Finset.mem_union, Finset.mem_filter_univ, Pi.add_apply]
+  grind [add_zero]
+
 section AddZeroClass
 
 variable [Fintype ι] [AddZeroClass A] [DecidableEq A]
@@ -128,12 +138,6 @@ theorem hammingNorm_add_add_ncard_inter_add_ncard_sdiff (x y : ι → A) :
   rw [hunion] at hdisj
   have hinter := Set.ncard_union_add_ncard_inter (support x) (support y)
   simp only [hammingNorm_eq_ncard_support]
-  omega
-
-/-- Hamming weight is subadditive. -/
-theorem hammingNorm_add_le (x y : ι → A) :
-    hammingNorm (x + y) ≤ hammingNorm x + hammingNorm y := by
-  have := hammingNorm_add_add_ncard_inter_add_ncard_sdiff x y
   omega
 
 /-- Words with disjoint supports have additive Hamming weight. -/
@@ -169,6 +173,25 @@ theorem hammingNorm_const {A : Type*} [Fintype ι] [Zero A] [DecidableEq A] (a :
     hammingNorm (Function.const ι a) = if a = 0 then 0 else Fintype.card ι := by
   by_cases ha : a = 0 <;> simp [hammingNorm, Function.const, ha]
 
+/-- The Hamming weight of an integer vector is bounded by its sum of squares. -/
+theorem hammingNorm_le_sum_sq [Fintype ι] (z : ι → ℤ) : (hammingNorm z : ℤ) ≤ ∑ i, z i ^ 2 := by
+  have hsum : ∑ i, (if z i ≠ 0 then (1 : ℤ) else 0) ≤ ∑ i, z i ^ 2 := by
+    apply Finset.sum_le_sum
+    intro i _
+    split_ifs with hz
+    · have := sq_pos_of_ne_zero hz
+      omega
+    · exact sq_nonneg _
+  simpa only [Finset.sum_boole, hammingNorm] using hsum
+
+/-- The Hamming weight of the image of an integer vector in any additive group with one, such as
+its reduction modulo `n`, is bounded by its sum of squares. -/
+theorem hammingNorm_intCast_le_sum_sq [Fintype ι] (R : Type*) [AddGroupWithOne R]
+    [DecidableEq R] (z : ι → ℤ) : (hammingNorm (fun i ↦ (z i : R)) : ℤ) ≤ ∑ i, z i ^ 2 :=
+  -- Casting coordinatewise sends `0` to `0`, so it cannot increase the Hamming weight.
+  (Nat.cast_le.mpr <| hammingNorm_comp_le_hammingNorm (fun _ ↦ Int.cast) fun _ ↦
+    Int.cast_zero).trans (hammingNorm_le_sum_sq z)
+
 /-- The Hamming distance between two pairs of words combined on a disjoint union is the sum of
 the distances between the respective words. -/
 @[simp]
@@ -184,12 +207,8 @@ theorem hammingDist_sumRec [Fintype ι] [Fintype κ] [∀ z, DecidableEq (β z)]
 theorem hammingNorm_sumRec [Fintype ι] [Fintype κ] [∀ z, DecidableEq (β z)]
     [∀ z, Zero (β z)] (x : ∀ i, β (.inl i)) (y : ∀ j, β (.inr j)) :
     hammingNorm (Sum.rec (motive := β) x y) = hammingNorm x + hammingNorm y := by
-  have sumRec_zero :
-      Sum.rec (motive := β) (0 : ∀ i, β (.inl i)) (0 : ∀ j, β (.inr j)) = 0 := by
-    funext z
-    cases z <;> rfl
-  simpa only [← hammingDist_zero_right, sumRec_zero] using
-    hammingDist_sumRec x (0 : ∀ i, β (.inl i)) y (0 : ∀ j, β (.inr j))
+  simp only [hammingNorm, Finset.card_filter]
+  rw [Fintype.sum_sum_type]
 
 /-- The Hamming distance between two pairs of words over a common alphabet, combined on a disjoint
 union, is the sum of the distances between the respective words. -/
@@ -208,8 +227,8 @@ theorem hammingNorm_sumElim {A : Type*} [Fintype ι] [Fintype κ] [DecidableEq A
   hammingNorm_sumRec (β := fun _ ↦ A) x y
 
 /-- Hamming weight splits over a retained coordinate set and its complement. -/
-theorem hammingNorm_eq_domRestrict_add_domRestrict_compl {ι : Type*} {A : ι → Type*}
-    [Fintype ι] [∀ i, Zero (A i)] [∀ i, DecidableEq (A i)]
+theorem hammingNorm_eq_domRestrict_add_domRestrict_compl {A : ι → Type*} [Fintype ι]
+    [∀ i, Zero (A i)] [∀ i, DecidableEq (A i)]
     (s : Set ι) [DecidablePred (· ∈ s)] (x : ∀ i, A i) :
     hammingNorm x = hammingNorm (s.domRestrict x) + hammingNorm (sᶜ.domRestrict x) := by
   simp only [hammingNorm, Finset.card_filter]
@@ -245,20 +264,20 @@ theorem hammingNorm_comp [Zero α] (e : κ ≃ ι) (x : ι → α) :
 
 section Relabelling
 
-variable {R : Type*} [Semiring R]
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 
 /-- Relabelling a word along an equivalence of finite coordinate types preserves its Hamming
 weight, when the relabelling is expressed as a linear map between function spaces. -/
 @[simp]
-theorem hammingNorm_funLeft [DecidableEq R] (e : κ ≃ ι) (x : ι → R) :
-    hammingNorm (LinearMap.funLeft R R e x) = hammingNorm x :=
+theorem hammingNorm_funLeft [DecidableEq M] (e : κ ≃ ι) (x : ι → M) :
+    hammingNorm (LinearMap.funLeft R M e x) = hammingNorm x :=
   Equiv.hammingNorm_comp e x
 
 /-- Relabelling two words along an equivalence of finite coordinate types preserves their Hamming
 distance, when the relabelling is expressed as a linear map between function spaces. -/
 @[simp]
-theorem hammingDist_funLeft [DecidableEq R] (e : κ ≃ ι) (x y : ι → R) :
-    hammingDist (LinearMap.funLeft R R e x) (LinearMap.funLeft R R e y) = hammingDist x y :=
+theorem hammingDist_funLeft [DecidableEq M] (e : κ ≃ ι) (x y : ι → M) :
+    hammingDist (LinearMap.funLeft R M e x) (LinearMap.funLeft R M e y) = hammingDist x y :=
   Equiv.hammingDist_comp e x y
 
 end Relabelling

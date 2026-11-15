@@ -42,7 +42,8 @@ classify regular quadratic forms over a nonarchimedean local field (O'Meara, §6
 * `QuadraticForm.finiteHasse_eq_localHasse_baseChange`: the finite Hasse sign is the local Hasse
   invariant of the scalar extension of the global isometry class.
 * `QuadraticForm.finiteHasse_eq_prod_hilbertSymbol`: its value `∏_{i<j} (aᵢ, aⱼ)_v` on any
-  diagonalization `⟨a₁, …, aₙ⟩` over `K`.
+  diagonalization `⟨a₁, …, aₙ⟩` over `K`, and `QuadraticForm.finiteHasse_weightedSumSquares_binary`:
+  the single symbol `(a, b)_v` for a binary form `⟨a, b⟩`.
 * `QuadraticForm.finiteHasse_eq_of_equivalent_atFinitePlace`,
   `QuadraticMap.Equivalent.finiteHasse_eq`: forms isometric at `v`, in particular isometric forms,
   have the same finite Hasse sign.
@@ -119,6 +120,23 @@ theorem finiteHasse_eq_prod_hilbertSymbol (Q : _root_.QuadraticForm K V) (hQ : Q
   rw [finiteHasse_eq_localHasse_baseChange,
     formClass_mk Q hQ ⟨n, a⟩ (by rwa [presentedForm_eq_weightedSumSquares_coe]),
     RegularFormClass.baseChange_mk, baseChange_presentation, RegularFormClass.localHasse_mk]
+
+/-- The finite Hasse sign of a binary diagonal form `⟨a, b⟩` at `v` is the single Hilbert symbol
+`(a, b)_v` of the images of its coefficients. -/
+@[simp]
+theorem finiteHasse_weightedSumSquares_binary (a b : Kˣ)
+    (h : (QuadraticMap.weightedSumSquares K ![(a : K), (b : K)]).Nondegenerate)
+    (v : HeightOneSpectrum (𝓞 K)) :
+    finiteHasse (QuadraticMap.weightedSumSquares K ![(a : K), (b : K)]) h v =
+      hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b) := by
+  have hw : (fun i => ((![a, b] i : Kˣ) : K)) = ![(a : K), (b : K)] := by
+    ext i
+    fin_cases i <;> rfl
+  have h0 : Ioi (0 : Fin 2) = {1} := by decide
+  have h1 : Ioi (1 : Fin 2) = ∅ := by decide
+  rw [finiteHasse_eq_prod_hilbertSymbol _ h (a := ![a, b]) (by rw [hw]; exact .refl _),
+    Fin.prod_univ_two, h0, h1]
+  simp
 
 /-- **Isometry invariance.** Regular forms whose localizations at `v` are isometric have the same
 finite Hasse sign at `v`. -/

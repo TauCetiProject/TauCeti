@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTriviality
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Properties
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 
 /-!
 # Invertible sheaves on a scheme
@@ -31,7 +32,13 @@ over an arbitrary site. This file only packages it over a scheme:
   modules over itself, is invertible;
 * `SheafOfModules.isInvertible_iff_exists_isOpenCover` characterizes invertible sheaves on a
   scheme as those whose restrictions to the open subschemes of some open cover are isomorphic to
-  the structure sheaves of those open subschemes.
+  the structure sheaves of those open subschemes;
+* `SheafOfModules.LocalTrivializations.ofIsOpenCover` and
+  `SheafOfModules.LocalTrivializations.ofForallMem` build a rank-one atlas of an `𝒪_X`-module
+  from an open cover, respectively from a neighbourhood of each point, together with a
+  trivialization over each member, and `TauCeti.SheafOfModules.LocalTrivializations.unitIsoRestrict`
+  turns a free rank-one trivialization over an open `U` into an isomorphism from the structure
+  sheaf of the open subscheme `U` to the restriction of the module to `U`.
 
 A free rank-one trivialization of an `𝒪_X`-module `M` over an open `V` gives local coordinates:
 
@@ -44,7 +51,12 @@ A free rank-one trivialization of an `𝒪_X`-module `M` over an open `V` gives 
 * `Scheme.Modules.existsUnique_eq_smul_map_trivializationGenerator` writes every section over
   `W ≤ V` uniquely as a regular multiple of the restricted basis section, and
   `Scheme.Modules.existsUnique_map_trivializationGenerator_eq_smul` shows that the basis sections
-  of two trivializations differ by a unique regular unit on any common open subset.
+  of two trivializations differ by a unique regular unit on any common open subset;
+* `Scheme.Modules.trivializationCoordinateIso` is the isomorphism `M.over U ≅ 𝒪_U` from which
+  `Scheme.Modules.trivializationCoordinate` is read off on each open `W ≤ U`;
+* `Scheme.Modules.trivializationGenerator_ne_zero` says that the basis section is nonzero on a
+  nonempty open subset, and `Scheme.Modules.exists_mem_trivialization` that every point of a
+  scheme lies in the domain of a rank-one trivialization of an invertible sheaf.
 
 These local rank-one coordinates describe transition functions between local bases and provide
 normal forms for sections used in line-bundle constructions.
@@ -103,6 +115,12 @@ instance isInvertible_unit :
     (N := _root_.SheafOfModules.unit X.ringCatSheaf)
     (TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf)
 
+open MonoidalCategory in
+/-- The monoidal unit `𝟙_ X.Modules`, the structure sheaf, is an invertible sheaf. Instance search
+does not identify it with `SheafOfModules.unit X.ringCatSheaf` of `isInvertible_unit`. -/
+instance isInvertible_tensorUnit : isInvertible X (𝟙_ X.Modules) :=
+  isInvertible_unit X
+
 end SheafOfModules
 
 variable {X : Scheme.{u}}
@@ -116,6 +134,12 @@ namespace InvertibleSheaf
 
 instance (L : InvertibleSheaf X) : SheafOfModules.isInvertible X L.obj :=
   L.property
+
+/-- The underlying sheaf of a line bundle is quasicoherent. -/
+instance isQuasicoherent_obj (L : InvertibleSheaf X) : L.obj.IsQuasicoherent :=
+  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L.obj := L.property
+  let F : _root_.SheafOfModules X.ringCatSheaf := L.obj
+  inferInstanceAs F.IsQuasicoherent
 
 /-- The invertible sheaf given by the free sheaf on an indexing type with exactly one element. -/
 def free (X : Scheme.{u}) (I : Type u) [Nonempty I] [Subsingleton I] :

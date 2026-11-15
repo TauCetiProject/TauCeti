@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.Free
+public import TauCeti.Algebra.Category.ModuleCat.CartanMap.RestrictScalars
 public import TauCeti.RepresentationTheory.GrothendieckGroup.SimpleBasis
 
 /-!
@@ -40,6 +41,8 @@ restriction appears, for the same reason, in `TauCeti.pathAlgebraDimensionVector
 * `TauCeti.finrankK0_unique`: the dimension homomorphism is the only one with that property.
 * `TauCeti.finrankK0_of_eq_zero_iff` and `TauCeti.finrankK0_of_pos`: the dimension of an object
   class vanishes exactly for the zero module, and is positive otherwise.
+* `TauCeti.finrankK0_finiteModulesK0Restrict`: restriction of scalars along a homomorphism of
+  finite-dimensional algebras preserves the dimension of a class.
 * `TauCeti.finrankK0_eq_sum_jordanHolderCoordinate_mul`: the dimension of a class is the sum of its
   Jordan--Hölder multiplicities weighted by the dimensions of the simple modules.
 * `TauCeti.eq_finrankK0_smul_of_finrank_eq_one`: when every simple module is isomorphic to one
@@ -122,6 +125,31 @@ theorem finrankK0_of_pos (M : FGModuleCat.{u} A) (hM : Nontrivial M.obj) :
   lt_of_le_of_ne (finrankK0_of_nonneg k A M) fun h ↦
     (not_subsingleton_iff_nontrivial.2 hM) ((finrankK0_of_eq_zero_iff k A M).1 h.symm)
 
+/-- **Restriction of scalars preserves dimension.** Restricting scalars along a ring
+homomorphism `f : A →+* B` of finite-dimensional `k`-algebras compatible with the structure maps
+does not change the `k`-dimension of a class. -/
+@[simp]
+theorem finrankK0_finiteModulesK0Restrict {B : Type u} [Ring B] [Algebra k B]
+    [FiniteDimensional k B] (f : A →+* B) (hfk : f.comp (algebraMap k A) = algebraMap k B)
+    (x : ExactK0 (finiteModulesExactStructure B)) :
+    -- `B` is finitely generated over `A` through `f`, since it already is over `k`.
+    finrankK0 k A (f.finiteModulesK0Restrict (by
+      let := f.toModule
+      have : IsScalarTower k A B := ⟨fun c a b ↦ by
+        simp [RingHom.toModule_smul, Algebra.smul_def, ← DFunLike.congr_fun hfk c, mul_assoc]⟩
+      exact Module.Finite.of_restrictScalars_finite k A B) x) = finrankK0 k B x := by
+  refine DFunLike.congr_fun
+    (?_ : (finrankK0 k A).comp (f.finiteModulesK0Restrict _) = finrankK0 k B) x
+  exact ExactK0.hom_ext fun M ↦ by
+    simp only [AddMonoidHom.comp_apply, RingHom.finiteModulesK0Restrict_of, finrankK0_of,
+      Nat.cast_inj]
+    -- The two `k`-module structures on the underlying group of `M` are
+    -- `c • m = f (algebraMap k A c) • m` and `c • m = algebraMap k B c • m`.
+    exact LinearEquiv.finrank_eq
+      ((((f.finiteModulesRestrictScalarsCompιIso _).app M).toLinearEquiv.restrictScalars k).trans
+        (AddEquiv.toLinearEquiv (M := (ModuleCat.restrictScalars f).obj M.obj) (M₂ := M.obj)
+          (by rfl) fun c m ↦ congrArg (· • m) (DFunLike.congr_fun hfk c)))
+
 end Finrank
 
 /-! ### The dimension homomorphism in the simple-class basis -/
@@ -129,31 +157,50 @@ end Finrank
 section SimpleCoordinates
 
 -- `[IsArtinianRing A]` follows from `[FiniteDimensional k A]`, but `TauCeti.jordanHolderCoordinate`
--- and `TauCeti.IsExhaustiveSimpleFamily` take it as an instance argument and both appear in the
--- statements below, so it cannot be confined to the proofs; and an instance deriving it from
--- `[FiniteDimensional k A]` has no synthesization order, since `k` is not determined by the goal.
+-- takes it as an instance argument and appears in the statement below, so it cannot be confined
+-- to the proof; and an instance deriving it from `[FiniteDimensional k A]` has no synthesization
+-- order, since `k` is not determined by the goal.
 variable (k : Type u) [Field k] (A : Type u) [Ring A] [Algebra k A] [FiniteDimensional k A]
-  [IsArtinianRing A] {I : Type v} (S : I → FGModuleCat.{u} A) [∀ i, IsSimpleModule A (S i)]
-  (hnoniso : Pairwise fun i j ↦ IsEmpty ((S i : Type u) ≃ₗ[A] S j))
+  [IsArtinianRing A] {I : Type v} (S : I → FGModuleCat.{u} A)
+  (hnoniso : Pairwise fun i j ↦
+    IsSimpleModule A (S i) → IsSimpleModule A (S j) → IsEmpty ((S i : Type u) ≃ₗ[A] S j))
   (hexhaustive : IsExhaustiveSimpleFamily S)
 
 include hnoniso hexhaustive in
 /-- **The dimension of a class is its Jordan--Hölder expansion weighted by the dimensions of the
 simple modules.** For the class of a module this is the statement that the dimension of a module is
-the sum of the dimensions of its composition factors. -/
+the sum of the dimensions of its composition factors. The members of the family need not be
+simple, nor pairwise nonisomorphic when they are not simple: a member that is not simple has
+Jordan--Hölder coordinate zero, so it contributes nothing. -/
 theorem finrankK0_eq_sum_jordanHolderCoordinate_mul [Fintype I]
     (x : ExactK0 (finiteModulesExactStructure A)) :
     finrankK0 k A x =
       ∑ i, jordanHolderCoordinate A (S i) x * (Module.finrank k (S i).obj : ℤ) := by
   classical
-  set b := simpleClassBasis S hnoniso hexhaustive with hb
-  calc finrankK0 k A x = finrankK0 k A (∑ i, b.repr x i • b i) := by rw [b.sum_repr x]
-    _ = ∑ i, b.repr x i • finrankK0 k A (b i) := by
-        rw [map_sum]
-        exact Finset.sum_congr rfl fun i _ ↦ map_zsmul _ _ _
-    _ = _ := by
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        rw [hb, simpleClassBasis_apply, simpleClassBasis_repr_apply, finrankK0_of, smul_eq_mul]
+  let S' : {i // IsSimpleModule A (S i)} → FGModuleCat.{u} A := fun j ↦ S j
+  have : ∀ j, IsSimpleModule A (S' j) := fun j ↦ j.2
+  have hnoniso' : Pairwise fun i j ↦ IsEmpty ((S' i : Type u) ≃ₗ[A] S' j) :=
+    fun i j hij ↦ hnoniso (fun h ↦ hij (Subtype.ext h)) i.2 j.2
+  have hexhaustive' : IsExhaustiveSimpleFamily S' := by
+    rw [isExhaustiveSimpleFamily_iff] at hexhaustive ⊢
+    intro M hM
+    obtain ⟨i, ⟨e⟩⟩ := hexhaustive M hM
+    exact ⟨⟨i, IsSimpleModule.congr e.symm⟩, ⟨e⟩⟩
+  set b := simpleClassBasis S' hnoniso' hexhaustive' with hb
+  have hsum : finrankK0 k A x =
+      ∑ j, jordanHolderCoordinate A (S' j) x * (Module.finrank k (S' j).obj : ℤ) :=
+    calc finrankK0 k A x = finrankK0 k A (∑ j, b.repr x j • b j) := by rw [b.sum_repr x]
+      _ = ∑ j, b.repr x j • finrankK0 k A (b j) := by
+          rw [map_sum]
+          exact Finset.sum_congr rfl fun j _ ↦ map_zsmul _ _ _
+      _ = _ := by
+          refine Finset.sum_congr rfl fun j _ ↦ ?_
+          rw [hb, simpleClassBasis_apply, simpleClassBasis_repr_apply, finrankK0_of, smul_eq_mul]
+  have hzero (i : I) (hi : ¬ IsSimpleModule A (S i)) : jordanHolderCoordinate A (S i) x = 0 := by
+    rw [jordanHolderCoordinate_eq_zero_of_not_isSimpleModule A _ hi, AddMonoidHom.zero_apply]
+  rw [hsum, ← Finset.sum_subtype (Finset.univ.filter fun i ↦ IsSimpleModule A (S i)) (by simp)
+    fun i ↦ jordanHolderCoordinate A (S i) x * (Module.finrank k (S i).obj : ℤ),
+    Finset.sum_filter_of_ne fun i _ h ↦ by_contra fun hi ↦ h (by simp [hzero i hi])]
 
 end SimpleCoordinates
 
@@ -161,12 +208,8 @@ end SimpleCoordinates
 
 section UniqueSimple
 
--- `[IsArtinianRing A]` follows from `[FiniteDimensional k A]`, but
--- `TauCeti.IsExhaustiveSimpleFamily` takes it as an instance argument and appears in the statements
--- below, so it cannot be confined to the proofs; and an instance deriving it from
--- `[FiniteDimensional k A]` has no synthesization order, since `k` is not determined by the goal.
 variable (k : Type u) [Field k] (A : Type u) [Ring A] [Algebra k A] [FiniteDimensional k A]
-  [IsArtinianRing A] (S : FGModuleCat.{u} A)
+  (S : FGModuleCat.{u} A)
   (hexhaustive : IsExhaustiveSimpleFamily fun _ : Unit ↦ S)
 
 include hexhaustive in
@@ -177,6 +220,7 @@ up to isomorphism, which is what the composition-series induction behind
 `TauCeti.span_range_exactK0OfFamily_eq_top` consumes. -/
 theorem eq_finrankK0_smul_of_finrank_eq_one (hdim : Module.finrank k S.obj = 1)
     (x : ExactK0 (finiteModulesExactStructure A)) : x = finrankK0 k A x • ExactK0.of S := by
+  have : IsArtinianRing A := .of_finite k A
   have hrange : Set.range (exactK0OfFamily fun _ : Unit ↦ S) = {ExactK0.of S} := by
     ext y
     refine ⟨?_, ?_⟩

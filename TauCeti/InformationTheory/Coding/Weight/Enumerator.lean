@@ -201,7 +201,7 @@ theorem weightPolynomial_def (C : Set (∀ i, β i)) :
 theorem coeff_weightPolynomial (C : Set (∀ i, β i)) (w : ℕ) :
     C.weightPolynomial.coeff w = C.weightDistribution w := by
   rw [weightPolynomial_def, Polynomial.finsetSum_coeff]
-  simp_rw [Polynomial.coeff_monomial]
+  simp_rw [Polynomial.coeff_monomial_apply]
   rw [sum_ite_eq', ite_eq_left_iff]
   intro hw
   rw [weightDistribution_eq_zero_of_card_lt (by simpa [Nat.lt_succ_iff] using hw),
@@ -249,11 +249,27 @@ end Set
 
 namespace TauCeti
 
-/-- A finite set containing zero whose nonzero words all have weight `d ≠ 0` has one word of
-weight zero, `Nat.card C - 1` words of weight `d`, and no words of any other weight. -/
+section WeightPreservingEquivalence
+
+variable {ι κ : Type*} {β : ι → Type*} {γ : κ → Type*} [Fintype ι] [Fintype κ]
+  [∀ i, Zero (β i)] [∀ j, Zero (γ j)]
+  [∀ i, DecidableEq (β i)] [∀ j, DecidableEq (γ j)]
+
+/-- A weight-preserving equivalence preserves the weight distribution of any set of words. -/
+theorem weightDistribution_image (C : Set (∀ i, β i)) (f : (∀ i, β i) ≃ (∀ j, γ j))
+    (hf : ∀ x, hammingNorm (f x) = hammingNorm x) (w : ℕ) :
+    (f '' C).weightDistribution w = C.weightDistribution w := by
+  rw [Set.weightDistribution_def, Set.weightDistribution_def]
+  exact (Nat.card_congr (Equiv.subtypeEquiv f fun x ↦ by simp [hf])).symm
+
+end WeightPreservingEquivalence
+
+/-- A finite set containing zero whose nonzero words all have weight `d` has one word of
+weight zero and no words of any weight other than zero and `d`. For `d ≠ 0` it has `Nat.card C - 1`
+words of weight `d`. For `d = 0` the set is the singleton `{0}`, whose one word has weight zero. -/
 theorem weightDistribution_eq_of_constant_weight {ι : Type*} {β : ι → Type*} [Fintype ι]
     [∀ i, Zero (β i)] [∀ i, DecidableEq (β i)] {C : Set (∀ i, β i)} {d : ℕ}
-    (hC : C.Finite) (h0 : 0 ∈ C) (hd : d ≠ 0)
+    (hC : C.Finite) (h0 : 0 ∈ C)
     (hweight : ∀ x ∈ C, x ≠ 0 → hammingNorm x = d) (w : ℕ) :
     C.weightDistribution w = if w = 0 then 1 else if w = d then Nat.card C - 1 else 0 := by
   have hvanish : ∀ w, w ≠ 0 → w ≠ d → C.weightDistribution w = 0 := by
@@ -265,6 +281,11 @@ theorem weightDistribution_eq_of_constant_weight {ι : Type*} {β : ι → Type*
       simp [hx0] at hxw
       exact hw0 hxw.symm
     exact hwd (hxw.symm.trans (hweight x hx hx0))
+  rcases eq_or_ne d 0 with rfl | hd
+  · by_cases hw0 : w = 0
+    · subst w
+      simp [Set.weightDistribution_zero h0]
+    · simp [hw0, hvanish w hw0 hw0]
   have hshape (w : ℕ) : C.weightDistribution w =
       (if w = 0 then 1 else 0) + (if w = d then C.weightDistribution d else 0) := by
     by_cases hw0 : w = 0
@@ -367,16 +388,10 @@ theorem IsPermutationEquivalent.weightDistribution_eq (h : IsPermutationEquivale
     (w : ℕ) :
     (C : Set (ι → R)).weightDistribution w = (D : Set (κ → R)).weightDistribution w := by
   obtain ⟨e, rfl⟩ := isPermutationEquivalent_iff.mp h
-  refine Nat.card_congr
-    (Equiv.subtypeEquiv (LinearEquiv.funCongrLeft R R e.symm).toEquiv fun x ↦ ?_)
-  simp only [SetLike.mem_coe, LinearEquiv.coe_toEquiv, Submodule.mem_map_equiv,
-    LinearEquiv.funCongrLeft_symm, Equiv.symm_symm, LinearEquiv.funCongrLeft_apply]
-  have hinv : LinearMap.funLeft R R e (LinearMap.funLeft R R e.symm x) = x :=
-    funext fun i ↦ congrArg x (e.symm_apply_apply i)
-  have hx : LinearMap.funLeft R R e.symm x = x ∘ e.symm := by
-    ext i
-    simp
-  rw [hinv, hx, Equiv.hammingNorm_comp]
+  rw [Submodule.map_coe]
+  exact (weightDistribution_image (C : Set (ι → R))
+    (LinearEquiv.funCongrLeft R R e.symm).toEquiv
+    (fun x ↦ Equiv.hammingNorm_funLeft (R := R) e.symm x) w).symm
 
 /-- Permutation-equivalent codes have the same weight enumerator. -/
 theorem IsPermutationEquivalent.weightEnumerator_eq (h : IsPermutationEquivalent C D) :
@@ -396,7 +411,9 @@ variable [CommSemiring R] {C : Submodule R (ι → R)} {D : Submodule R (κ → 
 theorem IsMonomialEquivalent.weightDistribution_eq (h : IsMonomialEquivalent C D) (w : ℕ) :
     (C : Set (ι → R)).weightDistribution w = (D : Set (κ → R)).weightDistribution w := by
   obtain ⟨u, e, rfl⟩ := isMonomialEquivalent_iff.mp h
-  exact Nat.card_congr (Equiv.subtypeEquiv (monomialEquiv u e).toEquiv fun x ↦ by simp)
+  rw [Submodule.map_coe]
+  exact (weightDistribution_image (C : Set (ι → R)) (monomialEquiv u e).toEquiv
+    (hammingNorm_monomialEquiv u e) w).symm
 
 /-- Monomially equivalent codes have the same weight enumerator. -/
 theorem IsMonomialEquivalent.weightEnumerator_eq (h : IsMonomialEquivalent C D) :

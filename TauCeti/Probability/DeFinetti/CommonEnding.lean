@@ -10,18 +10,15 @@ public import TauCeti.Probability.Exchangeability.MixedIID.Basic
 /-!
 # The rectangle common ending for de Finetti
 
-This file provides the first shared de Finetti common-ending adapter.  If a measurable random
-probability measure `ν : Ω → ProbabilityMeasure α` has the expected rectangle factorization for
-every finite injective block of a coordinatewise `μ`-a.e. measurable family, then the family is
-`MixedIID`.
+This file provides a shared de Finetti common-ending adapter. If a measurable random probability
+measure `ν : Ω → ProbabilityMeasure α` has the expected rectangle factorization for every finite
+injective block of a coordinatewise `μ`-a.e. measurable family, then the family is `MixedIID`.
 
 The work is done by the `MixedIIDWith` rectangle characterization
-(`mixedIIDWith_of_forall_rectangles`, next to its definition): rectangles generate the
-finite product σ-algebra by Mathlib's `generateFrom_pi` / `isPiSystem_pi`, and Tau Ceti's
-product-kernel API evaluates the mixture on rectangles.  This file packages that as the existential
-wrapper.  This advances `TauCetiRoadmap/Exchangeability/README.md`, Layer 1, the mixture common
-de Finetti ending `mixedIID_of_mixingRepresentative`. The joint-rectangle strengthening
-`conditionallyIID_of_jointRectangles`, which the roadmap pairs with it, lives in
+(`mixedIIDWith_of_forall_rectangles`, next to its definition): rectangles generate the finite
+product σ-algebra by Mathlib's `generateFrom_pi` / `isPiSystem_pi`, and Tau Ceti's product-kernel
+API evaluates the mixture on rectangles. This file packages that as the existential wrapper. The
+joint-rectangle strengthening `conditionallyIID_of_jointRectangles` lives in
 `TauCeti.Probability.DeFinetti.ConditionalCommonEnding`.
 
 This is adapted from the rectangle common-ending strategy in

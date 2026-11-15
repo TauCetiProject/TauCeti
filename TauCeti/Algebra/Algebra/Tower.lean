@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Tower
+public import Mathlib.Algebra.Algebra.RestrictScalars
 
 /-!
-# Restriction of scalars of algebra homomorphisms is functorial
+# Algebra towers: restriction of scalars and reversing a tower
 
 Restricting the scalars of an `S`-algebra homomorphism along `R → S` (`AlgHom.restrictScalars`)
 commutes with composition. Mathlib records injectivity of `AlgHom.restrictScalars` and its
@@ -16,10 +16,25 @@ interaction with the underlying ring and linear maps, but not this composition l
 rewrite needs when a composite homomorphism is restricted and then fed to a construction that is
 functorial in `R`-algebra homomorphisms.
 
+When `algebraMap R S` has a right inverse `algebraMap S R`, for instance when it is bijective, a
+tower `R → S → M` can be reversed to a tower `S → R → M`, so that invariants of `M` relative to
+two isomorphic base rings can be compared through tower formulas in both directions.
+
+An `R`-algebra structure on an `S`-algebra `A` is determined by the scalar tower condition: every
+`R`-algebra structure with `IsScalarTower R S A` is the one obtained by restricting scalars along
+`R → S`. This identifies a restricted-scalars structure, such as the real algebra structure on
+operators over an `RCLike` field, with the structure an instance provides in a concrete case.
+
 ## Main results
 
 * `AlgHom.restrictScalars_comp`: `(f.comp g).restrictScalars R = (f.restrictScalars R).comp
   (g.restrictScalars R)`.
+* `IsScalarTower.of_algebraMap_rightInverse`: a tower `R → S → M` gives a tower `S → R → M` when
+  `algebraMap S R` is a right inverse of `algebraMap R S`.
+* `Algebra.restrictScalars_eq`: an `R`-algebra structure on `A` compatible with the `S`-algebra
+  structure is `Algebra.restrictScalars R S A`.
+* `AlgEquiv.toRingEquiv_algebraMap_of_tower`: an `S`-algebra isomorphism fixes the image of `R`,
+  stated as a compatibility of the underlying ring isomorphism along `RingEquiv.refl R`.
 -/
 
 public section
@@ -34,3 +49,26 @@ algebra homomorphisms. -/
 theorem AlgHom.restrictScalars_comp (f : B →ₐ[S] C) (g : A →ₐ[S] B) :
     (f.comp g).restrictScalars R = (f.restrictScalars R).comp (g.restrictScalars R) :=
   rfl
+
+/-- A tower `R → S → M` gives a tower `S → R → M` when `algebraMap S R` is a right inverse of
+`algebraMap R S`. Here `M` is any type with an action of `S` and a scalar multiplication by `R`,
+for instance an `S`-algebra or an `S`-module; the tower makes `R` act through `algebraMap R S`. -/
+theorem IsScalarTower.of_algebraMap_rightInverse {M : Type*} [SMul R M] [MulAction S M]
+    [IsScalarTower R S M] [Algebra S R]
+    (h : Function.RightInverse (algebraMap S R) (algebraMap R S)) : IsScalarTower S R M :=
+  ⟨fun s r m ↦ by
+    rw [← algebraMap_smul S (s • r) m, ← algebraMap_smul S r m, Algebra.smul_def, map_mul, h s,
+      mul_smul]⟩
+
+/-- An `R`-algebra structure on the `S`-algebra `A` forming a scalar tower `R → S → A` is the one
+obtained by restricting scalars along `R → S`. -/
+theorem Algebra.restrictScalars_eq : Algebra.restrictScalars R S A = ‹Algebra R A› :=
+  Algebra.algebra_ext _ _ fun r ↦ (IsScalarTower.algebraMap_apply R S A r).symm
+
+/-- **An isomorphism of `S`-algebras fixes the constants** of a scalar tower `R → S`, in the form
+`τ (algebraMap R A c) = algebraMap R B (σ c)` with `τ = e.toRingEquiv` and `σ = RingEquiv.refl R`.
+This is the compatibility hypothesis of semilinear transports such as
+`TauCeti.Place.equivOfRingEquiv`, which `AlgEquiv.commutes` matches only up to unfolding. -/
+theorem AlgEquiv.toRingEquiv_algebraMap_of_tower (e : A ≃ₐ[S] B) (c : R) :
+    e.toRingEquiv (algebraMap R A c) = algebraMap R B (RingEquiv.refl R c) :=
+  (e.restrictScalars R).commutes c

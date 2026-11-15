@@ -48,4 +48,14 @@ theorem preprojectiveIdeal_le_arrowIdeal_sq (k : Type w) {Q : Type u} [CommRing 
       (ofPath_mem_arrowIdeal_pow _)
   exact sub_mem hhead htail
 
+/-- **The vertex idempotents survive in the preprojective algebra**: over a nontrivial ring the
+class of a vertex idempotent is nonzero, since the relation ideal lies in the square of the arrow
+ideal, which contains no vertex idempotent. -/
+theorem preprojectiveMk_vertexIdempotent_ne_zero (k : Type w) {Q : Type u} [CommRing k]
+    [Nontrivial k] [Quiver.{v} Q] [Fintype Q] [∀ i j : Q, Fintype (i ⟶ j)] (i : Symmetrify Q) :
+    preprojectiveMk k Q (vertexIdempotent k i) ≠ 0 := by
+  rw [Ne, preprojectiveMk_eq_zero_iff, ← TwoSidedIdeal.mem_asIdeal]
+  exact fun h => vertexIdempotent_notMem_arrowIdeal (k := k) _
+    (Ideal.pow_le_self two_ne_zero (preprojectiveIdeal_le_arrowIdeal_sq k h))
+
 end TauCeti

@@ -8,8 +8,8 @@ module
 -- `TauCeti.GL2PrincipalSeries` and the Borel character `TauCeti.GL2BorelRep` it is induced from
 -- are the subject.
 public import TauCeti.RepresentationTheory.CharacterTable.GL2.PrincipalSeries.Basic
--- `TauCeti.indClassFun_ofFDRep_character` rewrites the character of an induced representation as
--- the induced class function, whose coset sum `TauCeti.indClassFun_eq_sum_of_smul_eq_self_mem`
+-- `Subgroup.indClassFun_ofFDRep_character` rewrites the character of an induced representation as
+-- the induced class function, whose coset sum `Subgroup.indClassFun_eq_sum_of_smul_eq_self_mem`
 -- then cuts down to the fixed cosets.
 import TauCeti.RepresentationTheory.Induction.Character
 -- The fixed-coset counts of the four families, and the representatives `TauCeti.diagGL`,
@@ -36,7 +36,7 @@ projective line, which is the boundary case
 `TauCeti/RepresentationTheory/CharacterTable/GL2/CharacterValues.lean` reads off.
 
 The computation is the induced-character formula in the form
-`TauCeti.indClassFun_eq_sum_of_smul_eq_self_mem`: the character of an induction at `g` is the sum
+`Subgroup.indClassFun_eq_sum_of_smul_eq_self_mem`: the character of an induction at `g` is the sum
 of the inducing character over the cosets of `B` that `g` fixes, evaluated at the conjugate of `g`
 into `B` that each such coset exhibits. Which cosets are fixed is already known — a scalar fixes
 all `q + 1` of them, a split semisimple element exactly `2`, a Jordan block exactly `1`, and an
@@ -60,11 +60,8 @@ coset sum they run on is the one of a finite-index subgroup.
 
 ## References
 
-This supplies the principal-series row of the character-value formulas of Layer 9 ("the
-representation theory of `GL₂(𝔽_q)`") of
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md`. See also W. Fulton and J. Harris,
-*Representation Theory: A First Course*, GTM 129, §5.2, and C. Bonnafé, *Representations of
-`SL₂(𝔽_q)`* (2011), Chapter 5.
+* W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2.
+* C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 5.
 -/
 
 public section
@@ -115,14 +112,14 @@ private theorem indTerm_character_GL2BorelRep_eq (a b : Fˣ) {g x : GL (Fin 2) F
     (hc : x⁻¹ * g * x = (c : GL (Fin 2) F))
     (h0 : ((c : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) 0 0 = (a : F))
     (h1 : ((c : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) 1 1 = (b : F)) :
-    indTerm (GL2BorelRep F α β).character g x = (α a : ℂ) * (β b : ℂ) := by
+    Function.indTerm (GL2BorelRep F α β).character g x = (α a : ℂ) * (β b : ℂ) := by
   have hmem : x⁻¹ * g * x ∈ GL2Borel F := hc ▸ c.2
   -- After the case split, the summand is the Borel character at the *subgroup* element
   -- `⟨x⁻¹ * g * x, hmem⟩`, whereas `hc` equates underlying matrices.  Rewriting by `hc` there
   -- would have to move the membership proof `hmem` along with it, so it is the equality of
   -- subgroup elements, obtained from `hc` by `Subtype.ext`, that rewrites.
   have hsub : (⟨x⁻¹ * g * x, hmem⟩ : GL2Borel F) = c := Subtype.ext hc
-  rw [indTerm_apply, dite_eq_left hmem, hsub, character_GL2BorelRep_eq α β c h0 h1]
+  rw [Function.indTerm_apply, dite_eq_left hmem, hsub, character_GL2BorelRep_eq α β c h0 h1]
 
 /-- The character of the Borel representation is a class function, so its summands depend only on
 the coset of their representative. -/
@@ -133,10 +130,10 @@ private theorem character_GL2BorelRep_mem_classFunction :
 /-- The summand may be computed at any representative of its coset, in particular at a chosen one
 rather than at `Quotient.out`. -/
 private theorem indTerm_out_eq (g x : GL (Fin 2) F) :
-    indTerm (GL2BorelRep F α β).character g
+    Function.indTerm (GL2BorelRep F α β).character g
         (Quotient.out (QuotientGroup.mk x : GL (Fin 2) F ⧸ GL2Borel F)) =
-      indTerm (GL2BorelRep F α β).character g x :=
-  indTerm_eq_of_mk_eq (character_GL2BorelRep_mem_classFunction α β) _ _ _
+      Function.indTerm (GL2BorelRep F α β).character g x :=
+  Function.indTerm_eq_of_mk_eq _ (character_GL2BorelRep_mem_classFunction α β) _ _ _
     (QuotientGroup.out_eq' _)
 
 /-! ### The four values -/
@@ -148,8 +145,8 @@ variable [Fintype F]
 /-- The character of the principal series is the induced class function of the Borel character. -/
 private theorem character_GL2PrincipalSeries_eq_indClassFun (g : GL (Fin 2) F) :
     (GL2PrincipalSeries F α β).character g =
-      indClassFun (GL2Borel F) (GL2BorelRep F α β).character g := by
-  rw [GL2PrincipalSeries_def, ← indClassFun_ofFDRep_character]
+      Subgroup.indClassFun (GL2Borel F) (GL2BorelRep F α β).character g := by
+  rw [GL2PrincipalSeries_def, ← Subgroup.indClassFun_ofFDRep_character]
 
 /-- **The principal series has character `(q + 1) α(a) β(a)` at a central element.** A scalar
 matrix is central, so every one of the `q + 1` cosets of the Borel subgroup is fixed, and each
@@ -160,7 +157,7 @@ theorem character_GL2PrincipalSeries_scalar (u : Fˣ) :
   classical
   let _ : Fintype (GL (Fin 2) F ⧸ GL2Borel F) := Fintype.ofFinite _
   have hterm : ∀ t : GL (Fin 2) F ⧸ GL2Borel F,
-      indTerm (GL2BorelRep F α β).character (Matrix.GeneralLinearGroup.scalar (Fin 2) u)
+      Function.indTerm (GL2BorelRep F α β).character (Matrix.GeneralLinearGroup.scalar (Fin 2) u)
         (Quotient.out t) = (α u : ℂ) * (β u : ℂ) := fun t =>
     indTerm_character_GL2BorelRep_eq α β u u (c := ⟨_, GL2Borel.scalar_mem F u⟩)
       (by rw [mul_assoc, Matrix.GeneralLinearGroup.scalar_commute, inv_mul_cancel_left])
@@ -168,7 +165,7 @@ theorem character_GL2PrincipalSeries_scalar (u : Fˣ) :
   have hcard : Fintype.card (GL (Fin 2) F ⧸ GL2Borel F) = Fintype.card F + 1 := by
     rw [← Nat.card_eq_fintype_card, ← Subgroup.index_eq_card, GL2Borel.index_eq]
   rw [character_GL2PrincipalSeries_eq_indClassFun,
-    indClassFun_eq_sum_of_smul_eq_self_mem _ _ Finset.univ fun t _ => Finset.mem_univ t,
+    Subgroup.indClassFun_eq_sum_of_smul_eq_self_mem _ _ _ Finset.univ fun t _ => Finset.mem_univ t,
     Finset.sum_congr rfl fun t _ => hterm t, Finset.sum_const, Finset.card_univ, hcard,
     nsmul_eq_mul]
   push_cast
@@ -203,7 +200,7 @@ theorem character_GL2PrincipalSeries_diagGL {a b : Fˣ} (hab : a ≠ b) :
       (by rw [Set.ncard_pair hne]; exact le_of_eq (GL2Borel.natCard_fixedCosets_diagGL hab))
       (Set.toFinite _)
   rw [character_GL2PrincipalSeries_eq_indClassFun,
-    indClassFun_eq_sum_of_smul_eq_self_mem _ _
+    Subgroup.indClassFun_eq_sum_of_smul_eq_self_mem _ _ _
       ({QuotientGroup.mk 1, QuotientGroup.mk (GL2WeylElement F)} : Finset _)
       (fun t ht => by simpa using hfixed.ge ht),
     Finset.sum_pair hne, indTerm_out_eq, indTerm_out_eq,
@@ -228,7 +225,7 @@ theorem character_GL2PrincipalSeries_jordanGL (a : Fˣ) {b : F} (hb : b ≠ 0) :
       (by rw [Set.ncard_singleton]; exact le_of_eq (GL2Borel.natCard_fixedCosets_jordanGL a hb))
       (Set.toFinite _)
   rw [character_GL2PrincipalSeries_eq_indClassFun,
-    indClassFun_eq_sum_of_smul_eq_self_mem _ _ ({QuotientGroup.mk 1} : Finset _)
+    Subgroup.indClassFun_eq_sum_of_smul_eq_self_mem _ _ _ ({QuotientGroup.mk 1} : Finset _)
       (fun t ht => by simpa using hfixed.ge ht),
     Finset.sum_singleton, indTerm_out_eq,
     indTerm_character_GL2BorelRep_eq α β a a (c := ⟨_, hmem⟩) (by group) (by simp) (by simp)]
@@ -245,7 +242,8 @@ theorem character_GL2PrincipalSeries_gl2NonSplitTorusHom {x : Eˣ}
     (GL2PrincipalSeries F α β).character (GL2NonSplitTorusHom F E x) = 0 := by
   classical
   rw [character_GL2PrincipalSeries_eq_indClassFun,
-    indClassFun_eq_sum_of_smul_eq_self_mem _ _ (∅ : Finset _) fun t ht => ?_, Finset.sum_empty]
+    Subgroup.indClassFun_eq_sum_of_smul_eq_self_mem _ _ _ (∅ : Finset _) fun t ht => ?_,
+      Finset.sum_empty]
   have : Nonempty {c : GL (Fin 2) F ⧸ GL2Borel F //
       GL2NonSplitTorusHom F E x • c = c} := ⟨⟨t, ht⟩⟩
   have hpos := Nat.card_pos (α := {c : GL (Fin 2) F ⧸ GL2Borel F //

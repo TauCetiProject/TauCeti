@@ -7,10 +7,14 @@ module
 
 public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.OfModule
-public import TauCeti.RingTheory.PrimitiveIdempotent
+public import TauCeti.RingTheory.Idempotents.Primitive.Basic
+
+import Mathlib.LinearAlgebra.PID
+import TauCeti.Algebra.MonoidAlgebra.Trace
+import TauCeti.LinearAlgebra.Trace.Idempotent
 
 /-!
-# Intertwining maps out of the left ideal of a quasi-idempotent
+# Intertwining maps out of, and the character of, the left ideal of a quasi-idempotent
 
 Let `σ` be a representation of a monoid `G` on `V` over a commutative semiring `k`, and let `a` be
 an element of the monoid algebra `k[G]` that is **quasi-idempotent**: `a * a = κ • a` for a unit
@@ -37,6 +41,16 @@ its value at `a`, which therefore determines it; and that value lies in `a V` be
 `a = κ⁻¹ a a`. Conversely a vector `a v` of `a V` defines the intertwining map
 `x ↦ κ⁻¹ x (a v)`, which sends `a` to `κ⁻¹ a a v = a v`.
 
+For a finite group over a field the character of `k[G] a` is read off from the coefficients of
+`a` (`Representation.mul_char_ofModule'_span_singleton`):
+
+`κ * χ(g) = ∑ σ, a_{σ⁻¹ g⁻¹ σ}`.
+
+Right multiplication by `a` maps `k[G]` into the ideal and acts on it as `κ`, so composing it with
+left multiplication by `g` gives an endomorphism of `k[G]` whose trace is `κ * χ(g)`
+(`TauCeti.LinearMap.trace_mul_eq_mul_trace_restrict_range`); the right-hand side is the same
+trace computed in the basis of group elements.
+
 ## Main definitions
 
 * `Representation.spanSingletonHomEquivRange`: **the dictionary**
@@ -49,6 +63,8 @@ its value at `a`, which therefore determines it; and that value lies in `a V` be
 * `Representation.spanSingletonHomEquivRange_symm_apply_smul_generator`: its inverse
   sends a vector of `a V` to the intertwining map taking `r a` to `r` applied to that vector.
 * `Representation.spanSingletonHomEquivRange_comp`: naturality in the target.
+* `Representation.mul_char_ofModule'_span_singleton`: the character of `k[G] a`, multiplied by
+  `κ`, is a sum of coefficients of `a` over the conjugates of `g⁻¹`.
 
 ## References
 
@@ -63,7 +79,8 @@ public section
 namespace Representation
 
 open scoped MonoidAlgebra
-open TauCeti (spanSingletonGenerator coe_spanSingletonGenerator)
+open TauCeti (spanSingletonGenerator coe_spanSingletonGenerator
+  exists_smul_spanSingletonGenerator smul_spanSingletonGenerator_self)
 
 variable {k G V : Type*} [CommSemiring k] [Monoid G] [AddCommMonoid V] [Module k V]
 variable (σ : Representation k G V) {a : k[G]} {κ : k}
@@ -71,18 +88,6 @@ variable (σ : Representation k G V) {a : k[G]} {κ : k}
 /-- The representation of `G` on the left ideal `k[G] a` by left multiplication. -/
 local notation "ρₐ" a =>
   ofModule' (k := k) (G := G) (Ideal.span {a} : Ideal k[G])
-
-/-- An element of the left ideal `k[G] a` is a left multiple of the generator `a`. -/
-private theorem exists_smul_spanSingletonGenerator (x : (Ideal.span {a} : Ideal k[G])) :
-    ∃ r : k[G], r • spanSingletonGenerator a = x := by
-  obtain ⟨r, hr⟩ := Ideal.mem_span_singleton'.mp x.2
-  exact ⟨r, Subtype.ext (by rwa [Submodule.coe_smul, coe_spanSingletonGenerator, smul_eq_mul])⟩
-
-/-- Under quasi-idempotence, `a` acting on the generator of `k[G] a` scales it by `κ`. -/
-private theorem smul_spanSingletonGenerator_self (ha : a * a = κ • a) :
-    a • spanSingletonGenerator a = κ • spanSingletonGenerator a :=
-  Subtype.ext (by
-    rwa [Submodule.coe_smul, Submodule.coe_smul_of_tower, coe_spanSingletonGenerator, smul_eq_mul])
 
 /-- An intertwining map out of `k[G] a` sends `r a` to `r` applied to its value at `a`. -/
 private theorem intertwining_apply_smul_generator (f : IntertwiningMap (ρₐ a) σ) (r : k[G]) :
@@ -110,7 +115,7 @@ private noncomputable def intertwiningOfVector (hκ : IsUnit κ) (v : V) :
     ext x
     simp only [LinearMap.coe_comp, LinearMap.coe_mk, AddHom.coe_mk, Function.comp_apply,
       TauCeti.Representation.ofModule'_apply, Submodule.coe_smul, smul_eq_mul, map_mul,
-      Module.End.mul_apply, asAlgebraHom_single_one, map_smul]
+      mul_apply_eq_comp, asAlgebraHom_single_one, map_smul]
 
 private theorem intertwiningOfVector_apply (hκ : IsUnit κ) (v : V)
     (x : (Ideal.span {a} : Ideal k[G])) :
@@ -133,7 +138,7 @@ noncomputable def spanSingletonHomEquivRange (hκ : IsUnit κ) (ha : a * a = κ 
     rw [IntertwiningMap.toLinearMap_apply, IntertwiningMap.toLinearMap_apply,
       intertwiningOfVector_apply,
       intertwining_apply_smul_generator, Submodule.coe_smul, smul_eq_mul,
-      coe_spanSingletonGenerator, map_mul, Module.End.mul_apply]
+      coe_spanSingletonGenerator, map_mul, mul_apply_eq_comp]
     -- `a` applied to the value at `a` is the value at `a • a = κ • a`, so `κ⁻¹` cancels
     rw [← intertwining_apply_smul_generator, smul_spanSingletonGenerator_self ha, map_smul,
       map_smul, smul_smul, hκ.val_inv_mul, one_smul]
@@ -141,7 +146,7 @@ noncomputable def spanSingletonHomEquivRange (hκ : IsUnit κ) (ha : a * a = κ 
     rintro ⟨_, u, rfl⟩
     refine Subtype.ext ?_
     dsimp only
-    rw [intertwiningOfVector_apply, coe_spanSingletonGenerator, ← Module.End.mul_apply,
+    rw [intertwiningOfVector_apply, coe_spanSingletonGenerator, ← mul_apply_eq_comp,
       ← map_mul, ha, map_smul, LinearMap.smul_apply, smul_smul, hκ.val_inv_mul, one_smul]
 
 /-- The dictionary evaluates an intertwining map at the generator `a`. -/
@@ -174,5 +179,33 @@ theorem spanSingletonHomEquivRange_comp {W : Type*} [AddCommMonoid W] [Module k 
     (spanSingletonHomEquivRange τ hκ ha (T.comp f) : W) =
       T (spanSingletonHomEquivRange σ hκ ha f) :=
   (rfl)
+
+/-! ### The character of the left ideal -/
+
+section Character
+
+variable {k G : Type*} [Field k] [Group G] [Fintype G] {a : k[G]} {κ : k}
+
+/-- **The character of the left ideal of a quasi-idempotent.** If `a * a = κ • a`, then `κ` times
+the character of `k[G] a` at `g` is `∑ σ, a_{σ⁻¹ g⁻¹ σ}`, the sum of the coefficients of `a` over
+the conjugates of `g⁻¹`, each counted once for every element of `G` conjugating `g⁻¹` to it. -/
+theorem mul_char_ofModule'_span_singleton (ha : a * a = κ • a) (g : G) :
+    κ * (ofModule' (k := k) (G := G) (Ideal.span {a} : Ideal k[G])).character g =
+      ∑ σ : G, a.coeff (σ⁻¹ * g⁻¹ * σ) := by
+  set I : Ideal k[G] := Ideal.span {a}
+  -- right multiplication by `a` is essentially idempotent, with range the ideal `I`
+  have hc : LinearMap.mulRight k a * LinearMap.mulRight k a = κ • LinearMap.mulRight k a :=
+    LinearMap.ext fun x => by simp [mul_assoc, ha]
+  have hrange : LinearMap.range (LinearMap.mulRight k a) = I.restrictScalars k := by
+    ext x; simp [I, Ideal.mem_span_singleton', eq_comm]
+  -- the identity of carriers between `range (mulRight a)` and `I`
+  let e := (LinearEquiv.ofEq _ _ hrange).trans ((I.restrictScalarsEquiv k).restrictScalars k)
+  rw [← MonoidAlgebra.trace_mulLeft_single_mul_mulRight, (LinearMap.commute_mulLeft_right _ a).eq,
+    TauCeti.LinearMap.trace_mul_eq_mul_trace_restrict_range hc
+      (LinearMap.commute_mulLeft_right _ a).symm, character, ← LinearMap.trace_conj' _ e]
+  -- transported along `e`, left multiplication by `g` on the range is the action on `I`
+  congr 2
+
+end Character
 
 end Representation

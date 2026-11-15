@@ -8,8 +8,6 @@ module
 public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.VonMangoldt
 import TauCeti.Algebra.Group.Conj
 import TauCeti.Analysis.Asymptotics.Lemmas
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.DedekindZeta
-import TauCeti.NumberTheory.Chebotarev.AuxiliaryPrime
 import TauCeti.NumberTheory.Chebotarev.Crossing.CrossingConstant
 import TauCeti.NumberTheory.Chebotarev.PrimeCounting.Cyclotomic
 import TauCeti.NumberTheory.Chebotarev.PrimeCounting.FixedFieldContraction
@@ -43,9 +41,10 @@ crossing follows the proof of `NumberField.Chebotarev.hasDirichletDensity_abelia
   over the class of `σ`, so their `ψ` functions add up to at most `ψ_σ`: for a fixed `q`, the
   limit in `x` gives `liminf ψ_σ(x) / x ≥ (1 - 2 ^ (-r)) ^ #f.primeFactors / #G`, and only then
   does `r` grow, giving `liminf ψ_σ(x) / x ≥ 1 / #G`.
-* The `ψ` functions of all classes add up to `ψ_K(x) = x + o(x)` (the prime ideal theorem
-  `TauCeti.primeIdealTheorem`) up to `O(log x)`, so these lower bounds saturate the total and
-  each of them is the limit.
+* Summing the cyclotomic weighted theorem over the Galois group of `K(μ₃)/K` and restoring
+  its finitely many ramified primes gives `ψ_K(x) = x + o(x)`. The `ψ` functions of all classes
+  of `Gal(L/K)` account for this total up to `O(log x)`, so their lower bounds saturate the
+  total and each of them is the limit.
 * For a general class `C ∋ σ`, the extension `L / L ^ ⟨σ⟩` is cyclic, and the contraction across
   the cyclic fixed field carries the abelian result down to `C`.
 
@@ -73,25 +72,21 @@ namespace NumberField.Chebotarev
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
--- **One auxiliary prime.** In an abelian extension, the Frobenius `ψ` of `σ` eventually exceeds
--- `δ x` for every `δ` below `(1 - 2 ^ (-r)) ^ #(orderOf σ).primeFactors / #G`, for every `r ≥ 1`.
-private theorem eventually_lt_frobeniusPsi_div_of_mul_comm
-    (hab : ∀ σ τ : L ≃ₐ[K] L, σ * τ = τ * σ) (σ : L ≃ₐ[K] L) {r : ℕ} (hr : 0 < r) {δ : ℝ}
-    (hδ : δ < (1 - (2 : ℝ) ^ (-(r : ℤ))) ^ (orderOf σ).primeFactors.card /
-      (Nat.card (L ≃ₐ[K] L) : ℝ)) :
+-- **One auxiliary prime.** In an abelian extension, for a prime `q` coprime to the discriminant
+-- of `L`, the Frobenius `ψ` of `σ` eventually exceeds `δ x` for every `δ` below the crossing
+-- constant of `(ZMod q)ˣ` at the order of `σ`.
+private theorem eventually_lt_frobeniusPsi_div_of_lt_crossingConstant
+    (hab : ∀ σ τ : L ≃ₐ[K] L, σ * τ = τ * σ) (σ : L ≃ₐ[K] L) {q : ℕ} [Fact q.Prime]
+    (hcop : (discr L).natAbs.Coprime q) {δ : ℝ}
+    (hδ : δ < crossingConstant K L (H := (ZMod q)ˣ) (orderOf σ)) :
     ∀ᶠ x in atTop, δ < frobeniusPsi K L (ConjClasses.mk σ) x / x := by
   classical
   set f := orderOf σ
-  -- Cross with `M = L(μ_q)` for a prime `q` with `f ^ r ∣ q - 1` and `|disc L| < q`; then
-  -- `Gal(M/K) ≃ Gal(L/K) × (ZMod q)ˣ`.
-  obtain ⟨q, hq, hqN, -, hfq, -, -, -⟩ := exists_auxiliaryPrime K L (f ^ r) (discr L).natAbs
-    (pow_ne_zero _ (orderOf_pos σ).ne')
-  have : Fact q.Prime := ⟨hq⟩
-  have hcop : (discr L).natAbs.Coprime q :=
-    (Nat.coprime_of_lt_prime (Int.natAbs_ne_zero.mpr (discr_ne_zero L)) hqN hq).symm
+  -- Cross with `M = L(μ_q)`, so that `Gal(M/K) ≃ Gal(L/K) × (ZMod q)ˣ`.
   let M := CyclotomicField q L
   have hζ := IsCyclotomicExtension.zeta_spec q L M
-  have : IsGalois K M := IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M q
+  have : IsGalois K M :=
+    IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M {q}
   set e := IsCyclotomicExtension.galEquivProd K L M q hcop hζ
   have hcard : Nat.card (M ≃ₐ[K] M) = Nat.card (L ≃ₐ[K] L) * Nat.card (ZMod q)ˣ := by
     rw [Nat.card_congr e.toEquiv, Nat.card_prod]
@@ -111,7 +106,7 @@ private theorem eventually_lt_frobeniusPsi_div_of_mul_comm
         frobeniusPsi_asymptotic_of_isCyclotomicExtension _ M q
           (e.symm (σ, τ)).toFixedFieldAlgEquiv
     rw [Nat.card_coe_set_eq, ConjClasses.ncard_carrier_mk_of_mem_center
-      (Subgroup.mem_center_iff.mpr fun ρ ↦ hcomm ρ _), hcard, Nat.cast_one, Nat.cast_mul] at h
+      (Submonoid.mem_center_iff.mpr fun ρ ↦ hcomm ρ _), hcard, Nat.cast_one, Nat.cast_mul] at h
     exact (isLittleO_sub_mul_iff_tendsto_div (eventually_ne_atTop 0)).mp h
   -- Summed over the tags, the limits add up to the crossing constant.
   have hsum : Tendsto (fun x ↦ ∑ τ ∈ taggedElements f,
@@ -119,8 +114,6 @@ private theorem eventually_lt_frobeniusPsi_div_of_mul_comm
         (𝓝 (crossingConstant K L (H := (ZMod q)ˣ) f)) := by
     rw [crossingConstant_def, div_eq_mul_one_div, ← nsmul_eq_mul, ← Finset.sum_const]
     exact tendsto_finsetSum _ hψ
-  have hf : f ^ r ∣ Nat.card (ZMod q)ˣ := by
-    rwa [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient, Nat.totient_prime hq]
   -- Distinct tags give distinct classes of `Gal(M/K)`, all over the class of `σ`.
   have hinj : Set.InjOn (fun τ : (ZMod q)ˣ ↦ ConjClasses.mk (e.symm (σ, τ)))
       (taggedElements (H := (ZMod q)ˣ) f : Set (ZMod q)ˣ) := fun τ _ υ _ h ↦ by
@@ -133,8 +126,7 @@ private theorem eventually_lt_frobeniusPsi_div_of_mul_comm
     rintro _ ⟨τ, -, rfl⟩
     rw [ConjClasses.map_mk, AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply,
       IsCyclotomicExtension.restrictNormal_galEquivProd_symm]
-  filter_upwards [(tendsto_order.1 hsum).1 δ (hδ.trans_le (le_crossingConstant K L f r hr hf)),
-    eventually_gt_atTop 0] with x hx hx0
+  filter_upwards [(tendsto_order.1 hsum).1 δ hδ, eventually_gt_atTop 0] with x hx hx0
   refine hx.trans_le ?_
   rw [← Finset.sum_div, ← Finset.sum_image (f := fun D ↦ frobeniusPsi K M D x) hinj]
   gcongr
@@ -146,15 +138,41 @@ private theorem eventually_lt_frobeniusPsi_div_one_div_card_of_mul_comm
     (hab : ∀ σ τ : L ≃ₐ[K] L, σ * τ = τ * σ) (σ : L ≃ₐ[K] L) {δ : ℝ}
     (hδ : δ < 1 / (Nat.card (L ≃ₐ[K] L) : ℝ)) :
     ∀ᶠ x in atTop, δ < frobeniusPsi K L (ConjClasses.mk σ) x / x := by
-  -- The bound of one auxiliary prime tends to `1 / #G` as its level grows.
-  have h2 : Tendsto (fun r : ℕ ↦ (2 : ℝ) ^ (-(r : ℤ))) atTop (𝓝 0) := by
-    simpa [zpow_neg, zpow_natCast, inv_pow] using
-      tendsto_pow_atTop_nhds_zero_of_lt_one (r := (2 : ℝ)⁻¹) (by norm_num) (by norm_num)
-  have hlim := (((tendsto_const_nhds (x := (1 : ℝ))).sub h2).pow
-    (orderOf σ).primeFactors.card).div_const (Nat.card (L ≃ₐ[K] L) : ℝ)
-  rw [sub_zero, one_pow] at hlim
-  obtain ⟨r, hr, hδr⟩ := ((eventually_gt_atTop 0).and (hlim.eventually (lt_mem_nhds hδ))).exists
-  exact eventually_lt_frobeniusPsi_div_of_mul_comm hab σ hr hδr
+  obtain ⟨q, _, hcop, hδq⟩ := exists_prime_coprime_lt_crossingConstant K L (orderOf_pos σ).ne'
+    (Int.natAbs_ne_zero.mpr (discr_ne_zero L)) hδ
+  exact eventually_lt_frobeniusPsi_div_of_lt_crossingConstant hab σ hcop hδq
+
+open scoped Classical in
+/-- In an abelian Galois group, summing over elements is summing over conjugacy classes. -/
+private theorem _root_.TauCeti.NumberField.Chebotarev.sum_frobeniusPsi_mk
+    [IsMulCommutative (L ≃ₐ[K] L)] (x : ℝ) :
+    ∑ ρ : L ≃ₐ[K] L, frobeniusPsi K L (ConjClasses.mk ρ) x =
+      ∑ C : ConjClasses (L ≃ₐ[K] L), frobeniusPsi K L C x := by
+  classical
+  -- The scoped `CommMonoid` and the ambient automorphism monoid have definitionally equal
+  -- monoid projections; this ascription checks the bijection against the ambient instance.
+  have hmk : Function.Bijective
+      (ConjClasses.mk : (L ≃ₐ[K] L) → ConjClasses (L ≃ₐ[K] L)) :=
+    open scoped IsMulCommutative in ConjClasses.mk_bijective
+  exact Fintype.sum_bijective _ hmk _ _ fun _ ↦ rfl
+
+/-- The prime ideal theorem for `ψ`: summing the cyclotomic weighted theorem over
+`Gal(K(μ₃)/K)` and restoring the finitely many ramified primes gives `ψ_K(x) = x + o(x)`. -/
+private theorem _root_.TauCeti.NumberField.Chebotarev.primePsi_univ_asymptotic :
+    (fun x : ℝ ↦ primePsi K Set.univ x - x) =o[atTop] fun x : ℝ ↦ x := by
+  classical
+  let F := CyclotomicField 3 K
+  have := IsCyclotomicExtension.isGalois {3} K F
+  have := IsCyclotomicExtension.isMulCommutative {3} K F
+  have hsum := Asymptotics.IsLittleO.sum (s := Finset.univ)
+    (fun (ρ : F ≃ₐ[K] F) _ ↦ frobeniusPsi_asymptotic_of_isCyclotomicExtension K F 3 ρ)
+  refine (hsum.add ((primePsi_univ_sub_sum_frobeniusPsi_isBigO_log K F).trans_isLittleO
+    Real.isLittleO_log_id_atTop)).congr_left fun x ↦ ?_
+  simp only [Finset.sum_apply, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
+    nsmul_eq_mul, ← Nat.card_eq_fintype_card]
+  rw [sum_frobeniusPsi_mk, ← mul_assoc,
+    mul_one_div_cancel (Nat.cast_ne_zero.mpr Nat.card_pos.ne')]
+  ring
 
 public section
 
@@ -167,23 +185,19 @@ theorem frobeniusPsi_asymptotic_of_mul_comm (hab : ∀ σ τ : L ≃ₐ[K] L, σ
   classical
   rw [isLittleO_sub_mul_iff_tendsto_div (eventually_ne_atTop 0)]
   -- In an abelian group the conjugacy classes are the elements.
-  have hmk : Function.Bijective (ConjClasses.mk : (L ≃ₐ[K] L) → ConjClasses (L ≃ₐ[K] L)) := by
-    refine ⟨fun ρ ρ' h ↦ ?_, ConjClasses.mk_surjective⟩
-    obtain ⟨c, hc⟩ := isConj_iff.mp (ConjClasses.mk_eq_mk_iff_isConj.mp h)
-    rw [← hc, hab c, mul_inv_cancel_right]
+  have : IsMulCommutative (L ≃ₐ[K] L) := isMulCommutative_iff.2 hab
   -- The Frobenius `ψ` functions of all classes add up to `ψ_K(x) = x + o(x)`, up to `O(log x)`.
   have htotal : Tendsto (fun x ↦ ∑ ρ : L ≃ₐ[K] L, frobeniusPsi K L (ConjClasses.mk ρ) x / x)
       atTop (𝓝 (∑ _ρ : L ≃ₐ[K] L, 1 / (Nat.card (L ≃ₐ[K] L) : ℝ))) := by
     have h : (fun x ↦ ∑ C : ConjClasses (L ≃ₐ[K] L), frobeniusPsi K L C x - 1 * x)
         =o[atTop] fun x : ℝ ↦ x :=
-      ((primeIdealTheorem K).1.isLittleO.sub
+      (primePsi_univ_asymptotic.sub
         ((primePsi_univ_sub_sum_frobeniusPsi_isBigO_log K L).trans_isLittleO
-          Real.isLittleO_log_id_atTop)).congr_left fun x ↦ by rw [Pi.sub_apply]; ring
+          Real.isLittleO_log_id_atTop)).congr_left fun x ↦ by ring
     rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← Nat.card_eq_fintype_card,
       mul_one_div_cancel (Nat.cast_ne_zero.mpr Nat.card_pos.ne')]
     refine ((isLittleO_sub_mul_iff_tendsto_div (eventually_ne_atTop 0)).mp h).congr fun x ↦ ?_
-    rw [← Finset.sum_div, Fintype.sum_bijective _ hmk
-      (fun ρ ↦ frobeniusPsi K L (ConjClasses.mk ρ) x) (fun C ↦ frobeniusPsi K L C x) fun _ ↦ rfl]
+    rw [← Finset.sum_div, sum_frobeniusPsi_mk]
   -- Every class has lower asymptotic density `1 / #G`, and these bounds saturate the total.
   exact tendsto_of_forall_eventually_lt_of_eventually_sum_lt (s := Finset.univ)
     (f := fun ρ x ↦ frobeniusPsi K L (ConjClasses.mk ρ) x / x)

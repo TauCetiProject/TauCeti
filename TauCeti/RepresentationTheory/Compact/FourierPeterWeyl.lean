@@ -71,11 +71,11 @@ by `IrrepModel`. -/
 noncomputable def fourierIrrepModel (n : ℤ) :
   IrrepModel ℂ (Multiplicative (AddCircle T)) where
   dim := 1
-  rep := ContRepresentation.congr (IrrepModel.oneDimensionalEquiv.toContinuousLinearEquiv)
+  rep := ContinuousLinearEquiv.congr (IrrepModel.oneDimensionalEquiv.toContinuousLinearEquiv)
     (fourierRep T n)
-  continuous_rep := ContRepresentation.continuous_congr _ (continuous_fourierRep T n)
+  continuous_rep := ContinuousLinearEquiv.continuous_congr _ (continuous_fourierRep T n)
   isUnitary := (isUnitary_fourierRep T n).congr IrrepModel.oneDimensionalEquiv
-  isIrreducible := ContRepresentation.isIrreducible_congr _ (isIrreducible_fourierRep T n)
+  isIrreducible := ContinuousLinearEquiv.isIrreducible_congr _ (isIrreducible_fourierRep T n)
 
 omit hT in
 @[simp]
@@ -92,9 +92,9 @@ theorem fourierIrrepModel_rep_apply (n : ℤ) (x : Multiplicative (AddCircle T))
   -- (the motive is not type correct). Both steps below only unfold `fourierIrrepModel` by
   -- definition: first in the type of `v`, then in the representation applied to it.
   change EuclideanSpace ℂ (Fin 1) at v
-  change ContRepresentation.congr IrrepModel.oneDimensionalEquiv.toContinuousLinearEquiv
+  change ContinuousLinearEquiv.congr IrrepModel.oneDimensionalEquiv.toContinuousLinearEquiv
     (fourierRep T n) x v = fourier n (Multiplicative.toAdd x) • v
-  rw [ContRepresentation.congr_apply, fourierRep_apply, ← smul_eq_mul, map_smul]
+  rw [ContinuousLinearEquiv.congr_apply, fourierRep_apply, ← smul_eq_mul, map_smul]
   exact congrArg (fourier n (Multiplicative.toAdd x) • ·)
     (LinearIsometryEquiv.apply_symm_apply IrrepModel.oneDimensionalEquiv v)
 

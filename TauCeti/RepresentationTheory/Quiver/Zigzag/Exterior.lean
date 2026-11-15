@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.Basic
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The exterior skew-zigzag parameter
@@ -85,9 +86,9 @@ relation, rather than the ordinary one, that the exterior skew group algebras of
 carry. -/
 def exterior : SkewZigzagParameter k G where
   ratio _ j j' _ _ := if j = j' then 1 else -1
-  ratio_self := by intro i j h; exact ite_eq_left rfl
+  ratio_self := by intro i j _; exact ite_eq_left rfl
   ratio_inv := by
-    intro i j j' h h'
+    intro i j j' _ _
     exact exteriorSign_mul_exteriorSign k j j'
   ratio_cocycle := by
     intro i j j' j'' h h' h''

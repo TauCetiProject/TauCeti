@@ -14,6 +14,7 @@ import Mathlib.Data.Nat.Squarefree
 import Mathlib.Data.Rat.Lemmas
 import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -26,6 +27,7 @@ that Mathlib does not provide directly, used across the multiquadratic developme
   Mathlib's `IsUnit.squarefree`). It is phrased with `Squarefree` dot-notation, so a caller
   holding `ha : Squarefree a` and `hu : ¬ IsUnit a` can write `ha.not_isSquare hu`.
 * `Squarefree.neg`: negation preserves squarefreeness in any ring with distributive negation.
+* `TauCeti.squarefree_map_iff`: a multiplicative equivalence preserves and reflects squarefreeness.
 * `not_isSquare_intCast_of_squarefree_of_ne_one`: a squarefree integer other than `1` is not a
   rational square.
 * `isSquare_mul_sq_iff`: in a commutative group with zero, multiplying by a nonzero square does
@@ -35,6 +37,19 @@ that Mathlib does not provide directly, used across the multiquadratic developme
   square. Mathlib's `exists_sq_mul_squarefree` proves the underlying factorization in a unique
   factorization monoid; the integer statement here records a nonzero square factor and puts the
   factors in the orientation used by the rational square-class argument.
+* `TauCeti.Int.not_four_dvd_of_squarefree` and
+  `TauCeti.Int.emod_four_eq_two_or_three_of_squarefree`: the modulo-four restrictions on
+  squarefree integers.
+* `TauCeti.Int.not_dvd_two_mul_and_sq_dvd_sq_sub_of_squarefree` and
+  `TauCeti.Int.not_dvd_two_mul_sub_one_and_sq_dvd_sq_sub_sub_of_squarefree`: the integer
+  arithmetic behind Dedekind's criterion at every prime for `ℤ[√d]` (`d ≢ 1 (mod 4)`) and for
+  `ℤ[(1 + √d)/2]` (`d ≡ 1 (mod 4)`), with `d` squarefree.
+* `TauCeti.Int.emod_eight_eq_of_eq_mul_sq_of_not_four_dvd`: removing a square factor
+  preserves residues modulo eight when the original integer is not divisible by four.
+* `TauCeti.Int.emod_eight_eq_five_iff_exists_eq_mod_eight_eq_five_mul_sq` and
+  `TauCeti.Int.exists_eq_mod_eight_eq_five_mul_sq_iff_exists_squarefree_mod_eight_eq_five_mul_sq`:
+  membership in the rational square class of an integer congruent to five modulo eight can be
+  tested on an integer squarefree part.
 * `Nat.four_dvd_or_exists_odd_prime_and_dvd_of_squarefree`: squarefreeness of *every* prime
   divisor of an `n > 2`, read in any ring, yields the single branch that Mathlib's
   `Nat.four_dvd_or_exists_odd_prime_and_dvd_of_two_lt` splits into. This is the bridge from a
@@ -43,6 +58,68 @@ that Mathlib does not provide directly, used across the multiquadratic developme
 -/
 
 public section
+
+namespace TauCeti.Int
+
+/-- A squarefree integer is not divisible by four. -/
+theorem not_four_dvd_of_squarefree {n : ℤ} (hn : Squarefree n) : ¬ (4 : ℤ) ∣ n :=
+  fun h => (Int.isUnit_iff.not.mpr (by decide)) (hn 2 (by simpa using h))
+
+/-- A squarefree integer not congruent to one modulo four is congruent to two or three. -/
+theorem emod_four_eq_two_or_three_of_squarefree {n : ℤ} (hn : Squarefree n)
+    (h : n % 4 ≠ 1) : n % 4 = 2 ∨ n % 4 = 3 := by
+  have := not_four_dvd_of_squarefree hn
+  omega
+
+/-- For a squarefree integer `d ≢ 1 (mod 4)` and a prime `p`, no `r` has both `p ∣ 2r` and
+`p² ∣ r² - d`: if `p ∣ r` then `p² ∣ d`, and otherwise `p = ±2` with `r` odd, so
+`d ≡ r² ≡ 1 (mod 4)`. This is Dedekind's criterion for `ℤ[√d]` at `p`. -/
+theorem not_dvd_two_mul_and_sq_dvd_sq_sub_of_squarefree {p d : ℤ} (hp : Prime p)
+    (hd : Squarefree d) (hd4 : d % 4 ≠ 1) (r : ℤ) :
+    ¬ (p ∣ 2 * r ∧ p ^ 2 ∣ r ^ 2 - d) := by
+  rintro ⟨h2r, hsq⟩
+  by_cases hpr : p ∣ r
+  · -- `p ∣ r` gives `p² ∣ r²`, hence `p² ∣ d`.
+    have hpd : p * p ∣ d := by
+      have := dvd_sub (pow_dvd_pow_of_dvd hpr 2) hsq
+      rwa [sub_sub_cancel, sq] at this
+    exact hp.not_isUnit (hd _ hpd)
+  · -- Otherwise `p ∣ 2`, so `p² = 4` and `r` is odd, whence `d ≡ r² ≡ 1 (mod 4)`.
+    have h2 : p ∣ 2 := (hp.dvd_or_dvd h2r).resolve_right hpr
+    have hp4 : p ^ 2 = 4 := by
+      have habs : p.natAbs ∣ 2 := by simpa using Int.natAbs_dvd_natAbs.mpr h2
+      rcases (Nat.dvd_prime Nat.prime_two).mp habs with h | h
+      · exact absurd (Int.isUnit_iff_natAbs_eq.mpr h) hp.not_isUnit
+      · rw [← Int.natAbs_sq, h]
+        norm_num
+    have hodd : r % 2 = 1 := by
+      by_contra hev
+      exact hpr (h2.trans (by omega))
+    rw [hp4] at hsq
+    obtain ⟨k, hk⟩ := hsq
+    have : r ^ 2 % 4 = 1 := by
+      have hr' : r = 2 * (r / 2) + 1 := by omega
+      rw [hr']
+      ring_nf
+      omega
+    omega
+
+/-- For a squarefree integer `d ≡ 1 (mod 4)` and a prime `p`, no `r` has both `p ∣ 2r - 1` and
+`p² ∣ r² - r - (d - 1)/4`: since `d = (2r - 1)² - 4 (r² - r - (d - 1)/4)`, both would force
+`p² ∣ d`. This is Dedekind's criterion for `ℤ[(1 + √d)/2]` at `p`. -/
+theorem not_dvd_two_mul_sub_one_and_sq_dvd_sq_sub_sub_of_squarefree {p d : ℤ} (hp : Prime p)
+    (hd : Squarefree d) (hd4 : d % 4 = 1) (r : ℤ) :
+    ¬ (p ∣ 2 * r - 1 ∧ p ^ 2 ∣ r ^ 2 - r - (d - 1) / 4) := by
+  rintro ⟨⟨t, ht⟩, hsq⟩
+  have h4 : d = (2 * r - 1) ^ 2 - 4 * (r ^ 2 - r - (d - 1) / 4) := by
+    have : 4 * ((d - 1) / 4) = d - 1 := by omega
+    linear_combination -this
+  have hpd : p * p ∣ d := by
+    rw [h4, ht, ← sq]
+    exact dvd_sub (by rw [mul_pow]; exact dvd_mul_right _ _) (dvd_mul_of_dvd_right hsq _)
+  exact hp.not_isUnit (hd _ hpd)
+
+end TauCeti.Int
 
 /-- A squarefree non-unit of a monoid is not a square. -/
 theorem Squarefree.not_isSquare {R : Type*} [Monoid R] {a : R}
@@ -54,6 +131,16 @@ theorem Squarefree.not_isSquare {R : Type*} [Monoid R] {a : R}
 theorem Squarefree.neg {R : Type*} [Monoid R] [HasDistribNeg R] {n : R}
     (hn : Squarefree n) : Squarefree (-n) :=
   ((Associated.refl n).neg_left).squarefree_iff.mpr hn
+
+/-- A multiplicative equivalence preserves and reflects squarefreeness. -/
+@[simp]
+theorem TauCeti.squarefree_map_iff {F M N : Type*} [Monoid M] [Monoid N] [EquivLike F M N]
+    [MulEquivClass F M N] (f : F) {a : M} : Squarefree (f a) ↔ Squarefree a := by
+  refine ⟨fun h x hx ↦ (isUnit_map_iff f x).mp (h _ (by simpa using map_dvd f hx)),
+    fun h y hy ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := EquivLike.surjective f y
+  rw [← map_mul, map_dvd_iff] at hy
+  exact (h x hy).map f
 
 /-- A squarefree integer other than `1` is not a rational square. -/
 theorem not_isSquare_intCast_of_squarefree_of_ne_one {n : ℤ}
@@ -101,6 +188,74 @@ theorem Rat.exists_squarefree_int_mul_sq {q : ℚ} (hq : q ≠ 0) :
   rw [hnum] at habQ
   field_simp
   linear_combination habQ
+
+namespace TauCeti.Int
+
+/-- Removing an integer square factor preserves the residue modulo eight when the original
+integer is not divisible by four. -/
+theorem emod_eight_eq_of_eq_mul_sq_of_not_four_dvd {n s b : ℤ} (h : n = s * b ^ 2)
+    (hn : ¬ (4 : ℤ) ∣ n) : n % 8 = s % 8 := by
+  have hb : ¬ (2 : ℤ) ∣ b := by
+    rintro ⟨k, rfl⟩
+    apply hn
+    refine ⟨s * k ^ 2, ?_⟩
+    rw [h]
+    ring
+  have hsq : b ^ 2 % 8 = 1 := by
+    have hodd : Odd b := Int.not_even_iff_odd.mp (fun h => hb h.two_dvd)
+    have := Int.dvd_iff_emod_eq_zero.mp (Int.eight_dvd_sq_sub_one_of_odd hodd)
+    omega
+  rw [h, Int.mul_emod, hsq, mul_one, Int.emod_emod]
+
+/-- For a squarefree integer, being in the rational square class of an integer congruent to
+five modulo eight is equivalent to being congruent to five modulo eight itself. -/
+theorem emod_eight_eq_five_iff_exists_eq_mod_eight_eq_five_mul_sq {n : ℤ} (hn : Squarefree n) :
+    n % 8 = 5 ↔ ∃ (c : ℤ) (q : ℚ), c % 8 = 5 ∧ q ≠ 0 ∧ (n : ℚ) = c * q ^ 2 := by
+  refine ⟨fun h => ⟨n, 1, h, one_ne_zero, by simp⟩, ?_⟩
+  rintro ⟨c, q, hc, -, h⟩
+  have hsq : IsSquare (n * c) := Rat.isSquare_intCast_iff.mp (by
+    refine ⟨(c : ℚ) * q, ?_⟩
+    push_cast
+    rw [h]
+    ring)
+  obtain ⟨z, hz⟩ := hsq
+  obtain ⟨e, he⟩ : n ∣ z := (hn.dvd_pow_iff_dvd two_ne_zero).mp ⟨c, by
+    simpa [sq] using hz.symm⟩
+  have hce : c = n * e ^ 2 := by
+    rw [he] at hz
+    apply mul_left_cancel₀ hn.ne_zero
+    linear_combination hz
+  have hmod : c % 8 = (n % 8 * ((e % 8) ^ 2 % 8)) % 8 := by
+    simp only [sq]
+    rw [hce, sq, Int.mul_emod, Int.mul_emod e e]
+  have hemod := Int.emod_nonneg e (by decide : (8 : ℤ) ≠ 0)
+  have helt := Int.emod_lt_of_pos e (by decide : (0 : ℤ) < 8)
+  interval_cases e % 8 <;> norm_num at hmod <;> omega
+
+/-- An integer lies in the rational square class of an integer congruent to five modulo eight
+exactly when its squarefree part is congruent to five modulo eight. The nonzero integer square
+factor excludes zero, which has no squarefree part. -/
+theorem exists_eq_mod_eight_eq_five_mul_sq_iff_exists_squarefree_mod_eight_eq_five_mul_sq
+    {n : ℤ} :
+    (∃ (c : ℤ) (q : ℚ), c % 8 = 5 ∧ q ≠ 0 ∧ (n : ℚ) = c * q ^ 2) ↔
+      ∃ s b : ℤ, Squarefree s ∧ b ≠ 0 ∧ n = s * b ^ 2 ∧ s % 8 = 5 := by
+  constructor
+  · rintro ⟨c, q, hc, hq, h⟩
+    have hn : n ≠ 0 := by
+      intro hn
+      have hc0 : (c : ℚ) ≠ 0 := by exact_mod_cast (by omega : c ≠ 0)
+      exact mul_ne_zero hc0 (pow_ne_zero 2 hq) (h.symm.trans (by simp [hn]))
+    obtain ⟨s, b, hs, hb, hn⟩ := Int.exists_squarefree_mul_sq hn
+    have hbQ : (b : ℚ) ≠ 0 := by exact_mod_cast hb
+    refine ⟨s, b, hs, hb, hn, (emod_eight_eq_five_iff_exists_eq_mod_eight_eq_five_mul_sq hs).mpr
+      ⟨c, q / b, hc, div_ne_zero hq hbQ, ?_⟩⟩
+    have hnQ : (n : ℚ) = s * (b : ℚ) ^ 2 := by exact_mod_cast hn
+    field_simp
+    linear_combination h - hnQ
+  · rintro ⟨s, b, -, hb, hn, hs⟩
+    exact ⟨s, b, hs, by exact_mod_cast hb, by exact_mod_cast hn⟩
+
+end TauCeti.Int
 
 namespace Nat
 

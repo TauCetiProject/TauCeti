@@ -57,10 +57,9 @@ the root-system case is irreducibility, which Mathlib packages as
 ## References
 
 This file supplies the "no cycles" and "`n - 1` edges" steps of the classification of finite-type
-Cartan matrices, Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See
-J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, where the shape of
-an admissible diagram is deduced from exactly these two facts, and Bourbaki, *Lie Groups and Lie
-Algebras, Chapters 4-6*, Ch. VI §4.
+Cartan matrices. See J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*,
+§11.4, where the shape of an admissible diagram is deduced from exactly these two facts, and
+Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4.
 -/
 
 public section
@@ -114,9 +113,35 @@ theorem diagramGraph_cartanMatrix_A (n : ℕ) :
 
 end DynkinType
 
+/-- Two nodes of the `Aₙ` diagram are joined exactly when they are consecutive. -/
+theorem diagramGraph_A_adj (n : ℕ) (i j : Fin n) :
+    (diagramGraph (DynkinType.A n).cartanMatrix : SimpleGraph (Fin n)).Adj i j ↔
+      (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i := by
+  rw [DynkinType.cartanMatrix_A, DynkinType.diagramGraph_cartanMatrix_A,
+    SimpleGraph.pathGraph_adj]
+
+/-- From rank three on, two nodes of the `Dₙ` diagram are joined exactly when they are consecutive
+on the long arm `0, …, n - 3`, or one is the branch node `n - 3` and the other a leaf. -/
+theorem diagramGraph_D_adj {n : ℕ} (hn : 3 ≤ n) (i j : Fin n) :
+    (diagramGraph (DynkinType.D n).cartanMatrix : SimpleGraph (Fin n)).Adj i j ↔
+      (i : ℕ) + 1 = j ∧ (j : ℕ) ≤ n - 3 ∨ (j : ℕ) + 1 = i ∧ (i : ℕ) ≤ n - 3 ∨
+        (i : ℕ) = n - 3 ∧ n - 3 < j ∨ (j : ℕ) = n - 3 ∧ n - 3 < i := by
+  rw [DynkinType.cartanMatrix_D, diagramGraph_adj]
+  simp only [CartanMatrix.D, Matrix.of_apply, ne_eq, Fin.ext_iff]
+  have := i.2
+  have := j.2
+  split_ifs <;> simp <;> omega
+
+/-- Below rank three the `Dₙ` diagram has no edges. -/
+theorem not_diagramGraph_D_adj {n : ℕ} (hn : n < 3) (i j : Fin n) :
+    ¬(diagramGraph (DynkinType.D n).cartanMatrix : SimpleGraph (Fin n)).Adj i j := by
+  rw [DynkinType.cartanMatrix_D, diagramGraph_adj]
+  rintro ⟨hij, h, -⟩
+  have hn' : n ≤ 2 := by omega
+  simp [CartanMatrix.D, hn', hij] at h
+
 namespace IsFiniteType
 
-variable [Fintype B]
 
 /-- **Adjacency in the diagram of a finite-type matrix is a single nonvanishing condition**, the
 vanishing pattern of such a matrix being symmetric. -/
@@ -180,7 +205,7 @@ theorem exists_chain_of_reachable (h : IsFiniteType A) {u v : B}
 
 /-- **The degree bound in graph form**: no index of a finite-type matrix has four neighbours in the
 diagram, so a finite-type diagram branches into at most three arms. -/
-theorem degree_le_three [DecidableEq B] (h : IsFiniteType A) (i : B) :
+theorem degree_le_three [Fintype B] [DecidableEq B] (h : IsFiniteType A) (i : B) :
     (diagramGraph A).degree i ≤ 3 :=
   h.card_le_three_of_forall_apply_ne_zero (SimpleGraph.notMem_neighborFinset_self _ i)
     fun _ hj ↦ (diagramGraph_adj.mp ((SimpleGraph.mem_neighborFinset _ _ _).mp hj)).2.1
@@ -194,7 +219,7 @@ theorem isTree_diagramGraph (h : IsFiniteType A) (hconn : (diagramGraph A).Conne
 /-- **A connected finite-type diagram has one edge fewer than it has vertices.** This is the
 counting form of acyclicity, and the constraint that the enumeration of admissible diagrams is run
 against. -/
-theorem card_edgeFinset_add_one_eq_card [DecidableEq B] (h : IsFiniteType A)
+theorem card_edgeFinset_add_one_eq_card [Fintype B] [DecidableEq B] (h : IsFiniteType A)
     (hconn : (diagramGraph A).Connected) :
     (diagramGraph A).edgeFinset.card + 1 = Fintype.card B :=
   (h.isTree_diagramGraph hconn).card_edgeFinset

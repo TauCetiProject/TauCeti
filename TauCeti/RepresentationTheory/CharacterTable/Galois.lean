@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.End.FiniteOrder
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 public import Mathlib.FieldTheory.Minpoly.IsConjRoot
+import Mathlib.Algebra.Field.ULift
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.RepresentationTheory.BaseChange
 
@@ -23,15 +24,20 @@ them as a power map `μ ↦ μ ^ j`, and then `σ (χ(g)) = ∑ dim(V_μ) · μ 
 action on character values is by power maps of the group element**.
 
 This file proves that identity, first for an arbitrary ring endomorphism of an algebraically closed
-field and then, over `ℂ`, in the form the character-theory roadmap asks for, with the exponent `j`
-supplied by Mathlib's cyclotomic character `IsPrimitiveRoot.autToPow`, which reads it off a chosen
-primitive root of unity and an algebra automorphism. A field automorphism of `ℂ` is automatically
+field, over any field containing a primitive root of the requisite order, and then, over `ℂ`,
+with the exponent `j` supplied by Mathlib's cyclotomic character
+`IsPrimitiveRoot.autToPow`, which reads it off a chosen primitive root of unity and an algebra
+automorphism. A field automorphism of `ℂ` is automatically
 `ℚ`-linear, so `ℂ ≃ₐ[ℚ] ℂ` is the group of field automorphisms of `ℂ`; the endomorphism statement
 above is the more general one, since a `ℚ`-linear ring homomorphism `ℂ →+* ℂ` is an embedding but
 need not be surjective.
 
 Complex conjugation is the instance `j = n - 1` of all this, and gives back
-`TauCeti.Representation.conj_char_eq_char_inv`, `conj (χ g) = χ g⁻¹`.
+`Representation.conj_char_eq_char_inv`, `conj (χ g) = χ g⁻¹`.
+
+For a field containing a primitive root, `IsAlgClosed.lift` extends the coefficient endomorphism
+to an embedding of its algebraic closure, where the eigenvalue argument applies;
+`Representation.character_baseChange` then descends the trace identity.
 
 Two consequences are recorded: `χ(g)` and `χ(g ^ j)` are conjugate algebraic numbers over `ℚ`
 (they are `IsConjRoot ℚ`), and a character value that is rational is unchanged by the power maps
@@ -46,11 +52,11 @@ the analogous realization by an automorphism of `ℂ`.
 
 ## Main statements
 
-* `TauCeti.Representation.map_character_eq_character_pow`: if `σ` raises every `n`-th root of unity
+* `Representation.map_character_eq_character_pow`: if `σ` raises every `n`-th root of unity
   to the `j`-th power and `g ^ n = 1`, then `σ (χ(g)) = χ(g ^ j)`. The variant
-  `TauCeti.Representation.map_character_eq_character_pow_of_isPrimitiveRoot` witnesses the power on
+  `Representation.map_character_eq_character_pow_of_isPrimitiveRoot` witnesses the power on
   a single primitive root of unity.
-* `TauCeti.Representation.map_ofCharacter_eq_powMap`: on a group of exponent dividing `n` the
+* `Representation.map_ofCharacter_eq_powMap`: on a group of exponent dividing `n` the
   Galois twist `σ ∘ χ` is the power-map twist `TauCeti.ClassFunction.powMap j` of the class
   function of `χ`, so the twist is an operation on `ClassFunction k G`.
 * `FDRep.map_character_eq_character_pow_of_isPrimitiveRoot`: over `ℂ`, a field
@@ -66,24 +72,22 @@ the analogous realization by an automorphism of `ℂ`.
 
 ## References
 
-* [Character Theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 4, "The Galois action".
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Lemma 9.16.
 * J.-P. Serre, *Linear Representations of Finite Groups* (1977), Section 12.4.
 -/
 
 public section
 
-namespace TauCeti
-
 open Module Polynomial
+
+open TauCeti (ClassFunction)
 
 universe u v w
 
 namespace Representation
 
 variable {k : Type u} {G : Type v} {V : Type w} [Field k] [IsAlgClosed k] [Monoid G]
-  [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+  [AddCommGroup V] [Module k V]
 
 /-- **The Galois action on character values is by power maps.** If `g ^ n = 1` and the ring
 endomorphism `σ` of the coefficient field raises every `n`-th root of unity to the `j`-th power,
@@ -92,38 +96,63 @@ dimensions of the eigenspaces they are weighted by. -/
 theorem map_character_eq_character_pow (ρ : Representation k G V) {g : G} {n j : ℕ}
     (hn : (n : k) ≠ 0) (hg : g ^ n = 1) (σ : k →+* k) (hσ : ∀ μ : k, μ ^ n = 1 → σ μ = μ ^ j) :
     σ (ρ.character g) = ρ.character (g ^ j) := by
-  simp only [Representation.character, map_pow]
-  exact End.map_trace_eq_trace_pow hn (by rw [← map_pow, hg, map_one]) σ hσ
+  by_cases hV : FiniteDimensional k V
+  · simp only [Representation.character, map_pow]
+    exact Module.End.map_trace_eq_trace_pow hn (by rw [← map_pow, hg, map_one]) σ hσ
+  · simp [ρ.character_eq_zero_of_not_finite hV]
 
+omit [IsAlgClosed k] in
 /-- **The Galois action on character values is by power maps**, in the form where the power `j` is
 witnessed on a single primitive `n`-th root of unity: if `σ ζ = ζ ^ j` for a primitive `n`-th root
-of unity `ζ` and `g ^ n = 1`, then `σ (χ(g)) = χ(g ^ j)`. -/
+of unity `ζ` and `g ^ n = 1`, then `σ (χ(g)) = χ(g ^ j)`. The coefficient field need not be
+algebraically closed. -/
 theorem map_character_eq_character_pow_of_isPrimitiveRoot (ρ : Representation k G V) {g : G}
     {n j : ℕ} {ζ : k} (hζ : IsPrimitiveRoot ζ n) (hn : (n : k) ≠ 0) (hg : g ^ n = 1)
     (σ : k →+* k) (hσ : σ ζ = ζ ^ j) :
-    σ (ρ.character g) = ρ.character (g ^ j) :=
+    σ (ρ.character g) = ρ.character (g ^ j) := by
   have : NeZero n := ⟨fun h => hn (by rw [h, Nat.cast_zero])⟩
-  Representation.map_character_eq_character_pow ρ hn hg σ
-    fun _ hμ => IsPrimitiveRoot.map_eq_pow hζ σ hσ hμ
+  let L := AlgebraicClosure k
+  let ι : k →+* L := algebraMap k L
+  -- Lift the coefficient endomorphism to an embedding of the algebraic closure. The target
+  -- algebra structure is twisted only while constructing the lift.
+  obtain ⟨τ, hτ⟩ : ∃ τ : L →+* L, ∀ x : k, τ (ι x) = ι (σ x) := by
+    -- The copy separates the source and target algebra structures.
+    let : IsAlgClosed (ULift.{0} L) :=
+      IsAlgClosed.of_ringEquiv L _ ULift.ringEquiv.symm
+    let : Algebra k (ULift.{0} L) :=
+      (ULift.ringEquiv.symm.toRingHom.comp (ι.comp σ)).toAlgebra
+    let τ := IsAlgClosed.lift (R := k) (S := L) (M := ULift.{0} L)
+    refine ⟨ULift.ringEquiv.toRingHom.comp τ.toRingHom, fun x => ?_⟩
+    exact congrArg ULift.down (τ.commutes x)
+  have hroot : IsPrimitiveRoot (ι ζ) n := hζ.map_of_injective ι.injective
+  have hpower : τ (ι ζ) = (ι ζ) ^ j := by rw [hτ, hσ, map_pow]
+  have hnL : (n : L) ≠ 0 := by
+    simpa only [map_natCast] using (_root_.map_ne_zero (f := ι)).mpr hn
+  have hmap := map_character_eq_character_pow (ρ.baseChange L) hnL hg τ
+    (fun μ hμ => hroot.map_eq_pow τ hpower hμ)
+  simp only [character_baseChange] at hmap
+  apply ι.injective
+  exact (hτ (ρ.character g)).symm.trans hmap
 
 end Representation
 
 section ClassFunction
 
 variable {k : Type u} {G : Type v} {V : Type w} [Field k] [IsAlgClosed k] [Group G]
-  [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+  [AddCommGroup V] [Module k V]
 
 /-- **The Galois twist of a character is the power-map twist of its class function.** On a group
 of exponent dividing `n`, the composite `σ ∘ χ` is `TauCeti.ClassFunction.powMap j` applied to the
-class function of `χ`. This is the form in which a Galois group acts on `ClassFunction k G`. -/
+class function of `χ`. This is the form in which a Galois group acts on `ClassFunction k G`. If `V`
+is not finite-dimensional, every character vanishes and both sides are `0`. -/
 theorem Representation.map_ofCharacter_eq_powMap (ρ : Representation k G V) {n j : ℕ}
     (hn : (n : k) ≠ 0) (hG : ∀ g : G, g ^ n = 1) (σ : k →+* k)
     (hσ : ∀ μ : k, μ ^ n = 1 → σ μ = μ ^ j) :
     σ ∘ (ClassFunction.ofCharacter ρ).1 =
       (ClassFunction.powMap j (ClassFunction.ofCharacter ρ)).1 := by
   funext g
-  simpa only [Function.comp_apply, ClassFunction.powMap_apply, ClassFunction.ofCharacter_apply]
-    using Representation.map_character_eq_character_pow ρ hn (hG g) σ hσ
+  simp only [Function.comp_apply, ClassFunction.powMap_apply, ClassFunction.ofCharacter_apply]
+  exact Representation.map_character_eq_character_pow ρ hn (hG g) σ hσ
 
 end ClassFunction
 
@@ -134,26 +163,34 @@ variable {G : Type v} [Monoid G]
 /-- **The Galois action on complex character values is by power maps.** If `g ^ n = 1` and the ring
 endomorphism `σ` of `ℂ` raises every `n`-th root of unity to the `j`-th power, then
 `σ (χ(g)) = χ(g ^ j)`. -/
-theorem _root_.FDRep.map_character_eq_character_pow (X : FDRep ℂ G) {g : G} {n j : ℕ} (hn : n ≠ 0)
+theorem map_character_eq_character_pow (X : FDRep ℂ G) {g : G} {n j : ℕ}
     (hg : g ^ n = 1) (σ : ℂ →+* ℂ) (hσ : ∀ μ : ℂ, μ ^ n = 1 → σ μ = μ ^ j) :
-    σ (X.character g) = X.character (g ^ j) :=
-  Representation.map_character_eq_character_pow X.ρ (Nat.cast_ne_zero.2 hn) hg σ hσ
+    σ (X.character g) = X.character (g ^ j) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · -- Every complex number is a `0`-th root of unity, which forces `σ = id` and `j = 1`.
+    have h2 : (2 : ℕ) ^ j = 2 ^ 1 := by
+      have := hσ 2 (pow_zero 2)
+      rw [map_ofNat] at this
+      exact_mod_cast this.symm
+    obtain rfl := Nat.pow_right_injective (le_refl 2) h2
+    simpa using hσ (X.character g) (pow_zero _)
+  · exact Representation.map_character_eq_character_pow X.ρ (Nat.cast_ne_zero.2 hn) hg σ hσ
 
 /-- **The Galois action on complex character values is by power maps**, with the power supplied by
 the cyclotomic character `IsPrimitiveRoot.autToPow`: a field automorphism `f` of `ℂ`, which is the
 same thing as a `ℚ`-algebra automorphism, acts on the roots of unity of order dividing `n` as
 `ζ ↦ ζ ^ j` for a unique `j : (ZMod n)ˣ`, and then `f (χ(g)) = χ(g ^ j)` whenever `g ^ n = 1`. -/
-theorem _root_.FDRep.map_character_eq_character_pow_of_isPrimitiveRoot (X : FDRep ℂ G) {n : ℕ}
+theorem map_character_eq_character_pow_of_isPrimitiveRoot (X : FDRep ℂ G) {n : ℕ}
     [NeZero n] {ζ : ℂ}
     (hζ : IsPrimitiveRoot ζ n) {g : G} (hg : g ^ n = 1) (f : ℂ ≃ₐ[ℚ] ℂ) :
     f (X.character g) = X.character (g ^ ((hζ.autToPow ℚ f : ZMod n).val)) :=
-  FDRep.map_character_eq_character_pow X (NeZero.ne n) hg f.toAlgHom.toRingHom
+  FDRep.map_character_eq_character_pow X hg f.toAlgHom.toRingHom
     fun _ hμ => IsPrimitiveRoot.map_eq_pow hζ _ (hζ.autToPow_spec ℚ f).symm hμ
 
 /-- **A character value and its power-map twist are conjugate algebraic numbers**: `χ(g)` and
 `χ(g ^ j)` have the same minimal polynomial over `ℚ`, being images of one another under a field
 automorphism of `ℂ`. -/
-theorem _root_.FDRep.isConjRoot_character_pow (X : FDRep ℂ G) {n : ℕ} [NeZero n] {ζ : ℂ}
+theorem isConjRoot_character_pow (X : FDRep ℂ G) {n : ℕ} [NeZero n] {ζ : ℂ}
     (hζ : IsPrimitiveRoot ζ n) {g : G} (hg : g ^ n = 1) (f : ℂ ≃ₐ[ℚ] ℂ) :
     IsConjRoot ℚ (X.character g) (X.character (g ^ ((hζ.autToPow ℚ f : ZMod n).val))) := by
   rw [← FDRep.map_character_eq_character_pow_of_isPrimitiveRoot X hζ hg f]
@@ -161,7 +198,7 @@ theorem _root_.FDRep.isConjRoot_character_pow (X : FDRep ℂ G) {n : ℕ} [NeZer
 
 /-- **A rational character value is fixed by the power maps that automorphisms of `ℂ` realize**: if
 `χ(g)` is rational then `χ(g ^ j) = χ(g)` for every `j` coming from a field automorphism of `ℂ`. -/
-theorem _root_.FDRep.character_pow_eq_character_of_mem_range (X : FDRep ℂ G) {n : ℕ} [NeZero n]
+theorem character_pow_eq_character_of_mem_range (X : FDRep ℂ G) {n : ℕ} [NeZero n]
     {ζ : ℂ}
     (hζ : IsPrimitiveRoot ζ n) {g : G} (hg : g ^ n = 1) (f : ℂ ≃ₐ[ℚ] ℂ)
     (hχ : X.character g ∈ (algebraMap ℚ ℂ).range) :
@@ -171,13 +208,17 @@ theorem _root_.FDRep.character_pow_eq_character_of_mem_range (X : FDRep ℂ G) {
 
 /-- **Rational characters are invariant under coprime power maps.** A representation defined over
 `ℚ` has `χ(g ^ j) = χ(g)` whenever `g ^ n = 1` and `j` is coprime to `n`. -/
-theorem _root_.FDRep.character_pow_eq_character_of_coprime (X : FDRep ℚ G) {g : G} {n j : ℕ}
-    [NeZero n] (hg : g ^ n = 1) (hj : n.Coprime j) :
+theorem character_pow_eq_character_of_coprime (X : FDRep ℚ G) {g : G} {n j : ℕ}
+    (hg : g ^ n = 1) (hj : n.Coprime j) :
     X.character (g ^ j) = X.character g := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · rw [Nat.coprime_zero_left] at hj; rw [hj, pow_one]
+  have : NeZero n := ⟨hn⟩
   let K := AlgebraicClosure ℚ
   let Y : FDRep K G := FDRep.of (Representation.baseChange K X.ρ)
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K n
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
   obtain ⟨σ, hσ⟩ := hζ.exists_algEquiv_apply_eq_pow_of_coprime hj
+    (Polynomial.cyclotomic.irreducible_rat (NeZero.pos n))
   have hmap : σ (Y.character g) = Y.character (g ^ j) :=
     Representation.map_character_eq_character_pow_of_isPrimitiveRoot Y.ρ hζ
       (Nat.cast_ne_zero.2 (NeZero.ne n)) hg σ.toAlgHom.toRingHom hσ
@@ -190,7 +231,7 @@ theorem _root_.FDRep.character_pow_eq_character_of_coprime (X : FDRep ℚ G) {g 
 
 /-- A rational character has the same value on two elements that generate the same cyclic
 subgroup. -/
-theorem _root_.FDRep.character_eq_of_zpowers_eq {G : Type u} [Group G] [Finite G]
+theorem character_eq_of_zpowers_eq {G : Type u} [Group G] [Finite G]
     (X : FDRep ℚ G) {g x : G} (h : Subgroup.zpowers x = Subgroup.zpowers g) :
     X.character x = X.character g := by
   have hx : x ∈ Submonoid.powers g :=
@@ -202,9 +243,6 @@ theorem _root_.FDRep.character_eq_of_zpowers_eq {G : Type u} [Group G] [Finite G
     rw [orderOf_pow] at hord
     exact Nat.coprime_iff_gcd_eq_one.mpr <|
       (Nat.div_eq_self.mp hord).resolve_left (orderOf_pos g).ne'
-  let _ : NeZero (orderOf g) := ⟨(orderOf_pos g).ne'⟩
   exact X.character_pow_eq_character_of_coprime (pow_orderOf_eq_one g) hcop
 
 end FDRep
-
-end TauCeti

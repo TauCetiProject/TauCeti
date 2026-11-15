@@ -33,7 +33,8 @@ how the tensor product and the biproduct of quasi-coherent sheaves are shown to 
 
 Restricting a presentation preserves finiteness, and it preserves presentations whose generating
 morphism is an isomorphism, that is, presentations exhibiting a free sheaf. Hence refining finite
-quasi-coherent data or locally free data gives data of the same kind.
+quasi-coherent data or locally free data gives data of the same kind. In particular, a finite
+global presentation gives a finitely presented sheaf via the trivial covering.
 
 ## Main declarations
 
@@ -108,6 +109,24 @@ theorem _root_.SheafOfModules.Presentation.isIso_map_generators_π (h : IsIso P.
 
 end Map
 
+/-- A sheaf of modules with a finite global presentation is finitely presented. -/
+theorem _root_.SheafOfModules.Presentation.isFinitePresentation
+    {C : Type u₁} [Category.{v₁} C] [HasBinaryProducts C]
+    {J : GrothendieckTopology C} {R : Sheaf J RingCat.{u}}
+    [HasSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
+    [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
+    [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
+    {M : SheafOfModules.{u} R} (P : M.Presentation) [P.IsFinite] :
+    M.IsFinitePresentation := by
+  let q := P.quasicoherentData
+  have : q.IsFinitePresentation := by
+    constructor
+    intro X
+    dsimp only [q, Presentation.quasicoherentData]
+    -- Determine the slice-site universes from the presentation before synthesizing sheafification.
+    apply +allowSynthFailures Presentation.isFinite_map
+  exact IsFinitePresentation.mk ⟨q, inferInstance⟩
+
 variable {C : Type u₁} [Category.{v₁} C] [HasPullbacks C] {J : GrothendieckTopology C}
   {R : Sheaf J RingCat.{u}}
   [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
@@ -127,42 +146,6 @@ def _root_.SheafOfModules.QuasicoherentData.ofRefinement {M : SheafOfModules.{u}
   presentation i :=
     ((q.presentation (index i)).map (overMap R (map i)) (overMapUnitIso (map i)).symm).ofIsIso
       ((overFunctorMap R (map i)).hom.app M)
-
-/-- Generating sections of `M.over X` restricted along `f : Y ⟶ X` to generating sections of
-`M.over Y`: they are carried by the restriction functor `overMap R f`, which is identified with
-restriction to `Y` by `overFunctorMap`. -/
-def _root_.SheafOfModules.GeneratingSections.restrict {M : SheafOfModules.{u} R} {X Y : C}
-    (G : (M.over X).GeneratingSections) (f : Y ⟶ X) : (M.over Y).GeneratingSections :=
-  G.mapIso (overMap R f) (overMapUnitIso f).symm ((overFunctorMap R f).app M)
-
-/-- Restricting generating sections preserves their index type. -/
-@[simp]
-theorem _root_.SheafOfModules.GeneratingSections.restrict_I {M : SheafOfModules.{u} R} {X Y : C}
-    (G : (M.over X).GeneratingSections) (f : Y ⟶ X) : (G.restrict f).I = G.I :=
-  GeneratingSections.mapIso_I _ _ _ _
-
-/-- The generating morphism of restricted generating sections is obtained by mapping the original
-generating morphism and then applying the comparison with restriction to `Y`, read along the
-identification `restrict_I` of the index types. -/
-@[simp]
-theorem _root_.SheafOfModules.GeneratingSections.restrict_π {M : SheafOfModules.{u} R} {X Y : C}
-    (G : (M.over X).GeneratingSections) (f : Y ⟶ X) :
-    eqToHom (congrArg free (GeneratingSections.restrict_I G f).symm) ≫ (G.restrict f).π =
-      ((mapFreeIso (overMap R f) G.I (overMapUnitIso f).symm).hom ≫
-        (overMap R f).map G.π) ≫ ((overFunctorMap R f).app M).hom :=
-  GeneratingSections.mapIso_π _ _ _ _
-
-/-- Restricting generating sections preserves an invertible generating morphism. -/
-instance _root_.SheafOfModules.GeneratingSections.isIso_restrict_π {M : SheafOfModules.{u} R}
-    {X Y : C} (G : (M.over X).GeneratingSections) (f : Y ⟶ X) [IsIso G.π] :
-    IsIso (G.restrict f).π :=
-  GeneratingSections.isIso_mapIso_π _ _ _ _
-
-/-- Restricting generating sections preserves finiteness. -/
-instance _root_.SheafOfModules.GeneratingSections.isFiniteType_restrict
-    {M : SheafOfModules.{u} R} {X Y : C} (G : (M.over X).GeneratingSections) (f : Y ⟶ X)
-    [hG : G.IsFiniteType] : (G.restrict f).IsFiniteType :=
-  GeneratingSections.isFiniteType_mapIso _ _ _ _
 
 /-- Local generators for `M` transported to a refining covering family `Y`: each `Y i` maps to the
 member `q.X (index i)` of the original cover by `map i`, and the generators of `M.over (Y i)` are
@@ -189,8 +172,9 @@ instance {M : SheafOfModules.{u} R} (q : M.LocalGeneratorsData) [q.IsFiniteType]
     {I : Type w} (Y : I → C) (coversTop : J.CoversTop Y) (index : I → q.I)
     (map : ∀ i, Y i ⟶ q.X (index i)) :
     (q.ofRefinement Y coversTop index map).IsFiniteType where
-  isFiniteType i := GeneratingSections.isFiniteType_restrict _ _
-    (hG := LocalGeneratorsData.IsFiniteType.isFiniteType (index i))
+  isFiniteType i :=
+    let _ := LocalGeneratorsData.IsFiniteType.isFiniteType (index i)
+    GeneratingSections.isFiniteType_restrict _ _
 
 /-- Refining quasi-coherent data preserves presentations with an invertible generating
 morphism. -/

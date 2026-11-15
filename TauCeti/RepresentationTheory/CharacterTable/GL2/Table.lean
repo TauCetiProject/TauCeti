@@ -12,9 +12,8 @@ public import TauCeti.RepresentationTheory.CharacterTable.Specification
 -- Non-public: `FDRep.nonempty_iso_of_character_eq` recovers an isomorphism from a character
 -- identity.
 import TauCeti.RepresentationTheory.CharacterTable.Determined
--- Non-public: `TauCeti.primitiveChar_to_Complex_ne_one`, the canonical additive character is
--- nontrivial.
-import TauCeti.NumberTheory.LegendreSymbol.Complex
+-- Non-public: `AddChar.IsPrimitive.ne_one`, the canonical additive character is nontrivial.
+import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 -- Non-public: the `q`-power map is an involution on the units of the quadratic extension.
 import TauCeti.FieldTheory.Finite.FrobeniusFixed
 -- Non-public: `TauCeti.card_conjClasses_GL2` counts the conjugacy classes of `GL₂(𝔽_q)`.
@@ -231,7 +230,7 @@ series (`TauCeti.nonempty_iso_GL2PrincipalSeries_iff`) and the orbit `{θ, θ^q}
 characters (`TauCeti.GL2CuspidalVirtualCharacter_eq_iff`). -/
 theorem coe_classFunction_injective :
     Function.Injective fun i : GL2CharacterParam F E => (i.classFunction : GL (Fin 2) F → ℂ) := by
-  have hψ := primitiveChar_to_Complex_ne_one F
+  have hψ := (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one
   intro i j hij
   simp only at hij
   rcases i with α | α | ⟨s, hs⟩ | o <;> rcases j with β | β | ⟨t, ht⟩ | o'
@@ -250,7 +249,7 @@ theorem coe_classFunction_injective :
   · exact absurd hij.symm (character_GL2Linear_ne_character_GL2SteinbergTwist β α)
   · exact congrArg steinbergTwist (GL2SteinbergTwist_character_injective hij)
   · exact absurd hij (character_GL2SteinbergTwist_ne_character_GL2PrincipalSeries α _ _)
-  · exact absurd hij (character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter α _ hψ)
+  · exact absurd hij (character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter α _ _)
   · exact absurd hij.symm (character_GL2Linear_ne_character_GL2PrincipalSeries β _ _)
   · exact absurd hij.symm (character_GL2SteinbergTwist_ne_character_GL2PrincipalSeries β _ _)
   · obtain ⟨e⟩ := FDRep.nonempty_iso_of_character_eq _ _ hij
@@ -258,7 +257,7 @@ theorem coe_classFunction_injective :
     exact Sym2.eq_iff.mpr ((nonempty_iso_GL2PrincipalSeries_iff F).mp ⟨e⟩)
   · exact absurd hij (character_GL2PrincipalSeries_ne_GL2CuspidalVirtualCharacter _ _ _ _)
   · exact absurd hij.symm (character_GL2Linear_ne_GL2CuspidalVirtualCharacter β _ hψ)
-  · exact absurd hij.symm (character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter β _ hψ)
+  · exact absurd hij.symm (character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter β _ _)
   · exact absurd hij.symm (character_GL2PrincipalSeries_ne_GL2CuspidalVirtualCharacter _ _ _ _)
   · simp only [cuspidal.injEq]
     exact Quotient.sound
@@ -269,7 +268,8 @@ theorem coe_classFunction_injective :
 theorem exists_coe_classFunction_eq {f : GL (Fin 2) F → ℂ}
     (hf : f ∈ irreducibleCharacters ℂ (GL (Fin 2) F)) :
     ∃ i : GL2CharacterParam F E, (i.classFunction : GL (Fin 2) F → ℂ) = f := by
-  rw [irreducibleCharacters_GL2_eq_union F E (primitiveChar_to_Complex_ne_one F)] at hf
+  rw [irreducibleCharacters_GL2_eq_union F E
+    (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one] at hf
   rcases hf with (((⟨α, rfl⟩ | ⟨α, rfl⟩) | ⟨⟨α, β⟩, hαβ, rfl⟩) | ⟨θ, hθ, rfl⟩)
   · exact ⟨linear α, coe_classFunction_linear α⟩
   · exact ⟨steinbergTwist α, coe_classFunction_steinbergTwist α⟩
@@ -369,6 +369,25 @@ character with parameter `i`. -/
 theorem GL2CharacterTable_apply (i : GL2CharacterParam F E) (g : GL (Fin 2) F) :
     GL2CharacterTable F E i (ConjClasses.mk g) = (i.classFunction : GL (Fin 2) F → ℂ) g :=
   ClassFunction.toConjClasses_mk _ g
+
+/-- An explicit matrix containing every parameter row is the full `GL₂` character table
+up to an enumeration of its rows, provided its columns enumerate all conjugacy classes and
+its row index has at most as many elements as the parameter type. -/
+theorem exists_equiv_submatrix_GL2CharacterTable_eq {ι κ : Type*} [Finite ι]
+    (c : κ → ConjClasses (GL (Fin 2) F)) (hc : Function.Bijective c)
+    (M : Matrix ι κ ℂ)
+    (hrow : ∀ i : GL2CharacterParam F E, ∃ k, ∀ j, GL2CharacterTable F E i (c j) = M k j)
+    (hcard : Nat.card ι ≤ Nat.card (GL2CharacterParam F E)) :
+    ∃ e : ι ≃ GL2CharacterParam F E, (GL2CharacterTable F E).submatrix e c = M := by
+  -- The common enumeration argument from `CharacterTable.GL2.Field.Three`.
+  choose f hf using hrow
+  have hinj : Function.Injective f := fun i i' h => by
+    refine GL2CharacterParam.coe_classFunction_injective (funext fun g => ?_)
+    obtain ⟨j, hj⟩ := hc.surjective (ConjClasses.mk g)
+    simp only [← GL2CharacterTable_apply (E := E), ← hj, hf, h]
+  have hbij : Function.Bijective f := hinj.bijective_of_nat_card_le hcard
+  refine ⟨(Equiv.ofBijective f hbij).symm, Matrix.ext fun k j => ?_⟩
+  rw [submatrix_apply, hf, Equiv.ofBijective_apply_symm_apply f hbij k]
 
 /-- **The identity column lists the degrees** `1`, `q`, `q + 1` and `q - 1` of the four
 families. -/

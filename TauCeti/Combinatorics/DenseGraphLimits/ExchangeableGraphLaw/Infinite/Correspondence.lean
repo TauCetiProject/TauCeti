@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Correspondence
-public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.DissociatedRepresentation
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite.Sampling
 
 /-!
@@ -15,8 +14,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infini
 Every exchangeable probability law on infinite graphs corresponds to a unique probability
 measure on the graphon quotient. The correspondence transports the finite-marginal mixture
 equivalence through extension to infinite graphs. Its finite upper masses are integrals of
-homomorphism densities. Dirac mixing measures give the joint sampling law of one graphon, and
-these are exactly the dissociated laws.
+homomorphism densities. Dirac mixing measures give the joint sampling law of one graphon.
 
 This is the graphon-mixture correspondence of Diaconis and Janson, *Graph limits and
 exchangeable random graphs*, Section 5.
@@ -31,22 +29,6 @@ open MeasureTheory
 namespace TauCeti
 
 namespace DenseGraphLimits
-
-/-- A graphon mixture is dissociated exactly when its mixing measure is concentrated at one
-graphon class. -/
-theorem isDissociated_mixtureExchangeableLaw_iff (P : ProbabilityMeasure GraphonSpaceI) :
-    (mixtureExchangeableLaw P).IsDissociated ↔
-      ∃ W : Graphon unitInterval (volume : Measure unitInterval),
-        P = diracProba (SeparationQuotient.mk W) := by
-  constructor
-  · intro h
-    obtain ⟨W, hW⟩ := exists_graphon_of_isDissociated (mixtureExchangeableLaw P) h
-    refine ⟨W, mixtureExchangeableLaw_injective ?_⟩
-    rw [mixtureExchangeableLaw_diracProba]
-    exact hW
-  · rintro ⟨W, rfl⟩
-    rw [mixtureExchangeableLaw_diracProba]
-    exact isDissociated_sampleExchangeableLaw W
 
 /-- The Diaconis–Janson correspondence between mixing measures on graphon space and
 exchangeable probability laws on infinite graphs. -/

@@ -10,11 +10,15 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Biproducts
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
-# Hom from a finite biproduct in a linear category
+# Hom to and from a biproduct in a linear category
 
 The universal property of a biproduct identifies morphisms out of it with families of
 morphisms out of its summands. In a linear category this is a linear equivalence, so finiteness
-and rank of the Hom module can be read summand by summand.
+and rank of the Hom module can be read summand by summand. Dually, morphisms into a biproduct
+are families of morphisms into its summands.
+
+Scalars also pull out of the morphism `biproduct.matrix m` between biproducts assembled from a
+matrix `m` of morphisms between the summands (`CategoryTheory.Limits.biproduct.matrix_smul`).
 -/
 
 public section
@@ -55,11 +59,43 @@ theorem homBiproductLinearEquiv_symm_apply (f : ∀ j, X j ⟶ Y) :
     (homBiproductLinearEquiv k X Y).symm f = biproduct.desc f :=
   (rfl)
 
+/-- Morphisms into a biproduct form the product of the Hom spaces into its summands. -/
+noncomputable def homToBiproductLinearEquiv :
+    (Y ⟶ ⨁ X) ≃ₗ[k] (∀ j, Y ⟶ X j) where
+  toFun f j := f ≫ biproduct.π X j
+  invFun f := biproduct.lift f
+  left_inv f := biproduct.hom_ext _ _ fun j ↦ by simp
+  right_inv f := funext fun j ↦ by simp
+  map_add' f g := by
+    ext j
+    simp
+  map_smul' r f := by
+    ext j
+    simp
+
+/-- The equivalence reads off a morphism's component at a summand. -/
+@[simp]
+theorem homToBiproductLinearEquiv_apply (f : Y ⟶ ⨁ X) (j : J) :
+    homToBiproductLinearEquiv k X Y f j = f ≫ biproduct.π X j :=
+  (rfl)
+
+/-- The inverse assembles a family of morphisms by the biproduct lift map. -/
+@[simp]
+theorem homToBiproductLinearEquiv_symm_apply (f : ∀ j, Y ⟶ X j) :
+    (homToBiproductLinearEquiv k X Y).symm f = biproduct.lift f :=
+  (rfl)
+
 /-- Finite Hom modules out of each summand give a finite Hom module out of a finite
 biproduct. -/
 instance moduleFinite_hom_biproduct [Finite J] [∀ j, Module.Finite k (X j ⟶ Y)] :
     Module.Finite k (⨁ X ⟶ Y) :=
   .equiv (homBiproductLinearEquiv k X Y).symm
+
+/-- Finite Hom modules into each summand give a finite Hom module into a finite
+biproduct. -/
+instance moduleFinite_homTo_biproduct [Finite J] [∀ j, Module.Finite k (Y ⟶ X j)] :
+    Module.Finite k (Y ⟶ ⨁ X) :=
+  .equiv (homToBiproductLinearEquiv k X Y).symm
 
 /-- The rank of Hom out of a finite biproduct is the sum of the ranks from its summands, when
 these are finite free modules. -/
@@ -68,4 +104,26 @@ theorem finrank_hom_biproduct [Fintype J] [StrongRankCondition k]
     Module.finrank k (⨁ X ⟶ Y) = ∑ j, Module.finrank k (X j ⟶ Y) := by
   rw [(homBiproductLinearEquiv k X Y).finrank_eq, Module.finrank_pi_fintype]
 
+/-- The rank of Hom into a finite biproduct is the sum of the ranks into its summands, when
+these are finite free modules. -/
+theorem finrank_homTo_biproduct [Fintype J] [StrongRankCondition k]
+    [∀ j, Module.Free k (Y ⟶ X j)] [∀ j, Module.Finite k (Y ⟶ X j)] :
+    Module.finrank k (Y ⟶ ⨁ X) = ∑ j, Module.finrank k (Y ⟶ X j) := by
+  rw [(homToBiproductLinearEquiv k X Y).finrank_eq, Module.finrank_pi_fintype]
+
 end TauCeti
+
+namespace CategoryTheory.Limits
+
+variable {C : Type*} [Category* C] [Preadditive C] [HasFiniteBiproducts C]
+  {R : Type*} [Semiring R] [Linear R C] {J : Type*} [Finite J] {K : Type} [Finite K]
+  {f : J → C} {g : K → C}
+
+/-- Scalars pull out of the morphism of biproducts assembled from a matrix of morphisms. -/
+@[simp]
+theorem biproduct.matrix_smul (r : R) (m : ∀ j k, f j ⟶ g k) :
+    biproduct.matrix (fun j k ↦ r • m j k) = r • biproduct.matrix m := by
+  ext
+  simp
+
+end CategoryTheory.Limits

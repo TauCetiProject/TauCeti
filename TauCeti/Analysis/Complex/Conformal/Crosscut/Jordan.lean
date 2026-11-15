@@ -26,26 +26,22 @@ the closure of the image crosscut — as a Jordan curve.
 
 The subsingleton hypothesis is deliberately literal. The endpoint theorem in
 `Conformal/Crosscut/BoundaryEnds.lean` shows that the boundary intersection is a pair `{u, v}`, but
-does not prove the two points distinct; asserting distinctness here would assume the planar
-separation argument that remains to be formalized. Instead this theorem gives the exact conclusion
-in the coincident-end branch, with no weakened or surrogate separation claim. The complementary
-branch, in which the boundary intersection is *not* a subsingleton and the closed image crosscut is
-an arc, is `Conformal/Crosscut/Arc.lean`.
+does not prove the two points distinct; asserting distinctness here would require a planar
+separation argument. Instead this theorem gives the exact conclusion in the coincident-end branch,
+with no weakened or surrogate separation claim. The complementary branch, in which the boundary
+intersection is *not* a subsingleton and the closed image crosscut is an arc, is
+`Conformal/Crosscut/Arc.lean`.
+
+The two branches serve the Jordan-domain case of Carathéodory's boundary correspondence. There the
+length–area estimate produces arbitrarily short image crosscuts, and the path theorem above supplies
+their simple parametrisations. To bound the whole boundary of the image piece such a crosscut cuts
+off, one uses the Jordan curve produced here when the ends coincide, and joins the crosscut to one
+of the two boundary arcs between its ends when they are distinct.
 
 ## Main result
 
 * `TauCeti.isJordanCurve_closure_image_ball_inter_sphere_of_subsingleton` — if a finite-length
   image crosscut has at most one boundary end, its closure is a Jordan curve.
-
-## Roadmap role
-
-This advances layer **L5** of `TauCetiRoadmap/ConformalMapping/README.md`, the Jordan-domain case of
-the Carathéodory boundary correspondence. The existing length-area machinery produces arbitrarily
-short image crosscuts and the existing path theorem supplies their simple parametrisations. The
-remaining step after this file is the planar separation argument: treat the Jordan curve produced
-here when the ends coincide, and join the crosscut to one of the two boundary arcs when they are
-distinct, in order to bound the whole boundary of the cut-off image piece. The joining itself is
-`Conformal/Crosscut/Arc.lean`; what is left is the choice of boundary arc.
 
 ## References
 

@@ -62,10 +62,10 @@ that algorithm are *left* eigenvectors.
 
 ## References
 
-This implements the object `eigenvalueSearch` of Layer 6 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-and its
-[suggested declarations](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/Suggested.lean).
+* J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
+  446–450.
+* G. J. A. Schneider, *Dixon's character table algorithm revisited*, J. Symbolic Comput. 9 (1990),
+  601–606.
 -/
 
 public section
@@ -90,8 +90,7 @@ evaluate it, and kernel reduction needs the definition. -/
 /-- The scalars the search keeps are those at which `a • 1 - A` has vanishing determinant. -/
 @[simp] theorem mem_eigenvalueSearch :
     a ∈ eigenvalueSearch A ↔ (Matrix.scalar n a - A).det = 0 := by
-  rw [eigenvalueSearch, Finset.mem_filter]
-  simp
+  simp only [eigenvalueSearch, Finset.mem_filter, Finset.mem_univ, true_and]
 
 /-- A scalar the search rejects is one at which `a • 1 - A` is invertible. -/
 theorem notMem_eigenvalueSearch_iff_isUnit :
@@ -102,9 +101,7 @@ theorem notMem_eigenvalueSearch_iff_isUnit :
 `A - a • 1` is singular. -/
 theorem mem_eigenvalueSearch_iff_det_sub_smul_eq_zero :
     a ∈ eigenvalueSearch A ↔ (A - a • (1 : Matrix n n F)).det = 0 := by
-  have h : Matrix.scalar n a - A = -(A - a • (1 : Matrix n n F)) := by
-    rw [neg_sub, Matrix.scalar_apply, smul_one_eq_diagonal]
-  rw [mem_eigenvalueSearch, h, Matrix.det_neg]
+  rw [mem_eigenvalueSearch, ← neg_sub, det_neg, scalar_apply, ← smul_one_eq_diagonal]
   simp
 
 /-- The search keeps exactly the roots of the characteristic polynomial. -/
@@ -129,33 +126,17 @@ theorem mem_eigenvalueSearch_iff_hasEigenvalue :
   rw [mem_eigenvalueSearch_iff_mem_spectrum, ← Matrix.spectrum_toLin',
     Module.End.hasEigenvalue_iff_mem_spectrum]
 
-/-- The scalar-minus-matrix system is the corresponding eigenvector equation. -/
-theorem scalar_sub_mulVec_eq_zero_iff {R : Type*} [NonUnitalNonAssocRing R]
-    (A : Matrix n n R) (a : R) (v : n → R) :
-    (Matrix.diagonal (fun _ => a) - A) *ᵥ v = 0 ↔ A *ᵥ v = a • v := by
-  rw [Matrix.sub_mulVec, sub_eq_zero, eq_comm]
-  -- Mathlib's `Matrix.diagonal_const_mulVec` requires `NonAssocSemiring`, whereas this result does
-  -- not need a multiplicative identity.
-  have hdiag : (Matrix.diagonal (fun _ => a)) *ᵥ v = a • v := by
-    funext i
-    rw [Matrix.mulVec_diagonal]
-    rfl
-  rw [hdiag]
-
 /-- A scalar is found by the search exactly when it has a nonzero eigenvector. -/
 theorem mem_eigenvalueSearch_iff_exists_mulVec :
     a ∈ eigenvalueSearch A ↔ ∃ v ≠ 0, A *ᵥ v = a • v := by
-  rw [mem_eigenvalueSearch, ← Matrix.exists_mulVec_eq_zero_iff]
-  refine exists_congr fun v => and_congr_right fun _ => ?_
-  exact scalar_sub_mulVec_eq_zero_iff A a v
+  rw [mem_eigenvalueSearch, ← exists_mulVec_eq_zero_iff]
+  simp [sub_mulVec, sub_eq_zero, eq_comm]
 
 /-- A matrix and its transpose have the same eigenvalues. -/
 @[simp] theorem eigenvalueSearch_transpose (A : Matrix n n F) :
     eigenvalueSearch Aᵀ = eigenvalueSearch A := by
   ext a
-  rw [mem_eigenvalueSearch, mem_eigenvalueSearch, ← Matrix.det_transpose,
-    Matrix.transpose_sub, Matrix.transpose_transpose, Matrix.scalar_apply,
-    Matrix.diagonal_transpose]
+  simp_rw [mem_eigenvalueSearch_iff_isRoot_charpoly, charpoly_transpose]
 
 /-- A scalar is found by the search exactly when it has a nonzero *left* eigenvector: a row vector
 `v` with `v ᵥ* A = a • v`. This is the orientation of the Dixon--Schneider eigenrows. -/

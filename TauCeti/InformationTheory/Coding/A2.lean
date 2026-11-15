@@ -8,7 +8,7 @@ module
 public import TauCeti.InformationTheory.Coding.TernaryGolay
 public import TauCeti.InformationTheory.Coding.Tetracode
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.CoordinatePower
-public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.Basic
 
 import Mathlib.Algebra.BigOperators.Field
 

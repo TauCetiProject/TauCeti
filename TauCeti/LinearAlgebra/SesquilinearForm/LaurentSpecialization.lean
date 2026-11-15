@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
-public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Algebra.Polynomial.Laurent.Specialization
 
 /-!
@@ -23,9 +22,9 @@ form on `N₁_ε₁ × N₂_ε₂` with values `laurentEval ε₂ (b x y)` whene
 `R = ℤ` this is automatic, the two units being `q = 1` and `q = -1`.  This is how the q-Euler form
 of a graded category specializes.
 
-Specialization does not preserve nondegeneracy: the Laurent matrix with rows `(1, q)` and `(q, 1)`
-has determinant `1 - q²`, which is nonzero, while its value at any `ε` with `ε⁻¹ = ε` has
-determinant zero.
+Specialization does not preserve nondegeneracy: over a nontrivial coefficient ring, the Laurent
+matrix with rows `(1, q)` and `(q, 1)` has determinant `1 - q²`, which is a non-zero-divisor,
+while its value at any `ε` with `ε⁻¹ = ε` has determinant zero.
 
 ## Main definitions
 
@@ -69,8 +68,8 @@ private noncomputable def laurentEvalForm
       simp)
     (fun x y₁ y₂ => by rw [map_add, map_add])
     (fun r x y => by
-      rw [← algebraMap_smul (A := R[T;T⁻¹]) r y, map_smul, smul_eq_mul, map_mul,
-        AlgHom.commutes, Algebra.algebraMap_self, RingHom.id_apply, smul_eq_mul])
+      rw [← algebraMap_smul (A := R[T;T⁻¹]) r y, map_smul, smul_eq_mul, map_mul]
+      simp)
 
 /-- The evaluated form takes the values of `b` evaluated at `ε₂`. -/
 private theorem laurentEvalForm_apply
@@ -89,25 +88,18 @@ noncomputable def laurentSpecialize
     (b : N₁ →ₛₗ[(invert (R := R)).toRingEquiv.toRingHom] N₂ →ₗ[R[T;T⁻¹]] R[T;T⁻¹])
     (hε : ε₁⁻¹ = ε₂) :
     LaurentSpecialization ε₁ N₁ →ₗ[R] LaurentSpecialization ε₂ N₂ →ₗ[R] R :=
-  ((laurentEvalForm (ε₂ := ε₂) b).liftQ₂ _ _
-    (fun z hz => by
-      rw [Submodule.restrictScalars_mem] at hz
-      refine Submodule.smul_induction_on hz (fun p hp x _ => ?_) fun x y hx hy => add_mem hx hy
-      refine LinearMap.mem_ker.mpr (LinearMap.ext fun y => ?_)
-      rw [LinearMap.zero_apply, laurentEvalForm_apply, LinearMap.map_smulₛₗ₂, smul_eq_mul,
-        map_mul]
-      simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv]
-      rw [laurentEval_invert, ← hε, inv_inv, RingHom.mem_ker.mp hp, zero_mul])
-    (fun z hz => by
-      rw [Submodule.restrictScalars_mem] at hz
-      refine Submodule.smul_induction_on hz (fun p hp y _ => ?_) fun x y hx hy => add_mem hx hy
-      refine LinearMap.mem_ker.mpr (LinearMap.ext fun x => ?_)
-      rw [LinearMap.zero_apply, LinearMap.flip_apply, laurentEvalForm_apply, map_smul, smul_eq_mul,
-        map_mul, RingHom.mem_ker.mp hp, zero_mul])).compl₁₂
-    (Submodule.Quotient.restrictScalarsEquiv R
-      (RingHom.ker (laurentEval (R := R) ε₁) • ⊤ : Submodule R[T;T⁻¹] N₁)).symm.toLinearMap
-    (Submodule.Quotient.restrictScalarsEquiv R
-      (RingHom.ker (laurentEval (R := R) ε₂) • ⊤ : Submodule R[T;T⁻¹] N₂)).symm.toLinearMap
+  (LaurentSpecialization.lift ε₂
+    (LaurentSpecialization.lift ε₁ (laurentEvalForm (ε₂ := ε₂) b) (fun x => by
+      ext y
+      rw [laurentEvalForm_apply, LinearMap.map_smulₛₗ₂]
+      simpa [laurentEvalForm_apply, ← hε, smul_eq_mul] using
+        mul_comm (laurentEval ε₂ (b x y)) (ε₁ : R))).flip
+    (fun y => by
+      apply LaurentSpecialization.hom_ext ε₁
+      intro x
+      simp only [LinearMap.flip_apply, LinearMap.smul_apply, lift_mk, laurentEvalForm_apply]
+      rw [map_smul, smul_eq_mul, map_mul, laurentEval_T_one]
+      rfl)).flip
 
 /-- **The specialized form is the evaluated form**: on specialized elements its value is the value
 of the Laurent form evaluated at `ε₂`. -/
@@ -117,9 +109,7 @@ theorem laurentSpecialize_mk_mk
     (hε : ε₁⁻¹ = ε₂) (x : N₁) (y : N₂) :
     b.laurentSpecialize hε (LaurentSpecialization.mk ε₁ x) (LaurentSpecialization.mk ε₂ y) =
       laurentEval ε₂ (b x y) := by
-  rw [laurentSpecialize, LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-    mk_apply, mk_apply, Submodule.Quotient.restrictScalarsEquiv_symm_mk,
-    Submodule.Quotient.restrictScalarsEquiv_symm_mk, LinearMap.liftQ₂_mk, laurentEvalForm_apply]
+  simp [laurentSpecialize, LinearMap.flip_apply, laurentEvalForm_apply]
 
 end LinearMap
 
@@ -143,14 +133,11 @@ theorem exists_nondegenerate_and_not_nondegenerate_map_laurentEval (R : Type*) [
     rw [algebraMap_eq_toLaurent] at hmem
     have hdet : Matrix.det !![(1 : R[T;T⁻¹]), T 1; T 1, 1] =
         Polynomial.toLaurent (Polynomial.X ^ 2 - Polynomial.C 1 : R[X]) * -1 := by
-      rw [Matrix.det_fin_two_of, map_sub, map_pow, Polynomial.toLaurent_X, Polynomial.toLaurent_C,
-        map_one, one_mul, ← T_add, sq, ← T_add]
-      ring
+      simp [Matrix.det_fin_two_of, sq, ← T_add]
     rw [hdet]
     exact mul_mem hmem isUnit_one.neg.mem_nonZeroDivisors
   · have hεε : (ε : R) * ε = 1 := by
-      nth_rewrite 1 [← hε]
-      exact Units.inv_mul ε
+      simpa [hε] using Units.inv_mul ε
     have h := hM.separatingRight.eq_zero_of_mulVec_eq_zero (v := ![(ε : R), -1]) (by
       ext i
       fin_cases i <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two, hεε])

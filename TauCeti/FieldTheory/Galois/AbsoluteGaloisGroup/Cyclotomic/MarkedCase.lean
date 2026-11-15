@@ -14,7 +14,8 @@ The marked classification of maximal pro-`p` local Galois groups separates the d
 with exactly two `2`-power roots of unity according to the parity of their degree and, in even
 degree, according to whether `-1` belongs to the cyclotomic image. This file defines those
 arithmetic predicates and proves that every finite extension of `ℚ₂` lies in exactly one of the
-four resulting cases.
+four resulting cases. At an odd prime, it proves that exactly one of the free and nonexceptional
+Demushkin cases applies.
 
 The partition is purely arithmetic: it does not assume a Demushkin presentation. It is the case
 split used when the abstract marked classification is applied to a local Galois group.
@@ -78,6 +79,32 @@ theorem isQNeTwoCase_iff : IsQNeTwoCase p K ↔
   Iff.rfl
 
 end QNeTwoCase
+
+section OddPrime
+
+variable (p : ℕ) [Fact p.Prime] (K : Type*) [Field K] [Algebra ℚ_[p] K]
+  [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+
+/-- At an odd prime, exactly one of the free and nonexceptional Demushkin arithmetic cases
+applies. The exceptional value `q = 2` cannot occur because the local root-of-unity order is a
+power of `p`. -/
+theorem odd_isFreeCase_xor_isQNeTwoCase (hp : p ≠ 2) :
+    (IsFreeCase p K ∧ ¬ IsQNeTwoCase p K) ∨
+      (¬ IsFreeCase p K ∧ IsQNeTwoCase p K) := by
+  let _ : CharZero K :=
+    charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+  let hfinite := finite_pPowerRootsOfUnity (p := p) (K := K)
+    (by exact_mod_cast (Fact.out : p.Prime).ne_zero)
+  by_cases hmu : ∃ ζ : K, IsPrimitiveRoot ζ p
+  · right
+    refine ⟨fun hfree ↦ (isFreeCase_iff p K).mp hfree hmu,
+      (isQNeTwoCase_iff (p := p) (K := K)).mpr ⟨hmu, ?_⟩⟩
+    exact fun hq ↦ hp (prime_eq_two_of_localRootOfUnityOrder_eq_two p K hfinite hq)
+  · left
+    exact ⟨(isFreeCase_iff p K).mpr hmu,
+      fun hcase ↦ hmu ((isQNeTwoCase_iff (p := p) (K := K)).mp hcase).1⟩
+
+end OddPrime
 
 section Dyadic
 

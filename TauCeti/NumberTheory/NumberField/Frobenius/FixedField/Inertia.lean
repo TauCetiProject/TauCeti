@@ -48,10 +48,14 @@ runs through.
   `L ^ H`, multiplied by the order of `D(Q) ∩ H`, is the local degree of `Q` over the base.
 * `Ideal.ramificationIdx_mul_inertiaDeg_under_fixedField_eq_relIndex`: the local degree below
   `L ^ H` is `[D(Q) : D(Q) ∩ H]`.
+* `Ideal.inertiaDeg_under_fixedField_eq_one_of_stabilizer_le`: if `D(Q) ≤ H`, the residue
+  degree below `L ^ H` is one.
 * `Ideal.ramificationIdx_under_fixedField_mul_card_inf`: the ramification index below `L ^ H`,
   multiplied by the order of `I(Q) ∩ H`, is the ramification index of `Q` over the base.
 * `Ideal.ramificationIdx_under_fixedField_eq_relIndex`: the ramification index below `L ^ H` is
   `[I(Q) : I(Q) ∩ H]`.
+* `Ideal.ramificationIdx_under_fixedField_eq_one_iff`: the ramification index below `L ^ H` is
+  one exactly when `I(Q) ≤ H`.
 * `Ideal.isUnramifiedAt_fixedField_iff_inertia_inf_eq_bot`: unramifiedness over `L ^ H` is
   equivalent to trivial intersection of inertia with `H`.
 * `Ideal.inertiaDeg_under_fixedField_mul_card_inf`: the number of elements of `D(Q) ⊓ H` times the
@@ -138,6 +142,15 @@ theorem ramificationIdx_mul_inertiaDeg_under_fixedField_eq_relIndex
   rw [inf_comm, hcardD, ← hmul, mul_comm] at hidx
   exact Nat.eq_of_mul_eq_mul_right Nat.card_pos hidx.symm
 
+/-- **Above the decomposition group the residue degree is one.** If `H` contains the
+decomposition group `D(Q)`, then the prime below `Q` in `L ^ H` has residue degree one over
+`𝓞 K`. -/
+theorem inertiaDeg_under_fixedField_eq_one_of_stabilizer_le (Q : Ideal (𝓞 L)) [Q.IsPrime]
+    {H : Subgroup (L ≃ₐ[K] L)} (hH : MulAction.stabilizer (L ≃ₐ[K] L) Q ≤ H) :
+    (Q.under (𝓞 ↥(fixedField H))).inertiaDeg (𝓞 K) = 1 :=
+  (mul_eq_one.1 <| (ramificationIdx_mul_inertiaDeg_under_fixedField_eq_relIndex Q H).trans
+    (Subgroup.relIndex_eq_one.2 hH)).2
+
 omit [IsGalois K L] in
 /-- **The ramification index below a fixed field.** For any subgroup `H` and `E = L ^ H`, the
 ramification index of `Q ∩ 𝓞 E` over `𝓞 K`, multiplied by the size of `I(Q) ∩ H`, is the
@@ -171,6 +184,13 @@ theorem ramificationIdx_under_fixedField_eq_relIndex
     ← ramificationIdx_under_fixedField_mul_card_inf Q H, mul_comm] at hidx
   exact Nat.eq_of_mul_eq_mul_right Nat.card_pos hidx.symm
 
+/-- **Unramified below a fixed field.** The prime below `Q` in `L ^ H` has ramification index
+one over `𝓞 K` exactly when `H` contains the inertia group `I(Q)`. -/
+theorem ramificationIdx_under_fixedField_eq_one_iff (Q : Ideal (𝓞 L)) [Q.IsPrime]
+    (H : Subgroup (L ≃ₐ[K] L)) :
+    (Q.under (𝓞 ↥(fixedField H))).ramificationIdx (𝓞 K) = 1 ↔ Q.inertia (L ≃ₐ[K] L) ≤ H := by
+  rw [ramificationIdx_under_fixedField_eq_relIndex, Subgroup.relIndex_eq_one]
+
 omit [IsGalois K L] in
 /-- A prime of `L` is unramified over `L ^ H` exactly when its inertia group over `K`
 has trivial intersection with `H`. -/
@@ -190,31 +210,31 @@ omit [IsGalois K L] in
 degree of `Q ∩ 𝓞 E` over `𝓞 K` times the size of the intersection of `H` with the decomposition
 group is the residue degree of `Q` itself.  Stated as a product, so no natural-number division is
 truncated. -/
-theorem inertiaDeg_under_fixedField_mul_card_inf (Q : Ideal (𝓞 L)) [Q.IsPrime] (hQ : Q ≠ ⊥)
+theorem inertiaDeg_under_fixedField_mul_card_inf (Q : Ideal (𝓞 L)) [Q.IsPrime]
     [Algebra.IsUnramifiedAt (𝓞 K) Q] (H : Subgroup (L ≃ₐ[K] L)) :
     (Q.under (𝓞 ↥(fixedField H))).inertiaDeg (𝓞 K)
         * Nat.card ((MulAction.stabilizer (L ≃ₐ[K] L) Q ⊓ H : Subgroup (L ≃ₐ[K] L)))
       = Q.inertiaDeg (𝓞 K) := by
-  set E := fixedField H with hE
+  let E := fixedField H
   have : IsScalarTower K ↥E L := E.isScalarTower_mid'
   have : IsGalois ↥E L := IsGalois.of_fixed_field L H
   have : Algebra.IsUnramifiedAt (𝓞 ↥E) Q := Algebra.IsUnramifiedAt.of_restrictScalars (𝓞 K) Q
   have htower : Q.inertiaDeg (𝓞 K)
       = (Q.under (𝓞 ↥E)).inertiaDeg (𝓞 K) * Q.inertiaDeg (𝓞 ↥E) :=
     inertiaDeg_tower (Q.under (𝓞 ↥E)) Q
-  rw [htower, ← card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt Q hQ,
+  rw [htower, ← card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt Q,
     card_stabilizer_fixedField_eq_card_inf Q H]
 
 /-- **The residue degree is a relative index.**  For any subgroup `H` and `φ` a Frobenius at an
 unramified `Q`, the residue degree below `L ^ H` is `Subgroup.relIndex`, Mathlib's name for the
 index of `H ⊓ ⟨φ⟩` in `⟨φ⟩`. -/
-theorem inertiaDeg_under_fixedField_eq_relIndex (Q : Ideal (𝓞 L)) [Q.IsPrime] (hQ : Q ≠ ⊥)
+theorem inertiaDeg_under_fixedField_eq_relIndex (Q : Ideal (𝓞 L)) [Q.IsPrime]
     [Algebra.IsUnramifiedAt (𝓞 K) Q] (H : Subgroup (L ≃ₐ[K] L)) {φ : L ≃ₐ[K] L}
     (hφ : IsArithFrobAt (𝓞 K) φ Q) :
     (Q.under (𝓞 ↥(fixedField H))).inertiaDeg (𝓞 K) = H.relIndex (Subgroup.zpowers φ) := by
-  have hmul := inertiaDeg_under_fixedField_mul_card_inf Q hQ H
-  rw [← zpowers_eq_stabilizer_of_isArithFrobAt Q hQ hφ,
-    ← orderOf_eq_inertiaDeg_of_isArithFrobAt Q hQ hφ] at hmul
+  have hmul := inertiaDeg_under_fixedField_mul_card_inf Q H
+  rw [← zpowers_eq_stabilizer_of_isArithFrobAt Q hφ,
+    ← orderOf_eq_inertiaDeg_of_isArithFrobAt Q hφ] at hmul
   have hidx := Subgroup.relIndex_inf_mul_relIndex ⊥ H (Subgroup.zpowers φ)
   simp only [Subgroup.relIndex_bot_left, bot_inf_eq] at hidx
   rw [inf_comm, Nat.card_zpowers φ, ← hmul, mul_comm] at hidx
@@ -223,11 +243,10 @@ theorem inertiaDeg_under_fixedField_eq_relIndex (Q : Ideal (𝓞 L)) [Q.IsPrime]
 /-- The residue degree below the fixed field of a power of a Frobenius is its exponent's
 greatest common divisor with the Frobenius order. -/
 theorem inertiaDeg_under_fixedField_zpowers_pow_eq_gcd (Q : Ideal (𝓞 L)) [Q.IsPrime]
-    (hQ : Q ≠ ⊥) [Algebra.IsUnramifiedAt (𝓞 K) Q] {φ : L ≃ₐ[K] L}
-    (hφ : IsArithFrobAt (𝓞 K) φ Q) (k : ℕ) :
+    [Algebra.IsUnramifiedAt (𝓞 K) Q] {φ : L ≃ₐ[K] L} (hφ : IsArithFrobAt (𝓞 K) φ Q) (k : ℕ) :
     (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers (φ ^ k))))).inertiaDeg (𝓞 K) =
       Nat.gcd k (orderOf φ) := by
-  rw [inertiaDeg_under_fixedField_eq_relIndex Q hQ _ hφ,
+  rw [inertiaDeg_under_fixedField_eq_relIndex Q _ hφ,
     ← zpow_natCast, Subgroup.relIndex_zpowers_zpow]
   simp
 
@@ -236,13 +255,13 @@ unramified `Q`, the residue degree below `L ^ H` is the smallest `n ≥ 1` with 
 
 This is the characterization the fixed-field fibre count uses: it turns the residue degree into a
 condition on powers of the Frobenius, with no index or relative index left to unfold. -/
-theorem isLeast_pow_mem_inertiaDeg_under_fixedField (Q : Ideal (𝓞 L)) [Q.IsPrime] (hQ : Q ≠ ⊥)
+theorem isLeast_pow_mem_inertiaDeg_under_fixedField (Q : Ideal (𝓞 L)) [Q.IsPrime]
     [Algebra.IsUnramifiedAt (𝓞 K) Q] (H : Subgroup (L ≃ₐ[K] L)) {φ : L ≃ₐ[K] L}
     (hφ : IsArithFrobAt (𝓞 K) φ Q) :
     IsLeast {n : ℕ | 0 < n ∧ φ ^ n ∈ H}
       ((Q.under (𝓞 ↥(fixedField H))).inertiaDeg (𝓞 K)) := by
   have : H.IsFiniteRelIndex (Subgroup.zpowers φ) := ⟨Subgroup.index_ne_zero_of_finite⟩
-  rw [inertiaDeg_under_fixedField_eq_relIndex Q hQ H hφ]
+  rw [inertiaDeg_under_fixedField_eq_relIndex Q H hφ]
   exact Subgroup.isLeast_pow_mem_relIndex_zpowers φ H
 
 /-- **Residue degree one is membership.**  The prime below `Q` in `L ^ H` has residue degree one
@@ -250,19 +269,18 @@ over `𝓞 K` exactly when a Frobenius at `Q` lies in `H`. -/
 -- Deliberately not `@[simp]`: `φ` occurs only in the hypothesis `hφ`, never in the left-hand
 -- side, so `simp` cannot infer it and the rule would never fire. The simp-NF linter rejects
 -- the attribute.
-theorem inertiaDeg_under_fixedField_eq_one_iff (Q : Ideal (𝓞 L)) [Q.IsPrime] (hQ : Q ≠ ⊥)
+theorem inertiaDeg_under_fixedField_eq_one_iff (Q : Ideal (𝓞 L)) [Q.IsPrime]
     [Algebra.IsUnramifiedAt (𝓞 K) Q] (H : Subgroup (L ≃ₐ[K] L)) {φ : L ≃ₐ[K] L}
     (hφ : IsArithFrobAt (𝓞 K) φ Q) :
     (Q.under (𝓞 ↥(fixedField H))).inertiaDeg (𝓞 K) = 1 ↔ φ ∈ H := by
-  rw [inertiaDeg_under_fixedField_eq_relIndex Q hQ H hφ, Subgroup.relIndex_eq_one,
+  rw [inertiaDeg_under_fixedField_eq_relIndex Q H hφ, Subgroup.relIndex_eq_one,
     Subgroup.zpowers_le]
 
 /-- **The prime below `Q` in the fixed field of a Frobenius at `Q` has degree one.**  The case
 `H = ⟨σ⟩` with `σ` itself the Frobenius, where membership is automatic. -/
 theorem inertiaDeg_under_fixedField_eq_one_of_isArithFrobAt (Q : Ideal (𝓞 L)) [Q.IsPrime]
-    (hQ : Q ≠ ⊥) [Algebra.IsUnramifiedAt (𝓞 K) Q] {σ : L ≃ₐ[K] L}
-    (hσ : IsArithFrobAt (𝓞 K) σ Q) :
+    [Algebra.IsUnramifiedAt (𝓞 K) Q] {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers σ)))).inertiaDeg (𝓞 K) = 1 :=
-  (inertiaDeg_under_fixedField_eq_one_iff Q hQ (Subgroup.zpowers σ) hσ).2 (Subgroup.mem_zpowers σ)
+  (inertiaDeg_under_fixedField_eq_one_iff Q (Subgroup.zpowers σ) hσ).2 (Subgroup.mem_zpowers σ)
 
 end Ideal

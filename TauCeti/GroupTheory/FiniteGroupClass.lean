@@ -50,6 +50,7 @@ thus all derived constructions are universe-independent.
 
 * `TauCeti.FiniteGroupClass.MemFinite.prod`: a class of finite groups is closed under binary
   products.
+* `TauCeti.FiniteGroupClass.MemFinite.pi`: and under finite products.
 * `TauCeti.FiniteGroupClass.MemFinite.quotient_inf`: the normal subgroups with quotient in the
   class are closed under binary intersection.
 * `TauCeti.FiniteGroupClass.MemFinite.quotient_comap`: they are preserved by preimage along a
@@ -208,6 +209,25 @@ theorem MemFinite.prod {K : Type u} [Group K] (hH : C.MemFinite H) (hK : C.MemFi
   · exact (memFinite_congr
       (QuotientGroup.quotientKerEquivOfSurjective (MonoidHom.snd H K)
         fun k ↦ ⟨(1, k), rfl⟩)).mpr hK
+
+/-- A dependent product indexed by a finite type belongs to `C` whenever every factor belongs
+to `C`. -/
+theorem MemFinite.pi {ι : Type*} [Finite ι] {K : ι → Type v} [∀ i, Group (K i)]
+    (hK : ∀ i, C.MemFinite (K i)) : C.MemFinite (∀ i, K i) := by
+  have key : ∀ (n : ℕ) (L : Fin n → Type v) [∀ i, Group (L i)],
+      (∀ i, C.MemFinite (L i)) → C.MemFinite (∀ i, L i) := by
+    intro n
+    induction n with
+    | zero => intro L _ _; exact memFinite_of_subsingleton
+    | succ n ih =>
+      intro L _ hL
+      let e : (∀ i, L i) ≃* L 0 × ∀ i : Fin n, L i.succ :=
+        { (Fin.consEquiv L).symm with map_mul' := fun _ _ ↦ rfl }
+      exact (memFinite_congr e).mpr ((hL 0).prod (ih _ fun i ↦ hL i.succ))
+  obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin ι
+  let f : (∀ i, K i) ≃* ∀ j : Fin n, K (e.symm j) :=
+    { Equiv.piCongrLeft' K e with map_mul' := fun _ _ ↦ rfl }
+  exact (memFinite_congr f).mpr (key n _ fun j ↦ hK _)
 
 /-- **The normal subgroups with quotient in `C` are closed under binary intersection**, because
 `G ⧸ (M ⊓ N)` embeds in `(G ⧸ M) × (G ⧸ N)`. This is what makes that family downward directed.

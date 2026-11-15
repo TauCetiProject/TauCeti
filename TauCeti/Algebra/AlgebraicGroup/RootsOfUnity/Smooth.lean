@@ -62,7 +62,6 @@ theorem coordinateRing_not_smooth (p : ℕ) [Fact p.Prime] [CharP k p] :
 
 /-- The structural morphism of the group scheme `μ_n` is smooth exactly when `n` is a unit in
 the ground field. -/
--- Not `@[simp]`: `simp` unfolds the left-hand side via `DiagonalizableGroup.groupScheme_X_hom`.
 theorem groupScheme_smooth_iff (n : ℕ) [NeZero n] :
     Smooth (groupScheme k n).X.hom ↔ IsUnit (n : k) := by
   rw [groupScheme, DiagonalizableGroup.groupScheme_def]

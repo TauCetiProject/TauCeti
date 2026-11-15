@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
-public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 public import TauCeti.RingTheory.Idempotents.SquareRootOne
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import Mathlib.FieldTheory.IsSepClosed
@@ -50,8 +51,8 @@ map is a subalgebra, the generators `ι Q v` are in it because
 with `ω · ι Q v` even, and `CliffordAlgebra.adjoin_range_ι` says the generators generate.
 
 The element the theorem is meant for is the **volume element** of
-`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement.lean`: the ordered product `ω = v₁ ⋯ vₙ` of a
-pairwise orthogonal spanning list of **odd** length is central
+`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Basic.lean`: the ordered product
+`ω = v₁ ⋯ vₙ` of a pairwise orthogonal spanning list of **odd** length is central
 (`CliffordAlgebra.prod_map_ι_mem_center_of_odd_length`) and odd, and its square is the scalar
 `(-1) ^ (n.choose 2) ∏ᵢ Q vᵢ` (`CliffordAlgebra.prod_map_ι_sq_scalar`). Rescaling `ω` by a scalar
 `s` whose square inverts that constant normalizes the square to `1`, which is what
@@ -64,7 +65,7 @@ Only the odd case splits this way. For a list of even length the volume element 
 the generators coming from the span of the list rather than commuting with them
 (`CliffordAlgebra.prod_map_ι_mul_ι_of_even_length`). Anticommutation does not by itself rule out
 centrality — in an exterior algebra the volume element annihilates the generators and is central
-all the same, as `VolumeElement.lean` records — but it does rule it out under the hypotheses this
+all the same, as that file records — but it does rule it out under the hypotheses this
 file works with: were an even-length `ω` with `ω * ω = 1` central, then `2` being invertible would
 give `ι Q m * ω = 0`, hence `ι Q m = ι Q m * ω * ω = 0`, for every `m` in the span of the list. The
 even-dimensional Clifford algebra over a separably closed field is instead a matrix algebra, proved
@@ -113,9 +114,6 @@ no membership proof has to appear in the statement.
 
 ## References
 
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 1, "The odd-dimensional case": the two central idempotents split the odd Clifford algebra,
-  while the even subalgebra stays a single block.
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry*, Princeton University Press (1989), Chapter I,
   Proposition 3.7 and Theorem 4.3.
 * C. Chevalley, *The Algebraic Theory of Spinors*, Columbia University Press (1954), Chapter II.
@@ -340,6 +338,40 @@ theorem coe_equivEvenProd_apply_snd
   rw [neg_neg, add_comm (halfOneAdd R (-ω) * b) (halfOneAdd R ω * a)] at h
   exact h.symm
 
+/-- A splitting element fixed by Clifford conjugation makes the odd splitting carry conjugation
+to componentwise reversal on the two even factors. -/
+theorem equivEvenProd_star
+    (hcomm : ∀ x : ↥(even Q), Commute ω (x : CliffordAlgebra Q))
+    (hodd : ω ∈ evenOdd Q 1) (hsq : ω * ω = 1) (hstar : star ω = ω)
+    (x : CliffordAlgebra Q) :
+    equivEvenProd Q ω hcomm hodd hsq (star x) =
+      (reverseEven Q (equivEvenProd Q ω hcomm hodd hsq x).1,
+        reverseEven Q (equivEvenProd Q ω hcomm hodd hsq x).2) := by
+  let e := equivEvenProd Q ω hcomm hodd hsq
+  apply e.symm.injective
+  rw [e.symm_apply_apply, equivEvenProd_symm_apply]
+  have hhalf : star (halfOneAdd R ω) = halfOneAdd R ω := by
+    simp [TauCeti.halfOneAdd_def, hstar]
+  have hhalfNeg : star (halfOneAdd R (-ω)) = halfOneAdd R (-ω) := by
+    simp [TauCeti.halfOneAdd_def, hstar]
+  calc
+    star x = star (e.symm (e x)) := congrArg star (e.symm_apply_apply x).symm
+    _ = star (halfOneAdd R ω * ((e x).1 : CliffordAlgebra Q) +
+        halfOneAdd R (-ω) * ((e x).2 : CliffordAlgebra Q)) := by
+      rw [equivEvenProd_symm_apply]
+    _ = reverseEven Q (e x).1 * halfOneAdd R ω +
+        reverseEven Q (e x).2 * halfOneAdd R (-ω) := by
+      simp only [star_add, star_mul, hhalf, hhalfNeg, ← reverse_eq_star_of_mem_even,
+        coe_reverseEven_apply]
+    _ = halfOneAdd R ω * reverseEven Q (e x).1 +
+        halfOneAdd R (-ω) * reverseEven Q (e x).2 := by
+      rw [TauCeti.halfOneAdd_def, TauCeti.halfOneAdd_def]
+      simp only [mul_smul_comm, smul_mul_assoc]
+      rw [mul_add, mul_add, add_mul, add_mul,
+        (hcomm (reverseEven Q (e x).1)).eq,
+        (hcomm (reverseEven Q (e x).2)).neg_left.eq]
+      simp only [one_mul, mul_one]
+
 end Splitting
 
 /-! ### The volume element as the splitting element -/
@@ -399,6 +431,18 @@ theorem coe_equivEvenProdOfOddLength_apply_snd {l : List M} (hl : l.Pairwise Q.I
         + halfOneAdd R (s • (l.map (ι Q)).prod) * involute x :=
   coe_equivEvenProd_apply_snd Q (s • (l.map (ι Q)).prod) _ _ _ x
 
+/-- If the normalized odd volume is fixed by Clifford conjugation, its splitting carries
+conjugation to componentwise reversal on the two even factors. -/
+theorem equivEvenProdOfOddLength_star {l : List M} (hl : l.Pairwise Q.IsOrtho)
+    (hlen : Odd l.length) (hspan : Submodule.span R {x : M | x ∈ l} = ⊤) {s : R}
+    (hs : s * s * ((-1 : R) ^ l.length.choose 2 * (l.map Q).prod) = 1)
+    (hstar : star (s • (l.map (ι Q)).prod) = s • (l.map (ι Q)).prod)
+    (x : CliffordAlgebra Q) :
+    equivEvenProdOfOddLength hl hlen hspan hs (star x) =
+      (reverseEven Q (equivEvenProdOfOddLength hl hlen hspan hs x).1,
+        reverseEven Q (equivEvenProdOfOddLength hl hlen hspan hs x).2) :=
+  equivEvenProd_star _ _ _ hstar x
+
 /-- **Over a separably closed field of characteristic not two the normalization is automatic.**
 
 An orthogonal spanning list of odd length with no isotropic member has a volume element whose
@@ -414,13 +458,8 @@ theorem nonempty_algEquiv_even_prod_of_isSepClosed {K V : Type*} [Field K] [IsSe
     Nonempty (CliffordAlgebra Q ≃ₐ[K] (↥(even Q) × ↥(even Q))) := by
   have _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   set c : K := (-1 : K) ^ l.length.choose 2 * (l.map Q).prod
-  have hprod : (l.map Q).prod ≠ 0 := by
-    refine List.prod_ne_zero ?_
-    rintro hmem
-    obtain ⟨v, hv, hv0⟩ := List.mem_map.mp hmem
-    exact hQ v hv hv0
-  have hcne : c ≠ 0 := mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) hprod
-  obtain ⟨s, hsz⟩ := IsSepClosed.exists_eq_mul_self (k := K) c⁻¹
+  have hcne : c ≠ 0 := neg_one_pow_choose_two_mul_prod_map_ne_zero hQ
+  obtain ⟨s, hsz⟩ := IsSepClosed.isSquare (k := K) c⁻¹
   exact ⟨equivEvenProdOfOddLength hl hlen hspan
     (s := s) (by rw [← hsz, inv_mul_cancel₀ hcne])⟩
 

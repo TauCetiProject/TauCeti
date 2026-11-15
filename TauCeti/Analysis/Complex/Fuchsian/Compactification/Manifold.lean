@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Cusp.Chart
 public import TauCeti.Analysis.Complex.Fuchsian.CoarseQuotient
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Extension
+public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
 import Mathlib.Analysis.Complex.RemovableSingularity
 
 /-!
@@ -43,7 +44,9 @@ because a transition map is continuous.
 * `Subgroup.CompactifiedQuotient.instIsManifold`: the atlas is analytic, so the compactified
   quotient is a Riemann surface.
 * `Subgroup.CompactifiedQuotient.mdifferentiable_ofQuotient`: the inclusion of the coarse quotient
-  is holomorphic.
+  is holomorphic, and `Subgroup.CompactifiedQuotient.mdifferentiableAt_comp_ofQuotient_iff`: a map
+  out of the compactified quotient is holomorphic along the coarse quotient exactly when its
+  restriction is.
 
 ## References
 
@@ -207,16 +210,16 @@ private theorem differentiableAt_cuspChart_symm_trans_of_ne_zero (D : Γ.CuspDat
   -- On the punctured disc, the transition map is Mathlib's cusp function of the scaled pullback.
   have heq : ⇑((cuspChart D hA).symm ≫ₕ c') =ᶠ[𝓝 u]
       Periodic.cuspFunction D.width ((fun z : ℍ ↦ f (D.scaling⁻¹ • z)) ∘ ofComplex) := by
-    filter_upwards [isOpen_ne.mem_nhds hu0, (cuspChart D hA).open_target.mem_nhds hu1] with v hv hv'
-    rw [OpenPartialHomeomorph.trans_apply, cuspChart_symm_of_ne_zero D hA hv' hv,
-      Periodic.cuspFunction_eq_of_nonzero _ _ hv]
+    filter_upwards [isOpen_ne.mem_nhds hu0] with v hv
+    rw [OpenPartialHomeomorph.trans_apply, cuspChart_symm_of_ne_zero D hA hv,
+      Function.Periodic.cuspFunction_eq_of_ne_zero _ _ hv]
     rfl
   -- The logarithmic lift of `u`, at which the scaled pullback is holomorphic.
   set τ₀ : ℍ := ⟨Periodic.invQParam D.width u,
     Periodic.im_invQParam_pos_of_norm_lt_one D.width_pos hu1' hu0⟩
   have hτ₀ : ofComplex (Periodic.invQParam D.width u) = τ₀ := ofComplex_apply τ₀
   have hτ₀mem : ofQuotient (Quotient.mk _ (D.scaling⁻¹ • τ₀)) ∈ c'.source := by
-    rwa [cuspChart_symm_of_ne_zero D hA hu1 hu0, hτ₀] at hu2
+    rwa [cuspChart_symm_of_ne_zero D hA hu0, hτ₀] at hu2
   have hdiff : DifferentiableAt ℂ ((fun z : ℍ ↦ f (D.scaling⁻¹ • z)) ∘ ofComplex)
       (Periodic.invQParam D.width u) := by
     have hm : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) τ₀ :=
@@ -275,4 +278,44 @@ theorem mdifferentiable_ofQuotient :
   rw [this]
   exact mdifferentiableAt_atlas (chart_mem_atlas ℂ p) (mem_chart_source ℂ p)
 
+/-- A map out of the compactified quotient is holomorphic at a point of the coarse quotient exactly
+when its restriction to the coarse quotient is: the transported charts of the coarse quotient are
+charts of the compactified quotient. -/
+theorem mdifferentiableAt_comp_ofQuotient_iff {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℂ E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℂ E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {F : Γ.CompactifiedQuotient → M'}
+    {p : orbitRel.Quotient Γ ℍ} :
+    MDifferentiableAt 𝓘(ℂ) I' (F ∘ ofQuotient) p ↔ MDifferentiableAt 𝓘(ℂ) I' F (ofQuotient p) := by
+  refine ⟨fun hF ↦ ?_, fun hF ↦ hF.comp p (mdifferentiable_ofQuotient p)⟩
+  set e := chartAt ℂ p
+  have hc : ofQuotientChart e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 Γ.CompactifiedQuotient :=
+    IsManifold.subset_maximalAtlas (ofQuotientChart_mem_atlas (chart_mem_atlas ℂ p))
+  have hx : ofQuotient p ∈ (ofQuotientChart e).source :=
+    (ofQuotient_mem_ofQuotientChart_source_iff e).2 (mem_chart_source ℂ p)
+  rw [← mdifferentiableWithinAt_univ, mdifferentiableWithinAt_iff_source_of_mem_maximalAtlas hc hx]
+  simp only [mfld_simps, mdifferentiableWithinAt_univ]
+  have hcomp : F ∘ (ofQuotientChart e).symm = (F ∘ ofQuotient) ∘ e.symm :=
+    funext fun u ↦ by simp
+  rw [hcomp, ofQuotientChart_ofQuotient]
+  exact hF.comp_of_eq (e p) (mdifferentiableAt_atlas_symm (chart_mem_atlas ℂ p)
+    (e.map_source (mem_chart_source ℂ p))) (e.left_inv (mem_chart_source ℂ p))
+
 end Subgroup.CompactifiedQuotient
+
+namespace TauCeti.Subgroup.CompactifiedQuotient
+
+open _root_.Subgroup.CompactifiedQuotient RiemannSurface
+
+variable {Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ]
+
+/-- At a point of the coarse quotient, a map on the compactification has the same local
+multiplicity as its restriction. No holomorphy assumption is needed because the charts agree. -/
+@[simp]
+theorem localMultiplicity_ofQuotient {Y : Type*} [TopologicalSpace Y] [ChartedSpace ℂ Y]
+    (F : Γ.CompactifiedQuotient → Y) (p : orbitRel.Quotient Γ ℍ) :
+    localMultiplicity F (ofQuotient p) = localMultiplicity (F ∘ ofQuotient) p := by
+  rw [localMultiplicity_def, localMultiplicity_def, chartAt_ofQuotient,
+    ofQuotientChart_ofQuotient]
+  simp only [ofQuotientChart_symm_apply, Function.comp_apply]
+
+end TauCeti.Subgroup.CompactifiedQuotient

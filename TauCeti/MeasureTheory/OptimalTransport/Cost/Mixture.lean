@@ -37,8 +37,13 @@ optimal plans compare two optimal plans through their sum.
 * `TauCeti.transportCost_sum_le` — countable subadditivity for `MeasureTheory.Measure.sum`;
 * `TauCeti.transportCost_finset_sum_le` and `TauCeti.transportCost_add_le` — the finite and binary
   forms of subadditivity;
+* `TauCeti.transportCost_le_sum_of_split` — transport cost along a splitting of both measures into
+  a part matched cell by cell and a remainder bounded by the maximal cost;
 * `TauCeti.IsOptimalCoupling.add` — the sum of two optimal plans for the same marginals is optimal
-  for the doubled marginals.
+  for the doubled marginals;
+* `TauCeti.transportCost_smul_add_smul_lt` — strict convexity in the target: when the optimal
+  plans out of the source into a mixture of two distinct targets are induced by maps, the cost to
+  the mixture is strictly below the mixture of the costs.
 
 ## References
 
@@ -82,6 +87,14 @@ theorem transportCost_smul (ha : a ≠ ∞) (c : X × Y → ℝ≥0∞) (μ : Me
           rw [lintegral_smul_measure, smul_eq_mul, ← mul_assoc, ENNReal.mul_inv_cancel ha₀ ha,
             one_mul]
 
+/-- Scaling an optimal plan by a finite factor preserves optimality, including at zero mass. -/
+protected theorem IsOptimalCoupling.smul {c : X × Y → ℝ≥0∞} {π : Measure (X × Y)}
+    {μ : Measure X} {ν : Measure Y} (h : IsOptimalCoupling c π μ ν) (ha : a ≠ ∞) :
+    IsOptimalCoupling c (a • π) (a • μ) (a • ν) where
+  toIsCoupling := h.toIsCoupling.smul a
+  lintegral_eq := by
+    rw [lintegral_smul_measure, smul_eq_mul, h.lintegral_eq, transportCost_smul ha]
+
 /-- **Countable subadditivity of the transport cost.** The transport cost of the sums of two
 countable families of marginals is at most the sum of the transport costs of the pairs: near
 optimal plans of the pairs sum to a plan of the sums. -/
@@ -93,14 +106,14 @@ theorem transportCost_sum_le {ι : Type*} [Countable ι] (c : X × Y → ℝ≥0
   -- Each summand is finite, so it is strictly below itself plus its share `δ i` of the slack.
   have hlt' (i : ι) : transportCost c (μ i) (ν i) < transportCost c (μ i) (ν i) + δ i :=
     ENNReal.lt_add_right
-      (ne_top_of_le_ne_top hlt.ne (ENNReal.le_tsum (f := fun i ↦ transportCost c (μ i) (ν i)) i))
+      (ne_top_of_le_ne_top hlt.ne (le_tsum (f := fun i ↦ transportCost c (μ i) (ν i)) i))
       (hδ i).ne'
   choose π hπ hπc using fun i ↦ transportCost_lt_iff.1 (hlt' i)
   calc transportCost c (Measure.sum μ) (Measure.sum ν) ≤ ∫⁻ z, c z ∂Measure.sum π :=
         transportCost_le_lintegral (IsCoupling.sum hπ) c
     _ = ∑' i, ∫⁻ z, c z ∂π i := lintegral_sum_measure c π
-    _ ≤ ∑' i, (transportCost c (μ i) (ν i) + δ i) := ENNReal.tsum_le_tsum fun i ↦ (hπc i).le
-    _ = ∑' i, transportCost c (μ i) (ν i) + ∑' i, δ i := ENNReal.tsum_add
+    _ ≤ ∑' i, (transportCost c (μ i) (ν i) + δ i) := tsum_le_tsum fun i ↦ (hπc i).le
+    _ = ∑' i, transportCost c (μ i) (ν i) + ∑' i, δ i := tsum_add
     _ ≤ ∑' i, transportCost c (μ i) (ν i) + ε := add_le_add_right hδε.le _
 
 /-- **Finite subadditivity of the transport cost.** -/
@@ -128,5 +141,73 @@ protected theorem IsOptimalCoupling.add {c : X × Y → ℝ≥0∞} {π π' : Me
   lintegral_eq := by
     rw [lintegral_add_measure, h.lintegral_eq, h'.lintegral_eq, ← two_smul ℝ≥0∞ μ,
       ← two_smul ℝ≥0∞ ν, transportCost_smul ENNReal.ofNat_ne_top, two_mul]
+
+/-- **Strict convexity of the transport cost in the target.** Let `π₀` and `π₁` be optimal plans
+from `μ` to `ν₀` and to `ν₁`, and let `a, b` be nonzero weights with `a + b = 1`. If every optimal
+plan from `μ` to the mixture `a • ν₀ + b • ν₁` is induced by a map and `ν₀ ≠ ν₁`, then the
+transport cost from `μ` to the mixture is strictly below the mixture of the two transport costs.
+-/
+theorem transportCost_smul_add_smul_lt [MeasurableEq Y] {c : X × Y → ℝ≥0∞}
+    {π₀ π₁ : Measure (X × Y)} {μ : Measure X} {ν₀ ν₁ : Measure Y} {b : ℝ≥0∞} (hab : a + b = 1)
+    (ha : a ≠ 0) (hb : b ≠ 0) (h₀ : IsOptimalCoupling c π₀ μ ν₀)
+    (h₁ : IsOptimalCoupling c π₁ μ ν₁)
+    (hgraph : ∀ π, IsOptimalCoupling c π μ (a • ν₀ + b • ν₁) →
+      ∃ T : X → Y, AEMeasurable T μ ∧ π = graphPlan T μ)
+    (hne : ν₀ ≠ ν₁) :
+    transportCost c μ (a • ν₀ + b • ν₁) <
+      a * transportCost c μ ν₀ + b * transportCost c μ ν₁ := by
+  have hπ : IsCoupling (a • π₀ + b • π₁) μ (a • ν₀ + b • ν₁) := by
+    have h := (h₀.toIsCoupling.smul a).add (h₁.toIsCoupling.smul b)
+    rwa [← add_smul, hab, one_smul] at h
+  have hcost : ∫⁻ z, c z ∂(a • π₀ + b • π₁) =
+      a * transportCost c μ ν₀ + b * transportCost c μ ν₁ := by
+    rw [lintegral_add_measure, lintegral_smul_measure, lintegral_smul_measure, smul_eq_mul,
+      smul_eq_mul, h₀.lintegral_eq, h₁.lintegral_eq]
+  -- The mixture of the two plans couples `μ` with the mixture of the targets and costs exactly the
+  -- mixture of the two costs, so it remains to rule out equality.
+  refine lt_of_le_of_ne (hcost ▸ transportCost_le_lintegral hπ c) fun heq ↦ hne ?_
+  -- Equality makes the mixture of the two plans optimal, so it is the graph plan of a map `T`.
+  obtain ⟨T, hT, hπT⟩ := hgraph _ ⟨hπ, hcost.trans heq.symm⟩
+  -- A coupling out of `μ` lying below a multiple of that graph plan has target `μ.map T`.
+  have key {σ : Measure (X × Y)} {ν : Measure Y} {d : ℝ≥0∞} (hd : d ≠ 0)
+      (hσ : IsCoupling σ μ ν) (hle : d • σ ≤ graphPlan T μ) : ν = μ.map T := by
+    have hac : σ ≪ graphPlan T μ :=
+      (Measure.absolutelyContinuous_smul hd).trans (Measure.absolutelyContinuous_of_le hle)
+    rw [← hσ.snd_eq, eq_graphPlan_of_absolutelyContinuous hT hac, hσ.fst_eq, snd_graphPlan hT]
+  rw [key ha h₀.toIsCoupling (hπT ▸ Measure.le_add_right le_rfl),
+    key hb h₁.toIsCoupling (hπT ▸ Measure.le_add_left le_rfl)]
+
+/-- **Transport along a splitting of both measures.** If two finite measures of equal mass are
+split into pieces `α i + α' i` and `β i + β' i`, where `α i` and `β i` have equal mass and cost at
+most `w i`, and the cost is at most `M` everywhere, then the transport cost is at most the sum of
+the `w i` plus `M` times the total mass of the pieces `α' i`. -/
+theorem transportCost_le_sum_of_split {ι : Type*} [Fintype ι] {c : X × Y → ℝ≥0∞} {μ : Measure X}
+    {ν : Measure Y} [IsFiniteMeasure μ] {α α' : ι → Measure X} {β β' : ι → Measure Y}
+    (hμ : μ = ∑ i, α i + ∑ i, α' i) (hν : ν = ∑ i, β i + ∑ i, β' i)
+    (h : μ Set.univ = ν Set.univ) (hαβ : ∀ i, α i Set.univ = β i Set.univ) {w r : ι → ℝ≥0∞}
+    (hcell : ∀ i, transportCost c (α i) (β i) ≤ w i) {M : ℝ≥0∞} (hM : ∀ z, c z ≤ M)
+    (hα' : ∀ i, α' i Set.univ = r i) :
+    transportCost c μ ν ≤ ∑ i, w i + M * ∑ i, r i := by
+  have hsum : (∑ i, α i) Set.univ = (∑ i, β i) Set.univ := by
+    simp only [FunLike.coe_sum, Finset.sum_apply, hαβ]
+  have hα_le : ∑ i, α i ≤ μ := hμ ▸ Measure.le_add_right le_rfl
+  have hα'_le : ∑ i, α' i ≤ μ := hμ ▸ Measure.le_add_left le_rfl
+  have hne : (∑ i, α i) Set.univ ≠ ∞ := ne_top_of_le_ne_top (measure_ne_top μ Set.univ) (hα_le _)
+  have hrest : (∑ i, α' i) Set.univ = (∑ i, β' i) Set.univ := by
+    have htot : (∑ i, α i) Set.univ + (∑ i, α' i) Set.univ =
+        (∑ i, β i) Set.univ + (∑ i, β' i) Set.univ := by
+      rw [← _root_.add_apply, ← _root_.add_apply, ← hμ, ← hν, h]
+    rwa [hsum, ENNReal.add_right_inj (hsum ▸ hne)] at htot
+  have : IsFiniteMeasure (∑ i, α' i) := ⟨(hα'_le _).trans_lt (measure_lt_top μ Set.univ)⟩
+  calc transportCost c μ ν
+      = transportCost c (∑ i, α i + ∑ i, α' i) (∑ i, β i + ∑ i, β' i) := by rw [← hμ, ← hν]
+    _ ≤ transportCost c (∑ i, α i) (∑ i, β i) + transportCost c (∑ i, α' i) (∑ i, β' i) :=
+        transportCost_add_le c _ _ _ _
+    _ ≤ ∑ i, transportCost c (α i) (β i) + transportCost (fun _ ↦ M) (∑ i, α' i) (∑ i, β' i) :=
+        add_le_add (transportCost_finset_sum_le _ c _ _) (transportCost_mono hM)
+    _ ≤ ∑ i, w i + M * ∑ i, r i := by
+        rw [transportCost_const (exists_isCoupling_iff.2 hrest)]
+        refine add_le_add (Finset.sum_le_sum fun i _ ↦ hcell i) (le_of_eq ?_)
+        simp only [FunLike.coe_sum, Finset.sum_apply, hα']
 
 end TauCeti

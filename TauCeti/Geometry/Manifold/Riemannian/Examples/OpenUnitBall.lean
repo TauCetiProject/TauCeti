@@ -68,38 +68,34 @@ theorem mem_iff {x : ℝ} : x ∈ realOpenUnitBall ↔ |x| < 1 := by
 /-- The ambient metric on the real open unit ball is the Riemannian distance induced by the
 restricted Euclidean metric. This is an instance in the `TauCeti` scope. -/
 theorem isRiemannianManifold : IsRiemannianManifold 𝓘(ℝ, ℝ) realOpenUnitBall :=
-  Manifold.isRiemannianManifold_of_convex realOpenUnitBall (convex_ball (0 : ℝ) 1)
+  TopologicalSpace.Opens.isRiemannianManifold_of_convex realOpenUnitBall (convex_ball (0 : ℝ) 1)
 
 scoped[TauCeti] attribute [instance] TauCeti.RealOpenUnitBall.isRiemannianManifold
 
 /-- The radial segment from the centre to `q`, affinely parametrized on `[0, 1]` and clamped
 outside that interval. -/
 def radialSegment (q : realOpenUnitBall) : ℝ → realOpenUnitBall :=
-  TopologicalSpace.Opens.convexSegment realOpenUnitBall
+  Set.convexSegment (realOpenUnitBall : Set ℝ)
     (convex_ball (0 : ℝ) 1) center q
 
 /-- On `[0, 1]`, the radial segment from the centre to `q` is `t ↦ t * q`. -/
 theorem coe_radialSegment (q : realOpenUnitBall) (t : ℝ) (ht : t ∈ Icc 0 1) :
     (radialSegment q t : ℝ) = t * (q : ℝ) := by
-  calc
-    (radialSegment q t : ℝ) =
-        ⇑(ContinuousAffineMap.lineMap (R := ℝ) (center : ℝ) (q : ℝ)) t := by
-      simpa only [radialSegment, Function.comp_apply] using
-        TopologicalSpace.Opens.convexSegment_val_eqOn realOpenUnitBall
-          (convex_ball (0 : ℝ) 1) center q t ht
-    _ = t * (q : ℝ) := by
-      simp [ContinuousAffineMap.coe_lineMap_eq, AffineMap.lineMap_apply_module]
+  simpa only [radialSegment, Function.comp_apply, AffineMap.lineMap_apply_module,
+    coe_center, smul_eq_mul, mul_zero, zero_add] using
+      Set.convexSegment_val_eqOn (realOpenUnitBall : Set ℝ)
+        (convex_ball (0 : ℝ) 1) center q ht
 
 /-- The radial segment starts at the centre of the open unit ball. -/
 @[simp]
 theorem radialSegment_zero (q : realOpenUnitBall) : radialSegment q 0 = center :=
-  TopologicalSpace.Opens.convexSegment_zero realOpenUnitBall
+  Set.convexSegment_zero (realOpenUnitBall : Set ℝ)
     (convex_ball (0 : ℝ) 1) center q
 
 /-- The radial segment ends at `q`. -/
 @[simp]
 theorem radialSegment_one (q : realOpenUnitBall) : radialSegment q 1 = q :=
-  TopologicalSpace.Opens.convexSegment_one realOpenUnitBall
+  Set.convexSegment_one (realOpenUnitBall : Set ℝ)
     (convex_ball (0 : ℝ) 1) center q
 
 /-- The radial segment is `C¹` on `[0, 1]`. -/

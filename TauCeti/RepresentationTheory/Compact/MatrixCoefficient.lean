@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Group.Conjugation
 public import TauCeti.RepresentationTheory.Compact.Haar
+public import TauCeti.RepresentationTheory.Compact.RegularRepresentation
 public import TauCeti.RepresentationTheory.Continuous.MatrixCoefficient
 public import Mathlib.MeasureTheory.Function.L2Space
 
@@ -24,37 +25,38 @@ the Haar integral the orthogonality argument evaluates.
 
 ## Main definitions
 
-* `TauCeti.ContRepresentation.matrixCoeffLp`: the matrix coefficient `g ↦ ⟪π g v, w⟫` as an element
+* `ContRepresentation.matrixCoeffLp`: the matrix coefficient `g ↦ ⟪π g v, w⟫` as an element
   of `Lp 𝕜 2 (haarProb G)`.
-* `TauCeti.ContRepresentation.matrixCoeffLpₛₗ`: the matrix coefficients of a fixed representation
+* `ContRepresentation.matrixCoeffLpₛₗ`: the matrix coefficients of a fixed representation
   bundled as a sesquilinear map `V →ₗ⋆[𝕜] V →ₗ[𝕜] Lp 𝕜 2 (haarProb G)`.
 
 ## Main statements
 
-* `TauCeti.ContRepresentation.inner_matrixCoeffLp`: the `L²` inner product of two matrix
+* `ContRepresentation.inner_matrixCoeffLp`: the `L²` inner product of two matrix
   coefficients is the Haar integral of their pointwise product, in Mathlib's convention
   `⟪F, H⟫ = ∫ H · conj F`.
-* `TauCeti.ContRepresentation.norm_matrixCoeffLp_sq`: the squared `L²` norm is the Haar integral of
+* `ContRepresentation.norm_matrixCoeffLp_sq`: the squared `L²` norm is the Haar integral of
   the squared modulus.
-* `TauCeti.ContRepresentation.norm_matrixCoeffLp_le`: for a unitary representation the `L²` norm is
+* `ContRepresentation.norm_matrixCoeffLp_le`: for a unitary representation the `L²` norm is
   at most `‖v‖ * ‖w‖`, because normalized Haar measure has total mass one.
-* `TauCeti.ContRepresentation.matrixCoeffLp_eq_zero_iff`: passing to `L²` loses no information,
+* `ContRepresentation.matrixCoeffLp_eq_zero_iff`: passing to `L²` loses no information,
   since Haar measure is positive on nonempty open sets.
-* `TauCeti.ContRepresentation.matrixCoeffLp_map_map`: moving both defining vectors by `π h`
+* `ContRepresentation.matrixCoeffLp_map_map`: moving both defining vectors by `π h`
   reparametrizes the matrix coefficient by a conjugation.
+* `ContRepresentation.leftRegularLp_matrixCoeffLp`: left translation of a matrix coefficient acts
+  on its second vector.
 
-This is the second half of the Layer 3 milestone of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap), whose first half is the
-uniform-norm algebra in `TauCeti/RepresentationTheory/Continuous/MatrixCoefficient.lean`. The
-mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
+The uniform-norm algebra is developed in
+`TauCeti/RepresentationTheory/Continuous/MatrixCoefficient.lean`. The mathematical development
+follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
 
+open TauCeti
+
 open MeasureTheory
 open scoped InnerProductSpace
-
-namespace TauCeti
 
 namespace ContRepresentation
 
@@ -258,8 +260,14 @@ theorem matrixCoeffLp_map_map (hunitary : IsUnitary π) (h : G) (v w : V) :
           (continuous_const.mul continuous_id).mul continuous_const⟩
         (measurePreserving_conj (haarProb G) h⁻¹)).symm
 
+/-- Left translation of a matrix coefficient acts on its second vector. -/
+theorem leftRegularLp_matrixCoeffLp (hunitary : IsUnitary π) (g : G) (v w : V) :
+    leftRegularLp 𝕜 G g (matrixCoeffLp π hπ v w) = matrixCoeffLp π hπ v (π g w) := by
+  rw [matrixCoeffLp_def, matrixCoeffLp_def, leftRegularLp_toLp]
+  congr 1
+  ext x
+  simp [matrixCoeff_apply_mul_left π hπ hunitary, hunitary.inner_map_left]
+
 end CompactGroup
 
 end ContRepresentation
-
-end TauCeti

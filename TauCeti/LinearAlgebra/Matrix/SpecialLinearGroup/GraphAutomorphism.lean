@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.GraphAutomorphism
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # The type-A graph automorphism on the special linear group
@@ -25,6 +26,8 @@ standard type-A pinning sign-free.
   root subgroup.
 * `Matrix.SpecialLinearGroup.typeAGraphAutomorphism_typeAGraphAutomorphism` and
   `Matrix.SpecialLinearGroup.typeAGraphAutomorphism_mul_self`: the involution equations.
+* `Matrix.SpecialLinearGroup.typeAGraphAutomorphism_comp_map_comp_self`: twisting an entrywise
+  ring endomorphism by the graph automorphism and squaring gives the entrywise square.
 
 ## References
 
@@ -65,6 +68,7 @@ private theorem typeAGraphAutomorphism_det_eq_one
   simpa only [Matrix.GeneralLinearGroup.val_det_apply, Units.val_one] using
     congrArg Units.val h
 
+/-- Restrict the signed general-linear graph involution to determinant-one matrices. -/
 private noncomputable def typeAGraphAutomorphismToSL
     (g : Matrix.SpecialLinearGroup (Fin (r + 1)) A) :
     Matrix.SpecialLinearGroup (Fin (r + 1)) A :=
@@ -163,5 +167,31 @@ theorem typeAGraphAutomorphism_mul_self :
   apply DFunLike.ext _ _
   intro g
   exact typeAGraphAutomorphism_typeAGraphAutomorphism r A g
+
+variable {A} in
+/-- The signed type-A graph automorphism commutes with entrywise ring maps. -/
+@[simp]
+theorem map_typeAGraphAutomorphism {B : Type*} [CommRing B] (f : A →+* B)
+    (g : Matrix.SpecialLinearGroup (Fin (r + 1)) A) :
+    map f (typeAGraphAutomorphism r A g) = typeAGraphAutomorphism r B (map f g) := by
+  apply toGL_injective
+  rw [toGL_map, toGL_typeAGraphAutomorphism, toGL_typeAGraphAutomorphism, toGL_map]
+  exact TauCeti.map_typeAGraphAutomorphism f r (toGL g)
+
+variable {A} in
+/-- **The square of a graph-twisted entrywise ring endomorphism is the entrywise square.** Since
+the graph automorphism is an involution commuting with entrywise ring maps, applying
+`g ↦ θ (g.map σ)` twice is `g ↦ g.map (σ ∘ σ)`. For `σ` the `q`-power Frobenius this is the
+relation that the square of the Steinberg map of `²A_r(q)` is the `q²`-power Frobenius. -/
+theorem typeAGraphAutomorphism_comp_map_comp_self (σ : A →+* A) :
+    ((typeAGraphAutomorphism r A : SpecialLinearGroup (Fin (r + 1)) A →*
+          SpecialLinearGroup (Fin (r + 1)) A).comp (map σ)).comp
+        ((typeAGraphAutomorphism r A : SpecialLinearGroup (Fin (r + 1)) A →*
+          SpecialLinearGroup (Fin (r + 1)) A).comp (map σ)) =
+      map (σ.comp σ) := by
+  refine MonoidHom.ext fun g ↦ ?_
+  simp only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, map_typeAGraphAutomorphism,
+    typeAGraphAutomorphism_typeAGraphAutomorphism]
+  rw [← MonoidHom.comp_apply (map σ), map_comp_map]
 
 end Matrix.SpecialLinearGroup

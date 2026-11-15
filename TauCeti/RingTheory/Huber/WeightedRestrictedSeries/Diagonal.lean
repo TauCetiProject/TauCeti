@@ -160,13 +160,13 @@ private theorem exists_eq_rename_add_X_mul_rename_add_one_sub_mul [UniformSpace 
   -- `S ν` sums the coefficients of `u` along the diagonal ray from `ν`; `a` reads `S` on the
   -- `X`-axis, `b` on the `Y`-axis past the origin, and `-w` one diagonal step further on
   set S : (Fin 2 →₀ ℕ) → A := fun ν ↦ ∑' n : ℕ, coeff (ν + n • diagStep) u
-  have hSt : Tendsto S cofinite (𝓝 0) := tendsto_tsum_coeff_add_nsmul hu diagStep
+  have hSt : Tendsto S cofinite (𝓝 0) := u.tendsto_tsum_coeff_add_nsmul hu diagStep
   exact ⟨fun s ↦ S (embDomain Fin.castSuccEmb s),
     fun s ↦ S (embDomain (Fin.succEmb 1) s + single 1 1), fun ν ↦ -S (ν + diagStep),
     hSt.comp (embDomain_injective _).tendsto_cofinite,
     hSt.comp ((add_left_injective _).comp (embDomain_injective _)).tendsto_cofinite,
     ZeroAtFilter.neg (hSt.comp (add_left_injective diagStep).tendsto_cofinite),
-    eq_rename_add_X_mul_rename_add_one_sub_mul_of_coeff_eq (tsum_coeff_add_nsmul_eq hu (by simp))
+    eq_rename_add_X_mul_rename_add_one_sub_mul_of_coeff_eq (u.tsum_coeff_add_nsmul_eq hu (by simp))
       (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl)⟩
 
 private theorem eq_zero_of_rename_sub_rename_eq_one_sub_mul [TopologicalSpace A] [T1Space A]
@@ -183,7 +183,7 @@ private theorem eq_zero_of_rename_sub_rename_eq_one_sub_mul [TopologicalSpace A]
   ext μ
   -- along the diagonal through `μ` they also tend to zero, so in the T1 space `A` they are zero
   simpa using tendsto_const_nhds_iff.mp
-    ((tendsto_coeff_add_nsmul hw (by simp) μ).congr fun n ↦ hstep.nsmul n μ)
+    ((w.tendsto_coeff_add_nsmul hw (by simp) μ).congr fun n ↦ hstep.nsmul n μ)
 
 private theorem exists_eq_C_of_rename_sub_rename_eq_one_sub_mul [TopologicalSpace A] [T1Space A]
     {a b : MvPowerSeries (Fin 1) A} {w : MvPowerSeries (Fin 2) A}

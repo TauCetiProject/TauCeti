@@ -98,11 +98,7 @@ theorem toAdd_exponentSum_of_pow_apply [DecidableEq X] (i : X) (n : ℕ) (k : X)
 @[simp]
 theorem exponentSum_padicPow_of [DecidableEq X] (x : X) (a : ℤ_[p]) :
     exponentSum p X ((isProP_freeProP p X).padicPow (of x) a) = ofAdd (Pi.single x a) := by
-  have h := (isProP_freeProP p X).map_padicPow (isProP_multiplicative_pi_padicInt p X)
-    (exponentSum p X : freeProP p X →* Multiplicative (X → ℤ_[p])) (exponentSum p X).continuous
-    (of x) a
-  rw [MonoidHom.coe_ofClass] at h
-  rw [h, exponentSum_of, IsProP.padicPow_ofAdd_pi, ← Pi.single_smul, smul_eq_mul, mul_one]
+  rw [IsProP.map_padicPow_pi, exponentSum_of, toAdd_ofAdd, ← Pi.single_smul, smul_eq_mul, mul_one]
 
 /-- The exponent vector of the `i`-th `ℕ`-indexed generator of `freeProP p (Fin n)` is the
 coordinate vector at `i`; out of range it is `0`. -/
@@ -245,14 +241,15 @@ noncomputable def abelianizationEquiv :
     classical
     obtain ⟨y, rfl⟩ := QuotientGroup.mk_surjective x
     have h : (abelianizationInv p X).comp ((TopologicalAbelianization.lift (exponentSum p X)).comp
-        (ContinuousMonoidHom.quotientMk _)) = ContinuousMonoidHom.quotientMk _ :=
+        (Subgroup.quotientMkContinuousMonoidHom _)) = Subgroup.quotientMkContinuousMonoidHom _ :=
       hom_ext fun x ↦ by
         simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply,
-          ContinuousMonoidHom.quotientMk_apply, TopologicalAbelianization.lift_mk, exponentSum_of,
+          Subgroup.quotientMkContinuousMonoidHom_apply, TopologicalAbelianization.lift_mk,
+            exponentSum_of,
           abelianizationInv_ofAdd_single]
     have := DFunLike.congr_fun h y
     simpa only [ContinuousMonoidHom.coe_comp, Function.comp_apply,
-      ContinuousMonoidHom.quotientMk_apply] using this
+      Subgroup.quotientMkContinuousMonoidHom_apply] using this
   right_inv u := by
     classical
     have h : (TopologicalAbelianization.lift (exponentSum p X)).comp (abelianizationInv p X) =
@@ -321,6 +318,7 @@ theorem toAdd_exponentSum_eq_single_iff [DecidableEq X] (y : freeProP p X) (x₀
     eq_comm]
   exact Multiplicative.toAdd.eq_symm_apply.symm
 
+omit [Finite X] in
 /-- **A continuous homomorphism from a free pro-`p` group of finite rank to a commutative pro-`p`
 group is computed by the exponent sums**: `ψ y = ∏ x, ψ (x_x) ^ (u x)` for `u = exponentSum y`,
 the powers being the `p`-adic powers of the target. -/
@@ -347,6 +345,7 @@ theorem apply_eq_prod_padicPow_exponentSum [Fintype X] {A : Type*} [CommGroup A]
   rw [MonoidHom.coe_ofClass] at hmap
   rw [hmap, TopologicalAbelianization.lift_mk]
 
+omit [Finite X] in
 /-- **The exponent vector under a continuous homomorphism of free pro-`p` groups** is the linear
 image of the exponent vector: `exponentSum (φ y) = ∑ x, (exponentSum y)_x • exponentSum (φ x_x)`.
 The vectors `exponentSum (φ x_x)` are the columns of the matrix of the abelianization of `φ`. -/
@@ -361,6 +360,23 @@ theorem toAdd_exponentSum_apply_eq_sum_smul [Fintype X] {Y : Type v}
   refine Finset.sum_congr rfl fun x _ ↦ ?_
   rw [Function.comp_apply, ← ofAdd_toAdd (exponentSum p Y (φ (of x))), IsProP.padicPow_ofAdd_pi,
     toAdd_ofAdd, toAdd_ofAdd]
+
+/-- The abelianization isomorphism of the free pro-`p` group carries the `p`-adic powers of the
+class of `r` to the multiples of its exponent vector. -/
+@[simp]
+lemma abelianizationEquiv_padicPow_class (r : freeProP p X) (l : ℤ_[p]) :
+    abelianizationEquiv p X
+        ((isProP_freeProP p X).topologicalAbelianization_self.padicPow
+          (r : TopologicalAbelianization (freeProP p X)) l) =
+      ofAdd (l • (exponentSum p X r).toAdd) := by
+  have hερ : abelianizationEquiv p X (r : TopologicalAbelianization (freeProP p X)) =
+      ofAdd (exponentSum p X r).toAdd := by
+    rw [abelianizationEquiv_mk, ofAdd_toAdd]
+  have h := (isProP_freeProP p X).topologicalAbelianization_self.map_padicPow_pi
+    (abelianizationEquiv p X : TopologicalAbelianization
+      (freeProP p X) →ₜ* Multiplicative (X → ℤ_[p]))
+    (r : TopologicalAbelianization (freeProP p X)) l
+  rwa [ContinuousMonoidHom.coe_coe, hερ, toAdd_ofAdd] at h
 
 end freeProP
 

@@ -11,6 +11,8 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.Algebra.Module.Submodule.Map
 public import Mathlib.Algebra.Module.Submodule.Equiv
 public import TauCeti.KnotTheory.Grid.Cycles
+public import TauCeti.KnotTheory.Grid.Differential.Square.Zero
+public import TauCeti.Algebra.Homology.SquareZero
 import Mathlib.LinearAlgebra.Dimension.RankNullity
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Finsupp.VectorSpace
@@ -58,7 +60,7 @@ unknot.
   their difference is a boundary, and `TauCeti.GridDiagram.fullyBlockedHomology_mk_eq_zero_iff`:
   a class vanishes exactly when a representing cycle is a boundary.
 * `TauCeti.GridDiagram.finrank_fullyBlockedHomology_add_two_mul_finrank_range`: rank-nullity for
-  any fully blocked differential that squares to zero.
+  the fully blocked differential, which squares to zero.
 * `TauCeti.GridDiagram.natCard_fullyBlockedHomology_of_le_two` and
   `TauCeti.GridDiagram.finrank_fullyBlockedHomology_of_le_two`: the small-grid cardinality
   `2 ^ n!` and dimension `n!`.
@@ -68,10 +70,7 @@ unknot.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3,
-"The complexes and `∂² = 0`", and the acceptance criterion that grid homology compute on the
-`2 × 2` unknot grid with its bigradings, exhibiting the `W^{⊗(n-1)}` stabilization factor. The
-homology and stabilization conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots
+The homology and stabilization conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots
 and Links*, Chapter 4.
 -/
 
@@ -141,20 +140,56 @@ theorem fullyBlockedHomology_mk_eq_zero_iff (a : G.fullyBlockedCycles) :
       (a : GridChain (ZMod 2) n) ∈ G.fullyBlockedBoundaries := by
   rw [Submodule.Quotient.mk_eq_zero, mem_fullyBlockedBoundariesInCycles]
 
+/-- The fully blocked homology is the homology of its square-zero linear differential. -/
+noncomputable def fullyBlockedHomologyEquivLinearMapHomology :
+    G.fullyBlockedHomology ≃ₗ[ZMod 2]
+      G.fullyBlockedDifferential.homology G.fullyBlockedDifferential_comp_self_eq_zero := by
+  let E := LinearEquiv.ofEq _ _ G.fullyBlockedCycles_eq_ker
+  refine Submodule.Quotient.equiv _ _ E ?_
+  ext z
+  rw [Submodule.mem_map]
+  constructor
+  · rintro ⟨w, hw, rfl⟩
+    simpa only [LinearMap.mem_boundariesInKer, E, LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply,
+      ← G.fullyBlockedBoundaries_eq_range] using
+      (G.mem_fullyBlockedBoundariesInCycles w).mp hw
+  · intro hz
+    refine ⟨E.symm z, ?_, E.apply_symm_apply z⟩
+    simpa only [mem_fullyBlockedBoundariesInCycles, E, LinearEquiv.ofEq_symm,
+      LinearEquiv.coe_ofEq_apply, G.fullyBlockedBoundaries_eq_range,
+      LinearMap.mem_boundariesInKer] using hz
+
+/-- The kernel-homology identification preserves the underlying cycle representative. -/
+@[simp]
+theorem fullyBlockedHomologyEquivLinearMapHomology_mk
+    (z : G.fullyBlockedCycles) :
+    G.fullyBlockedHomologyEquivLinearMapHomology (Submodule.Quotient.mk z) =
+      Submodule.Quotient.mk ((LinearEquiv.ofEq _ _ G.fullyBlockedCycles_eq_ker) z) := by
+  simp [fullyBlockedHomologyEquivLinearMapHomology, Submodule.Quotient.equiv_apply,
+    Submodule.mapQ_apply]
+
+/-- The inverse kernel-homology identification also preserves cycle representatives. -/
+@[simp]
+theorem fullyBlockedHomologyEquivLinearMapHomology_symm_mk
+    (z : LinearMap.ker G.fullyBlockedDifferential) :
+    G.fullyBlockedHomologyEquivLinearMapHomology.symm (Submodule.Quotient.mk z) =
+      Submodule.Quotient.mk ((LinearEquiv.ofEq _ _ G.fullyBlockedCycles_eq_ker).symm z) := by
+  apply G.fullyBlockedHomologyEquivLinearMapHomology.injective
+  simp only [LinearEquiv.apply_symm_apply, fullyBlockedHomologyEquivLinearMapHomology_mk]
+
 /-- The coefficient ring `ZMod 2` is a field, as needed for the dimension formula below. -/
 local instance : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
 
-/-- Rank-nullity for fully blocked grid homology: when the differential squares to zero, the
-homology dimension plus twice the differential rank is the number of grid states. -/
-theorem finrank_fullyBlockedHomology_add_two_mul_finrank_range
-    (hsq : G.fullyBlockedDifferential.comp G.fullyBlockedDifferential = 0) :
+/-- Rank-nullity for fully blocked grid homology: the homology dimension plus twice the
+differential rank is the number of grid states. -/
+theorem finrank_fullyBlockedHomology_add_two_mul_finrank_range :
     Module.finrank (ZMod 2) G.fullyBlockedHomology +
         2 * Module.finrank (ZMod 2) (LinearMap.range G.fullyBlockedDifferential) = n.factorial := by
   have hrk := LinearMap.finrank_range_add_finrank_ker G.fullyBlockedDifferential
   have hZ : Module.finrank (ZMod 2) G.fullyBlockedCycles =
       Module.finrank (ZMod 2) (LinearMap.ker G.fullyBlockedDifferential) :=
     (LinearEquiv.ofEq _ _ G.fullyBlockedCycles_eq_ker).finrank_eq
-  have hle := G.fullyBlockedBoundaries_le_cycles hsq
+  have hle := G.fullyBlockedBoundaries_le_cycles G.fullyBlockedDifferential_comp_self_eq_zero
   have hB : Module.finrank (ZMod 2) G.fullyBlockedBoundariesInCycles =
       Module.finrank (ZMod 2) (LinearMap.range G.fullyBlockedDifferential) := by
     exact ((LinearEquiv.ofEq _ _ G.fullyBlockedBoundariesInCycles_eq_comap).trans

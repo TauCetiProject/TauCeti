@@ -41,7 +41,7 @@ only the group law; so the trace coefficient and its bi-translation identities a
 finite-dimensional normed space over a complete nontrivially normed field, and the inner product
 enters only in the comparison with the matrix coefficients. Composed with `ContinuousMap.toLp`
 this is the equivariance of the Peter-Weyl block of a compact group, in
-`TauCeti/RepresentationTheory/Compact/TraceCoefficient.lean`.
+`TauCeti/RepresentationTheory/Compact/TraceCoefficient/Basic.lean`.
 
 ## Main definitions
 
@@ -67,9 +67,11 @@ this is the equivariance of the Peter-Weyl block of a compact group, in
 
 public section
 
+open _root_.ContRepresentation
+
 open scoped InnerProductSpace
 
-open TauCeti TauCeti.ContRepresentation
+open TauCeti
 
 namespace ContRepresentation
 
@@ -128,7 +130,7 @@ representation: `rankOne 𝕜 w v` pairs to `x ↦ ⟪π x v, w⟫`. Unitarity e
 `π x⁻¹`, which it identifies with `π x`. -/
 theorem traceCoeff_rankOne (hunitary : IsUnitary π) (v w : V) :
     traceCoeff π hπ (InnerProductSpace.rankOne 𝕜 w v) = matrixCoeff π hπ v w := by
-  have := FiniteDimensional.complete 𝕜 V
+  have := FiniteDimensional.completeSpace 𝕜 V
   ext x
   rw [traceCoeff_apply, matrixCoeff_apply, InnerProductSpace.rankOne_comp,
     hunitary.adjoint_eq_inv, inv_inv, traceCLM_apply, InnerProductSpace.trace_rankOne]

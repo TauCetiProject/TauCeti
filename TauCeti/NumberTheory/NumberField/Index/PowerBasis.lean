@@ -44,10 +44,6 @@ namespace TauCeti.NumberField.IntegralPrimitiveElement
 
 variable {K : Type*} [Field K] [NumberField K]
 
--- The power basis, its generator, and the discriminant comparison below follow the
--- human-authored specification in `TauCetiRoadmap/NumberFieldArithmetic/Suggested.lean`,
--- Layer 3.2.
-
 /-- The power basis `1, θ, …, θ ^ (n - 1)` of `K` over `ℚ` attached to an integral primitive
 element `θ`, where `n = [K : ℚ]`. -/
 noncomputable def powerBasis (θ : IntegralPrimitiveElement K) : PowerBasis ℚ K :=
@@ -64,6 +60,6 @@ theorem discr_powerBasis_eq_minpoly_discr (θ : IntegralPrimitiveElement K) :
     Algebra.discr ℚ θ.powerBasis.basis = algebraMap ℤ ℚ (minpoly ℤ θ.1).discr := by
   rw [Algebra.discr_powerBasis_eq_minpoly_discr, powerBasis_gen,
     _root_.NumberField.RingOfIntegers.minpoly_rat_coe,
-    Polynomial.Monic.discr_map (minpoly.monic θ.1.isIntegral)]
+    (minpoly.monic θ.1.isIntegral).discr_map]
 
 end TauCeti.NumberField.IntegralPrimitiveElement

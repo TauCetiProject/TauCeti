@@ -16,7 +16,8 @@ maps. The integral carrier's base change contains this generated subgroup; equal
 integral carrier's fibre is a separate question.
 
 The coordinate Hopf algebra here is the common target of the connectedness and smoothness results
-for the generated subgroup.
+for the generated subgroup. Its quotient map from `O(GL₅₆)` and the factorizations of the generator
+coordinate maps through it are what its standard representation is built from.
 
 ## References
 
@@ -77,5 +78,76 @@ theorem generatedCoordinateHopfAlgebra_def :
       CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A 56)
         (generatedDefiningIdeal A) := by
   simp [generatedCoordinateHopfAlgebra]
+
+/-- The quotient coordinate morphism `O(GL₅₆) ⟶ O(generated subgroup)`, representing its
+closed immersion into `GL₅₆`. -/
+noncomputable def generatedCoordinateMap :
+    GeneralLinear.coordinateHopfAlgebra A 56 ⟶ generatedCoordinateHopfAlgebra A :=
+  CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 56) (generatedDefiningIdeal A)
+
+/-- After exposing the generated coordinate algebra as its quotient presentation, the generated
+coordinate map is the quotient morphism. -/
+theorem generatedCoordinateMap_comp_eqToIso_hom :
+    generatedCoordinateMap A ≫ (eqToIso (generatedCoordinateHopfAlgebra_def A)).hom =
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 56)
+        (generatedDefiningIdeal A) := by
+  -- In this defining module the deliberately opaque named quotient and quotient map reduce,
+  -- so the equality transport is the identity.  Consumers use this theorem as the interface.
+  change CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 56)
+      (generatedDefiningIdeal A) ≫ 𝟙 _ = _
+  simp
+
+/-- The generated subgroup coordinate morphism is surjective. -/
+theorem generatedCoordinateMap_surjective : Function.Surjective (generatedCoordinateMap A).hom :=
+  CommHopfAlgCat.mkQuotient_surjective
+    (GeneralLinear.coordinateHopfAlgebra A 56) (generatedDefiningIdeal A)
+
+/-- The kernel of the generated subgroup coordinate morphism is its defining ideal. -/
+@[simp]
+theorem generatedCoordinateMap_ker :
+    RingHom.ker (generatedCoordinateMap A).hom =
+      (generatedDefiningIdeal A).toIdeal :=
+  CommHopfAlgCat.mkQuotient_ker
+    (GeneralLinear.coordinateHopfAlgebra A 56) (generatedDefiningIdeal A)
+
+/-- Every generator coordinate map kills the generated defining ideal. -/
+theorem generatedDefiningIdeal_toIdeal_le_ker (j : Sum (Fin 7 ⊕ Fin 7) Unit) :
+    (generatedDefiningIdeal A).toIdeal ≤
+      RingHom.ker (generatorCoordinateMap A j).hom.toAlgHom.toRingHom := by
+  rw [generatedDefiningIdeal_def]
+  exact CommHopfAlgCat.commonKernelHopfIdeal_toIdeal_le_ker (generatorCoordinateMap A) j
+
+/-- The `j`th generator coordinate map factored through the generated subgroup. -/
+noncomputable def generatedCoordinateLift (j : Sum (Fin 7 ⊕ Fin 7) Unit) :
+    generatedCoordinateHopfAlgebra A ⟶ generatorCoordinateAlgebra A j :=
+  CommHopfAlgCat.liftQuotient (generatedDefiningIdeal A) (generatorCoordinateMap A j)
+    (generatedDefiningIdeal_toIdeal_le_ker A j)
+
+/-- Composing the quotient coordinate morphism with the `j`th lift recovers the generator. -/
+@[simp]
+theorem generatedCoordinateMap_comp_generatedCoordinateLift (j : Sum (Fin 7 ⊕ Fin 7) Unit) :
+    generatedCoordinateMap A ≫ generatedCoordinateLift A j = generatorCoordinateMap A j :=
+  CommHopfAlgCat.mkQuotient_comp_liftQuotient (generatedDefiningIdeal A)
+    (generatorCoordinateMap A j) (generatedDefiningIdeal_toIdeal_le_ker A j)
+
+/-- The lift is the unique factorization of the `j`th generator coordinate map through the
+generated subgroup. -/
+theorem generatedCoordinateLift_unique (j : Sum (Fin 7 ⊕ Fin 7) Unit)
+    (g : generatedCoordinateHopfAlgebra A ⟶ generatorCoordinateAlgebra A j)
+    (hg : generatedCoordinateMap A ≫ g = generatorCoordinateMap A j) :
+    g = generatedCoordinateLift A j :=
+  CommHopfAlgCat.liftQuotient_unique (generatedDefiningIdeal A) (generatorCoordinateMap A j)
+    (generatedDefiningIdeal_toIdeal_le_ker A j) g hg
+
+/-- The generated coordinate Hopf algebra is a finite-type `A`-algebra. -/
+instance : Algebra.FiniteType A (generatedCoordinateHopfAlgebra A) := by
+  rw [generatedCoordinateHopfAlgebra_def]
+  infer_instance
+
+/-- The generated type-`E₇` subgroup as a finite-type commutative Hopf algebra. -/
+noncomputable abbrev finiteTypeGeneratedCoordinateHopfAlgebra :
+    FiniteTypeCommHopfAlgCat.{u, u} A :=
+  ⟨generatedCoordinateHopfAlgebra A,
+    (inferInstance : Algebra.FiniteType A (generatedCoordinateHopfAlgebra A))⟩
 
 end TauCeti.E7Minuscule

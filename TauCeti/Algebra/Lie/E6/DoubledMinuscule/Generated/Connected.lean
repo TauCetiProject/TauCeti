@@ -30,7 +30,7 @@ requires a separate comparison.
 * J. S. Milne, *Algebraic Groups* (2017), Propositions 2.37 and 2.48.
 * R. Steinberg, *Lectures on Chevalley Groups*, Section 3.
 * `TauCeti.Algebra.AlgebraicGroup.Connected.Generated`, connectedness of common-kernel quotients.
-* `TauCeti.Algebra.Lie.D4.Tripled.GeneratedConnected`, the analogous result for the tripled
+* `TauCeti.Algebra.Lie.D4.Tripled.Generated.Connected`, the analogous result for the tripled
   type-`D₄` generated subgroup.
 -/
 

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import Mathlib.Algebra.Category.ModuleCat.Ulift
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.BinaryBiproducts
+public import TauCeti.CategoryTheory.Preadditive.Indecomposable
 public import TauCeti.CategoryTheory.Skeletal
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
 
@@ -39,13 +41,14 @@ finite-dimensional indecomposables is finite, so that "the indecomposables" may 
   representation type every such family is indexed by a finite type.
 * `TauCeti.isFiniteRepType_of_map`: finite representation type transfers along a map of
   indecomposables reflecting isomorphisms outside one exceptional isomorphism class.
+* `TauCeti.IsFiniteRepType.of_ulift`: finite representation type for vertex spaces in a universe
+  implies it for vertex spaces in any smaller one.
 
 ## Implementation notes
 
-The definition does not carry `[Finite Q]`. The roadmap pins `IsFiniteRepType` with that instance
-binder, to record the intended setting, but nothing in the statement consumes it and an unused
+The definition does not carry `[Finite Q]`: nothing in the statement consumes it, and an unused
 instance argument is a linter error here; a consumer that needs a finite vertex set -- Gabriel's
-dichotomy does -- states it where it is used. Dropping it costs nothing: the definition reads the
+dichotomy does -- states it where it is used. Omitting it costs nothing: the definition reads the
 same, and it stays meaningful over an infinite quiver.
 
 The skeleton is Mathlib's `CategoryTheory.Skeleton`, so `IsFiniteRepType` is a finiteness statement
@@ -58,12 +61,6 @@ The two results are stated for a family `M : α → QuiverRep k Q` rather than f
 representations: a family is what the worked examples produce -- the loop quiver's family is
 indexed by the base field -- and injectivity up to isomorphism is expressed directly on the index
 type.
-
-## References
-
-This implements the "finite representation type" item of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, on which its Gabriel
-dichotomy and the loop-quiver and Kronecker worked examples are stated.
 -/
 
 public section
@@ -165,5 +162,21 @@ theorem isFiniteRepType_of_map {Q' : Type v'} [Quiver.{w'} Q']
   have hexc : Subsingleton {a // E (M a)} :=
     ⟨fun a b ↦ Subtype.ext (heq _ _ (hE _ _ (hM a).2 (hM b).2 a.2 b.2))⟩
   exact isFiniteRepType_iff.mpr (Finite.of_equiv _ (Equiv.sumCompl fun a ↦ E (M a)))
+
+/-- **Finite representation type descends to a smaller universe of vertex spaces.** Lifting the
+vertex spaces of a representation to a larger universe, through `ModuleCat.uliftFunctor`, is fully
+faithful, so it carries the finite-dimensional indecomposables to finite-dimensional indecomposables
+and non-isomorphic ones to non-isomorphic ones. -/
+theorem IsFiniteRepType.of_ulift (h : IsFiniteRepType.{u, v, w, max t t'} k Q) :
+    IsFiniteRepType.{u, v, w, t} k Q := by
+  let L := (Functor.whiskeringRight (Paths Q) _ _).obj (ModuleCat.uliftFunctor.{t', t} k)
+  have hL : L.FullyFaithful := (ModuleCat.fullyFaithfulUliftFunctor k).whiskeringRight (Paths Q)
+  refine isFiniteRepType_of_map (fun _ ↦ False) L.obj (fun M hM hM' _ ↦ ⟨?_,
+    L.indecomposable_obj_of_map_bijective hM' (hL.map_bijective _ _)⟩)
+    (fun _ _ _ _ _ _ ⟨e⟩ ↦ ⟨hL.preimageIso e⟩) (fun _ _ _ _ h ↦ h.elim) h
+  refine isFinDim_iff.mpr fun x ↦ ?_
+  have := isFinDim_iff.mp hM x
+  rw [Functor.whiskeringRight_obj_obj, Functor.comp_obj, ModuleCat.uliftFunctor_obj]
+  exact ULift.moduleEquiv.symm.finiteDimensional
 
 end TauCeti

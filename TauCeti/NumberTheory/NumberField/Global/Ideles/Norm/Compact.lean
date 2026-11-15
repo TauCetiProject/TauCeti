@@ -53,7 +53,7 @@ private lemma ringEquiv_mixedSpace_mul_unitEmbedding (z : IdeleGroup (𝓞 K) K)
         (Units.map (algebraMap (𝓞 K) K) u) : AdeleRing (𝓞 K) K).1) =
       u • InfiniteAdeleRing.ringEquiv_mixedSpace K (z : AdeleRing (𝓞 K) K).1 := by
   rw [unitSMul_smul, InfiniteAdeleRing.mixedEmbedding_eq_algebraMap_comp, ← map_mul,
-    IdeleGroup.coe_unitEmbedding, AdeleRing.fst_mul, mul_comm]
+    IdeleGroup.val_unitEmbedding_apply, AdeleRing.fst_mul, mul_comm]
   refine congrArg _ (congrArg (· * _) (funext fun w ↦ ?_))
   rw [AdeleRing.algebraMap_fst_apply, InfiniteAdeleRing.algebraMap_apply, Units.coe_map,
     MonoidHom.coe_ofClass]
@@ -79,8 +79,8 @@ private lemma exists_isCompact_forall_exists_mul_unitEmbedding_mem :
   have hG : IsCompact G := hF.image_of_continuousOn fun x hx ↦
     (NormedRing.inverse_continuousAt (hFunit x hx).unit).continuousWithinAt
   -- The finite parts: the integral finite adeles.
-  let O : Set (FiniteAdeleRing (𝓞 K) K) := {a | ∀ v, a v ∈ v.adicCompletionIntegers K}
-  have hO : IsCompact O := FiniteAdeleRing.isCompact_integralFiniteAdeles
+  let O : Set (FiniteAdeleRing (𝓞 K) K) := FiniteAdeleRing.integralAdeles (𝓞 K) K
+  have hO : IsCompact O := FiniteAdeleRing.isCompact_integralAdeles
   let C : Set (AdeleRing (𝓞 K) K) := (e.symm '' F) ×ˢ O
   let D : Set (AdeleRing (𝓞 K) K) := (e.symm '' G) ×ˢ O
   have hC : IsCompact C :=
@@ -108,8 +108,10 @@ private lemma exists_isCompact_forall_exists_mul_unitEmbedding_mem :
     rw [map_mul, IdeleGroup.toFiniteIdele_unitEmbedding]
     exact mul_mem hzf (FiniteAdeleRing.unitEmbedding_map_algebraMap_mem_integralUnits u)
   have hint := FiniteAdeleRing.mem_integralUnits_iff_forall_mem_adicCompletionIntegers.mp hf'
-  refine ⟨⟨⟨e (z' : AdeleRing (𝓞 K) K).1, hF', e.symm_apply_apply _⟩, fun v ↦ ?_⟩,
-    ⟨⟨Ring.inverse (e (z' : AdeleRing (𝓞 K) K).1), ⟨_, hF', rfl⟩, ?_⟩, fun v ↦ ?_⟩⟩
+  refine ⟨⟨⟨e (z' : AdeleRing (𝓞 K) K).1, hF', e.symm_apply_apply _⟩,
+      FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ ?_⟩,
+    ⟨⟨Ring.inverse (e (z' : AdeleRing (𝓞 K) K).1), ⟨_, hF', rfl⟩, ?_⟩,
+      FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ ?_⟩⟩
   · simpa using (hint v).1
   · -- The infinite part of `z'⁻¹` is the inverse of the infinite part of `z'`: the unit of the
     -- mixed space below has, by `Units.coe_map`, value `e (z' : 𝔸_K).1` and inverse

@@ -78,15 +78,17 @@ namespace presentedProP
 
 variable {X : Type u} [Finite X] (rels : Set (freeProP p X))
 
+omit [Fact p.Prime] in
 /-- A pro-`p` group presented on a finite type `X` has topological generator rank at most
-`Nat.card X`: it is the image of the free pro-`p` group on `X`, of rank `Nat.card X`, under the
-continuous surjection `mk`. -/
+`Nat.card X`: the `Nat.card X` generators topologically generate it. -/
 theorem topologicalGeneratorRankNat_le_card :
     topologicalGeneratorRankNat (presentedProP p X rels) isTopologicallyFinitelyGenerated ≤
       Nat.card X := by
-  rw [← topologicalGeneratorRankNat_freeProP p (isTopologicallyFinitelyGenerated_freeProP p X)]
-  exact topologicalGeneratorRankNat_le_of_surjective (mk p rels : freeProP p X →* _)
-    (map_continuous (mk p rels)) (mk_surjective p rels) _
+  classical
+  have := Fintype.ofFinite X
+  refine (topologicalGeneratorRankNat_le _ (s := Finset.univ.image (of p rels)) ?_).trans ?_
+  · simpa using topologicalClosure_closure_range_of_eq_top (p := p) (rels := rels)
+  · exact Finset.card_image_le.trans (by simp [Nat.card_eq_fintype_card])
 
 /-- **Minimal presentations.** A pro-`p` group presented on a finite type `X` has topological
 generator rank `Nat.card X` exactly when every relator lies in the Frattini subgroup of the free
@@ -162,8 +164,8 @@ theorem topologicalClosure_normalClosure_eq_proPFrattini
   -- `Φ(F)` maps into `Φ(G) = 1`, so it dies in `⟨X ∣ rels⟩`, hence lies in the relation subgroup.
   have hmem := (mk p rels : _ →* presentedProP p X rels).map_proPFrattini_le
     (map_continuous (mk p rels)) (mk_surjective p rels) ⟨x, hx, rfl⟩
-  have hmem' := Subgroup.mem_map_of_mem e.toMulEquiv.toMonoidHom hmem
-  rw [e.map_proPFrattini_eq, hΦ, Subgroup.mem_bot] at hmem'
+  have hmem' : e ((mk p rels) x) = 1 := by
+    simpa [hΦ] using Subgroup.mem_map_of_mem e.toMulEquiv.toMonoidHom hmem
   exact (mk_eq_one_iff x).mp (e.injective (by simpa using hmem'))
 
 end presentedProP

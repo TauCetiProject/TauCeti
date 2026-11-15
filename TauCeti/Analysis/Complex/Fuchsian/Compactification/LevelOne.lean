@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Compactness
+public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Cusp
 import Mathlib.NumberTheory.Modular
 import Mathlib.NumberTheory.ModularForms.Cusps
 
@@ -50,7 +51,9 @@ private theorem isParabolic_psl2zToPSL2R_iff (a : SL(2, ℤ)) :
   rw [psl2zToPSL2R_mk, sl2zToPSL2R_apply, isParabolic_mk_iff]
   rfl
 
-private theorem isCuspPoint_iff_isCusp (c : OnePoint ℝ) :
+/-- The projective cusp points of the effective modular group are Mathlib's cusps of
+`SL(2, ℤ)`; in particular, they are the rational projective boundary points. -/
+theorem isCuspPoint_iff_isCusp (c : OnePoint ℝ) :
     psl2zToPSL2R.range.IsCuspPoint c ↔ _root_.IsCusp c 𝒮ℒ := by
   constructor
   · intro hc
@@ -100,6 +103,10 @@ instance instUniqueCuspOrbit : Unique psl2zToPSL2R.range.CuspOrbit where
     obtain ⟨c, rfl⟩ := Subgroup.cuspOrbitMk_surjective C
     apply (Subgroup.cuspOrbitMk_eq_iff _ _).mpr
     exact cuspPoint_mem_orbit_infty (Subgroup.mem_cuspPoints.mp c.property)
+
+@[simp]
+theorem cuspDatumInfty_cuspOrbit : cuspDatumInfty.cuspOrbit = cuspOrbitInfty :=
+  Subsingleton.elim _ _
 
 /-- The level-one modular orbit space becomes compact after its unique cusp orbit is adjoined.
 The compact sets used here are Mathlib's truncated closed modular fundamental domains. -/

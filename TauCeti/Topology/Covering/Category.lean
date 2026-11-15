@@ -9,7 +9,9 @@ public import Mathlib.CategoryTheory.Limits.Shapes.IsTerminal
 public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
 public import Mathlib.Topology.Category.TopCat.Basic
 public import Mathlib.Topology.Covering.Basic
-public import TauCeti.CategoryTheory.Comma.Over
+public import Mathlib.CategoryTheory.Comma.Over.Basic
+public import TauCeti.Topology.Category.TopCat.Over
+public import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
 # The category of covering spaces over a fixed base
@@ -45,8 +47,6 @@ fundamental-group actions.
 * `TauCeti.CoveringSpace.forget`, `fullyFaithfulForget`: the inclusion into `TopCat / X` and its
   full faithfulness.
 * `TauCeti.CoveringSpace.totalSpace`: the functor taking a cover to its total space.
-* `TauCeti.CoveringSpace.isIso_iff_isHomeomorph_hom_left`: a map of covers is an isomorphism
-  exactly when its map of total spaces is a homeomorphism.
 * `TauCeti.CoveringSpace.isInitial_iff_isEmpty`: a cover is an initial object exactly when its
   total space is empty.
 * `TauCeti.CoveringSpace.FullSubcategory X P`: the full subcategory of covers whose underlying
@@ -57,8 +57,6 @@ fundamental-group actions.
 * `TauCeti.CoveringSpace.FullSubcategory.totalSpace`, `totalSpace_obj`, `totalSpace_map`: the
   functor taking an object to its total space, and its characteristic equations.
 * `TauCeti.CoveringSpace.FullSubcategory.forget`: the inclusion into all covers.
-* `TauCeti.CoveringSpace.FullSubcategory.isIso_iff_isHomeomorph_hom_left`: the corresponding
-  isomorphism criterion.
 * `TauCeti.ConnectedCoveringSpace X`: connected covering spaces over `X`, with
   `TauCeti.ConnectedCoveringSpace.mk`, `mk_coe`, `mk_proj`, `forget_obj_mk` and `forget`.
 * `TauCeti.ConnectedCoveringSpace.connectedSpace`: the total space of a connected covering space
@@ -68,7 +66,7 @@ fundamental-group actions.
 
 The construction follows Mathlib's `CategoryTheory.MonoOver`: both are full subcategories of an
 over category selected by a property of the structure morphism. The `forget`, `mk`, `proj`,
-`homMk`, `isoMk`, and isomorphism-characterization APIs are adapted from
+`homMk`, and `isoMk` APIs are adapted from
 `Mathlib/CategoryTheory/Subobject/MonoOver.lean`, using the generic `Over` and
 `ObjectProperty.FullSubcategory` constructors directly, and are stated once for
 `TauCeti.CoveringSpace.FullSubcategory`.
@@ -97,13 +95,6 @@ theorem isCoveringMap_iff {X : TopCat.{u}} {p : CategoryTheory.Over X} :
     isCoveringMap X p ↔ _root_.IsCoveringMap p.hom :=
   Iff.rfl
 
-/-- A morphism in `TopCat / X` is an isomorphism exactly when its map on left objects is a
-homeomorphism. -/
-theorem isIso_iff_isHomeomorph_left {X : TopCat.{u}} {p q : CategoryTheory.Over X}
-    (f : p ⟶ q) : IsIso f ↔ IsHomeomorph f.left := by
-  rw [← TopCat.isIso_iff_isHomeomorph]
-  exact (isIso_iff_of_reflects_iso _ (CategoryTheory.Over.forget X)).symm
-
 end Over
 
 /-- The category of covering spaces over `X`. Its objects are covering maps to `X`, and its
@@ -127,21 +118,23 @@ abbrev totalSpace (X : TopCat.{u}) : CoveringSpace X ⥤ TopCat :=
 instance : CoeOut (CoveringSpace X) TopCat where
   coe p := p.obj.left
 
-/-- Construct a covering space over `X` from a covering map `p`. -/
-def mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p) : CoveringSpace X where
+/-- Construct a covering space over `X` from a covering map `p`. The definition is `@[expose]`d
+so that its total space is `E` and its projection is `p` by `rfl` in downstream modules. -/
+@[expose] def mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p) : CoveringSpace X where
   obj := CategoryTheory.Over.mk p
-  property := hp
+  property := Over.isCoveringMap_iff.2 hp
 
 @[simp]
 theorem mk_coe {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p) :
     (mk p hp : TopCat) = E :=
-  (rfl)
+  rfl
 
 /-- The projection of a covering space to its base. -/
 abbrev proj (p : CoveringSpace X) : (p : TopCat) ⟶ X :=
   p.obj.hom
 
-@[simp]
+-- Not `@[simp]`: Mathlib's `ObjectProperty.ι_obj` rewrites `(forget X).obj p` first, so a `simp`
+-- attribute here would never fire.
 theorem forget_obj_left (p : CoveringSpace X) : ((forget X).obj p).left = (p : TopCat) :=
   rfl
 
@@ -150,8 +143,8 @@ theorem forget_obj_hom (p : CoveringSpace X) : ((forget X).obj p).hom = p.proj :
 
 @[simp]
 theorem mk_proj {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p) :
-    (mk p hp).proj = eqToHom (mk_coe p hp) ≫ p :=
-  (rfl)
+    (mk p hp).proj = p :=
+  rfl
 
 /-- The projection from an object of `CoveringSpace X` is a covering map. -/
 theorem isCoveringMap_proj (p : CoveringSpace X) : _root_.IsCoveringMap p.proj :=
@@ -161,11 +154,13 @@ theorem isCoveringMap_proj (p : CoveringSpace X) : _root_.IsCoveringMap p.proj :
 def fullyFaithfulForget (X : TopCat.{u}) : (forget X).FullyFaithful :=
   ObjectProperty.fullyFaithfulι _
 
-@[simp]
+-- The two characteristic equations below are deliberately not `@[simp]`: Mathlib's
+-- `ObjectProperty.ι*`, `Over.forget_*` and `Functor.comp_*` lemmas match these goals first, so a
+-- `simp` attribute here would never fire.
+
 theorem totalSpace_obj (p : CoveringSpace X) : (totalSpace X).obj p = (p : TopCat) :=
   rfl
 
-@[simp]
 theorem totalSpace_map {p q : CoveringSpace X} (f : p ⟶ q) :
     (totalSpace X).map f = f.hom.left :=
   rfl
@@ -179,8 +174,7 @@ theorem w {p q : CoveringSpace X} (f : p ⟶ q) : f.hom.left ≫ q.proj = p.proj
 functions. -/
 theorem proj_hom_comp_hom_left_hom {p q : CoveringSpace X} (f : p ⟶ q) :
     q.proj.hom ∘ f.hom.left.hom = p.proj.hom := by
-  funext e
-  exact DFunLike.congr_fun (congrArg TopCat.Hom.hom (w f)) e
+  rw [← TopCat.coe_comp, w f]
 
 /-- Construct a morphism of covering spaces from a continuous map over the base. -/
 def homMk {p q : CoveringSpace X} (f : (p : TopCat) ⟶ (q : TopCat))
@@ -221,12 +215,6 @@ theorem mkProjIso_hom_hom_left (p : CoveringSpace X) :
 theorem mkProjIso_inv_hom_left (p : CoveringSpace X) :
     (mkProjIso p).inv.hom.left = eqToHom (mk_coe p.proj p.isCoveringMap_proj).symm :=
   (rfl)
-
-/-- A map of covering spaces is an isomorphism exactly when its map of total spaces is a
-homeomorphism. -/
-theorem isIso_iff_isHomeomorph_hom_left {p q : CoveringSpace X} (f : p ⟶ q) :
-    IsIso f ↔ IsHomeomorph f.hom.left := by
-  rw [← ObjectProperty.isIso_hom_iff, Over.isIso_iff_isHomeomorph_left]
 
 /-- **A covering space of `X` is an initial object of `TauCeti.CoveringSpace X` exactly when its
 total space is empty.** The empty space covers `X` — vacuously, by
@@ -285,8 +273,10 @@ abbrev forget (X : TopCat.{u}) (P : ObjectProperty (CategoryTheory.Over X)) :
 instance : CoeOut (CoveringSpace.FullSubcategory X P) TopCat where
   coe p := p.obj.left
 
-/-- Construct an object from a covering map whose underlying object satisfies `P`. -/
-def mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
+/-- Construct an object from a covering map whose underlying object satisfies `P`. The definition
+is `@[expose]`d so that its total space is `E` and its projection is `p` by `rfl` in downstream
+modules. -/
+@[expose] def mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
     (hP : P (CategoryTheory.Over.mk p)) : CoveringSpace.FullSubcategory X P where
   obj := CategoryTheory.Over.mk p
   property := ⟨Over.isCoveringMap_iff.2 hp, hP⟩
@@ -294,7 +284,7 @@ def mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
 @[simp]
 theorem mk_coe {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
     (hP : P (CategoryTheory.Over.mk p)) : (mk p hp hP : TopCat) = E :=
-  (rfl)
+  rfl
 
 /-- The projection of an object to its base. -/
 abbrev proj (p : CoveringSpace.FullSubcategory X P) : (p : TopCat) ⟶ X :=
@@ -326,8 +316,8 @@ theorem forget_obj_proj (p : CoveringSpace.FullSubcategory X P) :
 
 @[simp]
 theorem mk_proj {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
-    (hP : P (CategoryTheory.Over.mk p)) : (mk p hp hP).proj = eqToHom (mk_coe p hp hP) ≫ p :=
-  (rfl)
+    (hP : P (CategoryTheory.Over.mk p)) : (mk p hp hP).proj = p :=
+  rfl
 
 @[simp]
 theorem forget_obj_mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
@@ -375,30 +365,25 @@ theorem isoMk_inv_hom_left {p q : CoveringSpace.FullSubcategory X P}
     (isoMk e w).inv.hom.left = e.inv :=
   (rfl)
 
+-- `mk` asks for `P (Over.mk p.proj)`. `p.prop_obj : P p.obj` is accepted there because
+-- `Over.mk p.obj.hom` is `p.obj` by structure eta, at default transparency.
+
 /-- Reconstructing an object from its projection gives an isomorphic object. -/
 def mkProjIso (p : CoveringSpace.FullSubcategory X P) :
-    mk (P := P) p.proj p.isCoveringMap_proj
-      ((congrArg P (CostructuredArrow.eq_mk p.obj)).mp p.prop_obj) ≅ p :=
+    mk (P := P) p.proj p.isCoveringMap_proj p.prop_obj ≅ p :=
   isoMk (Iso.refl _)
 
 @[simp]
 theorem mkProjIso_hom_hom_left (p : CoveringSpace.FullSubcategory X P) :
     (mkProjIso p).hom.hom.left =
-      eqToHom (mk_coe (P := P) p.proj p.isCoveringMap_proj
-        ((congrArg P (CostructuredArrow.eq_mk p.obj)).mp p.prop_obj)) :=
+      eqToHom (mk_coe (P := P) p.proj p.isCoveringMap_proj p.prop_obj) :=
   (rfl)
 
 @[simp]
 theorem mkProjIso_inv_hom_left (p : CoveringSpace.FullSubcategory X P) :
     (mkProjIso p).inv.hom.left =
-      eqToHom (mk_coe (P := P) p.proj p.isCoveringMap_proj
-        ((congrArg P (CostructuredArrow.eq_mk p.obj)).mp p.prop_obj)).symm :=
+      eqToHom (mk_coe (P := P) p.proj p.isCoveringMap_proj p.prop_obj).symm :=
   (rfl)
-
-/-- A morphism is an isomorphism exactly when its map of total spaces is a homeomorphism. -/
-theorem isIso_iff_isHomeomorph_hom_left {p q : CoveringSpace.FullSubcategory X P} (f : p ⟶ q) :
-    IsIso f ↔ IsHomeomorph f.hom.left := by
-  rw [← ObjectProperty.isIso_hom_iff, Over.isIso_iff_isHomeomorph_left]
 
 end CoveringSpace.FullSubcategory
 
@@ -415,7 +400,7 @@ abbrev forget (X : TopCat.{u}) : ConnectedCoveringSpace X ⥤ CoveringSpace X :=
   CoveringSpace.FullSubcategory.forget X _
 
 /-- Construct a connected covering space from a covering map with connected total space. -/
-def mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p) [ConnectedSpace E] :
+@[expose] def mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p) [ConnectedSpace E] :
     ConnectedCoveringSpace X :=
   -- `Over.mk p` exposes `E` only at default transparency, so instance search alone cannot
   -- identify its left object with `E`.
@@ -424,15 +409,12 @@ def mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p) [ConnectedSp
 @[simp]
 theorem mk_coe {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
     [ConnectedSpace E] : (mk p hp : TopCat) = E :=
-  -- The `_` is the connectedness proof that `mk` supplies; the generic lemma applies because `mk`
-  -- unfolds to the generic constructor. A `rfl` cannot: this theorem is exported, so it may only
-  -- unfold definitions whose bodies are exposed, and `mk`'s is not.
-  CoveringSpace.FullSubcategory.mk_coe p hp _
+  rfl
 
 @[simp]
 theorem mk_proj {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
-    [ConnectedSpace E] : (mk p hp).proj = eqToHom (mk_coe p hp) ≫ p :=
-  CoveringSpace.FullSubcategory.mk_proj p hp _
+    [ConnectedSpace E] : (mk p hp).proj = p :=
+  rfl
 
 @[simp]
 theorem forget_obj_mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
@@ -442,6 +424,16 @@ theorem forget_obj_mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap 
 /-- The total space of a connected covering space is connected. -/
 instance connectedSpace (p : ConnectedCoveringSpace X) : ConnectedSpace (p : TopCat) :=
   p.prop_obj
+
+/-- A connected cover of a locally path-connected base is locally path connected. -/
+instance locallyPathConnectedSpace [LocallyPathConnectedSpace X]
+    (p : ConnectedCoveringSpace X) : LocallyPathConnectedSpace (p : TopCat) :=
+  p.isCoveringMap_proj.isLocalHomeomorph.locallyPathConnectedSpace
+
+/-- A connected cover of a locally path-connected base is path connected. -/
+instance pathConnectedSpace [LocallyPathConnectedSpace X]
+    (p : ConnectedCoveringSpace X) : PathConnectedSpace (p : TopCat) :=
+  PathConnectedSpace.of_locallyPathConnectedSpace
 
 end ConnectedCoveringSpace
 

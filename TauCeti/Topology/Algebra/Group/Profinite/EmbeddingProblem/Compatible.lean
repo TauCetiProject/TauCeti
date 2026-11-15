@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 public import Mathlib.Order.DirectedInverseSystem
 public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.Level

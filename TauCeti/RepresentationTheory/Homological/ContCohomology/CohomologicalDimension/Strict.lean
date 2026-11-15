@@ -45,6 +45,9 @@ The long exact sequence of continuous cohomology is available for coefficients i
   `CohomologicalDimensionLE p G n` implies `StrictCohomologicalDimensionLE p G (n + 1)`.
 * `TauCeti.strictCohomologicalDimensionAt_le_cohomologicalDimensionAt_add_one`:
   `scd_p G ≤ cd_p G + 1` in `ℕ∞`, including the case `cd_p G = ⊤`.
+* `TauCeti.StrictCohomologicalDimensionLE.primaryComponent_eq_bot_of_isSmoothDiscrete`: the strict
+  vanishing predicate read on a smooth discrete object of `TopRep ℤ G`, such as the trivial
+  module `ℤ`.
 
 ## References
 
@@ -62,6 +65,26 @@ universe u
 
 variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G]
+
+omit [CompactSpace G] in
+attribute [local instance] TopRep.distribMulAction in
+/-- **The strict vanishing predicate on a smooth discrete coefficient object.** Under
+`StrictCohomologicalDimensionLE p G n`, the `p`-primary component of `Hⁱ(G, X)` vanishes for every
+`i > n` and every smooth discrete object `X` of `TopRep ℤ G`, not only for the objects
+`ofDiscreteModule ℤ G M` the predicate is stated with. -/
+theorem StrictCohomologicalDimensionLE.primaryComponent_eq_bot_of_isSmoothDiscrete {n : ℕ}
+    (h : StrictCohomologicalDimensionLE.{u} p G n) (X : TopRep.{u} ℤ G)
+    (hX : IsSmoothDiscrete ℤ X) {i : ℕ} (hi : n < i) :
+    AddCommGroup.primaryComponent (continuousCohomology i X) p = ⊥ := by
+  have := hX.discreteTopology
+  have := (isSmoothDiscrete_iff_continuousSMul X).1 hX
+  -- `ofDiscreteModule` reads `X` through the canonical `ℤ`-module structure of an additive group,
+  -- which agrees with that of `X` because a `ℤ`-module structure is unique
+  have hXX : ofDiscreteModule ℤ G X.V = X := by
+    convert ofDiscreteModule_eq_self X
+    exact Subsingleton.elim _ _
+  rw [← hXX]
+  exact strictCohomologicalDimensionLE_iff.1 h X.V i hi
 
 /-- **Multiplication by `p` is injective above `cd_p + 1`.** For a compact group `G` with
 `CohomologicalDimensionLE p G n`, multiplication by `p` is injective on `Hⁱ(G, M)` for every
@@ -102,9 +125,9 @@ theorem CohomologicalDimensionLE.nsmul_right_injective {n : ℕ}
   -- the short exact sequence `0 → pM → M → M ⧸ pM → 0`
   let S₂ := DiscreteShortExact.ofAddSubgroup I hI
   -- `M[p]` and `M ⧸ pM` are killed by `p`, so their cohomology vanishes above `n`
-  have hKp : IsPPrimaryTorsion p K :=
-    isPPrimaryTorsion_iff.2 fun m ↦ ⟨1, Subtype.ext (by simpa [K] using AddMonoidHom.mem_ker.1 m.2)⟩
-  have hQp : IsPPrimaryTorsion p (M ⧸ I) := isPPrimaryTorsion_iff.2 fun q ↦ by
+  have hKp : IsAddPGroup p K :=
+    fun m ↦ ⟨1, Subtype.ext (by simpa [K] using AddMonoidHom.mem_ker.1 m.2)⟩
+  have hQp : IsAddPGroup p (M ⧸ I) := fun q ↦ by
     induction q using QuotientAddGroup.induction_on with
     | H m => exact ⟨1, (QuotientAddGroup.eq_zero_iff _).2 (by simp [I])⟩
   have := cohomologicalDimensionLE_iff.1 h K hKp (j + 1) (by omega)

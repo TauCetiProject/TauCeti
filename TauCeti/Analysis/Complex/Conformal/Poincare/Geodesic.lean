@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Complex.Conformal.Poincare.Isometry.Equiv
 
 `Poincare/MetricSpace.lean` makes the complex open unit disc a metric space `TauCeti.PoincareDisc`
 for the hyperbolic distance `TauCeti.hyperbolicDist`, and `Poincare/Topology.lean` shows the
-resulting metric is proper. This file adds the remaining basic geometric fact about that metric:
+resulting metric is proper. This file adds a further basic geometric fact about that metric:
 it is **geodesic**, the Euclidean diameters being unit-speed geodesic lines through the origin.
 (The converse classification — that *every* geodesic through the origin is a Euclidean diameter —
 is a uniqueness statement, and is not proved here.)
@@ -66,18 +66,12 @@ passes one of them.
 * `TauCeti.hyperbolicDist_zero_add_hyperbolicDist_ofReal_mul` — the Euclidean radius from the
   origin to a disc point is a hyperbolic geodesic segment: the hyperbolic distance adds along it.
 
-This advances the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on `𝔻`"
-(see `ConformalMapping/README.md`), which the preceding files carried as far as the metric-space
-instance and its topology; being geodesic is a further basic property of that metric, the one
-that makes hyperbolic lines and segments available in this model. (It is not by itself a
-characterisation of the hyperbolic plane: many unrelated metric spaces are geodesic.) It reuses
-Tau Ceti's pseudo-hyperbolic, hyperbolic-distance and disc-automorphism API. As with the rest of
-the L0--L3 conformal-mapping material, it is coordinated with the upstream Mathlib
-Riemann-mapping effort leanprover-community/mathlib4#33505, whose preceding human-curated work in
-`Analysis/Complex/RiemannMapping.lean` and `Analysis/Complex/BranchLogRoot.lean` this file
-duplicates nothing of; should a human-curated Poincaré-disc metric land upstream, this material
-should be refactored onto it. Mathlib has the hyperbolic metric on the upper half-plane
-(`Analysis/Complex/UpperHalfPlane`), but no Poincaré metric on the disc and no geodesics for it.
+Beyond the metric-space instance and its topology, being geodesic is the basic property of the
+Poincaré metric that makes hyperbolic lines and segments available in this model. (It is not by
+itself a characterisation of the hyperbolic plane: many unrelated metric spaces are geodesic.) It
+reuses Tau Ceti's pseudo-hyperbolic, hyperbolic-distance and disc-automorphism API. Mathlib has the
+hyperbolic metric on the upper half-plane (`Analysis/Complex/UpperHalfPlane`), but no Poincaré
+metric on the disc and no geodesics for it.
 -/
 
 public section

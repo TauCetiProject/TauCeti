@@ -1,0 +1,98 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.MeasureTheory.Covering.OneDim
+
+/-!
+# Lebesgue differentiation on the line for extended nonnegative densities
+
+Mathlib's `IntervalIntegrable.ae_hasDerivAt_integral` differentiates the primitive of an
+interval-integrable Bochner integrand. This file records the companion statement for an extended
+nonnegative density and the lower Lebesgue integral: if `f : ℝ → ℝ≥0∞` is almost everywhere
+measurable on `Ι a b` with finite lower integral there, then at almost every point `t` of `[a, b]`
+the averages `(∫⁻ r in Ι t s, f r) / edist s t` tend to `f t` as `s → t` with `s ≠ t`, from either
+side.
+
+Stating it for `ℝ≥0∞`-valued densities avoids choosing a real representative of `f` and the
+`ENNReal.toReal` bookkeeping that comes with it, which is the convenient form when the density
+bounds a distance from above, as for the metric derivative of a curve.
+
+## Main results
+
+* `TauCeti.ae_tendsto_setLIntegral_uIoc_div`: the one-dimensional Lebesgue differentiation theorem
+  for an extended nonnegative density which is almost everywhere measurable with finite lower
+  integral on an interval.
+* `TauCeti.ae_tendsto_inv_mul_measureReal_Ioc_of_mutuallySingular`: a locally finite measure on
+  the line that is singular with respect to Lebesgue measure has right difference quotients
+  `ρ (t, t + δ] / δ` tending to zero at almost every `t`.
+-/
+
+public section
+
+open Filter IsUnifLocDoublingMeasure MeasureTheory Set Topology
+open scoped ENNReal Interval
+
+namespace TauCeti
+
+/-- The *Lebesgue differentiation theorem* on the line for an extended nonnegative density: if
+`f : ℝ → ℝ≥0∞` is almost everywhere measurable on `Ι a b` with finite lower integral there, then
+for almost every `t ∈ [a, b]` the averages `(∫⁻ r in Ι t s, f r) / edist s t` over the intervals
+between `t` and `s` tend to `f t` as `s` tends to `t` from either side. -/
+theorem ae_tendsto_setLIntegral_uIoc_div {f : ℝ → ℝ≥0∞} {a b : ℝ}
+    (hf : AEMeasurable f (volume.restrict (Ι a b))) (hfin : ∫⁻ r in Ι a b, f r ≠ ∞) :
+    ∀ᵐ t, t ∈ uIcc a b →
+      Tendsto (fun s ↦ (∫⁻ r in Ι t s, f r) / edist s t) (𝓝[≠] t) (𝓝 (f t)) := by
+  wlog hab : a ≤ b generalizing a b
+  · rw [uIoc_comm] at hf hfin
+    exact uIcc_comm b a ▸ this hf hfin (le_of_not_ge hab)
+  rw [uIoc_of_le hab] at hf hfin
+  rw [uIcc_of_le hab]
+  set g := (Ioc a b).indicator f
+  have hg : AEMeasurable g := (aemeasurable_indicator_iff measurableSet_Ioc).2 hf
+  have hgfin : ∫⁻ r, g r ≠ ∞ := by rwa [lintegral_indicator measurableSet_Ioc]
+  filter_upwards [(vitaliFamily (volume : Measure ℝ) 1).ae_tendsto_lintegral_div hg hgfin,
+    volume.ae_ne a, volume.ae_ne b] with t ht hta htb htab
+  -- `t` is an interior point of `[a, b]`, so `Ioc a b` contains every short interval around it.
+  have hmem : t ∈ Ioo a b := ⟨htab.1.lt_of_ne' hta, htab.2.lt_of_ne htb⟩
+  have hg_eq {u v : ℝ} (hu : a ≤ u) (hv : v ≤ b) :
+      ∫⁻ r in Icc u v, g r = ∫⁻ r in Ioc u v, f r := by
+    rw [setLIntegral_congr Ioc_ae_eq_Icc.symm, setLIntegral_indicator measurableSet_Ioc,
+      inter_eq_right.2 (Ioc_subset_Ioc hu hv)]
+  have hgt : g t = f t := indicator_of_mem (Ioo_subset_Ioc_self hmem) f
+  rw [hgt] at ht
+  rw [← nhdsLT_sup_nhdsGT]
+  refine Tendsto.sup ((ht.comp (Real.tendsto_Icc_vitaliFamily_left t)).congr' ?_)
+    ((ht.comp (Real.tendsto_Icc_vitaliFamily_right t)).congr' ?_)
+  · filter_upwards [Ioo_mem_nhdsLT hmem.1] with s hs
+    rw [Function.comp_apply, hg_eq hs.1.le hmem.2.le, Real.volume_Icc, uIoc_of_ge hs.2.le,
+      edist_dist, Real.dist_eq, abs_of_neg (sub_neg.2 hs.2), neg_sub]
+  · filter_upwards [Ioo_mem_nhdsGT hmem.2] with s hs
+    rw [Function.comp_apply, hg_eq hmem.1.le hs.2.le, Real.volume_Icc, uIoc_of_le hs.1.le,
+      edist_dist, Real.dist_eq, abs_of_pos (sub_pos.2 hs.1)]
+
+/-- A locally finite measure on `ℝ` that is singular with respect to Lebesgue measure has right
+difference quotients `ρ (t, t + δ] / δ` tending to zero at almost every `t`. -/
+theorem ae_tendsto_inv_mul_measureReal_Ioc_of_mutuallySingular {ρ : Measure ℝ}
+    [IsLocallyFiniteMeasure ρ] (hρ : ρ ⟂ₘ volume) :
+    ∀ᵐ t, Tendsto (fun δ : ℝ ↦ δ⁻¹ * ρ.real (Ioc t (t + δ))) (𝓝[>] 0) (𝓝 0) := by
+  set v := IsUnifLocDoublingMeasure.vitaliFamily (volume : Measure ℝ) 1
+  filter_upwards [v.ae_eventually_measure_zero_of_singular hρ] with t ht
+  have hshift : Tendsto (fun δ : ℝ ↦ t + δ) (𝓝[>] 0) (𝓝[>] t) :=
+    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      (((continuous_const_add t).tendsto' 0 t (add_zero t)).mono_left nhdsWithin_le_nhds)
+      (eventually_nhdsWithin_of_forall fun δ (hδ : 0 < δ) ↦ lt_add_of_pos_right t hδ)
+  refine squeeze_zero' (eventually_nhdsWithin_of_forall fun δ (hδ : 0 < δ) ↦ by positivity)
+    (eventually_nhdsWithin_of_forall fun δ (hδ : 0 < δ) ↦ ?_)
+    ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
+      (ht.comp ((Real.tendsto_Icc_vitaliFamily_right t).comp hshift)))
+  calc δ⁻¹ * ρ.real (Ioc t (t + δ)) ≤ δ⁻¹ * ρ.real (Icc t (t + δ)) := by
+        gcongr
+        exacts [measure_Icc_lt_top.ne, Ioc_subset_Icc_self]
+    _ = (ρ (Icc t (t + δ)) / volume (Icc t (t + δ))).toReal := by
+        simp [ENNReal.toReal_div, measureReal_def, hδ.le, inv_mul_eq_div]
+
+end TauCeti

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basic
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 
 /-!
@@ -37,17 +38,10 @@ ordered-monomial theorem for an abelian Lie algebra: the ordering of a monomial 
 information here, since the generators commute, so a monomial is recorded by its exponent
 function `n : κ →₀ ℕ` rather than by a sorted word.
 
-One ring-theoretic finiteness property transfers across the comparison with no further Lie theory:
-`U(L)` is a **domain** over a domain when `L` is free as a module
-(`TauCeti.UniversalEnvelopingAlgebra.instIsDomain`), being a polynomial algebra. That instance is
-the abelian case of a general Poincaré--Birkhoff--Witt corollary, which over a field holds for every
-Lie algebra; the general statement goes through the associated graded of the PBW filtration and is
-not proved here, the argument below using commutativity of `U(L)`
-throughout.
-
 The comparison also makes `ι` injective on any abelian `L`
-(`TauCeti.UniversalEnvelopingAlgebra.ι_injective`), with no hypothesis on `L` as a module: it
-identifies `ι` with the canonical map `L → S(L)`, which the square-zero extension `R ⊕ L` retracts.
+(`TauCeti.UniversalEnvelopingAlgebra.ι_injective_of_isLieAbelian`), with no hypothesis on `L`
+as a module: it identifies `ι` with the canonical map `L → S(L)`, which the square-zero
+extension `R ⊕ L` retracts.
 For a general Lie algebra injectivity is instead a corollary of Poincaré--Birkhoff--Witt, which
 over a commutative ring needs `L` to be free (or at least projective) as an `R`-module, and is
 unconditional only over a field.
@@ -69,14 +63,14 @@ in the Harish-Chandra projection from the center of `U(L)` to `S(H)`.
 * `TauCeti.UniversalEnvelopingAlgebra.isSymmetricAlgebra_ι` and
   `TauCeti.UniversalEnvelopingAlgebra.symmetricAlgebraEquiv`: **`ι : L → U(L)` exhibits `U(L)` as
   the symmetric algebra of `L`**, with the resulting algebra isomorphism `S(L) ≃ₐ[R] U(L)`.
+* `TauCeti.UniversalEnvelopingAlgebra.symmetricAlgebraEquiv_symm_mem_wordFiltration_iff` and
+  `TauCeti.UniversalEnvelopingAlgebra.symmetricAlgebraEquiv_symm_mem_wordFiltrationPrevious_iff`:
+  the comparison matches the PBW filtration of `U(L)` with the degree filtration of `S(L)`.
 * `TauCeti.UniversalEnvelopingAlgebra.mvPolynomialEquiv`: for a basis of `L`, the identification of
   `U(L)` with a polynomial algebra.
-* `TauCeti.UniversalEnvelopingAlgebra.ι_injective`: `ι` is injective, with no hypothesis on `L` as
-  an `R`-module.
-* `TauCeti.UniversalEnvelopingAlgebra.basisMonomials`: the monomial basis of `U(L)`, with
-  `TauCeti.UniversalEnvelopingAlgebra.linearIndependent_ι_basis`.
-* `TauCeti.UniversalEnvelopingAlgebra.instIsDomain`: **`U(L)` is a domain** for an abelian `L` free
-  as a module over a domain.
+* `TauCeti.UniversalEnvelopingAlgebra.ι_injective_of_isLieAbelian`: `ι` is injective, with no
+  hypothesis on `L` as an `R`-module.
+* `TauCeti.UniversalEnvelopingAlgebra.basisMonomials`: the monomial basis of `U(L)`.
 
 ## References
 
@@ -212,13 +206,46 @@ theorem symmetricAlgebraEquiv_symm_ι' (x : L) :
       SymmetricAlgebra.ι R L x := by
   simpa using symmetricAlgebraEquiv_symm_ι R L x
 
+/-- **The comparison isomorphism matches the two filtrations by word length**: an element of `U(L)`
+has PBW filtration degree at most `k` exactly when its image in `S(L)` has degree at most `k`, the
+degree filtration of `S(L)` being the word filtration of its generator map. -/
+@[simp]
+theorem symmetricAlgebraEquiv_symm_mem_wordFiltration_iff {k : ℕ} {u : U} :
+    (symmetricAlgebraEquiv R L).symm u ∈ TauCeti.Algebra.wordFiltration (SymmetricAlgebra.ι R L) k ↔
+      u ∈ pbwFiltration R L k := by
+  rw [pbwFiltration_def]
+  refine ⟨fun hu ↦ ?_, fun hu ↦ ?_⟩
+  · simpa using TauCeti.Algebra.map_mem_wordFiltration (SymmetricAlgebra.ι R L)
+      (symmetricAlgebraEquiv R L).toAlgHom (_root_.UniversalEnvelopingAlgebra.ι R).toLinearMap
+      (fun m ↦ by
+        simpa using TauCeti.Algebra.apply_mem_wordFiltration_one
+          (_root_.UniversalEnvelopingAlgebra.ι R).toLinearMap m) hu
+  · exact TauCeti.Algebra.map_mem_wordFiltration (_root_.UniversalEnvelopingAlgebra.ι R).toLinearMap
+      (symmetricAlgebraEquiv R L).symm.toAlgHom (SymmetricAlgebra.ι R L)
+      (fun m ↦ by
+        simpa [symmetricAlgebraEquiv_symm_ι] using
+          TauCeti.Algebra.apply_mem_wordFiltration_one (SymmetricAlgebra.ι R L) m) hu
+
+/-- The comparison isomorphism matches the steps preceding degree `k` of the PBW filtration of
+`U(L)` and of the degree filtration of `S(L)`. -/
+@[simp]
+theorem symmetricAlgebraEquiv_symm_mem_wordFiltrationPrevious_iff {k : ℕ} {u : U} :
+    (symmetricAlgebraEquiv R L).symm u ∈
+        TauCeti.Algebra.wordFiltrationPrevious (SymmetricAlgebra.ι R L) k ↔
+      u ∈ pbwFiltrationPrevious R L k := by
+  cases k with
+  | zero => simp
+  | succ k =>
+    rw [TauCeti.Algebra.wordFiltrationPrevious_succ, pbwFiltrationPrevious_succ,
+      symmetricAlgebraEquiv_symm_mem_wordFiltration_iff]
+
 /-- **The canonical map of an abelian Lie algebra into its enveloping algebra is injective.** Under
 the comparison it is the canonical map `L → S(L)`, which is injective for every module. For a
 general Lie algebra injectivity is instead a corollary of the Poincaré--Birkhoff--Witt theorem,
 which over a commutative ring needs `L` to be free (or at least projective) as an `R`-module. -/
-theorem ι_injective :
+theorem ι_injective_of_isLieAbelian :
     Function.Injective (_root_.UniversalEnvelopingAlgebra.ι R : L → U) := fun x y h ↦
-  TauCeti.SymmetricAlgebra.ι_injective R L <| by
+  SymmetricAlgebra.ι_injective R L <| by
     rw [← symmetricAlgebraEquiv_symm_ι R L x, ← symmetricAlgebraEquiv_symm_ι R L y, h]
 
 /-- The enveloping algebra of an abelian Lie algebra which is free as a module is free as a
@@ -279,31 +306,5 @@ canonical generators. -/
 theorem basisMonomials_apply (b : Basis κ R L) (n : κ →₀ ℕ) :
     basisMonomials R L b n = n.prod fun i k ↦ _root_.UniversalEnvelopingAlgebra.ι R (b i) ^ k := by
   simp [basisMonomials, Basis.symmetricAlgebra, MvPolynomial.monomial_eq, map_finsuppProd]
-
-/-- **The images of a basis of an abelian Lie algebra are linearly independent in the enveloping
-algebra**: `ι` is an injective linear map. -/
-theorem linearIndependent_ι_basis (b : Basis κ R L) :
-    LinearIndependent R fun i : κ ↦ (_root_.UniversalEnvelopingAlgebra.ι R (b i) : U) := by
-  have h := b.linearIndependent.map'
-    ((_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U)
-    (LinearMap.ker_eq_bot_of_injective (ι_injective R L))
-  simpa [Function.comp_def] using h
-
-/-! ### Domains -/
-
-section Transfer
-
-variable {R L}
-
-/-- **The enveloping algebra of an abelian Lie algebra over a domain is a domain**, when the Lie
-algebra is free as a module: it is then a polynomial algebra over the base ring.
-
-This is the abelian case of the Poincaré--Birkhoff--Witt corollary that `U(L)` is a domain for
-every Lie algebra over a field; the general statement goes through the associated graded of the
-PBW filtration and is not proved here. -/
-instance instIsDomain [IsDomain R] [Module.Free R L] : IsDomain U :=
-  (mvPolynomialEquiv R L (Module.Free.chooseBasis R L)).symm.toMulEquiv.isDomain _
-
-end Transfer
 
 end TauCeti.UniversalEnvelopingAlgebra

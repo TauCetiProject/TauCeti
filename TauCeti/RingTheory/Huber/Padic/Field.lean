@@ -5,16 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecificLimits.Normed
+public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.Padic.Basic
 
 /-!
 # The p-adic numbers are a Tate ring
 
 `ℚ_[p]` is a Tate ring, with `(ℤ_[p], (p))` as a pair of definition and `p` as a
-pseudouniformiser. Together with `TauCeti.Huber.PadicInt.not_isTateRing` this is the roadmap's
-Layer-0 example separating the two notions: the same ideal of definition makes `ℤ_[p]` Huber but
-not Tate, and `ℚ_[p]` Tate, the difference being that `p` becomes a unit in `ℚ_[p]`.
+pseudouniformiser. Together with `TauCeti.Huber.PadicInt.not_isTateRing` this is the example
+separating the two notions: the same ideal of definition makes `ℤ_[p]` Huber but not Tate, and
+`ℚ_[p]` Tate, the difference being that `p` becomes a unit in `ℚ_[p]`.
+
+The instance itself is not stated here: `ℚ_[p]` is a nontrivially normed field with an ultrametric
+norm, so it is a Tate ring by `TauCeti.Huber.IsTateRing.of_nontriviallyNormedField`. This file
+records the explicit pair of definition and pseudouniformiser.
 
 No `Ideal.comap` is needed here. Mathlib's `ℤ_[p]` is the subtype `{x : ℚ_[p] // ‖x‖ ≤ 1}` and
 `PadicInt.subring p` is a separate declaration cutting out the same set, so `ℤ_[p]` and
@@ -32,8 +36,6 @@ maximalIdeal ℤ_[p]` typechecks against the expected `Ideal ↥(PadicInt.subrin
   The ring of definition is pinned down by an equation, the ideal of definition by the
   membership form `‖x‖ < 1` — see the note on that lemma for why.
 * `TauCeti.Huber.Padic.isPseudoUniformizer_p`: `p` is a pseudouniformiser of `ℚ_[p]`.
-* `TauCeti.Huber.Padic.isHuberRing` and `TauCeti.Huber.Padic.isTateRing`: `ℚ_[p]` is a Huber
-  ring, and a Tate ring.
 
 ## References
 
@@ -59,12 +61,9 @@ private theorem isOpen_padicIntSubring :
   rwa [Subtype.range_coe_subtype] at h
 
 /-- `p` is a pseudouniformiser of `ℚ_[p]`: it is a unit, and its powers have norm `p⁻ⁿ → 0`. -/
-theorem isPseudoUniformizer_p : IsPseudoUniformizer (p : ℚ_[p]) := by
-  -- `IsTopologicalNilpotent` is by definition this convergence, so `exact` accepts it
-  have hnil : Filter.Tendsto (fun n : ℕ ↦ (p : ℚ_[p]) ^ n) Filter.atTop (𝓝 0) :=
-    tendsto_pow_atTop_nhds_zero_of_norm_lt_one _root_.Padic.norm_p_lt_one
-  exact isPseudoUniformizer_iff.mpr
-    ⟨Ne.isUnit (by exact_mod_cast (Fact.out : p.Prime).ne_zero), hnil⟩
+theorem isPseudoUniformizer_p : IsPseudoUniformizer (p : ℚ_[p]) :=
+  isPseudoUniformizer_iff_norm_lt_one.mpr
+    ⟨by exact_mod_cast (Fact.out : p.Prime).ne_zero, _root_.Padic.norm_p_lt_one⟩
 
 /-- The pair of definition `(ℤ_[p], (p))` exhibiting `ℚ_[p]` as a Huber ring. -/
 noncomputable def pairOfDefinition : PairOfDefinition ℚ_[p] where
@@ -103,14 +102,6 @@ theorem mem_pairOfDefinition_idealOfDefinition
     x ∈ (pairOfDefinition (p := p)).idealOfDefinition ↔ ‖(x : ℚ_[p])‖ < 1 := by
   simp only [pairOfDefinition]
   exact _root_.PadicInt.mem_nonunits
-
-/-- **`ℚ_[p]` is a Huber ring**, with `(ℤ_[p], (p))` as a pair of definition. -/
-instance isHuberRing : IsHuberRing ℚ_[p] :=
-  ⟨⟨pairOfDefinition⟩⟩
-
-/-- **`ℚ_[p]` is a Tate ring**, with `p` as a pseudouniformiser. -/
-instance isTateRing : IsTateRing ℚ_[p] :=
-  ⟨⟨(p : ℚ_[p]), isPseudoUniformizer_p⟩⟩
 
 end Padic
 

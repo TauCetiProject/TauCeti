@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Algebra.Lie.TransferInstance
+public import Mathlib.Algebra.Lie.TransferInstance
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Subalgebra
 
 /-!
@@ -15,8 +15,8 @@ The half-normalized Clifford bivector map identifies the second exterior power w
 Lie subalgebra of quadratic elements in the Clifford algebra. Transporting its Lie structure
 equips the exterior square with the corresponding commutator bracket.
 
-This is a generic prerequisite for identifying bivectors with the orthogonal Lie algebra in the
-spin representations roadmap. It does not construct that orthogonal Lie equivalence.
+This is a generic interface for identifying bivectors with the orthogonal Lie algebra. It does
+not construct that orthogonal Lie equivalence.
 
 ## Main results
 
@@ -28,10 +28,6 @@ spin representations roadmap. It does not construct that orthogonal Lie equivale
 * `CliffordAlgebra.bivectorLieEquiv`: the transported Lie equivalence with the
   quadratic Lie subalgebra.
 
-## References
-
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 3, "the Lie algebra `𝔰𝔬(V) ≅ ⋀²V` inside the Clifford algebra".
 -/
 
 public section
@@ -77,16 +73,15 @@ theorem coe_bivectorExteriorEquivQuadraticLieSubalgebra_symm_apply
 
 /-- The Lie ring structure on the second exterior power transported from the quadratic elements
 through `bivectorExteriorEquivQuadraticLieSubalgebra`. It is explicit in `Q` because the
-exterior square alone does not determine the quadratic form. -/
-@[instance_reducible]
-noncomputable def bivectorLieRing :
+exterior square alone does not determine the quadratic form. This is an abbreviation so the
+canonical exterior-power additive structure remains visible to downstream linear maps. -/
+noncomputable abbrev bivectorLieRing :
     LieRing (⋀[R]^2 M) :=
   (bivectorExteriorEquivQuadraticLieSubalgebra Q).toAddEquiv.lieRing
 
 /-- The Lie algebra structure on the second exterior power transported from the quadratic
 elements. It is explicit in `Q` for the same reason as `bivectorLieRing`. -/
-@[instance_reducible]
-noncomputable def bivectorLieAlgebra :
+noncomputable abbrev bivectorLieAlgebra :
     letI := bivectorLieRing Q
     LieAlgebra R (⋀[R]^2 M) :=
   (bivectorExteriorEquivQuadraticLieSubalgebra Q).lieAlgebra

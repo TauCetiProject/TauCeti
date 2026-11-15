@@ -42,6 +42,8 @@ the toral carrier.
 
 ## Main results
 
+* `TauCeti.DynkinType.coe_geckDiagramBaseEquiv_apply`: the transported node permutation agrees with
+  the root permutation of the rational diagram automorphism on the base.
 * `TauCeti.DynkinType.geckDiagramModuleEquiv_mem_geckCoordinateLattice_iff`: the coordinate
   permutation preserves the pinned integral lattice in both directions.
 * `TauCeti.DynkinType.geckWeight_geckDiagramIndexEquiv`: the weights are permuted
@@ -62,9 +64,6 @@ and Chevalley groups*, Proc. Amer. Math. Soc. **145** (2017), 3233--3247. The pa
 diagram symmetry to a graph automorphism follows R. W. Carter, *Finite Groups of Lie Type:
 Conjugacy Classes and Complex Characters*, §1.15.
 
-This is a prerequisite for the pinned isomorphism theorem in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is milestone L1, ordinary and
-graph-twisted Steinberg maps, of `TauCetiRoadmap/CFSGStatement/README.md`.
 -/
 
 public section
@@ -89,7 +88,10 @@ theorem geckDiagramBaseEquiv_apply_simpleSupportEquiv (sigma : Equiv.Perm (Fin t
       t.simpleSupportEquiv ht (sigma i) := by
   rw [geckDiagramBaseEquiv, Equiv.permCongr_apply, Equiv.symm_apply_apply]
 
-private theorem coe_diagramBaseEquiv_eq_indexEquiv (hsigma : sigma ∈ t.diagramSymmetry)
+/-- The node permutation transported to the support of the pinned base agrees with the root
+permutation of the rational diagram automorphism. This is the hypothesis under which Geck's
+reindexing carries each numbered generator to the renumbered one. -/
+theorem coe_geckDiagramBaseEquiv_apply (hsigma : sigma ∈ t.diagramSymmetry)
     (i : (t.rationalBase ht).support) :
     ((t.geckDiagramBaseEquiv ht sigma i : (t.rationalBase ht).support) : Fin t.numRoots) =
       (t.rationalDiagramAut ht hsigma).indexEquiv i := by
@@ -102,7 +104,13 @@ Bourbaki-numbered Dynkin diagram. It acts by the node permutation on the base-su
 and by `TauCeti.DynkinType.diagramRootPerm` on the root coordinates. -/
 def geckDiagramIndexEquiv (hsigma : sigma ∈ t.diagramSymmetry) :
     t.GeckIndex ht ≃ t.GeckIndex ht :=
-  geckIndexEquiv (t.rationalDiagramAut ht hsigma) (t.geckDiagramBaseEquiv ht sigma)
+  (t.rationalDiagramAut ht hsigma).geckIndexEquiv (t.geckDiagramBaseEquiv ht sigma)
+
+/-- The pinned coordinate permutation is Geck's reindexing along the rational diagram automorphism
+and the transported node permutation. -/
+theorem geckDiagramIndexEquiv_def (hsigma : sigma ∈ t.diagramSymmetry) :
+    t.geckDiagramIndexEquiv ht hsigma =
+      (t.rationalDiagramAut ht hsigma).geckIndexEquiv (t.geckDiagramBaseEquiv ht sigma) := (rfl)
 
 /-- The diagram symmetry acts on a base-support coordinate by the transported node permutation. -/
 @[simp]
@@ -111,7 +119,7 @@ theorem geckDiagramIndexEquiv_apply_inl (hsigma : sigma ∈ t.diagramSymmetry)
     t.geckDiagramIndexEquiv ht hsigma (Sum.inl i) =
       Sum.inl (t.geckDiagramBaseEquiv ht sigma i) := by
   simpa only [geckDiagramIndexEquiv] using
-    geckIndexEquiv_apply_inl (t.rationalDiagramAut ht hsigma)
+    (t.rationalDiagramAut ht hsigma).geckIndexEquiv_apply_inl
       (t.geckDiagramBaseEquiv ht sigma) i
 
 /-- The diagram symmetry acts on a root coordinate by the induced root permutation. -/
@@ -121,14 +129,20 @@ theorem geckDiagramIndexEquiv_apply_inr (hsigma : sigma ∈ t.diagramSymmetry)
     t.geckDiagramIndexEquiv ht hsigma (Sum.inr i) =
       Sum.inr (t.diagramRootPerm ht hsigma i) := by
   simpa only [geckDiagramIndexEquiv, rationalDiagramAut_indexEquiv] using
-    geckIndexEquiv_apply_inr (t.rationalDiagramAut ht hsigma)
+    (t.rationalDiagramAut ht hsigma).geckIndexEquiv_apply_inr
       (t.geckDiagramBaseEquiv ht sigma) i
 
 /-- The rational linear equivalence of the pinned Geck module induced by a diagram symmetry. It is
 the permutation of coordinate functions along `TauCeti.DynkinType.geckDiagramIndexEquiv`. -/
 def geckDiagramModuleEquiv (hsigma : sigma ∈ t.diagramSymmetry) :
     (t.GeckIndex ht → ℚ) ≃ₗ[ℚ] (t.GeckIndex ht → ℚ) :=
-  geckModuleEquiv (t.rationalDiagramAut ht hsigma) (t.geckDiagramBaseEquiv ht sigma)
+  (t.rationalDiagramAut ht hsigma).geckModuleEquiv (t.geckDiagramBaseEquiv ht sigma)
+
+/-- The pinned Geck-module equivalence is Geck's coordinate permutation of the defining module along
+the rational diagram automorphism and the transported node permutation. -/
+theorem geckDiagramModuleEquiv_def (hsigma : sigma ∈ t.diagramSymmetry) :
+    t.geckDiagramModuleEquiv ht hsigma =
+      (t.rationalDiagramAut ht hsigma).geckModuleEquiv (t.geckDiagramBaseEquiv ht sigma) := (rfl)
 
 /-- The pinned Geck-module equivalence acts by precomposition with the inverse coordinate
 permutation. -/
@@ -138,7 +152,7 @@ theorem geckDiagramModuleEquiv_apply (hsigma : sigma ∈ t.diagramSymmetry)
     t.geckDiagramModuleEquiv ht hsigma v i =
       v ((t.geckDiagramIndexEquiv ht hsigma).symm i) := by
   simpa only [geckDiagramModuleEquiv, geckDiagramIndexEquiv] using
-    geckModuleEquiv_apply (t.rationalDiagramAut ht hsigma)
+    (t.rationalDiagramAut ht hsigma).geckModuleEquiv_apply
       (t.geckDiagramBaseEquiv ht sigma) v i
 
 /-- The pinned Geck-module equivalence sends a standard coordinate vector to the standard vector
@@ -149,7 +163,7 @@ theorem geckDiagramModuleEquiv_single (hsigma : sigma ∈ t.diagramSymmetry)
     t.geckDiagramModuleEquiv ht hsigma (Pi.single i r) =
       Pi.single (t.geckDiagramIndexEquiv ht hsigma i) r := by
   simpa only [geckDiagramModuleEquiv, geckDiagramIndexEquiv] using
-    geckModuleEquiv_single (t.rationalDiagramAut ht hsigma)
+    (t.rationalDiagramAut ht hsigma).geckModuleEquiv_single
       (t.geckDiagramBaseEquiv ht sigma) i r
 
 /-- **A diagram symmetry preserves the pinned integral Geck lattice.** Membership is equivalent in
@@ -187,7 +201,7 @@ theorem geckWeight_geckDiagramIndexEquiv (hsigma : sigma ∈ t.diagramSymmetry)
       rw [geckDiagramIndexEquiv_apply_inr, geckWeight_inr, geckWeight_inr]
       simpa only [rationalDiagramAut_indexEquiv, coe_simpleSupportEquiv,
         diagramRootPerm_simpleIndex] using
-          pairingIn_indexEquiv ℤ (t.rationalDiagramAut ht hsigma).toHom x
+          (t.rationalDiagramAut ht hsigma).toHom.pairingIn_indexEquiv ℤ x
             (t.simpleSupportEquiv ht i)
 
 /-! ## The coordinate permutation in the finite-ordinal indexing -/
@@ -352,17 +366,17 @@ theorem geckDiagramModuleEquiv_geckRepresentation_rootGenerator
         geckRepresentation_ι_apply, coe_lieBasis_e]
       simpa only [geckDiagramModuleEquiv, geckDiagramBaseEquiv, Equiv.permCongr_apply,
         Equiv.symm_apply_apply] using
-          geckModuleEquiv_mulVec_e (t.rationalDiagramAut ht hsigma)
+          (t.rationalDiagramAut ht hsigma).geckModuleEquiv_mulVec_e
             (t.geckDiagramBaseEquiv ht sigma)
-            (coe_diagramBaseEquiv_eq_indexEquiv ht hsigma) (t.simpleSupportEquiv ht i) v
+            (coe_geckDiagramBaseEquiv_apply ht hsigma) (t.simpleSupportEquiv ht i) v
   | inr i =>
       simp only [LieAlgebra.Basis.rootGenerator_inr, diagramRootGeneratorPerm_apply_inr,
         geckRepresentation_ι_apply, coe_lieBasis_f]
       simpa only [geckDiagramModuleEquiv, geckDiagramBaseEquiv, Equiv.permCongr_apply,
         Equiv.symm_apply_apply] using
-          geckModuleEquiv_mulVec_f (t.rationalDiagramAut ht hsigma)
+          (t.rationalDiagramAut ht hsigma).geckModuleEquiv_mulVec_f
             (t.geckDiagramBaseEquiv ht sigma)
-            (coe_diagramBaseEquiv_eq_indexEquiv ht hsigma) (t.simpleSupportEquiv ht i) v
+            (coe_geckDiagramBaseEquiv_apply ht hsigma) (t.simpleSupportEquiv ht i) v
 
 end
 

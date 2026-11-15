@@ -9,11 +9,12 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 public import Mathlib.RingTheory.TensorProduct.Free
 
 /-!
-# Multiplying by `a ⊗ₜ 1` in `A ⊗[K] B`
+# Multiplying pure tensors in `A ⊗[K] B`
 
-Two formulas for multiplication by a pure tensor `a ⊗ₜ 1` in an algebra tensor product, one on
-each side. Both are general facts about `A ⊗[K] B` over a commutative semiring: neither needs `A`
-or `B` to be central, simple, or even a ring.
+Multiplication formulas and anticommutation criteria for `A ⊗[K] B` over a commutative
+semiring. The anticommutation criteria need only nonunital, nonassociative semirings whose
+multiplication is bilinear over `K`. The formulas for multiplication by `a ⊗ₜ 1` use a
+`K`-algebra `A` and a possibly nonassociative semiring `B` with `K`-bilinear multiplication.
 
 ## Main results
 
@@ -21,33 +22,50 @@ or `B` to be central, simple, or even a ring.
   `A`-module action on `A ⊗[K] B`.
 * `Algebra.TensorProduct.basis_repr_mul_tmul_one`: multiplying on the right by `a ⊗ₜ 1` multiplies
   each coordinate against `Algebra.TensorProduct.basis` by `a` on the right.
-
-Both are declared into Mathlib's root `Algebra.TensorProduct` namespace, which houses the algebra
-tensor product's multiplicative API, rather than into a `TauCeti.`-prefixed copy of it. (The
-underlying type is the root `TensorProduct`; `Algebra.TensorProduct` is where its algebra
-structure and the lemmas about it live.)
+* `Algebra.TensorProduct.tmul_anticommute_of_left` and
+  `Algebra.TensorProduct.tmul_anticommute_of_right`: pure tensors anticommute when the factors
+  on one side anticommute and the factors on the other side commute.
 -/
 
 public section
 
 open scoped TensorProduct
 
-namespace TauCeti
+namespace Algebra.TensorProduct
 
-variable {K A B ι : Type*} [CommSemiring K] [Semiring A] [Semiring B] [Algebra K A] [Algebra K B]
+variable {K A B ι : Type*} [CommSemiring K]
+
+section NonUnitalNonAssocSemiring
+
+variable [NonUnitalNonAssocSemiring A] [Module K A] [SMulCommClass K A A] [IsScalarTower K A A]
+  [NonUnitalNonAssocSemiring B] [Module K B] [SMulCommClass K B B] [IsScalarTower K B B]
+
+/-- Pure tensors anticommute when their left factors anticommute and right factors commute. -/
+theorem tmul_anticommute_of_left {x x' : A} {y y' : B}
+    (hx : x * x' + x' * x = 0) (hy : Commute y y') :
+    x ⊗ₜ[K] y * x' ⊗ₜ y' + x' ⊗ₜ y' * x ⊗ₜ y = 0 := by
+  simp only [tmul_mul_tmul, hy.eq, ← TensorProduct.add_tmul, hx, TensorProduct.zero_tmul]
+
+/-- Pure tensors anticommute when their left factors commute and right factors anticommute. -/
+theorem tmul_anticommute_of_right {x x' : A} {y y' : B}
+    (hx : Commute x x') (hy : y * y' + y' * y = 0) :
+    x ⊗ₜ[K] y * x' ⊗ₜ y' + x' ⊗ₜ y' * x ⊗ₜ y = 0 := by
+  simp only [tmul_mul_tmul, hx.eq, ← TensorProduct.tmul_add, hy, TensorProduct.tmul_zero]
+
+end NonUnitalNonAssocSemiring
+
+section Semiring
+
+variable [Semiring A] [Algebra K A]
+  [NonAssocSemiring B] [Module K B] [SMulCommClass K B B] [IsScalarTower K B B]
 
 /-- Left multiplication by `a ⊗ₜ 1` on `A ⊗[K] B` is the left `A`-module action, the one that
-`Algebra.TensorProduct.basis` is a basis for.
-
-This is Mathlib's `smul_one_mul`, available because `Algebra.TensorProduct.isScalarTower_right`
-makes `A ⊗[K] B` a scalar tower over `A`; all this adds is the identification of `a • 1` with
-`a ⊗ₜ 1`. (`Algebra.smul_def` is not available here: `A` is not assumed commutative, so there is no
-`Algebra A (A ⊗[K] B)` instance.) -/
+`Algebra.TensorProduct.basis` is a basis for. This identifies `a ⊗ₜ 1` with `a • 1` in
+`smul_one_mul`, and does not require `A` to be commutative. -/
 @[simp]
-theorem _root_.Algebra.TensorProduct.tmul_one_mul_eq_smul (a : A) (x : A ⊗[K] B) :
+theorem tmul_one_mul_eq_smul (a : A) (x : A ⊗[K] B) :
     (a ⊗ₜ[K] (1 : B)) * x = a • x := by
-  rw [← smul_one_mul a x, Algebra.TensorProduct.one_def, TensorProduct.smul_tmul', smul_eq_mul,
-    mul_one]
+  simpa [one_def, TensorProduct.smul_tmul'] using smul_one_mul a x
 
 variable (𝓑 : Module.Basis ι K B)
 
@@ -57,16 +75,12 @@ Unlike the left-handed `Algebra.TensorProduct.tmul_one_mul_eq_smul` this is not 
 generic scalar-action API, since right multiplication is not the module action
 `Algebra.TensorProduct.basis` is a basis for. -/
 @[simp]
-theorem _root_.Algebra.TensorProduct.basis_repr_mul_tmul_one (a : A) (x : A ⊗[K] B) (j : ι) :
-    (Algebra.TensorProduct.basis A 𝓑).repr (x * (a ⊗ₜ[K] (1 : B))) j =
-      (Algebra.TensorProduct.basis A 𝓑).repr x j * a := by
+theorem basis_repr_mul_tmul_one (a : A) (x : A ⊗[K] B) (j : ι) :
+    (basis A 𝓑).repr (x * (a ⊗ₜ[K] (1 : B))) j = (basis A 𝓑).repr x j * a := by
   induction x using TensorProduct.inductionOn with
-  | tmul a' b =>
-    rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, Algebra.TensorProduct.basis_repr_tmul,
-      Algebra.TensorProduct.basis_repr_tmul]
-    simp only [Finsupp.smul_apply, Finsupp.mapRange_apply, smul_eq_mul]
-    rw [mul_assoc, mul_assoc, Algebra.commutes]
-  | add x y hx hy => rw [add_mul, map_add, Finsupp.add_apply, hx, hy, map_add, Finsupp.add_apply,
-      add_mul]
+  | tmul a' b => simp [mul_assoc, ← Algebra.commutes]
+  | add x y hx hy => simp [add_mul, hx, hy]
 
-end TauCeti
+end Semiring
+
+end Algebra.TensorProduct

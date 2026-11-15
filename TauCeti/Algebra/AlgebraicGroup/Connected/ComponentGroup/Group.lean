@@ -43,9 +43,6 @@ component-idempotent decomposition.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37 and Section 5.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Sections 6.7 and 14.
-
-This advances Layer 3, "Identity component `G°` and component group `π₀(G)`", of the
-ReductiveGroups roadmap.
 -/
 
 public section
@@ -58,10 +55,7 @@ universe u
 
 variable {k : Type u} [Field k] [IsAlgClosed k]
 
-/-- Locally expose the group structure carried by the bundled rational component group. -/
-noncomputable local instance componentGroupPointsGroupForTransfer
-    (H : FiniteTypeCommHopfAlgCat.{u, u} k) : Group (componentGroupPoints H) :=
-  (componentGroupPoints H).str
+attribute [local instance] componentGroupPointsGroup
 
 /-- The group structure on the connected components of the spectrum of a finite-type affine
 group. It is characterized by the requirement that the canonical bijection from
@@ -154,6 +148,25 @@ theorem rationalKernelPoint_one_component (H : FiniteTypeCommHopfAlgCat.{u, u} k
   rw [← rationalKernelPoint_one H]
   rw [← rationalComponentMap_apply]
   exact map_one (rationalComponentMap H)
+
+/-- An idempotent nonzero at the identity is nonzero at every rational point of the
+identity component. -/
+theorem ofConv_ne_zero_of_isIdempotentElem_of_rationalComponentMap_eq_one
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k) {a : H} (ha : IsIdempotentElem a)
+    (hε : Bialgebra.counitAlgHom k H a ≠ 0)
+    (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k))
+    (hg : rationalComponentMap H g = 1) : g.ofConv a ≠ 0 := by
+  have hmem : rationalKernelPoint H g ∈
+      connectedComponent (Bialgebra.augmentationPoint k H : PrimeSpectrum H) := by
+    apply ConnectedComponents.coe_eq_coe'.mp
+    exact (rationalComponentMap_apply H g).symm.trans
+      (hg.trans (rationalKernelPoint_one_component H).symm)
+  have hopen := PrimeSpectrum.isClopen_iff.mpr ⟨a, ha, rfl⟩
+  have hidentity : (Bialgebra.augmentationPoint k H : PrimeSpectrum H) ∈
+      PrimeSpectrum.basicOpen a :=
+    (AlgHom.kernelPoint_mem_basicOpen_iff (Bialgebra.counitAlgHom k H) a).mpr hε
+  exact (AlgHom.kernelPoint_mem_basicOpen_iff g.ofConv a).mp
+    (hopen.connectedComponent_subset hidentity hmem)
 
 /-- The component of a product of rational points is the product of their components. -/
 @[simp]

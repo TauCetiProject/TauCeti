@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
 public import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
 public import TauCeti.RepresentationTheory.Continuous.TopRep.RestrictScalars
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 /-!
 # Continuous cohomology does not see the scalars
@@ -79,7 +79,8 @@ what lets every result of the first kind be applied to coefficients of the secon
   `TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntEquiv` between the carriers are the
   isomorphisms on elements; they act through the values of the iterated function spaces
   (`TopRep.resolutionXRestrictScalarsIntIso_succ_hom_apply`,
-  `TauCeti.ContCohomology.iCycles_cocyclesRestrictScalarsIntEquiv_one_apply`,
+  `TauCeti.ContCohomology.iCycles_cocyclesRestrictScalarsIntEquiv_zero_apply` and its analogues
+  in degrees one and two,
   `TauCeti.ContCohomology.restrictScalarsIntEquiv_π`).
 * `TauCeti.ContCohomology.coeffMap_comp_restrictScalarsIntIso_hom`: the isomorphism is natural in
   the representation, with respect to the coefficient maps
@@ -385,6 +386,17 @@ theorem coe_iCycles_cocyclesRestrictScalarsIntEquiv (v : cocycles (restrictScala
     congr($(cocyclesRestrictScalarsIntIso_hom_comp_map_iCycles X n) v)
   rw [h, coe_homogeneousCochainsRestrictScalarsIntIso_hom_f]
 
+/-- In degree zero, `cocyclesRestrictScalarsIntEquiv` does not change the values of a homogeneous
+cocycle: both sides are the function `C(G, X.V)` underlying the cocycle. -/
+theorem iCycles_cocyclesRestrictScalarsIntEquiv_zero_apply
+    (v : cocycles (restrictScalarsInt.obj X) 0) (g₀ : G) :
+    ((homogeneousCochains X).iCycles 0 (cocyclesRestrictScalarsIntEquiv X 0 v)).val g₀ =
+      ((homogeneousCochains (restrictScalarsInt.obj X)).iCycles 0 v).val g₀ :=
+  (congrArg (fun w : C(G, X.V) ↦ w g₀)
+    (coe_iCycles_cocyclesRestrictScalarsIntEquiv X 0 v)).trans
+    ((resolutionXRestrictScalarsIntIso_succ_hom_apply X 0 _ g₀).trans
+      (resolutionXRestrictScalarsIntIso_zero_hom_apply X _))
+
 /-- In degree one, `cocyclesRestrictScalarsIntEquiv` does not change the values of a homogeneous
 cocycle: both sides are the function `C(G, C(G, X.V))` underlying the cocycle. -/
 -- Not a `simp` lemma: the carriers of the cocycles sit in the implicit arguments of `Subtype.val`,
@@ -406,15 +418,14 @@ theorem iCycles_cocyclesRestrictScalarsIntEquiv_one_apply
 /-- In degree two, `cocyclesRestrictScalarsIntEquiv` does not change the values of a homogeneous
 cocycle. -/
 theorem iCycles_cocyclesRestrictScalarsIntEquiv_two_apply
-    (v : cocycles (restrictScalarsInt.obj X) (1 + 1)) (g₀ g₁ g₂ : G) :
-    ((homogeneousCochains X).iCycles (1 + 1) (cocyclesRestrictScalarsIntEquiv X (1 + 1) v)).val
-        g₀ g₁ g₂ =
-      ((homogeneousCochains (restrictScalarsInt.obj X)).iCycles (1 + 1) v).val g₀ g₁ g₂ :=
+    (v : cocycles (restrictScalarsInt.obj X) 2) (g₀ g₁ g₂ : G) :
+    ((homogeneousCochains X).iCycles 2 (cocyclesRestrictScalarsIntEquiv X 2 v)).val g₀ g₁ g₂ =
+      ((homogeneousCochains (restrictScalarsInt.obj X)).iCycles 2 v).val g₀ g₁ g₂ :=
   -- The identification of the resolutions is the identity on values, one function-space level at
   -- a time; the composite is assembled as a term because the intermediate values live in the
   -- carriers of `restrictScalarsInt.obj _`, which `rw` does not see as function spaces.
   (congrArg (fun w : C(G, C(G, C(G, X.V))) ↦ w g₀ g₁ g₂)
-    (coe_iCycles_cocyclesRestrictScalarsIntEquiv X (1 + 1) v)).trans
+    (coe_iCycles_cocyclesRestrictScalarsIntEquiv X 2 v)).trans
     ((congrArg (fun w : C(G, C(G, X.V)) ↦ w g₁ g₂)
       (resolutionXRestrictScalarsIntIso_succ_hom_apply X (1 + 1) _ g₀)).trans
       ((congrArg (fun w : C(G, X.V) ↦ w g₂)
@@ -720,6 +731,27 @@ theorem iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_apply
     simp only [eqToHom_refl, CategoryTheory.id_apply]
     rfl
   exact key X.ρ.restrictScalarsInt (ofDiscreteModule_ρ_eq_restrictScalarsInt_obj_ρ X)
+
+/-- In degree two, `ofDiscreteModuleCocyclesRestrictScalarsIntIso` does not change the values of
+a homogeneous cocycle. -/
+-- Not a `simp` lemma, for the same reason as `iCycles_cocyclesRestrictScalarsIntEquiv_one_apply`.
+theorem iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_two_apply
+    (w : cocycles (ofDiscreteModule ℤ G X.V) 2) (g₀ g₁ g₂ : G) :
+    ((homogeneousCochains X).iCycles 2
+        ((ofDiscreteModuleCocyclesRestrictScalarsIntIso X 2).hom w)).val g₀ g₁ g₂ =
+      ((homogeneousCochains (ofDiscreteModule ℤ G X.V)).iCycles 2 w).val g₀ g₁ g₂ := by
+  rw [ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_apply]
+  refine (iCycles_cocyclesRestrictScalarsIntEquiv_two_apply X _ g₀ g₁ g₂).trans ?_
+  -- The transport along the equality of objects is a `cast` of values once that equality has a
+  -- variable side; here both carriers are `X.V`, so the `cast` is the identity.
+  have hev : ∀ (B : TopRep ℤ G) (h : ofDiscreteModule ℤ G X.V = B),
+      ((homogeneousCochains B).iCycles 2
+          (eqToHom (congrArg (cocycles · 2) h) w)).val g₀ g₁ g₂ =
+        cast (congrArg TopRep.V h)
+          (((homogeneousCochains (ofDiscreteModule ℤ G X.V)).iCycles 2 w).val g₀ g₁ g₂) := by
+    rintro B rfl
+    simp only [eqToHom_refl, CategoryTheory.id_apply, cast_eq]
+  exact (hev _ (ofDiscreteModule_eq_restrictScalarsInt_obj X)).trans (cast_eq _ _)
 
 /-- `Hⁿ(G, X)` vanishes exactly when the `ℤ`-cohomology of the carrier of the discrete `X`
 vanishes. -/

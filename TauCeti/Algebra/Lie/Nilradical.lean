@@ -15,7 +15,7 @@ The **nilradical** of a Lie algebra `L` is the supremum of its ideals that are n
 algebras*, built here as `TauCeti.LieAlgebra.nilradical R L`, the supremum of the ideals `I` with
 `LieRing.IsNilpotent I`.  As soon as `L` is Noetherian that supremum is itself nilpotent, so it is
 then a largest element: the largest nilpotent ideal.  It sits between the centre and the solvable
-radical, and, again for Noetherian `L`, every one of its elements is `ad`-nilpotent.
+radical, and every one of its elements is `ad`-nilpotent.
 
 Mathlib's `LieAlgebra.maxNilpotentIdeal R L` is a *different* ideal: the largest ideal on which the
 ambient algebra `L` acts nilpotently.  It is contained in the nilradical
@@ -50,12 +50,16 @@ namespace, where dot notation on that Mathlib type elaborates.
 * `LieIdeal.isNilpotent_iff_exists_lcs_eq_bot` and `LieIdeal.isNilpotent_iff_isNilpotent_ambient`:
   the two ambient readings of nilpotency of an ideal.
 * `LieIdeal.isNilpotentSup`: a sum of nilpotent ideals is nilpotent.
+* `LieIdeal.exists_mem_notMem_lie_mem_of_lt`: a proper subspace `T` of a nilpotent ideal `I` is
+  enlarged by some `x ∈ I` with `⁅x, I⁆ ⊆ T`.
 * `LieIdeal.le_nilradical` and `TauCeti.LieAlgebra.nilradical_le_iff`: the two halves of the
   universal property of the supremum, neither needing a Noetherian assumption.
 * `TauCeti.LieAlgebra.nilradicalIsNilpotent`: over a Noetherian Lie algebra the nilradical is
   nilpotent, so `LieIdeal.isNilpotent_iff_le_nilradical` characterises it.
 * `TauCeti.LieAlgebra.maxNilpotentIdeal_le_nilradical`, `TauCeti.LieAlgebra.center_le_nilradical`
   and `TauCeti.LieAlgebra.nilradical_le_radical`: the standard containments.
+* `TauCeti.LieAlgebra.exists_isNilpotent_ideal_of_mem_nilradical`: every element of the nilradical
+  lies in a nilpotent ideal, with no Noetherian assumption.
 * `TauCeti.LieAlgebra.isNilpotent_ad_of_mem_nilradical`: elements of the nilradical are
   `ad`-nilpotent.
 
@@ -149,6 +153,12 @@ theorem isNilpotent_of_le {I J : LieIdeal R L} (h : I ≤ J) (_ : LieRing.IsNilp
     LieRing.IsNilpotent I :=
   (inclusion_injective h).lieAlgebra_isNilpotent
 
+/-- The preimage of a nilpotent ideal under an injective Lie homomorphism is nilpotent. -/
+theorem isNilpotent_comap_of_injective {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (I : LieIdeal R L') (f : L →ₗ⁅R⁆ L') (hf : Function.Injective f)
+    [LieRing.IsNilpotent I] : LieRing.IsNilpotent (I.comap f) :=
+  (f.lieIdealComap_injective I hf).lieAlgebra_isNilpotent
+
 /-- A surjective Lie algebra homomorphism maps a nilpotent ideal to a nilpotent ideal. -/
 theorem isNilpotent_map_of_surjective {L' : Type*} [LieRing L'] [LieAlgebra R L']
     (I : LieIdeal R L) (g : L →ₗ⁅R⁆ L') (hg : Function.Surjective g)
@@ -224,6 +234,34 @@ instance isNilpotentSup (I J : LieIdeal R L) [LieRing.IsNilpotent I] [LieRing.Is
   · exact inf_le_left.trans ((lcs_antitone L I h).trans hk.le)
   · exact inf_le_right.trans ((lcs_antitone L J (by omega)).trans hl.le)
 
+/-- **A proper subspace of a nilpotent ideal is normalized by a new element of the ideal.** If a
+submodule `T` lies strictly below a nilpotent ideal `I`, some `x ∈ I` outside `T` satisfies
+`⁅x, I⁆ ⊆ T`.  The element is taken from the last term of `⁅I, ⁅I, … ⁅I, L⁆…⁆⁆` not contained in
+`T`.  When `R` is a field, `I` is finite-dimensional and `T` is a subalgebra, repeated application
+builds a flag of subalgebras from `T` up to `I`, each an ideal of the next with codimension one. -/
+theorem exists_mem_notMem_lie_mem_of_lt (I : LieIdeal R L) [LieRing.IsNilpotent I]
+    {T : Submodule R L} (hT : T < I.toSubmodule) :
+    ∃ x ∈ I, x ∉ T ∧ ∀ y ∈ I, ⁅x, y⁆ ∈ T := by
+  classical
+  obtain ⟨k, hk⟩ := (isNilpotent_iff_exists_lcs_eq_bot I).1 ‹_›
+  -- `P j` says that the `j`-th term of the series meets `I` inside `T`; it fails at `0`.
+  let P : ℕ → Prop := fun j ↦ ∀ z ∈ I.lcs L j, z ∈ I → z ∈ T
+  have hPk : P k := fun z hz _ ↦ by
+    rw [hk, LieSubmodule.mem_bot] at hz
+    exact hz ▸ T.zero_mem
+  have hP0 : ¬ P 0 := fun h ↦ hT.not_ge fun z hz ↦ h z (by simp) hz
+  obtain ⟨j, hj⟩ : ∃ j, Nat.find ⟨k, hPk⟩ = j + 1 :=
+    Nat.exists_eq_add_one.mpr (Nat.pos_of_ne_zero fun h ↦ hP0 (h ▸ Nat.find_spec ⟨k, hPk⟩))
+  have hPj : ¬ P j := Nat.find_min ⟨k, hPk⟩ (by omega)
+  have hPj1 : P (j + 1) := hj ▸ Nat.find_spec ⟨k, hPk⟩
+  simp only [P, not_forall] at hPj
+  obtain ⟨x, hxj, hxI, hxT⟩ := hPj
+  refine ⟨x, hxI, hxT, fun y hy ↦ ?_⟩
+  rw [← lie_skew]
+  refine T.neg_mem (hPj1 _ ?_ (I.lie_mem hxI))
+  rw [lcs_succ]
+  exact LieSubmodule.lie_mem_lie hy hxj
+
 end LieIdeal
 
 namespace TauCeti
@@ -240,6 +278,11 @@ This is not Mathlib's `LieAlgebra.maxNilpotentIdeal`, which is the largest ideal
 ambient algebra acts nilpotently, and is in general smaller. -/
 def nilradical : LieIdeal R L :=
   sSup { I : LieIdeal R L | LieRing.IsNilpotent I }
+
+/-- The nilradical is the supremum of all nilpotent Lie ideals. -/
+theorem nilradical_def :
+    nilradical R L = sSup {I : LieIdeal R L | LieRing.IsNilpotent I} :=
+  (rfl)
 
 /-- The nilradical of a Noetherian Lie algebra is nilpotent. -/
 instance nilradicalIsNilpotent [IsNoetherian R L] : LieRing.IsNilpotent (nilradical R L) := by
@@ -323,10 +366,30 @@ theorem nilradical_eq_top_iff [IsNoetherian R L] :
 
 variable {R L}
 
+/-- **Every element of the nilradical lies in a nilpotent ideal.** Nilpotent ideals are directed,
+so the supremum defining the nilradical is attained on each element, with no Noetherian hypothesis
+on `L`. -/
+theorem exists_isNilpotent_ideal_of_mem_nilradical {n : L} (hn : n ∈ nilradical R L) :
+    ∃ J : LieIdeal R L, LieRing.IsNilpotent J ∧ n ∈ J := by
+  let S : Set (Submodule R L) :=
+    {s | ∃ I : LieIdeal R L, LieRing.IsNilpotent I ∧ LieSubmodule.toSubmodule I = s}
+  have hn' : n ∈ sSup S := by
+    rw [nilradical_def] at hn
+    exact hn
+  have hdir : DirectedOn (· ≤ ·) S := by
+    rintro _ ⟨I, hI, rfl⟩ _ ⟨J, hJ, rfl⟩
+    exact ⟨LieSubmodule.toSubmodule (I ⊔ J), ⟨I ⊔ J, LieIdeal.isNilpotentSup I J, rfl⟩,
+      sup_le_iff.mp le_rfl⟩
+  have hne : S.Nonempty := ⟨_, ⊥, LieIdeal.isNilpotentBot, rfl⟩
+  obtain ⟨_, ⟨J, hJ, rfl⟩, hnJ⟩ := (Submodule.mem_sSup_of_directed hne hdir).mp hn'
+  exact ⟨J, hJ, hnJ⟩
+
 /-- **Every element of the nilradical is `ad`-nilpotent.** -/
-theorem isNilpotent_ad_of_mem_nilradical [IsNoetherian R L] {x : L}
-    (hx : x ∈ nilradical R L) : IsNilpotent (LieAlgebra.ad R L x) :=
-  LieIdeal.isNilpotent_ad_of_mem (nilradical R L) hx
+theorem isNilpotent_ad_of_mem_nilradical {x : L}
+    (hx : x ∈ nilradical R L) : IsNilpotent (LieAlgebra.ad R L x) := by
+  obtain ⟨J, hJ, hxJ⟩ := exists_isNilpotent_ideal_of_mem_nilradical hx
+  have := hJ
+  exact LieIdeal.isNilpotent_ad_of_mem J hxJ
 
 end LieAlgebra
 

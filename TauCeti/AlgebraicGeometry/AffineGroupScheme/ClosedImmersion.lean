@@ -31,6 +31,8 @@ the same universe, which is reflected in the declaration in this file.
   after identifying the target group scheme.
 * `TauCeti.CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_iff`: the criterion after
   identifying the source group scheme.
+* `TauCeti.CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_comp_eqToHom_iff`:
+  the criterion after identifying both group schemes.
 -/
 
 public section
@@ -88,6 +90,22 @@ lemma isClosedImmersion_eqToHom_comp_hopfSpec_map_iff {S : CommRingCat.{u}}
       Function.Surjective f.hom := by
   simp only [Grp.comp', Mon.comp_hom', Over.comp_left]
   rw [MorphismProperty.cancel_left_of_respectsIso (P := @IsClosedImmersion)]
+  exact isClosedImmersion_hopfSpec_map_iff f
+
+/-- Identifying both the source and target of the `hopfSpec` image of a Hopf-algebra
+morphism does not change the closed-immersion criterion. -/
+@[simp↓]
+lemma isClosedImmersion_eqToHom_comp_hopfSpec_map_comp_eqToHom_iff {S : CommRingCat.{u}}
+    {A B : _root_.CommHopfAlgCat.{u} S}
+    {G H : Grp (Over (AlgebraicGeometry.Spec S))}
+    (hG : G = (AlgebraicGeometry.hopfSpec S).obj (Opposite.op B))
+    (hH : H = (AlgebraicGeometry.hopfSpec S).obj (Opposite.op A)) (f : A ⟶ B) :
+    IsClosedImmersion
+        ((eqToHom hG ≫ (AlgebraicGeometry.hopfSpec S).map f.op ≫
+          eqToHom hH.symm).hom.hom.left) ↔ Function.Surjective f.hom := by
+  simp only [Grp.comp', Mon.comp_hom', Over.comp_left]
+  rw [MorphismProperty.cancel_left_of_respectsIso (P := @IsClosedImmersion),
+    MorphismProperty.cancel_right_of_respectsIso (P := @IsClosedImmersion)]
   exact isClosedImmersion_hopfSpec_map_iff f
 
 end CommHopfAlgCat

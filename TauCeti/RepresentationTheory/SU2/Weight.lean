@@ -54,11 +54,6 @@ Two consequences make this the form the highest-weight classification uses.
 
 ## References
 
-This is the "weight/string decomposition" milestone of the `SU(2)` engine case of
-`TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md`, which asks for the weights
-`{d, d-2, …, -d}` of `Symᵈ(ℂ²)` "each with multiplicity one, computed from the diagonal action",
-as the input to the highest-weight argument.
-
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 3.
 * T. Bröcker, T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
   Chapter II, §5.
@@ -95,7 +90,7 @@ theorem weightBasis_apply (i : Fin (d + 1)) :
 the unordered tuple indexing it lists its factors. -/
 theorem exists_weightBasis_eq_tprod (i : Fin (d + 1)) :
     ∃ f : Fin d → Fin 2, weightBasis d i = ⨂ₛ[ℂ] j, Pi.basisFun ℂ (Fin 2) (f j) := by
-  obtain ⟨f, hf⟩ := TauCeti.Sym.ofFn_surjective ((symFinTwoEquiv d).symm i)
+  obtain ⟨f, hf⟩ := Sym.ofFn_surjective ((symFinTwoEquiv d).symm i)
   exact ⟨f, by rw [weightBasis_apply, ← hf, Module.Basis.symmetricPower_apply,
     SymmetricPower.tprodOfSym_ofFn]⟩
 
@@ -136,7 +131,7 @@ theorem symPower_torusHom_weightBasis (z : Circle) (i : Fin (d + 1)) :
   have hi : (i : ℕ) ≤ d := Nat.lt_succ_iff.mp i.isLt
   rw [weightBasis_apply, symPower_apply, toGL_torusHom,
     Representation.symmetricPower_apply,
-    SymmetricPower.map_basis_symmetricPower_of_apply_basis (Pi.basisFun ℂ (Fin 2)) _
+    Module.Basis.map_symmetricPower_of_apply (Pi.basisFun ℂ (Fin 2)) _
       (fun j => ((![Circle.toUnits z, (Circle.toUnits z)⁻¹] j : ℂˣ) : ℂ))
       (stdRep_diagGL_apply_basisFun _)]
   congr 1

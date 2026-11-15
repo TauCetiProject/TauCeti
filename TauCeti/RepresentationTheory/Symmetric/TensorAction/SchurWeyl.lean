@@ -29,7 +29,7 @@ commuting with every diagonal operator already lies in the image of the group al
 ## The argument
 
 The image `A` of `k[S_d]` in `End_k ((kⁿ)^{⊗d})` is a quotient of `k[S_d]`, which is semisimple by
-Maschke's theorem, so the double centralizer theorem `TauCeti.centralizer_centralizer_range`
+Maschke's theorem, so the double centralizer theorem `AlgHom.centralizer_centralizer_range`
 applies and gives `A'' = A`. The commutant `A'` is the span of the diagonal operators by the half
 already available, so `A` is the commutant of that span.
 
@@ -62,9 +62,6 @@ in this file are the span-level input to that identification.
 
 ## References
 
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 8, "The double centralizer (image-level)", of which this file proves the form with all
-  diagonal operators in place of the image of `k[GLₙ]`.
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Lecture 6 and Appendix B.1.
 * C. Procesi, *Lie Groups: An Approach through Invariants and Representations*, Chapter 9.
 -/
@@ -126,7 +123,10 @@ theorem centralizer_span_range_map_const_eq_range_permTensorActionAlgHom :
     rwa [Nat.card_eq_fintype_card, Fintype.card_perm, Fintype.card_fin]
   rw [← coe_centralizer_range_permTensorActionAlgHom_eq_span_range_map_const
     (isUnit_iff_ne_zero.2 (NeZero.ne _))]
-  exact centralizer_centralizer_range (permTensorActionAlgHom k n d)
+  have := Module.Finite.of_restrictScalars_finite k
+    (Module.End (permTensorActionAlgHom k n d).range (⨂[k] _ : Fin d, Fin n → k))
+    (⨂[k] _ : Fin d, Fin n → k)
+  exact AlgHom.centralizer_centralizer_range (permTensorActionAlgHom k n d)
 
 /-- **Schur-Weyl duality, as a membership criterion.** An endomorphism of `(kⁿ)^{⊗d}` is the action
 of an element of the group algebra `k[S_d]` exactly when it commutes with every diagonal operator

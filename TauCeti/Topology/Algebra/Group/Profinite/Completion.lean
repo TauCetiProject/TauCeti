@@ -21,6 +21,11 @@ in independent universes, unlike Mathlib's single-universe adjunction
 `ProfiniteGrp.ProfiniteCompletion.homEquiv`; this is what lets a fixed universe-polymorphic
 completion, such as the profinite integers, map to profinite groups in any universe.
 
+A continuous homomorphism out of the completion is surjective onto a Hausdorff target when it has
+dense range on `G` (`surjective_continuousMonoidHom_of_denseRange`), and injective when every
+finite-index normal subgroup of `G` contains the elements sent near `1`
+(`injective_continuousMonoidHom_of_forall_exists_nhds_one_comap_le`).
+
 The continuous finite quotients of the completion are exactly the finite quotients of `G`
 (`isFiniteContinuousQuotient_iff_exists_surjective`), and the completion of a finitely generated
 group is topologically finitely generated (`isTopologicallyFinitelyGenerated`). Through the
@@ -199,6 +204,46 @@ theorem continuousMonoidHomEquiv_symm_apply_etaFn (f : G →* P) (g : G) :
     (continuousMonoidHomEquiv G P).symm f
       (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) = f g :=
   liftAux_etaFn f g
+
+/-- A continuous homomorphism from the profinite completion of `G` to a Hausdorff topological
+monoid is surjective as soon as its restriction to the canonical image of `G` has dense range: its
+image is compact, hence closed. -/
+theorem surjective_continuousMonoidHom_of_denseRange
+    {Q : Type v} [Monoid Q] [TopologicalSpace Q] [T2Space Q]
+    (F : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →ₜ* Q)
+    (hF : DenseRange fun g : G ↦ F (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g)) :
+    Function.Surjective F := by
+  have hc : IsClosed (Set.range F) := (map_continuous F).isClosedMap.isClosed_range
+  rw [← Set.range_eq_univ, ← hc.closure_eq]
+  refine Dense.closure_eq (hF.mono ?_)
+  rintro _ ⟨g, rfl⟩
+  exact ⟨_, rfl⟩
+
+/-- **Injectivity criterion for maps out of a profinite completion.** A continuous homomorphism
+`F` from the profinite completion of `G` to a topological monoid is injective if every
+finite-index normal subgroup `H` of `G` contains every `g` that `F` maps into some fixed
+neighbourhood of `1`. -/
+theorem injective_continuousMonoidHom_of_forall_exists_nhds_one_comap_le
+    {Q : Type v} [Monoid Q] [TopologicalSpace Q]
+    (F : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →ₜ* Q)
+    (h : ∀ H : FiniteIndexNormalSubgroup G, ∃ U ∈ nhds (1 : Q), ∀ g : G,
+      F (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) ∈ U → g ∈ H) :
+    Function.Injective F := by
+  rw [injective_iff_map_eq_one]
+  intro c hc
+  refine ProfiniteGrp.limit_ext _ _ _ fun H ↦ ?_
+  rw [← coordinateHom_apply G H c, ← coordinateHom_apply G H 1, map_one]
+  obtain ⟨U, hU, hUH⟩ := h H
+  -- the elements of `G` near `c` lie in `H` and share the `H`-coordinate of `c`; the fibre of
+  -- `coordinateHom G H` is open since every set is open in the discrete topology `⊥`
+  have hN : F ⁻¹' U ∩ coordinateHom G H ⁻¹' {coordinateHom G H c} ∈ nhds c :=
+    Filter.inter_mem ((map_continuous F).continuousAt (hc ▸ hU))
+      ((@Continuous.isOpen_preimage _ _ _ ⊥ _ (continuous_coordinateHom G H) _ trivial).mem_nhds
+        rfl)
+  obtain ⟨_, ⟨g, rfl⟩, hgU, hgc⟩ :=
+    (ProfiniteGrp.ProfiniteCompletion.denseRange (G := GrpCat.of G)).inter_nhds_nonempty hN
+  rw [← hgc, coordinateHom_etaFn]
+  exact (QuotientGroup.eq_one_iff g).2 (hUH g hgU)
 
 section FiniteQuotients
 

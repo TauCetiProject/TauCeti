@@ -1,0 +1,434 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+public import Mathlib.Geometry.Manifold.Diffeomorph
+public import Mathlib.Geometry.Manifold.Immersion
+import TauCeti.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Topology.OpenPartialHomeomorph.Composition
+import TauCeti.Geometry.Manifold.PullbackGroupoid
+
+/-!
+# Composing immersions with diffeomorphisms, and immersions into finite dimensions
+
+Mathlib defines `Manifold.IsImmersion` by a normal form in charts — `f` looks like `u ↦ (u, 0)`
+for suitable charts of the source and the target — and lists `IsImmersion.comp` as a `TODO` in
+`Mathlib/Geometry/Manifold/Immersion.lean`, because a general composite has to combine two
+complements and needs the differential to split.
+
+This file settles the special case that is elementary: composing with a **diffeomorphism** on
+either side. Nothing has to be recombined, because a diffeomorphism carries charts to charts: if
+`φ` is a chart of `M` in the maximal atlas and `e : M' ≃ₘ M` is a diffeomorphism, then `φ ∘ e` is
+a chart of `M'` in the maximal atlas, and reading `f ∘ e` in it produces literally the same normal
+form that `f` had in `φ`. The same argument on the other side pulls an ambient chart back along
+`e⁻¹`. So both composites are immersions with the *same* complement.
+
+Since a diffeomorphism is invertible, every composition rule here is in fact an equivalence, and
+each is also stated in `_iff` form. The one-directional statements remain the primitive ones: they
+need a manifold structure only on the manifold `e` introduces, whereas the `_iff` forms need one on
+both sides, in order to apply the rule to `e.symm` as well.
+
+## Main results
+
+* `Diffeomorph.transOpenPartialHomeomorph_mem_maximalAtlas` (in
+  `TauCeti.Geometry.Manifold.PullbackGroupoid`): a diffeomorphism pulls a chart of the maximal
+  atlas back to a chart of the maximal atlas. This is the only geometric input.
+* `TauCeti.isImmersion_comp_diffeomorph` and Mathlib’s `Manifold.IsImmersion.comp_diffeomorph`,
+  together with
+  their `Manifold.IsImmersionAt`, `Manifold.IsImmersionAtOfComplement` and
+  `Manifold.IsImmersionOfComplement` counterparts and the `_iff` companions of all of them:
+  immersions are stable under composition with a diffeomorphism on either side.
+* `Diffeomorph.isImmersion`: a diffeomorphism is an immersion.
+* `TauCeti.isImmersion_comp_continuousLinearEquiv` and its `Manifold.IsImmersionAt` and
+  `Manifold.IsImmersionAtOfComplement` counterparts: precomposing a map on a vector space with a
+  continuous linear equivalence `E₀ ≃L E` preserves immersions, although the source model changes
+  from `E` to `E₀`.
+* `ContinuousLinearMap.HasLeftInverse.isImmersion`: a continuous linear map with a continuous
+  linear left inverse is an immersion.
+* `TauCeti.isImmersion_prodMkRight_of_extChartAt_eq_zero`: the slice `x ↦ (c, x)` of a product
+  `N × M` is an immersion when the preferred chart of `N` at `c` sends `c` to `0`.
+* `TauCeti.isImmersion_iff_forall_isImmersionAt`: for a finite-dimensional target model, a map is
+  an immersion exactly when it is an immersion at every point.
+* `Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv`: for nonempty manifolds
+  modelled on `ℝᵏ` and `ℝᵐ`, the complement of an immersion is a copy of `ℝᵐ⁻ᵏ`.
+* `Manifold.IsImmersion.of_le`, together with its `Manifold.IsImmersionAt`,
+  `Manifold.IsImmersionAtOfComplement`, and `Manifold.IsImmersionOfComplement` counterparts:
+  lowering the regularity order preserves immersions.
+* `Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend_eq`: in the charts of
+  immersion data, a point `b` of the source chart is sent by `f` to the point read as
+  `h.equiv (b, 0)` in the target chart.
+
+`Manifold.IsImmersion` asks for one complement serving every point, so it is not obviously a
+local property; Mathlib's docstring of `Manifold.IsImmersion.isImmersionAt` explains that the
+converse of that lemma fails for infinite-dimensional targets. When the target model is
+finite-dimensional, every complement of the source model has the same finite dimension, so any
+two of them are isomorphic and pointwise immersions assemble to an immersion. This makes being
+an immersion local, as needed to glue immersions defined on the pieces of an open cover.
+
+## References
+
+* M. Hirsch, *Differential Topology*, Springer GTM 33 (1976), Chapter 1, for immersions and their
+  behaviour under composition.
+-/
+
+public section
+
+noncomputable section
+
+namespace TauCeti
+
+open Manifold
+open scoped Manifold ContDiff
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H : Type*} [TopologicalSpace H] {G : Type*} [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 E' G}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {M' : Type*} [TopologicalSpace M'] [ChartedSpace H M']
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+  {P : Type*} [TopologicalSpace P] [ChartedSpace G P]
+  {n : ℕ∞ω} {f : M → N}
+
+/-- Precomposing with a diffeomorphism of the source preserves the immersion normal form at a
+point, with the same complement: the domain chart of the immersion is pulled back along the
+diffeomorphism, and `f ∘ e` read in the new chart is what `f` was in the old one. -/
+theorem isImmersionAtOfComplement_comp_diffeomorph [IsManifold I n M']
+    (e : M' ≃ₘ^n⟮I, I⟯ M) {x : M'} (h : IsImmersionAtOfComplement F I J n f (e x)) :
+    IsImmersionAtOfComplement F I J n (f ∘ e) x := by
+  -- `Homeomorph.transOpenPartialHomeomorph` is built from `Equiv.transPartialEquiv`, whose
+  -- `PartialEquiv` is assembled with `copy`, so the pulled-back chart's source is *literally*
+  -- `⇑e ⁻¹' h.domChart.source` and its target is *literally* `h.domChart.target`. The three
+  -- identities this produces are what makes `h`'s data fit the new chart; we spell them out
+  -- rather than leaving them to definitional unfolding.
+  have hsource : (e.toHomeomorph.transOpenPartialHomeomorph h.domChart).source
+      = ⇑e ⁻¹' h.domChart.source := rfl
+  have htarget : ((e.toHomeomorph.transOpenPartialHomeomorph h.domChart).extend I).target
+      = (h.domChart.extend I).target := rfl
+  have hsymm : ⇑((e.toHomeomorph.transOpenPartialHomeomorph h.domChart).extend I).symm
+      = ⇑e.symm ∘ ⇑(h.domChart.extend I).symm := rfl
+  refine IsImmersionAtOfComplement.mk_of_charts h.equiv
+    (e.toHomeomorph.transOpenPartialHomeomorph h.domChart) h.codChart ?_ h.mem_codChart_source
+    (e.transOpenPartialHomeomorph_mem_maximalAtlas h.domChart_mem_maximalAtlas)
+    h.codChart_mem_maximalAtlas ?_ fun y hy => ?_
+  · rw [hsource]
+    exact h.mem_domChart_source
+  · rw [hsource]
+    exact fun _ hy => h.source_subset_preimage_source hy
+  · rw [htarget] at hy
+    -- Reading `f ∘ e` through the pulled-back chart reinstates `e.symm`, which cancels the `e`:
+    -- what is left is exactly `f` read through `h.domChart`.
+    rw [hsymm]
+    simpa only [Function.comp_apply, _root_.Diffeomorph.apply_symm_apply] using
+      h.writtenInCharts hy
+
+/-- Precomposing with a diffeomorphism of the source preserves being an immersion at a point. -/
+theorem isImmersionAt_comp_diffeomorph [IsManifold I n M']
+    (e : M' ≃ₘ^n⟮I, I⟯ M) {x : M'} (h : IsImmersionAt I J n f (e x)) :
+    IsImmersionAt I J n (f ∘ e) x :=
+  (isImmersionAtOfComplement_comp_diffeomorph e
+    h.isImmersionAtOfComplement_complement).isImmersionAt
+
+/-- Precomposing an immersion with a fixed complement by a diffeomorphism of the source gives an
+immersion with the same complement. -/
+theorem isImmersionOfComplement_comp_diffeomorph [IsManifold I n M']
+    (e : M' ≃ₘ^n⟮I, I⟯ M) (h : IsImmersionOfComplement F I J n f) :
+    IsImmersionOfComplement F I J n (f ∘ e) :=
+  fun x => isImmersionAtOfComplement_comp_diffeomorph e (h (e x))
+
+/-- Reparametrising an immersion by a diffeomorphism of the source gives an immersion. -/
+theorem isImmersion_comp_diffeomorph [IsManifold I n M']
+    (e : M' ≃ₘ^n⟮I, I⟯ M) (h : IsImmersion I J n f) : IsImmersion I J n (f ∘ e) :=
+  (isImmersionOfComplement_comp_diffeomorph e h.isImmersionOfComplement_complement).isImmersion
+
+section Iff
+
+section Source
+
+variable [IsManifold I n M] [IsManifold I n M']
+
+/-- Precomposition with a diffeomorphism of the source neither creates nor destroys the immersion
+normal form at a point. -/
+theorem isImmersionAtOfComplement_comp_diffeomorph_iff (e : M' ≃ₘ^n⟮I, I⟯ M) {x : M'} :
+    IsImmersionAtOfComplement F I J n (f ∘ e) x ↔ IsImmersionAtOfComplement F I J n f (e x) := by
+  refine ⟨fun h => ?_, isImmersionAtOfComplement_comp_diffeomorph e⟩
+  have hcomp : (f ∘ ⇑e) ∘ ⇑e.symm = f := funext fun y => by simp
+  have h' := isImmersionAtOfComplement_comp_diffeomorph (f := f ∘ ⇑e) e.symm (x := e x)
+    (by rw [e.symm_apply_apply]; exact h)
+  rwa [hcomp] at h'
+
+/-- Precomposition with a diffeomorphism of the source neither creates nor destroys an immersion
+at a point. -/
+theorem isImmersionAt_comp_diffeomorph_iff (e : M' ≃ₘ^n⟮I, I⟯ M) {x : M'} :
+    IsImmersionAt I J n (f ∘ e) x ↔ IsImmersionAt I J n f (e x) := by
+  refine ⟨fun h => ?_, isImmersionAt_comp_diffeomorph e⟩
+  have hcomp : (f ∘ ⇑e) ∘ ⇑e.symm = f := funext fun y => by simp
+  have h' := isImmersionAt_comp_diffeomorph (f := f ∘ ⇑e) e.symm (x := e x)
+    (by rw [e.symm_apply_apply]; exact h)
+  rwa [hcomp] at h'
+
+/-- Precomposition with a diffeomorphism of the source neither creates nor destroys an immersion
+with a fixed complement. -/
+theorem isImmersionOfComplement_comp_diffeomorph_iff (e : M' ≃ₘ^n⟮I, I⟯ M) :
+    IsImmersionOfComplement F I J n (f ∘ e) ↔ IsImmersionOfComplement F I J n f := by
+  refine ⟨fun h => ?_, isImmersionOfComplement_comp_diffeomorph e⟩
+  have hcomp : (f ∘ ⇑e) ∘ ⇑e.symm = f := funext fun y => by simp
+  have h' := isImmersionOfComplement_comp_diffeomorph e.symm h
+  rwa [hcomp] at h'
+
+/-- Precomposition with a diffeomorphism of the source neither creates nor destroys an
+immersion. -/
+theorem isImmersion_comp_diffeomorph_iff (e : M' ≃ₘ^n⟮I, I⟯ M) :
+    IsImmersion I J n (f ∘ e) ↔ IsImmersion I J n f := by
+  refine ⟨fun h => ?_, isImmersion_comp_diffeomorph e⟩
+  have hcomp : (f ∘ ⇑e) ∘ ⇑e.symm = f := funext fun y => by simp
+  have h' := isImmersion_comp_diffeomorph e.symm h
+  rwa [hcomp] at h'
+
+end Source
+
+section Target
+
+variable [IsManifold J n N] [IsManifold J n P]
+
+/-- Postcomposition with a diffeomorphism of the target neither creates nor destroys the immersion
+normal form at a point. -/
+theorem isImmersionAtOfComplement_diffeomorph_comp_iff (e : N ≃ₘ^n⟮J, J⟯ P) {x : M} :
+    IsImmersionAtOfComplement F I J n (e ∘ f) x ↔ IsImmersionAtOfComplement F I J n f x := by
+  refine ⟨fun h => ?_, fun h => h.comp_diffeomorph e⟩
+  have hcomp : ⇑e.symm ∘ ⇑e ∘ f = f := funext fun y => by simp
+  have h' := h.comp_diffeomorph e.symm
+  rwa [hcomp] at h'
+
+/-- Postcomposition with a diffeomorphism of the target neither creates nor destroys an immersion
+at a point. -/
+theorem isImmersionAt_diffeomorph_comp_iff (e : N ≃ₘ^n⟮J, J⟯ P) {x : M} :
+    IsImmersionAt I J n (e ∘ f) x ↔ IsImmersionAt I J n f x := by
+  refine ⟨fun h => ?_, fun h => h.comp_diffeomorph e⟩
+  have hcomp : ⇑e.symm ∘ ⇑e ∘ f = f := funext fun y => by simp
+  have h' := h.comp_diffeomorph e.symm
+  rwa [hcomp] at h'
+
+/-- Postcomposition with a diffeomorphism of the target neither creates nor destroys an immersion
+with a fixed complement. -/
+theorem isImmersionOfComplement_diffeomorph_comp_iff (e : N ≃ₘ^n⟮J, J⟯ P) :
+    IsImmersionOfComplement F I J n (e ∘ f) ↔ IsImmersionOfComplement F I J n f := by
+  refine ⟨fun h => ?_, fun h => h.comp_diffeomorph e⟩
+  have hcomp : ⇑e.symm ∘ ⇑e ∘ f = f := funext fun y => by simp
+  have h' := h.comp_diffeomorph e.symm
+  rwa [hcomp] at h'
+
+/-- Postcomposition with a diffeomorphism of the target neither creates nor destroys an
+immersion. -/
+theorem isImmersion_diffeomorph_comp_iff (e : N ≃ₘ^n⟮J, J⟯ P) :
+    IsImmersion I J n (e ∘ f) ↔ IsImmersion I J n f := by
+  refine ⟨fun h => ?_, fun h => h.comp_diffeomorph e⟩
+  have hcomp : ⇑e.symm ∘ ⇑e ∘ f = f := funext fun y => by simp
+  have h' := h.comp_diffeomorph e.symm
+  rwa [hcomp] at h'
+
+end Target
+
+end Iff
+
+/-- Every diffeomorphism is an immersion. -/
+theorem _root_.Diffeomorph.isImmersion [IsManifold I n M] [IsManifold I n M']
+    (e : M ≃ₘ^n⟮I, I⟯ M') :
+    IsImmersion I I n e :=
+  ((IsImmersion.id (I := I) (n := n) (M := M)).comp_diffeomorph e).congr rfl
+
+/-! ### Changing the model of a vector space source by a linear equivalence -/
+
+section LinearEquiv
+
+variable {E₀ : Type*} [NormedAddCommGroup E₀] [NormedSpace 𝕜 E₀] {g : E → N}
+
+/-- Precomposing a map on a vector space with a continuous linear equivalence `e : E₀ ≃L E`
+preserves the immersion normal form at a point, with the same complement, although the source
+model changes from `E` to `E₀`: a domain chart `ψ` of `E` is carried to the chart `e⁻¹ ∘ ψ ∘ e`
+of `E₀`, and the linear isomorphism of the normal form absorbs `e`. -/
+theorem isImmersionAtOfComplement_comp_continuousLinearEquiv (e : E₀ ≃L[𝕜] E) {x : E₀}
+    (h : IsImmersionAtOfComplement F 𝓘(𝕜, E) J n g (e x)) :
+    IsImmersionAtOfComplement F 𝓘(𝕜, E₀) J n (g ∘ e) x := by
+  set ψ : OpenPartialHomeomorph E₀ E₀ :=
+    (e.toHomeomorph.transOpenPartialHomeomorph h.domChart).transHomeomorph e.symm.toHomeomorph
+  have hsource : ψ.source = ⇑e ⁻¹' h.domChart.source := rfl
+  have hdom := h.domChart_mem_maximalAtlas
+  rw [IsManifold.mem_maximalAtlas_iff_contMDiffOn] at hdom
+  refine IsImmersionAtOfComplement.mk_of_charts
+    ((e.prodCongr (ContinuousLinearEquiv.refl 𝕜 F)).trans h.equiv) ψ h.codChart ?_
+    h.mem_codChart_source ?_ h.codChart_mem_maximalAtlas ?_ fun u hu ↦ ?_
+  · rw [hsource]
+    exact h.mem_domChart_source
+  · rw [IsManifold.mem_maximalAtlas_iff_contMDiffOn]
+    refine ⟨?_, ?_⟩
+    · exact e.symm.contDiff.contMDiff.comp_contMDiffOn
+        (hdom.1.comp e.contDiff.contMDiff.contMDiffOn fun _ hy ↦ hy)
+    · exact e.symm.contDiff.contMDiff.comp_contMDiffOn
+        (hdom.2.comp e.contDiff.contMDiff.contMDiffOn fun _ hy ↦ hy)
+  · rw [hsource]
+    exact fun _ hy ↦ h.source_subset_preimage_source hy
+  · -- Read through `ψ`, the map `g ∘ e` is `g` read through `h.domChart` at `e u`.
+    simp only [ψ, mfld_simps] at hu ⊢
+    have hu' : e u ∈ (h.domChart.extend 𝓘(𝕜, E)).target := by simpa using hu
+    simpa using h.writtenInCharts hu'
+
+/-- Precomposing a map on a vector space with a continuous linear equivalence preserves being an
+immersion at a point. -/
+theorem isImmersionAt_comp_continuousLinearEquiv (e : E₀ ≃L[𝕜] E) {x : E₀}
+    (h : IsImmersionAt 𝓘(𝕜, E) J n g (e x)) : IsImmersionAt 𝓘(𝕜, E₀) J n (g ∘ e) x :=
+  (isImmersionAtOfComplement_comp_continuousLinearEquiv e
+    h.isImmersionAtOfComplement_complement).isImmersionAt
+
+/-- Precomposing an immersion of a vector space with a continuous linear equivalence gives an
+immersion, for the new source model. -/
+theorem isImmersion_comp_continuousLinearEquiv (e : E₀ ≃L[𝕜] E)
+    (h : IsImmersion 𝓘(𝕜, E) J n g) : IsImmersion 𝓘(𝕜, E₀) J n (g ∘ e) :=
+  (IsImmersionOfComplement.isImmersion fun x ↦ isImmersionAtOfComplement_comp_continuousLinearEquiv
+    e (h.isImmersionOfComplement_complement (e x)))
+
+end LinearEquiv
+
+/-! ### Linear maps with a continuous left inverse -/
+
+/-- A continuous linear map `f : E →L F` with a continuous linear left inverse `g` is a `C^n`
+immersion, with complement `ker g`: the continuous linear equivalence `F ≃L E × ker g` sending `y`
+to `(g y, y - f (g y))` carries `f` to the inclusion `u ↦ (u, 0)`. For instance, the inclusion
+of a closed complemented subspace is an immersion. -/
+theorem _root_.ContinuousLinearMap.HasLeftInverse.isImmersion {f : E →L[𝕜] E'}
+    (hf : f.HasLeftInverse) : IsImmersion 𝓘(𝕜, E) 𝓘(𝕜, E') n f := by
+  let e := ContinuousLinearEquiv.equivOfRightInverse hf.leftInverse f hf.leftInverse_leftInverse
+  refine IsImmersionOfComplement.isImmersion (F := LinearMap.ker (hf.leftInverse : E' →ₗ[𝕜] E))
+    fun x ↦ IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt f.continuous.continuousAt
+      e.symm fun u _ ↦ ?_
+  simp [e]
+
+/-! ### Slices of a product -/
+
+/-- **Slices of a product.** If the preferred chart of `N` at `c` sends `c` to `0`, then the slice
+`x ↦ (c, x)` of the product `N × M` is a `C^n` immersion with complement `E'`: in product charts
+it is the inclusion `u ↦ (0, u)`. -/
+theorem isImmersion_prodMkRight_of_extChartAt_eq_zero [IsManifold I n M] [IsManifold J n N]
+    {c : N} (hc : extChartAt J c c = 0) :
+    IsImmersion I (J.prod I) n (Prod.mk c : M → N × M) :=
+  IsImmersionOfComplement.isImmersion (F := E') fun x ↦
+    IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt
+      (continuous_const.prodMk continuous_id).continuousAt
+      (ContinuousLinearEquiv.prodComm 𝕜 E E') fun u hu ↦ by
+        simp only [Function.comp_apply, ContinuousLinearEquiv.prodComm_apply, Prod.swap_prod_mk]
+        rw [extChartAt_prod, PartialEquiv.prod_coe]
+        simp only [hc, (extChartAt I x).right_inv hu]
+
+/-! ### Immersions into finite-dimensional models -/
+
+section FiniteDimensional
+
+variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E']
+
+/-- For a finite-dimensional target model, being an immersion is a pointwise condition: the
+complements at different points are isomorphic, so they can be replaced by a single one. -/
+theorem isImmersion_iff_forall_isImmersionAt :
+    IsImmersion I J n f ↔ ∀ x, IsImmersionAt I J n f x := by
+  refine ⟨fun h x => h.isImmersionAt x, fun h => ?_⟩
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+  · exact IsImmersionOfComplement.isImmersion (F := E') fun x => isEmptyElim x
+  refine IsImmersionOfComplement.isImmersion (F := (h x₀).complement) fun x => ?_
+  obtain ⟨e⟩ := nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv
+    (h x).isImmersionAtOfComplement_complement.equiv
+    (h x₀).isImmersionAtOfComplement_complement.equiv
+  exact (h x).isImmersionAtOfComplement_complement.trans_F e
+
+end FiniteDimensional
+
+/-! ### Euclidean complements -/
+
+section Euclidean
+
+variable {k m : ℕ} {I : ModelWithCorners ℝ (EuclideanSpace ℝ (Fin k)) H}
+  {J : ModelWithCorners ℝ (EuclideanSpace ℝ (Fin m)) G}
+
+/-- The complement of a `C^n` immersion of a nonempty manifold modelled on `ℝᵏ`, possibly with
+boundary or corners, into a manifold modelled on `ℝᵐ` is a copy of `ℝʲ`, for `j = m - k`: the
+immersion's normal form at any point splits `ℝᵐ` as `ℝᵏ` times the complement. -/
+theorem _root_.Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv [Nonempty M]
+    (h : IsImmersion I J n f) {j : ℕ} (hj : m - k = j) :
+    Nonempty (h.complement ≃L[ℝ] EuclideanSpace ℝ (Fin j)) := by
+  obtain ⟨x⟩ := ‹Nonempty M›
+  let L := (h.isImmersionOfComplement_complement x).equiv
+  have : FiniteDimensional ℝ (EuclideanSpace ℝ (Fin k) × h.complement) :=
+    L.symm.toLinearEquiv.finiteDimensional
+  have : FiniteDimensional ℝ h.complement :=
+    Module.Finite.of_surjective (LinearMap.snd ℝ (EuclideanSpace ℝ (Fin k)) _) Prod.snd_surjective
+  refine ⟨ContinuousLinearEquiv.ofFinrankEq ?_⟩
+  have := L.toLinearEquiv.finrank_eq
+  rw [Module.finrank_prod, finrank_euclideanSpace_fin, finrank_euclideanSpace_fin] at this
+  rw [finrank_euclideanSpace_fin]
+  omega
+
+end Euclidean
+
+/-! ### Monotonicity in the regularity order -/
+
+section OfLe
+
+variable {m : ℕ∞ω}
+
+/-- Lowering the regularity order preserves the immersion normal form at a point, with the same
+complement. -/
+theorem _root_.Manifold.IsImmersionAtOfComplement.of_le {x : M}
+    (h : IsImmersionAtOfComplement F I J m f x) (hnm : n ≤ m) :
+    IsImmersionAtOfComplement F I J n f x :=
+  IsImmersionAtOfComplement.mk_of_charts h.equiv h.domChart h.codChart
+    h.mem_domChart_source h.mem_codChart_source
+    (IsManifold.maximalAtlas_subset_of_le hnm h.domChart_mem_maximalAtlas)
+    (IsManifold.maximalAtlas_subset_of_le hnm h.codChart_mem_maximalAtlas)
+    h.source_subset_preimage_source h.writtenInCharts
+
+/-- Lowering the regularity order preserves being an immersion at a point. -/
+theorem _root_.Manifold.IsImmersionAt.of_le {x : M}
+    (h : IsImmersionAt I J m f x) (hnm : n ≤ m) :
+    IsImmersionAt I J n f x :=
+  (h.isImmersionAtOfComplement_complement.of_le hnm).isImmersionAt
+
+/-- Lowering the regularity order preserves immersions with a fixed complement. -/
+theorem _root_.Manifold.IsImmersionOfComplement.of_le
+    (h : IsImmersionOfComplement F I J m f) (hnm : n ≤ m) :
+    IsImmersionOfComplement F I J n f :=
+  fun x ↦ (h x).of_le hnm
+
+/-- Lowering the regularity order preserves immersions. -/
+theorem _root_.Manifold.IsImmersion.of_le
+    (h : IsImmersion I J m f) (hnm : n ≤ m) :
+    IsImmersion I J n f :=
+  (h.isImmersionOfComplement_complement.of_le hnm).isImmersion
+
+end OfLe
+
+/-! ### Points of the source read in the immersion charts -/
+
+/-- In the charts `φ = h.domChart.extend I` and `e = h.codChart.extend J` of immersion data `h` of
+`f` at `x`, every point `b` of the target of `φ` is sent to the slice: `f (φ⁻¹ b)` lies in the
+chart `e`, corresponds to `h.equiv (b, 0)`, and `h.equiv (b, 0)` lies in the target of `e`. -/
+theorem _root_.Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend_eq {x : M}
+    (h : IsImmersionAtOfComplement F I J n f x) {b : E} (hb : b ∈ (h.domChart.extend I).target) :
+    f ((h.domChart.extend I).symm b) ∈ h.codChart.source ∧
+      h.codChart.extend J (f ((h.domChart.extend I).symm b)) = h.equiv (b, 0) ∧
+      (h.codChart.extend J).symm (h.equiv (b, 0)) = f ((h.domChart.extend I).symm b) ∧
+      h.equiv (b, 0) ∈ (h.codChart.extend J).target := by
+  have hsrc : (h.domChart.extend I).symm b ∈ h.domChart.source := by
+    simpa using (h.domChart.extend I).map_target hb
+  have hy : f ((h.domChart.extend I).symm b) ∈ h.codChart.source :=
+    h.source_subset_preimage_source hsrc
+  have hw : h.codChart.extend J (f ((h.domChart.extend I).symm b)) = h.equiv (b, 0) :=
+    h.writtenInCharts hb
+  refine ⟨hy, hw, ?_, h.target_subset_preimage_target hb⟩
+  rw [← hw, (h.codChart.extend J).left_inv (by simpa using hy)]
+
+end TauCeti

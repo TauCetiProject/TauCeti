@@ -31,13 +31,12 @@ namespace TauCeti.NumberField
 
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
 
-/-- **A nonzero prime divides a number-field relative discriminant exactly when an upper prime has
+/-- **A prime divides a number-field relative discriminant exactly when an upper prime has
 ramification index greater than one.** -/
-theorem dvd_relDiscr_iff_exists_one_lt_ramificationIdx {p : Ideal (𝓞 K)} [p.IsPrime]
-    (hp : p ≠ ⊥) :
+theorem dvd_relDiscr_iff_exists_one_lt_ramificationIdx {p : Ideal (𝓞 K)} [p.IsPrime] :
     p ∣ relDiscr (𝓞 K) (𝓞 L) ↔
       ∃ P : p.primesOver (𝓞 L), 1 < (P : Ideal (𝓞 L)).ramificationIdx (𝓞 K) := by
-  rw [dvd_relDiscr_iff_exists_not_isUnramifiedAt hp]
+  rw [dvd_relDiscr_iff_exists_not_isUnramifiedAt]
   apply exists_congr
   intro P
   constructor

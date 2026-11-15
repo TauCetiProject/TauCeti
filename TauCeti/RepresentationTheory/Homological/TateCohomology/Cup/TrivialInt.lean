@@ -58,9 +58,7 @@ theorem cupTrivialInt_trivialTateHZeroOne (N : Rep ℤ H) {q : ℤ}
   have hcup : cup (Rep.trivial ℤ H ℤ) N 0 q q (by omega) =
       cup0H (Rep.trivial ℤ H ℤ) N q := by
     convert cup_zero_left (Rep.trivial ℤ H ℤ) N q (by omega) using 1
-  have hone : trivialTateHZeroOne H = H0π (Rep.trivial ℤ H ℤ) one := by
-    apply (H0LinearEquivTrivialIntZModCard H).injective
-    simp [H0LinearEquivTrivialIntZModCard_H0π, one]
+  have hone : trivialTateHZeroOne H = H0π (Rep.trivial ℤ H ℤ) one := trivialTateHZeroOne_def H
   rw [hone, cupTrivialInt_apply, hcup, cup0H_H0π]
   rw [← ModuleCat.comp_apply, ← Functor.map_comp, Category.assoc, hunit]
   simp
@@ -80,11 +78,7 @@ theorem cupTrivialInt_bijective (N : Rep ℤ H) {q : ℤ} (u : tateCohomology N 
   have hsource : Nat.card (tateCohomology (Rep.trivial ℤ H ℤ) 0) = Fintype.card H := by
     rw [natCard_tateCohomology_zero_trivial_int_eq_card]
     exact Nat.card_eq_fintype_card
-  have hsource_ne : Nat.card (tateCohomology (Rep.trivial ℤ H ℤ) 0) ≠ 0 := by
-    rw [hsource]
-    exact (Fintype.card_pos : 0 < Fintype.card H).ne'
-  exact (@Nat.bijective_iff_surjective_and_card _ _
-    (Nat.finite_of_card_ne_zero hsource_ne) (cupTrivialInt N u)).2
-      ⟨hsurj, hsource.trans hcard.symm⟩
+  exact (Nat.bijective_iff_surjective_and_card (cupTrivialInt N u)).2
+    ⟨hsurj, hsource.trans hcard.symm⟩
 
 end TauCeti.TateCohomology

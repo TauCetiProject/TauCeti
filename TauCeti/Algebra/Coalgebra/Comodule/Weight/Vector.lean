@@ -23,8 +23,10 @@ forces `ε c = 1` and coassociativity forces `Δ c = c ⊗ c`, because a nonzero
 space is detected by a linear functional. So a one-dimensional subcomodule of a comodule over a
 field is specified by a group-like element. When `C` is the coordinate Hopf algebra of an affine
 group, that group-like element is a character, so there is no need to carry group-likeness as a
-hypothesis. Over a general commutative semiring, `HasNonzeroWeightVector` instead explicitly
-requires its exhibited weight to be group-like.
+hypothesis. The weight-detection results also hold for projective modules over semifields,
+where nonzero vectors are likewise detected by normalized linear functionals. Over a general
+commutative semiring, `HasNonzeroWeightVector` explicitly requires its exhibited weight to be
+group-like, while stability of a weight under taking its span needs no further assumptions.
 
 Weight vectors are the eigenvector form of the fixed vectors of
 `TauCeti.Algebra.Coalgebra.Comodule.Fixed`: a fixed vector is a weight vector of weight `1`. They
@@ -82,11 +84,18 @@ theorem hasNonzeroWeightVector_iff :
         coact (R := k) (C := C) (M := M) v = v ⊗ₜ[k] c :=
   Iff.rfl
 
+/-- Every vector of a line spanned by a weight vector is a weight vector of the same weight. -/
+theorem coact_eq_tmul_of_mem_span {v : M} {c : C}
+    (h : coact (R := k) (C := C) (M := M) v = v ⊗ₜ[k] c) {x : M} (hx : x ∈ k ∙ v) :
+    coact (R := k) (C := C) (M := M) x = x ⊗ₜ[k] c := by
+  obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hx
+  rw [map_smul, h, TensorProduct.smul_tmul']
+
 end Semiring
 
 variable {k : Type u} {C : Type v} {M : Type w}
-variable [Field k] [AddCommMonoid C] [Module k C] [Coalgebra k C]
-variable [AddCommGroup M] [Module k M] [Comodule k C M]
+variable [Semifield k] [AddCommMonoid C] [Module k C] [Coalgebra k C]
+variable [AddCommMonoid M] [Module k M] [Module.Projective k M] [Comodule k C M]
 
 /-- The weight of a nonzero weight vector is a group-like element. -/
 theorem isGroupLikeElem_of_coact_eq_tmul {v : M} (hv : v ≠ 0) {c : C}
@@ -121,42 +130,18 @@ theorem eq_of_coact_eq_tmul {v : M} (hv : v ≠ 0) {c d : C}
       (TensorProduct.map phi (LinearMap.id : C →ₗ[k] C) z)) h
   simpa [hphi] using hphi'
 
-/-- Every vector of a line spanned by a weight vector is a weight vector of the same weight. -/
-theorem coact_eq_tmul_of_mem_span {v : M} {c : C}
-    (h : coact (R := k) (C := C) (M := M) v = v ⊗ₜ[k] c) {x : M} (hx : x ∈ k ∙ v) :
-    coact (R := k) (C := C) (M := M) x = x ⊗ₜ[k] c := by
-  obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hx
-  rw [map_smul, h, TensorProduct.smul_tmul']
-
 /-- A vector whose coaction lies in the tensor product of the line it spans with the coalgebra is
 a weight vector, and its weight is group-like. -/
 theorem exists_isGroupLikeElem_coact_eq_tmul_of_mem_range {v : M} (hv : v ≠ 0)
     (h : coact (R := k) (C := C) (M := M) v ∈
       LinearMap.range (TensorProduct.map (k ∙ v).subtype (LinearMap.id : C →ₗ[k] C))) :
     ∃ c : C, IsGroupLikeElem k c ∧ coact (R := k) (C := C) (M := M) v = v ⊗ₜ[k] c := by
-  obtain ⟨phi, hphi⟩ := Module.Projective.exists_dual_eq_one k hv
-  obtain ⟨z, hz⟩ := h
-  set contract : (↥(k ∙ v)) ⊗[k] C →ₗ[k] C :=
-    (TensorProduct.lid k C).toLinearMap ∘ₗ
-      TensorProduct.map (phi ∘ₗ (k ∙ v).subtype) (LinearMap.id : C →ₗ[k] C) with hcontract
-  have key : ∀ w : (↥(k ∙ v)) ⊗[k] C,
-      TensorProduct.map (k ∙ v).subtype (LinearMap.id : C →ₗ[k] C) w = v ⊗ₜ[k] contract w := by
-    intro w
-    induction w with
-    | tmul x c =>
-        have hx : (x : M) = phi (x : M) • v := by
-          obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp x.2
-          rw [← ha]
-          simp [hphi]
-        simp only [hcontract, TensorProduct.map_tmul, LinearMap.id_coe, id_eq,
-          LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
-          LinearEquiv.coe_coe, TensorProduct.lid_tmul]
-        conv_lhs => rw [hx]
-        exact TensorProduct.smul_tmul _ _ _
-    | add x y hx hy => simp [hx, hy, TensorProduct.tmul_add]
-  refine ⟨contract z, ?_, ?_⟩
-  · exact isGroupLikeElem_of_coact_eq_tmul hv (hz ▸ key z)
-  · exact hz ▸ key z
+  have hmem : coact (R := k) (C := C) (M := M) v ∈
+      LinearMap.range (TensorProduct.mk k M C v) := by
+    simpa only [TensorProduct.range_map, Submodule.range_subtype, LinearMap.range_id,
+      Submodule.map₂_span_singleton_eq_map, Submodule.map_top] using h
+  obtain ⟨c, hc⟩ := hmem
+  exact ⟨c, isGroupLikeElem_of_coact_eq_tmul hv hc.symm, hc.symm⟩
 
 /-- A subcomodule spanned by a single nonzero vector exhibits that vector as a weight vector. -/
 theorem exists_isGroupLikeElem_coact_eq_tmul_of_toSubmodule_eq_span

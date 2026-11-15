@@ -19,6 +19,10 @@ again invariant, so an invariant subspace admitting an orthogonal projection has
 complement. This is the averaging-free half of complete reducibility: it needs no measure, only
 that every action operator preserves the inner product.
 
+For the subspace of fixed vectors, its orthogonal complement is invariant even for a unitary
+*monoid* representation; `IsUnitary.invariantsOrthogonal` is the resulting representation,
+which has no nonzero invariant vectors.
+
 Invariance of a submodule is Mathlib's `Representation.invtSubmodule`, the sublattice of submodules
 invariant under every action operator, and semisimplicity is Mathlib's
 `Representation.IsSemisimpleRepresentation`, the statement that the lattice of subrepresentations is
@@ -26,24 +30,24 @@ complemented.
 
 ## Main definitions
 
-* `TauCeti.ContRepresentation.IsUnitary.orthogonalSubrepresentation`: the orthogonal complement of
+* `ContRepresentation.IsUnitary.orthogonalSubrepresentation`: the orthogonal complement of
   a subrepresentation of a unitary representation, as a subrepresentation.
-* `TauCeti.ContRepresentation.IsUnitary.starProjectionIntertwiner`: the orthogonal projection onto
+* `ContRepresentation.IsUnitary.starProjectionIntertwiner`: the orthogonal projection onto
   an invariant subspace, as a continuous intertwining map.
 
 ## Main results
 
-* `TauCeti.ContRepresentation.IsUnitary.orthogonal_mem_invtSubmodule`: for a unitary representation
+* `ContRepresentation.IsUnitary.orthogonal_mem_invtSubmodule`: for a unitary representation
   of a group, the orthogonal complement of an invariant submodule is invariant. The element form is
-  `TauCeti.ContRepresentation.IsUnitary.apply_mem_orthogonal`.
-* `TauCeti.ContRepresentation.IsUnitary.isCompl_orthogonalSubrepresentation`: a subrepresentation
+  `ContRepresentation.IsUnitary.apply_mem_orthogonal`.
+* `ContRepresentation.IsUnitary.isCompl_orthogonalSubrepresentation`: a subrepresentation
   admitting an orthogonal projection is complemented by its orthogonal complement.
-* `TauCeti.ContRepresentation.IsUnitary.sup_orthogonalSubrepresentation_inf`: a subrepresentation
+* `ContRepresentation.IsUnitary.sup_orthogonalSubrepresentation_inf`: a subrepresentation
   together with its orthogonal complement inside a larger one recovers the larger one.
-* `TauCeti.ContRepresentation.IsUnitary.starProjection_apply_comm`: the orthogonal projection onto
+* `ContRepresentation.IsUnitary.starProjection_apply_comm`: the orthogonal projection onto
   an invariant subspace commutes with the action.
-* `TauCeti.ContRepresentation.IsUnitary.isSemisimpleRepresentation` and
-  `TauCeti.ContRepresentation.IsUnitary.isSemisimpleModule_asModule`: complete reducibility of a
+* `ContRepresentation.IsUnitary.isSemisimpleRepresentation` and
+  `ContRepresentation.IsUnitary.isSemisimpleModule_asModule`: complete reducibility of a
   finite-dimensional unitary continuous representation, in the subrepresentation-lattice form and
   as semisimplicity of the group-algebra module.
 
@@ -70,9 +74,7 @@ direct sum but not as an algebraic one.
 
 ## References
 
-This file builds the invariant-complement milestone of Layer 2 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/roadmap/representation-theory/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-whose `Suggested.lean` names it `orthogonal_invariant`. The mathematical development follows Daniel
+The mathematical development follows Daniel
 Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
@@ -80,9 +82,54 @@ public section
 
 open scoped InnerProductSpace
 
-namespace TauCeti
-
 namespace ContRepresentation
+
+/-! ### The orthogonal complement of the fixed subspace -/
+
+section Monoid
+
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Monoid G] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+
+namespace IsUnitary
+
+variable {ρ : ContRepresentation 𝕜 G V}
+
+/-- The restriction of a unitary representation to the orthogonal complement of its invariant
+vectors. -/
+def invariantsOrthogonal (hρ : ρ.IsUnitary) : ContRepresentation 𝕜 G ρ.invariantsᗮ :=
+  ρ.subrepresentation ρ.invariantsᗮ (fun g _ hv ↦ by
+    rw [Submodule.mem_orthogonal]
+    intro w hw
+    rw [← hw g, hρ.inner_map_map]
+    exact hv w hw)
+
+/-- The action on the orthogonal complement is the original action on underlying vectors. -/
+@[simp]
+theorem coe_invariantsOrthogonal_apply (hρ : ρ.IsUnitary) (g : G) (v : ρ.invariantsᗮ) :
+    (hρ.invariantsOrthogonal g v : V) = ρ g v :=
+  coe_subrepresentation_apply _ _
+
+/-- The orthogonal-complement representation is unitary. -/
+theorem isUnitary_invariantsOrthogonal (hρ : ρ.IsUnitary) :
+    hρ.invariantsOrthogonal.IsUnitary :=
+  hρ.subrepresentation _
+
+/-- Removing the invariant subspace leaves no nonzero invariant vectors. -/
+@[simp]
+theorem invariants_invariantsOrthogonal (hρ : ρ.IsUnitary) :
+    hρ.invariantsOrthogonal.invariants = ⊥ := by
+  apply eq_bot_iff.mpr
+  intro v hv
+  have hfixed : (v : V) ∈ ρ.invariants := by
+    intro g
+    simpa only [coe_invariantsOrthogonal_apply] using congrArg Subtype.val (hv g)
+  have hzero : (v : V) = 0 :=
+    (Submodule.disjoint_def.mp ρ.invariants.orthogonal_disjoint) v hfixed v.property
+  exact Subtype.ext hzero
+
+end IsUnitary
+
+end Monoid
 
 /-! ### The orthogonal complement of an invariant subspace -/
 
@@ -166,11 +213,7 @@ theorem isCompl_orthogonalSubrepresentation (hπ : IsUnitary π)
     (σ : Subrepresentation π.toRepresentation) [σ.toSubmodule.HasOrthogonalProjection] :
     IsCompl σ (hπ.orthogonalSubrepresentation σ) := by
   have h : IsCompl σ.toSubmodule σ.toSubmoduleᗮ := σ.toSubmodule.isCompl_orthogonal
-  constructor
-  · rw [disjoint_iff]
-    exact Subrepresentation.toSubmodule_injective h.inf_eq_bot
-  · rw [codisjoint_iff]
-    exact Subrepresentation.toSubmodule_injective h.sup_eq_top
+  exact Subrepresentation.isCompl_toSubmodule.mp h
 
 /-- A subrepresentation, together with its orthogonal complement taken inside a larger
 subrepresentation, recovers that larger subrepresentation. This is
@@ -213,5 +256,3 @@ end IsUnitary
 end Unitary
 
 end ContRepresentation
-
-end TauCeti

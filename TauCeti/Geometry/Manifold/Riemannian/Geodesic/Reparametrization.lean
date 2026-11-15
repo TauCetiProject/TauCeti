@@ -24,7 +24,9 @@ affine statement.
 
 The same two operations are recorded for geodesics carrying prescribed initial data: restriction
 to a parameter set still containing `0` keeps the initial data, and the scaling `t ↦ a * t`, which
-fixes `0`, keeps the initial point and multiplies the initial velocity by `a`.
+fixes `0`, keeps the initial point and multiplies the initial velocity by `a`. Conversely, a
+geodesic on an open interval acquires initial data once an interior parameter `τ` is translated to
+`0`: its initial data are then `(γ τ, γ'(τ))`.
 
 ## Main results
 
@@ -35,6 +37,9 @@ fixes `0`, keeps the initial point and multiplies the initial velocity by `a`.
 * `TauCeti.Manifold.IsGeodesicCurveOnFrom.mono` and
   `TauCeti.Manifold.IsGeodesicCurveOnFrom.comp_mul_left`: the two operations on a geodesic with
   prescribed initial data.
+* `TauCeti.Manifold.IsGeodesicCurveOn.isGeodesicCurveOnFrom_comp_add_const`: translating a
+  geodesic on an open interval so that an interior parameter `τ` becomes `0` gives a geodesic with
+  initial data `(γ τ, γ'(τ))`.
 
 ## References
 
@@ -44,8 +49,6 @@ fixes `0`, keeps the initial point and multiplies the initial velocity by `a`.
   [`frenzymath/Poincare-Conjecture`](https://github.com/frenzymath/Poincare-Conjecture)
   repository, revision `24f32e4d600878bfaac6bc2f2f9324175571c321`, adapted to Tau Ceti's
   interval-aware geodesic and along-curve APIs.
-* [The Hopf--Rinow roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Maximal interval and homogeneity".
 -/
 
 public section
@@ -61,7 +64,6 @@ variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {s u : Set ℝ} {p : M} {v : TangentSpace I p}
@@ -76,48 +78,24 @@ theorem IsGeodesicCurveOn.comp_affine (h : IsGeodesicCurveOn I γ s) (a b : ℝ)
   contMDiffOn := by
     have hφ : ContDiff ℝ 2 (fun t : ℝ ↦ a * t + b) := by fun_prop
     exact h.contMDiffOn.comp hφ.contMDiff.contMDiffOn hmaps
-  alongCurveWithin_curveVelocityWithin_eq_zero t ht := by
-    let φ : ℝ → ℝ := fun r ↦ a * r + b
+  accelerationWithin_eq_zero t ht := by
+    set φ : ℝ → ℝ := fun r ↦ a * r + b
     have hφ (r : ℝ) : HasDerivWithinAt φ a u r :=
       ((hasDerivAt_const_mul a).add_const b).hasDerivWithinAt
-    have hchart : DifferentiableWithinAt ℝ (extChartAt I (γ (φ t)) ∘ γ) s (φ t) :=
-      (hasDerivWithinAt_extChartAt_comp_curve (hasMFDerivWithinAt_curveVelocityWithin
-        (h.mdifferentiableOn (φ t) (hmaps ht)))).differentiableWithinAt
+    have hderiv : EqOn (derivWithin φ u) (fun _ ↦ a) u := fun r hr ↦ (hφ r).derivWithin (hu r hr)
     have hsection : DifferentiableWithinAt ℝ
-        (sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ (φ t))) s (φ t) := by
-      exact differentiableWithinAt_sectionCoord_curveVelocityWithin γ h.uniqueDiffOn
-        h.contMDiffOn (hmaps ht) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I)
-          (γ (φ t)))
-    have hvelocity (r : ℝ) (hr : r ∈ u) :
-        curveVelocityWithin I (γ ∘ φ) u r =
-          a • curveVelocityWithin I γ s (φ r) :=
-      curveVelocityWithin_comp (hφ r) hmaps (h.mdifferentiableOn (φ r) (hmaps hr)) (hu r hr)
-    have hvelocity_eventually :
-        curveVelocityWithin I (γ ∘ φ) u =ᶠ[𝓝[u] t]
-          fun r ↦ a • curveVelocityWithin I γ s (φ r) := by
-      filter_upwards [self_mem_nhdsWithin] with r hr
-      exact hvelocity r hr
-    have hreparam :
-        alongCurveWithin (leviCivitaConnection I M) (γ ∘ φ)
-            (fun r ↦ curveVelocityWithin I γ s (φ r)) u t =
-          a • alongCurveWithin (leviCivitaConnection I M) γ (curveVelocityWithin I γ s) s
-            (φ t) := by
-      rw [alongCurveWithin_comp (leviCivitaConnection I M) γ (curveVelocityWithin I γ s) φ
-        (hφ t).differentiableWithinAt hmaps hchart hsection, (hφ t).derivWithin (hu t ht)]
-    calc
-      alongCurveWithin (leviCivitaConnection I M) (γ ∘ φ)
-          (curveVelocityWithin I (γ ∘ φ) u) u t =
-          alongCurveWithin (leviCivitaConnection I M) (γ ∘ φ)
-            (fun r ↦ a • curveVelocityWithin I γ s (φ r)) u t :=
-        alongCurveWithin_congr (leviCivitaConnection I M) (γ ∘ φ) _ hvelocity_eventually
-          (hvelocity t ht)
-      _ = a • alongCurveWithin (leviCivitaConnection I M) (γ ∘ φ)
-          (fun r ↦ curveVelocityWithin I γ s (φ r)) u t :=
-        alongCurveWithin_const_smul (leviCivitaConnection I M) (γ ∘ φ)
-          (fun r ↦ curveVelocityWithin I γ s (φ r)) a u t
-      _ = a • (a • alongCurveWithin (leviCivitaConnection I M) γ
-          (curveVelocityWithin I γ s) s (φ t)) := by rw [hreparam]
-      _ = 0 := by rw [h.alongCurveWithin_curveVelocityWithin_eq_zero (φ t) (hmaps ht)]; simp
+        (sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ (φ t))) s (φ t) :=
+      differentiableWithinAt_sectionCoord_curveVelocityWithin γ h.uniqueDiffOn h.contMDiffOn
+        (hmaps ht) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ (φ t)))
+    -- By the chain rule for the acceleration, the reparametrized acceleration is `a²` times the
+    -- original one, since the affine map has vanishing second derivative.
+    rw [accelerationWithin_comp (leviCivitaConnection I M) γ hu ht
+        (fun r _ ↦ (hφ r).differentiableWithinAt)
+        ((differentiableWithinAt_const a).congr hderiv (hderiv ht)) hmaps h.mdifferentiableOn
+        hsection,
+      derivWithin_congr hderiv (hderiv ht), derivWithin_fun_const,
+      h.accelerationWithin_eq_zero (φ t) (hmaps ht)]
+    simp
 
 /-- A geodesic remains a geodesic after restriction to a smaller parameter set with unique
 derivatives. The smaller set need not be open or an interval. -/
@@ -157,6 +135,25 @@ theorem IsGeodesicCurveOnFrom.comp_mul_left (h : IsGeodesicCurveOnFrom I γ s p 
     -- Scaling the fibre component by `a` is a map of the tangent bundle, so it can be applied
     -- to the bundled initial data of `h`.
     exact congrArg (fun z : TangentBundle I M ↦ TotalSpace.mk' E z.proj (a • z.snd)) h.initial_eq
+
+/-- **Restarting a geodesic.** Translating a geodesic `γ` on an open interval `(a, b)` in time,
+so that a parameter `τ ∈ (a, b)` becomes `0`, gives a geodesic on `(a - τ, b - τ)` with initial
+data `(γ τ, γ'(τ))`. -/
+theorem IsGeodesicCurveOn.isGeodesicCurveOnFrom_comp_add_const {a b τ : ℝ}
+    (hγ : IsGeodesicCurveOn I γ (Ioo a b)) (hτ : τ ∈ Ioo a b) :
+    IsGeodesicCurveOnFrom I (γ ∘ fun u : ℝ ↦ u + τ) (Ioo (a - τ) (b - τ)) (γ τ)
+      (curveVelocity I γ τ) := by
+  have h0 : (0 : ℝ) ∈ Ioo (a - τ) (b - τ) := ⟨sub_neg.mpr hτ.1, sub_pos.mpr hτ.2⟩
+  refine ⟨?_, h0, ?_⟩
+  · simpa only [one_mul] using hγ.comp_affine 1 τ (uniqueDiffOn_Ioo _ _)
+      fun u hu ↦ ⟨by linarith [hu.1], by linarith [hu.2]⟩
+  · have hd : HasDerivAt (fun u : ℝ ↦ u + τ) 1 0 := (hasDerivAt_id (0 : ℝ)).add_const τ
+    have hγτ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ (0 + τ) := by
+      simpa only [zero_add] using
+        (hγ.contMDiffOn.contMDiffAt (isOpen_Ioo.mem_nhds hτ)).mdifferentiableAt two_ne_zero
+    rw [curveVelocityWithin_of_mem_nhds (isOpen_Ioo.mem_nhds h0), curveVelocity_comp hd hγτ,
+      one_smul, Function.comp_apply]
+    exact congrArg (fun u : ℝ ↦ TotalSpace.mk' E (γ u) (curveVelocity I γ u)) (zero_add τ)
 
 end TauCeti.Manifold
 

@@ -9,9 +9,10 @@ public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Basic.Complex.Basic
 public import TauCeti.Combinatorics.Young.StandardTableau.Reading
-public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower
+public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower.Basic
 public import TauCeti.RepresentationTheory.Symmetric.Relabel
 public import TauCeti.RepresentationTheory.Tensor.PermRange
+import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # The Weyl construction: a Young symmetrizer cuts out a `GL n k`-subrepresentation
@@ -53,8 +54,15 @@ Young symmetrizer would let the construction run over any commutative ring, and 
 separate topic.  What the two halves of the criterion actually use of the hypothesis is much
 less.  Vanishing needs only that `2` is invertible, which a `ℚ`-algebra gives.  Nonvanishing needs
 characteristic zero, and a `ℚ`-algebra has characteristic zero as soon as it is nontrivial, so the
-nonvanishing statements carry a `Nontrivial` hypothesis instead.  This is the characteristic-zero
-setting the roadmap works in.
+nonvanishing statements carry a `Nontrivial` hypothesis instead.
+
+The construction is named `weylModule` because what is constructed is a module, not a functor:
+the Schur functor of `μ` is a functor in the underlying module, and only its value at `kⁿ` is built
+here.  Its value at `ℂⁿ`, bundled as an object of `FDRep`, is `TauCeti.schurFunctor`.  The two
+extreme cases `S^{(d)} V ≅ Symᵈ V` and `S^{(1ᵈ)} V ≅ ⋀ᵈ V` are proved in
+`TauCeti/RepresentationTheory/ClassicalGroups/ExtremeShape.lean`, against
+`TauCeti.YoungTableau.weylModule_toSubmodule` and `TauCeti.weylRepOfShape` and without unfolding
+anything built here.
 
 ## Main definitions
 
@@ -63,7 +71,9 @@ setting the roadmap works in.
 * `TauCeti.weylModuleOfShape`: the Weyl module of a shape, namely that of its row-superstandard
   tableau, with `weylRepOfShape` the action of `GL n k` on it and `weylFDRepOfShape` its bundled
   form in `FDRep`, over a Noetherian base ring.
-* `TauCeti.schurFunctor`: the roadmap-pinned name, `weylFDRepOfShape` at `k = ℂ`.
+* `TauCeti.weylRepOfShapeProjection`: the surjective intertwining map from the tensor power onto
+  the Weyl module of a shape, given by its Young symmetrizer.
+* `TauCeti.schurFunctor`: the Schur functor `𝕊^μ(ℂⁿ)`, `weylFDRepOfShape` at `k = ℂ`.
 
 ## Main results
 
@@ -76,26 +86,18 @@ setting the roadmap works in.
   than `n` rows.
 * `TauCeti.YoungTableau.weylModule_eq_bot_iff`: the two directions combined, the vanishing
   criterion, with `TauCeti.weylModuleOfShape_eq_bot_iff` its shape-indexed form.
+* `TauCeti.YoungTableau.permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_zero`:
+  the symmetrizer kills a monomial basis vector that repeats a basis index on a column, and
+  `...tensorPowerBasis_rowFilling_ne_zero`: it does not kill the one indexed by the row filling.
+  These are the two halves of the vanishing criterion at the level of a single basis vector.
+* `TauCeti.YoungTableau.permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_mem_weylModule`
+  states that the image of any monomial basis vector under the symmetrizer belongs to the Weyl
+  module.
 
 ## References
 
 * [W. Fulton and J. Harris, *Representation Theory: A First Course*][fulton-harris1991],
   Lecture 6, "Weyl's construction".
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 2, "Young symmetrizers and the Schur functor", where this object is pinned as
-  `schurFunctor`.  The construction itself is named `weylModule` here because what is constructed
-  is the module, not a functor: the Schur functor of `μ` is a functor in the underlying module,
-  and only its value at `kⁿ` is built.  The pinned name is supplied as `TauCeti.schurFunctor`,
-  the definitional re-export at `k = ℂ` of the bundled form, so that later roadmap layers can
-  consume it under the name they are written against.
-
-  Of that bullet, the `GLₙ`-subrepresentation, the fixed choice of tableau, the canonical
-  isomorphism between the images for different tableaux, and the vanishing criterion are built
-  here.  The bullet's two remaining deliverables, the extreme cases `S^{(d)} V ≅ Symᵈ V` and
-  `S^{(1ᵈ)} V ≅ ⋀ᵈ V`, are proved in
-  `TauCeti/RepresentationTheory/ClassicalGroups/ExtremeShape.lean`, against
-  `TauCeti.YoungTableau.weylModule_toSubmodule` and `TauCeti.weylRepOfShape` and without
-  unfolding anything built here.
 -/
 
 public section
@@ -188,7 +190,7 @@ noncomputable def weylRelabelRepEquiv (σ : Equiv.Perm (Fin μ.card)) (t : Young
     have h := congrArg (fun f : Module.End k (⨂[k]^μ.card (Fin n → k)) =>
         f (x : ⨂[k]^μ.card (Fin n → k)))
       (commute_permTensorAction_tensorPowerRep k n μ.card σ g)
-    simp only [Module.End.mul_apply] at h
+    simp only [mul_apply_eq_comp] at h
     simpa only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
       weylRelabelEquiv_apply_coe, weylRep_apply_coe] using h
 
@@ -200,15 +202,6 @@ noncomputable def weylRepEquiv (t t' : YoungTableau μ) :
 
 /-! ### The vanishing criterion -/
 
-/-- **Every label of a `μ`-tableau has row index below `n`** once `μ` has at most `n` rows: the
-row of a label is bounded by the length of the first column. -/
-private theorem rowIndex_lt_of_colLen_le (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n)
-    (ℓ : Fin μ.card) : rowIndex t ℓ < n := by
-  have hmem : ((t.symm ℓ : ℕ × ℕ).1, (t.symm ℓ : ℕ × ℕ).2) ∈ μ := (t.symm ℓ).2
-  have h1 := YoungDiagram.mem_iff_lt_colLen.mp hmem
-  rw [rowIndex_def]
-  exact lt_of_lt_of_le (lt_of_lt_of_le h1 (μ.colLen_anti 0 _ (Nat.zero_le _))) hn
-
 /-- **The symmetrizer's diagonal coefficient is the order of the row group.** Write `r ℓ` for the
 row of the label `ℓ`. The `r`-coordinate of `c_t • e_r` in the monomial basis is the number of
 permutations lying in the row group of `t`. -/
@@ -216,14 +209,13 @@ private theorem repr_symmetrizer_tensorPowerBasis_eq_card_rowSubgroup (t : Young
     (hn : μ.colLen 0 ≤ n) :
     (tensorPowerBasis k n μ.card).repr
         (permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-          (tensorPowerBasis k n μ.card fun ℓ =>
-            (⟨rowIndex t ℓ, rowIndex_lt_of_colLen_le t hn ℓ⟩ : Fin n)))
-        (fun ℓ => (⟨rowIndex t ℓ, rowIndex_lt_of_colLen_le t hn ℓ⟩ : Fin n)) =
+          (tensorPowerBasis k n μ.card (rowFilling t hn)))
+        (rowFilling t hn) =
       (Nat.card (rowSubgroup t) : k) := by
   classical
   rcases subsingleton_or_nontrivial k with hk | hk
   · exact Subsingleton.elim _ _
-  set r : Fin μ.card → Fin n := fun ℓ => ⟨rowIndex t ℓ, rowIndex_lt_of_colLen_le t hn ℓ⟩
+  set r : Fin μ.card → Fin n := rowFilling t hn
   -- the row group is exactly the set of permutations surviving the evaluation
   set S : Finset (Equiv.Perm (Fin μ.card)) := {σ | σ ∈ rowSubgroup t} with hSdef
   have hmemS : ∀ σ : Equiv.Perm (Fin μ.card), σ ∈ S ↔ σ ∈ rowSubgroup t := by
@@ -232,7 +224,8 @@ private theorem repr_symmetrizer_tensorPowerBasis_eq_card_rowSubgroup (t : Young
       (fun ℓ => r (σ.symm ℓ)) = r ↔ σ ∈ rowSubgroup t := by
     intro σ
     rw [← inv_mem_iff (G := Equiv.Perm (Fin μ.card)), mem_rowSubgroup]
-    exact ⟨fun h ℓ => congrArg Fin.val (congrFun h ℓ), fun h => funext fun ℓ => Fin.ext (h ℓ)⟩
+    dsimp only [r]
+    simp only [funext_iff, Fin.ext_iff, val_rowFilling, Equiv.Perm.inv_def]
   have hSNat : Nat.card (rowSubgroup t) = S.card := by
     rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
   rw [hSNat, permTensorActionAlgHom_apply_tensorPowerBasis, map_sum, Finset.sum_apply']
@@ -268,14 +261,34 @@ private theorem repr_symmetrizer_tensorPowerBasis_ne_zero [Nontrivial k] (t : Yo
     (hn : μ.colLen 0 ≤ n) :
     (tensorPowerBasis k n μ.card).repr
         (permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-          (tensorPowerBasis k n μ.card fun ℓ =>
-            (⟨rowIndex t ℓ, rowIndex_lt_of_colLen_le t hn ℓ⟩ : Fin n)))
-        (fun ℓ => (⟨rowIndex t ℓ, rowIndex_lt_of_colLen_le t hn ℓ⟩ : Fin n)) ≠ 0 := by
+          (tensorPowerBasis k n μ.card (rowFilling t hn)))
+        (rowFilling t hn) ≠ 0 := by
   classical
   -- the coefficient is the order of the row group, and characteristic zero keeps it nonzero
   have : CharZero k := charZero_of_injective_algebraMap (algebraMap ℚ k).injective
   rw [repr_symmetrizer_tensorPowerBasis_eq_card_rowSubgroup t hn]
   exact Nat.cast_ne_zero.mpr (Nat.card_ne_zero.mpr ⟨inferInstance, inferInstance⟩)
+
+/-- **The symmetrizer does not annihilate the monomial basis vector of the row filling**: the
+coordinate of `c_t • e_r` at `r = TauCeti.YoungTableau.rowFilling t hn` is the order of the row
+group of `t`, which is nonzero in characteristic zero.
+
+This nonzero image witnesses `TauCeti.YoungTableau.weylModule_ne_bot`. -/
+theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_rowFilling_ne_zero
+    [Nontrivial k] (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
+    permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
+        (tensorPowerBasis k n μ.card (rowFilling t hn)) ≠ 0 := by
+  intro h
+  exact repr_symmetrizer_tensorPowerBasis_ne_zero t hn (by rw [h, map_zero, Finsupp.zero_apply])
+
+/-- The image under the Young symmetrizer of any monomial basis vector belongs to the Weyl
+module. -/
+theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_mem_weylModule
+    (t : YoungTableau μ) (p : Fin μ.card → Fin n) :
+    permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
+        (tensorPowerBasis k n μ.card p) ∈ (weylModule k n t).toSubmodule := by
+  rw [weylModule_toSubmodule]
+  exact LinearMap.mem_range_self _ _
 
 /-- The Weyl module of a `μ`-tableau is nonzero as soon as `μ` has at most `n` rows.
 
@@ -285,30 +298,12 @@ zero and the module it generates is not `⊥`. -/
 theorem weylModule_ne_bot [Nontrivial k] (t : YoungTableau μ) (hn : μ.colLen 0 ≤ n) :
     weylModule k n t ≠ ⊥ := by
   intro hbot
-  -- the submodule underlying the zero subrepresentation is `⊥`
-  have hbot' : (weylModule k n t).toSubmodule = ⊥ := by rw [hbot]; rfl
-  have hmem : permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
-      (tensorPowerBasis k n μ.card fun ℓ =>
-        (⟨rowIndex t ℓ, rowIndex_lt_of_colLen_le t hn ℓ⟩ : Fin n))
-      ∈ (weylModule k n t).toSubmodule := by
-    rw [weylModule_toSubmodule]
-    exact LinearMap.mem_range_self _ _
-  rw [hbot', Submodule.mem_bot k] at hmem
-  exact repr_symmetrizer_tensorPowerBasis_ne_zero t hn (by rw [hmem, map_zero]; rfl)
-
-/-- When `μ` has more than `n` rows, any index function `p : Fin μ.card → Fin n` repeats a value on
-the first column of `t`: two distinct labels of that column carry the same basis index. -/
-private theorem exists_ne_and_apply_eq_of_lt_colLen (t : YoungTableau μ) (hn : n < μ.colLen 0)
-    (p : Fin μ.card → Fin n) :
-    ∃ a b : Fin μ.card, colIndex t a = 0 ∧ colIndex t b = 0 ∧ a ≠ b ∧ p a = p b := by
-  classical
-  have hcard : Fintype.card {ℓ : Fin μ.card // colIndex t ℓ = 0} = μ.colLen 0 := by
-    rw [μ.colLen_eq_card, ← Fintype.card_coe]
-    exact Fintype.card_congr (colFiberEquiv t 0)
-  obtain ⟨a, b, hab, hpab⟩ :=
-    Fintype.exists_ne_map_eq_of_card_lt (fun ℓ : {ℓ : Fin μ.card // colIndex t ℓ = 0} => p ℓ)
-      (by rw [hcard, Fintype.card_fin]; exact hn)
-  exact ⟨a, b, a.2, b.2, fun h => hab (Subtype.ext h), hpab⟩
+  have hbot' : (weylModule k n t).toSubmodule = ⊥ := by
+    rw [hbot, Subrepresentation.toSubmodule_bot]
+  have hmem := permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_mem_weylModule
+    (k := k) t (rowFilling t hn)
+  rw [hbot', Submodule.mem_bot] at hmem
+  exact permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_rowFilling_ne_zero t hn hmem
 
 /-- Transposing two labels of the same column that `p` sends to the same basis index fixes the
 monomial basis vector at `p` while negating `c_t`, so the symmetrizer's value there is its own
@@ -329,7 +324,7 @@ private theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_
         (tensorPowerBasis k n μ.card p) =
       permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
         (tensorPowerBasis k n μ.card p) := by
-    rw [map_mul, Module.End.mul_apply, permTensorActionAlgHom_single_tensorPowerBasis, one_smul,
+    rw [map_mul, mul_apply_eq_comp, permTensorActionAlgHom_single_tensorPowerBasis, one_smul,
       hswap]
   -- a transposition of the column group has sign `-1`, and `c_t` is alternating under it
   have hneg : youngSymmetrizerOver k t * MonoidAlgebra.single (Equiv.swap a b) 1 =
@@ -338,28 +333,39 @@ private theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_
   conv_lhs => rw [← h]
   rw [hneg, map_neg, LinearMap.neg_apply]
 
-/-- **The symmetrizer annihilates the whole tensor power when `μ` has more than `n` rows.** On each
-monomial basis vector two labels of the first column share a basis index, so their transposition
-fixes it while negating `c_t`; the value is its own negative, hence zero since `2` is invertible. -/
-private theorem permTensorActionAlgHom_youngSymmetrizerOver_eq_zero (t : YoungTableau μ)
-    (hn : n < μ.colLen 0) :
-    permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t) = 0 := by
+/-- **The symmetrizer annihilates a monomial basis vector that repeats a basis index on a
+column.** Transposing the two labels fixes the vector while negating `c_t`, so the value is its own
+negative, hence zero because `2` is invertible in a `ℚ`-algebra. -/
+theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_zero
+    (t : YoungTableau μ) {p : Fin μ.card → Fin n} {a b : Fin μ.card}
+    (hcol : colIndex t a = colIndex t b) (hab : a ≠ b) (hpab : p a = p b) :
+    permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
+        (tensorPowerBasis k n μ.card p) = 0 := by
   have : Invertible (2 : ℚ) := invertibleOfNonzero (by norm_num)
   have : Invertible (2 : k) := by
     have h := Invertible.map (algebraMap ℚ k) (2 : ℚ)
     rwa [map_ofNat] at h
-  refine (tensorPowerBasis k n μ.card).ext fun p => ?_
-  rw [LinearMap.zero_apply]
-  obtain ⟨a, b, ha, hb, hab, hpab⟩ := exists_ne_and_apply_eq_of_lt_colLen t hn p
   have hneg :=
-    permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_neg (k := k) t
-      (ha.trans hb.symm) hab hpab
+    permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_neg (k := k) t hcol hab hpab
   have htwo : (2 : k) • permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
       (tensorPowerBasis k n μ.card p) = 0 := by
     rw [two_smul]
     nth_rewrite 2 [hneg]
     rw [add_neg_cancel]
   simpa [smul_smul] using congrArg (fun w => (⅟(2 : k)) • w) htwo
+
+/-- **The symmetrizer annihilates the whole tensor power when `μ` has more than `n` rows.** On each
+monomial basis vector two labels of the first column share a basis index, so the vanishing
+criterion above applies. -/
+private theorem permTensorActionAlgHom_youngSymmetrizerOver_eq_zero (t : YoungTableau μ)
+    (hn : n < μ.colLen 0) :
+    permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t) = 0 := by
+  refine (tensorPowerBasis k n μ.card).ext fun p => ?_
+  rw [LinearMap.zero_apply]
+  obtain ⟨a, b, ha, hb, hab, hpab⟩ :=
+    exists_ne_and_apply_eq_of_lt_colLen t (by simpa only [Fintype.card_fin] using hn) p
+  exact permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_zero t
+    (ha.trans hb.symm) hab hpab
 
 /-- The Weyl module of a `μ`-tableau vanishes as soon as `μ` has more than `n` rows.
 
@@ -413,7 +419,7 @@ the canonical `μ`-tableau.  Since the Weyl modules of two `μ`-tableaux are iso
 representations, this is a legitimate shape-indexed representative of them all; the
 identification is `TauCeti.YoungTableau.weylRepEquivOfShape`.
 
-This is the object the classical-groups roadmap pins as `schurFunctor n μ`. -/
+Over `ℂ`, bundled as an object of `FDRep`, it is `TauCeti.schurFunctor n μ`. -/
 noncomputable def weylModuleOfShape (μ : YoungDiagram) :
     Subrepresentation (tensorPowerRep k n μ.card) :=
   YoungTableau.weylModule k n (StandardYoungTableau.rowSuperstandard μ).toTableau
@@ -449,6 +455,45 @@ theorem weylRepOfShape_apply_coe (μ : YoungDiagram) (g : GL (Fin n) k)
         ⨂[k]^μ.card (Fin n → k)) = tensorPowerRep k n μ.card g x :=
   (rfl)
 
+/-- **The projection onto the Weyl module of a shape**: the Young symmetrizer of the
+row-superstandard tableau acting on the tensor power, corestricted to its image.  It intertwines
+the action of `GL n k`, and is onto (`TauCeti.weylRepOfShapeProjection_surjective`). -/
+noncomputable def weylRepOfShapeProjection (μ : YoungDiagram) :
+    Representation.IntertwiningMap (tensorPowerRep k n μ.card) (weylRepOfShape k n μ) where
+  toLinearMap := (permTensorActionAlgHom k n μ.card (YoungTableau.youngSymmetrizerOver k
+      (StandardYoungTableau.rowSuperstandard μ).toTableau)).codRestrict
+    (weylModuleOfShape k n μ).toSubmodule fun v => by
+      rw [weylModuleOfShape_toSubmodule]
+      exact LinearMap.mem_range_self _ v
+  isIntertwining' g := by
+    apply LinearMap.ext
+    intro v
+    apply Subtype.ext
+    simp only [LinearMap.comp_apply, LinearMap.codRestrict_apply, weylRepOfShape_apply_coe]
+    exact congrArg (fun f : Module.End k _ => f v)
+      (commute_permTensorActionAlgHom_tensorPowerRep k n μ.card _ g).eq
+
+/-- The projection onto the Weyl module of a shape is the Young symmetrizer of its
+row-superstandard tableau. -/
+@[simp]
+theorem weylRepOfShapeProjection_apply_coe (μ : YoungDiagram) (v : ⨂[k]^μ.card (Fin n → k)) :
+    ((weylRepOfShapeProjection k n μ v : (weylModuleOfShape k n μ).toSubmodule) :
+        ⨂[k]^μ.card (Fin n → k)) =
+      permTensorActionAlgHom k n μ.card (YoungTableau.youngSymmetrizerOver k
+        (StandardYoungTableau.rowSuperstandard μ).toTableau) v :=
+  (rfl)
+
+/-- The projection onto the Weyl module of a shape is surjective. -/
+theorem weylRepOfShapeProjection_surjective (μ : YoungDiagram) :
+    Function.Surjective (weylRepOfShapeProjection k n μ) := by
+  intro w
+  have hw : (w : ⨂[k]^μ.card (Fin n → k)) ∈ LinearMap.range (permTensorActionAlgHom k n μ.card
+      (YoungTableau.youngSymmetrizerOver k
+        (StandardYoungTableau.rowSuperstandard μ).toTableau)) := by
+    simpa only [weylModuleOfShape_toSubmodule] using w.property
+  obtain ⟨v, hv⟩ := hw
+  exact ⟨v, Subtype.ext hv⟩
+
 /-- The Weyl module of any `μ`-tableau is isomorphic, as a representation of `GL n k`, to the
 Weyl module of the shape `μ`. -/
 noncomputable def YoungTableau.weylRepEquivOfShape {μ : YoungDiagram} (t : YoungTableau μ) :
@@ -482,13 +527,12 @@ noncomputable abbrev weylFDRepOfShape (μ : YoungDiagram) : FDRep k (GL (Fin n) 
 
 end Bundled
 
-/-- **The Schur functor** `𝕊^μ(ℂⁿ)` in the roadmap's pinned form: the Weyl module of the shape
-`μ` over `ℂ`, bundled as an object of `FDRep ℂ (GL (Fin n) ℂ)`.
+/-- **The Schur functor** `𝕊^μ(ℂⁿ)`: the Weyl module of the shape `μ` over `ℂ`, bundled as an
+object of `FDRep ℂ (GL (Fin n) ℂ)`.
 
-This is a definitional re-export of `TauCeti.weylFDRepOfShape` at `k = ℂ`, under the name later
-roadmap layers are written against; the general form, over any Noetherian commutative ring that
-is a `ℚ`-algebra, is `TauCeti.weylFDRepOfShape`, and the unbundled construction is
-`TauCeti.weylModuleOfShape`. -/
+This is `TauCeti.weylFDRepOfShape` at `k = ℂ`, by definition, under its classical name; the
+general form, over any Noetherian commutative ring that is a `ℚ`-algebra, is
+`TauCeti.weylFDRepOfShape`, and the unbundled construction is `TauCeti.weylModuleOfShape`. -/
 noncomputable abbrev schurFunctor (n : ℕ) (μ : YoungDiagram) : FDRep ℂ (GL (Fin n) ℂ) :=
   weylFDRepOfShape ℂ n μ
 

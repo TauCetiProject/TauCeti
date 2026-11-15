@@ -21,7 +21,7 @@ so the kernel is read off the character alone. That equivalence is the content o
 (`Representation.mem_ker_iff_char_eq` and its `FDRep` form `FDRep.mem_ker_iff_char_eq`), together
 with the consequence that the locus where a whole *family* of characters takes its value at the
 identity is the common kernel of that family (`FDRep.coe_iInf_ker`), a normal subgroup by
-`FDRep.normal_iInf_ker` (`TauCeti/RepresentationTheory/FDRep.lean`, that normality needing no
+`FDRep.normal_iInf_ker` (`TauCeti/RepresentationTheory/FDRep/Basic.lean`, that normality needing no
 characters).
 
 One direction is immediate: if `ρ g` is the identity then its trace is `finrank ℂ V`. The other is
@@ -30,7 +30,7 @@ real part at most `1`; the character value is those eigenvalues summed with the 
 eigenspaces as weights, and those dimensions add up to `finrank ℂ V`. Attaining the value
 `finrank ℂ V` therefore forces every eigenvalue to have real part `1`, hence to be `1`, and `ρ g`
 is diagonalizable, so it is the identity. That argument is carried out for a bare endomorphism in
-`TauCeti.End.trace_eq_finrank_iff`; here it is only transported to representations and characters.
+`Module.End.trace_eq_finrank_iff`; here it is only transported to representations and characters.
 
 Finite order is exactly what the statement needs, and it is all that is assumed here. For an element
 of infinite order there is no constraint on the eigenvalues of `ρ g`, and the character can take the
@@ -40,24 +40,19 @@ to the unipotent matrix with off-diagonal entry `n` has character constantly `2`
 where the hypothesis is explicit, then for one of finite order; the statements about the whole
 kernel assume `IsMulTorsion G`, which a finite group satisfies by `isOfFinOrder_of_finite`.
 
-The restriction to `ℂ` is inherited from `TauCeti.End.trace_eq_finrank_iff`, and is one of proof
+The restriction to `ℂ` is inherited from `Module.End.trace_eq_finrank_iff`, and is one of proof
 rather than of substance: the equivalence holds over any field of characteristic zero, the
 eigenvalues generating a cyclotomic subfield of the algebraic closure that embeds into `ℂ`. What the
 proof compares are the real parts of the eigenvalues, which is what such an embedding buys; the
 descent along one is not carried out, and `ℂ` is where the character theory downstream of this file
 works.
 
-The kernel description is what turns a character computation into a normal subgroup, and that is a
-**prerequisite** of the character-theoretic proof of **Frobenius's theorem**, not that proof nor a
-milestone of it. The exceptional characters of
+The kernel description turns a character computation into a normal subgroup, as used in the
+character-theoretic proof of Frobenius's theorem. The exceptional characters of
 `TauCeti/RepresentationTheory/Induction/ExceptionalCharacter.lean` are irreducible characters of
 `G`, and the classical argument exhibits the Frobenius kernel `TauCeti.frobeniusKernel` as their
 common kernel; `FDRep.coe_iInf_ker` and `FDRep.normal_iInf_ker` are the generic half of that step,
 saying that such a common kernel is cut out by character equations and is a normal subgroup.
-Nothing here identifies that locus with `TauCeti.frobeniusKernel`: constructing the coherent family
-out of the exceptional-character correspondence, and proving that its common kernel is
-`TauCeti.frobeniusKernel`, remain to be done, and only then does the bundled
-`frobeniusKernelSubgroup` with its normality follow.
 
 ## Main statements
 
@@ -67,7 +62,7 @@ out of the exceptional-character correspondence, and proving that its common ker
   description of the kernel; `FDRep.coe_ker` states it as an equality of sets.
 * `FDRep.coe_iInf_ker`: **the locus where every member of a family of characters takes its value at
   the identity is the common kernel of that family**, which `FDRep.normal_iInf_ker`
-  (`TauCeti/RepresentationTheory/FDRep.lean`) records as a normal subgroup.
+  (`TauCeti/RepresentationTheory/FDRep/Basic.lean`) records as a normal subgroup.
 * `FDRep.ker_eq_ker_of_char_eq`: the kernel depends on the representation only through its
   character.
 * `FDRep.ker_eq_top_iff` and `FDRep.ker_eq_bot_iff`: the kernel is everything exactly when the
@@ -78,8 +73,6 @@ out of the exceptional-character correspondence, and proving that its common ker
 * I. M. Isaacs, *Character Theory of Finite Groups*, AMS Chelsea (1976), Lemma 2.15 and Chapter 7,
   Section 7B.
 * J.-P. Serre, *Linear Representations of Finite Groups*, Springer GTM 42 (1977), Section 2.1.
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 8, the `frobeniusKernelSubgroup` milestone "that its support is a normal subgroup".
 -/
 
 public section
@@ -101,7 +94,7 @@ element of finite order. -/
 theorem char_eq_finrank_iff_of_pow_eq_one (ρ : Representation ℂ G V) {g : G} {n : ℕ}
     (hn : n ≠ 0) (hg : g ^ n = 1) :
     ρ.character g = (finrank ℂ V : ℂ) ↔ ρ g = 1 :=
-  TauCeti.End.trace_eq_finrank_iff hn (by rw [← map_pow, hg, map_one])
+  Module.End.trace_eq_finrank_iff hn (by rw [← map_pow, hg, map_one])
 
 /-- **A complex character attains its degree at an element of finite order exactly when that
 element acts as the identity.** -/

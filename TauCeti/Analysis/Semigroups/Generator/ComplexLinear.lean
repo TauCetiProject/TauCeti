@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Semigroups.Generator.Closed
 public import TauCeti.LinearAlgebra.LinearPMap.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
-import TauCeti.Analysis.Complex.SmulI
+import TauCeti.Topology.Algebra.Module.ComplexSmulI
 import TauCeti.Analysis.Semigroups.Generator.Invariance
 import TauCeti.Analysis.Semigroups.Generator.Similarity
 
@@ -36,6 +36,8 @@ complex continuous linear map. It does not introduce a parallel complex semigrou
 * `StronglyContinuousSemigroup.mem_complexDomain_iff`: membership agrees with the real domain.
 * `StronglyContinuousSemigroup.complexGenerator`: the real generator bundled as a complex
   `LinearPMap` on the same domain.
+* `StronglyContinuousSemigroup.complexGenerator_commute`: a bounded complex-linear operator
+  commuting with the semigroup preserves the complex generator domain and intertwines its action.
 * `StronglyContinuousSemigroup.dense_complexDomain`: the complex generator domain is dense.
 * `StronglyContinuousSemigroup.isClosed_complexGenerator`: the complex generator is closed.
 * `StronglyContinuousSemigroup.complexGenerator_restrictScalars`: restricting the complex
@@ -68,25 +70,22 @@ namespace TauCeti.Semigroups
 
 namespace StronglyContinuousSemigroup
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] [CompleteSpace X]
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X]
 
 /-- A real C₀-semigroup on a complex normed space is complex linear when every operator commutes
 with complex scalar multiplication. -/
 def IsComplexLinear (S : StronglyContinuousSemigroup X) : Prop :=
   ∀ (t : ℝ≥0) (z : ℂ) (x : X), S t (z • x) = z • S t x
 
-omit [CompleteSpace X] in
 theorem isComplexLinear_iff (S : StronglyContinuousSemigroup X) :
     S.IsComplexLinear ↔ ∀ (t : ℝ≥0) (z : ℂ) (x : X), S t (z • x) = z • S t x :=
   Iff.rfl
 
-omit [CompleteSpace X] in
 /-- The operators of a complex-linear semigroup commute with complex scalars. -/
 theorem IsComplexLinear.map_smul {S : StronglyContinuousSemigroup X} (hS : S.IsComplexLinear)
     (t : ℝ≥0) (z : ℂ) (x : X) : S t (z • x) = z • S t x :=
   hS t z x
 
-omit [CompleteSpace X] in
 /-- The real-time operators of a complex-linear semigroup commute with complex scalars. -/
 theorem IsComplexLinear.realOperator_map_smul {S : StronglyContinuousSemigroup X}
     (hS : S.IsComplexLinear) (t : ℝ) (z : ℂ) (x : X) :
@@ -102,14 +101,12 @@ def complexLinearOperator (S : StronglyContinuousSemigroup X) (hS : S.IsComplexL
   map_smul' := hS.map_smul t
   cont := (S t).continuous
 
-omit [CompleteSpace X] in
 /-- The complex-linear bundle has the same pointwise action as the underlying real operator. -/
 @[simp]
 theorem complexLinearOperator_apply (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear)
     (t : ℝ≥0) (x : X) : S.complexLinearOperator hS t x = S t x :=
   (rfl)
 
-omit [CompleteSpace X] in
 /-- Restricting the complex-linear bundle to real scalars recovers the semigroup operator. -/
 @[simp]
 theorem complexLinearOperator_restrictScalars (S : StronglyContinuousSemigroup X)
@@ -117,7 +114,6 @@ theorem complexLinearOperator_restrictScalars (S : StronglyContinuousSemigroup X
     (S.complexLinearOperator hS t).restrictScalars ℝ = S t :=
   ContinuousLinearMap.ext fun x => S.complexLinearOperator_apply hS t x
 
-omit [CompleteSpace X] in
 /-- The complex-linear bundle at time `0` is the identity. -/
 @[simp]
 theorem complexLinearOperator_zero (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear) :
@@ -126,7 +122,6 @@ theorem complexLinearOperator_zero (S : StronglyContinuousSemigroup X) (hS : S.I
     rw [S.complexLinearOperator_apply hS, S.map_zero, ContinuousLinearMap.id_apply,
       ContinuousLinearMap.id_apply]
 
-omit [CompleteSpace X] in
 /-- The semigroup law for the complex-linear bundle. -/
 @[simp]
 theorem complexLinearOperator_add (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear)
@@ -138,7 +133,6 @@ theorem complexLinearOperator_add (S : StronglyContinuousSemigroup X) (hS : S.Is
       S.complexLinearOperator_apply hS, S.complexLinearOperator_apply hS, S.map_add,
       ContinuousLinearMap.comp_apply]
 
-omit [CompleteSpace X] in
 /-- The difference quotient of `z • x` is `z` times the difference quotient of `x`, so it converges
 to `z • A x` for `x` in the generator domain. -/
 private theorem tendsto_genQuot_smul (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear)
@@ -160,14 +154,12 @@ def complexDomain (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear) :
   smul_mem' z x hx :=
     (S.mem_domain_iff_tendsto (z • x)).mpr ⟨_, tendsto_genQuot_smul S hS ⟨x, hx⟩ z⟩
 
-omit [CompleteSpace X] in
 /-- Membership in the complex generator domain is membership in the underlying real domain. -/
 @[simp]
 theorem mem_complexDomain_iff (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear)
     (x : X) : x ∈ S.complexDomain hS ↔ x ∈ S.domain :=
   Iff.rfl
 
-omit [CompleteSpace X] in
 /-- The complex generator domain has the real generator domain as its underlying set. -/
 @[simp]
 theorem coe_complexDomain (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear) :
@@ -190,14 +182,12 @@ noncomputable def complexGenerator (S : StronglyContinuousSemigroup X)
           ((S.mem_complexDomain_iff hS _).mp ((S.complexDomain hS).smul_mem z x.property))
           (tendsto_genQuot_smul S hS ⟨(x : X), x.property⟩ z) }
 
-omit [CompleteSpace X] in
 /-- The complex generator has the complex generator domain. -/
 @[simp]
 theorem complexGenerator_domain (S : StronglyContinuousSemigroup X)
     (hS : S.IsComplexLinear) : (S.complexGenerator hS).domain = S.complexDomain hS :=
   (rfl)
 
-omit [CompleteSpace X] in
 /-- The complex generator agrees pointwise with the underlying real generator. -/
 @[simp]
 theorem complexGenerator_apply (S : StronglyContinuousSemigroup X)
@@ -207,13 +197,41 @@ theorem complexGenerator_apply (S : StronglyContinuousSemigroup X)
       exact x.property⟩ :=
   (rfl)
 
+/-- A bounded complex-linear operator commuting with a complex-linear strongly continuous
+semigroup preserves its complex generator domain and intertwines the generator action. -/
+theorem complexGenerator_commute (S : StronglyContinuousSemigroup X)
+    (hS : S.IsComplexLinear) (T : X →L[ℂ] X)
+    (hT : ∀ (s : ℝ≥0) (y : X), S s (T y) = T (S s y))
+    (x : (S.complexGenerator hS).domain) :
+    ∃ hmem : T (x : X) ∈ (S.complexGenerator hS).domain,
+      S.complexGenerator hS ⟨T (x : X), hmem⟩ = T (S.complexGenerator hS x) := by
+  have hxR : (x : X) ∈ S.domain := by
+    rw [← S.mem_complexDomain_iff hS, ← S.complexGenerator_domain hS]
+    exact x.property
+  obtain ⟨hmemR, hcommR⟩ :=
+    S.generator_commute_of_commute (T.restrictScalars ℝ)
+      (fun s y => by
+        simpa only [ContinuousLinearMap.coe_restrictScalars'] using hT s y)
+      ⟨(x : X), hxR⟩
+  have hmemReal : T (x : X) ∈ S.domain := by
+    simpa only [ContinuousLinearMap.coe_restrictScalars'] using hmemR
+  have hmem : T (x : X) ∈ (S.complexGenerator hS).domain := by
+    simpa only [S.complexGenerator_domain hS, S.mem_complexDomain_iff hS] using hmemReal
+  refine ⟨hmem, ?_⟩
+  calc
+    S.complexGenerator hS ⟨T (x : X), hmem⟩ =
+        S.generator ⟨T (x : X), by rw [S.generator_domain]; exact hmemReal⟩ :=
+      S.complexGenerator_apply hS _
+    _ = T (S.generator ⟨(x : X), by rw [S.generator_domain]; exact hxR⟩) := by
+      simpa only [ContinuousLinearMap.coe_restrictScalars'] using hcommR
+    _ = T (S.complexGenerator hS x) := by rw [S.complexGenerator_apply hS x]
+
 /-- The domain of the complex generator is dense. -/
-theorem dense_complexDomain (S : StronglyContinuousSemigroup X)
+theorem dense_complexDomain [CompleteSpace X] (S : StronglyContinuousSemigroup X)
     (hS : S.IsComplexLinear) : Dense (S.complexDomain hS : Set X) := by
   rw [S.coe_complexDomain hS]
   exact S.dense_domain
 
-omit [CompleteSpace X] in
 /-- The real restriction of the complex generator is the real generator. -/
 @[simp]
 theorem complexGenerator_restrictScalars (S : StronglyContinuousSemigroup X)
@@ -227,7 +245,7 @@ theorem complexGenerator_restrictScalars (S : StronglyContinuousSemigroup X)
     exact S.complexGenerator_apply hS _
 
 /-- The complex generator is closed: its graph is that of the real generator. -/
-theorem isClosed_complexGenerator (S : StronglyContinuousSemigroup X)
+theorem isClosed_complexGenerator [CompleteSpace X] (S : StronglyContinuousSemigroup X)
     (hS : S.IsComplexLinear) : (S.complexGenerator hS).IsClosed := by
   have h : IsClosed (((S.complexGenerator hS).restrictScalars ℝ).graph : Set (X × X)) := by
     rw [S.complexGenerator_restrictScalars hS]
@@ -236,7 +254,6 @@ theorem isClosed_complexGenerator (S : StronglyContinuousSemigroup X)
 
 /-! ## Complex linearity from the generator -/
 
-omit [CompleteSpace X] in
 /-- A real-linear semigroup commuting with multiplication by `i` is complex linear. -/
 theorem isComplexLinear_of_I_smul (S : StronglyContinuousSemigroup X)
     (h : ∀ (t : ℝ≥0) (x : X), S t (Complex.I • x) = Complex.I • S t x) : S.IsComplexLinear := by
@@ -248,7 +265,6 @@ theorem isComplexLinear_of_I_smul (S : StronglyContinuousSemigroup X)
     simp only [Complex.coe_algebraMap, Complex.re_add_im]
   rw [hz x, (S t).map_add, (S t).map_smul, (S t).map_smul, h, hz (S t x)]
 
-omit [CompleteSpace X] in
 /-- The generator domain of `S` is the domain of `A` when `S.generator = A.restrictScalars ℝ`. -/
 theorem mem_domain_iff_of_generator_eq_restrictScalars
     (S : StronglyContinuousSemigroup X) {A : X →ₗ.[ℂ] X}
@@ -257,7 +273,8 @@ theorem mem_domain_iff_of_generator_eq_restrictScalars
 
 /-- **Complex linearity is read off the generator.** A real C₀-semigroup on a complex Banach
 space whose generator is the real restriction of a complex-linear partial map is complex linear. -/
-theorem isComplexLinear_of_generator_eq_restrictScalars (S : StronglyContinuousSemigroup X)
+theorem isComplexLinear_of_generator_eq_restrictScalars [CompleteSpace X]
+    (S : StronglyContinuousSemigroup X)
     {A : X →ₗ.[ℂ] X} (hA : S.generator = A.restrictScalars ℝ) : S.IsComplexLinear := by
   refine S.isComplexLinear_of_I_smul fun t x => ?_
   have hdom : ∀ x, Complex.smulIEquiv X x ∈ S.domain ↔ x ∈ S.domain := fun x => by
@@ -280,7 +297,6 @@ theorem isComplexLinear_of_generator_eq_restrictScalars (S : StronglyContinuousS
   have h := S.map_comm_of_generator_comm (Complex.smulIEquiv X) hdom hcomm t x
   rwa [Complex.smulIEquiv_apply, Complex.smulIEquiv_apply] at h
 
-omit [CompleteSpace X] in
 /-- The complex generator of a complex-linear semigroup whose real generator is the real
 restriction of `A` is `A` itself. -/
 theorem complexGenerator_eq_of_generator_eq_restrictScalars (S : StronglyContinuousSemigroup X)

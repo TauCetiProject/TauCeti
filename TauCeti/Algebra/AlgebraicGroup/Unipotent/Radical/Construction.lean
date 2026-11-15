@@ -45,9 +45,6 @@ geometric fibre gives the geometric unipotent radical.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 6.42 and §§6.45--6.46.
 * A. Borel, *Linear Algebraic Groups*, §11.21.
-
-This completes the construction target in Layer 5, "The unipotent radical", of the
-ReductiveGroups roadmap.
 -/
 
 public section
@@ -201,12 +198,6 @@ theorem unipotentRadicalSpecMapOfCandidate_comp_unipotentRadicalSpecι
       CommHopfAlgCat.quotientSpecι H.obj I :=
   CommHopfAlgCat.quotientSpecMapOfLe_comp_quotientSpecι H.obj
     (unipotentRadicalDefiningIdeal_le H I hI)
-
-/-- The inclusion of the unipotent radical is a closed immersion. -/
-instance isClosedImmersion_unipotentRadicalSpecι
-    (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
-    IsClosedImmersion (unipotentRadicalSpecι H).hom.hom.left :=
-  inferInstance
 
 end FiniteTypeCommHopfAlgCat
 

@@ -149,9 +149,16 @@ lemma adjoin_range_coord : Algebra.adjoin R (Set.range (coord a)) = ⊤ := by
   rw [h, ← AlgHom.map_adjoin, MvPolynomial.adjoin_range_X, Algebra.map_top, AlgHom.range_eq_top]
   exact mk_surjective a
 
-private def presentation : Presentation R (NodeAlgebra R a) (Fin 2) Unit :=
+/-- The presentation of `R[x, y] ⧸ (xy - a)` by its two coordinates and the single relation
+`xy - a`. -/
+def presentation : Presentation R (NodeAlgebra R a) (Fin 2) Unit :=
   (Presentation.naive (v := fun _ : Unit ↦ X 0 * X 1 - C a)).ofAlgEquiv
     (Ideal.quotientEquivAlgOfEq R (by simp))
+
+/-- The single relation of `NodeAlgebra.presentation` is `xy - a`. -/
+@[simp]
+lemma presentation_relation (r : Unit) : (presentation a).relation r = X 0 * X 1 - C a :=
+  (Presentation.ofAlgEquiv_relation _ _ r).trans (Presentation.naive_relation_apply _ _ r)
 
 /-- The nodal equation is an algebra of finite presentation over its coefficient ring. -/
 instance : FinitePresentation R (NodeAlgebra R a) :=
@@ -170,8 +177,6 @@ private lemma prePresentation_jacobian (i : Fin 2) :
   -- Identify the fields of the local `prePresentation` wrapper, which has no projection API.
   change aeval (presentation a).val
     (pderiv (1 - i) ((presentation a).relation ())) = coord a i
-  have hrelation : (presentation a).relation () = X 0 * X 1 - C a :=
-    (Presentation.ofAlgEquiv_relation _ _ ()).trans (Presentation.naive_relation_apply _ _ ())
   have hderiv : pderiv (1 - i) (X 0 * X 1 - C a) = X i := by
     fin_cases i
     -- Normalize the two closed `Fin 2` subtractions before applying the derivative lemmas.
@@ -181,7 +186,7 @@ private lemma prePresentation_jacobian (i : Fin 2) :
     · change pderiv 0 (X 0 * X 1 - C a) = X 1
       simp only [map_sub, pderiv_mul, pderiv_X_of_ne (by decide : (1 : Fin 2) ≠ 0),
         pderiv_X_self, pderiv_C, one_mul, mul_zero, add_zero, sub_zero]
-  rw [hrelation, hderiv, aeval_X]
+  rw [presentation_relation, hderiv, aeval_X]
   -- Identify the generator of the local presentation with its transported quotient class.
   change (Ideal.quotientEquivAlgOfEq R _)
     (Ideal.Quotient.mk _ (X i)) = coord a i

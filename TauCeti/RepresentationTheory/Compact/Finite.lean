@@ -104,7 +104,7 @@ as `Representation.card_inv_mul_sum_char_mul_char_eq_finrank`, for the algebraic
 `Representation.IntertwiningMap`, which in finite dimensions is the continuous one because every
 linear map out of a finite-dimensional normed space is continuous. Both routes are exhibited by
 anonymous `example`s, as are both branches of Mathlib's `Representation.char_orthonormal`: the
-diagonal one is `TauCeti.ContRepresentation.character_orthonormal_self` read through the finite
+diagonal one is `ContRepresentation.character_orthonormal_self` read through the finite
 pairing — Mathlib and `TauCeti.ClassFunction.characterPairing_ofCharacter_self` both already prove
 that identity, so no name is claimed for it either — and the off-diagonal one is
 `character_orthonormal_distinct_sum` with its intertwiner hypothesis discharged, for a pair of
@@ -121,7 +121,7 @@ not even `[Fact (1 ≤ p)]`, since `MeasureTheory.MemLp.of_discrete` produces th
 at every exponent, whereas `ContinuousMap.toLp`, being a continuous linear map, needs a norm on
 `Lp` and hence that hypothesis — and `[RCLike 𝕜]` and `p = 2` appear from the inner-product
 statements on.
-Cardinalities are written `Nat.card G` throughout, matching the rest of the roadmap;
+Cardinalities are written `Nat.card G` throughout;
 `Nat.card_eq_fintype_card` converts.
 
 `IsTopologicalGroup G`, `CompactSpace G`, `T2Space G` and `MeasurableSingletonClass G` are all
@@ -131,12 +131,12 @@ extra hypotheses are carried. Continuity of a representation is likewise automat
 the two pairing lemmas are about the `L²` classes `matrixCoeffLp π hπ` and `characterLp π hπ`, which
 take the continuity proof as an argument, so a caller of them holds one already. The orthogonality
 relations ask for none: the Schur ones are stated as bare sums `∑ g, ⟪π g v, w⟫ · …`, and the
-character one uses Mathlib's `Representation.character`, which is by
-`TauCeti.ContRepresentation.coe_character` the function underlying `character π hπ`. Those
-statements mention no measure either, so they ask for no measurable structure on `G`: their proofs
-install `borel G` themselves, and the caller is left with a bare finite discrete group. The two
-Maschke statements go one step further: mentioning no topology on `G` at all, they have their proof
-install the discrete topology as well, and the caller is left with a bare finite group.
+character one uses Mathlib's `Representation.character`. The Schur statements mention no measure
+either, so they ask for no measurable structure on `G`: their proofs install `borel G` themselves,
+and the caller is left with a bare finite discrete group. The character statement
+`character_orthonormal_distinct_sum` and the two Maschke statements go one step further: mentioning
+no topology on `G` at all, they have their proof install the discrete topology as well, and the
+caller is left with a bare finite group.
 
 The scalar in the averaged sums is real, not `𝕜`: the Bochner integral being specialized is an
 `ℝ`-integral, and `V` is not assumed to be an `ℝ`-`𝕜`-scalar tower. The conversion is confined to
@@ -145,10 +145,8 @@ The scalar in the averaged sums is real, not `𝕜`: the Bochner integral being 
 
 ## References
 
-The compact-group theory specialized here is the one developed in the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-and each statement below is the finite case of the compact one named beside it. `haarProb G` is the
-normalized counting measure `|G|⁻¹ • count`, and the counting identity
+Each statement below is the finite case of the compact-group theorem named beside it.
+`haarProb G` is the normalized counting measure `|G|⁻¹ • count`, and the counting identity
 `dim V^G = |G|⁻¹ ∑ g, χ_π g` is the finite shadow of
 `ContRepresentation.integral_character_eq_finrank_invariants`, matching Mathlib's
 `FDRep.average_char_eq_finrank_invariants` for the purely algebraic theory. `L²(G)` is `G → 𝕜` by
@@ -172,6 +170,8 @@ matrix-coefficient basis of the functions on `G`, is proved in
 
 public section
 
+open _root_.ContRepresentation
+
 open MeasureTheory Set
 open scoped ENNReal InnerProductSpace
 
@@ -180,7 +180,6 @@ namespace TauCeti
 section LeftInvariant
 
 variable {G : Type*} [Group G] [Finite G] [MeasurableSpace G] [MeasurableSingletonClass G]
-  [MeasurableMul G]
 
 /-- **A left-invariant probability measure on a finite group is the normalized counting measure.**
 
@@ -197,7 +196,7 @@ theorem eq_smul_count_of_isMulLeftInvariant (μ : Measure G) [μ.IsMulLeftInvari
     rw [← measure_preimage_mul μ g {g}, h]
   have hsmul : μ = μ {(1 : G)} • Measure.count := by
     refine Measure.ext_of_singleton fun a ↦ ?_
-    rw [Measure.smul_apply, Measure.count_singleton, smul_eq_mul, mul_one, hone a]
+    rw [_root_.smul_apply, Measure.count_singleton, smul_eq_mul, mul_one, hone a]
   have hmass : μ {(1 : G)} * (Nat.card G : ℝ≥0∞) = 1 := by
     have h := congrArg (fun ν : Measure G ↦ ν univ) hsmul
     simpa [Measure.count_univ, ENat.card_eq_coe_natCard] using h.symm
@@ -220,12 +219,12 @@ theorem haarProb_eq_smul_count :
 /-- **The normalized Haar measure of a singleton in a finite discrete group is `|G|⁻¹`.** -/
 @[simp]
 theorem haarProb_singleton (g : G) : haarProb G {g} = (Nat.card G : ℝ≥0∞)⁻¹ := by
-  rw [haarProb_eq_smul_count G, Measure.smul_apply, Measure.count_singleton, smul_eq_mul, mul_one]
+  rw [haarProb_eq_smul_count G, _root_.smul_apply, Measure.count_singleton, smul_eq_mul, mul_one]
 
 /-- The normalized Haar measure of a set in a finite discrete group is the fraction of the group it
 occupies. -/
 theorem haarProb_apply (s : Set G) : haarProb G s = (s.ncard : ℝ≥0∞) / Nat.card G := by
-  rw [haarProb_eq_smul_count G, Measure.smul_apply,
+  rw [haarProb_eq_smul_count G, _root_.smul_apply,
     Measure.count_apply_finite s s.toFinite, smul_eq_mul, ENNReal.div_eq_inv_mul,
     Set.ncard_eq_toFinset_card s s.toFinite]
 
@@ -448,10 +447,11 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [Fintype G] [TopologicalSpac
 
 /-- Completeness of `V` is not an extra hypothesis: a finite-dimensional normed space over an
 `RCLike` field is already complete. As in
-`TauCeti/RepresentationTheory/Compact/Invariants.lean`, Mathlib keeps `FiniteDimensional.complete`
+`TauCeti/RepresentationTheory/Compact/Invariants.lean`, Mathlib keeps
+`FiniteDimensional.completeSpace`
 out of the global instance set, so it is installed here as a local instance. -/
 local instance instCompleteSpaceFinite : CompleteSpace V :=
-  FiniteDimensional.complete 𝕜 V
+  FiniteDimensional.completeSpace 𝕜 V
 
 /- **The finite-group counting identity** `|G|⁻¹ ∑ g, χ_π g = dim V^G`, the specialization of
 `ContRepresentation.integral_character_eq_finrank_invariants` to a finite discrete group, and the
@@ -491,14 +491,13 @@ section SchurSelf
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [IsAlgClosed 𝕜] [Group G] [Fintype G] [TopologicalSpace G]
   [DiscreteTopology G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
-  [FiniteDimensional 𝕜 V]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
 
 /-- **The first Schur orthogonality relation for a finite group.** For a unitary irreducible
 representation of dimension `d`,
 `|G|⁻¹ ∑ g, conj ⟪π g v₁, w₁⟫ * ⟪π g v₂, w₂⟫ = d⁻¹ * (conj ⟪v₁, v₂⟫ * ⟪w₁, w₂⟫)`.
 
-This is `TauCeti.ContRepresentation.schur_orthogonality_self` with the Haar integral of the
+This is `ContRepresentation.schur_orthogonality_self` with the Haar integral of the
 compact theory replaced by the group average; the normalization `|G|⁻¹` is exactly the one that
 makes normalized Haar measure a probability measure. Neither continuity of `π` nor a measurable
 structure on `G` is asked: the statement mentions no measure and no continuity proof, and the proof
@@ -509,16 +508,19 @@ theorem schur_orthogonality_self_sum (π : ContRepresentation 𝕜 G V)
     (v₁ w₁ v₂ w₂ : V) :
     (Nat.card G : 𝕜)⁻¹ * ∑ g, (starRingEnd 𝕜) ⟪π g v₁, w₁⟫_𝕜 * ⟪π g v₂, w₂⟫_𝕜 =
       (Module.finrank 𝕜 V : 𝕜)⁻¹ * ((starRingEnd 𝕜) ⟪v₁, v₂⟫_𝕜 * ⟪w₁, w₂⟫_𝕜) := by
+  let _ : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
+  have _ : SMulCommClass ℝ 𝕜 V := inferInstance
   let _ : MeasurableSpace G := borel G
   have _ : BorelSpace G := ⟨rfl⟩
   rw [← inner_matrixCoeffLp_eq_inv_mul_sum π continuous_of_discreteTopology π
       continuous_of_discreteTopology,
-    schur_orthogonality_self π continuous_of_discreteTopology hunitary hirr]
+    π.schur_orthogonality_self continuous_of_discreteTopology hunitary hirr]
 
+omit [FiniteDimensional 𝕜 V] in
 /-- **The first Schur orthogonality relation for a finite group, in an orthonormal basis.** If
 `πᵢⱼ(g) = ⟪π g eⱼ, eᵢ⟫`, then `|G|⁻¹ ∑ g, conj (πᵢⱼ g) * πₖₗ g = d⁻¹ δⱼₗ δᵢₖ`.
 
-This is `TauCeti.ContRepresentation.schur_orthogonality_basis` with the Haar integral replaced by
+This is `ContRepresentation.schur_orthogonality_basis` with the Haar integral replaced by
 the group average, and it is the form the matrix coefficients of a finite group present themselves
 in: the index order and the placement of the conjugation are the ones fixed there, Kronecker deltas
 being real. -/
@@ -527,11 +529,14 @@ theorem schur_orthogonality_basis_sum (π : ContRepresentation 𝕜 G V)
     {d : ℕ} (e : OrthonormalBasis (Fin d) 𝕜 V) (i j k l : Fin d) :
     (Nat.card G : 𝕜)⁻¹ * ∑ g, (starRingEnd 𝕜) ⟪π g (e j), e i⟫_𝕜 * ⟪π g (e l), e k⟫_𝕜 =
       (d : 𝕜)⁻¹ * ((if j = l then (1 : 𝕜) else 0) * (if i = k then (1 : 𝕜) else 0)) := by
+  have _ : FiniteDimensional 𝕜 V := Module.Finite.of_basis e.toBasis
+  let _ : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
+  have _ : SMulCommClass ℝ 𝕜 V := inferInstance
   let _ : MeasurableSpace G := borel G
   have _ : BorelSpace G := ⟨rfl⟩
   rw [← inner_matrixCoeffLp_eq_inv_mul_sum π continuous_of_discreteTopology π
       continuous_of_discreteTopology,
-    schur_orthogonality_basis π continuous_of_discreteTopology hunitary hirr]
+    π.schur_orthogonality_basis continuous_of_discreteTopology hunitary hirr]
 
 end SchurSelf
 
@@ -540,14 +545,13 @@ section SchurDistinct
 variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [Fintype G] [TopologicalSpace G]
   [DiscreteTopology G]
   [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
-  [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
-  [CompleteSpace W]
+  [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [CompleteSpace W]
 
 omit [FiniteDimensional 𝕜 V] in
 /-- **Schur orthogonality for a finite group and a vanishing intertwiner space.** If the only
 continuous intertwiner `π → ρ` is zero and `ρ` is unitary, then every matrix coefficient of `π` has
 vanishing group average against every matrix coefficient of `ρ`. This is
-`TauCeti.ContRepresentation.schur_orthogonality_distinct` read through the finite Hermitian
+`ContRepresentation.schur_orthogonality_distinct` read through the finite Hermitian
 pairing; Schur's lemma is what supplies the hypothesis for a pair of inequivalent irreducibles, as
 in `ContRepresentation.schur_orthogonality_sum` below. No continuity is asked of either
 representation, for the reason given at `ContRepresentation.schur_orthogonality_self_sum`. -/
@@ -556,6 +560,8 @@ theorem schur_orthogonality_distinct_sum (π : ContRepresentation 𝕜 G V)
     (hdistinct : ∀ f : ContIntertwiningMap π ρ, f.toContinuousLinearMap = 0)
     (v w : V) (v' w' : W) :
     (Nat.card G : 𝕜)⁻¹ * ∑ g, (starRingEnd 𝕜) ⟪π g v, w⟫_𝕜 * ⟪ρ g v', w'⟫_𝕜 = 0 := by
+  let _ : NormedSpace ℝ W := NormedSpace.restrictScalars ℝ 𝕜 W
+  have _ : SMulCommClass ℝ 𝕜 W := inferInstance
   let _ : MeasurableSpace G := borel G
   have _ : BorelSpace G := ⟨rfl⟩
   rw [← inner_matrixCoeffLp_eq_inv_mul_sum π continuous_of_discreteTopology ρ
@@ -565,7 +571,7 @@ theorem schur_orthogonality_distinct_sum (π : ContRepresentation 𝕜 G V)
 
 /-- **The second Schur orthogonality relation for a finite group.** Matrix coefficients of
 inequivalent irreducible representations, the second of them unitary, have vanishing group average,
-this being `TauCeti.ContRepresentation.schur_orthogonality` read through the finite Hermitian
+this being `ContRepresentation.schur_orthogonality` read through the finite Hermitian
 pairing. No continuity is asked of either representation, for the reason given at
 `ContRepresentation.schur_orthogonality_self_sum`. -/
 theorem schur_orthogonality_sum (π : ContRepresentation 𝕜 G V)
@@ -574,11 +580,13 @@ theorem schur_orthogonality_sum (π : ContRepresentation 𝕜 G V)
     (hirrρ : Representation.IsIrreducible ρ.toRepresentation)
     (hne : IsEmpty (_root_.ContRepresentation.Equiv π ρ)) (v w : V) (v' w' : W) :
     (Nat.card G : 𝕜)⁻¹ * ∑ g, (starRingEnd 𝕜) ⟪π g v, w⟫_𝕜 * ⟪ρ g v', w'⟫_𝕜 = 0 := by
+  let _ : NormedSpace ℝ W := NormedSpace.restrictScalars ℝ 𝕜 W
+  have _ : SMulCommClass ℝ 𝕜 W := inferInstance
   let _ : MeasurableSpace G := borel G
   have _ : BorelSpace G := ⟨rfl⟩
   rw [← inner_matrixCoeffLp_eq_inv_mul_sum π continuous_of_discreteTopology ρ
       continuous_of_discreteTopology,
-    schur_orthogonality π continuous_of_discreteTopology ρ continuous_of_discreteTopology
+    π.schur_orthogonality continuous_of_discreteTopology ρ continuous_of_discreteTopology
       hunitary hirrπ hirrρ hne]
 
 end SchurDistinct
@@ -626,6 +634,40 @@ example :
 
 end Character
 
+section CharacterOrthogonalityNormed
+
+variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [Fintype G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [FiniteDimensional 𝕜 W]
+  (π : ContRepresentation 𝕜 G V)
+
+/-- **The off-diagonal branch of first (row) character orthogonality for a finite group**: the
+group average of `conj χ_π · χ_ρ` vanishes when no nonzero continuous intertwiner `ρ → π` exists,
+which for a pair of irreducibles is Schur's lemma. As in the compact source
+`ContRepresentation.character_orthonormal_distinct`, neither unitarity nor an inner product is
+assumed. (The second orthogonality relation, the column sum over the irreducible characters, is a
+different statement and is not proved here.)
+
+The characters are written as Mathlib's `Representation.character` of the underlying
+representations, so the statement assumes no topology on `G`, no continuity proof and no measurable
+structure; the proof installs the discrete topology and its Borel structure itself. -/
+theorem character_orthonormal_distinct_sum (ρ : ContRepresentation 𝕜 G W)
+    (hdistinct : ∀ f : ContIntertwiningMap ρ π, f.toContinuousLinearMap = 0) :
+    (Nat.card G : 𝕜)⁻¹ * ∑ g, (starRingEnd 𝕜) (π.toRepresentation.character g) *
+        ρ.toRepresentation.character g = 0 := by
+  let _ : TopologicalSpace G := ⊥
+  have _ : DiscreteTopology G := ⟨rfl⟩
+  let _ : MeasurableSpace G := borel G
+  have _ : BorelSpace G := ⟨rfl⟩
+  rw [← coe_character π continuous_of_discreteTopology,
+    ← coe_character ρ continuous_of_discreteTopology,
+    ← inner_characterLp_eq_inv_mul_sum π continuous_of_discreteTopology ρ
+      continuous_of_discreteTopology,
+    character_orthonormal_distinct π continuous_of_discreteTopology ρ
+      continuous_of_discreteTopology hdistinct]
+
+end CharacterOrthogonalityNormed
+
 section CharacterOrthogonality
 
 variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [Fintype G] [TopologicalSpace G]
@@ -636,32 +678,6 @@ variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [Fintype G] [TopologicalSp
   [FiniteDimensional 𝕜 W]
   (π : ContRepresentation 𝕜 G V)
 
-omit [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] in
-/-- **The off-diagonal branch of first (row) character orthogonality for a finite group**: for a
-*unitary* `π`, the group average of `conj χ_π · χ_ρ` vanishes when no nonzero continuous intertwiner
-`ρ → π` exists, which for a pair of irreducibles is Schur's lemma. Unitarity is asked of `π` alone,
-as in the compact source `TauCeti.ContRepresentation.character_orthonormal_distinct`. (The second
-orthogonality relation, the column sum over the irreducible characters, is a different statement and
-is not proved here.)
-
-The characters are written as Mathlib's `Representation.character` of the underlying
-representations, which is by `TauCeti.ContRepresentation.coe_character` the function underlying
-`character π hπ`; so no continuity proof is asked of the caller, and no measurable structure on `G`
-either, the statement mentioning neither. -/
-theorem character_orthonormal_distinct_sum (ρ : ContRepresentation 𝕜 G W)
-    (hunitary : IsUnitary π)
-    (hdistinct : ∀ f : ContIntertwiningMap ρ π, f.toContinuousLinearMap = 0) :
-    (Nat.card G : 𝕜)⁻¹ * ∑ g, (starRingEnd 𝕜) (π.toRepresentation.character g) *
-        ρ.toRepresentation.character g = 0 := by
-  let _ : MeasurableSpace G := borel G
-  have _ : BorelSpace G := ⟨rfl⟩
-  rw [← coe_character π continuous_of_discreteTopology,
-    ← coe_character ρ continuous_of_discreteTopology,
-    ← inner_characterLp_eq_inv_mul_sum π continuous_of_discreteTopology ρ
-      continuous_of_discreteTopology,
-    character_orthonormal_distinct π continuous_of_discreteTopology ρ
-      continuous_of_discreteTopology hunitary hdistinct]
-
 variable (hπ : Continuous π)
 
 include hπ
@@ -669,10 +685,10 @@ include hπ
 /- **The diagonal branch of first (row) character orthogonality for a finite group**, which is the
 diagonal half of Mathlib's `Representation.char_orthonormal`, in its `χ_π(g) · χ_π(g⁻¹)` spelling,
 obtained through the compact theory:
-`TauCeti.ContRepresentation.character_orthonormal_self` says the character of an irreducible
-unitary representation is an `L²` unit vector, `inner_characterLp_eq_inv_mul_sum` turns that pairing
+`ContRepresentation.character_orthonormal_self` says the character of an irreducible
+representation is an `L²` unit vector, `inner_characterLp_eq_inv_mul_sum` turns that pairing
 into a group average, and unitarity turns the inverse into a conjugate by
-`TauCeti.ContRepresentation.character_apply_inv`.
+`ContRepresentation.character_apply_inv`.
 
 No name is claimed, for the same reason as in the two counting identities above: the identity is
 already Mathlib's `Representation.char_orthonormal` (its diagonal branch) at `π.toRepresentation`,
@@ -684,7 +700,7 @@ example [IsAlgClosed 𝕜] (hunitary : IsUnitary π)
     (Nat.card G : 𝕜)⁻¹ * ∑ g, character π hπ g * character π hπ g⁻¹ = 1 := by
   let _ : MeasurableSpace G := borel G
   have _ : BorelSpace G := ⟨rfl⟩
-  rw [← character_orthonormal_self π hπ hunitary hirr, inner_characterLp_eq_inv_mul_sum π hπ π hπ]
+  rw [← character_orthonormal_self π hπ hirr, inner_characterLp_eq_inv_mul_sum π hπ π hπ]
   exact congrArg _ (Finset.sum_congr rfl fun g _ ↦ by
     rw [character_apply_inv π hπ hunitary, mul_comm])
 
@@ -692,10 +708,10 @@ example [IsAlgClosed 𝕜] (hunitary : IsUnitary π)
 the characters of two inequivalent irreducibles have vanishing group average. This is
 `character_orthonormal_distinct_sum` at the transposed pair `(ρ, π)`, whose intertwiner hypothesis
 is discharged by the vanishing half of Schur's lemma,
-`TauCeti.ContRepresentation.eq_zero_of_isEmpty_equiv`, exactly as `orthonormal_characterLp`
+`ContRepresentation.eq_zero_of_isEmpty_equiv`, exactly as `orthonormal_characterLp`
 discharges it in the compact theory. So the substantive vanishing statement is reached, not
-assumed: `character_orthonormal_distinct_sum` keeps the hypothesis of the compact theorem
-`character_orthonormal_distinct` it specializes, and irreducibility enters here.
+assumed: `character_orthonormal_distinct_sum` keeps the intertwiner hypothesis of the compact
+theorem `character_orthonormal_distinct` it specializes, and irreducibility enters here.
 
 No name is claimed, for the same reason as above and in the two counting identities: with both
 representations irreducible and inequivalent this is Mathlib's `Representation.char_orthonormal`
@@ -706,7 +722,7 @@ example (ρ : ContRepresentation 𝕜 G W) (hρ : Continuous ρ) (hunitary : IsU
     (hirrρ : Representation.IsIrreducible ρ.toRepresentation)
     (hne : IsEmpty (_root_.ContRepresentation.Equiv π ρ)) :
     (Nat.card G : 𝕜)⁻¹ * ∑ g, character π hπ g * character ρ hρ g⁻¹ = 0 := by
-  rw [← character_orthonormal_distinct_sum ρ π hunitary
+  rw [← character_orthonormal_distinct_sum ρ π
       fun f ↦ by simp [eq_zero_of_isEmpty_equiv hirrπ hirrρ hne f],
     ← coe_character ρ hρ, ← coe_character π hπ]
   exact congrArg _ (Finset.sum_congr rfl fun g _ ↦ by
@@ -720,7 +736,7 @@ section Unitarization
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [Fintype G] [TopologicalSpace G]
   [DiscreteTopology G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
   [CompleteSpace V]
 
 variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
@@ -730,34 +746,34 @@ include hπ
 /-- **The averaged invariant form of a finite group is the group average**
 `⟪v, w⟫_G = |G|⁻¹ ∑ g, ⟪π g v, π g w⟫`. This is the form Weyl's unitarian trick averages into
 existence, read off the Gram operator that represents it
-(`TauCeti.ContRepresentation.inner_gramOperator`) through
+(`ContRepresentation.inner_gramOperator`) through
 `TauCeti.integral_haarProb_eq_inv_mul_sum`; for a finite group it is the classical averaging
 `⟪·, ·⟫ ↦ |G|⁻¹ ∑ g, ⟪π g ·, π g ·⟫` of the finite-group proof, and the normalization `|G|⁻¹` is
 the one that fixes the form on the invariants. -/
 theorem inner_gramOperator_eq_inv_mul_sum (v w : V) :
-    ⟪v, gramOperator π hπ w⟫_𝕜 = (Nat.card G : 𝕜)⁻¹ * ∑ g, ⟪π g v, π g w⟫_𝕜 := by
-  rw [inner_gramOperator, integral_haarProb_eq_inv_mul_sum]
+    ⟪v, π.gramOperator hπ w⟫_𝕜 = (Nat.card G : 𝕜)⁻¹ * ∑ g, ⟪π g v, π g w⟫_𝕜 := by
+  rw [π.inner_gramOperator hπ, integral_haarProb_eq_inv_mul_sum]
 
 /-- **The averaged form of a finite group on the diagonal is the average of `‖π g v‖ ^ 2`.** This is
 the finite form of the positive definiteness that makes the unitarian trick work: the average of
 `|G|` nonnegative reals, one of which is `‖v‖ ^ 2` at `g = 1`, is positive for `v ≠ 0`. Compactness
-of `G` enters the general statement `TauCeti.ContRepresentation.inner_gramOperator_self` only to
+of `G` enters the general statement `ContRepresentation.inner_gramOperator_self` only to
 make `g ↦ ‖π g v‖ ^ 2` integrable; it is the *strict* positivity
-`TauCeti.ContRepresentation.re_inner_gramOperator_self_pos` that also needs the compactness bound
+`ContRepresentation.re_inner_gramOperator_self_pos` that also needs the compactness bound
 on the operator norms from below. A finite group needs neither. -/
 theorem inner_gramOperator_self_eq_inv_mul_sum (v : V) :
-    ⟪gramOperator π hπ v, v⟫_𝕜 = (((Nat.card G : ℝ)⁻¹ * ∑ g, ‖π g v‖ ^ 2 : ℝ) : 𝕜) := by
-  rw [inner_gramOperator_self, integral_haarProb, smul_eq_mul]
+    ⟪π.gramOperator hπ v, v⟫_𝕜 = (((Nat.card G : ℝ)⁻¹ * ∑ g, ‖π g v‖ ^ 2 : ℝ) : 𝕜) := by
+  rw [π.inner_gramOperator_self hπ, integral_haarProb, smul_eq_mul]
 
 /-- **The Gram operator of a finite group is the averaged sum of the operators `(π g)† ∘ (π g)`.**
 This is `ContRepresentation.inner_gramOperator_eq_inv_mul_sum` at the level of operators:
 each summand is the Gram operator of the pulled-back form `(v, w) ↦ ⟪π g v, π g w⟫`, and the Haar
 average of the family is their group average. -/
 theorem gramOperator_eq_smul_sum :
-    gramOperator π hπ =
+    π.gramOperator hπ =
       (Nat.card G : 𝕜)⁻¹ • ∑ g, (ContinuousLinearMap.adjoint (π g)).comp (π g) := by
   refine ContinuousLinearMap.ext fun w ↦ ext_inner_left 𝕜 fun v ↦ ?_
-  rw [inner_gramOperator_eq_inv_mul_sum, smul_apply, sum_apply, inner_smul_right, inner_sum]
+  rw [π.inner_gramOperator_eq_inv_mul_sum hπ, smul_apply, sum_apply, inner_smul_right, inner_sum]
   exact congrArg _ (Finset.sum_congr rfl fun g _ ↦
     (ContinuousLinearMap.adjoint_inner_right (π g) v (π g w)).symm)
 
@@ -766,25 +782,23 @@ end Unitarization
 section Maschke
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [Finite G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
   [FiniteDimensional 𝕜 V]
 
 /-- **The unitarian trick for a finite group.** Every finite-dimensional representation of a finite
 group on an inner product space is conjugate, by a continuous linear automorphism of the carrier,
 to one preserving the inner product.
 
-This is `TauCeti.ContRepresentation.exists_isUnitary_congr` with all of its compact-group
-hypotheses discharged: the statement mentions neither a topology on `G` nor a measure, so the proof
-installs the discrete topology and the Borel structure it averages against — a finite discrete
-group is compact and every representation of it is continuous by `continuous_of_discreteTopology` —
-and the caller is left with a bare finite group. The form being averaged is the explicit
+This is `ContRepresentation.exists_isUnitary_congr` with all of its compact-group
+hypotheses discharged: the statement mentions no topology on `G`, so the proof installs the
+discrete topology — a finite discrete group is compact and every representation of it is
+continuous by `continuous_of_discreteTopology` — and the caller is left with a bare finite group.
+The form being averaged is the explicit
 `|G|⁻¹ ∑ g, ⟪π g ·, π g ·⟫` of `ContRepresentation.inner_gramOperator_eq_inv_mul_sum`. -/
 theorem exists_isUnitary_congr_of_finite (π : ContRepresentation 𝕜 G V) :
-    ∃ e : V ≃L[𝕜] V, IsUnitary (congr e π) := by
+    ∃ e : V ≃L[𝕜] V, IsUnitary (ContinuousLinearEquiv.congr e π) := by
   let _ : TopologicalSpace G := ⊥
   have _ : DiscreteTopology G := ⟨rfl⟩
-  let _ : MeasurableSpace G := borel G
-  have _ : BorelSpace G := ⟨rfl⟩
   exact exists_isUnitary_congr π continuous_of_discreteTopology
 
 /-- **Maschke's theorem in orthogonal form.** A finite-dimensional representation `π` of a finite
@@ -796,7 +810,7 @@ automorphism `e` of the carrier.
 This is the finite shadow of complete reducibility, and all that is finite about it is the
 production of `e`: unitarity is not assumed but produced, by the finite unitarian trick
 `ContRepresentation.exists_isUnitary_congr_of_finite`, and the decomposition of `π` itself is then
-`TauCeti.ContRepresentation.IsUnitary.exists_orthogonal_irreducible_decomposition_of_congr`, which
+`ContRepresentation.IsUnitary.exists_orthogonal_irreducible_decomposition_of_congr`, which
 decomposes the unitary model and carries every block back along the equivalence of representations
 `ContRepresentation.congrEquiv : π.Equiv (congr e π)` for an arbitrary group. The blocks are
 therefore subrepresentations of `π` itself.
@@ -811,7 +825,7 @@ which produces complements but no inner product; the plain semisimplicity is not
 being already a Mathlib instance for every field in which `|G|` is invertible. -/
 theorem exists_orthogonal_irreducible_decomposition_of_finite (π : ContRepresentation 𝕜 G V) :
     ∃ (e : V ≃L[𝕜] V) (n : ℕ) (U : Fin n → Subrepresentation π.toRepresentation),
-      IsUnitary (congr e π) ∧
+      IsUnitary (ContinuousLinearEquiv.congr e π) ∧
       (∀ i, (U i).toRepresentation.IsIrreducible) ∧
       (Pairwise fun i j ↦ ∀ v ∈ (U i).toSubmodule, ∀ w ∈ (U j).toSubmodule, ⟪e v, e w⟫_𝕜 = 0) ∧
       DirectSum.IsInternal (fun i ↦ (U i).toSubmodule) ∧

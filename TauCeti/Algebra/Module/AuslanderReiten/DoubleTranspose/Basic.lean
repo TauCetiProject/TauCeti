@@ -28,6 +28,10 @@ The double-transpose equivalences use the transpose's actual codomain `Aᵐᵒ�
 semilinear along the canonical ring equivalence `Aᵐᵒᵖᵐᵒᵖ ≃+* A`. Thus they apply to
 noncommutative rings without changing the transpose's module instances.
 
+For a right presentation, `rightDoubleTransposePresentationEquiv` instead dualizes into
+`A` itself. Its recovery is `Aᵐᵒᵖ`-linear, which lets left presentations realize prescribed
+right modules as their transposes.
+
 ## References
 
 * M. Auslander, M. Bridger, *Stable module theory*, Mem. Amer. Math. Soc. 94 (1969), Section 2.1.
@@ -160,5 +164,58 @@ theorem doubleTransposePresentationEquiv_symm_apply (f : P₁ →ₗ[A] P₀) (g
         (opDualCodomainEquiv A (Module.Dual A P₀) (opDualEval A P₀ x)) := by
   rw [doubleTransposePresentationEquiv, LinearEquiv.symm_trans_apply,
     Function.Exact.linearEquivOfSurjective_symm_apply, doubleTransposeCokernelEquiv_symm_mk]
+
+section RightPresentation
+
+variable {Q₀ Q₁ N : Type*} [AddCommGroup Q₀] [Module Aᵐᵒᵖ Q₀]
+  [AddCommGroup Q₁] [Module Aᵐᵒᵖ Q₁] [AddCommGroup N] [Module Aᵐᵒᵖ N]
+  [Module.Finite Aᵐᵒᵖ Q₀] [Module.Projective Aᵐᵒᵖ Q₀]
+  [Module.Finite Aᵐᵒᵖ Q₁] [Module.Projective Aᵐᵒᵖ Q₁]
+
+/-- Transposing the `A`-valued dual of a finite projective right presentation returns its
+presented module, with no scalar transport through the double opposite. -/
+noncomputable def rightDoubleTransposePresentationEquiv
+    (f : Q₁ →ₗ[Aᵐᵒᵖ] Q₀) (g : Q₀ →ₗ[Aᵐᵒᵖ] N)
+    (hexact : Function.Exact f g) (hsurj : Function.Surjective g) :
+    AuslanderReitenTranspose (f.lcomp A A) ≃ₗ[Aᵐᵒᵖ] N := by
+  let e₀ := unopDualEvalEquiv A Q₀
+  let e₁ := unopDualEvalEquiv A Q₁
+  have hsquare : e₀.symm.toLinearMap ∘ₗ (f.lcomp A A).lcomp Aᵐᵒᵖ A =
+      f ∘ₗ e₁.symm.toLinearMap := by
+    ext F
+    apply e₀.injective
+    simp [e₀, e₁, unopDualEvalEquiv_naturality]
+  have hrange :
+      (LinearMap.range ((f.lcomp A A).lcomp Aᵐᵒᵖ A)).map e₀.symm.toLinearMap =
+        LinearMap.range f := by
+    rw [← LinearMap.range_comp, hsquare, LinearEquiv.range_comp]
+  exact (AuslanderReitenTranspose.quotientEquiv (f.lcomp A A) _ e₀.symm hrange).trans
+    (hexact.linearEquivOfSurjective hsurj)
+
+/-- Recovery from the right double transpose applies the augmentation to inverse evaluation. -/
+@[simp]
+theorem rightDoubleTransposePresentationEquiv_mk
+    (f : Q₁ →ₗ[Aᵐᵒᵖ] Q₀) (g : Q₀ →ₗ[Aᵐᵒᵖ] N)
+    (hexact : Function.Exact f g) (hsurj : Function.Surjective g)
+    (F : Module.Dual A (Q₀ →ₗ[Aᵐᵒᵖ] A)) :
+    rightDoubleTransposePresentationEquiv A f g hexact hsurj
+        (AuslanderReitenTranspose.mk (f.lcomp A A) F) =
+      g ((unopDualEvalEquiv A Q₀).symm F) := by
+  simp only [rightDoubleTransposePresentationEquiv, LinearEquiv.trans_apply,
+    AuslanderReitenTranspose.quotientEquiv_mk]
+  rw [← Function.Exact.linearEquivOfSurjective_symm_apply hexact hsurj,
+    LinearEquiv.apply_symm_apply]
+
+/-- Inverse recovery sends the image of a right presenting vector to its evaluation class. -/
+@[simp]
+theorem rightDoubleTransposePresentationEquiv_symm_apply
+    (f : Q₁ →ₗ[Aᵐᵒᵖ] Q₀) (g : Q₀ →ₗ[Aᵐᵒᵖ] N)
+    (hexact : Function.Exact f g) (hsurj : Function.Surjective g) (x : Q₀) :
+    (rightDoubleTransposePresentationEquiv A f g hexact hsurj).symm (g x) =
+      AuslanderReitenTranspose.mk (f.lcomp A A) (unopDualEvalEquiv A Q₀ x) := by
+  apply (rightDoubleTransposePresentationEquiv A f g hexact hsurj).injective
+  simp
+
+end RightPresentation
 
 end TauCeti

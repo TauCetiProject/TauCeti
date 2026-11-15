@@ -41,8 +41,7 @@ with zero divisors.
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
-This supplies the explicit `GL₂` check for the dynamic-parabolic route in Layer 7, "Structure
-theory", of the ReductiveGroups roadmap.
+This supplies the explicit `GL₂` check for the dynamic approach to parabolic subgroups.
 -/
 
 public section

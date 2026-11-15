@@ -18,12 +18,8 @@ API, in turn, is the formal model for symmetric powers.  The declarations here b
 layers by turning `D⁺` and `D⁻` into `EffectiveDivisorOfDegree` terms with their actual degrees
 as indices.
 
-This is formal divisor bookkeeping for the Jacobian challenge roadmap's Layer A and Layer C:
-`TauCetiRoadmap/JacobianChallenge/README.md`, specifically "Divisors on a curve: Weil divisors
-`⊕_x ℤ`", "Degree", and the symmetric-power prerequisite "Relative effective Cartier divisors
-and symmetric powers `Symᵈ X`".  No external mathematics is vendored; the proofs reuse Tau
-Ceti's `WeilDivisor.Order` positive/negative-part API and the existing
-`EffectiveDivisorOfDegree` packaging.
+No external mathematics is vendored; the proofs reuse Tau Ceti's `WeilDivisor.Order`
+positive/negative-part API and the `EffectiveDivisorOfDegree` packaging.
 -/
 
 public section
@@ -45,14 +41,12 @@ noncomputable section
 /-- The positive part of a Weil divisor, packaged as an effective divisor of its own degree. -/
 abbrev posPart (D : WeilDivisor X) :
     EffectiveDivisorOfDegree X (degree D⁺).toNat :=
-  ⟨D⁺, WeilDivisor.isEffective_posPart D,
-    (Int.toNat_of_nonneg (WeilDivisor.isEffective_posPart D).degree_nonneg).symm⟩
+  ⟨D⁺, posPart_nonneg D, (Int.toNat_of_nonneg (degree_nonneg (posPart_nonneg D))).symm⟩
 
 /-- The negative part of a Weil divisor, packaged as an effective divisor of its own degree. -/
 abbrev negPart (D : WeilDivisor X) :
     EffectiveDivisorOfDegree X (degree D⁻).toNat :=
-  ⟨D⁻, WeilDivisor.isEffective_negPart D,
-    (Int.toNat_of_nonneg (WeilDivisor.isEffective_negPart D).degree_nonneg).symm⟩
+  ⟨D⁻, negPart_nonneg D, (Int.toNat_of_nonneg (degree_nonneg (negPart_nonneg D))).symm⟩
 
 /-- The underlying Weil divisor of the packaged positive part is `D⁺`. -/
 @[simp]
@@ -66,22 +60,22 @@ lemma coe_negPart (D : WeilDivisor X) : (negPart D : WeilDivisor X) = D⁻ :=
 
 /-- If a divisor is already effective, its packaged positive part is the divisor itself, up to
 the degree-index cast. -/
-lemma posPart_coe_of_isEffective (D : EffectiveDivisorOfDegree X d) :
+lemma posPart_coe_eq_cast_self (D : EffectiveDivisorOfDegree X d) :
     posPart (D : WeilDivisor X) =
       EffectiveDivisorOfDegree.cast (by
-        rw [WeilDivisor.posPart_eq_self_iff_isEffective.mpr D.isEffective, D.degree_eq]
+        rw [posPart_eq_self.mpr D.coe_nonneg, D.degree_eq]
         simp) D := by
   ext
-  simp [WeilDivisor.posPart_eq_self_iff_isEffective.mpr D.isEffective]
+  simp
 
 /-- If a divisor is effective, its packaged negative part is the zero divisor. -/
-lemma negPart_coe_of_isEffective (D : EffectiveDivisorOfDegree X d) :
+lemma negPart_coe_eq_cast_zero (D : EffectiveDivisorOfDegree X d) :
     negPart (D : WeilDivisor X) =
       EffectiveDivisorOfDegree.cast (by
-        rw [WeilDivisor.negPart_eq_zero_iff_isEffective.mpr D.isEffective]
+        rw [negPart_eq_zero.mpr D.coe_nonneg]
         simp) (zero X) := by
   ext
-  simp [WeilDivisor.negPart_eq_zero_iff_isEffective.mpr D.isEffective]
+  simp
 
 /-! ### Point differences -/
 

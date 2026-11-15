@@ -13,7 +13,7 @@ public import TauCeti.Data.Sym.Pi
 The generators of a pointed Heegaard diagram choose one intersection point on each `α`-curve
 and each `β`-curve. This file records incidence data by assigning each intersection point its
 `α`- and `β`-curve labels. A generator is the matching datum in the domain of
-`TauCeti.Sym.matchingTuple`, specialized through `TauCeti.Sym.piInterEquiv` to the two label
+`Sym.matchingTuple`, specialized through `Sym.piInterEquiv` to the two label
 fibers: a permutation of the curve indices and an intersection point in each paired fiber.
 
 The curve count `n` is independent of surface genus. For a multi-pointed diagram of genus `g`
@@ -35,9 +35,14 @@ needed to define the differential.
 * `TauCeti.HeegaardIntersectionSystem.generatorOfPointChoice`: the point-choice constructor from
   bijective `β`-labels.
 * `TauCeti.HeegaardIntersectionSystem.point` and `TauCeti.HeegaardIntersectionSystem.betaEquiv`:
-  accessors for the chosen point and its curve matching.
+  accessors for the chosen point and its curve matching; a generator is determined by its chosen
+  points (`TauCeti.HeegaardIntersectionSystem.point_injective`).
 * `TauCeti.HeegaardIntersectionSystem.generatorChain`: the `0`-chain of the points of a
   generator.
+* `TauCeti.HeegaardIntersectionSystem.betaPoint` and
+  `TauCeti.HeegaardIntersectionSystem.generatorEquivBetaPoint`: a generator read along the
+  `β`-curves, as one point on each `β`-curve whose `α`-curves are all different; this is the form
+  in which generators of glued bordered diagrams are assembled.
 
 ## References
 
@@ -110,7 +115,7 @@ theorem generator_card :
     (pairwise_disjoint_fiber D.beta) (by
       intro i j
       exact hPoint.subset (by
-        intro p hp
+        intro p _
         exact Set.mem_univ p))
 
 /-- Construct a generator from a point choice and its two curve-label conditions. -/
@@ -175,6 +180,14 @@ theorem betaEquiv_apply (g : D.Generator) (i : Fin n) :
     D.betaEquiv g i = D.beta (D.point g i) := by
   simpa [betaEquiv, point] using (g.2 i).property.2.symm
 
+/-- A generator is determined by its chosen points: their `β`-labels recover the matching. -/
+theorem point_injective : Function.Injective D.point := by
+  rintro ⟨σ, f⟩ ⟨τ, g⟩ h
+  obtain rfl : σ = τ := Equiv.ext fun i => by
+    simpa [point] using (f i).property.2.symm.trans (congrArg D.beta (congrFun h i)) |>.trans
+      (g i).property.2
+  exact congrArg (Sigma.mk σ) (funext fun i => Subtype.ext (congrFun h i))
+
 /-- The chosen point over `i` has `α`-label `i`. -/
 @[simp]
 theorem alpha_coe (g : D.Generator) (i : Fin n) : D.alpha (g.2 i) = i :=
@@ -206,10 +219,22 @@ theorem generatorChain_apply [DecidableEq Point] (g : D.Generator) (q : Point) :
   simp only [generatorChain, Set.indicator_apply, Set.mem_range, point_apply, exists_point_iff,
     Pi.one_apply]
 
+/-- The `0`-chain of a generator is the sum of the unit chains at its intersection points. -/
+theorem generatorChain_eq_sum_single [DecidableEq Point] (g : D.Generator) :
+    D.generatorChain g = ∑ i, Pi.single (D.point g i) 1 := by
+  funext q
+  rw [generatorChain_apply, Finset.sum_apply, Finset.sum_eq_single (D.alpha q)]
+  · simp [Pi.single_apply, eq_comm]
+  · intro i _ hi
+    have : q ≠ D.point g i := fun h => hi (by simp [h])
+    exact Pi.single_eq_of_ne this 1
+  · simp
+
 /-- Pairing the `0`-chain of a generator with a function on intersection points sums the
-function over the points of the generator. -/
-theorem sum_generatorChain_smul [Fintype Point] {M : Type*} [AddCommGroup M] (g : D.Generator)
-    (f : Point → M) :
+function over the points of the generator. Only the zero and one scalar laws are needed, so
+the values may lie in any commutative additive monoid with a zero-preserving `ℤ`-action. -/
+theorem sum_generatorChain_smul [Fintype Point] {M : Type*} [AddCommMonoid M]
+    [MulActionWithZero ℤ M] (g : D.Generator) (f : Point → M) :
     ∑ q, D.generatorChain g q • f q = ∑ i, f (D.point g i) := by
   classical
   simp only [generatorChain_apply, ite_smul, one_smul, zero_smul]
@@ -224,6 +249,78 @@ theorem sum_generatorChain_smul [Fintype Point] {M : Type*} [AddCommGroup M] (g 
 theorem Generator.ext {g g' : D.Generator} (h : ∀ i, (g.2 i : Point) = g'.2 i) : g = g' :=
   Sym.matching_ext (A := fun i => {p | D.alpha p = i})
     (B := fun j => {p | D.beta p = j}) (pairwise_disjoint_fiber D.beta) h
+
+/-! ### Generators indexed by the `β`-curves -/
+
+/-- The point of a generator on the `β`-curve `j`. -/
+def betaPoint (g : D.Generator) (j : Fin n) : Point :=
+  g.2 (g.1.symm j)
+
+/-- The point of a generator on the `β`-curve `j` lies on `j`. -/
+@[simp]
+theorem beta_betaPoint (g : D.Generator) (j : Fin n) : D.beta (D.betaPoint g j) = j := by
+  simp [betaPoint]
+
+/-- The point of a generator on the `β`-curve `j` lies on the `α`-curve matched with `j`. -/
+@[simp]
+theorem alpha_betaPoint (g : D.Generator) (j : Fin n) : D.alpha (D.betaPoint g j) = g.1.symm j := by
+  simp [betaPoint]
+
+/-- The `α`-curves of the points of a generator on the `β`-curves are all different and exhaust
+the `α`-curves. -/
+theorem alpha_comp_betaPoint_bijective (g : D.Generator) :
+    Function.Bijective (D.alpha ∘ D.betaPoint g) := by
+  convert g.1.symm.bijective
+  ext
+  simp
+
+/-- A generator is determined by its points on the `β`-curves. -/
+theorem betaPoint_injective : Function.Injective D.betaPoint := by
+  rintro ⟨σ, f⟩ ⟨τ, f'⟩ h
+  obtain rfl : σ = τ := Equiv.symm_bijective.injective
+    (Equiv.ext fun j ↦ by simpa using congrArg D.alpha (congrFun h j))
+  refine Generator.ext D fun i ↦ ?_
+  have hi := congrFun h (σ i)
+  rwa [betaPoint, betaPoint, Equiv.symm_apply_apply] at hi
+
+/-- Construct a generator from one intersection point on each `β`-curve, provided that the
+`α`-curves of these points are all different and exhaust the `α`-curves. -/
+noncomputable def generatorOfBetaPoint (q : Fin n → Point) (hβ : ∀ j, D.beta (q j) = j)
+    (hα : Function.Bijective (D.alpha ∘ q)) : D.Generator :=
+  ⟨(Equiv.ofBijective _ hα).symm, fun i ↦
+    ⟨q ((Equiv.ofBijective _ hα).symm i), by
+      simpa using Equiv.ofBijective_apply_symm_apply _ hα i, hβ _⟩⟩
+
+/-- The points on the `β`-curves of the generator built from `q` are those of `q`. -/
+@[simp]
+theorem betaPoint_generatorOfBetaPoint (q : Fin n → Point) (hβ : ∀ j, D.beta (q j) = j)
+    (hα : Function.Bijective (D.alpha ∘ q)) :
+    D.betaPoint (D.generatorOfBetaPoint q hβ hα) = q := by
+  ext j
+  have hj := Equiv.ofBijective_symm_apply_apply _ hα j
+  simp only [Function.comp_apply] at hj
+  simp [betaPoint, generatorOfBetaPoint, hj]
+
+/-- The generators are the choices of one intersection point on each `β`-curve whose `α`-curves
+are all different and exhaust the `α`-curves. -/
+noncomputable def generatorEquivBetaPoint :
+    D.Generator ≃ {q : Fin n → Point // (∀ j, D.beta (q j) = j) ∧
+      Function.Bijective (D.alpha ∘ q)} where
+  toFun g := ⟨D.betaPoint g, D.beta_betaPoint g, D.alpha_comp_betaPoint_bijective g⟩
+  invFun q := D.generatorOfBetaPoint q.1 q.2.1 q.2.2
+  left_inv g := D.betaPoint_injective (by simp)
+  right_inv q := Subtype.ext (by simp)
+
+@[simp]
+theorem coe_generatorEquivBetaPoint (g : D.Generator) :
+    (D.generatorEquivBetaPoint g : Fin n → Point) = D.betaPoint g :=
+  (rfl)
+
+@[simp]
+theorem generatorEquivBetaPoint_symm_apply (q : {q : Fin n → Point // (∀ j, D.beta (q j) = j) ∧
+      Function.Bijective (D.alpha ∘ q)}) :
+    D.generatorEquivBetaPoint.symm q = D.generatorOfBetaPoint q.1 q.2.1 q.2.2 :=
+  (rfl)
 
 end HeegaardIntersectionSystem
 

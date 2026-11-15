@@ -6,36 +6,47 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Continuous.Basic
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Precomp
 
 /-!
 # Restricting a continuous representation to an invariant submodule
 
 This file restricts a continuous representation of a monoid to a submodule preserved by every
-action operator, the continuous counterpart of Mathlib's `Representation.subrepresentation`.
+action operator, the continuous counterpart of Mathlib's `Representation.subrepresentation`, and
+descends it to the quotient by such a submodule, the continuous counterpart of
+`Representation.quotient`. In particular an intertwining map acts on its kernel and on the quotient
+by its range, the representations underlying `TopRep.ker` and `TopRep.coker`.
 
 ## Main definitions
 
-* `TauCeti.ContRepresentation.subrepresentation`: the restriction of a continuous representation to
+* `ContRepresentation.subrepresentation`: the restriction of a continuous representation to
   an invariant submodule.
 * `ContRepresentation.subrepresentationInclusion`: the continuous intertwiner including a
   subrepresentation into its ambient representation.
+* `ContRepresentation.quotient`: a continuous representation descended to the quotient by an
+  invariant submodule, the continuous counterpart of `Representation.quotient`.
+* `ContIntertwiningMap.kerRepresentation`: the action on the kernel of an intertwining map.
+* `ContIntertwiningMap.cokerRepresentation`: the action on the quotient by its range.
 
 ## Main results
 
-* `TauCeti.ContRepresentation.mem_invariants_subrepresentation`: a vector of the submodule is
+* `Subrepresentation.contRepresentation_apply_mem_toSubmodule`: a subrepresentation of the
+  underlying representation is stable under the continuous operators.
+* `ContRepresentation.mem_invariants_subrepresentation`: a vector of the submodule is
   invariant for the restricted representation exactly when it is invariant for the ambient one.
-* `TauCeti.ContRepresentation.toRepresentation_subrepresentation`: the underlying representation of
+* `ContRepresentation.toRepresentation_subrepresentation`: the underlying representation of
   a restricted continuous representation is the restriction of the underlying representation.
-* `TauCeti.ContRepresentation.toRepresentation_subrepresentation_toSubmodule`: restricting to the
+* `Subrepresentation.toRepresentation_subrepresentation_toSubmodule`: restricting to the
   submodule a subrepresentation carries has that subrepresentation's own representation underneath.
-* `TauCeti.ContRepresentation.continuous_subrepresentation`: the restriction of a continuous
+* `ContRepresentation.toRepresentation_quotient`: the underlying representation of a descended
+  continuous representation is the descended underlying representation.
+* `ContRepresentation.continuous_subrepresentation`: the restriction of a continuous
   representation to an invariant submodule is again continuous.
 -/
 
 public section
-
-namespace TauCeti
 
 namespace ContRepresentation
 
@@ -61,11 +72,20 @@ theorem coe_subrepresentation_apply (g : G) (v : W) :
     ((subrepresentation π W hW g v : W) : V) = π g (v : V) :=
   (rfl)
 
--- Declared in the root `ContRepresentation` namespace, so that the inclusion is reachable as
--- `π.subrepresentationInclusion σ` at its use sites.
+/-- A subrepresentation of the underlying representation of `π` is stable under the continuous
+operators `π g`. This is `Subrepresentation.apply_mem_toSubmodule` with `π.toRepresentation g`
+read as `π g`, in the shape of the stability hypothesis of `ContRepresentation.subrepresentation`;
+the two operators agree only after unfolding `ContRepresentation.toRepresentation`, so passing this
+lemma, rather than `Subrepresentation.apply_mem_toSubmodule` itself, keeps the restricted
+representation type-correct at the transparency at which `rw` and `simp` check their motives. -/
+theorem _root_.Subrepresentation.contRepresentation_apply_mem_toSubmodule
+    (σ : Subrepresentation π.toRepresentation) (g : G) (v : V) (hv : v ∈ σ.toSubmodule) :
+    π g v ∈ σ.toSubmodule :=
+  σ.apply_mem_toSubmodule g hv
+
 /-- The inclusion of a subrepresentation into its ambient continuous representation, packaged as a
 continuous intertwiner. -/
-noncomputable def _root_.ContRepresentation.subrepresentationInclusion
+noncomputable def subrepresentationInclusion
     (π : ContRepresentation R G V) (σ : Subrepresentation π.toRepresentation) :
     ContIntertwiningMap
       (subrepresentation π σ.toSubmodule
@@ -77,7 +97,7 @@ noncomputable def _root_.ContRepresentation.subrepresentationInclusion
 
 /-- The subrepresentation inclusion sends a vector to the same vector in the ambient space. -/
 @[simp]
-theorem _root_.ContRepresentation.subrepresentationInclusion_apply (π : ContRepresentation R G V)
+theorem subrepresentationInclusion_apply (π : ContRepresentation R G V)
     (σ : Subrepresentation π.toRepresentation) (v : σ.toSubmodule) :
     π.subrepresentationInclusion σ v = (v : V) :=
   (rfl)
@@ -107,19 +127,56 @@ theorem toRepresentation_subrepresentation : (subrepresentation π W hW).toRepre
 /-- Restricting `π` to the submodule a subrepresentation `σ` of `π.toRepresentation` carries has
 `σ.toRepresentation` as its underlying representation: both restrict the ambient action to the
 same submodule. -/
-theorem toRepresentation_subrepresentation_toSubmodule (σ : Subrepresentation π.toRepresentation)
-    (hσ : ∀ g, ∀ v ∈ σ.toSubmodule, π g v ∈ σ.toSubmodule) :
-    (subrepresentation π σ.toSubmodule hσ).toRepresentation = σ.toRepresentation := by
-  rw [toRepresentation_subrepresentation]
+theorem _root_.Subrepresentation.toRepresentation_subrepresentation_toSubmodule
+    (σ : Subrepresentation π.toRepresentation) :
+    (subrepresentation π σ.toSubmodule
+      (fun g _ hv ↦ σ.apply_mem_toSubmodule g hv)).toRepresentation = σ.toRepresentation := by
+  exact toRepresentation_subrepresentation.trans (by ext g v; rfl)
+
+end Restriction
+
+section Quotient
+
+variable {R G V : Type*} [Ring R] [Monoid G] [AddCommGroup V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V] [Module R V]
+
+/-- A continuous representation descended to the quotient by an invariant submodule, which
+carries the quotient topology. This is the continuous counterpart of `Representation.quotient`. -/
+def quotient (π : ContRepresentation R G V) (W : Submodule R V)
+    (hW : ∀ g, ∀ v ∈ W, π g v ∈ W) : ContRepresentation R G (V ⧸ W) :=
+  .ofMonoidHom
+    { toFun g := W.liftQL (W.mkQL ∘L π g) fun v hv ↦ by simpa using hW g v hv
+      map_one' := by
+        ext v
+        obtain ⟨v, rfl⟩ := W.mkQ_surjective v
+        simp
+      map_mul' g h := by
+        ext v
+        obtain ⟨v, rfl⟩ := W.mkQ_surjective v
+        simp }
+
+variable {π : ContRepresentation R G V} {W : Submodule R V} {hW : ∀ g, ∀ v ∈ W, π g v ∈ W}
+
+/-- The descended action on the class of `v` is the class of the ambient action on `v`. -/
+@[simp]
+theorem quotient_apply_mk (g : G) (v : V) :
+    quotient π W hW g (Submodule.Quotient.mk v) = Submodule.Quotient.mk (π g v) :=
+  (rfl)
+
+/-- The underlying representation of a descended continuous representation is the descended
+underlying representation. -/
+@[simp]
+theorem toRepresentation_quotient : (quotient π W hW).toRepresentation
+      = π.toRepresentation.quotient W fun g _ hv => hW g _ hv := by
   ext g v
   rfl
 
-end Restriction
+end Quotient
 
 section Continuity
 
 variable {𝕜 G V : Type*} [NormedField 𝕜] [Monoid G] [TopologicalSpace G] [AddCommGroup V]
-  [TopologicalSpace V] [IsTopologicalAddGroup V] [Module 𝕜 V] [ContinuousConstSMul 𝕜 V]
+  [TopologicalSpace V] [IsTopologicalAddGroup V] [Module 𝕜 V]
   {π : ContRepresentation 𝕜 G V} {W : Submodule 𝕜 V} {hW : ∀ g, ∀ v ∈ W, π g v ∈ W}
 
 /-- Restricting a continuous representation to an invariant submodule preserves continuity: from
@@ -131,10 +188,55 @@ theorem continuous_subrepresentation (hπ : Continuous π) :
     Continuous (subrepresentation π W hW) := by
   rw [(ContinuousLinearMap.isInducing_postcomp W.subtypeL
     Topology.IsInducing.subtypeVal).continuous_iff]
-  exact (ContinuousLinearMap.precomp V W.subtypeL).continuous.comp hπ
+  exact (ContinuousLinearMap.continuous_precomp W.subtypeL).comp hπ
 
 end Continuity
 
 end ContRepresentation
 
-end TauCeti
+namespace ContIntertwiningMap
+
+variable {R G V W : Type*} [Ring R] [Monoid G] [AddCommGroup V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V] [Module R V] [AddCommGroup W] [TopologicalSpace W]
+  [IsTopologicalAddGroup W] [Module R W]
+  {π : ContRepresentation R G V} {ρ : ContRepresentation R G W}
+  (T : ContIntertwiningMap π ρ)
+
+/-- The action of `G` on the kernel of an intertwining map `T : π →ⁱL ρ`: the restriction of `π`
+to the invariant submodule `ker T`, as in Mathlib's `Representation.IntertwiningMap.ker`. -/
+def kerRepresentation : ContRepresentation R G T.toContinuousLinearMap.ker :=
+  π.subrepresentation _ fun g _ hv ↦ T.toIntertwiningMap.ker.apply_mem_toSubmodule g hv
+
+/-- The kernel representation acts as `π` on the underlying vectors. -/
+@[simp]
+theorem coe_kerRepresentation_apply (g : G) (v : T.toContinuousLinearMap.ker) :
+    ((T.kerRepresentation g v : T.toContinuousLinearMap.ker) : V) = π g v :=
+  ContRepresentation.coe_subrepresentation_apply g v
+
+/-- The kernel representation is the restriction of `π` to `ker T`, so the API of
+`ContRepresentation.subrepresentation` applies to it. -/
+theorem kerRepresentation_eq_subrepresentation :
+    T.kerRepresentation = π.subrepresentation _ fun g _ hv ↦
+      T.toIntertwiningMap.ker.apply_mem_toSubmodule g hv :=
+  (rfl)
+
+/-- The action of `G` on the cokernel of an intertwining map `T : π →ⁱL ρ`: the descent of `ρ` to
+the quotient by the invariant submodule `range T`, as in Mathlib's
+`Representation.IntertwiningMap.range`. -/
+def cokerRepresentation : ContRepresentation R G (W ⧸ T.toContinuousLinearMap.range) :=
+  ρ.quotient _ fun g _ hw ↦ T.toIntertwiningMap.range.apply_mem_toSubmodule g hw
+
+/-- The cokernel representation acts on the class of `w` as `ρ` acts on `w`. -/
+@[simp]
+theorem cokerRepresentation_apply_mk (g : G) (w : W) :
+    T.cokerRepresentation g (Submodule.Quotient.mk w) = Submodule.Quotient.mk (ρ g w) :=
+  ContRepresentation.quotient_apply_mk g w
+
+/-- The cokernel representation is the descent of `ρ` to the quotient by `range T`, so the API of
+`ContRepresentation.quotient` applies to it. -/
+theorem cokerRepresentation_eq_quotient :
+    T.cokerRepresentation = ρ.quotient _ fun g _ hw ↦
+      T.toIntertwiningMap.range.apply_mem_toSubmodule g hw :=
+  (rfl)
+
+end ContIntertwiningMap

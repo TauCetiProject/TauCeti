@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Gluing
+public import TauCeti.Geometry.Manifold.Gluing.GlueData
 public import TauCeti.Geometry.Toric.Analytic.Fan.GlueData
 
 /-!
@@ -26,7 +26,7 @@ extending basis.
 
 Two affine charts are glued along the chart of the intersection cone, through the open face
 localizations into both. A face localization is a biholomorphism onto its open image, so the
-charts are glued along holomorphic maps, and `TauCeti.chartedSpaceOfIsOpenEmbedding` gives the
+charts are glued along holomorphic maps, and `TopCat.GlueData.chartedSpace` gives the
 realization a complex atlas making it a complex manifold. For this atlas, the inclusion of every
 affine chart, with the complex structure of any extending basis, is a biholomorphism onto its
 open image.
@@ -110,7 +110,7 @@ private theorem isOpenEmbedding_rankChart (σ : Φ.cones) :
     IsOpenEmbedding (Φ.rankChart hΦ σ) :=
   (Φ.chartData hΦ σ).L.toHomeomorph.isOpenEmbedding.comp
     (isOpenEmbedding_coneChartAmbient Φ.lattice _ _ _
-      (analyticChartGenerators Φ σ ((isRegular_iff.mp hΦ) σ.1 σ.2)).2)
+      (analyticChartGenerators Φ σ).2)
 
 /-- An affine analytic chart is nonempty. -/
 private instance nonempty_piece (σ : Φ.cones) : Nonempty ((Φ.analyticGlueData hΦ).U σ) :=
@@ -168,9 +168,9 @@ structure of the chosen chart data is holomorphic. -/
 private theorem contMDiff_toCone (σ : Φ.cones) (n : ℕ∞ω) :
     let hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
     let D := Φ.chartData hΦ σ
-    let _ := affinePointTopology (analyticChartGenerators Φ σ hσ).2
+    let _ := affinePointTopology (analyticChartGenerators Φ σ).2
     let _ := coneChartedSpace Φ.lattice hσ.toIsToricCone D.hB D.κ
-      (analyticChartGenerators Φ σ hσ).2
+      (analyticChartGenerators Φ σ).2
     ContMDiff 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) 𝓘(ℂ, (Fin D.k → ℂ) × (Fin D.l → ℂ)) n
       (Φ.toPoint hΦ σ) := by
   intro hσ D _ _
@@ -187,9 +187,9 @@ on an affine analytic chart is holomorphic. -/
 private theorem contMDiff_ofCone (σ : Φ.cones) (n : ℕ∞ω) :
     let hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
     let D := Φ.chartData hΦ σ
-    let _ := affinePointTopology (analyticChartGenerators Φ σ hσ).2
+    let _ := affinePointTopology (analyticChartGenerators Φ σ).2
     let _ := coneChartedSpace Φ.lattice hσ.toIsToricCone D.hB D.κ
-      (analyticChartGenerators Φ σ hσ).2
+      (analyticChartGenerators Φ σ).2
     ContMDiff 𝓘(ℂ, (Fin D.k → ℂ) × (Fin D.l → ℂ)) 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n
       (Φ.ofPoint hΦ σ) := by
   intro hσ D _ _
@@ -208,10 +208,10 @@ private theorem contMDiffOn_piece_iff (σ : Φ.cones) {E' H' M : Type*} [NormedA
         (fun x ↦ Φ.toPoint hΦ σ (f x) (MonoidAlgebra.single (Multiplicative.ofAdd m) 1)) t := by
   have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
   let D := Φ.chartData hΦ σ
-  let _ := affinePointTopology (analyticChartGenerators Φ σ hσ).2
-  let _ := coneChartedSpace Φ.lattice hσ.toIsToricCone D.hB D.κ (analyticChartGenerators Φ σ hσ).2
+  let _ := affinePointTopology (analyticChartGenerators Φ σ).2
+  let _ := coneChartedSpace Φ.lattice hσ.toIsToricCone D.hB D.κ (analyticChartGenerators Φ σ).2
   have hc := contMDiffOn_iff_forall_contMDiffOn_apply_single Φ.lattice hσ.toIsToricCone D.hB D.κ
-    (analyticChartGenerators Φ σ hσ).2 (I := I) (t := t) (n := n)
+    (analyticChartGenerators Φ σ).2 (I := I) (t := t) (n := n)
     (f := Φ.toPoint hΦ σ ∘ f)
   exact ⟨fun hf ↦ hc.1 ((Φ.contMDiff_toCone hΦ σ n).comp_contMDiffOn hf),
     fun hf ↦ (Φ.contMDiff_ofCone hΦ σ n).comp_contMDiffOn (hc.2 hf)⟩
@@ -220,7 +220,7 @@ private theorem contMDiffOn_piece_iff (σ : Φ.cones) {E' H' M : Type*} [NormedA
 data. -/
 private noncomputable def pieceMap {τ σ : Φ.cones} (f : τ ⟶ σ) :
     (Φ.analyticGlueData hΦ).U τ → (Φ.analyticGlueData hΦ).U σ :=
-  (Φ.analyticAffineChartDiagram hΦ).map f
+  (Φ.analyticAffineChartDiagram).map f
 
 /-- A map of affine analytic charts along a face inclusion is an open embedding. -/
 private theorem isOpenEmbedding_pieceMap {τ σ : Φ.cones} (f : τ ⟶ σ) :
@@ -231,7 +231,7 @@ private theorem isOpenEmbedding_pieceMap {τ σ : Φ.cones} (f : τ ⟶ σ) :
 private theorem toPoint_pieceMap {τ σ : Φ.cones} (f : τ ⟶ σ) (x : (Φ.analyticGlueData hΦ).U τ) :
     Φ.toPoint hΦ σ (Φ.pieceMap hΦ f x) =
       faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f)) (Φ.toPoint hΦ τ x) :=
-  Φ.analyticFaceMap_apply _ _ f x
+  Φ.analyticFaceMap_apply f x
 
 /-- The gluing of two pieces is compatible with a map along a face inclusion. -/
 private theorem ι_pieceMap {τ σ : Φ.cones} (f : τ ⟶ σ) (x : (Φ.analyticGlueData hΦ).U τ) :
@@ -263,8 +263,8 @@ private theorem contMDiffOn_pieceMap_symm {τ σ : Φ.cones} (f : τ ⟶ σ) (n 
   have hτσ := Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f)
   let Dσ := Φ.chartData hΦ σ
   let Dτ := Φ.chartData hΦ τ
-  let gσ := (analyticChartGenerators Φ σ hσ).2
-  let gτ := (analyticChartGenerators Φ τ hτ).2
+  let gσ := (analyticChartGenerators Φ σ).2
+  let gτ := (analyticChartGenerators Φ τ).2
   let _ := affinePointTopology gσ
   let _ := affinePointTopology gτ
   let _ := coneChartedSpace Φ.lattice hσ.toIsToricCone Dσ.hB Dσ.κ gσ
@@ -294,7 +294,7 @@ private theorem exists_contMDiffAt_transition (σ τ : Φ.cones) (x : (Φ.analyt
   let e := hl.toOpenPartialHomeomorph _
   have hleft : ∀ v, e.symm (Φ.pieceMap hΦ l v) = v := fun v ↦
     hl.toOpenPartialHomeomorph_left_inv _
-  have hz : Φ.analyticOverlapLeft hΦ σ τ z = Φ.pieceMap hΦ l z := by
+  have hz : Φ.analyticOverlapLeft σ τ z = Φ.pieceMap hΦ l z := by
     rw [analyticOverlapLeft_def]
     -- `pieceMap` is the map of the chart diagram.
     rfl
@@ -318,18 +318,14 @@ inclusions. -/
 @[instance_reducible]
 noncomputable def analyticChartedSpace :
     ChartedSpace (Fin (Module.finrank ℤ N) → ℂ) (Φ.analyticRealization hΦ) :=
-  chartedSpaceOfIsOpenEmbedding (J := (Φ.analyticGlueData hΦ).J)
-    (U := fun σ ↦ (Φ.analyticGlueData hΦ).U σ) (M := Φ.analyticRealization hΦ)
-    (φ := fun σ ↦ ⇑((Φ.analyticGlueData hΦ).ι σ)) (Φ.analyticGlueData hΦ).ι_isOpenEmbedding
-    (Φ.analyticGlueData hΦ).ι_jointly_surjective
+  (Φ.analyticGlueData hΦ).chartedSpace _
 
 /-- The analytic realization of a regular fan is a complex manifold. -/
 theorem isManifold_analyticRealization (n : ℕ∞ω) :
     letI := Φ.analyticChartedSpace hΦ
     IsManifold 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n (Φ.analyticRealization hΦ) :=
-  isManifold_chartedSpaceOfIsOpenEmbedding (J := (Φ.analyticGlueData hΦ).J)
-    (U := fun σ ↦ (Φ.analyticGlueData hΦ).U σ) (M := Φ.analyticRealization hΦ)
-    (φ := fun σ ↦ ⇑((Φ.analyticGlueData hΦ).ι σ)) _ _
+  isManifold_chartedSpaceOfIsOpenEmbedding (Φ.analyticGlueData hΦ).ι_isOpenEmbedding
+    (Φ.analyticGlueData hΦ).ι_jointly_surjective
     fun σ τ x y h ↦ Φ.exists_contMDiffAt_transition hΦ σ τ x y h n
 
 /-- The inclusion of the affine analytic chart of a cone, with its chosen structure, as a
@@ -338,9 +334,8 @@ private noncomputable def piecePartialDiffeomorph (σ : Φ.cones) (n : ℕ∞ω)
     letI := Φ.analyticChartedSpace hΦ
     PartialDiffeomorph 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ)
       ((Φ.analyticGlueData hΦ).U σ) (Φ.analyticRealization hΦ) n :=
-  partialDiffeomorphOfIsOpenEmbedding (J := (Φ.analyticGlueData hΦ).J)
-    (U := fun σ ↦ (Φ.analyticGlueData hΦ).U σ) (M := Φ.analyticRealization hΦ)
-    (φ := fun σ ↦ ⇑((Φ.analyticGlueData hΦ).ι σ)) _ _
+  partialDiffeomorphOfIsOpenEmbedding (Φ.analyticGlueData hΦ).ι_isOpenEmbedding
+    (Φ.analyticGlueData hΦ).ι_jointly_surjective
     (fun σ τ x y h ↦ Φ.exists_contMDiffAt_transition hΦ σ τ x y h n) σ
 
 private theorem piecePartialDiffeomorph_source (σ : Φ.cones) (n : ℕ∞ω) :
@@ -356,9 +351,8 @@ private theorem piecePartialDiffeomorph_apply (σ : Φ.cones) (n : ℕ∞ω)
     (x : (Φ.analyticGlueData hΦ).U σ) :
     Φ.piecePartialDiffeomorph hΦ σ n x = Φ.analyticAffineChartι hΦ σ x := by
   rw [analyticAffineChartι_def]
-  exact congrFun (coe_partialDiffeomorphOfIsOpenEmbedding (J := (Φ.analyticGlueData hΦ).J)
-    (U := fun σ ↦ (Φ.analyticGlueData hΦ).U σ) (M := Φ.analyticRealization hΦ)
-    (φ := fun σ ↦ ⇑((Φ.analyticGlueData hΦ).ι σ)) _ _
+  exact congrFun (coe_partialDiffeomorphOfIsOpenEmbedding
+    (Φ.analyticGlueData hΦ).ι_isOpenEmbedding (Φ.analyticGlueData hΦ).ι_jointly_surjective
     (fun σ τ x y h ↦ Φ.exists_contMDiffAt_transition hΦ σ τ x y h n) σ) x
 
 section ChartInclusion
@@ -433,6 +427,21 @@ theorem analyticAffineChartPartialDiffeomorph_apply (n : ℕ∞ω)
     (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
     Φ.analyticAffineChartPartialDiffeomorph hΦ σ hB κ g n x = Φ.analyticAffineChartι hΦ σ x :=
   Φ.piecePartialDiffeomorph_apply hΦ σ n x
+
+/-- The inverse chart-inclusion biholomorphism recovers each affine chart point from its image. -/
+@[simp]
+theorem analyticAffineChartPartialDiffeomorph_symm_analyticAffineChartι (n : ℕ∞ω)
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
+    let _ := affinePointTopology g
+    let _ := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
+    letI := Φ.analyticChartedSpace hΦ
+    (Φ.analyticAffineChartPartialDiffeomorph hΦ σ hB κ g n).toPartialEquiv.symm
+      (Φ.analyticAffineChartι hΦ σ x) = x := by
+  intro _ _
+  let _ := Φ.analyticChartedSpace hΦ
+  rw [← Φ.analyticAffineChartPartialDiffeomorph_apply hΦ σ hB κ g n x]
+  exact (Φ.analyticAffineChartPartialDiffeomorph hΦ σ hB κ g n).toPartialEquiv.left_inv
+    (by simp)
 
 /-- The inclusion of the affine analytic chart of a cone into the analytic realization is
 holomorphic, for the complex structure of any extending basis of the cone. -/

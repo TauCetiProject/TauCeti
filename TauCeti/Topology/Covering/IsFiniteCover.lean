@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Covering.Comp
 public import TauCeti.Topology.Covering.Homeomorph
 
 /-!
@@ -27,8 +28,8 @@ covering spaces in the bundled sense, as objects of `TopCat / X`, are
 
 * `Homeomorph.isFiniteCover`, `TauCeti.IsFiniteCover.id`: homeomorphisms, and in particular the
   identity, are finite covers.
-* `TauCeti.IsFiniteCover.homeomorph_comp`: a finite cover followed by a homeomorphism is a finite
-  cover.
+* `TauCeti.IsFiniteCover.comp`: a composite of finite covers is a finite cover; in particular
+  (`TauCeti.IsFiniteCover.homeomorph_comp`) so is a finite cover followed by a homeomorphism.
 * `TauCeti.IsFiniteCover.connectedSpace`, `TauCeti.IsFiniteCover.infinite`: the base of a finite
   cover by a connected, respectively infinite, space is connected, respectively infinite.
 -/
@@ -64,13 +65,20 @@ protected theorem id : IsFiniteCover (@id N) where
   surjective := Function.surjective_id
   finite_fiber x := Set.finite_singleton x
 
-/-- A finite cover followed by a homeomorphism of the base is a finite cover. -/
-theorem homeomorph_comp (hp : IsFiniteCover p) (e : M ≃ₜ M') : IsFiniteCover (e ∘ p) where
-  isCoveringMap := hp.isCoveringMap.homeomorph_comp e
-  surjective := e.surjective.comp hp.surjective
+/-- A finite cover followed by a finite cover is a finite cover. -/
+theorem comp {q : M → M'} (hq : IsFiniteCover q) (hp : IsFiniteCover p) :
+    IsFiniteCover (q ∘ p) where
+  isCoveringMap := hq.isCoveringMap.comp hp.isCoveringMap fun x ↦
+    Set.finite_coe_iff.mp (hq.finite_fiber x)
+  surjective := hq.surjective.comp hp.surjective
   finite_fiber x := by
-    rw [Set.preimage_comp, ← e.image_symm, Set.image_singleton]
-    exact hp.finite_fiber _
+    rw [Set.preimage_comp]
+    exact (Set.finite_coe_iff.mp (hq.finite_fiber x) |>.preimage' fun y _ ↦
+      Set.finite_coe_iff.mp (hp.finite_fiber y)).to_subtype
+
+/-- A finite cover followed by a homeomorphism of the base is a finite cover. -/
+theorem homeomorph_comp (hp : IsFiniteCover p) (e : M ≃ₜ M') : IsFiniteCover (e ∘ p) :=
+  e.isFiniteCover.comp hp
 
 /-- The base of a finite cover by a connected space is connected. -/
 theorem connectedSpace [ConnectedSpace N] (hp : IsFiniteCover p) : ConnectedSpace M :=

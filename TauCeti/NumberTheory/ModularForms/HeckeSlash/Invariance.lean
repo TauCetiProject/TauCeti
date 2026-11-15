@@ -23,7 +23,7 @@ That is the content of Shimura's Proposition 3.37 — right multiplication by `�
 
 ⚠ The two groups are different: the hypothesis is invariance under `Γ₁` and the conclusion is
 invariance under `Γ₂`. They agree on a diagonal triple `HeckeCoset Δ Γ Γ`, which is where the
-Hecke operators of Layer 2(b) live, but nothing here needs them to.
+Hecke operators live, but nothing here needs them to.
 
 ## Main results
 
@@ -58,10 +58,7 @@ namespace HeckeRing.GL2
 variable (k : ℤ) {Δ : Submonoid (GL (Fin 2) ℚ)} {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℚ)}
   (D : HeckeCoset Δ Γ₁ Γ₂) [Finite (DecompQuotient Γ₂ Γ₁ (D.out : GL (Fin 2) ℚ)⁻¹)]
 
-/-- The enumeration the reindexing argument needs, chosen exactly as in `HeckeSlash/Basic.lean`
-so that the two `∑`s are the same term. -/
-noncomputable local instance : Fintype (DecompQuotient Γ₂ Γ₁ (D.out : GL (Fin 2) ℚ)⁻¹) :=
-  Fintype.ofFinite _
+attribute [local instance] fintypeDecompQuotient
 
 /-- **The slash sum of a `Γ₁`-invariant function is `Γ₂`-invariant.** For `f` invariant under the
 weight-`k` slash action of `Γ₁` and `γ ∈ Γ₂`,

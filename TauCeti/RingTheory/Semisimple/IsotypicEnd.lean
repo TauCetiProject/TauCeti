@@ -28,7 +28,7 @@ size over a division ring is simple.  So
 
   `IsSimpleRing (Module.End R M)`
 
-for every nonzero such `M`, with no hypothesis on `R` beyond what makes `M` semisimple.
+for every nonzero such `M`, over an arbitrary ring `R`.
 
 This is the shape in which Artin--Wedderburn uniqueness uses endomorphism rings: over a semisimple
 ring the isotypic components of the regular module are exactly the modules this applies to, so
@@ -37,8 +37,8 @@ ring the isotypic components of the regular module are exactly the modules this 
 
 ## Main results
 
-* `TauCeti.isSimpleRing_moduleEnd_of_isIsotypic`: **the endomorphism ring of a nonzero finite
-  isotypic semisimple module is simple.**
+* `IsIsotypic.isSimpleRing_moduleEnd`: **the endomorphism ring of a nonzero finite isotypic
+  semisimple module is simple.**
 
 ## Implementation notes
 
@@ -47,33 +47,23 @@ Nonzero-ness of `M` is what makes the matrix size `n` nonzero, and it cannot be 
 
 ## References
 
-This is the module-theoretic engine behind the Layer 2 uniqueness statements of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See T. Y. Lam, *A First Course in Noncommutative Rings*, GTM 131, §3, or C. W. Curtis and
 I. Reiner, *Representation Theory of Finite Groups and Associative Algebras*, §25.
 -/
 
 public section
 
-namespace TauCeti
-
 variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
 
 /-- **The endomorphism ring of a nonzero finite isotypic semisimple module is simple.**
 
-Writing `M` as a power `Sⁿ` of a simple module presents `End_R M` as the matrix ring
-`Matₙ(End_R S)` over the division ring `End_R S` of Schur's lemma, and `n ≠ 0` because `M ≠ 0`.
-
 The ring `R` is arbitrary: only the module is asked to be semisimple, isotypic and finite.  Over a
 simple Artinian ring every module is isotypic, which is the specialization
-`TauCeti.IsSimpleRing.moduleEnd`. -/
-theorem isSimpleRing_moduleEnd_of_isIsotypic [IsSemisimpleModule R M] [Module.Finite R M]
+`IsSimpleRing.moduleEnd`. -/
+theorem IsIsotypic.isSimpleRing_moduleEnd [IsSemisimpleModule R M] [Module.Finite R M]
     [Nontrivial M] (h : IsIsotypic R M) : IsSimpleRing (Module.End R M) := by
+  obtain ⟨n, _, S, _, ⟨e⟩⟩ := h.linearEquiv_fun
+  -- `M ≃ Sⁿ` presents `End_R M` as `Matₙ(End_R S)`, simple since `End_R S` is a division ring
+  -- by Schur's lemma (`classical` supplies its decidable equality) and `n ≠ 0`.
   classical
-  obtain ⟨n, hn, S, hS, ⟨e⟩⟩ := h.linearEquiv_fun
-  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn.ne⟩⟩
-  -- Schur's lemma makes `End_R S` a division ring, hence a simple ring, hence so is `Matₙ` of it.
-  exact IsSimpleRing.of_ringEquiv
-    (e.conjRingEquiv.trans (endVecRingEquivMatrixEnd (Fin n) R S)).symm inferInstance
-
-end TauCeti
+  exact .of_ringEquiv (e.conjRingEquiv.trans (endVecRingEquivMatrixEnd ..)).symm inferInstance

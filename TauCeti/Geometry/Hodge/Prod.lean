@@ -51,6 +51,8 @@ public section
 
 namespace TauCeti.Hodge
 
+open IsBaseChange
+
 universe u v w
 
 /-! ### The direct sum of two pure Hodge structures -/
@@ -131,19 +133,19 @@ theorem IsPolarization.prod {Q : LinearMap.BilinForm ℤ V} {Q' : LinearMap.Bili
     obtain ⟨hx1, hx2⟩ := (Submodule.mem_prod (p := hs.F p) (q := hs'.F p)).mp hx
     obtain ⟨hy1, hy2⟩ :=
       (Submodule.mem_prod (p := hs.F (n + 1 - p)) (q := hs'.F (n + 1 - p))).mp hy
-    rw [integralFormBaseChange_prod hℂ h'ℂ, LinearMap.BilinForm.prod_apply,
+    rw [bilinForm_prod hℂ h'ℂ, LinearMap.BilinForm.prod_apply,
       h.orthogonal p x.1 hx1 y.1 hy1, h'.orthogonal p x.2 hx2 y.2 hy2, add_zero]
   positive p x hx hx0 := by
     rw [HodgeStructureOn.prod_piece] at hx
     obtain ⟨hx1, hx2⟩ := (Submodule.mem_prod (p := hs.piece p) (q := hs'.piece p)).mp hx
-    rw [integralFormBaseChange_prod hℂ h'ℂ, latticeConj_prodMap hℂ h'ℂ,
+    rw [bilinForm_prod hℂ h'ℂ, latticeConj_prodMap hℂ h'ℂ,
       LinearMap.BilinForm.prod_apply, mul_add]
-    have hfst : 0 ≤ Complex.I ^ (2 * p - n) * integralFormBaseChange hℂ Q x.1
+    have hfst : 0 ≤ Complex.I ^ (2 * p - n) * bilinForm hℂ Q x.1
         (latticeConj hℂ x.1) := by
       rcases eq_or_ne x.1 0 with hzero | hne
       · simp [hzero]
       · exact (h.positive p x.1 hx1 hne).le
-    have hsnd : 0 ≤ Complex.I ^ (2 * p - n) * integralFormBaseChange h'ℂ Q' x.2
+    have hsnd : 0 ≤ Complex.I ^ (2 * p - n) * bilinForm h'ℂ Q' x.2
         (latticeConj h'ℂ x.2) := by
       rcases eq_or_ne x.2 0 with hzero | hne
       · simp [hzero]
@@ -171,7 +173,7 @@ theorem Polarization.prod_Qint (P : Polarization hℂ hs) (P' : Polarization h'�
 theorem Polarization.prod_Q (P : Polarization hℂ hs) (P' : Polarization h'ℂ hs') :
     (P.prod P').Q = P.Q.prod P'.Q := by
   rw [Polarization.Q_def, Polarization.Q_def, Polarization.Q_def, Polarization.prod_Qint,
-    integralFormBaseChange_prod]
+    bilinForm_prod]
 
 /-- A direct sum of polarizable pure Hodge structures is polarizable. -/
 theorem IsPolarizable.prod (h : IsPolarizable hℂ hs) (h' : IsPolarizable h'ℂ hs') :

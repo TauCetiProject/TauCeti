@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.TensorProduct.Galois
 public import TauCeti.Algebra.Coalgebra.BaseChange
+public import Mathlib.RingTheory.Bialgebra.TensorProduct
 import Mathlib.RingTheory.Flat.Basic
 import TauCeti.Algebra.TensorProduct.BaseChange
 

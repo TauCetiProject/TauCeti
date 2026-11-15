@@ -7,8 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.LFunction.FunctionalEquation
 public import TauCeti.NumberTheory.ModularForms.Newforms.AnalyticInvariants
-public import TauCeti.NumberTheory.ModularForms.Newforms.Fricke
-import TauCeti.NumberTheory.ModularForms.Parity
+public import TauCeti.NumberTheory.ModularForms.Newforms.SelfDual
 
 /-!
 # The sign of the functional equation
@@ -19,10 +18,12 @@ relation between *two* forms. When `f` is an eigenvector of the normalized Frick
 `𝒲_N f = ε • f`, the companion is `f` again up to the scalar `ε`, and the relation becomes a
 functional equation for `Λ_N(·, f)` alone, with **sign** `i^k ε`.
 
-On a newform of trivial nebentypus the eigenvalue is the Fricke sign `ε_N(f) ∈ {1, -1}` and the
-weight is even, so the sign of the functional equation is `i^k ε_N(f)`, again `1` or `-1`. A sign
-different from `1` forces the completed L-function to vanish at the central point `s = k / 2`,
-and hence makes the analytic rank of the newform positive.
+A newform `f` is an eigenvector of `𝒲_N` exactly when it is self-dual, `f = f_ρ`; the eigenvalue
+is then its Fricke pseudo-eigenvalue `λ_N(f)`, and the sign of the functional equation is
+`i^k λ_N(f)`, which is `1` or `-1`. This covers every newform of trivial nebentypus, where
+`λ_N(f)` is the Fricke sign `ε_N(f) ∈ {1, -1}`, and also the self-dual newforms of nontrivial real
+nebentypus. A sign different from `1` forces the completed L-function to vanish at the central
+point `s = k / 2`, and hence makes the analytic rank of the newform positive.
 
 ## Main results
 
@@ -33,6 +34,10 @@ and hence makes the analytic rank of the newform positive.
 * `CuspForm.Λ_eq_zero_of_normalizedFrickeOperatorCusp_eq_smul`,
   `CuspForm.L_eq_zero_of_normalizedFrickeOperatorCusp_eq_smul`: a sign different from `1` kills
   the central value of the completed and of the ordinary L-function.
+* `HeckeRing.GL2.Newform.IsSelfDual.frickeCompletedL_sub_eq`: the functional equation of a
+  self-dual newform, with sign `i^k λ_N(f)`.
+* `HeckeRing.GL2.Newform.IsSelfDual.analyticRank_pos_of_I_zpow_mul_frickePseudoEigenvalue_ne_one`:
+  a self-dual newform whose sign is different from `1` has positive analytic rank.
 * `HeckeRing.GL2.Newform.frickeCompletedL_sub_eq`: the functional equation of a newform of
   trivial nebentypus, with sign `i^k ε_N(f)`.
 * `HeckeRing.GL2.Newform.I_zpow_mul_frickeSign_eq_one_or_neg_one`: that sign is `1` or `-1`.
@@ -58,7 +63,7 @@ variable {N : ℕ} [NeZero N] {k : ℤ} (f : CuspForm ((Gamma1 N).map (mapGL ℝ
 
 /-! ### The functional equation of a Fricke eigenvector -/
 
-/-- **The one-form functional equation.** If a cusp form of level `Γ₁(N)` and positive weight `k`
+/-- **The one-form functional equation.** If a cusp form of level `Γ₁(N)` and weight `k`
 is an eigenvector of the normalized Fricke operator with eigenvalue `ε`, then its level-`N`
 completed L-function satisfies
 
@@ -66,11 +71,11 @@ completed L-function satisfies
 
 The sign of the functional equation is therefore `i^k ε`; the factor `i^k` comes from the
 two-form equation `frickeCompletedL_functional_equation_gamma1`. -/
-theorem frickeCompletedL_sub_eq_of_normalizedFrickeOperatorCusp_eq_smul (hk : 0 < k)
+theorem frickeCompletedL_sub_eq_of_normalizedFrickeOperatorCusp_eq_smul
     (hε : normalizedFrickeOperatorCusp k f = ε • f) (s : ℂ) :
     frickeCompletedL f (N.toPNat (NeZero.pos N)) ((k : ℂ) - s) =
       Complex.I ^ k * ε * frickeCompletedL f (N.toPNat (NeZero.pos N)) s := by
-  rw [frickeCompletedL_functional_equation_gamma1 f hk s, hε, frickeCompletedL_smul, mul_assoc]
+  rw [frickeCompletedL_functional_equation_gamma1 f s, hε, frickeCompletedL_smul, mul_assoc]
 
 /-- **The functional equation in Mathlib's normalization.** For a Fricke eigenvector with
 eigenvalue `ε`, Mathlib's completed L-function satisfies
@@ -86,7 +91,7 @@ theorem Λ_sub_eq_of_normalizedFrickeOperatorCusp_eq_smul (hk : 0 < k)
   have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
   have hA : (N : ℂ) ^ (((k : ℂ) - s) / 2) ≠ 0 :=
     fun h ↦ hN ((Complex.cpow_eq_zero_iff _ _).mp h).1
-  have h := frickeCompletedL_sub_eq_of_normalizedFrickeOperatorCusp_eq_smul f hk hε s
+  have h := frickeCompletedL_sub_eq_of_normalizedFrickeOperatorCusp_eq_smul f hε s
   -- `Nat.toPNat` is the subtype constructor, so its coercion back to `ℕ` is definitional; there
   -- is no `Nat.toPNat_coe` in Mathlib to rewrite with.
   rw [frickeCompletedL_eq_cpow_mul_Λ f (N.toPNat (NeZero.pos N)) hk,
@@ -105,10 +110,10 @@ theorem Λ_sub_eq_of_normalizedFrickeOperatorCusp_eq_smul (hk : 0 < k)
 /-- **The central point of a functional equation with sign different from `1`.** The central
 point `s = k / 2` is the fixed point of `s ↦ k - s`, so the functional equation reads
 `Λ_N(k/2, f) = i^k ε Λ_N(k/2, f)` there; unless the sign `i^k ε` is `1`, the value vanishes. -/
-theorem frickeCompletedL_eq_zero_of_normalizedFrickeOperatorCusp_eq_smul (hk : 0 < k)
+theorem frickeCompletedL_eq_zero_of_normalizedFrickeOperatorCusp_eq_smul
     (hε : normalizedFrickeOperatorCusp k f = ε • f) (hsign : Complex.I ^ k * ε ≠ 1) :
     frickeCompletedL f (N.toPNat (NeZero.pos N)) ((k : ℂ) / 2) = 0 := by
-  have h := frickeCompletedL_sub_eq_of_normalizedFrickeOperatorCusp_eq_smul f hk hε ((k : ℂ) / 2)
+  have h := frickeCompletedL_sub_eq_of_normalizedFrickeOperatorCusp_eq_smul f hε ((k : ℂ) / 2)
   have hcenter : (k : ℂ) - (k : ℂ) / 2 = (k : ℂ) / 2 := by ring
   rw [hcenter] at h
   exact (mul_left_eq_self₀.mp h.symm).resolve_left hsign
@@ -129,9 +134,10 @@ different from `1`. -/
 theorem L_eq_zero_of_normalizedFrickeOperatorCusp_eq_smul (hk : 0 < k)
     (hε : normalizedFrickeOperatorCusp k f = ε • f) (hsign : Complex.I ^ k * ε ≠ 1) :
     ModularForm.L hk f ((k : ℂ) / 2) = 0 := by
-  -- Mathlib offers no lemma for `L = Λ * (2 / Gammaℂ)`, so the definition is unfolded here.
-  unfold ModularForm.L
-  rw [Λ_eq_zero_of_normalizedFrickeOperatorCusp_eq_smul f hk hε hsign, zero_mul]
+  have hcenter : (k : ℂ) / 2 ≠ 0 :=
+    div_ne_zero (Int.cast_ne_zero.mpr (ne_of_gt hk)) (by norm_num)
+  rw [ModularForm.L_apply_of_ne_zero hk f hcenter,
+    Λ_eq_zero_of_normalizedFrickeOperatorCusp_eq_smul f hk hε hsign, zero_mul]
 
 end CuspForm
 
@@ -139,31 +145,57 @@ namespace HeckeRing.GL2.Newform
 
 variable {N : ℕ} [NeZero N] {k : ℤ}
 
+/-! ### The functional equation of a self-dual newform -/
+
+namespace IsSelfDual
+
+variable {f : Newform N k}
+
+/-- **The functional equation of a self-dual newform**, with sign `i^k λ_N(f)` for `λ_N(f)` the
+Fricke pseudo-eigenvalue:
+
+`Λ_N(k - s, f) = i^k λ_N(f) Λ_N(s, f)`.
+
+The nebentypus of a self-dual newform is real but need not be trivial. -/
+theorem frickeCompletedL_sub_eq (hf : f.IsSelfDual) (s : ℂ) :
+    CuspForm.frickeCompletedL f.toCuspForm (N.toPNat (NeZero.pos N)) ((k : ℂ) - s) =
+      Complex.I ^ k * f.frickePseudoEigenvalue *
+        CuspForm.frickeCompletedL f.toCuspForm (N.toPNat (NeZero.pos N)) s :=
+  CuspForm.frickeCompletedL_sub_eq_of_normalizedFrickeOperatorCusp_eq_smul f.toCuspForm
+    hf.normalizedFrickeOperatorCusp_eq_frickePseudoEigenvalue_smul s
+
+/-- **A self-dual newform whose functional equation has sign different from `1` has positive
+analytic rank**: its L-function vanishes at the central point `s = k / 2`. By
+`IsSelfDual.I_zpow_mul_frickePseudoEigenvalue_eq_one_or_neg_one` the sign is then `-1`. -/
+theorem analyticRank_pos_of_I_zpow_mul_frickePseudoEigenvalue_ne_one (hf : f.IsSelfDual)
+    (hk : 0 < k) (hsign : Complex.I ^ k * f.frickePseudoEigenvalue ≠ 1) :
+    0 < f.analyticRank hk :=
+  (f.analyticRank_pos_iff hk).mpr
+    (CuspForm.L_eq_zero_of_normalizedFrickeOperatorCusp_eq_smul f.toCuspForm hk
+      hf.normalizedFrickeOperatorCusp_eq_frickePseudoEigenvalue_smul hsign)
+
+end IsSelfDual
+
 /-! ### The functional equation of a newform of trivial nebentypus -/
 
 /-- **The functional equation of a newform of trivial nebentypus**, with sign `i^k ε_N(f)` for
 `ε_N(f)` the Fricke sign:
 
 `Λ_N(k - s, f) = i^k ε_N(f) Λ_N(s, f)`. -/
-theorem frickeCompletedL_sub_eq (f : Newform N k) (hχ : f.χ = 1) (hk : 0 < k) (s : ℂ) :
+theorem frickeCompletedL_sub_eq (f : Newform N k) (hχ : f.χ = 1) (s : ℂ) :
     CuspForm.frickeCompletedL f.toCuspForm (N.toPNat (NeZero.pos N)) ((k : ℂ) - s) =
       Complex.I ^ k * f.frickeSign hχ *
-        CuspForm.frickeCompletedL f.toCuspForm (N.toPNat (NeZero.pos N)) s :=
-  CuspForm.frickeCompletedL_sub_eq_of_normalizedFrickeOperatorCusp_eq_smul f.toCuspForm hk
-    (f.normalizedFrickeOperatorCusp_eq_frickeSign_smul hχ) s
+        CuspForm.frickeCompletedL f.toCuspForm (N.toPNat (NeZero.pos N)) s := by
+  rw [← f.frickePseudoEigenvalue_eq_frickeSign hχ]
+  exact (f.isSelfDual_of_χ_eq_one hχ).frickeCompletedL_sub_eq s
 
 /-- **The sign of the functional equation of a newform of trivial nebentypus is `1` or `-1`.**
-A nonzero form with trivial nebentypus has even weight, so `i^k` is `(-1) ^ (k / 2)`, and the
-Fricke sign is itself `± 1`. -/
+This is the trivial-nebentypus case of
+`HeckeRing.GL2.Newform.IsSelfDual.I_zpow_mul_frickePseudoEigenvalue_eq_one_or_neg_one`. -/
 theorem I_zpow_mul_frickeSign_eq_one_or_neg_one (f : Newform N k) (hχ : f.χ = 1) :
     Complex.I ^ k * f.frickeSign hχ = 1 ∨ Complex.I ^ k * f.frickeSign hχ = -1 := by
-  obtain ⟨m, hm⟩ :=
-    even_of_mem_cuspFormCharSpace_one_of_ne_zero (hχ ▸ f.mem_charSpace) f.ne_zero
-  have hI : Complex.I ^ k = (-1 : ℂ) ^ m := by
-    rw [hm, ← two_mul m, zpow_mul, zpow_two, Complex.I_mul_I]
-  rcases f.frickeSign_eq_one_or_neg_one hχ with hε | hε <;>
-    rcases Int.even_or_odd m with hpar | hpar <;>
-    simp [hI, hε, hpar.neg_one_zpow]
+  rw [← f.frickePseudoEigenvalue_eq_frickeSign hχ]
+  exact (f.isSelfDual_of_χ_eq_one hχ).I_zpow_mul_frickePseudoEigenvalue_eq_one_or_neg_one
 
 /-! ### Positive analytic rank -/
 
@@ -171,9 +203,9 @@ theorem I_zpow_mul_frickeSign_eq_one_or_neg_one (f : Newform N k) (hχ : f.χ = 
 positive analytic rank**: its L-function vanishes at the central point `s = k / 2`. -/
 theorem analyticRank_pos_of_I_zpow_mul_frickeSign_ne_one (f : Newform N k) (hχ : f.χ = 1)
     (hk : 0 < k) (hsign : Complex.I ^ k * f.frickeSign hχ ≠ 1) :
-    0 < f.analyticRank hk :=
-  (f.analyticRank_pos_iff hk).mpr
-    (CuspForm.L_eq_zero_of_normalizedFrickeOperatorCusp_eq_smul f.toCuspForm hk
-      (f.normalizedFrickeOperatorCusp_eq_frickeSign_smul hχ) hsign)
+    0 < f.analyticRank hk := by
+  rw [← f.frickePseudoEigenvalue_eq_frickeSign hχ] at hsign
+  exact (f.isSelfDual_of_χ_eq_one hχ).analyticRank_pos_of_I_zpow_mul_frickePseudoEigenvalue_ne_one
+    hk hsign
 
 end HeckeRing.GL2.Newform

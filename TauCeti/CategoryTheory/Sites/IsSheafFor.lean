@@ -7,10 +7,11 @@ module
 
 public import Mathlib.CategoryTheory.Limits.Shapes.IsTerminal
 public import Mathlib.CategoryTheory.Limits.Shapes.Products
+public import Mathlib.CategoryTheory.Sites.Coverage
 public import Mathlib.CategoryTheory.Sites.IsSheafFor
 
 /-!
-# Compatible families over a terminal object
+# Compatible families over a terminal object and a meet-semilattice, and local sheaf conditions
 
 For a family of maps `π i : X i ⟶ B` to a terminal object `B`, every pair of maps into two members
 of the family agrees after composing with `π`. So a family of elements `x i ∈ P(X i)` of a presheaf
@@ -18,9 +19,28 @@ of types `P` is compatible exactly when, for every pair `k : Fin 2 → I`, the r
 `x (k 0)` and `x (k 1)` to the product of `X (k 0)` and `X (k 1)` agree. This is the form the
 compatibility condition takes in degree `1` of the Čech complex.
 
+In a meet-semilattice, such as the opens of a topological space, there is at most one morphism
+between two objects, and two members `X i`, `X j` of a family have the greatest lower bound
+`X i ⊓ X j`. So a family of elements is compatible exactly when the restrictions of `x i` and
+`x j` to `X i ⊓ X j` agree.
+
+Every natural transformation `P ⟶ P'` carries compatible families for a presieve `R` on `X` to
+compatible families. So it carries the sheaf condition for `R` from `P'` back to `P` as soon as it
+is bijective at `X` and injective at the sources of the arrows of `R`, whatever it does at other
+objects. This is how a sheaf condition on an open subspace is compared with one on the ambient
+space.
+
 ## Main results
 
 * `CategoryTheory.Presieve.Arrows.compatible_iff_of_isTerminal`: the characterisation above.
+* `CategoryTheory.Presieve.Arrows.compatible_homOfLE_iff`: compatibility in a meet-semilattice is
+  agreement on pairwise meets.
+* `CategoryTheory.Presieve.isSheafFor_of_bijective_app`: the sheaf condition for a presieve `R` on
+  `X` passes back along a natural transformation that is bijective at `X` and injective at the
+  sources of the arrows of `R`.
+* `CategoryTheory.Presieve.isSheafFor_ofArrows_of_factorsThru`: the sheaf condition for a family of
+  arrows follows from that of a finer presieve `S` (one factoring through the arrows), once
+  separated presieves on the sources of the arrows refine `S` along them.
 -/
 
 public section
@@ -48,4 +68,58 @@ theorem compatible_iff_of_isTerminal (hB : IsTerminal B) (π : ∀ i, X i ⟶ B)
   simp only [← Functor.map_comp_apply, ← op_comp, Pi.lift_comp_π] at this
   exact this
 
+section SemilatticeInf
+
+variable {X : Type u} [SemilatticeInf X] {P : Xᵒᵖ ⥤ Type w} {I : Type t} {Y : I → X} {B : X}
+
+/-- **Compatibility in a meet-semilattice is agreement on pairwise meets.** For members `Y i ≤ B`
+of a meet-semilattice, such as opens of a topological space, a family of elements
+`x i ∈ P(Y i)` of a presheaf of types is compatible exactly when, for all `i` and `j`, the
+restrictions of `x i` and `x j` to `Y i ⊓ Y j` agree. -/
+theorem compatible_homOfLE_iff (hY : ∀ i, Y i ≤ B) (x : ∀ i, P.obj (op (Y i))) :
+    Compatible P (fun i ↦ homOfLE (hY i)) x ↔ ∀ i j,
+      P.map (homOfLE inf_le_left : Y i ⊓ Y j ⟶ Y i).op (x i) =
+        P.map (homOfLE inf_le_right : Y i ⊓ Y j ⟶ Y j).op (x j) := by
+  refine ⟨fun h i j ↦ h i j _ _ _ (Subsingleton.elim _ _), fun h i j Z gi gj _ ↦ ?_⟩
+  -- both maps out of `Z` factor through `Y i ⊓ Y j`, and morphisms in a preorder are unique
+  have hZ : Z ≤ Y i ⊓ Y j := le_inf gi.le gj.le
+  rw [show gi = homOfLE hZ ≫ homOfLE inf_le_left from Subsingleton.elim _ _,
+    show gj = homOfLE hZ ≫ homOfLE inf_le_right from Subsingleton.elim _ _, op_comp, op_comp,
+    Functor.map_comp_apply, Functor.map_comp_apply, h i j]
+
+end SemilatticeInf
+
 end CategoryTheory.Presieve.Arrows
+
+namespace CategoryTheory.Presieve
+
+variable {C : Type u} [Category.{v} C] {P P' : Cᵒᵖ ⥤ Type w}
+
+/-- **Transferring the sheaf condition along a natural transformation.** If a natural
+transformation `α : P ⟶ P'` is bijective at `X` and injective at the source of every arrow of a
+presieve `R` on `X`, then `P` satisfies the sheaf condition for `R` whenever `P'` does. Unlike
+`CategoryTheory.Presieve.isSheafFor_of_nat_equiv`, nothing is assumed at other objects. -/
+theorem isSheafFor_of_bijective_app (α : P ⟶ P') {X : C} {R : Presieve X}
+    (hX : Function.Bijective (α.app (op X)))
+    (hR : ∀ ⦃Y : C⦄ ⦃f : Y ⟶ X⦄, R f → Function.Injective (α.app (op Y)))
+    (h : IsSheafFor P' R) : IsSheafFor P R := by
+  intro x hx
+  obtain ⟨t', ht', hu⟩ := h (x.map α) (hx.map α)
+  obtain ⟨t, rfl⟩ := hX.2 t'
+  refine ⟨t, fun Y f hf ↦ hR hf ?_, fun t₁ ht₁ ↦ hX.1 (hu _ (ht₁.map α))⟩
+  rw [NatTrans.naturality_apply]
+  exact ht' f hf
+
+/-- **The sheaf condition for a family of arrows from a refining presieve.** Let `f i : X i ⟶ W`
+be arrows, `S` a presieve on `W` for which `P` satisfies the sheaf condition and which factors
+through the arrows `f i`, and `T i` a presieve on `X i` for which `P` is separated and which
+factors through `S` along `f i`. Then `P` satisfies the sheaf condition for the family
+`f`. This is `Presieve.isSheafFor_of_factorsThru` for `Presieve.ofArrows X f`. -/
+theorem isSheafFor_ofArrows_of_factorsThru {W : C} {ι : Type*} {X : ι → C} (f : ∀ i, X i ⟶ W)
+    (T : ∀ i, Presieve (X i)) (hsep : ∀ i, (T i).IsSeparatedFor P) {S : Presieve W}
+    (hS : S.IsSheafFor P) (hfac : S.FactorsThru (ofArrows X f))
+    (href : ∀ i, (T i).FactorsThruAlong S (f i)) :
+    (ofArrows X f).IsSheafFor P :=
+  isSheafFor_of_factorsThru _ hfac hS fun _ _ ⟨i⟩ ↦ ⟨T i, hsep i, href i⟩
+
+end CategoryTheory.Presieve

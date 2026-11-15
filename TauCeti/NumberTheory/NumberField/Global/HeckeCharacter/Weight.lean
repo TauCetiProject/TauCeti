@@ -87,7 +87,7 @@ Consequently both weights agree on every ideal prime to `𝔫`. -/
 theorem toUnitaryIdealWeightAt_of_dvd (h : 𝔪 ∣ 𝔫) (χ : HeckeCharacter K)
     (hχ : χ ∈ (ofRayClassCharacter 𝔪).range) :
     toUnitaryIdealWeightAt χ 𝔫 (range_ofRayClassCharacter_le h hχ) =
-      (toUnitaryIdealWeightAt χ 𝔪 hχ).restrict 𝔫.support 𝔫.support.finite_toSet := by
+      (toUnitaryIdealWeightAt χ 𝔪 hχ).restrictAway 𝔫.support 𝔫.support.finite_toSet := by
   rw [toUnitaryIdealWeightAt, toUnitaryIdealWeightAt,
     rayClassCharacterAt_of_dvd (𝔪 := 𝔪) (𝔫 := 𝔫) h χ hχ,
     RayClassCharacter.toUnitaryIdealWeight_induced]

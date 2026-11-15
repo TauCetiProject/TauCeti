@@ -129,7 +129,8 @@ variable {k : Type u} [Field k] {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
 theorem relativeDegree_principalCartierDivisor (hX : ∀ x : X, coheight x ≤ 1)
     (g : Additive X.functionFieldˣ) :
     relativeDegree (X ↘ Spec (.of k)) (principalCartierDivisorAddHom X g) = 0 := by
-  rw [relativeDegree_apply, toWeilDivisor_principalCartierDivisor]
+  rw [relativeDegree_apply, principalCartierDivisorAddHom_apply,
+    toWeilDivisor_principalCartierDivisor]
   exact SchemeWeilDivisor.relativeDegree_principalDivisor k hX g
 
 /-- Translation by a principal Cartier divisor preserves degree on a proper curve. -/

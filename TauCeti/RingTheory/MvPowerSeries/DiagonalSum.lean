@@ -14,14 +14,14 @@ import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 /-!
 # Summing the coefficients of a multivariate power series along a ray
 
-Fix an exponent `d` and read the coefficients of `u` along the rays `ν, ν + d, ν + 2d, …`. Two
-convergence statements need only a nonarchimedean coefficient group: if the coefficients of `u`
-tend to zero along the cofinite filter, then so do the ray sums, and so do the coefficients along
-each single ray once the step `d` is nonzero.
+Fix an exponent `d` and read the coefficients of `u` along the rays `ν, ν + d, ν + 2d, …`. If the
+coefficients of `u` converge along the cofinite filter, then the coefficients along each single
+ray have the same limit once the step `d` is nonzero. This needs only a topological coefficient
+semiring, with no continuity assumption on its operations.
 
-The coefficient ring is a (not necessarily commutative) `Ring`: `MvPowerSeries.coeff` is an
-`R`-linear map, so `Semiring R` is the floor for stating any of this, and the nonarchimedean and
-uniform hypotheses below need the additive group.
+For a nonarchimedean coefficient ring, if the coefficients of `u` tend to zero along the
+cofinite filter, then so do the ray sums. No completeness or separation hypothesis is needed
+for this convergence statement about `tsum`.
 
 Peeling the first term of a ray is a statement about an actual sum, so it asks for more: the
 coefficient group must also be complete and separated for a compatible uniform structure
@@ -35,8 +35,8 @@ restricted series modulo `1 - XY` is proved.
 ## Main results
 
 * `MvPowerSeries.tendsto_tsum_coeff_add_nsmul`: the ray sums tend to zero along `cofinite`.
-* `MvPowerSeries.tendsto_coeff_add_nsmul`: along one ray the coefficients tend to zero, provided
-  the step `d` is nonzero.
+* `MvPowerSeries.tendsto_coeff_add_nsmul`: along one ray the coefficients have the same limit
+  as the full coefficient family, provided the step `d` is nonzero.
 * `MvPowerSeries.tsum_coeff_add_nsmul_eq`: peeling the first term of a ray, over a complete
   separated nonarchimedean uniform additive group.
 -/
@@ -47,13 +47,27 @@ namespace MvPowerSeries
 
 open Filter Finsupp Topology
 
-variable {σ R : Type*} [Ring R]
+variable {σ R : Type*}
 
-/-- **The ray sums tend to zero**: if the coefficients of `u` tend to zero along `cofinite`, so
-does `ν ↦ ∑' n, coeff (ν + n • d) u`. A nonarchimedean subgroup `W` is closed, so a ray sum
-outside `W` must have a term outside `W`, and `ν` lies below that term's index. -/
+section Semiring
+
+variable [Semiring R]
+
+/-- Along a ray with nonzero step, the coefficients have the same cofinite limit as the full
+coefficient family. -/
+theorem tendsto_coeff_add_nsmul [TopologicalSpace R] (u : MvPowerSeries σ R) {a : R}
+    (hu : Tendsto (coeff · u) cofinite (𝓝 a)) {d : σ →₀ ℕ} (hd : d ≠ 0) (ν : σ →₀ ℕ) :
+    Tendsto (fun n : ℕ ↦ coeff (ν + n • d) u) cofinite (𝓝 a) :=
+  hu.comp ((nsmul_left_strictMono hd.bot_lt).const_add ν).injective.tendsto_cofinite
+
+end Semiring
+
+variable [Ring R]
+
+/-- If the coefficients of `u` tend to zero along `cofinite`, so does the family of ray sums
+`ν ↦ ∑' n, coeff (ν + n • d) u` in a nonarchimedean coefficient ring. -/
 theorem tendsto_tsum_coeff_add_nsmul [TopologicalSpace R] [NonarchimedeanAddGroup R]
-    {u : MvPowerSeries σ R} (hu : Tendsto (coeff · u) cofinite (𝓝 0)) (d : σ →₀ ℕ) :
+    (u : MvPowerSeries σ R) (hu : Tendsto (coeff · u) cofinite (𝓝 0)) (d : σ →₀ ℕ) :
     Tendsto (fun ν ↦ ∑' n : ℕ, coeff (ν + n • d) u) cofinite (𝓝 0) := by
   classical
   refine NonarchimedeanAddGroup.zeroAtFilter_cofinite_iff_finite_notMem.mpr fun W ↦ ?_
@@ -62,21 +76,13 @@ theorem tendsto_tsum_coeff_add_nsmul [TopologicalSpace R] [NonarchimedeanAddGrou
   obtain ⟨n, hn⟩ := not_forall.mp (mt (tsum_mem W.isClosed) hν)
   exact Set.mem_biUnion hn (Set.mem_Iic.mpr le_self_add)
 
-/-- **Along one ray the coefficients tend to zero.** The step `d` must be nonzero, so that
-`n ↦ ν + n • d` is injective and cofinite sets pull back to cofinite sets. -/
-theorem tendsto_coeff_add_nsmul [TopologicalSpace R] {u : MvPowerSeries σ R}
-    (hu : Tendsto (coeff · u) cofinite (𝓝 0)) {d : σ →₀ ℕ} (hd : d ≠ 0) (ν : σ →₀ ℕ) :
-    Tendsto (fun n : ℕ ↦ coeff (ν + n • d) u) cofinite (𝓝 0) :=
-  hu.comp ((nsmul_left_strictMono hd.bot_lt).const_add ν).injective.tendsto_cofinite
-
-/-- **Peeling the first term of a ray**: the ray at `ν` is its own first coefficient plus the ray
-at `ν + d`. Summability comes from `tendsto_coeff_add_nsmul` over a complete nonarchimedean
-group. -/
+/-- The sum along a ray with nonzero step is its first coefficient plus the sum along the ray
+starting one step further, in a complete separated nonarchimedean coefficient group. -/
 theorem tsum_coeff_add_nsmul_eq [UniformSpace R] [IsUniformAddGroup R]
-    [NonarchimedeanAddGroup R] [CompleteSpace R] [T0Space R] {u : MvPowerSeries σ R}
+    [NonarchimedeanAddGroup R] [CompleteSpace R] [T0Space R] (u : MvPowerSeries σ R)
     (hu : Tendsto (coeff · u) cofinite (𝓝 0)) {d : σ →₀ ℕ} (hd : d ≠ 0) (ν : σ →₀ ℕ) :
     ∑' n : ℕ, coeff (ν + n • d) u = coeff ν u + ∑' n : ℕ, coeff (ν + d + n • d) u := by
   simpa [succ_nsmul', add_assoc] using (NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
-    (tendsto_coeff_add_nsmul hu hd ν)).tsum_eq_zero_add
+    (u.tendsto_coeff_add_nsmul hu hd ν)).tsum_eq_zero_add
 
 end MvPowerSeries

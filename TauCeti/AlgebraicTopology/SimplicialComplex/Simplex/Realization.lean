@@ -6,24 +6,31 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.Normed.Module.RCLike.Real
+import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
 
 public import Mathlib.Analysis.Convex.StdSimplex
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
+public import TauCeti.Geometry.Convex.ConvexSpace.LocallyPathConnectedSpaceStdSimplex
 
 /-!
-# Realizations of the standard one-simplex and its boundary
+# Realizations of finite simplices
 
-This file identifies the geometric realization of the full abstract complex on a finite vertex
-type with Mathlib's standard simplex of barycentric coordinate functions. Specializing to two
+This file compares the closed coordinate simplex on any finite vertex set, including the empty
+set, with Mathlib's standard simplex on that set. It also identifies the geometric realization of
+any closed simplex in an ambient weak realization with its coordinate simplex, preserving
+barycentric coordinates in both directions. This works even in infinite ambient complexes.
+Finally, it compares the realization of
+the full abstract complex on a finite vertex type with Mathlib's standard simplex of barycentric
+coordinate functions. Specializing to two
 vertices gives a homeomorphism from the standard one-simplex to the unit interval. Its boundary,
 the bottom abstract complex on `Fin 2`, is then identified with the unit zero-sphere.
 
-These are the first realization round-trips in layer 11 of the geometric-topology roadmap. The
-roadmap asks that the realization of the boundary of the standard `n`-simplex be homeomorphic to
-`Sⁿ⁻¹`; `realizationOneSimplexBoundaryHomeomorphSphereZero` establishes the base case `n = 1`.
-The interval identification also supplies the standard topological model for the simplicial
-interval used in the later product-and-collapse formulation of Zeeman's conjecture.
+The realization of the boundary of the standard `(n + 1)`-simplex is homeomorphic to the unit
+`n`-sphere (`Simplex.BoundarySphere`); `realizationOneSimplexBoundaryHomeomorphSphereZero` is a
+direct proof of the case `n = 0`, with the sphere taken in `ℝ`. The interval identification also
+supplies the standard topological model for the simplicial interval used in the product-and-collapse
+formulation of Zeeman's conjecture (`Zeeman`).
 
 The barycentric simplex uses Mathlib's `Convexity.StdSimplex`, and its homeomorphism with the
 unit interval is Mathlib's `Convexity.StdSimplex.homeomorphI`. The zero-sphere identification is
@@ -31,7 +38,13 @@ the elementary equivalence between its two points and `Fin 2`.
 
 ## Main results
 
+* `Finset.standardSimplexHomeomorph`: a closed coordinate simplex is homeomorphic to Mathlib's
+  standard simplex on its finite vertex set.
+* `AbstractSimplicialComplex.instLocallyPathConnectedSpaceStandardSimplex`: every closed
+  coordinate simplex is locally path-connected.
 * `realizationTopHomeomorphStdSimplex`: the full complex realizes to Mathlib's standard simplex.
+* `range_realization_coe_top`, `range_realization_coe_standardSuccSimplexBoundary`: the coordinate
+  vectors of the realizations of the full complex and of the boundary of a standard simplex.
 * `realizationOneSimplexHomeomorphUnitInterval`: the standard one-simplex realizes to `[0, 1]`.
 * `realizationOneSimplexBoundaryHomeomorphSphereZero`: its boundary realizes to `S⁰`.
 -/
@@ -42,11 +55,237 @@ noncomputable section
 
 open Metric Set TauCeti.SetLike
 
-namespace AbstractSimplicialComplex
+namespace Finset
 
-variable {ι : Type*} [Fintype ι] [Nonempty ι]
+open AbstractSimplicialComplex
+
+variable {α : Type*} {σ : Finset α}
 
 attribute [local instance] Classical.decEq
+
+/-- A closed coordinate simplex is homeomorphic to Mathlib's standard simplex on its finite
+vertex set, including when that set is empty. -/
+def standardSimplexHomeomorph (σ : Finset α) : StandardSimplex σ ≃ₜ Convexity.StdSimplex ℝ σ where
+  toFun x := {
+    weights := x.1.subtypeDomain (· ∈ σ)
+    nonneg := fun a => StandardSimplex.nonneg x a
+    total := by
+      exact (Finsupp.sum_subtypeDomain_index (p := fun a => a ∈ σ)
+        (h := fun (_ : α) (r : ℝ) => r) (StandardSimplex.support_subset x)).trans
+          (StandardSimplex.sum_eq_one x) }
+  invFun w := ⟨w.weights.mapDomain Subtype.val, by
+    rw [Finset.coe_image, mem_standardSimplex_iff]
+    refine ⟨fun a => Finsupp.mapDomain_nonneg w.nonneg a, ?_, ?_⟩
+    · rw [Finsupp.sum_mapDomain_index (fun _ => rfl) (fun _ _ _ => rfl)]
+      exact w.total
+    · intro a ha
+      obtain ⟨b, -, rfl⟩ := Finset.mem_image.mp (Finsupp.mapDomain_support ha)
+      exact b.2⟩
+  left_inv x := by
+    apply Subtype.ext
+    ext a
+    by_cases ha : a ∈ σ
+    · simpa only [Finsupp.subtypeDomain_apply] using
+        Finsupp.mapDomain_apply_of_injective Subtype.val_injective
+          (x.1.subtypeDomain (· ∈ σ)) ⟨a, ha⟩
+    · rw [Finsupp.mapDomain_of_notMem_range]
+      · exact (Finsupp.notMem_support_iff.mp
+          (fun h => ha (StandardSimplex.support_subset x h))).symm
+      · simpa using ha
+  right_inv w := by
+    apply Convexity.StdSimplex.ext
+    ext a
+    exact Finsupp.mapDomain_apply_of_injective Subtype.val_injective w.weights a
+  continuous_toFun := by
+    apply (Convexity.StdSimplex.isEmbedding_toFun_comp_weights ℝ σ).continuous_iff.mpr
+    exact continuous_pi fun a => (continuous_apply a.1).comp continuous_induced_dom
+  continuous_invFun := by
+    apply continuous_induced_rng.mpr
+    exact continuous_pi fun a =>
+      (Convexity.StdSimplex.continuous_weights_apply ℝ a).comp
+        (Convexity.StdSimplex.continuous_map ℝ (Subtype.val : σ → α))
+
+/-- The finite-simplex comparison reads the original coordinate at each vertex of the face. -/
+@[simp]
+theorem standardSimplexHomeomorph_weights (σ : Finset α) (x : StandardSimplex σ) (a : σ) :
+    (standardSimplexHomeomorph σ x).weights a = x.1 a := (rfl)
+
+/-- A closed coordinate simplex is homeomorphic to the set of its finite barycentric coordinate
+vectors. The target inherits the metric on functions when a metric is needed. -/
+def standardSimplexCoordinatesHomeomorph (σ : Finset α) :
+    StandardSimplex σ ≃ₜ Set.range (fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) :=
+  (standardSimplexHomeomorph σ).trans
+    (Convexity.StdSimplex.isEmbedding_toFun_comp_weights ℝ σ).toHomeomorph
+
+/-- The coordinate homeomorphism reads the original coordinates on the finite vertex set. -/
+@[simp]
+theorem standardSimplexCoordinatesHomeomorph_val (σ : Finset α) (x : StandardSimplex σ) :
+    (standardSimplexCoordinatesHomeomorph σ x).1 = fun a : σ => x.1 a := by
+  simp only [standardSimplexCoordinatesHomeomorph, Homeomorph.trans_apply,
+    Topology.IsEmbedding.toHomeomorph_apply_coe]
+  exact funext fun a => standardSimplexHomeomorph_weights σ x a
+
+/-- The coordinate vectors of a closed simplex are exactly the weight vectors of Mathlib's
+standard simplex on its vertex set. -/
+theorem range_standardSimplex_coordinates (σ : Finset α) :
+    Set.range (fun x : StandardSimplex σ => fun a : σ => x.1 a) =
+      Set.range (fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) := by
+  ext u
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact (standardSimplexCoordinatesHomeomorph σ x).2
+  · intro hu
+    obtain ⟨x, hx⟩ := (standardSimplexCoordinatesHomeomorph σ).surjective ⟨u, hu⟩
+    exact ⟨x, congrArg Subtype.val hx⟩
+
+/-- A map on a closed coordinate simplex is continuous if, in the finite coordinates of its
+vertex set, it is the restriction of a map continuous on Mathlib's standard simplex. -/
+theorem continuous_of_continuousOn_coordinates {X : Type*} [TopologicalSpace X]
+    {F : (σ → ℝ) → X} {g : StandardSimplex σ → X} (hFg : ∀ x, F (fun a => x.1 a) = g x)
+    (hF : ContinuousOn F (Set.range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights)) :
+    Continuous g := by
+  have hcoord : Continuous fun x : StandardSimplex σ => fun a : σ => x.1 a :=
+    continuous_pi fun a => (continuous_apply a.1).comp continuous_induced_dom
+  refine (hF.comp_continuous hcoord fun x => ?_).congr hFg
+  rw [← range_standardSimplex_coordinates]
+  exact mem_range_self x
+
+/-- The inverse finite-simplex comparison extends the finite coordinate vector by zero. -/
+@[simp]
+theorem standardSimplexHomeomorph_symm_val (σ : Finset α) (w : Convexity.StdSimplex ℝ σ) :
+    ((standardSimplexHomeomorph σ).symm w : α →₀ ℝ) = w.weights.mapDomain Subtype.val := (rfl)
+
+/-- The finite coordinate vector of the point of a closed coordinate simplex corresponding to a
+weight vector `w` of Mathlib's standard simplex is `w` itself. -/
+theorem standardSimplexHomeomorph_symm_val_comp_val (σ : Finset α)
+    (w : Convexity.StdSimplex ℝ σ) :
+    (fun a : σ => ((standardSimplexHomeomorph σ).symm w).1 a) = ⇑w.weights :=
+  funext fun a => Finsupp.mapDomain_apply_of_injective Subtype.val_injective w.weights a
+
+/-- Extending the finite coordinate vector of a point of a closed coordinate simplex by zero
+recovers its barycentric coordinates. -/
+theorem extend_val_standardSimplex (x : StandardSimplex σ) :
+    Function.extend (Subtype.val : σ → α) (fun a => x.1 a) 0 = x.1 := by
+  ext a
+  by_cases ha : a ∈ σ
+  · exact Subtype.val_injective.extend_apply (fun b : σ => x.1 b) 0 ⟨a, ha⟩
+  · rw [Function.extend_apply' _ _ _ (by simpa using ha)]
+    exact (Finsupp.notMem_support_iff.mp
+      (fun h => ha (StandardSimplex.support_subset x h))).symm
+
+/-- The barycentric coordinates of a point of a closed coordinate simplex sum to one. -/
+theorem sum_standardSimplex_eq_one (y : StandardSimplex σ) : ∑ a : σ, y.1 a = 1 := by
+  simpa using (standardSimplexHomeomorph σ y).total_of_fintype
+
+section LinearCombination
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E]
+
+/-- Sending barycentric coordinates to the corresponding linear combination of an affinely
+independent family is injective on the closed coordinate simplex. -/
+theorem injective_linearCombination_standardSimplex {p : σ → E} (hp : AffineIndependent ℝ p) :
+    Function.Injective
+      fun y : StandardSimplex σ => Fintype.linearCombination ℝ p fun a => y.1 a := by
+  intro y y' hyy'
+  have h := hp.eq_of_sum_eq_sum (s := Finset.univ) (w₁ := fun a : σ => y.1 a)
+    (w₂ := fun a : σ => y'.1 a) (by simp only [sum_standardSimplex_eq_one])
+    (by simpa [Fintype.linearCombination_apply] using hyy')
+  refine (standardSimplexHomeomorph σ).injective (Convexity.StdSimplex.ext ?_)
+  ext a
+  exact h a (Finset.mem_univ a)
+
+/-- The range of the map from the closed coordinate simplex sending barycentric coordinates to the
+corresponding linear combination of a family `p` is the convex hull of `p`. -/
+theorem range_linearCombination_standardSimplex (p : σ → E) :
+    Set.range (fun y : StandardSimplex σ => Fintype.linearCombination ℝ p fun a => y.1 a) =
+      convexHull ℝ (Set.range p) := by
+  classical
+  let : Convexity.ConvexSpace ℝ E := .ofModule
+  rw [Set.range_comp' (Fintype.linearCombination ℝ p), range_standardSimplex_coordinates,
+    ← Set.range_comp']
+  simp_rw [Fintype.linearCombination_apply,
+    ← Convexity.StdSimplex.affineMapMk_apply_eq_sum_of_fintype]
+  rw [Set.convexHull_eq_range_iConvexComb]
+  -- Reindex Mathlib's convex combinations between the family and its range.
+  let s : Set.range p → σ := fun x => x.2.choose
+  have hs (x : Set.range p) : p (s x) = x := x.2.choose_spec
+  apply Set.Subset.antisymm
+  · rintro _ ⟨w, rfl⟩
+    refine ⟨w.map (Set.rangeFactorization p), ?_⟩
+    simp only [Convexity.StdSimplex.affineMapMk_apply, Convexity.iConvexComb_map,
+      Set.rangeFactorization]
+  · rintro _ ⟨w, rfl⟩
+    refine ⟨w.map s, ?_⟩
+    simp only [Convexity.StdSimplex.affineMapMk_apply, Convexity.iConvexComb_map, hs]
+
+end LinearCombination
+
+end Finset
+
+namespace AbstractSimplicialComplex
+
+variable {ι : Type*}
+
+attribute [local instance] Classical.decEq
+
+/-- Every closed coordinate simplex is locally path-connected. -/
+instance instLocallyPathConnectedSpaceStandardSimplex (σ : Finset ι) :
+    LocallyPathConnectedSpace (StandardSimplex σ) :=
+  (Finset.standardSimplexHomeomorph σ).symm.locallyPathConnectedSpace
+
+/-- A closed face, with the subspace topology of the weak realization, is homeomorphic to
+its coordinate simplex. The ambient complex and its vertex type may be infinite. -/
+noncomputable def simplexRealizationHomeomorph (K : AbstractSimplicialComplex ι)
+    (V : Finset ι) (hV : V ∈ K) :
+    StandardSimplex V ≃ₜ
+      {x : Realization K // x.1.support ∈ PreAbstractSimplicialComplex.simplex V} := by
+  let e : StandardSimplex V ≃
+      {x : Realization K // x.1.support ∈ PreAbstractSimplicialComplex.simplex V} := {
+    toFun x := ⟨faceInclusion K ⟨V, hV⟩ x, by
+      refine PreAbstractSimplicialComplex.mem_simplex.mpr
+        ⟨K.isRelLowerSet_faces.prop_of_mem (support_mem K (faceInclusion K ⟨V, hV⟩ x)), ?_⟩
+      simpa only [faceInclusion_val] using StandardSimplex.support_subset x⟩
+    invFun x := ⟨x.1.1, by
+      simpa only [Finset.coe_image] using mem_standardSimplex_iff.mpr
+        ⟨Realization.nonneg K x.1, Realization.sum_eq_one K x.1,
+          (PreAbstractSimplicialComplex.mem_simplex.mp x.2).2⟩⟩
+    left_inv x := Subtype.ext (faceInclusion_val K ⟨V, hV⟩ x)
+    right_inv x := Subtype.ext (Subtype.ext (faceInclusion_val K ⟨V, hV⟩ _)) }
+  letI : CompactSpace (StandardSimplex V) :=
+    (Finset.standardSimplexHomeomorph V).symm.compactSpace
+  have hc : Continuous e := (continuous_faceInclusion K ⟨V, hV⟩).subtype_mk _
+  exact e.toHomeomorphOfContinuousClosed hc hc.isClosedMap
+
+/-- The closed-face identification preserves the barycentric coordinate vector. -/
+@[simp] theorem simplexRealizationHomeomorph_val (K : AbstractSimplicialComplex ι)
+    (V : Finset ι) (hV : V ∈ K) (x : StandardSimplex V) :
+    (K.simplexRealizationHomeomorph V hV x).1.1 = x.1 :=
+  faceInclusion_val K ⟨V, hV⟩ x
+
+/-- The inverse closed-face identification preserves the barycentric coordinate vector. -/
+@[simp] theorem simplexRealizationHomeomorph_symm_val (K : AbstractSimplicialComplex ι)
+    (V : Finset ι) (hV : V ∈ K)
+    (x : {x : Realization K // x.1.support ∈ PreAbstractSimplicialComplex.simplex V}) :
+    ((K.simplexRealizationHomeomorph V hV).symm x).1 = x.1.1 := by
+  have h := congrArg (fun y => y.1.1)
+    ((K.simplexRealizationHomeomorph V hV).apply_symm_apply x)
+  simpa only [simplexRealizationHomeomorph_val] using h
+
+/-- The coordinate vectors of the realization of the boundary of a standard simplex are the weight
+vectors of the standard simplex with some vanishing coordinate. -/
+theorem range_realization_coe_standardSuccSimplexBoundary (n : ℕ) :
+    range (fun x : Realization (standardSuccSimplexBoundary n) => (x.1 : Fin (n + 2) → ℝ)) =
+      {z ∈ range fun t : Convexity.StdSimplex ℝ (Fin (n + 2)) => ⇑t.weights | ∃ i, z i = 0} := by
+  ext z
+  have hz : ∑ i, z i = 1 → z ≠ 0 := by
+    rintro h rfl
+    simp at h
+  rw [mem_range_realization_coe_iff, mem_standardSuccSimplexBoundary_iff]
+  simp [Finset.ssubset_univ_iff, Finset.eq_univ_iff_forall,
+    Convexity.StdSimplex.range_toFun_comp_weights]
+  grind
+
+variable [Fintype ι] [Nonempty ι]
 
 private theorem univ_mem_top : (Finset.univ : Finset ι) ∈ (⊤ : AbstractSimplicialComplex ι) :=
   Finset.univ_nonempty
@@ -104,6 +343,22 @@ theorem realizationTopHomeomorphStdSimplex_symm_apply_val (x : Convexity.StdSimp
   exact congrArg (fun z : ι →₀ ℝ => z i)
     (faceInclusion_val (⊤ : AbstractSimplicialComplex ι)
       (topFace (ι := ι)) _)
+
+omit [Fintype ι] [Nonempty ι] in
+/-- The coordinate vectors of the realization of the full complex are the weight vectors of the
+standard simplex. -/
+theorem range_realization_coe_top :
+    range (fun x : Realization (⊤ : AbstractSimplicialComplex ι) => (x.1 : ι → ℝ)) =
+      range fun t : Convexity.StdSimplex ℝ ι => ⇑t.weights := by
+  ext z
+  constructor
+  · rintro ⟨x, rfl⟩
+    obtain ⟨hnn, hsum, -⟩ := TauCeti.mem_standardGeometricComplex_space_iff.mp x.2
+    exact ⟨⟨x.1, fun i => hnn i, hsum⟩, rfl⟩
+  · rintro ⟨t, rfl⟩
+    refine ⟨⟨t.weights, TauCeti.mem_standardGeometricComplex_space_iff.mpr
+      ⟨fun i => t.nonneg i, t.total, ?_⟩⟩, rfl⟩
+    exact t.support_weights_nonempty
 
 /-- The realization of the standard one-simplex is homeomorphic to the unit interval. The zeroth
 vertex maps to `0` and the first vertex maps to `1`; see the two endpoint lemmas below. -/
@@ -237,4 +492,3 @@ theorem realizationOneSimplexBoundaryHomeomorphSphereZero_symm_apply_neg_one :
   simp
 
 end AbstractSimplicialComplex
-

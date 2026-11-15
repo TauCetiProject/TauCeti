@@ -7,7 +7,11 @@ module
 
 public import TauCeti.LinearAlgebra.Span.IntegralDescent
 public import TauCeti.RepresentationTheory.CharacterTable.Table
-public import TauCeti.RepresentationTheory.FDRep
+public import TauCeti.RepresentationTheory.FDRep.Basic
+import Mathlib.RepresentationTheory.Maschke
+import TauCeti.RepresentationTheory.Intertwining
+import TauCeti.RepresentationTheory.Irreducible
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # The virtual-character lattice
@@ -33,12 +37,24 @@ on the lattice: pairing two integer combinations of the irreducible characters g
 product of their integer coefficients. That integrality is what makes the classical norm-`1` test
 work — a virtual character of norm `1` is, up to sign, an irreducible character.
 
+Over a field of characteristic zero that is not algebraically closed the irreducible characters
+need not be orthonormal, but the norm-`1` test survives in the form that realizes representations
+over a smaller field: writing a virtual character as `χ_A - χ_B` and cancelling the summands that
+`A` and `B` share, a virtual character of norm `1` and natural degree is the character of a simple
+representation whose endomorphisms are the scalars
+(`TauCeti.exists_simple_character_eq_of_characterPairing_self_eq_one`). This is how an irreducible
+complex character that is an integer combination of characters of representations over a subfield
+`K` of `ℂ` is seen to be the character of a representation over `K`.
+
 ## Main definitions
 
 * `TauCeti.virtualCharacters`: the virtual-character lattice of `G` over `k`.
 
 ## Main results
 
+* `TauCeti.mem_virtualCharacters_iff_exists_eq_character_sub_character`: the virtual characters
+  are exactly the differences of two characters, with `TauCeti.exists_eq_character_sub_character`
+  its forward direction.
 * `TauCeti.mul_mem_virtualCharacters` and `TauCeti.one_mem_virtualCharacters`: the lattice is
   closed under the pointwise product and contains the constant `1`.
 * `TauCeti.comp_mem_virtualCharacters`: pulling back along a monoid homomorphism preserves virtual
@@ -59,6 +75,9 @@ work — a virtual character of norm `1` is, up to sign, an irreducible characte
 * `TauCeti.exists_eq_irreducibleCharacter_or_neg`: **a virtual character of norm `1` is `±` an
   irreducible character**, and `TauCeti.mem_irreducibleCharacters_of_characterPairing_self_eq_one`
   fixes the sign when its degree is a natural number.
+* `TauCeti.exists_simple_character_eq_of_characterPairing_self_eq_one`: **over any field of
+  characteristic zero, a virtual character of norm `1` and natural degree is the character of a
+  simple representation whose endomorphisms are the scalars**.
 * `TauCeti.natCard_nsmul_mem_span_irreducibleCharacters`: **`|G|` times a class function with
   values in a subring `A` containing the character values is an `A`-combination of the irreducible
   characters**.
@@ -72,22 +91,19 @@ spaces `Fin n → k`; `FDRep.of` mediates between the two, and nothing is lost, 
 of an irreducible representation on an arbitrary finite-dimensional space already lies in
 `TauCeti.irreducibleCharacters`.
 
-Following the roadmap, the lattice is an `AddSubgroup (G → k)` and not a `Subring (G → k)`: the
-additive structure is what the integrality arguments downstream use, and closure under the pointwise
-product is recorded as the lemma `TauCeti.mul_mem_virtualCharacters` rather than built into the
-interface. The coefficients in `TauCeti.mem_virtualCharacters_iff` are genuine integers, the scalars
-`(c i : k)` appearing only because the ambient module is a `k`-module; they are determined by the
-element only in characteristic zero, since in positive characteristic the cast `ℤ → k` is not
-injective.
+The lattice is an `AddSubgroup (G → k)` and not a `Subring (G → k)`: the additive structure is what
+the integrality arguments downstream use, and closure under the pointwise product is recorded as the
+lemma `TauCeti.mul_mem_virtualCharacters` rather than built into the interface. The coefficients in
+`TauCeti.mem_virtualCharacters_iff` are genuine integers, the scalars `(c i : k)` appearing only
+because the ambient module is a `k`-module; they are determined by the element only in
+characteristic zero, since in positive characteristic the cast `ℤ → k` is not injective.
 
 ## References
 
-This is the virtual-character-lattice item of Layer 3 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-and the `virtualCharacters` target of Layer 6 of the
-[induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md).
 See I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 2 and Lemma 4.7, or
-J.-P. Serre, *Linear Representations of Finite Groups* (1977), Sections 2.5 and 9.
+J.-P. Serre, *Linear Representations of Finite Groups* (1977), Sections 2.5 and 9. The norm-`1`
+test over an arbitrary field of characteristic zero is the argument of Serre, Section 12.3
+(realizability over cyclotomic fields), and of Isaacs, Chapter 10.
 -/
 
 public section
@@ -109,7 +125,7 @@ by the characters of the finite-dimensional representations of `G`.
 
 Its elements, the *virtual characters*, are the differences of genuine characters: characters are
 closed under addition, so an integer combination of them is a difference of two of them. -/
-def virtualCharacters : AddSubgroup (G → k) :=
+noncomputable def virtualCharacters : AddSubgroup (G → k) :=
   AddSubgroup.closure (Set.range (FDRep.character : FDRep k G → G → k))
 
 variable {k G}
@@ -128,13 +144,40 @@ theorem virtualCharacters_le {H : AddSubgroup (G → k)} (h : ∀ V : FDRep k G,
   rintro - ⟨V, rfl⟩
   exact h V
 
+open CategoryTheory.Limits in
+/-- **A virtual character is a difference of two characters**: the characters are closed under
+addition, the character of a direct sum being the sum of the characters, so an integer combination
+of characters is the character of one representation minus that of another. -/
+theorem exists_eq_character_sub_character {f : G → k} (hf : f ∈ virtualCharacters k G) :
+    ∃ A B : FDRep k G, f = A.character - B.character := by
+  induction hf using AddSubgroup.closure_induction with
+  | mem f hf =>
+    obtain ⟨V, rfl⟩ := hf
+    exact ⟨V ⊞ V, V, by rw [FDRep.char_biprod, add_sub_cancel_right]⟩
+  | zero => exact ⟨𝟙_ (FDRep k G), 𝟙_ (FDRep k G), (sub_self _).symm⟩
+  | add f g _ _ hf hg =>
+    obtain ⟨A, B, rfl⟩ := hf
+    obtain ⟨C, D, rfl⟩ := hg
+    exact ⟨A ⊞ C, B ⊞ D, by rw [FDRep.char_biprod, FDRep.char_biprod]; abel⟩
+  | neg f _ hf =>
+    obtain ⟨A, B, rfl⟩ := hf
+    exact ⟨B, A, (neg_sub _ _)⟩
+
+/-- **A function `G → k` is a virtual character exactly when it is a difference of two
+characters.** This holds over any field and for any monoid `G`, unlike the description
+`TauCeti.mem_virtualCharacters_iff` as an integer combination of irreducible characters. -/
+theorem mem_virtualCharacters_iff_exists_eq_character_sub_character {f : G → k} :
+    f ∈ virtualCharacters k G ↔ ∃ A B : FDRep k G, f = A.character - B.character :=
+  ⟨exists_eq_character_sub_character, by
+    rintro ⟨A, B, rfl⟩
+    exact sub_mem (character_mem_virtualCharacters A) (character_mem_virtualCharacters B)⟩
+
 /-- **The virtual-character lattice is closed under the pointwise product.** The product of two
 characters is the character of the tensor product, and multiplication by a fixed function is
 additive, so the property propagates through the additive generation of the lattice.
 
 The lattice is nevertheless kept as an `AddSubgroup`: multiplicativity is recorded by this lemma
-rather than by bundling the carrier as a `Subring (G → k)`, the additive interface being the one
-the roadmap prescribes. -/
+rather than by bundling the carrier as a `Subring (G → k)`. -/
 theorem mul_mem_virtualCharacters {f g : G → k} (hf : f ∈ virtualCharacters k G)
     (hg : g ∈ virtualCharacters k G) : f * g ∈ virtualCharacters k G := by
   rw [virtualCharacters] at hf hg ⊢
@@ -144,8 +187,8 @@ theorem mul_mem_virtualCharacters {f g : G → k} (hf : f ∈ virtualCharacters 
     obtain ⟨W, rfl⟩ := hy
     rw [← FDRep.char_tensor]
     exact AddSubgroup.subset_closure ⟨V ⊗ W, rfl⟩
-  | zero_left x hx => simp
-  | zero_right x hx => simp
+  | zero_left x _ => simp
+  | zero_right x _ => simp
   | add_left x y z hx hy hz ihx ihy => rw [add_mul]; exact AddSubgroup.add_mem _ ihx ihy
   | add_right y z x hy hz hx ihy ihz => rw [mul_add]; exact AddSubgroup.add_mem _ ihy ihz
   | neg_left x y hx hy ih => rw [neg_mul]; exact AddSubgroup.neg_mem _ ih
@@ -229,8 +272,8 @@ theorem conj_apply_of_mem_virtualCharacters {f : G → ℂ} (hf : f ∈ virtualC
       obtain ⟨V, rfl⟩ := hx
       exact FDRep.conj_char V g
     | zero => simp
-    | neg x hx ih => simp [ih]
-    | add x y hx hy ihx ihy => simp [ihx, ihy]
+    | neg x _ ih => simp [ih]
+    | add x y _ _ ihx ihy => simp [ihx, ihy]
   exact key f hf
 
 end Complex
@@ -251,7 +294,7 @@ end Irreducible
 
 section Lattice
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)]
 
 /-- **A character is the sum of the irreducible characters weighted by their multiplicities.** The
@@ -261,6 +304,7 @@ natural numbers: the multiplicities with which the irreducibles occur in `V`. -/
 theorem character_eq_sum_nsmul_irreducibleCharacter (V : FDRep k G) :
     V.character = ∑ i, finrank k (Representation.IntertwiningMap V.ρ
       (irreducibleRepresentation k i)) • irreducibleCharacter k i := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ : Fintype G := Fintype.ofFinite G
   funext y
   have hy := ClassFunction.apply_eq_sum_characterPairing_mul_character
@@ -326,20 +370,32 @@ theorem mem_virtualCharacters_iff {f : G → k} :
     Finset.sum_congr rfl fun i _ => Int.cast_smul_eq_zsmul k (c i) _
   rw [heq, eq_comm]
 
+omit [Invertible (Nat.card G : k)] in
 /-- **Virtual characters descend from `A`-coefficients to integer coefficients.** Let `A` be a
 subring of `k` admitting an additive map `t : A → ℤ` with `t 1 = 1`, such as `ℤ[ζ]` for a root of
 unity `ζ` in characteristic zero (`PowerBasis.exists_linearMap_apply_one`). If `V` is an additive
 subgroup of the virtual characters, then a virtual character that is an `A`-linear combination of
 elements of `V` already lies in `V`: `Submodule.span A V ∩ R(G) = V`. -/
-theorem mem_of_mem_span_of_mem_virtualCharacters (A : Subring k) (t : A →+ ℤ) (ht : t 1 = 1)
+theorem mem_of_mem_span_of_mem_virtualCharacters [Finite G] (A : Subring k) (t : A →+ ℤ)
+    (ht : t 1 = 1)
     {V : AddSubgroup (G → k)} (hV : V ≤ virtualCharacters k G) {f : G → k}
     (hf : f ∈ virtualCharacters k G) (hfA : f ∈ Submodule.span A (V : Set (G → k))) :
     f ∈ V := by
+  -- the existence of `t` forces `|G|` to be nonzero in `k`
+  have hG : (Nat.card G : k) ≠ 0 := by
+    intro h0
+    have h1 : (Nat.card G) • (1 : A) = 0 := Subtype.ext (by simpa using h0)
+    have h2 := congrArg t h1
+    rw [map_nsmul, ht, map_zero] at h2
+    exact Nat.card_pos.ne' (by simpa using h2)
+  let : Invertible (Nat.card G : k) := invertibleOfNonzero hG
   have h := virtualCharacters_eq_closure_irreducibleCharacters (k := k) (G := G)
   rw [← range_irreducibleCharacter] at h
   rw [h] at hV hf
-  exact mem_of_mem_span_of_mem_closure
-    ((linearIndependent_irreducibleCharacter (k := k)).restrict_scalars' A) t ht hV hf hfA
+  have hspan := AddSubgroup.toIntSubmodule_closure (Set.range (irreducibleCharacter (G := G) k))
+  exact mem_of_mem_span_of_mem_span_range
+    ((linearIndependent_irreducibleCharacter (k := k)).restrict_scalars' A) t.toIntLinearMap ht
+    (V := V.toIntSubmodule) (hspan ▸ AddSubgroup.toIntSubmodule.monotone hV) (hspan ▸ hf) hfA
 
 /-- Reading an integer combination of irreducible characters back inside
 `TauCeti.ClassFunction`. -/
@@ -359,7 +415,7 @@ end Lattice
 
 section Subring
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)]
 
 /-- **A class function with values in a subring `A` is, once multiplied by `|G|`, an
@@ -373,6 +429,7 @@ theorem natCard_nsmul_mem_span_irreducibleCharacters (A : Subring k) {f : G → 
     (hf : f ∈ ClassFunction k G) (hfA : ∀ g, f g ∈ A)
     (hA : ∀ (i : Fin (Nat.card (ConjClasses G))) (g : G), irreducibleCharacter k i g ∈ A) :
     Nat.card G • f ∈ Submodule.span A (irreducibleCharacters k G) := by
+  have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   let _ : Fintype G := Fintype.ofFinite G
   have hexp : Nat.card G • f =
       ∑ i, (∑ g, irreducibleCharacter k i g * f g⁻¹) • irreducibleCharacter k i := by
@@ -415,13 +472,28 @@ theorem characterPairing_eq_intCast_sum {f₁ f₂ : ClassFunction k G}
   push_cast
   exact Finset.sum_congr rfl fun i _ => mul_comm _ _
 
-/-- **The character pairing is integer-valued on the virtual-character lattice.** -/
+omit [IsAlgClosed k] [Invertible (Nat.card G : k)] in
+/-- **The character pairing is integer-valued on the virtual-character lattice.** If `|G|` is
+zero in `k` the normalization `|G|⁻¹` of the pairing is `0`, so the pairing vanishes and the
+statement holds trivially; it is only meaningful when `|G|` is invertible in `k`. -/
 theorem exists_characterPairing_eq_intCast {f₁ f₂ : ClassFunction k G}
     (h₁ : (f₁ : G → k) ∈ virtualCharacters k G) (h₂ : (f₂ : G → k) ∈ virtualCharacters k G) :
     ∃ n : ℤ, ClassFunction.characterPairing f₁ f₂ = (n : k) := by
-  obtain ⟨c, hc⟩ := mem_virtualCharacters_iff.mp h₁
-  obtain ⟨d, hd⟩ := mem_virtualCharacters_iff.mp h₂
-  exact ⟨∑ i, c i * d i, characterPairing_eq_intCast_sum hc hd⟩
+  by_cases hG : (Nat.card G : k) = 0
+  · exact ⟨0, by rw [ClassFunction.characterPairing_apply, hG, inv_zero, zero_mul, Int.cast_zero]⟩
+  let _ : Invertible (Nat.card G : k) := invertibleOfNonzero hG
+  obtain ⟨A, B, hAB⟩ := exists_eq_character_sub_character h₁
+  obtain ⟨C, D, hCD⟩ := exists_eq_character_sub_character h₂
+  have e₁ : f₁ = ClassFunction.ofFDRep A - ClassFunction.ofFDRep B :=
+    Subtype.ext (funext fun g => by simp [hAB])
+  have e₂ : f₂ = ClassFunction.ofFDRep C - ClassFunction.ofFDRep D :=
+    Subtype.ext (funext fun g => by simp [hCD])
+  refine ⟨(finrank k (C ⟶ A) : ℤ) - finrank k (D ⟶ A) - finrank k (C ⟶ B) + finrank k (D ⟶ B),
+    ?_⟩
+  rw [e₁, e₂]
+  simp only [map_sub, LinearMap.sub_apply, ClassFunction.characterPairing_ofFDRep_eq_finrank]
+  push_cast
+  ring
 
 end Pairing
 
@@ -465,7 +537,7 @@ theorem exists_eq_irreducibleCharacter_or_neg {f : ClassFunction k G}
   have hzero : ∑ i ∈ Finset.univ.erase i₀, c i * c i = 0 := by omega
   have hrest : ∀ i ∈ Finset.univ.erase i₀, c i = 0 := fun i hi =>
     mul_self_eq_zero.mp
-      ((Finset.sum_eq_zero_iff_of_nonneg fun j hj => hnn j (Finset.mem_univ j)).mp hzero i hi)
+      ((Finset.sum_eq_zero_iff_of_nonneg fun j _ => hnn j (Finset.mem_univ j)).mp hzero i hi)
   have hval : (f : G → k) = (c i₀ : k) • irreducibleCharacter k i₀ := by
     rw [hc, ← Finset.sum_erase_add Finset.univ _ (Finset.mem_univ i₀),
       Finset.sum_eq_zero fun i hi => by rw [hrest i hi]; simp, zero_add]
@@ -474,6 +546,7 @@ theorem exists_eq_irreducibleCharacter_or_neg {f : ClassFunction k G}
   · exact Or.inl (by rw [hval, h]; simp)
   · exact Or.inr (by rw [hval, h]; simp)
 
+omit [Invertible (Nat.card G : k)] in
 /-- **A virtual character of norm `1` whose degree is a natural number is an irreducible
 character.** By `TauCeti.exists_eq_irreducibleCharacter_or_neg` it is `±χ`, and `-χ` is excluded:
 its degree `-χ(1)` is negative, so it is not the image of a natural number. -/
@@ -481,6 +554,8 @@ theorem mem_irreducibleCharacters_of_characterPairing_self_eq_one {f : ClassFunc
     (hf : (f : G → k) ∈ virtualCharacters k G)
     (hnorm : ClassFunction.characterPairing f f = 1) {n : ℕ} (hn : (f : G → k) 1 = n) :
     (f : G → k) ∈ irreducibleCharacters k G := by
+  let : Invertible (Nat.card G : k) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   obtain ⟨i, hi | hi⟩ := exists_eq_irreducibleCharacter_or_neg hf hnorm
   · exact hi ▸ irreducibleCharacter_mem k i
   · -- the negative alternative would force a sum of a positive and a natural number to vanish
@@ -494,5 +569,117 @@ theorem mem_irreducibleCharacters_of_characterPairing_self_eq_one {f : ClassFunc
     omega
 
 end Norm
+
+section NormCharZero
+
+open Module
+
+variable {k : Type u} {G : Type v} [Field k] [Group G]
+
+/-- The cancellation step of `TauCeti.exists_simple_character_eq_of_characterPairing_self_eq_one`:
+a nonzero intertwiner `σ → ρ` between semisimple representations exhibits a common summand, the
+image of a complement of its kernel, and cancelling it from `χ_ρ - χ_σ` leaves the difference of
+the characters of a complement of that image in `ρ` and of the kernel. -/
+private theorem exists_char_sub_eq_of_ne_zero {V W : Type*} [AddCommGroup V] [Module k V]
+    [FiniteDimensional k V] [AddCommGroup W] [Module k W] [FiniteDimensional k W]
+    {ρ : Representation k G V} {σ : Representation k G W} [ρ.IsSemisimpleRepresentation]
+    [σ.IsSemisimpleRepresentation] {φ : σ.IntertwiningMap ρ} (hφ : φ ≠ 0) :
+    ∃ (ρ' : Subrepresentation ρ) (σ' : Subrepresentation σ),
+      finrank k ρ'.toSubmodule < finrank k V ∧
+        ρ.character - σ.character =
+          ρ'.toRepresentation.character - σ'.toRepresentation.character := by
+  obtain ⟨C, hC⟩ := exists_isCompl φ.ker
+  have hC' := Subrepresentation.isCompl_toSubmodule.mpr hC
+  -- `φ` restricted to the complement `C` of its kernel is injective
+  let ψ := φ.comp C.subtype
+  have hψ : Function.Injective ψ := by
+    intro x y hxy
+    have hker : (x : W) - y ∈ φ.ker.toSubmodule := by
+      simp only [Representation.IntertwiningMap.ker_toSubmodule, LinearMap.mem_ker,
+        Representation.IntertwiningMap.coe_toLinearMap, map_sub]
+      exact sub_eq_zero.mpr (by simpa [ψ] using hxy)
+    exact Subtype.ext (sub_eq_zero.mp (Submodule.disjoint_def.mp hC'.disjoint _ hker
+      (C.toSubmodule.sub_mem x.2 y.2)))
+  obtain ⟨ρ', hρ'⟩ := exists_isCompl ψ.range
+  refine ⟨ρ', φ.ker, ?_, ?_⟩
+  · -- the image of `ψ` is nonzero, since otherwise `C` is zero and `φ` vanishes
+    have hpos : 0 < finrank k ψ.range.toSubmodule := by
+      refine Nat.pos_of_ne_zero fun h0 => hφ ?_
+      have hrange := Submodule.finrank_eq_zero.mp h0
+      have hCbot : C.toSubmodule = ⊥ := Submodule.eq_bot_iff _ |>.mpr fun v hv =>
+        congrArg Subtype.val (hψ (a₂ := 0) (by
+          simpa using (Submodule.eq_bot_iff _).mp hrange (ψ ⟨v, hv⟩) ⟨⟨v, hv⟩, rfl⟩))
+      have hktop : φ.ker.toSubmodule = ⊤ := eq_top_of_isCompl_bot (hCbot ▸ hC')
+      refine Representation.IntertwiningMap.ext (LinearMap.ext fun v => ?_)
+      have hv : v ∈ φ.ker.toSubmodule := hktop ▸ Submodule.mem_top
+      simpa using hv
+    have := Submodule.finrank_add_eq_of_isCompl
+      (Subrepresentation.isCompl_toSubmodule.mpr hρ')
+    omega
+  · rw [← Subrepresentation.char_add_eq_of_isCompl hC,
+      ← Subrepresentation.char_add_eq_of_isCompl hρ',
+      Representation.char_iso (ψ.equivOfRange hψ (P := ψ.range) rfl)]
+    abel
+
+open _root_.Representation in
+/-- **A virtual character of norm `1` and natural degree is the character of an absolutely
+irreducible representation, over any field of characteristic zero.** If `f` is an integer
+combination of characters of representations of `G` over `k`, with `⟨f, f⟩ = 1` and `f 1` a
+natural number, then `f` is the character of a simple object `V` of `FDRep k G` whose equivariant
+endomorphisms are the scalars.
+
+Over an algebraically closed field this is
+`TauCeti.mem_irreducibleCharacters_of_characterPairing_self_eq_one`. Over a general field the
+irreducible characters need not be orthonormal (the rotation representation of `ℤ/3` on `ℝ²` is
+irreducible of norm `2`), so instead `f = χ_A - χ_B` is reduced by cancelling common summands of
+`A` and `B` until no nonzero intertwiner `B → A` is left; then `⟨f, f⟩ = dim End(A) + dim End(B)`
+forces one of `A`, `B` to be zero and the other to have one-dimensional endomorphism algebra, and
+the degree rules out `A = 0`.
+
+This is the step that turns a character identity over a subfield `k` of `ℂ` into the realizability
+over `k` of an irreducible complex representation. -/
+theorem exists_simple_character_eq_of_characterPairing_self_eq_one [Fintype G] [CharZero k]
+    {f : ClassFunction k G} (hf : (f : G → k) ∈ virtualCharacters k G)
+    (hnorm : ClassFunction.characterPairing f f = 1) {n : ℕ} (hn : (f : G → k) 1 = n) :
+    ∃ V : FDRep k G, CategoryTheory.Simple V ∧ finrank k (V ⟶ V) = 1 ∧ V.character = f := by
+  have : NeZero (Nat.card G : k) := ⟨Nat.cast_ne_zero.mpr Nat.card_pos.ne'⟩
+  let _ : Invertible (Nat.card G : k) := invertibleOfNonzero (NeZero.ne _)
+  obtain ⟨A, B, hAB⟩ := exists_eq_character_sub_character hf
+  induction hA : finrank k A using Nat.strong_induction_on generalizing A B with
+  | _ m ih =>
+  by_cases hφ : ∃ φ : IntertwiningMap B.ρ A.ρ, φ ≠ 0
+  · -- cancel a common summand of `A` and `B`, lowering the dimension of `A`
+    obtain ⟨φ, hφ⟩ := hφ
+    obtain ⟨ρ', σ', hlt, heq⟩ := exists_char_sub_eq_of_ne_zero hφ
+    refine ih _ (hA ▸ hlt) (FDRep.of ρ'.toRepresentation) (FDRep.of σ'.toRepresentation) ?_ rfl
+    rw [hAB, FDRep.character_of, FDRep.character_of, ← heq]
+    funext g
+    rw [Pi.sub_apply, Pi.sub_apply, FDRep.character_ρ, FDRep.character_ρ]
+  -- no intertwiner `B → A` is left, so `⟨f, f⟩ = dim End(A) + dim End(B)`
+  push Not at hφ
+  have : Subsingleton (IntertwiningMap B.ρ A.ρ) := ⟨fun φ ψ => (hφ φ).trans (hφ ψ).symm⟩
+  have hf' : f = ClassFunction.ofCharacter A.ρ - ClassFunction.ofCharacter B.ρ :=
+    Subtype.ext (funext fun g => by simp [hAB, ClassFunction.ofCharacter_apply, FDRep.character_ρ])
+  rw [hf', ClassFunction.characterPairing_ofCharacter_sub_self] at hnorm
+  have hsum : finrank k (IntertwiningMap A.ρ A.ρ) + finrank k (IntertwiningMap B.ρ B.ρ) = 1 := by
+    exact_mod_cast hnorm
+  rcases Nat.add_eq_one_iff.mp hsum with ⟨ha, hb⟩ | ⟨ha, hb⟩
+  · -- `A = 0` would make the degree `f 1 = -dim B` negative
+    have := (isIrreducible_of_finrank_intertwiningMap_self_eq_one hb).nontrivial
+    rw [hAB, Pi.sub_apply, FDRep.character_eq_zero_of_finrank_intertwiningMap_eq_zero A ha,
+      Pi.zero_apply, zero_sub, FDRep.char_one] at hn
+    have hd : finrank k B + n = 0 := by
+      exact_mod_cast (by linear_combination -hn : (finrank k B : k) + n = 0)
+    exact absurd (finrank_pos (R := k) (M := B)) (by omega)
+  · -- `B = 0`, and `A` is semisimple with one-dimensional endomorphism algebra
+    have := isIrreducible_of_finrank_intertwiningMap_self_eq_one ha
+    refine ⟨A, inferInstance, ?_, ?_⟩
+    · have hEnd := ClassFunction.characterPairing_ofFDRep_eq_finrank A A
+      rw [ClassFunction.ofFDRep_eq_ofCharacter,
+        ClassFunction.characterPairing_ofCharacter_eq_finrank, ha] at hEnd
+      exact_mod_cast hEnd.symm
+    · rw [hAB, FDRep.character_eq_zero_of_finrank_intertwiningMap_eq_zero B hb, sub_zero]
+
+end NormCharZero
 
 end TauCeti

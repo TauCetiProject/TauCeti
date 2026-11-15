@@ -24,9 +24,9 @@ monomorphism, the image of a filtration step is exactly the target step intersec
 of the enveloping-algebra map. Consequently, an equivalence of Lie algebras identifies the
 filtration steps by linear equivalences.
 
-These results do not use the Poincare--Birkhoff--Witt basis theorem. In particular, the exact image
-statement for an arbitrary, not necessarily split, Lie subalgebra inclusion remains part of the
-ordered-monomial stage of PBW.
+These results do not use the Poincare--Birkhoff--Witt basis theorem. The exact image statement for
+an arbitrary injective Lie map over a field uses PBW and is proved in
+`TauCeti/Algebra/Lie/UniversalEnveloping/PBW/Subalgebra.lean`.
 
 ## Main definitions and results
 

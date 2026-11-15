@@ -19,22 +19,20 @@ already forces every element outside `N` to conjugate by inversion as well
 rotations and of a dicyclic group over its cyclic subgroup, and it makes the character of the
 representation induced from a linear character `ψ` of `N` completely explicit: it vanishes off `N`
 (`TauCeti.character_indFDRep_eq_zero_of_notMem_of_index_two`, which needs neither the inversion
-hypothesis nor linearity), and on `N` it is `ψ + ψ⁻¹` as soon as the order of `N` is invertible in
-the coefficient field, which the average form of the induced character below asks for.
+hypothesis nor linearity), and on `N` it is `ψ + ψ⁻¹`.
 
-On `N` the average form `TauCeti.character_ind` of the induced character is the one to use.  A
-linear character takes its values in the commutative group `kˣ`, so conjugating by an element of
-`N` does not move it, while conjugating by an element outside `N` inverts it.  The two halves of
-`G` are equally large, so each contributes `|N|` copies of one of the two values, and the factor
-`|N|⁻¹` in front of the average cancels them.
+On `N` the division-free two-coset formula `TauCeti.character_indFDRep_eq_add_of_index_two` is the
+one to use.  A linear character takes its values in the commutative group `kˣ`, and conjugating by
+an element outside `N` inverts it, so the two coset terms are `ψ` and `ψ⁻¹`.
 
 ## Main statements
 
+* `TauCeti.character_indFDRep_eq_add_of_index_two`: the division-free two-coset formula
+  for an arbitrary representation induced from a subgroup of index two.
 * `TauCeti.character_indFDRep_eq_zero_of_notMem_of_index_two`: **off a subgroup of index two, an
   induced character vanishes.**
 * `TauCeti.character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv`: **on the
-  subgroup, the character induced from a linear character is `ψ + ψ⁻¹`**, provided the order of
-  the subgroup is invertible in the coefficient field.
+  subgroup, the character induced from a linear character is `ψ + ψ⁻¹`**.
 
 ## References
 
@@ -49,6 +47,25 @@ universe u v
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] {N : Subgroup G} [Finite G]
 
+omit [Finite G] in
+/-- For a subgroup of index two, the induced character has just two summands: those
+at the identity representative and at any representative outside the subgroup.
+No invertibility assumption on the subgroup order is needed. -/
+theorem character_indFDRep_eq_add_of_index_two [N.FiniteIndex]
+    (hindex : N.index = 2) {s : G} (hs : s ∉ N) (A : FDRep k N) (g : G) :
+    (indFDRep A).character g =
+      Function.indTerm A.character g 1 + Function.indTerm A.character g s := by
+  classical
+  let := Fintype.ofFinite (G ⧸ N)
+  rw [character_indFDRep_sum_quotient]
+  simp only [← Function.indTerm_apply]
+  rw [sum_quotient_eq_add_of_index_two hindex hs]
+  exact congrArg₂ (· + ·)
+    (Function.indTerm_eq_of_mk_eq A.character (ClassFunction.mem_iff.mpr A.char_conj) g _ 1
+      (Quotient.out_eq' _))
+    (Function.indTerm_eq_of_mk_eq A.character (ClassFunction.mem_iff.mpr A.char_conj) g _ s
+      (Quotient.out_eq' _))
+
 /-- **Off a subgroup of index two, an induced character vanishes.**  A subgroup of index two is
 normal, so this is `TauCeti.character_indFDRep_eq_zero_of_notMem` stated against the explicit
 hypothesis `N.index = 2` that the formula on `N` below is stated against, rather than against a
@@ -62,41 +79,23 @@ theorem character_indFDRep_eq_zero_of_notMem_of_index_two (hindex : N.index = 2)
 /-- **On an inverted subgroup of index two, the character induced from a linear character `ψ` is
 `ψ + ψ⁻¹`.**  Together with `TauCeti.character_indFDRep_eq_zero_of_notMem_of_index_two`, which
 gives the value `0` off `N` from the same hypothesis `hindex`, this determines the induced
-character on all of `G`.  The hypothesis `hN` asks that the order of `N` be invertible in `k`. -/
+character on all of `G`.  This holds over any field `k`, with no assumption on the
+order of `N`. -/
 theorem character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv
     (hindex : N.index = 2) {s : G} (hs : s ∉ N) (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹)
-    (hN : IsUnit (Nat.card N : k)) (ψ : N →* kˣ) {g : G} (hg : g ∈ N) :
+    (ψ : N →* kˣ) {g : G} (hg : g ∈ N) :
     (indFDRep (k := k) (G := G) (FDRep.ofLinearCharacter ψ)).character g =
       (ψ ⟨g, hg⟩ : k) + ((ψ ⟨g, hg⟩)⁻¹ : kˣ) := by
   classical
-  have : Fintype G := Fintype.ofFinite G
-  have hnormal : N.Normal := Subgroup.normal_of_index_eq_two hindex
-  have hconj : ∀ x : G, x⁻¹ * g * x ∈ N := fun x => by
-    simpa using hnormal.conj_mem _ hg x⁻¹
-  -- Each summand of the average takes one of two values, according to the half of `G` that the
-  -- conjugating element lies in.
-  have hterm : ∀ x : G,
-      (if h : x⁻¹ * g * x ∈ N then
-          (FDRep.ofLinearCharacter (k := k) ψ).character ⟨x⁻¹ * g * x, h⟩ else 0) =
-        if x ∈ N then (ψ ⟨g, hg⟩ : k) else ((ψ ⟨g, hg⟩)⁻¹ : kˣ) := by
-    intro x
-    rw [dite_eq_left (hconj x), FDRep.char_ofLinearCharacter]
-    by_cases hx : x ∈ N
-    · have hsplit : (⟨x⁻¹ * g * x, hconj x⟩ : N) = (⟨x, hx⟩ : N)⁻¹ * ⟨g, hg⟩ * ⟨x, hx⟩ :=
-        Subtype.ext (by simp)
-      rw [ite_eq_left hx, hsplit, map_mul, map_mul, map_inv, inv_mul_cancel_comm]
-    · have hxinv : x⁻¹ ∉ N := fun h => hx (by simpa using N.inv_mem h)
-      have hsplit : (⟨x⁻¹ * g * x, hconj x⟩ : N) = (⟨g, hg⟩ : N)⁻¹ :=
-        Subtype.ext (by
-          simpa using conj_eq_inv_of_notMem_of_index_two hindex hs hinv hxinv hg)
-      rw [ite_eq_right hx, hsplit, map_inv]
-  -- The two halves of `G` have `|N|` elements each.
-  have hmemCard : (Finset.univ.filter (fun x : G => x ∈ N)).card = Nat.card N := by
-    simp [Nat.card_eq_fintype_card, Fintype.card_subtype]
-  have hnotMemCard : (Finset.univ.filter (fun x : G => ¬ x ∈ N)).card = Nat.card N := by
-    simpa using card_filter_notMem_eq_card_of_index_two (N := N) hindex
-  rw [character_ind hN _ g, Finset.sum_congr rfl fun x _ => hterm x, Finset.sum_ite,
-    Finset.sum_const, Finset.sum_const, hmemCard, hnotMemCard, nsmul_eq_mul, nsmul_eq_mul,
-    ← mul_add, ← mul_assoc, inv_mul_cancel₀ hN.ne_zero, one_mul]
+  have hsinv : s⁻¹ ∉ N := fun h => hs (by simpa using N.inv_mem h)
+  have hconj : s⁻¹ * g * s ∈ N := by
+    have := Subgroup.normal_of_index_eq_two hindex
+    simpa using (inferInstance : N.Normal).conj_mem g hg s⁻¹
+  have hsplit : (⟨s⁻¹ * g * s, hconj⟩ : N) = (⟨g, hg⟩ : N)⁻¹ :=
+    Subtype.ext (by simpa using conj_eq_inv_of_notMem_of_index_two hindex hs hinv hsinv hg)
+  rw [character_indFDRep_eq_add_of_index_two hindex hs, Function.indTerm_apply,
+    Function.indTerm_apply, dite_eq_left (by simpa using hg), dite_eq_left hconj,
+    FDRep.char_ofLinearCharacter, FDRep.char_ofLinearCharacter, hsplit, map_inv]
+  simp
 
 end TauCeti

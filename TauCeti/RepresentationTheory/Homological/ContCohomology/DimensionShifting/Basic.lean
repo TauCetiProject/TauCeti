@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Separation.Connected
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Iso
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Acyclic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Quotient
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.HomologySequence
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.Basic
@@ -30,7 +31,10 @@ coinduction `TauCeti.DiscreteCoind.unit G ⊥ M`,
 M ↪ Coind_1^G M,   m ↦ (x ↦ x • m),
 ```
 
-and the long exact sequence of `0 → M → Coind_1^G M → Coind_1^G M ⧸ M → 0` then shifts degrees:
+and the long exact sequence of `0 → M → Coind_1^G M → Coind_1^G M ⧸ M → 0`
+(`TauCeti.ContCohomology.coindShortExact G ⊥ M`, built for an arbitrary subgroup in
+`TauCeti/RepresentationTheory/Homological/ContCohomology/Coinduced/Quotient.lean`) then shifts
+degrees:
 
 ```text
 H²(G, M) ≅ H¹(G, Coind_1^G M ⧸ M),
@@ -52,13 +56,10 @@ Hⁱ⁺¹(G, M) ≅ Hⁱ(G, Coind_1^G M ⧸ M)   (i ≥ 1)
 ```
 
 for every compact group `G` (`TauCeti.ContCohomology.dimensionShiftIso`), inverse to the
-connecting map, which is an isomorphism (`TauCeti.ContCohomology.isIso_coindBotShortExact_delta`).
+connecting map, which is an isomorphism (`TauCeti.ContCohomology.isIso_coindShortExact_bot_delta`).
 
 ## Main definitions
 
-* `TauCeti.ContCohomology.DimensionShiftQuotient`: the discrete `G`-module `Coind_1^G M ⧸ M`.
-* `TauCeti.ContCohomology.coindBotShortExact`: the short exact sequence
-  `0 → M → Coind_1^G M → Coind_1^G M ⧸ M → 0` of discrete `G`-modules.
 * `TauCeti.ContCohomology.explicitDimensionShift1`: `H¹(G, Coind_1^G M ⧸ M) ≃+ H²(G, M)`, the
   connecting map `δ¹`.
 * `TauCeti.ContCohomology.explicitDimensionShift0`: the cokernel of
@@ -72,20 +73,13 @@ connecting map, which is an isomorphism (`TauCeti.ContCohomology.isIso_coindBotS
 * `TauCeti.ContCohomology.subsingleton_H1_discreteCoind_bot` and
   `subsingleton_H2_discreteCoind_bot`: **acyclicity of `Coind_1^G A`** in degrees one and two,
   for profinite `G`.
-* `TauCeti.ContCohomology.isIso_coindBotShortExact_delta`: the connecting map
+* `TauCeti.ContCohomology.isIso_coindShortExact_bot_delta`: the connecting map
   `Hⁱ(G, Coind_1^G M ⧸ M) ⟶ Hⁱ⁺¹(G, M)` is an isomorphism for `i ≥ 1`, for compact `G`.
 
 ## Implementation notes
 
-As for `TauCeti.DiscreteCoind`, the quotient is a type synonym carrying the discrete topology; the
-quotient topology inherited from `QuotientAddGroup` is not the one used for coefficients. Its
-`G`-action is induced by the right-translation action on `Coind_1^G M`, which preserves the image
-of `M` because the embedding is `G`-equivariant, and it is continuous because the stabilizer of a
-class contains the open stabilizer of any representative.
-
-Compactness of `G` makes the right-translation action on `Coind_1^G M` continuous. The underlying
-quotient and its algebraic action do not require compactness, but its `ContinuousSMul` instance
-does. Total disconnectedness supplies the `T1` property making the trivial subgroup closed, as
+Compactness of `G` makes the actions on `Coind_1^G M` and on `Coind_1^G M ⧸ M` continuous. Total
+disconnectedness supplies the `T1` property making the trivial subgroup closed, as
 required by the available Shapiro isomorphisms; the acyclicity and the two shifts use both
 profinite hypotheses.
 
@@ -124,113 +118,6 @@ instance subsingleton_H2_discreteCoind_bot : Subsingleton (H2 G (DiscreteCoind G
 
 end Acyclic
 
-/-! ### The embedding into `Coind_1^G M` and its cokernel -/
-
-section Embedding
-
-variable (G : Type u) [Group G] [TopologicalSpace G]
-  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-  [DistribMulAction G M] [ContinuousSMul G M]
-
-section ContinuousMul
-
-variable [ContinuousMul G]
-
-/-- **The dimension-shifting module `Coind_1^G M ⧸ M`**, the cokernel of the unit
-`TauCeti.DiscreteCoind.unit G ⊥ M`, the embedding `M ↪ Coind_1^G M` by orbit maps, carrying the
-discrete topology. -/
-@[expose] def DimensionShiftQuotient : Type _ :=
-  DiscreteCoind G ⊥ M ⧸ (DiscreteCoind.unit G ⊥ M).toAddMonoidHom.range
-
-namespace DimensionShiftQuotient
-
-/-- `Coind_1^G M ⧸ M` is an additive group, as a quotient of `Coind_1^G M`. -/
-instance : AddCommGroup (DimensionShiftQuotient G M) :=
-  inferInstanceAs
-    (AddCommGroup (DiscreteCoind G ⊥ M ⧸ (DiscreteCoind.unit G ⊥ M).toAddMonoidHom.range))
-
-/-- `Coind_1^G M ⧸ M` carries the discrete topology. -/
-instance : TopologicalSpace (DimensionShiftQuotient G M) := ⊥
-
-/-- The topology on `Coind_1^G M ⧸ M` is discrete. -/
-instance : DiscreteTopology (DimensionShiftQuotient G M) := ⟨rfl⟩
-
-/-- The projection `Coind_1^G M → Coind_1^G M ⧸ M`. -/
-@[expose] def mk : DiscreteCoind G ⊥ M →+ DimensionShiftQuotient G M := QuotientAddGroup.mk' _
-
-variable {G M}
-
-/-- The projection `Coind_1^G M → Coind_1^G M ⧸ M` is surjective. -/
-theorem mk_surjective : Function.Surjective (mk G M) := QuotientAddGroup.mk'_surjective _
-
-/-- A coinduced element dies in the quotient exactly when it is an orbit map. -/
-@[simp]
-theorem mk_eq_zero_iff {f : DiscreteCoind G ⊥ M} :
-    mk G M f = 0 ↔ f ∈ (DiscreteCoind.unit G ⊥ M).toAddMonoidHom.range :=
-  QuotientAddGroup.eq_zero_iff f
-
-/-- Induction on `Coind_1^G M ⧸ M`: a property of the classes of all coinduced elements holds for
-every element of the quotient. -/
-@[elab_as_elim]
-theorem induction_on {motive : DimensionShiftQuotient G M → Prop} (q : DimensionShiftQuotient G M)
-    (h : ∀ f : DiscreteCoind G ⊥ M, motive (mk G M f)) : motive q :=
-  QuotientAddGroup.induction_on q h
-
-/-- Right translation on `Coind_1^G M`, descended to the quotient; the image of `M` is preserved
-because the embedding is equivariant. -/
-instance : DistribMulAction G (DimensionShiftQuotient G M) where
-  smul g := QuotientAddGroup.map _ _ (DistribSMul.toAddMonoidHom (DiscreteCoind G ⊥ M) g) <| by
-    rintro _ ⟨m, rfl⟩
-    exact ⟨g • m, _root_.map_smul (DiscreteCoind.unit G ⊥ M) g m⟩
-  one_smul q := induction_on q fun f => congrArg (mk G M) (one_smul G f)
-  mul_smul g h q := induction_on q fun f => congrArg (mk G M) (mul_smul g h f)
-  smul_zero g := map_zero (QuotientAddGroup.map _ _ _ _)
-  smul_add g := map_add (QuotientAddGroup.map _ _ _ _)
-
-/-- The projection is `G`-equivariant. -/
-@[simp]
-theorem mk_smul (g : G) (f : DiscreteCoind G ⊥ M) : mk G M (g • f) = g • mk G M f := (rfl)
-
-end DimensionShiftQuotient
-
-/-- **The short exact sequence `0 → M → Coind_1^G M → Coind_1^G M ⧸ M → 0`** of discrete
-`G`-modules on which dimension shifting runs. -/
-def coindBotShortExact :
-    DiscreteShortExact G M (DiscreteCoind G ⊥ M) (DimensionShiftQuotient G M) where
-  incl := (DiscreteCoind.unit G ⊥ M).toAddMonoidHom
-  proj := DimensionShiftQuotient.mk G M
-  incl_equivariant g m := _root_.map_smul (DiscreteCoind.unit G ⊥ M) g m
-  proj_equivariant := DimensionShiftQuotient.mk_smul
-  incl_injective := DiscreteCoind.unit_injective
-  proj_surjective := DimensionShiftQuotient.mk_surjective
-  exact _ := DimensionShiftQuotient.mk_eq_zero_iff
-
-/-- The first map of the dimension-shifting short exact sequence is the unit `M → Coind_1^G M`. -/
-@[simp]
-theorem coindBotShortExact_incl :
-    (coindBotShortExact G M).incl = (DiscreteCoind.unit G ⊥ M).toAddMonoidHom := (rfl)
-
-/-- The second map of the dimension-shifting short exact sequence is the projection `Coind_1^G M →
-Coind_1^G M ⧸ M`. -/
-@[simp]
-theorem coindBotShortExact_proj :
-    (coindBotShortExact G M).proj = DimensionShiftQuotient.mk G M := (rfl)
-
-end ContinuousMul
-
-variable {G M} in
-/-- The action on the quotient is continuous: the stabilizer of a class contains the stabilizer of
-any representative, which is open. -/
-instance DimensionShiftQuotient.instContinuousSMul [IsTopologicalGroup G] [CompactSpace G] :
-    ContinuousSMul G (DimensionShiftQuotient G M) := by
-  refine continuousSMul_iff_stabilizer_isOpen.2 fun q => ?_
-  obtain ⟨f, rfl⟩ := DimensionShiftQuotient.mk_surjective q
-  refine Subgroup.isOpen_mono (fun g hg => ?_) (stabilizer_isOpen G f)
-  rw [MulAction.mem_stabilizer_iff] at hg ⊢
-  rw [← DimensionShiftQuotient.mk_smul, hg]
-
-end Embedding
-
 /-! ### Dimension shifting -/
 
 section DimensionShift
@@ -241,34 +128,34 @@ variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Com
   [DistribMulAction G M] [ContinuousSMul G M]
 
 /-- **Dimension shifting from degree two to degree one**, `H¹(G, Coind_1^G M ⧸ M) ≅ H²(G, M)`,
-for a profinite group `G`: the connecting map `δ¹` of `TauCeti.ContCohomology.coindBotShortExact`
-is bijective because `Coind_1^G M` is acyclic. -/
-noncomputable def explicitDimensionShift1 : H1 G (DimensionShiftQuotient G M) ≃+ H2 G M :=
-  AddEquiv.ofBijective (coindBotShortExact G M).explicitDelta1
-    (coindBotShortExact G M).explicitDelta1_bijective_of_subsingleton
+for a profinite group `G`: the connecting map `δ¹` of
+`TauCeti.ContCohomology.coindShortExact G ⊥ M` is bijective because `Coind_1^G M` is acyclic. -/
+noncomputable def explicitDimensionShift1 : H1 G (CoindQuotient G ⊥ M) ≃+ H2 G M :=
+  AddEquiv.ofBijective (coindShortExact G ⊥ M).explicitDelta1
+    (coindShortExact G ⊥ M).explicitDelta1_bijective_of_subsingleton
 
 /-- The dimension-shifting isomorphism `H¹(G, Coind_1^G M ⧸ M) ≃ H²(G, M)` is the connecting map
 `δ¹`. -/
 @[simp]
-theorem explicitDimensionShift1_apply (x : H1 G (DimensionShiftQuotient G M)) :
-    explicitDimensionShift1 G M x = (coindBotShortExact G M).explicitDelta1 x := (rfl)
+theorem explicitDimensionShift1_apply (x : H1 G (CoindQuotient G ⊥ M)) :
+    explicitDimensionShift1 G M x = (coindShortExact G ⊥ M).explicitDelta1 x := (rfl)
 
 /-- **Dimension shifting from degree one to degree zero**, for a profinite group `G`: `H¹(G, M)` is
 the cokernel of `H⁰(G, Coind_1^G M) → H⁰(G, Coind_1^G M ⧸ M)`, through the connecting map `δ⁰`,
 which is surjective because `Coind_1^G M` has vanishing `H¹`. -/
 noncomputable def explicitDimensionShift0 :
-    H0 G (DimensionShiftQuotient G M) ⧸
+    H0 G (CoindQuotient G ⊥ M) ⧸
         (explicitCoeff0 G (DiscreteCoind G ⊥ M)
-          (coindBotShortExact G M).projDistribMulActionHom).range ≃+ H1 G M :=
-  (QuotientAddGroup.quotientAddEquivOfEq (coindBotShortExact G M).explicitLongExact_H0C).trans
+          (coindShortExact G ⊥ M).projDistribMulActionHom).range ≃+ H1 G M :=
+  (QuotientAddGroup.quotientAddEquivOfEq (coindShortExact G ⊥ M).explicitLongExact_H0C).trans
     (QuotientAddGroup.quotientKerEquivOfSurjective _
-      (coindBotShortExact G M).explicitDelta0_surjective_of_subsingleton)
+      (coindShortExact G ⊥ M).explicitDelta0_surjective_of_subsingleton)
 
 /-- The dimension-shifting isomorphism onto `H¹(G, M)` sends the class of `x ∈ H⁰(G, Coind_1^G M ⧸
 M)` to `δ⁰ x`. -/
 @[simp]
-theorem explicitDimensionShift0_mk (x : H0 G (DimensionShiftQuotient G M)) :
-    explicitDimensionShift0 G M x = (coindBotShortExact G M).explicitDelta0 x := by
+theorem explicitDimensionShift0_mk (x : H0 G (CoindQuotient G ⊥ M)) :
+    explicitDimensionShift0 G M x = (coindShortExact G ⊥ M).explicitDelta0 x := by
   rw [explicitDimensionShift0, AddEquiv.trans_apply,
     QuotientAddGroup.quotientAddEquivOfEq_mk,
     QuotientAddGroup.quotientKerEquivOfSurjective,
@@ -290,28 +177,28 @@ open CategoryTheory Limits
 /-- **The connecting map of the dimension-shifting sequence is an isomorphism in every positive
 degree**: `δ : Hⁱ(G, Coind_1^G M ⧸ M) ⟶ Hⁱ⁺¹(G, M)` for `i ≥ 1` and a compact group `G`, because
 `Coind_1^G M` is acyclic in degrees `i` and `i + 1`. -/
-theorem isIso_coindBotShortExact_delta (i : ℕ) (hi : 0 < i) :
-    IsIso ((coindBotShortExact G M).delta i) := by
+theorem isIso_coindShortExact_bot_delta (i : ℕ) (hi : 0 < i) :
+    IsIso ((coindShortExact G ⊥ M).delta i) := by
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hi.ne'
-  exact (coindBotShortExact G M).isIso_delta (n + 1)
+  exact (coindShortExact G ⊥ M).isIso_delta (n + 1)
 
 /-- **Dimension shifting in every positive degree**, `Hⁱ⁺¹(G, M) ≅ Hⁱ(G, Coind_1^G M ⧸ M)` for
 `i ≥ 1` and a compact group `G`, as an isomorphism of Mathlib's canonical continuous cohomology. Its
-inverse is the connecting map of `TauCeti.ContCohomology.coindBotShortExact`
-(`dimensionShiftIso_inv`), an isomorphism by `isIso_coindBotShortExact_delta`. The analogous
+inverse is the connecting map of `TauCeti.ContCohomology.coindShortExact G ⊥ M`
+(`dimensionShiftIso_inv`), an isomorphism by `isIso_coindShortExact_bot_delta`. The analogous
 statement on the explicit low-degree model, for a profinite `G` and in the direction of the
 connecting map, is `TauCeti.ContCohomology.explicitDimensionShift1 :
 H¹(G, Coind_1^G M ⧸ M) ≃+ H²(G, M)`. -/
 noncomputable def dimensionShiftIso (i : ℕ) (hi : 0 < i) :
     continuousCohomology (i + 1) (ofDiscreteModule ℤ G M) ≅
-      continuousCohomology i (ofDiscreteModule ℤ G (DimensionShiftQuotient G M)) :=
-  (@asIso _ _ _ _ ((coindBotShortExact G M).delta i)
-    (isIso_coindBotShortExact_delta G M i hi)).symm
+      continuousCohomology i (ofDiscreteModule ℤ G (CoindQuotient G ⊥ M)) :=
+  (@asIso _ _ _ _ ((coindShortExact G ⊥ M).delta i)
+    (isIso_coindShortExact_bot_delta G M i hi)).symm
 
 /-- The inverse of the dimension-shifting isomorphism is the connecting map. -/
 @[simp]
 theorem dimensionShiftIso_inv (i : ℕ) (hi : 0 < i) :
-    (dimensionShiftIso G M i hi).inv = (coindBotShortExact G M).delta i := by
+    (dimensionShiftIso G M i hi).inv = (coindShortExact G ⊥ M).delta i := by
   rw [dimensionShiftIso, Iso.symm_inv, asIso_hom]
 
 end DimensionShiftAll

@@ -5,14 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.GrothendieckGroup.IsoClassModel
 public import TauCeti.CategoryTheory.GrothendieckGroup.ObjectCodeMonoid
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
-public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
-public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import Mathlib.CategoryTheory.Adjunction.Limits
+public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.GroupTheory.MonoidLocalization.GrothendieckGroup
 
 /-!
-# Split `K₀` of an additive category
+# Split `K₀` from biproduct relations
 
 The split Grothendieck group `TauCeti.SplitK0 C` of an essentially small category `C` with zero
 morphisms and binary biproducts -- an additive category, in the intended application -- is the
@@ -22,8 +23,8 @@ isomorphism classes and additive on binary biproducts.
 
 A short complex with a splitting is a conflation of *every* exact structure on `C`
 (`TauCeti.ExactStructure.conflation_of_splitting`), so the biproduct relations are imposed by
-every exact structure. Once exact `K₀` is available, the comparison homomorphism out of split
-`K₀` will therefore be an instance of `TauCeti.SplitK0.ofLE`; no such comparison is stated here.
+every exact structure. The comparison homomorphism `TauCeti.ExactK0.fromSplit` sends each
+object class in split `K₀` to its class in exact `K₀`.
 
 The construction is the presentation engine of
 `TauCeti/CategoryTheory/GrothendieckGroup/Presentation.lean` applied to the biproduct relations,
@@ -34,7 +35,8 @@ The last section identifies `SplitK0 C` with Mathlib's group completion
 `Algebra.GrothendieckAddGroup` of the additive monoid of isomorphism classes under `⊞`, built in
 `TauCeti/CategoryTheory/GrothendieckGroup/ObjectCodeMonoid.lean`. That monoid structure is carried
 by `TauCeti.ObjectCode C` itself, so the identification is an isomorphism of additive groups in
-the same small universe.
+the same small universe. The final section presents split `K₀` over every model of the
+isomorphism classes, so that it does not depend on the skeleton used to build it.
 
 ## Main definitions
 
@@ -44,9 +46,18 @@ the same small universe.
 * `TauCeti.SplitK0.ofLE`: the comparison to a presentation imposing more relations.
 * `TauCeti.SplitK0.AdditiveInvariant C G`: an isomorphism-invariant, biproduct-additive function
   on objects, and `TauCeti.SplitK0.lift` the homomorphism it induces.
-* `TauCeti.SplitK0.map` and `TauCeti.SplitK0.mapEquiv`: functoriality for additive functors and
-  invariance under additive equivalences.
+* `TauCeti.SplitK0.map` and `TauCeti.SplitK0.mapEquiv`: functoriality for functors preserving
+  zero morphisms and binary biproducts, and invariance under equivalences.
+* `TauCeti.SplitK0.BiadditiveInvariant C D G`: a function on pairs of objects which is
+  isomorphism-invariant and biproduct-additive in each variable, and
+  `TauCeti.SplitK0.BiadditiveInvariant.bilift` its descent to a biadditive map.
+* `TauCeti.SplitK0.map₂`: the biadditive map induced by a bifunctor preserving zero morphisms and
+  binary biproducts in each variable.
 * `TauCeti.SplitK0.ofCode`: the class map on the monoid of isomorphism classes of objects.
+* `TauCeti.splitObjectRelations C`: the biproduct relations as integral combinations of objects,
+  and `TauCeti.SplitK0.isoClassModelEquiv m`: the canonical isomorphism from `SplitK0 C` to the
+  group they present over a model `m` of the isomorphism classes of `C`
+  (`TauCeti.IsoClassModel`), such as a chosen skeleton.
 
 ## Main results
 
@@ -57,8 +68,13 @@ the same small universe.
   invariants, and in particular the class map, are additive on finite biproducts.
 * `TauCeti.SplitK0.liftEquiv`: the universal property. Biproduct-additive invariants with values
   in `G` correspond bijectively to homomorphisms `SplitK0 C →+ G`.
+* `TauCeti.SplitK0.BiadditiveInvariant.bilift_of_of` and
+  `TauCeti.SplitK0.BiadditiveInvariant.bilift_unique`: the two-variable universal property, and
+  `TauCeti.SplitK0.map₂_of_of`: a bifunctor sends `([X], [Y])` to `[F(X, Y)]`.
 * `TauCeti.SplitK0.grothendieckAddGroupEquiv`: split `K₀` is the group completion of the additive
   monoid of isomorphism classes of objects.
+* `TauCeti.SplitK0.of_eq_of_iff`: two objects have the same class exactly when `X ⊞ T ≅ Y ⊞ T`
+  for some object `T`.
 
 ## References
 
@@ -217,6 +233,14 @@ structure AdditiveInvariant (G : Type*) [AddCommGroup G] where
   /-- The value on a biproduct is the sum of the values. -/
   map_biprod : ∀ X Y : C, obj (X ⊞ Y) = obj X + obj Y
 
+omit [EssentiallySmall.{w} C] in
+/-- An additive invariant vanishes on zero objects. -/
+theorem AdditiveInvariant.obj_eq_zero_of_isZero (a : AdditiveInvariant C G) {X : C}
+    (hX : IsZero X) : a.obj X = 0 := by
+  have h := a.map_biprod X X
+  rw [a.map_iso (isoBiprodZero hX).symm] at h
+  exact add_eq_right.1 h.symm
+
 private noncomputable def AdditiveInvariant.toPresented (a : AdditiveInvariant C G) :
     PresentedK0.AdditiveInvariant (splitRelations C) G where
   obj := a.obj
@@ -262,22 +286,34 @@ lemma liftEquiv_apply (a : AdditiveInvariant C G) : liftEquiv a = lift a := (rfl
 lemma liftEquiv_symm_apply_obj (f : SplitK0 C →+ G) (X : C) :
     ((liftEquiv (C := C) (G := G)).symm f).obj X = f (of X) := (rfl)
 
+variable (C) in
+/-- The class map `X ↦ [X]`, as a biproduct-additive invariant valued in split `K₀` itself. -/
+noncomputable def ofInvariant : AdditiveInvariant C (SplitK0 C) where
+  obj := of
+  map_iso _ _ e := of_congr e
+  map_biprod := of_biprod
+
+@[simp]
+lemma ofInvariant_obj (X : C) : (ofInvariant C).obj X = of X := (rfl)
+
 end SplitK0
 
 section Functoriality
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts C]
   [EssentiallySmall.{w} C]
-  {D : Type u'} [Category.{v'} D] [Preadditive D] [HasBinaryBiproducts D]
+  {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D] [HasBinaryBiproducts D]
   [EssentiallySmall.{w'} D]
 
-private lemma freeMap_splitRelation (F : C ⥤ D) [F.Additive] (X Y : C) :
+private lemma freeMap_splitRelation (F : C ⥤ D) [F.PreservesZeroMorphisms]
+    [PreservesBiproductsOfShape WalkingPair F] (X Y : C) :
     freeMap F (splitRelation X Y) = splitRelation (F.obj X) (F.obj Y) := by
   have : PreservesBinaryBiproducts F := preservesBinaryBiproducts_of_preservesBiproducts F
   rw [splitRelation_def, map_sub, map_sub, freeMap_freeOf, freeMap_freeOf, freeMap_freeOf,
     freeOf_congr (F.mapBiprod X Y), splitRelation_def]
 
-private lemma freeMap_splitRelations_mem_closure (F : C ⥤ D) [F.Additive] :
+private lemma freeMap_splitRelations_mem_closure (F : C ⥤ D) [F.PreservesZeroMorphisms]
+    [PreservesBiproductsOfShape WalkingPair F] :
     ∀ r ∈ splitRelations C, freeMap F r ∈ AddSubgroup.closure (splitRelations D) := by
   rintro _ ⟨X, Y, rfl⟩
   rw [freeMap_splitRelation]
@@ -285,12 +321,15 @@ private lemma freeMap_splitRelations_mem_closure (F : C ⥤ D) [F.Additive] :
 
 namespace SplitK0
 
-/-- The homomorphism of split Grothendieck groups induced by an additive functor. -/
-noncomputable def map (F : C ⥤ D) [F.Additive] : SplitK0 C →+ SplitK0 D :=
+/-- The homomorphism of split Grothendieck groups induced by a functor preserving zero morphisms
+and binary biproducts. -/
+noncomputable def map (F : C ⥤ D) [F.PreservesZeroMorphisms]
+    [PreservesBiproductsOfShape WalkingPair F] : SplitK0 C →+ SplitK0 D :=
   PresentedK0.map F (freeMap_splitRelations_mem_closure F)
 
 @[simp]
-lemma map_of (F : C ⥤ D) [F.Additive] (X : C) : map F (of X) = of (F.obj X) :=
+lemma map_of (F : C ⥤ D) [F.PreservesZeroMorphisms]
+    [PreservesBiproductsOfShape WalkingPair F] (X : C) : map F (of X) = of (F.obj X) :=
   PresentedK0.map_of F _ X
 
 /-- `SplitK0.map` sends the identity functor to the identity homomorphism. -/
@@ -298,37 +337,42 @@ lemma map_of (F : C ⥤ D) [F.Additive] (X : C) : map F (of X) = of (F.obj X) :=
 lemma map_id : map (𝟭 C) = AddMonoidHom.id (SplitK0 C) :=
   PresentedK0.map_id _
 
-/-- `SplitK0.map` sends a composite of additive functors to the composite homomorphism. -/
+/-- `SplitK0.map` sends a composite of biproduct-preserving functors to the composite
+homomorphism. -/
 @[simp]
-lemma map_comp {E : Type u''} [Category.{v''} E] [Preadditive E] [HasBinaryBiproducts E]
-    [EssentiallySmall.{w''} E] (F : C ⥤ D) (G : D ⥤ E) [F.Additive] [G.Additive] :
+lemma map_comp {E : Type u''} [Category.{v''} E] [HasZeroMorphisms E] [HasBinaryBiproducts E]
+    [EssentiallySmall.{w''} E] (F : C ⥤ D) (G : D ⥤ E) [F.PreservesZeroMorphisms]
+    [PreservesBiproductsOfShape WalkingPair F] [G.PreservesZeroMorphisms]
+    [PreservesBiproductsOfShape WalkingPair G] :
     map (F ⋙ G) = (map G).comp (map F) :=
   PresentedK0.map_comp F G _ _ _
 
-/-- Objectwise isomorphic additive functors induce the same map; in particular naturally
+/-- Objectwise isomorphic biproduct-preserving functors induce the same map; in particular naturally
 isomorphic ones do. -/
-lemma map_congr {F G : C ⥤ D} [F.Additive] [G.Additive]
+lemma map_congr {F G : C ⥤ D} [F.PreservesZeroMorphisms]
+    [PreservesBiproductsOfShape WalkingPair F] [G.PreservesZeroMorphisms]
+    [PreservesBiproductsOfShape WalkingPair G]
     (h : ∀ X : C, Nonempty (F.obj X ≅ G.obj X)) : map F = map G :=
   PresentedK0.map_congr h _ _
 
-/-- Invariance under additive equivalences. -/
-noncomputable def mapEquiv (e : C ≌ D) [e.functor.Additive] : SplitK0 C ≃+ SplitK0 D :=
+/-- Split `K₀` is invariant under equivalences of categories. -/
+noncomputable def mapEquiv (e : C ≌ D) : SplitK0 C ≃+ SplitK0 D :=
   PresentedK0.mapEquiv e (freeMap_splitRelations_mem_closure e.functor)
     (freeMap_splitRelations_mem_closure e.inverse)
 
 @[simp]
-lemma mapEquiv_of (e : C ≌ D) [e.functor.Additive] (X : C) :
+lemma mapEquiv_of (e : C ≌ D) (X : C) :
     mapEquiv e (of X) = of (e.functor.obj X) :=
   PresentedK0.mapEquiv_of e _ _ X
 
 @[simp]
-lemma mapEquiv_symm_of (e : C ≌ D) [e.functor.Additive] (Y : D) :
+lemma mapEquiv_symm_of (e : C ≌ D) (Y : D) :
     (mapEquiv e).symm (of Y) = of (e.inverse.obj Y) :=
   PresentedK0.mapEquiv_symm_of e _ _ Y
 
 /-- The homomorphism underlying the equivalence invariance is the functorial map. -/
 @[simp]
-lemma mapEquiv_toAddMonoidHom (e : C ≌ D) [e.functor.Additive] :
+lemma mapEquiv_toAddMonoidHom (e : C ≌ D) :
     ((mapEquiv e : SplitK0 C ≃+ SplitK0 D) : SplitK0 C →+ SplitK0 D) = map e.functor :=
   PresentedK0.mapEquiv_toAddMonoidHom e _ _
 
@@ -336,18 +380,117 @@ end SplitK0
 
 end Functoriality
 
+section Biadditive
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts C]
+  [EssentiallySmall.{w} C]
+  {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D] [HasBinaryBiproducts D]
+  [EssentiallySmall.{w'} D]
+
+namespace SplitK0
+
+variable (C D) in
+/-- A biadditive invariant for split `K₀`: a function on pairs of objects which, in each variable
+separately, is constant on isomorphism classes and additive on binary biproducts. These are
+exactly the data that descend to a biadditive map `SplitK0 C →+ SplitK0 D →+ G`; see
+`TauCeti.SplitK0.BiadditiveInvariant.bilift` and
+`TauCeti.SplitK0.BiadditiveInvariant.bilift_unique`. -/
+@[ext]
+structure BiadditiveInvariant (G : Type*) [AddCommGroup G] where
+  /-- The value of the invariant on a pair of objects. -/
+  obj : C → D → G
+  /-- Isomorphic objects in the first variable receive equal values. -/
+  map_iso₁ : ∀ ⦃X X' : C⦄, (X ≅ X') → ∀ Y : D, obj X Y = obj X' Y
+  /-- Isomorphic objects in the second variable receive equal values. -/
+  map_iso₂ : ∀ (X : C) ⦃Y Y' : D⦄, (Y ≅ Y') → obj X Y = obj X Y'
+  /-- The invariant is additive on binary biproducts in the first variable. -/
+  map_biprod₁ : ∀ (X X' : C) (Y : D), obj (X ⊞ X') Y = obj X Y + obj X' Y
+  /-- The invariant is additive on binary biproducts in the second variable. -/
+  map_biprod₂ : ∀ (X : C) (Y Y' : D), obj X (Y ⊞ Y') = obj X Y + obj X Y'
+
+namespace BiadditiveInvariant
+
+variable {G : Type*} [AddCommGroup G] (a : BiadditiveInvariant C D G)
+
+/-- The invariant with its first argument fixed. -/
+private def rightInvariant (X : C) : AdditiveInvariant D G where
+  obj := a.obj X
+  map_iso _ _ e := a.map_iso₂ X e
+  map_biprod := a.map_biprod₂ X
+
+omit [EssentiallySmall.{w} C] [EssentiallySmall.{w'} D] in
+private lemma rightInvariant_obj (X : C) : (a.rightInvariant X).obj = a.obj X := (rfl)
+
+/-- The one-sided descents in the second variable, as an additive invariant of the first
+variable with values in the homomorphisms out of `SplitK0 D`. -/
+private noncomputable def leftInvariant : AdditiveInvariant C (SplitK0 D →+ G) where
+  obj X := lift (a.rightInvariant X)
+  map_iso X X' e := hom_ext fun Y => by
+    simpa only [lift_of, rightInvariant_obj] using a.map_iso₁ e Y
+  map_biprod X X' := hom_ext fun Y => by
+    simpa only [AddMonoidHom.add_apply, lift_of, rightInvariant_obj] using a.map_biprod₁ X X' Y
+
+omit [EssentiallySmall.{w} C] in
+private lemma leftInvariant_obj (X : C) : a.leftInvariant.obj X = lift (a.rightInvariant X) :=
+  (rfl)
+
+/-- Descend a biadditive invariant through both split Grothendieck groups. -/
+noncomputable def bilift : SplitK0 C →+ SplitK0 D →+ G :=
+  lift a.leftInvariant
+
+/-- The two-variable descent evaluates on object classes as the original invariant. -/
+@[simp]
+lemma bilift_of_of (X : C) (Y : D) : a.bilift (of X) (of Y) = a.obj X Y := by
+  rw [bilift, lift_of, leftInvariant_obj, lift_of, rightInvariant_obj]
+
+/-- The two-variable descent is the unique biadditive map with the prescribed values on pairs of
+object classes. -/
+theorem bilift_unique (b : SplitK0 C →+ SplitK0 D →+ G)
+    (hb : ∀ (X : C) (Y : D), b (of X) (of Y) = a.obj X Y) : b = a.bilift :=
+  hom_ext fun X => hom_ext fun Y => by rw [hb, bilift_of_of]
+
+end BiadditiveInvariant
+
+variable {K : Type u''} [Category.{v''} K] [HasZeroMorphisms K] [HasBinaryBiproducts K]
+  [EssentiallySmall.{w''} K] (F : C ⥤ D ⥤ K)
+  [∀ X, (F.obj X).PreservesZeroMorphisms] [∀ X, PreservesBiproductsOfShape WalkingPair (F.obj X)]
+  [∀ Y, (F.flip.obj Y).PreservesZeroMorphisms]
+  [∀ Y, PreservesBiproductsOfShape WalkingPair (F.flip.obj Y)]
+
+/-- The class `[F(X, Y)]` of a bifunctor preserving zero morphisms and binary biproducts in each
+variable, as a biadditive invariant. -/
+private noncomputable def map₂Invariant : BiadditiveInvariant C D (SplitK0 K) where
+  obj X Y := of ((F.obj X).obj Y)
+  map_iso₁ _ _ e Y := of_congr ((F.mapIso e).app Y)
+  map_iso₂ X _ _ e := of_congr ((F.obj X).mapIso e)
+  map_biprod₁ X X' Y := by
+    simpa only [map_add, map_of, Functor.flip_obj_obj] using
+      congrArg (map (F.flip.obj Y)) (of_biprod X X')
+  map_biprod₂ X Y Y' := by
+    simpa only [map_add, map_of] using congrArg (map (F.obj X)) (of_biprod Y Y')
+
+/-- **Biadditivity of split `K₀`**: a bifunctor preserving zero morphisms and binary biproducts
+in each variable induces a biadditive map of split Grothendieck groups, sending the pair of classes
+`([X], [Y])` to `[F(X, Y)]`. -/
+noncomputable def map₂ : SplitK0 C →+ SplitK0 D →+ SplitK0 K :=
+  (map₂Invariant F).bilift
+
+/-- The biadditive map induced by a bifunctor sends a pair of object classes to the class of the
+image of the pair. -/
+@[simp]
+lemma map₂_of_of (X : C) (Y : D) : map₂ F (of X) (of Y) = of ((F.obj X).obj Y) :=
+  (map₂Invariant F).bilift_of_of X Y
+
+end SplitK0
+
+end Biadditive
+
 section FiniteBiproducts
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts C]
   {G : Type*} [AddCommGroup G] (v : SplitK0.AdditiveInvariant C G)
 
 namespace SplitK0.AdditiveInvariant
-
-/-- An additive invariant vanishes on zero objects. -/
-theorem obj_eq_zero_of_isZero {X : C} (hX : IsZero X) : v.obj X = 0 := by
-  have h := v.map_biprod X X
-  rw [v.map_iso (isoBiprodZero hX).symm] at h
-  exact add_eq_right.1 h.symm
 
 /-- An additive invariant is additive on finite biproducts. -/
 @[simp]
@@ -374,16 +517,6 @@ end SplitK0.AdditiveInvariant
 namespace SplitK0
 
 variable [EssentiallySmall.{w} C]
-
-variable (C) in
-/-- The class map `X ↦ [X]`, as a biproduct-additive invariant valued in split `K₀` itself. -/
-noncomputable def ofInvariant : AdditiveInvariant C (SplitK0 C) where
-  obj := of
-  map_iso _ _ e := of_congr e
-  map_biprod := of_biprod
-
-@[simp]
-lemma ofInvariant_obj (X : C) : (ofInvariant C).obj X = of X := (rfl)
 
 /-- The class of a finite biproduct is the sum of the classes of its summands. -/
 @[simp]
@@ -482,8 +615,83 @@ lemma grothendieckAddGroupEquiv_symm_of (X : C) :
       Algebra.GrothendieckAddGroup.of (objectCode X) :=
   (grothendieckAddGroupEquiv C).symm_apply_eq.2 (grothendieckAddGroupEquiv_of_objectCode X).symm
 
+/-- Two objects have the same class in split `K₀` exactly when they become isomorphic after adding
+a common object: `[X] = [Y]` if and only if `X ⊞ T ≅ Y ⊞ T` for some `T`. This is equality in the
+group completion of the monoid of isomorphism classes. -/
+theorem of_eq_of_iff {X Y : C} :
+    (of X : SplitK0 C) = of Y ↔ ∃ T : C, Nonempty (X ⊞ T ≅ Y ⊞ T) := by
+  rw [← (grothendieckAddGroupEquiv C).symm.injective.eq_iff, grothendieckAddGroupEquiv_symm_of,
+    grothendieckAddGroupEquiv_symm_of]
+  refine (AddLocalization.addMonoidOf ⊤).eq_iff_exists.trans ⟨fun ⟨⟨c, _⟩, h⟩ => ?_,
+    fun ⟨T, h⟩ => ⟨⟨objectCode T, trivial⟩, ?_⟩⟩
+  · obtain ⟨T, rfl⟩ := objectCode_surjective c
+    rw [add_comm, add_comm _ (objectCode Y), ← objectCode_biprod, ← objectCode_biprod,
+      objectCode_eq_objectCode_iff] at h
+    exact ⟨T, h⟩
+  · have h := objectCode_eq_objectCode_iff.2 h
+    rwa [objectCode_biprod, objectCode_biprod, add_comm, add_comm (objectCode Y)] at h
+
 end SplitK0
 
 end IsoClasses
+
+section IsoClassModel
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts C]
+
+variable (C) in
+/-- The biproduct relations `[X ⊞ Y] - [X] - [Y]` as integral combinations of objects of `C`,
+before passing to isomorphism classes. Their codes are the relations `TauCeti.splitRelations C`,
+so they present split `K₀` over every model of the isomorphism classes of `C`. -/
+def splitObjectRelations : Set (FreeAbelianGroup C) :=
+  {r | ∃ X Y : C, r = .of (X ⊞ Y) - .of X - .of Y}
+
+/-- Membership in the family of object-level biproduct relations. -/
+@[simp]
+lemma mem_splitObjectRelations_iff {r : FreeAbelianGroup C} :
+    r ∈ splitObjectRelations C ↔ ∃ X Y : C, r = .of (X ⊞ Y) - .of X - .of Y := (Iff.rfl)
+
+variable [EssentiallySmall.{w} C]
+
+/-- The codes of the object-level biproduct relations are the biproduct relations presenting
+split `K₀`. -/
+lemma image_splitObjectRelations :
+    FreeAbelianGroup.map objectCode '' splitObjectRelations C = splitRelations C := by
+  ext r
+  simp [splitRelation_def, freeOf_def, eq_comm]
+
+namespace SplitK0
+
+variable {I J : Type*}
+
+/-- Split `K₀` presented over a model `m` of the isomorphism classes of `C`: the canonical
+isomorphism from `SplitK0 C` to the free abelian group on the index type of `m` modulo the codes
+of the biproduct relations. It preserves the class of every object, so split `K₀` does not depend
+on the skeleton used to build it. -/
+noncomputable def isoClassModelEquiv (m : IsoClassModel C I) :
+    SplitK0 C ≃+ m.K0 (splitObjectRelations C) :=
+  IsoClassModel.K0.presentedK0Equiv m image_splitObjectRelations
+
+@[simp]
+lemma isoClassModelEquiv_of (m : IsoClassModel C I) (X : C) :
+    isoClassModelEquiv m (of X) = IsoClassModel.K0.of X :=
+  IsoClassModel.K0.presentedK0Equiv_of _ X
+
+@[simp]
+lemma isoClassModelEquiv_symm_of (m : IsoClassModel C I) (X : C) :
+    (isoClassModelEquiv m).symm (IsoClassModel.K0.of X) = of X :=
+  IsoClassModel.K0.presentedK0Equiv_symm_of _ X
+
+/-- The presentations of split `K₀` over two models differ by the canonical isomorphism
+`TauCeti.IsoClassModel.K0.equiv` between them. -/
+@[simp]
+lemma isoClassModelEquiv_trans_equiv (m : IsoClassModel C I) (m' : IsoClassModel C J) :
+    (isoClassModelEquiv m).trans (IsoClassModel.K0.equiv m m' (splitObjectRelations C)) =
+      isoClassModelEquiv m' :=
+  AddEquiv.toAddMonoidHom_injective (hom_ext fun X => by simp)
+
+end SplitK0
+
+end IsoClassModel
 
 end TauCeti

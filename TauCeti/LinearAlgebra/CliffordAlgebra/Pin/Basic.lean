@@ -14,6 +14,13 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Basic
 The Pin group is the subgroup of the Lipschitz group whose elements have unit Clifford norm.
 This file packages its inclusion into the Lipschitz group, the vector generators with norm `-1`,
 and the Spin inclusion used when transporting norms and actions along those maps.
+
+`TauCeti.CliffordAlgebra.coe_inv_pinToLipschitz` identifies the inverse unit coordinate of a
+Pin element's image in the Lipschitz group with its Clifford star.
+
+Every Pin element is homogeneous for the `ℤ/2`-grading `CliffordAlgebra.evenOdd`, as an element of
+the Lipschitz group (`pinGroup.exists_mem_evenOdd`). This is what assigns a parity to a Pin element,
+the sign with which it acts on vectors through the grade involution.
 -/
 
 public section
@@ -36,6 +43,13 @@ theorem ι_mem_pinGroup {v : M} (hv : Q v = -1) : ι Q v ∈ pinGroup Q := by
   · rw [star_ι, neg_mul, hsq, neg_neg]
   · rw [star_ι, mul_neg, hsq, neg_neg]
 
+/-- **Elements of the Pin group are homogeneous**: every element of the Pin group is even or odd
+for the `ℤ/2`-grading of the Clifford algebra. -/
+theorem _root_.pinGroup.exists_mem_evenOdd {x : CliffordAlgebra Q} (hx : x ∈ pinGroup Q) :
+    ∃ p : ZMod 2, x ∈ evenOdd Q p := by
+  obtain ⟨u, hu, rfl⟩ := pinGroup.mem_lipschitzGroup hx
+  exact lipschitzGroup.exists_mem_evenOdd hu
+
 variable (Q)
 
 /-- The Pin group includes into the Lipschitz group. -/
@@ -50,6 +64,16 @@ theorem coe_pinToLipschitz_apply (x : pinGroup Q) :
       (x : CliffordAlgebra Q) := by
   rw [pinToLipschitz]
   rfl
+
+variable {Q} in
+/-- The inverse unit coordinate of a Pin element in the Lipschitz group is its Clifford star. -/
+@[simp]
+theorem _root_.TauCeti.CliffordAlgebra.coe_inv_pinToLipschitz (x : pinGroup Q) :
+    (((pinToLipschitz Q x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) :
+        CliffordAlgebra Q) = star (x : CliffordAlgebra Q) :=
+  Units.inv_eq_of_mul_eq_one_right (by
+    rw [coe_pinToLipschitz_apply]
+    exact pinGroup.mul_star_self_of_mem x.2)
 
 /-- The spin group sits inside the Pin group. -/
 def spinToPin : spinGroup Q →* pinGroup Q :=

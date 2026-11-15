@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.Stationary
-public import TauCeti.Probability.Recurrent
+public import TauCeti.Probability.Recurrent.Basic
 
 /-!
 # Exchangeable and contractable processes are recurrent
@@ -25,7 +25,6 @@ processes are contractable, so they are recurrent too.
 
 * P. Diaconis and D. Freedman, "de Finetti's theorem for Markov chains", *Annals of Probability*
   8 (1980), 115–130.
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 8, "Markov exchangeability".
 -/
 
 public section

@@ -38,7 +38,7 @@ variable {k L K A : Type*} [CommSemiring k] [CommSemiring L] [Algebra k L]
 /-- Extension of the coefficients of a character through a tower of scalar rings. -/
 noncomputable def groupLikeScalarTowerHom :
     _root_.GroupLike L (L ⊗[k] A) →* _root_.GroupLike K (K ⊗[k] A) :=
-  (GroupLike.mapEquiv (Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k L A K)).toMonoidHom.comp
+  (Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k L A K).mapGroupLike.toMonoidHom.comp
     groupLikeBaseChange
 
 /-- The scalar-tower map extends the scalar coefficients of a character. -/
@@ -47,7 +47,7 @@ theorem val_groupLikeScalarTowerHom (x : _root_.GroupLike L (L ⊗[k] A)) :
     (groupLikeScalarTowerHom (K := K) x).val =
       Algebra.TensorProduct.map (IsScalarTower.toAlgHom k L K) (AlgHom.id k A) x.val := by
   simp only [groupLikeScalarTowerHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    GroupLike.val_mapEquiv, val_groupLikeBaseChange]
+    BialgEquiv.val_mapGroupLike, val_groupLikeBaseChange]
   exact TensorProduct.baseChangeTowerBialgEquiv_one_tmul k L A K x.val
 
 end Map
@@ -65,7 +65,7 @@ noncomputable def groupLikeScalarTowerEquiv
       (Set.range (_root_.GroupLike.val (R := L) (A := L ⊗[k] A))) = ⊤) :
     _root_.GroupLike L (L ⊗[k] A) ≃* _root_.GroupLike K (K ⊗[k] A) :=
   (groupLikeBaseChangeEquiv (K := K) hspan).trans
-    (GroupLike.mapEquiv (Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k L A K))
+    (Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k L A K).mapGroupLike
 
 /-- The character comparison extends coefficients and leaves the original bialgebra fixed. -/
 @[simp]

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.HopfAlgebra.Augmentation
 public import Mathlib.RingTheory.Ideal.Height
 
@@ -42,9 +42,6 @@ action laws, and identifies its action on the prime spectrum.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 6.7.
-
-This is translation infrastructure for Layer 3, "Identity component `G°` and component group
-`π₀(G)`", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -140,6 +137,13 @@ theorem rightTranslationAlgEquiv_toAlgHom (g : WithConv (H →ₐ[k] k)) :
     (rightTranslationAlgEquiv g).toAlgHom = rightTranslationAlgHom g :=
   AlgEquiv.toAlgHom_ofBijective _ _
 
+/-- The coordinate map of right translation is convolution of the universal point
+with the constant translating point. -/
+theorem toConv_rightTranslationAlgEquiv (g : WithConv (H →ₐ[k] k)) :
+    WithConv.toConv (rightTranslationAlgEquiv g).toAlgHom =
+      WithConv.toConv (AlgHom.id k H) * AlgHom.mapValue (Algebra.ofId k H) g := by
+  rw [rightTranslationAlgEquiv_toAlgHom, rightTranslationAlgHom, AlgHom.mapValue_apply]
+
 private theorem rightTranslationAlgEquiv_toLinearEquiv
     (g : WithConv (H →ₐ[k] k)) :
     (rightTranslationAlgEquiv g).toLinearEquiv = rightTranslationLinearEquiv g := by
@@ -189,7 +193,7 @@ theorem rightTranslationAlgEquiv_mul (g h : WithConv (H →ₐ[k] k)) :
     _ = (rightTranslationLinearEquiv g * rightTranslationLinearEquiv h) x :=
       LinearEquiv.congr_fun (rightTranslationLinearEquiv_mul g h) x
     _ = rightTranslationLinearEquiv g (rightTranslationLinearEquiv h x) :=
-      LinearEquiv.mul_apply _ _ x
+      mul_apply_eq_comp _ _ x
     _ = rightTranslationLinearEquiv g (rightTranslationAlgEquiv h x) :=
       congrArg (rightTranslationLinearEquiv g)
         (LinearEquiv.congr_fun (rightTranslationAlgEquiv_toLinearEquiv h) x).symm
@@ -316,9 +320,9 @@ theorem rightTranslationHomeomorph_apply (g : WithConv (H →ₐ[k] k))
 
 end CommRing
 
-section Field
+section IsDomain
 
-variable {k : Type u} [Field k]
+variable {k : Type u} [CommRing k] [IsDomain k]
 variable {H : Type v} [CommRing H] [_root_.HopfAlgebra k H]
 
 /-- Contraction of the augmentation point along right translation gives the translating point. -/
@@ -336,7 +340,7 @@ theorem comap_rightTranslationAlgEquiv_augmentationPoint
   rw [rightTranslationAlgEquiv_toAlgHom, AlgHom.comap_kernelPoint,
     counitAlgHom_comp_rightTranslationAlgHom]
 
-end Field
+end IsDomain
 
 end TauCeti.HopfAlgebra
 
@@ -349,11 +353,11 @@ variable {R H K : Type*} [CommRing R] [CommRing H] [CommRing K]
 
 /-- A homomorphism of affine groups commutes with right translation by a point and its image. -/
 theorem comp_rightTranslationAlgHom (f : H →ₐc[R] K) (g : WithConv (K →ₐ[R] R)) :
-    f.toAlgHom.comp (TauCeti.HopfAlgebra.rightTranslationAlgHom (AlgHom.mapDomain f g)) =
+    f.toAlgHom.comp (TauCeti.HopfAlgebra.rightTranslationAlgHom (BialgHom.mapDomain f g)) =
       (TauCeti.HopfAlgebra.rightTranslationAlgHom g).comp f.toAlgHom := by
   simp only [TauCeti.HopfAlgebra.rightTranslationAlgHom,
     _root_.AlgHom.comp_convMul_distrib, _root_.AlgHom.convMul_comp_bialgHom_distrib,
     ofConv_toConv, _root_.AlgHom.comp_id, _root_.AlgHom.id_comp,
-    AlgHom.mapDomain_apply, ← _root_.AlgHom.comp_assoc, Algebra.comp_ofId]
+    BialgHom.mapDomain_apply, ← _root_.AlgHom.comp_assoc, Algebra.comp_ofId]
 
 end BialgHom

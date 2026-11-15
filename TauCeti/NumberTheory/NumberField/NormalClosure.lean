@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Basic
+public import TauCeti.FieldTheory.Galois.SubfieldDictionary
 public import TauCeti.FieldTheory.Normal.Embeddings
 
 /-!
@@ -20,14 +21,20 @@ The action on those embeddings, and the facts the dictionary rests on — transi
 normal extension, faithfulness when the images generate, and the count of embeddings for a finite
 separable extension — are general field theory and live in
 `TauCeti/FieldTheory/Normal/Embeddings.lean`, with the underlying postcomposition action in
-`TauCeti/Algebra/GroupAction/AlgHom.lean`. This file supplies only the number-field packaging, so
-that a consumer with a `NormalClosureData` can feed the generation half of `isNormalClosure`, and
-`d.embedding`, to those general results.
+`TauCeti/Algebra/GroupAction/AlgHom.lean`; the subfield dictionary of an embedded field is
+`AlgHom.intermediateFieldEquivSubgroup` in `TauCeti/FieldTheory/Galois/SubfieldDictionary.lean`.
+This file supplies only the number-field packaging, so that a consumer with a `NormalClosureData`
+can feed the generation half of `isNormalClosure`, `d.embedding`, and the Galois property
+`NormalClosureData.isGalois` to those general results.
 
 ## Main definitions
 
 * `TauCeti.NumberField.NormalClosureData`: data exhibiting `M` as a normal closure of a number
   field `K` over `ℚ`.
+
+## Main results
+
+* `TauCeti.NumberField.NormalClosureData.isGalois`: such an `M` is Galois over `ℚ`.
 
 ## References
 
@@ -65,6 +72,15 @@ structure NormalClosureData (K M : Type*) [Field K] [NumberField K] [Field M]
   isNormalClosure : IsNormalClosure ℚ K M
 
 variable {K M : Type*} [Field K] [NumberField K] [Field M] [NumberField M]
+
+/-- **A normal closure of a number field is Galois over `ℚ`.** This is the hypothesis under
+which `AlgHom.intermediateFieldEquivSubgroup` applies to `d.embedding`, giving the subfields of `K`
+as the subgroups of `Gal(M/ℚ)` containing the stabilizer of `d.embedding`. -/
+theorem NormalClosureData.isGalois (d : NormalClosureData K M) : IsGalois ℚ M :=
+  -- Normality is the splitting half of `isNormalClosure`; separability is automatic in
+  -- characteristic zero.
+  have := d.isNormalClosure
+  { to_normal := IsNormalClosure.normal (K := K) }
 
 end TauCeti.NumberField
 

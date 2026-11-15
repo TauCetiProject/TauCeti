@@ -12,6 +12,7 @@ import TauCeti.NumberTheory.Chebotarev.Density.SplitsCompletely
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Surjective
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Orthogonality
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Weight
+import TauCeti.NumberTheory.Cyclotomic.Aut
 import TauCeti.NumberTheory.NumberField.DedekindZeta
 
 /-!
@@ -130,16 +131,16 @@ private theorem exists_differentiableOn_eq_LSeries (m : ℕ) [NeZero m]
       exact (w.norm_le_one _).trans_lt (𝔭.one_lt_norm_absNorm_cpow hs)).ne_zero
   -- The continued `L`-function with the Euler factors at the primes dividing `m` deleted has
   -- cancellation; dividing by those factors, which are nonzero on `Re s > 0`, restores them.
-  refine ⟨fun s ↦ continuedLFunctionOfWeight (w.restrict (S : Set _) S.finite_toSet) s /
+  refine ⟨fun s ↦ continuedLFunctionOfWeight (w.restrictAway (S : Set _) S.finite_toSet) s /
       ∏ 𝔭 ∈ S, (1 - w.1 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s), ?_, fun s hs ↦ ?_⟩
   · refine (differentiableOn_continuedLFunctionOfWeight
-      (MonoidHom.hasCancellation_restrict_galoisCharacterUnitaryWeight χ hχ)).div
+      (MonoidHom.hasCancellation_restrictAway_galoisCharacterUnitaryWeight χ hχ)).div
         hcorr.differentiableOn fun s hs ↦ hne ?_
     -- The half-plane `Re s > 1 - 1 / [K : ℚ]` lies in `Re s > 0`.
     exact (sub_nonneg.mpr <| div_le_one_of_le₀ (Nat.one_le_cast.mpr Module.finrank_pos)
       (Nat.cast_nonneg _)).trans_lt hs
   · dsimp only
-    rw [continuedLFunctionOfWeight_restrict_of_one_lt_re w S hs,
+    rw [continuedLFunctionOfWeight_restrictAway_of_one_lt_re w S hs,
       mul_div_cancel_right₀ _ (hne (by linarith)), continuedLFunctionOfWeight_eq_LSeries _ hs,
       UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
       MonoidHom.val_galoisCharacterUnitaryWeight]
@@ -148,10 +149,13 @@ variable (K F) in
 /-- **Holomorphy on `Re s > 1 - 1 / [K : ℚ]`.** For `F = K(μ_m)` and a nontrivial character `χ` of
 `Gal(F/K)`, the continued `L`-series of `χ` is holomorphic on the half-plane
 `Re s > 1 - 1 / [K : ℚ]`. -/
-theorem differentiableOn_cyclotomicCharacterSeriesC (m : ℕ) [NeZero m]
+theorem differentiableOn_cyclotomicCharacterSeriesC (m : ℕ)
     [IsCyclotomicExtension {m} K F] (χ : (F ≃ₐ[K] F) →* ℂˣ) (hχ : χ ≠ 1) :
     DifferentiableOn ℂ (cyclotomicCharacterSeriesC K F χ)
       {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} := by
+  have : Nontrivial (F ≃ₐ[K] F) :=
+    not_subsingleton_iff_nontrivial.mp fun _ ↦ hχ (Subsingleton.elim _ _)
+  have : NeZero m := IsCyclotomicExtension.neZero_of_nontrivial_aut K F
   -- The Artin map is surjective, so `χ ∘ cyclotomicArtin K F m` is nontrivial.
   have h := exists_differentiableOn_eq_LSeries m χ <| by
     rwa [Ne, ← MonoidHom.one_comp (cyclotomicArtin K F m),
@@ -164,7 +168,7 @@ variable (K F) in
 /-- **Analyticity at `s = 1`.** For `F = K(μ_m)` and a nontrivial character `χ` of `Gal(F/K)`,
 the continued `L`-series of `χ` is analytic at `s = 1`, which lies in the half-plane of
 `differentiableOn_cyclotomicCharacterSeriesC`. -/
-theorem analyticAt_cyclotomicCharacterSeriesC_one (m : ℕ) [NeZero m] [IsCyclotomicExtension {m} K F]
+theorem analyticAt_cyclotomicCharacterSeriesC_one (m : ℕ) [IsCyclotomicExtension {m} K F]
     (χ : (F ≃ₐ[K] F) →* ℂˣ) (hχ : χ ≠ 1) : AnalyticAt ℂ (cyclotomicCharacterSeriesC K F χ) 1 :=
   (differentiableOn_cyclotomicCharacterSeriesC K F m χ hχ).analyticAt <|
     (isOpen_lt continuous_const Complex.continuous_re).mem_nhds
@@ -263,7 +267,7 @@ open scoped Classical in
 -- If the continued `L`-series of `χ ≠ 1` vanishes at `1`, then as `σ → 1⁺` the `L`-series of every
 -- character converges after renormalising: that of the trivial character multiplied by `σ - 1`,
 -- that of `χ` divided by `σ - 1`, and the others unchanged.
-private theorem exists_tendsto_mulSingle_mul_LSeries (m : ℕ) [NeZero m]
+private theorem exists_tendsto_mulSingle_mul_LSeries (m : ℕ)
     [IsCyclotomicExtension {m} K F] {χ : (F ≃ₐ[K] F) →* ℂˣ} (hχ : χ ≠ 1)
     (h0 : cyclotomicCharacterSeriesC K F χ 1 = 0) (ψ : (F ≃ₐ[K] F) →* ℂˣ) :
     ∃ z, Tendsto (fun σ : ℝ ↦ Pi.mulSingle (M := fun _ ↦ ℂ) 1 ((σ : ℂ) - 1) ψ *
@@ -298,9 +302,12 @@ private theorem exists_tendsto_mulSingle_mul_LSeries (m : ℕ) [NeZero m]
 variable (K F) in
 /-- **Nonvanishing at `s = 1`.** For `F = K(μ_m)` and a nontrivial character `χ` of `Gal(F/K)`,
 the continued `L`-series of `χ` does not vanish at `s = 1`. -/
-theorem cyclotomicCharacterSeriesC_ne_zero_at_one (m : ℕ) [NeZero m] [IsCyclotomicExtension {m} K F]
+theorem cyclotomicCharacterSeriesC_ne_zero_at_one (m : ℕ) [IsCyclotomicExtension {m} K F]
     (χ : (F ≃ₐ[K] F) →* ℂˣ) (hχ : χ ≠ 1) : cyclotomicCharacterSeriesC K F χ 1 ≠ 0 := by
   intro h0
+  have : Nontrivial (F ≃ₐ[K] F) :=
+    not_subsingleton_iff_nontrivial.mp fun _ ↦ hχ (Subsingleton.elim _ _)
+  have : NeZero m := IsCyclotomicExtension.neZero_of_nontrivial_aut K F
   have := IsCyclotomicExtension.isMulCommutative {m} K F
   -- The product of all the `L`-series is unbounded as `σ → 1⁺`. But the trivial character's
   -- series times `σ - 1` converges, the series of `χ` divided by `σ - 1` converges since it

@@ -19,9 +19,10 @@ power of `𝓂[L]`, and which satisfies `A * A ≤ ϖ • A`. Then for every `j 
 `1 + ϖ ^ j • A = {1 + ϖ ^ j • a | a ∈ A}`
 
 is an open subgroup of `Lˣ`, contained in `U(L, j + 1)`. These subgroups form a decreasing,
-separated filtration, and `1 + ϖ ^ j • a ↦ a mod ϖ • A` is a surjective homomorphism onto the
-additive group of `A ⧸ ϖ • A` whose kernel is `1 + ϖ ^ (j + 1) • A`: every graded piece of the
-filtration is `A ⧸ ϖ • A`. If `A` is stable under the automorphisms of `L/K`, so is each step.
+separated and complete filtration, and `1 + ϖ ^ j • a ↦ a mod ϖ • A` is a surjective
+homomorphism onto the additive group of `A ⧸ ϖ • A` whose kernel is `1 + ϖ ^ (j + 1) • A`: every
+graded piece of the filtration is `A ⧸ ϖ • A`. If `A` is stable under the automorphisms of `L/K`,
+so is each step.
 
 For a finite Galois extension with group `G` a lattice of this kind is supplied by a scaled normal
 basis element (`TauCeti.exists_span_orbit_mul_le_smul`), and is then free over `𝒪[K][G]`, so that
@@ -44,6 +45,8 @@ approximation: this is how the Herbrand quotient of `𝒪[L]ˣ` is shown to be `
 * `TauCeti.IsUnitFiltrationLattice.filtration_le_unitFiltration_succ`: its `j`-th step lies
   in `U(L, j + 1)`; in particular `TauCeti.IsUnitFiltrationLattice.iInf_filtration`: it is
   separated.
+* `TauCeti.IsUnitFiltrationLattice.exists_forall_div_prod_mem_filtration`: it is complete:
+  every product `∏ n, y n` with `y n` in the `n`-th step converges.
 * `TauCeti.IsUnitFiltrationLattice.exists_unitFiltration_le_filtration` and
   `TauCeti.IsUnitFiltrationLattice.isOpen_filtration`: each step contains some `U(L, m)`, and
   is open.
@@ -235,6 +238,34 @@ theorem iInf_filtration : ⨅ j, hA.filtration j = ⊥ := by
   rw [← iInf_unitFiltration (K := L), Subgroup.mem_iInf]
   exact fun i ↦ unitFiltration_antitone i.le_succ
     (hA.filtration_le_unitFiltration_succ i (Subgroup.mem_iInf.1 hx i))
+
+/-- **The unit filtration of a lattice is complete.** If `y n` lies in the `n`-th step
+`1 + ϖ ^ n • A` for every `n`, the infinite product `∏ n, y n` converges to some `s` in step zero,
+in the sense that `s` differs from the `n`-th partial product by an element of the `n`-th step. -/
+theorem exists_forall_div_prod_mem_filtration (y : ℕ → Lˣ) (hy : ∀ n, y n ∈ hA.filtration n) :
+    ∃ s ∈ hA.filtration 0, ∀ n, s / ∏ i ∈ Finset.range n, y i ∈ hA.filtration n := by
+  -- The candidates `C n` for the `n`-th partial product `P n` form a decreasing chain of nonempty
+  -- closed subsets of the compact group `U(L, 1)`, so their intersection is nonempty.
+  set P : ℕ → Lˣ := fun n ↦ ∏ i ∈ Finset.range n, y i
+  set C : ℕ → Set Lˣ := fun n ↦ (fun s ↦ s / P n) ⁻¹' (hA.filtration n : Set Lˣ)
+  have hclosed (n : ℕ) : IsClosed (C n) :=
+    ((hA.filtration n).isClosed_of_isOpen (hA.isOpen_filtration n)).preimage
+      (continuous_id.div_const _)
+  have hC0 : C 0 = hA.filtration 0 := by ext s; simp [C, P]
+  have hcompact : IsCompact (C 0) := by
+    rw [hC0]
+    exact (isCompact_unitFiltration 1).of_isClosed_subset (hC0 ▸ hclosed 0)
+      (hA.filtration_le_unitFiltration_succ 0)
+  have hdecr (n : ℕ) : C (n + 1) ⊆ C n := fun s hs ↦ by
+    have h : s / P n = s / P (n + 1) * y n := by
+      simp only [P, Finset.prod_range_succ, div_mul_eq_div_div, div_mul_cancel]
+    simp only [C, Set.mem_preimage, SetLike.mem_coe] at hs ⊢
+    rw [h]
+    exact mul_mem (hA.filtration_antitone n.le_succ hs) (hy n)
+  obtain ⟨s, hs⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed C hdecr
+    (fun n ↦ ⟨P n, by simp [C]⟩) hcompact hclosed
+  rw [Set.mem_iInter] at hs
+  exact ⟨s, by simpa [hC0] using hs 0, hs⟩
 
 /-! ### The graded pieces -/
 

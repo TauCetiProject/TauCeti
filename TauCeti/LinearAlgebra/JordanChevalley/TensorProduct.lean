@@ -13,8 +13,10 @@ public import Mathlib.RingTheory.TensorProduct.Finite
 /-!
 # Tensor products of multiplicative Jordan decompositions
 
-Over a perfect field, the multiplicative Jordan decomposition of a tensor product of linear
-automorphisms is obtained by tensoring their semisimple factors and their unipotent factors.
+For finite-dimensional vector spaces over a perfect field, the multiplicative Jordan
+decomposition of a tensor product of linear automorphisms is obtained by tensoring their
+semisimple factors and their unipotent factors. Preservation of unipotence holds more generally
+over any commutative semiring acting on additive commutative groups.
 
 This is the tensor-product compatibility needed to assemble the componentwise Jordan factors of
 point actions on finite comodules into tensor automorphisms.  Together with the intertwining
@@ -61,9 +63,9 @@ theorem IsSemisimple.tensorProduct {g : GeneralLinearGroup K V}
 
 end Semisimple
 
-section CommRing
+section CommSemiring
 
-variable [CommRing K] [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
+variable [CommSemiring K] [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
 
 /-- The tensor product of unipotent linear automorphisms is unipotent. -/
 theorem IsUnipotent.tensorProduct {g : GeneralLinearGroup K V}
@@ -73,7 +75,7 @@ theorem IsUnipotent.tensorProduct {g : GeneralLinearGroup K V}
   rw [coe_tensorProduct]
   exact hg.tensorProduct_map_sub_one hh
 
-end CommRing
+end CommSemiring
 
 section PerfectField
 

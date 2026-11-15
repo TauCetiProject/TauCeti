@@ -5,26 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.EReal.Operations
 public import TauCeti.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
 
 /-!
 # Kantorovich dual feasibility and weak duality
 
-For a nonnegative extended cost `c : X × Y → ℝ≥0∞`, a pair of real potentials `φ` and `ψ` is
+For an extended-real cost `c : X × Y → EReal`, a pair of real potentials `φ` and `ψ` is
 dual feasible when
 
 `φ x + ψ y ≤ c (x, y)`.
 
-The comparison is made in `EReal`, so negative potential values and the value `∞` of a forbidden
-pair are both represented honestly. The dual value is the sum of the two marginal integrals.
+The comparison is made in `EReal`, so signed costs, negative potential values, and the value `∞`
+of a forbidden pair are all represented honestly. The dual value is the sum of the two marginal
+integrals.
 The weak-duality theorems and integral manipulations that need it require both potentials to be
 integrable. Integrability is not part of pointwise feasibility, since later `c`-transform arguments
 study feasibility before choosing marginals.
 
-Weak duality says that the value of every integrable feasible pair is at most the cost of every
-coupling, and hence at most the primal transport cost. Neither the cost nor its integral needs to
-be finite or measurable.
+For nonnegative costs, weak duality says that the value of every integrable feasible pair is at
+most the cost of every coupling, and hence at most the primal transport cost. Neither the cost
+nor its integral needs to be finite or measurable.
 
 ## Main definitions
 
@@ -42,15 +44,17 @@ be finite or measurable.
   infimum;
 * `TauCeti.DualFeasible.add_const_sub_const` and
   `TauCeti.kantorovichDualValue_add_const_sub_const` — feasibility and value are unchanged by
-  the usual opposite additive shifts when the marginals have equal finite mass.
+  the usual opposite additive shifts when the marginals have equal finite mass;
+* `TauCeti.kantorovichDualValue_div` — dividing both potentials by `a` divides the value by `a`;
+* `TauCeti.kantorovichDualValue_add_const_left` and
+  `TauCeti.kantorovichDualValue_add_const_right` — shifting one potential by a constant `L` shifts
+  the value by `L` times the mass of the corresponding finite marginal.
 
 ## References
 
 * C. Villani, *Topics in Optimal Transportation*, Graduate Studies in Mathematics 58, 2003,
   §1.1.1, for the Kantorovich dual constraint and weak duality.
 * C. Villani, *Optimal Transport: Old and New*, Grundlehren 338, 2009, Chapter 5.
-
-This is Layer 2, item 1 of the optimal-transport roadmap.
 -/
 
 public section
@@ -64,18 +68,24 @@ namespace TauCeti
 
 universe u v
 
-variable {X : Type u} {Y : Type v} {c c' : X × Y → ℝ≥0∞}
+variable {X : Type u} {Y : Type v} {c : X × Y → ℝ≥0∞}
   {φ : X → ℝ} {ψ : Y → ℝ}
 
 /-- A pair of real-valued potentials is dual feasible for `c` when their split sum is bounded by
-the cost. The inequality is in `EReal`, retaining both negative potential values and infinite
-costs. -/
-def DualFeasible (c : X × Y → ℝ≥0∞) (φ : X → ℝ) (ψ : Y → ℝ) : Prop :=
-  ∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ (c (x, y) : EReal)
+the cost. The inequality is in `EReal`, retaining signed costs, negative potential values, and
+infinite costs. -/
+def DualFeasible (c : X × Y → EReal) (φ : X → ℝ) (ψ : Y → ℝ) : Prop :=
+  ∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ c (x, y)
+
+/-- The pointwise characterization of dual feasibility. -/
+@[simp]
+theorem dualFeasible_iff {c : X × Y → EReal} : DualFeasible c φ ψ ↔
+    ∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ c (x, y) :=
+  Iff.rfl
 
 /-- Dual feasibility in the equivalent extended-nonnegative form used by `lintegral`. Taking
 `ENNReal.ofReal` loses no information because the cost is nonnegative. -/
-theorem dualFeasible_iff_ofReal_add_le : DualFeasible c φ ψ ↔
+theorem dualFeasible_iff_ofReal_add_le : DualFeasible (fun z ↦ (c z : EReal)) φ ψ ↔
     ∀ x y, ENNReal.ofReal (φ x + ψ y) ≤ c (x, y) := by
   constructor
   · intro h x y
@@ -92,7 +102,7 @@ theorem dualFeasible_iff_ofReal_add_le : DualFeasible c φ ψ ↔
     simpa only [EReal.coe_add] using hsum.trans hcast
 
 /-- A dual-feasible pair satisfies the extended-nonnegative pointwise constraint. -/
-theorem DualFeasible.ofReal_add_le (h : DualFeasible c φ ψ) (x : X) (y : Y) :
+theorem DualFeasible.ofReal_add_le (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ) (x : X) (y : Y) :
     ENNReal.ofReal (φ x + ψ y) ≤ c (x, y) :=
   dualFeasible_iff_ofReal_add_le.1 h x y
 
@@ -100,25 +110,26 @@ theorem DualFeasible.ofReal_add_le (h : DualFeasible c φ ψ) (x : X) (y : Y) :
 real pointwise inequality. This is the bridge from a real linear-programming dual constraint to
 the canonical `TauCeti.DualFeasible` predicate. -/
 theorem dualFeasible_ofReal_iff {c : X × Y → ℝ} (hc : ∀ z, 0 ≤ c z) (φ : X → ℝ) (ψ : Y → ℝ) :
-    DualFeasible (fun z ↦ ENNReal.ofReal (c z)) φ ψ ↔ ∀ x y, φ x + ψ y ≤ c (x, y) := by
+    DualFeasible (fun z ↦ (ENNReal.ofReal (c z) : EReal)) φ ψ ↔ ∀ x y, φ x + ψ y ≤ c (x, y) := by
   rw [dualFeasible_iff_ofReal_add_le]
   exact forall_congr' fun x ↦ forall_congr' fun y ↦ ENNReal.ofReal_le_ofReal_iff (hc (x, y))
 
 /-- Increasing the cost preserves dual feasibility. -/
-theorem DualFeasible.mono_cost (h : DualFeasible c φ ψ) (hcc' : c ≤ c') :
+theorem DualFeasible.mono_cost {c c' : X × Y → EReal} (h : DualFeasible c φ ψ) (hcc' : c ≤ c') :
     DualFeasible c' φ ψ :=
-  fun x y ↦ (h x y).trans <| EReal.coe_ennreal_le_coe_ennreal_iff.2 (hcc' (x, y))
+  fun x y ↦ (h x y).trans (hcc' (x, y))
 
 /-- The zero potentials are feasible for every nonnegative extended cost. -/
-@[simp]
+@[simp↓]
 theorem dualFeasible_zero (c : X × Y → ℝ≥0∞) :
-    DualFeasible c (fun _ ↦ 0) (fun _ ↦ 0) := by
+    DualFeasible (fun z ↦ (c z : EReal)) (fun _ ↦ 0) (fun _ ↦ 0) := by
   intro x y
   simpa only [EReal.coe_zero, zero_add] using EReal.coe_ennreal_nonneg (c (x, y))
 
 /-- Adding a constant to the first potential and subtracting it from the second preserves dual
 feasibility. -/
-theorem DualFeasible.add_const_sub_const (h : DualFeasible c φ ψ) (a : ℝ) :
+theorem DualFeasible.add_const_sub_const {c : X × Y → EReal}
+    (h : DualFeasible c φ ψ) (a : ℝ) :
     DualFeasible c (fun x ↦ φ x + a) (fun y ↦ ψ y - a) := by
   intro x y
   calc
@@ -149,6 +160,24 @@ theorem kantorovichDualValue_zero :
     kantorovichDualValue μ ν (fun _ ↦ 0) (fun _ ↦ 0) = 0 := by
   simp [kantorovichDualValue_def]
 
+/-- Adding integrable marginal terms to the potentials adds their dual value. -/
+theorem kantorovichDualValue_add {a : X → ℝ} {b : Y → ℝ}
+    (hφ : Integrable φ μ) (hψ : Integrable ψ ν)
+    (ha : Integrable a μ) (hb : Integrable b ν) :
+    kantorovichDualValue μ ν (fun x ↦ φ x + a x) (fun y ↦ ψ y + b y) =
+      kantorovichDualValue μ ν φ ψ + kantorovichDualValue μ ν a b := by
+  simp only [kantorovichDualValue_def, integral_add hφ ha, integral_add hψ hb]
+  ring
+
+/-- Subtracting integrable marginal terms from the potentials subtracts their dual value. -/
+theorem kantorovichDualValue_sub {a : X → ℝ} {b : Y → ℝ}
+    (hφ : Integrable φ μ) (hψ : Integrable ψ ν)
+    (ha : Integrable a μ) (hb : Integrable b ν) :
+    kantorovichDualValue μ ν (fun x ↦ φ x - a x) (fun y ↦ ψ y - b y) =
+      kantorovichDualValue μ ν φ ψ - kantorovichDualValue μ ν a b := by
+  simp only [kantorovichDualValue_def, integral_sub hφ ha, integral_sub hψ hb]
+  ring
+
 /-- Opposite additive shifts do not change the dual value when the first marginal is finite and
 the two marginals have the same mass. -/
 theorem kantorovichDualValue_add_const_sub_const [IsFiniteMeasure μ]
@@ -160,6 +189,30 @@ theorem kantorovichDualValue_add_const_sub_const [IsFiniteMeasure μ]
     integral_sub hψ (integrable_const a), integral_const, integral_const]
   have hmassReal : μ.real Set.univ = ν.real Set.univ := congrArg ENNReal.toReal hmass
   rw [hmassReal]
+  ring
+
+/-- Dividing both potentials by `a` divides the dual value by `a`. -/
+theorem kantorovichDualValue_div (a : ℝ) :
+    kantorovichDualValue μ ν (fun x ↦ φ x / a) (fun y ↦ ψ y / a) =
+      kantorovichDualValue μ ν φ ψ / a := by
+  simp only [kantorovichDualValue_def, integral_div, add_div]
+
+/-- Adding a constant `L` to an integrable first potential adds `μ.real univ * L` to the dual
+value, when the first marginal is finite. -/
+theorem kantorovichDualValue_add_const_left [IsFiniteMeasure μ] (hφ : Integrable φ μ) (L : ℝ) :
+    kantorovichDualValue μ ν (fun x ↦ φ x + L) ψ =
+      kantorovichDualValue μ ν φ ψ + μ.real Set.univ * L := by
+  rw [kantorovichDualValue_def, kantorovichDualValue_def, integral_add hφ (integrable_const L),
+    integral_const, smul_eq_mul]
+  ring
+
+/-- Adding a constant `L` to an integrable second potential adds `ν.real univ * L` to the dual
+value, when the second marginal is finite. -/
+theorem kantorovichDualValue_add_const_right [IsFiniteMeasure ν] (hψ : Integrable ψ ν) (L : ℝ) :
+    kantorovichDualValue μ ν φ (fun y ↦ ψ y + L) =
+      kantorovichDualValue μ ν φ ψ + ν.real Set.univ * L := by
+  rw [kantorovichDualValue_def, kantorovichDualValue_def, integral_add hψ (integrable_const L),
+    integral_const, smul_eq_mul]
   ring
 
 /-- Against any coupling of the two marginals, the dual value is the integral of the split sum
@@ -175,17 +228,10 @@ theorem kantorovichDualValue_eq_integral (hπ : IsCoupling π μ ν) (hφ : Inte
 
 section WeakDuality
 
-private theorem real_coe_le_ennreal_coe_of_ofReal_le {x : ℝ} {a : ℝ≥0∞}
-    (h : ENNReal.ofReal x ≤ a) : (x : EReal) ≤ (a : EReal) := by
-  calc
-    (x : EReal) ≤ (ENNReal.ofReal x : EReal) := by
-      rw [EReal.coe_ennreal_ofReal]
-      exact le_max_left (x : EReal) 0
-    _ ≤ (a : EReal) := EReal.coe_ennreal_le_coe_ennreal_iff.2 h
-
 /-- **Weak duality against a fixed coupling, in extended-nonnegative form.** The positive part of
 the dual value is bounded by the cost of every coupling. -/
-theorem DualFeasible.ofReal_kantorovichDualValue_le_lintegral (h : DualFeasible c φ ψ)
+theorem DualFeasible.ofReal_kantorovichDualValue_le_lintegral
+    (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) (hπ : IsCoupling π μ ν) :
     ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) ≤ ∫⁻ z, c z ∂π := by
   rw [kantorovichDualValue_eq_integral hπ hφ hψ]
@@ -196,21 +242,25 @@ theorem DualFeasible.ofReal_kantorovichDualValue_le_lintegral (h : DualFeasible 
 
 /-- **Weak duality against a fixed coupling.** The real dual value is at most the possibly
 infinite coupling cost, with both sides compared in `EReal`. -/
-theorem DualFeasible.kantorovichDualValue_le_lintegral (h : DualFeasible c φ ψ)
+theorem DualFeasible.kantorovichDualValue_le_lintegral
+    (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) (hπ : IsCoupling π μ ν) :
     (kantorovichDualValue μ ν φ ψ : EReal) ≤ ((∫⁻ z, c z ∂π) : ℝ≥0∞) := by
-  exact real_coe_le_ennreal_coe_of_ofReal_le <| h.ofReal_kantorovichDualValue_le_lintegral hφ hψ hπ
+  exact EReal.coe_le_coe_ennreal_of_ofReal_le <|
+    h.ofReal_kantorovichDualValue_le_lintegral hφ hψ hπ
 
 /-- **Kantorovich weak duality, in extended-nonnegative form.** The positive part of every
 integrable feasible dual value is at most the primal transport cost. -/
-theorem DualFeasible.ofReal_kantorovichDualValue_le_transportCost (h : DualFeasible c φ ψ)
+theorem DualFeasible.ofReal_kantorovichDualValue_le_transportCost
+    (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) :
   ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) ≤ transportCost c μ ν :=
   le_transportCost fun _π hπ ↦ h.ofReal_kantorovichDualValue_le_lintegral hφ hψ hπ
 
 /-- **Kantorovich weak duality in finite real form.** If the primal value is finite, every
 integrable feasible dual value is at most its real representative. -/
-theorem DualFeasible.kantorovichDualValue_le_toReal_transportCost (h : DualFeasible c φ ψ)
+theorem DualFeasible.kantorovichDualValue_le_toReal_transportCost
+    (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hne : transportCost c μ ν ≠ ⊤) (hφ : Integrable φ μ) (hψ : Integrable ψ ν) :
     kantorovichDualValue μ ν φ ψ ≤ (transportCost c μ ν).toReal :=
   (ENNReal.ofReal_le_iff_le_toReal hne).1
@@ -218,10 +268,12 @@ theorem DualFeasible.kantorovichDualValue_le_toReal_transportCost (h : DualFeasi
 
 /-- **Kantorovich weak duality.** Every integrable feasible dual value is at most the primal
 transport cost. The comparison in `EReal` remains meaningful when the primal value is `∞`. -/
-theorem DualFeasible.kantorovichDualValue_le_transportCost (h : DualFeasible c φ ψ)
+theorem DualFeasible.kantorovichDualValue_le_transportCost
+    (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) :
     (kantorovichDualValue μ ν φ ψ : EReal) ≤ (transportCost c μ ν : ℝ≥0∞) := by
-  exact real_coe_le_ennreal_coe_of_ofReal_le <| h.ofReal_kantorovichDualValue_le_transportCost hφ hψ
+  exact EReal.coe_le_coe_ennreal_of_ofReal_le <|
+    h.ofReal_kantorovichDualValue_le_transportCost hφ hψ
 
 end WeakDuality
 

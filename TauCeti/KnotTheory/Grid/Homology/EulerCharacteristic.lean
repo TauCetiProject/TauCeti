@@ -11,8 +11,9 @@ public import TauCeti.KnotTheory.Grid.EulerCharacteristic
 
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Algebra.Homology.CochainComplexOpposite
-import TauCeti.Algebra.Homology.Embedding.Restriction
-import TauCeti.Algebra.Homology.EulerCharacteristic.FiniteDimensional
+import Mathlib.Algebra.Homology.Embedding.RestrictionHomology
+import TauCeti.Algebra.Homology.Embedding.Restriction.Basic
+import TauCeti.Algebra.Homology.EulerCharacteristic.Finite
 
 /-!
 # The Euler characteristic of fully blocked grid homology

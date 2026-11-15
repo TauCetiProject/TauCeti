@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.IsCone
 public import Mathlib.Data.Fintype.Powerset
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Join
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Basic
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Data.Set.Finite.Basic
 
@@ -19,10 +19,10 @@ The cone on a simplicial complex `K` is its join with a single vertex.  Its vert
 apex.  A face is therefore either an original face, tagged into the left summand, or an original
 face together with the apex; the apex by itself is also a face.
 
-Cones are elementary infrastructure for layer 11 of the geometric-topology roadmap.  Recursive
-combinatorial balls are obtained by coning combinatorial spheres, and suspensions are formed by
-iterated coning/gluing.  This file supplies the combinatorial operation and its face API, building
-entirely on the join construction already available in Tau Ceti.
+Cones are elementary infrastructure for combinatorial piecewise-linear topology: coning a
+combinatorial sphere gives a combinatorial ball, and suspensions are formed by iterated
+coning/gluing.  This file supplies the combinatorial operation and its face API, building entirely
+on the join construction already available in Tau Ceti.
 
 The file also records that the construction satisfies the internal cone condition
 `PreAbstractSimplicialComplex.IsCone` at its apex (`isCone_cone`), which is what
@@ -166,6 +166,16 @@ theorem cone_toPreAbstractSimplicialComplex : (cone K).toPreAbstractSimplicialCo
       PreAbstractSimplicialComplex.cone K.toPreAbstractSimplicialComplex := by
   rw [cone, join_toPreAbstractSimplicialComplex, PreAbstractSimplicialComplex.cone]
   congr 1
+
+/-- The abstract cone satisfies the internal cone condition at its adjoined apex. -/
+theorem isCone_cone [inst : DecidableEq (α ⊕ PUnit)] (K : AbstractSimplicialComplex α) :
+    PreAbstractSimplicialComplex.IsCone (cone K).toPreAbstractSimplicialComplex
+      (Sum.inr PUnit.unit) := by
+  classical
+  rw [cone_toPreAbstractSimplicialComplex]
+  -- The pre-abstract witness uses the sum-derived equality instance; `convert` identifies
+  -- it with the caller's instance by subsingleton elimination.
+  convert PreAbstractSimplicialComplex.isCone_cone K.toPreAbstractSimplicialComplex using 1
 
 /-- A finite set is a face of the cone exactly when it is nonempty and its left projection is
 either empty or a face of the base complex.

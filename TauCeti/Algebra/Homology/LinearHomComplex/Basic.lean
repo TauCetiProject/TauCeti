@@ -15,9 +15,9 @@ Let `C` be an `R`-linear preadditive category and let `F` and `G` be cochain com
 Mathlib's `CochainComplex.HomComplex.Cochain F G n` is the `R`-module of degree-`n` cochains from
 `F` to `G`, and `CochainComplex.HomComplex.δ` is the signed differential
 `δ z = d_G ∘ z + (-1)^{n+1} z ∘ d_F`, already known to be `R`-linear and square-zero.  Mathlib
-assembles this data into `CochainComplex.HomComplex F G`, a cochain complex of *abelian groups*,
-which forgets the `R`-module structure.  This file assembles the same data into a cochain complex
-of `R`-modules.
+assembles this data into `CochainComplex.linearHomComplex R F G`, a cochain complex of
+`R`-modules, and `CochainComplex.HomComplex F G`, its additive-group-valued counterpart.
+This file supplies the comparison isomorphism and functoriality of the module-valued complex.
 
 That complex is the object a differential graded category is enriched in: a DG category over `R`
 is a category enriched in `CochainComplex (ModuleCat R) ℤ`, and `CochainComplex C ℤ` is the
@@ -27,8 +27,6 @@ complexes.
 
 ## Main definitions
 
-* `TauCeti.linearHomComplex R F G`: the `R`-linear Hom complex, a cochain complex of `R`-modules
-  whose degree-`n` term is `Cochain F G n` and whose differential is `δ`.
 * `TauCeti.linearHomComplexPrecomp` and `TauCeti.linearHomComplexPostcomp`: precomposition and
   postcomposition by a morphism of cochain complexes, as morphisms of `R`-linear Hom complexes.
 * `TauCeti.linearHomComplexFunctor`: the two variances bundled into a bifunctor, contravariant in
@@ -38,57 +36,40 @@ complexes.
 
 * `TauCeti.forget₂LinearHomComplexIso`: forgetting the `R`-module structure degreewise recovers
   Mathlib's `CochainComplex.HomComplex`.
+* `CochainComplex.HomComplex.δ_v_apply_of_d_eq_zero` and
+  `CochainComplex.HomComplex.Cochain.v_apply_mem_ker_of_δ_eq_zero`: element-level formulas for the
+  differential of a cochain of complexes of modules on an element killed by the source
+  differential, and the resulting behaviour of closed degree-zero cochains on kernels.
 
-This advances `TauCetiRoadmap/DGAInfinity/README.md`, Layer 0, item "signed graded multilinear and
-tensor-coalgebra infrastructure", specifically its request to "construct the `k`-linear Hom
-complex, its signed differential `d(f) = d_Y f - (-1)^{|f|} f d_X`, closed composition map, and
-the enrichment, and compare its underlying additive-group complex with Mathlib's
-`CochainComplex.HomComplex`".  No formalization is vendored: the cochain modules, the differential
-`δ`, its `R`-linearity and the Leibniz rule for composition are all Mathlib's.
+The cochain modules, the differential `δ`, its `R`-linearity and the Leibniz rule for composition
+are supplied by Mathlib.
 
 ## Implementation notes
 
-`linearHomComplex` and `linearHomComplexFunctor` carry `@[expose]`, while every operation built
-from them is sealed and used only through its characteristic lemmas.  The exposures permit the
-dependent component types `(linearHomComplex R F G).X n` and
-`((linearHomComplexFunctor R).obj F).obj G` to elaborate against their advertised values.  The
-element-level API itself is normalized to `ModuleCat.of R (Cochain F G n)` and explicit `.hom`
-application, so ordinary `simp` and `rw` use it without unfolding either construction.
+Mathlib's `CochainComplex.linearHomComplex` is implicitly reducible, and
+`linearHomComplexFunctor` carries `@[expose]`, so their dependent component types elaborate
+against their advertised values.  The element-level API is normalized to
+`ModuleCat.of R (Cochain F G n)` and explicit `.hom` application.  Differential applications use
+Mathlib's `CochainComplex.linearHomComplex_d_hom_apply`.  The additional operations are sealed
+and used through their characteristic lemmas.
 
 ## References
 
 * B. Keller, *Deriving DG categories*, Section 1.
-* Joël Riou's Mathlib construction `CochainComplex.HomComplex` and its cochain/`δ` API in
-  `Mathlib/Algebra/Homology/HomotopyCategory/HomComplex.lean`.  The construction here adapts it
-  by retaining `ModuleCat R` in place of `AddCommGrpCat`, with the same sign convention.
+* Joël Riou's Mathlib constructions `CochainComplex.linearHomComplex` and
+  `CochainComplex.HomComplex`, with their cochain/`δ` API in
+  `Mathlib/Algebra/Homology/HomotopyCategory/HomComplex.lean`.
 -/
 
 public section
 
-open CategoryTheory Limits CochainComplex.HomComplex
+open CategoryTheory Limits CochainComplex CochainComplex.HomComplex
 
 namespace TauCeti
 
 universe v u w
 
 variable (R : Type w) [Ring R] {C : Type u} [Category.{v} C] [Preadditive C] [Linear R C]
-
-/-- The `R`-linear Hom complex of two cochain complexes: in degree `n` it is the `R`-module
-`CochainComplex.HomComplex.Cochain F G n` of degree-`n` cochains, and its differential is the
-signed differential `δ`. -/
-@[expose, simps! X]
-def linearHomComplex (F G : CochainComplex C ℤ) : CochainComplex (ModuleCat.{v} R) ℤ where
-  X n := ModuleCat.of R (Cochain F G n)
-  d n m := ModuleCat.ofHom (δ_hom R F G n m)
-  shape n m hnm := ModuleCat.hom_ext (LinearMap.ext fun z => δ_shape n m hnm z)
-  d_comp_d' n m p _ _ := ModuleCat.hom_ext (LinearMap.ext fun z => δ_δ n m p z)
-
-@[simp]
-lemma linearHomComplex_d_apply (F G : CochainComplex C ℤ) (n m : ℤ)
-    (z : ModuleCat.of R (Cochain F G n)) :
-    ModuleCat.Hom.hom ((linearHomComplex R F G).d n m) z =
-      (δ n m z : ModuleCat.of R (Cochain F G m)) :=
-  rfl
 
 /-- Forgetting the `R`-module structure of the `R`-linear Hom complex recovers Mathlib's
 `CochainComplex.HomComplex`. -/
@@ -147,14 +128,16 @@ variable {R}
 @[simp]
 lemma linearHomComplexPrecomp_f_apply (φ : F₁ ⟶ F₂) (G : CochainComplex C ℤ) (n : ℤ)
     (z : ModuleCat.of R (Cochain F₂ G n)) :
-    ModuleCat.Hom.hom ((linearHomComplexPrecomp R φ G).f n) z =
+    (dsimp% only [linearHomComplex_X]
+      ModuleCat.Hom.hom ((linearHomComplexPrecomp R φ G).f n) z) =
       ((Cochain.ofHom φ).comp z (zero_add n) : ModuleCat.of R (Cochain F₁ G n)) :=
   (rfl)
 
 @[simp]
 lemma linearHomComplexPostcomp_f_apply (F : CochainComplex C ℤ) (ψ : G₁ ⟶ G₂) (n : ℤ)
     (z : ModuleCat.of R (Cochain F G₁ n)) :
-    ModuleCat.Hom.hom ((linearHomComplexPostcomp R F ψ).f n) z =
+    (dsimp% only [linearHomComplex_X]
+      ModuleCat.Hom.hom ((linearHomComplexPostcomp R F ψ).f n) z) =
       (z.comp (Cochain.ofHom ψ) (add_zero n) : ModuleCat.of R (Cochain F G₂ n)) :=
   (rfl)
 
@@ -171,9 +154,10 @@ lemma linearHomComplexPrecomp_comp (φ : F₁ ⟶ F₂) (φ' : F₂ ⟶ F₃) (G
     linearHomComplexPrecomp R (φ ≫ φ') G =
       linearHomComplexPrecomp R φ' G ≫ linearHomComplexPrecomp R φ G := by
   ext n (z : ModuleCat.of R (Cochain F₃ G n))
-  simp only [linearHomComplexPrecomp_f_apply, HomologicalComplex.comp_f, ModuleCat.hom_comp,
-    LinearMap.coe_comp]
-  rw [Cochain.ofHom_comp]
+  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.coe_comp,
+    Function.comp_apply]
+  rw [linearHomComplexPrecomp_f_apply, linearHomComplexPrecomp_f_apply,
+    linearHomComplexPrecomp_f_apply, Cochain.ofHom_comp]
   exact Cochain.comp_assoc _ _ _ (zero_add 0) (zero_add n) (by omega)
 
 @[simp]
@@ -187,9 +171,10 @@ lemma linearHomComplexPostcomp_comp (F : CochainComplex C ℤ) (ψ : G₁ ⟶ G�
     linearHomComplexPostcomp R F (ψ ≫ ψ') =
       linearHomComplexPostcomp R F ψ ≫ linearHomComplexPostcomp R F ψ' := by
   ext n (z : ModuleCat.of R (Cochain F G₁ n))
-  simp only [linearHomComplexPostcomp_f_apply, HomologicalComplex.comp_f, ModuleCat.hom_comp,
-    LinearMap.coe_comp]
-  rw [Cochain.ofHom_comp]
+  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.coe_comp,
+    Function.comp_apply]
+  rw [linearHomComplexPostcomp_f_apply, linearHomComplexPostcomp_f_apply,
+    linearHomComplexPostcomp_f_apply, Cochain.ofHom_comp]
   exact (Cochain.comp_assoc _ _ _ (add_zero n) (zero_add 0) (by omega)).symm
 
 /-- Precomposition and postcomposition commute. -/
@@ -219,3 +204,38 @@ def linearHomComplexFunctor :
 end Functoriality
 
 end TauCeti
+
+namespace CochainComplex.HomComplex
+
+/-- On an element killed by the differential of the source, the differential of a cochain of
+complexes of modules is the differential of the target applied to the value of the cochain. -/
+theorem δ_v_apply_of_d_eq_zero {R : Type*} [Ring R] {K L : CochainComplex (ModuleCat R) ℤ}
+    {n m : ℤ} (z : Cochain K L n) {p q r : ℤ} (hpq : p + n = q)
+    (hpr : p + m = r) {a : K.X p} (ha : (K.d p (p + 1)).hom a = 0) :
+    ((δ n m z).v p r hpr).hom a = (L.d q r).hom ((z.v p q hpq).hom a) := by
+  by_cases hnm : n + 1 = m
+  · rw [δ_v n m hnm z p r hpr q (p + 1) (by omega) rfl]
+    simp [ha]
+  · rw [δ_shape _ _ hnm, L.shape q r (by simp [ComplexShape.up_Rel]; omega)]
+    simp
+
+end CochainComplex.HomComplex
+
+namespace CochainComplex.HomComplex.Cochain
+
+/-- A closed cochain of degree zero between complexes of modules sends elements killed by the
+differential to elements killed by the differential. -/
+theorem v_apply_mem_ker_of_δ_eq_zero {R : Type*} [Ring R] {K L : CochainComplex (ModuleCat R) ℤ}
+    (z : Cochain K L 0) (hz : δ 0 1 z = 0) {p q : ℤ} {a : K.X p}
+    (ha : (K.d p q).hom a = 0) :
+    (z.v p p (add_zero p)).hom a ∈ LinearMap.ker (L.d p q).hom := by
+  by_cases hpq : p + 1 = q
+  swap
+  · rw [L.shape p q (by simpa [ComplexShape.up_Rel] using hpq)]
+    simp
+  have key := congrArg (fun φ ↦ ModuleCat.Hom.hom φ a) (Cochain.congr_v hz p q hpq)
+  simpa only [δ_zero_cochain_v, Cochain.zero_v, ModuleCat.hom_sub, ModuleCat.hom_comp,
+    LinearMap.sub_apply, LinearMap.comp_apply, ha, map_zero, sub_zero, ModuleCat.hom_zero,
+    LinearMap.zero_apply, LinearMap.mem_ker] using key
+
+end CochainComplex.HomComplex.Cochain

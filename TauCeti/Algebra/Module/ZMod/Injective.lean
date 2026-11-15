@@ -36,6 +36,8 @@ hypothesis `n ≠ 0` is necessary: `ℤ` is not injective over itself, since the
 * `Module.Baer.zmod_self`: `ℤ/nℤ` satisfies Baer's criterion over itself, for `n ≠ 0`.
 * `Module.Baer.of_addEquiv_zmod`: a `ℤ/nℤ`-module isomorphic to `ℤ/nℤ` as an additive group
   satisfies Baer's criterion, for `n ≠ 0`.
+* `Module.Baer.exists_module_of_addEquiv_zmod`: an additive group isomorphic to `ℤ/nℤ` carries a
+  `ℤ/nℤ`-module structure satisfying Baer's criterion, for `n ≠ 0`.
 -/
 
 public section
@@ -68,3 +70,13 @@ theorem Module.Baer.of_addEquiv_zmod {n : ℕ} [NeZero n] {W : Type*} [AddCommGr
     [Module (ZMod n) W] (e : W ≃+ ZMod n) : Module.Baer (ZMod n) W :=
   Module.Baer.of_equiv (e.symm.toLinearEquiv fun c x => ZMod.map_smul _ c x)
     (Module.Baer.zmod_self n)
+
+/-- **An additive group isomorphic to `ℤ/nℤ` is a self-injective `ℤ/nℤ`-module**: for `n ≠ 0`, an
+additive group `W` with `W ≃+ ZMod n` is killed by `n`, so it carries a `ZMod n`-module structure
+(`AddCommGroup.zmodModule`), and for it `W` satisfies Baer's criterion over `ZMod n`
+(`Module.Baer.of_addEquiv_zmod`). -/
+theorem Module.Baer.exists_module_of_addEquiv_zmod {n : ℕ} [NeZero n] {W : Type*}
+    [AddCommGroup W] (e : W ≃+ ZMod n) : ∃ _ : Module (ZMod n) W, Module.Baer (ZMod n) W :=
+  let : Module (ZMod n) W := AddCommGroup.zmodModule fun x ↦ e.injective <| by
+    rw [map_nsmul, map_zero, nsmul_eq_mul, ZMod.natCast_self, zero_mul]
+  ⟨this, Module.Baer.of_addEquiv_zmod e⟩

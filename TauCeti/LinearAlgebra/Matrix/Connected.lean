@@ -113,7 +113,7 @@ lemma eq_smul_of_mulVec_eq_zero {C K : Type*} [Fintype C]
   have hr_eq (j : C) : r j = r i := by
     induction hconnected i j with
     | refl => rfl
-    | tail hab hjk ih => exact hadj ih hjk
+    | tail _ hjk ih => exact hadj ih hjk
   refine ⟨r i, funext fun j ↦ ?_⟩
   rw [Pi.smul_apply, smul_eq_mul, ← hr_eq j, hx_eq]
 

@@ -17,13 +17,9 @@ positive-definite functions on `ℝ≥0 × V`. If `F` is semigroup-group positiv
 `φ : W →+ V` is an additive homomorphism, then `(t, w) ↦ F (t, φ w)` is again
 semigroup-group positive definite.
 
-This is a small prerequisite for the BCR semigroup--Bochner representation milestone in the
-`OneParameterSemigroups` roadmap. The Bochner part is stated on an arbitrary finite-dimensional
-real inner-product space, so downstream arguments need to transport the spatial variable along
-additive equivalences and continuous linear maps without unfolding the private BCR wrapper.
-
-This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, the positive-definite
-function API item "pullbacks" and Milestone 2 ("BCR semigroup--Bochner").
+The Bochner part is stated on an arbitrary finite-dimensional real inner-product space, so
+downstream arguments need to transport the spatial variable along additive equivalences and
+continuous linear maps without unfolding the private BCR wrapper.
 
 ## Main declarations
 

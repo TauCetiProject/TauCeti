@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.Cofree
+public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!
@@ -21,6 +21,9 @@ The condition is formulated for any right comodule, so it applies to the cofree 
 comodule `sM ⊗ Tᶜ(sA)` without constructing a second comodule API.  An odd homogeneous
 coderivation over a square-zero `b` has a square which is a comodule morphism.  This is
 the algebraic step needed to read module Stasheff identities from the components of `D²`.
+Likewise, the graded commutator of a homogeneous comodule morphism with two coderivations over
+the same operator `b` is a comodule morphism. Its counit component therefore detects compatibility
+with the differentials when the target is cofree.
 
 The sign convention follows Getzler--Jones, *A-infinity algebras and the cyclic bar
 complex*, Sections 1--2, and Keller, *Introduction to A-infinity algebras and modules*,
@@ -45,14 +48,14 @@ variable {R : Type uR} {C : Type uC} {M : Type uM}
 `b` on the coalgebra, with twist parameter `q`. Homogeneity (including the degree of `D`)
 and square-zero conditions are separate: this predicate records exactly the compatibility
 with the coaction. -/
-def IsGradedCoderivationOver (G : InternalGrading R M) (q : ℤ)
+def IsGradedCoderivationOver (G : InternalGrading R M ℤ) (q : ℤ)
     (b : C →ₗ[R] C) (D : M →ₗ[R] M) : Prop :=
   coact (R := R) (C := C) (M := M) ∘ₗ D =
     D.rTensor C ∘ₗ coact (R := R) (C := C) (M := M) +
       (b.lTensor M ∘ₗ (G.koszulTwist q).rTensor C) ∘ₗ
         coact (R := R) (C := C) (M := M)
 
-variable {G : InternalGrading R M} {q : ℤ} {b : C →ₗ[R] C} {D : M →ₗ[R] M}
+variable {G : InternalGrading R M ℤ} {q : ℤ} {b : C →ₗ[R] C} {D : M →ₗ[R] M}
 
 /-- The signed co-Leibniz law evaluated on one comodule element. -/
 theorem IsGradedCoderivationOver.coact_apply (h : IsGradedCoderivationOver G q b D)
@@ -96,7 +99,7 @@ theorem IsGradedCoderivationOver.square_commutes_coact_of_negOnePow_eq_neg_one {
   let H := b.lTensor M ∘ₗ T.rTensor C
   have hρ : ρ ∘ₗ D = (F + H) ∘ₗ ρ := h
   have hTF : T ∘ₗ D = (-1 : R) • (D ∘ₗ T) := by
-    simpa only [T, hqr] using hD.koszulTwist_comp q
+    simpa only [T, hqr] using hD.koszulTwist_comp_eq_smul q
   have hcross : F ∘ₗ H + H ∘ₗ F = 0 := by
     have hcomm : H ∘ₗ F = (-1 : R) • (F ∘ₗ H) := by
       calc
@@ -191,7 +194,7 @@ attribute [local instance] Comodule.cofree
 component obtained by applying the coalgebra counit vanishes.  This is the universal
 property that reduces module Stasheff identities to Taylor components. -/
 theorem IsGradedCoderivationOver.square_eq_zero_iff_counit_of_negOnePow_eq_neg_one {r : ℤ}
-    (G : InternalGrading R (N ⊗[R] C))
+    (G : InternalGrading R (N ⊗[R] C) ℤ)
     (b : C →ₗ[R] C) (D : (N ⊗[R] C) →ₗ[R] N ⊗[R] C)
     (h : IsGradedCoderivationOver G q b D)
     (hD : LinearMap.IsHomogeneous D G.piece G.piece r)
@@ -215,7 +218,7 @@ theorem IsGradedCoderivationOver.square_eq_zero_iff_counit_of_negOnePow_eq_neg_o
 /-- For a degree-one coderivation, the square vanishes if and only if its cofree
 counit component vanishes. -/
 theorem IsGradedCoderivationOver.square_eq_zero_iff_counit
-    (G : InternalGrading R (N ⊗[R] C))
+    (G : InternalGrading R (N ⊗[R] C) ℤ)
     (b : C →ₗ[R] C) (D : (N ⊗[R] C) →ₗ[R] N ⊗[R] C)
     (h : IsGradedCoderivationOver G 1 b D)
     (hD : LinearMap.IsHomogeneous D G.piece G.piece 1)
@@ -225,7 +228,104 @@ theorem IsGradedCoderivationOver.square_eq_zero_iff_counit
         (Coalgebra.counit (R := R) (A := C)).lTensor N ∘ₗ (D ∘ₗ D) = 0 :=
   h.square_eq_zero_iff_counit_of_negOnePow_eq_neg_one G b D hD (by norm_num) hb
 
+/-- Two coderivations over the same coalgebra operator on a cofree comodule are equal when their
+counit components agree. -/
+theorem IsGradedCoderivationOver.eq_of_counit_comp_eq
+    (G : InternalGrading R (N ⊗[R] C) ℤ)
+    (b : C →ₗ[R] C) (D E : (N ⊗[R] C) →ₗ[R] N ⊗[R] C)
+    (hD : IsGradedCoderivationOver G q b D)
+    (hE : IsGradedCoderivationOver G q b E)
+    (hcounit :
+      (TensorProduct.rid R N).toLinearMap ∘ₗ
+          (Coalgebra.counit (R := R) (A := C)).lTensor N ∘ₗ D =
+        (TensorProduct.rid R N).toLinearMap ∘ₗ
+          (Coalgebra.counit (R := R) (A := C)).lTensor N ∘ₗ E) :
+    D = E := by
+  let _ : AddCommGroup N := Module.addCommMonoidToAddCommGroup R
+  let _ : AddCommGroup C := Module.addCommMonoidToAddCommGroup R
+  let _ : AddCommGroup (N ⊗[R] C) := Module.addCommMonoidToAddCommGroup R
+  let ρ := coact (R := R) (C := C) (M := N ⊗[R] C)
+  have hcomm : ρ ∘ₗ (D - E) = (D - E).rTensor C ∘ₗ ρ := by
+    rw [LinearMap.comp_sub, hD, hE, LinearMap.rTensor_sub, LinearMap.sub_comp]
+    module
+  let f : Hom R C (N ⊗[R] C) (N ⊗[R] C) :=
+    { toLinearMap := D - E
+      map_coact := by
+        simpa only [LinearMap.rTensor] using hcomm.symm }
+  have hf_counit :
+      (TensorProduct.rid R N).toLinearMap ∘ₗ
+          (Coalgebra.counit (R := R) (A := C)).lTensor N ∘ₗ f.toLinearMap = 0 := by
+    dsimp only [f]
+    apply LinearMap.ext
+    intro x
+    have h := LinearMap.congr_fun hcounit x
+    simp only [LinearMap.comp_apply, LinearMap.sub_apply, map_sub, LinearMap.zero_apply]
+    exact sub_eq_zero.mpr h
+  have hf : f = 0 := (Hom.eq_zero_iff_counit f).2 hf_counit
+  have hsub := congrArg (fun g : Hom R C (N ⊗[R] C) (N ⊗[R] C) ↦ g.toLinearMap) hf
+  have : D - E = 0 := by
+    simpa only [f, Hom.zero_toLinearMap] using hsub
+  exact sub_eq_zero.mp this
+
 end Cofree
+
+namespace Hom
+
+variable {N : Type*} [AddCommGroup N] [Module R N]
+  [Comodule R C N]
+
+/-- The graded commutator of a degree-`r` comodule morphism with coderivations over the same
+coalgebra operator is a comodule morphism. The two coalgebra terms cancel by Koszul naturality. -/
+def coderivationComm {r : ℤ} (f : Hom R C M N) (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ)
+    (hf : LinearMap.IsHomogeneous f.toLinearMap G.piece H.piece r)
+    (D : M →ₗ[R] M) (E : N →ₗ[R] N)
+    (hD : IsGradedCoderivationOver G q b D) (hE : IsGradedCoderivationOver H q b E) :
+    Hom R C M N where
+  toLinearMap := E ∘ₗ f.toLinearMap - (((q * r).negOnePow : ℤ) : R) • (f.toLinearMap ∘ₗ D)
+  map_coact := by
+    let F := f.toLinearMap.rTensor C
+    let ρM := coact (R := R) (C := C) (M := M)
+    let ρN := coact (R := R) (C := C) (M := N)
+    let TM := b.lTensor M ∘ₗ (G.koszulTwist q).rTensor C
+    let TN := b.lTensor N ∘ₗ (H.koszulTwist q).rTensor C
+    have hF : F ∘ₗ ρM = ρN ∘ₗ f.toLinearMap := f.map_coact
+    have htw : H.koszulTwist q ∘ₗ f.toLinearMap =
+        (((q * r).negOnePow : ℤ) : R) • (f.toLinearMap ∘ₗ G.koszulTwist q) :=
+      hf.koszulTwist_comp_eq_smul q
+    have hcross : TN ∘ₗ F = (((q * r).negOnePow : ℤ) : R) • (F ∘ₗ TM) := by
+      refine TensorProduct.ext' fun x c ↦ ?_
+      simpa only [TN, TM, F, LinearMap.comp_apply, LinearMap.rTensor_tmul,
+        LinearMap.lTensor_tmul, LinearMap.smul_apply, TensorProduct.smul_tmul'] using
+        congrArg (fun y ↦ y ⊗ₜ[R] b c) (LinearMap.congr_fun htw x)
+    have hleft : ρN ∘ₗ (E ∘ₗ f.toLinearMap) =
+        E.rTensor C ∘ₗ F ∘ₗ ρM + TN ∘ₗ F ∘ₗ ρM := by
+      rw [← LinearMap.comp_assoc, hE, LinearMap.add_comp]
+      dsimp only [TN, ρN, ρM] at hF ⊢
+      simp only [LinearMap.comp_assoc, hF]
+    have hright : ρN ∘ₗ (f.toLinearMap ∘ₗ D) =
+        F ∘ₗ D.rTensor C ∘ₗ ρM + F ∘ₗ TM ∘ₗ ρM := by
+      rw [← LinearMap.comp_assoc, ← hF, LinearMap.comp_assoc, hD, LinearMap.comp_add]
+    have hcomm : ρN ∘ₗ
+        (E ∘ₗ f.toLinearMap - (((q * r).negOnePow : ℤ) : R) • (f.toLinearMap ∘ₗ D)) =
+        (E ∘ₗ f.toLinearMap -
+          (((q * r).negOnePow : ℤ) : R) • (f.toLinearMap ∘ₗ D)).rTensor C ∘ₗ ρM := by
+      have hcross' := congrArg (fun L ↦ L ∘ₗ ρM) hcross
+      simp only [LinearMap.smul_comp, LinearMap.comp_assoc] at hcross'
+      rw [LinearMap.comp_sub, LinearMap.comp_smul, hleft, hright, hcross']
+      simp only [LinearMap.rTensor_sub, LinearMap.rTensor_smul, LinearMap.rTensor_comp,
+        LinearMap.sub_comp, LinearMap.smul_comp, LinearMap.comp_assoc]
+      module
+    exact hcomm.symm
+
+/-- The underlying map of the coderivation commutator is the signed operator commutator. -/
+@[simp]
+theorem coderivationComm_toLinearMap {r : ℤ} (f : Hom R C M N) (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) (hf D E hD hE) :
+    (f.coderivationComm (r := r) (q := q) (b := b) G H hf D E hD hE).toLinearMap =
+      E ∘ₗ f.toLinearMap - (((q * r).negOnePow : ℤ) : R) • (f.toLinearMap ∘ₗ D) := (rfl)
+
+end Hom
 
 end Comodule
 

@@ -5,9 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Logic.Equiv.Fin.Basic
+public import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
+public import TauCeti.GroupTheory.Perm.SwapFactors
+import Mathlib.Data.Finite.Perm
 import Mathlib.Tactic.Abel
+import TauCeti.Data.Fin.Basic
 
 /-!
 # The cycles of a permutation acting separately on the two halves of a sum
@@ -21,19 +26,34 @@ one. Every cycle stays inside one of the two halves, so all the cycle data simpl
   `Equiv.Perm.parts_partition_sumCongr`: the cycle type, the number of moved points and the parts
   of the full, fixed-point-aware partition are additive.
 * `Equiv.Perm.orbitCount_sumCongr`: so is the number of orbits, fixed points included.
-* `Equiv.Perm.sumCongr_zpow`: powers are taken summandwise.
+* `Equiv.Perm.sameCycleQuotientSumCongrEquiv`: the cycle quotient decomposes as the sum of
+  the cycle quotients of the two summands.
+* `Equiv.Perm.orbitCount_sumCongr_one_mul_swap_mul_swap_mul_swap_mul_swap`: splicing four
+  adjoined fixed points into the orbits of a permutation leaves its number of orbits.
+* `Equiv.Perm.sumCongr_zpow`, `Equiv.Perm.sumCongr_pow`: powers are taken summandwise.
+* `Equiv.Perm.minimalPeriod_sumCongr_inl`, `Equiv.Perm.minimalPeriod_sumCongr_inr`: so are the
+  lengths of the cycles.
 * `Equiv.Perm.sameCycle_sumCongr_inl`, `Equiv.Perm.sameCycle_sumCongr_inr`: two points of one
   summand share a cycle exactly when they share a cycle of the permutation of that summand.
+* `Equiv.Perm.existsUnique_sameCycle_sumCongr`: representatives of the cycles of the two summands
+  together represent the cycles of the sum.
 * `Equiv.Perm.finSumPerm`: the same construction read on `Fin (m + n)` through
   `finSumFinEquiv`, with `Equiv.Perm.finSumPermHom` packaging it as a monoid homomorphism from
   `Equiv.Perm (Fin m) × Equiv.Perm (Fin n)`, and with the two cycle-counting results transported.
+* `Equiv.Perm.finSumPermHom_injective`: a block permutation determines its two blocks, so
+  `Equiv.Perm.finSumPermEquivRange` identifies `Equiv.Perm (Fin m) × Equiv.Perm (Fin n)` with the
+  block subgroup, of order `m! n!` (`Equiv.Perm.card_range_finSumPermHom`).
+* `Equiv.Perm.sign_finSumPerm`: its sign is the product of the signs of the two blocks.
+* `Equiv.Perm.finRotate_add_eq_swap_mul_finSumPerm`: the cyclic rotation of `Fin (m + n)` is the
+  blockwise rotation followed by one transposition between the blocks.
+* `Fin.append_comp_finSumPerm`: it permutes the two halves of an appended tuple separately.
 -/
 
 public section
 
-namespace TauCeti
+namespace Equiv.Perm
 
-open Equiv Equiv.Perm
+open Equiv TauCeti
 
 variable {α β : Type*}
 
@@ -41,7 +61,7 @@ variable {α β : Type*}
 
 /-- A permutation of the left summand, extended by the identity, is the extension of its domain
 along `Equiv.sumIsLeft`. -/
-theorem _root_.Equiv.Perm.sumCongr_one_eq_extendDomain (σ : Perm α) :
+theorem sumCongr_one_eq_extendDomain (σ : Perm α) :
     Perm.sumCongr σ (1 : Perm β) =
       σ.extendDomain (Equiv.sumIsLeft (α := α) (β := β)).symm := by
   refine Equiv.ext fun x => ?_
@@ -55,7 +75,7 @@ theorem _root_.Equiv.Perm.sumCongr_one_eq_extendDomain (σ : Perm α) :
 
 /-- A permutation of the right summand, extended by the identity, is the extension of its domain
 along `Equiv.sumIsRight`. -/
-theorem _root_.Equiv.Perm.one_sumCongr_eq_extendDomain (τ : Perm β) :
+theorem one_sumCongr_eq_extendDomain (τ : Perm β) :
     Perm.sumCongr (1 : Perm α) τ =
       τ.extendDomain (Equiv.sumIsRight (α := α) (β := β)).symm := by
   refine Equiv.ext fun x => ?_
@@ -69,7 +89,7 @@ theorem _root_.Equiv.Perm.one_sumCongr_eq_extendDomain (τ : Perm β) :
 
 /-- The two halves of a sum permutation are disjoint: each of them fixes everything the other
 can move. -/
-theorem _root_.Equiv.Perm.disjoint_sumCongr_one_one_sumCongr (σ : Perm α) (τ : Perm β) :
+theorem disjoint_sumCongr_one_one_sumCongr (σ : Perm α) (τ : Perm β) :
     Perm.Disjoint (Perm.sumCongr σ (1 : Perm β)) (Perm.sumCongr (1 : Perm α) τ) := by
   rw [Perm.disjoint_iff_eq_or_eq]
   rintro (a | b)
@@ -78,14 +98,36 @@ theorem _root_.Equiv.Perm.disjoint_sumCongr_one_one_sumCongr (σ : Perm α) (τ 
 
 /-- The powers of a sum permutation are taken separately on the two summands. -/
 @[simp]
-theorem _root_.Equiv.Perm.sumCongr_zpow (σ : Perm α) (τ : Perm β) (k : ℤ) :
+theorem sumCongr_zpow (σ : Perm α) (τ : Perm β) (k : ℤ) :
     Perm.sumCongr σ τ ^ k = Perm.sumCongr (σ ^ k) (τ ^ k) := by
   simpa using (map_zpow (Perm.sumCongrHom α β) (σ, τ) k).symm
+
+/-- The natural powers of a sum permutation are taken separately on the two summands. -/
+@[simp]
+theorem sumCongr_pow (σ : Perm α) (τ : Perm β) (k : ℕ) :
+    Perm.sumCongr σ τ ^ k = Perm.sumCongr (σ ^ k) (τ ^ k) := by
+  simpa using (map_pow (Perm.sumCongrHom α β) (σ, τ) k).symm
+
+/-- A point of the left summand has the same period under `Equiv.Perm.sumCongr σ τ` as under
+`σ`. -/
+@[simp]
+theorem minimalPeriod_sumCongr_inl (σ : Perm α) (τ : Perm β) (a : α) :
+    Function.minimalPeriod (Perm.sumCongr σ τ) (.inl a) = Function.minimalPeriod σ a :=
+  Function.minimalPeriod_eq_minimalPeriod_iff.mpr fun n ↦ by
+    simp [Function.IsPeriodicPt, Function.IsFixedPt, ← coe_pow]
+
+/-- A point of the right summand has the same period under `Equiv.Perm.sumCongr σ τ` as under
+`τ`. -/
+@[simp]
+theorem minimalPeriod_sumCongr_inr (σ : Perm α) (τ : Perm β) (b : β) :
+    Function.minimalPeriod (Perm.sumCongr σ τ) (.inr b) = Function.minimalPeriod τ b :=
+  Function.minimalPeriod_eq_minimalPeriod_iff.mpr fun n ↦ by
+    simp [Function.IsPeriodicPt, Function.IsFixedPt, ← coe_pow]
 
 /-- Two points of the left summand lie in one cycle of `Equiv.Perm.sumCongr σ τ` exactly when they
 lie in one cycle of `σ`. -/
 @[simp]
-theorem _root_.Equiv.Perm.sameCycle_sumCongr_inl {σ : Perm α} {τ : Perm β} {a b : α} :
+theorem sameCycle_sumCongr_inl {σ : Perm α} {τ : Perm β} {a b : α} :
     (Perm.sumCongr σ τ).SameCycle (.inl a) (.inl b) ↔ σ.SameCycle a b :=
   exists_congr fun k => by
     rw [Perm.sumCongr_zpow, Perm.sumCongr_apply, Sum.map_inl, Sum.inl.injEq]
@@ -93,10 +135,74 @@ theorem _root_.Equiv.Perm.sameCycle_sumCongr_inl {σ : Perm α} {τ : Perm β} {
 /-- Two points of the right summand lie in one cycle of `Equiv.Perm.sumCongr σ τ` exactly when
 they lie in one cycle of `τ`. -/
 @[simp]
-theorem _root_.Equiv.Perm.sameCycle_sumCongr_inr {σ : Perm α} {τ : Perm β} {a b : β} :
+theorem sameCycle_sumCongr_inr {σ : Perm α} {τ : Perm β} {a b : β} :
     (Perm.sumCongr σ τ).SameCycle (.inr a) (.inr b) ↔ τ.SameCycle a b :=
   exists_congr fun k => by
     rw [Perm.sumCongr_zpow, Perm.sumCongr_apply, Sum.map_inr, Sum.inr.injEq]
+
+/-- Points in different summands cannot lie in the same cycle of a sum permutation. -/
+@[simp] theorem not_sameCycle_sumCongr_inl_inr
+    (σ : Perm α) (τ : Perm β) (a : α) (b : β) :
+    ¬ (Perm.sumCongr σ τ).SameCycle (.inl a) (.inr b) := by
+  rintro ⟨k, hk⟩
+  simp only [Perm.sumCongr_zpow, Perm.sumCongr_apply, Sum.map_inl,
+    Sum.inl_ne_inr] at hk
+
+/-- Choices of one point on every cycle of `σ` and of `τ` together choose one point on every
+cycle of `Equiv.Perm.sumCongr σ τ`. -/
+theorem existsUnique_sameCycle_sumCongr {J K : Type*} {σ : Perm α} {τ : Perm β} {r : J → α}
+    {t : K → β} (hr : ∀ x, ∃! j, σ.SameCycle (r j) x) (ht : ∀ y, ∃! k, τ.SameCycle (t k) y) :
+    ∀ z, ∃! l, (Perm.sumCongr σ τ).SameCycle (Sum.map r t l) z := by
+  rintro (x | y)
+  · obtain ⟨j, hj, hu⟩ := hr x
+    refine ⟨.inl j, sameCycle_sumCongr_inl.mpr hj, ?_⟩
+    rintro (j' | k') h
+    · exact congrArg Sum.inl (hu j' (sameCycle_sumCongr_inl.mp h))
+    · exact (not_sameCycle_sumCongr_inl_inr σ τ x (t k') h.symm).elim
+  · obtain ⟨k, hk, hu⟩ := ht y
+    refine ⟨.inr k, sameCycle_sumCongr_inr.mpr hk, ?_⟩
+    rintro (j' | k') h
+    · exact (not_sameCycle_sumCongr_inl_inr σ τ (r j') y h).elim
+    · exact congrArg Sum.inr (hu k' (sameCycle_sumCongr_inr.mp h))
+
+/-- The cycle quotient of a sum permutation is the sum of its two cycle quotients. -/
+def sameCycleQuotientSumCongrEquiv (σ : Perm α) (τ : Perm β) :
+    Quotient (SameCycle.setoid (Perm.sumCongr σ τ)) ≃
+      Quotient (SameCycle.setoid σ) ⊕ Quotient (SameCycle.setoid τ) where
+  toFun := Quotient.lift (fun z ↦ z.map (⟦·⟧) (⟦·⟧)) fun z w h ↦ by
+    rcases z with z | z <;> rcases w with w | w
+    · exact congrArg Sum.inl (Quotient.sound (sameCycle_sumCongr_inl.mp h))
+    · exact (not_sameCycle_sumCongr_inl_inr σ τ z w h).elim
+    · exact (not_sameCycle_sumCongr_inl_inr σ τ w z h.symm).elim
+    · exact congrArg Sum.inr (Quotient.sound (sameCycle_sumCongr_inr.mp h))
+  invFun := Sum.elim
+    (Quotient.map Sum.inl fun _ _ h ↦ sameCycle_sumCongr_inl.mpr h)
+    (Quotient.map Sum.inr fun _ _ h ↦ sameCycle_sumCongr_inr.mpr h)
+  left_inv q := by
+    induction q using Quotient.inductionOn with
+    | h z => rcases z with z | z <;> rfl
+  right_inv := by
+    rintro (q | q) <;> induction q using Quotient.inductionOn <;> rfl
+
+/-- A cycle in the left summand stays in the left cycle quotient. -/
+@[simp]
+theorem sameCycleQuotientSumCongrEquiv_mk_inl (σ : Perm α) (τ : Perm β) (x : α) :
+    sameCycleQuotientSumCongrEquiv σ τ ⟦Sum.inl x⟧ = .inl ⟦x⟧ := (rfl)
+
+/-- A cycle in the right summand stays in the right cycle quotient. -/
+@[simp]
+theorem sameCycleQuotientSumCongrEquiv_mk_inr (σ : Perm α) (τ : Perm β) (y : β) :
+    sameCycleQuotientSumCongrEquiv σ τ ⟦Sum.inr y⟧ = .inr ⟦y⟧ := (rfl)
+
+/-- The inverse includes the left cycle quotient by its representatives. -/
+@[simp]
+theorem sameCycleQuotientSumCongrEquiv_symm_inl_mk (σ : Perm α) (τ : Perm β) (x : α) :
+    (sameCycleQuotientSumCongrEquiv σ τ).symm (.inl ⟦x⟧) = ⟦Sum.inl x⟧ := (rfl)
+
+/-- The inverse includes the right cycle quotient by its representatives. -/
+@[simp]
+theorem sameCycleQuotientSumCongrEquiv_symm_inr_mk (σ : Perm α) (τ : Perm β) (y : β) :
+    (sameCycleQuotientSumCongrEquiv σ τ).symm (.inr ⟦y⟧) = ⟦Sum.inr y⟧ := (rfl)
 
 /-! ### Additivity of the cycle data -/
 
@@ -106,7 +212,7 @@ variable [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β]
 
 /-- The cycles of `Equiv.Perm.sumCongr σ τ` are those of `σ` together with those of `τ`. -/
 @[simp]
-theorem _root_.Equiv.Perm.cycleType_sumCongr (σ : Perm α) (τ : Perm β) :
+theorem cycleType_sumCongr (σ : Perm α) (τ : Perm β) :
     (Perm.sumCongr σ τ).cycleType = σ.cycleType + τ.cycleType := by
   have h : Perm.sumCongr σ τ = Perm.sumCongr σ (1 : Perm β) * Perm.sumCongr (1 : Perm α) τ := by
     rw [Perm.sumCongr_mul, mul_one, one_mul]
@@ -117,7 +223,7 @@ theorem _root_.Equiv.Perm.cycleType_sumCongr (σ : Perm α) (τ : Perm β) :
 /-- The points moved by `Equiv.Perm.sumCongr σ τ` are those moved by `σ` together with those
 moved by `τ`. -/
 @[simp]
-theorem _root_.Equiv.Perm.card_support_sumCongr (σ : Perm α) (τ : Perm β) :
+theorem card_support_sumCongr (σ : Perm α) (τ : Perm β) :
     (Perm.sumCongr σ τ).support.card = σ.support.card + τ.support.card := by
   rw [← sum_cycleType, ← sum_cycleType, ← sum_cycleType, cycleType_sumCongr, Multiset.sum_add]
 
@@ -126,7 +232,7 @@ two partitions it is assembled from. Unlike `Equiv.Perm.cycleType_sumCongr` this
 the fixed points, and it is the form the Euler characteristic of a disjoint sum of permutation
 triples is computed from. -/
 @[simp]
-theorem _root_.Equiv.Perm.parts_partition_sumCongr (σ : Perm α) (τ : Perm β) :
+theorem parts_partition_sumCongr (σ : Perm α) (τ : Perm β) :
     (Perm.sumCongr σ τ).partition.parts = σ.partition.parts + τ.partition.parts := by
   have hα : σ.support.card ≤ Fintype.card α := by simpa using σ.support.card_le_univ
   have hβ : τ.support.card ≤ Fintype.card β := by simpa using τ.support.card_le_univ
@@ -141,7 +247,7 @@ end Finite
 /-- The orbits of `Equiv.Perm.sumCongr σ τ`, fixed points included, are those of `σ` together
 with those of `τ`. -/
 @[simp]
-theorem _root_.Equiv.Perm.orbitCount_sumCongr [Finite α] [Finite β] (σ : Perm α) (τ : Perm β) :
+theorem orbitCount_sumCongr [Finite α] [Finite β] (σ : Perm α) (τ : Perm β) :
     orbitCount (Perm.sumCongr σ τ) = orbitCount σ + orbitCount τ := by
   classical
   cases nonempty_fintype α
@@ -149,70 +255,213 @@ theorem _root_.Equiv.Perm.orbitCount_sumCongr [Finite α] [Finite β] (σ : Perm
   rw [orbitCount_eq_card_parts_partition, orbitCount_eq_card_parts_partition,
     orbitCount_eq_card_parts_partition, parts_partition_sumCongr, Multiset.card_add]
 
+/-- Attach two distinct cycles of the right summand to cycles of the left summand.
+Each attachment removes one orbit, even if the two left endpoints lie in the same cycle. -/
+theorem orbitCount_sumCongr_mul_swap_mul_swap_add_two
+    [DecidableEq α] [DecidableEq β] [Finite α] [Finite β]
+    (σ : Perm α) (τ : Perm β) (a c : α) {b d : β} (hbd : ¬ τ.SameCycle b d) :
+    orbitCount (Perm.sumCongr σ τ * swap (Sum.inl a : α ⊕ β) (.inr b) *
+      swap (.inl c) (.inr d)) + 2 = orbitCount σ + orbitCount τ := by
+  have h₁ := orbitCount_mul_swap_add_one_of_not_sameCycle
+    (not_sameCycle_sumCongr_inl_inr σ τ a b)
+  have h₂ : ¬ (Perm.sumCongr σ τ * swap (Sum.inl a : α ⊕ β) (.inr b)).SameCycle
+      (.inl c) (.inr d) := by
+    rw [Equiv.mul_swap_eq_swap_mul]
+    intro h
+    rcases h.sameCycle_or_of_swap_mul with h | ⟨-, h⟩
+    · exact not_sameCycle_sumCongr_inl_inr σ τ c d h
+    · rcases h with h | h
+      · exact not_sameCycle_sumCongr_inl_inr σ τ (σ a) d h.symm
+      · apply hbd
+        simpa only [Perm.sumCongr_apply, Sum.map_inr, Perm.sameCycle_sumCongr_inr,
+          sameCycle_apply_left] using h.symm
+  have h₃ := orbitCount_mul_swap_add_one_of_not_sameCycle h₂
+  rw [Perm.orbitCount_sumCongr] at h₁
+  omega
+
+/-- **Splicing four adjoined fixed points.** Adjoin four fixed points to `σ` and splice each of
+them into an orbit, `i₀` after `x₀`, then `i₁` after `x₁`, `i₂` after `x₂` and `i₃` after `x₃`:
+each splice removes one orbit, so as many orbits as `σ` has are left. -/
+theorem orbitCount_sumCongr_one_mul_swap_mul_swap_mul_swap_mul_swap
+    [DecidableEq α] [Finite α] (σ : Perm α) (x₀ x₁ x₂ x₃ : α) {i₀ i₁ i₂ i₃ : Fin 4}
+    (h₀₁ : i₀ ≠ i₁) (h₀₂ : i₀ ≠ i₂) (h₀₃ : i₀ ≠ i₃) (h₁₂ : i₁ ≠ i₂) (h₁₃ : i₁ ≠ i₃)
+    (h₂₃ : i₂ ≠ i₃) :
+    orbitCount (Perm.sumCongr σ 1 * swap (.inl x₀) (.inr i₀) * swap (.inl x₁) (.inr i₁) *
+      swap (.inl x₂) (.inr i₂) * swap (.inl x₃) (.inr i₃)) = orbitCount σ := by
+  have k₀ := orbitCount_mul_swap_add_one (τ := Perm.sumCongr σ (1 : Perm (Fin 4)))
+    (p := .inr i₀) (a := .inl x₀) (by simp) (by simp)
+  have k₁ := orbitCount_mul_swap_add_one
+    (τ := Perm.sumCongr σ (1 : Perm (Fin 4)) * swap (.inl x₀) (.inr i₀))
+    (p := .inr i₁) (a := .inl x₁) (by simp [swap_apply_of_ne_of_ne, Ne.symm h₀₁]) (by simp)
+  have k₂ := orbitCount_mul_swap_add_one
+    (τ := Perm.sumCongr σ (1 : Perm (Fin 4)) * swap (.inl x₀) (.inr i₀) *
+      swap (.inl x₁) (.inr i₁))
+    (p := .inr i₂) (a := .inl x₂)
+    (by simp [swap_apply_of_ne_of_ne, Ne.symm h₀₂, Ne.symm h₁₂]) (by simp)
+  have k₃ := orbitCount_mul_swap_add_one
+    (τ := Perm.sumCongr σ (1 : Perm (Fin 4)) * swap (.inl x₀) (.inr i₀) *
+      swap (.inl x₁) (.inr i₁) * swap (.inl x₂) (.inr i₂))
+    (p := .inr i₃) (a := .inl x₃)
+    (by simp [swap_apply_of_ne_of_ne, Ne.symm h₀₃, Ne.symm h₁₃, Ne.symm h₂₃]) (by simp)
+  have k : orbitCount (Perm.sumCongr σ (1 : Perm (Fin 4))) = orbitCount σ + 4 := by
+    rw [Perm.orbitCount_sumCongr, orbitCount_one, Nat.card_eq_fintype_card, Fintype.card_fin]
+  omega
+
 /-! ### The sum of a permutation of `Fin m` and a permutation of `Fin n` -/
 
 variable {m n : ℕ}
 
 /-- The permutation of `Fin (m + n)` that acts as `σ` on the first `m` labels and as `τ` on the
 last `n`, the two blocks being separated by `finSumFinEquiv`. -/
-def _root_.Equiv.Perm.finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) : Perm (Fin (m + n)) :=
+def finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) : Perm (Fin (m + n)) :=
   finSumFinEquiv.permCongr (Perm.sumCongr σ τ)
 
 /-- Permuting the first `m` labels and the last `n` labels separately, as a monoid homomorphism.
 Its range is the subgroup of `Equiv.Perm (Fin (m + n))` preserving the two blocks. -/
-def _root_.Equiv.Perm.finSumPermHom (m n : ℕ) :
+def finSumPermHom (m n : ℕ) :
     Perm (Fin m) × Perm (Fin n) →* Perm (Fin (m + n)) :=
   finSumFinEquiv.permCongrHom.toMonoidHom.comp (Perm.sumCongrHom (Fin m) (Fin n))
 
 @[simp]
-theorem _root_.Equiv.Perm.finSumPermHom_apply (p : Perm (Fin m) × Perm (Fin n)) :
+theorem finSumPermHom_apply (p : Perm (Fin m) × Perm (Fin n)) :
     finSumPermHom m n p = finSumPerm p.1 p.2 := (rfl)
 
-theorem _root_.Equiv.Perm.finSumPerm_apply (σ : Perm (Fin m)) (τ : Perm (Fin n))
+theorem finSumPerm_apply (σ : Perm (Fin m)) (τ : Perm (Fin n))
     (x : Fin (m + n)) :
     finSumPerm σ τ x = finSumFinEquiv (Sum.map σ τ (finSumFinEquiv.symm x)) := (rfl)
 
 @[simp]
-theorem _root_.Equiv.Perm.finSumPerm_apply_castAdd (σ : Perm (Fin m)) (τ : Perm (Fin n))
+theorem finSumPerm_apply_castAdd (σ : Perm (Fin m)) (τ : Perm (Fin n))
     (i : Fin m) :
     finSumPerm σ τ (Fin.castAdd n i) = Fin.castAdd n (σ i) := by
   rw [← finSumFinEquiv_apply_left, finSumPerm_apply, Equiv.symm_apply_apply, Sum.map_inl,
     finSumFinEquiv_apply_left]
 
 @[simp]
-theorem _root_.Equiv.Perm.finSumPerm_apply_natAdd (σ : Perm (Fin m)) (τ : Perm (Fin n))
+theorem finSumPerm_apply_natAdd (σ : Perm (Fin m)) (τ : Perm (Fin n))
     (j : Fin n) :
     finSumPerm σ τ (Fin.natAdd m j) = Fin.natAdd m (τ j) := by
   rw [← finSumFinEquiv_apply_right, finSumPerm_apply, Equiv.symm_apply_apply, Sum.map_inr,
     finSumFinEquiv_apply_right]
 
+/-- The block embedding is injective: a block permutation determines its two blocks. -/
+theorem finSumPermHom_injective (m n : ℕ) : Function.Injective (finSumPermHom m n) :=
+  finSumFinEquiv.permCongrHom.injective.comp sumCongrHom_injective
+
+/-- `Sₘ × Sₙ` is isomorphic to the block subgroup, the range of the block embedding
+`Equiv.Perm.finSumPermHom m n`: the subgroup of permutations of `Fin (m + n)` preserving the first
+`m` points. -/
+noncomputable def finSumPermEquivRange (m n : ℕ) :
+    Perm (Fin m) × Perm (Fin n) ≃* (finSumPermHom m n).range :=
+  MonoidHom.ofInjective (finSumPermHom_injective m n)
+
+/-- The image of a pair of permutations in the block subgroup is their block sum. -/
 @[simp]
-theorem _root_.Equiv.Perm.finSumPerm_one :
+theorem coe_finSumPermEquivRange (p : Perm (Fin m) × Perm (Fin n)) :
+    (finSumPermEquivRange m n p : Perm (Fin (m + n))) = finSumPerm p.1 p.2 :=
+  (MonoidHom.ofInjective_apply _).trans (finSumPermHom_apply p)
+
+/-- The block sum `σ ⊕ τ`, as an element of the block subgroup, corresponds to the pair `(σ, τ)`. -/
+@[simp]
+theorem finSumPermEquivRange_symm_mk (σ : Perm (Fin m)) (τ : Perm (Fin n))
+    (h : finSumPerm σ τ ∈ (finSumPermHom m n).range) :
+    (finSumPermEquivRange m n).symm ⟨finSumPerm σ τ, h⟩ = (σ, τ) :=
+  (MulEquiv.symm_apply_eq _).2 (Subtype.ext (coe_finSumPermEquivRange (σ, τ)).symm)
+
+/-- An element of the block subgroup is the block sum of its two blocks. -/
+@[simp]
+theorem finSumPerm_finSumPermEquivRange_symm (s : (finSumPermHom m n).range) :
+    finSumPerm ((finSumPermEquivRange m n).symm s).1 ((finSumPermEquivRange m n).symm s).2 = s := by
+  rw [← coe_finSumPermEquivRange, MulEquiv.apply_symm_apply]
+
+/-- The block subgroup `Sₘ × Sₙ` of `S_(m+n)` has order `m! n!`. -/
+theorem card_range_finSumPermHom (m n : ℕ) :
+    Nat.card (finSumPermHom m n).range = m.factorial * n.factorial := by
+  rw [← Nat.card_congr (finSumPermEquivRange m n).toEquiv, Nat.card_prod, Nat.card_perm,
+    Nat.card_perm, Nat.card_eq_fintype_card, Fintype.card_fin, Nat.card_eq_fintype_card,
+    Fintype.card_fin]
+
+@[simp]
+theorem finSumPerm_one :
     finSumPerm (1 : Perm (Fin m)) (1 : Perm (Fin n)) = 1 :=
   map_one (finSumPermHom m n)
 
 @[simp]
-theorem _root_.Equiv.Perm.finSumPerm_inv (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
+theorem finSumPerm_inv (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
     (finSumPerm σ τ)⁻¹ = finSumPerm σ⁻¹ τ⁻¹ :=
   (map_inv (finSumPermHom m n) (σ, τ)).symm
 
 @[simp]
-theorem _root_.Equiv.Perm.finSumPerm_mul (σ σ' : Perm (Fin m)) (τ τ' : Perm (Fin n)) :
+theorem finSumPerm_mul (σ σ' : Perm (Fin m)) (τ τ' : Perm (Fin n)) :
     finSumPerm σ τ * finSumPerm σ' τ' = finSumPerm (σ * σ') (τ * τ') :=
   (map_mul (finSumPermHom m n) (σ, τ) (σ', τ')).symm
+
+/-- Powers of `Equiv.Perm.finSumPerm σ τ` are taken blockwise. -/
+@[simp]
+theorem finSumPerm_pow (σ : Perm (Fin m)) (τ : Perm (Fin n)) (k : ℕ) :
+    finSumPerm σ τ ^ k = finSumPerm (σ ^ k) (τ ^ k) :=
+  (map_pow (finSumPermHom m n) (σ, τ) k).symm
 
 /-- The full cycle partition of `Equiv.Perm.finSumPerm σ τ` is the concatenation of those of `σ`
 and of `τ`. -/
 @[simp]
-theorem _root_.Equiv.Perm.parts_partition_finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
+theorem parts_partition_finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
     (finSumPerm σ τ).partition.parts = σ.partition.parts + τ.partition.parts := by
   rw [finSumPerm, parts_partition_permCongr, parts_partition_sumCongr]
 
 /-- The number of orbits of `Equiv.Perm.finSumPerm σ τ`, fixed points included, is the sum of the
 numbers of orbits of `σ` and of `τ`. -/
 @[simp]
-theorem _root_.Equiv.Perm.orbitCount_finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
+theorem orbitCount_finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
     orbitCount (finSumPerm σ τ) = orbitCount σ + orbitCount τ := by
   rw [finSumPerm, orbitCount_permCongr, orbitCount_sumCongr]
 
-end TauCeti
+/-- The sign of `Equiv.Perm.finSumPerm σ τ` is the product of the signs of `σ` and of `τ`. -/
+@[simp]
+theorem sign_finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
+    sign (finSumPerm σ τ) = sign σ * sign τ := by
+  rw [finSumPerm, sign_permCongr, sign_sumCongr]
+
+/-- Under `Equiv.Perm.finSumPerm σ τ`, a point of the first block and a point of the second block
+never lie in the same cycle. -/
+@[simp]
+theorem not_sameCycle_finSumPerm_castAdd_natAdd (σ : Perm (Fin m)) (τ : Perm (Fin n))
+    (i : Fin m) (j : Fin n) : ¬ (finSumPerm σ τ).SameCycle (Fin.castAdd n i) (Fin.natAdd m j) := by
+  rw [← finSumFinEquiv_apply_left, ← finSumFinEquiv_apply_right, finSumPerm, sameCycle_permCongr]
+  exact not_sameCycle_sumCongr_inl_inr σ τ i j
+
+/-- **Rotating a split ordinal.** For nonempty blocks, the cyclic rotation of `Fin (m + n)` is the
+rotation of each block separately followed by the exchange of the first points of the two blocks,
+which joins the two rotations into one cycle. -/
+theorem finRotate_add_eq_swap_mul_finSumPerm [NeZero m] [NeZero n] :
+    finRotate (m + n) = swap (Fin.castAdd n 0) (Fin.natAdd m 0) *
+      finSumPerm (finRotate m) (finRotate n) := by
+  have hm := NeZero.pos m
+  have hn := NeZero.pos n
+  ext x
+  induction x using Fin.addCases with
+  | left i =>
+    have hi := i.isLt
+    rw [Perm.mul_apply, finSumPerm_apply_castAdd, swap_apply_def]
+    split_ifs <;> simp only [Fin.ext_iff, Fin.val_castAdd, Fin.val_natAdd, Fin.val_zero,
+      Fin.coe_finRotate_eq_ite] at * <;> split_ifs at * <;> omega
+  | right j =>
+    rw [Perm.mul_apply, finSumPerm_apply_natAdd, swap_apply_def]
+    split_ifs <;> simp only [Fin.ext_iff, Fin.val_castAdd, Fin.val_natAdd, Fin.val_zero,
+      Fin.coe_finRotate_eq_ite] at * <;> split_ifs at * <;> omega
+
+end Equiv.Perm
+
+namespace Fin
+
+variable {α : Type*} {m n : ℕ}
+
+/-- Appending two tuples and then permuting the two blocks separately is appending the two
+permuted tuples. -/
+theorem append_comp_finSumPerm (u : Fin m → α) (v : Fin n → α) (σ : Equiv.Perm (Fin m))
+    (τ : Equiv.Perm (Fin n)) :
+    Fin.append u v ∘ Equiv.Perm.finSumPerm σ τ = Fin.append (u ∘ σ) (v ∘ τ) := by
+  funext i
+  induction i using Fin.addCases <;> simp
+
+end Fin

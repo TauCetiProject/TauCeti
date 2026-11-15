@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Probability.Kernel.Randomization
 public import Mathlib.Probability.Independence.Conditional
+import TauCeti.MeasureTheory.Constructions.Pi
 import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
 # Randomizing conditionally independent variables
@@ -21,7 +23,9 @@ an arbitrary finite family.
 This is the conditional randomization step used when a probabilistic factorization is converted
 into separate latent variables. It combines Mathlib's factorization of a conditionally independent
 joint law into a product of conditional distributions with measurable randomization of the
-coordinate kernels.
+coordinate kernels. The joint-law identities hold for any finite base measure; when the base
+measure is a probability measure, the product noise coordinates are independent of one another
+and of the original sample.
 
 Conversely, codings of conditionally independent variables obtained separately, each jointly
 with the conditioning variable, can be fed with independent noises to realize their joint law with
@@ -57,8 +61,8 @@ variable {Ω β γ δ : Type*} [MeasurableSpace Ω] [StandardBorelSpace Ω] [Mea
 
 /-- **Conditional independence as a functional representation.** If `X` and `Y` are conditionally
 independent given `Z`, then their joint law with `Z` is obtained by keeping `Z` and applying two
-measurable coding functions to separate independent uniform variables. In particular, the noises
-used for `X` and `Y` are independent both of one another and of the original sample carrying `Z`.
+measurable coding functions to separate uniform coordinates. When `μ` is a probability measure,
+the noises are independent both of one another and of the original sample carrying `Z`.
 -/
 theorem CondIndepFun.exists_independent_coding
     [StandardBorelSpace β] [Nonempty β] [StandardBorelSpace γ] [Nonempty γ]
@@ -109,19 +113,30 @@ given `Z`, and each is realized, jointly with `Z`, by a measurable function of `
 independent noise, with laws `ρ₁` and `ρ₂`. Then feeding independent noises into the two codings
 realizes the joint law of `(Z, X, Y)`. -/
 theorem CondIndepFun.map_prod_prod_eq_of_map_prod_eq
-    [StandardBorelSpace β] [Nonempty β] [StandardBorelSpace γ] [Nonempty γ]
+    [StandardBorelSpace β] [StandardBorelSpace γ]
     {ξ ζ : Type*} [MeasurableSpace ξ] [MeasurableSpace ζ]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : Ω → β} {Y : Ω → γ} {Z : Ω → δ}
     (hZ : Measurable Z)
     (h : CondIndepFun (MeasurableSpace.comap Z inferInstance) hZ.comap_le X Y μ)
     (hX : Measurable X) (hY : Measurable Y)
-    {ρ₁ : Measure ξ} {ρ₂ : Measure ζ} [IsProbabilityMeasure ρ₁] [IsProbabilityMeasure ρ₂]
+    {ρ₁ : Measure ξ} {ρ₂ : Measure ζ}
     {f : δ → ξ → β} {g : δ → ζ → γ}
     (hf : Measurable (Function.uncurry f)) (hg : Measurable (Function.uncurry g))
     (hfX : ((μ.map Z).prod ρ₁).map (fun p => (p.1, f p.1 p.2)) = μ.map fun ω => (Z ω, X ω))
     (hgY : ((μ.map Z).prod ρ₂).map (fun p => (p.1, g p.1 p.2)) = μ.map fun ω => (Z ω, Y ω)) :
     ((μ.map Z).prod (ρ₁.prod ρ₂)).map (fun p => (p.1, f p.1 p.2.1, g p.1 p.2.2)) =
       μ.map fun ω => (Z ω, X ω, Y ω) := by
+  -- For the zero measure both sides vanish; otherwise the noises are probability measures and
+  -- the spaces `Ω`, `β`, `γ` are nonempty.
+  by_cases hμ : μ = 0
+  · simp [hμ]
+  have := Measure.isProbabilityMeasure_of_map_prod_eq hμ hZ hX hf hfX
+  have := Measure.isProbabilityMeasure_of_map_prod_eq hμ hZ hY hg hgY
+  -- `Ω`, hence `β` and `γ`, is nonempty.
+  have : Nonempty Ω := (nonempty_of_measure_ne_zero (μ := μ) (s := Set.univ)
+    (by simpa using hμ)).to_type
+  have : Nonempty β := ⟨X (Classical.arbitrary Ω)⟩
+  have : Nonempty γ := ⟨Y (Classical.arbitrary Ω)⟩
   -- The randomizations realize the kernels `z ↦ ρ₁.map (f z)` and `z ↦ ρ₂.map (g z)`, which are
   -- therefore versions of the conditional distributions of `X` and `Y` given `Z`.
   let κ : Kernel δ β := ⟨fun z => ρ₁.map (f z),
@@ -151,43 +166,45 @@ variable {ι : Type*} [Fintype ι] {β : ι → Type*} [∀ i, MeasurableSpace (
   [∀ i, StandardBorelSpace (β i)] [∀ i, Nonempty (β i)]
 
 /-- The conditional law of a finite conditionally independent family factors on measurable
-rectangles into the product of its one-coordinate conditional laws. -/
+rectangles into the product of its one-coordinate conditional laws, almost everywhere under the
+law of the conditioning variable. -/
 theorem iCondIndepFun.condDistrib_apply_pi_ae_eq_prod
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ∀ i, Ω → β i} {Z : Ω → δ}
     (hZ : Measurable Z)
     (h : iCondIndepFun (MeasurableSpace.comap Z inferInstance) hZ.comap_le X μ)
     (hX : ∀ i, Measurable (X i)) (s : ∀ i, Set (β i)) (hs : ∀ i, MeasurableSet (s i)) :
-    ∀ᵐ ω ∂μ,
-      condDistrib (fun ω i => X i ω) Z μ (Z ω) (Set.univ.pi s) =
-        ∏ i, condDistrib (X i) Z μ (Z ω) (s i) := by
+    ∀ᵐ z ∂μ.map Z,
+      condDistrib (fun ω i => X i ω) Z μ z (Set.univ.pi s) =
+        ∏ i, condDistrib (X i) Z μ z (s i) := by
   classical
-  have hfactor := (iCondIndepFun_iff_condExp_inter_preimage_eq_mul
-    (m' := MeasurableSpace.comap Z inferInstance) (fun i => inferInstance) X hX).mp h
-    Finset.univ (sets := s) (fun i _ => hs i)
+  rw [ae_map_iff hZ.aemeasurable]
+  swap
+  · exact measurableSet_eq_fun
+      (Kernel.measurable_coe _ (MeasurableSet.univ_pi hs))
+      (Finset.measurable_prod _ fun i _ => Kernel.measurable_coe _ (hs i))
+  have hfactor := (Kernel.iIndepFun_iff_measure_inter_preimage_eq_mul
+    (κ := condExpKernel μ (MeasurableSpace.comap Z inferInstance))
+    (fun i => inferInstance) X).mp h Finset.univ (sets := s) (fun i _ => hs i)
   have hvec : Measurable (fun ω i => X i ω) := Measurable.of_eval hX
   have hpi : MeasurableSet (Set.univ.pi s) := MeasurableSet.univ_pi hs
-  filter_upwards [hfactor,
-    condDistrib_ae_eq_condExp hZ hvec hpi,
-    ae_all_iff.2 (fun i => condDistrib_ae_eq_condExp hZ (hX i) (hs i))]
+  filter_upwards [ae_of_ae_trim hZ.comap_le hfactor,
+    condDistrib_apply_ae_eq_condExpKernel_map hvec hZ hpi,
+    ae_all_iff.2 (fun i => condDistrib_apply_ae_eq_condExpKernel_map (hX i) hZ (hs i))]
       with ω hfac hwhole hcoord
   have hpre : (fun ω i => X i ω) ⁻¹' Set.univ.pi s =
       ⋂ i ∈ (Finset.univ : Finset ι), X i ⁻¹' s i := by
     ext x
     simp [Set.mem_pi]
-  rw [← Measure.pi_pi (μ := fun i => condDistrib (X i) Z μ (Z ω)) s,
-    ← measureReal_eq_measureReal_iff]
-  rw [hpre] at hwhole
-  simp only [Finset.prod_apply] at hfac
-  rw [hwhole, hfac]
-  simp only [Measure.real, Measure.pi_pi]
-  rw [ENNReal.toReal_prod]
-  exact Finset.prod_congr rfl fun i _ => (hcoord i).symm
+  rw [hwhole, Kernel.map_apply' _ hvec _ hpi, hpre, hfac]
+  refine Finset.prod_congr rfl fun i _ => ?_
+  rw [hcoord i, Kernel.map_apply' _ (hX i) _ (hs i)]
 
 /-- **Conditional independence as a finite-family functional representation.** Suppose each
 coordinate of a finite conditionally independent family is realized from the conditioning
-variable and its own noise coordinate. Applying those realizations to a product noise preserves
-the joint law of the conditioning variable and the whole family. -/
-theorem iCondIndepFun.map_prod_pi_coding_eq
+variable and its own noise coordinate, almost everywhere under the law of the conditioning
+variable. Applying those realizations to a product noise preserves the joint law of the
+conditioning variable and the whole family. -/
+theorem iCondIndepFun.map_prod_pi_eq_of_ae_map_eq
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ∀ i, Ω → β i} {Z : Ω → δ}
     (hZ : Measurable Z)
     (h : iCondIndepFun (MeasurableSpace.comap Z inferInstance) hZ.comap_le X μ)
@@ -200,112 +217,39 @@ theorem iCondIndepFun.map_prod_pi_coding_eq
         (fun p => (Z p.1, fun i => f i (Z p.1) (p.2 i))) =
       μ.map fun ω => (Z ω, fun i => X i ω) := by
   classical
-  let F : Ω × (∀ i, ξ i) → δ × (∀ i, β i) :=
-    fun p => (Z p.1, fun i => f i (Z p.1) (p.2 i))
-  let G : Ω → δ × (∀ i, β i) := fun ω => (Z ω, fun i => X i ω)
-  have hF : Measurable F := hZ.comp measurable_fst |>.prodMk <|
-    Measurable.of_eval fun i => (hf i).comp
-      ((hZ.comp measurable_fst).prodMk ((measurable_pi_apply i).comp measurable_snd))
-  have hG : Measurable G := hZ.prodMk (Measurable.of_eval hX)
-  let C : Set (Set (δ × (∀ i, β i))) := Set.image2 (· ×ˢ ·)
-    {s : Set δ | MeasurableSet s}
-    (Set.univ.pi '' Set.univ.pi fun i => {s : Set (β i) | MeasurableSet s})
-  apply Measure.ext_of_generateFrom_of_cover_subset (S := C) (T := {Set.univ})
-  · exact (generateFrom_eq_prod MeasurableSpace.generateFrom_measurableSet generateFrom_pi
-      isCountablySpanning_measurableSet
-      (IsCountablySpanning.pi fun _ => isCountablySpanning_measurableSet)).symm
-  · exact IsPiSystem.prod MeasurableSpace.isPiSystem_measurableSet
-      isPiSystem_pi
-  · intro t ht
-    simp only [Set.mem_singleton_iff] at ht
-    subst t
-    refine ⟨Set.univ, by simp, Set.univ, ?_, Set.univ_prod_univ⟩
-    exact ⟨fun _ => Set.univ, by simp⟩
-  · exact Set.countable_singleton _
-  · simp
-  · intro t ht
-    simp only [Set.mem_singleton_iff] at ht
-    subst t
-    simp
-  · rintro _ ⟨A, hA, B, ⟨s, hs, rfl⟩, rfl⟩
-    simp only [Set.mem_ofPred_eq, Set.mem_univ_pi] at hA hs
-    have hB : MeasurableSet (Set.univ.pi s) := MeasurableSet.univ_pi hs
-    have hvec : Measurable (fun ω i => X i ω) := Measurable.of_eval hX
-    have hmap_all : ∀ᵐ z ∂μ.map Z,
-        ∀ i, (ρ i).map (f i z) = condDistrib (X i) Z μ z := ae_all_iff.2 hmap
-    have hcode : Measurable (fun p : δ × (∀ i, ξ i) =>
-        (p.1, fun i => f i p.1 (p.2 i))) :=
-      measurable_fst.prodMk (TauCeti.Probability.measurable_pi_uncurry_prod hf)
-    have hprod :
-        (μ.prod (Measure.pi ρ)).map (Prod.map Z id) =
-          (μ.map Z).prod (Measure.pi ρ) := by
-      simpa using
-        (Measure.map_prod_map μ (Measure.pi ρ) hZ measurable_id).symm
-    have hleft :
-        (μ.prod (Measure.pi ρ)).map F (A ×ˢ Set.univ.pi s) =
-          ∫⁻ z in A, ∏ i, condDistrib (X i) Z μ z (s i) ∂μ.map Z := by
-      have hFcomp : F = (fun p : δ × (∀ i, ξ i) =>
-          (p.1, fun i => f i p.1 (p.2 i))) ∘ Prod.map Z id := rfl
-      rw [hFcomp,
-        ← Measure.map_map hcode (hZ.prodMap measurable_id), hprod,
-        Measure.map_apply hcode (hA.prod hB), Measure.prod_apply (hcode (hA.prod hB))]
-      rw [← lintegral_indicator hA]
-      refine lintegral_congr_ae ?_
-      filter_upwards [hmap_all] with z hzmap
-      rw [Set.indicator]
-      by_cases hz : z ∈ A
-      · rw [ite_eq_left hz]
-        have hfz : Measurable (fun (u : ∀ i, ξ i) i => f i z (u i)) :=
-          Measurable.of_eval fun i => (hf i).of_uncurry_left.comp (measurable_pi_apply i)
-        have : ∀ i, SigmaFinite ((ρ i).map (f i z)) := fun i => by
-          rw [hzmap i]
-          infer_instance
-        have hpush : (Measure.pi ρ).map (fun u i => f i z (u i)) =
-            Measure.pi fun i => condDistrib (X i) Z μ z := by
-          rw [Measure.pi_map_pi fun i => (hf i).of_uncurry_left.aemeasurable]
-          simp_rw [hzmap]
-        have hsection :
-            Prod.mk z ⁻¹' (fun p : δ × (∀ i, ξ i) =>
-                (p.1, fun i => f i p.1 (p.2 i))) ⁻¹' (A ×ˢ Set.univ.pi s) =
-              (fun u i => f i z (u i)) ⁻¹' Set.univ.pi s := by
-          ext u
-          simp [hz]
-        rw [hsection, ← Measure.map_apply hfz hB, hpush, Measure.pi_pi]
-      · rw [ite_eq_right hz]
-        have hsection :
-            Prod.mk z ⁻¹' (fun p : δ × (∀ i, ξ i) =>
-                (p.1, fun i => f i p.1 (p.2 i))) ⁻¹' (A ×ˢ Set.univ.pi s) = ∅ := by
-          ext u
-          simp [hz]
-        rw [hsection]
-        exact measure_empty
-    have hright :
-        μ.map G (A ×ˢ Set.univ.pi s) =
-          ∫⁻ z in A, ∏ i, condDistrib (X i) Z μ z (s i) ∂μ.map Z := by
-      have hdisintegrate :
-          μ.map G = μ.map Z ⊗ₘ condDistrib (fun ω i => X i ω) Z μ :=
-        (compProd_map_condDistrib hZ.aemeasurable hvec.aemeasurable).symm
-      rw [hdisintegrate, Measure.compProd_apply (hA.prod hB)]
-      have hfac := h.condDistrib_apply_pi_ae_eq_prod hZ hX s hs
-      have hfac' : ∀ᵐ z ∂μ.map Z,
-          condDistrib (fun ω i => X i ω) Z μ z (Set.univ.pi s) =
-            ∏ i, condDistrib (X i) Z μ z (s i) := by
-        rw [MeasureTheory.ae_map_iff hZ.aemeasurable]
-        · exact hfac
-        · exact measurableSet_eq_fun
-            (Kernel.measurable_coe _ hB)
-            (Finset.measurable_prod _ fun i _ => Kernel.measurable_coe _ (hs i))
-      rw [← lintegral_indicator hA]
-      refine lintegral_congr_ae ?_
-      filter_upwards [hfac'] with z hz
-      rw [Set.indicator]
-      by_cases hzA : z ∈ A
-      · rw [ite_eq_left hzA]
-        simpa [hzA] using hz
-      · rw [ite_eq_right hzA]
-        simp [hzA]
-    exact hleft.trans hright.symm
+  let F : δ → (∀ i, ξ i) → (∀ i, β i) := fun z u i => f i z (u i)
+  have hF : Measurable (Function.uncurry F) :=
+    TauCeti.Probability.measurable_pi_uncurry_prod hf
+  let κ : Kernel δ (∀ i, β i) := ⟨fun z => (Measure.pi ρ).map (F z),
+    TauCeti.MeasureTheory.measurable_map_of_measurable_uncurry hF⟩
+  have : IsMarkovKernel κ :=
+    ⟨fun z => inferInstanceAs (IsProbabilityMeasure ((Measure.pi ρ).map (F z)))⟩
+  have hcode : Measurable (fun p : δ × (∀ i, ξ i) => (p.1, F p.1 p.2)) :=
+    measurable_fst.prodMk hF
+  have hprod : (μ.prod (Measure.pi ρ)).map (Prod.map Z id) =
+      (μ.map Z).prod (Measure.pi ρ) := by
+    simpa only [Measure.map_id] using
+      (Measure.map_prod_map μ (Measure.pi ρ) hZ measurable_id).symm
+  have hcomp : (fun p : Ω × (∀ i, ξ i) => (Z p.1, fun i => f i (Z p.1) (p.2 i))) =
+      (fun p : δ × (∀ i, ξ i) => (p.1, F p.1 p.2)) ∘ Prod.map Z id := rfl
+  rw [hcomp, ← Measure.map_map hcode (hZ.prodMap measurable_id), hprod,
+    κ.map_prod_eq_compProd_of_map (Measure.pi ρ) F hF (fun _ => rfl),
+    ← compProd_map_condDistrib hZ.aemeasurable (Measurable.of_eval hX).aemeasurable]
+  -- It suffices to compare the two composition-products on base sets times coordinate rectangles.
+  refine Measure.ext_prod_pi fun A hA s hs => ?_
+  have hB : MeasurableSet (Set.univ.pi s) := MeasurableSet.univ_pi hs
+  rw [Measure.compProd_apply_prod hA hB, Measure.compProd_apply_prod hA hB]
+  refine lintegral_congr_ae ?_
+  filter_upwards [ae_restrict_of_ae (ae_all_iff.2 hmap),
+    ae_restrict_of_ae (h.condDistrib_apply_pi_ae_eq_prod hZ hX s hs)] with z hzmap hfac
+  rw [hfac]
+  have hpush : κ z = Measure.pi fun i => condDistrib (X i) Z μ z := by
+    dsimp only [κ, Kernel.coe_mk, F]
+    rw [Measure.pi_map_pi fun i => (hf i).of_uncurry_left.aemeasurable]
+    simp_rw [hzmap]
+  rw [hpush, Measure.pi_pi]
 
+omit [∀ i, Nonempty (β i)] in
 /-- **Gluing conditionally independent codings of a finite family.** Suppose a finite family is
 conditionally independent given `Z`, and each coordinate `X i` is realized, jointly with `Z`, by a
 measurable function of `Z` and an independent noise with law `ρ i`. Then feeding independent
@@ -316,12 +260,20 @@ theorem iCondIndepFun.map_prod_pi_eq_of_map_prod_eq
     (h : iCondIndepFun (MeasurableSpace.comap Z inferInstance) hZ.comap_le X μ)
     (hX : ∀ i, Measurable (X i))
     {ξ : ι → Type*} [∀ i, MeasurableSpace (ξ i)] {ρ : ∀ i, Measure (ξ i)}
-    [∀ i, IsProbabilityMeasure (ρ i)]
     {f : ∀ i, δ → ξ i → β i} (hf : ∀ i, Measurable (Function.uncurry (f i)))
     (hfX : ∀ i, ((μ.map Z).prod (ρ i)).map (fun p => (p.1, f i p.1 p.2)) =
       μ.map fun ω => (Z ω, X i ω)) :
     ((μ.map Z).prod (Measure.pi ρ)).map (fun p => (p.1, fun i => f i p.1 (p.2 i))) =
       μ.map fun ω => (Z ω, fun i => X i ω) := by
+  -- For the zero measure both sides vanish; otherwise the noises are probability measures and
+  -- `Ω`, hence every `β i`, is nonempty.
+  by_cases hμ : μ = 0
+  · simp [hμ]
+  have : Nonempty Ω := (nonempty_of_measure_ne_zero (μ := μ) (s := Set.univ)
+    (by simpa using hμ)).to_type
+  have : ∀ i, Nonempty (β i) := fun i => ⟨X i (Classical.arbitrary Ω)⟩
+  have : ∀ i, IsProbabilityMeasure (ρ i) := fun i =>
+    Measure.isProbabilityMeasure_of_map_prod_eq hμ hZ (hX i) (hf i) (hfX i)
   -- Each randomization realizes the kernel `z ↦ (ρ i).map (f i z)`, which is therefore a version
   -- of the conditional distribution of `X i` given `Z`.
   have hmap (i : ι) : ∀ᵐ z ∂μ.map Z, (ρ i).map (f i z) = condDistrib (X i) Z μ z := by
@@ -337,7 +289,7 @@ theorem iCondIndepFun.map_prod_pi_eq_of_map_prod_eq
   have hprod : (μ.map Z).prod (Measure.pi ρ) = (μ.prod (Measure.pi ρ)).map (Prod.map Z id) := by
     simpa using Measure.map_prod_map μ (Measure.pi ρ) hZ measurable_id
   rw [hprod, Measure.map_map hcode (hZ.prodMap measurable_id)]
-  exact h.map_prod_pi_coding_eq hZ hX f hf hmap
+  exact h.map_prod_pi_eq_of_ae_map_eq hZ hX f hf hmap
 
 /-- **A finite conditionally independent family has a functional representation by independent
 uniform noises.** Every coordinate is a jointly measurable function of the conditioning variable
@@ -354,7 +306,7 @@ theorem iCondIndepFun.exists_independent_coding
         μ.map fun ω => (Z ω, fun i => X i ω) := by
   choose f hf hmap using fun i =>
     Kernel.exists_measurable_map_eq_unitInterval (condDistrib (X i) Z μ)
-  exact ⟨f, hf, h.map_prod_pi_coding_eq hZ hX f hf fun i =>
+  exact ⟨f, hf, h.map_prod_pi_eq_of_ae_map_eq hZ hX f hf fun i =>
     Filter.Eventually.of_forall (hmap i)⟩
 
 end Families

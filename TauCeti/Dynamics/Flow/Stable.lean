@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Dynamics.Flow
 public import Mathlib.Topology.Instances.Real.Lemmas
+public import TauCeti.Dynamics.Flow.Basic
 public import TauCeti.Dynamics.Flow.Conjugacy
 -- Private: used only for the arithmetic progression tending to infinity.
 import Mathlib.Order.Filter.AtTopBot.Archimedean
@@ -26,10 +27,17 @@ its limiting point is fixed by the flow.  Time reversal exchanges the two constr
 
 * `Flow.stableSet`: points converging to a given point in forward time.
 * `Flow.unstableSet`: points converging to a given point in backward time.
+* `Flow.stableSet_prod` and `Flow.unstableSet_prod`: the stable and unstable sets of a product of
+  flows are the products of the stable and unstable sets.
 * `Flow.isInvariant_stableSet` and `Flow.isInvariant_unstableSet`: invariance
-  under time translation.
+  under time translation (and `Flow.isInvariant_unstableSet_inter_stableSet` for their
+  intersection), and `Flow.apply_mem_stableSet_iff` and `Flow.apply_mem_unstableSet_iff`:
+  a point and its images under the flow lie in the same stable and unstable sets
+  (`IsInvariant.flow_apply_mem_iff` for any invariant set).
 * `Flow.fixed_of_mem_stableSet` and `Flow.fixed_of_mem_unstableSet`: a limiting
   point of a trajectory is fixed.
+* `Flow.disjoint_stableSet` and `Flow.disjoint_unstableSet`: stable (respectively unstable) sets
+  of distinct points are disjoint.
 * `Flow.stableSet_reverse` and `Flow.unstableSet_reverse`: time reversal exchanges
   stable and unstable sets.
 * `Homeomorph.image_stableSet_eq` and `Homeomorph.image_unstableSet_eq`: a topological conjugacy
@@ -73,6 +81,26 @@ theorem mem_unstableSet {φ : _root_.Flow ℝ α} {x y : α} :
     y ∈ unstableSet φ x ↔ Tendsto (fun t ↦ φ t y) atBot (𝓝 x) :=
   Iff.rfl
 
+/-- The stable set of a point under a product of flows is the product of the stable sets. -/
+@[simp]
+theorem stableSet_prod {β : Type*} [TopologicalSpace β] (φ : _root_.Flow ℝ α)
+    (ψ : _root_.Flow ℝ β) (x : α × β) :
+    stableSet (φ.prod ψ) x = stableSet φ x.1 ×ˢ stableSet ψ x.2 := by
+  obtain ⟨x₁, x₂⟩ := x
+  ext p
+  simp only [mem_stableSet, mem_prod, prod_apply, nhds_prod_eq]
+  exact tendsto_prod_iff'
+
+/-- The unstable set of a point under a product of flows is the product of the unstable sets. -/
+@[simp]
+theorem unstableSet_prod {β : Type*} [TopologicalSpace β] (φ : _root_.Flow ℝ α)
+    (ψ : _root_.Flow ℝ β) (x : α × β) :
+    unstableSet (φ.prod ψ) x = unstableSet φ x.1 ×ˢ unstableSet ψ x.2 := by
+  obtain ⟨x₁, x₂⟩ := x
+  ext p
+  simp only [mem_unstableSet, mem_prod, prod_apply, nhds_prod_eq]
+  exact tendsto_prod_iff'
+
 /-- The stable set of a point is invariant under every time map of the flow. -/
 theorem isInvariant_stableSet (φ : _root_.Flow ℝ α) (x : α) :
     IsInvariant φ (stableSet φ x) := by
@@ -88,6 +116,30 @@ theorem isInvariant_unstableSet (φ : _root_.Flow ℝ α) (x : α) :
   rw [mem_unstableSet] at hy ⊢
   simpa only [Function.comp_def, ← φ.map_add, id_eq] using
     hy.comp (tendsto_atBot_add_const_right atBot t tendsto_id)
+
+/-- The set of points on trajectories running from `x` to `y` is invariant under every time map of
+the flow. -/
+theorem isInvariant_unstableSet_inter_stableSet (φ : _root_.Flow ℝ α) (x y : α) :
+    IsInvariant φ (unstableSet φ x ∩ stableSet φ y) := fun t _ hz ↦
+  ⟨isInvariant_unstableSet φ x t hz.1, isInvariant_stableSet φ y t hz.2⟩
+
+/-- A point lies in a set invariant under a flow exactly when its image under a time map of the
+flow does. -/
+theorem _root_.IsInvariant.flow_apply_mem_iff {τ : Type*} [TopologicalSpace τ] [AddGroup τ]
+    {ϕ : _root_.Flow τ α} {s : Set α} (h : IsInvariant ϕ s) (t : τ) {y : α} :
+    ϕ t y ∈ s ↔ y ∈ s :=
+  ⟨fun hy ↦ by simpa only [← ϕ.map_add, neg_add_cancel, ϕ.map_zero_apply] using h (-t) hy,
+    fun hy ↦ h t hy⟩
+
+/-- A point lies in a stable set exactly when its image under a time map of the flow does. -/
+theorem apply_mem_stableSet_iff (φ : _root_.Flow ℝ α) (t : ℝ) {x y : α} :
+    φ t y ∈ stableSet φ x ↔ y ∈ stableSet φ x :=
+  (isInvariant_stableSet φ x).flow_apply_mem_iff t
+
+/-- A point lies in an unstable set exactly when its image under a time map of the flow does. -/
+theorem apply_mem_unstableSet_iff (φ : _root_.Flow ℝ α) (t : ℝ) {x y : α} :
+    φ t y ∈ unstableSet φ x ↔ y ∈ unstableSet φ x :=
+  (isInvariant_unstableSet φ x).flow_apply_mem_iff t
 
 /-- If some trajectory converges to `x` in forward time, then `x` is fixed by every time map of
 the flow. -/
@@ -131,6 +183,17 @@ theorem self_mem_unstableSet_iff [T2Space α] {φ : _root_.Flow ℝ α} {x : α}
   rw [mem_unstableSet]
   simpa only [hx] using (tendsto_const_nhds : Tendsto (fun _ : ℝ ↦ x) atBot (𝓝 x))
 
+/-- Stable sets of distinct points are disjoint: a trajectory has at most one forward limit. -/
+theorem disjoint_stableSet [T2Space α] {φ : _root_.Flow ℝ α} {x y : α} (hxy : x ≠ y) :
+    Disjoint (stableSet φ x) (stableSet φ y) :=
+  disjoint_left.2 fun _ hx hy ↦ hxy (tendsto_nhds_unique (mem_stableSet.1 hx) (mem_stableSet.1 hy))
+
+/-- Unstable sets of distinct points are disjoint: a trajectory has at most one backward limit. -/
+theorem disjoint_unstableSet [T2Space α] {φ : _root_.Flow ℝ α} {x y : α} (hxy : x ≠ y) :
+    Disjoint (unstableSet φ x) (unstableSet φ y) :=
+  disjoint_left.2 fun _ hx hy ↦
+    hxy (tendsto_nhds_unique (mem_unstableSet.1 hx) (mem_unstableSet.1 hy))
+
 /-- Time reversal is an involution. -/
 @[simp]
 theorem reverse_reverse {τ : Type*} [TopologicalSpace τ] [SubtractionCommMonoid τ]
@@ -155,6 +218,15 @@ theorem unstableSet_reverse (φ : _root_.Flow ℝ α) (x : α) :
     unstableSet φ.reverse x = stableSet φ x := by
   rw [← stableSet_reverse φ.reverse x, reverse_reverse]
 
+/-- Reversing the flow and negating a function preserves antitonicity of the function along an
+orbit. -/
+theorem antitone_reverse_neg {β : Type*} [AddCommGroup β] [PartialOrder β]
+    [IsOrderedAddMonoid β] {φ : _root_.Flow ℝ α} {g : α → β} {y : α}
+    (hanti : Antitone fun t ↦ g (φ t y)) : Antitone fun t ↦ (-g) (φ.reverse t y) :=
+  fun _ _ hst ↦ by
+  simp only [_root_.Flow.reverse_apply, Pi.neg_apply]
+  exact neg_le_neg (hanti (neg_le_neg hst))
+
 /-- Under the identity flow, the stable set of `x` is the singleton `{x}`. -/
 @[simp]
 theorem stableSet_id [T1Space α] (x : α) :
@@ -174,10 +246,10 @@ section Conjugacy
 variable {β : Type*} [TopologicalSpace β]
   {φ : _root_.Flow ℝ α} {ψ : _root_.Flow ℝ β}
 
-/-- An inducing semiconjugacy carries membership in a stable set to membership in the
-corresponding stable set. -/
+/-- An inducing map intertwining two flows carries membership in a stable set to membership in
+the corresponding stable set. -/
 theorem _root_.Topology.IsInducing.map_mem_stableSet_iff {f : α → β} (hf : IsInducing f)
-    (hconj : _root_.Flow.IsSemiconjugacy f φ ψ) {x y : α} :
+    (hconj : ∀ t, Function.Semiconj f (φ t) (ψ t)) {x y : α} :
     f y ∈ stableSet ψ (f x) ↔ y ∈ stableSet φ x := by
   rw [mem_stableSet, mem_stableSet]
   exact hf.tendsto_flow_iff hconj
@@ -188,7 +260,7 @@ corresponding stable set. This is stated as an explicit rewrite lemma because
 theorem _root_.Homeomorph.map_mem_stableSet_iff
     (e : α ≃ₜ β) (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {x : α} {y : α} :
     e y ∈ stableSet ψ (e x) ↔ y ∈ stableSet φ x := by
-  exact e.isInducing.map_mem_stableSet_iff hconj
+  exact e.isInducing.map_mem_stableSet_iff hconj.semiconj
 
 /-- A topological conjugacy carries a stable set to the corresponding stable set. -/
 /- This is an explicit rewrite lemma: the target flow is not determined by the left-hand
@@ -204,11 +276,11 @@ theorem _root_.Homeomorph.image_stableSet_eq
     refine ⟨e.symm y, (e.map_mem_stableSet_iff hconj).1 ?_, e.apply_symm_apply y⟩
     simpa only [e.apply_symm_apply] using hy
 
-/-- An inducing semiconjugacy carries membership in an unstable set to membership in the
-corresponding unstable set. This is stated as an explicit rewrite lemma because
+/-- An inducing map intertwining two flows carries membership in an unstable set to membership in
+the corresponding unstable set. This is stated as an explicit rewrite lemma because
 `Flow.mem_unstableSet` already puts its left-hand side in simp-normal form. -/
 theorem _root_.Topology.IsInducing.map_mem_unstableSet_iff {f : α → β} (hf : IsInducing f)
-    (hconj : _root_.Flow.IsSemiconjugacy f φ ψ) {x y : α} :
+    (hconj : ∀ t, Function.Semiconj f (φ t) (ψ t)) {x y : α} :
     f y ∈ unstableSet ψ (f x) ↔ y ∈ unstableSet φ x := by
   rw [mem_unstableSet, mem_unstableSet]
   exact hf.tendsto_flow_iff hconj
@@ -219,7 +291,7 @@ corresponding unstable set. This is stated as an explicit rewrite lemma because
 theorem _root_.Homeomorph.map_mem_unstableSet_iff
     (e : α ≃ₜ β) (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {x : α} {y : α} :
     e y ∈ unstableSet ψ (e x) ↔ y ∈ unstableSet φ x := by
-  exact e.isInducing.map_mem_unstableSet_iff hconj
+  exact e.isInducing.map_mem_unstableSet_iff hconj.semiconj
 
 /-- A topological conjugacy carries an unstable set to the corresponding unstable set. -/
 /- This is an explicit rewrite lemma: the target flow is not determined by the left-hand

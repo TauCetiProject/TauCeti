@@ -5,14 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import Mathlib.Algebra.Exact.Basic
+public import Mathlib.Algebra.Module.Projective
 public import TauCeti.LinearAlgebra.Trace.Prod
 
 /-!
 # The trace of an endomorphism of a short exact sequence
 
-An endomorphism of a short exact sequence `0 → N → M → Q → 0` of vector spaces, `M`
-finite-dimensional, has `trace f = trace fN + trace fQ`.
+An endomorphism of a short exact sequence `0 → N → M → Q → 0` over a commutative ring,
+with `M` finite and `N`, `Q` free, has `trace f = trace fN + trace fQ`. The freeness of `Q`
+splits the sequence; the splitting makes `M` free and the two outer modules finite.
+In particular this applies to every short exact sequence of finite-dimensional vector spaces.
 
 The typical use is a filtration whose graded pieces are known: iterating the identity along
 `M ⊇ M₁ ⊇ ⋯` expresses `trace f` as the sum of the traces on the successive quotients.  That is how
@@ -30,40 +33,42 @@ open Module
 
 namespace LinearMap
 
-variable {K M N Q : Type*} [Field K]
-variable [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N] [AddCommGroup Q] [Module K Q]
+variable {R M N Q : Type*} [CommRing R]
+variable [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [AddCommGroup Q] [Module R Q]
 
--- Provenance: the argument below is the one carried by the private
--- `TauCeti.TensorSquare.trace_eq_add_of_exact` of
--- `TauCeti/RepresentationTheory/Tensor/Square.lean`, generalized here to an arbitrary short exact
--- sequence and consumed there.
 /-- **The trace is additive along a short exact sequence.** If `0 → N --i--> M --π--> Q → 0` is
 exact and the endomorphisms `fN`, `f`, `fQ` commute with `i` and `π`, then
-`trace f = trace fN + trace fQ`. -/
-theorem trace_eq_add_of_exact [FiniteDimensional K M] {i : N →ₗ[K] M} {π : M →ₗ[K] Q}
+`trace f = trace fN + trace fQ`. The middle module is finite and the outer modules are free;
+the quotient's projectivity supplies a section. -/
+theorem trace_eq_add_of_exact [Module.Finite R M] [Module.Free R N] [Module.Free R Q]
+    {i : N →ₗ[R] M} {π : M →ₗ[R] Q}
     (hi : Function.Injective i) (hπ : Function.Surjective π) (hex : Function.Exact i π)
-    {f : M →ₗ[K] M} {fN : N →ₗ[K] N} {fQ : Q →ₗ[K] Q}
+    {f : M →ₗ[R] M} {fN : N →ₗ[R] N} {fQ : Q →ₗ[R] Q}
     (hN : f ∘ₗ i = i ∘ₗ fN) (hQ : π ∘ₗ f = fQ ∘ₗ π) :
-    trace K M f = trace K N fN + trace K Q fQ := by
-  have _ : FiniteDimensional K N := FiniteDimensional.of_injective i hi
-  have _ : FiniteDimensional K Q := Module.Finite.of_surjective π hπ
-  -- choose a linear section of `π`
+    trace R M f = trace R N fN + trace R Q fQ := by
+  -- The free quotient is projective, so the sequence splits over any commutative ring.
   obtain ⟨s, hs⟩ := π.exists_rightInverse_of_surjective (range_eq_top.mpr hπ)
   obtain ⟨E, hiE, hπE⟩ := hex.splitSurjectiveEquiv hi ⟨s, hs⟩
+  have _ : Module.Free R M := Module.Free.of_equiv E.symm
+  have _ : Module.Finite R N := Module.Finite.of_surjective
+    ((fst R N Q).comp E.toLinearMap) (by
+      intro n
+      exact ⟨E.symm (n, 0), by simp⟩)
+  have _ : Module.Finite R Q := Module.Finite.of_surjective π hπ
   have hi_apply (n : N) : E.symm (n, 0) = i n := by
     simpa using congr($hiE n).symm
   -- transport `f` to `N × Q`; it is block upper triangular there
-  set F : (N × Q) →ₗ[K] N × Q := E.conj f with hF
+  set F : (N × Q) →ₗ[R] N × Q := E.conj f with hF
   have hFapply (x : N × Q) : F x = E (f (E.symm x)) := by
     simp [hF, LinearEquiv.conj_apply]
   have hsnd (m : M) : (E m).2 = π m := by
     simpa using congr($hπE m).symm
-  have hinl : F ∘ₗ (inl K N Q) = (inl K N Q) ∘ₗ fN := by
+  have hinl : F ∘ₗ (inl R N Q) = (inl R N Q) ∘ₗ fN := by
     refine ext fun n ↦ E.symm.injective ?_
     have hfi : f (i n) = i (fN n) := congr($hN n)
     simp only [comp_apply, inl_apply, hFapply, E.symm_apply_apply, hi_apply]
     exact hfi
-  have hsnd' : (snd K N Q) ∘ₗ F = fQ ∘ₗ (snd K N Q) := by
+  have hsnd' : (snd R N Q) ∘ₗ F = fQ ∘ₗ (snd R N Q) := by
     refine ext fun x ↦ ?_
     have h₃ : π (f (E.symm x)) = fQ (π (E.symm x)) := congr($hQ (E.symm x))
     simp only [comp_apply, snd_apply, hFapply, hsnd, h₃]

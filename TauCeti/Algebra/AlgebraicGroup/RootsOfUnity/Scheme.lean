@@ -32,8 +32,8 @@ All statements include `n = 0`, `n = 1`, and the zero base and value rings. The 
 quotient presentation by `T ^ n - 1` and the realization as the kernel of the power map are
 separate constructions.
 
-This advances Layer 4 and the worked-examples lane of the reductive-groups roadmap by keeping
-the Hopf-algebra, group-scheme, and functor-of-points descriptions of `mu_n` synchronized.
+This keeps the Hopf-algebra, group-scheme, and functor-of-points descriptions of `mu_n`
+synchronized.
 
 ## Main declarations
 
@@ -227,13 +227,13 @@ noncomputable def characterQuotient (n : ℕ) :
 residue class. -/
 @[simp]
 theorem characterQuotient_apply_up (n : ℕ) (x : Multiplicative ℤ) :
-    FGCommGrpCat.toMonoidHom (characterQuotient.{u} n) (ULift.up x) =
+    (characterQuotient.{u} n).hom.hom (ULift.up x) =
       ULift.up (toMultiplicativeZMod n x) := by
   rfl
 
 /-- The lifted character quotient defining `mu_n -> G_m` is surjective for every `n`. -/
 theorem characterQuotient_surjective (n : ℕ) :
-    Function.Surjective (FGCommGrpCat.toMonoidHom (characterQuotient.{u} n)) := by
+    Function.Surjective (characterQuotient.{u} n).hom.hom := by
   intro y
   rcases y with ⟨y⟩
   obtain ⟨x, hx⟩ := toMultiplicativeZMod_surjective n y

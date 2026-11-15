@@ -37,6 +37,9 @@ half of the archimedean classification; the complex half is in
 
 * `QuadraticForm.realPositiveIndex_add_realNegativeIndex_eq_finrank`: the indices of a
   nondegenerate form add to its rank.
+* `QuadraticForm.realPositiveIndex_weightedSumSquares`,
+  `QuadraticForm.realNegativeIndex_weightedSumSquares`: the indices of a diagonal form count its
+  coefficients that are positive, respectively negative, at the place.
 * `QuadraticMap.Equivalent.realSignature_eq`: equivalent forms have equal real signatures.
 * `QuadraticForm.realSignature_prod`: real-place signatures are additive under orthogonal
   products.
@@ -48,6 +51,10 @@ half of the archimedean classification; the complex half is in
   `QuadraticForm.equivalent_atRealPlace_realSignatureForm`: the localization is the normal form
   `p⟨1⟩ ⊥ q⟨-1⟩` exactly when `(p, q)` is its signature, hence is always the normal form of its
   own signature.
+* `QuadraticForm.anisotropic_atRealPlace_iff_realNegativeIndex_eq_zero_or_realPositiveIndex_eq_zero`
+  says that a regular form is anisotropic at a real place exactly when it is definite there.
+* `QuadraticForm.anisotropic_atRealPlace_weightedSumSquares_iff`: a diagonal form is
+  anisotropic at a real place exactly when its coefficients there all have the same sign.
 
 ## References
 
@@ -118,19 +125,52 @@ theorem realNegativeIndex_eq_sigNeg (Q : _root_.QuadraticForm K V)
 
 /-- The positive and negative indices of a nondegenerate form at a real place add to its global
 rank. -/
-theorem realPositiveIndex_add_realNegativeIndex_eq_finrank [FiniteDimensional K V]
+theorem realPositiveIndex_add_realNegativeIndex_eq_finrank
     {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate)
     (w : {w : InfinitePlace K // w.IsReal}) :
     Q.realPositiveIndex w + Q.realNegativeIndex w = Module.finrank K V := by
   let : CharZero K := RingHom.charZero w.1.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  by_cases hV : FiniteDimensional K V
+  swap
+  · -- infinite rank: both indices are bounded by the rank `0` of the localized form
+    have hbc : Module.finrank ℝ (TensorProduct K ℝ V) = 0 := by
+      rw [Module.finrank_baseChange, Module.finrank_of_not_finite hV]
+    have h1 := sigPos_le_finrank (Q.atRealPlace w)
+    have h2 := sigPos_le_finrank (-Q.atRealPlace w)
+    rw [sigPos_neg] at h2
+    rw [hbc] at h1 h2
+    rw [Module.finrank_of_not_finite hV, realPositiveIndex_eq_sigPos, realNegativeIndex_eq_sigNeg]
+    omega
   have hlocal : (Q.atRealPlace w).Nondegenerate := by
     rw [atRealPlace_def]
     exact QuadraticForm.Nondegenerate.baseChange hQ
   have hsum := sigPos_add_sigNeg_add_radical (Q := Q.atRealPlace w)
   rw [hlocal.radical_eq_bot, finrank_bot, add_zero, Module.finrank_baseChange] at hsum
   simpa only [realPositiveIndex_eq_sigPos, realNegativeIndex_eq_sigNeg] using hsum
+
+section WeightedSumSquares
+
+variable {ι : Type*} [Fintype ι]
+
+/-- The positive index of a diagonal form `⟨a₁, …, aₙ⟩` at a real place `w` is the number of
+coefficients that are positive under the real embedding of `w`. -/
+theorem realPositiveIndex_weightedSumSquares (a : ι → K) (w : {w : InfinitePlace K // w.IsReal}) :
+    realPositiveIndex (QuadraticMap.weightedSumSquares K a) w =
+      {i | 0 < embedding_of_isReal w.2 (a i)}.ncard := by
+  rw [realPositiveIndex_eq_sigPos, (QuadraticMap.Equivalent.sigPos_eq
+    ⟨atRealPlaceWeightedSumSquares w a⟩), sigPos_weightedSumSquares]
+
+/-- The negative index of a diagonal form `⟨a₁, …, aₙ⟩` at a real place `w` is the number of
+coefficients that are negative under the real embedding of `w`. -/
+theorem realNegativeIndex_weightedSumSquares (a : ι → K) (w : {w : InfinitePlace K // w.IsReal}) :
+    realNegativeIndex (QuadraticMap.weightedSumSquares K a) w =
+      {i | embedding_of_isReal w.2 (a i) < 0}.ncard := by
+  rw [realNegativeIndex_eq_sigNeg, (QuadraticMap.Equivalent.sigNeg_eq
+    ⟨atRealPlaceWeightedSumSquares w a⟩), sigNeg_weightedSumSquares]
+
+end WeightedSumSquares
 
 variable {W : Type v'} [AddCommGroup W] [Module K W]
 variable {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
@@ -241,7 +281,6 @@ theorem realSignature_neg (Q : _root_.QuadraticForm K V)
 section Scaling
 
 variable (Q : _root_.QuadraticForm K V) (w : {w : InfinitePlace K // w.IsReal}) (a : K)
-variable [FiniteDimensional ℝ (TauCeti.RealScalarExtension (V := V) w)]
 
 /-- Scaling by a scalar positive at a real place preserves its positive index. -/
 @[simp]
@@ -350,6 +389,24 @@ theorem equivalent_atRealPlace_realSignatureForm (hQ : Q.Nondegenerate)
     (Q.atRealPlace w).Equivalent
       (realSignatureForm (Q.realPositiveIndex w) (Q.realNegativeIndex w)) :=
   (equivalent_atRealPlace_realSignatureForm_iff_realSignature_eq hQ w _ _).mpr (by simp)
+
+/-- A regular quadratic form is anisotropic at a real place exactly when it is definite there,
+that is, when its negative or its positive index there vanishes. -/
+theorem anisotropic_atRealPlace_iff_realNegativeIndex_eq_zero_or_realPositiveIndex_eq_zero
+    (hQ : Q.Nondegenerate) (w : {w : InfinitePlace K // w.IsReal}) :
+    (Q.atRealPlace w).Anisotropic ↔ Q.realNegativeIndex w = 0 ∨ Q.realPositiveIndex w = 0 := by
+  rw [anisotropic_iff_sigNeg_eq_zero_or_sigPos_eq_zero
+    (Nondegenerate.atRealPlace hQ w).radical_eq_bot, realNegativeIndex_eq_sigNeg,
+    realPositiveIndex_eq_sigPos]
+
+/-- A diagonal form `⟨a₁, …, aₙ⟩` is anisotropic at a real place exactly when its coefficients
+there are all positive or all negative. -/
+theorem anisotropic_atRealPlace_weightedSumSquares_iff {ι : Type*} [Fintype ι] (a : ι → K)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    (atRealPlace (QuadraticMap.weightedSumSquares K a) w).Anisotropic ↔
+      (∀ i, 0 < embedding_of_isReal w.2 (a i)) ∨ ∀ i, embedding_of_isReal w.2 (a i) < 0 := by
+  rw [QuadraticMap.Equivalent.anisotropic_iff ⟨atRealPlaceWeightedSumSquares w a⟩,
+    QuadraticMap.anisotropic_weightedSumSquares_iff]
 
 end Classification
 

@@ -59,6 +59,7 @@ indecomposables is counted by `Fin 3`.
   **every indecomposable representation of the `A₂` quiver is `S₁`, `S₂` or `P₁`.**
 * `TauCeti.not_nonempty_simpleRep_indecProjRep_iso`: a vertex simple of the `A₂` quiver is not
   `P₁`, which with `TauCeti.not_nonempty_simpleRep_iso` makes the three pairwise non-isomorphic.
+* `TauCeti.indecomposableKroneckerEquiv`: the explicit enumeration of these classes by `Fin 3`.
 * `TauCeti.card_skeleton_indecomposable_kronecker`: **the `A₂` quiver has exactly three
   finite-dimensional indecomposable representations up to isomorphism.**
 
@@ -83,12 +84,10 @@ used.
 
 ## References
 
-This supplies the representation-level half of the "`A₂` quiver" worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose path-algebra half is
-`TauCeti.RepresentationTheory.Quiver.Kronecker.UpperTriangular`, together with the finite
-representation type asked for in its Layer 5. See Assem--Simson--Skowroński, *Elements of the
-Representation Theory of Associative Algebras I*, Ch. II and VII, and Schiffler, *Quiver
-Representations*, Ch. 2.
+The path-algebra counterpart of this classification is
+`TauCeti.RepresentationTheory.Quiver.Kronecker.UpperTriangular`. See Assem--Simson--Skowroński,
+*Elements of the Representation Theory of Associative Algebras I*, Ch. II and VII, and Schiffler,
+*Quiver Representations*, Ch. 2.
 -/
 
 public section
@@ -512,6 +511,43 @@ theorem card_skeleton_indecomposable_kronecker (k : Type u) [Field k] (A : Type)
         IsFinDim k (Quiver.Kronecker A) M ∧ Indecomposable M))) = 3 := by
   rw [← Nat.card_eq_of_bijective (indecClass k A) ⟨indecClass_injective, indecClass_surjective⟩,
     Nat.card_eq_fintype_card, Fintype.card_fin]
+
+variable (k A) in
+/-- The finite-dimensional indecomposable classes of the one-arrow quiver, listed as `S₁`,
+`S₂`, `P₁`. -/
+noncomputable def indecomposableKroneckerEquiv : Fin 3 ≃
+    Skeleton (ObjectProperty.FullSubcategory
+      (fun M : QuiverRep.{u, 0, 0, u} k (Quiver.Kronecker A) ↦
+        IsFinDim k (Quiver.Kronecker A) M ∧ Indecomposable M)) :=
+  Equiv.ofBijective (indecClass k A) ⟨indecClass_injective, indecClass_surjective⟩
+
+/-- The first indecomposable class is the source simple. -/
+@[simp]
+theorem indecomposableKroneckerEquiv_zero :
+    indecomposableKroneckerEquiv k A 0 = toSkeleton
+      ⟨simpleRep k (Quiver.Kronecker A) Quiver.Kronecker.src,
+        isFinDim_iff.mpr fun v ↦ finiteDimensional_simpleRep_obj Quiver.Kronecker.src v,
+        indecomposable_of_simple _⟩ :=
+  (rfl)
+
+/-- The second indecomposable class is the target simple. -/
+@[simp]
+theorem indecomposableKroneckerEquiv_one :
+    indecomposableKroneckerEquiv k A 1 = toSkeleton
+      ⟨simpleRep k (Quiver.Kronecker A) Quiver.Kronecker.tgt,
+        isFinDim_iff.mpr fun v ↦ finiteDimensional_simpleRep_obj Quiver.Kronecker.tgt v,
+        indecomposable_of_simple _⟩ :=
+  (rfl)
+
+/-- The third indecomposable class is the source projective. -/
+@[simp]
+theorem indecomposableKroneckerEquiv_two :
+    indecomposableKroneckerEquiv k A 2 = toSkeleton
+      ⟨indecProjRep k (Quiver.Kronecker A) Quiver.Kronecker.src,
+        isFinDim_iff.mpr fun v ↦ by
+          cases v <;> exact finiteDimensional_indecProjRep_obj Quiver.Kronecker.src _,
+        indecomposable_indecProjRep_of_isAcyclic Quiver.Kronecker.isAcyclic _⟩ :=
+  (rfl)
 
 end A2
 

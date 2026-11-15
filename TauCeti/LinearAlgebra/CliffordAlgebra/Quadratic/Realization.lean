@@ -31,10 +31,6 @@ canonical bivector action rather than from a basis-dependent inverse.
   criterion, identifying a quadratic element with the Clifford bivector of two vectors from its
   commutator action on a basis.
 
-## References
-
-* [Tau Ceti Roadmap](https://github.com/TauCetiProject/TauCetiRoadmap), Representation Theory / Spin
-  Representations, Layer 9, "The abstract quadratic realization".
 -/
 
 public section
@@ -55,8 +51,15 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
 private noncomputable def exteriorSquareEquivSkewAdjointPolar
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
     ⋀[K]^2 V ≃ₗ[K] skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q) :=
-  exteriorSquareEquivSkewAdjoint (QuadraticMap.polarBilin Q)
-    (QuadraticMap.nondegenerate_polar_iff.mpr hQ) Q.isSymm_polarBilin
+  LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (QuadraticMap.polarBilin Q)
+    (by
+      let B : LinearMap.BilinForm K V := QuadraticMap.polarBilin Q
+      have hB := QuadraticMap.nondegenerate_polar_iff.mpr hQ
+      have heq : (B.toDual hB : V → Module.Dual K V) = B := by
+        ext x y
+        exact LinearMap.BilinForm.toDual_def hB
+      exact heq ▸ (B.toDual hB).bijective)
+    Q.isSymm_polarBilin
 
 private theorem ι_exteriorSquareEquivSkewAdjoint_apply
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (z : ⋀[K]^2 V) (x : V) :
@@ -102,7 +105,7 @@ private theorem ι_exteriorSquareEquivSkewAdjoint_apply
         (exteriorPower.ιMulti K 2 ![w 0, w 1]) :
           skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q)) : Module.End K V) x) = _
   unfold exteriorSquareEquivSkewAdjointPolar
-  rw [exteriorSquareEquivSkewAdjoint_apply_ιMulti_apply]
+  rw [LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint_apply_ιMulti_apply]
   -- Expose the quadratic-subalgebra carrier before using its Clifford computation theorem.
   change _ = ⁅((bivectorExteriorEquivQuadraticLieSubalgebra Q
       (exteriorPower.ιMulti K 2 ![w 0, w 1]) : quadraticLieSubalgebra Q) :

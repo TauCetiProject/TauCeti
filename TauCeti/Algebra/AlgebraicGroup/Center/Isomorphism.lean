@@ -37,6 +37,8 @@ equality and is then carried through `hopfSpec`.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory
 
 namespace TauCeti.CommHopfAlgCat
@@ -76,8 +78,7 @@ theorem comapOfSurjective_centerDefiningIdeal (e : H ≅ K) :
 to the centers. -/
 noncomputable def centerCoordinateIso (e : H ≅ K) :
     quotient H (centerDefiningIdeal H) ≅ quotient K (centerDefiningIdeal K) :=
-  eqToIso (congrArg (quotient H) (comapOfSurjective_centerDefiningIdeal e).symm) ≪≫
-    quotientIsoOfIso e (centerDefiningIdeal K)
+  quotientIsoOfComapEq e (centerDefiningIdeal K) (comapOfSurjective_centerDefiningIdeal e)
 
 /-- The coordinate morphism obtained by restricting an ambient isomorphism to the centers. -/
 noncomputable def centerCoordinateMap (e : H ≅ K) :

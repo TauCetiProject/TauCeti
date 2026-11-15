@@ -106,21 +106,23 @@ theorem mem_code_iff {x : Fin 24 → ZMod 2} :
 theorem generator_mul_transpose_eq_zero : generator * generator.transpose = 0 := by
   decide +kernel
 
+/-- Encoding is injective because the generator is systematic. -/
+theorem vecMul_generator_injective : Function.Injective (fun a ↦ a ᵥ* generator) := by
+  intro a b hab
+  have h := congrArg (fun x : Fin 24 → ZMod 2 ↦ fun i : Fin 12 ↦ x (i.castAdd 12)) hab
+  simpa only [vecMul_generator, Fin.append_left] using h
+
 /-- Systematic encoding gives a linear equivalence between messages and codewords. -/
 noncomputable def encodingEquiv : (Fin 12 → ZMod 2) ≃ₗ[ZMod 2] code :=
-  (LinearEquiv.ofInjective generator.vecMulLinear (by
-    intro a b hab
-    have h := congrArg (fun x : Fin 24 → ZMod 2 ↦ fun i : Fin 12 ↦ x (i.castAdd 12)) hab
-    simpa only [Matrix.vecMulLinear_apply, vecMul_generator, Fin.append_left] using h)).trans
-    (LinearEquiv.ofEq _ _ (by rw [code_def, Matrix.generatedBy_def]))
+  LinearCode.IsGeneratorMatrix.encodingEquiv
+    ((LinearCode.isGeneratorMatrix_def _ _).mpr code_def.symm)
+    (Matrix.vecMul_injective_iff.mp vecMul_generator_injective)
 
 /-- The encoding equivalence sends a message to its systematic encoding. -/
 @[simp]
 theorem encodingEquiv_apply (a : Fin 12 → ZMod 2) :
     (encodingEquiv a : Fin 24 → ZMod 2) = Fin.append a (a ᵥ* block) := by
-  simp only [encodingEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
-  exact (LinearEquiv.ofInjective_apply (f := generator.vecMulLinear) a).trans
-    (vecMul_generator a)
+  rw [encodingEquiv, LinearCode.IsGeneratorMatrix.coe_encodingEquiv_apply, vecMul_generator]
 
 /-- Decoding reads the first twelve coordinates. -/
 @[simp]
@@ -128,6 +130,16 @@ theorem encodingEquiv_symm_apply (x : code) (i : Fin 12) :
     encodingEquiv.symm x i = x.val (i.castAdd 12) := by
   obtain ⟨a, rfl⟩ := encodingEquiv.surjective x
   simp
+
+/-- Two codewords of the extended binary Golay code agreeing on the twelve information coordinates
+are equal. -/
+theorem eq_of_mem_code_of_forall_castAdd_eq {x y : Fin 24 → ZMod 2} (hx : x ∈ code) (hy : y ∈ code)
+    (h : ∀ i : Fin 12, x (i.castAdd 12) = y (i.castAdd 12)) : x = y := by
+  have hsub : (⟨x, hx⟩ : code) = ⟨y, hy⟩ :=
+    encodingEquiv.symm.injective <| funext fun i ↦ by
+      rw [encodingEquiv_symm_apply, encodingEquiv_symm_apply]
+      exact h i
+  exact congrArg Subtype.val hsub
 
 /-- The extended binary Golay code has dimension twelve. -/
 @[simp]
@@ -147,14 +159,15 @@ theorem natCard_code : Nat.card code = 4096 := by
   norm_num [Nat.card_eq_fintype_card]
 
 /-- The extended binary Golay code is Euclidean self-dual. -/
+theorem isSelfDual_code : code.IsSelfDual := by
+  rw [code_def]
+  exact Matrix.generatedBy_isSelfDual_of_mul_transpose_eq_zero_and_card_le generator
+    generator_mul_transpose_eq_zero (by simp)
+
+/-- The Euclidean dual of the extended binary Golay code is the code itself. -/
 @[simp]
-theorem euclideanDual_code : code.euclideanDual = code := by
-  symm
-  apply Submodule.eq_euclideanDual_of_le_of_card_le_two_mul_finrank
-  · rw [code_def, ← Matrix.checkedBy_eq_euclideanDual_generatedBy,
-      Matrix.generatedBy_le_checkedBy_iff]
-    exact generator_mul_transpose_eq_zero
-  · simp
+theorem euclideanDual_code : code.euclideanDual = code :=
+  isSelfDual_code.euclideanDual_eq
 
 /-- The same matrix is a parity-check matrix for the extended Golay code. -/
 @[simp↓]
@@ -558,7 +571,7 @@ theorem isDoublyEven_code : BinaryCode.IsDoublyEven code := by
 
 /-- The extended binary Golay code is Type II: doubly even and Euclidean self-dual. -/
 theorem isTypeII_code : BinaryCode.IsTypeII code :=
-  isDoublyEven_code.isTypeII euclideanDual_code.symm
+  isDoublyEven_code.isTypeII isSelfDual_code
 
 private theorem weightDistribution_eq_card (w : ℕ) :
     (code : Set (Fin 24 → ZMod 2)).weightDistribution w =
@@ -665,5 +678,33 @@ theorem hammingMinDist_code : Set.hammingMinDist (code : Set (Fin 24 → ZMod 2)
   · intro w hw
     simp only [Set.mem_ofPred_eq, weightDistribution_code] at hw
     split_ifs at hw <;> omega
+
+/-- Every nonzero codeword of the extended binary Golay code has weight at least eight. -/
+theorem eight_le_hammingNorm {x : Fin 24 → ZMod 2} (hx : x ∈ code) (hx0 : x ≠ 0) :
+    8 ≤ hammingNorm x := by
+  simpa using Set.hammingMinDist_le_hammingNorm code.zero_mem hx hx0
+
+/-- Distinct coordinates of `Fin 24` are separated by some codeword of `code`. -/
+theorem eq_of_forall_mem_code_apply_eq {i j : Fin 24} (h : ∀ c ∈ code, c i = c j) : i = j := by
+  by_contra hij
+  let v : Fin 24 → ZMod 2 := Pi.single i 1 - Pi.single j 1
+  have hv_mem : v ∈ code := by
+    rw [← euclideanDual_code, Submodule.mem_euclideanDual]
+    intro c hc
+    simp [v, dotProduct_sub, h c hc]
+  have hv_ne : v ≠ 0 := by
+    intro hv0
+    have hi := congrFun hv0 i
+    simp [v, hij] at hi
+  have h8 : 8 ≤ hammingNorm v := eight_le_hammingNorm hv_mem hv_ne
+  have hle2 : hammingNorm v ≤ 2 := by
+    have hsub : Finset.univ.filter (fun k ↦ v k ≠ 0) ⊆ ({i, j} : Finset (Fin 24)) := by
+      intro k hk
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk
+      by_contra hnij
+      simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hnij
+      exact hk (by simp [v, Pi.single_eq_of_ne hnij.1, Pi.single_eq_of_ne hnij.2])
+    exact (Finset.card_le_card hsub).trans (Finset.card_insert_le i {j})
+  omega
 
 end TauCeti.BinaryGolay

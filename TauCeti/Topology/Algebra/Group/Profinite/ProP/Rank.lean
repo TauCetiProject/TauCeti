@@ -153,7 +153,7 @@ theorem topologicalGeneratorRank_quotient_proPFrattini (hG : IsProP p G) :
 
 section Surjective
 
-variable {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H]
+variable {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
   [TotallyDisconnectedSpace H]
 
 omit [TotallyDisconnectedSpace G] in
@@ -163,6 +163,7 @@ subgroup of `H`, has index `p ^ d(H)` in `G`. -/
 theorem index_proPFrattini_sup_ker (hH : IsProP p H) (hfg : IsTopologicallyFinitelyGenerated H)
     (f : G →* H) (hf : Continuous f) (hsurj : Function.Surjective f) :
     (proPFrattini p G ⊔ f.ker).index = p ^ topologicalGeneratorRankNat H hfg := by
+  have : CompactSpace H := hsurj.compactSpace hf
   rw [← comap_proPFrattini_eq_of_surjective hp.out f hf hsurj,
     Subgroup.index_comap_of_surjective _ hsurj, Subgroup.index_eq_card,
     hH.natCard_quotient_proPFrattini hfg]

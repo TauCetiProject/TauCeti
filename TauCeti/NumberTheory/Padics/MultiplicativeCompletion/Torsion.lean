@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Basic
 public import TauCeti.NumberTheory.LocalField.RootsOfUnity.Basic
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
+import TauCeti.NumberTheory.Padics.Module
 
 /-!
 # Torsion in the p-adic completion of a multiplicative group
@@ -173,26 +174,8 @@ is killed by a nonzero `p`-adic integer exactly when it has finite multiplicativ
 theorem mem_torsion_padicCompletionUnits_iff (x : Additive ↑(padicCompletionUnits p L)) :
     x ∈ Submodule.torsion ℤ_[p] (Additive ↑(padicCompletionUnits p L)) ↔
       x.toMul ∈ CommGroup.torsion ↑(padicCompletionUnits p L) := by
-  have hp : p.Prime := Fact.out
-  rw [Submodule.mem_torsion_iff, CommGroup.mem_torsion, isOfFinOrder_iff_pow_eq_one]
-  constructor
-  · rintro ⟨⟨a, ha⟩, hax⟩
-    have ha0 : a ≠ 0 := nonZeroDivisors.ne_zero ha
-    -- Dividing by the unit part of `a` leaves a power of `p` that kills `x`.
-    have hpx : (p ^ a.valuation : ℕ) • x = 0 := by
-      have hu : (((PadicInt.unitCoeff ha0)⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) * a =
-          (p : ℤ_[p]) ^ a.valuation := by
-        conv_lhs => arg 2; rw [PadicInt.unitCoeff_spec ha0]
-        rw [← mul_assoc, Units.inv_mul, one_mul]
-      rw [← padicCompletionUnits_natCast_smul, Nat.cast_pow, ← hu, mul_smul,
-        ← Submonoid.smul_def ⟨a, ha⟩, hax, smul_zero]
-    refine ⟨p ^ a.valuation, pow_pos hp.pos _, ?_⟩
-    rw [← toMul_nsmul, hpx, toMul_zero]
-  · rintro ⟨n, hn, hxn⟩
-    refine ⟨⟨n, mem_nonZeroDivisors_of_ne_zero (Nat.cast_ne_zero.mpr hn.ne')⟩, ?_⟩
-    rw [Submonoid.smul_def, padicCompletionUnits_natCast_smul]
-    apply Additive.toMul.injective
-    rw [toMul_nsmul, hxn, toMul_zero]
+  rw [← Submodule.mem_toAddSubgroup, Submodule.torsion_padicInt, AddCommGroup.mem_torsion,
+    CommGroup.mem_torsion, ← isOfFinAddOrder_ofMul_iff, ofMul_toMul]
 
 /-- The `p`-power torsion of `A(L)`, as a submodule over any ring acting on it, is the additive
 form of its group torsion: every element of finite order has `p`-power order. -/

@@ -27,11 +27,11 @@ different embeddings `f` induce different structures, so none can be registered 
 
 ## Main results
 
-* `TauCeti.AlgHom.finrank_fieldRange`: `[L : f.fieldRange] = [L : K]`.
-* `TauCeti.AlgHom.finiteDimensional_of_fieldRange` and `AlgHom.isSeparable_of_fieldRange`:
+* `AlgHom.finrank_fieldRange`: `[L : f.fieldRange] = [L : K]`.
+* `AlgHom.finiteDimensional_of_fieldRange` and `AlgHom.isSeparable_of_fieldRange`:
   finiteness and separability over the range transfer to the source — the same identification
   read for a property rather than for a number.
-* `TauCeti.AlgHom.finSepDegree_fieldRange` and `TauCeti.AlgHom.finInsepDegree_fieldRange`: the
+* `AlgHom.finSepDegree_fieldRange` and `AlgHom.finInsepDegree_fieldRange`: the
   same for the separable and inseparable degrees. These are the `f.fieldRange` cases of the
   general transports in `TauCeti.FieldTheory.SeparableDegree`, which is where a caller holding
   some other surjectively-presented intermediate field should look.
@@ -39,7 +39,7 @@ different embeddings `f` induce different structures, so none can be registered 
 
 public section
 
-namespace TauCeti.AlgHom
+namespace AlgHom
 
 variable {F K L : Type*} [Field F] [Field K] [Field L] [Algebra F K] [Algebra F L]
 
@@ -53,7 +53,7 @@ theorem finrank_fieldRange (f : K →ₐ[F] L) [Algebra K L] (h : ∀ z, algebra
   have hsquare : (algebraMap f.fieldRange L).comp f.equivFieldRange.toRingEquiv.toRingHom =
       (RingEquiv.refl L).toRingHom.comp (algebraMap K L) := by
     ext z
-    exact (_root_.AlgHom.equivFieldRange_apply_coe f z).trans (h z).symm
+    exact (AlgHom.equivFieldRange_apply_coe f z).trans (h z).symm
   exact (Algebra.finrank_eq_of_equiv_equiv f.equivFieldRange.toRingEquiv (RingEquiv.refl L)
     hsquare).symm
 
@@ -70,7 +70,7 @@ theorem finiteDimensional_of_fieldRange (f : K →ₐ[F] L) [Algebra K L]
     FiniteDimensional K L :=
   Module.Finite.of_equiv_equiv f.equivFieldRange.toRingEquiv.symm (RingEquiv.refl L) <| by
     ext z
-    simpa [h] using (_root_.AlgHom.equivFieldRange_apply_coe f (f.equivFieldRange.symm z)).symm
+    simpa [h] using (AlgHom.equivFieldRange_apply_coe f (f.equivFieldRange.symm z)).symm
 
 /-- **The separable degree above the range of a field embedding equals the one above its
 source.** The `f.fieldRange` case of `Field.finSepDegree_eq_of_surjective`. -/
@@ -80,7 +80,7 @@ theorem finSepDegree_fieldRange (f : K →ₐ[F] L) [Algebra K L] (h : ∀ z, al
   have : IsScalarTower K f.fieldRange L :=
     IsScalarTower.of_algebraMap_eq fun z ↦ by
       rw [RingHom.algebraMap_toAlgebra]
-      exact (h z).trans (_root_.AlgHom.equivFieldRange_apply_coe f z).symm
+      exact (h z).trans (AlgHom.equivFieldRange_apply_coe f z).symm
   exact Field.finSepDegree_eq_of_surjective fun r ↦
     ⟨f.equivFieldRange.symm r, by
       rw [RingHom.algebraMap_toAlgebra]; exact f.equivFieldRange.apply_symm_apply r⟩
@@ -93,22 +93,16 @@ theorem finInsepDegree_fieldRange (f : K →ₐ[F] L) [Algebra K L] (h : ∀ z, 
   have : IsScalarTower K f.fieldRange L :=
     IsScalarTower.of_algebraMap_eq fun z ↦ by
       rw [RingHom.algebraMap_toAlgebra]
-      exact (h z).trans (_root_.AlgHom.equivFieldRange_apply_coe f z).symm
+      exact (h z).trans (AlgHom.equivFieldRange_apply_coe f z).symm
   exact Field.finInsepDegree_eq_of_surjective fun r ↦
     ⟨f.equivFieldRange.symm r, by
       rw [RingHom.algebraMap_toAlgebra]; exact f.equivFieldRange.apply_symm_apply r⟩
-
-end TauCeti.AlgHom
-
-namespace AlgHom
-
-variable {F K L : Type*} [Field F] [Field K] [Field L] [Algebra F K] [Algebra F L]
 
 /-- **Separability above the range of a field embedding transfers to its source.** The range
 restriction `f.equivFieldRange` is an isomorphism `K ≃ₐ[F] f.fieldRange` over `L`, and
 separability only depends on the subfield of `L` the scalars land in.
 
-The counterpart of `TauCeti.AlgHom.finiteDimensional_of_fieldRange` for separability: a caller
+The counterpart of `AlgHom.finiteDimensional_of_fieldRange` for separability: a caller
 who knows only that `L` is separable over the *range* — the form in which an intermediate field
 usually arrives — gets separability over `K` itself, which is what the theorems stated for an
 abstract extension take as an instance. -/

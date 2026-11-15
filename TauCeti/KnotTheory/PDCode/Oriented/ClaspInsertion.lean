@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.PDCode.ClaspInsertion
+public import TauCeti.KnotTheory.PDCode.ClaspInsertion.Planar
 
 /-!
 # Clasp insertion on oriented PD-codes
@@ -100,7 +100,7 @@ def insertClasp (D : OrientedPDCode n) (p q : Fin (4 * n)) (b : Bool) (hqp : q �
       | last => fin_cases slot <;> simp [oppositeCrossingSlot_apply]
       | cast i => simp
   crossinglessComponents := D.crossinglessComponents
-  crossinglessComponents_card := by simp
+  card_crossinglessComponents := by simp
 
 variable (D : OrientedPDCode n) (p q : Fin (4 * n)) (b : Bool) (hqp : q ≠ p)
   (hqe : q ≠ D.edgePair.val p)

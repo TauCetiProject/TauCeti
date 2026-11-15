@@ -120,10 +120,11 @@ which nothing here needs to be exposed. The parenthesized form elaborates the sa
 ordinary term, without that check.
 
 Continuity in the group variable (`continuous_homAction_apply`) needs only that `φ` itself be
-continuous, the two actions occurring in `g • φ (g⁻¹ • m)` being continuous by hypothesis, and
-`isOpen_setOfPred_homAction_eq_self` inherits that hypothesis; the discrete source of the intended
-setting enters only where it is discharged, in the `ContinuousSMul` instance, by
-`continuous_of_discreteTopology`.
+continuous, the two actions occurring in `g • φ (g⁻¹ • m)` being continuous by hypothesis, together
+with continuity of inversion. `isOpen_setOfPred_homAction_eq_self` does not need continuity of
+inversion, because `g` fixes `φ` exactly when `φ (g • m) = g • φ m` for every `m`; the discrete
+source of the intended setting enters only where `Continuous φ` is discharged, in the
+`ContinuousSMul` instance, by `continuous_of_discreteTopology`.
 
 `Representation.linHom` is the same conjugation construction for `k`-linear maps `V →ₗ[k] W` of
 bundled representations. It is not used as the definition here for two reasons. Its carrier is
@@ -136,18 +137,19 @@ the two constructions do agree, transported along `AddMonoidHom.toIntLinearMap`;
 not recorded here, because it would pull `Mathlib.RepresentationTheory.Basic` — and with it the
 tensor, matrix and dual stack — into a file the whole continuous-cohomology development imports.
 
-Mathlib puts no topology on `M →+ N`. Discreteness of the internal hom enters here through the
-discreteness of the ambient function space `M → N`, which is what
-`isOpen_setOfPred_homAction_eq_self` rests on. `InternalHom G M N` carries the discrete topology by
-definition, with no hypothesis on `M` or `N`: that is the intended topology in the discrete setting
-this file is written for, namely finite discrete `M` and discrete `N`, which is also the setting in
-which the action is proved continuous below. Those hypotheses are sufficient for that continuity,
-not necessary — if `G` acts trivially on both `M` and `N` then it acts trivially on `M →+ N`, so
-the action is continuous for an infinite `M` too — and it is sufficiency that is established here.
-(A trivial action on `M` alone does not suffice: the stabilizer of `φ` is then the intersection of
-the stabilizers of the values `φ m`, which for infinitely many `m` need not be open.) For infinite
-`M` the internal hom in the category of discrete `G`-modules is the sub-object of homomorphisms
-with open stabilizer, which is not `InternalHom G M N`; nothing here claims otherwise.
+Mathlib puts no topology on `M →+ N`. `InternalHom G M N` carries the discrete topology by
+definition, with no hypothesis on `M` or `N`; for finite `M` and discrete `N`, the stabilizer of
+each continuous `φ` is then open (`isOpen_setOfPred_homAction_eq_self`), a finite intersection of
+open sets, which gives continuity of the action. The discrete topology is the intended topology in
+the discrete setting this file is written for, namely finite discrete `M` and discrete `N`, which
+is also the setting in which the action is proved continuous below. Those hypotheses are
+sufficient for that continuity, not necessary — if `G` acts trivially on both `M` and `N` then it
+acts trivially on `M →+ N`, so the action is continuous for an infinite `M` too — and it is
+sufficiency that is established here. (A trivial action on `M` alone does not suffice: the
+stabilizer of `φ` is then the intersection of the stabilizers of the values `φ m`, which for
+infinitely many `m` need not be open.) For infinite `M` the internal hom in the category of
+discrete `G`-modules is the sub-object of homomorphisms with open stabilizer, which is not
+`InternalHom G M N`; nothing here claims otherwise.
 -/
 
 public section
@@ -281,19 +283,23 @@ theorem continuous_homAction_coe {φ : M →+ N} (hφ : Continuous φ) :
     Continuous fun g : G => ((homAction g φ : M →+ N) : M → N) :=
   continuous_pi fun m => continuous_homAction_apply hφ m
 
-/-- For a finite `M` and a discrete `N` the set of group elements fixing a continuous `φ` is open.
-Discreteness enters through the ambient function space `M → N`; as for the two continuity lemmas
-above, the source only has to be discrete where `Continuous φ` is discharged. This is what the
+omit [ContinuousInv G] in
+/-- For a finite `M` and a discrete `N` the set of group elements fixing a continuous `φ` is open,
+without any continuity of inversion on `G`. As for the two continuity lemmas above, the source only
+has to be discrete where `Continuous φ` is discharged. This is what the
 `ContinuousSMul G (InternalHom G M N)` instance below rests on, through
 `continuousSMul_iff_stabilizer_isOpen`. -/
 theorem isOpen_setOfPred_homAction_eq_self [Finite M] [DiscreteTopology N] {φ : M →+ N}
     (hφ : Continuous φ) : IsOpen {g : G | homAction g φ = φ} := by
-  have hset : {g : G | homAction g φ = φ}
-      = (fun g : G => ((homAction g φ : M →+ N) : M → N)) ⁻¹' {(φ : M → N)} := by
+  -- By `homAction_eq_self_iff` the set is the finite intersection of the sets where the continuous
+  -- maps `g ↦ φ (g • m)` and `g ↦ g • φ m` into the discrete `N` agree.
+  have hset : {g : G | homAction g φ = φ} = ⋂ m : M, {g : G | φ (g • m) = g • φ m} := by
     ext g
-    simp [DFunLike.coe_fn_eq]
+    simp [homAction_eq_self_iff]
   rw [hset]
-  exact (continuous_homAction_coe hφ).isOpen_preimage _ (isOpen_discrete _)
+  refine isOpen_iInter_of_finite fun m ↦ ?_
+  exact (isOpen_discrete {p : N × N | p.1 = p.2}).preimage
+    ((hφ.comp (continuous_id.smul continuous_const)).prodMk (continuous_id.smul continuous_const))
 
 end Topology
 
@@ -559,14 +565,21 @@ theorem precomp_injective {f : M →+[G] M'} (hf : Function.Surjective f) :
   obtain ⟨m, rfl⟩ := hf m'
   exact congrArg (fun χ : InternalHom G M N => evalPairing G χ m) h
 
+/-- Precomposition with `f` is surjective on internal homs as soon as every additive homomorphism
+`M →+ N` is the restriction along `f` of an additive homomorphism `M' →+ N`: the extension, with
+the conjugation action, is a preimage in the internal hom. -/
+theorem precomp_surjective_of_forall_exists_comp_eq {f : M →+[G] M'}
+    (h : ∀ φ : M →+ N, ∃ ψ : M' →+ N, ψ.comp f = φ) :
+    Function.Surjective (precomp G f (N := N)) := fun φ =>
+  let ⟨ψ, hψ⟩ := h φ.toAddMonoidHom
+  ⟨of G ψ, InternalHom.ext hψ⟩
+
 /-- Precomposition with a bijection is bijective: `Hom(-, N)` takes isomorphisms to isomorphisms.
 The inverse is precomposition with the inverse bijection. -/
 theorem precomp_bijective {f : M →+[G] M'} (hf : Function.Bijective f) :
     Function.Bijective (precomp G f (N := N)) :=
-  ⟨precomp_injective hf.2, fun φ =>
-    ⟨of G (φ.toAddMonoidHom.comp (AddEquiv.ofBijective (f : M →+ M') hf).symm.toAddMonoidHom),
-      InternalHom.ext (AddMonoidHom.ext fun m =>
-        congrArg φ.toAddMonoidHom ((AddEquiv.ofBijective (f : M →+ M') hf).symm_apply_apply m))⟩⟩
+  ⟨precomp_injective hf.2, precomp_surjective_of_forall_exists_comp_eq
+    (AddMonoidHom.compHom'_bijective (f := (f : M →+ M')) hf).2⟩
 
 end Precomp
 
@@ -680,12 +693,13 @@ end Restrict
 
 section Exact
 
-variable {G : Type*} [Group G] {M M' M'' : Type*} [AddMonoid M] [AddCommGroup M']
-  [AddCommGroup M''] [DistribMulAction G M] [DistribMulAction G M'] [DistribMulAction G M'']
+variable {G : Type*} [Group G] {M M' M'' : Type*} [AddMonoid M] [AddGroup M']
+  [AddGroup M''] [DistribMulAction G M] [DistribMulAction G M'] [DistribMulAction G M'']
   {N : Type*} [AddCommGroup N] [DistribMulAction G N]
 
 /-- Precomposition along an exact pair `f : M →+[G] M'`, `g : M' →+[G] M''` with `g` surjective is
-exact: a homomorphism on `M'` killing the image of `f` factors through `g`. -/
+exact: a homomorphism on `M'` killing the image of `f` factors through `g`. The groups
+`M'` and `M''` need not be commutative. -/
 theorem exact_precomp (f : M →+[G] M') (g : M' →+[G] M'') (hg : Function.Surjective g)
     (hfg : Function.Exact f g) :
     Function.Exact (precomp G g (N := N)) (precomp G f) := by
@@ -712,15 +726,6 @@ section Surjective
 variable {G : Type*} [Group G] {M M' : Type*} [AddCommGroup M] [AddCommGroup M']
   [DistribMulAction G M] [DistribMulAction G M'] {N : Type*} [AddCommMonoid N]
   [DistribMulAction G N]
-
-/-- Precomposition with `f` is surjective on internal homs as soon as every additive homomorphism
-`M →+ N` is the restriction along `f` of an additive homomorphism `M' →+ N`: the extension, with
-the conjugation action, is a preimage in the internal hom. -/
-theorem precomp_surjective_of_forall_exists_comp_eq {f : M →+[G] M'}
-    (h : ∀ φ : M →+ N, ∃ ψ : M' →+ N, ψ.comp f = φ) :
-    Function.Surjective (precomp G f (N := N)) := fun φ =>
-  let ⟨ψ, hψ⟩ := h φ.toAddMonoidHom
-  ⟨of G ψ, InternalHom.ext hψ⟩
 
 /-- Precomposition with an injection into a module killed by a prime `p` is surjective, for any
 `N`: `Hom(-, N)` is exact on the modules killed by `p`. This is

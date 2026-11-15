@@ -30,12 +30,14 @@ commutator action of Clifford bivectors, rather than by expanding a matrix commu
 * `CliffordAlgebra.bivectorEquivSo`: the standard exterior-bivector Lie equivalence.
 * `CliffordAlgebra.bivectorEquivSo_apply_ιMulti`: its value on a decomposable bivector.
 * `CliffordAlgebra.bivectorEquivSo_symm_repr_apply`: the coefficients of its inverse.
+* `CliffordAlgebra.ι_bivectorEquivSo_mulVec_of_polar`: its Clifford action for any form with
+  the standard polar pairing.
+* `CliffordAlgebra.ι_bivectorEquivSo_mulVec`: its Clifford action for the standard form.
 * `CliffordAlgebra.bivectorEquivSo_apply_ιMulti_mulVec`: its normalized action on a vector.
 
 ## References
 
-This implements the Layer 3 "Bivectors are `𝔰𝔬(V)`" target in
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md`.
+* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, Section 2.
 -/
 
 public section
@@ -252,14 +254,38 @@ private theorem standardBivectorToSoLinear_mulVec (u v x : Fin n → R) :
   simp [dotProduct]
   ring
 
-private theorem ι_standardBivectorToSoLinear_mulVec
+/-- The generator case of `ι_standardBivectorToSoLinear_mulVec_of_polar`: the identity for a
+decomposable exterior square `u 0 ∧ u 1`. -/
+private theorem ι_standardBivectorToSoLinear_mulVec_ιMulti_of_polar
+    (Q : QuadraticForm R (Fin n → R))
+    (hpolar : ∀ a b, QuadraticMap.polar Q a b = 2 * ∑ i, a i * b i)
+    (u : Fin 2 → Fin n → R) (y : Fin n → R) :
+    ι Q ((((standardBivectorToSoLinear n R (exteriorPower.ιMulti R 2 u) :
+      LieAlgebra.Orthogonal.so (Fin n) R) : Matrix (Fin n) (Fin n) R) *ᵥ y)) =
+      ⁅((bivectorExteriorEquivQuadraticLieSubalgebra Q (exteriorPower.ιMulti R 2 u) :
+        quadraticLieSubalgebra Q) : CliffordAlgebra Q), ι Q y⁆ := by
+  have hu : u = ![u 0, u 1] := by
+    funext i
+    fin_cases i <;> rfl
+  rw [hu]
+  rw [standardBivectorToSoLinear_mulVec, map_sub, map_smul, map_smul]
+  -- Expose the quadratic-subalgebra coercion before applying its public equation.
+  change _ =
+    ⁅((bivectorExteriorEquivQuadraticLieSubalgebra Q
+        (exteriorPower.ιMulti R 2 ![u 0, u 1]) :
+      quadraticLieSubalgebra Q) : CliffordAlgebra Q), ι Q y⁆
+  rw [coe_bivectorExteriorEquivQuadraticLieSubalgebra_apply,
+    bivectorExterior_apply_ιMulti, bivector_lie_ι]
+  rw [hpolar, hpolar, map_sub, map_smul, map_smul]
+
+private theorem ι_standardBivectorToSoLinear_mulVec_of_polar
+    (Q : QuadraticForm R (Fin n → R))
+    (hpolar : ∀ a b, QuadraticMap.polar Q a b = 2 * ∑ i, a i * b i)
     (x : ⋀[R]^2 (Fin n → R)) (y : Fin n → R) :
-    let Q := QuadraticMap.weightedSumSquares R (1 : Fin n → R)
     ι Q ((((standardBivectorToSoLinear n R x :
       LieAlgebra.Orthogonal.so (Fin n) R) : Matrix (Fin n) (Fin n) R) *ᵥ y)) =
       ⁅((bivectorExteriorEquivQuadraticLieSubalgebra Q x :
         quadraticLieSubalgebra Q) : CliffordAlgebra Q), ι Q y⁆ := by
-  let Q := QuadraticMap.weightedSumSquares R (1 : Fin n → R)
   let lhs : ⋀[R]^2 (Fin n → R) →ₗ[R] CliffordAlgebra Q :=
     { toFun := fun z =>
         ι Q ((((standardBivectorToSoLinear n R z :
@@ -305,30 +331,20 @@ private theorem ι_standardBivectorToSoLinear_mulVec
   apply exteriorPower.linearMap_ext
   apply AlternatingMap.ext
   intro u
-  have hu : u = ![u 0, u 1] := by
-    funext i
-    fin_cases i <;> rfl
-  rw [hu]
-  -- Expose the local quadratic form and the decomposable exterior generator.
-  change ι Q
-      ((((standardBivectorToSoLinear n R (exteriorPower.ιMulti R 2 ![u 0, u 1]) :
-        LieAlgebra.Orthogonal.so (Fin n) R) : Matrix (Fin n) (Fin n) R) *ᵥ y)) = _
-  rw [standardBivectorToSoLinear_mulVec, map_sub, map_smul, map_smul]
-  -- Expose the quadratic-subalgebra coercion before applying its public equation.
-  change _ =
-    ⁅((bivectorExteriorEquivQuadraticLieSubalgebra Q
-        (exteriorPower.ιMulti R 2 ![u 0, u 1]) :
-      quadraticLieSubalgebra Q) : CliffordAlgebra Q), ι Q y⁆
-  rw [coe_bivectorExteriorEquivQuadraticLieSubalgebra_apply,
-    bivectorExterior_apply_ιMulti, bivector_lie_ι]
-  have hpolar (a b : Fin n → R) : QuadraticMap.polar Q a b =
-      2 * ∑ i, a i * b i := by
-    -- Expose the local standard form so its named polar-form equation applies.
-    change QuadraticMap.polar (QuadraticMap.weightedSumSquares R (1 : Fin n → R)) a b = _
-    rw [← QuadraticMap.polarBilin_apply_apply,
-      QuadraticForm.polarBilin_weightedSumSquares_one]
-    simp [Matrix.toLinearMap₂'_apply, Matrix.one_apply]
-  rw [hpolar, hpolar, map_sub, map_smul, map_smul]
+  exact ι_standardBivectorToSoLinear_mulVec_ιMulti_of_polar n R Q hpolar u y
+
+private theorem ι_standardBivectorToSoLinear_mulVec
+    (x : ⋀[R]^2 (Fin n → R)) (y : Fin n → R) :
+    let Q := QuadraticMap.weightedSumSquares R (1 : Fin n → R)
+    ι Q ((((standardBivectorToSoLinear n R x :
+      LieAlgebra.Orthogonal.so (Fin n) R) : Matrix (Fin n) (Fin n) R) *ᵥ y)) =
+      ⁅((bivectorExteriorEquivQuadraticLieSubalgebra Q x :
+        quadraticLieSubalgebra Q) : CliffordAlgebra Q), ι Q y⁆ := by
+  apply ι_standardBivectorToSoLinear_mulVec_of_polar
+  intro a b
+  rw [← QuadraticMap.polarBilin_apply_apply,
+    QuadraticForm.polarBilin_weightedSumSquares_one]
+  simp [Matrix.toLinearMap₂'_apply, Matrix.one_apply]
 
 private noncomputable def standardQuadraticToSoLinearEquiv :
     let Q := QuadraticMap.weightedSumSquares R (1 : Fin n → R)
@@ -385,7 +401,6 @@ private theorem standardQuadraticToSoLinearEquiv_map_lie
 private noncomputable def standardQuadraticToSoLieEquiv :
     let Q := QuadraticMap.weightedSumSquares R (1 : Fin n → R)
     quadraticLieSubalgebra Q ≃ₗ⁅R⁆ LieAlgebra.Orthogonal.so (Fin n) R := by
-  let Q := QuadraticMap.weightedSumSquares R (1 : Fin n → R)
   let e := standardQuadraticToSoLinearEquiv n R
   exact LieEquiv.mk
     { toLinearMap := e.toLinearMap
@@ -421,6 +436,35 @@ private theorem bivectorEquivSo_apply (x : ⋀[R]^2 (Fin n → R)) :
       ((bivectorExteriorEquivQuadraticLieSubalgebra Q).symm
         (bivectorLieEquiv Q x)) = _
   rw [bivectorLieEquiv_apply, LinearEquiv.symm_apply_apply]
+
+/-- If a quadratic form has the standard polar pairing, the standard bivector-to-skew
+equivalence acts on Clifford generators by the corresponding Clifford commutator. -/
+theorem ι_bivectorEquivSo_mulVec_of_polar (Q : QuadraticForm R (Fin n → R))
+    (hpolar : ∀ a b, QuadraticMap.polar Q a b = 2 * ∑ i, a i * b i)
+    (x : ⋀[R]^2 (Fin n → R)) (y : Fin n → R) :
+    ι Q ((((bivectorEquivSo n R x :
+      LieAlgebra.Orthogonal.so (Fin n) R) : Matrix (Fin n) (Fin n) R) *ᵥ y)) =
+      ⁅((bivectorExteriorEquivQuadraticLieSubalgebra Q x :
+        quadraticLieSubalgebra Q) : CliffordAlgebra Q), ι Q y⁆ := by
+  rw [bivectorEquivSo_apply]
+  exact ι_standardBivectorToSoLinear_mulVec_of_polar n R Q hpolar x y
+
+/-- The standard bivector-to-skew equivalence acts on Clifford generators by the corresponding
+Clifford commutator. -/
+theorem ι_bivectorEquivSo_mulVec
+    (x : ⋀[R]^2 (Fin n → R)) (y : Fin n → R) :
+    let Q := QuadraticMap.weightedSumSquares R (1 : Fin n → R)
+    letI := bivectorLieRing Q
+    letI := bivectorLieAlgebra Q
+    ι Q ((((bivectorEquivSo n R x :
+      LieAlgebra.Orthogonal.so (Fin n) R) : Matrix (Fin n) (Fin n) R) *ᵥ y)) =
+      ⁅((bivectorExteriorEquivQuadraticLieSubalgebra Q x :
+        quadraticLieSubalgebra Q) : CliffordAlgebra Q), ι Q y⁆ := by
+  apply ι_bivectorEquivSo_mulVec_of_polar
+  intro a b
+  rw [← QuadraticMap.polarBilin_apply_apply,
+    QuadraticForm.polarBilin_weightedSumSquares_one]
+  simp [Matrix.toLinearMap₂'_apply, Matrix.one_apply]
 
 /-- On a decomposable bivector, `bivectorEquivSo` is the normalized skew matrix
 `2 * (u vᵀ - v uᵀ)`. -/

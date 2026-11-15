@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 /-!
 # Norms of integral lattices
@@ -31,9 +33,15 @@ the integral norm on the carrier.
 ## Main results
 
 * `TauCeti.IntegralLattice.norm_apply`: evaluating the rational norm yields self-pairing.
+* `TauCeti.IntegralLattice.nondegenerate_norm`: the rational norm of a nondegenerate lattice is
+  nondegenerate.
+* `TauCeti.IntegralLattice.isNondegenerate_of_anisotropic`: a lattice with anisotropic rational
+  norm form is nondegenerate.
 * `TauCeti.IntegralLattice.integralNorm_apply`: evaluating the integral norm yields
   integral self-pairing.
 * `TauCeti.IntegralLattice.integralNorm_cast`: the integral norm recovers the rational norm in `ℚ`.
+* `TauCeti.IntegralLattice.exists_integralNorm_ne_zero`: a nondegenerate lattice in a nonzero
+  space has a vector of nonzero norm.
 * `TauCeti.IntegralLattice.Isometry.normIsometryEquiv`: the norm-form isometry induced by a lattice
   isometry.
 * `TauCeti.IntegralLattice.norm_add`: polarization identity for the rational norm.
@@ -41,15 +49,14 @@ the integral norm on the carrier.
 * `TauCeti.IntegralLattice.integralNorm_add`: polarization identity for the integral norm.
 * `TauCeti.IntegralLattice.integralNorm_sub`: subtractive polarization identity for the integral
   norm.
-* `TauCeti.IntegralLattice.mem_vectorsOfNorm_intCast` and
-  `TauCeti.IntegralLattice.mem_vectorsOfNorm_natCast`: characterization of integer-norm vectors.
+* `TauCeti.IntegralLattice.mem_vectorsOfNorm_intCast`,
+  `TauCeti.IntegralLattice.mem_vectorsOfNorm_natCast`, and
+  `TauCeti.IntegralLattice.mem_vectorsOfNorm_one_iff`: characterization of integer-norm vectors.
 
 ## References
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean`
 -/
 
 public section
@@ -72,6 +79,18 @@ def norm (L : IntegralLattice V) : QuadraticForm ℚ V := L.form.toQuadraticMap
 theorem norm_def (L : IntegralLattice V) :
     L.norm = L.form.toQuadraticMap :=
   (rfl)
+
+/-- The ambient rational norm form of a nondegenerate integral lattice is nondegenerate. -/
+theorem nondegenerate_norm (L : IntegralLattice V) [L.IsNondegenerate] :
+    L.norm.Nondegenerate := by
+  rw [norm_def]
+  exact L.form_nondegenerate.toQuadraticMap L.form_flip
+
+/-- A lattice with anisotropic rational norm form is nondegenerate. -/
+theorem isNondegenerate_of_anisotropic {L : IntegralLattice V} (h : L.norm.Anisotropic) :
+    L.IsNondegenerate :=
+  ⟨(LinearMap.IsRefl.nondegenerate_iff_separatingLeft L.isSymm.isRefl).mpr
+    (LinearMap.BilinForm.separatingLeft_of_anisotropic (by rwa [← norm_def]))⟩
 
 -- The evaluation and negation identities below remain explicit rewrite lemmas. Registering them
 -- with `simp` makes the specialized cast, zero, and scaling rules fail the `simpNF` linter.
@@ -218,6 +237,11 @@ theorem mem_vectorsOfNorm_natCast (L : IntegralLattice V) {n : ℕ} {x : L} :
     x ∈ L.vectorsOfNorm (n : ℚ) ↔ L.integralNorm x = n := by
   rw [← Int.cast_natCast, L.mem_vectorsOfNorm_intCast]
 
+/-- A lattice vector has norm one if and only if its integral pairing with itself is one. -/
+theorem mem_vectorsOfNorm_one_iff (L : IntegralLattice V) {x : L} :
+    x ∈ L.vectorsOfNorm 1 ↔ L.integralForm x x = 1 := by
+  rw [← Int.cast_one (R := ℚ), L.mem_vectorsOfNorm_intCast, integralNorm_apply]
+
 /-- The zero vector in an integral lattice has norm zero. -/
 theorem zero_mem_vectorsOfNorm (L : IntegralLattice V) : (0 : L) ∈ L.vectorsOfNorm 0 := by
   simp
@@ -226,6 +250,18 @@ theorem zero_mem_vectorsOfNorm (L : IntegralLattice V) : (0 : L) ∈ L.vectorsOf
 theorem neg_mem_vectorsOfNorm_iff {L : IntegralLattice V} {n : ℚ} (x : L) :
     -x ∈ L.vectorsOfNorm n ↔ x ∈ L.vectorsOfNorm n := by
   simp [mem_vectorsOfNorm]
+
+/-- Negation has no fixed point on a shell of nonzero norm. -/
+theorem neg_ne_self_of_mem_vectorsOfNorm {L : IntegralLattice V} {n : ℚ} (hn : n ≠ 0)
+    {x : L} (hx : x ∈ L.vectorsOfNorm n) : -x ≠ x := by
+  intro h
+  have hz : (2 : ℚ) • (x : V) = 0 := by
+    calc
+      (2 : ℚ) • (x : V) = (x : V) + x := two_smul ℚ (x : V)
+      _ = -(x : V) + x := congrArg (· + (x : V)) (congrArg Subtype.val h).symm
+      _ = 0 := neg_add_cancel _
+  have hx0 : x = 0 := Subtype.ext ((smul_eq_zero.mp hz).resolve_left (by norm_num))
+  exact hn (by simpa [hx0] using (mem_vectorsOfNorm.mp hx).symm)
 
 -- This membership transport is not registered with `simp`: `mem_vectorsOfNorm`,
 -- `coe_carrierEquiv_apply`, and `Isometry.norm_apply` already prove it, so tagging it fails the
@@ -245,6 +281,24 @@ theorem vectorsOfNorm_eq_empty_of_forall_ne_intCast (L : IntegralLattice V) {n :
   simp only [mem_vectorsOfNorm, Set.mem_empty_iff_false, iff_false]
   intro hx
   exact hn (L.integralNorm x) (hx.symm.trans (L.integralNorm_cast x).symm)
+
+/-- **A nondegenerate lattice in a nonzero space has a vector of nonzero norm.** -/
+theorem exists_integralNorm_ne_zero (L : IntegralLattice V) [L.IsNondegenerate] [Nontrivial V] :
+    ∃ x : L, L.integralNorm x ≠ 0 := by
+  by_contra! h
+  -- Otherwise the form vanishes on the lattice by polarization, hence on its rational span.
+  have hnorm (x : L) : L.norm x = 0 := by
+    rw [← integralNorm_cast, h x, Int.cast_zero]
+  have hform (x y : L) : L.form x y = 0 := by
+    have hxy := L.norm_add x y
+    rw [← Submodule.coe_add, hnorm, hnorm, hnorm] at hxy
+    linarith
+  have hzero : L.form = 0 := LinearMap.BilinForm.ext_basis L.rationalBasis fun i j ↦ by
+    rw [rationalBasis_apply, rationalBasis_apply, hform, LinearMap.zero_apply,
+      LinearMap.zero_apply]
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  exact hv (L.form_nondegenerate.1 v fun w ↦ by rw [hzero, LinearMap.zero_apply,
+    LinearMap.zero_apply])
 
 end IntegralLattice
 

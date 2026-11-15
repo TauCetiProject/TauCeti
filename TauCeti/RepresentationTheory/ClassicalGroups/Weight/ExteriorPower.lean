@@ -74,8 +74,8 @@ separate weights, in the sense that `l ↦ weightChar k l` is injective;
 false: over `𝔽₂` the diagonal torus of `GL n 𝔽₂` is trivial, so every weight space of every
 representation is everything.
 
-The eigenvector computation itself is `exteriorPower.map_basis_exteriorPower_of_apply_basis`, the
-exterior-power analogue of `SymmetricPower.map_basis_symmetricPower_of_apply_basis`; it is what
+The eigenvector computation itself is `Module.Basis.map_exteriorPower_of_apply`, the
+exterior-power analogue of `Module.Basis.map_symmetricPower_of_apply`; it is what
 `TauCeti.char_extPowerRep_diagonal` sums to get the elementary symmetric polynomial, and the
 weight-space statements here refine that character identity to the decomposition behind it.
 
@@ -142,7 +142,7 @@ theorem extPowerRep_diagGL_apply_basis (t : Fin n → kˣ) (s : Set.powersetCard
     extPowerRep k n d (diagGL t) ((Pi.basisFun k (Fin n)).exteriorPower d s) =
       (∏ i ∈ (s : Finset (Fin n)), (t i : k)) • (Pi.basisFun k (Fin n)).exteriorPower d s := by
   rw [Representation.exteriorPower_apply,
-    exteriorPower.map_basis_exteriorPower_of_apply_basis (Pi.basisFun k (Fin n))
+    (Pi.basisFun k (Fin n)).map_exteriorPower_of_apply
       (stdRep k n (diagGL t)) (fun i => (t i : k)) (stdRep_diagGL_apply_basisFun t) d s]
 
 /-- The wedge of the standard basis vectors indexed by `s` has weight the indicator of `s`. -/

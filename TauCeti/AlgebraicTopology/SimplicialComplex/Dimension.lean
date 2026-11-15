@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ENat.Lattice
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
+import Mathlib.Data.Nat.Cast.Order.Basic
 
 /-!
 # The dimension of an abstract simplicial complex
@@ -19,15 +20,12 @@ no singleton requirement) and for `AbstractSimplicialComplex`.
 Following the convention Mathlib uses for `Order.krullDim`, the dimension takes values in
 `WithBot ℕ∞`: the empty complex `⊥` has dimension `⊥` (the "`-1`" of the void complex), a complex
 whose faces have unbounded cardinality has dimension `⊤`, and a finite-dimensional nonempty complex
-has an honest natural-number dimension. This is the primitive the layer-11 combinatorial-manifold
-recursion is indexed against: a combinatorial `n`-sphere or `n`-ball is an `n`-dimensional complex,
-and the boundary of the standard `(n + 1)`-simplex — computed here to have dimension `n` — is the
-base model of that recursion.
+has an honest natural-number dimension. Combinatorial manifolds are indexed by this dimension: a
+combinatorial `n`-sphere or `n`-ball is an `n`-dimensional complex, and the boundary of the
+standard `(n + 1)`-simplex — computed here to have dimension `n` — is the model combinatorial
+`n`-sphere.
 
 The definitions follow Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2.
-This supplements the basic API (faces, the star and link of a simplex) that the geometric-topology
-roadmap (`TauCetiRoadmap/GeometricTopology/README.md`, layer 11) asks for on top of Mathlib's
-`AbstractSimplicialComplex`.
 
 ## Main definitions
 
@@ -82,6 +80,21 @@ theorem le_dimension (hσ : σ ∈ K) : ((σ.card - 1 : ℕ) : WithBot ℕ∞) �
 theorem dimension_le_iff {n : WithBot ℕ∞} :
     dimension K ≤ n ↔ ∀ σ ∈ K, ((σ.card - 1 : ℕ) : WithBot ℕ∞) ≤ n := by
   simp only [dimension, iSup_le_iff]
+
+/-- A precomplex has dimension at most zero exactly when every face is a singleton.
+The void complex is allowed. -/
+theorem dimension_le_zero_iff :
+    dimension K ≤ 0 ↔ ∀ σ ∈ K, ∃ v, σ = {v} := by
+  constructor
+  · intro h σ hσ
+    have hle := (dimension_le_iff.mp h) σ hσ
+    have hcard : σ.card - 1 ≤ 0 := by exact_mod_cast hle
+    have hpos := Finset.card_pos.mpr (K.isRelLowerSet_faces hσ).1
+    exact Finset.card_eq_one.mp (by omega)
+  · intro h
+    refine dimension_le_iff.mpr fun σ hσ => ?_
+    obtain ⟨v, rfl⟩ := h σ hσ
+    simp
 
 /-- Dimension is monotone in the complex. -/
 theorem dimension_mono (h : K ≤ L) : dimension K ≤ dimension L :=
@@ -334,3 +347,35 @@ theorem dimension_top_eq_top_of_infinite [Infinite ι] :
   exact PreAbstractSimplicialComplex.dimension_top_eq_top_of_infinite
 
 end AbstractSimplicialComplex
+
+namespace TauCeti.PreAbstractSimplicialComplex
+
+/-- A nonempty family of generators with `n + 1` vertices generates an `n`-dimensional
+precomplex. -/
+theorem dimension_ofGenerators {ι : Type*} {T : Set (Finset ι)} {n : ℕ}
+    (hcard : ∀ t ∈ T, t.card = n + 1) (hne : T.Nonempty) :
+    _root_.PreAbstractSimplicialComplex.dimension (ofGenerators T) = n := by
+  refine le_antisymm (_root_.PreAbstractSimplicialComplex.dimension_le_iff.mpr fun σ hσ => ?_) ?_
+  · obtain ⟨-, t, ht, hσt⟩ := mem_ofGenerators.mp hσ
+    have hle := Finset.card_le_card hσt
+    rw [hcard t ht] at hle
+    exact_mod_cast (by omega : σ.card - 1 ≤ n)
+  · obtain ⟨t, ht⟩ := hne
+    have htne : t.Nonempty := Finset.card_pos.mp (by rw [hcard t ht]; omega)
+    simpa [hcard t ht] using
+      _root_.PreAbstractSimplicialComplex.le_dimension (mem_ofGenerators_of_mem ht htne)
+
+end TauCeti.PreAbstractSimplicialComplex
+
+namespace TauCeti.AbstractSimplicialComplex
+
+/-- A nonempty family of generators with `n + 1` vertices generates an `n`-dimensional complex. -/
+theorem dimension_ofGenerators {ι : Type*} {T : Set (Finset ι)}
+    {hcover : ∀ v, ∃ t ∈ T, v ∈ t} {n : ℕ}
+    (hcard : ∀ t ∈ T, t.card = n + 1) (hne : T.Nonempty) :
+    _root_.AbstractSimplicialComplex.dimension (ofGenerators T hcover) = n := by
+  rw [← _root_.AbstractSimplicialComplex.dimension_toPreAbstractSimplicialComplex,
+    toPreAbstractSimplicialComplex_ofGenerators]
+  exact PreAbstractSimplicialComplex.dimension_ofGenerators hcard hne
+
+end TauCeti.AbstractSimplicialComplex

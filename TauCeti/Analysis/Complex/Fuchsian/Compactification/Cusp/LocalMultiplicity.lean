@@ -38,12 +38,11 @@ theorem localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex [Discrete
     (hσ : D.scaling = E.scaling) :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     localMultiplicity (compactifiedQuotientMap h) (ofCusp D.cuspOrbit) =
-      widthIndex h D E (D.cusp_eq_of_scaling_eq E hσ) hσ := by
+      widthIndex h D E hσ := by
   have : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   let hc : D.cusp = E.cusp := D.cusp_eq_of_scaling_eq E hσ
-  let n := widthIndex h D E hc hσ
-  have hn : 0 < n := widthIndex_pos h D E hc hσ
-  have hw : D.width = n * E.width := width_eq_widthIndex_mul h D E hc hσ
+  let n := widthIndex h D E hσ
+  have hw : D.width = n * E.width := width_eq_widthIndex_mul h D E hσ
   have hD : D.width ≤ D.width := le_rfl
   have hE : E.width ≤ D.width := width_le_of_width_eq_nat_mul D E hw hD
   let e := cuspChart D hD
@@ -70,10 +69,10 @@ theorem localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex [Discrete
     filter_upwards [hex ▸ e.open_target.mem_nhds (e.map_source hxe)] with z hz
     have hz' : e.symm z ∈ cuspNhd D D.width := by
       simpa [e] using e.map_target hz
-    rw [cuspChart_compactifiedQuotientMap_eq_pow_widthIndex h D E hc hσ hD hz']
+    rw [cuspChart_compactifiedQuotientMap_eq_pow_widthIndex h D E hσ hD hz']
     simp [e, n, e.right_inv hz]
   exact localMultiplicity_eq_of_coordinate_eventuallyEq_pow_zero
-    he he' hxe hfxe hf hn hex hefx hpow
+    he he' hxe hfxe hf hex hefx hpow
 
 /-- The local multiplicity of a compactified quotient map at the orbit of a cusp point `c` is the
 relative index of the smaller group in the stabilizer of `c` in the larger group, that is,

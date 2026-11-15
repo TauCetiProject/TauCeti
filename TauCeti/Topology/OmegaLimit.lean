@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Dynamics.Flow
 public import Mathlib.Topology.ClusterPt
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Order.IntermediateValue
 public import TauCeti.Topology.Continuum
+import Mathlib.Dynamics.OmegaLimit
+import TauCeti.Topology.Connected.TotallyDisconnected
 
 /-!
 # The ω-limit set of a curve
@@ -45,12 +48,15 @@ locus, to be a single point.
   the closures of its tails.
 * `TauCeti.isPreconnected_setOf_mapClusterPt_atTop` — the ω-limit set of such a curve, continuous
   on the half-line carrying that tail, is preconnected.
+* `TauCeti.exists_tendsto_atTop_of_setOf_mapClusterPt_subset_of_isTotallyDisconnected` — such a
+  curve whose ω-limit set lies in a totally disconnected set converges to a point of that set.
+* `TauCeti.exists_tendsto_atTop_of_setOf_mapClusterPt_subset` — the case of a finite set.
+* `Flow.mapClusterPt_atTop_flow` — the ω-limit set of an orbit of a flow of `ℝ` is invariant
+  under the flow.
 
 ## References
 
 * M. Audin, M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014, Chapter 2.
-* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
-  Lane M, "Morse homology".
 -/
 
 public section
@@ -94,4 +100,46 @@ theorem isPreconnected_setOf_mapClusterPt_atTop [T2Space X] (hK : IsCompact K)
   · exact ((isPreconnected_Ici (a := (T : ℝ))).image u
       (hu.mono (Ici_subset_Ici.mpr (mem_Ici.mp T.2)))).closure
 
+/-- **A curve whose ω-limit points lie in a totally disconnected set converges.** If a curve,
+continuous on a half-line `[a, ∞)`, maps it into a compact set and its ω-limit set lies in a totally
+disconnected set `C`, then it converges to a point of `C`: its ω-limit set is nonempty and
+preconnected, hence a single point. This applies for instance when the points of `C` are isolated
+in `C` (`IsDiscrete C`), as for the nondegenerate periodic orbits of a time-periodic vector field
+in the space of loops. -/
+theorem exists_tendsto_atTop_of_setOf_mapClusterPt_subset_of_isTotallyDisconnected [T2Space X]
+    (hK : IsCompact K) (hu : ContinuousOn u (Ici a)) (hmaps : MapsTo u (Ici a) K) {C : Set X}
+    (hC : IsTotallyDisconnected C) (hsub : {x | MapClusterPt x atTop u} ⊆ C) :
+    ∃ x ∈ C, Tendsto u atTop (𝓝 x) := by
+  have hev : ∀ᶠ t in atTop, u t ∈ K := by
+    filter_upwards [eventually_ge_atTop a] with t ht using hmaps ht
+  obtain ⟨p, -, hp⟩ := hK.exists_mapClusterPt (tendsto_principal.mpr hev)
+  have hone : ∀ x ∈ K, MapClusterPt x atTop u → x = p := fun x _ hx ↦
+    hC _ hsub (isPreconnected_setOf_mapClusterPt_atTop hK hu hmaps) hx hp
+  exact ⟨p, hsub hp, hK.tendsto_nhds_of_unique_mapClusterPt hev hone⟩
+
+/-- **A curve with finitely many ω-limit points converges.** If a curve, continuous on a half-line
+`[a, ∞)`, maps it into a compact set and its ω-limit set lies in a finite set `C`, then it
+converges to a point of `C`: its ω-limit set is nonempty and preconnected, hence a single point. -/
+theorem exists_tendsto_atTop_of_setOf_mapClusterPt_subset [T2Space X] (hK : IsCompact K)
+    (hu : ContinuousOn u (Ici a)) (hmaps : MapsTo u (Ici a) K) {C : Set X} (hC : C.Finite)
+    (hsub : {x | MapClusterPt x atTop u} ⊆ C) : ∃ x ∈ C, Tendsto u atTop (𝓝 x) :=
+  exists_tendsto_atTop_of_setOf_mapClusterPt_subset_of_isTotallyDisconnected hK hu hmaps
+    hC.isDiscrete.isTotallyDisconnected hsub
+
 end TauCeti
+
+namespace Flow
+
+open Filter Topology
+
+/-- **The ω-limit set of an orbit of a flow is invariant.** If `z` is a cluster point at `+∞` of
+the orbit `t ↦ φ t y` of a flow of `ℝ`, so is `φ s z` for every time `s`. This is Mathlib's
+`Flow.isInvariant_omegaLimit` for the ω-limit set of the single point `y`. -/
+theorem mapClusterPt_atTop_flow {α : Type*} [TopologicalSpace α] {φ : Flow ℝ α} {y z : α}
+    (hz : MapClusterPt z atTop fun t ↦ φ t y) (s : ℝ) :
+    MapClusterPt (φ s z) atTop fun t ↦ φ t y := by
+  have hω := (mem_omegaLimit_singleton_iff_mapClusterPt (f := atTop) (ϕ := φ) y z).2 hz
+  exact (mem_omegaLimit_singleton_iff_mapClusterPt (f := atTop) (ϕ := φ) y _).1
+    (isInvariant_omegaLimit atTop φ {y} (fun t ↦ tendsto_atTop_add_const_left _ t tendsto_id) s hω)
+
+end Flow

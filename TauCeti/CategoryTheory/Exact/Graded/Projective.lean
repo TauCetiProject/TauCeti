@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Graded.Resolution
-public import TauCeti.CategoryTheory.Exact.Projective
+public import TauCeti.CategoryTheory.Exact.Resolution.Comparison
+public import TauCeti.CategoryTheory.Exact.Resolution.Horseshoe
 
 /-!
 # Projectives and projective resolutions in a graded exact category
@@ -21,6 +22,11 @@ term. In particular, the objects of finite projective dimension form a shift-sta
 These facts are the projective input to graded comparison and horseshoe constructions and to the
 graded resolution theorem.
 
+The comparison maps between finite projective resolutions are compatible with the shift: the
+complex of a shifted resolution is the shifted complex, and under this identification the lift of
+`f{1}` is homotopic to the shift of the lift of `f`. This is the graded comparison theorem; as in
+the ungraded case it holds only up to homotopy, since the lift itself is a choice.
+
 ## Main results
 
 * `TauCeti.GradedExactStructure.isProjective_shift_iff`: projectivity is invariant under the
@@ -31,6 +37,12 @@ graded resolution theorem.
   resolution term by term.
 * `TauCeti.GradedExactStructure.admitsFiniteProjectiveResolution_inverseImage_shift`: finite
   projective dimension is invariant under the grading shift.
+* `TauCeti.ExactStructure.FiniteResolution.toChainComplexShiftProjectiveIso`: the complex of a
+  shifted finite projective resolution is the shift of its complex.
+* `TauCeti.ExactStructure.FiniteResolution.liftShiftHomotopy`: **the graded comparison
+  theorem**, the comparison map commutes with the grading shift up to homotopy.
+* `TauCeti.ExactStructure.FiniteResolution.Horseshoe.shift`: shift a finite projective
+  horseshoe, including its augmentation-compatible chain maps.
 
 ## References
 
@@ -225,6 +237,170 @@ def inverseShiftProjective
     r.inverseShiftProjective.length = r.length := by
   simp [inverseShiftProjective]
 
+/-- The complex of the shift of a finite projective resolution is the shift of its complex. -/
+noncomputable def toChainComplexShiftProjectiveIso
+    (r : E.toExactStructure.FiniteResolution E.isProjective X) :
+    r.shiftProjective.toChainComplex ≅
+      (E.shift.functor.mapHomologicalComplex _).obj r.toChainComplex :=
+  toChainComplexMapIso _ _ r
+
+/-- The complex of the inverse shift of a finite projective resolution is the inverse shift of
+its complex. -/
+noncomputable def toChainComplexInverseShiftProjectiveIso
+    (r : E.toExactStructure.FiniteResolution E.isProjective X) :
+    r.inverseShiftProjective.toChainComplex ≅
+      (E.shift.inverse.mapHomologicalComplex _).obj r.toChainComplex :=
+  let _ : E.shift.symm.functor.Additive := inferInstanceAs E.shift.inverse.Additive
+  toChainComplexMapIso _ _ r
+
+/-- The identification of the complex of a shifted resolution with the shifted complex is
+compatible with the augmentations. -/
+@[reassoc (attr := simp)]
+theorem toChainComplexShiftProjectiveIso_hom_f_zero_comp_map_aug
+    (r : E.toExactStructure.FiniteResolution E.isProjective X) :
+    (toChainComplexShiftProjectiveIso r).hom.f 0 ≫ E.shift.functor.map r.aug =
+      r.shiftProjective.aug := by
+  rw [toChainComplexShiftProjectiveIso, toChainComplexMapIso_hom_f]
+  -- `shiftProjective` is by definition the image of the resolution under the shift
+  exact (aug_map _ _ r).symm
+
+/-- The identification of the complex of an inversely shifted resolution with the inversely
+shifted complex is compatible with the augmentations. -/
+@[reassoc (attr := simp)]
+theorem toChainComplexInverseShiftProjectiveIso_hom_f_zero_comp_map_aug
+    (r : E.toExactStructure.FiniteResolution E.isProjective X) :
+    (toChainComplexInverseShiftProjectiveIso r).hom.f 0 ≫ E.shift.inverse.map r.aug =
+      r.inverseShiftProjective.aug := by
+  let _ : E.shift.symm.functor.Additive := inferInstanceAs E.shift.inverse.Additive
+  rw [toChainComplexInverseShiftProjectiveIso, toChainComplexMapIso_hom_f]
+  -- `inverseShiftProjective` is by definition the image of the resolution under the inverse shift
+  exact (aug_map _ _ r).symm
+
+/-- **The graded comparison theorem.** The comparison map between two finite projective
+resolutions commutes with the grading shift up to homotopy: the lift of `f{1}` between the
+shifted resolutions is homotopic to the shift of the lift of `f`. -/
+noncomputable def liftShiftHomotopy {Y : C} (f : X ⟶ Y)
+    (r : E.toExactStructure.FiniteResolution E.isProjective X)
+    (r' : E.toExactStructure.FiniteResolution E.isProjective Y) :
+    Homotopy (lift le_rfl (E.shift.functor.map f) r.shiftProjective r'.shiftProjective)
+      ((toChainComplexShiftProjectiveIso r).hom ≫
+        (E.shift.functor.mapHomologicalComplex _).map (lift le_rfl f r r') ≫
+          (toChainComplexShiftProjectiveIso r').inv) :=
+  liftMapHomotopy le_rfl le_rfl E.shift_exact _ _ f r r'
+
+/-- The comparison map between two finite projective resolutions commutes with the inverse
+grading shift up to homotopy. -/
+noncomputable def liftInverseShiftHomotopy {Y : C} (f : X ⟶ Y)
+    (r : E.toExactStructure.FiniteResolution E.isProjective X)
+    (r' : E.toExactStructure.FiniteResolution E.isProjective Y) :
+    Homotopy (lift le_rfl (E.shift.inverse.map f) r.inverseShiftProjective
+        r'.inverseShiftProjective)
+      ((toChainComplexInverseShiftProjectiveIso r).hom ≫
+        (E.shift.inverse.mapHomologicalComplex _).map (lift le_rfl f r r') ≫
+          (toChainComplexInverseShiftProjectiveIso r').inv) :=
+  let _ : E.shift.symm.functor.Additive := inferInstanceAs E.shift.inverse.Additive
+  liftMapHomotopy le_rfl le_rfl E.shift_inverse_exact _ _ f r r'
+
 end ExactStructure.FiniteResolution
+
+namespace ExactStructure.FiniteResolution.Horseshoe
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
+  [HasBinaryBiproducts C] {E : GradedExactStructure C} {S : ShortComplex C}
+  {r₁ : E.toExactStructure.FiniteResolution E.isProjective S.X₁}
+  {r₃ : E.toExactStructure.FiniteResolution E.isProjective S.X₃}
+
+/-- Shift every object and morphism in a finite projective horseshoe. The shifted middle
+resolution remains termwise split between the shifted prescribed outer resolutions. -/
+noncomputable def shift
+    (h : Horseshoe S r₁ r₃) :
+    Horseshoe (S.map E.shift.functor)
+      r₁.shiftProjective r₃.shiftProjective :=
+  h.map E.shift_exact E.isProjective_inverseImage_shift.ge
+
+/-- Apply the inverse grading shift to every object and morphism in a finite projective
+horseshoe. -/
+noncomputable def inverseShift
+    (h : Horseshoe S r₁ r₃) :
+    Horseshoe (S.map E.shift.inverse)
+      r₁.inverseShiftProjective r₃.inverseShiftProjective :=
+  let _ : E.shift.symm.functor.Additive := inferInstanceAs E.shift.inverse.Additive
+  h.map E.shift_inverse_exact E.isProjective_inverseImage_inverseShift.ge
+
+/-- The middle resolution of the shifted horseshoe is the shifted middle resolution. -/
+@[simp]
+theorem shift_resolution
+    (h : Horseshoe S r₁ r₃) :
+    h.shift.resolution = h.resolution.shiftProjective := by
+  simpa only [shift, shiftProjective] using
+    h.map_resolution E.shift_exact E.isProjective_inverseImage_shift.ge
+
+/-- The middle resolution of the inversely shifted horseshoe is the inversely shifted middle
+resolution. -/
+@[simp]
+theorem inverseShift_resolution
+    (h : Horseshoe S r₁ r₃) :
+    h.inverseShift.resolution = h.resolution.inverseShiftProjective := by
+  let _ : E.shift.symm.functor.Additive := inferInstanceAs E.shift.inverse.Additive
+  simpa only [inverseShift, inverseShiftProjective] using
+    h.map_resolution E.shift_inverse_exact E.isProjective_inverseImage_inverseShift.ge
+
+/-- Each component of the shifted horseshoe injection is the shifted original component,
+conjugated by the canonical term identifications. -/
+@[simp]
+theorem shift_ι_f (h : Horseshoe S r₁ r₃) (n : ℕ) :
+    h.shift.ι.f n =
+      (toChainComplexShiftProjectiveIso r₁).hom.f n ≫
+        E.shift.functor.map (h.ι.f n) ≫
+          (toChainComplexShiftProjectiveIso h.resolution).inv.f n ≫
+            eqToHom (congrArg (fun r ↦ r.term n) h.shift_resolution.symm) := by
+  simpa only [shift, shiftProjective, toChainComplexShiftProjectiveIso,
+    toChainComplexMapIso_hom_f, toChainComplexMapIso_inv_f] using
+    h.map_ι_f E.shift_exact E.isProjective_inverseImage_shift.ge n
+
+/-- Each component of the shifted horseshoe projection is the shifted original component,
+conjugated by the canonical term identifications. -/
+@[simp]
+theorem shift_π_f (h : Horseshoe S r₁ r₃) (n : ℕ) :
+    h.shift.π.f n =
+      eqToHom (congrArg (fun r ↦ r.term n) h.shift_resolution) ≫
+        (toChainComplexShiftProjectiveIso h.resolution).hom.f n ≫
+          E.shift.functor.map (h.π.f n) ≫
+            (toChainComplexShiftProjectiveIso r₃).inv.f n := by
+  simpa only [shift, shiftProjective, toChainComplexShiftProjectiveIso,
+    toChainComplexMapIso_hom_f, toChainComplexMapIso_inv_f] using
+    h.map_π_f E.shift_exact E.isProjective_inverseImage_shift.ge n
+
+/-- Each component of the inversely shifted horseshoe injection is the inversely shifted original
+component, conjugated by the canonical term identifications. -/
+@[simp]
+theorem inverseShift_ι_f (h : Horseshoe S r₁ r₃) (n : ℕ) :
+    h.inverseShift.ι.f n =
+      (toChainComplexInverseShiftProjectiveIso r₁).hom.f n ≫
+        E.shift.inverse.map (h.ι.f n) ≫
+          (toChainComplexInverseShiftProjectiveIso h.resolution).inv.f n ≫
+            eqToHom (congrArg (fun r ↦ r.term n) h.inverseShift_resolution.symm) := by
+  let _ : E.shift.symm.functor.Additive := inferInstanceAs E.shift.inverse.Additive
+  simpa only [inverseShift, inverseShiftProjective,
+    toChainComplexInverseShiftProjectiveIso, toChainComplexMapIso_hom_f,
+    toChainComplexMapIso_inv_f] using
+    h.map_ι_f E.shift_inverse_exact E.isProjective_inverseImage_inverseShift.ge n
+
+/-- Each component of the inversely shifted horseshoe projection is the inversely shifted original
+component, conjugated by the canonical term identifications. -/
+@[simp]
+theorem inverseShift_π_f (h : Horseshoe S r₁ r₃) (n : ℕ) :
+    h.inverseShift.π.f n =
+      eqToHom (congrArg (fun r ↦ r.term n) h.inverseShift_resolution) ≫
+        (toChainComplexInverseShiftProjectiveIso h.resolution).hom.f n ≫
+          E.shift.inverse.map (h.π.f n) ≫
+            (toChainComplexInverseShiftProjectiveIso r₃).inv.f n := by
+  let _ : E.shift.symm.functor.Additive := inferInstanceAs E.shift.inverse.Additive
+  simpa only [inverseShift, inverseShiftProjective,
+    toChainComplexInverseShiftProjectiveIso, toChainComplexMapIso_hom_f,
+    toChainComplexMapIso_inv_f] using
+    h.map_π_f E.shift_inverse_exact E.isProjective_inverseImage_inverseShift.ge n
+
+end ExactStructure.FiniteResolution.Horseshoe
 
 end TauCeti

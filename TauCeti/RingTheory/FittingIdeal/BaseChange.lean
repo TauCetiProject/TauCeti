@@ -7,9 +7,12 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+public import Mathlib.RingTheory.Kaehler.TensorProduct
+public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import TauCeti.RingTheory.FittingIdeal.Generators
+import Mathlib.RingTheory.Etale.Kaehler
 
 /-!
 # Base change of Fitting ideals
@@ -26,20 +29,35 @@ quasi-coherent module of finite type to glue to a quasi-coherent ideal sheaf; fo
 relative differentials, this compatibility is used in constructing the intended singular-locus
 ideal.
 
-Base change to the residue field `κ(p)` of a prime `p` identifies the zero locus of `Fitt_k(M)`:
-`Fitt_k(M) ⊆ p` exactly when the fibre `κ(p) ⊗[R] M` has dimension greater than `k`.
+Base change to a field `K` detects the rank of the fibre: `Fitt_k(M)` extends to the zero ideal
+of `K` exactly when `K ⊗[R] M` has dimension greater than `k`. For the residue field `κ(p)` of a
+prime `p`, this identifies the zero locus of `Fitt_k(M)`: `Fitt_k(M) ⊆ p` exactly when the fibre
+`κ(p) ⊗[R] M` has dimension greater than `k`.
+
+The Kähler differentials of a base change are the base change of the Kähler differentials, so
+their Fitting ideals, which cut out the singular locus of a relative curve, are compatible with
+base change of the ground ring: if `B = S ⊗[R] A`, then `Fitt_k(Ω[B⁄S]) = Fitt_k(Ω[A⁄R]) B`.
+They are also carried to each other by an isomorphism of `R`-algebras.
 
 ## Main results
 
 * `IsBaseChange.minorsIdeal_span_image`: the minors ideals of the `S`-span of the image of a
-  submodule `N` of a free module of finite rank under a base change are the extensions of the
+  submodule `N` of a projective module under a base change are the extensions of the
   minors ideals of `N`.
 * `Submodule.minorsIdeal_baseChange`: the same for `N.baseChange S`.
 * `TauCeti.fittingIdeal_baseChange`: `Fitt_k(S ⊗[R] M) = Fitt_k(M) S`.
 * `IsBaseChange.fittingIdeal_eq_map`: the same for any base change of `M`, in particular for a
   localization of `M`.
+* `TauCeti.fittingIdeal_map_eq_bot_iff_lt_finrank`: `Fitt_k(M) K = 0` for a field `K` exactly
+  when `k < dim_K K ⊗[R] M`.
 * `TauCeti.fittingIdeal_le_iff_lt_finrank`: `Fitt_k(M) ⊆ p` exactly when
   `k < dim_{κ(p)} κ(p) ⊗[R] M`.
+* `TauCeti.fittingIdeal_zero_eq_top_iff`: `Fitt₀(M) = R` exactly when `M = 0`, and
+  `TauCeti.fittingIdeal_zero_map_eq_top_iff`: `Fitt₀(M) S = S` exactly when `S ⊗[R] M = 0`.
+* `TauCeti.fittingIdeal_kaehlerDifferential_eq_map`: `Fitt_k(Ω[B⁄S]) = Fitt_k(Ω[A⁄R]) B` for
+  `B = S ⊗[R] A`.
+* `TauCeti.fittingIdeal_kaehlerDifferential_eq_map_algEquiv`: `Fitt_k(Ω[B⁄R]) = e (Fitt_k(Ω[A⁄R]))`
+  for an `R`-algebra isomorphism `e : A ≃ₐ[R] B`.
 
 ## References
 
@@ -60,10 +78,9 @@ namespace IsBaseChange
 variable {R S F W : Type*} [CommRing R] [CommRing S] [Algebra R S] [AddCommGroup F] [Module R F]
   [AddCommGroup W] [Module R W] [Module S W] [IsScalarTower R S W] {j : F →ₗ[R] W}
 
-/-- Let `j : F → W` exhibit `W` as the base change of a free `R`-module `F` of finite rank to `S`.
-The minors ideals of the `S`-submodule of `W` spanned by the image of a submodule `N` of `F` are
-the extensions to `S` of the minors ideals of `N`. -/
-theorem minorsIdeal_span_image [Free R F] [Module.Finite R F] (hj : IsBaseChange S j)
+/-- The free case of `IsBaseChange.minorsIdeal_span_image`. -/
+private theorem minorsIdeal_span_image_of_free [Free R F] [Module.Finite R F]
+    (hj : IsBaseChange S j)
     (N : Submodule R F) (p : ℕ) :
     (Submodule.span S (j '' N)).minorsIdeal p = (N.minorsIdeal p).map (algebraMap R S) := by
   have hmap (f : Fin p → Dual R F) (v : Fin p → F) :
@@ -81,13 +98,16 @@ theorem minorsIdeal_span_image [Free R F] [Module.Finite R F] (hj : IsBaseChange
     obtain rfl : w = fun i ↦ j (v i) := funext fun i ↦ (hvw i).symm
     -- The determinant is multilinear in the functionals `g k`, which are `S`-linear combinations
     -- of base changes of functionals on `F` since `Dual S W` is the base change of `Dual R F`.
-    let μ : MultilinearMap S (fun _ : Fin p ↦ Dual S W) S :=
-      Matrix.detRowAlternating.toMultilinearMap.compLinearMap fun _ ↦
-        LinearMap.pi fun i ↦ LinearMap.applyₗ (j (v i))
+    let μ : MultilinearMap (RingHom.id S) (fun _ : Fin p ↦ Dual S W) S :=
+      (Matrix.detRowAlternating.compLinearMap
+        (LinearMap.pi fun i ↦ LinearMap.applyₗ (j (v i)))).toMultilinearMap
     have hμ (g : Fin p → Dual S W) : μ g = (Matrix.of fun i k ↦ g k (j (v i))).det := by
       rw [← Matrix.det_transpose]
-      simp only [μ, MultilinearMap.compLinearMap_apply, Matrix.det]
-      congr 1
+      simp only [μ, Matrix.detRowAlternating_compLinearMap_pi_apply,
+        LinearMap.applyₗ_apply_apply]
+      apply congrArg Matrix.det
+      ext i k
+      simp only [Matrix.transpose_apply, Matrix.of_apply]
     have hg (k : Fin p) : g k ∈ Submodule.span S (Set.range hj.toDual) :=
       hj.dual.inductionOn (g k) (fun f ↦ Submodule.subset_span ⟨f, rfl⟩)
         (fun s _ h ↦ Submodule.smul_mem _ s h) fun _ _ h₁ h₂ ↦ add_mem h₁ h₂
@@ -102,6 +122,57 @@ theorem minorsIdeal_span_image [Free R F] [Module.Finite R F] (hj : IsBaseChange
     rw [Ideal.mem_comap, ← hmap]
     exact Submodule.det_mem_minorsIdeal _ fun i ↦ Submodule.subset_span ⟨v i, hv i, rfl⟩
 
+/-- Let `j : F → W` exhibit `W` as the base change of a projective `R`-module `F` to `S`.
+The minors ideals of the `S`-submodule of `W` spanned by the image of a submodule `N` of `F` are
+the extensions to `S` of the minors ideals of `N`. -/
+theorem minorsIdeal_span_image [Projective R F] (hj : IsBaseChange S j)
+    (N : Submodule R F) (p : ℕ) :
+    (Submodule.span S (j '' N)).minorsIdeal p = (N.minorsIdeal p).map (algebraMap R S) := by
+  refine le_antisymm ?_ (Ideal.map_le_iff_le_comap.2 <| Submodule.minorsIdeal_le_iff.2 ?_)
+  · rw [Submodule.minorsIdeal_span, TauCeti.minorsIdealOfSet_def]
+    refine Ideal.span_le.2 ?_
+    rintro _ ⟨g, w, hw, rfl⟩
+    choose v hv hvw using hw
+    obtain rfl : w = fun i ↦ j (v i) := funext fun i ↦ (hvw i).symm
+    -- Finitely many vectors `v i` of the projective module `F` factor through a finite free
+    -- module `T`: `v i = B (A (v i))`, where `T` is spanned by the coordinates of the `v i` in a
+    -- free module of which `F` is a direct summand.
+    classical
+    obtain ⟨σ, hσ⟩ := Module.projective_def'.1 ‹Projective R F›
+    let J : Finset F := Finset.univ.biUnion fun i ↦ (σ (v i)).support
+    let A : F →ₗ[R] (J → R) := LinearMap.pi fun a ↦ Finsupp.lapply a.1 ∘ₗ σ
+    let B : (J → R) →ₗ[R] F := Fintype.linearCombination R fun a : J ↦ (a : F)
+    have hBA (i : Fin p) : B (A (v i)) = v i := by
+      have h := congr($hσ (v i))
+      rw [LinearMap.comp_apply, LinearMap.id_apply,
+        Finsupp.linearCombination_apply_of_mem_supported R (s := J)
+          ((Finsupp.mem_supported R _).2 fun a ha ↦
+            Finset.mem_coe.2 (Finset.mem_biUnion.2 ⟨i, Finset.mem_univ _, ha⟩))] at h
+      refine Eq.trans ?_ h
+      simpa [B, A, Fintype.linearCombination_apply] using
+        Finset.sum_coe_sort J fun a ↦ σ (v i) a • a
+    have hj' := TensorProduct.isBaseChange R (J → R) S
+    let B' : S ⊗[R] (J → R) →ₗ[S] W := hj'.lift (j ∘ₗ B)
+    have hB' (t : J → R) : B' (1 ⊗ₜ t) = j (B t) := hj'.lift_eq _ t
+    have hdet : (Matrix.of fun i k ↦ g k (j (v i))).det ∈
+        (Submodule.span S (TensorProduct.mk R S (J → R) 1 '' (N.map A))).minorsIdeal p := by
+      have hmem (i : Fin p) : (1 : S) ⊗ₜ[R] A (v i) ∈
+          Submodule.span S (TensorProduct.mk R S (J → R) 1 '' (N.map A)) :=
+        Submodule.subset_span ⟨A (v i), Submodule.mem_map_of_mem (hv i), rfl⟩
+      have := Submodule.det_mem_minorsIdeal (fun k ↦ g k ∘ₗ B') hmem
+      simpa [hB', hBA] using this
+    rw [minorsIdeal_span_image_of_free hj'] at hdet
+    exact Ideal.map_mono (Submodule.minorsIdeal_map_le A N p) hdet
+  · intro f v hv
+    have hmap : (Matrix.of fun i k ↦ hj.toDual (f k) (j (v i))).det =
+        algebraMap R S (Matrix.of fun i k ↦ f k (v i)).det := by
+      rw [RingHom.map_det]
+      congr 1
+      ext i k
+      simp [toDual_comp_apply]
+    rw [Ideal.mem_comap, ← hmap]
+    exact Submodule.det_mem_minorsIdeal _ fun i ↦ Submodule.subset_span ⟨v i, hv i, rfl⟩
+
 end IsBaseChange
 
 namespace Submodule
@@ -109,10 +180,10 @@ namespace Submodule
 variable {R F : Type*} (S : Type*) [CommRing R] [CommRing S] [Algebra R S] [AddCommGroup F]
   [Module R F]
 
-/-- The minors ideals of the base change of a submodule of a free module of finite rank are the
+/-- The minors ideals of the base change of a submodule of a projective module are the
 extensions of its minors ideals. -/
 @[simp]
-theorem minorsIdeal_baseChange [Free R F] [Module.Finite R F] (N : Submodule R F) (p : ℕ) :
+theorem minorsIdeal_baseChange [Projective R F] (N : Submodule R F) (p : ℕ) :
     (N.baseChange S).minorsIdeal p = (N.minorsIdeal p).map (algebraMap R S) := by
   rw [baseChange_eq_span, map_coe]
   exact (TensorProduct.isBaseChange R F S).minorsIdeal_span_image N p
@@ -165,17 +236,77 @@ namespace TauCeti
 variable {R F M : Type*} [CommRing R] [AddCommGroup F] [Module R F] [AddCommGroup M]
   [Module R M] [Module.Finite R M]
 
+/-- The extension of `Fitt_k(M)` to a field `K` vanishes exactly when the fibre `K ⊗[R] M` has
+dimension greater than `k`. -/
+@[simp]
+theorem fittingIdeal_map_eq_bot_iff_lt_finrank (K : Type*) [Field K] [Algebra R K] (k : ℕ) :
+    (fittingIdeal R M k).map (algebraMap R K) = ⊥ ↔ k < finrank K (K ⊗[R] M) := by
+  rw [← not_le, ← fittingIdeal_eq_top_iff_finrank_le, fittingIdeal_baseChange]
+  -- An ideal of the field `K` is `⊥` or `⊤`.
+  rcases Ideal.eq_bot_or_top ((fittingIdeal R M k).map (algebraMap R K)) with h | h <;> simp [h]
+
 /-- The zero locus of the `k`-th Fitting ideal of a finite module `M` is the set of primes `p` at
 which the fibre `κ(p) ⊗[R] M` has dimension greater than `k`. -/
 @[simp]
 theorem fittingIdeal_le_iff_lt_finrank (p : Ideal R) [p.IsPrime] (k : ℕ) :
     fittingIdeal R M k ≤ p ↔ k < finrank p.ResidueField (p.ResidueField ⊗[R] M) := by
-  have hle : fittingIdeal R M k ≤ p ↔
-      (fittingIdeal R M k).map (algebraMap R p.ResidueField) = ⊥ := by
-    rw [Ideal.map_eq_bot_iff_le_ker, Ideal.ker_algebraMap_residueField]
-  rw [hle, ← not_le, ← fittingIdeal_eq_top_iff_finrank_le, fittingIdeal_baseChange]
-  -- An ideal of the field `κ(p)` is `⊥` or `⊤`.
-  rcases Ideal.eq_bot_or_top ((fittingIdeal R M k).map (algebraMap R p.ResidueField)) with
-    h | h <;> simp [h]
+  rw [← fittingIdeal_map_eq_bot_iff_lt_finrank, Ideal.map_eq_bot_iff_le_ker,
+    Ideal.ker_algebraMap_residueField]
+
+/-- The zeroth Fitting ideal of a finite module `M` is the unit ideal exactly when `M = 0`. -/
+@[simp]
+theorem fittingIdeal_zero_eq_top_iff : fittingIdeal R M 0 = ⊤ ↔ Subsingleton M := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact iff_of_true (Subsingleton.elim _ _) (Module.subsingleton R M)
+  refine ⟨fun h ↦ (support_eq_empty_iff (R := R)).mp <|
+      Set.eq_empty_of_forall_notMem fun p hp ↦ ?_,
+    fun _ ↦ fittingIdeal_eq_top_of_surjective (φ := (0 : (Fin 0 → R) →ₗ[R] M))
+      (fun _ ↦ ⟨0, Subsingleton.elim _ _⟩) finrank_zero_of_subsingleton.le⟩
+  -- at a prime `p` of the support the fibre `κ(p) ⊗[R] M` is nonzero, so `Fitt₀(M) ≤ p`
+  rw [mem_support_iff_nontrivial_residueField_tensorProduct] at hp
+  exact p.2.ne_top <| top_le_iff.mp <|
+    h ▸ (fittingIdeal_le_iff_lt_finrank p.asIdeal 0).mpr finrank_pos
+
+/-- The base change `S ⊗[R] M` of a finite module `M` vanishes exactly when `Fitt₀(M)` extends to
+the unit ideal of `S`. -/
+theorem fittingIdeal_zero_map_eq_top_iff (S : Type*) [CommRing S] [Algebra R S] :
+    (fittingIdeal R M 0).map (algebraMap R S) = ⊤ ↔ Subsingleton (S ⊗[R] M) := by
+  rw [← fittingIdeal_baseChange, fittingIdeal_zero_eq_top_iff]
+
+section Kaehler
+
+variable (R S A B : Type*) [CommRing R] [CommRing S] [Algebra R S] [CommRing A] [CommRing B]
+  [Algebra R A] [Algebra R B] [Algebra A B] [Algebra S B] [IsScalarTower R A B]
+  [IsScalarTower R S B] [Algebra.IsPushout R S A B] [Module.Finite A Ω[A⁄R]]
+
+/-- **Fitting ideals of Kähler differentials commute with base change**: if `B = S ⊗[R] A`, then
+`Fitt_k(Ω[B⁄S]) = Fitt_k(Ω[A⁄R]) B`, since `Ω[B⁄S]` is the base change `B ⊗[A] Ω[A⁄R]`
+(`KaehlerDifferential.tensorKaehlerEquiv`). -/
+theorem fittingIdeal_kaehlerDifferential_eq_map (k : ℕ) :
+    (haveI : Module.Finite B Ω[B⁄S] := .equiv (KaehlerDifferential.tensorKaehlerEquiv R S A B)
+     fittingIdeal B Ω[B⁄S] k) = (fittingIdeal A Ω[A⁄R] k).map (algebraMap A B) := by
+  have : Module.Finite B Ω[B⁄S] := .equiv (KaehlerDifferential.tensorKaehlerEquiv R S A B)
+  rw [← fittingIdeal_congr (KaehlerDifferential.tensorKaehlerEquiv R S A B),
+    fittingIdeal_baseChange]
+
+end Kaehler
+
+section KaehlerEquiv
+
+variable {R A B : Type*} [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+  [Module.Finite A Ω[A⁄R]] [Module.Finite B Ω[B⁄R]]
+
+/-- **Fitting ideals of Kähler differentials are invariant under isomorphism**: an `R`-algebra
+isomorphism `e : A ≃ₐ[R] B` carries `Fitt_k(Ω[A⁄R])` to `Fitt_k(Ω[B⁄R])`. -/
+theorem fittingIdeal_kaehlerDifferential_eq_map_algEquiv (e : A ≃ₐ[R] B) (k : ℕ) :
+    fittingIdeal B Ω[B⁄R] k = (fittingIdeal A Ω[A⁄R] k).map e := by
+  -- Along `e`, which is étale, `Ω[B⁄R]` is the base change of `Ω[A⁄R]`.
+  let : Algebra A B := e.toRingHom.toAlgebra
+  have : IsScalarTower R A B := .of_algebraMap_eq fun r ↦ (e.commutes r).symm
+  have : Algebra.FormallyEtale A B :=
+    .of_equiv (AlgEquiv.ofRingEquiv (f := e.toRingEquiv) fun _ ↦ rfl : A ≃ₐ[A] B)
+  exact (KaehlerDifferential.isBaseChange_of_formallyEtale R A B).fittingIdeal_eq_map k
+
+end KaehlerEquiv
 
 end TauCeti

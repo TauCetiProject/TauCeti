@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.DG
+public import TauCeti.Algebra.Homology.SquareZero
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 
 /-!
@@ -45,6 +46,8 @@ strict morphisms of these `A∞` algebras.
 * `TauCeti.AInfinityAlgebra.cohomologyClass`: the class represented by a cycle.
 * `TauCeti.AInfinityAlgebra.cohomologyEquivOfCyclesEqTop`: the class-map equivalence when all
   elements are cycles.
+* `TauCeti.AInfinityAlgebra.cohomologyEquivHomology`: the cohomology is the homology
+  `ker m₁ ⧸ im m₁` of the unary operation as a square-zero endomorphism.
 * `TauCeti.AInfinityAlgebra.cohomologyMul`: the product on cohomology induced by the binary
   operation.
 * `TauCeti.AInfinityAlgebra.instNonUnitalRingCohomology`, together with the scalar tower and
@@ -63,6 +66,8 @@ strict morphisms of these `A∞` algebras.
   cycle is the class of its degree-`p` component.
 * `TauCeti.AInfinityAlgebra.instGradedMulCohomologyGrading`: the product on cohomology has degree
   zero.
+* `TauCeti.AInfinityAlgebra.koszulTwist_cohomologyClass`: the Koszul twist of cohomology is induced
+  by the Koszul twist of cycles.
 
 ## References
 
@@ -188,6 +193,12 @@ through which maps out of cohomology are built by the universal property of the 
 theorem cohomologyClass_eq_mk (𝒜 : AInfinityAlgebra R A) {x : A} (hx : x ∈ 𝒜.cycles) :
     𝒜.cohomologyClass hx = Submodule.Quotient.mk ⟨x, hx⟩ := (rfl)
 
+/-- The quotient map sends a cycle to its cohomology class. -/
+@[simp]
+theorem cohomologyClassLinearMap_apply (𝒜 : AInfinityAlgebra R A) (x : 𝒜.cycles) :
+    𝒜.cohomologyClassLinearMap x = 𝒜.cohomologyClass x.property := by
+  rw [cohomologyClass]
+
 /-- If every element is a cycle, the differential and hence the boundaries vanish, so the class
 map is a linear equivalence with cohomology. -/
 noncomputable def cohomologyEquivOfCyclesEqTop
@@ -242,6 +253,12 @@ theorem exists_cohomologyClass_eq (𝒜 : AInfinityAlgebra R A) (c : 𝒜.Cohomo
   induction c using Submodule.Quotient.induction_on with
   | H x => exact ⟨x, x.2, rfl⟩
 
+/-- Equal cycles represent the same cohomology class, whatever proofs of membership are used. -/
+theorem cohomologyClass_congr (𝒜 : AInfinityAlgebra R A) {x y : A} (hx : x ∈ 𝒜.cycles)
+    (hy : y ∈ 𝒜.cycles) (h : x = y) : 𝒜.cohomologyClass hx = 𝒜.cohomologyClass hy := by
+  subst h
+  rfl
+
 /-- Two cycles represent the same cohomology class exactly when their difference is a boundary. -/
 @[simp]
 theorem cohomologyClass_eq_iff (𝒜 : AInfinityAlgebra R A) {x y : A}
@@ -263,6 +280,39 @@ theorem cohomologyClass_eq_zero_iff (𝒜 : AInfinityAlgebra R A) {x : A}
 theorem cohomologyClass_m_one_eq_zero (𝒜 : AInfinityAlgebra R A) (x : A) :
     𝒜.cohomologyClass (𝒜.mem_cycles.mpr (𝒜.stasheff_arity_one x)) = 0 :=
   (𝒜.cohomologyClass_eq_zero_iff _).mpr (𝒜.mem_boundaries.mpr ⟨x, rfl⟩)
+
+/-! ### Comparison with the homology of the unary operation -/
+
+/-- The cohomology of an `A∞` algebra is the homology `ker m₁ ⧸ im m₁` of its unary operation,
+viewed as a square-zero linear endomorphism (`LinearMap.homology`). -/
+def cohomologyEquivHomology (𝒜 : AInfinityAlgebra R A) :
+    𝒜.Cohomology ≃ₗ[R] 𝒜.differential.homology 𝒜.differential_comp_self_eq_zero :=
+  Submodule.Quotient.equiv _ _ (LinearEquiv.ofEq _ _ 𝒜.cycles_def) <| by
+    ext z
+    simp only [Submodule.mem_map, LinearMap.mem_boundariesInKer, mem_boundariesInCycles,
+      boundaries_def]
+    refine ⟨fun ⟨w, hw, hwz⟩ ↦ ?_, fun hz ↦ ⟨⟨z, by rw [cycles_def]; exact z.2⟩, hz, ?_⟩⟩
+    · rw [← hwz]
+      simpa only [LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply] using hw
+    · exact Subtype.ext (LinearEquiv.coe_ofEq_apply _ _)
+
+/-- The comparison sends the cohomology class of a cycle to its homology class. -/
+@[simp]
+theorem cohomologyEquivHomology_cohomologyClass (𝒜 : AInfinityAlgebra R A) {x : A}
+    (hx : x ∈ 𝒜.cycles) :
+    𝒜.cohomologyEquivHomology (𝒜.cohomologyClass hx) =
+      𝒜.differential.homologyπ 𝒜.differential_comp_self_eq_zero ⟨x, by rwa [← cycles_def]⟩ := by
+  simp only [cohomologyEquivHomology, cohomologyClass_eq_mk, Submodule.Quotient.equiv_apply,
+    Submodule.mapQ_apply, LinearMap.homologyπ_apply]
+  exact congrArg _ (Subtype.ext (LinearEquiv.coe_ofEq_apply _ _))
+
+/-- The inverse comparison sends the homology class of a cycle of `m₁` to its cohomology class. -/
+theorem cohomologyEquivHomology_symm_homologyπ (𝒜 : AInfinityAlgebra R A)
+    (z : LinearMap.ker 𝒜.differential) :
+    𝒜.cohomologyEquivHomology.symm
+        (𝒜.differential.homologyπ 𝒜.differential_comp_self_eq_zero z) =
+      𝒜.cohomologyClass (show (z : A) ∈ 𝒜.cycles by rw [cycles_def]; exact z.2) := by
+  rw [LinearEquiv.symm_apply_eq, cohomologyEquivHomology_cohomologyClass]
 
 /-- The binary operation, restricted to a bilinear map on cycles. -/
 def cyclesMul (𝒜 : AInfinityAlgebra R A) : 𝒜.cycles →ₗ[R] 𝒜.cycles →ₗ[R] 𝒜.cycles :=
@@ -365,8 +415,8 @@ one. -/
 theorem differential_decompose (𝒜 : AInfinityAlgebra R A) (p : ℤ) (x : A) :
     𝒜.differential (decompose 𝒜.grading.piece x p : A) =
       (decompose 𝒜.grading.piece (𝒜.differential x) (p + 1) : A) :=
-  DirectSum.map_decompose_shift 𝒜.grading.piece 𝒜.grading.piece 𝒜.differential (· + 1)
-    (add_left_injective 1) (fun _ _ ↦ 𝒜.differential_mem_piece) p x
+  DirectSum.map_decompose_shift 𝒜.grading.piece 𝒜.grading.piece 𝒜.differential.toAddMonoidHom
+    (· + 1) (add_left_injective 1) (fun _ _ ↦ 𝒜.differential_mem_piece) p x
 
 /-- The cycles form a homogeneous submodule: the homogeneous components of a cycle are cycles. -/
 theorem isHomogeneous_cycles (𝒜 : AInfinityAlgebra R A) :
@@ -377,7 +427,7 @@ theorem isHomogeneous_cycles (𝒜 : AInfinityAlgebra R A) :
   simp
 
 /-- The internal grading of the cycles by homogeneous cycles. -/
-noncomputable def cyclesGrading (𝒜 : AInfinityAlgebra R A) : InternalGrading R 𝒜.cycles :=
+noncomputable def cyclesGrading (𝒜 : AInfinityAlgebra R A) : InternalGrading R 𝒜.cycles ℤ :=
   𝒜.grading.submodule 𝒜.cycles 𝒜.isHomogeneous_cycles
 
 /-- A cycle has degree `p` exactly when its underlying element does. -/
@@ -405,7 +455,7 @@ theorem isHomogeneous_boundariesInCycles (𝒜 : AInfinityAlgebra R A) :
 
 /-- The internal grading of the cohomology: its degree-`p` piece consists of the classes of
 homogeneous cycles of degree `p`. -/
-noncomputable def cohomologyGrading (𝒜 : AInfinityAlgebra R A) : InternalGrading R 𝒜.Cohomology :=
+noncomputable def cohomologyGrading (𝒜 : AInfinityAlgebra R A) : InternalGrading R 𝒜.Cohomology ℤ :=
   𝒜.cyclesGrading.quotient 𝒜.boundariesInCycles 𝒜.isHomogeneous_boundariesInCycles
 
 /-- A cohomology class has degree `p` exactly when it is represented by a cycle of degree `p`. -/
@@ -451,6 +501,31 @@ theorem cohomologyMul_mem_cohomologyGrading_piece (𝒜 : AInfinityAlgebra R A) 
 instance instGradedMulCohomologyGrading (𝒜 : AInfinityAlgebra R A) :
     SetLike.GradedMul 𝒜.cohomologyGrading.piece where
   mul_mem _ _ _ _ ha hb := 𝒜.cohomologyMul_mem_cohomologyGrading_piece ha hb
+
+/-- The degree-one Koszul twist of a cycle is a cycle. -/
+theorem koszulTwist_mem_cycles (𝒜 : AInfinityAlgebra R A) {a : A} (ha : a ∈ 𝒜.cycles) :
+    𝒜.grading.koszulTwist 1 a ∈ 𝒜.cycles := by
+  rw [mem_cycles] at ha ⊢
+  rw [m_one_koszulTwist, ha, map_zero, neg_zero]
+
+/-- The degree-one Koszul twist of the class of a cycle is the class of its Koszul twist. -/
+@[simp]
+theorem koszulTwist_cohomologyClass (𝒜 : AInfinityAlgebra R A) {a : A} (ha : a ∈ 𝒜.cycles) :
+    𝒜.cohomologyGrading.koszulTwist 1 (𝒜.cohomologyClass ha) =
+      𝒜.cohomologyClass (𝒜.koszulTwist_mem_cycles ha) := by
+  -- Both sides are linear in the cycle, so it suffices to compare them on homogeneous cycles.
+  let τ : 𝒜.cycles →ₗ[R] 𝒜.cycles :=
+    (𝒜.grading.koszulTwist 1).restrict fun _ ↦ 𝒜.koszulTwist_mem_cycles
+  have h : 𝒜.cohomologyGrading.koszulTwist 1 ∘ₗ 𝒜.cohomologyClassLinearMap =
+      𝒜.cohomologyClassLinearMap ∘ₗ τ := by
+    refine 𝒜.cyclesGrading.linearMap_ext fun p x hx ↦ ?_
+    rw [mem_cyclesGrading_piece] at hx
+    simp only [LinearMap.comp_apply, cohomologyClassLinearMap_apply]
+    rw [𝒜.cohomologyGrading.koszulTwist_one_apply_of_mem
+      (𝒜.cohomologyClass_mem_cohomologyGrading_piece x.2 hx), ← cohomologyClass_smul]
+    congr 1
+    exact (𝒜.grading.koszulTwist_one_apply_of_mem hx).symm
+  simpa [τ] using LinearMap.congr_fun h ⟨a, ha⟩
 
 end Grading
 

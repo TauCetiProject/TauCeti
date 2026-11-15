@@ -35,10 +35,8 @@ with an involutive reversal, since each of its summands is a backtrack.
 
 ## References
 
-This proves the opposite-algebra comparison in the first bullet of Layer 4 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`. The preprojective presentation and its signs
-follow Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson
-problem*, Section 1.
+The preprojective presentation and its signs follow Crawley-Boevey, *Quiver algebras, weighted
+projective lines, and the Deligne--Simpson problem*, Section 1.
 -/
 
 public section

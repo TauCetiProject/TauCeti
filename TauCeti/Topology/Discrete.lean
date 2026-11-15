@@ -1,41 +1,127 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.Order
+public import Mathlib.Topology.MetricSpace.Pseudo.Real
 
 /-!
-# Continuous inverse evaluation on discrete spaces
+# Maps and convergence in discrete spaces
 
-Pointwise continuous families of equivalences have continuous inverse evaluation when the
-target space is discrete.
-
+A continuous map into a discrete space is locally constant, and this file records three
+consequences. Pointwise continuous families of equivalences into a discrete space have continuous
+inverse evaluation, whatever the topology of their source (`TauCeti.continuous_equiv_symm_apply`).
 This supplies continuity of inverse permutation evaluation in
-`TauCeti.WreathProduct.continuous_right_inv` and inverse coset translation in
-`Subgroup.continuous_inv_smul_const`, over a discrete index or coset quotient.
+`TauCeti.WreathProduct.continuous_right_inv` and
+inverse coset translation in `Subgroup.continuous_inv_smul_const`. A continuous map lifts along any
+surjection onto a discrete space (`TauCeti.exists_continuous_lift`), and an injection into a
+discrete space reflects continuity (`TauCeti.continuous_of_injective_comp`); these give
+surjectivity and the descent of cocycle conditions for continuous cochains of discrete modules
+in `TauCeti/RepresentationTheory/Homological/ContCohomology/ShortExact.lean`.
+
+For explicit pullbacks of the discrete topology `⊥`, an injective map pulls `⊥` back to `⊥`
+(`TauCeti.induced_bot_of_injective`), and the neighbourhood filter at `x` in
+`TopologicalSpace.induced g ⊥` is the principal filter of the fibre `g ⁻¹' {g x}`
+(`TauCeti.nhds_induced_bot`).
+
+A family eventually contained in a subset and converging to one of its points witnesses
+nondiscreteness when it is frequently unequal to that point (`Filter.Tendsto.not_isDiscrete`).
+This criterion uses only the target topology and applies to ranges of homomorphisms whose
+nonidentity values accumulate at the identity. Conversely, a real family converging along a
+filter and eventually in the discrete lattice `c ℤ`, `c > 0`, is eventually constant
+(`Filter.Tendsto.exists_eventually_eq_mul_intCast`); this is how convergent integer-valued
+charges stabilize.
 -/
 
 public section
 
 namespace TauCeti
 
-/-- Inverse evaluation of a family of equivalences on a discrete space is continuous if every
-forward evaluation is continuous. -/
-theorem continuous_equiv_symm_apply {α β : Type*} [TopologicalSpace α]
-    [TopologicalSpace β] [DiscreteTopology β] {f : α → β ≃ β}
-    (hf : ∀ b, Continuous fun a => f a b) (b : β) :
+/-- Inverse evaluation of a family of equivalences into a discrete space is continuous if every
+forward evaluation is continuous, whatever the topology on the source of the equivalences. -/
+theorem continuous_equiv_symm_apply {α β γ : Type*} [TopologicalSpace α] [TopologicalSpace β]
+    [TopologicalSpace γ] [DiscreteTopology γ] {f : α → β ≃ γ}
+    (hf : ∀ c, Continuous fun a => f a c) (b : γ) :
     Continuous fun a => (f a).symm b := by
-  rw [continuous_discrete_rng]
+  apply IsLocallyConstant.continuous
+  rw [IsLocallyConstant.iff_isOpen_fiber]
   intro c
-  have h : (fun a : α => (f a).symm b) ⁻¹' {c} =
-      (fun a : α => f a c) ⁻¹' {b} := by
-    ext a
-    simp only [Set.mem_preimage, Set.mem_singleton_iff]
-    exact (Equiv.symm_apply_eq (e := f a) (x := b) (y := c)).trans eq_comm
-  rw [h]
-  exact (isOpen_discrete _).preimage (hf c)
+  simpa only [Set.preimage, Set.mem_singleton_iff, Equiv.symm_apply_eq, eq_comm (a := b)] using
+    (isOpen_discrete ({b} : Set γ)).preimage (hf c)
+
+/-- **A continuous map lifts along any surjection onto a discrete space.** A continuous map into
+the discrete `C` is locally constant, so composing it with any set-theoretic section of `p` is
+continuous again. -/
+theorem exists_continuous_lift {X B C : Type*} [TopologicalSpace X] [TopologicalSpace B]
+    [TopologicalSpace C] [DiscreteTopology C] {p : B → C} (hp : Function.Surjective p)
+    {f : X → C} (hf : Continuous f) : ∃ e : X → B, Continuous e ∧ ∀ x, p (e x) = f x :=
+  ⟨fun x => Function.surjInv hp (f x),
+    (continuous_of_discreteTopology (f := Function.surjInv hp)).comp hf,
+    fun x => Function.surjInv_eq hp (f x)⟩
+
+/-- **An injective map into a discrete space reflects continuity.** Continuity into the discrete
+`B` is local constancy, local constancy descends along an injection, and a locally constant map is
+continuous. -/
+theorem continuous_of_injective_comp {X A B : Type*} [TopologicalSpace X] [TopologicalSpace A]
+    [TopologicalSpace B] [DiscreteTopology B] {f : A → B} (hf : Function.Injective f) {a : X → A}
+    (h : Continuous fun x => f (a x)) : Continuous a :=
+  (IsLocallyConstant.desc a f ((IsLocallyConstant.iff_continuous _).2 h) hf).continuous
+
+/-- An injective map pulls the discrete topology `⊥` back to `⊥`. -/
+theorem induced_bot_of_injective {X Y : Type*} {e : X → Y} (he : Function.Injective e) :
+    TopologicalSpace.induced e ⊥ = ⊥ := by
+  let _ : TopologicalSpace Y := ⊥
+  have := discreteTopology_bot Y
+  let _ : TopologicalSpace X := TopologicalSpace.induced e ⊥
+  exact (Topology.IsEmbedding.discreteTopology ⟨⟨rfl⟩, he⟩).eq_bot
+
+/-- In the topology induced from the discrete topology `⊥` along `g : X → Y`, the neighbourhood
+filter of `x` is the principal filter of the fibre `g ⁻¹' {g x}`. -/
+theorem nhds_induced_bot {X Y : Type*} (g : X → Y) (x : X) :
+    @nhds X (TopologicalSpace.induced g ⊥) x = Filter.principal (g ⁻¹' {g x}) := by
+  let _ : TopologicalSpace Y := ⊥
+  have := discreteTopology_bot Y
+  rw [nhds_induced, nhds_discrete]
+  exact Filter.comap_pure
 
 end TauCeti
+
+open Topology
+
+namespace Filter
+
+/-- A subset containing the limit of an eventually contained family is nondiscrete if the family
+is frequently different from the limit. -/
+theorem Tendsto.not_isDiscrete {X Y : Type*} [TopologicalSpace Y] {f : X → Y} {l : Filter X}
+    {a : Y} {s : Set Y} (hf : Tendsto f l (𝓝 a)) (ha : a ∈ s)
+    (hs : ∀ᶠ x in l, f x ∈ s) (hne : ∃ᶠ x in l, f x ≠ a) : ¬ IsDiscrete s := by
+  intro hD
+  have heq := tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ hf hs
+  rw [nhdsWithin_of_mem_discrete hD ha, tendsto_pure] at heq
+  exact hne (heq.mono fun _ h hne ↦ hne h)
+
+/-- A real family that converges along `l` and eventually lies in the lattice `c ℤ`, `c > 0`, is
+eventually equal to one fixed multiple of `c`. -/
+theorem Tendsto.exists_eventually_eq_mul_intCast {X : Type*} {f : X → ℝ} {l : Filter X} [l.NeBot]
+    {c L : ℝ} (hc : 0 < c) (hf : Tendsto f l (𝓝 L)) (h : ∀ᶠ x in l, ∃ n : ℤ, f x = c * n) :
+    ∃ n₀ : ℤ, ∀ᶠ x in l, f x = c * n₀ := by
+  -- Two multiples of `c` within `c / 2` of the limit are equal.
+  have hev := h.and (hf.eventually (Metric.ball_mem_nhds _ (half_pos hc)))
+  obtain ⟨x₀, ⟨n₀, hn₀⟩, hx₀⟩ := hev.exists
+  refine ⟨n₀, hev.mono fun x ⟨⟨n, hn⟩, hx⟩ ↦ ?_⟩
+  have hd : |c * (n - n₀)| < c := by
+    have := (dist_triangle_right (f x) (f x₀) L).trans_lt
+      (add_lt_add (Metric.mem_ball.1 hx) (Metric.mem_ball.1 hx₀))
+    rwa [Real.dist_eq, hn, hn₀, ← mul_sub, add_halves] at this
+  rw [abs_mul, abs_of_pos hc] at hd
+  have h1 : |((n - n₀ : ℤ) : ℝ)| < 1 := by
+    push_cast
+    exact (mul_lt_iff_lt_one_right hc).1 hd
+  have h2 : |n - n₀| < 1 := by exact_mod_cast h1
+  rw [hn, sub_eq_zero.1 (Int.abs_lt_one_iff.1 h2)]
+
+end Filter

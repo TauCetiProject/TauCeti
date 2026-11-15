@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.DirichletDensity
 import Mathlib.NumberTheory.LSeries.PrimesInAP
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.NaturalDensity
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NaturalDensity
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Boundary
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
@@ -26,6 +26,8 @@ in arithmetic progressions.
 
 ## Main results
 
+* `NumberField.Chebotarev.primeCount_primesCongruent_sub_mul_logIntegral_isLittleO`: the prime
+  count in an invertible residue class is `φ(m)⁻¹ Li(x) + o(x / log x)`.
 * `NumberField.Chebotarev.hasDirichletDensity_primesCongruent`: the primes of `𝓞 ℚ` of norm
   congruent to a unit `a` modulo `m` have Dirichlet density `1 / φ(m)`.
 
@@ -97,9 +99,10 @@ private theorem LSeriesSummable_primeVonMangoldtCoeff_rat_sub_residueClass :
   · exact le_rfl
   · simp [vonMangoldt.residueClass, Subsingleton.elim _ (0 : ZMod 1)]
 
-/-- The primes of `𝓞 ℚ` of norm congruent to `a` modulo `m` satisfy
+/-- The primes of `𝓞 ℚ` of norm congruent to an invertible residue `a` modulo `m` satisfy
 `π_S = φ(m)⁻¹ Li + o(x / log x)`. -/
-private theorem primeCount_rat_sub_mul_logIntegral_isLittleO [NeZero m] (ha : IsUnit (a : ZMod m)) :
+theorem primeCount_primesCongruent_sub_mul_logIntegral_isLittleO [NeZero m]
+    (ha : IsUnit (a : ZMod m)) :
     (fun x ↦ primeCount ℚ
         {𝔭 : HeightOneSpectrum (𝓞 ℚ) | Ideal.absNorm 𝔭.asIdeal % m = a % m} x -
       (Nat.totient m : ℝ)⁻¹ * Real.logIntegral x) =o[atTop] fun x : ℝ ↦ x / _root_.Real.log x :=
@@ -121,6 +124,6 @@ theorem hasDirichletDensity_primesCongruent (m a : ℕ) [NeZero m]
   refine Set.hasDirichletDensity_of_hasNaturalDensity
     (Set.hasNaturalDensity_iff_isLittleO_logIntegral.2 ?_)
   rw [one_div]
-  exact primeCount_rat_sub_mul_logIntegral_isLittleO m a ha
+  exact primeCount_primesCongruent_sub_mul_logIntegral_isLittleO m a ha
 
 end NumberField.Chebotarev

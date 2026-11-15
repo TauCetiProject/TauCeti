@@ -39,10 +39,8 @@ gradings in this concrete diagram, and package the diagram with its odd-componen
 
 ## References
 
-This supplies a small prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`,
-Lane G.3, "The complexes and `∂² = 0`", and the acceptance criterion that grid homology
-compute on the `2 × 2` unknot grid with its bigradings. The grid and grading conventions
-follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters 3 and 4.
+The grid and grading conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
+Links*, Chapters 3 and 4.
 -/
 
 public section
@@ -57,7 +55,7 @@ theorem twoByTwo_OSet :
     twoByTwo.OSet = {(0, 0), (1, 1)} := by
   ext p
   rcases p with ⟨c, r⟩
-  fin_cases c <;> fin_cases r <;> simp [OSet]
+  fin_cases c <;> fin_cases r <;> simp [OSet_def]
 
 /-- The standard two-by-two diagram has `X` markings at `(0,1)` and `(1,0)`. -/
 @[simp]
@@ -65,7 +63,7 @@ theorem twoByTwo_XSet :
     twoByTwo.XSet = {(0, 1), (1, 0)} := by
   ext p
   rcases p with ⟨c, r⟩
-  fin_cases c <;> fin_cases r <;> simp [XSet]
+  fin_cases c <;> fin_cases r <;> simp [XSet_def]
 
 private theorem twoByTwoId_pairCard_self : (Finset.univ.filter fun p : Fin 2 × Fin 2 =>
       p.1 < p.2 ∧ GridState.twoByTwoId p.1 < GridState.twoByTwoId p.2).card = 1 := by
@@ -241,6 +239,19 @@ abbrev twoByTwo : OddComponentGridDiagram 2 :=
       GridDiagram.unknot_zero ▸ (GridDiagram.isKnot_def _).1 (GridDiagram.isKnot_unknot 0)
     rw [h]
     exact odd_one⟩
+
+/-- The identity generator in the standard two-by-two diagram has bidegree `(-1, -1)`. -/
+@[simp]
+theorem bidegree_twoByTwo_twoByTwoId :
+    twoByTwo.bidegree GridState.twoByTwoId = (-1, -1) := by
+  apply Prod.ext
+  · simpa only [bidegree_fst] using
+      GridDiagram.maslovOℤ_twoByTwo_twoByTwoId
+  · have h := twoByTwo.two_mul_alexanderℤ GridState.twoByTwoId
+    rw [GridDiagram.alexanderTwoℤ_twoByTwo_twoByTwoId] at h
+    have hA : twoByTwo.alexanderℤ GridState.twoByTwoId = -1 := by
+      omega
+    simpa only [bidegree_snd] using hA
 
 /-- The transposition generator in the standard two-by-two diagram has bidegree `(0, 0)`. -/
 @[simp]

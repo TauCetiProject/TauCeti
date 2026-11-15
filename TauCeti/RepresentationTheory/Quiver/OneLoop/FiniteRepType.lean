@@ -10,7 +10,7 @@ public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.Basic
 public import TauCeti.RepresentationTheory.Quiver.OneLoop.Basic
 public import TauCeti.RepresentationTheory.Quiver.Representation.DimensionVector
 public import TauCeti.RingTheory.AdjoinRoot.Basic
-public import TauCeti.RingTheory.Polynomial.Truncated
+public import TauCeti.RingTheory.Polynomial.Truncated.Basic
 public import Mathlib.CategoryTheory.PathCategory.MorphismProperty
 
 /-!
@@ -68,12 +68,12 @@ criterion does not apply, and an endomorphism is pinned down instead by its valu
 (`AdjoinRoot.eq_mulRight_of_root_mul`, from `TauCeti.RingTheory.AdjoinRoot.Basic`). That value
 records the endomorphism faithfully in the truncated polynomial algebra, sending `0` to `0`, the
 identity to `1` and squares to squares, and that algebra is local by
-`TauCeti.isLocalRing_adjoinRoot_X_pow` from `TauCeti.RingTheory.Polynomial.Truncated`; a scalar
-representation is the same criterion read in the base field.
+`TauCeti.isLocalRing_adjoinRoot_X_pow` from `TauCeti.RingTheory.Polynomial.Truncated.Basic`; a
+scalar representation is the same criterion read in the base field.
 
 The quiver `•↺` itself -- `TauCeti.Quiver.OneLoop`, with its `Quiver` instance and its loop
 `TauCeti.Quiver.OneLoop.loop` -- is defined in
-`TauCeti.RepresentationTheory.Quiver.OneLoop.Basic`, which carries the vertex and arrow data alone;
+`TauCeti.RepresentationTheory.Quiver.OneLoop.Basic`, which carries the vertex, arrow, and path data;
 the path-algebra results cited under "References" are not imported here.
 
 `TauCeti.oneLoopRep` and `TauCeti.oneLoopNilpotentRep` carry `@[expose]` because the vertex space of
@@ -83,10 +83,8 @@ through its definition, and without it even `TauCeti.oneLoopRep_map_loop_apply` 
 
 ## References
 
-This proves the `¬ IsFiniteRepType` half of the loop-quiver worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose other half -- that the
-path algebra is `k[X]` and is infinite-dimensional -- is `TauCeti.PathAlgebra.oneLoopAlgEquiv`
-together with `TauCeti.not_finiteDimensional_pathAlgebra_oneLoop`.
+The path-algebra side -- that the path algebra is `k[X]` and is infinite-dimensional -- is
+`TauCeti.PathAlgebra.oneLoopAlgEquiv` together with `TauCeti.not_module_finite_pathAlgebra_oneLoop`.
 -/
 
 public section
@@ -240,19 +238,11 @@ theorem oneLoopRepHom_oneLoopRepScalar {c d : k}
 theorem isFinDim_oneLoopRep (c : k) : IsFinDim k Quiver.OneLoop (oneLoopRep.{u, w} k c) :=
   isFinDim_iff.mpr fun _ ↦ inferInstanceAs (FiniteDimensional k k)
 
-/-- `TauCeti.oneLoopRep k c` is nonzero: the vector space at its vertex is the base field, which is
-not the zero module. -/
-theorem not_isZero_oneLoopRep (c : k) : ¬ IsZero (oneLoopRep.{u, w} k c) := by
-  intro h
-  have : Subsingleton k :=
-    ModuleCat.subsingleton_of_isZero (h.obj (Quiver.OneLoop.vertex : Paths Quiver.OneLoop))
-  exact one_ne_zero (α := k) (Subsingleton.elim _ _)
-
 /-- **`TauCeti.oneLoopRep k c` is indecomposable.** Its only vertex carries a line, so its scalar
 records an endomorphism faithfully in the field `k`, a local ring, sending `0` to `0`, the
 identity to `1` and squares to squares. -/
 theorem indecomposable_oneLoopRep (c : k) : Indecomposable (oneLoopRep.{u, w} k c) :=
-  indecomposable_of_injective_of_isLocalRing (not_isZero_oneLoopRep c) oneLoopRepScalar
+  indecomposable_of_injective_of_isLocalRing oneLoopRepScalar
     (fun _ _ h ↦ oneLoopRep_hom_ext h) (oneLoopRepScalar_zero c c) (oneLoopRepScalar_id c)
     fun f ↦ oneLoopRepScalar_comp f f
 
@@ -324,15 +314,6 @@ theorem dimVector_oneLoopNilpotentRep (n : ℕ) (v : Quiver.OneLoop) :
   -- `AdjoinRoot f` *is* `k[X] ⧸ (f)`, so Mathlib's dimension formula for such a quotient applies.
   exact finrank_quotient_span_eq_natDegree.trans (natDegree_X_pow (n + 1))
 
-/-- `TauCeti.oneLoopNilpotentRep k n` is nonzero: its vertex space is the nontrivial ring
-`k[X]/(Xⁿ⁺¹)`. -/
-theorem not_isZero_oneLoopNilpotentRep (n : ℕ) :
-    ¬ IsZero (oneLoopNilpotentRep.{u, w} k n) := by
-  intro h
-  have : Subsingleton (AdjoinRoot ((X : k[X]) ^ (n + 1))) :=
-    ModuleCat.subsingleton_of_isZero (h.obj (Quiver.OneLoop.vertex : Paths Quiver.OneLoop))
-  exact false_of_nontrivial_of_subsingleton (AdjoinRoot ((X : k[X]) ^ (n + 1)))
-
 /-- The single component of an endomorphism of a nilpotent Jordan block, as a linear map on
 `k[X]/(Xⁿ⁺¹)`. The quiver has one vertex, so a natural transformation is this one linear map. -/
 private noncomputable def oneLoopNilpotentRepApp {n : ℕ}
@@ -389,9 +370,9 @@ theorem indecomposable_oneLoopNilpotentRep (n : ℕ) :
     Indecomposable (oneLoopNilpotentRep.{u, w} k n) := by
   have hmul : ∀ e : oneLoopNilpotentRep.{u, w} k n ⟶ oneLoopNilpotentRep.{u, w} k n,
       oneLoopNilpotentRepApp e = LinearMap.mulRight k (oneLoopNilpotentRepApp e 1) := fun e ↦
-    AdjoinRoot.eq_mulRight_of_root_mul (monic_X_pow (R := k) (n + 1))
+    AdjoinRoot.eq_mulRight_of_root_mul
       (oneLoopNilpotentRepApp_root_mul e)
-  refine indecomposable_of_injective_of_isLocalRing (not_isZero_oneLoopNilpotentRep n)
+  refine indecomposable_of_injective_of_isLocalRing
     (fun e ↦ oneLoopNilpotentRepApp e 1) (fun e e' h ↦ ?_) ?_ ?_ fun e ↦ ?_
   · refine oneLoopNilpotentRep_hom_ext ?_
     rw [hmul e, hmul e']

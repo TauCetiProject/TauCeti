@@ -68,7 +68,7 @@ namespace TauCeti.GlobalNumberFields
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- The points of the ray fundamental domain of `𝔪` that are images of algebraic integers. -/
-def rayIntegerSet (𝔪 : Modulus K) : Set (mixedSpace K) :=
+noncomputable def rayIntegerSet (𝔪 : Modulus K) : Set (mixedSpace K) :=
   rayFundamentalDomain 𝔪 ∩ mixedEmbedding.integerLattice K
 
 /-- Membership in `rayIntegerSet`: a point of the ray fundamental domain that is the image of an
@@ -170,8 +170,8 @@ theorem stabilizer_rayIntegerSet_eq_bot {𝔪 : Modulus K} (a : rayIntegerSet �
     rayIntegerSetUnitsCongruenceTorsionSMul_smul_coe] at hζ
   rw [← mixedEmbedding_preimageOfMemRayIntegerSet a] at hζ
   exact OneMemClass.coe_eq_one.mp
-    (eq_one_of_unitSMul_mixedEmbedding_eq
-      (RingOfIntegers.coe_ne_zero_iff.mpr (nonZeroDivisors.coe_ne_zero _)) hζ)
+    ((unitSMul_mixedEmbedding_eq_self_iff
+      (RingOfIntegers.coe_ne_zero_iff.mpr (nonZeroDivisors.coe_ne_zero _))).mp hζ)
 
 /-- **Freeness as a typeclass.**  Exposing `stabilizer_rayIntegerSet_eq_bot` as `IsCancelSMul`
 lets the generic free-action and orbit-cardinality results apply to this action by instance

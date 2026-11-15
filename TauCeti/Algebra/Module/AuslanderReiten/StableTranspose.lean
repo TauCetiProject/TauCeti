@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
 public import TauCeti.Algebra.Module.Projective.Schanuel
+import TauCeti.Algebra.Module.AuslanderReiten.DoubleTranspose.Basic
+import TauCeti.LinearAlgebra.Dual.FiniteProjective
+import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
 # The transpose of an arbitrary projective presentation
@@ -30,11 +33,13 @@ the corresponding duals.
 
 When the presentations are by finitely generated projectives, the duals `Hom_A(P, A)` are finitely
 generated projective `Aᵐᵒᵖ`-modules, so the transpose of a finitely presented module is well defined
-up to adding finitely generated projectives. This is the first half of the Auslander–Bridger
-duality, the other being that transposing twice returns the module up to projective summands; it
-is how Neukirch–Schmidt–Wingberg compare modules of projective dimension one over the group ring
-`ℤ_p[G]` of a finite group through their `Ext¹(-, ℤ_p[G])`, which is the transpose of such a
-module.
+up to adding finitely generated projectives. Combined with the other half of the Auslander–Bridger
+duality, that transposing a dual presentation returns the presented module
+(`TauCeti.doubleTransposePresentationEquiv`), this shows that the transpose determines a finitely
+presented module up to finitely generated projective summands: modules with isomorphic transposes
+become isomorphic after adding finitely generated projectives. This is how Neukirch–Schmidt–Wingberg
+compare modules of projective dimension one over the group ring `ℤ_p[G]` of a finite group through
+their `Ext¹(-, ℤ_p[G])`, which is the transpose of such a module.
 
 ## Main definitions
 
@@ -48,6 +53,9 @@ module.
 * `TauCeti.AuslanderReitenTranspose.nonempty_linearEquiv_prod_dual`: for two projective
   presentations `P₁ → P₀ → M` and `Q₁ → Q₀ → M` of the same module,
   `Tr(P₁ → P₀) ⊕ Hom_A(P₀ × Q₁, A) ≃ Tr(Q₁ → Q₀) ⊕ Hom_A(P₁ × Q₀, A)`.
+* `TauCeti.AuslanderReitenTranspose.nonempty_linearEquiv_prod_of_linearEquiv`: for finite projective
+  presentations `P₁ → P₀ → M` and `Q₁ → Q₀ → N` with isomorphic transposes,
+  `M ⊕ P₁ ⊕ Q₀ ≃ N ⊕ P₀ ⊕ Q₁`.
 
 ## References
 
@@ -111,6 +119,55 @@ theorem nonempty_linearEquiv_prod_dual {f : P₁ →ₗ[A] P₀} {π : P₀ →�
   exact ⟨eP.symm.trans ((linearEquiv e₀ e₁ he).trans eQ)⟩
 
 end Presentation
+
+section Recovery
+
+variable {M N P₀ P₁ Q₀ Q₁ : Type*} [AddCommGroup M] [Module A M] [AddCommGroup N] [Module A N]
+  [AddCommGroup P₀] [Module A P₀] [AddCommGroup P₁] [Module A P₁]
+  [AddCommGroup Q₀] [Module A Q₀] [AddCommGroup Q₁] [Module A Q₁]
+  [Module.Finite A P₀] [Module.Projective A P₀] [Module.Finite A P₁] [Module.Projective A P₁]
+
+/-- Transposing the dual of a finite projective presentation of `M`, and taking the opposite double
+dual of finite projectives `C₁` and `C₂`, recovers `M ⊕ C₁ ⊕ C₂`, semilinearly along
+`Aᵐᵒᵖᵐᵒᵖ ≃+* A`. -/
+private noncomputable def doubleTransposeProdEquiv {C₁ C₂ : Type*}
+    [AddCommGroup C₁] [Module A C₁] [Module.Finite A C₁] [Module.Projective A C₁]
+    [AddCommGroup C₂] [Module A C₂] [Module.Finite A C₂] [Module.Projective A C₂]
+    {f : P₁ →ₗ[A] P₀} {π : P₀ →ₗ[A] M} (hf : Function.Exact f π) (hπ : Function.Surjective π) :
+    (AuslanderReitenTranspose (f.lcomp Aᵐᵒᵖ A) ×
+      Module.Dual Aᵐᵒᵖ (Module.Dual A C₁ × Module.Dual A C₂))
+        ≃ₛₗ[RingHomClass.toRingHom (RingEquiv.opOp A).symm] M × (C₁ × C₂) :=
+  let eM := doubleTransposePresentationEquiv A f π hf hπ
+  let eC := (LinearEquiv.congrLeft Aᵐᵒᵖ Aᵐᵒᵖᵐᵒᵖ (LinearMap.coprodEquiv Aᵐᵒᵖ)).trans
+    ((opDualCodomainEquiv A _).symm.trans (opDualEvalEquiv A (C₁ × C₂)).symm)
+  -- Mathlib's `LinearEquiv.prodCongr` is stated only for linear equivalences, so the product of
+  -- these semilinear ones is assembled from `AddEquiv.prodCongr` in the same way.
+  { eM.toAddEquiv.prodCongr eC.toAddEquiv with
+    map_smul' := fun c x ↦ Prod.ext (eM.map_smulₛₗ c x.1) (eC.map_smulₛₗ c x.2) }
+
+variable [Module.Finite A Q₀] [Module.Projective A Q₀] [Module.Finite A Q₁] [Module.Projective A Q₁]
+
+/-- **The transpose determines a module up to projective summands.** For finite projective
+presentations `P₁ → P₀ → M → 0` and `Q₁ → Q₀ → N → 0`, with first maps `f` and `g`, an isomorphism
+of transposes `Tr f ≃ Tr g` gives `M ⊕ P₁ ⊕ Q₀ ≃ N ⊕ P₀ ⊕ Q₁` as `A`-modules.
+
+The ring `A` may be noncommutative, and no minimality of the presentations is needed. -/
+theorem nonempty_linearEquiv_prod_of_linearEquiv {f : P₁ →ₗ[A] P₀} {π : P₀ →ₗ[A] M}
+    {g : Q₁ →ₗ[A] Q₀} {ρ : Q₀ →ₗ[A] N} (hf : Function.Exact f π) (hπ : Function.Surjective π)
+    (hg : Function.Exact g ρ) (hρ : Function.Surjective ρ)
+    (e : AuslanderReitenTranspose f ≃ₗ[Aᵐᵒᵖ] AuslanderReitenTranspose g) :
+    Nonempty ((M × (P₁ × Q₀)) ≃ₗ[A] (N × (P₀ × Q₁))) := by
+  -- The dual arrows present `Tr f` twice over `Aᵐᵒᵖ`, the second time through `e`.
+  have hf' : Function.Exact (f.lcomp Aᵐᵒᵖ A) (mk f) := by
+    rw [LinearMap.exact_iff, ker_mk]
+  have hg' : Function.Exact (g.lcomp Aᵐᵒᵖ A) (e.symm.toLinearMap ∘ₗ mk g) := by
+    rw [LinearMap.exact_iff, LinearEquiv.ker_comp, ker_mk]
+  obtain ⟨e'⟩ := nonempty_linearEquiv_prod_dual hf' (mk_surjective f) hg'
+    (e.symm.surjective.comp (mk_surjective g))
+  -- Transposing the two dual presentations returns `M` and `N`.
+  exact ⟨(doubleTransposeProdEquiv hf hπ).symm.trans (e'.trans (doubleTransposeProdEquiv hg hρ))⟩
+
+end Recovery
 
 end AuslanderReitenTranspose
 

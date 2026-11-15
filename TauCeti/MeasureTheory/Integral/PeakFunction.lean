@@ -1,0 +1,225 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.MeasureTheory.Function.LpOrder
+public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Measure.OpenPos
+public import Mathlib.Topology.ContinuousMap.CompactlySupported
+public import Mathlib.Topology.UrysohnsLemma
+
+/-!
+# Integrals against `L¹` peak functions concentrating at a point
+
+Let `f i` be a net of `L¹` classes of unit integral, `∫ f i = 1`, with uniformly bounded `L¹` norms,
+which concentrate at a point `x₀`: for every neighbourhood `U` of `x₀`, eventually each `f i`
+vanishes almost everywhere outside `U`. Then `∫ x, f i x • φ x ∂μ` tends to `a` for every `φ`
+with limit `a` at `x₀` whose products `f i • φ` with the weights are almost everywhere strongly
+measurable. This is the approximate-identity argument in its pointwise form: since `∫ f i = 1`,
+the difference is `∫ x, f i x • (φ x - a) ∂μ`, and `φ x` stays close to `a` on the set where
+`f i` lives.
+
+Only the integrands `f i • φ` are asked to be almost everywhere strongly measurable, not `φ`
+itself. This holds when `φ` is, but also for a continuous `φ` and a measure that is inner regular
+for compact sets but not σ-finite, such as the Haar measure `MeasureTheory.Measure.addHaar` of a
+locally compact group that is not σ-compact
+(`MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_smul`).
+
+On a measure that charges every open set and is finite on some neighbourhood of each point, such
+peak functions exist inside every neighbourhood of every point (normalized indicators), so the
+statement is never vacuous.
+
+The weights here are `L¹` classes with values in an `RCLike` field, as consumed by integrated forms
+of representations. Mathlib's peak-function results
+(`tendsto_integral_peak_smul_of_integrable_of_tendsto` in
+`Mathlib/MeasureTheory/Integral/PeakFunction.lean`) do not apply in that situation: they ask for
+nonnegative real weights, defined pointwise, and for `φ` to be integrable. The latter fails for the
+orbits `g ↦ π g v` of a unitary representation of a non-compact group, which have constant norm.
+Similarly, `tendsto_integral_smul_of_tendsto_average_norm_sub` asks for pointwise bounds
+`|g i| ≤ K / μ (a i)` on the weights. Here, instead, `φ` only has to be bounded near `x₀`, which
+its limit at `x₀` provides.
+
+## Main statements
+
+* `TauCeti.norm_integral_smul_sub_le`: the approximate-identity estimate
+  `‖∫ x, f x • φ x ∂μ - y‖ ≤ ε * ‖f‖` when `∫ f = 1`, `f` vanishes off `U`, and `φ` stays within `ε`
+  of `y` almost everywhere on `U`.
+* `TauCeti.tendsto_integral_smul_of_tendsto`: a net of `L¹` peak functions concentrating at
+  `x₀` integrates `φ` to its limit at `x₀`.
+* `TauCeti.exists_nonneg_integral_eq_one_norm_eq_one`,
+  `TauCeti.exists_integral_eq_one_norm_eq_one`: nonnegative real and `RCLike`-valued peak functions
+  of unit integral and unit `L¹` norm exist inside every neighbourhood of a point.
+* `TauCeti.exists_nonneg_tsupport_subset_integral_eq_one`: on a locally compact space, they can
+  be taken continuous, compactly supported and nonnegative.
+* `CompactlySupportedContinuousMap.norm_integral_smul_sub_le`: the direct continuous peak-function
+  estimate `‖∫ x, φ x • ψ x ∂μ - y‖ ≤ ε` for a nonnegative `φ : C_c(α, ℝ)` of unit integral and
+  continuous `ψ` within `ε` of `y` on `tsupport φ`.
+
+## References
+
+* G. B. Folland, *A Course in Abstract Harmonic Analysis*, 2nd ed., CRC Press (2016), §2.5.
+-/
+
+public section
+
+open Filter MeasureTheory Metric Set
+open scoped CompactlySupported Topology
+
+namespace TauCeti
+
+variable {α 𝕜 E : Type*} [MeasurableSpace α] [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E] [CompleteSpace E] {μ : Measure α}
+
+/-- **The approximate-identity estimate.** If an `L¹` class `f` has unit integral and vanishes
+almost everywhere outside `U`, and `φ` stays within `ε` of `y` almost everywhere on `U`, then the
+integral of `φ` against `f` is within `ε * ‖f‖` of `y`. The integrand `f • φ` is assumed almost
+everywhere strongly measurable. -/
+theorem norm_integral_smul_sub_le {f : α →₁[μ] 𝕜} (hf : ∫ x, f x ∂μ = 1) {U : Set α}
+    (hfU : ∀ᵐ x ∂μ, x ∉ U → f x = 0) {φ : α → E}
+    (hφ : AEStronglyMeasurable (fun x ↦ f x • φ x) μ) {y : E}
+    {ε : ℝ} (hφU : ∀ᵐ x ∂μ, x ∈ U → ‖φ x - y‖ ≤ ε) :
+    ‖(∫ x, f x • φ x ∂μ) - y‖ ≤ ε * ‖f‖ := by
+  have hfi : Integrable (fun x ↦ f x) μ := L1.integrable_coeFn f
+  -- Pointwise, `‖f x • (φ x - y)‖ ≤ ‖f x‖ * ε`, since `f x = 0` off `U`.
+  have hbound : ∀ᵐ x ∂μ, ‖f x • (φ x - y)‖ ≤ ‖f x‖ * ε := by
+    filter_upwards [hfU, hφU] with x hx hxφ
+    rw [norm_smul]
+    by_cases hxU : x ∈ U
+    · exact mul_le_mul_of_nonneg_left (hxφ hxU) (norm_nonneg _)
+    · simp [hx hxU]
+  have hint : Integrable (fun x ↦ f x • (φ x - y)) μ :=
+    (hfi.norm.mul_const ε).mono'
+      ((hφ.sub (hfi.aestronglyMeasurable.smul_const y)).congr
+        (.of_forall fun x ↦ (smul_sub _ _ _).symm)) hbound
+  -- Since `∫ f = 1`, subtracting `y` is integrating `f • (φ - y)`.
+  have hsplit : ∫ x, f x • φ x ∂μ = (∫ x, f x • (φ x - y) ∂μ) + ∫ x, f x • y ∂μ := by
+    rw [← integral_add hint (hfi.smul_const y)]
+    simp_rw [smul_sub, sub_add_cancel]
+  rw [hsplit, integral_smul_const, hf, one_smul, add_sub_cancel_right, L1.norm_eq_integral_norm,
+    mul_comm, ← integral_mul_const]
+  exact norm_integral_le_of_norm_le (hfi.norm.mul_const ε) hbound
+
+/-- **`L¹` peak functions integrate a function to its limit at the peak.** Let `f i` be `L¹`
+classes which eventually have unit integral and `L¹` norm at most `C`, and which concentrate at
+`x₀`: for every neighbourhood `U` of `x₀`, eventually `f i` vanishes almost everywhere outside `U`.
+Then `∫ x, f i x • φ x ∂μ` tends to `a` for every `φ` tending to `a` at `x₀` whose products
+`f i • φ` are eventually almost everywhere strongly measurable. -/
+theorem tendsto_integral_smul_of_tendsto {ι : Type*} {l : Filter ι} {f : ι → α →₁[μ] 𝕜}
+    {C : ℝ} {x₀ : α} [TopologicalSpace α] (hf : ∀ᶠ i in l, ∫ x, f i x ∂μ = 1)
+    (hfC : ∀ᶠ i in l, ‖f i‖ ≤ C) (hfx₀ : ∀ U ∈ 𝓝 x₀, ∀ᶠ i in l, ∀ᵐ x ∂μ, x ∉ U → f i x = 0)
+    {φ : α → E} (hφ : ∀ᶠ i in l, AEStronglyMeasurable (fun x ↦ f i x • φ x) μ) {a : E}
+    (hφa : Tendsto φ (𝓝 x₀) (𝓝 a)) :
+    Tendsto (fun i ↦ ∫ x, f i x • φ x ∂μ) l (𝓝 a) := by
+  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
+  -- Ask `φ` to stay within `δ` of `a`, where `C * δ < ε`.
+  obtain ⟨δ, hδpos, hδC⟩ := exists_pos_mul_lt hε C
+  filter_upwards [hf, hfC, hfx₀ _ (hφa (closedBall_mem_nhds a hδpos)), hφ] with i hi hiC hiU hiφ
+  rw [dist_eq_norm]
+  calc ‖(∫ x, f i x • φ x ∂μ) - a‖ ≤ δ * ‖f i‖ :=
+        norm_integral_smul_sub_le hi hiU hiφ <| .of_forall fun x hx ↦ by
+          simpa [dist_eq_norm] using hx
+    _ ≤ C * δ := (mul_le_mul_of_nonneg_left hiC hδpos.le).trans_eq (mul_comm _ _)
+    _ < ε := hδC
+
+variable (μ) in
+/-- **Nonnegative `L¹` peak functions exist.** For a measure positive on nonempty open sets and
+finite on some neighbourhood of each point, every neighbourhood `U` of a point carries a
+nonnegative real `L¹` class of unit integral and unit `L¹` norm vanishing almost everywhere
+outside `U`: the indicator of a neighbourhood of finite measure inside `U`, normalized by that
+measure. -/
+theorem exists_nonneg_integral_eq_one_norm_eq_one [TopologicalSpace α] [OpensMeasurableSpace α]
+    [μ.IsOpenPosMeasure] [IsLocallyFiniteMeasure μ] {x₀ : α} {U : Set α} (hU : U ∈ 𝓝 x₀) :
+    ∃ f : α →₁[μ] ℝ, 0 ≤ f ∧ ∫ x, f x ∂μ = 1 ∧ ‖f‖ = 1 ∧ ∀ᵐ x ∂μ, x ∉ U → f x = 0 := by
+  -- An open neighbourhood `V ⊆ U` of `x₀` of positive, finite measure.
+  obtain ⟨W, hW, hWμ⟩ := μ.finiteAt_nhds x₀
+  set V := interior (U ∩ W)
+  have hVμ : μ V ≠ ⊤ :=
+    ((measure_mono (interior_subset.trans inter_subset_right)).trans_lt hWμ).ne
+  have hVpos : 0 < μ.real V :=
+    ENNReal.toReal_pos (isOpen_interior.measure_ne_zero μ
+      ⟨x₀, mem_interior_iff_mem_nhds.2 (inter_mem hU hW)⟩) hVμ
+  refine ⟨indicatorConstLp 1 isOpen_interior.measurableSet hVμ (μ.real V)⁻¹, ?_, ?_, ?_, ?_⟩
+  · rw [← Lp.coeFn_nonneg]
+    filter_upwards [indicatorConstLp_coeFn (p := 1) (hs := isOpen_interior.measurableSet)
+      (hμs := hVμ) (c := (μ.real V)⁻¹)] with x hx
+    exact hx.symm ▸ indicator_nonneg (fun _ _ ↦ inv_nonneg.2 hVpos.le) x
+  · rw [integral_indicatorConstLp, smul_eq_mul, mul_inv_cancel₀ hVpos.ne']
+  · rw [norm_indicatorConstLp one_ne_zero ENNReal.one_ne_top, ENNReal.toReal_one, div_one,
+      Real.rpow_one, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hVpos), inv_mul_cancel₀ hVpos.ne']
+  · filter_upwards [indicatorConstLp_coeFn_notMem (p := 1) (hs := isOpen_interior.measurableSet)
+      (hμs := hVμ) (c := (μ.real V)⁻¹)] with x hx hxU
+    exact hx fun hxV ↦ hxU (interior_subset hxV).1
+
+variable (𝕜 μ) in
+/-- **`L¹` peak functions exist.** For a measure positive on nonempty open sets and finite on some
+neighbourhood of each point, every neighbourhood `U` of a point carries an `L¹` class of unit
+integral and unit `L¹` norm vanishing almost everywhere outside `U`: the indicator of a
+neighbourhood of finite measure inside `U`, normalized by that measure. -/
+theorem exists_integral_eq_one_norm_eq_one [TopologicalSpace α] [OpensMeasurableSpace α]
+    [μ.IsOpenPosMeasure] [IsLocallyFiniteMeasure μ] {x₀ : α} {U : Set α} (hU : U ∈ 𝓝 x₀) :
+    ∃ f : α →₁[μ] 𝕜, ∫ x, f x ∂μ = 1 ∧ ‖f‖ = 1 ∧ ∀ᵐ x ∂μ, x ∉ U → f x = 0 := by
+  obtain ⟨f, _, hf1, hfn, hfU⟩ := exists_nonneg_integral_eq_one_norm_eq_one μ hU
+  have hae := (RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).coeFn_compLp f
+  refine ⟨(RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp f, ?_, ?_, ?_⟩
+  · simp [integral_congr_ae hae, RCLike.ofRealCLM_apply, integral_ofReal, hf1]
+  · rw [L1.norm_eq_integral_norm] at hfn ⊢
+    refine (integral_congr_ae ?_).trans hfn
+    filter_upwards [hae] with x hx
+    simp [hx, RCLike.ofRealCLM_apply]
+  · filter_upwards [hae, hfU] with x hx hxU hnotU
+    simp [hx, hxU hnotU]
+
+variable (μ) in
+/-- **Continuous peak functions exist.** On a locally compact space with a measure positive on
+nonempty open sets and finite on compact sets, every neighbourhood `U` of a point carries a
+nonnegative compactly supported continuous function of unit integral whose support closure lies
+in `U`: a Urysohn function, normalized by its integral. -/
+theorem exists_nonneg_tsupport_subset_integral_eq_one [TopologicalSpace α] [R1Space α]
+    [LocallyCompactSpace α] [OpensMeasurableSpace α] [μ.IsOpenPosMeasure]
+    [IsFiniteMeasureOnCompacts μ] {x₀ : α} {U : Set α} (hU : U ∈ 𝓝 x₀) :
+    ∃ φ : C_c(α, ℝ), 0 ≤ φ ∧ tsupport φ ⊆ U ∧ ∫ x, φ x ∂μ = 1 := by
+  obtain ⟨f, hf1, hfc, hfU, hf01⟩ := exists_continuousMap_one_of_isCompact_subset_isOpen
+    isCompact_singleton isOpen_interior (singleton_subset_iff.2 (mem_interior_iff_mem_nhds.2 hU))
+  have hf0 : 0 ≤ (f : α → ℝ) := fun x ↦ (hf01 x).1
+  have hpos : 0 < ∫ x, f x ∂μ := f.continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero
+    hfc hf0 (x := x₀) (by simp [hf1 (mem_singleton x₀)])
+  set g : C_c(α, ℝ) := ⟨f, hfc⟩
+  have hg : ⇑g = f := CompactlySupportedContinuousMap.coe_mk _ _
+  refine ⟨(∫ x, f x ∂μ)⁻¹ • g, CompactlySupportedContinuousMap.le_def.2 fun x ↦ ?_, ?_, ?_⟩
+  · simpa [hg] using mul_nonneg (inv_nonneg.2 hpos.le) (hf0 x)
+  · rw [CompactlySupportedContinuousMap.coe_smul (R := ℝ), hg]
+    exact (tsupport_smul_subset_right (fun _ ↦ (∫ x, f x ∂μ)⁻¹) f).trans
+      (hfU.trans interior_subset)
+  · simp [hg, integral_const_mul, inv_mul_cancel₀ hpos.ne']
+
+end TauCeti
+
+/-- **Continuous peak-function estimate.** If a nonnegative `φ : C_c(α, ℝ)` has unit integral and
+a continuous map `ψ : α → E` into a Banach space stays within `ε` of `y` on `tsupport φ`, then
+`‖(∫ x, φ x • ψ x ∂μ) - y‖ ≤ ε`. -/
+theorem CompactlySupportedContinuousMap.norm_integral_smul_sub_le {α E : Type*}
+    [TopologicalSpace α] [MeasurableSpace α] [OpensMeasurableSpace α]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    {μ : Measure α} [IsFiniteMeasureOnCompacts μ]
+    {φ : C_c(α, ℝ)} (hφ : 0 ≤ φ) (hφ1 : ∫ x, φ x ∂μ = 1) {ψ : α → E} (hψ : Continuous ψ)
+    {y : E} {ε : ℝ} (hψU : ∀ x ∈ tsupport φ, ‖ψ x - y‖ ≤ ε) :
+    ‖(∫ x, φ x • ψ x ∂μ) - y‖ ≤ ε := by
+  have hφi : Integrable φ μ := φ.continuous.integrable_of_hasCompactSupport φ.hasCompactSupport
+  have hψi : Integrable (fun x ↦ φ x • ψ x) μ :=
+    (φ.continuous.smul hψ).integrable_of_hasCompactSupport φ.hasCompactSupport.smul_right
+  have hsub : (∫ x, φ x • ψ x ∂μ) - y = ∫ x, φ x • (ψ x - y) ∂μ := by
+    calc (∫ x, φ x • ψ x ∂μ) - y
+        = (∫ x, φ x • ψ x ∂μ) - ∫ x, φ x • y ∂μ := by rw [integral_smul_const, hφ1, one_smul]
+      _ = ∫ x, φ x • (ψ x - y) ∂μ := by
+          rw [← integral_sub hψi (hφi.smul_const y)]
+          simp_rw [smul_sub]
+  rw [hsub, ← one_mul ε, ← hφ1, ← integral_mul_const]
+  refine norm_integral_le_of_norm_le (hφi.mul_const ε) (.of_forall fun x ↦ ?_)
+  rw [norm_smul, Real.norm_of_nonneg (hφ x)]
+  by_cases hx : x ∈ tsupport φ
+  · exact mul_le_mul_of_nonneg_left (hψU x hx) (hφ x)
+  · simp [image_eq_zero_of_notMem_tsupport hx]

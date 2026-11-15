@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.BoundedAtCusp
 
 /-!
-# Vanishing and boundedness at a cusp are closed under finite sums and scalars
+# Limits, vanishing, and boundedness at cusps
 
 Mathlib's `OnePoint.IsZeroAt` and `OnePoint.IsBoundedAt` are closed under binary sums
 (`OnePoint.IsZeroAt.add`, `OnePoint.IsBoundedAt.add`), but the zero function and a
@@ -21,8 +21,12 @@ an operator preserves vanishing at the cusps is an induction over the summands, 
 `OnePoint.IsZeroAt.sum` each call site has to rerun that induction by hand. The scalar half is
 what the nebentypus twist needs, where each summand carries a character value as its weight.
 
+An upper-triangular slash preserves the filter at infinity and has constant automorphy factor.
+The limit-transport lemma records this factor, including the conjugation for negative determinant.
+
 ## Main declarations
 
+* `TauCeti.tendsto_slash_atImInfty_of_upperTriangular`: the limit of an upper-triangular slash.
 * `UpperHalfPlane.isZeroAtImInfty_zero`: the zero analogue of Mathlib's
   `zero_form_isBoundedAtImInfty`, which is absent upstream.
 * `OnePoint.IsZeroAt.zero`, `OnePoint.IsBoundedAt.zero`: the zero function vanishes, and is
@@ -30,7 +34,7 @@ what the nebentypus twist needs, where each summand carries a character value as
 * `OnePoint.IsZeroAt.sum`, `OnePoint.IsBoundedAt.sum`: a finite sum of functions vanishing
   (resp. bounded) at `c` vanishes (resp. is bounded) at `c`.
 * `OnePoint.IsZeroAt.const_smul`, `OnePoint.IsBoundedAt.const_smul`: both properties survive
-  scaling by a constant.
+  scaling by a constant from any scalar type `α` with `IsScalarTower α ℂ ℂ`.
 
 ## Provenance
 
@@ -50,6 +54,25 @@ public section
 
 open UpperHalfPlane
 
+open scoped MatrixGroups ModularForm Topology
+
+namespace TauCeti
+
+/-- An upper-triangular slash carries a limit at infinity to the same limit times its
+constant automorphy factor, with complex conjugation when the determinant is negative. -/
+lemma tendsto_slash_atImInfty_of_upperTriangular {f : ℍ → ℂ} {c : ℂ} (k : ℤ)
+    (g : GL (Fin 2) ℝ) (hg : g 1 0 = 0) (hf : Filter.Tendsto f atImInfty (𝓝 c)) :
+    Filter.Tendsto (f ∣[k] g) atImInfty
+      (𝓝 (σ g c * |g.det.val| ^ (k - 1) * (g 1 1 : ℂ) ^ (-k))) := by
+  have h := (((σ g).continuous.tendsto c).comp
+    (hf.comp (tendsto_smul_atImInfty hg))).mul_const
+      (|g.det.val| ^ (k - 1) : ℂ)
+  convert h.mul_const ((g 1 1 : ℂ) ^ (-k)) using 1
+  ext z
+  simp [ModularForm.slash_apply, denom, hg]
+
+end TauCeti
+
 namespace UpperHalfPlane
 
 /-- **The zero function is zero at `im → ∞`.** This is the missing analogue of Mathlib's
@@ -65,6 +88,7 @@ end UpperHalfPlane
 namespace OnePoint
 
 variable {c : OnePoint ℝ} {k : ℤ} {ι : Type*} {s : Finset ι} {F : ι → ℍ → ℂ}
+variable {α : Type*} [SMul α ℂ] [IsScalarTower α ℂ ℂ]
 
 /-- The zero function vanishes at every point of `OnePoint ℝ`. -/
 @[simp]
@@ -72,8 +96,8 @@ lemma IsZeroAt.zero : IsZeroAt c 0 k := fun _ _ ↦ by simp
 
 /-- The zero function is bounded at every point of `OnePoint ℝ`. -/
 @[simp]
-lemma IsBoundedAt.zero : IsBoundedAt c 0 k := fun _ _ ↦ by
-  simpa using zero_form_isBoundedAtImInfty
+lemma IsBoundedAt.zero : IsBoundedAt c 0 k := fun g hg ↦
+  (IsZeroAt.zero g hg).isBoundedAtImInfty
 
 /-- A finite sum of functions vanishing at `c` vanishes at `c`. -/
 lemma IsZeroAt.sum (h : ∀ i ∈ s, IsZeroAt c (F i) k) : IsZeroAt c (∑ i ∈ s, F i) k :=
@@ -83,20 +107,24 @@ lemma IsZeroAt.sum (h : ∀ i ∈ s, IsZeroAt c (F i) k) : IsZeroAt c (∑ i ∈
 lemma IsBoundedAt.sum (h : ∀ i ∈ s, IsBoundedAt c (F i) k) : IsBoundedAt c (∑ i ∈ s, F i) k :=
   Finset.sum_induction F (IsBoundedAt c · k) (fun _ _ ↦ .add) IsBoundedAt.zero h
 
-/-- Vanishing at `c` survives scaling by a constant. -/
-lemma IsZeroAt.const_smul {f : ℍ → ℂ} (a : ℂ) (hf : IsZeroAt c f k) :
+/-- Vanishing at `c` survives scaling by a constant `a : α`, for any scalar type `α`
+with `IsScalarTower α ℂ ℂ` (such as `ℂ`, `ℝ`, `ℚ`, `ℤ` or `ℕ`). -/
+lemma IsZeroAt.const_smul {f : ℍ → ℂ} (a : α) (hf : IsZeroAt c f k) :
     IsZeroAt c (a • f) k := fun g hg ↦ by
-  -- `ModularForm.smul_slash` twists the scalar to `σ g a` when `g` has negative determinant;
-  -- that twist is immaterial, since vanishing along `atImInfty` is preserved by *any* scalar.
-  rw [ModularForm.smul_slash]
+  -- Once `smul_one_smul` makes the scalar complex, `ModularForm.smul_slash` twists it by `σ g`
+  -- when `g` has negative determinant; that twist is immaterial, since vanishing along
+  -- `atImInfty` is preserved by *any* scalar.
+  rw [← smul_one_smul ℂ a f, ModularForm.smul_slash]
   exact (hf g hg).smul _
 
-/-- Boundedness at `c` survives scaling by a constant. -/
-lemma IsBoundedAt.const_smul {f : ℍ → ℂ} (a : ℂ) (hf : IsBoundedAt c f k) :
+/-- Boundedness at `c` survives scaling by a constant `a : α`, for any scalar type `α`
+with `IsScalarTower α ℂ ℂ` (such as `ℂ`, `ℝ`, `ℚ`, `ℤ` or `ℕ`). -/
+lemma IsBoundedAt.const_smul {f : ℍ → ℂ} (a : α) (hf : IsBoundedAt c f k) :
     IsBoundedAt c (a • f) k := fun g hg ↦ by
-  -- `ModularForm.smul_slash` twists the scalar to `σ g a` when `g` has negative determinant;
-  -- that twist is immaterial, since boundedness along `atImInfty` is preserved by *any* scalar.
-  rw [ModularForm.smul_slash]
+  -- Once `smul_one_smul` makes the scalar complex, `ModularForm.smul_slash` twists it by `σ g`
+  -- when `g` has negative determinant; that twist is immaterial, since boundedness along
+  -- `atImInfty` is preserved by *any* scalar.
+  rw [← smul_one_smul ℂ a f, ModularForm.smul_slash]
   exact (hf g hg).smul _
 
 end OnePoint

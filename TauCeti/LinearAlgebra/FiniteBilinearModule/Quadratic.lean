@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -31,9 +31,19 @@ the polar pairing is therefore `B(x, y)` modulo `ℤ`.
 * `TauCeti.FiniteQuadraticModule.toFiniteBilinearModule`: the canonical polar bilinear module.
 * `TauCeti.FiniteQuadraticModule.Hom`: a quadratic-map-preserving additive homomorphism.
 * `TauCeti.FiniteQuadraticModule.Isometry`: a quadratic-map isometric equivalence.
+* `TauCeti.FiniteQuadraticModule.Isometry.ofEq`: the identity isometry between equal finite
+  quadratic modules.
+* `TauCeti.FiniteQuadraticModule.Isometry.ofSubsingleton`: the unique isometry between two trivial
+  finite quadratic modules.
+* `TauCeti.FiniteQuadraticModule.Hom.toIsometryOfNondegenerate`: a morphism from a
+  nondegenerate source of the same finite cardinality, packaged as an isometry.
+* `TauCeti.FiniteQuadraticModule.two_nsmul_eq_zero_of_quadratic_add_self_eq_zero`: a
+  nondegenerate module whose quadratic form takes values in `½ℤ/ℤ` is killed by `2`.
 * `TauCeti.FiniteQuadraticModule.IsIsotropic`: quadratic isotropy of an additive subgroup.
 * `TauCeti.FiniteQuadraticModule.isIsotropic_prod_iff`: quadratic isotropy of a product subgroup
   in an orthogonal direct sum is quadratic isotropy of each factor subgroup.
+* `TauCeti.FiniteQuadraticModule.isIsotropic_zmultiples_iff`: a cyclic subgroup is quadratically
+  isotropic exactly when its generator is.
 * `TauCeti.FiniteQuadraticModule.IsLagrangian`: a quadratic-isotropic subgroup equal to its
   bilinear orthogonal complement.
 * `TauCeti.FiniteQuadraticModule.orthogonalQuotient`: the quadratic module induced on
@@ -106,6 +116,40 @@ variable (A : FiniteQuadraticModule)
 theorem polar_eq_pairing (x y : A) :
     QuadraticMap.polar A.quadratic x y = A.toFiniteBilinearModule.pairing x y :=
   A.polar_eq_pairing' x y
+
+/-- The quadratic value of an integral combination `m • x + n • y`, expanded in terms of the
+quadratic values of `x` and `y` and their pairing. -/
+theorem quadratic_zsmul_add_zsmul (x y : A) (m n : ℤ) :
+    A.quadratic (m • x + n • y) = (m * m) • A.quadratic x +
+      (m * n) • A.toFiniteBilinearModule.pairing x y + (n * n) • A.quadratic y := by
+  rw [QuadraticMap.map_add A.quadratic, QuadraticMap.map_smul, QuadraticMap.map_smul,
+    QuadraticMap.polar_smul_left, QuadraticMap.polar_smul_right, polar_eq_pairing, smul_smul]
+  abel
+
+/-- If `n` kills an element, then `2 * n` kills its quadratic value. -/
+theorem two_mul_nsmul_quadratic_of_nsmul_eq_zero {n : ℕ} (x : A) (hx : n • x = 0) :
+    (2 * n) • A.quadratic x = 0 := by
+  rw [mul_nsmul, ← QuadraticMap.polar_self, polar_eq_pairing, ← map_nsmul, hx, map_zero]
+
+/-- Twice the order of the underlying group kills every quadratic value. -/
+theorem two_mul_natCard_nsmul_quadratic (x : A) :
+    (2 * Nat.card A) • A.quadratic x = 0 :=
+  A.two_mul_nsmul_quadratic_of_nsmul_eq_zero x (card_nsmul_eq_zero' (x := x))
+
+/-- An odd natural number killing an element also kills its quadratic value. -/
+theorem nsmul_quadratic_of_odd {n : ℕ} (hn : Odd n) (x : A) (hx : n • x = 0) :
+    n • A.quadratic x = 0 := by
+  have hsq : n • (n • A.quadratic x) = 0 := by
+    rw [← mul_nsmul, ← Nat.cast_smul_eq_nsmul ℤ, Nat.cast_mul,
+      ← A.quadratic.map_smul, Nat.cast_smul_eq_nsmul ℤ, hx, A.quadratic.map_zero]
+  have htwo : 2 • (n • A.quadratic x) = 0 := by
+    simpa only [mul_nsmul'] using A.two_mul_nsmul_quadratic_of_nsmul_eq_zero x hx
+  exact (nsmul_eq_zero_iff_of_coprime hn.coprime_two_right).mp ⟨hsq, htwo⟩
+
+/-- If the underlying group has odd order, that order kills every quadratic value. -/
+theorem natCard_nsmul_quadratic_of_odd (hm : Odd (Nat.card A)) (x : A) :
+    Nat.card A • A.quadratic x = 0 :=
+  A.nsmul_quadratic_of_odd hm x (card_nsmul_eq_zero' (x := x))
 
 /-- The bilinear map of the underlying finite bilinear module is exactly the polar bilinear map. -/
 theorem toFiniteBilinearModule_toBilin :
@@ -228,6 +272,26 @@ theorem trans_apply {C : FiniteQuadraticModule} (f : Isometry A B) (g : Isometry
     (f.trans g) x = g (f x) :=
   rfl
 
+/-- The identity isometry between two equal finite quadratic modules. -/
+def ofEq {A' : FiniteQuadraticModule.{u}} (h : A = A') : Isometry A A' :=
+  h ▸ QuadraticMap.IsometryEquiv.refl A.quadratic
+
+/-- The identity isometry between equal finite quadratic modules is the cast of carriers. -/
+theorem ofEq_apply {A' : FiniteQuadraticModule.{u}} (h : A = A') (x : A) :
+    ofEq h x = cast (congrArg (fun C : FiniteQuadraticModule.{u} ↦ (C : Type u)) h) x := by
+  subst h
+  rfl
+
+/-- The identity isometry of a reflexive equality is the identity. -/
+@[simp]
+theorem ofEq_rfl : ofEq (rfl : A = A) = QuadraticMap.IsometryEquiv.refl A.quadratic :=
+  (rfl)
+
+/-- The isometry between two finite quadratic modules with at most one element. -/
+def ofSubsingleton [Subsingleton A] [Subsingleton B] : Isometry A B where
+  toLinearEquiv := LinearEquiv.ofSubsingleton _ _
+  map_app' x := by simp [Subsingleton.elim x 0]
+
 /-- A quadratic isometry is, after forgetting bijectivity, a morphism. -/
 def toHom (f : Isometry A B) : Hom A B :=
   f.toIsometry
@@ -284,6 +348,12 @@ namespace Hom
 
 variable {A : FiniteQuadraticModule.{u}} {B : FiniteQuadraticModule.{v}}
 
+/-- A quadratic morphism from a nondegenerate finite module is injective. -/
+theorem injective (f : Hom A B) (hA : A.IsNondegenerate) : Function.Injective f :=
+  fun x y hxy ↦ FiniteBilinearModule.Hom.injective f.toFiniteBilinearModule hA
+    ((toFiniteBilinearModule_apply f x).trans
+      (hxy.trans (toFiniteBilinearModule_apply f y).symm))
+
 /-- A bijective morphism of finite quadratic modules is an isometry. -/
 noncomputable def toIsometry (f : Hom A B) (hf : Function.Bijective f) : Isometry A B where
   toLinearEquiv := (AddEquiv.ofBijective f.toLinearMap.toAddMonoidHom hf).toIntLinearEquiv
@@ -299,6 +369,26 @@ theorem toIsometry_toHom (f : Hom A B) (hf : Function.Bijective f) :
     (f.toIsometry hf).toHom = f := by
   ext
   rfl
+
+/-- A quadratic morphism from a nondegenerate source is an isometry when the two
+finite modules have the same cardinality. -/
+noncomputable def toIsometryOfNondegenerate (f : Hom A B) (hA : A.IsNondegenerate)
+    (hcard : Nat.card A = Nat.card B) : Isometry A B :=
+  f.toIsometry ((Nat.bijective_iff_injective_and_card f).mpr ⟨f.injective hA, hcard⟩)
+
+/-- Packaging the morphism with nondegeneracy and equal cardinality preserves its action. -/
+@[simp]
+theorem toIsometryOfNondegenerate_apply (f : Hom A B) (hA : A.IsNondegenerate)
+    (hcard : Nat.card A = Nat.card B) (x : A) :
+    f.toIsometryOfNondegenerate hA hcard x = f x :=
+  toIsometry_apply f _ x
+
+/-- Forgetting the isometry constructed from nondegeneracy recovers the morphism. -/
+@[simp]
+theorem toIsometryOfNondegenerate_toHom (f : Hom A B) (hA : A.IsNondegenerate)
+    (hcard : Nat.card A = Nat.card B) :
+    (f.toIsometryOfNondegenerate hA hcard).toHom = f :=
+  toIsometry_toHom f _
 
 end Hom
 
@@ -429,6 +519,42 @@ theorem isNondegenerate_prod (B : FiniteQuadraticModule) :
     (A.prod B).IsNondegenerate ↔ A.IsNondegenerate ∧ B.IsNondegenerate :=
   A.toFiniteBilinearModule.isNondegenerate_prod B.toFiniteBilinearModule
 
+/-! ## Quadratic forms with values in `½ℤ/ℤ` -/
+
+variable {A} in
+/-- A nondegenerate module whose quadratic form takes values in `½ℤ/ℤ` is killed by `2`: the
+pairing `q(x + y) - q(x) - q(y)` is then killed by `2`. -/
+theorem two_nsmul_eq_zero_of_quadratic_add_self_eq_zero (hA : A.IsNondegenerate)
+    (hq : ∀ x : A, A.quadratic x + A.quadratic x = 0) (x : A) : 2 • x = 0 := by
+  refine FiniteBilinearModule.IsNondegenerate.eq_zero_of_forall_pairing_eq_zero _ hA fun y ↦ ?_
+  rw [FiniteBilinearModule.pairing_nsmul_left, ← polar_eq_pairing, QuadraticMap.polar, two_nsmul]
+  calc _ = (A.quadratic (x + y) + A.quadratic (x + y)) - (A.quadratic x + A.quadratic x) -
+        (A.quadratic y + A.quadratic y) := by abel
+    _ = 0 := by rw [hq, hq, hq, sub_zero, sub_zero]
+
+variable {A} in
+/-- Isometric modules have quadratic forms with values in `½ℤ/ℤ` together. -/
+theorem Isometry.forall_quadratic_add_self_eq_zero_iff {B : FiniteQuadraticModule}
+    (f : Isometry A B) :
+    (∀ x : A, A.quadratic x + A.quadratic x = 0) ↔
+      ∀ y : B, B.quadratic y + B.quadratic y = 0 := by
+  refine ⟨fun h y ↦ ?_, fun h x ↦ ?_⟩
+  · rw [← f.apply_symm_apply y, f.map_app]
+    exact h _
+  · rw [← f.map_app]
+    exact h _
+
+/-- An orthogonal product has quadratic form with values in `½ℤ/ℤ` exactly when both factors
+do. -/
+theorem forall_quadratic_add_self_eq_zero_prod_iff (B : FiniteQuadraticModule) :
+    (∀ z : A.prod B, (A.prod B).quadratic z + (A.prod B).quadratic z = 0) ↔
+      (∀ x : A, A.quadratic x + A.quadratic x = 0) ∧
+        ∀ y : B, B.quadratic y + B.quadratic y = 0 := by
+  refine ⟨fun h ↦ ⟨fun x ↦ ?_, fun y ↦ ?_⟩, fun h z ↦ ?_⟩
+  · simpa [prod_quadratic] using h (x, 0)
+  · simpa [prod_quadratic] using h (0, y)
+  · rw [prod_quadratic, add_add_add_comm, h.1, h.2, add_zero]
+
 /-! ## Quadratic isotropy -/
 
 /-- An element of a finite quadratic module is isotropic when its quadratic value vanishes. -/
@@ -518,6 +644,14 @@ theorem IsIsotropic.mono {H K : AddSubgroup A} (hK : A.IsIsotropic K) (h : H ≤
 theorem isIsotropic_bot : A.IsIsotropic ⊥ := by
   simp [IsIsotropic]
 
+/-- **The cyclic subgroup generated by `x` is quadratically isotropic if and only if `x` is**,
+since `q(m • x) = m² q(x)`. -/
+theorem isIsotropic_zmultiples_iff (x : A) :
+    A.IsIsotropic (AddSubgroup.zmultiples x) ↔ A.IsIsotropicElem x := by
+  refine ⟨fun h ↦ h x (AddSubgroup.mem_zmultiples x), fun h y hy ↦ ?_⟩
+  obtain ⟨m, rfl⟩ := AddSubgroup.mem_zmultiples_iff.mp hy
+  rw [QuadraticMap.map_smul, (isIsotropicElem_def A x).mp h, smul_zero]
+
 /-- **Quadratic isotropy of a product subgroup is componentwise.** -/
 @[simp]
 theorem isIsotropic_prod_iff (B : FiniteQuadraticModule) (H : AddSubgroup A)
@@ -562,6 +696,24 @@ theorem IsIsotropic.le_orthogonalComplement {H : AddSubgroup A} (hH : A.IsIsotro
     H ≤ A.toFiniteBilinearModule.orthogonalComplement H :=
   A.toFiniteBilinearModule.isIsotropic_iff_le_orthogonalComplement H |>.mp
     hH.toFiniteBilinearModule
+
+/-- **The subgroup generated by a set is quadratically isotropic if and only if the generators
+are isotropic and pairwise orthogonal**, since `q(x + y) = q(x) + q(y) + b(x, y)`. -/
+theorem isIsotropic_closure_iff {S : Set A} :
+    A.IsIsotropic (AddSubgroup.closure S) ↔
+      (∀ x ∈ S, A.quadratic x = 0) ∧
+        ∀ x ∈ S, ∀ y ∈ S, A.toFiniteBilinearModule.pairing x y = 0 := by
+  rw [← A.toFiniteBilinearModule.isIsotropic_closure_iff]
+  refine ⟨fun h ↦ ⟨fun x hx ↦ h x (AddSubgroup.subset_closure hx), h.toFiniteBilinearModule⟩,
+    fun ⟨hq, hb⟩ x hx ↦ ?_⟩
+  rw [FiniteBilinearModule.isIsotropic_def] at hb
+  induction hx using AddSubgroup.closure_induction with
+  | mem x hx => exact hq x hx
+  | zero => exact A.quadratic.map_zero
+  | add x y hx hy ihx ihy =>
+    rw [QuadraticMap.map_add A.quadratic, ihx, ihy, polar_eq_pairing, hb x hx y hy, add_zero,
+      add_zero]
+  | neg x _ ih => rw [QuadraticMap.map_neg, ih]
 
 /-- A quadratic Lagrangian is a quadratically isotropic subgroup which is Lagrangian for the
 polar bilinear pairing. -/

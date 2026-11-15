@@ -35,6 +35,9 @@ On homotopy categories, a quasi-fully faithful DG functor `F` induces a fully fa
   quasi-equivalence induces an equivalence of homotopy categories.
 * `TauCeti.DGFullSubcategory.isQuasiEquivalence_inclusion_iff`: when the inclusion of a full DG
   subcategory is a quasi-equivalence.
+* `TauCeti.DGFullSubcategory.mapDGHomotopyCategory_inclusion_map_homOf`: on homotopy categories,
+  the inclusion of a full DG subcategory sends the class of a closed morphism to its class in the
+  ambient DG category.
 
 ## References
 
@@ -92,6 +95,12 @@ theorem isQuasiFullyFaithful_id :
   -- definitional reduction so the isomorphism instance for identities applies.
   change QuasiIso (𝟙 _)
   exact quasiIso_of_isIso _
+
+/-- A DG functor which is an isomorphism on every Hom complex is quasi-fully faithful. -/
+theorem isQuasiFullyFaithful_of_isIso_map
+    {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
+    (hF : ∀ X Y : C, IsIso (F.map X Y)) : EnrichedFunctor.IsQuasiFullyFaithful F :=
+  fun X Y ↦ have := hF X Y; quasiIso_of_isIso _
 
 /-- Composition preserves quasi-full faithfulness. -/
 theorem IsQuasiFullyFaithful.comp
@@ -202,6 +211,12 @@ namespace DGFullSubcategory
 
 variable {P : C → Prop}
 
+/-- A degree-zero morphism of a full DG subcategory is closed exactly when it is closed in the
+ambient DG category. -/
+theorem mem_dgCycles_iff {X Y : DGFullSubcategory P} {f : DGHom R 0 X Y} :
+    f ∈ dgCycles R X Y ↔ f ∈ dgCycles R X.obj Y.obj := by
+  rw [mem_dgCycles, mem_dgCycles, dgDifferential_eq]
+
 /-- The inclusion of a full DG subcategory is quasi-fully faithful: its maps on Hom complexes
 are identity maps. -/
 @[simp]
@@ -210,6 +225,27 @@ theorem isQuasiFullyFaithful_inclusion :
   intro X Y
   rw [inclusion_map]
   infer_instance
+
+/-- On homotopy categories, the inclusion of a full DG subcategory sends the class of a closed
+degree-zero morphism to the class of the same morphism in the ambient DG category. -/
+theorem mapDGHomotopyCategory_inclusion_map_homOf {X Y : DGFullSubcategory P}
+    (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
+    (inclusion (R := R) (P := P)).mapDGHomotopyCategory.map (DGHomotopyCategory.homOf R f hf) =
+      eqToHom (by simp) ≫
+        DGHomotopyCategory.homOf R (X := X.obj) (Y := Y.obj) f (mem_dgCycles_iff.1 hf) ≫
+          eqToHom (by simp) := by
+  refine (EnrichedFunctor.mapDGHomotopyCategory_map_homOf _ f hf).trans
+    ((conj_eqToHom_iff_heq' _ _ _ _).2 ?_)
+  -- The inclusion acts on Hom complexes by `eqToHom` (`inclusion_map`); generalizing its target
+  -- objects lets us substitute them by the underlying objects of `X` and `Y`.
+  have key : ∀ (X' Y' : C) (hX : X' = X.obj) (hY : Y' = Y.obj)
+      (φ : dgHomComplex R X.obj Y.obj ⟶ dgHomComplex R X' Y'), φ = eqToHom (by rw [hX, hY]) →
+        ∀ hφ, DGHomotopyCategory.homOf R ((φ.f 0).hom f) hφ ≍
+          DGHomotopyCategory.homOf R (X := X.obj) (Y := Y.obj) f (mem_dgCycles_iff.1 hf) := by
+    rintro X' Y' rfl rfl φ rfl hφ
+    simp
+  simp only [EnrichedFunctor.dgMap_apply]
+  exact key _ _ (inclusion_obj R X) (inclusion_obj R Y) _ (inclusion_map R X Y) _
 
 /-- Inclusion of a full DG subcategory is a quasi-equivalence precisely when every ambient
 object is isomorphic in `H⁰` to an object satisfying its predicate. -/

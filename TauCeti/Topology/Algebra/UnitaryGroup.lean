@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.RCLike.Lemmas
 public import Mathlib.Topology.Algebra.Star.Unitary
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SpecialUnitary
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
+public import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
 # The unitary and special unitary matrix groups are compact
@@ -31,8 +34,26 @@ its own `Group` instance in `Mathlib/LinearAlgebra/UnitaryGroup.lean`, so its `C
 compactness is `RCLike`-specific. Hausdorffness is not proved here: it
 is inherited from the ambient matrix topology whenever `𝕜` is Hausdorff.
 
+Closedness is also recorded one level up, for `TauCeti.GLSpecialUnitary`, the same group seen as
+a subgroup of the general linear group of units: its carrier is the preimage of the matrix special
+unitary group under the continuous coercion `Units.val`.  That is the form in which the
+closed-subgroup theorem consumes it.  Over `ℝ` or `ℂ`, compactness of the matrix unitary group
+likewise passes to the unitary subgroup `unitarySubgroup (GL n 𝕜)`.
+
 This is the setup the compact-group representation theory of `SU(2)` runs on; see
 `TauCeti/RepresentationTheory/SU2/Basic.lean`.
+
+## Main results
+
+* `TauCeti.Matrix.isClosed_specialUnitaryGroup`: the special unitary matrix group is closed.
+* `TauCeti.Matrix.isCompact_unitaryGroup` and `TauCeti.Matrix.isCompact_specialUnitaryGroup`: the
+  unitary and special unitary matrix groups over `ℝ` or `ℂ` are compact.
+* `TauCeti.isClosed_GLSpecialUnitary`: the special unitary subgroup of the general linear group is
+  closed.
+* `Matrix.GeneralLinearGroup.isCompact_unitarySubgroup`: the unitary subgroup of the general linear
+  group over `ℝ` or `ℂ` is compact.
+* `Matrix.UnitaryGroup.continuous_fromBlocksOne`: the block embedding `B ↦ diag(1_r, B)` of `U(m)`
+  in `U(r + m)` is continuous.
 -/
 
 public section
@@ -106,4 +127,46 @@ end RCLike
 
 end Matrix
 
+section GeneralLinear
+
+variable (n : Type*) [Fintype n] [DecidableEq n] (𝕜 : Type*) [CommRing 𝕜] [StarRing 𝕜]
+  [TopologicalSpace 𝕜] [ContinuousStar 𝕜] [IsTopologicalRing 𝕜] [T1Space 𝕜]
+
+/-- **The special unitary subgroup of the general linear group is closed.**  Its carrier is the
+preimage of the closed matrix special unitary group under the continuous coercion of units.  This
+is the hypothesis the closed-subgroup theorem needs in order to promote it to an embedded Lie
+subgroup. -/
+theorem isClosed_GLSpecialUnitary :
+    IsClosed ((GLSpecialUnitary n 𝕜 : Subgroup (GL n 𝕜)) : Set (GL n 𝕜)) := by
+  rw [GLSpecialUnitary.coe_eq_preimage]
+  exact (Matrix.isClosed_specialUnitaryGroup (n := n) (𝕜 := 𝕜)).preimage Units.continuous_val
+
+end GeneralLinear
+
 end TauCeti
+
+namespace Matrix.GeneralLinearGroup
+
+variable {n : Type*} [Fintype n] [DecidableEq n] {𝕜 : Type*} [RCLike 𝕜]
+
+/-- **The unitary subgroup of `GL n 𝕜` is compact** over `ℝ` or `ℂ`: the matrix unitary group is
+compact. -/
+theorem isCompact_unitarySubgroup :
+    IsCompact ((unitarySubgroup (GL n 𝕜) : Subgroup (GL n 𝕜)) : Set (GL n 𝕜)) :=
+  TauCeti.isCompact_unitarySubgroup_units_iff.mpr TauCeti.Matrix.isCompact_unitaryGroup
+
+end Matrix.GeneralLinearGroup
+
+namespace Matrix.UnitaryGroup
+
+variable {𝕜 : Type*} [CommRing 𝕜] [StarRing 𝕜] [TopologicalSpace 𝕜] {r : ℕ}
+
+/-- The block embedding `B ↦ diag(1_r, B)` of `U(m)` in `U(r + m)` is continuous. -/
+theorem continuous_fromBlocksOne (m : ℕ) :
+    Continuous (fromBlocksOne 𝕜 r m) := by
+  refine continuous_induced_rng.2 ?_
+  simp only [Function.comp_def, coe_fromBlocksOne]
+  exact (continuous_const.matrix_fromBlocks continuous_const continuous_const
+    continuous_subtype_val).matrix_reindex _ _
+
+end Matrix.UnitaryGroup

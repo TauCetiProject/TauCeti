@@ -6,9 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.PontryaginDual
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Polish
 
 /-!
-# The Pontryagin dual of the integers
+# Topology of Pontryagin duals
+
+Multiplication and inversion of characters are pointwise, as recorded by
+`PontryaginDual.mul_apply` and `PontryaginDual.inv_apply`.
+
+The Pontryagin dual of a second-countable locally compact monoid is Polish. For locally compact
+abelian groups this ensures that finite Borel measures on the dual are tight and determined by
+their Fourier–Stieltjes transforms.
 
 A continuous character of the discrete group `ℤ` is determined by its value at `1`, which may be
 any point of the unit circle. This file packages that correspondence as an isomorphism of
@@ -30,7 +38,26 @@ public section
 
 noncomputable section
 
+namespace PontryaginDual
+
+variable {A : Type*} [Monoid A] [TopologicalSpace A]
+
+/-- Multiplication of characters is pointwise. -/
+@[simp]
+theorem mul_apply (χ ψ : PontryaginDual A) (a : A) : (χ * ψ) a = χ a * ψ a := (rfl)
+
+/-- Inversion of characters is pointwise. -/
+@[simp]
+theorem inv_apply (χ : PontryaginDual A) (a : A) : χ⁻¹ a = (χ a)⁻¹ := (rfl)
+
+end PontryaginDual
+
 namespace TauCeti
+
+/-- The Pontryagin dual of a second-countable locally compact monoid is Polish. -/
+instance instPolishSpacePontryaginDual {A : Type*} [Monoid A] [TopologicalSpace A]
+    [LocallyCompactSpace A] [SecondCountableTopology A] : PolishSpace (PontryaginDual A) :=
+  inferInstanceAs (PolishSpace (A →ₜ* Circle))
 
 /-- The unit circle is the Pontryagin dual of `ℤ`: the point `z` corresponds to the character
 `n ↦ zⁿ`, and a character corresponds to its value at `1`. -/

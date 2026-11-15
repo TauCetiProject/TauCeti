@@ -26,6 +26,11 @@ and the resolution is unique up to chain homotopy. This is the relative version 
 categories: the ambient category need not have kernels or cokernels, and exactness is the
 exact-structure datum rather than Mathlib's `ShortComplex.Exact`.
 
+The uniqueness also makes the comparison map functorial: the image of a lift under a
+conflation-exact functor is again a lift, so it is homotopic to the lift between the image
+resolutions. Applied to the grading shift of a graded exact category, this is the graded
+comparison theorem.
+
 ## Main definitions
 
 * `TauCeti.ExactStructure.FiniteResolution.lift`: the chain map lifting `f : X ⟶ Y` from a finite
@@ -39,6 +44,8 @@ exact-structure datum rather than Mathlib's `ShortComplex.Exact`.
   homotopic to the identity, and the lift of a composite to the composite of the lifts.
 * `TauCeti.ExactStructure.FiniteResolution.homotopyEquiv`: two finite projective resolutions of
   the same object are homotopy equivalent.
+* `TauCeti.ExactStructure.FiniteResolution.liftMapHomotopy`: the comparison map is functorial
+  up to homotopy along conflation-exact functors preserving the projective terms.
 
 ## Main results
 
@@ -55,6 +62,9 @@ exact-structure datum rather than Mathlib's `ShortComplex.Exact`.
 * `Mathlib/CategoryTheory/Abelian/Projective/Resolution.lean`, whose `lift`, `liftHomotopyZero`,
   `liftHomotopy`, `liftIdHomotopy`, `liftCompHomotopy` and `homotopyEquiv` API for projective
   resolutions in abelian categories is followed here.
+* `Mathlib/CategoryTheory/Preadditive/Projective/Resolution.lean`, whose
+  `CategoryTheory.Functor.mapProjectiveResolution` is the abelian counterpart of the image of a
+  resolution under a functor used in `liftMapHomotopy`.
 -/
 
 public section
@@ -63,7 +73,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
-universe v u
+universe v v' u u'
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
 
@@ -235,6 +245,30 @@ theorem homotopyEquiv_inv_f_zero_comp_aug (hP : P ≤ E.isProjective) (hP' : P' 
   simp [homotopyEquiv]
 
 end Homotopy
+
+section Map
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
+  {E' : ExactStructure D} {Q Q' : ObjectProperty D} {F : C ⥤ D} [F.Additive]
+
+/-- **Functoriality of the comparison map.** Let `F` be a conflation-exact functor carrying the
+relative projectives of `P` into relative projectives of `Q`. The lift of `F f` between the images
+of two resolutions is homotopic to the image of the lift of `f`, transported along the
+identifications `TauCeti.ExactStructure.FiniteResolution.toChainComplexMapIso` of the complexes
+of the image resolutions with the images of the complexes. -/
+noncomputable def liftMapHomotopy (hP : P ≤ E.isProjective) (hQ : Q ≤ E'.isProjective)
+    (hF : E.IsConflationExact E' F) (hPQ : P ≤ Q.inverseImage F) (hP'Q' : P' ≤ Q'.inverseImage F)
+    {X Y : C} (f : X ⟶ Y) (r : FiniteResolution E P X) (r' : FiniteResolution E P' Y) :
+    Homotopy (lift hQ (F.map f) (r.map hF hPQ) (r'.map hF hP'Q'))
+      ((toChainComplexMapIso hF hPQ r).hom ≫ (F.mapHomologicalComplex _).map (lift hP f r r') ≫
+        (toChainComplexMapIso hF hP'Q' r').inv) :=
+  liftHomotopy hQ (F.map f) _ _ (lift_f_zero_comp_aug ..) (by
+    simp only [HomologicalComplex.comp_f, toChainComplexMapIso_hom_f,
+      Functor.mapHomologicalComplex_map_f, toChainComplexMapIso_inv_f, Category.assoc,
+      Iso.inv_hom_id_assoc, aug_map]
+    rw [← F.map_comp, ← F.map_comp, lift_f_zero_comp_aug])
+
+end Map
 
 end FiniteResolution
 

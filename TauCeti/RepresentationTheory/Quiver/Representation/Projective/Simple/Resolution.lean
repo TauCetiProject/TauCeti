@@ -161,19 +161,12 @@ theorem ι_arrowSumToIndecProjRep (a : (j : Q) × (i ⟶ j)) :
 /-- **`⨁_{e : i ⟶ j} Pⱼ ⟶ Pᵢ` is a monomorphism.** -/
 instance mono_arrowSumToIndecProjRep : Mono (arrowSumToIndecProjRep k i) := by
   have := Fintype.ofFinite ((j : Q) × (i ⟶ j))
-  -- The decomposition `∑ₐ πₐ ≫ ιₐ = 𝟙` of the identity of the biproduct; Mathlib's
-  -- `biproduct.total` only covers index types in `Type`.
-  have htotal : ∑ a, biproduct.π (fun a : (j : Q) × (i ⟶ j) ↦ indecProjRep k Q a.1) a ≫
-      biproduct.ι (fun a : (j : Q) × (i ⟶ j) ↦ indecProjRep k Q a.1) a = 𝟙 _ :=
-    biproduct.hom_ext _ _ fun c ↦ by
-      rw [Preadditive.sum_comp, Finset.sum_eq_single c
-        (fun x _ hx ↦ by rw [Category.assoc, biproduct.ι_π_ne _ hx, comp_zero]) (by simp)]
-      simp
   refine Preadditive.mono_of_cancel_zero _ fun {T} g hg ↦ biproduct.hom_ext _ _ fun a ↦ ?_
   have hsum : ∑ a, (g ≫ biproduct.π _ a) ≫ indecProjRepArrowHom k a.2 = 0 := by
-    rw [← hg, ← Category.comp_id (arrowSumToIndecProjRep k i), ← Category.id_comp
-      (arrowSumToIndecProjRep k i), ← htotal]
-    simp [Preadditive.comp_sum, Preadditive.sum_comp]
+    refine (biproduct.lift_desc (g := fun a ↦ g ≫ biproduct.π _ a)
+      (h := fun a : (j : Q) × (i ⟶ j) ↦ indecProjRepArrowHom k a.2)).symm.trans ?_
+    rw [← hg]
+    exact congrArg (· ≫ arrowSumToIndecProjRep k i) (biproduct.hom_ext _ _ fun a ↦ by simp)
   rw [zero_comp]
   refine NatTrans.ext (funext fun b ↦ ModuleCat.hom_ext (LinearMap.ext fun t ↦ ?_))
   rw [NatTrans.app_zero, ModuleCat.hom_zero, LinearMap.zero_apply]

@@ -36,6 +36,8 @@ Eisenstein*, Section 2.2, and D. A. Cox, *Primes of the Form x² + ny²*, Sectio
   generators indexed by negative prime discriminants.
 * `TauCeti.Multiquadratic.candidateGenusFieldConj_apply_eq_self_iff`: an element is fixed by
   conjugation exactly when it belongs to the real candidate.
+* `TauCeti.Multiquadratic.mem_map_candidateGenusFieldReal_iff`: inside `ℂ`, the real candidate
+  consists of the real elements of the candidate.
 * `TauCeti.Multiquadratic.fixedField_zpowers_candidateGenusFieldConj`: the fixed field of complex
   conjugation is `candidateGenusFieldReal hd`.
 * `TauCeti.Multiquadratic.fixingSubgroup_candidateGenusFieldReal`: the subgroup fixing the real
@@ -105,8 +107,7 @@ noncomputable def candidateGenusFieldConj (hd : Squarefree d) :
   simp only [coe_candidateGenusFieldConj_apply, candidateGenusFieldGen_val]
   split_ifs with hneg
   · have hrad : primeDiscriminantRadicand P.val < 0 :=
-      (primeDiscriminantRadicand_neg_iff
-        ((genusPrimeDiscriminants_spec hd).1 P.val P.property)).2 hneg
+      (primeDiscriminantRadicand_neg_iff P.val).2 hneg
     have hsquare : genusFieldRoot hd P ^ 2 ≤ 0 := by
       rw [genusFieldRoot_sq]
       exact_mod_cast hrad.le
@@ -116,8 +117,7 @@ noncomputable def candidateGenusFieldConj (hd : Squarefree d) :
     · simp
   · have hrad : 0 ≤ primeDiscriminantRadicand P.val := by
       have : ¬ primeDiscriminantRadicand P.val < 0 := fun hr => hneg <|
-        (primeDiscriminantRadicand_neg_iff
-          ((genusPrimeDiscriminants_spec hd).1 P.val P.property)).1 hr
+        (primeDiscriminantRadicand_neg_iff P.val).1 hr
       omega
     have hsquare : 0 ≤ genusFieldRoot hd P ^ 2 := by
       rw [genusFieldRoot_sq]
@@ -181,6 +181,21 @@ theorem candidateGenusFieldConj_apply_eq_self_iff (hd : Squarefree d)
     apply Subtype.ext
     rw [coe_candidateGenusFieldConj_apply]
     exact hx (candidateGenusField hd).val
+
+/-- **The real candidate, viewed in `ℂ`, is the set of real elements of the candidate.** A complex
+number lies in the image of `candidateGenusFieldReal hd` exactly when it lies in the candidate
+genus field and is fixed by complex conjugation. -/
+theorem mem_map_candidateGenusFieldReal_iff (hd : Squarefree d) (x : ℂ) :
+    x ∈ (candidateGenusFieldReal hd).map (candidateGenusField hd).val ↔
+      x ∈ candidateGenusField hd ∧ star x = x := by
+  rw [IntermediateField.mem_map]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨y.2, (coe_candidateGenusFieldConj_apply hd y).symm.trans
+      (congrArg Subtype.val ((candidateGenusFieldConj_apply_eq_self_iff hd y).2 hy))⟩
+  · rintro ⟨hx, hstar⟩
+    exact ⟨⟨x, hx⟩, (candidateGenusFieldConj_apply_eq_self_iff hd _).1
+      (Subtype.ext ((coe_candidateGenusFieldConj_apply hd _).trans hstar)), rfl⟩
 
 /-- **The maximal totally real subfield is the fixed field of complex conjugation.** Equivalently,
 the ordinary real candidate is obtained from the full prime-discriminant compositum by fixing the

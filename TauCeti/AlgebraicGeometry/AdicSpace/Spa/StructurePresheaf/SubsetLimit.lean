@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Sites.Spaces
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Cofinality
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Basic
 
 /-!
 # The presentation limit is the limit over rational subsets

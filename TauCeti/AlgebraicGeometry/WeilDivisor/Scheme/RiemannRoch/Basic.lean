@@ -32,6 +32,8 @@ Riemann's inequality also makes the Riemann–Roch space of a divisor of degree 
 nonzero, so such a divisor is linearly equivalent to an effective divisor: nonemptiness of a
 complete linear system is the existence of a nonzero global section, by
 `SchemeWeilDivisor.nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf`.
+The inequality and effectivity statements require only that all global functions are constant,
+so they also apply without a rational point.
 
 ## Main declarations
 
@@ -104,9 +106,8 @@ theorem sections_top_eq_bot_of_relativeDegree_neg {D : SchemeWeilDivisor X}
       orderAt y f = X.ord (Scheme.rationalFunctionsEquiv (⊤ : X.Opens) s) (y : X) :=
     ⟨Additive.ofMul (Units.mk0 _ hc0), fun y ↦ by
       rw [orderAt_apply, toMul_ofMul, Units.val_mk0]⟩
-  have heff : WeilDivisor.IsEffective
-      ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor f + D) :=
-    (WeilDivisor.isEffective_iff _).mpr fun y ↦ by
+  have heff : 0 ≤ (WeilDivisor.OrderSystem.ofScheme X).principalDivisor f + D :=
+    (WeilDivisor.nonneg_iff _).mpr fun y ↦ by
       have hy := hord y trivial
       rw [WeilDivisor.coeff_add, WeilDivisor.OrderSystem.coeff_principalDivisor,
         WeilDivisor.OrderSystem.ofScheme_ord, hordf y]
@@ -152,10 +153,12 @@ theorem finrank_cohomology_zero_sheaf_sub_finrank_cohomology_one_sheaf (D : Sche
   rw [← Scheme.Modules.eulerCharBelow_two,
     eulerCharBelow_sheaf_eq_relativeDegree_add_one_sub_genus k hX hs D]
 
+omit hs in
 /-- **Riemann's inequality.** On a proper integral curve over a field `k` whose codimension-one
-local rings are discrete valuation rings, with a `k`-rational point and with `H¹(X, 𝒪_X)`
-finite-dimensional, `dim_k H⁰(X, 𝒪_X(D)) ≥ deg D + 1 - g`. -/
+local rings are discrete valuation rings, with all global functions constant and with
+`H¹(X, 𝒪_X)` finite-dimensional, `dim_k H⁰(X, 𝒪_X(D)) ≥ deg D + 1 - g`. -/
 theorem relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf
+    (hφ : Function.Surjective (Scheme.Modules.baseRingToGlobalSections k X))
     (D : SchemeWeilDivisor X) :
     letI : IsLocallyNoetherian X :=
       LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
@@ -163,7 +166,9 @@ theorem relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf
       (finrank k (Scheme.Modules.Cohomology (sheaf D) 0) : ℤ) := by
   let _ : IsLocallyNoetherian X :=
     LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  have h := finrank_cohomology_zero_sheaf_sub_finrank_cohomology_one_sheaf k hX hs D
+  have h := eulerCharBelow_sheaf_eq_relativeDegree_add k hX D
+  rw [eulerCharBelow_trivial_eq_one_sub_genus_of_surjective k hφ,
+    Scheme.Modules.eulerCharBelow_two] at h
   have := Int.natCast_nonneg (finrank k (Scheme.Modules.Cohomology (sheaf D) 1))
   omega
 
@@ -213,14 +218,13 @@ variable {X : Scheme.{u}} [IsIntegral X]
   (k : Type u) [Field k] [X.Over (Spec (.of k))] [IsProper (X ↘ Spec (.of k))]
   (hX : ∀ y : X, coheight y ≤ 1)
   [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
-  {s : Spec (.of k) ⟶ X} (hs : s ≫ X ↘ Spec (.of k) = 𝟙 (Spec (.of k)))
+  (hφ : Function.Surjective (Scheme.Modules.baseRingToGlobalSections k X))
 
-include hX hs
+include hX hφ
 
 /-- **A divisor of degree at least the genus is linearly equivalent to an effective divisor.**
-Riemann's inequality makes the Riemann–Roch space of such a divisor nonzero, and a nonzero global
-section of `𝒪_X(D)` names an effective divisor in the class of `D`. Properness over the field
-makes `X` Noetherian, which supplies the order system used by the complete linear system. -/
+On a proper integral curve with discrete valuation stalks, constant global functions and
+finite-dimensional `H¹(X, 𝒪_X)`, the complete linear system of such a divisor is nonempty. -/
 theorem nonempty_completeLinearSystem_of_genus_le_relativeDegree {D : SchemeWeilDivisor X}
     (hD : (X.genus k : ℤ) ≤ relativeDegree (X ↘ Spec (.of k)) D) :
     letI : IsNoetherian X :=
@@ -236,7 +240,7 @@ theorem nonempty_completeLinearSystem_of_genus_le_relativeDegree {D : SchemeWeil
   rw [nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf,
     ← Module.finrank_pos_iff_of_free (R := k),
     ← Scheme.Modules.finrank_cohomology_zero_eq_finrank_globalSections]
-  have h := relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf k hX hs D
+  have h := relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf k hX hφ D
   omega
 
 end CompleteLinearSystem

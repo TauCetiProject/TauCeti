@@ -38,6 +38,25 @@ def AgreesOnIdentityComponent (t u : ContinuousInfinityType K) : Prop :=
   t.realExponent = u.realExponent ∧ t.complexExponent = u.complexExponent ∧
     t.complexAngularFrequency = u.complexAngularFrequency
 
+/-- Agreement on the identity component means equality of the two modulus exponents and the
+complex angular frequency. -/
+theorem agreesOnIdentityComponent_iff (t u : ContinuousInfinityType K) :
+    t.AgreesOnIdentityComponent u ↔
+      t.realExponent = u.realExponent ∧ t.complexExponent = u.complexExponent ∧
+        t.complexAngularFrequency = u.complexAngularFrequency :=
+  Iff.rfl
+
+/-- Agreement on the identity component is symmetric. -/
+theorem AgreesOnIdentityComponent.symm {t u : ContinuousInfinityType K}
+    (h : t.AgreesOnIdentityComponent u) : u.AgreesOnIdentityComponent t :=
+  ⟨h.1.symm, h.2.1.symm, h.2.2.symm⟩
+
+/-- Agreement on the identity component is transitive. -/
+theorem AgreesOnIdentityComponent.trans {t u v : ContinuousInfinityType K}
+    (h₁ : t.AgreesOnIdentityComponent u) (h₂ : u.AgreesOnIdentityComponent v) :
+    t.AgreesOnIdentityComponent v :=
+  ⟨h₁.1.trans h₂.1, h₁.2.1.trans h₂.2.1, h₁.2.2.trans h₂.2.2⟩
+
 /-- Agreement on the identity component is equivalent to a finite-order sign twist. -/
 theorem agreesOnIdentityComponent_iff_exists_finiteOrderInfinityType
     (t u : ContinuousInfinityType K) :
@@ -67,6 +86,15 @@ def IsAlgebraicOnIdentityComponent (t : ContinuousInfinityType K) : Prop :=
   ∃ n : AlgebraicInfinityType K, t.AgreesOnIdentityComponent
     (AlgebraicInfinityType.toContinuous n)
 
+/-- Algebraicity on the identity component is witnessed by integer embedding exponents whose
+continuous infinity type agrees there. -/
+theorem isAlgebraicOnIdentityComponent_iff_exists_agreesOnIdentityComponent
+    (t : ContinuousInfinityType K) :
+    t.IsAlgebraicOnIdentityComponent ↔
+      ∃ n : AlgebraicInfinityType K,
+        t.AgreesOnIdentityComponent (AlgebraicInfinityType.toContinuous n) :=
+  Iff.rfl
+
 /-- An infinity type is algebraic on the identity component precisely when it is an algebraic
 infinity type times a finite-order real sign type. -/
 theorem isAlgebraicOnIdentityComponent_iff (t : ContinuousInfinityType K) :
@@ -92,5 +120,26 @@ theorem isAlgebraicOnIdentityComponent_finiteOrder (ε : FiniteOrderInfinityType
   exact ⟨0, ε, by simp⟩
 
 end ContinuousInfinityType
+
+namespace AlgebraicInfinityType
+
+variable {K : Type*} [Field K]
+
+/-- **Algebraic infinity types are determined on the identity component.** The real parity of
+`toContinuous n` is the reduction of its real exponent, so the sign twists that agreement on the
+identity component allows are invisible between two algebraic infinity types. -/
+@[simp]
+theorem agreesOnIdentityComponent_toContinuous_iff {n m : AlgebraicInfinityType K} :
+    (toContinuous n).AgreesOnIdentityComponent (toContinuous m) ↔ n = m := by
+  refine ⟨fun ⟨hr, hc, hk⟩ ↦ toContinuous_injective ?_, fun h ↦ h ▸ ⟨rfl, rfl, rfl⟩⟩
+  apply ContinuousInfinityType.ext <;> funext w
+  · exact congrFun hr w
+  · have hw : n w.1.embedding = m w.1.embedding := by
+      simpa using congrFun hr w
+    simp [hw]
+  · exact congrFun hc w
+  · exact congrFun hk w
+
+end AlgebraicInfinityType
 
 end TauCeti.GlobalNumberFields

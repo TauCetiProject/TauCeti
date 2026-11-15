@@ -41,7 +41,7 @@ variable {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
 
 /-- The induced map carries a numbered root-subgroup parameter along the homomorphism of value
 rings. -/
-@[simp]
+@[simp↓]
 theorem map_rootSubgroupPoints (f : A →+* B) (k : Fin 7 ⊕ Fin 7)
     (u : Multiplicative A) :
     (pointsPresentation A).map (pointsPresentation B) f (rootSubgroupPoints k A u) =
@@ -49,8 +49,8 @@ theorem map_rootSubgroupPoints (f : A →+* B) (k : Fin 7 ⊕ Fin 7)
   apply Subtype.ext
   have h := congrArg Subtype.val
     (UniversalEnvelopingAlgebra.map_kostantToralRootSubgroupPoints
-      (e := TauCeti.serreRootGenerator (CartanMatrix.E 7))
-      (h := TauCeti.serreH ℚ (CartanMatrix.E 7)) (ρ := rep) (M := lattice.toAddSubgroup)
+      (e := TauCeti.serreRootGenerator weightTable.cartanMatrix)
+      (h := TauCeti.serreH ℚ weightTable.cartanMatrix) (ρ := rep) (M := lattice.toAddSubgroup)
       (hM := rep_kostantForm_mem_lattice) (hnil := isNilpotent_rep_serreRootGenerator)
       (b := latticeBasis) (wt := TauCeti.DynkinType.e7MinusculeWeight) f k u)
   rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] at h
@@ -60,15 +60,15 @@ theorem map_rootSubgroupPoints (f : A →+* B) (k : Fin 7 ⊕ Fin 7)
 
 /-- The induced map carries a point of the pinned split weight torus coordinatewise along the
 homomorphism of value rings. -/
-@[simp]
+@[simp↓]
 theorem map_weightTorusPoints (f : A →+* B) (s : Fin 7 → Aˣ) :
     (pointsPresentation A).map (pointsPresentation B) f (weightTorusPoints A s) =
       weightTorusPoints B fun i ↦ Units.map (f : A →* B) (s i) := by
   apply Subtype.ext
   have h := congrArg Subtype.val
     (UniversalEnvelopingAlgebra.map_kostantToralWeightTorusPoints
-      (e := TauCeti.serreRootGenerator (CartanMatrix.E 7))
-      (h := TauCeti.serreH ℚ (CartanMatrix.E 7)) (ρ := rep) (M := lattice.toAddSubgroup)
+      (e := TauCeti.serreRootGenerator weightTable.cartanMatrix)
+      (h := TauCeti.serreH ℚ weightTable.cartanMatrix) (ρ := rep) (M := lattice.toAddSubgroup)
       (hM := rep_kostantForm_mem_lattice) (hnil := isNilpotent_rep_serreRootGenerator)
       (b := latticeBasis) (wt := TauCeti.DynkinType.e7MinusculeWeight) f s)
   rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] at h

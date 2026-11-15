@@ -7,21 +7,24 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.DirichletDensity.Negligible
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.IdealZetaSum
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.ResidueDegree.NaturalDensity
 import TauCeti.Analysis.SpecialFunctions.Log.OneDivSub
+import TauCeti.Data.Set.Restrict
 
 /-!
-# Contracting prime sums and Dirichlet densities along a fibre count
+# Contracting prime sums, prime counts and densities along a fibre count
 
 Let `K` and `E` be number fields, `T` a set of height-one primes of `𝓞 E` and `S` one of `𝓞 K`,
 and let `π` send each prime of `E` to a prime of `K`. Suppose that `π` maps `T` into `S`, that it
-preserves absolute norms on `T`, and that every `𝔭 ∈ S` has exactly `c ≠ 0` preimages in `T`.
+preserves absolute norms on `T`, and that every `𝔭 ∈ S` has exactly `c` preimages in `T`.
 Then, for every real `s`,
 
 ```text
 ∑_{𝔓 ∈ T} N𝔓 ^ (-s) = c * ∑_{𝔭 ∈ S} N𝔭 ^ (-s),
 ```
 
-and consequently `T` has Dirichlet density `δ` exactly when `S` has Dirichlet density `δ / c`.
+and, if `c ≠ 0`, `T` has Dirichlet density `δ` exactly when `S` has Dirichlet density
+`δ / c`.
 
 The fibre count only matters away from a set of density zero. If `π` does not increase norms and
 has boundedly many preimages in `T` over each prime of `S`, the prime sum over `T` is bounded by a
@@ -37,6 +40,12 @@ an extension field is transported down to the base, as in the proof of the Chebo
 theorem, where a relative Frobenius fibre over the fixed field of a cyclic subgroup is counted
 over the primes of the base field.
 
+The same fibre count multiplies the prime counts: for every cutoff `x`, `π_T(x) = c π_S(x)` and
+`ϑ_T(x) = c ϑ_S(x)`, with no error term, for every `c`, as for the prime-sum identity. By the
+prime ideal theorem the ordinary prime counts of both fields are asymptotic to `x / log x` (and
+the weighted counts `ϑ` to `x`), so the transfer, its bounded-fibre variant, and the contraction
+form hold for natural density as well.
+
 ## Main results
 
 * `NumberField.Set.primeIdealZetaSum_eq_mul_of_card_fiber`: the exact identity of prime sums.
@@ -49,6 +58,14 @@ over the primes of the base field.
   Dirichlet densities when the fibre count is exact only off a set of density zero.
 * `NumberField.Set.hasDirichletDensity_contraction`: the transfer along contraction, counting only
   primes of residue degree one and only off a set of density zero.
+* `NumberField.Set.primeCount_eq_mul_of_card_fiber` and
+  `NumberField.Set.primeTheta_eq_mul_of_card_fiber`: the exact identities of prime counts.
+* `NumberField.Set.primeCount_le_mul_of_encard_fiber_le` and
+  `NumberField.Set.HasNaturalDensity.zero_of_encard_fiber_le`: the bounded fibre count for prime
+  counts and natural density zero.
+* `NumberField.Set.hasNaturalDensity_iff_of_card_fiber`,
+  `NumberField.Set.hasNaturalDensity_iff_of_card_fiber_of_negligible` and
+  `NumberField.Set.hasNaturalDensity_contraction`: the three transfers for natural density.
 
 ## References
 
@@ -68,10 +85,10 @@ variable {K E : Type*} [Field K] [NumberField K] [Field E] [NumberField E]
   {π : HeightOneSpectrum (𝓞 E) → HeightOneSpectrum (𝓞 K)} {c : ℕ}
 
 /-- **Prime sums along a fibre count.** If `π` maps `T` into `S`, preserves absolute norms on `T`,
-and every prime of `S` has exactly `c ≠ 0` preimages in `T`, then the prime sum over `T` is `c`
+and every prime of `S` has exactly `c` preimages in `T`, then the prime sum over `T` is `c`
 times the prime sum over `S`, at every real `s`. -/
 theorem primeIdealZetaSum_eq_mul_of_card_fiber (hmaps : Set.MapsTo π T S)
-    (hnorm : ∀ 𝔓 ∈ T, Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (π 𝔓).asIdeal) (hc : c ≠ 0)
+    (hnorm : ∀ 𝔓 ∈ T, Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (π 𝔓).asIdeal)
     (hfiber : ∀ 𝔭 ∈ S, Nat.card {𝔓 // π 𝔓 = 𝔭 ∧ 𝔓 ∈ T} = c) (s : ℝ) :
     T.primeIdealZetaSum s = c * S.primeIdealZetaSum s := by
   classical
@@ -87,9 +104,15 @@ theorem primeIdealZetaSum_eq_mul_of_card_fiber (hmaps : Set.MapsTo π T S)
           ⟨⟨𝔓.1, 𝔓.2.2⟩, Subtype.ext ((hmaps.val_restrict_apply _).trans 𝔓.2.1)⟩
         left_inv := fun _ ↦ rfl
         right_inv := fun _ ↦ rfl }
-  -- `c ≠ 0` makes the fibres finite: an infinite fibre would have `Nat.card` equal to `0`.
-  have hfin (𝔭 : S) : Finite {t : T // f t = 𝔭} :=
-    Nat.finite_of_card_ne_zero ((hcard 𝔭).symm ▸ hc)
+  -- Each fibre is finite: `π` preserves the norm on `T`, and only finitely many primes have a
+  -- given norm.
+  have hfin (𝔭 : S) : Finite {t : T // f t = 𝔭} := by
+    refine (Ring.HasFiniteQuotients.finite_absNorm_heightOneSpectrum_le
+      (S := 𝓞 E) (Ideal.absNorm 𝔭.1.asIdeal)).to_subtype.of_injective
+      (fun t ↦ ⟨t.1.1, ?_⟩) fun t t' h ↦ ?_
+    · rw [Set.mem_ofPred_eq, hnorm t.1.1 t.1.2]
+      exact (congrArg (fun q : S ↦ Ideal.absNorm q.1.asIdeal) t.2).le
+    · simpa only [Subtype.mk.injEq, Subtype.ext_iff] using h
   have hinner (𝔭 : S) : ∑' _ : {t : T // f t = 𝔭}, g 𝔭 = c * g 𝔭 := by
     have := Fintype.ofFinite {t : T // f t = 𝔭}
     rw [tsum_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_eq_nat_card, hcard,
@@ -102,6 +125,14 @@ theorem primeIdealZetaSum_eq_mul_of_card_fiber (hmaps : Set.MapsTo π T S)
     simp only [Equiv.sigmaFiberEquiv_apply, hnorm t.1 t.2, g, f, hmaps.val_restrict_apply]
   -- Both sides are summable together, so off summability both are the junk value `0`.
   rw [hT, primeIdealZetaSum_def]
+  rcases eq_or_ne c 0 with rfl | _
+  · -- With no preimages, `T` is empty, so both sides vanish.
+    have : IsEmpty (Σ 𝔭 : S, {t : T // f t = 𝔭}) :=
+      ⟨fun ⟨𝔭, t⟩ ↦ by
+        have := hfin 𝔭
+        have := Nonempty.intro t
+        exact (Nat.card_pos (α := {t : T // f t = 𝔭})).ne' (hcard 𝔭)⟩
+    rw [tsum_empty, Nat.cast_zero, zero_mul]
   by_cases hsum : Summable fun x : Σ 𝔭 : S, {t : T // f t = 𝔭} ↦ g x.1
   · rw [hsum.tsum_sigma, tsum_congr hinner, tsum_mul_left]
   · -- The regrouped family is summable exactly when `g` is, since `c ≠ 0`.
@@ -121,7 +152,7 @@ theorem hasDirichletDensity_iff_of_card_fiber (hmaps : Set.MapsTo π T S)
   -- The all-prime sums over `E` and `K` differ, so compare both through the logarithmic
   -- normalization, where each is asymptotic to `log (1 / (s - 1))`.
   simp_rw [hasDirichletDensity_iff_tendsto_div_log_one_div_sub_one,
-    primeIdealZetaSum_eq_mul_of_card_fiber hmaps hnorm hc hfiber, mul_div_assoc]
+    primeIdealZetaSum_eq_mul_of_card_fiber hmaps hnorm hfiber, mul_div_assoc]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · simpa [div_eq_inv_mul, hc'] using h.const_mul (c : ℝ)⁻¹
   · simpa [mul_div_cancel₀ δ hc'] using h.const_mul (c : ℝ)
@@ -201,14 +232,8 @@ theorem hasDirichletDensity_iff_of_card_fiber_of_negligible {Z : Set (HeightOneS
     (hbound : ∀ 𝔭 ∈ Z, (T ∩ π ⁻¹' {𝔭}).encard ≤ m) {δ : ℝ} :
     T.HasDirichletDensity δ ↔ S.HasDirichletDensity (δ / c) := by
   -- Remove the exceptional primes on both sides; away from them the fibre count is exact.
-  have hfiber' (𝔭 : HeightOneSpectrum (𝓞 K)) (h𝔭 : 𝔭 ∈ S \ Z) :
-      Nat.card {𝔓 // π 𝔓 = 𝔭 ∧ 𝔓 ∈ T \ π ⁻¹' Z} = c := by
-    rw [← hfiber 𝔭 h𝔭]
-    refine Nat.card_congr (Equiv.subtypeEquivRight fun 𝔓 ↦ ?_)
-    simp only [Set.mem_sdiff, Set.mem_preimage]
-    exact ⟨fun h ↦ ⟨h.1, h.2.1⟩, fun h ↦ ⟨h.1, h.2, h.1 ▸ h𝔭.2⟩⟩
   have hcore := hasDirichletDensity_iff_of_card_fiber hmaps hnorm hc
-    hfiber' (δ := δ)
+    (fun 𝔭 h𝔭 ↦ (Set.natCard_fiber_sdiff_preimage π h𝔭.2).trans (hfiber 𝔭 h𝔭)) (δ := δ)
   -- The primes of `T` over `Z` are negligible, since `π` has bounded fibres over `Z`.
   have hTZ : (T \ π ⁻¹' Z) ∆ T = T ∩ π ⁻¹' Z := by
     ext 𝔓
@@ -225,6 +250,17 @@ theorem hasDirichletDensity_iff_of_card_fiber_of_negligible {Z : Set (HeightOneS
       tauto
   rw [← hasDirichletDensity_iff_of_symmDiff hT, hcore, hasDirichletDensity_iff_of_symmDiff hS]
 
+/-- The members of `T` of residue degree above one over `K` have residue degree above one over
+`ℚ`, so they lie in `TauCeti.higherDegreePrimes E`, which has density zero. -/
+private theorem symmDiff_setOf_inertiaDeg_eq_one_subset [Algebra K E]
+    (T : Set (HeightOneSpectrum (𝓞 E))) :
+    {𝔓 | 𝔓 ∈ T ∧ 𝔓.asIdeal.inertiaDeg (𝓞 K) = 1} ∆ T ⊆ TauCeti.higherDegreePrimes E := by
+  intro 𝔓 h𝔓
+  simp only [Set.mem_symmDiff, Set.mem_ofPred_eq] at h𝔓
+  have hpos := Ideal.inertiaDeg_pos 𝔓.asIdeal (𝓞 K)
+  have hne : 𝔓.asIdeal.inertiaDeg (𝓞 K) ≠ 1 := by tauto
+  exact TauCeti.mem_higherDegreePrimes_of_one_lt_inertiaDeg (K := K) (by omega)
+
 /-- **Dirichlet densities along contraction.** Let `E / K` be an extension of number fields, `T` a
 set of primes of `E` whose residue-degree-one members outside the preimage of `Z` contract into a
 set `S` of primes of `K`, and `Z` a set of primes of `K` of Dirichlet density zero. If every prime
@@ -240,25 +276,183 @@ theorem hasDirichletDensity_contraction [Algebra K E] {Z : Set (HeightOneSpectru
     (hfiber : ∀ 𝔭 ∈ S \ Z, Nat.card {𝔓 // 𝔓.under (𝓞 K) = 𝔭 ∧ 𝔓 ∈ T ∧
       𝔓.asIdeal.inertiaDeg (𝓞 K) = 1} = c) {δ : ℝ} :
     T.HasDirichletDensity δ ↔ S.HasDirichletDensity (δ / c) := by
-  -- The primes of `T` of residue degree above one over `K` have residue degree above one over
-  -- `ℚ`, so they are negligible.
-  set T₁ : Set (HeightOneSpectrum (𝓞 E)) := {𝔓 | 𝔓 ∈ T ∧ 𝔓.asIdeal.inertiaDeg (𝓞 K) = 1}
-  have hT : (T₁ ∆ T).HasDirichletDensity 0 := by
-    refine TauCeti.hasDirichletDensity_higherDegreePrimes.zero_of_subset fun 𝔓 h𝔓 ↦ ?_
-    simp only [T₁, Set.mem_symmDiff, Set.mem_ofPred_eq] at h𝔓
-    have hpos := Ideal.inertiaDeg_pos 𝔓.asIdeal (𝓞 K)
-    have hne : 𝔓.asIdeal.inertiaDeg (𝓞 K) ≠ 1 := by tauto
-    exact TauCeti.mem_higherDegreePrimes_of_one_lt_inertiaDeg (K := K) (by omega)
-  rw [← hasDirichletDensity_iff_of_symmDiff hT]
-  have hnorm (𝔓 : HeightOneSpectrum (𝓞 E)) (h𝔓 : 𝔓 ∈ T₁) :
-      Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (𝔓.under (𝓞 K)).asIdeal := by
-    have : 𝔓.asIdeal.LiesOver (𝔓.under (𝓞 K)).asIdeal :=
-      ⟨HeightOneSpectrum.under_asIdeal _ 𝔓⟩
-    rw [← Ideal.absNorm_pow_inertiaDeg (𝔓.under (𝓞 K)).asIdeal 𝔓.asIdeal, h𝔓.2, pow_one]
-  refine hasDirichletDensity_iff_of_card_fiber_of_negligible hZ
+  rw [← hasDirichletDensity_iff_of_symmDiff
+    (TauCeti.hasDirichletDensity_higherDegreePrimes.zero_of_subset
+      (symmDiff_setOf_inertiaDeg_eq_one_subset (K := K) T))]
+  exact hasDirichletDensity_iff_of_card_fiber_of_negligible
+    (T := {𝔓 | 𝔓 ∈ T ∧ 𝔓.asIdeal.inertiaDeg (𝓞 K) = 1}) hZ
     (fun 𝔓 h𝔓 ↦ ⟨hmaps 𝔓 h𝔓.1.1 h𝔓.1.2 h𝔓.2, h𝔓.2⟩)
-    (fun 𝔓 h𝔓 ↦ hnorm 𝔓 h𝔓.1) (fun 𝔓 h𝔓 ↦ (hnorm 𝔓 h𝔓.1).ge) hc hfiber
-    (m := Module.finrank K E) fun 𝔭 _ ↦
+    (fun 𝔓 h𝔓 ↦ HeightOneSpectrum.absNorm_eq_absNorm_under_of_inertiaDeg_eq_one h𝔓.1.2)
+    (fun 𝔓 h𝔓 ↦ (HeightOneSpectrum.absNorm_eq_absNorm_under_of_inertiaDeg_eq_one h𝔓.1.2).ge)
+    hc hfiber (m := Module.finrank K E) fun 𝔭 _ ↦
+      (Set.encard_le_encard Set.inter_subset_right).trans
+        (𝔭.encard_setOf_under_eq_le_finrank (E := E))
+
+/-! ### Prime counts and natural density along a fibre count -/
+
+open TauCeti in
+/-- Summing over the primes of `T` of norm at most `x` a weight that factors through `π` gives `c`
+times the sum of the weight over the primes of `S` of norm at most `x`, when `π` preserves norms on
+`T` and has exactly `c` preimages in `T` over each prime of `S`. -/
+private theorem sum_primesLE_indicator_eq_mul (hmaps : Set.MapsTo π T S)
+    (hnorm : ∀ 𝔓 ∈ T, Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (π 𝔓).asIdeal)
+    (hfiber : ∀ 𝔭 ∈ S, Nat.card {𝔓 // π 𝔓 = 𝔭 ∧ 𝔓 ∈ T} = c)
+    {w : HeightOneSpectrum (𝓞 E) → ℝ} {g : HeightOneSpectrum (𝓞 K) → ℝ}
+    (hw : ∀ 𝔓 ∈ T, w 𝔓 = g (π 𝔓)) (x : ℝ) :
+    ∑ 𝔓 ∈ primesLE E x, T.indicator w 𝔓 = c * ∑ 𝔭 ∈ primesLE K x, S.indicator g 𝔭 := by
+  classical
+  simp only [Set.indicator_apply]
+  rw [← Finset.sum_filter, ← Finset.sum_filter, Finset.mul_sum]
+  -- Group the primes of `T` below `x` by their image under `π`, which has the same norm.
+  refine (Finset.sum_fiberwise_of_maps_to (g := π) (fun 𝔓 h𝔓 ↦ ?_) _).symm.trans
+    (Finset.sum_congr rfl fun 𝔭 h𝔭 ↦ ?_)
+  · simp only [Finset.mem_filter, mem_normLE] at h𝔓 ⊢
+    exact ⟨hnorm 𝔓 h𝔓.2 ▸ h𝔓.1, hmaps h𝔓.2⟩
+  simp only [Finset.mem_filter, mem_normLE] at h𝔭
+  rw [Finset.sum_congr rfl fun 𝔓 h𝔓 ↦ by
+      simp only [Finset.mem_filter] at h𝔓
+      rw [hw 𝔓 h𝔓.1.2, h𝔓.2], Finset.sum_const, nsmul_eq_mul]
+  -- The fibre over `𝔭` below `x` is the whole fibre of `π` in `T`, since `π` preserves norms.
+  rw [← hfiber 𝔭 h𝔭.2, ← Nat.card_eq_finsetCard]
+  refine congrArg (fun n : ℕ ↦ (n : ℝ) * g 𝔭)
+    (Nat.card_congr (Equiv.subtypeEquivRight fun 𝔓 ↦ ?_))
+  simp only [Finset.mem_filter, mem_normLE]
+  refine ⟨fun h ↦ ⟨h.2, h.1.2⟩, fun h ↦ ⟨⟨?_, h.2⟩, h.1⟩⟩
+  rw [hnorm 𝔓 h.2, h.1]
+  exact h𝔭.1
+
+/-- **Prime counts along a fibre count.** If `π` maps `T` into `S`, preserves absolute norms on
+`T`, and every prime of `S` has exactly `c` preimages in `T`, then for every cutoff `x` there are
+`c` times as many primes of `T` as primes of `S` of norm at most `x`. -/
+theorem primeCount_eq_mul_of_card_fiber (hmaps : Set.MapsTo π T S)
+    (hnorm : ∀ 𝔓 ∈ T, Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (π 𝔓).asIdeal)
+    (hfiber : ∀ 𝔭 ∈ S, Nat.card {𝔓 // π 𝔓 = 𝔭 ∧ 𝔓 ∈ T} = c) (x : ℝ) :
+    TauCeti.primeCount E T x = c * TauCeti.primeCount K S x := by
+  rw [TauCeti.primeCount_apply, TauCeti.primeCount_apply]
+  exact sum_primesLE_indicator_eq_mul hmaps hnorm hfiber (w := 1) (g := 1) (fun _ _ ↦ rfl) x
+
+/-- **Logarithmically weighted prime counts along a fibre count.** If `π` maps `T` into `S`,
+preserves absolute norms on `T`, and every prime of `S` has exactly `c` preimages in `T`, then
+`ϑ_T(x) = c ϑ_S(x)` for every cutoff `x`. -/
+theorem primeTheta_eq_mul_of_card_fiber (hmaps : Set.MapsTo π T S)
+    (hnorm : ∀ 𝔓 ∈ T, Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (π 𝔓).asIdeal)
+    (hfiber : ∀ 𝔭 ∈ S, Nat.card {𝔓 // π 𝔓 = 𝔭 ∧ 𝔓 ∈ T} = c) (x : ℝ) :
+    TauCeti.primeTheta E T x = c * TauCeti.primeTheta K S x := by
+  rw [TauCeti.primeTheta_apply, TauCeti.primeTheta_apply]
+  exact sum_primesLE_indicator_eq_mul hmaps hnorm hfiber
+    (fun 𝔓 h𝔓 ↦ by simp only [hnorm 𝔓 h𝔓]) x
+
+/-- **Natural densities along a fibre count.** If `π` maps `T` into `S`, preserves absolute norms
+on `T`, and every prime of `S` has exactly `c ≠ 0` preimages in `T`, then `T` has natural density
+`δ` exactly when `S` has natural density `δ / c`. -/
+theorem hasNaturalDensity_iff_of_card_fiber (hmaps : Set.MapsTo π T S)
+    (hnorm : ∀ 𝔓 ∈ T, Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (π 𝔓).asIdeal) (hc : c ≠ 0)
+    (hfiber : ∀ 𝔭 ∈ S, Nat.card {𝔓 // π 𝔓 = 𝔭 ∧ 𝔓 ∈ T} = c) {δ : ℝ} :
+    HasNaturalDensity T δ ↔ HasNaturalDensity S (δ / c) := by
+  have hc' : (c : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hc
+  -- The all-prime counts over `E` and `K` differ, so compare both with `x / log x`, to which each
+  -- is asymptotic by the prime ideal theorem.
+  simp_rw [hasNaturalDensity_iff_tendsto_div_div_log,
+    primeCount_eq_mul_of_card_fiber hmaps hnorm hfiber, mul_div_assoc]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · simpa [div_eq_inv_mul, hc'] using h.const_mul (c : ℝ)⁻¹
+  · simpa [mul_div_cancel₀ δ hc'] using h.const_mul (c : ℝ)
+
+/-- **Prime counts along a bounded fibre count.** If `π` maps `T` into `S`, does not increase
+absolute norms on `T`, and every prime of `S` has at most `m` preimages in `T`, then for every
+cutoff `x` there are at most `m` times as many primes of `T` as primes of `S` of norm at most
+`x`. -/
+theorem primeCount_le_mul_of_encard_fiber_le (hmaps : Set.MapsTo π T S)
+    (hnorm : ∀ 𝔓 ∈ T, Ideal.absNorm (π 𝔓).asIdeal ≤ Ideal.absNorm 𝔓.asIdeal) {m : ℕ}
+    (hfiber : ∀ 𝔭 ∈ S, (T ∩ π ⁻¹' {𝔭}).encard ≤ m) (x : ℝ) :
+    TauCeti.primeCount E T x ≤ m * TauCeti.primeCount K S x := by
+  classical
+  rw [TauCeti.primeCount_eq_card, TauCeti.primeCount_eq_card]
+  -- `π` sends the primes of `T` below `x` to primes of `S` below `x`, with at most `m` in each
+  -- fibre.
+  have key := Finset.card_le_mul_card_image_of_maps_to (f := π)
+    (s := (TauCeti.primesLE E x).filter (· ∈ T)) (t := (TauCeti.primesLE K x).filter (· ∈ S))
+    (fun 𝔓 h𝔓 ↦ by
+      simp only [Finset.mem_filter, TauCeti.mem_normLE] at h𝔓 ⊢
+      exact ⟨(Nat.cast_le.mpr (hnorm 𝔓 h𝔓.2)).trans h𝔓.1, hmaps h𝔓.2⟩)
+    m fun 𝔭 h𝔭 ↦ by
+      have hsub : ((((TauCeti.primesLE E x).filter (· ∈ T)).filter (π · = 𝔭) : Finset _) :
+          Set (HeightOneSpectrum (𝓞 E))) ⊆ T ∩ π ⁻¹' {𝔭} := fun 𝔓 h𝔓 ↦ by
+        rw [Finset.mem_coe, Finset.mem_filter, Finset.mem_filter] at h𝔓
+        exact ⟨h𝔓.1.2, h𝔓.2⟩
+      have := (Set.encard_le_encard hsub).trans (hfiber 𝔭 (Finset.mem_filter.mp h𝔭).2)
+      rwa [Set.encard_coe_eq_coe_finsetCard, Nat.cast_le] at this
+  exact_mod_cast key
+
+/-- **Natural density zero pulls back along a bounded fibre count.** If `S` has natural density
+zero, and `π` maps `T` into `S`, does not increase absolute norms on `T`, and has at most `m`
+preimages in `T` over each prime of `S`, then `T` has natural density zero. -/
+theorem HasNaturalDensity.zero_of_encard_fiber_le (hS : HasNaturalDensity S 0)
+    (hmaps : Set.MapsTo π T S)
+    (hnorm : ∀ 𝔓 ∈ T, Ideal.absNorm (π 𝔓).asIdeal ≤ Ideal.absNorm 𝔓.asIdeal) {m : ℕ}
+    (hfiber : ∀ 𝔭 ∈ S, (T ∩ π ⁻¹' {𝔭}).encard ≤ m) : HasNaturalDensity T 0 := by
+  rw [hasNaturalDensity_zero_iff_isLittleO] at hS ⊢
+  refine Asymptotics.IsBigO.trans_isLittleO
+    (Asymptotics.IsBigO.of_bound m (Eventually.of_forall fun x ↦ ?_)) hS
+  rw [Real.norm_of_nonneg (TauCeti.primeCount_nonneg T x),
+    Real.norm_of_nonneg (TauCeti.primeCount_nonneg S x)]
+  exact primeCount_le_mul_of_encard_fiber_le hmaps hnorm hfiber x
+
+/-- **Natural densities along a fibre count off a negligible set.** Let `π` map the part of `T`
+away from the preimage of `Z` into `S \ Z`, preserve absolute norms there, and not increase norms
+over `Z`. Suppose that every prime of `S` outside the natural-density-zero set `Z` has exactly
+`c ≠ 0` preimages in `T`, and every prime in `Z` has at most `m`. Then `T` has natural density `δ`
+exactly when `S` has natural density `δ / c`. -/
+theorem hasNaturalDensity_iff_of_card_fiber_of_negligible {Z : Set (HeightOneSpectrum (𝓞 K))}
+    (hZ : HasNaturalDensity Z 0) (hmaps : Set.MapsTo π (T \ π ⁻¹' Z) (S \ Z))
+    (hnorm : ∀ 𝔓 ∈ T \ π ⁻¹' Z, Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (π 𝔓).asIdeal)
+    (hnorm_le : ∀ 𝔓 ∈ T ∩ π ⁻¹' Z, Ideal.absNorm (π 𝔓).asIdeal ≤ Ideal.absNorm 𝔓.asIdeal)
+    (hc : c ≠ 0)
+    (hfiber : ∀ 𝔭 ∈ S \ Z, Nat.card {𝔓 // π 𝔓 = 𝔭 ∧ 𝔓 ∈ T} = c) {m : ℕ}
+    (hbound : ∀ 𝔭 ∈ Z, (T ∩ π ⁻¹' {𝔭}).encard ≤ m) {δ : ℝ} :
+    HasNaturalDensity T δ ↔ HasNaturalDensity S (δ / c) := by
+  -- The primes of `T` over `Z` are negligible, since `π` has bounded fibres over `Z`.
+  have hT : HasNaturalDensity ((T \ π ⁻¹' Z) ∆ T) 0 := by
+    refine (hZ.zero_of_encard_fiber_le (T := T ∩ π ⁻¹' Z) (m := m) (fun _ h𝔓 ↦ h𝔓.2) hnorm_le
+      fun 𝔭 h𝔭 ↦ ?_).zero_of_subset fun 𝔓 h𝔓 ↦ ?_
+    · exact (Set.encard_le_encard (Set.inter_subset_inter_left _ Set.inter_subset_left)).trans
+        (hbound 𝔭 h𝔭)
+    · simp only [Set.mem_symmDiff, Set.mem_sdiff, Set.mem_inter_iff, Set.mem_preimage] at h𝔓 ⊢
+      tauto
+  have hS : HasNaturalDensity ((S \ Z) ∆ S) 0 :=
+    hZ.zero_of_subset fun 𝔭 h𝔭 ↦ by
+      simp only [Set.mem_symmDiff, Set.mem_sdiff] at h𝔭
+      tauto
+  -- Away from the exceptional primes the fibre count is exact.
+  rw [← hasNaturalDensity_iff_of_symmDiff hT,
+    hasNaturalDensity_iff_of_card_fiber hmaps hnorm hc
+      fun 𝔭 h𝔭 ↦ (Set.natCard_fiber_sdiff_preimage π h𝔭.2).trans (hfiber 𝔭 h𝔭),
+    hasNaturalDensity_iff_of_symmDiff hS]
+
+/-- **Natural densities along contraction.** Let `E / K` be an extension of number fields, `T` a
+set of primes of `E` whose residue-degree-one members outside the preimage of `Z` contract into a
+set `S` of primes of `K`, and `Z` a set of primes of `K` of natural density zero. If every prime of
+`S` outside `Z` lies below exactly `c ≠ 0` members of `T` of residue degree one over `K`, then `T`
+has natural density `δ` exactly when `S` has natural density `δ / c`.
+
+As for `NumberField.Set.hasDirichletDensity_contraction`, neither the primes of `T` of residue
+degree above one over `K` nor those over `Z` need to be counted. -/
+theorem hasNaturalDensity_contraction [Algebra K E] {Z : Set (HeightOneSpectrum (𝓞 K))}
+    (hZ : HasNaturalDensity Z 0)
+    (hmaps : ∀ 𝔓 ∈ T, 𝔓.asIdeal.inertiaDeg (𝓞 K) = 1 → 𝔓.under (𝓞 K) ∉ Z →
+      𝔓.under (𝓞 K) ∈ S) (hc : c ≠ 0)
+    (hfiber : ∀ 𝔭 ∈ S \ Z, Nat.card {𝔓 // 𝔓.under (𝓞 K) = 𝔭 ∧ 𝔓 ∈ T ∧
+      𝔓.asIdeal.inertiaDeg (𝓞 K) = 1} = c) {δ : ℝ} :
+    HasNaturalDensity T δ ↔ HasNaturalDensity S (δ / c) := by
+  rw [← hasNaturalDensity_iff_of_symmDiff
+    (TauCeti.hasNaturalDensity_higherDegreePrimes.zero_of_subset
+      (symmDiff_setOf_inertiaDeg_eq_one_subset (K := K) T))]
+  exact hasNaturalDensity_iff_of_card_fiber_of_negligible
+    (T := {𝔓 | 𝔓 ∈ T ∧ 𝔓.asIdeal.inertiaDeg (𝓞 K) = 1}) hZ
+    (fun 𝔓 h𝔓 ↦ ⟨hmaps 𝔓 h𝔓.1.1 h𝔓.1.2 h𝔓.2, h𝔓.2⟩)
+    (fun 𝔓 h𝔓 ↦ HeightOneSpectrum.absNorm_eq_absNorm_under_of_inertiaDeg_eq_one h𝔓.1.2)
+    (fun 𝔓 h𝔓 ↦ (HeightOneSpectrum.absNorm_eq_absNorm_under_of_inertiaDeg_eq_one h𝔓.1.2).ge)
+    hc hfiber (m := Module.finrank K E) fun 𝔭 _ ↦
       (Set.encard_le_encard Set.inter_subset_right).trans
         (𝔭.encard_setOf_under_eq_le_finrank (E := E))
 

@@ -26,8 +26,11 @@ map into a `ZMod 2`-space of dimension `#ι`, and lets such a family be compared
 
 ## Main results
 
+* `TauCeti.hilbertSign`: the sign dictionary `ZMod 2 → ℤˣ`, sending `0` to `1` and `1` to `-1`.
 * `TauCeti.additiveIntUnitsLinearEquiv`: the linear equivalence `Additive ℤˣ ≃ₗ[ZMod 2] ZMod 2`.
 * `TauCeti.finrank_zmod_two_additive_intUnits`: `Module.finrank (ZMod 2) (Additive ℤˣ) = 1`.
+* `TauCeti.uzpow_intCast_eq_negOnePow`: the sign `(-1) ^ (n mod 2)` of a parity is the sign
+  `Int.negOnePow n` of any integer lift.
 -/
 
 public section
@@ -49,6 +52,58 @@ def additiveIntUnitsAddEquiv : Additive ℤˣ ≃+ ZMod 2 where
 @[simp] theorem additiveIntUnitsAddEquiv_apply (u : Additive ℤˣ) :
     additiveIntUnitsAddEquiv u = if Additive.toMul u = 1 then 0 else 1 :=
   (rfl)
+
+/-- The sign `(-1)^n`, read additively in `ZMod 2`, is the parity of `n`. -/
+theorem additiveIntUnitsAddEquiv_ofMul_neg_one_pow (n : ℕ) :
+    additiveIntUnitsAddEquiv (Additive.ofMul ((-1 : ℤˣ) ^ n)) = n := by
+  rw [ofMul_pow, map_nsmul]
+  simp
+
+/-- Translate an additive `ZMod 2` normalization, such as that of the cohomological local symbol,
+to the classical sign normalization, sending `0` to `+1` and `1` to `-1`. -/
+def hilbertSign (x : ZMod 2) : ℤˣ :=
+  ((AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).symm
+    (Multiplicative.ofAdd x))
+
+/-- The zero class has positive sign. -/
+@[simp]
+theorem hilbertSign_zero : hilbertSign 0 = 1 := by
+  apply (AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).injective
+  simp [hilbertSign, additiveIntUnitsAddEquiv_apply]
+
+/-- The nonzero class in `ZMod 2` has negative sign. -/
+@[simp]
+theorem hilbertSign_one : hilbertSign 1 = -1 := by
+  apply (AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).injective
+  simp [hilbertSign, additiveIntUnitsAddEquiv_apply]
+
+/-- The sign is `+1` exactly at the zero class. -/
+@[simp]
+theorem hilbertSign_eq_one_iff (x : ZMod 2) : hilbertSign x = 1 ↔ x = 0 := by
+  rcases (by decide : ∀ y : ZMod 2, y = 0 ∨ y = 1) x with rfl | rfl <;> simp
+
+/-- The sign `(-1) ^ i` of the parity `i` of an integer `n` is the sign `Int.negOnePow n`. -/
+theorem uzpow_intCast_eq_negOnePow (n : ℤ) : (-1 : ℤˣ) ^ (n : ZMod 2) = n.negOnePow := by
+  rw [uzpow_intCast, Int.negOnePow_def]
+
+/-- The sign dictionary turns addition of mod-two invariants into multiplication of signs. -/
+theorem hilbertSign_add (x y : ZMod 2) : hilbertSign (x + y) = hilbertSign x * hilbertSign y :=
+  ((AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).symm.map_mul
+    (Multiplicative.ofAdd x) (Multiplicative.ofAdd y))
+
+/-- The sign dictionary turns a finite sum of mod-two invariants into the product of their
+signs. -/
+theorem hilbertSign_sum {ι : Type*} (s : Finset ι) (f : ι → ZMod 2) :
+    hilbertSign (∑ i ∈ s, f i) = ∏ i ∈ s, hilbertSign (f i) := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons i s hi ih => rw [Finset.sum_cons, Finset.prod_cons, hilbertSign_add, ih]
+
+/-- **Signs are determined by their vanishing.** A sign `u ∈ {±1}` is the sign of `x : ZMod 2`
+exactly when `u = 1` holds precisely when `x = 0`. -/
+theorem eq_hilbertSign_iff (u : ℤˣ) (x : ZMod 2) : u = hilbertSign x ↔ (u = 1 ↔ x = 0) := by
+  rcases Int.units_eq_one_or u with rfl | rfl <;>
+    rcases (by decide : ∀ y : ZMod 2, y = 0 ∨ y = 1) x with rfl | rfl <;> simp
 
 /-- **The sign group is the line `ZMod 2`, linearly.** `TauCeti.additiveIntUnitsAddEquiv` is
 automatically `ZMod 2`-linear, every additive map between `ZMod 2`-modules being so. -/
@@ -78,13 +133,18 @@ theorem additiveIntUnitsCoordinateSum_apply (ι : Type*) [Fintype ι]
   classical
   simp [additiveIntUnitsCoordinateSum]
 
-/-- The hyperplane of sign vectors of coordinate sum zero has dimension one less than the number
-of coordinates. -/
-theorem finrank_ker_additiveIntUnitsCoordinateSum (ι : Type*) [Fintype ι] [Nonempty ι] :
+/-- The space of sign vectors of coordinate sum zero has dimension `#ι - 1`, with natural-number
+subtraction. For nonempty `ι` this is a hyperplane, of dimension one less than the number of
+coordinates; for empty `ι` the whole space is trivial and the dimension is `0`. -/
+theorem finrank_ker_additiveIntUnitsCoordinateSum (ι : Type*) [Fintype ι] :
     Module.finrank (ZMod 2) (LinearMap.ker (additiveIntUnitsCoordinateSum ι)) =
       Fintype.card ι - 1 := by
   classical
-  let i₀ : ι := Classical.choice inferInstance
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · -- no coordinates: the ambient space is trivial
+    rw [Module.finrank_zero_of_subsingleton]
+    simp
+  let i₀ : ι := Classical.choice hι
   have hpi : Module.finrank (ZMod 2) (ι → Additive ℤˣ) = Fintype.card ι := by
     rw [Module.finrank_pi_fintype, finrank_zmod_two_additive_intUnits]
     simp

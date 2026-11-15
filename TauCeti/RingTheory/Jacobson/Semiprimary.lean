@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Jacobson.Semiprimary
 
 /-!
-# The radical quotient of a module over a semiprimary ring
+# The radical quotient of a module
 
 Let `I` be a two-sided ideal of `R` with `R ⧸ I` a semisimple ring. Then for *any* `R`-module `M`
 the quotient `M ⧸ I • M` is a semisimple module: it is a module over `R ⧸ I`, annihilated by `I`,
@@ -21,19 +21,27 @@ semisimple ring. Mathlib records that the ring `R ⧸ Ring.jacobson R` is then s
 special case of the above at `I = Ring.jacobson R` is the module-level consequence, that the
 radical quotient of any module over a semiprimary ring is semisimple.
 
+The radical quotient also sees every map into a semisimple module, since the Jacobson radical
+annihilates semisimple modules (`IsSemisimpleModule.jacobson_le_annihilator`, to be fed to
+`TauCeti.linearMapQuotientSMulTopEquiv`); and when `R ⧸ Ring.jacobson R` is finite, so is every
+simple module, being cyclic and annihilated by the radical. Together these let the radical quotient
+of a module be read off from the finite sets of maps into simple modules.
+
 ## Main results
 
 * `TauCeti.isSemisimpleModule_quotient_smul_top`: `M ⧸ I • M` is a semisimple `R`-module whenever
   `R ⧸ I` is a semisimple ring.
 * `TauCeti.isSemisimpleModule_quotient_jacobson_smul_top`: the radical quotient of any module over
   a semiprimary ring is a semisimple module.
+* `TauCeti.IsSimpleModule.finite_of_finite_quotient_jacobson`: a simple module over a ring with
+  finite radical quotient is finite.
 -/
 
 public section
 
 namespace TauCeti
 
-universe u v
+universe u v w
 
 variable (R : Type u) [Ring R]
 
@@ -52,5 +60,20 @@ theorem isSemisimpleModule_quotient_jacobson_smul_top (M : Type v) [AddCommGroup
     [IsSemiprimaryRing R] :
     IsSemisimpleModule R (M ⧸ Ring.jacobson R • (⊤ : Submodule R M)) :=
   isSemisimpleModule_quotient_smul_top R (Ring.jacobson R) M
+
+variable {R}
+
+/-- **A simple module over a ring with finite radical quotient is finite.** The Jacobson radical
+annihilates a simple module, which is cyclic, so the module is a quotient of `R ⧸ J`. -/
+theorem IsSimpleModule.finite_of_finite_quotient_jacobson [Finite (R ⧸ Ring.jacobson R)]
+    (S : Type w) [AddCommGroup S] [Module R S] [IsSimpleModule R S] : Finite S := by
+  have := IsSimpleModule.nontrivial R S
+  obtain ⟨s, hs⟩ := exists_ne (0 : S)
+  have hle : Ring.jacobson R ≤ LinearMap.ker (LinearMap.toSpanSingleton R S s) := fun r hr ↦ by
+    rw [LinearMap.mem_ker, LinearMap.toSpanSingleton_apply]
+    exact Module.mem_annihilator.mp (IsSemisimpleModule.jacobson_le_annihilator R S hr) s
+  refine Finite.of_surjective ((Ring.jacobson R).liftQ _ hle) fun y ↦ ?_
+  obtain ⟨x, rfl⟩ := IsSimpleModule.toSpanSingleton_surjective R hs y
+  exact ⟨Submodule.Quotient.mk x, Submodule.liftQ_apply _ _ _⟩
 
 end TauCeti

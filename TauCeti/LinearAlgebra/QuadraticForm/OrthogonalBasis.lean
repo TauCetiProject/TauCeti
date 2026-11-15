@@ -28,10 +28,19 @@ pairwise orthogonal vectors that the Clifford-algebra API asks for.
 
 ## Main results
 
+* `QuadraticMap.exists_list_pairwise_isOrtho`: every quadratic form on a finite-dimensional space
+  has a spanning list of pairwise orthogonal vectors.
 * `QuadraticMap.Nondegenerate.exists_orthogonal_basis`: a nondegenerate quadratic form on a
   finite-dimensional space has an orthogonal basis none of whose members is isotropic.
 * `QuadraticMap.Nondegenerate.exists_list_pairwise_isOrtho`: the same basis read as a spanning list
   of pairwise orthogonal, non-isotropic vectors whose length is the dimension.
+* `QuadraticMap.Nondegenerate.exists_orthogonal_triple`: in dimension at least three, three
+  pairwise orthogonal, non-isotropic vectors.
+* `QuadraticMap.nondegenerate_and_length_eq_finrank_of_pairwise_isOrtho`: conversely, a spanning
+  list of pairwise orthogonal, non-isotropic vectors is a basis, so the form is nondegenerate and
+  the list has the length of the dimension.
+* `QuadraticMap.nondegenerate_of_isOrthoᵢ`: the same converse for a basis: a form with an
+  orthogonal basis of non-isotropic vectors is nondegenerate, in any dimension.
 -/
 
 public section
@@ -40,8 +49,27 @@ namespace QuadraticMap
 
 open Module
 
-variable {F V : Type*} [Field F] [AddCommGroup V] [Module F V]
-  [Invertible (2 : F)] [FiniteDimensional F V] {Q : QuadraticForm F V}
+variable {F V : Type*} [Field F] [AddCommGroup V] [Module F V] {Q : QuadraticForm F V}
+
+section FiniteDimensional
+
+variable [Invertible (2 : F)] [FiniteDimensional F V]
+
+variable (Q) in
+/-- **Every quadratic form has an orthogonal spanning list**: Mathlib's
+`LinearMap.BilinForm.exists_orthogonal_basis` for the associated bilinear form, read as a list of
+pairwise orthogonal vectors spanning the space. This is the shape in which the Clifford-algebra API
+consumes an orthogonal family. -/
+theorem exists_list_pairwise_isOrtho :
+    ∃ l : List V, l.Pairwise Q.IsOrtho ∧ Submodule.span F {x : V | x ∈ l} = ⊤ := by
+  obtain ⟨b, hb⟩ := LinearMap.BilinForm.exists_orthogonal_basis
+    (B := QuadraticMap.associated Q) (QuadraticForm.associated_isSymm F Q)
+  refine ⟨List.ofFn b, List.pairwise_ofFn.mpr fun _ _ hij =>
+    associated_isOrtho.mp (hb (Fin.ne_of_lt hij)), ?_⟩
+  have hset : {x : V | x ∈ List.ofFn b} = Set.range b := by
+    ext x
+    simp
+  rw [hset, b.span_eq]
 
 /-- **A nondegenerate quadratic form has an anisotropic orthogonal basis.** Mathlib's
 `LinearMap.BilinForm.exists_orthogonal_basis` supplies the orthogonality, and
@@ -74,5 +102,65 @@ theorem Nondegenerate.exists_list_pairwise_isOrtho (hQ : Q.Nondegenerate) :
   · rintro v hv
     obtain ⟨i, rfl⟩ := List.mem_ofFn.mp hv
     exact haniso i
+
+end FiniteDimensional
+
+section Triple
+
+variable [Invertible (2 : F)]
+
+/-- A nondegenerate quadratic form on a space of dimension at least three has three pairwise
+orthogonal anisotropic vectors, taken from an anisotropic orthogonal basis. -/
+theorem Nondegenerate.exists_orthogonal_triple (hQ : Q.Nondegenerate) (hV : 3 ≤ finrank F V) :
+    ∃ x y z : V, Q.IsOrtho x y ∧ Q.IsOrtho x z ∧ Q.IsOrtho y z ∧
+      Q x ≠ 0 ∧ Q y ≠ 0 ∧ Q z ≠ 0 := by
+  let _ : FiniteDimensional F V := Module.finite_of_finrank_pos (by omega)
+  obtain ⟨B, horth, haniso⟩ := hQ.exists_orthogonal_basis
+  let n0 : Fin (finrank F V) := ⟨0, by omega⟩
+  let n1 : Fin (finrank F V) := ⟨1, by omega⟩
+  let n2 : Fin (finrank F V) := ⟨2, by omega⟩
+  exact ⟨B n0, B n1, B n2, horth n0 n1 (by simp [n0, n1]), horth n0 n2 (by simp [n0, n2]),
+    horth n1 n2 (by simp [n1, n2]), haniso n0, haniso n1, haniso n2⟩
+
+end Triple
+
+/-- **An anisotropic orthogonal spanning list is a basis**, the converse of
+`QuadraticMap.Nondegenerate.exists_list_pairwise_isOrtho`: the form is nondegenerate and the list
+has the length of the dimension. No finiteness is assumed; the list itself makes the space
+finite-dimensional. -/
+theorem nondegenerate_and_length_eq_finrank_of_pairwise_isOrtho [NeZero (2 : F)] {l : List V}
+    (hl : l.Pairwise Q.IsOrtho) (hspan : Submodule.span F {x : V | x ∈ l} = ⊤)
+    (hQl : ∀ v ∈ l, Q v ≠ 0) :
+    Q.Nondegenerate ∧ l.length = finrank F V := by
+  let _ : Invertible (2 : F) := invertibleOfNonzero (NeZero.ne (2 : F))
+  let v : Fin l.length → V := fun i ↦ l[i]
+  have hortho : LinearMap.BilinForm.iIsOrtho Q.polarBilin v := by
+    intro i j hij
+    refine isOrtho_polarBilin.mpr ?_
+    rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with h | h
+    · exact List.pairwise_iff_getElem.mp hl i j i.isLt j.isLt h
+    · exact isOrtho_comm.mp (List.pairwise_iff_getElem.mp hl j i j.isLt i.isLt h)
+  have hself : ∀ i, Q.polarBilin (v i) (v i) ≠ 0 := fun i ↦ by
+    rw [polarBilin_apply_apply, polar_self, two_smul, ← two_mul]
+    exact mul_ne_zero (NeZero.ne 2) (hQl _ (List.getElem_mem _))
+  have hrange : Set.range v = {x : V | x ∈ l} := by
+    ext x
+    simp [v, List.mem_iff_getElem, Fin.exists_iff]
+  let b : Basis (Fin l.length) F V :=
+    Basis.mk (LinearMap.BilinForm.linearIndependent_of_iIsOrtho hortho hself)
+      (by rw [hrange, hspan])
+  have hb : ⇑b = v := Basis.coe_mk _ _
+  refine ⟨nondegenerate_polar_iff.mp ?_, by simpa using (finrank_eq_card_basis b).symm⟩
+  exact (LinearMap.BilinForm.iIsOrtho.nondegenerate_iff_not_isOrtho_basis_self _ b
+    (hb ▸ hortho)).mpr (hb ▸ hself)
+
+/-- **An orthogonal basis of non-isotropic vectors makes the form nondegenerate**, in any
+dimension. This is the basis form of
+`QuadraticMap.nondegenerate_and_length_eq_finrank_of_pairwise_isOrtho`. -/
+theorem nondegenerate_of_isOrthoᵢ [Invertible (2 : F)] {ι : Type*} {b : Basis ι F V}
+    (hb : (associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) ≠ 0) : Q.Nondegenerate :=
+  nondegenerate_associated_iff.mp <| hb.nondegenerate_of_not_isOrtho_basis_self b fun i ↦ by
+    rw [associated_eq_self_apply]
+    exact hQ i
 
 end QuadraticMap

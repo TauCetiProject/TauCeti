@@ -35,6 +35,8 @@ a one-relator pro-`p` group is read off its relator.
 * `TauCeti.cupFp_cohomFpAddEquivH1_symm`: the same identity read from the explicit side.
 * `TauCeti.cupFp_eq_zero_iff`: the cup square of two classes vanishes exactly when the explicit
   cup product of the corresponding explicit classes does.
+* `TauCeti.explicitCup11_mul_bijective_iff`: the explicit cup square is a perfect pairing exactly
+  when `cupFp p G` is.
 
 ## References
 
@@ -135,5 +137,24 @@ theorem cupFp_eq_zero_iff (a b : cohomFp p G 1) :
         (smul_mul_smul_of_smul_eq_self htriv) (cohomFpAddEquivH1 p G htriv a)
         (cohomFpAddEquivH1 p G htriv b) = 0 := by
   rw [← cohomFpAddEquivH2_cupFp, map_eq_zero_iff _ (cohomFpAddEquivH2 p G htriv).injective]
+
+/-- **The explicit cup square is a perfect pairing exactly when the cup square is**: under the
+identifications `TauCeti.cohomFpAddEquivH1` and `TauCeti.cohomFpAddEquivH2`, the explicit `(1,1)`
+cup product of multiplication, `x ↦ (y ↦ x ⌣ y)`, is a bijection from `H1 G (ZMod p)` onto the
+additive homomorphisms `H1 G (ZMod p) →+ H2 G (ZMod p)` exactly when `cupFp p G` is a bijection
+from `H¹(G, 𝔽_p)` onto the linear maps `H¹(G, 𝔽_p) →ₗ H²(G, 𝔽_p)`. -/
+theorem explicitCup11_mul_bijective_iff :
+    Function.Bijective (explicitCup11 G (ZMod p) (ZMod p) (ZMod p) AddMonoidHom.mul continuous_mul
+      (smul_mul_smul_of_smul_eq_self htriv)) ↔ Function.Bijective (cupFp p G) := by
+  -- the explicit cup square is `cupFp` conjugated by the two identifications
+  have h : ⇑(explicitCup11 G (ZMod p) (ZMod p) (ZMod p) AddMonoidHom.mul continuous_mul
+      (smul_mul_smul_of_smul_eq_self htriv)) =
+      ((AddMonoidHom.toZModLinearMapEquiv p).symm.trans
+        ((cohomFpAddEquivH1 p G htriv).addMonoidHomCongrLeft.trans
+          (cohomFpAddEquivH2 p G htriv).addMonoidHomCongrRight)) ∘ cupFp p G ∘
+        (cohomFpAddEquivH1 p G htriv).symm :=
+    funext fun x => AddMonoidHom.ext fun y => by
+      simp [AddMonoidHom.toZModLinearMapEquiv, cupFp_cohomFpAddEquivH1_symm p G htriv]
+  rw [h, EquivLike.comp_bijective, EquivLike.bijective_comp]
 
 end TauCeti

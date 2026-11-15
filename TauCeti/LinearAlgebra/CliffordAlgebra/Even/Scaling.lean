@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!
@@ -14,7 +15,8 @@ import TauCeti.LinearAlgebra.QuadraticForm.Prod
 Multiplying a quadratic form by a unit does not change its even Clifford algebra up to
 isomorphism. The equivalence sends a pair of generating vectors to the corresponding pair
 multiplied by the inverse scalar. This allows a represented unit to be normalized to `-1`
-before applying the dimension-shift equivalence for Clifford algebras.
+before applying the dimension-shift equivalence for Clifford algebras. Scaling preserves
+reversal, and dimension reduction turns reversal into Clifford conjugation.
 
 The construction uses the universal property of the even subalgebra, following Mathlib's
 `CliffordAlgebra.evenToNeg` and `CliffordAlgebra.evenEquivEvenNeg` for negation.
@@ -81,6 +83,31 @@ theorem evenEquivEvenSMul_symm_ι (Q : QuadraticForm R M) (a : Rˣ) (m n : M) :
       (a : R) • (even.ι Q).bilin m n := by
   simp [evenEquivEvenSMul, evenMapScale_ι]
 
+/-- The even-algebra scaling equivalence preserves Clifford reversal. -/
+theorem evenEquivEvenSMul_reverseEven (Q : QuadraticForm R M) (a : Rˣ) (x : even Q) :
+    evenEquivEvenSMul Q a (reverseEven Q x) =
+      reverseEven ((a : R) • Q) (evenEquivEvenSMul Q a x) := by
+  rcases x with ⟨x, hx⟩
+  -- Even induction separates the ambient Clifford element from its membership proof;
+  -- repackaging each branch exposes the subalgebra arithmetic used by the reversal API.
+  induction x, hx using even_induction with
+  | algebraMap r =>
+      change evenEquivEvenSMul Q a (reverseEven Q (algebraMap R (even Q) r)) =
+        reverseEven _ (evenEquivEvenSMul Q a (algebraMap R (even Q) r))
+      simp
+  | add x y hx hy ihx ihy =>
+      change evenEquivEvenSMul Q a (reverseEven Q (⟨x, hx⟩ + ⟨y, hy⟩)) =
+        reverseEven _ (evenEquivEvenSMul Q a (⟨x, hx⟩ + ⟨y, hy⟩))
+      simp only [map_add, ihx, ihy]
+  | ι_mul_ι_mul m n x hx ih =>
+      let z : even Q := ⟨x, hx⟩
+      change evenEquivEvenSMul Q a (reverseEven Q z) =
+        reverseEven _ (evenEquivEvenSMul Q a z) at ih
+      change evenEquivEvenSMul Q a (reverseEven Q ((even.ι Q).bilin m n * z)) =
+        reverseEven _ (evenEquivEvenSMul Q a ((even.ι Q).bilin m n * z))
+      simp only [reverseEven_mul, map_mul, ih, reverseEven_ι,
+        evenEquivEvenSMul_ι, map_smul]
+
 -- Normalizing the last coefficient to `-1` gives exactly Mathlib's augmented form.
 private def normalizeLast (Q : QuadraticForm R M) (a : Rˣ) :
     ((↑(-a⁻¹) : R) • (Q.prod ((a : R) • QuadraticMap.sq))).IsometryEquiv
@@ -125,5 +152,13 @@ theorem evenProdSMulSqEquiv_symm_ι (Q : QuadraticForm R M) (a : Rˣ) (m : M) :
   apply (evenProdSMulSqEquiv Q a).injective
   rw [map_smul, evenProdSMulSqEquiv_ι]
   simp [smul_smul]
+
+/-- Dimension reduction sends reversal on the even algebra to Clifford conjugation. -/
+theorem evenProdSMulSqEquiv_reverseEven (Q : QuadraticForm R M) (a : Rˣ)
+    (x : even (Q.prod ((a : R) • QuadraticMap.sq))) :
+    evenProdSMulSqEquiv Q a (reverseEven _ x) = star (evenProdSMulSqEquiv Q a x) := by
+  simp only [evenProdSMulSqEquiv, AlgEquiv.trans_apply]
+  rw [evenEquivEvenSMul_reverseEven, evenEquivOfIsometry_reverseEven,
+    equivEven_symm_reverseEven]
 
 end TauCeti.CliffordAlgebra

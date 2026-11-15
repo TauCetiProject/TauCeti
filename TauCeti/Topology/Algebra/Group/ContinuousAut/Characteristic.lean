@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.TopologicallyFinitelyGenerated
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Topologically characteristic subgroups
@@ -21,7 +22,8 @@ automorphisms need not be continuous.
 The predicate `TauCeti.IsTopCharacteristic G N` is expressed by the image equation
 `N.map φ = N`. Its equivalent image and preimage inclusion criteria make it convenient to prove,
 and it is stable under arbitrary suprema and infima. A topologically characteristic subgroup is
-normal as soon as inner automorphisms are continuous.
+normal as soon as inner automorphisms are continuous, and so is a topologically characteristic
+subgroup of a normal subgroup.
 
 In a topologically finitely generated compact group the topologically characteristic open normal
 subgroups are cofinal among the open subgroups: an open subgroup has finite index, there are
@@ -43,6 +45,8 @@ The characterizations and lattice API parallel Mathlib's API for
   topologically characteristic.
 * `TauCeti.IsTopCharacteristic.normal`: a topologically characteristic subgroup is normal when
   inner automorphisms are continuous.
+* `TauCeti.IsTopCharacteristic.map_subtype_normal`: a topologically characteristic subgroup of a
+  normal subgroup is normal in the ambient group.
 * `TauCeti.IsTopologicallyFinitelyGenerated.exists_isTopCharacteristic_le`: in a topologically
   finitely generated compact group, every open subgroup contains a topologically characteristic
   open normal subgroup.
@@ -177,6 +181,16 @@ theorem normal [SeparatelyContinuousMul G] (hN : IsTopCharacteristic G N) : N.No
     rw [← hN (ContinuousAut.conj g)]
     rw [← ContinuousAut.conj_apply]
     exact Subgroup.mem_map_of_mem (ContinuousAut.conj g).toMulEquiv.toMonoidHom hn
+
+/-- A topologically characteristic subgroup of a normal subgroup is normal in the ambient group
+when inner automorphisms are continuous. This is the topological analogue of
+`Subgroup.normal_of_characteristic_of_normal`. -/
+theorem map_subtype_normal [SeparatelyContinuousMul G] {H : Subgroup G} [H.Normal]
+    {K : Subgroup H} (hK : IsTopCharacteristic H K) : (K.map H.subtype).Normal where
+  conj_mem := by
+    rintro _ ⟨k, hk, rfl⟩ g
+    exact ⟨ContinuousAut.conjNormal g k,
+      isTopCharacteristic_iff_map_le.mp hK _ ⟨k, hk, rfl⟩, ContinuousAut.conjNormal_apply g k⟩
 
 end IsTopCharacteristic
 

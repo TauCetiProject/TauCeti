@@ -52,19 +52,11 @@ theorem mem_ramifiedPrimes_of_natCast_mem (F : Type*) [Field F] [NumberField F]
     let Q : 𝔭.asIdeal.primesOver (𝓞 F) := Classical.choice inferInstance
     have : Q.1.IsPrime := Q.2.1
     have : Q.1.LiesOver 𝔭.asIdeal := Q.2.2
-    have hpQ : (p : 𝓞 F) ∈ Q.1 := by
-      have hp𝔭 : (p : 𝓞 ℚ) ∈ 𝔭.asIdeal :=
-        (Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd 𝔭).mpr dvd_rfl
-      simpa using (Ideal.mem_of_liesOver Q.1 𝔭.asIdeal (p : 𝓞 ℚ)).mp hp𝔭
-    have : Q.1.LiesOver (Ideal.span {(p : ℤ)}) := by
-      rw [Ideal.liesOver_iff]
-      refine Ideal.IsMaximal.eq_of_le (Int.ideal_span_isMaximal_of_prime p)
-        Ideal.IsPrime.ne_top' ?_
-      simpa [Ideal.span_singleton_le_iff_mem, Ideal.mem_comap] using hpQ
+    have : Q.1.LiesOver (Ideal.span {(p : ℤ)}) :=
+      Rat.HeightOneSpectrum.liesOver_span_absNorm 𝔭 Q.1
     have := hur Q.1
     have he := Ideal.ramificationIdx_eq_one_of_isUnramifiedAt (R := 𝓞 ℚ) (p := Q.1)
-    rw [Ideal.ramificationIdx_ringOfIntegers_rat_eq_int Q.1
-      (Ideal.ne_bot_of_liesOver_of_ne_bot 𝔭.ne_bot Q.1),
+    rw [Ideal.ramificationIdx_ringOfIntegers_rat_eq_int Q.1,
       IsCyclotomicExtension.Rat.ramificationIdx_eq n F Q.1 hnm hpm] at he
     have hp2 : p = 2 := by
       have := Nat.eq_one_of_mul_eq_one_left he

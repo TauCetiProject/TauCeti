@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.InfinityType.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Connected
 
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
-import TauCeti.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The infinity type of a Hecke character
@@ -47,14 +47,26 @@ a `FiniteOrderInfinityType`: signs at the real places and nothing else.
 
 * `TauCeti.GlobalNumberFields.HeckeCharacter.infinityType_eq_iff`: the infinity type is the
   unique continuous infinity type whose parameters describe every real and complex component.
+* `TauCeti.GlobalNumberFields.HeckeCharacter.infiniteComponent_neg_one_eq_one_iff`: a Hecke
+  character is trivial on the sign `-1` at a real place exactly when its real parity there is zero.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.infinityType_mul`: multiplying Hecke characters adds
   their infinity types.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.infinityType_normPow`: the infinity type of the norm
   character `‖·‖ ^ s`.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.exists_finiteOrderInfinityType`: the infinity type of
   a finite-order Hecke character comes from a finite-order infinity type.
+* `TauCeti.GlobalNumberFields.HeckeCharacter.infiniteComponent_eq_one_iff`: a finite-order Hecke
+  character is trivial at a real place exactly when its real parity there is zero.
+* `HeckeCharacter.infiniteComponent_eq_one_of_mem_range_ofRayClassCharacter`: a Hecke character
+  coming from a ray class character of `𝔪` is trivial at every infinite place outside `𝔪`.
+* `TauCeti.GlobalNumberFields.HeckeCharacter.mem_range_ofRayClassCharacter_erase`: a Hecke
+  character coming from `𝔪` and trivial at a real place `w` of `𝔪` comes from `𝔪` with `w` removed.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.isFiniteOrder_normPow_iff`: `‖·‖ ^ s` has finite
   order exactly when `s = 0`.
+* `TauCeti.GlobalNumberFields.HeckeCharacter.re_realExponent_infinityType`,
+  `TauCeti.GlobalNumberFields.HeckeCharacter.re_complexExponent_infinityType`: the real parts of the
+  modulus exponents are the shift `σ` of `χ` at every real place and `2 * σ` at every complex
+  place, since `|χ| = ‖·‖ ^ σ`.
 
 ## References
 
@@ -66,7 +78,7 @@ a `FiniteOrderInfinityType`: signs at the real places and nothing else.
 public section
 noncomputable section
 
-open NumberField NumberField.InfinitePlace.Completion
+open NumberField NumberField.InfinitePlace NumberField.InfinitePlace.Completion
 open scoped NumberField NNReal
 
 namespace TauCeti.GlobalNumberFields
@@ -247,6 +259,26 @@ theorem infinityType_eq_iff {χ : HeckeCharacter K} {t : ContinuousInfinityType 
   ext w
   exacts [(hr' w).1, (hr' w).2, (hc' w).1, (hc' w).2]
 
+/-- **The real parity reads off the sign.**  At a real place `w`, a Hecke character takes the
+value `(-1) ^ ε` on the idele that is `-1` at `w` and `1` elsewhere, where `ε` is the real parity
+of its infinity type at `w`. -/
+theorem coe_infiniteComponent_neg_one (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    (χ.infiniteComponent w.1 (-1) : ℂ) = (-1) ^ (χ.infinityType.realParity w).val := by
+  have h : (Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2)).symm (-1) = -1 :=
+    Units.ext <| (continuousMulEquivRealOfIsReal w.2).symm_apply_eq.mpr (by simp)
+  rw [← h, ← realComponent_apply, realComponent_eq, realUnitsCharacter_neg_one]
+
+/-- A Hecke character is trivial on the idele that is `-1` at a real place `w` and `1` elsewhere
+exactly when the real parity of its infinity type at `w` vanishes. Unlike
+`infiniteComponent_eq_one_iff`, this needs no finite-order hypothesis. -/
+theorem infiniteComponent_neg_one_eq_one_iff (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    χ.infiniteComponent w.1 (-1) = 1 ↔ χ.infinityType.realParity w = 0 := by
+  rw [← Units.val_eq_one, coe_infiniteComponent_neg_one,
+    neg_one_pow_eq_one_iff_even (by norm_num), ← ZMod.natCast_eq_zero_iff_even,
+    ZMod.natCast_zmod_val]
+
 /-- The trivial Hecke character has the zero infinity type. -/
 @[simp]
 theorem infinityType_one : (1 : HeckeCharacter K).infinityType = 0 :=
@@ -296,13 +328,77 @@ theorem exists_finiteOrderInfinityType {χ : HeckeCharacter K} (hχ : χ.IsFinit
     ∃ ε : FiniteOrderInfinityType K, χ.infinityType = FiniteOrderInfinityType.toContinuous ε :=
   ⟨_, infinityType_eq_toContinuous_realParity hχ⟩
 
+/-- **A finite-order Hecke character is trivial at a real place exactly when its real parity there
+is zero.** Its modulus exponents vanish, so its component at `w` is `x ↦ sgn(x) ^ ε_w`. -/
+theorem infiniteComponent_eq_one_iff {χ : HeckeCharacter K} (hχ : χ.IsFiniteOrder)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    χ.infiniteComponent w.1 = 1 ↔ χ.infinityType.realParity w = 0 := by
+  have hreal : χ.realComponent w = realUnitsCharacter 0 (χ.infinityType.realParity w) := by
+    rw [realComponent_eq, infinityType_eq_toContinuous_realParity hχ,
+      FiniteOrderInfinityType.toContinuous_realExponent,
+      FiniteOrderInfinityType.toContinuous_realParity]
+  refine ⟨fun h ↦ ?_, fun h ↦ ContinuousMonoidHom.ext fun u ↦ ?_⟩
+  · have h1 : χ.realComponent w = realUnitsCharacter 0 0 :=
+      ContinuousMonoidHom.ext fun x ↦ by simp [h]
+    exact (realUnitsCharacter_inj.mp (hreal.symm.trans h1)).2
+  · have hu := DFunLike.congr_fun hreal
+      (Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2) u)
+    rw [realComponent_apply, ContinuousMulEquiv.symm_apply_apply] at hu
+    simpa [h] using hu
+
+/-! ### Characters coming from ray class characters -/
+
+/-- **A Hecke character coming from a ray class character of `𝔪` is trivial at every infinite
+place outside `𝔪`.** The idele classes concentrated at such a place lie in `raySubgroup 𝔪`. -/
+theorem infiniteComponent_eq_one_of_mem_range_ofRayClassCharacter {𝔪 : Modulus K}
+    {χ : HeckeCharacter K} (hχ : χ ∈ (ofRayClassCharacter 𝔪).range) {w : InfinitePlace K}
+    (hw : ∀ w' ∈ 𝔪.infinitePart, (w' : InfinitePlace K) ≠ w) : χ.infiniteComponent w = 1 := by
+  obtain ⟨η, rfl⟩ := hχ
+  refine ContinuousMonoidHom.ext fun u ↦ ?_
+  rw [infiniteComponent_apply, ContinuousMonoidHom.coe_one, Pi.one_apply,
+    ofRayClassCharacter_apply_eq_one_of_mem_raySubgroup η (ofCompletion_mem_raySubgroup hw u)]
+
+open scoped Classical in
+/-- **Removing a real place at which a character is trivial.** A Hecke character coming from `𝔪`
+and trivial at a real place `w` comes from the modulus with the same finite part and with `w`
+removed from the infinite part: dividing an idele congruent to one modulo the smaller modulus by its
+own component at `w` makes it congruent to one modulo `𝔪`. -/
+theorem mem_range_ofRayClassCharacter_erase {𝔪 : Modulus K} {χ : HeckeCharacter K}
+    (hχ : χ ∈ (ofRayClassCharacter 𝔪).range) {w : {w : InfinitePlace K // w.IsReal}}
+    (hw : χ.infiniteComponent w.1 = 1) :
+    χ ∈ (ofRayClassCharacter
+      ⟨𝔪.finitePart, 𝔪.finitePart_ne_bot, 𝔪.infinitePart.erase w⟩).range := by
+  rw [mem_range_ofRayClassCharacter_iff] at hχ ⊢
+  intro c hc
+  obtain ⟨x, hx, rfl⟩ := mem_raySubgroup_iff.mp hc
+  obtain ⟨h₁, h₂, h₃⟩ := mem_ideleCongruenceSubgroup_iff.mp hx
+  -- Dividing `x` by its own component at `w` gives an idele congruent to one modulo `𝔪`.
+  let u : w.1.Completionˣ := w.1.ideleInfiniteCoord x
+  have hy : x * (IdeleGroup.ofCompletion (𝓞 K) K w.1 u)⁻¹ ∈ ideleCongruenceSubgroup 𝔪 := by
+    refine mem_ideleCongruenceSubgroup_iff.mpr
+      ⟨fun v hv ↦ by simpa using h₁ v hv, fun v hv ↦ by simpa [Modulus.exponent_def] using h₂ v hv,
+        fun w' hw' ↦ ?_⟩
+    by_cases hww' : w' = w
+    · subst hww'
+      simp [u]
+    · have hne : w'.1 ≠ w.1 := fun h ↦ hww' (Subtype.ext h)
+      simpa [hne] using h₃ w' (Finset.mem_erase.mpr ⟨hww', hw'⟩)
+  have hsplit : QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K) x =
+      QuotientGroup.mk' _ (x * (IdeleGroup.ofCompletion (𝓞 K) K w.1 u)⁻¹) *
+        IdeleClassGroup.ofCompletion (𝓞 K) K w.1 u := by
+    rw [IdeleClassGroup.ofCompletion_apply, QuotientGroup.mk'_apply, QuotientGroup.mk'_apply,
+      ← QuotientGroup.mk_mul, inv_mul_cancel_right]
+  rw [MonoidHom.mem_ker, hsplit, map_mul,
+    MonoidHom.mem_ker.mp (hχ (mem_raySubgroup_iff.mpr ⟨_, hy, rfl⟩)), one_mul]
+  simpa using DFunLike.congr_fun hw u
+
 /-! ### The norm characters -/
 
 /-- The component of the norm character `‖·‖ ^ s` at an infinite place `w` sends `u` to
 `|u|_w ^ s`, for the normalized absolute value `|·|_w` of `K_w`. -/
 theorem coe_infiniteComponent_normPow_apply (s : ℂ) (w : InfinitePlace K) (u : w.Completionˣ) :
     ((normPow K s).infiniteComponent w u : ℂ) =
-      ((infiniteCompletionNormalizedAbsValue w u : ℝ) : ℂ) ^ s := by
+      ((completionNormalizedAbsValue w u : ℝ) : ℂ) ^ s := by
   simp [IdeleClassGroup.ofCompletion_apply]
 
 /-- The component of the norm character `‖·‖ ^ s` at a real place is `x ↦ |x| ^ s`. -/
@@ -310,7 +406,7 @@ theorem coe_infiniteComponent_normPow_apply (s : ℂ) (w : InfinitePlace K) (u :
 theorem realComponent_normPow (s : ℂ) (w : {w : InfinitePlace K // w.IsReal}) :
     (normPow K s).realComponent w = normCpowCharacter ℝ s := by
   ext x
-  simp [infiniteCompletionNormalizedAbsValue_of_isReal _ w.2]
+  simp [completionNormalizedAbsValue_of_isReal _ w.2]
 
 /-- The component of the norm character `‖·‖ ^ s` at a complex place is `z ↦ |z| ^ (2 * s)`,
 since the normalized absolute value of a complex place is the square of the usual one. -/
@@ -318,7 +414,7 @@ since the normalized absolute value of a complex place is the square of the usua
 theorem complexComponent_normPow (s : ℂ) (w : {w : InfinitePlace K // w.IsComplex}) :
     (normPow K s).complexComponent w = normCpowCharacter ℂ (2 * s) := by
   ext z
-  simp [infiniteCompletionNormalizedAbsValue_of_isComplex _ w.2, ofReal_pow_cpow (norm_nonneg _)]
+  simp [completionNormalizedAbsValue_of_isComplex _ w.2, ofReal_pow_cpow (norm_nonneg _)]
 
 /-- **The infinity type of the norm character `‖·‖ ^ s`**: modulus exponent `s` and parity `0` at
 every real place, and modulus exponent `2 * s` and angular frequency `0` at every complex place,
@@ -342,6 +438,62 @@ theorem isFiniteOrder_normPow_iff {s : ℂ} : (normPow K s).IsFiniteOrder ↔ s 
   rcases w.isReal_or_isComplex with hw | hw
   · simpa using congrArg (fun t : ContinuousInfinityType K ↦ t.realExponent ⟨w, hw⟩) ht
   · simpa using congrArg (fun t : ContinuousInfinityType K ↦ t.complexExponent ⟨w, hw⟩) ht
+
+/-! ### Absolute values of the components and the shift -/
+
+/-- **The absolute value of an infinite component is the shift-th power of the normalized
+absolute value.** -/
+theorem norm_infiniteComponent_apply (χ : HeckeCharacter K) (w : InfinitePlace K)
+    (u : w.Completionˣ) :
+    ‖(χ.infiniteComponent w u : ℂ)‖ = completionNormalizedAbsValue w u ^ χ.shift := by
+  rw [infiniteComponent_apply, norm_apply_eq_rpow_shift,
+    IdeleClassGroup.ofCompletion_apply, ideleClassNorm_mk, coe_ideleNorm_ofCompletion]
+
+/-- **The absolute value of a real component is the shift-th power of `|x|`.**  At a real place
+`w`, the component of `χ` satisfies `|χ_w(x)| = |x| ^ σ`, where `σ` is the shift of `χ`. -/
+theorem norm_realComponent_apply (χ : HeckeCharacter K) (w : {w : InfinitePlace K // w.IsReal})
+    (x : ℝˣ) : ‖(χ.realComponent w x : ℂ)‖ = |(x : ℝ)| ^ χ.shift := by
+  rw [realComponent_apply, norm_infiniteComponent_apply,
+    completionNormalizedAbsValue_of_isReal _ w.2]
+  simp
+
+/-- **The absolute value of a complex component is the power of `‖z‖` with exponent twice the
+shift.**  At a complex place `w`, the component of `χ` satisfies
+`|χ_w(z)| = |z| ^ (2 * σ)`, where `σ` is the shift of `χ`, since the normalized absolute value of
+a complex place is the square of the usual one. -/
+theorem norm_complexComponent_apply (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsComplex}) (z : ℂˣ) :
+    ‖(χ.complexComponent w z : ℂ)‖ = ‖(z : ℂ)‖ ^ (2 * χ.shift) := by
+  rw [complexComponent_apply, norm_infiniteComponent_apply,
+    completionNormalizedAbsValue_of_isComplex _ w.2]
+  simp only [Units.symm_mapContinuousMulEquiv, Units.mapContinuousMulEquiv_apply, Units.coe_map,
+    MonoidHom.coe_ofClass, ContinuousMulEquiv.coe_toMulEquiv,
+    norm_continuousMulEquivComplexOfIsComplex_symm]
+  rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _)]
+  norm_num
+
+/-- **The real part of a real modulus exponent is the shift.**  The infinity type of `χ` has a
+complex exponent `s_w` at each real place `w`; its real part is the shift of `χ`, independently
+of `w`. -/
+@[simp]
+theorem re_realExponent_infinityType (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    (χ.infinityType.realExponent w).re = χ.shift := by
+  have h := χ.norm_realComponent_apply w (Units.mk0 2 two_ne_zero)
+  rw [realComponent_eq, norm_coe_realUnitsCharacter_apply, Units.val_mk0, abs_two] at h
+  exact (Real.rpow_right_inj two_pos (by norm_num)).1 h
+
+/-- **The real part of a complex modulus exponent is twice the shift.**  The infinity type of
+`χ` has a complex exponent `s_w` at each complex place `w`; its real part is `2 * σ` for the shift
+`σ` of `χ`, independently of `w`. -/
+@[simp]
+theorem re_complexExponent_infinityType (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsComplex}) :
+    (χ.infinityType.complexExponent w).re = 2 * χ.shift := by
+  have h := χ.norm_complexComponent_apply w (Units.mk0 2 two_ne_zero)
+  rw [complexComponent_eq, norm_coe_complexUnitsCharacter_apply, Units.val_mk0,
+    Complex.norm_two] at h
+  exact (Real.rpow_right_inj two_pos (by norm_num)).1 h
 
 end HeckeCharacter
 

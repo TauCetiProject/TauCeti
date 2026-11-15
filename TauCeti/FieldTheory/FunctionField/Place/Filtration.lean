@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Place.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Equiv
 public import TauCeti.LinearAlgebra.Dimension.Tower
 
 /-!
@@ -45,12 +45,16 @@ these local quotients, and so computes `dim_k (A_F(E) / A_F(D)) = deg E - deg D`
 
 * `TauCeti.Place.rank_quotient_filtration_add_one`: one step of the filtration has the rank of the
   residue field.
+* `TauCeti.Place.mem_maximalIdeal_pow_iff_coe_mem_filtration`: the positive part of the place
+  filtration is the maximal-ideal filtration of the valuation ring.
 * `TauCeti.Place.finrank_quotient_filtration_add` and
   `TauCeti.Place.finrank_quotient_filtration`: `dim_k (𝔪_P^a / 𝔪_P^b) = (b - a) · deg P`, in the
   form indexed by `b = a + n` with `n : ℕ` and in the integer form.
 * `TauCeti.Place.finiteDimensional_quotient_filtration`: those quotients are finite-dimensional
   as soon as the residue field is, which for a function field is
   `TauCeti.Place.finiteDimensional_residueField`.
+* `TauCeti.Place.apply_mem_filtration_equivOfRingEquiv_iff`: a semilinear field isomorphism
+  identifies the order filtrations at a place and at its transport.
 
 ## Implementation notes
 
@@ -128,6 +132,33 @@ theorem mem_filtration_one_iff {z : F} : z ∈ P.filtration 1 ↔ P.valuation z 
   · rw [P.mem_filtration_iff_le_ord hz, P.valuation_lt_one_iff_ord_pos hz]
     omega
 
+/-- The positive part of the order filtration is the maximal-ideal filtration of the valuation
+ring: an integral function belongs to `𝔪_P ^ n` exactly when its image in the function field lies
+in `P.filtration n`, that is, when `v_P(x) ≤ exp (-n)`. -/
+@[simp]
+theorem mem_maximalIdeal_pow_iff_coe_mem_filtration (n : ℕ) (x : P.integers) :
+    x ∈ IsLocalRing.maximalIdeal P.integers ^ n ↔ (x : F) ∈ P.filtration n := by
+  have hint : P.valuation.Integers P.integers :=
+    P.integers_def ▸ Valuation.valuationSubring.integers P.valuation
+  obtain ⟨π, hπirr⟩ := IsDiscreteValuationRing.exists_irreducible P.integers
+  let e : P.integers ≃+* P.valuation.valuationSubring :=
+    RingEquiv.subringCongr (congrArg ValuationSubring.toSubring P.integers_def)
+  have heπirr : Irreducible (e π) := hπirr.map e
+  have hπuni : P.valuation.IsUniformizer (e π : F) :=
+    Valuation.isUniformizer_of_maximalIdeal_eq_span P.valuation heπirr.maximalIdeal_eq
+  have heπ : ((e π : P.valuation.valuationSubring) : F) = (π : F) :=
+    RingEquiv.coe_subringCongr_apply _ π
+  have hπ : P.valuation (algebraMap P.integers F π) = WithZero.exp (-1 : ℤ) := by
+    rw [ValuationSubring.algebraMap_apply, ← heπ]
+    simpa [Valuation.IsUniformizer.iff, P.generator_eq_exp_neg_one] using hπuni
+  have hpow : x ∈ IsLocalRing.maximalIdeal P.integers ^ n ↔
+      P.valuation (algebraMap P.integers F x) ≤
+        P.valuation (algebraMap P.integers F π) ^ n :=
+    Set.ext_iff.mp (hint.maximalIdeal_pow_eq_setOfPred_le_v_algebraMap_pow hπirr n) x
+  rw [hpow, P.mem_filtration_iff, ValuationSubring.algebraMap_apply]
+  simp only [hπ, ← WithZero.exp_nsmul]
+  norm_num
+
 /-- Two functions integral at `P` have the same value at `P` exactly when they differ by a
 function of positive order: `𝔪_P^1` is the maximal ideal of `𝒪_P`, seen inside `F`. -/
 theorem residue_eq_iff_sub_mem_filtration_one {y z : P.integers} :
@@ -143,12 +174,30 @@ theorem filtration_antitone : Antitone P.filtration := fun a b hab z hz ↦
   P.mem_filtration_iff.mpr
     ((P.mem_filtration_iff.mp hz).trans (WithZero.exp_le_exp.mpr (by omega)))
 
+/-- A function congruent modulo the `m`-th filtration to a regular function is regular. -/
+theorem mem_integers_of_sub_mem_filtration {y w : F} (hy : y ∈ P.integers) {m : ℕ}
+    (hw : w - y ∈ P.filtration m) : w ∈ P.integers := by
+  have := add_mem (P.filtration_antitone (Nat.cast_nonneg m) hw)
+    (P.mem_filtration_zero_iff.mpr hy)
+  rwa [sub_add_cancel, mem_filtration_zero_iff] at this
+
 /-- A function of order at least `a` and one of order at least `b` have a product of order at
 least `a + b`. -/
 theorem mul_mem_filtration {a b : ℤ} {z w : F} (hz : z ∈ P.filtration a)
     (hw : w ∈ P.filtration b) : z * w ∈ P.filtration (a + b) := by
   rw [mem_filtration_iff, map_mul, neg_add, WithZero.exp_add]
   exact mul_le_mul' (P.mem_filtration_iff.mp hz) (P.mem_filtration_iff.mp hw)
+
+/-- A finite product of functions of orders at least `a i` has order at least `∑ a i`. -/
+theorem prod_mem_filtration {ι : Type*} (s : Finset ι) {a : ι → ℤ} {z : ι → F}
+    (hz : ∀ i ∈ s, z i ∈ P.filtration (a i)) : ∏ i ∈ s, z i ∈ P.filtration (∑ i ∈ s, a i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert j s hj ih =>
+    rw [Finset.prod_insert hj, Finset.sum_insert hj]
+    exact P.mul_mem_filtration (hz j (Finset.mem_insert_self j s))
+      (ih fun i hi ↦ hz i (Finset.mem_insert_of_mem hi))
 
 /-- A function integral at `P` and congruent to `1` to order `a` stays congruent to `1` to
 order `a` after being raised to a power. -/
@@ -170,6 +219,21 @@ theorem mem_filtration_ord (z : F) : z ∈ P.filtration (P.ord z) := by
   rcases eq_or_ne z 0 with rfl | hz
   · simp
   · exact (P.mem_filtration_iff_le_ord hz).mpr le_rfl
+
+/-- A finite sum of terms `c d * t ^ d` with every `d` at least `n` lies in the `n`-th
+filtration step when `t` is a uniformizer. -/
+theorem sum_algebraMap_mul_pow_mem_filtration {t : F} (ht : P.ord t = 1) {n : ℕ} (c : ℕ → k)
+    (S : Finset ℕ) (hS : ∀ d ∈ S, n ≤ d) :
+    ∑ d ∈ S, algebraMap k F (c d) * t ^ d ∈ P.filtration n := by
+  apply Submodule.sum_mem
+  intro d hd
+  have hpow := P.mem_filtration_ord (t ^ d)
+  simp only [P.ord_pow, ht, mul_one] at hpow
+  have hdegree : (n : ℤ) ≤ (d : ℤ) := by exact_mod_cast hS d hd
+  apply P.filtration_antitone hdegree
+  have hm := P.mul_mem_filtration
+    (P.mem_filtration_zero_iff.mpr (P.algebraMap_mem_integers (c d))) hpow
+  simpa only [zero_add] using hm
 
 /-! ### The successive quotients -/
 
@@ -345,6 +409,21 @@ theorem finiteDimensional_quotient_filtration [Module.Finite k P.ResidueField] (
       Submodule.submoduleOf_eq_top.mpr (P.filtration_antitone hab.le)
     rw [this]
     infer_instance
+
+/-! ### Transport along semilinear isomorphisms -/
+
+section Equiv
+
+variable {k' F' : Type*} [Field k'] [Field F'] [Algebra k' F'] (σ : k ≃+* k') (τ : F ≃+* F')
+  (h : ∀ c, τ (algebraMap k F c) = algebraMap k' F' (σ c))
+
+/-- A semilinear field isomorphism identifies the order filtrations at a place and at its
+transport. -/
+theorem apply_mem_filtration_equivOfRingEquiv_iff {m : ℤ} {z : F} :
+    τ z ∈ (equivOfRingEquiv σ τ h P).filtration m ↔ z ∈ P.filtration m := by
+  simp only [mem_filtration_iff, valuation_equivOfRingEquiv, RingEquiv.symm_apply_apply]
+
+end Equiv
 
 end Place
 

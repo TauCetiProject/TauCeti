@@ -10,14 +10,15 @@ public import TauCeti.Analysis.Sobolev.W1p.Basic
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The Sobolev space `W^{1,p}_0(Ω)`
 
 This file builds `W^{1,p}_0(Ω)`, the closure of the test functions `C_c^∞(Ω)` inside the weak
-Sobolev space `W^{1,p}(Ω)` of `TauCeti/Analysis/Sobolev/W1p/Basic.lean`. This is the
-`C_c^∞(Ω)`-closure half of Lane A.2 of `TauCetiRoadmap/PDE/README.md`; Meyers--Serrin density is
-not proved here.
+Sobolev space `W^{1,p}(Ω)` of `TauCeti/Analysis/Sobolev/W1p/Basic.lean`. Meyers--Serrin density
+is not proved here.
 
 ## Test functions as Sobolev functions
 
@@ -50,11 +51,13 @@ subspace under a suitable geometric hypothesis but not on all of `W^{1,p}(Ω)`.
 * `TauCeti.w1p0Submodule_subset_of_isClosed`: a closed set containing every test-function jet
   contains `W^{1,p}_0(Ω)`, which is how a property is extended from test functions to the whole
   space.
+* `TauCeti.W1p0.instNormedAddCommGroup` and `TauCeti.W1p0.instInnerProductSpace`: shortcut
+  instances for the normed group structure of `W^{1,p}_0(Ω)` and the Hilbert space structure of
+  `W^{1,2}_0(Ω)`. They are `local`: a file that needs them registers them.
 
 ## References
 
-The `C_c^∞(Ω)`-closure half of Lane A.2 of `TauCetiRoadmap/PDE/README.md`; L. C. Evans,
-*Partial Differential Equations*, Section 5.2.
+L. C. Evans, *Partial Differential Equations*, Section 5.2.
 -/
 
 public section
@@ -100,10 +103,51 @@ theorem W1p.value_ofTestFunctionₗ (phi : 𝓓(Omega, ℝ)) :
     W1p.value (W1p.ofTestFunctionₗ mu Omega p phi) = testFunctionLp p phi :=
   W1p.value_mk _ _ _
 
+/-- The value of an embedded test function agrees almost everywhere on `Ω` with the test
+function itself. -/
+theorem W1p.value_ofTestFunctionₗ_ae (phi : 𝓓(Omega, ℝ)) :
+    W1p.value (W1p.ofTestFunctionₗ mu Omega p phi) =ᵐ[mu.restrict Omega] phi := by
+  rw [W1p.value_ofTestFunctionₗ]
+  exact testFunctionLp_apply_ae p phi
+
 @[simp]
 theorem W1p.gradient_ofTestFunctionₗ (phi : 𝓓(Omega, ℝ)) :
     W1p.gradient (W1p.ofTestFunctionₗ mu Omega p phi) = gradientTestFunctionLp p phi :=
   W1p.gradient_mk _ _ _
+
+/-- On the whole space, the value of an embedded test function agrees `μ`-almost everywhere with
+the test function itself. -/
+theorem W1p.value_ofTestFunctionₗ_top_ae (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    W1p.value (W1p.ofTestFunctionₗ mu ⊤ p phi) =ᵐ[mu] phi := by
+  simpa only [Opens.coe_top, Measure.restrict_univ] using
+    W1p.value_ofTestFunctionₗ_ae (mu := mu) (Omega := ⊤) (p := p) phi
+
+/-- On the whole space, the gradient of an embedded test function agrees `μ`-almost everywhere
+with the gradient of the test function itself. -/
+theorem W1p.gradient_ofTestFunctionₗ_top_ae (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ p phi) =ᵐ[mu] _root_.gradient (phi : E → ℝ) := by
+  rw [W1p.gradient_ofTestFunctionₗ]
+  have h := gradientTestFunctionLp_apply_ae (mu := mu) (Omega := ⊤) p phi
+  simp only [Opens.coe_top, Measure.restrict_univ] at h
+  exact h
+
+/-- On the whole space, the squared `L²` norm of the value of an embedded test function is
+`∫ φ²`. -/
+theorem W1p.norm_value_ofTestFunctionₗ_top_sq (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    ‖W1p.value (W1p.ofTestFunctionₗ mu ⊤ 2 phi)‖ ^ 2 = ∫ x, phi x ^ 2 ∂mu := by
+  rw [← W1p.integral_value_sq_eq_norm_value_sq]
+  simp only [Opens.coe_top, Measure.restrict_univ]
+  exact integral_congr_ae ((W1p.value_ofTestFunctionₗ_top_ae (p := 2) phi).mono fun x hx ↦ by
+    simp only [hx])
+
+/-- On the whole space, the squared `L²` norm of the gradient of an embedded test function is
+`∫ ‖Dφ‖²`. -/
+theorem W1p.norm_gradient_ofTestFunctionₗ_top_sq (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    ‖W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ 2 phi)‖ ^ 2 = ∫ x, ‖fderiv ℝ phi x‖ ^ 2 ∂mu := by
+  rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
+  simp only [Opens.coe_top, Measure.restrict_univ]
+  exact integral_congr_ae ((W1p.gradient_ofTestFunctionₗ_top_ae (p := 2) phi).mono fun x hx ↦ by
+    simp only [hx, norm_gradient_eq_norm_fderiv])
 
 /-- The embedding of the test functions is **injective**: two test functions with the same jet
 agree almost everywhere on `Ω`, hence everywhere, being continuous, supported in `Ω`, and measured
@@ -156,6 +200,9 @@ noncomputable instance instSeminormedAddCommGroupW1p0 :
 Sobolev subspaces. -/
 noncomputable instance instNormedSpaceW1p0 : NormedSpace ℝ (W1p0 mu Omega p) := inferInstance
 
+/-- The zero-boundary Sobolev space contains the zero function. -/
+instance W1p0.instNonempty : Nonempty (w1p0Submodule mu Omega p) := ⟨0⟩
+
 /-- **The canonical value map of `W^{1,p}_0(Ω)`**, the value component of the Sobolev jet read
 off a zero-boundary function, as a continuous linear map into `Lᵖ(Ω)`. -/
 def W1p0.valueL : W1p0 mu Omega p →L[ℝ] Lp ℝ p (mu.restrict Omega) :=
@@ -186,8 +233,7 @@ theorem W1p0.denseRange_valueL_two :
     have hzero : ∀ᵐ x ∂mu.restrict Omega, f x = 0 := by
       rw [ae_restrict_iff' Omega.isOpen.measurableSet]
       refine Omega.isOpen.ae_eq_zero_of_integral_contDiff_smul_eq_zero
-        (locallyIntegrableOn_of_locallyIntegrable_restrict
-          ((Lp.memLp f).locallyIntegrable (by simp))) fun g hg hgc hgs => ?_
+        (Lp.locallyIntegrableOn f (by simp)) fun g hg hgc hgs => ?_
       let phi : 𝓓(Omega, ℝ) := ⟨g, hg, hgc, hgs⟩
       let u : W1p0 mu Omega 2 :=
         ⟨W1p.ofTestFunctionₗ mu Omega 2 phi, W1p.ofTestFunctionₗ_mem_w1p0Submodule phi⟩
@@ -245,5 +291,23 @@ theorem W1p0.valueL_ne_zero (hOmega : (Omega : Set E).Nonempty) :
 /-- `W^{1,p}_0(Ω)` is complete: it is a closed subspace of the complete space `W^{1,p}(Ω)`. -/
 instance : CompleteSpace (W1p0 mu Omega p) :=
   (w1p0Submodule mu Omega p).isClosed.completeSpace_coe
+
+/-! ### Shortcut instances for the Hilbert space `W^{1,2}_0(Ω)`
+
+The two instances below are `local`, so they take part in instance search only in a file that
+registers them with `attribute [local instance]`. -/
+
+/-- Shortcut instance for the normed group structure of `W^{1,p}_0(Ω)`, the separated form of
+`instSeminormedAddCommGroupW1p0`. Instance search finds this structure when the measure and the
+open set are known, but it can time out while they are still metavariables, as happens when an
+argument of an abstract Hilbert space lemma is elaborated. -/
+noncomputable local instance W1p0.instNormedAddCommGroup :
+    NormedAddCommGroup (W1p0 mu Omega p) := inferInstance
+
+/-- Shortcut instance for the Hilbert space structure of `W^{1,2}_0(Ω)`, inherited from the `L²`
+jet space through the two nested closed subspaces. A file that applies abstract Hilbert space
+results to `W^{1,2}_0(Ω)` registers it together with `W1p0.instNormedAddCommGroup`. -/
+noncomputable local instance W1p0.instInnerProductSpace :
+    InnerProductSpace ℝ (W1p0 mu Omega 2) := inferInstance
 
 end TauCeti

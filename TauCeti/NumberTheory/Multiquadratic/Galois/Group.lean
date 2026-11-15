@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.FieldTheory.Galois.Basic
+public import Mathlib.FieldTheory.PolynomialGaloisGroup
 public import TauCeti.NumberTheory.Multiquadratic.Degree
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Basic
 
@@ -29,6 +30,8 @@ homomorphism to be an isomorphism: `Gal(M/K) ≃ (ℤ/2)ⁿ`.
   type, `Gal(M/K)` is nontrivial.
 * `TauCeti.Multiquadratic.card_aut_adjoin_range`: the cardinality reading
   `|Gal(M/K)| = 2^|ι|` of that isomorphism.
+* `TauCeti.Multiquadratic.nonempty_mulEquiv_gal_definingPolynomial`: the same group read as the
+  Galois group `Polynomial.Gal` of the defining polynomial `∏ᵢ (X² - dᵢ)`.
 
 ## Provenance
 
@@ -274,5 +277,32 @@ theorem card_aut_adjoin_range [Finite ι] [NeZero (2 : K)]
     Nat.card_congr (Multiplicative.ofAdd (α := ι → ZMod 2)).symm,
     Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, Fintype.card_pi]
   simp [ZMod.card]
+
+/-- **For square-class independent radicands, `∏ᵢ (X² - dᵢ)` has Galois group `(ℤ/2)ⁿ`.** The
+splitting field of the defining polynomial contains a square root of every radicand, and it is the
+multiquadratic field they generate, so `galoisGroupEquiv` applies to it. The isomorphism depends
+on the choice of those square roots, which is why only its existence is stated. -/
+theorem nonempty_mulEquiv_gal_definingPolynomial [Finite ι] [NeZero (2 : K)]
+    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) :
+    Nonempty ((definingPolynomial d).Gal ≃* Multiplicative (ι → ZMod 2)) := by
+  let := Fintype.ofFinite ι
+  set L := (definingPolynomial d).SplittingField
+  have hroot (i : ι) : ∃ r : L, r ^ 2 = algebraMap K L (d i) := by
+    have hdvd : X ^ 2 - C (d i) ∣ definingPolynomial d := by
+      rw [definingPolynomial_def]
+      convert Finset.dvd_prod_of_mem _ (Finset.mem_univ i)
+    have hne : definingPolynomial d ≠ 0 := by
+      rw [definingPolynomial_def]
+      exact (monic_prod_of_monic _ _ fun i _ ↦ monic_X_pow_sub_C _ two_ne_zero).ne_zero
+    have hsp : ((X ^ 2 - C (d i)).map (algebraMap K L)).Splits :=
+      (SplittingField.splits (definingPolynomial d)).of_dvd (map_ne_zero hne)
+        (Polynomial.map_dvd _ hdvd)
+    obtain ⟨r, hr⟩ := hsp.exists_eval_eq_zero (by
+      rw [degree_map, degree_X_pow_sub_C (by norm_num)]; norm_num)
+    exact ⟨r, by simpa [sub_eq_zero] using hr⟩
+  choose root hroot using hroot
+  have := isSplittingField hroot
+  exact ⟨(AlgEquiv.autCongr (IsSplittingField.algEquiv (adjoin K (Set.range root))
+    (definingPolynomial d))).symm.trans (galoisGroupEquiv hroot hindep)⟩
 
 end TauCeti.Multiquadratic

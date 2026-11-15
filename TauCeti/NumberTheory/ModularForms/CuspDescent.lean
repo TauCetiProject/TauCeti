@@ -24,13 +24,12 @@ with all three conditions in hand, `f` itself bundles into a `CuspForm` of the l
 
 Everything rests on the fact that `diag(d, 1)⁻¹ · A` carries `∞` to a cusp, for any
 `A ∈ SL(2, ℤ)`. That is *not* a computation: the matrix is rational, and rational matrices carry
-cusps to cusps — `IsCusp.smul_map_ratCast`, already in `Cusps/Rat/Basic.lean`. So the only work
-is to name `diag(d, 1)` over `ℚ` and record that it pushes forward to `scaleGL d`.
+cusps to cusps — `IsCusp.smul_map_ratCast`, already in `Cusps/Rat/Basic.lean`. The matrix
+`diag(d, 1)` over `ℚ` is `HeckeRing.GLn.natDiagGL 2 ![d, 1]`, and `Degeneracy.lean` supplies its
+pushforward to `scaleGL d` (`map_natDiagGL_d_one_eq_scaleGL`).
 
 ## Main results
 
-* `TauCeti.scaleGLRat`, `TauCeti.map_ratCast_scaleGLRat`: `diag(d, 1)` over `ℚ`, and its
-  pushforward to `ℝ`.
 * `TauCeti.isCusp_inv_scaleGL_mul_mapGL_smul_infty`: `diag(d, 1)⁻¹ · A` sends `∞` to a cusp of
   any arithmetic subgroup.
 * `TauCeti.isZeroAtImInfty_slash_inv_scaleGL_mul_mapGL`: a cusp form therefore vanishes at
@@ -96,24 +95,6 @@ namespace TauCeti
 
 variable {d : ℕ} [NeZero d]
 
-/-- **`diag(d, 1)` over `ℚ`.** `scaleGL` is stated over `ℝ`, where the slash action lives, but the
-cusp argument needs the same matrix over `ℚ`, because what makes `diag(d, 1)⁻¹ · A` carry cusps to
-cusps is precisely that it is *rational*. -/
-noncomputable def scaleGLRat (d : ℕ) [NeZero d] : GL (Fin 2) ℚ :=
-  diagGL ![Units.mk0 (d : ℚ) (Nat.cast_ne_zero.mpr (NeZero.ne d)), 1]
-
-/-- `scaleGLRat` pushes forward to `scaleGL`. -/
-@[simp] lemma map_ratCast_scaleGLRat (d : ℕ) [NeZero d] :
-    Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (scaleGLRat d) = scaleGL d := by
-  -- `scaleGL` sits in a `public section` without `@[expose]`, so its body is sealed to this
-  -- module; `coe_scaleGL` is the interface, exactly as `Degeneracy.lean` uses it itself.
-  refine Units.ext ?_
-  rw [coe_scaleGL]
-  ext i j
-  simp only [Matrix.GeneralLinearGroup.map, Units.coe_map, scaleGLRat, diagGL_coe,
-    Matrix.diagonal_fin_two]
-  fin_cases i <;> fin_cases j <;> simp
-
 /-- **`diag(d, 1)⁻¹ · A` carries `∞` to a cusp.** For any `A ∈ SL(2, ℤ)` and any arithmetic
 subgroup, the point `(diag(d, 1)⁻¹ · A) • ∞` is a cusp.
 
@@ -126,8 +107,9 @@ lemma isCusp_inv_scaleGL_mul_mapGL_smul_infty (d : ℕ) [NeZero d] (A : SL(2, �
       (∞ : OnePoint ℝ)) Γ := by
   have hinfty : IsCusp (∞ : OnePoint ℝ) Γ :=
     (Subgroup.IsArithmetic.isCusp_iff_isCusp_SL2Z Γ).mpr (isCusp_SL2Z_iff'.mpr ⟨1, by simp⟩)
-  have := hinfty.smul_map_ratCast ((scaleGLRat d)⁻¹ * (mapGL ℚ A : GL (Fin 2) ℚ))
-  rwa [map_mul, map_inv, map_ratCast_scaleGLRat, A.map_mapGL] at this
+  have := hinfty.smul_map_ratCast
+    ((HeckeRing.GLn.natDiagGL 2 ![d, 1])⁻¹ * (mapGL ℚ A : GL (Fin 2) ℚ))
+  rwa [map_mul, map_inv, map_natDiagGL_d_one_eq_scaleGL, A.map_mapGL] at this
 
 variable {k : ℤ} {F : Type*} [FunLike F ℍ ℂ]
 
@@ -232,7 +214,7 @@ lemma coe_cuspFormOfSmulSlashScaleGL (l N : ℕ) [NeZero l] [NeZero N] (hlN : l 
     ⇑(cuspFormOfSmulSlashScaleGL l N hlN k χ hχ f g hgχ hg hT) = f :=
   -- deliberately `(rfl)` rather than `rfl`: `cuspFormOfSmulSlashScaleGL` is not `@[expose]`, so
   -- the parentheses opt out of exporting the definitional equality, which this lemma itself
-  -- replaces downstream. Same convention as `ModularForm.coe_ofLe` in `Basic.lean`.
+  -- replaces downstream. Same convention as `ModularForm.coe_ofSlashInvariant` in `Basic.lean`.
   (rfl)
 
 end TauCeti

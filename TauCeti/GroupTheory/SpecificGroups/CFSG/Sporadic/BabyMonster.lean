@@ -10,10 +10,9 @@ public import TauCeti.GroupTheory.Presentation.Coxeter
 /-!
 # A transcribed presentation of the Baby Monster
 
-This file carries the `B` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records the `Y₄₃₃` presentation of the Baby Monster
-as a `TauCeti.GroupPresentation`, together with the diagram it expands, the exact source, the
-generator convention, the transcription notes, and decidable checks on the transcribed data.
+This file records the `Y₄₃₃` presentation of the Baby Monster as a `TauCeti.GroupPresentation`,
+together with the diagram it expands, the exact source, the generator convention, the
+transcription notes, and decidable checks on the transcribed data.
 
 The eleven involutory generators are the nodes of a `Y`-shaped Coxeter diagram: a chain of eight
 nodes with a further arm of three nodes attached to its fifth node,
@@ -41,22 +40,19 @@ presents `2 × 2·B`, and adjoining the two further relations
 
 presents the Baby Monster itself. The `69` relators are therefore `66 + 1 + 2`.
 
-The source is admissible in the sense the roadmap requires: it presents the abstract group rather
-than recognizing generators inside a group constructed elsewhere. The presentation was conjectured
-in the ATLAS of Finite Groups and proved by Ivanov, subject to the Monster having no proper double
-cover; that hypothesis is Griess's determination of the Schur multiplier of the Monster. The row
-below records that chain of attributions rather than reproving any part of it.
+The source presents the abstract group rather than recognizing generators inside a group
+constructed elsewhere. The presentation was conjectured in the ATLAS of Finite Groups and proved by
+Ivanov, subject to the Monster having no proper double cover; that hypothesis is Griess's
+determination of the Schur multiplier of the Monster. The row below records that chain of
+attributions rather than reproving any part of it.
 
 Nothing here asserts that the presented group is nontrivial, finite or simple, that it has any
-particular order, or that it is isomorphic to any other construction of the Baby Monster. The
-roadmap's independent permutation-group cross-check does not cover `B`, whose smallest faithful
-permutation representation has degree `13 571 955 000`. The independent source-to-Lean
-read-through below therefore supplies the whole of this row's S1 review obligation.
+particular order, or that it is isomorphic to any other construction of the Baby Monster.
 
-## Independent source-to-Lean read-through
+## Source-to-Lean read-through
 
-An independent read-through used Breuer--Magaard--Wilson, Section 3.1, in arXiv:1902.07758v2. The
-source numbers eleven involutions `t₁` through `t₁₁` and lists the exponent-three pairs
+The transcription was compared with Breuer--Magaard--Wilson, Section 3.1, in arXiv:1902.07758v2.
+The source numbers eleven involutions `t₁` through `t₁₁` and lists the exponent-three pairs
 
 ```text
 (1,2), (2,3), (3,4), (4,5), (5,6), (6,7), (7,8), (5,9), (9,10), (10,11).
@@ -80,11 +76,11 @@ and the two words
 (t₅ t₄ t₃ t₆ t₇ t₈ t₉)^9,  (t₅ t₄ t₃ t₆ t₉ t₁₀ t₁₁)^9.
 ```
 
-Their letters, order, and exponents agree exactly with `spiderRelator_eq`,
-`extraRelatorOne_eq`, and `extraRelatorTwo_eq`. The source states that the Coxeter relations plus
+Their letters, order, and exponents agree exactly with `spiderRelator_def`,
+`extraRelatorOne_def`, and `extraRelatorTwo_def`. The source states that the Coxeter relations plus
 the spider relation present `2 × 2·B`, and that adjoining the last two relations presents `B`.
-`relatorList_def` appends precisely those three words in that order, giving the checked total
-`66 + 3 = 69`. This closes the row's S1 source-to-Lean read-through.
+`adjoinedRelators_def` lists precisely those three words in that order, and `relatorList_def`
+appends them to the Coxeter relators, giving the checked total `66 + 3 = 69`.
 
 ## Main definitions
 
@@ -145,7 +141,6 @@ numbering with the customary offset, so `tᵢ` is index `i - 1`. -/
 def branchNode : Fin 11 := 4
 
 /-- The branch node is index four, corresponding to the source's `t₅`. -/
-@[simp]
 theorem branchNode_def : branchNode = 4 := (rfl)
 
 /-- The three arms of the diagram, each listed outwards from the branch node: `t₄ t₃ t₂ t₁`, then
@@ -153,7 +148,6 @@ theorem branchNode_def : branchNode = 4 := (rfl)
 def arms : List (List (Fin 11)) := [[3, 2, 1, 0], [5, 6, 7], [8, 9, 10]]
 
 /-- The three arms, spelled out in the numbered alphabet. -/
-@[simp]
 theorem arms_def : arms = [[3, 2, 1, 0], [5, 6, 7], [8, 9, 10]] := (rfl)
 
 /-- **The three arms have lengths four, three and three**, which is what the name `Y₄₃₃`
@@ -229,8 +223,6 @@ theorem map_length_neighbors :
 @[inherit_doc Relator.mul]
 local infixl:70 " ⬝ " => Relator.mul
 
-private abbrev t1 : Relator (Fin 11) := .gen 0
-private abbrev t2 : Relator (Fin 11) := .gen 1
 private abbrev t3 : Relator (Fin 11) := .gen 2
 private abbrev t4 : Relator (Fin 11) := .gen 3
 private abbrev t5 : Relator (Fin 11) := .gen 4
@@ -247,7 +239,7 @@ def spiderRelator : Relator (Fin 11) :=
   .pow (t5 ⬝ t4 ⬝ t3 ⬝ t5 ⬝ t6 ⬝ t7 ⬝ t5 ⬝ t9 ⬝ t10) 10
 
 /-- The spider relator spelled out in the numbered alphabet. -/
-theorem spiderRelator_eq :
+theorem spiderRelator_def :
     spiderRelator =
       .pow (.gen 4 ⬝ .gen 3 ⬝ .gen 2 ⬝ .gen 4 ⬝ .gen 5 ⬝ .gen 6 ⬝ .gen 4 ⬝ .gen 8 ⬝ .gen 9) 10 := by
   rw [spiderRelator]
@@ -257,7 +249,7 @@ spider relation to pass from `2 × 2·B` to `B`. -/
 def extraRelatorOne : Relator (Fin 11) := .pow (t5 ⬝ t4 ⬝ t3 ⬝ t6 ⬝ t7 ⬝ t8 ⬝ t9) 9
 
 /-- The first adjoined relator spelled out in the numbered alphabet. -/
-theorem extraRelatorOne_eq :
+theorem extraRelatorOne_def :
     extraRelatorOne =
       .pow (.gen 4 ⬝ .gen 3 ⬝ .gen 2 ⬝ .gen 5 ⬝ .gen 6 ⬝ .gen 7 ⬝ .gen 8) 9 := by
   rw [extraRelatorOne]
@@ -267,7 +259,7 @@ spider relation to pass from `2 × 2·B` to `B`. -/
 def extraRelatorTwo : Relator (Fin 11) := .pow (t5 ⬝ t4 ⬝ t3 ⬝ t6 ⬝ t9 ⬝ t10 ⬝ t11) 9
 
 /-- The second adjoined relator spelled out in the numbered alphabet. -/
-theorem extraRelatorTwo_eq :
+theorem extraRelatorTwo_def :
     extraRelatorTwo =
       .pow (.gen 4 ⬝ .gen 3 ⬝ .gen 2 ⬝ .gen 5 ⬝ .gen 8 ⬝ .gen 9 ⬝ .gen 10) 9 := by
   rw [extraRelatorTwo]
@@ -293,55 +285,59 @@ theorem relatorList_def :
 
 /-! ### The transcribed row and its checks -/
 
-/-- The `Y₄₃₃` finite presentation of the Baby Monster `B` on eleven involutions, with the source
-and transcription metadata that make the row auditable.
+/-- The `Y₄₃₃` finite presentation of the Baby Monster `B` on eleven involutions.
 
 Ivanov proves that the diagram with the spider relation presents `2 × 2·B`; the source adjoins two
 further relations to present `B`. No structural property of the resulting `PresentedGroup` is
-asserted here: this definition records only the cited generators and the complete relator data. -/
-@[expose]
+asserted here: this definition records only the cited generators and the complete relator data.
+
+Generator order (starting at index zero): `t1`, `t2`, `t3`, `t4`, `t5`, `t6`, `t7`, `t8`, `t9`,
+`t10`, `t11`.
+
+Source: T. Breuer, K. Magaard, and R. A. Wilson, Verification of the ordinary character table of
+the Baby Monster, Journal of Algebra 561 (2020), 111-130; A. A. Ivanov, Presenting the Baby
+Monster, Journal of Algebra 163 (1994), 88-108.
+
+Source locator: Breuer-Magaard-Wilson, Section 3.1, doi:10.1016/j.jalgebra.2019.06.047, also
+arXiv:1902.07758v2; Ivanov, doi:10.1006/jabr.1994.1005. The presentation was conjectured in the
+Atlas of Finite Groups (Conway, Curtis, Norton, Parker, Wilson, 1985) and proved by Ivanov,
+subject to the Monster having no proper double cover, which is Griess's computation of the Schur
+multiplier of the Monster (The Schur multipliers of the known finite simple groups, III,
+Proceedings of the Rutgers Group Theory Year 1983-1984, Cambridge University Press, 1985, 69-80).
+
+Generator convention: Indices 0 through 10 are the source's involutions t1 through t11, so `t_i`
+is index i-1. The Coxeter diagram is the chain t1-t2-t3-t4-t5-t6-t7-t8 together with the arm
+t5-t9-t10-t11, so t5 is the branch node and the three arms have lengths 4, 3 and 3. Products are
+read left to right.
+
+Transcription notes: The Coxeter matrix expands the diagram into 66 relators: eleven squares
+`t_i^2`, one relator `(t_i` `t_j)^3` for each of the ten edges, and one relator `(t_i` `t_j)^2`
+for each of the remaining 45 unordered pairs of distinct nodes. Appended to them are the source's
+spider relation, which presents 2 x 2.B, and then its two further relations, which present B. The
+source displays its relations by family rather than as a numbered list and records no total
+length, so the expected relator count is the sum 11 + 55 + 1 + 2 over those families. -/
 def presentation : GroupPresentation where
-  generatorNames := ["t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10", "t11"]
-  source := "T. Breuer, K. Magaard, and R. A. Wilson, Verification of the ordinary character \
-    table of the Baby Monster, Journal of Algebra 561 (2020), 111-130; A. A. Ivanov, Presenting \
-    the Baby Monster, Journal of Algebra 163 (1994), 88-108"
-  sourceLocator := "Breuer-Magaard-Wilson, Section 3.1, doi:10.1016/j.jalgebra.2019.06.047, \
-    also arXiv:1902.07758v2; Ivanov, doi:10.1006/jabr.1994.1005. The presentation was conjectured \
-    in the Atlas of Finite Groups (Conway, Curtis, Norton, Parker, Wilson, 1985) and proved by \
-    Ivanov, subject to the Monster having no proper double cover, which is Griess's computation of \
-    the Schur multiplier of the Monster (The Schur multipliers of the known finite simple groups, \
-    III, Proceedings of the Rutgers Group Theory Year 1983-1984, Cambridge University Press, 1985, \
-    69-80)."
-  generatorConvention := "Indices 0 through 10 are the source's involutions t1 through t11, so \
-    t_i is index i-1. The Coxeter diagram is the chain t1-t2-t3-t4-t5-t6-t7-t8 together with the \
-    arm t5-t9-t10-t11, so t5 is the branch node and the three arms have lengths 4, 3 and 3. \
-    Products are read left to right."
-  transcriptionNotes := "The Coxeter matrix expands the diagram into 66 relators: eleven squares \
-    t_i^2, one relator (t_i t_j)^3 for each of the ten edges, and one relator (t_i t_j)^2 for each \
-    of the remaining 45 unordered pairs of distinct nodes. Appended to them are the source's \
-    spider relation, which presents 2 x 2.B, and then its two further relations, which present B. \
-    The source displays its relations by family rather than as a numbered list and records no \
-    total length, so the expected relator count is the sum 11 + 55 + 1 + 2 over those families. \
-    The independent source-to-Lean read-through checked the 66 Coxeter relations and all three \
-    adjoined relators. The FiniteSimpleGroups permutation construction does not cover B."
-  expectedGeneratorCount := 11
+  generatorCount := 11
   expectedRelatorCount := 69
   transcribed := relatorList
 
-/-- The relators of the row are the Coxeter relations of the diagram followed by the three
-adjoined relators. The record's body is exposed, so its metadata fields are read off it directly;
-this equation is the one field projection that is not read off it, because
-`TauCeti.Sporadic.BabyMonster.relatorList` is sealed. -/
+/-- The number of generators in the Baby Monster presentation. -/
 @[simp]
-theorem presentation_transcribed : presentation.transcribed = relatorList := rfl
+theorem presentation_generatorCount : presentation.generatorCount = 11 := by
+  rw [presentation]
 
-/-- **The relators of the row are the Coxeter relators of the `Y₄₃₃` diagram followed by the three
-adjoined relators.** This is the form in which the source states the presentation, and the
-hypothesis that `TauCeti.Sporadic.BabyMonster.mulEquivPresentedGroupCoxeterAppend` below
-consumes. -/
-theorem presentation_transcribed_append :
-    presentation.transcribed = coxeterRelators coxeterMatrix ++ adjoinedRelators := by
-  rw [presentation_transcribed, relatorList_def]
+/-- The expected number of relators in the Baby Monster presentation. -/
+@[simp]
+theorem presentation_expectedRelatorCount : presentation.expectedRelatorCount = 69 := by
+  rw [presentation]
+
+/-- The relators of the row are `TauCeti.Sporadic.BabyMonster.relatorList`: the Coxeter relations
+of the diagram followed by the three adjoined relators (`relatorList_def`).
+
+The cast transports the list along `presentation_generatorCount`. This is not `@[simp]` because
+`simp` cannot see through that cast; rewrite with it instead. -/
+theorem presentation_transcribed : presentation.transcribed = cast (by simp) relatorList := by
+  rfl
 
 /-- **The transcribed presentation has sixty-nine relators**, the `(11 + 1).choose 2 = 66` Coxeter
 relators of a diagram on eleven nodes together with the three adjoined relators. -/
@@ -349,26 +345,28 @@ theorem length_relatorList : relatorList.length = 69 := by
   rw [relatorList_def, List.length_append, length_coxeterRelators, adjoinedRelators_def]
   decide
 
-/-- **The recorded generator and relator counts agree with the transcribed data.** -/
-theorem matchesMetadata_presentation : presentation.matchesMetadata :=
-  (GroupPresentation.matchesMetadata_iff presentation).mpr ⟨by decide, length_relatorList⟩
+/-- **The recorded relator count agrees with the transcribed data.** -/
+theorem matchesMetadata_presentation : presentation.matchesMetadata := by
+  rw [GroupPresentation.matchesMetadata_iff, presentation_transcribed,
+    presentation_expectedRelatorCount]
+  exact length_relatorList
 
 /-! ### Letter counts -/
 
 /-- The spider relator compiles to `10 · 9 = 90` letters. -/
 @[simp]
 theorem length_spiderRelator : spiderRelator.length = 90 := by
-  simp [spiderRelator_eq]
+  simp [spiderRelator_def]
 
 /-- The first adjoined relator compiles to `9 · 7 = 63` letters. -/
 @[simp]
 theorem length_extraRelatorOne : extraRelatorOne.length = 63 := by
-  simp [extraRelatorOne_eq]
+  simp [extraRelatorOne_def]
 
 /-- The second adjoined relator compiles to `9 · 7 = 63` letters. -/
 @[simp]
 theorem length_extraRelatorTwo : extraRelatorTwo.length = 63 := by
-  simp [extraRelatorTwo_eq]
+  simp [extraRelatorTwo_def]
 
 /-- **The Coxeter relators of the `Y₄₃₃` diagram contain `262` letters.** A relator `(tᵢ tⱼ) ^ m`
 contributes `2m`, so the eleven involution relators contribute `2` each, the ten edges `6` each,
@@ -399,7 +397,7 @@ theorem presentation_totalLength : presentation.totalLength = 478 := by
       Relator.length_toWord, length_spiderRelator, length_extraRelatorOne,
       length_extraRelatorTwo, sum_map_length_coxeterRelators]
     decide
-  rw [GroupPresentation.totalLength_def, GroupPresentation.relators_def, presentation_transcribed]
+  rw [GroupPresentation.totalLength_def, GroupPresentation.relators_def, presentation]
   exact key
 
 /-- **Every expression in the `Y₄₃₃` relator list compiles to a cyclically reduced word.** The
@@ -413,14 +411,8 @@ theorem isCyclicallyReduced_toWord_of_mem_relatorList (r : Relator (Fin 11))
   · obtain ⟨i, j, rfl⟩ := mem_coxeterRelators_iff.mp hr
     exact isCyclicallyReduced_toWord_coxeterRelator coxeterMatrix _ _
   · simp only [adjoinedRelators_def, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · rw [spiderRelator_eq]
-      exact Relator.isCyclicallyReduced_toWord_pow
-        (by simp [FreeGroup.IsCyclicallyReduced, FreeGroup.IsReduced]) _
-    · rw [extraRelatorOne_eq]
-      exact Relator.isCyclicallyReduced_toWord_pow
-        (by simp [FreeGroup.IsCyclicallyReduced, FreeGroup.IsReduced]) _
-    · rw [extraRelatorTwo_eq]
+    rcases hr with rfl | rfl | rfl <;>
+      simp only [spiderRelator_def, extraRelatorOne_def, extraRelatorTwo_def] <;>
       exact Relator.isCyclicallyReduced_toWord_pow
         (by simp [FreeGroup.IsCyclicallyReduced, FreeGroup.IsReduced]) _
 
@@ -429,10 +421,11 @@ letter count of `TauCeti.Sporadic.BabyMonster.presentation_totalLength` comparab
 presentation-length convention, under which a relator is measured after free and cyclic
 reduction. -/
 theorem presentation_relatorsCyclicallyReduced : presentation.relatorsCyclicallyReduced := by
+  unfold presentation
   rw [GroupPresentation.relatorsCyclicallyReduced_iff, GroupPresentation.relators_def]
   intro w hw
   obtain ⟨r, hr, rfl⟩ := List.mem_map.mp hw
-  exact isCyclicallyReduced_toWord_of_mem_relatorList r (presentation_transcribed ▸ hr)
+  exact isCyclicallyReduced_toWord_of_mem_relatorList r hr
 
 /-- **The row presents the Coxeter group of the `Y₄₃₃` diagram cut down by the three adjoined
 relations**, which is the shape in which the source states the presentation: the Coxeter relations
@@ -441,19 +434,22 @@ of the diagram, the spider relation, and the two further relations.
 This is an identification of the presented group with a quotient built from Mathlib's
 `CoxeterMatrix.relationsSet`; it asserts nothing about the order or the structure of either
 side. -/
-def mulEquivPresentedGroupCoxeterAppend :
+protected def mulEquivPresentedGroupCoxeterAppend :
     presentation.Group ≃*
-      PresentedGroup (coxeterMatrix.relationsSet ∪ Relator.relatorSet adjoinedRelators) :=
-  presentation.mulEquivPresentedGroupCoxeterAppend coxeterMatrix adjoinedRelators
-    (congrArg Subgroup.normalClosure (congrArg Relator.relatorSet presentation_transcribed_append))
+      PresentedGroup (coxeterMatrix.relationsSet ∪ Relator.relatorSet adjoinedRelators) := by
+  unfold presentation
+  apply GroupPresentation.mulEquivPresentedGroupCoxeterAppend
+  exact congrArg Subgroup.normalClosure (congrArg Relator.relatorSet relatorList_def)
 
 /-- The Coxeter equivalence sends each canonical generator to the corresponding canonical
 generator. -/
 @[simp]
-theorem mulEquivPresentedGroupCoxeterAppend_apply_of (i : Fin presentation.generatorCount) :
-    mulEquivPresentedGroupCoxeterAppend (PresentedGroup.of i) = PresentedGroup.of i :=
-  GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of _ _ _
-    (congrArg Subgroup.normalClosure
-      (congrArg Relator.relatorSet presentation_transcribed_append)) i
+protected theorem mulEquivPresentedGroupCoxeterAppend_apply_of (i : Fin 11) :
+    BabyMonster.mulEquivPresentedGroupCoxeterAppend
+        (PresentedGroup.of
+          (Fin.cast (by simp [presentation]) i)) =
+      PresentedGroup.of i := by
+  unfold BabyMonster.mulEquivPresentedGroupCoxeterAppend presentation
+  apply GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of
 
 end TauCeti.Sporadic.BabyMonster

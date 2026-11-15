@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Curved.Cone
+public import TauCeti.Algebra.Homology.Curved.Cone.Basic
 
 /-!
 # A square-zero curved duplex

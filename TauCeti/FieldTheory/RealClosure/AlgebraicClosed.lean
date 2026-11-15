@@ -18,8 +18,8 @@ then proves algebraic closedness of that square-closed field. In particular,
 `isAlgClosed_quadraticAlgebra` proves that `R[i] = QuadraticAlgebra R (-1) 0` is
 algebraically closed. `Polynomial.natDegree_le_two_of_irreducible` bounds irreducible degrees
 by two; the polynomial IVT development uses this bound.
-Open `scoped TauCeti.RealClosure` to enable the field and algebraic-closedness
-instances on this quadratic algebra.
+Open `scoped TauCeti.RealClosure` to enable the algebraic-closedness instance on this
+quadratic algebra.
 
 The proof puts finite extensions inside a finite normal closure. The 2-group argument
 then applies to the Galois group over a square-closed intermediate field.
@@ -42,14 +42,15 @@ namespace TauCeti.RealClosure
 open Module IntermediateField
 
 variable {R C L : Type*} [Field R] [IsRealClosed R] [Field C] [Algebra R C]
-    [FiniteDimensional R C] [Field L] [Algebra R L] [Algebra C L]
-    [IsScalarTower R C L] [FiniteDimensional C L]
+    [FiniteDimensional R C] [Field L] [Algebra C L] [FiniteDimensional C L]
 
 include R in
 /-- Every finite extension of a finite square-closed extension of a real
 closed field is trivial. -/
 theorem finrank_eq_one_of_forall_isSquare (hsq : ∀ x : C, IsSquare x) :
     finrank C L = 1 := by
+  let : Algebra R L := ((algebraMap C L).comp (algebraMap R C)).toAlgebra
+  have : IsScalarTower R C L := .of_algebraMap_eq' rfl
   let M := AlgebraicClosure L
   have : FiniteDimensional R L := FiniteDimensional.trans R C L
   have : CharZero L := charZero_of_injective_algebraMap (algebraMap R L).injective

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Rectangle.Annulus
+public import TauCeti.KnotTheory.Grid.Rectangle.Annulus.Basic
 public import TauCeti.KnotTheory.Grid.Unblocked
 
 /-!
@@ -44,10 +44,8 @@ other two: that consequence is
 
 ## References
 
-This supplies the annular case for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane
-G.3, "The complexes and `∂² = 0`", specifically the "annular pairs of empty rectangles" clause of
-its juxtaposition case analysis. The argument follows Ozsváth--Stipsicz--Szabó, *Grid Homology
-for Knots and Links*, Chapter 4.6.
+This is the annular case of the juxtaposition case analysis for `∂² = 0`. The argument follows
+Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.6.
 -/
 
 public section

@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Valuation.Integral
-public import TauCeti.FieldTheory.FunctionField.Place.Basic
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Adic
 
 /-!
 # Affine models: a place finite on a Dedekind subring is one of its height one primes
@@ -21,8 +20,8 @@ the normalized `𝔭`-adic valuation. The prime in question is the centre `{r : 
 the place on `R`, so the valuation ring of the place is the localization of `R` there. The converse
 — that every height one prime of `R` arises this way, which upgrades this injection into a
 bijection — is not proved here; it is proved in
-`TauCeti/FieldTheory/FunctionField/AffineModel/Prime.lean`, which constructs the place of a
-prime.
+`TauCeti/FieldTheory/FunctionField/AffineModel/Prime.lean`, using the place of a prime from
+`TauCeti/FieldTheory/FunctionField/Place/Adic.lean`.
 
 This is the "places → height one primes" half of the affine-model dictionary that reduces divisor
 theory on the finite chart of a model to Mathlib's factorization calculus for fractional ideals.
@@ -32,7 +31,8 @@ integrally closed, then swallows everything integral over `k[x]`.
 
 ## Main results
 
-* `TauCeti.Place.adjoin_le_integers_iff`: `k[x] ⊆ 𝒪_P` exactly when `x ∈ 𝒪_P`.
+* `TauCeti.Place.mem_integers_of_isIntegral_adjoin`: everything integral over `k[x]` lies in `𝒪_P`
+  as soon as `x ∈ 𝒪_P`.
 * `TauCeti.Place.center`: the height one prime of an affine model below a place finite on it,
   with `TauCeti.Place.valuation_center` identifying the adic valuation of that prime with the
   valuation of the place, `TauCeti.Place.center_injective` showing that a place finite on a
@@ -64,15 +64,6 @@ universe u v w
 variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F] (P : Place k F)
 
 section Integers
-
-/-- **`k[x]` lies in the valuation ring of `P` exactly when `x` has no pole at `P`**: the
-criterion selecting the places on the finite chart of `x`. Its additive form is obtained from
-`TauCeti.Place.mem_integers_iff_ord_nonneg`. -/
-theorem adjoin_le_integers_iff {x : F} :
-    (∀ y ∈ Algebra.adjoin k ({x} : Set F), y ∈ P.integers) ↔ x ∈ P.integers :=
-  ⟨fun h ↦ h x (Algebra.self_mem_adjoin_singleton k x), fun hx _ hy ↦
-    Algebra.adjoin_le (S := Subalgebra.mk P.integers.toSubring.toSubsemiring
-      P.algebraMap_mem_integers) (Set.singleton_subset_iff.mpr (by simpa using hx)) hy⟩
 
 /-- Every element of `F` integral over `k[x]` lies in the valuation ring of `P`, as soon as `x`
 has no pole at `P`. This is what makes the integral closure of `k[x]` in `F` — the affine model

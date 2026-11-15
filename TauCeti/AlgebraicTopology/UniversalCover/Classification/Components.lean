@@ -35,12 +35,10 @@ faithfulness has no hypothesis, so monodromy is an equivalence.
 
 ## References
 
-This closes the disconnected-cover part of Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`. It consumes the based-path universal-cover
-construction adapted from Kim Morrison's
+This file consumes the based-path universal-cover construction adapted from Kim Morrison's
 [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292), and the
-disjoint-union classification already built from it. The mathematical classification follows
-Hatcher, *Algebraic Topology*, Section 1.3; no external formalization is copied or adapted here.
+disjoint-union classification built from it. The mathematical classification follows Hatcher,
+*Algebraic Topology*, Section 1.3; no external formalization is copied or adapted here.
 -/
 
 public section
@@ -77,12 +75,8 @@ theorem exists_monodromyFunctor_iso_of_locallyPathConnectedSpace
     TopCat.ofHom ⟨h ∘ q.proj, hp.continuous⟩
   let p : CoveringSpace (TopCat.of X) := mk pMap hp
   refine ⟨p, ⟨?_⟩⟩
-  let totalHomeomorph : (p : TopCat) ≃ₜ (q : TopCat) :=
-    TopCat.homeoOfIso (eqToIso (mk_coe pMap hp))
-  have htotal : (h ∘ q.proj) ∘ totalHomeomorph = p.proj := by
-    funext z
-    have hproj := DFunLike.congr_fun (congrArg TopCat.Hom.hom (mk_proj pMap hp)) z
-    exact hproj.symm
+  let totalHomeomorph : (p : TopCat) ≃ₜ (q : TopCat) := Homeomorph.refl _
+  have htotal : (h ∘ q.proj) ∘ totalHomeomorph = p.proj := rfl
   let qIso : q.isCoveringMap_proj.monodromyFunctor ≅
       FundamentalGroupoid.map hMap ⋙ F :=
     eqToIso (monodromyFunctor_obj q).symm ≪≫ hq.some

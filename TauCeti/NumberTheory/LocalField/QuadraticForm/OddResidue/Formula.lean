@@ -35,9 +35,7 @@ open _root_.TauCeti.Units
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-/-- The finite residue field, used to state the quadratic character formula. -/
-noncomputable local instance instFintypeOddResidueFormula : Fintype 𝓀[K] :=
-  Fintype.ofFinite _
+attribute [local instance] instFintypeResidueField
 
 /-- The diagonal uniformizer value is the residue sign of `-1`. -/
 theorem hilbertSymbol_uniformizer_self (h2 : IsUnit (2 : 𝒪[K]))

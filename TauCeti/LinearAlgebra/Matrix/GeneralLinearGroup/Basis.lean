@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Basis.Fin
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Algebra.Module.Equiv.Basic
 
@@ -23,7 +24,13 @@ the composite, which sends a linear automorphism to its invertible matrix in the
 ## Main statements
 
 * `Module.Basis.toLin'_toGL`: reading the matrix back through `toLin'` recovers the automorphism.
+* `Module.Basis.coe_toGL`: the matrix of `f` is `LinearMap.toMatrix b b f`, so its `(i, j)` entry
+  is the `i`-th coordinate of `f (b j)`.
 * `Module.Basis.toGL_smulOfUnit`: multiplication by a unit has the scalar matrix of that unit.
+* `Module.Basis.finTwoProd_toGL_symm_apply`: in the standard basis of `R × R`, an invertible
+  `2 × 2` matrix acts by multiplication of column vectors.
+* `Module.Basis.fin_two_basis_generators`: an invertible two-by-two change of basis has
+  nonzero first generator and generates the whole module.
 -/
 
 public section
@@ -48,6 +55,20 @@ theorem toLin'_toGL (b : Module.Basis ι k V) (f : V ≃ₗ[k] V) :
       (LinearMap.GeneralLinearGroup.generalLinearEquiv k V).symm f := by
   simp [toGL]
 
+/-- The invertible matrix of `f` in the basis `b` is its matrix `LinearMap.toMatrix b b f`: the
+`(i, j)` entry is the `i`-th coordinate of `f (b j)`. -/
+@[simp]
+theorem coe_toGL (b : Module.Basis ι k V) (f : V ≃ₗ[k] V) :
+    (b.toGL f : Matrix ι ι k) = LinearMap.toMatrix b b f := by
+  -- Both matrices are determined by the linear maps they define in the basis `b`.
+  apply (Matrix.toLin b b).injective
+  ext v
+  have hf : ((LinearMap.GeneralLinearGroup.generalLinearEquiv k V).symm f).toLinearEquiv = f :=
+    (LinearMap.GeneralLinearGroup.generalLinearEquiv k V).apply_symm_apply f
+  have h := Matrix.GeneralLinearGroup.toLin'_apply b (b.toGL f) v
+  rw [toLin'_toGL, hf] at h
+  simpa [Matrix.toLin_apply, Fintype.linearCombination_apply] using h.symm
+
 /-- Multiplication by a unit `a` has matrix the scalar matrix `a` in every basis. -/
 @[simp]
 theorem toGL_smulOfUnit (b : Module.Basis ι k V) (a : kˣ) :
@@ -62,5 +83,38 @@ theorem toGL_smulOfUnit (b : Module.Basis ι k V) (a : kˣ) :
   rw [Matrix.GeneralLinearGroup.toLin'_apply]
   simp [Fintype.linearCombination_apply, Matrix.scalar, Pi.algebraMap_def,
     LinearEquiv.smulOfUnit_apply]
+
+/-- In the standard basis of `R × R`, the linear automorphism of an invertible matrix `g` is
+multiplication of column vectors by `g`: it sends `(x, y)` to `(g₀₀ x + g₀₁ y, g₁₀ x + g₁₁ y)`. -/
+@[simp]
+theorem finTwoProd_toGL_symm_apply {R : Type*} [CommRing R] (g : GL (Fin 2) R) (x y : R) :
+    (Module.Basis.finTwoProd R).toGL.symm g (x, y) =
+      (g 0 0 * x + g 0 1 * y, g 1 0 * x + g 1 1 * y) := by
+  obtain ⟨f, rfl⟩ := (Module.Basis.finTwoProd R).toGL.surjective g
+  have hxy : ((x, y) : R × R) = x • (1, 0) + y • (0, 1) := by simp
+  rw [MulEquiv.symm_apply_apply, hxy, map_add, map_smul, map_smul]
+  ext <;> simp [LinearMap.toMatrix_apply, mul_comm]
+
+
+/-- An invertible change of a two-element basis has nonzero first generator and
+still generates every element over the coefficient ring. -/
+theorem fin_two_basis_generators
+    {R M : Type*} [CommRing R] [Nontrivial R] [AddCommGroup M] [Module R M]
+    (b : Module.Basis (Fin 2) R M) (γ : Matrix.GeneralLinearGroup (Fin 2) R) :
+    (γ 0 0 • b 0 + γ 1 0 • b 1) ≠ 0 ∧
+      ∀ z : M, ∃ m n : R,
+        m • (γ 0 0 • b 0 + γ 1 0 • b 1) +
+          n • (γ 0 1 • b 0 + γ 1 1 • b 1) = z := by
+  let e := (Matrix.GeneralLinearGroup.toLin' b γ).toLinearEquiv
+  let c := b.map e
+  have hc (i : Fin 2) : c i = γ 0 i • b 0 + γ 1 i • b 1 := by
+    simp [c, e, Matrix.GeneralLinearGroup.toLin'_apply, Finsupp.single_eq_pi_single,
+      Fintype.linearCombination_apply, Fin.sum_univ_two]
+  constructor
+  · simpa only [hc] using c.ne_zero 0
+  · intro z
+    refine ⟨c.repr z 0, c.repr z 1, ?_⟩
+    simpa only [Fin.sum_univ_two, hc] using c.sum_repr z
+
 
 end Module.Basis

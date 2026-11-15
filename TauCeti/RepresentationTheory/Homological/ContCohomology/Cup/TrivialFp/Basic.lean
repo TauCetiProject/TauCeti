@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Functoriality
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.GradedComm
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Graded.Comm
 import Mathlib.Algebra.Field.ZMod
 
 /-!
@@ -33,6 +33,10 @@ odd prime every cup square `a ⌣ a` vanishes, since `2` is then invertible in `
 
 * `TauCeti.cupFp_res`: restriction to a subgroup preserves `cupFp`.
 * `TauCeti.cupFp_map`: a continuous group homomorphism preserves `cupFp`.
+* `TauCeti.cupFp_bijective_iff_of_bijective`: perfectness of `cupFp` transfers along a continuous
+  homomorphism inducing isomorphisms on `H¹` and `H²`.
+* `TauCeti.cupFp_bijective_congr`: perfectness of `cupFp` is invariant under topological group
+  isomorphism.
 * `TauCeti.fpPairing_flip`: the opposite of the multiplication pairing is itself.
 * `TauCeti.cupFp_gradedComm`: the cup square is graded-commutative, `cupFp a b = - cupFp b a`.
 * `TauCeti.cupFp_eq_zero_comm`: `a ⌣ b = 0` exactly when `b ⌣ a = 0`.
@@ -93,16 +97,17 @@ section Group
 
 variable (p : ℕ) (G : Type u) [Group G]
 
-/-- Transport along `res_trivialFp` intertwines the restricted multiplication pairing of `G` with
-the multiplication pairing of `S`. -/
+/-- Transport along `res_trivialFp_hom` intertwines the restricted multiplication pairing of `G`
+with the multiplication pairing of `S`. -/
 theorem eqToHom_res_fpPairing_bil (S : Subgroup G)
     (x y : (TopRep.res (S.subtype : S →* G) (trivialFp p G)).V) :
-    eqToHom (res_trivialFp p G S) (((fpPairing p G).res S.subtype).bil x y) =
-      (fpPairing p S).bil (eqToHom (res_trivialFp p G S) x) (eqToHom (res_trivialFp p G S) y) :=
+    eqToHom (res_trivialFp_hom p S.subtype) (((fpPairing p G).res S.subtype).bil x y) =
+      (fpPairing p S).bil (eqToHom (res_trivialFp_hom p S.subtype) x)
+        (eqToHom (res_trivialFp_hom p S.subtype) y) :=
   (trivialFpEquiv p S).injective (by
-    -- the transport lemma is passed with `p G S` fixed: by bare name, `simp` indexes it through
-    -- the unfolded restricted carrier and does not find it in this module
-    simp only [trivialFpEquiv_eqToHom_res_trivialFp p G S, TopPairing.res_bil,
+    -- Fix `p` and `S.subtype` before passing the lemma: by bare name, `simp` indexes it through
+    -- the unfolded restricted carrier and does not find it in this module.
+    simp only [trivialFpEquiv_eqToHom_res_trivialFp_hom p S.subtype, TopPairing.res_bil,
       fpPairing_bil_apply, LinearEquiv.apply_symm_apply])
 
 variable [TopologicalSpace G] [IsTopologicalGroup G]
@@ -133,17 +138,44 @@ theorem cupFp_map {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGrou
     cohomFpMap p φ 2 (cupFp p G a b) =
       cupFp p H (cohomFpMap p φ 1 a) (cohomFpMap p φ 1 b) := by
   have hpair (x y : (trivialFp p G).V) :
-      eqToHom (res_trivialFp_hom p φ) ((fpPairing p G).bil x y) =
-        (fpPairing p H).bil (eqToHom (res_trivialFp_hom p φ) x)
-          (eqToHom (res_trivialFp_hom p φ) y) := by
+      eqToHom (res_trivialFp_hom p φ.toMonoidHom) ((fpPairing p G).bil x y) =
+        (fpPairing p H).bil (eqToHom (res_trivialFp_hom p φ.toMonoidHom) x)
+          (eqToHom (res_trivialFp_hom p φ.toMonoidHom) y) := by
     apply (trivialFpEquiv p H).injective
-    simp only [trivialFpEquiv_eqToHom_res_trivialFp_hom p φ,
+    simp only [trivialFpEquiv_eqToHom_res_trivialFp_hom p φ.toMonoidHom,
       fpPairing_bil_apply, LinearEquiv.apply_symm_apply]
   simpa only [cohomFpMap_def, cupFp_def, one_add_one_eq_two] using
     (fpPairing p G).cup_map (fpPairing p H) φ
-      (eqToHom (res_trivialFp_hom p φ))
-      (eqToHom (res_trivialFp_hom p φ))
-      (eqToHom (res_trivialFp_hom p φ)) hpair 1 1 a b
+      (eqToHom (res_trivialFp_hom p φ.toMonoidHom))
+      (eqToHom (res_trivialFp_hom p φ.toMonoidHom))
+      (eqToHom (res_trivialFp_hom p φ.toMonoidHom)) hpair 1 1 a b
+
+/-- **Perfectness of the cup square transfers along a continuous homomorphism** `φ : H →ₜ* G`
+inducing isomorphisms on `H¹(-, ZMod p)` and `H²(-, ZMod p)`: `cupFp p G` is a bijection onto the
+linear maps `H¹(G, ZMod p) →ₗ H²(G, ZMod p)` exactly when `cupFp p H` is. -/
+theorem cupFp_bijective_iff_of_bijective {H : Type u} [Group H] [TopologicalSpace H]
+    [IsTopologicalGroup H] (φ : H →ₜ* G) (h₁ : Function.Bijective (cohomFpMap p φ 1))
+    (h₂ : Function.Bijective (cohomFpMap p φ 2)) :
+    Function.Bijective (cupFp p G) ↔ Function.Bijective (cupFp p H) := by
+  let e₁ := LinearEquiv.ofBijective (cohomFpMap p φ 1).hom.toLinearMap h₁
+  let e₂ := LinearEquiv.ofBijective (cohomFpMap p φ 2).hom.toLinearMap h₂
+  -- `cupFp p H` is `cupFp p G` conjugated by the cohomology equivalences along `φ`
+  have h : ⇑(cupFp p H) = (e₁.arrowCongr e₂) ∘ cupFp p G ∘ e₁.symm :=
+    funext fun a => LinearMap.ext fun b => by
+      rw [Function.comp_apply, Function.comp_apply, LinearEquiv.arrowCongr_apply]
+      conv_lhs => rw [← e₁.apply_symm_apply a, ← e₁.apply_symm_apply b]
+      exact (cupFp_map p G φ _ _).symm
+  rw [h, EquivLike.comp_bijective, EquivLike.bijective_comp]
+
+/-- **Perfectness of the cup square is invariant under topological group isomorphism**: `cupFp p G`
+is a bijection onto the linear maps `H¹(G, ZMod p) →ₗ H²(G, ZMod p)` exactly when `cupFp p H` is,
+for `G ≃ₜ* H`. -/
+theorem cupFp_bijective_congr {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    (e : G ≃ₜ* H) : Function.Bijective (cupFp p G) ↔ Function.Bijective (cupFp p H) :=
+  have h (n : ℕ) :
+      Function.Bijective (cohomFpMap p (ContinuousMonoidHom.toContinuousMonoidHom e.symm) n) :=
+    funext (cohomFpLinearEquiv_apply p e n) ▸ (cohomFpLinearEquiv p e n).bijective
+  cupFp_bijective_iff_of_bijective p G _ (h 1) (h 2)
 
 /-- **Restriction preserves the cup product with trivial `ZMod p` coefficients**:
 `res (a ⌣ b) = res a ⌣ res b` for the named restriction `trivialFpResMap`. -/
@@ -158,7 +190,8 @@ theorem cupFp_res (S : Subgroup G) (a b : cohomFp p G 1) :
 graded commutativity of the cup product at the multiplication pairing, whose opposite pairing is
 itself. -/
 theorem cupFp_gradedComm (a b : cohomFp p G 1) : cupFp p G a b = -cupFp p G b a := by
-  rw [cupFp_def, (fpPairing p G).cup_one_one_eq_neg_flip a b, fpPairing_flip]
+  rw [cupFp_def, (fpPairing p G).cup_gradedComm 1 1 a b, ContinuousCohomology.degreeCast_rfl,
+    Iso.refl_hom, ConcreteCategory.id_apply, mul_one, pow_one, neg_one_smul, fpPairing_flip]
 
 /-- `a ⌣ b` vanishes exactly when `b ⌣ a` does, by graded commutativity. -/
 theorem cupFp_eq_zero_comm (a b : cohomFp p G 1) : cupFp p G a b = 0 ↔ cupFp p G b a = 0 := by

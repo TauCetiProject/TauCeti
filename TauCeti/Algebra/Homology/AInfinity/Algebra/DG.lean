@@ -42,6 +42,8 @@ vanish.
 * `TauCeti.IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_one_apply`,
   `toAInfinityAlgebra_m_two_apply`, and `toAInfinityAlgebra_m_of_three_le`: its operations are the
   differential, the product, and zero.
+* `TauCeti.IsNonUnitalDGAlgebra.toAInfinityAlgebra_taylor`: its Taylor map is the differential on
+  single letters and the signed product on two-letter words.
 * `TauCeti.IsDGAlgebra.strictUnit_one`: the unit of a DG algebra is a strict unit.
 * `TauCeti.AInfinityAlgebra.isNonUnitalDGAlgebra_differential` and
   `TauCeti.AInfinityAlgebra.isDGAlgebra_differential`: the unary operation of an `A∞` algebra
@@ -79,10 +81,11 @@ namespace IsNonUnitalDGAlgebra
 /-- The `A∞` operations of a differential `d` on an algebra: `m₁ = d`, `m₂` is the product, and all
 other operations vanish. -/
 private noncomputable def operation (d : A →ₗ[R] A) :
-    ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A
+    ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A
   | 0 => 0
-  | 1 => MultilinearMap.ofSubsingleton R A A 0 d
-  | 2 => (MultilinearMap.ofSubsingletonₗ R R A A (0 : Fin 1) ∘ₗ LinearMap.mul R A).uncurryLeft
+  | 1 => MultilinearMap.ofSubsingleton (RingHom.id R) A A 0 d
+  | 2 => (MultilinearMap.ofSubsingletonₗ R (RingHom.id R) A A (0 : Fin 1) ∘ₗ LinearMap.mul R
+      A).uncurryLeft
   | _ + 3 => 0
 
 private theorem operation_zero (d : A →ₗ[R] A) : operation d 0 = 0 := (rfl)
@@ -133,14 +136,10 @@ private theorem stasheffSum_operation (h : IsNonUnitalDGAlgebra 𝒜 d) (n : ℕ
     refine Finset.sum_eq_zero fun p hp ↦ Finset.sum_eq_zero fun s hs ↦ ?_
     rw [Finset.mem_range] at hp
     rw [Finset.mem_Icc] at hs
-    rw [AInfinity.stasheffTerm_def]
     rcases lt_or_ge s 3 with hs3 | hs3
-    · rw [operation_of_three_le d (by omega : 3 ≤ p + 1 + (n + 4 - p - s)),
-        evalNat_def, _root_.zero_apply, smul_zero]
-    · have hinner : evalNat (operation d s) (fun j ↦ x (p + j)) = 0 := by
-        rw [operation_of_three_le d hs3, evalNat_def, _root_.zero_apply]
-      rw [hinner, evalNat_def, (operation d _).map_coord_zero
-        (⟨p, by omega⟩ : Fin (p + 1 + (n + 4 - p - s))) (by simp), smul_zero]
+    · exact AInfinity.stasheffTerm_eq_zero_of_outer_eq_zero _ _ _
+        (operation_of_three_le d (by omega))
+    · exact AInfinity.stasheffTerm_eq_zero_of_inner_eq_zero _ _ _ (operation_of_three_le d hs3)
 
 /-- The `A∞` algebra of a nonunital DG algebra: `m₁ = d`, `m₂` is the product, and `m n = 0` for
 `n ≥ 3`. -/
@@ -198,6 +197,20 @@ theorem toAInfinityAlgebra_mul (h : IsNonUnitalDGAlgebra 𝒜 d) :
     h.toAInfinityAlgebra.mul = LinearMap.mul R A := by
   ext x y
   simp
+
+/-- The Taylor map of the `A∞` algebra of a nonunital DG algebra: the differential on single
+letters, and the product on two-letter words, with the Koszul twist `a ↦ (-1) ^ |a| a` of the left
+letter carrying the suspension sign. -/
+theorem toAInfinityAlgebra_taylor (h : IsNonUnitalDGAlgebra 𝒜 d) :
+    h.toAInfinityAlgebra.taylor = d ∘ₗ ReducedTensorWords.letter R A +
+      LinearMap.mul' R A ∘ₗ
+        TensorProduct.map
+          ((InternalGrading.ofDecomposition 𝒜).koszulTwist 1 ∘ₗ ReducedTensorWords.letter R A)
+          (ReducedTensorWords.letter R A) ∘ₗ ReducedTensorWords.deconcatenation R A := by
+  have hμ : TensorProduct.lift (LinearMap.mul R A) = LinearMap.mul' R A :=
+    TensorProduct.ext' fun _ _ ↦ by simp
+  rw [h.toAInfinityAlgebra.taylor_eq_of_m_eq_zero fun _ ↦ h.toAInfinityAlgebra_m_of_three_le,
+    toAInfinityAlgebra_differential, toAInfinityAlgebra_mul, toAInfinityAlgebra_grading, hμ]
 
 end IsNonUnitalDGAlgebra
 

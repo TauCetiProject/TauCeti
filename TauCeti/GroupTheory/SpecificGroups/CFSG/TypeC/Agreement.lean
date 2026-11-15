@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Generation
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC.Basic
 public import TauCeti.LinearAlgebra.RootSystem.RootLength
@@ -102,6 +102,25 @@ preserves the underlying matrix. -/
 noncomputable def carrierEquivSymplectic : d.AmbientGroup ≃* d.StandardGroup :=
   SpStd.pointsMulEquivGLSymplecticFin d.carrierRank d.1.Closure
 
+/-- The carrier equivalence leaves the underlying invertible matrix of a point unchanged. -/
+@[simp]
+theorem coe_carrierEquivSymplectic_apply (g : d.AmbientGroup) :
+    ((d.carrierEquivSymplectic g : d.StandardGroup) :
+        Matrix.GeneralLinearGroup (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) =
+      (g : Matrix.GeneralLinearGroup (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
+        d.1.Closure) :=
+  SpStd.coe_pointsMulEquivGLSymplecticFin_apply d.carrierRank g
+
+/-- The inverse of the carrier equivalence leaves the underlying invertible matrix of a symplectic
+matrix unchanged. -/
+@[simp]
+theorem coe_carrierEquivSymplectic_symm_apply (g : d.StandardGroup) :
+    ((d.carrierEquivSymplectic.symm g : d.AmbientGroup) :
+        Matrix.GeneralLinearGroup (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) =
+      (g : Matrix.GeneralLinearGroup (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
+        d.1.Closure) :=
+  SpStd.coe_pointsMulEquivGLSymplecticFin_symm_apply d.carrierRank g
+
 /-- **The explicit type-`C` carrier is equivalent to the points of the pinned `Sp_{2r}/ℤ` group
 scheme.** -/
 noncomputable def carrierEquivPinned : d.AmbientGroup ≃* d.PinnedGroup :=
@@ -128,8 +147,8 @@ root `2eᵣ₋₁` at the final node, and the adjacent difference root `eᵢ - e
 noncomputable def symplecticRootIndex (i : Fin d.1.rank) :
     GLSymplecticFin.RootSubgroupIndex (d.carrierRank + 1) :=
   if hi : d.carrierNode i = Fin.last d.carrierRank then .positiveLong (Fin.last d.carrierRank)
-  else .difference (d.carrierNode i) (SpStd.next d.carrierRank (d.carrierNode i) hi)
-    (SpStd.lt_next d.carrierRank (d.carrierNode i) hi).ne
+  else .difference (d.carrierNode i) (Order.succ (d.carrierNode i))
+    (Order.lt_succ_iff_ne_top.2 hi).ne
 
 /-- The symplectic root at the final carrier node is the positive long root `2eᵣ₋₁`. -/
 theorem symplecticRootIndex_of_carrierNode_eq_last {i : Fin d.1.rank}
@@ -141,8 +160,8 @@ theorem symplecticRootIndex_of_carrierNode_eq_last {i : Fin d.1.rank}
 theorem symplecticRootIndex_of_carrierNode_ne_last {i : Fin d.1.rank}
     (hi : d.carrierNode i ≠ Fin.last d.carrierRank) :
     d.symplecticRootIndex i =
-      .difference (d.carrierNode i) (SpStd.next d.carrierRank (d.carrierNode i) hi)
-        (SpStd.lt_next d.carrierRank (d.carrierNode i) hi).ne := by
+      .difference (d.carrierNode i) (Order.succ (d.carrierNode i))
+        (Order.lt_succ_iff_ne_top.2 hi).ne := by
   simp only [symplecticRootIndex, hi, ↓reduceDIte]
 
 /-- **At a long simple root the symplectic root is the positive long root `2eᵣ₋₁`.** -/
@@ -176,6 +195,12 @@ the index records. -/
 noncomputable def symplecticFrobenius : d.StandardGroup →* d.StandardGroup :=
   GLSymplecticFin.map (d.carrierRank + 1) d.1.Closure
     (iterateFrobenius d.1.Closure d.1.characteristic d.1.fieldExponent)
+
+/-- The matrix Frobenius is the entrywise map along the `q`-power Frobenius of the closure. -/
+theorem symplecticFrobenius_def :
+    d.symplecticFrobenius = GLSymplecticFin.map (d.carrierRank + 1) d.1.Closure
+      (iterateFrobenius d.1.Closure d.1.characteristic d.1.fieldExponent) :=
+  (rfl)
 
 /-- **The `q`-power Frobenius on the pinned symplectic scheme points**, defined through their
 canonical matrix realization and independently of the explicit carrier. The type-`C` family is

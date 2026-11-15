@@ -86,7 +86,7 @@ private theorem represented_rootSubgroupCoordinateMap_surjective (k : Fin 4 ⊕ 
   have h := congrArg (fun f : Module.End ℚ (Fin 24 → ℚ) =>
     f ((latticeBasis s : lattice) : Fin 24 → ℚ))
     (weightTable.rep_serreRootGenerator_pow_two k)
-  simpa only [rep_def, pow_two, Module.End.mul_apply, LinearMap.zero_apply] using h
+  simpa only [rep_def, pow_two, mul_apply_eq_comp, LinearMap.zero_apply] using h
 
 /-- Every numbered root-subgroup coordinate map of the tripled carrier is surjective over `ℤ`.
 Thus the additive parameter is a regular function on its scheme-theoretic image. -/
@@ -106,7 +106,7 @@ instance isClosedImmersion_rootSubgroup (k : Fin 4 ⊕ Fin 4) :
 
 /-- Every numbered root-subgroup map into the tripled type-`D₄` carrier is a monomorphism. -/
 theorem mono_rootSubgroup (k : Fin 4 ⊕ Fin 4) : Mono (rootSubgroup k) :=
-  mono_of_isClosedImmersion_underlying (rootSubgroup k)
+  Grp.mono_of_mono_left (rootSubgroup k)
 
 /-- Surjectivity of the numbered root-subgroup coordinate maps persists over every commutative
 base ring, in the transported quotient presentation of the carrier. -/

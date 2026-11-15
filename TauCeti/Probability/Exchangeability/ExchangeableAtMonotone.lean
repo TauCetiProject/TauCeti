@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.Basic
-import TauCeti.Probability.Exchangeability.PermutationExtension
+import Mathlib.Logic.Equiv.Fintype
 
 /-!
 # Monotonicity of finite exchangeability

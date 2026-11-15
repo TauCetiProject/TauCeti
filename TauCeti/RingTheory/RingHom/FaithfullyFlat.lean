@@ -6,7 +6,12 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
+public import Mathlib.RingTheory.Localization.Away.Basic
+public import TauCeti.RingTheory.Spectrum.Prime.TensorProduct
 
+import Mathlib.RingTheory.Flat.Localization
+import Mathlib.RingTheory.Localization.Ideal
+import Mathlib.RingTheory.RingHom.Flat
 import TauCeti.RingTheory.Flat.Pi
 
 /-!
@@ -16,19 +21,60 @@ Scalar extension `Algebra.TensorProduct.lTensor` preserves faithful flatness of 
 homomorphisms, via the pushout identification used by Mathlib's `RingHom.Flat.lTensor`.
 A finite family of flat ring homomorphisms `f i : R →+* S i` combines into a faithfully flat ring
 homomorphism `RingHom.pi f : R →+* ∀ i, S i` as soon as every maximal ideal of `R` stays proper
-under some `f i`.
+under some `f i`. A single flat ring homomorphism is faithfully flat as soon as every maximal
+ideal is contracted from a prime of the target. For a flat algebra whose spectral image has
+complement `V(I)`, faithful flatness after base change is equivalent to the extension of `I`
+being the unit ideal.
 
 ## Main results
 
+* `Ideal.faithfullyFlat_baseChange_iff_map_eq_top`: the spectral-complement criterion for
+  faithful flatness after base change.
+* `RingHom.FaithfullyFlat.comp`: composition preserves faithful flatness across universes.
 * `RingHom.FaithfullyFlat.lTensor`: scalar extension preserves faithful flatness.
 * `RingHom.FaithfullyFlat.pi_of_exists_map_ne_top`: the criterion above.
+* `RingHom.FaithfullyFlat.pi_algebraMap_localizationAway`: in particular, the product of the
+  localizations away from finitely many elements generating the unit ideal is faithfully flat.
+* `RingHom.FaithfullyFlat.of_flat_of_forall_isMaximal_mem_range_comap`: a flat ring homomorphism
+  whose prime-spectrum map hits every maximal ideal is faithfully flat.
 -/
 
 public section
 
 open scoped TensorProduct
 
+namespace Ideal
+
+/-- If the complement of the spectral image of a flat algebra is `V(I)`, its base change is
+faithfully flat exactly when the extension of `I` is the unit ideal. -/
+theorem faithfullyFlat_baseChange_iff_map_eq_top
+    {A S T : Type*} [CommRing A] [CommRing S] [CommRing T]
+    [Algebra A S] [Algebra A T] [Module.Flat A S] (I : Ideal A)
+    (hI : (Set.range (PrimeSpectrum.comap (algebraMap A S)))ᶜ =
+      PrimeSpectrum.zeroLocus (I : Set A)) :
+    Module.FaithfullyFlat T (T ⊗[A] S) ↔ I.map (algebraMap A T) = ⊤ := by
+  rw [← RingHom.faithfullyFlat_algebraMap_iff,
+    RingHom.FaithfullyFlat.iff_flat_and_comap_surjective]
+  have hflat : (algebraMap T (T ⊗[A] S)).Flat :=
+    RingHom.flat_algebraMap_iff.mpr inferInstance
+  simp only [hflat, true_and, ← Set.range_eq_univ,
+    PrimeSpectrum.range_comap_algebraMap_tensorProduct]
+  rw [← Set.compl_empty_iff, ← Set.preimage_compl, hI,
+    PrimeSpectrum.preimage_comap_zeroLocus, ← PrimeSpectrum.zeroLocus_span,
+    ← Ideal.map_span, Ideal.span_eq, PrimeSpectrum.zeroLocus_empty_iff_eq_top]
+
+end Ideal
+
 namespace RingHom.FaithfullyFlat
+
+/-- The composite of faithfully flat ring homomorphisms is faithfully flat, even when the
+three rings live in different universes. -/
+theorem comp {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
+    {f : R →+* S} {g : S →+* T} (hf : f.FaithfullyFlat) (hg : g.FaithfullyFlat) :
+    (g.comp f).FaithfullyFlat := by
+  refine iff_flat_and_comap_surjective.mpr ⟨hf.flat.comp hg.flat, ?_⟩
+  exact (iff_flat_and_comap_surjective.mp hf).2.comp
+    (iff_flat_and_comap_surjective.mp hg).2
 
 section lTensor
 
@@ -48,6 +94,23 @@ theorem lTensor {f : B →ₐ[R] D} (hf : f.FaithfullyFlat) :
 
 end lTensor
 
+/-- **A flat ring homomorphism is faithfully flat as soon as every maximal ideal is contracted from
+a prime of the target.** Compared with `RingHom.FaithfullyFlat.iff_flat_and_comap_surjective`, the
+map `PrimeSpectrum.comap f` only has to hit the closed points. -/
+theorem of_flat_of_forall_isMaximal_mem_range_comap {R S : Type*} [CommRing R] [CommRing S]
+    {f : R →+* S} (hf : f.Flat)
+    (h : ∀ (m : Ideal R) (hm : m.IsMaximal), ⟨m, hm.isPrime⟩ ∈ Set.range (PrimeSpectrum.comap f)) :
+    f.FaithfullyFlat := by
+  algebraize [f]
+  rw [← RingHom.algebraMap_toAlgebra f, RingHom.faithfullyFlat_algebraMap_iff]
+  refine ⟨fun m hm ↦ ?_⟩
+  obtain ⟨q, hq⟩ := h m hm
+  have hmq : m = q.asIdeal.comap (algebraMap R S) := congrArg PrimeSpectrum.asIdeal hq.symm
+  -- so `m S ⊆ q ≠ S`, as in Mathlib's `Module.FaithfullyFlat.of_comap_surjective`
+  rw [Ideal.smul_top_eq_map, hmq]
+  exact (Submodule.restrictScalars_eq_top_iff _ _ _).ne.mpr
+    fun htop ↦ q.isPrime.ne_top <| top_le_iff.mp <| htop ▸ Ideal.map_comap_le
+
 /-- **A finite product of flat ring homomorphisms is faithfully flat as soon as no maximal ideal
 becomes the unit ideal under every factor.** No single `f i` need be faithfully flat: each maximal
 ideal `m` of `R` only has to stay proper under *some* `f i`, and which one may depend on `m`. Since
@@ -65,6 +128,21 @@ theorem pi_of_exists_map_ne_top {R ι : Type*} [CommRing R] [_root_.Finite ι] {
   change Module.FaithfullyFlat R (∀ i, S i)
   refine Module.FaithfullyFlat.pi_of_exists_submodule_ne_top fun m hm ↦ (h m hm).imp fun i hi ↦ ?_
   rwa [Ideal.smul_top_eq_map, Ne, Submodule.restrictScalars_eq_top_iff]
+
+/-- **A finite Zariski cover is faithfully flat.** If finitely many elements `f i` generate the
+unit ideal of `R`, the ring homomorphism `R →+* ∏ i, R[1/f i]` is faithfully flat. -/
+theorem pi_algebraMap_localizationAway {R ι : Type*} [CommRing R] [_root_.Finite ι] (f : ι → R)
+    (hf : Ideal.span (Set.range f) = ⊤) :
+    (RingHom.pi fun i ↦ algebraMap R (Localization.Away (f i))).FaithfullyFlat := by
+  refine pi_of_exists_map_ne_top (fun i ↦ RingHom.flat_algebraMap_iff.2 inferInstance)
+    fun m hm ↦ ?_
+  obtain ⟨i, hi⟩ : ∃ i, f i ∉ m := by
+    by_contra! h
+    exact hm.ne_top (top_le_iff.1 (hf ▸ Ideal.span_le.2 (Set.range_subset_iff.2 h)))
+  have := hm.isPrime
+  exact ⟨i, (IsLocalization.map_algebraMap_ne_top_iff_disjoint (Submonoid.powers (f i))
+    (Localization.Away (f i)) m).2
+    ((Ideal.disjoint_powers_iff_notMem_of_isPrime _).2 hi)⟩
 
 end RingHom.FaithfullyFlat
 

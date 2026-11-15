@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Semigroups.Resolvent.PowerBounds
 For a semigroup `S` of growth `(omega, M)` and a bounded operator `B`, the sharp Hille--Yosida
 bound `‖R(lambda, S.generator)‖ ≤ M / (lambda - omega)` makes the perturbation
 `B +ᵥ S.generator` small against the resolvent as soon as `lambda > omega + M ‖B‖`. The Neumann
-perturbation of a resolvent point (`TauCeti.LinearPMap.mem_resolventSet_vadd`) then puts every
+perturbation of a resolvent point (`ContinuousLinearMap.mem_resolventSet_vadd`) then puts every
 such `lambda` in the resolvent set of the perturbed generator, with
 `‖R(lambda, B + S.generator)‖ ≤ M / (lambda - omega - M ‖B‖)`.
 
@@ -53,7 +53,7 @@ theorem mem_resolventSet_generator_vadd (S : StronglyContinuousSemigroup X)
   have hM : 0 < M := lt_of_lt_of_le zero_lt_one hb.one_le
   have hMB : 0 ≤ M * ‖B‖ := mul_nonneg hM.le (norm_nonneg B)
   have homega : omega < lambda := by linarith
-  refine LinearPMap.mem_resolventSet_vadd B (S.Ioi_subset_resolventSet_generator hb homega)
+  refine B.mem_resolventSet_vadd (S.Ioi_subset_resolventSet_generator hb homega)
     (r := M / (lambda - omega)) (by simpa using S.norm_generator_resolvent_pow_le hb homega 1) ?_
   rw [mul_div_assoc', div_lt_one (by linarith)]
   nlinarith
@@ -72,11 +72,10 @@ theorem norm_resolvent_generator_vadd_le (S : StronglyContinuousSemigroup X)
   have hsmall : ‖B‖ * (M / (lambda - omega)) < 1 := by
     rw [mul_div_assoc', div_lt_one hpos]
     nlinarith
-  refine (LinearPMap.norm_resolvent_vadd_le B (S.Ioi_subset_resolventSet_generator hb homega)
+  refine (B.norm_resolvent_vadd_le (S.Ioi_subset_resolventSet_generator hb homega)
     (r := M / (lambda - omega)) (by simpa using S.norm_generator_resolvent_pow_le hb homega 1)
     hsmall).trans_eq ?_
   have hne : lambda - omega ≠ 0 := ne_of_gt hpos
-  have hden : (1 : ℝ) - ‖B‖ * (M / (lambda - omega)) ≠ 0 := ne_of_gt (by linarith)
   have hd : lambda - omega - M * ‖B‖ ≠ 0 := ne_of_gt (by linarith)
   field_simp
 

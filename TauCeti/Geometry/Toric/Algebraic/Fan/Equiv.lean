@@ -217,6 +217,14 @@ theorem coneEquiv_apply_coe (e : FanEquiv Φ Ψ) (σ : Φ.cones) :
       PointedCone.map (e.realEquiv : V →ₗ[ℝ] V') σ.1 :=
   e.coneMap_coe σ
 
+/-- The induced cone equivalence preserves the dimension of each cone's linear span. -/
+@[simp]
+theorem finrank_span_coneEquiv (e : FanEquiv Φ Ψ) (σ : Φ.cones) :
+    Module.finrank ℝ (Submodule.span ℝ (e.coneEquiv σ : Set V')) =
+      Module.finrank ℝ (Submodule.span ℝ (σ.1 : Set V)) := by
+  rw [e.coneEquiv_apply_coe, PointedCone.coe_map, Submodule.span_image,
+    e.realEquiv.finrank_map_eq]
+
 /-- The inverse induced cone equivalence is the cone equivalence of the inverse fan
 equivalence. -/
 @[simp]

@@ -1,0 +1,331 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
+-/
+module
+
+public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
+public import Mathlib.Analysis.Calculus.FDeriv.Add
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Analysis.Calculus.FDeriv.Pi
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Comp
+
+/-!
+# Derivatives of continuous-linear-map applications
+
+This file records a zero-value rule for differentiating the pointwise application of a varying
+continuous linear map. At a zero of the vector-valued argument, the variation of the operator
+contributes nothing to the derivative, so the operator-valued map need only be continuous. It also
+records the derivative of the pairing `(x, φ) ↦ φ x` of a space with its continuous linear maps
+(in particular with its continuous dual), the derivative of the application of a varying continuous
+linear map to a fixed vector (or of a varying bilinear map to two fixed vectors, together with the
+second derivative of the latter), the product rule
+for a varying bilinear map applied to two varying vectors, and the fact that the derivative of a
+field of symmetric bilinear maps takes symmetric values. A continuous linear map vanishing on a
+function near a point vanishes on its derivative there. Finally, a family of continuous linear maps
+out of a finite-dimensional space is differentiable, or has a given derivative in a scalar variable,
+within a set or at a point, exactly when each of its evaluations does; this is how derivatives of
+families of linear and bilinear maps are tested on vectors. Composing a family of continuous linear
+maps on the left with a fixed one composes its derivative with that map. An injective operator
+also recovers a vanishing vector derivative when the position derivative and the derivative of
+the corresponding affine expression vanish.
+
+## Main declarations
+
+* `HasFDerivWithinAt.clm_apply_of_eq_zero`: the derivative of `y ↦ c y (u y)` at a zero of
+  `u`, assuming only continuity of `c`.
+* `TauCeti.fderiv_clm_apply_const_apply`: the derivative of `y ↦ c y v` in the direction `w` is
+  `Dc(w) v`; `TauCeti.fderiv_clm_apply_const_apply₂` is the form for fields of bilinear maps,
+  and `TauCeti.fderiv_fderiv_clm_apply_const_apply₂` is its second-derivative analogue.
+* `TauCeti.hasFDerivAt_pairing`: the derivative of the evaluation pairing `(x, φ) ↦ φ x` of a
+  space with its continuous linear maps, in particular with its continuous dual.
+* `TauCeti.fderiv_bilin_apply`: the product rule for `y ↦ c y (A y) (B y)`.
+* `TauCeti.fderiv_apply_apply_comm`: the derivative of a field of bilinear maps that is symmetric
+  near a point takes symmetric values there.
+* `TauCeti.clm_apply_fderiv_eq_zero`: a continuous linear map that vanishes on `g` near a point
+  vanishes on the derivative of `g` there.
+* `TauCeti.differentiableWithinAt_clm_apply`: a family of continuous linear maps out of a
+  finite-dimensional space is differentiable within a set exactly when each evaluation is;
+  `TauCeti.differentiableAt_clm_apply` is the pointwise form.
+* `TauCeti.hasDerivWithinAt_clm_apply`: such a family of a scalar variable has derivative `c'`
+  within a set, at a point of unique differentiability, exactly when each evaluation at `v` has
+  derivative `c' v`; `TauCeti.hasDerivAt_clm_apply` is the pointwise form.
+* `TauCeti.differentiableWithinAt_clm_apply₂`, `TauCeti.hasDerivWithinAt_clm_apply₂` and their
+  pointwise forms: the same criteria for families of bilinear maps, tested on pairs of vectors.
+* `HasDerivAt.const_clm_comp`: composing a family of continuous linear maps on the left with a
+  fixed continuous linear map composes its derivative with that map.
+* `TauCeti.deriv_eq_zero_of_injective_of_deriv_clm_apply_add_eq_zero`: recover a zero
+  derivative through an injective operator when its parameter derivative vanishes.
+* `TauCeti.deriv_eq_zero_of_injective_of_deriv_clm_apply_eq_zero`: the unshifted case.
+
+## References
+
+* J. Morgan and G. Tian, *Ricci Flow and the Poincaré Conjecture*, Proposition 6.30.
+* https://github.com/frenzymath/lean-eval-submissions
+* https://github.com/frenzymath/PoincareConjecture
+-/
+
+public section
+
+open Asymptotics Filter Set
+open scoped Topology
+
+variable {𝕜 E F G F' : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+
+namespace TauCeti
+
+/-- At a zero of `u`, the variation of `c` is multiplied by `u y = O(y - z)`, so it contributes
+nothing to the derivative. -/
+theorem _root_.HasFDerivWithinAt.clm_apply_of_eq_zero {c : E → F →L[𝕜] F'} {u : E → F}
+    {u' : E →L[𝕜] F} {s : Set E} {z : E}
+    (hc : ContinuousWithinAt c s z) (hu : HasFDerivWithinAt u u' s z) (hu0 : u z = 0) :
+    HasFDerivWithinAt (fun y ↦ c y (u y)) ((c z).comp u') s z := by
+  have hrem : HasFDerivWithinAt (fun y ↦ (c y - c z) (u y)) (0 : E →L[𝕜] F') s z := by
+    refine .of_isLittleO ?_
+    simp only [hu0, map_zero, sub_self, sub_zero, zero_apply]
+    refine (isBoundedBilinearMap_apply (𝕜 := 𝕜) (E := F) (F := F')).isBigO_comp.trans_isLittleO ?_
+    have hc' : (fun y ↦ ‖c y - c z‖) =o[𝓝[s] z] (fun _ ↦ (1 : ℝ)) :=
+      ((isLittleO_one_iff ℝ).2 (tendsto_sub_nhds_zero_iff.2 hc)).norm_left
+    have hu' : (fun y ↦ ‖u y‖) =O[𝓝[s] z] (fun y ↦ ‖y - z‖) := by
+      simpa only [hu0, sub_zero] using hu.isBigO_sub.norm_norm
+    exact isLittleO_norm_right.1 (by simpa only [one_mul] using hc'.mul_isBigO hu')
+  convert ((c z).hasFDerivAt.comp_hasFDerivWithinAt z hu).add hrem using 1
+  · funext y
+    simp
+  · simp
+
+/-- The derivative of the evaluation pairing `(x, φ) ↦ φ x` between a space and its continuous
+linear maps into `F` at `(x, φ)` is `(δx, δφ) ↦ φ δx + δφ x`. For `F = 𝕜` this is the pairing of a
+space with its continuous dual. -/
+theorem hasFDerivAt_pairing (z : E × (E →L[𝕜] F)) :
+    HasFDerivAt (fun z : E × (E →L[𝕜] F) ↦ z.2 z.1)
+      (z.2.comp (ContinuousLinearMap.fst 𝕜 E (E →L[𝕜] F)) +
+        (ContinuousLinearMap.apply 𝕜 F z.1).comp
+          (ContinuousLinearMap.snd 𝕜 E (E →L[𝕜] F))) z :=
+  (hasFDerivAt_snd.clm_apply hasFDerivAt_fst).congr_fderiv
+    (ContinuousLinearMap.ext fun u ↦ by simp)
+
+/-- Differentiating `y ↦ c y v` for a fixed vector `v` in the direction `w` gives the derivative
+of `c` in the direction `w`, applied to `v`. -/
+theorem fderiv_clm_apply_const_apply {c : E → F →L[𝕜] F'} {x : E} (hc : DifferentiableAt 𝕜 c x)
+    (v : F) (w : E) :
+    fderiv 𝕜 (fun y ↦ c y v) x w = fderiv 𝕜 c x w v := by
+  rw [fderiv_clm_apply hc (differentiableAt_const v)]
+  simp
+
+/-- Differentiating `y ↦ c y v w` for a field `c` of bilinear maps and fixed vectors `v` and `w`
+in the direction `u` gives the derivative of `c` in the direction `u`, applied to `v` and `w`. -/
+theorem fderiv_clm_apply_const_apply₂ {c : E → F →L[𝕜] F' →L[𝕜] G} {x : E}
+    (hc : DifferentiableAt 𝕜 c x) (v : F) (w : F') (u : E) :
+    fderiv 𝕜 (fun y ↦ c y v w) x u = fderiv 𝕜 c x u v w := by
+  rw [fderiv_clm_apply_const_apply (hc.clm_apply (differentiableAt_const v)),
+    fderiv_clm_apply_const_apply hc]
+
+/-- The second derivative of `y ↦ c y v w`, for a field `c` of bilinear maps and fixed vectors `v`
+and `w`, is the second derivative of `c` applied to `v` and `w`. -/
+theorem fderiv_fderiv_clm_apply_const_apply₂ {c : E → F →L[𝕜] F' →L[𝕜] G} {x : E}
+    (hc : ∀ᶠ y in 𝓝 x, DifferentiableAt 𝕜 c y) (hdc : DifferentiableAt 𝕜 (fderiv 𝕜 c) x)
+    (v : F) (w : F') (a b : E) :
+    fderiv 𝕜 (fderiv 𝕜 fun y ↦ c y v w) x a b = fderiv 𝕜 (fderiv 𝕜 c) x a b v w := by
+  -- Near `x`, the derivative of `y ↦ c y v w` is the derivative of `c` followed by the fixed
+  -- continuous linear evaluation at `v` and `w`.
+  let L := (ContinuousLinearMap.apply 𝕜 G w).comp (ContinuousLinearMap.apply 𝕜 (F' →L[𝕜] G) v)
+  have heq : fderiv 𝕜 (fun y ↦ c y v w) =ᶠ[𝓝 x] fun y ↦ L.comp (fderiv 𝕜 c y) :=
+    hc.mono fun y hy ↦ ContinuousLinearMap.ext fun u ↦ fderiv_clm_apply_const_apply₂ hy v w u
+  -- Naming `c` and `d` avoids a unification failure on the nested operator spaces.
+  have hL := HasFDerivAt.clm_comp (c := fun _ ↦ L) (d := fderiv 𝕜 c)
+    (hasFDerivAt_const L x) hdc.hasFDerivAt
+  rw [heq.fderiv_eq, hL.fderiv]
+  simp [L]
+
+/-- The derivative of `y ↦ c y (A y) (B y)` for a field `c` of bilinear maps: the product rule. -/
+theorem fderiv_bilin_apply {c : E → F →L[𝕜] G →L[𝕜] F'} {A : E → F} {B : E → G} {x : E}
+    (hc : DifferentiableAt 𝕜 c x) (hA : DifferentiableAt 𝕜 A x) (hB : DifferentiableAt 𝕜 B x)
+    (u : E) :
+    fderiv 𝕜 (fun y ↦ c y (A y) (B y)) x u =
+      fderiv 𝕜 c x u (A x) (B x) + c x (fderiv 𝕜 A x u) (B x) + c x (A x) (fderiv 𝕜 B x u) := by
+  rw [((hc.hasFDerivAt.clm_apply hA.hasFDerivAt).clm_apply hB.hasFDerivAt).fderiv]
+  simp only [add_apply, ContinuousLinearMap.coe_comp, Function.comp_apply,
+    ContinuousLinearMap.flip_apply]
+  abel
+
+/-- If a field `c` of bilinear maps takes symmetric values near `x`, then so does each directional
+derivative of `c` at `x`. -/
+theorem fderiv_apply_apply_comm {c : E → F →L[𝕜] F →L[𝕜] G} {x : E}
+    (hc : ∀ᶠ y in 𝓝 x, ∀ v w, c y v w = c y w v) (u : E) (v w : F) :
+    fderiv 𝕜 c x u v w = fderiv 𝕜 c x u w v := by
+  by_cases hd : DifferentiableAt 𝕜 c x
+  · -- Both sides are derivatives of functions of `y` which agree near `x`.
+    have heq : (fun y ↦ c y v w) =ᶠ[𝓝 x] fun y ↦ c y w v := hc.mono fun y hy ↦ hy v w
+    rw [← fderiv_clm_apply_const_apply₂ hd, ← fderiv_clm_apply_const_apply₂ hd, heq.fderiv_eq]
+  · simp [fderiv_zero_of_not_differentiableAt hd]
+
+/-- If a continuous linear map `L` vanishes on `g` near `x`, then `L` vanishes on every directional
+derivative of `g` at `x`. -/
+theorem clm_apply_fderiv_eq_zero {L : F →L[𝕜] G} {g : E → F} {x : E}
+    (hL : ∀ᶠ y in 𝓝 x, L (g y) = 0) (w : E) : L (fderiv 𝕜 g x w) = 0 := by
+  by_cases hg : DifferentiableAt 𝕜 g x
+  · have hc := L.hasFDerivAt.comp x hg.hasFDerivAt
+    simpa using congrArg (· w) (hc.unique ((hasFDerivAt_const 0 x).congr_of_eventuallyEq hL))
+  · simp [fderiv_zero_of_not_differentiableAt hg]
+
+/-- A family of continuous linear maps out of a finite-dimensional space is differentiable within
+a set exactly when its evaluation at each fixed vector is differentiable within that set. -/
+theorem differentiableWithinAt_clm_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    {c : E → F →L[𝕜] G} {s : Set E} {x : E} :
+    DifferentiableWithinAt 𝕜 c s x ↔ ∀ v, DifferentiableWithinAt 𝕜 (fun y ↦ c y v) s x := by
+  refine ⟨fun h v ↦ h.clm_apply (differentiableWithinAt_const v), fun h ↦ ?_⟩
+  -- Read `c` through the evaluations at the vectors of a basis of `F`, as in the proof of
+  -- Mathlib's `contDiffWithinAt_clm_apply`.
+  let d := Module.finrank 𝕜 F
+  have hd : d = Module.finrank 𝕜 (Fin d → 𝕜) := (Module.finrank_fin_fun 𝕜).symm
+  let e₁ := ContinuousLinearEquiv.ofFinrankEq hd
+  let e₂ := (e₁.arrowCongr (1 : G ≃L[𝕜] G)).trans (ContinuousLinearEquiv.piRing (Fin d))
+  have he : DifferentiableWithinAt 𝕜 (fun y ↦ e₂ (c y)) s x :=
+    differentiableWithinAt_pi.mpr fun _ ↦ h _
+  simpa [Function.comp_def] using e₂.symm.differentiableAt.comp_differentiableWithinAt x he
+
+/-- A family of continuous linear maps out of a finite-dimensional space is differentiable
+exactly when its evaluation at each fixed vector is differentiable. -/
+theorem differentiableAt_clm_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    {c : E → F →L[𝕜] G} {x : E} :
+    DifferentiableAt 𝕜 c x ↔ ∀ v, DifferentiableAt 𝕜 (fun y ↦ c y v) x := by
+  simpa only [differentiableWithinAt_univ] using
+    differentiableWithinAt_clm_apply (c := c) (s := univ) (x := x)
+
+/-- A family of continuous linear maps out of a finite-dimensional space, depending on a scalar,
+has derivative `c'` within a set at a point of unique differentiability exactly when its
+evaluation at each fixed vector `v` has derivative `c' v` within that set. -/
+theorem hasDerivWithinAt_clm_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    {c : 𝕜 → F →L[𝕜] G} {c' : F →L[𝕜] G} {s : Set 𝕜} {t : 𝕜} (hs : UniqueDiffWithinAt 𝕜 s t) :
+    HasDerivWithinAt c c' s t ↔ ∀ v, HasDerivWithinAt (fun r ↦ c r v) (c' v) s t := by
+  refine ⟨fun h v ↦ by simpa using h.clm_apply (hasDerivWithinAt_const t s v), fun h ↦ ?_⟩
+  have hd := (differentiableWithinAt_clm_apply.mpr fun v ↦
+    (h v).differentiableWithinAt).hasDerivWithinAt
+  convert hd using 1
+  ext v
+  exact hs.eq_deriv s (h v) (by simpa using hd.clm_apply (hasDerivWithinAt_const t s v))
+
+/-- A family of continuous linear maps out of a finite-dimensional space, depending on a scalar,
+has derivative `c'` exactly when its evaluation at each fixed vector `v` has derivative `c' v`. -/
+theorem hasDerivAt_clm_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] {c : 𝕜 → F →L[𝕜] G}
+    {c' : F →L[𝕜] G} {t : 𝕜} :
+    HasDerivAt c c' t ↔ ∀ v, HasDerivAt (fun s ↦ c s v) (c' v) t := by
+  simpa only [hasDerivWithinAt_univ] using
+    hasDerivWithinAt_clm_apply (c := c) (c' := c') uniqueDiffWithinAt_univ
+
+/-- A family of continuous bilinear maps on finite-dimensional spaces is differentiable within a
+set exactly when its evaluation at each fixed pair of vectors is differentiable within that set. -/
+theorem differentiableWithinAt_clm_apply₂ [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    [FiniteDimensional 𝕜 F'] {c : E → F →L[𝕜] F' →L[𝕜] G} {s : Set E} {x : E} :
+    DifferentiableWithinAt 𝕜 c s x ↔ ∀ v w, DifferentiableWithinAt 𝕜 (fun y ↦ c y v w) s x :=
+  differentiableWithinAt_clm_apply.trans
+    (forall_congr' fun _ ↦ differentiableWithinAt_clm_apply)
+
+/-- A family of continuous bilinear maps on finite-dimensional spaces is differentiable exactly
+when its evaluation at each fixed pair of vectors is differentiable. -/
+theorem differentiableAt_clm_apply₂ [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    [FiniteDimensional 𝕜 F'] {c : E → F →L[𝕜] F' →L[𝕜] G} {x : E} :
+    DifferentiableAt 𝕜 c x ↔ ∀ v w, DifferentiableAt 𝕜 (fun y ↦ c y v w) x :=
+  differentiableAt_clm_apply.trans (forall_congr' fun _ ↦ differentiableAt_clm_apply)
+
+/-- A family of continuous bilinear maps on finite-dimensional spaces, depending on a scalar, has
+derivative `c'` within a set at a point of unique differentiability exactly when its evaluation
+at each fixed pair `(v, w)` has derivative `c' v w` within that set. -/
+theorem hasDerivWithinAt_clm_apply₂ [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    [FiniteDimensional 𝕜 F'] {c : 𝕜 → F →L[𝕜] F' →L[𝕜] G} {c' : F →L[𝕜] F' →L[𝕜] G}
+    {s : Set 𝕜} {t : 𝕜} (hs : UniqueDiffWithinAt 𝕜 s t) :
+    HasDerivWithinAt c c' s t ↔ ∀ v w, HasDerivWithinAt (fun r ↦ c r v w) (c' v w) s t :=
+  (hasDerivWithinAt_clm_apply hs).trans (forall_congr' fun _ ↦ hasDerivWithinAt_clm_apply hs)
+
+/-- A family of continuous bilinear maps on finite-dimensional spaces, depending on a scalar, has
+derivative `c'` exactly when its evaluation at each fixed pair `(v, w)` has derivative
+`c' v w`. -/
+theorem hasDerivAt_clm_apply₂ [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    [FiniteDimensional 𝕜 F'] {c : 𝕜 → F →L[𝕜] F' →L[𝕜] G} {c' : F →L[𝕜] F' →L[𝕜] G} {t : 𝕜} :
+    HasDerivAt c c' t ↔ ∀ v w, HasDerivAt (fun s ↦ c s v w) (c' v w) t :=
+  hasDerivAt_clm_apply.trans (forall_congr' fun _ ↦ hasDerivAt_clm_apply)
+
+/-- Composing a family of continuous linear maps on the left with a fixed continuous linear map
+`g` composes its derivative with `g`: the derivative form of `Continuous.const_clm_comp`. -/
+theorem _root_.HasDerivAt.const_clm_comp {c : 𝕜 → E →L[𝕜] F} {c' : E →L[𝕜] F} {t : 𝕜}
+    (hc : HasDerivAt c c' t) (g : F →L[𝕜] G) :
+    HasDerivAt (fun s ↦ g.comp (c s)) (g.comp c') t := by
+  simpa using (hasDerivAt_const t g).clm_comp hc
+
+variable {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+
+/-- If the position derivative and the derivative of the affine expression
+`G (a ·) (ξ ·) + P (a ·)` vanish, injectivity of `G (a t)` forces `deriv ξ t = 0`.
+The position `a` and vector `ξ` may take values in different normed spaces. -/
+theorem deriv_eq_zero_of_injective_of_deriv_clm_apply_add_eq_zero
+    {a : 𝕜 → F} {ξ : 𝕜 → E} {G : F → E →L[𝕜] H}
+    {P : F → H} {t : 𝕜}
+    (ha : DifferentiableAt 𝕜 a t) (hξ : DifferentiableAt 𝕜 ξ t)
+    (hG : DifferentiableAt 𝕜 G (a t)) (hP : DifferentiableAt 𝕜 P (a t))
+    (hGinj : Function.Injective (G (a t))) (ha0 : deriv a t = 0)
+    (hzero : deriv (fun r ↦ G (a r) (ξ r) + P (a r)) t = 0) : deriv ξ t = 0 := by
+  have hGa : HasDerivAt (fun r ↦ G (a r)) 0 t := by
+    have h : HasDerivAt (fun r ↦ G (a r)) (fderiv 𝕜 G (a t) (deriv a t)) t :=
+      HasFDerivAt.comp_hasDerivAt (𝕜 := 𝕜) (F := F)
+        (E := E →L[𝕜] H) (l := G) t hG.hasFDerivAt ha.hasDerivAt
+    simpa only [ha0, map_zero] using h
+  have hPa : HasDerivAt (fun r ↦ P (a r)) 0 t := by
+    have h : HasDerivAt (fun r ↦ P (a r)) (fderiv 𝕜 P (a t) (deriv a t)) t :=
+      HasFDerivAt.comp_hasDerivAt (𝕜 := 𝕜) (F := F)
+        (E := H) (l := P) t hP.hasFDerivAt ha.hasDerivAt
+    simpa only [ha0, map_zero] using h
+  have hRP : HasDerivAt (fun r ↦ G (a r) (ξ r) + P (a r))
+      (G (a t) (deriv ξ t)) t := by
+    simpa only [zero_apply, zero_add, add_zero] using
+      (hGa.clm_apply hξ.hasDerivAt).fun_add hPa
+  apply hGinj
+  rw [map_zero, ← hRP.deriv, hzero]
+
+/-- The unshifted version for `G (a ·) (ξ ·)`, assuming `G (a t)` is injective. -/
+theorem deriv_eq_zero_of_injective_of_deriv_clm_apply_eq_zero
+    {a : 𝕜 → F} {ξ : 𝕜 → E} {G : F → E →L[𝕜] H} {t : 𝕜}
+    (ha : DifferentiableAt 𝕜 a t) (hξ : DifferentiableAt 𝕜 ξ t)
+    (hG : DifferentiableAt 𝕜 G (a t)) (hGinj : Function.Injective (G (a t)))
+    (ha0 : deriv a t = 0) (hzero : deriv (fun r ↦ G (a r) (ξ r)) t = 0) :
+    deriv ξ t = 0 := by
+  apply deriv_eq_zero_of_injective_of_deriv_clm_apply_add_eq_zero
+    (P := fun _ ↦ 0) ha hξ hG (differentiableAt_const _) hGinj ha0
+  simpa only [add_zero] using hzero
+
+section Real
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- Positive diagonal values of `G (a t)` suffice to recover the zero vector derivative
+from the zero derivative of the affine expression `G (a ·) (ξ ·) + P (a ·)`. -/
+theorem deriv_eq_zero_of_apply_self_pos_of_deriv_clm_apply_add_eq_zero
+    {a : ℝ → F} {ξ : ℝ → E} {G : F → E →L[ℝ] E →L[ℝ] ℝ}
+    {P : F → E →L[ℝ] ℝ} {t : ℝ}
+    (ha : DifferentiableAt ℝ a t) (hξ : DifferentiableAt ℝ ξ t)
+    (hG : DifferentiableAt ℝ G (a t)) (hP : DifferentiableAt ℝ P (a t))
+    (hpos : ∀ v : E, v ≠ 0 → 0 < G (a t) v v) (ha0 : deriv a t = 0)
+    (hzero : deriv (fun r ↦ G (a r) (ξ r) + P (a r)) t = 0) : deriv ξ t = 0 := by
+  apply deriv_eq_zero_of_injective_of_deriv_clm_apply_add_eq_zero ha hξ hG hP ?_ ha0 hzero
+  apply (injective_iff_map_eq_zero (G (a t))).mpr
+  intro v hv
+  by_contra hne
+  have hv' : G (a t) v = 0 := hv
+  exact (hpos v hne).ne' (by simp only [hv', zero_apply])
+
+end Real
+
+end TauCeti
+
+end

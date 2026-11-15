@@ -12,17 +12,19 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.RootSpace
 /-!
 # Adjoint root spaces of the general linear group
 
-For `GL_n` over a field, restrict the adjoint representation to its diagonal split torus.  The
-matrix unit `E_ij` is a weight vector of character `e_i - e_j`: conjugation by
+For `GL_n` over a commutative ring, restrict the adjoint representation to its diagonal split
+torus. The matrix unit `E_ij` is a weight vector of character `e_i - e_j`: conjugation by
 `diag(t_0, ..., t_{n-1})` multiplies it by `t_i t_j⁻¹`.  This file turns the pointwise matrix
 calculation in `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Adjoint.Basic` into membership in the
 actual comodule weight space `Derivation.adjointWeightSpace`.
 
 The character is written multiplicatively because the coordinate algebra of the split torus is
 the group algebra on `Multiplicative (ULift (Fin n) →₀ ℤ)`.  Off the diagonal it is nontrivial,
-so every ordered pair `i ≠ j` gives an element of
+so over a nontrivial base ring every ordered pair `i ≠ j` gives an element of
 `Derivation.nontrivialAdjointWeights`.  On the diagonal the matrix units have trivial weight,
 identifying the diagonal tangent directions as torus-fixed vectors.
+Geometric scalar extension preserves all these normalized matrix-unit tangent vectors,
+including their scalar parameters.
 
 ## Main declarations
 
@@ -33,16 +35,15 @@ identifying the diagonal tangent directions as torus-fixed vectors.
 * `TauCeti.GeneralLinear.matrixUnitTangent_mem_adjointWeightSpace`: `E_ij` has weight
   `e_i - e_j` under the diagonal torus.
 * `TauCeti.GeneralLinear.matrixUnitWeight_mem_nontrivialAdjointWeights`: every off-diagonal
-  character `e_i - e_j` is a root read from the adjoint representation.
+  character `e_i - e_j` is a root read from the adjoint representation over a nontrivial base ring.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §21.1.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), §26.3.
 
-This is the first worked root calculation for Layer 7, "Root datum of `(G,T)`", of the
-ReductiveGroups roadmap.  It connects the diagonal torus of `GL_n` to the abstract adjoint
-weight-space API from which the root set of a split pair is read.
+This connects the diagonal torus of `GL_n` to the abstract adjoint weight-space API from which the
+root set of a split pair is read.
 -/
 
 public section
@@ -55,7 +56,7 @@ universe u
 
 noncomputable section
 
-variable {k : Type u} [Field k] {n : ℕ}
+variable {k : Type u} [CommRing k] {n : ℕ}
 
 /-- The diagonal-torus weight `e_i - e_j` of the matrix unit `E_ij`, written as an element of
 the multiplicative character group of the rank-`n` split torus. -/
@@ -107,7 +108,7 @@ theorem matrixUnitWeight_ne_one {i j : Fin n} (hij : i ≠ j) :
 
 /-- Off the diagonal, the character `e_i - e_j` determines the ordered pair `(i, j)`.  This
 follows in the torsion-free character lattice `ULift (Fin n) →₀ ℤ`, independently of the base
-field. -/
+ring. -/
 @[simp]
 theorem matrixUnitWeight_eq_matrixUnitWeight_iff {i j : Fin n} (hij : i ≠ j) (a b : Fin n) :
     (matrixUnitWeight a b : Multiplicative (ULift.{u} (Fin n) →₀ ℤ)) =
@@ -191,7 +192,7 @@ private theorem universalPoint_diagonalTorusCoordinateMap :
       (CommAlgCat.of k (MonoidAlgebra k (Multiplicative (ULift.{u} (Fin n) →₀ ℤ))))
       (toConv (AlgHom.id k
         (MonoidAlgebra k (Multiplicative (ULift.{u} (Fin n) →₀ ℤ))))))
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply_apply] at hvalue
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply] at hvalue
   rw [AlgHom.id_apply] at hvalue
   exact hvalue
 
@@ -231,6 +232,20 @@ def matrixUnitTangent (i j : Fin n) :
 theorem cotangentDualMatrixEquiv_matrixUnitTangent (i j : Fin n) :
     cotangentDualMatrixEquiv (matrixUnitTangent (k := k) i j) = Matrix.single i j 1 := by
   exact LinearEquiv.apply_symm_apply _ _
+
+/-- Geometric scalar extension preserves every normalized matrix-unit tangent vector,
+including the diagonal directions, with its scalar parameter. -/
+@[simp↓]
+theorem cotangentDualBaseChangeEquiv_tmul_matrixUnitTangent
+    (R : Type u) (K : Type*) [CommRing R] [CommRing K] [Algebra R K]
+    {n : ℕ} (i j : Fin n) (c : K) :
+    cotangentDualBaseChangeEquiv R K n (c ⊗ₜ[R] matrixUnitTangent (k := R) i j) =
+      c • matrixUnitTangent (k := K) i j := by
+  apply cotangentDualMatrixEquiv.injective
+  rw [cotangentDualMatrixEquiv_cotangentDualBaseChangeEquiv_tmul,
+    cotangentDualMatrixEquiv_matrixUnitTangent, map_smul,
+    cotangentDualMatrixEquiv_matrixUnitTangent]
+  simp only [Matrix.map_single, map_one]
 
 /-- The universal diagonal-torus adjoint action multiplies the `(i, j)` matrix entry by the
 character `e_i - e_j`.  Unlike the matrix-unit specialization below, this formula applies to an
@@ -304,7 +319,7 @@ theorem matrixUnitTangent_mem_trivialAdjointWeightSpace (i : Fin n) :
   simpa using matrixUnitTangent_mem_adjointWeightSpace (k := k) i i
 
 /-- Every matrix-unit tangent vector is nonzero. -/
-theorem matrixUnitTangent_ne_zero (i j : Fin n) :
+theorem matrixUnitTangent_ne_zero [Nontrivial k] (i j : Fin n) :
     matrixUnitTangent (k := k) i j ≠ 0 := by
   intro hzero
   have hmatrix := congrArg (cotangentDualMatrixEquiv (k := k) (n := n)) hzero
@@ -313,7 +328,7 @@ theorem matrixUnitTangent_ne_zero (i j : Fin n) :
 
 /-- Every off-diagonal character `e_i - e_j` occurs as a nontrivial adjoint weight of `GL_n`
 relative to its diagonal torus. -/
-theorem matrixUnitWeight_mem_nontrivialAdjointWeights {i j : Fin n} (hij : i ≠ j) :
+theorem matrixUnitWeight_mem_nontrivialAdjointWeights [Nontrivial k] {i j : Fin n} (hij : i ≠ j) :
     matrixUnitWeight i j ∈
       Derivation.nontrivialAdjointWeights
         (diagonalTorusCoordinateMap (R := k) (N := n)).hom := by

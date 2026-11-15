@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.Transvection.Basic
-public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
+public import TauCeti.LinearAlgebra.QuadraticForm.Transvection.ParameterBaseChange
 
 /-!
 # Base change of Eichler transvections
@@ -14,8 +13,10 @@ public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 An Eichler transvection is defined by a polynomial formula in the quadratic form and its polar
 form. Extending scalars therefore carries the transvection determined by `u` and `w` to the one
 determined by their pure tensors. The corresponding statement for `SO(Q)` follows from this
-identity and the existing base-change homomorphism of special orthogonal groups. These formulas
-let the same transvection be used over a rational quadratic space and at each of its completions.
+identity and the existing base-change homomorphism of special orthogonal groups. The quotient
+parameter map also makes the entire root-subgroup homomorphism commute with scalar extension.
+These formulas let the same transvection be used over a rational quadratic space and at each of
+its completions.
 -/
 
 public section
@@ -67,3 +68,31 @@ theorem specialOrthogonalGroupBaseChange_transvection [Module.Free R M] [Module.
   exact transvection_baseChange (A := A) Q hu huw
 
 end QuadraticMap
+
+namespace TauCeti.QuadraticMap
+
+open _root_.QuadraticMap
+
+variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [Invertible (2 : R)]
+
+/-- Extending scalars of the Eichler root-subgroup homomorphism agrees with extending its
+quotient parameters. This holds over commutative rings, without nondegeneracy. -/
+theorem specialOrthogonalGroupBaseChange_comp_transvectionHom
+    [Module.Free R M] [Module.Finite R M] (Q : QuadraticForm R M) {u : M}
+    (hu : Q u = 0) :
+    (specialOrthogonalGroupBaseChange (A := A) Q).toAdditive.comp (transvectionHom Q hu) =
+      (transvectionHom (Q.baseChange A) (u := 1 ⊗ₜ[R] u)
+        (by simp [QuadraticForm.baseChange_tmul, hu])).comp
+          (transvectionParameterBaseChange (A := A) Q u).toAddMonoidHom := by
+  apply AddMonoidHom.ext
+  intro q
+  induction q using Submodule.Quotient.induction_on with | H w =>
+    have huw : polar Q u (w : M) = 0 := LinearMap.mem_ker.mp w.2
+    apply Additive.toMul.injective
+    simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply,
+      LinearMap.toAddMonoidHom_coe, transvectionParameterBaseChange_mk, toMul_ofMul]
+    rw [toMul_transvectionHom_mk hu huw, specialOrthogonalGroupBaseChange_transvection,
+      toMul_transvectionHom_mk]
+
+end TauCeti.QuadraticMap

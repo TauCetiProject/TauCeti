@@ -27,11 +27,7 @@ noncomputable section
 
 local notation "𝔽₂" => ZMod 2
 
-/-- Local adjoint comodule on the cotangent dual of `GL₂₆`. -/
-local instance : Comodule 𝔽₂ (GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26)
-    f4ShortRootCotangentDual :=
-  Derivation.adjointComodule
-    (R := 𝔽₂) (H := GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26)
+attribute [local instance] f4ShortRootCotangentAdjointComodule
 
 variable {A : Type} [CommRing A] [Algebra 𝔽₂ A]
 

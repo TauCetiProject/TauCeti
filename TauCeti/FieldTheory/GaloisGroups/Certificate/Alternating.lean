@@ -31,27 +31,7 @@ namespace TauCeti
 /-- The discriminant of `X⁵ + 20X - 16` is `32000²`. -/
 theorem discr_X_pow_five_add_twenty_mul_X_sub_sixteen :
     (X ^ 5 + 20 * X - 16 : ℤ[X]).discr = 32000 ^ 2 := by
-  let f : ℤ[X] := X ^ 5 + 20 * X - 16
-  let g : ℤ[X] := X ^ 4 + 4
-  have hf : f.Monic := by dsimp [f]; monicity!
-  have hdeg : f.natDegree = 5 := by dsimp [f]; compute_degree!
-  have hgdeg : g.natDegree = 4 := by dsimp [g]; compute_degree!
-  have hder : f.derivative = C 5 * g := by
-    simp [f, g]
-    ring
-  have hres := resultant_deriv (f := f) (natDegree_pos_iff_degree_pos.mp (by omega))
-  rw [hdeg, hf.leadingCoeff, hder] at hres
-  norm_num at hres
-  -- Removing a multiple of the quartic leaves a linear polynomial in the resultant.
-  have hred : f = C 16 * (X - C 1) + g * X := by simp [f, g]; ring
-  have hresult : f.resultant g 5 4 = 16 ^ 4 * 5 := by
-    rw [hred, resultant_add_mul_left _ _ _ 5 4 (by simp) (by omega)]
-    rw [resultant_add_left_deg _ _ 1 4 4 (by compute_degree!)]
-    rw [resultant_C_mul_left, resultant_X_sub_C_left _ _ _ (by omega)]
-    norm_num [g]
-  rw [resultant_C_mul_right, hresult] at hres
-  norm_num at hres
-  exact hres.symm
+  simpa [sub_eq_add_neg] using discr_X_pow_five_add_C_mul_X_add_C (20 : ℤ) (-16)
 
 end TauCeti
 

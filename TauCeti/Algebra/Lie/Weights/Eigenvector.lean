@@ -12,33 +12,56 @@ public import Mathlib.Algebra.Lie.Weights.Killing
 
 Let `H` be a subalgebra of a Lie algebra `L` acting on a module `M`. A vector `v` on which every
 element of `H` acts by a scalar is a **simultaneous eigenvector**, its eigenvalue being the
-function `chi : H → R` that records those scalars. This file collects two facts about such a vector.
+function `chi : H → R` that records those scalars. This file collects facts about such a vector.
 When `H` is nilpotent, it lies in the generalized weight space of its eigenvalue. And applying to
 it an eigenvector `f` of the adjoint action shifts its eigenvalue by that of `f`, once per
-application; this second fact is one element of `L` at a time, so it needs no subalgebra at all.
+application; this second fact is stated both for the whole subalgebra `H`, as a statement about
+weight spaces, and for one element of `L` at a time, where it needs no subalgebra at all.
 
-Both are stated over a commutative ring; the weight-space result assumes the subalgebra is
-nilpotent. The Cartan subalgebra of a Lie algebra with non-degenerate Killing form, where the
-eigenvalue of `f` is a root, is the case the weight theory uses, and
+Both are stated over a commutative ring; only the generalized-weight-space result,
+`TauCeti.mem_genWeightSpace_of_forall_lie_eq_smul`, assumes the subalgebra is nilpotent. The
+Cartan subalgebra of a Lie algebra with non-degenerate Killing form, where the eigenvalue of `f`
+is a root, is the case the weight theory uses, and
 `TauCeti.lie_pow_toEnd_eq_smul_of_mem_rootSpace` records it.
+
+For an arbitrary family of elements of `L`, the bracket adds simultaneous adjoint eigenvalues.
+Consequently, the sum of the simultaneous eigenspaces with eigenvalues in any additive
+subsemigroup, such as the set of all integral eigenvalues, is closed under the bracket. An
+automorphism whose inverse acts on the family by a coreflection `Hₖ ↦ Hₖ - CMₖᵢ • Hᵢ` carries each
+simultaneous eigenspace into the one of the correspondingly reflected integral eigenvalues.
+
+Dually, a linear functional on which an element acts by a scalar detects weights: over an
+integral domain it can be nonzero on a generalized weight vector only if that scalar is the value
+of the weight. This is how a weight is read off a coordinate of a vector in an explicit model.
 
 ## Main results
 
+* `TauCeti.lie_mem_iInf_eigenspace_ad`: the bracket adds eigenvalues for any family of adjoint
+  operators.
+* `TauCeti.lie_mem_biSup_iInf_eigenspace_ad`: the sum of simultaneous eigenspaces with
+  eigenvalues in an additive subsemigroup is closed under the bracket.
+* `TauCeti.lie_mem_biSup_iInf_eigenspace_ad_intCast`: the same for integral eigenvalues in an
+  additive subsemigroup.
+* `TauCeti.lie_mem_iSup_iInf_eigenspace_ad`: the sum of simultaneous eigenspaces with integral
+  eigenvalues is closed under the bracket.
+* `LieEquiv.apply_mem_iInf_eigenspace_of_symm_apply`: an automorphism whose inverse acts on the
+  family by a coreflection carries simultaneous eigenspaces to those of the reflected eigenvalues.
 * `TauCeti.mem_genWeightSpace_of_forall_lie_eq_smul`: a simultaneous eigenvector of `H` lies in the
   generalized weight space of its eigenvalue, at nilpotency index one.
+* `TauCeti.lie_mem_weightSpace_of_mem_weightSpace`: if `H` acts on `f` by `psi` under the adjoint
+  action, then `f` carries the weight space of `chi` into that of `psi + chi`.
+* `TauCeti.lie_mem_eigenspace_toEnd_add`: for a single `h : L`, an `ad h`-eigenvector of
+  eigenvalue `a` maps an `h`-eigenvector of eigenvalue `b` in a module to one of eigenvalue
+  `a + b`.
 * `TauCeti.lie_pow_toEnd_eq_smul`: for a single `x : L`, applying an `x`-eigenvector `f` of
   eigenvalue `c` to an `x`-eigenvector of eigenvalue `a`, `k` times, gives an `x`-eigenvector of
   eigenvalue `a + k c`.
+* `TauCeti.apply_eq_of_mem_genWeightSpace`: dually, a linear functional on which `x` acts by the
+  scalar `c` and which does not vanish on a generalized weight vector of weight `chi` forces
+  `chi x = c`.
 * `TauCeti.lie_pow_toEnd_eq_smul_of_mem_rootSpace`: the specialization of the shift to a vector of
   the root space of `psi`, which is an adjoint eigenvector of weight `psi` by
   `LieAlgebra.IsKilling.lie_eq_smul_of_mem_rootSpace`.
-
-## References
-
-This is elementary weight-space infrastructure for the highest weight modules of Layer 3 and the
-"integrability relation" milestone of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`: the weight shift is what makes
-a lowered highest weight vector an eigenvector again.
 -/
 
 public section
@@ -48,6 +71,80 @@ namespace TauCeti
 open LieAlgebra LieModule Module
 
 universe u v w
+
+section AdjointFamily
+
+variable {B R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] {H : B → L}
+
+/-- The bracket of a simultaneous eigenvector of the `ad Hᵢ` of eigenvalues `χ` with one of
+eigenvalues `ψ` is a simultaneous eigenvector of eigenvalues `χ + ψ`, by the Leibniz rule. -/
+theorem lie_mem_iInf_eigenspace_ad {χ ψ : B → R} {x y : L}
+    (hx : x ∈ ⨅ i, (ad R L (H i)).eigenspace (χ i))
+    (hy : y ∈ ⨅ i, (ad R L (H i)).eigenspace (ψ i)) :
+    ⁅x, y⁆ ∈ ⨅ i, (ad R L (H i)).eigenspace (χ i + ψ i) := by
+  simp only [Submodule.mem_iInf, Module.End.mem_eigenspace_iff, ad_apply] at hx hy ⊢
+  intro i
+  rw [leibniz_lie, hx i, hy i, smul_lie, lie_smul, add_smul]
+
+/-- For an additive subsemigroup `S` of eigenvalue families, the sum of the simultaneous
+eigenspaces of the `ad Hᵢ` with eigenvalues in `S` is closed under the bracket, since the bracket
+adds eigenvalues. -/
+theorem lie_mem_biSup_iInf_eigenspace_ad {S : AddSubsemigroup (B → R)} {x y : L}
+    (hx : x ∈ ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i))
+    (hy : y ∈ ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i)) :
+    ⁅x, y⁆ ∈ ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i) := by
+  rw [iSup_subtype'] at hx hy ⊢
+  induction hx using Submodule.iSup_induction' with
+  | mem χ x hx =>
+    induction hy using Submodule.iSup_induction' with
+    | mem ψ y hy =>
+      refine Submodule.mem_iSup_of_mem ⟨χ + ψ, add_mem χ.2 ψ.2⟩ ?_
+      simpa only [Pi.add_apply] using lie_mem_iInf_eigenspace_ad hx hy
+    | zero => simp
+    | add y₁ y₂ _ _ h₁ h₂ => rw [lie_add]; exact add_mem h₁ h₂
+  | zero => simp
+  | add x₁ x₂ _ _ h₁ h₂ => rw [add_lie]; exact add_mem h₁ h₂
+
+/-- For an additive subsemigroup `S` of integral eigenvalue families, the sum of the simultaneous
+eigenspaces of the `ad Hᵢ` with eigenvalues in `S` is closed under the bracket. This is
+`TauCeti.lie_mem_biSup_iInf_eigenspace_ad` for the image of `S` under the integer cast. -/
+theorem lie_mem_biSup_iInf_eigenspace_ad_intCast {S : AddSubsemigroup (B → ℤ)} {x y : L}
+    (hx : x ∈ ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i : R))
+    (hy : y ∈ ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i : R)) :
+    ⁅x, y⁆ ∈ ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i : R) := by
+  have hS : ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i : R) =
+      ⨆ χ ∈ S.map (AddMonoidHom.compLeft (Int.castAddHom R) B).toAddHom,
+        ⨅ i, (ad R L (H i)).eigenspace (χ i) := by
+    simp [iSup_and, iSup_comm (ι := B → R)]
+  rw [hS] at hx hy ⊢
+  exact lie_mem_biSup_iInf_eigenspace_ad hx hy
+
+/-- The sum of the simultaneous eigenspaces of the `ad Hᵢ` with integral eigenvalues is closed
+under the bracket, since the bracket adds eigenvalues. -/
+theorem lie_mem_iSup_iInf_eigenspace_ad {x y : L}
+    (hx : x ∈ ⨆ χ : B → ℤ, ⨅ i, (ad R L (H i)).eigenspace (χ i : R))
+    (hy : y ∈ ⨆ χ : B → ℤ, ⨅ i, (ad R L (H i)).eigenspace (χ i : R)) :
+    ⁅x, y⁆ ∈ ⨆ χ : B → ℤ, ⨅ i, (ad R L (H i)).eigenspace (χ i : R) := by
+  simpa using lie_mem_biSup_iInf_eigenspace_ad_intCast (S := ⊤) (by simpa using hx)
+    (by simpa using hy)
+
+/-- An automorphism whose inverse acts on the `Hₖ` by the coreflection `Hₖ ↦ Hₖ - CMₖᵢ • Hᵢ`
+carries the simultaneous eigenspace of the integral eigenvalues `χ` into that of the reflected
+eigenvalues `χ - χᵢ • CM.col i`. -/
+theorem _root_.LieEquiv.apply_mem_iInf_eigenspace_of_symm_apply (τ : L ≃ₗ⁅R⁆ L)
+    {CM : Matrix B B ℤ} {i : B} (hτ : ∀ k, τ.symm (H k) = H k - CM k i • H i) {χ : B → ℤ}
+    {x : L} (hx : x ∈ ⨅ k, (ad R L (H k)).eigenspace (χ k : R)) :
+    τ x ∈ ⨅ k, (ad R L (H k)).eigenspace ((χ - χ i • CM.col i) k : R) := by
+  simp only [Submodule.mem_iInf, Module.End.mem_eigenspace_iff, ad_apply] at hx ⊢
+  intro k
+  have e : CM k i • (χ i : R) • x = ((χ i * CM k i : ℤ) : R) • x := by
+    rw [← Int.cast_smul_eq_zsmul R, smul_smul, Int.cast_mul, mul_comm]
+  calc ⁅H k, τ x⁆ = τ ⁅τ.symm (H k), x⁆ := by rw [LieEquiv.map_lie, LieEquiv.apply_symm_apply]
+    _ = ((χ - χ i • CM.col i) k : R) • τ x := by
+      rw [hτ, sub_lie, zsmul_lie, hx k, hx i, e, ← sub_smul, ← Int.cast_sub, map_smul]
+      simp [Matrix.col_apply]
+
+end AdjointFamily
 
 section CommRing
 
@@ -64,6 +161,28 @@ theorem mem_genWeightSpace_of_forall_lie_eq_smul {chi : H → R} {v : M}
     rw [LieSubalgebra.coe_bracket_of_module]
     exact hv x
 
+/-- **Applying an adjoint eigenvector shifts the weight.** If `H` acts on `f` through `psi` under
+the adjoint action and `v` lies in the weight space of `chi`, then `⁅f, v⁆` lies in the weight space
+of `psi + chi`. -/
+theorem lie_mem_weightSpace_of_mem_weightSpace {f : L} {psi : H → R}
+    (hf : ∀ x : H, ⁅(x : L), f⁆ = psi x • f) {chi : H → R} {v : M}
+    (hv : v ∈ weightSpace M chi) : ⁅f, v⁆ ∈ weightSpace M (psi + chi) := by
+  rw [mem_weightSpace] at hv ⊢
+  intro x
+  have hvx := hv x
+  simp only [LieSubalgebra.coe_bracket_of_module] at hvx ⊢
+  rw [leibniz_lie, hf, hvx, smul_lie, lie_smul, Pi.add_apply, add_smul]
+
+/-- **The bracket adds eigenvalues.** If `x` is an eigenvector of `ad h` of eigenvalue `a` and `v`
+is an eigenvector of `h` acting on a Lie module of eigenvalue `b`, then `⁅x, v⁆` is an eigenvector
+of `h` of eigenvalue `a + b`. -/
+theorem lie_mem_eigenspace_toEnd_add {h x : L} {v : M} {a b : R}
+    (hx : x ∈ (ad R L h).eigenspace a) (hv : v ∈ (toEnd R L M h).eigenspace b) :
+    ⁅x, v⁆ ∈ (toEnd R L M h).eigenspace (a + b) := by
+  rw [Module.End.mem_eigenspace_iff, ad_apply] at hx
+  rw [Module.End.mem_eigenspace_iff, toEnd_apply_apply] at hv ⊢
+  rw [leibniz_lie h x v, hx, hv, smul_lie, lie_smul, add_smul]
+
 /-- **Applying an adjoint eigenvector shifts the eigenvalue.** If `x` acts on `v` by `a` and `f`
 is an eigenvector of `ad x` of eigenvalue `c`, then `x` acts on `fᵏ v` by `a + k c`.
 
@@ -78,13 +197,40 @@ theorem lie_pow_toEnd_eq_smul {x f : L} {a c : R} {v : M} (hv : ⁅x, v⁆ = a �
   | succ k ih =>
       have hstep : ∀ m : M, ((toEnd R L M f) ^ (k + 1)) m = ⁅f, ((toEnd R L M f) ^ k) m⁆ := by
         intro m
-        rw [pow_succ', Module.End.mul_apply, toEnd_apply_apply]
+        rw [pow_succ', mul_apply_eq_comp, toEnd_apply_apply]
       rw [hstep, leibniz_lie, hf, ih, smul_lie, lie_smul, ← add_smul]
       congr 1
       push_cast
       ring
 
 end CommRing
+
+section Domain
+
+variable {R : Type u} {L : Type v} [CommRing R] [IsDomain R] [LieRing L] [LieAlgebra R L]
+  [LieRing.IsNilpotent L] {M : Type w} [AddCommGroup M] [Module R M] [LieRingModule L M]
+  [LieModule R L M]
+
+/-- **A linear functional that is an eigenvector of the dual action reads off a generalized
+weight.** If `φ ⁅x, m⁆ = c * φ m` for every `m` and `v` lies in the generalized weight space of
+`chi`, then `φ v` is killed by a power of `c - chi x`; so `chi x = c` as soon as `φ v ≠ 0`. -/
+theorem apply_eq_of_mem_genWeightSpace {chi : L → R} {v : M} (hv : v ∈ genWeightSpace M chi)
+    (x : L) (φ : M →ₗ[R] R) {c : R} (hφ : ∀ m, φ ⁅x, m⁆ = c * φ m) (hv0 : φ v ≠ 0) :
+    chi x = c := by
+  obtain ⟨k, hk⟩ := (mem_genWeightSpace M chi v).mp hv x
+  have key : ∀ n : ℕ, φ (((toEnd R L M x - chi x • 1) ^ n) v) = (c - chi x) ^ n * φ v := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      rw [pow_succ', mul_apply_eq_comp, LinearMap.sub_apply, map_sub, toEnd_apply_apply, hφ,
+        LinearMap.smul_apply, one_apply_eq_self, map_smul, ih, smul_eq_mul]
+      ring
+  have h0 := key k
+  rw [hk, map_zero, eq_comm, mul_eq_zero] at h0
+  exact (sub_eq_zero.mp (pow_eq_zero_iff'.mp (h0.resolve_right hv0)).1).symm
+
+end Domain
 
 section Killing
 

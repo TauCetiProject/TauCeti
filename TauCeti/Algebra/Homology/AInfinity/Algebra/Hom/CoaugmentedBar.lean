@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Basic
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Strict
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.CoaugmentedBar
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.CoalgHom
 
@@ -14,7 +15,8 @@ public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.CoalgHom
 
 An `A∞` morphism is stored as a map of reduced bar coalgebras. Its coaugmented bar map fixes
 the empty word and acts by the stored map on positive-length words. It is a coalgebra morphism
-which intertwines the coaugmented bar differentials. Identity and composition are preserved.
+which intertwines the coaugmented bar differentials. Identity and composition are preserved, and
+the coaugmented bar map of a strict morphism applies the morphism to every letter.
 These facts let module and bimodule bar constructions use the coaugmented coalgebra without
 changing the notion of `A∞` morphism.
 
@@ -156,5 +158,27 @@ theorem coaugmentedBarCoalgHom_comp (g : AInfinityHom BB CC) (f : AInfinityHom A
   simp
 
 end AInfinityHom
+
+namespace AInfinityStrictHom
+
+variable {R : Type uR} {A : Type uA} {B : Type uB} [CommRing R]
+  [AddCommGroup A] [Module R A] [AddCommGroup B] [Module R B]
+  {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B}
+
+/-- The coaugmented bar map of a strict morphism applies the morphism to every letter. -/
+@[simp]
+theorem coaugmentedBarMap_toAInfinityHom (g : AInfinityStrictHom AA BB) :
+    g.toAInfinityHom.coaugmentedBarMap = TensorWords.map g.toLinearMap := by
+  refine TensorWords.linearMap_ext R A fun n a ↦ ?_
+  rw [TensorWords.map_of_tprod]
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rw [TensorWords.of_tprod_eq_subword, TensorWords.subword_length_zero R a le_rfl,
+      AInfinityHom.coaugmentedBarMap_one, TensorWords.of_tprod_eq_subword,
+      TensorWords.subword_length_zero R _ le_rfl]
+  · rw [← TensorWords.reducedInclusion_of R A ⟨n, hn⟩,
+      AInfinityHom.coaugmentedBarMap_reducedInclusion, barMap_toAInfinityHom, barMap_of_tprod,
+      TensorWords.reducedInclusion_of, coe_toLinearMap]
+
+end AInfinityStrictHom
 
 end TauCeti

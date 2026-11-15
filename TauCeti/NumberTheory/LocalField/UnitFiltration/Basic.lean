@@ -9,6 +9,8 @@ public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.GroupTheory.Index
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.Topology.Algebra.Group.Units
+public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+import Mathlib.Topology.Algebra.Group.Pointwise
 
 /-!
 # The unit filtration of a nonarchimedean local field
@@ -49,15 +51,21 @@ action on a finite extension, and its behaviour under a field embedding.
   and `TauCeti.mem_unitFiltration_iff_valuation_sub_one_le`: the valuation form of membership, an
   inequality on `x - 1` measured against a uniformizer. At positive depth the inequality alone
   already forces `x` to be a unit of `𝒪[K]`.
+* `TauCeti.mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one`: for `x ≠ 1` and
+  `i ≠ 0`, membership in `U(K,i)` is the inequality `i ≤ v_K(x - 1)` on the normalized additive
+  valuation.
 * `TauCeti.unitFiltration_zero` and `TauCeti.unitFiltration_one`: the two shallow steps are
   Mathlib's `ValuationSubring.unitGroup` and `ValuationSubring.principalUnitGroup`.
 * `TauCeti.unitFiltrationGradedZeroEquivResidueFieldUnits`: reduction identifies the
   depth-zero graded piece with the multiplicative group of the residue field.
-* `TauCeti.unitFiltration_antitone`: the filtration is decreasing.
+* `TauCeti.unitFiltration_antitone` and `TauCeti.unitFiltration_succ_lt`: the filtration is
+  decreasing, and strictly so from depth one on.
 * `TauCeti.iInf_unitFiltration`: the filtration separates points, `⨅ i, U(K,i) = ⊥`.
 * `TauCeti.isOpen_unitFiltration`, `TauCeti.isCompact_unitFiltration` and
   `TauCeti.hasBasis_nhds_one_unitFiltration`: every `U(K,i)` is an open compact subgroup of
   `Kˣ`, and the family is a neighbourhood basis of `1`; in particular `Kˣ` is Hausdorff.
+* `TauCeti.unitFiltration_le_of_isClosed_of_le_sup`: successive one-step approximations by a
+  closed subgroup imply containment of the entire filtration step.
 
 ## Implementation notes
 
@@ -85,9 +93,6 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
--- Provenance: the declaration sequence follows the human-authored specification in
--- `TauCetiRoadmap/LocalFieldsRamification/Suggested.lean`, and the additive normalization of the
--- valuation is the convention fixed in that directory's `README.md`.
 variable (K) in
 /-- The unit filtration `U(K,i)` of a nonarchimedean local field `K`: the units of `𝒪[K]` that
 are congruent to `1` modulo `𝓂[K] ^ i`, viewed inside `Kˣ`. The depth-zero step is included in
@@ -182,6 +187,21 @@ theorem mem_unitFiltration_iff_valuation_sub_one_le {i : ℕ} (hi : i ≠ 0) {π
     x ∈ unitFiltration K i ↔ valuation K ((x : K) - 1) ≤ valuation K (π : K) ^ i := by
   obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hi
   rw [mem_unitFiltration_succ_valuation j x π hπ, map_pow]
+
+/-- For `x ≠ 1` and a positive depth `i`, membership of `x` in the unit filtration step `U(K,i)`
+is the inequality `i ≤ v_K(x - 1)` on the normalized valuation of `x - 1`. -/
+theorem mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one {i : ℕ} (hi : i ≠ 0)
+    {x : Kˣ} (hx : x ≠ 1) :
+    x ∈ unitFiltration K i ↔
+      (i : ℤ) ≤ WithZero.log (normalizedValuationWithZero K ((x : K) - 1)) := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  have h : (x : K) - 1 ≠ 0 := sub_ne_zero.mpr fun h ↦ hx (Units.ext h)
+  have hϖ := normalizedValuation_irreducible hπ
+  rw [mem_unitFiltration_iff_valuation_sub_one_le hi hπ,
+    ← Units.val_mk0 h, normalizedValuationWithZero_coe,
+    ← ofAdd_toAdd (normalizedValuation K _), ← WithZero.exp_eq_coe_ofAdd, WithZero.log_exp,
+    le_toAdd_normalizedValuation_iff_valuation_le_zpow hϖ]
+  simp
 
 /-- The depth-one step of the unit filtration is Mathlib's principal unit group of the valuation
 subring of `K`. -/
@@ -299,6 +319,27 @@ theorem unitFiltration_antitone : Antitone (unitFiltration K) := by
   obtain ⟨u, hu, hux⟩ := hx
   exact ⟨u, Ideal.pow_le_pow_right hij hu, hux⟩
 
+/-- The unit filtration is strictly decreasing from depth one on: `U(K,i+1) < U(K,i)` for
+`i ≠ 0`, as witnessed by `1 + π ^ i` for a uniformizer `π`. At depth zero the inclusion
+`U(K,1) ≤ U(K,0)` is an equality when the residue field is `𝔽₂`. -/
+theorem unitFiltration_succ_lt {i : ℕ} (hi : i ≠ 0) :
+    unitFiltration K (i + 1) < unitFiltration K i := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
+  have hπ1 : valuation K (π : K) < 1 := Valuation.integer.v_irreducible_lt_one hπ
+  have hπ0 : 0 < valuation K (π : K) := by
+    rw [zero_lt_iff, Valuation.ne_zero_iff, ne_eq, ZeroMemClass.coe_eq_zero]
+    exact hπ.ne_zero
+  have hv : valuation K (1 + (π : K) ^ i) = 1 := (valuation K).map_one_add_of_lt <| by
+    rw [map_pow]
+    exact pow_lt_one₀ zero_le hπ1 hi
+  set x : Kˣ := Units.mk0 (1 + (π : K) ^ i) fun h ↦ by simp [h] at hv
+  have hx : valuation K ((x : K) - 1) = valuation K (π : K) ^ i := by
+    simp [x]
+  refine IsConcreteLE.lt_iff_le_and_exists.2 ⟨unitFiltration_antitone i.le_succ, x, ?_, ?_⟩
+  · rw [mem_unitFiltration_iff_valuation_sub_one_le hi hπ, hx]
+  · rw [mem_unitFiltration_iff_valuation_sub_one_le i.succ_ne_zero hπ, hx, not_le]
+    exact pow_lt_pow_right_of_lt_one₀ hπ0 hπ1 i.lt_succ_self
+
 /-- The unit filtration separates points: an element lying in every step is `1`. -/
 theorem iInf_unitFiltration : ⨅ i, unitFiltration K i = ⊥ := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
@@ -378,6 +419,19 @@ theorem unitsMap_residue_unitFiltrationToIntegerUnits_one (y : unitFiltration K 
   exact (mem_unitFiltration_one_iff_residue_eq_one _).mp
     (by rw [unitsMap_subtype_unitFiltrationToIntegerUnits]; exact y.2)
 
+-- Not a `simp` lemma: `unitFiltrationGradedZeroEquivResidueFieldUnits_mk` rewrites its left-hand
+-- side first.
+/-- On a class represented by `x ∈ U(K,0)`, the depth-zero graded equivalence is the residue of
+`x`, read as an element of `𝒪[K]`. -/
+theorem coe_unitFiltrationGradedZeroEquivResidueFieldUnits_mk (x : unitFiltration K 0) :
+    (unitFiltrationGradedZeroEquivResidueFieldUnits (QuotientGroup.mk x) : 𝓀[K]) =
+      residue 𝒪[K] (unitFiltrationToIntegerUnits 0 x : 𝒪[K]) := by
+  rw [unitFiltrationGradedZeroEquivResidueFieldUnits_mk,
+    ValuationSubring.coe_unitGroupToResidueFieldUnits_apply]
+  -- The valuation subring of `K` is built on `𝒪[K]`, and both residue maps are the quotient by
+  -- the same maximal ideal, so the two sides agree by unfolding.
+  rfl
+
 section Topology
 
 /-- Each step of the unit filtration is a neighbourhood of `1` in `Kˣ`. -/
@@ -453,6 +507,25 @@ theorem hasBasis_nhds_one_unitFiltration :
     exact hγ (((mem_unitFiltration_iff_valuation_le hπ).mp hx).2.trans_lt hi)
   · rintro ⟨i, -, hi⟩
     exact mem_of_superset (unitFiltration_mem_nhds_one i) hi
+
+/-- A closed subgroup containing each `U(K,n)` modulo `U(K,n+1)` for `i ≤ n` contains
+`U(K,i)`. Successive approximation gives containment modulo every deeper step, and the
+unit-filtration neighbourhood basis then gives containment in the subgroup's closure. -/
+theorem unitFiltration_le_of_isClosed_of_le_sup {S : Subgroup Kˣ} {i : ℕ}
+    (hS : IsClosed (S : Set Kˣ))
+    (hstep : ∀ n, i ≤ n → unitFiltration K n ≤ S ⊔ unitFiltration K (n + 1)) :
+    unitFiltration K i ≤ S := by
+  have happrox (n : ℕ) : unitFiltration K i ≤ S ⊔ unitFiltration K (i + n) := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      exact ih.trans <| sup_le le_sup_left (by simpa [Nat.add_assoc] using hstep (i + n) (by omega))
+  intro x hx
+  rw [← SetLike.mem_coe, ← hS.closure_eq,
+    ← hasBasis_nhds_one_unitFiltration.iInter_mul_right_eq_closure, Set.mem_iInter₂]
+  intro n _
+  rw [← Subgroup.mul_normal]
+  exact sup_le_sup_left (unitFiltration_antitone (Nat.le_add_left n i)) _ (happrox n hx)
 
 end Topology
 

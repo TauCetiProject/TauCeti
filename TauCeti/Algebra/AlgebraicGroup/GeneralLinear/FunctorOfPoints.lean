@@ -28,23 +28,40 @@ natural isomorphism from `HopfAlgebra.pointsFunctor` for `coordinateHopfAlgebra`
 of invertible matrices. The construction includes rank zero and zero rings, without a
 nontriviality or positive-rank assumption.
 
+Along a map of value algebras `A → B`, a matrix over `B` comes from a point with values in `A`
+exactly when it is the image of a matrix over `A` whose determinant is a unit of `A`. For the
+valuation ring `O` of a nonarchimedean local field `E`, a diagonal matrix with entries in `O`
+comes from such a point exactly when its entries are units of `O`, so `diag(ϖ, 1)` for a
+uniformizer `ϖ` does not, although its entries are integral and its determinant is nonzero.
+
 ## Main declarations
 
 * `TauCeti.GeneralLinear.pointToGeneralLinear`: the invertible matrix read from a point, with
   `TauCeti.GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear` identifying it with the
   transported generic matrix.
-* `TauCeti.GeneralLinear.generalLinearToPoint`: the point obtained by matrix evaluation.
+* `TauCeti.GeneralLinear.generalLinearToPoint`: the point obtained by matrix evaluation;
+  `TauCeti.GeneralLinear.generalLinearToPoint_one` identifies the identity point.
 * `TauCeti.GeneralLinear.pointsMulEquiv`: the group equivalence between convolution points and
   invertible matrices.
+* `TauCeti.GeneralLinear.pointToGeneralLinear_mapValue` and
+  `TauCeti.GeneralLinear.pointsMulEquiv_mapValue`: the point identification and the bundled
+  equivalence are natural in the value algebra.
+* `TauCeti.GeneralLinear.coe_inv_pointsMulEquiv_apply`: the entries of the inverse matrix of a
+  point are its values on the antipodes of the generic entries.
+* `TauCeti.GeneralLinear.range_coe_pointsMulEquiv_mapValue`: the matrices coming from points with
+  values in `A` are the images of the matrices over `A` with unit determinant.
+* `TauCeti.GeneralLinear.diagonal_mem_range_coe_pointsMulEquiv_mapValue_iff`: along an injective
+  map, a diagonal matrix comes from a point exactly when its entries are units.
 * `TauCeti.GeneralLinear.generalLinearFunctor`: the group-valued functor of invertible matrices.
 * `TauCeti.GeneralLinear.pointsNatIso`: the natural isomorphism between the two functors.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §2.8 and §§3.2--3.6.
+* B. Conrad, *Weil and Grothendieck approaches to adelic points*, Enseign. Math. (2) 58 (2012),
+  Ex. 2.3, p. 3.
 * The Stacks Project, Tags
-  [022W](https://stacks.math.columbia.edu/tag/022W),
-  [022X](https://stacks.math.columbia.edu/tag/022X), and
+  [022W](https://stacks.math.columbia.edu/tag/022W) and
   [00CM](https://stacks.math.columbia.edu/tag/00CM).
 -/
 
@@ -64,33 +81,13 @@ section Pointwise
 
 variable {A : Type w} [CommRing A] [Algebra R A]
 
-/-- The matrix of values of a point on the localized generic matrix. -/
-private noncomputable def matrixOfPoint
-    (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) : Matrix (Fin n) (Fin n) A :=
-  (localizedGenericMatrix R n).map
-    (f.ofConv.comp (coordinateHopfAlgebraAlgEquiv R n).toAlgHom)
-
-/-- An entry of `matrixOfPoint f` is the value of `f` on the corresponding bundled coordinate. -/
-@[simp]
-private theorem matrixOfPoint_apply
-    (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) (i j : Fin n) :
-    matrixOfPoint n f i j =
-      f.ofConv (coordinateHopfAlgebraAlgEquiv R n
-        (coordinateRingMap R n (MvPolynomial.X (i, j)))) := by
-  simp [matrixOfPoint]
-
-private theorem isUnit_det_matrixOfPoint
-    (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
-    IsUnit (Matrix.det (matrixOfPoint n f)) := by
-  rw [matrixOfPoint, ← AlgHom.mapMatrix_apply, ← AlgHom.map_det]
-  exact (isUnit_det_localizedGenericMatrix R n).map
-    (f.ofConv.comp (coordinateHopfAlgebraAlgEquiv R n).toAlgHom)
-
-/-- The invertible matrix obtained by evaluating a point on the localized generic matrix. -/
+/-- The invertible matrix obtained by evaluating a point on the generic matrix. -/
 noncomputable def pointToGeneralLinear
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     Matrix.GeneralLinearGroup (Fin n) A :=
-  Matrix.GeneralLinearGroup.mk'' (matrixOfPoint n f) (isUnit_det_matrixOfPoint n f)
+  Matrix.GeneralLinearGroup.mk'' ((genericMatrix R n).map f.ofConv) <| by
+    rw [← AlgHom.mapMatrix_apply, ← AlgHom.map_det]
+    exact (isUnit_det_genericMatrix R n).map f.ofConv
 
 /-- Reading a point as an invertible matrix evaluates it on the corresponding bundled
 coordinate. -/
@@ -100,7 +97,7 @@ theorem pointToGeneralLinear_apply
     pointToGeneralLinear n f i j =
       f.ofConv (coordinateHopfAlgebraAlgEquiv R n
         (coordinateRingMap R n (MvPolynomial.X (i, j)))) := by
-  exact matrixOfPoint_apply n f i j
+  simp [pointToGeneralLinear]
 
 /-- **The generic matrix transported along an algebra morphism out of the coordinate Hopf algebra
 is the matrix of the point that morphism is.** -/
@@ -116,7 +113,7 @@ theorem map_genericMatrix_eq_coe_pointToGeneralLinear
 /-- Evaluate the polynomial coordinate ring at the entries of an invertible matrix. -/
 private noncomputable def evaluationOfGeneralLinear
     (g : Matrix.GeneralLinearGroup (Fin n) A) :
-    MatrixMonoid.CoordinateRing R n →ₐ[R] A :=
+    MatrixMonoid.CoordinateRing R (Fin n) →ₐ[R] A :=
   MvPolynomial.aeval fun ij : Fin n × Fin n ↦
     g.val ij.1 ij.2
 
@@ -136,7 +133,7 @@ private noncomputable def localizedEvaluationOfGeneralLinear
     (evaluationOfGeneralLinear_determinant_isUnit (R := R) n g)
 
 private theorem localizedEvaluationOfGeneralLinear_coordinateRingMap
-    (g : Matrix.GeneralLinearGroup (Fin n) A) (x : MatrixMonoid.CoordinateRing R n) :
+    (g : Matrix.GeneralLinearGroup (Fin n) A) (x : MatrixMonoid.CoordinateRing R (Fin n)) :
     localizedEvaluationOfGeneralLinear (R := R) n g (coordinateRingMap R n x) =
       evaluationOfGeneralLinear (R := R) n g x := by
   rw [coordinateRingMap_apply]
@@ -161,19 +158,12 @@ private theorem generalLinearToPoint_ofConv
 multivariable polynomial evaluation at the matrix entries. -/
 @[simp]
 theorem generalLinearToPoint_coordinateRingMap
-    (g : Matrix.GeneralLinearGroup (Fin n) A) (x : MatrixMonoid.CoordinateRing R n) :
+    (g : Matrix.GeneralLinearGroup (Fin n) A) (x : MatrixMonoid.CoordinateRing R (Fin n)) :
     (generalLinearToPoint (R := R) n g).ofConv
         (coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n x)) =
       MvPolynomial.aeval (fun ij : Fin n × Fin n ↦ g.val ij.1 ij.2) x := by
-  rw [generalLinearToPoint_ofConv, AlgHom.comp_apply]
-  have heq :
-      (coordinateHopfAlgebraAlgEquiv R n).symm.toAlgHom
-          (coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n x)) =
-        coordinateRingMap R n x :=
-    (coordinateHopfAlgebraAlgEquiv R n).symm_apply_apply _
-  rw [heq]
-  rw [localizedEvaluationOfGeneralLinear_coordinateRingMap]
-  rfl
+  simp [generalLinearToPoint_ofConv, localizedEvaluationOfGeneralLinear_coordinateRingMap,
+    evaluationOfGeneralLinear]
 
 /-- The point obtained from an invertible matrix sends a bundled generic coordinate to the
 corresponding matrix entry. -/
@@ -195,24 +185,24 @@ theorem pointToGeneralLinear_generalLinearToPoint
   intro i j
   rw [pointToGeneralLinear_apply, generalLinearToPoint_apply]
 
+/-- The point attached to an invertible matrix takes the generic determinant to the determinant
+of that matrix. -/
+@[simp]
+theorem generalLinearToPoint_det (g : Matrix.GeneralLinearGroup (Fin n) A) :
+    (generalLinearToPoint (R := R) n g).ofConv (genericMatrix R n).det =
+      (g : Matrix (Fin n) (Fin n) A).det := by
+  rw [AlgHom.map_det, AlgHom.mapMatrix_apply, map_genericMatrix_eq_coe_pointToGeneralLinear,
+    toConv_ofConv, pointToGeneralLinear_generalLinearToPoint]
+
 /-- Forming a point from the invertible matrix read from a point recovers the original point. -/
 @[simp]
 theorem generalLinearToPoint_pointToGeneralLinear
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     generalLinearToPoint (R := R) n (pointToGeneralLinear n f) = f := by
-  have hraw :
-      localizedEvaluationOfGeneralLinear (R := R) n (pointToGeneralLinear n f) =
-        f.ofConv.comp (coordinateHopfAlgebraAlgEquiv R n).toAlgHom := by
-    apply algHom_ext_away R n
-    apply MvPolynomial.algHom_ext
-    rintro ⟨i, j⟩
-    simp only [AlgHom.comp_apply]
-    rw [localizedEvaluationOfGeneralLinear_coordinateRingMap]
-    simp [evaluationOfGeneralLinear]
   apply WithConv.ext
-  rw [generalLinearToPoint_ofConv, hraw]
-  ext x
-  simp
+  apply coordinateHopfAlgebra_algHom_ext R n
+  intro i j
+  rw [generalLinearToPoint_apply, pointToGeneralLinear_apply]
 
 /-- Reading points as invertible matrices carries convolution to ordinary matrix
 multiplication, with the tensor-factor order unchanged. -/
@@ -252,6 +242,45 @@ theorem pointsMulEquiv_symm_apply (g : Matrix.GeneralLinearGroup (Fin n) A) :
     (pointsMulEquiv (R := R) n).symm g = generalLinearToPoint (R := R) n g :=
   (rfl)
 
+/-- The identity matrix defines the identity convolution point. -/
+@[simp]
+theorem generalLinearToPoint_one : generalLinearToPoint (R := R) (A := A) n 1 = 1 := by
+  simpa only [pointsMulEquiv_symm_apply] using (pointsMulEquiv (R := R) (A := A) n).symm.map_one
+
+/-- The identity convolution point is read as the identity matrix. -/
+@[simp]
+theorem pointToGeneralLinear_one :
+    pointToGeneralLinear n (1 : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) = 1 :=
+  map_one (pointsMulEquiv (R := R) (A := A) n)
+
+/-- Reading the inverse of a point as a matrix gives the inverse matrix. -/
+@[simp]
+theorem pointToGeneralLinear_inv (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
+    pointToGeneralLinear n f⁻¹ = (pointToGeneralLinear n f)⁻¹ :=
+  map_inv (pointsMulEquiv (R := R) (A := A) n) f
+
+/-- The point of a product of invertible matrices is the convolution product of the points. -/
+@[simp]
+theorem generalLinearToPoint_mul (g h : Matrix.GeneralLinearGroup (Fin n) A) :
+    generalLinearToPoint (R := R) n (g * h) =
+      generalLinearToPoint (R := R) n g * generalLinearToPoint (R := R) n h :=
+  map_mul (pointsMulEquiv (R := R) (A := A) n).symm g h
+
+/-- The point of an inverse matrix is the convolution inverse of the point. -/
+@[simp]
+theorem generalLinearToPoint_inv (g : Matrix.GeneralLinearGroup (Fin n) A) :
+    generalLinearToPoint (R := R) n g⁻¹ = (generalLinearToPoint (R := R) n g)⁻¹ :=
+  map_inv (pointsMulEquiv (R := R) (A := A) n).symm g
+
+/-- The entries of the invertible matrix of a point inverse are the values of the point on the
+antipodes of the generic entries. -/
+theorem coe_inv_pointsMulEquiv_apply (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A))
+    (i j : Fin n) :
+    (↑(pointsMulEquiv n f)⁻¹ : Matrix (Fin n) (Fin n) A) i j =
+      f.ofConv (HopfAlgebra.antipode R (A := coordinateHopfAlgebra R n)
+        (coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n (MvPolynomial.X (i, j))))) := by
+  rw [← map_inv, pointsMulEquiv_apply, pointToGeneralLinear_apply, ← algHom_inv_apply]
+
 end Pointwise
 
 section Naturality
@@ -268,8 +297,11 @@ theorem pointToGeneralLinear_mapValue (phi : A →ₐ[R] B)
   intro i j
   simp
 
+/-- Reading a point as an invertible matrix commutes with post-composition by a map of value
+algebras. This is `pointToGeneralLinear_mapValue` in the form `simp` reaches: `simp` rewrites
+`AlgHom.mapValue phi f` to `toConv (phi.comp f.ofConv)`. -/
 @[simp]
-private theorem pointToGeneralLinear_toConv_comp (phi : A →ₐ[R] B)
+theorem pointToGeneralLinear_toConv_comp (phi : A →ₐ[R] B)
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     pointToGeneralLinear n (toConv (phi.comp f.ofConv)) =
       Matrix.GeneralLinearGroup.map (phi : A →+* B) (pointToGeneralLinear n f) := by
@@ -280,7 +312,7 @@ theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
     (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     pointsMulEquiv n (AlgHom.mapValue (H := coordinateHopfAlgebra R n) phi f) =
       Matrix.GeneralLinearGroup.map (phi : A →+* B) (pointsMulEquiv n f) := by
-  exact pointToGeneralLinear_mapValue n phi f
+  rw [pointsMulEquiv_apply, pointsMulEquiv_apply, pointToGeneralLinear_mapValue]
 
 /-- Naturality of the inverse pointwise equivalence in the value algebra. -/
 theorem mapValue_pointsMulEquiv_symm_apply (phi : A →ₐ[R] B)
@@ -293,8 +325,11 @@ theorem mapValue_pointsMulEquiv_symm_apply (phi : A →ₐ[R] B)
   rw [pointsMulEquiv_mapValue]
   simp
 
+/-- Post-composing the point of an invertible matrix with a map of value algebras gives the point
+of the entrywise image matrix. This is `mapValue_pointsMulEquiv_symm_apply` in the form `simp`
+reaches. -/
 @[simp]
-private theorem toConv_comp_generalLinearToPoint_ofConv (phi : A →ₐ[R] B)
+theorem toConv_comp_generalLinearToPoint_ofConv (phi : A →ₐ[R] B)
     (g : Matrix.GeneralLinearGroup (Fin n) A) :
     toConv (phi.comp (generalLinearToPoint (R := R) n g).ofConv) =
       generalLinearToPoint (R := R) n
@@ -302,13 +337,51 @@ private theorem toConv_comp_generalLinearToPoint_ofConv (phi : A →ₐ[R] B)
   simpa only [AlgHom.mapValue_apply, pointsMulEquiv_symm_apply] using
     mapValue_pointsMulEquiv_symm_apply n phi g
 
+/-- The matrices over `B` that come from points of `GL_n` with values in `A`, along a map
+`phi : A → B`, are the images of the matrices over `A` whose determinant is a unit of `A`. For the
+valuation ring `O` of a local field `E` and `phi : O → E`, these are the matrices with integral
+entries whose determinant is a unit of `O`. -/
+theorem range_coe_pointsMulEquiv_mapValue (phi : A →ₐ[R] B) :
+    Set.range (fun f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A) ↦
+        (pointsMulEquiv n (AlgHom.mapValue phi f) : Matrix (Fin n) (Fin n) B)) =
+      {M | ∃ N : Matrix (Fin n) (Fin n) A, IsUnit N.det ∧ N.map phi = M} := by
+  ext M
+  simp only [pointsMulEquiv_mapValue, Set.mem_range, Set.mem_ofPred_eq]
+  constructor
+  · rintro ⟨f, rfl⟩
+    exact ⟨pointsMulEquiv n f, Matrix.isUnits_det_units _, rfl⟩
+  · rintro ⟨N, hN, rfl⟩
+    obtain ⟨u, rfl⟩ := (Matrix.isUnit_iff_isUnit_det N).2 hN
+    exact ⟨(pointsMulEquiv n).symm u, by simp [Matrix.GeneralLinearGroup.map]⟩
+
+/-- Along an injective map `phi : A → B`, the diagonal matrix with entries `phi (d i)` comes from a
+point of `GL_n` with values in `A` exactly when every `d i` is a unit of `A`. For the valuation
+ring `O` of a local field and a uniformizer `ϖ`, the matrix `diag(ϖ, 1)` has integral entries and
+nonzero determinant, but does not come from a point of `GL_2` over `O`. -/
+theorem diagonal_mem_range_coe_pointsMulEquiv_mapValue_iff {phi : A →ₐ[R] B}
+    (hphi : Function.Injective phi) (d : Fin n → A) :
+    Matrix.diagonal (fun i ↦ phi (d i)) ∈ Set.range
+        (fun f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A) ↦
+          (pointsMulEquiv n (AlgHom.mapValue phi f) : Matrix (Fin n) (Fin n) B)) ↔
+      ∀ i, IsUnit (d i) := by
+  rw [range_coe_pointsMulEquiv_mapValue, Set.mem_ofPred_eq]
+  constructor
+  · rintro ⟨N, hN, hNd⟩
+    have : N = Matrix.diagonal d := by
+      ext i j
+      apply hphi
+      simpa [Matrix.diagonal_apply, apply_ite phi] using congrFun (congrFun hNd i) j
+    simpa [this] using hN
+  · intro hd
+    exact ⟨Matrix.diagonal d, by simpa using hd, by simp [Matrix.diagonal_map]⟩
+
 end Naturality
 
 section Functor
 
 /-- The group-valued functor sending a commutative `R`-algebra to its general linear group, before
 the universe lift used by `generalLinearFunctor`. -/
-private noncomputable abbrev generalLinearFunctorUnlifted :
+private abbrev generalLinearFunctorUnlifted :
     CommAlgCat.{w} R ⥤ GrpCat.{w} where
   obj A := GrpCat.of (Matrix.GeneralLinearGroup (Fin n) (A : Type w))
   map phi := GrpCat.ofHom (Matrix.GeneralLinearGroup.map phi.hom.toRingHom)
@@ -318,7 +391,7 @@ private noncomputable abbrev generalLinearFunctorUnlifted :
 /-- The group-valued functor sending a commutative `R`-algebra to its general linear group and
 a value-algebra morphism to entrywise application. Its values are universe-lifted so that its
 codomain agrees with the generic Hopf-algebra points functor. -/
-noncomputable def generalLinearFunctor :
+def generalLinearFunctor :
     CommAlgCat.{w} R ⥤ GrpCat.{max u w} :=
   generalLinearFunctorUnlifted (R := R) n ⋙ GrpCat.uliftFunctor.{u, w}
 
@@ -343,7 +416,7 @@ theorem generalLinearFunctor_map {A B : CommAlgCat.{w} R} (phi : A ⟶ B) :
   (rfl)
 
 /-- Entrywise computation of the value-algebra map on the general linear functor. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem generalLinearFunctor_map_apply_apply {A B : CommAlgCat.{w} R} (phi : A ⟶ B)
     (g : ULift.{u, w} (Matrix.GeneralLinearGroup (Fin n) A)) (i j : Fin n) :
     (eqToHom (generalLinearFunctor_obj (R := R) n B)
@@ -368,7 +441,7 @@ noncomputable def pointsNatIso :
 
 /-- After transport along `generalLinearFunctor_obj`, the forward component of `pointsNatIso` is
 the pointwise general-linear equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem pointsNatIso_hom_app_apply (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) A) :
     (eqToHom (generalLinearFunctor_obj (R := R) n A)
@@ -377,7 +450,7 @@ theorem pointsNatIso_hom_app_apply (A : CommAlgCat.{w} R)
 
 /-- After transport back along `generalLinearFunctor_obj`, the inverse component of `pointsNatIso`
 is evaluation at an invertible matrix. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem pointsNatIso_inv_app_apply (A : CommAlgCat.{w} R)
     (g : ULift.{u, w} (Matrix.GeneralLinearGroup (Fin n) A)) :
     (pointsNatIso (R := R) n).inv.app A

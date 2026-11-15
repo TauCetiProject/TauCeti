@@ -28,21 +28,21 @@ genuine constraint on a `HodgeType`, since it rules out every type whose Hodge n
 up to the rank of the lattice one wants to carry it.
 
 The symmetry group `Aut(V, Qint)` of the pair — where the monodromy of a variation of Hodge
-structure lands — is not redefined here: it is `TauCeti.BilinForm.isometryGroup Qint`, the subgroup
-of `V ≃ₗ[ℤ] V` cut out by `TauCeti.BilinForm.IsIsometry`. The complex-manifold structure on the set
-of period-domain points is out of scope; it needs flag-variety topology.
+structure lands — is not redefined here: it is `LinearMap.BilinForm.isometryGroup Qint`, the
+subgroup of `V ≃ₗ[ℤ] V` cut out by `TauCeti.BilinForm.IsIsometry`. The complex-manifold structure
+on the set of period-domain points is out of scope; it needs flag-variety topology.
 
 ## Main declarations
 
 * `TauCeti.Hodge.PeriodDomain.Point`: a point of the period domain of `(V, Qint)` at a fixed type.
 * `TauCeti.Hodge.PeriodDomain.Point.finsum_h_eq_finrank`: **the Hodge numbers partition the
   dimension.**
+* `TauCeti.Hodge.PeriodDomain.Point.hs_isEffective_iff`: a point of the period domain is an
+  effective Hodge structure exactly when its prescribed Hodge type is effective.
 * `TauCeti.Hodge.tatePoint`: the Tate structure `ℤ(m)` as a point of its period domain.
 
-The signature of `PeriodDomain.Point` is adapted from the roadmap's formal companion
-`HodgeStructures/Suggested.lean`. The mathematics follows Griffiths, *Periods of integrals on
-algebraic manifolds II*, §1, and Carlson–Müller-Stach–Peters, *Period Mappings and Period Domains*,
-§4. This is Layer L3 of `TauCetiRoadmap/HodgeStructures/README.md`.
+The mathematics follows Griffiths, *Periods of integrals on algebraic manifolds II*, §1, and
+Carlson–Müller-Stach–Peters, *Period Mappings and Period Domains*, §4.
 -/
 
 public section
@@ -106,6 +106,13 @@ theorem hodgeType_eq (D : PeriodDomain.Point hℂ n Qint htype) : D.hs.hodgeType
 /-- The structure underlying a point of the period domain is polarizable. -/
 theorem isPolarizable (D : PeriodDomain.Point hℂ n Qint htype) : IsPolarizable hℂ D.hs :=
   Polarization.isPolarizable ⟨Qint, D.pol⟩
+
+/-- The Hodge structure underlying a point of the period domain is effective exactly when the
+prescribed Hodge type is: effectivity is constant on the period domain of a fixed type. -/
+theorem hs_isEffective_iff (D : PeriodDomain.Point hℂ n Qint htype) :
+    D.hs.IsEffective ↔ htype.IsEffective := by
+  have := hℂ.finite
+  rw [← HodgeStructureOn.hodgeType_isEffective_iff, D.hodgeType_eq]
 
 /-- **The Hodge numbers partition the dimension.** For any point of the period domain, the
 prescribed Hodge numbers sum to the dimension of the complexification.

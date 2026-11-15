@@ -40,6 +40,9 @@ and bad primes.
   `HeckeRing.GL2.Eigenform.qExpansion_coeff_prime_pow_add_two`: the same identities for the
   coefficients of a normalised eigenform, conditions (2) and (3) of Diamond–Shurman's
   Proposition 5.8.5 at every index.
+* `HeckeRing.GL2.Eigenform.qExpansion_coeff_mem_of_forall_prime`: by these identities, every
+  coefficient of a normalised eigenform lies in each subring of `ℂ` containing the coefficients
+  at the primes and the scalars `χ(p) p^{k−1}` of the recurrence.
 
 ## Provenance
 
@@ -59,7 +62,7 @@ coprime product formula.
 
 public section
 
-open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup HeckeRing.GLn
+open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup HeckeRing.GLn TauCeti
 
 open scoped MatrixGroups ModularForm HeckeCosetModule
 
@@ -135,8 +138,8 @@ noncomputable def ofForallPrime {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
   toCuspForm := f
   χ := χ
   mem_charSpace := hχ
-  eigenvalue n := (exists_smul_heckeTCompositeGamma0_of_forall_prime h n n.pos.ne').choose
-  isEigen n := (exists_smul_heckeTCompositeGamma0_of_forall_prime h n n.pos.ne').choose_spec
+  eigenvalue n := (exists_smul_heckeTCompositeGamma0_of_forall_prime h n).choose
+  isEigen n := (exists_smul_heckeTCompositeGamma0_of_forall_prime h n).choose_spec
   ne_zero := hf
 
 @[simp]
@@ -175,6 +178,22 @@ theorem qExpansion_coeff_eq_eigenvalue_mul_coeff_one (f : Eigenform N k) (n : �
     PowerSeries.coeff_smul, smul_eq_mul] at h
   simpa using h.symm
 
+/-- **The first coefficient of a full eigenform is nonzero.** Otherwise every `a_n` is
+`eigenvalue n * a₁ = 0`, so the `q`-expansion, and with it the form, would vanish. -/
+theorem qExpansion_coeff_one_ne_zero (f : Eigenform N k) :
+    (qExpansion 1 f.toCuspForm).coeff 1 ≠ 0 := by
+  intro hc
+  refine f.ne_zero (DFunLike.ext' ?_)
+  have h0 : qExpansion 1 f.toCuspForm = 0 := by
+    ext n
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simpa using CuspFormClass.qExpansion_coeff_zero f.toCuspForm one_pos
+        (TauCeti.one_mem_strictPeriods_Gamma1_map N)
+    · simpa [hc] using f.qExpansion_coeff_eq_eigenvalue_mul_coeff_one ⟨n, hn⟩
+  simpa using congrArg DFunLike.coe
+    ((ModularForm.qExpansion_eq_zero_iff one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map N)
+      (ModularFormClass.modularForm f.toCuspForm)).mp h0)
+
 /-! ### The eigenvalue system -/
 
 /-- Two scalars acting alike on a full eigenform are equal. -/
@@ -196,7 +215,7 @@ theorem eigenvalue_mul (f : Eigenform N k) {m n : ℕ+} (hmn : Nat.Coprime m n) 
     f.eigenvalue (m * n) = f.eigenvalue m * f.eigenvalue n := by
   refine f.eq_of_smul_eq ?_
   rw [← f.isEigen (m * n), PNat.mul_coe, heckeTCompositeGamma0_mul_of_coprime N hmn, map_mul]
-  simp only [Module.End.mul_apply, f.isEigen, map_smul, smul_smul, mul_comm]
+  simp only [mul_apply_eq_comp, f.isEigen, map_smul, smul_smul, mul_comm]
 
 /-- At a bad prime, the power identity for Hecke operators acts on a full eigenform by the
 product of the eigenvalues at `p` and `p ^ (r + 1)`. -/
@@ -212,7 +231,7 @@ private theorem heckeRingHomCuspCharSpace_prime_pow_add_two_of_not_coprime
     rw [heckeTCompositeGamma0_prime_pow_of_not_coprime N hp hpN,
       heckeTCompositeGamma0_prime_pow_of_not_coprime N hp hpN, heckeTCompositeGamma0_prime N hp,
       ← pow_succ']
-  rw [hT, map_mul, Module.End.mul_apply, ← PNat.pow_coe]
+  rw [hT, map_mul, mul_apply_eq_comp, ← PNat.pow_coe]
   simp only [f.isEigen, map_smul, smul_smul, mul_comm]
 
 /-- **The recurrence along the powers of a prime**:
@@ -279,6 +298,32 @@ theorem qExpansion_coeff_prime_pow_add_two (f : Eigenform N k)
   lift p to ℕ+ using hp.pos
   simp only [← PNat.pow_coe, f.qExpansion_coeff_eq_eigenvalue h₁]
   exact f.eigenvalue_prime_pow_add_two hp r
+
+/-- **The coefficients of a normalised full eigenform lie in every subring containing the prime
+data of its Hecke recurrence.** If `a₁ = 1` and a subring of `ℂ` contains `a_p` and
+`χ(p) p^{k−1}` for every prime `p`, with `χ(p) = 0` for `p ∣ N`, then it contains every
+coefficient `a_n`. -/
+theorem qExpansion_coeff_mem_of_forall_prime {S : Type*} [SetLike S ℂ] [SubringClass S ℂ]
+    (f : Eigenform N k) (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (s : S)
+    (ha : ∀ p : ℕ, p.Prime → (qExpansion 1 f.toCuspForm).coeff p ∈ s)
+    (hχ : ∀ p : ℕ, p.Prime →
+      (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ (k - 1) ∈ s) (n : ℕ) :
+    (qExpansion 1 f.toCuspForm).coeff n ∈ s := by
+  induction n using Nat.recOnPrimeCoprime with
+  | zero =>
+      rw [CuspFormClass.qExpansion_coeff_zero f.toCuspForm one_pos
+        (TauCeti.one_mem_strictPeriods_Gamma1_map N)]
+      exact zero_mem s
+  | prime_pow p r hp =>
+      induction r using Nat.twoStepInduction with
+      | zero => simp [h₁]
+      | one => simpa using ha p hp
+      | more r ih₁ ih₂ =>
+          rw [f.qExpansion_coeff_prime_pow_add_two h₁ hp r]
+          exact sub_mem (mul_mem (ha p hp) ih₂) (mul_mem (hχ p hp) ih₁)
+  | coprime a b _ _ hab ha' hb' =>
+      rw [f.qExpansion_coeff_mul h₁ hab]
+      exact mul_mem ha' hb'
 
 end Eigenform
 
