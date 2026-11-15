@@ -59,7 +59,7 @@ estimates, paraproducts) specialize to `H^s`.
   linear map.
 * `TauCeti.BesovSpace.toBesselPotentialSpace`: the inclusion `B^s_{p,1} → H^{s,p}` as a
   continuous linear map.
-* `BesselPotentialSpace.inclusionOfLE`: the inclusion `H^{s,p} → H^{s',p}` for `s' ≤ s`, which
+* `BesselPotentialSpace.inclusionₚ`: the inclusion `H^{s,p} → H^{s',p}` for `s' ≤ s`, which
   for `s' < s` factors through `B^s_{p,∞} ⊆ B^{s'}_{p,1}`.
 * `SchwartzMap.memBesov`: Schwartz functions lie in every Besov space `B^s_{p,q}`, `q ≠ 0`, since
   they lie in `H^{s+1,p} ⊆ B^{s+1}_{p,∞}`.
@@ -293,11 +293,12 @@ variable {s' : ℝ}
 variable (E F p) in
 /-- **The inclusion `H^{s,p} ⊆ H^{s',p}` for `s' ≤ s`**, as a continuous linear map, for every
 `1 ≤ p ≤ ∞` and every complete normed `F`. It keeps the underlying tempered distribution
-(`BesselPotentialSpace.toDistr_inclusionOfLE`). For `s' < s` it factors through the Besov spaces
+(`BesselPotentialSpace.toDistr_inclusionₚ`). For `s' < s` it factors through the Besov spaces
 as `H^{s,p} ⊆ B^s_{p,∞} ⊆ B^{s'}_{p,1} ⊆ H^{s',p}`, for the Besov spaces built from any bump
-function; for `s' = s` it is `BesselPotentialSpace.copy`. For `p = 2` and Hilbert-space values,
-`BesselPotentialSpace.inclusion` is the same inclusion, with norm at most `1`. -/
-def inclusionOfLE (h : s' ≤ s) : H^{s, p}(E, F) →L[ℂ] H^{s', p}(E, F) :=
+function; for `s' = s` it is `BesselPotentialSpace.copy`. The subscript marks the general exponent
+`p`: for `p = 2` and Hilbert-space values, `BesselPotentialSpace.inclusion` is the same inclusion,
+with norm at most `1`. -/
+def inclusionₚ (h : s' ≤ s) : H^{s, p}(E, F) →L[ℂ] H^{s', p}(E, F) :=
   if hs : s' < s then
     BesovSpace.toBesselPotentialSpace ∘L
       BesovSpace.inclusionOfLT F (default : ContDiffBump (0 : E)) p ∞ 1 hs ∘L toBesovSpace default
@@ -311,9 +312,9 @@ def inclusionOfLE (h : s' ≤ s) : H^{s, p}(E, F) →L[ℂ] H^{s', p}(E, F) :=
         one_mul, le_refl]
 
 @[simp]
-theorem toDistr_inclusionOfLE (h : s' ≤ s) (u : H^{s, p}(E, F)) :
-    (inclusionOfLE E F p h u).toDistr = u.toDistr := by
-  unfold inclusionOfLE
+theorem toDistr_inclusionₚ (h : s' ≤ s) (u : H^{s, p}(E, F)) :
+    (inclusionₚ E F p h u).toDistr = u.toDistr := by
+  unfold inclusionₚ
   split_ifs with hs
   · simp
   · exact toDistr_copy u (le_antisymm (not_lt.mp hs) h)

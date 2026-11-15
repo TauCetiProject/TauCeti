@@ -514,11 +514,11 @@ private theorem toDistr_quantizeBesselPotentialSpace_congr_of_le {m' : ℝ} {b :
     (huv : u.toDistr = v.toDistr) :
     (a.quantizeBesselPotentialSpace ha s p u).toDistr =
       (b.quantizeBesselPotentialSpace hb t p v).toDistr := by
-  have hv : v = BesselPotentialSpace.inclusionOfLE _ _ p hts u :=
-    BesselPotentialSpace.ext (by rw [BesselPotentialSpace.toDistr_inclusionOfLE, huv])
+  have hv : v = BesselPotentialSpace.inclusionₚ _ _ p hts u :=
+    BesselPotentialSpace.ext (by rw [BesselPotentialSpace.toDistr_inclusionₚ, huv])
   rw [hv]
   exact toDistr_quantizeBesselPotentialSpace_comp hab ha hb hp hp_top _
-    (BesselPotentialSpace.toDistr_inclusionOfLE _) u
+    (BesselPotentialSpace.toDistr_inclusionₚ _) u
 
 /-- **Compatibility of the extensions.** The operator `Op(a) : H^{s,p} → H^{s - m,p}` only depends
 on the coefficient of `a` and on the tempered distribution of its argument: symbols `a` and `b` of
@@ -604,16 +604,8 @@ theorem toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id (φ : 𝓢(Coordi
       TemperedDistribution.smulLeftCLM V (φ : CoordinateSpace n → ℂ) ∘L
         BesselPotentialSpace.toDistrCLM _ V s p := by
     refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun w ↦ ?_
-    have hw : quantizeUniformCLM _ h.isUniform w = SchwartzMap.smulLeftCLM V φ w := by
-      ext x
-      rw [quantizeUniformCLM_apply, SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth]
-      have hc : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
-          ((φ.smooth ⊤).smul contDiff_const)).coefficient =
-            fun q ↦ φ q.1 • ContinuousLinearMap.id ℂ V :=
-        funext (coefficient_ofSpatial _ _)
-      rw [hc, quantizeSchwartzValue_comp_fst (fun y ↦ φ y • ContinuousLinearMap.id ℂ V)]
-      simp
-    simp [quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM _ _ hp hp_top, hw,
+    simp [quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM _ _ hp hp_top,
+      quantizeUniformCLM_ofSpatial_smul_id,
       TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq]
   simpa using congrArg (· u) key
 
@@ -631,16 +623,8 @@ theorem toDistr_quantizeBesselPotentialSpace_sharp {U : Type*} [NormedAddCommGro
   BesselPotentialSpace.toDistr_apply_eq_of_toBesselPotentialSpaceCLM
     (T' := a.quantizeBesselPotentialSpace ha (s - m) p ∘L b.quantizeBesselPotentialSpace hb s p)
     hp_top (fun w ↦ by
-      -- On a Schwartz function `w`, `Op(a # b) w = Op(a) (Op(b) w)`.
-      have hw : quantizeUniformCLM (a.sharp b hb) (ha.sharp hb).isUniform w =
-          quantizeUniformCLM a ha.isUniform (quantizeUniformCLM b hb.isUniform w) := by
-        ext x
-        rw [quantizeUniformCLM_apply, quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb,
-          quantizeUniformCLM_apply]
-        congr 1
-        ext y
-        simp [quantizeUniformCLM_apply]
-      simp [quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM _ _ hp hp_top, hw]) u
+      simp [quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM _ _ hp hp_top,
+        quantizeUniformCLM_sharp ha.isUniform hb]) u
 
 /-- **Smoothing operators gain every number of derivatives.** A smoothing symbol `a` with compact
 spatial support quantizes to a bounded operator `T : H^{r,p} → H^{s,p}` for arbitrary real orders
@@ -657,9 +641,9 @@ theorem IsSmoothing.exists_continuousLinearMap_toDistr_quantizeBesselPotentialSp
   have hbK := ha.of_coefficient_eq hb
   -- `b` has order `r - s` and the coefficient of `a`, so `Op(b)` maps `H^{r,p}` to
   -- `H^{r - (r - s),p}`, which is `H^{s,p}`.
-  refine ⟨BesselPotentialSpace.inclusionOfLE _ _ p (sub_sub_cancel r s).ge ∘L
+  refine ⟨BesselPotentialSpace.inclusionₚ _ _ p (sub_sub_cancel r s).ge ∘L
     b.quantizeBesselPotentialSpace hbK r p, fun huv ↦ ?_⟩
-  rw [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusionOfLE]
+  rw [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusionₚ]
   exact toDistr_quantizeBesselPotentialSpace_congr hb.symm ha hbK hp hp_top huv
 
 end Symbol

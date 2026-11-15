@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Convolution
@@ -65,6 +66,8 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
   for the test function `w = Op(b) u`, and
   `TauCeti.Symbol.coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq`: `a # b` is the only
   symbol, of any order, whose quantization is `Op(a) ∘ Op(b)`.
+* `TauCeti.Symbol.quantizeUniformCLM_sharp`: `Op(a # b) = Op(a) ∘ Op(b)` as continuous linear
+  maps on Schwartz space, for a uniform `a`.
 * `TauCeti.Symbol.sharp_assoc`: **associativity**, `(a # b) # c = a # (b # c)` for `b` and `c` with
   compact spatial support, since both are the symbol of `Op(a) ∘ Op(b) ∘ Op(c)`.
 * `TauCeti.Symbol.quantizeSobolev_sharp`: if `a` also has compact spatial support, then
@@ -1035,6 +1038,19 @@ theorem coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq [CompleteSpace V
     c.coefficient = (a.sharp b hb).coefficient :=
   coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u hu ↦ funext fun x ↦
     (h u hu x).trans (quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb u x).symm
+
+/-- **Composition of quantizations on Schwartz space.** For a uniform symbol `a` and a symbol `b`
+with compact spatial support, `Op(a # b) = Op(a) ∘ Op(b)` as operators on Schwartz space. -/
+theorem quantizeUniformCLM_sharp [CompleteSpace W] [CompleteSpace U] (ha : a.IsUniform)
+    (hb : b.HasCompactSpatialSupport) :
+    quantizeUniformCLM (a.sharp b hb) (ha.sharp hb) =
+      quantizeUniformCLM a ha ∘L quantizeUniformCLM b hb.isUniform := by
+  ext u x
+  rw [quantizeUniformCLM_apply, quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb,
+    ContinuousLinearMap.comp_apply, quantizeUniformCLM_apply]
+  congr 1
+  ext y
+  simp
 
 end Operator
 

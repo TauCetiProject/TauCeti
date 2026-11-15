@@ -79,7 +79,8 @@ where the profile is bounded by `‖u‖_{L¹}`.
 * `TauCeti.Symbol.besselMultiplier_two_quantizeUniformCLM`: the same commutator for the Bessel
   multiplier `J² = 1 - (2π)⁻² Δ` of order `2`.
 * `TauCeti.Symbol.quantizeUniformCLM_const`: a constant symbol `T` quantizes to the composition
-  with `T`.
+  with `T`, and `TauCeti.Symbol.quantizeUniformCLM_ofSpatial_smul_id`: the symbol `φ(x) id`
+  quantizes to multiplication by `φ`.
 * `TauCeti.Symbol.quantizeRightUniformCLM`: the right quantization of a uniform symbol as a
   continuous linear map `𝓢(ℝⁿ, V) →L[ℂ] 𝓢(ℝⁿ, W)`, with its formula
   `TauCeti.Symbol.quantizeRightUniformCLM_apply`, its Fourier transform
@@ -432,6 +433,19 @@ theorem quantizeUniformCLM_const [CompleteSpace V] [CompleteSpace W] (T : V →L
   have hT : (const T : Symbol n V W 0).coefficient = fun _ ↦ T := funext (coefficient_const T)
   ext u x
   simpa [hT] using quantizeSchwartzValue_comp_fst (fun _ ↦ T) u x
+
+/-- The symbol `φ(x) id` of multiplication by a Schwartz function `φ` quantizes to multiplication
+by `φ`. -/
+theorem quantizeUniformCLM_ofSpatial_smul_id [CompleteSpace V] (φ : 𝓢(CoordinateSpace n, ℂ))
+    (hφ : ContDiff ℝ ∞ fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
+    (h : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) hφ).IsUniform) :
+    quantizeUniformCLM _ h = SchwartzMap.smulLeftCLM V φ := by
+  have hc : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) hφ).coefficient =
+      fun p ↦ φ p.1 • ContinuousLinearMap.id ℂ V :=
+    funext (coefficient_ofSpatial _ hφ)
+  ext u x
+  simpa [hc, SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth] using
+    quantizeSchwartzValue_comp_fst (fun y ↦ φ y • ContinuousLinearMap.id ℂ V) u x
 
 /-! ### The Fourier profile of the right quantization -/
 

@@ -153,14 +153,14 @@ theorem exists_norm_le_of_toDistr_eq_smulLeftCLM (hP : P.IsEllipticAbove R)
   obtain ⟨T, hT⟩ := hrS.exists_continuousLinearMap_toDistr_quantizeBesselPotentialSpace_eq hr hp
     hp_top t s
   -- `Op(q)` maps `H^{s - m,p}` to `H^{s - m - (-m),p}`, which is `H^{s,p}`.
-  set Q := BesselPotentialSpace.inclusionOfLE _ V p (show s ≤ s - m - -m by simp) ∘L
+  set Q := BesselPotentialSpace.inclusionₚ _ V p (show s ≤ s - m - -m by simp) ∘L
     q.quantizeBesselPotentialSpace hq (s - m) p
   refine ⟨‖Q‖ + ‖T‖, fun u f w hf hw ↦ ?_⟩
   -- `w = Op(q) f - Op(r) u`, with `Op(q) : H^{s - m,p} → H^{s,p}` and `Op(r) : H^{t,p} → H^{s,p}`.
   have hw' : w = Q f - T u := by
     refine BesselPotentialSpace.ext ?_
     rw [hw, BesselPotentialSpace.toDistr_sub, ← hT rfl, ContinuousLinearMap.comp_apply,
-      BesselPotentialSpace.toDistr_inclusionOfLE,
+      BesselPotentialSpace.toDistr_inclusionₚ,
       toDistr_quantizeBesselPotentialSpace_congr rfl hq hq hp hp_top hf,
       h p hp hp_top t u, add_sub_cancel_right]
   rw [hw']
