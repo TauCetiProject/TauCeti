@@ -32,11 +32,12 @@ boundary of the saddle, for every pseudo-gradient `X` adapted to this function.
 Over `ℤ` the same two pairs of trajectories give the differentials `±2` from the maximum to the
 saddle and `0` from the saddle to the minimum, recovering `H₁(ℝℙ²; ℤ) = ℤ/2`: the two trajectories
 into the saddle carry the same sign and the two out of it opposite signs. Those signs come from
-orientations of the unstable manifolds, which the mod-two complex does not see. The second
-differential is computed here: the integral boundary of the saddle vanishes, for every adapted
-pseudo-gradient and every choice of orientations
-(`signedMorseBoundary_single_eq_zero_projectiveMomentFunction_real`), since the
-minimum is the only critical point of index `0`.
+orientations of the unstable manifolds, which the mod-two complex does not see. The differential
+`d₁` from the saddle to the minimum is computed here: the integral boundary of the saddle
+vanishes, for every adapted pseudo-gradient and every choice of orientations
+(`signedMorseBoundary_single_eq_zero_projectiveMomentFunction_real`), since the minimum is the
+only critical point of index `0`. The differential `d₂ = ±2` from the maximum to the saddle, which
+depends on the non-orientability of `ℝℙ²`, is not proved in this file.
 
 ## Main declarations
 

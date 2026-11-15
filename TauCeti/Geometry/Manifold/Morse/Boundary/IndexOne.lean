@@ -26,12 +26,14 @@ coordinates of negative weight is a line, oriented by the orientation of `W^u(p)
 small `c ∈ V`, the point `y_c` of the chart with coordinates `c` in the directions of negative
 weight and `0` elsewhere lies on `W^u(p)`, and the unstable frame at `y_c` sends `c` to the
 velocity `X y_c`
-(`TauCeti.IsAdaptedPseudoGradient.eventually_mem_unstableSet_and_unstableFrame_eq`): in the chart
+(`TauCeti.IsAdaptedPseudoGradient.eventually_mem_unstableSet_and_unstableFrame_eq`, in
+`TauCeti.Geometry.Manifold.Morse.Stable.Frame`): in the chart
 both vectors have coordinates `c` in the directions of negative weight, along which the linear
 field is the identity. So at `y_c` the vector `c` points along the flow, while at `y_{-c}` it points
 against it. For `c ≠ 0` the points `y_c` and `y_{-c}` therefore lie on different orbits, which are
 the two trajectories leaving `p`
-(`TauCeti.IsAdaptedPseudoGradient.eventually_unstableSet_eq_insert_union_orbit`).
+(`TauCeti.IsAdaptedPseudoGradient.eventually_unstableSet_eq_insert_union_orbit`, in
+`TauCeti.Geometry.Manifold.Morse.Stable.OneDimensional`).
 
 If both trajectories end at a critical point `q` of index `0`, the sign of each of them compares
 the orientation of `V` with the direction in which `f` decreases. The comparison maps at `y_c` and
@@ -56,10 +58,6 @@ the orientability of `M` along them, which the local argument here does not see.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `eventually_mem_unstableSet_and_unstableFrame_eq`: on the unstable axis of a Morse chart, the
-  unstable frame of the coordinates is the velocity.
-* `eventually_unstableSet_eq_insert_union_orbit`: at a critical point of index `1`, the unstable
-  manifold is the critical point together with the orbits of `y_c` and `y_{-c}`.
 * `trajectorySign_eq_neg_of_notMem_orbit`: two different trajectories from a critical point of
   index `1` to the same critical point carry opposite signs.
 * `signedTrajectoryCount_eq_zero_of_mem_stableSet`: if both trajectories leaving a critical point
@@ -95,205 +93,36 @@ namespace IsAdaptedPseudoGradient
 
 variable {hX : IsAdaptedPseudoGradient f X} {p : M} {φ : MorseChart E f p}
 
-section UnstableAxis
-
-variable (hφ : ∀ y ∈ φ.toChart.source,
-    φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
-      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
-include hφ
-
-/-- A point of the unstable axis whose linear backward orbit stays in the chart lies on the
-unstable manifold: for `t ≤ 0` its flow is the linear flow, which tends to the centre. -/
-private theorem toChart_symm_negativeExtend_mem_unstableSet {c : {i // φ.weight i < 0} → ℝ}
-    (hmem : ∀ t ≤ 0, φ.coord.symm (φ.linearFlow t (φ.coord (φ.negativeExtend c))) ∈
-      φ.toChart.target) :
-    φ.toChart.symm (φ.negativeExtend c) ∈ hX.flow.unstableSet p := by
-  set z := φ.coord (φ.negativeExtend c)
-  have hlin (t : ℝ) : φ.linearFlow t z = Real.exp t • z := by
-    simpa using φ.linearFlow_neg_coord_negativeExtend (-t) c
-  rw [Flow.mem_unstableSet]
-  have hflow : ∀ᶠ t in atBot, φ.toChart.symm (φ.coord.symm (Real.exp t • z)) =
-      hX.flow t (φ.toChart.symm (φ.negativeExtend c)) := by
-    filter_upwards [eventually_le_atBot 0] with t ht
-    rw [← LinearEquiv.symm_apply_apply φ.coord (φ.negativeExtend c),
-      flow_toChart_symm_of_forall_mem_uIcc hX φ hφ fun s hs ↦
-        hmem s (by rw [uIcc_of_ge ht] at hs; exact hs.2), hlin]
-  refine Tendsto.congr' hflow ?_
-  have hexp : Tendsto (fun t : ℝ ↦ Real.exp t • z) atBot (𝓝 0) := by
-    simpa using Real.tendsto_exp_atBot.smul_const z
-  have hlim : Tendsto (fun t : ℝ ↦ φ.toChart.symm (φ.coord.symm (Real.exp t • z))) atBot
-      (𝓝 (φ.toChart.symm (φ.coord.symm 0))) :=
-    (φ.toChart.continuousAt_symm (by simpa using φ.toChart.map_source φ.mem_source)).tendsto.comp
-      (((φ.coord.symm.toLinearMap.continuous_of_finiteDimensional).tendsto 0).comp hexp)
-  rwa [φ.toChart_symm_coord_symm_zero] at hlim
-
-/-- At a point of the unstable axis whose linear backward orbit stays in the chart, the unstable
-frame of the coordinates is the velocity: in the chart, the frame is read through
-`mfderiv_unstableFrame` at the time `0`, and the velocity through the linear field, which is the
-identity on the negative directions. -/
-private theorem unstableFrame_toChart_symm_negativeExtend {c : {i // φ.weight i < 0} → ℝ}
-    (hmem : ∀ t ≤ 0, φ.coord.symm (φ.linearFlow t (φ.coord (φ.negativeExtend c))) ∈
-      φ.toChart.target) :
-    hX.unstableFrame φ (φ.toChart.symm (φ.negativeExtend c)) c =
-      X (φ.toChart.symm (φ.negativeExtend c)) := by
-  have htarget : φ.negativeExtend c ∈ φ.toChart.target := by
-    simpa using hmem 0 le_rfl
-  set y := φ.toChart.symm (φ.negativeExtend c)
-  have hy : y ∈ φ.toChart.source := φ.toChart.map_target htarget
-  have hcoord : φ.coord (φ.toChart y) = φ.coord (φ.negativeExtend c) := by
-    rw [φ.toChart.right_inv htarget]
-  have hT : (0 : ℝ) ∈ hX.linearBackwardTimes φ y := by
-    refine (hX.mem_linearBackwardTimes φ).2 ⟨by simpa using hy, fun t ht ↦ ?_⟩
-    simpa [hcoord] using hmem t ht
-  have hF := mfderiv_unstableFrame hφ hT c
-  have hcomp : (φ.toChart ∘ hX.flow (-0) : M → E) = φ.toChart := by
-    funext w
-    simp
-  rw [hcomp, neg_zero, Real.exp_zero, one_smul] at hF
-  have hV : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y) = φ.negativeExtend c := by
-    refine φ.coord.injective (funext fun i ↦ ?_)
-    simp only [hφ y hy, hcoord]
-    rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
-    · rw [hi]
-      ring
-    · rw [φ.coord_negativeExtend_of_not_weight_neg c (by rw [hi]; norm_num), mul_zero, neg_zero]
-  have hinv := isInvertible_mfderiv_chart
-    (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) hy
-  exact hinv.injective (hF.trans hV.symm)
-
-/-- **The unstable axis of a Morse chart.** Let `X` be linear in the Morse chart `φ` at `p`. For
-every small `c` in the space of coordinates of negative weight, the point `y` of the chart whose
-coordinates are `c` in the directions of negative weight and `0` elsewhere lies on the unstable
-manifold of `p`, and the unstable frame at `y` sends `c` to the velocity `X y`. -/
-theorem eventually_mem_unstableSet_and_unstableFrame_eq :
-    ∀ᶠ c in 𝓝 (0 : {i // φ.weight i < 0} → ℝ), φ.negativeExtend c ∈ φ.toChart.target ∧
-      φ.toChart.symm (φ.negativeExtend c) ∈ hX.flow.unstableSet p ∧
-        hX.unstableFrame φ (φ.toChart.symm (φ.negativeExtend c)) c =
-          X (φ.toChart.symm (φ.negativeExtend c)) := by
-  obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
-  have hcont : Continuous fun c : {i // φ.weight i < 0} → ℝ ↦ φ.coord (φ.negativeExtend c) :=
-    (φ.coord.toLinearMap.comp φ.negativeExtend).continuous_of_finiteDimensional
-  have h0 : Tendsto (fun c : {i // φ.weight i < 0} → ℝ ↦ ‖φ.coord (φ.negativeExtend c)‖) (𝓝 0)
-      (𝓝 0) := by
-    simpa using (hcont.tendsto 0).norm
-  filter_upwards [h0.eventually (gt_mem_nhds hr)] with c hc
-  -- Along the negative directions the linear flow is the scaling by `e^{t}`, which keeps the
-  -- point in the chart for `t ≤ 0`.
-  have hmem (t : ℝ) (ht : t ≤ 0) :
-      φ.coord.symm (φ.linearFlow t (φ.coord (φ.negativeExtend c))) ∈ φ.toChart.target := by
-    refine hrT _ ?_
-    have hlin : φ.linearFlow t (φ.coord (φ.negativeExtend c)) =
-        Real.exp t • φ.coord (φ.negativeExtend c) := by
-      simpa using φ.linearFlow_neg_coord_negativeExtend (-t) c
-    rw [hlin, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le]
-    exact (mul_le_of_le_one_left (norm_nonneg _) (Real.exp_le_one_iff.2 ht)).trans_lt hc
-  exact ⟨by simpa using hmem 0 le_rfl, toChart_symm_negativeExtend_mem_unstableSet hφ hmem,
-    unstableFrame_toChart_symm_negativeExtend hφ hmem⟩
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] hφ in
-/-- A point of the unstable axis with nonzero coordinates is not the centre of the chart. -/
-private theorem toChart_symm_negativeExtend_ne {c : {i // φ.weight i < 0} → ℝ} (hc : c ≠ 0)
-    (hT : φ.negativeExtend c ∈ φ.toChart.target) : φ.toChart.symm (φ.negativeExtend c) ≠ p := by
-  intro h
-  have h0 : φ.negativeExtend c = 0 := by
-    rw [← φ.toChart.right_inv hT, h, φ.apply_self]
-  exact hc (φ.injective_negativeExtend (h0.trans (map_zero _).symm))
-
-/-- On the unstable axis, the points with opposite coordinates `c` and `-c ≠ 0` lie on different
-orbits: the unstable frame of `c` is the velocity at the first point and its opposite at the
-second, while the flow carries the frame and the velocity at the first point to positive multiples
-of those at the second. -/
-private theorem notMem_orbit_toChart_symm_negativeExtend_neg (hf : IsMorse 𝓘(ℝ, E) f)
-    {c : {i // φ.weight i < 0} → ℝ} (hc : c ≠ 0)
-    (h₁ : φ.negativeExtend c ∈ φ.toChart.target ∧
-      φ.toChart.symm (φ.negativeExtend c) ∈ hX.flow.unstableSet p ∧
-      hX.unstableFrame φ (φ.toChart.symm (φ.negativeExtend c)) c =
-        X (φ.toChart.symm (φ.negativeExtend c)))
-    (h₂ : φ.negativeExtend (-c) ∈ φ.toChart.target ∧
-      φ.toChart.symm (φ.negativeExtend (-c)) ∈ hX.flow.unstableSet p ∧
-      hX.unstableFrame φ (φ.toChart.symm (φ.negativeExtend (-c))) (-c) =
-        X (φ.toChart.symm (φ.negativeExtend (-c)))) :
-    φ.toChart.symm (φ.negativeExtend (-c)) ∉
-      hX.flow.orbit (φ.toChart.symm (φ.negativeExtend c)) := by
-  set y₁ := φ.toChart.symm (φ.negativeExtend c)
-  set y₂ := φ.toChart.symm (φ.negativeExtend (-c))
-  intro h
-  obtain ⟨t, ht⟩ := (hX.flow.mem_orbit_iff).1 h
-  obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφ hf h₁.2.1).exists
-  -- The frame at `y₂` on `c` is `e^{-t}` times the velocity, and also minus the velocity.
-  have hflow := unstableFrame_flow hφ hT t c
-  rw [h₁.2.2, hX.mfderiv_flow_apply_self, ht] at hflow
-  have hneg : hX.unstableFrame φ y₂ c = -X y₂ := by
-    rw [← h₂.2.2, map_neg, neg_neg]
-  rw [hneg, eq_comm, ← sub_eq_zero, sub_neg_eq_add] at hflow
-  have hsum : (Real.exp (-t) + 1) • X y₂ = 0 := by rwa [add_smul, one_smul]
-  have hX0 : X y₂ = 0 := (smul_eq_zero.1 hsum).resolve_left (by positivity)
-  -- So `y₂` is a rest point on the unstable manifold of `p`, hence `p` itself, which is not on
-  -- the axis away from `0`.
-  have hcrit := hX.eq_zero_iff.1 hX0
-  refine toChart_symm_negativeExtend_ne (neg_ne_zero.2 hc) h₂.1 ?_
-  have hlim := Flow.mem_unstableSet.1 h₂.2.1
-  simp only [hX.flow_apply_of_mfderiv_eq_zero hcrit] at hlim
-  exact tendsto_nhds_unique tendsto_const_nhds hlim
-
-/-- On the unstable axis, the conclusions of
-`TauCeti.IsAdaptedPseudoGradient.eventually_mem_unstableSet_and_unstableFrame_eq` hold at `c` and
-at `-c` for all small `c`. -/
-private theorem eventually_axis :
-    ∀ᶠ c in 𝓝 (0 : {i // φ.weight i < 0} → ℝ),
-      (φ.negativeExtend c ∈ φ.toChart.target ∧
-        φ.toChart.symm (φ.negativeExtend c) ∈ hX.flow.unstableSet p ∧
+/-- At a critical point `p` of index `1` at which `X` is linear in `φ`, some `c ≠ 0` gives points
+`y_c` and `y_{-c}` of the unstable axis, different from `p` and on different orbits, at which the
+unstable frames of `c` and `-c` are the velocity, and the unstable manifold of `p` is `p` together
+with the orbits of these two points. -/
+private theorem exists_axis_point
+    (hφ : ∀ y ∈ φ.toChart.source,
+      φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+        fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    (hf : IsMorse 𝓘(ℝ, E) f) (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = 1) :
+    ∃ c : {i // φ.weight i < 0} → ℝ, c ≠ 0 ∧
+      (φ.toChart.symm (φ.negativeExtend c) ∈ hX.flow.unstableSet p ∧
         hX.unstableFrame φ (φ.toChart.symm (φ.negativeExtend c)) c =
           X (φ.toChart.symm (φ.negativeExtend c))) ∧
-      (φ.negativeExtend (-c) ∈ φ.toChart.target ∧
-        φ.toChart.symm (φ.negativeExtend (-c)) ∈ hX.flow.unstableSet p ∧
+      (φ.toChart.symm (φ.negativeExtend (-c)) ∈ hX.flow.unstableSet p ∧
         hX.unstableFrame φ (φ.toChart.symm (φ.negativeExtend (-c))) (-c) =
-          X (φ.toChart.symm (φ.negativeExtend (-c)))) := by
-  have h := eventually_mem_unstableSet_and_unstableFrame_eq (hX := hX) hφ
-  refine h.and ?_
-  have hneg : Tendsto (fun c : {i // φ.weight i < 0} → ℝ ↦ -c) (𝓝 0) (𝓝 0) := by
-    simpa using (tendsto_neg (0 : {i // φ.weight i < 0} → ℝ))
-  exact hneg.eventually h
-
-/-- **The two trajectories leaving a critical point of index one.** Let `X` be linear in the Morse
-chart `φ` at a critical point `p` of index `1`. For every small `c ≠ 0` in the space of coordinates
-of negative weight, which is a line, the points `y_c` and `y_{-c}` of the chart with coordinates
-`c` and `-c` in the direction of negative weight and `0` elsewhere lie on different orbits, and the
-unstable manifold of `p` is `p` together with these two orbits. -/
-theorem eventually_unstableSet_eq_insert_union_orbit (hf : IsMorse 𝓘(ℝ, E) f)
-    (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = 1) :
-    ∀ᶠ c in 𝓝[≠] (0 : {i // φ.weight i < 0} → ℝ),
+          X (φ.toChart.symm (φ.negativeExtend (-c)))) ∧
+      φ.toChart.symm (φ.negativeExtend c) ≠ p ∧ φ.toChart.symm (φ.negativeExtend (-c)) ≠ p ∧
       φ.toChart.symm (φ.negativeExtend (-c)) ∉
-          hX.flow.orbit (φ.toChart.symm (φ.negativeExtend c)) ∧
-        hX.flow.unstableSet p = insert p (hX.flow.orbit (φ.toChart.symm (φ.negativeExtend c)) ∪
-          hX.flow.orbit (φ.toChart.symm (φ.negativeExtend (-c)))) := by
-  filter_upwards [eventually_nhdsWithin_of_eventually_nhds (eventually_axis (hX := hX) hφ),
-    self_mem_nhdsWithin] with c ⟨h₁, h₂⟩ hc
-  set y₁ := φ.toChart.symm (φ.negativeExtend c)
-  set y₂ := φ.toChart.symm (φ.negativeExtend (-c))
+        hX.flow.orbit (φ.toChart.symm (φ.negativeExtend c)) ∧
+      hX.flow.unstableSet p = insert p (hX.flow.orbit (φ.toChart.symm (φ.negativeExtend c)) ∪
+        hX.flow.orbit (φ.toChart.symm (φ.negativeExtend (-c)))) := by
+  have : Nontrivial ({i // φ.weight i < 0} → ℝ) :=
+    Module.nontrivial_of_finrank_eq_succ (by rw [φ.finrank_negativeWeight_fun, hp])
+  have h := eventually_mem_unstableSet_and_unstableFrame_eq (hX := hX) hφ
+  obtain ⟨c, ⟨⟨hT₁, h₁⟩, hT₂, h₂⟩, hW, hc⟩ := ((eventually_nhdsWithin_of_eventually_nhds
+    (h.and ((continuous_neg.tendsto' 0 0 neg_zero).eventually h))).and
+      ((eventually_unstableSet_eq_insert_union_orbit hφ hf hp).and self_mem_nhdsWithin)).exists
   have hc : c ≠ 0 := hc
-  have hsep := notMem_orbit_toChart_symm_negativeExtend_neg hφ hf hc h₁ h₂
-  refine ⟨hsep, ?_⟩
-  obtain ⟨u₁, u₂, -, -, -, hW⟩ := hX.exists_unstableSet_eq_insert_union_orbit hf
-    (hX.mfderiv_eq_zero_of_mem_unstableSet h₁.2.1) hp
-  have hy₁ : y₁ ≠ p := toChart_symm_negativeExtend_ne hc h₁.1
-  have hy₂ : y₂ ≠ p := toChart_symm_negativeExtend_ne (neg_ne_zero.2 hc) h₂.1
-  have horb {y u : M} (h : y ∈ hX.flow.orbit u) : hX.flow.orbit y = hX.flow.orbit u := by
-    obtain ⟨t, rfl⟩ := (hX.flow.mem_orbit_iff).1 h
-    exact Flow.orbit_apply _ _ _
-  have hmem₁ := h₁.2.1
-  have hmem₂ := h₂.2.1
-  rw [hW] at hmem₁ hmem₂
-  rcases hmem₁ with h | h | h
-  · exact absurd h hy₁
-  all_goals rcases hmem₂ with h' | h' | h'
-  all_goals first
-    | exact absurd h' hy₂
-    | exact absurd (by rw [horb h]; exact h') hsep
-    | rw [hW, horb h, horb h']
-  exact congrArg (insert p) (union_comm _ _)
-
-end UnstableAxis
+  exact ⟨c, hc, h₁, h₂, φ.toChart_symm_negativeExtend_ne hc hT₁,
+    φ.toChart_symm_negativeExtend_ne (neg_ne_zero.2 hc) hT₂, hW⟩
 
 /-- If the unstable manifold of `p` is `p` together with the orbits of two points `a` and `b` of
 trajectories from `p` to `q`, then the middle-level slice of the trajectories from `p` to `q`
@@ -397,9 +226,7 @@ private theorem trajectorySign_toChart_symm_negativeExtend_neg (hMS : hX.IsMorse
       -hX.trajectorySign φ φq op oq hpq (φ.toChart.symm (φ.negativeExtend c)) := by
   set y₁ := φ.toChart.symm (φ.negativeExtend c)
   set y₂ := φ.toChart.symm (φ.negativeExtend (-c))
-  have hne : p ≠ q := by
-    rintro rfl
-    omega
+  have hne : p ≠ q := ne_of_apply_ne (manifoldMorseIndex 𝓘(ℝ, E) f) (by omega)
   have hm₁ : y₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q := ⟨h₁.1, hs₁⟩
   have hm₂ : y₂ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q := ⟨h₂.1, hs₂⟩
   -- `f` decreases along the flow at both points.
@@ -439,18 +266,9 @@ theorem trajectorySign_eq_neg_of_notMem_orbit (hMS : hX.IsMorseSmale) (hf : IsMo
     (hy₁ : y₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
     (hy₂ : y₂ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) (h : y₂ ∉ hX.flow.orbit y₁) :
     hX.trajectorySign φ φq op oq hpq y₂ = -hX.trajectorySign φ φq op oq hpq y₁ := by
-  have hne : p ≠ q := by
-    rintro rfl
-    omega
-  have : Nontrivial ({i // φ.weight i < 0} → ℝ) :=
-    Module.nontrivial_of_finrank_eq_succ (by rw [φ.finrank_negativeWeight_fun, hp])
-  obtain ⟨c, ⟨h₁, h₂⟩, ⟨-, hW⟩, hc⟩ := ((eventually_nhdsWithin_of_eventually_nhds
-    (eventually_axis (hX := hX) hφ)).and
-      ((eventually_unstableSet_eq_insert_union_orbit hφ hf hp).and self_mem_nhdsWithin)).exists
-  have hcrit := hX.mfderiv_eq_zero_of_mem_unstableSet h₁.2.1
-  have horb {y u : M} (h : y ∈ hX.flow.orbit u) : hX.flow.orbit y = hX.flow.orbit u := by
-    obtain ⟨t, rfl⟩ := (hX.flow.mem_orbit_iff).1 h
-    exact Flow.orbit_apply _ _ _
+  have hne : p ≠ q := ne_of_apply_ne (manifoldMorseIndex 𝓘(ℝ, E) f) (by omega)
+  obtain ⟨c, hc, h₁, h₂, -, -, -, hW⟩ := exists_axis_point (hX := hX) hφ hf hp
+  have hcrit := hX.mfderiv_eq_zero_of_mem_unstableSet h₁.1
   -- Each of `y₁` and `y₂` lies on the orbit of `y_c` or on that of `y_{-c}`, and has the sign of
   -- that point of the axis.
   have hmem {y : M} (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
@@ -468,16 +286,16 @@ theorem trajectorySign_eq_neg_of_notMem_orbit (hMS : hX.IsMorseSmale) (hf : IsMo
     have hus : u ∈ hX.flow.stableSet q := (Flow.apply_mem_stableSet_iff _ t).1 hy.2
     exact ⟨hus, trajectorySign_flow hφ hφq hMS hf ⟨hu, hus⟩ t⟩
   have hab := trajectorySign_toChart_symm_negativeExtend_neg (op := op) (oq := oq) (hpq := hpq) hφ
-    hφq hMS hf hp hc ⟨h₁.2.1, h₁.2.2⟩ ⟨h₂.2.1, h₂.2.2⟩
+    hφq hMS hf hp hc h₁ h₂
   rcases hmem hy₁ with h₁a | h₁b <;> rcases hmem hy₂ with h₂a | h₂b
-  · exact (h (by rw [horb h₁a]; exact h₂a)).elim
-  · obtain ⟨ha, hs₁⟩ := hsign h₁.2.1 hy₁ h₁a
-    obtain ⟨hb, hs₂⟩ := hsign h₂.2.1 hy₂ h₂b
+  · exact (h (by rw [hX.flow.orbit_eq_iff.2 h₁a]; exact h₂a)).elim
+  · obtain ⟨ha, hs₁⟩ := hsign h₁.1 hy₁ h₁a
+    obtain ⟨hb, hs₂⟩ := hsign h₂.1 hy₂ h₂b
     rw [hs₁, hs₂, hab ha hb]
-  · obtain ⟨hb, hs₁⟩ := hsign h₂.2.1 hy₁ h₁b
-    obtain ⟨ha, hs₂⟩ := hsign h₁.2.1 hy₂ h₂a
+  · obtain ⟨hb, hs₁⟩ := hsign h₂.1 hy₁ h₁b
+    obtain ⟨ha, hs₂⟩ := hsign h₁.1 hy₂ h₂a
     rw [hs₁, hs₂, hab ha hb, neg_neg]
-  · exact (h (by rw [horb h₁b]; exact h₂b)).elim
+  · exact (h (by rw [hX.flow.orbit_eq_iff.2 h₁b]; exact h₂b)).elim
 
 /-- **The trajectories leaving a critical point of index one cancel.** Let `X` be a Morse–Smale
 pseudo-gradient adapted to a Morse function `f`, linear in Morse charts at a critical point `p` of
@@ -488,20 +306,12 @@ theorem signedTrajectoryCount_eq_zero_of_mem_stableSet (hMS : hX.IsMorseSmale)
     (hf : IsMorse 𝓘(ℝ, E) f) (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = 1)
     (hW : ∀ y ∈ hX.flow.unstableSet p, y ≠ p → y ∈ hX.flow.stableSet q) :
     hX.signedTrajectoryCount φ φq op oq hpq = 0 := by
-  have hne : p ≠ q := by
-    rintro rfl
-    omega
-  have : Nontrivial ({i // φ.weight i < 0} → ℝ) :=
-    Module.nontrivial_of_finrank_eq_succ (by rw [φ.finrank_negativeWeight_fun, hp])
-  obtain ⟨c, ⟨h₁, h₂⟩, ⟨hsep, hU⟩, hc⟩ := ((eventually_nhdsWithin_of_eventually_nhds
-    (eventually_axis (hX := hX) hφ)).and
-      ((eventually_unstableSet_eq_insert_union_orbit hφ hf hp).and self_mem_nhdsWithin)).exists
+  have hne : p ≠ q := ne_of_apply_ne (manifoldMorseIndex 𝓘(ℝ, E) f) (by omega)
+  obtain ⟨c, -, h₁, h₂, hp₁, hp₂, hsep, hU⟩ := exists_axis_point (hX := hX) hφ hf hp
   set a := φ.toChart.symm (φ.negativeExtend c)
   set b := φ.toChart.symm (φ.negativeExtend (-c))
-  have ha : a ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q :=
-    ⟨h₁.2.1, hW a h₁.2.1 (toChart_symm_negativeExtend_ne hc h₁.1)⟩
-  have hb : b ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q :=
-    ⟨h₂.2.1, hW b h₂.2.1 (toChart_symm_negativeExtend_ne (neg_ne_zero.2 hc) h₂.1)⟩
+  have ha : a ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q := ⟨h₁.1, hW a h₁.1 hp₁⟩
+  have hb : b ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q := ⟨h₂.1, hW b h₂.1 hp₂⟩
   -- The slice consists of one crossing on each of the two orbits, which carry opposite signs.
   obtain ⟨za, hza, zb, hzb, hslice⟩ := exists_morseTrajectorySlice_eq_pair hne ha hb hU
   have hmem {z : M} (hz : z ∈ hX.morseTrajectorySlice p q) :
@@ -510,15 +320,9 @@ theorem signedTrajectoryCount_eq_zero_of_mem_stableSet (hMS : hX.IsMorseSmale)
   have hza' := hmem (hslice ▸ mem_insert za {zb})
   have hzb' := hmem (hslice ▸ mem_insert_of_mem za (mem_singleton zb))
   have hsep' : zb ∉ hX.flow.orbit za := by
-    obtain ⟨s, rfl⟩ := (hX.flow.mem_orbit_iff).1 hza
-    obtain ⟨t, rfl⟩ := (hX.flow.mem_orbit_iff).1 hzb
-    rw [Flow.orbit_apply]
-    intro h
-    obtain ⟨u, hu⟩ := (hX.flow.mem_orbit_iff).1 h
-    exact hsep ((hX.flow.mem_orbit_iff).2
-      ⟨-t + u, by rw [Flow.map_add, hu, Flow.map_neg_apply_map]⟩)
-  have hne' : za ≠ zb := fun h ↦
-    hsep' (h ▸ (hX.flow.mem_orbit_iff).2 ⟨0, Flow.map_zero_apply _ _⟩)
+    rwa [← hX.flow.orbit_eq_iff, hX.flow.orbit_eq_iff.2 hza, hX.flow.orbit_eq_iff.2 hzb,
+      hX.flow.orbit_eq_iff]
+  have hne' : za ≠ zb := fun h ↦ hsep' (h ▸ hX.flow.mem_orbit_self za)
   rw [signedTrajectoryCount_def, hslice, finsum_mem_pair hne',
     trajectorySign_eq_neg_of_notMem_orbit hφ hφq hMS hf hp hza' hzb' hsep', add_neg_cancel]
 
@@ -539,13 +343,11 @@ theorem signedMorseBoundaryCoeff_eq_zero_of_unique_index_zero {m : criticalPoint
     (p : criticalPoints 𝓘(ℝ, E) f) : hX.signedMorseBoundaryCoeff 𝔬 p m = 0 := by
   -- A point of minimum of `f` is a critical point of index `0`, hence `m`.
   have hm : manifoldMorseIndex 𝓘(ℝ, E) f m = 0 := by
-    obtain ⟨x, -, hx⟩ := isCompact_univ.exists_isMinOn ⟨(m : M), mem_univ _⟩
-      hf.contMDiff.continuous.continuousOn
-    have hmin : IsLocalMin f x := hx.isLocalMin Filter.univ_mem
-    have hx0 := manifoldMorseIndex_eq_zero_of_isLocalMin
-      ((hf.contMDiff.of_le (by norm_cast)).contMDiffAt (x := x)) hmin
-    rw [← huniq x (mem_criticalPoints_iff_mfderiv_eq_zero.1 hmin.mem_criticalPoints) hx0]
-    exact hx0
+    have : Nonempty M := ⟨m⟩
+    have h0 := criticalCount_zero_ne_zero (hf.contMDiff.of_le (by norm_cast))
+    rw [criticalCount_def] at h0
+    obtain ⟨x, hx, hx0⟩ := Set.nonempty_of_encard_ne_zero h0
+    exact huniq x (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx) hx0 ▸ hx0
   by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f m + 1
   · rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hind]
     exact signedTrajectoryCount_eq_zero_of_mem_stableSet (𝔬.coord_mfderiv_chart p)

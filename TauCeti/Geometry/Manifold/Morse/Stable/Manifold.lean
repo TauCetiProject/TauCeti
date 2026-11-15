@@ -134,6 +134,15 @@ theorem negativeCoord_negativeExtend (c : {i // φ.weight i < 0} → ℝ) :
 theorem injective_negativeExtend : Injective φ.negativeExtend :=
   LeftInverse.injective φ.negativeCoord_negativeExtend
 
+/-- A point of the chart whose coordinates are `c ≠ 0` in the directions of negative weight and `0`
+elsewhere is not the centre of the chart. -/
+theorem toChart_symm_negativeExtend_ne {c : {i // φ.weight i < 0} → ℝ} (hc : c ≠ 0)
+    (hT : φ.negativeExtend c ∈ φ.toChart.target) : φ.toChart.symm (φ.negativeExtend c) ≠ x := by
+  intro h
+  have h0 : φ.negativeExtend c = 0 := by
+    rw [← φ.toChart.right_inv hT, h, φ.apply_self]
+  exact hc (φ.injective_negativeExtend (h0.trans (map_zero _).symm))
+
 /-- A vector whose coordinates of positive weight vanish is recovered from its coordinates of
 negative weight. -/
 theorem negativeExtend_negativeCoord {v : E}
