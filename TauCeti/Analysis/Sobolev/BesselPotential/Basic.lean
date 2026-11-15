@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # Bessel-potential and weak-derivative Sobolev spaces agree
@@ -46,6 +47,8 @@ descriptions.
 * `TemperedDistribution.mem_realSobolevFunctions_add_one_of_fderiv_apply`: conversely, a real `C¹`
   function in `H^{s,p}` whose classical directional derivatives lie in `H^{s,p}` lies in
   `H^{s+1,p}`.
+* `TemperedDistribution.mem_realSobolevFunctions_one_of_norm_le_mul_exp`: a real `C¹` function
+  which decays exponentially together with its derivative lies in `H^{1,p}`, `1 < p < ∞`.
 
 ## References
 
@@ -207,5 +210,24 @@ theorem mem_realSobolevFunctions_add_one_of_fderiv_apply {p : ℝ≥0∞} [Fact 
   obtain ⟨u', hu'f, hu'⟩ := mem_realSobolevFunctions.1 (hd v)
   rw [lineDerivOp_toTemperedDistribution_ofReal_eq_of_contDiff hf huf hu'f]
   exact hu'
+
+/-- **Exponentially decaying `C¹` functions are `H¹` functions.** For `1 < p < ∞`, a real `C¹`
+function on a finite-dimensional real inner product space which is bounded, together with its
+derivative, by `K exp (-(c ‖x‖))` for some `c > 0` lies in `H^{1,p}`. -/
+theorem mem_realSobolevFunctions_one_of_norm_le_mul_exp {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p)
+    (hp_top : p ≠ ∞) {f : E → ℝ} (hf : ContDiff ℝ 1 f) {c K : ℝ} (hc : 0 < c)
+    (hfK : ∀ x, ‖f x‖ ≤ K * Real.exp (-(c * ‖x‖)))
+    (hdK : ∀ x, ‖fderiv ℝ f x‖ ≤ K * Real.exp (-(c * ‖x‖))) :
+    f ∈ realSobolevFunctions E 1 p := by
+  have h₀ : f ∈ realSobolevFunctions E 0 p := mem_realSobolevFunctions_zero_iff.2 <|
+    memLp_of_norm_le_mul_exp_neg_mul_norm volume hf.continuous.aestronglyMeasurable hc hfK p
+  have hd (v : E) : (fun x ↦ fderiv ℝ f x v) ∈ realSobolevFunctions E 0 p := by
+    refine mem_realSobolevFunctions_zero_iff.2 <| memLp_of_norm_le_mul_exp_neg_mul_norm volume
+      ((hf.continuous_fderiv one_ne_zero).clm_apply continuous_const).aestronglyMeasurable hc
+      (K := K * ‖v‖) (fun x ↦ ?_) p
+    calc ‖fderiv ℝ f x v‖ ≤ ‖fderiv ℝ f x‖ * ‖v‖ := (fderiv ℝ f x).le_opNorm v
+      _ ≤ K * Real.exp (-(c * ‖x‖)) * ‖v‖ := by gcongr; exact hdK x
+      _ = K * ‖v‖ * Real.exp (-(c * ‖x‖)) := by ring
+  simpa using mem_realSobolevFunctions_add_one_of_fderiv_apply (s := 0) hp hp_top hf h₀ hd
 
 end TemperedDistribution

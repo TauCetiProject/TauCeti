@@ -18,9 +18,10 @@ A map whose norm is locally constant has derivative orthogonal to its value. In 
 derivative of a map into a sphere is tangent to the sphere. Away from the origin, a vanishing
 derivative of a norm-composition forces the one-dimensional profile derivative to vanish.
 
-The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
-sum of the squared partial derivatives of its components along `1` and `I`
-(`TauCeti.norm_fderiv_sq_le_two_mul_sum_sq`).
+The derivative of a component of a differentiable map into a Euclidean space has norm at most that
+of the derivative of the map (`TauCeti.norm_fderiv_apply_le`). The squared norm of the derivative
+of a map from `ℂ` to a Euclidean space is at most twice the sum of the squared partial derivatives
+of its components along `1` and `I` (`TauCeti.norm_fderiv_sq_le_two_mul_sum_sq`).
 
 The function `y ↦ √(a - ‖y‖²)`, whose graph over the ball of radius `√a` is a hemisphere, has
 derivative `-(√(a - ‖x‖²))⁻¹ ⟪x, ·⟫` wherever `a - ‖x‖² ≠ 0`; in particular it is flat at the
@@ -61,6 +62,17 @@ theorem inner_fderiv_eq_zero_of_eventually_norm_eq {ψ : E → F} {w : E}
         (hψ.mono fun y hy => by simp [hy])
     simpa using congrArg (fun L : E →L[ℝ] ℝ => L u) (h₁.unique h₂)
   · simp [fderiv_zero_of_not_differentiableAt hd]
+
+/-- The derivative of a component of a map into a Euclidean space, at a point where the map is
+differentiable, has norm at most that of the derivative of the map. -/
+theorem norm_fderiv_apply_le {ι : Type*} [Fintype ι] {u : E → EuclideanSpace ℝ ι} {z : E}
+    (hu : DifferentiableAt ℝ u z) (i : ι) :
+    ‖fderiv ℝ (fun w ↦ u w i) z‖ ≤ ‖fderiv ℝ u z‖ := by
+  have h : HasFDerivAt (fun w ↦ u w i) ((EuclideanSpace.proj i).comp (fderiv ℝ u z)) z :=
+    (EuclideanSpace.proj (𝕜 := ℝ) i).hasFDerivAt.comp z hu.hasFDerivAt
+  rw [h.fderiv]
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ ?_
+  simpa using (PiLp.norm_apply_le (fderiv ℝ u z v) i).trans ((fderiv ℝ u z).le_opNorm v)
 
 /-- The squared operator norm of the derivative of a map from `ℂ` to a Euclidean space is at most
 twice the sum, over the components, of the squared partial derivatives along `1` and `I`. -/

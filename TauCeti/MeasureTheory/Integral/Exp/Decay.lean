@@ -44,6 +44,8 @@ inclusion.
   `exp (b * x * I)`.
 * `TauCeti.integrable_exp_neg_mul_norm`: `exp (-(a * ‖·‖))` is integrable on a finite-dimensional
   space when `0 < a`.
+* `TauCeti.memLp_of_norm_le_mul_exp_neg_mul_norm`: a function bounded by a multiple of
+  `exp (-(a * ‖·‖))`, `0 < a`, lies in every `Lᵖ`.
 -/
 
 public section
@@ -131,6 +133,33 @@ theorem integrable_exp_neg_mul_norm {E : Type*} [NormedAddCommGroup E] [NormedSp
     exact (integrable_const (1 : ℝ)).congr (.of_forall fun x ↦ by simp [Subsingleton.elim x 0])
   · refine (integrable_fun_norm_addHaar μ (f := fun t ↦ Real.exp (-(a * t)))).mpr ?_
     simpa only [smul_eq_mul] using integrableOn_pow_mul_exp_neg_mul_Ioi _ ha
+
+/-- A function on a finite-dimensional real normed space bounded by a multiple of the radial
+exponential `exp (-(a * ‖x‖))`, `0 < a`, lies in every `Lᵖ` space of every additive Haar measure. -/
+theorem memLp_of_norm_le_mul_exp_neg_mul_norm {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    [NormedAddCommGroup F] (μ : Measure E) [μ.IsAddHaarMeasure] {g : E → F}
+    (hg : AEStronglyMeasurable g μ) {a K : ℝ} (ha : 0 < a)
+    (hK : ∀ x, ‖g x‖ ≤ K * Real.exp (-(a * ‖x‖))) (p : ℝ≥0∞) : MemLp g p μ := by
+  have hle (x : E) : K * Real.exp (-(a * ‖x‖)) ≤ |K| * Real.exp (-(a * ‖x‖)) := by
+    gcongr
+    exact le_abs_self K
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hg
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · refine memLp_top_of_bound hg |K| (.of_forall fun x ↦ (hK x).trans ((hle x).trans ?_))
+    exact mul_le_of_le_one_right (abs_nonneg K) (Real.exp_le_one_iff.2 (by
+      have := norm_nonneg x
+      nlinarith))
+  -- `‖g‖ ^ p ≤ |K| ^ p exp (-(p a ‖x‖))`, which is integrable.
+  have hpos : 0 < p.toReal := ENNReal.toReal_pos hp0 hptop
+  refine (integrable_norm_rpow_iff hg hp0 hptop).1 <|
+    ((integrable_exp_neg_mul_norm μ (mul_pos hpos ha)).const_mul (|K| ^ p.toReal)).mono'
+      (hg.norm.aemeasurable.pow_const _).aestronglyMeasurable (.of_forall fun x ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity),
+    show -(p.toReal * a * ‖x‖) = -(a * ‖x‖) * p.toReal by ring, Real.exp_mul,
+    ← Real.mul_rpow (abs_nonneg K) (Real.exp_pos _).le]
+  exact Real.rpow_le_rpow (norm_nonneg _) ((hK x).trans (hle x)) hpos.le
 
 /-- The two-sided exponential is integrable on the line. -/
 theorem integrable_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :

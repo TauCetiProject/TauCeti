@@ -49,8 +49,11 @@ products of `H^k` functions. Hence, if the equation defect of `x` and the gauge-
 `d₀*_(x₀) (x - x₀)` lie in `H^k`, then `L₀ y ∈ H^k`, and the vacuum regularity gives `y ∈ H^(k+1)`,
 that is, `x ∈ A_m^(k+1)` (`TauCeti.Vortex.mem_framedFieldSpace_add_one_of_equation`).
 
-For a solution of the vortex equation in the Coulomb slice through a base field lying in every
-`A_m^j`, iterating gives `x ∈ A_m^j` for every `j`, and the Sobolev embedding makes `x` smooth
+For a solution of the vortex equation whose Coulomb defect relative to a base field lying in every
+`A_m^j` lies in every `H^j`, for instance a solution in the Coulomb slice, iterating gives
+`x ∈ A_m^j` for every `j`
+(`TauCeti.Vortex.mem_framedFieldSpace_of_equation_eq_zero_of_gaugeAdjoint_mem`). In the Coulomb
+slice the Sobolev embedding then makes `x` smooth
 (`TauCeti.Vortex.mem_framedFieldSpace_of_equation_eq_zero`,
 `TauCeti.Vortex.contDiff_of_equation_eq_zero`). The reference field is such a base field
 (`TauCeti.Vortex.referenceField_mem_framedFieldSpace`).
@@ -64,10 +67,15 @@ All in the namespace `TauCeti.Vortex`:
 
 * `mem_sobolevFields_add_one_of_gaugeFixedOperator`: a `C¹` field `y ∈ H^s`, `s ≥ 1`, with
   `L₀ y ∈ H^s` lies in `H^(s+1)`.
+* `gaugeFixedOperator_sub_mem_sobolevFields_of_mul_mem`: `L_x y - L₀ y ∈ H^s` when `y ∈ H^s` and
+  the products of the coordinates of `x` and `y` lie in `H^s`.
 * `gaugeFixedOperator_sub_mem_sobolevFields`: `L_x - L₀` maps `H^n` to `H^n` for `x ∈ A_m^n`.
 * `mem_framedFieldSpace_add_one_of_equation`: a `C¹` field of `A_m^k`, `k ≥ 2`, whose equation
   defect and Coulomb defect relative to a base field of `A_m^(k+1)` lie in `H^k` lies in
   `A_m^(k+1)`.
+* `mem_framedFieldSpace_of_equation_eq_zero_of_gaugeAdjoint_mem`: a `C¹` vortex in `A_m^k`,
+  `k ≥ 2`, whose Coulomb defect relative to a base field lying in every `A_m^j` lies in every `H^j`
+  lies in every `A_m^j`.
 * `mem_framedFieldSpace_of_equation_eq_zero`, `contDiff_of_equation_eq_zero`: a `C¹` vortex in
   `A_m^k`, `k ≥ 2`, in the Coulomb slice through a base field lying in every `A_m^j` lies in every
   `A_m^j` and is smooth.
@@ -169,16 +177,14 @@ theorem mem_sobolevFields_add_one_of_gaugeFixedOperator {s : ℝ} (hs : 1 ≤ s)
 
 /-! ### The gauge-fixed operator at a framed field -/
 
-/-- **`L_x - L₀` has order zero.** For a field `x ∈ A_m^n`, `n ≥ 2`, the gauge-fixed operators at
-`x` and at the vacuum differ on `y ∈ H^n` by a field in `H^n`: their difference is multiplication of
-`y` by the coordinates of `x - vacuumField`. -/
-theorem gaugeFixedOperator_sub_mem_sobolevFields {f : ContDiffBump (0 : ℝ)} {m n : ℕ}
-    (hn : 1 < n) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m n)
-    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields n) :
-    gaugeFixedOperator x y - gaugeFixedOperator vacuumField y ∈ sobolevFields n := by
-  have hp (a b : Fin 4) : (fun z ↦ x z a * y z b) ∈ realSobolevFunctions ℂ n 2 :=
-    mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hn hx a (mem_sobolevFields.1 hy b)
-  have hc (b : Fin 4) : (fun z ↦ (1 / 2 : ℝ) * y z b) ∈ realSobolevFunctions ℂ n 2 :=
+/-- **`L_x - L₀` has order zero.** The gauge-fixed operators at `x` and at the vacuum differ on `y`
+by multiplication of `y` by the coordinates of `x - vacuumField`. So if `y ∈ H^s` and every product
+of a coordinate of `x` with a coordinate of `y` lies in `H^s`, then `L_x y - L₀ y ∈ H^s`. -/
+theorem gaugeFixedOperator_sub_mem_sobolevFields_of_mul_mem {s : ℝ}
+    {x y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s)
+    (hp : ∀ a b, (fun z ↦ x z a * y z b) ∈ realSobolevFunctions ℂ s 2) :
+    gaugeFixedOperator x y - gaugeFixedOperator vacuumField y ∈ sobolevFields s := by
+  have hc (b : Fin 4) : (fun z ↦ (1 / 2 : ℝ) * y z b) ∈ realSobolevFunctions ℂ s 2 :=
     Submodule.smul_mem _ (1 / 2 : ℝ) (mem_sobolevFields.1 hy b)
   refine mem_sobolevFields.2 fun i ↦ ?_
   fin_cases i
@@ -200,6 +206,15 @@ theorem gaugeFixedOperator_sub_mem_sobolevFields {f : ContDiffBump (0 : ℝ)} {m
     ext z
     simp [vacuumField_apply]
     ring
+
+/-- **`L_x - L₀` has order zero on `A_m^n`.** For a field `x ∈ A_m^n`, `n ≥ 2`, the gauge-fixed
+operators at `x` and at the vacuum differ on `y ∈ H^n` by a field in `H^n`. -/
+theorem gaugeFixedOperator_sub_mem_sobolevFields {f : ContDiffBump (0 : ℝ)} {m n : ℕ}
+    (hn : 1 < n) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m n)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields n) :
+    gaugeFixedOperator x y - gaugeFixedOperator vacuumField y ∈ sobolevFields n :=
+  gaugeFixedOperator_sub_mem_sobolevFields_of_mul_mem hy fun a b ↦
+    mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hn hx a (mem_sobolevFields.1 hy b)
 
 /-! ### The bootstrap -/
 
@@ -297,14 +312,15 @@ theorem mem_framedFieldSpace_add_one_of_equation {f : ContDiffBump (0 : ℝ)} {m
   exact mem_framedFieldSpace.2 <| mem_sobolevFields_add_one_of_gaugeFixedOperator
     (by exact_mod_cast hk.le) hy (hxc.sub ((contDiff_referenceField f m).of_le (by simp))) hL₀
 
-/-- **Gauge-fixed vortices lie in every `A_m^j`.** Let `x₀` be a `C¹` base field lying in every
-`A_m^j`, such as the reference field. A `C¹` solution `x ∈ A_m^k`, `k ≥ 2`, of the vortex equation
-in the Coulomb slice `d₀*_(x₀) (x - x₀) = 0` lies in every `A_m^j`. -/
-theorem mem_framedFieldSpace_of_equation_eq_zero {f : ContDiffBump (0 : ℝ)} {m k : ℕ}
-    (hk : 1 < k) {x₀ x : ℂ → EuclideanSpace ℝ (Fin 4)}
+/-- **Vortices with a smooth Coulomb defect lie in every `A_m^j`.** Let `x₀` be a `C¹` base field
+lying in every `A_m^j`, such as the reference field. A `C¹` solution `x ∈ A_m^k`, `k ≥ 2`, of the
+vortex equation whose Coulomb defect `d₀*_(x₀) (x - x₀)` lies in every `H^j` lies in every
+`A_m^j`. -/
+theorem mem_framedFieldSpace_of_equation_eq_zero_of_gaugeAdjoint_mem {f : ContDiffBump (0 : ℝ)}
+    {m k : ℕ} (hk : 1 < k) {x₀ x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx₀ : ∀ j : ℕ, x₀ ∈ framedFieldSpace f m j) (hx₀c : ContDiff ℝ 1 x₀)
     (hx : x ∈ framedFieldSpace f m k) (hxc : ContDiff ℝ 1 x) (heq : ∀ z, equation x z = 0)
-    (hgauge : ∀ z, gaugeAdjoint x₀ (x - x₀) z = 0) (j : ℕ) :
+    (hgauge : ∀ j : ℕ, gaugeAdjoint x₀ (x - x₀) ∈ realSobolevFunctions ℂ j 2) (j : ℕ) :
     x ∈ framedFieldSpace f m j := by
   have hzero (s : ℝ) : (0 : ℂ → ℝ) ∈ realSobolevFunctions ℂ s 2 := zero_mem _
   -- Climb from `A_m^k` one order at a time.
@@ -314,10 +330,21 @@ theorem mem_framedFieldSpace_of_equation_eq_zero {f : ContDiffBump (0 : ℝ)} {m
     | succ i ih =>
       have h := mem_framedFieldSpace_add_one_of_equation (k := k + i) (by omega)
         (by exact_mod_cast hx₀ (k + i + 1)) hx₀c ih hxc
-        (fun i ↦ by convert hzero _ using 1; ext z; simp [heq z])
-        (by convert hzero _ using 1; ext z; exact hgauge z)
+        (fun i ↦ by convert hzero _ using 1; ext z; simp [heq z]) (by exact_mod_cast hgauge _)
       exact_mod_cast h
   exact framedFieldSpace_mono f m (by exact_mod_cast (Nat.le_add_left j k)) (hclimb j)
+
+/-- **Gauge-fixed vortices lie in every `A_m^j`.** Let `x₀` be a `C¹` base field lying in every
+`A_m^j`, such as the reference field. A `C¹` solution `x ∈ A_m^k`, `k ≥ 2`, of the vortex equation
+in the Coulomb slice `d₀*_(x₀) (x - x₀) = 0` lies in every `A_m^j`. -/
+theorem mem_framedFieldSpace_of_equation_eq_zero {f : ContDiffBump (0 : ℝ)} {m k : ℕ}
+    (hk : 1 < k) {x₀ x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx₀ : ∀ j : ℕ, x₀ ∈ framedFieldSpace f m j) (hx₀c : ContDiff ℝ 1 x₀)
+    (hx : x ∈ framedFieldSpace f m k) (hxc : ContDiff ℝ 1 x) (heq : ∀ z, equation x z = 0)
+    (hgauge : ∀ z, gaugeAdjoint x₀ (x - x₀) z = 0) (j : ℕ) :
+    x ∈ framedFieldSpace f m j :=
+  mem_framedFieldSpace_of_equation_eq_zero_of_gaugeAdjoint_mem hk hx₀ hx₀c hx hxc heq
+    (fun _ ↦ by convert zero_mem (realSobolevFunctions ℂ _ 2) using 1; ext z; exact hgauge z) j
 
 /-- **Gauge-fixed vortices are smooth.** A `C¹` solution `x ∈ A_m^k`, `k ≥ 2`, of the vortex
 equation in the Coulomb slice `d₀*_(x₀) (x - x₀) = 0` through a `C¹` base field `x₀` lying in every

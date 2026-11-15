@@ -177,13 +177,12 @@ theorem gaugeFixedAdjoint_mem_sobolevFields {f : ContDiffBump (0 : ℝ)} {m k : 
     simp only [Fin.reduceFinMk, Fin.isValue, gaugeFixedAdjoint_apply_three, Pi.add_apply,
       Pi.sub_apply, Pi.neg_apply]
 
-/-- The quadratic remainder of the vortex equation maps `H^s` fields, `s > 1`, to `H^s`. -/
-theorem quadraticTerm_apply_mem_realSobolevFunctions {s : ℝ} (hs : 1 < s)
-    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) (i : Fin 3) :
+/-- The rows of the quadratic remainder of the vortex equation lie in `H^s` when every product of
+two coordinates of `y` does. -/
+theorem quadraticTerm_apply_mem_realSobolevFunctions_of_mul_mem {s : ℝ}
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hp : ∀ a b, (fun z ↦ y z a * y z b) ∈ realSobolevFunctions ℂ s 2) (i : Fin 3) :
     (fun z ↦ quadraticTerm y z i) ∈ realSobolevFunctions ℂ s 2 := by
-  have hp (a b : Fin 4) : (fun z ↦ y z a * y z b) ∈ realSobolevFunctions ℂ s 2 :=
-    mul_mem_realSobolevFunctions (finrank_real_complex_lt_two_mul hs) (mem_sobolevFields.1 hy a)
-      (mem_sobolevFields.1 hy b)
   fin_cases i
   · convert Submodule.smul_mem _ (1 / 2 : ℝ) (add_mem (hp 2 2) (hp 3 3)) using 1
     ext z
@@ -197,6 +196,14 @@ theorem quadraticTerm_apply_mem_realSobolevFunctions {s : ℝ} (hs : 1 < s)
   · convert sub_mem (hp 0 2) (hp 1 3) using 1
     ext z
     simp
+
+/-- The quadratic remainder of the vortex equation maps `H^s` fields, `s > 1`, to `H^s`. -/
+theorem quadraticTerm_apply_mem_realSobolevFunctions {s : ℝ} (hs : 1 < s)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) (i : Fin 3) :
+    (fun z ↦ quadraticTerm y z i) ∈ realSobolevFunctions ℂ s 2 :=
+  quadraticTerm_apply_mem_realSobolevFunctions_of_mul_mem (fun a b ↦
+    mul_mem_realSobolevFunctions (finrank_real_complex_lt_two_mul hs) (mem_sobolevFields.1 hy a)
+      (mem_sobolevFields.1 hy b)) i
 
 /-- **The vortex equation map on the Sobolev scale.** For an integer `k ≥ 1`, the equation
 defect `(*iF_a - (1 - |α|²) / 8, Re ∂bar_a α, Im ∂bar_a α)` of a `C¹` field `x ∈ A_m^(k+1)` has
