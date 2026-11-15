@@ -39,6 +39,15 @@ Filled compact exhaustions of open sets in proper real normed spaces are constru
   condition through the bounded components of `Kᶜ`.
 * `TauCeti.isFilledIn_univ_iff`: a closed set is filled in the whole space exactly when it equals
   its filled hull.
+* `TauCeti.frontier_connectedComponentIn_sdiff_subset` and
+  `TauCeti.connectedComponentIn_sdiff_eq_of_closure_subset`: when `Ω \ K` is open, a connected
+  component of `Ω \ K` whose closure lies in `Ω` has frontier in `K` and coincides with the
+  connected component in `Kᶜ`.
+* `TauCeti.isFilledIn_union_setOf_isCompact_closure_connectedComponentIn`,
+  `TauCeti.union_setOf_isCompact_closure_connectedComponentIn_subset_filledHull`, and
+  `IsClosed.isClosed_union_setOf_isCompact_closure_connectedComponentIn`: adjoining to `K` all
+  connected components of `Ω \ K` with compact closure in `Ω` produces a closed subset of
+  `filledHull K` that is filled in `Ω`.
 
 ## References
 
@@ -68,7 +77,51 @@ theorem isFilledIn_iff :
     IsFilledIn K Ω ↔ ∀ x ∈ Ω \ K,
       ¬ (IsCompact (closure (connectedComponentIn (Ω \ K) x)) ∧
         closure (connectedComponentIn (Ω \ K) x) ⊆ Ω) :=
-  Iff.rfl
+  (Iff.rfl)
+
+/-- Adjoining to `K` all connected components of `Ω \ K` whose closures are compact subsets of `Ω`
+produces a set filled in `Ω`. -/
+theorem isFilledIn_union_setOf_isCompact_closure_connectedComponentIn (K Ω : Set X) :
+    IsFilledIn (K ∪ {z | z ∈ Ω \ K ∧
+      IsCompact (closure (connectedComponentIn (Ω \ K) z)) ∧
+      closure (connectedComponentIn (Ω \ K) z) ⊆ Ω}) Ω := by
+  set K' := K ∪ {z | z ∈ Ω \ K ∧
+    IsCompact (closure (connectedComponentIn (Ω \ K) z)) ∧
+    closure (connectedComponentIn (Ω \ K) z) ⊆ Ω}
+  refine isFilledIn_iff.mpr fun x hx ⟨hcpt, hsub⟩ => hx.2 (Or.inr ?_)
+  have hxΩK : x ∈ Ω \ K := ⟨hx.1, fun h => hx.2 (Or.inl h)⟩
+  have hcomp_eq : connectedComponentIn (Ω \ K') x = connectedComponentIn (Ω \ K) x := by
+    refine Subset.antisymm
+      (connectedComponentIn_mono x (sdiff_subset_sdiff Subset.rfl subset_union_left)) ?_
+    refine isPreconnected_connectedComponentIn.subset_connectedComponentIn
+      (mem_connectedComponentIn hxΩK) fun y hy => ⟨(connectedComponentIn_subset _ _ hy).1, ?_⟩
+    rintro (hyK | ⟨-, hycpt, hysub⟩)
+    · exact (connectedComponentIn_subset _ _ hy).2 hyK
+    · have hxy : connectedComponentIn (Ω \ K) y = connectedComponentIn (Ω \ K) x :=
+        (connectedComponentIn_eq hy).symm
+      exact hx.2 (Or.inr ⟨hxΩK, hxy ▸ hycpt, hxy ▸ hysub⟩)
+  exact ⟨hxΩK, hcomp_eq ▸ hcpt, hcomp_eq ▸ hsub⟩
+
+/-- If `Ω \ K` is open in a locally connected space and a connected component of `Ω \ K` has
+closure contained in `Ω`, then its frontier lies in `K`. -/
+theorem frontier_connectedComponentIn_sdiff_subset [LocallyConnectedSpace X]
+    (hΩK : IsOpen (Ω \ K)) {x : X} (hsub : closure (connectedComponentIn (Ω \ K) x) ⊆ Ω) :
+    frontier (connectedComponentIn (Ω \ K) x) ⊆ K := fun y hy => by
+  by_contra hyK
+  exact frontier_connectedComponentIn_subset_compl hΩK x hy
+    ⟨hsub (frontier_subset_closure hy), hyK⟩
+
+/-- If `Ω \ K` is open in a locally connected space and the connected component of `x ∈ Ω \ K` in
+`Ω \ K` has closure contained in `Ω`, then it coincides with the connected component of `x` in
+`Kᶜ`. -/
+theorem connectedComponentIn_sdiff_eq_of_closure_subset [LocallyConnectedSpace X]
+    (hΩK : IsOpen (Ω \ K)) {x : X} (hx : x ∈ Ω \ K)
+    (hsub : closure (connectedComponentIn (Ω \ K) x) ⊆ Ω) :
+    connectedComponentIn (Ω \ K) x = connectedComponentIn Kᶜ x :=
+  Subset.antisymm (connectedComponentIn_mono x (sdiff_subset_compl Ω K)) <|
+    isPreconnected_connectedComponentIn.subset_connectedComponentIn_of_inter_closure_subset
+      hΩK (mem_connectedComponentIn hx.2) hx
+      fun _ hy => ⟨hsub hy.2, connectedComponentIn_subset _ _ hy.1⟩
 
 end Topology
 
@@ -95,14 +148,12 @@ theorem isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subs
     exact h x ⟨hDΩ (mem_connectedComponentIn hxK), hxK⟩
       ⟨(mem_filledHull_iff.mp hxH).isCompact_closure.of_isClosed_subset isClosed_closure
         (closure_mono hCD), (closure_mono hCD).trans hclD⟩
-  · -- A relatively compact component of `Ω \ K` would contain the whole component of `x` in `Kᶜ`.
-    rintro h x ⟨hxΩ, hxK⟩ ⟨hcpt, hsub⟩
-    have hD : connectedComponentIn Kᶜ x ⊆ connectedComponentIn (Ω \ K) x :=
-      isPreconnected_connectedComponentIn.subset_connectedComponentIn_of_inter_closure_subset
-        (hΩ.sdiff hK) (mem_connectedComponentIn hxK) ⟨hxΩ, hxK⟩
-        fun y hy => ⟨hsub hy.2, connectedComponentIn_subset _ _ hy.1⟩
-    exact h x ⟨mem_filledHull_iff.mpr (hcpt.isBounded.subset (hD.trans subset_closure)), hxK⟩
-      (hD.trans (subset_closure.trans hsub))
+  · -- A relatively compact component of `Ω \ K` equals the component of `x` in `Kᶜ`.
+    rintro h x hx ⟨hcpt, hsub⟩
+    have hD : connectedComponentIn (Ω \ K) x = connectedComponentIn Kᶜ x :=
+      connectedComponentIn_sdiff_eq_of_closure_subset (hΩ.sdiff hK) hx hsub
+    exact h x ⟨mem_filledHull_iff.mpr (hD ▸ hcpt.isBounded.subset subset_closure), hx.2⟩
+      (hD ▸ subset_closure.trans hsub)
 
 /-- A closed set is filled in the whole space exactly when it equals its filled hull, i.e. its
 complement has no bounded connected component. -/
@@ -112,6 +163,48 @@ theorem isFilledIn_univ_iff (hK : IsClosed K) : IsFilledIn K univ ↔ filledHull
   exact ⟨fun h => Subset.antisymm
       (fun x hx => by_contra fun hxK => h x ⟨hx, hxK⟩ (subset_univ _)) subset_filledHull,
     fun h x hx _ => hx.2 (h ▸ hx.1)⟩
+
+omit [ProperSpace X] in
+/-- When `Ω \ K` is open in a locally connected pseudometric space, `K` together with all connected
+components of `Ω \ K` having compact closure in `Ω` lies inside `filledHull K`. -/
+theorem union_setOf_isCompact_closure_connectedComponentIn_subset_filledHull
+    (hΩK : IsOpen (Ω \ K)) :
+    K ∪ {z | z ∈ Ω \ K ∧ IsCompact (closure (connectedComponentIn (Ω \ K) z)) ∧
+      closure (connectedComponentIn (Ω \ K) z) ⊆ Ω} ⊆ filledHull K := by
+  rintro z (hzK | ⟨hz, hcpt, hsub⟩)
+  · exact subset_filledHull hzK
+  · exact subset_filledHull_of_frontier_subset (hcpt.isBounded.subset subset_closure)
+      (frontier_connectedComponentIn_sdiff_subset hΩK hsub)
+      (mem_connectedComponentIn hz)
+
+omit [ProperSpace X] in
+/-- For an open set `Ω` and closed `K` in a locally connected pseudometric space, adjoining to `K`
+all connected components of `Ω \ K` having compact closure in `Ω` produces a closed set. -/
+theorem _root_.IsClosed.isClosed_union_setOf_isCompact_closure_connectedComponentIn
+    (hK : IsClosed K) (hΩ : IsOpen Ω) :
+    IsClosed (K ∪ {z | z ∈ Ω \ K ∧ IsCompact (closure (connectedComponentIn (Ω \ K) z)) ∧
+      closure (connectedComponentIn (Ω \ K) z) ⊆ Ω}) := by
+  set K' := K ∪ {z | z ∈ Ω \ K ∧ IsCompact (closure (connectedComponentIn (Ω \ K) z)) ∧
+    closure (connectedComponentIn (Ω \ K) z) ⊆ Ω}
+  rw [← isOpen_compl_iff, isOpen_iff_forall_mem_open]
+  intro z hz
+  by_cases hzF : z ∈ filledHull K
+  · have hzK : z ∉ K := fun h => hz (Or.inl h)
+    refine ⟨connectedComponentIn Kᶜ z, fun w hw hwK' => ?_,
+      hK.isOpen_compl.connectedComponentIn, mem_connectedComponentIn hzK⟩
+    rcases hwK' with hwK | ⟨hwΩK, hwcpt, hwsub⟩
+    · exact connectedComponentIn_subset Kᶜ z hw hwK
+    · have hD : connectedComponentIn (Ω \ K) w = connectedComponentIn Kᶜ z :=
+        (connectedComponentIn_sdiff_eq_of_closure_subset (hΩ.sdiff hK) hwΩK hwsub).trans
+          (connectedComponentIn_eq hw).symm
+      have hzC : z ∈ connectedComponentIn (Ω \ K) w := hD.symm ▸ mem_connectedComponentIn hzK
+      have hzC_eq : connectedComponentIn (Ω \ K) z = connectedComponentIn (Ω \ K) w :=
+        (connectedComponentIn_eq hzC).symm
+      exact hz (Or.inr ⟨connectedComponentIn_subset _ _ hzC, hzC_eq ▸ hwcpt, hzC_eq ▸ hwsub⟩)
+  · exact ⟨(filledHull K)ᶜ,
+      compl_subset_compl.mpr
+        (union_setOf_isCompact_closure_connectedComponentIn_subset_filledHull (hΩ.sdiff hK)),
+      hK.isClosed_filledHull.isOpen_compl, hzF⟩
 
 end MetricSpace
 
