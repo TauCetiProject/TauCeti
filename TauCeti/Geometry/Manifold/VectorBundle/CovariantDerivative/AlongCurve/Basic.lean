@@ -96,7 +96,7 @@ variable (cov : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
 
 /-- The moving-chart coordinate formula for `V` along `γ` in the chart centred at `x`, taken
 within the parameter set `s`: `v' + Γ(v, u')`, where `u = extChartAt I x ∘ γ` and
-`v = sectionCoord γ V x` are the coordinate readings of the curve and the field, their
+`v = sectionCoord 𝕜 γ V x` are the coordinate readings of the curve and the field, their
 derivatives are taken within `s`, and `Γ` is the Christoffel map of `cov` in the local frame of
 the fixed basis `Module.finBasis 𝕜 E`.  Its chart independence and agreement with an ambient
 derivative are established for fields pulled back from ambient vector fields by
