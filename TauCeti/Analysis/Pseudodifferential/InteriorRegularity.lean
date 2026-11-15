@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.BesselPotentialSpace
 public import TauCeti.Analysis.Pseudodifferential.Composition.Parametrix
+import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 
 /-!
 # Interior elliptic regularity on Bessel-potential spaces
@@ -183,10 +184,8 @@ theorem memSobolev_smulLeftCLM_of_memSobolev_quantizeSobolev
   rw [hψu r u, toDistr_quantizeSobolev_congr rfl
     (hasCompactSpatialSupport_localize hψ b) (hasCompactSpatialSupport_localize hψ b)
     (MemSobolev.toBesselPotentialSpace_toDistr hu).symm]
-  have hmem {t : ℝ} (f : H^{t}(CoordinateSpace n, V)) (ht : t = s + m) :
-      MemSobolev (s + m) 2 f.toDistr :=
-    ht ▸ f.memSobolev_toDistr
-  exact (hmem _ (by ring)).sub (hmem _ (by ring))
+  exact (BesselPotentialSpace.memSobolev_toDistr_of_eq _ (by ring)).sub
+    (BesselPotentialSpace.memSobolev_toDistr_of_eq _ (by ring))
 
 /-- **Interior elliptic estimate.** Let `b` be a formal left parametrix of the symbol `a` of order
 `m`, `1 ∼ ∑ₖ sharpTerm b a k`, let `ψ` be a compactly supported Schwartz function, and `p` a
@@ -210,10 +209,6 @@ theorem exists_norm_smulLeftCLM_le
   set T := R.quantizeSobolev hR r
   refine ⟨max ‖Q‖ ‖T‖, fun u ↦ ?_⟩
   -- `ψ u = Q (Op(p) u) - T u`, compared in `H^{s + m}`.
-  have hnorm {t : ℝ} (f : H^{t}(CoordinateSpace n, V)) (ht : t = s + m) :
-      ‖f.copy (s + m) ht‖ = ‖f‖ := by
-    rw [← BesselPotentialSpace.norm_toLp_eq, BesselPotentialSpace.toLp_copy _ ht,
-      BesselPotentialSpace.norm_toLp_eq]
   set X := BesselPotentialSpace.copy (s + m) (Q (p.quantizeSobolev hp (s + m) u)) (by ring)
   set Y := BesselPotentialSpace.copy (s + m) (T (BesselPotentialSpace.inclusion hr u)) (by ring)
   have hXY : BesselPotentialSpace.smulLeftCLM (s + m) ψ u = X - Y := by
@@ -225,7 +220,7 @@ theorem exists_norm_smulLeftCLM_le
     exact toDistr_quantizeSobolev_congr rfl hR hR (by simp)
   calc ‖BesselPotentialSpace.smulLeftCLM (s + m) ψ u‖ ≤ ‖X‖ + ‖Y‖ := hXY ▸ norm_sub_le X Y
     _ ≤ ‖Q‖ * ‖p.quantizeSobolev hp (s + m) u‖ + ‖T‖ * ‖BesselPotentialSpace.inclusion hr u‖ := by
-      rw [hnorm, hnorm]
+      rw [BesselPotentialSpace.norm_copy, BesselPotentialSpace.norm_copy]
       exact add_le_add (Q.le_opNorm _) (T.le_opNorm _)
     _ ≤ _ := by
       rw [mul_add]
@@ -301,10 +296,8 @@ theorem memSobolev_smulLeftCLM_of_memSobolev_quantizeBesselPotentialSpace
   rw [hψu r u, toDistr_quantizeBesselPotentialSpace_congr rfl
     (hasCompactSpatialSupport_localize hψ b) (hasCompactSpatialSupport_localize hψ b) hp hp_top
     (MemSobolev.toBesselPotentialSpace_toDistr hu).symm]
-  have hmem {t : ℝ} (f : H^{t, p}(CoordinateSpace n, V)) (ht : t = s + m) :
-      MemSobolev (s + m) p f.toDistr :=
-    ht ▸ f.memSobolev_toDistr
-  exact (hmem _ (by ring)).sub (hmem _ (by ring))
+  exact (BesselPotentialSpace.memSobolev_toDistr_of_eq _ (by ring)).sub
+    (BesselPotentialSpace.memSobolev_toDistr_of_eq _ (by ring))
 
 /-- **Interior elliptic regularity on `H^{s,p}` for elliptic symbols.** Let `1 < p < ∞`, let `V`
 and `W` be finite-dimensional, let `a` be a symbol of order `m` elliptic above some radius, let `ψ`
@@ -349,10 +342,6 @@ theorem exists_norm_le_of_toDistr_eq_smulLeftCLM
   set T := R.quantizeBesselPotentialSpace hR r p
   refine ⟨max ‖Q‖ ‖T‖, fun u v hv ↦ ?_⟩
   -- `v = ψ u = Q (Op(c) u) - T u`, compared in `H^{s + m,p}`.
-  have hnorm {t : ℝ} (f : H^{t, p}(CoordinateSpace n, V)) (ht : t = s + m) :
-      ‖f.copy (s + m) ht‖ = ‖f‖ := by
-    rw [← BesselPotentialSpace.norm_toLp_eq, BesselPotentialSpace.toLp_copy _ ht,
-      BesselPotentialSpace.norm_toLp_eq]
   set X := BesselPotentialSpace.copy (s + m)
     (Q (c.quantizeBesselPotentialSpace hc (s + m) p u)) (by ring)
   set Y := BesselPotentialSpace.copy (s + m) (T (BesselPotentialSpace.inclusion hr u)) (by ring)
@@ -365,7 +354,7 @@ theorem exists_norm_le_of_toDistr_eq_smulLeftCLM
   calc ‖v‖ ≤ ‖X‖ + ‖Y‖ := hXY ▸ norm_sub_le X Y
     _ ≤ ‖Q‖ * ‖c.quantizeBesselPotentialSpace hc (s + m) p u‖ +
         ‖T‖ * ‖BesselPotentialSpace.inclusion hr u‖ := by
-      rw [hnorm, hnorm]
+      rw [BesselPotentialSpace.norm_copy, BesselPotentialSpace.norm_copy]
       exact add_le_add (Q.le_opNorm _) (T.le_opNorm _)
     _ ≤ _ := by
       rw [mul_add]

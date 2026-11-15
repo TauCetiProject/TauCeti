@@ -65,6 +65,9 @@ these bounds over `η`.
 * `TauCeti.Symbol.quantizeBesselPotentialSpace_add`,
   `TauCeti.Symbol.quantizeBesselPotentialSpace_smul` and their consequences: the operator is linear
   in the symbol.
+* `TauCeti.Symbol.quantizeBesselPotentialSpace_inclusion`,
+  `TauCeti.Symbol.quantizeBesselPotentialSpace_comp_inclusion`: compatibility with raising the order
+  of the symbol and with the inclusions `H^{s,p} ⊆ H^{r,p}`.
 * `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_congr`: the operators for different orders
   `s` and for symbols with the same coefficient agree as maps of tempered distributions.
 * `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id`: the symbol `φ(x)`
@@ -516,18 +519,45 @@ theorem quantizeBesselPotentialSpace_sub {b : Symbol n V W m} (ha : a.HasCompact
     hp_top]
   simp_rw [sub_add_cancel]
 
-/-- The operators of two symbols with the same coefficient agree on `H^{s,p} ⊆ H^{t,p}`,
-`t ≤ s`, as maps into the tempered distributions. -/
-private theorem toDistrCLM_comp_quantizeBesselPotentialSpace {b : Symbol n V W m'}
-    (hab : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
-    (hb : b.HasCompactSpatialSupport) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) {s t : ℝ}
-    (hts : t ≤ s) :
-    BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L a.quantizeBesselPotentialSpace ha s p =
-      BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L b.quantizeBesselPotentialSpace hb t p ∘L
-        BesselPotentialSpace.inclusion hts := by
+/-- **Changing the order of the symbol.** Let `1 < p < ∞`. Viewing a symbol of order `m` as a
+symbol of order `m' ≥ m` gives the operator `H^{s,p} → H^{s - m,p}` followed by the inclusion
+`H^{s - m,p} ⊆ H^{s - m',p}`. -/
+theorem quantizeBesselPotentialSpace_inclusion (h : m ≤ m') (ha : a.HasCompactSpatialSupport)
+    (ha' : (inclusion h a).HasCompactSpatialSupport) (s : ℝ) (hp : 1 < p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    (inclusion h a).quantizeBesselPotentialSpace ha' s p =
+      BesselPotentialSpace.inclusion (by linarith) ∘L a.quantizeBesselPotentialSpace ha s p := by
   refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
   simp [hp, hp_top, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
-    quantizeUniformCLM_congr ha.isUniform hb.isUniform hab]
+    quantizeUniformCLM_congr ha'.isUniform ha.isUniform (coefficient_inclusion h a)]
+
+/-- **Changing the Sobolev order.** Let `1 < p < ∞`. The operators
+`Op(a) : H^{s,p} → H^{s - m,p}` for the different orders `s` are compatible with the inclusions
+`H^{s,p} ⊆ H^{r,p}`. -/
+theorem quantizeBesselPotentialSpace_comp_inclusion (ha : a.HasCompactSpatialSupport) {r s : ℝ}
+    (h : r ≤ s) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    a.quantizeBesselPotentialSpace ha r p ∘L BesselPotentialSpace.inclusion h =
+      BesselPotentialSpace.inclusion (by linarith) ∘L a.quantizeBesselPotentialSpace ha s p := by
+  refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
+  simp [hp, hp_top, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM]
+
+/-- The case `t ≤ s` of `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_congr`. -/
+private theorem toDistr_quantizeBesselPotentialSpace_congr_of_le {b : Symbol n V W m'}
+    (hab : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) {s t : ℝ}
+    (hts : t ≤ s) {u : H^{s, p}(CoordinateSpace n, V)} {v : H^{t, p}(CoordinateSpace n, V)}
+    (huv : u.toDistr = v.toDistr) :
+    (a.quantizeBesselPotentialSpace ha s p u).toDistr =
+      (b.quantizeBesselPotentialSpace hb t p v).toDistr := by
+  have key : BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L a.quantizeBesselPotentialSpace ha s p =
+      BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L b.quantizeBesselPotentialSpace hb t p ∘L
+        BesselPotentialSpace.inclusion hts := by
+    refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
+    simp [hp, hp_top, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
+      quantizeUniformCLM_congr ha.isUniform hb.isUniform hab]
+  have hv : v = BesselPotentialSpace.inclusion hts u :=
+    BesselPotentialSpace.ext (by rw [BesselPotentialSpace.toDistr_inclusion, huv])
+  simpa [hv] using congrArg (fun T ↦ T u) key
 
 /-- **Compatibility of the extensions.** The operator `Op(a) : H^{s,p} → H^{s - m,p}` only depends
 on the coefficient of `a` and on the tempered distribution of its argument: symbols `a` and `b` of
@@ -541,18 +571,9 @@ theorem toDistr_quantizeBesselPotentialSpace_congr {b : Symbol n V W m'}
     (a.quantizeBesselPotentialSpace ha s p u).toDistr =
       (b.quantizeBesselPotentialSpace hb t p v).toDistr := by
   rcases le_total t s with h | h
-  · have key := congrArg (fun T ↦ T u)
-      (toDistrCLM_comp_quantizeBesselPotentialSpace hab ha hb hp hp_top h)
-    simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply] at key
-    rw [key]
-    congr 2
-    exact BesselPotentialSpace.ext (by rw [BesselPotentialSpace.toDistr_inclusion, huv])
-  · have key := congrArg (fun T ↦ T v)
-      (toDistrCLM_comp_quantizeBesselPotentialSpace hab.symm hb ha hp hp_top h)
-    simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply] at key
-    rw [key]
-    congr 2
-    exact BesselPotentialSpace.ext (by rw [BesselPotentialSpace.toDistr_inclusion, huv])
+  · exact toDistr_quantizeBesselPotentialSpace_congr_of_le hab ha hb hp hp_top h huv
+  · exact (toDistr_quantizeBesselPotentialSpace_congr_of_le hab.symm hb ha hp hp_top h
+      huv.symm).symm
 
 /-- **Multiplication operators.** For a Schwartz function `φ` such that the symbol `φ(x) id` of
 order `0` has compact spatial support, for instance a compactly supported `φ`
