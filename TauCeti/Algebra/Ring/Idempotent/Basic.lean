@@ -18,13 +18,20 @@ to the product decomposition, an element `e x + (1 - e) y` has `e`-component `e 
 componentwise.
 
 For an idempotent `p` of any ring, `2 p - 1` squares to `1`. For a star projection this is the
-self-adjoint unitary `IsStarProjection.two_mul_sub_one_mem_unitary`.
+self-adjoint unitary `IsStarProjection.two_mul_sub_one_mem_unitary`. Conversely, for any element
+`u` with `u * u = 1`, `1 + u` squares to `(1 + u) + (1 + u)`, and when `v` anticommutes with `u`
+(`u * v + v * u = 0`), the sandwich `(1 + u) * (1 + v) * (1 + u)` also reduces to
+`(1 + u) + (1 + u)`.
 
 ## Main results
 
 * `IsIdempotentElem.mul_add_one_sub_mul`: elements of the form `e x + (1 - e) y` multiply
   componentwise.
 * `IsIdempotentElem.two_mul_sub_one_mul_self`: `(2 p - 1) * (2 p - 1) = 1`.
+* `TauCeti.one_add_mul_self_of_mul_self_eq_one`: if `u * u = 1`, then
+  `(1 + u) * (1 + u) = (1 + u) + (1 + u)`.
+* `TauCeti.one_add_mul_one_add_mul_one_add_of_mul_self_eq_one`: if `u * u = 1` and
+  `u * v + v * u = 0`, then `(1 + u) * (1 + v) * (1 + u) = (1 + u) + (1 + u)`.
 -/
 
 public section
@@ -55,3 +62,33 @@ theorem two_mul_sub_one_mul_self (hp : IsIdempotentElem p) : (2 * p - 1) * (2 * 
 end Ring
 
 end IsIdempotentElem
+
+namespace TauCeti
+
+/-- If `u * u = 1`, then `1 + u` squares to `(1 + u) + (1 + u)` (so after dividing by `2`,
+`2⁻¹ • (1 + u)` is idempotent). -/
+theorem one_add_mul_self_of_mul_self_eq_one {R : Type*} [NonAssocSemiring R] {u : R}
+    (hu : u * u = 1) :
+    (1 + u) * (1 + u) = (1 + u) + (1 + u) := by
+  rw [add_mul, one_mul, mul_add, mul_one, hu, add_comm u 1]
+
+/-- If `u * u = 1` and `u * v + v * u = 0`, then `(1 + u) * (1 + v) * (1 + u)` reduces to
+`(1 + u) + (1 + u)`. -/
+theorem one_add_mul_one_add_mul_one_add_of_mul_self_eq_one {R : Type*} [Semiring R] {u v : R}
+    (hu : u * u = 1) (huv : u * v + v * u = 0) :
+    (1 + u) * (1 + v) * (1 + u) = (1 + u) + (1 + u) := by
+  have hv : v + u * v * u = 0 :=
+    calc
+      v + u * v * u = 1 * v + u * (v * u) := by rw [one_mul, mul_assoc]
+      _ = u * u * v + u * (v * u) := by rw [hu]
+      _ = u * (u * v + v * u) := by rw [mul_assoc, mul_add]
+      _ = 0 := by rw [huv, mul_zero]
+  calc
+    (1 + u) * (1 + v) * (1 + u)
+        = ((1 + u) + (u + u * u)) + (u * v + v * u) + (v + u * v * u) := by
+          simp only [add_mul, mul_add, one_mul, mul_one]
+          ac_rfl
+    _ = (1 + u) + (1 + u) := by
+          rw [hu, huv, hv, add_zero, add_zero, add_comm u 1]
+
+end TauCeti
