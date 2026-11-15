@@ -13,11 +13,13 @@ import Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal
 import Mathlib.NumberTheory.RamificationInertia.Galois
 import Mathlib.RingTheory.DedekindDomain.AdicValuation.Ramification
 import Mathlib.RingTheory.Ideal.Int
+import TauCeti.NumberTheory.DedekindDomain.RelNorm
 import TauCeti.NumberTheory.GaussSum.Stickelberger
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Splitting
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.RingTheory.Ideal.Pointwise
+import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
 /-!
 # Stickelberger's relation
@@ -51,11 +53,14 @@ Away from `p`, `Φ(P)` is a unit because `Φ(P) σ_{-1}(Φ(P)) = N(P)^m`.
 
 ## Main results
 
+* `TauCeti.isUnit_stickelbergerProduct_iff`: for `m ≥ 2`, `α ^ γ` is a unit if and only if `α` is.
 * `Ideal.intValuation_smul_stickelbergerPhi`: `v_P(σ(Φ(P))) = ∑_{i < f} (p ^ i c(σ) mod m)`.
 * `Ideal.span_stickelbergerPhi_of_isMaximal`: `(Φ(P)) = ∏_σ (σ⁻¹ P) ^ c(σ)`.
 * `Ideal.span_stickelbergerPhi`: `(Φ(A)) = ∏_σ (σ⁻¹ A) ^ c(σ)` for `A` prime to `m`.
 * `Ideal.span_stickelbergerPhi_span_singleton`: `(Φ((α))) = (∏_σ (σ⁻¹ α) ^ c(σ))` for `α` prime
   to `m`.
+* `Ideal.powerResidueSymbolIdeal_stickelbergerProduct`: `(α ^ γ / 𝔅)_m = (α / (N 𝔅))_m` for every
+  ideal `𝔅` and element `α` of `𝓞 K`.
 
 ## References
 
@@ -106,6 +111,22 @@ theorem stickelbergerProduct_pow (α : 𝓞 K) (n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih => simp [pow_succ, ih]
+
+variable {m} in
+/-- For `m ≥ 2`, the Stickelberger product `α ^ γ` is a unit of `𝓞 K` if and only if `α` is:
+the factor `σ = 1` contributes `α ^ 1 = α`, and units are closed under Galois action, powers, and
+products. -/
+@[simp]
+theorem isUnit_stickelbergerProduct_iff (hm : 2 ≤ m) {α : 𝓞 K} :
+    IsUnit (stickelbergerProduct m α) ↔ IsUnit α := by
+  have : Fact (1 < m) := ⟨hm⟩
+  refine ⟨fun h ↦ isUnit_of_dvd_unit ?_ h, fun h ↦ ?_⟩
+  · rw [stickelbergerProduct_def]
+    simpa [ZMod.val_one] using Finset.dvd_prod_of_mem
+      (fun σ : Gal(K/ℚ) ↦ (σ⁻¹ • α) ^ (galEquivZMod m K σ : ZMod m).val) (Finset.mem_univ 1)
+  · rw [stickelbergerProduct_def]
+    exact Finset.prod_induction _ IsUnit (fun _ _ ↦ IsUnit.mul) isUnit_one fun σ _ ↦
+      (h.map (MulSemiringAction.toRingHom Gal(K/ℚ) (𝓞 K) σ⁻¹)).pow _
 
 end TauCeti
 
@@ -359,5 +380,68 @@ theorem span_stickelbergerPhi_span_singleton (hm : 2 ≤ m) {α : 𝓞 K}
       span {TauCeti.stickelbergerProduct m α} := by
   rw [TauCeti.stickelbergerProduct_def, span_stickelbergerPhi hm hα, ← prod_span_singleton]
   simp only [smul_closure, Set.smul_set_singleton, span_singleton_pow]
+
+/-- At a maximal ideal `P` of `𝓞 K`, `(α ^ γ / P)_m = (α / (N P))_m`: Galois equivariance turns
+`((σ⁻¹ α) ^ c(σ) / P)_m = σ((σ⁻¹ α / P)_m)` into `(α / σ P)_m`, and `∏_σ σ P = (N P)`. -/
+private theorem powerResidueSymbol_stickelbergerProduct_of_isMaximal (hm : 2 ≤ m)
+    (P : Ideal (𝓞 K)) [P.IsMaximal] (α : 𝓞 K) :
+    powerResidueSymbol P m (Quotient.mk P (TauCeti.stickelbergerProduct m α)) =
+      powerResidueSymbolIdeal (span {(absNorm P : 𝓞 K)}) m
+        (Quotient.mk (span {(absNorm P : 𝓞 K)}) α) := by
+  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
+  have : Fact (1 < m) := ⟨hm⟩
+  have hne (σ : Gal(K/ℚ)) : σ • P ≠ ⊥ :=
+    Ring.ne_bot_of_isMaximal_of_not_isField inferInstance (RingOfIntegers.not_isField K)
+  rw [← prod_smul_eq_span_absNorm Gal(K/ℚ) P,
+    powerResidueSymbolIdeal_prod_right (fun σ _ ↦ hne σ), TauCeti.stickelbergerProduct_def,
+    map_prod, map_prod]
+  refine Finset.prod_congr rfl fun σ _ ↦ ?_
+  rw [map_pow, map_pow]
+  let e := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ
+  have hPσ : σ • P = P.map e := rfl
+  have hrhs : powerResidueSymbolIdeal (σ • P) m (Quotient.mk (σ • P) α) =
+      σ • powerResidueSymbol P m (Quotient.mk P (σ⁻¹ • α)) := by
+    have hα : α = e (σ⁻¹ • α) := by simp [e]
+    nth_rw 1 [hα]
+    rw [hPσ, ← map_powerResidueSymbolIdeal, powerResidueSymbolIdeal_of_isMaximal,
+      MulSemiringAction.toRingEquiv_apply_apply]
+  rw [hrhs]
+  rcases eq_or_ne (Quotient.mk P (σ⁻¹ • α)) 0 with hx | hx
+  · have hc : (galEquivZMod m K σ : ZMod m).val ≠ 0 := by
+      rw [ne_eq, ZMod.val_eq_zero]
+      exact Units.ne_zero (galEquivZMod m K σ)
+    rw [hx, MulChar.map_zero, zero_pow hc, smul_zero]
+  · exact (galEquivZMod_smul_of_pow_eq m K σ (powerResidueSymbol_pow_eq_one hx)).symm
+
+/-- **The power residue symbol of the Stickelberger product.** Let `K` be the `m`-th cyclotomic
+field, `m ≥ 2`. For every ideal `𝔅` and element `α` of `𝓞 K`,
+`(α ^ γ / 𝔅)_m = (α / (N 𝔅))_m`, where `γ = ∑_σ c(σ) σ⁻¹` is the Stickelberger element. -/
+theorem powerResidueSymbolIdeal_stickelbergerProduct (hm : 2 ≤ m) (𝔅 : Ideal (𝓞 K)) (α : 𝓞 K) :
+    powerResidueSymbolIdeal 𝔅 m (Quotient.mk 𝔅 (TauCeti.stickelbergerProduct m α)) =
+      powerResidueSymbolIdeal (span {(absNorm 𝔅 : 𝓞 K)}) m
+        (Quotient.mk (span {(absNorm 𝔅 : 𝓞 K)}) α) := by
+  induction 𝔅 using induction_on_prime with
+  | h₁ =>
+    have hu : IsUnit (Quotient.mk (⊥ : Ideal (𝓞 K)) (TauCeti.stickelbergerProduct m α)) ↔
+        IsUnit (Quotient.mk (⊥ : Ideal (𝓞 K)) α) := by
+      simp only [Quotient.isUnit_mk_iff, sup_bot_eq, span_singleton_eq_top,
+        TauCeti.isUnit_stickelbergerProduct_iff hm]
+    rw [zero_eq_bot, absNorm_bot, Nat.cast_zero, span_singleton_zero, powerResidueSymbolIdeal_bot]
+    by_cases hα : IsUnit (Quotient.mk (⊥ : Ideal (𝓞 K)) α)
+    · rw [MulChar.one_apply (hu.mpr hα), MulChar.one_apply hα]
+    · rw [MulChar.map_nonunit _ (hu.not.mpr hα), MulChar.map_nonunit _ hα]
+  | h₂ 𝔅 h𝔅 =>
+    rw [isUnit_iff.mp h𝔅, absNorm_top, Nat.cast_one, span_singleton_one,
+      powerResidueSymbolIdeal_top, powerResidueSymbolIdeal_top]
+  | h₃ A P hA₀ hP ih =>
+    have hP₀ : P ≠ ⊥ := hP.ne_zero
+    have hA₀' : A ≠ ⊥ := hA₀
+    have : P.IsMaximal := (isPrime_of_prime hP).isMaximal hP₀
+    have hNP : span {(absNorm P : 𝓞 K)} ≠ ⊥ := by simpa [absNorm_eq_zero_iff] using hP₀
+    have hNA : span {(absNorm A : 𝓞 K)} ≠ ⊥ := by simpa [absNorm_eq_zero_iff] using hA₀'
+    rw [map_mul, Nat.cast_mul, ← span_singleton_mul_span_singleton,
+      powerResidueSymbolIdeal_mul_right hP₀ hA₀',
+      powerResidueSymbolIdeal_mul_right hNP hNA, powerResidueSymbolIdeal_of_isMaximal,
+      powerResidueSymbol_stickelbergerProduct_of_isMaximal hm P α, ih]
 
 end Ideal
