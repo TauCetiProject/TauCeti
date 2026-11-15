@@ -54,49 +54,41 @@ section ObjEquiv
 universe w u'
 
 /-- Equivalence `X.obj m ≃ (uliftFunctor.{w, u'}.obj X).obj m` on simplices of `X : SSet.{u'}`,
-mirroring `TopCat.uliftFunctorObjHomeo` so simplices of `uliftFunctor.obj X` retain their
-syntactic type under `implicit` transparency. -/
+mirroring `TopCat.uliftFunctorObjHomeo` under `implicit` transparency. -/
 def uliftFunctorObjEquiv (X : SSet.{u'}) (m : SimplexCategoryᵒᵖ) :
-    X.obj m ≃ (uliftFunctor.{w, u'}.obj X).obj m :=
-  Equiv.ulift.symm
+    X.obj m ≃ (uliftFunctor.{w, u'}.obj X).obj m := Equiv.ulift.symm
 
 @[simp]
 theorem uliftFunctorObjEquiv_down (X : SSet.{u'}) (m : SimplexCategoryᵒᵖ) (x : X.obj m) :
-    (X.uliftFunctorObjEquiv.{w} m x).down = x :=
-  (rfl)
+    (X.uliftFunctorObjEquiv.{w} m x).down = x := (rfl)
 
 theorem uliftFunctorObjEquiv_symm_eq_down (X : SSet.{u'}) (m : SimplexCategoryᵒᵖ)
-    (x : (uliftFunctor.{w, u'}.obj X).obj m) :
-    (X.uliftFunctorObjEquiv.{w} m).symm x = x.down :=
+    (x : (uliftFunctor.{w, u'}.obj X).obj m) : (X.uliftFunctorObjEquiv.{w} m).symm x = x.down :=
   (rfl)
 
 @[simp]
 theorem uliftFunctor_obj_map_uliftFunctorObjEquiv (X : SSet.{u'}) {m₁ m₂ : SimplexCategoryᵒᵖ}
     (f : m₁ ⟶ m₂) (x : X.obj m₁) :
     (uliftFunctor.{w, u'}.obj X).map f (X.uliftFunctorObjEquiv m₁ x) =
-      X.uliftFunctorObjEquiv m₂ (X.map f x) :=
-  (rfl)
+      X.uliftFunctorObjEquiv m₂ (X.map f x) := (rfl)
 
 @[simp]
 theorem uliftFunctorObjEquiv_symm_map (X : SSet.{u'}) {m₁ m₂ : SimplexCategoryᵒᵖ} (f : m₁ ⟶ m₂)
     (x : (uliftFunctor.{w, u'}.obj X).obj m₁) :
     (X.uliftFunctorObjEquiv m₂).symm ((uliftFunctor.{w, u'}.obj X).map f x) =
-      X.map f ((X.uliftFunctorObjEquiv m₁).symm x) :=
-  (rfl)
+      X.map f ((X.uliftFunctorObjEquiv m₁).symm x) := (rfl)
 
 @[simp]
 theorem uliftFunctor_map_uliftFunctorObjEquiv {X Y : SSet.{u'}} (f : X ⟶ Y)
     (m : SimplexCategoryᵒᵖ) (x : X.obj m) :
     (uliftFunctor.{w, u'}.map f).app m (X.uliftFunctorObjEquiv m x) =
-      Y.uliftFunctorObjEquiv m (f.app m x) :=
-  (rfl)
+      Y.uliftFunctorObjEquiv m (f.app m x) := (rfl)
 
 @[simp]
 theorem uliftFunctorObjEquiv_symm_uliftFunctor_map {X Y : SSet.{u'}} (f : X ⟶ Y)
     (m : SimplexCategoryᵒᵖ) (x : (uliftFunctor.{w, u'}.obj X).obj m) :
     (Y.uliftFunctorObjEquiv m).symm ((uliftFunctor.{w, u'}.map f).app m x) =
-      f.app m ((X.uliftFunctorObjEquiv m).symm x) :=
-  (rfl)
+      f.app m ((X.uliftFunctorObjEquiv m).symm x) := (rfl)
 
 end ObjEquiv
 

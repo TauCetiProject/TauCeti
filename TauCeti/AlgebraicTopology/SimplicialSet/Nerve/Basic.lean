@@ -223,32 +223,23 @@ theorem δ₃_mk₃_eq :
 
 end Faces
 
-/-- Equivalence `(nerve C) _⦋n⦌ ≃ ComposableArrows C n` on `n`-simplices of `nerve C`,
-mirroring `SSet.stdSimplex.objEquiv` and `SSet.opObjEquiv` so simplices of `nerve C` retain their
-syntactic type under `implicit` transparency. -/
-def objEquiv {C : Type u} [Category.{v} C] {n : ℕ} :
-    (nerve C) _⦋n⦌ ≃ ComposableArrows C n :=
+/-- Equivalence `(nerve C) _⦋n⦌ ≃ ComposableArrows C n` on `n`-simplices of `nerve C`, mirroring
+`SSet.stdSimplex.objEquiv` under `implicit` transparency. -/
+def objEquiv {C : Type u} [Category.{v} C] {n : ℕ} : (nerve C) _⦋n⦌ ≃ ComposableArrows C n :=
   Equiv.refl _
 
-theorem objEquiv_eq {n : ℕ} (s : (nerve C) _⦋n⦌) :
-    objEquiv s = (s : ComposableArrows C n) :=
-  (rfl)
+theorem objEquiv_eq {n : ℕ} (s : (nerve C) _⦋n⦌) : objEquiv s = (s : ComposableArrows C n) := (rfl)
 
 theorem objEquiv_symm_eq {n : ℕ} (s : ComposableArrows C n) :
-    objEquiv.symm s = (s : (nerve C) _⦋n⦌) :=
-  (rfl)
+    objEquiv.symm s = (s : (nerve C) _⦋n⦌) := (rfl)
 
-@[simp]
-theorem objEquiv_nerveMap_app {D : Type u} [Category.{v} D] (F : C ⥤ D) {n : ℕ}
+@[simp] theorem objEquiv_nerveMap_app {D : Type u} [Category.{v} D] (F : C ⥤ D) {n : ℕ}
     (s : (nerve C) _⦋n⦌) :
-    objEquiv ((nerveMap F).app (op ⦋n⦌) s) = (F.mapComposableArrows n).obj (objEquiv s) :=
-  (rfl)
+    objEquiv ((nerveMap F).app (op ⦋n⦌) s) = (F.mapComposableArrows n).obj (objEquiv s) := (rfl)
 
-@[simp]
-theorem nerveMap_app_objEquiv_symm {D : Type u} [Category.{v} D] (F : C ⥤ D) {n : ℕ}
+@[simp] theorem nerveMap_app_objEquiv_symm {D : Type u} [Category.{v} D] (F : C ⥤ D) {n : ℕ}
     (s : ComposableArrows C n) :
-    (nerveMap F).app (op ⦋n⦌) (objEquiv.symm s) =
-      objEquiv.symm ((F.mapComposableArrows n).obj s) :=
+    (nerveMap F).app (op ⦋n⦌) (objEquiv.symm s) = objEquiv.symm ((F.mapComposableArrows n).obj s) :=
   (rfl)
 
 theorem nerveMap_app_eq_objEquiv_symm {D : Type u} [Category.{v} D] (F : C ⥤ D) {n : ℕ}
@@ -256,57 +247,40 @@ theorem nerveMap_app_eq_objEquiv_symm {D : Type u} [Category.{v} D] (F : C ⥤ D
     (nerveMap F).app (op ⦋n⦌) s = objEquiv.symm ((F.mapComposableArrows n).obj (objEquiv s)) :=
   (rfl)
 
-@[simp]
-theorem objEquiv_map {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : (nerve C) _⦋n⦌) :
+@[simp] theorem objEquiv_map {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : (nerve C) _⦋n⦌) :
     objEquiv ((nerve C).map f.op s) =
-      (objEquiv s).whiskerLeft (SimplexCategory.toCat.map f).toFunctor :=
-  (rfl)
+      (objEquiv s).whiskerLeft (SimplexCategory.toCat.map f).toFunctor := (rfl)
 
-@[simp]
-theorem map_objEquiv_symm {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : ComposableArrows C n) :
+@[simp] theorem map_objEquiv_symm {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : ComposableArrows C n) :
     (nerve C).map f.op (objEquiv.symm s) =
-      objEquiv.symm (s.whiskerLeft (SimplexCategory.toCat.map f).toFunctor) :=
-  (rfl)
+      objEquiv.symm (s.whiskerLeft (SimplexCategory.toCat.map f).toFunctor) := (rfl)
 
-@[simp]
-theorem objEquiv_δ {n : ℕ} (i : Fin (n + 2)) (s : (nerve C) _⦋n + 1⦌) :
+@[simp] theorem objEquiv_δ {n : ℕ} (i : Fin (n + 2)) (s : (nerve C) _⦋n + 1⦌) :
     objEquiv ((nerve C).δ i s) =
-      (objEquiv s).whiskerLeft (Fin.strictMono_succAbove i).monotone.functor :=
-  (rfl)
+      (objEquiv s).whiskerLeft (Fin.strictMono_succAbove i).monotone.functor := (rfl)
 
-@[simp]
-theorem δ_objEquiv_symm {n : ℕ} (i : Fin (n + 2)) (s : ComposableArrows C (n + 1)) :
+@[simp] theorem δ_objEquiv_symm {n : ℕ} (i : Fin (n + 2)) (s : ComposableArrows C (n + 1)) :
     (nerve C).δ i (objEquiv.symm s) =
-      objEquiv.symm (s.whiskerLeft (Fin.strictMono_succAbove i).monotone.functor) :=
-  (rfl)
+      objEquiv.symm (s.whiskerLeft (Fin.strictMono_succAbove i).monotone.functor) := (rfl)
 
-@[simp]
-theorem objEquiv_σ {n : ℕ} (i : Fin (n + 1)) (s : (nerve C) _⦋n⦌) :
+@[simp] theorem objEquiv_σ {n : ℕ} (i : Fin (n + 1)) (s : (nerve C) _⦋n⦌) :
     objEquiv ((nerve C).σ i s) =
-      (objEquiv s).whiskerLeft (Fin.predAbove_right_monotone i).functor :=
-  (rfl)
+      (objEquiv s).whiskerLeft (Fin.predAbove_right_monotone i).functor := (rfl)
 
-@[simp]
-theorem σ_objEquiv_symm {n : ℕ} (i : Fin (n + 1)) (s : ComposableArrows C n) :
+@[simp] theorem σ_objEquiv_symm {n : ℕ} (i : Fin (n + 1)) (s : ComposableArrows C n) :
     (nerve C).σ i (objEquiv.symm s) =
-      objEquiv.symm (s.whiskerLeft (Fin.predAbove_right_monotone i).functor) :=
-  (rfl)
+      objEquiv.symm (s.whiskerLeft (Fin.predAbove_right_monotone i).functor) := (rfl)
 
 theorem objEquiv_symm_nerveEquiv_symm (X : C) :
-    objEquiv.symm (nerveEquiv.symm X) = (nerveEquiv.symm X : (nerve C) _⦋0⦌) :=
-  (rfl)
+    objEquiv.symm (nerveEquiv.symm X) = (nerveEquiv.symm X : (nerve C) _⦋0⦌) := (rfl)
 
 theorem _root_.CategoryTheory.nerveEquiv_symm_eq_mk₀ (X : C) :
-    nerveEquiv.symm X = ComposableArrows.mk₀ X :=
-  (rfl)
+    nerveEquiv.symm X = ComposableArrows.mk₀ X := (rfl)
 
-@[simp]
-theorem _root_.CategoryTheory.nerveEquiv_symm_obj (X : C) (i : Fin 1) :
-    (nerveEquiv.symm X).obj i = X :=
-  (rfl)
+@[simp] theorem _root_.CategoryTheory.nerveEquiv_symm_obj (X : C) (i : Fin 1) :
+    (nerveEquiv.symm X).obj i = X := (rfl)
 
-@[simp]
-theorem representableBy_homEquiv_const_zero {n : ℕ} {α : Type u} [Preorder α]
+@[simp] theorem representableBy_homEquiv_const_zero {n : ℕ} {α : Type u} [Preorder α]
     (e : α ≃o Fin (n + 1)) (i : Fin (n + 1)) :
     (representableBy α e).homEquiv (SimplexCategory.const ⦋0⦌ ⦋n⦌ i) =
       objEquiv.symm (nerveEquiv.symm (e.symm i)) :=
@@ -316,37 +290,22 @@ theorem representableBy_homEquiv_const_zero {n : ℕ} {α : Type u} [Preorder α
 /-- The nerve of `AsSmall.{w} C` is isomorphic to the universe lift of `nerve C`. -/
 def asSmallIso (C : Type u) [Category.{v} C] :
     nerve (AsSmall.{w} C) ≅ SSet.uliftFunctor.{w, max u v}.obj (nerve C) where
-  hom :=
-    { app m := ↾fun s ↦ ULift.up ((AsSmall.down.mapComposableArrows m.unop.len).obj s)
-      naturality _ _ _ := rfl }
-  inv :=
-    { app m := ↾fun s ↦ (AsSmall.up.mapComposableArrows m.unop.len).obj s.down
-      naturality _ _ _ := rfl }
-  hom_inv_id := rfl
-  inv_hom_id := rfl
+  hom := { app m := ↾fun s ↦ ULift.up ((AsSmall.down.mapComposableArrows m.unop.len).obj s) }
+  inv := { app m := ↾fun s ↦ (AsSmall.up.mapComposableArrows m.unop.len).obj s.down }
 
-@[simp]
-lemma asSmallIso_hom_app {C : Type u} [Category.{v} C] {n : ℕ}
+@[simp] lemma asSmallIso_hom_app {C : Type u} [Category.{v} C] {n : ℕ}
     (s : (nerve (AsSmall.{w} C)) _⦋n⦌) :
     (asSmallIso.{w} C).hom.app (op ⦋n⦌) s =
       (nerve C).uliftFunctorObjEquiv (op ⦋n⦌)
         (objEquiv.symm ((AsSmall.down.mapComposableArrows n).obj (objEquiv s))) :=
   ULift.ext ((nerve C).uliftFunctorObjEquiv_down _ _).symm
 
-lemma asSmallIso_hom_app_down {C : Type u} [Category.{v} C] {n : ℕ}
-    (s : (nerve (AsSmall.{w} C)) _⦋n⦌) :
-    ULift.down ((asSmallIso.{w} C).hom.app (op ⦋n⦌) s) =
-      objEquiv.symm ((AsSmall.down.mapComposableArrows n).obj (objEquiv s)) :=
-  (rfl)
-
-@[simp]
-lemma asSmallIso_inv_app {C : Type u} [Category.{v} C] {n : ℕ}
+@[simp] lemma asSmallIso_inv_app {C : Type u} [Category.{v} C] {n : ℕ}
     (s : (SSet.uliftFunctor.{w, max u v}.obj (nerve C)) _⦋n⦌) :
     (asSmallIso.{w} C).inv.app (op ⦋n⦌) s =
       objEquiv.symm ((AsSmall.up.mapComposableArrows n).obj
         (objEquiv (((nerve C).uliftFunctorObjEquiv (op ⦋n⦌)).symm s))) := by
-  rw [SSet.uliftFunctorObjEquiv_symm_eq_down]
-  rfl
+  rw [SSet.uliftFunctorObjEquiv_symm_eq_down]; rfl
 
 /-- The nerve of any discrete category `C` (`[IsDiscrete C]`) is isomorphic to the constant
 simplicial set on `ULift.{v} C`. -/
@@ -357,43 +316,30 @@ def isDiscreteIso (C : Type u) [Category.{v} C] [IsDiscrete C] :
       naturality _ _ _ := ConcreteCategory.hom_ext _ _ fun F ↦ by
         dsimp [nerve, Functor.const]
         exact ULift.ext (IsDiscrete.eq_of_hom (F.map (homOfLE (Fin.zero_le _)))).symm }
-  inv :=
-    { app m := ↾fun x ↦ (Functor.const (Fin (m.unop.len + 1))).obj x.down
-      naturality _ _ _ := rfl }
+  inv := { app m := ↾fun x ↦ (Functor.const (Fin (m.unop.len + 1))).obj x.down }
   hom_inv_id := by
     ext ⟨⟨n⟩⟩ F : 4
-    exact ComposableArrows.ext
-      (fun i ↦ IsDiscrete.eq_of_hom (F.map (homOfLE (Fin.zero_le i))))
+    exact ComposableArrows.ext (fun i ↦ IsDiscrete.eq_of_hom (F.map (homOfLE (Fin.zero_le i))))
       (fun _ _ ↦ Subsingleton.elim _ _)
-  inv_hom_id := rfl
 
-@[simp]
-lemma isDiscreteIso_hom_app {C : Type u} [Category.{v} C] [IsDiscrete C] {n : ℕ}
+@[simp] lemma isDiscreteIso_hom_app {C : Type u} [Category.{v} C] [IsDiscrete C] {n : ℕ}
     (s : (nerve C) _⦋n⦌) :
-    dsimp% (isDiscreteIso C).hom.app (op ⦋n⦌) s = ULift.up ((objEquiv s).obj 0) :=
-  (rfl)
+    dsimp% (isDiscreteIso C).hom.app (op ⦋n⦌) s = ULift.up ((objEquiv s).obj 0) := (rfl)
 
-@[simp]
-lemma isDiscreteIso_inv_app {C : Type u} [Category.{v} C] [IsDiscrete C] {n : ℕ}
+@[simp] lemma isDiscreteIso_inv_app {C : Type u} [Category.{v} C] [IsDiscrete C] {n : ℕ}
     (x : ULift.{v} C) :
     dsimp% (isDiscreteIso C).inv.app (op ⦋n⦌) x =
-      objEquiv.symm ((Functor.const (Fin (n + 1))).obj x.down) :=
-  (rfl)
+      objEquiv.symm ((Functor.const (Fin (n + 1))).obj x.down) := (rfl)
 
-/-- The nerve of `Discrete S` is isomorphic to the constant simplicial set on `S`, obtained as a
-specialization of `nerve.isDiscreteIso`. -/
-def discreteIso (S : Type u) :
-    nerve (Discrete S) ≅ (Functor.const SimplexCategoryᵒᵖ).obj S :=
+/-- The nerve of `Discrete S` is isomorphic to the constant simplicial set on `S`. -/
+def discreteIso (S : Type u) : nerve (Discrete S) ≅ (Functor.const SimplexCategoryᵒᵖ).obj S :=
   isDiscreteIso (Discrete S) ≪≫
     (Functor.const SimplexCategoryᵒᵖ).mapIso (Equiv.ulift.trans discreteEquiv).toIso
 
-@[simp]
-lemma discreteIso_hom_app (S : Type u) {n : ℕ} (s : (nerve (Discrete S)) _⦋n⦌) :
-    dsimp% (discreteIso S).hom.app (op ⦋n⦌) s = ((objEquiv s).obj 0).as := by
-  simp [discreteIso]
+@[simp] lemma discreteIso_hom_app (S : Type u) {n : ℕ} (s : (nerve (Discrete S)) _⦋n⦌) :
+    dsimp% (discreteIso S).hom.app (op ⦋n⦌) s = ((objEquiv s).obj 0).as := by simp [discreteIso]
 
-@[simp]
-lemma discreteIso_inv_app (S : Type u) {n : ℕ} (s : S) :
+@[simp] lemma discreteIso_inv_app (S : Type u) {n : ℕ} (s : S) :
     dsimp% (discreteIso S).inv.app (op ⦋n⦌) s =
       objEquiv.symm ((Functor.const (Fin (n + 1))).obj (Discrete.mk s)) := by
   simp [discreteIso, discreteEquiv]
@@ -403,25 +349,20 @@ end CategoryTheory.nerve
 namespace TauCeti
 
 /-- `nerveMap` is injective on functors in arbitrary object and morphism universes, extending
-`CategoryTheory.nerveFunctor.faithful` (which requires `v = u`) to `Cat.{v, u}`. -/
+`CategoryTheory.nerveFunctor.faithful` from `Cat.{u, u}` to `Cat.{v, u}`. -/
 theorem nerveMap_injective {C D : Type u} [Category.{v} C] [Category.{v} D] :
-    Function.Injective (nerveMap : (C ⥤ D) → (nerve C ⟶ nerve D)) := by
-  intro F G h
+    Function.Injective (nerveMap : (C ⥤ D) → (nerve C ⟶ nerve D)) := fun F G h ↦ by
   have h₁ {X Y : C} (f : X ⟶ Y) : Arrow.mk (F.map f) = Arrow.mk (G.map f) := by
     rw [← ComposableArrows.mk₁_eq_mk₁_iff, ← nerveMap_app_mk₁, ← nerveMap_app_mk₁, h]
   refine CategoryTheory.Functor.ext (fun X ↦ congr($(h₁ (𝟙 X)).left)) fun X Y f ↦ ?_
-  obtain ⟨_, _, hf⟩ := (Arrow.mk_eq_mk_iff _ _).1 (h₁ f)
-  exact hf
+  obtain ⟨_, _, hf⟩ := (Arrow.mk_eq_mk_iff _ _).1 (h₁ f); exact hf
 
 instance : nerveFunctor.{v, u}.Faithful where
   map_injective h := Cat.Hom.ext (nerveMap_injective h)
 
-/-- The nerve map of a constant functor `(Functor.const C).obj Y` is the constant simplicial map at
-`nerve.objEquiv.symm (nerveEquiv.symm Y)`. -/
-@[simp]
-theorem nerveMap_const (C D : Type u) [Category.{v} C] [Category.{v} D] (Y : D) :
-    nerveMap ((Functor.const C).obj Y) =
-      SSet.const (nerve.objEquiv.symm (nerveEquiv.symm Y)) :=
+/-- The nerve map of `(Functor.const C).obj Y` is the constant simplicial map at `Y`. -/
+@[simp] theorem nerveMap_const (C D : Type u) [Category.{v} C] [Category.{v} D] (Y : D) :
+    nerveMap ((Functor.const C).obj Y) = SSet.const (nerve.objEquiv.symm (nerveEquiv.symm Y)) :=
   SSet.hom_ext fun ⟨⟨n⟩⟩ ↦ ConcreteCategory.hom_ext _ _ fun s ↦
     nerve.objEquiv.injective <| ComposableArrows.ext_of_totalArrow fun _ _ _ ↦ by
       simp [SSet.const_app, nerveEquiv_symm_eq_mk₀]
