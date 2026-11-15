@@ -13,13 +13,14 @@ public import Mathlib.Order.Interval.Set.Nat
 # Apéry sets of numerical semigroups
 
 For an additive submonoid `S` of `ℕ` and `n : ℕ`, the Apéry set `S.aperySet n` consists of the
-elements `s ∈ S` such that `s - n` (computed in `ℤ`) does not lie in `S`. When `n ∈ S` its
+elements `s ∈ S` such that `s - n` (computed in `ℤ`) does not lie in `S`. When `0 < n ∈ S` its
 elements are exactly the least elements of `S` in their residue classes modulo `n`, and when
 moreover `S` is a numerical semigroup there is exactly one such element in each residue class.
 
-Apéry sets are the basic tool for computing the invariants of a numerical semigroup: every
-element of `S` is uniquely a multiple of `n` plus an element of the Apéry set, and Selmer's
-formula reads off the Frobenius number as the largest element of the Apéry set minus `n`.
+Apéry sets are the basic tool for computing the invariants of a numerical semigroup: for
+`0 < n ∈ S`, every element of `S` is uniquely a multiple of `n` plus an element of the Apéry set,
+and for every `0 < n` Selmer's formula reads off the Frobenius number as the largest element of
+the Apéry set minus `n`.
 
 ## Main definitions
 
@@ -31,10 +32,11 @@ formula reads off the Frobenius number as the largest element of the Apéry set 
   the least elements of `S` in their residue classes modulo `n`.
 * `AddSubmonoid.IsNumericalSemigroup.bijOn_mod_aperySet`: reduction modulo `n ∈ S` is a
   bijection from the Apéry set of a numerical semigroup onto `{0, …, n - 1}`.
-* `AddSubmonoid.IsNumericalSemigroup.ncard_aperySet`: the Apéry set has exactly `n` elements.
+* `AddSubmonoid.IsNumericalSemigroup.ncard_aperySet`: for a numerical semigroup `S` and `n ∈ S`,
+  the Apéry set has exactly `n` elements.
 * `AddSubmonoid.existsUnique_mem_aperySet_mul_add_eq`: for `0 < n ∈ S`, every `s ∈ S` is
   uniquely `k * n + w` with `w` in the Apéry set.
-* `AddSubmonoid.closure_insert_aperySet`: `n` and the Apéry set generate `S`.
+* `AddSubmonoid.closure_insert_aperySet`: for `0 < n ∈ S`, `n` and the Apéry set generate `S`.
 * `AddSubmonoid.IsNumericalSemigroup.numericalFrobenius_eq_sSup_aperySet_sub`: Selmer's formula
   `F(S) = max Ap(S, n) - n`. It holds for every positive `n`, not only for `n ∈ S`.
 * `AddSubmonoid.mem_aperySet_of_add_mem_aperySet_left`: the Apéry set is closed under summands
@@ -58,17 +60,17 @@ def aperySet (S : AddSubmonoid ℕ) (n : ℕ) : Set ℕ :=
   {s | s ∈ S ∧ ∀ t ∈ S, t + n ≠ s}
 
 /-- Membership in the Apéry set, unfolded. -/
-@[simp]
 theorem mem_aperySet : s ∈ S.aperySet n ↔ s ∈ S ∧ ∀ t ∈ S, t + n ≠ s := Iff.rfl
 
 /-- Membership in the Apéry set, with the difference `s - n` taken in `ℕ`. -/
+@[grind =]
 theorem mem_aperySet_iff_sub_notMem : s ∈ S.aperySet n ↔ s ∈ S ∧ (n ≤ s → s - n ∉ S) := by
   refine and_congr_right fun _ ↦ ⟨fun h hle hmem ↦ h _ hmem (Nat.sub_add_cancel hle), ?_⟩
   rintro h t ht rfl
   exact h (Nat.le_add_left n t) (by simpa using ht)
 
 /-- Membership in the Apéry set, with the difference `s - n` taken in `ℤ`. -/
-theorem mem_aperySet_iff_intCast : s ∈ S.aperySet n ↔ s ∈ S ∧ ∀ t ∈ S, (t : ℤ) ≠ s - n := by
+theorem mem_aperySet_iff_natCast_ne_sub : s ∈ S.aperySet n ↔ s ∈ S ∧ ∀ t ∈ S, (t : ℤ) ≠ s - n := by
   refine and_congr_right fun _ ↦ forall₂_congr fun t _ ↦ ?_
   constructor <;> intro h <;> omega
 
@@ -88,6 +90,32 @@ theorem mem_aperySet_of_lt (hs : s ∈ S) (h : s < n) : s ∈ S.aperySet n :=
 theorem aperySet_zero : S.aperySet 0 = ∅ :=
   Set.eq_empty_of_forall_notMem fun s hs ↦ hs.2 s hs.1 (Nat.add_zero s)
 
+/-- An element of `S` plus `n` never lies in the Apéry set. -/
+@[simp]
+theorem add_notMem_aperySet {t : ℕ} (ht : t ∈ S) : t + n ∉ S.aperySet n :=
+  fun h ↦ h.2 t ht rfl
+
+/-- `n` never lies in its own Apéry set. -/
+@[simp]
+theorem self_notMem_aperySet : n ∉ S.aperySet n := by
+  simpa using add_notMem_aperySet (n := n) S.zero_mem
+
+/-- The Apéry set with respect to `n` contains `0` if and only if `n ≠ 0`. -/
+@[simp]
+theorem zero_mem_aperySet_iff : 0 ∈ S.aperySet n ↔ n ≠ 0 :=
+  ⟨fun h hn ↦ by subst hn; exact self_notMem_aperySet h, zero_mem_aperySet⟩
+
+/-- The Apéry set with respect to `n` is empty if and only if `n = 0`. -/
+@[simp]
+theorem aperySet_eq_empty_iff : S.aperySet n = ∅ ↔ n = 0 := by
+  refine ⟨fun h ↦ by_contra fun hn ↦ ?_, by rintro rfl; exact aperySet_zero⟩
+  simpa [h] using zero_mem_aperySet (S := S) hn
+
+/-- The Apéry set with respect to `n` is nonempty if and only if `n ≠ 0`. -/
+@[simp]
+theorem nonempty_aperySet_iff : (S.aperySet n).Nonempty ↔ n ≠ 0 := by
+  rw [Set.nonempty_iff_ne_empty, ne_eq, aperySet_eq_empty_iff]
+
 /-- The Apéry set of `ℕ` with respect to `n` is `{0, …, n - 1}`. -/
 @[simp]
 theorem aperySet_top : (⊤ : AddSubmonoid ℕ).aperySet n = Set.Iio n := by
@@ -106,31 +134,39 @@ theorem mem_of_le_of_modEq {m : ℕ} (hn : n ∈ S) (hw : w ∈ S) (hle : w ≤ 
 
 /-- For `n ∈ S`, an element of the Apéry set is at most every element of `S` congruent to it
 modulo `n`. -/
+@[grind →]
 theorem le_of_mem_aperySet_of_modEq (hn : n ∈ S) (hw : w ∈ S.aperySet n) (hs : s ∈ S)
-    (h : s ≡ w [MOD n]) : w ≤ s := by
+    (h : w ≡ s [MOD n]) : w ≤ s := by
   by_contra! hlt
-  have hdvd : n ∣ w - s := (Nat.modEq_iff_dvd' hlt.le).mp h
+  have hdvd : n ∣ w - s := (Nat.modEq_iff_dvd' hlt.le).mp h.symm
   have hle : n ≤ w - s := Nat.le_of_dvd (by omega) hdvd
   refine hw.2 (w - n) (mem_of_le_of_modEq hn hs (by omega) ?_) (by omega)
   refine (Nat.modEq_iff_dvd' (by omega)).mpr ?_
   rw [show w - n - s = w - s - n by omega]
   exact Nat.dvd_sub hdvd dvd_rfl
 
+/-- For `n ∈ S` and an element `w` of the Apéry set, a natural number congruent to `w` modulo `n`
+lies in `S` if and only if it is at least `w`. -/
+theorem mem_iff_le_of_mem_aperySet_of_modEq (hn : n ∈ S) (hw : w ∈ S.aperySet n)
+    (h : w ≡ s [MOD n]) : s ∈ S ↔ w ≤ s :=
+  ⟨fun hs ↦ le_of_mem_aperySet_of_modEq hn hw hs h, fun hle ↦ mem_of_le_of_modEq hn hw.1 hle h⟩
+
 /-- For `0 < n ∈ S`, the Apéry set consists of the least elements of `S` in their residue
 classes modulo `n`. -/
 theorem mem_aperySet_iff_forall_modEq_le (hn : n ∈ S) (hpos : n ≠ 0) :
-    w ∈ S.aperySet n ↔ w ∈ S ∧ ∀ s ∈ S, s ≡ w [MOD n] → w ≤ s := by
+    w ∈ S.aperySet n ↔ w ∈ S ∧ ∀ s ∈ S, w ≡ s [MOD n] → w ≤ s := by
   refine ⟨fun hw ↦ ⟨hw.1, fun s hs h ↦ le_of_mem_aperySet_of_modEq hn hw hs h⟩, ?_⟩
   rintro ⟨hw, hmin⟩
   refine ⟨hw, fun t ht hsum ↦ ?_⟩
-  have := hmin t ht (hsum ▸ (Nat.add_modulus_modEq_iff.mpr rfl).symm)
+  have := hmin t ht (hsum ▸ Nat.add_modulus_modEq_iff.mpr rfl)
   omega
 
 /-- For `n ∈ S`, two elements of the Apéry set congruent modulo `n` are equal. -/
+@[grind →]
 theorem eq_of_mem_aperySet_of_modEq {v : ℕ} (hn : n ∈ S) (hv : v ∈ S.aperySet n)
     (hw : w ∈ S.aperySet n) (h : v ≡ w [MOD n]) : v = w :=
-  le_antisymm (le_of_mem_aperySet_of_modEq hn hv hw.1 h.symm)
-    (le_of_mem_aperySet_of_modEq hn hw hv.1 h)
+  le_antisymm (le_of_mem_aperySet_of_modEq hn hv hw.1 h)
+    (le_of_mem_aperySet_of_modEq hn hw hv.1 h.symm)
 
 /-- For `n ∈ S`, reduction modulo `n` is injective on the Apéry set. -/
 theorem injOn_mod_aperySet (hn : n ∈ S) : Set.InjOn (· % n) (S.aperySet n) :=
@@ -143,7 +179,7 @@ theorem finite_aperySet (hn : n ∈ S) : (S.aperySet n).Finite := by
   exact (Set.finite_Iio n).of_injOn (fun w _ ↦ Nat.mod_lt w hpos) (injOn_mod_aperySet hn)
 
 /-- For `n ≠ 0`, below every `s ∈ S` there is an element of the Apéry set congruent to `s`
-modulo `n`: the least element of `S` in the residue class of `s`. -/
+modulo `n`. -/
 theorem exists_mem_aperySet_modEq_le (hpos : n ≠ 0) (hs : s ∈ S) :
     ∃ w ∈ S.aperySet n, w ≡ s [MOD n] ∧ w ≤ s := by
   classical
@@ -178,24 +214,40 @@ theorem IsNumericalSemigroup.ncard_aperySet (h : S.IsNumericalSemigroup) (hn : n
     (S.aperySet n).ncard = n := by
   rw [(h.bijOn_mod_aperySet hn).ncard_eq, Set.ncard_Iio_nat]
 
+/-- For `n ∈ S`, the decomposition of a natural number as `k * n + w` with `w` in the Apéry set
+is unique. -/
+theorem mul_add_eq_mul_add_iff_of_mem_aperySet {k₁ k₂ w₁ w₂ : ℕ} (hn : n ∈ S)
+    (hw₁ : w₁ ∈ S.aperySet n) (hw₂ : w₂ ∈ S.aperySet n) :
+    k₁ * n + w₁ = k₂ * n + w₂ ↔ k₁ = k₂ ∧ w₁ = w₂ := by
+  refine ⟨fun h ↦ ?_, by rintro ⟨rfl, rfl⟩; rfl⟩
+  have hpos : n ≠ 0 := nonempty_aperySet_iff.mp ⟨w₁, hw₁⟩
+  obtain rfl : w₁ = w₂ := eq_of_mem_aperySet_of_modEq hn hw₁ hw₂ <| by
+    rw [Nat.ModEq, ← Nat.mul_add_mod' k₁, h, Nat.mul_add_mod']
+  exact ⟨Nat.eq_of_mul_eq_mul_right (Nat.pos_of_ne_zero hpos) (by omega), rfl⟩
+
 /-- For `0 < n ∈ S`, every element of `S` is uniquely of the form `k * n + w` with `w` in the
 Apéry set. -/
 theorem existsUnique_mem_aperySet_mul_add_eq (hn : n ∈ S) (hpos : n ≠ 0) (hs : s ∈ S) :
     ∃! p : ℕ × ℕ, p.2 ∈ S.aperySet n ∧ p.1 * n + p.2 = s := by
   obtain ⟨w, hw, hmod, hle⟩ := exists_mem_aperySet_modEq_le hpos hs
   obtain ⟨k, hk⟩ := (Nat.modEq_iff_dvd' hle).mp hmod
-  refine ⟨(k, w), ⟨hw, ?_⟩, ?_⟩
-  · rw [Nat.mul_comm] at hk
-    dsimp only
-    omega
+  have hs' : k * n + w = s := by rw [Nat.mul_comm] at hk; omega
+  refine ⟨(k, w), ⟨hw, hs'⟩, ?_⟩
   rintro ⟨k', w'⟩ ⟨hw', hsum⟩
-  dsimp only at hw' hsum
-  subst hsum
-  have hw'w : w' = w :=
-    eq_of_mem_aperySet_of_modEq hn hw' hw ((Nat.mul_add_mod' k' n w').symm.trans hmod.symm)
-  subst hw'w
-  have hkk : k' * n = k * n := by rw [Nat.mul_comm k]; omega
-  rw [Nat.eq_of_mul_eq_mul_right (Nat.pos_of_ne_zero hpos) hkk]
+  obtain ⟨rfl, rfl⟩ :=
+    (mul_add_eq_mul_add_iff_of_mem_aperySet hn hw' hw).mp (hsum.trans hs'.symm)
+  rfl
+
+/-- For `0 < n ∈ S`, the elements of `S` are exactly the numbers `k * n + w` with `w` in the
+Apéry set. -/
+theorem mem_iff_exists_mem_aperySet_mul_add_eq (hn : n ∈ S) (hpos : n ≠ 0) :
+    s ∈ S ↔ ∃ k, ∃ w ∈ S.aperySet n, k * n + w = s := by
+  refine ⟨fun hs ↦ ?_, ?_⟩
+  · obtain ⟨⟨k, w⟩, ⟨hw, hsum⟩, -⟩ := existsUnique_mem_aperySet_mul_add_eq hn hpos hs
+    exact ⟨k, w, hw, hsum⟩
+  · rintro ⟨k, w, hw, rfl⟩
+    rw [← smul_eq_mul]
+    exact S.add_mem (S.nsmul_mem hn k) hw.1
 
 /-- For `0 < n ∈ S`, the submonoid `S` is generated by `n` together with its Apéry set. Since
 `0` lies in every submonoid, the element `0` of the Apéry set may be discarded. -/
@@ -220,6 +272,13 @@ theorem IsNumericalSemigroup.isGreatest_aperySet (h : S.IsNumericalSemigroup) (h
   · by_contra! hlt
     exact hs.2 (s - n) (mem_of_numericalConductor_le h (by omega)) (by omega)
 
+/-- For a numerical semigroup `S`, the Apéry set with respect to any `n` is finite. -/
+theorem IsNumericalSemigroup.finite_aperySet (h : S.IsNumericalSemigroup) :
+    (S.aperySet n).Finite := by
+  rcases eq_or_ne n 0 with rfl | hpos
+  · simp
+  exact (Set.finite_Iic _).subset (h.isGreatest_aperySet hpos).2
+
 /-- **Selmer's formula** for the Frobenius number: for a numerical semigroup `S` and `n ≠ 0`,
 `F(S) = max Ap(S, n) - n`. The usual hypothesis `n ∈ S` is not needed. -/
 theorem IsNumericalSemigroup.numericalFrobenius_eq_sSup_aperySet_sub
@@ -230,11 +289,13 @@ theorem IsNumericalSemigroup.numericalFrobenius_eq_sSup_aperySet_sub
   omega
 
 /-- If a sum of two elements of `S` lies in the Apéry set, so does the first summand. -/
+@[grind →]
 theorem mem_aperySet_of_add_mem_aperySet_left {x y : ℕ} (hx : x ∈ S) (hy : y ∈ S)
     (h : x + y ∈ S.aperySet n) : x ∈ S.aperySet n :=
   ⟨hx, fun t ht hsum ↦ h.2 (t + y) (S.add_mem ht hy) (by omega)⟩
 
 /-- If a sum of two elements of `S` lies in the Apéry set, so does the second summand. -/
+@[grind →]
 theorem mem_aperySet_of_add_mem_aperySet_right {x y : ℕ} (hx : x ∈ S) (hy : y ∈ S)
     (h : x + y ∈ S.aperySet n) : y ∈ S.aperySet n :=
   mem_aperySet_of_add_mem_aperySet_left hy hx (Nat.add_comm x y ▸ h)
