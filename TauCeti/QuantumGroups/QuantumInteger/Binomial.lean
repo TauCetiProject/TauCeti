@@ -372,34 +372,25 @@ theorem add_pow_of_mul_eq_smul_mul {A : Type*} [Semiring A] [Algebra K A] {q : K
         ← pow_mul_quantumBinomial_add_pow_mul_quantumBinomial hq (Nat.lt_succ_iff.mp hk), add_comm]
 
 open Polynomial in
-/-- **Alternating Cauchy binomial identity**: for `q ≠ 0`, evaluating
-`∏_{j < n} (1 + q^(2j) X)` at `X = -1` gives
+/-- **Alternating Cauchy binomial identity**: for `q ≠ 0`,
 `∑_{k = 0}^n (-1)^k q^(k(n-1)) [n choose k]_q = δ_{n, 0}`. -/
 theorem sum_neg_one_pow_mul_zpow_mul_quantumBinomial {q : K} (hq : q ≠ 0) (n : ℕ) :
-    ∑ k ∈ range (n + 1),
-      (-1 : K) ^ k * q ^ ((k : ℤ) * (n - 1)) * quantumBinomial q n k =
+    ∑ k ∈ range (n + 1), (-1 : K) ^ k * q ^ ((k : ℤ) * (n - 1)) * quantumBinomial q n k =
       if n = 0 then 1 else 0 := by
-  have hdeg : (∏ j ∈ range n, (1 + C ((q ^ 2) ^ j) * X)).natDegree < n + 1 := by
-    refine (natDegree_prod_le _ _).trans_lt ?_
-    refine (sum_le_sum (g := fun _ => 1) fun j _ => ?_).trans_lt (by simp)
-    exact (natDegree_add_le _ _).trans (max_le (by simp) ((natDegree_C_mul_le _ _).trans (by simp)))
-  have heval := eval_eq_sum_range' hdeg (-1 : K)
-  rw [eval_prod] at heval
-  have hprod : (∏ j ∈ range n, (1 + C ((q ^ 2) ^ j) * X).eval (-1)) =
-      if n = 0 then 1 else 0 := by
-    cases n with
-    | zero => simp
-    | succ n => simp [prod_range_succ']
-  rw [← hprod, heval]
+  have hdeg : (∏ j ∈ range n, (1 + C ((q ^ 2) ^ j) * X)).natDegree < n + 1 :=
+    (natDegree_prod_le _ _).trans_lt <| (sum_le_sum (g := fun _ => 1) fun _ _ =>
+      (natDegree_add_le _ _).trans (max_le (by simp) ((natDegree_C_mul_le _ _).trans (by simp)))
+      ).trans_lt (by simp)
+  have hprod : (∏ j ∈ range n, (1 + C ((q ^ 2) ^ j) * X)).eval (-1 : K) =
+      if n = 0 then 1 else 0 := by cases n <;> simp [eval_prod, prod_range_succ']
+  rw [← hprod, eval_eq_sum_range' hdeg (-1 : K)]
   refine sum_congr rfl fun k _ => ?_
-  rw [coeff_prod_range_one_add_C_mul_X hq]
-  ring
+  rw [coeff_prod_range_one_add_C_mul_X hq]; ring
 
 /-- The `q ↦ q⁻¹` form of the alternating Cauchy binomial identity: for `q ≠ 0`,
 `∑_{k = 0}^n (-1)^k q^(-k(n-1)) [n choose k]_q = δ_{n, 0}`. -/
 theorem sum_neg_one_pow_mul_zpow_neg_mul_quantumBinomial {q : K} (hq : q ≠ 0) (n : ℕ) :
-    ∑ k ∈ range (n + 1),
-      (-1 : K) ^ k * q ^ (-((k : ℤ) * (n - 1))) * quantumBinomial q n k =
+    ∑ k ∈ range (n + 1), (-1 : K) ^ k * q ^ (-((k : ℤ) * (n - 1))) * quantumBinomial q n k =
       if n = 0 then 1 else 0 := by
   simpa only [inv_zpow, ← zpow_neg, quantumBinomial_inv] using
     sum_neg_one_pow_mul_zpow_mul_quantumBinomial (inv_ne_zero hq) n
