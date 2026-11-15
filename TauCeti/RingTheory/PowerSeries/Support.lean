@@ -44,6 +44,9 @@ cusp forms by pulling `PowerSeries.supportedOnDvdSubmodule` back along the `q`-e
   of `d` exactly when it is a `q ↦ q ^ d` substitution.
 * `PowerSeries.range_expand_eq_supportedOnDvdSubmodule`: the same characterisation in submodule
   form, an equality rather than a containment.
+* `PowerSeries.linearIndependent_expand`: over a commutative ring without zero divisors, the
+  substitutions `P.expand (d i)` of a series `P` with a nonzero positive-degree coefficient along
+  pairwise distinct positive integers `d i` are linearly independent.
 
 ## Typeclass assumptions
 
@@ -218,6 +221,45 @@ of its underlying linear map. -/
 theorem range_expand_eq_supportedOnDvdSubmodule (hd : d ≠ 0) :
     LinearMap.range (expand (R := R) d hd).toLinearMap = supportedOnDvdSubmodule R d :=
   SetLike.ext fun P ↦ (isSupportedOnDvd_iff_exists_expand hd P).symm
+
+/-- **Distinct positive dilations of a nonconstant power series are linearly independent.** Over a
+commutative ring without zero divisors, if `P` has a nonzero coefficient of positive degree, then
+the family `i ↦ P.expand (d i)` for pairwise distinct positive integers `d i` is `R`-linearly
+independent. -/
+theorem linearIndependent_expand [NoZeroDivisors R] {P : PowerSeries R}
+    (hP : ∃ n ≠ 0, P.coeff n ≠ 0) {ι : Type*} {d : ι → ℕ} (hd0 : ∀ i, d i ≠ 0)
+    (hd : Function.Injective d) : LinearIndependent R (fun i ↦ P.expand (d i) (hd0 i)) := by
+  classical
+  set n₀ := Nat.find hP
+  obtain ⟨hn₀, hPn₀⟩ : n₀ ≠ 0 ∧ P.coeff n₀ ≠ 0 := Nat.find_spec hP
+  rw [linearIndependent_iff']
+  intro s c hsum i hi
+  by_contra hci
+  obtain ⟨i₀, hi₀, hmin_d⟩ :=
+    Finset.exists_min_image (s.filter fun j ↦ c j ≠ 0) d ⟨i, Finset.mem_filter.mpr ⟨hi, hci⟩⟩
+  obtain ⟨hi₀s, hci₀⟩ := Finset.mem_filter.mp hi₀
+  have hcoeff := congrArg (coeff (R := R) (d i₀ * n₀)) hsum
+  rw [map_sum, map_zero, Finset.sum_eq_single i₀] at hcoeff
+  · rw [coeff_smul, smul_eq_mul, coeff_expand_mul] at hcoeff
+    exact (mul_eq_zero.mp hcoeff).elim hci₀ hPn₀
+  · intro j hjs hji₀
+    rw [coeff_smul, smul_eq_mul]
+    by_cases hcj : c j = 0
+    · rw [hcj, zero_mul]
+    · have hlt : d i₀ < d j := lt_of_le_of_ne (hmin_d j (Finset.mem_filter.mpr ⟨hjs, hcj⟩))
+        fun h ↦ hji₀ (hd h).symm
+      by_cases hdiv : d j ∣ d i₀ * n₀
+      · obtain ⟨m, hm⟩ := hdiv
+        rw [hm, coeff_expand_mul]
+        have hm0 : m ≠ 0 := right_ne_zero_of_mul (hm ▸ mul_ne_zero (hd0 i₀) hn₀)
+        have hmlt : m < n₀ :=
+          lt_of_mul_lt_mul_left' (hm ▸ Nat.mul_lt_mul_of_pos_right hlt (Nat.pos_of_ne_zero hm0))
+        have hPm : P.coeff m = 0 := by
+          by_contra hPm
+          exact Nat.find_min hP hmlt ⟨hm0, hPm⟩
+        rw [hPm, mul_zero]
+      · rw [coeff_expand_of_not_dvd _ (hd0 j) P hdiv, mul_zero]
+  · exact fun h ↦ absurd hi₀s h
 
 end Expand
 
