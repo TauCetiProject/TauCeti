@@ -122,7 +122,7 @@ theorem _root_.IsLocalDiffeomorph.map_withDensity_enorm_curveVelocity_of_periodi
     rw [← h, Module.finrank_self]
   have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hdim
   have hrange : range γ = insert (γ (a + p)) (γ '' Ioo a (a + p)) := by
-    rw [← hper.image_Ioc hp a, ← Ioo_insert_right (lt_add_of_pos_right a hp), image_insert_eq]
+    rw [← hper.image_Ioc hp a, ← insert_right_Ioo (lt_add_of_pos_right a hp), image_insert_eq]
   rw [hrange, Measure.restrict_congr_set (insert_ae_eq_self _ _),
     ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
   have h := (((hγ.isLocalDiffeomorphOn _).partialDiffeomorphOfInjOn isOpen_Ioo hinj).ofLE

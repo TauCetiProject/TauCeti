@@ -14,10 +14,13 @@ public import TauCeti.Topology.VectorBundle.Riemannian.Hermitian
 The native Gram–Schmidt process is continuous for continuous families of linearly independent
 vectors in a vector bundle over an `RCLike` field `𝕜` whose fibres carry inner products with
 continuous norm (`TauCeti.ContinuousFiberNorm`): a continuous Riemannian bundle for `𝕜 = ℝ`, a
-continuous Hermitian bundle for `𝕜 = ℂ`. Applying it to the inverse image of a fixed
-basis under a bundle trivialization gives continuous local orthonormal bases. The construction
-uses Mathlib's `InnerProductSpace.gramSchmidt` and `gramSchmidtNormed`, including their span
-and orthonormality theorems, rather than a separate orthogonalization procedure.
+continuous Hermitian bundle for `𝕜 = ℂ`. Only an initial segment of the family matters: the
+`n`-th vector needs the inputs up to and including `n` to be continuous, and those strictly
+before `n` to be linearly independent, or those up to and including `n` for the normalized
+process. Applying it to the inverse image of a fixed basis under a bundle trivialization gives
+continuous local orthonormal bases. The construction uses Mathlib's
+`InnerProductSpace.gramSchmidt` and `gramSchmidtNormed`, including their span and orthonormality
+theorems, rather than a separate orthogonalization procedure.
 
 The continuity argument follows the sectionwise Gram–Schmidt construction of Patrick Massot
 and Michael Rothgang in Mathlib PR [#26221](https://github.com/leanprover-community/mathlib4/pull/26221),
@@ -42,31 +45,36 @@ attribute [local instance] IsWellOrder.toHasWellFounded
 variable {X : Type*} [TopologicalSpace X] {b : X → B} {v : ι → ∀ x, E (b x)}
   {s : Set X} {x : X}
 
-/-- Gram–Schmidt applied in each fiber is continuous at a linearly independent family. -/
-theorem ContinuousWithinAt.gramSchmidt_bundle
-    (hv : ∀ i, ContinuousWithinAt (fun y ↦ (v i y : TotalSpace F E)) s x)
-    (hli : LinearIndependent 𝕜 (fun i ↦ v i x)) (n : ι) :
+/-- Gram–Schmidt applied in each fiber is continuous at every parameter where the input sections
+up to and including the index are continuous and the input vectors strictly before the index are
+linearly independent. The input vector at the index itself may lie in their span. -/
+theorem ContinuousWithinAt.gramSchmidt_bundle (n : ι)
+    (hv : ∀ i ≤ n, ContinuousWithinAt (fun y ↦ (v i y : TotalSpace F E)) s x)
+    (hli : LinearIndepOn 𝕜 (fun i ↦ v i x) (Set.Iio n)) :
     ContinuousWithinAt
       (fun y ↦ TotalSpace.mk' F (b y) (gramSchmidt 𝕜 (fun i ↦ v i y) n)) s x := by
   classical
   induction n using WellFoundedLT.induction with
   | ind n ih =>
     let e := trivializationAt F E (b x)
-    have hb := ((FiberBundle.continuousWithinAt_totalSpace F _).1 (hv n)).1
+    obtain ⟨hb, hc⟩ := (FiberBundle.continuousWithinAt_totalSpace F _).1 (hv n le_rfl)
     have hmem : ∀ᶠ y in 𝓝[s] x, b y ∈ e.baseSet :=
       hb (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E (b x)))
-    have hc (i : ι) := ((FiberBundle.continuousWithinAt_totalSpace F _).1 (hv i)).2
+    have hgs (i : ι) (hi : i < n) :=
+      ih i hi (fun k hk ↦ hv k (hk.trans hi.le)) (hli.mono (Set.Iio_subset_Iio hi.le))
     have hg (i : ι) (hi : i < n) :=
-      ((FiberBundle.continuousWithinAt_totalSpace F _).1 (ih i hi)).2
+      ((FiberBundle.continuousWithinAt_totalSpace F _).1 (hgs i hi)).2
     have hnorm (i : ι) (hi : i < n) :
         ContinuousWithinAt (fun y ↦ ((‖gramSchmidt 𝕜 (fun j ↦ v j y) i‖ : ℝ) : 𝕜)) s x :=
       RCLike.continuous_ofReal.continuousAt.comp_continuousWithinAt
-        (ih i hi).norm_bundle_of_continuousFiberNorm
-    have hcont := (hc n).sub <| tendsto_finsetSum (Finset.Iio n) fun i hi ↦
+        (hgs i hi).norm_bundle_of_continuousFiberNorm
+    have hne (i : ι) (hi : i < n) : gramSchmidt 𝕜 (fun j ↦ v j x) i ≠ 0 :=
+      gramSchmidt_ne_zero_coe i (hli.mono (Set.Iic_subset_Iio.2 hi)).linearIndependent
+    have hcont := hc.sub <| tendsto_finsetSum (Finset.Iio n) fun i hi ↦
       let hi' := Finset.mem_Iio.mp hi
-      (((ih i hi').inner_bundle_of_continuousFiberNorm (hv n)).div ((hnorm i hi').pow 2)
+      (((hgs i hi').inner_bundle_of_continuousFiberNorm (hv n le_rfl)).div ((hnorm i hi').pow 2)
         (pow_ne_zero 2 (RCLike.ofReal_ne_zero.2
-          (norm_ne_zero_iff.mpr (gramSchmidt_ne_zero i hli))))).smul (hg i hi')
+          (norm_ne_zero_iff.mpr (hne i hi'))))).smul (hg i hi')
     have hformula (y : X) (hy : b y ∈ e.baseSet) :
         (e ⟨b y, gramSchmidt 𝕜 (fun i ↦ v i y) n⟩).2 =
           (e ⟨b y, v n y⟩).2 - ∑ i ∈ Finset.Iio n,
@@ -81,13 +89,15 @@ theorem ContinuousWithinAt.gramSchmidt_bundle
     exact ⟨hb, hcont.congr_of_eventuallyEq (hmem.mono hformula)
       (hformula x (mem_baseSet_trivializationAt F E (b x)))⟩
 
-/-- Normalized Gram–Schmidt is continuous at a linearly independent family. -/
-theorem ContinuousWithinAt.gramSchmidtNormed_bundle
-    (hv : ∀ i, ContinuousWithinAt (fun y ↦ (v i y : TotalSpace F E)) s x)
-    (hli : LinearIndependent 𝕜 (fun i ↦ v i x)) (n : ι) :
+/-- Normalized Gram–Schmidt applied in each fiber is continuous at every parameter where the input
+sections up to and including the index are continuous and the input vectors up to and including
+the index are linearly independent. -/
+theorem ContinuousWithinAt.gramSchmidtNormed_bundle (n : ι)
+    (hv : ∀ i ≤ n, ContinuousWithinAt (fun y ↦ (v i y : TotalSpace F E)) s x)
+    (hli : LinearIndepOn 𝕜 (fun i ↦ v i x) (Set.Iic n)) :
     ContinuousWithinAt
       (fun y ↦ TotalSpace.mk' F (b y) (gramSchmidtNormed 𝕜 (fun i ↦ v i y) n)) s x := by
-  have hg := ContinuousWithinAt.gramSchmidt_bundle hv hli n
+  have hg := ContinuousWithinAt.gramSchmidt_bundle n hv (hli.mono Set.Iio_subset_Iic_self)
   have hn : ContinuousWithinAt (fun y ↦ ((‖gramSchmidt 𝕜 (fun i ↦ v i y) n‖ : ℝ) : 𝕜)) s x :=
     RCLike.continuous_ofReal.continuousAt.comp_continuousWithinAt
       hg.norm_bundle_of_continuousFiberNorm
@@ -101,36 +111,42 @@ theorem ContinuousWithinAt.gramSchmidtNormed_bundle
           (e ⟨b y, gramSchmidt 𝕜 (fun i ↦ v i y) n⟩).2 := by
     simp only [gramSchmidtNormed, ← e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hy, map_smul]
   have H := (hn.inv₀ (RCLike.ofReal_ne_zero.2
-    (norm_ne_zero_iff.mpr (gramSchmidt_ne_zero n hli)))).smul hc
+    (norm_ne_zero_iff.mpr (gramSchmidt_ne_zero_coe n hli.linearIndependent)))).smul hc
   rw [FiberBundle.continuousWithinAt_totalSpace]
   exact ⟨hb, H.congr_of_eventuallyEq (hmem.mono hformula)
     (hformula x (mem_baseSet_trivializationAt F E (b x)))⟩
 
-/-- Normalized Gram–Schmidt is continuous at a linearly independent family. -/
-theorem ContinuousAt.gramSchmidtNormed_bundle
-    (hv : ∀ i, ContinuousAt (fun y ↦ (v i y : TotalSpace F E)) x)
-    (hli : LinearIndependent 𝕜 (fun i ↦ v i x)) (n : ι) :
+/-- Normalized Gram–Schmidt applied in each fiber is continuous at every parameter where the input
+sections up to and including the index are continuous and the input vectors up to and including
+the index are linearly independent. -/
+theorem ContinuousAt.gramSchmidtNormed_bundle (n : ι)
+    (hv : ∀ i ≤ n, ContinuousAt (fun y ↦ (v i y : TotalSpace F E)) x)
+    (hli : LinearIndepOn 𝕜 (fun i ↦ v i x) (Set.Iic n)) :
     ContinuousAt
       (fun y ↦ TotalSpace.mk' F (b y) (gramSchmidtNormed 𝕜 (fun i ↦ v i y) n)) x := by
   rw [← continuousWithinAt_univ]
-  exact ContinuousWithinAt.gramSchmidtNormed_bundle
-    (fun i ↦ (hv i).continuousWithinAt) hli n
+  exact ContinuousWithinAt.gramSchmidtNormed_bundle n
+    (fun i hi ↦ (hv i hi).continuousWithinAt) hli
 
-/-- Normalized Gram–Schmidt preserves continuity on a set where the input families are
-linearly independent. -/
-theorem ContinuousOn.gramSchmidtNormed_bundle
-    (hv : ∀ i, ContinuousOn (fun y ↦ (v i y : TotalSpace F E)) s)
-    (hli : ∀ y ∈ s, LinearIndependent 𝕜 (fun i ↦ v i y)) (n : ι) :
+/-- Normalized Gram–Schmidt applied in each fiber is continuous on a set on which the input
+sections up to and including the index are continuous and, at each point, the input vectors up to
+and including the index are linearly independent. -/
+theorem ContinuousOn.gramSchmidtNormed_bundle (n : ι)
+    (hv : ∀ i ≤ n, ContinuousOn (fun y ↦ (v i y : TotalSpace F E)) s)
+    (hli : ∀ y ∈ s, LinearIndepOn 𝕜 (fun i ↦ v i y) (Set.Iic n)) :
     ContinuousOn (fun y ↦ TotalSpace.mk' F (b y) (gramSchmidtNormed 𝕜 (fun i ↦ v i y) n)) s :=
-  fun y hy ↦ ContinuousWithinAt.gramSchmidtNormed_bundle (fun i ↦ hv i y hy) (hli y hy) n
+  fun y hy ↦ ContinuousWithinAt.gramSchmidtNormed_bundle n (fun i hi ↦ hv i hi y hy) (hli y hy)
 
-/-- Normalized Gram–Schmidt preserves a continuous family of linearly independent vectors. -/
-theorem Continuous.gramSchmidtNormed_bundle
-    (hv : ∀ i, Continuous (fun y ↦ (v i y : TotalSpace F E)))
-    (hli : ∀ y, LinearIndependent 𝕜 (fun i ↦ v i y)) (n : ι) :
+/-- Normalized Gram–Schmidt applied in each fiber is continuous when the input sections up to and
+including the index are continuous and the input vectors up to and including the index are
+linearly independent at every parameter. -/
+theorem Continuous.gramSchmidtNormed_bundle (n : ι)
+    (hv : ∀ i ≤ n, Continuous (fun y ↦ (v i y : TotalSpace F E)))
+    (hli : ∀ y, LinearIndepOn 𝕜 (fun i ↦ v i y) (Set.Iic n)) :
     Continuous (fun y ↦ TotalSpace.mk' F (b y) (gramSchmidtNormed 𝕜 (fun i ↦ v i y) n)) := by
   rw [← continuousOn_univ]
-  exact ContinuousOn.gramSchmidtNormed_bundle (fun i ↦ (hv i).continuousOn) (fun y _ ↦ hli y) n
+  exact ContinuousOn.gramSchmidtNormed_bundle n (fun i hi ↦ (hv i hi).continuousOn)
+    (fun y _ ↦ hli y)
 
 namespace Bundle.Trivialization
 
@@ -169,7 +185,7 @@ theorem continuous_orthonormalBasis (i : ι) :
       symm_continuousLinearEquivAt_eq, Function.comp_def] using
       (c.map (e.continuousLinearEquivAt 𝕜 y y.property).symm.toLinearEquiv).linearIndependent
   simpa only [orthonormalBasis_apply] using
-    (Continuous.gramSchmidtNormed_bundle hv hli i)
+    (Continuous.gramSchmidtNormed_bundle i (fun j _ ↦ hv j) fun y ↦ (hli y).linearIndepOn _)
 
 end Bundle.Trivialization
 

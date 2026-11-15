@@ -54,7 +54,7 @@ universe u v w
 
 variable {R : Type u} [CommRing R]
 variable {V : Type v} {W : Type w} [AddCommGroup V] [Module R V] [AddCommGroup W] [Module R W]
-variable (G : InternalGrading R V) (H : InternalGrading R W)
+variable (G : InternalGrading R V ℤ) (H : InternalGrading R W ℤ)
 
 /-! ### The two inclusions -/
 

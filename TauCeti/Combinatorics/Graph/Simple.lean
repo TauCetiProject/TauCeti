@@ -29,6 +29,8 @@ interchangeably when edge identities carry no additional information.
   are the edges of that simple graph.
 * `Graph.ofSimpleGraphToSimpleGraphIso`: the canonical multigraph isomorphism from the graph
   reconstructed from the underlying simple graph to the original simple multigraph.
+* `Graph.Iso.toSimpleGraphIso`: an arbitrary multigraph isomorphism induces an isomorphism of
+  underlying simple graphs.
 -/
 
 public section
@@ -158,5 +160,59 @@ theorem coe_ofSimpleGraphToSimpleGraphIso_symm_edgeEquiv_apply
     (G.ofSimpleGraphToSimpleGraphIso.edgeEquiv.symm e)
   rw [Equiv.apply_symm_apply] at h
   exact h.symm
+
+namespace Iso
+
+variable {V' E' : Type*} {H : Graph V' E'}
+
+/-- A multigraph isomorphism induces an isomorphism of the underlying simple graphs,
+forgetting loops and parallel-edge identities. -/
+def toSimpleGraphIso (f : Iso G H) : G.toSimpleGraph ≃g H.toSimpleGraph where
+  toEquiv := f.vertexEquiv
+  map_rel_iff' := by
+    intro x y
+    simp only [toSimpleGraph_adj, f.vertexEquiv.injective.ne_iff]
+    refine and_congr_right fun _ ↦ ?_
+    constructor
+    · rintro ⟨e, he⟩
+      exact ⟨f.edgeEquiv.symm ⟨e, he.edge_mem⟩,
+        (f.map_isLink_iff (f.edgeEquiv.symm ⟨e, he.edge_mem⟩) x y).mp (by simpa using he)⟩
+    · rintro ⟨e, he⟩
+      exact ⟨f.edgeEquiv ⟨e, he.edge_mem⟩, (f.map_isLink_iff ⟨e, he.edge_mem⟩ x y).mpr he⟩
+
+/-- The induced simple-graph isomorphism uses the original vertex equivalence. -/
+@[simp]
+theorem toSimpleGraphIso_apply (f : Iso G H) (x : V(G)) :
+    f.toSimpleGraphIso x = f.vertexEquiv x := (rfl)
+
+/-- The inverse induced isomorphism uses the inverse vertex equivalence. -/
+@[simp]
+theorem toSimpleGraphIso_symm_apply (f : Iso G H) (x : V(H)) :
+    f.toSimpleGraphIso.symm x = f.vertexEquiv.symm x := by
+  apply f.toSimpleGraphIso.injective
+  simp
+
+/-- Simplification sends the identity multigraph isomorphism to the identity. -/
+@[simp]
+theorem toSimpleGraphIso_refl : (refl G).toSimpleGraphIso = SimpleGraph.Iso.refl := by
+  ext x
+  simp
+
+/-- Simplification commutes with inversion of isomorphisms. -/
+@[simp]
+theorem toSimpleGraphIso_symm (f : Iso G H) :
+    f.symm.toSimpleGraphIso = f.toSimpleGraphIso.symm := by
+  ext x
+  simp
+
+/-- Simplification commutes with composition of isomorphisms. -/
+@[simp]
+theorem toSimpleGraphIso_trans {V'' E'' : Type*} {K : Graph V'' E''}
+    (f : Iso G H) (g : Iso H K) :
+    (f.trans g).toSimpleGraphIso = f.toSimpleGraphIso.trans g.toSimpleGraphIso := by
+  ext x
+  simp
+
+end Iso
 
 end Graph

@@ -108,8 +108,8 @@ private theorem sectionCoord_alongCurve_eventuallyEq
     differentiableAt_sectionCoord (f q) (W q) (hcurve.mdifferentiableAt (by norm_num))
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) _)
   rw [sectionCoord_apply, ← alongCurveWithin_univ,
-    ← symmL_alongCurveInChartWithin cov (f q) (W q) hqb uniqueDiffWithinAt_univ
-      hfq.mdifferentiableWithinAt hV.differentiableWithinAt,
+    ← symmL_alongCurveInChartWithin cov (f q) (W q) hqb hfq.mdifferentiableWithinAt
+      hV.differentiableWithinAt,
     e.continuousLinearMapAt_symmL (R := ℝ) hqb, alongCurveInChartWithin_apply,
     derivWithin_univ, derivWithin_univ, Function.comp_def, hcoord q, hφdef]
 

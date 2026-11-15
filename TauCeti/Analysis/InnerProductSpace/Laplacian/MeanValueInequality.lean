@@ -202,7 +202,7 @@ private lemma local_bound (hE : Module.finrank ℝ E = 2) {w : E → ℝ} {x₀ 
   have hint : ∫ x in ball z δ, w x ∂μ ≤ ∫ x in ball x₀ r, w x ∂μ :=
     setIntegral_mono_set ((hwc.integrableOn_compact (isCompact_closedBall _ _)).mono_set
       ball_subset_closedBall) (ae_restrict_of_forall_mem measurableSet_ball hw0)
-      (ball_subset_closedBall.trans (hsub δ hδε)).eventuallyLE
+      (ball_subset_closedBall.trans (hsub δ hδε)).eventuallySubset
   linarith
 
 /-- **The mean-value inequality.** Let `E` be two-dimensional, and let `w` be `C²` on the ball

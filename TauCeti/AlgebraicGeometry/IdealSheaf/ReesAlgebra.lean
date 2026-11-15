@@ -373,7 +373,7 @@ private lemma coeff_toPolynomial (x : ⨁ n, Γ(I.reesAlgebra.obj.X n, U)) (n : 
     (I.toPolynomial U x).coeff n = I.reesSec U n (x n) := by
   classical
   conv_lhs => rw [← DirectSum.sum_support_of x]
-  simp only [map_sum, toPolynomial_of, finsetSum_coeff, coeff_monomial, Finset.sum_ite_eq',
+  simp only [map_sum, toPolynomial_of, finsetSum_coeff, coeff_monomial_apply, Finset.sum_ite_eq',
     DFinsupp.mem_support_toFun, ne_eq, ite_not]
   split_ifs with h
   · rw [h, map_zero]
@@ -409,7 +409,8 @@ private lemma bijective_toPolynomial :
     choose y hy using hf
     refine ⟨∑ n ∈ (f : Γ(X, U)[X]).support, DirectSum.of _ n (y n), Subtype.ext ?_⟩
     ext m
-    simp only [map_sum, toPolynomial_of, finsetSum_coeff, coeff_monomial, Finset.sum_ite_eq', hy]
+    simp only [map_sum, toPolynomial_of, finsetSum_coeff, coeff_monomial_apply,
+      Finset.sum_ite_eq', hy]
     split_ifs with h
     · rfl
     · exact (notMem_support_iff.mp h).symm

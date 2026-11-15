@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Subpolyad
-import TauCeti.Data.Fintype.CardEmbedding
+import TauCeti.Data.Fintype.Card.Embedding
 import Mathlib.Tactic.Linarith
 
 /-!
