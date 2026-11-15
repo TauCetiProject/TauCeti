@@ -193,7 +193,7 @@ theorem _root_.Polynomial.psc_eq_sign_mul_leadingCoeff_pow_mul_psc_mod {p q : K[
       (-1) ^ ((m - j) * (q.natDegree - j)) * q.leadingCoeff ^ (m - r) *
         psc q (p % q) q.natDegree r j := by
   rw [← psc_mod_left hp,
-    psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hr le_rfl hrm hjr hjq,
+    psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hr hrm hjr hjq,
     psc_comm (p % q) q r q.natDegree j, coeff_natDegree]
   have hgap : m - j = (m - r) + (r - j) := by omega
   rw [hgap, add_mul, pow_add]
@@ -226,7 +226,7 @@ theorem _root_.Polynomial.psc_eq_zero_of_natDegree_mod_lt {p q : K[X]} {m j : �
     (hjm : j ≤ m) :
     psc p q m q.natDegree j = 0 := by
   rw [← psc_mod_left hp,
-    psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hrj.le le_rfl hjm le_rfl hjq.le,
+    psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hrj.le hjm le_rfl hjq.le,
     psc_left_bound, coeff_eq_zero_of_natDegree_lt hrj, zero_pow (by omega), mul_zero]
 
 /-- One step of the signed remainder sequence multiplies the signed principal coefficients by a
@@ -269,12 +269,12 @@ theorem _root_.Polynomial.signedPsc_eq_zero_of_natDegree_mod_lt {p q : K[X]} {m 
 subresultant of `(p, q)` is that of `(q, p % q)` times `± q.leadingCoeff ^ (m - r)`. -/
 theorem _root_.Polynomial.subresultant_eq_C_mul_subresultant_mod {p q : K[X]} {m r j : ℕ}
     (hp : p.natDegree ≤ m) (hr : (p % q).natDegree ≤ r) (hrm : r ≤ m)
-    (hj : j < min r q.natDegree) :
+    (hj : j < r) :
     subresultant p q m q.natDegree j =
       C ((-1) ^ ((m - j) * (q.natDegree - j)) * q.leadingCoeff ^ (m - r)) *
         subresultant q (p % q) q.natDegree r j := by
   rw [← subresultant_mod_left hp,
-    subresultant_eq_C_sign_mul_coeff_pow_mul_of_left_degree_drop hr le_rfl hrm hj,
+    subresultant_eq_C_sign_mul_coeff_pow_mul_of_left_degree_drop hr hrm hj,
     subresultant_comm (p % q) q r q.natDegree j, coeff_natDegree, ← mul_assoc, ← C_mul]
   congr 2
   have hmj : m - j = (m - r) + (r - j) := by omega
@@ -285,7 +285,7 @@ theorem _root_.Polynomial.subresultant_eq_C_mul_subresultant_mod {p q : K[X]} {m
 remainder sequence. Negating the remainder adds the sign of its `q.natDegree - j` columns. -/
 theorem _root_.Polynomial.subresultant_eq_C_mul_subresultant_neg_mod {p q : K[X]} {m r j : ℕ}
     (hp : p.natDegree ≤ m) (hr : (p % q).natDegree ≤ r) (hrm : r ≤ m)
-    (hj : j < min r q.natDegree) :
+    (hj : j < r) :
     subresultant p q m q.natDegree j =
       C ((-1) ^ ((m - j + 1) * (q.natDegree - j)) * q.leadingCoeff ^ (m - r)) *
         subresultant q (-(p % q)) q.natDegree r j := by
@@ -307,7 +307,7 @@ theorem _root_.Polynomial.subresultant_eq_C_mul_mod {p q : K[X]} {m j : ℕ}
     subresultant p q m q.natDegree j =
       C ((-1) ^ ((m - j) * (q.natDegree - j)) * q.leadingCoeff ^ (m - j) *
         (p % q).coeff j ^ (q.natDegree - j - 1)) * (p % q) := by
-  rw [← subresultant_mod_left hp, subresultant_left_bound_of_degree_drop hr le_rfl hjq hjm,
+  rw [← subresultant_mod_left hp, subresultant_left_bound_of_degree_drop hr hjq hjm,
     coeff_natDegree]
 
 /-- The subresultant at index `q.natDegree - 1` is `(-q.leadingCoeff) ^ (m + 1 - q.natDegree)`

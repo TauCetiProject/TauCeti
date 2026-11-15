@@ -63,6 +63,8 @@ an affine parametrization with a segment whose terminal endpoint is removed.
 * `TauCeti.mem_segment_zero_left_iff_real_inner_eq_norm_mul_and_norm_le` and
   `TauCeti.zero_mem_segment_iff_real_inner_eq_neg_norm_mul` — the two criteria in a real inner
   product space.
+* `TauCeti.add_smul_mem_segment` — a point `p + t • v` with `t` between `t₀` and `t₁` lies on
+  the segment from `p + t₀ • v` to `p + t₁ • v`.
 * `TauCeti.image_add_smul_Ico` — the affine image of `Ico 0 D` is a segment with its terminal
   endpoint removed.
 * `TauCeti.image_eq_segment_sdiff_of_forall_eq_add_smul` — a map equal to `c + d x • u` on a set
@@ -226,6 +228,15 @@ section HalfOpen
 
 variable {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup E] [Module 𝕜 E]
+
+/-- A point `p + t • v` of an affine line lies on the segment between its points of parameters
+`t₀` and `t₁` whenever `t` lies between `t₀` and `t₁`. -/
+theorem add_smul_mem_segment {p v : E} {t t₀ t₁ : 𝕜} (ht : t ∈ uIcc t₀ t₁) :
+    p + t • v ∈ segment 𝕜 (p + t₀ • v) (p + t₁ • v) := by
+  refine (mem_segment_translate 𝕜 p).2 ?_
+  rw [← segment_eq_uIcc] at ht
+  simpa using image_segment 𝕜 (LinearMap.toSpanSingleton 𝕜 E v).toAffineMap t₀ t₁ ▸
+    mem_image_of_mem _ ht
 
 /-- **A nonzero affine ray parametrizes a half-open segment.** If `y - x = D • u` with `D > 0`,
 then the points `x + t • u` for `0 ≤ t < D` are exactly the segment from `x` to `y` with `y`

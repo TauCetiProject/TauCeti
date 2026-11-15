@@ -28,29 +28,22 @@ its relative degree. Comparing the two routes gives `2 · [K(W) : K(W)^q] = 2q`.
 * `WeierstrassCurve.Affine.finrank_fieldRange_frobeniusAlgHom`: `[K(W) : K(W)^q] = q`.
 
 `K(W)^q` is not given a name of its own: it is the field range of
-`FiniteField.frobeniusAlgHom K W.FunctionField` throughout, which is the expression the seeded
-`Isogeny.degree` — a `finrank` over a `fieldPullback.fieldRange` — is taken over, so a consumer
-needs no rewriting to reach it.
+`FiniteField.frobeniusAlgHom K W.FunctionField` throughout, which is the expression
+`TauCeti.Isogeny.degree` — a `finrank` over a `fieldPullback.fieldRange` — is taken over, so a
+consumer needs no rewriting to reach it.
 
 No degree here needs `W` to be elliptic: these are degrees of `K(W)` over embedded subfields, and
 the Weierstrass equation alone gives the power basis.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 1**, the Frobenius isogeny — "the key input to
-Layer 3", seeded as `frobeniusIsogeny` with `degree_frobeniusIsogeny : … = Nat.card F`, where
-`Isogeny.degree φ := Module.finrank φ.fieldPullback.fieldRange W₁.FunctionField`. The subfield
-`K(W)^q` here is the field range that seeded degree is taken over, so
-`finrank_fieldRange_frobeniusAlgHom` is that theorem's field-theoretic content, available before
-any isogeny exists and stated in the same `Nat.card K`.
-
-Nothing here defines an isogeny, a `fieldPullback` or a `degree`; the seeded declarations stay
-untouched for whoever builds Layer 1's isogeny API.
+The subfield `K(W)^q` is the field range over which the degree of the Frobenius isogeny is taken,
+so `finrank_fieldRange_frobeniusAlgHom` is the field-theoretic content of
+`TauCeti.Isogeny.degree_frobeniusIsogeny`, available before any isogeny exists and stated in the
+same `Nat.card K`. Nothing here defines an isogeny, a `fieldPullback` or a `degree`.
 
 ## Provenance
 
-Ported from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, pinned by
-that roadmap at `dev/hasse-weil @ 513e83879e2f`), `HasseWeil/FrobeniusIsogeny.lean`, the `private`
+Ported from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, at
+`dev/hasse-weil @ 513e83879e2f`), `HasseWeil/FrobeniusIsogeny.lean`, the `private`
 declarations `frobeniusAlgHom_comp_comm`, `finrank_over_frobenius_image` and
 `frobenius_finrank_functionField`. The source's `frobFracRange`, `frobFracRange_le_frobRange` and
 `finrank_frobFracRange_functionField` are the finite-field model of the exponent-generic tower,
@@ -114,8 +107,8 @@ theorem relfinrank_fieldRange_frobeniusAlgHom :
 
 /-- **`[K(W) : K(W)^q] = q`.** The tower `K(x^q) ⊆ K(W)^q ⊆ K(W)` has degrees `2` and
 `[K(W) : K(W)^q]`, with product `2q`. Stated over the field range of the `q`-power map itself,
-which is the form the seeded `Isogeny.degree` — a `finrank` over a `fieldPullback.fieldRange` —
-is taken over. -/
+which is the form `TauCeti.Isogeny.degree` — a `finrank` over a `fieldPullback.fieldRange` — is
+taken over. -/
 @[simp]
 theorem finrank_fieldRange_frobeniusAlgHom :
     letI := Fintype.ofFinite K

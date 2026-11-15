@@ -105,8 +105,7 @@ private theorem crossRecut_toRectangleDecomposition
     (E.crossRecut hcommon hone hf hs hrow hturn).toRectangleDecomposition =
       E.toRectangleDecomposition.recut hone hf hs := by
   apply GridRectangleDecomposition.ext <;>
-    simp [crossRecut, GridRectanglePentagonDecomposition.pentagon,
-      (E.crossRecut_geometry hcommon hone hf hs hrow).2.1]
+    simp [crossRecut, GridRectanglePentagonDecomposition.pentagon]
 
 /-- The inverse cross-recut shares its terminal side, with the pentagon starting inside the
 rectangle's column interval. -/

@@ -167,11 +167,11 @@ theorem IsPrimaryEisenstein.cubic_reciprocity {π₁ π₂ : 𝓞 K} (hπ₁ : I
   -- two relations read `y b = a ^ 2` and `x a = b ^ 2`, while `a ^ 3 = b ^ 3 = 1`.
   have hy := powerResidueSymbol_mul_powerResidueSymbol_absNorm hπ₁ _ hc₂ h₁₂
   have hx := powerResidueSymbol_mul_powerResidueSymbol_absNorm hπ₂ _ hc₁ h₁₂.symm
-  have ha := powerResidueSymbol_pow_eq_one hc₂ (x := Ideal.Quotient.mk (span {π₂})
+  have ha := powerResidueSymbol_pow_eq_one (n := 3) (x := Ideal.Quotient.mk (span {π₂})
     (absNorm (span {π₁}) : 𝓞 K)) (by
       rw [Ne, Quotient.eq_zero_iff_mem]
       exact natCast_notMem_of_coprime_absNorm IsPrime.ne_top' h₁₂)
-  have hb := powerResidueSymbol_pow_eq_one hc₁ (x := Ideal.Quotient.mk (span {π₁})
+  have hb := powerResidueSymbol_pow_eq_one (n := 3) (x := Ideal.Quotient.mk (span {π₁})
     (absNorm (span {π₂}) : 𝓞 K)) (by
       rw [Ne, Quotient.eq_zero_iff_mem]
       exact natCast_notMem_of_coprime_absNorm IsPrime.ne_top' h₁₂.symm)

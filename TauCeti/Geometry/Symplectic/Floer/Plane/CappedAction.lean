@@ -49,9 +49,12 @@ clockwise on the negative plane.
 `∫_{D_R} E = ε A_H(ℓ_R, u ∘ endDisc R) - ∫_ℂ R_K(u)`
 
 (`integral_floerEnergyDensity_pssPlanePerturbation_closedBall_eq_endSign_mul_cappedLoopAction` in
-`TauCeti.SmoothTwoForm.IsNondegenerate`), and if `|H| ≤ B`, the curvature term is at most `B` in
-absolute value, uniformly in `R`. For a solution of the Floer equation with almost complex
-structures tamed by `ω` the energy is nonnegative, which gives the capped action bound
+`TauCeti.SmoothTwoForm.IsNondegenerate`). Against any other disc `D` bounding `ℓ_R`, the action
+changes by the area of the sphere glued from `D` and `u ∘ endDisc R`
+(`integral_floerEnergyDensity_pssPlanePerturbation_closedBall_of_isLoopCylinder`). If `|H| ≤ B`,
+the curvature term is at most `B` in absolute value, uniformly in `R`. For a solution of the Floer
+equation with almost complex structures tamed by `ω` the energy is nonnegative, which gives the
+capped action bound
 `-B ≤ ε A_H(ℓ_R, u ∘ endDisc R)`
 (`SmoothTwoForm.IsNondegenerate.neg_le_endSign_mul_cappedLoopAction_pssPlanePerturbation`). If these
 capped actions converge to `a` as `R → ∞`, then the energy of the solution over the whole plane is
@@ -337,6 +340,39 @@ theorem
     smoothTransition.one_of_one_le (by linarith : (1 : ℝ) ≤ R - 1),
     cappedLoopAction_def]
   ring
+
+/-- **The energy identity on discs of a PSS plane, against an arbitrary cap.** Let `K` be the
+perturbation of a PSS plane given by a period-one `C¹` Hamiltonian `H` on a finite-dimensional
+manifold with a nondegenerate two-form `ω`, let `u` be a `C²` map, `R ≥ 2`, and let `D` be any
+disc bounding the loop `ℓ_R(t) = u(φ(ε R + i t))`. Then
+
+`∫_{D_R} E = ε (A_H(ℓ_R, D) - ω(D ⋆ (u ∘ endDisc R)⁻¹)) - ∫_ℂ R_K(u)`,
+
+where `D ⋆ (u ∘ endDisc R)⁻¹` is the sphere obtained by gluing `D` to the restriction of `u` to
+the disc run backwards (`TauCeti.rectangleTrans`). On the negative plane, `ε = -1`, this is the
+energy identity `E = -A_H(ℓ_R, D) + ω(A) - ∫ R_K` of the plane with output cap `D`, in the class
+`A` of the sphere formed by `D` and the plane. -/
+theorem integral_floerEnergyDensity_pssPlanePerturbation_closedBall_of_isLoopCylinder
+    (hω : ω.IsNondegenerate) (hH : Periodic H 1)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u) {R : ℝ} (hR : 2 ≤ R) {D : ℝ × ℝ → M} {x : M}
+    (hD : IsLoopCylinder I D (fun _ ↦ x) fun t ↦ u (Complex.equivRealProdCLM
+      (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I)))) :
+    ∫ z in Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall 0 (Real.exp (2 * π * R)),
+        ω.floerEnergyDensity
+          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
+      p.endSign * (cappedLoopAction ω.1 H (fun t ↦ u (Complex.equivRealProdCLM
+          (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I)))) D -
+          rectangleIntegral ω.1
+            (rectangleTrans D ((u ∘ p.endDisc R) ∘ Prod.map (fun s ↦ 1 - s) id)) (0, 0) (1, 1)) -
+        ∫ z, ω.hamiltonianCurvature
+          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
+  rw [hω.integral_floerEnergyDensity_pssPlanePerturbation_closedBall_eq_endSign_mul_cappedLoopAction
+      hH hHs (hu.of_le one_le_two) hR,
+    ← cappedLoopAction_sub_cappedLoopAction (ω.isSmoothForm.of_le (by simp)) H
+      (isLoopCylinder_comp_endDisc hu R) hD, sub_sub_cancel]
 
 /-- **The energy and the capped action on discs of a PSS plane.** If `|H| ≤ B`, then for every
 `R ≥ 2` the Floer energy of a `C¹` map over the disc `‖w‖ ≤ exp (2πR)` differs from `ε` times the

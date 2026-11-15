@@ -81,7 +81,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 /-- Surjectivity onto a finite-dimensional space is an open condition on continuous linear
 maps. -/
 theorem isOpen_setOf_surjective : IsOpen {A : E →L[𝕜] F | Surjective A} := by
-  have : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   rw [Metric.isOpen_iff]
   rintro A (hA : Surjective A)
   obtain ⟨R, hAR⟩ := A.exists_rightInverse_of_surjective (A.range_eq_top_of_surjective hA)
@@ -148,7 +148,7 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
 No complement to the kernel is needed. -/
 theorem surjective_of_norm_sub_lt_inv_rightInverse [CompleteSpace E]
     (T S : E →L[𝕜] F) (R : T.NonlinearRightInverse)
-    (h : ‖S - T‖ < (R.nnnorm : ℝ)⁻¹) : Function.Surjective S := by
+    (h : ‖S - T‖ < (R.nnNorm : ℝ)⁻¹) : Function.Surjective S := by
   have ha : ApproximatesLinearOn (S : E → F) T univ ‖S - T‖₊ := by
     intro x _ y _
     have he : S x - S y - T (x - y) = (S - T) (x - y) := by
@@ -156,7 +156,7 @@ theorem surjective_of_norm_sub_lt_inv_rightInverse [CompleteSpace E]
       abel
     rw [he]
     exact (S - T).le_opNorm _
-  have hnn : ‖S - T‖₊ < R.nnnorm⁻¹ := by exact_mod_cast h
+  have hnn : ‖S - T‖₊ < R.nnNorm⁻¹ := by exact_mod_cast h
   have hopen : IsOpen (Set.range S) := by
     simpa only [image_univ] using ha.open_image R isOpen_univ (Or.inr hnn)
   apply LinearMap.range_eq_top.1

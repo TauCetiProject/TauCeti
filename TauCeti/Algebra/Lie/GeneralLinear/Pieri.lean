@@ -251,11 +251,11 @@ private theorem sum_Iic_lie_single_pieriVec (hv : IsGlHighestWeightVector mu v)
   · rw [pieriVec_of_lt hit, smul_zero]
     exact Finset.sum_eq_zero fun k hk => by
       rw [pieriVec_of_lt ((Finset.mem_Iic.mp hk).trans_lt hit), lie_zero]
-  · rw [← Finset.Iio_insert, Finset.sum_insert Finset.notMem_Iio_self,
+  · rw [← Finset.insert_Iio, Finset.sum_insert Finset.notMem_Iio_self,
       Finset.sum_eq_zero fun k hk => by rw [pieriVec_of_lt (Finset.mem_Iio.mp hk), lie_zero],
       pieriVec_self, hv.lie_single_self_eq_smul]
     simp
-  · rw [← Finset.Iio_insert, Finset.sum_insert Finset.notMem_Iio_self,
+  · rw [← Finset.insert_Iio, Finset.sum_insert Finset.notMem_Iio_self,
       sum_lie_single_pieriVec_of_gt hmut hti, lie_single_self_pieriVec hv, ← add_smul]
     congr 1
     have hti' : (((i : ℕ) - t : ℕ) : K) = (((i : ℕ) - t - 1 : ℕ) : K) + 1 := by

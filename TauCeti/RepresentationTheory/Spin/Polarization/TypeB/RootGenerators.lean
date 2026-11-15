@@ -76,19 +76,6 @@ introduced: the statements are about the Clifford elements and their action on t
 * The five `mem_integralSpinActionSubring` statements, one for each numbered root vector and
   coroot: every generator preserves the coordinate integral lattice.
 
-## Roadmap
-
-This is the evaluation half of the "evaluate the comparison on the numbered root vectors and prove
-their divided powers preserve the integral spinor lattice" step of the full-weight type-`B`
-Chevalley carrier in Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`: the comparison is evaluated on the numbered
-generators, and those generators themselves are shown to preserve the lattice. The divided powers
-are trivial as a consequence of the square-zero lemmas above, but no divided-power structure is
-formalized here; that remains the next step. That carrier is consumed by milestone L0, "pinned
-ambient groups", of
-`TauCetiRoadmap/CFSGStatement/README.md`, whose `Bₙ(q)` branch needs the simply connected form and
-so the spinor lattice rather than the adjoint one.
-
 ## References
 
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II.

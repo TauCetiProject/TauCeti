@@ -35,6 +35,8 @@ compatibility with composition characterizes the transport
 * `TauCeti.localHomology R S k`: the relative singular homology `Hₖ(M, M ∖ S)`.
 * `TauCeti.localHomologyRestriction`: for `S ⊆ T`, the map `Hₖ(M, M ∖ T) ⟶ Hₖ(M, M ∖ S)`
   induced by the identity of `M`.
+* `TauCeti.singularHomologyToLocalHomology`: with module coefficients, the map
+  `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from singular homology to the local homology at `x`.
 * `TauCeti.localHomologyMap`: for a continuous map `j : M → N` with `j ⁻¹' T ⊆ S`, the map
   `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j`. It is functorial, is the restriction map for `j`
   the identity, and is compatible with restriction on both sides.
@@ -139,6 +141,28 @@ private lemma localHomologyRestriction_comp_inv_comp {S T : Set M} (hST : S ⊆ 
   rw [← Category.assoc, hinv, ← localHomologyRestriction_comp R hy hST, IsIso.inv_hom_id_assoc]
 
 end Restriction
+
+section SingularHomology
+
+variable {M : Type w} [TopologicalSpace M] {Λ : Type*} [Ring Λ] (N : ModuleCat.{w} Λ)
+
+/-- The map `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from the singular homology of `M` to its local
+homology at `x`: the quotient map to `Hₖ(M, M ∖ M; N)` followed by restriction to `{x}`. -/
+def singularHomologyToLocalHomology (x : M) (k : ℕ) :
+    ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ) →ₗ[Λ]
+      (localHomology N ({x} : Set M) k : ModuleCat.{w} Λ) :=
+  ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ (C := ModuleCat.{w} Λ) N k ≫
+    localHomologyRestriction N (subset_univ {x}) k).hom
+
+theorem singularHomologyToLocalHomology_apply (x : M) {k : ℕ}
+    (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)) :
+    singularHomologyToLocalHomology N x k μ =
+      localHomologyRestriction N (subset_univ {x}) k
+        (((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
+          (C := ModuleCat.{w} Λ) N k).hom μ) :=
+  (rfl)
+
+end SingularHomology
 
 section Map
 

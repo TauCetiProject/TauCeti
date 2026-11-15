@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Order.Filter.Cofinite
 import Mathlib.Logic.Encodable.Basic
+import TauCeti.Order.Filter.Cofinite.Basic
 
 /-!
 # Enumerating a cofinitely convergent countable family by a sequence
@@ -30,15 +31,6 @@ theorem Filter.Tendsto.exists_seq_tendsto_range_subset {ι α : Type*} [Countabl
   obtain ⟨f, hf⟩ := exists_injective_nat ι
   refine ⟨Function.extend f g fun _ ↦ b, ?_, ?_⟩
   · rw [← Nat.cofinite_eq_atTop]
-    intro U hU
-    -- Off the range of `f` the sequence is `b ∈ U`; on it, `f` lists the finitely many `g i ∉ U`.
-    rw [mem_map, mem_cofinite]
-    refine ((mem_cofinite.1 (hg hU)).image f).subset fun n hn ↦ ?_
-    by_cases hn' : ∃ i, f i = n
-    · obtain ⟨i, rfl⟩ := hn'
-      rw [mem_compl_iff, mem_preimage, hf.extend_apply] at hn
-      exact ⟨i, hn, rfl⟩
-    · rw [mem_compl_iff, mem_preimage, Function.extend_apply' _ _ _ hn'] at hn
-      exact absurd (hb hU) hn
+    exact hg.extend_cofinite f hb
   · rintro _ ⟨i, rfl⟩
     exact ⟨f i, hf.extend_apply _ _ _⟩

@@ -58,7 +58,7 @@ theorem tendsto_integral_oneForm_of_tendstoUniformlyOn {γn : ℕ → ℝ → E}
     Tendsto (fun n ↦ ∫ t in a..b, ω (γn n t) (deriv (γn n) t)) atTop
       (nhds (∫ t in a..b, ω (γ t) (deriv γ t))) := by
   simp only [intervalIntegral.integral_of_le hab] at hdconv ⊢
-  apply tendsto_integral_clm_apply_of_integral_norm_sub
+  apply tendsto_integral_clm_apply_of_ae_tendsto_of_integral_norm_sub
   · refine .of_forall fun n ↦ ?_
     exact ((hω.comp_continuousOn ((hγn n).continuousOn.mono
       (by simpa only [uIcc_of_le hab] using Ioc_subset_Icc_self))).aestronglyMeasurable

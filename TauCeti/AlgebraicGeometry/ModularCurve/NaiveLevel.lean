@@ -812,7 +812,7 @@ theorem hasProperty_gammaNaiveRelRepData {W : MorphismProperty Scheme.{u}}
       (W.comp_mem _ _ (W.pullback_fst _ _ (h X)) (h X))
 
 /-- The naive problem `[Γ(N)]` is locally of finite presentation over `Ell/B`. -/
-theorem hasProperty_gammaNaiveRelRepData_locallyOfFinitePresentation :
+theorem hasProperty_locallyOfFinitePresentation_gammaNaiveRelRepData :
     (gammaNaiveRelRepData (B := B) (N := N)).HasProperty @LocallyOfFinitePresentation :=
   hasProperty_gammaNaiveRelRepData (fun _ _ _ _ ↦ inferInstance) fun _ ↦ inferInstance
 

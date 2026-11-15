@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Acyclic.TitsForm
 public import TauCeti.RepresentationTheory.Quiver.Reflection.PositiveRoot
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Source.Composite
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Uniqueness
@@ -196,9 +195,9 @@ omit [DecidableEq Q] in
 /-- **Every positive root of a quiver with positive definite Tits form is the dimension vector of a
 finite-dimensional indecomposable representation.** This is the surjective half of the Gabriel
 correspondence; the injective half — that an indecomposable is determined by its dimension vector —
-is `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic`, and that the dimension
+is `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable`, and that the dimension
 vector of an indecomposable *is* a positive root is
-`TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic`. -/
+`TauCeti.titsForm_dimVector_eq_one_of_indecomposable`. -/
 theorem exists_indecomposable_dimVector_eq [q : _root_.Quiver.{w} Q]
     [hq : ∀ a b : Q, Fintype (a ⟶ b)] (hpd : (titsForm Q).PosDef)
     {d : Q → ℤ} (hd : 0 ≤ d) (hroot : titsForm Q d = 1) :
@@ -237,7 +236,7 @@ theorem exists_indecomposable_dimVector_eq [q : _root_.Quiver.{w} Q]
 omit [DecidableEq Q] in
 /-- **A vector is a nonnegative root exactly when it is realized by an indecomposable
 representation.** The forward direction is `TauCeti.exists_indecomposable_dimVector_eq`; the reverse
-is `TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic`, nonnegativity being automatic
+is `TauCeti.titsForm_dimVector_eq_one_of_indecomposable`, nonnegativity being automatic
 for a dimension vector. -/
 theorem nonneg_and_titsForm_eq_one_iff_exists_indecomposable [q : _root_.Quiver.{w} Q]
     [hq : ∀ a b : Q, Fintype (a ⟶ b)] (hpd : (titsForm Q).PosDef) {d : Q → ℤ} :
@@ -248,8 +247,7 @@ theorem nonneg_and_titsForm_eq_one_iff_exists_indecomposable [q : _root_.Quiver.
     exists_indecomposable_dimVector_eq.{u, v, w, x} k Q hpd hd hroot, ?_⟩
   rintro ⟨M, hM, hfd, rfl⟩
   exact ⟨fun t ↦ Int.natCast_nonneg _,
-    titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic.{u, v, w, max u x}
-      (isAcyclic_of_titsForm_posDef hpd) hpd M hM hfd⟩
+    titsForm_dimVector_eq_one_of_indecomposable.{u, v, w, max u x} hpd M hM hfd⟩
 
 end Existence
 

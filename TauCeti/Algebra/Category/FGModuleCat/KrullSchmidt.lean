@@ -8,7 +8,11 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.RingTheory.Artinian.Defs
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
+public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
+public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Basic
 import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
+import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.FullSubcategory
 import TauCeti.Algebra.Category.ModuleCat.Indecomposable
 import TauCeti.CategoryTheory.Functor.RingEquivEnd
 
@@ -22,6 +26,10 @@ is read off from the existence half of the Krull-Schmidt theorem,
 morphisms `a j : X ⟶ W j` and `b j : W j ⟶ X` with `∑ j, a j ≫ b j = 𝟙 X`, which needs no
 biproducts in `FGModuleCat A`. By Fitting's lemma, a finitely generated indecomposable module of
 finite length has a local endomorphism ring (`FGModuleCat.isLocalRing_end_of_indecomposable`).
+
+Over a left Artinian ring `A`, for instance an Artin algebra, finitely generated modules have finite
+length, so `mod A = FGModuleCat A` is a Krull-Schmidt category
+(`FGModuleCat.isKrullSchmidt_of_isArtinianRing`).
 -/
 
 public section
@@ -68,5 +76,13 @@ theorem isLocalRing_end_of_indecomposable {X : FGModuleCat.{w} A} [IsNoetherian 
   have : IsLocalRing (End ((ObjectProperty.ι _).obj X)) :=
     (TauCeti.indecomposable_iff_isLocalRing_end X.obj hfl).mp hX
   exact ((ObjectProperty.fullyFaithfulι _).ringEquivEnd X).symm.isLocalRing
+
+open TauCeti in
+/-- **`mod A` is Krull-Schmidt over a left Artinian ring `A`**, for instance an Artin algebra: the
+finitely generated modules are the modules of finite length, which form a Krull-Schmidt category
+(`TauCeti.isKrullSchmidt_isFiniteLength`). -/
+instance isKrullSchmidt_of_isArtinianRing [IsArtinianRing A] :
+    IsKrullSchmidt (FGModuleCat.{w} A) :=
+  (ObjectProperty.fullSubcategoryCongr ModuleCat.isFiniteLength_eq_isFG).isKrullSchmidt
 
 end FGModuleCat

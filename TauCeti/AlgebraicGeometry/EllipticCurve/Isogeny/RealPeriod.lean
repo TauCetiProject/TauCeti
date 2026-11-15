@@ -434,7 +434,7 @@ private theorem exists_forall_lt_eval_denom_ne_zero_and_pos :
   set Z := {x | φ.xRatFunc.denom.eval x = 0 ∨ W₁.Ψ₂Sq.eval x ≤ 0}
   obtain ⟨e, he, hpos⟩ := exists_isRoot_Ψ₂Sq_and_forall_lt_pos_eval W₁
   obtain ⟨M, hM⟩ := eventually_atTop.mp
-    (Polynomial.eventually_atTop_not_isRoot _ φ.xRatFunc.denom_ne_zero)
+    (Polynomial.eventually_atTop_not_isRoot φ.xRatFunc.denom_ne_zero)
   have heZ : e ∈ Z := Or.inr he.eq_zero.le
   have hZb : BddAbove Z := ⟨max e M, fun x hx ↦ le_of_not_gt fun h ↦ by
     rcases hx with hx | hx
@@ -461,7 +461,7 @@ private theorem tendsto_eval_div_atTop
     Tendsto (fun x ↦ φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) atTop atTop := by
   obtain ⟨p, -, -, hgt⟩ := exists_forall_lt_eval_denom_ne_zero_and_pos φ
   refine tendsto_eval_div_atTop_of_tendsto_abs hc
-    (abs_div_tendsto_atTop_atTop_of_degree_gt _ _
+    (abs_div_tendsto_atTop_atTop_of_degree_gt
       (degree_lt_degree (natDegree_denom_lt_natDegree_num_xRatFunc φ)) φ.xRatFunc.denom_ne_zero)
     ((eventually_gt_atTop p).mono fun x hx ↦ ⟨(hgt hx).1, (hgt hx).2.le⟩)
 
