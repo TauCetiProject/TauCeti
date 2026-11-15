@@ -71,6 +71,9 @@ polynomial in the Morse inequalities.
   `TauCeti.mem_criticalPoints_iff_deriv_eq_zero`.
 * `TauCeti.criticalPoints_pow`: the only critical point of `y ↦ yᵐ` on the real line, `m ≥ 2`,
   is `0`.
+* `TauCeti.criticalPoints_eq_univ_of_subsingleton` and
+  `TauCeti.isRegularValue_iff_notMem_range_of_subsingleton`: in dimension `0` every point is
+  critical, so the regular values are the values not attained.
 * `TauCeti.isMorseOn_iff_criticalPoints`: Morse functions in terms of the critical set.
 * `TauCeti.criticalPoints_comp_subtypeVal` and `TauCeti.totalCriticalCount_comp_subtypeVal`: the
   critical points of the restriction of `f` to an open submanifold `U` are those of `f` in `U`.
@@ -211,6 +214,13 @@ theorem isRegularValue_iff_notMem_image_criticalPoints {c : ℝ} :
 theorem criticalPoints_eq_univ_of_subsingleton [Subsingleton E] : criticalPoints I f = univ :=
   -- The derivative at `x` is a linear form on the tangent space, which is the zero space `E`.
   eq_univ_of_forall fun _ ↦ Subsingleton.elim (α := E →L[ℝ] ℝ) _ _
+
+/-- On a manifold modelled on a zero-dimensional space every attained value is critical, so a value
+is regular exactly when it is not attained: every regular level is empty. -/
+theorem isRegularValue_iff_notMem_range_of_subsingleton [Subsingleton E] {c : ℝ} :
+    IsRegularValue I 𝓘(ℝ) f c ↔ c ∉ range f := by
+  rw [isRegularValue_iff_notMem_image_criticalPoints, criticalPoints_eq_univ_of_subsingleton,
+    image_univ]
 
 /-- A function and its negation have the same critical points. -/
 @[simp]
