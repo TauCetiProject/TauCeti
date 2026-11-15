@@ -41,6 +41,9 @@ larger order (`VertexOperator.IsLocalOfOrder.mono`), and it is symmetric in `A` 
 * `VertexOperator.ext_ncoeff`: vertex operators with the same normalized coefficients are equal.
 * `VertexOperator.IsLocalOfOrder.mono`, `VertexOperator.IsLocalOfOrder.symm`: locality is
   monotone in the order and symmetric.
+* `VertexOperator.IsLocalOfOrder.zero_left`, `VertexOperator.IsLocalOfOrder.add_left`,
+  `VertexOperator.IsLocalOfOrder.smul_left` (and right/neg/sub variants): mutual locality is
+  closed under `R`-linear combinations in either argument.
 
 ## References
 
@@ -143,6 +146,73 @@ theorem symm (h : A.IsLocalOfOrder B N) : B.IsLocalOfOrder A N := by
     rw [Prod.fst_swap, Prod.snd_swap, Nat.choose_symm_of_eq_add (mem_antidiagonal.1 hij).symm, hN]
     module
   rw [sum_congr rfl e, ← smul_sum, h m n, smul_zero]
+
+/-- The zero vertex operator is local of every order with any field on the right. -/
+theorem zero_left (B : VertexOperator R V) (N : ℕ) :
+    (0 : VertexOperator R V).IsLocalOfOrder B N :=
+  isLocalOfOrder_iff.2 fun _ _ ↦ sum_eq_zero fun _ _ ↦ by simp
+
+/-- Any field is local of every order with the zero vertex operator on the right. -/
+theorem zero_right (A : VertexOperator R V) (N : ℕ) :
+    A.IsLocalOfOrder (0 : VertexOperator R V) N :=
+  (zero_left A N).symm
+
+/-- Sums of fields local with `B` are local with `B` of order `max N₁ N₂`. -/
+theorem add_left {A₁ A₂ B : VertexOperator R V} {N₁ N₂ : ℕ}
+    (h₁ : A₁.IsLocalOfOrder B N₁) (h₂ : A₂.IsLocalOfOrder B N₂) :
+    (A₁ + A₂).IsLocalOfOrder B (max N₁ N₂) := by
+  have h₁' := isLocalOfOrder_iff.1 (h₁.mono (le_max_left N₁ N₂))
+  have h₂' := isLocalOfOrder_iff.1 (h₂.mono (le_max_right N₁ N₂))
+  refine isLocalOfOrder_iff.2 fun m n ↦ ?_
+  have hsplit (ij : ℕ × ℕ) :
+      ((A₁ + A₂)[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * (A₁ + A₂)[[m + ij.1]]) =
+        (A₁[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * A₁[[m + ij.1]]) +
+          (A₂[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * A₂[[m + ij.1]]) := by
+    rw [map_add, Pi.add_apply, add_mul, mul_add]
+    abel
+  simp only [hsplit, smul_add, sum_add_distrib, h₁' m n, h₂' m n, add_zero]
+
+/-- Locality with `A` on the left is preserved by addition on the right. -/
+theorem add_right {A B₁ B₂ : VertexOperator R V} {N₁ N₂ : ℕ}
+    (h₁ : A.IsLocalOfOrder B₁ N₁) (h₂ : A.IsLocalOfOrder B₂ N₂) :
+    A.IsLocalOfOrder (B₁ + B₂) (max N₁ N₂) :=
+  (h₁.symm.add_left h₂.symm).symm
+
+/-- Scalar multiples of a field local with `B` remain local with `B` of the same order. -/
+theorem smul_left (r : R) (h : A.IsLocalOfOrder B N) : (r • A).IsLocalOfOrder B N := by
+  refine isLocalOfOrder_iff.2 fun m n ↦ ?_
+  have h' := congrArg (r • ·) (isLocalOfOrder_iff.1 h m n)
+  rw [smul_zero, smul_sum] at h'
+  rw [← h']
+  refine sum_congr rfl fun ij _ ↦ ?_
+  rw [map_smul, Pi.smul_apply, smul_mul_assoc, mul_smul_comm, ← smul_sub, smul_comm r,
+    smul_comm r ((-1 : ℤ) ^ ij.2)]
+
+/-- Locality with `A` on the left is preserved by scalar multiplication on the right. -/
+theorem smul_right (r : R) (h : A.IsLocalOfOrder B N) : A.IsLocalOfOrder (r • B) N :=
+  (h.symm.smul_left r).symm
+
+/-- Negating the left field preserves mutual locality of order `N`. -/
+theorem neg_left (h : A.IsLocalOfOrder B N) : (-A).IsLocalOfOrder B N := by
+  rw [← neg_one_smul R A]
+  exact h.smul_left (-1)
+
+/-- Negating the right field preserves mutual locality of order `N`. -/
+theorem neg_right (h : A.IsLocalOfOrder B N) : A.IsLocalOfOrder (-B) N :=
+  h.symm.neg_left.symm
+
+/-- Differences of fields local with `B` are local with `B` of order `max N₁ N₂`. -/
+theorem sub_left {A₁ A₂ B : VertexOperator R V} {N₁ N₂ : ℕ}
+    (h₁ : A₁.IsLocalOfOrder B N₁) (h₂ : A₂.IsLocalOfOrder B N₂) :
+    (A₁ - A₂).IsLocalOfOrder B (max N₁ N₂) := by
+  rw [sub_eq_add_neg]
+  exact h₁.add_left h₂.neg_left
+
+/-- Locality with `A` on the left is preserved by subtraction on the right. -/
+theorem sub_right {A B₁ B₂ : VertexOperator R V} {N₁ N₂ : ℕ}
+    (h₁ : A.IsLocalOfOrder B₁ N₁) (h₂ : A.IsLocalOfOrder B₂ N₂) :
+    A.IsLocalOfOrder (B₁ - B₂) (max N₁ N₂) :=
+  (h₁.symm.sub_left h₂.symm).symm
 
 end IsLocalOfOrder
 
