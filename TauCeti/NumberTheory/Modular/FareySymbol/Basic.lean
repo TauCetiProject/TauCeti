@@ -7,20 +7,19 @@ module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Algebra.Order.Field.Rat
-public import Mathlib.Data.Rat.Lemmas
 public import Mathlib.Data.Set.Finite.List
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.RingTheory.Coprime.Lemmas
+public import TauCeti.Data.Rat.Lemmas
 import Mathlib.Basic.Finite.Prod
-import Mathlib.Data.Int.GCD
 import Mathlib.Data.Int.Interval
-import Mathlib.Data.List.FinRange
 import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
+import TauCeti.Data.List.OfFn
 
 /-!
 # Farey symbols
@@ -60,17 +59,19 @@ on the `m + 2` sides `(x_{i - 1}, x_i)` such that every free label occurs zero o
 * R. S. Kulkarni, *An arithmetic-geometric method in the study of the subgroups of the modular
   group*, Amer. J. Math. **113** (1991), no. 6, 1053–1133.
 * C. A. Kurth and L. Long, *Computations with finite index subgroups of `PSL₂(ℤ)` using Farey
-  symbols*, J. Number Theory **128** (2008), no. 7, 1862–1888, arXiv:0710.1835.
+  symbols*, in *Advances in Algebra and Combinatorics* (World Scientific, 2008), 225–242,
+  `arXiv:0710.1835v1`.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti
 
 /-- The label attached to a side `(x_{i - 1}, x_i)` of a Farey symbol: an elliptic involution
 (`even`), an elliptic three-cycle (`odd`), or half of a paired side identification (`free j`). -/
 inductive SideLabel where
-  /-- An even side, carrying an elliptic involution fixing the side's geodesic midpoint. -/
+  /-- An even side, carrying an elliptic involution fixing the order-`2` elliptic point (the
+  `SL(2, ℤ)`-translate of `i`) on the side's geodesic. -/
   | even
   /-- An odd side, carrying an elliptic element of order `3` fixing an interior ideal-triangle
   center. -/
@@ -81,23 +82,6 @@ inductive SideLabel where
 
 namespace SideLabel
 
-/-- Whether a `SideLabel` is of the form `free j`. -/
-def isFree : SideLabel → Bool
-  | .free _ => true
-  | _ => false
-
-@[simp] theorem isFree_even : isFree .even = false := (rfl)
-@[simp] theorem isFree_odd : isFree .odd = false := (rfl)
-@[simp] theorem isFree_free (j : ℕ) : isFree (.free j) = true := (rfl)
-
-/-- A label satisfies `isFree` precisely when it is `free j` for some `j`. -/
-theorem isFree_eq_true_iff {l : SideLabel} : l.isFree = true ↔ ∃ j, l = .free j := by
-  cases l <;> simp
-
-/-- A label fails `isFree` precisely when it is `even` or `odd`. -/
-theorem isFree_eq_false_iff {l : SideLabel} : l.isFree = false ↔ l = .even ∨ l = .odd := by
-  cases l <;> simp
-
 /-- Extract the index of a `free` label, or `none` on `even` and `odd` labels. -/
 def freeIndex? : SideLabel → Option ℕ
   | .free j => some j
@@ -106,6 +90,10 @@ def freeIndex? : SideLabel → Option ℕ
 @[simp] theorem freeIndex?_even : freeIndex? .even = none := (rfl)
 @[simp] theorem freeIndex?_odd : freeIndex? .odd = none := (rfl)
 @[simp] theorem freeIndex?_free (j : ℕ) : freeIndex? (.free j) = some j := (rfl)
+
+@[simp] theorem freeIndex?_eq_some_iff {a : SideLabel} {j : ℕ} :
+    a.freeIndex? = some j ↔ a = .free j := by
+  cases a <;> simp
 
 /-- On any list of side labels, the counts of `even`, `odd`, and `free` entries partition the
 length. -/
@@ -133,11 +121,11 @@ theorem count_filterMap_freeIndex? (labels : List SideLabel) (j : ℕ) :
   | nil => simp
   | cons l ls ih => cases l <;> simp [ih, List.count_cons]
 
+-- Not `@[simp]`: `simpNF` rewrites the LHS via `List.mem_filterMap`; `freeIndex?_eq_some_iff`
+-- then reduces `simp` on `j ∈ labels.filterMap freeIndex?` to `SideLabel.free j ∈ labels`.
 /-- Membership in `labels.filterMap freeIndex?` is membership of `free j` in `labels`. -/
 theorem mem_filterMap_freeIndex? {labels : List SideLabel} {j : ℕ} :
-    j ∈ labels.filterMap freeIndex? ↔ SideLabel.free j ∈ labels := by
-  simp only [List.mem_filterMap]
-  exact ⟨fun ⟨l, hl, h⟩ ↦ by cases l <;> cases h; exact hl, fun hj ↦ ⟨.free j, hj, rfl⟩⟩
+    j ∈ labels.filterMap freeIndex? ↔ SideLabel.free j ∈ labels := by simp
 
 /-- If every free label in `labels` occurs either zero or two times, the number of free entries is
 twice the number of distinct free indices occurring in `labels`. -/
@@ -204,7 +192,7 @@ theorem nodup_xs (F : FareySymbol) : F.xs.Nodup :=
   F.sorted.imp ne_of_lt
 
 /-- Indexing into `F.xs` is strictly increasing. -/
-theorem strictMono_xs (F : FareySymbol) ⦃i j : ℕ⦄ (hi : i < F.xs.length)
+theorem getElem_xs_lt_getElem_xs_of_lt (F : FareySymbol) ⦃i j : ℕ⦄ (hi : i < F.xs.length)
     (hj : j < F.xs.length) (hij : i < j) : F.xs[i] < F.xs[j] :=
   List.pairwise_iff_getElem.mp F.sorted i j hi hj hij
 
@@ -244,6 +232,10 @@ theorem freePairs_def (F : FareySymbol) :
 def freeLabels (F : FareySymbol) : Finset ℕ :=
   (F.labels.filterMap SideLabel.freeIndex?).toFinset
 
+/-- Definitional expansion of `freeLabels`. -/
+theorem freeLabels_def (F : FareySymbol) :
+    F.freeLabels = (F.labels.filterMap SideLabel.freeIndex?).toFinset := (rfl)
+
 @[simp]
 theorem mem_freeLabels {F : FareySymbol} {j : ℕ} :
     j ∈ F.freeLabels ↔ SideLabel.free j ∈ F.labels := by
@@ -274,25 +266,15 @@ theorem evenCount_add_oddCount_add_two_mul_freePairs (F : FareySymbol) :
   rw [evenCount_def, oddCount_def, ← F.length_filter_free,
     SideLabel.count_even_add_count_odd_add_length_filter_free]
 
+/-- Positive `evenCount` is equivalent to `SideLabel.even` occurring in `F.labels`. -/
+@[simp]
+theorem evenCount_pos_iff {F : FareySymbol} : 0 < F.evenCount ↔ SideLabel.even ∈ F.labels :=
+  List.count_pos_iff
+
 /-- Positive `oddCount` is equivalent to `SideLabel.odd` occurring in `F.labels`. -/
 @[simp]
 theorem oddCount_pos_iff {F : FareySymbol} : 0 < F.oddCount ↔ SideLabel.odd ∈ F.labels :=
   List.count_pos_iff
-
-/-- The number of side indices `j` carrying label `x` equals `F.labels.count x`. -/
-theorem card_filter_labels_eq_count (F : FareySymbol) (x : SideLabel) :
-    (Finset.univ.filter fun j : Fin F.labels.length ↦ F.labels[j] = x).card =
-      F.labels.count x := by
-  have hmap : (List.finRange F.labels.length).map (fun j ↦ F.labels[j]) = F.labels :=
-    List.ext_getElem (by simp) fun _ _ _ ↦ by simp
-  have hset :
-      ((List.finRange F.labels.length).filter (fun j ↦ decide (F.labels[j] = x))).toFinset =
-        Finset.univ.filter (fun j : Fin F.labels.length ↦ F.labels[j] = x) := by ext; simp
-  rw [← hset, List.toFinset_card_of_nodup ((List.nodup_finRange _).filter _),
-    ← List.countP_eq_length_filter]
-  conv_rhs => rw [← hmap]
-  rw [List.count_eq_countP, List.countP_map]
-  exact List.countP_congr fun _ _ ↦ by simp [beq_iff_eq]
 
 /-- Every free side `i` of `F` has a partner side `j ≠ i` carrying the same free label. -/
 theorem exists_other_free {F : FareySymbol} {i : Fin F.labels.length} {l : ℕ}
@@ -304,7 +286,7 @@ theorem exists_other_free {F : FareySymbol} {i : Fin F.labels.length} {l : ℕ}
     Finset.ext fun j ↦ by
       simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton]
       exact ⟨fun hj ↦ by_contra fun hne ↦ hall j hne hj, fun h ↦ h ▸ hi⟩
-  have hcard := F.card_filter_labels_eq_count (.free l)
+  have hcard := F.labels.card_filter_getElem_eq_count (.free l)
   rw [hfilter, Finset.card_singleton, hcnt] at hcard; omega
 
 /-- The partner of a free side `i` in `F` is unique: no third side can share its free label. -/
@@ -318,7 +300,7 @@ theorem eq_of_free_partner {F : FareySymbol} {i j₁ j₂ : Fin F.labels.length}
     simp only [Finset.mem_insert, Finset.mem_singleton] at hk
     simp only [Finset.mem_filter, Finset.mem_univ, true_and]
     rcases hk with rfl | rfl | rfl <;> assumption
-  have hle := (Finset.card_le_card hsub).trans_eq (F.card_filter_labels_eq_count (.free l))
+  have hle := (Finset.card_le_card hsub).trans_eq (F.labels.card_filter_getElem_eq_count (.free l))
   rw [Finset.card_insert_of_notMem (by simp [hne₁.symm, hne₂.symm]),
     Finset.card_insert_of_notMem (by simp [h12]), Finset.card_singleton, hcnt] at hle
   omega
@@ -482,7 +464,7 @@ theorem det_endpoints_pos {F : FareySymbol} {k l : ℕ}
       have hj : j < F.xs.length := by omega
       have hdiv : ((F.xs[i]'hi).num : ℚ) / (F.xs[i]'hi).den <
           ((F.xs[j]'hj).num : ℚ) / (F.xs[j]'hj).den := by
-        simpa [Rat.num_div_den] using F.strictMono_xs hi hj (by omega)
+        simpa [Rat.num_div_den] using F.getElem_xs_lt_getElem_xs_of_lt hi hj (by omega)
       rw [div_lt_div_iff₀ (Nat.cast_pos.mpr (F.xs[i]'hi).den_pos)
         (Nat.cast_pos.mpr (F.xs[j]'hj).den_pos)] at hdiv
       have hmul : (F.xs[i]'hi).num * (F.xs[j]'hj).den < (F.xs[j]'hj).num * (F.xs[i]'hi).den := by
@@ -558,6 +540,9 @@ theorem getElem_reflect_labels (F : FareySymbol) (i : Fin F.reflect.labels.lengt
 @[simp] theorem freePairs_reflect (F : FareySymbol) : F.reflect.freePairs = F.freePairs := by
   simp [freePairs, List.filter_reverse]
 
+@[simp] theorem freeLabels_reflect (F : FareySymbol) : F.reflect.freeLabels = F.freeLabels := by
+  ext; simp
+
 /-- Reflection reverses `F.endpoints` while negating first coordinates (including swapping
 `(-1, 0)` and `(1, 0)` up to sign). -/
 theorem endpoints_reflect (F : FareySymbol) :
@@ -586,11 +571,6 @@ theorem rightEndpoint_reflect (F : FareySymbol) (i : Fin F.reflect.labels.length
   simp [leftEndpoint_def, rightEndpoint_def, endpoints_reflect, List.getElem_reverse,
     Fin.val_rev, hidx]
 
-private theorem add_intCast_num (q : ℚ) (j : ℤ) : (q + (j : ℚ)).num = q.num + j * q.den := by
-  have h := Rat.add_num_den' q (j : ℚ)
-  simp only [Rat.den_intCast, Nat.cast_one, mul_one, Rat.num_intCast, Rat.add_intCast_den] at h
-  exact mul_right_cancel₀ (Nat.cast_ne_zero.mpr q.den_nz) h
-
 /-- **Integer translation of a Farey symbol**: shift every rational cusp by `j ∈ ℤ` while keeping
 the side labels unchanged. -/
 def translate (j : ℤ) (F : FareySymbol) : FareySymbol where
@@ -603,7 +583,7 @@ def translate (j : ℤ) (F : FareySymbol) : FareySymbol where
   last_den := by simpa [List.getLast_map, Rat.add_intCast_den] using F.last_den
   unimodular := fun i hi ↦ by
     simp only [List.length_map] at hi
-    simp only [List.getElem_map, add_intCast_num, Rat.add_intCast_den]
+    simp only [List.getElem_map, Rat.add_intCast_num, Rat.add_intCast_den]
     linear_combination F.unimodular i hi
   nondegenerate := by simpa using F.nondegenerate
   free_twice := F.free_twice
@@ -637,6 +617,9 @@ instance instAddActionInt : AddAction ℤ FareySymbol where
 @[simp] theorem freePairs_translate (j : ℤ) (F : FareySymbol) :
     (F.translate j).freePairs = F.freePairs := (rfl)
 
+@[simp] theorem freeLabels_translate (j : ℤ) (F : FareySymbol) :
+    (F.translate j).freeLabels = F.freeLabels := (rfl)
+
 /-- Integer translation acts faithfully on every Farey symbol: `F.translate j = F.translate k`
 implies `j = k`. -/
 theorem translate_injective (F : FareySymbol) : Function.Injective (fun j : ℤ ↦ F.translate j) :=
@@ -647,7 +630,7 @@ theorem translate_injective (F : FareySymbol) : Function.Injective (fun j : ℤ 
 and `(1, 0)`) maps to `(a + j * b, b)`. -/
 theorem endpoints_translate (j : ℤ) (F : FareySymbol) :
     (F.translate j).endpoints = F.endpoints.map (fun p ↦ (p.1 + j * p.2, p.2)) := by
-  simp [endpoints, List.map_append, Function.comp_def, add_intCast_num, Rat.add_intCast_den]
+  simp [endpoints, List.map_append, Function.comp_def, Rat.add_intCast_num, Rat.add_intCast_den]
 
 /-- Left endpoint of side `i` after translating `F` by `j ∈ ℤ`. -/
 theorem leftEndpoint_translate (j : ℤ) (F : FareySymbol) (i : Fin (F.translate j).labels.length) :
@@ -705,13 +688,8 @@ theorem finite_setOf_abs_num_le_and_den_le_and_free_lt (A B L : ℕ) :
 /-- A Farey symbol satisfies the height bounds `A = B = 1` if and only if every cusp in `F.xs`
 belongs to `{-1, 0, 1}`. -/
 theorem forall_mem_xs_abs_num_le_one_and_den_le_one_iff (F : FareySymbol) :
-    (∀ x ∈ F.xs, |x.num| ≤ 1 ∧ x.den ≤ 1) ↔ ∀ x ∈ F.xs, x ∈ ({-1, 0, 1} : Set ℚ) := by
-  refine forall₂_congr fun x _ ↦ ⟨fun ⟨hnum, hden⟩ ↦ ?_, ?_⟩
-  · rw [← Rat.intCast_num_of_den_eq_one (Nat.le_antisymm hden x.den_pos)]
-    rw [abs_le] at hnum
-    rcases (by omega : x.num = -1 ∨ x.num = 0 ∨ x.num = 1) with h | h | h <;> simp [h]
-  · simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-    rintro (rfl | rfl | rfl) <;> norm_num
+    (∀ x ∈ F.xs, |x.num| ≤ 1 ∧ x.den ≤ 1) ↔ ∀ x ∈ F.xs, x ∈ ({-1, 0, 1} : Set ℚ) :=
+  forall₂_congr fun _ _ ↦ Rat.abs_num_le_one_and_den_le_one_iff
 
 /-! ### Standard worked Farey symbols -/
 
@@ -723,6 +701,9 @@ def levelOne : FareySymbol where
   unimodular := fun _ hi ↦ by simp at hi
   nondegenerate := Or.inr (by decide); free_twice := fun _ ↦ Or.inl rfl
 
+@[simp] theorem levelOne_xs : levelOne.xs = [0] := (rfl)
+@[simp] theorem levelOne_labels : levelOne.labels = [.even, .odd] := (rfl)
+
 /-- The singleton Farey symbol `xs = [0]` with two odd sides `(odd, odd)`, of score `8`. -/
 def oddSingleton : FareySymbol where
   xs := [0]; labels := [.odd, .odd]
@@ -730,6 +711,9 @@ def oddSingleton : FareySymbol where
   head_den := (by decide); last_den := (by decide)
   unimodular := fun _ hi ↦ by simp at hi
   nondegenerate := Or.inr (by decide); free_twice := fun _ ↦ Or.inl rfl
+
+@[simp] theorem oddSingleton_xs : oddSingleton.xs = [0] := (rfl)
+@[simp] theorem oddSingleton_labels : oddSingleton.labels = [.odd, .odd] := (rfl)
 
 /-- The Farey symbol for `Γ₀(2)`: `xs = [0, 1]` with labels `[free 1, even, free 1]`. -/
 def gamma0Two : FareySymbol where
@@ -742,6 +726,9 @@ def gamma0Two : FareySymbol where
   free_twice := fun j ↦ by
     obtain rfl | hj := eq_or_ne j 1; · exact Or.inr (by decide)
     exact Or.inl (by simp [List.count_cons]; omega)
+
+@[simp] theorem gamma0Two_xs : gamma0Two.xs = [0, 1] := (rfl)
+@[simp] theorem gamma0Two_labels : gamma0Two.labels = [.free 1, .even, .free 1] := (rfl)
 
 /-- The Farey symbol for `Γ(2)`: `xs = [0, 1, 2]` with labels `[free 2, free 1, free 1, free 2]`. -/
 def gammaTwo : FareySymbol where
@@ -756,6 +743,9 @@ def gammaTwo : FareySymbol where
     obtain rfl | hj2 := eq_or_ne j 2; · exact Or.inr (by decide)
     exact Or.inl (by simp [List.count_cons]; omega)
 
+@[simp] theorem gammaTwo_xs : gammaTwo.xs = [0, 1, 2] := (rfl)
+@[simp] theorem gammaTwo_labels : gammaTwo.labels = [.free 2, .free 1, .free 1, .free 2] := (rfl)
+
 /-- The Farey symbol for the index-`7` noncongruence subgroup class with cusp widths `{4, 3}`:
 `xs = [0, 1, 2]` with labels `[even, free 1, odd, free 1]`. -/
 def indexSeven43 : FareySymbol where
@@ -769,6 +759,10 @@ def indexSeven43 : FareySymbol where
     obtain rfl | hj := eq_or_ne j 1; · exact Or.inr (by decide)
     exact Or.inl (by simp [List.count_cons]; omega)
 
+@[simp] theorem indexSeven43_xs : indexSeven43.xs = [0, 1, 2] := (rfl)
+@[simp] theorem indexSeven43_labels :
+    indexSeven43.labels = [.even, .free 1, .odd, .free 1] := (rfl)
+
 /-- Without a numerator bound, even `x.den ≤ 1` and zero free labels admit infinitely many Farey
 symbols (namely the integer translates `levelOne.translate j`). -/
 theorem infinite_setOf_den_le_one_and_free_lt :
@@ -777,8 +771,8 @@ theorem infinite_setOf_den_le_one_and_free_lt :
   refine Set.infinite_of_injective_forall_mem levelOne.translate_injective fun j ↦ ⟨?_, ?_⟩
   · rintro x hx
     rcases List.mem_map.mp hx with ⟨y, hy, rfl⟩
-    simp [List.mem_singleton.mp hy]
-  · intro _ hk; simp [levelOne] at hk
+    simp [List.mem_singleton.mp (by simpa using hy)]
+  · intro _ hk; simp at hk
 
 /-- Without a bound on free-label indices, even `|x.num| ≤ 1` and `x.den ≤ 1` admit infinitely
 many Farey symbols (obtained by varying the free label on `[0, 1]`). -/

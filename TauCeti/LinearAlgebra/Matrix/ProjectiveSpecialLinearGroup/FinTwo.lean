@@ -31,7 +31,8 @@ them; that classification, which runs through the action on the projective line,
 ## Main declarations
 
 * `Matrix.ProjectiveSpecialLinearGroup.mk_inv_mul_mul`: projection to `PSL(2, R)` preserves
-  conjugation, with the inverse on the left.
+  conjugation, with the inverse on the left, and `mk_neg`: negating a matrix does not change its
+  class.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff`: over a ring without zero divisors, two
   matrices of `SL(2, R)` have the same class exactly when they agree up to sign.
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic`: an element of `PSL(2, R)` is parabolic when
@@ -39,8 +40,9 @@ them; that classification, which runs through the action on the projective line,
 * `Matrix.ProjectiveSpecialLinearGroup.eq_one_or_isParabolic_of_trace_sq_eq_four`: a matrix of
   `SL(2, R)` with `tr² = 4` has trivial or parabolic class.
 * `Matrix.ProjectiveSpecialLinearGroup.isParabolic_conj_iff`: parabolicity is invariant under
-  conjugation, `isParabolic_inv_iff`: under inversion, and `IsParabolic.pow`, `IsParabolic.zpow`:
-  under nonzero powers in characteristic zero.
+  conjugation, `isParabolic_inv_iff`: under inversion, and `IsParabolic.pow`, `IsParabolic.zpow`,
+  `IsParabolic.orderOf_eq_zero`, `IsParabolic.not_isOfFinOrder`: under nonzero powers and infinite
+  order over characteristic-zero domains.
 * `Matrix.ProjectiveSpecialLinearGroup.upperRightHom`: the translations `x ↦ !![1, x; 0, 1]`, as
   an injective additive character `R → PSL(2, R)`, parabolic exactly away from `x = 0`
   (`isParabolic_upperRightHom_iff`); `mk_mul_upperRightHom_mul_inv`: conjugation by an
@@ -75,6 +77,13 @@ variable {R : Type*} [CommRing R]
 theorem mk_inv_mul_mul (S Y : SL(2, R)) :
     ((S⁻¹ * Y * S : SL(2, R)) : PSL(2, R)) = (S : PSL(2, R))⁻¹ * Y * S := by
   rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
+
+/-- Negating a special linear matrix does not change its class in `PSL(2, R)`. -/
+@[simp]
+theorem mk_neg (A : SL(2, R)) : ((-A : SL(2, R)) : PSL(2, R)) = A := by
+  rw [QuotientGroup.eq_iff_div_mem, show (-A) / A = (-1 : SL(2, R)) by
+    rw [← neg_one_mul A]; exact mul_div_cancel_right _ _]
+  exact Subgroup.mem_center_iff.mpr fun g ↦ by rw [neg_one_mul, mul_neg_one]
 
 /-- An element of `PSL(2, R)` is *parabolic* when it is the class of a parabolic matrix of
 `SL(2, R)`; then every representative is parabolic
@@ -168,24 +177,66 @@ theorem eq_one_or_isParabolic_of_trace_sq_eq_four {a : SL(2, R)}
     · exact Or.inr (Subtype.ext (by rw [SpecialLinearGroup.coe_neg, ← hr]; simp))
   · exact Or.inr ⟨hs, by ring⟩
 
-/-- A nonzero power of a parabolic element of `PSL(2, K)` is parabolic. -/
-theorem IsParabolic.pow {K : Type*} [Field K] [CharZero K] {g : PSL(2, K)} (hg : IsParabolic g)
+/-- A nonzero power of a parabolic element of `PSL(2, R)` is parabolic. -/
+theorem IsParabolic.pow [CharZero R] {g : PSL(2, R)} (hg : IsParabolic g)
     {n : ℕ} (hn : n ≠ 0) : IsParabolic (g ^ n) := by
-  induction g using QuotientGroup.induction_on with | H a => ?_
-  rw [← QuotientGroup.mk_pow, isParabolic_mk_iff, map_pow]
-  exact ((isParabolic_mk_iff a).mp hg).pow hn
+  suffices hpos : ∀ b : SL(2, R), IsParabolic (b : PSL(2, R)) →
+      (b : Matrix (Fin 2) (Fin 2) R).trace = 2 → IsParabolic ((b : PSL(2, R)) ^ n) by
+    induction g using QuotientGroup.induction_on with | H a => ?_
+    have hpar := (isParabolic_mk_iff a).mp hg
+    rw [GeneralLinearGroup.IsParabolic, SpecialLinearGroup.coe_GL_coe_matrix] at hpar
+    have hsq : (a : Matrix (Fin 2) (Fin 2) R).trace ^ 2 = 2 ^ 2 := by
+      have hd := hpar.2; rw [Matrix.discr_fin_two, a.det_coe] at hd; linear_combination hd
+    rcases sq_eq_sq_iff_eq_or_eq_neg.mp hsq with h2 | hneg2
+    · exact hpos a hg h2
+    · rw [← mk_neg a]
+      exact hpos (-a) (by rwa [mk_neg]) (by simp [hneg2])
+  intro b hb htr
+  let M : Matrix (Fin 2) (Fin 2) R := b
+  have hsq : (M - 1) * (M - 1) = 0 := by
+    rw [sub_mul, mul_sub, mul_one, one_mul, ← sq, M.sq_eq_trace_smul_sub_det_smul_one_fin_two,
+      htr, b.det_coe, two_smul, one_smul]; abel
+  have hm : (M - 1) * M = M - 1 := sub_eq_zero.mp (by rwa [← mul_sub_one])
+  have hpow : ∀ k : ℕ, M ^ k = 1 + (k : R) • (M - 1) := fun k ↦ by
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      rw [pow_succ, ih, add_mul, one_mul, smul_mul_assoc, hm]
+      push_cast; rw [add_smul, one_smul]; abel
+  rw [← QuotientGroup.mk_pow, isParabolic_mk_iff, GeneralLinearGroup.IsParabolic,
+    SpecialLinearGroup.coe_GL_coe_matrix, Matrix.IsParabolic]
+  refine ⟨fun hs ↦ ?_, ?_⟩
+  · have hnb : M ∉ Set.range (scalar (Fin 2)) := ((isParabolic_mk_iff b).mp hb).1
+    rw [SpecialLinearGroup.coe_pow, hpow n, TauCeti.mem_range_scalar_fin_two_iff] at hs
+    have hn0 : (n : R) ≠ 0 := Nat.cast_ne_zero.mpr hn
+    apply hnb (TauCeti.mem_range_scalar_fin_two_iff.mpr ⟨?_, ?_, ?_⟩)
+    · exact (mul_eq_zero.mp (by simpa using hs.1)).resolve_left hn0
+    · exact (mul_eq_zero.mp (by simpa using hs.2.1)).resolve_left hn0
+    · have hdiag : (n : R) * (M 0 0 - M 1 1) = 0 := by
+        have h : 1 + (n : R) * (M 0 0 - 1) = 1 + (n : R) * (M 1 1 - 1) := by simpa using hs.2.2
+        linear_combination h
+      exact sub_eq_zero.mp ((mul_eq_zero.mp hdiag).resolve_left hn0)
+  · have htrn : ((b ^ n : SL(2, R)) : Matrix (Fin 2) (Fin 2) R).trace = 2 := by
+      rw [SpecialLinearGroup.coe_pow, hpow n, Matrix.trace_add, Matrix.trace_smul,
+        Matrix.trace_sub, htr]; simp
+    rw [Matrix.discr_fin_two, (b ^ n).det_coe, htrn]; ring
 
-/-- A nonzero integer power of a parabolic element of `PSL(2, K)` is parabolic. -/
-theorem IsParabolic.zpow {K : Type*} [Field K] [CharZero K] {g : PSL(2, K)} (hg : IsParabolic g)
+/-- A nonzero integer power of a parabolic element of `PSL(2, R)` is parabolic. -/
+theorem IsParabolic.zpow [CharZero R] {g : PSL(2, R)} (hg : IsParabolic g)
     {n : ℤ} (hn : n ≠ 0) : IsParabolic (g ^ n) := by
   obtain ⟨m, rfl | rfl⟩ := n.eq_nat_or_neg <;>
     simpa only [zpow_neg, zpow_natCast, isParabolic_inv_iff] using hg.pow (by simpa using hn)
 
-/-- A parabolic element of `PSL(2, K)` has infinite order: its nonzero powers are parabolic, so
-none of them is the identity. -/
-theorem IsParabolic.orderOf_eq_zero {K : Type*} [Field K] [CharZero K] {g : PSL(2, K)}
+/-- A parabolic element of `PSL(2, R)` has infinite order (`orderOf g = 0`): its nonzero powers are
+parabolic, so none of them is the identity. -/
+theorem IsParabolic.orderOf_eq_zero [CharZero R] {g : PSL(2, R)}
     (hg : IsParabolic g) : orderOf g = 0 :=
   orderOf_eq_zero_iff'.2 fun _ hn ↦ (hg.pow hn.ne').ne_one
+
+/-- A parabolic element of `PSL(2, R)` does not have finite order. -/
+theorem IsParabolic.not_isOfFinOrder [CharZero R] {g : PSL(2, R)}
+    (hg : IsParabolic g) : ¬ IsOfFinOrder g :=
+  orderOf_eq_zero_iff.mp hg.orderOf_eq_zero
 
 omit [NoZeroDivisors R] in
 /-- The translation `upperRightHom x ∈ PSL(2, R)`, the class of the transvection

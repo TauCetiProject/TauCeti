@@ -29,6 +29,9 @@ of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
   `T = (T S) S⁻¹`.
 * `TauCeti.Matrix.SpecialLinearGroup.apply_smul_eq_of_S_smul_of_T_smul`: a function on an
   `SL₂(ℤ)`-set that is invariant under `S` and `T` is invariant under all of `SL₂(ℤ)`.
+* `TauCeti.Matrix.SpecialLinearGroup.eq_of_le_of_perm_S_T`: a subgroup `H ≤ K ≤ SL₂(ℤ)` equals `K`
+  when right coset representatives of `K` with trivial basepoint are permuted modulo `H` under left
+  multiplication by `S` and `T`.
 
 * `TauCeti.Matrix.SpecialLinearGroup.vecMul_map_modularGroup_S`,
   `TauCeti.Matrix.SpecialLinearGroup.vecMul_map_modularGroup_T`: `r S = (r₂, -r₁)` and
@@ -90,6 +93,30 @@ theorem apply_smul_eq_of_S_smul_of_T_smul {X α : Type*} [MulAction SL(2, ℤ) X
     · exact hT x
   | mul g h _ _ hg hh => rw [mul_smul, hg, hh]
   | inv g _ hg => rw [← hg, smul_inv_smul]
+
+open ModularGroup in
+/-- If `H ≤ K ≤ SL(2, ℤ)` and `R : Fin n → SL(2, ℤ)` with `R 0 = 1` meets `K` only at `0` while
+left multiplication by `S` and `T` permutes the right cosets `H · R i`, then `H = K`. -/
+theorem eq_of_le_of_perm_S_T {n : ℕ} [NeZero n] {H K : Subgroup SL(2, ℤ)} (hle : H ≤ K)
+    (R : Fin n → SL(2, ℤ)) (hR0 : R 0 = 1) (hRK : ∀ i, R i ∈ K → i = 0)
+    (hS : ∃ σ : Equiv.Perm (Fin n), ∀ i, (R (σ i))⁻¹ * S * R i ∈ H)
+    (hT : ∃ σ : Equiv.Perm (Fin n), ∀ i, (R (σ i))⁻¹ * T * R i ∈ H) :
+    H = K := by
+  let M : Subgroup SL(2, ℤ) :=
+    { carrier := {g | ∃ σ : Equiv.Perm (Fin n), ∀ i, (R (σ i))⁻¹ * g * R i ∈ H}
+      one_mem' := ⟨1, fun i ↦ by simp [one_mem]⟩
+      mul_mem' := fun ⟨σ₁, h₁⟩ ⟨σ₂, h₂⟩ ↦
+        ⟨σ₁ * σ₂, fun i ↦ by simpa [mul_assoc] using mul_mem (h₁ (σ₂ i)) (h₂ i)⟩
+      inv_mem' := fun ⟨σ, h⟩ ↦
+        ⟨σ⁻¹, fun i ↦ by simpa [mul_assoc] using inv_mem (h (σ⁻¹ i))⟩ }
+  have hMtop : M = ⊤ := by
+    rw [eq_top_iff, ← SpecialLinearGroup.SL2Z_generators, Subgroup.closure_le]
+    exact Set.pair_subset hS hT
+  refine le_antisymm hle fun k hk ↦ ?_
+  obtain ⟨σ, hσ⟩ : k ∈ M := hMtop.symm ▸ Subgroup.mem_top k
+  have hi : (R (σ 0))⁻¹ * k ∈ H := by simpa [hR0] using hσ 0
+  have hRσ : R (σ 0) ∈ K := by simpa using inv_mem (mul_mem (hle hi) (inv_mem hk))
+  simpa [hRK (σ 0) hRσ, hR0] using hi
 
 /-- The row vector `r` multiplied on the right by `S = [[0, -1], [1, 0]]` is `(r₂, -r₁)`. -/
 theorem vecMul_map_modularGroup_S {R : Type u} [Ring R] (r : Fin 2 → R) :
