@@ -269,7 +269,8 @@ theorem map_univ_eq_replicate_add_replicate_iff_occCount [Fintype X] {a b : S} (
     rcases eq_or_ne z a with rfl | hza
     · simp [hab.symm, hk]
     · rcases eq_or_ne z b with rfl | hzb
-      · simp [hza.symm]; omega
+      · simp only [ite_eq_right hza.symm, ↓reduceIte, zero_add]
+        omega
       · simp only [ite_eq_right hza.symm, ite_eq_right hzb.symm, add_zero]
         exact occCount_of_notMem_range f z fun ⟨x, hx⟩ =>
           (hf x).elim (fun h => hza (hx ▸ h)) (fun h => hzb (hx ▸ h))
@@ -330,8 +331,7 @@ theorem map_univ_ite_mem [Fintype X] (s : Finset X) [DecidablePred (· ∈ s)] (
     Function.occCount_eq_card_filter]
   by_cases hza : a = z <;> by_cases hzb : b = z
   · subst hza; subst hzb
-    have hle : s.card ≤ Fintype.card X := s.card_le_univ
-    simp; omega
+    simp [Nat.add_sub_of_le s.card_le_univ]
   · subst hza
     simp only [↓reduceIte, ite_eq_right hzb, add_zero]
     congr 1

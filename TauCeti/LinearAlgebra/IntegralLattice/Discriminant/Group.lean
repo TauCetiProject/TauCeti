@@ -37,6 +37,10 @@ equivalence of discriminant groups.  The construction respects identity, inverse
   in the nondegenerate case.
 * `TauCeti.IntegralLattice.Isometry.discriminantGroupEquiv`: the induced equivalence of
   discriminant groups.
+* `Isometry.mk_dualCarrierEquiv_eq_iff_of_discriminantGroupEquiv_eq`,
+  `Isometry.mk_dualCarrierEquiv_mem_map_discriminantGroupEquiv_iff`,
+  `Isometry.mk_dualCarrierEquiv_mem_zmultiples_iff_of_discriminantGroupEquiv_eq`:
+  transport of discriminant-class and subgroup membership along an isometry.
 
 ## References
 
@@ -210,6 +214,40 @@ theorem discriminantGroupEquiv_trans (e : Isometry L M) (f : Isometry M N) :
   exact Submodule.Quotient.equiv_trans L.carrierInDual M.carrierInDual N.carrierInDual
     e.dualCarrierEquiv f.dualCarrierEquiv e.map_carrierInDual f.map_carrierInDual
       (by simpa only [dualCarrierEquiv_trans] using (e.trans f).map_carrierInDual)
+
+/-- **Isometries transport membership in a discriminant class**: if `e` carries the class `c` to
+`d`, then `e.dualCarrierEquiv x` lies in `d` if and only if `x` lies in `c`. -/
+theorem mk_dualCarrierEquiv_eq_iff_of_discriminantGroupEquiv_eq (e : Isometry L M)
+    {c : L.DiscriminantGroup} {d : M.DiscriminantGroup} (h : e.discriminantGroupEquiv c = d)
+    {x : L.dualCarrier} :
+    (Submodule.Quotient.mk (e.dualCarrierEquiv x) : M.DiscriminantGroup) = d ↔
+      (Submodule.Quotient.mk x : L.DiscriminantGroup) = c := by
+  rw [← h, ← discriminantGroupEquiv_mk, e.discriminantGroupEquiv.injective.eq_iff]
+
+/-- **Isometries transport membership in a discriminant subgroup**: `e.dualCarrierEquiv x` has
+class in the image subgroup `H.map e.discriminantGroupEquiv.toAddMonoidHom` if and only if `x` has
+class in `H`. -/
+theorem mk_dualCarrierEquiv_mem_map_discriminantGroupEquiv_iff (e : Isometry L M)
+    (H : AddSubgroup L.DiscriminantGroup) {x : L.dualCarrier} :
+    (Submodule.Quotient.mk (e.dualCarrierEquiv x) : M.DiscriminantGroup) ∈
+        H.map e.discriminantGroupEquiv.toAddMonoidHom ↔
+      (Submodule.Quotient.mk x : L.DiscriminantGroup) ∈ H := by
+  rw [← discriminantGroupEquiv_mk, AddSubgroup.mem_map]
+  exact ⟨fun ⟨c, hc, hce⟩ ↦ e.discriminantGroupEquiv.injective hce ▸ hc,
+    fun hx ↦ ⟨_, hx, rfl⟩⟩
+
+/-- **Isometries transport membership in a cyclic discriminant subgroup**: if `e` carries the
+class `c` to `d`, then `e.dualCarrierEquiv x` has class in `AddSubgroup.zmultiples d` if and only
+if `x` has class in `AddSubgroup.zmultiples c`. -/
+theorem mk_dualCarrierEquiv_mem_zmultiples_iff_of_discriminantGroupEquiv_eq (e : Isometry L M)
+    {c : L.DiscriminantGroup} {d : M.DiscriminantGroup} (h : e.discriminantGroupEquiv c = d)
+    {x : L.dualCarrier} :
+    (Submodule.Quotient.mk (e.dualCarrierEquiv x) : M.DiscriminantGroup) ∈
+        AddSubgroup.zmultiples d ↔
+      (Submodule.Quotient.mk x : L.DiscriminantGroup) ∈ AddSubgroup.zmultiples c := by
+  rw [← h]
+  exact AddMonoidHom.map_zmultiples e.discriminantGroupEquiv.toAddMonoidHom c ▸
+    e.mk_dualCarrierEquiv_mem_map_discriminantGroupEquiv_iff (AddSubgroup.zmultiples c)
 
 end Isometry
 

@@ -32,10 +32,15 @@ forces `∑ mⱼ = k`.  Expanding the squares gives the exact identity
 ```
 
 whose error term is a sum of the nonnegative integers `mⱼ (mⱼ - 1)`.  So the displayed value is a
-lower bound, and it is attained exactly when every `mⱼ` is `0` or `1`: the minimal vectors of the
-class `k ω₁` are the `(n + 1).choose k` coordinate permutations of `zeroSumCosetMinimizer n k`,
-which has `k` coordinates equal to `(n + 1 - k) / (n + 1)` and the remaining `n + 1 - k`
-coordinates equal to `-k / (n + 1)`.
+lower bound, and it is attained exactly when every `mⱼ` is `0` or `1`: for `0 ≤ k ≤ n + 1`, the
+minimal vectors of the class `k ω₁` are the `(n + 1).choose k` coordinate permutations of
+`zeroSumCosetMinimizer n k`, which has `k` coordinates equal to `(n + 1 - k) / (n + 1)` and the
+remaining `n + 1 - k` coordinates equal to `-k / (n + 1)`.
+
+The minima are stated as `IsLeast` over the norms of the actual dual-lattice vectors in each
+discriminant class, so they record attainment as well as the lower bound.  They are the
+shortest-norm values attached to the glue labels of an `Aₙ` component, the input for bounding the
+norm of a glue vector in an orthogonal sum of root lattices.
 
 ## Main definitions and results
 
@@ -43,19 +48,37 @@ coordinates equal to `-k / (n + 1)`.
   `TauCeti.IntegralLattice.mul_sub_div_le_dotProduct_self`,
   `TauCeti.IntegralLattice.dotProduct_self_eq_mul_sub_div_iff`: the exact norm identity, lower
   bound, and coordinatewise equality criterion in classical coordinates.
-* `TauCeti.IntegralLattice.zeroSumCosetMinimizer`: the canonical coset minimizer of `k ω₁` in
-  `ℚ^{n+1}`, with `(n + 1 - k) / (n + 1)` in the first `k` coordinates and `-k / (n + 1)` in the
-  remaining `n + 1 - k` coordinates.
-* `TauCeti.IntegralLattice.ncard_sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq`:
+* `TauCeti.IntegralLattice.zeroSumCosetMinimizer`: for `k ≤ n + 1`, the canonical coset minimizer
+  of `k ω₁` in `ℚ^{n+1}`, with `(n + 1 - k) / (n + 1)` in the first `k` coordinates and
+  `-k / (n + 1)` in the remaining `n + 1 - k` coordinates (extended as a total function for
+  `k > n + 1`).
+* `sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_eq`,
+  `sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq_iff_exists_finset`,
+  `sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq_iff_exists_perm`,
+  `TauCeti.IntegralLattice.ncard_sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq`:
   rearrangement characterizations (via coordinate multiset, `k`-element subset indicators, and
   index permutations) and exact count `(n + 1).choose k` in classical coordinates.
+* `TauCeti.IntegralLattice.exists_mk_eq_nsmul_typeAFundamentalWeightClass_and_apply_eq`,
+  `TauCeti.IntegralLattice.isLeast_form_self_nsmul_typeAFundamentalWeightClass`,
+  `TauCeti.IntegralLattice.isLeast_form_self_typeADiscriminantGroupEquiv`: attainment and minimum
+  norm of the discriminant classes `k ω₁` (for `k ≤ n + 1`) and `typeADiscriminantGroupEquiv n a`
+  in `typeARootLattice n`.
 * `TauCeti.IntegralLattice.isLeast_form_self_nsmul_zeroSumFundamentalWeightClass`,
-  `TauCeti.IntegralLattice.ncard_mk_eq_nsmul_zeroSumFundamentalWeightClass_and_form_self_eq`:
-  coset minimum, minimizer characterizations, and count `(n + 1).choose k` in `zeroSumLattice n`.
-* `TauCeti.IntegralLattice.isLeast_form_self_nsmul_typeAFundamentalWeightClass`,
+  `TauCeti.IntegralLattice.isLeast_form_self_zeroSumDiscriminantGroupEquiv`,
+  `mk_eq_nsmul_zeroSumFundamentalWeightClass_and_form_self_eq_iff_map_univ_eq`,
+  `mk_eq_nsmul_zeroSumFundamentalWeightClass_and_form_self_eq_iff_exists_finset`,
+  `mk_eq_nsmul_zeroSumFundamentalWeightClass_and_form_self_eq_iff_exists_perm`,
+  `TauCeti.IntegralLattice.mk_eq_zeroSumDiscriminantGroupEquiv_and_form_self_eq_iff_exists_perm`,
+  `TauCeti.IntegralLattice.ncard_mk_eq_nsmul_zeroSumFundamentalWeightClass_and_form_self_eq`,
+  `TauCeti.IntegralLattice.ncard_mk_eq_zeroSumDiscriminantGroupEquiv_and_form_self_eq`:
+  coset minima, minimizer characterizations, and counts `(n + 1).choose k` in `zeroSumLattice n`.
+* `mk_eq_nsmul_typeAFundamentalWeightClass_and_form_self_eq_iff_map_univ_eq`,
+  `mk_eq_nsmul_typeAFundamentalWeightClass_and_form_self_eq_iff_exists_finset`,
+  `mk_eq_nsmul_typeAFundamentalWeightClass_and_form_self_eq_iff_exists_perm`,
+  `TauCeti.IntegralLattice.mk_eq_typeADiscriminantGroupEquiv_and_form_self_eq_iff_exists_perm`,
   `TauCeti.IntegralLattice.ncard_mk_eq_nsmul_typeAFundamentalWeightClass_and_form_self_eq`,
   `TauCeti.IntegralLattice.ncard_mk_eq_typeADiscriminantGroupEquiv_and_form_self_eq`:
-  the corresponding coset minima, minimizer characterizations, and counts in `typeARootLattice n`.
+  minimizer characterizations and counts in `typeARootLattice n`.
 
 ## References
 
@@ -126,8 +149,10 @@ end ClassicalBound
 /-! ## The canonical coset minimizer and rearrangement in classical coordinates -/
 
 /-- **The canonical coset minimizer of the discriminant class `k ω₁` of `Aₙ` in classical
-coordinates**: the vector of `ℚ^{n+1}` with `(n + 1 - k) / (n + 1)` in the first `k` coordinates
-and `-k / (n + 1)` in the remaining `n + 1 - k` coordinates. -/
+coordinates**, for `k ≤ n + 1`: the vector of `ℚ^{n+1}` with `(n + 1 - k) / (n + 1)` in the first
+`k` coordinates and `-k / (n + 1)` in the remaining `n + 1 - k` coordinates. For `k > n + 1` the
+same conditional formula gives a total extension (constant `(n + 1 - k) / (n + 1)`, not in the
+zero-sum hyperplane). -/
 def zeroSumCosetMinimizer (n k : ℕ) (j : Fin (n + 1)) : ℚ :=
   if (j : ℕ) < k then ((n : ℚ) + 1 - k) / (n + 1) else -(k : ℚ) / (n + 1)
 
@@ -225,11 +250,22 @@ theorem zeroSumCosetMinimizer_dotProduct_self (hk : k ≤ n + 1) :
     split_ifs <;> [right; left] <;> push_cast <;> ring
   simpa using h
 
+/-- Summing a `{0, 1}`-valued equality indicator minus a constant `c` over `Fin (n + 1)` gives
+`occCount f a - (n + 1) * c`. -/
+private theorem sum_ite_eq_sub_const {α : Type*} [DecidableEq α] (f : Fin (n + 1) → α) (a : α)
+    (c : ℚ) :
+    ∑ j, ((if f j = a then (1 : ℚ) else 0) - c) = Function.occCount f a - (n + 1) * c := by
+  have hocc : ∑ j, (if f j = a then (1 : ℚ) else 0) = Function.occCount f a := by
+    simp [Function.occCount_eq_sum]
+  have hc : ∑ _j : Fin (n + 1), c = (n + 1) * c := by
+    simp [add_mul]
+  rw [sum_sub_distrib, hocc, hc]
+
 /-- **Multiset characterization of the coset minimizers of `Aₙ` in classical coordinates.** A
 vector `x ∈ ℚ^{n+1}` has coordinate sum zero, coordinates in `ℤ - k / (n + 1)`, and squared norm
 `k (n + 1 - k) / (n + 1)` if and only if its multiset of coordinates consists of `k` copies of
 `(n + 1 - k) / (n + 1)` and `n + 1 - k` copies of `-k / (n + 1)`. -/
-theorem sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_eq
+theorem sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_eq
     {x : Fin (n + 1) → ℚ} :
     (∑ j, x j = 0 ∧ (∀ j, ∃ m : ℤ, x j = m - k / (n + 1)) ∧
         x ⬝ᵥ x = (k : ℚ) * (n + 1 - k) / (n + 1)) ↔
@@ -247,10 +283,7 @@ theorem sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_e
       rcases hvals j with hj | hj
       · rw [hj, ite_eq_left rfl, ha1]
       · rw [hj, ite_eq_right (sub_div_ne_neg_div n k).symm, zero_sub, hb0]
-    rw [sum_congr rfl fun j _ ↦ hx_eq j, sum_sub_distrib, sum_boole, sum_const, card_univ,
-      Fintype.card_fin, nsmul_eq_mul, Nat.cast_add, Nat.cast_one,
-      ← Function.occCount_eq_card_filter]
-    field_simp
+    rw [sum_congr rfl fun j _ ↦ hx_eq j, sum_ite_eq_sub_const, mul_div_cancel₀ _ hn]
   have hmult : (Finset.univ.val.map x =
       Multiset.replicate k a + Multiset.replicate (n + 1 - k) b) ↔
       (∀ j, x j = a ∨ x j = b) ∧ Function.occCount x a = k := by
@@ -279,13 +312,13 @@ theorem sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_e
 
 /-- **Subset-indicator characterization of the coset minimizers of `Aₙ` in classical coordinates.**
 -/
-theorem sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq_iff_exists_finset
+theorem sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq_iff_exists_finset
     {x : Fin (n + 1) → ℚ} :
     (∑ j, x j = 0 ∧ (∀ j, ∃ m : ℤ, x j = m - k / (n + 1)) ∧
         x ⬝ᵥ x = (k : ℚ) * (n + 1 - k) / (n + 1)) ↔
       ∃ s : Finset (Fin (n + 1)), s.card = k ∧
         x = fun j ↦ if j ∈ s then ((n : ℚ) + 1 - k) / (n + 1) else -(k : ℚ) / (n + 1) :=
-  sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_eq.trans
+  sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_eq.trans
     (by simpa only [Fintype.card_fin] using
       Multiset.map_univ_eq_replicate_add_replicate_iff_exists_finset (X := Fin (n + 1)))
 
@@ -293,21 +326,21 @@ theorem sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq_iff_exists_fin
 `k ≤ n + 1`, the vectors of coordinate sum zero in `ℤ - k / (n + 1)` attaining the minimum norm
 `k (n + 1 - k) / (n + 1)` are precisely the coordinate permutations of `zeroSumCosetMinimizer n k`.
 -/
-theorem sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq_iff_exists_perm
+theorem sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq_iff_exists_perm
     (hk : k ≤ n + 1) {x : Fin (n + 1) → ℚ} :
     (∑ j, x j = 0 ∧ (∀ j, ∃ m : ℤ, x j = m - k / (n + 1)) ∧
         x ⬝ᵥ x = (k : ℚ) * (n + 1 - k) / (n + 1)) ↔
       ∃ σ : Equiv.Perm (Fin (n + 1)), zeroSumCosetMinimizer n k ∘ σ = x := by
-  rw [sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_eq,
+  rw [sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_eq,
     ← map_univ_zeroSumCosetMinimizer hk, Function.map_univ_eq_iff_exists_perm]
 
 end ClassicalMinimizers
 
 /-- **There are `(n + 1).choose k` coset minimizers in classical coordinates.** -/
-theorem ncard_sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq (n k : ℕ) :
+theorem ncard_sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq (n k : ℕ) :
     {x : Fin (n + 1) → ℚ | ∑ j, x j = 0 ∧ (∀ j, ∃ m : ℤ, x j = m - k / (n + 1)) ∧
       x ⬝ᵥ x = (k : ℚ) * (n + 1 - k) / (n + 1)}.ncard = (n + 1).choose k := by
-  simp_rw [sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_eq]
+  simp_rw [sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_eq]
   simpa only [Fintype.card_fin] using
     Multiset.ncard_map_univ_eq_replicate_add_replicate (X := Fin (n + 1))
       (sub_div_ne_neg_div n k) k
@@ -318,8 +351,8 @@ theorem ncard_exists_perm_zeroSumCosetMinimizer {n k : ℕ} (hk : k ≤ n + 1) :
     {x : Fin (n + 1) → ℚ |
       ∃ σ : Equiv.Perm (Fin (n + 1)), zeroSumCosetMinimizer n k ∘ σ = x}.ncard =
       (n + 1).choose k := by
-  simp_rw [← sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq_iff_exists_perm hk]
-  exact ncard_sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq n k
+  simp_rw [← sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq_iff_exists_perm hk]
+  exact ncard_sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq n k
 
 /-! ## Coset minima and minimizers of the simple-root model -/
 
@@ -405,13 +438,10 @@ variable {n : ℕ}
 theorem isLeast_form_self_nsmul_zeroSumFundamentalWeightClass {k : ℕ} (hk : k ≤ n + 1) :
     IsLeast {q : ℚ | ∃ y : (zeroSumLattice n).dualCarrier,
       Submodule.Quotient.mk y = k • zeroSumFundamentalWeightClass n ∧
-        (zeroSumLattice n).form y y = q} ((k : ℚ) * (n + 1 - k) / (n + 1)) := by
-  have hclass : (typeAIsometryZeroSumLattice n).discriminantGroupEquiv
-      (k • typeAFundamentalWeightClass n) = k • zeroSumFundamentalWeightClass n := by
-    rw [← natCast_zsmul, (typeAIsometryZeroSumLattice n).discriminantGroupEquiv.map_smul,
-      discriminantGroupEquiv_typeAIsometryZeroSumLattice_typeAFundamentalWeightClass, natCast_zsmul]
-  exact ((typeAIsometryZeroSumLattice n).isLeast_form_self_iff_of_discriminantGroupEquiv_eq
-    hclass).mpr (isLeast_form_self_nsmul_typeAFundamentalWeightClass hk)
+        (zeroSumLattice n).form y y = q} ((k : ℚ) * (n + 1 - k) / (n + 1)) :=
+  ((typeAIsometryZeroSumLattice n).isLeast_form_self_iff_of_discriminantGroupEquiv_eq
+    (discriminantGroupEquiv_typeAIsometryZeroSumLattice_nsmul_typeAFundamentalWeightClass n k)).mpr
+    (isLeast_form_self_nsmul_typeAFundamentalWeightClass hk)
 
 /-- **The minimum norm of the discriminant class labelled `a : ZMod (n + 1)` in
 `zeroSumLattice n`.** -/
@@ -435,7 +465,7 @@ theorem mk_eq_nsmul_zeroSumFundamentalWeightClass_and_form_self_eq_iff_map_univ_
     (mem_singleParityCheckCode _ _).mp y.1.2
   rw [← natCast_zsmul, mk_eq_zsmul_zeroSumFundamentalWeightClass_iff_forall_exists_intCast_sub,
     zeroSumLattice_form, zeroSumForm_apply, Int.cast_natCast,
-    ← sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_eq,
+    ← sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_eq,
     and_iff_right hsum]
 
 /-- **Subset-indicator characterization of the coset minimizers of `k ω₁` in `zeroSumLattice n`.**
@@ -524,7 +554,7 @@ theorem ncard_mk_eq_nsmul_zeroSumFundamentalWeightClass_and_form_self_eq (n k : 
     · rintro ⟨y, hy, rfl⟩
       rw [Set.mem_ofPred_eq,
         mk_eq_nsmul_zeroSumFundamentalWeightClass_and_form_self_eq_iff_map_univ_eq] at hy
-      exact sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_eq.mpr hy
+      exact sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_eq.mpr hy
     · intro hx
       rw [Set.mem_ofPred_eq] at hx
       rcases hx with ⟨hsum, hint, hnorm⟩
@@ -540,10 +570,10 @@ theorem ncard_mk_eq_nsmul_zeroSumFundamentalWeightClass_and_form_self_eq (n k : 
       refine ⟨⟨⟨x, hx0⟩, hdual⟩, ?_, rfl⟩
       rw [Set.mem_ofPred_eq,
         mk_eq_nsmul_zeroSumFundamentalWeightClass_and_form_self_eq_iff_map_univ_eq]
-      exact sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_eq.mp
+      exact sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq_iff_map_univ_eq.mp
         ⟨hsum, hint, hnorm⟩
   rw [← Set.ncard_image_of_injective _ hinj, himg,
-    ncard_sum_eq_zero_and_exists_intCast_sub_and_dotProduct_self_eq]
+    ncard_sum_eq_zero_and_forall_exists_intCast_sub_and_dotProduct_self_eq]
 
 /-- **The discriminant class `a : ZMod (n + 1)` of `zeroSumLattice n` has `(n + 1).choose a.val`
 shortest vectors.** -/
@@ -556,12 +586,6 @@ theorem ncard_mk_eq_zeroSumDiscriminantGroupEquiv_and_form_self_eq {n : ℕ} (a 
   exact ncard_mk_eq_nsmul_zeroSumFundamentalWeightClass_and_form_self_eq n a.val
 
 /-! ## Minimizer characterizations and counts in the simple-root model -/
-
-private theorem discriminantGroupEquiv_nsmul_typeAFundamentalWeightClass (n k : ℕ) :
-    (typeAIsometryZeroSumLattice n).discriminantGroupEquiv (k • typeAFundamentalWeightClass n) =
-      k • zeroSumFundamentalWeightClass n := by
-  rw [← natCast_zsmul, (typeAIsometryZeroSumLattice n).discriminantGroupEquiv.map_smul,
-    discriminantGroupEquiv_typeAIsometryZeroSumLattice_typeAFundamentalWeightClass, natCast_zsmul]
 
 section SimpleRootMinimizers
 
@@ -576,8 +600,8 @@ theorem mk_eq_nsmul_typeAFundamentalWeightClass_and_form_self_eq_iff_map_univ_eq
       Finset.univ.val.map (typeAIsometryZeroSumLattice n x : Fin (n + 1) → ℚ) =
         Multiset.replicate k (((n : ℚ) + 1 - k) / (n + 1)) +
           Multiset.replicate (n + 1 - k) (-(k : ℚ) / (n + 1)) := by
-  have he := discriminantGroupEquiv_nsmul_typeAFundamentalWeightClass n k
-  rw [← Isometry.mk_dualCarrierEquiv_eq_and_form_self_eq_iff_of_discriminantGroupEquiv_eq _ he,
+  rw [← Isometry.mk_dualCarrierEquiv_eq_and_form_self_eq_iff_of_discriminantGroupEquiv_eq _
+      (discriminantGroupEquiv_typeAIsometryZeroSumLattice_nsmul_typeAFundamentalWeightClass n k),
     mk_eq_nsmul_zeroSumFundamentalWeightClass_and_form_self_eq_iff_map_univ_eq,
     Isometry.coe_dualCarrierEquiv_apply]
 
@@ -603,8 +627,8 @@ theorem mk_eq_nsmul_typeAFundamentalWeightClass_and_form_self_eq_iff_exists_perm
         (typeARootLattice n).form x x = (k : ℚ) * (n + 1 - k) / (n + 1)) ↔
       ∃ σ : Equiv.Perm (Fin (n + 1)),
         zeroSumCosetMinimizer n k ∘ σ = (typeAIsometryZeroSumLattice n x : Fin (n + 1) → ℚ) := by
-  have he := discriminantGroupEquiv_nsmul_typeAFundamentalWeightClass n k
-  rw [← Isometry.mk_dualCarrierEquiv_eq_and_form_self_eq_iff_of_discriminantGroupEquiv_eq _ he,
+  rw [← Isometry.mk_dualCarrierEquiv_eq_and_form_self_eq_iff_of_discriminantGroupEquiv_eq _
+      (discriminantGroupEquiv_typeAIsometryZeroSumLattice_nsmul_typeAFundamentalWeightClass n k),
     mk_eq_nsmul_zeroSumFundamentalWeightClass_and_form_self_eq_iff_exists_perm,
     Isometry.coe_dualCarrierEquiv_apply]
 
@@ -632,7 +656,7 @@ theorem ncard_mk_eq_nsmul_typeAFundamentalWeightClass_and_form_self_eq (n k : �
       (typeARootLattice n).form x x = (k : ℚ) * (n + 1 - k) / (n + 1)}.ncard =
       (n + 1).choose k := by
   rw [← (typeAIsometryZeroSumLattice n).ncard_mk_eq_and_form_self_eq_of_discriminantGroupEquiv_eq
-    (discriminantGroupEquiv_nsmul_typeAFundamentalWeightClass n k),
+    (discriminantGroupEquiv_typeAIsometryZeroSumLattice_nsmul_typeAFundamentalWeightClass n k),
     ncard_mk_eq_nsmul_zeroSumFundamentalWeightClass_and_form_self_eq]
 
 /-- **The discriminant class `a : ZMod (n + 1)` of `typeARootLattice n` has `(n + 1).choose a.val`

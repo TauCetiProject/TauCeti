@@ -185,12 +185,9 @@ variable (n : ℕ)
 
 /-- **The first fundamental weight `ω₁` in the zero-sum model**: `e₀ - (1 / (n + 1)) (1, …, 1)`. -/
 def zeroSumFundamentalWeight : singleParityCheckCode ℚ (Fin (n + 1)) :=
-  ⟨fun j ↦ (if j = 0 then 1 else 0) - 1 / ((n : ℚ) + 1), by
-    have hn : (n : ℚ) + 1 ≠ 0 := by positivity
-    rw [mem_singleParityCheckCode]
-    simp [sum_sub_distrib]
-    field_simp
-    norm_num⟩
+  ⟨fun j ↦ (if j = 0 then 1 else 0) - 1 / ((n : ℚ) + 1),
+    funext (typeAIsometryZeroSumLattice_typeAFundamentalWeight_apply n) ▸
+      (typeAIsometryZeroSumLattice n (typeAFundamentalWeight n)).2⟩
 
 /-- Evaluation of `zeroSumFundamentalWeight` at a coordinate `j`. -/
 @[simp]
@@ -253,6 +250,27 @@ theorem discriminantGroupEquiv_typeAIsometryZeroSumLattice_typeAFundamentalWeigh
     dualCarrierEquiv_typeAIsometryZeroSumLattice_typeAFundamentalWeightDual,
     mk_zeroSumFundamentalWeightDual]
 
+-- Not `@[simp]`: `simpNF` rejects it because `map_smul` and the `@[simp]` lemma above already
+-- simplify the left-hand side.
+/-- `typeAIsometryZeroSumLattice` carries `k • typeAFundamentalWeightClass n` to
+`k • zeroSumFundamentalWeightClass n` for `k : ℤ`. -/
+theorem discriminantGroupEquiv_typeAIsometryZeroSumLattice_zsmul_typeAFundamentalWeightClass
+    (k : ℤ) :
+    (typeAIsometryZeroSumLattice n).discriminantGroupEquiv (k • typeAFundamentalWeightClass n) =
+      k • zeroSumFundamentalWeightClass n := by
+  rw [map_smul, discriminantGroupEquiv_typeAIsometryZeroSumLattice_typeAFundamentalWeightClass]
+
+/-- `typeAIsometryZeroSumLattice` carries `k • typeAFundamentalWeightClass n` to
+`k • zeroSumFundamentalWeightClass n` for `k : ℕ`. -/
+@[simp]
+theorem discriminantGroupEquiv_typeAIsometryZeroSumLattice_nsmul_typeAFundamentalWeightClass
+    (k : ℕ) :
+    (typeAIsometryZeroSumLattice n).discriminantGroupEquiv (k • typeAFundamentalWeightClass n) =
+      k • zeroSumFundamentalWeightClass n := by
+  rw [← natCast_zsmul,
+    discriminantGroupEquiv_typeAIsometryZeroSumLattice_zsmul_typeAFundamentalWeightClass,
+    natCast_zsmul]
+
 /-- **The cyclic `ℤ/(n+1)` parametrization of the discriminant group of `zeroSumLattice n`**,
 carrying `1` to the class of `zeroSumFundamentalWeight`. -/
 noncomputable def zeroSumDiscriminantGroupEquiv :
@@ -280,9 +298,8 @@ theorem zeroSumDiscriminantGroupEquiv_apply_one :
 theorem zeroSumDiscriminantGroupEquiv_apply (a : ZMod (n + 1)) :
     zeroSumDiscriminantGroupEquiv n a = a.val • zeroSumFundamentalWeightClass n := by
   rw [← discriminantGroupEquiv_typeAIsometryZeroSumLattice_typeADiscriminantGroupEquiv,
-    typeADiscriminantGroupEquiv_apply, ← natCast_zsmul,
-    (typeAIsometryZeroSumLattice n).discriminantGroupEquiv.map_smul,
-    discriminantGroupEquiv_typeAIsometryZeroSumLattice_typeAFundamentalWeightClass, natCast_zsmul]
+    typeADiscriminantGroupEquiv_apply,
+    discriminantGroupEquiv_typeAIsometryZeroSumLattice_nsmul_typeAFundamentalWeightClass]
 
 end ZeroSumModel
 
@@ -306,16 +323,11 @@ theorem mk_eq_zsmul_zeroSumFundamentalWeightClass_iff_forall_exists_intCast_sub
         k • zeroSumFundamentalWeightClass n ↔
       ∀ j, ∃ m : ℤ, (y : Fin (n + 1) → ℚ) j = m - k / (n + 1) := by
   let e := typeAIsometryZeroSumLattice n
-  let x := e.dualCarrierEquiv.symm y
-  have hx : e.dualCarrierEquiv x = y := e.dualCarrierEquiv.apply_symm_apply y
-  have hclass : e.discriminantGroupEquiv (k • typeAFundamentalWeightClass n) =
-      k • zeroSumFundamentalWeightClass n := by
-    rw [e.discriminantGroupEquiv.map_smul,
-      discriminantGroupEquiv_typeAIsometryZeroSumLattice_typeAFundamentalWeightClass]
-  rw [← hx, ← hclass, ← Isometry.discriminantGroupEquiv_mk,
-    e.discriminantGroupEquiv.injective.eq_iff,
+  conv_lhs => rw [← e.dualCarrierEquiv.apply_symm_apply y]
+  rw [e.mk_dualCarrierEquiv_eq_iff_of_discriminantGroupEquiv_eq
+    (discriminantGroupEquiv_typeAIsometryZeroSumLattice_zsmul_typeAFundamentalWeightClass n k),
     mk_eq_zsmul_typeAFundamentalWeightClass_iff_forall_exists_intCast_sub,
-    ← Isometry.coe_dualCarrierEquiv_apply, hx]
+    ← Isometry.coe_dualCarrierEquiv_apply, e.dualCarrierEquiv.apply_symm_apply]
 
 /-- **The subgroup of order `d` of the discriminant group of `zeroSumLattice n`.** If
 `e d = n + 1`, a dual vector of `zeroSumLattice n` lies in a class of the cyclic subgroup generated
@@ -326,20 +338,11 @@ theorem mk_mem_zmultiples_nsmul_zeroSumFundamentalWeightClass_iff {e d : ℕ} (h
         AddSubgroup.zmultiples (e • zeroSumFundamentalWeightClass n) ↔
       ∀ j, ∃ m : ℤ, d * (y : Fin (n + 1) → ℚ) j = m := by
   let f := typeAIsometryZeroSumLattice n
-  let x := f.dualCarrierEquiv.symm y
-  have hx : f.dualCarrierEquiv x = y := f.dualCarrierEquiv.apply_symm_apply y
-  have he : f.discriminantGroupEquiv (e • typeAFundamentalWeightClass n) =
-      e • zeroSumFundamentalWeightClass n := by
-    rw [← natCast_zsmul, f.discriminantGroupEquiv.map_smul,
-      discriminantGroupEquiv_typeAIsometryZeroSumLattice_typeAFundamentalWeightClass, natCast_zsmul]
-  have hcoe : ((y : singleParityCheckCode ℚ (Fin (n + 1))) : Fin (n + 1) → ℚ) =
-      (f x : Fin (n + 1) → ℚ) := by
-    rw [← hx, Isometry.coe_dualCarrierEquiv_apply]
-  rw [hcoe, ← mk_mem_zmultiples_nsmul_typeAFundamentalWeightClass_iff hed x,
-    AddSubgroup.mem_zmultiples_iff, AddSubgroup.mem_zmultiples_iff]
-  refine ⟨fun ⟨t, ht⟩ ↦ ⟨t, f.discriminantGroupEquiv.injective ?_⟩, fun ⟨t, ht⟩ ↦ ⟨t, ?_⟩⟩
-  · rw [f.discriminantGroupEquiv.map_smul, he, Isometry.discriminantGroupEquiv_mk, hx, ht]
-  · rw [← hx, ← Isometry.discriminantGroupEquiv_mk, ← ht, f.discriminantGroupEquiv.map_smul, he]
+  conv_lhs => rw [← f.dualCarrierEquiv.apply_symm_apply y]
+  rw [f.mk_dualCarrierEquiv_mem_zmultiples_iff_of_discriminantGroupEquiv_eq
+    (discriminantGroupEquiv_typeAIsometryZeroSumLattice_nsmul_typeAFundamentalWeightClass n e),
+    mk_mem_zmultiples_nsmul_typeAFundamentalWeightClass_iff hed,
+    ← Isometry.coe_dualCarrierEquiv_apply, f.dualCarrierEquiv.apply_symm_apply]
 
 end ZeroSumCharacterizations
 

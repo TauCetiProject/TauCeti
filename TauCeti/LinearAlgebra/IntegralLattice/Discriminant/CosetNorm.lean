@@ -121,16 +121,6 @@ theorem Isometry.isLeast_form_self_iff_of_discriminantGroupEquiv_eq {W : Type v}
       IsLeast {q : ℚ | ∃ x : L.dualCarrier, Submodule.Quotient.mk x = c ∧ L.form x x = q} r := by
   rw [← h, e.setOf_form_self_discriminantGroupEquiv]
 
-/-- **Isometries transport membership in a discriminant class**: if `e` carries the class `c` to
-`d`, then `e.dualCarrierEquiv x` lies in `d` if and only if `x` lies in `c`. -/
-theorem Isometry.mk_dualCarrierEquiv_eq_iff_of_discriminantGroupEquiv_eq {W : Type v}
-    [AddCommGroup W] [Module ℚ W] {M : IntegralLattice W} (e : Isometry L M)
-    {c : L.DiscriminantGroup} {d : M.DiscriminantGroup} (h : e.discriminantGroupEquiv c = d)
-    {x : L.dualCarrier} :
-    (Submodule.Quotient.mk (e.dualCarrierEquiv x) : M.DiscriminantGroup) = d ↔
-      (Submodule.Quotient.mk x : L.DiscriminantGroup) = c := by
-  rw [← h, ← discriminantGroupEquiv_mk, e.discriminantGroupEquiv.injective.eq_iff]
-
 /-- **Isometries transport the vectors of a given norm in a discriminant class**: if `e` carries
 the class `c` to `d`, then `e.dualCarrierEquiv x` lies in `d` with norm `r` if and only if `x`
 lies in `c` with norm `r`. -/
