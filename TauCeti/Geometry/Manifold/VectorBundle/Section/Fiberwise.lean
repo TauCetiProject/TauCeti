@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Topology
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Prod
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Comp
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Restriction
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype

@@ -88,24 +88,32 @@ theorem iteratedFDerivWithin_extChartAt_comp (g : C^n⟮J, N; I', P⟯) (f : C^n
     (uniqueDiffOn_extChartAt_target y) (uniqueDiffOn_extChartAt_target x) hw
     (hev.mono fun _ hv ↦ ψ.map_source hv) hm
 
+omit [IsManifold J n N] [IsManifold I' n P] in
+/-- The family `g` is controlled at the parameter `x₀` in the charts at `z`: wherever `g x₀` is
+visible in the chart at `z`, the maps `g x` stay visible there and their coordinate derivatives
+converge to those of `g x₀`, jointly in the parameter and the point of the middle chart. -/
+private def TendstoInCharts {X : Type*} [TopologicalSpace X] (g : X → C^n⟮J, N; I', P⟯) (x₀ : X)
+    (z : P) : Prop :=
+  ∀ {y : N} {u₀ : F}, u₀ ∈ (extChartAt J y).target →
+    g x₀ ((extChartAt J y).symm u₀) ∈ (extChartAt I' z).source →
+    (∀ᶠ p : X × F in 𝓝 x₀ ×ˢ 𝓝[(extChartAt J y).target] u₀,
+      g p.1 ((extChartAt J y).symm p.2) ∈ (extChartAt I' z).source) ∧
+    ∀ k : ℕ, k ≤ n → Tendsto (fun p : X × F ↦
+        iteratedFDerivWithin 𝕜 k (extChartAt I' z ∘ g p.1 ∘ (extChartAt J y).symm)
+          (extChartAt J y).target p.2) (𝓝 x₀ ×ˢ 𝓝[(extChartAt J y).target] u₀)
+      (𝓝 (iteratedFDerivWithin 𝕜 k (extChartAt I' z ∘ g x₀ ∘ (extChartAt J y).symm)
+        (extChartAt J y).target u₀))
+
 variable [LocallyCompactSpace E]
 
 /-- The local form of continuity of `x ↦ g x ∘ f x`: a coordinate derivative test passed by
 `g x₀ ∘ f x₀` at a chart point is passed near that point by `g x ∘ f x` for all `x` near `x₀`.
-The inner family `f` is continuous at `x₀`; the outer family `g` stays visible in charts and has
-convergent coordinate derivatives, jointly in the parameter and the chart point. -/
+The inner family `f` is continuous at `x₀`; the outer family `g` is controlled in charts
+(`TendstoInCharts`). -/
 private theorem eventually_comp_mem_source_and_iteratedFDerivWithin_mem {X : Type*}
     [TopologicalSpace X] {g : X → C^n⟮J, N; I', P⟯} {f : X → C^n⟮I, M; J, N⟯} {x₀ : X}
     (hF : ContinuousAt f x₀) {x : M} {z : P}
-    (hG : ∀ {y : N} {u₀ : F}, u₀ ∈ (extChartAt J y).target →
-      g x₀ ((extChartAt J y).symm u₀) ∈ (extChartAt I' z).source →
-      (∀ᶠ p : X × F in 𝓝 x₀ ×ˢ 𝓝[(extChartAt J y).target] u₀,
-        g p.1 ((extChartAt J y).symm p.2) ∈ (extChartAt I' z).source) ∧
-      ∀ k : ℕ, k ≤ n → Tendsto (fun p : X × F ↦
-          iteratedFDerivWithin 𝕜 k (extChartAt I' z ∘ g p.1 ∘ (extChartAt J y).symm)
-            (extChartAt J y).target p.2) (𝓝 x₀ ×ˢ 𝓝[(extChartAt J y).target] u₀)
-        (𝓝 (iteratedFDerivWithin 𝕜 k (extChartAt I' z ∘ g x₀ ∘ (extChartAt J y).symm)
-          (extChartAt J y).target u₀)))
+    (hG : TendstoInCharts g x₀ z)
     {w₀ : E} (hw₀ : w₀ ∈ (extChartAt I x).target)
     (h₀ : (g x₀).comp (f x₀) ((extChartAt I x).symm w₀) ∈ (extChartAt I' z).source)
     {m : ℕ} (hm : m ≤ n) {V : Set (E [×m]→L[𝕜] E')}
@@ -162,19 +170,10 @@ private theorem eventually_comp_mem_source_and_iteratedFDerivWithin_mem {X : Typ
   exact hcsrc.and (hlim.eventually_mem hV)
 
 /-- `x ↦ g x ∘ f x` is continuous for the manifold weak Whitney topology when `f` is continuous
-and `g` stays visible in charts and has convergent coordinate derivatives, jointly in the
-parameter and the chart point. -/
+and `g` is controlled in charts (`TendstoInCharts`) at every parameter. -/
 private theorem continuous_comp_of_tendsto_iteratedFDerivWithin {X : Type*} [TopologicalSpace X]
     {g : X → C^n⟮J, N; I', P⟯} {f : X → C^n⟮I, M; J, N⟯} (hF : Continuous f)
-    (hG : ∀ (x₀ : X) (z : P) {y : N} {u₀ : F}, u₀ ∈ (extChartAt J y).target →
-      g x₀ ((extChartAt J y).symm u₀) ∈ (extChartAt I' z).source →
-      (∀ᶠ p : X × F in 𝓝 x₀ ×ˢ 𝓝[(extChartAt J y).target] u₀,
-        g p.1 ((extChartAt J y).symm p.2) ∈ (extChartAt I' z).source) ∧
-      ∀ k : ℕ, k ≤ n → Tendsto (fun p : X × F ↦
-          iteratedFDerivWithin 𝕜 k (extChartAt I' z ∘ g p.1 ∘ (extChartAt J y).symm)
-            (extChartAt J y).target p.2) (𝓝 x₀ ×ˢ 𝓝[(extChartAt J y).target] u₀)
-        (𝓝 (iteratedFDerivWithin 𝕜 k (extChartAt I' z ∘ g x₀ ∘ (extChartAt J y).symm)
-          (extChartAt J y).target u₀))) :
+    (hG : ∀ x₀ z, TendstoInCharts g x₀ z) :
     Continuous (fun x ↦ (g x).comp (f x)) := by
   refine continuous_iff_continuousAt.mpr fun x₀ ↦ ?_
   refine tendsto_manifoldWeakWhitney_iff.mpr fun x z m hm K hK V hV h₀ ↦ ?_
