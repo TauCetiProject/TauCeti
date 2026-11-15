@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Compressions of operators
@@ -16,8 +17,11 @@ For bounded operators `A : E → E` and `X : F → E` between Hilbert spaces, th
 an isometry it is `A` cut down to the subspace `range X`, read in the coordinates of `F`. This
 file records its basic algebra: it is additive and homogeneous in `A`, commutes with adjoints and
 `star`, satisfies `‖X† A X‖ ≤ ‖X‖² ‖A‖`, preserves symmetry, and compressing in two steps is
-compressing along the composite. When `X` is an isometry, compression is contractive, preserves the
-identity, and is multiplicative at operators commuting with the range projection `X ∘L X†`.
+compressing along the composite. When `X` is an isometry, compression is contractive, preserves `1`,
+and intertwines and is multiplicative at operators commuting with the range projection `X ∘L X†`.
+For a complete subspace `U`, `U.subtypeL ∘L U.subtypeL† = U.starProjection`
+(`Submodule.subtypeL_comp_adjoint_subtypeL`) and `A.compression U.subtypeL` is
+`U.orthogonalProjectionOnto ∘L A ∘L U.subtypeL` (`ContinuousLinearMap.compression_subtypeL`).
 Compressing to the orthogonal complement of an eigenvector creates no new eigenvalues
 (`ContinuousLinearMap.hasEigenvalue_of_hasEigenvalue_compression_orthogonal_span_singleton`).
 
@@ -107,7 +111,7 @@ theorem compression_star : (star A).compression X = star (A.compression X) := by
 /-- Operator norm bound for a compression: `‖X† A X‖ ≤ ‖X‖² ‖A‖`. -/
 theorem opNorm_compression_le : ‖A.compression X‖ ≤ ‖X‖ ^ 2 * ‖A‖ := by
   calc
-    ‖A.compression X‖ = ‖adjoint X ∘L A ∘L X‖ := rfl
+    ‖A.compression X‖ = ‖adjoint X ∘L A ∘L X‖ := by rw [compression_def]
     _ ≤ ‖adjoint X‖ * ‖A ∘L X‖ := opNorm_comp_le _ _
     _ ≤ ‖X‖ * (‖A‖ * ‖X‖) := by
       rw [LinearIsometryEquiv.norm_map]
@@ -115,16 +119,10 @@ theorem opNorm_compression_le : ‖A.compression X‖ ≤ ‖X‖ ^ 2 * ‖A‖ 
       exact opNorm_comp_le _ _
     _ = ‖X‖ ^ 2 * ‖A‖ := by ring
 
-/-- Compressing the identity endomorphism along an isometry yields the identity. -/
-theorem compression_id_of_isometry {X : F →L[𝕜] E} (hX : Isometry X) :
-    (ContinuousLinearMap.id 𝕜 E).compression X = ContinuousLinearMap.id 𝕜 F := by
-  rw [compression_def, id_comp]
-  exact (isometry_iff_adjoint_comp_self X).mp hX
-
 /-- Compressing `1` along an isometry yields `1`. -/
 theorem compression_one_of_isometry {X : F →L[𝕜] E} (hX : Isometry X) :
-    (1 : E →L[𝕜] E).compression X = 1 :=
-  compression_id_of_isometry hX
+    (1 : E →L[𝕜] E).compression X = 1 := by
+  rw [compression_def, one_def, id_comp, (isometry_iff_adjoint_comp_self X).mp hX]
 
 /-- Compressing along an isometry is contractive, including on the zero space. -/
 theorem opNorm_compression_le_of_isometry {X : F →L[𝕜] E} (hX : Isometry X) :
@@ -136,19 +134,42 @@ theorem opNorm_compression_le_of_isometry {X : F →L[𝕜] E} (hX : Isometry X)
     _ ≤ 1 ^ 2 * ‖A‖ := by gcongr
     _ = ‖A‖ := by ring
 
+/-- If `A` commutes with the range projection `X ∘L X†` of an isometry `X`, then `X` intertwines
+`A.compression X` with `A`. -/
+theorem comp_compression_of_commute {A : E →L[𝕜] E} {X : F →L[𝕜] E}
+    (hX : Isometry X) (hA : Commute (X ∘L adjoint X) A) :
+    X ∘L A.compression X = A ∘L X := by
+  have hXX : adjoint X ∘L X = 1 := (isometry_iff_adjoint_comp_self X).mp hX
+  calc
+    X ∘L A.compression X = ((X ∘L adjoint X) * A) ∘L X := by
+      simp only [compression_def, mul_def, comp_assoc]
+    _ = (A * (X ∘L adjoint X)) ∘L X := by rw [hA.eq]
+    _ = A ∘L X ∘L (adjoint X ∘L X) := by simp only [mul_def, comp_assoc]
+    _ = A ∘L X := by rw [hXX, one_def, comp_id]
+
+/-- If `A` commutes with the range projection `X ∘L X†` of an isometry `X`, then `X†` intertwines
+`A` with `A.compression X`. -/
+theorem compression_comp_adjoint_of_commute {A : E →L[𝕜] E} {X : F →L[𝕜] E}
+    (hX : Isometry X) (hA : Commute (X ∘L adjoint X) A) :
+    A.compression X ∘L adjoint X = adjoint X ∘L A := by
+  have hXX : adjoint X ∘L X = 1 := (isometry_iff_adjoint_comp_self X).mp hX
+  calc
+    A.compression X ∘L adjoint X = adjoint X ∘L (A * (X ∘L adjoint X)) := by
+      simp only [compression_def, mul_def, comp_assoc]
+    _ = adjoint X ∘L ((X ∘L adjoint X) * A) := by rw [← hA.eq]
+    _ = (adjoint X ∘L X) ∘L adjoint X ∘L A := by simp only [mul_def, comp_assoc]
+    _ = adjoint X ∘L A := by rw [hXX, one_def, id_comp]
+
 /-- Compression along an isometry `X` is multiplicative on the left at any operator commuting with
 the range projection `X ∘L X†`. -/
 theorem compression_mul_of_commute_left {A : E →L[𝕜] E} (B : E →L[𝕜] E) {X : F →L[𝕜] E}
     (hX : Isometry X) (hA : Commute (X ∘L adjoint X) A) :
     (A * B).compression X = A.compression X * B.compression X := by
-  have hXX : adjoint X ∘L X = ContinuousLinearMap.id 𝕜 F :=
-    (isometry_iff_adjoint_comp_self X).mp hX
-  have hAX : A ∘L X ∘L adjoint X = (X ∘L adjoint X) ∘L A := hA.symm.eq
   calc
-    (A * B).compression X = (adjoint X ∘L X) ∘L adjoint X ∘L A ∘L B ∘L X := by
-      rw [hXX, id_comp, compression_def, mul_def, comp_assoc]
-    _ = adjoint X ∘L ((X ∘L adjoint X) ∘L A) ∘L B ∘L X := by simp only [comp_assoc]
-    _ = adjoint X ∘L (A ∘L X ∘L adjoint X) ∘L B ∘L X := by rw [hAX]
+    (A * B).compression X = (adjoint X ∘L A) ∘L B ∘L X := by
+      simp only [compression_def, mul_def, comp_assoc]
+    _ = (A.compression X ∘L adjoint X) ∘L B ∘L X := by
+      rw [compression_comp_adjoint_of_commute hX hA]
     _ = A.compression X * B.compression X := by simp only [compression_def, mul_def, comp_assoc]
 
 /-- Compression along an isometry `X` is multiplicative on the right at any operator commuting with
@@ -156,21 +177,32 @@ the range projection `X ∘L X†`. -/
 theorem compression_mul_of_commute_right (A : E →L[𝕜] E) {B : E →L[𝕜] E} {X : F →L[𝕜] E}
     (hX : Isometry X) (hB : Commute (X ∘L adjoint X) B) :
     (A * B).compression X = A.compression X * B.compression X := by
-  have hXX : adjoint X ∘L X = ContinuousLinearMap.id 𝕜 F :=
-    (isometry_iff_adjoint_comp_self X).mp hX
-  have hBX : (X ∘L adjoint X) ∘L B = B ∘L X ∘L adjoint X := hB.eq
   calc
-    (A * B).compression X = adjoint X ∘L A ∘L B ∘L X ∘L (adjoint X ∘L X) := by
-      rw [hXX, comp_id, compression_def, mul_def, comp_assoc]
-    _ = adjoint X ∘L A ∘L (B ∘L X ∘L adjoint X) ∘L X := by simp only [comp_assoc]
-    _ = adjoint X ∘L A ∘L ((X ∘L adjoint X) ∘L B) ∘L X := by rw [← hBX]
+    (A * B).compression X = adjoint X ∘L A ∘L (B ∘L X) := by
+      simp only [compression_def, mul_def, comp_assoc]
+    _ = adjoint X ∘L A ∘L (X ∘L B.compression X) := by rw [comp_compression_of_commute hX hB]
     _ = A.compression X * B.compression X := by simp only [compression_def, mul_def, comp_assoc]
 
-/-- Compressing the identity operator to a complete submodule `U` yields the identity on `U`. -/
-@[simp]
-theorem compression_id_subtypeL (U : Submodule 𝕜 E) [CompleteSpace U] :
-    (ContinuousLinearMap.id 𝕜 E).compression U.subtypeL = ContinuousLinearMap.id 𝕜 U :=
-  compression_id_of_isometry U.subtypeₗᵢ.isometry
+/-- If `A` and `B` commute with the range projection `X ∘L X†` of an isometry `X` and their
+compressions along `X` commute, then `A * B` and `B * A` agree on the range of `X`. -/
+theorem mul_comp_eq_of_commute_compression {A B : E →L[𝕜] E} {X : F →L[𝕜] E}
+    (hX : Isometry X) (hA : Commute (X ∘L adjoint X) A) (hB : Commute (X ∘L adjoint X) B)
+    (hAB : Commute (A.compression X) (B.compression X)) :
+    (A * B) ∘L X = (B * A) ∘L X := by
+  calc
+    (A * B) ∘L X = X ∘L (A * B).compression X :=
+      (comp_compression_of_commute hX (hA.mul_right hB)).symm
+    _ = X ∘L (A.compression X * B.compression X) := by
+      rw [compression_mul_of_commute_left B hX hA]
+    _ = X ∘L (B.compression X * A.compression X) := by rw [hAB.eq]
+    _ = X ∘L (B * A).compression X := by
+      rw [← compression_mul_of_commute_left A hX hB]
+    _ = (B * A) ∘L X := comp_compression_of_commute hX (hB.mul_right hA)
+
+/-- Compressing `A` along `U.subtypeL` is `U.orthogonalProjectionOnto ∘L A ∘L U.subtypeL`. -/
+theorem compression_subtypeL (U : Submodule 𝕜 E) [CompleteSpace U] :
+    A.compression U.subtypeL = U.orthogonalProjectionOnto ∘L A ∘L U.subtypeL := by
+  rw [compression_def, U.adjoint_subtypeL]
 
 /-- Compressing `1` to a complete submodule `U` yields `1`. -/
 @[simp]
@@ -232,3 +264,13 @@ theorem hasEigenvalue_of_hasEigenvalue_compression_orthogonal_span_singleton {A 
   exact Module.End.hasEigenvalue_of_hasEigenvector ⟨Module.End.mem_eigenspace_iff.mpr hAz, hz0⟩
 
 end ContinuousLinearMap
+
+namespace Submodule
+
+/-- For a complete subspace `U` of a Hilbert space `E`, `U.subtypeL ∘L U.subtypeL†` is the
+orthogonal projection `U.starProjection`. -/
+theorem subtypeL_comp_adjoint_subtypeL (U : Submodule 𝕜 E) [CompleteSpace U] :
+    U.subtypeL ∘L ContinuousLinearMap.adjoint U.subtypeL = U.starProjection := by
+  rw [U.adjoint_subtypeL, ← U.starProjection_def]
+
+end Submodule

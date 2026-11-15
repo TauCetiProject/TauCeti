@@ -19,7 +19,12 @@ import TauCeti.Analysis.InnerProductSpace.RankOne
 When a concrete von Neumann algebra `M` on `H` has trivial center (`M ⊓ M.commutant = ⊥`, as holds
 for every factor), `M` and `M.commutant` are algebraically linearly disjoint inside `H →L[ℂ] H`:
 
-* **Nonzero product theorem** (`VonNeumannAlgebra.eq_zero_or_eq_zero_of_mul_eq_zero`): if `a ∈ M`
+* **Orbit projections** (`VonNeumannAlgebra.starProjection_topologicalClosure_span_mem_commutant`,
+  `VonNeumannAlgebra.starProjection_topologicalClosure_span_mem`): for any `S : Set H`, the
+  orthogonal projection onto the closed span of `{x v | x ∈ M, v ∈ S}` lies in `M.commutant`, and
+  also in `M` whenever `S` is `M.commutant`-invariant.
+* **Nonzero product theorem**
+  (`VonNeumannAlgebra.eq_zero_or_eq_zero_of_mul_eq_zero_of_mem_commutant`): if `a ∈ M`
   and `b ∈ M.commutant` satisfy `a * b = 0`, then `a = 0` or `b = 0`. The closed subspace spanned
   by `{x (a ξ) | x ∈ M, ξ ∈ H}` is invariant under both `M` and `M.commutant`, so its orthogonal
   projection lies in `M ⊓ M.commutant = ⊥` and is therefore `0` (forcing `a = 0`) or `1` (forcing
@@ -28,8 +33,9 @@ for every factor), `M` and `M.commutant` are algebraically linearly disjoint ins
   if `w i ∈ M.commutant` are `ℂ`-linearly independent and `v i ∈ M` satisfy `∑ i, v i * w i = 0`,
   then every `v i` is `0`. Induction on the support reduces to the sandwich identity
   `u * x * v = v * x * u` for all `x ∈ M`, which extends by strong-operator density of
-  `M ⊔ M.commutant = ⊤` to all bounded operators `T : H →L[ℂ] H`; evaluating against normalized
-  rank-one operators (`TauCeti.rankOneDivNormSq`) forces `v` to be a scalar multiple of `u`.
+  `M ⊔ M.commutant = ⊤` (`VonNeumannAlgebra.eq_of_mem_adjoin`) to all bounded operators
+  `T : H →L[ℂ] H`; evaluating against normalized rank-one operators (`TauCeti.rankOneDivNormSq`)
+  forces `v` to be a scalar multiple of `u`.
 * **Multiplication equivalences** (`VonNeumannAlgebra.mulLinearEquiv`,
   `VonNeumannAlgebra.mulStarAlgEquiv`): for arbitrary `ℂ`-linear subspaces `V ≤ M` and
   `W ≤ M.commutant` (with no finite-dimensionality assumption), multiplication induces a linear
@@ -56,85 +62,95 @@ namespace VonNeumannAlgebra
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
+/-! ### Orbit projections -/
+
+/-- For any set of vectors `S`, the orthogonal projection onto the closed span of the `M`-orbit
+`{x v | x ∈ M, v ∈ S}` lies in `M.commutant`. -/
+theorem starProjection_topologicalClosure_span_mem_commutant (M : VonNeumannAlgebra H)
+    (S : Set H) :
+    (Submodule.span ℂ {w : H | ∃ x ∈ M, ∃ v ∈ S, x v = w}).topologicalClosure.starProjection ∈
+      M.commutant := by
+  set L₀ := Submodule.span ℂ {w : H | ∃ x ∈ M, ∃ v ∈ S, x v = w}
+  set L := L₀.topologicalClosure
+  rw [IsStarProjection.mem_iff (isStarProjection_starProjection (U := L)) M.commutant,
+    M.commutant_commutant, L.range_starProjection]
+  intro z hz
+  rw [Module.End.mem_invtSubmodule]
+  refine Submodule.topologicalClosure_minimal _ ?_
+    (L₀.isClosed_topologicalClosure.preimage z.continuous)
+  rw [Submodule.span_le]
+  rintro _ ⟨x, hx, v, hv, rfl⟩
+  refine Submodule.le_topologicalClosure _
+    (Submodule.subset_span ⟨z * x, M.mul_mem hz hx, v, hv, ?_⟩)
+  exact mul_apply_eq_comp z x v
+
+/-- If `S : Set H` is invariant under every operator in `M.commutant`, then the orthogonal
+projection onto the closed span of `{x v | x ∈ M, v ∈ S}` lies in `M`. -/
+theorem starProjection_topologicalClosure_span_mem (M : VonNeumannAlgebra H) {S : Set H}
+    (hS : ∀ y ∈ M.commutant, Set.MapsTo y S S) :
+    (Submodule.span ℂ {w : H | ∃ x ∈ M, ∃ v ∈ S, x v = w}).topologicalClosure.starProjection ∈
+      M := by
+  set L₀ := Submodule.span ℂ {w : H | ∃ x ∈ M, ∃ v ∈ S, x v = w}
+  set L := L₀.topologicalClosure
+  rw [IsStarProjection.mem_iff (isStarProjection_starProjection (U := L)) M,
+    L.range_starProjection]
+  intro y hy
+  rw [Module.End.mem_invtSubmodule]
+  refine Submodule.topologicalClosure_minimal _ ?_
+    (L₀.isClosed_topologicalClosure.preimage y.continuous)
+  rw [Submodule.span_le]
+  rintro _ ⟨x, hx, v, hv, rfl⟩
+  have hcomm : x * y = y * x := mem_commutant_iff.mp hy x hx
+  refine Submodule.le_topologicalClosure _
+    (Submodule.subset_span ⟨x, hx, y v, hS y hy hv, ?_⟩)
+  calc
+    x (y v) = (x * y) v := (mul_apply_eq_comp x y v).symm
+    _ = (y * x) v := by rw [hcomm]
+    _ = y (x v) := mul_apply_eq_comp y x v
+
 /-! ### Nonzero products between `M` and `M.commutant` -/
 
 /-- **Nonzero product theorem.** If `M` has trivial center (`M ⊓ M.commutant = ⊥`), `a ∈ M`, and
 `b ∈ M.commutant` satisfy `a * b = 0`, then `a = 0` or `b = 0`. -/
-theorem eq_zero_or_eq_zero_of_mul_eq_zero {M : VonNeumannAlgebra H} (hM : M ⊓ M.commutant = ⊥)
-    {a b : H →L[ℂ] H} (ha : a ∈ M) (hb : b ∈ M.commutant) (hab : a * b = 0) :
+theorem eq_zero_or_eq_zero_of_mul_eq_zero_of_mem_commutant {M : VonNeumannAlgebra H}
+    (hM : M ⊓ M.commutant = ⊥) {a b : H →L[ℂ] H} (ha : a ∈ M) (hb : b ∈ M.commutant)
+    (hab : a * b = 0) :
     a = 0 ∨ b = 0 := by
-  by_cases hH : Subsingleton H
-  · exact Or.inl (Subsingleton.elim a 0)
-  have : Nontrivial H := not_subsingleton_iff_nontrivial.mp hH
-  -- The closed span `L` of `{(x * a) ξ | x ∈ M, ξ ∈ H}` reduces both `M` and `M.commutant`.
-  let S₀ : Submodule ℂ H := Submodule.span ℂ {v : H | ∃ x ∈ M, ∃ ξ : H, (x * a) ξ = v}
-  let L : Submodule ℂ H := S₀.topologicalClosure
-  have : CompleteSpace L := S₀.isClosed_topologicalClosure.completeSpace_coe
-  have hL_M : L.starProjection ∈ M.commutant := by
-    rw [IsStarProjection.mem_iff (isStarProjection_starProjection (U := L)) M.commutant,
-      M.commutant_commutant, L.range_starProjection]
-    intro z hz
-    rw [Module.End.mem_invtSubmodule]
-    refine Submodule.topologicalClosure_minimal _ ?_
-      (S₀.isClosed_topologicalClosure.preimage z.continuous)
-    rw [Submodule.span_le]
-    rintro _ ⟨x, hx, ξ, rfl⟩
-    refine Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨z * x, M.mul_mem hz hx, ξ, ?_⟩)
-    simp [mul_assoc]
-  have hL_M' : L.starProjection ∈ M := by
-    rw [IsStarProjection.mem_iff (isStarProjection_starProjection (U := L)) M,
-      L.range_starProjection]
-    intro w hw
-    rw [Module.End.mem_invtSubmodule]
-    refine Submodule.topologicalClosure_minimal _ ?_
-      (S₀.isClosed_topologicalClosure.preimage w.continuous)
-    rw [Submodule.span_le]
-    rintro _ ⟨x, hx, ξ, rfl⟩
-    have hcomm : (x * a) * w = w * (x * a) := mem_commutant_iff.mp hw (x * a) (M.mul_mem hx ha)
-    refine Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨x, hx, w ξ, ?_⟩)
-    calc
-      (x * a) (w ξ) = ((x * a) * w) ξ := rfl
-      _ = (w * (x * a)) ξ := by rw [hcomm]
-      _ = w ((x * a) ξ) := rfl
+  -- The closed span `L` of `{x v | x ∈ M, v ∈ range a}` reduces both `M` and `M.commutant`.
+  set L₀ : Submodule ℂ H := Submodule.span ℂ {w : H | ∃ x ∈ M, ∃ v ∈ Set.range a, x v = w}
+  set L : Submodule ℂ H := L₀.topologicalClosure
+  have hrange : ∀ w ∈ M.commutant, Set.MapsTo w (Set.range a) (Set.range a) := by
+    rintro w hw _ ⟨ξ, rfl⟩
+    have hcomm : a * w = w * a := mem_commutant_iff.mp hw a ha
+    exact ⟨w ξ, (mul_apply_eq_comp a w ξ).symm.trans
+      ((DFunLike.congr_fun hcomm ξ).trans (mul_apply_eq_comp w a ξ))⟩
   have hp_bot : L.starProjection ∈ (⊥ : VonNeumannAlgebra H) :=
-    hM ▸ mem_inf.mpr ⟨hL_M', hL_M⟩
-  obtain ⟨c, hc⟩ := mem_bot.mp hp_bot
-  rw [Algebra.algebraMap_eq_smul_one] at hc
-  -- Since `L.starProjection` is an idempotent scalar `c • 1`, either `c = 0` or `c = 1`.
-  have hcc : c * c = c := by
-    have hidem := L.isIdempotentElem_starProjection.eq
-    rw [← hc, smul_mul_smul] at hidem
-    exact smul_left_injective ℂ one_ne_zero hidem
-  have hc01 : c = 0 ∨ c = 1 := by
-    have : c * (c - 1) = 0 := by linear_combination hcc
-    rcases mul_eq_zero.mp this with rfl | h1
-    · exact Or.inl rfl
-    · exact Or.inr (sub_eq_zero.mp h1)
-  rcases hc01 with rfl | rfl
+    hM ▸ mem_inf.mpr
+      ⟨M.starProjection_topologicalClosure_span_mem hrange,
+        M.starProjection_topologicalClosure_span_mem_commutant (Set.range a)⟩
+  -- Since `L.starProjection` is an idempotent in `⊥`, it is `0` or `1`.
+  rcases eq_zero_or_eq_one_of_isIdempotentElem_of_mem_bot L.isIdempotentElem_starProjection
+      hp_bot with hp0 | hp1
   · left
-    rw [zero_smul] at hc
     ext ξ
     have hξ : a ξ ∈ L := Submodule.le_topologicalClosure _
-      (Submodule.subset_span ⟨1, M.one_mem, ξ, by simp⟩)
-    rw [← L.starProjection_eq_self_iff.mpr hξ, ← hc]
-    simp
+      (Submodule.subset_span ⟨1, M.one_mem, a ξ, ⟨ξ, rfl⟩, one_apply_eq_self _⟩)
+    rw [← L.starProjection_eq_self_iff.mpr hξ, hp0, zero_apply, zero_apply]
   · right
-    rw [one_smul] at hc
     have hker : L ≤ LinearMap.ker b.toLinearMap := by
       refine Submodule.topologicalClosure_minimal _ ?_ (isClosed_singleton.preimage b.continuous)
       rw [Submodule.span_le]
-      rintro _ ⟨x, hx, ξ, rfl⟩
+      rintro _ ⟨x, hx, _, ⟨ξ, rfl⟩, rfl⟩
+      rw [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
       have hxb : x * b = b * x := mem_commutant_iff.mp hb x hx
       have hab' : b * a = 0 := (mem_commutant_iff.mp hb a ha).symm.trans hab
-      change b ((x * a) ξ) = 0
       calc
-        b ((x * a) ξ) = ((b * x) * a) ξ := by simp [mul_assoc]
+        b (x (a ξ)) = ((b * x) * a) ξ := by simp [mul_assoc]
         _ = (x * (b * a)) ξ := by rw [← hxb, mul_assoc]
         _ = 0 := by simp [hab']
     ext v
     have hvL : v ∈ L := by
-      rw [← L.starProjection_eq_self_iff, ← hc]
-      simp
+      rw [← L.starProjection_eq_self_iff, hp1, one_apply_eq_self]
     exact hker hvL
 
 /-- In a von Neumann algebra with trivial center, a product `a * b` with `a ∈ M` and
@@ -142,14 +158,14 @@ theorem eq_zero_or_eq_zero_of_mul_eq_zero {M : VonNeumannAlgebra H} (hM : M ⊓ 
 theorem mul_eq_zero_iff_of_mem_commutant {M : VonNeumannAlgebra H} (hM : M ⊓ M.commutant = ⊥)
     {a b : H →L[ℂ] H} (ha : a ∈ M) (hb : b ∈ M.commutant) :
     a * b = 0 ↔ a = 0 ∨ b = 0 :=
-  ⟨eq_zero_or_eq_zero_of_mul_eq_zero hM ha hb, by rintro (rfl | rfl) <;> simp⟩
+  ⟨eq_zero_or_eq_zero_of_mul_eq_zero_of_mem_commutant hM ha hb, by rintro (rfl | rfl) <;> simp⟩
 
 /-- In a von Neumann algebra with trivial center, the product of nonzero `a ∈ M` and
 `b ∈ M.commutant` is nonzero. -/
 theorem mul_ne_zero_of_mem_commutant {M : VonNeumannAlgebra H} (hM : M ⊓ M.commutant = ⊥)
     {a b : H →L[ℂ] H} (ha : a ∈ M) (hb : b ∈ M.commutant) (ha0 : a ≠ 0) (hb0 : b ≠ 0) :
     a * b ≠ 0 :=
-  fun hab => (eq_zero_or_eq_zero_of_mul_eq_zero hM ha hb hab).elim ha0 hb0
+  fun hab => (eq_zero_or_eq_zero_of_mul_eq_zero_of_mem_commutant hM ha hb hab).elim ha0 hb0
 
 /-! ### Linear disjointness of `M` and `M.commutant` -/
 
@@ -184,43 +200,16 @@ private theorem exists_smul_eq_of_forall_mul_mul_eq {M : VonNeumannAlgebra H}
   have hadj_top : adjoin s = ⊤ := by
     rw [← sup_eq_adjoin, sup_commutant_eq_top_iff]
     exact hM
-  -- By strong-operator density (`exists_forall_norm_sub_apply_lt_of_mem_adjoin`), the sandwich
-  -- identity holds for every bounded operator `T : H →L[ℂ] H`.
-  have hB : ∀ (T : H →L[ℂ] H) (ξ : H), (u * T * v) ξ = (v * T * u) ξ := by
-    intro T ξ
-    refine sub_eq_zero.mp (norm_eq_zero.mp (le_antisymm (le_of_forall_pos_le_add fun ε hε => ?_)
-      (norm_nonneg _)))
-    rw [zero_add]
-    have hδ : 0 < ε / (‖u‖ + ‖v‖ + 1) := div_pos hε (by positivity)
-    obtain ⟨t, ht, happrox⟩ := exists_forall_norm_sub_apply_lt_of_mem_adjoin
-      (hadj_top ▸ mem_top : T ∈ adjoin s) ![v ξ, u ξ] hδ
-    have htP : t ∈ M.toStarSubalgebra.toSubmodule * M.commutant.toStarSubalgebra.toSubmodule := by
-      rw [← StarSubalgebra.toSubmodule_sup_of_commute hcomm]
-      exact hadj_le ht
-    have htv := hP t htP
-    have hsub : (u * T * v) ξ - (v * T * u) ξ =
-        u (T (v ξ) - t (v ξ)) - v (T (u ξ) - t (u ξ)) := by
-      have htξ : u (t (v ξ)) = v (t (u ξ)) := congr($htv ξ)
-      simp only [mul_apply_eq_comp, map_sub]
-      rw [htξ]
-      abel
-    rw [hsub]
-    have h0 := happrox 0
-    have h1 := happrox 1
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one] at h0 h1
-    calc
-      ‖u (T (v ξ) - t (v ξ)) - v (T (u ξ) - t (u ξ))‖
-          ≤ ‖u (T (v ξ) - t (v ξ))‖ + ‖v (T (u ξ) - t (u ξ))‖ := norm_sub_le _ _
-      _ ≤ ‖u‖ * ‖T (v ξ) - t (v ξ)‖ + ‖v‖ * ‖T (u ξ) - t (u ξ)‖ := by
-          gcongr <;> exact ContinuousLinearMap.le_opNorm _ _
-      _ ≤ ‖u‖ * (ε / (‖u‖ + ‖v‖ + 1)) + ‖v‖ * (ε / (‖u‖ + ‖v‖ + 1)) := by
-          gcongr
-      _ = (‖u‖ + ‖v‖) / (‖u‖ + ‖v‖ + 1) * ε := by ring
-      _ ≤ 1 * ε := by
-          gcongr
-          rw [div_le_one (by positivity)]
-          linarith
-      _ = ε := one_mul ε
+  -- By strong-operator density (`eq_of_mem_adjoin`), the sandwich identity holds for all `T`.
+  have hB (T : H →L[ℂ] H) (ξ : H) : (u * T * v) ξ = (v * T * u) ξ :=
+    eq_of_mem_adjoin (hadj_top ▸ mem_top : T ∈ adjoin s) ![v ξ, u ξ]
+      (u.continuous.comp (continuous_apply 0)) (v.continuous.comp (continuous_apply 1))
+      fun t ht => by
+        have htP : t ∈ M.toStarSubalgebra.toSubmodule *
+            M.commutant.toStarSubalgebra.toSubmodule := by
+          rw [← StarSubalgebra.toSubmodule_sup_of_commute hcomm]
+          exact hadj_le ht
+        simpa using DFunLike.congr_fun (hP t htP) ξ
   -- Evaluate on normalized rank-one operators sending `u ξ₀ ↦ ξ`.
   obtain ⟨ξ₀, hξ₀⟩ : ∃ ξ₀ : H, u ξ₀ ≠ 0 := by
     by_contra! hall
@@ -291,7 +280,8 @@ private theorem eq_zero_of_sum_fin_mul_eq_zero {M : VonNeumannAlgebra H}
           _ = ∑ k : Fin (n + 1), v k * w k := (Fin.sum_univ_succ fun k => v k * w k).symm
           _ = 0 := hsum
       have hw0 : w 0 + ∑ j : Fin n, c j • w j.succ = 0 :=
-        (eq_zero_or_eq_zero_of_mul_eq_zero hM (hv 0) hw_comb hprod).resolve_left hv0
+        (eq_zero_or_eq_zero_of_mul_eq_zero_of_mem_commutant hM (hv 0) hw_comb hprod).resolve_left
+          hv0
       let coeff : Fin (n + 1) → ℂ := @Fin.cons n (fun _ => ℂ) 1 c
       have hdep : ∑ k : Fin (n + 1), coeff k • w k = 0 := by
         simpa [coeff, Fin.sum_univ_succ] using hw0
@@ -354,21 +344,22 @@ noncomputable def mulLinearEquiv {M : VonNeumannAlgebra H} (hM : M ⊓ M.commuta
       | tmul v w => exact Submodule.mul_mem_mul v.2 w.2
       | add x y hx hy => rw [map_add]; exact (V * W).add_mem hx hy
   LinearEquiv.ofBijective μ
-    ⟨fun _ _ hxy => mul_tensorProduct_injective hM hV hW (congrArg Subtype.val hxy),
+    (⟨fun _ _ hxy => mul_tensorProduct_injective hM hV hW (congrArg Subtype.val hxy),
       fun ⟨z, hz⟩ =>
         Submodule.mul_induction_on' (C := fun z hz => ∃ t : V ⊗[ℂ] W, μ t = ⟨z, hz⟩)
-          (fun v hv w hw => ⟨(⟨v, hv⟩ : V) ⊗ₜ[ℂ] (⟨w, hw⟩ : W), Subtype.ext rfl⟩)
+          (fun v hv w hw => ⟨(⟨v, hv⟩ : V) ⊗ₜ[ℂ] (⟨w, hw⟩ : W), Subtype.ext (by simp [μ])⟩)
           (fun _ _ _ _ ⟨tx, htx⟩ ⟨ty, hty⟩ =>
             ⟨tx + ty, Subtype.ext (by simp [map_add, congrArg Subtype.val htx,
-              congrArg Subtype.val hty])⟩) hz⟩
+              congrArg Subtype.val hty])⟩) hz⟩ : Function.Bijective μ)
 
 /-- `mulLinearEquiv` sends a pure tensor `v ⊗ₜ w` to the operator product `v * w`. -/
 @[simp]
 theorem coe_mulLinearEquiv_tmul {M : VonNeumannAlgebra H} (hM : M ⊓ M.commutant = ⊥)
     {V W : Submodule ℂ (H →L[ℂ] H)} (hV : (V : Set (H →L[ℂ] H)) ⊆ M)
     (hW : (W : Set (H →L[ℂ] H)) ⊆ M.commutant) (v : V) (w : W) :
-    (mulLinearEquiv hM hV hW (v ⊗ₜ[ℂ] w) : H →L[ℂ] H) = (v : H →L[ℂ] H) * w :=
-  (rfl)
+    (mulLinearEquiv hM hV hW (v ⊗ₜ[ℂ] w) : H →L[ℂ] H) = (v : H →L[ℂ] H) * w := by
+  rw [mulLinearEquiv]
+  exact (congrArg Subtype.val (LinearEquiv.ofBijective_apply _ (v ⊗ₜ[ℂ] w))).trans (by simp)
 
 /-- For unital `⋆`-subalgebras `A ≤ M` and `B ≤ M.commutant`, the `⋆`-subalgebra `A ⊔ B` they
 generate has underlying submodule `A.toSubmodule * B.toSubmodule` (the linear span `AB`). -/
@@ -390,19 +381,24 @@ noncomputable def mulStarAlgEquiv {M : VonNeumannAlgebra H} (hM : M ⊓ M.commut
   let lin : A ⊗[ℂ] B ≃ₗ[ℂ] ↥(A ⊔ B) :=
     (mulLinearEquiv hM (V := A.toSubmodule) (W := B.toSubmodule) hA hB).trans
       (LinearEquiv.ofEq _ _ (toSubmodule_sup_eq_mul hA hB).symm)
+  have hlin (a : A) (b : B) : ((lin (a ⊗ₜ[ℂ] b) : ↥(A ⊔ B)) : H →L[ℂ] H) =
+      (a : H →L[ℂ] H) * b := by
+    rw [LinearEquiv.trans_apply]
+    exact (LinearEquiv.coe_ofEq_apply _ _).trans
+      (coe_mulLinearEquiv_tmul hM hA hB ⟨a.1, a.2⟩ ⟨b.1, b.2⟩)
   let alg : A ⊗[ℂ] B ≃ₐ[ℂ] ↥(A ⊔ B) :=
     Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct lin
       (fun a₁ a₂ b₁ b₂ => Subtype.ext <| by
         have hba : (b₁ : H →L[ℂ] H) * a₂ = (a₂ : H →L[ℂ] H) * b₁ :=
           (mem_commutant_iff.mp (hB b₁.2) a₂ (hA a₂.2)).symm
-        change ((a₁ : H →L[ℂ] H) * a₂) * ((b₁ : H →L[ℂ] H) * b₂) =
-          ((a₁ : H →L[ℂ] H) * b₁) * ((a₂ : H →L[ℂ] H) * b₂)
+        rw [MulMemClass.coe_mul, hlin, hlin, hlin, MulMemClass.coe_mul, MulMemClass.coe_mul]
         calc
           ((a₁ : H →L[ℂ] H) * a₂) * ((b₁ : H →L[ℂ] H) * b₂)
               = (a₁ : H →L[ℂ] H) * (a₂ * b₁) * b₂ := by simp only [mul_assoc]
           _ = (a₁ : H →L[ℂ] H) * (b₁ * a₂) * b₂ := by rw [← hba]
           _ = ((a₁ : H →L[ℂ] H) * b₁) * ((a₂ : H →L[ℂ] H) * b₂) := by simp only [mul_assoc])
-      (Subtype.ext <| by change (1 : H →L[ℂ] H) * 1 = 1; exact mul_one 1)
+      (Subtype.ext <| by
+        rw [hlin, OneMemClass.coe_one, OneMemClass.coe_one, OneMemClass.coe_one, mul_one])
   StarAlgEquiv.ofAlgEquiv alg fun t => by
     induction t using TensorProduct.inductionOn with
     | tmul a b =>
@@ -410,9 +406,10 @@ noncomputable def mulStarAlgEquiv {M : VonNeumannAlgebra H} (hM : M ⊓ M.commut
       have hcomm : (star a : H →L[ℂ] H) * (star b : H →L[ℂ] H) =
           (star b : H →L[ℂ] H) * (star a : H →L[ℂ] H) :=
         mem_commutant_iff.mp (hB (star b).2) (star a) (hA (star a).2)
-      change (star a : H →L[ℂ] H) * (star b : H →L[ℂ] H) =
-        star ((a : H →L[ℂ] H) * (b : H →L[ℂ] H))
-      rw [star_mul, ← hcomm]
+      rw [TensorProduct.star_tmul,
+        Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct_apply,
+        StarMemClass.coe_star, Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct_apply,
+        hlin, hlin, StarMemClass.coe_star, StarMemClass.coe_star, star_mul, ← hcomm]
     | add x y hx hy =>
       rw [star_add, map_add, hx, hy, map_add, star_add]
 
@@ -421,8 +418,11 @@ noncomputable def mulStarAlgEquiv {M : VonNeumannAlgebra H} (hM : M ⊓ M.commut
 theorem coe_mulStarAlgEquiv_tmul {M : VonNeumannAlgebra H} (hM : M ⊓ M.commutant = ⊥)
     {A B : StarSubalgebra ℂ (H →L[ℂ] H)} (hA : (A : Set (H →L[ℂ] H)) ⊆ M)
     (hB : (B : Set (H →L[ℂ] H)) ⊆ M.commutant) (a : A) (b : B) :
-    (mulStarAlgEquiv hM hA hB (a ⊗ₜ[ℂ] b) : H →L[ℂ] H) = (a : H →L[ℂ] H) * b :=
-  (rfl)
+    (mulStarAlgEquiv hM hA hB (a ⊗ₜ[ℂ] b) : H →L[ℂ] H) = (a : H →L[ℂ] H) * b := by
+  rw [mulStarAlgEquiv, StarAlgEquiv.ofAlgEquiv_apply,
+    Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct_apply, LinearEquiv.trans_apply]
+  exact (LinearEquiv.coe_ofEq_apply _ _).trans
+    (coe_mulLinearEquiv_tmul hM hA hB ⟨a.1, a.2⟩ ⟨b.1, b.2⟩)
 
 /-- When `M ⊓ M.commutant = ⊥`, multiplication gives a unital `⋆`-algebra equivalence from
 `M ⊗[ℂ] M.commutant` onto `M.toStarSubalgebra ⊔ M.commutant.toStarSubalgebra`. -/
@@ -436,6 +436,6 @@ noncomputable def commutantMulStarAlgEquiv {M : VonNeumannAlgebra H} (hM : M ⊓
 theorem coe_commutantMulStarAlgEquiv_tmul {M : VonNeumannAlgebra H} (hM : M ⊓ M.commutant = ⊥)
     (x : M.toStarSubalgebra) (y : M.commutant.toStarSubalgebra) :
     (commutantMulStarAlgEquiv hM (x ⊗ₜ[ℂ] y) : H →L[ℂ] H) = (x : H →L[ℂ] H) * y :=
-  (rfl)
+  coe_mulStarAlgEquiv_tmul hM Set.Subset.rfl Set.Subset.rfl x y
 
 end VonNeumannAlgebra

@@ -37,7 +37,9 @@ single-vector case applies to the sum.
 
 Simultaneous approximation on finitely many vectors is what lets an identity between vector
 functionals `y ↦ ⟪u, y v⟫`, proved for `y` in the range `π(A)` of a representation, pass to the
-von Neumann algebra `π(A)''` that it generates.
+von Neumann algebra `π(A)''` that it generates;
+`StarSubalgebra.eq_of_mem_centralizer_centralizer` and `VonNeumannAlgebra.eq_of_mem_adjoin`
+package this passage for any continuous relation on finitely many vector evaluations.
 
 ## References
 
@@ -143,6 +145,27 @@ theorem exists_forall_norm_sub_apply_lt_of_mem_centralizer_centralizer [Complete
     _ ≤ ‖PiLp.diagStarAlgHom 𝕜 H ι (x - s) (WithLp.toLp 2 v)‖ := PiLp.norm_apply_le _ _
     _ < ε := hlt
 
+/-- Simultaneous strong-operator approximation extends any continuous relation on finitely many
+vector evaluations from a unital star subalgebra `S` to its double commutant `S''`. -/
+theorem eq_of_mem_centralizer_centralizer [CompleteSpace H]
+    (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) {x : H →L[𝕜] H}
+    (hx : x ∈ (S : Set (H →L[𝕜] H)).centralizer.centralizer)
+    {ι α : Type*} [Finite ι] [TopologicalSpace α] [T2Space α] (v : ι → H)
+    {f g : (ι → H) → α} (hf : Continuous f) (hg : Continuous g)
+    (hS : ∀ s ∈ S, f (fun i => s (v i)) = g (fun i => s (v i))) :
+    f (fun i => x (v i)) = g (fun i => x (v i)) := by
+  classical
+  have := Fintype.ofFinite ι
+  have hcl : (fun i => x (v i)) ∈
+      closure ((fun (s : H →L[𝕜] H) i => s (v i)) '' (S : Set (H →L[𝕜] H))) := by
+    rw [Metric.mem_closure_iff]
+    intro ε hε
+    obtain ⟨s, hs, happrox⟩ :=
+      S.exists_forall_norm_sub_apply_lt_of_mem_centralizer_centralizer hx v hε
+    refine ⟨_, ⟨s, hs, rfl⟩, (dist_pi_lt_iff hε).mpr fun i => ?_⟩
+    simpa [dist_eq_norm, norm_sub_rev] using happrox i
+  exact closure_minimal (by rintro _ ⟨s, hs, rfl⟩; exact hS s hs) (isClosed_eq hf hg) hcl
+
 end StarSubalgebra
 
 namespace VonNeumannAlgebra
@@ -164,5 +187,19 @@ theorem exists_forall_norm_sub_apply_lt_of_mem_adjoin {s : Set (H →L[ℂ] H)} 
       simpa using star_mem (StarAlgebra.subset_adjoin ℂ s ht)
   rw [← SetLike.mem_coe, coe_adjoin] at hx
   exact Set.centralizer_subset (Set.centralizer_subset hsub) hx
+
+/-- Simultaneous strong-operator approximation extends any continuous relation on finitely many
+vector evaluations from `StarAlgebra.adjoin ℂ s` to `VonNeumannAlgebra.adjoin s`. -/
+theorem eq_of_mem_adjoin {s : Set (H →L[ℂ] H)} {x : H →L[ℂ] H} (hx : x ∈ adjoin s)
+    {ι α : Type*} [Finite ι] [TopologicalSpace α] [T2Space α] (v : ι → H)
+    {f g : (ι → H) → α} (hf : Continuous f) (hg : Continuous g)
+    (hst : ∀ t ∈ StarAlgebra.adjoin ℂ s, f (fun i => t (v i)) = g (fun i => t (v i))) :
+    f (fun i => x (v i)) = g (fun i => x (v i)) := by
+  have hsub : s ∪ star s ⊆ StarAlgebra.adjoin ℂ s := Set.union_subset
+    (StarAlgebra.subset_adjoin ℂ s) fun t ht => by
+      simpa using star_mem (StarAlgebra.subset_adjoin ℂ s ht)
+  rw [← SetLike.mem_coe, coe_adjoin] at hx
+  exact (StarAlgebra.adjoin ℂ s).eq_of_mem_centralizer_centralizer
+    (Set.centralizer_subset (Set.centralizer_subset hsub) hx) v hf hg hst
 
 end VonNeumannAlgebra

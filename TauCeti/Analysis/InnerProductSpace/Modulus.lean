@@ -56,7 +56,8 @@ No finite dimension is assumed. For linear maps between finite-dimensional space
   `(ker T)ᗮ`, and
   `ContinuousLinearMap.norm_modulus`: `‖|T|‖ = ‖T‖`.
 * `ContinuousLinearMap.commute_modulus_of_commute`: an endomorphism commuting with `T† T`
-  commutes with `|T|`.
+  commutes with `|T|`; hence `ContinuousLinearMap.norm_apply_comp_le_of_commute_adjoint_comp_self`:
+  if `S` commutes with `T† T`, then `‖T (S x)‖ ≤ ‖S‖ * ‖T x‖`.
 * `ContinuousLinearMap.norm_modulus_comp`, `ContinuousLinearMap.norm_comp_modulus`: the
   composition laws `‖|T| D‖ = ‖T D‖` and `‖D |T|‖ = ‖D T†‖`.
 * `ContinuousLinearMap.continuous_modulus`: on real Hilbert spaces, `|T|` depends continuously
@@ -205,6 +206,18 @@ theorem modulus_eq_abs [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E
 theorem norm_modulus_apply (T : E →L[𝕜] F) (x : E) : ‖T.modulus x‖ = ‖T x‖ := by
   refine adjoint_comp_self_eq_adjoint_comp_self_iff.1 ?_ x
   rw [adjoint_modulus, modulus_comp_modulus]
+
+/-- If `S` commutes with the source Gram operator `T† T`, then `S` commutes with `|T|`, so
+`‖T (S x)‖ ≤ ‖S‖ * ‖T x‖` for every `x`. -/
+theorem norm_apply_comp_le_of_commute_adjoint_comp_self (T : E →L[𝕜] F) {S : E →L[𝕜] E}
+    (hS : Commute (T† ∘L T) S) (x : E) :
+    ‖T (S x)‖ ≤ ‖S‖ * ‖T x‖ := by
+  have hmod : Commute S T.modulus := commute_modulus_of_commute hS.symm
+  calc
+    ‖T (S x)‖ = ‖T.modulus (S x)‖ := (T.norm_modulus_apply (S x)).symm
+    _ = ‖S (T.modulus x)‖ := congrArg norm (DFunLike.congr_fun hmod.symm.eq x)
+    _ ≤ ‖S‖ * ‖T.modulus x‖ := S.le_opNorm (T.modulus x)
+    _ = ‖S‖ * ‖T x‖ := by rw [T.norm_modulus_apply]
 
 /-- The modulus and the operator have the same kernel. -/
 @[simp]

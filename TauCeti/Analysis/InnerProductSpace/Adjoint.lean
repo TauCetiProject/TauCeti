@@ -44,7 +44,9 @@ preimages (`LinearIsometry.adjoint_apply_apply`).
 
 An isometric inclusion also identifies the operator algebra of its source isometrically with
 an orthogonal corner in the target's operator algebra: extend by zero using `e T e†`.
-Compression is its inverse on this corner, and extension preserves composition and adjoints.
+Compression is its inverse on this corner, extension preserves composition and adjoints, and
+ambient operators commuting with the range projection `e ∘L e†` multiply and commute with extended
+operators through their compressions along `e`.
 
 ## Main definitions
 
@@ -518,7 +520,69 @@ theorem mem_range_cornerEmbedding_iff (e : E →ₗᵢ[𝕜] F) (T : F →L[𝕜
   · intro h
     exact ⟨T.compression e.toContinuousLinearMap, (e.cornerEmbedding_compression T).trans h⟩
 
+/-- Post-multiplying `e.cornerEmbedding T` by an ambient operator `S` commuting with the range
+projection `e ∘L e†` compresses `S` into the corner. -/
+theorem cornerEmbedding_mul_of_commute (e : E →ₗᵢ[𝕜] F) (T : E →L[𝕜] E) {S : F →L[𝕜] F}
+    (hS : Commute (e.toContinuousLinearMap ∘L e.toContinuousLinearMap.adjoint) S) :
+    e.cornerEmbedding T * S =
+      e.cornerEmbedding (T * S.compression e.toContinuousLinearMap) := by
+  calc
+    e.cornerEmbedding T * S
+        = e.toContinuousLinearMap ∘L T ∘L (e.toContinuousLinearMap.adjoint ∘L S) := by
+          simp only [ContinuousLinearMap.mul_def, cornerEmbedding_apply, compression_def,
+            adjoint_adjoint, ContinuousLinearMap.comp_assoc]
+    _ = e.toContinuousLinearMap ∘L T ∘L
+          (S.compression e.toContinuousLinearMap ∘L e.toContinuousLinearMap.adjoint) := by
+          rw [compression_comp_adjoint_of_commute e.isometry hS]
+    _ = e.cornerEmbedding (T * S.compression e.toContinuousLinearMap) := by
+          simp only [cornerEmbedding_apply, compression_def, adjoint_adjoint,
+            ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_assoc]
+
+/-- Pre-multiplying `e.cornerEmbedding T` by an ambient operator `S` commuting with the range
+projection `e ∘L e†` compresses `S` into the corner. -/
+theorem mul_cornerEmbedding_of_commute (e : E →ₗᵢ[𝕜] F) (T : E →L[𝕜] E) {S : F →L[𝕜] F}
+    (hS : Commute (e.toContinuousLinearMap ∘L e.toContinuousLinearMap.adjoint) S) :
+    S * e.cornerEmbedding T =
+      e.cornerEmbedding (S.compression e.toContinuousLinearMap * T) := by
+  calc
+    S * e.cornerEmbedding T
+        = (S ∘L e.toContinuousLinearMap) ∘L T ∘L e.toContinuousLinearMap.adjoint := by
+          simp only [ContinuousLinearMap.mul_def, cornerEmbedding_apply, compression_def,
+            adjoint_adjoint, ContinuousLinearMap.comp_assoc]
+    _ = (e.toContinuousLinearMap ∘L S.compression e.toContinuousLinearMap) ∘L
+          T ∘L e.toContinuousLinearMap.adjoint := by
+          rw [comp_compression_of_commute e.isometry hS]
+    _ = e.cornerEmbedding (S.compression e.toContinuousLinearMap * T) := by
+          simp only [cornerEmbedding_apply, compression_def, adjoint_adjoint,
+            ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_assoc]
+
+/-- An ambient operator `S` commuting with the range projection `e ∘L e†` commutes with
+`e.cornerEmbedding T` if and only if its compression along `e` commutes with `T`. -/
+theorem commute_cornerEmbedding_iff (e : E →ₗᵢ[𝕜] F) (T : E →L[𝕜] E) {S : F →L[𝕜] F}
+    (hS : Commute (e.toContinuousLinearMap ∘L e.toContinuousLinearMap.adjoint) S) :
+    Commute S (e.cornerEmbedding T) ↔ Commute (S.compression e.toContinuousLinearMap) T := by
+  rw [Commute, SemiconjBy, e.mul_cornerEmbedding_of_commute T hS,
+    e.cornerEmbedding_mul_of_commute T hS, e.cornerEmbedding.injective.eq_iff, ← SemiconjBy,
+    ← Commute]
+
 end LinearIsometry
+
+namespace Submodule
+
+open ContinuousLinearMap
+
+/-- Compressing an operator `T` to a complete subspace `U` and extending back by zero yields the
+two-sided projection cutdown `U.starProjection * T * U.starProjection`. -/
+theorem cornerEmbedding_subtype_compression [CompleteSpace E] (U : Submodule 𝕜 E)
+    [CompleteSpace U] (T : E →L[𝕜] E) :
+    U.subtypeₗᵢ.cornerEmbedding (T.compression U.subtypeL) =
+      U.starProjection * T * U.starProjection := by
+  have h := U.subtypeₗᵢ.cornerEmbedding_compression T
+  rw [U.subtypeₗᵢ_toContinuousLinearMap, U.subtypeL_comp_adjoint_subtypeL] at h
+  rw [h, compression_def, (isSelfAdjoint_starProjection U).adjoint_eq,
+    ← ContinuousLinearMap.mul_def, ← ContinuousLinearMap.mul_def, ← mul_assoc]
+
+end Submodule
 
 end OperatorCorners
 

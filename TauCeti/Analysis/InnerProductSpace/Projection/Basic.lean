@@ -56,6 +56,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 
 ## Main results
 
+* `Submodule.starProjection_def`: `U.starProjection` is `U.subtypeL ∘L U.orthogonalProjectionOnto`.
+* `Submodule.starProjection_ne_zero_iff`: `U.starProjection ≠ 0 ↔ Nontrivial U`.
 * `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
   onto `U` to `U` itself gives the identity map.
 * `Submodule.adjoint_subtype`: the adjoint of subspace inclusion is orthogonal projection
@@ -295,6 +297,29 @@ theorem starProjection_mul_starProjection_sub_starProjection_sq :
   have hQ := V.isIdempotentElem_starProjection
   simp only [sq, sub_mul, mul_sub, mul_assoc, hP.eq, hQ.eq, hP.mul_self_mul]
   abel
+
+/-- `U.starProjection` is the composition `U.subtypeL ∘L U.orthogonalProjectionOnto`. -/
+theorem starProjection_def :
+    U.starProjection = U.subtypeL ∘L U.orthogonalProjectionOnto :=
+  (rfl)
+
+/-- The orthogonal projection onto `U` is nonzero if and only if `U` is nontrivial. -/
+theorem starProjection_ne_zero_iff :
+    U.starProjection ≠ 0 ↔ Nontrivial U := by
+  constructor
+  · intro h
+    obtain ⟨x, hx⟩ : ∃ x : E, U.starProjection x ≠ 0 := by
+      by_contra! hall
+      exact h (ContinuousLinearMap.ext hall)
+    exact nontrivial_of_ne ⟨U.starProjection x, U.starProjection_apply_mem x⟩ 0
+      (Subtype.coe_ne_coe.mp hx)
+  · intro _
+    obtain ⟨u, hu⟩ := exists_ne (0 : U)
+    intro h0
+    apply hu
+    apply Subtype.ext
+    have hu' : U.starProjection (u : E) = u := U.starProjection_eq_self_iff.mpr u.2
+    simpa [h0] using hu'.symm
 
 /-- Restricting the orthogonal projection onto `U` to `U` itself gives the identity map. -/
 @[simp]

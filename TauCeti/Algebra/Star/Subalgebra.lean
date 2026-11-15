@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.Subalgebra
 public import Mathlib.RingTheory.TwoSidedIdeal.Kernel
+import Mathlib.Algebra.Algebra.Subalgebra.Pointwise
 
 /-!
 # Range and codomain restrictions of `⋆`-algebra homomorphisms
@@ -27,7 +28,7 @@ nonunital and unital generality, mirroring `AlgHom.rangeRestrict_surjective` and
   range preserves `TwoSidedIdeal.ker`.
 * `StarSubalgebra.toSubmodule_sup_of_commute`: for elementwise commuting `⋆`-subalgebras `S` and
   `T`, the underlying submodule of `S ⊔ T` is `S.toSubmodule * T.toSubmodule`.
-* `StarAlgebra.adjoin_toSubmodule_of_mul_mem`: for a self-adjoint multiplicatively closed set `s`,
+* `StarAlgebra.adjoin_eq_span_of_mul_mem`: for a self-adjoint multiplicatively closed set `s`,
   `StarAlgebra.adjoin R s` has underlying submodule `Submodule.span R (insert 1 s)`.
 
 ## Implementation notes
@@ -130,7 +131,8 @@ theorem toSubmodule_sup_of_commute {S T : StarSubalgebra R A}
     (S ⊔ T).toSubmodule = S.toSubmodule * T.toSubmodule := by
   let P : Submodule R A := S.toSubmodule * T.toSubmodule
   have hle : P ≤ (S ⊔ T).toSubmodule :=
-    Submodule.mul_le.2 fun a ha b hb => mul_mem_sup ha hb
+    (S.toSubalgebra.mul_toSubmodule_le T.toSubalgebra).trans
+      (sup_le (toSubalgebra_le_iff.mpr le_sup_left) (toSubalgebra_le_iff.mpr le_sup_right))
   refine le_antisymm ?_ hle
   have hmul : ∀ u ∈ P, ∀ v ∈ P, u * v ∈ P := fun u hu =>
     Submodule.mul_induction_on hu
@@ -175,51 +177,13 @@ variable {R A : Type*} [CommSemiring R] [StarRing R]
 
 /-- For a self-adjoint multiplicatively closed subset `s`, the `⋆`-algebra it generates has
 underlying submodule `Submodule.span R (insert 1 s)`. -/
-theorem adjoin_toSubmodule_of_mul_mem {s : Set A} (hstar : star s ⊆ s)
+theorem adjoin_eq_span_of_mul_mem {s : Set A} (hstar : star s ⊆ s)
     (hmul : ∀ a ∈ s, ∀ b ∈ s, a * b ∈ s) :
     (adjoin R s).toSubmodule = Submodule.span R (insert 1 s) := by
-  let P : Submodule R A := Submodule.span R (insert 1 s)
-  have hle : P ≤ (adjoin R s).toSubmodule := by
-    rw [Submodule.span_le]
-    rintro x (rfl | hx)
-    · exact (adjoin R s).one_mem
-    · exact subset_adjoin R s hx
-  refine le_antisymm ?_ hle
-  have hmul' : ∀ u ∈ P, ∀ v ∈ P, u * v ∈ P := by
-    intro u hu v hv
-    induction hu using Submodule.span_induction with
-    | mem x hx =>
-      induction hv using Submodule.span_induction with
-      | mem y hy =>
-        rcases hx with rfl | hx <;> rcases hy with rfl | hy
-        · simpa using Submodule.subset_span (Set.mem_insert 1 s)
-        · simpa using Submodule.subset_span (Set.mem_insert_of_mem 1 hy)
-        · simpa using Submodule.subset_span (Set.mem_insert_of_mem 1 hx)
-        · exact Submodule.subset_span (Set.mem_insert_of_mem 1 (hmul x hx y hy))
-      | zero => simp
-      | add y₁ y₂ _ _ ih₁ ih₂ => rw [mul_add]; exact P.add_mem ih₁ ih₂
-      | smul r y _ ih => rw [mul_smul_comm]; exact P.smul_mem r ih
-    | zero => simp
-    | add x₁ x₂ _ _ ih₁ ih₂ => rw [add_mul]; exact P.add_mem ih₁ ih₂
-    | smul r x _ ih => rw [smul_mul_assoc]; exact P.smul_mem r ih
-  let U : StarSubalgebra R A :=
-    { P with
-      one_mem' := Submodule.subset_span (Set.mem_insert 1 s)
-      mul_mem' := fun {u v} hu hv => hmul' u hu v hv
-      algebraMap_mem' := fun r => by
-        rw [Algebra.algebraMap_eq_smul_one]
-        exact P.smul_mem r (Submodule.subset_span (Set.mem_insert 1 s))
-      star_mem' := fun {u} hu => by
-        induction hu using Submodule.span_induction with
-        | mem x hx =>
-          rcases hx with rfl | hx
-          · simpa using Submodule.subset_span (Set.mem_insert 1 s)
-          · exact Submodule.subset_span (Set.mem_insert_of_mem 1 (hstar (Set.star_mem_star.2 hx)))
-        | zero => simp
-        | add _ _ _ _ ih₁ ih₂ => rw [star_add]; exact P.add_mem ih₁ ih₂
-        | smul r _ _ ih =>
-          rw [star_smul]
-          exact P.smul_mem (star r) ih }
-  exact adjoin_le (S := U) fun x hx => Submodule.subset_span (Set.mem_insert_of_mem 1 hx)
-
+  let sg : Subsemigroup A := ⟨s, fun {a b} ha hb => hmul a ha b hb⟩
+  have hsg : (Subsemigroup.closure s : Set A) = s :=
+    congrArg SetLike.coe
+      (Subsemigroup.closure_eq_of_le (S := sg) subset_rfl Subsemigroup.subset_closure)
+  rw [adjoin_eq_span, Set.union_eq_left.2 hstar, Submonoid.closure_eq_one_union, hsg,
+    Set.singleton_union]
 end StarAlgebra

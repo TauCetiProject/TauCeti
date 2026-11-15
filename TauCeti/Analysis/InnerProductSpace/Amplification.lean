@@ -16,8 +16,9 @@ acts diagonally on the Hilbert sum `PiLp 2 (fun _ : ι => H)` of copies of `H`, 
 `s ⊕ ⋯ ⊕ s`. This diagonal amplification is a star algebra homomorphism,
 `PiLp.diagStarAlgHom`. Conversely, every operator `T` on the Hilbert sum has matrix entries
 `ContinuousLinearMap.piLpEntry T i j : H →L[𝕜] H`, and `T` acts through them
-(`ContinuousLinearMap.apply_eq_sum_piLpEntry`). The amplification of `s` has `s` on the diagonal
-and `0` off it (`ContinuousLinearMap.piLpEntry_diagStarAlgHom`).
+(`ContinuousLinearMap.apply_eq_sum_piLpEntry`). The amplification of `s` is norm-nonincreasing
+(`PiLp.norm_diagStarAlgHom_le`) and has `s` on the diagonal and `0` off it
+(`ContinuousLinearMap.piLpEntry_diagStarAlgHom`).
 
 Amplification turns statements about finitely many vectors of `H` into statements about a single
 vector of the Hilbert sum; this is how the von Neumann density theorem passes from one vector to
@@ -94,6 +95,17 @@ theorem diagStarAlgHom_apply_single [DecidableEq ι] (s : H →L[𝕜] H) (j : �
   by_cases hk : k = j
   · subst hk; simp
   · simp [hk]
+
+/-- Diagonal amplification to a finite Hilbert sum does not increase the operator norm. -/
+theorem norm_diagStarAlgHom_le (s : H →L[𝕜] H) :
+    ‖diagStarAlgHom 𝕜 H ι s‖ ≤ ‖s‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg s) fun ξ ↦ ?_
+  refine (sq_le_sq₀ (norm_nonneg (diagStarAlgHom 𝕜 H ι s ξ))
+    (mul_nonneg (norm_nonneg s) (norm_nonneg ξ))).mp ?_
+  rw [mul_pow, PiLp.norm_sq_eq_of_L2, PiLp.norm_sq_eq_of_L2, Finset.mul_sum]
+  refine Finset.sum_le_sum fun i _ ↦ ?_
+  rw [diagStarAlgHom_apply, ← mul_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) (s.le_opNorm (ξ i)) 2
 
 end PiLp
 
