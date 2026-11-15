@@ -183,6 +183,19 @@ section Transport
 
 variable (A B : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
 
+/-- A bound with the weight `⟨Aᵀ ξ⟩ ^ r` gives one with the weight `⟨ξ⟩ ^ r`, since `Aᵀ` is an
+equivalence. -/
+private theorem exists_le_mul_one_add_norm_sq_rpow_of_adjoint {K : Set (CoordinateSpace n)}
+    {f : CoordinateSpace n → CoordinateSpace n → ℝ} {r : ℝ}
+    (h : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, f x ξ ≤ C * (1 + ‖ContinuousLinearMap.adjoint
+      (A : CoordinateSpace n →L[ℝ] CoordinateSpace n) ξ‖ ^ 2) ^ (r / 2)) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, f x ξ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  obtain ⟨C, hC0, hC⟩ := h
+  obtain ⟨c, hc0, hc⟩ := A.adjointEquiv.exists_one_add_norm_apply_sq_rpow_le r
+  refine ⟨C * c, mul_nonneg hC0 hc0, fun x hx ξ ↦ (hC x hx ξ).trans ?_⟩
+  rw [mul_assoc, ← ContinuousLinearEquiv.adjointEquiv_apply]
+  exact mul_le_mul_of_nonneg_left (hc ξ) hC0
+
 /-- The **transport** of a symbol `a` along the linear change of coordinates `y = A x`: the symbol
 `a_A(y, η) = a(A⁻¹ y, Aᵀ η)` of the same order, which is `a` written in the coordinates `y`.
 Its quantization is `Op(a)` written in the coordinates `y`
@@ -194,18 +207,14 @@ def transport : Symbol n V W m →ₗ[ℂ] Symbol n V W m where
       contDiff_coefficient := a.contDiff_coefficient.comp
         ((A.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n).prodMap
           (ContinuousLinearMap.adjoint (A : CoordinateSpace n →L[ℝ] CoordinateSpace n))).contDiff
-      exists_bound := fun K hK α β ↦ by
-        obtain ⟨C, hC0, hC⟩ := exists_norm_mixedDeriv_comp_le
+      exists_bound := fun K hK α β ↦ exists_le_mul_one_add_norm_sq_rpow_of_adjoint A <|
+        exists_norm_mixedDeriv_comp_le
           (A.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)
           (ContinuousLinearMap.adjoint (A : CoordinateSpace n →L[ℝ] CoordinateSpace n))
           (fun _ ↦ True) (fun _ _ ↦ trivial) (fun _ _ ↦ trivial)
           (K := K) (fun a _ ↦ by
             obtain ⟨C, hC0, hC⟩ := a.exists_bound_coefficient _ (hK.image A.symm.continuous)
-            exact ⟨C, hC0, fun x hx ξ ↦ hC _ (Set.mem_image_of_mem _ hx) _⟩) a trivial α β
-        obtain ⟨c, hc0, hc⟩ := A.adjointEquiv.exists_one_add_norm_apply_sq_rpow_le (m - β.length)
-        exact ⟨C * c, mul_nonneg hC0 hc0, fun x hx ξ ↦ (hC x hx ξ).trans <| by
-          rw [mul_assoc]
-          exact mul_le_mul_of_nonneg_left (by simpa using hc ξ) hC0⟩ }
+            exact ⟨C, hC0, fun x hx ξ ↦ hC _ (Set.mem_image_of_mem _ hx) _⟩) a trivial α β }
   map_add' _ _ := (rfl)
   map_smul' _ _ := (rfl)
 
@@ -299,19 +308,17 @@ theorem spatialDeriv_transport (j : Fin n) (a : Symbol n V W m) :
 theorem IsUniform.transport {a : Symbol n V W m} (ha : a.IsUniform) :
     (Symbol.transport A a).IsUniform := by
   refine isUniform_iff.2 fun α β ↦ ?_
-  obtain ⟨C, hC0, hC⟩ := exists_norm_mixedDeriv_comp_le
-    (A.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)
-    (ContinuousLinearMap.adjoint (A : CoordinateSpace n →L[ℝ] CoordinateSpace n))
-    IsUniform
-    (fun ha c ↦ IsUniform.sum fun k _ ↦ (ha.spatialDeriv k).smul (c k))
-    (fun ha c ↦ IsUniform.sum fun k _ ↦ (ha.frequencyDeriv k).smul (c k))
-    (K := Set.univ) (fun a ha ↦ by
-      obtain ⟨C, hC0, hC⟩ := ha.exists_bound_coefficient
-      exact ⟨C, hC0, fun x _ ξ ↦ hC _ _⟩) a ha α β
-  obtain ⟨c, hc0, hc⟩ := A.adjointEquiv.exists_one_add_norm_apply_sq_rpow_le (m - β.length)
-  exact ⟨C * c, mul_nonneg hC0 hc0, fun x ξ ↦ (hC x trivial ξ).trans <| by
-    rw [mul_assoc]
-    exact mul_le_mul_of_nonneg_left (by simpa using hc ξ) hC0⟩
+  obtain ⟨C, hC0, hC⟩ := exists_le_mul_one_add_norm_sq_rpow_of_adjoint A <|
+    exists_norm_mixedDeriv_comp_le
+      (A.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+      (ContinuousLinearMap.adjoint (A : CoordinateSpace n →L[ℝ] CoordinateSpace n))
+      IsUniform
+      (fun ha c ↦ IsUniform.sum fun k _ ↦ (ha.spatialDeriv k).smul (c k))
+      (fun ha c ↦ IsUniform.sum fun k _ ↦ (ha.frequencyDeriv k).smul (c k))
+      (K := Set.univ) (fun a ha ↦ by
+        obtain ⟨C, hC0, hC⟩ := ha.exists_bound_coefficient
+        exact ⟨C, hC0, fun x _ ξ ↦ hC _ _⟩) a ha α β
+  exact ⟨C, hC0, fun x ξ ↦ hC x trivial ξ⟩
 
 /-- A transported symbol has estimates uniform in the position exactly when the symbol does. -/
 @[simp]

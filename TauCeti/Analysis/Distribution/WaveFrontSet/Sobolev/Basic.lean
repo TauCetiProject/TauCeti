@@ -356,8 +356,6 @@ theorem IsMicrolocallySobolevAt.compCLMOfContinuousLinearEquiv {s : ℝ} {T : �
   obtain ⟨φ, hφ, Γ, hΓ, hξ, hcone, hL⟩ := h
   -- The frequencies change by `A = (e⁻¹)ᵀ`, a linear isomorphism with inverse `eᵀ`.
   set A : E →L[ℝ] E := (e.symm : E →L[ℝ] E)†
-  have hinv : ∀ η, ((e : E →L[ℝ] E)†) (A η) = η := fun η ↦ by
-    simpa using e.symm.adjoint_symm_adjoint_apply η
   set L : E ≃L[ℝ] E := e.symm.adjointEquiv
   have hLA : (L : E → E) = A := funext e.symm.adjointEquiv_apply
   refine ⟨e.symm.transportTestFunction hOV φ, by simpa using hφ, A ⁻¹' Γ,
@@ -370,18 +368,11 @@ theorem IsMicrolocallySobolevAt.compCLMOfContinuousLinearEquiv {s : ℝ} {T : �
       memLp_iff, Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage]
     exact ENNReal.mul_lt_top
       (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg ENNReal.ofReal_ne_top) hL
-  -- The weights at `η` and at `A η` are comparable, since `‖η‖ ≤ ‖e‖ ‖A η‖`.
-  set c : ℝ := max 1 (max ‖(e : E →L[ℝ] E)‖ ‖A‖)
-  have hc : 1 ≤ c := le_max_left _ _
-  have hweight : ∀ η, (1 + ‖η‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖A η‖ ^ 2) ^ (s / 2) := fun η ↦ by
-    refine TauCeti.one_add_norm_sq_rpow_le_of_norm_le_mul hc s ?_ ?_
-    · calc ‖η‖ = ‖((e : E →L[ℝ] E)†) (A η)‖ := by rw [hinv]
-        _ ≤ ‖(e : E →L[ℝ] E)†‖ * ‖A η‖ := ContinuousLinearMap.le_opNorm _ _
-        _ = ‖(e : E →L[ℝ] E)‖ * ‖A η‖ := by rw [LinearIsometryEquiv.norm_map]
-        _ ≤ c * ‖A η‖ := by gcongr; exact (le_max_left _ _).trans (le_max_right _ _)
-    · calc ‖A η‖ ≤ ‖A‖ * ‖η‖ := A.le_opNorm η
-        _ ≤ c * ‖η‖ := by gcongr; exact (le_max_right _ _).trans (le_max_right _ _)
-  refine hmem.of_le_mul (c := |LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ * c ^ |s|)
+  -- The weights at `η` and at `A η = L η` are comparable, since `L` is an equivalence.
+  obtain ⟨c, -, hc⟩ := L.symm.exists_one_add_norm_apply_sq_rpow_le s
+  have hweight (η : E) : (1 + ‖η‖ ^ 2) ^ (s / 2) ≤ c * (1 + ‖A η‖ ^ 2) ^ (s / 2) := by
+    simpa only [L.symm_apply_apply, ← hLA] using hc (L η)
+  refine hmem.of_le_mul (c := |LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ * c)
     (aestronglyMeasurable_weight_smul_localFourier _ _ _ _) (.of_forall fun η ↦ ?_)
   rw [localFourier_compCLMOfContinuousLinearEquiv,
     ContinuousLinearEquiv.transportTestFunction_transportTestFunction_symm, norm_smul, norm_smul,

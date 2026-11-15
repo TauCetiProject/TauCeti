@@ -384,15 +384,20 @@ theorem quantizeSchwartzValue_compCLMOfContinuousLinearEquiv (A : E ≃L[ℝ] E)
       simp [C]
     rw [hC, ContinuousLinearMap.adjoint_adjoint, ContinuousLinearEquiv.coe_coe]
   have hdet : |A.toLinearEquiv.toLinearMap.det|⁻¹ * |C.toLinearEquiv.toLinearMap.det|⁻¹ = 1 := by
+    have hA : LinearMap.toContinuousLinearMap (A.symm.toLinearEquiv : E →ₗ[ℝ] E) =
+        (A.symm : E →L[ℝ] E) := by
+      ext1 y
+      rw [LinearMap.coe_toContinuousLinearMap', LinearEquiv.coe_coe,
+        ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.coe_coe]
     have hC : C.toLinearEquiv.toLinearMap =
         LinearMap.adjoint (A.symm.toLinearEquiv.toLinearMap) := by
       ext1 y
-      simp [C, LinearMap.adjoint_eq_toCLM_adjoint]
-      rfl
+      rw [LinearMap.adjoint_eq_toCLM_adjoint, hA, ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe,
+        ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.adjointEquiv_apply]
     have hsymm : LinearMap.det (A.symm.toLinearEquiv : E →ₗ[ℝ] E) =
         (LinearMap.det (A.toLinearEquiv : E →ₗ[ℝ] E))⁻¹ := A.toLinearEquiv.det_coe_symm
-    rw [hC, LinearMap.det_adjoint, star_trivial, ← abs_inv, ← abs_inv, ← abs_mul, hsymm, inv_inv,
-      inv_mul_cancel₀ A.toLinearEquiv.isUnit_det'.ne_zero, abs_one]
+    rw [hC, LinearMap.det_adjoint, star_trivial, hsymm, abs_inv, inv_inv,
+      inv_mul_cancel₀ (abs_ne_zero.2 A.toLinearEquiv.isUnit_det'.ne_zero)]
   have hfun : (fun ζ ↦ a (x, (2 * π) • ζ)
       (𝓕 (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A u) ζ)) =
         (fun ω ↦ |A.toLinearEquiv.toLinearMap.det|⁻¹ •
