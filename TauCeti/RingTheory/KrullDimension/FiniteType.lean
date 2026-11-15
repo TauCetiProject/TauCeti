@@ -100,7 +100,7 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
   algebra `A` with irreducible spectrum over `k` has height `dim A`.
 * `Ideal.ringKrullDim_quotient_eq_toNat_trdeg_residueField`: `dim (A ⧸ p) = trdeg_k κ(p)`.
 * `PrimeSpectrum.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient`,
-  `PrimeSpectrum.topologicalKrullDimAt_eq_localization_add_trdeg`: the
+  `PrimeSpectrum.topologicalKrullDimAt_eq_ringKrullDim_localization_add_toNat_trdeg`: the
   local Krull dimension of `Spec A` at `p` is `ht p + dim (A ⧸ p) = dim A_p + trdeg_k κ(p)`.
 
 ## References
@@ -494,7 +494,7 @@ variable (k) in
 /-- **Local dimension of an affine scheme of finite type over a field, via the stalk.** For a
 finitely generated algebra `A` over a field `k`, the local Krull dimension of `Spec A` at a prime
 `p` is `dim A_p + trdeg_k κ(p)`. -/
-theorem _root_.PrimeSpectrum.topologicalKrullDimAt_eq_localization_add_trdeg
+theorem _root_.PrimeSpectrum.topologicalKrullDimAt_eq_ringKrullDim_localization_add_toNat_trdeg
     {A : Type*} [CommRing A] [Algebra k A] [Algebra.FiniteType k A] (p : PrimeSpectrum A) :
     topologicalKrullDimAt (PrimeSpectrum A) p = ringKrullDim (Localization.AtPrime p.asIdeal) +
       (Algebra.trdeg k p.asIdeal.ResidueField).toNat := by
