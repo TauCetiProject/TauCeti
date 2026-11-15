@@ -51,10 +51,11 @@ annuli, removable-singularity characterization, and term-by-term differentiation
   `TauCeti.HasLaurentSeriesOnAnnulus.tendstoUniformlyOn_closedAnnulus`: automatic absolute
   summability on interior circles and uniform convergence on closed concentric subannuli.
 * `TauCeti.HasLaurentSeriesOnAnnulus.hasFPowerSeriesOnBall_laurentPosPart`,
+  `TauCeti.HasLaurentSeriesOnAnnulus.tendstoUniformlyOn_laurentNegPart`,
   `TauCeti.HasLaurentSeriesOnAnnulus.analyticOnNhd_laurentNegPart`, and
   `TauCeti.HasLaurentSeriesOnAnnulus.tendsto_laurentNegPart_cocompact`: convergence and analyticity
-  of the positive part on `Metric.eball c R` and of the negative part on `(Metric.closedBall c r)ᶜ`,
-  with vanishing at infinity.
+  of the positive part on `Metric.eball c R` and of the negative part on `(Metric.closedBall c r)ᶜ`
+  (uniform on `(Metric.ball c r')ᶜ` for `r' > r`), with vanishing at infinity.
 * `TauCeti.HasLaurentSeriesOnAnnulus.eq_laurentPosPart_add_laurentNegPart` and
   `TauCeti.HasLaurentSeriesOnAnnulus.analyticOnNhd`: Laurent splitting and analyticity of the sum on
   the open annulus.
@@ -456,6 +457,30 @@ theorem tendstoUniformlyOn_closedAnnulus {f : ℂ → E} {a : ℤ → E} {c : �
   filter_upwards [he ε hε] with t ht w hw
   simpa only [← map_sum, e.isometry.dist_eq] using ht w hw
 
+/-- Outside any open disk `Metric.ball c r'` of radius `r' > r`, the negative-degree Laurent terms
+admit a uniform summable norm majorant on the entire unbounded exterior `(Metric.ball c r')ᶜ`. -/
+theorem exists_summable_norm_bound_laurentNegPart {f : ℂ → E} {a : ℤ → E} {c : ℂ}
+    {r r' : ℝ} {R : ℝ≥0∞} (h : HasLaurentSeriesOnAnnulus f a c r R) (hrr' : r < r') :
+    ∃ B : ℕ → ℝ, Summable B ∧
+      ∀ n : ℕ, ∀ w ∈ (ball c r')ᶜ,
+        ‖(w - c) ^ (-((n : ℤ) + 1)) • a (-((n : ℤ) + 1))‖ ≤ B n := by
+  have hr'_pos : 0 < r' := h.r_nonneg.trans_lt hrr'
+  have hmin : ENNReal.ofReal r < min (ENNReal.ofReal r') R :=
+    lt_min ((ENNReal.ofReal_lt_ofReal_iff hr'_pos).mpr hrr') h.r_lt
+  obtain ⟨ρ, -, hrρ', hρmin⟩ := ENNReal.lt_iff_exists_real_btwn.1 hmin
+  obtain ⟨hrρ, hρ_pos⟩ := ENNReal.ofReal_lt_ofReal_iff'.1 hrρ'
+  have hρr' : ρ ≤ r' :=
+    (ENNReal.ofReal_le_ofReal_iff hr'_pos.le).mp (hρmin.trans_le (min_le_left _ _)).le
+  have hρR : ENNReal.ofReal ρ < R := hρmin.trans_le (min_le_right _ _)
+  refine ⟨fun n : ℕ => ‖a (-((n : ℤ) + 1))‖ * ρ ^ (-((n : ℤ) + 1)),
+    h.summable_norm_mul_zpow_neg_add_one hrρ hρR, fun n w hw => ?_⟩
+  have hρw : ρ ≤ ‖w - c‖ :=
+    hρr'.trans (by simpa only [mem_compl_iff, mem_ball, dist_eq_norm, not_lt] using hw)
+  dsimp only
+  rw [norm_smul, norm_zpow, mul_comm, ← Int.negSucc_eq, zpow_negSucc, zpow_negSucc]
+  exact mul_le_mul_of_nonneg_left
+    (inv_anti₀ (pow_pos hρ_pos (n + 1)) (pow_le_pow_left₀ hρ_pos.le hρw (n + 1))) (norm_nonneg _)
+
 private theorem inv_sub_mem_eball_radius_negCoordPowerSeries
     {f : ℂ → E} {a : ℤ → E} {c w : ℂ} {r : ℝ} {R : ℝ≥0∞}
     (h : HasLaurentSeriesOnAnnulus f a c r R) (hw : w ∉ closedBall c r) :
@@ -549,6 +574,17 @@ theorem hasSum_laurentNegPart {f : ℂ → E} {a : ℤ → E} {c w : ℂ} {r : �
       (laurentNegPart a c w) := by
   rw [h.laurentNegPart_eq_negCoordPowerSeries_sum hw]
   exact h.hasSum_negCoordPowerSeries_sum hw
+
+/-- On the unbounded exterior `(Metric.ball c r')ᶜ` of any open disk of radius `r' > r`, the finite
+partial sums of the negative-degree Laurent terms converge uniformly to `laurentNegPart a c`. -/
+theorem tendstoUniformlyOn_laurentNegPart {f : ℂ → E} {a : ℤ → E} {c : ℂ}
+    {r r' : ℝ} {R : ℝ≥0∞} (h : HasLaurentSeriesOnAnnulus f a c r R) (hrr' : r < r') :
+    TendstoUniformlyOn
+      (fun (t : Finset ℕ) w => ∑ n ∈ t, (w - c) ^ (-((n : ℤ) + 1)) • a (-((n : ℤ) + 1)))
+      (laurentNegPart a c) atTop (ball c r')ᶜ := by
+  obtain ⟨B, hB, hbound⟩ := h.exists_summable_norm_bound_laurentNegPart hrr'
+  refine (tendstoUniformlyOn_tsum hB hbound).congr_right fun w hw => ?_
+  exact (h.hasSum_laurentNegPart fun hwc => hw (closedBall_subset_ball hrr' hwc)).tsum_eq
 
 /-- The negative part `laurentNegPart a c` is complex-analytic on `(Metric.closedBall c r)ᶜ`
 (the whole punctured plane `ℂ \ {c}` when `r = 0`). -/
