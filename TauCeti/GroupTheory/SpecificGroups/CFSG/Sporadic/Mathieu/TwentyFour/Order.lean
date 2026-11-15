@@ -314,54 +314,131 @@ private theorem sift_tables :
     [aTable, bTable].all (TauCeti.sift (Fin.ofNat 24) transversal 0 7 1) = true := by
   decide +kernel
 
-/- The sifting conditions are checked one level at a time: together they are thousands of sifts,
-too many for a single kernel check within the default heartbeat budget. -/
+/- Split the sifting checks by both levels `i` and `j`, so each kernel computation checks only
+one pair of transversal lists and keeps its reduction cache small. The separate lemmas also keep
+the total work of each proof within the default heartbeat budget. -/
+private def siftPairCheck (i j : ℕ) : Bool :=
+  (transversal j).all fun s ↦ (transversal i).all fun r ↦
+    TauCeti.sift (Fin.ofNat 24) transversal i (7 - i) 1 (s * r)
 
-/- The sifts at level `0` are split once more, by the level `j` of the left factor `s`. -/
-
-private theorem siftCheck_0_lt_three : [0, 1, 2].all (fun j ↦ (transversal j).all fun s ↦
-    (transversal 0).all fun r ↦ TauCeti.sift (Fin.ofNat 24) transversal 0 7 1 (s * r)) = true := by
+private theorem siftPairCheck_0_0 : siftPairCheck 0 0 = true := by
   decide +kernel
 
-private theorem siftCheck_0_ge_three : [3, 4, 5, 6].all (fun j ↦ (transversal j).all fun s ↦
-    (transversal 0).all fun r ↦ TauCeti.sift (Fin.ofNat 24) transversal 0 7 1 (s * r)) = true := by
+private theorem siftPairCheck_0_1 : siftPairCheck 0 1 = true := by
   decide +kernel
 
-private theorem siftCheck_0 : TauCeti.siftCheck (Fin.ofNat 24) transversal 7 0 = true := by
-  have hrange : (List.range 7).filter (0 ≤ ·) = [0, 1, 2] ++ [3, 4, 5, 6] := by decide
-  unfold TauCeti.siftCheck
-  rw [hrange, Nat.sub_zero, List.all_append, Bool.and_eq_true]
-  exact ⟨siftCheck_0_lt_three, siftCheck_0_ge_three⟩
-
-private theorem siftCheck_1 : TauCeti.siftCheck (Fin.ofNat 24) transversal 7 1 = true := by
+private theorem siftPairCheck_0_2 : siftPairCheck 0 2 = true := by
   decide +kernel
 
-private theorem siftCheck_2 : TauCeti.siftCheck (Fin.ofNat 24) transversal 7 2 = true := by
+private theorem siftPairCheck_0_3 : siftPairCheck 0 3 = true := by
   decide +kernel
 
-private theorem siftCheck_3 : TauCeti.siftCheck (Fin.ofNat 24) transversal 7 3 = true := by
+private theorem siftPairCheck_0_4 : siftPairCheck 0 4 = true := by
   decide +kernel
 
-private theorem siftCheck_4 : TauCeti.siftCheck (Fin.ofNat 24) transversal 7 4 = true := by
+private theorem siftPairCheck_0_5 : siftPairCheck 0 5 = true := by
   decide +kernel
 
-private theorem siftCheck_5 : TauCeti.siftCheck (Fin.ofNat 24) transversal 7 5 = true := by
+private theorem siftPairCheck_0_6 : siftPairCheck 0 6 = true := by
   decide +kernel
 
-private theorem siftCheck_6 : TauCeti.siftCheck (Fin.ofNat 24) transversal 7 6 = true := by
+private theorem siftPairCheck_1_1 : siftPairCheck 1 1 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_1_2 : siftPairCheck 1 2 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_1_3 : siftPairCheck 1 3 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_1_4 : siftPairCheck 1 4 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_1_5 : siftPairCheck 1 5 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_1_6 : siftPairCheck 1 6 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_2_2 : siftPairCheck 2 2 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_2_3 : siftPairCheck 2 3 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_2_4 : siftPairCheck 2 4 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_2_5 : siftPairCheck 2 5 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_2_6 : siftPairCheck 2 6 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_3_3 : siftPairCheck 3 3 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_3_4 : siftPairCheck 3 4 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_3_5 : siftPairCheck 3 5 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_3_6 : siftPairCheck 3 6 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_4_4 : siftPairCheck 4 4 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_4_5 : siftPairCheck 4 5 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_4_6 : siftPairCheck 4 6 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_5_5 : siftPairCheck 5 5 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_5_6 : siftPairCheck 5 6 = true := by
+  decide +kernel
+
+private theorem siftPairCheck_6_6 : siftPairCheck 6 6 = true := by
   decide +kernel
 
 private theorem siftCheck_eq_true :
     ∀ i < 7, TauCeti.siftCheck (Fin.ofNat 24) transversal 7 i = true := by
   intro i hi
+  -- By definition, `TauCeti.siftCheck … 7 i` is `((List.range 7).filter (i ≤ ·)).all
+  -- (siftPairCheck i)`. At each numeral `i` the filtered range reduces to the literal list
+  -- `[i, …, 6]`, so each `change` below only unfolds that definition.
   interval_cases i
-  exacts [siftCheck_0, siftCheck_1, siftCheck_2, siftCheck_3, siftCheck_4, siftCheck_5,
-    siftCheck_6]
+  · change [0, 1, 2, 3, 4, 5, 6].all (siftPairCheck 0) = true
+    simp only [List.all_cons, List.all_nil, siftPairCheck_0_0, siftPairCheck_0_1,
+      siftPairCheck_0_2, siftPairCheck_0_3, siftPairCheck_0_4, siftPairCheck_0_5,
+      siftPairCheck_0_6, Bool.true_and]
+  · change [1, 2, 3, 4, 5, 6].all (siftPairCheck 1) = true
+    simp only [List.all_cons, List.all_nil, siftPairCheck_1_1, siftPairCheck_1_2,
+      siftPairCheck_1_3, siftPairCheck_1_4, siftPairCheck_1_5, siftPairCheck_1_6,
+      Bool.true_and]
+  · change [2, 3, 4, 5, 6].all (siftPairCheck 2) = true
+    simp only [List.all_cons, List.all_nil, siftPairCheck_2_2, siftPairCheck_2_3,
+      siftPairCheck_2_4, siftPairCheck_2_5, siftPairCheck_2_6, Bool.true_and]
+  · change [3, 4, 5, 6].all (siftPairCheck 3) = true
+    simp only [List.all_cons, List.all_nil, siftPairCheck_3_3, siftPairCheck_3_4,
+      siftPairCheck_3_5, siftPairCheck_3_6, Bool.true_and]
+  · change [4, 5, 6].all (siftPairCheck 4) = true
+    simp only [List.all_cons, List.all_nil, siftPairCheck_4_4, siftPairCheck_4_5,
+      siftPairCheck_4_6, Bool.true_and]
+  · change [5, 6].all (siftPairCheck 5) = true
+    simp only [List.all_cons, List.all_nil, siftPairCheck_5_5, siftPairCheck_5_6,
+      Bool.true_and]
+  · change [6].all (siftPairCheck 6) = true
+    simp only [List.all_cons, List.all_nil, siftPairCheck_6_6, Bool.true_and]
 
 /-- **The points `0, 1, 2, 3, 4, 5, 6` form a base of `M24`**: no element of `M24` other than `1`
 fixes all of them. -/
 theorem stabilizerChain_seven_eq_bot : M24.stabilizerChain (Fin.ofNat 24) 7 = ⊥ :=
-  Subgroup.stabilizerChain_eq_bot_of_siftCheck mem_transversal le_closure_tables
+  Subgroup.stabilizerChain_eq_bot_of_siftCheck le_closure_tables
     transversalCheck_eq_true sift_tables siftCheck_eq_true
 
 end M24

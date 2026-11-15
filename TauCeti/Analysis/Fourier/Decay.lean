@@ -8,7 +8,10 @@ module
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.Complex.CauchyIntegral
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 
+import Mathlib.Analysis.PSeries
+import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 
 /-!
@@ -50,6 +53,9 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
   `exp(-i ⟪v, ξ⟫)` keeps it integrable.
 * `TauCeti.exists_abs_pow_mul_norm_fourierCoeff_le`: if `f : AddCircle T → ℂ` is `C^k` as a
   periodic function on `ℝ`, then `|n| ^ k * ‖fourierCoeff f n‖ ≤ C` for some `C`.
+* `TauCeti.summable_fourierCoeff_of_contDiff`: a `C²` function on the circle has summable Fourier
+  coefficients, and `TauCeti.summable_fourierCoeffOn_circleMap_of_contDiff` states this for
+  `θ ↦ φ(e^{iθ})` on `[0, 2π]`.
 * `TauCeti.periodic_cexp_two_pi_mul_I_mul_div`: the Fourier monomial `z ↦ e^{2πinz/T}` on `ℂ` is
   `T`-periodic.
 * `TauCeti.integral_eq_integral_add_mul_I_of_differentiableOn_strip`: the integral over a period of
@@ -231,6 +237,19 @@ theorem exists_abs_pow_mul_norm_fourierCoeff_le {f : AddCircle T → ℂ} {k : �
           field_simp
       _ ≤ T ^ k / (2 * π) ^ k * M := by gcongr
 
+/-- **A `C²` function on the circle has summable Fourier coefficients**, since they are
+`O(n⁻²)` (`exists_abs_pow_mul_norm_fourierCoeff_le`). -/
+theorem summable_fourierCoeff_of_contDiff {f : AddCircle T → ℂ}
+    (hf : ContDiff ℝ 2 fun x : ℝ ↦ f x) : Summable (fourierCoeff f) := by
+  obtain ⟨C, hC⟩ := exists_abs_pow_mul_norm_fourierCoeff_le hf
+  refine ((Real.summable_one_div_int_pow.mpr one_lt_two).mul_left C).of_norm_bounded_eventually ?_
+  filter_upwards [Filter.eventually_cofinite_ne 0] with n hn
+  have hn2 : 0 < (n : ℝ) ^ 2 := by positivity
+  have := hC n
+  rw [pow_abs, abs_of_pos hn2] at this
+  rw [mul_one_div, le_div_iff₀ hn2, mul_comm]
+  exact this
+
 omit hT in
 /-- The Fourier monomial `z ↦ e^{2πinz/T}`, extended to all of `ℂ`, is `T`-periodic. -/
 theorem periodic_cexp_two_pi_mul_I_mul_div (n : ℤ) :
@@ -316,5 +335,23 @@ theorem norm_fourierCoeff_le_of_differentiableOn_strip {f : AddCircle T → ℂ}
         field_simp
 
 end Circle
+
+section UnitCircle
+
+open AddCircle
+open scoped Real
+
+local instance decayTwoPiPos : Fact (0 < 2 * π) := ⟨Real.two_pi_pos⟩
+
+/-- **`C²` data on the unit circle have summable Fourier coefficients.** If `θ ↦ φ(e^{iθ})` is of
+class `C²`, its Fourier coefficients on `[0, 2π]` are summable. -/
+theorem summable_fourierCoeffOn_circleMap_of_contDiff {φ : ℂ → ℂ}
+    (hφ : ContDiff ℝ 2 fun θ ↦ φ (circleMap 0 1 θ)) :
+    Summable fun n : ℤ ↦ fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n := by
+  convert summable_fourierCoeff_of_contDiff (f := fun x : AddCircle (2 * π) ↦ φ (toCircle x))
+    (by simpa [coe_toCircle_coe_eq_circleMap] using hφ) using 1
+  exact (funext (fourierCoeff_comp_toCircle φ)).symm
+
+end UnitCircle
 
 end TauCeti

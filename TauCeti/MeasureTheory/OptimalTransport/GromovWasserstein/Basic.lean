@@ -344,7 +344,7 @@ theorem gromovWassersteinDistortion_top_le_iff [SFinite π]
       (fun _ ↦ (1 : ℝ≥0∞)) (edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))) (π.prod π) :=
     (measurable_const.indicator measurableSet_Ioi).comp_aemeasurable hmeas.aemeasurable
   rw [gromovWassersteinDistortion_def, eLpNorm_exponent_top hmeas, lintegral_eq_zero_iff' hind]
-  refine ⟨fun h ↦ ?_, fun h ↦ eLpNormEssSup_le_of_ae_enorm_bound ?_⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ eLpNormEssSup_le_of_ae_eNorm_bound ?_⟩
   · filter_upwards [ae_le_eLpNormEssSup (f := fun q : (X × Y) × (X × Y) ↦
       edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))] with q hq
     simpa using (hq.trans h).not_gt
@@ -586,8 +586,8 @@ theorem gromovWassersteinEDist_triangle_of_exists_glue (hp : 1 ≤ p) [IsFiniteM
     _ ≤ eLpNorm ((fun q : (X × Y × W) × (X × Y × W) ↦
             edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2.1, q.2.2.1))) +
           fun q ↦ edist (ωY (q.1.2.1, q.2.2.1)) (ωW (q.1.2.2, q.2.2.2))) p (γ.prod γ) :=
-        eLpNorm_mono_enorm (aestronglyMeasurable_edist_comp hX hW hωX hωW) fun q ↦ by
-          simpa only [Pi.add_apply, enorm_eq_self] using edist_triangle _ _ _
+        eLpNorm_mono_eNorm (aestronglyMeasurable_edist_comp hX hW hωX hωW) fun q ↦ by
+          simpa only [Pi.add_apply, eNorm_eq_self] using edist_triangle _ _ _
     _ ≤ _ := eLpNorm_add_le hp
 
 /-- **The triangle inequality.** For `1 ≤ p` and a standard Borel third carrier, the

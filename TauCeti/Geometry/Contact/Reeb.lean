@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 
 /-!
@@ -42,6 +43,8 @@ All statements here are pointwise linear algebra at each point, applying
 * `TauCeti.SmoothForm.reebVectorField`: the Reeb vector field of a one-form.
 * `TauCeti.SmoothForm.IsContactForm.apply_reebVectorField`,
   `TauCeti.SmoothForm.IsContactForm.mextDeriv_reebVectorField_left`: the Reeb equations.
+* `TauCeti.SmoothForm.IsContactForm.interior_mextDeriv_reebVectorField`: the second Reeb
+  equation `ι_(R_α) dα = 0` as an identity of one-forms.
 * `TauCeti.SmoothForm.IsContactForm.eq_reebVectorField_iff`: uniqueness.
 * `TauCeti.SmoothForm.IsContactForm.isCompl_kerDistribution_span_reebVectorField`: the splitting
   `T_x M = ξ_x ⊕ ℝ R_α(x)`.
@@ -107,6 +110,14 @@ theorem IsContactForm.mextDeriv_reebVectorField_right (hα : α.IsContactForm) (
     (w : TangentSpace I x) : mextDeriv α.1 x ![w, α.reebVectorField x] = 0 := by
   have := (isContactForm_def.1 hα x).apply_reebVector_right (isAlt_bilinFormAt _ x) w
   rwa [← mextDeriv_eq_bilinFormAt] at this
+
+/-- The second Reeb equation as an identity of one-forms: `ι_(R_α) dα = 0`. -/
+theorem IsContactForm.interior_mextDeriv_reebVectorField (hα : α.IsContactForm) :
+    (mextDeriv α.1).interior α.reebVectorField = 0 := by
+  funext x
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
+  simpa using hα.mextDeriv_reebVectorField_left x w
 
 /-- **Characterization of the Reeb vector field**: `R_α(x)` is the unique tangent vector `v` with
 `α(v) = 1` and `ι_v dα = 0`. -/

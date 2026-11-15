@@ -40,7 +40,7 @@ universe vM vN uk uA uB
 
 variable {k : Type uk} {A : Type uA} {B : Type uB}
   [CommRing k] [Ring A] [Ring B] [Algebra k A] [Algebra k B]
-  (Γ : InternalGrading k A) (Δ : InternalGrading k B)
+  (Γ : InternalGrading k A ℤ) (Δ : InternalGrading k B ℤ)
 
 attribute [local instance] instModuleMulOppositeCarrierTensorProduct
   instIsScalarTowerMulOppositeCarrierTensorProduct

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Hessian.Conformal
 public import TauCeti.Geometry.Manifold.Riemannian.Hessian.Isometry
-public import TauCeti.Geometry.Manifold.Riemannian.WithMetric
+public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 
 /-!
 # Hessians on metric-indexed manifolds

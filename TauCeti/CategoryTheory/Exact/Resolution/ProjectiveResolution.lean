@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Abelian.Projective.Resolution
+public import TauCeti.CategoryTheory.Abelian.Projective.Resolution
+public import TauCeti.Algebra.Homology.ChainComplex.Exact
 public import TauCeti.CategoryTheory.Exact.Abelian
 public import TauCeti.CategoryTheory.Exact.Resolution.ChainComplex
 public import TauCeti.CategoryTheory.Exact.Resolution.OfChainComplex
@@ -108,14 +109,8 @@ theorem exact_d_succ_d {X : C} (r : (ExactStructure.abelian C).FiniteResolution 
 /-- The complex of a finite resolution in an abelian category is exact in every positive
 degree, in the vocabulary of homological complexes. -/
 theorem exactAt_toChainComplex_succ {X : C} (r : (ExactStructure.abelian C).FiniteResolution P X)
-    (n : ℕ) : r.toChainComplex.ExactAt (n + 1) := by
-  rw [HomologicalComplex.exactAt_iff' _ (n + 2) (n + 1) n (by simp) (by simp)]
-  exact (ShortComplex.exact_iff_of_iso (S₁ := r.toChainComplex.sc' (n + 2) (n + 1) n)
-    (S₂ := ShortComplex.mk _ _ (r.d_comp_d n))
-    (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
-      (by simpa only [HomologicalComplex.shortComplexFunctor'_obj_f, Iso.refl_hom,
-        Category.id_comp, Category.comp_id] using (r.toChainComplex_d (n + 1)).symm)
-      (by simp))).2 (r.exact_d_succ_d n)
+    (n : ℕ) : r.toChainComplex.ExactAt (n + 1) :=
+  ChainComplex.of_exactAt_succ r.term r.d r.d_comp_d n (r.exact_d_succ_d n)
 
 /-- The augmentation kills the first differential of the complex of a finite resolution. -/
 private theorem toChainComplex_d_one_zero_comp_aug {X : C}
@@ -132,26 +127,15 @@ The proof that the augmentation is a quasi-isomorphism follows that of Mathlib's
 `CategoryTheory.ProjectiveResolution.of` in `Mathlib/CategoryTheory/Abelian/Projective/Resolution`
 (by Markus Himmel, Kim Morrison, Jakob von Raumer and Joël Riou). -/
 noncomputable def toProjectiveResolution {X : C}
-    (r : (ExactStructure.abelian C).FiniteResolution P X) : ProjectiveResolution X where
-  complex := r.toChainComplex
-  projective n := by
-    by_cases hn : n ≤ r.length
-    · exact hP _ (r.prop_term_of_le_length hn)
-    · exact (r.isZero_term_of_length_lt (not_le.mp hn)).projective
-  π := (ChainComplex.toSingle₀Equiv _ X).symm ⟨r.aug, r.toChainComplex_d_one_zero_comp_aug⟩
-  quasiIso := ⟨fun n ↦ by
-    cases n with
-    | zero =>
-      have hπ := ChainComplex.toSingle₀Equiv_symm_apply_f_zero (C := r.toChainComplex) r.aug
-        r.toChainComplex_d_one_zero_comp_aug
-      rw [ChainComplex.quasiIsoAt₀_iff, ShortComplex.quasiIso_iff_of_zeros' _ rfl rfl rfl]
-      refine (ShortComplex.exact_and_epi_g_iff_of_iso
-        (S₂ := ShortComplex.mk _ _ r.d_comp_aug) ?_).2 ⟨r.exact_d_zero_aug, r.epi_aug⟩
-      exact ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
-        (by simpa using (r.toChainComplex_d 0).symm) (by simp [hπ])
-    | succ n =>
-      rw [quasiIsoAt_iff_exactAt' _ _ (ChainComplex.exactAt_succ_single_obj _ _)]
-      exact r.exactAt_toChainComplex_succ n⟩
+    (r : (ExactStructure.abelian C).FiniteResolution P X) : ProjectiveResolution X :=
+  r.toChainComplex.toProjectiveResolution r.aug r.toChainComplex_d_one_zero_comp_aug
+    (fun n => by
+      by_cases hn : n ≤ r.length
+      · exact hP _ (r.prop_term_of_le_length hn)
+      · exact (r.isZero_term_of_length_lt (not_le.mp hn)).projective)
+    (ChainComplex.of_exact_d_one_zero r.term r.d r.d_comp_d r.aug r.d_comp_aug
+      r.exact_d_zero_aug)
+    r.exactAt_toChainComplex_succ
 
 /-- The terms of the projective resolution are the terms of the finite resolution. -/
 noncomputable def toProjectiveResolutionXIso {X : C}
@@ -173,7 +157,9 @@ theorem toProjectiveResolution_complex_d {X : C}
     (r.toProjectiveResolution hP).complex.d (n + 1) n =
       (r.toProjectiveResolutionXIso hP (n + 1)).hom ≫ r.d n ≫
         (r.toProjectiveResolutionXIso hP n).inv := by
-  simp [toProjectiveResolutionXIso, toProjectiveResolution]
+  -- Reduction identifies the endpoints of the identity term isomorphisms before simp can
+  -- apply category laws; rewriting just the complex projection leaves an ill-typed simp goal.
+  simp [toProjectiveResolutionXIso, toProjectiveResolution, ChainComplex.toProjectiveResolution]
 
 /-- The augmentation of the projective resolution is that of the finite resolution, through the
 identification of the degree-zero terms. -/
@@ -181,7 +167,9 @@ identification of the degree-zero terms. -/
 theorem toProjectiveResolution_π_f_zero {X : C}
     (r : (ExactStructure.abelian C).FiniteResolution P X) :
     (r.toProjectiveResolution hP).π.f 0 = (r.toProjectiveResolutionXIso hP 0).hom ≫ r.aug := by
-  simpa [toProjectiveResolutionXIso, toProjectiveResolution] using
+  -- As above, the identity's endpoints need reduction before the augmentation lemma applies.
+  simpa [toProjectiveResolutionXIso, toProjectiveResolution,
+    ChainComplex.toProjectiveResolution] using
     ChainComplex.toSingle₀Equiv_symm_apply_f_zero (C := r.toChainComplex) r.aug
       r.toChainComplex_d_one_zero_comp_aug
 

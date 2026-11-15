@@ -51,7 +51,8 @@ variable {W₁ : Type u} {W₂ : Type v} [AddCommGroup W₁] [Module ℂ W₁]
   [AddCommGroup W₂] [Module ℂ W₂]
 variable {ω₁ : Conjugation W₁} {ω₂ : Conjugation W₂} {n₁ n₂ : ℤ}
 
-private noncomputable def pieceGrading (hs : HodgeStructureOn W₁ ω₁ n₁) : InternalGrading ℂ W₁ where
+private noncomputable def pieceGrading (hs : HodgeStructureOn W₁ ω₁ n₁) :
+    InternalGrading ℂ W₁ ℤ where
   piece := hs.piece
   isInternal := hs.isInternal_piece
 

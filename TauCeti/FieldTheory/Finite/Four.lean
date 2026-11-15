@@ -33,8 +33,10 @@ namespace TauCeti
 
 variable {F : Type*} [Field F] [Finite F]
 
+omit [Finite F] in
 /-- A field of order four has characteristic two. -/
 theorem two_eq_zero_of_natCard_eq_four (hF : Nat.card F = 4) : (2 : F) = 0 := by
+  have : Finite F := Nat.finite_of_card_ne_zero (by omega)
   let := Fintype.ofFinite F
   let := charP_of_card_eq_prime_pow (Nat.card_eq_fintype_card.symm.trans hF : _ = 2 ^ 2)
   exact CharTwo.two_eq_zero
@@ -91,6 +93,7 @@ theorem exists_sq_add_self_add_one_eq_zero_of_natCard_eq_four (hF : Nat.card F =
 private noncomputable def zmodTwoHom (hF : Nat.card F = 4) (x : F) : ZMod 2 →+ F :=
   ZMod.lift 2 ⟨zmultiplesHom F x, by simp [two_eq_zero_of_natCard_eq_four hF]⟩
 
+omit [Finite F] in
 private theorem zmodTwoHom_apply (hF : Nat.card F = 4) (x : F) (a : ZMod 2) :
     zmodTwoHom hF x a = (a.val : F) * x := by
   have hcases : ∀ c : ZMod 2, c = 0 ∨ c = 1 := by decide

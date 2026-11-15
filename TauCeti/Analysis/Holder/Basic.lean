@@ -81,7 +81,7 @@ theorem holderNorm_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 Y]
     {α : ℝ≥0} (c : 𝕜) (f : X →ᵇ Y) (hf : MemHolder α (f : X → Y)) :
     holderNorm α (c • f) = ‖c‖ * holderNorm α f := by
   simp only [holderNorm_def, norm_smul, FunLike.coe_smul,
-    hf.nnHolderNorm_smul c, NNReal.coe_mul, coe_nnnorm, mul_add]
+    hf.nnHolderNorm_smul c, NNReal.coe_mul, coe_nnNorm, mul_add]
 
 variable [NormedSpace ℝ Y]
 

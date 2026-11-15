@@ -35,6 +35,8 @@ of `AlgebraicGeometry.Proj.isClosedImmersion_map_of_grade_subset_range`.
 * `CategoryTheory.CommMon.ι_relativeProjMap`: on the chart over `U`, the morphism of relative
   `Proj`s is the morphism of projective spectra, with the charts written as the coprojections of
   the gluing diagrams, as glued modules on the relative `Proj` use them.
+* `CategoryTheory.CommMon.image_basicOpen_le_preimage_relativeProjMap`: the morphism maps the
+  image of `D₊(φ b)` in a chart of `Proj_X(A)` into the image of `D₊(b)` in a chart of `Proj_X(B)`.
 * `CategoryTheory.CommMon.relativeProjMap_id` and `CategoryTheory.CommMon.relativeProjMap_comp`:
   the construction is contravariantly functorial.
 * `CategoryTheory.CommMon.isPullback_relativeProjMap`: over the chart of `Proj_X(B)` above an
@@ -134,6 +136,17 @@ theorem ι_relativeProjMap (U : X.AffineZariskiSite) :
         colimit.ι B.relativeProjGluingData.functor U :=
   (CommMon.relativeProjCover_f_relativeProjMap φ hφ U).trans
     (congrArg (· ≫ _) (CommMon.relativeProjFunctorMap_app φ hφ U))
+
+/-- The morphism of relative `Proj`s maps the image of `D₊(φ b)` in the chart of `Proj_X(A)` over
+`U` into the image of `D₊(b)` in the chart of `Proj_X(B)` over `U`. -/
+theorem _root_.CategoryTheory.CommMon.image_basicOpen_le_preimage_relativeProjMap
+    (U : X.AffineZariskiSite) (b : ⨁ n, Γ(B.X n, U.toOpens)) :
+    colimit.ι A.relativeProjGluingData.functor U ''ᵁ
+        Proj.basicOpen _ (CommMon.gradedSectionsGradedHom φ U.toOpens b) ≤
+      CommMon.relativeProjMap φ hφ ⁻¹ᵁ
+        (colimit.ι B.relativeProjGluingData.functor U ''ᵁ Proj.basicOpen _ b) := by
+  rintro _ ⟨z, hz, rfl⟩
+  exact ⟨Proj.map _ (hφ U.toOpens U.2) z, hz, congr($(CommMon.ι_relativeProjMap φ hφ U) z).symm⟩
 
 /-- **The morphism of relative `Proj`s induced by `φ` lies over `X`.** -/
 @[reassoc (attr := simp)]

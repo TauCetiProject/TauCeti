@@ -131,7 +131,7 @@ theorem MeasureContraction.mono (h : M.MeasureContraction K N) (hK : K' ≤ K) (
   obtain ⟨η, hgeo, h₀, h₁, hle⟩ := h o ho A hA hpos hfin
   refine ⟨η, hgeo, h₀, h₁, fun t ↦
     (Measure.timeMarginal_mono (withDensity_mono (ae_of_all _ fun γ ↦ ?_)) t).trans (hle t)⟩
-  exact ENNReal.rpow_le_rpow (distortionTau_left_monotone (sub_nonneg.2 (unitInterval.le_one t))
+  exact ENNReal.rpow_le_rpow (distortionTau_left_monotone
     (sub_le_self _ (unitInterval.nonneg t)) hK) hN
 
 /-- **The Bonnet–Myers diameter bound under `MCP(K, N)`.** If `M` satisfies `MCP(K, N)` with
@@ -245,7 +245,7 @@ theorem measureContraction_of_nonpos_of_finrank_le [Nontrivial E] (hK : K ≤ 0)
       ENNReal.ofReal (1 - t) ^ N • M.reference[|A].map fun y ↦ segmentPath (y, o) := by
     rw [← withDensity_const]
     exact withDensity_mono (ae_of_all _ fun γ ↦ ENNReal.rpow_le_rpow (distortionTau_le_ofReal
-      (sub_nonneg.2 (unitInterval.le_one t)) (sub_le_self _ (unitInterval.nonneg t)) hK) hN₀.le)
+      (sub_le_self _ (unitInterval.nonneg t)) hK) hN₀.le)
   refine (Measure.timeMarginal_mono hweight t).trans ?_
   rw [Measure.timeMarginal_smul, hmarg]
   rcases (unitInterval.le_one t).lt_or_eq with ht | ht

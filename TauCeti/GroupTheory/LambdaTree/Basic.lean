@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.TypeTags
+public import Mathlib.Order.Interval.Set.OrdConnected
 public import Mathlib.Topology.MetricSpace.BundledFun
 public import TauCeti.Algebra.Order.Group.IntervalIsometry
 
@@ -31,7 +33,11 @@ Measuring the distance from `x` identifies a segment from `x` to `y` isometrical
 interval `[0, d x y]`, so the part of a segment between two of its points is again a segment. We
 prove that segments in a `Λ`-tree are unique, hence convex, that `Λ` itself, with the metric
 `|a - b|`, is a `Λ`-tree whose segments are its closed intervals, and that a one-point space is a
-`Λ`-tree. The vertex set of a cycle of length four, with its path metric, is a geodesic
+`Λ`-tree. An injective map `f : Y → X` induces the `Λ`-metric `d (f x) (f y)` on `Y`, whose
+segments are the sets with image a segment of `X`; when `X` is a `Λ`-tree it makes `Y` a `Λ`-tree
+exactly when `Y` is nonempty and the range of `f` contains the segment between any two of its
+points. In particular the subsets of `Λ` which are `Λ`-trees are the nonempty order-connected
+(convex) ones. The vertex set of a cycle of length four, with its path metric, is a geodesic
 `ℤ`-metric space which is not a `ℤ`-tree, so geodesicity alone does not make a `Λ`-metric space a
 `Λ`-tree.
 
@@ -39,6 +45,9 @@ prove that segments in a `Λ`-tree are unique, hence convex, that `Λ` itself, w
 
 * `TauCeti.LambdaMetric Λ X`: a `Λ`-valued metric on `X`.
 * `TauCeti.LambdaMetric.self Λ`: the metric `|a - b|` on `Λ`.
+* `TauCeti.LambdaMetric.comap d f hf`: the `Λ`-metric induced on `Y` by an injective map
+  `f : Y → X`.
+* `TauCeti.LambdaMetric.IsIsometricAction d G`: `G` acts on `X` by isometries of `d`.
 * `TauCeti.LambdaMetric.IsSegment d σ x y`: `σ` is a segment from `x` to `y`.
 * `TauCeti.LambdaMetric.IsGeodesic d`: any two points are joined by a segment.
 * `TauCeti.LambdaMetric.IsTree d`: `d` makes `X` a `Λ`-tree.
@@ -58,7 +67,15 @@ prove that segments in a `Λ`-tree are unique, hence convex, that `Λ` itself, w
   unique segment.
 * `TauCeti.LambdaMetric.IsTree.segment_eq_sep`: in a `Λ`-tree, the segment between two points of
   a segment is the part of that segment between them.
+* `TauCeti.LambdaMetric.isSegment_comap_iff`: a set is a segment for the metric induced by an
+  injective map `f` if and only if its image under `f` is a segment.
+* `TauCeti.LambdaMetric.IsTree.isTree_comap_iff`: the metric induced on `Y` by an injective map
+  `f` into a `Λ`-tree makes `Y` a `Λ`-tree if and only if `Y` is nonempty and the range of `f`
+  contains the segment between any two of its points.
 * `TauCeti.LambdaMetric.isTree_self`: `Λ` is a `Λ`-tree.
+* `TauCeti.LambdaMetric.isTree_comap_self_subtype_iff`: a subset of `Λ`, with the metric
+  `|a - b|`, is a `Λ`-tree if and only if it is nonempty and order-connected.
+* `TauCeti.LambdaMetric.isIsometricAction_self`: `Λ` acts on itself by isometric translations.
 * `TauCeti.LambdaMetric.exists_isGeodesic_not_isTree`: a geodesic `ℤ`-metric space need not be a
   `ℤ`-tree.
 
@@ -66,7 +83,7 @@ prove that segments in a `Λ`-tree are unique, hence convex, that `Λ` itself, w
 
 * I. Chiswell, *Introduction to Λ-trees*, World Scientific, 2001, §§1.2 and 2.1.
 * O. Kharlampovich, A. Myasnikov, D. Serbin, *Actions, length functions, and non-Archimedean
-  words*, Internat. J. Algebra Comput. 23 (2013), §4.2.
+  words*, Internat. J. Algebra Comput. 23 (2013), §4.2 (Example 9 for the convex subsets of `Λ`).
 -/
 
 public section
@@ -133,6 +150,37 @@ def self : LambdaMetric Λ Λ where
 @[simp]
 theorem self_apply (a b : Λ) : (self Λ) a b = |a - b| :=
   (rfl)
+
+/-! ### Isometric actions -/
+
+/-- `G` acts on `X` by isometries of the `Λ`-metric `d`. -/
+def IsIsometricAction (G : Type*) [SMul G X] : Prop :=
+  ∀ (g : G) (x y : X), d (g • x) (g • y) = d x y
+
+namespace IsIsometricAction
+
+variable {d} {G : Type*}
+
+@[simp]
+theorem dist_smul_smul [SMul G X] (hG : d.IsIsometricAction G) (g : G) (x y : X) :
+    d (g • x) (g • y) = d x y :=
+  hG g x y
+
+variable [Group G] [MulAction G X]
+
+/-- An isometry and its inverse move a point by the same distance. -/
+@[simp]
+theorem dist_inv_smul (hG : d.IsIsometricAction G) (g : G) (x : X) :
+    d x (g⁻¹ • x) = d x (g • x) := by
+  rw [← hG.dist_smul_smul g x (g⁻¹ • x), smul_inv_smul, d.symm]
+
+/-- The distance `d x ((g⁻¹ * f) • x)` is the distance between the translates `g • x` and
+`f • x`. -/
+theorem dist_inv_mul_smul (hG : d.IsIsometricAction G) (g f : G) (x : X) :
+    d x ((g⁻¹ * f) • x) = d (g • x) (f • x) := by
+  rw [← hG.dist_smul_smul g x, mul_smul, smul_inv_smul]
+
+end IsIsometricAction
 
 /-! ### Segments -/
 
@@ -419,6 +467,105 @@ theorem IsTree.segment_subset (hd : d.IsTree) {σ : Set X} {x y a b : X} (hσ : 
   rw [hd.segment_eq_sep hσ ha hb]
   exact sep_subset _ _
 
+/-! ### Induced metrics -/
+
+section Comap
+
+variable {Y : Type*} (d) (f : Y → X) (hf : Function.Injective f)
+
+/-- The `Λ`-metric `d (f x) (f y)` induced on `Y` by an injective map `f : Y → X`. -/
+def comap : LambdaMetric Λ Y where
+  toFun x y := d (f x) (f y)
+  refl' x := d.refl (f x)
+  symm' x y := d.symm (f x) (f y)
+  triangle' x y z := d.triangle (f x) (f y) (f z)
+  eq_of_eq_zero' h := hf (d.eq_zero_iff.1 h)
+
+@[simp]
+theorem comap_apply (x y : Y) : d.comap f hf x y = d (f x) (f y) :=
+  (rfl)
+
+variable {d f hf}
+
+/-- A subset of `Y` is a segment for the metric induced by `f : Y → X` if and only if its image
+under `f` is a segment of `X`. -/
+theorem isSegment_comap_iff {σ : Set Y} {x y : Y} :
+    (d.comap f hf).IsSegment σ x y ↔ d.IsSegment (f '' σ) (f x) (f y) := by
+  constructor
+  · rintro ⟨g, rfl, hg1, hg, rfl⟩
+    rw [comap_apply] at hg1 hg
+    exact ⟨f ∘ g, rfl, congrArg f hg1, hg, image_comp f g _⟩
+  · rintro ⟨h, h0, h1, hh, hσ⟩
+    have : Nonempty Y := ⟨x⟩
+    have hD : (0 : Λ) ≤ d (f x) (f y) := d.nonneg _ _
+    -- Lift the parametrisation `h` of `f '' σ` through `f`.
+    have hlift : ∀ t ∈ Icc 0 (d (f x) (f y)), ∃ u ∈ σ, f u = h t := fun t ht =>
+      hσ.subset (mem_image_of_mem h ht)
+    choose! g hgσ hfg using hlift
+    refine ⟨g, hf ?_, hf ?_, fun s hs t ht => ?_, (image_subset_iff.2 hgσ).antisymm fun u hu => ?_⟩
+    · rw [hfg 0 ⟨le_rfl, hD⟩, h0]
+    · rw [comap_apply, hfg _ ⟨hD, le_rfl⟩, h1]
+    · rw [comap_apply] at hs ht
+      rw [comap_apply, hfg s hs, hfg t ht, hh s hs t ht]
+    · obtain ⟨t, ht, htu⟩ := hσ.superset (mem_image_of_mem f hu)
+      exact ⟨t, ht, hf ((hfg t ht).trans htu)⟩
+
+/-- A subset of `Y` whose image under `f : Y → X` is a segment of `X` is a segment for the metric
+induced by `f`, between the preimages of the endpoints. -/
+theorem exists_isSegment_comap_of_image {σ : Set Y} {p q : X} (h : d.IsSegment (f '' σ) p q) :
+    ∃ x y, (d.comap f hf).IsSegment σ x y := by
+  obtain ⟨x, -, rfl⟩ := h.left_mem
+  obtain ⟨y, -, rfl⟩ := h.right_mem
+  exact ⟨x, y, isSegment_comap_iff.2 h⟩
+
+/-- The metric induced by `f : Y → X` is geodesic if and only if any two points of the range of
+`f` are joined by a segment contained in the range of `f`. -/
+theorem isGeodesic_comap_iff :
+    (d.comap f hf).IsGeodesic ↔ ∀ x y : Y, ∃ τ ⊆ range f, d.IsSegment τ (f x) (f y) := by
+  refine forall₂_congr fun x y => ⟨fun ⟨σ, hσ⟩ => ⟨_, image_subset_range f σ,
+    isSegment_comap_iff.1 hσ⟩, fun ⟨τ, hτ, h⟩ => ⟨f ⁻¹' τ, isSegment_comap_iff.2 ?_⟩⟩
+  rwa [image_preimage_eq_of_subset hτ]
+
+namespace IsTree
+
+variable (hd : d.IsTree)
+include hd
+
+/-- The metric induced on `Y` by a map `f` into a `Λ`-tree is geodesic if and only if the range of
+`f` contains the segment between any two of its points. -/
+theorem isGeodesic_comap_iff_segment_subset :
+    (d.comap f hf).IsGeodesic ↔ ∀ x y : Y, hd.segment (f x) (f y) ⊆ range f := by
+  rw [isGeodesic_comap_iff]
+  refine forall₂_congr fun x y => ⟨fun ⟨τ, hτ, h⟩ => ?_, fun h => ⟨_, h, hd.isSegment_segment _ _⟩⟩
+  rwa [← hd.isSegment_iff_eq_segment.1 h]
+
+/-- A geodesic metric induced by a map into a `Λ`-tree makes its domain, if nonempty, a
+`Λ`-tree: the axioms (T2) and (T3) are inherited. -/
+theorem comap [Nonempty Y] (h : (d.comap f hf).IsGeodesic) : (d.comap f hf).IsTree where
+  nonempty := ‹_›
+  isGeodesic := h
+  exists_isSegment_union {σ τ x y z} hσ hτ hστ := by
+    rw [isSegment_comap_iff] at hσ hτ
+    obtain ⟨p, q, hpq⟩ := hd.exists_isSegment_union hσ hτ
+      (by rw [← image_inter hf, hστ, image_singleton])
+    exact exists_isSegment_comap_of_image (image_union f σ τ ▸ hpq)
+  exists_isSegment_inter {σ τ x y z} hσ hτ := by
+    rw [isSegment_comap_iff] at hσ hτ
+    obtain ⟨p, q, hpq⟩ := hd.exists_isSegment_inter hσ hτ
+    exact exists_isSegment_comap_of_image (image_inter hf ▸ hpq)
+
+/-- The metric induced on `Y` by an injective map `f` into a `Λ`-tree makes `Y` a `Λ`-tree if and
+only if `Y` is nonempty and the range of `f` contains the segment between any two of its
+points. -/
+theorem isTree_comap_iff :
+    (d.comap f hf).IsTree ↔ Nonempty Y ∧ ∀ x y : Y, hd.segment (f x) (f y) ⊆ range f := by
+  rw [← hd.isGeodesic_comap_iff_segment_subset (hf := hf)]
+  exact ⟨fun h => ⟨h.nonempty, h.isGeodesic⟩, fun ⟨_, h⟩ => hd.comap h⟩
+
+end IsTree
+
+end Comap
+
 /-! ### Examples -/
 
 /-- The segments of `Λ` are its closed intervals. -/
@@ -464,6 +611,29 @@ theorem isTree_self : (self Λ).IsTree where
       ext w
       simp only [mem_inter_iff, mem_uIcc]
       grind
+
+/-- The segment between two points of the `Λ`-tree `Λ` is the closed interval between them. -/
+@[simp]
+theorem segment_isTree_self (a b : Λ) : (isTree_self (Λ := Λ)).segment a b = uIcc a b :=
+  (isTree_self.isSegment_iff_eq_segment.1 (self_isSegment_iff.2 rfl)).symm
+
+/-- The metric `|f x - f y|` induced on `Y` by an injective map `f : Y → Λ` makes `Y` a `Λ`-tree
+if and only if `Y` is nonempty and the range of `f` is order-connected. -/
+theorem isTree_comap_self_iff {Y : Type*} {f : Y → Λ} {hf : Function.Injective f} :
+    ((self Λ).comap f hf).IsTree ↔ Nonempty Y ∧ (range f).OrdConnected := by
+  simp [isTree_self.isTree_comap_iff, ordConnected_iff_uIcc_subset]
+
+/-- A subset of `Λ`, with the metric `|a - b|`, is a `Λ`-tree if and only if it is nonempty and
+order-connected. -/
+theorem isTree_comap_self_subtype_iff {s : Set Λ} :
+    ((self Λ).comap ((↑) : s → Λ) Subtype.val_injective).IsTree ↔ s.Nonempty ∧ s.OrdConnected := by
+  rw [isTree_comap_self_iff, Subtype.range_coe, nonempty_coe_sort]
+
+/-- `Λ` acts on the `Λ`-tree `Λ` by translations, which are isometries. -/
+theorem isIsometricAction_self : (self Λ).IsIsometricAction (Multiplicative Λ) := by
+  intro a x y
+  obtain ⟨a, rfl⟩ := Multiplicative.ofAdd.surjective a
+  simp [self_apply]
 
 /-- A one-point space is a `Λ`-tree, for its unique `Λ`-metric. -/
 theorem isTree_of_subsingleton [Nonempty X] [Subsingleton X] : d.IsTree where

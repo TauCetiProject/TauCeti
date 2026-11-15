@@ -164,21 +164,9 @@ theorem mvfderiv_coe_sphereRotationFamily_apply (p : sphere (0 : E) 1)
         ((y.1 : (ℝ ∙ (p : E))ᗮ) : E)) x w =
       ((mvfderiv (𝓡 m) ((↑) : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 → (ℝ ∙ (p : E))ᗮ) x.1
         (Manifold.tangentSpaceProdEquiv x w).1 : (ℝ ∙ (p : E))ᗮ) : E) := by
-    have h := (ℝ ∙ (p : E))ᗮ.subtypeL.mvfderiv_comp_apply hι (Manifold.tangentSpaceProdEquiv x w).1
-    rw [Manifold.tangentSpaceProdEquiv_apply] at h ⊢
+    rw [Manifold.tangentSpaceProdEquiv_apply]
     -- The inclusion `Sᵐ ⊆ E` is the inclusion into `p^⊥` followed by `subtypeL` by definition.
-    exact (mvfderiv_comp_fst_apply
-      (fun v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 ↦ ((v : (ℝ ∙ (p : E))ᗮ) : E)) x w).trans h
-  have hL (L : ℂ →L[ℝ] ℝ) : mvfderiv ((𝓡 m).prod (𝓡 1))
-      (fun y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) x w =
-      L (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) x.2
-        (Manifold.tangentSpaceProdEquiv x w).2) := by
-    -- `mvfderiv_comp_snd_apply` rewrites the derivative of a composition `g ∘ Prod.snd`, so the
-    -- map, a lambda, is first written definitionally in that form.
-    rw [show (fun y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) =
-      (L ∘ ((↑) : sphere (0 : ℂ) 1 → ℂ)) ∘ Prod.snd from rfl, mvfderiv_comp_snd_apply,
-      Manifold.tangentSpaceProdEquiv_apply]
-    exact L.mvfderiv_comp_apply hκ _
+    exact (ℝ ∙ (p : E))ᗮ.subtypeL.mvfderiv_comp_fst_apply hι w
   -- Write the map as a sum of products of scalar and vector-valued functions.
   rw [show (fun y ↦ (sphereRotationFamily p y : E)) =
     ((fun y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦ Complex.reCLM (y.2 : ℂ)) •
@@ -188,7 +176,8 @@ theorem mvfderiv_coe_sphereRotationFamily_apply (p : sphere (0 : E) 1)
     mvfderiv_add (hre.smul mdifferentiableAt_const) (him.smul hv),
     mvfderiv_smul hre mdifferentiableAt_const, mvfderiv_smul him hv]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
-  rw [hL Complex.reCLM, hL Complex.imCLM, hv', mvfderiv_const]
+  rw [Complex.reCLM.mvfderiv_comp_snd_apply hκ, Complex.imCLM.mvfderiv_comp_snd_apply hκ, hv',
+    mvfderiv_const, Manifold.tangentSpaceProdEquiv_apply]
   simp only [zero_apply, smul_zero, zero_add, Complex.reCLM_apply, Complex.imCLM_apply]
   abel
 
