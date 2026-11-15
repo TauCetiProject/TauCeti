@@ -335,7 +335,7 @@ theorem fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere {u c :
   have hdim : (0 : ℝ) < (Module.finrank ℝ E : ℝ) := by exact_mod_cast Module.finrank_pos
   have hβ : 0 ≤ β := (norm_nonneg _).trans (hb y (mem_ball_self hR))
   have hγ : 0 ≤ γ := (hc y (mem_ball_self hR)).trans (hcγ y (mem_ball_self hR))
-  set x₀ : E := y + R • e with hx₀def
+  set x₀ : E := y + R • e
   -- The barrier exponent, negative enough for `mul_hopfBarrier_le_laplacian_add_fderiv`.
   set p : ℝ := -((Module.finrank ℝ E : ℝ) + β * R + γ * R ^ 2) with hpdef
   have hpneg : p < 0 := by

@@ -82,7 +82,7 @@ theorem realize_scottSentenceAt_self {α : Ordinal.{o}} (hα : α < ω₁)
     (hs : SelfStabilizesCompletely (L := L) M α) :
     SentenceInf.Realize (scottSentenceAt (L := L) M α) M :=
   (realize_scottSentenceAt M hα).mpr
-    ⟨BFEquiv.refl _ _, fun _ _ _ hab => hs.bfEquiv_of_le le_self_add hab⟩
+    ⟨BFEquiv.refl _ _, fun _ _ _ hab => hs.bfEquiv_of_bfEquiv hab⟩
 
 /-- In any model of a Scott sentence, the tuples matching at its level form a back-and-forth
 system. No countability or internal-stabilization hypothesis on the model is needed. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Sobolev.WeakDeriv.ChainRule
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
@@ -31,6 +32,8 @@ derivative has size `|z|^{-9/5}` and `(9/5)(4/3) > 2`.
 * `TauCeti.MemWkpLoc.contDiffOn_comp`: continuous `W^{1,p}_loc` maps compose with `C¹` maps.
 * `TauCeti.MemWkpLoc.contDiff_comp`: the same for globally `C¹` maps.
 * `TauCeti.MemWkpLoc.contDiffOn_comp_graph`: the domain-dependent composition `z ↦ g(z, u z)`.
+* `TauCeti.MemWkpLoc.ring_inverse`: pointwise inverses of continuous invertible maps into a
+  complete normed algebra.
 
 ## References
 
@@ -89,6 +92,16 @@ theorem MemWkpLoc.contDiffOn_comp_graph {u : ℂ → F} {g : ℂ × F → H} {W 
   have hid : MemWkpLoc p U 1 (fun z : ℂ => z) :=
     contDiff_id.contDiffOn.memWkpLoc (Ω := ⊤) (by simp only [Opens.coe_top, subset_univ])
   exact (hid.prodMk hu).contDiffOn_comp (continuousOn_id.prodMk huc) hW hg huW
+
+omit [CompleteSpace G] in
+/-- **Pointwise inverses.** If `u` is continuous on `U`, belongs to `W^{1,p}_loc(U)` and takes
+invertible values in a complete normed algebra on `U`, then `z ↦ (u z)⁻¹` belongs to
+`W^{1,p}_loc(U)`, since inversion is smooth on the open set of units. -/
+theorem MemWkpLoc.ring_inverse {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [CompleteSpace R]
+    {u : ℂ → R} (hu : MemWkpLoc p U 1 u) (huc : ContinuousOn u U)
+    (hunit : ∀ z ∈ U, IsUnit (u z)) : MemWkpLoc p U 1 (fun z => Ring.inverse (u z)) :=
+  hu.contDiffOn_comp huc Units.isOpen
+    (fun _ ⟨x, hx⟩ => hx ▸ (contDiffAt_ringInverse ℝ x).contDiffWithinAt) hunit
 
 end MemWkpLoc
 

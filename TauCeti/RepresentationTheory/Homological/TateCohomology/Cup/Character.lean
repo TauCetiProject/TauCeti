@@ -76,7 +76,7 @@ sequence applied to the degree `(-2, 1)` cup product with the character class. T
 because the left degree is even. -/
 theorem cup_characterConnectingClass_eq_tateδ
     (x : tateCohomology (Rep.trivial ℤ G ℤ) (-2))
-    (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) :
+    (χ : Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) :
     cup (Rep.trivial ℤ G ℤ) (Rep.ratAddCircleShortComplex G).X₁ (-2) 2 0 (by omega) x
         (characterConnectingClass G χ) =
       _root_.TateCohomology.δ
@@ -86,26 +86,26 @@ theorem cup_characterConnectingClass_eq_tateδ
           (-2) 1 (-1) (by omega) x
           (Rep.fromGroupCohomology (Rep.ratAddCircleShortComplex G).X₃ 1
             ((groupCohomology.H1IsoOfIsTrivial (Rep.ratAddCircleShortComplex G).X₃).inv
-              (χ.comp Abelianization.of.toAdditive)))) := by
+              (χ.comp Group.Abelianization.of.toAdditive)))) := by
   rw [characterConnectingClass_eq_tateδ]
   have h := cup_δ_of_flat (Rep.trivial ℤ G ℤ)
     (Rep.ratAddCircleShortComplex_shortExact G) (p := (-2)) (q := 1) (n := (-1))
     (by omega) x
     (Rep.fromGroupCohomology (Rep.ratAddCircleShortComplex G).X₃ 1
       ((groupCohomology.H1IsoOfIsTrivial (Rep.ratAddCircleShortComplex G).X₃).inv
-        (χ.comp Abelianization.of.toAdditive)))
+        (χ.comp Group.Abelianization.of.toAdditive)))
   rw [Int.negOnePow_even _ (by use (-1); norm_num), one_smul] at h
   norm_num at h ⊢
   exact h
 
 /-- For `σ ∈ Gᵃᵇ`, the elementary tensor `1 ⊗ χ(σ)` of the trivial representation
 `ℤ ⊗ ℚ/ℤ` has norm zero, because `|G| • σ = 0`. -/
-private theorem one_tmul_mem_ker_norm (σ : Additive (Abelianization G))
-    (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) :
+private theorem one_tmul_mem_ker_norm (σ : Additive (Group.Abelianization G))
+    (χ : Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) :
     ((1 : ℤ) ⊗ₜ[ℤ] χ σ : (Rep.trivial ℤ G ℤ ⊗ (Rep.ratAddCircleShortComplex G).X₃).V) ∈
       LinearMap.ker (Rep.trivial ℤ G ℤ ⊗ (Rep.ratAddCircleShortComplex G).X₃).ρ.norm := by
   obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective (Additive.toMul σ)
-  obtain rfl : Additive.ofMul (Abelianization.of g) = σ := congrArg Additive.ofMul hg
+  obtain rfl : Additive.ofMul (Group.Abelianization.of g) = σ := congrArg Additive.ofMul hg
   rw [LinearMap.mem_ker]
   simp only [tensor_V, Representation.norm, tensor_ρ, Representation.tprod_apply,
     LinearMap.coe_sum, Finset.sum_apply, TensorProduct.map_tmul, Representation.trivial_apply,
@@ -117,14 +117,14 @@ private theorem one_tmul_mem_ker_norm (σ : Additive (Abelianization G))
 -- `g⁻¹ • f - f = -χ(g)`, a constant function: `(g⁻¹ • f)(h) = χ(h g⁻¹) = χ(h) - χ(g)`.
 omit [Fintype G] in
 private theorem coindBot_ρ_inv_sub_character (g : G)
-    (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) :
+    (χ : Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) :
     (coindBot ℤ G (AddCircle (1 : ℚ))).ρ g⁻¹
         ((coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm fun h ↦
-          χ (Additive.ofMul (Abelianization.of h))) -
+          χ (Additive.ofMul (Group.Abelianization.of h))) -
       (coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm
-        (fun h ↦ χ (Additive.ofMul (Abelianization.of h))) =
+        (fun h ↦ χ (Additive.ofMul (Group.Abelianization.of h))) =
       -(coindBotUnit (Rep.trivial ℤ G (AddCircle (1 : ℚ)))).hom
-        (χ (Additive.ofMul (Abelianization.of g))) := by
+        (χ (Additive.ofMul (Group.Abelianization.of g))) := by
   apply (coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).injective
   rw [map_sub, map_neg]
   funext h
@@ -143,16 +143,16 @@ private theorem δ₀_character
     (hS : ((ShortComplex.mk (coindBotUnit (Rep.ratAddCircleShortComplex G).X₃)
       (dimensionShiftUpπ (Rep.ratAddCircleShortComplex G).X₃)
       (coindBotUnit_comp_dimensionShiftUpπ _)).map (tensorLeft (Rep.trivial ℤ G ℤ))).ShortExact)
-    (g : G) (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) :
+    (g : G) (χ : Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) :
     groupHomology.δ hS 1 0 rfl (H1π _ (mapCycles₁ (MonoidHom.id G)
         (Rep.tensorInvariant (Rep.trivial ℤ G ℤ) (characterDimensionShift G χ))
         ((cycles₁IsoOfIsTrivial (Rep.trivial ℤ G ℤ)).inv (Finsupp.single g 1)))) =
-      groupHomology.H0π _ ((1 : ℤ) ⊗ₜ[ℤ] (-χ (Additive.ofMul (Abelianization.of g)))) := by
+      groupHomology.H0π _ ((1 : ℤ) ⊗ₜ[ℤ] (-χ (Additive.ofMul (Group.Abelianization.of g)))) := by
   let f : coindBot ℤ G (AddCircle (1 : ℚ)) :=
     (coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm fun h ↦
-      χ (Additive.ofMul (Abelianization.of h))
+      χ (Additive.ofMul (Group.Abelianization.of h))
   refine δ₀_apply hS _ (Finsupp.single g ((1 : ℤ) ⊗ₜ[ℤ] f)) ?_
-    ((1 : ℤ) ⊗ₜ[ℤ] (-χ (Additive.ofMul (Abelianization.of g)))) ?_
+    ((1 : ℤ) ⊗ₜ[ℤ] (-χ (Additive.ofMul (Group.Abelianization.of g)))) ?_
   · erw [coe_mapCycles₁, cycles₁IsoOfIsTrivial_inv_apply]
     simp only [chainsMap₁, ModuleCat.hom_ofHom, LinearMap.coe_comp, Function.comp_apply,
       Finsupp.lmapDomain_apply, Finsupp.mapDomain_single, MonoidHom.id_apply,
@@ -174,18 +174,18 @@ private theorem δ₀_character
 /-- **The degree `(-2, 1)` cup product with a character is evaluation, up to sign.** For
 `σ ∈ Gᵃᵇ = Ĥ⁻²(G, ℤ)` and a character `χ : Gᵃᵇ → ℚ/ℤ`, read as a class in `Ĥ¹(G, ℚ/ℤ)`, the
 product `σ ∪ χ` is the class of the norm-zero element `1 ⊗ (-χ(σ))` in `Ĥ⁻¹(G, ℤ ⊗ ℚ/ℤ)`. -/
-theorem cup_character_eq_HNegOneπ (σ : Additive (Abelianization G))
-    (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) :
+theorem cup_character_eq_HNegOneπ (σ : Additive (Group.Abelianization G))
+    (χ : Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) :
     cup (Rep.trivial ℤ G ℤ) (Rep.ratAddCircleShortComplex G).X₃ (-2) 1 (-1) (by omega)
         (HNegTwoAddEquivAbelianization.symm σ)
         (Rep.fromGroupCohomology (Rep.ratAddCircleShortComplex G).X₃ 1
           ((groupCohomology.H1IsoOfIsTrivial (Rep.ratAddCircleShortComplex G).X₃).inv
-            (χ.comp Abelianization.of.toAdditive))) =
+            (χ.comp Group.Abelianization.of.toAdditive))) =
       HNegOneπ _ ⟨(1 : ℤ) ⊗ₜ[ℤ] (-χ σ), by
         rw [TensorProduct.tmul_neg]
         exact neg_mem (one_tmul_mem_ker_norm G σ χ)⟩ := by
   obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective (Additive.toMul σ)
-  obtain rfl : Additive.ofMul (Abelianization.of g) = σ := congrArg Additive.ofMul hg
+  obtain rfl : Additive.ofMul (Group.Abelianization.of g) = σ := congrArg Additive.ofMul hg
   -- Shift `χ` to the invariant `g ↦ χ(g)` of the upward dimension shift of `ℚ/ℤ`; the cup product
   -- with `σ` is then the tensored connecting map applied to the image of `σ`.
   rw [← dimensionShiftUpIso_characterDimensionShift]
@@ -205,7 +205,7 @@ theorem cup_character_eq_HNegOneπ (σ : Additive (Abelianization G))
   rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
   have hmap := ConcreteCategory.congr_hom (tateCohomologyFunctor_map_comp_toGroupHomology
     (Rep.tensorInvariant (Rep.trivial ℤ G ℤ) (characterDimensionShift G χ)) 1)
-    (HNegTwoAddEquivAbelianization.symm (Additive.ofMul (Abelianization.of g)))
+    (HNegTwoAddEquivAbelianization.symm (Additive.ofMul (Group.Abelianization.of g)))
   rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hmap
   erw [hmap]
   rw [toGroupHomology_eq_negSuccIso_hom, HNegTwoAddEquivAbelianization_symm_of, negSuccIso_hom]
@@ -216,8 +216,8 @@ theorem cup_character_eq_HNegOneπ (σ : Additive (Abelianization G))
 /-- **The Tate pairing of `Gᵃᵇ` with a character class.** For `σ ∈ Gᵃᵇ = Ĥ⁻²(G, ℤ)`, a character
 `χ : Gᵃᵇ → ℚ/ℤ` and an integer `k` with `k / |G| ≡ χ(σ) (mod 1)`, the cup product `σ ∪ δχ`,
 read in `Ĥ⁰(G, ℤ)` through the left unitor, is `-k` times the class of `1`. -/
-theorem map_leftUnitor_cup_characterConnectingClass (σ : Additive (Abelianization G))
-    (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) (k : ℤ)
+theorem map_leftUnitor_cup_characterConnectingClass (σ : Additive (Group.Abelianization G))
+    (χ : Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) (k : ℤ)
     (hk : (((k : ℚ) / Nat.card G : ℚ) : AddCircle (1 : ℚ)) = χ σ) :
     (tateCohomologyFunctor 0).map (λ_ (Rep.trivial ℤ G ℤ)).hom
         (cup (Rep.trivial ℤ G ℤ) (Rep.trivial ℤ G ℤ) (-2) 2 0 (by omega)
@@ -257,8 +257,8 @@ theorem map_leftUnitor_cup_characterConnectingClass (σ : Additive (Abelianizati
 `σ ∈ Gᵃᵇ` with the connecting class of a character `χ` is the negative evaluation `-χ(σ)`. -/
 @[simp]
 theorem toRatAddCircle_map_leftUnitor_cup_characterConnectingClass
-    (σ : Additive (Abelianization G))
-    (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) :
+    (σ : Additive (Group.Abelianization G))
+    (χ : Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) :
     ZMod.toRatAddCircle (Nat.card G)
         (H0LinearEquivTrivialIntZModCard G
           ((tateCohomologyFunctor 0).map (λ_ (Rep.trivial ℤ G ℤ)).hom
@@ -268,7 +268,7 @@ theorem toRatAddCircle_map_leftUnitor_cup_characterConnectingClass
   have hχ : χ σ ∈ AddSubgroup.torsionBy (AddCircle (1 : ℚ)) (Nat.card G : ℤ) := by
     rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul]
     obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective (Additive.toMul σ)
-    obtain rfl : Additive.ofMul (Abelianization.of g) = σ := congrArg Additive.ofMul hg
+    obtain rfl : Additive.ofMul (Group.Abelianization.of g) = σ := congrArg Additive.ofMul hg
     rw [← ofMul_pow, ← map_pow, pow_card_eq_one', map_one, ofMul_one, map_zero]
   rw [← ZMod.toRatAddCircle_range] at hχ
   obtain ⟨z, hz⟩ := hχ

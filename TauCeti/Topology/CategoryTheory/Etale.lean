@@ -360,7 +360,7 @@ theorem exists_isotropy_action_of_proper_source_target [T2Space (Quiver.Total C)
     (exists_nhds_section_one_mul (σ := σ) (T := T) hu hc ht.continuous hWo hWx hinj
       (fun g ↦ (e g).open_target) hxT (fun g ↦ (e g).continuousOn_symm) hσW hσl hσx))
   simp only [Set.subset_ofPred, forall₂_and] at hVE
-  obtain ⟨hVU₀, hVT, hVTT, hone, hmul⟩ := hVE
+  obtain ⟨hVU₀, _, hVTT, hone, hmul⟩ := hVE
   choose _ hmul using hmul
   -- Shrink `V` to the neighbourhood `U` which the local action preserves.
   have hmulr (y : C) (hy : y ∈ V) (g h : Aut x) :

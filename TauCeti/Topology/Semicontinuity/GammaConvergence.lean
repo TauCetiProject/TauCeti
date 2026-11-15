@@ -354,7 +354,7 @@ along a subsequence, then `x₀` minimizes the Γ-limit `f`. -/
 theorem isMinOn_of_tendsto (h : TendstoGamma F f) (hu : ∀ n, IsMinOn (F n) univ (u n))
     {φ : ℕ → ℕ} (hφ : Tendsto φ atTop atTop) {x₀ : X} (hx₀ : Tendsto (u ∘ φ) atTop (𝓝 x₀)) :
     IsMinOn f univ x₀ := fun y _ ↦ by
-  obtain ⟨v, hv, hle⟩ := (h.comp hφ).exists_tendsto_limsup_le y
+  obtain ⟨v, _, hle⟩ := (h.comp hφ).exists_tendsto_limsup_le y
   calc f x₀ ≤ liminf (fun k ↦ F (φ k) (u (φ k))) atTop := (h.comp hφ).le_liminf hx₀
     _ ≤ liminf (fun k ↦ F (φ k) (v k)) atTop :=
         liminf_le_liminf (Eventually.of_forall fun k ↦ hu (φ k) (mem_univ (v k)))

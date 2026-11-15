@@ -16,8 +16,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.Basic
 /-!
 # Plumbing graphs and their intersection forms
 
-This file opens the lattice-homology lane of the combinatorial Heegaard Floer roadmap. A
-plumbing graph records the combinatorial data of a plumbing of disk bundles over spheres: a
+A plumbing graph records the combinatorial data of a plumbing of disk bundles over spheres: a
 simple graph whose vertices are the spheres, whose edges record which spheres are plumbed, and
 an integer weight on each vertex giving its self-intersection (the framing / Euler number).
 
@@ -31,9 +30,9 @@ every framing negative.
 
 We model the underlying combinatorics with a `SimpleGraph`: one edge between two distinct
 spheres, no edge multiplicities or signs. The matrix-level definitions make sense for any
-vertex type; the lattice form used for Lane L is introduced under `[Fintype V]`, matching the
-finite plumbing graphs in the roadmap. This is the standard starting point (the plumbing trees
-of Seifert-fibred examples), with edge multiplicities a later refinement.
+vertex type; the bilinear form on the lattice `V → ℤ` is introduced under `[Fintype V]`, since
+lattice homology is built from finite plumbing graphs. This is the standard starting point (the
+plumbing trees of Seifert-fibred examples); edge multiplicities are not modelled here.
 
 ## Main definitions
 
@@ -60,17 +59,13 @@ of Seifert-fibred examples), with edge multiplicities a later refinement.
 * `TauCeti.PlumbingGraph.intersectionForm_self_smul`: the self-pairing scales by the square of the
   multiplier.
 * `TauCeti.PlumbingGraph.intersectionForm_single_right_eq_mulVec_apply`: pairing against a basis
-  sphere
-  reads off one coordinate of the matrix-vector product.
+  sphere reads off one coordinate of the matrix-vector product.
 * `TauCeti.PlumbingGraph.intersectionForm_adjugate_mulVec_right`: pairing against the covector
   `adjugate A *ᵥ k` computes `det A` times the linear form `⟪k, -⟫`.
 
 ## References
 
-This supplies the first prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`,
-Lane L ("lattice homology"), whose opening data is "plumbing trees/graphs and their lattices …
-from lattice points and weight functions … finite combinatorics plus bilinear forms". The
-intersection form of a plumbing graph follows Némethi,
+The intersection form of a plumbing graph follows Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), after Ozsváth--Szabó,
 [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/

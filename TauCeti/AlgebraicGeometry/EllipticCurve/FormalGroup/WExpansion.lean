@@ -83,15 +83,13 @@ The directory anticipates that later work.
 
 ## Provenance
 
-Adapted from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, pinned
-by `TauCetiRoadmap/EllipticCurves/README.md` at `dev/hasse-weil @ 513e83879e2f`),
-`HasseWeil/FormalGroup.lean`, declarations `formalW_step`, `formalW_coeff`, `formalW`,
-`formalU_coeff`, the `formalW_coeff_*` lemmas and `formalW_recurrence`.
+Adapted from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, at
+`dev/hasse-weil @ 513e83879e2f`), `HasseWeil/FormalGroup.lean`, declarations `formalW_step`,
+`formalW_coeff`, `formalW`, `formalU_coeff`, the `formalW_coeff_*` lemmas and `formalW_recurrence`.
 
 The statement of uniqueness at an arbitrary parameter is adapted from Michael Stoll's
-`EllipticCurves` project (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
-`EllipticCurves/WeierstrassFormalGroup/Chord.lean`, declarations `wStepAt` and
+`EllipticCurves` project (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at
+`66889eada51a`), `EllipticCurves/WeierstrassFormalGroup/Chord.lean`, declarations `wStepAt` and
 `eq_of_wStepAt_fixed`. There the equation is a `def` used only internally; here it is the public
 `wEquationRHS`, so the existing statements in this file are phrased through it too. The univariate
 proof is not Stoll's: that argues by contraction for the `z`-adic filtration, which needs

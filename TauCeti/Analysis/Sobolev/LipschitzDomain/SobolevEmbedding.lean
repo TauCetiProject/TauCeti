@@ -66,21 +66,19 @@ theorem W1p.exists_sobolevEmbeddingL_of_isLipschitzDomainWith (hpstar : pstar �
     ∃ S : W1p volume Ω p →L[ℝ] Lp ℝ pstar (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))),
       ∀ u, S u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] W1p.value u := by
   let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
-  obtain ⟨T, hT⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := p) hΩ hb
+  obtain ⟨T, hT, _⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := p) hΩ hb
   have hle : volume.restrict (Ω : Set (WithLp 2 (ℝ × E))) ≤
       (1 : ℝ≥0∞) • volume.restrict ((⊤ : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E))) := by
     rw [one_smul]
     exact Measure.restrict_mono_set volume (by simp)
   refine ⟨(Lp.LpToLpOfMeasureLeSMul ENNReal.one_ne_top hle).comp
     ((W1p.sobolevEmbeddingTopL hpstar hexp).comp T), fun u => ?_⟩
-  have hu : W1p.restrictL le_top (T u) = u := by
-    simpa using congrArg (· u) hT
   filter_upwards [Lp.coeFn_LpToLpOfMeasureLeSMul ENNReal.one_ne_top hle
       (W1p.sobolevEmbeddingTopL hpstar hexp (T u)),
     ae_restrict_of_ae_restrict_of_subset (by simp)
       (W1p.coeFn_sobolevEmbeddingTopL hpstar hexp (T u)),
-    W1p.value_restrictL_ae le_top (T u)] with x h1 h2 h3
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, h1, h2, ← h3, hu]
+    W1p.value_ae_eq_of_restrictL_comp_eq_id le_top hT u] with x h1 h2 h3
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, h1, h2, h3]
 
 /-- **The Sobolev inequality on bounded Lipschitz domains.** If `Ω ⊆ ℝ × E` is a bounded Lipschitz
 domain of dimension `n`, `1 ≤ p` and `1/p⋆ + 1/n = 1/p` with `p⋆ < ∞`, then for every `q ≤ p⋆`
@@ -142,11 +140,11 @@ theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain_of_isLipschitzDomainWith
     exact W1p.exists_eLpNorm_value_le_of_subcritical_gain (Ω := ⊤)
       (by exact_mod_cast hps') hgap hb.isCompact_closure (subset_univ _)
   obtain ⟨C, hC⟩ := hC
-  obtain ⟨T, hT⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := p) hΩ hb
+  obtain ⟨T, hT, _⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := p) hΩ hb
   refine ⟨(C * ‖T‖ₑ).toNNReal, fun u => ?_⟩
   have hu : W1p.restrictL le_top (T u) = u := by
     simpa using congrArg (· u) hT
-  rw [ENNReal.coe_toNNReal (ENNReal.mul_ne_top ENNReal.coe_ne_top enorm_ne_top)]
+  rw [ENNReal.coe_toNNReal (ENNReal.mul_ne_top ENNReal.coe_ne_top eNorm_ne_top)]
   calc eLpNorm (W1p.value u) s (volume.restrict (Ω : Set (WithLp 2 (ℝ × E))))
       = eLpNorm (W1p.value (W1p.restrictL le_top (T u))) s
           (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))) := by rw [hu]

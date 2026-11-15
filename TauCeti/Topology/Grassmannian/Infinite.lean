@@ -280,7 +280,7 @@ theorem isClosed_image_toInfinite {n : ℕ} {C : Set (finiteGrassmannian 𝕜 k 
     convert hC.preimage (continuous_ambientInclusion h) using 1
     ext W
     simp only [mem_preimage, mem_image, ← toInfinite_ambientInclusion h W, toInfinite_inj]
-    exact ⟨fun ⟨V, hV, hVW⟩ ↦ hVW ▸ hV, fun hW ↦ ⟨_, hW, rfl⟩⟩
+    exact ⟨fun ⟨_, hV, hVW⟩ ↦ hVW ▸ hV, fun hW ↦ ⟨_, hW, rfl⟩⟩
   · -- From a higher stage, the preimage is the image of `C`, closed by compactness.
     convert (isClosedEmbedding_ambientInclusion h).isClosedMap C hC using 1
     ext W

@@ -46,8 +46,6 @@ results.
 * J. Lee, *Introduction to Riemannian Manifolds*, GTM 176, 2018, Ch. 5.
 -/
 
--- Roadmap: HopfRinow
-
 public section
 
 open Bundle Filter Function Manifold Set

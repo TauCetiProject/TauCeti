@@ -157,7 +157,7 @@ theorem inversionCount_resolve_lt (h : p ∈ φ.inversions) :
 /-- A resolved crossing is no longer a crossing. -/
 theorem notMem_inversions_resolve_self : p ∉ (φ.resolve p).inversions := by
   by_cases h : p ∈ φ.inversions
-  · obtain ⟨hlt, a, ha, b, hb, -⟩ := mem_inversions.1 h
+  · obtain ⟨_, a, ha, b, hb, -⟩ := mem_inversions.1 h
     rw [mem_inversions, resolve_apply h, resolve_apply h, Equiv.swap_apply_left,
       Equiv.swap_apply_right]
     rintro ⟨-, a', ha', b', hb', hba'⟩

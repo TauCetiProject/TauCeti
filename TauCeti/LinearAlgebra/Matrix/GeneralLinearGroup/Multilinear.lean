@@ -59,7 +59,7 @@ variable [Finite m] [Finite n] [CommSemiring K]
 Expanding each of the `ι` arguments in the matrix units, the value `Θ (Y, …, Y)` is a sum of
 constants times monomials `∏ᵢ Y (a i).1 (a i).2` indexed by the functions `a : ι → m × n`. -/
 theorem exists_mvPolynomial_eval_eq_apply_const
-    (Θ : MultilinearMap K (fun _ : ι => Matrix m n K) K) :
+    (Θ : MultilinearMap (RingHom.id K) (fun _ : ι => Matrix m n K) K) :
     ∃ P : MvPolynomial (m × n) K, ∀ Y : Matrix m n K,
       MvPolynomial.eval (fun p : m × n => Y p.1 p.2) P = Θ fun _ => Y := by
   classical
@@ -85,7 +85,8 @@ vanishing diagonal**, over an infinite field `K` and with values in any `K`-vect
 coordinate of the diagonal in a basis of `M` is a polynomial function of the matrix entries (the
 square case of `MultilinearMap.exists_mvPolynomial_eval_eq_apply_const`), and over an infinite
 field the invertible matrices are Zariski dense. -/
-theorem apply_const_eq_zero_of_eq_zero_on_gl (Θ : MultilinearMap K (fun _ : ι => Matrix m m K) M)
+theorem apply_const_eq_zero_of_eq_zero_on_gl (Θ : MultilinearMap (RingHom.id K) (fun _ : ι =>
+    Matrix m m K) M)
     (h : ∀ g : GL m K, (Θ fun _ => (g : Matrix m m K)) = 0) (Y : Matrix m m K) :
     (Θ fun _ => Y) = 0 := by
   let b := Module.Free.chooseBasis K M

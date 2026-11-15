@@ -45,7 +45,7 @@ theorem ContDiffWithinAt.hasDerivAt_iteratedDerivWithin (hg : ContDiffWithinAt �
   have hev (j : ℕ) : iteratedDerivWithin j g s =ᶠ[𝓝 x] iteratedDerivWithin j g (interior s) := by
     have hset : s =ᶠ[𝓝 x] interior s := by
       filter_upwards [hu] with y hy
-      exact propext ⟨fun _ => hy, fun _ => interior_subset hy⟩
+      exact ⟨fun _ => hy, fun _ => interior_subset hy⟩
     filter_upwards [iteratedFDerivWithin_eventually_congr_set (𝕜 := 𝕜) (f := g) hset j] with y hy
     simp only [iteratedDerivWithin_eq_iteratedFDerivWithin, hy]
   have h : HasDerivAt (iteratedDerivWithin k g (interior s))

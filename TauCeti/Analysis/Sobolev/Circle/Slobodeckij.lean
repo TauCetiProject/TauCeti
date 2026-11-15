@@ -413,7 +413,7 @@ theorem enorm_rotate_sub_sq {a : CircleSobolev 0 ℂ} {g : AddCircle T → ℂ}
   have h2 := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero
     ((Lp.aestronglyMeasurable _).congr hae)
   simp only [NNReal.coe_ofNat, ENNReal.coe_ofNat, ENNReal.rpow_two] at h2
-  rw [← (toLpₗᵢ T).enorm_map, Lp.enorm_def, eLpNorm_congr_ae hae, h2]
+  rw [← (toLpₗᵢ T).eNorm_map, Lp.eNorm_def, eLpNorm_congr_ae hae, h2]
 
 /-- The energy of order `s` of `a ∈ H⁰` is the double integral
 `∫∫ ‖g y - g x‖² / ‖y - x‖ ^ (1 + 2 s) dy dx`, for any measurable representative `g` of the `L²`

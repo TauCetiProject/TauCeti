@@ -123,11 +123,9 @@ theorem isGaussReduced_iff_sq_lt {f : BinaryQuadraticForm ℤ} :
   rw [abs_of_pos ha]
   constructor
   · rintro ⟨hac, habs⟩
-    have hc : c < 0 := by nlinarith
     obtain ⟨h₁, h₂⟩ := abs_lt.mp habs
     refine ⟨by linarith, by nlinarith, by nlinarith, by nlinarith⟩
-  · rintro ⟨hb, h₁, h₂, h₃⟩
-    have hc : c < 0 := by nlinarith
+  · rintro ⟨_, h₁, h₂, h₃⟩
     exact ⟨by nlinarith, abs_lt.mpr ⟨by nlinarith, by nlinarith⟩⟩
 
 /-- **Gauss's reduction condition**: `a x² + b x y + c y²` of discriminant `D` is reduced exactly
@@ -350,8 +348,8 @@ theorem IsGaussReduced.reductionStep {f : BinaryQuadraticForm ℤ} (hf : f.IsGau
     (hD : ¬ IsSquare f.discrim) : f.reductionStep.IsGaussReduced := by
   rw [isGaussReduced_reductionStep_iff hD]
   have hc := c_ne_zero_of_not_isSquare_discrim hD
-  obtain ⟨hb₁, hb₂, hb₃⟩ := (isGaussReduced_iff_le_sqrt' hD).mp hf
-  obtain ⟨h₁, h₂⟩ := reductionStep_b_mem_Ioc hc
+  obtain ⟨hb₁, _, hb₃⟩ := (isGaussReduced_iff_le_sqrt' hD).mp hf
+  obtain ⟨h₁, _⟩ := reductionStep_b_mem_Ioc hc
   by_contra! h
   -- `b' + b` is a multiple of `2 c` strictly between `0` and `2 |c|`
   have hdvd : 2 * |f.c| ∣ f.reductionStep.b + f.b := by

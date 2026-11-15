@@ -51,6 +51,8 @@ that affinoid algebras are Jacobson rings.
 * `TauCeti.isUnit_one_sub_of_supSeminorm_lt_one`: if the point norms of `a` are bounded and
   `|a|sup < 1`, then `1 - a` is a unit.
 * `TauCeti.isPowMul_supSeminorm`: `|f ^ n|sup = |f|sup ^ n` for `n ≥ 1`.
+* `TauCeti.IsAffinoidAlgebra.supSeminorm_aeval_le`: a polynomial over the unit ball of `K`
+  without constant term, evaluated at elements with `|xᵢ|sup ≤ ε ≤ 1`, has `|·|sup ≤ ε`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_zero_iff`: `|f|sup = 0` if and only if `f` is
   nilpotent.
 * `TauCeti.IsAffinoidAlgebra.isReduced_iff_supSeminorm_eq_zero`: `|·|sup` separates points
@@ -267,7 +269,7 @@ private theorem spectralNorm_le_norm {A : Type*} [NormedCommRing A] [NormedAlgeb
   have : IsUltrametricDist L :=
     IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm fun a b ↦
       isNonarchimedean_spectralNorm (K := K) (L := L) a b
-  have : CompleteSpace L := FiniteDimensional.complete K L
+  have : CompleteSpace L := FiniteDimensional.completeSpace K L
   have hc : Continuous φ := (hA.of_surjective φ hφ).continuous_algHom φ
   let q : A →L[K] L := { toLinearMap := φ.toLinearMap, cont := hc }
   have hq : (φ : A →+* L).IsBounded :=
@@ -443,6 +445,41 @@ theorem supSeminorm_add_le (hA : IsAffinoidAlgebra K A) (f g : A) :
 theorem isNonarchimedean_supSeminorm (hA : IsAffinoidAlgebra K A) :
     IsNonarchimedean (supSeminorm K : A → ℝ) :=
   hA.supSeminorm_add_le
+
+/-- A polynomial with coefficients in the unit ball of `K` and no constant term, evaluated at
+elements of supremum seminorm at most `ε ≤ 1`, has supremum seminorm at most `ε`. -/
+theorem supSeminorm_aeval_le {σ : Type*} (hA : IsAffinoidAlgebra K A) {x : σ → A}
+    {ε : ℝ} (hε0 : 0 ≤ ε) (hε1 : ε ≤ 1) (hx : ∀ i, supSeminorm K (x i) ≤ ε)
+    {q : MvPolynomial σ K} (hq0 : q.coeff 0 = 0) (hq : ∀ t, ‖q.coeff t‖ ≤ 1) :
+    supSeminorm K (MvPolynomial.aeval x q) ≤ ε := by
+  classical
+  rw [MvPolynomial.aeval_def, MvPolynomial.eval₂_eq]
+  refine Finset.sum_induction _ (fun b ↦ supSeminorm K b ≤ ε)
+    (fun a b ha hb ↦ (hA.supSeminorm_add_le a b).trans (max_le ha hb))
+    (supSeminorm_zero.trans_le hε0) fun t ht ↦ ?_
+  -- A monomial `xᵗ` with `t ≠ 0` contains a factor `xᵢ` and is otherwise of norm at most one.
+  obtain ⟨i, hi⟩ : ∃ i, t i ≠ 0 := by
+    by_contra! h
+    exact MvPolynomial.mem_support_iff.mp ht (by rw [show t = 0 from Finsupp.ext h, hq0])
+  have hrest : supSeminorm K (∏ j ∈ t.support.erase i, x j ^ t j) ≤ 1 :=
+    Finset.prod_induction _ (fun b ↦ supSeminorm K b ≤ 1)
+      (fun a b ha hb ↦ (hA.supSeminorm_mul_le a b).trans
+        ((mul_le_of_le_one_left (supSeminorm_nonneg b) ha).trans hb))
+      (supSeminorm_le zero_le_one fun _ ↦ pointNorm_one.le) fun j _ ↦
+        supSeminorm_le zero_le_one fun y ↦ by
+          rw [y.pointNorm_pow]
+          exact pow_le_one₀ (pointNorm_nonneg _)
+            ((hA.pointNorm_le_supSeminorm y _).trans ((hx j).trans hε1))
+  rw [← Algebra.smul_def, supSeminorm_smul,
+    ← Finset.mul_prod_erase _ _ (Finsupp.mem_support_iff.mpr hi)]
+  calc ‖q.coeff t‖ * supSeminorm K (x i ^ t i * ∏ j ∈ t.support.erase i, x j ^ t j)
+      ≤ 1 * (ε * 1) := by
+        refine mul_le_mul (hq t) ((hA.supSeminorm_mul_le _ _).trans (mul_le_mul ?_ hrest
+          (supSeminorm_nonneg _) hε0)) (supSeminorm_nonneg _) zero_le_one
+        rw [supSeminorm_pow _ hi]
+        exact (pow_le_pow_left₀ (supSeminorm_nonneg _) (hx i) _).trans
+          (pow_le_of_le_one hε0 hε1 hi)
+    _ = ε := by ring
 
 /-- The supremum seminorm of an affinoid algebra vanishes exactly on the elements lying in every
 maximal ideal. -/

@@ -17,10 +17,10 @@ structure sheaf:
 * `CartierDivisor.transitionUnit` chooses the unique unit between two local equations;
 * `transitionUnit_spec` exposes the defining equation for the chosen unit.
 
-This prepares the exact descent datum used in the Cartier-divisor-to-line-bundle construction in
-Layer A of `TauCetiRoadmap/JacobianChallenge/README.md`; no smoothness or Noetherian hypothesis
-is needed for this part.  The construction follows Hartshorne, *Algebraic Geometry*, II.6, and
-the Stacks Project, *Divisors*, Tag 02AR.  It reuses the local equation and uniqueness theorem from
+This prepares the descent datum for building the line bundle of a Cartier divisor by gluing; no
+smoothness or Noetherian hypothesis is needed for this part.  The construction follows
+Hartshorne, *Algebraic Geometry*, II.6, and the Stacks Project, *Divisors*, Tag 02AR.  It reuses
+the local equation and uniqueness theorem from
 `TauCeti.AlgebraicGeometry.CartierDivisor.LocalEquations`.
 -/
 

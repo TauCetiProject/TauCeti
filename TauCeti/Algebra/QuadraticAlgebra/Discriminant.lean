@@ -9,15 +9,21 @@ import Mathlib.Algebra.Order.Ring.Defs
 import Mathlib.Tactic.Linarith
 
 /-!
-# Nonnegative norms in quadratic algebras
+# Discriminants and nonnegative norms in quadratic algebras
 
-Over an ordered ring, a nonpositive discriminant makes the norm nonnegative
+A ring map commutes with the discriminant (`QuadraticAlgebra.map_discr`). Over an ordered ring,
+a nonpositive discriminant makes the norm nonnegative
 (`QuadraticAlgebra.norm_nonneg_of_discr_nonpos`), as for `ℚ(√d)` with `d < 0`.
 -/
 
 public section
 
 namespace QuadraticAlgebra
+
+/-- A ring map commutes with the discriminant. -/
+theorem map_discr {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S) (a b : R) :
+    f (discr a b) = discr (f a) (f b) := by
+  simp [discr_def, map_ofNat]
 
 /-- **The norm is nonnegative when the discriminant is nonpositive.** Over an ordered ring, if
 `b² + 4a ≤ 0` then every element of `QuadraticAlgebra R a b` has nonnegative norm. -/
