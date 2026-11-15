@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Convex.Cone.Alternative
+import Mathlib.Data.Rat.Cast.Order
 import Mathlib.LinearAlgebra.Matrix.DotProduct
+import Mathlib.LinearAlgebra.Matrix.Dual
+import Mathlib.RingTheory.Localization.FractionRing
+import Mathlib.RingTheory.Localization.Integer
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -35,7 +39,15 @@ The statements hold over every linearly ordered field, in particular over `ℚ`.
 certificates are finite data, feasibility of a system with coefficients in `K` does not change
 under an order-preserving ring homomorphism `K → L`
 (`Matrix.exists_mulVec_le_and_mulVec_eq_map_iff`): a system with rational data that is solvable
-over `ℝ` has a rational solution.
+over `ℝ` has a rational solution. Clearing the denominators of such a solution shows that a system
+with integer data is solvable over `K` exactly when some dilation `A *ᵥ x ≤ N • b`, `E *ᵥ x = N • d`
+with `0 < N` has an integer solution
+(`Matrix.exists_mulVec_le_and_mulVec_eq_intCast_iff_exists_nsmul`).
+
+Each result has a specialization to systems `A *ᵥ x ≤ b` without equality rows
+(`Matrix.forall_dotProduct_le_iff_exists_vecMul_eq`,
+`Matrix.forall_dotProduct_nonpos_iff_exists_vecMul_eq`, `Matrix.not_exists_mulVec_le_iff`,
+`Matrix.exists_mulVec_le_map_iff`, `Matrix.exists_mulVec_le_intCast_iff_exists_nsmul`).
 
 ## Implementation notes
 
@@ -75,19 +87,6 @@ theorem vecMul_add_vecMul_dotProduct_le [Fintype I] [Fintype J] {A : Matrix I ι
 end OrderedSemiring
 
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-
-omit [LinearOrder K] [IsStrictOrderedRing K] in
-/-- A linear functional on `(ι → K) × K` is a dot product on the first factor plus a multiple of
-the second coordinate. -/
-private theorem dual_prod_apply [DecidableEq ι] (F : Module.Dual K ((ι → K) × K)) (v : ι → K)
-    (r : K) :
-    F (v, r) = v ⬝ᵥ (fun k => F (Pi.single k 1, 0)) + r * F (0, 1) := by
-  classical
-  have hv : ((v, r) : (ι → K) × K) =
-      ∑ k, v k • ((Pi.single k 1 : ι → K), (0 : K)) + r • (0, 1) := by
-    ext k <;> simp [Prod.fst_sum, Prod.snd_sum, Pi.single_apply]
-  rw [hv]
-  simp only [map_add, map_sum, map_smul, smul_eq_mul, dotProduct]
 
 /-- Rescaling a solution of the homogenized system with positive last coordinate `t` gives a
 solution of the original system. -/
@@ -139,8 +138,12 @@ private theorem exists_certificate_or_exists [Fintype I] [Fintype J] (A : Matrix
         inv_mul_le_iff₀ hw₀, ← hδ]
       exact le_add_of_nonneg_right (hw _)
   · -- The relation avoids `-(c, δ)`: the functional `F` separates `(c, δ)` from the cone.
-    obtain ⟨x, t, hrep⟩ : ∃ (x : ι → K) (t : K), ∀ v r, F (v, r) = v ⬝ᵥ x + r * t :=
-      ⟨_, _, dual_prod_apply F⟩
+    obtain ⟨x, t, hrep⟩ : ∃ (x : ι → K) (t : K), ∀ v r, F (v, r) = v ⬝ᵥ x + r * t := by
+      obtain ⟨x, hx⟩ := (dotProductEquiv K ι).surjective (F ∘ₗ .inl K (ι → K) K)
+      refine ⟨x, F (0, 1), fun v r => ?_⟩
+      have hv : ((v, r) : (ι → K) × K) = (v, 0) + r • (0, 1) := by ext <;> simp
+      rw [hv, map_add, map_smul, smul_eq_mul, dotProduct_comm]
+      exact congrArg (· + _) (LinearMap.congr_fun hx v).symm
     have hF' : ∀ o, 0 ≤ F (a o) := hF
     simp only [a, Option.forall, Option.elim_none, Option.elim_some, Sum.forall, Sum.elim_inl,
       Sum.elim_inr, hrep, zero_dotProduct, one_mul, zero_add, neg_dotProduct] at hF'
@@ -218,7 +221,7 @@ theorem not_exists_mulVec_le_and_mulVec_eq_iff [Fintype I] [Fintype J] (A : Matr
 order-preserving ring homomorphism out of a linearly ordered field: a Farkas certificate of
 infeasibility over `K` maps to one over `L`. For instance, a system with rational coefficients
 that is solvable over `ℝ` has a rational solution. -/
-theorem exists_mulVec_le_and_mulVec_eq_map_iff [Finite I] [Finite J] {L : Type*} [Ring L]
+theorem exists_mulVec_le_and_mulVec_eq_map_iff [Finite I] [Finite J] {L : Type*} [Semiring L]
     [PartialOrder L] [IsOrderedRing L] [Nontrivial L] (f : K →+* L) (hf : Monotone f)
     (A : Matrix I ι K) (b : I → K) (E : Matrix J ι K) (d : J → K) :
     (∃ x, A.map f *ᵥ x ≤ f ∘ b ∧ E.map f *ᵥ x = f ∘ d) ↔ ∃ x, A *ᵥ x ≤ b ∧ E *ᵥ x = d := by
@@ -236,5 +239,91 @@ theorem exists_mulVec_le_and_mulVec_eq_map_iff [Finite I] [Finite J] {L : Type*}
     exact h.not_gt (by simpa using (hf.strictMono_of_injective f.injective) hlt)
   · simpa [← RingHom.map_mulVec] using hf (hA i)
   · simpa [← RingHom.map_mulVec] using congrArg f (congrFun hE j)
+
+/-- **Clearing denominators.** A finite system `A *ᵥ x ≤ b`, `E *ᵥ x = d` with integer coefficients
+is solvable over a linearly ordered field `K`, for instance `ℝ`, exactly when for some positive `N`
+the dilated system `A *ᵥ x ≤ N • b`, `E *ᵥ x = N • d` has an integer solution. -/
+theorem exists_mulVec_le_and_mulVec_eq_intCast_iff_exists_nsmul [Finite I] [Finite J]
+    (A : Matrix I ι ℤ) (b : I → ℤ) (E : Matrix J ι ℤ) (d : J → ℤ) :
+    (∃ x : ι → K, A.map (Int.cast : ℤ → K) *ᵥ x ≤ Int.cast ∘ b ∧
+        E.map (Int.cast : ℤ → K) *ᵥ x = Int.cast ∘ d) ↔
+      ∃ N : ℕ, 0 < N ∧ ∃ x : ι → ℤ, A *ᵥ x ≤ N • b ∧ E *ᵥ x = N • d := by
+  constructor
+  · intro hK
+    obtain ⟨q, hqA, hqE⟩ := (exists_mulVec_le_and_mulVec_eq_map_iff (Rat.castHom K) Rat.cast_mono
+      (A.map Int.cast) (Int.cast ∘ b) (E.map Int.cast) (Int.cast ∘ d)).mp
+      (by simpa [Matrix.map_map, Function.comp_def] using hK)
+    -- Clear the denominators of the rational solution `q` by a positive integer `D`.
+    obtain ⟨⟨D, hD⟩, hDq⟩ := IsLocalization.exist_integer_multiples_of_finite (Submonoid.pos ℤ) q
+    choose g hg using hDq
+    rw [Submonoid.mem_pos] at hD
+    have hD' : (0 : ℚ) < D := by exact_mod_cast hD
+    have hg' : (Int.cast ∘ g : ι → ℚ) = (D : ℚ) • q := funext fun k => by simpa using hg k
+    refine ⟨D.toNat, by omega, g, fun i => ?_, funext fun j => ?_⟩
+    · have h : ((A *ᵥ g) i : ℚ) = ((D : ℚ) • (A.map Int.cast *ᵥ q)) i := by
+        rw [← mulVec_smul, ← hg']
+        exact (Int.castRingHom ℚ).map_mulVec A g i
+      rw [← Int.cast_le (R := ℚ), h]
+      simpa [max_eq_left hD'.le] using mul_le_mul_of_nonneg_left (hqA i) hD'.le
+    · have h : ((E *ᵥ g) j : ℚ) = ((D : ℚ) • (E.map Int.cast *ᵥ q)) j := by
+        rw [← mulVec_smul, ← hg']
+        exact (Int.castRingHom ℚ).map_mulVec E g j
+      apply Int.cast_injective (α := ℚ)
+      have hqj : (E.map Int.cast *ᵥ q) j = d j := by simpa using congrFun hqE j
+      simp [h, hqj, max_eq_left hD'.le]
+  · rintro ⟨N, hN, x, hA, hE⟩
+    have hN' : (0 : K) < N := by exact_mod_cast hN
+    refine ⟨_, mulVec_inv_smul hN' (x := Int.cast ∘ x) (fun i => ?_) (funext fun j => ?_)⟩
+    · have h : ((A *ᵥ x) i : K) = (A.map Int.cast *ᵥ (Int.cast ∘ x)) i :=
+        (Int.castRingHom K).map_mulVec A x i
+      rw [← h]
+      simpa using (Int.cast_le (R := K)).mpr (hA i)
+    · have h : ((E *ᵥ x) j : K) = (E.map Int.cast *ᵥ (Int.cast ∘ x)) j :=
+        (Int.castRingHom K).map_mulVec E x j
+      rw [← h]
+      simpa using congrArg (Int.cast : ℤ → K) (congrFun hE j)
+
+/-! ### Systems of linear inequalities
+
+The special case of the results above in which there are no equality rows. -/
+
+/-- **Farkas' lemma** for a nonempty solution set of `A *ᵥ x ≤ b`: the inequality `c ⬝ᵥ x ≤ δ`
+holds on it exactly when `c = y ᵥ* A` and `y ⬝ᵥ b ≤ δ` for some nonnegative `y`. -/
+theorem forall_dotProduct_le_iff_exists_vecMul_eq [Fintype I] (A : Matrix I ι K) (b : I → K)
+    (c : ι → K) (δ : K) (hfeas : ∃ x, A *ᵥ x ≤ b) :
+    (∀ x, A *ᵥ x ≤ b → c ⬝ᵥ x ≤ δ) ↔ ∃ y, 0 ≤ y ∧ y ᵥ* A = c ∧ y ⬝ᵥ b ≤ δ := by
+  simpa using forall_dotProduct_le_iff_exists_vecMul_add_vecMul_eq A b
+    (0 : Matrix (Fin 0) ι K) 0 c δ (by simpa using hfeas)
+
+/-- **Farkas' lemma**, homogeneous form without equality rows. The inequality `c ⬝ᵥ x ≤ 0` holds on
+the polyhedral cone `A *ᵥ x ≤ 0` exactly when `c = y ᵥ* A` for some nonnegative `y`. -/
+theorem forall_dotProduct_nonpos_iff_exists_vecMul_eq [Fintype I] (A : Matrix I ι K)
+    (c : ι → K) : (∀ x, A *ᵥ x ≤ 0 → c ⬝ᵥ x ≤ 0) ↔ ∃ y, 0 ≤ y ∧ y ᵥ* A = c := by
+  simpa using forall_dotProduct_nonpos_iff_exists_vecMul_add_vecMul_eq A
+    (0 : Matrix (Fin 0) ι K) c
+
+/-- **Farkas' lemma**, infeasibility form without equality rows. The system `A *ᵥ x ≤ b` has no
+solution exactly when `y ᵥ* A = 0` and `y ⬝ᵥ b < 0` for some nonnegative `y`. -/
+theorem not_exists_mulVec_le_iff [Fintype I] (A : Matrix I ι K) (b : I → K) :
+    (¬∃ x, A *ᵥ x ≤ b) ↔ ∃ y, 0 ≤ y ∧ y ᵥ* A = 0 ∧ y ⬝ᵥ b < 0 := by
+  simpa using not_exists_mulVec_le_and_mulVec_eq_iff A b (0 : Matrix (Fin 0) ι K) 0
+
+/-- Feasibility of a finite system of linear inequalities does not change under an
+order-preserving ring homomorphism out of a linearly ordered field. -/
+theorem exists_mulVec_le_map_iff [Finite I] {L : Type*} [Semiring L] [PartialOrder L]
+    [IsOrderedRing L] [Nontrivial L] (f : K →+* L) (hf : Monotone f) (A : Matrix I ι K)
+    (b : I → K) : (∃ x, A.map f *ᵥ x ≤ f ∘ b) ↔ ∃ x, A *ᵥ x ≤ b := by
+  simpa [eq_iff_true_of_subsingleton] using
+    exists_mulVec_le_and_mulVec_eq_map_iff f hf A b (0 : Matrix (Fin 0) ι K) 0
+
+/-- **Clearing denominators** for a finite system `A *ᵥ x ≤ b` of linear inequalities with integer
+coefficients: it is solvable over a linearly ordered field `K` exactly when for some positive `N`
+the dilated system `A *ᵥ x ≤ N • b` has an integer solution. -/
+theorem exists_mulVec_le_intCast_iff_exists_nsmul [Finite I] (A : Matrix I ι ℤ) (b : I → ℤ) :
+    (∃ x : ι → K, A.map (Int.cast : ℤ → K) *ᵥ x ≤ Int.cast ∘ b) ↔
+      ∃ N : ℕ, 0 < N ∧ ∃ x : ι → ℤ, A *ᵥ x ≤ N • b := by
+  simpa [eq_iff_true_of_subsingleton] using
+    exists_mulVec_le_and_mulVec_eq_intCast_iff_exists_nsmul (K := K) A b
+    (0 : Matrix (Fin 0) ι ℤ) 0
 
 end Matrix

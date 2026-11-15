@@ -38,12 +38,13 @@ parallelograms traps every entry `h p` between explicit linear combinations `ent
 1. **Zero-boundary uniqueness** (`TauCeti.Hive.boundary_eq_zero_iff`): the only normalized hive
    with zero boundary over any partially ordered abelian group is `0`.
 2. **Matrix presentations** (`TauCeti.Hive.eqMatrix`, `TauCeti.Hive.rhombusMatrix`,
-   `TauCeti.Hive.mem_fixedBoundary_iff_mulVec`): `eqMatrix R n` and `rhombusMatrix R n` are defined
-   over any ring `R` by base change from `ℤ` (`TauCeti.Hive.map_intCast_eqMatrix`,
-   `TauCeti.Hive.map_intCast_rhombusMatrix`), and over any partially ordered ring `R` with
-   order-compatible addition (`[IsOrderedAddMonoid R]`, in particular `ℤ`, `ℚ`, `ℝ`), fixed-boundary
-   hives are characterized as the solutions of `eqMatrix R n *ᵥ f = eqRHS B` and
-   `rhombusMatrix R n *ᵥ f ≤ 0`.
+   `TauCeti.Hive.mem_fixedBoundary_iff_mulVec`, `TauCeti.Hive.exists_boundary_eq_iff_mulVec`):
+   `eqMatrix R n` and `rhombusMatrix R n` are defined over any ring `R` by base change from `ℤ`
+   (`TauCeti.Hive.map_intCast_eqMatrix`, `TauCeti.Hive.map_intCast_rhombusMatrix`), and over any
+   partially ordered ring `R` with order-compatible addition (`[IsOrderedAddMonoid R]`, in
+   particular `ℤ`, `ℚ`, `ℝ`), fixed-boundary hives are characterized as the solutions of
+   `eqMatrix R n *ᵥ f = eqRHS B` and `rhombusMatrix R n *ᵥ f ≤ 0`; a hive with boundary `B` exists
+   exactly when this system is feasible.
 3. **Compact real polytopes and proper boundary projection** (`TauCeti.Hive.properCone`,
    `TauCeti.Hive.isConvexPolyhedron_realFibre`, `TauCeti.Hive.isCompact_realFibre`,
    `TauCeti.Hive.isProperMap_boundary_properCone`): `‖f‖ ≤ 3 * n * ‖boundaryLinear ℝ n ℝ f‖` makes
@@ -294,15 +295,22 @@ theorem mem_fixedBoundary_iff_mulVec {n : ℕ} {R : Type*} [Ring R] [PartialOrde
     [IsOrderedAddMonoid R] (B : Fin 3 → Fin n → R) (f : Vertex n → R) :
     (f (Vertex.cornerA n) = 0 ∧ IsRhombusConcave f ∧ boundaryLinear ℤ n R f = B) ↔
       eqMatrix R n *ᵥ f = eqRHS B ∧ rhombusMatrix R n *ᵥ f ≤ 0 := by
-  refine ⟨fun ⟨hA, hconc, hB⟩ => ⟨by ext (⟨⟨⟩⟩ | ⟨s, i⟩) <;> simp [eqRHS, hA, ← hB], fun r => ?_⟩,
-    fun ⟨heq, hineq⟩ => ⟨by simpa [eqRHS] using congrFun heq (Sum.inl ()),
-      (isRhombusConcave_def f).mpr fun a b c d hr => ?_,
-      by ext s i; simpa [eqRHS] using congrFun heq (Sum.inr (s, i))⟩⟩
-  · rw [Pi.zero_apply, rhombusMatrix_mulVec_apply, neg_nonpos, rhombusSlack_def]
-    exact sub_nonneg.mpr ((isRhombusConcave_def f).mp hconc r.2)
-  · have h := hineq ⟨(a, b, c, d), hr⟩
-    rw [Pi.zero_apply, rhombusMatrix_mulVec_apply, neg_nonpos, rhombusSlack_def] at h
-    exact sub_nonneg.mp h
+  rw [rhombusMatrix_mulVec_nonpos_iff]
+  exact ⟨fun ⟨hA, hconc, hB⟩ => ⟨by ext (⟨⟨⟩⟩ | ⟨s, i⟩) <;> simp [hA, ← hB], hconc⟩,
+    fun ⟨heq, hconc⟩ => ⟨by simpa using congrFun heq (Sum.inl ()), hconc,
+      by ext s i; simpa using congrFun heq (Sum.inr (s, i))⟩⟩
+
+/-- A hive with boundary `B` exists exactly when the matrix system of
+`TauCeti.Hive.mem_fixedBoundary_iff_mulVec` is feasible. -/
+theorem exists_boundary_eq_iff_mulVec {n : ℕ} {R : Type*} [Ring R] [PartialOrder R]
+    [IsOrderedAddMonoid R] (B : Fin 3 → Fin n → R) :
+    (∃ h : Hive n R, h.boundary = B) ↔
+      ∃ f, rhombusMatrix R n *ᵥ f ≤ 0 ∧ eqMatrix R n *ᵥ f = eqRHS B := by
+  refine ⟨fun ⟨h, hB⟩ => ⟨h, ((mem_fixedBoundary_iff_mulVec B h).mp
+    ⟨h.apply_cornerA, h.isRhombusConcave, (boundaryLinear_coe ℤ h).trans hB⟩).symm⟩,
+    fun ⟨f, hR, hE⟩ => ?_⟩
+  obtain ⟨hA, hconc, hB⟩ := (mem_fixedBoundary_iff_mulVec B f).mpr ⟨hE, hR⟩
+  exact ⟨⟨f, hA, fun hr => (isRhombusConcave_def f).mp hconc hr⟩, (boundary_def _).trans hB⟩
 
 end MatrixPresentation
 
