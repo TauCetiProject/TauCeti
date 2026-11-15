@@ -79,7 +79,7 @@ section SpecifiedFractionField
 variable {k F K Q : Type*} [Field k] [Field F] [Field K] [Field Q]
   [Algebra k F] [Algebra k K] [Algebra (F ⊗[k] K) Q]
   [Algebra k Q] [Algebra F Q] [Algebra K Q]
-  [IsScalarTower k (F ⊗[k] K) Q] [IsScalarTower F (F ⊗[k] K) Q]
+  [IsScalarTower F (F ⊗[k] K) Q]
   [IsScalarTower K (F ⊗[k] K) Q] [IsScalarTower k F Q] [IsScalarTower k K Q]
   [IsFractionRing (F ⊗[k] K) Q]
 
@@ -98,7 +98,6 @@ theorem _root_.Transcendental.algebraMap_of_isFractionRing_tensorProduct {x : F}
     Transcendental K (algebraMap F Q x) :=
   (linearDisjoint_of_isFractionRing_tensorProduct (k := k)).transcendental_algebraMap hx
 
-omit [IsScalarTower k (F ⊗[k] K) Q] in
 include k in
 /-- Separability over a simple parameter persists in any fraction field `Q` of `F ⊗[k] K`: if
 `F / k(x)` is separable algebraic, then `Q / K(x)` is separable algebraic. -/
@@ -123,7 +122,6 @@ section RatFunc
 variable [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
   [Algebra (RatFunc K) Q] [IsScalarTower K (RatFunc K) Q]
 
-omit [IsScalarTower k (F ⊗[k] K) Q] in
 /-- Separability over `RatFunc k` persists in any fraction field `Q` of `F ⊗[k] K` over
 `RatFunc K` when the rational variable `X` maps compatibly. -/
 theorem isSeparable_ratFunc_of_isFractionRing_tensorProduct

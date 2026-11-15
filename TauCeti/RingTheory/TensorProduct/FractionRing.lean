@@ -97,8 +97,8 @@ section LinearDisjoint
 variable {k F K Q : Type*} [Field k] [Field F] [Field K] [Field Q]
   [Algebra k F] [Algebra k K] [Algebra (F ⊗[k] K) Q]
   [Algebra k Q] [Algebra F Q] [Algebra K Q]
-  [IsScalarTower k (F ⊗[k] K) Q] [IsScalarTower F (F ⊗[k] K) Q]
-  [IsScalarTower K (F ⊗[k] K) Q] [IsScalarTower k F Q] [IsScalarTower k K Q]
+  [IsScalarTower F (F ⊗[k] K) Q] [IsScalarTower K (F ⊗[k] K) Q]
+  [IsScalarTower k F Q] [IsScalarTower k K Q]
   [IsFractionRing (F ⊗[k] K) Q]
 
 /-- The images of the two factors in a fraction field of their tensor product are
@@ -106,6 +106,7 @@ linearly disjoint. This is the concrete fraction-field form of Mathlib's
 `Subalgebra.LinearDisjoint.exists_field_of_isDomain_of_injective`. -/
 theorem linearDisjoint_of_isFractionRing_tensorProduct :
     (IsScalarTower.toAlgHom k K Q).fieldRange.LinearDisjoint F := by
+  have : IsScalarTower k (F ⊗[k] K) Q := .to₁₃₄ k F (F ⊗[k] K) Q
   let i := IsScalarTower.toAlgHom k (F ⊗[k] K) Q
   have hi : Function.Injective i := IsFractionRing.injective (F ⊗[k] K) Q
   have H := (Subalgebra.LinearDisjoint.include_range k F K).map i hi
@@ -480,8 +481,8 @@ theorem fractionRingTensorCongrAlgEquiv_toAlgHom {k A B : Type*} (K QA QB : Type
     [IsScalarTower K (B ⊗[k] K) QB] [IsFractionRing (B ⊗[k] K) QB]
     (e : A ≃ₐ[k] B) :
     (fractionRingTensorCongrAlgEquiv K QA QB e).toAlgHom =
-      fractionRingTensorMapAlgHom K QA QB
-        (show Function.Injective (e : A →ₐ[k] B) from e.injective) := by
+      fractionRingTensorMapAlgHom K QA QB (f := (e : A →ₐ[k] B))
+        (e.coe_toAlgHom.symm ▸ e.injective) := by
   apply AlgHom.toRingHom_injective
   refine IsLocalization.ringHom_ext (nonZeroDivisors (A ⊗[k] K)) (RingHom.ext fun x ↦ ?_)
   simp
@@ -513,7 +514,8 @@ theorem fractionRingTensorCommAlgEquiv_algebraMap_tensorProduct (Q₁ Q₂ : Typ
     fractionRingTensorCommAlgEquiv k A K Q₁ Q₂ (algebraMap (A ⊗[k] K) Q₁ x) =
       algebraMap (K ⊗[k] A) Q₂ ((Algebra.TensorProduct.comm k K A).symm x) := by
   rw [fractionRingTensorCommAlgEquiv, IsFractionRing.algEquivOfAlgEquiv_algebraMap]
-  rfl
+  apply congrArg (algebraMap (K ⊗[k] A) Q₂)
+  exact TensorProduct.inductionOn x (fun _ _ ↦ by simp) (fun _ _ hx hy ↦ by simp [map_add, hx, hy])
 
 /-- The inverse of `fractionRingTensorCommAlgEquiv` swaps pure tensors on `K ⊗[k] A`. -/
 @[simp]
@@ -523,10 +525,8 @@ theorem fractionRingTensorCommAlgEquiv_symm_algebraMap_tensorProduct (Q₁ Q₂ 
     [CommRing Q₂] [Algebra (K ⊗[k] A) Q₂] [Algebra K Q₂]
     [IsScalarTower K (K ⊗[k] A) Q₂] [IsFractionRing (K ⊗[k] A) Q₂] (x : K ⊗[k] A) :
     (fractionRingTensorCommAlgEquiv k A K Q₁ Q₂).symm (algebraMap (K ⊗[k] A) Q₂ x) =
-      algebraMap (A ⊗[k] K) Q₁ (Algebra.TensorProduct.comm k K A x) := by
-  rw [fractionRingTensorCommAlgEquiv, IsFractionRing.algEquivOfAlgEquiv_symm,
-    AlgEquiv.symm_symm, IsFractionRing.algEquivOfAlgEquiv_algebraMap]
-  rfl
+      algebraMap (A ⊗[k] K) Q₁ (Algebra.TensorProduct.comm k K A x) :=
+  (fractionRingTensorCommAlgEquiv k A K Q₁ Q₂).injective (by simp)
 
 /-- `fractionRingTensorCommAlgEquiv` commutes with the canonical maps from `A`. -/
 @[simp]

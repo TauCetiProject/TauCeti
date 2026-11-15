@@ -318,6 +318,26 @@ theorem finrank_eq_of_pow_eq_add_mul_X_pow
   rw [← IntermediateField.finrank_top', ← hgen, IntermediateField.adjoin.finrank hint, hmin,
     natDegree_X_pow_sub_C]
 
+/-- For `p`-independent `a, b ∈ k`, `AdjoinRoot` of `X ^ p - (a + b x ^ p)` over `RatFunc k` is a
+function field over `k` with exact constant field `k` containing a solution `y` to
+`y ^ p = a + b x ^ p`. -/
+private theorem exists_isFunctionField_isIntegrallyClosedIn_pow_eq_add_mul_X_pow :
+    ∃ (E : Type u) (_ : Field E) (_ : Algebra k E) (_ : Algebra (RatFunc k) E)
+      (_ : IsScalarTower k (RatFunc k) E) (y : E),
+      IsFunctionField k E ∧ IsIntegrallyClosedIn k E ∧
+      y ^ p = algebraMap (RatFunc k) E (algebraMap k[X] (RatFunc k) (C a + C b * X ^ p)) := by
+  set f := X ^ p - C (algebraMap k[X] (RatFunc k) (C a + C b * X ^ p))
+  have : Fact (Irreducible f) := ⟨irreducible_X_pow_sub_C_add_mul_X_pow hab⟩
+  have hy : AdjoinRoot.root f ^ p = algebraMap (RatFunc k) (AdjoinRoot f)
+      (algebraMap k[X] (RatFunc k) (C a + C b * X ^ p)) := by
+    have := AdjoinRoot.eval₂_root f
+    simp only [f, eval₂_sub, eval₂_X_pow, eval₂_C, sub_eq_zero] at this
+    exact this
+  have hgen := IntermediateField.adjoin_root_eq_top f
+  exact ⟨AdjoinRoot f, inferInstance, inferInstance, inferInstance, inferInstance,
+    AdjoinRoot.root f, isFunctionField_of_pow_eq_add_mul_X_pow hgen hy,
+    isIntegrallyClosedIn_of_pow_eq_add_mul_X_pow hab hgen hy, hy⟩
+
 /-- **A function field with exact constants and a nonreduced extension of scalars.** If `a, b ∈ k`
 are `p`-independent and `K / k` contains `p`-th roots of `a` and `b`, there is a function field
 `F / k` with exact constant field `k` whose tensor product with `K` over `k` is not reduced, namely
@@ -327,17 +347,9 @@ theorem exists_isFunctionField_isIntegrallyClosedIn_not_isReduced_tensorProduct
     (hβ : β ^ p = algebraMap k K b) :
     ∃ (F : Type u) (_ : Field F) (_ : Algebra k F), IsFunctionField k F ∧
       IsIntegrallyClosedIn k F ∧ ¬ IsReduced (F ⊗[k] K) := by
-  set f := X ^ p - C (algebraMap k[X] (RatFunc k) (C a + C b * X ^ p))
-  have : Fact (Irreducible f) := ⟨irreducible_X_pow_sub_C_add_mul_X_pow hab⟩
-  have hy : AdjoinRoot.root f ^ p = algebraMap (RatFunc k) (AdjoinRoot f)
-      (algebraMap k[X] (RatFunc k) (C a + C b * X ^ p)) := by
-    have := AdjoinRoot.eval₂_root f
-    simp only [f, eval₂_sub, eval₂_X_pow, eval₂_C, sub_eq_zero] at this
-    exact this
-  have hgen := IntermediateField.adjoin_root_eq_top f
-  exact ⟨AdjoinRoot f, inferInstance, inferInstance,
-    isFunctionField_of_pow_eq_add_mul_X_pow hgen hy,
-    isIntegrallyClosedIn_of_pow_eq_add_mul_X_pow hab hgen hy,
+  obtain ⟨E, _, _, _, _, _, hE, hex, hy⟩ :=
+    exists_isFunctionField_isIntegrallyClosedIn_pow_eq_add_mul_X_pow hab
+  exact ⟨E, inferInstance, inferInstance, hE, hex,
     not_isReduced_tensorProduct_of_pow_eq_add_mul_X_pow hy hα hβ
       (notMem_span_pair_of_pow_eq hab hα hβ)⟩
 
@@ -374,17 +386,11 @@ theorem exists_isFunctionField_isIntegrallyClosedIn_not_exists_separating :
     ∃ (F : Type u) (_ : Field F) (_ : Algebra k F), IsFunctionField k F ∧
       IsIntegrallyClosedIn k F ∧ ¬ Algebra.IsGeometricallyReduced k F ∧
       ¬ ∃ z : F, Transcendental k z ∧ Algebra.IsSeparable k⟮z⟯ F := by
-  obtain ⟨α, hα⟩ :=
-    IsAlgClosed.exists_pow_nat_eq (algebraMap k (AlgebraicClosure k) a) hp.out.pos
-  obtain ⟨β, hβ⟩ :=
-    IsAlgClosed.exists_pow_nat_eq (algebraMap k (AlgebraicClosure k) b) hp.out.pos
-  obtain ⟨F, _, _, hF, hex, hnotred⟩ :=
-    exists_isFunctionField_isIntegrallyClosedIn_not_isReduced_tensorProduct hab hα hβ
-  have hngr : ¬ Algebra.IsGeometricallyReduced k F := fun _ ↦
-    hnotred (isReduced_of_injective (Algebra.TensorProduct.comm k F (AlgebraicClosure k))
-      (Algebra.TensorProduct.comm k F (AlgebraicClosure k)).injective)
-  exact ⟨F, inferInstance, inferInstance, hF, hex, hngr,
-    fun ⟨_, hz, _⟩ ↦ hngr (isGeometricallyReduced_of_separating hz)⟩
+  obtain ⟨E, _, _, _, _, _, hE, hex, hy⟩ :=
+    exists_isFunctionField_isIntegrallyClosedIn_pow_eq_add_mul_X_pow hab
+  exact ⟨E, inferInstance, inferInstance, hE, hex,
+    not_isGeometricallyReduced_of_pow_eq_add_mul_X_pow hab hy,
+    not_exists_transcendental_and_isSeparable_adjoin_of_pow_eq_add_mul_X_pow hab hy⟩
 
 end PIndependent
 

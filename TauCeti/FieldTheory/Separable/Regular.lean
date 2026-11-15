@@ -296,37 +296,19 @@ theorem isIntegrallyClosedIn_of_isFractionRing_left_tensorProduct
     {K Q : Type*} [Field K] [Algebra k K] [CommRing Q] [Algebra (K ⊗[k] F) Q] [Algebra K Q]
     [IsScalarTower K (K ⊗[k] F) Q] [IsFractionRing (K ⊗[k] F) Q] :
     IsIntegrallyClosedIn K Q := by
-  have := isDomain_tensorProduct_of_isGeometricallyReduced' hex K
-  let _ : Field Q := IsFractionRing.toField (K ⊗[k] F)
   have := isDomain_tensorProduct_of_isFractionRing_left_tensorProduct hex (K := K) (Q := Q)
     (AlgebraicClosure K)
-  exact isIntegrallyClosedIn_of_isDomain_tensorProduct (k := K) (K := Q) (AlgebraicClosure K)
+  exact isIntegrallyClosedIn_of_isDomain_tensorProduct (k := K) (A := Q) (AlgebraicClosure K)
 
-/-- **Geometric reducedness persists after arbitrary field base change and localization.** If
-`F / k` is geometrically reduced and `K / k` is any field extension, then any fraction ring `Q` of
-`K ⊗[k] F` is geometrically reduced over `K`; exactness of `k` in `F` is not needed. -/
+/-- **Geometric reducedness persists after arbitrary base change and localization.** If `A` is a
+geometrically reduced `R`-algebra and `S` is any commutative `R`-algebra, then any total quotient
+ring `Q` of `S ⊗[R] A` is geometrically reduced over `S`. -/
 theorem isGeometricallyReduced_of_isFractionRing_left_tensorProduct
-    [Algebra.IsGeometricallyReduced k F]
-    {K Q : Type*} [Field K] [Algebra k K] [CommRing Q] [Algebra (K ⊗[k] F) Q] [Algebra K Q]
-    [IsScalarTower K (K ⊗[k] F) Q] [IsFractionRing (K ⊗[k] F) Q] :
-    Algebra.IsGeometricallyReduced K Q := by
-  let L := AlgebraicClosure k
-  let Ω := AlgebraicClosure K
-  let j : L →ₐ[k] Ω := IsAlgClosed.lift
-  algebraize [j.toRingHom]
-  have : IsScalarTower k L Ω := .of_algebraMap_eq fun c ↦ (j.commutes c).symm
-  have : IsReduced (L ⊗[k] F) := (Algebra.isGeometricallyReduced_field_iff k F).mp inferInstance
-  -- `Ω ⊗[k] F ≃ Ω ⊗[L] (L ⊗[k] F)` is reduced over the perfect field `L`.
-  have : IsReduced (Ω ⊗[k] F) :=
-    isReduced_of_injective (Algebra.TensorProduct.cancelBaseChange k L Ω Ω F).symm
-      (Algebra.TensorProduct.cancelBaseChange k L Ω Ω F).symm.injective
-  let e : (K ⊗[k] F) ⊗[K] Ω ≃ₐ[K] Ω ⊗[k] F :=
-    (Algebra.TensorProduct.comm K (K ⊗[k] F) Ω).trans
-      (Algebra.TensorProduct.cancelBaseChange k K K Ω F)
-  have : IsReduced ((K ⊗[k] F) ⊗[K] Ω) := isReduced_of_injective e e.injective
-  have : IsReduced (Q ⊗[K] Ω) :=
-    isReduced_tensorProduct_of_isLocalization (nonZeroDivisors (K ⊗[k] F)) Q Ω
-  exact isGeometricallyReduced_of_isReduced_tensorProduct (k := K) Ω
+    {R S A Q : Type*} [CommRing R] [CommRing S] [Algebra R S] [CommRing A] [Algebra R A]
+    [Algebra.IsGeometricallyReduced R A] [CommRing Q] [Algebra (S ⊗[R] A) Q] [Algebra S Q]
+    [IsScalarTower S (S ⊗[R] A) Q] [IsFractionRing (S ⊗[R] A) Q] :
+    Algebra.IsGeometricallyReduced S Q :=
+  isGeometricallyReduced_of_isLocalization (nonZeroDivisors (S ⊗[R] A)) Q
 
 /-- **Over an algebraically closed base field, `Frac(F ⊗[k] L)` is regular over `F`.** For any two
 field extensions `F / k` and `L / k` over an algebraically closed field `k`, any fraction ring `Q`
@@ -349,13 +331,14 @@ theorem isIntegrallyClosedIn_left_of_isFractionRing_tensorProduct_of_isAlgClosed
   isIntegrallyClosedIn_of_isFractionRing_left_tensorProduct
     (F := L) (K := F) (isIntegrallyClosedIn_of_isAlgClosed (k := k) (A := L))
 
-/-- Over a perfect base field `k`, for any two field extensions `F / k` and `L / k`, any fraction
-ring `Q` of `F ⊗[k] L` is geometrically reduced over `F`. -/
+/-- Over a perfect base field `k`, for any commutative `k`-algebra `S` and reduced commutative
+`k`-algebra `L`, any total quotient ring `Q` of `S ⊗[k] L` is geometrically reduced over `S`. -/
 theorem isGeometricallyReduced_left_of_isFractionRing_tensorProduct_of_perfectField
-    [PerfectField k] {L Q : Type*} [Field L] [Algebra k L] [CommRing Q] [Algebra (F ⊗[k] L) Q]
-    [Algebra F Q] [IsScalarTower F (F ⊗[k] L) Q] [IsFractionRing (F ⊗[k] L) Q] :
-    Algebra.IsGeometricallyReduced F Q :=
-  isGeometricallyReduced_of_isFractionRing_left_tensorProduct (k := k) (F := L) (K := F)
+    [PerfectField k] {S L Q : Type*} [CommRing S] [Algebra k S] [CommRing L] [IsReduced L]
+    [Algebra k L] [CommRing Q] [Algebra (S ⊗[k] L) Q] [Algebra S Q]
+    [IsScalarTower S (S ⊗[k] L) Q] [IsFractionRing (S ⊗[k] L) Q] :
+    Algebra.IsGeometricallyReduced S Q :=
+  isGeometricallyReduced_of_isFractionRing_left_tensorProduct (R := k) (S := S) (A := L)
 
 variable (k F) in
 /-- Over an algebraically closed base field `k`, `F` is unconditionally relatively algebraically
@@ -370,23 +353,23 @@ section RightAlgebra
 attribute [local instance] Algebra.TensorProduct.rightAlgebra
   Algebra.TensorProduct.right_isScalarTower
 
-/-- The `K ⊗[k] F`-algebra structure on a `F ⊗[k] K`-algebra induced by swapping tensor factors. -/
+/-- The `K ⊗[R] A`-algebra structure on an `A ⊗[R] K`-algebra induced by swapping tensor factors. -/
 @[instance_reducible]
-private noncomputable def commLeftAlgebra {K Q : Type*} [Field K] [Algebra k K] [CommRing Q]
-    [Algebra (F ⊗[k] K) Q] : Algebra (K ⊗[k] F) Q :=
-  ((algebraMap (F ⊗[k] K) Q).comp (Algebra.TensorProduct.comm k K F).toRingHom).toAlgebra
+private noncomputable def commLeftAlgebra {R A K Q : Type*} [CommRing R] [CommRing A] [Algebra R A]
+    [CommRing K] [Algebra R K] [CommRing Q] [Algebra (A ⊗[R] K) Q] : Algebra (K ⊗[R] A) Q :=
+  ((algebraMap (A ⊗[R] K) Q).comp (Algebra.TensorProduct.comm R K A).toRingHom).toAlgebra
 
-/-- Swapping `F ⊗[k] K` with `K ⊗[k] F` preserves the `K`-scalar tower and `IsFractionRing`. -/
-private theorem commLeft_isScalarTower_and_isFractionRing {K Q : Type*} [Field K] [Algebra k K]
-    [CommRing Q] [Algebra (F ⊗[k] K) Q] [Algebra K Q] [IsScalarTower K (F ⊗[k] K) Q]
-    [IsFractionRing (F ⊗[k] K) Q] :
-    letI := commLeftAlgebra (k := k) (F := F) (K := K) (Q := Q)
-    IsScalarTower K (K ⊗[k] F) Q ∧ IsFractionRing (K ⊗[k] F) Q :=
-  letI := commLeftAlgebra (k := k) (F := F) (K := K) (Q := Q)
+/-- Swapping `A ⊗[R] K` with `K ⊗[R] A` preserves the `K`-scalar tower and `IsFractionRing`. -/
+private theorem commLeft_isScalarTower_and_isFractionRing {R A K Q : Type*} [CommRing R]
+    [CommRing A] [Algebra R A] [CommRing K] [Algebra R K] [CommRing Q] [Algebra (A ⊗[R] K) Q]
+    [Algebra K Q] [IsScalarTower K (A ⊗[R] K) Q] [IsFractionRing (A ⊗[R] K) Q] :
+    letI := commLeftAlgebra (R := R) (A := A) (K := K) (Q := Q)
+    IsScalarTower K (K ⊗[R] A) Q ∧ IsFractionRing (K ⊗[R] A) Q :=
+  letI := commLeftAlgebra (R := R) (A := A) (K := K) (Q := Q)
   ⟨.of_algebraMap_eq fun c ↦ by
-      simp [RingHom.algebraMap_toAlgebra, IsScalarTower.algebraMap_apply K (F ⊗[k] K) Q],
+      simp [RingHom.algebraMap_toAlgebra, IsScalarTower.algebraMap_apply K (A ⊗[R] K) Q],
     (IsFractionRing.isFractionRing_iff_of_base_ringEquiv Q
-      (Algebra.TensorProduct.comm k F K).toRingEquiv).mp inferInstance⟩
+      (Algebra.TensorProduct.comm R A K).toRingEquiv).mp inferInstance⟩
 
 /-- Right-scalar companion to `TauCeti.isDomain_tensorProduct_of_isFractionRing_left_tensorProduct`,
 viewing a fraction ring `Q` of `F ⊗[k] K` as a `K`-algebra via the right tensor factor. -/
@@ -396,8 +379,8 @@ theorem isDomain_tensorProduct_of_isFractionRing_tensorProduct
     [IsScalarTower K (F ⊗[k] K) Q] [IsFractionRing (F ⊗[k] K) Q]
     (A : Type*) [CommRing A] [IsDomain A] [Algebra K A] :
     IsDomain (Q ⊗[K] A) := by
-  let _ := commLeftAlgebra (k := k) (F := F) (K := K) (Q := Q)
-  obtain ⟨_, _⟩ := commLeft_isScalarTower_and_isFractionRing (k := k) (F := F) (K := K) (Q := Q)
+  let _ := commLeftAlgebra (R := k) (A := F) (K := K) (Q := Q)
+  obtain ⟨_, _⟩ := commLeft_isScalarTower_and_isFractionRing (R := k) (A := F) (K := K) (Q := Q)
   exact isDomain_tensorProduct_of_isFractionRing_left_tensorProduct hex (Q := Q) A
 
 /-- Right-scalar companion to
@@ -409,22 +392,21 @@ theorem isIntegrallyClosedIn_of_isFractionRing_tensorProduct
     {K Q : Type*} [Field K] [Algebra k K] [CommRing Q] [Algebra (F ⊗[k] K) Q] [Algebra K Q]
     [IsScalarTower K (F ⊗[k] K) Q] [IsFractionRing (F ⊗[k] K) Q] :
     IsIntegrallyClosedIn K Q := by
-  let _ := commLeftAlgebra (k := k) (F := F) (K := K) (Q := Q)
-  obtain ⟨_, _⟩ := commLeft_isScalarTower_and_isFractionRing (k := k) (F := F) (K := K) (Q := Q)
+  let _ := commLeftAlgebra (R := k) (A := F) (K := K) (Q := Q)
+  obtain ⟨_, _⟩ := commLeft_isScalarTower_and_isFractionRing (R := k) (A := F) (K := K) (Q := Q)
   exact isIntegrallyClosedIn_of_isFractionRing_left_tensorProduct hex (Q := Q)
 
 /-- Right-scalar companion to
-`TauCeti.isGeometricallyReduced_of_isFractionRing_left_tensorProduct`: if `F / k` is geometrically
-reduced and `K / k` is any field extension, then any fraction ring `Q` of `F ⊗[k] K` is
-geometrically reduced over `K`. -/
+`TauCeti.isGeometricallyReduced_of_isFractionRing_left_tensorProduct`: if `A` is a geometrically
+reduced `R`-algebra and `K` is any commutative `R`-algebra, then any total quotient ring `Q` of
+`A ⊗[R] K` is geometrically reduced over `K`. -/
 theorem isGeometricallyReduced_of_isFractionRing_tensorProduct
-    [Algebra.IsGeometricallyReduced k F]
-    {K Q : Type*} [Field K] [Algebra k K] [CommRing Q] [Algebra (F ⊗[k] K) Q] [Algebra K Q]
-    [IsScalarTower K (F ⊗[k] K) Q] [IsFractionRing (F ⊗[k] K) Q] :
-    Algebra.IsGeometricallyReduced K Q := by
-  let _ := commLeftAlgebra (k := k) (F := F) (K := K) (Q := Q)
-  obtain ⟨_, _⟩ := commLeft_isScalarTower_and_isFractionRing (k := k) (F := F) (K := K) (Q := Q)
-  exact isGeometricallyReduced_of_isFractionRing_left_tensorProduct (k := k) (F := F) (Q := Q)
+    {R A K Q : Type*} [CommRing R] [CommRing A] [Algebra R A] [Algebra.IsGeometricallyReduced R A]
+    [CommRing K] [Algebra R K] [CommRing Q] [Algebra (A ⊗[R] K) Q] [Algebra K Q]
+    [IsScalarTower K (A ⊗[R] K) Q] [IsFractionRing (A ⊗[R] K) Q] :
+    Algebra.IsGeometricallyReduced K Q :=
+  have := isGeometricallyReduced_tensorProduct_right (R := R) (A := A) K
+  isGeometricallyReduced_of_isLocalization (nonZeroDivisors (A ⊗[R] K)) Q
 
 /-- If `F / k` is geometrically reduced with exact constants, then `K` is algebraically closed in
 `FractionRing (F ⊗[k] K)` for every field extension `K / k`. -/
@@ -433,13 +415,13 @@ theorem isIntegrallyClosedIn_fractionRing_tensorProduct (hex : IsIntegrallyClose
     IsIntegrallyClosedIn K (FractionRing (F ⊗[k] K)) :=
   isIntegrallyClosedIn_of_isFractionRing_tensorProduct hex
 
-variable (k F) in
-/-- If `F / k` is geometrically reduced, then `FractionRing (F ⊗[k] K)` is geometrically reduced
-over `K` for every field extension `K / k`. -/
+/-- If `A` is a geometrically reduced `R`-algebra, then `FractionRing (A ⊗[R] K)` is geometrically
+reduced over `K` for every commutative `R`-algebra `K`. -/
 theorem isGeometricallyReduced_fractionRing_tensorProduct
-    [Algebra.IsGeometricallyReduced k F] (K : Type*) [Field K] [Algebra k K] :
-    Algebra.IsGeometricallyReduced K (FractionRing (F ⊗[k] K)) :=
-  isGeometricallyReduced_of_isFractionRing_tensorProduct (k := k) (F := F)
+    (R A K : Type*) [CommRing R] [CommRing A] [Algebra R A] [Algebra.IsGeometricallyReduced R A]
+    [CommRing K] [Algebra R K] :
+    Algebra.IsGeometricallyReduced K (FractionRing (A ⊗[R] K)) :=
+  isGeometricallyReduced_of_isFractionRing_tensorProduct (R := R) (A := A)
 
 /-- Over a perfect base field `k`, exactness of `k` in `F` implies that `K` is algebraically
 closed in `FractionRing (F ⊗[k] K)` for every field extension `K / k`. -/
@@ -448,13 +430,13 @@ theorem isIntegrallyClosedIn_fractionRing_tensorProduct_of_perfectField [Perfect
     IsIntegrallyClosedIn K (FractionRing (F ⊗[k] K)) :=
   isIntegrallyClosedIn_fractionRing_tensorProduct hex K
 
-variable (k F) in
-/-- Over a perfect base field `k`, `FractionRing (F ⊗[k] K)` is unconditionally geometrically
-reduced over `K` for any field extensions `F / k` and `K / k`. -/
+variable (k) in
+/-- Over a perfect base field `k`, `FractionRing (A ⊗[k] K)` is geometrically reduced over `K` for
+every reduced commutative `k`-algebra `A` and commutative `k`-algebra `K`. -/
 theorem isGeometricallyReduced_fractionRing_tensorProduct_of_perfectField [PerfectField k]
-    (K : Type*) [Field K] [Algebra k K] :
-    Algebra.IsGeometricallyReduced K (FractionRing (F ⊗[k] K)) :=
-  isGeometricallyReduced_fractionRing_tensorProduct k F K
+    (A K : Type*) [CommRing A] [IsReduced A] [Algebra k A] [CommRing K] [Algebra k K] :
+    Algebra.IsGeometricallyReduced K (FractionRing (A ⊗[k] K)) :=
+  isGeometricallyReduced_fractionRing_tensorProduct k A K
 
 variable (k F) in
 /-- Over an algebraically closed base field `k`, `K` is unconditionally algebraically closed in

@@ -33,7 +33,9 @@ This supplies the reduced tensor square needed to form reductions of affine grou
 
 Over an arbitrary field `k`, an algebra `A` is geometrically reduced as soon as `L ⊗[k] A` (or
 `A ⊗[k] L`) is reduced for one algebraically closed field `L` over `k`, since the algebraic
-closure of `k` embeds in `L` and the tensor product over a field preserves injections.
+closure of `k` embeds in `L` and the tensor product over a field preserves injections. Conversely,
+over any commutative ring `R`, geometric reducedness is preserved by arbitrary base change
+(`S ⊗[R] A` and `A ⊗[R] S`) and by localization.
 
 ## References
 
@@ -47,6 +49,15 @@ public section
 open scoped TensorProduct
 
 namespace Algebra.IsGeometricallyReduced
+
+/-- Geometric reducedness over any commutative ring is invariant under `R`-algebra isomorphism. -/
+theorem of_algEquiv {R A B : Type*} [CommRing R] [Ring A] [Ring B] [Algebra R A] [Algebra R B]
+    [IsGeometricallyReduced R A] (e : A ≃ₐ[R] B) : IsGeometricallyReduced R B :=
+  ⟨fun p _ ↦
+    let f := Algebra.TensorProduct.congr
+      (AlgEquiv.refl : AlgebraicClosure p.ResidueField ≃ₐ[R] AlgebraicClosure p.ResidueField)
+      e.symm
+    isReduced_of_injective f f.injective⟩
 
 /-- A `k`-algebra `A` is geometrically reduced as soon as `L ⊗[k] A` is reduced for one
 algebraically closed field `L` over `k`. -/
@@ -133,6 +144,8 @@ instance isReduced_ratFunc_tensorProduct {k : Type*} [CommRing k] [IsDomain k] {
     isReduced_of_injective e e.injective
   exact isReduced_tensorProduct_of_isLocalization (nonZeroDivisors (Polynomial k)) _ A
 
+section PerfectField
+
 variable (k : Type*) [Field k] [PerfectField k]
 
 /-- A reduced algebra over a perfect field is geometrically reduced, without a
@@ -170,5 +183,56 @@ instance instIsReducedTensorProductOfPerfectField
       (Algebra.TensorProduct.includeRight_injective (algebraMap k L).injective)
   exact isReduced_of_injective (Algebra.TensorProduct.comm k A C)
     (Algebra.TensorProduct.comm k A C).injective
+
+end PerfectField
+
+/-- Geometric reducedness is preserved by arbitrary commutative base change `S ⊗[R] A`. -/
+instance isGeometricallyReduced_tensorProduct_left {R S A : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] [CommRing A] [Algebra R A] [Algebra.IsGeometricallyReduced R A] :
+    Algebra.IsGeometricallyReduced S (S ⊗[R] A) := by
+  refine ⟨fun q _ ↦ ?_⟩
+  let p : Ideal R := q.comap (algebraMap R S)
+  have : p.IsPrime := Ideal.comap_isPrime (algebraMap R S) q
+  let L := AlgebraicClosure p.ResidueField
+  let Ω := AlgebraicClosure q.ResidueField
+  let _ : Algebra p.ResidueField Ω :=
+    ((algebraMap q.ResidueField Ω).comp (Ideal.ResidueField.map p q (algebraMap R S) rfl)).toAlgebra
+  let j : L →ₐ[p.ResidueField] Ω := IsAlgClosed.lift
+  let _ : Algebra L Ω := j.toRingHom.toAlgebra
+  have : IsScalarTower R L Ω := .of_algebraMap_eq fun r ↦ by
+    symm
+    rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      IsScalarTower.algebraMap_apply R p.ResidueField L, j.commutes,
+      RingHom.algebraMap_toAlgebra, RingHom.comp_apply, Ideal.ResidueField.map_algebraMap,
+      ← IsScalarTower.algebraMap_apply S q.ResidueField Ω,
+      ← IsScalarTower.algebraMap_apply R S Ω]
+  -- `L` is algebraically closed (hence perfect) and `L ⊗[R] A` is reduced by geometric reducedness.
+  have : IsReduced (Ω ⊗[R] A) :=
+    isReduced_of_injective (Algebra.TensorProduct.cancelBaseChange R L Ω Ω A).symm
+      (Algebra.TensorProduct.cancelBaseChange R L Ω Ω A).symm.injective
+  exact isReduced_of_injective (Algebra.TensorProduct.cancelBaseChange R S Ω Ω A)
+    (Algebra.TensorProduct.cancelBaseChange R S Ω Ω A).injective
+
+attribute [local instance] Algebra.TensorProduct.rightAlgebra in
+/-- Geometric reducedness is preserved by arbitrary commutative base change `A ⊗[R] S` with the
+right `S`-algebra structure. -/
+theorem isGeometricallyReduced_tensorProduct_right {R A : Type*} [CommRing R] [CommRing A]
+    [Algebra R A] [Algebra.IsGeometricallyReduced R A] (S : Type*) [CommRing S] [Algebra R S] :
+    Algebra.IsGeometricallyReduced S (A ⊗[R] S) :=
+  Algebra.IsGeometricallyReduced.of_algEquiv (Algebra.TensorProduct.commRight R S A)
+
+/-- Geometric reducedness over any commutative ring is preserved by localization. -/
+theorem isGeometricallyReduced_of_isLocalization {R A : Type*} [CommRing R] [CommRing A]
+    [Algebra R A] [Algebra.IsGeometricallyReduced R A] (M : Submonoid A) (Q : Type*) [CommRing Q]
+    [Algebra R Q] [Algebra A Q] [IsScalarTower R A Q] [IsLocalization M Q] :
+    Algebra.IsGeometricallyReduced R Q := by
+  refine ⟨fun p _ ↦ ?_⟩
+  let L := AlgebraicClosure p.ResidueField
+  have : IsReduced (A ⊗[R] L) :=
+    isReduced_of_injective (Algebra.TensorProduct.comm R A L)
+      (Algebra.TensorProduct.comm R A L).injective
+  have : IsReduced (Q ⊗[R] L) := isReduced_tensorProduct_of_isLocalization M Q L
+  exact isReduced_of_injective (Algebra.TensorProduct.comm R L Q)
+    (Algebra.TensorProduct.comm R L Q).injective
 
 end TauCeti
