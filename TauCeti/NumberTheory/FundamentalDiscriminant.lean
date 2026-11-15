@@ -20,6 +20,8 @@ prime-discriminant theory.
 
 * `Int.decidablePredIsFundamentalDiscr`: being a fundamental discriminant is decidable, through
   congruences mod `4` and squarefreeness of natural numbers, so the kernel can check it.
+* `Int.isFundamentalDiscr_one`, `Int.IsFundamentalDiscr.natAbs_eq_one_iff`: `1` is the unique
+  fundamental discriminant of absolute value `1`.
 * `Int.IsFundamentalDiscr.not_sixteen_dvd`: a fundamental discriminant is not divisible by `16`.
 * `Int.IsFundamentalDiscr.mul`: coprime fundamental discriminants have fundamental product.
 * `Int.IsFundamentalDiscr.not_isSquare_rat`: a fundamental discriminant other than `1` is not a
@@ -36,6 +38,18 @@ instance decidablePredIsFundamentalDiscr : DecidablePred IsFundamentalDiscr := f
   decidable_of_iff ((D % 4 = 1 ∧ Squarefree D.natAbs) ∨
       (D % 4 = 0 ∧ Squarefree (D / 4).natAbs ∧ (D / 4 % 4 = 2 ∨ D / 4 % 4 = 3))) <| by
     rw [isFundamentalDiscr_iff_squarefree, squarefree_natAbs, squarefree_natAbs]
+
+/-- `1` is a fundamental discriminant, corresponding to the trivial quadratic character. -/
+@[simp]
+theorem isFundamentalDiscr_one : IsFundamentalDiscr 1 :=
+  isFundamentalDiscr_iff_squarefree.mpr (Or.inl ⟨rfl, squarefree_one⟩)
+
+/-- A fundamental discriminant has absolute value `1` if and only if it is `1` (`-1 ≡ 3 (mod 4)`
+is not a fundamental discriminant). -/
+theorem IsFundamentalDiscr.natAbs_eq_one_iff {D : ℤ} (hD : IsFundamentalDiscr D) :
+    D.natAbs = 1 ↔ D = 1 := by
+  have := hD.emod_four_eq_zero_or_one
+  omega
 
 /-- The absolute value of a fundamental discriminant is a nonzero Dirichlet-character level. -/
 theorem IsFundamentalDiscr.neZero_natAbs {D : ℤ} (hD : IsFundamentalDiscr D) :
