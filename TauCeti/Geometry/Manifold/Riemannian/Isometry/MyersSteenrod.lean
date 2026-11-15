@@ -435,6 +435,12 @@ def toRiemannianIsometry (e : M ≃ᵢ N) : TauCeti.RiemannianIsometry I J M N :
 theorem coe_toRiemannianIsometry (e : M ≃ᵢ N) : ⇑(e.toRiemannianIsometry I J) = e :=
   (rfl)
 
+/-- The underlying equivalence of `e.toRiemannianIsometry I J` is that of `e`. -/
+@[simp]
+theorem toEquiv_toRiemannianIsometry (e : M ≃ᵢ N) :
+    (e.toRiemannianIsometry I J).toEquiv = e.toEquiv :=
+  (rfl)
+
 /-- The inverse of `e.toRiemannianIsometry I J` is the inverse of `e`. -/
 @[simp]
 theorem coe_toRiemannianIsometry_symm (e : M ≃ᵢ N) :
