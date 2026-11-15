@@ -75,6 +75,8 @@ integrand is `O(j)` uniformly.
 * `TauCeti.sphericalPendulumRotationAngle_eq_setIntegral`: `Θ(h, j)` as an integral over the
   heights of the fibre `F⁻¹(h, j)`.
 * `TauCeti.sphericalPendulumRotationAngle_neg_right`: `Θ(h, -j) = -Θ(h, j)`.
+* `TauCeti.sphericalPendulumRotationAngle_eq_integral_turningPoint`: for regular values with
+  `j ≠ 0`, `Θ(h, j)` as an integral between the turning points `z₋` and `z₊`.
 * `TauCeti.tendsto_sphericalPendulumRotationAngle_nhdsGT_of_lt_one` and its three companions: the
   one-sided limits of `Θ(h, j)` as `j → 0`.
 * `TauCeti.sphericalPendulumRotationAngle_eq_integral_sin`: `Θ(h, j)` as an integral of a
@@ -141,6 +143,56 @@ theorem sphericalPendulumRotationAngle_neg_right (h j : ℝ) :
 theorem sphericalPendulumRotationAngle_zero_right (h : ℝ) :
     sphericalPendulumRotationAngle h 0 = 0 := by
   simp [sphericalPendulumRotationAngle_def]
+
+/-! ### Integrals between the turning points -/
+
+/-- **Integrals over the heights of a fibre.** For `(h, j)` with `j ≠ 0` strictly above the curve
+of relative equilibria, an integrand on `[-1, 1]` that vanishes wherever the radicand
+`2 (h - z) (1 - z²) - j²` is nonpositive has the same integral over `[-1, 1]` as between the
+turning points `z₋` and `z₊`. -/
+theorem integral_neg_one_one_eq_integral_sphericalPendulumTurningPoint {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {h j : ℝ}
+    (hc : (h, j) ∈ sphericalPendulumTurningPointDomain) {g : ℝ → F}
+    (hg : ∀ z, 2 * (h - z) * (1 - z ^ 2) - j ^ 2 ≤ 0 → g z = 0) :
+    ∫ z in (-1)..1, g z =
+      ∫ z in sphericalPendulumLowerTurningPoint h j..sphericalPendulumUpperTurningPoint h j,
+        g z := by
+  obtain ⟨hj, z₀, hz₀, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 hc
+  have hfac := two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV
+  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
+  have ha := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz₀ hV
+  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
+  have hc₃ := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
+    hj hz₀ hV
+  set a := sphericalPendulumLowerTurningPoint h j
+  set b := sphericalPendulumUpperTurningPoint h j
+  rw [intervalIntegral.integral_of_le (by norm_num), intervalIntegral.integral_of_le hab.le,
+    ← integral_Icc_eq_integral_Ioc, ← integral_Icc_eq_integral_Ioc,
+    setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_Icc
+      (Icc_subset_Icc ha.le hb.le)]
+  -- Outside `[z₋, z₊]`, exactly one of the factors `z - z₋`, `z₊ - z` of the radicand is negative.
+  rintro z ⟨hz, hzab⟩
+  refine hg z ?_
+  rw [hfac z]
+  have hz₃ : 0 < h - a - b - z := by linarith [hz.2]
+  rcases not_and_or.1 hzab with hza | hzb
+  · have := mul_pos (mul_pos (sub_pos.2 (not_le.1 hza)) (by linarith : (0 : ℝ) < b - z)) hz₃
+    nlinarith
+  · have := mul_pos (mul_pos (by linarith : (0 : ℝ) < z - a) (sub_pos.2 (not_le.1 hzb))) hz₃
+    nlinarith
+
+/-- **The rotation angle between the turning points.** For `(h, j)` with `j ≠ 0` strictly above
+the curve of relative equilibria, the rotation angle is the integral between the turning points
+`z₋ < z₊`:
+`Θ(h, j) = 2 ∫_{z₋}^{z₊} j dz / ((1 - z²) √(2 (h - z) (1 - z²) - j²))`. -/
+theorem sphericalPendulumRotationAngle_eq_integral_turningPoint {h j : ℝ}
+    (hc : (h, j) ∈ sphericalPendulumTurningPointDomain) :
+    sphericalPendulumRotationAngle h j =
+      2 * ∫ z in sphericalPendulumLowerTurningPoint h j..sphericalPendulumUpperTurningPoint h j,
+        j / ((1 - z ^ 2) * √(2 * (h - z) * (1 - z ^ 2) - j ^ 2)) := by
+  rw [sphericalPendulumRotationAngle_def,
+    integral_neg_one_one_eq_integral_sphericalPendulumTurningPoint hc fun z hz ↦ by
+      rw [Real.sqrt_eq_zero'.2 hz, mul_zero, div_zero]]
 
 /-! ### The limits of the rotation angle as `j → 0` -/
 
