@@ -551,7 +551,7 @@ theorem compFrequency_refl (a : HomogeneousSymbol X E V W m) :
   (rfl)
 
 /-- Changing the position and changing the frequency commute. -/
-theorem compPosition_compFrequency {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+theorem compFrequency_compPosition {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
     (a : HomogeneousSymbol X E V W m) (g : Y → X) (hg : ContDiff ℝ ∞ g) :
     (a.compFrequency B).compPosition g hg = (a.compPosition g hg).compFrequency B :=
   (rfl)

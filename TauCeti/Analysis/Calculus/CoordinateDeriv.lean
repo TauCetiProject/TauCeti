@@ -1116,23 +1116,16 @@ theorem _root_.ContinuousMultilinearMap.norm_append_le_sum_single {k l : ℕ}
     congr 1
     funext i
     refine Fin.addCases (fun i => ?_) (fun i => ?_) i <;> simp [ι]
-  -- Split a word of length `k + l` into its first `k` and its last `l` letters.
-  let split : (Fin k → Fin n) × (Fin l → Fin n) ≃ (Fin (k + l) → Fin n) :=
-    { toFun p := Fin.append p.1 p.2
-      invFun t := (fun i => t (Fin.castAdd l i), fun i => t (Fin.natAdd k i))
-      left_inv p := by simp
-      right_inv t := funext fun i => by
-        refine Fin.addCases (fun i => ?_) (fun i => ?_) i <;> simp }
   have hsum : ∑ t : Fin (k + l) → Fin n, ‖G' fun i => EuclideanSpace.single (t i) 1‖ =
       ∑ r : Fin k → Fin n, ∑ s : Fin l → Fin n,
         ‖G (Fin.append (fun i => (EuclideanSpace.single (r i) 1, 0))
           fun i => (0, EuclideanSpace.single (s i) 1))‖ := by
-    rw [← Fintype.sum_prod_type', ← Fintype.sum_equiv split _ _ fun _ => rfl]
+    rw [← Fintype.sum_prod_type', ← Fintype.sum_equiv (Fin.appendEquiv k l) _ _ fun _ => rfl]
     refine Fintype.sum_congr _ _ fun p => ?_
     rw [hG]
     congr 2
     funext i
-    refine Fin.addCases (fun i => ?_) (fun i => ?_) i <;> simp [split]
+    refine Fin.addCases (fun i => ?_) (fun i => ?_) i <;> simp [Fin.appendEquiv]
   rw [hG]
   calc ‖G' (Fin.append u w)‖ ≤ ‖G'‖ * ∏ i, ‖Fin.append u w i‖ := G'.le_opNorm _
     _ ≤ (∑ t : Fin (k + l) → Fin n, ‖G' fun i => EuclideanSpace.single (t i) 1‖) *

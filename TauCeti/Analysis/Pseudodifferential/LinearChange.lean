@@ -31,8 +31,9 @@ symbol transforms as a function on the cotangent bundle.
 
 * `TauCeti.quantizeSchwartzValue_comp_prodMap_adjoint`: for any coefficient `a` on a
   finite-dimensional inner product space, `Op(a(A ·, (A⁻¹)ᵀ ·)) u (x) = Op(a) (u ∘ A⁻¹) (A x)`.
-  The proof is Mathlib's linear change of variables in the Fourier transform,
-  `ContinuousLinearEquiv.fourier_comp`, applied twice.
+  The proof is the linear change of variables in the Fourier transform,
+  `ContinuousLinearEquiv.fourier_comp` and `ContinuousLinearEquiv.fourierInv_comp` from
+  `TauCeti.Analysis.Fourier.ChangeOfVariables`.
 * `TauCeti.Symbol.linearPullback`: the symbol `A^* a` of the same order, with
   `TauCeti.Symbol.quantizeSchwartzValue_linearPullback` and the operator identity
   `TauCeti.Symbol.quantizeUniformCLM_linearPullback` on Schwartz space. The pullback preserves
@@ -42,9 +43,9 @@ symbol transforms as a function on the cotangent bundle.
 * `TauCeti.Symbol.linearPullback_eq_self_iff`: a pseudodifferential operator commutes with the
   pullback along `A` exactly when its symbol is invariant under the cotangent lift of `A`.
 * `TauCeti.ClassicalSymbol.linearPullback`: classical symbols pull back to classical symbols,
-  termwise, so that the principal symbol transforms by the cotangent lift
-  (`TauCeti.ClassicalSymbol.principal_linearPullback`) and ellipticity is preserved
-  (`TauCeti.ClassicalSymbol.isElliptic_linearPullback_iff`).
+  termwise and compatibly with sums, composition and the order inclusions, so that the principal
+  symbol transforms by the cotangent lift (`TauCeti.ClassicalSymbol.principal_linearPullback`)
+  and ellipticity is preserved (`TauCeti.ClassicalSymbol.isElliptic_linearPullback_iff`).
 
 The symbol estimates of `A^* a` come from `TauCeti.norm_mixedDeriv_comp_prodMap_le`, which bounds
 the mixed derivatives of `a(L x, M ξ)` by those of `a` at `(L x, M ξ)`, and from the comparison
@@ -115,9 +116,16 @@ theorem quantizeSchwartzValue_comp_prodMap_adjoint (A : E ≃L[ℝ] E) (a : E ×
     ext1 y
     simp [B]
   rw [quantizeSchwartzValue_eq_fourierInv, quantizeSchwartzValue_eq_fourierInv, hleft, hright,
-    hsmul, B.fourierInv_comp, hBsymm, ContinuousLinearMap.adjoint_adjoint,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply, smul_smul, hdet,
-    one_smul]
+    hsmul, B.fourierInv_comp, smul_smul, hdet, one_smul]
+  simp [hBsymm]
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- `(A⁻¹)ᵀ` is inverted by `Aᵀ`, so `‖ξ‖ ≤ ‖Aᵀ‖ ‖(A⁻¹)ᵀ ξ‖`. -/
+private theorem norm_le_norm_adjoint_mul_norm_adjoint_symm_apply (A : E ≃L[ℝ] E) (ξ : E) :
+    ‖ξ‖ ≤ ‖(A : E →L[ℝ] E)†‖ * ‖((A.symm : E →L[ℝ] E)†) ξ‖ := by
+  calc ‖ξ‖ = ‖((A : E →L[ℝ] E)†) (((A.symm : E →L[ℝ] E)†) ξ)‖ := by
+        simpa using congrArg norm (A.symm.adjoint_symm_adjoint_apply ξ).symm
+    _ ≤ _ := ContinuousLinearMap.le_opNorm _ _
 
 end Quantization
 
@@ -150,11 +158,8 @@ private theorem exists_bound_comp_prodMap_adjoint (a : Symbol n V W m)
       (1 + ‖M ξ‖ ^ 2) ^ (t / 2) ≤ c ^ |t| * (1 + ‖ξ‖ ^ 2) ^ (t / 2) := by
     refine one_add_norm_sq_rpow_le_of_norm_le_mul hc t
       ((M.le_opNorm ξ).trans (by gcongr; exact (le_max_left _ _).trans (le_max_right _ _))) ?_
-    calc ‖ξ‖ = ‖((A : CoordinateSpace n →L[ℝ] CoordinateSpace n)†) (M ξ)‖ := by
-          simpa [M] using congrArg norm (A.symm.adjoint_symm_adjoint_apply ξ).symm
-      _ ≤ c * ‖M ξ‖ :=
-          (ContinuousLinearMap.le_opNorm _ _).trans
-            (by gcongr; exact (le_max_right _ _).trans (le_max_right _ _))
+    exact (norm_le_norm_adjoint_mul_norm_adjoint_symm_apply A ξ).trans
+      (by gcongr; exact (le_max_right _ _).trans (le_max_right _ _))
   choose C hC0 hC using fun (r : Fin α.length → Fin n) (s : Fin β.length → Fin n) ↦
     hT (List.ofFn r) (List.ofFn s)
   have hC0' : 0 ≤ ∑ r, ∑ s, C r s :=
@@ -392,10 +397,8 @@ private theorem exists_remainder_linearPullback (a : ClassicalSymbol n V W m)
   set M : CoordinateSpace n →L[ℝ] CoordinateSpace n := (A.symm : _ →L[ℝ] _)†
   set At : CoordinateSpace n →L[ℝ] CoordinateSpace n :=
     (A : CoordinateSpace n →L[ℝ] CoordinateSpace n)†
-  have hM (ξ : CoordinateSpace n) : ‖ξ‖ ≤ ‖At‖ * ‖M ξ‖ := by
-    calc ‖ξ‖ = ‖At (M ξ)‖ := by
-          simpa [M, At] using congrArg norm (A.symm.adjoint_symm_adjoint_apply ξ).symm
-      _ ≤ _ := ContinuousLinearMap.le_opNorm _ _
+  have hM (ξ : CoordinateSpace n) : ‖ξ‖ ≤ ‖At‖ * ‖M ξ‖ :=
+    norm_le_norm_adjoint_mul_norm_adjoint_symm_apply A ξ
   obtain ⟨r, hr⟩ := Symbol.exists_coefficient_eq_of_forall_le_norm
     (a.toSymbol.linearPullback A - ∑ j ∈ Finset.range N, Symbol.inclusion (by simp)
       (cutoffSymbol χ (homogeneousPullback A (a.term j)))).contDiff_coefficient
@@ -433,6 +436,7 @@ theorem coefficient_term_linearPullback (a : ClassicalSymbol n V W m) (j : ℕ)
 
 /-- **The principal symbol transforms by the cotangent lift**:
 `σ(A^* a)(x, ξ) = σ(a)(A x, (A⁻¹)ᵀ ξ)`. -/
+@[simp]
 theorem principal_linearPullback (a : ClassicalSymbol n V W m) :
     (a.linearPullback A).principal =
       (a.principal.compPosition A A.contDiff).compFrequency A.symm.adjointEquiv := by
@@ -449,6 +453,43 @@ theorem linearPullback_refl (a : ClassicalSymbol n V W m) :
 theorem linearPullback_linearPullback (B : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
     (a : ClassicalSymbol n V W m) :
     (a.linearPullback A).linearPullback B = a.linearPullback (B.trans A) :=
+  ext <| by simp
+
+@[simp]
+theorem zero_linearPullback : (0 : ClassicalSymbol n V W m).linearPullback A = 0 :=
+  ext <| by simp
+
+@[simp]
+theorem add_linearPullback (a b : ClassicalSymbol n V W m) :
+    (a + b).linearPullback A = a.linearPullback A + b.linearPullback A :=
+  ext <| by simp
+
+@[simp]
+theorem smul_linearPullback (c : ℂ) (a : ClassicalSymbol n V W m) :
+    (c • a).linearPullback A = c • a.linearPullback A :=
+  ext <| by simp
+
+@[simp]
+theorem neg_linearPullback (a : ClassicalSymbol n V W m) :
+    (-a).linearPullback A = -a.linearPullback A :=
+  ext <| by simp
+
+@[simp]
+theorem sub_linearPullback (a b : ClassicalSymbol n V W m) :
+    (a - b).linearPullback A = a.linearPullback A - b.linearPullback A :=
+  ext <| by simp
+
+@[simp]
+theorem inclusion_linearPullback {m' : ℝ} (k : ℕ) (hk : m' = m - k)
+    (a : ClassicalSymbol n V W m') :
+    (inclusion k hk a).linearPullback A = inclusion k hk (a.linearPullback A) :=
+  ext <| by simp
+
+/-- The pullback is compatible with the composition of classical symbols. -/
+@[simp]
+theorem comp_linearPullback {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m' : ℝ}
+    (b : ClassicalSymbol n W U m') (a : ClassicalSymbol n V W m) :
+    (b.comp a).linearPullback A = (b.linearPullback A).comp (a.linearPullback A) :=
   ext <| by simp
 
 /-- **Ellipticity is invariant under linear changes of coordinates.** -/
