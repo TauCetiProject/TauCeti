@@ -170,8 +170,7 @@ theorem span_completion_pi_eq_top :
       (fun a ↦ ⟨(a : P.Completion), funext fun P' ↦ ?_⟩) ?_
       ((span_completionIntegers_pi_eq_top k' F' P).symm ▸ Submodule.mem_top)
     · simp only [toV, RingHom.pi_apply, RingHom.comp_apply, Pi.evalRingHom_apply,
-        Pi.algebraMap_apply]
-      change ((algebraMap _ P'.1.completionPlace.integers a : _) : P'.1.Completion) = _
+        Pi.algebraMap_apply, ValuationSubring.coe_subtype]
       rw [coe_algebraMap_completionIntegersExtensionAlgebra, algebraMap_completionExtensionAlgebra]
     · rintro _ ⟨y, rfl⟩
       exact Submodule.subset_span ⟨y.1, funext fun P' ↦ by simp [toV]⟩
@@ -298,7 +297,7 @@ private theorem completionEmbedding_trace_of_finsum
       B.repr (fun P' : ι ↦ P'.1.completionEmbedding y) i = P.completionEmbedding (b.repr y i) := by
     have hy : (fun P' : ι ↦ P'.1.completionEmbedding y) =
         ∑ j, P.completionEmbedding (b.repr y j) • B j := by
-      change completionEmbeddingPi k' P y = _
+      rw [← completionEmbeddingPi_apply]
       conv_lhs => rw [← b.sum_repr y]
       simp only [B, Basis.coe_mk, map_sum, LinearMap.map_smulₛₗ, AlgHom.coe_toRingHom,
         completionEmbeddingPi_apply]
