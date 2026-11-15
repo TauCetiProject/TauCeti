@@ -97,6 +97,11 @@ theorem endSign_eq_one_or_eq_neg_one (q : Puncture) : q.endSign = 1 ∨ q.endSig
 @[simp] theorem endSign_mul_self (q : Puncture) : q.endSign * q.endSign = 1 := by
   cases q <;> simp
 
+/-- Multiplying twice by the sign of an end is the identity. -/
+@[simp] theorem endSign_mul_endSign_mul (q : Puncture) (x : ℝ) :
+    q.endSign * (q.endSign * x) = x := by
+  rw [← mul_assoc, endSign_mul_self, one_mul]
+
 /-- The sign of an end is its own inverse. -/
 @[simp] theorem inv_endSign (q : Puncture) : q.endSign⁻¹ = q.endSign := by
   cases q <;> simp
