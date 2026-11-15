@@ -89,6 +89,9 @@ the CI machinery. **Infrastructure tests** runs those suites separately, only wh
 `scripts/` or `.github/` changes. Its results do not gate content builds, merge
 statuses, lint, or cache publication.
 
+Operators can [enable, disable, or resize Namespace runners](scripts/namespace-controls.md)
+through Actions variables, without a source PR or staging batch.
+
 Human-owned infrastructure changes still require human review. After reviewing a PR,
 repository admins can issue `bors r+` or `bors merge`: bors records approval
 for the accepted head and merge base, requests trusted CI, and owns testing and

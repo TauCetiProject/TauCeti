@@ -83,6 +83,9 @@ star, so the subdivision is glued from the same two pieces the geometric picture
   complex that is its own closed star at `σ` produces a cone with apex the new vertex; for a
   simplex, `PreAbstractSimplicialComplex.link_stellarSubdivision_simplex_self` identifies the
   link of that apex with the simplex boundary.
+* `PreAbstractSimplicialComplex.isCone_stellarSubdivision_closedStar` and
+  `link_stellarSubdivision_closedStar_singleton`: starring the closed star of a face at that
+  face produces a cone whose apex link is the boundary `closedStar K σ ⊓ deletion K σ`.
 -/
 
 public section
@@ -477,6 +480,20 @@ theorem isCone_stellarSubdivision_simplex_self (hV : V.Nonempty) :
     IsCone (stellarSubdivision (simplex V) V v) v :=
   isCone_stellarSubdivision_of_closedStar_eq_self (self_mem_simplex.mpr hV)
     (closedStar_simplex Finset.Subset.rfl)
+
+/-- Starring the closed star of a face at that face produces a cone with apex the new vertex. -/
+theorem isCone_stellarSubdivision_closedStar (hσ : σ ∈ K) :
+    IsCone (stellarSubdivision (closedStar K σ) σ v) v :=
+  isCone_stellarSubdivision_of_closedStar_eq_self (by simp [hσ]) (by simp)
+
+/-- In the starred closed star of a face, the link of the new vertex is the boundary
+`closedStar K σ ⊓ deletion K σ` of the original closed star. -/
+theorem link_stellarSubdivision_closedStar_singleton (hv : ({v} : Finset ι) ∉ closedStar K σ) :
+    link (stellarSubdivision (closedStar K σ) σ v) {v} = closedStar K σ ⊓ deletion K σ := by
+  rw [link_stellarSubdivision_singleton hv, closedStar_closedStar, union_self]
+  refine SetLike.ext fun τ => ?_
+  simp only [mem_inf, mem_closedStar, mem_deletion]
+  tauto
 
 /-- **The starred simplex is the cone on the simplex boundary**: the link of the new vertex is
 exactly `simplexBoundary V`. This is the standard model of the move, and pins the convention. -/
