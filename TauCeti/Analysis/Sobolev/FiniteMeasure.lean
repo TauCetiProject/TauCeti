@@ -47,6 +47,8 @@ with `κ = 1/n`). The estimate then passes from test functions to their closure 
   on a ball `B(x₀, R)`, with constant a multiple of `R ^ (1 - n δ)`.
 * `TauCeti.W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top`: some
   exponent `q > p` and constant `S` with `‖u‖_{L^q} ≤ S ‖∇u‖_{Lᵖ}` on `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p0.integrable_mul_value_of_memLp`: for `r > max 1 (2n/(n+2))`, `f ∈ Lʳ(Ω)` and
+  `v ∈ W^{1,2}_0(Ω)`, the product `f v` is integrable on `Ω`.
 * `TauCeti.W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp`: for `r > max 1 (2n/(n+2))`,
   an `Lʳ(Ω)` function acts on `W^{1,2}_0(Ω)` as a continuous linear functional `v ↦ ∫_Ω f v`.
 
@@ -279,6 +281,42 @@ private def W1p0.setIntegralMulₗ (f : E → ℝ)
     rw [hx, Pi.smul_apply, smul_eq_mul]
     ring
 
+/-- The exponent bookkeeping behind the pairing of `Lʳ` with `W^{1,2}_0(Ω)`: a Sobolev exponent
+`t ≥ 2` with `‖v‖_{Lᵗ(Ω)} ≤ S ‖∇v‖_{L²(Ω)}` on `W^{1,2}_0(Ω)` and `1/r + 1/t ≤ 1`. -/
+private theorem W1p0.exists_eLpNorm_value_le_mul_enorm_gradient_of_memLp [Nontrivial E]
+    (hOmega : mu Omega ≠ ∞) {r : ℝ≥0} (hr : 1 < r)
+    (hrn : (finrank ℝ E : ℝ) * (2 - r) < 2 * r) :
+    ∃ t : ℝ≥0, 0 < t ∧ (r : ℝ)⁻¹ + (t : ℝ)⁻¹ ≤ 1 ∧ ∃ S : ℝ≥0∞, S ≠ ∞ ∧
+      ∀ v : W1p0 mu Omega 2, eLpNorm (W1p.value (v : W1p mu Omega 2)) t (mu.restrict Omega) ≤
+        S * ‖W1p.gradient (v : W1p mu Omega 2)‖ₑ := by
+  have hn : (1 : ℝ) ≤ (finrank ℝ E : ℝ) := Nat.one_le_cast.2 finrank_pos
+  obtain ⟨t, ht0, h2t, hτn, hrt⟩ :=
+    ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one (zero_lt_one.trans_le hn) hr hrn
+  exact ⟨t, ht0, hrt, _, ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+    (ENNReal.rpow_ne_top_of_nonneg (by linarith) hOmega), fun v =>
+    W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (mu := mu)
+      ENNReal.ofNat_ne_top hOmega h2t (δ := 2⁻¹ - (t : ℝ)⁻¹) (by rw [ENNReal.toReal_ofNat])
+      hτn v.2⟩
+
+/-- **An `Lʳ` function can be integrated against `W^{1,2}_0(Ω)`.** Let `n ≥ 1` be the dimension,
+let `Ω` have finite measure, and let `r > 1` with `n (2 - r) < 2 r`, that is `r > 2n/(n + 2)`.
+For `f ∈ Lʳ(Ω)` and `v ∈ W^{1,2}_0(Ω)` the product `f v` is integrable on `Ω`: by the Sobolev
+inequality `v` lies in `Lᵗ(Ω)` for an exponent `t` with `1/r + 1/t ≤ 1`. -/
+theorem W1p0.integrable_mul_value_of_memLp [Nontrivial E] (hOmega : mu Omega ≠ ∞) {r : ℝ≥0}
+    (hr : 1 < r) (hrn : (finrank ℝ E : ℝ) * (2 - r) < 2 * r) {f : E → ℝ}
+    (hf : MemLp f r (mu.restrict Omega)) (v : W1p0 mu Omega 2) :
+    Integrable (fun x => f x * W1p.value (v : W1p mu Omega 2) x) (mu.restrict Omega) := by
+  have : IsFiniteMeasure (mu.restrict (Omega : Set E)) := isFiniteMeasure_restrict.2 hOmega
+  obtain ⟨t, ht0, hrt, S, hSfin, hS⟩ :=
+    W1p0.exists_eLpNorm_value_le_mul_enorm_gradient_of_memLp hOmega hr hrn
+  have hq1 : (1 : ℝ≥0∞) ≤ ((r : ℝ≥0∞)⁻¹ + (t : ℝ≥0∞)⁻¹)⁻¹ := by
+    have hle : ((r⁻¹ + t⁻¹ : ℝ≥0) : ℝ) ≤ 1 := by push_cast; exact hrt
+    rw [ENNReal.one_le_inv, ← ENNReal.coe_inv (zero_lt_one.trans hr).ne', ← ENNReal.coe_inv ht0.ne',
+      ← ENNReal.coe_add]
+    exact_mod_cast hle
+  exact (hf.mul ((hS v).trans_lt (ENNReal.mul_lt_top hSfin.lt_top eNorm_lt_top))
+    (hpqr := ENNReal.HolderTriple.of _ _)).integrable hq1
+
 /-- **An `Lʳ` function acts continuously on `W^{1,2}_0(Ω)`.** Let `n ≥ 1` be the dimension, let
 `Ω` have finite measure, and let `r > 1` with `n (2 - r) < 2 r`, that is `r > 2n/(n + 2)` (which
 is automatic for `n ≤ 2`). For `f ∈ Lʳ(Ω)`, the pairing `v ↦ ∫_Ω f v` is a continuous linear
@@ -290,31 +328,15 @@ theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
     {f : E → ℝ} (hf : MemLp f r (mu.restrict Omega)) :
     ∃ ℓ : StrongDual ℝ (W1p0 mu Omega 2), ∀ v : W1p0 mu Omega 2,
       ℓ v = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-  set n : ℝ := (finrank ℝ E : ℝ)
-  have hn : (1 : ℝ) ≤ n := Nat.one_le_cast.2 finrank_pos
   set ν := mu.restrict (Omega : Set E)
   have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hOmega
-  obtain ⟨t, ht0, h2t, hτn, hrt⟩ :=
-    ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one (zero_lt_one.trans_le hn) hr hrn
   -- The Sobolev inequality `‖v‖_{Lᵗ} ≤ S ‖∇v‖_{L²}` on `W^{1,2}_0(Ω)`.
-  obtain ⟨S, hSfin, hS⟩ : ∃ S : ℝ≥0∞, S ≠ ∞ ∧ ∀ v : W1p0 mu Omega 2,
-      eLpNorm (W1p.value (v : W1p mu Omega 2)) t ν ≤ S * ‖W1p.gradient (v : W1p mu Omega 2)‖ₑ :=
-    ⟨_, ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-      (ENNReal.rpow_ne_top_of_nonneg (by linarith) hOmega), fun v =>
-      W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (mu := mu)
-        ENNReal.ofNat_ne_top hOmega h2t (δ := 2⁻¹ - (t : ℝ)⁻¹) (by rw [ENNReal.toReal_ofNat])
-        hτn v.2⟩
+  obtain ⟨t, ht0, hrt, S, hSfin, hS⟩ :=
+    W1p0.exists_eLpNorm_value_le_mul_enorm_gradient_of_memLp hOmega hr hrn
   have hmemt : ∀ v : W1p0 mu Omega 2, MemLp (W1p.value (v : W1p mu Omega 2)) t ν := fun v =>
     (hS v).trans_lt (ENNReal.mul_lt_top hSfin.lt_top eNorm_lt_top)
-  -- Hölder's inequality: `f v` is integrable and `|∫_Ω f v| ≤ ‖f‖_{Lʳ} ‖v‖_{Lᵗ} |Ω|^{...}`.
-  have hq1 : (1 : ℝ≥0∞) ≤ ((r : ℝ≥0∞)⁻¹ + (t : ℝ≥0∞)⁻¹)⁻¹ := by
-    have hle : ((r⁻¹ + t⁻¹ : ℝ≥0) : ℝ) ≤ 1 := by push_cast; exact hrt
-    rw [ENNReal.one_le_inv, ← ENNReal.coe_inv (zero_lt_one.trans hr).ne', ← ENNReal.coe_inv ht0.ne',
-      ← ENNReal.coe_add]
-    exact_mod_cast hle
-  have hint : ∀ v : W1p0 mu Omega 2,
-      Integrable (fun x => f x * W1p.value (v : W1p mu Omega 2) x) ν := fun v =>
-    (hf.mul (hmemt v) (hpqr := ENNReal.HolderTriple.of _ _)).integrable hq1
+  -- Hölder's inequality: `|∫_Ω f v| ≤ ‖f‖_{Lʳ} ‖v‖_{Lᵗ} |Ω|^{...}`.
+  have hint := W1p0.integrable_mul_value_of_memLp hOmega hr hrn hf
   refine ⟨(W1p0.setIntegralMulₗ f hint).mkContinuous
     ((eLpNorm f r ν).toReal * S.toReal * ν.real univ ^ (1 - (r : ℝ)⁻¹ - (t : ℝ)⁻¹))
     fun v => ?_, fun v => rfl⟩

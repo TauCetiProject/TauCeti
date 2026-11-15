@@ -262,20 +262,7 @@ theorem energyFormH1_restrictL_eq_setIntegral {a : EuclideanSpace ℝ ι → Mat
     (v : W1p0 mu U 2) :
     energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) =
       ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
-  have hUm := U.isOpen.measurableSet
-  have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
-  rw [energyFormH1_restrictL, hu, W1p0.value_extendByZeroL]
-  calc ∫ x in Omega, f x * extendByZeroLpₗᵢ ℝ mu hUm hUO (W1p.value (v : W1p mu U 2)) x ∂mu
-      = ∫ x in Omega, (U : Set (EuclideanSpace ℝ ι)).indicator
-          (fun x => f x * W1p.value (v : W1p mu U 2) x) x ∂mu := by
-        refine integral_congr_ae ?_
-        filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.value (v : W1p mu U 2))] with x hx
-        rw [hx]
-        by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
-        · rw [indicator_of_mem hxU, indicator_of_mem hxU]
-        · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, mul_zero]
-    _ = ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
-        rw [integral_indicator hUm, Measure.restrict_restrict hUm, inter_eq_left.2 hUO]
+  rw [energyFormH1_restrictL, hu, W1p0.setIntegral_mul_value_extendByZeroL]
 
 /-- If `a'` agrees with `a` on an open `U ≤ Ω`, is essentially bounded on `U`, `b, c ∈ L∞(Ω)`, and
 `u ∈ H¹(Ω)` solves the equation with coefficients `a, b, c` and right-hand side `f`, then the

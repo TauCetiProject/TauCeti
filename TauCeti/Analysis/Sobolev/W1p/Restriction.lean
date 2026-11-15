@@ -35,6 +35,8 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
   the weak gradients of a function and of a function defined only there.
 * `TauCeti.W1p.continuous_setAverage_value`: the mean of the value component over a fixed
   subset depends continuously on the Sobolev function.
+* `TauCeti.W1p.setIntegral_mul_value_restrictL`, `TauCeti.W1p.integrable_mul_value_restrictL_iff`:
+  testing a function against `v|_U` on `U` is testing its extension by zero against `v`.
 
 ## References
 
@@ -326,5 +328,31 @@ theorem W1p.tendsto_lintegral_gradient_sub (hV : V ≤ Omega)
   simpa only [hrs] using tendsto_setLIntegral_enorm_sub_of_tendsto_Lp hlt hgrad
     (a := fun n => W1p.gradient (a n)) (a₀ := W1p.gradient u) (fun n => ae_eq_refl _)
     (ae_eq_refl _)
+
+/-- Testing a function `g` against the restriction `v|_U` of `v ∈ W^{1,p}(Ω)` on `U ⊆ Ω` is
+testing `1_U g` against `v` on `Ω`. -/
+theorem W1p.setIntegral_mul_value_restrictL (hU : U ≤ Omega) (g : E → ℝ) (v : W1p mu Omega p) :
+    ∫ x in U, g x * W1p.value (W1p.restrictL hU v) x ∂mu =
+      ∫ x in Omega, (U : Set E).indicator g x * W1p.value v x ∂mu := by
+  have hUm := U.isOpen.measurableSet
+  simp_rw [← Set.indicator_mul_left]
+  rw [integral_indicator hUm, Measure.restrict_restrict_of_subset (SetLike.coe_subset_coe.mpr hU)]
+  refine integral_congr_ae ?_
+  filter_upwards [W1p.value_restrictL_ae hU v] with x hx
+  rw [hx]
+
+/-- The product of `g` with the restriction `v|_U` of `v ∈ W^{1,p}(Ω)` is integrable on `U ⊆ Ω`
+exactly when `1_U g v` is integrable on `Ω`. -/
+theorem W1p.integrable_mul_value_restrictL_iff (hU : U ≤ Omega) (g : E → ℝ)
+    (v : W1p mu Omega p) :
+    Integrable (fun x => g x * W1p.value (W1p.restrictL hU v) x) (mu.restrict U) ↔
+      Integrable (fun x => (U : Set E).indicator g x * W1p.value v x) (mu.restrict Omega) := by
+  have hUm := U.isOpen.measurableSet
+  simp_rw [← Set.indicator_mul_left]
+  rw [integrable_indicator_iff hUm,
+    IntegrableOn, Measure.restrict_restrict_of_subset (SetLike.coe_subset_coe.mpr hU)]
+  refine integrable_congr ?_
+  filter_upwards [W1p.value_restrictL_ae hU v] with x hx
+  rw [hx]
 
 end TauCeti

@@ -50,6 +50,9 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
   `TauCeti.W1p0.extendByZeroL_extendByZeroL`.
 * `TauCeti.W1p0.value_extendByZeroL_ae_eq_zero_compl`: the whole-space extension vanishes almost
   everywhere off `Ω`.
+* `TauCeti.W1p0.setIntegral_mul_value_extendByZeroL`,
+  `TauCeti.W1p0.integrable_mul_value_extendByZeroL_iff`: testing a function against the extension
+  is testing it against `u` on `Ω`.
 * `TauCeti.W1p0.norm_value_extendByZeroL`, `TauCeti.W1p0.norm_gradient_extendByZeroL`: the
   extension preserves the norms of both components.
 * `TauCeti.W1p0.restrictL_extendByZeroL`: restricting the extension back to `Ω` recovers `u`.
@@ -297,6 +300,49 @@ theorem W1p0.gradient_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omega
         (W1p.gradient (u : W1p mu Omega p)) := by
   rw [W1p.gradient_coe, W1p.gradient_coe, W1p0.coe_extendByZeroL,
     Sobolev1JetLp.gradient_extendByZeroₗᵢ]
+
+/-- The value component of the extension is, almost everywhere on `Ω'`, the value component of
+`u` on `Ω` and `0` off `Ω`. -/
+theorem W1p0.value_extendByZeroL_ae_eq_indicator (hsub : Omega ≤ Omega')
+    (u : W1p0 mu Omega p) :
+    W1p.value (W1p0.extendByZeroL hsub u : W1p mu Omega' p) =ᵐ[mu.restrict Omega']
+      (Omega : Set E).indicator (W1p.value (u : W1p mu Omega p) : E → ℝ) := by
+  rw [W1p0.value_extendByZeroL]
+  exact coeFn_extendByZeroLpₗᵢ ℝ Omega.isOpen.measurableSet (SetLike.coe_subset_coe.mpr hsub)
+    (W1p.value (u : W1p mu Omega p))
+
+/-- Testing a function `g` against the zero extension of `u ∈ W^{1,p}_0(Ω)` on `Ω' ⊇ Ω` is
+testing it against `u` on `Ω`. -/
+theorem W1p0.setIntegral_mul_value_extendByZeroL (hsub : Omega ≤ Omega') (g : E → ℝ)
+    (u : W1p0 mu Omega p) :
+    ∫ x in Omega', g x * W1p.value (W1p0.extendByZeroL hsub u : W1p mu Omega' p) x ∂mu =
+      ∫ x in Omega, g x * W1p.value (u : W1p mu Omega p) x ∂mu := by
+  have hOm := Omega.isOpen.measurableSet
+  calc ∫ x in Omega', g x * W1p.value (W1p0.extendByZeroL hsub u : W1p mu Omega' p) x ∂mu
+      = ∫ x in Omega', (Omega : Set E).indicator
+          (fun x => g x * W1p.value (u : W1p mu Omega p) x) x ∂mu := by
+        refine integral_congr_ae ?_
+        filter_upwards [W1p0.value_extendByZeroL_ae_eq_indicator hsub u] with x hx
+        rw [hx, ← Set.indicator_mul_right]
+    _ = ∫ x in Omega, g x * W1p.value (u : W1p mu Omega p) x ∂mu := by
+        rw [integral_indicator hOm,
+          Measure.restrict_restrict_of_subset (SetLike.coe_subset_coe.mpr hsub)]
+
+/-- The product of `g` with the zero extension of `u ∈ W^{1,p}_0(Ω)` is integrable on `Ω' ⊇ Ω`
+exactly when `g u` is integrable on `Ω`. -/
+theorem W1p0.integrable_mul_value_extendByZeroL_iff (hsub : Omega ≤ Omega') (g : E → ℝ)
+    (u : W1p0 mu Omega p) :
+    Integrable (fun x => g x * W1p.value (W1p0.extendByZeroL hsub u : W1p mu Omega' p) x)
+        (mu.restrict Omega') ↔
+      Integrable (fun x => g x * W1p.value (u : W1p mu Omega p) x) (mu.restrict Omega) := by
+  have hOm := Omega.isOpen.measurableSet
+  rw [integrable_congr (by
+      filter_upwards [W1p0.value_extendByZeroL_ae_eq_indicator hsub u] with x hx
+      rw [hx, ← Set.indicator_mul_right] :
+      (fun x => g x * W1p.value (W1p0.extendByZeroL hsub u : W1p mu Omega' p) x) =ᵐ[_]
+        (Omega : Set E).indicator (fun x => g x * W1p.value (u : W1p mu Omega p) x)),
+    integrable_indicator_iff hOm, IntegrableOn,
+    Measure.restrict_restrict_of_subset (SetLike.coe_subset_coe.mpr hsub)]
 
 /-- Extension by zero preserves the `Lᵖ` norm of the value component. -/
 theorem W1p0.norm_value_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omega p) :
