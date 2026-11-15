@@ -107,7 +107,7 @@ theorem IsFilledIn.exists_differentiableOn_norm_sub_lt [CompleteSpace F] (hfill 
   have hhK : Disjoint (tsupport h) K := disjoint_left.2 fun z hz ↦ (hhU hz).2
   -- Read `f` on `K` as `π⁻¹ ∫ G`, a `C(K, F)`-valued integral of simple fractions.
   have : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  let G : C(ℂ, C(K, F)) := ContinuousMap.curry ⟨_, hh.inv_sub_smul_of_disjoint_tsupport hhK⟩
+  let G : C(ℂ, C(K, F)) := ContinuousMap.curry ⟨_, hh.sub_inv_smul_of_disjoint_tsupport hhK⟩
   have hG_apply (z : ℂ) (ξ : K) : G z ξ = ((ξ : ℂ) - z)⁻¹ • h z := by
     simp [G, ContinuousMap.curry_apply]
   have hGc : HasCompactSupport G := hhc.mono fun z hz hhz ↦
@@ -157,7 +157,7 @@ theorem isFilledIn_iff_forall_exists_differentiableOn_norm_sub_lt (hΩ : IsOpen 
       ∀ ε > 0, ∃ g : ℂ → ℂ, DifferentiableOn ℂ g Ω ∧ ∀ z ∈ K, ‖f z - g z‖ < ε := by
   refine ⟨fun hfill U hU hKU f hf ε hε ↦
     hfill.exists_differentiableOn_norm_sub_lt hΩ hK hKΩ hU hKU hf hε, fun h ↦ ?_⟩
-  refine isFilledIn_of_forall_exists_differentiableOn_norm_inv_sub_lt hΩ hK.isClosed fun a ha ↦
+  refine isFilledIn_of_forall_exists_differentiableOn_norm_inv_sub_lt hΩ fun a ha ↦
     h {a}ᶜ isOpen_compl_singleton (fun z hz hza ↦ ha.2 (hza ▸ hz)) _ ?_
   exact ((differentiableOn_id.sub_const a).inv fun z hz ↦ sub_ne_zero.2 hz)
 

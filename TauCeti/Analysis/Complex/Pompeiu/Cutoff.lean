@@ -23,7 +23,7 @@ whose poles avoid `K`; it is the representation behind Runge's approximation the
 
 ## Main results
 
-* `Continuous.inv_sub_smul_of_disjoint_tsupport`: the Cauchy kernel `(z, ξ) ↦ (ξ - z)⁻¹ • h z` is
+* `Continuous.sub_inv_smul_of_disjoint_tsupport`: the Cauchy kernel `(z, ξ) ↦ (ξ - z)⁻¹ • h z` is
   jointly continuous on `ℂ × K` when the closed support of the continuous density `h` misses `K`.
 * `DifferentiableOn.exists_eqOn_cauchyTransform`: the Cauchy–Green formula with a cutoff.
 
@@ -42,7 +42,7 @@ namespace TauCeti
 
 /-- The Cauchy kernel `(z, ξ) ↦ (ξ - z)⁻¹ • h z` is continuous on `ℂ × K` when the density `h` is
 continuous and its closed support misses `K`. -/
-theorem _root_.Continuous.inv_sub_smul_of_disjoint_tsupport {F : Type*} [TopologicalSpace F]
+theorem _root_.Continuous.sub_inv_smul_of_disjoint_tsupport {F : Type*} [TopologicalSpace F]
     [Zero F] [SMulZeroClass ℂ F] [ContinuousSMul ℂ F] {K : Set ℂ} {h : ℂ → F} (hh : Continuous h)
     (hK : Disjoint (tsupport h) K) : Continuous fun p : ℂ × K ↦ ((p.2 : ℂ) - p.1)⁻¹ • h p.1 :=
   (hh.comp continuous_fst).smul_of_continuousOn_of_tsupport_subset

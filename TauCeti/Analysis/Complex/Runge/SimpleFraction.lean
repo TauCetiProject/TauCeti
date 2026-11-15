@@ -37,9 +37,8 @@ hence on `C` by the maximum modulus principle, which fails at `z = a`.
 * `TauCeti.IsFilledIn.exists_differentiableOn_norm_inv_sub_lt`: on a compact set filled in `Ω`,
   each simple fraction with pole off the set is uniformly approximable by functions holomorphic
   on `Ω`.
-* `TauCeti.isFilledIn_of_forall_exists_differentiableOn_norm_inv_sub_lt`: conversely, for closed
-  `K`, if the simple fractions with poles in `Ω \ K` are so approximable, then `K` is filled in
-  `Ω`.
+* `TauCeti.isFilledIn_of_forall_exists_differentiableOn_norm_inv_sub_lt`: conversely, if the
+  simple fractions with poles in `Ω \ K` are so approximable, then `K` is filled in `Ω`.
 * `TauCeti.isFilledIn_iff_forall_exists_differentiableOn_norm_inv_sub_lt`: the resulting
   characterisation of compact sets filled in `Ω`.
 
@@ -54,7 +53,7 @@ hence on `C` by the maximum modulus principle, which fails at `z = a`.
 
 public section
 
-open Set
+open Filter Set
 open scoped Topology
 
 namespace TauCeti
@@ -133,21 +132,39 @@ theorem IsFilledIn.exists_differentiableOn_norm_inv_sub_lt (hfill : IsFilledIn K
   exact lt_of_le_of_lt ((v.val - φ g').norm_coe_le_norm ⟨z, hz⟩)
     (by simpa [dist_eq_norm] using hdist)
 
-/-- **The converse of Runge's theorem for simple fractions.** Let `K ⊆ ℂ` be closed and `Ω ⊆ ℂ`
+/-- **The converse of Runge's theorem for simple fractions.** Let `K ⊆ ℂ` be any set and `Ω ⊆ ℂ`
 open. If for every `a ∈ Ω \ K` the simple fraction `z ↦ (z - a)⁻¹` is a uniform limit on `K` of
 functions holomorphic on `Ω`, then `K` is filled in `Ω`. -/
 theorem isFilledIn_of_forall_exists_differentiableOn_norm_inv_sub_lt (hΩ : IsOpen Ω)
-    (hK : IsClosed K)
     (h : ∀ a ∈ Ω \ K, ∀ ε > 0, ∃ g : ℂ → ℂ, DifferentiableOn ℂ g Ω ∧
       ∀ z ∈ K, ‖(z - a)⁻¹ - g z‖ < ε) :
     IsFilledIn K Ω := by
+  -- `Ω \ K` is open: a pole `a ∈ Ω \ K` lies off `closure K`, since near `a` the simple fraction
+  -- is unbounded on `K` while its holomorphic approximant stays bounded.
+  have hΩK : IsOpen (Ω \ K) := by
+    suffices Ω \ K = Ω \ closure K from this ▸ hΩ.sdiff isClosed_closure
+    refine (sdiff_subset_sdiff_right subset_closure).antisymm' fun a ha ↦ ⟨ha.1, fun haK ↦ ?_⟩
+    obtain ⟨g, hg, hgK⟩ := h a ha 1 one_pos
+    have := mem_closure_iff_nhdsWithin_neBot.1 haK
+    have hsub : Tendsto (· - a) (𝓝[K] a) (𝓝[≠] 0) :=
+      tendsto_nhdsWithin_iff.2 ⟨tendsto_nhdsWithin_of_tendsto_nhds
+        (by simpa using (continuous_sub_right a).tendsto a),
+        eventually_mem_nhdsWithin.mono fun z hz ↦ sub_ne_zero.2 fun hza ↦ ha.2 (hza ▸ hz)⟩
+    have hg' : Tendsto (fun z ↦ -‖g z‖) (𝓝[K] a) (𝓝 (-‖g a‖)) :=
+      ((hg.differentiableAt (hΩ.mem_nhds ha.1)).continuousAt.norm.neg).mono_left
+        nhdsWithin_le_nhds
+    have hlim := tendsto_atTop_mono
+      (fun z ↦ (sub_eq_add_neg _ _).symm.trans_le (norm_sub_norm_le _ _))
+      ((tendsto_norm_inv_nhdsNE_zero_atTop.comp hsub).atTop_add hg')
+    obtain ⟨z, hz, hzK⟩ := ((hlim.eventually_ge_atTop 1).and self_mem_nhdsWithin).exists
+    exact (hgK z hzK).not_ge hz
   rw [isFilledIn_iff]
   rintro a ha ⟨hCc, hCΩ⟩
   set C := connectedComponentIn (Ω \ K) a
   -- The frontier of the component `C` lies in `K`.
   have hfr : frontier C ⊆ K := fun z hz ↦ by
     by_contra hzK
-    exact frontier_connectedComponentIn_subset_compl (hΩ.sdiff hK) a hz
+    exact frontier_connectedComponentIn_subset_compl hΩK a hz
       ⟨hCΩ (frontier_subset_closure hz), hzK⟩
   obtain ⟨R, hR⟩ := hCc.isBounded.subset_closedBall a
   set R' := max R 0
@@ -179,6 +196,6 @@ theorem isFilledIn_iff_forall_exists_differentiableOn_norm_inv_sub_lt (hΩ : IsO
     IsFilledIn K Ω ↔ ∀ a ∈ Ω \ K, ∀ ε > 0, ∃ g : ℂ → ℂ, DifferentiableOn ℂ g Ω ∧
       ∀ z ∈ K, ‖(z - a)⁻¹ - g z‖ < ε :=
   ⟨fun hfill _ ha _ hε ↦ hfill.exists_differentiableOn_norm_inv_sub_lt hΩ hK hKΩ ha.2 hε,
-    isFilledIn_of_forall_exists_differentiableOn_norm_inv_sub_lt hΩ hK.isClosed⟩
+    isFilledIn_of_forall_exists_differentiableOn_norm_inv_sub_lt hΩ⟩
 
 end TauCeti
