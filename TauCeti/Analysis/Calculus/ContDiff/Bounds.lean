@@ -62,6 +62,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   order at most `n` of `f` and `g` are `O(ρ₁)` and `O(ρ₂)`, then the order-`n` derivative of
   `y ↦ B (f y) (g y)` is `O(ρ₁ ρ₂)`.
 * `ContDiff.isBigO_iteratedFDeriv_smulRight`: the same for `y ↦ (f y).smulRight (g y)`.
+* `ContinuousLinearMap.isBigO_iteratedFDeriv_comp_left`: along any filter, if the order-`n`
+  derivative of `f` is `O(ρ)`, then so is that of `y ↦ L (f y)`.
 -/
 
 public section
@@ -302,6 +304,18 @@ theorem ContDiff.isBigO_iteratedFDeriv_smulRight {D : Type*} [NormedAddCommGroup
     iteratedFDeriv 𝕜 n (fun y ↦ (f y).smulRight (g y)) =O[l] fun y ↦ ρ₁ y * ρ₂ y := by
   simpa using (ContinuousLinearMap.smulRightL 𝕜 E G).isBigO_iteratedFDeriv_of_bilinear hf hg hn
     hfn hgn
+
+open Asymptotics in
+/-- **Asymptotic bounds on the derivatives of `L ∘ f`.** Along any filter, if the derivative of
+order `n` of a `Cⁿ` map `f` is `O(ρ)`, then so is that of `y ↦ L (f y)` for a continuous linear
+map `L`, by `ContinuousLinearMap.norm_iteratedFDeriv_comp_left`. -/
+theorem ContinuousLinearMap.isBigO_iteratedFDeriv_comp_left {D : Type*} [NormedAddCommGroup D]
+    [NormedSpace 𝕜 D] (L : E →L[𝕜] F) {f : D → E} {N : WithTop ℕ∞} (hf : ContDiff 𝕜 N f) {n : ℕ}
+    (hn : n ≤ N) {l : Filter D} {R : Type*} [Norm R] {ρ : D → R}
+    (hfn : iteratedFDeriv 𝕜 n f =O[l] ρ) :
+    iteratedFDeriv 𝕜 n (fun y ↦ L (f y)) =O[l] ρ :=
+  (IsBigO.of_bound ‖L‖ (Filter.Eventually.of_forall fun _ ↦
+    L.norm_iteratedFDeriv_comp_left hf.contDiffAt hn)).trans hfn
 
 namespace TauCeti
 

@@ -22,10 +22,12 @@ public import TauCeti.GroupTheory.QuotientGroup.Basic
 
 Two subgroups `H` and `K` of a group `G` are **almost conjugate** (also called *Gassmann
 equivalent*, or *locally conjugate*) when they meet every conjugacy class of `G` in the same
-number of elements. Conjugate subgroups are almost conjugate, but the converse fails: there are
-finite groups with non-conjugate almost-conjugate subgroups. These are Gassmann's examples, and
-they are the group-theoretic input to the construction of non-isomorphic arithmetically
-equivalent number fields.
+number of elements. This is the classical notion for finite `H` and `K` (in particular for finite
+`G`). The definition counts with `Nat.card`, which is `0` on an infinite set, so for infinite
+subgroups it is coarser than comparing cardinalities. Conjugate subgroups are almost conjugate,
+but the converse fails: there are finite groups with non-conjugate almost-conjugate subgroups.
+These are Gassmann's examples, and they are the group-theoretic input to the construction of
+non-isomorphic arithmetically equivalent number fields.
 
 The notion is equivalently a statement about the coset spaces. For `g : G` the number of cosets
 of `H` fixed by `g` is related to the number of elements of `H` conjugate to `g` by the
@@ -49,9 +51,9 @@ Through the classification of permutation representations by fixed-point counts 
 
 ## Main definitions
 
-* `Subgroup.AlmostConjugate H K`: `H` and `K` meet every conjugacy class of `G` in the same number
-  of elements. It is decidable for a finite group with decidable equality and decidable subgroup
-  membership.
+* `Subgroup.AlmostConjugate H K`: `H` and `K` meet every conjugacy class of `G` in the same
+  `Nat.card` (the same number of elements when `H` and `K` are finite). It is decidable for a
+  finite group with decidable equality and decidable subgroup membership.
 
 ## Main statements
 
@@ -88,7 +90,8 @@ namespace Subgroup
 variable {G Γ : Type*} [Group G] [Group Γ]
 
 /-- Two subgroups `H` and `K` of `G` are **almost conjugate** when they meet every conjugacy class
-of `G` in the same number of elements. -/
+of `G` in the same number of elements. This is the classical notion for finite `H` and `K`; the
+number of elements is `Nat.card`, so an infinite intersection counts as `0`. -/
 def AlmostConjugate (H K : Subgroup G) : Prop :=
   ∀ C : ConjClasses G,
     Nat.card {x : G // x ∈ C.carrier ∧ x ∈ H} = Nat.card {x : G // x ∈ C.carrier ∧ x ∈ K}
@@ -102,7 +105,9 @@ theorem almostConjugate_iff :
   Iff.rfl
 
 /-- Almost-conjugacy read on conjugacy classes through their representatives: `H` and `K` are
-almost conjugate exactly when, for every `g : G`, they contain equally many conjugates of `g`. -/
+almost conjugate exactly when, for every `g : G`, the conjugates of `g` in `H` and in `K` have the
+same `Nat.card` (infinite sets count as `0`), that is, `H` and `K` contain equally many conjugates
+of `g` when they are finite. -/
 theorem almostConjugate_iff_forall_natCard_isConj :
     H.AlmostConjugate K ↔ ∀ g : G,
       Nat.card {x : G // IsConj g x ∧ x ∈ H} = Nat.card {x : G // IsConj g x ∧ x ∈ K} := by
