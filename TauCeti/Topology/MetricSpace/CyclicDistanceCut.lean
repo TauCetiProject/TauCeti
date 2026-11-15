@@ -9,6 +9,7 @@ public import Mathlib.Topology.ContinuousMap.Basic
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 
 import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Cyclic tuples with bounded consecutive distances
@@ -24,6 +25,8 @@ with the indices read cyclically (`TauCeti.cyclicDistanceCut`). This file develo
 arbitrary pseudometric space, before any geodesic interpolation is chosen.
 
 * The cut is closed, hence compact in a compact space, and it grows with the cut-offs.
+* Closing up a tuple by its first vertex lists the edges `(q i, q (i + 1))` in order, and each edge
+  is bounded by its cut-off.
 * Repeating the first vertex, `(q₀, …, qₙ) ↦ (q₀, q₀, q₁, …, qₙ)`, adds an edge of length zero and
   keeps the other edges. So it maps the cut with cut-offs `δ` into the cut with cut-offs `δ'` as
   soon as `δ₀ ≤ δ'₀`, `0 ≤ δ'₁` and `δᵢ ≤ δ'ᵢ₊₁` for every `i ≠ 0`
@@ -44,6 +47,9 @@ The sampling of compact families of free Moore loops into these cuts is in
 
 * `TauCeti.isClosed_cyclicDistanceCut`, `TauCeti.isCompact_cyclicDistanceCut`: the cut is closed,
   and compact in a compact space.
+* `TauCeti.dist_add_one_le_of_mem_cyclicDistanceCut`,
+  `TauCeti.dist_snoc_le_of_mem_cyclicDistanceCut`: consecutive vertices, including the closing
+  pair, are within the cut-offs.
 * `TauCeti.cons_mem_cyclicDistanceCut`: repeating the first vertex maps one cut into another.
 * `TauCeti.isEmbedding_cyclicDistanceCutRepeatFirst`,
   `TauCeti.isClosedEmbedding_cyclicDistanceCutRepeatFirst`: it is an embedding, closed when the
@@ -95,6 +101,21 @@ theorem cyclicDistanceCut_mono {δ δ' : Fin (n + 1) → ℝ} (h : δ ≤ δ') :
 theorem nonneg_of_mem_cyclicDistanceCut {δ : Fin (n + 1) → ℝ} {q : Fin (n + 1) → X}
     (hq : q ∈ cyclicDistanceCut δ) : 0 ≤ δ :=
   fun i ↦ dist_nonneg.trans (hq i)
+
+/-- In the distance cut, each vertex is within the cut-off `δ (i + 1)` of the cyclically next one:
+the edge from `q i` to `q (i + 1)` is the edge at the vertex `i + 1`. -/
+theorem dist_add_one_le_of_mem_cyclicDistanceCut {δ : Fin (n + 1) → ℝ} {q : Fin (n + 1) → X}
+    (hq : q ∈ cyclicDistanceCut δ) (i : Fin (n + 1)) : dist (q i) (q (i + 1)) ≤ δ (i + 1) := by
+  simpa [dist_comm] using hq (i + 1)
+
+/-- In the distance cut, the consecutive vertices of the closed tuple `q 0, …, q n, q 0` are within
+the cut-offs: its `i`-th edge joins `q i` to `q (i + 1)`. -/
+theorem dist_snoc_le_of_mem_cyclicDistanceCut {δ : Fin (n + 1) → ℝ} {q : Fin (n + 1) → X}
+    (hq : q ∈ cyclicDistanceCut δ) (i : Fin (n + 1)) :
+    dist ((Fin.snoc q (q 0) : Fin (n + 2) → X) i.castSucc)
+      ((Fin.snoc q (q 0) : Fin (n + 2) → X) i.succ) ≤ δ (i + 1) := by
+  rw [Fin.snoc_castSucc, Fin.snoc_self_zero_succ]
+  exact dist_add_one_le_of_mem_cyclicDistanceCut hq i
 
 /-- The constant tuples lie in the distance cut for nonnegative cut-offs. -/
 theorem const_mem_cyclicDistanceCut {δ : Fin (n + 1) → ℝ} (hδ : 0 ≤ δ) (x : X) :

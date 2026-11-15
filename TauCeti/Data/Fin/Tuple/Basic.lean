@@ -36,6 +36,8 @@ once.
 * `Fin.snoc_comp_swap_castSucc`: exchanging two entries other than the last one commutes with
   appending.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
+* `Fin.snoc_self_zero_succ`: closing up a tuple by appending its first entry, the entry after the
+  `i`-th one is the entry at the cyclic successor `i + 1`.
 * `Fin.snoc_tail_comp_rev`: appending the first entry to the reversed tail reverses the tuple.
 * `Fin.forall_snoc_eq_iff_snoc_eq`: appending one entry to each of two tuples gives the same
   equality pattern exactly when the old patterns agree and the new entries repeat the same
@@ -129,6 +131,14 @@ theorem snoc_comp_swap_castSucc {n : ℕ} (c : Fin n → α) (z : α) (j k : Fin
 theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
     tail (snoc a x : Fin (n + 2) → α) = snoc (tail a) x := by
   conv_lhs => rw [← cons_self_tail a, ← cons_snoc_eq_snoc_cons, tail_cons]
+
+/-- Closing up a tuple by appending its first entry: in the closed tuple, the entry following the
+`i`-th one is the entry of the original tuple at the cyclic successor `i + 1`. -/
+theorem snoc_self_zero_succ {α : Type*} {n : ℕ} (a : Fin (n + 1) → α) (i : Fin (n + 1)) :
+    (snoc a (a 0) : Fin (n + 2) → α) i.succ = a (i + 1) := by
+  induction i using lastCases with
+  | last => rw [succ_last, snoc_last, last_add_one]
+  | cast j => rw [succ_castSucc, snoc_castSucc, coeSucc_eq_succ]
 
 /-- Appending the first entry of `a` to its reversed tail is reversing `a`. -/
 theorem snoc_tail_comp_rev {α : Type*} {n : ℕ} (a : Fin (n + 1) → α) :
