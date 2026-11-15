@@ -10,7 +10,9 @@ public import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 public import TauCeti.Analysis.Fourier.Torus.Multiplier
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.Analysis.Fourier.Torus.Convolution
 import TauCeti.Analysis.Fourier.PoissonSummation
+import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 /-!
 # Fourier multipliers on the torus with Schwartz symbols
@@ -119,20 +121,16 @@ private theorem eLpNorm_periodicKernel_le (σ : 𝓢(EuclideanSpace ℝ d, ℂ))
 
 /-! ### The multiplier is a convolution -/
 
-/-- The integral of `eₙ(t) f(x - t)` over the torus is `eₙ(x) f̂(n)`. -/
+/-- The integral of `eₙ(t) f(x - t)` over the torus is `eₙ(x) f̂(n)`: the convolution identity
+`UnitAddTorus.convolution_mFourier_apply` for the Haar probability measure used here, which is the
+volume on the torus. -/
 private theorem integral_mFourier_mul_sub (f : UnitAddTorus d → ℂ) (n : d → ℤ)
     (x : UnitAddTorus d) :
     ∫ t, mFourier n t * f (x - t) = mFourier n x * mFourierCoeff f n := by
-  have he (s : UnitAddTorus d) : mFourier n (x - s) = mFourier n x * mFourier (-n) s := by
-    have h1 : mFourier n s * mFourier (-n) s = 1 := by
-      rw [← mFourier_add, add_neg_cancel, mFourier_zero, ContinuousMap.one_apply]
-    calc mFourier n (x - s) = mFourier n (x - s) * (mFourier n s * mFourier (-n) s) := by
-          rw [h1, mul_one]
-      _ = mFourier n (x - s + s) * mFourier (-n) s := by rw [mFourier_apply_add]; ring
-      _ = _ := by rw [sub_add_cancel]
-  rw [mFourierCoeff, ← integral_const_mul,
-    ← integral_sub_left_eq_self (fun t ↦ mFourier n t * f (x - t)) volume x]
-  simp only [sub_sub_cancel, he, smul_eq_mul, mul_assoc]
+  have h := convolution_mFourier_apply n f x
+  rw [TauCeti.UnitAddTorus.volume_eq_pi_haarAddCircle, convolution_def] at h
+  simp only [ContinuousLinearMap.lsmul_apply, smul_eq_mul] at h
+  exact h
 
 variable (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) {m : ℓ^∞(d → ℤ, ℂ)}
 
@@ -163,15 +161,11 @@ private theorem fourierMultiplier_ae_eq_convolution (hm : ∀ n, m n = σ (latti
     fourierMultiplier m f =ᵐ[volume]
       periodicKernel σ ⋆[ContinuousLinearMap.mul ℂ ℂ, volume] f := by
   set c : (d → ℤ) → ℂ := fun n ↦ m n * mFourierCoeff f n
-  -- By Parseval's identity, the Fourier coefficients of `f` are bounded by `‖f‖`.
-  have hf (n : d → ℤ) : ‖mFourierCoeff f n‖ ≤ ‖f‖ :=
-    (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1
-      (le_hasSum (hasSum_norm_sq_mFourierCoeff f) n fun _ _ ↦ sq_nonneg _)
   have hc : Summable fun n ↦ c n • mFourier n := .of_norm <|
     ((summable_norm_apply_latticePoint σ).mul_right ‖f‖).of_nonneg_of_le
       (fun _ ↦ norm_nonneg _) fun n ↦ by
         rw [norm_smul, mFourier_norm, mul_one, norm_mul, hm]
-        exact mul_le_mul_of_nonneg_left (hf n) (norm_nonneg _)
+        exact mul_le_mul_of_nonneg_left (norm_mFourierCoeff_le_norm f n) (norm_nonneg _)
   -- The Fourier series of `T_m f` converges in `L²` and, absolutely, in `C(𝕋ᵈ)`.
   have hsum := (ContinuousMap.toLp (E := ℂ) 2 volume ℂ).hasSum hc.hasSum
   simp only [map_smul] at hsum
