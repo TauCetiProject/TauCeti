@@ -57,6 +57,8 @@ manifold differential of a function to tangent vectors whose base point varies.
   chart centre, these pullbacks are the coordinates in the tangent-bundle trivialization.
 * `MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm`:
   differentiability of these coordinate expressions without a completeness assumption.
+* `MDifferentiableAt.differentiableAt_mpullbackWithin_extChartAt_symm`: on a boundaryless model,
+  these coordinate expressions are differentiable at the chart image of the point.
 * `ContMDiffWithinAt.contDiffWithinAt_mpullbackWithin_extChartAt_symm`: `C^n` regularity of
   these coordinate expressions, over any model with corners.
 * `TauCeti.eventually_hasDerivAt_extChartAt_family`: read in the chart at `y`, the points near `y`
@@ -431,6 +433,18 @@ theorem MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartA
   exact hd.congr_of_eventuallyEq
     (heq.symm.filter_mono (nhdsWithin_mono _ inter_subset_right))
     (heq.symm.self_of_nhdsWithin (mem_range_self (chartAt H x x)))
+
+/-- On a boundaryless model, a vector field which is differentiable at `x` as a tangent-bundle
+section has an inverse-chart pullback differentiable at the chart image of `x`. -/
+theorem MDifferentiableAt.differentiableAt_mpullbackWithin_extChartAt_symm [I.Boundaryless]
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x) :
+    DifferentiableAt 𝕜
+      (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I))
+      (extChartAt I x x) := by
+  have h := MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm
+    (hV.mdifferentiableWithinAt (s := univ))
+  rw [preimage_univ, univ_inter] at h
+  exact h.differentiableAt (by rw [I.range_eq_univ]; exact univ_mem)
 
 /-- A vector field which is `C^n` as a tangent-bundle section within a set has a `C^n`
 inverse-chart pullback within the corresponding chart set. Unlike
