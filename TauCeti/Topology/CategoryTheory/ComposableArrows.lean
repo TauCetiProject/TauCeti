@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.CategoryTheory.Nerve
+public import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
 # The nerve as iterated fiber products of arrows
@@ -17,7 +18,9 @@ its remaining string, with the matching endpoint equation. In degree zero,
 `CategoryTheory.ComposableArrows.zeroHomeomorph` identifies the nerve with the object space.
 Thus the topology defined by recording all composite arrows introduces no extra topology
 beyond that of composable strings. These identifications apply to topological groupoids
-without discarding any isotropy arrows.
+without discarding any isotropy arrows. In a locally compact category with Hausdorff objects,
+these descriptions give local compactness of every nerve level. If target is a local
+homeomorphism, deleting the first vertex is also a local homeomorphism.
 
 Composition is required to be continuous on the subspace of pairs with matching endpoints.
 No topology on individual hom types and no new category or groupoid carrier is used.
@@ -187,5 +190,33 @@ theorem continuous_iff_first_tail {Y : Type*} [TopologicalSpace Y] {n : ℕ}
   rw [← (precompHomeomorph hs hu hc n).comp_continuous_iff]
   simp only [continuous_induced_rng, continuous_prodMk, Function.comp_def,
     precompHomeomorph_apply]
+
+include hs hu hc in
+/-- Deleting the first vertex is a local homeomorphism when target is a local
+homeomorphism: this face map is its base change along the first vertex of the tail. -/
+theorem isLocalHomeomorph_δ₀
+    (ht : IsLocalHomeomorph (Quiver.Total.right : Quiver.Total C → C)) (n : ℕ) :
+    IsLocalHomeomorph (fun F : ComposableArrows C (n + 1) ↦ F.δ₀) := by
+  have hp := ht.pullback_snd (continuous_obj hs (0 : Fin (n + 1)))
+  convert hp.comp (precompHomeomorph hs hu hc n).isLocalHomeomorph using 1
+  funext F
+  exact (congrArg _root_.Prod.snd (precompHomeomorph_apply hs hu hc n F)).symm
+
+include hs hu hc in
+/-- Strings of composable arrows in a locally compact category are locally compact when
+objects are Hausdorff and source, target, units and composition are continuous. -/
+theorem locallyCompactSpace [T2Space C] [LocallyCompactSpace C]
+    [LocallyCompactSpace (Quiver.Total C)]
+    (ht : Continuous (Quiver.Total.right : Quiver.Total C → C)) (n : ℕ) :
+    LocallyCompactSpace (ComposableArrows C n) := by
+  induction n with
+  | zero => exact (zeroHomeomorph hs hu).isClosedEmbedding.locallyCompactSpace
+  | succ n ih =>
+    let := ih
+    have hclosed : IsClosed {p : Quiver.Total C × ComposableArrows C n |
+        p.1.right = p.2.left} :=
+      isClosed_eq (ht.comp continuous_fst) ((continuous_obj hs 0).comp continuous_snd)
+    let := hclosed.locallyCompactSpace
+    exact (precompHomeomorph hs hu hc n).isClosedEmbedding.locallyCompactSpace
 
 end CategoryTheory.ComposableArrows
