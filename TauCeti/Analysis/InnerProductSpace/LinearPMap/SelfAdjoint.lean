@@ -46,7 +46,10 @@ linear maps used by the semigroup development.
   graph-norm lower bounds `abs_im_mul_norm_le_norm_smul_sub` (equivalently the resolvent bound
   `norm_le_inv_abs_im_mul_norm_smul_sub`) and `norm_apply_le_mul_norm_smul_sub`.
 * `LinearPMap.IsFormalAdjoint.eq_zero_of_apply_eq_smul`: a formally self-adjoint map has no
-  eigenvector for a nonreal eigenvalue.
+  eigenvector for a nonreal eigenvalue,
+  `LinearPMap.IsFormalAdjoint.inner_apply_eq_mul_inner`: pairing an eigenvector `v` for `c` with
+  `A x` gives `c * ⟪v, x⟫`, and `LinearPMap.IsFormalAdjoint.inner_eq_zero_of_apply_eq_smul`: its
+  eigenvectors for distinct eigenvalues are orthogonal.
 * `LinearPMap.exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero`: a vector orthogonal to the range
   of the shift `c • x - A x` is an eigenvector of the adjoint `A†` for the eigenvalue `conj c`.
 * `LinearPMap.IsFormalAdjoint.range_le_orthogonal_ker` and `IsSelfAdjoint.orthogonal_range_eq_ker`:
@@ -253,6 +256,27 @@ theorem IsFormalAdjoint.eq_zero_of_apply_eq_smul {A : E →ₗ.[𝕜] E} (hA : A
   simp only [RCLike.mul_im, inner_self_im, inner_self_eq_norm_sq, mul_zero,
     zero_add] at him
   exact norm_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp ((mul_eq_zero.mp him).resolve_left hc))
+
+/-- **An eigenvector of a symmetric operator paired with an image.** If `v` is an eigenvector of a
+symmetric operator `A` for the eigenvalue `c`, then `⟪v, A x⟫ = c * ⟪v, x⟫`: symmetry moves `A`
+onto `v`, and `c` is real unless `v = 0` (`IsFormalAdjoint.eq_zero_of_apply_eq_smul`). -/
+theorem IsFormalAdjoint.inner_apply_eq_mul_inner {A : E →ₗ.[𝕜] E} (hA : A.IsFormalAdjoint A)
+    {v : A.domain} {c : 𝕜} (hv : A v = c • (v : E)) (x : A.domain) :
+    inner 𝕜 (v : E) (A x) = c * inner 𝕜 (v : E) (x : E) := by
+  by_cases hv0 : (v : E) = 0
+  · rw [hv0, inner_zero_left, inner_zero_left, mul_zero]
+  have hc : (starRingEnd 𝕜) c = c :=
+    RCLike.conj_eq_iff_im.mpr (by_contra fun h ↦ hv0 (hA.eq_zero_of_apply_eq_smul h hv))
+  rw [← hA v x, hv, inner_smul_left, hc]
+
+/-- **Eigenvectors of a symmetric operator for distinct eigenvalues are orthogonal.** By
+`IsFormalAdjoint.inner_apply_eq_mul_inner`, `d * ⟪x, y⟫ = ⟪x, A y⟫ = c * ⟪x, y⟫`. -/
+theorem IsFormalAdjoint.inner_eq_zero_of_apply_eq_smul {A : E →ₗ.[𝕜] E}
+    (hA : A.IsFormalAdjoint A) {x y : A.domain} {c d : 𝕜} (hx : A x = c • (x : E))
+    (hy : A y = d • (y : E)) (hcd : c ≠ d) : inner 𝕜 (x : E) (y : E) = 0 := by
+  have h := hA.inner_apply_eq_mul_inner hx y
+  rw [hy, inner_smul_right, ← sub_eq_zero, ← sub_mul] at h
+  exact (mul_eq_zero.mp h).resolve_left (sub_ne_zero.mpr hcd.symm)
 
 /-- **The range of a shift bounded below is dense.** If a shift `x ↦ c • x - A x` of a
 self-adjoint partial linear map dominates `K * ‖x‖` for some `K > 0`, its range is dense: a vector
