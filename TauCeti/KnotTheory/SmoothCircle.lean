@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import Mathlib.Tactic.FinCases
+import TauCeti.Analysis.InnerProductSpace.PlaneRotation
 
 /-!
 # Smooth circle presentations
@@ -266,21 +267,17 @@ open Metric Module
 
 /-- The standard isometric inclusion of the complex plane into `ℝ⁴` as the first coordinate plane,
 `z ↦ (Re z, Im z, 0, 0)`. -/
-def complexToEuclideanFour : ℂ →ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4) where
-  toLinearMap := Complex.reLm.smulRight (EuclideanSpace.single 0 1) +
-    Complex.imLm.smulRight (EuclideanSpace.single 1 1)
-  norm_map' z := by
-    simp only [LinearMap.add_apply, LinearMap.smulRight_apply, Complex.reLm_coe, Complex.imLm_coe]
-    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), norm_add_sq_real,
-      ← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
-    simp [norm_smul, inner_smul_left, inner_smul_right, EuclideanSpace.inner_single_left]
-    ring
+def complexToEuclideanFour : ℂ →ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4) :=
+  LinearIsometry.complexOfOrthonormal
+    ((EuclideanSpace.orthonormal_single (𝕜 := ℝ) (ι := Fin 4)).1 0)
+    ((EuclideanSpace.orthonormal_single (𝕜 := ℝ) (ι := Fin 4)).1 1)
+    ((EuclideanSpace.orthonormal_single (𝕜 := ℝ) (ι := Fin 4)).2 (by decide))
 
 @[simp]
 theorem complexToEuclideanFour_apply (z : ℂ) :
     complexToEuclideanFour z =
-      z.re • EuclideanSpace.single 0 1 + z.im • EuclideanSpace.single 1 1 :=
-  (rfl)
+      z.re • EuclideanSpace.single 0 1 + z.im • EuclideanSpace.single 1 1 := by
+  simp [complexToEuclideanFour]
 
 /-- The first coordinate plane of `ℝ⁴` is the image of the first factor of `ℂ²` under
 `TauCeti.complexProdToEuclideanFour`. -/

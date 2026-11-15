@@ -392,6 +392,30 @@ private theorem evalAt_comp_rotationFamilyToDiffSphere (p : sphere (0 : E) 1) (r
           Circle.coe_homeomorphSphere_symm_apply]
         rfl
 
+include m in
+omit [FiniteDimensional ℝ E] in
+/-- A sphere of positive dimension contains a point distinct from both `x₀` and `-x₀`, obtained
+from a unit vector orthogonal to `x₀`. -/
+private theorem exists_sphere_ne_and_ne_neg (x₀ : sphere (0 : E) 1) :
+    ∃ q : sphere (0 : E) 1, q ≠ x₀ ∧ q ≠ -x₀ := by
+  have : Nontrivial (ℝ ∙ (x₀ : E))ᗮ := Module.nontrivial_of_finrank_pos (R := ℝ) (by
+    rw [(fact_finrank_orthogonal_span_singleton_coe_sphere (n := m) x₀).out]
+    omega)
+  obtain ⟨w, hw⟩ := exists_ne (0 : (ℝ ∙ (x₀ : E))ᗮ)
+  let v₀ : sphere (0 : (ℝ ∙ (x₀ : E))ᗮ) 1 := ⟨‖w‖⁻¹ • w, by
+    rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm,
+      inv_mul_cancel₀ (norm_ne_zero_iff.2 hw)]⟩
+  let q : sphere (0 : E) 1 :=
+    ⟨((v₀ : (ℝ ∙ (x₀ : E))ᗮ) : E), mem_sphere_zero_iff_norm.2 (norm_eq_of_mem_sphere v₀)⟩
+  have hin : ⟪(x₀ : E), (q : E)⟫ = 0 :=
+    Submodule.mem_orthogonal_singleton_iff_inner_right.1 v₀.1.2
+  refine ⟨q, fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [h, real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere x₀, one_pow] at hin
+    exact zero_ne_one hin.symm
+  · rw [h, coe_neg_sphere, inner_neg_right, real_inner_self_eq_norm_sq,
+      norm_eq_of_mem_sphere x₀, one_pow] at hin
+    linarith
+
 namespace HomologicalOrientation
 
 /-- **Odd spheres are `2`-covered by diffeomorphisms** (second proof of Proposition 6.34 of
@@ -404,30 +428,7 @@ theorem isCoveredByDiffeomorphisms_sphere_of_even
     (hm : Even m) (r : ℕ∞ω) (x₀ : sphere (0 : E) 1) :
     o.IsCoveredByDiffeomorphisms finrank_euclideanSpace_fin r x₀ 2 := by
   have : ConnectedSpace (sphere (0 : E) 1) := connectedSpace_sphere (m + 1)
-  -- Pick a point `q ≠ ±x₀` from a unit vector orthogonal to `x₀`.
-  have : Nontrivial (ℝ ∙ (x₀ : E))ᗮ := Module.nontrivial_of_finrank_pos (R := ℝ) (by
-    rw [(fact_finrank_orthogonal_span_singleton_coe_sphere (n := m) x₀).out]
-    omega)
-  obtain ⟨w, hw⟩ := exists_ne (0 : (ℝ ∙ (x₀ : E))ᗮ)
-  let v₀ : sphere (0 : (ℝ ∙ (x₀ : E))ᗮ) 1 := ⟨‖w‖⁻¹ • w, by
-    rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm,
-      inv_mul_cancel₀ (norm_ne_zero_iff.2 hw)]⟩
-  let q : sphere (0 : E) 1 :=
-    ⟨((v₀ : (ℝ ∙ (x₀ : E))ᗮ) : E), mem_sphere_zero_iff_norm.2 (norm_eq_of_mem_sphere v₀)⟩
-  have hqx : q ≠ x₀ := by
-    intro h
-    have hin : ⟪(x₀ : E), (q : E)⟫ = 0 :=
-      Submodule.mem_orthogonal_singleton_iff_inner_right.1 v₀.1.2
-    rw [h, real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere x₀, one_pow] at hin
-    exact zero_ne_one hin.symm
-  have hqx' : q ≠ -x₀ := by
-    intro h
-    have hin : ⟪(x₀ : E), (q : E)⟫ = 0 :=
-      Submodule.mem_orthogonal_singleton_iff_inner_right.1 v₀.1.2
-    rw [h] at hin
-    simp only [coe_neg_sphere, inner_neg_right, real_inner_self_eq_norm_sq,
-      norm_eq_of_mem_sphere x₀, one_pow] at hin
-    linarith
+  obtain ⟨q, hqx, hqx'⟩ := exists_sphere_ne_and_ne_neg (m := m) x₀
   -- Choose a reference orientation of `E` and orient `Sᵐ⁺¹` and `Sᵐ × S¹`.
   let oE : _root_.Orientation ℝ E (Fin (m + 1 + 1)) :=
     (finBasisOfFinrankEq ℝ E Fact.out).orientation
@@ -470,14 +471,7 @@ theorem isCoveredByDiffeomorphisms_sphere_of_even
       finrank_euclideanSpace_fin oP' oQ hreg).trans
       ((congrArg (· • _) hdeg).trans
         (congrArg ((2 : ℤ) • ·) (mapFundamentalClass_id _ _).symm))
-  rcases HomologicalOrientation.eq_or_eq_neg finrank_euclideanSpace_fin o
-      (oQ.toHomologicalOrientation finrank_euclideanSpace_fin) with ho | ho
-  · rw [← ho]
-    exact hcov
-  · have hneg : o = -(oQ.toHomologicalOrientation finrank_euclideanSpace_fin) :=
-      (neg_neg o).symm.trans (congrArg Neg.neg ho.symm)
-    rw [hneg, isCoveredByDiffeomorphisms_neg]
-    exact hcov
+  exact (isCoveredByDiffeomorphisms_iff_of_preconnectedSpace _ _).1 hcov
 
 end HomologicalOrientation
 
