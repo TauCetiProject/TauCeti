@@ -171,10 +171,7 @@ private lemma intersection_eq_zero_of_leaf (hc : T.IsSelfIntersectionMinusTwoCha
     (hc.intersection_self (r + 2) (by omega)) hx_self hy_self
     (hc.ne (by omega) (by omega) (by omega)) (hc.ne (by omega) (by omega) (by omega))
     (hx_ne _ (by omega)).symm (hc.ne (by omega) (by omega) (by omega))
-    (hc.ne (by omega) (by omega) (by omega)) (hx_ne _ (by omega)).symm
-    (hy_ne _ (by omega)).symm (hc.ne (by omega) (by omega) (by omega))
-    (hy_ne _ (by omega)).symm (hx_ne _ (by omega)).symm (hy_ne _ (by omega)).symm
-    (hx_ne _ (by omega)).symm hxy
+    (hy_ne _ (by omega)).symm (hx_ne _ (by omega)).symm hxy
     (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
     (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega)) hx
 
