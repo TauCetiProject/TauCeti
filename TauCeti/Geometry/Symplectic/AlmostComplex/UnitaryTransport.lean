@@ -104,7 +104,7 @@ theorem continuousLinearMapOfBilin_associatedBilinForm (hJ : ω.Invariant J) :
         LinearMap.toContinuousLinearMap J.toLinearMap) := by
   ext u
   refine ext_inner_right ℝ fun w ↦ ?_
-  have h := ω.inner_apply_eq_of_apply_apply_eq_inner hJ₀ (J u) w
+  have h := ω.inner_apply_left_eq_of_apply_apply_eq_inner hJ₀ (J u) w
   rw [continuousLinearMapOfBilin_apply, LinearMap.toContinuousBilinearMap_apply,
     associatedBilinForm_apply]
   simp only [neg_apply, mul_apply_eq_comp, LinearMap.coe_toContinuousLinearMap', inner_neg_left, h]
@@ -236,7 +236,7 @@ theorem unitaryTransport_mul_toContinuousLinearMap (hJ : ω.Compatible J) :
     refine (ContinuousLinearMap.metricChangeTransport_eq_iff hpos).2 ⟨?_, ?_⟩
     · have hconj := (ContinuousLinearMap.nonneg_iff_isPositive.1 (CFC.sqrt_nonneg H)).conj_adjoint A
       rw [ω.adjoint_eq_neg_of_forall_inner_apply_eq (A := A)
-        (ω.inner_apply_eq_of_apply_apply_eq_inner hJ₀)] at hconj
+        (ω.inner_apply_left_eq_of_apply_apply_eq_inner hJ₀)] at hconj
       rw [ContinuousLinearMap.nonneg_iff_isPositive]
       convert hconj using 1
       simp only [ContinuousLinearMap.comp_neg, ContinuousLinearMap.mul_def,
