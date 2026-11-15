@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.FiniteOrder
 public import TauCeti.NumberTheory.LSeries.HurwitzZetaGrowth
 
-import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta
+import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Growth
 
 /-!
 # Order one and vertical-strip growth of primitive Dirichlet completions

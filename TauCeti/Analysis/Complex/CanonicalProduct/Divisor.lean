@@ -346,14 +346,14 @@ theorem summable_divisor_toNat_mul_re_one_div_sub {f : ℂ → ℂ}
   simp only [mul_re, natCast_re, natCast_im, zero_mul, sub_zero, add_re]
   ring
 
-private theorem divisor_toNat_mul_re_one_div_sub_nonneg {f : ℂ → ℂ} {s : ℂ}
-    (hle : ∀ ρ : ℂ, 0 < MeromorphicOn.divisor f Set.univ ρ → ρ.re ≤ s.re) (ρ : ℂ) :
+private theorem divisor_toNat_mul_re_one_div_sub_nonneg {f : ℂ → ℂ} {s ρ : ℂ}
+    (hle : 0 < MeromorphicOn.divisor f Set.univ ρ → ρ.re ≤ s.re) :
     0 ≤ ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re := by
   rcases le_or_gt (MeromorphicOn.divisor f Set.univ ρ) 0 with hd | hd
   · simp [Int.toNat_of_nonpos hd]
   · refine mul_nonneg (Nat.cast_nonneg _) ?_
     rw [one_div, Complex.inv_re_nonneg, sub_re, sub_nonneg]
-    exact hle ρ hd
+    exact hle hd
 
 /-- At any `s : ℂ` whose real part is at least that of every positive-multiplicity point of the
 whole-plane divisor of `f`, the `tsum` `∑' ρ, m_ρ * Re (1 / (s - ρ))` over the divisor support is
@@ -362,18 +362,16 @@ theorem tsum_divisor_toNat_mul_re_one_div_sub_nonneg {f : ℂ → ℂ} {s : ℂ}
     (hle : ∀ ρ : ℂ, 0 < MeromorphicOn.divisor f Set.univ ρ → ρ.re ≤ s.re) :
     0 ≤ ∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
       ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re :=
-  tsum_nonneg fun ρ ↦ divisor_toNat_mul_re_one_div_sub_nonneg hle ρ
+  tsum_nonneg fun ρ ↦ divisor_toNat_mul_re_one_div_sub_nonneg (hle ρ)
 
-/-- At any `s : ℂ` whose real part is at least that of every positive-multiplicity point of the
-whole-plane divisor of `f`, when the positive-multiplicity points have bounded real part and
-summable weighted inverse squares, any finite subsum over `S : Finset ℂ` is bounded above by the
-full support `tsum` `∑' ρ, m_ρ * Re (1 / (s - ρ))`. -/
-theorem sum_divisor_toNat_mul_re_one_div_sub_le_tsum {f : ℂ → ℂ}
+/-- When `ρ ↦ m_ρ * Re (1 / (s - ρ))` is summable on the whole-plane divisor support of `f` and
+every positive-multiplicity point outside `S : Finset ℂ` has real part at most `Re s`, the finite
+subsum over `S` is bounded above by the full support `tsum` `∑' ρ, m_ρ * Re (1 / (s - ρ))`. -/
+theorem sum_divisor_toNat_mul_re_one_div_sub_le_tsum {f : ℂ → ℂ} {s : ℂ}
     (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
-      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2))
-    {B : ℝ} (hre : ∀ ρ : ℂ, 0 < MeromorphicOn.divisor f Set.univ ρ → |ρ.re| ≤ B)
-    {s : ℂ} (hle : ∀ ρ : ℂ, 0 < MeromorphicOn.divisor f Set.univ ρ → ρ.re ≤ s.re)
-    (S : Finset ℂ) :
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re))
+    (S : Finset ℂ)
+    (hle : ∀ ρ ∉ S, 0 < MeromorphicOn.divisor f Set.univ ρ → ρ.re ≤ s.re) :
     ∑ ρ ∈ S, ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re ≤
       ∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
         ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re := by
@@ -382,9 +380,9 @@ theorem sum_divisor_toNat_mul_re_one_div_sub_le_tsum {f : ℂ → ℂ}
   have hF_supp : Function.support F ⊆ d.support := fun ρ hρ ↦
     Function.mem_support.mpr fun h0 ↦ hρ (by simp [F, h0])
   have hF_sum : HasSum F (∑' ρ : d.support, F ρ) :=
-    (hasSum_subtype_iff_of_support_subset hF_supp).mp
-      (summable_divisor_toNat_mul_re_one_div_sub hsum hre s).hasSum
+    (hasSum_subtype_iff_of_support_subset hF_supp).mp hsum.hasSum
   rw [← hF_sum.tsum_eq]
-  exact hF_sum.summable.sum_le_tsum S fun ρ _ ↦ divisor_toNat_mul_re_one_div_sub_nonneg hle ρ
+  exact hF_sum.summable.sum_le_tsum S fun ρ hρS ↦
+    divisor_toNat_mul_re_one_div_sub_nonneg (hle ρ hρS)
 
 end TauCeti

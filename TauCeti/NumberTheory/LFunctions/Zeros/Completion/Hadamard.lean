@@ -216,10 +216,8 @@ theorem sum_divisor_toNat_mul_re_one_div_sub_le_re_logDeriv {f : ℂ → ℂ}
       (logDeriv f s).re := by
   rw [h.re_logDeriv_eq_tsum hf hf0 hle hfe hs]
   exact sum_divisor_toNat_mul_re_one_div_sub_le_tsum
-    (h.summable_divisor_toNat_mul_norm_inv_sq hf (by norm_num))
-    (fun ρ hρ ↦ abs_re_le_of_re_le hle hfe ρ
-      ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero hρ.ne'))
-    (fun ρ hρ ↦ hle ρ ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero hρ.ne')) S
+    (h.summable_divisor_toNat_mul_re_one_div_sub_of_re_le hf (by norm_num) hle hfe s) S
+    fun ρ _ hρ ↦ hle ρ ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero hρ.ne')
 
 end OrderLE
 
