@@ -99,8 +99,10 @@ private theorem gaussCode_eq_of_boundaryParam_eq_comp {poly' : Polygon P' n} {q�
   -- `g` preserves and reflects the fibres of the projections, as it preserves "lies above".
   have hfib (x y) : projAlong ℝ q₀ d' (g x) = projAlong ℝ q₀ d' (g y) ↔
       projAlong ℝ p₀ d x = projAlong ℝ p₀ d y :=
-    ⟨fun h ↦ projAlong_eq_projAlong_of_over h hg.eq_iff.1 (hover x y).1 (hover y x).1,
-      fun h ↦ projAlong_eq_projAlong_of_over h (congrArg g) (hover x y).2 (hover y x).2⟩
+    ⟨fun h ↦ projAlong_eq_projAlong_of_exists_pos_smul_eq_vsub h hg.eq_iff.1 (hover x y).1
+        (hover y x).1,
+      fun h ↦ projAlong_eq_projAlong_of_exists_pos_smul_eq_vsub h (congrArg g) (hover x y).2
+        (hover y x).2⟩
   -- `g` carries the boundary and the double points of `poly` onto those of `poly'`.
   have hbd : poly'.boundary ℝ = g '' poly.boundary ℝ := by
     rw [← range_boundaryParam, ← range_boundaryParam, ← range_comp]

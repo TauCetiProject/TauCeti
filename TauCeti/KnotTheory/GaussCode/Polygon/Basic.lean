@@ -66,8 +66,6 @@ by Reidemeister moves, are not proved here.
 * `Polygon.gaussCode_sign_visit`: the sign of a crossing is the sign of `b.det ![u, w, d]`.
 * `Polygon.visitTime_cast_eq_of_crossingTimes_eq`: a change of time, increasing on the crossing
   times of one simple polygon and carrying them onto those of another, matches their visits.
-* `Polygon.projAlong_eq_projAlong_of_over`: a map that preserves "lies above, seen from `d`" also
-  preserves the fibres of the projection along `d`.
 * `Polygon.gaussCode_partner_cast_eq_of_boundaryParam_eq`: if a map carries the visits of one
   simple polygon to those of another and respects the fibres of the projections on the double
   points, then it carries partner visits to partner visits.
@@ -494,24 +492,6 @@ theorem visitTime_cast_eq_of_crossingTimes_eq (hφ : StrictMonoOn φ (poly.cross
       (strictMono_visitTime hs hπ hkl)
   exact congrFun ((hf.range_inj_of_wellFoundedLT hφv).1 hrange) j
 
-/-- **Fibres of the projection from "lies above".** If two points `x` and `y` lie in one fibre of
-the projection along `d`, so that `x -ᵥ y` is a multiple of `d`, and the images `x'` and `y'` are
-equal when `x` and `y` are and lie above one another, seen from `d'`, whenever `x` and `y` do, then
-`x'` and `y'` lie in one fibre of the projection along `d'`. -/
-theorem projAlong_eq_projAlong_of_over {x y : P} {x' y' : P'} {p₀ : P} {q₀ : P'} {d : V} {d' : V'}
-    (hxy : projAlong ℝ p₀ d x = projAlong ℝ p₀ d y) (hxx : x = y → x' = y')
-    (h₁ : (∃ c : ℝ, 0 < c ∧ c • d = x -ᵥ y) → ∃ c : ℝ, 0 < c ∧ c • d' = x' -ᵥ y')
-    (h₂ : (∃ c : ℝ, 0 < c ∧ c • d = y -ᵥ x) → ∃ c : ℝ, 0 < c ∧ c • d' = y' -ᵥ x') :
-    projAlong ℝ q₀ d' x' = projAlong ℝ q₀ d' y' := by
-  obtain ⟨a, ha⟩ := projAlong_eq_projAlong_iff.1 hxy
-  rcases lt_trichotomy a 0 with h | rfl | h
-  · obtain ⟨c, -, hc⟩ := h₂ ⟨-a, neg_pos.2 h, by rw [neg_smul, ha, neg_vsub_eq_vsub_rev]⟩
-    exact projAlong_eq_projAlong_iff.2 ⟨-c, by rw [neg_smul, hc, neg_vsub_eq_vsub_rev]⟩
-  · rw [zero_smul, eq_comm, vsub_eq_zero_iff_eq] at ha
-    rw [hxx ha]
-  · obtain ⟨c, -, hc⟩ := h₁ ⟨a, h, ha⟩
-    exact projAlong_eq_projAlong_iff.2 ⟨c, hc⟩
-
 /-- **Partners of visits at corresponding points.** Let `poly'` be a simple polygon with a regular
 projection along `d'`, and `g` a map carrying double points of `poly` with the same projection along
 `d` to points with the same projection along `d'`. Let `σ` be a permutation of the visits of `poly`
@@ -580,8 +560,8 @@ theorem gaussCode_eq_of_strictMonoOn {g : P → P'}
   have hfib : ∀ x ∈ poly.doublePoints ℝ (projAlong ℝ p₀ d),
       ∀ y ∈ poly.doublePoints ℝ (projAlong ℝ p₀ d),
       projAlong ℝ p₀ d x = projAlong ℝ p₀ d y → projAlong ℝ q₀ d' (g x) = projAlong ℝ q₀ d' (g y) :=
-    fun x hx y hy hxy ↦ projAlong_eq_projAlong_of_over hxy (fun e ↦ e ▸ rfl) (hover x hx y hy)
-      (hover y hy x hx)
+    fun x hx y hy hxy ↦ projAlong_eq_projAlong_of_exists_pos_smul_eq_vsub hxy (fun e ↦ e ▸ rfl)
+      (hover x hx y hy) (hover y hy x hx)
   have hmem (k) : visitTime hs hπ k ∈ poly.crossingTimes p₀ d := visitTime_mem_crossingTimes hs hπ k
   have hvt := visitTime_cast_eq_of_crossingTimes_eq hs hπ hs' hπ' hφ hct h2
   have hpartner (k) : D'.partner.val (Fin.cast h2 k) = Fin.cast h2 (D.partner.val k) :=
