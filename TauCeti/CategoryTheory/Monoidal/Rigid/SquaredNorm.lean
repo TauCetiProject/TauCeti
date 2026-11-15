@@ -13,45 +13,25 @@ public import TauCeti.CategoryTheory.Simple.Classes
 /-!
 # Squared norms and pivot-free global dimension
 
-In a rigid monoidal category `C`, an isomorphism `a : X ≅ Xᘁᘁ` between an object and its double
-right dual does not require a pivotal structure on `C`. Any morphism `f : X ⟶ Xᘁᘁ` can be closed
-up into a scalar `TauCeti.doubleDualTrace f = η_ X Xᘁ ≫ f ▷ Xᘁ ≫ ε_ Xᘁ Xᘁᘁ : 𝟙_ C ⟶ 𝟙_ C`.
-For an isomorphism `a : X ≅ Xᘁᘁ`, the product
-
-`squaredNorm a = doubleDualTrace a.hom ≫ doubleDualTrace (a.inv)ᘁ`
-
-is the *squared norm* of `X` with respect to `a` (Etingof–Nikshych–Ostrik).
-
-When `End X` consists purely of scalars from a commutative semiring `R` — that is,
-`algebraMap R (End X)` is bijective, which holds for every split simple object over an
-algebraically closed field by Schur's lemma — any two isomorphisms `a, b : X ≅ Xᘁᘁ` differ by a
-unit scalar `r`, and their inverses differ by `r⁻¹`, so `squaredNorm a = squaredNorm b` is
-independent of the choice of isomorphism (`TauCeti.squaredNorm_congr`). Without scalar
-endomorphisms this fails: on a direct sum of two objects, scaling the two summands of `a`
-independently changes `squaredNorm a`.
-
-Summing `squaredNorm (a S)` over the simple isomorphism classes `S : SimpleClasses C` for a family
-of double-dual isomorphisms `a S : S.repr ≅ S.reprᘁᘁ` defines the pivot-free global dimension
-`TauCeti.normGlobalDim C a`, which is likewise independent of the family `a` when each simple
-representative has scalar endomorphisms (`TauCeti.normGlobalDim_congr`). Comparison with the
-pivotal global dimension `TauCeti.globalDim` is recorded in
-`TauCeti.CategoryTheory.Monoidal.Pivotal.GlobalDim`.
+In a rigid monoidal category `C`, any morphism `a : X ⟶ Xᘁᘁ` closes up to a scalar
+`TauCeti.doubleDualTrace a = η_ X Xᘁ ≫ a ▷ Xᘁ ≫ ε_ Xᘁ Xᘁᘁ : 𝟙_ C ⟶ 𝟙_ C`. For an isomorphism
+`a : X ≅ Xᘁᘁ`, the product `squaredNorm a = doubleDualTrace a.hom ≫ doubleDualTrace (a.inv)ᘁ` is
+the *squared norm* of `X` with respect to `a` (Etingof–Nikshych–Ostrik). When
+`algebraMap R (End X)` is bijective (e.g. for split simple objects over an algebraically closed
+field), `squaredNorm a` is independent of `a` (`TauCeti.squaredNorm_congr`); without scalar
+endomorphisms this fails on direct sums. Summing over `SimpleClasses C` defines the pivot-free
+global dimension `TauCeti.normGlobalDim C a` (`TauCeti.normGlobalDim_congr`), compared with
+`TauCeti.globalDim` in `TauCeti.CategoryTheory.Monoidal.Pivotal.GlobalDim`.
 
 ## Main declarations
 
-* `TauCeti.doubleDualTrace`: the scalar trace `η_ X Xᘁ ≫ a ▷ Xᘁ ≫ ε_ Xᘁ Xᘁᘁ` of `a : X ⟶ Xᘁᘁ`,
-  with `TauCeti.doubleDualTrace_def`, `TauCeti.doubleDualTrace_rightAdjointMate`,
-  `TauCeti.doubleDualTrace_conj`, and additivity/linearity lemmas;
-* `TauCeti.squaredNorm`: the squared norm `doubleDualTrace a.hom ≫ doubleDualTrace (a.inv)ᘁ` of
-  an isomorphism `a : X ≅ Xᘁᘁ`, with `TauCeti.squaredNorm_def`, `TauCeti.squaredNorm_conj`, and
-  `TauCeti.squaredNorm_congr`;
-* `TauCeti.normGlobalDim`: the sum of squared norms over `SimpleClasses C`, with
-  `TauCeti.normGlobalDim_def` and `TauCeti.normGlobalDim_congr`.
+* `TauCeti.doubleDualTrace` with `_def`, `_rightAdjointMate`, `_conj`, and linearity lemmas;
+* `TauCeti.squaredNorm` with `squaredNorm_def`, `squaredNorm_conj`, and `squaredNorm_congr`;
+* `TauCeti.normGlobalDim` with `normGlobalDim_def` and `normGlobalDim_congr`.
 
 ## References
 
 * P. Etingof, D. Nikshych, V. Ostrik, *On fusion categories*, Ann. of Math. **162** (2005), §2.1
-  (Proposition 2.1 and Definition 2.2)
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §7.21
 -/
 
@@ -76,8 +56,7 @@ noncomputable def doubleDualTrace {X : C} [HasRightDual X] [HasRightDual (Xᘁ :
 /-- The defining formula of `TauCeti.doubleDualTrace`. -/
 theorem doubleDualTrace_def {X : C} [HasRightDual X] [HasRightDual (Xᘁ : C)]
     (a : X ⟶ ((Xᘁ : C)ᘁ : C)) :
-    doubleDualTrace a = η_ X Xᘁ ≫ a ▷ Xᘁ ≫ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) :=
-  (rfl)
+    doubleDualTrace a = η_ X Xᘁ ≫ a ▷ Xᘁ ≫ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) := (rfl)
 
 /-- The double-dual trace of the right adjoint mate `fᘁ : Xᘁ ⟶ Xᘁᘁᘁ` of `f : Xᘁᘁ ⟶ X` is
 `η_ Xᘁ Xᘁᘁ ≫ Xᘁ ◁ f ≫ ε_ X Xᘁ`. -/
@@ -91,11 +70,10 @@ theorem doubleDualTrace_conj {X Y : C} [HasRightDual X] [HasRightDual (Xᘁ : C)
     [HasRightDual Y] [HasRightDual (Yᘁ : C)] (u : X ≅ Y) (a : X ⟶ ((Xᘁ : C)ᘁ : C)) :
     doubleDualTrace (u.inv ≫ a ≫ ((u.hom)ᘁ)ᘁ) = doubleDualTrace a := by
   rw [doubleDualTrace_def, doubleDualTrace_def, comp_whiskerRight_assoc,
-    ← coevaluation_comp_rightAdjointMate_assoc, whisker_exchange_assoc,
-    comp_whiskerRight_assoc, ← rightAdjointMate_comp_evaluation,
-    ← comp_whiskerRight_assoc, ← comp_whiskerRight_assoc, Category.assoc,
-    ← comp_rightAdjointMate, ← comp_rightAdjointMate,
-    u.hom_inv_id, rightAdjointMate_id, rightAdjointMate_id, Category.comp_id]
+    ← coevaluation_comp_rightAdjointMate_assoc, whisker_exchange_assoc, comp_whiskerRight_assoc,
+    ← rightAdjointMate_comp_evaluation, ← comp_whiskerRight_assoc, ← comp_whiskerRight_assoc,
+    Category.assoc, ← comp_rightAdjointMate, ← comp_rightAdjointMate, u.hom_inv_id,
+    rightAdjointMate_id, rightAdjointMate_id, Category.comp_id]
 
 /-- The double-dual trace of zero is zero. -/
 @[simp]
@@ -148,8 +126,7 @@ noncomputable def squaredNorm {X : C} [HasRightDual X] [HasRightDual (Xᘁ : C)]
 /-- The defining formula of `TauCeti.squaredNorm`. -/
 theorem squaredNorm_def {X : C} [HasRightDual X] [HasRightDual (Xᘁ : C)]
     [HasRightDual ((Xᘁ : C)ᘁ : C)] (a : X ≅ ((Xᘁ : C)ᘁ : C)) :
-    squaredNorm a = doubleDualTrace a.hom ≫ doubleDualTrace (rightAdjointMate a.inv) :=
-  (rfl)
+    squaredNorm a = doubleDualTrace a.hom ≫ doubleDualTrace (rightAdjointMate a.inv) := (rfl)
 
 /-- `TauCeti.squaredNorm` is invariant under transport along an isomorphism `u : X ≅ Y`. -/
 theorem squaredNorm_conj {X Y : C} [HasRightDual X] [HasRightDual (Xᘁ : C)]
@@ -175,19 +152,10 @@ theorem squaredNorm_congr (R : Type w) [CommSemiring R] [Preadditive C] [Linear 
   obtain ⟨r, hr⟩ := hX.2 (End.of (a.hom ≫ b.inv))
   obtain ⟨s, hs⟩ := hX.2 (End.of (b.hom ≫ a.inv))
   have ha : a.hom = r • b.hom := by
-    have h1 := congrArg End.asHom hr
-    simp only [End.algebraMap_asHom] at h1
-    calc a.hom = (a.hom ≫ b.inv) ≫ b.hom := by rw [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-      _ = (r • 𝟙 X) ≫ b.hom := by rw [← h1]
-      _ = r • b.hom := by rw [Linear.smul_comp, Category.id_comp]
+    simpa [End.algebraMap_asHom] using (congrArg End.asHom hr).symm =≫ b.hom
   have ha' : a.inv = s • b.inv := by
-    have h1 := congrArg End.asHom hs
-    simp only [End.algebraMap_asHom] at h1
-    calc a.inv = b.inv ≫ (b.hom ≫ a.inv) := by rw [Iso.inv_hom_id_assoc]
-      _ = b.inv ≫ (s • 𝟙 X) := by rw [← h1]
-      _ = s • b.inv := by rw [Linear.comp_smul, Category.comp_id]
-  have hrs : r * s = 1 := by
-    apply hX.1
+    simpa [End.algebraMap_asHom] using b.inv ≫= (congrArg End.asHom hs).symm
+  have hrs : r * s = 1 := hX.1 <| by
     rw [map_mul, hr, hs, ← End.of_comp, Category.assoc, Iso.inv_hom_id_assoc, Iso.hom_inv_id,
       End.of_id, map_one]
   rw [squaredNorm_def, squaredNorm_def, ha, ha', rightAdjointMate_smul, doubleDualTrace_smul,
@@ -210,8 +178,7 @@ noncomputable def normGlobalDim (a : ∀ S : SimpleClasses C, S.repr ≅ ((S.rep
 
 /-- The defining formula of `TauCeti.normGlobalDim`. -/
 theorem normGlobalDim_def (a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ) :
-    normGlobalDim C a = ∑ S : SimpleClasses C, squaredNorm (a S) :=
-  (rfl)
+    normGlobalDim C a = ∑ S : SimpleClasses C, squaredNorm (a S) := (rfl)
 
 /-- **Independence of the family of double-dual isomorphisms**: if every simple representative has
 scalar endomorphisms over a commutative semiring `R`, then `TauCeti.normGlobalDim C a` does not

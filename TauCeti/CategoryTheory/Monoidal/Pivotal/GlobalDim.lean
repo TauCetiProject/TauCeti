@@ -20,14 +20,12 @@ the left dimension of `Sᘁ` is the right dimension of `S`, it is also `∑ S, l
 and in a spherical category it is the sum of the squares of the quantum dimensions of the simple
 objects.
 
-More generally, without assuming a pivotal structure, `TauCeti.squaredNorm` and
-`TauCeti.normGlobalDim` (`TauCeti.CategoryTheory.Monoidal.Rigid.SquaredNorm`) define the squared
-norm of an object equipped with an isomorphism `X ≅ Xᘁᘁ` and the global dimension from a family of
-such isomorphisms on simple representatives. In a pivotal category, evaluating `TauCeti.squaredNorm`
-at `pivotalIsoApp X` recovers `leftDim X ≫ rightDim X` (`TauCeti.squaredNorm_pivotalIsoApp`), so
-`normGlobalDim C` agrees with `globalDim C` at `pivotalIsoApp`
-(`TauCeti.normGlobalDim_pivotalIsoApp`) and — whenever every simple representative has scalar
-endomorphisms — for any family of double-dual isomorphisms (`TauCeti.normGlobalDim_eq_globalDim`).
+Without a pivotal structure, `TauCeti.squaredNorm` and `TauCeti.normGlobalDim`
+(`TauCeti.CategoryTheory.Monoidal.Rigid.SquaredNorm`) recover `leftDim X ≫ rightDim X` and
+`globalDim C` when evaluated at `pivotalIsoApp` (`TauCeti.squaredNorm_pivotalIsoApp`,
+`TauCeti.normGlobalDim_pivotalIsoApp`), and agree with `globalDim C` for any family of double-dual
+isomorphisms once every simple representative has scalar endomorphisms
+(`TauCeti.normGlobalDim_eq_globalDim`).
 
 The global dimension is defined from a pivotal structure, but it does not depend on it, at least
 when the endomorphisms of each simple object are the scalars of an algebraically closed field `k`
@@ -39,12 +37,11 @@ the global dimension with the Frobenius–Perron dimension, be a property of `C`
 
 ## Main declarations
 
-* `TauCeti.squaredNorm_pivotalIsoApp`: the squared norm of `pivotalIsoApp X` is
-  `leftDim X ≫ rightDim X`;
+* `TauCeti.squaredNorm_pivotalIsoApp`, `TauCeti.normGlobalDim_pivotalIsoApp`, and
+  `TauCeti.normGlobalDim_eq_globalDim`: comparison of `squaredNorm`/`normGlobalDim` with
+  `globalDim`;
 * `TauCeti.globalDim`: the global dimension of a pivotal category, with
   `TauCeti.globalDim_def` and `TauCeti.globalDim_eq_sum_leftDim_comp_rightDim` computing it;
-* `TauCeti.normGlobalDim_pivotalIsoApp` and `TauCeti.normGlobalDim_eq_globalDim`: comparison of the
-  pivot-free global dimension `TauCeti.normGlobalDim` with `TauCeti.globalDim`;
 * `TauCeti.globalDim_eq_sum_quantumDim_comp_quantumDim`: in a spherical category it is the sum of
   the squared quantum dimensions of the simple objects;
 * `TauCeti.globalDim_pivotalCategory_eq`: it does not depend on the pivotal structure.
@@ -68,13 +65,9 @@ the pivotal isomorphism `pivotalIsoApp X` gives `leftDim X ≫ rightDim X`. -/
 theorem squaredNorm_pivotalIsoApp {C : Type u} [Category.{v} C] [MonoidalCategory C]
     [RigidCategory C] [PivotalCategory C] (X : C) :
     squaredNorm (pivotalIsoApp X) = leftDim X ≫ rightDim X := by
-  have hr : doubleDualTrace (pivotalIsoApp X).hom = rightDim X := by
-    rw [doubleDualTrace_def, ← rightTrace_id, rightTrace_eq_pivotalIsoApp, id_whiskerRight,
-      Category.id_comp]
-  have hl : doubleDualTrace (rightAdjointMate (pivotalIsoApp X).inv) = leftDim X := by
-    rw [doubleDualTrace_rightAdjointMate, ← leftTrace_id, leftTrace_eq_pivotalIsoApp,
-      whiskerLeft_id, Category.id_comp]
-  rw [squaredNorm_def, hr, hl, scalar_comm]
+  rw [squaredNorm_def, doubleDualTrace_def, doubleDualTrace_rightAdjointMate]
+  rw [← rightTrace_id, rightTrace_eq_pivotalIsoApp, ← leftTrace_id, leftTrace_eq_pivotalIsoApp]
+  simp [scalar_comm]
 
 variable (C : Type u) [Category.{v} C] [MonoidalCategory C] [RigidCategory C] [Preadditive C]
   [Fintype (SimpleClasses C)]
