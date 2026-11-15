@@ -41,8 +41,6 @@ group itself with a Tits system having the same Weyl group.
 
 ## Main declarations
 
-* `ChevalleyDatum.borelSubgroup_sup_weylSubgroup_eq_extendedElementarySubgroup`:
-  `B(A) ⊔ N(A) = D.extendedElementarySubgroup A` over every commutative ring `A`.
 * `ChevalleyDatum.doubleCoset_weylElement_mul_subset_of_notMem_inversions` and
   `ChevalleyDatum.doubleCoset_weylElement_mul_subset_union`: the rank-one multiplication laws for
   `B(k)`-double cosets inside `D.points k`.
@@ -77,69 +75,6 @@ noncomputable section
 universe v
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
-
-section CommRing
-
-variable (A : Type v) [CommRing A]
-
-/-- Conjugating any point of the actual weight-lattice torus by an element of `D.weylSubgroup A`
-stays inside `D.borelSubgroup A`. -/
-theorem weylSubgroup_conj_torusPoints_mem_borelSubgroup
-    (w : D.weylSubgroup A) (s : Fin t.rank → Aˣ) :
-    (w : D.points A) * D.torusPoints A s * (w : D.points A)⁻¹ ∈ D.borelSubgroup A :=
-  D.range_torusPoints_le_borelSubgroup A <|
-    (Subgroup.mem_normalizer_iff.mp
-      (D.weylSubgroup_le_normalizer_range_torusPoints A w.property)
-      (D.torusPoints A s)).mp ⟨s, rfl⟩
-
-/-- The positive Borel-type subgroup lies inside the extended elementary subgroup over every
-commutative ring. -/
-theorem borelSubgroup_le_extendedElementarySubgroup :
-    D.borelSubgroup A ≤ D.extendedElementarySubgroup A := by
-  rw [D.borelSubgroup_le_iff]
-  exact ⟨fun γ _ u ↦ D.elementarySubgroup_le_extendedElementarySubgroup A
-    (D.rootSubgroupPoints_mem_elementarySubgroup A γ u),
-    D.torusPoints_mem_extendedElementarySubgroup A⟩
-
-/-- The Weyl subgroup lies inside the extended elementary subgroup over every commutative ring. -/
-theorem weylSubgroup_le_extendedElementarySubgroup :
-    D.weylSubgroup A ≤ D.extendedElementarySubgroup A := by
-  rw [D.weylSubgroup_def, Subgroup.closure_le]
-  rintro _ (⟨s, rfl⟩ | ⟨i, rfl⟩)
-  · exact D.torusPoints_mem_extendedElementarySubgroup A s
-  · dsimp only
-    rw [D.weylElement_def]
-    exact D.elementarySubgroup_le_extendedElementarySubgroup A
-      (mul_mem (mul_mem (D.rootSubgroupPoints_mem_elementarySubgroup A _ _)
-        (D.rootSubgroupPoints_mem_elementarySubgroup A _ _))
-        (D.rootSubgroupPoints_mem_elementarySubgroup A _ _))
-
-/-- Over every commutative ring, the positive Borel-type subgroup and the Weyl subgroup generate
-the extended elementary subgroup. -/
-@[simp]
-theorem borelSubgroup_sup_weylSubgroup_eq_extendedElementarySubgroup :
-    D.borelSubgroup A ⊔ D.weylSubgroup A = D.extendedElementarySubgroup A := by
-  apply le_antisymm
-    (sup_le (D.borelSubgroup_le_extendedElementarySubgroup A)
-      (D.weylSubgroup_le_extendedElementarySubgroup A))
-  rw [D.extendedElementarySubgroup_def]
-  refine sup_le ?_ (le_sup_of_le_left (D.range_torusPoints_le_borelSubgroup A))
-  rw [D.elementarySubgroup_eq_closure_simpleRootPair, Subgroup.closure_le, Set.iUnion_subset_iff]
-  intro i
-  have hpair : Subgroup.closure (Set.range (D.rootSubgroupPoints (t.simpleIndex ht i) A) ∪
-      Set.range (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
-        (t.simpleIndex ht i) (t.simpleIndex ht i)) A)) ≤
-      D.borelSubgroup A ⊔ D.weylSubgroup A := by
-    rw [D.closure_simpleRootPair_eq, Subgroup.closure_le]
-    rintro g ((⟨u, rfl⟩ | ⟨s, rfl⟩) | rfl)
-    · exact Subgroup.mem_sup_left (D.positivePoints_le_borelSubgroup A
-        (D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) u))
-    · rw [D.simpleCorootPoints_eq_torusPoints]
-      exact Subgroup.mem_sup_left (D.range_torusPoints_le_borelSubgroup A ⟨_, rfl⟩)
-    · exact Subgroup.mem_sup_right (D.weylElement_mem_weylSubgroup A i)
-  exact Subgroup.subset_closure.trans hpair
-
-end CommRing
 
 section Field
 
@@ -330,9 +265,9 @@ private theorem extElemB_subgroupOf_extElemN :
         (Subgroup.subgroupOfEquivOfLe (D.weylSubgroup_le_extendedElementarySubgroup k)).toMonoidHom
       := by
   ext n
-  change ((n : D.extendedElementarySubgroup k) : D.points k) ∈ D.borelSubgroup k ↔
-    ((n : D.extendedElementarySubgroup k) : D.points k) ∈ (D.torusPoints k).range
-  rw [← D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints k]
+  simp only [ExtElemB, Subgroup.mem_subgroupOf, Subgroup.mem_comap, MulEquiv.coe_toMonoidHom,
+    Subgroup.subgroupOfEquivOfLe_apply_coe,
+    ← D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints k]
   exact ⟨fun h ↦ ⟨h, n.2⟩, fun h ↦ h.1⟩
 
 private instance : ((D.ExtElemB k).subgroupOf (D.ExtElemN k)).Normal := by
@@ -350,44 +285,28 @@ private theorem closure_range_mk_extElemSimpleRep :
         D.ExtElemN k ⧸ (D.ExtElemB k).subgroupOf (D.ExtElemN k))) = ⊤ := by
   let S : Set (D.ExtElemN k ⧸ (D.ExtElemB k).subgroupOf (D.ExtElemN k)) :=
     Set.range fun i : Fin t.rank ↦ QuotientGroup.mk (D.extElemSimpleRep k i)
+  let K : Subgroup (D.ExtElemN k) :=
+    (Subgroup.closure S).comap (QuotientGroup.mk' ((D.ExtElemB k).subgroupOf (D.ExtElemN k)))
+  let ι : D.ExtElemN k →* D.points k :=
+    (D.extendedElementarySubgroup k).subtype.comp (D.ExtElemN k).subtype
+  have hle : D.weylSubgroup k ≤ K.map ι := by
+    rw [D.weylSubgroup_def, Subgroup.closure_le]
+    rintro _ (⟨s, rfl⟩ | ⟨i, rfl⟩)
+    · have hsW : D.torusPoints k s ∈ D.weylSubgroup k := D.torusPoints_mem_weylSubgroup k s
+      let t_el : D.ExtElemN k :=
+        ⟨⟨D.torusPoints k s, D.weylSubgroup_le_extendedElementarySubgroup k hsW⟩, hsW⟩
+      refine ⟨t_el, ?_, rfl⟩
+      simp only [SetLike.mem_coe, K, Subgroup.mem_comap, QuotientGroup.mk'_apply]
+      rw [(QuotientGroup.eq_one_iff _).mpr
+        (Subgroup.mem_subgroupOf.mpr (Subgroup.mem_subgroupOf.mpr
+          (D.range_torusPoints_le_borelSubgroup k ⟨s, rfl⟩)))]
+      exact one_mem _
+    · exact ⟨D.extElemSimpleRep k i, Subgroup.subset_closure ⟨i, rfl⟩, rfl⟩
   refine eq_top_iff.mpr fun q _ ↦ ?_
-  induction q using QuotientGroup.induction_on with
-  | H n =>
-    suffices ∀ x : D.points k, (hx : x ∈ D.weylSubgroup k) →
-        (QuotientGroup.mk (⟨⟨x, D.weylSubgroup_le_extendedElementarySubgroup k hx⟩, hx⟩ :
-          D.ExtElemN k) : D.ExtElemN k ⧸ (D.ExtElemB k).subgroupOf (D.ExtElemN k)) ∈
-          Subgroup.closure S from this _ n.2
-    intro x hx
-    have hx' := hx
-    rw [D.weylSubgroup_def] at hx'
-    induction hx' using Subgroup.closure_induction with
-    | mem x hx_mem =>
-      rcases hx_mem with ⟨s, rfl⟩ | ⟨i, rfl⟩
-      · have hmem : (⟨⟨D.torusPoints k s,
-            D.weylSubgroup_le_extendedElementarySubgroup k hx⟩, hx⟩ : D.ExtElemN k) ∈
-            (D.ExtElemB k).subgroupOf (D.ExtElemN k) :=
-          D.range_torusPoints_le_borelSubgroup k ⟨s, rfl⟩
-        rw [(QuotientGroup.eq_one_iff _).mpr hmem]
-        exact one_mem _
-      · exact Subgroup.subset_closure ⟨i, rfl⟩
-    | one =>
-      change QuotientGroup.mk (1 : D.ExtElemN k) ∈ Subgroup.closure S
-      simpa only [QuotientGroup.mk_one] using one_mem _
-    | mul x y hx_w hy_w ihx ihy =>
-      have hxW : x ∈ D.weylSubgroup k := D.weylSubgroup_def k ▸ hx_w
-      have hyW : y ∈ D.weylSubgroup k := D.weylSubgroup_def k ▸ hy_w
-      change QuotientGroup.mk
-        ((⟨⟨x, D.weylSubgroup_le_extendedElementarySubgroup k hxW⟩, hxW⟩ : D.ExtElemN k) *
-          ⟨⟨y, D.weylSubgroup_le_extendedElementarySubgroup k hyW⟩, hyW⟩) ∈ Subgroup.closure S
-      rw [QuotientGroup.mk_mul]
-      exact mul_mem (ihx hxW) (ihy hyW)
-    | inv x hx_w ihx =>
-      have hxW : x ∈ D.weylSubgroup k := D.weylSubgroup_def k ▸ hx_w
-      change QuotientGroup.mk
-        ((⟨⟨x, D.weylSubgroup_le_extendedElementarySubgroup k hxW⟩, hxW⟩ : D.ExtElemN k)⁻¹) ∈
-        Subgroup.closure S
-      rw [QuotientGroup.mk_inv]
-      exact inv_mem (ihx hxW)
+  obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective q
+  have hι : Function.Injective ι :=
+    (D.extendedElementarySubgroup k).subtype_injective.comp (D.ExtElemN k).subtype_injective
+  exact (Subgroup.mem_map_iff_mem hι).mp (hle n.2)
 
 private theorem doubleCoset_extElemB_coe {x z : D.extendedElementarySubgroup k} :
     z ∈ DoubleCoset.doubleCoset x (D.ExtElemB k) (D.ExtElemB k) ↔

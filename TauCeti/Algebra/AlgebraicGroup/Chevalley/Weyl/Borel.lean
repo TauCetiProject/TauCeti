@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.PositiveSubsystem
 import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
@@ -17,7 +18,9 @@ import TauCeti.LinearAlgebra.TensorProduct.Basis
 # Intersection of the Borel and Weyl subgroups of a Chevalley datum
 
 For a Chevalley datum `D` over a field `k`, let `U(k) = D.positivePoints k`,
-`B(k) = D.borelSubgroup k = U(k) ⊔ T_D(k)`, and `N(k) = D.weylSubgroup k`. This file proves
+`B(k) = D.borelSubgroup k = U(k) ⊔ T_D(k)`, and `N(k) = D.weylSubgroup k`. Over any commutative
+ring `A`, `N(A)` normalizes `T_D(A)` and therefore conjugates torus points inside `B(A)`. Over any
+field `k`, this file proves
 
 ```text
 U(k) ∩ N(k) = 1   and   B(k) ∩ N(k) = T_D(k).
@@ -40,6 +43,8 @@ The proof of `U(k) ∩ N(k) = 1` has two stages:
 
 ## Main results
 
+* `ChevalleyDatum.weylSubgroup_conj_torusPoints_mem_borelSubgroup`: over any commutative ring `A`,
+  conjugating a point of `T_D(A)` by `w ∈ N(A)` stays inside `B(A)`.
 * `ChevalleyDatum.positivePoints_inf_weylSubgroup_eq_bot` and
   `ChevalleyDatum.weylSubgroup_inf_positivePoints_eq_bot`: `U(k) ∩ N(k) = 1`.
 * `ChevalleyDatum.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints` and
@@ -66,6 +71,16 @@ attribute [local instance high] Ring.toIntAlgebra
 attribute [local instance high] Algebra.toModule
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
+
+/-- Conjugating any point of the actual weight-lattice torus by an element of `D.weylSubgroup A`
+stays inside `D.borelSubgroup A`. -/
+theorem weylSubgroup_conj_torusPoints_mem_borelSubgroup
+    (A : Type v) [CommRing A] (w : D.weylSubgroup A) (s : Fin t.rank → Aˣ) :
+    (w : D.points A) * D.torusPoints A s * (w : D.points A)⁻¹ ∈ D.borelSubgroup A :=
+  D.range_torusPoints_le_borelSubgroup A <|
+    (Subgroup.mem_normalizer_iff.mp
+      (D.weylSubgroup_le_normalizer_range_torusPoints A w.property)
+      (D.torusPoints A s)).mp ⟨s, rfl⟩
 
 private structure WeightIdx (d : ℕ) where
   ofFin ::
