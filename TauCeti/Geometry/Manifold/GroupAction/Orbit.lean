@@ -33,9 +33,11 @@ Hence the orbit map is an **immersion** exactly
 when the action is locally free at `x`, that is, `𝔤_x = 0`
 (`TauCeti.isImmersion_smul_const_iff`). For finite-dimensional `G`, by
 `TauCeti.Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot` this means that the stabilizer `G_x`
-is discrete; in particular the orbit map is an immersion where the stabilizer is trivial
-(`TauCeti.isImmersion_smul_const_of_stabilizer_eq_bot`). For a proper action the orbit map is
-moreover a closed topological embedding at such a point
+is discrete; in particular, where the stabilizer is trivial, `𝔤_x = 0`
+(`TauCeti.isotropy_fundamental_eq_bot_of_stabilizer_eq_bot`), `𝔤 · x` has dimension `dim G`
+(`TauCeti.finrank_orbitTangent_fundamental_of_stabilizer_eq_bot`), and the orbit map is an
+immersion (`TauCeti.isImmersion_smul_const_of_stabilizer_eq_bot`). For a proper action the orbit map
+is moreover a closed topological embedding at such a point
 (`ProperSMul.isClosedEmbedding_smul_const`). Hence **the orbit map of a free point of a proper
 smooth action is a smooth embedding with closed image** (`TauCeti.isSmoothEmbedding_smul_const`).
 This is the first step of the proof of the quotient manifold theorem for free proper actions.
@@ -86,18 +88,35 @@ theorem isImmersion_smul_const_iff {x : M} :
 
 variable [FiniteDimensional ℝ E]
 
+omit [FiniteDimensional ℝ E'] [I.Boundaryless] in
+/-- **Free points have trivial isotropy Lie algebra.** Where the stabilizer of `x` is trivial, the
+isotropy Lie algebra `𝔤_x` of a smooth action on a Hausdorff manifold vanishes. -/
+theorem isotropy_fundamental_eq_bot_of_stabilizer_eq_bot [T2Space M] {x : M}
+    (hx : MulAction.stabilizer G x = ⊥) :
+    (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  have : Subsingleton (MulAction.stabilizer G x) := hx ▸ inferInstance
+  exact (Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot (I := I) (I' := I')).1 inferInstance
+
+omit [FiniteDimensional ℝ E'] [I.Boundaryless] in
+/-- **Dimension of the orbit tangent space at a free point.** Where the stabilizer of `x` is
+trivial, the orbit tangent space `𝔤 · x` of a smooth action on a Hausdorff manifold has dimension
+`dim G`. -/
+theorem finrank_orbitTangent_fundamental_of_stabilizer_eq_bot [T2Space M] {x : M}
+    (hx : MulAction.stabilizer G x = ⊥) :
+    Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) =
+      Module.finrank ℝ E :=
+  (InfinitesimalAction.fundamental I G I' M).finrank_orbitTangent_of_isotropy_eq_bot x
+    (isotropy_fundamental_eq_bot_of_stabilizer_eq_bot hx)
+
 omit [CompleteSpace E] [CompleteSpace E'] in
 /-- **Orbit maps of free points are immersions.** Where the stabilizer of `x` is trivial, the
 orbit map `g ↦ g • x` of a smooth action on a Hausdorff manifold is an immersion. -/
 theorem isImmersion_smul_const_of_stabilizer_eq_bot [T2Space M] {x : M}
     (hx : MulAction.stabilizer G x = ⊥) : IsImmersion I I' ∞ (fun g : G ↦ g • x) := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have : CompleteSpace E' := FiniteDimensional.completeSpace ℝ E'
-  have : T2Space G := I.t2Space_of_lieGroup ∞
-  have : Subsingleton (MulAction.stabilizer G x) := by
-    rw [hx]
-    infer_instance
-  exact isImmersion_smul_const_iff.2
-    ((Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot (I := I) (I' := I')).1 inferInstance)
+  exact isImmersion_smul_const_iff.2 (isotropy_fundamental_eq_bot_of_stabilizer_eq_bot hx)
 
 omit [CompleteSpace E] [CompleteSpace E'] in
 /-- **Free orbits of proper smooth actions are closed embedded submanifolds.** Where the stabilizer

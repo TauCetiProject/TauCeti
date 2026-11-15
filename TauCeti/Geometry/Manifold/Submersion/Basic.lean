@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Submersion
 public import Mathlib.Analysis.Normed.Module.ContinuousInverse
-public import Mathlib.Geometry.Manifold.MFDeriv.Defs
-import Mathlib.Geometry.Manifold.MFDeriv.Atlas
-import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+public import Mathlib.Geometry.Manifold.Diffeomorph
 
 -- Access the body of `Manifold.IsSubmersionOfComplement`, which Mathlib does not expose, to supply
 -- its missing pointwise characterization.
@@ -39,9 +37,11 @@ When the model of the source has no boundary, a submersion at `x` has a `C^n` lo
 `x` over an open neighbourhood of `f x`, read off from the normal-form charts
 (`Manifold.IsSubmersionAt.exists_contMDiffOn_section`). Consequently smoothness descends along a
 submersion: `g` is `C^m` at `f x` exactly when `g ∘ f` is `C^m` at `x`
-(`Manifold.IsSubmersionAt.contMDiffAt_comp_iff`), and along a surjective submersion a `C^m` map
+(`Manifold.IsSubmersionAt.contMDiffAt_comp_iff`), along a surjective submersion a `C^m` map
 constant on the fibres factors through a unique `C^m` map
-(`Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`).
+(`Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`), and two surjective `C^n` submersions out
+of the same manifold with identical fibres have `C^n` diffeomorphic targets
+(`Manifold.IsSubmersion.diffeomorphOfSurjective`).
 
 ## Main results
 
@@ -63,13 +63,15 @@ constant on the fibres factors through a unique `C^m` map
   smoothness descends along a submersion.
 * `Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`: smooth maps constant on the fibres of a
   surjective submersion descend to smooth maps.
+* `Manifold.IsSubmersion.diffeomorphOfSurjective`: uniqueness of quotient manifolds up to `C^n`
+  diffeomorphism along surjective submersions with identical fibres.
 
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013),
   Theorem 4.12 (local form of a submersion), Theorem 4.26 (local sections of submersions) and
-  Theorems 4.29 and 4.30 (characteristic property of surjective submersions, passing smoothly to
-  the quotient).
+  Theorems 4.29–4.31 (characteristic property of surjective submersions, passing smoothly to
+  the quotient, and uniqueness of smooth quotients).
 -/
 
 public section
@@ -358,6 +360,77 @@ theorem IsSubmersion.existsUnique_contMDiff_comp_eq [I.Boundaryless] (h : IsSubm
   have hcomp : (g ∘ surjInv hsurj) ∘ f = g := funext fun x ↦ hgf (surjInv_eq hsurj (f x))
   refine ⟨g ∘ surjInv hsurj, ⟨(h.contMDiff_comp_iff hsurj hm).1 (by rwa [hcomp]), hcomp⟩,
     fun g' hg' ↦ hsurj.injective_comp_right (hg'.2.trans hcomp.symm)⟩
+
+/-- **Uniqueness of quotient manifolds along surjective submersions.** Two surjective `C^n`
+submersions out of a manifold with boundaryless model that have identical fibres induce a canonical
+`C^n` diffeomorphism between their targets, commuting with the two projections. -/
+noncomputable def IsSubmersion.diffeomorphOfSurjective [I.Boundaryless]
+    (h : IsSubmersion I J n f) (hsurj : Surjective f)
+    {q : M → P} (hq : IsSubmersion I K n q) (hq_surj : Surjective q)
+    (hfib : ∀ x y : M, f x = f y ↔ q x = q y) : N ≃ₘ^n⟮J, K⟯ P where
+  toFun := q ∘ surjInv hsurj
+  invFun := f ∘ surjInv hq_surj
+  left_inv y := by
+    obtain ⟨x, rfl⟩ := hsurj y
+    have h₁ : q (surjInv hsurj (f x)) = q x := (hfib _ _).1 (surjInv_eq hsurj (f x))
+    rw [comp_apply, comp_apply, h₁]
+    exact (hfib _ _).2 (surjInv_eq hq_surj (q x))
+  right_inv z := by
+    obtain ⟨x, rfl⟩ := hq_surj z
+    have h₁ : f (surjInv hq_surj (q x)) = f x := (hfib _ _).2 (surjInv_eq hq_surj (q x))
+    rw [comp_apply, comp_apply, h₁]
+    exact (hfib _ _).1 (surjInv_eq hsurj (f x))
+  contMDiff_toFun := by
+    have hcomp : (q ∘ surjInv hsurj) ∘ f = q :=
+      funext fun x ↦ (hfib _ _).1 (surjInv_eq hsurj (f x))
+    exact (h.contMDiff_comp_iff hsurj le_rfl).1 (hcomp.symm ▸ hq.contMDiff)
+  contMDiff_invFun := by
+    have hcomp : (f ∘ surjInv hq_surj) ∘ q = f :=
+      funext fun x ↦ (hfib _ _).2 (surjInv_eq hq_surj (q x))
+    exact (hq.contMDiff_comp_iff hq_surj le_rfl).1 (hcomp.symm ▸ h.contMDiff)
+
+/-- The diffeomorphism `IsSubmersion.diffeomorphOfSurjective` sends `f x` to `q x`. -/
+@[simp]
+theorem IsSubmersion.diffeomorphOfSurjective_apply [I.Boundaryless]
+    (h : IsSubmersion I J n f) (hsurj : Surjective f)
+    {q : M → P} (hq : IsSubmersion I K n q) (hq_surj : Surjective q)
+    (hfib : ∀ x y : M, f x = f y ↔ q x = q y) (x : M) :
+    h.diffeomorphOfSurjective hsurj hq hq_surj hfib (f x) = q x :=
+  (hfib _ _).1 (surjInv_eq hsurj (f x))
+
+/-- Composing `IsSubmersion.diffeomorphOfSurjective` with `f` recovers `q`. -/
+@[simp]
+theorem IsSubmersion.diffeomorphOfSurjective_comp [I.Boundaryless]
+    (h : IsSubmersion I J n f) (hsurj : Surjective f)
+    {q : M → P} (hq : IsSubmersion I K n q) (hq_surj : Surjective q)
+    (hfib : ∀ x y : M, f x = f y ↔ q x = q y) :
+    ⇑(h.diffeomorphOfSurjective hsurj hq hq_surj hfib) ∘ f = q :=
+  funext (h.diffeomorphOfSurjective_apply hsurj hq hq_surj hfib)
+
+/-- Reversing the roles of the two surjective submersions inverts
+`IsSubmersion.diffeomorphOfSurjective`. -/
+@[simp]
+theorem IsSubmersion.diffeomorphOfSurjective_symm [I.Boundaryless]
+    (h : IsSubmersion I J n f) (hsurj : Surjective f)
+    {q : M → P} (hq : IsSubmersion I K n q) (hq_surj : Surjective q)
+    (hfib : ∀ x y : M, f x = f y ↔ q x = q y) :
+    (h.diffeomorphOfSurjective hsurj hq hq_surj hfib).symm =
+      hq.diffeomorphOfSurjective hq_surj h hsurj fun x y ↦ (hfib x y).symm := by
+  ext z
+  obtain ⟨x, rfl⟩ := hq_surj z
+  rw [hq.diffeomorphOfSurjective_apply, ← h.diffeomorphOfSurjective_apply hsurj hq hq_surj hfib x,
+    Diffeomorph.symm_apply_apply]
+
+/-- `IsSubmersion.diffeomorphOfSurjective` is the unique map between the targets intertwining the
+two surjective submersions. -/
+theorem IsSubmersion.eq_diffeomorphOfSurjective_iff [I.Boundaryless]
+    (h : IsSubmersion I J n f) (hsurj : Surjective f)
+    {q : M → P} (hq : IsSubmersion I K n q) (hq_surj : Surjective q)
+    (hfib : ∀ x y : M, f x = f y ↔ q x = q y) {e : N → P} :
+    e = ⇑(h.diffeomorphOfSurjective hsurj hq hq_surj hfib) ↔ e ∘ f = q := by
+  refine ⟨fun he ↦ he ▸ h.diffeomorphOfSurjective_comp hsurj hq hq_surj hfib, fun he ↦ ?_⟩
+  exact hsurj.injective_comp_right
+    (he.trans (h.diffeomorphOfSurjective_comp hsurj hq hq_surj hfib).symm)
 
 end Descent
 

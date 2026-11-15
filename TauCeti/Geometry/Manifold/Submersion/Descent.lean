@@ -7,15 +7,19 @@ module
 
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.Submersion.Split
 
 /-!
-# Immersions descended through a surjective submersion
+# Immersions and submersions descended through a surjective submersion
 
 A map out of the target of a surjective submersion is smooth exactly when its composite with
 the submersion is smooth (`Manifold.IsSubmersion.contMDiff_comp_iff`). If moreover the composite
 kills precisely the vertical tangent vectors of the submersion, the descended map is an
-immersion. This criterion applies to smooth quotients with positive dimensional fibres,
-including quotients removing the excess in composition of correspondences.
+immersion (`Manifold.IsSubmersion.isImmersion_iff_ker_mfderiv_comp`); when both target manifolds
+are finite-dimensional, the descended map is a submersion exactly when the composite has surjective
+differential everywhere (`Manifold.IsSubmersion.isSubmersion_iff_surjective_mfderiv_comp`). These
+criteria apply to smooth quotients with positive dimensional fibres, including quotients by free
+proper Lie group actions and quotients removing the excess in composition of correspondences.
 
 ## References
 
@@ -72,5 +76,27 @@ theorem isImmersion_iff_ker_mfderiv_comp (hq : IsSubmersion I J n q)
         ContinuousLinearMap.comp_apply]
       exact hv
     exact LinearMap.mem_ker.mp (hker x ▸ hu)
+
+omit [K.Boundaryless] in
+/-- Between finite-dimensional manifolds, a map descended through a surjective submersion is a
+submersion exactly when the composite is smooth and has surjective differential at every point. The
+source of the surjective submersion need not be finite-dimensional. -/
+theorem isSubmersion_iff_surjective_mfderiv_comp [FiniteDimensional 𝕜 F]
+    (hq : IsSubmersion I J n q) (hsurj : Surjective q) (hn : 1 ≤ n) :
+    IsSubmersion J K n f ↔ ContMDiff I K n (f ∘ q) ∧
+      ∀ x, Surjective (mfderiv I K (f ∘ q) x) := by
+  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
+  constructor
+  · intro hf
+    refine ⟨hf.contMDiff.comp hq.contMDiff, fun x ↦ ?_⟩
+    rw [mfderiv_comp x (hf.contMDiff.mdifferentiable hn0 _) (hq.contMDiff.mdifferentiable hn0 _)]
+    exact (hf.surjective_mfderiv hn0 (q x)).comp (hq.surjective_mfderiv hn0 x)
+  · rintro ⟨hfq, hsurj_comp⟩
+    have hf := (hq.contMDiff_comp_iff hsurj le_rfl).mp hfq
+    refine (hf.isSubmersionOfComplement_of_surjective_mfderiv hn fun y ↦ ?_).isSubmersion
+    obtain ⟨x, rfl⟩ := hsurj y
+    have hcomp := hsurj_comp x
+    rw [mfderiv_comp x (hf.mdifferentiable hn0 _) (hq.contMDiff.mdifferentiable hn0 _)] at hcomp
+    exact Surjective.of_comp hcomp
 
 end Manifold.IsSubmersion
