@@ -59,25 +59,6 @@ variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
 attribute [local instance high] Algebra.toModule
 
-private theorem positiveSubgroup_eq_biSup (A : CommAlgCat.{v} ℤ) :
-    D.positiveSubgroup A =
-      ⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
-        (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-          D.isNilpotent_representation_rootGenerator γ A).range := by
-  have hjoin :
-      (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
-        (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-          D.isNilpotent_representation_rootGenerator γ A).range) =
-        Subgroup.closure
-          (⋃ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
-            Set.range (chevalleyRootSubgroup D.representation D.lattice
-              D.representation_mem_lattice D.isNilpotent_representation_rootGenerator γ A)) := by
-    simp only [← MonoidHom.coe_range, Subgroup.closure_iUnion, Subgroup.closure_eq]
-  rw [hjoin, D.positiveSubgroup_eq_closure]
-  congr 1
-  ext x
-  simp only [Set.mem_ofPred_eq, Set.mem_iUnion, Set.mem_range, exists_prop]
-
 /-- **Every element of the positive lattice subgroup is an ordered positive-root product.**
 The list `l` enumerates all positive roots without repetition, in any chosen order, over an
 arbitrary commutative value ring and for every valid Dynkin type. -/
@@ -90,7 +71,7 @@ theorem mem_positiveSubgroup_iff_exists_prod
       (l.map fun γ => chevalleyRootSubgroup D.representation D.lattice
         D.representation_mem_lattice D.isNilpotent_representation_rootGenerator γ A (u γ)).prod =
         g := by
-  rw [D.positiveSubgroup_eq_biSup A,
+  rw [D.positiveSubgroup_eq_iSup A,
     mem_iSup_posRoots_chevalleyRootSubgroup_iff_exists_list_prod D.representation D.lattice
       D.representation_mem_lattice D.isNilpotent_representation_rootGenerator A l hl hcover g]
   constructor
@@ -210,19 +191,10 @@ theorem mem_positivePoints_iff_exists_mul_of_subset
       exact le_iSup₂ (f := fun γ _ => (D.rootSubgroupPoints γ A).range) γ hγ ⟨u γ, rfl⟩
   · -- Conversely, both root-subgroup joins lie inside `positivePoints`.
     rintro ⟨u₁, hu₁, u₂, hu₂, rfl⟩
-    have hle₁ : (⨆ γ ∈ S, (D.rootSubgroupPoints γ A).range : Subgroup (D.points A)) ≤
-        D.positivePoints A := by
-      refine iSup₂_le fun γ hγ => ?_
-      rintro _ ⟨u, rfl⟩
-      exact D.rootSubgroupPoints_mem_positivePoints A (hS hγ) u
-    have hle₂ :
-        (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ S,
-          (D.rootSubgroupPoints γ A).range : Subgroup (D.points A)) ≤
-          D.positivePoints A := by
-      refine iSup₂_le fun γ hγ => ?_
-      rintro _ ⟨u, rfl⟩
-      exact D.rootSubgroupPoints_mem_positivePoints A hγ.1 u
-    exact Subgroup.mul_mem _ (hle₁ hu₁) (hle₂ hu₂)
+    rw [D.positivePoints_eq_iSup A]
+    exact Subgroup.mul_mem _
+      (IsConcreteLE.le_iff.mp (biSup_mono hS) hu₁)
+      (IsConcreteLE.le_iff.mp (biSup_mono Set.sdiff_subset) hu₂)
 
 /-- **Simple-root factorization of positive points.** For every valid Dynkin type and commutative
 ring `A`, each positive point factors as a product of a point in the punctured positive subgroup

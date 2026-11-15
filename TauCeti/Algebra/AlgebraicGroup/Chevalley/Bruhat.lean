@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Elementary
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Generation
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Collection
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Quotient
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
@@ -20,8 +19,10 @@ import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 
 For every valid Dynkin type `t` and Chevalley datum `D` of type `t`, the Borel-type subgroup
 `D.borelSubgroup` and the Weyl subgroup `D.weylSubgroup` sit inside `D.extendedElementarySubgroup`,
-generate it (`borelSubgroup_sup_weylSubgroup`), and intersect in the actual character-lattice torus
-`(D.torusPoints A).range` (`borelSubgroup_inf_weylSubgroup`) over every commutative ring `A`.
+generate it (`TauCeti.DynkinType.ChevalleyDatum.borelSubgroup_sup_weylSubgroup` in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Generation`), and intersect in the actual
+character-lattice torus `(D.torusPoints A).range` (`borelSubgroup_inf_weylSubgroup`) over every
+commutative ring `A`.
 
 Over an arbitrary field `k`, combining the simple-root factorization `U = U⁽ⁱ⁾ Xᵢ` and
 `nᵢ`-normalization of `U⁽ⁱ⁾` from `TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Collection`,
@@ -67,19 +68,17 @@ determinant in `(kˣ)²`).
 
 ## Main results
 
-* `TauCeti.DynkinType.ChevalleyDatum.borelSubgroup_sup_weylSubgroup` and
-  `TauCeti.DynkinType.ChevalleyDatum.borelSubgroup_inf_weylSubgroup`:
-  `D.borelSubgroup A ⊔ D.weylSubgroup A = D.extendedElementarySubgroup A` and
+* `TauCeti.DynkinType.ChevalleyDatum.borelSubgroup_inf_weylSubgroup`:
   `D.borelSubgroup A ⊓ D.weylSubgroup A = (D.torusPoints A).range` over any commutative ring `A`.
 * `TauCeti.DynkinType.ChevalleyDatum.doubleCoset_weylElement_mul_subset`: the Tits double-coset
   multiplication inclusion over any field `k`.
 * `TauCeti.DynkinType.ChevalleyDatum.mem_extendedElementarySubgroup_iff_exists_mem_doubleCoset`
   and `TauCeti.DynkinType.ChevalleyDatum.doubleCoset_borelSubgroup_eq_iff`: covering and
   Weyl-indexed separation of `B`-double cosets in `D.points k`.
-* `positivePoints_inf_map_negativePoints_eq_iSup`,
+* `ChevalleyDatum.positivePoints_inf_map_negativePoints_eq_iSup`,
   `eq_and_eq_of_mem_positivePoints_inf_map_negativePoints_of_mem_borelSubgroup_of_mul_mul_eq`,
-  `mem_doubleCoset_borelSubgroup_iff_exists_mul`, and
-  `existsUnique_mul_weylSubgroup_mul_eq_of_mem_doubleCoset_borelSubgroup`:
+  `ChevalleyDatum.mem_doubleCoset_borelSubgroup_iff_exists_mul`, and
+  `ChevalleyDatum.existsUnique_mul_weylSubgroup_mul_eq_of_mem_doubleCoset_borelSubgroup`:
   root-subgroup characterization of `U(k) ∩ n U⁻(k) n⁻¹` and Steinberg's unique factorization on
   each Bruhat cell.
 
@@ -100,57 +99,7 @@ universe v
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-/-! ## Join and intersection of `borelSubgroup` and `weylSubgroup` -/
-
-/-- All positive points lie in the elementary subgroup over every commutative ring. -/
-theorem positivePoints_le_elementarySubgroup (A : Type v) [CommRing A] :
-    D.positivePoints A ≤ D.elementarySubgroup A :=
-  D.positivePoints_le_iff.mpr fun γ _ u => D.rootSubgroupPoints_mem_elementarySubgroup A γ u
-
-/-- All negative points lie in the elementary subgroup over every commutative ring. -/
-theorem negativePoints_le_elementarySubgroup (A : Type v) [CommRing A] :
-    D.negativePoints A ≤ D.elementarySubgroup A :=
-  D.negativePoints_le_iff.mpr fun γ _ u => D.rootSubgroupPoints_mem_elementarySubgroup A γ u
-
-/-- The Borel-type subgroup is contained in the extended elementary subgroup over every commutative
-ring. -/
-theorem borelSubgroup_le_extendedElementarySubgroup (A : Type v) [CommRing A] :
-    D.borelSubgroup A ≤ D.extendedElementarySubgroup A := by
-  rw [D.borelSubgroup_def, D.extendedElementarySubgroup_def]
-  exact sup_le ((D.positivePoints_le_elementarySubgroup A).trans le_sup_left) le_sup_right
-
-/-- The Weyl subgroup is contained in the extended elementary subgroup over every commutative
-ring. -/
-theorem weylSubgroup_le_extendedElementarySubgroup (A : Type v) [CommRing A] :
-    D.weylSubgroup A ≤ D.extendedElementarySubgroup A := by
-  rw [D.weylSubgroup_def, Subgroup.closure_le]
-  rintro g (⟨s, rfl⟩ | ⟨i, rfl⟩)
-  · exact D.torusPoints_mem_extendedElementarySubgroup A s
-  · dsimp only
-    rw [D.weylElement_def]
-    refine Subgroup.mul_mem _ (Subgroup.mul_mem _ ?_ ?_) ?_ <;>
-      exact D.elementarySubgroup_le_extendedElementarySubgroup A
-        (D.rootSubgroupPoints_mem_elementarySubgroup A _ _)
-
-/-- **Over every commutative ring, the Borel-type subgroup and the Weyl subgroup generate the
-extended elementary subgroup.** -/
-@[simp]
-theorem borelSubgroup_sup_weylSubgroup (A : Type v) [CommRing A] :
-    D.borelSubgroup A ⊔ D.weylSubgroup A = D.extendedElementarySubgroup A := by
-  apply le_antisymm
-  · exact sup_le (D.borelSubgroup_le_extendedElementarySubgroup A)
-      (D.weylSubgroup_le_extendedElementarySubgroup A)
-  · rw [D.extendedElementarySubgroup_def, sup_le_iff]
-    refine ⟨?_, (D.range_torusPoints_le_borelSubgroup A).trans le_sup_left⟩
-    rw [D.elementarySubgroup_eq_closure_simpleRootPair A, Subgroup.closure_iUnion, iSup_le_iff]
-    intro i
-    rw [D.closure_simpleRootPair_eq i A, Subgroup.closure_le]
-    rintro g ((⟨u, rfl⟩ | ⟨s, rfl⟩) | rfl)
-    · exact Subgroup.mem_sup_left (D.positivePoints_le_borelSubgroup A
-        (D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) u))
-    · rw [D.simpleCorootPoints_eq_torusPoints]
-      exact Subgroup.mem_sup_left (D.range_torusPoints_le_borelSubgroup A ⟨_, rfl⟩)
-    · exact Subgroup.mem_sup_right (D.weylElement_simpleIndex_one_mem_weylSubgroup A i)
+/-! ## Intersection of `borelSubgroup` and `weylSubgroup` -/
 
 private theorem borelSubgroup_inf_weylSubgroup_field (k : Type v) [Field k] :
     D.borelSubgroup k ⊓ D.weylSubgroup k = (D.torusPoints k).range := by
@@ -426,13 +375,8 @@ theorem doubleCoset_weylElement_mul_subset (k : Type v) [Field k] (i : Fin t.ran
   have hv' : nᵢ * v * nᵢ⁻¹ ∈ D.borelSubgroup k := by
     have hnorm := (Subgroup.mem_normalizer_iff.mp
       (D.weylElement_mem_normalizer_positivePoints_diff_singleton i k 1) v).mp hv
-    have hle :
-        (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
-          (D.rootSubgroupPoints γ k).range : Subgroup (D.points k)) ≤ D.positivePoints k :=
-      iSup₂_le fun γ hγ => by
-        rintro _ ⟨c, rfl⟩
-        exact D.rootSubgroupPoints_mem_positivePoints k hγ.1 c
-    exact D.positivePoints_le_borelSubgroup k (hle hnorm)
+    exact D.positivePoints_le_borelSubgroup k
+      (D.positivePoints_eq_iSup k ▸ IsConcreteLE.le_iff.mp (biSup_mono Set.sdiff_subset) hnorm)
   have htw : (w : D.points k)⁻¹ * D.torusPoints k s * (w : D.points k) ∈ D.borelSubgroup k :=
     D.range_torusPoints_le_borelSubgroup k <|
       (Subgroup.mem_normalizer_iff.mp
@@ -441,30 +385,28 @@ theorem doubleCoset_weylElement_mul_subset (k : Type v) [Field k] (i : Fin t.ran
   have hbR : (w : D.points k)⁻¹ * D.torusPoints k s * (w : D.points k) * b₄ ∈ D.borelSubgroup k :=
     (D.borelSubgroup k).mul_mem htw hb₄
   -- Reduce the remaining middle factor `nᵢ xᵢ(a) w` via the rank-one exchange lemma.
-  have hmid := D.weylElement_mul_rootSubgroupPoints_mul_mem_union k i a w
-  have hmul_eq :
-      (b₁ * nᵢ * b₂) * (b₃ * (w : D.points k) * b₄) =
-        (b₁ * (nᵢ * v * nᵢ⁻¹)) * (nᵢ * D.rootSubgroupPoints (t.simpleIndex ht i) k a *
-          (w : D.points k)) *
-          ((w : D.points k)⁻¹ * D.torusPoints k s * (w : D.points k) * b₄) := by
+  have wrap {z : D.points k}
+      (hm : nᵢ * D.rootSubgroupPoints (t.simpleIndex ht i) k a * (w : D.points k) ∈
+        DoubleCoset.doubleCoset z (D.borelSubgroup k) (D.borelSubgroup k)) :
+      (b₁ * nᵢ * b₂) * (b₃ * (w : D.points k) * b₄) ∈
+        DoubleCoset.doubleCoset z (D.borelSubgroup k) (D.borelSubgroup k) := by
+    obtain ⟨c₁, hc₁, c₂, hc₂, hcm⟩ := DoubleCoset.mem_doubleCoset.mp hm
+    refine DoubleCoset.mem_doubleCoset.mpr
+      ⟨_, (D.borelSubgroup k).mul_mem hbL hc₁, _, (D.borelSubgroup k).mul_mem hc₂ hbR, ?_⟩
     have hb₂₃ : b₂ * b₃ = v * D.rootSubgroupPoints (t.simpleIndex ht i) k a * D.torusPoints k s :=
       hs.symm
     calc
       (b₁ * nᵢ * b₂) * (b₃ * (w : D.points k) * b₄)
           = b₁ * nᵢ * (b₂ * b₃) * (w : D.points k) * b₄ := by group
+      _ = (b₁ * (nᵢ * v * nᵢ⁻¹)) *
+            (nᵢ * D.rootSubgroupPoints (t.simpleIndex ht i) k a * (w : D.points k)) *
+            ((w : D.points k)⁻¹ * D.torusPoints k s * (w : D.points k) * b₄) := by
+          rw [hb₂₃]
+          group
       _ = _ := by
-        rw [hb₂₃]
-        group
-  rw [hmul_eq]
-  rcases hmid with hm | hm
-  · obtain ⟨c₁, hc₁, c₂, hc₂, hcm⟩ := DoubleCoset.mem_doubleCoset.mp hm
-    exact Or.inl <| DoubleCoset.mem_doubleCoset.mpr
-      ⟨_, (D.borelSubgroup k).mul_mem hbL hc₁, _, (D.borelSubgroup k).mul_mem hc₂ hbR,
-        by dsimp only [nᵢ]; rw [hcm]; group⟩
-  · obtain ⟨c₁, hc₁, c₂, hc₂, hcm⟩ := DoubleCoset.mem_doubleCoset.mp hm
-    exact Or.inr <| DoubleCoset.mem_doubleCoset.mpr
-      ⟨_, (D.borelSubgroup k).mul_mem hbL hc₁, _, (D.borelSubgroup k).mul_mem hc₂ hbR,
-        by dsimp only [nᵢ]; rw [hcm]; group⟩
+          rw [hcm]
+          group
+  exact (D.weylElement_mul_rootSubgroupPoints_mul_mem_union k i a w).imp wrap wrap
 
 /-! ## The Tits system on `extendedElementarySubgroup` over a field -/
 
