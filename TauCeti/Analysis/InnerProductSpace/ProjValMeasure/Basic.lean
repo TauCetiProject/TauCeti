@@ -47,7 +47,7 @@ from the structure's laws.
   `inner_proj`, the normalization `proj_univ : P(X) = 1`, and the
   multiplicativity law `proj_inter`.
 * `proj_idem`, `isSelfAdjoint_proj`, `isPositive_proj`, `proj_mul_eq_left_of_subset`,
-  `proj_range_mono`, `proj_union`, `proj_compl`, `norm_proj_apply_le`:
+  `range_proj_mono`, `proj_union`, `proj_compl`, `norm_proj_apply_le`:
   the classical PVM laws, recovered from the structure.
 * `hasSum_proj_of_pairwise_disjoint`: unconditional strong countable additivity
   (`HasSum`) on a pairwise-disjoint measurable family; `tendsto_sum_proj_of_pairwise_disjoint`
@@ -224,7 +224,7 @@ theorem proj_mul_eq_right_of_subset (P : ProjValMeasure X H) {B C : Set X}
 
 /-- If measurable `B ⊆ C`, then the range of `P(B)` is contained in the
 range of `P(C)`. -/
-theorem proj_range_mono (P : ProjValMeasure X H) {B C : Set X}
+theorem range_proj_mono (P : ProjValMeasure X H) {B C : Set X}
     (hBC : B ⊆ C) (hB : MeasurableSet B) (hC : MeasurableSet C) :
     (P.proj B hB).range ≤ (P.proj C hC).range := by
   rw [← P.proj_mul_eq_right_of_subset hBC hB hC]
