@@ -362,37 +362,6 @@ theorem contDiff_quarticSliceGluing [Fintype ι] (p q : ι → ℝ) (j : ι) (c 
   · exact contDiff_const.mul ((contDiff_intervalBaseTargetGluing _).comp (contDiff_apply _ _ i))
   · exact contDiff_const.mul ((contDiff_intervalBaseSourceGluing _).comp (contDiff_apply _ _ i))
 
-/-- **The slice point of a trajectory in gluing parameters.** Flowing the trajectory point with
-time coordinates `u` for time `U(c) - uⱼ` gives the slice evaluation with gluing parameters
-`e^{-(uᵢ - uⱼ)}` for the coordinates `i ∈ A` and `e^{uᵢ - uⱼ}` for the others. When `j` is a moving
-coordinate, with `pⱼ = 0` and `qⱼ = ±1`, this is where the trajectory reaches the slice
-`{|yⱼ| = c}`, and `A` plays the role of the coordinates ahead of `j`. -/
-theorem quarticWellSumFlow_quarticTrajectoryPoint_eq_quarticSliceGluing
-    (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1) (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) (j : ι)
-    {c : ℝ} (hc : c ∈ Ioo 0 1) (A : Finset ι) (u : ι → ℝ) :
-    quarticWellSumFlow (intervalBaseTimeCoordinate c - u j) (quarticTrajectoryPoint p q u) =
-      quarticSliceGluing p q j c A
-        fun i ↦ if i ∈ A then exp (-(u i - u j)) else exp (u i - u j) := by
-  rw [quarticWellSumFlow_quarticTrajectoryPoint hp hq]
-  funext i
-  by_cases h : p i = q i
-  · rw [quarticTrajectoryPoint_apply_of_eq _ h, quarticSliceGluing_apply_of_eq _ _ _ _ h]
-  rw [quarticTrajectoryPoint_apply_of_ne _ h]
-  by_cases hij : i = j
-  · subst hij
-    rw [quarticSliceGluing_apply_self _ _ _ h, sub_add_cancel,
-      intervalBaseOrbit_one_intervalBaseTimeCoordinate hc]
-  -- Only the times `uᵢ + (U(c) - uⱼ)` and `U(c) ∓ log ρᵢ` passed to `q` need rearranging.
-  by_cases hA : i ∈ A
-  · rw [quarticSliceGluing_apply_of_mem _ _ h hij hA, ite_eq_left hA,
-      ← intervalBaseOrbit_one_sub_log _ (exp_pos _), log_exp]
-    congr 2
-    ring
-  · rw [quarticSliceGluing_apply_of_notMem _ _ h hij hA, ite_eq_right hA,
-      ← intervalBaseOrbit_one_add_log _ (exp_pos _), log_exp]
-    congr 2
-    ring
-
 /-- **Positive gluing parameters give trajectory points.** At gluing parameters which are positive
 on the moving coordinates other than `j`, the slice evaluation is the trajectory point with time
 coordinate `U(c)` at `j`, `U(c) - log ρᵢ` at the coordinates `i ∈ A` ahead of `j`, and
@@ -415,6 +384,30 @@ theorem quarticSliceGluing_eq_quarticTrajectoryPoint (j : ι) {c : ℝ} (hc : c 
       intervalBaseOrbit_one_sub_log _ (hρ i h hij)]
   · rw [quarticSliceGluing_apply_of_notMem _ _ h hij hA, ite_eq_right hij, ite_eq_right hA,
       intervalBaseOrbit_one_add_log _ (hρ i h hij)]
+
+/-- **The slice point of a trajectory in gluing parameters.** Flowing the trajectory point with
+time coordinates `u` for time `U(c) - uⱼ` gives the slice evaluation with gluing parameters
+`e^{-(uᵢ - uⱼ)}` for the coordinates `i ∈ A` and `e^{uᵢ - uⱼ}` for the others. When `j` is a moving
+coordinate, with `pⱼ = 0` and `qⱼ = ±1`, this is where the trajectory reaches the slice
+`{|yⱼ| = c}`, and `A` plays the role of the coordinates ahead of `j`. -/
+theorem quarticWellSumFlow_quarticTrajectoryPoint_eq_quarticSliceGluing
+    (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1) (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) (j : ι)
+    {c : ℝ} (hc : c ∈ Ioo 0 1) (A : Finset ι) (u : ι → ℝ) :
+    quarticWellSumFlow (intervalBaseTimeCoordinate c - u j) (quarticTrajectoryPoint p q u) =
+      quarticSliceGluing p q j c A
+        fun i ↦ if i ∈ A then exp (-(u i - u j)) else exp (u i - u j) := by
+  rw [quarticWellSumFlow_quarticTrajectoryPoint hp hq,
+    quarticSliceGluing_eq_quarticTrajectoryPoint j hc A fun _ _ _ ↦ by
+      split_ifs <;> exact exp_pos _]
+  -- Both time functions are `uᵢ + U(c) - uⱼ`.
+  congr 1
+  funext i
+  split_ifs with hij hA
+  · rw [hij, sub_add_cancel]
+  · rw [log_exp]
+    ring
+  · rw [log_exp]
+    ring
 
 /-- **The broken trajectory at zero gluing parameters.** At `ρ = 0` the slice evaluation is the
 trajectory point with all time coordinates `U(c)` from `A.piecewise q p` to
