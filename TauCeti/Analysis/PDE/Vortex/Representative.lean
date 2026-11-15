@@ -141,7 +141,8 @@ private theorem isBigO_iteratedFDeriv_exp_sub_one_mul_referenceSection {ψ : ℂ
   have h := (ContinuousLinearMap.mul ℝ ℝ).isBigO_iteratedFDeriv_of_bilinear
     ((Real.contDiff_exp.comp hψ).sub contDiff_const) (L.contDiff.comp hr) (n := n)
     (by exact_mod_cast le_top)
-    (fun i _ ↦ (hψ.of_le (by exact_mod_cast le_top)).isBigO_iteratedFDeriv_exp_sub_one hρ
+    (fun i _ ↦ (hψ.of_le (by exact_mod_cast le_top)).isBigO_iteratedFDeriv_exp_sub_one
+      (hρ.isBigO_one ℝ)
       fun j _ ↦ hψn j) hL
   simpa only [ContinuousLinearMap.mul_apply', Function.comp_apply, mul_one] using h
 

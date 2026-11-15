@@ -11,7 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.SpecialFunctions.Exp.Limits
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # Derivatives of exponential functions
@@ -36,8 +36,9 @@ at `exp y`, so the chain rule `(f ∘ exp)'(y) = e^y f'(e^y)` holds with no hypo
 * `ContDiff.isBigO_iteratedFDeriv_succ_exp`: along any filter, the derivative of order `n + 1` of
   `exp ℓ` is `O(ρ)` when the derivatives of `ℓ` of positive order up to that order are `O(ρ)` and
   those of `exp ℓ` of lower order are bounded.
-* `ContDiff.isBigO_iteratedFDeriv_exp_sub_one`: along a filter on which `ρ → 0`, the order-`n`
-  derivative of `exp ℓ - 1` is `O(ρ)` when the derivatives of `ℓ` of order at most `n` are.
+* `ContDiff.isBigO_iteratedFDeriv_exp_sub_one`: along a filter on which `ρ` is bounded, the
+  derivative of order `n` of `exp ℓ - 1` is `O(ρ)` when the derivatives of `ℓ` of order at most `n`
+  are `O(ρ)`.
 -/
 
 public section
@@ -135,42 +136,44 @@ theorem ContDiff.isBigO_iteratedFDeriv_succ_exp {D : Type*} [NormedAddCommGroup 
   rw [hfe] at hB
   exact (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_fderiv.ge).trans hB
 
-open Asymptotics Filter Topology in
-/-- **Asymptotic bounds on the derivatives of `exp ℓ - 1`.** Along any filter on which `ρ` tends
-to zero, if the derivatives of order at most `n` of a `Cⁿ` map `ℓ` are `O(ρ)`, then so is the
-order-`n` derivative of `y ↦ exp (ℓ y) - 1`. -/
+open Asymptotics Filter in
+/-- **Asymptotic bounds on the derivatives of `exp ℓ - 1`.** Along a filter on which the weight
+`ρ` is bounded, the derivative of order `n` of `y ↦ exp (ℓ y) - 1` is `O(ρ)` for a `Cⁿ` map `ℓ`
+whose derivatives of order at most `n` are `O(ρ)`. -/
 theorem ContDiff.isBigO_iteratedFDeriv_exp_sub_one {D : Type*} [NormedAddCommGroup D]
     [NormedSpace ℝ D] {ℓ : D → ℝ} {n : ℕ} (hℓ : ContDiff ℝ n ℓ) {l : Filter D} {ρ : D → ℝ}
-    (hρ : Tendsto ρ l (𝓝 0)) (hℓn : ∀ i ≤ n, iteratedFDeriv ℝ i ℓ =O[l] ρ) :
+    (hρ : ρ =O[l] fun _ ↦ (1 : ℝ)) (hdec : ∀ i ≤ n, iteratedFDeriv ℝ i ℓ =O[l] ρ) :
     iteratedFDeriv ℝ n (fun y ↦ Real.exp (ℓ y) - 1) =O[l] ρ := by
-  have hℓ0 : ℓ =O[l] ρ :=
-    (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_zero.ge).trans (hℓn 0 (Nat.zero_le n))
-  have he : ContDiff ℝ n (fun y ↦ Real.exp (ℓ y)) := Real.contDiff_exp.comp hℓ
-  -- In positive order, the derivatives of `exp ℓ - 1` are those of `exp ℓ`.
-  have hsub (i : ℕ) (hi : i ≠ 0) (hin : i ≤ n) (y : D) :
-      iteratedFDeriv ℝ i (fun y ↦ Real.exp (ℓ y) - 1) y =
-        iteratedFDeriv ℝ i (fun y ↦ Real.exp (ℓ y)) y := by
-    rw [fun_iteratedFDeriv_sub_apply (he.contDiffAt.of_le (by exact_mod_cast hin))
-      contDiffAt_const, iteratedFDeriv_const_of_ne hi, Pi.zero_apply, sub_zero]
-  -- Strong induction on the order `j ≤ n`.
-  suffices h : ∀ j ≤ n, iteratedFDeriv ℝ j (fun y ↦ Real.exp (ℓ y) - 1) =O[l] ρ from h n le_rfl
-  intro j
-  induction j using Nat.strong_induction_on with
-  | _ j ih =>
-  intro hjn
-  rcases j with _ | j
-  · exact (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_zero.le).trans
-      (Real.isBigO_exp_comp_sub_one (hℓ0.trans_tendsto hρ) hℓ0)
-  -- The derivatives of `exp ℓ` of order at most `j` are bounded: `exp ℓ → 1`, and in positive
-  -- order they are `O(ρ)` by induction.
-  have hen (i : ℕ) (hi : i ≤ j) :
-      iteratedFDeriv ℝ i (fun y ↦ Real.exp (ℓ y)) =O[l] fun _ ↦ (1 : ℝ) := by
-    rcases i with _ | i
-    · refine (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_zero.le).trans ?_
-      exact ((Real.continuous_exp.tendsto 0).comp (hℓ0.trans_tendsto hρ)).isBigO_one ℝ
-    · exact (isBigO_of_le _ fun y ↦
-        (congrArg norm (hsub (i + 1) i.succ_ne_zero (by omega) y)).ge).trans
-          ((ih (i + 1) (by omega) (by omega)).trans (hρ.isBigO_one ℝ))
-  exact (isBigO_of_le _ fun y ↦ (congrArg norm (hsub (j + 1) j.succ_ne_zero hjn y)).le).trans
-    ((hℓ.of_le (by exact_mod_cast hjn)).isBigO_iteratedFDeriv_succ_exp
-      (fun i _ hi ↦ hℓn i (hi.trans hjn)) hen)
+  have hℓρ : ℓ =O[l] ρ :=
+    (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_zero.ge).trans (hdec 0 (Nat.zero_le n))
+  -- `ℓ` is eventually bounded by some `C`, and then `|exp ℓ - 1| ≤ exp C |ℓ|`.
+  obtain ⟨C, hC⟩ := (hℓρ.trans hρ).bound
+  have he1 : (fun y ↦ Real.exp (ℓ y) - 1) =O[l] ρ := by
+    refine (IsBigO.of_bound (Real.exp C) (hC.mono fun y hy ↦ ?_)).trans hℓρ
+    rw [norm_one, mul_one, Real.norm_eq_abs] at hy
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, mul_comm]
+    exact (TauCeti.abs_exp_sub_one_le_mul_exp_abs _).trans
+      (mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 hy) (abs_nonneg _))
+  -- The derivatives of `exp ℓ` of order at most `n` are bounded.
+  have hbdd : ∀ k ≤ n, ∀ i ≤ k, iteratedFDeriv ℝ i (fun y ↦ Real.exp (ℓ y)) =O[l]
+      fun _ ↦ (1 : ℝ) := by
+    intro k
+    induction k with
+    | zero =>
+      intro _ i hi
+      obtain rfl : i = 0 := by omega
+      refine (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_zero.le).trans ?_
+      simpa using (he1.trans hρ).add (isBigO_refl (fun _ : D ↦ (1 : ℝ)) l)
+    | succ k ih =>
+      intro hk i hi
+      rcases Nat.lt_or_eq_of_le hi with hi | rfl
+      · exact ih (by omega) i (by omega)
+      · exact ((hℓ.of_le (by exact_mod_cast hk)).isBigO_iteratedFDeriv_succ_exp
+          (fun i _ hi ↦ hdec i (by omega)) (ih (by omega))).trans hρ
+  rcases n with _ | n
+  · exact (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_zero.le).trans he1
+  · have hexp : ContDiff ℝ (n + 1) (fun y ↦ Real.exp (ℓ y)) := Real.contDiff_exp.comp hℓ
+    refine (isBigO_of_le _ fun y ↦ le_of_eq ?_).trans
+      ((hℓ.isBigO_iteratedFDeriv_succ_exp (fun i _ hi ↦ hdec i hi) (hbdd n (by omega))))
+    rw [fun_iteratedFDeriv_sub_apply (hexp.contDiffAt.of_le (by simp)) contDiffAt_const,
+      iteratedFDeriv_const_of_ne n.succ_ne_zero, Pi.zero_apply, sub_zero]
