@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.Complexification
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.HermitianMetric
 public import TauCeti.LinearAlgebra.ExteriorPower.BaseChange
 import Mathlib.LinearAlgebra.ExteriorAlgebra.Grading
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 
 /-!
 # The exterior Gram metric on real and complexified exterior algebras
@@ -155,21 +156,12 @@ theorem _root_.ExteriorAlgebra.gramBilinForm_toBasis_exteriorAlgebra {I : Type*}
     gramBilinForm V x y =
       toLinearMapₛₗ₂ (starRingEnd ℝ) e.toBasis.ExteriorAlgebra e.toBasis.ExteriorAlgebra
         (1 : Matrix (Finset I) (Finset I) ℝ) x y := by
-  have he : toLinearMapₛₗ₂ (starRingEnd ℝ) e.toBasis e.toBasis (1 : Matrix I I ℝ) =
-      { toFun := innerₗ V, map_add' := map_add _, map_smul' := fun r v ↦ by simp } := by
-    refine LinearMap.ext_basis e.toBasis e.toBasis fun i j ↦ ?_
-    rw [toLinearMapₛₗ₂_apply_basis, Matrix.one_apply]
-    exact (orthonormal_iff_ite.mp e.orthonormal i j).symm
-  let B : _root_.ExteriorAlgebra ℝ V →ₗ⋆[ℝ] _root_.ExteriorAlgebra ℝ V →ₗ[ℝ] ℝ :=
-    { toFun := gramBilinForm V
-      map_add' := map_add _
-      map_smul' := fun r s ↦ by simp }
-  have hB : B = toLinearMapₛₗ₂ (starRingEnd ℝ) e.toBasis.ExteriorAlgebra
-      e.toBasis.ExteriorAlgebra (1 : Matrix (Finset I) (Finset I) ℝ) := by
-    refine _root_.ExteriorAlgebra.eq_toLinearMapₛₗ₂_of_ιMulti e.toBasis B
-      (fun hpq _ hs _ ht ↦ gramBilinForm_eq_zero_of_mem_exteriorPower hpq hs ht) (fun p u v ↦ ?_)
-    rw [he]
-    exact gramBilinForm_ιMulti_ιMulti p u v
+  have hB := _root_.ExteriorAlgebra.eq_toLinearMapₛₗ₂_of_ιMulti e.toBasis
+    (gramBilinForm V : _root_.ExteriorAlgebra ℝ V →ₗ⋆[ℝ] _root_.ExteriorAlgebra ℝ V →ₗ[ℝ] ℝ)
+    (fun hpq _ hs _ ht ↦ gramBilinForm_eq_zero_of_mem_exteriorPower hpq hs ht)
+    fun p u v ↦ by
+      rw [e.toLinearMapₛₗ₂_one_eq_innerₛₗ]
+      exact gramBilinForm_ιMulti_ιMulti p u v
   exact LinearMap.congr_fun₂ hB x y
 
 /-- The increasing wedge basis of an ordered orthonormal basis of `V` is orthonormal for
@@ -192,18 +184,10 @@ theorem isSymm_gramBilinForm : (gramBilinForm V).IsSymm :=
 /-- `gramBilinForm V` is positive definite. -/
 theorem posDef_toQuadraticMap_gramBilinForm : (gramBilinForm V).toQuadraticMap.PosDef := by
   intro x hx
-  let b := (stdOrthonormalBasis ℝ V).toBasis.ExteriorAlgebra
-  have hsum : gramBilinForm V x x = ∑ S, (b.repr x S) ^ 2 := by
-    rw [_root_.ExteriorAlgebra.gramBilinForm_toBasis_exteriorAlgebra (stdOrthonormalBasis ℝ V),
-      toLinearMapₛₗ₂_one_apply]
-    refine Finset.sum_congr rfl fun S _ ↦ ?_
-    rw [starRingEnd_apply, star_trivial, sq]
-  rw [LinearMap.BilinMap.toQuadraticMap_apply, hsum]
-  refine lt_of_le_of_ne (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _) (Ne.symm fun h0 ↦ hx ?_)
-  apply b.repr.injective
-  ext S
-  simpa using (Finset.sum_eq_zero_iff_of_nonneg (fun _ _ ↦ sq_nonneg _)).mp h0 S
-    (Finset.mem_univ S)
+  rw [LinearMap.BilinMap.toQuadraticMap_apply,
+    _root_.ExteriorAlgebra.gramBilinForm_toBasis_exteriorAlgebra (stdOrthonormalBasis ℝ V)]
+  exact lt_of_le_of_ne (toLinearMapₛₗ₂_one_self_nonneg _ x)
+    (Ne.symm fun h ↦ hx ((toLinearMapₛₗ₂_one_self_eq_zero_iff _).mp h))
 
 end Real
 
@@ -291,15 +275,6 @@ theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_baseChangeEquiv
         (_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ x)
         (_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ y) =
       (gramBilinForm V).sesqComplexification x y := by
-  have hbasis (S : Finset I) :
-      _root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ ((1 : ℂ) ⊗ₜ[ℝ] e.toBasis.ExteriorAlgebra S) =
-        (e.toBasis.baseChange ℂ).ExteriorAlgebra S := by
-    apply (_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm.injective
-    rw [AlgEquiv.symm_apply_apply,
-      _root_.ExteriorAlgebra.basis_apply_ofCard (e.toBasis.baseChange ℂ) (rfl : S.card = S.card),
-      _root_.ExteriorAlgebra.basis_apply_ofCard e.toBasis (rfl : S.card = S.card)]
-    simp only [_root_.ExteriorAlgebra.ιMulti_family, Function.comp_def, Basis.baseChange_apply,
-      _root_.ExteriorAlgebra.baseChangeEquiv_symm_ιMulti_tmul, Finset.prod_const_one]
   set H := toLinearMapₛₗ₂ (starRingEnd ℂ) (e.toBasis.baseChange ℂ).ExteriorAlgebra
     (e.toBasis.baseChange ℂ).ExteriorAlgebra (1 : Matrix (Finset I) (Finset I) ℂ)
   let f := (_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).toLinearMap
@@ -309,7 +284,9 @@ theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_baseChangeEquiv
     rw [LinearMap.compl₂_apply, LinearMap.comp_apply, Basis.baseChange_apply,
       Basis.baseChange_apply]
     dsimp only [f]
-    rw [AlgEquiv.toLinearMap_apply, AlgEquiv.toLinearMap_apply, hbasis, hbasis,
+    rw [AlgEquiv.toLinearMap_apply, AlgEquiv.toLinearMap_apply,
+      _root_.ExteriorAlgebra.baseChangeEquiv_tmul_basis,
+      _root_.ExteriorAlgebra.baseChangeEquiv_tmul_basis, one_smul, one_smul,
       toLinearMapₛₗ₂_apply_basis, Matrix.one_apply,
       LinearMap.BilinForm.sesqComplexification_tmul_tmul,
       gramBilinForm_toBasis_exteriorAlgebra_apply e S T]
@@ -362,17 +339,9 @@ theorem sesqComplexification_gramBilinForm_baseChangeEquiv_symm_ιMulti_ιMulti
       (Matrix.of fun i j ↦
         LinearMap.BilinForm.sesqComplexification (innerₗ V) (x i) (y j)).det := by
   let e := stdOrthonormalBasis ℝ V
-  have he : toLinearMapₛₗ₂ (starRingEnd ℂ) (e.toBasis.baseChange ℂ) (e.toBasis.baseChange ℂ)
-      (1 : Matrix (Fin (finrank ℝ V)) (Fin (finrank ℝ V)) ℂ) =
-        LinearMap.BilinForm.sesqComplexification (innerₗ V) := by
-    refine LinearMap.ext_basis (e.toBasis.baseChange ℂ) (e.toBasis.baseChange ℂ) fun i j ↦ ?_
-    rw [toLinearMapₛₗ₂_apply_basis, Matrix.one_apply, Basis.baseChange_apply,
-      Basis.baseChange_apply]
-    simp only [LinearMap.BilinForm.sesqComplexification_tmul_tmul, map_one, one_mul,
-      innerₗ_apply_apply, e.coe_toBasis, orthonormal_iff_ite.mp e.orthonormal i j]
-    split_ifs <;> simp
   rw [← _root_.ExteriorAlgebra.toLinearMapₛₗ₂_baseChange_exteriorAlgebra e,
-    _root_.ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti_ιMulti, he]
+    _root_.ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti_ιMulti,
+    ← LinearMap.BilinForm.sesqComplexification_toLinearMap₂_one, e.toLinearMap₂_one_eq_innerₗ]
 
 end Complexification
 

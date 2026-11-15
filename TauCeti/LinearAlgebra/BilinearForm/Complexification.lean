@@ -42,6 +42,10 @@ definite, so is `h`. This is the positive Hermitian form that a Euclidean metric
   conjugate of `h (x, y)`.
 * `LinearMap.BilinForm.sesqComplexification_baseChange_baseChange`: complexified maps preserving
   `B` preserve `h`.
+* `LinearMap.BilinForm.sesqComplexification_toLinearMap₂` and
+  `LinearMap.BilinForm.sesqComplexification_toLinearMap₂_one`: the sesquilinear complexification
+  of `Matrix.toLinearMap₂ b b M` is `Matrix.toLinearMapₛₗ₂ (starRingEnd ℂ)` in `b.baseChange ℂ`
+  of the entrywise complexified matrix (and of `1` when `M = 1`).
 * `LinearMap.BilinForm.sesqComplexification_eq_zero_of_mem_eigenspace`: eigenspaces of a
   complexified map preserving `B` are `h`-orthogonal unless `conj z * w = 1`.
 * `LinearMap.BilinForm.sesqComplexification_baseChange_left_of_skewAdjoint`: real
@@ -125,6 +129,29 @@ theorem sesqComplexification_baseChange_baseChange {B' : BilinForm ℝ V'} {f : 
       B.sesqComplexification x y := by
   rw [sesqComplexification_apply, sesqComplexification_apply, tmulConj_baseChange,
     baseChange_baseChange_baseChange hf]
+
+/-- **The sesquilinear complexification of a matrix-represented real bilinear form** is the
+complex sesquilinear form of the entrywise complexified matrix in the complexified basis. -/
+theorem sesqComplexification_toLinearMap₂ {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℝ V) (M : Matrix ι ι ℝ) :
+    sesqComplexification (Matrix.toLinearMap₂ b b M) =
+      Matrix.toLinearMapₛₗ₂ (starRingEnd ℂ) (b.baseChange ℂ) (b.baseChange ℂ)
+        (M.map (algebraMap ℝ ℂ)) := by
+  refine LinearMap.ext_basis (b.baseChange ℂ) (b.baseChange ℂ) fun i j ↦ ?_
+  rw [Matrix.toLinearMapₛₗ₂_apply_basis, Module.Basis.baseChange_apply,
+    Module.Basis.baseChange_apply, sesqComplexification_tmul_tmul, map_one, one_mul, one_mul,
+    Matrix.toLinearMap₂_apply_basis, Matrix.map_apply]
+  rfl
+
+/-- **The sesquilinear complexification of the form making a real basis `b` orthonormal** is the
+Hermitian form making `b.baseChange ℂ` orthonormal. -/
+@[simp]
+theorem sesqComplexification_toLinearMap₂_one {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℝ V) :
+    sesqComplexification (Matrix.toLinearMap₂ b b (1 : Matrix ι ι ℝ)) =
+      Matrix.toLinearMapₛₗ₂ (starRingEnd ℂ) (b.baseChange ℂ) (b.baseChange ℂ)
+        (1 : Matrix ι ι ℂ) := by
+  rw [sesqComplexification_toLinearMap₂, Matrix.map_one _ (map_zero _) (map_one _)]
 
 /-- **Eigenspaces of a complexified map preserving a real bilinear form are orthogonal for its
 sesquilinear complexification** unless their eigenvalues satisfy `conj z * w = 1`: the
