@@ -40,9 +40,10 @@ multiplicativity of the values for the cup product
 Consequently invertibility in `H⁰(X; k)` can be tested pointwise, one path component at a time: a
 square matrix of degree-zero classes whose matrices of values are invertible at every point is
 invertible for the cup product (`TauCeti.exists_singularCup_matrix_eq_one`), and in particular a
-class whose values are units is a unit (`TauCeti.exists_singularCup_eq_one`). The inverse has, at
-every point, the inverse matrix of values; it is a class because the matrix of values, and so its
-inverse, is constant on path components.
+class whose values are units is a unit (`TauCeti.exists_singularCup_eq_one`), so that the cup
+product with it is bijective in every degree (`TauCeti.bijective_singularCup_right_of_isUnit`).
+The inverse has, at every point, the inverse matrix of values; it is a class because the matrix of
+values, and so its inverse, is constant on path components.
 
 ## References
 
@@ -313,6 +314,35 @@ theorem exists_singularCup_eq_one
   obtain ⟨B, h₁, h₂⟩ := exists_singularCup_matrix_eq_one (ι := Unit) (fun _ _ ↦ u)
     fun x ↦ (Matrix.isUnit_iff_isUnit_det _).2 (by simpa using hu x)
   exact ⟨B () (), by simpa using h₁ () (), by simpa using h₂ () ()⟩
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- **The cup product with a degree-zero class whose values are units is bijective**: for such a
+class `u ∈ H⁰(X; k)` and a `k`-module `M`, the map `a ↦ a ⌣ u` on `Hᵖ(X; M)`, along the right
+unitor `M ⊗ k ≅ M`, is a bijection. Its inverse is the cup product with the inverse of `u` given by
+`TauCeti.exists_singularCup_eq_one`. -/
+theorem bijective_singularCup_right_of_isUnit (M : ModuleCat.{w} k)
+    (u : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0)
+    (hu : ∀ x : X, IsUnit (singularCohomologyZeroEval x u)) (p : ℕ) :
+    Function.Bijective fun a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M p ↦
+      X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (ρ_ M).hom p 0 p rfl a u := by
+  obtain ⟨v, h₁, h₂⟩ := exists_singularCup_eq_one u hu
+  -- `(a ⌣ x) ⌣ y = a` whenever `x ⌣ y = 1`, by associativity and the right unit law.
+  have key (x y : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0)
+      (hxy : X.singularCup k (λ_ _).inv (λ_ _).hom 0 0 0 rfl x y = X.singularCohomologyZeroOne)
+      (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M p) :
+      X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (ρ_ M).hom p 0 p rfl
+        (X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (ρ_ M).hom p 0 p rfl a x) y = a := by
+    refine (X.singularCup_assoc k (u₁₂ := (λ_ _).inv) (u := (λ_ _).inv) (u₂₃ := (λ_ _).inv)
+      (u' := (λ_ _).inv) (by monoidal) (μ₁₂ := (ρ_ M).hom) (μ := (ρ_ M).hom)
+      (μ₂₃ := (λ_ (𝟙_ (ModuleCat.{w} k))).hom) (μ' := (ρ_ M).hom) (by monoidal) rfl rfl rfl rfl
+      a x y).trans ?_
+    rw [hxy, TopCat.singularCohomologyZeroOne_def]
+    exact X.singularCup_constSingularCocycle_right k (η := 𝟙 _) (by simp [unitors_inv_equal])
+      (by simp) rfl a
+  exact ⟨fun a a' haa' ↦ (key u v h₁ a).symm.trans
+      ((congrArg (fun z ↦ X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (ρ_ M).hom p 0 p rfl z v)
+        haa').trans (key u v h₁ a')),
+    fun a ↦ ⟨_, key v u h₂ a⟩⟩
 
 end Invertibility
 
