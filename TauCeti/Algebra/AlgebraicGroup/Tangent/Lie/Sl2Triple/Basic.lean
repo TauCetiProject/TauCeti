@@ -42,13 +42,6 @@ namespace IsSl2Triple
 
 universe u
 
-@[reducible]
-private noncomputable def finiteTypeSL2 (k : Type u) [Field k] :
-    FiniteTypeCommHopfAlgCat.{u, u} k :=
-  ⟨SpecialLinear.coordinateHopfAlgebra k 2, by
-    rw [← SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj]
-    exact (SpecialLinear.finiteTypeCoordinateHopfAlgebra k 2).property⟩
-
 section Integration
 
 variable {k : Type u} [Field k] [CharZero k]
@@ -70,26 +63,38 @@ theorem existsUnique_sl2CoordinateMap (t : IsSl2Triple h e f) :
   let _ : LieModule k (SpecialLinear.sl (Fin 2) k) M := LieModule.compLieHom M ρLie
   let _ : Comodule k (SpecialLinear.coordinateHopfAlgebra k 2) M :=
     SpecialLinear.comoduleOfLieModule k M
-  refine CommHopfAlgCat.existsUnique_hom_of_surjective_of_derivationCompLieHom_eq
-    (K := finiteTypeSL2 k)
-    (SpecialLinear.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)
-    (Comodule.coordinateBialgHom (H := H) b) hq
-    (Comodule.coordinateBialgHom (H := SpecialLinear.coordinateHopfAlgebra k 2) b) _ ?_
-  ext d : 1
-  rw [LieHom.comp_apply, LieHom.comp_apply, LieEquiv.coe_toLieHom, derivationCompLieHom_apply,
-    derivationCompLieHom_apply]
-  apply (GeneralLinear.tangentLinearEquivMatrix (R := k) (B := k) n).injective
-  ext i j
-  rw [GeneralLinear.tangentLinearEquivMatrix_apply, GeneralLinear.tangentLinearEquivMatrix_apply,
-    d.tangentMatrix_derivationComp_coordinateBialgHom_apply
-      (H := SpecialLinear.coordinateHopfAlgebra k 2) b i j,
-    Derivation.tangentMatrix_derivationComp_coordinateBialgHom_apply _ (H := H) b i j,
-    Comodule.coefficientMatrix_apply (C := SpecialLinear.coordinateHopfAlgebra k 2) b i j,
-    Comodule.coefficientMatrix_apply (C := H) b i j,
-    d.apply_matrixCoefficient (H := SpecialLinear.coordinateHopfAlgebra k 2) (b.coord i) (b j),
-    Derivation.apply_matrixCoefficient _ (H := H) (b.coord i) (b j),
-    SpecialLinear.differential_comoduleOfLieModule]
-  exact (congrArg (b.coord i) (LieRingModule.compLieHom_apply M ρLie _ (b j))).symm
+  have hdiff : (derivationCompLieHom (B := k) (Comodule.coordinateBialgHom (H := H) b)).comp
+      ((t.toLieHom k).comp (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).toLieHom) =
+      derivationCompLieHom (B := k)
+        (Comodule.coordinateBialgHom (H := SpecialLinear.coordinateHopfAlgebra k 2) b) := by
+    ext d : 1
+    rw [LieHom.comp_apply, LieHom.comp_apply, LieEquiv.coe_toLieHom, derivationCompLieHom_apply,
+      derivationCompLieHom_apply]
+    apply (GeneralLinear.tangentLinearEquivMatrix (R := k) (B := k) n).injective; ext i j
+    rw [GeneralLinear.tangentLinearEquivMatrix_apply, GeneralLinear.tangentLinearEquivMatrix_apply,
+      d.tangentMatrix_derivationComp_coordinateBialgHom_apply
+        (H := SpecialLinear.coordinateHopfAlgebra k 2) b i j,
+      Derivation.tangentMatrix_derivationComp_coordinateBialgHom_apply _ (H := H) b i j,
+      Comodule.coefficientMatrix_apply (C := SpecialLinear.coordinateHopfAlgebra k 2) b i j,
+      Comodule.coefficientMatrix_apply (C := H) b i j,
+      d.apply_matrixCoefficient (H := SpecialLinear.coordinateHopfAlgebra k 2) (b.coord i) (b j),
+      Derivation.apply_matrixCoefficient _ (H := H) (b.coord i) (b j),
+      SpecialLinear.differential_comoduleOfLieModule]
+    exact (congrArg (b.coord i) (LieRingModule.compLieHom_apply M ρLie _ (b j))).symm
+  have h : ∀ C : _root_.CommHopfAlgCat.{u} k,
+      C = (SpecialLinear.finiteTypeCoordinateHopfAlgebra k 2).obj →
+      ∀ (ρ : GeneralLinear.coordinateHopfAlgebra k n →ₐc[k] C) (L : Derivation k C
+          (Bialgebra.CounitAlgebra k C k) →ₗ⁅k⁆ Derivation k H (Bialgebra.CounitAlgebra k H k)),
+        (derivationCompLieHom (B := k) (Comodule.coordinateBialgHom (H := H) b)).comp L =
+          derivationCompLieHom (B := k) ρ →
+        ∃! φ : CommHopfAlgCat.of k H ⟶ C, derivationCompLieHom (B := k) φ.hom = L := by
+    rintro _ rfl ρ L hL
+    exact CommHopfAlgCat.existsUnique_hom_of_surjective_of_derivationCompLieHom_eq
+      (K := SpecialLinear.finiteTypeCoordinateHopfAlgebra k 2)
+      (SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj k 2 ▸
+        SpecialLinear.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)
+      _ hq ρ L hL
+  exact h _ (SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj k 2).symm _ _ hdiff
 
 /-- **The coordinate Hopf-algebra morphism `H ⟶ O(SL₂)` attached to an `sl₂` triple.** -/
 noncomputable def sl2CoordinateMap (t : IsSl2Triple h e f) :
@@ -145,12 +150,9 @@ theorem sl2CoordinateMap_map {H' : Type u} [CommRing H'] [HopfAlgebra k H']
     [Algebra.FiniteType k H'] (t : IsSl2Triple h e f)
     (ψ : CommHopfAlgCat.of k H' ⟶ CommHopfAlgCat.of k H)
     (hψ : derivationCompLieHom (B := k) ψ.hom h ≠ 0) :
-    (t.map (derivationCompLieHom (B := k) ψ.hom) hψ).sl2CoordinateMap =
-      ψ ≫ t.sl2CoordinateMap := by
-  symm
-  rw [eq_sl2CoordinateMap_iff, CommHopfAlgCat.hom_comp, derivationCompLieHom_comp,
-    t.derivationCompLieHom_sl2CoordinateMap, t.toLieHom_map k _ hψ]
-  ext d : 1; rfl
+    (t.map (derivationCompLieHom (B := k) ψ.hom) hψ).sl2CoordinateMap = ψ ≫ t.sl2CoordinateMap := by
+  symm; rw [eq_sl2CoordinateMap_iff, CommHopfAlgCat.hom_comp, derivationCompLieHom_comp,
+    t.derivationCompLieHom_sl2CoordinateMap, t.toLieHom_map k _ hψ]; ext d : 1; rfl
 
 /-- On `SL₂` itself, the standard `sl₂` triple integrates to the identity of `O(SL₂)`. -/
 @[simp]
@@ -160,10 +162,8 @@ theorem sl2CoordinateMap_isSl2Triple_single
     ((isSl2Triple_single (R := k) (zero_ne_one : (0 : Fin 2) ≠ 1)).map
       (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm.toLieHom hH).sl2CoordinateMap =
       𝟙 (SpecialLinear.coordinateHopfAlgebra k 2) := by
-  symm
-  rw [eq_sl2CoordinateMap_iff, (isSl2Triple_single (R := k) zero_ne_one).toLieHom_map k _ hH,
-    toLieHom_isSl2Triple_single]
-  ext d x
+  symm; rw [eq_sl2CoordinateMap_iff, (isSl2Triple_single (R := k) zero_ne_one).toLieHom_map k _ hH,
+    toLieHom_isSl2Triple_single]; ext d x
   simp only [derivationCompLieHom_apply, LieHom.comp_apply, LieHom.id_apply, LieEquiv.coe_toLieHom,
     LieEquiv.symm_apply_apply, derivationComp_apply]; rfl
 
@@ -192,16 +192,14 @@ theorem derivationComp_sl2CoordinateMap_rootSubgroup_one_zero (t : IsSl2Triple h
 /-- **The algebraic group-scheme homomorphism `SL₂ ⟶ G` attached to an `sl₂` triple.** -/
 noncomputable def sl2GroupSchemeHom (t : IsSl2Triple h e f) :
     SpecialLinear.groupScheme k 2 ⟶
-      (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).obj
-        (Opposite.op (CommHopfAlgCat.of k H)) :=
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).obj (Opposite.op (CommHopfAlgCat.of k H)) :=
   eqToHom (SpecialLinear.groupScheme_def k 2) ≫
     (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).map t.sl2CoordinateMap.op
 
 /-- Explicit formula for `t.sl2GroupSchemeHom` via `hopfSpec`. -/
 theorem sl2GroupSchemeHom_def (t : IsSl2Triple h e f) :
-    t.sl2GroupSchemeHom =
-      eqToHom (SpecialLinear.groupScheme_def k 2) ≫
-        (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).map t.sl2CoordinateMap.op :=
+    t.sl2GroupSchemeHom = eqToHom (SpecialLinear.groupScheme_def k 2) ≫
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).map t.sl2CoordinateMap.op :=
   (rfl)
 
 end Integration
@@ -225,17 +223,16 @@ theorem exists_sl2CoordinateMap_of_isNilpotent_ad
     (he : IsNilpotent (ad k (Derivation k H (Bialgebra.CounitAlgebra k H k)) e)) (he0 : e ≠ 0) :
     ∃ (h f : Derivation k H (Bialgebra.CounitAlgebra k H k)) (t : IsSl2Triple h e f)
       (φ : CommHopfAlgCat.of k H ⟶ SpecialLinear.coordinateHopfAlgebra k 2),
-      φ = t.sl2CoordinateMap ∧
-        Function.Injective (derivationCompLieHom (B := k) φ.hom) ∧
+      φ = t.sl2CoordinateMap ∧ Function.Injective (derivationCompLieHom (B := k) φ.hom) ∧
         derivationComp (B := k) φ.hom
           ((SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm
             (SpecialLinear.single 0 1 zero_ne_one 1)) = e := by
   obtain ⟨h, f, t⟩ := exists_isSl2Triple_of_isNilpotent_ad he he0
-  refine ⟨h, f, t, t.sl2CoordinateMap, rfl, ?_, ?_⟩
-  · rw [t.derivationCompLieHom_sl2CoordinateMap]
-    exact (t.toLieHom_injective k).comp
-      (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).injective
-  · rw [t.derivationComp_sl2CoordinateMap_symm, t.toLieHom_single_zero_one k]
+  refine ⟨h, f, t, t.sl2CoordinateMap, rfl, ?_, by
+    rw [t.derivationComp_sl2CoordinateMap_symm, t.toLieHom_single_zero_one k]⟩
+  rw [t.derivationCompLieHom_sl2CoordinateMap]
+  exact (t.toLieHom_injective k).comp
+    (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).injective
 
 /-- **Characterization of nonzero `ad`-nilpotent elements via algebraic `SL₂` homomorphisms.** -/
 theorem exists_sl2CoordinateMap_iff {e : Derivation k H (Bialgebra.CounitAlgebra k H k)} :
@@ -251,9 +248,8 @@ theorem exists_sl2CoordinateMap_iff {e : Derivation k H (Bialgebra.CounitAlgebra
     (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm.toLieHom,
     hφ.comp (SpecialLinear.tangentLieEquivSl (R := k) (B := k) 2).symm.injective, by
       simpa only [LieHom.comp_apply, LieEquiv.coe_toLieHom, derivationCompLieHom_apply] using he⟩,
-    ?_⟩
-  rintro ⟨ψ, hψ, rfl⟩
-  have hH := ψ.injective_iff_map_singleSubSingle_ne_zero.mp hψ
+    fun ⟨ψ, hψ, he⟩ ↦ ?_⟩
+  subst he; have hH := ψ.injective_iff_map_singleSubSingle_ne_zero.mp hψ
   let t := (isSl2Triple_single (R := k) (zero_ne_one : (0 : Fin 2) ≠ 1)).map ψ hH
   have ht : t.toLieHom k = ψ := (ψ.eq_toLieHom_map hH).symm
   refine ⟨t.sl2CoordinateMap, ?_, by rw [t.derivationComp_sl2CoordinateMap_symm, ht]⟩

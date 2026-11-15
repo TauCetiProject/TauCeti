@@ -50,13 +50,6 @@ namespace IsSl2Triple
 
 universe u
 
-@[reducible]
-private noncomputable def finiteTypeSL2 (k : Type u) [Field k] :
-    FiniteTypeCommHopfAlgCat.{u, u} k :=
-  ⟨SpecialLinear.coordinateHopfAlgebra k 2, by
-    rw [← SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj]
-    exact (SpecialLinear.finiteTypeCoordinateHopfAlgebra k 2).property⟩
-
 section Kernel
 
 variable {k : Type u} [Field k] [CharZero k]
@@ -84,32 +77,39 @@ theorem lieSubalgebra_kernelHopfIdeal_sl2CoordinateMap (t : IsSl2Triple h e f) :
 theorem algebraEtale_quotient_kernelHopfIdeal_sl2CoordinateMap (t : IsSl2Triple h e f) :
     Algebra.Etale k
       (SpecialLinear.coordinateHopfAlgebra k 2 ⧸
-        (CommHopfAlgCat.kernelHopfIdeal t.sl2CoordinateMap).toIdeal) := by
-  let _ : Algebra.FiniteType k (SpecialLinear.coordinateHopfAlgebra k 2) := (finiteTypeSL2 k).2
-  exact (CommHopfAlgCat.algebraEtale_quotient_kernelHopfIdeal_iff t.sl2CoordinateMap).mpr
+        (CommHopfAlgCat.kernelHopfIdeal t.sl2CoordinateMap).toIdeal) :=
+  (CommHopfAlgCat.algebraEtale_quotient_kernelHopfIdeal_iff t.sl2CoordinateMap).mpr
     t.derivationCompLieHom_sl2CoordinateMap_injective
 
 /-- **The scheme-theoretic kernel of `t.sl2CoordinateMap` is finite over `k`.** -/
 theorem moduleFinite_quotient_kernelHopfIdeal_sl2CoordinateMap (t : IsSl2Triple h e f) :
     Module.Finite k
       (SpecialLinear.coordinateHopfAlgebra k 2 ⧸
-        (CommHopfAlgCat.kernelHopfIdeal t.sl2CoordinateMap).toIdeal) := by
-  let _ : Algebra.FiniteType k (SpecialLinear.coordinateHopfAlgebra k 2) := (finiteTypeSL2 k).2
-  exact CommHopfAlgCat.moduleFinite_quotient_kernelHopfIdeal_of_derivationCompLieHom_injective
+        (CommHopfAlgCat.kernelHopfIdeal t.sl2CoordinateMap).toIdeal) :=
+  CommHopfAlgCat.moduleFinite_quotient_kernelHopfIdeal_of_derivationCompLieHom_injective
     t.derivationCompLieHom_sl2CoordinateMap_injective
 
 /-- **The scheme-theoretic kernel of `t.sl2CoordinateMap` is central in `SL₂`.** -/
 theorem isCentral_kernelHopfIdeal_sl2CoordinateMap (t : IsSl2Triple h e f) :
     (CommHopfAlgCat.kernelHopfIdeal t.sl2CoordinateMap).IsCentral := by
-  let _ : Module.Finite k (CommHopfAlgCat.quotient (finiteTypeSL2 k).obj
+  let _ : Module.Finite k (CommHopfAlgCat.quotient (SpecialLinear.coordinateHopfAlgebra k 2)
       (CommHopfAlgCat.kernelHopfIdeal t.sl2CoordinateMap)) :=
     t.moduleFinite_quotient_kernelHopfIdeal_sl2CoordinateMap
-  let _ : Algebra.Etale k (CommHopfAlgCat.quotient (finiteTypeSL2 k).obj
+  let _ : Algebra.Etale k (CommHopfAlgCat.quotient (SpecialLinear.coordinateHopfAlgebra k 2)
       (CommHopfAlgCat.kernelHopfIdeal t.sl2CoordinateMap)) :=
     t.algebraEtale_quotient_kernelHopfIdeal_sl2CoordinateMap
-  exact (CommHopfAlgCat.isNormal_kernelHopfIdeal
-    t.sl2CoordinateMap).isCentral_of_finite_of_isGeometricallyReduced (H := finiteTypeSL2 k)
-      (SpecialLinear.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)
+  have h : ∀ C : _root_.CommHopfAlgCat.{u} k,
+      C = (SpecialLinear.finiteTypeCoordinateHopfAlgebra k 2).obj →
+      ∀ [Algebra.IsGeometricallyReduced k C] (I : HopfIdeal k C)
+        [Module.Finite k (CommHopfAlgCat.quotient C I)]
+        [Algebra.IsGeometricallyReduced k (CommHopfAlgCat.quotient C I)],
+        I.IsNormal → I.IsCentral := by
+    rintro _ rfl _ I _ _ hI; exact hI.isCentral_of_finite_of_isGeometricallyReduced
+      (H := SpecialLinear.finiteTypeCoordinateHopfAlgebra k 2)
+      (SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj k 2 ▸
+        SpecialLinear.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)
+  exact h _ (SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj k 2).symm _
+    (CommHopfAlgCat.isNormal_kernelHopfIdeal t.sl2CoordinateMap)
 
 /-- **The scheme-theoretic kernel of `SL₂ ⟶ G` is contained in `Z(SL₂) = μ₂`.** -/
 theorem centerDefiningIdeal_le_kernelHopfIdeal_sl2CoordinateMap (t : IsSl2Triple h e f) :
@@ -132,14 +132,10 @@ theorem kernelHopfIdeal_sl2CoordinateMap_dichotomy (t : IsSl2Triple h e f) :
   have hKε : K ≤ ε := HopfIdeal.le_augmentation k A K
   let _ : Module.Finite k (CommHopfAlgCat.quotient A Z) :=
     SpecialLinear.moduleFinite_centerCoordinate 2 zero_lt_two
-  let _ : Module.Finite k (CommHopfAlgCat.quotient A K) :=
-    t.moduleFinite_quotient_kernelHopfIdeal_sl2CoordinateMap
-  let _ : Module.Finite k (CommHopfAlgCat.quotient A ε) :=
-    HopfIdeal.moduleFinite_quotient_augmentation A
-  have hdimZ : Module.finrank k (CommHopfAlgCat.quotient A Z) = 2 :=
-    SpecialLinear.finrank_centerCoordinate 2 zero_lt_two
-  have hdimε : Module.finrank k (CommHopfAlgCat.quotient A ε) = 1 :=
-    HopfIdeal.finrank_quotient_augmentation A
+  let _ := t.moduleFinite_quotient_kernelHopfIdeal_sl2CoordinateMap
+  let _ := HopfIdeal.moduleFinite_quotient_augmentation (R := k) A
+  have hdimZ := SpecialLinear.finrank_centerCoordinate (k := k) 2 zero_lt_two
+  have hdimε := HopfIdeal.finrank_quotient_augmentation (R := k) A
   have hle2 := (LinearMap.finrank_le_finrank_of_surjective
     (CommHopfAlgCat.quotientMapOfLe_surjective A hZK)).trans hdimZ.le
   have hge1 := hdimε.symm.le.trans (LinearMap.finrank_le_finrank_of_surjective
@@ -162,22 +158,16 @@ theorem existsUnique_comp_conjugationMap_sl2CoordinateMap_iff (t : IsSl2Triple h
     exact CommHopfAlgCat.kernelHopfIdeal_comp_le ψ (SpecialLinear.conjugationMap 2 k)
   · let hSL := SpecialLinear.semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra k 2
     let eqSL := eqToIso (SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj k 2).symm
-    have hgen : ∀ (B : _root_.CommHopfAlgCat.{u} k)
-        (heq : B = SpecialLinear.coordinateHopfAlgebra k 2),
+    have hgen : ∀ (B : _root_.CommHopfAlgCat.{u} k) (heq : B = _),
         CommHopfAlgCat.kernelHopfIdeal (t.sl2CoordinateMap ≫ eqToHom heq.symm) ≤
-          CommHopfAlgCat.centerDefiningIdeal B := by rintro B rfl; simpa using hker.le
-    have hle : CommHopfAlgCat.kernelHopfIdeal (t.sl2CoordinateMap ≫ eqSL.hom) ≤
-        CommHopfAlgCat.centerDefiningIdeal
-          (SpecialLinear.finiteTypeCoordinateHopfAlgebra k 2).obj :=
-      hgen _ (SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj k 2)
+          CommHopfAlgCat.centerDefiningIdeal B := by rintro _ rfl; simpa using hker.le
     let ψ₀ : CommHopfAlgCat.of k H ⟶ ProjectiveGeneralLinear.coordinateHopfAlgebra 2 k :=
-      hSL.reductive.liftCenterQuotient (t.sl2CoordinateMap ≫ eqSL.hom) hle ≫
+      hSL.reductive.liftCenterQuotient (t.sl2CoordinateMap ≫ eqSL.hom)
+        (hgen _ (SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj k 2)) ≫
         (ProjectiveGeneralLinear.specialLinearCenterQuotientIso 2 k).inv
     have hψ₀ : ψ₀ ≫ SpecialLinear.conjugationMap 2 k = t.sl2CoordinateMap := by
       simp only [ψ₀, Category.assoc,
-        ProjectiveGeneralLinear.specialLinearCenterQuotientIso_inv_comp,
-        reductiveCommHopfAlgProperty.liftCenterQuotient_comp_centerQuotientι_assoc]
-      simp [eqSL]
+        ProjectiveGeneralLinear.specialLinearCenterQuotientIso_inv_comp]; simp [eqSL]
     refine ⟨ψ₀, hψ₀, fun ψ hψ ↦ ?_⟩
     apply CommHopfAlgCat.hom_ext; ext x
     exact SpecialLinear.injective_conjugationMap 2 k
@@ -199,9 +189,8 @@ theorem centerDefiningIdeal_two_ne_augmentation (k : Type u) [Field k] :
       HopfIdeal.augmentation k (coordinateHopfAlgebra k 2) := by
   intro heq
   have h2 := finrank_centerCoordinate (k := k) 2 zero_lt_two
-  have h1 : Module.finrank k
-      (CommHopfAlgCat.quotient (coordinateHopfAlgebra k 2)
-        (HopfIdeal.augmentation k (coordinateHopfAlgebra k 2))) = 1 :=
+  have h1 : Module.finrank k (CommHopfAlgCat.quotient (coordinateHopfAlgebra k 2)
+      (HopfIdeal.augmentation k (coordinateHopfAlgebra k 2))) = 1 :=
     HopfIdeal.finrank_quotient_augmentation (coordinateHopfAlgebra k 2)
   rw [heq] at h2; omega
 
@@ -249,8 +238,7 @@ private theorem derivationCompLieHom_conjugationMap_two_ne_zero :
   have hd : ProjectiveGeneralLinear.tangentEnd 2
       (derivationComp (B := k) (conjugationMap 2 k).hom d₀) = 0 := by
     rw [← derivationCompLieHom_apply, h0, map_zero]
-  have hmat : GeneralLinear.tangentMatrix 2
-      (derivationComp (B := k) (coordinateMap k 2).hom d₀) =
+  have hmat : GeneralLinear.tangentMatrix 2 (derivationComp (B := k) (coordinateMap k 2).hom d₀) =
       (LieAlgebra.SpecialLinear.singleSubSingle (0 : Fin 2) 1 (1 : k)).val := by
     rw [coordinateMap, CommHopfAlgCat.hom_mkQuotient, ← HopfIdeal.quotientLieHom_apply,
       ← tangentMatrix_apply_coe, ← tangentLieEquivSl_apply, LieEquiv.apply_symm_apply]
@@ -260,22 +248,19 @@ private theorem derivationCompLieHom_conjugationMap_two_ne_zero :
     (LinearMap.congr_fun hd (Matrix.single (0 : Fin 2) 1 (1 : k))) 0) 1
   simp only [LinearMap.sub_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply,
     LieAlgebra.SpecialLinear.val_singleSubSingle, LinearMap.zero_apply, Matrix.sub_apply,
-    Matrix.mul_apply, Matrix.single_apply, Matrix.zero_apply, Fin.sum_univ_two, Fin.isValue]
-    at heval
+    Matrix.mul_apply, Matrix.single_apply, Matrix.zero_apply, Fin.sum_univ_two,
+    Fin.isValue] at heval
   norm_num at heval
 
 /-- **The standard `sl₂` triple in `Lie(PGL₂)`.** -/
 theorem pgl2StandardTriple :
     IsSl2Triple
-      (derivationCompLieHom (B := k) (conjugationMap 2 k).hom
-        ((tangentLieEquivSl (R := k) (B := k) 2).symm
-          (LieAlgebra.SpecialLinear.singleSubSingle 0 1 1)))
-      (derivationCompLieHom (B := k) (conjugationMap 2 k).hom
-        ((tangentLieEquivSl (R := k) (B := k) 2).symm
-          (LieAlgebra.SpecialLinear.single 0 1 zero_ne_one 1)))
-      (derivationCompLieHom (B := k) (conjugationMap 2 k).hom
-        ((tangentLieEquivSl (R := k) (B := k) 2).symm
-          (LieAlgebra.SpecialLinear.single 1 0 one_ne_zero 1))) :=
+      (derivationCompLieHom (B := k) (conjugationMap 2 k).hom ((tangentLieEquivSl (R := k)
+        (B := k) 2).symm (LieAlgebra.SpecialLinear.singleSubSingle 0 1 1)))
+      (derivationCompLieHom (B := k) (conjugationMap 2 k).hom ((tangentLieEquivSl (R := k)
+        (B := k) 2).symm (LieAlgebra.SpecialLinear.single 0 1 zero_ne_one 1)))
+      (derivationCompLieHom (B := k) (conjugationMap 2 k).hom ((tangentLieEquivSl (R := k)
+        (B := k) 2).symm (LieAlgebra.SpecialLinear.single 1 0 one_ne_zero 1))) :=
   (sl2StandardTriple k).map (derivationCompLieHom (B := k) (conjugationMap 2 k).hom)
     (derivationCompLieHom_conjugationMap_two_ne_zero k)
 

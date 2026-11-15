@@ -64,36 +64,27 @@ private noncomputable def finPiComodule {R H : Type*} [CommRing R] [CommRing H] 
   | 0, B, _, _, _ => Comodule.Transport (R := R) (C := H) (finZeroEquivPUnit R B)
   | r + 1, B, _, _, c =>
     letI : Comodule R H (B 0) := c 0
-    letI : Comodule R H (∀ i : Fin r, B i.succ) :=
-      finPiComodule r (fun i ↦ B i.succ) (fun i ↦ c i.succ)
+    letI : Comodule R H (∀ i : Fin r, B i.succ) := finPiComodule r (B ·.succ) (c ·.succ)
     letI : Comodule R H (B 0 × (∀ i : Fin r, B i.succ)) := Comodule.Prod
     Comodule.Transport (R := R) (C := H) (finSuccEquivProd R B)
 
-private theorem differential_finPiComodule {R H : Type*} [CommRing R] [CommRing H]
-    [Bialgebra R H] :
+private theorem differential_finPiComodule {R H : Type*} [CommRing R] [CommRing H] [Bialgebra R H] :
     ∀ (r : ℕ) (B : Fin r → Type*) [∀ i, AddCommGroup (B i)] [∀ i, Module R (B i)]
-      (c : ∀ i, Comodule R H (B i))
-      (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (f : ∀ i, B i) (i : Fin r),
+      (c : ∀ i, Comodule R H (B i)) (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
+      (f : ∀ i, B i) (i : Fin r),
       (@Comodule.differential R H (∀ j, B j) _ _ _ _ _ (finPiComodule r B c) d f) i =
         @Comodule.differential R H (B i) _ _ _ _ _ (c i) d (f i)
   | 0, _, _, _, _, _, _, i => Fin.elim0 i
   | r + 1, B, _, _, c, d, f, i => by
     let _ : Comodule R H (B 0) := c 0
-    let _ : Comodule R H (∀ j : Fin r, B j.succ) :=
-      finPiComodule r (fun j ↦ B j.succ) (fun j ↦ c j.succ)
+    let _ : Comodule R H (∀ j : Fin r, B j.succ) := finPiComodule r (B ·.succ) (c ·.succ)
     let _ : Comodule R H (B 0 × (∀ j : Fin r, B j.succ)) := Comodule.Prod
     rw [finPiComodule, Comodule.differential_transport (finSuccEquivProd R B),
       Comodule.differential_prod]
     refine Fin.cases (by simp [finSuccEquivProd]) (fun j ↦ ?_) i
     simp only [finSuccEquivProd, LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk,
       LinearEquiv.coe_symm_mk, Fin.cases_succ]
-    exact differential_finPiComodule r _ (fun j ↦ c j.succ) d (fun j ↦ f j.succ) j
-
-@[reducible]
-private noncomputable def finiteTypeSL2 (k : Type u) [Field k] : FiniteTypeCommHopfAlgCat k :=
-  ⟨coordinateHopfAlgebra k 2, by
-    rw [← finiteTypeCoordinateHopfAlgebra_obj]
-    exact (finiteTypeCoordinateHopfAlgebra k 2).property⟩
+    exact differential_finPiComodule r _ (c ·.succ) d (f ·.succ) j
 
 end Aux
 
@@ -106,8 +97,7 @@ attribute [local instance] polynomialComodule
 whose differential agrees with the Lie-module action across `tangentLieEquivSl 2`. -/
 theorem existsUnique_comodule_of_lieModule (k : Type u) [Field k] [CharZero k]
     (M : Type w) [AddCommGroup M] [Module k M] [Module.Finite k M]
-    [LieRingModule (SpecialLinear.sl (Fin 2) k) M]
-    [LieModule k (SpecialLinear.sl (Fin 2) k) M] :
+    [LieRingModule (SpecialLinear.sl (Fin 2) k) M] [LieModule k (SpecialLinear.sl (Fin 2) k) M] :
     ∃! c : Comodule k (coordinateHopfAlgebra k 2) M,
       ∀ (d : Derivation k (coordinateHopfAlgebra k 2)
           (Bialgebra.CounitAlgebra k (coordinateHopfAlgebra k 2) k)) (m : M),
@@ -135,24 +125,28 @@ theorem existsUnique_comodule_of_lieModule (k : Type u) [Field k] [CharZero k]
       (Bialgebra.CounitAlgebra k (coordinateHopfAlgebra k 2) k)) (m : M) :
       @Comodule.differential k (coordinateHopfAlgebra k 2) M _ _ _ _ _ cM d m =
         ⁅tangentLieEquivSl (R := k) (B := k) 2 d, m⁆ := by
-    rw [Comodule.differential_transport E]
-    conv_rhs => rw [← E.apply_symm_apply m]
+    rw [Comodule.differential_transport E]; conv_rhs => rw [← E.apply_symm_apply m]
     simp only [E, LinearEquiv.trans_apply, heSum, LinearEquiv.piCongrRight_apply, lie_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     simp only [eSummand, LinearEquiv.trans_apply, LieModuleEquiv.coe_toLinearEquiv]
     rw [differential_finPiComodule, binaryFormsEquivSl2Std_differential]
     exact congrArg Subtype.val ((φ i).symm.toLieModuleHom.map_lie _ _)
-  exact ⟨cM, hcM, fun c' hc' ↦ Comodule.ext_of_differential_eq_of_geometricallyConnected
-    (H := finiteTypeSL2 k) (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)
-    fun d m ↦ (hc' d m).trans (hcM d m).symm⟩
+  refine ⟨cM, hcM, fun c' hc' ↦ ?_⟩
+  have h : ∀ C : _root_.CommHopfAlgCat.{u} k, C = (finiteTypeCoordinateHopfAlgebra k 2).obj →
+      ∀ (c₁ c₂ : Comodule k C M), (∀ d m, @Comodule.differential k C M _ _ _ _ _ c₁ d m =
+        @Comodule.differential k C M _ _ _ _ _ c₂ d m) → c₁ = c₂ := by
+    rintro _ rfl _ _ hd; exact Comodule.ext_of_differential_eq_of_geometricallyConnected
+      (H := finiteTypeCoordinateHopfAlgebra k 2) (finiteTypeCoordinateHopfAlgebra_obj k 2 ▸
+        geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2) hd
+  exact h _ (finiteTypeCoordinateHopfAlgebra_obj k 2).symm c' cM
+    fun d m ↦ (hc' d m).trans (hcM d m).symm
 
 /-- **The canonical `O(SL₂)`-comodule integrating a finite-dimensional `sl (Fin 2) k`-module**
 over a characteristic-zero field. -/
 @[implicit_reducible]
 noncomputable def comoduleOfLieModule (k : Type u) [Field k] [CharZero k]
     (M : Type w) [AddCommGroup M] [Module k M] [Module.Finite k M]
-    [LieRingModule (SpecialLinear.sl (Fin 2) k) M]
-    [LieModule k (SpecialLinear.sl (Fin 2) k) M] :
+    [LieRingModule (SpecialLinear.sl (Fin 2) k) M] [LieModule k (SpecialLinear.sl (Fin 2) k) M] :
     Comodule k (coordinateHopfAlgebra k 2) M :=
   (existsUnique_comodule_of_lieModule k M).choose
 
@@ -201,11 +195,20 @@ noncomputable def comoduleHomOfLieModuleHom (f : M →ₗ⁅k,SpecialLinear.sl (
     Comodule.Hom k (coordinateHopfAlgebra k 2) M N :=
   letI := comoduleOfLieModule k M; letI := comoduleOfLieModule k N
   { toLinearMap := f.toLinearMap
-    map_coact := (f.toLinearMap.map_coact_iff_map_differential_of_geometricallyConnected
-      (H := finiteTypeSL2 k)
-      (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)).mpr fun d m ↦ by
+    map_coact := by
+      have h : ∀ C : _root_.CommHopfAlgCat.{u} k, C = (finiteTypeCoordinateHopfAlgebra k 2).obj →
+          ∀ [Comodule k C M] [Comodule k C N],
+            (∀ d m, f (Comodule.differential (R := k) (H := C) d m) =
+              Comodule.differential (R := k) (H := C) d (f m)) →
+            TensorProduct.map f.toLinearMap LinearMap.id ∘ₗ Comodule.coact (R := k) (C := C) =
+              Comodule.coact (R := k) (C := C) ∘ₗ f.toLinearMap := by
+        rintro _ rfl _ _
+        exact (f.toLinearMap.map_coact_iff_map_differential_of_geometricallyConnected
+          (H := finiteTypeCoordinateHopfAlgebra k 2) (finiteTypeCoordinateHopfAlgebra_obj k 2 ▸
+            geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)).mpr
+      exact h _ (finiteTypeCoordinateHopfAlgebra_obj k 2).symm fun d m ↦ by
         rw [differential_comoduleOfLieModule, differential_comoduleOfLieModule]
-        exact f.map_lie (tangentLieEquivSl (R := k) (B := k) 2 d) m }
+        exact f.map_lie _ m }
 
 @[simp]
 theorem comoduleHomOfLieModuleHom_toLinearMap (f : M →ₗ⁅k,SpecialLinear.sl (Fin 2) k⁆ N) :
@@ -226,12 +229,20 @@ theorem exists_subcomodule_comoduleOfLieModule_iff (S : Submodule k M) :
     (∃ W : Subcomodule k (coordinateHopfAlgebra k 2) M, W.toSubmodule = S) ↔
       ∀ (A : SpecialLinear.sl (Fin 2) k), ∀ m ∈ S, ⁅A, m⁆ ∈ S := by
   let _ := comoduleOfLieModule k M
-  rw [S.exists_subcomodule_iff_forall_differential_mem_of_geometricallyConnected
-    (H := finiteTypeSL2 k) (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)]
-  refine ⟨fun h A m hm ↦ ?_, fun h d m hm ↦ ?_⟩
-  · have h' := h ((tangentLieEquivSl (R := k) (B := k) 2).symm A) m hm
-    rwa [differential_comoduleOfLieModule_symm] at h'
-  · rw [differential_comoduleOfLieModule]; exact h _ m hm
+  trans (∀ d : Derivation k (coordinateHopfAlgebra k 2)
+      (Bialgebra.CounitAlgebra k (coordinateHopfAlgebra k 2) k), ∀ m ∈ S,
+      Comodule.differential (R := k) (H := coordinateHopfAlgebra k 2) d m ∈ S)
+  · have h : ∀ C : _root_.CommHopfAlgCat.{u} k, C = (finiteTypeCoordinateHopfAlgebra k 2).obj →
+        ∀ [Comodule k C M], (∃ W : Subcomodule k C M, W.toSubmodule = S) ↔
+          ∀ d, ∀ m ∈ S, Comodule.differential (R := k) (H := C) d m ∈ S := by
+      rintro _ rfl _
+      exact S.exists_subcomodule_iff_forall_differential_mem_of_geometricallyConnected
+        (H := finiteTypeCoordinateHopfAlgebra k 2) (finiteTypeCoordinateHopfAlgebra_obj k 2 ▸
+          geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)
+    exact h _ (finiteTypeCoordinateHopfAlgebra_obj k 2).symm
+  · refine ⟨fun h A m hm ↦ ?_, fun h d m hm ↦ ?_⟩
+    · rw [← differential_comoduleOfLieModule_symm A m]; exact h _ m hm
+    · rw [differential_comoduleOfLieModule]; exact h _ m hm
 
 end API
 
