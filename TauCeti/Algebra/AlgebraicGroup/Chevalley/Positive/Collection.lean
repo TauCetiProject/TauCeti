@@ -21,12 +21,6 @@ lacing, isogeny type, reducedness, or characteristic. It is the existence half o
 coordinates; uniqueness is proved in `TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct` and
 combined with collection in `TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Coordinates`.
 
-Outside `G₂`, root strings have length at most two, so commutators of positive root elements raise
-Bourbaki height and `DynkinType.mem_iSup_posRoots_chevalleyRootSubgroup_iff_exists_list_prod`
-collects the factors. In `G₂`, the explicit six-root ordering in
-`TauCeti.DynkinType.mem_biSup_posRoots_g2_iff_exists_list_prod_map` supplies the same collection in
-every duplicate-free positive-root list.
-
 ## Main results
 
 * `TauCeti.DynkinType.ChevalleyDatum.positiveSubgroup_eq_iSup` and

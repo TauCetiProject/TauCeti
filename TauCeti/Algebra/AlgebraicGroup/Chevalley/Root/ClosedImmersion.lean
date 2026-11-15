@@ -16,11 +16,14 @@ Every root morphism of **any** Chevalley datum `D` is a closed immersion over `�
 Consequently its additive parameter remains faithful over arbitrary value rings, including
 nonreduced rings and rings of bad characteristic, and across all isogeny types.
 
-The starting immersions are `ChevalleyDatum.isClosedImmersion_rootSubgroup_simpleIndex`. They are
-extended using the signed Weyl conjugation formula
-`ChevalleyDatum.weylElement_conj_rootSubgroupPoints`. The argument takes place at the universal
-additive-group point, so it proves surjectivity of coordinate maps, rather than only injectivity
-on field-valued points. No point-generation or specialization theorem is required.
+## Main results
+
+* `TauCeti.DynkinType.ChevalleyDatum.rootCoordinateMap_surjective_of_simple`: surjectivity of the
+  positive simple-root coordinate maps over `ℤ` implies surjectivity of all root coordinate maps.
+* `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_rootSubgroup_of_simple`: closed-immersion
+  extension from positive simple roots to every root `γ`.
+* `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_rootSubgroup`: every root morphism
+  `D.rootSubgroup γ : 𝔾ₐ ⟶ D.groupScheme` is unconditionally a closed immersion over `ℤ`.
 
 ## References
 

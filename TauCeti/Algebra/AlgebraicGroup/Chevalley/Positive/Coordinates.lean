@@ -13,11 +13,10 @@ import Mathlib.SetTheory.Cardinal.Finite
 # Positive-root coordinates on the positive subgroup of a Chevalley datum
 
 For **any** Chevalley datum `D` of **any** valid Dynkin type and **any** commutative ring `A`,
-combining positive-root collection (`ChevalleyDatum.mem_positivePoints_iff_exists_prod`) with
-ordered-product uniqueness (`ChevalleyDatum.list_prod_map_rootSubgroupPoints_inj`) gives a
-canonical coordinate bijection between
-`(posRoots (t.rationalRootSystem ht) (t.rationalBase ht) → A)` and `D.positivePoints A` for every
-duplicate-free enumeration `l` of the positive roots.
+every duplicate-free enumeration `l` of the positive roots determines a canonical coordinate
+bijection between `(posRoots (t.rationalRootSystem ht) (t.rationalBase ht) → A)` and
+`D.positivePoints A` (`ChevalleyDatum.positivePointsEquiv`), sending each coordinate family to its
+ordered positive-root product (`ChevalleyDatum.positivePointsProd`).
 
 In particular, every element of `D.positivePoints A` admits a **unique** ordered product
 representation along `l`, the positive point subgroup over a finite commutative ring `A` is finite,
@@ -35,11 +34,10 @@ coordinate parameterization across all isogeny types and characteristics.
 
 ## Main results
 
-* `TauCeti.DynkinType.ChevalleyDatum.positivePointsProd_injective`: ordered positive-root products
-  along any duplicate-free list `l` of positive roots are injective.
-* `TauCeti.DynkinType.ChevalleyDatum.positivePointsProd_bijective` and
-  `TauCeti.DynkinType.ChevalleyDatum.existsUnique_positivePointsProd_eq`: when `l` enumerates all
-  positive roots without repetition, every element of `D.positivePoints A` has unique coordinates.
+* `TauCeti.DynkinType.ChevalleyDatum.positivePointsProd_injective` and
+  `TauCeti.DynkinType.ChevalleyDatum.positivePointsProd_surjective`: ordered positive-root products
+  along a duplicate-free positive-root list are injective, and surjective when the list covers all
+  positive roots.
 * `TauCeti.DynkinType.ChevalleyDatum.card_positivePoints`: the cardinality of `D.positivePoints A`
   is `Nat.card A ^ (posRoots (t.rationalRootSystem ht) (t.rationalBase ht)).ncard`.
 
@@ -141,23 +139,6 @@ theorem positivePointsProd_surjective (l : List (Fin t.numRoots)) (hl : l.Nodup)
   refine ⟨fun γ => u γ.1, Subtype.ext ?_⟩
   rw [D.coe_positivePointsProd_comp, hu]
 
-/-- When `l` enumerates all positive roots without repetition, the ordered positive-root product
-map is bijective over every commutative ring. -/
-theorem positivePointsProd_bijective (l : List (Fin t.numRoots)) (hl : l.Nodup)
-    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (A : Type v) [CommRing A] :
-    Function.Bijective (D.positivePointsProd (fun γ hγ => (hcover γ).mp hγ) A) :=
-  ⟨D.positivePointsProd_injective hl _ A, D.positivePointsProd_surjective l hl hcover A⟩
-
-/-- Every element of `D.positivePoints A` has a unique coordinate family along any duplicate-free
-enumeration `l` of the positive roots. -/
-theorem existsUnique_positivePointsProd_eq (l : List (Fin t.numRoots)) (hl : l.Nodup)
-    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (A : Type v) [CommRing A] (g : D.positivePoints A) :
-    ∃! u : {γ // γ ∈ l} → A,
-      D.positivePointsProd (fun γ hγ => (hcover γ).mp hγ) A u = g :=
-  (D.positivePointsProd_bijective l hl hcover A).existsUnique g
-
 /-- The coordinate bijection between functions on the positive roots with values in `A` and the
 positive point subgroup `D.positivePoints A`, determined by a duplicate-free enumeration `l` of all
 positive roots. -/
@@ -167,7 +148,7 @@ noncomputable def positivePointsEquiv (l : List (Fin t.numRoots)) (hl : l.Nodup)
     (posRoots (t.rationalRootSystem ht) (t.rationalBase ht) → A) ≃ D.positivePoints A :=
   (Equiv.piCongrLeft' (fun _ => A) (Equiv.subtypeEquivRight hcover)).symm.trans
     (Equiv.ofBijective (D.positivePointsProd (fun γ hγ => (hcover γ).mp hγ) A)
-      (D.positivePointsProd_bijective l hl hcover A))
+      ⟨D.positivePointsProd_injective hl _ A, D.positivePointsProd_surjective l hl hcover A⟩)
 
 /-- Evaluating `positivePointsEquiv` restricts the positive-root coordinates to `l` and takes their
 ordered product. -/
@@ -181,6 +162,7 @@ theorem positivePointsEquiv_apply (l : List (Fin t.numRoots)) (hl : l.Nodup)
   rfl
 
 /-- Coercing `positivePointsEquiv` to `D.points A` gives the attached ordered root product. -/
+@[simp]
 theorem coe_positivePointsEquiv_apply (l : List (Fin t.numRoots)) (hl : l.Nodup)
     (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
     (A : Type v) [CommRing A]

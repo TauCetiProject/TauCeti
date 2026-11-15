@@ -15,22 +15,30 @@ import TauCeti.LinearAlgebra.Basis.Basic
 /-!
 # Closed root subgroups detected by primitive images
 
-Let a nilpotent root operator preserve an integral lattice through all its divided powers.
-Two criteria make its exponential a closed immersion `𝔾ₐ → GLₙ` over `ℤ`:
+Let a nilpotent root operator `op` preserve an integral lattice through all its divided powers. This
+module provides two integral closed-immersion criteria for the induced root morphism `𝔾ₐ ⟶ GLₙ`
+over `ℤ`:
 
-* In **any** integral basis of the lattice, if a lattice vector `m` satisfies `e² m = 0` and
-  `e m` is primitive, the regular matrix coefficient `g ↦ ℓ(g m) - ℓ(m)` associated with an
-  integral functional `ℓ(e m) = 1` recovers the additive generator.
-* In a **Cartan weight basis** for a nonzero integral root `α`, assuming only that `e m` is
-  primitive (without `e² m = 0`), every matrix entry connecting weight `μ` to weight `μ + α` has no
-  constant or higher divided-power contribution, so summing those single-root-shift entries against
-  `ℓ` and the coordinates of `m` hits the additive generator directly. This covers representations
-  such as the adjoint representation of `PSL₂`, where no primitive image vector lies in
-  `op(ker op²)`.
+* **Two-step string criterion** (for any integral lattice basis): if a lattice vector `m` satisfies
+  `op (op m) = 0` and `op m` is primitive in the lattice, then the root coordinate map is
+  surjective and the root morphism is a closed immersion. This subsumes the basis-step criterion in
+  `TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion`.
+* **Cartan weight-basis criterion** (without `op (op m) = 0`): in a Cartan weight basis for a
+  nonzero integral root `α`, the existence of any lattice vector `m` with `op m` primitive already
+  makes the root coordinate map surjective and the root morphism a closed immersion. This covers
+  higher-length root strings such as the adjoint representation of `PSL₂`, where no primitive image
+  vector lies in `op(ker op²)`.
 
-The basis-step criterion in
-`TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/RootSubgroup/Scheme/ClosedImmersion.lean`
-is a special case of the first criterion, with the same represented subgroup and chosen coordinates.
+## Main results
+
+* `kostantRootSubgroupCoordinateMap_surjective_of_isPrimitive` and
+  `isClosedImmersion_kostantRootSubgroup_of_isPrimitive`: coordinate surjectivity and closed
+  immersion from a primitive two-step string in any lattice basis.
+* `kostantRootSubgroupCoordinateMap_genericMatrix_of_weight_eq`: pullback of single-root-shift
+  generic matrix entries in a Cartan weight basis.
+* `kostantRootSubgroupCoordinateMap_surjective_of_isPrimitive_of_isCartanWeightVector` and
+  `isClosedImmersion_kostantRootSubgroup_of_isPrimitive_of_isCartanWeightVector`: coordinate
+  surjectivity and closed immersion from a primitive image vector in a Cartan weight basis.
 
 ## References
 

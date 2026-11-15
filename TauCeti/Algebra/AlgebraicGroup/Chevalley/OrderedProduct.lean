@@ -20,10 +20,12 @@ duplicate-free list of positive roots, and in particular to any enumeration of a
 regardless of the isogeny type of `D`. As a special case on singleton lists together with Weyl
 conjugation, every root subgroup of `D` is injective on `A`-points.
 
-The proof applies `list_prod_map_kostantRootSubgroupParam_inj` to the named all-root Chevalley
-system on `D.lattice`. Its operator-faithfulness hypothesis is supplied integrally by
-`ChevalleyDatum.smul_baseChange_kostantRootOperator_chevalleySystem_eq_zero_iff`, so no
-restriction on characteristic, reducedness, or fundamental-weight summands is needed.
+This is the uniqueness half of positive-root factorization on `D.positivePoints A`, pairing with
+positive-root collection in `TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Collection` to build
+the coordinate bijection `ChevalleyDatum.positivePointsEquiv` in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Coordinates`, and supplying the point-level
+faithfulness needed for scheme-theoretic monomorphicity of `D.rootProduct` in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Scheme`.
 
 ## Main results
 

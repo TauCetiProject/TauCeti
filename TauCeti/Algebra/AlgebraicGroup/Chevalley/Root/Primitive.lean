@@ -19,13 +19,10 @@ On the admissible lattice of **any** Chevalley datum `D`, every numbered simple-
 its image. Consequently, after scalar extension to an arbitrary commutative ring `A`, no root
 operator has a nonzero scalar annihilator: `c • X_γ = 0` on `A ⊗[ℤ] D.lattice` forces `c = 0`.
 
-For each simple node `j`, faithfulness of `D.representation` makes `(h_j, e_j, f_j)` an `sl₂`
-triple on `D.carrier` (`ChevalleyDatum.isSl2Triple_representation_rootGenerator`), while `(−h_j,
-f_j, e_j)` covers the negative simple root. Applying
-`TauCeti.UniversalEnvelopingAlgebra.exists_isPrimitive_kostantRootOperator_of_isSl2Triple` to
-`D.basis` yields primitive images at all signed simple roots without assuming two-step root
-strings, and `TauCeti.DynkinType.exists_isPrimitive_chevalleySystem_apply_of_simple` transports
-primitivity across the Weyl group to every root `γ`.
+These lattice-primitivity and scalar-faithfulness results hold across all valid Dynkin types and
+isogeny types without assuming two-step root strings, supplying the integral input for closed
+simple-root subgroups (`TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Immersion`) and ordered
+positive-root product uniqueness (`TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct`).
 
 ## Main results
 

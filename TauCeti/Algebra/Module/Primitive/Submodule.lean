@@ -15,11 +15,9 @@ is nonzero and no prime `p` divides every element of `N` in `M`. Applied to `Lin
 integer-linear map `f : L →ₗ[ℤ] M` into a free integer module hits a primitive vector if and only
 if `f ≠ 0` and no prime divides every value of `f` in `M`.
 
-The argument works at arbitrary (possibly infinite) rank without computing a full Smith normal
-form: since `ℤ` is Noetherian, some functional `ϕ : M →ₗ[ℤ] ℤ` maximizes `N.map ϕ`, and the
-generator of that principal ideal divides every basis coordinate of every vector in `N`. Freeness
-of `M` is essential: the torsion group `⨁_{p prime} ZMod p` is nonzero and not globally divisible
-by any single prime, yet admits no nonzero homomorphism to `ℤ`.
+Both characterizations hold at arbitrary (possibly infinite) rank without any finite-generation
+hypothesis. Freeness of `M` is essential: the torsion group `⨁_{p prime} ZMod p` is nonzero and not
+globally divisible by any single prime, yet admits no nonzero homomorphism to `ℤ`.
 
 ## Main results
 
@@ -75,8 +73,7 @@ private theorem exists_linearMap_apply_eq_and_dvd
   have hdvd_y : a ∣ ψ y := dvd_apply_of_maximal_map hϕ hyN hϕy ψ
   have hzN : y + (x - q • y) ∈ N := N.add_mem hyN (N.sub_mem hxN (N.smul_mem q hyN))
   have hϕz : ϕ (y + (x - q • y)) = a := by
-    rw [map_add, map_sub, map_smul, hϕy, hq]
-    change a + (a * q - q * a) = a
+    rw [map_add, map_sub, map_smul, hϕy, hq, smul_eq_mul]
     ring
   have hdvd_z : a ∣ ψ y + (ψ x - q * ψ y) := by
     simpa [map_add, map_sub, map_smul] using dvd_apply_of_maximal_map hϕ hzN hϕz ψ
@@ -101,8 +98,7 @@ theorem exists_isPrimitive_iff
     by_cases hunit : IsUnit a
     · obtain ⟨u, rfl⟩ := hunit
       refine ⟨y, hyN, TauCeti.isPrimitive_def.mpr ⟨(↑u⁻¹ : ℤ) • ϕ, ?_⟩⟩
-      change (↑u⁻¹ : ℤ) * ϕ y = 1
-      rw [hϕy, Units.inv_mul]
+      rw [LinearMap.smul_apply, smul_eq_mul, hϕy, Units.inv_mul]
     · have hne1 : a.natAbs ≠ 1 := fun h1 => hunit (Int.isUnit_iff_natAbs_eq.mpr h1)
       let p : ℕ := a.natAbs.minFac
       have hp : p.Prime := Nat.minFac_prime hne1

@@ -17,8 +17,10 @@ tests arbitrary commutative rings, not just fields, and applies across all isoge
 the uniqueness part of the scheme-theoretic positive-root factorization, and does not assert that
 its image is the unipotent radical or that the multiplication is a closed immersion.
 
-The monomorphism criterion `ChevalleyDatum.mono_rootProduct_of_injective` applies to
-`ChevalleyDatum.list_prod_map_rootSubgroupPoints_inj`.
+## Main results
+
+* `TauCeti.DynkinType.ChevalleyDatum.mono_rootProduct`: `D.rootProduct l` is a monomorphism of
+  schemes over `ℤ` for every duplicate-free list `l` of positive roots.
 
 ## References
 

@@ -8,11 +8,10 @@ module
 public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
 public import TauCeti.Algebra.Module.Primitive
-import Mathlib.LinearAlgebra.Eigenspace.Basic
 import Mathlib.NumberTheory.Padics.PadicVal.Basic
 import TauCeti.Algebra.Lie.Sl2.Straightening
 import TauCeti.Algebra.Module.Primitive.Submodule
-import TauCeti.LinearAlgebra.Eigenspace.Binomial
+import TauCeti.LinearAlgebra.Eigenspace.Separation
 
 /-!
 # Primitive images of Kostant root operators in `sl₂` triples
@@ -23,18 +22,14 @@ of an `sl₂` triple `(H, ρ(e i), ρ(e opp))` whose Cartan operator `H` acts di
 integral eigenvalues, the integral root operator `kostantRootOperator e h ρ M hM i : M →ₗ[ℤ] M` has
 a primitive vector in its image.
 
-At an `H`-highest weight basis vector `b j`, the eigenvalue `N := wt j` is strictly positive
-because `H ≠ 0` and rank-one straightening reflects any negative lowest weight into a positive
-eigenvalue. Applying the integral lowering divided power `F⁽ᴺ⁾` to `b j` produces a lattice vector
-`m₀ ∈ M` such that `op^N m₀ = N! • b j`. Since `v_p(N!) < N` for every prime `p`, no prime can
-divide all values of `op` in `M`, so `LinearMap.exists_isPrimitive_apply_iff` yields a primitive
-image vector. Unlike two-step string arguments on fundamental modules, this works uniformly across
-all isogeny types, including adjoint representations where `op` has no primitive two-step string.
+This holds for every finite-rank Kostant-stable weight lattice without any restriction on
+root-string length or fundamental-weight summands, including adjoint lattices where no primitive
+image vector lies in a two-step root string. It provides the lattice-primitivity input for
+closed-immersion and parameter-faithfulness theorems on Chevalley root subgroups across all isogeny
+types.
 
 ## Main results
 
-* `TauCeti.Sl2.dividedPower_e_apply_dividedPower_f_apply_of_eq_zero`: on an `sl₂` highest-weight
-  vector `v` of natural weight `n`, `E⁽ⁿ⁾ (F⁽ⁿ⁾ v) = v`.
 * `TauCeti.UniversalEnvelopingAlgebra.exists_isPrimitive_kostantRootOperator_of_isSl2Triple`:
   integral root-operator primitivity for any finite-rank Kostant-stable weight lattice carrying an
   `sl₂` triple.
@@ -47,35 +42,6 @@ all isogeny types, including adjoint representations where `op` has no primitive
 
 public section
 
-namespace TauCeti.Sl2
-
-open Associative
-
-/-- On an `sl₂` highest-weight vector `v` (`E v = 0`) of natural Cartan weight `n` (`H v = n • v`),
-lowering by the `n`-th divided power `F⁽ⁿ⁾` and raising back by `E⁽ⁿ⁾` recovers `v`. -/
-theorem dividedPower_e_apply_dividedPower_f_apply_of_eq_zero
-    {V : Type*} [AddCommGroup V] [Module ℚ V] {H E F : Module.End ℚ V}
-    (hef : E * F - F * E = H) (hhe : H * E - E * H = 2 • E) (hhf : H * F - F * H = -(2 • F))
-    {v : V} {n : ℕ} (hEv : E v = 0) (hHv : H v = (n : ℚ) • v) :
-    (dividedPower n E) ((dividedPower n F) v) = v := by
-  have hpow_zero : ∀ {m : ℕ}, m ≠ 0 → (dividedPower m E) v = 0 := by
-    rintro (_ | m) hm
-    · exact (hm rfl).elim
-    · rw [dividedPower_def, LinearMap.smul_apply, pow_succ, mul_apply_eq_comp, hEv, map_zero,
-        smul_zero]
-  rw [← mul_apply_eq_comp, dividedPower_e_mul_dividedPower_f hef hhe hhf n n, min_self,
-    LinearMap.sum_apply, Finset.sum_range_succ, Finset.sum_eq_zero]
-  · simp only [zero_add, tsub_self, dividedPower_zero, one_mul, mul_one]
-    have harg : (H - (n + n : ℕ) + (2 * n : ℕ) : Module.End ℚ V) = H := by
-      rw [two_mul, sub_add_cancel]
-    rw [harg, TauCeti.ringChoose_end_apply_of_apply_eq_natCast_smul hHv n, Nat.choose_self,
-      Nat.cast_one, one_smul]
-  · intro k hk
-    have hnk : n - k ≠ 0 := Nat.sub_ne_zero_of_lt (Finset.mem_range.mp hk)
-    rw [mul_apply_eq_comp, hpow_zero hnk, map_zero]
-
-end TauCeti.Sl2
-
 namespace TauCeti.UniversalEnvelopingAlgebra
 
 open Associative
@@ -83,22 +49,6 @@ open Associative
 section
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
-
-private theorem eq_zero_of_eigenvalue_notMem_range
-    {V η : Type*} [AddCommGroup V] [Module ℚ V] {b : η → V}
-    (hspan : Submodule.span ℚ (Set.range b) = ⊤) {H : Module.End ℚ V} {wt : η → ℤ}
-    (hwt : ∀ r, H (b r) = (wt r : ℚ) • b r) {μ : ℤ} {v : V}
-    (hv : H v = (μ : ℚ) • v) (hμ : ∀ r, wt r ≠ μ) : v = 0 := by
-  have hle : Submodule.span ℚ (Set.range b) ≤
-      ⨆ (q : ℚ) (_ : q ≠ (μ : ℚ)), H.eigenspace q := by
-    rw [Submodule.span_le]
-    rintro _ ⟨r, rfl⟩
-    have hne : (wt r : ℚ) ≠ (μ : ℚ) := by exact_mod_cast hμ r
-    exact Submodule.mem_iSup_of_mem (wt r : ℚ) <|
-      Submodule.mem_iSup_of_mem hne <| Module.End.mem_eigenspace_iff.mpr (hwt r)
-  rw [hspan] at hle
-  exact (Submodule.disjoint_def.mp (H.eigenspaces_iSupIndep (μ : ℚ))) v
-    (Module.End.mem_eigenspace_iff.mpr hv) (hle Submodule.mem_top)
 
 private theorem exists_pos_weight_of_isSl2Triple
     {V η : Type*} [AddCommGroup V] [Module ℚ V] [Finite η]
@@ -125,9 +75,9 @@ private theorem exists_pos_weight_of_isSl2Triple
       push_cast
       simpa [pow_one, mul_apply_eq_comp, sub_apply, hwt j₀, sub_smul,
         ← Nat.cast_smul_eq_nsmul ℚ] using hcomm
-    refine eq_zero_of_eigenvalue_notMem_range hspan hwt heig fun r => ?_
+    refine H.eq_zero_of_apply_eq_smul_of_span_eq_top hspan hwt heig fun r => ?_
     have := hj₀min r (Finset.mem_univ r)
-    omega
+    exact_mod_cast (by omega : wt r ≠ wt j₀ - 2)
   let K : ℕ := (-wt j₀).toNat
   have hK_eq : (K : ℤ) = -wt j₀ := Int.toNat_of_nonneg (by omega)
   have hsym := hsl2.symm
@@ -143,9 +93,9 @@ private theorem exists_pos_weight_of_isSl2Triple
     simpa [mul_apply_eq_comp, hwt j₀, ← Nat.cast_smul_eq_nsmul ℚ, smul_smul, ← add_smul,
       hwtK] using hcomm
   have hw_zero : (dividedPower K E) (b j₀ : V) = 0 :=
-    eq_zero_of_eigenvalue_notMem_range hspan hwt hw_eig fun r => by
+    H.eq_zero_of_apply_eq_smul_of_span_eq_top hspan hwt hw_eig fun r => by
       have := hnonpos r
-      omega
+      exact_mod_cast (by omega : wt r ≠ (K : ℤ))
   rw [hw_zero, map_zero] at hround
   exact (b.ne_zero j₀) (Subtype.ext hround.symm)
 
@@ -164,9 +114,9 @@ private theorem exists_pos_weight_and_apply_eq_zero_of_isSl2Triple
     have hcomm := LinearMap.congr_fun (TauCeti.Sl2.h_mul_e_pow hsl2.lie_h_e_nsmul 1) (b j : V)
     push_cast
     simpa [pow_one, mul_apply_eq_comp, hwt j, add_smul, ← Nat.cast_smul_eq_nsmul ℚ] using hcomm
-  refine eq_zero_of_eigenvalue_notMem_range hspan hwt heig fun r => ?_
+  refine H.eq_zero_of_apply_eq_smul_of_span_eq_top hspan hwt heig fun r => ?_
   have := hjmax r (Finset.mem_univ r)
-  omega
+  exact_mod_cast (by omega : wt r ≠ wt j + 2)
 
 private theorem exists_pow_kostantRootOperator_eq_factorial_smul
     {L ι κ V η : Type*} [LieRing L] [LieAlgebra ℚ L] [AddCommGroup V] [Module ℚ V] [Finite η]
@@ -218,10 +168,9 @@ theorem exists_isPrimitive_kostantRootOperator_of_isSl2Triple
     {wt : η → ℤ} (hwt : ∀ r, H (b r : V) = (wt r : ℚ) • (b r : V)) :
     ∃ m : M, IsPrimitive (kostantRootOperator e h ρ M hM i m) := by
   let : Module.Free ℤ M := Module.Free.of_basis b
-  let op := kostantRootOperator e h ρ M hM i
   obtain ⟨j, N, m₀, hN_ne, hopN⟩ :=
     exists_pow_kostantRootOperator_eq_factorial_smul e h ρ M hM b hspan hsl2 hwt
-  change (op ^ N) m₀ = N.factorial • b j at hopN
+  set op := kostantRootOperator e h ρ M hM i
   refine op.exists_isPrimitive_apply_iff.mpr ⟨?_, fun p hp => ?_⟩
   · intro hop0
     have hzero : N.factorial • b j = 0 := by

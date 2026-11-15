@@ -17,12 +17,14 @@ For **any** Chevalley datum `D`, the numbered positive and negative simple-root 
 not merely injectivity on points over fields; it remains valid after arbitrary base change,
 including to nonreduced rings and rings of small characteristic, and across all isogeny types.
 
-Each signed simple-root operator has a primitive vector in its lattice image
-(`ChevalleyDatum.exists_isPrimitive_kostantRootOperator`). In the datum's Cartan weight basis, the
-weight-graded criterion
-`kostantRootSubgroupCoordinateMap_surjective_of_isPrimitive_of_isCartanWeightVector`
-shows that the ambient root coordinate map is surjective without assuming a square-zero root string,
-and factoring through the coordinate algebra of the toral closure preserves surjectivity.
+## Main results
+
+* `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_kostantRootSubgroupToToral`: every numbered
+  positive or negative simple-root morphism into `D.groupScheme` is a closed immersion over `ℤ`.
+* `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_rootSubgroup_simpleIndex` and
+  `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_rootSubgroup_reflectionPerm_simpleIndex`:
+  closed-immersion instances for the canonical positive and negative simple-root morphisms,
+  supplying the base case for `TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.ClosedImmersion`.
 
 ## References
 
