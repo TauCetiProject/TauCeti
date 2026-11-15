@@ -12,9 +12,10 @@ public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 # Scalar realizations of fundamental-discriminant characters
 
 The integer-valued character of a fundamental discriminant has compatible realizations over
-commutative rings. In characteristic zero these realizations retain conductor `|D|`, are
-primitive and quadratic, and are nonprincipal exactly when `D ≠ 1`. In particular the real and
-complex realizations have the same coefficients under the canonical scalar embedding.
+commutative rings. Whenever `2 ≠ 0` in the coefficient ring (in particular in characteristic zero),
+these realizations retain conductor `|D|`, are primitive and quadratic, and are nonprincipal
+exactly when `D ≠ 1`. In particular the real and complex realizations have the same coefficients
+under the canonical scalar embedding.
 
 These comparisons let analytic Dirichlet-character APIs use precisely the character constructed
 from prime discriminants, without choosing a second quadratic character.
@@ -39,6 +40,12 @@ noncomputable def fundamentalDiscriminantCharCast (R : Type*) [CommRing R]
     fundamentalDiscriminantCharCast R D hD a = (fundamentalDiscriminantChar D hD a : R) :=
   (rfl)
 
+/-- Over `ℤ`, `fundamentalDiscriminantCharCast` is `fundamentalDiscriminantChar` itself. -/
+@[simp] theorem fundamentalDiscriminantCharCast_int (hD : Int.IsFundamentalDiscr D) :
+    fundamentalDiscriminantCharCast ℤ D hD = fundamentalDiscriminantChar D hD := by
+  ext a
+  simp
+
 /-- Realizations commute with scalar maps, including the embedding of real into complex values. -/
 @[simp] theorem fundamentalDiscriminantCharCast_ringHomComp {R S : Type*}
     [CommRing R] [CommRing S] (hD : Int.IsFundamentalDiscr D) (f : R →+* S) :
@@ -53,29 +60,60 @@ theorem fundamentalDiscriminantCharCast_isQuadratic {R : Type*} [CommRing R]
     (fundamentalDiscriminantCharCast R D hD).IsQuadratic :=
   (fundamentalDiscriminantChar_isQuadratic hD).comp (Int.castRingHom R)
 
-variable {R : Type*} [CommRing R] [CharZero R]
+/-- The scalar realization at `-1` is the cast of the sign of `D`. -/
+theorem fundamentalDiscriminantCharCast_neg_one {R : Type*} [CommRing R]
+    (hD : Int.IsFundamentalDiscr D) :
+    fundamentalDiscriminantCharCast R D hD (-1) = D.sign := by
+  rw [fundamentalDiscriminantCharCast_apply, fundamentalDiscriminantChar_neg_one]
 
-/-- In characteristic zero, the scalar realization is primitive at its actual level `|D|`. -/
-theorem isPrimitive_fundamentalDiscriminantCharCast (hD : Int.IsFundamentalDiscr D) :
-    (fundamentalDiscriminantCharCast R D hD).IsPrimitive := by
+/-- The scalar realization of the trivial fundamental discriminant `1` is principal over every
+commutative ring. -/
+@[simp] theorem fundamentalDiscriminantCharCast_one {R : Type*} [CommRing R]
+    (hD : Int.IsFundamentalDiscr 1) :
+    fundamentalDiscriminantCharCast R 1 hD = 1 := by
+  exact @Subsingleton.elim (DirichletCharacter R 1) _ _ _
+
+variable {R : Type*} [CommRing R] [NeZero (2 : R)]
+
+/-- When `2 ≠ 0` in `R`, `fundamentalDiscriminantCharCast R D hD` factors through a divisor `d`
+if and only if the integer-valued character does. -/
+theorem factorsThrough_fundamentalDiscriminantCharCast_iff (hD : Int.IsFundamentalDiscr D)
+    {d : ℕ} :
+    (fundamentalDiscriminantCharCast R D hD).FactorsThrough d ↔
+      (fundamentalDiscriminantChar D hD).FactorsThrough d := by
   have := hD.neZero_natAbs
-  rw [fundamentalDiscriminantCharCast, isPrimitive_ringHomComp_iff _ _ Int.cast_injective]
-  exact isPrimitive_fundamentalDiscriminantChar hD
+  by_cases hd : d ∣ D.natAbs
+  · rw [factorsThrough_iff_ker_unitsMap hd, factorsThrough_iff_ker_unitsMap hd]
+    suffices (fundamentalDiscriminantCharCast R D hD).toUnitHom.ker =
+        (fundamentalDiscriminantChar D hD).toUnitHom.ker by rw [this]
+    ext u
+    simp only [MonoidHom.mem_ker, Units.ext_iff, MulChar.coe_toUnitHom, Units.val_one,
+      fundamentalDiscriminantCharCast_apply]
+    rcases (fundamentalDiscriminantChar_isQuadratic hD).apply_eq_one_or_eq_neg_one u.isUnit with
+      hu | hu
+    · simp [hu]
+    · rw [hu, Int.cast_neg, Int.cast_one]
+      refine iff_of_false (fun h ↦ NeZero.ne (2 : R) ?_) (by norm_num)
+      rwa [neg_eq_iff_add_eq_zero, one_add_one_eq_two] at h
+  · exact iff_of_false (mt FactorsThrough.dvd hd) (mt FactorsThrough.dvd hd)
 
-/-- In characteristic zero, the realized character has conductor exactly `|D|`. -/
+/-- When `2 ≠ 0` in `R`, the realized character has conductor `|D|`. -/
 @[simp] theorem conductor_fundamentalDiscriminantCharCast (hD : Int.IsFundamentalDiscr D) :
-    (fundamentalDiscriminantCharCast R D hD).conductor = D.natAbs :=
-  (isPrimitive_def _).mp (isPrimitive_fundamentalDiscriminantCharCast hD)
+    (fundamentalDiscriminantCharCast R D hD).conductor = D.natAbs := by
+  have hcond : (fundamentalDiscriminantCharCast R D hD).conductor =
+      (fundamentalDiscriminantChar D hD).conductor :=
+    congrArg sInf (Set.ext fun _ ↦ factorsThrough_fundamentalDiscriminantCharCast_iff hD)
+  exact hcond.trans ((isPrimitive_def _).mp (isPrimitive_fundamentalDiscriminantChar hD))
 
-/-- A characteristic-zero realization is principal exactly for the discriminant `1`. -/
+/-- When `2 ≠ 0` in `R`, the scalar realization is primitive at its actual level `|D|`. -/
+theorem isPrimitive_fundamentalDiscriminantCharCast (hD : Int.IsFundamentalDiscr D) :
+    (fundamentalDiscriminantCharCast R D hD).IsPrimitive :=
+  (isPrimitive_def _).mpr (conductor_fundamentalDiscriminantCharCast hD)
+
+/-- When `2 ≠ 0` in `R`, the scalar realization is principal if and only if `D = 1`. -/
 @[simp] theorem fundamentalDiscriminantCharCast_eq_one_iff (hD : Int.IsFundamentalDiscr D) :
     fundamentalDiscriminantCharCast R D hD = 1 ↔ D = 1 := by
-  constructor
-  · intro h
-    by_contra hD1
-    exact (MulChar.ringHomComp_ne_one_iff Int.cast_injective).mpr
-      (fundamentalDiscriminantChar_ne_one hD hD1) h
-  · rintro rfl
-    exact @Subsingleton.elim (DirichletCharacter R 1) _ _ _
+  have := hD.neZero_natAbs
+  rw [eq_one_iff_conductor_eq_one, conductor_fundamentalDiscriminantCharCast, hD.natAbs_eq_one_iff]
 
 end TauCeti.Multiquadratic
