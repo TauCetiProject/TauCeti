@@ -14,6 +14,7 @@ import TauCeti.RingTheory.Affinoid.QuotientNorm
 import TauCeti.RingTheory.Affinoid.Restricted
 import TauCeti.RingTheory.Dagger.SupSeminorm
 import TauCeti.RingTheory.Ideal.KrullIntersection
+import TauCeti.RingTheory.Ideal.Quotient.Integral
 
 /-!
 # Universal extension of homomorphisms from Monsky–Washnitzer to Tate algebras
@@ -30,9 +31,9 @@ corresponding universal property for every presentation quotient `W_σ ⧸ I →
   `ψ Xᵢ` is power-bounded (`TauCeti.IsAffinoidAlgebra.isPowerBounded_iff_supSeminorm_le_one`).
 * Restricted evaluation (`TauCeti.IsAffinoidAlgebra.restrictedLift`) gives a `K`-algebra
   homomorphism `Ψ : T_σ →ₐ[K] S` sending each `Xᵢ` to `ψ Xᵢ`. Because `S` is noetherian and its
-  quotients `S ⧸ m ^ k` by powers of maximal ideals are finite over `K`, `Ψ ∘ toTate` and `ψ` agree
-  modulo every `m ^ k` (`TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isIntegral`), hence
-  globally by Krull's intersection theorem (`Ideal.iInf_isMaximal_pow_eq_bot`).
+  residue fields `S ⧸ m` at maximal ideals are finite (hence integral) over `K`, `Ψ ∘ toTate` and
+  `ψ` agree modulo every `m ^ k` (`TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isIntegral`),
+  hence globally by Krull's intersection theorem (`Ideal.iInf_isMaximal_pow_eq_bot`).
 * Uniqueness on `T_σ` and on `T_σ ⧸ I T_σ` follows from automatic continuity into `S` together with
   density of `W_σ` in `T_σ` (`TauCeti.IsAffinoidAlgebra.algHom_ext_of_denseRange`).
 
@@ -47,7 +48,7 @@ corresponding universal property for every presentation quotient `W_σ ⧸ I →
 
 * `TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isNoetherianRing` and
   `TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isAffinoidAlgebra`: `K`-algebra maps out of `W_σ`
-  into a noetherian `K`-algebra with finite maximal-power quotients (in particular any affinoid
+  into a noetherian `K`-algebra with integral maximal quotients (in particular any affinoid
   algebra) are determined by the coordinate variables.
 * `TauCeti.Dagger.washnitzerAlgebra.isPowerBounded_map_X`: any `K`-algebra map from `W_σ` into a
   completely normed affinoid algebra sends each variable `Xᵢ` to a power-bounded element.
@@ -79,22 +80,24 @@ section AlgHomExt
 
 variable {K σ : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] [Finite σ]
 
-/-- **Homomorphisms from `W_σ` separated by finite maximal-power quotients are determined by the
-variables.** If `R` is a noetherian `K`-algebra whose quotients `R ⧸ m ^ k` by all powers of
-maximal ideals are finite over `K`, then two `K`-algebra homomorphisms `W_σ →ₐ[K] R` agreeing on
-every coordinate variable are equal. No continuity or norm on `R` is assumed. -/
+/-- **Homomorphisms from `W_σ` separated by integral maximal quotients are determined by the
+variables.** If `R` is a noetherian `K`-algebra whose residue fields `R ⧸ m` at maximal ideals are
+integral over `K`, then two `K`-algebra homomorphisms `W_σ →ₐ[K] R` agreeing on every coordinate
+variable are equal. No continuity or norm on `R` is assumed. -/
 theorem algHom_ext_of_isNoetherianRing {R : Type*} [CommRing R] [Algebra K R]
     [IsNoetherianRing R]
-    (hfin : ∀ (m : Ideal R) [m.IsMaximal] (k : ℕ), Module.Finite K (R ⧸ m ^ k))
+    (hint : ∀ (m : Ideal R) [m.IsMaximal], Algebra.IsIntegral K (R ⧸ m))
     {φ ψ : washnitzerAlgebra σ K →ₐ[K] R} (h : ∀ i, φ (X σ K i) = ψ (X σ K i)) : φ = ψ := by
   ext f
   suffices φ f - ψ f ∈ (⊥ : Ideal R) from sub_eq_zero.mp this
   rw [← Ideal.iInf_isMaximal_pow_eq_bot]
   simp only [Ideal.mem_iInf]
   intro m hm k _
-  let := hm
-  have := hfin m k
-  have : Algebra.IsIntegral K (R ⧸ m ^ k) := Algebra.IsIntegral.of_finite K _
+  have : Algebra.IsIntegral K (R ⧸ m) := @hint m hm
+  have : Algebra.IsIntegral K (R ⧸ m ^ k) :=
+    ⟨fun y ↦ by
+      obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
+      exact isIntegral_quotient_pow_of_isIntegral_quotient (Algebra.IsIntegral.isIntegral _) k⟩
   let q := Ideal.Quotient.mkₐ K (m ^ k)
   have hq : q.comp φ = q.comp ψ := algHom_ext_of_isIntegral fun i ↦ by simp [h i]
   exact Ideal.Quotient.eq_zero_iff_mem.mp
@@ -106,7 +109,8 @@ theorem algHom_ext_of_isAffinoidAlgebra {R : Type*} [CommRing R] [Algebra K R]
     (hR : IsAffinoidAlgebra K R) {φ ψ : washnitzerAlgebra σ K →ₐ[K] R}
     (h : ∀ i, φ (X σ K i) = ψ (X σ K i)) : φ = ψ :=
   have := hR.isNoetherianRing
-  algHom_ext_of_isNoetherianRing (fun m _ k ↦ hR.finite_quotient_pow m k) h
+  algHom_ext_of_isNoetherianRing
+    (fun m _ ↦ have := hR.finite_quotient_of_isMaximal m; Algebra.IsIntegral.of_finite K _) h
 
 end AlgHomExt
 
@@ -247,10 +251,8 @@ theorem existsUnique_algHom_tateQuotient {S : Type*} [CommRing S] [Algebra K S]
       Φ.comp (Ideal.quotientMapₐ (I.map (toTate σ K)) (toTate σ K) Ideal.le_comap_map) = φ := by
   have hI : ∀ f ∈ I, (φ.comp (Ideal.Quotient.mkₐ K I)) f = 0 := fun f hf ↦ by
     simp [Ideal.Quotient.eq_zero_iff_mem.mpr hf]
-  refine ⟨liftToTateQuotient hS I (φ.comp (Ideal.Quotient.mkₐ K I)) hI, ?_, fun Φ hΦ ↦ ?_⟩
-  · dsimp only
-    rw [liftToTateQuotient_comp_quotientMap]
-    exact Ideal.Quotient.algHom_ext K (AlgHom.ext fun _ ↦ rfl)
+  refine ⟨liftToTateQuotient hS I (φ.comp (Ideal.Quotient.mkₐ K I)) hI,
+    Ideal.Quotient.algHom_ext K (by simp [Ideal.Quotient.liftₐ_comp]), fun Φ hΦ ↦ ?_⟩
   · refine tateQuotient_algHom_ext_of_isAffinoidAlgebra hS fun f ↦ ?_
     simpa using AlgHom.congr_fun hΦ (Ideal.Quotient.mk I f)
 

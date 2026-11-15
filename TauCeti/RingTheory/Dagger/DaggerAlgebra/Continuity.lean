@@ -111,17 +111,10 @@ completely normed affinoid algebra is continuous for the quotient Gauss norm on 
 theorem continuous_algHom_quotient_of_isAffinoidAlgebra {S : Type*} [NormedCommRing S]
     [NormedAlgebra K S] [IsUltrametricDist S] [CompleteSpace S] (hS : IsAffinoidAlgebra K S)
     {I : Ideal (W σ)} (φ : (W σ ⧸ I) →ₐ[K] S) : Continuous φ := by
-  have hI : ∀ f ∈ I, (φ.comp (Ideal.Quotient.mkₐ K I)) f = 0 := fun f hf ↦ by
-    simp [Ideal.Quotient.eq_zero_iff_mem.mpr hf]
-  let Φ : (T σ ⧸ I.map (toTate σ K)) →ₐ[K] S :=
-    liftToTateQuotient hS I (φ.comp (Ideal.Quotient.mkₐ K I)) hI
-  have hcomp : (Φ : _ → S) ∘
-      Ideal.quotientMapₐ (I.map (toTate σ K)) (toTate σ K) Ideal.le_comap_map = φ := by
-    ext ⟨f⟩
-    exact liftToTateQuotient_mk_toTate hS I _ hI f
+  obtain ⟨Φ, rfl, -⟩ := existsUnique_algHom_tateQuotient hS I φ
   have := ((isAffinoidAlgebra_tate (K := K) (σ := σ)).quotient
     (I.map (toTate σ K))).isNoetherianRing
-  rw [← hcomp]
+  rw [AlgHom.coe_comp]
   exact (hS.continuous_algHom (B := T σ ⧸ I.map (toTate σ K)) Φ).comp
     I.isometry_quotientMap_toTate.continuous
 
@@ -386,7 +379,7 @@ theorem toContinuousAlgEquiv_symm (e : A ≃ₐ[K] B) :
   let := residueNormedCommRing K A
   let := residueNormedCommRing K B
   ext b
-  exact rfl
+  exact (toContinuousAlgEquiv e).symm_apply_eq.mpr (by simp)
 
 /-- For any surjective presentation `π : W_σ →ₐ[K] A` of a dagger algebra, the first isomorphism
 theorem `(W_σ ⧸ ker π) ≃ₐ[K] A` is a topological `K`-algebra isomorphism between the quotient Gauss
@@ -607,18 +600,6 @@ theorem isPowerBounded_map (φ : A →ₐ[K] B) {a : A} :
   fun ha ↦ (isPowerBounded_iff_supSeminorm_le_one (K := K) (a := φ a)).mpr <|
     (supSeminorm_map_le φ a).trans
       ((isPowerBounded_iff_supSeminorm_le_one (K := K) (a := a)).mp ha)
-
-/-- Every `K`-algebra homomorphism `φ : A →ₐ[K] B` of dagger algebras maps topologically nilpotent
-elements to topologically nilpotent elements. -/
-theorem isTopologicallyNilpotent_map (φ : A →ₐ[K] B) {a : A} :
-    letI := residueNormedCommRing K A
-    letI := residueNormedCommRing K B
-    IsTopologicallyNilpotent a → IsTopologicallyNilpotent (φ a) :=
-  letI := residueNormedCommRing K A
-  letI := residueNormedCommRing K B
-  fun ha ↦ (isTopologicallyNilpotent_iff_supSeminorm_lt_one (K := K) (a := φ a)).mpr <|
-    (supSeminorm_map_le φ a).trans_lt
-      ((isTopologicallyNilpotent_iff_supSeminorm_lt_one (K := K) (a := a)).mp ha)
 
 end IsDaggerAlgebra
 
