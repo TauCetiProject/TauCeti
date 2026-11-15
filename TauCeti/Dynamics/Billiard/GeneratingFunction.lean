@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Topology.Order.MonotoneContinuity
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # The generating function of the billiard map
@@ -168,11 +169,8 @@ in `(-1, 1)`. (For coincident endpoints the chord direction is `0`.) -/
 theorem inner_deriv_chordDir_mem_Ioo (s t : ℝ) : ⟪deriv χ s, χ.chordDir s t⟫ ∈ Ioo (-1) 1 := by
   by_cases h : χ t = χ s
   · simp [χ.chordDir_eq_zero_iff.2 h]
-  have hsq := o.inner_sq_add_areaForm_sq (deriv χ s) (χ.chordDir s t)
-  rw [χ.norm_deriv, χ.norm_chordDir h] at hsq
-  have hpos := χ.areaForm_deriv_chordDir_pos h
-  have hlt : ⟪deriv χ s, χ.chordDir s t⟫ ^ 2 < 1 := by nlinarith
-  constructor <;> nlinarith
+  exact o.inner_mem_Ioo_of_areaForm_ne_zero (χ.norm_deriv s) (χ.norm_chordDir h)
+    (χ.areaForm_deriv_chordDir_pos h).ne'
 
 /-- The chord between distinct boundary points is the outgoing velocity of the state at `χ(s)`
 whose tangential component is that of the chord. -/
@@ -181,10 +179,9 @@ theorem outgoingDir_inner_deriv_chordDir {s t : ℝ} (h : χ t ≠ χ s) :
   set T := deriv χ s
   set u := χ.chordDir s t
   have hT : ‖T‖ = 1 := χ.norm_deriv s
-  have hsq := o.inner_sq_add_areaForm_sq T u
-  rw [hT, χ.norm_chordDir h] at hsq
-  have hω : √(1 - ⟪T, u⟫ ^ 2) = o.areaForm T u :=
-    (Real.sqrt_eq_iff_mul_self_eq_of_pos (χ.areaForm_deriv_chordDir_pos h)).2 (by nlinarith)
+  have hω : √(1 - ⟪T, u⟫ ^ 2) = o.areaForm T u := by
+    rw [o.sqrt_one_sub_inner_sq_eq_abs_areaForm hT (χ.norm_chordDir h),
+      abs_of_pos (χ.areaForm_deriv_chordDir_pos h)]
   -- Decompose `u` in the orthonormal basis `T, J T`.
   refine ext_inner_right ℝ fun y ↦ ?_
   have hdec := o.inner_mul_inner_add_areaForm_mul_areaForm T u y
@@ -238,8 +235,9 @@ theorem hasDerivAt_generatingFunction_left {s t : ℝ} (h : χ t ≠ χ s) :
   convert hd.neg using 1
   · funext s'
     simp [generatingFunction_def]
-  · rw [chordDir_def, NormedSpace.normalize, real_inner_smul_right, _root_.smul_apply,
-      innerSL_apply_apply, smul_eq_mul, inner_neg_right, mul_neg, neg_neg, real_inner_comm]
+  · simp [chordDir_def, NormedSpace.normalize, real_inner_smul_right, real_inner_comm,
+      inner_sub_right]
+    ring
 
 /-- **The derivative of the generating function in its second argument**:
 `∂_t S(s, t) = -⟪χ'(t), u⟫` for the unit vector `u` along the chord, wherever `χ(t) ≠ χ(s)`. -/
@@ -250,8 +248,8 @@ theorem hasDerivAt_generatingFunction_right {s t : ℝ} (h : χ t ≠ χ s) :
   convert hd.neg using 1
   · funext t'
     simp [generatingFunction_def]
-  · rw [chordDir_def, NormedSpace.normalize, real_inner_smul_right, _root_.smul_apply,
-      innerSL_apply_apply, smul_eq_mul, real_inner_comm]
+  · simp [chordDir_def, NormedSpace.normalize, real_inner_smul_right, real_inner_comm,
+      inner_sub_right]
 
 /-- **The generating function recovers the initial state**: at the next collision point
 `t` of the state `(s, v)`, `∂_s S(s, t) = v`. -/
@@ -418,15 +416,12 @@ theorem continuousOn_nextParam (s : ℝ) : ContinuousOn (χ.nextParam s) (Ioo (-
   have hc' : ContinuousAt (χ.nextParam s) v := by simpa using hc.neg
   exact hc'.continuousWithinAt
 
-private theorem sqrt_one_sub_sq_pos {v : ℝ} (hv : v ∈ Ioo (-1) 1) : 0 < √(1 - v ^ 2) :=
-  Real.sqrt_pos.2 (by nlinarith [hv.1, hv.2])
-
 /-- The quotient `ℓ / (√(1 - v²) √(1 - w²))` of the chord length by the sines of the angles of the
 chord with the boundary at the state `(s, v)` and at its next collision is positive. -/
 private theorem norm_div_sqrt_mul_sqrt_pos {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
     0 < ‖χ (χ.nextParam s v) - χ s‖ / (√(1 - v ^ 2) * √(1 - χ.nextTangential s v ^ 2)) :=
   div_pos (norm_pos_iff.2 (sub_ne_zero.2 (χ.apply_nextParam_ne hv)))
-    (mul_pos (sqrt_one_sub_sq_pos hv) (sqrt_one_sub_sq_pos (χ.nextTangential_mem_Ioo hv)))
+    (mul_pos (Real.sqrt_one_sub_sq_pos hv) (Real.sqrt_one_sub_sq_pos (χ.nextTangential_mem_Ioo hv)))
 
 /-- **The derivative of the next collision parameter.** For fixed `s`, the next collision
 parameter `t` of the state `(s, v)` is differentiable in `v`, with derivative
