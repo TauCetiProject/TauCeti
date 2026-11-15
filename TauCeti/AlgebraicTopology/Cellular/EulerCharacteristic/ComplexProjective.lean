@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Product
 public import TauCeti.Topology.CWComplex.Classical.ComplexProjective
 
 /-!
@@ -81,7 +82,7 @@ open scoped LinearAlgebra.Projectivization in
 `χ(ℙ ℂ V) = dim V` for a finite-dimensional Hausdorff complex topological vector space `V`. For
 `V = Fin (n + 1) → ℂ` this is `n + 1`; for `V = 0` the projectivization is empty. -/
 @[simp]
-theorem eulerChar_projectivization_complex {V : Type} [AddCommGroup V] [Module ℂ V]
+theorem eulerChar_projectivization_complex {V : Type*} [AddCommGroup V] [Module ℂ V]
     [FiniteDimensional ℂ V] [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℂ V]
     [T2Space V] : eulerChar (ℙ ℂ V) = Module.finrank ℂ V := by
   cases h : Module.finrank ℂ V with
@@ -89,9 +90,12 @@ theorem eulerChar_projectivization_complex {V : Type} [AddCommGroup V] [Module �
     have := Module.finrank_zero_iff.1 h
     simp [eulerChar_of_discreteTopology]
   | succ n =>
-    rw [← ((ComplexProjectiveSpace.homeomorphProjectivization n).trans
-      (ContinuousLinearEquiv.ofFinrankEq (E := Fin (n + 1) → ℂ) (F := V)
-        (by simp [h])).mapProjectivization).eulerChar_eq,
-      eulerChar_complexProjectiveSpace, Nat.cast_succ]
+    -- The factor `PUnit` lifts `CPⁿ` to the universe of `V`.
+    rw [← ((Homeomorph.prodPUnit (ComplexProjectiveSpace n)).trans
+      ((ComplexProjectiveSpace.homeomorphProjectivization n).trans
+        (ContinuousLinearEquiv.ofFinrankEq (E := Fin (n + 1) → ℂ) (F := V)
+          (by simp [h])).mapProjectivization)).eulerChar_eq,
+      eulerChar_prod, eulerChar_complexProjectiveSpace, eulerChar_of_contractibleSpace,
+      Nat.cast_succ, mul_one]
 
 end TauCeti

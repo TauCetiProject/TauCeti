@@ -127,6 +127,16 @@ theorem _root_.ContinuousLinearEquiv.mapProjectivization_symm (e : V ≃SL[σ] W
   (rfl)
 
 @[simp]
+theorem _root_.ContinuousLinearEquiv.mapProjectivization_symm_apply_apply (e : V ≃SL[σ] W)
+    (p : ℙ K V) : e.symm.mapProjectivization (e.mapProjectivization p) = p :=
+  e.mapProjectivization.symm_apply_apply p
+
+@[simp]
+theorem _root_.ContinuousLinearEquiv.mapProjectivization_apply_symm_apply (e : V ≃SL[σ] W)
+    (p : ℙ L W) : e.mapProjectivization (e.symm.mapProjectivization p) = p :=
+  e.mapProjectivization.apply_symm_apply p
+
+@[simp]
 theorem _root_.ContinuousLinearEquiv.mapProjectivization_refl :
     (ContinuousLinearEquiv.refl K V).mapProjectivization = Homeomorph.refl (ℙ K V) := by
   ext p

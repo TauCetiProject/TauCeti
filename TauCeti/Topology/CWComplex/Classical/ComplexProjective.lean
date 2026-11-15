@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.Topology.ComplexProjectiveSpace.Projectivization
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
+public import TauCeti.Topology.CWComplex.Classical.Product
 
 /-!
 # The CW structure on complex projective space
@@ -479,7 +480,7 @@ open scoped LinearAlgebra.Projectivization in
 /-- The projectivization `ℙ ℂ V` of a finite-dimensional Hausdorff complex topological vector space
 has finite CW type. It is empty when `V = 0`, and otherwise homeomorphic to `CPⁿ` for
 `n + 1 = dim V` (`TauCeti.ComplexProjectiveSpace.homeomorphProjectivization`). -/
-instance finiteCWType_projectivization_complex {V : Type} [AddCommGroup V] [Module ℂ V]
+instance finiteCWType_projectivization_complex {V : Type*} [AddCommGroup V] [Module ℂ V]
     [FiniteDimensional ℂ V] [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℂ V]
     [T2Space V] : FiniteCWType (ℙ ℂ V) := by
   cases h : Module.finrank ℂ V with
@@ -487,8 +488,10 @@ instance finiteCWType_projectivization_complex {V : Type} [AddCommGroup V] [Modu
     have := Module.finrank_zero_iff.1 h
     exact FiniteCWType.of_discreteTopology _
   | succ n =>
-    exact ((ComplexProjectiveSpace.homeomorphProjectivization n).trans
-      (ContinuousLinearEquiv.ofFinrankEq (E := Fin (n + 1) → ℂ) (F := V)
-        (by simp [h])).mapProjectivization).symm.finiteCWType
+    -- The factor `PUnit` lifts `CPⁿ` to the universe of `V`.
+    exact ((Homeomorph.prodPUnit (ComplexProjectiveSpace n)).trans
+      ((ComplexProjectiveSpace.homeomorphProjectivization n).trans
+        (ContinuousLinearEquiv.ofFinrankEq (E := Fin (n + 1) → ℂ) (F := V)
+          (by simp [h])).mapProjectivization)).symm.finiteCWType
 
 end TauCeti
