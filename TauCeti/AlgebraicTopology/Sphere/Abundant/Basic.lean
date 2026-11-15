@@ -72,13 +72,6 @@ namespace TauCeti
 
 variable (Q : Type) [TopologicalSpace Q]
 
-/-- The constant spheres map the pair `(Q, Q ∖ {b})` to `(Map(S², Q), Map(S², Q) ∖ ev⁻¹(b))`:
-the only constant sphere over `b` is the constant sphere at `b`. -/
-theorem const'_preimage_mappingSpaceEval_preimage_subset (b : Q) :
-    (ContinuousMap.const' : C(Q, C(Sphere2, Q))) ⁻¹'
-        (mappingSpaceEval Sphere2.north ⁻¹' {b}) ⊆ {b} :=
-  fun x h ↦ by simpa using h
-
 /-- A space `Q` is **abundant with 2-spheres** at `b`, in dimension `n`
 (Barraud–Damian–Humilière–Oancea, Definition 6.11), if some integral class
 `α ∈ Hₖ(Map(S², Q); ℤ)` lives over the fundamental class of `Q` at `b` for evaluation at the
@@ -97,7 +90,7 @@ def IsAbundantWithTwoSpheres (n : ℕ) (b : Q) : Prop :=
       (n < k ∨ k = n ∧ (fiberLocalization (ModuleCat.of ℤ (ULift.{0} ℤ))
         (mappingSpaceEval Sphere2.north) b k).hom α ∉
           LinearMap.range (localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ContinuousMap.const'
-            (const'_preimage_mappingSpaceEval_preimage_subset Q b) k).hom)
+            (const'_preimage_mappingSpaceEval_preimage_subset Sphere2.north b) k).hom)
 
 /-- Unfolding `IsAbundantWithTwoSpheres`: some class of `Hₖ(Map(S², Q); ℤ)` lives over the
 fundamental class at `b`, and either `n < k`, or `k = n` and its localization at the fibre over `b`
@@ -112,7 +105,7 @@ theorem isAbundantWithTwoSpheres_iff (n : ℕ) (b : Q) :
             (mappingSpaceEval Sphere2.north) b k).hom α ∉
               LinearMap.range (localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
                 ContinuousMap.const'
-                  (const'_preimage_mappingSpaceEval_preimage_subset Q b) k).hom) :=
+                  (const'_preimage_mappingSpaceEval_preimage_subset Sphere2.north b) k).hom) :=
   Iff.rfl
 
 variable {Q}
@@ -138,7 +131,7 @@ theorem isAbundantWithTwoSpheres_of_eq {n : ℕ} {b : Q}
     (hα : LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ))
       (mappingSpaceEval Sphere2.north) b α)
     (hc : ∀ β, (localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ContinuousMap.const'
-      (const'_preimage_mappingSpaceEval_preimage_subset Q b) n).hom β ≠
+      (const'_preimage_mappingSpaceEval_preimage_subset Sphere2.north b) n).hom β ≠
         (fiberLocalization (ModuleCat.of ℤ (ULift.{0} ℤ)) (mappingSpaceEval Sphere2.north) b
           n).hom α) :
     IsAbundantWithTwoSpheres Q n b :=

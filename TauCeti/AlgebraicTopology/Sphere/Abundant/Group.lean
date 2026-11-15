@@ -41,9 +41,9 @@ path-connected space is aspherical exactly when its double loop space is path co
 vanishing positive-degree integral homology. So if `π₂(G)` is trivial, which holds for compact Lie
 groups by a classical theorem of Cartan, and `G` is not aspherical, then `Ω²G` has a nonzero class
 of positive degree, and `G` is abundant with 2-spheres
-(`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_not_isAspherical`). For the source's
-Proposition 6.31 it remains to show that a compact connected Lie group has trivial `π₂` and is
-not aspherical unless it is a torus.
+(`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_not_isAspherical`). This applies to
+every `G` meeting these hypotheses, for example to compact connected Lie groups which are not
+tori: these have `π₂ = 0` by Cartan's theorem and are not aspherical.
 
 The unit quaternions `S³ = SU(2)` are simply connected, hence orientable, with `π₂(S³) = 0` and
 `π₃(S³) ≅ ℤ`, so they are abundant with 2-spheres
@@ -110,9 +110,8 @@ theorem isAbundantWithTwoSpheres_of_ne_zero (b : G) {k : ℕ} (hk : 0 < k)
   have hy := (livesOverFundamentalClass_homologyMap_coefficient_iff (R ⊗ R) φ).2 hx
   -- Carry the class to `Map(S², G)` along the homeomorphism over `G`.
   have hτ : (Ψ.symm : C(C(Sphere2, G), G × BasedMap Sphere2 G Sphere2.north 1)).comp Ψ =
-      ContinuousMap.id _ := by
-    ext x : 1
-    exact Ψ.symm_apply_apply x
+      ContinuousMap.id _ :=
+    Ψ.symm_comp_toContinuousMap
   have h : mappingSpaceEval Sphere2.north ∘ Ψ = id ∘ Prod.fst := funext fun x ↦ by
     simp [Ψ, x.2.2]
   have h' : (id ∘ Prod.fst) ∘ Ψ.symm = mappingSpaceEval Sphere2.north := funext fun f ↦ by
@@ -126,12 +125,12 @@ include o hn in
 /-- **A non-aspherical topological group with `π₂ = 0` is abundant with 2-spheres**
 (Barraud–Damian–Humilière–Oancea, Example 6.30). Let `G` be a path-connected compact oriented
 `n`-manifold which is a topological group with trivial `π₂(G)`, for instance a compact connected
-Lie group. If `G` is not aspherical, then `G` is abundant with 2-spheres at every point. By
-Lemma 3.41 of the source the double loop space of `G` then has a nonzero integral homology class
-of positive degree, to which `isAbundantWithTwoSpheres_of_ne_zero` applies. -/
+Lie group. If `G` is not aspherical, then `G` is abundant with 2-spheres at every point. -/
 theorem isAbundantWithTwoSpheres_of_not_isAspherical [PathConnectedSpace G] (b : G)
     (h₂ : Subsingleton (π_ 2 G 1)) (hG : ¬IsAspherical G 1) :
     IsAbundantWithTwoSpheres G n b := by
+  -- By Lemma 3.41 of the source the double loop space of `G` has a nonzero integral homology class
+  -- of positive degree, to which `isAbundantWithTwoSpheres_of_ne_zero` applies.
   rw [isAspherical_iff_doubleLoopSpace_singularHomology] at hG
   push Not at hG
   obtain ⟨m, hm₀, hm⟩ := hG ((pathConnectedSpace_doubleLoopSpace_iff (1 : G)).2 h₂)
