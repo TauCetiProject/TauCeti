@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Finiteness
 import TauCeti.Algebra.Group.Submonoid.Finiteness
-import TauCeti.Geometry.Convex.Cone.Alternative
+import TauCeti.Geometry.Convex.Cone.Saturation
 
 /-!
 # Finite generation of lattice points in rational cones
@@ -17,11 +17,11 @@ salience assumption (Gordan's lemma for lattice points). Integral characters sep
 point outside the cone from the cone, so membership of a lattice point in the cone is tested by the
 characters of its dual semigroup. This is the lattice-point form of the bipolar theorem.
 
-The separation argument applies the integral Tucker theorem
-`TauCeti.exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos` to the lattice generators of
-the cone together with the negative of the lattice point. Finite generation then follows as for
-`TauCeti.Toric.IsLatticeRational.fg_dualSemigroup`: the lattice points are the preimage of the
-nonnegative orthant under the evaluation of the finitely many generators of the dual semigroup.
+The separation argument uses integral linear-form separation for submonoid saturations
+(`AddSubmonoid.FG.mem_nsmulSaturation_iff_forall_nonneg`), proved from Tucker's theorem over `ℤ`.
+Finite generation then follows as for `TauCeti.Toric.IsLatticeRational.fg_dualSemigroup`: the
+lattice points are the preimage of the nonnegative orthant under the evaluation of the finitely many
+generators of the dual semigroup.
 
 ## Main declarations
 
@@ -60,20 +60,13 @@ private theorem mem_nsmulSaturation_closure_or_exists_mem_dualSemigroup_neg
       ∃ m ∈ dualSemigroup hi (PointedCone.hull ℝ (i '' (s : Set N))), m n < 0 := by
   classical
   have := hi.free
-  let v : Option s → N := Option.elim' (-n) Subtype.val
-  obtain ⟨c, m, hrel, hm, hpos⟩ :=
-    TauCeti.exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos v
-  have heq : ∑ a : s, c (some a) • (a : N) = c none • n := by
-    apply Eq.symm
-    simpa [v, Fintype.sum_option, neg_add_eq_zero] using hrel
-  rcases eq_or_ne (c none) 0 with hc | hc
-  · right
-    refine ⟨m, (mem_dualSemigroup_hull_image hi _ m).mpr (fun a ha ↦ ?_), ?_⟩
-    · simpa [v] using hm (some ⟨a, ha⟩)
-    · simpa [hc, v] using hpos none
-  · left
-    exact AddSubmonoid.mem_nsmulSaturation.mpr ⟨c none, Nat.pos_of_ne_zero hc,
-      heq ▸ AddSubmonoid.sum_mem _ fun a _ ↦ nsmul_mem (AddSubmonoid.subset_closure a.2) _⟩
+  refine or_iff_not_imp_left.mpr fun hn ↦ ?_
+  have hfg : (AddSubmonoid.closure (s : Set N)).FG := AddSubmonoid.isAddFG_iff.mpr ⟨s, rfl⟩
+  rw [hfg.mem_nsmulSaturation_iff_forall_nonneg] at hn
+  push Not at hn
+  obtain ⟨m, hm, hmn⟩ := hn
+  exact ⟨m, (mem_dualSemigroup_hull_image hi _ m).mpr fun a ha ↦
+    hm a (AddSubmonoid.subset_closure ha), hmn⟩
 
 /-- An integral character separates a lattice point outside a lattice-rational cone: it is
 nonnegative on the cone and strictly negative on the given lattice point. -/
@@ -83,8 +76,8 @@ theorem IsLatticeRational.exists_mem_dualSemigroup_neg_of_notMem (hσ : IsLattic
   obtain ⟨s, rfl⟩ := isLatticeRational_iff.mp hσ
   rcases mem_nsmulSaturation_closure_or_exists_mem_dualSemigroup_neg hi s n with hsat | hsep
   · exfalso
-    have hmem := i.nsmulSaturation_le_latticePoints_hull_image (K := ℝ)
-      (AddSubmonoid.closure (s : Set N)) hsat
+    have hmem :=
+      i.nsmulSaturation_le_latticePoints_hull_image (K := ℝ) (AddSubmonoid.closure (s : Set N)) hsat
     rw [i.hull_image_coe_addSubmonoid_closure] at hmem
     exact hn (PointedCone.mem_latticePoints.mp hmem)
   · exact hsep

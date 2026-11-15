@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.MonoidAlgebra.Saturation
+public import TauCeti.Algebra.MonoidAlgebra.IntegrallyClosed
 public import TauCeti.AlgebraicGeometry.MonoidAlgebra.BaseChange
 public import TauCeti.AlgebraicGeometry.Scheme.Normal
 
@@ -16,9 +16,10 @@ For an additive submonoid `S` of a torsion-free abelian group `G` and an integra
 `AddMonoidAlgebra R S` is a domain, so `Spec (AddMonoidAlgebra R S)` is a normal scheme exactly
 when `AddMonoidAlgebra R S` is integrally closed
 (`TauCeti.AlgebraicGeometry.isNormalScheme_Spec_iff`). Combining this with
-`AddSubmonoid.isIntegrallyClosed_addMonoidAlgebra_iff` characterizes normality of affine semigroup
-schemes and of their integral models `addMonoidAlgebraIntegralModel S =
-Spec (AddMonoidAlgebra ℤ S)` in terms of saturation inside `AddSubgroup.closure S`.
+`AddMonoidAlgebra.isIntegrallyClosed_iff_isIntegrallyClosed_and_nsmulSaturation_inf_closure_eq`
+characterizes normality of affine semigroup schemes and of their integral models
+`addMonoidAlgebraIntegralModel S = Spec (AddMonoidAlgebra ℤ S)` in terms of saturation inside
+`AddSubgroup.closure S`.
 
 ## Main results
 
@@ -50,14 +51,14 @@ theorem isNormalScheme_Spec_addMonoidAlgebra_iff (R : Type*) [CommRing R] [IsDom
       IsIntegrallyClosed R ∧
         S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid = S :=
   (isNormalScheme_Spec_iff (.of (AddMonoidAlgebra R S))).trans
-    (S.isIntegrallyClosed_addMonoidAlgebra_iff R)
+    AddMonoidAlgebra.isIntegrallyClosed_iff_isIntegrallyClosed_and_nsmulSaturation_inf_closure_eq
 
 /-- Over an integrally closed domain `R`, the affine semigroup scheme `Spec R[S]` of a saturated
 submonoid `S` of a torsion-free abelian group `G` is normal. -/
 theorem isNormalScheme_Spec_addMonoidAlgebra_of_nsmulSaturated (R : Type*) [CommRing R]
     [IsDomain R] [IsIntegrallyClosed R] {S : AddSubmonoid G} (hS : S.NSMulSaturated) :
     IsNormalScheme (Spec (.of (AddMonoidAlgebra R S))) :=
-  have := hS.isIntegrallyClosed_addMonoidAlgebra R
+  have := AddMonoidAlgebra.isIntegrallyClosed_of_nsmulSaturated (R := R) hS
   inferInstance
 
 /-- The integral affine semigroup model `Spec ℤ[S]` of a submonoid `S` of a torsion-free abelian
@@ -66,7 +67,7 @@ theorem isNormalScheme_addMonoidAlgebraIntegralModel_iff (S : AddSubmonoid G) :
     IsNormalScheme (addMonoidAlgebraIntegralModel S) ↔
       S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid = S := by
   rw [addMonoidAlgebraIntegralModel_def, isNormalScheme_Spec_iff]
-  exact S.isIntegrallyClosed_addMonoidAlgebra_iff_of_isIntegrallyClosed ℤ
+  exact AddMonoidAlgebra.isIntegrallyClosed_iff_nsmulSaturation_inf_closure_eq_of_isIntegrallyClosed
 
 /-- The integral affine semigroup model `Spec ℤ[S]` of a saturated submonoid `S` of a torsion-free
 abelian group `G` is a normal scheme. -/

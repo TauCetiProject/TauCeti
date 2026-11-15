@@ -16,7 +16,7 @@ Every pointed cone `σ` in an integral lattice `(N, V, i)` has a saturated dual 
 `dualSemigroup hi σ ≤ (N →+ ℤ)` (`TauCeti.Toric.nsmulSaturated_dualSemigroup`), and the character
 group `N →+ ℤ` is torsion-free over `ℤ` (`AddMonoidHom.instModuleIsTorsionFree`). Together with
 `TauCeti.Algebra.Group.UniqueProds.TorsionFree` and
-`AddSubmonoid.NSMulSaturated.isIntegrallyClosed_addMonoidAlgebra`, this shows that the
+`AddMonoidAlgebra.isIntegrallyClosed_of_nsmulSaturated`, this shows that the
 dual-semigroup algebra `AddMonoidAlgebra R (dualSemigroup hi σ)` over any integrally closed domain
 `R` is an integrally closed domain, with no rationality, salience, or finite-generation hypothesis
 on `σ`.
@@ -63,7 +63,7 @@ closed. -/
 instance isIntegrallyClosed_addMonoidAlgebra_dualSemigroup (R : Type*) [CommRing R] [IsDomain R]
     [IsIntegrallyClosed R] (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
     IsIntegrallyClosed (AddMonoidAlgebra R (dualSemigroup hi σ)) :=
-  (nsmulSaturated_dualSemigroup hi σ).isIntegrallyClosed_addMonoidAlgebra R
+  AddMonoidAlgebra.isIntegrallyClosed_of_nsmulSaturated (nsmulSaturated_dualSemigroup hi σ)
 
 /-- The complex coordinate ring of the affine toric chart of any cone is integrally closed. -/
 instance isIntegrallyClosed_affineCoordinateRing (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :

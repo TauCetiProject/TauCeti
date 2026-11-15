@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Convex.Cone.Dual
-public import TauCeti.Geometry.Convex.Cone.LatticePoints
+public import TauCeti.Geometry.Convex.Cone.Saturation
 public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 
 /-!
