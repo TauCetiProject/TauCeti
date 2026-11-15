@@ -32,7 +32,11 @@ cochains.
   `C*(X, A) ⟶ C*(X, B) ⟶ C*(A, B)` of a triple `(X, A, B)`.
 * `TauCeti.TopTriple.shortExact_singularCochainComplexShortComplex`: it is short exact.
 * `TauCeti.TopTriple.singularCohomologyδ`: the connecting map `Hⁿ(A, B) ⟶ Hⁿ⁺¹(X, A)` of the
-  associated long exact sequence.
+  associated long exact sequence, with the three exactness statements
+  `TauCeti.TopTriple.singularCohomology_exact_outer`,
+  `TauCeti.TopTriple.singularCohomology_exact_total` and
+  `TauCeti.TopTriple.singularCohomology_exact_inner`, and its naturality
+  `TauCeti.TopTriple.singularCohomologyδ_naturality`.
 
 ## References
 
@@ -89,6 +93,81 @@ abbrev singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
     (innerPair.obj T).singularCohomology R k M n ⟶
       (outerPair.obj T).singularCohomology R k M m :=
   (T.shortExact_singularCochainComplexShortComplex R k M).δ n m (by simpa)
+
+/-- The connecting morphism of a triple is the connecting morphism of the short exact sequence of
+relative singular cochain complexes of the triple. -/
+lemma singularCohomologyδ_def (n m : ℕ) (h : n + 1 = m := by lia) :
+    T.singularCohomologyδ R k M n m h =
+      (T.shortExact_singularCochainComplexShortComplex R k M).δ n m (by simpa) :=
+  (rfl)
+
+/-- The maps `Hⁿ(X, A) ⟶ Hⁿ(X, B) ⟶ Hⁿ(A, B)` of a triple compose to zero. -/
+@[reassoc (attr := simp)]
+lemma singularCohomologyMap_totalToOuter_comp_innerToTotal (n : ℕ) :
+    TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (totalToOuter.app T) n ≫
+      TopPair.singularCohomologyMap (innerToTotal.app T) n = 0 :=
+  (HomologicalComplex.homologyMap_comp _ _ n).symm.trans <|
+    (congrArg (HomologicalComplex.homologyMap · n)
+      (T.singularCochainComplexShortComplex R k M).zero).trans
+        (HomologicalComplex.homologyMap_zero _ _ n)
+
+/-- The map `Hⁿ(X, B) ⟶ Hⁿ(A, B)` of a triple followed by the connecting map
+`Hⁿ(A, B) ⟶ Hᵐ(X, A)` is zero. -/
+@[reassoc (attr := simp)]
+lemma comp_singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
+    TopPair.singularCohomologyMap (innerToTotal.app T) n ≫ T.singularCohomologyδ R k M n m h = 0 :=
+  (T.shortExact_singularCochainComplexShortComplex R k M).comp_δ n m (by simpa)
+
+/-- The connecting map `Hⁿ(A, B) ⟶ Hᵐ(X, A)` of a triple followed by the map
+`Hᵐ(X, A) ⟶ Hᵐ(X, B)` is zero. -/
+@[reassoc (attr := simp)]
+lemma singularCohomologyδ_comp (n m : ℕ) (h : n + 1 = m := by lia) :
+    T.singularCohomologyδ R k M n m h ≫ TopPair.singularCohomologyMap (totalToOuter.app T) m = 0 :=
+  (T.shortExact_singularCochainComplexShortComplex R k M).δ_comp n m (by simpa)
+
+/-- Exactness at `Hᵐ(X, A)` in the long exact cohomology sequence of a triple. -/
+lemma singularCohomology_exact_outer (n m : ℕ) (h : n + 1 = m := by lia) :
+    (ShortComplex.mk _ _ (T.singularCohomologyδ_comp R k M n m h)).Exact :=
+  (T.shortExact_singularCochainComplexShortComplex R k M).homology_exact₁ n m (by simpa)
+
+/-- Exactness at `Hⁿ(X, B)` in the long exact cohomology sequence of a triple. -/
+lemma singularCohomology_exact_total (n : ℕ) :
+    (ShortComplex.mk _ _ (T.singularCohomologyMap_totalToOuter_comp_innerToTotal R k M n)).Exact :=
+  (T.shortExact_singularCochainComplexShortComplex R k M).homology_exact₂ n
+
+/-- Exactness at `Hⁿ(A, B)` in the long exact cohomology sequence of a triple. -/
+lemma singularCohomology_exact_inner (n m : ℕ) (h : n + 1 = m := by lia) :
+    (ShortComplex.mk _ _ (T.comp_singularCohomologyδ R k M n m h)).Exact :=
+  (T.shortExact_singularCochainComplexShortComplex R k M).homology_exact₃ n m (by simpa)
+
+variable {R k M} in
+/-- The morphism of relative singular cochain sequences induced by a morphism of triples, used to
+prove the naturality of the connecting morphism. -/
+private def singularCochainComplexShortComplexMap {T T' : TopTriple.{w}} (φ : T ⟶ T') :
+    T'.singularCochainComplexShortComplex R k M ⟶ T.singularCochainComplexShortComplex R k M where
+  τ₁ := TopPair.singularCochainComplexMap (outerPair.map φ)
+  τ₂ := TopPair.singularCochainComplexMap (totalPair.map φ)
+  τ₃ := TopPair.singularCochainComplexMap (innerPair.map φ)
+  comm₁₂ := (TopPair.singularCochainComplexMap_comp _ _).symm.trans <|
+    (congrArg TopPair.singularCochainComplexMap (totalToOuter.naturality φ)).symm.trans
+      (TopPair.singularCochainComplexMap_comp _ _)
+  comm₂₃ := (TopPair.singularCochainComplexMap_comp _ _).symm.trans <|
+    (congrArg TopPair.singularCochainComplexMap (innerToTotal.naturality φ)).symm.trans
+      (TopPair.singularCochainComplexMap_comp _ _)
+
+variable {R k M} in
+/-- The connecting morphism of the long exact cohomology sequence of a triple is natural: for a
+morphism of triples `φ : (X, A, B) ⟶ (X', A', B')`, following `Hⁿ(A', B') ⟶ Hᵐ(X', A')` by the map
+induced by `φ` on `Hᵐ(X', A')` agrees with following the map induced by `φ` on `Hⁿ(A', B')` by
+`Hⁿ(A, B) ⟶ Hᵐ(X, A)`. -/
+@[reassoc]
+lemma singularCohomologyδ_naturality {T T' : TopTriple.{w}} (φ : T ⟶ T') (n m : ℕ)
+    (h : n + 1 = m := by lia) :
+    T'.singularCohomologyδ R k M n m h ≫ TopPair.singularCohomologyMap (outerPair.map φ) m =
+      TopPair.singularCohomologyMap (innerPair.map φ) n ≫ T.singularCohomologyδ R k M n m h :=
+  HomologicalComplex.HomologySequence.δ_naturality (singularCochainComplexShortComplexMap φ)
+    (T'.shortExact_singularCochainComplexShortComplex R k M)
+    (T.shortExact_singularCochainComplexShortComplex R k M) n m (by simpa)
 
 end TopTriple
 
