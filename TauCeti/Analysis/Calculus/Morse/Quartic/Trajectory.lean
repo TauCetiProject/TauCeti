@@ -85,9 +85,8 @@ theorem quarticWellSumFlow_quarticTrajectoryPoint {p q : ι → ℝ}
   funext i
   simp only [quarticWellSumFlow_apply, quarticTrajectoryPoint_apply]
   split_ifs with hpq
-  · rw [hpq]
-    rcases hq i with h | h | h <;> simp [h]
-  · exact intervalBaseFlow_mul_intervalBaseOrbit 1 s (hq i) (u i)
+  · simpa [hpq] using intervalBaseFlow_mul 1 s (hq i) 1
+  · simp [intervalBaseFlow_mul 1 s (hq i)]
 
 /-- The time coordinates of a trajectory point are determined on the coordinates that move. -/
 theorem quarticTrajectoryPoint_eq_quarticTrajectoryPoint_iff {p q u v : ι → ℝ} :
@@ -107,9 +106,7 @@ theorem intervalBaseTimeCoordinate_abs_quarticTrajectoryPoint {p q : ι → ℝ}
     (hpq : p i ≠ q i) (hq : q i = -1 ∨ q i = 1) (u : ι → ℝ) :
     intervalBaseTimeCoordinate |quarticTrajectoryPoint p q u i| = u i := by
   have hq' : |q i| = 1 := by rcases hq with h | h <;> simp [h]
-  rw [quarticTrajectoryPoint_apply, ite_eq_right hpq, abs_mul, hq', one_mul,
-    abs_of_pos (intervalBaseOrbit_mem_Ioo 1 (u i)).1, intervalBaseTimeCoordinate_intervalBaseOrbit,
-    one_mul]
+  simp [hpq, abs_mul, hq', abs_of_pos (intervalBaseOrbit_mem_Ioo 1 (u i)).1]
 
 /-- Trajectory points lie in the cube `[-1, 1]^ι` when their endpoint `q` does. -/
 theorem quarticTrajectoryPoint_mem_Icc (p : ι → ℝ) {q : ι → ℝ} (hq : q ∈ Icc (-1) 1)

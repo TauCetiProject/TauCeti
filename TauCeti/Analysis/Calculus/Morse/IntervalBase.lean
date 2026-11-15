@@ -331,6 +331,11 @@ theorem intervalBaseFlow_neg (C s t : ℝ) : intervalBaseFlow C s (-t) = -interv
 theorem intervalBaseFlow_apply_neg_one (C s : ℝ) : intervalBaseFlow C s (-1) = -1 := by
   rw [intervalBaseFlow_neg, intervalBaseFlow_apply_one]
 
+/-- The flow commutes with multiplication by a sign `a` in `{-1, 0, 1}`. -/
+theorem intervalBaseFlow_mul (C s : ℝ) {a : ℝ} (ha : a = -1 ∨ a = 0 ∨ a = 1) (t : ℝ) :
+    intervalBaseFlow C s (a * t) = a * intervalBaseFlow C s t := by
+  rcases ha with rfl | rfl | rfl <;> simp [intervalBaseFlow_neg]
+
 /-- The negative gradient field of the base potential is `2 |C|`-Lipschitz on `[-1, 1]`: the
 difference quotient of `C t (1 - t²)` is `C (1 - (a² + a b + b²))`. -/
 theorem lipschitzOnWith_neg_gradient_intervalBasePotential (C : ℝ) :
@@ -443,23 +448,29 @@ theorem one_sub_intervalBaseOrbit_sq (C s : ℝ) :
 `c + T` is `1 / √(1 + (e^{-c} ρ)²)`: it depends on `ρ` only through `ρ²`. -/
 theorem intervalBaseOrbit_one_sub_log (c : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
     intervalBaseOrbit 1 (c - Real.log ρ) = (√(1 + (Real.exp (-c) * ρ) ^ 2))⁻¹ := by
-  rw [intervalBaseOrbit_apply,
-    show -(2 * 1 * (c - Real.log ρ)) = (-c + Real.log ρ) + (-c + Real.log ρ) by ring,
-    Real.exp_add, Real.exp_add, Real.exp_log hρ, sq]
+  -- Write `ρ² = e^{2 log ρ}` and compare exponents.
+  rw [intervalBaseOrbit_apply, mul_pow, ← Real.exp_log (pow_pos hρ 2), ← Real.exp_nat_mul,
+    ← Real.exp_add, Real.log_pow]
+  ring_nf
 
 /-- **Departure at rate `1`.** In the gluing parameter `ρ = e^{-T}`, the unit-rate trajectory at
 time `c - T` is `x / √(1 + x²)` for `x = e^{c} ρ`: it is `ρ` times a function of `ρ²`. -/
 theorem intervalBaseOrbit_one_add_log (c : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
     intervalBaseOrbit 1 (c + Real.log ρ) =
       Real.exp c * ρ * (√(1 + (Real.exp c * ρ) ^ 2))⁻¹ := by
-  have hx : 0 < Real.exp c * ρ := mul_pos (Real.exp_pos c) hρ
-  have hsq : 1 + ((Real.exp c * ρ) ^ 2)⁻¹ = (1 + (Real.exp c * ρ) ^ 2) / (Real.exp c * ρ) ^ 2 := by
-    field_simp
-    ring
-  rw [intervalBaseOrbit_apply,
-    show -(2 * 1 * (c + Real.log ρ)) = -((c + Real.log ρ) + (c + Real.log ρ)) by ring,
-    Real.exp_neg, Real.exp_add, Real.exp_add, Real.exp_log hρ, ← sq, hsq,
-    Real.sqrt_div' _ (sq_nonneg _), Real.sqrt_sq hx.le, inv_div, div_eq_mul_inv]
+  -- The exponential is `x⁻²` for `x = e^{c} ρ`, and `1 / √(1 + x⁻²) = √x² / √(1 + x²)`.
+  have he : Real.exp (-(2 * 1 * (c + Real.log ρ))) = ((Real.exp c * ρ) ^ 2)⁻¹ := by
+    rw [mul_pow, ← Real.exp_log (pow_pos hρ 2), ← Real.exp_nat_mul, ← Real.exp_add, Real.log_pow,
+      ← Real.exp_neg]
+    ring_nf
+  have hx : 0 < Real.exp c * ρ := by positivity
+  rw [intervalBaseOrbit_apply, he]
+  generalize Real.exp c * ρ = x at hx ⊢
+  conv_rhs => arg 1; rw [← Real.sqrt_sq hx.le]
+  rw [← Real.sqrt_inv, ← Real.sqrt_inv, ← Real.sqrt_mul (sq_nonneg _)]
+  congr 1
+  field_simp
+  ring
 
 private theorem inv_sqrt_two_mem_Ioo : (√2)⁻¹ ∈ Ioo (0 : ℝ) 1 :=
   ⟨by positivity, inv_lt_one_of_one_lt₀ Real.one_lt_sqrt_two⟩
@@ -482,13 +493,6 @@ theorem intervalBaseFlow_intervalBaseOrbit (C s r : ℝ) :
     intervalBaseFlow C s (intervalBaseOrbit C r) = intervalBaseOrbit C (s + r) := by
   rw [intervalBaseOrbit_eq_intervalBaseFlow, intervalBaseOrbit_eq_intervalBaseFlow,
     intervalBaseFlow_add C s r inv_sqrt_two_mem_Icc]
-
-/-- The flow of the base moves a signed copy of its trajectory `q` along itself, for a sign `a`
-in `{-1, 0, 1}`. -/
-theorem intervalBaseFlow_mul_intervalBaseOrbit (C s : ℝ) {a : ℝ} (ha : a = -1 ∨ a = 0 ∨ a = 1)
-    (t : ℝ) :
-    intervalBaseFlow C s (a * intervalBaseOrbit C t) = a * intervalBaseOrbit C (s + t) := by
-  rcases ha with rfl | rfl | rfl <;> simp [intervalBaseFlow_neg]
 
 /-- The flow of the base for time `s` acts on the departing form `x / √(1 + x²)` of the unit-rate
 trajectory (`TauCeti.intervalBaseOrbit_one_add_log`) by `x ↦ e^{s} x`, for every real `x`. -/

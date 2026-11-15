@@ -151,37 +151,40 @@ theorem quarticGluingLate_same_left (p q : ι → ℝ) (ρ : ℝ) (u : ι → �
   funext i
   simp
 
+/-- A point lies in the cube `[-1, 1]^ι` when each coordinate has absolute value at most `1`. -/
+private theorem mem_Icc_of_abs_le_one {y : ι → ℝ} (h : ∀ i, |y i| ≤ 1) : y ∈ Icc (-1) 1 :=
+  ⟨fun i ↦ (abs_le.1 (h i)).1, fun i ↦ (abs_le.1 (h i)).2⟩
+
+/-- A coordinate `q i * t` lies in `[-1, 1]` when `q` lies in the cube and `|t| ≤ 1`. -/
+private theorem abs_mul_le_one_of_mem_Icc {q : ι → ℝ} (hq : q ∈ Icc (-1) 1) (i : ι) {t : ℝ}
+    (ht : |t| ≤ 1) : |q i * t| ≤ 1 := by
+  rw [abs_mul]
+  exact (mul_le_of_le_one_left (abs_nonneg t) (abs_le.2 ⟨hq.1 i, hq.2 i⟩)).trans ht
+
 /-- The early point lies in the cube `[-1, 1]^ι` when the endpoint `q` does. -/
 theorem quarticGluingEarly_mem_Icc (p r : ι → ℝ) {q : ι → ℝ} (hq : q ∈ Icc (-1) 1) (ρ : ℝ)
-    (u : ι → ℝ) : quarticGluingEarly p r q ρ u ∈ Icc (-1) 1 := by
-  have ht := quarticTrajectoryPoint_mem_Icc p hq u
-  rw [← pi_univ_Icc]
-  refine fun i _ ↦ abs_le.1 ?_
-  have hti : |quarticTrajectoryPoint p q u i| ≤ 1 := abs_le.2 ⟨ht.1 i, ht.2 i⟩
-  rw [quarticTrajectoryPoint_apply] at hti
-  rw [quarticGluingEarly_apply]
-  split_ifs at hti ⊢
-  · exact hti
-  · rw [abs_mul, ← div_eq_mul_inv]
-    exact (mul_le_of_le_one_left (abs_nonneg _) (abs_le.2 ⟨hq.1 i, hq.2 i⟩)).trans
-      (Real.abs_div_sqrt_one_add_sq_le_one _)
-  · exact hti
+    (u : ι → ℝ) : quarticGluingEarly p r q ρ u ∈ Icc (-1) 1 :=
+  mem_Icc_of_abs_le_one fun i ↦ by
+    have ho := intervalBaseOrbit_mem_Ioo 1 (u i)
+    rw [quarticGluingEarly_apply]
+    split_ifs with hpq
+    · exact hpq ▸ abs_le.2 ⟨hq.1 i, hq.2 i⟩
+    · exact abs_mul_le_one_of_mem_Icc hq i <| by
+        simpa only [div_eq_mul_inv] using Real.abs_div_sqrt_one_add_sq_le_one _
+    · exact abs_mul_le_one_of_mem_Icc hq i ((abs_of_pos ho.1).trans_le ho.2.le)
 
 /-- The late point lies in the cube `[-1, 1]^ι` when the endpoint `q` does. -/
 theorem quarticGluingLate_mem_Icc (p r : ι → ℝ) {q : ι → ℝ} (hq : q ∈ Icc (-1) 1) (ρ : ℝ)
-    (u : ι → ℝ) : quarticGluingLate p r q ρ u ∈ Icc (-1) 1 := by
-  have ht := quarticTrajectoryPoint_mem_Icc p hq u
-  rw [← pi_univ_Icc]
-  refine fun i _ ↦ abs_le.1 ?_
-  have hti : |quarticTrajectoryPoint p q u i| ≤ 1 := abs_le.2 ⟨ht.1 i, ht.2 i⟩
-  rw [quarticTrajectoryPoint_apply] at hti
-  rw [quarticGluingLate_apply]
-  split_ifs at hti ⊢
-  · exact hti
-  · exact hti
-  · rw [abs_mul, abs_inv, abs_of_nonneg (Real.sqrt_nonneg _)]
-    exact (mul_le_of_le_one_left (by positivity) (abs_le.2 ⟨hq.1 i, hq.2 i⟩)).trans
-      (inv_le_one_of_one_le₀ (Real.one_le_sqrt_one_add_sq _))
+    (u : ι → ℝ) : quarticGluingLate p r q ρ u ∈ Icc (-1) 1 :=
+  mem_Icc_of_abs_le_one fun i ↦ by
+    have ho := intervalBaseOrbit_mem_Ioo 1 (u i)
+    rw [quarticGluingLate_apply]
+    split_ifs with hpq
+    · exact hpq ▸ abs_le.2 ⟨hq.1 i, hq.2 i⟩
+    · exact abs_mul_le_one_of_mem_Icc hq i ((abs_of_pos ho.1).trans_le ho.2.le)
+    · refine abs_mul_le_one_of_mem_Icc hq i ?_
+      rw [abs_inv, abs_of_nonneg (Real.sqrt_nonneg _)]
+      exact inv_le_one_of_one_le₀ (Real.one_le_sqrt_one_add_sq _)
 
 /-- For `ρ > 0` the early point is the trajectory point with the second block delayed by
 `-log ρ`. -/
@@ -210,12 +213,10 @@ theorem quarticWellSumFlow_quarticGluingEarly {p r q : ι → ℝ}
   funext i
   simp only [quarticWellSumFlow_apply, quarticGluingEarly_apply]
   split_ifs with hpq
-  · rw [hpq]
-    rcases hq i with h | h | h <;> simp [h]
-  · rw [Real.exp_add, mul_assoc (Real.exp s)]
-    rcases hq i with h | h | h <;>
-      simp [h, intervalBaseFlow_neg, intervalBaseFlow_one_mul_inv_sqrt_one_add_sq]
-  · exact intervalBaseFlow_mul_intervalBaseOrbit 1 s (hq i) (u i)
+  · simpa [hpq] using intervalBaseFlow_mul 1 s (hq i) 1
+  · rw [Real.exp_add, mul_assoc (Real.exp s), intervalBaseFlow_mul 1 s (hq i),
+      intervalBaseFlow_one_mul_inv_sqrt_one_add_sq]
+  · simp [intervalBaseFlow_mul 1 s (hq i)]
 
 /-- The flow of the quartic translates all time coordinates of the late point at once, for every
 gluing parameter `ρ`, including the break `ρ = 0`. -/
@@ -226,12 +227,10 @@ theorem quarticWellSumFlow_quarticGluingLate {p r q : ι → ℝ}
   funext i
   simp only [quarticWellSumFlow_apply, quarticGluingLate_apply]
   split_ifs with hpq
-  · rw [hpq]
-    rcases hq i with h | h | h <;> simp [h]
-  · exact intervalBaseFlow_mul_intervalBaseOrbit 1 s (hq i) (u i)
-  · rw [neg_add, Real.exp_add, mul_assoc (Real.exp (-s))]
-    rcases hq i with h | h | h <;>
-      simp [h, intervalBaseFlow_neg, intervalBaseFlow_one_inv_sqrt_one_add_sq]
+  · simpa [hpq] using intervalBaseFlow_mul 1 s (hq i) 1
+  · simp [intervalBaseFlow_mul 1 s (hq i)]
+  · rw [intervalBaseFlow_mul 1 s (hq i), intervalBaseFlow_one_inv_sqrt_one_add_sq, neg_add,
+      Real.exp_add, mul_assoc (Real.exp (-s))]
 
 /-- **The glued pair lies on one trajectory.** For `ρ > 0` the flow for time `-log ρ` carries the
 early point to the late point. -/
@@ -261,6 +260,11 @@ private theorem eq_zero_of_ne_of_break {p r q : ι → ℝ} (hpr : ∀ i, p i �
   · exact h.trans (hrq i (h ▸ hi))
   · exact hpr i h
 
+/-- The coordinates moving along the first piece of a broken trajectory stay put on the second. -/
+private theorem eq_of_ne_of_break {p r q : ι → ℝ} (hpr : ∀ i, p i ≠ r i → p i = 0)
+    (hrq : ∀ i, r i ≠ q i → r i = 0) {i : ι} (h : p i ≠ r i) : r i = q i :=
+  by_contra fun h' ↦ h ((hpr i h).trans (hrq i h').symm)
+
 /-- For `ρ > 0` the glued trajectory runs from `p` to `q`, seen from the early point. -/
 theorem tendsto_quarticWellSumFlow_quarticGluingEarly {p r q : ι → ℝ}
     (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) (hpr : ∀ i, p i ≠ r i → p i = 0)
@@ -289,8 +293,7 @@ theorem quarticGluingEarly_zero {p r q : ι → ℝ} (hpr : ∀ i, p i ≠ r i �
   by_cases hpr' : p i = r i
   · have := hrq i
     split_ifs <;> simp_all
-  · have h0 := hpr i hpr'
-    have hrq' : r i = q i := by_contra fun h ↦ hpr' (h0.trans (hrq i h).symm)
+  · have hrq' := eq_of_ne_of_break hpr hrq hpr'
     rw [hrq'] at hpr' ⊢
     simp [hpr']
 
@@ -303,8 +306,7 @@ theorem quarticGluingLate_zero {p r q : ι → ℝ} (hpr : ∀ i, p i ≠ r i �
   simp only [quarticGluingLate_apply, quarticTrajectoryPoint_apply]
   by_cases hpr' : p i = r i
   · split_ifs <;> simp_all
-  · have h0 := hpr i hpr'
-    have hrq' : r i = q i := by_contra fun h ↦ hpr' (h0.trans (hrq i h).symm)
+  · have hrq' := eq_of_ne_of_break hpr hrq hpr'
     rw [hrq'] at hpr' ⊢
     simp [hpr']
 
@@ -419,19 +421,28 @@ theorem contDiff_quarticGluingLate [Fintype ι] {n : WithTop ℕ∞} (p r q : ι
 jointly, including at the break `ρ = 0`. -/
 theorem continuous_quarticGluingEarly (p r q : ι → ℝ) :
     Continuous fun x : ℝ × (ι → ℝ) ↦ quarticGluingEarly p r q x.1 x.2 :=
-  continuous_pi fun i ↦
-    (contDiff_quarticGluingEarly_apply (n := 0) (u := fun y _ ↦ y.2) p r q i contDiff_fst
-      contDiff_snd).continuous.comp
-        (continuous_fst.prodMk ((continuous_apply i).comp continuous_snd))
+  continuous_pi fun i ↦ by
+    have hx : Continuous fun x : ℝ × (ι → ℝ) ↦ Real.exp (x.2 i) * x.1 := by fun_prop
+    simp only [quarticGluingEarly_apply]
+    split_ifs
+    · exact continuous_const
+    · exact continuous_const.mul
+        (hx.mul ((contDiff_id.inv_sqrt_one_add_sq (n := 0)).continuous.comp hx))
+    · exact continuous_const.mul
+        ((contDiff_intervalBaseOrbit 1 (n := 0)).continuous.comp (by fun_prop))
 
 /-- The late point depends continuously on the gluing parameter and the time coordinates
 jointly, including at the break `ρ = 0`. -/
 theorem continuous_quarticGluingLate (p r q : ι → ℝ) :
     Continuous fun x : ℝ × (ι → ℝ) ↦ quarticGluingLate p r q x.1 x.2 :=
-  continuous_pi fun i ↦
-    (contDiff_quarticGluingLate_apply (n := 0) (u := fun y _ ↦ y.2) p r q i contDiff_fst
-      contDiff_snd).continuous.comp
-        (continuous_fst.prodMk ((continuous_apply i).comp continuous_snd))
+  continuous_pi fun i ↦ by
+    have hy : Continuous fun x : ℝ × (ι → ℝ) ↦ Real.exp (-x.2 i) * x.1 := by fun_prop
+    simp only [quarticGluingLate_apply]
+    split_ifs
+    · exact continuous_const
+    · exact continuous_const.mul
+        ((contDiff_intervalBaseOrbit 1 (n := 0)).continuous.comp (by fun_prop))
+    · exact continuous_const.mul ((contDiff_id.inv_sqrt_one_add_sq (n := 0)).continuous.comp hy)
 
 /-- **Convergence to the broken trajectory, early side.** As the gluing parameter tends to `0`,
 the early point tends to the point with time coordinates `u` on the first piece. -/
