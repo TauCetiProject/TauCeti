@@ -41,6 +41,8 @@ fixed points of the torus, mapped to its vertices.
 * `Submodule.sum_projectorDiagonal`: the entries sum to the dimension of `U`.
 * `Submodule.projectorDiagonal_span_single`: the diagonal of a coordinate subspace is the
   indicator of its coordinates.
+* `Submodule.projectorDiagonal_span_range_of_orthonormal`: the diagonal of the span of an
+  orthonormal family `(vⱼ)` is `Σⱼ |vⱼ i|²`.
 * `Submodule.finrank_span_image_single`: as a consequence, a coordinate subspace has dimension
   the number of its coordinates.
 * `Submodule.projectorDiagonal_map_piLpCongrRight`: the diagonal is invariant under the diagonal
@@ -167,6 +169,22 @@ theorem projectorDiagonal_span_single (s : Set ι) :
       PiLp.single_apply, ite_eq_right_iff]
     rintro rfl
     exact absurd hj hi
+
+/-- The diagonal of the projector onto the span of a finite orthonormal family `(vⱼ)` is the sum of
+the squared moduli of the coordinates, `Σⱼ |vⱼ i|²`, since `P_U = Σⱼ vⱼ vⱼ*`. -/
+theorem projectorDiagonal_span_range_of_orthonormal {κ : Type*} [Fintype κ]
+    {v : κ → EuclideanSpace 𝕜 ι} (hv : Orthonormal 𝕜 v) (i : ι) :
+    (span 𝕜 (Set.range v)).projectorDiagonal i = ∑ j, ‖v j i‖ ^ 2 := by
+  let b₀ := Basis.span hv.linearIndependent
+  have hb₀ : Orthonormal 𝕜 b₀ := by
+    convert orthonormal_span hv
+    simp [b₀, Basis.span_apply]
+  let b := b₀.toOrthonormalBasis hb₀
+  have hb (j : κ) : (b j : EuclideanSpace 𝕜 ι) = v j := by
+    simp [b, b₀, Basis.span_apply]
+  apply RCLike.ofReal_injective (K := 𝕜)
+  rw [ofReal_projectorDiagonal, b.starProjection_eq_sum_rankOne]
+  simp [hb, EuclideanSpace.inner_single_right, RCLike.conj_mul]
 
 /-- The projector diagonal is invariant under the diagonal unitary group: moving `U` by a linear
 isometry of `EuclideanSpace 𝕜 ι` acting on each coordinate separately, such as multiplication of
