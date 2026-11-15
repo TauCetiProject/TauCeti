@@ -130,23 +130,20 @@ theorem cdf_map_orderStatistic_pi_eq_sum (k : Fin n) (t : ℝ) :
   · intros
     simp
 
-end General
-
 /-- For an independent family with possibly different laws, the probability that the order
 statistic at position `k` is at most `t` is the corresponding Poisson-binomial tail.
 Positions are counted from zero, and ties are included. -/
 theorem measureReal_setOf_orderStatistic_le_indep
-    {n : ℕ} {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    {μ : Fin n → Measure ℝ} {X : Fin n → Ω → ℝ}
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Fin n → Ω → ℝ}
     (hindep : iIndepFun X P) (hX : ∀ i, HasLaw (X i) (μ i) P) (k : Fin n) (t : ℝ) :
     P.real {ω | orderStatistic k (fun i ↦ X i ω) ≤ t} =
       (poissonBinomialMeasure fun i ↦ ⟨cdf (μ i) t, cdf_nonneg _ _, cdf_le_one _ _⟩).real
         (Ioi (k : ℕ)) := by
-  have := hindep.isProbabilityMeasure
-  have _ (i : Fin n) : IsProbabilityMeasure (μ i) := (hX i).isProbabilityMeasure_iff.1 this
   rw [← cdf_map_orderStatistic_pi_eq_poissonBinomial, cdf_eq_real,
     map_measureReal_apply (measurable_orderStatistic k) measurableSet_Iic]
   exact (hindep.hasLaw_pi hX).measureReal_eq (measurable_orderStatistic k measurableSet_Iic)
+
+end General
 
 section Endpoints
 

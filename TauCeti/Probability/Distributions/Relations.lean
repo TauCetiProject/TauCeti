@@ -132,11 +132,11 @@ theorem measureReal_setOf_lt_min_indep
 
 /-- The minimum of a finite independent family is at most `x` with probability one minus the
 product of the marginal upper-tail probabilities. -/
-theorem measureReal_setOf_min_le_indep
+theorem measureReal_setOf_min_le_indep [∀ i, IsProbabilityMeasure (μs i)]
     (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : ℝ) :
     P.real {ω | (Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) ≤ x} =
       1 - ∏ i, (1 - cdf (μs i) x) := by
-  have _ : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
   have hcompl : {ω | (Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) ≤ x} =
       {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω}ᶜ := by
     ext ω
@@ -188,55 +188,58 @@ theorem measureReal_setOf_lt_min_iid (hindep : iIndepFun X P)
 
 /-- The minimum of `d` independent identically distributed variables has cumulative distribution
 function `1 - (1 - cdf μ x) ^ d`. -/
-theorem measureReal_setOf_min_le_iid (hindep : iIndepFun X P)
+theorem measureReal_setOf_min_le_iid [IsProbabilityMeasure μ] (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) μ P) (x : ℝ) :
     P.real {ω | (Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) ≤ x}
       = 1 - (1 - cdf μ x) ^ Fintype.card ι := by
+  let _ : ∀ _ : ι, IsProbabilityMeasure μ := fun _ => inferInstance
   simpa [Finset.card_univ] using
     measureReal_setOf_min_le_indep (μs := fun _ : ι => μ) hindep hlaw x
 
 /-- The cdf of the maximum of a finite independent family is the product of the marginal cdfs. -/
-theorem cdf_max_indep (hindep : iIndepFun X P)
+theorem cdf_max_indep [∀ i, IsProbabilityMeasure (μs i)] (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : ℝ) :
     cdf (P.map fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) x =
       ∏ i, cdf (μs i) x := by
   have hmax : AEMeasurable (fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) P := by
     simp_rw [Finset.sup'_univ_eq_ciSup]
     exact AEMeasurable.iSup fun i => (hlaw i).aemeasurable
-  have _ : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
   rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hmax measurableSet_Iic,
     ← measureReal_setOf_max_le_indep hindep hlaw x]
   rfl
 
 /-- The cdf of the minimum of a finite independent family is one minus the product of the
 marginal survival probabilities. -/
-theorem cdf_min_indep (hindep : iIndepFun X P)
+theorem cdf_min_indep [∀ i, IsProbabilityMeasure (μs i)] (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : ℝ) :
     cdf (P.map fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) x =
       1 - ∏ i, (1 - cdf (μs i) x) := by
   have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P := by
     simp_rw [Finset.inf'_univ_eq_ciInf]
     exact AEMeasurable.iInf fun i => (hlaw i).aemeasurable
-  have _ : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
   rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hmin measurableSet_Iic,
     ← measureReal_setOf_min_le_indep hindep hlaw x]
   rfl
 
 /-- The law of the maximum of `d` independent identically distributed variables, in cumulative
 distribution function form. -/
-theorem cdf_max_iid (hindep : iIndepFun X P)
+theorem cdf_max_iid [IsProbabilityMeasure μ] (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) μ P) (x : ℝ) :
     cdf (P.map fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) x
       = cdf μ x ^ Fintype.card ι := by
+  let _ : ∀ _ : ι, IsProbabilityMeasure μ := fun _ => inferInstance
   simpa [Finset.card_univ] using
     cdf_max_indep (μs := fun _ : ι => μ) hindep hlaw x
 
 /-- The law of the minimum of `d` independent identically distributed variables, in cumulative
 distribution function form. -/
-theorem cdf_min_iid (hindep : iIndepFun X P)
+theorem cdf_min_iid [IsProbabilityMeasure μ] (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) μ P) (x : ℝ) :
     cdf (P.map fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) x
       = 1 - (1 - cdf μ x) ^ Fintype.card ι := by
+  let _ : ∀ _ : ι, IsProbabilityMeasure μ := fun _ => inferInstance
   simpa [Finset.card_univ] using
     cdf_min_indep (μs := fun _ : ι => μ) hindep hlaw x
 

@@ -105,12 +105,11 @@ theorem cdf_map_orderStatistic_pi [IsProbabilityMeasure μ] (k : Fin n) (t : ℝ
 statistic of an independent family of `n` real random variables with common law `μ` is at most
 `t` with probability `∑ j ∈ Finset.Icc (k + 1) n, n.choose j * F(t) ^ j * (1 - F(t)) ^ (n - j)`,
 where `F = cdf μ`. -/
-theorem measureReal_setOf_orderStatistic_le_iid
+theorem measureReal_setOf_orderStatistic_le_iid [IsProbabilityMeasure μ]
     (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) μ P) (k : Fin n) (t : ℝ) :
     P.real {ω | orderStatistic k (fun i => X i ω) ≤ t} =
       ∑ j ∈ Finset.Icc ((k : ℕ) + 1) n,
         (n.choose j : ℝ) * cdf μ t ^ j * (1 - cdf μ t) ^ (n - j) := by
-  have : IsProbabilityMeasure μ := (hlaw k).isProbabilityMeasure_iff.1 hindep.isProbabilityMeasure
   have hpi := hindep.hasLaw_pi hlaw
   rw [← cdf_map_orderStatistic_pi, Measure.cdf_map _ _ (measurable_orderStatistic k).aemeasurable]
   exact hpi.measureReal_eq (p := fun x => orderStatistic k x ≤ t)
@@ -196,11 +195,10 @@ theorem map_orderStatistic_pi_eq_map_betaMeasure_quantile [IsProbabilityMeasure 
 /-- The random-variable form of
 `TauCeti.Probability.map_orderStatistic_pi_eq_map_betaMeasure_quantile`: the `k`-th order
 statistic of an iid sample from `μ` has the beta-quantile pushforward law. -/
-theorem hasLaw_orderStatistic_iid_map_betaMeasure_quantile
+theorem hasLaw_orderStatistic_iid_map_betaMeasure_quantile [IsProbabilityMeasure μ]
     (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) μ P) (k : Fin n) :
     HasLaw (fun ω => orderStatistic k fun i => X i ω)
       ((betaMeasure ((k : ℝ) + 1) ((n : ℝ) - k)).map μ.quantile) P := by
-  have : IsProbabilityMeasure μ := (hlaw k).isProbabilityMeasure_iff.1 hindep.isProbabilityMeasure
   rw [← map_orderStatistic_pi_eq_map_betaMeasure_quantile]
   exact (hasLaw_map (measurable_orderStatistic k).aemeasurable).comp (hindep.hasLaw_pi hlaw)
 

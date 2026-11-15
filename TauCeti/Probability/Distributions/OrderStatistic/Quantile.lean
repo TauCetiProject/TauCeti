@@ -58,7 +58,6 @@ theorem quantile_map_orderStatistic_pi (k : Fin n) (hu : u ∈ Ioo 0 1) :
   rw [cdf_map_orderStatistic_pi_eq_regularizedIncompleteBeta,
     inverseRegularizedIncompleteBeta_le_iff ha hb hu.1 hu.2]
 
-omit [IsProbabilityMeasure μ] in
 /-- The quantile formula for the `k`-th order statistic of independent real random
 variables with common law `μ`, with no atomlessness or continuity hypothesis. -/
 theorem quantile_of_hasLaw_orderStatistic_iid {Ω : Type*} [MeasurableSpace Ω]
@@ -66,7 +65,6 @@ theorem quantile_of_hasLaw_orderStatistic_iid {Ω : Type*} [MeasurableSpace Ω]
     (hlaw : ∀ i, HasLaw (X i) μ P) (k : Fin n) (hu : u ∈ Ioo 0 1) :
     (P.map (fun ω => orderStatistic k fun i => X i ω)).quantile u =
       μ.quantile (inverseRegularizedIncompleteBeta ((k : ℝ) + 1) ((n : ℝ) - k) u) := by
-  have : IsProbabilityMeasure μ := (hlaw k).isProbabilityMeasure_iff.1 hindep.isProbabilityMeasure
   have hstat := (hasLaw_map (measurable_orderStatistic k).aemeasurable).comp
     (hindep.hasLaw_pi hlaw)
   simp only [Function.comp_def] at hstat
