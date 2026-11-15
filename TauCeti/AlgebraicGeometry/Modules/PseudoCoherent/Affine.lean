@@ -177,7 +177,6 @@ theorem HasFiniteFreeResolution.isPseudoCoherentOver_moduleSpecΓ {F : (Spec R).
 
 /-- For an `R`-module `M`, the associated sheaf `M~` on `Spec R` has a finite free resolution if and
 only if `M` is pseudo-coherent over `R` (Stacks, Lemma 36.10.1, Tag 08E5). -/
-@[simp]
 theorem hasFiniteFreeResolution_tilde_iff (M : ModuleCat.{u} R) :
     (tilde M).HasFiniteFreeResolution ↔ TauCeti.Huber.IsPseudoCoherentOver R M ⊤ :=
   ⟨fun h ↦ h.isPseudoCoherentOver_moduleSpecΓ.of_equiv
