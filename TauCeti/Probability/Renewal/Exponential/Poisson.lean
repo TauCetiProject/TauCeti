@@ -60,7 +60,7 @@ theorem isPoissonRandomMeasure_renewalArrivalMeasure_of_expMeasure
   apply (isPoissonRandomMeasure_smul_nnvolume_iff_count_increments
     (measurable_renewalArrivalMeasure hT) hrenew).2
   refine ⟨?_, hasIndepIncrements_renewalCountNat_of_expMeasure hT hindep hlaw, ?_⟩
-  · have h := hasLaw_renewalCountNat_poissonMeasure hT hindep hlaw 0
+  · have h := hasLaw_renewalCountNat_poissonMeasure hindep hlaw 0
     simp only [mul_zero, poissonMeasure_zero] at h
     exact h.ae_eq_of_dirac
   · intro s t hst
