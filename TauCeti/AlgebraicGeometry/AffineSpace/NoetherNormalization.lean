@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AffineSpace.Linear
 public import TauCeti.RingTheory.NoetherNormalization
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 
 /-!
 # Geometric linear Noether normalization
@@ -26,11 +26,12 @@ Noether normalization:
 * When `x` generates `A` as a `k`-algebra, `homOfAlgebra k x` is moreover a closed immersion
   `Spec (.of A) ⟶ 𝔸(n; Spec (.of k))`
   (`AlgebraicGeometry.AffineSpace.exists_linear_normalization`).
-* For any nonempty closed subscheme `ι : Z ⟶ 𝔸(n; Spec (.of k))` over an infinite field `k` with
-  `n` finite, there exist `d ≤ Fintype.card n` and `C : Matrix (ULift (Fin d)) n k` whose induced
-  linear projection restricts on `Z` to a finite surjective morphism onto
-  `𝔸(ULift (Fin d); Spec (.of k))` with finite fibers and `topologicalKrullDim Z = d`
-  (`AlgebraicGeometry.AffineSpace.exists_linear_normalization_of_isClosedImmersion`).
+* For any nonempty scheme `Z` equipped with a finite morphism `ι : Z ⟶ 𝔸(n; Spec (.of k))` over an
+  infinite field `k` with `n` finite, there exist `d ≤ Fintype.card n` and
+  `C : Matrix (ULift (Fin d)) n k` whose induced linear projection composes with `ι` to a finite
+  surjective morphism onto `𝔸(ULift (Fin d); Spec (.of k))` with finite fibers and
+  `topologicalKrullDim Z = d`
+  (`AlgebraicGeometry.AffineSpace.exists_linear_normalization_of_isFinite`).
 
 ## Main results
 
@@ -39,13 +40,13 @@ Noether normalization:
   module-finite.
 * `AlgebraicGeometry.AffineSpace.exists_linear_normalization`: geometric linear Noether
   normalization for `Spec (.of A)` given algebra generators `x : n → A` over an infinite field `k`.
-* `AlgebraicGeometry.AffineSpace.exists_linear_normalization_of_isClosedImmersion`: geometric linear
-  Noether normalization for an arbitrary nonempty closed subscheme `ι : Z ⟶ 𝔸(n; Spec (.of k))`.
+* `AlgebraicGeometry.AffineSpace.exists_linear_normalization_of_isFinite`: geometric linear Noether
+  normalization for an arbitrary nonempty scheme `Z` finite over `𝔸(n; Spec (.of k))` (in
+  particular, any nonempty closed subscheme).
 
 ## References
 
 * J. S. Milne, *Algebraic Geometry*, Theorem 2.45 (pp. 55–56).
-* [Stacks Project, Tag 00OW](https://stacks.math.columbia.edu/tag/00OW)
 * [Stacks Project, Tag 00OY](https://stacks.math.columbia.edu/tag/00OY)
 -/
 
@@ -111,49 +112,51 @@ theorem exists_linear_normalization {k A : Type u} [Field k] [Infinite k] [CommR
   exact ⟨isClosedImmersion_homOfAlgebra_iff.mpr hx,
     exists_linear_normalization_of_finite x (AlgHom.Finite.of_surjective _ hsurj)⟩
 
-/-- **Geometric linear Noether normalization for a closed subscheme of affine space.** Let `Z` be a
-nonempty scheme equipped with a closed immersion `ι : Z ⟶ 𝔸(n; Spec (.of k))` over an infinite
-field `k`, with `n` finite. Then there exist `d ≤ Fintype.card n` and a matrix
-`C : Matrix (ULift.{u} (Fin d)) n k` such that `ι` composed with the linear projection `linearMap`
-defined by `C` is finite, surjective, and has finite fibers onto
+/-- **Geometric linear Noether normalization for a scheme finite over affine space.** Let `Z` be a
+nonempty scheme equipped with a finite morphism `ι : Z ⟶ 𝔸(n; Spec (.of k))` over an infinite field
+`k` (for instance, a closed immersion), with `n` finite. Then there exist `d ≤ Fintype.card n` and a
+matrix `C : Matrix (ULift.{u} (Fin d)) n k` such that `ι` composed with the linear projection
+`linearMap` defined by `C` is finite, surjective, and has finite fibers onto
 `𝔸(ULift.{u} (Fin d); Spec (.of k))`, and `topologicalKrullDim Z = d`. -/
-@[stacks 00OW]
-theorem exists_linear_normalization_of_isClosedImmersion {k : Type u} [Field k] [Infinite k]
+theorem exists_linear_normalization_of_isFinite {k : Type u} [Field k] [Infinite k]
     {n : Type u} [Fintype n] {Z : Scheme.{u}} [Nonempty Z] (ι : Z ⟶ 𝔸(n; Spec (.of k)))
-    [IsClosedImmersion ι] :
+    [IsFinite ι] :
     ∃ (d : ℕ) (_ : d ≤ Fintype.card n) (C : Matrix (ULift.{u} (Fin d)) n k),
       let π := ι ≫ linearMap (Spec (.of k)) (C.map (Scheme.ΓSpecIso (.of k)).inv)
       IsFinite π ∧ Surjective π ∧ (∀ q, (π ⁻¹' {q}).Finite) ∧
         topologicalKrullDim Z = (d : WithBot ℕ∞) := by
-  obtain ⟨I, e, he⟩ :=
-    (IsClosedImmersion.Spec_iff (f := ι ≫ (SpecIso n (.of k)).hom)).mp inferInstance
-  set A := MvPolynomial n k ⧸ I
-  have hSpec_nonempty : Nonempty (Spec (.of A)) := Nonempty.map e.hom ‹Nonempty Z›
-  have : Nontrivial A := by
-    by_contra hsub
-    rw [not_nontrivial_iff_subsingleton] at hsub
-    exact isEmpty_iff.mp (inferInstance : IsEmpty (PrimeSpectrum A)) hSpec_nonempty.some
-  let x : n → A := fun j ↦ Ideal.Quotient.mk I (MvPolynomial.X j)
-  have haeval : MvPolynomial.aeval (R := k) x = Ideal.Quotient.mkₐ k I :=
-    MvPolynomial.algHom_ext fun j ↦ MvPolynomial.aeval_X x j
-  have hι : ι = e.hom ≫ homOfAlgebra k x := by
-    rw [← Iso.eq_comp_inv] at he
-    rw [he, Category.assoc, homOfAlgebra_def, haeval]
-    rfl
-  obtain ⟨-, d, hd, C, hfin, hsurj, -, hdim⟩ :=
-    exists_linear_normalization x I.adjoin_range_quotient_mk_X_eq_top
+  have : IsAffine Z := isAffine_of_isAffineHom ι
+  have : Nontrivial Γ(Z, ⊤) := Z.component_nontrivial ⊤
+  obtain ⟨φ, hφ⟩ := Spec.map_surjective (Z.isoSpec.inv ≫ ι ≫ (SpecIso n (.of k)).hom)
+  let : Algebra k Γ(Z, ⊤) := (φ.hom.comp MvPolynomial.C).toAlgebra
+  let x : n → Γ(Z, ⊤) := fun j ↦ φ.hom (MvPolynomial.X j)
+  have haeval : (MvPolynomial.aeval (R := k) x).toRingHom = φ.hom := by
+    refine MvPolynomial.ringHom_ext' ?_ fun j ↦ ?_
+    · ext c
+      simp [RingHom.algebraMap_toAlgebra]
+    · simp [x]
+  have hφ_eq : CommRingCat.ofHom (MvPolynomial.aeval (R := k) x).toRingHom = φ :=
+    CommRingCat.hom_ext haeval
+  have hι : ι = Z.isoSpec.hom ≫ homOfAlgebra k x := by
+    rw [homOfAlgebra_def, hφ_eq, hφ]
+    simp
+  have hx_fin : (MvPolynomial.aeval (R := k) x).Finite := by
+    have hhom : homOfAlgebra k x = Z.isoSpec.inv ≫ ι := by simp [hι]
+    rw [← isFinite_homOfAlgebra_iff, hhom]
+    infer_instance
+  obtain ⟨d, hd, C, hfin, hsurj, -, hdim⟩ := exists_linear_normalization_of_finite x hx_fin
   refine ⟨d, hd, C, ?_⟩
   dsimp only
   have hπ : ι ≫ linearMap (Spec (.of k)) (C.map (Scheme.ΓSpecIso (.of k)).inv) =
-      e.hom ≫ (homOfAlgebra k x ≫
+      Z.isoSpec.hom ≫ (homOfAlgebra k x ≫
         linearMap (Spec (.of k)) (C.map (Scheme.ΓSpecIso (.of k)).inv)) := by
     rw [hι, Category.assoc]
   rw [hπ]
   refine ⟨inferInstance, inferInstance,
-    (e.hom ≫ (homOfAlgebra k x ≫
+    (Z.isoSpec.hom ≫ (homOfAlgebra k x ≫
       linearMap (Spec (.of k)) (C.map (Scheme.ΓSpecIso (.of k)).inv))).finite_preimage_singleton,
     ?_⟩
-  exact e.hom.homeomorph.isHomeomorph.topologicalKrullDim_eq.trans
-    ((PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim A).trans hdim)
+  exact Z.isoSpec.hom.homeomorph.isHomeomorph.topologicalKrullDim_eq.trans
+    ((TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec Γ(Z, ⊤)).trans hdim)
 
 end AlgebraicGeometry.AffineSpace

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AffineSpace.NoetherNormalization
+import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 import TauCeti.Examples.RingTheory.NoetherNormalization
 import TauCeti.RingTheory.MvPolynomial.Ideal
 
@@ -25,7 +26,7 @@ import TauCeti.RingTheory.MvPolynomial.Ideal
   surjective morphism onto `𝔸¹_k`.
 * **Closed immersion of the origin:** for the closed point
   `homOfAlgebra k (0 : n → k) : Spec (.of k) ⟶ 𝔸(n; Spec (.of k))` over an infinite field `k`,
-  `exists_linear_normalization_of_isClosedImmersion` produces a normalizing projection onto a
+  `exists_linear_normalization_of_isFinite` produces a normalizing projection onto a
   zero-dimensional affine space (`d = 0`).
 -/
 
@@ -113,7 +114,7 @@ example (k : Type u) [Field k] :
   exact ⟨isClosedImmersion_homOfAlgebra_iff.mpr I.adjoin_range_quotient_mk_X_eq_top,
     isFinite_homOfAlgebra_iff.mpr hfin, surjective_homOfAlgebra hind hfin.to_isIntegral⟩
 
--- Applying `exists_linear_normalization_of_isClosedImmersion` to the origin
+-- Applying `exists_linear_normalization_of_isFinite` to the origin
 -- `homOfAlgebra k (0 : n → k) : Spec (.of k) ⟶ 𝔸(n; Spec (.of k))` yields `d = 0`.
 example (k : Type u) [Field k] [Infinite k] (n : Type u) [Fintype n] :
     let ι : Spec (.of k) ⟶ 𝔸(n; Spec (.of k)) := homOfAlgebra k (0 : n → k)
@@ -124,9 +125,9 @@ example (k : Type u) [Field k] [Infinite k] (n : Type u) [Fintype n] :
   have hadj : Algebra.adjoin k (Set.range (0 : n → k)) = ⊤ :=
     eq_top_iff.mpr fun a _ ↦ Subalgebra.algebraMap_mem _ a
   have : IsClosedImmersion ι := isClosedImmersion_homOfAlgebra_iff.mpr hadj
-  obtain ⟨d, hd, C, hfin, hsurj, hfib, hdim⟩ := exists_linear_normalization_of_isClosedImmersion ι
+  obtain ⟨d, hd, C, hfin, hsurj, hfib, hdim⟩ := exists_linear_normalization_of_isFinite ι
   have hdim0 : topologicalKrullDim (Spec (.of k)) = (0 : WithBot ℕ∞) :=
-    (PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim k).trans (by simp)
+    (TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec (.of k)).trans (by simp)
   exact ⟨d, hd, C, hfin, hsurj, hfib, by exact_mod_cast hdim.symm.trans hdim0⟩
 
 end AlgebraicGeometry.AffineSpace.NoetherNormalizationExamples

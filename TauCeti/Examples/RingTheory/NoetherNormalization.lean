@@ -9,10 +9,6 @@ public import Mathlib.Algebra.Field.ZMod
 public import TauCeti.RingTheory.NoetherNormalization
 import Mathlib.Algebra.DualNumber
 import Mathlib.Algebra.MvPolynomial.Expand
-import Mathlib.Algebra.Polynomial.Degree.Lemmas
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.Tactic.FinCases
-import TauCeti.RingTheory.AlgebraicIndependent.Basic
 import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 import TauCeti.RingTheory.MvPolynomial.Ideal
 
@@ -31,17 +27,16 @@ import TauCeti.RingTheory.MvPolynomial.Ideal
   showing that `[Module.Flat R S]` in `AlgebraicIndependent.one_tmul` cannot be dropped.
 * **Failure of linearity over finite fields:** over `𝔽₂ = ZMod 2`, the nontrivial coordinate ring
   `A = 𝔽₂[X₀, X₁] ⧸ (X₀ X₁ (X₀ + X₁))` of the union of the three `𝔽₂`-rational lines through the
-  origin admits *no* `𝔽₂`-linear Noether normalization `(d, C)` in any dimension `d : ℕ`: every
-  `𝔽₂`-linear form vanishes identically along one of the three lines `X₀ = 0`, `X₁ = 0`, or
-  `X₀ + X₁ = 0` (`d ≤ 1`), while row linear independence rules out `d ≥ 2`. By contrast, the
-  quadratic polynomial `z = x₀² + x₀ x₁ + x₁²` is algebraically independent over `𝔽₂` and makes `A`
-  module-finite over `𝔽₂[Z]` (since `xᵢ³ - z xᵢ = 0` for `i = 0, 1`).
+  origin has Krull dimension `1`, witnessed by the quadratic polynomial `z = x₀² + x₀ x₁ + x₁²`
+  which is algebraically independent over `𝔽₂` and makes `A` module-finite over `𝔽₂[Z]` (since
+  `xᵢ³ - z xᵢ = 0` for `i = 0, 1`). However, `A` admits *no* `𝔽₂`-linear Noether normalization
+  `(d, C)` in any dimension `d : ℕ`, because every `𝔽₂`-linear form vanishes identically along one
+  of the three lines `X₀ = 0`, `X₁ = 0`, or `X₀ + X₁ = 0`.
 
 ## References
 
 * J. S. Milne, *Algebraic Geometry*, Remark 2.47.
 * J. S. Milne, *A Primer of Commutative Algebra*, Remark 8.4.
-* [Stacks Project, Tag 00OW](https://stacks.math.columbia.edu/tag/00OW)
 -/
 
 public section
@@ -169,31 +164,15 @@ example :
     AlgebraicIndependent ℤ y ∧
       ¬ AlgebraicIndependent (ZMod 2) (fun i ↦ ((1 : ZMod 2) ⊗ₜ[ℤ] y i : ZMod 2 ⊗[ℤ] ℤ[X])) := by
   dsimp only
-  set y : Fin 1 → ℤ[X] := ![2 * Polynomial.X]
-  have haeval : aeval (R := ℤ) y =
-      (Polynomial.aeval (2 * Polynomial.X : ℤ[X])).comp (uniqueAlgEquiv ℤ (Fin 1)).toAlgHom := by
-    apply MvPolynomial.algHom_ext
-    intro i
-    fin_cases i
-    simp [y, uniqueAlgEquiv]
-  refine ⟨?_, fun hind ↦ ?_⟩
-  · rw [algebraicIndependent_iff_injective_aeval, haeval, AlgHom.coe_comp]
-    refine Function.Injective.comp (fun p q hpq ↦ sub_eq_zero.mp ?_)
-      (uniqueAlgEquiv ℤ (Fin 1)).injective
-    have hcomp : (p - q).comp (2 * Polynomial.X : ℤ[X]) = 0 := by
-      rw [Polynomial.comp_eq_aeval, map_sub]
-      exact sub_eq_zero.mpr hpq
-    refine (Polynomial.comp_eq_zero_iff.mp hcomp).resolve_right ?_
-    rintro ⟨_, hdeg⟩
-    have hc := congrArg (fun f : ℤ[X] ↦ f.coeff 1) hdeg
-    simp at hc
-  · have hzero : aeval (R := ZMod 2)
-        (fun i ↦ ((1 : ZMod 2) ⊗ₜ[ℤ] y i : ZMod 2 ⊗[ℤ] ℤ[X])) (X 0) = 0 := by
-      have htwo : (2 * Polynomial.X : ℤ[X]) = (2 : ℤ) • Polynomial.X := by simp [two_mul, two_smul]
-      have hchar : ((2 : ℤ) • (1 : ZMod 2)) = 0 := by decide
-      simp only [aeval_X, y, Matrix.cons_val_zero, htwo, ← TensorProduct.smul_tmul, hchar,
-        TensorProduct.zero_tmul]
-    exact X_ne_zero (R := ZMod 2) (0 : Fin 1) (hind.eq_zero_of_aeval_eq_zero _ hzero)
+  have hc : (2 * Polynomial.X : ℤ[X]) = Polynomial.C 2 * Polynomial.X := by simp
+  refine ⟨algebraicIndependent_iff_transcendental.mpr <| hc ▸
+    (Polynomial.C 2 * Polynomial.X : ℤ[X]).transcendental
+      (by rw [Polynomial.natDegree_C_mul_X 2 two_ne_zero]; exact one_ne_zero)
+      (by rw [Polynomial.leadingCoeff_C_mul_X, mem_nonZeroDivisors_iff_ne_zero]; exact two_ne_zero),
+    fun hind ↦ hind.ne_zero 0 ?_⟩
+  have htwo : (2 * Polynomial.X : ℤ[X]) = (2 : ℤ) • Polynomial.X := by simp [two_mul, two_smul]
+  have hchar : ((2 : ℤ) • (1 : ZMod 2)) = 0 := by decide
+  simp only [Matrix.cons_val_zero, htwo, ← TensorProduct.smul_tmul, hchar, TensorProduct.zero_tmul]
 
 section ThreeLines
 
@@ -266,100 +245,15 @@ private lemma not_isIntegral_threeLines_linear (c : Fin 2 → ZMod 2) :
         simp only [map_add, map_mul]; ring
     _ = 0 := by rw [hu_orth, map_zero, zero_mul]
 
-private lemma not_algebraicIndependent_threeLines_dim_two
-    (C : Matrix (Fin 2) (Fin 2) (ZMod 2)) :
-    ¬ AlgebraicIndependent (ZMod 2) (fun i ↦ ∑ j, C i j • threeLinesGen j) := by
-  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  intro hind
-  set y : Fin 2 → MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal :=
-    fun i ↦ ∑ j, C i j • threeLinesGen j
-  have hspan : Submodule.span (ZMod 2) (Set.range C.row) = ⊤ :=
-    hind.linearIndependent_row.span_eq_top_of_card_eq_finrank
-      (by simp [Module.finrank_fintype_fun_eq_card])
-  have hlin : ∀ b : Fin 2 → ZMod 2, ∃ L : MvPolynomial (Fin 2) (ZMod 2),
-      aeval y L = ∑ j, b j • threeLinesGen j := fun b ↦ by
-    obtain ⟨u, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun (ZMod 2)).mp
-      (hspan.symm ▸ trivial : b ∈ Submodule.span (ZMod 2) (Set.range C.row))
-    refine ⟨∑ i, MvPolynomial.C (u i) * X i, ?_⟩
-    simp only [map_sum, map_mul, aeval_C, aeval_X, ← Algebra.smul_def, y, Finset.sum_apply,
-      Pi.smul_apply, Matrix.row_apply, Finset.smul_sum, Finset.sum_smul, smul_smul]
-    exact Finset.sum_comm
-  obtain ⟨L₀, hL₀⟩ := hlin ![1, 0]
-  obtain ⟨L₁, hL₁⟩ := hlin ![0, 1]
-  rw [Fin.sum_univ_two] at hL₀ hL₁
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, one_smul,
-    zero_smul, add_zero, zero_add] at hL₀ hL₁
-  let φ₁ := threeLinesLineHom ![0, 1] (by simp)
-  let φ₂ := threeLinesLineHom ![1, 0] (by simp)
-  have hL₀_ne : L₀ ≠ 0 := fun h ↦ Polynomial.X_ne_zero (R := ZMod 2) <| by
-    simpa [h, φ₂, threeLinesLineHom_gen] using (congrArg φ₂ hL₀).symm
-  have hL₁_ne : L₁ ≠ 0 := fun h ↦ Polynomial.X_ne_zero (R := ZMod 2) <| by
-    simpa [h, φ₁, threeLinesLineHom_gen] using (congrArg φ₁ hL₁).symm
-  have hsum_ne : L₀ + L₁ ≠ 0 := fun h ↦ Polynomial.X_ne_zero (R := ZMod 2) <| by
-    have hmap : φ₁ (aeval y (L₀ + L₁)) = Polynomial.X := by
-      simp [map_add, hL₀, hL₁, φ₁, threeLinesLineHom_gen]
-    simpa [h] using hmap.symm
-  have hprod_ne : L₀ * L₁ * (L₀ + L₁) ≠ 0 :=
-    mul_ne_zero (mul_ne_zero hL₀_ne hL₁_ne) hsum_ne
-  have hrel : threeLinesGen 0 * threeLinesGen 1 * (threeLinesGen 0 + threeLinesGen 1) = 0 := by
-    simp only [threeLinesGen, ← map_add, ← map_mul]
-    exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span rfl)
-  have hzero : aeval y (L₀ * L₁ * (L₀ + L₁)) = 0 := by
-    rw [map_mul, map_mul, map_add, hL₀, hL₁]
-    exact hrel
-  exact hprod_ne (hind.eq_zero_of_aeval_eq_zero _ hzero)
-
--- Over `𝔽₂ = ZMod 2`, NO linear combination `c 0 • x 0 + c 1 • x 1` of the coordinate generators
--- makes `𝔽₂[X₀, X₁] ⧸ (X₀ X₁ (X₀ + X₁))` integral (hence nor module-finite) over `𝔽₂[Y]`.
-example (c : Fin 2 → ZMod 2) :
-    ¬ (aeval (R := ZMod 2) (![c 0 • threeLinesGen 0 + c 1 • threeLinesGen 1] :
-      Fin 1 → _)).toRingHom.IsIntegral :=
-  not_isIntegral_threeLines_linear c
-
--- Sharpness of `[Infinite k]` in `TauCeti.exists_linear_normalization`: the coordinate ring
--- `𝔽₂[X₀, X₁] ⧸ (X₀ X₁ (X₀ + X₁))` is nontrivial and generated by `threeLinesGen`, yet admits NO
--- linear Noether normalization `(d, C)` in any dimension `d : ℕ`.
-example :
-    Nontrivial (MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal) ∧
-      Algebra.adjoin (ZMod 2) (Set.range threeLinesGen) = ⊤ ∧
-      ¬ ∃ (d : ℕ) (C : Matrix (Fin d) (Fin 2) (ZMod 2)),
-        let y : Fin d → MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal :=
-          fun i ↦ ∑ j, C i j • threeLinesGen j
-        AlgebraicIndependent (ZMod 2) y ∧ (aeval (R := ZMod 2) y).Finite := by
-  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  let φ₁ := threeLinesLineHom ![0, 1] (by simp)
-  have hnontriv : Nontrivial (MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal) :=
-    ⟨⟨0, threeLinesGen 1, fun h ↦ Polynomial.X_ne_zero (R := ZMod 2) <| by
-      simpa [φ₁, threeLinesLineHom_gen] using (congrArg φ₁ h).symm⟩⟩
-  refine ⟨hnontriv, threeLinesIdeal.adjoin_range_quotient_mk_X_eq_top, ?_⟩
-  rintro ⟨d, C, hind, hfin⟩
-  have hd_le : d ≤ 2 := by
-    simpa [Module.finrank_fintype_fun_eq_card] using
-      hind.linearIndependent_row.fintype_card_le_finrank
-  obtain rfl | rfl | rfl : d = 0 ∨ d = 1 ∨ d = 2 := by omega
-  · exact not_isIntegral_of_forall_threeLinesLineHom_eq_zero (u := ![1, 0]) (by simp)
-      (i₀ := 0) rfl (fun i ↦ Fin.elim0 i) hfin.to_isIntegral
-  · have hy : (fun i : Fin 1 ↦ ∑ j : Fin 2, C i j • threeLinesGen j) =
-        ![C 0 0 • threeLinesGen 0 + C 0 1 • threeLinesGen 1] :=
-      funext <| Fin.forall_fin_one.mpr (Fin.sum_univ_two _)
-    rw [hy] at hfin
-    exact not_isIntegral_threeLines_linear (C 0) hfin.to_isIntegral
-  · exact not_algebraicIndependent_threeLines_dim_two C hind
-
--- Over `𝔽₂ = ZMod 2`, the nonlinear quadratic element `z = x₀² + x₀ x₁ + x₁²` DOES normalize
--- `𝔽₂[X₀, X₁] ⧸ (X₀ X₁ (X₀ + X₁))` (`d = 1`).
-example :
+private lemma quadratic_normalization_threeLines :
     let y : Fin 1 → MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal :=
       ![threeLinesGen 0 ^ 2 + threeLinesGen 0 * threeLinesGen 1 + threeLinesGen 1 ^ 2]
-    Algebra.adjoin (ZMod 2) (Set.range threeLinesGen) = ⊤ ∧
-      AlgebraicIndependent (ZMod 2) y ∧ (aeval (R := ZMod 2) y).Finite ∧
-        ringKrullDim (MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal) = (1 : ℕ) := by
+    AlgebraicIndependent (ZMod 2) y ∧ (aeval (R := ZMod 2) y).Finite ∧
+      ringKrullDim (MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal) = (1 : ℕ) := by
   dsimp only
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
   set y : Fin 1 → MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal :=
     ![threeLinesGen 0 ^ 2 + threeLinesGen 0 * threeLinesGen 1 + threeLinesGen 1 ^ 2]
-  have hadj : Algebra.adjoin (ZMod 2) (Set.range threeLinesGen) = ⊤ :=
-    threeLinesIdeal.adjoin_range_quotient_mk_X_eq_top
   have haxis_ker : ∀ p ∈ threeLinesIdeal,
       (aeval (R := ZMod 2) (![X 0, 0] : Fin 2 → MvPolynomial (Fin 1) (ZMod 2))) p = 0 :=
     fun p hp ↦ RingHom.mem_ker.mp <| Ideal.span_le.mpr (by rintro _ rfl; simp) hp
@@ -389,15 +283,59 @@ example :
       exact Ideal.subset_span rfl
     simpa [y, threeLinesGen, map_sub, map_add, map_mul, map_pow] using hmk
   have hfin : (aeval (R := ZMod 2) y).Finite := by
-    refine (aeval (R := ZMod 2) y).finite_of_adjoin_eq_top (Set.finite_range threeLinesGen) hadj <|
-      Set.forall_mem_range.mpr fun j ↦ ?_
+    refine (aeval (R := ZMod 2) y).finite_of_adjoin_eq_top (Set.finite_range threeLinesGen)
+      threeLinesIdeal.adjoin_range_quotient_mk_X_eq_top <| Set.forall_mem_range.mpr fun j ↦ ?_
     refine ⟨Polynomial.X ^ 3 - Polynomial.C (X 0) * Polynomial.X,
       Polynomial.monic_X_pow_sub ((Polynomial.degree_C_mul_X_le _).trans_lt (by norm_num)), ?_⟩
     simpa using hcubic j
-  exact ⟨hadj, hind, hfin, by
+  exact ⟨hind, hfin, by
     simpa using ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial (k := ZMod 2)
       (aeval (R := ZMod 2) y).toRingHom
       (algebraicIndependent_iff_injective_aeval.mp hind) hfin.to_isIntegral⟩
+
+-- Over `𝔽₂ = ZMod 2`, NO linear combination `c 0 • x 0 + c 1 • x 1` of the coordinate generators
+-- makes `𝔽₂[X₀, X₁] ⧸ (X₀ X₁ (X₀ + X₁))` integral (hence nor module-finite) over `𝔽₂[Y]`.
+example (c : Fin 2 → ZMod 2) :
+    ¬ (aeval (R := ZMod 2) (![c 0 • threeLinesGen 0 + c 1 • threeLinesGen 1] :
+      Fin 1 → _)).toRingHom.IsIntegral :=
+  not_isIntegral_threeLines_linear c
+
+-- Over `𝔽₂ = ZMod 2`, the nonlinear quadratic element `z = x₀² + x₀ x₁ + x₁²` DOES normalize
+-- `𝔽₂[X₀, X₁] ⧸ (X₀ X₁ (X₀ + X₁))` (`d = 1`).
+example :
+    let y : Fin 1 → MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal :=
+      ![threeLinesGen 0 ^ 2 + threeLinesGen 0 * threeLinesGen 1 + threeLinesGen 1 ^ 2]
+    Algebra.adjoin (ZMod 2) (Set.range threeLinesGen) = ⊤ ∧
+      AlgebraicIndependent (ZMod 2) y ∧ (aeval (R := ZMod 2) y).Finite ∧
+        ringKrullDim (MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal) = (1 : ℕ) :=
+  ⟨threeLinesIdeal.adjoin_range_quotient_mk_X_eq_top, quadratic_normalization_threeLines⟩
+
+-- Sharpness of `[Infinite k]` in `TauCeti.exists_linear_normalization`: the coordinate ring
+-- `𝔽₂[X₀, X₁] ⧸ (X₀ X₁ (X₀ + X₁))` is nontrivial and generated by `threeLinesGen`, yet admits NO
+-- linear Noether normalization `(d, C)` in any dimension `d : ℕ`.
+example :
+    Nontrivial (MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal) ∧
+      Algebra.adjoin (ZMod 2) (Set.range threeLinesGen) = ⊤ ∧
+      ¬ ∃ (d : ℕ) (C : Matrix (Fin d) (Fin 2) (ZMod 2)),
+        let y : Fin d → MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal :=
+          fun i ↦ ∑ j, C i j • threeLinesGen j
+        AlgebraicIndependent (ZMod 2) y ∧ (aeval (R := ZMod 2) y).Finite := by
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  refine ⟨(threeLinesLineHom ![0, 1] (by simp)).toRingHom.domain_nontrivial,
+    threeLinesIdeal.adjoin_range_quotient_mk_X_eq_top, ?_⟩
+  rintro ⟨d, C, hind, hfin⟩
+  have hdim : ringKrullDim (MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal) =
+      (d : WithBot ℕ∞) := by
+    simpa using ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial (k := ZMod 2)
+      (aeval (R := ZMod 2) fun i ↦ ∑ j, C i j • threeLinesGen j).toRingHom
+      (algebraicIndependent_iff_injective_aeval.mp hind) hfin.to_isIntegral
+  obtain rfl : d = 1 := by
+    exact_mod_cast hdim.symm.trans quadratic_normalization_threeLines.2.2
+  have hy : (fun i : Fin 1 ↦ ∑ j : Fin 2, C i j • threeLinesGen j) =
+      ![C 0 0 • threeLinesGen 0 + C 0 1 • threeLinesGen 1] :=
+    funext <| Fin.forall_fin_one.mpr (Fin.sum_univ_two _)
+  rw [hy] at hfin
+  exact not_isIntegral_threeLines_linear (C 0) hfin.to_isIntegral
 
 end ThreeLines
 
