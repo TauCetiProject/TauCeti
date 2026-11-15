@@ -73,7 +73,6 @@ theorem integrable_integrand (f : C_c(G, A)) (v : H) :
 
 /-- The integrated form on compactly supported coefficient functions, defined by vector
 integration rather than operator-valued Bochner integration. -/
-@[expose]
 def integratedOperator : C_c(G, A) →ₗ[ℂ] (H →L[ℂ] H) :=
   P.coefficient.integratedOperator (fun g => P.group g) P.continuous_orbit
     P.isUnitary.exists_norm_le μ
@@ -119,34 +118,14 @@ to a left-invariant measure: `(π ⋊ U) (f ⋆ g) = (π ⋊ U) f * (π ⋊ U) g
 @[simp]
 theorem integratedOperator_convolution (f g : C_c(G, A)) :
     P.integratedOperator μ (α.convolution μ f g) =
-      P.integratedOperator μ f * P.integratedOperator μ g := by
-  ext v
-  -- The integrand on `G × G` obtained by expanding the twisted convolution.
-  set Ψ : G → G → H := fun s r => P.coefficient (f r * α r (g (r⁻¹ * s))) (P.group s v)
-  have hcont : Continuous (Function.uncurry Ψ) := by
-    rw [Function.uncurry_def]
-    exact ((map_continuous P.coefficient).comp (by fun_prop)).clm_apply
-      ((P.continuous_orbit v).comp continuous_fst)
-  have hsupp : HasCompactSupport (Function.uncurry Ψ) :=
-    hasCompactSupport_uncurry_of_inv_mul_mem f.hasCompactSupport g.hasCompactSupport
-      fun _ _ h => mem_tsupport_and_inv_mul_mem_tsupport h
-        (by intro hf; simp [Ψ, hf]) (by intro hg; simp [Ψ, hg])
-  calc P.integratedOperator μ (α.convolution μ f g) v
-      = ∫ s, ∫ r, Ψ s r ∂μ ∂μ := by
-        rw [integratedOperator_apply]
-        congr 1 with s
-        rw [convolution_apply,
-          ← P.coefficient.integral_apply_apply (α.integrable_integrand f g μ s)]
-    _ = ∫ r, ∫ s, Ψ s r ∂μ ∂μ := integral_integral_swap_of_hasCompactSupport hcont hsupp
-    _ = ∫ r, (P.coefficient (f r) * P.group r) (P.integratedOperator μ g v) ∂μ := by
-        congr 1 with r
-        -- Substitute `s ↦ r * s`, then use covariance to pull `π (f r) * U r` out of the integral.
-        rw [← integral_mul_left_eq_self (Ψ · r) r, integratedOperator_apply,
-          ← ContinuousLinearMap.integral_comp_comm _ (P.integrable_integrand μ g v)]
-        congr 1 with t
-        simp [Ψ, map_mul, P.covariance]
-    _ = (P.integratedOperator μ f * P.integratedOperator μ g) v := by
-        simp [integratedOperator_apply]
+      P.integratedOperator μ f * P.integratedOperator μ g :=
+  P.coefficient.integratedOperator_eq_mul P.continuous_orbit P.isUnitary.exists_norm_le μ
+    (F := fun r t => f r * α r (g t)) (by rw [Function.uncurry_def]; fun_prop)
+    (.intro (f.hasCompactSupport.prod g.hasCompactSupport) fun _ h => by
+      rcases not_and_or.mp h with h | h <;>
+        simp [Function.uncurry, image_eq_zero_of_notMem_tsupport h])
+    (α.convolution_apply μ f g)
+    fun r t => ContinuousLinearMap.ext fun v => by simp [map_mul, P.covariance]
 
 /-- The integrated form turns the twisted left translation into the group representation:
 `(π ⋊ U)(r • f) = U_r (π ⋊ U)(f)`. -/

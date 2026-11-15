@@ -7,8 +7,11 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.CStarAlgebra.Hom
+public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Integral.CompactlySupported
+import Mathlib.MeasureTheory.Group.Integral
+import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # Vector-valued integration along Hilbert-space representations
@@ -28,9 +31,14 @@ linear operator
 with `‖π.integratedOperator U hU hbdd μ f‖ ≤ C * ∫ x, ‖f x‖ ∂μ` whenever `‖U x‖ ≤ C` for all `x`.
 Integrating in `H` rather than `H →L[ℂ] H` requires only strong continuity of `U` and needs no
 group structure on `X`, no covariance or multiplicativity of `U`, and no separability, second
-countability, or σ-finiteness. Both untwisted (`CovariantRepresentation.integratedOperator`) and
-cocycle-twisted (`CentralCovariantPair.integratedOperator`) covariant integrated forms specialize
-this construction.
+countability, or σ-finiteness. On a topological group with a left-invariant measure finite on
+compacts, compact-support Fubini and left-translation invariance turn a convolution-type integral
+`h s = ∫ r, F r (r⁻¹ * s) ∂μ` satisfying `π (f r) * U r * (π (g t) * U t) = π (F r t) * U (r * t)`
+into the operator product of the integrated forms of `f` and `g`
+(`NonUnitalStarAlgHom.integratedOperator_eq_mul`), still without σ-finiteness. Both untwisted
+(`CovariantRepresentation.integratedOperator`) and cocycle-twisted
+(`CentralCovariantPair.integratedOperator`) covariant integrated forms specialize this
+construction.
 
 ## Main definitions and results
 
@@ -43,6 +51,8 @@ this construction.
   `NonUnitalStarAlgHom.integratedOperator_smul`, and
   `NonUnitalStarAlgHom.integratedOperator_apply_apply`: matrix-coefficient, left-multiplier, and
   right-covariance formulas.
+* `NonUnitalStarAlgHom.integratedOperator_eq_mul`: multiplicativity for convolution-type integrals
+  against a left-invariant measure.
 
 ## References
 
@@ -196,5 +206,63 @@ theorem integratedOperator_apply_apply (hU : ∀ v : H, Continuous fun x => U x 
   simp_rw [integratedOperator_apply, hcov, map_mul, mul_apply_eq_comp]
 
 end Integrated
+
+section Group
+
+variable {G A H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [MeasurableSpace G] [OpensMeasurableSpace G] [MeasurableMul G]
+  [NonUnitalCStarAlgebra A] [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+  {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)} {U : G → H →L[ℂ] H}
+
+/-- On a topological group with a left-invariant measure finite on compacts, if `h : C_c(G, A)` is
+given pointwise by `h s = ∫ r, F r (r⁻¹ * s) ∂μ` for a jointly continuous compactly supported
+kernel `F : G → G → A` satisfying `π (f r) * U r * (π (g t) * U t) = π (F r t) * U (r * t)`, then
+`π.integratedOperator U hU hbdd μ h` is the operator product of the integrated forms of `f` and `g`.
+Compact-support Fubini exchanges the integrals without assuming σ-finiteness. -/
+theorem integratedOperator_eq_mul (hU : ∀ v : H, Continuous fun g => U g v)
+    (hbdd : ∃ C, ∀ g, ‖U g‖ ≤ C) (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
+    [μ.IsMulLeftInvariant] {f g h : C_c(G, A)} {F : G → G → A}
+    (hF_cont : Continuous (Function.uncurry F))
+    (hF_supp : HasCompactSupport (Function.uncurry F))
+    (hh : ∀ s, h s = ∫ r, F r (r⁻¹ * s) ∂μ)
+    (hmul : ∀ r t, π (f r) * U r * (π (g t) * U t) = π (F r t) * U (r * t)) :
+    π.integratedOperator U hU hbdd μ h =
+      π.integratedOperator U hU hbdd μ f * π.integratedOperator U hU hbdd μ g := by
+  ext v
+  have hF_int (s : G) : Integrable (fun r => F r (r⁻¹ * s)) μ :=
+    (hF_cont.comp (continuous_id.prodMk
+      (continuous_inv.mul continuous_const))).integrable_of_hasCompactSupport
+      ((hF_supp.image continuous_fst).closure_of_subset fun r hr =>
+        ⟨(r, r⁻¹ * s), subset_tsupport _ hr, rfl⟩)
+  -- The integrand on `G × G` obtained by expanding `h s` inside the Hilbert-space integral.
+  set Ψ : G → G → H := fun s r => π (F r (r⁻¹ * s)) (U s v)
+  have hcont : Continuous (Function.uncurry Ψ) :=
+    ((map_continuous π).comp (hF_cont.comp
+      (continuous_snd.prodMk (continuous_snd.inv.mul continuous_fst)))).clm_apply
+      ((hU v).comp continuous_fst)
+  have hsupp : HasCompactSupport (Function.uncurry Ψ) :=
+    (hF_supp.image ((continuous_fst.mul continuous_snd).prodMk
+      continuous_fst)).closure_of_subset fun p hp =>
+        ⟨(p.2, p.2⁻¹ * p.1), subset_tsupport _ fun h0 => hp <| by
+          simp only [Function.uncurry_apply_pair] at h0
+          simp [Function.uncurry, Ψ, h0],
+          Prod.ext (mul_inv_cancel_left p.2 p.1) rfl⟩
+  calc π.integratedOperator U hU hbdd μ h v
+      = ∫ s, ∫ r, Ψ s r ∂μ ∂μ := by
+        rw [integratedOperator_apply]
+        congr 1 with s
+        rw [hh s, ← π.integral_apply_apply (hF_int s)]
+    _ = ∫ r, ∫ s, Ψ s r ∂μ ∂μ := integral_integral_swap_of_hasCompactSupport hcont hsupp
+    _ = ∫ r, (π (f r) * U r) (π.integratedOperator U hU hbdd μ g v) ∂μ := by
+        congr 1 with r
+        -- Substitute `s ↦ r * t`, then use `hmul` to pull `π (f r) * U r` out of the integral.
+        rw [← integral_mul_left_eq_self (Ψ · r) r, integratedOperator_apply,
+          ← ContinuousLinearMap.integral_comp_comm _ (π.integrable_integrand hU μ g v)]
+        congr 1 with t
+        simpa [Ψ, inv_mul_cancel_left, mul_apply_eq_comp] using congr($((hmul r t).symm) v)
+    _ = (π.integratedOperator U hU hbdd μ f * π.integratedOperator U hU hbdd μ g) v := by
+        simp [integratedOperator_apply]
+
+end Group
 
 end NonUnitalStarAlgHom

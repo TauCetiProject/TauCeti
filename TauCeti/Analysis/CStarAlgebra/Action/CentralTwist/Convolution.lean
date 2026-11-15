@@ -334,11 +334,6 @@ private theorem coe_involution_apply (f : C_c(G, A)) (s : G) :
   simp only [involution_apply, DoubleCentralizer.coe_smul,
     ← DoubleCentralizer.mul_coe_eq_coe_fst, ← α.multiplier_coe, DoubleCentralizer.coe_star]
 
-omit [IsTopologicalGroup G] [LocallyCompactSpace G] in
-private theorem multiplier_apply_multiplier_apply {α : CStarAction G A} (r s : G) (m : 𝓜(ℂ, A)) :
-    α.multiplier r (α.multiplier s m) = α.multiplier (r * s) m := by
-  rw [map_mul, StarAlgEquiv.mul_apply]
-
 /-- Applying the cocycle-twisted involution twice recovers `f`, using `α'_s(ω(s⁻¹, s)) = ω(s, s⁻¹)`.
 -/
 @[simp]
@@ -416,7 +411,7 @@ private theorem involution_convolution_cocycle_eq (s r : G) :
     simpa using ω.multiplier_value_mul_value s r r⁻¹
   have hsr : α.multiplier (s * r) (star (ω.value r⁻¹ r : 𝓜(ℂ, A))) =
       star (α.multiplier s (ω.value r r⁻¹ : 𝓜(ℂ, A))) := by
-    rw [map_mul, StarAlgEquiv.mul_apply, map_star, map_star, ω.multiplier_value_inv_left]
+    rw [← α.multiplier_apply_multiplier_apply, map_star, map_star, ω.multiplier_value_inv_left]
   have hstar₁ : star (ω.value s s⁻¹ : 𝓜(ℂ, A)) *
       α.multiplier s (star (ω.value r (r⁻¹ * s⁻¹) : 𝓜(ℂ, A))) =
         star (ω.value (s * r) (r⁻¹ * s⁻¹) : 𝓜(ℂ, A)) * star (ω.value s r : 𝓜(ℂ, A)) := by

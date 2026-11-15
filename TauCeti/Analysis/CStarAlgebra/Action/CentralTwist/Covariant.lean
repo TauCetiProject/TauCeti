@@ -316,7 +316,6 @@ theorem integrable_integrand (f : C_c(G, A)) (v : H) :
   P.pi.integrable_integrand P.strong_continuous μ f v
 
 /-- The vector-valued integrated form `v ↦ ∫ s, P.pi (f s) (U_s v) ∂μ` on `C_c(G, A)`. -/
-@[expose]
 def integratedOperator : C_c(G, A) →ₗ[ℂ] (H →L[ℂ] H) :=
   P.pi.integratedOperator (fun s => (P.unitaryMap s : H →L[ℂ] H)) P.strong_continuous
     P.exists_norm_unitaryMap_le μ
@@ -356,8 +355,9 @@ theorem integratedOperator_pi_apply (f : C_c(G, A)) (a : A) (v : H) :
 /-- For `ω = 1`, the integrated form agrees with `CovariantRepresentation.integratedOperator`. -/
 @[simp]
 theorem toCovariantRepresentation_integratedOperator (P : CentralCovariantPair H α 1) :
-    P.toCovariantRepresentation.integratedOperator μ = P.integratedOperator μ :=
-  (rfl)
+    P.toCovariantRepresentation.integratedOperator μ = P.integratedOperator μ := by
+  ext f v
+  simp [integratedOperator_apply, CovariantRepresentation.integratedOperator_apply]
 
 /-! ### Multiplicativity and involution preservation -/
 
@@ -372,36 +372,15 @@ multiplicative for cocycle-twisted convolution:
 @[simp]
 theorem integratedOperator_convolution (f g : C_c(G, A)) :
     P.integratedOperator μ (ω.convolution μ f g) =
-      P.integratedOperator μ f * P.integratedOperator μ g := by
-  ext v
-  set Ψ : G → G → H := fun s r =>
-    P.pi ((ω.value r (r⁻¹ * s) : 𝓜(ℂ, A)).snd (f r * α r (g (r⁻¹ * s))))
-      ((P.unitaryMap s : H →L[ℂ] H) v)
-  have hcont : Continuous (Function.uncurry Ψ) := by
-    rw [Function.uncurry_def]
-    refine ((map_continuous P.pi).comp ?_).clm_apply ((P.strong_continuous v).comp continuous_fst)
-    exact ω.continuous_snd_apply continuous_snd (continuous_snd.inv.mul continuous_fst)
-      (by fun_prop)
-  have hsupp : HasCompactSupport (Function.uncurry Ψ) :=
-    hasCompactSupport_uncurry_of_inv_mul_mem f.hasCompactSupport g.hasCompactSupport
-      fun _ _ h => mem_tsupport_and_inv_mul_mem_tsupport h
-        (by intro hf; simp [Ψ, hf]) (by intro hg; simp [Ψ, hg])
-  calc P.integratedOperator μ (ω.convolution μ f g) v
-      = ∫ s, ∫ r, Ψ s r ∂μ ∂μ := by
-        rw [integratedOperator_apply]
-        congr 1 with s
-        rw [CentralCocycle.convolution_apply,
-          ← P.pi.integral_apply_apply (ω.integrable_integrand μ f g s)]
-    _ = ∫ r, ∫ s, Ψ s r ∂μ ∂μ := integral_integral_swap_of_hasCompactSupport hcont hsupp
-    _ = ∫ r, (P.pi (f r) * (P.unitaryMap r : H →L[ℂ] H)) (P.integratedOperator μ g v) ∂μ := by
-        congr 1 with r
-        rw [← integral_mul_left_eq_self (Ψ · r) r, integratedOperator_apply,
-          ← ContinuousLinearMap.integral_comp_comm _ (P.integrable_integrand μ g v)]
-        congr 1 with t
-        simpa [Ψ, mul_apply_eq_comp] using
-          congr($((P.pi_mul_unitaryMap_mul r t (f r) (g t)).symm) v)
-    _ = (P.integratedOperator μ f * P.integratedOperator μ g) v := by
-        simp [integratedOperator_apply]
+      P.integratedOperator μ f * P.integratedOperator μ g :=
+  P.pi.integratedOperator_eq_mul P.strong_continuous P.exists_norm_unitaryMap_le μ
+    (F := fun r t => (ω.value r t : 𝓜(ℂ, A)).snd (f r * α r (g t)))
+    (by rw [Function.uncurry_def]; fun_prop)
+    (.intro (f.hasCompactSupport.prod g.hasCompactSupport) fun _ h => by
+      rcases not_and_or.mp h with h | h <;>
+        simp [Function.uncurry, image_eq_zero_of_notMem_tsupport h])
+    (ω.convolution_apply μ f g)
+    fun r t => P.pi_mul_unitaryMap_mul r t (f r) (g t)
 
 end Convolution
 
@@ -516,8 +495,9 @@ preserves its vector-valued integrated form. -/
 theorem toCentralCovariantPair_integratedOperator [MeasurableSpace G] [OpensMeasurableSpace G]
     (P : CovariantRepresentation α H) (hπ : P.coefficient.IsNondegenerate)
     (μ : Measure G) [IsFiniteMeasureOnCompacts μ] :
-    (P.toCentralCovariantPair hπ).integratedOperator μ = P.integratedOperator μ :=
-  (rfl)
+    (P.toCentralCovariantPair hπ).integratedOperator μ = P.integratedOperator μ := by
+  ext f v
+  simp [CentralCovariantPair.integratedOperator_apply, integratedOperator_apply]
 
 end CovariantRepresentation
 
