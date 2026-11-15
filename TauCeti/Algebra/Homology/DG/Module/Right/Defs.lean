@@ -38,6 +38,8 @@ a right DG module into a right module over the cohomology algebra.
   boundaries.
 * `TauCeti.IsDGRightModule.op_map_smul_mem_range_of_map_eq_zero`: the differential of an algebra
   element acts by a boundary on a module cycle.
+* `TauCeti.IsDGRightModule.differential_op_smul_koszulTwist_add`: right multiplication by the
+  differential of an algebra element is null-homotopic.
 * `TauCeti.isDGRightModule_zero`: a graded right module with zero differential is a DG right
   module over a graded algebra with zero differential.
 * `TauCeti.IsDGAlgebra.isDGRightModule`: a differential graded algebra is a differential graded
@@ -167,6 +169,28 @@ theorem op_smul_koszulTwist_map_eq_neg (hM : IsDGRightModule h ℳ dM) {a : A} (
       exact hM.isHomogeneous.map_mem hy
   rw [hhom.koszulTwist_apply 1 x, hM.leibniz_of_map_eq_zero _ ha]
   simp
+
+/-- **Right multiplication by a boundary is null-homotopic.** For every algebra element `a`, the
+right action of `d a` is `dM ∘ K + K ∘ dM` for the operator `K x = (-1) ^ |x| x a`, the right
+action of `a` after the Koszul sign of the module element. -/
+theorem differential_op_smul_koszulTwist_add (hM : IsDGRightModule h ℳ dM) (a : A) (x : M) :
+    dM (op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 x) +
+        op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (dM x) =
+      op (d a) • x := by
+  induction x using DirectSum.Decomposition.inductionOn ℳ with
+  | zero => simp
+  | @homogeneous q x =>
+    obtain ⟨x, hx⟩ := x
+    have hdx : dM x ∈ ℳ (q + 1) := hM.isHomogeneous.map_mem hx
+    simp only [InternalGrading.koszulTwist_ofDecomposition_apply_of_mem ℳ hx,
+      InternalGrading.koszulTwist_ofDecomposition_apply_of_mem ℳ hdx, one_mul]
+    rw [smul_comm (op a) _ x, LinearMap.map_smul, hM.leibniz hx a]
+    simp only [Int.cast_smul_eq_zsmul, ← Units.smul_def, Int.negOnePow_succ, Units.neg_smul,
+      smul_neg, smul_add, smul_smul, Int.units_mul_self, one_smul, smul_comm (op a) q.negOnePow]
+    abel
+  | add x y hx hy =>
+    rw [map_add, map_add, smul_add, map_add, map_add, smul_add, smul_add, ← hx, ← hy]
+    abel
 
 end IsDGRightModule
 

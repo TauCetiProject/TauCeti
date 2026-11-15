@@ -141,6 +141,13 @@ theorem map_act (f : C(Y, Y')) (hf : ∀ (g : G) (y : Y), f (op g • y) = op g 
   rw [act_def, act_def, ← LinearMap.comp_apply (map R f (p + q)), ← map_comp, key, map_comp,
     LinearMap.comp_apply, map_crossProduct, map_id, LinearMap.id_apply]
 
+/-- The action of the chain of a point `g` is the push-forward along the action of `g`. -/
+theorem act_ofCube_point {p : ℕ} (c : NormalizedCubicalChain Y R p) (g : G) :
+    act Y G R p 0 c (ofCube G R (SingularCube.point g)) =
+      map R ⟨fun y ↦ op g • y, by fun_prop⟩ p c := by
+  rw [act_def, map_crossProduct_ofCube_point]
+  congr 1
+
 end Act
 
 section MulAction
@@ -273,6 +280,18 @@ theorem cubicalChainModule.induction_on {motive : cubicalChainModule Y G R → P
     rwa [map_zero] at h
   | of n c => exact lof n c
   | add a b ha hb => exact add _ _ ha hb
+
+/-- A space with no points has no chains. -/
+instance [IsEmpty Y] : Subsingleton (cubicalChainModule Y G R) := by
+  have h (x : cubicalChainModule Y G R) : x = 0 := by
+    induction x using cubicalChainModule.induction_on with
+    | add x x' hx hx' => rw [hx, hx', add_zero]
+    | lof n c =>
+      induction c using Submodule.Quotient.induction_on with
+      | H c =>
+        have : IsEmpty (SingularCube Y n) := ⟨fun σ ↦ isEmptyElim (σ fun _ ↦ 0)⟩
+        rw [Subsingleton.elim c 0, Submodule.Quotient.mk_zero, map_zero]
+  exact ⟨fun x y ↦ (h x).trans (h y).symm⟩
 
 /-- The linear map given by homogeneous parts, on a homogeneous chain. -/
 @[simp]
