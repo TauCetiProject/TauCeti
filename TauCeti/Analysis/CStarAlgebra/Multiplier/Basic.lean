@@ -22,7 +22,9 @@ and `DoubleCentralizer.snd_mul`, injectivity of `A → 𝓜(𝕜, A)`, and `Doub
 is in `TauCeti.Analysis.Normed.Algebra.DoubleCentralizer`. It applies to every C⋆-ring, since a
 proper involution makes both annihilators zero (`TauCeti.faithfulSMul_mulOpposite_of_isProperStar`
 and `TauCeti.faithfulSMul_of_isProperStar`). For regular normed algebras
-(`RegularNormedAlgebra`), including real and complex C⋆-algebras, the canonical map is isometric.
+(`RegularNormedAlgebra`), including real and complex C⋆-algebras, the canonical map is isometric,
+and when `A` is unital it is a linear isometric equivalence
+(`DoubleCentralizer.ofUnitalLinearIsometryEquiv`).
 
 A bounded operator `L` with an adjoint `L'` for the pairing `(x, y) ↦ star x * y` is the left
 centralizer of the multiplier `DoubleCentralizer.ofAdjoint L L'`, whose right centralizer is
@@ -114,6 +116,35 @@ theorem isometry_coe : Isometry (DoubleCentralizer.coe 𝕜 : A → 𝓜(𝕜, A
   simp only [edist_dist, dist_eq_norm, ← coe_sub, norm_coe]
 
 end RegularNormedAlgebra
+
+section UnitalRegularNormedAlgebra
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
+  [RegularNormedAlgebra 𝕜 A]
+
+variable (𝕜 A) in
+/-- For a unital regular normed algebra `A` (including every unital C⋆-algebra), the canonical
+inclusion `A → 𝓜(𝕜, A)` is a linear isometric equivalence with inverse `m ↦ m.fst 1`. -/
+def ofUnitalLinearIsometryEquiv : A ≃ₗᵢ[𝕜] 𝓜(𝕜, A) where
+  toFun a := a
+  invFun m := m.fst 1
+  left_inv a := by simp
+  right_inv := coe_fst_one
+  map_add' := coe_add
+  map_smul' := coe_smul
+  norm_map' := norm_coe
+
+@[simp]
+theorem ofUnitalLinearIsometryEquiv_apply (a : A) :
+    ofUnitalLinearIsometryEquiv 𝕜 A a = a :=
+  (rfl)
+
+@[simp]
+theorem ofUnitalLinearIsometryEquiv_symm_apply (m : 𝓜(𝕜, A)) :
+    (ofUnitalLinearIsometryEquiv 𝕜 A).symm m = m.fst 1 :=
+  (rfl)
+
+end UnitalRegularNormedAlgebra
 
 section CStarAlgebra
 
