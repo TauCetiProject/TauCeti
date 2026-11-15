@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.PDE.Vortex.Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding

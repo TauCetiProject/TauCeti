@@ -429,8 +429,7 @@ theorem MemSobolev.exists_contDiff_ae_eq {s : ℝ} {k : ℕ} (hs : finrank ℝ E
     Lp.ae_eq_fourierInv_of_fourier_eq hv⟩
 
 /-- **Sobolev embedding into `C^k` for real functions.** A real function in `H^s`,
-`s > dim E / 2 + k`, agrees almost everywhere with a `C^k` function: the real part of the
-representative of `MemSobolev.exists_contDiff_ae_eq`. -/
+`s > dim E / 2 + k`, agrees almost everywhere with a `C^k` function. -/
 theorem exists_contDiff_ae_eq_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ}
     (hs : finrank ℝ E + 2 * k < 2 * s) {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) :
     ∃ g : E → ℝ, ContDiff ℝ k g ∧ f =ᵐ[volume] g := by
@@ -441,8 +440,7 @@ theorem exists_contDiff_ae_eq_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ}
   rw [← h₂, ← Complex.ofReal_re (u x), ← Complex.ofRealCLM_apply, ← h₁, h₃]
 
 /-- **Continuous Sobolev functions are `C^k`.** A continuous real function in `H^s`,
-`s > dim E / 2 + k`, is of class `C^k`: it agrees almost everywhere, hence everywhere, with the
-`C^k` representative given by `exists_contDiff_ae_eq_of_mem_realSobolevFunctions`. -/
+`s > dim E / 2 + k`, is of class `C^k`. -/
 theorem contDiff_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ} (hs : finrank ℝ E + 2 * k < 2 * s)
     {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) (hcont : Continuous f) :
     ContDiff ℝ k f := by
