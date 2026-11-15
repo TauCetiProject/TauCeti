@@ -48,6 +48,8 @@ continuous extension `LinearMap.extendOfNorm`.
 * `ProjValMeasure.integral_indicator`: the integral of a measurable indicator is the projection.
 * `ProjValMeasure.forall_commute_integral_iff`: an operator commutes with every integral iff it
   commutes with every projection.
+* `ProjValMeasure.integral_mem_closure_span_proj`: every integral lies in the norm closure of the
+  complex linear span of the measurable-set projections.
 * `ProjValMeasure.integral_diag_eq_inner_integral`: diagonal matrix elements of the integral are
   integrals against the diagonal measures.
 * `ProjValMeasure.norm_integral_le`: a pointwise bound on the symbol bounds the operator norm.
@@ -289,6 +291,19 @@ theorem forall_commute_integral_iff (P : ProjValMeasure X H) (A : H →L[ℂ] H)
   | ih s =>
     rw [integral_ofSimpleFunc]
     exact Commute.sum_right _ _ _ fun c _ => (h _ _).smul_right c
+
+/-- Every integral against `P` lies in the operator-norm closure of the complex linear span of the
+measurable-set projections of `P`. -/
+theorem integral_mem_closure_span_proj (P : ProjValMeasure X H) (f : BoundedBorelFunction X) :
+    P.integral f ∈
+      closure (Submodule.span ℂ {p | ∃ B hB, P.proj B hB = p} : Set (H →L[ℂ] H)) := by
+  induction f using BoundedBorelFunction.denseRange_ofSimpleFunc.induction_on with
+  | hp => exact isClosed_closure.preimage P.continuous_integral
+  | ih s =>
+    refine subset_closure ?_
+    rw [integral_ofSimpleFunc]
+    exact Submodule.sum_mem _ fun c _ =>
+      Submodule.smul_mem _ _ (Submodule.subset_span ⟨_, _, rfl⟩)
 
 /-- Diagonal matrix elements of the integral are integrals against the diagonal measures:
 `∫ f d(P.diag ξ) = ⟪ξ, (∫ f dP) ξ⟫`. -/
