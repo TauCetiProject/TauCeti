@@ -47,8 +47,8 @@ the total differential and its compatibility with cyclic cochains uses bilinear 
 * `TauCeti.cyclicTotalComplex`: the total complex, a cochain complex of `R`-modules.
 * `TauCeti.cyclicCochainsToTotal`, `TauCeti.cyclicCochainComplexToTotal`: the inclusion of cyclic
   cochains into column zero, and the resulting cochain map.
-* `TauCeti.cyclicTotalHomologyMk`: the class of a total cocycle in the cohomology of the total
-  complex.
+* `TauCeti.cyclicTotalHomologyMk`, `TauCeti.cyclicTotalHomologyDesc`: the class of a total cocycle
+  in the cohomology of the total complex, and descent of linear maps on total cocycles.
 
 ## Main results
 
@@ -900,6 +900,24 @@ theorem cyclicTotalHomologyMk_succ_eq_zero_iff {n : ℕ}
   · apply (ModuleCat.mono_iff_injective (cyclicTotalComplexXIso R A M (n + 1)).hom).1
       inferInstance
     rw [cyclicTotalComplex_d_apply, Iso.inv_hom_id_apply, Iso.inv_hom_id_apply, hw]
+
+/-- A linear map on total cocycles vanishing on cocycles with zero total cohomology class descends
+to the cohomology of the total complex. -/
+def cyclicTotalHomologyDesc {N : Type*} [AddCommGroup N] [Module R N] (n : ℕ)
+    (f : LinearMap.ker (cyclicTotalDifferential R A M n) →ₗ[R] N)
+    (hf : ∀ x, cyclicTotalHomologyMk R A M n x = 0 → f x = 0) :
+    (cyclicTotalComplex R A M).homology n →ₗ[R] N :=
+  (cyclicTotalHomologyMk R A M n).liftOfSurjective (cyclicTotalHomologyMk_surjective n)
+    ⟨f, fun x hx ↦ LinearMap.mem_ker.2 (hf x (LinearMap.mem_ker.1 hx))⟩
+
+/-- The descended map sends the class of a total cocycle to the value of the original map. -/
+@[simp]
+theorem cyclicTotalHomologyDesc_mk {N : Type*} [AddCommGroup N] [Module R N] (n : ℕ)
+    (f : LinearMap.ker (cyclicTotalDifferential R A M n) →ₗ[R] N)
+    (hf : ∀ x, cyclicTotalHomologyMk R A M n x = 0 → f x = 0)
+    (x : LinearMap.ker (cyclicTotalDifferential R A M n)) :
+    cyclicTotalHomologyDesc n f hf (cyclicTotalHomologyMk R A M n x) = f x :=
+  LinearMap.equivOfSurjective_apply _ _
 
 /-- A cyclic cocycle, included into column zero, is a total cocycle. -/
 theorem cyclicCochainsToTotal_mem_ker {m : ℕ} (φ : cyclicCocycles R A M m) :

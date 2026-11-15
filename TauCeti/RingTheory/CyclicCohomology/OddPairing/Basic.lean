@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
-public import TauCeti.RingTheory.CyclicCohomology.Matrix
+public import TauCeti.RingTheory.CyclicCohomology.Matrix.Basic
 
 import TauCeti.Data.Fin.Basic
 
