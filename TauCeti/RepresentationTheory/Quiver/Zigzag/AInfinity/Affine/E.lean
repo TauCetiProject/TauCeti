@@ -94,7 +94,7 @@ theorem not_hochschildVanishesAt_six_zigzagStrictAInfinityAlgebra [Nontrivial k]
     ¬(𝒵).HochschildVanishesAt ⟨6, by norm_num⟩ := by
   obtain ⟨f⟩ := hG
   exact not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction (n := 4)
-    (by norm_num) _ _
+    _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_eq_one f
       AffineDynkinType.isBipartite_graph_E6 affineE6Matrix
       (by simp only [AffineDynkinType.graph_E6_adj]; decide)
@@ -124,7 +124,7 @@ theorem not_hochschildVanishesAt_eight_zigzagStrictAInfinityAlgebra [Nontrivial 
     ¬(𝒵).HochschildVanishesAt ⟨8, by norm_num⟩ := by
   obtain ⟨f⟩ := hG
   exact not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction (n := 6)
-    (by norm_num) _ _
+    _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_eq_one f
       AffineDynkinType.isBipartite_graph_E7 affineE7Matrix
       (by simp only [AffineDynkinType.graph_E7_adj]; decide)
@@ -159,7 +159,7 @@ theorem not_hochschildVanishesAt_twelve_zigzagStrictAInfinityAlgebra [Nontrivial
     ¬(𝒵).HochschildVanishesAt ⟨12, by norm_num⟩ := by
   obtain ⟨f⟩ := hG
   exact not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction (n := 10)
-    (by norm_num) _ _
+    _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_eq_one f
       AffineDynkinType.isBipartite_graph_E8 affineE8Matrix
       (by simp only [AffineDynkinType.graph_E8_adj]; decide)

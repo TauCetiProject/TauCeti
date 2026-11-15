@@ -119,19 +119,19 @@ theorem mkQuotient_comp_baseChangeCoordinateIso_hom :
 `i`, transported to the coordinate Hopf algebras constructed directly over `A`. -/
 noncomputable def rootSubgroupBaseChangeCoordinateMap (i : Fin r ⊕ Fin r) :
     GeneralLinear.coordinateHopfAlgebra A (r + 1) ⟶ AdditiveGroup.coordinateHopfAlgebra A :=
-  kostantRootSubgroupBaseChangePresentationCoordinateMap
+  kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
     (rep_kostantForm_mem_lattice r)
-    (isNilpotent_rep_rootGenerator r) (latticeBasis r) A i
+    i (isNilpotent_rep_rootGenerator r i) (latticeBasis r) A
 
 /-- The ambient base-changed root-subgroup map is the specialization of the general transported
 Kostant root-subgroup map. -/
 theorem rootSubgroupBaseChangeCoordinateMap_def (i : Fin r ⊕ Fin r) :
     rootSubgroupBaseChangeCoordinateMap r A i =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
         (rep_kostantForm_mem_lattice r)
-        (isNilpotent_rep_rootGenerator r) (latticeBasis r) A i := by
+        i (isNilpotent_rep_rootGenerator r i) (latticeBasis r) A := by
   unfold rootSubgroupBaseChangeCoordinateMap
   rfl
 

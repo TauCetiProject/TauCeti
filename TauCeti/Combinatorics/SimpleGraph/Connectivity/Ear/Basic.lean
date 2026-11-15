@@ -411,6 +411,14 @@ theorem isCycle_vertex (v : V) : (EarStart.vertex (G := G) v).IsCycle ↔ False 
 theorem isCycle_cycle {u : V} (c : G.Walk u u) (hc : c.IsCycle) :
     (EarStart.cycle c hc).IsCycle ↔ True := (Iff.rfl)
 
+/-- Transporting an initial stage along an equality of its subgraphs preserves whether it is a
+cycle. -/
+@[simp]
+theorem isCycle_eqRec {K L : G.Subgraph} (h : K = L) (s : G.EarStart K) :
+    (h ▸ s).IsCycle ↔ s.IsCycle := by
+  subst h
+  rfl
+
 /-- Every valid initial subgraph is connected. -/
 theorem connected : ∀ _ : G.EarStart H, H.Connected
   | .vertex _ => Subgraph.singletonSubgraph_connected
@@ -701,10 +709,8 @@ theorem kindAt_snoc_last (d : G.EarDecomposition H) (e : G.Ear H) :
 theorem isOpen_snoc (d : G.EarDecomposition H) (e : G.Ear H) :
     (d.snoc e).IsOpen ↔ d.IsOpen ∧ e.kind = .«open» := by
   have hstart : (d.snoc e).start.IsCycle ↔ d.start.IsCycle := by
-    dsimp only [snoc]
-    have hrec : ∀ {K L : G.Subgraph} (h : K = L) (s : G.EarStart L),
-        (Eq.mpr (congrArg G.EarStart h) s).IsCycle ↔ s.IsCycle := by rintro _ _ rfl _; rfl
-    exact hrec (d.initial_snoc e) d.start
+    rw [start_snoc]
+    exact EarStart.isCycle_eqRec _ _
   rw [isOpen_iff, isOpen_iff]
   refine ⟨fun ⟨hs, hk⟩ ↦ ⟨⟨hstart.mp hs, fun i ↦ ?_⟩, ?_⟩,
     fun ⟨⟨hs, hk⟩, he⟩ ↦ ⟨hstart.mpr hs, ?_⟩⟩

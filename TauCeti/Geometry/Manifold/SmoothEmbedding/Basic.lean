@@ -44,6 +44,10 @@ the inputs of the tubular-neighbourhood and surgery constructions.
 * `Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap`: an injective proper immersion is a
   smooth embedding.
 * `Manifold.IsSmoothEmbedding.of_le`: lowering the regularity order preserves smooth embeddings.
+* `ContinuousLinearMap.HasLeftInverse.isSmoothEmbedding`,
+  `ContinuousLinearMap.isSmoothEmbedding_of_injective`: a continuous linear map with a continuous
+  linear left inverse, for instance an injective one into a finite-dimensional space over a
+  complete field, is a `C^n` embedding.
 
 The construction is a thin wrapper around Mathlib's
 `Manifold.IsSmoothEmbedding` API, especially `IsSmoothEmbedding.id`, `of_opens`, `prodMap`,
@@ -314,5 +318,17 @@ theorem _root_.Manifold.IsSmoothEmbedding.of_le {m : ℕ∞ω} {f : M → N}
     (h : Manifold.IsSmoothEmbedding I J m f) (hnm : n ≤ m) :
     Manifold.IsSmoothEmbedding I J n f :=
   ⟨h.isImmersion.of_le hnm, h.isEmbedding⟩
+
+/-- A continuous linear map with a continuous linear left inverse is a `C^n` embedding. -/
+theorem _root_.ContinuousLinearMap.HasLeftInverse.isSmoothEmbedding {f : E →L[𝕜] E'}
+    (hf : f.HasLeftInverse) : Manifold.IsSmoothEmbedding 𝓘(𝕜, E) 𝓘(𝕜, E') n f :=
+  ⟨hf.isImmersion, hf.leftInverse_leftInverse.isEmbedding hf.leftInverse.continuous f.continuous⟩
+
+/-- An injective continuous linear map into a finite-dimensional space over a complete field is a
+`C^n` embedding. -/
+theorem _root_.ContinuousLinearMap.isSmoothEmbedding_of_injective [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 E'] {f : E →L[𝕜] E'} (hf : Function.Injective f) :
+    Manifold.IsSmoothEmbedding 𝓘(𝕜, E) 𝓘(𝕜, E') n f :=
+  (ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hf).isSmoothEmbedding
 
 end TauCeti
