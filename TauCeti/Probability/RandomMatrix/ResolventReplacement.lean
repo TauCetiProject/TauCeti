@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Matrix.Resolvent.Derivative
 public import TauCeti.Probability.Moments.Lindeberg
 public import Mathlib.Probability.HasLaw
 
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
@@ -48,60 +49,55 @@ attribute [local instance] matrixComplexNormedAlgebraReal
 
 namespace Matrix.IsHermitian
 
-variable {n : Type*} [Fintype n] [DecidableEq n] {d : ℕ}
-  {A : Matrix n n ℂ} {B : Fin d → Matrix n n ℂ}
+variable {n ι : Type*} [Fintype n] [DecidableEq n] [Fintype ι]
+  {A : Matrix n n ℂ} {B : ι → Matrix n n ℂ}
 
 private theorem resolvent_test_continuous (hA : A.IsHermitian)
     (hB : ∀ i, (B i).IsHermitian) {z : ℂ} (hz : z.im ≠ 0) :
-    Continuous (fun x : Fin d → ℝ ↦
+    Continuous (fun x : ι → ℝ ↦
       (Fintype.card n : ℂ)⁻¹ * (A + ∑ i, x i • B i - z • 1)⁻¹.trace) := by
-  have hH (x : Fin d → ℝ) : (A + ∑ i, x i • B i).IsHermitian :=
+  have hH (x : ι → ℝ) : (A + ∑ i, x i • B i).IsHermitian :=
     hA.add (isSelfAdjoint_sum univ fun i _ ↦ (hB i).smul (by simp [IsSelfAdjoint]))
-  have hc : Continuous (fun x : Fin d → ℝ ↦ A + ∑ i, x i • B i - z • 1) := by fun_prop
-  have hi : Continuous (fun x : Fin d → ℝ ↦ (A + ∑ i, x i • B i - z • 1)⁻¹) := by
-    rw [continuous_iff_continuousAt]
-    intro x
-    obtain ⟨u, hu⟩ := (hH x).isUnit_sub_smul_one_of_im_ne_zero hz
-    have hi : ContinuousAt Ring.inverse (A + ∑ i, x i • B i - z • 1) :=
-      hu ▸ NormedRing.inverse_continuousAt u
-    simpa only [Matrix.nonsing_inv_eq_ringInverse, Function.comp_def] using!
-      hi.comp (f := fun y : Fin d → ℝ ↦ A + ∑ i, y i • B i - z • 1)
-        hc.continuousAt
-  exact continuous_const.mul
-    (((traceLinearMap n ℂ ℂ).restrictScalars ℝ).toContinuousLinearMap.continuous.comp hi)
+  have hc : Continuous (fun x : ι → ℝ ↦ A + ∑ i, x i • B i) := by fun_prop
+  have hi : Continuous (fun x : ι → ℝ ↦ (A + ∑ i, x i • B i - z • 1)⁻¹) := by
+    refine continuous_iff_continuousAt.2 fun x ↦ ?_
+    simpa only [Function.comp_def] using
+      ((hH x).contDiffAt_inv_sub_smul_one hz 0).continuousAt.comp
+        (f := fun y : ι → ℝ ↦ A + ∑ i, y i • B i) (x := x) hc.continuousAt
+  exact continuous_const.mul hi.matrix_trace
 
-private theorem resolvent_test_coordinate (hA : A.IsHermitian)
+private theorem resolvent_test_coordinate [DecidableEq ι] (hA : A.IsHermitian)
     (hB : ∀ i, (B i).IsHermitian) (l : ℂ →L[ℝ] ℝ) {z : ℂ} (hz : z.im ≠ 0)
-    (r : ℕ) (x : Fin d → ℝ) (i : Fin d) :
+    (r : ℕ) (x : ι → ℝ) (i : ι) :
     let f := fun t : ℝ ↦ l ((Fintype.card n : ℂ)⁻¹ *
       (A + ∑ j, Function.update x i t j • B j - z • 1)⁻¹.trace)
-    ContDiff ℝ (r + 1) f ∧ ∀ t, ‖iteratedDeriv (r + 1) f t‖ ≤
+    ContDiff ℝ (r + 1) f ∧ ∀ t, |iteratedDeriv (r + 1) f t| ≤
       ‖l‖ * (((B i).rank : ℝ) / Fintype.card n *
         ((Nat.factorial (r + 1) : ℝ) * ‖B i‖ ^ (r + 1) * |z.im|⁻¹ ^ (r + 2))) := by
+  classical
   let C := A + ∑ j ∈ univ.erase i, x j • B j
   have hC : C.IsHermitian :=
     hA.add (isSelfAdjoint_sum _ fun j _ ↦ (hB j).smul (by simp [IsSelfAdjoint]))
   have heq (t : ℝ) : A + ∑ j, Function.update x i t j • B j = C + t • B i := by
-    rw [← sum_erase_add _ _ (mem_univ i)]
-    simp only [Function.update_self]
-    have hsum : ∑ j ∈ univ.erase i, Function.update x i t j • B j =
-        ∑ j ∈ univ.erase i, x j • B j :=
-      sum_congr rfl fun j hj ↦ by simp [Function.update_of_ne (ne_of_mem_erase hj)]
-    rw [hsum]
-    simp only [C, add_assoc]
+    rw [funext fun j ↦ Function.apply_update (fun k (a : ℝ) ↦ a • B k) x i t j,
+      sum_update_of_mem (mem_univ i), sdiff_singleton_eq_erase]
+    dsimp only [C]
+    abel
   simp only [heq]
   have hs := hC.contDiff_inv_add_smul_sub_smul_one (hB i) hz (r + 1)
-  have ht : ContDiff ℝ (r + 1) (fun t : ℝ ↦ (C + t • B i - z • 1)⁻¹.trace) :=
-    ((traceLinearMap n ℂ ℂ).restrictScalars ℝ).toContinuousLinearMap.contDiff.comp hs
-  exact ⟨l.contDiff.comp (contDiff_const.mul ht), fun t ↦
-    hC.norm_iteratedDeriv_succ_normalized_trace_inv_add_smul_sub_smul_one_le (hB i) l r t hz⟩
+  have ht : ContDiff ℝ (r + 1) (fun t : ℝ ↦ (C + t • B i - z • 1)⁻¹.trace) := by
+    simpa only [Function.comp_def, LinearMap.coe_toContinuousLinearMap', traceLinearMap_apply]
+      using (traceLinearMap n ℝ ℂ).toContinuousLinearMap.contDiff.comp hs
+  have hn := (contDiff_const (c := (Fintype.card n : ℂ)⁻¹)).mul ht
+  refine ⟨l.contDiff.comp hn, fun t ↦ ?_⟩
+  rw [← Real.norm_eq_abs, ← Function.comp_def,
+    l.iteratedDeriv_comp_left hn.contDiffAt le_rfl]
+  exact (l.le_opNorm _).trans (mul_le_mul_of_nonneg_left
+    (hC.norm_iteratedDeriv_succ_normalized_trace_inv_add_smul_sub_smul_one_le (hB i) r t hz)
+    (norm_nonneg _))
 
-/-- **Resolvent Lindeberg comparison.** For an affine Hermitian matrix in independent real
-coordinates, replacing their laws by laws whose moments agree through order `r` changes its
-expected normalized resolvent trace by at most the sum of the `(r+1)`st absolute moments weighted
-by `(rank(B i) / card n) ‖B i‖^(r+1) / |Im z|^(r+2)`.
-The norm is the Euclidean operator norm. -/
-theorem norm_integral_pi_normalized_trace_inv_sub_integral_pi_le
+private theorem norm_integral_pi_normalized_trace_resolvent_fin_le
+    {d : ℕ} {B : Fin d → Matrix n n ℂ}
     (hA : A.IsHermitian) (hB : ∀ i, (B i).IsHermitian)
     {r : ℕ} (μ ν : Fin d → Measure ℝ)
     [∀ i, IsProbabilityMeasure (μ i)] [∀ i, IsProbabilityMeasure (ν i)]
@@ -131,7 +127,8 @@ theorem norm_integral_pi_normalized_trace_inv_sub_integral_pi_le
     ((∫ x, f x ∂Measure.pi μ) - ∫ x, f x ∂Measure.pi ν)
   have h := TauCeti.Probability.abs_integral_pi_sub_integral_pi_le_of_bounded μ ν hμ hν hmom
     (l.continuous.comp hc) (C := ‖l‖ * |z.im|⁻¹)
-    (fun x ↦ (l.le_opNorm _).trans (mul_le_mul_of_nonneg_left (hb x) (norm_nonneg _)))
+    (fun x ↦ (Real.norm_eq_abs _).symm.trans_le
+      ((l.le_opNorm _).trans (mul_le_mul_of_nonneg_left (hb x) (norm_nonneg _))))
     (M := fun i ↦ ‖l‖ * (((B i).rank : ℝ) / Fintype.card n *
       ((Nat.factorial (r + 1) : ℝ) * ‖B i‖ ^ (r + 1) * |z.im|⁻¹ ^ (r + 2))))
     (fun x i ↦ (resolvent_test_coordinate hA hB l hz r x i).1)
@@ -151,21 +148,60 @@ theorem norm_integral_pi_normalized_trace_inv_sub_integral_pi_le
   rw [hcancel]
   exact mul_le_mul_of_nonneg_right (mul_le_of_le_one_left (by positivity) hl) (by positivity)
 
+/-- **Resolvent Lindeberg comparison.** For an affine Hermitian matrix in independent real
+coordinates indexed by any finite type, replacing their laws by laws whose moments agree through
+order `r` changes its expected normalized resolvent trace by at most the sum of the `(r+1)`st
+absolute moments weighted by `(rank(B i) / card n) ‖B i‖^(r+1) / |Im z|^(r+2)`.
+The norm is the Euclidean operator norm. -/
+theorem norm_integral_pi_normalized_trace_inv_add_sum_smul_sub_smul_one_sub_integral_pi_le
+    (hA : A.IsHermitian) (hB : ∀ i, (B i).IsHermitian)
+    {r : ℕ} (μ ν : ι → Measure ℝ)
+    [∀ i, IsProbabilityMeasure (μ i)] [∀ i, IsProbabilityMeasure (ν i)]
+    (hμ : ∀ i, Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) (μ i))
+    (hν : ∀ i, Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) (ν i))
+    (hmom : ∀ i, ∀ k ≤ r, ∫ t, t ^ k ∂μ i = ∫ t, t ^ k ∂ν i)
+    {z : ℂ} (hz : z.im ≠ 0) :
+    ‖(∫ x : ι → ℝ, (Fintype.card n : ℂ)⁻¹ *
+        (A + ∑ i, x i • B i - z • 1)⁻¹.trace ∂Measure.pi μ) -
+      ∫ x : ι → ℝ, (Fintype.card n : ℂ)⁻¹ *
+        (A + ∑ i, x i • B i - z • 1)⁻¹.trace ∂Measure.pi ν‖ ≤
+      ∑ i, (((B i).rank : ℝ) / Fintype.card n) *
+        ‖B i‖ ^ (r + 1) * |z.im|⁻¹ ^ (r + 2) *
+        (∫ t, |t| ^ (r + 1) ∂μ i + ∫ t, |t| ^ (r + 1) ∂ν i) := by
+  classical
+  let e := (Fintype.equivFin ι).symm
+  have heq (x : Fin (Fintype.card ι) → ℝ) :
+      (∑ i, (MeasurableEquiv.piCongrLeft (fun _ : ι ↦ ℝ) e x) i • B i) =
+        ∑ j, x j • B (e j) := by
+    rw [← e.sum_comp]
+    simp only [MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply_apply]
+  have hi (ρ : ι → Measure ℝ) [∀ i, IsProbabilityMeasure (ρ i)] :
+      (∫ x : ι → ℝ, (Fintype.card n : ℂ)⁻¹ *
+        (A + ∑ i, x i • B i - z • 1)⁻¹.trace ∂Measure.pi ρ) =
+      ∫ x : Fin (Fintype.card ι) → ℝ, (Fintype.card n : ℂ)⁻¹ *
+        (A + ∑ i, x i • B (e i) - z • 1)⁻¹.trace ∂Measure.pi (fun i ↦ ρ (e i)) := by
+    rw [← (measurePreserving_piCongrLeft ρ e).integral_comp']
+    simp only [heq]
+  rw [hi μ, hi ν, ← e.sum_comp]
+  exact norm_integral_pi_normalized_trace_resolvent_fin_le hA (fun i ↦ hB (e i))
+    (fun i ↦ μ (e i)) (fun i ↦ ν (e i)) (fun i ↦ hμ (e i)) (fun i ↦ hν (e i))
+    (fun i ↦ hmom (e i)) hz
+
 end Matrix.IsHermitian
 
 namespace ProbabilityTheory.HasLaw
 
-variable {n : Type*} [Fintype n] [DecidableEq n] {d r : ℕ}
+variable {n ι : Type*} [Fintype n] [DecidableEq n] [Fintype ι] {r : ℕ}
   {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω'] {P : Measure Ω} {Q : Measure Ω'}
-  {μ ν : Fin d → Measure ℝ}
+  {μ ν : ι → Measure ℝ}
   [∀ i, IsProbabilityMeasure (μ i)] [∀ i, IsProbabilityMeasure (ν i)]
-  {X : Ω → Fin d → ℝ} {Y : Ω' → Fin d → ℝ}
-  {A : Matrix n n ℂ} {B : Fin d → Matrix n n ℂ}
+  {X : Ω → ι → ℝ} {Y : Ω' → ι → ℝ}
+  {A : Matrix n n ℂ} {B : ι → Matrix n n ℂ}
 
 /-- Resolvent Lindeberg comparison on arbitrary sample spaces. The two joint product-law
 hypotheses encode independence within each coordinate family, and can be obtained with
 `iIndepFun.hasLaw_pi`. No coupling between the two families is required. -/
-theorem norm_integral_normalized_trace_inv_sub_integral_le
+theorem norm_integral_normalized_trace_inv_add_sum_smul_sub_smul_one_sub_integral_le
     (hX : HasLaw X (Measure.pi μ) P) (hY : HasLaw Y (Measure.pi ν) Q)
     (hA : A.IsHermitian) (hB : ∀ i, (B i).IsHermitian)
     (hμ : ∀ i, Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) (μ i))
@@ -184,6 +220,7 @@ theorem norm_integral_normalized_trace_inv_sub_integral_le
   have hy := hY.integral_comp hc.aestronglyMeasurable
   simp only [Function.comp_def] at hx hy
   rw [hx, hy]
-  exact hA.norm_integral_pi_normalized_trace_inv_sub_integral_pi_le hB μ ν hμ hν hmom hz
+  exact hA.norm_integral_pi_normalized_trace_inv_add_sum_smul_sub_smul_one_sub_integral_pi_le
+    hB μ ν hμ hν hmom hz
 
 end ProbabilityTheory.HasLaw

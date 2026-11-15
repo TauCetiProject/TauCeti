@@ -13,7 +13,7 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 import TauCeti.Analysis.Matrix.Trace.Rank
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
-import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 
 /-!
 # Derivative of a matrix resolvent
@@ -32,7 +32,7 @@ gives `-R * B * R`, where `R = (A + t • B - z • 1)⁻¹` and `z` is nonreal.
 * `Matrix.IsHermitian.norm_iteratedDeriv_inv_add_smul_sub_smul_one_le` bounds it uniformly by
   `k! ‖B‖ᵏ / |Im z|ᵏ⁺¹` in the Euclidean operator norm.
 * `Matrix.IsHermitian.norm_iteratedDeriv_succ_normalized_trace_inv_add_smul_sub_smul_one_le`
-  gives the rank-sensitive bound for normalized resolvent traces, after a real linear scalar test.
+  gives the rank-sensitive bound for complex normalized resolvent traces.
 
 These uniform bounds supply the derivative hypotheses in Lindeberg replacement of matrix entries.
 
@@ -80,6 +80,15 @@ theorem hasDerivAt_inv_add_smul_sub_smul_one_apply (t : ℝ) {z : ℂ} (hz : z.i
     (hA.hasDerivAt_inv_add_smul_sub_smul_one hB t hz)
   simpa using! h
 
+omit hB in
+/-- The matrix resolvent is smooth near a Hermitian matrix when the spectral parameter is
+nonreal. The nearby matrices need not be Hermitian. -/
+theorem contDiffAt_inv_sub_smul_one {z : ℂ} (hz : z.im ≠ 0) (k : ℕ∞ω) :
+    ContDiffAt ℂ k (fun M : Matrix n n ℂ ↦ (M - z • 1)⁻¹) A := by
+  have hd : ContDiffAt ℂ k (fun M : Matrix n n ℂ ↦ M - z • 1) A := by fun_prop
+  simpa only [Matrix.nonsing_inv_eq_ringInverse] using
+    hd.inverse (hA.isUnit_sub_smul_one_of_im_ne_zero hz)
+
 /-- The resolvent along a Hermitian perturbation is smooth on the whole real line, of every
 finite or infinite order, whenever the spectral parameter is nonreal. -/
 theorem contDiff_inv_add_smul_sub_smul_one {z : ℂ} (hz : z.im ≠ 0) (k : ℕ∞ω) :
@@ -87,25 +96,22 @@ theorem contDiff_inv_add_smul_sub_smul_one {z : ℂ} (hz : z.im ≠ 0) (k : ℕ�
   rw [contDiff_iff_contDiffAt]
   intro t
   have h : (A + t • B).IsHermitian := hA.add (hB.smul (by simp [IsSelfAdjoint]))
-  obtain ⟨u, hu⟩ := h.isUnit_sub_smul_one_of_im_ne_zero hz
-  have hd : ContDiffAt ℝ k (fun s : ℝ ↦ A + s • B - z • 1) t := by fun_prop
-  have hi : ContDiffAt ℝ k Ring.inverse (A + t • B - z • 1) :=
-    hu ▸ contDiffAt_ringInverse ℝ u
-  simpa only [Matrix.nonsing_inv_eq_ringInverse, Function.comp_def] using! hi.comp t hd
+  have hd : ContDiffAt ℝ k (fun s : ℝ ↦ A + s • B) t := by fun_prop
+  simpa only [Function.comp_def] using
+    ((h.contDiffAt_inv_sub_smul_one hz k).restrict_scalars ℝ).comp t hd
 
 private theorem hasDerivAt_resolventWord (k : ℕ) (t : ℝ) {z : ℂ} (hz : z.im ≠ 0) :
     HasDerivAt
       (fun s : ℝ ↦ (A + s • B - z • 1)⁻¹ * (B * (A + s • B - z • 1)⁻¹) ^ k)
       (-((k + 1 : ℕ) : ℝ) •
         ((A + t • B - z • 1)⁻¹ * (B * (A + t • B - z • 1)⁻¹) ^ (k + 1))) t := by
-  let R := fun s : ℝ ↦ (A + s • B - z • 1)⁻¹
   have hR := hA.hasDerivAt_inv_add_smul_sub_smul_one hB t hz
   induction k with
-  | zero => simpa [R, pow_one, mul_assoc] using hR
+  | zero => simpa [pow_one, mul_assoc] using hR
   | succ k ih =>
     have hd := ih.fun_mul (hR.const_mul B)
     simp only [pow_succ, ← mul_assoc] at hd ⊢
-    convert hd using 1
+    refine hd.congr_deriv ?_
     simp only [Matrix.smul_mul, mul_neg, mul_assoc, Nat.cast_add, Nat.cast_one,
       neg_add, add_smul, neg_one_smul, add_mul, neg_mul]
 
@@ -170,42 +176,47 @@ theorem rank_iteratedDeriv_succ_inv_add_smul_sub_smul_one_le
     _ ≤ ((c • R) * B).rank := rank_mul_le_left _ _
     _ ≤ B.rank := rank_mul_le_right _ _
 
-/-- Positive-order derivatives of normalized resolvent traces have a bound proportional to the
-rank of the perturbation divided by the dimension. Any continuous real linear scalar test may
-be used; `Complex.reCLM` and `Complex.imCLM` give the real and imaginary components.
-The matrix norm is the Euclidean operator norm, and empty index types are allowed. -/
-theorem norm_iteratedDeriv_succ_normalized_trace_inv_add_smul_sub_smul_one_le
-    (l : ℂ →L[ℝ] ℝ) (k : ℕ) (t : ℝ) {z : ℂ} (hz : z.im ≠ 0) :
+/-- Positive-order derivatives of complex resolvent traces are bounded by the perturbation
+rank times the operator-norm derivative bound. The matrix norm is the Euclidean operator norm. -/
+theorem norm_iteratedDeriv_succ_trace_inv_add_smul_sub_smul_one_le
+    (k : ℕ) (t : ℝ) {z : ℂ} (hz : z.im ≠ 0) :
     ‖iteratedDeriv (k + 1)
-      (fun s : ℝ ↦ l ((Fintype.card n : ℂ)⁻¹ * (A + s • B - z • 1)⁻¹.trace)) t‖ ≤
-      ‖l‖ * ((B.rank : ℝ) / Fintype.card n *
-        ((Nat.factorial (k + 1) : ℝ) * ‖B‖ ^ (k + 1) * |z.im|⁻¹ ^ (k + 2))) := by
-  let L : Matrix n n ℂ →L[ℝ] ℝ :=
-    l.comp
-      ((((Fintype.card n : ℂ)⁻¹ • (traceLinearMap n ℂ ℂ)).restrictScalars ℝ).toContinuousLinearMap)
-  have hL (M : Matrix n n ℂ) : L M = l ((Fintype.card n : ℂ)⁻¹ * M.trace) := rfl
+      (fun s : ℝ ↦ (A + s • B - z • 1)⁻¹.trace) t‖ ≤
+      (B.rank : ℝ) *
+        ((Nat.factorial (k + 1) : ℝ) * ‖B‖ ^ (k + 1) * |z.im|⁻¹ ^ (k + 2)) := by
+  let L := (traceLinearMap n ℝ ℂ).toContinuousLinearMap
+  have hL (M : Matrix n n ℂ) : L M = M.trace := by simp [L]
   have hs := hA.contDiff_inv_add_smul_sub_smul_one hB hz (k + 1)
-  have heq : (fun s : ℝ ↦ l ((Fintype.card n : ℂ)⁻¹ *
-      (A + s • B - z • 1)⁻¹.trace)) = L ∘ (fun s : ℝ ↦ (A + s • B - z • 1)⁻¹) := by
+  have heq : (fun s : ℝ ↦ (A + s • B - z • 1)⁻¹.trace) =
+      L ∘ (fun s : ℝ ↦ (A + s • B - z • 1)⁻¹) := by
     ext s
     exact (hL _).symm
   rw [heq, L.iteratedDeriv_comp_left hs.contDiffAt le_rfl, hL]
   let D := iteratedDeriv (k + 1) (fun s : ℝ ↦ (A + s • B - z • 1)⁻¹) t
   have hr : D.rank ≤ B.rank := hA.rank_iteratedDeriv_succ_inv_add_smul_sub_smul_one_le hB k t hz
-  have ht : ‖(Fintype.card n : ℂ)⁻¹ * D.trace‖ ≤
-      (Fintype.card n : ℝ)⁻¹ * ((B.rank : ℝ) * ‖D‖) := by
-    rw [norm_mul, norm_inv, RCLike.norm_natCast]
-    gcongr
-    exact (norm_trace_le_rank_mul_l2_opNorm D).trans (by gcongr)
   calc
-    _ ≤ ‖l‖ * ‖(Fintype.card n : ℂ)⁻¹ * D.trace‖ := l.le_opNorm _
-    _ ≤ ‖l‖ * ((Fintype.card n : ℝ)⁻¹ * ((B.rank : ℝ) *
-        ((Nat.factorial (k + 1) : ℝ) * ‖B‖ ^ (k + 1) * |z.im|⁻¹ ^ (k + 2)))) := by
+    _ ≤ (D.rank : ℝ) * ‖D‖ := norm_trace_le_rank_mul_l2_opNorm D
+    _ ≤ (B.rank : ℝ) * ‖D‖ := by gcongr
+    _ ≤ _ := by
       gcongr
-      exact ht.trans (by
-        gcongr
-        exact hA.norm_iteratedDeriv_inv_add_smul_sub_smul_one_le hB (k + 1) t hz)
-    _ = _ := by simp only [div_eq_mul_inv]; ring
+      exact hA.norm_iteratedDeriv_inv_add_smul_sub_smul_one_le hB (k + 1) t hz
+
+/-- Positive-order derivatives of complex normalized resolvent traces have a bound proportional
+to the perturbation rank divided by the dimension. The matrix norm is the Euclidean operator
+norm, and empty index types are allowed. -/
+theorem norm_iteratedDeriv_succ_normalized_trace_inv_add_smul_sub_smul_one_le
+    (k : ℕ) (t : ℝ) {z : ℂ} (hz : z.im ≠ 0) :
+    ‖iteratedDeriv (k + 1)
+      (fun s : ℝ ↦ (Fintype.card n : ℂ)⁻¹ * (A + s • B - z • 1)⁻¹.trace) t‖ ≤
+      (B.rank : ℝ) / Fintype.card n *
+        ((Nat.factorial (k + 1) : ℝ) * ‖B‖ ^ (k + 1) * |z.im|⁻¹ ^ (k + 2)) := by
+  rw [iteratedDeriv_const_mul_field, norm_mul, norm_inv, RCLike.norm_natCast]
+  calc
+    _ ≤ (Fintype.card n : ℝ)⁻¹ * ((B.rank : ℝ) *
+        ((Nat.factorial (k + 1) : ℝ) * ‖B‖ ^ (k + 1) * |z.im|⁻¹ ^ (k + 2))) := by
+      gcongr
+      exact hA.norm_iteratedDeriv_succ_trace_inv_add_smul_sub_smul_one_le hB k t hz
+    _ = _ := by rw [div_eq_mul_inv]; ring
 
 end Matrix.IsHermitian
 
