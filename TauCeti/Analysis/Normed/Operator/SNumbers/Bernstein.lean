@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.SNumbers.Basic
+public import TauCeti.Analysis.Normed.Operator.SNumbers.Gelfand
 public import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
@@ -29,6 +29,13 @@ injective on `M`, so `A(M)` again has rank `n + 1`. An operator of rank at most 
 nonzero vector of every subspace of rank `n + 1`, and the identity has gain `1` on every nonzero
 subspace.
 
+The Bernstein numbers are injective, since a linear isometry on the target preserves every gain,
+and they lie below the Gelfand numbers, since a subspace of rank `n + 1` meets every subspace of
+codimension at most `n` in a nonzero vector. They are the smallest injective strict s-number
+sequence: if `T` is `d`-coercive on a subspace `M` of rank `n + 1`, then `T` restricted to `M`
+is the isometric inclusion of its range after an isomorphism `T₀` whose inverse has norm at most
+`d⁻¹`, and the normalization `s (id_M) n = 1` gives `d ≤ s T n`.
+
 The source spaces are normed, since the gain divides by the norm of the source vector; the
 target spaces may be seminormed.
 
@@ -43,13 +50,21 @@ target spaces may be seminormed.
 * `ContinuousLinearMap.bernsteinNumber_id`: `bₙ(id_E) = 1` when `n` is below the rank of `E`.
 * `TauCeti.SNumbers.isStrictSNumberSequence_bernstein`: the Bernstein numbers form a strict
   s-number sequence.
+* `ContinuousLinearMap.bernsteinNumber_le_gelfandNumber`: `bₙ(T) ≤ cₙ(T)`.
+* `LinearIsometry.bernsteinNumber_toContinuousLinearMap_comp`,
+  `TauCeti.SNumbers.isInjective_bernstein`: the Bernstein numbers are injective.
+* `TauCeti.SNumbers.IsStrictSNumberSequence.bernsteinNumber_le`: `bₙ(T) ≤ s T n` for every
+  injective strict s-number sequence `s`.
 
 ## References
 
 * A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), §4,
   Theorems 4.5 and 4.6.
+* A. Pietsch, *Operator Ideals*, North-Holland (1980), Chapter 11, for the minimality of the
+  Bernstein numbers among injective strict s-number sequences.
 * M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
-  `SNumbers/Bernstein.lean`: an earlier Lean formalization of the Bernstein numbers.
+  `SNumbers/Bernstein.lean` and `SNumbers/Injectivity.lean`: an earlier Lean formalization of
+  the Bernstein numbers and of injective s-number sequences.
 -/
 
 public section
@@ -257,7 +272,38 @@ theorem bernsteinNumber_id {n : ℕ} (hn : (n : Cardinal) < Module.rank 𝕜 E) 
   exact (ContinuousLinearMap.id 𝕜 E).le_bernsteinNumber_of_rank_eq (by exact_mod_cast hM)
     fun x _ ↦ by simp
 
+/-- **Bernstein numbers below Gelfand numbers.** `bₙ(T) ≤ cₙ(T)`: a subspace of rank `n + 1` and
+a subspace of codimension at most `n` meet in a nonzero vector. -/
+theorem bernsteinNumber_le_gelfandNumber (T : E →L[𝕜] F) (n : ℕ) :
+    T.bernsteinNumber n ≤ T.gelfandNumber n := by
+  refine le_gelfandNumber_iff.mpr fun N _ hN ↦ bernsteinNumber_le_of_forall_rank_eq fun M hM ↦ ?_
+  obtain ⟨x, hxM, hxN, hx0⟩ : ∃ x ∈ M, x ∈ N ∧ x ≠ 0 := by
+    by_contra! h
+    have hdisj : Disjoint M (LinearMap.ker N.mkQ) := by
+      rw [Submodule.ker_mkQ]
+      exact Submodule.disjoint_def.mpr h
+    have hle := (Cardinal.lift_le.mp (Submodule.lift_rank_le_of_disjoint_ker hdisj)).trans
+      ((Submodule.rank_le _).trans hN)
+    rw [hM, ← Nat.cast_add_one, Nat.cast_le] at hle
+    omega
+  exact ⟨x, hxM, hx0, (T ∘L N.subtypeL).le_opNNNorm ⟨x, hxN⟩⟩
+
 end ContinuousLinearMap
+
+namespace LinearIsometry
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- **Injectivity.** Postcomposition with a linear isometry leaves the Bernstein numbers
+unchanged: `bₙ(J T) = bₙ(T)`, since `J` preserves every gain of `T`. -/
+@[simp]
+theorem bernsteinNumber_toContinuousLinearMap_comp (J : F →ₗᵢ[𝕜] G) (T : E →L[𝕜] F) (n : ℕ) :
+    (J.toContinuousLinearMap ∘L T).bernsteinNumber n = T.bernsteinNumber n := by
+  simp [ContinuousLinearMap.bernsteinNumber_def]
+
+end LinearIsometry
 
 universe u
 
@@ -281,5 +327,61 @@ theorem isStrictSNumberSequence_bernstein : IsStrictSNumberSequence (bernstein (
     (fun S T n ↦ S.bernsteinNumber_add_le T n) (fun B T A n ↦ B.bernsteinNumber_comp_comp_le T A n)
     ContinuousLinearMap.bernsteinNumber_eq_zero_of_rank_le
     fun _ hn ↦ ContinuousLinearMap.bernsteinNumber_id hn
+
+/-- Bernstein numbers form an injective family. -/
+theorem isInjective_bernstein : IsInjective (bernstein (𝕜 := 𝕜)) where
+  linearIsometry_comp J T n := J.bernsteinNumber_toContinuousLinearMap_comp T n
+
+/-- **Minimality of the Bernstein numbers.** Every injective strict s-number sequence dominates
+the Bernstein numbers: `bₙ(T) ≤ s T n`. Together with `isStrictSNumberSequence_bernstein` and
+`isInjective_bernstein`, the Bernstein numbers are the smallest injective strict s-number
+sequence. -/
+theorem IsStrictSNumberSequence.bernsteinNumber_le {s : SNumberFamily 𝕜}
+    (hs : IsStrictSNumberSequence s) (hinj : IsInjective s) {X Y : Type u}
+    [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+    (T : X →L[𝕜] Y) (n : ℕ) : T.bernsteinNumber n ≤ s T n := by
+  refine ContinuousLinearMap.bernsteinNumber_le_iff.mpr fun M hM d hd ↦ ?_
+  rcases eq_or_ne d 0 with rfl | hd0
+  · exact zero_le
+  have hd0' : (0 : ℝ) < d := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hd0)
+  -- Factor the restriction of `T` to `M` through its range `R`, as `R.subtypeL ∘L T₀`.
+  let R := LinearMap.range (T ∘L M.subtypeL : M →ₗ[𝕜] Y)
+  obtain ⟨T₀, hT₀⟩ : ∃ T₀ : M →L[𝕜] R, R.subtypeL ∘L T₀ = T ∘L M.subtypeL :=
+    ⟨_, ContinuousLinearMap.subtypeL_comp_codRestrict _ _ (LinearMap.mem_range_self _)⟩
+  have hT₀x (x : M) : (T₀ x : Y) = T x := DFunLike.congr_fun hT₀ x
+  have hcoer (x : M) : (d : ℝ) * ‖x‖ ≤ ‖T₀ x‖ := by
+    simpa [← hT₀x] using NNReal.coe_le_coe.mpr (hd x x.2)
+  have hbij : Function.Bijective T₀ := by
+    refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun ⟨_, x, hx⟩ ↦ ⟨x, ?_⟩⟩
+    · have h := hcoer x
+      rw [hx, norm_zero, ← mul_zero (d : ℝ)] at h
+      exact norm_le_zero_iff.mp (le_of_mul_le_mul_left h hd0')
+    · exact Subtype.ext ((hT₀x x).trans hx)
+  -- The inverse of `T₀` has norm at most `d⁻¹`.
+  obtain ⟨S, hS, hST⟩ : ∃ S : R →L[𝕜] M, ‖S‖₊ ≤ d⁻¹ ∧ S ∘L T₀ = ContinuousLinearMap.id 𝕜 M := by
+    let e := LinearEquiv.ofBijective (T₀ : M →ₗ[𝕜] R) hbij
+    have he (x : M) : e.symm (T₀ x) = x :=
+      LinearEquiv.ofBijective_symm_apply_apply (T₀ : M →ₗ[𝕜] R) x
+    refine ⟨e.symm.toLinearMap.mkContinuous d⁻¹ fun y ↦ ?_, ?_, ?_⟩
+    · obtain ⟨x, rfl⟩ := hbij.2 y
+      rw [LinearEquiv.coe_coe, he, inv_mul_eq_div, le_div_iff₀ hd0', mul_comm]
+      exact hcoer x
+    · rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_inv]
+      exact LinearMap.mkContinuous_norm_le _ (by positivity) _
+    · ext x
+      simp [he]
+  have hsub : ‖M.subtypeL‖₊ ≤ 1 := by exact_mod_cast Submodule.norm_subtypeL_le M
+  -- Normalization on `id_M`, then injectivity along the isometric inclusion of `R`.
+  have key : 1 ≤ d⁻¹ * s T n :=
+    calc (1 : ℝ≥0) = s (ContinuousLinearMap.id 𝕜 M) n :=
+          (hs.normalize_of_lt_rank n (by rw [hM]; exact_mod_cast n.lt_succ_self)).symm
+      _ = s (S ∘L T₀) n := by rw [hST]
+      _ ≤ ‖S‖₊ * s T₀ n := hs.comp_le_left S T₀ n
+      _ = ‖S‖₊ * s (T ∘L M.subtypeL) n := by
+          rw [← hinj.linearIsometry_comp R.subtypeₗᵢ T₀ n,
+            Submodule.subtypeₗᵢ_toContinuousLinearMap, hT₀]
+      _ ≤ d⁻¹ * (s T n * ‖M.subtypeL‖₊) := by gcongr; exact hs.comp_le_right T M.subtypeL n
+      _ ≤ d⁻¹ * s T n := by gcongr; exact mul_le_of_le_one_right' hsub
+  simpa using (le_inv_mul_iff₀ (pos_iff_ne_zero.mpr hd0)).mp key
 
 end TauCeti.SNumbers

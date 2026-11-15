@@ -27,7 +27,8 @@ The Gelfand numbers form a strict s-number sequence over every nontrivially norm
 without completeness of the field or of the spaces. The two-sided ideal inequality pulls an
 admissible subspace back along the right factor, the rank axiom uses the kernel, and the
 normalization on identities uses that every subspace of codimension below the dimension is
-nonzero.
+nonzero. Postcomposition with a linear isometry preserves the norm of every restriction, so the
+Gelfand numbers are injective.
 
 ## Main declarations
 
@@ -39,6 +40,9 @@ nonzero.
 * `ContinuousLinearMap.gelfandNumber_id`: `cₙ(id_E) = 1` when `n` is below the rank of `E`.
 * `TauCeti.SNumbers.isStrictSNumberSequence_gelfand`: the Gelfand numbers form a strict
   s-number sequence.
+* `LinearIsometry.gelfandNumber_toContinuousLinearMap_comp`,
+  `TauCeti.SNumbers.isInjective_gelfand`: the Gelfand numbers are injective, unchanged under
+  postcomposition with a linear isometry.
 
 ## References
 
@@ -196,6 +200,22 @@ theorem gelfandNumber_id {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 end ContinuousLinearMap
 
+namespace LinearIsometry
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- **Injectivity.** Postcomposition with a linear isometry leaves the Gelfand numbers unchanged:
+`cₙ(J T) = cₙ(T)`, since `J` preserves the norm of every restriction of `T`. -/
+@[simp]
+theorem gelfandNumber_toContinuousLinearMap_comp (J : F →ₗᵢ[𝕜] G) (T : E →L[𝕜] F) (n : ℕ) :
+    (J.toContinuousLinearMap ∘L T).gelfandNumber n = T.gelfandNumber n := by
+  simp_rw [ContinuousLinearMap.gelfandNumber_def, ContinuousLinearMap.comp_assoc]
+  exact iInf_congr fun _ ↦ NNReal.eq J.norm_toContinuousLinearMap_comp
+
+end LinearIsometry
+
 universe u
 
 namespace TauCeti.SNumbers
@@ -223,5 +243,9 @@ theorem isStrictSNumberSequence_gelfand : IsStrictSNumberSequence (gelfand (𝕜
     rw [(WithLp.linearEquiv 2 𝕜 (Fin (n + 1) → 𝕜)).rank_eq]
     simp
   normalize_of_lt_rank n hn := ContinuousLinearMap.gelfandNumber_id hn
+
+/-- Gelfand numbers form an injective family. -/
+theorem isInjective_gelfand : IsInjective (gelfand (𝕜 := 𝕜)) where
+  linearIsometry_comp J T n := J.gelfandNumber_toContinuousLinearMap_comp T n
 
 end TauCeti.SNumbers
