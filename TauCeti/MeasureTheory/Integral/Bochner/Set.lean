@@ -19,13 +19,13 @@ a set. This file records its global form: a jointly continuous integrand which v
 integration variable lies in a fixed compact set has a continuous parametric integral, against any
 measure which is finite on compact sets. It also records that the indicator function of a
 bounded interval `[a, b)` is integrable against a locally finite measure, that the integral of
-`|f|` over a set splits along the sign of `f`, that an almost everywhere positive function has
-positive integral, bounds for the integral of the reciprocal of a function bounded below by a
-positive constant, and that a continuous
+`|f|` over a set splits along the sign of `f`, that an integral over a set splits along finitely
+many disjoint measurable subsets, that an almost everywhere positive function has positive
+integral, bounds for the integral of the reciprocal of a function bounded below by a positive
+constant, and that a continuous
 square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive
 on nonempty open sets. It also bounds the integral over a measurable set `S` by integrals over
-unions with disjoint sets, and identifies the integrals over two measurable sets of a function
-vanishing off their intersection.
+unions with disjoint sets.
 
 ## Main statements
 
@@ -42,6 +42,8 @@ vanishing off their intersection.
 * `TauCeti.integrableOn_sin_of_measure_ne_top`,
   `TauCeti.integrableOn_exp_ofReal_mul_I_of_measure_ne_top`: the sine and the unit-circle
   exponential `exp (t x I)` are integrable on a set of finite measure.
+* `MeasureTheory.setIntegral_eq_setIntegral_sdiff_iUnion_add_sum`: an integral over `T` splits along
+  finitely many pairwise disjoint measurable subsets of `T` and the rest of `T`.
 * `MeasureTheory.setIntegral_mul_le_mul_setIntegral_abs`: the pairing of an integrable `f` on `Ω`
   with a function `g` bounded by `S` on `V ⊆ Ω` is at most `S ∫_Ω |f|`.
 * `MeasureTheory.setLIntegral_enorm_sq_eq_ofReal_setIntegral`: the Lebesgue integral of `‖f‖ₑ ^ 2`
@@ -51,8 +53,6 @@ vanishing off their intersection.
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 * `MeasureTheory.norm_setIntegral_le_add_of_disjoint`: the integral over `S` is bounded by the
   integrals over `H ∪ (S ∪ T)`, `H` and `T`, for disjoint `H`, `S`, `T`.
-* `MeasureTheory.setIntegral_eq_setIntegral_of_forall_sdiff_eq_zero`: a function vanishing on
-  `s \ t` and on `t \ s` has the same integral over the measurable sets `s` and `t`.
 -/
 
 public section
@@ -217,6 +217,18 @@ theorem Continuous.eq_zero_of_integral_conj_mul_self_eq_zero {X 𝕜 : Type*} [T
 
 namespace MeasureTheory
 
+/-- An integral over `T` splits along finitely many pairwise disjoint measurable sets `A i ⊆ T`
+into the integral over the rest `T \ ⋃ i, A i` plus the sum of the integrals over the `A i`. -/
+theorem setIntegral_eq_setIntegral_sdiff_iUnion_add_sum {α E ι : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [Fintype ι] {ν : Measure α} {T : Set α}
+    {A : ι → Set α} (hAm : ∀ i, MeasurableSet (A i)) (hAd : Pairwise (Disjoint on A))
+    (hAT : ∀ i, A i ⊆ T) {f : α → E} (hf : IntegrableOn f T ν) :
+    ∫ x in T, f x ∂ν = (∫ x in T \ ⋃ i, A i, f x ∂ν) + ∑ i, ∫ x in A i, f x ∂ν := by
+  conv_lhs => rw [← sdiff_union_of_subset (iUnion_subset hAT)]
+  rw [setIntegral_union disjoint_sdiff_left (MeasurableSet.iUnion hAm)
+    (hf.mono_set sdiff_subset) (hf.mono_set (iUnion_subset hAT)),
+    integral_iUnion_fintype hAm hAd fun i ↦ hf.mono_set (hAT i)]
+
 /-- The pairing of an integrable function `f` on `Ω` with a function `g` bounded by `S` on
 `V ⊆ Ω` is at most `S ∫_Ω |f|`. -/
 theorem setIntegral_mul_le_mul_setIntegral_abs {α : Type*} [MeasurableSpace α]
@@ -275,15 +287,5 @@ theorem norm_setIntegral_le_add_of_disjoint {f : α → E} {H S T : Set α}
   calc ‖b‖ = ‖a + (b + c) - a - c‖ := by congr 1; abel
     _ ≤ ‖a + (b + c) - a‖ + ‖c‖ := norm_sub_le _ _
     _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
-
-/-- If `f` vanishes on `s \ t` and on `t \ s`, for measurable sets `s` and `t`, then its
-integrals over `s` and `t` agree. -/
-theorem setIntegral_eq_setIntegral_of_forall_sdiff_eq_zero {f : α → E} {s t : Set α}
-    (hs : MeasurableSet s) (ht : MeasurableSet t) (hst : ∀ x ∈ s \ t, f x = 0)
-    (hts : ∀ x ∈ t \ s, f x = 0) : ∫ x in s, f x ∂μ = ∫ x in t, f x ∂μ := by
-  rw [setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hs inter_subset_left
-      fun x hx ↦ hst x ⟨hx.1, fun h ↦ hx.2 ⟨hx.1, h⟩⟩,
-    setIntegral_eq_of_subset_of_forall_sdiff_eq_zero ht inter_subset_right
-      fun x hx ↦ hts x ⟨hx.1, fun h ↦ hx.2 ⟨h, hx.1⟩⟩]
 
 end MeasureTheory
