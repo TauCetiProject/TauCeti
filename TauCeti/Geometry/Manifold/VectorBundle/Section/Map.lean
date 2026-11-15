@@ -24,8 +24,9 @@ when a bundle is replaced by a smoothly isomorphic bundle. Smoothness is stated 
 spaces; no norms on individual fibres, finite-rank assumption, compactness of the base,
 or choice of frames is needed. Transport commutes with smooth scalar localization.
 
-On a real `C^n` vector bundle every fibre vector is the value of a global `C^n` section, so a
-bundle map is determined by its action on sections (`ContMDiffSection.mapLinearMap_inj`).
+On a real `C^n` vector bundle, `n ≤ ∞`, over a finite-dimensional Hausdorff smooth manifold, every
+fibre vector is the value of a global `C^n` section, so a bundle map is determined by its action on
+sections (`ContMDiffSection.mapLinearMap_inj`).
 -/
 
 public section
@@ -304,8 +305,10 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
   [TopologicalSpace (TotalSpace G W)] [FiberBundle G W] [VectorBundle ℝ G W]
 
-/-- On a real `C^n` vector bundle, `n ≤ ∞`, a bundle map is determined by its action on `C^n`
-sections, since every fibre vector is the value of a `C^n` section. -/
+/-- On a real `C^n` vector bundle, `n ≤ ∞`, over a finite-dimensional Hausdorff smooth manifold, a
+bundle map is determined by its action on `C^n` sections, since every fibre vector is the value of
+a global `C^n` section. -/
+@[simp]
 theorem mapLinearMap_inj [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
     {ϕ ψ : ∀ x, V x →ₗ[ℝ] W x}
     {hϕ : ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, G)) n

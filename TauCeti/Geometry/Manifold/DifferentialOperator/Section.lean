@@ -60,7 +60,7 @@ operator has order `0`.
 * `TauCeti.mem_differentialOperators_zero_iff_exists_eq_mapLinearMap`: for `V` of finite rank, the
   operators of order `0` are exactly the actions of smooth bundle maps, whose fibre maps are
   unique (`ContMDiffSection.mapLinearMap_inj`).
-* `CovariantDerivative.smulCommutator_alongVectorField`,
+* `CovariantDerivative.smulCommutator_alongVectorField_apply`,
   `CovariantDerivative.alongVectorField_mem_differentialOperators_one`: the Leibniz rule
   `[∇_X, f] = M_{X f}`, and `∇_X` has order at most one.
 
@@ -158,9 +158,7 @@ theorem mem_differentialOperators_zero_iff_exists_eq_mapLinearMap
     simpa using congr($(hlift x) v)
   let ϕ (x : M) : V x →ₗ[ℝ] W x := ContMDiffSection.evalLinearMap I F' ∞ W x ∘ₗ P ∘ₗ lift x
   have hϕ (s : Cₛ^∞⟮I; F, V⟯) (x : M) : ϕ x (s x) = P s x := by
-    have h := hpt (x := x) (s := lift x (s x) - s) (by simp [hlift'])
-    rw [map_sub, ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero] at h
-    simpa [ϕ] using h
+    simpa [ϕ, sub_eq_zero] using hpt (x := x) (s := lift x (s x) - s) (by simp [hlift'])
   -- The same fibre maps as continuous linear maps, through the finite-dimensional model fibre.
   let A (x : M) : V x →L[ℝ] W x :=
     let e := (trivializationAt F V x).continuousLinearEquivAt ℝ x
@@ -175,8 +173,7 @@ theorem mem_differentialOperators_zero_iff_exists_eq_mapLinearMap
       (fun x ↦ TotalSpace.mk' (F →L[ℝ] F') (E := fun y ↦ V y →L[ℝ] W y) x (A x)) := by
     refine (Manifold.contMDiff_hom_iff A).2 fun s hs ↦ ?_
     convert (P ⟨s, hs⟩).contMDiff using 2 with x
-    rw [hA, ← hϕ ⟨s, hs⟩ x]
-    rfl
+    rw [hA, ← hϕ ⟨s, hs⟩ x, ContMDiffSection.coeFn_mk]
   have htot := (contMDiff_hom_bundle_iff A).1 hAs
   refine ⟨ϕ, htot.congr fun p ↦ by simp [hA], ?_⟩
   ext s x
@@ -203,17 +200,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- **The Leibniz rule.** The commutator of the covariant derivative `∇_X` along a smooth vector
 field with multiplication by a smooth function `f` is multiplication by the derivative `X f` of `f`
 along `X`: `∇_X (f s) - f ∇_X s = (X f) s`. -/
-theorem smulCommutator_alongVectorField (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
+theorem smulCommutator_alongVectorField_apply (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
     (f : C^∞⟮I, M; ℝ⟯) (s : Cₛ^∞⟮I; F, V⟯) :
     smulCommutator ℝ f (cov.alongVectorField X) s = vectorFieldDerivation X f • s := by
   ext y
-  have hfs : ⇑(f • s) = (⇑f) • ⇑s := funext fun z ↦ ContMDiffSection.smul_apply ..
-  rw [smulCommutator_apply_apply, ContMDiffSection.coe_sub, Pi.sub_apply, alongVectorField_apply,
-    hfs, cov.covariantDerivative_smul_section_apply
-      (f.contMDiff.mdifferentiable (by simp) y) (s.mdifferentiableAt (x := y)),
-    ContMDiffSection.smul_apply, alongVectorField_apply, ContMDiffSection.smul_apply,
-    ContMDiffSection.vectorFieldDerivation_apply_apply]
-  abel
+  simp [smulCommutator_apply_apply,
+    show ⇑(f • s) = ⇑f • ⇑s from funext (ContMDiffSection.smul_apply f s),
+    cov.covariantDerivative_smul_section_apply (f.contMDiff.mdifferentiable (by simp) y)
+      s.mdifferentiableAt, ContMDiffSection.vectorFieldDerivation_apply_apply]
 
 /-- The covariant derivative along a smooth vector field is a differential operator of order at
 most one. -/
@@ -223,6 +217,6 @@ theorem alongVectorField_mem_differentialOperators_one
       differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 1 := by
   refine mem_differentialOperators_succ_iff.2 fun f ↦ mem_differentialOperators_zero_iff.2
     fun g s ↦ ?_
-  rw [smulCommutator_alongVectorField, smulCommutator_alongVectorField, smul_comm]
+  rw [smulCommutator_alongVectorField_apply, smulCommutator_alongVectorField_apply, smul_comm]
 
 end CovariantDerivative
