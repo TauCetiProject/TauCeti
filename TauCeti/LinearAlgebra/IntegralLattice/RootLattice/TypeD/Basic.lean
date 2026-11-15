@@ -784,6 +784,7 @@ theorem checkerboardCospinorClass_ne_checkerboardSpinorClass :
 /-! ## The order of the discriminant group -/
 
 /-- **The checkerboard discriminant group has order four.** -/
+@[simp]
 theorem natCard_discriminantGroup_checkerboardLattice :
     Nat.card (checkerboardLattice n).DiscriminantGroup = 4 := by
   rw [← Set.ncard_univ, Set.ncard_eq_four]
@@ -799,6 +800,7 @@ theorem natCard_discriminantGroup_checkerboardLattice :
 
 /-- **The discriminant of the checkerboard lattice is `4`**: the Gram determinant of any integral
 basis has absolute value `4`. -/
+@[simp]
 theorem discriminant_checkerboardLattice : (checkerboardLattice n).discriminant = 4 := by
   rw [← natCard_discriminantGroup, natCard_discriminantGroup_checkerboardLattice]
 
@@ -1005,7 +1007,7 @@ noncomputable def zmodTwoProdAddEquivCheckerboardDiscriminantGroup (hn : Even n)
     ((checkerboardZModTwoHom _ (two_zsmul_checkerboardVectorClass n)).coprod
       (checkerboardZModTwoHom _ (two_zsmul_checkerboardSpinorClass_of_even n hn))) ?_
   rw [Nat.bijective_iff_surjective_and_card]
-  refine ⟨fun g ↦ ?_, by simp [natCard_discriminantGroup_checkerboardLattice n]⟩
+  refine ⟨fun g ↦ ?_, by simp⟩
   rcases
       checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_cospinorClass
         g with h | h | h | h
