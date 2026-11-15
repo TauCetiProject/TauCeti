@@ -72,8 +72,7 @@ def duplicateAt (e : A) {L : ℕ} (j : Fin L) (z : Fin L → A) : Fin (L + 1) �
 
 /-- Explicit definition of `duplicateAt` via `Fin.insertNth` and `Function.update`. -/
 theorem duplicateAt_def (e : A) {L : ℕ} (j : Fin L) (z : Fin L → A) :
-    duplicateAt e j z = j.succ.insertNth e (Function.update z j e) := by
-  rfl
+    duplicateAt e j z = j.succ.insertNth e (Function.update z j e) := by rfl
 
 /-- Coordinate formula for `duplicateAt`: indices `< j` are unchanged, indices `j` and `j + 1` equal
 `e`, and indices `> j + 1` shift down by `1`. -/
@@ -88,22 +87,15 @@ theorem duplicateAt_apply (e : A) {L : ℕ} (j : Fin L) (z : Fin L → A) (k : F
   | p r =>
     rw [Fin.insertNth_apply_succAbove]
     rcases lt_trichotomy r.1 j.1 with hlt | heq | hgt
-    · have hne : r ≠ j := fun h ↦ Nat.ne_of_lt hlt (congrArg Fin.val h)
-      have hsa : j.succ.succAbove r = r.castSucc :=
-        Fin.succAbove_of_castSucc_lt _ _ (Fin.lt_def.2 (by simp; omega))
-      rw [Function.update_of_ne hne, hsa]
+    · rw [Function.update_of_ne (fun h ↦ Nat.ne_of_lt hlt (congrArg Fin.val h)),
+        Fin.succAbove_of_castSucc_lt _ _ (Fin.lt_def.2 (by simp; omega))]
       simp [hlt]
-    · have hrj : r = j := Fin.ext heq
-      subst hrj
-      have hsa : r.succ.succAbove r = r.castSucc :=
-        Fin.succAbove_of_castSucc_lt _ _ (Fin.lt_def.2 (by simp))
-      rw [Function.update_self, hsa]
+    · obtain rfl := Fin.ext heq
+      rw [Function.update_self, Fin.succAbove_of_castSucc_lt _ _ (Fin.lt_def.2 (by simp))]
       simp
-    · have hne : r ≠ j := fun h ↦ Nat.ne_of_gt hgt (congrArg Fin.val h)
-      have hsa : j.succ.succAbove r = r.succ :=
-        Fin.succAbove_of_le_castSucc _ _ (Fin.le_def.2 (by simp; omega))
-      rw [Function.update_of_ne hne, hsa, dite_eq_right (by rw [Fin.val_succ]; omega),
-        ite_eq_right (by rw [Fin.val_succ]; omega)]
+    · rw [Function.update_of_ne (fun h ↦ Nat.ne_of_gt hgt (congrArg Fin.val h)),
+        Fin.succAbove_of_le_castSucc _ _ (Fin.le_def.2 (by simp; omega)),
+        dite_eq_right (by rw [Fin.val_succ]; omega), ite_eq_right (by rw [Fin.val_succ]; omega)]
       exact congrArg z (Fin.ext (by simp))
 
 /-- Sum of `duplicateAt (-1) j 𝒟` when `𝒟 j = -1`: replacing one `-1` by two `-1`s decreases the
@@ -124,10 +116,7 @@ theorem duplicateAt_mem_piece {G : InternalGrading R A ℤ} {e : A} (he : e ∈ 
     {L : ℕ} (j : Fin L) {z : Fin L → A} {𝒟 : Fin L → ℤ} (hz : ∀ r, z r ∈ G.piece (𝒟 r))
     (k : Fin (L + 1)) : duplicateAt e j z k ∈ G.piece (duplicateAt (-1 : ℤ) j 𝒟 k) := by
   rw [duplicateAt_apply, duplicateAt_apply]
-  split_ifs
-  · exact hz _
-  · exact he
-  · exact hz _
+  split_ifs <;> first | exact hz _ | exact he
 
 private theorem sum_duplicateAt_range_le {m : ℕ} (j : Fin (m + 3)) (𝒟 : Fin (m + 3) → ℤ) {p : ℕ}
     (hp : p ≤ j.1) :
@@ -139,11 +128,9 @@ private theorem sum_duplicateAt_range_le {m : ℕ} (j : Fin (m + 3)) (𝒟 : Fin
       dite_eq_left (by rw [Fin.val_mk]; omega)]
 
 private theorem sum_duplicateAt_range_succ_ge {m : ℕ} (j : Fin (m + 3)) {𝒟 : Fin (m + 3) → ℤ}
-    (h𝒟j : 𝒟 j = -1) :
-    ∀ {q : ℕ}, j.1 ≤ q → q ≤ m + 2 →
-      (∑ r ∈ Finset.range (q + 1), if h : r < m + 4 then duplicateAt (-1 : ℤ) j 𝒟 ⟨r, h⟩ else 0) =
-        (∑ r ∈ Finset.range q, if h : r < m + 3 then 𝒟 ⟨r, h⟩ else 0) - 1 := by
-  intro q hq₁
+    (h𝒟j : 𝒟 j = -1) {q : ℕ} (hq₁ : j.1 ≤ q) : q ≤ m + 2 →
+    (∑ r ∈ Finset.range (q + 1), if h : r < m + 4 then duplicateAt (-1 : ℤ) j 𝒟 ⟨r, h⟩ else 0) =
+      (∑ r ∈ Finset.range q, if h : r < m + 3 then 𝒟 ⟨r, h⟩ else 0) - 1 := by
   induction q, hq₁ using Nat.le_induction with
   | base =>
     intro _
@@ -155,14 +142,11 @@ private theorem sum_duplicateAt_range_succ_ge {m : ℕ} (j : Fin (m + 3)) {𝒟 
     rw [Finset.sum_range_succ _ (q + 1), ih (by omega), Finset.sum_range_succ _ q,
       dite_eq_left (by omega), dite_eq_left (by omega), duplicateAt_apply]
     rcases eq_or_lt_of_le hjq with heq | hlt
-    · have hqj : (⟨q, by omega⟩ : Fin (m + 3)) = j := Fin.ext heq.symm
-      rw [hqj, h𝒟j]
-      simp [heq]
-      omega
-    · rw [dite_eq_right (by rw [Fin.val_mk]; omega), ite_eq_right (by rw [Fin.val_mk]; omega)]
-      have hfin : (⟨(⟨q + 1, by omega⟩ : Fin (m + 4)).1 - 1, by omega⟩ : Fin (m + 3)) =
-          ⟨q, by omega⟩ := Fin.ext (by simp)
-      rw [hfin]
+    · rw [show (⟨q, by omega⟩ : Fin (m + 3)) = j from Fin.ext heq.symm, h𝒟j]
+      simp [heq]; omega
+    · rw [dite_eq_right (by rw [Fin.val_mk]; omega), ite_eq_right (by rw [Fin.val_mk]; omega),
+        show (⟨(⟨q + 1, by omega⟩ : Fin (m + 4)).1 - 1, by omega⟩ : Fin (m + 3)) = ⟨q, by omega⟩
+          from Fin.ext (by simp)]
       omega
 
 /-! ### Subword and splice identities -/
@@ -184,14 +168,12 @@ private theorem subword_init_duplicateAt_last {e : A} {m : ℕ} {w : Fin (m + 3)
       of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R w) := by
   rw [subword_eq_of_tprod R _ (by omega) (by omega)]
   refine of_tprod_congr R A _ rfl fun k ↦ ?_
-  have hk := k.isLt
-  simp only [Fin.cast_eq_self, zero_add]
-  rw [duplicateAt_apply]
-  rcases Nat.lt_or_eq_of_le (Nat.le_of_lt_succ hk) with hlt | heq
-  · rw [dite_eq_left (by rw [Fin.val_mk, Fin.val_last]; exact hlt)]
-  · rw [dite_eq_right (by rw [Fin.val_mk, Fin.val_last]; omega),
-      ite_eq_left (by rw [Fin.val_mk, Fin.val_last]; omega)]
-    exact hw.symm.trans (congrArg w (Fin.ext (by rw [Fin.val_last]; omega)))
+  have _hk := k.isLt
+  simp only [Fin.cast_eq_self, zero_add, duplicateAt_apply, Fin.val_last]
+  split_ifs <;> try dsimp only at *
+  all_goals first
+    | omega
+    | (rw [← hw]; exact congrArg w (Fin.ext (by dsimp only [Fin.last]; omega)))
 
 private theorem subword_tail_duplicateAt_zero {e : A} {m : ℕ} {j : Fin (m + 3)} (hj : j.1 = 0)
     {w : Fin (m + 3) → A} (hw : w 0 = e) :
@@ -200,11 +182,9 @@ private theorem subword_tail_duplicateAt_zero {e : A} {m : ℕ} {j : Fin (m + 3)
   rw [subword_eq_of_tprod R _ (by omega) (by omega)]
   refine of_tprod_congr R A _ rfl fun k ↦ ?_
   rw [Fin.cast_eq_self, duplicateAt_apply, dite_eq_right (by rw [Fin.val_mk]; omega)]
-  rcases Nat.eq_zero_or_pos k.1 with hk0 | hkpos
-  · rw [ite_eq_left (by rw [Fin.val_mk]; omega)]
-    exact hw.symm.trans (congrArg w (Fin.ext (by rw [Fin.val_zero]; omega)))
-  · rw [ite_eq_right (by rw [Fin.val_mk]; omega)]
-    exact congrArg w (Fin.ext (by rw [Fin.val_mk, Fin.val_mk]; omega))
+  split_ifs with h <;> dsimp only at h
+  · exact hw.symm.trans (congrArg w (Fin.ext (by rw [Fin.val_zero]; omega)))
+  · exact congrArg w (Fin.ext (by dsimp only; omega))
 
 private theorem subword_tail_duplicateAt_of_pos (R : Type uR) [CommRing R] [Module R A] (e : A)
     {m : ℕ} {j : Fin (m + 3)} (hj : 1 ≤ j.1) (w : Fin (m + 3) → A) :
@@ -234,19 +214,13 @@ private theorem splice_two_duplicateAt_pred {e : A} {m : ℕ} {j : Fin (m + 3)} 
       of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R w) := by
   rw [splice_eq_of_tprod R _ _ two_pos (by omega) (by omega)]
   refine of_tprod_congr R A _ rfl fun k ↦ ?_
-  simp only [Fin.cast_eq_self, zero_add]
-  rcases lt_trichotomy k.1 (j.1 - 1) with hlt | heq | hgt
-  · rw [dite_eq_left hlt, duplicateAt_apply, dite_eq_left (by rw [Fin.val_mk]; omega)]
-    exact congrArg w (Fin.ext rfl)
-  · rw [dite_eq_right (by omega), dite_eq_left heq]
-    exact congrArg w (Fin.ext (by rw [Fin.val_mk]; omega))
-  · rw [dite_eq_right (by omega), dite_eq_right (by omega), duplicateAt_apply,
-      dite_eq_right (by rw [Fin.val_mk]; omega)]
-    rcases eq_or_lt_of_le (Nat.succ_le_of_lt hgt) with hkj | hgt'
-    · rw [ite_eq_left (by rw [Fin.val_mk]; omega)]
-      exact hw.symm.trans (congrArg w (Fin.ext (by omega)))
-    · rw [ite_eq_right (by rw [Fin.val_mk]; omega)]
-      exact congrArg w (Fin.ext (by rw [Fin.val_mk, Fin.val_mk]; omega))
+  simp only [Fin.cast_eq_self, zero_add, duplicateAt_apply]
+  split_ifs
+  all_goals first
+    | omega
+    | exact congrArg w (Fin.ext rfl)
+    | (rw [← hw]; exact congrArg w (Fin.ext (by omega)))
+    | exact congrArg w (Fin.ext (by dsimp only; omega))
 
 private theorem splice_two_duplicateAt_self (R : Type uR) [CommRing R] [Module R A]
     {e : A} {m : ℕ} {j : Fin (m + 3)} {w : Fin (m + 3) → A} (hw : w j = e) :
@@ -254,15 +228,12 @@ private theorem splice_two_duplicateAt_self (R : Type uR) [CommRing R] [Module R
       of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R w) := by
   rw [splice_eq_of_tprod R _ _ two_pos (by omega) (by omega)]
   refine of_tprod_congr R A _ rfl fun k ↦ ?_
-  simp only [Fin.cast_eq_self, zero_add]
-  rcases lt_trichotomy k.1 j.1 with hlt | heq | hgt
-  · rw [dite_eq_left hlt, duplicateAt_apply, dite_eq_left (by rw [Fin.val_mk]; exact hlt)]
-    exact congrArg w (Fin.ext rfl)
-  · rw [dite_eq_right (by omega), dite_eq_left heq]
-    exact hw.symm.trans (congrArg w (Fin.ext heq.symm))
-  · rw [dite_eq_right (by omega), dite_eq_right (by omega), duplicateAt_apply,
-      dite_eq_right (by rw [Fin.val_mk]; omega), ite_eq_right (by rw [Fin.val_mk]; omega)]
-    exact congrArg w (Fin.ext (by rw [Fin.val_mk, Fin.val_mk]; omega))
+  simp only [Fin.cast_eq_self, zero_add, duplicateAt_apply]
+  split_ifs
+  all_goals first
+    | omega
+    | exact congrArg w (Fin.ext rfl)
+    | (rw [← hw]; exact congrArg w (Fin.ext (by omega)))
 
 /-- Collapsing `[e, w (j + 1)]` to `w (j + 1)` in `duplicateAt e j w` recovers `w` when
 `w j = e`. -/
@@ -272,19 +243,13 @@ theorem splice_two_duplicateAt_succ {e : A} {m : ℕ} {j : Fin (m + 3)} (hj : j.
       of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R w) := by
   rw [splice_eq_of_tprod R _ _ two_pos (by omega) (by omega)]
   refine of_tprod_congr R A _ rfl fun k ↦ ?_
-  simp only [Fin.cast_eq_self, zero_add]
-  rcases lt_trichotomy k.1 (j.1 + 1) with hlt | heq | hgt
-  · rw [dite_eq_left hlt, duplicateAt_apply]
-    rcases Nat.lt_or_eq_of_le (Nat.le_of_lt_succ hlt) with hlt' | hkj
-    · rw [dite_eq_left (by rw [Fin.val_mk]; exact hlt')]
-      exact congrArg w (Fin.ext rfl)
-    · rw [dite_eq_right (by rw [Fin.val_mk]; omega), ite_eq_left (by rw [Fin.val_mk]; omega)]
-      exact hw.symm.trans (congrArg w (Fin.ext hkj.symm))
-  · rw [dite_eq_right (by omega), dite_eq_left heq]
-    exact congrArg w (Fin.ext (by rw [Fin.val_mk]; omega))
-  · rw [dite_eq_right (by omega), dite_eq_right (by omega), duplicateAt_apply,
-      dite_eq_right (by rw [Fin.val_mk]; omega), ite_eq_right (by rw [Fin.val_mk]; omega)]
-    exact congrArg w (Fin.ext (by rw [Fin.val_mk, Fin.val_mk]; omega))
+  simp only [Fin.cast_eq_self, zero_add, duplicateAt_apply]
+  split_ifs
+  all_goals first
+    | omega
+    | exact congrArg w (Fin.ext rfl)
+    | (rw [← hw]; exact congrArg w (Fin.ext (by omega)))
+    | exact congrArg w (Fin.ext (by dsimp only; omega))
 
 private theorem subword_two_duplicateAt_ge {e : A} {m : ℕ} {j : Fin (m + 3)} {q : ℕ}
     (hq₁ : j.1 ≤ q) (hq₂ : q + 2 ≤ m + 3) {w : Fin (m + 3) → A} (hw : w j = e) :
@@ -292,14 +257,9 @@ private theorem subword_two_duplicateAt_ge {e : A} {m : ℕ} {j : Fin (m + 3)} {
   rw [subword_eq_of_tprod R _ two_pos (by omega), subword_eq_of_tprod R _ two_pos hq₂]
   refine of_tprod_congr R A _ rfl fun k ↦ ?_
   rw [Fin.cast_eq_self, duplicateAt_apply, dite_eq_right (by rw [Fin.val_mk]; omega)]
-  by_cases h : (⟨q + 1 + k.1, by omega⟩ : Fin (m + 4)).1 = j.1 ∨
-      (⟨q + 1 + k.1, by omega⟩ : Fin (m + 4)).1 = j.1 + 1
-  · rw [ite_eq_left h]
-    dsimp only at h
-    exact hw.symm.trans (congrArg w (Fin.ext (by dsimp only; omega)))
-  · rw [ite_eq_right h]
-    dsimp only at h
-    exact congrArg w (Fin.ext (by dsimp only; omega))
+  split_ifs with h <;> dsimp only at h
+  · exact hw.symm.trans (congrArg w (Fin.ext (by dsimp only; omega)))
+  · exact congrArg w (Fin.ext (by dsimp only; omega))
 
 /-- Splicing a two-letter block strictly after `j` commutes with duplicating `e` at slot `j`. -/
 theorem splice_two_duplicateAt_after (e : A) {m : ℕ} (j : Fin (m + 2)) {q : ℕ}
@@ -405,50 +365,41 @@ private theorem taylor_barDifferential_duplicateAt_binary_prefix {𝒜 : AInfini
       if j.1 = 0 then 𝒜.taylor (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R w)) else 0 := by
   have hjlt := j.isLt
   rcases Nat.eq_zero_or_pos j.1 with hj0 | hjpos
-  · have hr0 : Finset.range (j.1 + 1) = Finset.range 1 := congrArg Finset.range (by omega)
-    have hsp := splice_two_duplicateAt_self R hwj
+  · have hsp := splice_two_duplicateAt_self R hwj
     rw [hj0] at hsp
-    rw [ite_eq_left hj0, hr0, Finset.sum_range_one, Finset.sum_range_zero, negOnePowCast_zero,
-      one_smul, subword_two_eq R _ (by omega)]
-    have h0 : duplicateAt e j w ⟨0, by omega⟩ = e := by rw [duplicateAt_apply]; simp [hj0]
-    have h1 : duplicateAt e j w ⟨1, by omega⟩ = e := by rw [duplicateAt_apply]; simp [hj0]
-    rw [h0, h1, h𝒜.taylor_of_two_cohomologicalUnit_left he, hsp]
-  · have hlen : Finset.range (j.1 + 1) = Finset.range ((j.1 - 1) + 1 + 1) :=
-      congrArg Finset.range (by omega)
-    rw [ite_eq_right (Nat.ne_of_gt hjpos), hlen, Finset.sum_range_succ, Finset.sum_range_succ]
-    have hpre : (∑ p ∈ Finset.range (j.1 - 1),
-        negOnePowCast R (∑ r ∈ Finset.range p,
-            if h : r < m + 4 then duplicateAt (-1 : ℤ) j 𝒟 ⟨r, h⟩ else 0) •
-          𝒜.taylor (splice R (duplicateAt e j w) 0 (m + 4) p 2
-            (𝒜.taylor (subword R (duplicateAt e j w) p 2)))) = 0 :=
+    rw [ite_eq_left hj0, show Finset.range (j.1 + 1) = Finset.range 1 from congrArg _ (by omega),
+      Finset.sum_range_one, Finset.sum_range_zero, negOnePowCast_zero, one_smul,
+      subword_two_eq R _ (by omega),
+      show duplicateAt e j w ⟨0, by omega⟩ = e by rw [duplicateAt_apply]; simp [hj0],
+      show duplicateAt e j w ⟨1, by omega⟩ = e by rw [duplicateAt_apply]; simp [hj0],
+      h𝒜.taylor_of_two_cohomologicalUnit_left he, hsp]
+  · have hj_pred : (j.1 - 1) + 1 = j.1 := by omega
+    rw [ite_eq_right (Nat.ne_of_gt hjpos),
+      show Finset.range (j.1 + 1) = Finset.range ((j.1 - 1) + 1 + 1) from congrArg _ (by omega),
+      Finset.sum_range_succ, Finset.sum_range_succ,
       Finset.sum_eq_zero fun p hp ↦ by
         rw [Finset.mem_range] at hp
         obtain ⟨u, hu, hsp⟩ := splice_two_duplicateAt_of_lt R e (by omega : p + 2 ≤ j.1) w
           (𝒜.taylor (subword R (duplicateAt e j w) p 2))
-        rw [hsp, hIH u ⟨j.1 - 1, by omega⟩ (by dsimp only; omega) hu, smul_zero]
-    have hj_pred : (j.1 - 1) + 1 = j.1 := by omega
-    rw [hpre, zero_add, hj_pred, sum_duplicateAt_range_le j 𝒟 (by omega),
+        rw [hsp, hIH u ⟨j.1 - 1, by omega⟩ (by dsimp only; omega) hu, smul_zero],
+      zero_add, hj_pred, sum_duplicateAt_range_le j 𝒟 (by omega),
       sum_duplicateAt_range_le j 𝒟 le_rfl]
-    have hYpred : duplicateAt e j w ⟨j.1 - 1, by omega⟩ = w ⟨j.1 - 1, by omega⟩ := by
-      rw [duplicateAt_apply, dite_eq_left (by rw [Fin.val_mk]; omega)]
-    have hY0 : duplicateAt e j w ⟨j.1 - 1 + 1, by omega⟩ = e := by
-      rw [duplicateAt_apply]; simp [hj_pred]
-    have hY1 : duplicateAt e j w ⟨j.1, by omega⟩ = e := by rw [duplicateAt_apply]; simp
-    have hY2 : duplicateAt e j w ⟨j.1 + 1, by omega⟩ = e := by rw [duplicateAt_apply]; simp
-    rw [subword_two_eq R _ (by omega), hYpred, hY0, h𝒜.taylor_of_two_cohomologicalUnit_right he,
+    rw [subword_two_eq R _ (by omega),
+      show duplicateAt e j w ⟨j.1 - 1, by omega⟩ = w ⟨j.1 - 1, by omega⟩ by
+        rw [duplicateAt_apply, dite_eq_left (by rw [Fin.val_mk]; omega)],
+      show duplicateAt e j w ⟨j.1 - 1 + 1, by omega⟩ = e by rw [duplicateAt_apply]; simp [hj_pred],
+      h𝒜.taylor_of_two_cohomologicalUnit_right he,
       𝒜.grading.koszulTwist_one_apply_of_mem
         (by simpa [InternalGrading.shift_piece] using hw ⟨j.1 - 1, by omega⟩),
       ← negOnePowCast_eq_intCast, splice_smul, map_smul, splice_two_duplicateAt_pred hjpos hwj,
-      subword_two_eq R _ (by omega), hY1, hY2, h𝒜.taylor_of_two_cohomologicalUnit_left he,
-      splice_two_duplicateAt_self R hwj, smul_smul, ← negOnePowCast_add, ← add_smul]
-    have hrj : Finset.range j.1 = Finset.range ((j.1 - 1) + 1) :=
-      congrArg Finset.range (by omega)
-    have hS : (∑ r ∈ Finset.range j.1, if h : r < m + 3 then 𝒟 ⟨r, h⟩ else 0) =
-        (∑ r ∈ Finset.range (j.1 - 1), if h : r < m + 3 then 𝒟 ⟨r, h⟩ else 0) +
-          𝒟 ⟨j.1 - 1, by omega⟩ := by
-      rw [hrj, Finset.sum_range_succ, dite_eq_left (by omega)]
-    rw [hS, ← add_assoc, negOnePowCast_add _ 1, negOnePowCast_one, mul_neg_one, neg_add_cancel,
-      zero_smul]
+      subword_two_eq R _ (by omega),
+      show duplicateAt e j w ⟨j.1, by omega⟩ = e by rw [duplicateAt_apply]; simp,
+      show duplicateAt e j w ⟨j.1 + 1, by omega⟩ = e by rw [duplicateAt_apply]; simp,
+      h𝒜.taylor_of_two_cohomologicalUnit_left he, splice_two_duplicateAt_self R hwj, smul_smul,
+      ← negOnePowCast_add, ← add_smul,
+      show Finset.range j.1 = Finset.range ((j.1 - 1) + 1) from congrArg _ (by omega),
+      Finset.sum_range_succ, dite_eq_left (by omega), ← add_assoc, negOnePowCast_add _ 1,
+      negOnePowCast_one, mul_neg_one, neg_add_cancel, zero_smul]
 
 private theorem taylor_barDifferential_duplicateAt_row {𝒜 : AInfinityAlgebra R A}
     (h𝒜 : 𝒜.IsMinimal) {e : A} (he : 𝒜.CohomologicalUnit e) {m : ℕ}
@@ -523,12 +474,6 @@ theorem IsMinimal.taylor_barDifferential_duplicateAt {𝒜 : AInfinityAlgebra R 
     Finset.sum_add_distrib, Finset.sum_add_distrib] at hzero
   simp only [ite_and, Finset.sum_ite_eq', Finset.mem_range,
     ite_eq_left (by omega : 0 < m + 4), ite_eq_left (by omega : 1 < m + 4)] at hzero
-  have hsplit_range : Finset.range (m + 3) = Finset.range ((j.1 + 1) + (m + 2 - j.1)) :=
-    congrArg Finset.range (by omega)
-  rw [Finset.sum_range_succ _ (m + 3),
-    splice_eq_zero_of_not_fits R _ _ (by omega : ¬ (0 < 2 ∧ (m + 3) + 2 ≤ m + 4)), map_zero,
-    smul_zero, add_zero, hsplit_range, Finset.sum_range_add,
-    taylor_barDifferential_duplicateAt_binary_prefix h𝒜 he j hIH hw hwj] at hzero
   have htail : (∑ t ∈ Finset.range (m + 2 - j.1),
       negOnePowCast R (∑ r ∈ Finset.range (j.1 + 1 + t),
           if h : r < m + 4 then duplicateAt (-1 : ℤ) j 𝒟 ⟨r, h⟩ else 0) •
@@ -541,18 +486,21 @@ theorem IsMinimal.taylor_barDifferential_duplicateAt {𝒜 : AInfinityAlgebra R 
             (𝒜.taylor (subword R w (j.1 + t) 2)))) :=
     Finset.sum_congr rfl fun t ht ↦ by
       rw [Finset.mem_range] at ht
-      have hidx : j.1 + 1 + t = (j.1 + t) + 1 := by omega
-      rw [hidx, sum_duplicateAt_range_succ_ge j h𝒟j (by omega) (by omega),
+      rw [show j.1 + 1 + t = (j.1 + t) + 1 by omega,
+        sum_duplicateAt_range_succ_ge j h𝒟j (by omega) (by omega),
         subword_two_duplicateAt_ge (by omega) (by omega) hwj, sub_eq_add_neg, negOnePowCast_add,
         negOnePowCast_neg, negOnePowCast_one, mul_neg_one, neg_smul]
-  rw [htail] at hzero
+  rw [Finset.sum_range_succ _ (m + 3),
+    splice_eq_zero_of_not_fits R _ _ (by omega : ¬ (0 < 2 ∧ (m + 3) + 2 ≤ m + 4)), map_zero,
+    smul_zero, add_zero,
+    show Finset.range (m + 3) = Finset.range ((j.1 + 1) + (m + 2 - j.1)) from congrArg _ (by omega),
+    Finset.sum_range_add, taylor_barDifferential_duplicateAt_binary_prefix h𝒜 he j hIH hw hwj,
+    htail] at hzero
   by_cases hj0 : j.1 = 0
   · rw [ite_eq_left hj0, ite_eq_left hj0] at hzero
-    refine Eq.trans ?_ hzero
-    abel
+    refine Eq.trans ?_ hzero; abel
   · rw [ite_eq_right hj0, ite_eq_right hj0] at hzero
-    refine Eq.trans ?_ hzero
-    abel
+    refine Eq.trans ?_ hzero; abel
 
 /-- On a minimal `A∞` algebra with cohomological unit `e`, once `𝒜.taylor` vanishes on pure tensor
 words of length `k ≠ 2` (`k ≤ m + 2`) containing `e` and on `(m + 3)`-letter words carrying `e` in
