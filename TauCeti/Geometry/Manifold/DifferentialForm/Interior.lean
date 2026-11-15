@@ -284,6 +284,13 @@ theorem RoughForm.interior_swap [IsTopologicalAddGroup F]
     (ω.interior Y).interior X = -(ω.interior X).interior Y :=
   bundleInterior_swap X Y ω
 
+/-- The interior product of a form is supported in the support of the form. -/
+theorem RoughForm.tsupport_interior_subset (X : (x : M) → TangentSpace I x)
+    (ω : RoughForm I M F (k + 1)) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (ω.interior X) ⊆
+      _root_.tsupport (α := E [⋀^Fin (k + 1)]→L[ℝ] F) ω :=
+  closure_mono fun x hx hω ↦ hx (by ext v; rw [RoughForm.interior_apply, hω]; rfl)
+
 /-- Within-set pullback of a fixed-coefficient interior product, for fields related at a point. -/
 theorem mpullbackWithin_interior_at {E' H' M' : Type*}
     [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
