@@ -41,7 +41,6 @@ canonical families and boundary cases:
 
 * `TauCeti.GraphOfGroups.freeProductStarEquiv`, `TauCeti.GraphOfGroups.freeProductAdjacentEquiv`:
   basepoint star and neighbour bijections with `A` for `GraphOfGroups.freeProductGraph A B`.
-* `TauCeti.GraphOfGroups.HomotopyPathFrom`: based `𝔸`-paths from `v₀` modulo homotopy only.
 * `TauCeti.GraphOfGroups.twoIsolated`: the graph of groups on two isolated vertices with trivial
   vertex groups.
 
@@ -96,42 +95,49 @@ private theorem freeProductGraph_αArrow_range (A B : Type w) [Group A] [Group B
     ((freeProductGraph A B).αArrow e).range = ⊥ :=
   eq_bot_iff.mpr (by rintro _ ⟨⟨⟩, rfl⟩; exact map_one _)
 
+private abbrev segmentFalse : SerreGraph.segment.V := false
+
+private noncomputable def freeProductStarQuotientEquiv (A B : Type w) [Group A] [Group B]
+    (e : {e : SerreGraph.segment.E // SerreGraph.segment.src e = segmentFalse}) :
+    (freeProductGraph A B).vertexGroup segmentFalse ⧸
+      ((freeProductGraph A B).αArrow ⟨e.1, e.2, rfl⟩).range ≃ A :=
+  (Subgroup.quotientEquivOfEq (freeProductGraph_αArrow_range A B _)).trans
+    (QuotientGroup.quotientBot (G := (freeProductGraph A B).vertexGroup segmentFalse)).toEquiv
+
+private theorem freeProductStarQuotientEquiv_symm_apply (A B : Type w) [Group A] [Group B]
+    (e : {e : SerreGraph.segment.E // SerreGraph.segment.src e = segmentFalse})
+    (a : A) :
+    (freeProductStarQuotientEquiv A B e).symm a =
+      QuotientGroup.mk (show (freeProductGraph A B).vertexGroup segmentFalse from a) := by
+  let a' : (freeProductGraph A B).vertexGroup segmentFalse := a
+  exact (Equiv.symm_trans_apply _ _ a').trans <|
+    (congrArg _ (QuotientGroup.quotientBot_symm_apply a')).trans <|
+    (Equiv.symm_apply_eq _).mpr (Subgroup.quotientEquivOfEq_mk _ a').symm
+
 /-- In the Bass–Serre tree of `A ∗ B`, the outgoing darts at the base vertex `1 · A` correspond
 bijectively to the elements of `A`. -/
 noncomputable def freeProductStarEquiv (A B : Type w) [Group A] [Group B] :
     {E : ((freeProductGraph A B).bassSerreTree false).E //
       ((freeProductGraph A B).bassSerreTree false).src E =
         (freeProductGraph A B).bassSerreBaseVertex false} ≃ A :=
-  let v₀ : SerreGraph.segment.V := false
-  ((((Equiv.subtypeEquivRight fun _ =>
-      Iff.of_eq (congrArg _ (bassSerreBaseVertex_def (freeProductGraph A B) v₀))).trans
-    ((freeProductGraph A B).bassSerreStarEquiv v₀ .nil)).trans
+  (((Equiv.subtypeEquivRight fun _ => by
+      rw [bassSerreBaseVertex_def (freeProductGraph A B) segmentFalse]).trans
+    ((freeProductGraph A B).bassSerreStarEquiv segmentFalse .nil)).trans
     (Equiv.uniqueSigma _)).trans
-    (Subgroup.quotientEquivOfEq (freeProductGraph_αArrow_range A B _))).trans
-    (QuotientGroup.quotientBot (G := (freeProductGraph A B).vertexGroup v₀)).toEquiv
+    (freeProductStarQuotientEquiv A B default)
 
 @[simp] theorem freeProductStarEquiv_symm_apply_val (A B : Type w) [Group A] [Group B] (a : A) :
     ((freeProductStarEquiv A B).symm a).1 =
       (freeProductGraph A B).bassSerreDart false (false : SerreGraph.segment.E)
         (Path.ofVertex a) := by
-  let v₀ : SerreGraph.segment.V := false
-  let a' : (freeProductGraph A B).vertexGroup v₀ := a
-  let d : {e : SerreGraph.segment.E // SerreGraph.segment.src e = v₀} := default
-  let e₂ := (freeProductGraph A B).bassSerreStarEquiv v₀ .nil
-  let e₄ := Subgroup.quotientEquivOfEq (freeProductGraph_αArrow_range A B ⟨d.1, d.2, rfl⟩)
-  have hq : e₄.symm ((QuotientGroup.quotientBot
-      (G := (freeProductGraph A B).vertexGroup v₀)).toEquiv.symm a') = a' :=
-    (congrArg e₄.symm (QuotientGroup.quotientBot_symm_apply a')).trans
-      ((Equiv.symm_apply_eq e₄).mpr (Subgroup.quotientEquivOfEq_mk _ a').symm)
-  have hd : d = ⟨false, rfl⟩ := Subsingleton.elim _ _
-  refine (congrArg Subtype.val ((Equiv.symm_trans_apply _ _ a').trans <|
-    (Equiv.symm_trans_apply _ e₄ _).trans <| (Equiv.symm_trans_apply _ _ _).trans <|
-    (congrArg _ ((Equiv.uniqueSigma_symm_apply _).trans (congrArg (Sigma.mk d) hq))).trans
-    (Equiv.symm_trans_apply _ e₂ _))).trans ?_
-  exact (Equiv.subtypeEquivRight_symm_apply_coe _ _).trans
-    ((bassSerreStarEquiv_symm_apply_val .nil d a').trans (hd ▸ (bassSerreDartOfSrcEq_rfl
-      (𝔸 := freeProductGraph A B) (false : SerreGraph.segment.E) _).trans
-      (congrArg _ (Path.ofVertex_eq_nil_cons a').symm)))
+  have hd : (default : {e : SerreGraph.segment.E // SerreGraph.segment.src e = segmentFalse}) =
+      ⟨false, rfl⟩ := Subsingleton.elim _ _
+  simp only [freeProductStarEquiv, Equiv.symm_trans, Equiv.trans_apply,
+    Equiv.uniqueSigma_symm_apply, Equiv.subtypeEquivRight_symm_apply_coe]
+  rw [freeProductStarQuotientEquiv_symm_apply, bassSerreStarEquiv_symm_apply_val, hd]
+  exact (bassSerreDartOfSrcEq_rfl (𝔸 := freeProductGraph A B)
+      (false : SerreGraph.segment.E) _).trans
+    (congrArg _ (Path.ofVertex_eq_nil_cons _).symm)
 
 /-- In the Bass–Serre tree of `A ∗ B`, the neighbours of the base vertex `1 · A` correspond
 bijectively to `A` via `a ↦ (a · e) B`. -/
@@ -245,66 +251,6 @@ end BaumslagSolitar
 /-! ### 4. Unquotiented homotopy classes of based `𝔸`-paths (`bassSerreTree_not_quotient_paths`) -/
 
 section UnquotientedPaths
-
-/-- A based `𝔸`-path starting at `v₀` up to homotopy, without quotienting on the right by the
-terminal vertex group `A_v`. -/
-@[ext] structure HomotopyPathFrom : Type (max u v w) where
-  /-- The endpoint vertex in `Γ`. -/
-  vertex : Γ.V
-  /-- The homotopy class of the `𝔸`-path from `v₀` to `vertex`. -/
-  pathClass : Quotient (Path.setoid 𝔸 ⟨v₀⟩ ⟨vertex⟩)
-
-namespace HomotopyPathFrom
-
-variable {𝔸 v₀}
-
-/-- The homotopy class of an `𝔸`-path `p` from `v₀` to `v` in `𝔸.HomotopyPathFrom v₀`. -/
-@[expose] def ofPath {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) : 𝔸.HomotopyPathFrom v₀ :=
-  ⟨v, Quotient.mk (Path.setoid 𝔸 ⟨v₀⟩ ⟨v⟩) p⟩
-
-@[simp] theorem ofPath_vertex {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) : (ofPath p).vertex = v := (rfl)
-
-@[simp] theorem ofPath_pathClass {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
-    (ofPath p).pathClass = Quotient.mk (Path.setoid 𝔸 ⟨v₀⟩ ⟨v⟩) p := (rfl)
-
-/-- Prove a property of `𝔸.HomotopyPathFrom v₀` by checking it on `𝔸`-paths starting at `v₀`. -/
-@[elab_as_elim] theorem induction_on {P : 𝔸.HomotopyPathFrom v₀ → Prop}
-    (x : 𝔸.HomotopyPathFrom v₀)
-    (h : ∀ {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩), P (ofPath p)) : P x := by
-  rcases x with ⟨v, q⟩
-  exact Quotient.inductionOn q fun p => h p
-
-@[simp] theorem ofPath_eq_ofPath_iff {v : Γ.V} {p q : 𝔸.Path ⟨v₀⟩ ⟨v⟩} :
-    ofPath p = ofPath q ↔ p.Homotopic q := by
-  refine ⟨fun h => ?_, fun h => congrArg (HomotopyPathFrom.mk v) (Quotient.sound h)⟩
-  injection h with _ hq
-  exact Quotient.exact hq
-
-/-- `π₁(𝔸, v₀)` acts on `𝔸.HomotopyPathFrom v₀` on the left by concatenating closed `𝔸`-paths at
-`v₀`. -/
-noncomputable instance : SMul (π₁ 𝔸 v₀) (𝔸.HomotopyPathFrom v₀) where
-  smul g x := ⟨x.vertex, π₁.lift (fun s => Quotient.lift (fun p => Quotient.mk _ (s.comp p))
-      fun _ _ hp => Quotient.sound (Path.Homotopic.comp_left hp s))
-    (fun _ _ hs => funext fun q => Quotient.inductionOn q fun p =>
-      Quotient.sound (Path.Homotopic.comp_right hs p)) g x.pathClass⟩
-
-@[simp] theorem smul_vertex (g : π₁ 𝔸 v₀) (x : 𝔸.HomotopyPathFrom v₀) :
-    (g • x).vertex = x.vertex := (rfl)
-
-@[simp] theorem mk_smul_ofPath (s : 𝔸.Path ⟨v₀⟩ ⟨v₀⟩) {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
-    π₁.mk s • ofPath p = ofPath (s.comp p) :=
-  HomotopyPathFrom.ext rfl (heq_of_eq (congrFun (π₁.lift_mk _ _ s) _))
-
-/-- `π₁(𝔸, v₀)` acts on `𝔸.HomotopyPathFrom v₀` on the left by concatenating closed `𝔸`-paths at
-`v₀`. -/
-noncomputable instance : MulAction (π₁ 𝔸 v₀) (𝔸.HomotopyPathFrom v₀) where
-  one_smul x := induction_on x fun p => by
-    rw [← π₁.mk_nil, mk_smul_ofPath, Quiver.Path.nil_comp]
-  mul_smul g h x := π₁.induction_on g fun s₁ => π₁.induction_on h fun s₂ =>
-    induction_on x fun p => by
-      rw [← π₁.mk_comp, mk_smul_ofPath, mk_smul_ofPath, mk_smul_ofPath, Quiver.Path.comp_assoc]
-
-end HomotopyPathFrom
 
 /-- Without the left-coset relation `≈`, homotopy classes of based `𝔸`-paths carry a distinct
 point `ofPath (ofVertex a)` at `v₀` for every `a ∈ A_{v₀}`, and the empty path has trivial

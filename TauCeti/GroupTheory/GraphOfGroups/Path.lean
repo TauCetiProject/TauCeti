@@ -31,11 +31,13 @@ letter `1` turns any word into an alternating one, and their elementary equivale
 
 The closed `𝔸`-paths at a vertex `a` modulo homotopy form the fundamental group `π₁(𝔸, a)`,
 with concatenation as multiplication and reversal (inverting the vertex group letters) as
-inversion. An `𝔸`-path `p` from `a` to `b` conjugates the vertex group `A_b` into `π₁(𝔸, a)`;
-replacing `p` by another path from `a` to `b` conjugates the image of any subgroup of `A_b`. Over a
-preconnected graph any two vertices are joined by an `𝔸`-path. Reading the letters of a path as
-elements of `π₁(𝔸, T)` gives a homomorphism `π₁(𝔸, a) →* π₁(𝔸, T)` for every set `T` of darts.
-Over a graph without edges `π₁(𝔸, a)` is the vertex group `A_a`.
+inversion; more generally, `𝔸`-paths starting at `v₀` with arbitrary endpoint modulo homotopy
+form `HomotopyPathFrom`, on which `π₁(𝔸, v₀)` acts on the left by concatenation. An `𝔸`-path `p`
+from `a` to `b` conjugates the vertex group `A_b` into `π₁(𝔸, a)`; replacing `p` by another path
+from `a` to `b` conjugates the image of any subgroup of `A_b`. Over a preconnected graph any two
+vertices are joined by an `𝔸`-path. Reading the letters of a path as elements of `π₁(𝔸, T)` gives
+a homomorphism `π₁(𝔸, a) →* π₁(𝔸, T)` for every set `T` of darts. Over a graph without edges
+`π₁(𝔸, a)` is the vertex group `A_a`.
 
 An edge path of `Γ` is an `𝔸`-path with no vertex group letters, and backtrack homotopic edge
 paths are homotopic `𝔸`-paths. Hence reading reduced closed edge paths as `𝔸`-paths is a
@@ -57,6 +59,7 @@ at `a`.
 * `TauCeti.GraphOfGroups.Path.edgePath`: the underlying edge path of an `𝔸`-path.
 * `TauCeti.GraphOfGroups.π₁.pathGroupEquiv`: with trivial vertex groups, the reduced path group
   of `Γ` at `a` is `π₁(𝔸, a)`.
+* `TauCeti.GraphOfGroups.HomotopyPathFrom`: based `𝔸`-paths starting at `v₀` modulo homotopy.
 
 ## Main results
 
@@ -828,6 +831,77 @@ its underlying edge path. -/
   rw [MulEquiv.symm_apply_eq, pathGroupEquiv_ofPath, mk_mapPath_edgePath]
 
 end π₁
+
+/-! ### Homotopy classes of based `𝔸`-paths -/
+
+section
+
+variable (𝔸) (v₀ : Γ.V)
+
+/-- A based `𝔸`-path starting at `v₀` up to homotopy, without quotienting on the right by the
+terminal vertex group `A_v`. -/
+@[ext] structure HomotopyPathFrom : Type (max u v w) where
+  /-- The endpoint vertex in `Γ`. -/
+  vertex : Γ.V
+  /-- The homotopy class of the `𝔸`-path from `v₀` to `vertex`. -/
+  pathClass : Quotient (Path.setoid 𝔸 ⟨v₀⟩ ⟨vertex⟩)
+
+namespace HomotopyPathFrom
+
+variable {𝔸 v₀}
+
+/-- The homotopy class of an `𝔸`-path `p` from `v₀` to `v` in `𝔸.HomotopyPathFrom v₀`. -/
+def ofPath {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) : 𝔸.HomotopyPathFrom v₀ :=
+  ⟨v, Quotient.mk (Path.setoid 𝔸 ⟨v₀⟩ ⟨v⟩) p⟩
+
+@[simp] theorem ofPath_vertex {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) : (ofPath p).vertex = v := (rfl)
+
+@[simp] theorem ofPath_pathClass {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
+    (ofPath p).pathClass =
+      (ofPath_vertex p).symm ▸ Quotient.mk (Path.setoid 𝔸 ⟨v₀⟩ ⟨v⟩) p := (rfl)
+
+theorem ofPath_pathClass_heq {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
+    HEq (ofPath p).pathClass (Quotient.mk (Path.setoid 𝔸 ⟨v₀⟩ ⟨v⟩) p) := .rfl
+
+/-- Prove a property of `𝔸.HomotopyPathFrom v₀` by checking it on `𝔸`-paths starting at `v₀`. -/
+@[elab_as_elim] theorem induction_on {P : 𝔸.HomotopyPathFrom v₀ → Prop}
+    (x : 𝔸.HomotopyPathFrom v₀)
+    (h : ∀ {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩), P (ofPath p)) : P x := by
+  rcases x with ⟨v, q⟩
+  exact Quotient.inductionOn q fun p => h p
+
+@[simp] theorem ofPath_eq_ofPath_iff {v : Γ.V} {p q : 𝔸.Path ⟨v₀⟩ ⟨v⟩} :
+    ofPath p = ofPath q ↔ p.Homotopic q := by
+  refine ⟨fun h => ?_, fun h => congrArg (HomotopyPathFrom.mk v) (Quotient.sound h)⟩
+  injection h with _ hq
+  exact Quotient.exact hq
+
+/-- `π₁(𝔸, v₀)` acts on `𝔸.HomotopyPathFrom v₀` on the left by concatenating closed `𝔸`-paths at
+`v₀`. -/
+instance : SMul (π₁ 𝔸 v₀) (𝔸.HomotopyPathFrom v₀) where
+  smul g x := ⟨x.vertex, π₁.lift (fun s => Quotient.lift (fun p => Quotient.mk _ (s.comp p))
+      fun _ _ hp => Quotient.sound (Path.Homotopic.comp_left hp s))
+    (fun _ _ hs => funext fun q => Quotient.inductionOn q fun p =>
+      Quotient.sound (Path.Homotopic.comp_right hs p)) g x.pathClass⟩
+
+@[simp] theorem smul_vertex (g : π₁ 𝔸 v₀) (x : 𝔸.HomotopyPathFrom v₀) :
+    (g • x).vertex = x.vertex := (rfl)
+
+@[simp] theorem mk_smul_ofPath (s : 𝔸.Path ⟨v₀⟩ ⟨v₀⟩) {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
+    π₁.mk s • ofPath p = ofPath (s.comp p) := (rfl)
+
+/-- `π₁(𝔸, v₀)` acts on `𝔸.HomotopyPathFrom v₀` on the left by concatenating closed `𝔸`-paths at
+`v₀`. -/
+instance : MulAction (π₁ 𝔸 v₀) (𝔸.HomotopyPathFrom v₀) where
+  one_smul x := induction_on x fun p => by
+    rw [← π₁.mk_nil, mk_smul_ofPath, Quiver.Path.nil_comp]
+  mul_smul g h x := π₁.induction_on g fun s₁ => π₁.induction_on h fun s₂ =>
+    induction_on x fun p => by
+      rw [← π₁.mk_comp, mk_smul_ofPath, mk_smul_ofPath, mk_smul_ofPath, Quiver.Path.comp_assoc]
+
+end HomotopyPathFrom
+
+end
 
 end GraphOfGroups
 

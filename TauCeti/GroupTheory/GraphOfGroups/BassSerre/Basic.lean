@@ -658,7 +658,8 @@ variable {𝔸 v₀}
   bassSerreVertex_induction_on u fun _ => rfl
 
 @[simp] theorem bassSerreComponentHom_mapV_baseVertex :
-    (𝔸.bassSerreComponentHom v₀).mapV (𝔸.bassSerreBaseVertex v₀) = Γ.componentBase v₀ := (rfl)
+    (𝔸.bassSerreComponentHom v₀).mapV (𝔸.bassSerreBaseVertex v₀) = Γ.componentBase v₀ :=
+  Subtype.ext (by simp)
 
 @[simp] theorem bassSerreComponentHom_mapE_val (d : (𝔸.bassSerreTree v₀).E) :
     ((𝔸.bassSerreComponentHom v₀).mapE d).1 = (𝔸.bassSerreTypeHom v₀).mapE d :=

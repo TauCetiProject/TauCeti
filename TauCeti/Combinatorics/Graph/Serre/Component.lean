@@ -113,7 +113,7 @@ abbrev component : SerreGraph.{u, v} :=
     fun e => (Γ.rev_mem_componentDarts_iff v e).mpr
 
 /-- The base vertex `v` as a vertex of `Γ.component v`. -/
-@[expose] def componentBase : (Γ.component v).V :=
+def componentBase : (Γ.component v).V :=
   ⟨v, Γ.self_mem_componentVertices v⟩
 
 /-- The inclusion morphism from `Γ.component v` into `Γ`. -/
