@@ -229,6 +229,27 @@ private theorem pieceConst_nonneg (n : ℕ) (Cχ C : ℝ) : 0 ≤ pieceConst n C
   have := mul_self_nonneg C
   positivity
 
+private theorem norm_iteratedFDeriv_latticeBump_mul_le {n : ℕ} {Cχ : ℝ}
+    (hχ : ∀ q ≤ 4 * n, ∀ x, ‖iteratedFDeriv ℝ q (latticeBump n) x‖ ≤ Cχ)
+    (j j' : Fin n → ℤ) {p : ℕ} (hp : p ≤ 4 * n) (x : EuclideanSpace ℝ (Fin n)) :
+    ‖iteratedFDeriv ℝ p
+      (fun y ↦ latticeBump n (y - latticePoint j) * latticeBump n (y - latticePoint j')) x‖ ≤
+        2 ^ (4 * n) * (Cχ * Cχ) := by
+  set N := 4 * n
+  have hχ' : ∀ c : EuclideanSpace ℝ (Fin n), ∀ p ≤ N, ∀ x,
+      ‖iteratedFDeriv ℝ p (fun y ↦ latticeBump n (y - c)) x‖ ≤ Cχ := fun c p hp x ↦ by
+    rw [iteratedFDeriv_comp_sub]; exact hχ p hp _
+  have hφ : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv ℝ p
+      (fun y ↦ latticeBump n (y - latticePoint j) * latticeBump n (y - latticePoint j')) x‖ ≤
+        2 ^ p * (Cχ * Cχ) := fun p hp x ↦ by
+    have := (mul ℝ ℝ).norm_iteratedFDeriv_le_two_pow_mul_of_bilinear (opNorm_mul_le ℝ ℝ)
+      (contDiff_latticeBump.comp (contDiff_id.sub contDiff_const))
+      (contDiff_latticeBump.comp (contDiff_id.sub contDiff_const))
+      (hχ' (latticePoint j)) (hχ' (latticePoint j')) hp x
+    simpa only [mul_apply', Function.comp_def, id] using this
+  exact (hφ p hp x).trans
+    (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hp) (mul_self_nonneg Cχ))
+
 /-- **Fourier decay of a cut-off product.** If `f` and `g` have derivatives of order at most
 `N = 4n` bounded by `C`, then the Fourier transform of
 `x ↦ χ(x - j) χ(x - j') • B (f x) (g x)` decays like `(1 + ‖w‖)^(-N)`, with a constant
@@ -247,21 +268,10 @@ private theorem norm_fourier_cutoff_bilinear_le {n : ℕ} {F G U : Type*} [Norme
       2 ^ (4 * n) * (4 ^ (4 * n) * (2 ^ (4 * n) * (Cχ * Cχ) * (C * C)) * cellVolume n) *
         ((1 + ‖w‖) ^ (4 * n))⁻¹ := by
   set N := 4 * n
-  have hχ' : ∀ c : EuclideanSpace ℝ (Fin n), ∀ p ≤ N, ∀ x,
-      ‖iteratedFDeriv ℝ p (fun y ↦ latticeBump n (y - c)) x‖ ≤ Cχ := fun c p hp x ↦ by
-    rw [iteratedFDeriv_comp_sub]; exact hχ p hp _
-  have hφ : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv ℝ p
-      (fun y ↦ latticeBump n (y - latticePoint j) * latticeBump n (y - latticePoint j')) x‖ ≤
-        2 ^ p * (Cχ * Cχ) := fun p hp x ↦ by
-    have := (mul ℝ ℝ).norm_iteratedFDeriv_le_two_pow_mul_of_bilinear (opNorm_mul_le ℝ ℝ)
-      (contDiff_latticeBump.comp (contDiff_id.sub contDiff_const))
-      (contDiff_latticeBump.comp (contDiff_id.sub contDiff_const))
-      (hχ' (latticePoint j)) (hχ' (latticePoint j')) hp x
-    simpa only [mul_apply', Function.comp_def, id] using this
   have hφ' : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv ℝ p
       (fun y ↦ latticeBump n (y - latticePoint j) * latticeBump n (y - latticePoint j')) x‖ ≤
-        2 ^ N * (Cχ * Cχ) := fun p hp x ↦ (hφ p hp x).trans
-          (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hp) (mul_self_nonneg Cχ))
+        2 ^ N * (Cχ * Cχ) := fun p hp x ↦
+    norm_iteratedFDeriv_latticeBump_mul_le hχ j j' hp x
   have hcont : ContDiff ℝ N (fun y ↦ latticeBump n (y - latticePoint j) *
       latticeBump n (y - latticePoint j')) :=
     (contDiff_latticeBump.comp (contDiff_id.sub contDiff_const)).mul
@@ -289,7 +299,7 @@ private theorem norm_fourier_cutoff_bilinear_le {n : ℕ} {F G U : Type*} [Norme
       _ = 4 ^ N * (2 ^ N * (Cχ * Cχ) * (C * C)) := by
           rw [show (4 : ℝ) = 2 * 2 by norm_num, mul_pow]; ring
   have h := one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset
-    (hcont.smul ((B.contDiff.comp hf).clm_apply hg)) measurableSet_closedBall
+    (hcont.smul ((B.contDiff.comp hf).clm_apply hg))
     measure_closedBall_lt_top.ne hsupp hsmul w
   rw [Measure.real, volume_closedBall_eq_cellVolume, ENNReal.coe_toReal] at h
   have hpos : 0 < (1 + ‖w‖) ^ N := by positivity
