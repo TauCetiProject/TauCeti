@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Laurent
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 public import Mathlib.RingTheory.TensorProduct.Basic
+public import TauCeti.Algebra.TensorProduct.Mul
 
 /-!
 # The Laurent expansion of a polynomial over an algebra
@@ -39,17 +40,6 @@ public section
 
 open Polynomial LaurentPolynomial
 open scoped TensorProduct
-
-namespace Algebra.TensorProduct
-
-variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] [Semiring B]
-  [Algebra R B]
-
-/-- Multiplying by `a ⊗ 1` is the scalar action of `a` on `A ⊗[R] B`. -/
-theorem tmul_one_mul_eq_smul (a : A) (y : A ⊗[R] B) : (a ⊗ₜ[R] (1 : B)) * y = a • y := by
-  rw [Algebra.smul_def, algebraMap_apply, Algebra.algebraMap_self_apply]
-
-end Algebra.TensorProduct
 
 namespace TauCeti
 
@@ -103,7 +93,7 @@ theorem laurentExpansion_map_algebraMap_mul (g : R[X]) (p : B[X]) :
 theorem laurentExpansion_X_pow_mul (k : ℕ) (p : B[X]) :
     laurentExpansion R B ((Polynomial.X : B[X]) ^ k * p) =
       (T k : R[T;T⁻¹]) • laurentExpansion R B p := by
-  simpa using laurentExpansion_map_algebraMap_mul ((Polynomial.X : R[X]) ^ k) p
+  simp
 
 variable (R B) in
 /-- The coefficients of an element of the constant family `R[T;T⁻¹] ⊗[R] B`: the coefficient of
