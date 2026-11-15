@@ -26,6 +26,15 @@ principle for positive operators.
 An operator `D` between real or complex Hilbert spaces satisfies `D D† ≤ 1` in the Loewner
 order exactly when it is a contraction (`ContinuousLinearMap.self_comp_adjoint_le_one_iff`), so
 the defect operator `1 - D D†` of a contraction is positive.
+
+If `0 ≤ D ≤ C` in the Loewner order then `‖D x‖² ≤ ‖C‖ re ⟪D x, x⟫`
+(`ContinuousLinearMap.norm_apply_sq_le_of_nonneg_of_le`), obtained without square roots by
+expanding `re ⟪D (c x - D x), c x - D x⟫ ≥ 0` with `c = ‖C‖`. Hence the operator norm is monotone
+on positive operators (`ContinuousLinearMap.norm_le_norm_of_nonneg_of_le`), for real as well as
+complex scalars. Powers of a positive operator are positive
+(`ContinuousLinearMap.IsPositive.pow`), and the powers of a positive contraction `0 ≤ T ≤ 1`
+decrease (`ContinuousLinearMap.pow_le_pow_of_le_one`), because `T - T²` is the positive sum
+`(1 - T) T (1 - T) + T (1 - T) T`. These inequalities drive Vigier's monotone convergence theorem.
 -/
 
 public section
@@ -73,7 +82,51 @@ namespace ContinuousLinearMap
 open scoped InnerProductSpace InnerProduct
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [CompleteSpace E]
+
+/-- A positive operator dominated by `C` in the Loewner order satisfies
+`‖D x‖² ≤ ‖C‖ re ⟪D x, x⟫`. -/
+theorem norm_apply_sq_le_of_nonneg_of_le {D C : E →L[𝕜] E} (hD : 0 ≤ D) (hDC : D ≤ C)
+    (x : E) : ‖D x‖ ^ 2 ≤ ‖C‖ * RCLike.re ⟪D x, x⟫_𝕜 := by
+  have hpos := nonneg_iff_isPositive.mp hD
+  have hle : ∀ z, RCLike.re ⟪D z, z⟫_𝕜 ≤ ‖C‖ * ‖z‖ ^ 2 := fun z => by
+    have h1 := (le_def.mp hDC).re_inner_nonneg_left z
+    have h2 := (re_inner_le_norm (𝕜 := 𝕜) (C z) z).trans
+      (mul_le_mul_of_nonneg_right (C.le_opNorm z) (norm_nonneg z))
+    simp only [sub_apply, inner_sub_left, map_sub, sub_nonneg] at h1
+    nlinarith
+  rcases (norm_nonneg C).eq_or_lt with hc | hc
+  · have hC : C = 0 := norm_eq_zero.mp hc.symm
+    subst hC
+    simp [le_antisymm hDC hD]
+  · have h1 := hpos.re_inner_nonneg_left ((‖C‖ : 𝕜) • x - D x)
+    have h2 := hle (D x)
+    have hDD : ⟪D (D x), x⟫_𝕜 = ⟪D x, D x⟫_𝕜 := hpos.isSymmetric (D x) x
+    simp only [map_sub, map_smul, inner_sub_left, inner_sub_right, inner_smul_left,
+      inner_smul_right, hDD, RCLike.conj_ofReal,
+      RCLike.re_ofReal_mul, inner_self_eq_norm_sq_to_K, ← RCLike.ofReal_pow,
+      RCLike.ofReal_re] at h1
+    nlinarith
+
+/-- On positive operators the operator norm is monotone for the Loewner order. -/
+theorem norm_le_norm_of_nonneg_of_le {D C : E →L[𝕜] E} (hD : 0 ≤ D) (hDC : D ≤ C) :
+    ‖D‖ ≤ ‖C‖ := by
+  refine opNorm_le_bound _ (norm_nonneg C) fun x => ?_
+  rcases (norm_nonneg (D x)).eq_or_lt with h0 | h0
+  · rw [← h0]
+    positivity
+  · have h := norm_apply_sq_le_of_nonneg_of_le hD hDC x
+    have h' := re_inner_le_norm (𝕜 := 𝕜) (D x) x
+    refine le_of_mul_le_mul_left ?_ h0
+    nlinarith [norm_nonneg C]
+
+/-- Rewrites `T ^ k * T * T ^ k` as a single power. -/
+private theorem pow_mul_mul_pow (T : E →L[𝕜] E) (k : ℕ) :
+    T ^ k * T * T ^ k = T ^ (2 * k + 1) := by
+  rw [← pow_succ, ← pow_add]
+  congr 1
+  ring
+
+variable [CompleteSpace E]
 
 /-- On a complete space, `1 + T` is invertible for every positive operator `T`, since
 `re ⟪(1 + T) x, x⟫ = ‖x‖² + re ⟪T x, x⟫ ≥ ‖x‖²`. For instance `1 + X†X` is invertible, by
@@ -85,6 +138,52 @@ theorem IsPositive.isUnit_one_add {T : E →L[𝕜] E} (hT : T.IsPositive) : IsU
         rw [add_apply, one_apply_eq_self, inner_add_left, map_add, inner_self_eq_norm_sq]
         exact le_add_of_nonneg_right (hT.re_inner_nonneg_left x)
     _ ≤ ‖⟪(1 + T) x, x⟫_𝕜‖ := RCLike.re_le_norm _
+
+/-- Conjugating a positive operator by a self-adjoint one gives a positive operator. -/
+private theorem isPositive_mul_mul_of_isSelfAdjoint {S A : E →L[𝕜] E} (hS : IsSelfAdjoint S)
+    (hA : A.IsPositive) : (S * A * S).IsPositive := by
+  simpa [hS.adjoint_eq, mul_def, comp_assoc] using hA.conj_adjoint S
+
+/-- The powers of a positive contraction decrease in the Loewner order, one step at a time. -/
+private theorem pow_succ_le_pow {T : E →L[𝕜] E} (h0 : 0 ≤ T) (h1 : T ≤ 1) (n : ℕ) :
+    T ^ (n + 1) ≤ T ^ n := by
+  have hT := nonneg_iff_isPositive.mp h0
+  have hsa : IsSelfAdjoint T := hT.isSelfAdjoint
+  have h1' : (1 - T).IsPositive := le_def.mp h1
+  rw [le_def]
+  obtain ⟨k, rfl | rfl⟩ := Nat.even_or_odd' n
+  · have h : T ^ (2 * k) - T ^ (2 * k + 1) = T ^ k * (1 - T) * T ^ k := by
+      rw [mul_sub, sub_mul, mul_one, ← pow_add, pow_mul_mul_pow, two_mul]
+    rw [h]
+    exact isPositive_mul_mul_of_isSelfAdjoint (hsa.pow k) h1'
+  · -- `T - T² = (1 - T) T (1 - T) + T (1 - T) T` is positive.
+    have hTT : (T - T * T).IsPositive := by
+      have h : T - T * T = (1 - T) * T * (1 - T) + T * (1 - T) * T := by noncomm_ring
+      rw [h]
+      exact (isPositive_mul_mul_of_isSelfAdjoint ((IsSelfAdjoint.one _).sub hsa) hT).add
+        (isPositive_mul_mul_of_isSelfAdjoint hsa h1')
+    have h : T ^ (2 * k + 1) - T ^ (2 * k + 1 + 1) = T ^ k * (T - T * T) * T ^ k := by
+      have h2 : T ^ k * (T * T) * T ^ k = T ^ (2 * k + 1 + 1) := by
+        rw [← mul_assoc, ← pow_succ, ← pow_succ, ← pow_add]
+        congr 1
+        ring
+      rw [mul_sub, sub_mul, pow_mul_mul_pow, h2]
+    rw [h]
+    exact isPositive_mul_mul_of_isSelfAdjoint (hsa.pow k) hTT
+
+/-- The powers of a positive operator are positive. -/
+theorem IsPositive.pow {T : E →L[𝕜] E} (hT : T.IsPositive) (n : ℕ) : (T ^ n).IsPositive := by
+  have hsa : IsSelfAdjoint T := hT.isSelfAdjoint
+  obtain ⟨k, rfl | rfl⟩ := Nat.even_or_odd' n
+  · rw [two_mul, pow_add, ← mul_one (T ^ k)]
+    simpa using isPositive_mul_mul_of_isSelfAdjoint (hsa.pow k) isPositive_one
+  · rw [← pow_mul_mul_pow]
+    exact isPositive_mul_mul_of_isSelfAdjoint (hsa.pow k) hT
+
+/-- The powers of a positive contraction `0 ≤ T ≤ 1` decrease in the Loewner order. -/
+theorem pow_le_pow_of_le_one {T : E →L[𝕜] E} (h0 : 0 ≤ T) (h1 : T ≤ 1) {m n : ℕ}
+    (hmn : m ≤ n) : T ^ n ≤ T ^ m :=
+  antitone_nat_of_succ_le (pow_succ_le_pow h0 h1) hmn
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
 
