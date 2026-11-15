@@ -58,6 +58,10 @@ distribution of rank `k` is a `C^n` vector bundle with model fibre `Fin k → �
   topological vector bundle.
 * `TauCeti.IsContMDiffDistribution.contMDiffVectorBundle`: on a `C^(n+1)` manifold, a `C^n`
   distribution of rank `k` is a `C^n` vector bundle.
+* `TauCeti.IsContMDiffDistribution.contMDiff_totalSpace_inclusion`,
+  `TauCeti.IsContMDiffDistribution.contMDiffAt_totalSpace_mk`: on a `C^(n+1)` manifold, the
+  total-space inclusion of a `C^n` distribution is `C^n` and `C^n` maps into the tangent bundle
+  with values in `D` factor as `C^n` maps into `D`.
 * `TauCeti.IsDistributionFrameOn.exists_mdifferentiableAt_coeff`: a vector field tangent to `D`
   and differentiable at `x` is, near `x`, a combination of a `C¹` local frame with coefficients
   differentiable at `x`.
@@ -187,6 +191,33 @@ theorem contMDiffVectorBundle [IsManifold I (n + 1) M] (hD : IsContMDiffDistribu
     ContMDiffVectorBundle n (Fin k → 𝕜) (fun x ↦ D x) I :=
   have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
   hD.hasLocalContMDiffSubbundleFrames.contMDiffVectorBundle
+
+/-- On a `C^(n+1)` manifold, the canonical inclusion `(x, v) ↦ (x, ↑v)` of a `C^n` distribution of
+rank `k` into the tangent bundle is `C^n`. -/
+theorem contMDiff_totalSpace_inclusion [IsManifold I (n + 1) M]
+    (hD : IsContMDiffDistribution I n k D) :
+    letI := hD.fiberBundle
+    ContMDiff (I.prod 𝓘(𝕜, Fin k → 𝕜)) (I.prod 𝓘(𝕜, E)) n
+      (fun v : TotalSpace (Fin k → 𝕜) (fun x ↦ D x) ↦
+        (⟨v.proj, v.2⟩ : TotalSpace E (TangentSpace I))) :=
+  have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
+  hD.hasLocalContMDiffSubbundleFrames.contMDiff_totalSpace_inclusion
+
+/-- On a `C^(n+1)` manifold, a `C^n` map into the tangent bundle taking values in a `C^n`
+distribution `D` of rank `k` is `C^n` as a map into the total space of `D`. -/
+theorem contMDiffAt_totalSpace_mk [IsManifold I (n + 1) M]
+    {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+    {HM : Type*} [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace HM N]
+    (hD : IsContMDiffDistribution I n k D) {b : N → M} {w : ∀ y, TangentSpace I (b y)} {y₀ : N}
+    (hw : ContMDiffAt J (I.prod 𝓘(𝕜, E)) n
+      (fun y ↦ (⟨b y, w y⟩ : TotalSpace E (TangentSpace I))) y₀)
+    (hmem : ∀ y, w y ∈ D (b y)) :
+    letI := hD.fiberBundle
+    ContMDiffAt J (I.prod 𝓘(𝕜, Fin k → 𝕜)) n
+      (fun y ↦ (⟨b y, ⟨w y, hmem y⟩⟩ : TotalSpace (Fin k → 𝕜) fun x ↦ D x)) y₀ :=
+  have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
+  hD.hasLocalContMDiffSubbundleFrames.contMDiffAt_totalSpace_mk hw hmem
 
 end IsContMDiffDistribution
 
