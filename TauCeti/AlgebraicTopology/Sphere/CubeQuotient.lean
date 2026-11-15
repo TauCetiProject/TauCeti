@@ -42,7 +42,11 @@ relative to the north pole (`GenLoop.homotopic_iff_toSphere`), so `πₙ(X, x)` 
 pointed homotopy classes of maps `(Sⁿ, e_last) → (X, x)` (`HomotopyGroup.sphereEquiv`).  The
 identification is natural in based maps (`GenLoop.toSphere_map`).  A class is trivial exactly
 when its map out of the sphere is null-homotopic, by a free homotopy that need not fix the north
-pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
+pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).  Every map out of the sphere, based or
+not, is the map of a generalized loop at the image of the north pole
+(`GenLoop.exists_diskBoundaryMap_eq`); moving its class along a path to a fixed base point shows
+that, in a path-connected space, null-homotopy of sphere maps after a based map depends only on the
+kernel of the induced map on `πₙ` (`TopCat.Hom.nullhomotopic_comp_of_ker_le`).
 
 ## Main declarations
 
@@ -76,6 +80,10 @@ pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
   is a free homotopy of the corresponding maps out of the sphere.
 * `HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`: a class is trivial exactly when the
   corresponding map `Sⁿ → X` is freely null-homotopic.
+* `GenLoop.exists_diskBoundaryMap_eq`: every map `TopCat.diskBoundary (n + 1) ⟶ X` is the
+  attaching map of a generalized loop.
+* `TopCat.Hom.nullhomotopic_comp_of_ker_le`: if every class of `πₙ(X, x)` killed by `f` is killed
+  by `g`, every map `Sⁿ → X` null-homotopic after `f` is null-homotopic after `g`.
 
 ## References
 
@@ -642,6 +650,15 @@ theorem diskBoundaryMap_map {Y : TopCat.{u}} (f : X ⟶ Y) {y : Y} (hf : f x = y
   ext s
   simp
 
+/-- **Every map out of a sphere is the attaching map of a generalized loop**, at the image of the
+north pole. -/
+theorem exists_diskBoundaryMap_eq (r : TopCat.diskBoundary.{u} (n + 1) ⟶ X) :
+    ∃ p : Ω^ (Fin n) X (r ⟨TauCeti.sphereNorthPole n⟩), diskBoundaryMap p = r := by
+  refine ⟨(sphereEquiv n X _).symm ⟨r.hom.comp ⟨ULift.up, continuous_uliftUp⟩, rfl⟩, ?_⟩
+  ext s
+  rw [diskBoundaryMap_apply, ← coe_sphereEquiv_apply, Equiv.apply_symm_apply]
+  rfl
+
 end GenLoop
 
 namespace GenLoop
@@ -744,3 +761,39 @@ theorem map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp {X Y : TopCat.{u}} 
   exact mk_eq_one_iff_nullhomotopic_diskBoundaryMap _
 
 end HomotopyGroup
+
+namespace TopCat.Hom
+
+open TauCeti
+
+variable {n : ℕ} [NeZero n] {X Y Z : TopCat.{u}} [PathConnectedSpace X] {x : X} {y : Y} {z : Z}
+
+open CategoryTheory in
+/-- **Null-homotopy of sphere maps is inherited along an inclusion of kernels.** Let `X` be path
+connected, and let `f : X ⟶ Y` and `g : X ⟶ Z` be based maps such that every class of `πₙ(X, x)`
+killed by `f` is killed by `g`. Then every map `r : Sⁿ → X` that becomes null-homotopic after `f`
+becomes null-homotopic after `g`. The map `r` need not be based. -/
+theorem nullhomotopic_comp_of_ker_le (f : X ⟶ Y) (g : X ⟶ Z) (hf : f x = y) (hg : g x = z)
+    (hfg : (HomotopyGroup.mapHom (N := Fin n) f.hom hf).ker ≤
+      (HomotopyGroup.mapHom g.hom hg).ker)
+    (r : TopCat.diskBoundary.{u} (n + 1) ⟶ X) (hr : (r ≫ f).hom.Nullhomotopic) :
+    (r ≫ g).hom.Nullhomotopic := by
+  subst hf hg
+  obtain ⟨p, hp⟩ := GenLoop.exists_diskBoundaryMap_eq r
+  rw [← hp, ← HomotopyGroup.map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp g rfl]
+  rw [← hp, ← HomotopyGroup.map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp f rfl] at hr
+  -- Transport the class of `p` to the base point `x` along a path; based maps commute with
+  -- transport, and transport is a group isomorphism.
+  let γ := PathConnectedSpace.somePath (r ⟨sphereNorthPole n⟩) x
+  have hmap {V : TopCat.{u}} (h : X ⟶ V) :
+      HomotopyGroup.map h.hom rfl (homotopyGroupTransport γ ⟦p⟧) =
+        homotopyGroupMulEquivOfPath (γ.map h.hom.continuous)
+          (HomotopyGroup.map h.hom rfl ⟦p⟧) := by
+    rw [homotopyGroupMulEquivOfPath_apply, homotopyGroupTransport_mk, HomotopyGroup.map_mk,
+      HomotopyGroup.map_mk, GenLoop.map_transport, homotopyGroupTransport_mk]
+  have h := MonoidHom.mem_ker.1 (hfg (MonoidHom.mem_ker.2 (by
+    rw [HomotopyGroup.mapHom_apply, hmap f, hr, map_one])))
+  rw [HomotopyGroup.mapHom_apply, hmap g] at h
+  exact (homotopyGroupMulEquivOfPath _).injective (h.trans (map_one _).symm)
+
+end TopCat.Hom

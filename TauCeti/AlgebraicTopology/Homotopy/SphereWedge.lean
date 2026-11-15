@@ -25,7 +25,10 @@ The wedge of `(n + 1)`-spheres is `n`-connected
 (`TauCeti.subsingleton_homotopyGroup_sphereWedge`), since attaching `(n + 1)`-cells is onto on
 `π_k` for `k ≤ n`. For `n ≥ 2` the classes of the spheres form a basis of the abelian group
 `πₙ(⋁ᵢ Sⁿ)`, which is therefore free abelian on `ι` (`TauCeti.sphereWedgeHomotopyGroupBasis`),
-with no finiteness assumption on `ι`.
+with no finiteness assumption on `ι`. Hence a map out of the wedge is determined on `πₙ` by
+the images of the spheres, and every homomorphism out of `πₙ(⋁ᵢ Sⁿ)` is induced by the map
+`TauCeti.sphereWedgeLift` sending each sphere onto a chosen generalized loop
+(`TauCeti.exists_sphereWedge_mapHom_eq`).
 
 The proof goes through homology. The wedge is `(n - 1)`-connected, so the Hurewicz map is an
 isomorphism `πₙ(⋁ᵢ Sⁿ) ≅ Hₙ(⋁ᵢ Sⁿ; ℤ)` (`HomotopyGroup.hurewiczAddEquiv`), and `Hₙ(⋁ᵢ Sⁿ; ℤ)`
@@ -53,11 +56,15 @@ and attach `(n + 1)`-cells along the relations
 * `TauCeti.sphereWedgeLoop ι n i`: the `i`-th sphere, as a generalized loop at the base point.
 * `TauCeti.sphereWedgeHomotopyGroupBasis ι n`: the basis of `πₙ₊₂(⋁ᵢ Sⁿ⁺²)` given by the classes
   of the spheres (`TauCeti.sphereWedgeHomotopyGroupBasis_apply`).
+* `TauCeti.sphereWedgeLift ι n c`: the map out of the wedge sending the `i`-th sphere onto the
+  generalized loop `c i` (`TauCeti.map_sphereWedgeLift_sphereWedgeLoop`).
 
 ## Main results
 
 * `TauCeti.subsingleton_homotopyGroup_sphereWedge`: the wedge of `(n + 1)`-spheres is
   `n`-connected.
+* `TauCeti.exists_sphereWedge_mapHom_eq`: every homomorphism out of `πₙ₊₂(⋁ᵢ Sⁿ⁺²)` is induced
+  by a based map.
 
 ## References
 
@@ -273,5 +280,67 @@ theorem sphereWedgeHomotopyGroupBasis_apply (i : ι) :
     (sphereWedgeCellularEquiv_sphereWedgeLoop ι n i).symm
 
 end Basis
+
+section Lift
+
+/-! ### Maps out of a wedge of spheres -/
+
+variable {ι n} {Z : TopCat.{0}} {z : Z}
+
+/-- A wedge of `(n + 1)`-spheres is path connected. -/
+instance : PathConnectedSpace (sphereWedge ι (n + 1)) :=
+  (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (sphereWedgeBase ι (n + 1))).2
+    (subsingleton_homotopyGroup_sphereWedge ι n (Nat.zero_le n))
+
+variable (ι n) in
+/-- **The map out of a wedge of spheres sending each sphere onto a generalized loop.** Given a
+generalized loop `c i` at `z` for every `i : ι`, the map `⋁ᵢ Sⁿ ⟶ Z` sending the base point to `z`
+and the `i`-th sphere onto `c i` (`TauCeti.map_sphereWedgeLift_sphereWedgeLoop`). -/
+def sphereWedgeLift (c : ι → Ω^ (Fin n) Z z) : sphereWedge ι n ⟶ Z :=
+  cellAttachmentLift (sphereWedgeAttachingMap ι n) (TopCat.ofHom (ContinuousMap.const _ z))
+    (fun i ↦ GenLoop.diskMap (c i))
+    fun i ↦ by rw [GenLoop.diskBoundaryInclusion_comp_diskMap]; rfl
+
+/-- The map `TauCeti.sphereWedgeLift ι n c` sends the base point of the wedge to `z`. -/
+@[simp]
+lemma sphereWedgeLift_sphereWedgeBase (c : ι → Ω^ (Fin n) Z z) :
+    sphereWedgeLift ι n c (sphereWedgeBase ι n) = z := by
+  rw [sphereWedgeBase_def, sphereWedgeLift, ← ConcreteCategory.comp_apply,
+    cellAttachmentIncl_lift]
+  rfl
+
+/-- The map `TauCeti.sphereWedgeLift ι n c` sends the `i`-th sphere onto `c i`. -/
+@[simp]
+lemma map_sphereWedgeLift_sphereWedgeLoop (c : ι → Ω^ (Fin n) Z z) (i : ι) :
+    GenLoop.map (sphereWedgeLift ι n c).hom (sphereWedgeLift_sphereWedgeBase c)
+      (sphereWedgeLoop ι n i) = c i := by
+  ext t
+  rw [GenLoop.map_apply, sphereWedgeLoop_apply, ← ConcreteCategory.comp_apply, sphereWedgeLift,
+    cellAttachmentCell_lift, GenLoop.diskMap_apply, Homeomorph.apply_symm_apply]
+
+/-- **Every homomorphism out of `πₙ₊₂` of a wedge of spheres is induced by a based map.** Since the
+classes of the spheres form a basis of `πₙ₊₂(⋁ᵢ Sⁿ⁺²)`, a homomorphism `φ` to `πₙ₊₂(Z, z)` is
+induced by the map sending the `i`-th sphere onto a representative of the image of its class. -/
+theorem exists_sphereWedge_mapHom_eq
+    (φ : HomotopyGroup (Fin (n + 2)) (sphereWedge ι (n + 2)) (sphereWedgeBase ι (n + 2)) →*
+      HomotopyGroup (Fin (n + 2)) Z z) :
+    ∃ (g : sphereWedge ι (n + 2) ⟶ Z) (hg : g (sphereWedgeBase ι (n + 2)) = z),
+      HomotopyGroup.mapHom g.hom hg = φ := by
+  let a (i : ι) : HomotopyGroup (Fin (n + 2)) (sphereWedge ι (n + 2)) (sphereWedgeBase ι (n + 2)) :=
+    ⟦sphereWedgeLoop ι (n + 2) i⟧
+  let c : ι → Ω^ (Fin (n + 2)) Z z := fun i ↦ (φ (a i)).out
+  refine ⟨sphereWedgeLift ι (n + 2) c, sphereWedgeLift_sphereWedgeBase c, ?_⟩
+  -- Both homomorphisms agree on the classes of the spheres, which form a basis.
+  have h (i : ι) : HomotopyGroup.mapHom (sphereWedgeLift ι (n + 2) c).hom
+      (sphereWedgeLift_sphereWedgeBase c) (a i) = φ (a i) := by
+    rw [HomotopyGroup.mapHom_apply, HomotopyGroup.map_mk, map_sphereWedgeLift_sphereWedgeLoop]
+    exact Quotient.out_eq _
+  apply MonoidHom.toAdditive.injective
+  apply AddMonoidHom.toIntLinearMap_injective
+  exact (sphereWedgeHomotopyGroupBasis ι n).ext fun i ↦ by
+    rw [sphereWedgeHomotopyGroupBasis_apply]
+    exact congrArg Additive.ofMul (h i)
+
+end Lift
 
 end TauCeti
