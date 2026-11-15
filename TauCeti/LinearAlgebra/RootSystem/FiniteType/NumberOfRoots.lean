@@ -13,35 +13,21 @@ import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 /-!
 # Root counts of bases of a given Cartan type
 
-Mathlib's `RootPairing.Base.equivOfCartanMatrixEq` constructs an equivalence between two finite
-reduced crystallographic root systems over the *same* base ring from a relabelling of their simple
-roots that matches their Cartan matrices, using `[IsRootSystem]` to extend the simple-root bijection
-across the ambient weight modules. For root counts and index-level combinatorics, both restrictions
-are unnecessary: any root pairing `P` over a characteristic-zero domain carries the `ℤ`-basis
-`b.toWeightBasisInt` of its root lattice `P.rootSpan ℤ`, and simple reflections preserve
-`P.rootSpan ℤ` with the same Cartan-integer formula regardless of the ambient ring or whether the
-roots span the full weight module.
-
-This file builds the resulting root-index bijection `RootPairing.Base.indexEquivOfCartanMatrixEq`
-across arbitrary characteristic-zero coefficient domains without `[IsRootSystem]`, and applies it
-against the pinned integral datum `TauCeti.DynkinType.simplyConnectedRootDatum` (whose roots are
-indexed by `Fin t.numRoots`, and which is reduced by
-`TauCeti.DynkinType.isReduced_simplyConnectedRootDatum` without being a spanning root system in the
-fundamental-weight lattice) to deduce that any finite reduced crystallographic root pairing with a
-base of valid Cartan type `t` has `t.numRoots` roots and `t.numRoots / 2` positive roots.
+Any root pairing `P` over a characteristic-zero domain carries the `ℤ`-basis `b.toWeightBasisInt`
+of `P.rootSpan ℤ`, and simple reflections preserve `P.rootSpan ℤ` with the same Cartan-integer
+formula regardless of the ambient ring or `[IsRootSystem]`. This file constructs the resulting
+root-index bijection `RootPairing.Base.indexEquivOfCartanMatrixEq` across arbitrary
+characteristic-zero domains without `[IsRootSystem]`, and compares any finite reduced
+crystallographic root pairing of valid Cartan type `t` with `t.simplyConnectedRootDatum` to deduce
+that it has `t.numRoots` roots and `t.numRoots / 2` positive roots.
 
 ## Main definitions and results
 
-* `RootPairing.Base.indexEquivOfCartanMatrixEq`: bijection `ι ≃ ι₂` between the root index types of
-  any two finite reduced crystallographic root pairings (possibly over different characteristic-zero
-  domains, without `[IsRootSystem]`) induced by a Cartan-matrix-preserving bijection of simple
-  roots.
-* `TauCeti.HasCartanType.natCard_eq_numRoots` and `TauCeti.HasCartanType.two_mul_ncard_posRoots`:
-  a finite reduced crystallographic root pairing carrying a base of valid Cartan type `t` has
-  `t.numRoots` roots, half of them positive.
+* `RootPairing.Base.indexEquivOfCartanMatrixEq`: bijection `ι ≃ ι₂` induced by a
+  Cartan-matrix-preserving bijection of simple roots, without `[IsRootSystem]` or equal base rings.
+* `TauCeti.HasCartanType.natCard_eq_numRoots` and `TauCeti.HasCartanType.two_mul_ncard_posRoots`.
 * `TauCeti.natCard_eq_numRoots_classifiedDynkinType` and
-  `TauCeti.two_mul_ncard_posRoots_eq_numRoots_classifiedDynkinType`: classification-free versions
-  for any irreducible reduced crystallographic finite root system.
+  `TauCeti.two_mul_ncard_posRoots_eq_numRoots_classifiedDynkinType`.
 
 ## References
 
@@ -91,32 +77,32 @@ private lemma apply_rootSpanMem_mem_range_of_cartanMatrixEq
     f (P.rootSpanMem ℤ i) ∈ Set.range (P₂.rootSpanMem ℤ) := by
   have hcomm : ∀ k : b.support,
       f.toLinearMap.comp (reflectionRootSpanInt P k) =
-        (reflectionRootSpanInt P₂ (e k)).comp f.toLinearMap := by
-    intro k
-    refine b.toWeightBasisInt.ext fun j => ?_
-    have hj1 : b.toWeightBasisInt j = P.rootSpanMem ℤ j :=
-      Subtype.ext (b.coe_toWeightBasisInt_apply j)
-    have hrefl1 : reflectionRootSpanInt P k (P.rootSpanMem ℤ j) =
-        P.rootSpanMem ℤ j - b.cartanMatrix j k • P.rootSpanMem ℤ k :=
-      Subtype.ext <| by
-        simpa [reflectionRootSpanInt_apply_rootSpanMem, cartanMatrixIn_def] using
-          P.reflection_apply_root' ℤ (i := k) (j := j)
-    have hrefl2 : reflectionRootSpanInt P₂ (e k) (P₂.rootSpanMem ℤ (e j)) =
-        P₂.rootSpanMem ℤ (e j) - b₂.cartanMatrix (e j) (e k) • P₂.rootSpanMem ℤ (e k) :=
-      Subtype.ext <| by
-        simpa [reflectionRootSpanInt_apply_rootSpanMem, cartanMatrixIn_def] using
-          P₂.reflection_apply_root' ℤ (i := e k) (j := e j)
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hj1, hrefl1, map_sub, map_zsmul,
-      hf, hrefl2, he]
+        (reflectionRootSpanInt P₂ (e k)).comp f.toLinearMap := fun k =>
+    b.toWeightBasisInt.ext fun j => by
+      have hj1 : b.toWeightBasisInt j = P.rootSpanMem ℤ j :=
+        Subtype.ext (b.coe_toWeightBasisInt_apply j)
+      have hrefl1 : reflectionRootSpanInt P k (P.rootSpanMem ℤ j) =
+          P.rootSpanMem ℤ j - b.cartanMatrix j k • P.rootSpanMem ℤ k :=
+        Subtype.ext <| by
+          simpa [reflectionRootSpanInt_apply_rootSpanMem, cartanMatrixIn_def] using
+            P.reflection_apply_root' ℤ (i := k) (j := j)
+      have hrefl2 : reflectionRootSpanInt P₂ (e k) (P₂.rootSpanMem ℤ (e j)) =
+          P₂.rootSpanMem ℤ (e j) - b₂.cartanMatrix (e j) (e k) • P₂.rootSpanMem ℤ (e k) :=
+        Subtype.ext <| by
+          simpa [reflectionRootSpanInt_apply_rootSpanMem, cartanMatrixIn_def] using
+            P₂.reflection_apply_root' ℤ (i := e k) (j := e j)
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hj1, hrefl1, map_sub, map_zsmul,
+        hf, hrefl2, he]
   refine b.induction_reflect i
-    (p := fun idx => f (P.rootSpanMem ℤ idx) ∈ Set.range (P₂.rootSpanMem ℤ)) ?_ ?_ ?_
+    (p := fun idx => f (P.rootSpanMem ℤ idx) ∈ Set.range (P₂.rootSpanMem ℤ)) ?_
+    (fun j hj => ⟨e ⟨j, hj⟩, (hf ⟨j, hj⟩).symm⟩) ?_
   · rintro j ⟨l, hl⟩
-    have hneg1 : P.rootSpanMem ℤ (P.reflectionPerm j j) = -P.rootSpanMem ℤ j :=
-      Subtype.ext (by simp)
-    have hneg2 : P₂.rootSpanMem ℤ (P₂.reflectionPerm l l) = -P₂.rootSpanMem ℤ l :=
-      Subtype.ext (by simp)
-    exact ⟨P₂.reflectionPerm l l, by rw [hneg1, map_neg, ← hl, hneg2]⟩
-  · exact fun j hj => ⟨e ⟨j, hj⟩, (hf ⟨j, hj⟩).symm⟩
+    exact ⟨P₂.reflectionPerm l l, by
+      rw [show P.rootSpanMem ℤ (P.reflectionPerm j j) = -P.rootSpanMem ℤ j from
+            Subtype.ext (by simp),
+          map_neg, ← hl,
+          show P₂.rootSpanMem ℤ (P₂.reflectionPerm l l) = -P₂.rootSpanMem ℤ l from
+            Subtype.ext (by simp)]⟩
   · rintro j k ⟨l, hl⟩ hk
     have hstep := LinearMap.congr_fun (hcomm ⟨k, hk⟩) (P.rootSpanMem ℤ j)
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
@@ -131,24 +117,21 @@ noncomputable def indexEquivOfCartanMatrixEq [Finite ι₂] [P₂.IsReduced]
     (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) : ι ≃ ι₂ :=
   let f : P.rootSpan ℤ ≃ₗ[ℤ] P₂.rootSpan ℤ := b.toWeightBasisInt.equiv b₂.toWeightBasisInt e
   have hf_supp : ∀ i : b.support, f (P.rootSpanMem ℤ i) = P₂.rootSpanMem ℤ (e i) := fun i => by
-    have hi1 : P.rootSpanMem ℤ i = b.toWeightBasisInt i :=
-      Subtype.ext (b.coe_toWeightBasisInt_apply i).symm
-    have hi2 : P₂.rootSpanMem ℤ (e i) = b₂.toWeightBasisInt (e i) :=
-      Subtype.ext (b₂.coe_toWeightBasisInt_apply (e i)).symm
-    rw [hi1, hi2, Module.Basis.equiv_apply]
-  have hf_symm : ∀ i : b₂.support,
-      f.symm (P₂.rootSpanMem ℤ i) = P.rootSpanMem ℤ (e.symm i) := fun i =>
-    f.injective (by simp [hf_supp])
-  have hbij : Set.BijOn f (Set.range (P.rootSpanMem ℤ)) (Set.range (P₂.rootSpanMem ℤ)) := by
-    refine ⟨?_, f.injective.injOn, ?_⟩
-    · rintro _ ⟨i, rfl⟩
-      exact apply_rootSpanMem_mem_range_of_cartanMatrixEq b b₂ e f hf_supp he i
-    · rintro y ⟨j, rfl⟩
-      obtain ⟨i, hi⟩ := apply_rootSpanMem_mem_range_of_cartanMatrixEq b₂ b e.symm f.symm hf_symm
-        (fun u v => by simp [(he _ _).symm]) j
-      exact ⟨P.rootSpanMem ℤ i, Set.mem_range_self i, by rw [hi, f.apply_symm_apply]⟩
+    rw [show P.rootSpanMem ℤ i = b.toWeightBasisInt i from
+          Subtype.ext (b.coe_toWeightBasisInt_apply i).symm,
+        show P₂.rootSpanMem ℤ (e i) = b₂.toWeightBasisInt (e i) from
+          Subtype.ext (b₂.coe_toWeightBasisInt_apply (e i)).symm,
+        Module.Basis.equiv_apply]
+  have hbij : Set.BijOn f (Set.range (P.rootSpanMem ℤ)) (Set.range (P₂.rootSpanMem ℤ)) :=
+    ⟨by rintro _ ⟨i, rfl⟩
+        exact apply_rootSpanMem_mem_range_of_cartanMatrixEq b b₂ e f hf_supp he i,
+     f.injective.injOn,
+     by rintro y ⟨j, rfl⟩
+        obtain ⟨i, hi⟩ := apply_rootSpanMem_mem_range_of_cartanMatrixEq b₂ b e.symm f.symm
+          (fun i => f.injective (by simp [hf_supp])) (fun u v => by simp [(he _ _).symm]) j
+        exact ⟨P.rootSpanMem ℤ i, Set.mem_range_self i, by rw [hi, f.apply_symm_apply]⟩⟩
   (Equiv.ofInjective (P.rootSpanMem ℤ) (rootSpanMem_int_injective P)).trans <|
-    (hbij.equiv).trans (Equiv.ofInjective (P₂.rootSpanMem ℤ) (rootSpanMem_int_injective P₂)).symm
+    hbij.equiv.trans (Equiv.ofInjective (P₂.rootSpanMem ℤ) (rootSpanMem_int_injective P₂)).symm
 
 /-- `RootPairing.Base.indexEquivOfCartanMatrixEq` intertwines `rootSpanMem ℤ` with the linear
 equivalence `b.toWeightBasisInt.equiv b₂.toWeightBasisInt e` of root lattices. -/
@@ -201,19 +184,16 @@ theorem HasCartanType.nonempty_equiv_fin_numRoots {b : P.Base} {t : DynkinType}
 `t.numRoots` roots.** -/
 theorem HasCartanType.natCard_eq_numRoots {b : P.Base} {t : DynkinType}
     (h : HasCartanType P b t) (ht : t.Valid) : Nat.card ι = t.numRoots := by
-  obtain ⟨e⟩ := h.nonempty_equiv_fin_numRoots ht
-  simpa using Nat.card_congr e
+  obtain ⟨e⟩ := h.nonempty_equiv_fin_numRoots ht; simpa using Nat.card_congr e
 
 /-- **Twice the number of positive roots of a base of valid Cartan type `t` is `t.numRoots`.** -/
 theorem HasCartanType.two_mul_ncard_posRoots {b : P.Base} {t : DynkinType}
-    (h : HasCartanType P b t) (ht : t.Valid) :
-    2 * (posRoots P b).ncard = t.numRoots :=
+    (h : HasCartanType P b t) (ht : t.Valid) : 2 * (posRoots P b).ncard = t.numRoots :=
   (TauCeti.two_mul_ncard_posRoots P b).trans (h.natCard_eq_numRoots ht)
 
 /-- **A base of valid Cartan type `t` has `t.numRoots / 2` positive roots.** -/
 theorem HasCartanType.ncard_posRoots_eq_numRoots_div_two {b : P.Base} {t : DynkinType}
-    (h : HasCartanType P b t) (ht : t.Valid) :
-    (posRoots P b).ncard = t.numRoots / 2 := by
+    (h : HasCartanType P b t) (ht : t.Valid) : (posRoots P b).ncard = t.numRoots / 2 := by
   rw [ncard_posRoots_eq_natCard_div_two, h.natCard_eq_numRoots ht]
 
 end HasCartanType

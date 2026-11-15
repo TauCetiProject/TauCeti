@@ -11,13 +11,8 @@ public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 # Root multisets of `1 + X + ⋯ + X ^ (n - 1)` and `X ^ n + 1`
 
 In a commutative domain, a primitive `n`-th root of unity `ζ` determines the root multiset of
-`1 + X + ⋯ + X ^ (n - 1)`: multiplying by `X - 1` produces `X ^ n - 1`, whose roots are the `ζ ^ k`
-for `k < n`, and cancelling the root `1 = ζ ^ 0` leaves `ζ ^ (e + 1)` for `e < n - 1`.
-
-Similarly, a primitive `(2n)`-th root of unity `ζ` satisfies `ζ ^ n = -1` whenever `n > 0` while
-`ζ ^ 2` is a primitive `n`-th root of unity, so `Mathlib`'s `IsPrimitiveRoot.nthRoots_eq` identifies
-the root multiset of `X ^ n + 1 = X ^ n - (-1)` with the odd powers `ζ ^ (2k + 1)` for `k < n`. For
-`n = 0` the polynomial `X ^ 0 + 1 = 2` is constant and both sides are empty.
+`1 + X + ⋯ + X ^ (n - 1)` via `(∑_{i < n} X ^ i) (X - 1) = X ^ n - 1`, and a primitive `(2n)`-th
+root of unity `ζ` determines the root multiset of `X ^ n + 1 = X ^ n - (-1)` via `ζ ^ n = -1`.
 
 ## Main results
 
@@ -43,8 +38,7 @@ theorem roots_geom_sum {n : ℕ} {ζ : R} (hζ : IsPrimitiveRoot ζ n) :
   obtain rfl | hn := eq_or_ne n 0
   · simp
   set p : R[X] := ∑ i ∈ Finset.range n, X ^ i
-  have hp : p * (X - C 1) = X ^ n - C 1 := by
-    rw [C_1, geom_sum_mul]
+  have hp : p * (X - C 1) = X ^ n - C 1 := by rw [C_1, geom_sum_mul]
   have hroots : p.roots + {1} = (Multiset.range n).map fun k ↦ ζ ^ k * 1 := by
     rw [← roots_X_sub_C, ← roots_mul (hp ▸ X_pow_sub_C_ne_zero (Nat.pos_of_ne_zero hn) 1), hp,
       ← nthRoots, hζ.nthRoots_eq (one_pow n)]
@@ -60,21 +54,12 @@ each with multiplicity one. For `n = 0` the polynomial is constant and both side
 theorem roots_X_pow_add_one {n : ℕ} {ζ : R} (hζ : IsPrimitiveRoot ζ (2 * n)) :
     (X ^ n + 1 : R[X]).roots = (Multiset.range n).map fun k ↦ ζ ^ (2 * k + 1) := by
   obtain rfl | hn := eq_or_ne n 0
-  · rw [pow_zero, ← C_1, ← map_add, roots_C]
-    simp
-  have hn0 : 0 < n := Nat.pos_of_ne_zero hn
-  have hζn : ζ ^ n = -1 := by
-    have hsq : (ζ ^ n) ^ 2 = 1 := by
-      rw [← pow_mul, mul_comm, hζ.pow_eq_one]
-    rcases sq_eq_one_iff.mp hsq with h1 | h1
-    · exfalso
-      have := Nat.le_of_dvd hn0 (hζ.dvd_of_pow_eq_one n h1)
-      omega
-    · exact h1
-  have hζ2 : IsPrimitiveRoot (ζ ^ 2) n := hζ.pow (by omega) rfl
-  have hsub : (X ^ n + 1 : R[X]) = X ^ n - C (-1) := by
-    simp [sub_neg_eq_add]
-  rw [hsub, ← nthRoots, hζ2.nthRoots_eq hζn]
+  · rw [pow_zero, ← C_1, ← map_add, roots_C]; simp
+  have hζn : ζ ^ n = -1 :=
+    (sq_eq_one_iff.mp (by rw [← pow_mul, mul_comm, hζ.pow_eq_one])).resolve_left fun h1 ↦ by
+      have := Nat.le_of_dvd (Nat.pos_of_ne_zero hn) (hζ.dvd_of_pow_eq_one n h1); omega
+  rw [show (X ^ n + 1 : R[X]) = X ^ n - C (-1) by simp [sub_neg_eq_add], ← nthRoots,
+    (hζ.pow (by omega) rfl : IsPrimitiveRoot (ζ ^ 2) n).nthRoots_eq hζn]
   exact Multiset.map_congr rfl fun k _ ↦ by rw [← pow_mul, ← pow_succ]
 
 end IsPrimitiveRoot

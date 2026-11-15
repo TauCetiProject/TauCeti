@@ -14,33 +14,17 @@ import TauCeti.RingTheory.Polynomial.Cyclotomic.ComplexRoots
 /-!
 # Coxeter elements of classical Cartan types
 
-For a base `b` of Cartan type `Aₙ`, `Bₙ`, `Cₙ`, or `Dₙ`, every Coxeter element (a product of all
-the simple reflections, each once, in any order) has the same multiplicative order and
-characteristic polynomial on the simple roots as the Bourbaki-ordered Coxeter element of the
-standard Cartan matrix:
-
-| type | condition | order (`h`) | `W.charpoly` |
-|---|---|---|---|
-| `Aₙ` | `0 < n` (order); all `n` (`charpoly`) | `n + 1` | `∑_{k=0}^n X^k` |
-| `Bₙ` | `0 < n` | `2 n` | `X^n + 1` |
-| `Cₙ` | `0 < n` | `2 n` | `X^n + 1` |
-| `Dₙ` | `2 ≤ n` | `2 n - 2` | `(X^{n-1} + 1)(X + 1)` |
-
-Evaluating the complex root multisets of these characteristic polynomials expresses the complex
-eigenvalues (counted with algebraic multiplicity) of `W` on the span of the simple roots as
-`exp (2πi e / h)` over the classical exponent multisets: `1, …, n` for `Aₙ`; `1, 3, …, 2n - 1` for
-`Bₙ` and `Cₙ`; and `n - 1` together with `1, 3, …, 2n - 3` for `Dₙ` (`2 ≤ n`). Notice that in type
-`D₂ₘ` (`m ≥ 1`), the eigenvalue `-1 = exp (2πi (2m - 1) / (4m - 2))` has multiplicity `2`, which the
-multiset identity records directly.
+For a base `b` of Cartan type `Aₙ`, `Bₙ`, `Cₙ`, or `Dₙ`, every Coxeter element `wordProd P b l` has
+the same multiplicative order and characteristic polynomial on the simple roots as the
+Bourbaki-ordered `Matrix.coxeterElement` of the standard Cartan matrix, and its complex eigenvalue
+multiset has the form `exp (2πi e / h)` over the classical exponent multiset (recording the
+multiplicity-`2` eigenvalue `-1` in `D₂ₘ`).
 
 ## Main results
 
-* `TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType_A`, `B`, `C`, `D`: every Coxeter element of a
-  classical base has order equal to the Coxeter number.
-* `TauCeti.Coxeter.charpoly_of_hasCartanType_A_of_actsBy`, `B`, `C`, `D`: characteristic polynomial
-  of the action of every Coxeter element on the simple roots.
-* `TauCeti.Coxeter.roots_charpoly_of_hasCartanType_A_of_actsBy`, `B`, `C`, `D`: complex root
-  multisets of those characteristic polynomials in `exp (2πi e / h)` form.
+* `TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType_A`, `B`, `C`, `D`.
+* `TauCeti.Coxeter.charpoly_of_hasCartanType_A_of_actsBy`, `B`, `C`, `D`.
+* `TauCeti.Coxeter.roots_charpoly_of_hasCartanType_A_of_actsBy`, `B`, `C`, `D`.
 
 ## References
 
@@ -173,25 +157,20 @@ theorem roots_charpoly_of_hasCartanType_D_of_actsBy [DecidableEq ι] {n : ℕ} (
       ((n - 1) ::ₘ (Multiset.range (n - 1)).map (2 * · + 1)).map
         fun e : ℕ => Complex.exp (2 * Real.pi * Complex.I * (e / (2 * n - 2 : ℕ))) := by
   rw [charpoly_map, charpoly_of_hasCartanType_D_of_actsBy hn h hnd hall hW]
-  simp only [Polynomial.map_mul, Polynomial.map_add, Polynomial.map_pow, map_X,
-    Polynomial.map_one]
+  simp only [Polynomial.map_mul, Polynomial.map_add, Polynomial.map_pow, map_X, Polynomial.map_one]
   have hp1 : ((X : ℂ[X]) ^ (n - 1) + 1) ≠ 0 := by
     simpa [sub_neg_eq_add] using X_pow_sub_C_ne_zero (by omega : 0 < n - 1) (-1 : ℂ)
   have hp2 : ((X : ℂ[X]) + 1) ≠ 0 := by
     simpa [sub_neg_eq_add] using X_pow_sub_C_ne_zero Nat.one_pos (-1 : ℂ)
-  have hlin : ((X : ℂ[X]) + 1).roots = {-1} := by
-    rw [show ((X : ℂ[X]) + 1) = X - C (-1) by simp, roots_X_sub_C]
   have hh : 2 * n - 2 = 2 * (n - 1) := by omega
   have hexp_mid : Complex.exp (2 * Real.pi * Complex.I * ((n - 1 : ℕ) / (2 * n - 2 : ℕ))) = -1 := by
     have hne : ((n - 1 : ℕ) : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
-    have harg : (2 : ℂ) * Real.pi * Complex.I * (((n - 1 : ℕ) : ℂ) / ((2 * n - 2 : ℕ) : ℂ)) =
-        Real.pi * Complex.I := by
-      rw [hh]
-      push_cast
-      field_simp [hne]
-    rw [harg, Complex.exp_pi_mul_I]
-  rw [roots_mul (mul_ne_zero hp1 hp2), roots_X_pow_add_one_complex (n - 1), hlin, add_comm,
-    Multiset.singleton_add, Multiset.map_cons, hexp_mid, hh, Multiset.map_map]
+    rw [show (2 : ℂ) * Real.pi * Complex.I * (((n - 1 : ℕ) : ℂ) / ((2 * n - 2 : ℕ) : ℂ)) =
+      Real.pi * Complex.I by rw [hh]; push_cast; field_simp [hne], Complex.exp_pi_mul_I]
+  rw [roots_mul (mul_ne_zero hp1 hp2), roots_X_pow_add_one_complex (n - 1),
+    show ((X : ℂ[X]) + 1).roots = {-1} by
+      rw [show ((X : ℂ[X]) + 1) = X - C (-1) by simp, roots_X_sub_C],
+    add_comm, Multiset.singleton_add, Multiset.map_cons, hexp_mid, hh, Multiset.map_map]
   rfl
 
 end TauCeti.Coxeter
