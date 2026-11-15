@@ -269,11 +269,18 @@ theorem singularCohomologySphereProdSlantEquiv_singularCohomologyMap_tensorHom
       CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Y' (γ x₀))) g := by
     -- a constant map precomposed with `g` is constant
     exact CartesianMonoidalCategory.hom_ext _ _ (TopCat.ext fun _ ↦ by simp) (by simp)
-  rw [singularCohomologySphereProdSlantEquiv_apply, singularSlant_naturality,
-    singularSlant_naturality, ← ConcreteCategory.comp_apply (TauCeti.singularHomology₀Section _ x₀),
-    TauCeti.singularHomology₀Section_naturality,
-    singularSlant_singularHomology₀Section M X Y _ _ _ _ (fun s ↦ by simp),
-    ← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hg]
+  refine Prod.ext ?_ ?_
+  · -- `γ` sends the point class of `x₀` to that of `γ x₀`, where slanting is restriction
+    have hx₀ : ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj (𝟙_ _)).map γ
+        (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) x₀ (1 : k)) =
+          TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{w} k)) (γ x₀) (1 : k) := by
+      simp [← ConcreteCategory.comp_apply]
+    simp only [singularCohomologySphereProdSlantEquiv_apply]
+    rw [singularSlant_naturality, hx₀,
+      singularSlant_singularHomology₀Section M X Y _ _ _ _ (fun s ↦ by simp), ← hg,
+      TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply]
+  · -- slanting by the generator commutes with pulling back along `γ × g`
+    exact singularSlant_naturality M γ g _ _ _ _ _ _ φ
 
 /-- **A class pulled back along a sphere**: for maps `γ : Sᵈ⁺¹ ⟶ X` and `g : Y' ⟶ Y`, a point
 `x₀ ∈ Sᵈ⁺¹` and `φ ∈ Hⁿ⁺ᵈ⁺¹(X × Y; M)`,
