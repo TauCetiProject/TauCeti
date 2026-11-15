@@ -411,11 +411,12 @@ theorem isCycle_vertex (v : V) : (EarStart.vertex (G := G) v).IsCycle ↔ False 
 theorem isCycle_cycle {u : V} (c : G.Walk u u) (hc : c.IsCycle) :
     (EarStart.cycle c hc).IsCycle ↔ True := (Iff.rfl)
 
-/-- Heterogeneously equal initial stages agree on whether they are cycles. -/
-theorem isCycle_iff_of_heq {H K : G.Subgraph} {s₁ : G.EarStart H} {s₂ : G.EarStart K}
-    (hHK : H = K) (hs : HEq s₁ s₂) : s₁.IsCycle ↔ s₂.IsCycle := by
-  subst hHK
-  cases eq_of_heq hs
+/-- Transporting an initial stage along an equality of its subgraphs preserves whether it is a
+cycle. -/
+@[simp]
+theorem isCycle_eqRec {K L : G.Subgraph} (h : K = L) (s : G.EarStart K) :
+    (h ▸ s).IsCycle ↔ s.IsCycle := by
+  subst h
   rfl
 
 /-- Every valid initial subgraph is connected. -/
@@ -707,8 +708,9 @@ theorem kindAt_snoc_last (d : G.EarDecomposition H) (e : G.Ear H) :
 @[simp]
 theorem isOpen_snoc (d : G.EarDecomposition H) (e : G.Ear H) :
     (d.snoc e).IsOpen ↔ d.IsOpen ∧ e.kind = .«open» := by
-  have hstart : (d.snoc e).start.IsCycle ↔ d.start.IsCycle :=
-    EarStart.isCycle_iff_of_heq (d.initial_snoc e) (by simp)
+  have hstart : (d.snoc e).start.IsCycle ↔ d.start.IsCycle := by
+    rw [start_snoc]
+    exact EarStart.isCycle_eqRec _ _
   rw [isOpen_iff, isOpen_iff]
   refine ⟨fun ⟨hs, hk⟩ ↦ ⟨⟨hstart.mp hs, fun i ↦ ?_⟩, ?_⟩,
     fun ⟨⟨hs, hk⟩, he⟩ ↦ ⟨hstart.mpr hs, ?_⟩⟩
