@@ -58,7 +58,7 @@ theorem exists_isGeodesicSegment_of_isCompact_closedBall {x y : X} {R : ℝ}
   have hfmem (n : ℕ) : f n ∈ {g : C(I, X) | LipschitzWith R.toNNReal g ∧ g 0 = x} :=
     ⟨(hfLip n).weaken (Real.toNNReal_le_toNNReal (hrR n)), hf0 n⟩
   obtain ⟨g, ⟨-, hg0⟩, φ, hφ, hlim⟩ :=
-    (isCompact_setOf_lipschitzWith_apply_zero_eq_of_isCompact_closedBall R.toNNReal x
+    (isCompact_setOf_lipschitzWith_apply_eq_of_isCompact_closedBall R.toNNReal 0 x
       (by rwa [Real.coe_toNNReal _ hR0])).tendsto_subseq hfmem
   have hpoint (t : I) : Tendsto (fun n ↦ f (φ n) t) atTop (𝓝 (g t)) :=
     ((continuous_eval_const t).tendsto g).comp hlim

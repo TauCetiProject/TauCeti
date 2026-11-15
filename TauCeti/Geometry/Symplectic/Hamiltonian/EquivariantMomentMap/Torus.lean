@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Prod
+public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Pullback
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Restrict
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 
@@ -36,8 +37,10 @@ manifold they are the only other ones
 action preserving `σ` on a preconnected manifold, invariance of a moment map can be tested at a
 single point (`TauCeti.SmoothTwoForm.IsMomentMap.hamiltonianTorusData_iff`).
 
-Hamiltonian torus data restrict along smooth homomorphisms `φ : T' →* T` of commutative Lie
-groups, with moment map `x ↦ μ x ∘ dφ`
+Hamiltonian torus data pull back along smooth equivariant maps `f : N → M`, with form `f^* σ`
+and moment map `μ ∘ f` (`TauCeti.SmoothTwoForm.HamiltonianTorusData.mpullback`); this covers
+invariant open subsets and invariant submanifolds. They restrict along smooth homomorphisms
+`φ : T' →* T` of commutative Lie groups, with moment map `x ↦ μ x ∘ dφ`
 (`TauCeti.SmoothTwoForm.HamiltonianTorusData.comp_monoidHom`); this covers subtori and
 reparametrizations of the torus. They are compatible with the diagonal action of one group on
 a product (`TauCeti.SmoothTwoForm.HamiltonianTorusData.prod`) and with external products: if
@@ -66,6 +69,8 @@ manifolds.
   any one of them.
 * `TauCeti.SmoothTwoForm.IsMomentMap.hamiltonianTorusData_iff`: invariance of a moment map of an
   action by symplectomorphisms of a preconnected manifold can be tested at one point.
+* `TauCeti.SmoothTwoForm.HamiltonianTorusData.mpullback`: pullback along a smooth equivariant
+  map.
 * `TauCeti.SmoothTwoForm.HamiltonianTorusData.comp_monoidHom`: restriction along a homomorphism
   of commutative Lie groups.
 * `TauCeti.SmoothTwoForm.HamiltonianTorusData.prod`,
@@ -171,6 +176,23 @@ theorem hamiltonianTorusData_iff_exists_eq_add [PreconnectedSpace M]
     h.toIsEquivariantMomentMap.isEquivariantMomentMap_iff_exists_eq_add.1
       h'.toIsEquivariantMomentMap
   exact ⟨ν, hν⟩
+
+/-- **Pullback along an equivariant map.** If `f : N → M` is a smooth `G`-equivariant map and
+`μ` is the moment map of Hamiltonian torus data for `σ`, then `μ ∘ f` is the moment map of
+Hamiltonian torus data for the pullback `f^* σ`. -/
+theorem mpullback {EN HN : Type*} [NormedAddCommGroup EN] [NormedSpace ℝ EN] [CompleteSpace EN]
+    [TopologicalSpace HN] {IN : ModelWithCorners ℝ EN HN} {N : Type*} [TopologicalSpace N]
+    [ChartedSpace HN N] [IsManifold IN ∞ N] [MulAction G N] [ContMDiffSMul I IN ∞ G N]
+    (h : σ.HamiltonianTorusData μ) {f : N → M} (hf : ContMDiff IN I' ∞ f)
+    (hfg : ∀ (g : G) (y : N), f (g • y) = g • f y) :
+    HamiltonianTorusData (SmoothForm.mpullback f hf σ) (μ ∘ f) where
+  toIsEquivariantMomentMap := h.toIsEquivariantMomentMap.mpullback hf hfg
+  mpullback_smul g := by
+    -- Both sides pull `σ` back along `f`, since `f ∘ (g • ·) = (g • ·) ∘ f`.
+    conv_rhs => rw [← h.mpullback_smul g]
+    rw [SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback]
+    have hcomp : f ∘ (fun y : N ↦ g • y) = (fun x : M ↦ g • x) ∘ f := funext (hfg g)
+    simp only [hcomp]
 
 section Restrict
 

@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Robby Sneiderman. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Robby Sneiderman
 -/
 module
 
@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import TauCeti.Analysis.SpecificLimits.WeightedGeometric
 
 /-!
-# Taylor series bounds for `-log (1 - ·)`
+# Complex logarithm bounds and Taylor series
 
 Mathlib's `Complex.hasSum_taylorSeries_neg_log'` expands `-log (1 - z)` as `∑' e, z ^ (e+1)/(e+1)`
 for a single `z` of modulus less than one.  This file first sums that over a family `r : ι → ℂ`: the
@@ -32,7 +32,19 @@ The file also gives an explicit truncation error for a single `z`: the `n`-th pa
 factor `1 - w / p` is nonzero.  These are the estimates used to compare an Euler factor
 `(1 - w / p)⁻¹` with the prime-power partial sums of its logarithm.
 
+The estimate `Complex.norm_log_le_of_re_mem_Icc` bounds the principal logarithm uniformly
+in the real part on a positive vertical strip, with logarithmic growth in the imaginary part.
+Its proof adapts Robby Sneiderman’s strip argument from
+[PrimeNumberTheoremAnd](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/83f85e91fccdeecc8248fe6d51c30edfb3a07d15/PrimeNumberTheoremAnd/Mathlib/Analysis/SpecialFunctions/Gamma/DigammaBounds.lean).
+
+Finally, Mathlib's `Complex.hasSum_taylorSeries_log` has a vanishing constant term; dropping it
+re-indexes the Taylor series of `log (1 + z)` from `0`, the form a power series without constant
+term takes.
+
 ## Main results
+
+* `Complex.norm_log_le_of_re_mem_Icc`: an explicit principal-log norm bound on every
+  positive vertical strip, including empty and singleton strips.
 
 * `Complex.summable_taylorSeries_neg_log`: for a summable `r : ι → ℂ` with every `‖r i‖ < 1`, the
   family `(i, e) ↦ r i ^ (e + 1) / (e + 1)` is summable over `ι × ℕ`.
@@ -46,6 +58,10 @@ factor `1 - w / p` is nonzero.  These are the estimates used to compare an Euler
   for `‖w‖ ≤ 1` and a natural number `p ≥ 2`, bounded by `2 / p ^ (n + 1)`.
 * `Complex.one_sub_div_natCast_ne_zero`: for `‖w‖ ≤ 1` and a natural number `p > 1`, the factor
   `1 - w / p` is nonzero.
+* `Complex.hasSum_taylorSeries_log'`: `log (1 + z) = ∑ₙ (-1) ^ n z ^ (n + 1) / (n + 1)` for
+  `‖z‖ < 1`.
+* `Complex.norm_neg_one_pow_div_add_one`: the coefficients of that series have norm
+  `(n + 1)⁻¹`.
 -/
 
 public section
@@ -107,6 +123,25 @@ theorem tsum_taylorSeries_neg_log {ι : Type*} {r : ι → ℂ} (h1 : ∀ i, ‖
     refine tsum_eq_zero_of_not_summable fun hS ↦ hg ?_
     exact (hS.hasSum.prod_fiberwise hfib).summable
 
+/-- The Taylor series of `log (1 + z)` without its vanishing constant term:
+`log (1 + z) = ∑ₙ (-1) ^ n z ^ (n + 1) / (n + 1)` for `‖z‖ < 1`. -/
+theorem hasSum_taylorSeries_log' {z : ℂ} (hz : ‖z‖ < 1) :
+    HasSum (fun n : ℕ ↦ (-1) ^ n / (n + 1) * z ^ (n + 1)) (log (1 + z)) := by
+  have h := (hasSum_nat_add_iff' 1).2 (hasSum_taylorSeries_log hz)
+  simp only [Finset.range_one, Finset.sum_singleton, pow_zero, CharP.cast_eq_zero, div_zero,
+    sub_zero] at h
+  convert h using 1
+  ext n
+  push_cast
+  ring
+
+/-- The coefficients of the Taylor series of `log (1 + z)` have norm
+`‖(-1) ^ n / (n + 1)‖ = (n + 1)⁻¹`. -/
+theorem norm_neg_one_pow_div_add_one (n : ℕ) :
+    ‖((-1) ^ n / (n + 1) : ℂ)‖ = ((n : ℝ) + 1)⁻¹ := by
+  rw [norm_div, norm_pow, norm_neg, norm_one, one_pow, one_div, ← Nat.cast_add_one,
+    Complex.norm_natCast, Nat.cast_add_one]
+
 /-- **The truncation error of the Taylor series of `log (1 - z)⁻¹`.** For `‖z‖ < 1`, the partial
 sum `∑ j ∈ Icc 1 n, z ^ j / j` approximates `log (1 - z)⁻¹ = -log (1 - z)` to within
 `‖z‖ ^ (n + 1) / ((1 - ‖z‖) (n + 1))`. This restates Mathlib's
@@ -156,6 +191,37 @@ theorem one_sub_div_natCast_ne_zero {p : ℕ} (hp : 1 < p) {w : ℂ} (hw : ‖w�
   have h1 : ‖w / p‖ = 1 := by rw [← h, norm_one]
   have h2 : (1 : ℝ) < p := mod_cast hp
   rw [norm_div, norm_natCast, div_eq_one_iff_eq (by positivity)] at h1
+  linarith
+
+/-- A principal-log estimate uniform in the real part on a positive vertical strip. -/
+theorem norm_log_le_of_re_mem_Icc {a b : ℝ} (ha : 0 < a) {s : ℂ}
+    (hs : s.re ∈ Set.Icc a b) :
+    ‖Complex.log s‖ ≤ |Real.log a| + Real.log (|b| + 1) +
+      Real.log (|s.im| + 2) + Real.pi / 2 := by
+  have hre : 0 < s.re := ha.trans_le hs.1
+  have hnorm : a ≤ ‖s‖ := hs.1.trans (re_le_norm s)
+  have hnorm0 : 0 < ‖s‖ := ha.trans_le hnorm
+  have harg : |s.arg| ≤ Real.pi / 2 := abs_arg_le_pi_div_two_iff.mpr hre.le
+  have hnormhi : ‖s‖ ≤ (|b| + 1) * (|s.im| + 2) := by
+    have h := norm_le_abs_re_add_abs_im s
+    rw [abs_of_pos hre] at h
+    have hb : 0 ≤ |b| := abs_nonneg b
+    have hi : 0 ≤ |s.im| := abs_nonneg s.im
+    have hsb : s.re ≤ |b| := hs.2.trans (le_abs_self b)
+    nlinarith [mul_nonneg hb hi]
+  have hlo : Real.log a ≤ Real.log ‖s‖ := Real.log_le_log ha hnorm
+  have hhi : Real.log ‖s‖ ≤ Real.log (|b| + 1) + Real.log (|s.im| + 2) := by
+    simpa only [Real.log_mul (by positivity : |b| + 1 ≠ 0)
+      (by positivity : |s.im| + 2 ≠ 0)] using Real.log_le_log hnorm0 hnormhi
+  have hlogabs : |Real.log ‖s‖| ≤
+      |Real.log a| + Real.log (|b| + 1) + Real.log (|s.im| + 2) := by
+    refine abs_le.mpr ⟨?_, ?_⟩
+    · have hba := Real.log_nonneg (by linarith [abs_nonneg b] : 1 ≤ |b| + 1)
+      have hi := Real.log_nonneg (by linarith [abs_nonneg s.im] : 1 ≤ |s.im| + 2)
+      linarith [neg_abs_le (Real.log a)]
+    · linarith [abs_nonneg (Real.log a)]
+  have h := norm_le_abs_re_add_abs_im (Complex.log s)
+  rw [Complex.log_re, Complex.log_im] at h
   linarith
 
 end Complex

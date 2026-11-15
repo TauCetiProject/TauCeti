@@ -53,7 +53,7 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 * `MvPowerSeries.norm_coeff_le_norm` and `MvPowerSeries.exists_norm_coeff_eq_norm`: at unit
   polyradius the norm is the largest coefficient norm, and it is attained.
 * `TauCeti.MvPowerSeries.exists_isUnit_and_norm_eq`: at unit polyradius over a division ring,
-  the Gauss norm of a nonzero series is the norm of a unit, a constant series.
+  the Gauss norm of a nonzero series is the norm of a unit.
 * `MvPowerSeries.norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le`: a constant coefficient
   dominating every other weighted coefficient attains the Gauss norm.
 * `MvPowerSeries.IsRestricted.exists_achievesGaussNorm_max`: a nonzero restricted series has a
@@ -372,7 +372,7 @@ theorem norm_C (a : R) :
   simpa [monomial_zero_eq_C_apply] using norm_monomial (σ := σ) 0 a
 
 /-- At unit polyradius over a division ring, the Gauss norm of a nonzero restricted series is the
-norm of a unit: the constant series at a coefficient of maximal norm. -/
+norm of a unit. -/
 theorem _root_.TauCeti.MvPowerSeries.exists_isUnit_and_norm_eq {K : Type*} [NormedDivisionRing K]
     [IsUltrametricDist K] {f : IsRestricted.subring (R := K) (fun _ : σ ↦ 1)} (hf : f ≠ 0) :
     ∃ u : IsRestricted.subring (R := K) (fun _ : σ ↦ 1), IsUnit u ∧ ‖u‖ = ‖f‖ := by
