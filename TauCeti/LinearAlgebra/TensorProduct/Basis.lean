@@ -69,18 +69,18 @@ theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M 
   classical
   obtain ⟨s, hs⟩ := Module.projective_def'.mp (inferInstance : Module.Projective R N)
   let b := Finsupp.basisSingleOne (R := R) (ι := N)
-  have hmap : TensorProduct.map LinearMap.id s x = TensorProduct.map LinearMap.id s y := by
-    apply (TensorProduct.equivFinsuppOfBasisRight b (M := M)).injective
+  have hmap : map LinearMap.id s x = map LinearMap.id s y := by
+    apply (equivFinsuppOfBasisRight b (M := M)).injective
     ext i
     have hcoord :
-        _root_.LinearMap.tensorComponent (b.coord i) (TensorProduct.map LinearMap.id s x) =
-        _root_.LinearMap.tensorComponent (b.coord i) (TensorProduct.map LinearMap.id s y) := by
+        _root_.LinearMap.tensorComponent (b.coord i) (map LinearMap.id s x) =
+        _root_.LinearMap.tensorComponent (b.coord i) (map LinearMap.id s y) := by
       simpa only [_root_.LinearMap.tensorComponent_map, LinearMap.id_apply] using
         h ((b.coord i).comp s)
-    simpa only [TensorProduct.equivFinsuppOfBasisRight_apply,
+    simpa only [equivFinsuppOfBasisRight_apply,
       _root_.LinearMap.tensorComponent_def, LinearMap.comp_apply, LinearEquiv.coe_coe] using hcoord
-  have := congrArg (TensorProduct.map LinearMap.id (Finsupp.linearCombination R id)) hmap
-  simpa only [TensorProduct.map_map, LinearMap.id_comp, hs, TensorProduct.map_id,
+  have := congrArg (map LinearMap.id (Finsupp.linearCombination R id)) hmap
+  simpa only [map_map, LinearMap.id_comp, hs, map_id,
     LinearMap.id_apply] using this
 
 end TensorProduct
@@ -107,7 +107,7 @@ theorem tensor_mem_range_iff_forall_tensorComponent_mem (S : Submodule R M) (z :
     apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
     intro f
     rw [map_zero, LinearMap.tensorComponent_rTensor]
-    simpa only [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] using h f
+    simpa only [mkQ_apply, Quotient.mk_eq_zero] using h f
 
 end Submodule
 

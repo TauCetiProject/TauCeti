@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Order.ConditionallyCompleteLattice.WithTop
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 import Mathlib.Order.Bounds.Image
 public import Mathlib.Order.ConditionallyCompleteLattice.Basic

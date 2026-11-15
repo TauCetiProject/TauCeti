@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Sites.Fpqc
-public import Mathlib.CategoryTheory.MorphismProperty.Representable
+public import TauCeti.CategoryTheory.MorphismProperty.Representable
 
 /-!
 # Algebraic spaces
@@ -38,6 +38,8 @@ an algebraic space, with no separatedness hypothesis.
 
 * `TauCeti.AlgebraicGeometry.Spaces.representableDiagonal_iff`: the diagonal of `F` is
   representable if and only if every morphism from a scheme to `F` is.
+* `TauCeti.AlgebraicGeometry.Spaces.RepresentableDiagonal.monomorphisms_diag`: a representable
+  diagonal is representable by monomorphisms of schemes.
 * `TauCeti.AlgebraicGeometry.Spaces.etaleAtlas_yoneda_map_iff`: for a morphism of schemes `f`,
   `h_f` is an étale atlas if and only if `f` is étale and surjective.
 * `TauCeti.AlgebraicGeometry.Spaces.EtaleAtlas.yoneda_map_comp`: precomposing an étale atlas with
@@ -106,6 +108,12 @@ theorem RepresentableDiagonal.of_iso {F G : SchemePresheaf.{u}} (e : F ≅ G)
   representableDiagonal_iff.2 fun _ g ↦ by
     simpa using MorphismProperty.comp_mem _ _ e.hom (hF.relativelyRepresentable (g ≫ e.inv))
       (Functor.relativelyRepresentable.of_isIso _ e.hom)
+
+/-- A representable diagonal is representable by monomorphisms of schemes. -/
+theorem RepresentableDiagonal.monomorphisms_diag {F : SchemePresheaf.{u}}
+    (hF : RepresentableDiagonal F) :
+    MorphismProperty.presheaf (MorphismProperty.monomorphisms Scheme.{u}) (diag F) :=
+  MorphismProperty.relative_monomorphisms_of_mono (representableDiagonal_iff_diag.1 hF)
 
 /-- A morphism `a : h_U ⟶ F` from a scheme is an *étale atlas* if it is representable by schemes
 and its base change along every morphism `h_T ⟶ F` from a scheme is an étale surjective morphism

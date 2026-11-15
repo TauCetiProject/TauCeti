@@ -85,7 +85,7 @@ def extendL1 (T : 𝓕) : Lp F 1 (massMeasure T) →L[ℝ] ℝ :=
 /-- The domination of `T` by its mass measure, in the form used by `LinearMap.extendOfNorm`. -/
 private theorem norm_apply_le_one_mul (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
     ‖(T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ) φ‖ ≤ 1 * ‖(TestFunction.toLp 1 (massMeasure T)).toLinearMap φ‖ := by
-  rw [one_mul, LinearMap.coe_ofClass, ContinuousLinearMap.coe_coe, ← enorm_le_iff_norm_le,
+  rw [one_mul, LinearMap.coe_ofClass, ContinuousLinearMap.coe_coe, ← eNorm_le_iff_norm_le,
     TestFunction.enorm_toLp_one]
   exact enorm_apply_le_lintegral_massMeasure hT φ
 
@@ -160,7 +160,7 @@ theorem massRestrict_apply (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
 /-- **Domination of the Borel restriction.** `|(T ⌞ A) φ| ≤ ∫_A ‖φ‖ d‖T‖`. -/
 theorem enorm_massRestrict_apply_le (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
     ‖massRestrict T hA φ‖ₑ ≤ ∫⁻ x in A, ‖φ x‖ₑ ∂massMeasure T := by
-  rw [← TestFunction.enorm_indicatorToLp_one _ hA, massRestrict_apply, enorm_le_iff_norm_le]
+  rw [← TestFunction.enorm_indicatorToLp_one _ hA, massRestrict_apply, eNorm_le_iff_norm_le]
   exact norm_extendL1_apply_le _
 
 /-- A Borel restriction has locally finite mass. -/
@@ -209,7 +209,7 @@ theorem massMeasure_massRestrict (hT : HasLocallyFiniteMass T) (hA : MeasurableS
     intro φ
     rw [lintegral_add_measure,
       ← massRestrict_add_massRestrict_compl_apply hT hA φ]
-    exact (enorm_add_le _ _).trans (add_le_add
+    exact (eNorm_add_le _ _).trans (add_le_add
       (enorm_apply_le_lintegral_massMeasure (hasLocallyFiniteMass_massRestrict hA) φ)
       (enorm_apply_le_lintegral_massMeasure (hasLocallyFiniteMass_massRestrict hA.compl) φ))
   have hzero : ν.restrict A = 0 := by
@@ -244,7 +244,7 @@ theorem massRestrict_eq_zero (hA : MeasurableSet A) (hA0 : massMeasure T A = 0) 
   ext φ
   have h := enorm_massRestrict_apply_le (T := T) hA φ
   rw [Measure.restrict_eq_zero.2 hA0, lintegral_zero_measure, nonpos_iff_eq_zero,
-    enorm_eq_zero] at h
+    eNorm_eq_zero] at h
   simpa using h
 
 /-- A Borel restriction of a locally finite-mass current vanishes if and only if the
@@ -310,7 +310,7 @@ theorem tendsto_apply_smulLeftCLM_massRestrict (hT : HasLocallyFiniteMass T)
           TestFunction.indicatorToLp 1 (massMeasure T) hA φ‖ =
         (∫⁻ x, ‖(f i x - A.indicator 1 x) • φ x‖ₑ ∂massMeasure T).toReal := by
     rw [TestFunction.toLp_apply, TestFunction.indicatorToLp_apply, ← MemLp.toLp_sub,
-      Lp.norm_toLp, eLpNorm_one_eq_lintegral_enorm]
+      Lp.norm_toLp, eLpNorm_one_eq_lintegral_eNorm]
     · refine congrArg ENNReal.toReal (lintegral_congr fun x => ?_)
       by_cases hx : x ∈ A <;> simp [hx, sub_smul]
     · exact ((TestFunction.memLp_subtype (p := 1) _).sub
@@ -325,19 +325,19 @@ theorem tendsto_apply_smulLeftCLM_massRestrict (hT : HasLocallyFiniteMass T)
       (((hf i).continuous.comp continuous_subtype_val).smul
         (φ.continuous.comp continuous_subtype_val))
     exact (hc.aestronglyMeasurable.sub ((φ.continuous.comp
-      continuous_subtype_val).aestronglyMeasurable.indicator hA)).enorm.congr
+      continuous_subtype_val).aestronglyMeasurable.indicator hA)).eNorm.congr
       (ae_of_all _ fun x => by by_cases hx : x ∈ A <;> simp [hx, sub_smul])
   · dsimp only
-    rw [enorm_smul]
+    rw [eNorm_smul]
     gcongr
-    refine (enorm_sub_le).trans (add_le_add ?_ ?_)
+    refine (eNorm_sub_le).trans (add_le_add ?_ ?_)
     · rw [← ofReal_norm, ← ofReal_norm, Real.norm_eq_abs]
       exact ENNReal.ofReal_le_ofReal ((hfC i x x.2).trans (le_abs_self C))
     · by_cases hx : x ∈ A <;> simp [hx]
   · rw [lintegral_const_mul' _ _ (by simp), ← TestFunction.enorm_toLp_one]
-    exact ENNReal.mul_ne_top (by simp) enorm_ne_top
-  · have h := ENNReal.Tendsto.mul_const ((hlim x).sub_const (A.indicator 1 x)).enorm
-      (Or.inr enorm_ne_top) (b := ‖φ x‖ₑ)
-    simpa [sub_self, enorm_smul] using h
+    exact ENNReal.mul_ne_top (by simp) eNorm_ne_top
+  · have h := ENNReal.Tendsto.mul_const ((hlim x).sub_const (A.indicator 1 x)).eNorm
+      (Or.inr eNorm_ne_top) (b := ‖φ x‖ₑ)
+    simpa [sub_self, eNorm_smul] using h
 
 end Distribution

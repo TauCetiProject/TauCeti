@@ -334,8 +334,7 @@ theorem kostantWeylGL_conj_chevalleyRootSubgroup (i : Fin t.rank) (γ : Fin t.nu
       ((t.lieBasis ht).isSl2Triple_rootGenerator i)
       (isNilpotent_ad_rootGenerator_inl i).exists_pow_apply_eq_zero
       (isNilpotent_ad_rootGenerator_inr i).exists_pow_apply_eq_zero
-      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)]
+      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ)]
   have hw : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ
       (weylAut ((t.lieBasis ht).isSl2Triple_rootGenerator i)
         (isNilpotent_ad_rootGenerator_inl i).exists_pow_apply_eq_zero

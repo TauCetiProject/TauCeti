@@ -21,11 +21,14 @@ import Mathlib.Topology.Algebra.Ring.Compact
 import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
 
 /-!
-# Units of the `p`-adic integers
+# The `p`-adic integers: units, norms and local-global statements
 
-Complements to Mathlib's `PadicInt` API on the units of `ℤ_p`: `1 + x` is a unit whenever
+Complements to Mathlib's `PadicInt` API, chiefly on the units of `ℤ_p`: `1 + x` is a unit whenever
 `p ∣ x`, because `ℤ_p` is a local ring whose maximal ideal is `pℤ_p`. This is the criterion
-that makes `1 + p^f ℤ_p` a subgroup of `ℤ_pˣ`.
+that makes `1 + p^f ℤ_p` (for `f ≥ 1`) a subgroup of `ℤ_pˣ`. The file also contains summability
+and norm lemmas for `ℤ_p`, local-global statements for the ideals of `ℤ` (through the extensions
+to every `ℤ_p`), valuation lemmas for `ℚ_p`, and the vanishing of continuous additive
+homomorphisms `ℤ_p → ℤ`.
 
 The unit group `ℤ_pˣ` is a profinite group: it is the closed unit sphere of the compact
 totally disconnected space `ℤ_p`, and the topology of the units is the subspace topology because
@@ -51,6 +54,11 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
 * `PadicInt.isUnit_of_dvd_one_sub_sq`: `d` is a unit of `ℤ_[p]` whenever `p ∣ 1 - d ^ 2`.
 * `PadicInt.isUnit_two`: `2` is a unit of `ℤ_[p]` for odd `p`.
+* `PadicInt.isUnit_natCast_of_coprime`: a natural number prime to `p` is a unit of `ℤ_[p]`.
+* `PadicInt.isUnit_natCard_of_isPGroup`: the order of a finite `ℓ`-group is a unit of `ℤ_[p]` for
+  a prime `ℓ ≠ p`.
+* `PadicInt.isUnit_natCast_or_isMaximal_span`: a prime is a unit of `ℤ_[p]` or generates a maximal
+  ideal.
 * `PadicInt.pow_p_dvd_natCast_iff`: `p ^ n` divides a natural number in `ℤ_[p]` exactly when it
   does in `ℕ`.
 * `PadicInt.dvd_of_norm_le`: in `ℤ_[p]`, `y ∣ x` whenever `‖x‖ ≤ ‖y‖`.
@@ -131,12 +139,9 @@ theorem isUnit_one_add_of_dvd {x : ℤ_[p]} (hx : (p : ℤ_[p]) ∣ x) : IsUnit 
     exact (norm_lt_one_iff_dvd x).mpr hx
 
 /-- In `ℤ_p`, `d` is a unit whenever `p ∣ 1 - d ^ 2`. -/
-theorem isUnit_of_dvd_one_sub_sq {d : ℤ_[p]} (h : (p : ℤ_[p]) ∣ 1 - d ^ 2) : IsUnit d := by
-  by_contra hd
-  have hpd : (p : ℤ_[p]) ∣ d := (norm_lt_one_iff_dvd d).mp (mem_nonunits.mp hd)
-  have h1 : (p : ℤ_[p]) ∣ 1 := by
-    simpa using h.add (dvd_pow hpd two_ne_zero)
-  exact irreducible_p.not_isUnit (isUnit_of_dvd_one h1)
+theorem isUnit_of_dvd_one_sub_sq {d : ℤ_[p]} (h : (p : ℤ_[p]) ∣ 1 - d ^ 2) : IsUnit d :=
+  (isUnit_pow_iff two_ne_zero).mp (IsLocalRing.isUnit_of_mem_nonunits_one_sub_self _
+    (mem_nonunits.mpr ((norm_lt_one_iff_dvd _).mpr h)))
 
 /-- A natural number prime to `p` is a unit in `ℤ_p`. -/
 theorem isUnit_natCast_of_coprime {n : ℕ} (h : p.Coprime n) : IsUnit (n : ℤ_[p]) :=
@@ -160,9 +165,8 @@ theorem isUnit_natCast_or_isMaximal_span {ℓ : ℕ} (hℓ : ℓ.Prime) :
   · exact .inl (isUnit_natCast_of_coprime ((Nat.coprime_primes Fact.out hℓ).mpr (Ne.symm h)))
 
 /-- `2` is a unit in `ℤ_p` for every odd prime `p`. -/
-theorem isUnit_two (hp : p ≠ 2) : IsUnit (2 : ℤ_[p]) :=
-  isUnit_iff.mpr <| by
-    exact_mod_cast norm_natCast_eq_one_iff.mpr ((Nat.coprime_primes Fact.out Nat.prime_two).mpr hp)
+theorem isUnit_two (hp : p ≠ 2) : IsUnit (2 : ℤ_[p]) := by
+  exact_mod_cast isUnit_natCast_of_coprime ((Nat.coprime_primes Fact.out Nat.prime_two).mpr hp)
 
 /-- `p ^ n` divides a natural number in `ℤ_p` exactly when it divides it in `ℕ`: the natural
 number version of `PadicInt.pow_p_dvd_int_iff`. -/
@@ -211,13 +215,13 @@ theorem not_isUnit_iff_dvd {z : ℤ_[p]} : ¬IsUnit z ↔ (p : ℤ_[p]) ∣ z :=
 
 /-- An integer is a unit in `ℤ_p` exactly when `p` does not divide it. -/
 theorem isUnit_intCast_iff {z : ℤ} : IsUnit (z : ℤ_[p]) ↔ ¬(p : ℤ) ∣ z := by
-  rw [← not_iff_not, not_not, not_isUnit_iff_dvd, ← pow_one (p : ℤ_[p]), pow_p_dvd_int_iff,
-    pow_one]
+  rw [← not_iff_not, not_not, not_isUnit_iff, norm_intCast_lt_one_iff]
 
 /-- A natural number is a unit in `ℤ_p` exactly when `p` does not divide it.
 
-Not a `simp` lemma: `simp` rewrites the left-hand side by the general
-`IsLocalRing.isUnit_natCast_iff_not_dvd` first. -/
+Not tagged `simp`: in a module importing `TauCeti.Algebra.CharP.LocalRing`, `simp` rewrites the
+left-hand side by the general `IsLocalRing.isUnit_natCast_iff_not_dvd` first (in this module alone
+`simp` makes no progress on the statement). -/
 theorem isUnit_natCast_iff {n : ℕ} : IsUnit (n : ℤ_[p]) ↔ ¬p ∣ n := by
   rw [← Int.cast_natCast, isUnit_intCast_iff, Int.natCast_dvd_natCast]
 
@@ -225,10 +229,8 @@ theorem isUnit_natCast_iff {n : ℕ} : IsUnit (n : ℤ_[p]) ↔ ¬p ∣ n := by
 image of an integer. -/
 theorem intCast_not_surjective : ¬Function.Surjective (Int.cast : ℤ → ℤ_[p]) := fun h ↦ by
   have hp := (Fact.out : p.Prime).two_le
-  have hu : IsUnit ((1 + p : ℤ) : ℤ_[p]) := isUnit_intCast_iff.2 fun hdvd ↦ by
-    have : (p : ℤ) ∣ 1 := (dvd_add_left (dvd_refl _)).1 hdvd
-    have := Int.le_of_dvd one_pos this
-    omega
+  have hu : IsUnit ((1 + p : ℤ) : ℤ_[p]) := by
+    simpa using isUnit_one_add_of_dvd (dvd_refl (p : ℤ_[p]))
   obtain ⟨m, hm⟩ := h ↑hu.unit⁻¹
   have hmul : (1 + p : ℤ) * m = 1 :=
     Int.cast_injective (α := ℤ_[p]) <| by rw [Int.cast_mul, hm, IsUnit.mul_val_inv, Int.cast_one]

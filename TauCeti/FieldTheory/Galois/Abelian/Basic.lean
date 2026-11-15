@@ -66,9 +66,10 @@ fixed field of `H` has trivial image in the abelianization exactly when `σ ∈ 
 theorem abelianization_of_restrictNormalHom_fixedField_eq_one_iff [FiniteDimensional K L]
     (H : Subgroup Gal(L/K)) [IsAbelianGalois K (IntermediateField.fixedField H)]
     (σ : Gal(L/K)) :
-    Abelianization.of (AlgEquiv.restrictNormalHom (IntermediateField.fixedField H) σ) = 1 ↔
+    Group.Abelianization.of (AlgEquiv.restrictNormalHom (IntermediateField.fixedField H) σ) = 1 ↔
       σ ∈ H := by
-  rw [← map_one Abelianization.of, Abelianization.of_injective.eq_iff, ← MonoidHom.mem_ker,
+  rw [← map_one Group.Abelianization.of, Group.Abelianization.of_injective.eq_iff, ←
+      MonoidHom.mem_ker,
     IntermediateField.restrictNormalHom_ker, IntermediateField.fixingSubgroup_fixedField]
 
 section iSup

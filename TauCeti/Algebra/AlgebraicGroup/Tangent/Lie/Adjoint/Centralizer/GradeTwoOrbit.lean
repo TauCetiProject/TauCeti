@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.IdentityComponent
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Eigenspace
 public import TauCeti.Algebra.Lie.Sl2.WeightedDiagram.Finite

@@ -33,6 +33,7 @@ element `2 p - 1` is again self-adjoint.
 * `IsSelfAdjoint.star_mul_eq_zero_of_mul_eq_zero`: for self-adjoint `q`, `q * u = 0` implies
   `star u * q = 0`.
 * `IsSelfAdjoint.two_mul_sub_one`: `2 p - 1` is self-adjoint for a self-adjoint `p`.
+* `IsSelfAdjoint.of_mul_eq_one`: a right inverse of a self-adjoint element is self-adjoint.
 -/
 
 public section
@@ -81,3 +82,10 @@ theorem IsSelfAdjoint.two_mul_sub_one {R : Type*} [Ring R] [StarRing R] {p : R}
     (hp : IsSelfAdjoint p) : IsSelfAdjoint (2 * p - 1) := by
   rw [two_mul]
   exact (hp.add hp).sub (.one _)
+
+/-- A right inverse of a self-adjoint element is self-adjoint. -/
+theorem IsSelfAdjoint.of_mul_eq_one {A : Type*} [Monoid A] [StarMul A] {R Rinv : A}
+    (hR : IsSelfAdjoint R) (hRRinv : R * Rinv = 1) : IsSelfAdjoint Rinv := by
+  have hstar : star Rinv * R = 1 := by
+    simpa only [star_mul, hR.star_eq, star_one] using congrArg star hRRinv
+  exact left_inv_eq_right_inv hstar hRRinv

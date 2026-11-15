@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import TauCeti.Algebra.Module.ZLattice.Rank
-import TauCeti.Analysis.Convex.Gauge
+import TauCeti.Analysis.Convex.Gauge.Basic
 import TauCeti.Analysis.Convex.Star
 import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
