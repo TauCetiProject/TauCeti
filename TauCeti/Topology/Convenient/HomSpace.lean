@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Convenient.HomSpace
+public import TauCeti.Topology.Convenient.ContinuousMapGeneratedBy
 public import TauCeti.Topology.Convenient.GeneratedBy
 
 /-!
@@ -21,19 +22,20 @@ ordinary products and compact-open mapping spaces:
 
 * **Products with locally compact factors**
   (`Topology.IsGeneratedBy.prod_of_locallyCompactSpace_right`,
-  `Topology.IsGeneratedBy.prod_of_locallyCompactSpace_left`): if `Y` and `Z` are `X`-generated and
-  one of them is locally compact, then the ordinary product topology on `Y × Z` is already
-  `X`-generated, with no universe restriction between `X`, `Y`, and `Z`. In particular, taking the
-  product with a locally compact `X`-generated space such as `[0, 1]` needs no `X`-generated
-  refinement.
+  `Topology.IsGeneratedBy.prod_of_locallyCompactSpace_left`): assuming each test space `X i` is
+  locally compact and each pairwise product `X i × X j` is `X`-generated, if `Y` and `Z` are
+  `X`-generated and one of them is locally compact, then the ordinary product topology on `Y × Z`
+  is already `X`-generated, with no universe restriction between `X`, `Y`, and `Z`. In particular,
+  taking the product with a locally compact `X`-generated space such as `[0, 1]` needs no
+  `X`-generated refinement.
 * **Comparison with the compact-open topology** (`ContinuousMap.toContinuousMapGeneratedBy`,
   `Topology.ContinuousMapGeneratedBy.equivContinuousMap`,
-  `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapOfExistsIsCompactImageEq`): every
+  `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapOfExistsIUnionIsCompactImageEq`): every
   continuous map `Y → Z` is `X`-continuous and the inclusion
   `C(Y, Z) → ContinuousMapGeneratedBy X Y Z` is continuous for the compact-open topology on
   `C(Y, Z)`. When `Y` is `X`-generated, this map is a bijection; when, in addition, every compact
-  subset of `Y` is the continuous image of a compact subset of some test space `X i`, it is a
-  homeomorphism. This applies immediately to every test space `X i`
+  subset of `Y` is a finite union of images of compact subsets of test spaces `X i` under
+  continuous maps, it is a homeomorphism. This applies immediately to every test space `X i`
   (`Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapIndex`) and, for compact Hausdorff
   generators in `Type u`, to every `u`-small Hausdorff `u`-compactly generated space.
 
@@ -97,15 +99,17 @@ section LocallyCompactGenerators
 
 variable [∀ i, LocallyCompactSpace (X i)] [∀ i j, IsGeneratedBy X (X i × X j)]
 
-/-- If `Y` and `Z` are `X`-generated and `Z` is locally compact, then the ordinary product `Y × Z`
-is `X`-generated. -/
+/-- Assuming all generators `X i` are locally compact with `X`-generated pairwise products
+`X i × X j`, if `Y` and `Z` are `X`-generated and `Z` is locally compact, then the ordinary product
+`Y × Z` is `X`-generated. -/
 theorem prod_of_locallyCompactSpace_right (Y : Type v) (Z : Type v')
     [TopologicalSpace Y] [TopologicalSpace Z] [IsGeneratedBy X Y] [IsGeneratedBy X Z]
     [LocallyCompactSpace Z] : IsGeneratedBy X (Y × Z) :=
   prod_of_locallyCompactSpace_right_of_forall fun i ↦ index_prod i Z
 
-/-- If `Y` and `Z` are `X`-generated and `Y` is locally compact, then the ordinary product `Y × Z`
-is `X`-generated. -/
+/-- Assuming all generators `X i` are locally compact with `X`-generated pairwise products
+`X i × X j`, if `Y` and `Z` are `X`-generated and `Y` is locally compact, then the ordinary product
+`Y × Z` is `X`-generated. -/
 theorem prod_of_locallyCompactSpace_left (Y : Type v) (Z : Type v')
     [TopologicalSpace Y] [TopologicalSpace Z] [IsGeneratedBy X Y] [IsGeneratedBy X Z]
     [LocallyCompactSpace Y] : IsGeneratedBy X (Y × Z) :=
@@ -180,48 +184,54 @@ theorem equivContinuousMap_symm_apply (g : C(Y, Z)) :
     equivContinuousMap.symm g = g.toContinuousMapGeneratedBy X :=
   (rfl)
 
-/-- If every compact subset of an `X`-generated space `Y` is the image of a compact subset of some
-test space `X i` under a continuous map `X i → Y`, then `toContinuousMap` is continuous into the
-compact-open topology on `C(Y, Z)`. -/
-theorem continuous_toContinuousMap_of_exists_isCompact_image_eq
+/-- If every compact subset of an `X`-generated space `Y` is a finite union of images of compact
+subsets of test spaces `X i` under continuous maps `X i → Y`, then `toContinuousMap` is continuous
+into the compact-open topology on `C(Y, Z)`. -/
+theorem continuous_toContinuousMap_of_exists_iUnion_isCompact_image_eq
     (hK : ∀ ⦃K : Set Y⦄, IsCompact K →
-      ∃ (i : ι) (L : Set (X i)) (f : C(X i, Y)), IsCompact L ∧ f '' L = K) :
+      ∃ (m : ℕ) (i : Fin m → ι) (L : ∀ j, Set (X (i j))) (f : ∀ j, C(X (i j), Y)),
+        (∀ j, IsCompact (L j)) ∧ ⋃ j, f j '' L j = K) :
     Continuous (toContinuousMap (X := X) (Y := Y) (Z := Z)) := by
   rw [ContinuousMap.continuous_compactOpen]
   intro K hKc U hUo
-  obtain ⟨i, L, f, hLc, rfl⟩ := hK hKc
-  have hset : {g : ContinuousMapGeneratedBy X Y Z | Set.MapsTo g.toContinuousMap (f '' L) U} =
-      precomp f ⁻¹' {h : C(X i, Z) | Set.MapsTo h L U} := by
+  obtain ⟨m, i, L, f, hLc, rfl⟩ := hK hKc
+  have hset : {g : ContinuousMapGeneratedBy X Y Z |
+      Set.MapsTo g.toContinuousMap (⋃ j, f j '' L j) U} =
+      ⋂ j, precomp (f j) ⁻¹' {h : C(X (i j), Z) | Set.MapsTo h (L j) U} := by
     ext g
-    simp [Set.mapsTo_image_iff, Function.comp_def]
+    simp [Set.mapsTo_iUnion, Set.mapsTo_image_iff, Function.comp_def]
   rw [hset]
-  exact (ContinuousMap.isOpen_setOfPred_mapsTo hLc hUo).preimage (continuous_precomp f)
+  exact isOpen_iInter_of_finite fun j ↦
+    (ContinuousMap.isOpen_setOfPred_mapsTo (hLc j) hUo).preimage (continuous_precomp (f j))
 
-/-- If `Y` is `X`-generated and every compact subset of `Y` is the image of a compact subset of
-some test space `X i` under a continuous map, then `ContinuousMapGeneratedBy X Y Z` is homeomorphic
-to the compact-open mapping space `C(Y, Z)`. -/
-def homeomorphContinuousMapOfExistsIsCompactImageEq
+/-- If `Y` is `X`-generated and every compact subset of `Y` is a finite union of images of compact
+subsets of test spaces `X i` under continuous maps, then `ContinuousMapGeneratedBy X Y Z` is
+homeomorphic to the compact-open mapping space `C(Y, Z)`. -/
+def homeomorphContinuousMapOfExistsIUnionIsCompactImageEq
     (hK : ∀ ⦃K : Set Y⦄, IsCompact K →
-      ∃ (i : ι) (L : Set (X i)) (f : C(X i, Y)), IsCompact L ∧ f '' L = K) :
+      ∃ (m : ℕ) (i : Fin m → ι) (L : ∀ j, Set (X (i j))) (f : ∀ j, C(X (i j), Y)),
+        (∀ j, IsCompact (L j)) ∧ ⋃ j, f j '' L j = K) :
     ContinuousMapGeneratedBy X Y Z ≃ₜ C(Y, Z) where
   toEquiv := equivContinuousMap
-  continuous_toFun := continuous_toContinuousMap_of_exists_isCompact_image_eq hK
+  continuous_toFun := continuous_toContinuousMap_of_exists_iUnion_isCompact_image_eq hK
   continuous_invFun := (ContinuousMap.toContinuousMapGeneratedBy X).continuous
 
 @[simp]
-theorem homeomorphContinuousMapOfExistsIsCompactImageEq_apply
+theorem homeomorphContinuousMapOfExistsIUnionIsCompactImageEq_apply
     (hK : ∀ ⦃K : Set Y⦄, IsCompact K →
-      ∃ (i : ι) (L : Set (X i)) (f : C(X i, Y)), IsCompact L ∧ f '' L = K)
+      ∃ (m : ℕ) (i : Fin m → ι) (L : ∀ j, Set (X (i j))) (f : ∀ j, C(X (i j), Y)),
+        (∀ j, IsCompact (L j)) ∧ ⋃ j, f j '' L j = K)
     (g : ContinuousMapGeneratedBy X Y Z) :
-    homeomorphContinuousMapOfExistsIsCompactImageEq hK g = g.toContinuousMap :=
+    homeomorphContinuousMapOfExistsIUnionIsCompactImageEq hK g = g.toContinuousMap :=
   (rfl)
 
 @[simp]
-theorem homeomorphContinuousMapOfExistsIsCompactImageEq_symm_apply
+theorem homeomorphContinuousMapOfExistsIUnionIsCompactImageEq_symm_apply
     (hK : ∀ ⦃K : Set Y⦄, IsCompact K →
-      ∃ (i : ι) (L : Set (X i)) (f : C(X i, Y)), IsCompact L ∧ f '' L = K)
+      ∃ (m : ℕ) (i : Fin m → ι) (L : ∀ j, Set (X (i j))) (f : ∀ j, C(X (i j), Y)),
+        (∀ j, IsCompact (L j)) ∧ ⋃ j, f j '' L j = K)
     (g : C(Y, Z)) :
-    (homeomorphContinuousMapOfExistsIsCompactImageEq hK).symm g =
+    (homeomorphContinuousMapOfExistsIUnionIsCompactImageEq hK).symm g =
       g.toContinuousMapGeneratedBy X :=
   (rfl)
 
@@ -231,8 +241,9 @@ end GeneratedDomain
 homeomorphic to the compact-open mapping space `C(X i, Z)`. -/
 def homeomorphContinuousMapIndex (i : ι) :
     ContinuousMapGeneratedBy X (X i) Z ≃ₜ C(X i, Z) :=
-  homeomorphContinuousMapOfExistsIsCompactImageEq fun K hKc ↦
-    ⟨i, K, ContinuousMap.id (X i), hKc, Set.image_id K⟩
+  homeomorphContinuousMapOfExistsIUnionIsCompactImageEq fun K hKc ↦
+    ⟨1, fun _ ↦ i, fun _ ↦ K, fun _ ↦ ContinuousMap.id (X i), fun _ ↦ hKc,
+      by simp [Set.iUnion_const]⟩
 
 @[simp]
 theorem homeomorphContinuousMapIndex_apply (i : ι) (g : ContinuousMapGeneratedBy X (X i) Z) :

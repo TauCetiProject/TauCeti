@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Category.CompactlyGenerated
+public import TauCeti.Topology.Convenient.Category
 public import TauCeti.Topology.Convenient.CompactlyGenerated
 
 /-!
@@ -22,11 +23,12 @@ Transporting the general convenient-category coreflection along this equivalence
   coreflective full subcategory of `TopCat.{w}`
   (`CompactlyGenerated.instCoreflectiveCompactlyGeneratedToTop`), creating all colimits and
   admitting all small limits and colimits.
-* `CompactlyGenerated.isIso_adjCounit_app_iff` and
-  `CompactlyGenerated.isIso_adjCounit_app_of_compactlyCoherentSpace`: the coreflection counit at
-  `X : TopCat.{w}` is an isomorphism if and only if `X` is `u`-compactly generated, and in
-  particular whenever `X` is `u`-small, Hausdorff, and compactly coherent (including every
-  `u`-small Hausdorff weakly locally compact space or `CompactlyGeneratedSpace`).
+* `CompactlyGenerated.isIso_adjCounit_app_iff` and `CompactlyGenerated.instIsIsoAdjCounitApp`:
+  the coreflection counit at `X : TopCat.{w}` is an isomorphism if and only if `X` is
+  `u`-compactly generated, and in particular synthesizes automatically via
+  `TauCeti.uCompactlyGeneratedSpace_of_compactlyCoherentSpace` whenever `X` is `u`-small,
+  Hausdorff, and compactly coherent (including every `u`-small Hausdorff weakly locally compact
+  space or `CompactlyGeneratedSpace`).
 
 ## References
 
@@ -140,7 +142,7 @@ theorem toGeneratedByTopCat_comp_toTopCat :
   (rfl)
 
 @[simp]
-theorem fromGeneratedByTopCat_comp_toTop :
+theorem fromGeneratedByTopCat_comp_compactlyGeneratedToTop :
     fromGeneratedByTopCat.{u, w} ⋙ compactlyGeneratedToTop.{u, w} =
       GeneratedByTopCat.toTopCat (X := fun K : CompHaus.{u} ↦ K) :=
   (rfl)
@@ -191,7 +193,7 @@ theorem adjUnitIso_inv_app_apply (X : CompactlyGenerated.{u, w})
     ConcreteCategory.hom
       (X := TopCat.toCompactlyGenerated.{u, w}.obj (compactlyGeneratedToTop.obj X)) (Y := X)
       (adjUnitIso.{u, w}.inv.app X) x =
-      WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) x :=
+      WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) (Y := X) x :=
   (rfl)
 
 /-- The counit of the coreflective adjunction `CompactlyGenerated.adj`. -/
@@ -203,6 +205,14 @@ theorem adjCounit_app (X : TopCat.{w}) :
     adjCounit.{u, w}.app X =
       (GeneratedByTopCat.adjCounit (X := fun K : CompHaus.{u} ↦ K)).app X :=
   (rfl)
+
+@[simp]
+theorem adjCounit_app_apply (X : TopCat.{w}) (x : ↑(TopCat.toCompactlyGenerated.{u, w}.obj X)) :
+    ConcreteCategory.hom
+      (X := compactlyGeneratedToTop.{u, w}.obj (TopCat.toCompactlyGenerated.{u, w}.obj X)) (Y := X)
+      (adjCounit.{u, w}.app X) x =
+      WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) (Y := X) x :=
+  GeneratedByTopCat.adjCounit_app_apply (fun K : CompHaus.{u} ↦ K) X x
 
 /-- The coreflective adjunction `compactlyGeneratedToTop ⊣ TopCat.toCompactlyGenerated`. -/
 def adj : compactlyGeneratedToTop.{u, w} ⊣ TopCat.toCompactlyGenerated.{u, w} where
@@ -223,6 +233,22 @@ theorem adj_unit : adj.{u, w}.unit = adjUnitIso.hom := by
 theorem adj_counit : adj.{u, w}.counit = adjCounit := by
   rfl
 
+@[simp]
+theorem adj_homEquiv_apply {X : CompactlyGenerated.{u, w}} {Y : TopCat.{w}}
+    (f : compactlyGeneratedToTop.{u, w}.obj X ⟶ Y) (x : X) :
+    (adj.{u, w}.homEquiv X Y f) x =
+      (WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K)).symm (f x) :=
+  GeneratedByTopCat.adj_homEquiv_apply (G := fun K : CompHaus.{u} ↦ K)
+    (Y := toGeneratedByTopCat.obj X) (X := Y) f x
+
+@[simp]
+theorem adj_homEquiv_symm_apply {X : CompactlyGenerated.{u, w}} {Y : TopCat.{w}}
+    (g : X ⟶ TopCat.toCompactlyGenerated.{u, w}.obj Y) (x : X) :
+    ((adj.{u, w}.homEquiv X Y).symm g) x =
+      WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) (Y := Y) (g x) :=
+  GeneratedByTopCat.adj_homEquiv_symm_apply (G := fun K : CompHaus.{u} ↦ K)
+    (Y := toGeneratedByTopCat.obj X) (X := Y) (toGeneratedByTopCat.map g) x
+
 instance : IsIso adj.{u, w}.unit :=
   inferInstanceAs (IsIso adjUnitIso.{u, w}.hom)
 
@@ -232,8 +258,8 @@ instance : compactlyGeneratedToTop.{u, w}.IsLeftAdjoint :=
 instance : TopCat.toCompactlyGenerated.{u, w}.IsRightAdjoint :=
   adj.isRightAdjoint
 
-instance : TopCat.toCompactlyGenerated.{u, w}.Faithful where
-  map_injective h := by ext x; congrm $h x
+instance : TopCat.toCompactlyGenerated.{u, w}.Faithful :=
+  Functor.Faithful.comp _ _
 
 /-- `CompactlyGenerated.{u, w}` is a coreflective subcategory of `TopCat.{w}`. -/
 instance instCoreflectiveCompactlyGeneratedToTop :
@@ -245,6 +271,14 @@ noncomputable instance instCreatesColimitsOfSizeCompactlyGeneratedToTop :
     CreatesColimitsOfSize.{w', v'} compactlyGeneratedToTop.{u, w} :=
   comonadicCreatesColimits _
 
+instance {J : Type v'} [Category.{w'} J] [Small.{w} J] :
+    HasLimitsOfShape J CompactlyGenerated.{u, w} :=
+  hasLimitsOfShape_of_coreflective compactlyGeneratedToTop
+
+instance {J : Type v'} [Category.{w'} J] [Small.{w} J] :
+    HasColimitsOfShape J CompactlyGenerated.{u, w} :=
+  hasColimitsOfShape_of_coreflective compactlyGeneratedToTop
+
 instance [UnivLE.{v', w}] : HasLimitsOfSize.{w', v'} CompactlyGenerated.{u, w} :=
   hasLimits_of_coreflective compactlyGeneratedToTop
 
@@ -252,7 +286,6 @@ instance [UnivLE.{v', w}] : HasColimitsOfSize.{w', v'} CompactlyGenerated.{u, w}
   hasColimits_of_coreflective compactlyGeneratedToTop
 
 /-- The underlying continuous map of the categorical counit is the generated-topology counit. -/
-@[simp]
 theorem adjCounit_app_hom (X : TopCat.{w}) :
     (adjCounit.{u, w}.app X).hom =
       WithGeneratedByTopology.counit (fun K : CompHaus.{u} ↦ K) X :=
@@ -275,12 +308,9 @@ instance (X : TopCat.{w}) [UCompactlyGeneratedSpace.{u} X] :
   rw [adj_counit]
   infer_instance
 
-/-- On a `u`-small Hausdorff compactly coherent space, the compact-generation counit is an
-isomorphism in `TopCat`. -/
-theorem isIso_adjCounit_app_of_compactlyCoherentSpace (X : TopCat.{w})
-    [Small.{u} X] [T2Space X] [CompactlyCoherentSpace X] :
-    IsIso (adjCounit.{u, w}.app X) :=
-  have := TauCeti.uCompactlyGeneratedSpace_of_compactlyCoherentSpace.{u} X
-  inferInstance
+instance (X : TopCat.{w}) :
+    IsIso (TopCat.toCompactlyGenerated.{u, w}.map (adjCounit.{u, w}.app X)) := by
+  rw [← adj_counit]
+  infer_instance
 
 end CompactlyGenerated

@@ -80,7 +80,9 @@ def ContinuousMapGeneratedBy.homeomorphContinuousMapOfT2 (Y : Type v) (Z : Type 
     [TopologicalSpace Y] [TopologicalSpace Z] [Small.{u} Y] [T2Space Y]
     [UCompactlyGeneratedSpace.{u} Y] :
     ContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) Y Z ≃ₜ C(Y, Z) :=
-  homeomorphContinuousMapOfExistsIsCompactImageEq fun _ hKc ↦ hKc.exists_compHaus_isCompact_image_eq
+  homeomorphContinuousMapOfExistsIUnionIsCompactImageEq fun _ hKc ↦
+    let ⟨S, L, f, hLc, hf⟩ := hKc.exists_compHaus_isCompact_image_eq
+    ⟨1, fun _ ↦ S, fun _ ↦ L, fun _ ↦ f, fun _ ↦ hLc, by simpa [Set.iUnion_const] using hf⟩
 
 @[simp]
 theorem ContinuousMapGeneratedBy.homeomorphContinuousMapOfT2_apply {Y : Type v} {Z : Type w}
@@ -88,7 +90,7 @@ theorem ContinuousMapGeneratedBy.homeomorphContinuousMapOfT2_apply {Y : Type v} 
     [UCompactlyGeneratedSpace.{u} Y]
     (g : ContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) Y Z) :
     homeomorphContinuousMapOfT2 Y Z g = g.toContinuousMap :=
-  homeomorphContinuousMapOfExistsIsCompactImageEq_apply _ g
+  homeomorphContinuousMapOfExistsIUnionIsCompactImageEq_apply _ g
 
 @[simp]
 theorem ContinuousMapGeneratedBy.homeomorphContinuousMapOfT2_symm_apply {Y : Type v} {Z : Type w}
@@ -96,7 +98,7 @@ theorem ContinuousMapGeneratedBy.homeomorphContinuousMapOfT2_symm_apply {Y : Typ
     [UCompactlyGeneratedSpace.{u} Y] (g : C(Y, Z)) :
     (homeomorphContinuousMapOfT2 Y Z).symm g =
       g.toContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) :=
-  homeomorphContinuousMapOfExistsIsCompactImageEq_symm_apply _ g
+  homeomorphContinuousMapOfExistsIUnionIsCompactImageEq_symm_apply _ g
 
 end Topology
 
