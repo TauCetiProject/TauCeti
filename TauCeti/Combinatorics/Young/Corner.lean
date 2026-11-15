@@ -48,8 +48,6 @@ corner, and only at a cell of `μ` that is a corner, nothing but `c` itself is r
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 1.1.
 * [B. E. Sagan, *The Symmetric Group*][sagan2001], Section 3.10, where the corner recursion for
   standard Young tableaux is the starting point of the hook-length formula.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 5, whose `hookLengthFormula` milestone is proved by induction along the corners of `μ`.
 -/
 
 public section

@@ -37,6 +37,7 @@ so archimedean bounds on the coordinates bound the height.
   together with the scalar and logarithmic versions.
 * `NumberField.absMulHeight₁_eq_rpow`: for `x` in a number field `K`, the absolute height of `x` is
   `H_K(x) ^ (1 / [K : ℚ])`.
+* `NumberField.one_le_absMulHeight₁`: the absolute height is at least one.
 * `NumberField.absMulHeight₁_eq_of_minpoly_eq`: equal rational minimal polynomials give equal
   absolute heights.
 * `NumberField.absMulHeight₁_ratCast`: the absolute height of a rational number is its height
@@ -259,6 +260,26 @@ height relative to `K` divided by `[K : ℚ]`. -/
 theorem absLogHeight₁_eq_div (x : K) : absLogHeight₁ x = logHeight₁ x / finrank ℚ K := by
   rw [absLogHeight₁, absMulHeight₁_eq_rpow, Real.log_rpow (mulHeight₁_pos x),
     logHeight₁_eq_log_mulHeight₁, inv_mul_eq_div]
+
+section LowerBound
+
+variable {F : Type*} [Field F] [CharZero F]
+
+/-- The absolute multiplicative height is at least one, including its totalized value on
+nonalgebraic elements. -/
+theorem one_le_absMulHeight₁ (x : F) : 1 ≤ absMulHeight₁ x := by
+  rw [absMulHeight₁]
+  split_ifs with hx
+  · have : FiniteDimensional ℚ ℚ⟮x⟯ := adjoin.finiteDimensional hx
+    have : NumberField ℚ⟮x⟯ := {}
+    exact Real.one_le_rpow (one_le_mulHeight₁ _) (by positivity)
+  · exact le_rfl
+
+/-- The absolute logarithmic height is nonnegative. -/
+theorem zero_le_absLogHeight₁ (x : F) : 0 ≤ absLogHeight₁ x :=
+  Real.log_nonneg (one_le_absMulHeight₁ x)
+
+end LowerBound
 
 section MinpolyEq
 

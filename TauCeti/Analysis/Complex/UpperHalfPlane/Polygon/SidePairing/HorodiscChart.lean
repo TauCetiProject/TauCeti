@@ -206,7 +206,7 @@ theorem exists_isTilingChart_of_vertex_eq_inr
     rw [side_smul, mul_smul]
     exact smul_mem_smul_set (smul_mem_smul_set hi)
   -- crossing a side through the ideal vertex moves to the previous or the next tile of the cycle
-  have hmul (h : PSL(2, ℝ)) (hh : h ∈ M) (v : ℍ) (hv : v ∈ P.carrier)
+  have hmul (h : PSL(2, ℝ)) (hh : h ∈ M) (v : ℍ)
       (hvW : h • v ∈ {z : ℍ | max A₀ A₁ < (g • z).im}) (c : PSL(2, ℝ))
       (hc : c ∈ σ.localNeighbors v) : h * c ∈ M :=
     σ.mul_mem_range_cycleMap_zpow_mul_inv_partialCycleMap_of_mem_localNeighbors hj him hside hh
@@ -216,8 +216,8 @@ theorem exists_isTilingChart_of_vertex_eq_inr
   refine ⟨max A₀ A₁, fun B hB ↦ (σ.isLocalTiling hcyc).isTilingChart_of_closure_subset
     (isOpen_lt continuous_const hcont)
     ((closure_lt_subset_le continuous_const hcont).trans fun z hz ↦ hB.trans_le hz)
-    (fun z hz ↦ ?_) hmul fun h hh v hv hvW h' hh' hvh' ↦
-      σ.inv_mul_mem_localNeighbors_of_smul_mem hcyc hdisj hv (hmul h hh v hv hvW) hh' hvh'⟩
+    (fun z hz ↦ ?_) (fun h hh v _ ↦ hmul h hh v) fun h hh v hv hvW h' hh' hvh' ↦
+      σ.inv_mul_mem_localNeighbors_of_smul_mem hcyc hdisj hv (hmul h hh v hvW) hh' hvh'⟩
   have hz' : A₀ < (g • z).im := (le_max_left _ _).trans_lt hz
   obtain ⟨k, hk⟩ := mem_iUnion.1 (hA₀ hz')
   obtain ⟨m, -, hzm⟩ := mem_iUnion₂.1 hk

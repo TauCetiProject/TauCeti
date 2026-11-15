@@ -58,7 +58,7 @@ theorem holderWith_one_sub_smul_add_smul_apply (P Q : X → Matrix ι ι ℝ) (C
   have h := ((hP i j).smul (1 - t)).add ((hQ i j).smul t)
   have heq : C * ‖1 - t‖₊ + C * ‖t‖₊ = C := by
     apply NNReal.coe_injective
-    simp only [NNReal.coe_add, NNReal.coe_mul, coe_nnnorm, Real.norm_eq_abs,
+    simp only [NNReal.coe_add, NNReal.coe_mul, coe_nnNorm, Real.norm_eq_abs,
       abs_of_nonneg (sub_nonneg.mpr ht.2), abs_of_nonneg ht.1]
     ring
   rw [heq] at h

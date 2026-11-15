@@ -40,11 +40,6 @@ The root-character identifications reuse
 `TauCeti/Algebra/Lie/E6/Minuscule/RootDatum.lean`, since the character depends only on the common
 Serre generators, while the conjugation wrappers specialize the doubled carrier's existing
 pinning equation.
-
-This advances the "Pinnings" and "Root subgroup maps" targets of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`, whose doubled type-`E₆` carrier must use the roots and
-Bourbaki numbering of `DynkinType.simplyConnectedRootDatum`.
 -/
 
 public section

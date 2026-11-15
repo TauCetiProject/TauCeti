@@ -52,8 +52,8 @@ converge.
 Adapted from the AINTLIB [`LeanModularForms`](https://github.com/CBirkbeck/AINTLIB) valence-formula
 development, whose `ForMathlib/GeneralizedResidueTheory/Residue.lean` and
 `.../Residue/GeneralizedTheoremBase.lean` apply the generalized residue theorem to `logDeriv f`;
-here stated against Mathlib's `meromorphicOrderAt` and the raw-`γ` design of the
-contour-integration roadmap.
+here stated against Mathlib's `meromorphicOrderAt` and curves given as raw functions
+`γ : ℝ → ℂ`.
 
 ## References
 
@@ -94,39 +94,21 @@ theorem hasCauchyPV_logDeriv_nullHomologous {f : ℂ → ℂ} {S : Finset ℂ} {
     (hnull : IsNullHomologous γ a b U) :
     HasCauchyPV γ a b (logDeriv f)
       (2 * (Real.pi : ℂ) * Complex.I * ∑ z ∈ S, windingNumber γ a b z * (ord z : ℂ)) := by
-  classical
-  -- Only the points of `S` inside `U` can contribute: run the residue theorem on those, and let
-  -- null-homology kill the rest.
-  set T : Finset ℂ := S.filter (· ∈ U) with hT
-  have hTS : T ⊆ S := Finset.filter_subset _ _
-  have hmemT : ∀ {z : ℂ}, z ∈ T ↔ z ∈ S ∧ z ∈ U := by
-    intro z; rw [hT, Finset.mem_filter]
-  have hTU : (T : Set ℂ) ⊆ U := fun z hz => (hmemT.mp hz).2
-  -- On `U` the two exceptional sets agree, so the off-`S` hypothesis serves `T` unchanged.
-  have hUT : U \ (↑T : Set ℂ) = U \ (↑S : Set ℂ) := by
-    ext z
-    exact ⟨fun hz => ⟨hz.1, fun hzS => hz.2 (hmemT.mpr ⟨hzS, hz.1⟩)⟩,
-      fun hz => ⟨hz.1, fun hzT => hz.2 (hTS hzT)⟩⟩
-  have hdiff : DifferentiableOn ℂ (logDeriv f) (U \ (↑T : Set ℂ)) := by
-    rw [hUT]
-    exact fun z hz => (analyticAt_logDeriv_of_analyticAt (hoff z hz.1 hz.2).1
+  have hdiff : DifferentiableOn ℂ (logDeriv f) (U \ (↑S : Set ℂ)) := fun z hz =>
+    (analyticAt_logDeriv_of_analyticAt (hoff z hz.1 hz.2).1
       (hoff z hz.1 hz.2).2).differentiableAt.differentiableWithinAt
-  have hmeroT : ∀ s ∈ T, MeromorphicAt f s := fun s hs =>
-    hmero s (hTS hs) (hmemT.mp hs).2
-  have hmeroL : ∀ s ∈ T, MeromorphicAt (logDeriv f) s := fun s hs =>
-    (hmeroT s hs).deriv.div (hmeroT s hs)
+  have hmeroL : ∀ s ∈ S, s ∈ U → MeromorphicAt (logDeriv f) s := fun s hs hsU =>
+    (hmero s hs hsU).deriv.div (hmero s hs hsU)
   -- `Res_s (f'/f) = ord_s f` inside `U`, and outside it the winding number vanishes.
-  have hsum : ∑ s ∈ T, windingNumber γ a b s * residue (logDeriv f) s
-      = ∑ z ∈ S, windingNumber γ a b z * (ord z : ℂ) := by
-    rw [Finset.sum_congr rfl fun s hs => by
-      rw [residue_logDeriv_eq_meromorphicOrderAt (hmeroT s hs)
-        (hord s (hTS hs) (hmemT.mp hs).2)]]
-    refine Finset.sum_subset hTS fun z hzS hzT => ?_
-    rw [isNullHomologous_iff.mp hnull z fun hzU => hzT (hmemT.mpr ⟨hzS, hzU⟩), zero_mul]
+  have hsum : ∑ s ∈ S, windingNumber γ a b s * residue (logDeriv f) s
+      = ∑ z ∈ S, windingNumber γ a b z * (ord z : ℂ) :=
+    Finset.sum_congr rfl fun s hs => by
+      by_cases hsU : s ∈ U
+      · rw [residue_logDeriv_eq_meromorphicOrderAt (hmero s hs hsU) (hord s hs hsU)]
+      · rw [isNullHomologous_iff.mp hnull s hsU, zero_mul, zero_mul]
   rw [← hsum]
-  exact hungerbuhlerWasem_residueTheorem_of_simple_poles hU T γ a b hγ_imm hTU hclosed
-    (fun h => hγa (hTS h)) hγU hdiff hmeroL hnull fun s hs =>
-      neg_one_le_meromorphicOrderAt_logDeriv (hmeroT s hs)
+  exact hungerbuhlerWasem_residueTheorem_of_simple_poles hU S γ a b hγ_imm hclosed hγa hγU hdiff
+    hmeroL hnull fun s hs hsU => neg_one_le_meromorphicOrderAt_logDeriv (hmero s hs hsU)
 
 end TauCeti.Contour
 

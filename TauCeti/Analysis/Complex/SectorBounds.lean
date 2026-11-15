@@ -14,7 +14,8 @@ For a complex number `s` separated in argument from the negative real axis and a
 real `t`, the norm of the translate `s + t` is bounded below by a fixed multiple of `‖s‖ + t`:
 `c * (‖s‖ + t) ≤ ‖s + t‖`, where `0 ≤ c ≤ 1` depends only on the angular separation. On the
 sector `|arg s| ≤ π - δ` one may take `c = (1 - cos δ) / 2`. These inequalities control
-reciprocal kernels in sectorial integrals.
+reciprocal kernels in sectorial integrals. A nonzero point of such a sector, with `0 < δ`, lies in
+the slit plane.
 -/
 
 public section
@@ -55,5 +56,16 @@ theorem mul_norm_add_le_norm_add_ofReal_of_abs_arg_le {s : ℂ} {δ t : ℝ}
     have h := mul_le_mul_of_nonneg_left hcos (norm_nonneg s)
     rw [norm_mul_cos_arg] at h
     nlinarith
+
+/-- A nonzero complex number with `|arg s| < π` lies in the slit plane. -/
+theorem mem_slitPlane_of_abs_arg_lt {s : ℂ} (hs : |s.arg| < Real.pi) (hs0 : s ≠ 0) :
+    s ∈ slitPlane :=
+  mem_slitPlane_iff_arg.mpr ⟨fun h ↦ by rw [h, abs_of_pos Real.pi_pos] at hs; exact hs.false, hs0⟩
+
+/-- A nonzero complex number in the closed sector `|arg s| ≤ π - δ`, with `0 < δ`, lies in the
+slit plane. -/
+theorem mem_slitPlane_of_abs_arg_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ) (hs : |s.arg| ≤ Real.pi - δ)
+    (hs0 : s ≠ 0) : s ∈ slitPlane :=
+  mem_slitPlane_of_abs_arg_lt (by linarith) hs0
 
 end Complex

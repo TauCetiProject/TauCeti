@@ -349,7 +349,7 @@ theorem StronglyContinuousSemigroup.dense_domain
     (f := fun t => (1 / t) • ∫ u in Set.Ioc 0 t, S.realOperator u x)
     (b := nhdsWithin 0 (Set.Ioi (0 : ℝ))) ?_ ?_
   · simpa using S.tendsto_average_orbit_zero x
-  · filter_upwards [self_mem_nhdsWithin] with t ht
+  · filter_upwards [self_mem_nhdsWithin] with t _
     exact S.domain.smul_mem (1 / t) (S.integral_orbit_mem_domain x t)
 
 /-- Two continuous linear maps that agree on the (dense) generator domain are equal. -/

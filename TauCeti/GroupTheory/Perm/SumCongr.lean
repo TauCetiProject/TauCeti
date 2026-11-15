@@ -404,7 +404,6 @@ theorem finRotate_add_eq_swap_mul_finSumPerm [NeZero m] [NeZero n] :
     split_ifs <;> simp only [Fin.ext_iff, Fin.val_castAdd, Fin.val_natAdd, Fin.val_zero,
       Fin.coe_finRotate_eq_ite] at * <;> split_ifs at * <;> omega
   | right j =>
-    have hj := j.isLt
     rw [Perm.mul_apply, finSumPerm_apply_natAdd, swap_apply_def]
     split_ifs <;> simp only [Fin.ext_iff, Fin.val_castAdd, Fin.val_natAdd, Fin.val_zero,
       Fin.coe_finRotate_eq_ite] at * <;> split_ifs at * <;> omega

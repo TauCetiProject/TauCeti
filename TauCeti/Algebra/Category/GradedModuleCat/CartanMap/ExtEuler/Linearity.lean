@@ -191,7 +191,7 @@ theorem forall_isLinear_iff_cartan_poincare_maslovEuler
   -- Minimality puts every Ext group on or above the diagonal.
   have hiff (i j : I) :
       Bigraded.euler (P i j) = Bigraded.maslovEuler (P i j) ↔ Bigraded.IsDiagonal (P i j) :=
-    Bigraded.euler_eq_maslovEuler_iff_isDiagonal _ fun _ _ hlt ↦ by
+    Bigraded.euler_eq_maslovEuler_iff_isDiagonal _ <| .inl fun _ _ hlt ↦ by
       rw [hP, bigradedExtPoincareMatrix_apply]
       exact (hr i).coeff_bigradedExtPoincareSeries_eq_zero_of_lt (fun p hp ↦ hconc i p hp.ne)
         (hconc j) _ b (by omega)

@@ -274,7 +274,7 @@ theorem exists_rep_rootGenerator_inl_exteriorBasis (i : Fin (n + 1))
     have hlt : ((j.castSucc : Fin (n + 1)) : ℕ) + 1 < n + 1 := by simp
     obtain ⟨hj, hsucc⟩ := (DynkinType.typeBSpinWeight_eq_neg_one_iff_of_lt hlt s).1 hs
     rw [Fin.orderSucc_castSucc] at hsucc
-    have hrefl := DynkinType.typeBSpinReflection_eq_insert_erase_of_not_mem hlt hj
+    have hrefl := DynkinType.typeBSpinReflection_eq_insert_erase_of_not_mem hj
       (by simpa using hsucc)
     rw [Fin.orderSucc_castSucc] at hrefl
     rw [rep_rootGenerator_inl_castSucc,
@@ -307,7 +307,7 @@ theorem exists_rep_rootGenerator_inr_exteriorBasis (i : Fin (n + 1))
     have hlt : ((j.castSucc : Fin (n + 1)) : ℕ) + 1 < n + 1 := by simp
     obtain ⟨hj, hsucc⟩ := (DynkinType.typeBSpinWeight_eq_one_iff_of_lt hlt s).1 hs
     rw [Fin.orderSucc_castSucc] at hsucc
-    have hrefl := DynkinType.typeBSpinReflection_eq_insert_erase_of_mem hlt hj
+    have hrefl := DynkinType.typeBSpinReflection_eq_insert_erase_of_mem hj
       (by simpa using hsucc)
     rw [Fin.orderSucc_castSucc] at hrefl
     rw [rep_rootGenerator_inr_castSucc,

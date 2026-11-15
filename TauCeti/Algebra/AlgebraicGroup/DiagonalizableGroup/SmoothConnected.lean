@@ -36,9 +36,6 @@ of every split torus.
 
 * J. S. Milne, *Algebraic Groups* (2017), Definitions 12.14 and 12.17.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This establishes the geometric connectedness and reducedness of the split-torus case in Layer 4,
-"Tori: split and non-split", of the ReductiveGroups roadmap.
 -/
 
 public section

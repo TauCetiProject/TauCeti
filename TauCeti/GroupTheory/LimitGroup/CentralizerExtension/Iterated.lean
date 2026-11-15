@@ -127,14 +127,14 @@ def append (c : ICE F G ι) {K : Type u} [Group K] {j : G →* K} :
 theorem injective (c : ICE F G ι) : Function.Injective ι := by
   induction c with
   | refl => exact Function.injective_id
-  | step c h ih => exact CentralizerExt.of_injective.comp ih
+  | step _ _ ih => exact CentralizerExt.of_injective.comp ih
 
 /-- Every step of an ICE chain is strict: the coefficient inclusion is surjective exactly when the
 chain is empty. -/
 theorem range_eq_top_iff (c : ICE F G ι) : ι.range = ⊤ ↔ c.length = 0 := by
   induction c with
   | refl => simpa using MonoidHom.range_eq_top.2 Function.surjective_id
-  | @step G _ ι c r n h ih =>
+  | @step G _ ι c r n h _ =>
     simp only [length_step, Nat.add_one_ne_zero, iff_false]
     refine fun htop => CentralizerExt.range_of_ne_top (u := r) h.pos (eq_top_iff.2 ?_)
     rw [← htop]
@@ -146,7 +146,7 @@ the coefficient inclusion. -/
 theorem exists_retraction (c : ICE F G ι) : ∃ ρ : G →* F, ρ.comp ι = .id F := by
   induction c with
   | refl => exact ⟨.id _, rfl⟩
-  | step c h ih =>
+  | step _ _ ih =>
     obtain ⟨ρ, hρ⟩ := ih
     refine ⟨ρ.comp (CentralizerExt.retraction 0), ?_⟩
     rw [MonoidHom.comp_assoc, ← MonoidHom.comp_assoc _ CentralizerExt.of,
@@ -156,7 +156,7 @@ theorem exists_retraction (c : ICE F G ι) : ∃ ρ : G →* F, ρ.comp ι = .id
 theorem fg [Group.FG F] (c : ICE F G ι) : Group.FG G := by
   induction c with
   | refl => infer_instance
-  | step c h ih => infer_instance
+  | step _ _ ih => infer_instance
 
 open GroupAlgGeom in
 /-- **ICE groups are discriminated by their base.** Over a fully residually free group `F`, for
@@ -167,7 +167,7 @@ theorem isDiscriminatedBy (hF : IsFullyResiduallyFree F) (c : ICE F G ι) :
     IsDiscriminatedBy ι (.id F) := by
   induction c with
   | refl => exact .self _
-  | @step G _ ι c r n h ih =>
+  | @step G _ ι _ r n h ih =>
     -- The top `G` of the shorter chain is fully residually free, so the new step is
     -- discriminated by `G`; compose with the discrimination of `G` by `F`.
     have hG := hF.of_isDiscriminatedBy ih

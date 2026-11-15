@@ -89,7 +89,7 @@ theorem curvatureOperator_commutator_cyclic_eq_zero
       (hτ'.mdifferentiable (by simp) x)
   -- Expand the derivative of a curvature section into its three third-order terms.
   have hexp {A B C : Π y : M, TangentSpace I y}
-      (hA : CMDiff ∞ (T% A)) (hB : CMDiff ∞ (T% B)) (hC : CMDiff ∞ (T% C)) :
+      (_ : CMDiff ∞ (T% A)) (hB : CMDiff ∞ (T% B)) (hC : CMDiff ∞ (T% C)) :
       cov (curvatureOperator cov B C σ) x (A x) =
         cov (fun y ↦ cov (fun y ↦ cov σ y (C y)) y (B y)) x (A x) -
           cov (fun y ↦ cov (fun y ↦ cov σ y (B y)) y (C y)) x (A x) -

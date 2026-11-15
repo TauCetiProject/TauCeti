@@ -99,8 +99,6 @@ private theorem initialOverlapPartner_injective :
   have hD := G.initialOverlapPartner_isRecut C D
   have hE := G.initialOverlapPartner_isRecut C E
   rw [← h] at hE
-  have honeD := (G.initialOverlapSource_data C D.val D.property).2.1
-  have honeE := (G.initialOverlapSource_data C E.val E.property).2.1
   obtain ⟨hfD, hsD⟩ := G.initialOverlapSource_underlying_isEmpty C D.val D.property
   obtain ⟨hfE, hsE⟩ := G.initialOverlapSource_underlying_isEmpty C E.val E.property
   have hbackD := hD.symm hfD hsD

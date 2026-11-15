@@ -107,7 +107,6 @@ theorem nonempty_isometry_oddCyclic_prod {p : ℕ} [Fact p.Prime] (hp : Odd p) (
       Nonempty (Isometry ((oddCyclic (p ^ e) hp.pow s).prod (oddCyclic (p ^ e) hp.pow t))
         ((oddCyclic (p ^ e) hp.pow 1).prod (oddCyclic (p ^ e) hp.pow (s * t)))) := by
     have h1 : IsCoprime (p : ℤ) 1 := isCoprime_one_right
-    have hst : IsCoprime (p : ℤ) (s * t) := hs.mul_right ht
     rcases hχ s hs with hs1 | hs1
     · obtain ⟨f⟩ := hcyc (t := 1) hs (by rw [hs1, legendreSym.at_one])
       obtain ⟨g⟩ := hcyc (t := s * t) ht (by rw [legendreSym.mul, hs1, one_mul])

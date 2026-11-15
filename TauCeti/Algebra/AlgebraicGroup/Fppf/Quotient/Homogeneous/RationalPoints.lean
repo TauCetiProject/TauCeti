@@ -24,7 +24,9 @@ their equality. Thus
 
 No finiteness, reducedness, smoothness or normality is assumed of `G` or `N`. The comparison is
 compatible with the quotient projection from `G` and with the projections `G/P ⟶ G/Q` induced by
-inclusions `P ⊆ Q` of closed subgroups.
+inclusions `P ⊆ Q` of closed subgroups. It also intertwines the actual sheaf translation
+by `k`-points with the usual left action on cosets; this is not an internal action morphism
+of sheaves.
 
 In particular every `k`-point of `G/N` lifts to a `k`-point of `G`, and two `k`-points of `G`
 have the same image in `G/N` exactly when they differ by a `k`-point of `N`.
@@ -39,6 +41,8 @@ have the same image in `G/N` exactly when they differ by a `k`-point of `N`.
   `G(k) → (G/N)(k)` are the left cosets of `N(k)`.
 * `CommHopfAlgCat.fppfHomogeneousQuotientMap_app_rationalPointsEquiv`: the comparison commutes
   with the projections induced by inclusions of closed subgroups.
+* `CommHopfAlgCat.fppfHomogeneousQuotientTranslation_hom_app_rationalPointsEquiv`: the comparison
+  intertwines left translation with the usual left action on cosets.
 
 ## References
 
@@ -138,6 +142,22 @@ theorem fppfHomogeneousQuotientMap_app_rationalPointsEquiv {J : HopfIdeal k H} (
       fppfHomogeneousQuotientRationalPointsEquiv_mk,
       ← fppfHomogeneousQuotientProjection_comp_map H hJI, NatTrans.comp_app,
       ConcreteCategory.comp_apply]
+
+/-- Over an algebraically closed field, the rational-point/coset comparison intertwines
+left translation on the fppf quotient with the usual left action on cosets. -/
+theorem fppfHomogeneousQuotientTranslation_hom_app_rationalPointsEquiv
+    (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k))
+    (q : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k) ⧸
+      quotientPointsSubgroup H I (CommAlgCat.of k k)) :
+    (fppfHomogeneousQuotientTranslation H I g).hom.hom.app (op (op (CommAlgCat.of k k)))
+        (fppfHomogeneousQuotientRationalPointsEquiv H I q) =
+      fppfHomogeneousQuotientRationalPointsEquiv H I (g • q) := by
+  induction q using QuotientGroup.induction_on with
+  | H x =>
+    rw [fppfHomogeneousQuotientRationalPointsEquiv_mk,
+      fppfHomogeneousQuotientTranslation_hom_app_projection,
+      MulAction.Quotient.smul_mk, smul_eq_mul,
+      fppfHomogeneousQuotientRationalPointsEquiv_mk, HopfAlgebra.extendPoint_self]
 
 end
 

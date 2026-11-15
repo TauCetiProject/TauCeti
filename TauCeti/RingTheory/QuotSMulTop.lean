@@ -24,7 +24,9 @@ over the quotient ring and extended to an arbitrary ideal.
 
 Reduction modulo `I` is right exact. When `I = (x)` and `x` is regular on the last term, it also
 preserves injectivity on the left, so it carries a short exact sequence `0 → K → P → M → 0` to a
-short exact sequence `0 → K ⧸ x K → P ⧸ x P → M ⧸ x M → 0`.
+short exact sequence `0 → K ⧸ x K → P ⧸ x P → M ⧸ x M → 0`. More generally, bounded
+`x`-power torsion on the last term bounds the induced filtration on the first term by a fixed
+shift of its `(x)`-adic filtration.
 
 Mathlib makes `QuotSMulTop x M = M ⧸ x M` a module over `R ⧸ (x)`; this action is induced by the
 `R`-action on `M`, the analogue for `x • ⊤` of Mathlib's `Module.Quotient.mk_smul_mk` for `I • ⊤`.
@@ -122,6 +124,13 @@ theorem mk_smul_mk {x : R} (r : R) (m : M) :
       Submodule.Quotient.mk (r • m) :=
   rfl
 
+/-- Negation is the identity on a module modulo twice itself. -/
+@[simp]
+theorem neg_eq_self (x : QuotSMulTop (2 : R) M) : -x = x := by
+  apply neg_eq_iff_add_eq_zero.mpr
+  simpa only [two_smul] using
+    (Module.mem_annihilator.mp (mem_annihilator (M := M) (2 : R)) x)
+
 /-- Modulo a unit, every module is trivial: `x • ⊤ = ⊤` for a unit `x`. -/
 theorem subsingleton_of_isUnit {x : R} (hx : IsUnit x) : Subsingleton (QuotSMulTop x M) :=
   Submodule.Quotient.subsingleton_iff.2 (Submodule.smul_eq_self_of_isUnit hx)
@@ -156,6 +165,36 @@ theorem mapQSMulTop_span_singleton_injective {x : R} {f : K →ₗ[R] N} {g : N 
   exact (h ▸ this.comp (LinearEquiv.injective _)).of_comp
 
 end Ideal
+
+namespace LinearMap
+
+variable {R : Type*} [CommRing R]
+variable {M N P : Type*} [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P]
+variable {f : M →ₗ[R] N} {g : N →ₗ[R] P} {r : R} {k : ℕ}
+
+/-- Bounded `r`-power torsion in the last term of an exact sequence gives a uniform comparison
+between the induced filtration on the first term and its `(r)`-adic filtration. -/
+theorem comap_pow_smul_top_le_of_bounded_torsion (hf : Function.Injective f)
+    (hfg : Function.Exact f g)
+    (htors : ∀ (n : ℕ) (x : P), r ^ n • x = 0 → r ^ k • x = 0) (n : ℕ) :
+    ((Ideal.span {r}) ^ (n + k) • (⊤ : Submodule R N)).comap f ≤
+      (Ideal.span {r}) ^ n • (⊤ : Submodule R M) := by
+  intro x hx
+  simp only [Submodule.mem_comap, Ideal.span_singleton_pow,
+    Submodule.ideal_span_singleton_smul, Submodule.mem_smul_pointwise_iff_exists,
+    Submodule.mem_top, true_and] at hx ⊢
+  obtain ⟨y, hy⟩ := hx
+  have hgy : r ^ (n + k) • g y = 0 := by
+    rw [← g.map_smul, hy]
+    exact (hfg (f x)).mpr ⟨x, rfl⟩
+  obtain ⟨z, hz⟩ := (hfg (r ^ k • y)).mp (by
+    rw [g.map_smul]
+    exact htors (n + k) (g y) hgy)
+  refine ⟨z, hf ?_⟩
+  rw [f.map_smul, hz, smul_smul, ← pow_add, hy]
+
+end LinearMap
 
 namespace QuotSMulTop
 

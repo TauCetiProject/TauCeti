@@ -100,6 +100,10 @@ spanning the matched subalgebra are generators.
   `TauCeti.StrandsAlgebra.matchedIdem_mul_matchedIdem`: the `I(s)` are orthogonal idempotents of the
   matched subalgebra.
 * `TauCeti.StrandsAlgebra.differential_matchedIdem`: the `I(s)` are cycles.
+* `TauCeti.StrandsAlgebra.matchedIdem_ne_zero`,
+  `TauCeti.StrandsAlgebra.matchedIdem_mul_matchedIdem_ne_zero_iff`: over a nontrivial semiring
+  `I(s)` is nonzero when every element of `s` is a value of `M`, so `I(s) I(t) ≠ 0` exactly when
+  `s = t`.
 * `TauCeti.StrandsAlgebra.horizontalCompletion_mul_horizontalCompletion`: the product of two
   generators.
 * `TauCeti.StrandsAlgebra.matchedOne_mul`, `TauCeti.StrandsAlgebra.mul_matchedOne`: `∑ₛ I(s)` is
@@ -442,6 +446,31 @@ theorem matchedIdem_mul_matchedIdem (M : α → β) (s t : Finset β) :
 theorem isIdempotentElem_matchedIdem (M : α → β) (s : Finset β) :
     IsIdempotentElem (matchedIdem R M s) := by
   simp [IsIdempotentElem, matchedIdem_mul_matchedIdem]
+
+/-- The idempotent `I(s)` of a set `s` of values of `M` is nonzero over a nontrivial semiring:
+choosing one point over each element of `s` gives an identity diagram with coefficient `1`. -/
+theorem matchedIdem_ne_zero [Nontrivial R] {M : α → β} {s : Finset β}
+    (hs : (s : Set β) ⊆ Set.range M) : matchedIdem R M s ≠ 0 := by
+  choose f hf using fun b : s ↦ hs b.2
+  have hf' : Function.Injective f := fun b c h ↦ Subtype.ext (by simpa [hf] using congrArg M h)
+  have hS : (s.attach.image f).image M = s := by
+    ext b
+    simp [hf]
+  have hcard : #(s.attach.image f) = #s := by
+    rw [card_image_of_injective _ hf', card_attach]
+  intro h
+  have h' := congrArg (fun x ↦ (basis R α).repr x (idOn (s.attach.image f))) h
+  simp [repr_matchedIdem_apply, hS, hcard] at h'
+
+/-- The idempotents `I(s)` of two sets of values of `M` multiply to a nonzero element exactly when
+the sets agree. -/
+theorem matchedIdem_mul_matchedIdem_ne_zero_iff [Nontrivial R] {M : α → β} {s t : Finset β}
+    (hs : (s : Set β) ⊆ Set.range M) :
+    matchedIdem R M s * matchedIdem R M t ≠ 0 ↔ s = t := by
+  rw [matchedIdem_mul_matchedIdem]
+  split_ifs with hst
+  · exact iff_of_true (matchedIdem_ne_zero hs) hst
+  · exact iff_of_false (fun h ↦ h rfl) hst
 
 end Idempotents
 
@@ -901,6 +930,12 @@ theorem isMatchedGenerator_idOn_empty (s : Finset β) :
   injOn_target := by simp
   disjoint_source := by simp
   disjoint_target := by simp
+
+/-- The single strand of a chord `i < j`, with no horizontal strands added, indexes a generator. -/
+theorem isMatchedGenerator_single_empty {i j : α} (h : i < j) :
+    IsMatchedGenerator M (single i j h.le) ∅ :=
+  ⟨fun _ hk ↦ h.ne ((mem_single.1 hk).1.symm.trans (mem_single.1 hk).2), by simp, by simp,
+    disjoint_empty_right _, disjoint_empty_right _⟩
 
 /-- The idempotent `I(s)` is the generator `a(∅, s)`: the empty diagram with a horizontal strand
 added at one point of each pair in `s`. -/

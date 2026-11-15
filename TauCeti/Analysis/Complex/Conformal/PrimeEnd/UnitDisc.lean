@@ -202,7 +202,6 @@ theorem unitDiscPrimeEnd_injective : Function.Injective unitDiscPrimeEnd := by
   have h₂ := norm_sub_sq_le hζ' hqn.le (hut.trans hqt.le)
   have h₃ := norm_sub_sq_le_two_mul ζ ζ' q
   rw [norm_sub_rev ζ q, norm_sub_rev ζ' q] at h₃
-  have hu : 1 - u = 1 / ((m : ℝ) + 2) := by ring
   linarith
 
 /-! ### Every prime end of the disc is radial -/

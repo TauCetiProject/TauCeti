@@ -35,6 +35,10 @@ manifold differential of a function to tangent vectors whose base point varies.
 * `ContMDiffOn.contMDiffOn_mvfderiv_snd_apply`: the partial derivative in the second variable of
   a `C^n` function on a product, along a `C^m` family of tangent vectors, is jointly `C^m` on an
   open set, when `m + 1 ≤ n`.
+* `ContMDiffOn.contMDiffOn_totalSpaceMk_mfderiv_snd_apply`: the lifted partial differential
+  `q ↦ (f q, d(f (q.1, ·))_{q.2} (A q))` of a `C^n` map from a product into a manifold, along a
+  `C^m` family of tangent vectors, is `C^m` into the tangent bundle on an open set, when
+  `m + 1 ≤ n`.
 * `ContMDiffOn.contMDiffOn_totalSpaceMk_mfderiv_apply`: the lifted directional derivative
   `z ↦ (f z, df_z ξ)` of a `C^n` map from an open subset of a normed space into a manifold is
   `C^m` into the tangent bundle, when `m + 1 ≤ n`.
@@ -68,11 +72,6 @@ manifold differential of a function to tangent vectors whose base point varies.
 * `TauCeti.mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt` and its `At` and `On`
   forms: a vector field on a normed space is differentiable in the manifold sense exactly when it
   is differentiable as a map of the space.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The infinitesimal adjoint".
 -/
 
 public section
@@ -117,7 +116,7 @@ theorem contMDiff_tangentBundle_mk_constBase {v : N → E}
     ContMDiff J I.tangent n
       (fun p => TotalSpace.mk' E x (v p) : N → TangentBundle I M) := by
   intro p
-  rw [Bundle.contMDiffAt_totalSpace]
+  rw [Bundle.contMDiffAt_totalSpace_iff]
   constructor
   · exact contMDiffAt_const
   · have hx : x ∈ (extChartAt I x).source := mem_extChartAt_source _
@@ -197,6 +196,45 @@ theorem ContMDiffOn.contMDiffOn_mvfderiv_snd_apply {f : N × M → F} {W : Set (
       (ne_of_gt (lt_of_lt_of_le (by simp) hmn))
   -- Currying fixes `q.1`; the second-factor inclusion sends `A q` to `(0, A q)`.
   exact congrArg (· (A q)) (TauCeti.mvfderiv_curry_right q.1 q.2 hfq)
+
+/-- The lifted partial differential `q ↦ (f q, d(f (q.1, ·))_{q.2} (A q))` of a `C^n` map on a
+product into a manifold, along a `C^m` family of tangent vectors to the second factor, is a `C^m`
+map into the tangent bundle on an open set, when `m + 1 ≤ n`. For a parameter manifold `N`, this
+is the joint regularity of the differential along `M` of a family of maps `M → M'`. -/
+theorem ContMDiffOn.contMDiffOn_totalSpaceMk_mfderiv_snd_apply
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H'' M'] [IsManifold I'' 1 M']
+    {f : N × M → M'} {W : Set (N × M)} {A : Π q : N × M, TangentSpace I q.2}
+    (hf : ContMDiffOn (J.prod I) I'' n f W) (hW : IsOpen W)
+    (hA : ContMDiffOn (J.prod I) I.tangent m
+      (fun q ↦ (TotalSpace.mk' E q.2 (A q) : TangentBundle I M)) W)
+    (hmn : m + 1 ≤ n) :
+    ContMDiffOn (J.prod I) I''.tangent m
+      (fun q ↦ TotalSpace.mk' E'' (f q) (mfderiv I I'' (fun y ↦ f (q.1, y)) q.2 (A q))) W := by
+  have hlift : ContMDiffOn (J.prod I) (J.prod I).tangent m
+      (fun q ↦ (equivTangentBundleProd J N I M).symm (⟨q.1, 0⟩, ⟨q.2, A q⟩)) W :=
+    contMDiff_equivTangentBundleProd_symm.comp_contMDiffOn
+      ((contMDiff_tangentBundle_mk_zero contMDiff_fst).contMDiffOn.prodMk hA)
+  refine ((hf.contMDiffOn_tangentMapWithin hmn hW.uniqueMDiffOn).comp hlift
+    fun q hq ↦ hq).congr fun q hq ↦ ?_
+  have hfq : MDifferentiableAt (J.prod I) I'' f q :=
+    ((hf q hq).contMDiffAt (hW.mem_nhds hq)).mdifferentiableAt
+      (ne_of_gt (lt_of_lt_of_le (by simp) hmn))
+  have hcurry : mfderiv I I'' (fun y ↦ f (q.1, y)) q.2 =
+      (mfderiv (J.prod I) I'' f q).comp (mfderiv I (J.prod I) (fun y : M ↦ (q.1, y)) q.2) :=
+    mfderiv_comp_of_eq hfq (mdifferentiableAt_const.prodMk mdifferentiableAt_id) rfl
+  rw [mfderiv_prod_right] at hcurry
+  -- `(equivTangentBundleProd J N I M).symm` is defined componentwise: it pairs the base points and
+  -- the tangent vectors, so the lifted vector is `(0, A q)` at `q`. The `@[simps]` projections
+  -- cannot rewrite the base point alone, since the tangent vector's type depends on it.
+  have hpt : (equivTangentBundleProd J N I M).symm (⟨q.1, 0⟩, ⟨q.2, A q⟩) = ⟨q, (0, A q)⟩ := rfl
+  -- Evaluating `hcurry` at `A q`: the second-factor inclusion sends `A q` to `(0, A q)`.
+  have happly : mfderiv I I'' (fun y ↦ f (q.1, y)) q.2 (A q) =
+      mfderiv (J.prod I) I'' f q (0, A q) :=
+    congrArg (· (A q)) hcurry
+  rw [Function.comp_apply, hpt]
+  simp only [tangentMapWithin, mfderivWithin_of_isOpen hW hq, happly]
 
 end Partial
 
@@ -416,7 +454,7 @@ theorem ContMDiffWithinAt.contDiffWithinAt_mpullbackWithin_extChartAt_symm
     ContDiffWithinAt 𝕜 n
       (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I))
       ((extChartAt I x).symm ⁻¹' s ∩ range I) (extChartAt I x x) := by
-  have hc := contMDiffWithinAt_section.mp hV
+  have hc := contMDiffWithinAt_section_iff.mp hV
   rw [contMDiffWithinAt_iff_source, contMDiffWithinAt_iff_contDiffWithinAt,
     Function.comp_def] at hc
   have heq := VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt_symm V x

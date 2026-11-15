@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Basic
+import TauCeti.Analysis.Calculus.FDeriv.AlmostComplexType
 import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 
 /-!
@@ -99,34 +100,18 @@ theorem IsOfType.typeProjection_mextDerivₗ_eq_zero_ofComplexManifold
     (ofComplexManifold E M).typeProjection P Q (mextDerivₗ 𝓘(ℝ, E) k φ) = 0 :=
   Subtype.ext <| funext fun x ↦ by
     -- In the chart at `x`, the almost complex structure is the constant structure `L`, and the
-    -- coordinate expression `f` of `φ` satisfies the type equation `D_L f = c • f` for `L`.
-    -- Differentiating it, every derivative of `f` has type `(p,q)` for `L`.
+    -- coordinate expression `f` of `φ` has type `(p,q)` for `L`, so every derivative of `f` has
+    -- type `(p,q)` for `L`.
     set L : E →L[ℝ] E := Complex.I • ContinuousLinearMap.id ℝ E
-    set c : ℂ := ((p : ℂ) - q) * Complex.I
     set f := RoughForm.inChartAt φ.1 x
-    set z₀ := extChartAt 𝓘(ℝ, E) x x
     have hL (v : E) : L (L v) = -v := by
       simp [L, smul_smul]
-    have hd : HasFDerivWithinAt f (fderivWithin ℝ f (range 𝓘(ℝ, E)) z₀) (range 𝓘(ℝ, E)) z₀ :=
-      ((φ.isSmoothForm.contDiffWithinAt_inChartAt_self x).differentiableWithinAt
-        (by simp)).hasFDerivWithinAt
-    let T := (ContinuousAlternatingMap.fderivCompContinuousLinearMapCLM F
-      (ContinuousLinearMap.id ℝ E) (ι := Fin k)).flip L
-    have hT (β : E [⋀^Fin k]→L[ℝ] F) : T β = L.alternatingDerivation β := by
-      simp only [T, ContinuousLinearMap.flip_apply,
-        ContinuousAlternatingMap.fderivCompContinuousLinearMapCLM_apply,
-        ← ContinuousLinearMap.alternatingDerivation_eq_fderivCompContinuousLinearMap]
-    have heq : (fun z ↦ T (f z)) =ᶠ[𝓝[range 𝓘(ℝ, E)] z₀] fun z ↦ c • f z := by
-      filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz
-      rw [hT]
-      exact (hφ.inChartAt_isOfType x hz).alternatingDerivation_eq
-    have hD := (𝓘(ℝ, E).uniqueDiffOn.uniqueDiffWithinAt (mem_range_self _)).eq
-      ((T.hasFDerivAt.comp_hasFDerivWithinAt z₀ hd).congr_of_eventuallyEq heq.symm
-        (heq.symm.eq_of_nhdsWithin (mem_range_self _))) (hd.const_smul c)
-    have hη (v : E) : (fderivWithin ℝ f (range 𝓘(ℝ, E)) z₀ v).IsOfType L p q := by
-      refine ContinuousAlternatingMap.isOfType_iff.2 ⟨hφ.add_eq, ?_⟩
-      rw [← hT]
-      exact congrArg (fun A ↦ A v) hD
+    have hη (v : E) :
+        (fderivWithin ℝ f (range 𝓘(ℝ, E)) (extChartAt 𝓘(ℝ, E) x x) v).IsOfType L p q :=
+      ContinuousAlternatingMap.isOfType_fderivWithin
+        (𝓘(ℝ, E).uniqueDiffOn.uniqueDiffWithinAt (mem_range_self _)) (mem_range_self _)
+        (Filter.mem_of_superset (extChartAt_target_mem_nhdsWithin x)
+          fun _ hz ↦ hφ.inChartAt_isOfType x hz) v
     simp only [coe_typeProjection, mextDerivₗ_apply, ZeroMemClass.coe_zero, Pi.zero_apply]
     rw [mextDeriv_def, extDerivWithin, toEndomorphism_ofComplexManifold]
     exact ContinuousAlternatingMap.typeProjection_alternatizeUncurryFin_eq_zero_of_forall_isOfType

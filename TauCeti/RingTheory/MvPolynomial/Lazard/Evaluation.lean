@@ -354,7 +354,7 @@ theorem lazardEvalHom_apply (a : Fin n → S) (p : MvPolynomial (Fin n) S) :
 /-- The exponents removed from a power of a nonzero polynomial are multiplied by the power. -/
 theorem lazardExponent_pow {p : MvPolynomial (Fin n) S} (hp : p ≠ 0)
     (a : Fin n → S) (k : ℕ) : (p ^ k).lazardExponent a = k • p.lazardExponent a := by
-  rcases subsingleton_or_nontrivial S with hS | hS
+  rcases subsingleton_or_nontrivial S with hS | _
   · exact False.elim (hp (by ext d; exact Subsingleton.elim _ _))
   induction k with
   | zero => simpa using lazardExponent_C (1 : S) a

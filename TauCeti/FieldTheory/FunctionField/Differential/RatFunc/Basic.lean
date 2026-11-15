@@ -193,7 +193,6 @@ theorem weilDifferentialDivisor_ratFuncWeilDifferential (k : Type*) [Field k] :
 This is what makes the normalization meaningful: the two conditions of
 `TauCeti.ratFuncWeilDifferential` pin down a single differential. -/
 theorem eq_ratFuncWeilDifferential {ω : Module.Dual k ↥(repartitionSpace k (RatFunc k))}
-    (hmem : ω ∈ weilDifferentialSpace k (RatFunc k))
     (hgreat : IsGreatest {D : Divisor k (RatFunc k) | ω ∈ weilDifferentialFiltration D}
       ((-2 : ℤ) • WeilDivisor.ofPoint (Place.infty k)))
     (hnorm : repartitionDualComponent ω (Place.infty k) (RatFunc.X : RatFunc k)⁻¹ = -1) :
@@ -203,7 +202,8 @@ theorem eq_ratFuncWeilDifferential {ω : Module.Dual k ↥(repartitionSpace k (R
   -- then makes that constant `1`.
   obtain ⟨c, hc⟩ := exists_repartitionDualMul_eq (IsFunctionField.ratFunc k)
     isIntegrallyClosedIn_ratFunc (ratFuncWeilDifferential_mem k)
-    (ratFuncWeilDifferential_ne_zero k) hmem
+    (ratFuncWeilDifferential_ne_zero k)
+    (weilDifferentialFiltration_le_weilDifferentialSpace _ hgreat.1)
   have hω0 : ω ≠ 0 := by
     intro h
     rw [h, repartitionDualComponent_apply, LinearMap.zero_apply, eq_comm, neg_eq_zero] at hnorm

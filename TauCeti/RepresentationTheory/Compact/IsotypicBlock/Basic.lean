@@ -798,7 +798,7 @@ theorem peterWeylBlockAveraging_apply_mem_peterWeylBlock
   set K := (peterWeylBlock (models i)).comap
     (peterWeylBlockAveraging (models i)).toLinearMap with hK
   have hclosed : IsClosed (K : Set (Lp 𝕜 2 (haarProb G))) :=
-    ((peterWeylBlock (models i)).closed_of_finiteDimensional).preimage
+    ((peterWeylBlock (models i)).isClosed_of_finiteDimensional).preimage
       (peterWeylBlockAveraging (models i)).continuous
   have hle : ⨆ j, peterWeylBlock (models j) ≤ K := by
     refine iSup_le fun j x hx => Submodule.mem_comap.2 ?_

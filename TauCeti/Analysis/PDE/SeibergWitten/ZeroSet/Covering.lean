@@ -98,7 +98,6 @@ theorem exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le {C C₁ K c�
       c₁ / r ≤ (μ (closedBall x (c₀ / √r))).toReal →
       ∀ ρ, c₀ / √r ≤ ρ → ρ ≤ ρ₀ → ENNReal.ofReal (c * ρ ^ 2) ≤ μ (closedBall x ρ) := by
   set m := c₁ / (c₀ ^ 2 * (1 + C) ^ 2 * Real.exp (2 * C₁ * (1 + |Real.log c₀|)))
-  have hm : 0 < m := by positivity
   -- Below the radius `ρ₀` the error term `K ρ ^ 4` is absorbed into `m ρ ^ 2 / 2`.
   set ρ₀ := min σ₀ (min 1 √(m / (2 * (K + 1))))
   have hρ₀ : 0 < ρ₀ := lt_min hσ₀ (lt_min one_pos (by positivity))

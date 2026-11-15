@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.Pseudoconvex.Strong
-public import TauCeti.Geometry.Manifold.Morse.Cell.Band
 public import TauCeti.Geometry.Manifold.Morse.Generic.Strong
+public import TauCeti.Geometry.Manifold.Morse.TopHomology
 
 import TauCeti.Topology.Maps.Proper.Basic
 
@@ -39,6 +39,17 @@ strictly plurisubharmonic exhaustions
 coefficients in any abelian category with coproducts and exact sequential colimits (in particular
 any module over a ring, such as `ℤ`).
 
+The same Morse approximation, combined with
+`TauCeti.IsMorse.free_singularHomology_of_manifoldMorseIndex_le` and
+`TauCeti.IsMorse.isZero_singularCohomology_of_manifoldMorseIndex_le`, shows that in the top degree
+`H_{n+q}(M; V)` is free for every free module `V` over a principal ideal ring without zero divisors,
+for instance free abelian for `V = ℤ`, even when it is not finitely generated
+(`TauCeti.free_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt`), and that the
+singular cohomology `Hᵏ(M; V, N)` vanishes for `k > n + q`
+(`TauCeti.isZero_singularCohomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt`). By the
+universal coefficient theorem the vanishing in degree `n + q + 1` uses the freeness of `H_{n+q}`.
+Neither statement makes `H^{n+q}(M; ℤ)` torsion-free: it contains `Ext¹(H_{n+q-1}(M; ℤ), ℤ)`.
+
 ## Main results
 
 * `ContMDiffMap.exists_isMorse_sub_compl_isManifoldStronglyPseudoconvexAt`,
@@ -48,6 +59,13 @@ any module over a ring, such as `ℤ`).
   `TauCeti.isZero_singularHomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt`:
   vanishing of `Hₖ(M; R)` above degree `n + q` (and above `n` in the strictly plurisubharmonic
   case) for smooth non-Morse exhaustions.
+* `TauCeti.free_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt`,
+  `TauCeti.free_singularHomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt`:
+  freeness of `H_{n+q}(M; V)` (and of `Hₙ(M; V)` in the strictly plurisubharmonic case).
+* `TauCeti.isZero_singularCohomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt`,
+  `TauCeti.isZero_singularCohomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt`:
+  vanishing of `Hᵏ(M; V, N)` above degree `n + q` (and above `n` in the strictly
+  plurisubharmonic case).
 
 ## References
 
@@ -151,5 +169,67 @@ theorem isZero_singularHomology_of_isProperMap_of_isManifoldStrictlyPlurisubharm
     IsZero (((singularHomologyFunctor 𝒜 n).obj R).obj (TopCat.of M)) :=
   isZero_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt (q := 0) hf hp hbdd
     (fun x ↦ (hpsh x).isManifoldStronglyPseudoconvexAt 0) R (by omega)
+
+/-- **Free top homology on manifolds with a smooth strongly `q`-pseudoconvex exhaustion.** If `M`
+carries a smooth proper bounded-below everywhere strongly `q`-pseudoconvex function `f : M → ℝ`
+(not assumed to be Morse), then `H_{n+q}(M; V)` is free, where `n = finrank ℂ E`, for every free
+module `V` over a principal ideal ring without zero divisors. With integral coefficients it is free
+abelian, even when it is not finitely generated. -/
+theorem free_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt
+    {f : M → ℝ} {q : ℕ} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hp : IsProperMap f)
+    (hbdd : BddBelow (range f)) (hq : ∀ x, IsManifoldStronglyPseudoconvexAt E q f x)
+    {k : Type u} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] (V : ModuleCat.{u} k)
+    [Module.Free k V] :
+    Module.Free k (((singularHomologyFunctor (ModuleCat.{u} k) (finrank ℂ E + q)).obj V).obj
+      (TopCat.of M)) := by
+  let F : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ := ⟨f, hf⟩
+  obtain ⟨g, hgm, hgp, hgbdd, -, -, -, hgidx⟩ :=
+    F.exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt q hq hp hbdd
+      isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
+  exact hgm.free_singularHomology_of_manifoldMorseIndex_le hgp hgbdd hgidx V
+
+/-- **Cohomology vanishing on manifolds with a smooth strongly `q`-pseudoconvex exhaustion.** If
+`M` carries a smooth proper bounded-below everywhere strongly `q`-pseudoconvex function
+`f : M → ℝ` (not assumed to be Morse), then the singular cohomology `Hⁿ(M; V, N)` vanishes for every
+`n > finrank ℂ E + q`, every free module `V` over a principal ideal ring `k` without zero divisors
+and every `k`-module `N`; for instance `Hⁿ(M; ℤ) = 0` for `n > finrank ℂ E + q`. -/
+theorem isZero_singularCohomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt
+    {f : M → ℝ} {q : ℕ} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hp : IsProperMap f)
+    (hbdd : BddBelow (range f)) (hq : ∀ x, IsManifoldStronglyPseudoconvexAt E q f x)
+    {k : Type u} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] (V N : ModuleCat.{u} k)
+    [Module.Free k V] {n : ℕ} (hn : finrank ℂ E + q < n) :
+    IsZero ((TopCat.of M).singularCohomology V k N n) := by
+  let F : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ := ⟨f, hf⟩
+  obtain ⟨g, hgm, hgp, hgbdd, -, -, -, hgidx⟩ :=
+    F.exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt q hq hp hbdd
+      isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
+  exact hgm.isZero_singularCohomology_of_manifoldMorseIndex_le hgp hgbdd hgidx V N hn
+
+/-- **Free top homology on manifolds with a smooth strictly plurisubharmonic exhaustion.** If `M`
+carries a smooth proper bounded-below everywhere strictly plurisubharmonic function, then
+`Hₙ(M; V)` is free for `n = finrank ℂ E` and every free module `V` over a principal ideal ring
+without zero divisors. -/
+theorem free_singularHomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt
+    {f : M → ℝ} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hp : IsProperMap f)
+    (hbdd : BddBelow (range f)) (hpsh : ∀ x, IsManifoldStrictlyPlurisubharmonicAt E f x)
+    {k : Type u} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] (V : ModuleCat.{u} k)
+    [Module.Free k V] :
+    Module.Free k (((singularHomologyFunctor (ModuleCat.{u} k) (finrank ℂ E)).obj V).obj
+      (TopCat.of M)) :=
+  free_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt (q := 0) hf hp hbdd
+    (fun x ↦ (hpsh x).isManifoldStronglyPseudoconvexAt 0) V
+
+/-- **Cohomology vanishing on manifolds with a smooth strictly plurisubharmonic exhaustion.** If
+`M` carries a smooth proper bounded-below everywhere strictly plurisubharmonic function, then
+`Hⁿ(M; V, N) = 0` for `n > finrank ℂ E`, every free module `V` over a principal ideal ring `k`
+without zero divisors and every `k`-module `N`. -/
+theorem isZero_singularCohomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt
+    {f : M → ℝ} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hp : IsProperMap f)
+    (hbdd : BddBelow (range f)) (hpsh : ∀ x, IsManifoldStrictlyPlurisubharmonicAt E f x)
+    {k : Type u} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] (V N : ModuleCat.{u} k)
+    [Module.Free k V] {n : ℕ} (hn : finrank ℂ E < n) :
+    IsZero ((TopCat.of M).singularCohomology V k N n) :=
+  isZero_singularCohomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt (q := 0) hf hp hbdd
+    (fun x ↦ (hpsh x).isManifoldStronglyPseudoconvexAt 0) V N (by omega)
 
 end TauCeti

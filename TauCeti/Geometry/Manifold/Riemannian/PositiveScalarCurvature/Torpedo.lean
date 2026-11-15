@@ -415,7 +415,6 @@ private theorem exists_pos_le_exp_mul_one_sub_torpedoSlope_sq :
   rcases le_or_gt s (-2) with hs | hs
   · -- On the round cap `e^(-2 w) = cosh² s / R²` and `1 - v² = 1 / cosh² s`.
     refine (min_le_right _ _).trans ((min_le_right _ _).trans_eq ?_)
-    have hc := cosh_pos s
     simp only [torpedoProfile_of_le hs, torpedoSlope_of_le hs, neg_sq, tanh_eq_sinh_div_cosh]
     have harg : -2 * (log torpedoCapRadius - log (cosh s)) =
         log (cosh s ^ 2) - log (torpedoCapRadius ^ 2) := by

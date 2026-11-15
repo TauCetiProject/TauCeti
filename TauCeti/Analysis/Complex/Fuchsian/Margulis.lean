@@ -121,7 +121,6 @@ theorem conj_eq_or_conj_eq_inv_of_dist_le [DiscreteTopology Γ] {g h : PSL(2, �
       _ = 32 / 31 := by norm_num
   have hcA := hcosh _ dist_nonneg hgz
   have hcB := hcosh _ dist_nonneg hhz
-  have h1A := Real.one_le_cosh (dist (A • z) z)
   have h1B := Real.one_le_cosh (dist (B • z) z)
   have htrA := Matrix.SpecialLinearGroup.trace_sq_sub_four_le A z
   refine conj_eq_or_conj_eq_inv_of_cosh_dist hg hh z ?_

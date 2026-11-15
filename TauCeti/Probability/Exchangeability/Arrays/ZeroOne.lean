@@ -233,7 +233,7 @@ private theorem measure_inter_eq_mul_of_cylinders
   refine measure_inter_eq_mul_of_forall_zero_or_one_iInf (arrayTailFamily_antitone X)
     (arrayTailFamily_le_ambient 0 (fun p _ _ ↦ hX p))
     (by rw [← arrayTail_eq_iInf_arrayTailFamily]; exact htriv)
-    ((Measurable.of_eval fun p ↦ hX p) hcylA) hB'_meas (fun n ↦ hinv n hcylB) fun n ↦ ?_
+    hB'_meas (fun n ↦ hinv n hcylB) fun n ↦ ?_
   conv_lhs => rw [hAeq n]
   rw [← Set.preimage_inter, ← Set.preimage_inter]
   exact hinv n (hcylA.inter hcylB)

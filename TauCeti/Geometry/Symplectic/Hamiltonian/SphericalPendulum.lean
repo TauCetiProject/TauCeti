@@ -500,7 +500,7 @@ theorem sphericalPendulumEffectivePotential_lt_of_eq_zero {j z₀ z : ℝ} (hz�
     (hcrit : j ^ 2 * z₀ + (1 - z₀ ^ 2) ^ 2 = 0) (hz : z ∈ Ioo (-1) 1) (hne : z ≠ z₀) :
     sphericalPendulumEffectivePotential j z₀ < sphericalPendulumEffectivePotential j z := by
   have h1z : 0 < 1 - z ^ 2 := sub_pos.2 (((sq_lt_one_iff_abs_lt_one _).trans abs_lt).2 hz)
-  obtain ⟨hz₀₁, hz₀₂⟩ := hz₀
+  obtain ⟨_, hz₀₂⟩ := hz₀
   rw [← sub_pos, sphericalPendulumEffectivePotential_sub_eq hz₀₂.ne h1z.ne' hcrit]
   have hnum : 0 < 1 + z₀ ^ 2 + 2 * z₀ * z := by
     -- `1 + z₀² + 2 z₀ z = (1 + z₀ z)² + z₀² (1 - z²)`.
@@ -903,7 +903,7 @@ private theorem exists_fibreSheet_eq {h j : ℝ} (hj : j ≠ 0)
   simp only [cylindricalPoint_fst_two, cylindricalPoint_snd_two] at hw2
   obtain ⟨hx1, hx2⟩ := mem_sphericalPendulumPhaseSpace_cylindricalPoint_iff.1 hx
   rw [sphericalPendulumEnergyMomentum_cylindricalPoint, Prod.mk.injEq] at hF
-  obtain ⟨hF1, hF2⟩ := hF
+  obtain ⟨_, hF2⟩ := hF
   -- Since `r b = j ≠ 0`, the point is off the axis.
   have hr0 : 0 < r := hr.lt_of_ne fun h0 ↦ hj (by rw [← hF2, ← h0, zero_mul])
   have hz : z ∈ Ioo (-1 : ℝ) 1 := ((sq_lt_one_iff_abs_lt_one _).trans abs_lt).1 (by nlinarith)

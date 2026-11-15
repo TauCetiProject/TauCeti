@@ -116,15 +116,16 @@ theorem opMulEquiv_symm_op (g : DeckGroup) :
 
 /-- **The abelianization of the deck group** `H(ℤ) × ℤ` is `ℤ³`, through the coordinates
 `((x, y, z), n) ↦ (x, y, n)`. -/
-def abelianizationMulEquiv : Abelianization DeckGroup ≃* Multiplicative (ℤ × ℤ × ℤ) :=
-  (Abelianization.prodMulEquiv _).trans <|
-    (HeisenbergGroup.abelianizationMulEquiv.prodCongr Abelianization.equivOfComm.symm).trans <|
+def abelianizationMulEquiv : Group.Abelianization DeckGroup ≃* Multiplicative (ℤ × ℤ × ℤ) :=
+  Group.Abelianization.prodMulEquiv.trans <|
+    (HeisenbergGroup.abelianizationMulEquiv.prodCongr
+        Group.Abelianization.equivOfComm.symm).trans <|
       (MulEquiv.prodMultiplicative (ℤ × ℤ) ℤ).symm.trans
         (AddEquiv.prodAssoc (M := ℤ) (N := ℤ) (P := ℤ)).toMultiplicative
 
 @[simp]
 theorem abelianizationMulEquiv_of (g : DeckGroup) :
-    abelianizationMulEquiv (Abelianization.of g) = .ofAdd (g.1.x, g.1.y, g.2.toAdd) := by
+    abelianizationMulEquiv (Group.Abelianization.of g) = .ofAdd (g.1.x, g.1.y, g.2.toAdd) := by
   simp [abelianizationMulEquiv, MulEquiv.prodCongr]
 
 end DeckGroup
@@ -255,7 +256,6 @@ def firstHomologyAddEquiv :
 
 /-- The class of the loop `deckLoop g` in the first homology of the Kodaira–Thurston manifold has
 coordinates `(x, y, n)`, where `g = ((x, y, z), n)`. -/
-@[simp]
 theorem firstHomologyAddEquiv_loopClass_deckLoop (g : DeckGroup) :
     firstHomologyAddEquiv
         (H₁AddEquivHomology _ (loopClass (X := TopCat.of KodairaThurston) (deckLoop g))) =
@@ -271,7 +271,8 @@ theorem firstHomologyAddEquiv_symm_apply (v : ℤ × ℤ × ℤ) :
     firstHomologyAddEquiv.symm v =
       H₁AddEquivHomology _ (loopClass (X := TopCat.of KodairaThurston)
         (deckLoop (⟨v.1, v.2.1, 0⟩, .ofAdd v.2.2))) := by
-  simp [AddEquiv.symm_apply_eq]
+  rw [AddEquiv.symm_apply_eq, firstHomologyAddEquiv_loopClass_deckLoop]
+  simp
 
 end KodairaThurston
 

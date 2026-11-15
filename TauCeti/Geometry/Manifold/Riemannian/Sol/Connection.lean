@@ -216,7 +216,7 @@ of the finite basis used to define the map, and applies at every height. -/
     refine ContinuousLinearMap.coe_injective (b.ext fun i => ?_)
     simp only [ContinuousLinearMap.coe_coe]
     have hs := TauCeti.Manifold.covariantDerivative_localFrame_eq_sum_christoffelSymbol
-      b (cov := leviCivitaConnection J Sol) hx i j
+      b (cov := leviCivitaConnection J Sol) (x := p) (e := e) i j
     have hread := congrArg (tangentSpaceCastModel J p) hs
     simp only [e, localFrame_eq_constantField, constantField, map_sum, map_smul,
       ContinuousLinearEquiv.apply_symm_apply] at hread

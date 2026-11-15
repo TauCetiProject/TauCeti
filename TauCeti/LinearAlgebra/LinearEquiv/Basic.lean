@@ -24,6 +24,8 @@ A ring isomorphism over a common target carries the kernel of one map to the ker
 Composites of rescaled linear equivalences rescale by the quotient of the factors.
 Linear maps conjugate under linear equivalences have linearly equivalent kernels and cokernels,
 `LinearMap.kerEquivOfComp` and `LinearMap.cokerEquivOfComp`.
+Coordinate relabelling of function modules (`LinearEquiv.funCongrLeft`) is injective in the
+coordinate equivalence over a nontrivial target module.
 -/
 
 public section
@@ -86,6 +88,21 @@ theorem apply_symm_eq_div_smul {R A B C : Type*} [Semifield R] [AddCommMonoid A]
   have hv : M₂'.symm v = c₂ • M₂.symm v := by
     rw [symm_apply_eq, map_smul, ← h₂, apply_symm_apply]
   rw [h₁, hv, map_smul, smul_smul, div_mul_cancel₀ _ hc]
+
+/-- Coordinate relabelling of function modules is injective in the coordinate equivalence over a
+nontrivial target module. -/
+theorem funCongrLeft_injective (R M : Type*) [Semiring R] [AddCommMonoid M] [Module R M]
+    [Nontrivial M] {ι κ : Type*} :
+    Function.Injective (LinearEquiv.funCongrLeft R M : (κ ≃ ι) → (ι → M) ≃ₗ[R] (κ → M)) := by
+  classical
+  intro e₁ e₂ h
+  obtain ⟨m, hm⟩ := exists_ne (0 : M)
+  ext j
+  by_contra hne
+  have hj := congrArg (fun f : (ι → M) ≃ₗ[R] (κ → M) ↦ f (Pi.single (e₁ j) m) j) h
+  rw [funCongrLeft_apply, funCongrLeft_apply, LinearMap.funLeft_apply, LinearMap.funLeft_apply,
+    Pi.single_eq_same, Pi.single_eq_of_ne (Ne.symm hne)] at hj
+  exact hm hj
 
 end LinearEquiv
 

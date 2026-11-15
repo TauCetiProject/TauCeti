@@ -89,9 +89,6 @@ theorem conjWirtingerMultiplier_ne_zero {n : Fin 2 → ℤ} (hn : n ≠ 0) :
 /-- For `n ≠ 0`, the Fourier multiplier of `∂bar` has norm at least `1`. -/
 private theorem one_le_norm_conjWirtingerMultiplier {n : Fin 2 → ℤ} (hn : n ≠ 0) :
     1 ≤ ‖(π * I * (n 0 + I * n 1) : ℂ)‖ := by
-  have hz : (n 0 + I * n 1 : ℂ) ≠ 0 := by
-    intro h
-    exact conjWirtingerMultiplier_ne_zero hn (by rw [h, mul_zero])
   have h1 : 1 ≤ ‖(n 0 + I * n 1 : ℂ)‖ := by
     obtain ⟨i, hi⟩ := Function.ne_iff.1 hn
     have hi' : (1 : ℝ) ≤ |(n i : ℝ)| := by

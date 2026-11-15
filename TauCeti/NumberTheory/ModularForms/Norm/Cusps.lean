@@ -39,7 +39,9 @@ the identity are read for the full coset space, which is what makes them match.
 The **width** of an orbit is the period of that action: the least `m > 0` with
 `x⁻¹ T ^ m x ∈ 𝒢` (`minimalPeriod_TSL_dvd_iff`, `cuspTranslationOrbitWidth_mk`). It is the
 classical width of the cusp `x⁻¹ ∞` when `-I ∈ 𝒢`, and otherwise that width or twice it, in step
-with the same convention.
+with the same convention. For `Γ ≤ SL(2, ℤ)` it is read on integral representatives by
+`cuspTranslationOrbitWidth_mk_dvd_iff`, and the width for an intersection `𝒢₁ ⊓ 𝒢₂` is the least
+common multiple of the two widths (`cuspTranslationOrbitWidth_mk_inf`).
 The widths sum to the index (`sum_cuspTranslationOrbitWidth`), and the orbit of the base coset —
 the cusp `∞` — has width `Subgroup.integerCuspWidth 𝒢`
 (`cuspTranslationOrbitWidth_mk_one`).
@@ -213,6 +215,39 @@ lemma minimalPeriod_TSL_dvd_iff (x : 𝒮ℒ) (n : ℕ) :
     group
   rw [← MulAction.pow_smul_eq_iff_minimalPeriod_dvd, MulAction.Quotient.smul_mk, smul_eq_mul,
     QuotientGroup.eq, Subgroup.mem_subgroupOf, hconj, InvMemClass.coe_inv, Subgroup.inv_mem_iff]
+
+/-- For `Γ ≤ SL(2, ℤ)`, the width of the cusp translation orbit of the coset of `γ` (the cusp
+`γ⁻¹ ∞`) divides `m` exactly when `γ⁻¹ T ^ m γ ∈ Γ`. -/
+lemma cuspTranslationOrbitWidth_mk_dvd_iff {Γ : Subgroup SL(2, ℤ)} (γ : SL(2, ℤ)) (m : ℕ) :
+    cuspTranslationOrbitWidth
+        (⟦(QuotientGroup.mk ((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ) :
+          𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ)⟧ :
+            CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) ∣ m ↔
+      γ⁻¹ * ModularGroup.T ^ m * γ ∈ Γ := by
+  have hconj : (((((Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ)⁻¹ * TSL ^ m *
+      (Matrix.SpecialLinearGroup.mapGL ℝ).rangeRestrict γ) : 𝒮ℒ) : GL (Fin 2) ℝ) =
+        Matrix.SpecialLinearGroup.mapGL ℝ (γ⁻¹ * ModularGroup.T ^ m * γ) := by
+    have hT : ((TSL ^ m : 𝒮ℒ) : GL (Fin 2) ℝ) =
+        Matrix.SpecialLinearGroup.mapGL ℝ (ModularGroup.T ^ m) := by
+      rw [← zpow_natCast, coe_TSL_zpow, zpow_natCast,
+        TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
+    simp only [InvMemClass.coe_inv, Subgroup.coe_mul, MonoidHom.coe_rangeRestrict, map_inv, hT,
+      map_mul]
+  rw [cuspTranslationOrbitWidth_mk, minimalPeriod_TSL_dvd_iff, hconj,
+    Subgroup.mem_map_iff_mem Matrix.SpecialLinearGroup.mapGL_injective]
+
+/-- **Widths of an intersection**: at every coset, the width of the cusp translation orbit for
+`𝒢₁ ⊓ 𝒢₂` is the least common multiple of the widths for `𝒢₁` and for `𝒢₂`. -/
+lemma cuspTranslationOrbitWidth_mk_inf (𝒢₁ 𝒢₂ : Subgroup (GL (Fin 2) ℝ)) (x : 𝒮ℒ) :
+    cuspTranslationOrbitWidth
+        (⟦(QuotientGroup.mk x : 𝒮ℒ ⧸ (𝒢₁ ⊓ 𝒢₂).subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit (𝒢₁ ⊓ 𝒢₂)) =
+      (cuspTranslationOrbitWidth
+        (⟦(QuotientGroup.mk x : 𝒮ℒ ⧸ 𝒢₁.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢₁)).lcm
+      (cuspTranslationOrbitWidth
+        (⟦(QuotientGroup.mk x : 𝒮ℒ ⧸ 𝒢₂.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢₂)) :=
+  Nat.dvd_right_iff_eq.mp fun n ↦ by
+    simp only [cuspTranslationOrbitWidth_mk, Nat.lcm_dvd_iff, minimalPeriod_TSL_dvd_iff,
+      Subgroup.mem_inf]
 
 instance [𝒢.IsFiniteRelIndex 𝒮ℒ] (c : CuspTranslationOrbit 𝒢) :
     NeZero (cuspTranslationOrbitWidth c) :=

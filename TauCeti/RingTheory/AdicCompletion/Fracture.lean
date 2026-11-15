@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.AdicCompletion.Algebra
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.RingTheory.AdicCompletion.Regular
+public import TauCeti.RingTheory.AdicCompletion.Iterated
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Algebra.Module.LocalizedModule.IsLocalization
 import TauCeti.Algebra.Module.LocalizedModule.Regular
@@ -26,8 +27,10 @@ Now let `(p, v)` be a weakly regular pair on `R`, with `v` regular. Then `p` is 
 `R ⧸ vⁿ R` for every `n`, hence on `R̂` and on `R̂[1/v]`. So the cokernel of the short exact
 sequence `0 → R → R[1/v] × R̂ → R̂[1/v] → 0` has no `p`-torsion, and the sequence stays short exact
 after `p`-adic completion. In other words, the `p`-adic completion of the square is again a
-pullback. For `v = v₁` on a chart of the moduli of elliptic curves, its corners are the ordinary
-coefficients `(R[1/v₁])^_p`, the supersingular side `(R̂_{v₁})^_p` and their overlap
+pullback. Its supersingular corner `(R̂_v)^_p` is the `(p, v)`-adic completion of `R`
+(`AdicCompletion.iteratedEquivSup`), so the square may be stated with that corner instead. For
+`v = v₁` on a chart of the moduli of elliptic curves, its corners are the ordinary coefficients
+`(R[1/v₁])^_p`, the supersingular coefficients `R̂_{(p, v₁)}` and their overlap
 `(R̂_{v₁}[1/v₁])^_p`.
 
 The results use the native `AdicCompletion` and `Localization.Away` carriers. No Noetherian,
@@ -44,6 +47,8 @@ be faithfully flat: localization retains the part invisible to completion.
   overlap `R̂[1/v]` has no `p`-torsion.
 * `AdicCompletion.existsUnique_map_localization_lift`: for a weakly regular pair `(p, v)` with
   `v` regular, the `p`-adic completion of the localization–completion square for `v` is cartesian.
+* `AdicCompletion.existsUnique_map_localization_lift_sup`: the same square with the `(p, v)`-adic
+  completion of `R` as its supersingular corner.
 
 ## References
 
@@ -219,6 +224,33 @@ theorem existsUnique_map_localization_lift (h : IsWeaklyRegular R [p, v]) (hv : 
   · -- An element of the completed product is determined by its two components.
     rw [hx, ← map_inl_map_fst_add_map_inr_map_snd I (map I f x'), map_comp_apply (f := f),
       map_comp_apply (f := f), LinearMap.fst_prod, LinearMap.snd_prod, hx'.1, hx'.2]
+
+/-- **The coefficient pullback square with the `(p, v)`-adic completion.** Let `(p, v)` be a
+weakly regular pair on `R` with `v` regular. Compatible elements of the `p`-adic completion of
+`R[1/v]` and of the `((p) ⊔ (v))`-adic completion of `R` come from a unique element of the
+`p`-adic completion of `R`. The `((p) ⊔ (v))`-adic completion is identified with the `p`-adic
+completion of the `(v)`-adic completion by `AdicCompletion.iteratedEquivSup`. -/
+theorem existsUnique_map_localization_lift_sup (h : IsWeaklyRegular R [p, v]) (hv : IsRegular v)
+    (a : AdicCompletion (Ideal.span {p}) (Localization.Away v))
+    (b : AdicCompletion (Ideal.span {p} ⊔ Ideal.span {v}) R)
+    (hab : map (Ideal.span {p})
+        (Localization.awayMapₐ (Algebra.ofId R (AdicCompletion (Ideal.span {v}) R)) v).toLinearMap
+          a =
+      map (Ideal.span {p}) (IsScalarTower.toAlgHom R (AdicCompletion (Ideal.span {v}) R)
+        (Localization.Away (algebraMap R (AdicCompletion (Ideal.span {v}) R) v))).toLinearMap
+          ((iteratedEquivSup R h.isSMulRegular_quotient_pow_smul_top).symm b)) :
+    ∃! x : AdicCompletion (Ideal.span {p}) R,
+      map (Ideal.span {p}) (Algebra.linearMap R (Localization.Away v)) x = a ∧
+        iteratedToSup (Ideal.span {p}) (Ideal.span {v}) R
+          (map (Ideal.span {p}) (Algebra.linearMap R (AdicCompletion (Ideal.span {v}) R)) x) =
+            b := by
+  let e := iteratedEquivSup R h.isSMulRegular_quotient_pow_smul_top
+  obtain ⟨x, hx, hxu⟩ := existsUnique_map_localization_lift h hv a (e.symm b) hab
+  refine ⟨x, ⟨hx.1, ?_⟩, fun y hy ↦ hxu y ⟨hy.1, ?_⟩⟩
+  · rw [← iteratedEquivSup_apply h.isSMulRegular_quotient_pow_smul_top, hx.2,
+      e.apply_symm_apply]
+  · rw [← hy.2, ← iteratedEquivSup_apply h.isSMulRegular_quotient_pow_smul_top,
+      e.symm_apply_apply]
 
 end Completion
 
