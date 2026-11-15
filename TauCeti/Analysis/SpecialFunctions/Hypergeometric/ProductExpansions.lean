@@ -89,7 +89,7 @@ $$\mathbf{F}(a, b; c; z) \, \mathbf{F}(a, b; c; \zeta)
 public section
 
 open Filter Finset Polynomial
-open scoped Nat NNReal Topology BigOperators ENNReal
+open scoped Nat Topology BigOperators
 
 namespace TauCeti
 
@@ -570,29 +570,12 @@ theorem eq_cayleyOrrCoeff_of_eventually_hasSum (a b c : ℂ) {A : ℕ → ℂ}
     (hA : ∀ᶠ z in 𝓝 (0 : ℂ), HasSum (fun s : ℕ ↦ A s * z ^ s)
       ((1 - z) ^ (a + b - c) * ₂F₁ (2 * a) (2 * b) (2 * c - 1) z)) :
     A = TauCeti.cayleyOrrCoeff a b c := by
-  obtain ⟨r, hr0, hball⟩ := Metric.eventually_nhds_iff_ball.mp hA
-  have hρ_pos : 0 < min (r / 2) (1 / 2) := lt_min (half_pos hr0) (by norm_num)
-  let ρ : ℝ≥0 := ⟨min (r / 2) (1 / 2), hρ_pos.le⟩
-  have hρ : 0 < (ρ : ℝ) := hρ_pos
-  have hmem : ((ρ : ℝ) : ℂ) ∈ Metric.ball (0 : ℂ) r := by
-    rw [Metric.mem_ball, dist_zero_right, norm_real, Real.norm_of_nonneg hρ.le]
-    exact (min_le_left _ _).trans_lt (half_lt_self hr0)
-  have hrad : (ρ : ℝ≥0∞) ≤ (FormalMultilinearSeries.ofScalars ℂ A).radius := by
-    refine FormalMultilinearSeries.le_radius_of_tendsto _ (r := ρ) (l := 0) ?_
-    simpa [Real.norm_of_nonneg hρ.le] using
-      (hball ((ρ : ℝ) : ℂ) hmem).summable.tendsto_atTop_zero.norm
-  have hpA : HasFPowerSeriesOnBall
+  have hpA : HasFPowerSeriesAt
       (fun z : ℂ ↦ (1 - z) ^ (a + b - c) * ₂F₁ (2 * a) (2 * b) (2 * c - 1) z)
-      (FormalMultilinearSeries.ofScalars ℂ A) 0 (ρ : ℝ≥0∞) := by
-    refine ⟨hrad, ENNReal.coe_pos.mpr hρ_pos, fun {y} hy ↦ ?_⟩
-    rw [Metric.mem_eball, edist_dist, dist_zero_right, ← ENNReal.ofReal_coe_nnreal] at hy
-    have hyr : y ∈ Metric.ball (0 : ℂ) r := by
-      rw [Metric.mem_ball, dist_zero_right]
-      exact ((ENNReal.ofReal_lt_ofReal_iff hρ).mp hy).trans
-        ((min_le_left _ _).trans_lt (half_lt_self hr0))
-    simpa [FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using hball y hyr
+      (FormalMultilinearSeries.ofScalars ℂ A) 0 :=
+    hasFPowerSeriesAt_iff.mpr (hA.mono fun z hz ↦ by simpa [mul_comm] using hz)
   exact FormalMultilinearSeries.ofScalars_series_injective ℂ ℂ
-    (hpA.hasFPowerSeriesAt.eq_formalMultilinearSeries
+    (hpA.eq_formalMultilinearSeries
       (hasFPowerSeriesOnBall_one_sub_cpow_mul_ordinaryHypergeometric a b c).hasFPowerSeriesAt)
 
 /-! ### Burchnall–Chaundy two-variable product expansion (DLMF 15.16.3) -/
@@ -742,32 +725,37 @@ private theorem norm_bcGenTerm_le {a b c u v y : ℂ} {K : ℝ} {P Q : ℕ} (hy 
   exact (norm_tsum_le_tsum_norm hsum_norm).trans
     ((Summable.tsum_le_tsum hterm_le hsum_norm hmaj).trans_eq (hrow.tsum_mul_left _))
 
-private theorem norm_bcTerm_le {a b c z ζ : ℂ} {K r : ℝ} {P Q : ℕ}
-    (hz : ‖z‖ ≤ r) (hw : ‖z + ζ - z * ζ‖ ≤ r) (hr0 : 0 ≤ r) (hr1 : r < 1) (_ : 0 ≤ K)
-    (hbound : ∀ s j k : ℕ,
-      ‖bcGenCoeff a b c s j k‖ ≤
-        K * ((s : ℝ) + 1) ^ P * ((j + k : ℝ) + 1) ^ Q * ((j + k).choose j : ℝ))
-    (s : ℕ) :
-    ‖bcTerm a b c s z ζ‖ ≤
-      K * (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * r ^ k) * (((s : ℝ) + 1) ^ P * (r * ‖ζ‖) ^ s) := by
-  set w := z + ζ - z * ζ
-  have hw1 : ‖w‖ < 1 := hw.trans_lt hr1
-  have hrow_w0 := TauCeti.summable_add_one_pow_mul_geometric_of_norm_lt_one Q
-    (r := ‖w‖) (by simpa using hw1)
-  have hrow_r : Summable fun k : ℕ ↦ ((k : ℝ) + 1) ^ Q * r ^ k :=
-    TauCeti.summable_add_one_pow_mul_geometric_of_norm_lt_one Q (by rwa [Real.norm_of_nonneg hr0])
-  have hbc : ‖bcTerm a b c s z ζ‖ ≤
-      K * ((s : ℝ) + 1) ^ P * ‖z * ζ‖ ^ s * (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * ‖w‖ ^ k) := by
-    simpa [bcTerm, bcGenPref, w] using norm_bcGenTerm_le (u := z * ζ) (v := 1) hw1 hbound s 0
-      (hrow_w0.congr fun k ↦ by simp)
-  have htsum : (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * ‖w‖ ^ k) ≤ ∑' k : ℕ, ((k : ℝ) + 1) ^ Q * r ^ k :=
-    Summable.tsum_le_tsum (fun k ↦ by gcongr) hrow_w0 hrow_r
-  have huz : ‖z * ζ‖ ^ s ≤ (r * ‖ζ‖) ^ s := by
-    rw [norm_mul]; exact pow_le_pow_left₀ (by positivity) (by gcongr) s
-  calc ‖bcTerm a b c s z ζ‖
-      ≤ K * ((s : ℝ) + 1) ^ P * ‖z * ζ‖ ^ s * (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * ‖w‖ ^ k) := hbc
-    _ ≤ K * ((s : ℝ) + 1) ^ P * (r * ‖ζ‖) ^ s * (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * r ^ k) := by gcongr
-    _ = K * (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * r ^ k) * (((s : ℝ) + 1) ^ P * (r * ‖ζ‖) ^ s) := by ring
+private theorem exists_summable_norm_bcTerm_le (a b c : ℂ) {ζ : ℂ} {r : ℝ}
+    (hζ : ‖ζ‖ < 1) (hr1 : r < 1) :
+    ∃ g : ℕ → ℝ, Summable g ∧ ∀ s : ℕ, ∀ z : ℂ, ‖z‖ ≤ r → ‖z + ζ - z * ζ‖ ≤ r →
+      ‖bcTerm a b c s z ζ‖ ≤ g s := by
+  by_cases hr0 : 0 ≤ r
+  · obtain ⟨K, P, Q, hK0, hbound⟩ := exists_bc_coeff_bound a b c
+    have hrow_r : Summable fun k : ℕ ↦ ((k : ℝ) + 1) ^ Q * r ^ k :=
+      TauCeti.summable_add_one_pow_mul_geometric_of_norm_lt_one Q (by rwa [Real.norm_of_nonneg hr0])
+    refine ⟨fun s ↦ K * (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * r ^ k) * (((s : ℝ) + 1) ^ P * (r * ‖ζ‖) ^ s),
+      (TauCeti.summable_add_one_pow_mul_geometric_of_norm_lt_one P (r := r * ‖ζ‖)
+        (by rw [Real.norm_of_nonneg (by positivity)]; nlinarith [norm_nonneg ζ])).mul_left _,
+      fun s z hz hw ↦ ?_⟩
+    set w := z + ζ - z * ζ
+    have hw1 : ‖w‖ < 1 := hw.trans_lt hr1
+    have hrow_w0 := TauCeti.summable_add_one_pow_mul_geometric_of_norm_lt_one Q
+      (r := ‖w‖) (by simpa using hw1)
+    have hbc : ‖bcTerm a b c s z ζ‖ ≤
+        K * ((s : ℝ) + 1) ^ P * ‖z * ζ‖ ^ s * (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * ‖w‖ ^ k) := by
+      simpa [bcTerm, bcGenPref, w] using norm_bcGenTerm_le (u := z * ζ) (v := 1) hw1 hbound s 0
+        (hrow_w0.congr fun k ↦ by simp)
+    have htsum : (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * ‖w‖ ^ k) ≤ ∑' k : ℕ, ((k : ℝ) + 1) ^ Q * r ^ k :=
+      Summable.tsum_le_tsum (fun k ↦ by gcongr) hrow_w0 hrow_r
+    have huz : ‖z * ζ‖ ^ s ≤ (r * ‖ζ‖) ^ s := by
+      rw [norm_mul]; exact pow_le_pow_left₀ (by positivity) (by gcongr) s
+    calc ‖bcTerm a b c s z ζ‖
+        ≤ K * ((s : ℝ) + 1) ^ P * ‖z * ζ‖ ^ s * (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * ‖w‖ ^ k) := hbc
+      _ ≤ K * ((s : ℝ) + 1) ^ P * (r * ‖ζ‖) ^ s * (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * r ^ k) := by
+          gcongr
+      _ = K * (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * r ^ k) * (((s : ℝ) + 1) ^ P * (r * ‖ζ‖) ^ s) := by
+          ring
+  · exact ⟨0, summable_zero, fun _ z hz _ ↦ absurd ((norm_nonneg z).trans hz) hr0⟩
 
 private theorem isOpen_bcBall (ζ : ℂ) (r : ℝ) :
     IsOpen {z : ℂ | ‖z‖ < r ∧ ‖z + ζ - z * ζ‖ < r} :=
@@ -780,20 +768,15 @@ private theorem differentiableOn_tsum_bcTerm (a b c : ℂ) {ζ : ℂ} (hζ : ‖
   intro z₀ hz₀
   set r : ℝ := (max ‖z₀‖ ‖z₀ + ζ - z₀ * ζ‖ + 1) / 2
   have hr_lt : r < 1 := by simp only [r]; linarith [max_lt hz₀.1 hz₀.2]
-  have hr0 : 0 ≤ r := by positivity
   let V : Set ℂ := {z : ℂ | ‖z‖ < r ∧ ‖z + ζ - z * ζ‖ < r}
   have hV_open : IsOpen V := isOpen_bcBall ζ r
   have hz₀V : z₀ ∈ V :=
     ⟨by simp only [r]; linarith [le_max_left ‖z₀‖ ‖z₀ + ζ - z₀ * ζ‖, hz₀.1, hz₀.2],
       by simp only [r]; linarith [le_max_right ‖z₀‖ ‖z₀ + ζ - z₀ * ζ‖, hz₀.1, hz₀.2]⟩
-  obtain ⟨K, P, Q, hK0, hbound⟩ := exists_bc_coeff_bound a b c
-  have hg₁ : Summable fun s : ℕ ↦
-      K * (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * r ^ k) * (((s : ℝ) + 1) ^ P * (r * ‖ζ‖) ^ s) :=
-    (TauCeti.summable_add_one_pow_mul_geometric_of_norm_lt_one P (r := r * ‖ζ‖)
-      (by rw [Real.norm_of_nonneg (by positivity)]; nlinarith [norm_nonneg ζ])).mul_left _
+  obtain ⟨g, hg, hbound⟩ := exists_summable_norm_bcTerm_le a b c hζ hr_lt
   have hdiffV : DifferentiableOn ℂ (fun z : ℂ ↦ ∑' s : ℕ, bcTerm a b c s z ζ) V := by
-    refine differentiableOn_tsum_of_summable_norm hg₁ (fun s z hzV ↦ ?_) hV_open fun s z hzV ↦
-      norm_bcTerm_le hzV.1.le hzV.2.le hr0 hr_lt hK0 hbound s
+    refine differentiableOn_tsum_of_summable_norm hg (fun s z hzV ↦ ?_) hV_open fun s z hzV ↦
+      hbound s z hzV.1.le hzV.2.le
     have hcomp : DifferentiableAt ℂ
         (fun z : ℂ ↦ regularizedGaussHGFun (a + s) (b + s) (c + 2 * s) (z + ζ - z * ζ)) z :=
       (analyticAt_regularizedGaussHGFun _ _ _ (hzV.2.trans hr_lt)).differentiableAt.comp z
@@ -943,15 +926,9 @@ theorem hasSum_regularizedGaussHGFun_mul_regularizedGaussHGFun (a b c : ℂ) {z 
     exact (hasSum_bcTerm_of_add_norm_lt a b c hζ hzv).tsum_eq
   have heqU := hf_an.eqOn_of_preconnected_of_eventuallyEq hg_an
     (convex_bcDomain ζ).isPreconnected ⟨by simp, by simpa using hζ⟩ heq0
-  obtain ⟨K, P, Q, hK0, hbound⟩ := exists_bc_coeff_bound a b c
-  set r : ℝ := max ‖z‖ ‖z + ζ - z * ζ‖
-  have hr1 : r < 1 := max_lt hz hw
-  have hsum_z : Summable fun s : ℕ ↦ bcTerm a b c s z ζ := by
-    refine Summable.of_norm (Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _)
-      (fun s ↦ norm_bcTerm_le (le_max_left _ _) (le_max_right _ _) (by positivity) hr1 hK0
-        hbound s)
-      ((TauCeti.summable_add_one_pow_mul_geometric_of_norm_lt_one P (r := r * ‖ζ‖)
-        (by rw [Real.norm_of_nonneg (by positivity)]; nlinarith [norm_nonneg ζ])).mul_left _))
+  obtain ⟨g, hg, hbound⟩ := exists_summable_norm_bcTerm_le a b c hζ (max_lt hz hw)
+  have hsum_z : Summable fun s : ℕ ↦ bcTerm a b c s z ζ :=
+    .of_norm_bounded hg fun s ↦ hbound s z (le_max_left _ _) (le_max_right _ _)
   simpa only [bcTerm, ← heqU ⟨hz, hw⟩] using hsum_z.hasSum
 
 /-- **Burchnall–Chaundy two-variable product expansion for `₂F₁` (DLMF 15.16.3, ordinary form).**
