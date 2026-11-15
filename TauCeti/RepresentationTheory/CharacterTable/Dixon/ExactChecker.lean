@@ -222,12 +222,6 @@ private theorem central_eigen_map (f : R →+* ℂ) (i : Fin d.numClasses) :
     d.IsModularEigenrow (fun j => f (omega i j)) :=
   (h.central_eigen i).map f
 
-omit h in
-private theorem reindexTableOfMap_classOf (f : R →+* ℂ) (i : Fin (Nat.card (ConjClasses G)))
-    (k : Fin d.numClasses) : d.reindexTableOfMap f table i (d.classOf k) =
-      f (table ((finCongr d.numClasses_eq_card_conjClasses).symm i) k) := by
-  rw [← d.reindexTableOfMap_apply_classOf (⇑f) table, Equiv.apply_symm_apply]
-
 /-- The normalized row of the mapped ordinary table is the corresponding mapped central row,
 with both transported from the numbering of `d` to conjugacy classes. -/
 theorem centralCharacterRow_reindexTableOfMap (f : R →+* ℂ)
@@ -241,8 +235,8 @@ theorem centralCharacterRow_reindexTableOfMap (f : R →+* ℂ)
   rw [d.equivConjClasses_apply]
   have hdeg : (degree i' : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (h.degree_pos i').ne'
   have hconvert := congrArg f (h.degree_mul_central i' j)
-  rw [centralCharacterRow_apply, reindexTableOfMap_classOf, ← d.classOf_index (1 : G),
-    reindexTableOfMap_classOf, h.table_index_one, map_natCast, d.reindexModularRow_classOf,
+  rw [centralCharacterRow_apply, d.reindexTableOfMap_classOf, ← d.classOf_index (1 : G),
+    d.reindexTableOfMap_classOf, h.table_index_one, map_natCast, d.reindexModularRow_classOf,
     ← d.card_classFinset]
   apply (div_eq_iff hdeg).2
   simpa only [map_mul, map_natCast, mul_comm] using hconvert.symm
@@ -261,7 +255,7 @@ private theorem row_orthonormal_reindexTableOfMap (f : R →+* ℂ)
   have hG : (Fintype.card G : ℂ) ≠ 0 := by exact_mod_cast Fintype.card_pos.ne'
   simp only [Nat.card_eq_fintype_card]
   rw [← d.equivConjClasses.sum_comp]
-  simp only [d.equivConjClasses_apply, reindexTableOfMap_classOf, starRingEnd_apply]
+  simp only [d.equivConjClasses_apply, d.reindexTableOfMap_classOf, starRingEnd_apply]
   have hsum' :
       (∑ k, (Fintype.card (d.classOf k).carrier : ℂ) * f (table i' k) *
           star (f (table j' k))) =
@@ -288,9 +282,8 @@ theorem isCharacterTableSpec (f : R →+* ℂ) (hf : ∀ x, f (conj x) = star (f
   exists_degree i := by
     let i' := (finCongr d.numClasses_eq_card_conjClasses).symm i
     refine ⟨degree i', h.degree_pos i', ?_, ?_⟩
-    · rw [← d.classOf_index (1 : G),
-        ← (finCongr d.numClasses_eq_card_conjClasses).apply_symm_apply i,
-        d.reindexTableOfMap_apply_classOf, h.table_index_one, map_natCast]
+    · rw [← d.classOf_index (1 : G), d.reindexTableOfMap_classOf, h.table_index_one,
+        map_natCast]
     · simpa only [Nat.card_eq_fintype_card] using h.degree_dvd i'
   sum_degree_sq := by
     rw [@Nat.card_eq_fintype_card G, ← h.sum_degree_sq,
