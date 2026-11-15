@@ -29,8 +29,9 @@ join of two oracles.
 Mathlib's `ComputableIn₂` expresses computability of binary total functions in terms of
 encodings; `ComputableIn₂.iff_nat` restates it for functions on `ℕ` as a `Nat.RecursiveIn`
 statement on codes `Nat.pair a b` of pairs. Total oracle-computable functions are closed under
-composition, pairing, primitive recursion, and forming finite initial segments of a sequence.
-These closure proofs adapt Mathlib's `Computable.comp`, `Computable.pair`, and
+composition, pairing, primitive recursion, and forming finite initial segments of a sequence, and
+partial oracle-recursive functions are closed under unbounded Boolean search (`RecursiveIn.rfind`).
+These closure proofs adapt Mathlib's `Partrec.rfind`, `Computable.comp`, `Computable.pair`, and
 `Computable.nat_rec` in `Mathlib.Computability.Partrec` to `Nat.RecursiveIn`.
 -/
 
@@ -126,6 +127,30 @@ theorem iff_nat {f : ℕ → ℕ → ℕ} :
   exact ⟨fun h => h.of_eq fun n => by simp, fun h => h.of_eq fun n => by simp⟩
 
 end ComputableIn₂
+
+namespace RecursiveIn
+
+open Encodable
+
+variable {α : Type*} [Primcodable α] {O : Set (ℕ →. ℕ)}
+
+/-- Unbounded search over an oracle-recursive partial Boolean predicate, the oracle-relative form
+of `Partrec.rfind`. -/
+theorem rfind {p : α → ℕ →. Bool} (hp : RecursiveIn₂ O p) :
+    RecursiveIn O (fun a => Nat.rfind (p a)) := by
+  -- `Nat.RecursiveIn.rfind` searches for code `0`, whereas `encode true = 1` and
+  -- `encode false = 0`; subtracting from `1` exchanges the Boolean codes while keeping invalid
+  -- input encodings undefined.
+  have hflip : Nat.Primrec (1 - ·) :=
+    Primrec.nat_iff.1 <| Primrec.nat_sub.comp (_root_.Primrec.const 1) _root_.Primrec.id
+  have hbool : (fun b : Bool => decide (1 - encode b = 0)) = id :=
+    funext fun b => by cases b <;> simp
+  refine (Nat.RecursiveIn.map_primrec hp hflip).rfind.of_eq fun n => ?_
+  cases e : decode (α := α) n with
+  | none => simpa [e] using Nat.rfind_zero_none _ rfl
+  | some a => simp [e, Part.map_map, Function.comp_def, hbool, Part.map_id']
+
+end RecursiveIn
 
 namespace ComputableIn
 

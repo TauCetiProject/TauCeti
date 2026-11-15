@@ -54,9 +54,9 @@ pointclass of every iterated jump and yields the strict inclusions of the arithm
 * `TauCeti.ArithmeticalHierarchy.isSigma_succ_iff_oneOneReducible_iterate_jump`,
   `TauCeti.ArithmeticalHierarchy.isSigma_succ_iff_manyOneReducible_iterate_jump`: one-one and
   many-one completeness of `Z⁽ⁿ⁺¹⁾` for `Σ⁰ₙ₊₁(Z)`.
-* `TauCeti.ArithmeticalHierarchy.isSigma_iterate_jump_iff`,
-  `TauCeti.ArithmeticalHierarchy.isPi_iterate_jump_iff`,
-  `TauCeti.ArithmeticalHierarchy.isDelta_iterate_jump_iff`: exact level classifications of
+* `TauCeti.ArithmeticalHierarchy.isSigma_mem_iterate_jump_iff`,
+  `TauCeti.ArithmeticalHierarchy.isPi_mem_iterate_jump_iff`,
+  `TauCeti.ArithmeticalHierarchy.isDelta_mem_iterate_jump_iff`: exact level classifications of
   `Z⁽ⁿ⁺¹⁾`.
 * `TauCeti.ArithmeticalHierarchy.strictMono_setOf_isSigma`,
   `TauCeti.ArithmeticalHierarchy.strictMono_setOf_isPi`,
@@ -283,7 +283,7 @@ theorem isDelta_succ_succ_iff_of_low {A : Set ℕ} (hA : A.Low) :
 /-! ### Completeness of the iterated jumps -/
 
 /-- The `(n + 1)`-th jump `Z⁽ⁿ⁺¹⁾` belongs to `Σ⁰ₙ₊₁(Z)`. -/
-theorem isSigma_succ_iterate_jump : IsSigma Z (n + 1) (· ∈ Set.jump^[n + 1] Z) := by
+theorem isSigma_succ_mem_iterate_jump : IsSigma Z (n + 1) (· ∈ Set.jump^[n + 1] Z) := by
   rw [Function.iterate_succ_apply', ← isSigma_iterate_jump_succ_iff (m := 0)]
   exact isSigma_one_jump
 
@@ -298,14 +298,14 @@ iff it reduces one-one to `Z⁽ⁿ⁺¹⁾`. -/
 theorem isSigma_succ_iff_oneOneReducible_iterate_jump :
     IsSigma Z (n + 1) p ↔ OneOneReducible p (· ∈ Set.jump^[n + 1] Z) :=
   ⟨IsSigma.oneOneReducible_iterate_jump,
-    fun h => isSigma_succ_iterate_jump.of_manyOneReducible h.to_many_one⟩
+    fun h => isSigma_succ_mem_iterate_jump.of_manyOneReducible h.to_many_one⟩
 
 /-- **Many-one completeness of `Z⁽ⁿ⁺¹⁾` for `Σ⁰ₙ₊₁(Z)`.** A predicate is `Σ⁰ₙ₊₁` relative to `Z`
 iff it reduces many-one to `Z⁽ⁿ⁺¹⁾`. -/
 theorem isSigma_succ_iff_manyOneReducible_iterate_jump :
     IsSigma Z (n + 1) p ↔ ManyOneReducible p (· ∈ Set.jump^[n + 1] Z) :=
   ⟨fun h => h.oneOneReducible_iterate_jump.to_many_one,
-    isSigma_succ_iterate_jump.of_manyOneReducible⟩
+    isSigma_succ_mem_iterate_jump.of_manyOneReducible⟩
 
 /-- Every `Π⁰ₙ₊₁(Z)` predicate reduces one-one to the complement of `Z⁽ⁿ⁺¹⁾`. -/
 theorem IsPi.oneOneReducible_compl_iterate_jump (h : IsPi Z (n + 1) p) :
@@ -319,52 +319,52 @@ iff it reduces one-one to the complement of `Z⁽ⁿ⁺¹⁾`. -/
 theorem isPi_succ_iff_oneOneReducible_compl_iterate_jump :
     IsPi Z (n + 1) p ↔ OneOneReducible p (· ∉ Set.jump^[n + 1] Z) :=
   ⟨IsPi.oneOneReducible_compl_iterate_jump, fun h =>
-    (isPi_not_iff.2 isSigma_succ_iterate_jump).of_manyOneReducible h.to_many_one⟩
+    (isPi_not_iff.2 isSigma_succ_mem_iterate_jump).of_manyOneReducible h.to_many_one⟩
 
 /-- **Many-one completeness of `(Z⁽ⁿ⁺¹⁾)ᶜ` for `Π⁰ₙ₊₁(Z)`.** A predicate is `Π⁰ₙ₊₁` relative to `Z`
 iff it reduces many-one to the complement of `Z⁽ⁿ⁺¹⁾`. -/
 theorem isPi_succ_iff_manyOneReducible_compl_iterate_jump :
     IsPi Z (n + 1) p ↔ ManyOneReducible p (· ∉ Set.jump^[n + 1] Z) :=
   ⟨fun h => h.oneOneReducible_compl_iterate_jump.to_many_one,
-    (isPi_not_iff.2 isSigma_succ_iterate_jump).of_manyOneReducible⟩
+    (isPi_not_iff.2 isSigma_succ_mem_iterate_jump).of_manyOneReducible⟩
 
 /-! ### Exact classifications and strictness of the hierarchy -/
 
 /-- **Non-collapse at `Z⁽ⁿ⁺¹⁾`.** The `(n + 1)`-th jump `Z⁽ⁿ⁺¹⁾` is not `Π⁰ₙ₊₁` relative to `Z`. -/
-theorem not_isPi_succ_iterate_jump : ¬IsPi Z (n + 1) (· ∈ Set.jump^[n + 1] Z) := by
+theorem not_isPi_succ_mem_iterate_jump : ¬IsPi Z (n + 1) (· ∈ Set.jump^[n + 1] Z) := by
   rw [Function.iterate_succ_apply', ← isPi_iterate_jump_succ_iff (m := 0)]
   exact not_isPi_one_jump
 
 /-- `Z⁽ⁿ⁺¹⁾` belongs to `Σ⁰ₘ(Z)` iff `n + 1 ≤ m`. -/
-theorem isSigma_iterate_jump_iff :
+theorem isSigma_mem_iterate_jump_iff :
     IsSigma Z m (· ∈ Set.jump^[n + 1] Z) ↔ n + 1 ≤ m :=
   ⟨fun hm => not_lt.1 fun hlt =>
-    not_isPi_succ_iterate_jump (isDelta_iff.1 (hm.delta_succ.of_le (by omega))).2,
-    isSigma_succ_iterate_jump.of_le⟩
+    not_isPi_succ_mem_iterate_jump (isDelta_iff.1 (hm.delta_succ.of_le (by omega))).2,
+    isSigma_succ_mem_iterate_jump.of_le⟩
 
 /-- `Z⁽ⁿ⁺¹⁾` belongs to `Π⁰ₘ(Z)` iff `n + 2 ≤ m`. -/
-theorem isPi_iterate_jump_iff :
+theorem isPi_mem_iterate_jump_iff :
     IsPi Z m (· ∈ Set.jump^[n + 1] Z) ↔ n + 2 ≤ m :=
-  ⟨fun hm => not_lt.1 fun hlt => not_isPi_succ_iterate_jump (hm.of_le (by omega)),
-    isSigma_succ_iterate_jump.pi_succ.of_le⟩
+  ⟨fun hm => not_lt.1 fun hlt => not_isPi_succ_mem_iterate_jump (hm.of_le (by omega)),
+    isSigma_succ_mem_iterate_jump.pi_succ.of_le⟩
 
 /-- `Z⁽ⁿ⁺¹⁾` belongs to `Δ⁰ₘ(Z)` iff `n + 2 ≤ m`. -/
-theorem isDelta_iterate_jump_iff :
+theorem isDelta_mem_iterate_jump_iff :
     IsDelta Z m (· ∈ Set.jump^[n + 1] Z) ↔ n + 2 ≤ m := by
-  rw [isDelta_iff, isSigma_iterate_jump_iff, isPi_iterate_jump_iff]
+  rw [isDelta_iff, isSigma_mem_iterate_jump_iff, isPi_mem_iterate_jump_iff]
   omega
 
 /-- `Z'` belongs to `Σ⁰ₘ(Z)` iff `1 ≤ m`. -/
-theorem isSigma_jump_iff : IsSigma Z m (· ∈ Z.jump) ↔ 1 ≤ m := by
-  simpa using isSigma_iterate_jump_iff (Z := Z) (n := 0) (m := m)
+theorem isSigma_mem_jump_iff : IsSigma Z m (· ∈ Z.jump) ↔ 1 ≤ m := by
+  simpa using isSigma_mem_iterate_jump_iff (Z := Z) (n := 0) (m := m)
 
 /-- `Z'` belongs to `Π⁰ₘ(Z)` iff `2 ≤ m`. -/
-theorem isPi_jump_iff : IsPi Z m (· ∈ Z.jump) ↔ 2 ≤ m := by
-  simpa using isPi_iterate_jump_iff (Z := Z) (n := 0) (m := m)
+theorem isPi_mem_jump_iff : IsPi Z m (· ∈ Z.jump) ↔ 2 ≤ m := by
+  simpa using isPi_mem_iterate_jump_iff (Z := Z) (n := 0) (m := m)
 
 /-- `Z'` belongs to `Δ⁰ₘ(Z)` iff `2 ≤ m`. -/
-theorem isDelta_jump_iff : IsDelta Z m (· ∈ Z.jump) ↔ 2 ≤ m := by
-  simpa using isDelta_iterate_jump_iff (Z := Z) (n := 0) (m := m)
+theorem isDelta_mem_jump_iff : IsDelta Z m (· ∈ Z.jump) ↔ 2 ≤ m := by
+  simpa using isDelta_mem_iterate_jump_iff (Z := Z) (n := 0) (m := m)
 
 /-- The parity join of `Z⁽ⁿ⁺¹⁾` with its complement belongs to `Δ⁰ₙ₊₂(Z)`. -/
 theorem isDelta_succ_succ_turingJoin_compl_iterate_jump :
@@ -378,14 +378,14 @@ theorem isDelta_succ_succ_turingJoin_compl_iterate_jump :
 /-- The parity join of `Z⁽ⁿ⁺¹⁾` with its complement does not belong to `Σ⁰ₙ₊₁(Z)`. -/
 theorem not_isSigma_succ_turingJoin_compl_iterate_jump :
     ¬IsSigma Z (n + 1) (· ∈ (Set.jump^[n + 1] Z).turingJoin (Set.jump^[n + 1] Z)ᶜ) := fun h =>
-  not_isPi_succ_iterate_jump <| isSigma_not_iff.1 <|
+  not_isPi_succ_mem_iterate_jump <| isSigma_not_iff.1 <|
     (h.preimage Primrec.nat_double_succ.computableIn).of_eq fun _ =>
       Set.two_mul_add_one_mem_turingJoin
 
 /-- The parity join of `Z⁽ⁿ⁺¹⁾` with its complement does not belong to `Π⁰ₙ₊₁(Z)`. -/
 theorem not_isPi_succ_turingJoin_compl_iterate_jump :
     ¬IsPi Z (n + 1) (· ∈ (Set.jump^[n + 1] Z).turingJoin (Set.jump^[n + 1] Z)ᶜ) := fun h =>
-  not_isPi_succ_iterate_jump <|
+  not_isPi_succ_mem_iterate_jump <|
     (h.preimage Primrec.nat_double.computableIn).of_eq fun _ =>
       Set.two_mul_mem_turingJoin
 
@@ -397,8 +397,8 @@ theorem strictMono_setOf_isSigma (Z : Set ℕ) :
   rw [Set.ssubset_def]
   refine ⟨fun _ hp => hp.of_le hnm.le, fun hsub => ?_⟩
   have hmem : IsSigma Z n (· ∈ Set.jump^[n + 1] Z) :=
-    hsub (isSigma_iterate_jump_iff.2 hnm)
-  exact (not_le_of_gt n.lt_succ_self) (isSigma_iterate_jump_iff.1 hmem)
+    hsub (isSigma_mem_iterate_jump_iff.2 hnm)
+  exact (not_le_of_gt n.lt_succ_self) (isSigma_mem_iterate_jump_iff.1 hmem)
 
 /-- **Arithmetical Hierarchy Theorem (`Π⁰` strictness).** Relative to every oracle `Z`, the
 sequence of `Π⁰ₙ(Z)` pointclasses on `ℕ` is strictly increasing for all `n : ℕ`. -/
@@ -408,10 +408,10 @@ theorem strictMono_setOf_isPi (Z : Set ℕ) :
   rw [Set.ssubset_def]
   refine ⟨fun _ hp => hp.of_le hnm.le, fun hsub => ?_⟩
   have hmem : IsPi Z m (· ∉ Set.jump^[n + 1] Z) :=
-    isPi_not_iff.2 (isSigma_iterate_jump_iff.2 hnm)
+    isPi_not_iff.2 (isSigma_mem_iterate_jump_iff.2 hnm)
   have hmem' : IsSigma Z n (· ∈ Set.jump^[n + 1] Z) :=
     isPi_not_iff.1 (hsub hmem)
-  exact (not_le_of_gt n.lt_succ_self) (isSigma_iterate_jump_iff.1 hmem')
+  exact (not_le_of_gt n.lt_succ_self) (isSigma_mem_iterate_jump_iff.1 hmem')
 
 /-- **Arithmetical Hierarchy Theorem (`Δ⁰` strictness).** Relative to every oracle `Z`, the
 sequence of `Δ⁰ₙ₊₁(Z)` pointclasses on `ℕ` is strictly increasing in `n : ℕ`. -/
@@ -421,15 +421,15 @@ theorem strictMono_setOf_isDelta_succ (Z : Set ℕ) :
   rw [Set.ssubset_def]
   refine ⟨fun _ hp => hp.of_le (Nat.succ_le_succ hnm.le), fun hsub => ?_⟩
   have hmem : IsDelta Z (n + 1) (· ∈ Set.jump^[n + 1] Z) :=
-    hsub (isDelta_iterate_jump_iff.2 (Nat.succ_le_succ hnm))
-  exact (not_le_of_gt (n + 1).lt_succ_self) (isDelta_iterate_jump_iff.1 hmem)
+    hsub (isDelta_mem_iterate_jump_iff.2 (Nat.succ_le_succ hnm))
+  exact (not_le_of_gt (n + 1).lt_succ_self) (isDelta_mem_iterate_jump_iff.1 hmem)
 
 /-- At every positive level `n + 1`, `Δ⁰ₙ₊₁(Z)` is a proper subclass of `Σ⁰ₙ₊₁(Z)`. -/
 theorem setOf_isDelta_ssubset_setOf_isSigma_succ (Z : Set ℕ) (n : ℕ) :
     {p : ℕ → Prop | IsDelta Z (n + 1) p} ⊂ {p : ℕ → Prop | IsSigma Z (n + 1) p} := by
   rw [Set.ssubset_def]
   exact ⟨fun _ hp => (isDelta_iff.1 hp).1, fun hsub =>
-    not_isPi_succ_iterate_jump (isDelta_iff.1 (hsub isSigma_succ_iterate_jump)).2⟩
+    not_isPi_succ_mem_iterate_jump (isDelta_iff.1 (hsub isSigma_succ_mem_iterate_jump)).2⟩
 
 /-- At every positive level `n + 1`, `Δ⁰ₙ₊₁(Z)` is a proper subclass of `Π⁰ₙ₊₁(Z)`. -/
 theorem setOf_isDelta_ssubset_setOf_isPi_succ (Z : Set ℕ) (n : ℕ) :
@@ -437,19 +437,20 @@ theorem setOf_isDelta_ssubset_setOf_isPi_succ (Z : Set ℕ) (n : ℕ) :
   rw [Set.ssubset_def]
   refine ⟨fun _ hp => (isDelta_iff.1 hp).2, fun hsub => ?_⟩
   have hcompl : IsPi Z (n + 1) (· ∉ Set.jump^[n + 1] Z) :=
-    isPi_not_iff.2 isSigma_succ_iterate_jump
-  exact not_isPi_succ_iterate_jump (isSigma_not_iff.1 (isDelta_iff.1 (hsub hcompl)).1)
+    isPi_not_iff.2 isSigma_succ_mem_iterate_jump
+  exact not_isPi_succ_mem_iterate_jump (isSigma_not_iff.1 (isDelta_iff.1 (hsub hcompl)).1)
 
 /-- At every positive level `n + 1`, `Σ⁰ₙ₊₁(Z)` is not contained in `Π⁰ₙ₊₁(Z)`. -/
 theorem not_setOf_isSigma_subset_setOf_isPi_succ (Z : Set ℕ) (n : ℕ) :
     ¬({p : ℕ → Prop | IsSigma Z (n + 1) p} ⊆ {p : ℕ → Prop | IsPi Z (n + 1) p}) :=
-  fun hsub => not_isPi_succ_iterate_jump (hsub isSigma_succ_iterate_jump)
+  fun hsub => not_isPi_succ_mem_iterate_jump (hsub isSigma_succ_mem_iterate_jump)
 
 /-- At every positive level `n + 1`, `Π⁰ₙ₊₁(Z)` is not contained in `Σ⁰ₙ₊₁(Z)`. -/
 theorem not_setOf_isPi_subset_setOf_isSigma_succ (Z : Set ℕ) (n : ℕ) :
     ¬({p : ℕ → Prop | IsPi Z (n + 1) p} ⊆ {p : ℕ → Prop | IsSigma Z (n + 1) p}) :=
   fun hsub =>
-    not_isPi_succ_iterate_jump (isSigma_not_iff.1 (hsub (isPi_not_iff.2 isSigma_succ_iterate_jump)))
+    not_isPi_succ_mem_iterate_jump
+      (isSigma_not_iff.1 (hsub (isPi_not_iff.2 isSigma_succ_mem_iterate_jump)))
 
 /-- At every positive level `n + 1`, `Σ⁰ₙ₊₁(Z) ∪ Π⁰ₙ₊₁(Z)` is a proper subclass of `Δ⁰ₙ₊₂(Z)`. -/
 theorem setOf_isSigma_union_setOf_isPi_ssubset_setOf_isDelta_succ_succ (Z : Set ℕ) (n : ℕ) :

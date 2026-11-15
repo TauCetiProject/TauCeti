@@ -41,28 +41,13 @@ of a partial function recursive in `Z`, by least-witness search. -/
 theorem IsSigma.exists_recursiveIn_domain (h : IsSigma Z 1 p) :
     ∃ f : α →. ℕ, RecursiveIn {Z.oracle} f ∧ ∀ x, p x ↔ (f x).Dom := by
   obtain ⟨b, hb, heq⟩ := isSigma_one_iff.1 h
-  have hnot := Primrec.not.computableIn.comp hb
-  unfold ComputableIn RecursiveIn at hnot
-  refine ⟨fun x => Nat.rfind fun y => Part.some (b (x, y)), ?_, fun x => ?_⟩
-  · -- Compare encodings, keeping invalid input codes undefined. Numerical search succeeds
-    -- at zero, so negate the Boolean matrix to exchange its codes.
-    unfold RecursiveIn
-    exact hnot.rfind.of_eq fun n => by
-      cases e : decode (α := α) n with
-      | none =>
-        simpa [e, decode_prod_val] using Nat.rfind_zero_none (fun _ => Part.none) rfl
-      | some x =>
-        simp only [decode_prod_val, Nat.unpair_pair, decode_nat, Option.map_some, e,
-          Option.bind_some, Part.map_some, Part.map_eq_map, Part.coe_some, Part.bind_some]
-        congr 1
-        funext y
-        cases b (x, y) <;> rfl
-  · refine (heq x).trans ⟨?_, ?_⟩
-    · rintro ⟨y, hy⟩
-      exact Nat.rfind_dom.2 ⟨y, by simp [hy], fun _ => trivial⟩
-    · intro hdom
-      obtain ⟨y, hy, -⟩ := Nat.rfind_dom.1 hdom
-      exact ⟨y, (Part.mem_some_iff.1 hy).symm⟩
+  refine ⟨fun x => Nat.rfind fun y => Part.some (b (x, y)),
+    RecursiveIn.rfind hb.recursiveIn, fun x => (heq x).trans ⟨?_, ?_⟩⟩
+  · rintro ⟨y, hy⟩
+    exact Nat.rfind_dom.2 ⟨y, by simp [hy], fun _ => trivial⟩
+  · intro hdom
+    obtain ⟨y, hy, -⟩ := Nat.rfind_dom.1 hdom
+    exact ⟨y, (Part.mem_some_iff.1 hy).symm⟩
 
 /-- The domain of an oracle program is Σ⁰₁: a number belongs exactly when a finite successful
 run is found at some fuel bound. -/
@@ -163,22 +148,12 @@ theorem isDelta_one_iff : IsDelta Z 1 p ↔ IsSigma Z 0 p := by
         exact ⟨y, by simp [hy]⟩
       · obtain ⟨y, hy⟩ := (heq₂ x).1 hx
         exact ⟨y, by simp [hy]⟩
-    have hnot : ComputableIn {Z.oracle} (fun a : α × ℕ => !(b₁ a || b₂ a)) :=
-      Primrec.not.computableIn.comp (Primrec.or.computableIn.comp (hb₁.pair hb₂))
-    have hw : ComputableIn {Z.oracle} (fun x : α => Nat.find (hex x)) := by
-      unfold ComputableIn RecursiveIn at hnot ⊢
-      refine hnot.rfind.of_eq fun n => ?_
-      cases e : decode (α := α) n with
-      | none =>
-        simpa [e, decode_prod_val] using Nat.rfind_zero_none (fun _ => Part.none) rfl
-      | some x =>
-        simp only [decode_prod_val, Nat.unpair_pair, decode_nat, Option.map_some, e,
-          Option.bind_some, Part.map_some, Part.map_eq_map, Part.coe_some, Part.bind_some,
-          encode_nat]
-        refine (congrArg Nat.rfind (funext fun y => ?_)).trans (Part.eq_some_iff.2 <|
-          Nat.mem_rfind.2 ⟨Part.mem_some_iff.2 (Nat.find_spec (hex x)).symm,
-            fun {m} hm => Part.mem_some_iff.2 (Bool.eq_false_iff.2 (Nat.find_min (hex x) hm)).symm⟩)
-        cases b₁ (x, y) || b₂ (x, y) <;> rfl
+    have hor : ComputableIn₂ {Z.oracle} (fun x y => b₁ (x, y) || b₂ (x, y)) :=
+      Primrec.or.computableIn.comp (hb₁.pair hb₂)
+    have hw : ComputableIn {Z.oracle} (fun x : α => Nat.find (hex x)) :=
+      (RecursiveIn.rfind hor.recursiveIn₂).of_eq_tot fun x =>
+        Nat.mem_rfind.2 ⟨Part.mem_some_iff.2 (Nat.find_spec (hex x)).symm,
+          fun hm => Part.mem_some_iff.2 (Bool.eq_false_iff.2 (Nat.find_min (hex x) hm)).symm⟩
     refine isSigma_zero_iff.2 ⟨fun x => b₁ (x, Nat.find (hex x)),
       hb₁.comp (ComputableIn.id.pair hw), fun x => ?_⟩
     constructor
