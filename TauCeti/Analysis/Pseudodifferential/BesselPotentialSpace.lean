@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Composition.Parametrix
+public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
+public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier
-import TauCeti.Analysis.Pseudodifferential.Sobolev
 import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
@@ -36,10 +36,8 @@ The operators on the different `H^{s,p}` are compatible: `Op(a) u` only depends 
 of `a` and on the tempered distribution `u`. They compose as the symbols do, `Op(a # b) =
 Op(a) Op(b)`, the symbol `φ(x)` gives the multiplication by `φ`, and smoothing symbols give
 operators `H^{r,p} → H^{s,p}` for all `r` and `s`. These are the ingredients of the local
-parametrix of an elliptic operator, which gives **interior elliptic regularity** on `H^{s,p}`: if
-`P` is elliptic of order `m`, `a` agrees with `P` near the support of a compactly supported `φ`,
-`u ∈ H^{t,p}` and `Op(a) u ∈ H^{s - m,p}`, then `φ u ∈ H^{s,p}`, with the estimate
-`‖φ u‖_{H^{s,p}} ≤ C (‖Op(a) u‖_{H^{s - m,p}} + ‖u‖_{H^{t,p}})`.
+parametrix of an elliptic operator, which gives interior elliptic regularity on `H^{s,p}`
+(`TauCeti/Analysis/Pseudodifferential/BesselPotentialSpace/EllipticRegularity.lean`).
 
 ## The argument
 
@@ -81,11 +79,6 @@ these bounds over `η`.
   operators.
 * `TauCeti.Symbol.IsSmoothing.exists_continuousLinearMap_toDistr_quantizeBesselPotentialSpace_eq`:
   smoothing operators gain every number of derivatives.
-* `TauCeti.Symbol.IsEllipticAbove.exists_isSmoothing_and_toDistr_quantizeBesselPotentialSpace_eq`:
-  the local parametrix identity `Op(q) Op(a) = φ + Op(r)` with `r` smoothing.
-* `TauCeti.Symbol.IsEllipticAbove.memSobolev_smulLeftCLM_of_one_lt`: interior elliptic regularity.
-* `TauCeti.Symbol.IsEllipticAbove.exists_norm_le_of_toDistr_eq_smulLeftCLM`: the interior
-  elliptic estimate.
 
 ## References
 
@@ -95,9 +88,6 @@ these bounds over `η`.
 * L. Grafakos, *Classical Fourier Analysis*, 3rd ed., Theorem 6.2.7 (Mihlin–Hörmander).
 * G. B. Folland, *Real Analysis: Modern Techniques and Their Applications*, 2nd ed.,
   Theorem 6.19 (Minkowski's integral inequality).
-* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I,
-  (4.6)–(4.11) (the local parametrix and elliptic regularity), and Lecture II, (3.1)–(3.8) (their
-  `Lᵖ` versions).
 -/
 
 public section
@@ -105,7 +95,7 @@ public section
 noncomputable section
 
 open MeasureTheory Real FourierTransform SchwartzMap
-open scoped ContDiff RealInnerProductSpace SchwartzMap ENNReal NNReal BesselPotentialSpace Topology
+open scoped ContDiff RealInnerProductSpace SchwartzMap ENNReal NNReal BesselPotentialSpace
 
 namespace TauCeti
 
@@ -524,14 +514,11 @@ private theorem toDistr_quantizeBesselPotentialSpace_congr_of_le {m' : ℝ} {b :
     (huv : u.toDistr = v.toDistr) :
     (a.quantizeBesselPotentialSpace ha s p u).toDistr =
       (b.quantizeBesselPotentialSpace hb t p v).toDistr := by
-  rcases hts.lt_or_eq with hts | rfl
-  · have hv : v = BesselPotentialSpace.inclusionOfLT _ _ p hts u :=
-      BesselPotentialSpace.ext (by rw [BesselPotentialSpace.toDistr_inclusionOfLT, huv])
-    rw [hv]
-    exact toDistr_quantizeBesselPotentialSpace_comp hab ha hb hp hp_top _
-      (BesselPotentialSpace.toDistr_inclusionOfLT _) u
-  · obtain rfl : v = u := BesselPotentialSpace.ext huv.symm
-    exact toDistr_quantizeBesselPotentialSpace_comp hab ha hb hp hp_top (.id ℂ _) (fun _ ↦ rfl) v
+  have hv : v = BesselPotentialSpace.inclusionOfLE _ _ p hts u :=
+    BesselPotentialSpace.ext (by rw [BesselPotentialSpace.toDistr_inclusionOfLE, huv])
+  rw [hv]
+  exact toDistr_quantizeBesselPotentialSpace_comp hab ha hb hp hp_top _
+    (BesselPotentialSpace.toDistr_inclusionOfLE _) u
 
 /-- **Compatibility of the extensions.** The operator `Op(a) : H^{s,p} → H^{s - m,p}` only depends
 on the coefficient of `a` and on the tempered distribution of its argument: symbols `a` and `b` of
@@ -670,128 +657,10 @@ theorem IsSmoothing.exists_continuousLinearMap_toDistr_quantizeBesselPotentialSp
   have hbK := ha.of_coefficient_eq hb
   -- `b` has order `r - s` and the coefficient of `a`, so `Op(b)` maps `H^{r,p}` to
   -- `H^{r - (r - s),p}`, which is `H^{s,p}`.
-  have key : ∀ s', r - (r - s) = s' → ∃ T : H^{r, p}(CoordinateSpace n, V) →L[ℂ]
-      H^{s', p}(CoordinateSpace n, W),
-        ∀ u, (T u).toDistr = (b.quantizeBesselPotentialSpace hbK r p u).toDistr := by
-    rintro s' rfl
-    exact ⟨_, fun _ ↦ rfl⟩
-  obtain ⟨T, hT⟩ := key s (sub_sub_cancel r s)
-  refine ⟨T, fun huv ↦ ?_⟩
-  rw [hT]
+  refine ⟨BesselPotentialSpace.inclusionOfLE _ _ p (sub_sub_cancel r s).ge ∘L
+    b.quantizeBesselPotentialSpace hbK r p, fun huv ↦ ?_⟩
+  rw [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusionOfLE]
   exact toDistr_quantizeBesselPotentialSpace_congr hb.symm ha hbK hp hp_top huv
-
-/-! ### Interior elliptic regularity on `H^{s,p}` -/
-
-variable {R : ℝ} {P : Symbol n V W m}
-
-/-- **The local parametrix of an elliptic operator on `H^{s,p}`.** Let `P` be elliptic of order
-`m`, let `φ` be a compactly supported Schwartz function, and let `a` be a symbol with compact
-spatial support that agrees with `P` on a neighbourhood of `tsupport φ`. There are a symbol `q` of
-order `-m` and a smoothing symbol `r`, both with compact spatial support, such that
-`Op(q) Op(a) u = φ u + Op(r) u` for every `u ∈ H^{s,p}`, every real `s` and every `1 < p < ∞`. -/
-theorem IsEllipticAbove.exists_isSmoothing_and_toDistr_quantizeBesselPotentialSpace_eq
-    (hP : P.IsEllipticAbove R) (ha : a.HasCompactSpatialSupport) {φ : 𝓢(CoordinateSpace n, ℂ)}
-    (hφ : HasCompactSupport φ)
-    (haP : ∀ᶠ x in 𝓝ˢ (tsupport φ), ∀ ξ, a.coefficient (x, ξ) = P.coefficient (x, ξ)) :
-    ∃ (q : Symbol n W V (-m)) (hq : q.HasCompactSpatialSupport) (r : Symbol n V V (-m + m))
-      (hr : r.HasCompactSpatialSupport), r.IsSmoothing ∧
-        ∀ (p : ℝ≥0∞) [Fact (1 ≤ p)], 1 < p → p ≠ (∞ : ℝ≥0∞) →
-          ∀ (s : ℝ) (u : H^{s, p}(CoordinateSpace n, V)),
-          (q.quantizeBesselPotentialSpace hq (s - m) p
-              (a.quantizeBesselPotentialSpace ha s p u)).toDistr =
-            TemperedDistribution.smulLeftCLM V (φ : CoordinateSpace n → ℂ) u.toDistr +
-              (r.quantizeBesselPotentialSpace hr s p u).toDistr := by
-  obtain ⟨b, hL, -⟩ := hP.exists_isAsymptoticSum_sharpTerm
-  have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := V) hφ
-  set F := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) ((φ.smooth ⊤).smul contDiff_const)
-  set q := inclusion (zero_add (-m)).le (F.comp b)
-  have hq : q.HasCompactSpatialSupport := (hF.comp_right b).inclusion _
-  have hqb : ∀ x ξ, q.coefficient (x, ξ) = φ x • b.coefficient (x, ξ) := fun x ξ ↦ by
-    simp [q, F]
-  have hF' := hF.inclusion (neg_add_cancel m).ge
-  have hr := (hq.sharp ha).sub hF'
-  refine ⟨q, hq, _, hr, isSmoothing_sharp_sub_ofSpatial hL (φ.smooth ⊤) hqb ha haP,
-    fun p _ hp hp_top s u ↦ ?_⟩
-  -- `q # a = F + (q # a - F)`, where `F` is the symbol of the multiplication by `φ`.
-  rw [← toDistr_quantizeBesselPotentialSpace_sharp hq ha s hp hp_top,
-    toDistr_quantizeBesselPotentialSpace_congr
-      (b := inclusion (neg_add_cancel m).ge F + (q.sharp a ha - inclusion (neg_add_cancel m).ge F))
-      (by simp) (hq.sharp ha) (hF'.add hr) hp hp_top rfl,
-    quantizeBesselPotentialSpace_add hF' hr _ s hp hp_top, add_apply,
-    BesselPotentialSpace.toDistr_add,
-    toDistr_quantizeBesselPotentialSpace_congr (by simp) hF' hF hp hp_top rfl,
-    toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id φ hF s hp hp_top]
-
-/-- **Interior elliptic regularity on `H^{s,p}`.** Let `1 < p < ∞`, let `P` be elliptic of order
-`m`, let `φ` be a compactly supported Schwartz function, and let `a` be a symbol with compact
-spatial support that agrees with `P` on a neighbourhood of `tsupport φ`. If `u ∈ H^{t,p}` and
-`Op(a) u ∈ H^{s - m,p}`, then `φ u ∈ H^{s,p}`, for all real `s` and `t`. The case `p = 2` for
-Hilbert-space fibres is `TauCeti.Symbol.IsEllipticAbove.memSobolev_smulLeftCLM`. -/
-theorem IsEllipticAbove.memSobolev_smulLeftCLM_of_one_lt (hP : P.IsEllipticAbove R)
-    (ha : a.HasCompactSpatialSupport) {φ : 𝓢(CoordinateSpace n, ℂ)} (hφ : HasCompactSupport φ)
-    (haP : ∀ᶠ x in 𝓝ˢ (tsupport φ), ∀ ξ, a.coefficient (x, ξ) = P.coefficient (x, ξ))
-    (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) {s t : ℝ} {u : H^{t, p}(CoordinateSpace n, V)}
-    (hu : (a.quantizeBesselPotentialSpace ha t p u).toDistr.MemSobolev (s - m) p) :
-    (TemperedDistribution.smulLeftCLM V (φ : CoordinateSpace n → ℂ) u.toDistr).MemSobolev s p := by
-  obtain ⟨q, hq, r, hr, hrS, h⟩ :=
-    hP.exists_isSmoothing_and_toDistr_quantizeBesselPotentialSpace_eq ha hφ haP
-  -- `φ u = Op(q) (Op(a) u) - Op(r) u`, where `Op(q)` gains `m` derivatives on `Op(a) u` and the
-  -- smoothing `Op(r)` gains every number of derivatives.
-  have h₁ : (q.quantizeBesselPotentialSpace hq (t - m) p
-      (a.quantizeBesselPotentialSpace ha t p u)).toDistr.MemSobolev s p := by
-    rw [toDistr_quantizeBesselPotentialSpace_congr rfl hq hq hp hp_top
-      (v := hu.toBesselPotentialSpace) hu.toBesselPotentialSpace_toDistr.symm]
-    simpa using BesselPotentialSpace.memSobolev_toDistr
-      (q.quantizeBesselPotentialSpace hq (s - m) p hu.toBesselPotentialSpace)
-  obtain ⟨T, hT⟩ := hrS.exists_continuousLinearMap_toDistr_quantizeBesselPotentialSpace_eq hr hp
-    hp_top t s
-  have h₂ : (r.quantizeBesselPotentialSpace hr t p u).toDistr.MemSobolev s p := by
-    rw [hT rfl]
-    exact BesselPotentialSpace.memSobolev_toDistr _
-  simpa [h p hp hp_top t u] using h₁.sub h₂
-
-/-- **Interior elliptic estimate on `H^{s,p}`.** Let `1 < p < ∞`, let `P` be elliptic of order
-`m`, let `φ` be a compactly supported Schwartz function, and let `a` be a symbol with compact
-spatial support that agrees with `P` on a neighbourhood of `tsupport φ`. For all real `s` and `t`
-there is `C` such that for every `u ∈ H^{t,p}` with `Op(a) u ∈ H^{s - m,p}`,
-
-`‖φ u‖_{H^{s,p}} ≤ C (‖Op(a) u‖_{H^{s - m,p}} + ‖u‖_{H^{t,p}})`,
-
-where `φ u ∈ H^{s,p}` by `TauCeti.Symbol.IsEllipticAbove.memSobolev_smulLeftCLM_of_one_lt`. Here
-`f` and `w` are the elements of `H^{s - m,p}` and `H^{s,p}` with the tempered distributions of
-`Op(a) u` and `φ u`. The order `t` is arbitrary: `u` need not lie in `H^{s,p}`. -/
-theorem IsEllipticAbove.exists_norm_le_of_toDistr_eq_smulLeftCLM (hP : P.IsEllipticAbove R)
-    (ha : a.HasCompactSpatialSupport) {φ : 𝓢(CoordinateSpace n, ℂ)} (hφ : HasCompactSupport φ)
-    (haP : ∀ᶠ x in 𝓝ˢ (tsupport φ), ∀ ξ, a.coefficient (x, ξ) = P.coefficient (x, ξ))
-    (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) (s t : ℝ) :
-    ∃ C, ∀ (u : H^{t, p}(CoordinateSpace n, V)) (f : H^{s - m, p}(CoordinateSpace n, W))
-      (w : H^{s, p}(CoordinateSpace n, V)),
-        f.toDistr = (a.quantizeBesselPotentialSpace ha t p u).toDistr →
-        w.toDistr = TemperedDistribution.smulLeftCLM V (φ : CoordinateSpace n → ℂ) u.toDistr →
-          ‖w‖ ≤ C * (‖f‖ + ‖u‖) := by
-  obtain ⟨q, hq, r, hr, hrS, h⟩ :=
-    hP.exists_isSmoothing_and_toDistr_quantizeBesselPotentialSpace_eq ha hφ haP
-  obtain ⟨T, hT⟩ := hrS.exists_continuousLinearMap_toDistr_quantizeBesselPotentialSpace_eq hr hp
-    hp_top t s
-  -- `Op(q)` maps `H^{s - m,p}` to `H^{s - m - (-m),p}`, which is `H^{s,p}`.
-  have key : ∀ s', s - m - -m = s' → ∃ Q : H^{s - m, p}(CoordinateSpace n, W) →L[ℂ]
-      H^{s', p}(CoordinateSpace n, V),
-        ∀ f, (Q f).toDistr = (q.quantizeBesselPotentialSpace hq (s - m) p f).toDistr := by
-    rintro s' rfl
-    exact ⟨_, fun _ ↦ rfl⟩
-  obtain ⟨Q, hQ⟩ := key s (by ring)
-  refine ⟨‖Q‖ + ‖T‖, fun u f w hf hw ↦ ?_⟩
-  -- `w = Op(q) f - Op(r) u`, with `Op(q) : H^{s - m,p} → H^{s,p}` and `Op(r) : H^{t,p} → H^{s,p}`.
-  have hw' : w = Q f - T u := by
-    refine BesselPotentialSpace.ext ?_
-    rw [hw, BesselPotentialSpace.toDistr_sub, ← hT rfl, hQ,
-      toDistr_quantizeBesselPotentialSpace_congr rfl hq hq hp hp_top hf,
-      h p hp hp_top t u, add_sub_cancel_right]
-  rw [hw']
-  calc ‖Q f - T u‖ ≤ ‖Q‖ * ‖f‖ + ‖T‖ * ‖u‖ :=
-        (norm_sub_le _ _).trans (add_le_add (Q.le_opNorm f) (T.le_opNorm u))
-    _ ≤ (‖Q‖ + ‖T‖) * (‖f‖ + ‖u‖) := by
-        nlinarith [norm_nonneg Q, norm_nonneg T, norm_nonneg f, norm_nonneg u]
 
 end Symbol
 

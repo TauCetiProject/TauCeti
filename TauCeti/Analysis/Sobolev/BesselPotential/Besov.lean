@@ -58,8 +58,8 @@ estimates, paraproducts) specialize to `H^s`.
   linear map.
 * `TauCeti.BesovSpace.toBesselPotentialSpace`: the inclusion `B^s_{p,1} → H^{s,p}` as a
   continuous linear map.
-* `BesselPotentialSpace.inclusionOfLT`: the inclusion `H^{s,p} → H^{s',p}` for `s' < s`, which
-  factors through `B^s_{p,∞} ⊆ B^{s'}_{p,1}`.
+* `BesselPotentialSpace.inclusionOfLE`: the inclusion `H^{s,p} → H^{s',p}` for `s' ≤ s`, which
+  for `s' < s` factors through `B^s_{p,∞} ⊆ B^{s'}_{p,1}`.
 * `TemperedDistribution.memBesov_two_two_iff_memSobolev`: `u ∈ B^s_{2,2}` if and only if
   `u ∈ H^{s,2}`.
 * `TauCeti.BesovSpace.besselPotentialSpaceEquiv`: the identity on tempered distributions as an
@@ -250,21 +250,32 @@ open TauCeti
 variable {s' : ℝ}
 
 variable (E F p) in
-/-- **Strict monotonicity of the Bessel-potential scale.** For `s' < s`, the inclusion
-`H^{s,p} ⊆ H^{s',p}` as a continuous linear map, for every `1 ≤ p ≤ ∞` and every complete
-normed `F`. It keeps the underlying tempered distribution
-(`BesselPotentialSpace.toDistr_inclusionOfLT`). It factors through the Besov spaces as
-`H^{s,p} ⊆ B^s_{p,∞} ⊆ B^{s'}_{p,1} ⊆ H^{s',p}`, for the Besov spaces built from any bump
-function. For `p = 2` and Hilbert-space values, `BesselPotentialSpace.inclusion` is the inclusion
-for `s' ≤ s`, with norm at most `1`. -/
-def inclusionOfLT (h : s' < s) : H^{s, p}(E, F) →L[ℂ] H^{s', p}(E, F) :=
-  BesovSpace.toBesselPotentialSpace ∘L
-    BesovSpace.inclusionOfLT F (default : ContDiffBump (0 : E)) p ∞ 1 h ∘L toBesovSpace default
+/-- **The inclusion `H^{s,p} ⊆ H^{s',p}` for `s' ≤ s`**, as a continuous linear map, for every
+`1 ≤ p ≤ ∞` and every complete normed `F`. It keeps the underlying tempered distribution
+(`BesselPotentialSpace.toDistr_inclusionOfLE`). For `s' < s` it factors through the Besov spaces
+as `H^{s,p} ⊆ B^s_{p,∞} ⊆ B^{s'}_{p,1} ⊆ H^{s',p}`, for the Besov spaces built from any bump
+function; for `s' = s` it is `BesselPotentialSpace.copy`. For `p = 2` and Hilbert-space values,
+`BesselPotentialSpace.inclusion` is the same inclusion, with norm at most `1`. -/
+def inclusionOfLE (h : s' ≤ s) : H^{s, p}(E, F) →L[ℂ] H^{s', p}(E, F) :=
+  if hs : s' < s then
+    BesovSpace.toBesselPotentialSpace ∘L
+      BesovSpace.inclusionOfLT F (default : ContDiffBump (0 : E)) p ∞ 1 hs ∘L toBesovSpace default
+  else
+    have hs : s = s' := le_antisymm (not_lt.mp hs) h
+    LinearMap.mkContinuous
+      { toFun u := u.copy s' hs
+        map_add' u v := ext (by simp only [toDistr_copy _ hs, toDistr_add])
+        map_smul' c u := ext (by simp only [toDistr_copy _ hs, toDistr_smul, RingHom.id_apply]) }
+      1 fun u ↦ by simp only [← norm_toLp_eq, LinearMap.coe_mk, AddHom.coe_mk, toLp_copy _ hs,
+        one_mul, le_refl]
 
 @[simp]
-theorem toDistr_inclusionOfLT (h : s' < s) (u : H^{s, p}(E, F)) :
-    (inclusionOfLT E F p h u).toDistr = u.toDistr := by
-  simp [inclusionOfLT]
+theorem toDistr_inclusionOfLE (h : s' ≤ s) (u : H^{s, p}(E, F)) :
+    (inclusionOfLE E F p h u).toDistr = u.toDistr := by
+  unfold inclusionOfLE
+  split_ifs with hs
+  · simp
+  · exact toDistr_copy u (le_antisymm (not_lt.mp hs) h)
 
 end BesselPotentialSpace
 
