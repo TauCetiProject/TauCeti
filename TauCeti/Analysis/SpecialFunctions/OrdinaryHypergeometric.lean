@@ -19,12 +19,14 @@ coefficients take the junk value `0`, and the radius is `⊤`. This file records
 consequence that the radius is always at least `1`, so `₂F₁(a, b; c; ·)` is analytic on the open
 unit ball for all parameters.
 
-Over `ℝ` or `ℂ`, the series can be differentiated termwise inside its disc of convergence. This
-gives the iterated derivatives `(a)ₙ (b)ₙ / (c)ₙ` of `₂F₁(a, b; c; ·)` at `0`, and shows that, when
-`c` is not a nonpositive integer, `y = ₂F₁(a, b; c; ·)` solves **Gauss's hypergeometric equation**
-`x (1 - x) y'' + (c - (a + b + 1) x) y' - a b y = 0` (DLMF 15.10.1) on the open unit disc, and on
-the whole field when the series terminates. The equation is equivalent to the recurrence
-`(n + 1) (c + n) cₙ₊₁ = (a + n) (b + n) cₙ` for the coefficients `cₙ` of the series.
+Over a complete nontrivially normed field of characteristic zero, the series can be
+differentiated termwise inside its disc of convergence. This shows that, when `c` is not a
+nonpositive integer, `y = ₂F₁(a, b; c; ·)` solves **Gauss's hypergeometric equation**
+`x (1 - x) y'' + (c - (a + b + 1) x) y' - a b y = 0` (DLMF 15.10.1) inside that disc. Over `ℝ` or
+`ℂ`, this gives the iterated derivatives `(a)ₙ (b)ₙ / (c)ₙ` of `₂F₁(a, b; c; ·)` at `0`, and the
+equation on the open unit disc, and on the whole field when the series terminates. The equation
+is equivalent to the recurrence `(n + 1) (c + n) cₙ₊₁ = (a + n) (b + n) cₙ` for the coefficients
+`cₙ` of the series.
 
 ## Main statements
 
@@ -122,6 +124,12 @@ theorem deriv_ordinaryHypergeometric_zero (a b c : 𝕂) :
   rw [← iteratedDeriv_one, iteratedDeriv_ordinaryHypergeometric_zero]
   simp
 
+end Scalar
+
+section GaussEquation
+
+variable {𝕂 : Type*} [NontriviallyNormedField 𝕂] [CompleteSpace 𝕂] [CharZero 𝕂]
+
 /-- **Gauss's hypergeometric differential equation.** If the lower parameter `c` is not a
 nonpositive integer, then `y = ₂F₁(a, b; c; ·)` satisfies
 `x (1 - x) y'' + (c - (a + b + 1) x) y' - a b y = 0` at every `x` inside the disc of convergence of
@@ -136,8 +144,7 @@ theorem ordinaryHypergeometric_gaussEquation (a b c : 𝕂) (hc : ∀ k : ℕ, (
   -- scalar series `ofScalars 𝕂 C`
   have hf : HasFPowerSeriesOnBall f (FormalMultilinearSeries.ofScalars 𝕂 C) 0
       (ordinaryHypergeometricSeries 𝕂 a b c).radius :=
-    (ordinaryHypergeometricSeries 𝕂 a b c).hasFPowerSeriesOnBall
-      (zero_lt_one.trans_le (one_le_radius_ordinaryHypergeometricSeries 𝕂 a b c))
+    (ordinaryHypergeometricSeries 𝕂 a b c).hasFPowerSeriesOnBall (pos_of_gt hx)
   have hf' := hf.deriv_ofScalars
   have hxb : x ∈ Metric.eball (0 : 𝕂) (ordinaryHypergeometricSeries 𝕂 a b c).radius :=
     mem_eball_zero_iff.mpr hx
@@ -166,6 +173,12 @@ theorem ordinaryHypergeometric_gaussEquation (a b c : 𝕂) (hc : ∀ k : ℕ, (
     linear_combination x ^ n * hrec
   rw [hzero] at hsum
   linear_combination hsum.unique hasSum_zero
+
+end GaussEquation
+
+section Scalar
+
+variable {𝕂 : Type*} [RCLike 𝕂]
 
 /-- **Gauss's hypergeometric differential equation** on the open unit disc. -/
 theorem ordinaryHypergeometric_gaussEquation_of_norm_lt_one (a b c : 𝕂)
