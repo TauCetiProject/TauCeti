@@ -64,7 +64,7 @@ also `m`.
   analytic at `z₀` is the order of vanishing of `f - f z₀` at `z₀`.
 * `TauCeti.HomologicalOrientation.localIndex_pos_iff_of_analyticAt`: it is positive exactly when
   `f` is not constant near `z₀`.
-* `TauCeti.HomologicalOrientation.localIndex_pow_zero`: `z ↦ z ^ m` has local index `m` at `0`.
+* `TauCeti.HomologicalOrientation.localIndex_pow`: `z ↦ z ^ m` has local index `m` at `0`.
 * `TauCeti.HomologicalOrientation.localIndex_conj`: complex conjugation has local index `-1`.
 * `TauCeti.HomologicalOrientation.localIndex_comap_eq_one_of_hasDerivAt`,
   `TauCeti.HomologicalOrientation.localIndex_comap_eq_analyticOrderNatAt_sub`,
@@ -213,7 +213,7 @@ theorem localIndex_pos_iff_of_analyticAt {f : C(ℂ, ℂ)} {z₀ : ℂ} (hf : An
 
 /-- The power map `z ↦ z ^ m` has local index `m` at `0`. -/
 @[simp]
-theorem localIndex_pow_zero (m : ℕ) : o.localIndex o ⟨(· ^ m), continuous_pow m⟩ 0 = m := by
+theorem localIndex_pow (m : ℕ) : o.localIndex o ⟨(· ^ m), continuous_pow m⟩ 0 = m := by
   rw [o.localIndex_eq_analyticOrderNatAt_sub (analyticAt_id.pow m)]
   rcases eq_or_ne m 0 with rfl | hm
   · simp [analyticOrderNatAt]
