@@ -9,9 +9,12 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Attachment
 public import TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle
 public import TauCeti.Geometry.Manifold.Morse.Bott.Tubular
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Projection
 import TauCeti.Topology.VectorBundle.DiscSphere
 
 /-!
@@ -215,50 +218,6 @@ private theorem exists_sublevel_union_image_deformation (hfs : ContMDiff I 𝓘(
 
 end Transport
 
-section Fibre
-
-/-! ### Splitting a quadratic form along complementary subspaces -/
-
-variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] {Nn Pp : Submodule ℝ W}
-  (hNP : IsCompl Nn Pp)
-
-/-- A symmetric bilinear form for which `Nn` and `Pp` are orthogonal is the sum of its values on
-the two components of a vector. -/
-private theorem bilin_apply_self_eq_add {Q : LinearMap.BilinForm ℝ W} (hQ : Q.IsSymm)
-    (hQNP : ∀ v ∈ Nn, ∀ w ∈ Pp, Q v w = 0) (v : W) :
-    Q v v = Q (Nn.projection Pp hNP v) (Nn.projection Pp hNP v) +
-      Q (Pp.projection Nn hNP.symm v) (Pp.projection Nn hNP.symm v) := by
-  have hn := Nn.projection_apply_mem hNP v
-  have hp := Pp.projection_apply_mem hNP.symm v
-  have hpn : Q (Pp.projection Nn hNP.symm v) (Nn.projection Pp hNP v) = 0 := by
-    rw [hQ.eq]
-    exact hQNP _ hn _ hp
-  conv_lhs => rw [← Nn.projection_add_projection_eq_self hNP v]
-  simp only [map_add, LinearMap.add_apply, hQNP _ hn _ hp, hpn]
-  ring
-
-/-- If `Nn` and `Pp` are orthogonal, the squared norm of a vector is the sum of the squared norms
-of its two components. -/
-private theorem norm_sq_eq_add (hNP' : ∀ v ∈ Nn, ∀ w ∈ Pp, inner ℝ v w = 0) (v : W) :
-    ‖v‖ ^ 2 = ‖Nn.projection Pp hNP v‖ ^ 2 + ‖Pp.projection Nn hNP.symm v‖ ^ 2 := by
-  conv_lhs => rw [← Nn.projection_add_projection_eq_self hNP v]
-  simpa only [sq] using norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero _ _
-    (hNP' _ (Nn.projection_apply_mem hNP v) _ (Pp.projection_apply_mem hNP.symm v))
-
-/-- The projection onto `Nn` along `Pp` of `n + p`, for `n ∈ Nn` and `p ∈ Pp`, is `n`. -/
-private theorem projection_add_left {n p : W} (hn : n ∈ Nn) (hp : p ∈ Pp) :
-    Nn.projection Pp hNP (n + p) = n := by
-  rw [map_add, Submodule.projection_apply_of_mem_left hNP hn,
-    (Submodule.projection_apply_eq_zero_iff hNP).2 hp, add_zero]
-
-/-- The projection onto `Pp` along `Nn` of `n + p`, for `n ∈ Nn` and `p ∈ Pp`, is `p`. -/
-private theorem projection_add_right {n p : W} (hn : n ∈ Nn) (hp : p ∈ Pp) :
-    Pp.projection Nn hNP.symm (n + p) = p := by
-  rw [add_comm]
-  exact projection_add_left hNP.symm hp hn
-
-end Fibre
-
 section QuadraticTube
 
 /-! ### The tube of a quadratic normal form on a Riemannian vector bundle -/
@@ -303,11 +262,11 @@ private theorem negPart_add_posPart (b : B) (w : V b) : negPart hNP b w + posPar
 
 private theorem negPart_add {b : B} {n p : V b} (hn : n ∈ Nn b) (hp : p ∈ Pp b) :
     negPart hNP b (n + p) = n :=
-  projection_add_left (hNP b) hn hp
+  Submodule.projection_add_of_mem (hNP b) hn hp
 
 private theorem posPart_add {b : B} {n p : V b} (hn : n ∈ Nn b) (hp : p ∈ Pp b) :
     posPart hNP b (n + p) = p :=
-  projection_add_right (hNP b) hn hp
+  Submodule.projection_add_of_mem' (hNP b) hn hp
 
 private theorem tubeScale_one (x : TotalSpace F V) : tubeScale hNP (1, x) = x := by
   obtain ⟨b, w⟩ := x
@@ -333,7 +292,7 @@ private theorem norm_tubeScale_le (hgNP : ∀ b, ∀ v ∈ Nn b, ∀ w ∈ Pp b,
     ‖(tubeScale hNP (τ, x)).2‖ ≤ ‖x.2‖ := by
   obtain ⟨b, w⟩ := x
   have h₁ : ‖w‖ ^ 2 = ‖negPart hNP b w‖ ^ 2 + ‖posPart hNP b w‖ ^ 2 :=
-    norm_sq_eq_add (hNP b) (hgNP b) w
+    Submodule.norm_sq_eq_add_norm_sq_projection_of_isCompl (hNP b) (hgNP b) w
   have h₂ := norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero (negPart hNP b w)
     (τ • posPart hNP b w) (by
       rw [inner_smul_right, hgNP b _ (negPart_mem hNP b w) _ (posPart_mem hNP b w), mul_zero])
@@ -346,13 +305,15 @@ private theorem norm_tubeScale_le (hgNP : ∀ b, ∀ v ∈ Nn b, ∀ w ∈ Pp b,
 /-- The negative component is no longer than the vector. -/
 private theorem norm_negPart_le (hgNP : ∀ b, ∀ v ∈ Nn b, ∀ w ∈ Pp b, inner ℝ v w = 0)
     (b : B) (w : V b) : ‖negPart hNP b w‖ ≤ ‖w‖ := by
-  rw [← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), norm_sq_eq_add (hNP b) (hgNP b) w]
+  rw [← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _),
+    Submodule.norm_sq_eq_add_norm_sq_projection_of_isCompl (hNP b) (hgNP b) w]
   exact le_add_of_nonneg_right (sq_nonneg _)
 
 /-- The positive component is no longer than the vector. -/
 private theorem norm_posPart_le (hgNP : ∀ b, ∀ v ∈ Nn b, ∀ w ∈ Pp b, inner ℝ v w = 0)
     (b : B) (w : V b) : ‖posPart hNP b w‖ ≤ ‖w‖ := by
-  rw [← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), norm_sq_eq_add (hNP b) (hgNP b) w]
+  rw [← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _),
+    Submodule.norm_sq_eq_add_norm_sq_projection_of_isCompl (hNP b) (hgNP b) w]
   exact le_add_of_nonneg_left (sq_nonneg _)
 
 /-- On the negative directions, `‖u‖²` is minus half the quadratic form. -/
@@ -364,7 +325,7 @@ private theorem tubeNeg_of_mem {x : TotalSpace F V} (hx : x.2 ∈ Nn x.proj) :
 private theorem half_apply_self_eq (hQ : ∀ b, (Q b).IsSymm)
     (hQNP : ∀ b, ∀ v ∈ Nn b, ∀ w ∈ Pp b, Q b v w = 0) (x : TotalSpace F V) :
     2⁻¹ * Q x.proj x.2 x.2 = -tubeNeg Q hNP x + tubePos Q hNP x := by
-  rw [bilin_apply_self_eq_add (hNP x.proj) (hQ x.proj) (hQNP x.proj) x.2]
+  rw [(hQ x.proj).isRefl.apply_self_eq_add_projection (hNP x.proj) (hQNP x.proj) x.2]
   simp only [tubeNeg, tubePos, negPart, posPart]
   ring
 

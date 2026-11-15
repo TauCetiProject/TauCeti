@@ -9,11 +9,11 @@ public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.PerfectPairing.Restrict
+public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Algebra.DirectSum.Module
 import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
-import Mathlib.LinearAlgebra.Projection
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -75,6 +75,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   a non-zero-divisor dividing all its pairings splits off.
 * `LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_isUnit`: a vector with unit
   self-pairing splits off.
+* `LinearMap.BilinForm.IsRefl.apply_self_eq_add_projection`: for a reflexive form and an
+  orthogonal complementary pair, the self-pairing of a vector splits along the two components.
 * `LinearMap.BilinForm.IsAlt.sup_span_singleton_le_orthogonal`: adjoining an orthogonal vector
   to an isotropic submodule preserves isotropy for an alternating form.
 * `LinearMap.BilinForm.IsAlt.isCompl_span_pair_orthogonal` and
@@ -332,6 +334,16 @@ namespace LinearMap.BilinForm
 open Module
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- For a reflexive form for which `p` and its complement `q` are orthogonal, the self-pairing of
+a vector is the sum of the self-pairings of its components along `p` and `q`. -/
+theorem IsRefl.apply_self_eq_add_projection {B : LinearMap.BilinForm R M} (hB : B.IsRefl)
+    {p q : Submodule R M} (hpq : IsCompl p q) (hBpq : ∀ v ∈ p, ∀ w ∈ q, B v w = 0) (v : M) :
+    B v v = B (p.projection q hpq v) (p.projection q hpq v) +
+      B (q.projection p hpq.symm v) (q.projection p hpq.symm v) := by
+  have hpq' := hBpq _ (p.projection_apply_mem hpq v) _ (q.projection_apply_mem hpq.symm v)
+  conv_lhs => rw [← p.projection_add_projection_eq_self hpq v]
+  simp only [map_add, LinearMap.add_apply, hpq', hB _ _ hpq', add_zero, zero_add]
 
 /-- Adjoining an orthogonal vector to an isotropic submodule preserves isotropy for an
 alternating form. No nondegeneracy or characteristic assumption is needed. -/

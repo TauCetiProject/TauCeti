@@ -36,7 +36,9 @@ For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u
 The projection `P_U v` is the point of `v + Uᗮ` of least norm, and it is the only one: a vector
 `w` with `‖w‖ ≤ ‖P_U w‖` equals `P_U w`. Equivalently, `v ∈ U` exactly when adding a vector of
 `Uᗮ` never decreases the norm of `v`. Over `ℝ`, Pythagoras splits the squared distance from a
-point `b + c`, with `b ∈ U` and `c ∈ Uᗮ`, into its components along `U` and `Uᗮ`.
+point `b + c`, with `b ∈ U` and `c ∈ Uᗮ`, into its components along `U` and `Uᗮ`. More generally,
+the squared norm of a vector splits along any pair of mutually orthogonal complementary submodules,
+through the projections along each other.
 
 Since the kernel of `P_V` is `Vᗮ`, the projection `P_V` is injective on `U` exactly when no
 nonzero vector of `U` is orthogonal to `V`. In that case the rank of `U` is at most that of
@@ -88,6 +90,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `‖v‖ ≤ ‖v + w‖` for every `w ∈ Uᗮ`.
 * `Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal`: Pythagoras for `‖v - (b + c)‖²` with
   `b ∈ R` and `c ∈ Rᗮ`, split along `R` and `Rᗮ`.
+* `Submodule.norm_sq_eq_add_norm_sq_projection_of_isCompl`: Pythagoras for the components of a
+  vector along a pair of mutually orthogonal complementary submodules.
 * `Submodule.injOn_starProjection_iff_disjoint`: `P_V` is injective on `U` if and only if
   `U ⊓ Vᗮ = ⊥`.
 * `Submodule.rank_le_of_disjoint_orthogonal`: if `U ⊓ Vᗮ = ⊥`, then `rank U ≤ rank V`.
@@ -356,6 +360,15 @@ theorem span_range_starProjection_orthogonal_basis_succ
         simp only [map_sum, map_smul]
   rw [hw']
   exact sum_mem fun j _ ↦ smul_mem _ _ (subset_span ⟨j, rfl⟩)
+
+/-- For complementary submodules `p` and `q` orthogonal to each other, the squared norm of a vector
+is the sum of the squared norms of its components along `p` and `q`. -/
+theorem norm_sq_eq_add_norm_sq_projection_of_isCompl {p q : Submodule 𝕜 E} (hpq : IsCompl p q)
+    (hpq' : ∀ v ∈ p, ∀ w ∈ q, ⟪v, w⟫_𝕜 = 0) (x : E) :
+    ‖x‖ ^ 2 = ‖p.projection q hpq x‖ ^ 2 + ‖q.projection p hpq.symm x‖ ^ 2 := by
+  conv_lhs => rw [← p.projection_add_projection_eq_self hpq x]
+  simpa only [sq] using norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero _ _
+    (hpq' _ (p.projection_apply_mem hpq x) _ (q.projection_apply_mem hpq.symm x))
 
 section Real
 
