@@ -20,12 +20,13 @@ is `TauCeti.fiberwiseCellReattachment`.
 When the maps `h i (p, ·)` are invertible, with inverses continuous in `p` and preserving the
 boundary spheres, `E` is a homotopy equivalence over `P` relative to `P × A`
 (`TauCeti.exists_homotopyRel_fiberwiseCellReattachment_comp`), with no hypothesis on the
-comparison maps. Indeed `E` factors as the reattachment along `K` which does not move the discs,
-followed by the homeomorphism reparametrizing the discs by `h`
-(`TauCeti.fiberwiseCellAttachmentIso`), and a reattachment which does not move the discs is
-inverted by the reattachment along the reverse homotopy: on a cell their composite runs along `K`
-on the boundary sphere and back again, and contracting this excursion gives a homotopy to the
-identity over `P`, relative to `P × A`.
+comparison maps. When each `h i (p, ·)` is a linear isometry of the disc, an explicit inverse
+reattachment map is `TauCeti.fiberwiseCellReattachmentInv`. In general, `E` factors as the
+reattachment along `K` which does not move the discs, followed by the homeomorphism
+reparametrizing the discs by `h` (`TauCeti.fiberwiseCellAttachmentIso`), and a reattachment which
+does not move the discs is inverted by the reattachment along the reverse homotopy: on a cell
+their composite runs along `K` on the boundary sphere and back again, and contracting this
+excursion gives a homotopy to the identity over `P`, relative to `P × A`.
 
 ## References
 
