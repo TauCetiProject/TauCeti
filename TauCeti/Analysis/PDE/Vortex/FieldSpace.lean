@@ -442,6 +442,20 @@ theorem normSq_le_one_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : 
   exact normSq_le_one_of_tendsto hp hq hsol
     (tendsto_normSq_of_mem_framedFieldSpace hs hx hcont) z
 
+/-- **Sobolev embedding for the field space.** A continuous field of the affine space `A_m^s` is
+`Cⁿ` when `s > n + 1`: its difference with the smooth reference field is a continuous field of
+`H^s`. -/
+theorem contDiff_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ} {n : ℕ}
+    (hs : (n : ℝ) + 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : x ∈ framedFieldSpace f m s) (hcont : Continuous x) : ContDiff ℝ n x := by
+  have hy : ContDiff ℝ n (x - referenceField f m) := by
+    refine contDiff_euclidean.2 fun i ↦ contDiff_of_mem_realSobolevFunctions
+      (by rw [Complex.finrank_real_complex]; push_cast; linarith)
+      (mem_sobolevFields.1 (mem_framedFieldSpace.1 hx) i) ?_
+    have h := hcont.sub (contDiff_referenceField f m).continuous
+    fun_prop
+  simpa using hy.add ((contDiff_referenceField f m).of_le (by simp))
+
 /-- A continuous field of the affine space `A_m^s`, `s > 1`, is bounded: it tends to the
 reference field at infinity, and the reference field is bounded. -/
 theorem exists_norm_le_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ}

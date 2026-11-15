@@ -129,6 +129,20 @@ theorem integral_mul_gaugeAdjoint_gaugeDirection {u φ : ℂ → ℝ} (hφ : Con
   integral_congr_ae (Eventually.of_forall fun z ↦ by
     simp only [gaugeAdjoint_gaugeDirection x hφ.contDiffAt])
 
+/-- **Green's identity for the gauge Laplacian.** For a `C¹` field `x`, a `C²` phase `u` and a
+compactly supported `C²` phase `φ`, `∫ u d₀* d₀ φ = ∫ φ d₀* d₀ u`: both sides are
+`∫ ⟪d₀ u, d₀ φ⟫`. -/
+theorem integral_mul_gaugeAdjoint_gaugeDirection_comm (hx : ContDiff ℝ 1 x) {u φ : ℂ → ℝ}
+    (hu : ContDiff ℝ 2 u) (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
+    ∫ z, u z * gaugeAdjoint x (gaugeDirection x φ) z =
+      ∫ z, φ z * gaugeAdjoint x (gaugeDirection x u) z := by
+  rw [integral_mul_gaugeAdjoint_of_hasCompactSupport hx.continuous
+      (contDiff_gaugeDirection (n := 1) hx hφ) (hasCompactSupport_gaugeDirection x hφc)
+      (hu.of_le (by norm_num)),
+    integral_mul_gaugeAdjoint hx.continuous (contDiff_gaugeDirection (n := 1) hx hu)
+      (hφ.of_le (by norm_num)) hφc]
+  simp_rw [real_inner_comm]
+
 /-- **Uniqueness for the gauge Laplacian.** At a continuous field of `A_m^s`, `s > 1`, two
 functions `u₁, u₂ ∈ L²(ℂ)` with `d₀* d₀ u₁ = d₀* d₀ u₂ = g` weakly, that is
 `∫ uᵢ · d₀* d₀ φ = ∫ g φ` for every compactly supported smooth `φ`, agree almost everywhere. -/
