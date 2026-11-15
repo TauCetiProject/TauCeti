@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Simple
 public import TauCeti.CategoryTheory.Semisimple.OppositePairing
+import TauCeti.CategoryTheory.Monoidal.Pivotal.Nondegenerate
 
 /-!
 # Pivotal structures on finite semisimple categories
@@ -37,13 +38,15 @@ pivotal structures and their traces are controlled by what happens on simple obj
   dimensions on simple objects are equal.
 * `TauCeti.sphericalCategory_iff_leftDim_eq_rightDim`: a pivotal structure is spherical if and
   only if its left and right dimensions agree on simple objects.
+* `TauCeti.leftTrace_pivotalIsoApp_hom_comp_simpleDoubleDualIso_inv`: the left trace of
+  `(pivotalIsoApp X).hom ≫ (simpleDoubleDualIso X).inv` is `𝟙 (𝟙_ C)`.
 * `TauCeti.coevaluation_comp_simpleOppositeExactPairing_evaluation`: `η_ X Xᘁ` followed by the
   evaluation of `TauCeti.simpleOppositeExactPairing X` is `leftDim X ≫ rightDim X`.
 * `TauCeti.simpleDoubleDualIso_hom_eq_smul_pivotalIsoApp_hom`,
   `TauCeti.simpleDoubleDualIso_inv_eq_smul_pivotalIsoApp_inv`,
   `TauCeti.simpleOppositeExactPairing_evaluation_eq_smul` and
   `TauCeti.simpleOppositeExactPairing_coevaluation_eq_smul`: scalar comparisons between the
-  canonical simple opposite pairing and the pivotal pairing.
+  opposite pairing of a split simple object and the pivotal pairing.
 
 ## References
 
@@ -122,6 +125,14 @@ end Spherical
 
 section OppositePairing
 
+/-- For any simple object `X` in a finite semisimple pivotal category with simple tensor unit,
+the left trace of `(pivotalIsoApp X).hom ≫ (simpleDoubleDualIso X).inv` is `𝟙 (𝟙_ C)`. -/
+theorem leftTrace_pivotalIsoApp_hom_comp_simpleDoubleDualIso_inv [PivotalCategory C]
+    [MonoidalPreadditive C] [Simple (𝟙_ C)] (X : C) [Simple X] :
+    leftTrace ((pivotalIsoApp X).hom ≫ (simpleDoubleDualIso X).inv) = 𝟙 (𝟙_ C) := by
+  rw [leftTrace_eq_pivotalIsoApp, ← whiskerLeft_comp_assoc, Iso.inv_hom_id_assoc,
+    coevaluation_comp_whiskerLeft_simpleDoubleDualIso_inv_comp_evaluation]
+
 variable (k : Type w) [Field k] [IsAlgClosed k] [PivotalCategory C] [MonoidalPreadditive C]
   [Linear k C] [MonoidalLinear k C] [Simple (𝟙_ C)]
 variable (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)]
@@ -135,16 +146,12 @@ theorem coevaluation_comp_simpleOppositeExactPairing_evaluation :
     η_ X Xᘁ ≫ @ExactPairing.evaluation C _ _ Xᘁ X (simpleOppositeExactPairing X) =
       leftDim X ≫ rightDim X := by
   let a : X ≅ X := simpleDoubleDualIso X ≪≫ (pivotalIsoApp X).symm
-  have hl : leftTrace a.inv = 𝟙 (𝟙_ C) := by
-    dsimp only [a, Iso.trans_inv, Iso.symm_inv]
-    rw [leftTrace_def, pivotalExactPairing_coevaluation, Category.assoc, whiskerLeft_comp_assoc,
-      ← whiskerLeft_comp_assoc, Iso.inv_hom_id, whiskerLeft_id, Category.id_comp, ← Category.assoc,
-      ← simpleOppositeExactPairing_coevaluation,
-      simpleOppositeExactPairing_coevaluation_comp_evaluation]
+  have hl : leftTrace a.inv = 𝟙 (𝟙_ C) :=
+    leftTrace_pivotalIsoApp_hom_comp_simpleDoubleDualIso_inv X
   have hr : rightTrace a.hom =
       η_ X Xᘁ ≫ @ExactPairing.evaluation C _ _ Xᘁ X (simpleOppositeExactPairing X) := by
     dsimp only [a, Iso.trans_hom, Iso.symm_hom]
-    rw [rightTrace_def, pivotalExactPairing_evaluation, comp_whiskerRight_assoc,
+    rw [rightTrace_eq_pivotalIsoApp, comp_whiskerRight_assoc,
       ← comp_whiskerRight_assoc (pivotalIsoApp X).inv, Iso.inv_hom_id, id_whiskerRight,
       Category.id_comp, ← simpleOppositeExactPairing_evaluation]
   have key := leftTrace_inv_comp_rightTrace_hom k a
@@ -163,11 +170,8 @@ theorem simpleDoubleDualIso_inv_eq_smul_pivotalIsoApp_inv :
     (End.of ((pivotalIsoApp X).hom ≫ (simpleDoubleDualIso X).inv))
   have hc : (pivotalIsoApp X).hom ≫ (simpleDoubleDualIso X).inv = c • 𝟙 X :=
     (endAlgEquivOfSimple_smul_id (k := k) _).symm
-  have htr : leftTrace ((pivotalIsoApp X).hom ≫ (simpleDoubleDualIso X).inv) = 𝟙 (𝟙_ C) := by
-    rw [leftTrace_def, pivotalExactPairing_coevaluation, Category.assoc, whiskerLeft_comp_assoc,
-      ← whiskerLeft_comp_assoc, Iso.inv_hom_id, whiskerLeft_id, Category.id_comp, ← Category.assoc,
-      ← simpleOppositeExactPairing_coevaluation,
-      simpleOppositeExactPairing_coevaluation_comp_evaluation]
+  have htr : leftTrace ((pivotalIsoApp X).hom ≫ (simpleDoubleDualIso X).inv) = 𝟙 (𝟙_ C) :=
+    leftTrace_pivotalIsoApp_hom_comp_simpleDoubleDualIso_inv X
   have hcd : c * endAlgEquivOfSimple k (𝟙_ C) (End.of (leftDim X)) = 1 := by
     have h1 := congrArg (endAlgEquivOfSimple k (𝟙_ C) ∘ End.of) htr
     dsimp only [Function.comp_apply] at h1
@@ -185,13 +189,9 @@ theorem simpleDoubleDualIso_hom_eq_smul_pivotalIsoApp_hom :
     (simpleDoubleDualIso X).hom =
       endAlgEquivOfSimple k (𝟙_ C) (End.of (leftDim X)) • (pivotalIsoApp X).hom := by
   set d := endAlgEquivOfSimple k (𝟙_ C) (End.of (leftDim X))
-  have hd : d ≠ 0 := by
-    intro hd0
-    have hinv : (simpleDoubleDualIso X).inv = d⁻¹ • (pivotalIsoApp X).inv :=
-      simpleDoubleDualIso_inv_eq_smul_pivotalIsoApp_inv k X
-    rw [hd0, inv_zero, zero_smul] at hinv
-    exact CategoryTheory.id_ne_zero X
-      (by simpa [hinv] using (simpleDoubleDualIso X).hom_inv_id.symm)
+  have hd : d ≠ 0 := fun hd0 ↦
+    leftDim_ne_zero_of_simple k X
+      (by simpa [d] using (endAlgEquivOfSimple_apply_eq_iff (End.of (leftDim X)) 0).1 hd0)
   calc (simpleDoubleDualIso X).hom
       = (simpleDoubleDualIso X).hom ≫ (d • (d⁻¹ • (pivotalIsoApp X).inv)) ≫
           (pivotalIsoApp X).hom := by

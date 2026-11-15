@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Monoidal.Center.Semisimple
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Ribbon.OfSpherical
+import TauCeti.CategoryTheory.Monoidal.Pivotal.Character
 
 /-!
 # The centre of a spherical category is ribbon
@@ -33,8 +34,9 @@ the centre is a split finite semisimple category with simple unit, sphericity ma
 twist ribbon (`ribbonCategory_of_sphericalCategory`, Müger). Semisimplicity of the centre cannot
 simply be dropped, since in a non-semisimple braided category a spherical pivotal structure need
 not induce a ribbon twist. When `C` is a spherical fusion category over an algebraically closed
-field `k` with `globalDim C ≠ 0` — and unconditionally when `CharZero k` — finite semisimplicity of
-`Center C` is supplied by `Center/Semisimple.lean`, giving
+field `k` with `globalDim C ≠ 0` — and unconditionally when `CharZero k`, where
+`TauCeti.globalDim_ne_zero` applies because `C` is pivotal — finite semisimplicity of `Center C` is
+supplied by `Center/Semisimple.lean`, giving
 `ribbonCategory_of_sphericalCategory_of_globalDim_ne_zero` and
 `ribbonCategory_of_sphericalCategory_of_charZero`.
 
@@ -114,11 +116,15 @@ theorem ribbonCategory_of_sphericalCategory_of_globalDim_ne_zero [Fintype (Simpl
 
 include k in
 /-- **The centre of a spherical fusion category in characteristic zero is ribbon**
-(Müger, Etingof–Nikshych–Ostrik). -/
+(Müger, Etingof–Nikshych–Ostrik). For a spherical fusion category `C` over an algebraically closed
+field `k` of characteristic zero, the twist induced on `Center C` by its braiding and pivotal
+structure is ribbon. -/
 theorem ribbonCategory_of_sphericalCategory_of_charZero [CharZero k] [Finite (SimpleClasses C)] :
     letI := balancedOfBraidedPivotal (Center C)
     RibbonCategory (Center C) := by
-  have := isFiniteSemisimpleCategory_of_charZero k (C := C)
+  classical
+  let _ := Fintype.ofFinite (SimpleClasses C)
+  have := isFiniteSemisimpleCategory_of_globalDim_ne_zero k (TauCeti.globalDim_ne_zero k C)
   exact ribbonCategory_of_sphericalCategory (hfin := inferInstance) k
 
 end Fusion

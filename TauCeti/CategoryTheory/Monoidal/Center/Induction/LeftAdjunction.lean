@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.Adjunction
 public import TauCeti.CategoryTheory.Semisimple.OppositePairing
 public import TauCeti.CategoryTheory.Semisimple.Rigid
+import Mathlib.CategoryTheory.Adjunction.FullyFaithful
 
 /-!
 # The left adjunction for induction into the Drinfeld centre
@@ -28,15 +29,17 @@ adjunction** `inductionForgetAdjunction k C : Center.induction k C ⊣ Center.fo
 structure on `C`:
 
 * the unit `X ⟶ inductionObj X` embeds `X` into the unit-class summand `S₀.repr ⊗ X ⊗ S₀.reprᘁ`
-  via `(classOfReprIso (𝟙_ C)).inv` and `(rightDualIsoUnitOfIso (classOfReprIso (𝟙_ C))).inv`, and
-  splits `(forgetInductionAdjunction k C).counit.app X` (`Center.induction k C` is therefore
-  faithful);
+  via `(classOfReprIso (𝟙_ C)).inv` and `((classOfReprIso (𝟙_ C)).hom)ᘁ`, and splits
+  `(forgetInductionAdjunction k C).counit.app X` (`Center.induction k C` is therefore faithful);
 * the counit `inductionCenterObj k Z.1 ⟶ Z` acts on the `S`-summand `S.repr ⊗ Z.1 ⊗ S.reprᘁ` by
   moving `Z.1` to the left of `S.repr` via `(Z.2.β S.repr).inv` and contracting `S.repr ⊗ S.reprᘁ`
   via the evaluation of `simpleOppositeExactPairing S.repr`.
 
-Simplicity of `𝟙_ C` is necessary here: in the multifusion category `Vec_k × Vec_k`, the tensor
-unit `(k, k)` is not simple and `(k, 0) ⊗ (k, 0)ᘁ` cannot pair surjectively onto `(k, k)`.
+Simplicity of `𝟙_ C` is required for the single-unit-summand and `simpleOppositeExactPairing`
+construction here (in the multifusion category `Vec_k × Vec_k`, `(k, 0)ᘁ ⊗ (k, 0)` does not surject
+onto the tensor unit `(k, k)`), and is necessary for faithfulness of `Center.induction k C` and
+split-monomorphicity of the unit (which fail in the multifusion category `M₂(Vec_k)`, where the
+off-diagonal simple object `E₁₂` has `inductionObj E₁₂ = 0`).
 
 ## Main declarations
 
@@ -47,9 +50,11 @@ unit `(k, k)` is not simple and `(k, 0) ⊗ (k, 0)ᘁ` cannot pair surjectively 
   `CategoryTheory.Center.ι_comp_inductionForgetAdjunction_counit_app_f`;
 * the unit of `inductionForgetAdjunction` splits the counit of `forgetInductionAdjunction`
   (`inductionForgetAdjunction_unit_app_comp_forgetInductionAdjunction_counit_app`);
-* `CategoryTheory.Center.instIsSplitMonoInductionForgetAdjunctionUnitApp` and
-  `CategoryTheory.Center.instFaithfulInduction`: components of the unit are split monomorphisms, so
-  `Center.induction k C` is faithful.
+* `CategoryTheory.Center.instIsSplitMonoInductionForgetAdjunctionUnitApp`,
+  `CategoryTheory.Center.instIsSplitEpiForgetInductionAdjunctionCounitApp`, and
+  `CategoryTheory.Center.instFaithfulInduction`: components of the unit are split monomorphisms,
+  components of the right-adjunction counit are split epimorphisms, and `Center.induction k C` is
+  faithful.
 
 ## References
 
@@ -304,75 +309,91 @@ private theorem left_triangle_of_ne (X : C) {S T : SimpleClasses C} (hST : S ≠
   rw [Subsingleton.elim (Module.finBasis k _ i) 0, map_zero]
 
 /-- One-element `k`-basis of `(classOf (𝟙_ C)).repr ⟶ S.reprᘁ ⊗ S.repr` spanned by the canonical
-opposite coevaluation of `S.repr`. -/
+opposite coevaluation of `S.repr`, obtained by mapping `Module.Basis.singleton (Fin 1) k`. -/
 private def unitClassCoevaluationBasis (S : SimpleClasses C) :
     Basis (Fin 1) k ((SimpleClasses.classOf (𝟙_ C)).repr ⟶ S.reprᘁ ⊗ S.repr) :=
   let u₀ := SimpleClasses.classOfReprIso (𝟙_ C)
   let ηS := @ExactPairing.coevaluation C _ _ S.reprᘁ S.repr (simpleOppositeExactPairing S.repr)
-  Basis.mk (v := fun _ ↦ u₀.hom ≫ ηS)
-    (linearIndependent_unique_iff.2 fun h ↦ by
-      have h1 := u₀.inv ≫= h =≫ ε_ S.repr S.reprᘁ
-      rw [zero_comp, comp_zero, Category.assoc, u₀.inv_hom_id_assoc] at h1
-      dsimp only [ηS] at h1
-      rw [simpleOppositeExactPairing_coevaluation_comp_evaluation] at h1
-      exact CategoryTheory.id_ne_zero (𝟙_ C) h1)
-    (by
-      rintro f -
-      obtain ⟨c, hc⟩ := hom_from_tensorUnit_eq_smul_simpleOppositeExactPairing_coevaluation k
-        (u₀.inv ≫ f)
-      rw [Set.range_const, Submodule.mem_span_singleton]
-      refine ⟨c, ?_⟩
-      have hf : f = u₀.hom ≫ (u₀.inv ≫ f) := by rw [Iso.hom_inv_id_assoc]
-      dsimp only [ηS]
-      rw [hf, hc, Linear.comp_smul])
+  have hleft (c : k) :
+      endAlgEquivOfSimple k (𝟙_ C) (End.of (u₀.inv ≫ (c • (u₀.hom ≫ ηS)) ≫ ε_ S.repr S.reprᘁ)) =
+        c := by
+    apply (endAlgEquivOfSimple_apply_eq_iff _ c).2
+    dsimp only [ηS]
+    rw [Linear.smul_comp, Linear.comp_smul, Category.assoc, u₀.inv_hom_id_assoc,
+      simpleOppositeExactPairing_coevaluation_comp_evaluation]
+  let e : k ≃ₗ[k] ((SimpleClasses.classOf (𝟙_ C)).repr ⟶ S.reprᘁ ⊗ S.repr) :=
+    { toFun c := c • (u₀.hom ≫ ηS)
+      map_add' c₁ c₂ := add_smul c₁ c₂ _
+      map_smul' r c := by simp [mul_smul]
+      invFun f := endAlgEquivOfSimple k (𝟙_ C) (End.of (u₀.inv ≫ f ≫ ε_ S.repr S.reprᘁ))
+      left_inv := hleft
+      right_inv f := by
+        let _ : ExactPairing S.reprᘁ S.repr := simpleOppositeExactPairing S.repr
+        obtain ⟨c, hc⟩ := hom_from_tensorUnit_eq_smul_coevaluation_of_simple_right k (u₀.inv ≫ f)
+        have hf : f = c • (u₀.hom ≫ ηS) := by
+          calc f = u₀.hom ≫ (u₀.inv ≫ f) := by rw [Iso.hom_inv_id_assoc]
+            _ = c • (u₀.hom ≫ ηS) := by rw [hc, Linear.comp_smul]
+        rw [hf]
+        dsimp only
+        rw [hleft] }
+  (Module.Basis.singleton (Fin 1) k).map e
+
+private theorem unitClassCoevaluationBasis_apply (S : SimpleClasses C) (i : Fin 1) :
+    unitClassCoevaluationBasis k S i =
+      (SimpleClasses.classOfReprIso (𝟙_ C)).hom ≫
+        @ExactPairing.coevaluation C _ _ S.reprᘁ S.repr (simpleOppositeExactPairing S.repr) := by
+  simp [unitClassCoevaluationBasis]
 
 private theorem unitClassCoevaluationBasis_homDual (S : SimpleClasses C) :
     (unitClassCoevaluationBasis k S).homDual 0 =
       ε_ S.repr S.reprᘁ ≫ (SimpleClasses.classOfReprIso (𝟙_ C)).inv := by
   refine (((unitClassCoevaluationBasis k S).eq_homDual_iff _ 0).2 fun i ↦ ?_).symm
-  simp only [Fin.fin_one_eq_zero i, ↓reduceIte, unitClassCoevaluationBasis, Basis.mk_apply,
-    Category.assoc]
+  simp only [Fin.fin_one_eq_zero i, ↓reduceIte, unitClassCoevaluationBasis_apply, Category.assoc]
   rw [reassoc_of% (simpleOppositeExactPairing_coevaluation_comp_evaluation S.repr),
     Iso.hom_inv_id]
 
 omit [IsAlgClosed k] [IsFiniteSemisimpleCategory C]
   [∀ (X Y : C), FiniteDimensional k (X ⟶ Y)] in
-private theorem rightDualIsoUnitOfIso_inv_whiskerRight_comp_inductionMate (S : SimpleClasses C) :
-    (rightDualIsoUnitOfIso (SimpleClasses.classOfReprIso (𝟙_ C))).inv ▷ S.reprᘁ ≫
+private theorem rightAdjointMate_whiskerRight_comp_inductionMate (S : SimpleClasses C) :
+    ((SimpleClasses.classOfReprIso (𝟙_ C)).hom)ᘁ ▷ S.reprᘁ ≫
         inductionMate k S.reprᘁ
           (ε_ S.repr S.reprᘁ ≫ (SimpleClasses.classOfReprIso (𝟙_ C)).inv) =
       (λ_ S.reprᘁ).hom := by
   let u₀ := SimpleClasses.classOfReprIso (𝟙_ C)
-  let v₀ := rightDualIsoUnitOfIso u₀
   refine ExactPairing.rightHom_ext (X := S.repr) ?_
-  have hex : (v₀.inv ▷ S.reprᘁ) ▷ S.repr ≫ (α_ _ S.reprᘁ S.repr).hom ≫
+  have hex : ((u₀.hom)ᘁ ▷ S.reprᘁ) ▷ S.repr ≫ (α_ _ S.reprᘁ S.repr).hom ≫
         (SimpleClasses.classOf (𝟙_ C)).reprᘁ ◁ (ε_ S.repr S.reprᘁ ≫ u₀.inv) =
       (α_ (𝟙_ C) S.reprᘁ S.repr).hom ≫ 𝟙_ C ◁ (ε_ S.repr S.reprᘁ ≫ u₀.inv) ≫
-        v₀.inv ▷ (SimpleClasses.classOf (𝟙_ C)).repr := by
-    calc _ = 𝟙 _ ⊗≫ (v₀.inv ▷ (S.reprᘁ ⊗ S.repr) ≫
+        (u₀.hom)ᘁ ▷ (SimpleClasses.classOf (𝟙_ C)).repr := by
+    calc _ = 𝟙 _ ⊗≫ ((u₀.hom)ᘁ ▷ (S.reprᘁ ⊗ S.repr) ≫
               (SimpleClasses.classOf (𝟙_ C)).reprᘁ ◁ (ε_ S.repr S.reprᘁ ≫ u₀.inv)) := by monoidal
       _ = _ := by rw [whisker_exchange]; monoidal
-  calc (v₀.inv ▷ S.reprᘁ ≫ inductionMate k S.reprᘁ (ε_ S.repr S.reprᘁ ≫ u₀.inv)) ▷ S.repr ≫
+  have hmate : (u₀.hom)ᘁ ▷ (SimpleClasses.classOf (𝟙_ C)).repr ≫
+        ε_ (SimpleClasses.classOf (𝟙_ C)).repr _ =
+      (λ_ (SimpleClasses.classOf (𝟙_ C)).repr).hom ≫ u₀.hom := by
+    rw [rightAdjointMate_comp_evaluation]
+    change 𝟙_ C ◁ u₀.hom ≫ ε_ (𝟙_ C) (𝟙_ C) = _
+    rw [ExactPairing.unit_evaluation, ← unitors_equal, leftUnitor_naturality]
+  calc ((u₀.hom)ᘁ ▷ S.reprᘁ ≫ inductionMate k S.reprᘁ (ε_ S.repr S.reprᘁ ≫ u₀.inv)) ▷ S.repr ≫
           ε_ S.repr S.reprᘁ
-      = ((v₀.inv ▷ S.reprᘁ) ▷ S.repr ≫ (α_ _ S.reprᘁ S.repr).hom ≫
+      = (((u₀.hom)ᘁ ▷ S.reprᘁ) ▷ S.repr ≫ (α_ _ S.reprᘁ S.repr).hom ≫
           (SimpleClasses.classOf (𝟙_ C)).reprᘁ ◁ (ε_ S.repr S.reprᘁ ≫ u₀.inv)) ≫
           ε_ (SimpleClasses.classOf (𝟙_ C)).repr _ := by
         rw [comp_whiskerRight_assoc, inductionMate_whiskerRight_evaluation]
         simp only [Category.assoc]
     _ = (α_ (𝟙_ C) S.reprᘁ S.repr).hom ≫ 𝟙_ C ◁ (ε_ S.repr S.reprᘁ ≫ u₀.inv) ≫
-          (v₀.inv ▷ (SimpleClasses.classOf (𝟙_ C)).repr ≫
+          ((u₀.hom)ᘁ ▷ (SimpleClasses.classOf (𝟙_ C)).repr ≫
             ε_ (SimpleClasses.classOf (𝟙_ C)).repr _) := by
         rw [hex, Category.assoc, Category.assoc]
     _ = (λ_ S.reprᘁ).hom ▷ S.repr ≫ ε_ S.repr S.reprᘁ := by
-        rw [rightDualIsoUnitOfIso_inv_whiskerRight_evaluation u₀,
-          leftUnitor_naturality_assoc, Category.assoc, u₀.inv_hom_id, Category.comp_id]
+        rw [hmate, leftUnitor_naturality_assoc, Category.assoc, u₀.inv_hom_id, Category.comp_id]
         monoidal
 
 /-- Diagonal evaluation for the left triangle identity of `inductionForgetAdjunction`. -/
 private theorem left_triangle_self (X : C) (S : SimpleClasses C) :
     S.repr ◁ (((λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫
         ((SimpleClasses.classOfReprIso (𝟙_ C)).inv ⊗ₘ
-          (𝟙 X ⊗ₘ (rightDualIsoUnitOfIso (SimpleClasses.classOfReprIso (𝟙_ C))).inv))) ▷
+          (𝟙 X ⊗ₘ ((SimpleClasses.classOfReprIso (𝟙_ C)).hom)ᘁ))) ▷
         S.reprᘁ ≫
       inductionβComponent k X S.reprᘁ (SimpleClasses.classOf (𝟙_ C)) S) ≫
       (α_ S.repr S.reprᘁ (S.repr ⊗ X ⊗ S.reprᘁ)).inv ≫
@@ -380,25 +401,24 @@ private theorem left_triangle_self (X : C) (S : SimpleClasses C) :
         (S.repr ⊗ X ⊗ S.reprᘁ) ≫
       (λ_ (S.repr ⊗ X ⊗ S.reprᘁ)).hom = 𝟙 (S.repr ⊗ X ⊗ S.reprᘁ) := by
   let u₀ := SimpleClasses.classOfReprIso (𝟙_ C)
-  let v₀ := rightDualIsoUnitOfIso u₀
   let pS : ExactPairing S.reprᘁ S.repr := simpleOppositeExactPairing S.repr
   let ηS := @ExactPairing.coevaluation C _ _ S.reprᘁ S.repr pS
   let εS := @ExactPairing.evaluation C _ _ S.reprᘁ S.repr pS
-  have hinner : ((λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫ (u₀.inv ⊗ₘ (𝟙 X ⊗ₘ v₀.inv))) ▷ S.reprᘁ ≫
+  have hinner : ((λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫ (u₀.inv ⊗ₘ (𝟙 X ⊗ₘ (u₀.hom)ᘁ))) ▷ S.reprᘁ ≫
         inductionTerm k X (ε_ S.repr S.reprᘁ ≫ u₀.inv) (u₀.hom ≫ ηS) =
       (λ_ (X ⊗ S.reprᘁ)).inv ≫ ηS ▷ (X ⊗ S.reprᘁ) ≫ (α_ S.reprᘁ S.repr (X ⊗ S.reprᘁ)).hom := by
     rw [inductionTerm_apply]
-    have hex : (((SimpleClasses.classOf (𝟙_ C)).repr ◁ X ◁ v₀.inv) ▷ S.reprᘁ) ⊗≫
+    have hex : (((SimpleClasses.classOf (𝟙_ C)).repr ◁ X ◁ (u₀.hom)ᘁ) ▷ S.reprᘁ) ⊗≫
           (u₀.hom ≫ ηS) ▷ X ▷ (SimpleClasses.classOf (𝟙_ C)).reprᘁ ▷ S.reprᘁ =
         𝟙 _ ⊗≫ ((u₀.hom ≫ ηS) ▷ (X ⊗ 𝟙_ C)) ▷ S.reprᘁ ⊗≫
-          (S.reprᘁ ⊗ S.repr) ◁ X ◁ (v₀.inv ▷ S.reprᘁ) ⊗≫ 𝟙 _ := by
-      calc _ = (((SimpleClasses.classOf (𝟙_ C)).repr ◁ (X ◁ v₀.inv) ≫
+          (S.reprᘁ ⊗ S.repr) ◁ X ◁ ((u₀.hom)ᘁ ▷ S.reprᘁ) ⊗≫ 𝟙 _ := by
+      calc _ = (((SimpleClasses.classOf (𝟙_ C)).repr ◁ (X ◁ (u₀.hom)ᘁ) ≫
                 (u₀.hom ≫ ηS) ▷ (X ⊗ _)) ▷ S.reprᘁ) ⊗≫ 𝟙 _ := by monoidal
-        _ = (((u₀.hom ≫ ηS) ▷ (X ⊗ 𝟙_ C) ≫ (S.reprᘁ ⊗ S.repr) ◁ (X ◁ v₀.inv)) ▷ S.reprᘁ) ⊗≫
+        _ = (((u₀.hom ≫ ηS) ▷ (X ⊗ 𝟙_ C) ≫ (S.reprᘁ ⊗ S.repr) ◁ (X ◁ (u₀.hom)ᘁ)) ▷ S.reprᘁ) ⊗≫
               𝟙 _ := by rw [← whisker_exchange]
         _ = _ := by simp only [comp_whiskerRight]; monoidal
     calc _ = 𝟙 _ ⊗≫ (u₀.inv ▷ (X ⊗ 𝟙_ C)) ▷ S.reprᘁ ⊗≫
-              ((((SimpleClasses.classOf (𝟙_ C)).repr ◁ X ◁ v₀.inv) ▷ S.reprᘁ) ⊗≫
+              ((((SimpleClasses.classOf (𝟙_ C)).repr ◁ X ◁ (u₀.hom)ᘁ) ▷ S.reprᘁ) ⊗≫
                 (u₀.hom ≫ ηS) ▷ X ▷ (SimpleClasses.classOf (𝟙_ C)).reprᘁ ▷ S.reprᘁ) ⊗≫
               S.reprᘁ ◁ S.repr ◁ X ◁
                 inductionMate k S.reprᘁ (ε_ S.repr S.reprᘁ ≫ u₀.inv) ⊗≫ 𝟙 _ := by
@@ -406,17 +426,17 @@ private theorem left_triangle_self (X : C) (S : SimpleClasses C) :
             monoidal
       _ = 𝟙 _ ⊗≫ ((u₀.inv ≫ u₀.hom ≫ ηS) ▷ (X ⊗ 𝟙_ C)) ▷ S.reprᘁ ⊗≫
             S.reprᘁ ◁ S.repr ◁ X ◁
-              (v₀.inv ▷ S.reprᘁ ≫ inductionMate k S.reprᘁ (ε_ S.repr S.reprᘁ ≫ u₀.inv)) ⊗≫
+              ((u₀.hom)ᘁ ▷ S.reprᘁ ≫ inductionMate k S.reprᘁ (ε_ S.repr S.reprᘁ ≫ u₀.inv)) ⊗≫
             𝟙 _ := by
             rw [hex]
             simp only [comp_whiskerRight, whiskerLeft_comp]
             monoidal
       _ = _ := by
-            rw [u₀.inv_hom_id_assoc, rightDualIsoUnitOfIso_inv_whiskerRight_comp_inductionMate k S]
+            rw [u₀.inv_hom_id_assoc, rightAdjointMate_whiskerRight_comp_inductionMate k S]
             monoidal
   rw [inductionβComponent_eq k X S.reprᘁ _ S (unitClassCoevaluationBasis k S), Fin.sum_univ_one,
-    unitClassCoevaluationBasis_homDual, unitClassCoevaluationBasis, Basis.mk_apply]
-  dsimp only [u₀, v₀, ηS, pS] at hinner
+    unitClassCoevaluationBasis_homDual, unitClassCoevaluationBasis_apply]
+  dsimp only [u₀, ηS, pS] at hinner
   rw [hinner]
   have hzig := @ExactPairing.coevaluation_evaluation'' C _ _ S.reprᘁ S.repr pS
   calc _ = 𝟙 _ ⊗≫ (S.repr ◁ ηS ⊗≫ εS ▷ S.repr) ▷ (X ⊗ S.reprᘁ) ⊗≫ 𝟙 _ := by
@@ -442,7 +462,7 @@ embedding `X` into the unit-class summand `S₀.repr ⊗ X ⊗ S₀.reprᘁ`. -/
 private def unitL (X : C) : X ⟶ inductionObj X :=
   (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫
     ((SimpleClasses.classOfReprIso (𝟙_ C)).inv ⊗ₘ
-      (𝟙 X ⊗ₘ (rightDualIsoUnitOfIso (SimpleClasses.classOfReprIso (𝟙_ C))).inv)) ≫
+      (𝟙 X ⊗ₘ ((SimpleClasses.classOfReprIso (𝟙_ C)).hom)ᘁ)) ≫
     biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C))
 
 omit [Field k] [IsAlgClosed k] [Linear k C] [MonoidalPreadditive C] [MonoidalLinear k C]
@@ -450,24 +470,23 @@ omit [Field k] [IsAlgClosed k] [Linear k C] [MonoidalPreadditive C] [MonoidalLin
 private theorem unitL_naturality {X X' : C} (f : X ⟶ X') :
     f ≫ unitL X' = unitL X ≫ inductionMap f := by
   let u₀ := SimpleClasses.classOfReprIso (𝟙_ C)
-  let v₀ := rightDualIsoUnitOfIso u₀
-  have hmid : (u₀.inv ⊗ₘ (𝟙 X ⊗ₘ v₀.inv)) ≫ (SimpleClasses.classOf (𝟙_ C)).repr ◁ f ▷
+  have hmid : (u₀.inv ⊗ₘ (𝟙 X ⊗ₘ (u₀.hom)ᘁ)) ≫ (SimpleClasses.classOf (𝟙_ C)).repr ◁ f ▷
         (SimpleClasses.classOf (𝟙_ C)).reprᘁ =
-      (𝟙 (𝟙_ C) ⊗ₘ (f ⊗ₘ 𝟙 (𝟙_ C))) ≫ (u₀.inv ⊗ₘ (𝟙 X' ⊗ₘ v₀.inv)) := by
+      (𝟙 (𝟙_ C) ⊗ₘ (f ⊗ₘ 𝟙 ((𝟙_ C)ᘁ : C))) ≫ (u₀.inv ⊗ₘ (𝟙 X' ⊗ₘ (u₀.hom)ᘁ)) := by
     have h1 : (SimpleClasses.classOf (𝟙_ C)).repr ◁ f ▷ (SimpleClasses.classOf (𝟙_ C)).reprᘁ =
         𝟙 (SimpleClasses.classOf (𝟙_ C)).repr ⊗ₘ
           (f ⊗ₘ 𝟙 (SimpleClasses.classOf (𝟙_ C)).reprᘁ) := by
       simp [tensorHom_def]
-    rw [h1, tensorHom_comp_tensorHom, tensorHom_comp_tensorHom,
-      tensorHom_comp_tensorHom, tensorHom_comp_tensorHom,
-      Category.comp_id, Category.id_comp, Category.id_comp, Category.comp_id,
-      Category.id_comp, Category.comp_id]
+    rw [h1]
+    simp only [tensorHom_comp_tensorHom, Category.comp_id, Category.id_comp]
   have hunitor : f ≫ (λ_ X').inv ≫ 𝟙_ C ◁ (ρ_ X').inv =
-      (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫ (𝟙 (𝟙_ C) ⊗ₘ (f ⊗ₘ 𝟙 (𝟙_ C))) := by
+      (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫ (𝟙 (𝟙_ C) ⊗ₘ (f ⊗ₘ 𝟙 ((𝟙_ C)ᘁ : C))) := by
+    change f ≫ (λ_ X').inv ≫ 𝟙_ C ◁ (ρ_ X').inv =
+      (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫ (𝟙 (𝟙_ C) ⊗ₘ (f ⊗ₘ 𝟙 (𝟙_ C)))
     simp only [tensorHom_def]
     monoidal
-  have hpre : f ≫ (λ_ X').inv ≫ 𝟙_ C ◁ (ρ_ X').inv ≫ (u₀.inv ⊗ₘ (𝟙 X' ⊗ₘ v₀.inv)) =
-      (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫ (u₀.inv ⊗ₘ (𝟙 X ⊗ₘ v₀.inv)) ≫
+  have hpre : f ≫ (λ_ X').inv ≫ 𝟙_ C ◁ (ρ_ X').inv ≫ (u₀.inv ⊗ₘ (𝟙 X' ⊗ₘ (u₀.hom)ᘁ)) =
+      (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫ (u₀.inv ⊗ₘ (𝟙 X ⊗ₘ (u₀.hom)ᘁ)) ≫
         (SimpleClasses.classOf (𝟙_ C)).repr ◁ f ▷ (SimpleClasses.classOf (𝟙_ C)).reprᘁ := by
     rw [reassoc_of% hunitor, ← hmid]
   dsimp only [unitL]
@@ -598,7 +617,8 @@ private theorem counitLF_comm {A : C} (b : HalfBraiding A) (U : C) :
   simp only [comp_whiskerRight, whiskerLeft_comp]
   monoidal
 
-include k in
+omit [Field k] [IsAlgClosed k] [Linear k C] [MonoidalLinear k C]
+  [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] in
 /-- Right triangle identity for `inductionForgetAdjunction`: `unitL A ≫ counitLF b = 𝟙 A`. -/
 private theorem unitL_comp_counitLF {A : C} (b : HalfBraiding A) :
     unitL A ≫ counitLF b = 𝟙 A := by
@@ -606,39 +626,40 @@ private theorem unitL_comp_counitLF {A : C} (b : HalfBraiding A) :
   rw [Category.assoc, Category.assoc, Category.assoc, biproduct.ι_desc]
   dsimp only [counitComponent]
   let u₀ := SimpleClasses.classOfReprIso (𝟙_ C)
-  let v₀ := rightDualIsoUnitOfIso u₀
-  have hε := simpleOppositeExactPairing_evaluation_of_iso_unit k u₀
+  have hε := simpleOppositeExactPairing_evaluation_of_iso_unit u₀
   have hβ : u₀.inv ▷ A ≫ (b.β (SimpleClasses.classOf (𝟙_ C)).repr).inv =
       (λ_ A).hom ≫ (ρ_ A).inv ≫ A ◁ u₀.inv := by
     have hunit : (b.β (𝟙_ C)).inv = (λ_ A).hom ≫ (ρ_ A).inv := by
       apply Iso.inv_ext
       simp
     rw [b.naturality_inv u₀.inv, hunit, Category.assoc]
-  have hex : ((SimpleClasses.classOf (𝟙_ C)).repr ◁ A ◁ v₀.inv) ≫
+  have hex : ((SimpleClasses.classOf (𝟙_ C)).repr ◁ A ◁ (u₀.hom)ᘁ) ≫
         (α_ _ A _).inv ≫ (b.β _).inv ▷ _ =
-      (α_ _ A (𝟙_ C)).inv ≫ (b.β _).inv ▷ 𝟙_ C ≫ (A ⊗ _) ◁ v₀.inv := by
+      (α_ _ A (𝟙_ C)).inv ≫ (b.β _).inv ▷ 𝟙_ C ≫ (A ⊗ _) ◁ (u₀.hom)ᘁ := by
     calc _ = (α_ _ A (𝟙_ C)).inv ≫
-              (((SimpleClasses.classOf (𝟙_ C)).repr ⊗ A) ◁ v₀.inv ≫ (b.β _).inv ▷ _) := by
+              (((SimpleClasses.classOf (𝟙_ C)).repr ⊗ A) ◁ (u₀.hom)ᘁ ≫ (b.β _).inv ▷ _) := by
             monoidal
       _ = _ := by rw [whisker_exchange]
-  have hv : (u₀.inv ⊗ₘ (𝟙 A ⊗ₘ v₀.inv)) =
-      u₀.inv ▷ (A ⊗ 𝟙_ C) ≫ (SimpleClasses.classOf (𝟙_ C)).repr ◁ A ◁ v₀.inv := by
-    simp [tensorHom_def]
+  have hv : (u₀.inv ⊗ₘ (𝟙 A ⊗ₘ (u₀.hom)ᘁ)) =
+      u₀.inv ▷ (A ⊗ 𝟙_ C) ≫ (SimpleClasses.classOf (𝟙_ C)).repr ◁ A ◁ (u₀.hom)ᘁ := by
+    rw [tensorHom_def, id_tensorHom]; rfl
+  have hmate_id : (u₀.hom)ᘁ ≫ (u₀.inv)ᘁ = 𝟙 ((𝟙_ C)ᘁ : C) := by
+    rw [← comp_rightAdjointMate, u₀.inv_hom_id, rightAdjointMate_id]
   rw [hε, hv, Category.assoc (u₀.inv ▷ _), reassoc_of% hex]
   calc (λ_ A).inv ≫ 𝟙_ C ◁ (ρ_ A).inv ≫ (u₀.inv ▷ (A ⊗ 𝟙_ C) ≫
-          (α_ _ A (𝟙_ C)).inv ≫ (b.β _).inv ▷ 𝟙_ C ≫ (A ⊗ _) ◁ v₀.inv ≫
-          (α_ A _ _).hom ≫ A ◁ ((u₀.hom ⊗ₘ v₀.hom) ≫ (λ_ (𝟙_ C)).hom) ≫ (ρ_ A).hom)
+          (α_ _ A (𝟙_ C)).inv ≫ (b.β _).inv ▷ 𝟙_ C ≫ (A ⊗ _) ◁ (u₀.hom)ᘁ ≫
+          (α_ A _ _).hom ≫ A ◁ ((u₀.hom ⊗ₘ (u₀.inv)ᘁ) ≫ (λ_ (𝟙_ C)).hom) ≫ (ρ_ A).hom)
       = 𝟙 _ ⊗≫ (u₀.inv ▷ A ≫ (b.β _).inv) ▷ 𝟙_ C ⊗≫
-          A ◁ ((SimpleClasses.classOf (𝟙_ C)).repr ◁ v₀.inv ≫ (u₀.hom ⊗ₘ v₀.hom)) ⊗≫ 𝟙 A := by
+          A ◁ ((SimpleClasses.classOf (𝟙_ C)).repr ◁ (u₀.hom)ᘁ ≫ (u₀.hom ⊗ₘ (u₀.inv)ᘁ)) ⊗≫
+          𝟙 A := by
           simp only [whiskerLeft_comp]
           monoidal
-    _ = 𝟙 _ ⊗≫ A ◁ ((u₀.inv ⊗ₘ v₀.inv) ≫ (u₀.hom ⊗ₘ v₀.hom)) ⊗≫ 𝟙 A := by
+    _ = 𝟙 _ ⊗≫ A ◁ ((u₀.inv ⊗ₘ (u₀.hom)ᘁ) ≫ (u₀.hom ⊗ₘ (u₀.inv)ᘁ)) ⊗≫ 𝟙 A := by
           rw [hβ]
           simp only [tensorHom_def, comp_whiskerRight]
           monoidal
     _ = 𝟙 A := by
-          rw [tensorHom_comp_tensorHom, u₀.inv_hom_id, v₀.inv_hom_id, id_tensorHom_id,
-            whiskerLeft_id]
+          rw [tensorHom_comp_tensorHom, u₀.inv_hom_id, hmate_id, id_tensorHom_id, whiskerLeft_id]
           monoidal
 
 /-- Left triangle identity for `inductionForgetAdjunction`:
@@ -680,31 +701,56 @@ private theorem unitL_comp_counitF (X : C) :
     unitL X ≫ (forgetInductionAdjunction k C).counit.app X = 𝟙 X := by
   rw [forgetInductionAdjunction_counit_app]
   dsimp only [unitL]
-  let p₁ : HasRightDual (𝟙_ C) := RightRigidCategory.rightDual (𝟙_ C)
   let u₀ := SimpleClasses.classOfReprIso (𝟙_ C)
-  let v₀ := rightDualIsoUnitOfIso u₀
+  let r₀ : (SimpleClasses.classOf (𝟙_ C)).reprᘁ ⟶
+      (RightRigidCategory.rightDual (𝟙_ C)).rightDual :=
+    @rightAdjointMate C _ _ (𝟙_ C) _ (RightRigidCategory.rightDual (𝟙_ C)) _ u₀.inv
   have hend : biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) ≫
         inductionEndπ X (𝟙_ C) =
-      (SimpleClasses.classOf (𝟙_ C)).repr ◁ X ◁
-        @rightAdjointMate C _ _ (𝟙_ C) _ p₁ _ u₀.inv ≫
-        u₀.hom ▷ (X ⊗ p₁.rightDual) := by
+      (SimpleClasses.classOf (𝟙_ C)).repr ◁ X ◁ r₀ ≫
+        u₀.hom ▷ (X ⊗ (RightRigidCategory.rightDual (𝟙_ C)).rightDual) := by
     have hdin := inductionEndπ_dinatural k X u₀.inv
     rw [inductionEndπ_repr k X (SimpleClasses.classOf (𝟙_ C))] at hdin
     have h1 := biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) ≫= hdin
     rw [biproduct.ι_π_self_assoc, ← Category.assoc] at h1
-    have h2 := h1 =≫ u₀.hom ▷ (X ⊗ p₁.rightDual)
+    have h2 := h1 =≫ u₀.hom ▷ (X ⊗ (RightRigidCategory.rightDual (𝟙_ C)).rightDual)
     rw [Category.assoc, ← comp_whiskerRight, u₀.inv_hom_id, id_whiskerRight,
       Category.comp_id] at h2
     exact h2
-  rw [Category.assoc, Category.assoc, Category.assoc, reassoc_of% hend]
-  have hv : (u₀.inv ⊗ₘ (𝟙 X ⊗ₘ v₀.inv)) =
-      u₀.inv ▷ (X ⊗ 𝟙_ C) ≫ (SimpleClasses.classOf (𝟙_ C)).repr ◁ X ◁ v₀.inv := by
-    simp [tensorHom_def]
-  rw [hv, Category.assoc (u₀.inv ▷ _), ← whiskerLeft_comp_assoc, ← whiskerLeft_comp,
-    ← whisker_exchange_assoc, ← comp_whiskerRight_assoc, u₀.inv_hom_id, id_whiskerRight,
-    Category.id_comp, leftUnitor_naturality_assoc, ← whiskerLeft_comp_assoc, Category.assoc v₀.inv,
-    ← rightDualIsoUnitOfIso_hom u₀, v₀.inv_hom_id, whiskerLeft_id, Category.id_comp]
-  monoidal
+  have hmate_unit : (u₀.hom)ᘁ ≫ r₀ ≫ (rightDualUnitIso C).hom = 𝟙 (𝟙_ C) := by
+    dsimp only [r₀]
+    rw [rightAdjointMate_eq_rightMate,
+      @rightAdjointMate_eq_rightMate C _ _ (𝟙_ C) _ (RightRigidCategory.rightDual (𝟙_ C)) _,
+      rightDualUnitIso_hom, ExactPairing.rightDualIso_hom,
+      ← ExactPairing.comp_rightMate, ← ExactPairing.comp_rightMate,
+      Category.id_comp, u₀.inv_hom_id]
+    exact ExactPairing.rightMate_id exactPairingUnit
+  have hex : (SimpleClasses.classOf (𝟙_ C)).repr ◁ X ◁ ((u₀.hom)ᘁ ≫ r₀) ≫
+        u₀.hom ▷ (X ⊗ (RightRigidCategory.rightDual (𝟙_ C)).rightDual) =
+      u₀.hom ▷ (X ⊗ 𝟙_ C) ≫ 𝟙_ C ◁ X ◁ ((u₀.hom)ᘁ ≫ r₀) :=
+    whisker_exchange _ _
+  simp only [Category.assoc]
+  calc (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫ (u₀.inv ⊗ₘ (𝟙 X ⊗ₘ (u₀.hom)ᘁ)) ≫
+          biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) ≫
+          inductionEndπ X (𝟙_ C) ≫
+          (λ_ (X ⊗ (RightRigidCategory.rightDual (𝟙_ C)).rightDual)).hom ≫
+          X ◁ (rightDualUnitIso C).hom ≫ (ρ_ X).hom
+      = (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫ u₀.inv ▷ (X ⊗ 𝟙_ C) ≫
+          ((SimpleClasses.classOf (𝟙_ C)).repr ◁ X ◁ ((u₀.hom)ᘁ ≫ r₀) ≫
+            u₀.hom ▷ (X ⊗ (RightRigidCategory.rightDual (𝟙_ C)).rightDual)) ≫
+          (λ_ (X ⊗ (RightRigidCategory.rightDual (𝟙_ C)).rightDual)).hom ≫
+          X ◁ (rightDualUnitIso C).hom ≫ (ρ_ X).hom := by
+        rw [reassoc_of% hend]
+        simp only [tensorHom_def, whiskerLeft_comp, Category.assoc]
+        monoidal
+    _ = 𝟙 X ⊗≫ (u₀.inv ≫ u₀.hom) ▷ (X ⊗ 𝟙_ C) ⊗≫
+          𝟙_ C ◁ X ◁ ((u₀.hom)ᘁ ≫ r₀ ≫ (rightDualUnitIso C).hom) ⊗≫ 𝟙 X := by
+        rw [hex]
+        simp only [comp_whiskerRight, whiskerLeft_comp]
+        monoidal
+    _ = 𝟙 X := by
+        rw [u₀.inv_hom_id, hmate_unit]
+        monoidal
 
 /-! ### Public left adjunction API -/
 
@@ -726,18 +772,23 @@ def inductionForgetAdjunction : induction k C ⊣ forget C :=
                 (counitLF_comm k (A := (forget C).obj Z) Z.2 U).trans
                   (congrArg (· ≫ U ◁ counitLF (A := (forget C).obj Z) Z.2)
                     (inductionHalfBraiding_β_hom k ((forget C).obj Z) U).symm) }
-          naturality _ _ h := Center.ext _ _ (counitLF_naturality h.f h.comm) }
+          naturality _ _ h := by
+            refine Center.ext _ _ ?_
+            rw [comp_f, comp_f, Functor.comp_map, Functor.id_map, induction_map_f]
+            exact counitLF_naturality h.f h.comm }
       left_triangle := by
         refine NatTrans.ext (funext fun X ↦ ?_)
-        dsimp only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.associator_hom_app,
-          Functor.whiskerLeft_app, NatTrans.id_app, Functor.comp_obj, Functor.id_obj]
-        rw [Category.id_comp]
-        exact Center.ext _ _ (inductionMap_unitL_comp_counitLF k X)
+        simp only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.associator_hom_app,
+          Functor.whiskerLeft_app, Functor.comp_obj, Functor.id_obj, Category.id_comp]
+        dsimp only [NatTrans.id]
+        refine Center.ext _ _ ?_
+        rw [comp_f, id_f]
+        exact inductionMap_unitL_comp_counitLF k X
       right_triangle :=
         NatTrans.ext (funext fun Z ↦
           (congrArg (unitL ((forget C).obj Z) ≫ ·)
             (Category.id_comp (counitLF (A := (forget C).obj Z) Z.2))).trans
-            (unitL_comp_counitLF k (A := (forget C).obj Z) Z.2)) }
+            (unitL_comp_counitLF (A := (forget C).obj Z) Z.2)) }
 
 /-- `Center.induction k C` is a left adjoint (in particular, it preserves all colimits that exist in
 `C`). -/
@@ -749,13 +800,28 @@ theorem inductionForgetAdjunction_unit_app (X : C) :
     (inductionForgetAdjunction k C).unit.app X =
       (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫
         ((SimpleClasses.classOfReprIso (𝟙_ C)).inv ⊗ₘ
-          (𝟙 X ⊗ₘ (rightDualIsoUnitOfIso (SimpleClasses.classOfReprIso (𝟙_ C))).inv)) ≫
+          (𝟙 X ⊗ₘ ((SimpleClasses.classOfReprIso (𝟙_ C)).hom)ᘁ)) ≫
         biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) :=
   (rfl)
 
+/-- Reassociated form of `inductionForgetAdjunction_unit_app`.
+
+Stated explicitly because `@[reassoc]` does not unfold `induction` at `reducible` transparency and
+would otherwise leave the right-hand side left-associated at `biproduct.ι`. -/
+theorem inductionForgetAdjunction_unit_app_assoc (X : C) {W : C}
+    (h : (forget C).obj ((induction k C).obj X) ⟶ W) :
+    (inductionForgetAdjunction k C).unit.app X ≫ h =
+      (λ_ X).inv ≫ 𝟙_ C ◁ (ρ_ X).inv ≫
+        ((SimpleClasses.classOfReprIso (𝟙_ C)).inv ⊗ₘ
+          (𝟙 X ⊗ₘ ((SimpleClasses.classOfReprIso (𝟙_ C)).hom)ᘁ)) ≫
+        biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) ≫ h := by
+  rw [inductionForgetAdjunction_unit_app]
+  exact (Category.assoc _ _ _).trans (congrArg _ ((Category.assoc _ _ _).trans
+    (congrArg _ (Category.assoc _ _ _))))
+
 /-- Component of the counit of `inductionForgetAdjunction` on the `S`-summand of
 `inductionObj Z.1`. -/
-@[reassoc, simp]
+@[simp]
 theorem ι_comp_inductionForgetAdjunction_counit_app_f (Z : Center C) (S : SimpleClasses C) :
     biproduct.ι (inductionSummand Z.1) S ≫
         ((inductionForgetAdjunction k C).counit.app Z).f =
@@ -766,6 +832,23 @@ theorem ι_comp_inductionForgetAdjunction_counit_app_f (Z : Center C) (S : Simpl
   -- Unfold the counit component of `inductionForgetAdjunction` to `biproduct.desc`.
   change biproduct.ι (inductionSummand Z.1) S ≫ counitLF Z.2 = _
   simp [counitLF, counitComponent]
+
+/-- Reassociated form of `ι_comp_inductionForgetAdjunction_counit_app_f`.
+
+Stated explicitly because `@[reassoc (attr := simp)]` does not unfold `induction` at `reducible`
+transparency and would otherwise produce a left-associated LHS rejected by `simpNF`. -/
+@[simp]
+theorem ι_comp_inductionForgetAdjunction_counit_app_f_assoc (Z : Center C) (S : SimpleClasses C)
+    {W : C} (h : Z.1 ⟶ W) :
+    biproduct.ι (inductionSummand Z.1) S ≫
+        ((inductionForgetAdjunction k C).counit.app Z).f ≫ h =
+      (α_ S.repr Z.1 S.reprᘁ).inv ≫ (Z.2.β S.repr).inv ▷ S.reprᘁ ≫
+        (α_ Z.1 S.repr S.reprᘁ).hom ≫
+        Z.1 ◁ @ExactPairing.evaluation C _ _ S.reprᘁ S.repr (simpleOppositeExactPairing S.repr) ≫
+        (ρ_ Z.1).hom ≫ h := by
+  refine (Category.assoc _ _ _).symm.trans ?_
+  rw [ι_comp_inductionForgetAdjunction_counit_app_f]
+  simp only [Category.assoc]
 
 /-- The unit of `inductionForgetAdjunction` splits the counit of `forgetInductionAdjunction`. -/
 @[reassoc]
@@ -781,16 +864,17 @@ instance instIsSplitMonoInductionForgetAdjunctionUnitApp (X : C) :
     { retraction := (forgetInductionAdjunction k C).counit.app X
       id := inductionForgetAdjunction_unit_app_comp_forgetInductionAdjunction_counit_app k C X }
 
+/-- Every component of `(forgetInductionAdjunction k C).counit` is a split epimorphism. -/
+instance instIsSplitEpiForgetInductionAdjunctionCounitApp (X : C) :
+    IsSplitEpi ((forgetInductionAdjunction k C).counit.app X) :=
+  IsSplitEpi.mk'
+    { section_ := (inductionForgetAdjunction k C).unit.app X
+      id := inductionForgetAdjunction_unit_app_comp_forgetInductionAdjunction_counit_app k C X }
+
 /-- In a fusion category `C` over an algebraically closed field `k`, the induction functor
 `Center.induction k C : C ⥤ Center C` is faithful. -/
-instance instFaithfulInduction : (induction k C).Faithful where
-  map_injective {X Y} {f g} h := by
-    have hf := (inductionForgetAdjunction k C).unit.naturality f
-    have hg := (inductionForgetAdjunction k C).unit.naturality g
-    simp only [Functor.id_map, Functor.comp_map] at hf hg
-    rw [h] at hf
-    rw [← cancel_mono ((inductionForgetAdjunction k C).unit.app Y)]
-    exact hf.trans hg.symm
+instance instFaithfulInduction : (induction k C).Faithful :=
+  (inductionForgetAdjunction k C).faithful_L_of_mono_unit_app
 
 end Fusion
 
