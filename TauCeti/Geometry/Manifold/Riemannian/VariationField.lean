@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!
 # The transverse derivatives of the metric pairings along a variation
@@ -20,15 +21,19 @@ curve parameter `t`.  Its *variation field* `V = TauCeti.Manifold.variationField
 tangent vector at `γ t`.  Hypotheses on a variation are stated on the uncurried map
 `fun z : ℝ × ℝ ↦ F z.1 z.2`.
 
-In a Riemannian manifold with its Levi-Civita connection, this file records the two pointwise
-derivative formulas that variational arguments consume, valid at every parameter where the family
-is `C²`: the transverse derivative of the squared speed of the curves `F s`, and the product rule
-for `⟪V, γ'⟫` along `γ`.  They are the pointwise content of the Gauss lemma
-(`TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Basic`) and of the first variation of energy
-(`TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic`).
+In a Riemannian manifold with its Levi-Civita connection, this file records the joint `C^m`
+regularity of the squared speed `(s, t) ↦ ‖∂_t F (s, t)‖²` on open sets where the family is
+`C^(m+1)`, together with the two pointwise derivative formulas that variational arguments consume,
+valid at every parameter where the family is `C²`: the transverse derivative of the squared speed
+of the curves `F s`, and the product rule for `⟪V, γ'⟫` along `γ`.  They are the pointwise content
+of the Gauss lemma (`TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Basic`) and of the first
+and second variations of energy (`TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic`,
+`TauCeti.Geometry.Manifold.Riemannian.SecondVariation.Basic`).
 
 ## Main results
 
+* `ContMDiffOn.contDiffOn_norm_sq_curveVelocity`: for a `C^n` variation on an open subset of
+  `ℝ × ℝ` into a `C^m` Riemannian manifold (`m + 1 ≤ n`), `(s, t) ↦ ‖∂_t F (s, t)‖²` is `C^m`.
 * `TauCeti.Manifold.hasDerivAt_norm_sq_curveVelocity`: the transverse derivative of the squared
   speed is `2 ⟪D_t V, γ'⟫`.
 * `TauCeti.Manifold.hasDerivAt_inner_variationField_curveVelocity`: the product rule
@@ -56,6 +61,22 @@ variable
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : ℝ → ℝ → M}
+
+/-- For a `C^n` two-parameter family `F` on an open subset `U` of `ℝ × ℝ` into a manifold with a
+`C^m` Riemannian metric (`m + 1 ≤ n`), the squared speed `(s, t) ↦ ‖∂_t F (s, t)‖²` is `C^m` on
+`U`. -/
+theorem _root_.ContMDiffOn.contDiffOn_norm_sq_curveVelocity [IsManifold I 1 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {m n : ℕ∞ω}
+    [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)] {U : Set (ℝ × ℝ)}
+    (hf : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ F z.1 z.2) U) (hmn : m + 1 ≤ n)
+    (hU : IsOpen U) :
+    ContDiffOn ℝ m (fun z : ℝ × ℝ ↦ ‖curveVelocity I (F z.1) z.2‖ ^ 2) U :=
+  (hf.contDiffOn_inner_mfderiv hmn hU ((0 : ℝ), (1 : ℝ)) ((0 : ℝ), (1 : ℝ))).congr
+    fun ⟨s, t⟩ hz ↦ by
+      dsimp only
+      rw [← real_inner_self_eq_norm_sq, curveVelocity_eq_mfderiv_snd
+        ((hf.contMDiffAt (hU.mem_nhds hz)).mdifferentiableAt
+          (ne_of_gt (lt_of_lt_of_le (by simp : (0 : ℕ∞ω) < 1) (le_trans le_add_self hmn))))]
 
 variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]

@@ -28,8 +28,9 @@ since Mathlib's derivative is `0` wherever it is undefined. Mathlib's
 The second derivative of a quadratic polynomial `a + b s + c s ^ 2` is the constant `2 c`, and
 the affine line `t ↦ a + t • b` has constant derivative `b` and vanishing second derivative.
 
-The second derivative of the square root of a quadratic polynomial `Q s = a + b s + c s ^ 2` is
-computed where `Q` is positive. Since `2 Q Q'' - Q' ^ 2` is the constant `4 a c - b ^ 2`, it is
+The second derivative of `√(g s)` at a point where `g` is positive is
+`g'' / (2 √g) - g' ^ 2 / (4 g √g)`. Specializing to a quadratic polynomial
+`Q s = a + b s + c s ^ 2`, since `2 Q Q'' - Q' ^ 2` is the constant `4 a c - b ^ 2`, gives
 `(4 a c - b ^ 2) / (4 Q √Q)`; at `0` this is `(4 a c - b ^ 2) / (4 a √a)`.
 
 Under the change of variables `x = e^y` the operators `x d/dx` and `x² d²/dx²` become `d/dy` and
@@ -45,6 +46,8 @@ coefficients `x` and `x²` degenerate at `0`, into equations with constant coeff
 * `TauCeti.deriv_deriv_quadratic`: the second derivative of `s ↦ a + b s + c s ^ 2`.
 * `TauCeti.deriv_const_add_smul`, `TauCeti.iteratedDeriv_two_const_add_smul`: the first and
   second derivatives of the affine line `t ↦ a + t • b`.
+* `TauCeti.hasDerivAt_deriv_sqrt`, `TauCeti.deriv_deriv_sqrt`: the second derivative of
+  `s ↦ √(g s)` where `g` is positive.
 * `TauCeti.deriv_deriv_sqrt_quadratic`: the second derivative of `s ↦ √(a + b s + c s ^ 2)`, and
   `TauCeti.deriv_deriv_sqrt_quadratic_zero` its value at `0`.
 * `TauCeti.sq_mul_deriv_deriv_comp_log`, `TauCeti.deriv_deriv_comp_exp`: the second derivatives
@@ -122,6 +125,35 @@ theorem iteratedDeriv_two_const_add_smul (a b : F) :
     Pi.zero_def]
 
 end AffineLine
+
+/-- The second derivative of `s ↦ √(g s)` at a point `t` where `0 < g t`, `g` is differentiable
+near `t` with derivative `g'` at `t`, and `deriv g` has derivative `g''` at `t`, is
+`g'' / (2 * √(g t)) - g' ^ 2 / (4 * g t * √(g t))`. -/
+theorem hasDerivAt_deriv_sqrt {g : ℝ → ℝ} {g' g'' t : ℝ} (ht : 0 < g t)
+    (hg : ∀ᶠ s in 𝓝 t, DifferentiableAt ℝ g s)
+    (hg' : HasDerivAt g g' t) (hg'' : HasDerivAt (deriv g) g'' t) :
+    HasDerivAt (deriv fun s ↦ √(g s))
+      (g'' / (2 * √(g t)) - g' ^ 2 / (4 * g t * √(g t))) t := by
+  have hpos : ∀ᶠ s in 𝓝 t, 0 < g s :=
+    continuousAt_const.eventually_lt hg'.continuousAt ht
+  have hderiv : deriv (fun s ↦ √(g s)) =ᶠ[𝓝 t] fun s ↦ deriv g s / (2 * √(g s)) :=
+    (hg.and hpos).mono fun s ⟨hds, hspos⟩ ↦ (hds.hasDerivAt.sqrt hspos.ne').deriv
+  have hden : HasDerivAt (fun s ↦ 2 * √(g s)) (2 * (g' / (2 * √(g t)))) t :=
+    (hg'.sqrt ht.ne').const_mul 2
+  refine ((HasDerivAt.fun_div hg'' hden (by positivity)).congr_of_eventuallyEq hderiv).congr_deriv
+    ?_
+  have hsq := Real.sq_sqrt ht.le
+  rw [hg'.deriv]
+  field_simp
+  rw [hsq]
+  ring
+
+/-- Evaluating `hasDerivAt_deriv_sqrt` as `deriv (deriv fun s ↦ √(g s)) t`. -/
+theorem deriv_deriv_sqrt {g : ℝ → ℝ} {t : ℝ} (ht : 0 < g t)
+    (hg : ∀ᶠ s in 𝓝 t, DifferentiableAt ℝ g s) (hg'' : DifferentiableAt ℝ (deriv g) t) :
+    deriv (deriv fun s ↦ √(g s)) t =
+      deriv (deriv g) t / (2 * √(g t)) - deriv g t ^ 2 / (4 * g t * √(g t)) :=
+  (hasDerivAt_deriv_sqrt ht hg hg.self_of_nhds.hasDerivAt hg''.hasDerivAt).deriv
 
 /-- The second derivative of the square root of a quadratic polynomial
 `Q s = a + b * s + c * s ^ 2` at a point `t` where `Q` is positive is

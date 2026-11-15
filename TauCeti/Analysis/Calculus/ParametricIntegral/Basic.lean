@@ -20,10 +20,10 @@ is preserved at every finite or infinite order and with independent domain and c
 These results supply the analytic regularity used by smooth Hadamard factorization, differential
 forms and kernel integrals.
 
-The file also differentiates a parametrized interval integral `x ↦ ∫ t in a..b, G (x, t)` in a
-real parameter `x` at a point `x₀`, assuming only that `G` is `C¹` on an open set containing the
-compact segment `{x₀} × [a, b]`: the derivative is the integral of the partial derivative of `G`
-in `x`.
+The file also differentiates a parametrized interval integral `x ↦ ∫ t in a..b, G (x, t)` once or
+twice in a real parameter `x` at a point `x₀`, assuming only that `G` is `C¹` (respectively `C²`)
+on an open set containing the compact segment `{x₀} × [a, b]`: the first and second derivatives
+are the integrals of the first and second partial derivatives of `G` in `x`.
 
 Iterated derivatives also pass under an interval integral `x ↦ ∫ s in a..b, u s x` of a family of
 `C^N` functions, provided each derivative `D^k (u s) x`, `k ≤ N`, is measurable in `s` and bounded
@@ -142,6 +142,43 @@ theorem hasDerivAt_intervalIntegral_of_contDiffOn {G : ℝ × ℝ → F}
   · exact Filter.Eventually.of_forall fun t ht x hx ↦
       hC (x, t) ⟨hx, Set.uIoc_subset_uIcc ht⟩
   · exact Filter.Eventually.of_forall fun t ht x hx ↦ hdiff t ht x hx
+
+/-- **Second derivative under a parametrized interval integral.** If `G` is `C²` on an open set
+containing the segment `{x₀} × [a, b]`, then the second partial derivative of `G` in the first
+variable is interval integrable along that segment, and `deriv (fun x ↦ ∫ t in a..b, G (x, t))`
+is differentiable at `x₀` with derivative `∫ t in a..b, deriv (deriv fun x ↦ G (x, t)) x₀`. -/
+theorem hasDerivAt_deriv_intervalIntegral_of_contDiffOn {G : ℝ × ℝ → F}
+    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hG : ContDiffOn ℝ 2 G U) {x₀ a b : ℝ}
+    (hsub : {x₀} ×ˢ Set.uIcc a b ⊆ U) :
+    IntervalIntegrable (fun t ↦ deriv (deriv fun x ↦ G (x, t)) x₀) volume a b ∧
+      HasDerivAt (deriv fun x ↦ ∫ t in a..b, G (x, t))
+        (∫ t in a..b, deriv (deriv fun x ↦ G (x, t)) x₀) x₀ := by
+  obtain ⟨u, v, huo, _, hu, hv, huv⟩ :=
+    generalized_tube_lemma isCompact_singleton isCompact_uIcc hU hsub
+  have hx₀u : x₀ ∈ u := hu (Set.mem_singleton x₀)
+  set G₁ : ℝ × ℝ → F := fun z ↦ fderiv ℝ G z (1, 0)
+  have hG₁ : ContDiffOn ℝ 1 G₁ U :=
+    (hG.fderiv_of_isOpen hU (m := 1) le_rfl).clm_apply contDiffOn_const
+  have hd₁ :
+      (deriv fun x ↦ ∫ t in a..b, G (x, t)) =ᶠ[nhds x₀] fun x ↦ ∫ t in a..b, G₁ (x, t) := by
+    filter_upwards [huo.mem_nhds hx₀u] with x hx
+    exact (hasDerivAt_intervalIntegral_of_contDiffOn hU (hG.of_le one_le_two)
+      fun z hz ↦ huv ⟨(Set.mem_singleton_iff.mp hz.1) ▸ hx, hv hz.2⟩).2.deriv
+  obtain ⟨hint, hd₂⟩ := hasDerivAt_intervalIntegral_of_contDiffOn hU hG₁ hsub
+  have hpart {H : ℝ × ℝ → F} (hH : ContDiffOn ℝ 1 H U) {x t : ℝ} (hz : (x, t) ∈ U) :
+      HasDerivAt (fun x ↦ H (x, t)) (fderiv ℝ H (x, t) (1, 0)) x :=
+    ((hH.differentiableOn one_ne_zero (x, t) hz).differentiableAt
+      (hU.mem_nhds hz)).hasFDerivAt.comp_hasDerivAt x
+      ((hasDerivAt_id x).prodMk (hasDerivAt_const x t))
+  have hslice : ∀ t ∈ Set.uIcc a b,
+      fderiv ℝ G₁ (x₀, t) (1, 0) = deriv (deriv fun x ↦ G (x, t)) x₀ := by
+    intro t ht
+    have hdG : (deriv fun x ↦ G (x, t)) =ᶠ[nhds x₀] fun x ↦ G₁ (x, t) := by
+      filter_upwards [huo.mem_nhds hx₀u] with x hx
+      exact (hpart (hG.of_le one_le_two) (huv ⟨hx, hv ht⟩)).deriv
+    exact ((hpart hG₁ (huv ⟨hx₀u, hv ht⟩)).congr_of_eventuallyEq hdG).deriv.symm
+  exact ⟨hint.congr fun t ht ↦ hslice t (Set.uIoc_subset_uIcc ht),
+    (hd₂.congr_of_eventuallyEq hd₁).congr_deriv (intervalIntegral.integral_congr hslice)⟩
 
 /-! ### Iterated derivatives under an interval integral -/
 
