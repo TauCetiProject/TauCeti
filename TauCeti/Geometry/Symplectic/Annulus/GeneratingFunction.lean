@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 public import Mathlib.Topology.Algebra.Module.Determinant
+public import TauCeti.Geometry.Symplectic.Annulus.TwistCoordinates
 import Mathlib.Algebra.Order.Group.Pointwise.Interval
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
@@ -53,11 +54,29 @@ coordinates `(x, X)`.
   `∂₁ S'(x, X) = -y`, `∂₂ S'(x, X) = Y(x, y)` at `X = X(x, y)`
   (`TauCeti.hasFDerivAt_of_eventuallyEq_stripGeneratingFunction`).
 
+Globally, on an open strip `ℝ × I` on which `F` twists, the twist coordinates
+`(x, y) ↦ (x, X(x, y))` (`TauCeti.twistCoordinates`) are a diffeomorphism onto their image
+(`TauCeti.twistCoordinatesPartialDiffeomorph`). Reading `S` through their inverse gives the
+generating function in the coordinates `(x, X)` on the whole band
+(`TauCeti.twistGeneratingFunction F I`):
+
+* its value at `(x, X(x, y))` is `S(x, y)` (`TauCeti.twistGeneratingFunction_twistCoordinates`),
+  and it vanishes on the image `(x, X(x, 0))` of the lower boundary line
+  (`TauCeti.twistGeneratingFunction_mk_fst_zero`);
+* it is invariant under the diagonal translation `(x, X) ↦ (x + a, X + a)` when `F` commutes with
+  `(x, y) ↦ (x + a, y)` (`TauCeti.twistGeneratingFunction_twistCoordinates_add`);
+* when `I` contains `0` and `F` is `C²`, preserves area and the line `y = 0` and twists on the
+  strip, it satisfies the generating equations `∂₁ S(x, X) = -y`, `∂₂ S(x, X) = Y(x, y)` at every
+  point of the band (`TauCeti.hasFDerivAt_twistGeneratingFunction`), and it is `C^n` on the band
+  when `F` is `C^(n + 1)` (`TauCeti.contDiffOn_twistGeneratingFunction`).
+
 The normalization `S = 0` on the lower boundary fixes the additive constant of the generating
 function. For the affine shear `(x, y) ↦ (x + a + c y, y)` the generating function is `c y² / 2`
 (`TauCeti.stripGeneratingFunction_affineShear`). When the twist `c` is nonzero, this is
 `(X - x - a)² / (2c)` in the coordinates `(x, X)`, and its generating equations read
-`-∂₁ S' = y = ∂₂ S'` (`TauCeti.hasFDerivAt_affineShear_generatingFunction`).
+`-∂₁ S' = y = ∂₂ S'` (`TauCeti.hasFDerivAt_affineShear_generatingFunction`); it is the
+generating function of the shear in the twist coordinates of the plane
+(`TauCeti.twistGeneratingFunction_affineShear`).
 
 These are the generating functions of the area-preserving twist factors in the
 generating-function proof of the Poincaré–Birkhoff theorem.
@@ -309,42 +328,134 @@ theorem hasFDerivAt_of_eventuallyEq_stripGeneratingFunction {p : ℝ × ℝ}
     HasFDerivAt S' ((F p).2 • ContinuousLinearMap.snd ℝ ℝ ℝ -
       p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ) (p.1, (F p).1) := by
   have hFp : ContDiffAt ℝ 2 F p := hF p.2 right_mem_uIcc
-  set G : ℝ × ℝ → ℝ × ℝ := fun q ↦ (q.1, (F q).1)
-  set G' : (ℝ × ℝ) →L[ℝ] ℝ × ℝ :=
-    (ContinuousLinearMap.fst ℝ ℝ ℝ).prod ((ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ F p))
+  have hdiff : DifferentiableAt ℝ F p := hFp.differentiableAt two_ne_zero
+  -- The twist coordinates `G(x, y) = (x, X(x, y))` have invertible derivative, since their
+  -- Jacobian determinant is the twist.
+  set e : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ :=
+    (fderiv ℝ (twistCoordinates F) p).toContinuousLinearEquivOfDetNeZero
+      ((det_fderiv_twistCoordinates hdiff).trans_ne htwist)
+  have hG : HasStrictFDerivAt (twistCoordinates F) (e : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) p := by
+    rw [ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero]
+    exact (contDiffAt_twistCoordinates hFp).hasStrictFDerivAt
+      ((contDiffAt_twistCoordinates hFp).differentiableAt two_ne_zero).hasFDerivAt two_ne_zero
   set Λ : (ℝ × ℝ) →L[ℝ] ℝ :=
     (F p).2 • ContinuousLinearMap.snd ℝ ℝ ℝ - p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ
-  -- The coordinate change `G` has invertible derivative, since its determinant is the twist.
-  have hdetG : G'.det ≠ 0 := by
-    simpa [G', ContinuousLinearMap.det, LinearMap.det_finTwoProd] using htwist
-  set e : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ := G'.toContinuousLinearEquivOfDetNeZero hdetG
-  have he : (e : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) = G' := G'.coe_toContinuousLinearEquivOfDetNeZero hdetG
-  have hG : HasStrictFDerivAt G (e : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) p := by
-    rw [he]
-    exact hasStrictFDerivAt_fst.prodMk (hasStrictFDerivAt_fst.comp p
-      (hFp.hasStrictFDerivAt (hFp.differentiableAt two_ne_zero).hasFDerivAt two_ne_zero))
   -- Through the local inverse of `G`, `S'` is the generating function.
-  set k := hG.localInverse G e p
-  have heq : S' =ᶠ[𝓝 (G p)] stripGeneratingFunction F ∘ k := by
+  set k := hG.localInverse (twistCoordinates F) e p
+  have heq : S' =ᶠ[𝓝 (twistCoordinates F p)] stripGeneratingFunction F ∘ k := by
     filter_upwards [hG.eventually_right_inverse, hG.localInverse_tendsto.eventually hS']
       with z hz hz'
-    calc S' z = S' (G (k z)) := by rw [hz]
-      _ = (stripGeneratingFunction F ∘ k) z := hz'
+    calc S' z = S' (twistCoordinates F (k z)) := by rw [hz]
+      _ = (stripGeneratingFunction F ∘ k) z := by rw [twistCoordinates_apply]; exact hz'
   -- The derivative of `S'` is `Λ`, since `Λ ∘ dG = dS`.
   have hΛ : (F p).2 • (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ F p) -
       p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ = Λ.comp (e : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) := by
-    rw [he]
-    ext <;> simp [G', Λ]
+    rw [ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero,
+      (hasFDerivAt_twistCoordinates hdiff).fderiv]
+    ext <;> simp [Λ]
   have hS : HasFDerivAt (stripGeneratingFunction F)
       ((F p).2 • (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ F p) -
-        p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ) (k (G p)) := by
-    have hkp : k (G p) = p := hG.localInverse_apply_image
+        p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ) (k (twistCoordinates F p)) := by
+    have hkp : k (twistCoordinates F p) = p := hG.localInverse_apply_image
     rw [hkp]
     exact hasFDerivAt_stripGeneratingFunction hF hY hdet
-  have hSk := hS.comp (G p) hG.to_localInverse.hasFDerivAt
+  have hSk := hS.comp (twistCoordinates F p) hG.to_localInverse.hasFDerivAt
   rw [hΛ, ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_comp_coe_symm,
     ContinuousLinearMap.comp_id] at hSk
-  exact hSk.congr_of_eventuallyEq heq
+  have hS'p := hSk.congr_of_eventuallyEq heq
+  rwa [twistCoordinates_apply] at hS'p
+
+/-! ### The generating function on the band -/
+
+/-- The **generating function of `F` in the twist coordinates** `(x, X)`, for the strip `ℝ × I`:
+the generating function `S` of `F` read through the inverse of the twist coordinates
+`(x, y) ↦ (x, X(x, y))` on `ℝ × I`. Where the twist coordinates are injective on `ℝ × I`, its value
+at `(x, X(x, y))` is `S(x, y)` (`TauCeti.twistGeneratingFunction_twistCoordinates`); off the image
+of the strip its values carry no meaning. -/
+def twistGeneratingFunction (F : ℝ × ℝ → ℝ × ℝ) (I : Set ℝ) (z : ℝ × ℝ) : ℝ :=
+  stripGeneratingFunction F (Function.invFunOn (twistCoordinates F) ((univ : Set ℝ) ×ˢ I) z)
+
+variable {I : Set ℝ}
+
+theorem twistGeneratingFunction_def (z : ℝ × ℝ) :
+    twistGeneratingFunction F I z =
+      stripGeneratingFunction F (Function.invFunOn (twistCoordinates F) ((univ : Set ℝ) ×ˢ I) z) :=
+  (rfl)
+
+/-- On a strip where the twist coordinates are injective, the generating function in the twist
+coordinates takes the value `S(x, y)` at `(x, X(x, y))`. -/
+theorem twistGeneratingFunction_twistCoordinates
+    (hinj : InjOn (twistCoordinates F) ((univ : Set ℝ) ×ˢ I)) {q : ℝ × ℝ}
+    (hq : q ∈ (univ : Set ℝ) ×ˢ I) :
+    twistGeneratingFunction F I (twistCoordinates F q) = stripGeneratingFunction F q := by
+  rw [twistGeneratingFunction_def, hinj.leftInvOn_invFunOn hq]
+
+/-- The generating function in the twist coordinates vanishes on the image `(x, X(x, 0))` of the
+lower boundary line. -/
+theorem twistGeneratingFunction_mk_fst_zero
+    (hinj : InjOn (twistCoordinates F) ((univ : Set ℝ) ×ˢ I)) (h0 : (0 : ℝ) ∈ I) (x : ℝ) :
+    twistGeneratingFunction F I (x, (F (x, 0)).1) = 0 := by
+  have h := twistGeneratingFunction_twistCoordinates hinj (q := (x, 0)) ⟨mem_univ x, h0⟩
+  rwa [twistCoordinates_apply, stripGeneratingFunction_mk_zero] at h
+
+/-- If `F` commutes with the translation `(x, y) ↦ (x + a, y)`, the generating function in the
+twist coordinates is invariant under the diagonal translation `(x, X) ↦ (x + a, X + a)` of the
+image of the strip. -/
+theorem twistGeneratingFunction_twistCoordinates_add {a : ℝ}
+    (hF : ∀ q, F (q + (a, 0)) = F q + (a, 0))
+    (hinj : InjOn (twistCoordinates F) ((univ : Set ℝ) ×ˢ I)) {q : ℝ × ℝ}
+    (hq : q ∈ (univ : Set ℝ) ×ˢ I) :
+    twistGeneratingFunction F I (twistCoordinates F q + (a, a)) =
+      twistGeneratingFunction F I (twistCoordinates F q) := by
+  have hq' : q + (a, 0) ∈ (univ : Set ℝ) ×ˢ I := ⟨mem_univ _, by simpa using hq.2⟩
+  rw [← twistCoordinates_add_fst hF, twistGeneratingFunction_twistCoordinates hinj hq',
+    twistGeneratingFunction_twistCoordinates hinj hq, stripGeneratingFunction_add_fst hF]
+
+section OpenStrip
+
+variable (hIo : IsOpen I) (hI : I.OrdConnected) (h0 : (0 : ℝ) ∈ I)
+  (htwist : ∀ q ∈ (univ : Set ℝ) ×ˢ I, (fderiv ℝ F q (0, 1)).1 ≠ 0)
+
+include hIo hI h0 htwist in
+/-- **The generating equations on the band.** Let `F = (X, Y)` be `C²` on an open strip `ℝ × I`,
+with `I` order-connected and containing `0`, map the line `y = 0` into itself, preserve the area
+form `dx ∧ dy` and twist, `∂_y X ≠ 0`, everywhere on the strip. Then the generating function `S`
+in the twist coordinates has derivative `Y dX - y dx` at `(x, X(x, y))`, for every `(x, y)` in the
+strip: `∂₁ S(x, X) = -y` and `∂₂ S(x, X) = Y(x, y)`. -/
+theorem hasFDerivAt_twistGeneratingFunction (hF : ContDiffOn ℝ 2 F ((univ : Set ℝ) ×ˢ I))
+    (hY : ∀ x, (F (x, 0)).2 = 0) (hdet : ∀ q ∈ (univ : Set ℝ) ×ˢ I, (fderiv ℝ F q).det = 1)
+    {q : ℝ × ℝ} (hq : q ∈ (univ : Set ℝ) ×ˢ I) :
+    HasFDerivAt (twistGeneratingFunction F I)
+      ((F q).2 • ContinuousLinearMap.snd ℝ ℝ ℝ - q.2 • ContinuousLinearMap.fst ℝ ℝ ℝ)
+      (twistCoordinates F q) := by
+  have hs : IsOpen ((univ : Set ℝ) ×ˢ I) := isOpen_univ.prod hIo
+  have hinj := injOn_twistCoordinates hI
+    (fun q' hq' ↦ (hF.contDiffAt (hs.mem_nhds hq')).differentiableAt two_ne_zero) htwist
+  have hseg (t : ℝ) (ht : t ∈ [[0, q.2]]) : (q.1, t) ∈ (univ : Set ℝ) ×ˢ I :=
+    ⟨mem_univ _, hI.uIcc_subset h0 hq.2 ht⟩
+  rw [twistCoordinates_apply]
+  exact hasFDerivAt_of_eventuallyEq_stripGeneratingFunction
+    (fun t ht ↦ hF.contDiffAt (hs.mem_nhds (hseg t ht))) (hY q.1)
+    (fun t ht ↦ hdet _ (hseg t (uIoo_subset_uIcc_self ht))) (htwist q hq)
+    (eventually_of_mem (hs.mem_nhds hq) fun _ hq' ↦ by
+      simpa only [twistCoordinates_apply] using twistGeneratingFunction_twistCoordinates hinj hq')
+
+include hIo hI h0 htwist in
+/-- The generating function of a `C^(n + 1)` twist map in the twist coordinates is `C^n` on the
+image of an open strip `ℝ × I` containing the line `y = 0`. -/
+theorem contDiffOn_twistGeneratingFunction {n : ℕ∞}
+    (hF : ContDiffOn ℝ (n + 1) F ((univ : Set ℝ) ×ˢ I)) :
+    ContDiffOn ℝ n (twistGeneratingFunction F I) (twistCoordinates F '' ((univ : Set ℝ) ×ˢ I)) := by
+  have hs : IsOpen ((univ : Set ℝ) ×ˢ I) := isOpen_univ.prod hIo
+  -- On the strip the generating function `S` is `C^n`, and the inverse of the twist coordinates
+  -- maps the image of the strip `C^n` back into it.
+  have hS : ContDiffOn ℝ n (stripGeneratingFunction F) ((univ : Set ℝ) ×ˢ I) := fun q hq ↦
+    (contDiffAt_stripGeneratingFunction fun t ht ↦ hF.contDiffAt
+      (hs.mem_nhds ⟨mem_univ _, hI.uIcc_subset h0 hq.2 ht⟩)).contDiffWithinAt
+  exact hS.comp ((contDiffOn_invFunOn_twistCoordinates hIo le_add_self hF htwist hI).of_le
+    le_self_add) fun _ hz ↦ Function.invFunOn_mem hz
+
+end OpenStrip
 
 /-! ### Affine shears -/
 
@@ -385,5 +496,31 @@ theorem hasFDerivAt_affineShear_generatingFunction {a c : ℝ} (hc : c ≠ 0) (x
   rw [stripGeneratingFunction_affineShear]
   field_simp
   ring
+
+/-- The generating function of the affine shear `(x, y) ↦ (x + a + c y, y)`, `c ≠ 0`, in the twist
+coordinates of the whole plane is `S(x, X) = (X - x - a)² / (2c)`. -/
+theorem twistGeneratingFunction_affineShear {a c : ℝ} (hc : c ≠ 0) (z : ℝ × ℝ) :
+    twistGeneratingFunction (fun q : ℝ × ℝ ↦ (q.1 + a + c * q.2, q.2)) univ z =
+      (z.2 - z.1 - a) ^ 2 / (2 * c) := by
+  have hinj : InjOn (twistCoordinates fun q : ℝ × ℝ ↦ (q.1 + a + c * q.2, q.2))
+      ((univ : Set ℝ) ×ˢ univ) := by
+    refine injOn_twistCoordinates ordConnected_univ
+      (fun q _ ↦ (hasFDerivAt_affineShear a c q).differentiableAt) fun q _ ↦ ?_
+    rw [(hasFDerivAt_affineShear a c q).fderiv]
+    simpa using hc
+  -- `z` is the image of the point at height `(X - x - a) / c` on its vertical line.
+  have hz : twistCoordinates (fun q : ℝ × ℝ ↦ (q.1 + a + c * q.2, q.2))
+      (z.1, (z.2 - z.1 - a) / c) = z := by
+    rw [twistCoordinates_apply]
+    ext
+    · rfl
+    · dsimp only
+      field_simp
+      ring
+  have h := twistGeneratingFunction_twistCoordinates hinj
+    (q := (z.1, (z.2 - z.1 - a) / c)) ⟨mem_univ _, mem_univ _⟩
+  rw [hz, stripGeneratingFunction_affineShear] at h
+  rw [h]
+  field_simp
 
 end TauCeti
