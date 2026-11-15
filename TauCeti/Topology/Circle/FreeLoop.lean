@@ -283,8 +283,9 @@ theorem _root_.ContinuousMap.Homotopic.circleDegree_eq {f g : C(Circle, Circle)}
   have h₀ : F.curry 0 = f := ContinuousMap.ext fun w ↦ by simp
   have h₁ : F.curry 1 = g := ContinuousMap.ext fun w ↦ by simp
   -- the degree is locally constant, hence constant along the path `F.curry` from `f` to `g`
-  have h := PreconnectedSpace.constant inferInstance
-    (ContinuousMap.continuous_circleDegree.comp F.curry.continuous) (x := 0) (y := 1)
+  have h := isPreconnected_univ.constant
+    (ContinuousMap.continuous_circleDegree.comp F.curry.continuous).continuousOn
+    (x := 0) (y := 1) trivial trivial
   rwa [Function.comp_apply, Function.comp_apply, h₀, h₁] at h
 
 /-- A loop `γ`, read as a circle map, has the degree of `γ`. -/
