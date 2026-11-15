@@ -82,38 +82,10 @@ namespace Symbol
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {t : ℝ} {b : Symbol n V W t}
 
-/-- The rescaled slice `ζ ↦ b̂(η, 2πζ)` has derivatives `‖D^j‖ ≤ B ⟨ζ⟩ ^ (t - j) ⟨η⟩ ^ (-r)`. -/
-private theorem HasCompactSpatialSupport.exists_norm_iteratedFDeriv_fourier_slice_smul_le
-    (hb : b.HasCompactSpatialSupport) (j : ℕ) (r : ℝ) :
-    ∃ B, 0 ≤ B ∧ ∀ η ζ : CoordinateSpace n,
-      ‖iteratedFDeriv ℝ j (fun ζ ↦ 𝓕 (fun y ↦ b.coefficient (y, (2 * π) • ζ)) η) ζ‖ ≤
-        B * (1 + ‖ζ‖ ^ 2) ^ ((t - j) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
-  obtain ⟨C, hC0, hC⟩ := hb.exists_norm_iteratedFDeriv_fourier_slice_le j r
-  have h2π : (1 : ℝ) ≤ 2 * π := by linarith [Real.two_le_pi]
-  refine ⟨C * (2 * π) ^ j * (2 * π) ^ |t - j|, by positivity, fun η ζ ↦ ?_⟩
-  have hw := one_add_norm_smul_sq_rpow_le h2π (t - j) ζ
-  rw [iteratedFDeriv_comp_const_smul (2 * π)
-    ((hb.contDiff_fourier_slice η).of_le (mod_cast le_top)), norm_smul, norm_pow,
-    Real.norm_of_nonneg (by positivity)]
-  calc (2 * π) ^ j * ‖iteratedFDeriv ℝ j (fun ξ ↦ 𝓕 (fun y ↦ b.coefficient (y, ξ)) η)
-        ((2 * π) • ζ)‖
-      ≤ (2 * π) ^ j * (C * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((t - j) / 2) *
-          (1 + ‖η‖ ^ 2) ^ (-r / 2)) := by
-        gcongr
-        exact hC η _
-    _ ≤ (2 * π) ^ j * (C * ((2 * π) ^ |t - j| * (1 + ‖ζ‖ ^ 2) ^ ((t - j) / 2)) *
-          (1 + ‖η‖ ^ 2) ^ (-r / 2)) := by gcongr
-    _ = _ := by ring
-
 /-- The multiplier `ζ ↦ ⟨ζ + η⟩ ^ (-t) b̂(η, 2πζ)`. -/
 private def shiftedMultiplier (b : Symbol n V W t) (η ζ : CoordinateSpace n) :
     V →L[ℂ] W :=
   (1 + ‖ζ + η‖ ^ 2) ^ (-t / 2) • 𝓕 (fun y ↦ b.coefficient (y, (2 * π) • ζ)) η
-
-private theorem HasCompactSpatialSupport.contDiff_fourier_slice_smul
-    (hb : b.HasCompactSpatialSupport) (η : CoordinateSpace n) :
-    ContDiff ℝ ∞ fun ζ : CoordinateSpace n ↦ 𝓕 (fun y ↦ b.coefficient (y, (2 * π) • ζ)) η :=
-  (hb.contDiff_fourier_slice η).comp (contDiff_const_smul _)
 
 /-- The weight `ζ ↦ ⟨ζ + η⟩ ^ (-t)` of the shifted multiplier is smooth. -/
 private theorem contDiff_shiftedWeight (t : ℝ) (η : CoordinateSpace n) :
@@ -124,7 +96,7 @@ private theorem contDiff_shiftedWeight (t : ℝ) (η : CoordinateSpace n) :
 private theorem HasCompactSpatialSupport.contDiff_shiftedMultiplier
     (hb : b.HasCompactSpatialSupport) (η : CoordinateSpace n) :
     ContDiff ℝ ∞ (shiftedMultiplier b η) :=
-  (contDiff_shiftedWeight t η).smul (hb.contDiff_fourier_slice_smul η)
+  (contDiff_shiftedWeight t η).smul (hb.contDiff_fourier_slice_comp_smul η)
 
 /-- **Mihlin bounds of the shifted multiplier.** `‖D^k N_η(ζ)‖ ≤ C ⟨ζ⟩ ^ (-k) ⟨η⟩ ^ (-r)`, for
 every `k` and `r`. -/
@@ -136,12 +108,12 @@ private theorem HasCompactSpatialSupport.exists_norm_iteratedFDeriv_shiftedMulti
   choose A hA0 hA using fun i : ℕ ↦ exists_norm_iteratedFDeriv_one_add_norm_add_sq_rpow_le
     (E := CoordinateSpace n) (-t) i
   choose B hB0 hB using fun j : ℕ ↦
-    hb.exists_norm_iteratedFDeriv_fourier_slice_smul_le j (r + |-t| + k)
+    hb.exists_norm_iteratedFDeriv_fourier_slice_comp_smul_le j (r + |-t| + k)
   refine ⟨∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * A i * B (k - i),
     Finset.sum_nonneg fun i _ ↦ by have := hA0 i; have := hB0 (k - i); positivity,
     fun η ζ ↦ ?_⟩
   refine (norm_iteratedFDeriv_smul_le (contDiff_shiftedWeight t η)
-    (hb.contDiff_fourier_slice_smul η) ζ (mod_cast le_top)).trans ?_
+    (hb.contDiff_fourier_slice_comp_smul η) ζ (mod_cast le_top)).trans ?_
   rw [Finset.sum_mul, Finset.sum_mul]
   refine Finset.sum_le_sum fun i hi ↦ ?_
   have hik : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)

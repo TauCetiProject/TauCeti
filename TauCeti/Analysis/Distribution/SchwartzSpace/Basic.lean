@@ -37,6 +37,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
+* `SchwartzMap.norm_le_norm_toLp_top`: a Schwartz function is pointwise bounded by the `L^∞` norm
+  of its class, for a measure charging every nonempty open set.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
   integral of its squared norm does, for a measure charging every nonempty open set.
 * `TauCeti.eq_zero_of_forall_integral_apply_eq_zero`: a continuous operator-valued function that
@@ -214,6 +216,20 @@ theorem exists_integrable_norm_iteratedFDeriv_add_le (f : 𝓢(E, F)) (n : ℕ) 
       ≤ ‖iteratedFDeriv ℝ n f (z + h)‖ * (2 * (1 + ‖z + h‖)) ^ p := by gcongr
     _ = 2 ^ p * ((1 + ‖z + h‖) ^ p * ‖iteratedFDeriv ℝ n f (z + h)‖) := by rw [mul_pow]; ring
     _ ≤ 2 ^ p * (2 ^ p * S) := by gcongr
+
+/-- For a measure charging every nonempty open set, the values of a Schwartz function are bounded by
+the `L^∞` norm of its class: the essential supremum of a continuous function is its supremum. -/
+theorem norm_le_norm_toLp_top [μ.IsOpenPosMeasure] (f : 𝓢(E, F)) (x : E) :
+    ‖f x‖ ≤ ‖f.toLp ⊤ μ‖ := by
+  rw [norm_toLp]
+  refine (ENNReal.ofReal_le_iff_le_toReal (memLp_top f μ).eLpNorm_ne_top).1 ?_
+  rw [ofReal_norm, eLpNorm_exponent_top f.continuous.aestronglyMeasurable]
+  by_contra h
+  rw [not_le] at h
+  -- The open set where `‖f‖ₑ` exceeds its essential supremum is null, but contains `x`.
+  have hnull : μ {y | eLpNormEssSup f μ < ‖f y‖ₑ} = 0 := by
+    simpa only [not_le] using ae_iff.1 (ae_le_eLpNormEssSup (f := f) (μ := μ))
+  exact ((isOpen_lt continuous_const f.continuous.eNorm).measure_pos μ ⟨x, h⟩).ne' hnull
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 

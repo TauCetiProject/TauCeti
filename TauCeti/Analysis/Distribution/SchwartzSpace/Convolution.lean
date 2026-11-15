@@ -40,6 +40,9 @@ starting point of the estimates for multiplication operators on Sobolev spaces.
   `SchwartzMap.convolution` with `𝓕⁻ σ`.
 * `SchwartzMap.fourierMultiplierCLM_apply_eq_integral`: the same, pointwise, as an integral.
 * `SchwartzMap.eLpNorm_fourierMultiplierCLM_le`: the `Lᵖ` bound `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p`.
+* `SchwartzMap.norm_fourierInv_bilin_fourier_apply_le`: the pointwise bound
+  `‖𝓕⁻ (B (σ ·) (𝓕 f ·)) x‖ ≤ ‖B‖ ‖𝓕⁻ σ‖₁ sup ‖f‖` for a bilinear multiplier with a Schwartz
+  symbol, such as an operator-valued one.
 * `SchwartzMap.integrable_sub_smul`: for a Schwartz function `f` and `u ∈ Lᵖ`, `1 ≤ p ≤ ∞`, the
   convolution integral `∫ f (x - y) • u y` converges absolutely at every `x`.
 * `SchwartzMap.fourierInv_convolution`: the inverse Fourier transform of a convolution is the
@@ -170,6 +173,36 @@ theorem fourierInv_convolution [CompleteSpace F₃] (B : F₁ →L[ℂ] F₂ →
     𝓕⁻ (convolution B f g) = pairing B (𝓕⁻ f) (𝓕⁻ g) := by
   ext ξ
   rw [fourierInv_convolution_apply, pairing_apply_apply]
+
+/-- **Pointwise bound for a multiplier with a Schwartz symbol.** For a continuous bilinear map `B`,
+a Schwartz symbol `σ` and a Schwartz function `f` bounded by `M`, the function
+`𝓕⁻ (B (σ ·) (𝓕 f ·))`, which is the convolution of `𝓕⁻ σ` with `f`, is bounded by
+`‖B‖ ‖𝓕⁻ σ‖₁ M`. -/
+theorem norm_fourierInv_bilin_fourier_apply_le [CompleteSpace F₁] (B : F₁ →L[ℂ] F₂ →L[ℂ] F₃)
+    (σ : 𝓢(E, F₁)) (f : 𝓢(E, F₂)) {M : ℝ} (hf : ∀ y, ‖f y‖ ≤ M) (x : E) :
+    ‖𝓕⁻ (fun ξ ↦ B (σ ξ) (𝓕 f ξ)) x‖ ≤ ‖B‖ * (∫ y, ‖𝓕⁻ σ y‖) * M := by
+  have hR : 0 ≤ ‖B‖ * (∫ y, ‖𝓕⁻ σ y‖) * M :=
+    mul_nonneg (mul_nonneg (ContinuousLinearMap.opNorm_nonneg B)
+      (integral_nonneg fun _ ↦ norm_nonneg _))
+      ((norm_nonneg _).trans (hf 0))
+  -- Without completeness of `F₂` or `F₃` the left side vanishes by the integral convention.
+  by_cases hF₃ : CompleteSpace F₃
+  swap
+  · rw [Real.fourierInv_eq, integral_of_not_completeSpace hF₃, norm_zero]
+    exact hR
+  by_cases hF₂ : CompleteSpace F₂
+  swap
+  · simpa [fourier_eq_zero_of_not_completeSpace hF₂, Real.fourierInv_eq] using hR
+  have h : (fun ξ ↦ B (σ ξ) (𝓕 f ξ)) = ⇑(𝓕 (convolution B (𝓕⁻ σ) f) : 𝓢(E, F₃)) := by
+    ext ξ
+    rw [fourier_convolution, fourier_fourierInv_eq, pairing_apply_apply]
+  rw [h, ← fourierInv_coe, fourierInv_fourier_eq, convolution_apply,
+    MeasureTheory.convolution_def]
+  calc ‖∫ t, B (𝓕⁻ σ t) (f (x - t))‖ ≤ ∫ t, ‖B‖ * ‖𝓕⁻ σ t‖ * M :=
+        norm_integral_le_of_norm_le (((𝓕⁻ σ).integrable.norm.const_mul _).mul_const _)
+          (.of_forall fun t ↦ (B.le_opNorm₂ _ _).trans (by gcongr; exact hf _))
+    _ = ‖B‖ * (∫ y, ‖𝓕⁻ σ y‖) * M := by
+        rw [integral_mul_const, integral_const_mul]
 
 /-- **The Fourier transform of a product is the convolution of the Fourier transforms.** For
 Schwartz functions `f`, `g` and a continuous bilinear map `B`, the Fourier transform of the

@@ -86,8 +86,9 @@ theorem exists_fourierMultiplierCLM_compL_littlewoodPaleyBlock_eq {g : E → ℂ
   obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
   choose B _ hB using fun k : ℕ ↦ φ.exists_norm_iteratedFDeriv_enlargedLittlewoodPaley_le L k
   obtain ⟨a, b, ha, hab⟩ := φ.exists_one_add_norm_sq_le_of_mem_tsupport_enlargedLittlewoodPaley L
-  obtain ⟨C, hC⟩ := TauCeti.exists_integral_norm_fourierInv_cutoff_smul_le (E := E) hg
-    (N := finrank ℝ E + 1) (by omega) (fun i _ ↦ hgm i) (b := b) ha B
+  choose W hW using fun i ↦ hgm i
+  obtain ⟨C, hC⟩ := TauCeti.exists_integral_norm_fourierInv_cutoff_smul_le (E := E) (H := ℂ)
+    (m := m) (N := finrank ℝ E + 1) (by omega) W (b := b) ha B
   refine ⟨C, fun j ↦ ?_⟩
   -- The symbol `σⱼ = Ψⱼ g`.
   set χ : E → ℝ := φ.enlargedLittlewoodPaley L j
@@ -111,7 +112,7 @@ theorem exists_fourierMultiplierCLM_compL_littlewoodPaleyBlock_eq {g : E → ℂ
     simp only [Pi.mul_apply, hσ, Complex.real_smul]
     linear_combination (-g ξ) * h
   · rw [hσ]
-    exact hC (2 ^ j) χ (by positivity) hχ (hab j) fun k _ ξ ↦ hB k j ξ
+    exact hC g hg (fun i _ ↦ hW i) (2 ^ j) χ (by positivity) hχ (hab j) fun k _ ξ ↦ hB k j ξ
 
 /-- **Fourier multipliers of Littlewood–Paley blocks in `Lᵖ`.** Let `g` be a smooth symbol of
 order `m`, `‖D^i g ξ‖ ≤ C_i (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)`. There is a constant `C ≥ 0`, depending

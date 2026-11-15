@@ -1,0 +1,711 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
+public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
+import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
+import TauCeti.Analysis.Distribution.SchwartzSpace.DyadicSymbol
+import TauCeti.Analysis.Fourier.ChangeOfVariables
+import TauCeti.Analysis.Pseudodifferential.Sobolev
+
+/-!
+# Zygmund estimates for pseudodifferential operators with compact spatial support
+
+Let `a` be a symbol of order `m` on `ℝⁿ` (`TauCeti.Symbol n V W m`) that vanishes for positions
+outside a compact set, with values in operators between finite-dimensional complex normed spaces.
+The Hölder–Zygmund space `𝒞^r = B^r_{∞,∞}` (`TauCeti.BesovSpace V φ r ∞ ∞`) is measured by the
+Littlewood–Paley blocks `Δⱼ` through `supⱼ 2^{jr} ‖Δⱼ u‖_∞`. This file proves that `Op(a)` lowers
+this smoothness by exactly `m`, for every real `r`: on Schwartz functions,
+
+`‖Op(a) u‖_{𝒞^{r - m}} ≤ C ‖u‖_{𝒞^r}`
+
+(`TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_besovSpace_quantizeUniformCLM_le`), in the
+blockwise form `2^{(r - m) j} ‖Δⱼ Op(a) u‖_∞ ≤ C supₖ 2^{rk} ‖Δₖ u‖_∞`
+(`Symbol.HasCompactSpatialSupport.exists_rpow_mul_norm_fourierMultiplierCLM_quantizeUniformCLM_le`).
+The constant does not depend on `u`. These are the Zygmund estimates of the Euclidean calculus,
+the input for the Zygmund mapping of localized operators and for Schauder-type elliptic
+regularity. The space `𝒞^r` contains bounded functions with no decay, so Schwartz functions are
+not dense in it; extending the estimate from Schwartz functions to distributions is a separate
+step.
+
+## The argument
+
+Write `â(θ, ξ)` for the Fourier transform of the position slice `x ↦ a(x, ξ)` at `θ`. Since `a`
+has compact spatial support, `â(θ, ξ)` decays faster than any power of `⟨θ⟩`, with symbol
+estimates of order `m` in `ξ`. Expanding `a` in its Fourier transform in the position writes
+`Op(a)` as the superposition `∫ 𝐞 ⟪θ, ·⟫ â(θ, D) dθ` of modulated Fourier multipliers. A frequency
+cutoff `ψ` of `Op(a) u` is then the superposition of `𝐞 ⟪θ, ·⟫ 𝓕⁻ (ψ (· + θ) â(θ, 2π ·) 𝓕 u)`
+(`TauCeti.Symbol.HasCompactSpatialSupport.fourierInv_smul_fourier_quantizeSchwartzValue`).
+
+For `ψ = ψⱼ`, the translate `ψⱼ (· + θ)` meets only the pieces `ψₖ` with
+`2^{|j - k|} ≤ c (1 + ‖θ‖)` (`ContDiffBump.two_pow_le_of_inhomogeneousLittlewoodPaley_add_ne_zero`),
+so it sees only `O(⟨θ⟩)` blocks `Δₖ u`. On each of them, the modulated multiplier is a convolution
+with `𝓕⁻ ψⱼ (· + θ)`, whose `L¹` norm is that of `𝓕⁻ ψⱼ`, after a convolution with the kernel of
+`Ψₖ(ζ) â(θ, 2πζ)`, for the enlarged cutoff `Ψₖ` equal to `1` on the support of `ψₖ`. That kernel
+has `L¹` norm `O(2^{km} ⟨θ⟩ ^ (-ρ))` for every `ρ`
+(`TauCeti.exists_integral_norm_fourierInv_cutoff_smul_le_of_finiteDimensional`, applied
+uniformly in `θ`). Since `2^{(r - m)(j - k)} ≤ (c (1 + ‖θ‖)) ^ |r - m|` for the pieces met, the
+contribution of `θ` to `2^{(r - m) j} ‖Δⱼ Op(a) u‖_∞` is `O(⟨θ⟩ ^ (-(n + 1)))` times
+`supₖ 2^{rk} ‖Δₖ u‖_∞`, which is integrable in `θ`.
+
+## References
+
+* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I,
+  (3.31)–(3.34).
+* M. Taylor, *Pseudodifferential Operators and Nonlinear PDE*, Birkhäuser, 1991, Chapter 2.
+* H. Bahouri, J.-Y. Chemin and R. Danchin, *Fourier Analysis and Nonlinear Partial Differential
+  Equations*, Section 2.7.
+-/
+
+public section
+
+noncomputable section
+
+open MeasureTheory Real FourierTransform TemperedDistribution
+open scoped ENNReal NNReal SchwartzMap RealInnerProductSpace ContDiff
+
+namespace TauCeti
+
+namespace Symbol
+
+variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
+  [NormedSpace ℂ W] {m : ℝ} {a : Symbol n V W m}
+
+section Superposition
+
+/-- The integrands of the superposition formula are integrable on the product: with
+`G θ ζ = â(θ, 2πζ) 𝓕 u ζ`, both `(η, ζ) ↦ 𝐞 ⟪η, x⟫ ψ(η) G(η - ζ, ζ)` and
+`(θ, ζ) ↦ 𝐞 ⟪θ + ζ, x⟫ ψ(θ + ζ) G(θ, ζ)`, since `‖G θ ζ‖ ≤ B ⟨ζ⟩ ^ m ‖𝓕 u ζ‖ ⟨θ⟩ ^ (-(n + 1))`. -/
+private theorem HasCompactSpatialSupport.integrable_superposition
+    (ha : a.HasCompactSpatialSupport) {ψ : CoordinateSpace n → ℂ} (hψ : Continuous ψ)
+    (hψi : Integrable ψ) {D : ℝ} (hψD : ∀ ξ, ‖ψ ξ‖ ≤ D) (u : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n) :
+    Integrable (Function.uncurry fun η ζ : CoordinateSpace n ↦ 𝐞 ⟪η, x⟫ • ψ η •
+      𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) (η - ζ) (𝓕 u ζ)) (volume.prod volume) ∧
+    Integrable (Function.uncurry fun θ ζ : CoordinateSpace n ↦ 𝐞 ⟪θ + ζ, x⟫ • ψ (θ + ζ) •
+      𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ (𝓕 u ζ)) (volume.prod volume) := by
+  set G : CoordinateSpace n → CoordinateSpace n → W := fun θ ζ ↦
+    𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ (𝓕 u ζ)
+  obtain ⟨B, hB0, hB⟩ := ha.exists_norm_iteratedFDeriv_fourier_slice_comp_smul_le 0 (n + 1)
+  have hGle (θ ζ : CoordinateSpace n) : ‖G θ ζ‖ ≤
+      (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) * (B * (1 + ‖ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖) := by
+    have h := hB θ ζ
+    rw [norm_iteratedFDeriv_zero, CharP.cast_eq_zero, sub_zero] at h
+    calc ‖G θ ζ‖ ≤ ‖𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ‖ * ‖𝓕 u ζ‖ :=
+          ContinuousLinearMap.le_opNorm _ _
+      _ ≤ B * (1 + ‖ζ‖ ^ 2) ^ (m / 2) * (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) * ‖𝓕 u ζ‖ := by
+          gcongr
+      _ = _ := by ring
+  have hGc : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ G q.1 q.2 :=
+    (ha.continuous_fourier_slice.comp (continuous_fst.prodMk
+      (continuous_snd.const_smul (2 * π)))).clm_apply ((𝓕 u).continuous.comp continuous_snd)
+  have hu : Integrable fun ζ : CoordinateSpace n ↦ B * (1 + ‖ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖ := by
+    simpa [mul_assoc] using ((𝓕 u).integrable_one_add_norm_sq_rpow_mul_norm (m / 2)).const_mul B
+  have hθ : Integrable fun θ : CoordinateSpace n ↦ (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) :=
+    integrable_rpow_neg_one_add_norm_sq (by simp)
+  refine ⟨((hψi.norm.mul_prod hu)).mono' ?_ (.of_forall fun q ↦ ?_),
+    ((hθ.mul_prod hu).const_mul D).mono' ?_ (.of_forall fun q ↦ ?_)⟩
+  · exact ((Real.continuous_fourierChar.comp (continuous_fst.inner continuous_const)).smul
+      ((hψ.comp continuous_fst).smul (hGc.comp ((continuous_fst.sub continuous_snd).prodMk
+        continuous_snd)))).aestronglyMeasurable
+  · simp only [Function.uncurry, Circle.norm_smul, norm_smul]
+    refine mul_le_mul_of_nonneg_left ((hGle _ _).trans ?_) (norm_nonneg _)
+    refine mul_le_of_le_one_left (by positivity) (Real.rpow_le_one_of_one_le_of_nonpos ?_ ?_)
+    · simp only [le_add_iff_nonneg_right]; positivity
+    · linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]
+  · exact ((Real.continuous_fourierChar.comp ((continuous_fst.add continuous_snd).inner
+      continuous_const)).smul ((hψ.comp (continuous_fst.add continuous_snd)).smul
+        hGc)).aestronglyMeasurable
+  · simp only [Function.uncurry, Circle.norm_smul, norm_smul]
+    exact mul_le_mul (hψD _) (hGle _ _) (norm_nonneg _) ((norm_nonneg _).trans (hψD 0))
+
+/-- **A frequency cutoff of a quantization as a superposition.** Let `a` be a symbol with compact
+spatial support and `ψ` a bounded integrable continuous function. For a Schwartz function `u`,
+the frequency cutoff `𝓕⁻ (ψ 𝓕 (Op(a) u))` of `Op(a) u` is the superposition over `θ` of the
+modulated functions `𝐞 ⟪θ, ·⟫ 𝓕⁻ (ψ (· + θ) â(θ, 2π ·) 𝓕 u)`, where `â(θ, ξ)` is the Fourier
+transform of the position slice `x ↦ a(x, ξ)` at `θ`. -/
+theorem HasCompactSpatialSupport.fourierInv_smul_fourier_quantizeSchwartzValue
+    (ha : a.HasCompactSpatialSupport) {ψ : CoordinateSpace n → ℂ} (hψ : Continuous ψ)
+    (hψi : Integrable ψ) {D : ℝ} (hψD : ∀ ξ, ‖ψ ξ‖ ≤ D) (u : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n) :
+    𝓕⁻ (fun η ↦ ψ η • 𝓕 (quantizeSchwartzValue a.coefficient u) η) x =
+      ∫ θ, 𝐞 ⟪θ, x⟫ • ∫ ζ, 𝐞 ⟪ζ, x⟫ • ψ (ζ + θ) •
+        𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ (𝓕 u ζ) := by
+  set G : CoordinateSpace n → CoordinateSpace n → W := fun θ ζ ↦
+    𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ (𝓕 u ζ) with hG
+  obtain ⟨hF₁, hF₂⟩ := ha.integrable_superposition hψ hψi hψD u x
+  -- Fubini, the substitution `η = θ + ζ`, and Fubini again.
+  calc 𝓕⁻ (fun η ↦ ψ η • 𝓕 (quantizeSchwartzValue a.coefficient u) η) x
+      = ∫ η, ∫ ζ, 𝐞 ⟪η, x⟫ • ψ η • G (η - ζ) ζ := by
+        rw [Real.fourierInv_eq]
+        refine integral_congr_ae (.of_forall fun η ↦ ?_)
+        simp only [ha.fourier_quantizeSchwartzValue, hG, Circle.smul_def]
+        rw [← integral_smul, ← integral_smul]
+    _ = ∫ ζ, ∫ η, 𝐞 ⟪η, x⟫ • ψ η • G (η - ζ) ζ := integral_integral_swap hF₁
+    _ = ∫ ζ, ∫ θ, 𝐞 ⟪θ + ζ, x⟫ • ψ (θ + ζ) • G θ ζ := by
+        refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
+        dsimp only
+        rw [← integral_add_right_eq_self (fun η ↦ 𝐞 ⟪η, x⟫ • ψ η • G (η - ζ) ζ) ζ]
+        simp
+    _ = ∫ θ, ∫ ζ, 𝐞 ⟪θ + ζ, x⟫ • ψ (θ + ζ) • G θ ζ := (integral_integral_swap hF₂).symm
+    _ = _ := by
+        refine integral_congr_ae (.of_forall fun θ ↦ ?_)
+        dsimp only
+        rw [Circle.smul_def, ← integral_smul]
+        refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
+        simp only [hG, inner_add_left, AddChar.map_add_eq_mul, Circle.smul_def,
+          mul_smul, add_comm θ ζ]
+        exact smul_comm _ _ _
+
+end Superposition
+
+/-! ### Counting the pieces met by a translate -/
+
+/-- If `Q ≥ 1`, at most `2Q + 1` indices `k` satisfy both `2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`. -/
+private theorem card_filter_two_pow_le (s : Finset ℕ) (j : ℕ) {Q : ℝ} (hQ : 1 ≤ Q) :
+    ((s.filter fun k ↦ (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j).card : ℝ) ≤
+      2 * Q + 1 := by
+  set d := ⌊Q⌋₊
+  -- A power `2^i ≤ Q` has `i < 2^i ≤ Q`, so `i ≤ d`.
+  have hd {i l : ℕ} (h : (2 : ℝ) ^ i ≤ Q * 2 ^ l) : i - l ≤ d := by
+    refine Nat.le_floor ((Nat.cast_le.2 (Nat.lt_two_pow_self).le).trans ?_)
+    rcases le_total l i with hli | hil
+    · rw [Nat.cast_pow, Nat.cast_ofNat]
+      have h2 : (2 : ℝ) ^ (i - l) * 2 ^ l ≤ Q * 2 ^ l := by rwa [← pow_add, Nat.sub_add_cancel hli]
+      exact le_of_mul_le_mul_right h2 (by positivity)
+    · simpa [Nat.sub_eq_zero_of_le hil] using hQ
+  have hsub : (s.filter fun k ↦ (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j) ⊆
+      Finset.Icc (j - d) (j + d) := fun k hk ↦ by
+    obtain ⟨h₁, h₂⟩ := (Finset.mem_filter.1 hk).2
+    have := hd h₁
+    have := hd h₂
+    exact Finset.mem_Icc.2 ⟨by omega, by omega⟩
+  calc ((s.filter fun k ↦ (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j).card : ℝ)
+      ≤ (Finset.Icc (j - d) (j + d)).card := by exact_mod_cast Finset.card_le_card hsub
+    _ ≤ 2 * d + 1 := by
+        rw [Nat.card_Icc]
+        exact_mod_cast (by omega : j + d + 1 - (j - d) ≤ 2 * d + 1)
+    _ ≤ 2 * Q + 1 := by gcongr; exact Nat.floor_le (by linarith)
+
+/-- If `2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`, then `2^{σ (j - k)} ≤ Q ^ |σ|` for every real `σ`. -/
+private theorem two_rpow_mul_sub_le {j k : ℕ} {Q : ℝ} (h₁ : (2 : ℝ) ^ j ≤ Q * 2 ^ k)
+    (h₂ : (2 : ℝ) ^ k ≤ Q * 2 ^ j) (σ : ℝ) :
+    (2 : ℝ) ^ (σ * ((j : ℝ) - k)) ≤ Q ^ |σ| := by
+  have hle {i l : ℕ} (h : (2 : ℝ) ^ i ≤ Q * 2 ^ l) : (2 : ℝ) ^ ((i : ℝ) - l) ≤ Q := by
+    rw [Real.rpow_sub two_pos, Real.rpow_natCast, Real.rpow_natCast, div_le_iff₀ (by positivity)]
+    exact h
+  rcases le_total 0 σ with hσ | hσ
+  · rw [abs_of_nonneg hσ, mul_comm, Real.rpow_mul zero_le_two]
+    exact Real.rpow_le_rpow (by positivity) (hle h₁) hσ
+  · rw [abs_of_nonpos hσ, show σ * ((j : ℝ) - k) = ((k : ℝ) - j) * -σ by ring,
+      Real.rpow_mul zero_le_two]
+    exact Real.rpow_le_rpow (by positivity) (hle h₂) (by linarith)
+
+/-! ### The estimate for one translate -/
+
+section Estimates
+
+variable [CompleteSpace V] [FiniteDimensional ℂ V] [CompleteSpace W] [FiniteDimensional ℂ W]
+
+omit [CompleteSpace V] [CompleteSpace W] in
+/-- **Kernels of the dyadic pieces of the rescaled slices.** For a symbol of order `m` with
+compact spatial support, the kernels of `Ψₖ(ζ) â(θ, 2πζ)`, for the enlarged Littlewood–Paley
+cutoffs `Ψₖ`, have `L¹` norm `O((2^k) ^ m ⟨θ⟩ ^ (-ρ))`, uniformly in `k` and `θ`, for every
+`ρ`. -/
+private theorem HasCompactSpatialSupport.exists_integral_norm_fourierInv_cutoff_slice_le
+    (ha : a.HasCompactSpatialSupport) (φ : ContDiffBump (0 : CoordinateSpace n)) (L : ℕ)
+    (ρ : ℝ) :
+    ∃ C, ∀ (θ : CoordinateSpace n) (k : ℕ),
+      ∫ x, ‖𝓕⁻ (fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ •
+        𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ) x‖ ≤
+        C * (2 ^ k) ^ m * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2) := by
+  choose B _ hB using fun i : ℕ ↦ ha.exists_norm_iteratedFDeriv_fourier_slice_comp_smul_le i ρ
+  choose Bχ _ hBχ using fun k : ℕ ↦ φ.exists_norm_iteratedFDeriv_enlargedLittlewoodPaley_le L k
+  obtain ⟨α, β, hα, hαβ⟩ := φ.exists_one_add_norm_sq_le_of_mem_tsupport_enlargedLittlewoodPaley L
+  obtain ⟨C, hC⟩ := exists_integral_norm_fourierInv_cutoff_smul_le_of_finiteDimensional
+    (E := CoordinateSpace n) (G := V →L[ℂ] W) (m := m) (N := n + 1) (by simp; omega) B (b := β)
+    hα Bχ
+  refine ⟨C, fun θ k ↦ ?_⟩
+  -- Normalize the slice by the weight `w = ⟨θ⟩ ^ ρ`, which makes its estimates uniform in `θ`.
+  set w : ℝ := (1 + ‖θ‖ ^ 2) ^ (ρ / 2) with hw
+  have hw0 : 0 < w := by positivity
+  have hww : w * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2) = 1 := by
+    rw [hw, ← Real.rpow_add (by positivity), show ρ / 2 + -ρ / 2 = 0 by ring, Real.rpow_zero]
+  set g : CoordinateSpace n → V →L[ℂ] W := fun ζ ↦ 𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ
+  have hg : ContDiff ℝ ∞ fun ζ ↦ (w : ℂ) • g ζ :=
+    (ha.contDiff_fourier_slice_comp_smul θ).const_smul _
+  have hgm (i : ℕ) (_ : i ≤ n + 1) (ζ : CoordinateSpace n) :
+      ‖iteratedFDeriv ℝ i (fun ζ ↦ (w : ℂ) • g ζ) ζ‖ ≤ B i * (1 + ‖ζ‖ ^ 2) ^ ((m - i) / 2) := by
+    rw [iteratedFDeriv_const_smul_apply'
+      ((ha.contDiff_fourier_slice_comp_smul θ).contDiffAt.of_le (mod_cast le_top)), norm_smul,
+      Complex.norm_real, Real.norm_of_nonneg hw0.le]
+    calc w * ‖iteratedFDeriv ℝ i g ζ‖
+        ≤ w * (B i * (1 + ‖ζ‖ ^ 2) ^ ((m - i) / 2) * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2)) := by
+          gcongr
+          exact hB i θ ζ
+      _ = B i * (1 + ‖ζ‖ ^ 2) ^ ((m - i) / 2) * (w * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2)) := by ring
+      _ = _ := by rw [hww, mul_one]
+  have hk := hC (fun ζ ↦ (w : ℂ) • g ζ) hg hgm (2 ^ k) (φ.enlargedLittlewoodPaley L k)
+    (by positivity) (φ.contDiff_enlargedLittlewoodPaley L k) (hαβ k) fun i _ ξ ↦ hBχ i k ξ
+  have hw' : (w : ℂ) ≠ 0 := by exact_mod_cast hw0.ne'
+  have heq (x : CoordinateSpace n) : 𝓕⁻ (fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ • g ζ) x =
+      (w⁻¹ : ℂ) • 𝓕⁻ (fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ • (w : ℂ) • g ζ) x := by
+    simp only [Real.fourierInv_eq, Circle.smul_def, ← integral_smul]
+    refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
+    dsimp only
+    rw [smul_comm (φ.enlargedLittlewoodPaley L k ζ) (w : ℂ), smul_comm (w⁻¹ : ℂ),
+      inv_smul_smul₀ hw']
+  calc ∫ x, ‖𝓕⁻ (fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ • g ζ) x‖
+      = w⁻¹ * ∫ x, ‖𝓕⁻ (fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ • (w : ℂ) • g ζ) x‖ := by
+        rw [← integral_const_mul]
+        refine integral_congr_ae (.of_forall fun x ↦ ?_)
+        dsimp only
+        rw [heq, norm_smul, norm_inv, Complex.norm_real, Real.norm_of_nonneg hw0.le]
+    _ ≤ w⁻¹ * (C * (2 ^ k) ^ m) := by gcongr
+    _ = C * (2 ^ k) ^ m * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2) := by
+        rw [hw, ← Real.rpow_neg (by positivity), neg_div]
+        ring
+
+omit [CompleteSpace V] [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] in
+/-- **One modulated piece.** For Schwartz functions `ρ`, `σ` and `w` with `‖w‖ ≤ M`,
+`‖∫ 𝐞 ⟪ζ, x⟫ ρ(ζ) σ(ζ) 𝓕 w(ζ) dζ‖ ≤ ‖𝓕⁻ ρ‖₁ ‖𝓕⁻ σ‖₁ M`: the integral is the convolution of
+`𝓕⁻ ρ` with the convolution of `𝓕⁻ σ` with `w`. -/
+private theorem norm_integral_fourierChar_smul_apply_fourier_le (ρ : 𝓢(CoordinateSpace n, ℂ))
+    (σ : 𝓢(CoordinateSpace n, V →L[ℂ] W)) (w : 𝓢(CoordinateSpace n, V)) {M : ℝ}
+    (hw : ∀ y, ‖w y‖ ≤ M) (x : CoordinateSpace n) :
+    ‖∫ ζ, 𝐞 ⟪ζ, x⟫ • ρ ζ • σ ζ (𝓕 w ζ)‖ ≤
+      (∫ y, ‖𝓕⁻ ρ y‖) * ((∫ y, ‖𝓕⁻ σ y‖) * M) := by
+  set Z : 𝓢(CoordinateSpace n, W) :=
+    SchwartzMap.convolution (ContinuousLinearMap.id ℂ (V →L[ℂ] W)) (𝓕⁻ σ) w
+  have hZ : (fun ζ ↦ ContinuousLinearMap.id ℂ (V →L[ℂ] W) (σ ζ) (𝓕 w ζ)) =
+      ⇑(𝓕 Z : 𝓢(CoordinateSpace n, W)) := by
+    ext ζ
+    rw [SchwartzMap.fourier_convolution, fourier_fourierInv_eq, SchwartzMap.pairing_apply_apply]
+  have hZM (y : CoordinateSpace n) : ‖Z y‖ ≤ (∫ y, ‖𝓕⁻ σ y‖) * M := by
+    have h := SchwartzMap.norm_fourierInv_bilin_fourier_apply_le
+      (ContinuousLinearMap.id ℂ (V →L[ℂ] W)) σ w hw y
+    rw [hZ, ← SchwartzMap.fourierInv_coe, fourierInv_fourier_eq] at h
+    have hM : 0 ≤ (∫ y, ‖𝓕⁻ σ y‖) * M :=
+      mul_nonneg (integral_nonneg fun _ ↦ norm_nonneg _) ((norm_nonneg _).trans (hw 0))
+    rw [mul_assoc] at h
+    exact h.trans (mul_le_of_le_one_left hM ContinuousLinearMap.norm_id_le)
+  have hkey : ∫ ζ, 𝐞 ⟪ζ, x⟫ • ρ ζ • σ ζ (𝓕 w ζ) =
+      𝓕⁻ (fun ζ ↦ ContinuousLinearMap.lsmul ℂ ℂ (ρ ζ) (𝓕 Z ζ)) x := by
+    rw [Real.fourierInv_eq]
+    refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
+    dsimp only
+    rw [← congrFun hZ ζ]
+    rfl
+  rw [hkey]
+  refine (SchwartzMap.norm_fourierInv_bilin_fourier_apply_le _ ρ Z hZM x).trans ?_
+  have h0 : 0 ≤ (∫ y, ‖𝓕⁻ ρ y‖) * ((∫ y, ‖𝓕⁻ σ y‖) * M) :=
+    mul_nonneg (integral_nonneg fun _ ↦ norm_nonneg _) ((norm_nonneg _).trans (hZM 0))
+  rw [mul_assoc]
+  exact mul_le_of_le_one_left h0 ContinuousLinearMap.opNorm_lsmul_le
+
+omit [CompleteSpace V] [FiniteDimensional ℂ V] [CompleteSpace W] [FiniteDimensional ℂ W] in
+/-- The translates `ζ ↦ ψⱼ (ζ + θ)` of the Littlewood–Paley pieces are compactly supported. -/
+private theorem hasCompactSupport_inhomogeneousLittlewoodPaley_add
+    (φ : ContDiffBump (0 : CoordinateSpace n)) (j : ℕ) (θ : CoordinateSpace n) :
+    HasCompactSupport fun ζ ↦ (φ.inhomogeneousLittlewoodPaley j (ζ + θ) : ℂ) :=
+  ((φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).comp_homeomorph
+    (Homeomorph.addRight θ)).comp_left Complex.ofReal_zero
+
+omit [CompleteSpace V] [FiniteDimensional ℂ V] [CompleteSpace W] [FiniteDimensional ℂ W] in
+/-- The translates `ζ ↦ ψⱼ (ζ + θ)` of the Littlewood–Paley pieces are smooth. -/
+private theorem contDiff_inhomogeneousLittlewoodPaley_add
+    (φ : ContDiffBump (0 : CoordinateSpace n)) (j : ℕ) (θ : CoordinateSpace n) :
+    ContDiff ℝ ∞ fun ζ ↦ (φ.inhomogeneousLittlewoodPaley j (ζ + θ) : ℂ) :=
+  Complex.ofRealCLM.contDiff.comp
+    ((φ.contDiff_inhomogeneousLittlewoodPaley j).comp (contDiff_id.add contDiff_const))
+
+omit [CompleteSpace V] [FiniteDimensional ℂ V] [CompleteSpace W] [FiniteDimensional ℂ W] in
+/-- **Decomposition of a translate along the pieces.** If `2^j φ.rOut + ‖θ‖ ≤ 2^K φ.rIn`, the
+modulated piece attached to `θ` is the sum over `k ≤ K` of the same integrals with `𝓕 u`
+replaced by `ψₖ 𝓕 u = 𝓕 (Δₖ u)`: on the support of `ψⱼ (· + θ)` the pieces `ψₖ`, `k ≤ K`,
+sum to `1`. -/
+private theorem HasCompactSpatialSupport.integral_fourierChar_smul_eq_sum
+    (ha : a.HasCompactSpatialSupport) (φ : ContDiffBump (0 : CoordinateSpace n))
+    (u : 𝓢(CoordinateSpace n, V)) (j : ℕ) (x θ : CoordinateSpace n) {K : ℕ}
+    (hK : 2 ^ j * φ.rOut + ‖θ‖ ≤ 2 ^ K * φ.rIn) :
+    ∫ ζ, 𝐞 ⟪ζ, x⟫ • (φ.inhomogeneousLittlewoodPaley j (ζ + θ) : ℂ) •
+        𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ (𝓕 u ζ) =
+      ∑ k ∈ Finset.range (K + 1), ∫ ζ, 𝐞 ⟪ζ, x⟫ •
+        (φ.inhomogeneousLittlewoodPaley j (ζ + θ) : ℂ) •
+          𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ (𝓕 (SchwartzMap.fourierMultiplierCLM V
+            (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u) ζ) := by
+  have hint (k : ℕ) : Integrable fun ζ ↦ 𝐞 ⟪ζ, x⟫ •
+      (φ.inhomogeneousLittlewoodPaley j (ζ + θ) : ℂ) •
+        𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ (𝓕 (SchwartzMap.fourierMultiplierCLM V
+          (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u) ζ) := by
+    set v : 𝓢(CoordinateSpace n, V) := SchwartzMap.fourierMultiplierCLM V
+      (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u
+    exact ((Real.continuous_fourierChar.comp (continuous_id.inner continuous_const)).smul
+      ((contDiff_inhomogeneousLittlewoodPaley_add φ j θ).continuous.smul
+        ((ha.contDiff_fourier_slice_comp_smul θ).continuous.clm_apply
+          (𝓕 v).continuous))).integrable_of_hasCompactSupport
+      ((hasCompactSupport_inhomogeneousLittlewoodPaley_add φ j θ).smul_right.smul_left)
+  rw [← integral_finsetSum _ fun k _ ↦ hint k]
+  refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
+  have hF (k : ℕ) := SchwartzMap.fourier_fourierMultiplierCLM_apply (F := V)
+    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k) u ζ
+  simp only [hF, map_smul, ← Finset.smul_sum, ← Finset.sum_smul]
+  by_cases hj : φ.inhomogeneousLittlewoodPaley j (ζ + θ) = 0
+  · simp [hj]
+  -- On the support of the translate, `‖ζ‖ ≤ 2^K φ.rIn`, where the partial sum is `1`.
+  have hζ : ‖ζ‖ ≤ 2 ^ K * φ.rIn := by
+    have h := lt_of_not_ge fun h ↦ hj (φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm h)
+    calc ‖ζ‖ = ‖(ζ + θ) - θ‖ := by rw [add_sub_cancel_right]
+      _ ≤ ‖ζ + θ‖ + ‖θ‖ := norm_sub_le _ _
+      _ ≤ 2 ^ K * φ.rIn := by linarith
+  have h1 : ∑ k ∈ Finset.range (K + 1), (φ.inhomogeneousLittlewoodPaley k ζ : ℂ) = 1 := by
+    rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range, φ.one_of_mem_closedBall,
+      Complex.ofReal_one]
+    rw [mem_closedBall_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (by positivity),
+      inv_mul_le_iff₀ (by positivity)]
+    exact hζ
+  rw [h1, one_smul]
+
+omit [CompleteSpace V] [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] in
+/-- **The terms of the decomposition.** The term of the decomposition of the modulated piece
+attached to `θ` along `ψₖ` is bounded by `‖𝓕⁻ ψⱼ‖₁ ‖𝓕⁻ (Ψₖ â(θ, 2π ·))‖₁ ‖Δₖ u‖_∞`. -/
+private theorem HasCompactSpatialSupport.norm_integral_fourierChar_smul_le
+    (ha : a.HasCompactSpatialSupport) (φ : ContDiffBump (0 : CoordinateSpace n)) {L : ℕ}
+    (hL : ∀ j k : ℕ, j + L ≤ k → ∀ ξ : CoordinateSpace n,
+      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0)
+    (u : 𝓢(CoordinateSpace n, V)) (j k : ℕ) (x θ : CoordinateSpace n) {M : ℝ}
+    (hM : ∀ y, ‖SchwartzMap.fourierMultiplierCLM V
+      (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u y‖ ≤ M) :
+    ‖∫ ζ, 𝐞 ⟪ζ, x⟫ • (φ.inhomogeneousLittlewoodPaley j (ζ + θ) : ℂ) •
+        𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ (𝓕 (SchwartzMap.fourierMultiplierCLM V
+          (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u) ζ)‖ ≤
+      (∫ y, ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) y‖) *
+        ((∫ y, ‖𝓕⁻ (fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ •
+          𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ) y‖) * M) := by
+  set g : CoordinateSpace n → V →L[ℂ] W := fun ζ ↦ 𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ
+  set ρS : 𝓢(CoordinateSpace n, ℂ) := (hasCompactSupport_inhomogeneousLittlewoodPaley_add φ j
+    θ).toSchwartzMap (contDiff_inhomogeneousLittlewoodPaley_add φ j θ)
+  set σS : 𝓢(CoordinateSpace n, V →L[ℂ] W) :=
+    ((φ.hasCompactSupport_enlargedLittlewoodPaley L k).smul_right (f' := g)).toSchwartzMap
+      ((φ.contDiff_enlargedLittlewoodPaley L k).smul (ha.contDiff_fourier_slice_comp_smul θ))
+  have hρ : ⇑ρS = fun ζ ↦ (φ.inhomogeneousLittlewoodPaley j (ζ + θ) : ℂ) :=
+    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+  have hσ : ⇑σS = fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ • g ζ :=
+    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+  -- On the support of `ψₖ` the enlarged cutoff `Ψₖ` is `1`.
+  have hΨ (ζ : CoordinateSpace n) : (φ.enlargedLittlewoodPaley L k ζ : ℂ) *
+      φ.inhomogeneousLittlewoodPaley k ζ = φ.inhomogeneousLittlewoodPaley k ζ := by
+    exact_mod_cast φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL k ζ
+  have heq : ∫ ζ, 𝐞 ⟪ζ, x⟫ • (φ.inhomogeneousLittlewoodPaley j (ζ + θ) : ℂ) •
+      g ζ (𝓕 (SchwartzMap.fourierMultiplierCLM V
+        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u) ζ) =
+      ∫ ζ, 𝐞 ⟪ζ, x⟫ • ρS ζ • σS ζ (𝓕 (SchwartzMap.fourierMultiplierCLM V
+        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u) ζ) := by
+    refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
+    have hpt : (φ.enlargedLittlewoodPaley L k ζ • g ζ) (𝓕 (SchwartzMap.fourierMultiplierCLM V
+        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u) ζ) =
+        g ζ (𝓕 (SchwartzMap.fourierMultiplierCLM V
+          (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u) ζ) := by
+      rw [SchwartzMap.fourier_fourierMultiplierCLM_apply
+        (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k), FunLike.coe_smul,
+        Pi.smul_apply, ← Complex.coe_smul, ← map_smul, smul_smul, hΨ]
+    rw [hρ, hσ]
+    dsimp only
+    rw [hpt]
+  have hρn : ∫ y, ‖𝓕⁻ ρS y‖ = ∫ y, ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) y‖ := by
+    refine integral_congr_ae (.of_forall fun y ↦ ?_)
+    have h := TauCeti.fourierInv_comp_sub_const
+      (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) (-θ) y
+    simp only [sub_neg_eq_add] at h
+    dsimp only
+    rw [SchwartzMap.fourierInv_coe, hρ, h, Circle.norm_smul]
+  have hσn : ∫ y, ‖𝓕⁻ σS y‖ =
+      ∫ y, ‖𝓕⁻ (fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ • g ζ) y‖ := by
+    rw [SchwartzMap.fourierInv_coe, hσ]
+  rw [heq, ← hρn, ← hσn]
+  exact norm_integral_fourierChar_smul_apply_fourier_le ρS σS _ hM x
+
+omit [CompleteSpace V] [FiniteDimensional ℂ V] [CompleteSpace W] [FiniteDimensional ℂ W] in
+/-- **Distant pieces do not contribute.** The term of the decomposition of the modulated piece
+attached to `θ` along `ψₖ` vanishes unless `2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`, where
+`Q = 2 (φ.rOut + 1) / φ.rIn (1 + ‖θ‖)`. -/
+private theorem integral_fourierChar_smul_eq_zero (φ : ContDiffBump (0 : CoordinateSpace n))
+    (g : CoordinateSpace n → V →L[ℂ] W) (u : 𝓢(CoordinateSpace n, V)) {j k : ℕ}
+    (x θ : CoordinateSpace n)
+    (h : ¬((2 : ℝ) ^ j ≤ 2 * (φ.rOut + 1) / φ.rIn * (1 + ‖θ‖) * 2 ^ k ∧
+      (2 : ℝ) ^ k ≤ 2 * (φ.rOut + 1) / φ.rIn * (1 + ‖θ‖) * 2 ^ j)) :
+    ∫ ζ, 𝐞 ⟪ζ, x⟫ • (φ.inhomogeneousLittlewoodPaley j (ζ + θ) : ℂ) •
+        g ζ (𝓕 (SchwartzMap.fourierMultiplierCLM V
+          (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u) ζ) = 0 := by
+  refine integral_eq_zero_of_ae (.of_forall fun ζ ↦ ?_)
+  dsimp only [Pi.zero_apply]
+  rw [SchwartzMap.fourier_fourierMultiplierCLM_apply
+    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k)]
+  by_cases hj : φ.inhomogeneousLittlewoodPaley j (ζ + θ) = 0
+  · simp [hj]
+  by_cases hk : φ.inhomogeneousLittlewoodPaley k ζ = 0
+  · simp [hk]
+  refine absurd ⟨φ.two_pow_le_of_inhomogeneousLittlewoodPaley_add_ne_zero hj hk, ?_⟩ h
+  have hk' : φ.inhomogeneousLittlewoodPaley k (ζ + θ + -θ) ≠ 0 := by rwa [add_neg_cancel_right]
+  simpa using φ.two_pow_le_of_inhomogeneousLittlewoodPaley_add_ne_zero hk' hj
+
+omit [CompleteSpace V] [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] in
+/-- **The weighted bound for one term.** If `2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`, the term of the
+decomposition along `ψₖ`, weighted by `2^{(r - m) j}`, is at most `Cψ CK ⟨θ⟩ ^ (-ρ) M Q ^ |r - m|`,
+given the kernel bounds `‖𝓕⁻ ψⱼ‖₁ ≤ Cψ` and `‖𝓕⁻ (Ψₖ â(θ, 2π ·))‖₁ ≤ CK (2^k) ^ m ⟨θ⟩ ^ (-ρ)` and
+the block bounds `2^{rk} ‖Δₖ u‖_∞ ≤ M`. -/
+private theorem HasCompactSpatialSupport.two_rpow_mul_norm_integral_fourierChar_smul_le
+    (ha : a.HasCompactSpatialSupport) (φ : ContDiffBump (0 : CoordinateSpace n)) {L : ℕ}
+    (hL : ∀ j k : ℕ, j + L ≤ k → ∀ ξ : CoordinateSpace n,
+      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0)
+    (u : 𝓢(CoordinateSpace n, V)) {j k : ℕ} (x θ : CoordinateSpace n) {r M Cψ CK ρ Q : ℝ}
+    (hM : ∀ (k : ℕ) x, 2 ^ (r * k) * ‖SchwartzMap.fourierMultiplierCLM V
+      (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u x‖ ≤ M)
+    (hk : (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j)
+    (hCψ : ∫ y, ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) y‖ ≤ Cψ)
+    (hCK : ∫ y, ‖𝓕⁻ (fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ •
+      𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ) y‖ ≤
+        CK * (2 ^ k) ^ m * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2)) :
+    2 ^ ((r - m) * j) * ‖∫ ζ, 𝐞 ⟪ζ, x⟫ • (φ.inhomogeneousLittlewoodPaley j (ζ + θ) : ℂ) •
+        𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ (𝓕 (SchwartzMap.fourierMultiplierCLM V
+          (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u) ζ)‖ ≤
+      Cψ * max CK 0 * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2) * M * Q ^ |r - m| := by
+  have hMk (y : CoordinateSpace n) : ‖SchwartzMap.fourierMultiplierCLM V
+      (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u y‖ ≤ 2 ^ (-(r * k)) * M := by
+    rw [Real.rpow_neg zero_le_two, ← div_eq_inv_mul, le_div_iff₀ (by positivity), mul_comm]
+    exact hM k y
+  have hM0 : 0 ≤ M := (mul_nonneg (by positivity) (norm_nonneg _)).trans (hM 0 0)
+  have h := ha.norm_integral_fourierChar_smul_le φ hL u j k x θ hMk
+  have hpow : (2 : ℝ) ^ ((r - m) * j) * ((2 : ℝ) ^ k) ^ m * 2 ^ (-(r * k)) =
+      2 ^ ((r - m) * ((j : ℝ) - k)) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, ← Real.rpow_add two_pos,
+      ← Real.rpow_add two_pos]
+    ring_nf
+  have hCψ0 : 0 ≤ Cψ := (integral_nonneg fun _ ↦ norm_nonneg _).trans hCψ
+  have hCK' : ∫ y, ‖𝓕⁻ (fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ •
+      𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ) y‖ ≤
+        max CK 0 * (2 ^ k) ^ m * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2) :=
+    hCK.trans (by gcongr; exact le_max_left _ _)
+  calc 2 ^ ((r - m) * j) * ‖_‖
+      ≤ 2 ^ ((r - m) * j) * (Cψ * ((max CK 0 * (2 ^ k) ^ m * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2)) *
+          (2 ^ (-(r * k)) * M))) := by
+        refine mul_le_mul_of_nonneg_left (h.trans ?_) (by positivity)
+        exact mul_le_mul hCψ (mul_le_mul_of_nonneg_right hCK' (by positivity))
+          (mul_nonneg (integral_nonneg fun _ ↦ norm_nonneg _) (by positivity)) hCψ0
+    _ = Cψ * max CK 0 * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2) * M *
+          (2 ^ ((r - m) * j) * ((2 : ℝ) ^ k) ^ m * 2 ^ (-(r * k))) := by ring
+    _ ≤ Cψ * max CK 0 * (1 + ‖θ‖ ^ 2) ^ (-ρ / 2) * M * Q ^ |r - m| := by
+        rw [hpow]
+        gcongr
+        exact two_rpow_mul_sub_le hk.1 hk.2 _
+
+omit [CompleteSpace V] [FiniteDimensional ℂ V] [CompleteSpace W] [FiniteDimensional ℂ W] in
+/-- The arithmetic of the final bound for one translate: with `Q = c (1 + ‖θ‖)` and `s ≥ 0`,
+`(2Q + 1) A ⟨θ⟩ ^ (-(n + 2 + s)) M Q ^ s ≤ 3 A (c √2) ^ (1 + s) ⟨θ⟩ ^ (-(n + 1)) M`. -/
+private theorem two_mul_add_one_mul_le {c M A s : ℝ} (hc : 1 ≤ c) (hM : 0 ≤ M) (hA : 0 ≤ A)
+    (hs : 0 ≤ s) (θ : CoordinateSpace n) :
+    (2 * (c * (1 + ‖θ‖)) + 1) *
+        (A * (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 2 + s) / 2) * M * (c * (1 + ‖θ‖)) ^ s) ≤
+      3 * A * (c * √2) ^ (1 + s) * (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) * M := by
+  set Q := c * (1 + ‖θ‖)
+  set w : ℝ := 1 + ‖θ‖ ^ 2
+  have hw : 0 < w := by positivity
+  have hQ : 1 ≤ Q := one_le_mul_of_one_le_of_one_le hc (le_add_of_nonneg_right (norm_nonneg _))
+  have hQw : Q ≤ c * √2 * w ^ (1 / 2 : ℝ) := by
+    rw [← Real.sqrt_eq_rpow, mul_assoc]
+    exact mul_le_mul_of_nonneg_left (one_add_norm_le_sqrt_two_mul_sqrt θ) (by linarith)
+  have h2 : Q ^ (1 + s) ≤ (c * √2) ^ (1 + s) * w ^ ((1 + s) / 2) := by
+    calc Q ^ (1 + s) ≤ (c * √2 * w ^ (1 / 2 : ℝ)) ^ (1 + s) :=
+          Real.rpow_le_rpow (by positivity) hQw (by positivity)
+      _ = _ := by
+          rw [Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_mul hw.le]
+          ring_nf
+  have h3 : w ^ ((1 + s) / 2) * w ^ (-((n : ℝ) + 2 + s) / 2) = w ^ (-((n : ℝ) + 1) / 2) := by
+    rw [← Real.rpow_add hw]
+    ring_nf
+  calc (2 * Q + 1) * (A * w ^ (-((n : ℝ) + 2 + s) / 2) * M * Q ^ s)
+      ≤ 3 * Q * (A * w ^ (-((n : ℝ) + 2 + s) / 2) * M * Q ^ s) := by gcongr; linarith
+    _ = 3 * A * M * w ^ (-((n : ℝ) + 2 + s) / 2) * Q ^ (1 + s) := by
+        rw [Real.rpow_add (by linarith), Real.rpow_one]
+        ring
+    _ ≤ 3 * A * M * w ^ (-((n : ℝ) + 2 + s) / 2) *
+          ((c * √2) ^ (1 + s) * w ^ ((1 + s) / 2)) := by gcongr
+    _ = _ := by rw [← h3]; ring
+
+omit [CompleteSpace V] [CompleteSpace W] in
+/-- **The estimate for one translate.** Let `a` be a symbol of order `m` with compact spatial
+support and `r` real. There is `C` such that, for a Schwartz function `u` whose Littlewood–Paley
+blocks satisfy `2^{rk} ‖Δₖ u‖_∞ ≤ M`, the modulated piece of `Δⱼ Op(a) u` attached to the
+translation `θ` is bounded by `2^{-(r - m) j} C ⟨θ⟩ ^ (-(n + 1)) M`. The translate `ψⱼ (· + θ)`
+meets only the pieces `ψₖ` with `2^|j - k| ≲ ⟨θ⟩`, of which there are `O(⟨θ⟩)`, and each of them
+contributes `O(2^{(m - r) k} ⟨θ⟩ ^ (-ρ) M)`, for any `ρ`. -/
+private theorem HasCompactSpatialSupport.exists_norm_integral_fourierChar_smul_le
+    (ha : a.HasCompactSpatialSupport) (φ : ContDiffBump (0 : CoordinateSpace n)) (r : ℝ) :
+    ∃ C, ∀ (u : 𝓢(CoordinateSpace n, V)) (M : ℝ),
+      (∀ (k : ℕ) x, 2 ^ (r * k) * ‖SchwartzMap.fourierMultiplierCLM V
+        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u x‖ ≤ M) →
+      ∀ (j : ℕ) (x θ : CoordinateSpace n), 2 ^ ((r - m) * j) *
+        ‖∫ ζ, 𝐞 ⟪ζ, x⟫ • (φ.inhomogeneousLittlewoodPaley j (ζ + θ) : ℂ) •
+          𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ (𝓕 u ζ)‖ ≤
+        C * (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) * M := by
+  have : CompleteSpace W := FiniteDimensional.completeSpace ℂ W
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
+  obtain ⟨CK, hCK⟩ := ha.exists_integral_norm_fourierInv_cutoff_slice_le φ L (n + 2 + |r - m|)
+  obtain ⟨Cψ, hCψ⟩ :=
+    φ.exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le 0
+  simp only [pow_zero, one_mul, inv_one] at hCψ
+  set c : ℝ := 2 * (φ.rOut + 1) / φ.rIn
+  have hc : 1 ≤ c := by
+    rw [le_div_iff₀ φ.rIn_pos]
+    linarith [φ.rIn_lt_rOut, φ.rIn_pos]
+  refine ⟨3 * (Cψ * max CK 0) * (c * √2) ^ (1 + |r - m|), fun u M hM j x θ ↦ ?_⟩
+  set Q : ℝ := c * (1 + ‖θ‖)
+  have hQ : 1 ≤ Q := one_le_mul_of_one_le_of_one_le hc (le_add_of_nonneg_right (norm_nonneg _))
+  have hM0 : 0 ≤ M := (mul_nonneg (by positivity) (norm_nonneg _)).trans (hM 0 0)
+  set X : ℝ := Cψ * max CK 0 * (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 2 + |r - m|) / 2) * M * Q ^ |r - m|
+  -- Each term of the decomposition is at most `X`, and only those of comparable size survive.
+  have hterm (k : ℕ) : 2 ^ ((r - m) * j) * ‖∫ ζ, 𝐞 ⟪ζ, x⟫ •
+      (φ.inhomogeneousLittlewoodPaley j (ζ + θ) : ℂ) •
+        𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ (𝓕 (SchwartzMap.fourierMultiplierCLM V
+          (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u) ζ)‖ ≤
+      if (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j then X else 0 := by
+    split_ifs with hk
+    · exact ha.two_rpow_mul_norm_integral_fourierChar_smul_le φ hL u x θ hM hk (hCψ j)
+        (hCK θ k)
+    · rw [integral_fourierChar_smul_eq_zero φ _ u x θ hk, norm_zero, mul_zero]
+  obtain ⟨K, hK⟩ := pow_unbounded_of_one_lt ((2 ^ j * φ.rOut + ‖θ‖) / φ.rIn)
+    (one_lt_two (α := ℝ))
+  rw [div_lt_iff₀ φ.rIn_pos] at hK
+  rw [ha.integral_fourierChar_smul_eq_sum φ u j x θ hK.le]
+  calc 2 ^ ((r - m) * j) * ‖∑ k ∈ Finset.range (K + 1), _‖
+      ≤ ∑ k ∈ Finset.range (K + 1),
+          if (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j then X else 0 := by
+        refine (mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans ?_
+        rw [Finset.mul_sum]
+        exact Finset.sum_le_sum fun k _ ↦ hterm k
+    _ = ((Finset.range (K + 1)).filter fun k ↦
+          (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j).card * X := by
+        rw [Finset.sum_ite, Finset.sum_const_zero, add_zero, Finset.sum_const, nsmul_eq_mul]
+    _ ≤ (2 * Q + 1) * X :=
+        mul_le_mul_of_nonneg_right (card_filter_two_pow_le _ j hQ) (by positivity)
+    _ ≤ 3 * (Cψ * max CK 0) * (c * √2) ^ (1 + |r - m|) *
+          (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) * M :=
+        two_mul_add_one_mul_le hc hM0 (mul_nonneg Cψ.2 (le_max_right CK 0)) (abs_nonneg _) θ
+
+/-! ### The Zygmund estimate -/
+
+omit [CompleteSpace V] [CompleteSpace W] in
+/-- **Dyadic blocks of a quantization.** Let `a` be a symbol of order `m` with compact spatial
+support between finite-dimensional spaces, `φ` the bump function of a Littlewood–Paley
+partition and `r` real. There is `C ≥ 0` such that for every Schwartz function `u` and every `M`
+with `2^{rk} ‖Δₖ u‖_∞ ≤ M` for all `k`, the blocks of `Op(a) u` satisfy
+`2^{(r - m) j} ‖Δⱼ Op(a) u‖_∞ ≤ C M` for all `j`: `Op(a)` lowers the Zygmund smoothness, measured by
+the blocks, by `m`. -/
+theorem HasCompactSpatialSupport.exists_rpow_mul_norm_fourierMultiplierCLM_quantizeUniformCLM_le
+    (ha : a.HasCompactSpatialSupport) (φ : ContDiffBump (0 : CoordinateSpace n)) (r : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ (u : 𝓢(CoordinateSpace n, V)) (M : ℝ),
+      (∀ (k : ℕ) x, 2 ^ (r * k) * ‖SchwartzMap.fourierMultiplierCLM V
+        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u x‖ ≤ M) →
+      ∀ (j : ℕ) x, 2 ^ ((r - m) * j) * ‖SchwartzMap.fourierMultiplierCLM W
+        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) (quantizeUniformCLM a ha.isUniform u)
+          x‖ ≤ C * M := by
+  have : CompleteSpace W := FiniteDimensional.completeSpace ℂ W
+  obtain ⟨C, hC⟩ := ha.exists_norm_integral_fourierChar_smul_le φ r
+  set I : ℝ := ∫ θ : CoordinateSpace n, (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)
+  have hI : Integrable fun θ : CoordinateSpace n ↦ (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) :=
+    integrable_rpow_neg_one_add_norm_sq (by simp)
+  refine ⟨max C 0 * I, mul_nonneg (le_max_right _ _) (integral_nonneg fun _ ↦ by positivity),
+    fun u M hM j x ↦ ?_⟩
+  set ψ : CoordinateSpace n → ℂ := fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)
+  have hrep : SchwartzMap.fourierMultiplierCLM W ψ (quantizeUniformCLM a ha.isUniform u) x =
+      𝓕⁻ (fun η ↦ ψ η • 𝓕 (quantizeSchwartzValue a.coefficient u) η) x := by
+    have hfun : ⇑(SchwartzMap.smulLeftCLM W ψ (𝓕 (quantizeUniformCLM a ha.isUniform u))) =
+        fun η ↦ ψ η • 𝓕 (quantizeSchwartzValue a.coefficient u) η := by
+      funext η
+      rw [SchwartzMap.smulLeftCLM_apply_apply
+        (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j), SchwartzMap.fourier_coe,
+        coe_quantizeUniformCLM]
+    rw [SchwartzMap.fourierMultiplierCLM_apply, SchwartzMap.fourierInv_coe, hfun]
+  have hψi : Integrable ψ := by
+    have h := (φ.inhomogeneousLittlewoodPaleySchwartz j).integrable (μ := volume)
+    rwa [φ.coe_inhomogeneousLittlewoodPaleySchwartz] at h
+  have hψc : Continuous ψ :=
+    Complex.continuous_ofReal.comp (φ.contDiff_inhomogeneousLittlewoodPaley j (n := 0)).continuous
+  have hψ1 (ξ : CoordinateSpace n) : ‖ψ ξ‖ ≤ 1 := by
+    rw [Complex.norm_real, Real.norm_eq_abs]
+    exact φ.abs_inhomogeneousLittlewoodPaley_le_one j ξ
+  rw [hrep, ha.fourierInv_smul_fourier_quantizeSchwartzValue hψc hψi hψ1 u x]
+  -- Each modulated piece is `O(2^{-(r - m) j} ⟨θ⟩ ^ (-(n + 1)) M)`, which is integrable in `θ`.
+  have hb (θ : CoordinateSpace n) : ‖𝐞 ⟪θ, x⟫ • ∫ ζ, 𝐞 ⟪ζ, x⟫ • ψ (ζ + θ) •
+      𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ (𝓕 u ζ)‖ ≤
+      (2 ^ ((r - m) * j))⁻¹ * (max C 0 * (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) * M) := by
+    have hM0 : 0 ≤ M := (mul_nonneg (by positivity) (norm_nonneg _)).trans (hM 0 0)
+    rw [Circle.norm_smul, le_inv_mul_iff₀ (by positivity)]
+    exact (hC u M hM j x θ).trans (by gcongr; exact le_max_left _ _)
+  calc 2 ^ ((r - m) * j) * ‖∫ θ, 𝐞 ⟪θ, x⟫ • ∫ ζ, 𝐞 ⟪ζ, x⟫ • ψ (ζ + θ) •
+        𝓕 (fun y ↦ a.coefficient (y, (2 * π) • ζ)) θ (𝓕 u ζ)‖
+      ≤ 2 ^ ((r - m) * j) * ∫ θ : CoordinateSpace n,
+          (2 ^ ((r - m) * j))⁻¹ * (max C 0 * (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) * M) := by
+        gcongr
+        exact norm_integral_le_of_norm_le (((hI.const_mul _).mul_const _).const_mul _)
+          (.of_forall hb)
+    _ = max C 0 * I * M := by
+        rw [integral_const_mul, integral_mul_const, integral_const_mul,
+          mul_inv_cancel_left₀ (by positivity)]
+
+/-- **Zygmund estimate for pseudodifferential operators with compact spatial support.** Let `a`
+be a symbol of order `m` with compact spatial support between finite-dimensional complex normed
+spaces, and `r` real. There is `C` such that for every Schwartz function `u`, `Op(a) u` lies in
+the Hölder–Zygmund space `𝒞^{r - m} = B^{r - m}_{∞,∞}` with norm at most `C` times the norm of
+`u` in `𝒞^r = B^r_{∞,∞}`: `‖Op(a) u‖_{𝒞^{r - m}} ≤ C ‖u‖_{𝒞^r}`. -/
+theorem HasCompactSpatialSupport.exists_norm_besovSpace_quantizeUniformCLM_le
+    (ha : a.HasCompactSpatialSupport) (φ : ContDiffBump (0 : CoordinateSpace n)) (r : ℝ) :
+    ∃ C, ∀ (u : 𝓢(CoordinateSpace n, V)) (v : BesovSpace V φ r ∞ ∞),
+      v.toDistr = (u : 𝓢'(CoordinateSpace n, V)) →
+      ∃ w : BesovSpace W φ (r - m) ∞ ∞,
+        w.toDistr = (quantizeUniformCLM a ha.isUniform u : 𝓢'(CoordinateSpace n, W)) ∧
+          ‖w‖ ≤ C * ‖v‖ := by
+  obtain ⟨C, hC0, hC⟩ := ha.exists_rpow_mul_norm_fourierMultiplierCLM_quantizeUniformCLM_le φ r
+  refine ⟨C, fun u v hv ↦ ?_⟩
+  -- The blocks of `v` are the `L^∞` classes of the blocks of `u`.
+  have hblock (k : ℕ) : v.block k = (SchwartzMap.fourierMultiplierCLM V
+      (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u).toLp ⊤ :=
+    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
+      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply,
+        BesovSpace.coe_block, hv, littlewoodPaleyBlock_toTemperedDistributionCLM_eq,
+        Lp.toTemperedDistribution_toLp_eq]
+  have hM (k : ℕ) (x : CoordinateSpace n) : 2 ^ (r * k) * ‖SchwartzMap.fourierMultiplierCLM V
+      (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u x‖ ≤ ‖v‖ := by
+    refine le_trans ?_ (v.rpow_mul_norm_block_le k)
+    rw [hblock]
+    gcongr
+    exact SchwartzMap.norm_le_norm_toLp_top _ x
+  set Ou := quantizeUniformCLM a ha.isUniform u
+  set b : lp (fun _ : ℕ ↦ ℝ) ∞ := ⟨fun _ ↦ C * ‖v‖, memℓp_infty ⟨C * ‖v‖, by
+    rintro _ ⟨k, rfl⟩
+    exact (Real.norm_of_nonneg (by positivity)).le⟩⟩
+  obtain ⟨w, hw, hwb⟩ := BesovSpace.exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq
+    (s := r - m) (fun j ↦ (SchwartzMap.fourierMultiplierCLM W
+      (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) Ou).toLp ⊤) b
+    (fun j ↦ by
+      rw [littlewoodPaleyBlock_toTemperedDistributionCLM_eq, Lp.toTemperedDistribution_toLp_eq])
+    (fun j ↦ by
+      -- The entries of the anonymous `lp` element `b` are `C ‖v‖` by definition.
+      change _ ≤ C * ‖v‖
+      rw [← le_div_iff₀' (by positivity)]
+      refine (SchwartzMap.norm_toLp_top_le).trans (SchwartzMap.seminorm_le_bound ℝ 0 0 _
+        (by positivity) fun x ↦ ?_)
+      rw [pow_zero, one_mul, norm_iteratedFDeriv_zero, le_div_iff₀' (by positivity)]
+      exact hC u ‖v‖ hM j x)
+  refine ⟨w, hw, hwb.trans (lp.norm_le_of_forall_le (by positivity) fun _ ↦ ?_)⟩
+  exact (Real.norm_of_nonneg (by positivity)).le
+
+end Estimates
+
+end Symbol
+
+end TauCeti

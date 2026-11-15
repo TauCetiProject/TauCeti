@@ -55,6 +55,8 @@ derivative bounds; it localizes operators to the frequencies of a single block.
   is identically zero.
 * `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces,
   also between the partitions of two bump functions.
+* `ContDiffBump.two_pow_le_of_inhomogeneousLittlewoodPaley_add_ne_zero`: a piece `ψⱼ` translated
+  by `θ` meets only pieces `ψₖ` with `2^j ≤ c (1 + ‖θ‖) 2^k`.
 * `ContDiffBump.exists_card_filter_inhomogeneousLittlewoodPaley_ne_zero_le`: at each `ξ` at most a
   fixed number of pieces are nonzero.
 * `ContDiffBump.exists_sum_sq_inhomogeneousLittlewoodPaley_le`: `∑ⱼ ψⱼ ξ ²` is bounded uniformly
@@ -437,6 +439,35 @@ theorem exists_inhomogeneousLittlewoodPaley_mul_eq_zero (φ' : ContDiffBump (0 :
       _ = 2 ^ (j + n) * φ'.rIn := by rw [pow_add, mul_assoc]
       _ ≤ 2 ^ k * φ'.rIn :=
           mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega)) φ'.rIn_pos.le
+
+/-- **Translated pieces meet only pieces of comparable size.** If the translate `ψⱼ (· + θ)` and
+the piece `ψₖ` are both nonzero at `ζ`, then `2^j ≤ c (1 + ‖θ‖) 2^k` with
+`c = 2 (φ.rOut + 1) / φ.rIn`. Applied in both directions, a translation by `θ` moves the
+frequencies of `ψⱼ` only to pieces `ψₖ` with `2^|j - k| ≤ c (1 + ‖θ‖)`. -/
+theorem two_pow_le_of_inhomogeneousLittlewoodPaley_add_ne_zero {j k : ℕ} {ζ θ : E}
+    (hj : φ.inhomogeneousLittlewoodPaley j (ζ + θ) ≠ 0)
+    (hk : φ.inhomogeneousLittlewoodPaley k ζ ≠ 0) :
+    (2 : ℝ) ^ j ≤ 2 * (φ.rOut + 1) / φ.rIn * (1 + ‖θ‖) * 2 ^ k := by
+  have hrIn := φ.rIn_pos
+  have hlt := φ.rIn_lt_rOut
+  have hk' : ‖ζ‖ < 2 ^ k * φ.rOut :=
+    lt_of_not_ge fun h ↦ hk (φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm h)
+  have h2k : (1 : ℝ) ≤ 2 ^ k := one_le_pow₀ one_le_two
+  rcases j with _ | j
+  · have hc : 1 ≤ 2 * (φ.rOut + 1) / φ.rIn := by rw [le_div_iff₀ hrIn]; linarith
+    calc (2 : ℝ) ^ 0 = 1 * 1 * 1 := by simp
+      _ ≤ 2 * (φ.rOut + 1) / φ.rIn * (1 + ‖θ‖) * 2 ^ k := by
+          gcongr
+          exact le_add_of_nonneg_right (norm_nonneg _)
+  · have hj' : 2 ^ j * φ.rIn < ‖ζ + θ‖ :=
+      lt_of_not_ge fun h ↦ hj (φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le h)
+    have h1 : 2 ^ j * φ.rIn < 2 ^ k * (φ.rOut + 1) * (1 + ‖θ‖) := by
+      calc 2 ^ j * φ.rIn < ‖ζ‖ + ‖θ‖ := hj'.trans_le (norm_add_le _ _)
+        _ ≤ 2 ^ k * φ.rOut + ‖θ‖ := by linarith
+        _ ≤ 2 ^ k * (φ.rOut + 1) * (1 + ‖θ‖) := by
+            nlinarith [norm_nonneg θ, φ.rOut_pos, mul_le_mul_of_nonneg_right h2k (norm_nonneg θ)]
+    rw [pow_succ, div_mul_eq_mul_div, div_mul_eq_mul_div, le_div_iff₀ hrIn]
+    nlinarith
 
 /-- The **enlarged Littlewood–Paley cutoff** `Ψⱼ = ∑_{j + 1 - L ≤ k < j + L} ψₖ`, the sum of the
 pieces of the inhomogeneous partition whose indices are within `L` of `j`. It is supported in the
