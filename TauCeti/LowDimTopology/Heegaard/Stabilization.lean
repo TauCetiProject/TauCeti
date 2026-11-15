@@ -39,8 +39,8 @@ and the admissibility conditions all agree, and the hat differential of the stab
 hat differential of `H` transported along the generator correspondence. The Euler normalization
 `∑ χ(R) - #(α ∩ β) = 2 - 2g` of a closed surface of genus `g` passes to genus `g + 1`, so in a
 singly pointed diagram satisfying it the relative gradings agree modulo the periodic Maslov
-indices, and exactly when the periodic domains have Maslov index zero at the source generator.
-Stabilizing in a region containing a basepoint preserves niceness.
+indices, and agree outright when the periodic domains have Maslov index zero at the source
+generator. Stabilizing in a region containing a basepoint preserves niceness.
 
 This is the combinatorial half of the stabilization invariance of `\widehat{HF}`: for the
 holomorphic theory one must still identify the moduli spaces of the two diagrams (Ozsváth and
@@ -65,7 +65,8 @@ not treated here.
 * `TauCeti.HeegaardRegionSystem.coe_relativeGrading_stabilize` and
   `TauCeti.HeegaardRegionSystem.relativeGrading_stabilize`: in a singly pointed diagram with the
   Euler normalization of genus `n`, the relative gradings agree modulo the periodic Maslov
-  indices, and exactly when the periodic domains have Maslov index zero at the source generator.
+  indices, and agree outright when the periodic domains have Maslov index zero at the source
+  generator.
 * `TauCeti.HeegaardRegionSystem.weaklyAdmissible_stabilize_iff`,
   `TauCeti.HeegaardRegionSystem.weaklyAdmissibleAt_stabilize_iff` and
   `TauCeti.HeegaardRegionSystem.stronglyAdmissible_stabilize_iff`: admissibility is unchanged.
