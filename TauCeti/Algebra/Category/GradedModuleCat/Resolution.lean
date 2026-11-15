@@ -27,6 +27,8 @@ minimality, finite generation, nor boundedness.
 Forgetting the grading turns the same data into a projective resolution of the underlying
 `A`-module. Hence a graded resolution whose terms vanish from homological degree `n` on bounds the
 ungraded projective dimension (`TauCeti.GradedProjectiveResolution.hasProjectiveDimensionLT`).
+Regrading a resolution by `d` gives a resolution `r.shiftObj d` of `M{d}` whose `n`th term is
+`(r.termObj n){d}`, preserving minimality (`isMinimal_shiftObj_iff`).
 
 ## References
 
@@ -168,6 +170,23 @@ theorem hasProjectiveDimensionLT (n : ℕ) (h : ∀ i, n ≤ i → Subsingleton 
   refine R.hasProjectiveDimensionLT n fun i hi ↦ ?_
   have := h i hi
   exact ModuleCat.isZero_of_subsingleton (ModuleCat.of A (r.X i))
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- Shift a concrete graded projective resolution of `M` to a resolution of `M{d}` (`M.shiftObj d`),
+shifting every resolution term by `d`. -/
+abbrev shiftObj (d : ℤ) : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 (M.shiftObj d).grading :=
+  r.shift (-d)
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- The `n`th graded-module term of `r.shiftObj d` is `(r.termObj n).shiftObj d`. -/
+@[simp]
+theorem shiftObj_termObj (d : ℤ) (n : ℕ) :
+    (r.shiftObj d).termObj n = (r.termObj n).shiftObj d := (rfl)
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- Shifting a resolution of `M` to `M{d}` preserves minimality. -/
+theorem isMinimal_shiftObj_iff (d : ℤ) : (r.shiftObj d).IsMinimal ↔ r.IsMinimal :=
+  r.isMinimal_shift_iff (-d)
 
 end GradedProjectiveResolution
 
