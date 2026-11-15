@@ -22,10 +22,11 @@ the stable category and `K_ac(P)` is a triangle equivalence.
 
 The functor commutes with shifts: the shift by one of a complete resolution of `X` is a complete
 resolution of the cokernel of `X ↪ X⁰`, which represents the suspension of `X`. It sends the
-standard triangle of a conflation `X ↪ Y ↠ Z` to the triangle of the degreewise split sequence of
-complete resolutions given by the horseshoe lemma, which is distinguished in `K(C)`. The two
-connecting maps are compared on cycles in degree zero, where two maps of complete resolutions
-agree in `K(C)` exactly when they agree in the stable category.
+standard triangle of a conflation `X ↪ Y ↠ Z` to a triangle isomorphic to the triangle of the
+degreewise split sequence of complete resolutions given by the horseshoe lemma, which is
+distinguished in `K(C)`. The two connecting
+maps are compared on cycles in degree zero, where two maps of complete resolutions agree in `K(C)`
+exactly when they agree in the stable category.
 
 ## Main results
 
