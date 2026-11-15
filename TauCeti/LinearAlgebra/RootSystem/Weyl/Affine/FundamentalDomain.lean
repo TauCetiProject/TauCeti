@@ -61,9 +61,6 @@ From this single perturbation-and-gallery step we read off:
 
 ## Main results
 
-* `RootPairing.Base.affineSimpleRoot_affineSimpleReflection`: the affine Cartan matrix governs the
-  action of the affine simple reflections on the affine simple roots:
-  `aₗ(sₖ x) = aₗ(x) - A_{l,k} aₖ(x)`.
 * `RootPairing.closure_range_affineSimpleReflection`: over an archimedean linearly ordered field,
   the affine simple reflections generate `W_aff`.
 * `RootPairing.finite_affinePointStabilizer_of_base` and
@@ -95,100 +92,6 @@ public section
 open Set Function
 
 namespace RootPairing
-
-section AffineSimpleReflection
-
-variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
-  [Module R N] {P : RootPairing ι R M N} [CharZero R] [Finite ι] [Nonempty ι] (b : P.Base)
-
-namespace Base
-
-/-- The formula for an affine simple reflection in terms of its affine simple root `aₖ` and the
-coroot at `RootPairing.Base.affineSimpleRootIndex`: `sₖ(x) = x - aₖ(x) αₖ^∨`. -/
-lemma affineSimpleReflection_apply (k : Option b.support) (x : N) :
-    b.affineSimpleReflection k x =
-      x - b.affineSimpleRoot k x • P.coroot (b.affineSimpleRootIndex k) := by
-  rcases k with _ | i
-  · simp only [affineSimpleReflection_none, affineCoreflection_apply_eq_sub, affineSimpleRoot_none,
-      affineSimpleRootIndex_none, P.coroot_reflectionPerm, P.coreflection_apply_self, smul_neg,
-      sub_neg_eq_add]
-    rw [← neg_sub (1 : R), neg_smul]
-    abel
-  · simp [coreflection_apply]
-
-@[simp]
-lemma affineSimpleReflection_affineSimpleReflection (k : Option b.support) (x : N) :
-    b.affineSimpleReflection k (b.affineSimpleReflection k x) = x := by
-  rcases k with _ | i <;> simp
-
-@[simp]
-lemma affineSimpleReflection_mul_self (k : Option b.support) :
-    b.affineSimpleReflection k * b.affineSimpleReflection k = 1 := by
-  ext x
-  simp
-
-@[simp]
-lemma inv_affineSimpleReflection (k : Option b.support) :
-    (b.affineSimpleReflection k)⁻¹ = b.affineSimpleReflection k :=
-  inv_eq_of_mul_eq_one_right (b.affineSimpleReflection_mul_self k)
-
-@[simp]
-lemma symm_affineSimpleReflection (k : Option b.support) :
-    (b.affineSimpleReflection k).symm = b.affineSimpleReflection k :=
-  b.inv_affineSimpleReflection k
-
-/-- An affine simple reflection fixes the wall where its affine simple root vanishes. -/
-lemma affineSimpleReflection_apply_of_affineSimpleRoot_eq_zero {k : Option b.support} {x : N}
-    (h : b.affineSimpleRoot k x = 0) : b.affineSimpleReflection k x = x := by
-  rw [b.affineSimpleReflection_apply, h, zero_smul, sub_zero]
-
-/-- When `R` has no zero divisors, the fixed points of `sₖ` are the wall `aₖ(x) = 0`. -/
-@[simp]
-lemma affineSimpleReflection_apply_eq_self_iff [NoZeroDivisors R]
-    {k : Option b.support} {x : N} :
-    b.affineSimpleReflection k x = x ↔ b.affineSimpleRoot k x = 0 := by
-  rcases k with _ | i
-  · rw [affineSimpleReflection_none, P.affineCoreflection_apply_eq_self_iff,
-      affineSimpleRoot_none, sub_eq_zero, eq_comm]
-  · rw [affineSimpleReflection_some, ← P.affineCoreflection_zero,
-      P.affineCoreflection_apply_eq_self_iff, affineSimpleRoot_some]
-
-/-- **The affine Cartan matrix governs the action of `sₖ` on the affine simple roots**:
-`aₗ(sₖ x) = aₗ(x) - A_{l,k} aₖ(x)`. -/
-theorem affineSimpleRoot_affineSimpleReflection [P.IsCrystallographic]
-    (k l : Option b.support) (x : N) :
-    b.affineSimpleRoot l (b.affineSimpleReflection k x) =
-      b.affineSimpleRoot l x - b.affineCartanMatrix l k * b.affineSimpleRoot k x := by
-  rw [b.affineSimpleRoot_eq_root'_add l (b.affineSimpleReflection k x),
-    b.affineSimpleRoot_eq_root'_add l x]
-  simp [b.affineSimpleReflection_apply, b.affineCartanMatrix_apply, ← P.algebraMap_pairingIn ℤ]
-  ring
-
-@[simp]
-lemma affineSimpleRoot_affineSimpleReflection_self [P.IsCrystallographic]
-    (k : Option b.support) (x : N) :
-    b.affineSimpleRoot k (b.affineSimpleReflection k x) = -b.affineSimpleRoot k x := by
-  rw [b.affineSimpleRoot_affineSimpleReflection]
-  simp only [affineCartanMatrix_apply_same, Int.cast_ofNat]
-  ring
-
-/-- Every reflection in a wall of the fundamental alcove passing through `x` fixes `x`. -/
-lemma apply_eq_self_of_mem_affineWallReflections {x : N} {s : N ≃ᵃ[R] N}
-    (hs : s ∈ b.affineWallReflections x) : s x = x := by
-  obtain ⟨k, hk, rfl⟩ := b.mem_affineWallReflections.mp hs
-  exact b.affineSimpleReflection_apply_of_affineSimpleRoot_eq_zero hk
-
-/-- No wall of the fundamental alcove passes through a point of the open fundamental alcove. -/
-theorem affineWallReflections_eq_empty_of_mem_fundamentalAlcove [PartialOrder R]
-    [IsOrderedAddMonoid R] {x : N} (hx : x ∈ fundamentalAlcove P b) :
-    b.affineWallReflections x = ∅ := by
-  refine eq_empty_iff_forall_notMem.mpr fun s hs ↦ ?_
-  obtain ⟨k, hk, -⟩ := b.mem_affineWallReflections.mp hs
-  exact ((mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos b).mp hx k).ne' hk
-
-end Base
-
-end AffineSimpleReflection
 
 /-! ### Point stabilizers and root-hyperplane reflections -/
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.LocallyFinite
-public import TauCeti.LinearAlgebra.RootSystem.Alcove
+public import TauCeti.LinearAlgebra.RootSystem.Alcove.Basic
 import Mathlib.Data.Int.Interval
 import Mathlib.Topology.Order.DenselyOrdered
 
@@ -27,8 +27,8 @@ module topology):
 * under `[OrderClosedTopology R]`, `A` is open, and `Ā` and every closed face
   `b.closedAlcoveFace J` are closed;
 * over any linearly ordered ring with `[OrderClosedTopology R]`, the family of affine root
-  hyperplanes `H_{αⱼ,k}` is locally finite, so their union is closed and the complement — the set
-  of alcove interior points — is open;
+  hyperplanes `H_{αⱼ,k}` is locally finite, so their union is closed and its complement — the set
+  of points lying on no affine root hyperplane — is open;
 * over a linearly ordered topological field with `[OrderTopology R]`, `Ā` is the topological
   closure of `A` (by shrinking segments toward an interior point `x₀ ∈ A`), and `A` is the
   topological interior of `Ā` (by moving across any wall `aₖ(x) = 0` in the direction `-αₖ^∨`).
@@ -55,7 +55,7 @@ discharges continuity of every root functional automatically.
   `{x | αⱼ(x) = k}` indexed by `ι × ℤ` is locally finite.**
 * `RootPairing.isClosed_iUnion_setOf_root'_eq_intCast` and
   `RootPairing.isOpen_setOf_forall_root'_ne_intCast`: the union of the affine root hyperplanes is
-  closed, and the set of regular coweights avoiding all affine root hyperplanes is open.
+  closed, and the set of points lying on no affine root hyperplane is open.
 
 ## References
 
@@ -98,23 +98,15 @@ variable [LinearOrder R] [OrderClosedTopology R]
 /-- The open fundamental alcove is open when every root functional is continuous. -/
 theorem isOpen_fundamentalAlcove_of_continuous
     (hcont : ∀ i, Continuous (P.root' i)) : IsOpen (fundamentalAlcove P b) := by
-  have h : fundamentalAlcove P b =
-      (⋂ i ∈ b.support, P.root' i ⁻¹' Ioi 0) ∩ P.root' b.highestRoot ⁻¹' Iio 1 := by
-    ext x
-    simp [mem_fundamentalAlcove]
-  rw [h]
+  rw [fundamentalAlcove_eq_iInter]
   exact (isOpen_biInter_finset fun i _ ↦ isOpen_Ioi.preimage (hcont i)).inter
     (isOpen_Iio.preimage (hcont _))
 
 /-- The closed fundamental alcove is closed when every root functional is continuous. -/
 theorem isClosed_closedFundamentalAlcove_of_continuous
     (hcont : ∀ i, Continuous (P.root' i)) : IsClosed (closedFundamentalAlcove P b) := by
-  have h : closedFundamentalAlcove P b =
-      (⋂ i ∈ (b.support : Set ι), P.root' i ⁻¹' Ici 0) ∩ P.root' b.highestRoot ⁻¹' Iic 1 := by
-    ext x
-    simp [mem_closedFundamentalAlcove]
-  rw [h]
-  exact (isClosed_biInter fun i _ ↦ isClosed_Ici.preimage (hcont i)).inter
+  rw [closedFundamentalAlcove_eq_iInter]
+  exact (isClosed_iInter fun i ↦ isClosed_iInter fun _ ↦ isClosed_Ici.preimage (hcont i)).inter
     (isClosed_Iic.preimage (hcont _))
 
 /-- Every closed face `b.closedAlcoveFace J` of the fundamental alcove is closed when the root
@@ -179,8 +171,8 @@ theorem isClosed_iUnion_setOf_root'_eq_intCast_of_continuous
   (P.locallyFinite_setOf_root'_eq_intCast_of_continuous hcont).isClosed_iUnion fun p ↦
     isClosed_singleton.preimage (hcont p.1)
 
-/-- The set of regular coweights — points avoiding every affine root hyperplane — is open when the
-root functionals are continuous. -/
+/-- The set of points lying on no affine root hyperplane is open when the root functionals are
+continuous. -/
 theorem isOpen_setOf_forall_root'_ne_intCast_of_continuous (hcont : ∀ i, Continuous (P.root' i)) :
     IsOpen {x : N | ∀ (j : ι) (k : ℤ), P.root' j x ≠ k} := by
   have h : {x : N | ∀ (j : ι) (k : ℤ), P.root' j x ≠ k} =
@@ -252,7 +244,7 @@ theorem interior_closedFundamentalAlcove_of_continuous (hcont : ∀ i, Continuou
   have hval : b.affineSimpleRoot k (ψ t) = -2 * t := by
     have hx0 := (b.affineSimpleRoot_eq_root'_add k x).symm.trans hk0
     rw [b.affineSimpleRoot_eq_root'_add k (ψ t)]
-    simp [ψ]
+    simp only [ψ, map_add, map_smul, map_neg, root'_coroot_eq_pairing, pairing_same, smul_eq_mul]
     linear_combination hx0
   linarith
 
@@ -318,7 +310,7 @@ theorem isClosed_iUnion_setOf_root'_eq_intCast [Finite ι] (P : RootPairing ι �
   P.isClosed_iUnion_setOf_root'_eq_intCast_of_continuous
     fun i ↦ (P.root' i).continuous_of_finiteDimensional
 
-/-- Over `ℝ`, the set of regular coweights avoiding all affine root hyperplanes is open. -/
+/-- Over `ℝ`, the set of points lying on no affine root hyperplane is open. -/
 theorem isOpen_setOf_forall_root'_ne_intCast [Finite ι] (P : RootPairing ι ℝ M N) :
     IsOpen {x : N | ∀ (j : ι) (k : ℤ), P.root' j x ≠ k} :=
   P.isOpen_setOf_forall_root'_ne_intCast_of_continuous

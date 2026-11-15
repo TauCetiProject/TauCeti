@@ -75,8 +75,8 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
 * `RootPairing.mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove`: the fundamental alcove is
   the part of the closed fundamental alcove lying on no affine root hyperplane.
 * `RootPairing.convex_fundamentalAlcove`, `RootPairing.convex_closedFundamentalAlcove`, and
-  `RootPairing.lineMap_mem_fundamentalAlcove`: convexity of both alcoves and openness of interior
-  segments from `Ā` into `A`.
+  `RootPairing.lineMap_mem_fundamentalAlcove`: convexity of both alcoves, and that the open segment
+  from a point of `Ā` to a point of `A` lies in `A`.
 * `RootPairing.mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos`: the fundamental alcove is
   the set of points at which every affine simple root is positive.
 * `RootPairing.mem_closedFundamentalAlcove_iff_forall_affineSimpleRoot_nonneg`: the closed
@@ -159,6 +159,20 @@ lemma mem_closedFundamentalAlcove {x : N} :
       (∀ i ∈ b.support, 0 ≤ P.root' i x) ∧ P.root' b.highestRoot x ≤ 1 :=
   Iff.rfl
 
+/-- The open fundamental alcove as an intersection of open half-spaces. -/
+lemma fundamentalAlcove_eq_iInter :
+    fundamentalAlcove P b =
+      (⋂ i ∈ b.support, P.root' i ⁻¹' Ioi 0) ∩ P.root' b.highestRoot ⁻¹' Iio 1 := by
+  ext x
+  simp [mem_fundamentalAlcove]
+
+/-- The closed fundamental alcove as an intersection of closed half-spaces. -/
+lemma closedFundamentalAlcove_eq_iInter :
+    closedFundamentalAlcove P b =
+      (⋂ i ∈ b.support, P.root' i ⁻¹' Ici 0) ∩ P.root' b.highestRoot ⁻¹' Iic 1 := by
+  ext x
+  simp [mem_closedFundamentalAlcove]
+
 /-- The fundamental alcove lies in the closed fundamental alcove. -/
 lemma fundamentalAlcove_subset_closedFundamentalAlcove :
     fundamentalAlcove P b ⊆ closedFundamentalAlcove P b := fun _ hx ↦
@@ -174,21 +188,13 @@ variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [Nonempty ι] {P b}
 
 /-- The fundamental alcove is convex: it is an intersection of open half-spaces. -/
 theorem convex_fundamentalAlcove : Convex R (fundamentalAlcove P b) := by
-  have h : fundamentalAlcove P b =
-      (⋂ i ∈ b.support, {x | 0 < P.root' i x}) ∩ {x | P.root' b.highestRoot x < 1} := by
-    ext x
-    simp [mem_fundamentalAlcove]
-  rw [h]
+  rw [fundamentalAlcove_eq_iInter]
   exact (convex_iInter₂ fun i _ ↦ convex_halfSpace_gt (P.root' i).isLinear 0).inter
     (convex_halfSpace_lt (P.root' _).isLinear 1)
 
 /-- The closed fundamental alcove is convex: it is an intersection of closed half-spaces. -/
 theorem convex_closedFundamentalAlcove : Convex R (closedFundamentalAlcove P b) := by
-  have h : closedFundamentalAlcove P b =
-      (⋂ i ∈ b.support, {x | 0 ≤ P.root' i x}) ∩ {x | P.root' b.highestRoot x ≤ 1} := by
-    ext x
-    simp [mem_closedFundamentalAlcove]
-  rw [h]
+  rw [closedFundamentalAlcove_eq_iInter]
   exact (convex_iInter₂ fun i _ ↦ convex_halfSpace_ge (P.root' i).isLinear 0).inter
     (convex_halfSpace_le (P.root' _).isLinear 1)
 
