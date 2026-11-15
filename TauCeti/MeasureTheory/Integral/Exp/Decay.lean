@@ -42,6 +42,8 @@ inclusion.
   of `c * exp (-(a * |·|))`.
 * `TauCeti.integrable_exp_mul_I_mul_exp_neg_mul_abs`: the same times the oscillation
   `exp (b * x * I)`.
+* `TauCeti.integrable_one_add_abs_rpow_mul_exp_neg_mul_abs`: `(1 + |·|) ^ K * exp (-(a * |·|))`
+  is integrable for every `K : ℝ` when `0 < a`.
 * `TauCeti.integrable_exp_neg_mul_norm`: `exp (-(a * ‖·‖))` is integrable on a finite-dimensional
   space when `0 < a`.
 -/
@@ -168,6 +170,52 @@ theorem integrable_exp_mul_I_mul_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) (b : ℝ
   ((integrable_exp_neg_mul_abs ha).ofReal).bdd_mul (c := 1) (by fun_prop)
     (.of_forall fun x ↦ by simp [Complex.norm_exp])
 
+/-- Any real power of `1 + |x|` times a two-sided decaying exponential `exp (-(a * |x|))` is
+integrable on the line when `0 < a`. -/
+theorem integrable_one_add_abs_rpow_mul_exp_neg_mul_abs (K : ℝ) {a : ℝ} (ha : 0 < a) :
+    Integrable (fun x : ℝ ↦ (1 + |x|) ^ K * Real.exp (-(a * |x|))) := by
+  set M : ℝ := max K 0
+  have hM : 0 ≤ M := le_max_right K 0
+  set c : ℝ := a / (2 * (M + 1))
+  have hc : 0 < c := by positivity
+  refine ((integrable_exp_neg_mul_abs (half_pos ha)).const_mul ((max 1 c⁻¹) ^ M)).mono' ?_ ?_
+  · refine Continuous.aestronglyMeasurable ?_
+    exact ((continuous_const.add continuous_abs).rpow_const fun x ↦
+      Or.inl (add_pos_of_pos_of_nonneg one_pos (abs_nonneg x)).ne').mul (by fun_prop)
+  · refine .of_forall fun x ↦ ?_
+    have h1x : 1 ≤ 1 + |x| := le_add_of_nonneg_right (abs_nonneg x)
+    have hlin : 1 + |x| ≤ max 1 c⁻¹ * Real.exp (c * |x|) := by
+      calc 1 + |x| = 1 * 1 + c⁻¹ * (c * |x|) := by
+              rw [inv_mul_cancel_left₀ hc.ne', one_mul]
+        _ ≤ max 1 c⁻¹ * 1 + max 1 c⁻¹ * (c * |x|) :=
+              add_le_add (mul_le_mul_of_nonneg_right (le_max_left _ _) zero_le_one)
+                (mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity))
+        _ = max 1 c⁻¹ * (c * |x| + 1) := by ring
+        _ ≤ max 1 c⁻¹ * Real.exp (c * |x|) :=
+              mul_le_mul_of_nonneg_left (Real.add_one_le_exp _) (by positivity)
+    have hrpow : (1 + |x|) ^ K ≤ (max 1 c⁻¹) ^ M * Real.exp (a / 2 * |x|) := by
+      calc (1 + |x|) ^ K ≤ (1 + |x|) ^ M :=
+              Real.rpow_le_rpow_of_exponent_le h1x (le_max_left K 0)
+        _ ≤ (max 1 c⁻¹ * Real.exp (c * |x|)) ^ M :=
+              Real.rpow_le_rpow (by positivity) hlin hM
+        _ = (max 1 c⁻¹) ^ M * (Real.exp (c * |x|)) ^ M :=
+              Real.mul_rpow (by positivity) (Real.exp_pos _).le
+        _ = (max 1 c⁻¹) ^ M * Real.exp (c * |x| * M) := by
+              rw [Real.rpow_def_of_pos (Real.exp_pos _), Real.log_exp]
+        _ ≤ (max 1 c⁻¹) ^ M * Real.exp (a / 2 * |x|) := by
+              refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_) (by positivity)
+              have hMc : c * (M + 1) = a / 2 := by
+                dsimp [c]
+                field_simp
+              nlinarith [abs_nonneg x]
+    rw [Real.norm_of_nonneg (by positivity)]
+    calc (1 + |x|) ^ K * Real.exp (-(a * |x|))
+        ≤ (max 1 c⁻¹) ^ M * Real.exp (a / 2 * |x|) * Real.exp (-(a * |x|)) :=
+            mul_le_mul_of_nonneg_right hrpow (Real.exp_pos _).le
+      _ = (max 1 c⁻¹) ^ M * Real.exp (-(a / 2 * |x|)) := by
+            rw [mul_assoc, ← Real.exp_add]
+            congr 2
+            ring
 
 /-- At a nonnegative rate the integrand is bounded below by a positive constant on `(c, ∞)`, a set
 of infinite measure, so it is not integrable there. -/
