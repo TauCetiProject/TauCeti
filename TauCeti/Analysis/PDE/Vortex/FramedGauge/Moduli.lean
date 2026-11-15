@@ -206,7 +206,8 @@ theorem sobolevVortexDivisor_surjective :
   obtain ⟨hyc, hysol, -⟩ := mem_framedVortexSubMulAction.1 (u • x).2
   refine ⟨⟨⟨u • (x : ℂ → EuclideanSpace ℝ (Fin 4)), hu k⟩,
     mem_sobolevVortices.2 ⟨hyc.of_le (by simp), hysol⟩⟩, ?_⟩
-  rw [sobolevVortexDivisor_eq_framedVortexDivisor _ (u • x) rfl, framedVortexDivisor_smul, hx]
+  rw [sobolevVortexDivisor_eq_framedVortexDivisor _ (u • x) (SubMulAction.val_smul u x).symm,
+    framedVortexDivisor_smul, hx]
 
 /-- For `k ≥ 4`, every point of `Sym ℂ m` is the divisor of a `G_(k+1)`-orbit of `C²` vortices of
 `A_m^k`. -/
