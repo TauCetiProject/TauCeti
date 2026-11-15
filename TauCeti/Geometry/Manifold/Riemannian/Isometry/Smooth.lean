@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Group
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Radial
 import Mathlib.Analysis.InnerProductSpace.Convex
-import TauCeti.Analysis.Convex.StrictConvexBetween
+import TauCeti.Analysis.Convex.StrictConvex.Between
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Distance
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Distortion
 

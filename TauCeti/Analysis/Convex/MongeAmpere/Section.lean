@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Convex.MongeAmpere.Comparison
 public import TauCeti.Analysis.Convex.Section.Basic
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Convex.AffineNormalization
-import TauCeti.Analysis.Convex.StrictConvexSpace
+import TauCeti.Analysis.Convex.StrictConvex.Space
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!

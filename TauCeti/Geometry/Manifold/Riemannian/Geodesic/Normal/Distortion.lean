@@ -166,24 +166,6 @@ theorem exists_isNormalDomain_ball_lipschitzOnWith_riemannianExp (p : M) {c : �
     (fun z hz ↦ (hb z (hseg hz) (b - a)).2)
   simpa [edist_dist, dist_eq_norm, norm_sub_rev, ENNReal.ofReal_mul] using hle
 
-omit [T2Space M] in
-/-- A path that starts at `exp_p v` and leaves the normal neighbourhood `exp_p '' ball 0 R` has
-length at least `R - ‖v‖`. -/
-theorem IsNormalDomain.ofReal_le_enorm_add_pathELength {p : M} {R : ℝ}
-    (hn : IsNormalDomain I M p (Metric.ball 0 R)) {v : TangentSpace I p}
-    (hv : v ∈ Metric.ball 0 R) {γ : ℝ → M} (hγ : CMDiff[Icc 0 1] 1 γ)
-    (hγ0 : γ 0 = riemannianExp I M p v) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1)
-    (hγt : γ t ∉ riemannianExp I M p '' Metric.ball 0 R) :
-    ENNReal.ofReal R ≤ ‖v‖ₑ + pathELength I γ 0 1 := by
-  rw [hn.image_riemannianExp_ball subset_rfl, Metric.mem_eball, not_lt, edist_comm] at hγt
-  calc ENNReal.ofReal R ≤ edist p (γ t) := hγt
-    _ ≤ edist p (γ 0) + edist (γ 0) (γ t) := edist_triangle _ _ _
-    _ ≤ ‖v‖ₑ + pathELength I γ 0 1 := by
-      gcongr
-      · rw [hγ0, hn.edist_riemannianExp_eq_of_mem_ball subset_rfl hv]
-      exact (IsRiemannianManifold.edist_le_pathELength (hγ.mono (Icc_subset_Icc_right ht.2))
-        ht.1).trans (pathELength_mono le_rfl ht.2)
-
 /-- The exponential map is antilipschitz on a sufficiently small normal ball, with any prescribed
 constant greater than one: it shrinks distances by at most that factor. Distances on the target
 are its intrinsic Riemannian distances. -/

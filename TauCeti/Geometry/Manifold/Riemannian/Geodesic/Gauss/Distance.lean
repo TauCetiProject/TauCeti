@@ -44,6 +44,8 @@ In the namespace `TauCeti.Manifold.IsNormalDomain`:
   balls.
 * `edist_eq_ofReal_add_infEDist`: the distance to a point outside a geodesic ball is its radius
   plus the distance to the geodesic sphere.
+* `ofReal_le_enorm_add_pathELength`: a path from `exp_p v` that leaves the geodesic ball of
+  radius `r` has length at least `r - ‖v‖`.
 
 In the namespace `TauCeti.Manifold`:
 
@@ -269,6 +271,22 @@ theorem image_riemannianExp_ball (h : IsNormalDomain I M p U)
       rw [h.image_riemannianExp_closedBall hclosed hs]
       exact (mem_closedEBall').2 hqs'
     exact image_mono (Metric.closedBall_subset_ball hsr) hqclosed
+
+/-- A path that starts at `exp_p v` and leaves the normal neighbourhood `exp_p '' ball 0 r` has
+length at least `r - ‖v‖`. -/
+theorem ofReal_le_enorm_add_pathELength (h : IsNormalDomain I M p (Metric.ball 0 r))
+    (hv : v ∈ Metric.ball 0 r) {γ : ℝ → M} (hγ : CMDiff[Icc 0 1] 1 γ)
+    (hγ0 : γ 0 = riemannianExp I M p v) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1)
+    (hγt : γ t ∉ riemannianExp I M p '' Metric.ball 0 r) :
+    ENNReal.ofReal r ≤ ‖v‖ₑ + pathELength I γ 0 1 := by
+  rw [h.image_riemannianExp_ball subset_rfl, mem_eball, not_lt, edist_comm] at hγt
+  calc ENNReal.ofReal r ≤ edist p (γ t) := hγt
+    _ ≤ edist p (γ 0) + edist (γ 0) (γ t) := edist_triangle _ _ _
+    _ ≤ ‖v‖ₑ + pathELength I γ 0 1 := by
+      gcongr
+      · rw [hγ0, h.edist_riemannianExp_eq_of_mem_ball subset_rfl hv]
+      exact (IsRiemannianManifold.edist_le_pathELength (hγ.mono (Icc_subset_Icc_right ht.2))
+        ht.1).trans (pathELength_mono le_rfl ht.2)
 
 end IsNormalDomain
 

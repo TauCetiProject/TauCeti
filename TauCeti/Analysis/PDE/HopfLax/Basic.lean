@@ -11,7 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.Semicontinuity.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
-import TauCeti.Analysis.Convex.StrictConvexSpace
+import TauCeti.Analysis.Convex.StrictConvex.Space
 
 /-!
 # The Hopf–Lax formula and its subsolution inequality
