@@ -326,8 +326,7 @@ theorem pinnedCurve_zero (q : offDiag (univ : Set 𝕜) →ᵇ E) : q.pinnedCurv
   simp [pinnedCurve]
 
 theorem pinnedCurve_of_ne_zero (q : offDiag (univ : Set 𝕜) →ᵇ E) {t : 𝕜} (ht : t ≠ 0) :
-    q.pinnedCurve t = t • q ⟨(t, 0), ⟨trivial, trivial, ht⟩⟩ := by
-  simp [pinnedCurve, ht]
+    q.pinnedCurve t = t • q ⟨(t, 0), ⟨trivial, trivial, ht⟩⟩ := by simp [pinnedCurve, ht]
 
 end PinnedCurve
 
@@ -344,23 +343,18 @@ noncomputable def offDiagSlope (hg : LipschitzWith K g) : offDiag (univ : Set �
   BoundedContinuousFunction.ofNormedAddCommGroup
     (fun p ↦ (p.1.1 - p.1.2)⁻¹ • (g p.1.1 - g p.1.2))
     (by
-      have hc1 : Continuous fun p : offDiag (univ : Set 𝕜) ↦ p.1.1 :=
-        continuous_fst.comp continuous_subtype_val
-      have hc2 : Continuous fun p : offDiag (univ : Set 𝕜) ↦ p.1.2 :=
-        continuous_snd.comp continuous_subtype_val
-      exact ((hc1.sub hc2).inv₀ fun p ↦ sub_ne_zero.2 p.2.2.2).smul
-        ((hg.continuous.comp hc1).sub (hg.continuous.comp hc2)))
+      have hc := hg.continuous
+      exact (((continuous_fst.comp continuous_subtype_val).sub
+        (continuous_snd.comp continuous_subtype_val)).inv₀ fun p ↦ sub_ne_zero.2 p.2.2.2).smul
+        ((hc.comp (continuous_fst.comp continuous_subtype_val)).sub
+          (hc.comp (continuous_snd.comp continuous_subtype_val))))
     K fun p ↦ by
-      have hne : 0 < ‖p.1.1 - p.1.2‖ := norm_pos_iff.2 (sub_ne_zero.2 p.2.2.2)
-      have hlip : ‖g p.1.1 - g p.1.2‖ ≤ K * ‖p.1.1 - p.1.2‖ := by
-        simpa [dist_eq_norm] using hg.dist_le_mul p.1.1 p.1.2
-      rw [norm_smul, norm_inv, inv_mul_le_iff₀ hne, mul_comm]
-      exact hlip
+      rw [norm_smul, norm_inv, inv_mul_le_iff₀ (norm_pos_iff.2 (sub_ne_zero.2 p.2.2.2)), mul_comm]
+      simpa [dist_eq_norm] using hg.dist_le_mul p.1.1 p.1.2
 
 @[simp]
 theorem offDiagSlope_apply (hg : LipschitzWith K g) (p : offDiag (univ : Set 𝕜)) :
-    hg.offDiagSlope p = (p.1.1 - p.1.2)⁻¹ • (g p.1.1 - g p.1.2) :=
-  (rfl)
+    hg.offDiagSlope p = (p.1.1 - p.1.2)⁻¹ • (g p.1.1 - g p.1.2) := (rfl)
 
 theorem norm_offDiagSlope_le (hg : LipschitzWith K g) : ‖hg.offDiagSlope‖ ≤ K :=
   BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ K.coe_nonneg _
@@ -372,9 +366,7 @@ theorem smul_offDiagSlope_apply (hg : LipschitzWith K g) {t s : 𝕜} (h : t ≠
 @[simp]
 theorem pinnedCurve_offDiagSlope (hg : LipschitzWith K g) (t : 𝕜) :
     hg.offDiagSlope.pinnedCurve t = g t - g 0 := by
-  rcases eq_or_ne t 0 with rfl | ht
-  · simp
-  · simpa [BoundedContinuousFunction.pinnedCurve_of_ne_zero _ ht] using
-      hg.smul_offDiagSlope_apply ht
+  rcases eq_or_ne t 0 with rfl | ht; · simp
+  simpa [BoundedContinuousFunction.pinnedCurve_of_ne_zero _ ht] using hg.smul_offDiagSlope_apply ht
 
 end LipschitzWith

@@ -79,51 +79,40 @@ theorem isBigO_exp_rpow_add_mul_I_sub {E : Type*} [SeminormedAddCommGroup E]
     (fun z ↦ f (z + h * I) - f z) =O[cobounded ℂ ⊓ 𝓟 (re ⁻¹' s)]
       fun w ↦ Real.exp ((|B| * 2 ^ max A 0) * ‖w‖ ^ max A 0) := by
   let l := cobounded ℂ ⊓ 𝓟 (re ⁻¹' s)
-  have htend : Tendsto (fun z : ℂ ↦ z + h * I) l l := by
-    refine tendsto_inf.2 ⟨?_, tendsto_principal.2 ?_⟩
-    · rw [← tendsto_norm_atTop_iff_cobounded]
-      have hnorm : Tendsto (fun z : ℂ ↦ ‖z‖ - ‖(h : ℂ) * I‖) l atTop :=
-        (tendsto_atTop_add_const_right _ (-‖(h : ℂ) * I‖)
-          (tendsto_norm_cobounded_atTop.mono_left inf_le_left)).congr fun _ ↦
-            (sub_eq_add_neg _ _).symm
-      exact tendsto_atTop_mono (fun z ↦ by
-        have htri := norm_sub_le (z + h * I) ((h : ℂ) * I)
-        rw [add_sub_cancel_right] at htri; linarith) hnorm
-    · filter_upwards [(eventually_mem_principal (re ⁻¹' s)).filter_mono inf_le_right]
-        with z hz using by simpa using hz
   set p := max A 0
+  have htend : Tendsto (fun z : ℂ ↦ z + h * I) l l := by
+    refine tendsto_inf.2 ⟨tendsto_norm_atTop_iff_cobounded.1 ?_, tendsto_principal.2 ?_⟩
+    · refine tendsto_atTop_mono (fun z ↦ ?_) ((tendsto_atTop_add_const_right _ (-‖(h : ℂ) * I‖)
+        (tendsto_norm_cobounded_atTop.mono_left inf_le_left)).congr fun _ ↦
+          (sub_eq_add_neg _ _).symm)
+      have htri := norm_sub_le (z + h * I) ((h : ℂ) * I)
+      rw [add_sub_cancel_right] at htri; linarith
+    · filter_upwards [(eventually_mem_principal _).filter_mono inf_le_right] with z hz
+      simpa using hz
+  have hexp {w z : ℂ} (hw : 1 ≤ ‖w‖) (hwz : ‖w‖ ≤ 2 * ‖z‖) :
+      ‖Real.exp (B * ‖w‖ ^ A)‖ ≤ Real.exp (|B| * 2 ^ p * ‖z‖ ^ p) := by
+    suffices B * ‖w‖ ^ A ≤ |B| * 2 ^ p * ‖z‖ ^ p by
+      simpa [Real.norm_eq_abs, Real.abs_exp, Real.exp_le_exp] using this
+    calc B * ‖w‖ ^ A ≤ |B| * ‖w‖ ^ p :=
+          mul_le_mul (le_abs_self B) (Real.rpow_le_rpow_of_exponent_le hw (le_max_left _ _))
+            (Real.rpow_nonneg (norm_nonneg _) _) (abs_nonneg B)
+      _ ≤ |B| * 2 ^ p * ‖z‖ ^ p := by
+          simpa [Real.mul_rpow zero_le_two (norm_nonneg _), mul_assoc] using
+            mul_le_mul_of_nonneg_left (Real.rpow_le_rpow (norm_nonneg _) hwz (le_max_right _ _))
+              (abs_nonneg B)
   have hlarge : ∀ᶠ z : ℂ in l, max 1 ‖(h : ℂ) * I‖ + 1 ≤ ‖z‖ :=
     (tendsto_norm_cobounded_atTop.eventually
       (eventually_ge_atTop (max 1 ‖(h : ℂ) * I‖ + 1))).filter_mono inf_le_left
-  have hshift : (fun z ↦ f (z + h * I)) =O[l] fun w ↦ Real.exp (|B| * 2 ^ p * ‖w‖ ^ p) := by
-    refine (hf.comp_tendsto htend).trans (IsBigO.of_norm_eventuallyLE ?_)
-    filter_upwards [hlarge] with z hz
-    have h1 : 1 ≤ ‖z + h * I‖ := by
-      have htri := norm_sub_le (z + h * I) ((h : ℂ) * I)
-      rw [add_sub_cancel_right] at htri; linarith [le_max_right 1 ‖(h : ℂ) * I‖]
-    have h2 : ‖z + h * I‖ ≤ 2 * ‖z‖ := by
-      linarith [norm_add_le z ((h : ℂ) * I), le_max_left 1 ‖(h : ℂ) * I‖,
-        le_max_right 1 ‖(h : ℂ) * I‖]
-    have hexp : B * ‖z + h * I‖ ^ A ≤ |B| * 2 ^ p * ‖z‖ ^ p :=
-      calc B * ‖z + h * I‖ ^ A
-          ≤ |B| * ‖z + h * I‖ ^ p :=
-            mul_le_mul (le_abs_self B) (Real.rpow_le_rpow_of_exponent_le h1 (le_max_left _ _))
-              (Real.rpow_nonneg (norm_nonneg _) _) (abs_nonneg B)
-        _ ≤ |B| * (2 * ‖z‖) ^ p := by gcongr
-        _ = |B| * 2 ^ p * ‖z‖ ^ p := by rw [Real.mul_rpow zero_le_two (norm_nonneg _)]; ring
-    simpa [Real.norm_eq_abs, Real.abs_exp, Real.exp_le_exp] using hexp
-  have hself : f =O[l] fun w ↦ Real.exp (|B| * 2 ^ p * ‖w‖ ^ p) := by
-    refine hf.trans (IsBigO.of_norm_eventuallyLE ?_)
-    filter_upwards [hlarge] with z hz
-    have hz1 : 1 ≤ ‖z‖ := by linarith [le_max_left 1 ‖(h : ℂ) * I‖]
-    have h2p : |B| ≤ |B| * 2 ^ p :=
-      le_mul_of_one_le_right (abs_nonneg B) (Real.one_le_rpow one_le_two (le_max_right _ _))
-    have hexp : B * ‖z‖ ^ A ≤ |B| * 2 ^ p * ‖z‖ ^ p :=
-      mul_le_mul ((le_abs_self B).trans h2p)
-        (Real.rpow_le_rpow_of_exponent_le hz1 (le_max_left _ _))
-        (Real.rpow_nonneg (norm_nonneg _) _) (by positivity)
-    simpa [Real.norm_eq_abs, Real.abs_exp, Real.exp_le_exp] using hexp
-  exact hshift.sub hself
+  refine ((hf.comp_tendsto htend).trans (IsBigO.of_norm_eventuallyLE ?_)).sub
+    (hf.trans (IsBigO.of_norm_eventuallyLE ?_))
+  · filter_upwards [hlarge] with z hz
+    have htri := norm_sub_le (z + h * I) ((h : ℂ) * I)
+    rw [add_sub_cancel_right] at htri
+    exact hexp (by linarith [le_max_right 1 ‖(h : ℂ) * I‖])
+      (by linarith [norm_add_le z ((h : ℂ) * I), le_max_left 1 ‖(h : ℂ) * I‖,
+        le_max_right 1 ‖(h : ℂ) * I‖])
+  · filter_upwards [hlarge] with z hz
+    exact hexp (by linarith [le_max_left 1 ‖(h : ℂ) * I‖]) (by linarith [norm_nonneg z])
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {f : ℂ → E} {a b C : ℝ} {z : ℂ}

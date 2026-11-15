@@ -85,13 +85,11 @@ theorem IsUpperStripFunction.map {G : ℂ → C.SumSpace}
   exists_norm_le := by
     let S := C.sumLift (D.fstToSum.comp T₀) (D.sndToSum.comp T₁) h
     obtain ⟨K, hK⟩ := hG.exists_norm_le
-    refine ⟨‖S‖ * max K 0, fun z hz => ?_⟩
-    calc ‖S (G z)‖ ≤ ‖S‖ * ‖G z‖ := S.le_opNorm (G z)
-      _ ≤ ‖S‖ * (K * (1 + |z.im|)) := mul_le_mul_of_nonneg_left (hK z hz) (norm_nonneg S)
-      _ ≤ ‖S‖ * max K 0 * (1 + |z.im|) := by rw [mul_assoc]; gcongr; exact le_max_left K 0
+    refine ⟨‖S‖ * max K 0, fun z hz => (S.le_opNorm (G z)).trans <|
+      (mul_le_mul_of_nonneg_left (hK z hz) (norm_nonneg S)).trans ?_⟩
+    rw [mul_assoc]; gcongr; exact le_max_left K 0
   sub_mul_I hne := by
-    rw [← map_sub, hG.sub_mul_I hne, map_smul]
-    exact congrArg (_ • ·) (C.sumLift_fstToSum _ _ h _)
+    rw [← map_sub, hG.sub_mul_I hne, map_smul]; exact congrArg (_ • ·) (C.sumLift_fstToSum _ _ h _)
   sub_one_add_mul_I hne := by
     rw [← map_sub, hG.sub_one_add_mul_I hne, map_smul]
     exact congrArg (_ • ·) (C.sumLift_sndToSum _ _ h _)
@@ -102,20 +100,15 @@ def upperStripTracesMap : C.upperStripTraces →L[ℂ] D.upperStripTraces :=
   LinearMap.mkContinuous
     { toFun g := ⟨(T₀.compLeftContinuousBounded _ g.1.1, T₁.compLeftContinuousBounded _ g.1.2),
         mem_upperStripTraces_iff.2 ⟨_, (C.isUpperStripFunction_upperStripFunction g).map T₀ T₁ h⟩⟩
-      map_add' _ _ := Subtype.ext <| Prod.ext
+      map_add' _ _ := Subtype.ext <| Prod.ext (BoundedContinuousFunction.ext fun _ => by simp)
         (BoundedContinuousFunction.ext fun _ => by simp)
-        (BoundedContinuousFunction.ext fun _ => by simp)
-      map_smul' _ _ := Subtype.ext <| Prod.ext
-        (BoundedContinuousFunction.ext fun _ => by simp)
+      map_smul' _ _ := Subtype.ext <| Prod.ext (BoundedContinuousFunction.ext fun _ => by simp)
         (BoundedContinuousFunction.ext fun _ => by simp) }
-    (max ‖T₀‖ ‖T₁‖) fun g =>
-      norm_prod_le_iff.2
-        ⟨(T₀.norm_compLeftContinuousBounded_apply_le _).trans
-            (mul_le_mul (le_max_left _ _) (norm_fst_le g.1) (norm_nonneg _)
-              (le_trans (norm_nonneg T₀) (le_max_left _ _))),
-          (T₁.norm_compLeftContinuousBounded_apply_le _).trans
-            (mul_le_mul (le_max_right _ _) (norm_snd_le g.1) (norm_nonneg _)
-              (le_trans (norm_nonneg T₀) (le_max_left _ _)))⟩
+    (max ‖T₀‖ ‖T₁‖) fun g => norm_prod_le_iff.2
+      ⟨(T₀.norm_compLeftContinuousBounded_apply_le _).trans (mul_le_mul (le_max_left _ _)
+          (norm_fst_le g.1) (norm_nonneg _) ((norm_nonneg T₀).trans (le_max_left _ _))),
+        (T₁.norm_compLeftContinuousBounded_apply_le _).trans (mul_le_mul (le_max_right _ _)
+          (norm_snd_le g.1) (norm_nonneg _) ((norm_nonneg T₀).trans (le_max_left _ _)))⟩
 
 @[simp]
 theorem upperStripTracesMap_apply_fst (g : C.upperStripTraces) (p : offDiag (univ : Set ℝ)) :
@@ -139,12 +132,10 @@ theorem norm_upperStripTracesMap_snd_le {M₁ : ℝ} (hM₁ : 0 ≤ M₁) (h₁ 
 theorem upperStripDerivEval_upperStripTracesMap (z : ℂ) (g : C.upperStripTraces) :
     D.upperStripDerivEval z (upperStripTracesMap T₀ T₁ h g) =
       C.sumLift (D.fstToSum.comp T₀) (D.sndToSum.comp T₁) h (C.upperStripDerivEval z g) := by
-  let S := C.sumLift (D.fstToSum.comp T₀) (D.sndToSum.comp T₁) h
   by_cases hz : z ∈ verticalStrip 0 1
-  · rw [upperStripDerivEval_eq_deriv hz
-        ((C.isUpperStripFunction_upperStripFunction g).map T₀ T₁ h),
+  · rw [upperStripDerivEval_eq_deriv hz ((C.isUpperStripFunction_upperStripFunction g).map T₀ T₁ h),
       C.upperStripDerivEval_apply hz]
-    exact (S.hasFDerivAt.comp_hasDerivAt z
+    exact ((C.sumLift _ _ h).hasFDerivAt.comp_hasDerivAt z
       ((C.isUpperStripFunction_upperStripFunction g).differentiableAt hz).hasDerivAt).deriv
   · simp [D.upperStripDerivEval_eq_zero hz, C.upperStripDerivEval_eq_zero hz]
 
@@ -164,13 +155,10 @@ private theorem ibpCurve_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ
           ∫ u in t₀..t, scaleFactor M₀ M₁ (c + u * I) • y u := by
   have hsy : Continuous fun u : ℝ => scaleFactor M₀ M₁ (c + u * I) • y u :=
     ((differentiable_scaleFactor M₀ M₁).continuous.comp (by fun_prop)).smul hy_cont
-  have hadj : (∫ u in (0 : ℝ)..t, scaleFactor M₀ M₁ (c + u * I) • y u) -
-      ∫ u in (0 : ℝ)..t₀, scaleFactor M₀ M₁ (c + u * I) • y u =
-      ∫ u in t₀..t, scaleFactor M₀ M₁ (c + u * I) • y u := by
-    rw [sub_eq_iff_eq_add',
-      intervalIntegral.integral_add_adjacent_intervals (hsy.intervalIntegrable _ _)
-        (hsy.intervalIntegrable _ _)]
-  dsimp only [ibpCurve]; rw [← hadj, smul_sub]; abel
+  dsimp only [ibpCurve]
+  rw [← intervalIntegral.integral_add_adjacent_intervals (hsy.intervalIntegrable 0 t₀)
+    (hsy.intervalIntegrable t₀ t), smul_add]
+  abel
 
 /-- One-step quadratic-remainder bound on increments of `ibpCurve`. -/
 private theorem norm_ibpCurve_sub_le_quad {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
@@ -183,10 +171,6 @@ private theorem norm_ibpCurve_sub_le_quad {E : Type*} [NormedAddCommGroup E] [No
   let s := scaleFactor M₀ M₁
   have hs_cont : Continuous fun u : ℝ => s (c + u * I) :=
     (differentiable_scaleFactor M₀ M₁).continuous.comp (by fun_prop)
-  have hconst_int : (a * I) • (∫ u in t₀..t, s (c + u * I) • y t₀) =
-      (s (c + t * I) - s (c + t₀ * I)) • y t₀ := by
-    rw [intervalIntegral.integral_smul_const, ← smul_assoc, smul_eq_mul,
-      ← intervalIntegral.integral_const_mul, integral_deriv_scaleFactor_add_mul_I]
   have hrem : ibpCurve M₀ M₁ c y t - ibpCurve M₀ M₁ c y t₀ = s (c + t * I) • (y t - y t₀) -
       (a * I) • ∫ u in t₀..t, s (c + u * I) • (y u - y t₀) := by
     have hdiff_int : (∫ u in t₀..t, s (c + u * I) • (y u - y t₀)) =
@@ -194,21 +178,22 @@ private theorem norm_ibpCurve_sub_le_quad {E : Type*} [NormedAddCommGroup E] [No
       simp_rw [smul_sub]
       exact intervalIntegral.integral_sub ((hs_cont.smul hy_cont).intervalIntegrable _ _)
         ((hs_cont.smul continuous_const).intervalIntegrable _ _)
-    rw [ibpCurve_sub M₀ M₁ c hy_cont, hdiff_int, smul_sub, smul_sub, hconst_int, sub_smul]
-    dsimp [a, s]; abel
+    dsimp only [a, s]
+    rw [ibpCurve_sub M₀ M₁ c hy_cont, hdiff_int, intervalIntegral.integral_smul_const, smul_sub,
+      smul_sub, smul_smul, ← intervalIntegral.integral_const_mul,
+      integral_deriv_scaleFactor_add_mul_I, sub_smul]
+    abel
   have h1 : ‖s (c + t * I) • (y t - y t₀)‖ ≤ (L : ℝ) * |t - t₀| := by
     rw [norm_smul, hs_norm t, inv_mul_le_iff₀ hM]; exact (hy_lip t t₀).trans_eq (mul_assoc _ _ _)
-  have h2 : ‖(a * I) • ∫ u in t₀..t, s (c + u * I) • (y u - y t₀)‖ ≤ ‖a‖ * L * |t - t₀| ^ 2 := by
-    rw [norm_smul, norm_mul, norm_I, mul_one]
-    have hint_le : ‖∫ u in t₀..t, s (c + u * I) • (y u - y t₀)‖ ≤
-        ((L : ℝ) * |t - t₀|) * |t - t₀| := by
-      refine intervalIntegral.norm_integral_le_of_norm_le_const fun u hu => ?_
-      have hu_le : |u - t₀| ≤ |t - t₀| := abs_sub_left_of_mem_uIcc (uIoc_subset_uIcc hu)
+  have hint_le : ‖∫ u in t₀..t, s (c + u * I) • (y u - y t₀)‖ ≤ (L : ℝ) * |t - t₀| * |t - t₀| :=
+    intervalIntegral.norm_integral_le_of_norm_le_const fun u hu => by
       rw [norm_smul, hs_norm u, inv_mul_le_iff₀ hM]
-      exact ((hy_lip u t₀).trans (mul_le_mul_of_nonneg_left hu_le
-        (mul_nonneg hM.le L.coe_nonneg))).trans_eq (mul_assoc _ _ _)
-    exact (mul_le_mul_of_nonneg_left hint_le (norm_nonneg a)).trans_eq (by ring)
-  exact hrem ▸ (norm_sub_le _ _).trans (add_le_add h1 h2)
+      exact ((hy_lip u t₀).trans (mul_le_mul_of_nonneg_left
+        (abs_sub_left_of_mem_uIcc (uIoc_subset_uIcc hu)) (by positivity))).trans_eq
+        (mul_assoc _ _ _)
+  refine hrem ▸ (norm_sub_le _ _).trans (add_le_add h1 ?_)
+  rw [norm_smul, norm_mul, norm_I, mul_one]
+  exact (mul_le_mul_of_nonneg_left hint_le (norm_nonneg a)).trans_eq (by ring)
 
 /-- `N`-step subdivision upgrades `norm_ibpCurve_sub_le_quad` to exact `L`-Lipschitz continuity. -/
 private theorem lipschitzWith_ibpCurve {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
@@ -222,28 +207,24 @@ private theorem lipschitzWith_ibpCurve {E : Type*} [NormedAddCommGroup E] [Norme
   rw [dist_eq_norm, Real.dist_eq]
   refine le_of_forall_pos_le_add fun ε hε => ?_
   obtain ⟨N, hN⟩ := exists_nat_gt (‖a‖ * L * |t - t₀| ^ 2 / ε)
-  have hNpos : 0 < (N : ℝ) := lt_of_le_of_lt (div_nonneg (by positivity) hε.le) hN
+  have hNpos : 0 < (N : ℝ) := (div_nonneg (by positivity) hε.le).trans_lt hN
   let p : ℕ → ℝ := fun m => t₀ + (m : ℝ) / N * (t - t₀)
   have hdiff (j : ℕ) : |p (j + 1) - p j| = |t - t₀| / N := by
-    have : p (j + 1) - p j = (t - t₀) / N := by dsimp [p]; push_cast; ring
-    rw [this, abs_div, abs_of_pos hNpos]
+    rw [show p (j + 1) - p j = (t - t₀) / N by dsimp [p]; push_cast; ring,
+      abs_div, abs_of_pos hNpos]
+  have hpN : p N = t := by simp [p, div_self hNpos.ne']
+  have hp0 : p 0 = t₀ := by simp [p]
   have hsum_norm : ‖k t - k t₀‖ ≤ (L : ℝ) * |t - t₀| + ‖a‖ * L * |t - t₀| ^ 2 / N := by
-    have hpN : p N = t := by simp [p, div_self hNpos.ne']
-    have hp0 : p 0 = t₀ := by simp [p]
     conv_lhs => rw [← hpN, ← hp0, ← Finset.sum_range_sub (fun j => k (p j)) N]
-    calc ‖∑ j ∈ Finset.range N, (k (p (j + 1)) - k (p j))‖
-        ≤ ∑ j ∈ Finset.range N, ‖k (p (j + 1)) - k (p j)‖ := norm_sum_le _ _
-      _ ≤ ∑ _j ∈ Finset.range N,
-            ((L : ℝ) * (|t - t₀| / N) + ‖a‖ * L * (|t - t₀| / N) ^ 2) :=
-          Finset.sum_le_sum fun j _ => by
-            simpa [k, a, hdiff j] using
-              norm_ibpCurve_sub_le_quad hM hs_norm hy_cont hy_lip (p (j + 1)) (p j)
-      _ = (L : ℝ) * |t - t₀| + ‖a‖ * L * |t - t₀| ^ 2 / N := by
-          simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul, div_pow]
-          field_simp [hNpos.ne']
-  have hrem_lt : ‖a‖ * L * |t - t₀| ^ 2 / N < ε := by
-    rw [div_lt_iff₀ hNpos]; linarith [(div_lt_iff₀ hε).1 hN, mul_comm ε (N : ℝ)]
-  linarith
+    refine ((norm_sum_le _ _).trans (Finset.sum_le_sum
+      (g := fun _ => (L : ℝ) * (|t - t₀| / N) + ‖a‖ * L * (|t - t₀| / N) ^ 2)
+      fun j _ => ?_)).trans_eq ?_
+    · simpa [k, a, hdiff j] using
+        norm_ibpCurve_sub_le_quad hM hs_norm hy_cont hy_lip (p (j + 1)) (p j)
+    · simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul, div_pow]
+      field_simp [hNpos.ne']
+  linarith [(div_lt_iff₀ hNpos).2 (by linarith [(div_lt_iff₀ hε).1 hN, mul_comm ε (N : ℝ)] :
+    ‖a‖ * L * |t - t₀| ^ 2 < ε * N)]
 
 /-- The integrated-by-parts upper strip function
 `z ↦ scaleFactor M₀ M₁ z • H z - (log M₀ - log M₁) • wedgeIntegral θ z (scaleFactor M₀ M₁ • H)`,
@@ -280,17 +261,17 @@ private theorem wedgeIntegral_ibp_sub_eq {E F : Type*}
   have hint_split : (a * I) • (∫ u in t₀..t, s (c + u * I) • H (c + u * I)) =
       ι ((a * I) • ∫ u in t₀..t, s (c + u * I) • y u) +
         (s (c + t * I) - s (c + t₀ * I)) • H c := by
-    have hi₁ : IntervalIntegrable (fun u : ℝ => ι (s (c + u * I) • y u))
-        MeasureTheory.volume t₀ t :=
+    have hi1 : IntervalIntegrable (fun u => ι (s (c + u * I) • y u)) volume t₀ t :=
       (ι.continuous.comp hsy_cont).intervalIntegrable _ _
-    have hi₂ : IntervalIntegrable (fun u : ℝ => s (c + u * I) • H c) MeasureTheory.volume t₀ t :=
+    have hi2 : IntervalIntegrable (fun u => s (c + u * I) • H c) volume t₀ t :=
       (hs_cont.smul continuous_const).intervalIntegrable _ _
     simp_rw [hH_add, smul_add, ← map_smul]
-    rw [intervalIntegral.integral_add hi₁ hi₂,
+    rw [intervalIntegral.integral_add hi1 hi2,
       ι.intervalIntegral_comp_comm (hsy_cont.intervalIntegrable _ _),
       intervalIntegral.integral_smul_const, smul_add, ← map_smul, ← smul_assoc, smul_eq_mul,
-      ← intervalIntegral.integral_const_mul, integral_deriv_scaleFactor_add_mul_I]
-  dsimp [ibpStripFunction]
+      ← intervalIntegral.integral_const_mul]
+    dsimp only [a, s]
+    rw [integral_deriv_scaleFactor_add_mul_I]
   change (s (c + t * I) • H (c + t * I) - a • wedgeIntegral θ (c + t * I) fun w => s w • H w) -
       (s (c + t₀ * I) • H (c + t₀ * I) - a • wedgeIntegral θ (c + t₀ * I) fun w => s w • H w) = _
   rw [sub_sub_sub_comm, ← smul_sub, hwedge, smul_smul, hint_split, hH_add t, hH_add t₀,
@@ -309,8 +290,7 @@ def map : C.UpperComplexMethodSpace θ →L[ℂ] D.UpperComplexMethodSpace θ :=
 
 @[simp]
 theorem map_mk (g : C.upperStripTraces) :
-    map θ T₀ T₁ h (mk θ g) = mk θ (upperStripTracesMap T₀ T₁ h g) := by
-  simp [map]
+    map θ T₀ T₁ h (mk θ g) = mk θ (upperStripTracesMap T₀ T₁ h g) := by simp [map]
 
 /-- The induced map lies over `x₀ + x₁ ↦ T₀ x₀ + T₁ x₁` on the sum spaces. -/
 @[simp]
@@ -354,9 +334,7 @@ end Comp
 intersections. -/
 theorem map_ofInter (hθ : θ ∈ Ioo 0 1) {x : C.inter} {y : D.inter}
     (hy : D.interFst y = T₀ (C.interFst x)) : map θ T₀ T₁ h (ofInter θ x) = ofInter θ y := by
-  ext
-  rw [toSum_map, toSum_ofInter hθ, toSum_ofInter hθ, hy]
-  exact C.sumLift_fstToSum _ _ h _
+  ext; rw [toSum_map, toSum_ofInter hθ, toSum_ofInter hθ, hy]; exact C.sumLift_fstToSum _ _ h _
 
 /-- Without completeness hypotheses, `UpperComplexMethodSpace.map` is bounded by `max M₀ M₁`. -/
 theorem norm_map_le_max {M₀ M₁ : ℝ} (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁)
@@ -364,21 +342,19 @@ theorem norm_map_le_max {M₀ M₁ : ℝ} (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M�
     (u : C.UpperComplexMethodSpace θ) :
     ‖map θ T₀ T₁ h u‖ ≤ max M₀ M₁ * ‖u‖ := by
   set M := max M₀ M₁
-  have hM : 0 ≤ M := le_trans hM₀ (le_max_left _ _)
+  have hM : 0 ≤ M := hM₀.trans (le_max_left _ _)
   refine le_of_forall_pos_le_add fun ε hε => ?_
   obtain ⟨g, rfl, hg⟩ := norm_lt_iff.1
     (lt_add_of_pos_right ‖u‖ (div_pos hε (by linarith : 0 < M + 1)))
-  have htrace : ‖upperStripTracesMap T₀ T₁ h g‖ ≤ M * ‖g‖ :=
-    max_le
-      ((norm_upperStripTracesMap_fst_le T₀ T₁ h hM₀ h₀ g).trans
-        (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg g)))
-      ((norm_upperStripTracesMap_snd_le T₀ T₁ h hM₁ h₁ g).trans
-        (mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg g)))
-  calc ‖map θ T₀ T₁ h (mk θ g)‖ = ‖mk θ (upperStripTracesMap T₀ T₁ h g)‖ := by rw [map_mk]
-    _ ≤ M * ‖g‖ := (norm_mk_le _).trans htrace
-    _ ≤ M * (‖mk θ g‖ + ε / (M + 1)) := mul_le_mul_of_nonneg_left hg.le hM
-    _ ≤ M * ‖mk θ g‖ + (M + 1) * (ε / (M + 1)) := by rw [mul_add]; gcongr; linarith
-    _ = M * ‖mk θ g‖ + ε := by rw [mul_div_cancel₀ _ (by linarith : M + 1 ≠ 0)]
+  have htrace : ‖upperStripTracesMap T₀ T₁ h g‖ ≤ M * ‖g‖ := max_le
+    ((norm_upperStripTracesMap_fst_le T₀ T₁ h hM₀ h₀ g).trans
+      (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg g)))
+    ((norm_upperStripTracesMap_snd_le T₀ T₁ h hM₁ h₁ g).trans
+      (mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg g)))
+  rw [map_mk]
+  exact ((norm_mk_le _).trans (htrace.trans (mul_le_mul_of_nonneg_left hg.le hM))).trans
+    (by nlinarith [mul_div_cancel₀ ε (by linarith : M + 1 ≠ 0),
+      div_pos hε (by linarith : 0 < M + 1)])
 
 /-- Contractive endpoint maps induce a contractive map on `[X₀, X₁]^θ`, without completeness
 assumptions. -/
@@ -397,10 +373,9 @@ private theorem isBigO_exp_sq_ibp (hθ : θ ∈ Ioo 0 1) (M₀ M₁ : ℝ) (qY :
   let s := scaleFactor M₀ M₁
   let H := D.upperStripFunction qY
   set S := Real.exp (|Real.log M₀| + |Real.log M₁|)
-  set B := S * ‖qY‖ + ‖a‖ * (12 * S * ‖qY‖) + 1
   have hθ_norm : ‖(θ : ℂ)‖ ≤ 1 := by
-    rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hθ.1.le]; exact hθ.2.le
-  refine ⟨2, B, IsBigO.of_norm_eventuallyLE ?_⟩
+    simpa [Real.norm_eq_abs, abs_of_nonneg hθ.1.le] using hθ.2.le
+  refine ⟨2, S * ‖qY‖ + ‖a‖ * (12 * S * ‖qY‖) + 1, IsBigO.of_norm_eventuallyLE ?_⟩
   filter_upwards [(tendsto_norm_cobounded_atTop.eventually (eventually_ge_atTop 1)).filter_mono
       inf_le_left,
     (eventually_mem_principal (verticalStrip 0 1)).filter_mono inf_le_right] with z hz1 hz
@@ -408,26 +383,19 @@ private theorem isBigO_exp_sq_ibp (hθ : θ ∈ Ioo 0 1) (M₀ M₁ : ℝ) (qY :
   have hsH {w : ℂ} (hw : w ∈ verticalClosedStrip 0 1) : ‖s w • H w‖ ≤ S * ‖qY‖ * ‖w‖ := by
     rw [norm_smul]; exact (mul_le_mul (norm_scaleFactor_le hw) (D.norm_upperStripFunction_le qY w)
       (norm_nonneg _) (by positivity)).trans_eq (mul_assoc _ _ _).symm
-  have hzθ : ‖z - θ‖ ≤ 2 * ‖z‖ := (norm_sub_le z θ).trans (by linarith)
-  have hrect : ∀ u ∈ Rectangle (θ : ℂ) z, ‖s u • H u‖ ≤ S * ‖qY‖ * ‖u‖ := fun u hu =>
-    hsH (ordConnected_Icc.uIcc_subset ⟨hθ.1.le, hθ.2.le⟩ hz_cl (by simpa using hu.1))
+  have hprod : (‖(θ : ℂ)‖ + ‖z - θ‖) * ‖z - θ‖ ≤ 6 * ‖z‖ ^ 2 := by
+    nlinarith [norm_sub_le z θ, norm_nonneg (z - θ)]
   have hw : ‖wedgeIntegral θ z (fun w => s w • H w)‖ ≤ 12 * S * ‖qY‖ * ‖z‖ ^ 2 :=
-    calc ‖wedgeIntegral θ z (fun w => s w • H w)‖
-        ≤ 2 * (S * ‖qY‖) * (‖(θ : ℂ)‖ + ‖z - θ‖) * ‖z - θ‖ :=
-          TauCeti.norm_wedgeIntegral_le_of_norm_le_mul_norm hrect
-      _ ≤ 2 * (S * ‖qY‖) * (6 * ‖z‖ ^ 2) := by
-          rw [mul_assoc (2 * (S * ‖qY‖))]
-          exact mul_le_mul_of_nonneg_left
-            (by nlinarith [norm_nonneg (z - θ), norm_nonneg (θ : ℂ)]) (by positivity)
-      _ = 12 * S * ‖qY‖ * ‖z‖ ^ 2 := by ring
+    (TauCeti.norm_wedgeIntegral_le_of_norm_le_mul_norm fun u hu =>
+      hsH (ordConnected_Icc.uIcc_subset ⟨hθ.1.le, hθ.2.le⟩ hz_cl (by simpa using hu.1))).trans
+      (((mul_assoc _ _ _).le.trans (mul_le_mul_of_nonneg_left hprod (by positivity))).trans_eq
+        (by ring))
   have h1 : ‖s z • H z‖ ≤ S * ‖qY‖ * ‖z‖ ^ 2 :=
     (hsH hz_cl).trans (mul_le_mul_of_nonneg_left (by nlinarith) (by positivity))
   have h2 : ‖a • wedgeIntegral θ z (fun w => s w • H w)‖ ≤ ‖a‖ * (12 * S * ‖qY‖) * ‖z‖ ^ 2 := by
     rw [norm_smul, mul_assoc]; exact mul_le_mul_of_nonneg_left hw (norm_nonneg a)
-  rw [Real.rpow_two]
-  dsimp only [ibpStripFunction]
-  exact (((norm_sub_le _ _).trans (add_le_add h1 h2)).trans
-    (by dsimp [B]; nlinarith [sq_nonneg ‖z‖])).trans
+  rw [Real.rpow_two]; dsimp only [ibpStripFunction]
+  exact (((norm_sub_le _ _).trans (add_le_add h1 h2)).trans (by nlinarith [sq_nonneg ‖z‖])).trans
     ((le_add_of_nonneg_right zero_le_one).trans (Real.add_one_le_exp _))
 
 private theorem norm_scaleFactor_smul_map_mk_le [CompleteSpace Y₀] [CompleteSpace Y₁]
@@ -455,28 +423,25 @@ private theorem norm_scaleFactor_smul_map_mk_le [CompleteSpace Y₀] [CompleteSp
       rw [smul_smul]; abel
     rw [hKθ.deriv, map_smul, map_mk, toSum_mk, D.upperStripDerivEval_apply hθ_open]
   -- 3. `‖g‖`-Lipschitz bounds for the integrated-by-parts boundary curves on `re = 0` and `re = 1`.
-  have hqY₀ := norm_upperStripTracesMap_fst_le T₀ T₁ h hM₀.le h₀ g
-  have hqY₁ := norm_upperStripTracesMap_snd_le T₀ T₁ h hM₁.le h₁ g
   have hlip₀ := lipschitzWith_ibpCurve (M₀ := M₀) (M₁ := M₁) (c := 0) hM₀ (L := ‖g‖₊)
     (fun t => by simpa using norm_scaleFactor_mul_I (M₁ := M₁) hM₀ t)
-    hH.lipschitzWith_pinnedCurve_fst.continuous
-    (fun t t₀ => (hH.norm_pinnedCurve_fst_sub_le t t₀).trans
-      (mul_le_mul_of_nonneg_right hqY₀ (abs_nonneg _)))
+    hH.lipschitzWith_pinnedCurve_fst.continuous fun t t₀ =>
+      (hH.norm_pinnedCurve_fst_sub_le t t₀).trans (mul_le_mul_of_nonneg_right
+        (norm_upperStripTracesMap_fst_le T₀ T₁ h hM₀.le h₀ g) (abs_nonneg _))
   have hlip₁ := lipschitzWith_ibpCurve (M₀ := M₀) (M₁ := M₁) (c := 1) hM₁ (L := ‖g‖₊)
     (fun t => by simpa using norm_scaleFactor_one_add_mul_I (M₀ := M₀) hM₁ t)
-    hH.lipschitzWith_pinnedCurve_snd.continuous
-    (fun t t₀ => (hH.norm_pinnedCurve_snd_sub_le t t₀).trans
-      (mul_le_mul_of_nonneg_right hqY₁ (abs_nonneg _)))
+    hH.lipschitzWith_pinnedCurve_snd.continuous fun t t₀ =>
+      (hH.norm_pinnedCurve_snd_sub_le t t₀).trans (mul_le_mul_of_nonneg_right
+        (norm_upperStripTracesMap_snd_le T₀ T₁ h hM₁.le h₁ g) (abs_nonneg _))
   -- 4. Identify boundary increments via `wedgeIntegral_ibp_sub_eq` and conclude.
   simpa using norm_le_of_lipschitz hθ hdK (isBigO_exp_sq_ibp hθ M₀ M₁ qY) hlip₀ hlip₁
     (fun t t₀ => by
-      simpa using wedgeIntegral_ibp_sub_eq 0 hH.diffContOnCl hθ_cl D.fstToSum
-        ⟨le_rfl, zero_le_one⟩ hH.lipschitzWith_pinnedCurve_fst.continuous
-        (fun u => by simpa [H] using hH.fstToSum_pinnedCurve u) t t₀)
+      simpa using wedgeIntegral_ibp_sub_eq 0 hH.diffContOnCl hθ_cl D.fstToSum ⟨le_rfl, zero_le_one⟩
+        hH.lipschitzWith_pinnedCurve_fst.continuous
+        (fun u => by simpa using hH.fstToSum_pinnedCurve u) t t₀)
     (fun t t₀ => by
-      simpa using wedgeIntegral_ibp_sub_eq 1 hH.diffContOnCl hθ_cl D.sndToSum
-        ⟨zero_le_one, le_rfl⟩ hH.lipschitzWith_pinnedCurve_snd.continuous
-        (fun u => by simpa [H] using hH.sndToSum_pinnedCurve u) t t₀)
+      simpa using wedgeIntegral_ibp_sub_eq 1 hH.diffContOnCl hθ_cl D.sndToSum ⟨zero_le_one, le_rfl⟩
+        hH.lipschitzWith_pinnedCurve_snd.continuous hH.sndToSum_pinnedCurve t t₀)
     hderivK
 
 private theorem norm_map_le_of_pos [CompleteSpace Y₀] [CompleteSpace Y₁] (hθ : θ ∈ Ioo 0 1)

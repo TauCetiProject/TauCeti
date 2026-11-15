@@ -82,8 +82,7 @@ def upperStripTraces :
 variable {C} in
 theorem mem_upperStripTraces_iff
     {q : (offDiag (univ : Set ℝ) →ᵇ X₀) × (offDiag (univ : Set ℝ) →ᵇ X₁)} :
-    q ∈ C.upperStripTraces ↔ ∃ G, C.IsUpperStripFunction G q :=
-  Iff.rfl
+    q ∈ C.upperStripTraces ↔ ∃ G, C.IsUpperStripFunction G q := Iff.rfl
 
 /-- The canonical upper strip function with boundary difference quotients `g`, normalized by
 `G 0 = 0` on the closed strip and extended by zero outside `verticalClosedStrip 0 1`. -/
@@ -92,15 +91,13 @@ def upperStripFunction (g : C.upperStripTraces) : ℂ → C.SumSpace :=
     (mem_upperStripTraces_iff.1 g.2).choose z - (mem_upperStripTraces_iff.1 g.2).choose 0
 
 theorem isUpperStripFunction_upperStripFunction (g : C.upperStripTraces) :
-    C.IsUpperStripFunction (C.upperStripFunction g) g := by
-  refine ((mem_upperStripTraces_iff.1 g.2).choose_spec.sub_const
-    ((mem_upperStripTraces_iff.1 g.2).choose 0)).congr fun z hz => ?_
-  simp [upperStripFunction, indicator_of_mem hz]
+    C.IsUpperStripFunction (C.upperStripFunction g) g :=
+  ((mem_upperStripTraces_iff.1 g.2).choose_spec.sub_const _).congr fun _ hz => by
+    rw [upperStripFunction, indicator_of_mem hz]
 
 @[simp]
 theorem upperStripFunction_apply_zero (g : C.upperStripTraces) :
-    C.upperStripFunction g 0 = 0 := by
-  simp [upperStripFunction]
+    C.upperStripFunction g 0 = 0 := by simp [upperStripFunction]
 
 variable {C} in
 theorem upperStripFunction_eq {g : C.upperStripTraces} {G : ℂ → C.SumSpace}
@@ -121,16 +118,14 @@ theorem upperStripFunction_apply_of_notMem (g : C.upperStripTraces) {z : ℂ}
 
 @[simp]
 theorem upperStripFunction_zero : C.upperStripFunction 0 = 0 := by
-  ext z
-  by_cases hz : z ∈ verticalClosedStrip 0 1
+  ext z; by_cases hz : z ∈ verticalClosedStrip 0 1
   · simpa using upperStripFunction_eq (g := 0) IsUpperStripFunction.zero hz
   · exact C.upperStripFunction_apply_of_notMem _ hz
 
 @[simp]
 theorem upperStripFunction_add (g h : C.upperStripTraces) :
     C.upperStripFunction (g + h) = C.upperStripFunction g + C.upperStripFunction h := by
-  ext z
-  by_cases hz : z ∈ verticalClosedStrip 0 1
+  ext z; by_cases hz : z ∈ verticalClosedStrip 0 1
   · simpa using upperStripFunction_eq (g := g + h)
       ((C.isUpperStripFunction_upperStripFunction g).add
         (C.isUpperStripFunction_upperStripFunction h)) hz
@@ -139,8 +134,7 @@ theorem upperStripFunction_add (g h : C.upperStripTraces) :
 @[simp]
 theorem upperStripFunction_smul (c : ℂ) (g : C.upperStripTraces) :
     C.upperStripFunction (c • g) = c • C.upperStripFunction g := by
-  ext z
-  by_cases hz : z ∈ verticalClosedStrip 0 1
+  ext z; by_cases hz : z ∈ verticalClosedStrip 0 1
   · simpa [smul_sub] using upperStripFunction_eq (g := c • g)
       ((C.isUpperStripFunction_upperStripFunction g).const_smul c) hz
   · simp [C.upperStripFunction_apply_of_notMem _ hz]
@@ -149,8 +143,7 @@ theorem norm_upperStripFunction_le (g : C.upperStripTraces) (z : ℂ) :
     ‖C.upperStripFunction g z‖ ≤ ‖g‖ * ‖z‖ := by
   by_cases hz : z ∈ verticalClosedStrip 0 1
   · simpa using (C.isUpperStripFunction_upperStripFunction g).norm_sub_apply_zero_le hz
-  · rw [C.upperStripFunction_apply_of_notMem g hz, norm_zero]
-    positivity
+  · rw [C.upperStripFunction_apply_of_notMem g hz, norm_zero]; positivity
 
 /-- Complex derivative evaluation `g ↦ deriv G z` on `upperStripTraces` for `z ∈ verticalStrip 0 1`
 (extended by zero outside the open strip), a continuous linear map of norm at most one. -/
@@ -164,8 +157,7 @@ def upperStripDerivEval (z : ℂ) : C.upperStripTraces →L[ℂ] C.SumSpace :=
           exact deriv_add ((C.isUpperStripFunction_upperStripFunction g).differentiableAt hz)
             ((C.isUpperStripFunction_upperStripFunction h).differentiableAt hz)
         map_smul' c g := by
-          rw [upperStripFunction_smul, RingHom.id_apply]
-          exact deriv_const_smul c
+          simpa [upperStripFunction_smul] using deriv_const_smul c
             ((C.isUpperStripFunction_upperStripFunction g).differentiableAt hz) }
       1 fun g => by simpa using (C.isUpperStripFunction_upperStripFunction g).norm_deriv_le hz
   else 0
@@ -182,15 +174,14 @@ theorem upperStripDerivEval_eq_deriv {z : ℂ} (hz : z ∈ verticalStrip 0 1) {g
 
 @[simp]
 theorem upperStripDerivEval_eq_zero {z : ℂ} (hz : z ∉ verticalStrip 0 1) :
-    C.upperStripDerivEval z = 0 := by
-  simp [upperStripDerivEval, hz]
+    C.upperStripDerivEval z = 0 := by simp [upperStripDerivEval, hz]
 
-theorem norm_upperStripDerivEval_le (z : ℂ) : ‖C.upperStripDerivEval z‖ ≤ 1 := by
-  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun g => ?_
-  by_cases hz : z ∈ verticalStrip 0 1
-  · rw [C.upperStripDerivEval_apply hz, one_mul]
-    exact (C.isUpperStripFunction_upperStripFunction g).norm_deriv_le hz
-  · simp [C.upperStripDerivEval_eq_zero hz]
+theorem norm_upperStripDerivEval_le (z : ℂ) : ‖C.upperStripDerivEval z‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun g => by
+    by_cases hz : z ∈ verticalStrip 0 1
+    · simpa [C.upperStripDerivEval_apply hz] using
+        (C.isUpperStripFunction_upperStripFunction g).norm_deriv_le hz
+    · simp [C.upperStripDerivEval_eq_zero hz]
 
 private theorem tendstoLocallyUniformlyOn_upperStripFunction [CompleteSpace X₀] [CompleteSpace X₁]
     {u : ℕ → C.upperStripTraces}
@@ -211,33 +202,22 @@ private theorem tendstoLocallyUniformlyOn_upperStripFunction [CompleteSpace X₀
     obtain ⟨N, hN⟩ := Metric.cauchySeq_iff'.1 hlim.cauchySeq (ε / (‖z‖ + 1)) (by positivity)
     refine ⟨N, fun n hn => ?_⟩
     rw [dist_eq_norm]
-    calc ‖C.upperStripFunction (u n) z - C.upperStripFunction (u N) z‖
-        ≤ ‖(u n).1 - (u N).1‖ * (‖z‖ + 1) :=
-          (hdist n N hz).trans
-            (mul_le_mul_of_nonneg_left (le_add_of_nonneg_right zero_le_one) (norm_nonneg _))
-      _ < ε / (‖z‖ + 1) * (‖z‖ + 1) :=
-          mul_lt_mul_of_pos_right (by simpa [dist_eq_norm] using hN n hn) (by positivity)
-      _ = ε := div_mul_cancel₀ ε (by positivity)
+    exact ((hdist n N hz).trans (mul_le_mul_of_nonneg_left
+      (le_add_of_nonneg_right zero_le_one) (norm_nonneg _))).trans_lt
+      ((lt_div_iff₀ (by positivity)).1 (by simpa [dist_eq_norm] using hN n hn))
   rw [Metric.tendstoLocallyUniformlyOn_iff]
   intro ε hε z₀ _
   refine ⟨verticalClosedStrip 0 1 ∩ Metric.ball z₀ 1,
     inter_mem_nhdsWithin _ (Metric.ball_mem_nhds z₀ zero_lt_one), ?_⟩
-  have hq : Tendsto (fun n => ‖(u n).1 - q‖) atTop (𝓝 0) :=
-    tendsto_iff_norm_sub_tendsto_zero.1 hlim
-  filter_upwards [hq.eventually (gt_mem_nhds (div_pos hε (by positivity : 0 < ‖z₀‖ + 1)))]
-    with n hn z ⟨hz, hzball⟩
+  filter_upwards [(tendsto_iff_norm_sub_tendsto_zero.1 hlim).eventually
+    (gt_mem_nhds (div_pos hε (by positivity : 0 < ‖z₀‖ + 1)))] with n hn z ⟨hz, hzball⟩
   have hznorm : ‖z‖ ≤ ‖z₀‖ + 1 := by
-    have := norm_sub_norm_le z z₀
-    have hzb : ‖z - z₀‖ < 1 := by simpa [dist_eq_norm] using hzball
-    linarith
+    linarith [norm_sub_norm_le z z₀, show ‖z - z₀‖ < 1 by simpa [dist_eq_norm] using hzball]
   rw [dist_eq_norm, norm_sub_rev]
-  have hlim_sub := le_of_tendsto_of_tendsto' (tendsto_const_nhds.sub (hlimz hz)).norm
-    ((tendsto_const_nhds.sub hlim).norm.mul_const ‖z‖) fun m => hdist n m hz
-  calc ‖C.upperStripFunction (u n) z - limUnder atTop fun m => C.upperStripFunction (u m) z‖
-      ≤ ‖(u n).1 - q‖ * (‖z₀‖ + 1) :=
-        hlim_sub.trans (mul_le_mul_of_nonneg_left hznorm (norm_nonneg _))
-    _ < ε / (‖z₀‖ + 1) * (‖z₀‖ + 1) := mul_lt_mul_of_pos_right hn (by positivity)
-    _ = ε := div_mul_cancel₀ ε (by positivity)
+  exact ((le_of_tendsto_of_tendsto' (tendsto_const_nhds.sub (hlimz hz)).norm
+    ((tendsto_const_nhds.sub hlim).norm.mul_const ‖z‖) fun m => hdist n m hz).trans
+      (mul_le_mul_of_nonneg_left hznorm (norm_nonneg _))).trans_lt
+      ((lt_div_iff₀ (by positivity)).1 hn)
 
 variable {C} in
 private theorem sub_lim_eq_smul_of_tendsto {X : Type*} [SeminormedAddCommGroup X]
@@ -263,19 +243,17 @@ theorem isClosed_upperStripTraces [CompleteSpace X₀] [CompleteSpace X₁] :
       Set ((offDiag (univ : Set ℝ) →ᵇ X₀) × (offDiag (univ : Set ℝ) →ᵇ X₁))) := by
   refine IsSeqClosed.isClosed fun {u q} hu hlim => ?_
   let v : ℕ → C.upperStripTraces := fun n => ⟨u n, hu n⟩
-  have hG (n : ℕ) : C.IsUpperStripFunction (C.upperStripFunction (v n)) (u n) :=
-    C.isUpperStripFunction_upperStripFunction (v n)
+  have hG (n : ℕ) := C.isUpperStripFunction_upperStripFunction (v n)
   have hloc := C.tendstoLocallyUniformlyOn_upperStripFunction (u := v) hlim
   refine ⟨_, ⟨⟨(hloc.mono (verticalStrip_subset_verticalClosedStrip 0 1)).differentiableOn
       (.of_forall fun n => (hG n).diffContOnCl.differentiableOn) (isOpen_verticalStrip 0 1),
     closure_verticalStrip zero_lt_one ▸ hloc.continuousOn
       (.of_forall fun n => (hG n).diffContOnCl.continuousOn_verticalClosedStrip zero_lt_one)⟩,
     ⟨‖q‖, fun w hw => ?_⟩, fun {t s} h => ?_, fun {t s} h => ?_⟩⟩
-  · have hGw := le_of_tendsto_of_tendsto' (hloc.tendsto_at hw).norm (hlim.norm.mul_const ‖w‖)
-      fun n => by simpa using (hG n).norm_sub_apply_zero_le hw
-    have hre : |w.re| ≤ 1 := abs_le.2 ⟨by linarith [hw.1], hw.2⟩
-    exact hGw.trans (mul_le_mul_of_nonneg_left
-      ((norm_le_abs_re_add_abs_im w).trans (add_le_add_left hre _)) (norm_nonneg q))
+  · refine (le_of_tendsto_of_tendsto' (hloc.tendsto_at hw).norm (hlim.norm.mul_const ‖w‖)
+      fun n => by simpa using (hG n).norm_sub_apply_zero_le hw).trans
+      (mul_le_mul_of_nonneg_left ((norm_le_abs_re_add_abs_im w).trans
+        (add_le_add_left (abs_le.2 ⟨by linarith [hw.1], hw.2⟩) _)) (norm_nonneg q))
   · exact sub_lim_eq_smul_of_tendsto hloc ((continuous_fst.tendsto q).comp hlim) C.fstToSum
       (t * I) (s * I) (by simp) (by simp) h fun n => (hG n).sub_mul_I h
   · exact sub_lim_eq_smul_of_tendsto hloc ((continuous_snd.tendsto q).comp hlim) C.sndToSum
@@ -348,16 +326,13 @@ def lift (A : C.upperStripTraces →L[ℂ] E) (hA : ∀ g, C.upperStripDerivEval
 @[simp]
 theorem lift_mk (A : C.upperStripTraces →L[ℂ] E)
     (hA : ∀ g, C.upperStripDerivEval θ g = 0 → A g = 0) (g : C.upperStripTraces) :
-    lift A hA (mk θ g) = A g :=
-  (rfl)
+    lift A hA (mk θ g) = A g := (rfl)
 
 theorem lift_unique (A : C.upperStripTraces →L[ℂ] E)
     (hA : ∀ g, C.upperStripDerivEval θ g = 0 → A g = 0)
     {T : C.UpperComplexMethodSpace θ →L[ℂ] E} (hT : ∀ g, T (mk θ g) = A g) :
     T = lift A hA := by
-  ext u
-  obtain ⟨g, rfl⟩ := mk_surjective u
-  simpa using hT g
+  ext u; obtain ⟨g, rfl⟩ := mk_surjective u; simpa using hT g
 
 end Lift
 
@@ -366,14 +341,11 @@ def toSum : C.UpperComplexMethodSpace θ →L[ℂ] C.SumSpace :=
   (C.upperStripDerivEval θ).ker.liftQL (C.upperStripDerivEval θ) le_rfl
 
 @[simp]
-theorem toSum_mk (g : C.upperStripTraces) : toSum (mk θ g) = C.upperStripDerivEval θ g :=
-  (rfl)
+theorem toSum_mk (g : C.upperStripTraces) : toSum (mk θ g) = C.upperStripDerivEval θ g := (rfl)
 
 theorem toSum_injective :
     Function.Injective (toSum : C.UpperComplexMethodSpace θ → C.SumSpace) := by
-  intro u v huv
-  obtain ⟨g, rfl⟩ := mk_surjective u
-  obtain ⟨h, rfl⟩ := mk_surjective v
+  intro u v huv; obtain ⟨g, rfl⟩ := mk_surjective u; obtain ⟨h, rfl⟩ := mk_surjective v
   exact mk_eq_mk_iff.2 (by simpa using huv)
 
 /-- Elements of `[X₀, X₁]^θ` are determined by their images in the sum space. -/
@@ -383,17 +355,15 @@ theorem ext {u v : C.UpperComplexMethodSpace θ} (h : toSum u = toSum v) : u = v
 
 /-- For `θ` outside `(0, 1)`, the space `[X₀, X₁]^θ` is zero. -/
 theorem eq_zero_of_notMem (hθ : θ ∉ Ioo 0 1) (u : C.UpperComplexMethodSpace θ) : u = 0 := by
-  ext
-  obtain ⟨g, rfl⟩ := mk_surjective u
+  ext; obtain ⟨g, rfl⟩ := mk_surjective u
   rw [toSum_mk, C.upperStripDerivEval_eq_zero (by simpa using hθ), map_zero, zero_apply]
 
 /-- The inclusion of `[X₀, X₁]^θ` into the sum space does not increase norms. -/
-theorem norm_toSum_le (u : C.UpperComplexMethodSpace θ) : ‖toSum u‖ ≤ ‖u‖ := by
-  refine le_of_forall_gt fun r hr => ?_
-  obtain ⟨g, rfl, hg⟩ := norm_lt_iff.1 hr
-  rw [toSum_mk]
-  exact ((C.upperStripDerivEval θ).le_of_opNorm_le
-    (C.norm_upperStripDerivEval_le θ) g).trans_lt (by simpa using hg)
+theorem norm_toSum_le (u : C.UpperComplexMethodSpace θ) : ‖toSum u‖ ≤ ‖u‖ :=
+  le_of_forall_gt fun _ hr => by
+    obtain ⟨g, rfl, hg⟩ := norm_lt_iff.1 hr
+    exact ((C.upperStripDerivEval θ).le_of_opNorm_le
+      (C.norm_upperStripDerivEval_le θ) g).trans_lt (by simpa using hg)
 
 theorem opNorm_toSum_le : ‖(toSum : C.UpperComplexMethodSpace θ →L[ℂ] C.SumSpace)‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by simpa using norm_toSum_le u
@@ -404,13 +374,11 @@ theorem exists_toSum_eq_iff (hθ : θ ∈ Ioo 0 1) {u : C.SumSpace} :
     (∃ v : C.UpperComplexMethodSpace θ, toSum v = u) ↔
       ∃ G q, C.IsUpperStripFunction G q ∧ deriv G θ = u := by
   have hθ' : (θ : ℂ) ∈ verticalStrip 0 1 := by simpa using hθ
-  constructor
-  · rintro ⟨v, rfl⟩
-    obtain ⟨g, rfl⟩ := mk_surjective v
-    exact ⟨_, g, C.isUpperStripFunction_upperStripFunction g,
-      (C.upperStripDerivEval_apply hθ' g).symm⟩
-  · rintro ⟨G, q, hG, rfl⟩
-    exact ⟨mk θ ⟨q, G, hG⟩, upperStripDerivEval_eq_deriv hθ' hG⟩
+  refine ⟨fun ⟨v, hv⟩ => ?_, fun ⟨G, q, hG, hdu⟩ =>
+    ⟨mk θ ⟨q, G, hG⟩, hdu ▸ upperStripDerivEval_eq_deriv hθ' hG⟩⟩
+  obtain ⟨g, rfl⟩ := mk_surjective v
+  exact ⟨_, g, C.isUpperStripFunction_upperStripFunction g,
+    (C.upperStripDerivEval_apply hθ' g).symm.trans hv⟩
 
 /-- For `0 < θ < 1`, an upper strip function `G` with boundary difference quotients `q` and
 `deriv G θ = toSum u` bounds `‖u‖` by `‖q‖`. -/
@@ -418,9 +386,8 @@ theorem norm_le_of_toSum_eq (hθ : θ ∈ Ioo 0 1) {u : C.UpperComplexMethodSpac
     {G : ℂ → C.SumSpace}
     {q : (offDiag (univ : Set ℝ) →ᵇ X₀) × (offDiag (univ : Set ℝ) →ᵇ X₁)}
     (hG : C.IsUpperStripFunction G q) (hu : toSum u = deriv G θ) : ‖u‖ ≤ ‖q‖ := by
-  have hθ' : (θ : ℂ) ∈ verticalStrip 0 1 := by simpa using hθ
   have : u = mk θ ⟨q, G, hG⟩ := ext <| by
-    rw [hu, toSum_mk, upperStripDerivEval_eq_deriv hθ' hG]
+    rw [hu, toSum_mk, upperStripDerivEval_eq_deriv (by simpa using hθ) hG]
   exact this ▸ norm_mk_le _
 
 /-- Norm bound in `[X₀, X₁]^θ` from Lipschitz boundary curves `g₀ : ℝ → X₀`, `g₁ : ℝ → X₁` of `G`
@@ -452,33 +419,33 @@ private theorem isUpperStripFunction_linear (x : C.inter) :
     C.IsUpperStripFunction (fun z => z • C.fstToSum (C.interFst x)) (C.linearUpperTrace x) where
   diffContOnCl := (differentiable_id.smul_const _).diffContOnCl
   exists_norm_le := ⟨‖C.fstToSum (C.interFst x)‖, fun z hz => by
-    have hre : |z.re| ≤ 1 := abs_le.2 ⟨by linarith [hz.1], hz.2⟩
-    have hznorm : ‖z‖ ≤ 1 + |z.im| := (norm_le_abs_re_add_abs_im z).trans (add_le_add_left hre _)
     rw [norm_smul, mul_comm]
-    exact mul_le_mul_of_nonneg_left hznorm (norm_nonneg _)⟩
+    exact mul_le_mul_of_nonneg_left ((norm_le_abs_re_add_abs_im z).trans
+      (add_le_add_left (abs_le.2 ⟨by linarith [hz.1], hz.2⟩) _)) (norm_nonneg _)⟩
   sub_mul_I _ := by
-    simp only [linearUpperTrace, BoundedContinuousFunction.const_apply, map_smul]
-    rw [← sub_smul, ← smul_assoc, smul_eq_mul]; congr 1; ring
+    simp only [linearUpperTrace, BoundedContinuousFunction.const_apply, map_smul, ← sub_smul,
+      ← smul_assoc, smul_eq_mul]
+    congr 1; ring
   sub_one_add_mul_I _ := by
     simp only [linearUpperTrace, BoundedContinuousFunction.const_apply, ← C.fstToSum_interFst x,
-      map_smul]
-    rw [← sub_smul, ← smul_assoc, smul_eq_mul]; congr 1; ring
+      map_smul, ← sub_smul, ← smul_assoc, smul_eq_mul]
+    congr 1; ring
 
 omit [ContinuousAdd V] [T1Space V] in
-private theorem norm_linearUpperTrace_le (x : C.inter) : ‖C.linearUpperTrace x‖ ≤ ‖x‖ := by
-  refine norm_prod_le_iff.2
-    ⟨(BoundedContinuousFunction.norm_const_le _).trans ?_,
-      (BoundedContinuousFunction.norm_const_le _).trans ?_⟩
-  · simpa [norm_smul] using C.norm_interFst_le x
-  · simpa [norm_smul] using C.norm_interSnd_le x
+private theorem norm_linearUpperTrace_le (x : C.inter) : ‖C.linearUpperTrace x‖ ≤ ‖x‖ :=
+  norm_prod_le_iff.2
+    ⟨(BoundedContinuousFunction.norm_const_le _).trans
+        (by simpa [norm_smul] using C.norm_interFst_le x),
+      (BoundedContinuousFunction.norm_const_le _).trans
+        (by simpa [norm_smul] using C.norm_interSnd_le x)⟩
 
 private def linearUpperTraceMap : C.inter →L[ℂ] C.upperStripTraces :=
   LinearMap.mkContinuous
     { toFun x := ⟨C.linearUpperTrace x, _, C.isUpperStripFunction_linear x⟩
-      map_add' x y := Subtype.ext <| Prod.ext
+      map_add' _ _ := Subtype.ext <| Prod.ext
         (BoundedContinuousFunction.ext fun _ => by simp [linearUpperTrace, smul_add])
         (BoundedContinuousFunction.ext fun _ => by simp [linearUpperTrace, smul_add])
-      map_smul' c x := Subtype.ext <| Prod.ext
+      map_smul' c _ := Subtype.ext <| Prod.ext
         (BoundedContinuousFunction.ext fun _ => by simp [linearUpperTrace, smul_comm I c])
         (BoundedContinuousFunction.ext fun _ => by simp [linearUpperTrace, smul_comm I c]) }
     1 fun x => by simpa using C.norm_linearUpperTrace_le x
@@ -496,9 +463,8 @@ def ofInter : C.inter →L[ℂ] C.UpperComplexMethodSpace θ :=
 @[simp]
 theorem toSum_ofInter {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (x : C.inter) :
     toSum (ofInter θ x) = C.fstToSum (C.interFst x) := by
-  have hθ' : (θ : ℂ) ∈ verticalStrip 0 1 := by simpa using hθ
   rw [ofInter, ContinuousLinearMap.comp_apply, toSum_mk,
-    upperStripDerivEval_eq_deriv hθ' (C.isUpperStripFunction_linear x)]
+    upperStripDerivEval_eq_deriv (by simpa using hθ) (C.isUpperStripFunction_linear x)]
   simpa using ((hasDerivAt_id (θ : ℂ)).smul_const (C.fstToSum (C.interFst x))).deriv
 
 /-- The intersection embeds into `[X₀, X₁]^θ` without increasing norms:
@@ -517,11 +483,8 @@ theorem norm_refl {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : �
   by_cases hθ : θ ∈ Ioo 0 1
   · refine le_antisymm ?_ (norm_toSum_le u)
     set x := (refl ℂ X).sumSpaceEmbed (toSum u)
-    have hx : (x, x) ∈ (refl ℂ X).inter := by simp
-    have hu : ofInter θ ⟨(x, x), hx⟩ = u := by ext; simp [toSum_ofInter hθ, x]
-    calc ‖u‖ = ‖ofInter θ ⟨(x, x), hx⟩‖ := by rw [hu]
-      _ ≤ ‖(⟨(x, x), hx⟩ : (refl ℂ X).inter)‖ := norm_ofInter_le θ _
-      _ = ‖toSum u‖ := by simp [x, norm_refl_sumSpaceEmbed]
+    have hu : ofInter θ ⟨(x, x), by simp⟩ = u := by ext; simp [toSum_ofInter hθ, x]
+    exact (hu ▸ norm_ofInter_le θ _).trans_eq (by simp [x, norm_refl_sumSpaceEmbed])
   · simp [eq_zero_of_notMem hθ u]
 
 end UpperComplexMethodSpace

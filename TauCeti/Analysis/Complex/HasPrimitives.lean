@@ -63,8 +63,7 @@ namespace TauCeti
 
 /-- If `‖f u‖ ≤ M` throughout `Rectangle z w`, then `‖wedgeIntegral z w f‖ ≤ 2 * M * ‖w - z‖`. -/
 theorem norm_wedgeIntegral_le_of_norm_le_const {M : ℝ} {z w : ℂ}
-    (hf : ∀ u ∈ Rectangle z w, ‖f u‖ ≤ M) :
-    ‖wedgeIntegral z w f‖ ≤ 2 * M * ‖w - z‖ := by
+    (hf : ∀ u ∈ Rectangle z w, ‖f u‖ ≤ M) : ‖wedgeIntegral z w f‖ ≤ 2 * M * ‖w - z‖ := by
   have hre : ‖∫ x in z.re..w.re, f (x + z.im * I)‖ ≤ M * |w.re - z.re| :=
     intervalIntegral.norm_integral_le_of_norm_le_const fun x hx ↦
       hf _ ⟨by simpa using uIoc_subset_uIcc hx, by simp⟩
@@ -75,8 +74,7 @@ theorem norm_wedgeIntegral_le_of_norm_le_const {M : ℝ} {z w : ℂ}
   calc ‖wedgeIntegral z w f‖
       ≤ ‖∫ x in z.re..w.re, f (x + z.im * I)‖ +
           ‖I • ∫ y in z.im..w.im, f (w.re + y * I)‖ := norm_add_le _ _
-    _ ≤ M * |w.re - z.re| + M * |w.im - z.im| := by
-        rw [norm_smul, norm_I, one_mul]; exact add_le_add hre him
+    _ ≤ M * |w.re - z.re| + M * |w.im - z.im| := by simpa [norm_smul] using add_le_add hre him
     _ ≤ M * ‖w - z‖ + M * ‖w - z‖ := by
         rw [← sub_re, ← sub_im]; gcongr; exacts [abs_re_le_norm _, abs_im_le_norm _]
     _ = 2 * M * ‖w - z‖ := by ring
@@ -87,17 +85,15 @@ theorem norm_wedgeIntegral_le_of_norm_le_mul_norm {C₀ : ℝ} {z w : ℂ}
     (hf : ∀ u ∈ Rectangle z w, ‖f u‖ ≤ C₀ * ‖u‖) :
     ‖wedgeIntegral z w f‖ ≤ 2 * C₀ * (‖z‖ + ‖w - z‖) * ‖w - z‖ := by
   by_cases hzw : z = 0 ∧ w = 0
-  · rcases hzw with ⟨rfl, rfl⟩; simp [wedgeIntegral]
-  have hC₀ : 0 ≤ C₀ := by
-    rcases not_and_or.1 hzw with hz | hw
-    · exact nonneg_of_mul_nonneg_left
-        ((norm_nonneg _).trans (hf z ⟨left_mem_uIcc, left_mem_uIcc⟩)) (norm_pos_iff.2 hz)
-    · exact nonneg_of_mul_nonneg_left
-        ((norm_nonneg _).trans (hf w ⟨right_mem_uIcc, right_mem_uIcc⟩)) (norm_pos_iff.2 hw)
+  · simp [hzw.1, hzw.2, wedgeIntegral]
+  have hC₀ : 0 ≤ C₀ := (not_and_or.1 hzw).elim
+    (fun hz ↦ nonneg_of_mul_nonneg_left
+      ((norm_nonneg _).trans (hf z ⟨left_mem_uIcc, left_mem_uIcc⟩)) (norm_pos_iff.2 hz))
+    (fun hw ↦ nonneg_of_mul_nonneg_left
+      ((norm_nonneg _).trans (hf w ⟨right_mem_uIcc, right_mem_uIcc⟩)) (norm_pos_iff.2 hw))
   refine (norm_wedgeIntegral_le_of_norm_le_const (M := C₀ * (‖z‖ + ‖w - z‖)) fun u hu ↦
-    (hf u hu).trans ?_).trans_eq (by ring)
-  gcongr
-  refine (norm_le_insert' u z).trans (add_le_add_right ?_ _)
+    (hf u hu).trans <| mul_le_mul_of_nonneg_left
+      ((norm_le_insert' u z).trans <| add_le_add_right ?_ _) hC₀).trans_eq (by ring)
   rw [← dist_eq_norm, ← dist_eq_norm w z, dist_eq_re_im, dist_eq_re_im]
   exact Real.sqrt_le_sqrt (add_le_add (sq_le_sq.2 (abs_sub_left_of_mem_uIcc hu.1))
     (sq_le_sq.2 (abs_sub_left_of_mem_uIcc hu.2)))
@@ -109,36 +105,30 @@ continuous conservative function are additive across arbitrary points of `A ×�
 theorem Complex.IsConservativeOn.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_reProdIm
     {A B : Set ℝ} (hf : IsConservativeOn f (A ×ℂ B)) (hA : A.OrdConnected) (hB : B.OrdConnected)
     (hcont : ContinuousOn f (A ×ℂ B)) {b z w : ℂ} (hb : b ∈ A ×ℂ B) (hz : z ∈ A ×ℂ B)
-    (hw : w ∈ A ×ℂ B) :
-    wedgeIntegral b w f - wedgeIntegral b z f = wedgeIntegral z w f := by
-  set I₁ := ∫ x in b.re..w.re, f (x + b.im * I)
-  set I₂ := I • ∫ y in b.im..w.im, f (w.re + y * I)
-  set I₃ := ∫ x in b.re..z.re, f (x + b.im * I)
-  set I₄ := I • ∫ y in b.im..z.im, f (z.re + y * I)
-  set I₅ := ∫ x in z.re..w.re, f (x + z.im * I)
-  set I₆ := I • ∫ y in z.im..w.im, f (w.re + y * I)
-  set I₇ := ∫ x in z.re..w.re, f (x + b.im * I)
-  set I₈ := I • ∫ y in b.im..z.im, f (w.re + y * I)
-  have integrableHoriz (x₁ x₂ y : ℝ) (hx₁ : x₁ ∈ A) (hx₂ : x₂ ∈ A) (hy : y ∈ B) :
+    (hw : w ∈ A ×ℂ B) : wedgeIntegral b w f - wedgeIntegral b z f = wedgeIntegral z w f := by
+  set I₁ := ∫ x in b.re..w.re, f (x + b.im * I); set I₂ := I • ∫ y in b.im..w.im, f (w.re + y * I)
+  set I₃ := ∫ x in b.re..z.re, f (x + b.im * I); set I₄ := I • ∫ y in b.im..z.im, f (z.re + y * I)
+  set I₅ := ∫ x in z.re..w.re, f (x + z.im * I); set I₆ := I • ∫ y in z.im..w.im, f (w.re + y * I)
+  set I₇ := ∫ x in z.re..w.re, f (x + b.im * I); set I₈ := I • ∫ y in b.im..z.im, f (w.re + y * I)
+  have intH {x₁ x₂ y : ℝ} (hx₁ : x₁ ∈ A) (hx₂ : x₂ ∈ A) (hy : y ∈ B) :
       IntervalIntegrable (fun x : ℝ ↦ f (x + y * I)) volume x₁ x₂ :=
     (hcont.comp (by fun_prop) fun _ hx ↦
       ⟨by simpa using hA.uIcc_subset hx₁ hx₂ hx, by simpa using hy⟩).intervalIntegrable
-  have integrableVert (x y₁ y₂ : ℝ) (hx : x ∈ A) (hy₁ : y₁ ∈ B) (hy₂ : y₂ ∈ B) :
+  have intV {x y₁ y₂ : ℝ} (hx : x ∈ A) (hy₁ : y₁ ∈ B) (hy₂ : y₂ ∈ B) :
       IntervalIntegrable (fun y : ℝ ↦ f (x + y * I)) volume y₁ y₂ :=
     (hcont.comp (by fun_prop) fun _ hy ↦
       ⟨by simpa using hx, by simpa using hB.uIcc_subset hy₁ hy₂ hy⟩).intervalIntegrable
-  have hI₁ : I₁ = I₃ + I₇ := by
-    rw [intervalIntegral.integral_add_adjacent_intervals
-      (integrableHoriz _ _ _ hb.1 hz.1 hb.2) (integrableHoriz _ _ _ hz.1 hw.1 hb.2)]
+  have hI₁ : I₁ = I₃ + I₇ :=
+    (intervalIntegral.integral_add_adjacent_intervals (intH hb.1 hz.1 hb.2)
+      (intH hz.1 hw.1 hb.2)).symm
   have hI₂ : I₂ = I₈ + I₆ := by
-    rw [← smul_add, intervalIntegral.integral_add_adjacent_intervals
-      (integrableVert _ _ _ hw.1 hb.2 hz.2) (integrableVert _ _ _ hw.1 hz.2 hw.2)]
-  have hrect : Rectangle (z.re + b.im * I) (w.re + z.im * I) ⊆ A ×ℂ B := fun _ hp ↦
-    ⟨hA.uIcc_subset hz.1 hw.1 (by simpa using hp.1),
-      hB.uIcc_subset hb.2 hz.2 (by simpa using hp.2)⟩
+    rw [← smul_add, intervalIntegral.integral_add_adjacent_intervals (intV hw.1 hb.2 hz.2)
+      (intV hw.1 hz.2 hw.2)]
   have hI₀ : I₇ - I₅ + I₈ - I₄ = 0 := by
     simpa [← add_eq_zero_iff_eq_neg, wedgeIntegral_add_wedgeIntegral_eq] using
-      hf (z.re + b.im * I) (w.re + z.im * I) hrect
+      hf (z.re + b.im * I) (w.re + z.im * I) fun _ hp ↦
+        ⟨hA.uIcc_subset hz.1 hw.1 (by simpa using hp.1),
+          hB.uIcc_subset hb.2 hz.2 (by simpa using hp.2)⟩
   grind [wedgeIntegral]
 
 /-- On an axis-aligned product `A ×ℂ B` of order-connected real sets, the wedge integral of a
@@ -149,11 +139,10 @@ theorem Complex.IsConservativeOn.hasDerivAt_wedgeIntegral_of_mem_reProdIm [Compl
     (hcont : ContinuousOn f (A ×ℂ B)) {b z : ℂ} (hb : b ∈ A ×ℂ B) (hz : A ×ℂ B ∈ 𝓝 z) :
     HasDerivAt (fun w ↦ wedgeIntegral b w f) (f z) z := by
   obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.mp hz
-  have hlocal : HasDerivAt (fun w ↦ wedgeIntegral z w f) (f z) z :=
-    (hf.mono hball).hasDerivAt_wedgeIntegral (hcont.mono hball) (mem_ball_self hr)
-  refine (hlocal.const_add (wedgeIntegral b z f)).congr_of_eventuallyEq ?_
+  refine (((hf.mono hball).hasDerivAt_wedgeIntegral (hcont.mono hball)
+    (mem_ball_self hr)).const_add (wedgeIntegral b z f)).congr_of_eventuallyEq ?_
   filter_upwards [hz] with w hw
-  have hadd := hf.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_reProdIm hA hB hcont hb
+  have := hf.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_reProdIm hA hB hcont hb
     (mem_of_mem_nhds hz) hw
   grind
 
