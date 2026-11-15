@@ -64,6 +64,10 @@ of a higher-order Sobolev space.
   sums of coordinate pairs.
 * `Real.mul_rpow_inv_mul_mul_rpow_inv`: a common factor `c ≥ 0` comes out of
   `(c x)^(1/p) (c y)^(1/q)` when `1 / p + 1 / q = 1`.
+* `Real.le_div_add_rpow_mul_of_le_add_mul_rpow_mul_rpow`: absorption of a power `M^θ`, `θ < 1`,
+  in a bound `M ≤ A + B M^θ N^(1 - θ)`.
+* `Real.pow_mul_le_rpow_mul_rpow`: `s^(a + b) u ≤ M` gives
+  `s^a u ≤ M^(a / (a + b)) u^(b / (a + b))`.
 * `ENNReal.geom_mean_le_arith_mean2_weighted_ofReal`: two-point weighted AM-GM in `ℝ≥0∞` with
   the real weights `1 - θ` and `θ`.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
@@ -165,6 +169,43 @@ theorem mul_rpow_inv_mul_mul_rpow_inv {p q c : ℝ} (h : p⁻¹ + q⁻¹ = 1) (h
     (c * x) ^ p⁻¹ * (c * y) ^ q⁻¹ = c * (x ^ p⁻¹ * y ^ q⁻¹) := by
   rw [mul_rpow_of_nonneg_left hc, mul_rpow_of_nonneg_left hc, mul_mul_mul_comm,
     ← rpow_add' hc (by rw [h]; exact one_ne_zero), h, rpow_one]
+
+/-- **Absorption.** If `M ≤ A + B M^θ N^(1 - θ)` with `0 ≤ θ < 1` and `M, B, N ≥ 0`, then
+`M ≤ A / (1 - θ) + B^(1 / (1 - θ)) N`, by Young's inequality
+`M^θ D^(1 - θ) ≤ θ M + (1 - θ) D` for `D = B^(1 / (1 - θ)) N`. -/
+theorem le_div_add_rpow_mul_of_le_add_mul_rpow_mul_rpow {M A B N θ : ℝ} (hθ0 : 0 ≤ θ)
+    (hθ1 : θ < 1) (hM : 0 ≤ M) (hB : 0 ≤ B) (hN : 0 ≤ N)
+    (h : M ≤ A + B * M ^ θ * N ^ (1 - θ)) : M ≤ A / (1 - θ) + B ^ (1 / (1 - θ)) * N := by
+  set D := B ^ (1 / (1 - θ)) * N
+  have hD : 0 ≤ D := by positivity
+  have hBN : B * N ^ (1 - θ) = D ^ (1 - θ) := by
+    rw [mul_rpow (by positivity) hN, ← rpow_mul hB, one_div_mul_cancel (by linarith),
+      rpow_one]
+  have hY := geom_mean_le_arith_mean2_weighted hθ0 (by linarith : 0 ≤ 1 - θ) hM hD
+    (by ring)
+  have h' : M ≤ A + (θ * M + (1 - θ) * D) :=
+    calc M ≤ A + B * M ^ θ * N ^ (1 - θ) := h
+      _ = A + M ^ θ * D ^ (1 - θ) := by rw [← hBN]; ring
+      _ ≤ _ := by gcongr
+  rw [div_add' _ _ _ (by linarith), le_div_iff₀ (by linarith)]
+  nlinarith
+
+/-- If `s^(a + b) u ≤ M` with `s, u ≥ 0` and `b > 0`, then
+`s^a u ≤ M^(a / (a + b)) u^(b / (a + b))`: split `s^a u` as
+`(s^(a + b) u)^(a / (a + b)) u^(b / (a + b))`. -/
+theorem pow_mul_le_rpow_mul_rpow {s u M : ℝ} {a b : ℕ} (hb : 0 < b) (hs : 0 ≤ s) (hu : 0 ≤ u)
+    (hM : s ^ (a + b) * u ≤ M) :
+    s ^ a * u ≤ M ^ ((a : ℝ) / (a + b)) * u ^ ((b : ℝ) / (a + b)) := by
+  have hsplit : s ^ a * u = (s ^ (a + b) * u) ^ ((a : ℝ) / (a + b)) * u ^ ((b : ℝ) / (a + b)) := by
+    rw [mul_rpow (by positivity) hu, ← rpow_natCast s (a + b), ← rpow_mul hs,
+      mul_assoc, ← rpow_add' hu (by field_simp; positivity)]
+    push_cast
+    have hmul : ((a : ℝ) + b) * (a / (a + b)) = a := by field_simp
+    have hsum : (a : ℝ) / (a + b) + b / (a + b) = 1 := by field_simp
+    rw [hmul, hsum, rpow_one, rpow_natCast]
+  rw [hsplit]
+  exact mul_le_mul_of_nonneg_right (rpow_le_rpow (by positivity) hM (by positivity))
+    (by positivity)
 
 end Real
 
