@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
-public import TauCeti.Topology.ApproximateUnit
 import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
+import TauCeti.Analysis.Normed.Ring.ApproximateUnit
 
 /-!
 # Increasing approximate units: images and uniform convergence
@@ -19,15 +19,19 @@ unit under a surjective homomorphism is an increasing approximate unit of the ta
 `Filter.IsIncreasingApproximateUnit.map`. This transfers approximate-unit limits, such as the
 norm of a positive functional, from a C⋆-algebra to its quotients.
 
-Since an increasing approximate unit eventually lies in the closed unit ball, the convergence
-`e * a → a` is uniform for `a` in a compact set,
-`Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_right`, and so is the convergence
-`a * e → a`, `Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_left`. This controls
+Since an increasing approximate unit eventually lies in the closed unit ball, two-sided
+compressions `e * a * e` converge to `a` (`Filter.IsIncreasingApproximateUnit.tendsto_mul_self`),
+the convergence `e * a → a` is uniform for `a` in a compact set
+(`Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_right`), and so is the convergence
+`a * e → a` (`Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_left`). This controls
 `e * α_r(b) → α_r(b)` uniformly along a compact set of group elements `r` for a continuous action
 `α`, as needed for approximate units of twisted convolution algebras.
 
 `TauCeti.CStarAlgebra.norm_mul_star_sub_star_sq_le` is the estimate for a positive contraction `e`
-that drives the approximate-unit argument showing that closed two-sided ideals are self-adjoint:
+that drives the approximate-unit argument showing that closed two-sided ideals are self-adjoint and
+that `x * e → x` along an increasing approximate unit of a closed `⋆`-subalgebra `B` containing
+`star x * x` (`Filter.IsIncreasingApproximateUnit.tendsto_mul_star_of_star_mul_self_mem` and
+`Filter.IsIncreasingApproximateUnit.tendsto_mul_of_star_mul_self_mem`):
 `‖e * star a - star a‖ ^ 2 ≤ ‖star a * a - e * (star a * a)‖`. Its companions
 `TauCeti.CStarAlgebra.norm_sub_mul_sq_le`, `‖a - a * e‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z - z * e‖`, and
 `TauCeti.CStarAlgebra.norm_sub_mul_le_of_star_mul_self_le`, `‖x - x * e‖ ≤ ‖y - y * e‖` whenever
@@ -47,21 +51,9 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
 
 /-- Along an increasing approximate unit, two-sided compression `e * a * e` tends to `a`. -/
 theorem tendsto_mul_self {l : Filter A} (hl : l.IsIncreasingApproximateUnit) (a : A) :
-    Tendsto (fun e => e * a * e) l (𝓝 a) := by
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  have hsum : Tendsto (fun e => ‖a * e - a‖ + ‖e * a - a‖) l (𝓝 0) := by
-    simpa using (tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_left a)).add
-      (tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_right a))
-  refine squeeze_zero_norm' ?_ hsum
-  filter_upwards [hl.eventually_norm] with e he
-  rw [Real.norm_of_nonneg (norm_nonneg _)]
-  calc
-    ‖e * a * e - a‖ = ‖e * (a * e - a) + (e * a - a)‖ := by
-      rw [mul_sub, ← mul_assoc, sub_add_sub_cancel]
-    _ ≤ ‖e * (a * e - a)‖ + ‖e * a - a‖ := norm_add_le _ _
-    _ ≤ ‖a * e - a‖ + ‖e * a - a‖ := by
-      gcongr
-      exact (norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) he)
+    Tendsto (fun e => e * a * e) l (𝓝 a) :=
+  TauCeti.tendsto_mul_mul_of_isBoundedUnder ⟨1, eventually_map.mpr hl.eventually_norm⟩
+    (hl.tendsto_mul_right a) (hl.tendsto_mul_left a)
 
 /-- Along an increasing approximate unit, `e * a → a` uniformly for `a` in a compact set. -/
 theorem tendstoUniformlyOn_mul_right {l : Filter A} (hl : l.IsIncreasingApproximateUnit)
@@ -216,3 +208,66 @@ theorem norm_sub_mul_le_of_star_mul_self_le {x y : A} (hxy : star x * x ≤ star
     (le_abs_self _)
 
 end TauCeti.CStarAlgebra
+
+namespace Filter.IsIncreasingApproximateUnit
+
+section Subalgebra
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  {B : NonUnitalStarSubalgebra ℂ A} [IsClosed (B : Set A)]
+
+/-- Along an increasing approximate unit `l` of a closed `⋆`-subalgebra `B`, right convergence
+`x * (e : A) → x` implies left convergence `(e : A) * star x → star x` via `star` continuity. -/
+theorem tendsto_coe_mul_star_of_tendsto_mul_coe {l : Filter B} (hl : l.IsIncreasingApproximateUnit)
+    {x : A} (h : Tendsto (fun e : B => x * (e : A)) l (𝓝 x)) :
+    Tendsto (fun e : B => (e : A) * star x) l (𝓝 (star x)) := by
+  refine ((continuous_star.tendsto x).comp h).congr' ?_
+  filter_upwards [hl.eventually_nonneg] with e he
+  simp only [Function.comp_def, star_mul,
+    (IsSelfAdjoint.of_nonneg (Subtype.coe_le_coe.mpr he)).star_eq]
+
+/-- If `star x * x` belongs to a closed `⋆`-subalgebra `B`, then `(e : A) * star x → star x` along
+any increasing approximate unit `l` of `B`. -/
+theorem tendsto_mul_star_of_star_mul_self_mem {l : Filter B} (hl : l.IsIncreasingApproximateUnit)
+    {x : A} (hx : star x * x ∈ B) :
+    Tendsto (fun e : B => (e : A) * star x) l (𝓝 (star x)) := by
+  let k : B := ⟨star x * x, hx⟩
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  have hsq : ∀ᶠ e : B in l, ‖(e : A) * star x - star x‖ ^ 2 ≤ ‖e * k - k‖ := by
+    filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he₀ he₁
+    have h := TauCeti.CStarAlgebra.norm_mul_star_sub_star_sq_le (A := A)
+      (Subtype.coe_le_coe.mpr he₀) he₁ x
+    rwa [norm_sub_rev (star x * x)] at h
+  have hk_lim : Tendsto (fun e : B => Real.sqrt ‖e * k - k‖) l (𝓝 0) := by
+    simpa only [Real.sqrt_zero, Function.comp_def] using
+      (Real.continuous_sqrt.tendsto 0).comp
+        (tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_right k))
+  refine squeeze_zero_norm' ?_ hk_lim
+  filter_upwards [hsq] with e he
+  rw [Real.norm_of_nonneg (norm_nonneg _)]
+  exact Real.le_sqrt_of_sq_le he
+
+/-- If `star x * x` belongs to a closed `⋆`-subalgebra `B`, then `x * (e : A) → x` along any
+increasing approximate unit `l` of `B`. -/
+theorem tendsto_mul_of_star_mul_self_mem {l : Filter B} (hl : l.IsIncreasingApproximateUnit)
+    {x : A} (hx : star x * x ∈ B) :
+    Tendsto (fun e : B => x * (e : A)) l (𝓝 x) := by
+  have hstar := (continuous_star.tendsto (star x)).comp
+    (hl.tendsto_mul_star_of_star_mul_self_mem hx)
+  rw [star_star] at hstar
+  refine hstar.congr' ?_
+  filter_upwards [hl.eventually_nonneg] with e he
+  simp only [Function.comp_def, star_mul, star_star,
+    (IsSelfAdjoint.of_nonneg (Subtype.coe_le_coe.mpr he)).star_eq]
+
+/-- If `x * star x` belongs to a closed `⋆`-subalgebra `B`, then `(e : A) * x → x` along any
+increasing approximate unit `l` of `B`. -/
+theorem tendsto_mul_of_mul_star_self_mem {l : Filter B} (hl : l.IsIncreasingApproximateUnit)
+    {x : A} (hx : x * star x ∈ B) :
+    Tendsto (fun e : B => (e : A) * x) l (𝓝 x) := by
+  simpa only [star_star] using
+    hl.tendsto_mul_star_of_star_mul_self_mem (x := star x) (by simpa only [star_star] using hx)
+
+end Subalgebra
+
+end Filter.IsIncreasingApproximateUnit
