@@ -451,8 +451,7 @@ zigzag relation quotient. -/
 noncomputable def zigzagCenterBasis [Nontrivial V] (hconn : G.Preconnected) :
     Module.Basis (Option V) k (Subalgebra.center k (nonisolatedZigzagQuotient k G)) :=
   (Module.Basis.span
-    (linearIndependent_zigzagCenterFun k G fun i =>
-      SimpleGraph.exists_adj_iff_not_isIsolated.mpr (hconn.not_isIsolated i))).map
+    (linearIndependent_zigzagCenterFun k G hconn.exists_adj_of_nontrivial)).map
       ((LinearEquiv.ofEq _ _ (span_range_zigzagCenterFun_eq_center k G hconn)).trans
         (Subalgebra.toSubmoduleEquiv _))
 

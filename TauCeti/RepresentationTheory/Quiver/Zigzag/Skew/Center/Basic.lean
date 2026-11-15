@@ -439,7 +439,7 @@ theorem finrank_center_skewZigzagQuotient [Nontrivial k] [Fintype V] [Nontrivial
     Module.finrank k (Subalgebra.center k (skewZigzagQuotient k G c))
       = Fintype.card V + 1 := by
   let t : ∀ i : V, {j : V // G.Adj i j} := fun i =>
-    have h := SimpleGraph.exists_adj_iff_not_isIsolated.mpr (hconn.not_isIsolated i)
+    have h := hconn.exists_adj_of_nontrivial i
     ⟨h.choose, h.choose_spec⟩
   rw [Module.finrank_eq_card_basis (skewZigzagCenterBasis k G c t hconn),
     Fintype.card_option]
