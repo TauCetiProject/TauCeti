@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Fin.Basic
 public import Mathlib.Topology.ContinuousMap.Basic
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
-public import Mathlib.Topology.MetricSpace.Pseudo.Pi
 
 import TauCeti.Data.Fin.Basic
 
@@ -28,9 +26,10 @@ arbitrary pseudometric space, before any geodesic interpolation is chosen.
 * The cut is closed, hence compact in a compact space, and it grows with the cut-offs.
 * Repeating the first vertex, `(q₀, …, qₙ) ↦ (q₀, q₀, q₁, …, qₙ)`, adds an edge of length zero and
   keeps the other edges. So it maps the cut with cut-offs `δ` into the cut with cut-offs `δ'` as
-  soon as `δ₀ ≤ δ'₀` and `δᵢ ≤ δ'ᵢ₊₁` for every `i` (`TauCeti.cons_mem_cyclicDistanceCut`), for
-  instance when every `δᵢ` is at most every `δ'ⱼ`, the monotonicity condition `δᵢⁿ ≤ δⱼⁿ⁺¹`
-  imposed on the cut-offs of the approximation. This is its embedding `ιⁿ : 𝓛ⁿQ → 𝓛ⁿ⁺¹Q`
+  soon as `δ₀ ≤ δ'₀`, `0 ≤ δ'₁` and `δᵢ ≤ δ'ᵢ₊₁` for every `i ≠ 0`
+  (`TauCeti.cons_mem_cyclicDistanceCut`), for instance when the `δᵢ` are nonnegative and every
+  `δᵢ` is at most every `δ'ⱼ`, the monotonicity condition `δᵢⁿ ≤ δⱼⁿ⁺¹` imposed on the cut-offs
+  of the approximation. This is its embedding `ιⁿ : 𝓛ⁿQ → 𝓛ⁿ⁺¹Q`
   (`TauCeti.cyclicDistanceCutRepeatFirst`).
 
 The sampling of compact families of free Moore loops into these cuts is in
@@ -106,10 +105,12 @@ theorem const_mem_cyclicDistanceCut {δ : Fin (n + 1) → ℝ} (hδ : 0 ≤ δ) 
 `(q₀, q₀, q₁, …, qₙ)` has the closing edge `(q₀, qₙ)` of `q` at the vertex `0`, a new edge of
 length zero at the vertex `1`, and the edge of `q` at the vertex `i` at the vertex `i + 1`
 otherwise. So it lies in the cut with cut-offs `δ'` when `q` lies in the cut with cut-offs `δ`,
-`δ 0 ≤ δ' 0` and `δ i ≤ δ' (i + 1)` for every `i`. Both hold when every `δ i` is at most every
-`δ' j`, the monotonicity condition of the approximation. -/
+`δ 0 ≤ δ' 0`, `0 ≤ δ' 1` and `δ i ≤ δ' (i + 1)` for every `i ≠ 0`. These hold when the cut-offs
+`δ i` are nonnegative and every `δ i` is at most every `δ' j`, the monotonicity condition of the
+approximation. -/
 theorem cons_mem_cyclicDistanceCut {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2) → ℝ}
-    (h₀ : δ 0 ≤ δ' 0) (h : ∀ i, δ i ≤ δ' i.succ) {q : Fin (n + 1) → X}
+    (h₀ : δ 0 ≤ δ' 0) (h₁ : 0 ≤ δ' 1)
+    (h : ∀ i : Fin n, δ i.succ ≤ δ' i.succ.succ) {q : Fin (n + 1) → X}
     (hq : q ∈ cyclicDistanceCut δ) :
     (Fin.cons (q 0) q : Fin (n + 2) → X) ∈ cyclicDistanceCut δ' := by
   intro i
@@ -122,8 +123,8 @@ theorem cons_mem_cyclicDistanceCut {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2)
   · rw [Fin.succ_sub_one_eq_castSucc, Fin.cons_succ]
     refine Fin.cases ?_ (fun k ↦ ?_) j
     · -- The new edge `(q₀, q₀)` has length zero.
-      rw [Fin.castSucc_zero, Fin.cons_zero, dist_self]
-      exact (nonneg_of_mem_cyclicDistanceCut hq 0).trans (h 0)
+      rw [Fin.castSucc_zero, Fin.cons_zero, dist_self, Fin.succ_zero_eq_one]
+      exact h₁
     · -- The edge `(qₖ₊₁, qₖ)` is an edge of `q`.
       have hk := hq k.succ
       rw [Fin.succ_sub_one_eq_castSucc] at hk
@@ -132,30 +133,33 @@ theorem cons_mem_cyclicDistanceCut {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2)
 
 /-- **The embedding `ιⁿ : 𝓛ⁿ → 𝓛ⁿ⁺¹` repeating the first vertex**,
 `(q₀, …, qₙ) ↦ (q₀, q₀, q₁, …, qₙ)`, between the distance cuts with cut-offs `δ` and `δ'`, when
-`δ 0 ≤ δ' 0` and `δ i ≤ δ' (i + 1)` for every `i`. -/
+`δ 0 ≤ δ' 0`, `0 ≤ δ' 1` and `δ i ≤ δ' (i + 1)` for every `i ≠ 0`. -/
 def cyclicDistanceCutRepeatFirst {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2) → ℝ}
-    (h₀ : δ 0 ≤ δ' 0) (h : ∀ i, δ i ≤ δ' i.succ) :
+    (h₀ : δ 0 ≤ δ' 0) (h₁ : 0 ≤ δ' 1)
+    (h : ∀ i : Fin n, δ i.succ ≤ δ' i.succ.succ) :
     C(cyclicDistanceCut (X := X) δ, cyclicDistanceCut (X := X) δ') where
-  toFun q := ⟨Fin.cons (q.1 0) q.1, cons_mem_cyclicDistanceCut h₀ h q.2⟩
+  toFun q := ⟨Fin.cons (q.1 0) q.1, cons_mem_cyclicDistanceCut h₀ h₁ h q.2⟩
   continuous_toFun :=
     (((continuous_apply 0).comp continuous_subtype_val).finCons (A := fun _ ↦ X)
       continuous_subtype_val).subtype_mk _
 
 @[simp]
 theorem coe_cyclicDistanceCutRepeatFirst_apply {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2) → ℝ}
-    (h₀ : δ 0 ≤ δ' 0) (h : ∀ i, δ i ≤ δ' i.succ) (q : cyclicDistanceCut (X := X) δ) :
-    (cyclicDistanceCutRepeatFirst h₀ h q : Fin (n + 2) → X) = Fin.cons (q.1 0) q.1 :=
+    (h₀ : δ 0 ≤ δ' 0) (h₁ : 0 ≤ δ' 1)
+    (h : ∀ i : Fin n, δ i.succ ≤ δ' i.succ.succ) (q : cyclicDistanceCut (X := X) δ) :
+    (cyclicDistanceCutRepeatFirst h₀ h₁ h q : Fin (n + 2) → X) = Fin.cons (q.1 0) q.1 :=
   (rfl)
 
 /-- Repeating the first vertex is an embedding of distance cuts: forgetting the first vertex is a
 continuous left inverse on tuples. -/
 theorem isEmbedding_cyclicDistanceCutRepeatFirst {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2) → ℝ}
-    (h₀ : δ 0 ≤ δ' 0) (h : ∀ i, δ i ≤ δ' i.succ) :
-    IsEmbedding (cyclicDistanceCutRepeatFirst (X := X) h₀ h) := by
+    (h₀ : δ 0 ≤ δ' 0) (h₁ : 0 ≤ δ' 1)
+    (h : ∀ i : Fin n, δ i.succ ≤ δ' i.succ.succ) :
+    IsEmbedding (cyclicDistanceCutRepeatFirst (X := X) h₀ h₁ h) := by
   refine IsEmbedding.of_comp (map_continuous _)
     continuous_subtype_val.finTail ?_
   have hcomp : (fun p : cyclicDistanceCut (X := X) δ' ↦ Fin.tail p.1) ∘
-      cyclicDistanceCutRepeatFirst h₀ h = Subtype.val := by
+      cyclicDistanceCutRepeatFirst h₀ h₁ h = Subtype.val := by
     funext q
     simp
   exact hcomp ▸ IsEmbedding.subtypeVal
@@ -163,8 +167,9 @@ theorem isEmbedding_cyclicDistanceCutRepeatFirst {δ : Fin (n + 1) → ℝ} {δ'
 /-- The range of the map repeating the first vertex: the tuples of the target cut whose first two
 vertices agree and whose tail lies in the source cut. -/
 theorem range_cyclicDistanceCutRepeatFirst {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2) → ℝ}
-    (h₀ : δ 0 ≤ δ' 0) (h : ∀ i, δ i ≤ δ' i.succ) :
-    range (cyclicDistanceCutRepeatFirst (X := X) h₀ h) =
+    (h₀ : δ 0 ≤ δ' 0) (h₁ : 0 ≤ δ' 1)
+    (h : ∀ i : Fin n, δ i.succ ≤ δ' i.succ.succ) :
+    range (cyclicDistanceCutRepeatFirst (X := X) h₀ h₁ h) =
       Subtype.val ⁻¹' ({p | p 1 = p 0} ∩ Fin.tail ⁻¹' cyclicDistanceCut δ) := by
   ext ⟨p, hp⟩
   constructor
@@ -183,9 +188,10 @@ theorem range_cyclicDistanceCutRepeatFirst {δ : Fin (n + 1) → ℝ} {δ' : Fin
 
 /-- In a Hausdorff space, repeating the first vertex is a closed embedding of distance cuts. -/
 theorem isClosedEmbedding_cyclicDistanceCutRepeatFirst [T2Space X] {δ : Fin (n + 1) → ℝ}
-    {δ' : Fin (n + 2) → ℝ} (h₀ : δ 0 ≤ δ' 0) (h : ∀ i, δ i ≤ δ' i.succ) :
-    IsClosedEmbedding (cyclicDistanceCutRepeatFirst (X := X) h₀ h) := by
-  refine ⟨isEmbedding_cyclicDistanceCutRepeatFirst h₀ h, ?_⟩
+    {δ' : Fin (n + 2) → ℝ} (h₀ : δ 0 ≤ δ' 0) (h₁ : 0 ≤ δ' 1)
+    (h : ∀ i : Fin n, δ i.succ ≤ δ' i.succ.succ) :
+    IsClosedEmbedding (cyclicDistanceCutRepeatFirst (X := X) h₀ h₁ h) := by
+  refine ⟨isEmbedding_cyclicDistanceCutRepeatFirst h₀ h₁ h, ?_⟩
   rw [range_cyclicDistanceCutRepeatFirst]
   exact ((isClosed_eq (continuous_apply 1) (continuous_apply 0)).inter
     ((isClosed_cyclicDistanceCut δ).preimage continuous_id.finTail)).preimage continuous_subtype_val
