@@ -87,7 +87,7 @@ namespace Equiv.Perm
 
 /-- A permutation preserving consecutive adjacency and fixing the last point of a finite
 chain is the identity. Only forward preservation of adjacency is needed. -/
-theorem eq_one_of_adjacent_of_apply_last {n : ℕ} {σ : Perm (Fin (n + 1))}
+theorem eq_one_of_adjacent_of_apply_last_eq_self {n : ℕ} {σ : Perm (Fin (n + 1))}
     (hadj : ∀ i j, i.val + 1 = j.val →
       (σ i).val + 1 = (σ j).val ∨ (σ j).val + 1 = (σ i).val)
     (hlast : σ (Fin.last n) = Fin.last n) : σ = 1 := by

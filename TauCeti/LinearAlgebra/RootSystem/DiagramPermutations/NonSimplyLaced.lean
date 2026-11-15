@@ -70,8 +70,9 @@ theorem eq_one_of_cartanMatrix_F4 {ρ : Equiv.Perm (Fin 4)}
 /-- A nonsimply-laced numbered Dynkin diagram has no nonidentity permutation
 preserving its oriented Cartan matrix. -/
 theorem eq_one_of_cartanMatrix_of_not_isSimplyLaced {t : DynkinType}
-    (hsl : ¬ t.IsSimplyLaced) {ρ : Equiv.Perm (Fin t.rank)}
-    (h : ∀ i j, t.cartanMatrix (ρ i) (ρ j) = t.cartanMatrix i j) : ρ = 1 := by
+    {ρ : Equiv.Perm (Fin t.rank)}
+    (h : ∀ i j, t.cartanMatrix (ρ i) (ρ j) = t.cartanMatrix i j)
+    (hsl : ¬ t.IsSimplyLaced) : ρ = 1 := by
   cases t with
   | A n => exact (hsl (isSimplyLaced_A n)).elim
   | B n => exact eq_one_of_cartanMatrix_B h
@@ -87,7 +88,7 @@ theorem eq_one_of_cartanMatrix_of_not_isSimplyLaced {t : DynkinType}
 theorem diagramSymmetry_eq_bot_of_not_isSimplyLaced {t : DynkinType}
     (hsl : ¬ t.IsSimplyLaced) : t.diagramSymmetry = ⊥ :=
   (Subgroup.eq_bot_iff_forall _).mpr fun _ h ↦
-    eq_one_of_cartanMatrix_of_not_isSimplyLaced hsl (mem_diagramSymmetry_iff.mp h)
+    eq_one_of_cartanMatrix_of_not_isSimplyLaced (mem_diagramSymmetry_iff.mp h) hsl
 
 /-- The numbered type-F₄ diagram has trivial symmetry group. -/
 @[simp] theorem diagramSymmetry_F4_eq_bot : F4.diagramSymmetry = ⊥ :=

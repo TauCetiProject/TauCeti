@@ -37,7 +37,7 @@ theorem eq_one_of_cartanMatrix_B {n : ℕ} {ρ : Equiv.Perm (Fin n)}
   simp only [cartanMatrix_B] at h
   by_cases hn : 2 ≤ n
   · obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-    apply Equiv.Perm.eq_one_of_adjacent_of_apply_last
+    apply Equiv.Perm.eq_one_of_adjacent_of_apply_last_eq_self
     · intro i j hij
       apply (CartanMatrix.B_apply_neg_iff _ _).mp
       rw [h]

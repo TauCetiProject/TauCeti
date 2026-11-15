@@ -20,9 +20,9 @@ not a counterexample: it transposes rather than preserves the Cartan matrix.
 
 `RootPairing.Base.eq_one_of_forall_mem_support_of_not_isSimplyLaced` identifies the
 automorphism itself;
-`RootPairing.Base.indexEquiv_eq_self_of_not_isSimplyLaced` fixes every root index,
-not just the simple indices. They apply over any characteristic-zero domain with
-the native root-system hypotheses; no choice of real coordinates is involved.
+`RootPairing.Base.indexEquiv_eq_self_of_forall_mem_support_of_not_isSimplyLaced`
+fixes every root index, not just the simple indices. They apply over any characteristic-zero
+domain with the native root-system hypotheses; no choice of real coordinates is involved.
 This is the nonsimply-laced branch in reducing finite diagram folding to simply-laced
 components and cycles of components.
 
@@ -64,7 +64,7 @@ theorem eq_one_of_forall_mem_support_of_not_isSimplyLaced (b : P.Base) {σ : P.A
 
 /-- A based automorphism of a finite irreducible reduced crystallographic root pairing over a
 characteristic-zero domain with a non-simply-laced Cartan matrix fixes every root index. -/
-theorem indexEquiv_eq_self_of_not_isSimplyLaced (b : P.Base) (σ : P.Aut)
+theorem indexEquiv_eq_self_of_forall_mem_support_of_not_isSimplyLaced (b : P.Base) (σ : P.Aut)
     (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support)
     (hsl : ¬ b.cartanMatrix.IsSimplyLaced) (i : ι) : σ.indexEquiv i = i := by
   simp [b.eq_one_of_forall_mem_support_of_not_isSimplyLaced hσ hsl]
