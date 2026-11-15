@@ -48,6 +48,12 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 
 * `SchwartzMap.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
 * `SchwartzMap.fourierMultiplierCLM_laplacian`: Fourier multipliers commute with the Laplacian.
+* `SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM`: the Bessel
+  multipliers of orders `t` and `t'` compose to the one of order `t + t'`.
+* `SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_neg_comp_fourierMultiplierCLM`: the Bessel
+  multiplier of order `-t` inverts the one of order `t`.
+* `SchwartzMap.fourierMultiplierCLM_one_add_norm_sq`: the Bessel multiplier of order `2` is
+  `1 - (2π)⁻² Δ`.
 * `SchwartzMap.fourierInv_apply_eq_fourier_neg`: `𝓕⁻ f x = 𝓕 f (-x)`.
 * `SchwartzMap.fourier_smulLeftCLM_fourierInv_eq`: `𝓕 (g • 𝓕⁻ f) = 𝓕⁻ (g (-·) • 𝓕 f)`.
 * `SchwartzMap.integral_bilin_fourierMultiplierCLM_eq`: the transpose of a Fourier multiplier for
@@ -68,8 +74,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   `‖𝓕⁻ (∂_m^N σ) x‖² = (2π) ^ (2N) ⟪x, m⟫ ^ (2N) ‖𝓕⁻ σ x‖²`.
 * `SchwartzMap.exists_seminorm_fourier_le_sum_seminorm`: each seminorm `‖ξ‖ ^ k ‖𝓕 g ξ‖` of the
   Fourier transform is bounded by finitely many Schwartz seminorms of `g`.
-* `SchwartzMap.fourierInv_postcompCLM_apply`: the inverse Fourier transform commutes with
-  postcomposition by a continuous linear map.
+* `SchwartzMap.fourier_postcompCLM_apply`, `SchwartzMap.fourierInv_postcompCLM_apply`: the
+  Fourier transform and its inverse commute with postcomposition by a continuous linear map.
 * `SchwartzMap.norm_fourierInv_toL2_eq`: Plancherel's theorem for the inverse Fourier transform.
 * `SchwartzMap.norm_toLp_fourierMultiplierCLM_eq`: Plancherel's theorem for Fourier multipliers,
   `‖𝓕⁻ (w • 𝓕 f)‖_{L²} = ‖w • 𝓕 f‖_{L²}`.
@@ -176,6 +182,53 @@ theorem fourierMultiplierCLM_laplacian (g : E → 𝕜) (f : 𝓢(E, F)) :
       · simp [fourierMultiplierCLM_apply, fourier_eq_zero_of_not_completeSpace hF]
     simp only [h, zero_apply]
     exact (map_zero _).symm
+
+/-- The Bessel multipliers compose additively on Schwartz functions: the Fourier multipliers with
+symbols `⟨ξ⟩ ^ t'` and then `⟨ξ⟩ ^ t` give the one with symbol `⟨ξ⟩ ^ (t + t')`. -/
+theorem fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM (t t' : ℝ) (ψ : 𝓢(E, F)) :
+    fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ))
+        (fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t' / 2) : ℝ) : ℂ)) ψ) =
+      fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((t + t') / 2) : ℝ) : ℂ)) ψ := by
+  have h : ((fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) *
+      fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t' / 2) : ℝ) : ℂ)) =
+      fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((t + t') / 2) : ℝ) : ℂ) := by
+    ext x
+    rw [Pi.mul_apply, ← Complex.ofReal_mul, ← Real.rpow_add (by positivity), add_div]
+  rw [fourierMultiplierCLM_fourierMultiplierCLM_apply (by fun_prop) (by fun_prop), h]
+
+/-- The Bessel multiplier of order `-t`, with symbol `⟨ξ⟩ ^ (-t)`, inverts the one of order `t` on
+Schwartz functions. -/
+theorem fourierMultiplierCLM_one_add_norm_sq_rpow_neg_comp_fourierMultiplierCLM (t : ℝ) :
+    fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-t / 2) : ℝ) : ℂ)) ∘L
+        fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) =
+      ContinuousLinearMap.id ℂ 𝓢(E, F) := by
+  ext1 ψ
+  rw [ContinuousLinearMap.comp_apply,
+    fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM]
+  simp
+
+/-- The Fourier multiplier with symbol `⟨ξ⟩² = 1 + ‖ξ‖²`, the Bessel multiplier of order `2`, is
+the differential operator `1 - (2π)⁻² Δ` on Schwartz functions. -/
+theorem fourierMultiplierCLM_one_add_norm_sq (ψ : 𝓢(E, F)) :
+    fourierMultiplierCLM F (fun x : E ↦ ((1 + ‖x‖ ^ 2 : ℝ) : ℂ)) ψ =
+      ψ - ((2 * Real.pi) ^ 2)⁻¹ • Δ ψ := by
+  have h1 : (fun _ : E ↦ (1 : ℂ)).HasTemperateGrowth := by fun_prop
+  have h2 : (fun x : E ↦ ((‖x‖ ^ 2 : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
+  have hadd : fourierMultiplierCLM F (fun x : E ↦ ((1 + ‖x‖ ^ 2 : ℝ) : ℂ)) ψ =
+      fourierMultiplierCLM F (fun _ : E ↦ (1 : ℂ)) ψ +
+        fourierMultiplierCLM F (fun x : E ↦ ((‖x‖ ^ 2 : ℝ) : ℂ)) ψ := by
+    have hw : (fun x : E ↦ ((1 + ‖x‖ ^ 2 : ℝ) : ℂ)) =
+        (fun _ ↦ (1 : ℂ)) + fun x ↦ ((‖x‖ ^ 2 : ℝ) : ℂ) := by
+      ext x
+      simp
+    rw [hw, fourierMultiplierCLM_add h1 h2, _root_.add_apply]
+  have hreal : fourierMultiplierCLM F (fun x : E ↦ ((‖x‖ ^ 2 : ℝ) : ℂ)) ψ =
+      fourierMultiplierCLM F (fun x : E ↦ ‖x‖ ^ 2) ψ :=
+    fourierMultiplierCLM_ofReal ℂ (Function.hasTemperateGrowth_norm_sq E) ψ
+  have hπ : ((2 * Real.pi) ^ 2)⁻¹ * -(2 * Real.pi) ^ 2 = -1 := by
+    field_simp
+  rw [laplacian_eq_fourierMultiplierCLM, smul_smul, hπ, hadd, fourierMultiplierCLM_const, hreal]
+  simp [sub_eq_add_neg]
 
 /-- The transpose of a Fourier multiplier for a bilinear pairing of Schwartz functions has the
 reflected symbol: `∫ M (T_g f) h = ∫ M f (T_{g (-·)} h)`, where `T_g = 𝓕⁻ (g • 𝓕 ·)`. In
@@ -307,6 +360,19 @@ theorem exists_seminorm_fourier_le_sum_seminorm (k : ℕ) :
   obtain ⟨s, c, -, hc⟩ := Seminorm.bound_sum_of_continuous (schwartz_withSeminorms ℂ _ _) _ hq
   refine ⟨s, c, c.2, fun g ↦ (hc g).trans_eq ?_⟩
   simp [schwartzSeminormFamily, NNReal.smul_def]
+
+/-- The Fourier transform of a Schwartz function commutes with postcomposition by a continuous
+complex-linear map: `𝓕 (L ∘ f) = L ∘ 𝓕 f`. -/
+@[simp]
+theorem fourier_postcompCLM_apply {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    [CompleteSpace F] [CompleteSpace G] (L : F →L[ℂ] G) (f : 𝓢(E, F)) (x : E) :
+    𝓕 (postcompCLM L f) x = L (𝓕 f x) := by
+  rw [fourier_coe, fourier_coe, Real.fourier_eq, Real.fourier_eq, ← L.integral_comp_comm]
+  · simp [Circle.smul_def]
+  · refine f.integrable.norm.mono' ?_ (.of_forall fun v ↦ ?_)
+    · exact ((Real.continuous_fourierChar.comp (continuous_id.inner continuous_const).neg).smul
+        f.continuous).aestronglyMeasurable
+    · simp [Circle.norm_smul]
 
 /-- The inverse Fourier transform of a Schwartz function commutes with postcomposition by a
 continuous complex-linear map: `𝓕⁻ (L ∘ f) = L ∘ 𝓕⁻ f`. -/
