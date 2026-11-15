@@ -7,9 +7,10 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.MorseInequalities
 public import TauCeti.Geometry.Manifold.Morse.CWModel
+public import TauCeti.Geometry.Manifold.Morse.Inequalities
 
 /-!
-# Relative CW models of sublevel pairs
+# Relative CW models of sublevel pairs and cobordisms
 
 Let `f` be a Morse function and `a ≤ b` regular values with compact band `f⁻¹[a, b]`, and write
 `M_t = {f ≤ t}`. The relative CW model of the regular band
@@ -28,6 +29,19 @@ critical points of index `i` with values in `(a, b]` and `bᵢ = dim Hᵢ(M_b, M
 of `tⁱ` in `Q` is the rank of the relative cellular differential from degree `i + 1` to degree `i`
 of the model (`TauCeti.IsMorse.exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul`).
 
+The band `W = f⁻¹[a, b]` is a compact cobordism from `f⁻¹(a)` to `f⁻¹(b)`, and the inclusion of
+pairs `(W, f⁻¹(a)) ⟶ (M_b, M_a)` induces isomorphisms on relative homology
+(`TauCeti.isIso_singularHomologyMap_bandPairInclusion`). So the same model describes the
+coefficients of `Q` in the polynomial identity of the cobordism relative to its incoming boundary,
+with `bᵢ = dim Hᵢ(W, f⁻¹(a); V)`
+(`TauCeti.IsMorse.exists_relCWComplex_sum_range_monomial_bandPair_eq_add_mul`). Read from the
+other end, `W` is the band of `-f` between `-b` and `-a` (`TauCeti.bandPair_neg`), and a critical
+point of index `λ` of `f` has index `dim M - λ` for `-f`. The relative CW model of the band of `-f`
+therefore has one `i`-cell for each critical point of `f` of index `dim M - i` with value in
+`[a, b)`, and its cellular differentials describe the coefficients of `Q` in the polynomial
+identity of the cobordism relative to its outgoing boundary, with `bᵢ = dim Hᵢ(W, f⁻¹(b); V)`
+(`TauCeti.IsMorse.exists_relCWComplex_sum_range_monomial_upperBandPair_eq_add_mul`).
+
 ## Main results
 
 * `TauCeti.IsMorse.exists_relCWComplex_singularHomology_iso_sublevelPair`: the relative CW model of
@@ -36,6 +50,9 @@ of the model (`TauCeti.IsMorse.exists_relCWComplex_sum_range_monomial_sublevelPa
 * `TauCeti.IsMorse.exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul`: the Morse
   polynomial identity of a sublevel pair with compact band, with the coefficients of the quotient
   polynomial the ranks of the cellular differentials of a relative CW model.
+* `TauCeti.IsMorse.exists_relCWComplex_sum_range_monomial_bandPair_eq_add_mul` and
+  `TauCeti.IsMorse.exists_relCWComplex_sum_range_monomial_upperBandPair_eq_add_mul`: the same for a
+  compact cobordism between regular levels, relative to its incoming and to its outgoing boundary.
 
 ## References
 
@@ -142,4 +159,71 @@ theorem IsMorse.exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul (
   congr 1
   exact Finset.sum_congr rfl fun i _ ↦ by rw [(hH V i).some.toLinearEquiv.finrank_eq]
 
+/-- **The Morse polynomial identity of a cobordism, with cellular coefficients.** Let `f` be a
+Morse function and `a ≤ b` regular values with compact band `W = f⁻¹[a, b]`. Then there is a
+finite relative CW complex `(Y, B)` whose relative `m`-cells correspond to the critical points of
+index `m` with values in `(a, b]`, such that for every finite-dimensional module `V` over a division
+ring `k` and every `n ≥ dim M`, writing `cᵢ` for the number of these critical points of index `i`
+and `bᵢ = dim Hᵢ(W, f⁻¹(a); V)`, `∑ᵢ₌₀ⁿ cᵢ dim V · tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)`, where the
+coefficient of `tⁱ` in `Q` is the rank of the cellular differential of `(Y, B)` with coefficients
+in `V` from degree `i + 1` to degree `i`. -/
+theorem IsMorse.exists_relCWComplex_sum_range_monomial_bandPair_eq_add_mul (hf : IsMorse I f)
+    {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) :
+    ∃ (Y : Type u) (_ : TopologicalSpace Y) (_ : T2Space Y) (B : Set Y)
+      (_ : RelCWComplex (univ : Set Y) B),
+      RelCWComplex.Finite (univ : Set Y) ∧
+      (∀ m, Nonempty (cell (univ : Set Y) m ≃
+        ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m})) ∧
+      ∀ {k : Type u} [DivisionRing k] (V : ModuleCat.{u} k) [Module.Finite k V] {n : ℕ},
+        finrank ℝ E ≤ n →
+        ∑ i ∈ Finset.range (n + 1), monomial i
+            ({x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i}.ncard *
+              finrank k V) =
+          ∑ i ∈ Finset.range (n + 1),
+            monomial i (finrank k ((bandPair f hab).singularHomology V i : ModuleCat k)) +
+            (1 + X) * ∑ i ∈ Finset.range n, monomial i (finrank k
+              (LinearMap.range ((cellularChainComplex (univ : Set Y) V).d (i + 1) i).hom)) := by
+  obtain ⟨Y, _, _, B, _, hfin, c, h⟩ :=
+    hf.exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul hab hcompact ha hb
+  refine ⟨Y, _, ‹_›, B, ‹_›, hfin, c, fun V _ n hn ↦ ?_⟩
+  simpa only [finrank_singularHomology_bandPair V hf.contMDiff hab hcompact ha] using h V hn
+
+/-- **The Morse polynomial identity of a cobordism relative to its outgoing boundary, with
+cellular coefficients.** Let `f` be a Morse function on a manifold of dimension `m`, and `a ≤ b`
+regular values with compact band `W = f⁻¹[a, b]`. Then there is a finite relative CW complex
+`(Y, B)` whose relative `i`-cells correspond to the critical points of index `m - i` with values in
+`[a, b)`, such that for every finite-dimensional module `V` over a division ring `k` and every
+`n ≥ m`, writing `cᵢ` for the number of these critical points of index `m - i` and
+`bᵢ = dim Hᵢ(W, f⁻¹(b); V)`, `∑ᵢ₌₀ⁿ cᵢ dim V · tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)`, where the
+coefficient of `tⁱ` in `Q` is the rank of the cellular differential of `(Y, B)` with coefficients
+in `V` from degree `i + 1` to degree `i`. -/
+theorem IsMorse.exists_relCWComplex_sum_range_monomial_upperBandPair_eq_add_mul (hf : IsMorse I f)
+    {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) :
+    ∃ (Y : Type u) (_ : TopologicalSpace Y) (_ : T2Space Y) (B : Set Y)
+      (_ : RelCWComplex (univ : Set Y) B),
+      RelCWComplex.Finite (univ : Set Y) ∧
+      (∀ m, Nonempty (cell (univ : Set Y) m ≃
+        ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ico a b | manifoldMorseIndex I f x + m = finrank ℝ E})) ∧
+      ∀ {k : Type u} [DivisionRing k] (V : ModuleCat.{u} k) [Module.Finite k V] {n : ℕ},
+        finrank ℝ E ≤ n →
+        ∑ i ∈ Finset.range (n + 1), monomial i
+            ({x ∈ criticalPoints I f ∩ f ⁻¹' Ico a b |
+              manifoldMorseIndex I f x + i = finrank ℝ E}.ncard * finrank k V) =
+          ∑ i ∈ Finset.range (n + 1),
+            monomial i (finrank k ((upperBandPair f hab).singularHomology V i : ModuleCat k)) +
+            (1 + X) * ∑ i ∈ Finset.range n, monomial i (finrank k
+              (LinearMap.range ((cellularChainComplex (univ : Set Y) V).d (i + 1) i).hom)) := by
+  -- The band of `f` relative to its upper level is the band of `-f` relative to its lower level.
+  obtain ⟨Y, _, _, B, _, hfin, c, h⟩ :=
+    hf.neg.exists_relCWComplex_sum_range_monomial_bandPair_eq_add_mul (neg_le_neg hab)
+      (by rwa [preimage_neg_Icc_neg]) (isRegularValue_neg_iff.2 (by rwa [neg_neg]))
+      (isRegularValue_neg_iff.2 (by rwa [neg_neg]))
+  refine ⟨Y, _, ‹_›, B, ‹_›, hfin,
+    fun m ↦ ⟨(c m).some.trans (Set.equivOfEq (hf.setOf_neg_band_eq a b m))⟩, fun V _ n hn ↦ ?_⟩
+  rw [← bandPair_neg]
+  simpa only [hf.setOf_neg_band_eq] using h V hn
+
 end TauCeti
+

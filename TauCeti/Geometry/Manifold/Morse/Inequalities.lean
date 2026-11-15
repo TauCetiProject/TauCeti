@@ -683,7 +683,9 @@ theorem IsMorse.finite_singularHomology_bandPair (hf : IsMorse I f) {a b : ℝ} 
     (nonempty_linearEquiv_singularHomology_bandPair V hf.contMDiff hab hcompact ha n).some.symm
 
 omit [Module.Finite k V] in
-private theorem finrank_singularHomology_bandPair (hf : ContMDiff I 𝓘(ℝ) ∞ f) {a b : ℝ}
+/-- Above a regular value `a`, the relative homology of the band pair `(f⁻¹[a, b], f⁻¹(a))` has
+the dimension of that of the sublevel pair `({f ≤ b}, {f ≤ a})`. -/
+theorem finrank_singularHomology_bandPair (hf : ContMDiff I 𝓘(ℝ) ∞ f) {a b : ℝ}
     (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
     (n : ℕ) :
     finrank k ((bandPair f hab).singularHomology V n : ModuleCat k) =
@@ -771,7 +773,7 @@ index. -/
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
 /-- The critical points of index `i` of `-f` with values in `(-b, -a]` are the critical points of
 `f` with values in `[a, b)` and complementary index `dim M - i`. -/
-private theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :
+theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :
     {x ∈ criticalPoints I (-f) ∩ (-f) ⁻¹' Ioc (-b) (-a) | manifoldMorseIndex I (-f) x = i} =
       {x ∈ criticalPoints I f ∩ f ⁻¹' Ico a b | manifoldMorseIndex I f x + i = finrank ℝ E} := by
   ext x
