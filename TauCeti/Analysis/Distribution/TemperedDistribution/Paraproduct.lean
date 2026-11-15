@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
-import TauCeti.Algebra.BigOperators.Finset.RangeGap
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -37,7 +37,7 @@ level of the dyadic partial sums:
   in `L¹` against every integrable weight
   (`MeasureTheory.tendsto_lintegral_eNorm_mul_eNorm_integral_smul_comp_sub_smul_sub`), and the
   truncations are bounded in `L^∞` uniformly in `j`
-  (`exists_littlewoodPaleyLowPass_eq_and_norm_le`). Writing
+  (`exists_sum_littlewoodPaleyBlock_eq_and_norm_le`). Writing
   `Sⱼ f · Sⱼ g - f g = (Sⱼ f - f) · Sⱼ g + f · (Sⱼ g - g)` and pairing with a Schwartz function
   gives the convergence.
 * `TemperedDistribution.tendsto_toTemperedDistribution_paraproduct_add_paraproduct_add_resonant`:
@@ -51,7 +51,7 @@ The spectral localization of the terms, and the corresponding finite decompositi
 
 The blocks and truncations of an `L^∞` function are `L^∞` functions
 (`exists_littlewoodPaleyBlock_eq_and_norm_le`,
-`exists_littlewoodPaleyLowPass_eq_and_norm_le`); the statements take these
+`exists_sum_littlewoodPaleyBlock_eq_and_norm_le`); the statements take these
 functions as data, through the hypotheses identifying their tempered distributions.
 
 ## References
@@ -115,10 +115,8 @@ private theorem tendsto_lintegral_eNorm_mul_eNorm_sub_of_littlewoodPaleyLowPass_
     (u : Lp F ∞ (volume : Measure E)) {c : ℕ → Lp F ∞ (volume : Measure E)}
     (hc : ∀ j, littlewoodPaleyLowPass F φ j (u : 𝓢'(E, F)) = c j) :
     Tendsto (fun j ↦ ∫⁻ x, ‖ψ x‖ₑ * ‖c (j + 1) x - u x‖ₑ) atTop (𝓝 0) := by
-  have hdil : Tendsto (fun j : ℕ ↦ ((2 : ℝ) ^ j)⁻¹) atTop (𝓝[≠] 0) :=
-    tendsto_nhdsWithin_iff.2 ⟨tendsto_inv_atTop_zero.comp
-      (tendsto_pow_atTop_atTop_of_one_lt one_lt_two),
-      Eventually.of_forall fun j ↦ inv_ne_zero (pow_ne_zero j two_ne_zero)⟩
+  have hdil : Tendsto (fun j : ℕ ↦ ((2 : ℝ) ^ j)⁻¹) atTop (𝓝 0) :=
+    tendsto_inv_atTop_zero.comp (tendsto_pow_atTop_atTop_of_one_lt one_lt_two)
   refine ((tendsto_lintegral_eNorm_mul_eNorm_integral_smul_comp_sub_smul_sub
     φ.integrable_fourierInv φ.integral_fourierInv ψ.integrable (Lp.aestronglyMeasurable u)
     (Lp.ae_norm_le_norm_top u)).comp hdil).congr fun j ↦ ?_
@@ -139,10 +137,11 @@ theorem tendsto_toTemperedDistribution_smul_of_littlewoodPaleyLowPass_eq
       (𝓝 ((f • g : Lp F ∞ (volume : Measure E)) : 𝓢'(E, F))) := by
   -- The truncations of `g` are bounded in `L^∞` uniformly in `j`.
   set C := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
-  have hbC : ∀ j, ‖b j‖ₑ ≤ ENNReal.ofReal (C * ‖g‖) := fun j ↦ by
-    obtain ⟨g', hg', hg'C⟩ := exists_littlewoodPaleyLowPass_eq_and_norm_le φ j g
-    rw [Lp.toTemperedDistribution_injective (by rw [← hb, hg'] : (b j : 𝓢'(E, F)) = g'),
-      ← ofReal_norm]
+  have hbC : ∀ j, ‖b (j + 1)‖ₑ ≤ ENNReal.ofReal (C * ‖g‖) := fun j ↦ by
+    obtain ⟨g', hg', hg'C⟩ := exists_sum_littlewoodPaleyBlock_eq_and_norm_le φ j g
+    rw [Lp.toTemperedDistribution_injective (by
+      rw [← hb, littlewoodPaleyLowPass_def, _root_.sum_apply, hg'] :
+      (b (j + 1) : 𝓢'(E, F)) = g'), ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal hg'C
   refine PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.2 fun ψ ↦ ?_
   simp only [Lp.toTemperedDistribution_apply]

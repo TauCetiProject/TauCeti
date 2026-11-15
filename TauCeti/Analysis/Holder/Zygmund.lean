@@ -86,18 +86,6 @@ section Kernel
 
 variable (φ : ContDiffBump (0 : E))
 
-omit [MeasurableSpace E] [BorelSpace E] in
-private theorem coe_lowPass_eq_comp (N : ℕ) :
-    ⇑(φ.lowPassSchwartz N) = fun ξ ↦ φ.lowPassSchwartz 0 (((2 : ℝ) ^ N)⁻¹ • ξ) := by
-  simp [φ.coe_lowPassSchwartz]
-
-/-- The kernel `𝓕⁻ (φ (2^{-N} ·))` is the `L¹`-normalised dilate `2^{Nn} K₀ (2^N ·)`. -/
-private theorem fourierInv_lowPass_apply (N : ℕ) (y : E) :
-    𝓕⁻ (⇑(φ.lowPassSchwartz N)) y =
-      (((2 : ℝ) ^ N) ^ finrank ℝ E) • 𝓕⁻ (⇑(φ.lowPassSchwartz 0)) (((2 : ℝ) ^ N) • y) := by
-  rw [coe_lowPass_eq_comp, fourierInv_comp_smul, inv_inv, inv_pow, abs_inv, inv_inv,
-    abs_of_pos (by positivity)]
-
 /-- The Schwartz kernel `𝓕⁻ (φ (2^{-N} ·))` of the low-pass multiplier at scale `2^N`. -/
 private def kernel (N : ℕ) : 𝓢(E, ℂ) :=
   𝓕⁻ (φ.lowPassSchwartz N)
@@ -114,7 +102,7 @@ private theorem norm_iteratedFDeriv_kernel (N m : ℕ) (y : E) :
   have hdil : ⇑(kernel φ N) =
       fun y ↦ (((2 : ℝ) ^ N) ^ finrank ℝ E) • kernel φ 0 (((2 : ℝ) ^ N) • y) := by
     funext y
-    rw [coe_kernel, fourierInv_lowPass_apply, coe_kernel]
+    rw [coe_kernel, φ.fourierInv_lowPassSchwartz_apply, coe_kernel]
   rw [hdil, iteratedFDeriv_const_smul_apply' (f := fun y ↦ kernel φ 0 (((2 : ℝ) ^ N) • y))
       (hK.comp (contDiff_const_smul _)).contDiffAt,
     iteratedFDeriv_comp_const_smul _ hK, norm_smul, norm_smul, norm_pow, norm_pow,

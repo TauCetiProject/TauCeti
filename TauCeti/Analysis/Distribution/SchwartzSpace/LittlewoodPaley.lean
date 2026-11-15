@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
 # Littlewood–Paley pieces of a Mihlin symbol
@@ -49,6 +50,8 @@ partial sums of the Fourier multipliers `𝓕⁻ (ψⱼ • 𝓕 f)` are the low
   partition, as a complex Schwartz function.
 * `ContDiffBump.lowPassSchwartz`: the low-pass symbol `φ (2^{-j} ·)`, as a complex Schwartz
   function.
+* `ContDiffBump.fourierInv_lowPassSchwartz_apply`: its kernel is the `L¹`-normalised dilate
+  `2^{jn} 𝓕⁻ φ (2^j ·)` of the kernel at scale `1`.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le`: the scale-invariant
   derivative bounds for the pieces of a symbol satisfying Mihlin's condition.
 * `SchwartzMap.exists_eqOn_annulus_of_contDiffOn`: a symbol smooth away from the origin agrees
@@ -259,7 +262,23 @@ theorem coe_lowPassSchwartz (j : ℕ) :
     ⇑(φ.lowPassSchwartz j) = fun ξ ↦ (φ (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) :=
   (rfl)
 
+/-- The low-pass symbol at scale `2^j` is the dilate `φ (2^{-j} ·)` of the one at scale `1`. -/
+theorem coe_lowPassSchwartz_eq_comp (j : ℕ) :
+    ⇑(φ.lowPassSchwartz j) = fun ξ ↦ φ.lowPassSchwartz 0 (((2 : ℝ) ^ j)⁻¹ • ξ) := by
+  simp [coe_lowPassSchwartz]
+
 end FiniteDimensional
+
+open FourierTransform in
+/-- The kernel `𝓕⁻ (φ (2^{-j} ·))` of the low-pass symbol at scale `2^j` is the `L¹`-normalised
+dilate `2^{jn} 𝓕⁻ φ (2^j ·)` of the kernel at scale `1`, where `n` is the dimension. -/
+theorem fourierInv_lowPassSchwartz_apply {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    (φ : ContDiffBump (0 : E)) (j : ℕ) (y : E) :
+    𝓕⁻ (⇑(φ.lowPassSchwartz j)) y =
+      (((2 : ℝ) ^ j) ^ Module.finrank ℝ E) • 𝓕⁻ (⇑(φ.lowPassSchwartz 0)) (((2 : ℝ) ^ j) • y) := by
+  rw [coe_lowPassSchwartz_eq_comp, TauCeti.fourierInv_comp_smul, inv_inv, inv_pow, abs_inv,
+    inv_inv, abs_of_pos (by positivity)]
 
 end ContDiffBump
 

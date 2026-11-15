@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.MeasureTheory.Function.Lp.Translation
+import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
 
 /-!
 # Approximate identities acting on bounded functions
@@ -44,29 +45,11 @@ namespace MeasureTheory
 
 variable {𝕜 E F : Type*} [NormedAddCommGroup F]
 
-/-- An essentially bounded function agrees almost everywhere with a strongly measurable function
-bounded everywhere by `max C 0`. -/
-private theorem exists_stronglyMeasurable_ae_eq_norm_le {α : Type*} [MeasurableSpace α]
-    {ν : Measure α} {f : α → F} (hf : AEStronglyMeasurable f ν) {C : ℝ}
-    (hC : ∀ᵐ x ∂ν, ‖f x‖ ≤ C) :
-    ∃ f₀ : α → F, StronglyMeasurable f₀ ∧ f =ᵐ[ν] f₀ ∧ ∀ x, ‖f₀ x‖ ≤ max C 0 := by
-  set g := hf.mk f
-  refine ⟨{x | ‖g x‖ ≤ C}.indicator g, hf.stronglyMeasurable_mk.indicator
-    (measurableSet_le hf.stronglyMeasurable_mk.norm.measurable measurable_const), ?_, fun x ↦ ?_⟩
-  · filter_upwards [hf.ae_eq_mk, hC] with x hx hxC
-    rw [hx]
-    exact (indicator_of_mem (show x ∈ {x | ‖g x‖ ≤ C} by simpa [g, ← hx] using hxC) g).symm
-  · by_cases hx : ‖g x‖ ≤ C
-    · rw [indicator_of_mem hx g]
-      exact hx.trans (le_max_left _ _)
-    · rw [indicator_of_notMem hx g, norm_zero]
-      exact le_max_right _ _
-
 section Translation
 
-variable [NormedField 𝕜] [NormedSpace 𝕜 F] [NormedAddCommGroup E] [MeasurableSpace E]
-  [BorelSpace E] {μ : Measure E} [μ.IsAddRightInvariant] [IsLocallyFiniteMeasure μ]
-  [μ.InnerRegularCompactLTTop]
+variable [NormedField 𝕜] [NormedSpace 𝕜 F] [AddZeroClass E] [MeasurableSpace E]
+  [TopologicalSpace E] [ContinuousAdd E] [BorelSpace E] [R1Space E]
+  {μ : Measure E} [μ.IsAddRightInvariant] [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
 
 /-- **Weighted continuity of translation for bounded functions.** If `w` is integrable and `f` is
 essentially bounded, then `∫ |w(x)| ‖f(x + h) - f(x)‖ dx → 0` as `h → 0`. -/
@@ -171,19 +154,37 @@ private theorem lintegral_eNorm_mul_eNorm_integral_smul_comp_sub_smul_sub_le [Co
         rw [← sub_eq_add_neg]
         ring
 
+omit [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
+/-- **Dominated convergence along the dilations.** If `K` is integrable and `Φ` is measurable,
+bounded, and tends to zero at the origin, then `∫ |K(s)| Φ(-c s) ds → 0` as `c → 0`. -/
+private theorem tendsto_lintegral_eNorm_mul_comp_neg_smul {K : E → 𝕜} (hK : Integrable K μ)
+    {Φ : E → ℝ≥0∞} (hΦ : Tendsto Φ (𝓝 0) (𝓝 0)) (hΦm : Measurable Φ) {B : ℝ≥0∞} (hB : B ≠ ∞)
+    (hΦB : ∀ h, Φ h ≤ B) :
+    Tendsto (fun c : ℝ ↦ ∫⁻ s, ‖K s‖ₑ * Φ (-(c • s)) ∂μ) (𝓝 0) (𝓝 0) := by
+  have h := tendsto_lintegral_filter_of_dominated_convergence' (μ := μ) (l := 𝓝 (0 : ℝ))
+    (F := fun c s ↦ ‖K s‖ₑ * Φ (-(c • s))) (f := fun _ ↦ 0) (fun s ↦ ‖K s‖ₑ * B)
+    (Eventually.of_forall fun c ↦ hK.aestronglyMeasurable.eNorm.mul
+      (hΦm.comp (measurable_const_smul c).neg).aemeasurable)
+    (Eventually.of_forall fun c ↦ Eventually.of_forall fun s ↦ by gcongr; exact hΦB _)
+    (by rw [lintegral_mul_const' _ _ hB]; exact ENNReal.mul_ne_top hK.2.ne hB)
+    (Eventually.of_forall fun s ↦ ?_)
+  · simpa using h
+  have hs : Tendsto (fun c : ℝ ↦ -(c • s)) (𝓝 0) (𝓝 0) :=
+    (by fun_prop : Continuous fun c : ℝ ↦ -(c • s)).tendsto' 0 0 (by simp)
+  simpa using ENNReal.Tendsto.const_mul (hΦ.comp hs) (Or.inr eNorm_ne_top)
+
 /-- **Weighted convergence of an approximate identity on bounded functions.** Let `K` be
 integrable with `∫ K = 1`, let `w` be integrable and let `f` be essentially bounded. Then the
 averages `∫ K(s) f(x - c s) ds` of `f` against the dilates of `K` satisfy
 
-`∫ |w(x)| ‖∫ K(s) f(x - c s) ds - f(x)‖ dx → 0` as `c → 0`, `c ≠ 0`. -/
+`∫ |w(x)| ‖∫ K(s) f(x - c s) ds - f(x)‖ dx → 0` as `c → 0`. -/
 theorem tendsto_lintegral_eNorm_mul_eNorm_integral_smul_comp_sub_smul_sub [CompleteSpace F]
     {K : E → 𝕜} (hK : Integrable K μ) (hK1 : ∫ s, K s ∂μ = 1) {w : E → 𝕜} (hw : Integrable w μ)
     {f : E → F} (hf : AEStronglyMeasurable f μ) {C : ℝ} (hC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C) :
     Tendsto (fun c : ℝ ↦ ∫⁻ x, ‖w x‖ₑ * ‖(∫ s, K s • f (x - c • s) ∂μ) - f x‖ₑ ∂μ)
-      (𝓝[≠] 0) (𝓝 0) := by
-  -- Replace `f` by a strongly measurable modification bounded everywhere, and `w` by a strongly
-  -- measurable modification.
-  obtain ⟨f₀, hf₀m, hff₀, hf₀C⟩ := exists_stronglyMeasurable_ae_eq_norm_le hf hC
+      (𝓝 0) (𝓝 0) := by
+  -- Replace `f` and `w` by strongly measurable modifications, with `f₀` bounded everywhere.
+  obtain ⟨f₀, hf₀m, hff₀, hf₀C⟩ := hf.exists_stronglyMeasurable_ae_eq_norm_le hC
   set w₀ := hw.aestronglyMeasurable.mk w
   have hw₀m : StronglyMeasurable w₀ := hw.aestronglyMeasurable.stronglyMeasurable_mk
   have hww₀ : w =ᵐ[μ] w₀ := hw.aestronglyMeasurable.ae_eq_mk
@@ -210,23 +211,11 @@ theorem tendsto_lintegral_eNorm_mul_eNorm_integral_smul_comp_sub_smul_sub [Compl
     rw [two_mul, ENNReal.ofReal_add hC' hC']
     gcongr <;> rw [← ofReal_norm] <;> exact ENNReal.ofReal_le_ofReal (hf₀C _)
   -- Dominated convergence for `∫ |K(s)| Φ(-c s) ds`.
-  have hDCT : Tendsto (fun c : ℝ ↦ ∫⁻ s, ‖K s‖ₑ * Φ (-(c • s)) ∂μ) (𝓝[≠] 0) (𝓝 0) := by
-    have h := tendsto_lintegral_filter_of_dominated_convergence' (μ := μ) (l := 𝓝[≠] (0 : ℝ))
-      (F := fun c s ↦ ‖K s‖ₑ * Φ (-(c • s))) (f := fun _ ↦ 0) (fun s ↦ ‖K s‖ₑ * B)
-      (Eventually.of_forall fun c ↦ hK.aestronglyMeasurable.eNorm.mul
-        (hΦm.comp (measurable_const_smul c).neg).aemeasurable)
-      (Eventually.of_forall fun c ↦ Eventually.of_forall fun s ↦ by gcongr; exact hΦB _)
-      (by rw [lintegral_mul_const' _ _ hB]; exact ENNReal.mul_ne_top hK.2.ne hB)
-      (Eventually.of_forall fun s ↦ ?_)
-    · simpa using h
-    have hs : Tendsto (fun c : ℝ ↦ -(c • s)) (𝓝[≠] 0) (𝓝 0) := by
-      have : Tendsto (fun c : ℝ ↦ -(c • s)) (𝓝 0) (𝓝 (-((0 : ℝ) • s))) :=
-        ((continuous_id.smul continuous_const).neg).tendsto 0
-      simpa using this.mono_left nhdsWithin_le_nhds
-    simpa using ENNReal.Tendsto.const_mul (hΦ.comp hs) (Or.inr eNorm_ne_top)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hDCT
-    (Eventually.of_forall fun _ ↦ bot_le) ?_
-  filter_upwards [self_mem_nhdsWithin] with c (hc : c ≠ 0)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (tendsto_lintegral_eNorm_mul_comp_neg_smul hK hΦ hΦm hB hΦB) (fun _ ↦ bot_le) fun c ↦ ?_
+  -- At `c = 0` the average is `(∫ K) • f x = f x`, so the integrand vanishes.
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp [integral_smul_const, hK1]
   -- For fixed `x`, the average of `f` equals that of `f₀`, since `s ↦ x - c s` preserves null sets.
   have hqmp : ∀ x, QuasiMeasurePreserving (fun s : E ↦ x - c • s) μ μ := fun x ↦ by
     have h := (measurePreserving_add_left μ x).quasiMeasurePreserving.comp
