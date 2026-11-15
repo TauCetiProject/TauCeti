@@ -32,6 +32,8 @@ Lie-group exponential.
 * `lieMap`: the Lie-algebra homomorphism induced by a smooth monoid morphism.
 * `ContMDiffMonoidMorphism.groupLieAlgebraMap_lie`: the differential at the identity of a smooth
   homomorphism preserves the Lie bracket.
+* `ContMDiffMonoidMorphism.mfderiv_mulInvariantVectorField_lieMap`: the differential transports
+  invariant fields through the Lie map.
 * `leftInvariantDerivationLinearIsometryEquivModelVectorSpace_lieMap`: the differential formula
   in the model vector space.
 * `lieMap_id`, `lieMap_comp`: the identity and composition laws.
@@ -72,31 +74,6 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 
 variable [LieGroup I ∞ G] [LieGroup I' ∞ G']
 
-private theorem mfderiv_monoidHom_mulInvariantVectorField
-    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (g : G)
-    (X : GroupLieAlgebra I G) :
-    mfderiv I I' φ g (mulInvariantVectorField X g) =
-      mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X) (φ g) := by
-  simp only [mulInvariantVectorField]
-  have hfun : (φ : G → G') ∘ (fun y : G ↦ g * y) =
-      (fun z : G' ↦ φ g * z) ∘ φ := by
-    funext y
-    simp
-  have h := congrArg (fun L : E →L[ℝ] E' ↦ L X)
-    (mfderiv_congr (I := I) (I' := I') (x := (1 : G)) hfun)
-  have hleft := mfderiv_comp (I := I) (I' := I) (I'' := I') (x := (1 : G))
-    (g := (φ : G → G')) (f := fun y : G ↦ g * y)
-    (φ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt
-    (mdifferentiableAt_mul_left (a := g))
-  have hright := mfderiv_comp (I := I) (I' := I') (I'' := I') (x := (1 : G))
-    (g := fun z : G' ↦ φ g * z) (f := (φ : G → G'))
-    (mdifferentiableAt_mul_left (a := φ g))
-    (φ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt
-  rw [hleft, hright] at h
-  rw [mul_one, map_one] at h
-  rw [φ.toMonoidHom.groupLieAlgebraMap_apply I X]
-  exact h
-
 /-- The differential at the identity of a smooth homomorphism preserves the Lie bracket of the
 tangent Lie algebras. -/
 theorem ContMDiffMonoidMorphism.groupLieAlgebraMap_lie
@@ -110,8 +87,10 @@ theorem ContMDiffMonoidMorphism.groupLieAlgebraMap_lie
     (mdifferentiableAt_mulInvariantVectorField X) (mdifferentiableAt_mulInvariantVectorField Y)
     (mdifferentiableAt_mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X))
     (mdifferentiableAt_mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y))
-    (Filter.Eventually.of_forall fun g => mfderiv_monoidHom_mulInvariantVectorField φ g X)
-    (Filter.Eventually.of_forall fun g => mfderiv_monoidHom_mulInvariantVectorField φ g Y)
+    (Filter.Eventually.of_forall fun g => φ.toMonoidHom.mfderiv_mulInvariantVectorField
+      (φ.contMDiff_toFun.mdifferentiable (by simp)) g X)
+    (Filter.Eventually.of_forall fun g => φ.toMonoidHom.mfderiv_mulInvariantVectorField
+      (φ.contMDiff_toFun.mdifferentiable (by simp)) g Y)
   rw [φ.toMonoidHom.groupLieAlgebraMap_apply I, GroupLieAlgebra.bracket_def X Y,
     GroupLieAlgebra.bracket_def]
   rw [map_one] at h
@@ -153,6 +132,28 @@ theorem leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap
   change e' (e'.symm (φ.toMonoidHom.groupLieAlgebraMap I I' (e D))) = _
   rw [e'.apply_symm_apply]
   exact φ.toMonoidHom.groupLieAlgebraMap_apply I (e D)
+
+/-- A smooth homomorphism transports the invariant vector field of a derivation to the
+invariant field of its Lie-map image. -/
+theorem ContMDiffMonoidMorphism.mfderiv_mulInvariantVectorField_lieMap
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (g : G)
+    (D : LeftInvariantDerivation I G) :
+    mfderiv I I' φ g
+        (mulInvariantVectorField
+          (leftInvariantDerivationLieEquivGroupLieAlgebra
+            (I := I) (G := G) BoundarylessManifold.isInteriorPoint D) g) =
+      mulInvariantVectorField
+        (leftInvariantDerivationLieEquivGroupLieAlgebra
+          (I := I') (G := G') BoundarylessManifold.isInteriorPoint (lieMap φ D)) (φ g) := by
+  rw [leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap]
+  have hcoe : (φ.toMonoidHom : G → G') = φ := rfl
+  have h :=
+    φ.toMonoidHom.mfderiv_mulInvariantVectorField (φ.contMDiff_toFun.mdifferentiable (by simp)) g
+      (leftInvariantDerivationLieEquivGroupLieAlgebra
+        (I := I) (G := G) BoundarylessManifold.isInteriorPoint D)
+  rw [MonoidHom.groupLieAlgebraMap_apply, hcoe] at h
+  exact h
 
 /-- In model-vector-space coordinates, the Lie map is the differential at the identity. -/
 @[simp high]
@@ -250,7 +251,8 @@ private theorem monoidHom_mulInvariantExp
       (W := mulInvariantVectorField (I := I') (G := G') Y)
       (γ := γ) (s := Set.univ)
       (fun t _ => φ.contMDiff_toFun.mdifferentiable (by simp) (γ t))
-      (fun t _ => mfderiv_monoidHom_mulInvariantVectorField (I := I) (I' := I') φ (γ t) X)
+      (fun t _ => φ.toMonoidHom.mfderiv_mulInvariantVectorField
+        (φ.contMDiff_toFun.mdifferentiable (by simp)) (γ t) X)
       ((isMIntegralCurve_mulInvariantIntegralCurve
         (I := I) (G := G) X 1).isMIntegralCurveOn Set.univ)
   have hzero : (φ ∘ γ) 0 = (1 : G') := by simp [γ]

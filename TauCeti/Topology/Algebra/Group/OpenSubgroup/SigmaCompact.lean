@@ -36,10 +36,14 @@ allows two such subgroup choices to be compared inside their join.
 * `IsSigmaCompact.exists_openSubgroup_le` and `OpenSubgroup.exists_isSigmaCompact_le`: a σ-compact
   set and countably many σ-compact open subgroups of a locally compact group lie in a single
   σ-compact open subgroup.
+* `IsTopologicalGroup.sigmaCompactSpace_of_preconnected`: a preconnected locally compact group
+  is σ-compact.
 
 ## References
 
 * E. Hewitt, K. A. Ross, *Abstract Harmonic Analysis I*, 2nd ed., Springer (1979), Theorem 5.7.
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013),
+  Proposition 7.14, pp.156–157.
 -/
 
 public section
@@ -93,3 +97,12 @@ theorem OpenSubgroup.exists_isSigmaCompact_le [WeaklyLocallyCompactSpace G] {ι 
     ∃ U : OpenSubgroup G, (∀ i, H i ≤ U) ∧ IsSigmaCompact (U : Set G) := by
   obtain ⟨U, -, hHU, hU⟩ := isSigmaCompact_empty.exists_openSubgroup_le hH
   exact ⟨U, hHU, hU⟩
+
+/-- A preconnected locally compact topological group is σ-compact. -/
+@[to_additive /-- A preconnected locally compact topological additive group is σ-compact. -/]
+theorem IsTopologicalGroup.sigmaCompactSpace_of_preconnected
+    [WeaklyLocallyCompactSpace G] [PreconnectedSpace G] : SigmaCompactSpace G := by
+  obtain ⟨U, _, hU⟩ := (isSigmaCompact_empty (X := G)).exists_openSubgroup
+  have hfull : (U : Set G) = univ := U.isClopen.eq_univ ⟨1, U.one_mem⟩
+  rw [hfull] at hU
+  exact isSigmaCompact_univ_iff.mp hU
