@@ -141,12 +141,13 @@ theorem measureReal_norm_integral_comp_sqrt_spectralMeasure_sampleCovariance_sub
         ∂((X ω).sampleCovariance.spectralMeasure
           (Matrix.isHermitian_sampleCovariance _) : Measure ℝ) -
       ∫ x, f (Real.sqrt x)
-        ∂((Matrix.sampleCovariance (fun i j ↦ if ‖X ω i j‖ ≤ R then X ω i j else 0)).spectralMeasure
+        ∂((Matrix.of fun i j ↦
+            if ‖X ω i j‖ ≤ R then X ω i j else 0).sampleCovariance.spectralMeasure
           (Matrix.isHermitian_sampleCovariance _) : Measure ℝ)‖}
       ≤ (K : ℝ) ^ 2 * (∫ ω, ‖Z ω - (if ‖Z ω‖ ≤ R then Z ω else 0)‖ ^ 2 ∂Q) / ε ^ 2 := by
   apply
     measureReal_norm_integral_comp_sqrt_spectralMeasure_sampleCovariance_sub_ge_le_of_identDistrib
-    X (fun ω i j ↦ if ‖X ω i j‖ ≤ R then X ω i j else 0)
+    X (fun ω ↦ Matrix.of fun i j ↦ if ‖X ω i j‖ ≤ R then X ω i j else 0)
     (hZ.sub (hZ.ite_norm_le R)) _ hf hε
   intro i j
   exact (hid i j).comp (measurable_id.sub
@@ -168,8 +169,8 @@ theorem tendsto_iSup_measureReal_norm_integral_comp_sqrt_spectralMeasure_sampleC
         ∂((X i ω).sampleCovariance.spectralMeasure
           (Matrix.isHermitian_sampleCovariance _) : Measure ℝ) -
       ∫ x, f (Real.sqrt x)
-        ∂((Matrix.sampleCovariance
-          (fun j k ↦ if ‖X i ω j k‖ ≤ R then X i ω j k else 0)).spectralMeasure
+        ∂((Matrix.of fun j k ↦
+            if ‖X i ω j k‖ ≤ R then X i ω j k else 0).sampleCovariance.spectralMeasure
           (Matrix.isHermitian_sampleCovariance _) : Measure ℝ)‖}) atTop (𝓝 0) := by
   have htail : Tendsto (fun R : ℝ ↦
       ∫ ω, ‖Z ω - (if ‖Z ω‖ ≤ R then Z ω else 0)‖ ^ 2 ∂Q) atTop (𝓝 0) := by

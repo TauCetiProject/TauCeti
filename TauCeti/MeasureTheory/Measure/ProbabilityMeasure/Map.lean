@@ -34,8 +34,9 @@ to vary together with the parameter of a jointly continuous map. It combines Mat
 `ProbabilityMeasure.continuous_prod` and `continuous_diracProba` by representing the
 parameter as a Dirac factor.
 
-On the nonnegative real half-line, square-root pushforwards preserve and reflect weak
-convergence (`MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_map_sqrt`).
+On the nonnegative real half-line, square-root and squaring pushforwards preserve and reflect
+weak convergence (`MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_map_sqrt` and
+`MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_map_sq`).
 -/
 
 public section
@@ -104,6 +105,13 @@ end MeasureTheory.ProbabilityMeasure
 
 namespace MeasureTheory.ProbabilityMeasure
 
+/-- Square roots undo the squaring pushforward of a nonnegative real probability law. -/
+@[simp]
+theorem map_sqrt_map_sq (μ : ProbabilityMeasure ℝ) (hμ : ∀ᵐ x ∂(μ : Measure ℝ), 0 ≤ x) :
+    (μ.map (fun x ↦ x ^ 2)).map Real.sqrt = μ := by
+  apply toMeasure_injective
+  simp only [toMeasure_map, Measure.map_sqrt_map_sq _ hμ]
+
 /-- Squaring undoes the square-root pushforward of a nonnegative real probability law. -/
 @[simp]
 theorem map_sq_map_sqrt (μ : ProbabilityMeasure ℝ) (hμ : ∀ᵐ x ∂(μ : Measure ℝ), 0 ≤ x) :
@@ -128,5 +136,24 @@ theorem tendsto_iff_tendsto_map_sqrt
     apply hs.congr'
     filter_upwards [hμs] with i hi
     exact map_sq_map_sqrt (μs i) hi
+
+/-- Weak convergence of eventually nonnegative real probability laws is equivalent to
+weak convergence of their squaring pushforwards, for any filter. -/
+theorem tendsto_iff_tendsto_map_sq
+    {ι : Type*} {l : Filter ι} {μs : ι → ProbabilityMeasure ℝ} {μ : ProbabilityMeasure ℝ}
+    (hμs : ∀ᶠ i in l, ∀ᵐ x ∂(μs i : Measure ℝ), 0 ≤ x)
+    (hμ : ∀ᵐ x ∂(μ : Measure ℝ), 0 ≤ x) :
+    Filter.Tendsto μs l (nhds μ) ↔
+      Filter.Tendsto (fun i ↦ (μs i).map (fun x ↦ x ^ 2)) l
+        (nhds (μ.map (fun x ↦ x ^ 2))) := by
+  constructor
+  · exact fun h ↦ (continuous_map (by fun_prop)).tendsto μ |>.comp h
+  · intro h
+    have hs := (continuous_map Real.continuous_sqrt)
+      |>.tendsto (μ.map (fun x ↦ x ^ 2)) |>.comp h
+    rw [map_sqrt_map_sq μ hμ] at hs
+    apply hs.congr'
+    filter_upwards [hμs] with i hi
+    exact map_sqrt_map_sq (μs i) hi
 
 end MeasureTheory.ProbabilityMeasure

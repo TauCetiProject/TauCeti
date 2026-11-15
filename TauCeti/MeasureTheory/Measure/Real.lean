@@ -156,6 +156,7 @@ theorem eq_of_map_sq_eq_of_map_neg_eq_self (μ ν : Measure ℝ)
 
 /-- **Square roots undo squaring** for a measure carried by the nonnegative half-line: the
 pushforward of `μ` under `x ↦ x ^ 2` returns to `μ` under `Real.sqrt`. -/
+@[simp]
 theorem map_sqrt_map_sq (μ : Measure ℝ) (hμ : ∀ᵐ t ∂μ, 0 ≤ t) :
     (μ.map fun t : ℝ ↦ t ^ 2).map Real.sqrt = μ := by
   rw [Measure.map_map (by fun_prop) (by fun_prop)]
@@ -164,6 +165,7 @@ theorem map_sqrt_map_sq (μ : Measure ℝ) (hμ : ∀ᵐ t ∂μ, 0 ≤ t) :
   simpa using Real.sqrt_sq ht
 
 /-- **Squaring undoes square roots** for a measure carried by the nonnegative half-line. -/
+@[simp]
 theorem map_sq_map_sqrt (μ : Measure ℝ) (hμ : ∀ᵐ t ∂μ, 0 ≤ t) :
     (μ.map Real.sqrt).map (fun t : ℝ ↦ t ^ 2) = μ := by
   rw [Measure.map_map (by fun_prop) (by fun_prop)]

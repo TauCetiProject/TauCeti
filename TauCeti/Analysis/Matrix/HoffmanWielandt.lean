@@ -77,40 +77,9 @@ theorem sum_sq_singularValues_toEuclideanLin_sub_le_frobenius_norm_sub_sq
       (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) (Matrix.toEuclideanLin (A - B)) := by
     rw [← LinearMap.frobenius_norm_toMatrix _ e f, Matrix.toEuclideanLin_eq_toLin_orthonormal,
       LinearMap.toMatrix_toLin]
-  have h := LinearMap.sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_min
-    (Matrix.toEuclideanLin A) (Matrix.toEuclideanLin B)
-  have hn : finrank 𝕜 (EuclideanSpace 𝕜 n) = Fintype.card n := finrank_euclideanSpace
-  have hm : finrank 𝕜 (EuclideanSpace 𝕜 m) = Fintype.card m := finrank_euclideanSpace
-  have hF' :
-      TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜
-          (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m)
-          (Matrix.toEuclideanLin A - Matrix.toEuclideanLin B) = ‖A - B‖ := by
-    rw [← map_sub, hF]
-  rw [hn, hm] at h
-  simp only [hF'] at h
-  rw [Fin.sum_univ_eq_sum_range (fun i ↦
-    ((toEuclideanLin A).singularValues i - (toEuclideanLin B).singularValues i) ^ 2)] at h ⊢
-  let d := min (Fintype.card n) (Fintype.card m)
-  have hzero (T : Matrix m n 𝕜) (i : ℕ) (hi : d ≤ i) :
-      (toEuclideanLin T).singularValues i = 0 := by
-    rcases le_total (Fintype.card n) (Fintype.card m) with hn | hm
-    · exact (toEuclideanLin T).singularValues_of_finrank_le
-        (by simpa [d, min_eq_left hn] using hi)
-    · exact (toEuclideanLin T).singularValues_of_finrank_le_right
-        (by simpa [d, min_eq_right hm] using hi)
-  calc
-    _ ≤ ∑ i ∈ Finset.range (max k d),
-        ((toEuclideanLin A).singularValues i - (toEuclideanLin B).singularValues i) ^ 2 :=
-      Finset.sum_le_sum_of_subset_of_nonneg (Finset.range_mono (le_max_left _ _))
-        (fun _ _ _ ↦ sq_nonneg _)
-    _ = ∑ i ∈ Finset.range d,
-        ((toEuclideanLin A).singularValues i - (toEuclideanLin B).singularValues i) ^ 2 := by
-      symm
-      apply Finset.sum_subset (Finset.range_mono (le_max_right _ _))
-      intro i _ hi
-      have hi' : d ≤ i := by simpa only [Finset.mem_range, not_lt] using hi
-      simp [hzero A i hi', hzero B i hi']
-    _ ≤ _ := h
+  simpa only [← map_sub, ← hF] using
+    LinearMap.sum_sq_singularValues_sub_le_sq_frobenius_apply_sub
+      (Matrix.toEuclideanLin A) (Matrix.toEuclideanLin B) (k := k)
 
 /-- **The Hoffman–Wielandt inequality** for Hermitian matrices: the squared Euclidean distance
 between the decreasingly sorted spectra is at most the squared Frobenius norm `‖A - B‖_F²`. -/
