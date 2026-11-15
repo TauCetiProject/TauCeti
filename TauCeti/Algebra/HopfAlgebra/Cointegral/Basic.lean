@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic
 public import TauCeti.Algebra.HopfAlgebra.Antipode
+public import TauCeti.Algebra.HopfAlgebra.Integral
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -22,9 +23,10 @@ The defining equations use contraction of the coproduct, not a chosen representa
 We also give their Sweedler-sum forms for any `Coalgebra.Repr`. On a projective module,
 the equations are equivalent to the right and left integral equations for convolution.
 For finite projective bialgebras the scalar in these equations is precisely the counit
-of `TauCeti.ConvolutionDual`. For a Hopf algebra, precomposition with the antipode sends
-right cointegrals to left cointegrals and vice versa; no finiteness or bijectivity of the
-antipode is needed.
+of `TauCeti.ConvolutionDual`. Over a bialgebra, right and left cointegrals are exactly the
+right and left invariant integrals of `TauCeti.Algebra.HopfAlgebra.Integral`. For a Hopf
+algebra, precomposition with the antipode sends right cointegrals to left cointegrals and vice
+versa; no finiteness or bijectivity of the antipode is needed.
 
 ## References
 
@@ -185,6 +187,24 @@ theorem isLeftCointegral_iff_convMul [Module.Projective k H] (φ : Module.Dual k
   simpa [mul_comm] using heq
 
 end Coalgebra
+
+section Bialgebra
+
+variable {k H : Type*} [CommSemiring k] [Semiring H] [Bialgebra k H]
+
+/-- Right cointegrals are exactly the right invariant integrals: both predicates state
+`Σ φ(h₁) h₂ = φ(h) 1`. -/
+theorem isRightCointegral_iff_isRightInvariantIntegral {φ : Module.Dual k H} :
+    IsRightCointegral φ ↔ φ.IsRightInvariantIntegral := by
+  rw [isRightCointegral_def, LinearMap.isRightInvariantIntegral_iff]
+
+/-- Left cointegrals are exactly the left invariant integrals: both predicates state
+`Σ φ(h₂) h₁ = φ(h) 1`. -/
+theorem isLeftCointegral_iff_isLeftInvariantIntegral {φ : Module.Dual k H} :
+    IsLeftCointegral φ ↔ φ.IsLeftInvariantIntegral := by
+  rw [isLeftCointegral_def, LinearMap.isLeftInvariantIntegral_iff]
+
+end Bialgebra
 
 section HopfAlgebra
 

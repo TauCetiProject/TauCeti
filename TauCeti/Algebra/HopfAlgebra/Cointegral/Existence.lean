@@ -71,24 +71,6 @@ theorem dualMulLeftAct_tmul_apply (φ : Module.Dual R H) (h x : H) :
 
 end Algebra
 
-section Bialgebra
-
-variable [Bialgebra R H]
-
-/-- Right cointegrals are exactly the right invariant integrals: both predicates state
-`Σ φ(h₁) h₂ = φ(h) 1`. -/
-theorem isRightCointegral_iff_isRightInvariantIntegral {φ : Module.Dual R H} :
-    IsRightCointegral φ ↔ φ.IsRightInvariantIntegral := by
-  rw [isRightCointegral_def, LinearMap.isRightInvariantIntegral_iff]
-
-/-- Left cointegrals are exactly the left invariant integrals: both predicates state
-`Σ φ(h₂) h₁ = φ(h) 1`. -/
-theorem isLeftCointegral_iff_isLeftInvariantIntegral {φ : Module.Dual R H} :
-    IsLeftCointegral φ ↔ φ.IsLeftInvariantIntegral := by
-  rw [isLeftCointegral_def, LinearMap.isLeftInvariantIntegral_iff]
-
-end Bialgebra
-
 variable [HopfAlgebra R H]
 
 /-- The antipode applied to the right contraction of the coproduct with `φ`,
