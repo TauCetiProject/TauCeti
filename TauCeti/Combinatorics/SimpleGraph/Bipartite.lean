@@ -13,7 +13,10 @@ public import Mathlib.Logic.Equiv.Bool
 
 Restricting a graph to pairs between two sets is intersection with the corresponding
 restriction of the complete graph (`SimpleGraph.between_eq_inf_top_between`).
-Complete-graph cuts respect symmetric difference (`SimpleGraph.top_between_symmDiff`).
+Complete-graph cuts respect symmetric difference (`SimpleGraph.top_between_symmDiff`). A
+bipartition `G.IsBipartiteWith s t` extends to a covering bipartition on the whole vertex type by
+adjoining the remaining isolated vertices to either side (`SimpleGraph.IsBipartiteWith.compl_right`
+and `SimpleGraph.IsBipartiteWith.compl_left`).
 
 A walk in a graph coloured by `Bool` has even length exactly when its endpoints have the same
 colour (`SimpleGraph.Coloring.even_length_iff_congr`). On a preconnected graph every two vertices
@@ -26,6 +29,8 @@ independent of the colouring up to exchanging the two classes.
 
 ## Main results
 
+* `SimpleGraph.IsBipartiteWith.compl_right`, `SimpleGraph.IsBipartiteWith.compl_left`: extending a
+  bipartition to cover the whole vertex type.
 * `SimpleGraph.Coloring.eq_or_eq_recolorOfEquiv_boolNot`: on a preconnected graph, two
   `Bool`-colourings agree or differ by exchanging the colours.
 -/
@@ -54,6 +59,21 @@ theorem top_between_symmDiff (S T : Set V) :
   simp only [between_adj, top_adj, Set.mem_compl_iff, symmDiff_def, Set.mem_union,
     Set.mem_sdiff, sup_adj, sdiff_adj]
   tauto
+
+/-- Adjoining all vertices outside `s ∪ t` to the right side yields a bipartition with sides `s`
+and `sᶜ` covering the whole vertex type. -/
+theorem IsBipartiteWith.compl_right {G : SimpleGraph V} {s t : Set V}
+    (h : G.IsBipartiteWith s t) : G.IsBipartiteWith s sᶜ where
+  disjoint := disjoint_compl_right
+  mem_of_adj _ _ hadj := (h.mem_of_adj hadj).imp
+    (And.imp_right fun hx ↦ h.disjoint.subset_compl_left hx)
+    (And.imp_left fun hx ↦ h.disjoint.subset_compl_left hx)
+
+/-- Adjoining all vertices outside `s ∪ t` to the left side yields a bipartition with sides `tᶜ`
+and `t` covering the whole vertex type. -/
+theorem IsBipartiteWith.compl_left {G : SimpleGraph V} {s t : Set V}
+    (h : G.IsBipartiteWith s t) : G.IsBipartiteWith tᶜ t :=
+  h.symm.compl_right.symm
 
 end SimpleGraph
 
