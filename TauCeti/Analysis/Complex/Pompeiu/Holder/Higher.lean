@@ -235,16 +235,11 @@ private theorem support_source
     Function.support (f : CkHolderSpace k α ℂ F) ⊆ closedBall c r :=
   support_subset_of_mem_supportedCkHolderSubmodule f.property
 
-omit [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F] in
-private theorem hasCompactSupport_source
-    (f : supportedCkHolderSubmodule (E := ℂ) (F := F) k α (closedBall c r)) :
-    HasCompactSupport (f : CkHolderSpace k α ℂ F) :=
-  HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall c r) (support_source f)
-
 private theorem contDiff_cauchyCk (hα : 0 < α) (hα1 : α < 1)
     (f : supportedCkHolderSubmodule (E := ℂ) (F := F) k α (closedBall c r)) :
     ContDiff ℝ (k + 1 : ℕ) (cauchyCk f) :=
-  (hasCompactSupport_source f).contDiff_cauchyTransform_of_holderWith_iteratedFDeriv hα hα1
+  (hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r)
+    f.2).contDiff_cauchyTransform_of_holderWith_iteratedFDeriv hα hα1
     (f : CkHolderSpace k α ℂ F).contDiff
     (f : CkHolderSpace k α ℂ F).memHolder_iteratedFDeriv.holderWith
 
@@ -323,8 +318,9 @@ private def cauchyFieldLinearMap (hα : 0 < α) (hα1 : α < 1) (j : ℕ) (hj : 
     have hfg : cauchyCk (f + g) = cauchyCk f + cauchyCk g := by
       simp only [cauchyCk, Submodule.coe_add, CkHolderSpace.coe_add]
       exact cauchyTransform_add (f : CkHolderSpace k α ℂ F).contDiff.continuous
-        (hasCompactSupport_source f) (g : CkHolderSpace k α ℂ F).contDiff.continuous
-        (hasCompactSupport_source g)
+        (hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r) f.2)
+        (g : CkHolderSpace k α ℂ F).contDiff.continuous
+        (hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r) g.2)
     simp only [cauchyField_apply, FunLike.coe_add, Pi.add_apply, hfg]
     exact iteratedFDeriv_add_apply ((contDiff_cauchyCk hα hα1 f).contDiffAt.of_le hj')
       ((contDiff_cauchyCk hα hα1 g).contDiffAt.of_le hj')

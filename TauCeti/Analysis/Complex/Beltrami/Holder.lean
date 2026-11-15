@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.Pompeiu.Holder.Operator
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.Analysis.Holder.Bilinear
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
-import Mathlib.Topology.MetricSpace.Contracting
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -94,29 +93,6 @@ private theorem norm_beltramiOperator_le (hα : 0 < α) (hα1 : α < 1) (hr : 0 
     gcongr
     exact ContinuousLinearMap.norm_compHolder₂ExtendByZero_le _ _
 
-/-- The source of the Beltrami solution: the fixed point of the contraction `k ↦ μ + μ ∂ T k`
-when its linear part has norm at most `1 / 4`, with the bound `‖k‖ ≤ 2 ‖μ‖`. -/
-private theorem exists_add_beltramiOperator_eq (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
-    (μ : supportedHolderSubmodule (Y := ℂ) α (closedBall c r))
-    (hA : ‖beltramiOperator hα hα1 hr μ‖ ≤ 4⁻¹) :
-    ∃ k, μ + beltramiOperator hα hα1 hr μ k = k ∧ ‖k‖ ≤ 2 * ‖μ‖ := by
-  set A := beltramiOperator hα hα1 hr μ
-  have hK : ‖A‖₊ < 1 := by
-    rw [← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one]
-    linarith
-  have hΦ : ContractingWith ‖A‖₊ fun k ↦ μ + A k :=
-    ⟨hK, LipschitzWith.of_dist_le_mul fun k₁ k₂ ↦ by
-      rw [dist_eq_norm, dist_eq_norm, add_sub_add_left_eq_sub, ← map_sub, coe_nnNorm]
-      exact A.le_opNorm _⟩
-  set k := ContractingWith.fixedPoint _ hΦ
-  have hfix : μ + A k = k := ContractingWith.fixedPoint_isFixedPt hΦ
-  refine ⟨k, hfix, ?_⟩
-  have hk : ‖k‖ ≤ ‖μ‖ + 4⁻¹ * ‖k‖ := by
-    calc ‖k‖ = ‖μ + A k‖ := by rw [hfix]
-      _ ≤ ‖μ‖ + ‖A‖ * ‖k‖ := (norm_add_le _ _).trans (by gcongr; exact A.le_opNorm k)
-      _ ≤ ‖μ‖ + 4⁻¹ * ‖k‖ := by gcongr
-  linarith [norm_nonneg μ]
-
 /-- Regularity of `T h` for a source supported in the disc: it is `C¹` on `ball c (r + 1)` with
 `\bar∂ T h = h` there, and on the disc its real derivative is the bounded derivative operator
 applied to `h`. -/
@@ -191,8 +167,13 @@ theorem exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv (hα : 0 < α) (hα1 : �
     refine (norm_beltramiOperator_le hα hα1 hr μ').trans ?_
     rw [hμ']
     nlinarith [norm_nonneg μ, mul_nonneg hD (norm_nonneg μ)]
-  obtain ⟨h, hfix, hh⟩ := exists_add_beltramiOperator_eq hα hα1 hr μ' hA
-  rw [hμ'] at hh
+  obtain ⟨h, hfix, hh⟩ := ContinuousLinearMap.exists_add_apply_eq_of_norm_lt_one μ'
+    (hA.trans_lt (by norm_num))
+  replace hh : ‖h‖ ≤ 2 * ‖μ‖ := by
+    rw [← hμ']
+    refine hh.trans ?_
+    rw [div_le_iff₀ (by linarith)]
+    nlinarith [norm_nonneg μ']
   obtain ⟨hTC, hTbar, hDT⟩ := cauchy_regularity hα hα1 hr h
   set T : ℂ → ℂ := fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • (h : HolderSpace α ℂ ℂ) z
   have hsub : closedBall c r ⊆ ball c (r + 1) := closedBall_subset_ball (by linarith)
@@ -241,17 +222,8 @@ theorem exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv (hα : 0 < α) (hα1 : �
       push_cast
       linarith
   · -- `D ψ(z) = id + D T(z)` is a small perturbation of the identity, so it is invertible.
-    have hlt : ‖fderiv ℝ T z‖₊ < ‖((ContinuousLinearEquiv.refl ℝ ℂ).symm : ℂ →L[ℝ] ℂ)‖₊⁻¹ := by
-      rw [ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.coe_refl,
-        ContinuousLinearMap.nnNorm_id, inv_one, ← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one]
-      refine (hDT' z hz).trans_lt ?_
-      nlinarith [norm_nonneg μ, mul_nonneg hb (mul_nonneg hD (norm_nonneg μ))]
-    obtain ⟨L, hL⟩ := ContinuousLinearMap.isInvertible_of_norm_sub_lt
-      (ContinuousLinearEquiv.refl ℝ ℂ) (A := ContinuousLinearMap.id ℝ ℂ + fderiv ℝ T z)
-      (by rwa [ContinuousLinearEquiv.coe_refl, add_sub_cancel_left])
-    refine ⟨L, ?_⟩
-    rw [hL]
-    exact (contDiffAt_id.add (hTC.contDiffAt (isOpen_ball.mem_nhds (hsub hz)))).hasStrictFDerivAt
-      (hψ z (hsub hz)) one_ne_zero
+    exact ((hTC.contDiffAt (isOpen_ball.mem_nhds (hsub hz))).hasStrictFDerivAt_fderiv
+      one_ne_zero).exists_continuousLinearEquiv_id_add ((hDT' z hz).trans_lt (by
+        nlinarith [norm_nonneg μ, mul_nonneg hb (mul_nonneg hD (norm_nonneg μ))]))
 
 end TauCeti

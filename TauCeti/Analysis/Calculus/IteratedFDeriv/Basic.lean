@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Topology.MetricSpace.Holder
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Iterated derivatives of iterated derivatives
@@ -26,7 +27,11 @@ to a finite order have a common bound
 (`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`), and such a
 common bound is nonnegative and bounds the function itself
 (`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`). Adding a constant to a function does not
-change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`).
+change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`). The
+iterated derivatives of positive order of the identity are constant
+(`TauCeti.iteratedFDeriv_succ_id_eq`), so adding the identity to a function does not change the
+Hölder constants of its derivatives of positive order
+(`TauCeti.holderOnWith_iteratedFDeriv_succ_id_add`).
 -/
 
 public section
@@ -133,6 +138,29 @@ theorem iteratedFDeriv_succ_add_const (f : E → F) (c : F) (n : ℕ) :
     iteratedFDeriv 𝕜 (n + 1) (fun x ↦ f x + c) = iteratedFDeriv 𝕜 (n + 1) f := by
   funext x
   simp only [iteratedFDeriv_succ_eq_comp_right, fderiv_add_const]
+
+/-- The iterated derivatives of positive order of the identity are constant. -/
+theorem iteratedFDeriv_succ_id_eq (n : ℕ) (x y : E) :
+    iteratedFDeriv 𝕜 (n + 1) (id : E → E) x = iteratedFDeriv 𝕜 (n + 1) id y := by
+  rw [iteratedFDeriv_succ_eq_comp_right, iteratedFDeriv_succ_eq_comp_right, Function.comp_apply,
+    Function.comp_apply]
+  simp only [fderiv_id]
+  rcases n with _ | n
+  · simp only [iteratedFDeriv_zero_eq_comp, Function.comp_apply]
+  · rw [iteratedFDeriv_succ_const, Pi.zero_apply, Pi.zero_apply]
+
+/-- Adding the identity to a function that is `C^{n+1}` at every point of `s` does not change the
+Hölder constant on `s` of its derivative of order `n + 1`. -/
+theorem holderOnWith_iteratedFDeriv_succ_id_add {n : ℕ} {f : E → E} {C r : ℝ≥0} {s : Set E}
+    (hf : ∀ x ∈ s, ContDiffAt 𝕜 (n + 1 : ℕ) f x)
+    (hH : HolderOnWith C r (iteratedFDeriv 𝕜 (n + 1) f) s) :
+    HolderOnWith C r (iteratedFDeriv 𝕜 (n + 1) (fun y ↦ y + f y)) s := by
+  have hadd {x : E} (hx : x ∈ s) : iteratedFDeriv 𝕜 (n + 1) (fun y ↦ y + f y) x =
+      iteratedFDeriv 𝕜 (n + 1) id x + iteratedFDeriv 𝕜 (n + 1) f x :=
+    iteratedFDeriv_add_apply contDiffAt_id (hf x hx)
+  intro x hx y hy
+  rw [hadd hx, hadd hy, iteratedFDeriv_succ_id_eq n x y, edist_add_left]
+  exact hH x hx y hy
 
 /-- Bounded derivatives up to order `N` have a common bound. -/
 theorem exists_forall_norm_iteratedFDeriv_le_of_forall_exists {f : E → F} {N : ℕ}

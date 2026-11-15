@@ -37,6 +37,10 @@ curve through `1` with the constant `C`; the latter involves no inversion.
 * `ContinuousLinearMap.IsInvertible.of_mul_norm_sub_lt` and
   `ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt`: if `‖A⁻¹‖ ≤ M` and
   `M * ‖B - A‖ < 1`, then `B` is invertible with `‖B⁻¹‖ ≤ M / (1 - M * ‖B - A‖)`.
+* `ContinuousLinearMap.exists_add_apply_eq_of_norm_lt_one`: for `‖A‖ < 1`, the Neumann series
+  solves `v + A x = x` with `‖x‖ ≤ ‖v‖ / (1 - ‖A‖)`.
+* `HasStrictFDerivAt.exists_continuousLinearEquiv_id_add`: `y ↦ y + f y` has an invertible strict
+  derivative where `f` has a strict derivative of norm less than one.
 * `HasDerivAt.clm_inverse`: differentiates `(A t)⁻¹`.
 * `HasDerivAt.clm_inverse_apply`: differentiates `(A t)⁻¹ (w t)`.
 * `ContDiffWithinAt.clm_inverse`, `ContDiffAt.clm_inverse`, `ContDiffOn.clm_inverse`: the
@@ -177,6 +181,33 @@ theorem ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt [Com
       _ ≤ M * ‖A x‖ := by gcongr
   rw [div_mul_eq_mul_div, le_div_iff₀ hδ]
   nlinarith [mul_le_mul_of_nonneg_left hAx hM0]
+
+/-- **The Neumann series solves `v + A x = x`.** On a Banach space, if `‖A‖ < 1` then the
+equation `v + A x = x` has the solution `x = (1 - A)⁻¹ v`, and `‖x‖ ≤ ‖v‖ / (1 - ‖A‖)`. -/
+theorem ContinuousLinearMap.exists_add_apply_eq_of_norm_lt_one [CompleteSpace E] (v : E)
+    {A : E →L[𝕜] E} (hA : ‖A‖ < 1) : ∃ x, v + A x = x ∧ ‖x‖ ≤ ‖v‖ / (1 - ‖A‖) := by
+  set u := Units.oneSub A hA
+  set x := (↑u⁻¹ : E →L[𝕜] E) v
+  have hx : x - A x = v := by
+    have h : ((1 - A) * (↑u⁻¹ : E →L[𝕜] E)) v = v := congr($(u.mul_inv) v)
+    rwa [mul_apply_eq_comp, sub_apply, one_apply_eq_self] at h
+  refine ⟨x, by rw [← hx, sub_add_cancel], ?_⟩
+  rw [le_div_iff₀ (sub_pos.2 hA), ← hx]
+  calc ‖x‖ * (1 - ‖A‖) = ‖x‖ - ‖A‖ * ‖x‖ := by ring
+    _ ≤ ‖x‖ - ‖A x‖ := by gcongr; exact le_opNorm A x
+    _ ≤ ‖x - A x‖ := norm_sub_norm_le _ _
+
+/-- A strict derivative of norm less than one is a small perturbation of the identity: if `f` has
+strict derivative `f'` at `x` with `‖f'‖ < 1`, then `y ↦ y + f y` has an invertible strict
+derivative at `x`, namely `1 + f'`. -/
+theorem HasStrictFDerivAt.exists_continuousLinearEquiv_id_add [CompleteSpace E] {f : E → E}
+    {f' : E →L[𝕜] E} {x : E} (hf : HasStrictFDerivAt f f' x) (hf' : ‖f'‖ < 1) :
+    ∃ L : E ≃L[𝕜] E, HasStrictFDerivAt (fun y ↦ y + f y) (L : E →L[𝕜] E) x := by
+  set L := ContinuousLinearEquiv.unitsEquiv 𝕜 E (Units.oneSub (-f') (by rwa [norm_neg]))
+  have hL : (L : E →L[𝕜] E) = ContinuousLinearMap.id 𝕜 E + f' := by
+    ext v
+    simp [L, ContinuousLinearEquiv.unitsEquiv_apply]
+  exact ⟨L, hL ▸ (hasStrictFDerivAt_id x).add hf⟩
 
 end Perturbation
 

@@ -339,6 +339,26 @@ theorem wirtingerDeriv_id : wirtingerDeriv (id : V → V) x = ContinuousLinearMa
 theorem conjWirtingerDeriv_id : conjWirtingerDeriv (id : V → V) x = 0 :=
   (differentiableAt_id (𝕜 := ℂ)).conjWirtingerDeriv_eq_zero
 
+/-- Adding the identity does not change the conjugate Wirtinger derivative:
+`\bar∂(z + f) = \bar∂f`. Where `f` is not real-differentiable, neither is `z + f`, and both
+sides vanish. -/
+theorem conjWirtingerDeriv_id_add (f : V → V) (y : V) :
+    conjWirtingerDeriv (fun z ↦ z + f z) y = conjWirtingerDeriv f y := by
+  by_cases hf : DifferentiableAt ℝ f y
+  · exact (conjWirtingerDeriv_add differentiableAt_id hf).trans
+      (by rw [conjWirtingerDeriv_id, zero_add])
+  · have hf' : ¬DifferentiableAt ℝ (fun z ↦ z + f z) y := fun h ↦
+      hf (by simpa using h.sub differentiableAt_fun_id)
+    ext v
+    simp only [conjWirtingerDeriv_apply, fderiv_zero_of_not_differentiableAt hf,
+      fderiv_zero_of_not_differentiableAt hf']
+
+/-- Adding the identity adds the identity to the Wirtinger derivative of a real-differentiable
+function: `∂(z + f) = 1 + ∂f`. -/
+theorem wirtingerDeriv_id_add {f : V → V} {y : V} (hf : DifferentiableAt ℝ f y) :
+    wirtingerDeriv (fun z ↦ z + f z) y = ContinuousLinearMap.id ℂ V + wirtingerDeriv f y :=
+  (wirtingerDeriv_add differentiableAt_id hf).trans (by rw [wirtingerDeriv_id])
+
 /-- For a real function, the conjugate Wirtinger derivative is the complex conjugate of the
 Wirtinger derivative. -/
 theorem conjWirtingerDeriv_ofReal_comp_apply (f : V → ℝ) (x v : V) :

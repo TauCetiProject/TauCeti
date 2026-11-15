@@ -60,13 +60,6 @@ section Operator
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedSpace ℝ F]
   [IsScalarTower ℝ ℂ F] {k : ℕ} {α : ℝ≥0} {c : ℂ} {r R : ℝ}
 
-omit [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] in
-private theorem hasCompactSupport_source
-    (f : supportedCkHolderSubmodule (E := ℂ) (F := F) k α (closedBall c r)) :
-    HasCompactSupport (f : CkHolderSpace k α ℂ F) :=
-  HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall c r)
-    (support_subset_of_mem_supportedCkHolderSubmodule f.property)
-
 /-- The Beurling transform `B f = ∂ (T f)` of compactly supported `C^{k,α}` data is globally
 `C^k`, for `0 < α < 1`. -/
 theorem _root_.HasCompactSupport.contDiff_wirtingerDeriv_cauchyTransform_of_holderWith
@@ -160,8 +153,9 @@ theorem beurlingCkCLM_apply_fst (k : ℕ) (hα : 0 < α) (hα1 : α < 1) (hr : 0
     (beurlingCkCLM k hα hα1 hr hR f).1 i x =
       iteratedFDeriv ℝ i
         (fun w ↦ wirtingerDeriv (cauchyTransform (f : CkHolderSpace k α ℂ F)) w 1) x := by
-  have hT := (hasCompactSupport_source f).contDiff_cauchyTransform_of_holderWith_iteratedFDeriv
-    hα hα1 (f : CkHolderSpace k α ℂ F).contDiff
+  have hT := (hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r)
+    f.2).contDiff_cauchyTransform_of_holderWith_iteratedFDeriv hα hα1
+    (f : CkHolderSpace k α ℂ F).contDiff
     (f : CkHolderSpace k α ℂ F).memHolder_iteratedFDeriv.holderWith
   have hi : (i : ℕ) + 1 ≤ k + 1 := by omega
   rw [iteratedFDeriv_wirtingerDeriv_one (hT.of_le (by exact_mod_cast hi)), beurlingCkCLM,
@@ -178,8 +172,9 @@ theorem beurlingCkCLM_apply_snd (k : ℕ) (hα : 0 < α) (hα1 : α < 1) (hr : 0
     (beurlingCkCLM k hα hα1 hr hR f).2 x =
       iteratedFDeriv ℝ k
         (fun w ↦ wirtingerDeriv (cauchyTransform (f : CkHolderSpace k α ℂ F)) w 1) x := by
-  have hT := (hasCompactSupport_source f).contDiff_cauchyTransform_of_holderWith_iteratedFDeriv
-    hα hα1 (f : CkHolderSpace k α ℂ F).contDiff
+  have hT := (hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r)
+    f.2).contDiff_cauchyTransform_of_holderWith_iteratedFDeriv hα hα1
+    (f : CkHolderSpace k α ℂ F).contDiff
     (f : CkHolderSpace k α ℂ F).memHolder_iteratedFDeriv.holderWith
   rw [iteratedFDeriv_wirtingerDeriv_one hT, beurlingCkCLM, ContinuousLinearMap.comp_apply,
     beurlingPost_apply_snd]
@@ -231,7 +226,7 @@ theorem beurlingCkCLM_apply_fst_zero_ae_eq_beurlingLp (hα : 0 < α) (hα1 : α 
         beurlingLp p hp hp_top (hfp.toLp _) x := by
   -- The real action is uniquely determined by the compatible complex action.
   cases NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := G)
-  have hc := hasCompactSupport_source f
+  have hc := hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r) f.2
   have h := hc.wirtingerDeriv_cauchyTransform_ae_eq_beurlingLp hf hp hp_top
   have hL : (hf.continuous.memLp_of_hasCompactSupport (p := p) (μ := volume) hc).toLp _ =
       hfp.toLp _ := rfl

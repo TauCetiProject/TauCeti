@@ -9,10 +9,7 @@ public import TauCeti.Analysis.Complex.Pompeiu.Holder.Beurling
 public import TauCeti.Analysis.Holder.Localization
 public import TauCeti.Analysis.Holder.Product
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import Mathlib.Topology.MetricSpace.Contracting
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
-import TauCeti.Analysis.Normed.Ring.Units
-import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # The Beltrami equation with small `C^{k,α}` coefficient
@@ -34,8 +31,6 @@ with `ContinuousLinearMap.compCkHolder₂` gives the linear part of the fixed-po
 
 ## Main results
 
-* `TauCeti.isClosed_supportedCkHolderSubmodule`: the supported `C^{k,α}` subspace is closed, so it
-  is a Banach space.
 * `TauCeti.Beltrami.cutoffBeurlingCkCLM`: `h ↦ χ B h` as a bounded operator from `C^{k,α}` data
   supported in `closedBall c r` to `CkHolderSpace k α ℂ ℂ`, equal to `B h` on
   `closedBall c (r + 1)`.
@@ -73,28 +68,26 @@ private local instance instNormedSpaceBoundedContinuousFunction {X : Type*} [Top
     (n : ℕ) : NormedSpace ℝ (X →ᵇ (ℂ [×n]→L[ℝ] ℂ)) :=
   inferInstance
 
-section Closed
+/-- A point value of a derivative field of `b` is bounded by `‖b‖`. This reads pointwise bounds
+off the outputs of `TauCeti.cauchyTransformCkCLM` and `TauCeti.beurlingCkCLM`. -/
+private theorem norm_fst_apply_le {X Y : Type*} [TopologicalSpace X] [SeminormedAddCommGroup Y]
+    {n : ℕ} {G : Fin n → Type*} [∀ i, SeminormedAddCommGroup (G i)]
+    (b : ((i : Fin n) → X →ᵇ G i) × Y) (i : Fin n) (x : X) : ‖b.1 i x‖ ≤ ‖b‖ :=
+  (BoundedContinuousFunction.norm_coe_le_norm _ _).trans
+    ((norm_le_pi_norm b.1 i).trans (norm_fst_le b))
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
-  [NormedSpace ℝ F]
-
-/-- The supported `C^{k,α}` subspace is closed, as an intersection of kernels of evaluations. -/
-theorem isClosed_supportedCkHolderSubmodule (k : ℕ) (α : ℝ≥0) (s : Set E) :
-    IsClosed (supportedCkHolderSubmodule (F := F) k α s : Set (CkHolderSpace k α E F)) := by
-  have h : (supportedCkHolderSubmodule (F := F) k α s : Set (CkHolderSpace k α E F)) =
-      ⋂ x ∈ sᶜ, (fun f ↦ CkHolderSpace.toBoundedContinuousFunctionCLM f x) ⁻¹' {0} := by
-    ext f
-    simp
-  rw [h]
-  exact isClosed_biInter fun x _ ↦ isClosed_singleton.preimage
-    ((continuous_eval_const x).comp (ContinuousLinearMap.continuous _))
-
-/-- The supported `C^{k,α}` subspace is a Banach space when the codomain is. -/
-instance instCompleteSpaceSupportedCkHolderSubmodule [CompleteSpace F] (k : ℕ) (α : ℝ≥0)
-    (s : Set E) : CompleteSpace (supportedCkHolderSubmodule (F := F) k α s) :=
-  (isClosed_supportedCkHolderSubmodule k α s).completeSpace_coe
-
-end Closed
+/-- A function equal on `s` to the Hölder component of `b` is `α`-Hölder on `s` with constant
+`‖b‖`. This reads Hölder bounds off the outputs of `TauCeti.cauchyTransformCkCLM` and
+`TauCeti.beurlingCkCLM`. -/
+private theorem holderOnWith_of_snd_eq {X Y Z : Type*} [MetricSpace X] [NormedAddCommGroup Y]
+    [NormedSpace ℝ Y] [SeminormedAddCommGroup Z] {α : ℝ≥0} {s : Set X} {g : X → Y}
+    (b : Z × HolderSpace α s Y) (hb : ∀ x : s, b.2 x = g x) : HolderOnWith ‖b‖₊ α g s := by
+  rw [← HolderWith.restrict_iff]
+  have he : s.domRestrict g = ⇑b.2 := funext fun x ↦ (hb x).symm
+  rw [he]
+  exact (HolderSpace.holderWith_nnnorm _).mono (by
+    rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm]
+    exact norm_snd_le _)
 
 namespace Beltrami
 
@@ -126,12 +119,6 @@ private theorem tsupport_bump_subset (hr : 0 ≤ r) :
 
 private theorem r3_nonneg (hr : 0 ≤ r) : 0 ≤ r + 3 := by linarith
 
-private theorem hasCompactSupport_coe
-    (h : supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r)) :
-    HasCompactSupport (h : CkHolderSpace k α ℂ ℂ) :=
-  HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall c r)
-    (support_subset_of_mem_supportedCkHolderSubmodule h.property)
-
 variable (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
 
 private theorem norm_iteratedFDeriv_beurling_le
@@ -141,27 +128,15 @@ private theorem norm_iteratedFDeriv_beurling_le
         (fun w ↦ wirtingerDeriv (cauchyTransform (h : CkHolderSpace k α ℂ ℂ)) w 1) x‖ ≤
       ‖beurlingCkCLM k hα hα1 hr (r3_nonneg hr) h‖ := by
   rw [← beurlingCkCLM_apply_fst k hα hα1 hr (r3_nonneg hr) h ⟨i, by omega⟩ ⟨x, hx⟩]
-  set b := beurlingCkCLM k hα hα1 hr (r3_nonneg hr) h
-  calc ‖b.1 ⟨i, by omega⟩ ⟨x, hx⟩‖ ≤ ‖b.1 ⟨i, by omega⟩‖ :=
-        BoundedContinuousFunction.norm_coe_le_norm _ _
-    _ ≤ ‖b.1‖ := norm_le_pi_norm b.1 _
-    _ ≤ ‖b‖ := norm_fst_le b
+  exact norm_fst_apply_le _ _ _
 
 private theorem holderOnWith_iteratedFDeriv_beurling
     (h : supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r)) :
     HolderOnWith ‖beurlingCkCLM k hα hα1 hr (r3_nonneg hr) h‖₊ α
       (iteratedFDeriv ℝ k
         (fun w ↦ wirtingerDeriv (cauchyTransform (h : CkHolderSpace k α ℂ ℂ)) w 1))
-      (closedBall c (r + 3)) := by
-  rw [← HolderWith.restrict_iff]
-  have he : (closedBall c (r + 3)).domRestrict (iteratedFDeriv ℝ k
-      (fun w ↦ wirtingerDeriv (cauchyTransform (h : CkHolderSpace k α ℂ ℂ)) w 1)) =
-      ⇑(beurlingCkCLM k hα hα1 hr (r3_nonneg hr) h).2 :=
-    funext fun x ↦ (beurlingCkCLM_apply_snd k hα hα1 hr (r3_nonneg hr) h x).symm
-  rw [he]
-  exact (HolderSpace.holderWith_nnnorm _).mono (by
-    rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm]
-    exact norm_snd_le _)
+      (closedBall c (r + 3)) :=
+  holderOnWith_of_snd_eq _ (beurlingCkCLM_apply_snd k hα hα1 hr (r3_nonneg hr) h)
 
 /-- The cut-off Beurling transform of a supported source, as an element of the global space. -/
 private def cutoffBeurling
@@ -172,7 +147,8 @@ private def cutoffBeurling
     (M := ‖beurlingCkCLM k hα hα1 hr (r3_nonneg hr) h‖₊)
     (H := ‖beurlingCkCLM k hα hα1 hr (r3_nonneg hr) h‖₊)
     (N := bumpBound c hr (k + 1))
-    ((hasCompactSupport_coe h).contDiff_wirtingerDeriv_cauchyTransform_of_holderWith hα hα1
+    ((hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r)
+        h.2).contDiff_wirtingerDeriv_cauchyTransform_of_holderWith hα hα1
       (h : CkHolderSpace k α ℂ ℂ).contDiff
       (h : CkHolderSpace k α ℂ ℂ).memHolder_iteratedFDeriv.holderWith).contDiffOn
     (bump c hr).contDiff isOpen_ball (convex_ball c (r + 3)) (tsupport_bump_subset hr) hα1.le
@@ -228,18 +204,21 @@ def cutoffBeurlingCkCLM (k : ℕ) (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r) 
       map_add' := fun f g ↦ CkHolderSpace.ext fun x ↦ by
         by_cases hx : x ∈ closedBall c (r + 3)
         · simp only [cutoffBeurling_apply_of_mem hα hα1 hr _ hx, map_add, Prod.fst_add,
-            Pi.add_apply, CkHolderSpace.coe_add, ← smul_add]
-          rfl
+            Pi.add_apply, CkHolderSpace.coe_add, add_apply, ← smul_add]
         · simp [cutoffBeurling_apply_of_notMem hα hα1 hr _ hx]
       map_smul' := fun a f ↦ CkHolderSpace.ext fun x ↦ by
         by_cases hx : x ∈ closedBall c (r + 3)
         · simp only [cutoffBeurling_apply_of_mem hα hα1 hr _ hx, map_smul, Prod.smul_fst,
-            Pi.smul_apply, CkHolderSpace.coe_smul, RingHom.id_apply, smul_comm a]
-          rfl
+            Pi.smul_apply, CkHolderSpace.coe_smul, RingHom.id_apply, smul_apply, smul_comm a]
         · simp [cutoffBeurling_apply_of_notMem hα hα1 hr _ hx] }
     ((2 : ℝ) ^ k * bumpBound c hr (k + 1) * (k + 8) *
       ‖beurlingCkCLM (F := ℂ) (c := c) k hα hα1 hr (r3_nonneg hr)‖)
     (norm_cutoffBeurling_le hα hα1 hr)
+
+private theorem cutoffBeurlingCkCLM_apply'
+    (h : supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r)) :
+    cutoffBeurlingCkCLM k hα hα1 hr h = cutoffBeurling hα hα1 hr h :=
+  LinearMap.mkContinuous_apply _ _ _ h
 
 /-- On `closedBall c (r + 1)` the cut-off Beurling operator is the Beurling transform. -/
 theorem cutoffBeurlingCkCLM_apply_of_mem
@@ -247,8 +226,8 @@ theorem cutoffBeurlingCkCLM_apply_of_mem
     (hz : z ∈ closedBall c (r + 1)) :
     cutoffBeurlingCkCLM k hα hα1 hr h z =
       wirtingerDeriv (cauchyTransform (h : CkHolderSpace k α ℂ ℂ)) z 1 := by
-  change cutoffBeurling hα hα1 hr h z = _
-  rw [cutoffBeurling_apply, (bump c hr).one_of_mem_closedBall hz, one_smul]
+  rw [cutoffBeurlingCkCLM_apply', cutoffBeurling_apply, (bump c hr).one_of_mem_closedBall hz,
+    one_smul]
 
 /-- On `ball c (r + 1)` every derivative of the cut-off Beurling operator is that of the
 Beurling transform. -/
@@ -257,16 +236,16 @@ theorem iteratedFDeriv_cutoffBeurlingCkCLM_of_mem
     (hz : z ∈ ball c (r + 1)) (j : ℕ) :
     iteratedFDeriv ℝ j (cutoffBeurlingCkCLM k hα hα1 hr h) z =
       iteratedFDeriv ℝ j
-        (fun w ↦ wirtingerDeriv (cauchyTransform (h : CkHolderSpace k α ℂ ℂ)) w 1) z :=
-  CkHolderSpace.iteratedFDeriv_cutoff_eq _ _ _ _ _ _ _ _ _
+        (fun w ↦ wirtingerDeriv (cauchyTransform (h : CkHolderSpace k α ℂ ℂ)) w 1) z := by
+  rw [cutoffBeurlingCkCLM_apply']
+  exact CkHolderSpace.iteratedFDeriv_cutoff_eq _ _ _ _ _ _ _ _ _
     ((bump c hr).eventuallyEq_one_of_mem_ball hz) j
 
 /-- The cut-off Beurling operator vanishes off `ball c (r + 2)`. -/
 theorem cutoffBeurlingCkCLM_apply_eq_zero
     (h : supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r)) {z : ℂ}
     (hz : r + 2 ≤ dist z c) : cutoffBeurlingCkCLM k hα hα1 hr h z = 0 := by
-  change cutoffBeurling hα hα1 hr h z = _
-  rw [cutoffBeurling_apply, (bump c hr).zero_of_le_dist hz, zero_smul]
+  rw [cutoffBeurlingCkCLM_apply', cutoffBeurling_apply, (bump c hr).zero_of_le_dist hz, zero_smul]
 
 /-- **The linear part of the Beltrami fixed-point map on `C^{k,α}` data.** For a coefficient
 `μ` in the supported space, it is `h ↦ μ χ B h`, the product of `μ` with the cut-off Beurling
@@ -305,9 +284,8 @@ theorem norm_beltramiCkOperator_le
     ‖beltramiCkOperator k hα hα1 hr μ‖ ≤
       (k + 7) * 2 ^ k * ‖cutoffBeurlingCkCLM (c := c) k hα hα1 hr‖ * ‖μ‖ := by
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun h ↦ ?_
-  rw [← Submodule.norm_coe]
-  change ‖(ContinuousLinearMap.mul ℝ ℂ).compCkHolder₂ hα1.le (μ : CkHolderSpace k α ℂ ℂ)
-    (cutoffBeurlingCkCLM k hα hα1 hr h)‖ ≤ _
+  rw [← Submodule.norm_coe, beltramiCkOperator, ContinuousLinearMap.coe_codRestrict_apply,
+    ContinuousLinearMap.comp_apply]
   refine ((ContinuousLinearMap.mul ℝ ℂ).norm_compCkHolder₂_apply_le hα1.le _ _).trans ?_
   have hm : ‖ContinuousLinearMap.mul ℝ ℂ‖ ≤ 1 := ContinuousLinearMap.opNorm_mul_le _ _
   have hb := (cutoffBeurlingCkCLM (c := c) k hα hα1 hr).le_opNorm h
@@ -319,45 +297,6 @@ theorem norm_beltramiCkOperator_le
 
 end Beltrami
 
-/-- The solution of `v + A k = k` for a linear part of norm at most `1 / 4` is the Neumann series
-`(1 - A)⁻¹ v`, with `‖k‖ ≤ 2 ‖v‖`. -/
-private theorem exists_add_apply_eq {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-    [CompleteSpace X] (v : X) (A : X →L[ℝ] X) (hA : ‖A‖ ≤ 4⁻¹) :
-    ∃ k, v + A k = k ∧ ‖k‖ ≤ 2 * ‖v‖ := by
-  have hA1 : ‖A‖ < 1 := by linarith
-  refine ⟨Ring.inverse (1 - A) v, ?_, ?_⟩
-  · have h := congrArg (fun L : X →L[ℝ] X ↦ L v)
-      (Ring.mul_inverse_cancel (1 - A) ⟨Units.oneSub A hA1, rfl⟩)
-    change Ring.inverse (1 - A) v - A (Ring.inverse (1 - A) v) = v at h
-    nth_rewrite 1 [← h]
-    rw [sub_add_cancel]
-  · have hinv := NormedRing.norm_inverse_one_sub_le hA1
-    have h1 : ‖(1 : X →L[ℝ] X)‖ ≤ 1 := ContinuousLinearMap.norm_id_le
-    have h2 : (1 - ‖A‖)⁻¹ ≤ 2 := by
-      rw [inv_le_comm₀ (by linarith) two_pos]
-      linarith
-    calc ‖Ring.inverse (1 - A) v‖ ≤ ‖Ring.inverse (1 - A)‖ * ‖v‖ :=
-          (Ring.inverse (1 - A)).le_opNorm v
-      _ ≤ 2 * ‖v‖ := by gcongr; linarith
-
-/-- A bounded `C^{k,α}` map is itself `α`-Hölder, with constant `3 ‖f‖`, for `α ≤ 1`. -/
-private theorem holderWith_coe {k : ℕ} {α : ℝ≥0} (f : CkHolderSpace k α ℂ ℂ) (hα : α ≤ 1) :
-    HolderWith (3 * ‖f‖₊) α f := by
-  have h := f.holderWith_iteratedFDeriv_of_le hα (Nat.zero_le k)
-  rw [iteratedFDeriv_zero_eq_comp] at h
-  exact (Isometry.holderWith_comp_iff
-    (continuousMultilinearCurryFin0 ℝ ℂ ℂ).symm.isometry).mp h
-
-/-- The derivative of order `n + 1` of the identity is constant. -/
-private theorem iteratedFDeriv_succ_id_eq (n : ℕ) (x y : ℂ) :
-    iteratedFDeriv ℝ (n + 1) (id : ℂ → ℂ) x = iteratedFDeriv ℝ (n + 1) (id : ℂ → ℂ) y := by
-  rw [iteratedFDeriv_succ_eq_comp_right, iteratedFDeriv_succ_eq_comp_right, Function.comp_apply,
-    Function.comp_apply]
-  simp only [fderiv_id]
-  rcases n with _ | n
-  · simp only [iteratedFDeriv_zero_eq_comp, Function.comp_apply]
-  · rw [iteratedFDeriv_succ_const, Pi.zero_apply, Pi.zero_apply]
-
 variable {k : ℕ} {α : ℝ≥0} {c : ℂ} {r : ℝ}
 
 /-- The source of the Beltrami solution: a supported `h` with `‖h‖ ≤ 2 ‖μ‖` and
@@ -368,8 +307,11 @@ private theorem exists_source (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
     ∃ h : supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r), ‖h‖ ≤ 2 * ‖μ‖ ∧
       ∀ z, (h : CkHolderSpace k α ℂ ℂ) z = (μ : CkHolderSpace k α ℂ ℂ) z *
         (1 + wirtingerDeriv (cauchyTransform (h : CkHolderSpace k α ℂ ℂ)) z 1) := by
-  obtain ⟨h, hfix, hh⟩ := exists_add_apply_eq μ _ hA
-  refine ⟨h, hh, fun z ↦ ?_⟩
+  obtain ⟨h, hfix, hh⟩ :=
+    ContinuousLinearMap.exists_add_apply_eq_of_norm_lt_one μ (hA.trans_lt (by norm_num))
+  refine ⟨h, hh.trans ?_, fun z ↦ ?_⟩
+  · rw [div_le_iff₀ (by linarith)]
+    nlinarith [norm_nonneg μ]
   by_cases hz : z ∈ closedBall c r
   · have := congrArg (fun g : supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r) ↦
       (g : CkHolderSpace k α ℂ ℂ) z) hfix
@@ -401,57 +343,13 @@ private theorem cauchyTransform_regularity (hα : 0 < α) (hα1 : α < 1) (hr : 
     obtain ⟨C₀, hC₀⟩ := exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
       (F := ℂ) hα hα1 c hr (dist_nonneg (x := z) (y := c))
     rw [show T = _ from funext (cauchyTransform_apply _)]
-    exact (hC₀ (M := ‖(h : CkHolderSpace k α ℂ ℂ)‖₊) hhs (holderWith_coe _ hα1.le)
+    exact (hC₀ (M := ‖(h : CkHolderSpace k α ℂ ℂ)‖₊) hhs
+      ((h : CkHolderSpace k α ℂ ℂ).holderWith hα1.le)
       (fun x ↦ (h : CkHolderSpace k α ℂ ℂ).norm_apply_le x)).2.2.2 z
       (mem_ball.mpr (lt_add_one _))
   · rw [← cauchyTransformCkCLM_apply_fst k hα hα1 hr hr h ⟨i, by omega⟩ ⟨z, hz⟩]
-    calc ‖(D h).1 ⟨i, by omega⟩ ⟨z, hz⟩‖ ≤ ‖(D h).1 ⟨i, by omega⟩‖ :=
-          BoundedContinuousFunction.norm_coe_le_norm _ _
-      _ ≤ ‖(D h).1‖ := norm_le_pi_norm (D h).1 _
-      _ ≤ ‖D h‖ := norm_fst_le (D h)
-  · rw [← HolderWith.restrict_iff]
-    have he : (closedBall c r).domRestrict (iteratedFDeriv ℝ (k + 1) T) = ⇑(D h).2 :=
-      funext fun x ↦ (cauchyTransformCkCLM_apply_snd k hα hα1 hr hr h x).symm
-    rw [he]
-    exact (HolderSpace.holderWith_nnnorm _).mono (by
-      rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm]
-      exact norm_snd_le _)
-
-/-- Adding the identity does not change the Hölder constant of a derivative of order `n + 1`. -/
-private theorem holderOnWith_iteratedFDeriv_id_add {n : ℕ} {T : ℂ → ℂ} {C : ℝ≥0} {s : Set ℂ}
-    (hT : ContDiff ℝ (n + 1 : ℕ) T) (hH : HolderOnWith C α (iteratedFDeriv ℝ (n + 1) T) s) :
-    HolderOnWith C α (iteratedFDeriv ℝ (n + 1) (fun w ↦ w + T w)) s := by
-  refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
-  rw [show (fun w ↦ w + T w) = id + T from rfl,
-    iteratedFDeriv_add_apply contDiff_id.contDiffAt hT.contDiffAt,
-    iteratedFDeriv_add_apply contDiff_id.contDiffAt hT.contDiffAt,
-    iteratedFDeriv_succ_id_eq n x y, dist_add_left]
-  exact hH.dist_le hx hy
-
-/-- If `T` is differentiable at `z` with `‖D T(z)‖ < 1`, then `w ↦ w + T w` has an invertible
-strict derivative at `z`. -/
-private theorem exists_hasStrictFDerivAt_id_add {T : ℂ → ℂ} {z : ℂ} (hT : ContDiffAt ℝ 1 T z)
-    (hlt : ‖fderiv ℝ T z‖ < 1) :
-    ∃ L : ℂ ≃L[ℝ] ℂ, HasStrictFDerivAt (fun w ↦ w + T w) (L : ℂ →L[ℝ] ℂ) z := by
-  have hlt' : ‖fderiv ℝ T z‖₊ < ‖((ContinuousLinearEquiv.refl ℝ ℂ).symm : ℂ →L[ℝ] ℂ)‖₊⁻¹ := by
-    rw [ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.coe_refl,
-      ContinuousLinearMap.nnNorm_id, inv_one, ← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one]
-    exact hlt
-  obtain ⟨L, hL⟩ := ContinuousLinearMap.isInvertible_of_norm_sub_lt
-    (ContinuousLinearEquiv.refl ℝ ℂ) (A := ContinuousLinearMap.id ℝ ℂ + fderiv ℝ T z)
-    (by rwa [ContinuousLinearEquiv.coe_refl, add_sub_cancel_left])
-  refine ⟨L, ?_⟩
-  rw [hL]
-  exact (contDiffAt_id.add hT).hasStrictFDerivAt
-    ((hasFDerivAt_id z).add (hT.differentiableAt one_ne_zero).hasFDerivAt) one_ne_zero
-
-/-- The Wirtinger derivatives of `w ↦ w + T w` at a point where `T` is differentiable. -/
-private theorem wirtingerDeriv_id_add {T : ℂ → ℂ} {z : ℂ} (hT : DifferentiableAt ℝ T z) :
-    conjWirtingerDeriv (fun w ↦ w + T w) z 1 = conjWirtingerDeriv T z 1 ∧
-      wirtingerDeriv (fun w ↦ w + T w) z 1 = 1 + wirtingerDeriv T z 1 := by
-  rw [show (fun w ↦ w + T w) = id + T from rfl, conjWirtingerDeriv_add differentiableAt_id hT,
-    wirtingerDeriv_add differentiableAt_id hT, conjWirtingerDeriv_id, wirtingerDeriv_id]
-  simp
+    exact norm_fst_apply_le _ _ _
+  · exact holderOnWith_of_snd_eq _ (cauchyTransformCkCLM_apply_snd k hα hα1 hr hr h)
 
 /-- **The Beltrami equation with small `C^{k,α}` coefficient.** Let `k : ℕ` and `0 < α < 1`.
 There are `δ > 0` and `C` such that every bounded `C^{k,α}` function `μ` vanishing off
@@ -509,24 +407,24 @@ theorem exists_ckHolder_conjWirtingerDeriv_eq_mul_wirtingerDeriv (k : ℕ) (hα 
   have hfd : ∀ z ∈ closedBall c r, ‖fderiv ℝ T z‖ ≤ 2 * ‖D‖ * ‖μ‖ := fun z hz ↦ by
     simpa only [norm_iteratedFDeriv_one] using (hTi 1 (by omega) z (hsub hz)).trans hDh
   have hψbar : ∀ z, conjWirtingerDeriv (fun w ↦ w + T w) z 1 = (h : CkHolderSpace k α ℂ ℂ) z :=
-    fun z ↦ (wirtingerDeriv_id_add (hTd z)).1.trans (hTbar z)
+    fun z ↦ by rw [conjWirtingerDeriv_id_add, hTbar z]
   refine ⟨h, mem_supportedCkHolderSubmodule_iff.mpr fun z hz ↦ by
       rw [hpt z, mem_supportedCkHolderSubmodule_iff.mp hμ z hz, zero_mul],
     hh, contDiff_id.add hT, hψbar, fun z ↦ ?_, fun i hi z hz ↦ ?_, fun z hz ↦ ?_, ?_,
     fun z hz ↦ ?_⟩
-  · rw [hψbar z, (wirtingerDeriv_id_add (hTd z)).2]
+  · rw [hψbar z, wirtingerDeriv_id_add (hTd z), add_apply, ContinuousLinearMap.id_apply]
     exact hpt z
   · push_cast
     exact (hTi i hi z (hsub hz)).trans hDh
-  · rw [show (fun w ↦ w + T w) = id + T from rfl,
-      ((hasFDerivAt_id z).add (hTd z).hasFDerivAt).fderiv, add_sub_cancel_left]
+  · rw [fderiv_fun_add differentiableAt_fun_id (hTd z), fderiv_fun_id, add_sub_cancel_left]
     push_cast
     exact hfd z hz
-  · refine ((holderOnWith_iteratedFDeriv_id_add hT hTH).mono hsub).mono_const ?_
+  · refine ((holderOnWith_iteratedFDeriv_succ_id_add (fun _ _ ↦ hT.contDiffAt) hTH).mono
+      hsub).mono_const ?_
     rw [← NNReal.coe_le_coe]
     push_cast
     exact hDh
-  · exact exists_hasStrictFDerivAt_id_add (hT.contDiffAt.of_le (by simp))
+  · exact (hT.contDiffAt.hasStrictFDerivAt_fderiv (by simp)).exists_continuousLinearEquiv_id_add
       ((hfd z hz).trans_lt (by nlinarith [norm_nonneg μ, mul_nonneg hK (norm_nonneg μ)]))
 
 end TauCeti
