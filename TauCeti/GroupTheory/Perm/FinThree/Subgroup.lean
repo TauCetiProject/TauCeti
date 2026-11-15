@@ -20,23 +20,6 @@ stabilizers, so `A₃` has exactly three complements in `S₃`, one for each poi
 
 public section
 
-namespace TauCeti
-
-/-- **The three point stabilizers of `S₃` are distinct.** -/
-theorem stabilizer_perm_fin_three_injective :
-    Function.Injective (fun a : Fin 3 ↦ MulAction.stabilizer (Equiv.Perm (Fin 3)) a) := by
-  intro a b hab
-  have h := congrArg (fun H : Subgroup (Equiv.Perm (Fin 3)) ↦
-    Equiv.swap (a + 1) (a + 2) ∈ H) hab
-  simp only [mem_stabilizer_perm_fin_three_iff] at h
-  have key : ∀ a b : Fin 3,
-      (Equiv.swap (a + 1) (a + 2) = 1 ∨
-        Equiv.swap (a + 1) (a + 2) = Equiv.swap (b + 1) (b + 2)) → a = b := by
-    decide
-  exact key a b (h.mp (Or.inr trivial))
-
-end TauCeti
-
 namespace Subgroup
 
 /-- Every subgroup of `S₃` is trivial, a point stabilizer, alternating, or the whole group. -/

@@ -76,7 +76,21 @@ theorem card_normalized_isCocycle₁ :
 /-- The transposition `(0 1)` lies in the stabilizer of `2`. -/
 private theorem swap_mem_stabilizer :
     swap (0 : Fin 3) 1 ∈ MulAction.stabilizer (Perm (Fin 3)) (2 : Fin 3) :=
-  (mem_stabilizer_perm_fin_three_iff 2 _).mpr (Or.inr rfl)
+  swap_mem_stabilizer_perm_fin_three 2
+
+/-- The three-cycle `(0 1 2)`, as an element of `A₃`. -/
+@[expose] def threeCycle : alternatingGroup (Fin 3) :=
+  ⟨finRotate 3, Perm.finRotate_bit1_mem_alternatingGroup (n := 1)⟩
+
+/-- The three-cycle of `A₃` is `finRotate 3`. -/
+@[simp]
+theorem coe_threeCycle : (threeCycle : Perm (Fin 3)) = finRotate 3 := rfl
+
+/-- Every crossed projection onto `A₃` sends the three-cycle to itself. -/
+private theorem crossedProjection_finRotate {D : Subgroup (Perm (Fin 3))}
+    (h : (alternatingGroup (Fin 3)).IsComplement' D) :
+    h.crossedProjection (finRotate 3) = threeCycle :=
+  h.crossedProjection_coe threeCycle
 
 section CrossedProjection
 
@@ -90,8 +104,7 @@ theorem coe_crossedProjection_swap_zero_two :
   have h : swap (0 : Fin 3) 2 = finRotate 3 * swap 0 1 := by decide
   rw [h]
   exact congrArg Subtype.val
-    (h₂.crossedProjection_mul ⟨_, Perm.finRotate_bit1_mem_alternatingGroup (n := 1)⟩
-      ⟨_, swap_mem_stabilizer⟩)
+    (h₂.crossedProjection_mul threeCycle ⟨_, swap_mem_stabilizer⟩)
 
 /-- The crossed projection along `⟨(0 1)⟩` sends `(0 1) * (0 1 2) = (0 2 1) * (0 1)` to
 `(0 2 1)`. -/
@@ -99,8 +112,7 @@ theorem coe_crossedProjection_swap_mul_finRotate :
     (h₂.crossedProjection (swap 0 1 * finRotate 3) : Perm (Fin 3)) = (finRotate 3)⁻¹ := by
   have h : swap (0 : Fin 3) 1 * finRotate 3 = (finRotate 3)⁻¹ * swap 0 1 := by decide
   rw [h]
-  exact congrArg Subtype.val (h₂.crossedProjection_mul
-    ⟨_, inv_mem (Perm.finRotate_bit1_mem_alternatingGroup (n := 1))⟩ ⟨_, swap_mem_stabilizer⟩)
+  exact congrArg Subtype.val (h₂.crossedProjection_mul threeCycle⁻¹ ⟨_, swap_mem_stabilizer⟩)
 
 /-- **A crossed projection need not be a homomorphism**: the projection along `⟨(0 1)⟩` of
 `(0 1) * (0 1 2)` is not the product of the projections of `(0 1)` and `(0 1 2)`. -/
@@ -111,7 +123,7 @@ theorem crossedProjection_mul_ne :
   have h' := congrArg Subtype.val h
   rw [coe_crossedProjection_swap_mul_finRotate, h₂.crossedProjection_coe_right
       ⟨_, swap_mem_stabilizer⟩, one_mul,
-    h₂.crossedProjection_coe ⟨_, Perm.finRotate_bit1_mem_alternatingGroup (n := 1)⟩] at h'
+    crossedProjection_finRotate h₂, coe_threeCycle] at h'
   revert h'
   decide
 
@@ -132,11 +144,8 @@ crossed projection along `⟨(0 1)⟩` times the principal crossed map `x ↦ x 
 three-cycle `a = (0 1 2) ∈ A₃`. -/
 theorem crossedProjection_zero_eq (x : Perm (Fin 3)) :
     h₀.crossedProjection x = h₂.crossedProjection x *
-      (x • (⟨finRotate 3, Perm.finRotate_bit1_mem_alternatingGroup (n := 1)⟩ :
-        alternatingGroup (Fin 3)) /
-          ⟨finRotate 3, Perm.finRotate_bit1_mem_alternatingGroup (n := 1)⟩) :=
-  (h₂.eq_conj_smul_iff_crossedProjection_eq h₀
-    ⟨finRotate 3, Perm.finRotate_bit1_mem_alternatingGroup (n := 1)⟩).mp
+      (x • threeCycle / threeCycle) :=
+  (h₂.eq_conj_smul_iff_crossedProjection_eq h₀ threeCycle).mp
     conj_finRotate_smul_stabilizer.symm x
 
 end CrossedProjection
@@ -167,7 +176,7 @@ points other than `a`. -/
 theorem transversal_mk_swap (a : Fin 3) :
     transversal a (swap (a + 1) (a + 2) : Perm (Fin 3)) = swap (a + 1) (a + 2) :=
   (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).quotientSplitting_mk
-    ⟨_, (mem_stabilizer_perm_fin_three_iff a _).mpr (Or.inr rfl)⟩
+    ⟨_, swap_mem_stabilizer_perm_fin_three a⟩
 
 /-- **The crossed transfer of the identity of `A₃`** along the transversal in the stabilizer of
 `a` is the square of the crossed projection along that stabilizer. -/
@@ -187,7 +196,7 @@ theorem coe_crossedTransfer_id_finRotate (a : Fin 3) :
         alternatingGroup (Fin 3)) : Perm (Fin 3)) = (finRotate 3)⁻¹ := by
   have h := isComplement'_alternatingGroup_stabilizer_perm_fin_three a
   rw [crossedTransfer_id_apply h,
-    h.crossedProjection_coe ⟨_, Perm.finRotate_bit1_mem_alternatingGroup (n := 1)⟩]
+    crossedProjection_finRotate h, Subgroup.coe_pow, coe_threeCycle]
   decide
 
 /-- The crossed transfer of the identity of `A₃` along the transversal in `⟨(0 1)⟩` vanishes at
@@ -269,16 +278,15 @@ end Cohomology
 /-- **The unique Sylow `3`-subgroup of `S₃` is `A₃`.** -/
 theorem coe_sylow_eq_alternatingGroup (P : Sylow 3 (Perm (Fin 3))) :
     (P : Subgroup (Perm (Fin 3))) = alternatingGroup (Fin 3) := by
+  -- `A₃` is a normal subgroup of order `3` and index `2`, hence a normal Sylow `3`-subgroup
   have h3 : IsPGroup 3 (alternatingGroup (Fin 3)) :=
     IsPGroup.of_card (n := 1) (by rw [card_alternatingGroup_fin_three, pow_one])
-  refine (Subgroup.eq_of_le_of_card_ge (h3.le_sylow_of_normal P) ?_).symm
-  -- `|P|` is the `3`-part of `|S₃| = 3! = 2 * 3`
-  have h6 : Nat.factorial 3 = 2 * 3 := rfl
-  rw [P.card_eq_multiplicity, card_alternatingGroup_fin_three, Nat.card_perm,
-    Nat.card_eq_fintype_card, Fintype.card_fin, h6,
-    Nat.factorization_mul two_ne_zero three_ne_zero, Finsupp.add_apply,
-    Nat.prime_three.factorization_self, Nat.factorization_eq_zero_of_not_dvd (by norm_num),
-    zero_add, pow_one]
+  let Q : Sylow 3 (Perm (Fin 3)) := h3.toSylow (by rw [alternatingGroup.index_eq_two]; decide)
+  have hQ : (Q : Subgroup (Perm (Fin 3))).Normal := by
+    rw [h3.toSylow_coe]
+    infer_instance
+  have := Sylow.unique_of_normal Q hQ
+  rw [Subsingleton.elim P Q, h3.toSylow_coe]
 
 /-- `⊥` is a local complement of `A₃` in every Sylow `3`-subgroup of `S₃`, which is `A₃` itself;
 by Sylow detection (`IsPGroup.exists_isComplement'_iff_sylow`) this recovers that `A₃` has a
@@ -300,8 +308,8 @@ theorem isComplement'_and_le_normalizer_iff (a : Fin 3) (D : Subgroup (Perm (Fin
     exact ⟨isComplement'_alternatingGroup_stabilizer_perm_fin_three a, Subgroup.le_normalizer⟩⟩
   obtain ⟨b, rfl⟩ := (isComplement'_alternatingGroup_fin_three_iff D).mp hD
   have hs := (Subgroup.mem_normalizer_iff.mp
-    (hle ((mem_stabilizer_perm_fin_three_iff a _).mpr (Or.inr rfl))) (swap (b + 1) (b + 2))).mp
-    ((mem_stabilizer_perm_fin_three_iff b _).mpr (Or.inr rfl))
+    (hle (swap_mem_stabilizer_perm_fin_three a)) (swap (b + 1) (b + 2))).mp
+    (swap_mem_stabilizer_perm_fin_three b)
   rw [mem_stabilizer_perm_fin_three_iff] at hs
   have key : ∀ a b : Fin 3, (swap (a + 1) (a + 2) * swap (b + 1) (b + 2) *
       (swap (a + 1) (a + 2))⁻¹ = 1 ∨ swap (a + 1) (a + 2) * swap (b + 1) (b + 2) *
