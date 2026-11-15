@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Jon Crall, Claude Opus 5, qwen3.8-27b-dbirks-hyperqwen-huge
+Authors: Jon Crall, Claude Opus 5, qwen3.8-27b-dbirks-hyperqwen-huge, The Tau Ceti contributors
 -/
 /-
 Adapted from: Spectra (https://github.com/adambornemann-glitch/Spectra),
@@ -52,8 +52,9 @@ from the structure's laws.
 * `hasSum_proj_of_pairwise_disjoint`: unconditional strong countable additivity
   (`HasSum`) on a pairwise-disjoint measurable family; `tendsto_sum_proj_of_pairwise_disjoint`
   gives convergence of the natural-order partial sums.
-* `diag`, `diag_real_univ`, `diag_univ`: the finite diagonal scalar
-  measures carried by the structure, and their real/extended-real total masses.
+* `diag`, `diag_real_univ`, `diag_univ`, `diag_zero`, `diag_smul`, `diag_add_le`, `diag_proj`:
+  the finite diagonal scalar measures carried by the structure, their total masses, and their
+  behaviour under vector operations and spectral projections.
 * `ext_of_diag`, `ext`, `ext_iff_diag`, `ext_iff`: extensionality from either
   data field.
 
@@ -292,6 +293,62 @@ theorem diag_univ (P : ProjValMeasure X H) (ξ : H) :
       congrArg ENNReal.ofReal (P.diag_univ_toReal ξ)
     _ = ‖ξ‖ₑ ^ 2 := by
       rw [ENNReal.ofReal_pow (norm_nonneg ξ), ofReal_norm]
+
+/-- The diagonal measure at the zero vector is the zero measure. -/
+@[simp]
+theorem diag_zero (P : ProjValMeasure X H) : P.diag 0 = 0 := by
+  rw [← Measure.measure_univ_eq_zero, P.diag_univ]
+  simp
+
+/-- Scaling a vector by `c` scales its diagonal measure by `‖c‖₊ ^ 2`. -/
+theorem diag_smul (P : ProjValMeasure X H) (c : ℂ) (ξ : H) :
+    P.diag (c • ξ) = (‖c‖₊ ^ 2) • P.diag ξ := by
+  refine Measure.ext fun B hB => ?_
+  rw [_root_.smul_apply, ENNReal.smul_def, smul_eq_mul,
+    ← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag (c • ξ)) (s := B)),
+    ← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag ξ) (s := B)),
+    ← P.norm_sq_proj_apply B hB (c • ξ), ← P.norm_sq_proj_apply B hB ξ,
+    map_smul, norm_smul, mul_pow, ENNReal.ofReal_mul (sq_nonneg _),
+    ENNReal.ofReal_pow (norm_nonneg c), ofReal_norm, ENNReal.coe_pow]
+  rfl
+
+/-- Negating a vector leaves its diagonal measure unchanged. -/
+@[simp]
+theorem diag_neg (P : ProjValMeasure X H) (ξ : H) : P.diag (-ξ) = P.diag ξ := by
+  simpa [neg_one_smul] using P.diag_smul (-1) ξ
+
+/-- Parallelogram upper bound on the diagonal measure of a sum of vectors. -/
+theorem diag_add_le (P : ProjValMeasure X H) (ξ η : H) :
+    P.diag (ξ + η) ≤ (2 : NNReal) • P.diag ξ + (2 : NNReal) • P.diag η := by
+  refine Measure.le_iff.2 fun B hB => ?_
+  rw [_root_.add_apply, _root_.smul_apply, _root_.smul_apply,
+    ENNReal.smul_def, ENNReal.smul_def, smul_eq_mul, smul_eq_mul,
+    ← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag (ξ + η)) (s := B)),
+    ← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag ξ) (s := B)),
+    ← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag η) (s := B)),
+    ← P.norm_sq_proj_apply B hB (ξ + η), ← P.norm_sq_proj_apply B hB ξ,
+    ← P.norm_sq_proj_apply B hB η]
+  have hparallelogram : ‖P.proj B hB (ξ + η)‖ ^ 2 ≤
+      2 * ‖P.proj B hB ξ‖ ^ 2 + 2 * ‖P.proj B hB η‖ ^ 2 := by
+    rw [map_add]
+    have hnorm := norm_add_le (P.proj B hB ξ) (P.proj B hB η)
+    nlinarith [sq_nonneg (‖P.proj B hB ξ‖ - ‖P.proj B hB η‖),
+      norm_nonneg (P.proj B hB ξ + P.proj B hB η)]
+  refine (ENNReal.ofReal_le_ofReal hparallelogram).trans_eq ?_
+  rw [ENNReal.ofReal_add (by positivity) (by positivity),
+    ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat]
+  rfl
+
+/-- Applying a measurable spectral projection `P(B)` to a vector restricts its diagonal measure
+to `B`. -/
+theorem diag_proj (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B) (ξ : H) :
+    P.diag (P.proj B hB ξ) = (P.diag ξ).restrict B := by
+  refine Measure.ext fun E hE => ?_
+  rw [Measure.restrict_apply hE,
+    ← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag (P.proj B hB ξ)) (s := E)),
+    ← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag ξ) (s := E ∩ B)),
+    ← P.norm_sq_proj_apply E hE (P.proj B hB ξ),
+    ← mul_apply_eq_comp, P.proj_inter E B hE hB, ← P.norm_sq_proj_apply]
 
 /-- For every measurable set `B`, `P(B)` is a contraction on vectors. -/
 lemma norm_proj_apply_le (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B)

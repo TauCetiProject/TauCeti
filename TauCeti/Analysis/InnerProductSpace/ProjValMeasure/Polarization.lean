@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Jon Crall, GPT-6
+Authors: Jon Crall, GPT-6, The Tau Ceti contributors
 -/
 module
 
@@ -17,6 +17,8 @@ A normalized projection-valued measure `P` carries a finite diagonal positive me
 `P.polarizedComplexMeasure ψ ξ` whose value on a measurable set `B` is
 `⟪ψ, P.proj B hB ξ⟫_ℂ`. Its dependence on `ψ` is conjugate-linear and on `ξ` linear. On the
 diagonal, `P.polarizedComplexMeasure ξ ξ` is `P.diag ξ` with the constant complex density `1`.
+Applying a measurable spectral projection `P.proj B hB` to either vector restricts the polarized
+measure to `B`.
 
 The construction uses Mathlib's signed-measure and complex-measure conversions: countable
 additivity comes from the existing diagonal measures, not a second PVM construction.
@@ -148,6 +150,41 @@ theorem polarizedComplexMeasure_smul_right (P : ProjValMeasure X H) (c : ℂ) (�
       P.polarizedComplexMeasure u v B = ⟪u, P.proj B hB v⟫_ℂ :=
     P.polarizedComplexMeasure_apply u v B hB
   simp only [heval, _root_.smul_apply, map_smul, inner_smul_right, smul_eq_mul]
+
+/-- Applying a measurable spectral projection in the second argument restricts the polarized
+complex measure to that set. -/
+theorem polarizedComplexMeasure_proj_right (P : ProjValMeasure X H) (ψ ξ : H)
+    (B : Set X) (hB : MeasurableSet B) :
+    P.polarizedComplexMeasure ψ (P.proj B hB ξ) = (P.polarizedComplexMeasure ψ ξ).restrict B := by
+  ext E hE
+  rw [P.polarizedComplexMeasure_apply _ _ E hE, VectorMeasure.restrict_apply _ hB hE,
+    P.polarizedComplexMeasure_apply _ _ (E ∩ B) (hE.inter hB), ← mul_apply_eq_comp,
+    P.proj_inter E B hE hB]
+
+/-- Applying a measurable spectral projection in the first argument restricts the polarized
+complex measure to that set. -/
+theorem polarizedComplexMeasure_proj_left (P : ProjValMeasure X H) (ψ ξ : H)
+    (B : Set X) (hB : MeasurableSet B) :
+    P.polarizedComplexMeasure (P.proj B hB ψ) ξ = (P.polarizedComplexMeasure ψ ξ).restrict B := by
+  ext E hE
+  rw [P.polarizedComplexMeasure_apply _ _ E hE, VectorMeasure.restrict_apply _ hB hE,
+    P.polarizedComplexMeasure_apply _ _ (E ∩ B) (hE.inter hB)]
+  calc
+    ⟪P.proj B hB ψ, P.proj E hE ξ⟫_ℂ = ⟪ψ, P.proj B hB (P.proj E hE ξ)⟫_ℂ :=
+      (P.isSelfAdjoint_proj B hB).isSymmetric _ _
+    _ = ⟪ψ, P.proj (E ∩ B) (hE.inter hB) ξ⟫_ℂ := by
+      rw [← mul_apply_eq_comp, P.proj_mul_comm B E hB hE, P.proj_inter E B hE hB]
+
+/-- Applying the same measurable spectral projection in both arguments restricts the polarized
+complex measure to that set. -/
+theorem polarizedComplexMeasure_proj_proj (P : ProjValMeasure X H) (ψ ξ : H)
+    (B : Set X) (hB : MeasurableSet B) :
+    P.polarizedComplexMeasure (P.proj B hB ψ) (P.proj B hB ξ) =
+      (P.polarizedComplexMeasure ψ ξ).restrict B := by
+  ext E hE
+  rw [P.polarizedComplexMeasure_proj_left _ _ B hB, VectorMeasure.restrict_apply _ hB hE,
+    P.polarizedComplexMeasure_proj_right _ _ B hB, VectorMeasure.restrict_apply _ hB (hE.inter hB),
+    VectorMeasure.restrict_apply _ hB hE, Set.inter_assoc, Set.inter_self]
 
 /-- Pointwise Young-type bound on a polarized spectral measure by a weighted sum of the two
 diagonal measures. -/
