@@ -17,8 +17,11 @@ The preimage of a compact set under a proper map is compact
 monotone and functorial in `f`. It is the operation through which the cohomology with compact
 supports of a space, a colimit over its compact subsets, is contravariant in proper maps. It also
 records that Mathlib's image `TopologicalSpace.Compacts.map` is monotone, which makes cohomology
-with compact supports covariant in open embeddings. Finally, a compact set lies in one member of a
-directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`).
+with compact supports covariant in open embeddings. A compact set lies in one member of a
+directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`). Finally, the
+membership lemmas `TopologicalSpace.Compacts.mem_compl_toCloseds` and
+`TopologicalSpace.Compacts.mem_inf_compl_toCloseds` describe the open complement of a compact set
+of a Hausdorff space, and its intersection with an open set.
 -/
 
 public section
@@ -65,5 +68,18 @@ lemma exists_subset_of_iSup_eq_top {ι : Type*} [Nonempty ι] {U : ι → Opens 
     ∃ i, (K : Set α) ⊆ U i :=
   K.isCompact.elim_directed_cover (fun i ↦ (U i : Set α)) (fun i ↦ (U i).isOpen)
     (fun x _ ↦ by simp [← Opens.coe_iSup, hcover]) (hU.mono_comp _ fun _ _ h ↦ h)
+
+/-- In a Hausdorff space, a point lies in the open complement of a compact set exactly when it
+does not lie in the compact set. -/
+@[simp]
+lemma mem_compl_toCloseds [T2Space α] {K : Compacts α} {x : α} :
+    x ∈ K.toCloseds.compl ↔ x ∉ K :=
+  Iff.rfl
+
+/-- The open set `U ⊓ Kᶜ` cut out of an open set `U` by a compact set `K` of a Hausdorff space is
+the set difference `U ∖ K`. -/
+lemma mem_inf_compl_toCloseds [T2Space α] {U : Opens α} {K : Compacts α} {x : α} :
+    x ∈ U ⊓ K.toCloseds.compl ↔ x ∈ (U : Set α) \ K :=
+  Iff.rfl
 
 end TopologicalSpace.Compacts

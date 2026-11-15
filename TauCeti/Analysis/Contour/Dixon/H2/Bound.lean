@@ -31,6 +31,8 @@ only interval-integrable.
   its decay at infinity.
 * `TauCeti.Contour.dixonH2_norm_le_of_integrable` / `dixonH2_tendsto_zero_of_integrable` — the `L¹`
   versions, via the shared estimate `norm_integral_inv_sub_smul_le`.
+* `TauCeti.Contour.dixonH2_tendsto_zero_of_continuousOn` — decay at infinity for every `f`, the
+  integral being `0` far out when the weight is not integrable.
 
 The decay of `dixonH2` (hence of Dixon's glued function, which agrees with it far out) is the input
 to the Liouville step of Dixon's proof of the homology form of Cauchy's theorem
@@ -128,5 +130,25 @@ theorem dixonH2_tendsto_zero_of_integrable {R : ℝ} (hR : ∀ t ∈ Ι a b, ‖
     (hg : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b) :
     Tendsto (dixonH2 f γ a b) (cocompact ℂ) (nhds 0) :=
   tendsto_zero_cocompact_of_norm_le_div fun _ hw ↦ dixonH2_norm_le_of_integrable hR hg hw
+
+/-- **`dixonH2 f γ a b` tends to `0` along `cocompact ℂ` for a continuous curve.** No hypothesis on
+`f` is needed: when the weight `f (γ ·) * deriv γ` is interval-integrable this is
+`dixonH2_tendsto_zero_of_integrable`, and otherwise the Cauchy integrand is not integrable at any
+`w` off the curve, so `dixonH2 f γ a b w = 0` there, in particular at every `w` of large norm. -/
+theorem dixonH2_tendsto_zero_of_continuousOn (hγ : ContinuousOn γ (uIcc a b)) :
+    Tendsto (dixonH2 f γ a b) (cocompact ℂ) (nhds 0) := by
+  obtain ⟨R, hR⟩ := isCompact_uIcc.exists_bound_of_continuousOn hγ
+  by_cases hg : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b
+  · exact dixonH2_tendsto_zero_of_integrable (fun t ht ↦ hR t (uIoc_subset_uIcc ht)) hg
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [(isCompact_closedBall (0 : ℂ) R).compl_mem_cocompact] with w hw
+  have hoff : ∀ t ∈ uIcc a b, γ t - w ≠ 0 := fun t ht h ↦
+    hw (mem_closedBall_zero_iff.mpr (sub_eq_zero.mp h ▸ hR t ht))
+  -- Multiplying the Cauchy integrand by the continuous factor `γ t - w` recovers the weight.
+  refine ((dixonH2_def f γ a b w).trans (intervalIntegral.integral_undef fun hint ↦ hg ?_)).symm
+  refine (intervalIntegrable_congr fun t ht ↦ ?_).mp
+    (hint.continuousOn_mul (hγ.sub (continuousOn_const (c := w))))
+  simp only [Pi.sub_apply]
+  field_simp [hoff t (uIoc_subset_uIcc ht)]
 
 end TauCeti.Contour
