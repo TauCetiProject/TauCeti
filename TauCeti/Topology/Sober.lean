@@ -14,7 +14,8 @@ public import TauCeti.Logic.Equiv.Set
 In a sober space, the generic points of irreducible components are precisely the points
 with no proper generization. Every point of a closed subset is a specialization of such a
 generic point of that subset. These facts let one choose component-generic points without
-Noetherianity or a dimension argument.
+Noetherianity or a dimension argument; in a `T0` space they have no proper generization
+inside that subset.
 
 In a sober space, `x ↦ closure {x}` is a bijection from component-generic points onto
 irreducible components. For a continuous map between sober spaces, bijections on
@@ -73,6 +74,17 @@ theorem IsClosed.exists_genericPoint_specializes {X : Type*} [TopologicalSpace X
   refine ⟨(genericPoints.ofComponent C).1, (genericPoints.ofComponent C).2, ?_⟩
   exact ((genericPoints.isGenericPoint_ofComponent C).specializes mem_irreducibleComponent).map
     continuous_subtype_val
+
+/-- Every point of a closed subset of a quasi-sober `T0` space is a specialization of a point of
+that subset with no proper generization in it. -/
+theorem IsClosed.exists_maximal_specializes {X : Type*} [TopologicalSpace X] [QuasiSober X]
+    [T0Space X] {s : Set X} (hs : IsClosed s) {x : X} (hx : x ∈ s) :
+    ∃ z ∈ s, z ⤳ x ∧ ∀ z' ∈ s, z' ⤳ z → z' = z := by
+  let : QuasiSober s := hs.isClosedEmbedding_subtypeVal.quasiSober
+  obtain ⟨z, hz, hzx⟩ := hs.exists_genericPoint_specializes hx
+  refine ⟨z, z.2, hzx, fun z' hz' hzz' ↦ ?_⟩
+  exact congrArg Subtype.val ((TauCeti.mem_genericPoints_iff.mp hz) ⟨z', hz'⟩
+    ((subtype_specializes_iff _ _).mpr hzz'))
 
 section Maps
 

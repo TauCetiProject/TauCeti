@@ -43,13 +43,8 @@ theorem exists_maximal_ramificationLocus_over_of_maximal_branchLocus
     {x : X} (hx : x ∈ f.ramificationLocus) (hxy : f x = y) :
     ∃ z ∈ f.ramificationLocus, z ⤳ x ∧ f z = y ∧
       ∀ z' ∈ f.ramificationLocus, z' ⤳ z → z' = z := by
-  let : QuasiSober f.ramificationLocus :=
-    (f.isClosed_ramificationLocus).isClosedEmbedding_subtypeVal.quasiSober
-  obtain ⟨z, hz, hzx⟩ := (f.isClosed_ramificationLocus).exists_genericPoint_specializes hx
-  refine ⟨z, z.2, hzx, hy _ ?_ (hxy ▸ hzx.map f.continuous), ?_⟩
-  · exact mem_branchLocus_iff.mpr ⟨z, z.2, rfl⟩
-  · intro z' hz' hzz'
-    exact congrArg Subtype.val ((TauCeti.mem_genericPoints_iff.mp hz) ⟨z', hz'⟩
-      ((subtype_specializes_iff _ _).mpr hzz'))
+  obtain ⟨z, hz, hzx, hmax⟩ := (f.isClosed_ramificationLocus).exists_maximal_specializes hx
+  refine ⟨z, hz, hzx, hy _ ?_ (hxy ▸ hzx.map f.continuous), hmax⟩
+  exact mem_branchLocus_iff.mpr ⟨z, hz, rfl⟩
 
 end AlgebraicGeometry.Scheme.Hom
