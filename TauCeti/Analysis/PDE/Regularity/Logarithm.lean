@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.Mul
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
