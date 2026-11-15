@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.CategoryTheory.ConcreteCategory.Basic
+public import Mathlib.CategoryTheory.Limits.Shapes.ZeroObjects
 public import TauCeti.CategoryTheory.Dagger.Basic
 
 /-!
@@ -316,6 +317,75 @@ theorem unitaryEquivLinearIsometryEquiv_symm_val_apply
     (e : X ≃ₗᵢ[𝕜] Y) (x : X) :
     (unitaryEquivLinearIsometryEquiv.symm e).1 x = e x := (rfl)
 
+/-- For any object `X : HilbertCat 𝕜`, `End X` (with operator-order multiplication) is canonically
+`⋆`-isomorphic to the bounded operator algebra `X →L[𝕜] X`. -/
+def endStarAlgEquiv (X : HilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X →L[𝕜] X) where
+  toFun a := a.asHom
+  invFun f := End.of f
+  left_inv _ := (rfl)
+  right_inv _ := (rfl)
+  map_mul' _ _ := (rfl)
+  map_add' _ _ := (rfl)
+  map_smul' _ _ := (rfl)
+  map_star' _ := (rfl)
+
+/-- Forward evaluation of `HilbertCat.endStarAlgEquiv`. -/
+@[simp] theorem endStarAlgEquiv_apply (X : HilbertCat.{u, v} 𝕜) (a : End X) :
+    endStarAlgEquiv X a = ConcreteCategory.hom a.asHom := (rfl)
+
+/-- Inverse evaluation of `HilbertCat.endStarAlgEquiv`. -/
+@[simp] theorem endStarAlgEquiv_symm_apply (X : HilbertCat.{u, v} 𝕜) (f : X →L[𝕜] X) :
+    (endStarAlgEquiv X).symm f = End.of f := (rfl)
+
+/-- An object of `HilbertCat 𝕜` is a categorical zero object precisely when its underlying carrier
+is a subsingleton. -/
+theorem isZero_iff_subsingleton (X : HilbertCat.{u, v} 𝕜) :
+    Limits.IsZero X ↔ Subsingleton X := by
+  rw [Limits.IsZero.iff_id_eq_zero]
+  refine ⟨fun h => ⟨fun x y => ?_⟩, fun _ => ?_⟩
+  · have hx : ConcreteCategory.hom (𝟙 X) x = 0 :=
+      congrArg (fun T : X ⟶ X => ConcreteCategory.hom T x) h
+    have hy : ConcreteCategory.hom (𝟙 X) y = 0 :=
+      congrArg (fun T : X ⟶ X => ConcreteCategory.hom T y) h
+    rw [id_eq_id, hom_eq, ContinuousLinearMap.id_apply] at hx hy
+    exact hx.trans hy.symm
+  · exact ContinuousLinearMap.ext fun _ => Subsingleton.elim _ _
+
+/-- Any subsingleton Hilbert space bundles to a zero object in `HilbertCat 𝕜`. -/
+theorem isZero_of_subsingleton (E : Type v) [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] [Subsingleton E] :
+    Limits.IsZero (of 𝕜 E) :=
+  (isZero_iff_subsingleton (of 𝕜 E)).mpr inferInstance
+
+/-- Any nontrivial Hilbert space bundles to a nonzero object in `HilbertCat 𝕜`. -/
+theorem not_isZero_of_nontrivial (E : Type v) [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] [Nontrivial E] :
+    ¬ Limits.IsZero (of 𝕜 E) := by
+  rw [isZero_iff_subsingleton]
+  exact not_subsingleton (of 𝕜 E)
+
+/-- The object property selecting finite-dimensional Hilbert spaces in `HilbertCat 𝕜`. -/
+abbrev isFiniteDimensional : ObjectProperty (HilbertCat.{u, v} 𝕜) :=
+  fun X => FiniteDimensional 𝕜 X
+
 end HilbertCat
+
+/-- The full subcategory of finite-dimensional Hilbert spaces over `𝕜`. -/
+abbrev FinHilbertCat (𝕜 : Type u) [RCLike 𝕜] :=
+  (HilbertCat.isFiniteDimensional (𝕜 := 𝕜)).FullSubcategory
+
+namespace FinHilbertCat
+
+instance instFiniteDimensional {𝕜 : Type u} [RCLike 𝕜] (X : FinHilbertCat.{u, v} 𝕜) :
+    FiniteDimensional 𝕜 X.obj :=
+  X.property
+
+/-- Bundle a finite-dimensional inner product space into `FinHilbertCat 𝕜`. -/
+abbrev of (𝕜 : Type u) [RCLike 𝕜] (E : Type v) [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [hE : FiniteDimensional 𝕜 E] : FinHilbertCat.{u, v} 𝕜 :=
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
+  ⟨HilbertCat.of 𝕜 E, hE⟩
+
+end FinHilbertCat
 
 end TauCeti
