@@ -834,17 +834,9 @@ theorem curveVelocity_timeDependentFlowOf_comp {c : ℝ → M} {q : ℝ}
 is defined at `x`, flowing back from `t` to `s` is a left inverse near `x`, so `dφ_{s, t}` is
 injective at `x`. No completeness of the field is needed. -/
 theorem injective_mfderiv_timeDependentFlowOf (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
-    Function.Injective (mfderiv I I (timeDependentFlowOf X s t) x) := by
-  have hφ : MDifferentiableAt I I (timeDependentFlowOf X s t) x :=
-    (contMDiffAt_timeDependentFlowOf (n := 1) le_rfl hX h).mdifferentiableAt one_ne_zero
-  have hψ : MDifferentiableAt I I (timeDependentFlowOf X t s) (timeDependentFlowOf X s t x) :=
-    (contMDiffAt_timeDependentFlowOf (n := 1) le_rfl hX
-      (timeDependentFlowOf_symm_of_mem hX h).1).mdifferentiableAt one_ne_zero
-  have heq : timeDependentFlowOf X t s ∘ timeDependentFlowOf X s t =ᶠ[𝓝 x] id := by
-    filter_upwards [(continuousAt_const.prodMk continuousAt_id).preimage_mem_nhds
-      ((isOpen_timeDependentFlowDomain hX).mem_nhds h)] with y hy
-    exact (timeDependentFlowOf_symm_of_mem hX hy).2
-  exact mfderiv_injective_of_comp_eventuallyEq_id hψ hφ heq
+    Function.Injective (mfderiv I I (timeDependentFlowOf X s t) x) :=
+  (((timeDependentFlowPartialDiffeomorph le_rfl hX s t).isLocalDiffeomorphAt I I 1
+    h).isInvertible_mfderiv one_ne_zero).injective
 
 end Local
 
