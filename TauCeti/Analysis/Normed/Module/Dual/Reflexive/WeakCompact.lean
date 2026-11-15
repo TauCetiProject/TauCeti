@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.Dual.Goldstine
+public import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.Analysis.LocallyConvex.WeakSpace
+import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 import TauCeti.Analysis.Normed.Module.DoubleDual
 
 /-!
@@ -14,14 +15,14 @@ import TauCeti.Analysis.Normed.Module.DoubleDual
 
 A real or complex seminormed space is reflexive if and only if its closed unit ball is
 weakly compact. More generally, every norm-closed bounded real-convex set in a reflexive space is
-weakly compact. This rests on `TauCeti.isCompact_closure_toWeakSpace` from
+weakly compact. This rests on `TauCeti.isCompact_closure_toWeakSpace_of_isBounded` from
 `TauCeti.Analysis.Normed.Module.DoubleDual`: over any proper nontrivially normed field, every
 bounded set in a reflexive space has weakly compact closure.
 
 Reflexivity means surjectivity of `NormedSpace.inclusionInDoubleDual`. No completeness,
-separability or separation hypothesis is needed for the equivalence. For normed spaces,
-either condition also implies completeness. The topology changes are explicit, using
-`toWeakSpace` and `NormedSpace.inclusionInDoubleDualWeak`.
+separability or separation hypothesis is needed for the equivalence. Either condition also implies
+completeness (`TauCeti.completeSpace_of_surjective_inclusionInDoubleDual`). The topology changes
+are explicit, using `toWeakSpace` and `NormedSpace.inclusionInDoubleDualWeak`.
 
 The forward direction transports Banach–Alaoglu along the inducing bidual map;
 the reverse direction uses Goldstine's theorem.
@@ -71,7 +72,7 @@ theorem isCompact_toWeakSpace_of_isClosed_of_convex_of_isBounded
     IsCompact (toWeakSpace 𝕜 E '' s) := by
   have : LocallyConvexSpace ℝ E := NormedSpace.toLocallyConvexSpace' 𝕜
   rw [← hclosed.closure_eq, hconv.toWeakSpace_closure 𝕜]
-  exact isCompact_closure_toWeakSpace hE hbound
+  exact isCompact_closure_toWeakSpace_of_isBounded hE hbound
 
 /-- Every closed ball in a reflexive seminormed space is weakly compact, including balls
 of zero or negative radius. -/

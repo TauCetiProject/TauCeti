@@ -10,7 +10,6 @@ import Mathlib.Order.SuccPred.IntervalSucc
 import TauCeti.Geometry.Manifold.Morse.Deformation.Cofibration
 import TauCeti.Geometry.Manifold.Morse.Exhaustion
 import TauCeti.Logic.Equiv.Sum
-import TauCeti.Topology.Category.TopCat.Normal
 import TauCeti.Topology.CWComplex.Classical.Finite
 import TauCeti.Topology.CWComplex.Classical.SequentialColimit
 import TauCeti.Topology.Homotopy.Extension.Tower
@@ -36,8 +35,8 @@ complex, since a compact band holds finitely many critical points
 
 The colimit `X` of the stages `W k` is a CW complex whose cells are the new cells of all the stages
 (`TauCeti.cwComplexOfIsColimit`), so its `λ`-cells correspond to the critical points of index `λ`:
-each lies in exactly one band `(a k, a (k + 1)]`. It is Hausdorff, indeed normal, because each
-stage is compact (`TauCeti.TopCat.normalSpace_of_isColimit`). Inside `X` the stages are linked by
+each lies in exactly one band `(a k, a (k + 1)]`. It is Hausdorff because every stage is Hausdorff
+(`TauCeti.t2Space_of_isColimit_cwComplex`). Inside `X` the stages are linked by
 closed cofibrations, since each is a subcomplex of the next, and so are the regular sublevels of
 `M`, by collars of the regular levels
 (`TauCeti.hasHomotopyExtensionProperty_range_sublevelInclusion_of_isRegularValue`). The models of
@@ -97,12 +96,6 @@ private structure SublevelCWModel {E H : Type*} {M : Type u} [NormedAddCommGroup
 attribute [instance] SublevelCWModel.topologicalSpace SublevelCWModel.t2Space
   SublevelCWModel.cwComplex SublevelCWModel.finite
 
-variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
-  [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ}
-
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] [TopologicalSpace M]
-  [ChartedSpace H M] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
 /-- The sequence of models defined recursively from a first model and a rule extending each model
 to the next sublevel. -/
 private def sublevelCWModelSeq {E H : Type*} {M : Type u} [NormedAddCommGroup E]
@@ -114,8 +107,10 @@ private def sublevelCWModelSeq {E H : Type*} {M : Type u} [NormedAddCommGroup E]
   | 0 => S₀
   | k + 1 => S' k (sublevelCWModelSeq S₀ S' k)
 
+variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {f : M → ℝ}
+
 open Classical in
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
 /-- Splitting the critical points of index `m` in `{f ≤ b}` into those in `{f ≤ a}` and those in
 `(a, b]`, when `a ≤ b`. -/
 private def criticalPointsIicUnionEquiv {a b : ℝ} (hab : a ≤ b) (m : ℕ) :
@@ -131,23 +126,6 @@ private def criticalPointsIicUnionEquiv {a b : ℝ} (hab : a ≤ b) (m : ℕ) :
       simp only [mem_union, mem_ofPred_eq, mem_inter_iff, mem_preimage, ← Iic_union_Ioc_eq_Iic hab]
       tauto)
 
-/-- Across a compact band between regular values, a finite CW model of the lower sublevel extends
-to one of the upper sublevel, containing it as a subcomplex, with one new `m`-cell for each
-critical point of index `m` in the band. -/
-private theorem IsMorse.exists_sublevelCWModel_extension (hf : IsMorse I f) {a b : ℝ}
-    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
-    (hb : IsRegularValue I 𝓘(ℝ) f b) (S : SublevelCWModel I f a) :
-    ∃ (S' : SublevelCWModel I f b) (ι : C(S.W, S'.W)), IsClosedEmbedding ι ∧
-      (∀ w, (S'.h (ι w) : M) = S.h w) ∧
-      ∃ e : ∀ m, cell (univ : Set S'.W) m ≃ cell (univ : Set S.W) m ⊕
-          ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m},
-        ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x) := by
-  obtain ⟨W', _, _, _, ι, h', _, hι, -, hh, e, he⟩ :=
-    hf.exists_finite_cwComplex_extension_homotopyEquiv_sublevel hab hcompact ha hb S.W S.h
-  exact ⟨⟨W', h', fun m ↦ (e m).trans ((Equiv.sumCongr (S.cellEquiv m) (.refl _)).trans
-    (criticalPointsIicUnionEquiv hab m))⟩, ι, hι, hh, e, he⟩
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
 /-- The critical points of index `m` are the disjoint union, over `k`, of those with value in
 `(a k, a (k + 1)]`, when `a` increases to infinity from below all values of `f`. -/
 private def sigmaCriticalPointsIocEquiv {a : ℕ → ℝ} (hmono : StrictMono a)
@@ -169,6 +147,24 @@ private def sigmaCriticalPointsIocEquiv {a : ℕ → ℝ} (hmono : StrictMono a)
           ⟨a k, mem_range_self k, hk⟩)
       obtain ⟨k, hk⟩ := mem_iUnion.1 (hcover.symm ▸ ha0 x : f x ∈ ⋃ k, Ioc (a k) (a (k + 1)))
       exact ⟨⟨k, x, ⟨hx, hk⟩, hxm⟩, rfl⟩
+
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
+
+/-- Across a compact band between regular values, a finite CW model of the lower sublevel extends
+to one of the upper sublevel, containing it as a subcomplex, with one new `m`-cell for each
+critical point of index `m` in the band. -/
+private theorem IsMorse.exists_sublevelCWModel_extension (hf : IsMorse I f) {a b : ℝ}
+    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
+    (hb : IsRegularValue I 𝓘(ℝ) f b) (S : SublevelCWModel I f a) :
+    ∃ (S' : SublevelCWModel I f b) (ι : C(S.W, S'.W)), IsClosedEmbedding ι ∧
+      (∀ w, (S'.h (ι w) : M) = S.h w) ∧
+      ∃ e : ∀ m, cell (univ : Set S'.W) m ≃ cell (univ : Set S.W) m ⊕
+          ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m},
+        ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x) := by
+  obtain ⟨W', _, _, _, ι, h', _, hι, -, hh, e, he⟩ :=
+    hf.exists_finite_cwComplex_extension_homotopyEquiv_sublevel hab hcompact ha hb S.W S.h
+  exact ⟨⟨W', h', fun m ↦ (e m).trans ((Equiv.sumCongr (S.cellEquiv m) (.refl _)).trans
+    (criticalPointsIicUnionEquiv hab m))⟩, ι, hι, hh, e, he⟩
 
 /-- Glue compatible stage homotopy equivalences `S k ≃ₕ {f ≤ a k}` into a homotopy equivalence
 `c.pt ≃ₕ M` from the colimit of the CW tower, restricting to `eW k` on each stage subcomplex and
@@ -282,9 +278,7 @@ theorem IsMorse.exists_cwComplex_subcomplex_homotopyEquiv (hf : IsMorse I f) (hp
   let c := colimit.cocone F
   have hc : IsColimit c := colimit.isColimit F
   let := cwComplexOfIsColimit hF hιc hc
-  have : ∀ k, CompactSpace (F.obj k) := fun k ↦
-    isCompact_univ_iff.1 (CWComplex.isCompact_of_finite (C := (univ : Set (S k).W)))
-  have := TopCat.t4Space_of_isColimit hF hc
+  have := t2Space_of_isColimit_cwComplex hF hιc hc
   obtain ⟨h, hW, hhW, hsymm⟩ := hf.exists_homotopyEquiv_colimit_sublevel hmono htop hreg hcompact
     S (fun k ↦ ι k (S k)) rfl hF hιc (fun k ↦ hh k (S k)) hc
   have hW_coe := coe_cwComplexOfIsColimitSubcomplex hF hιc hc
