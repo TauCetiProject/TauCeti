@@ -36,8 +36,7 @@ maps differ by a unit of `ℤ` on `πₘ(Sᵐ)`, and hence everywhere.
 * `HomotopyGroup.exists_hurewicz_eq_units_smul_cubicalHurewicz`: the Hurewicz map is `ε` times
   the cubical Hurewicz map, transported to simplicial singular homology, for a universal sign `ε`.
 * `HomotopyGroup.bijective_hurewicz` and `HomotopyGroup.hurewiczAddEquiv`: **the Hurewicz
-  theorem**, `πₙ₊₂(X, x) ≅ Hₙ₊₂(X; ℤ)` for an `(n + 1)`-connected space. Its forward map is the
-  integral Hurewicz homomorphism (`HomotopyGroup.hurewiczAddEquiv_eq_hurewiczIntHom`).
+  theorem**, `πₙ₊₂(X, x) ≅ Hₙ₊₂(X; ℤ)` for an `(n + 1)`-connected space.
 * `HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom`: in that range, the Hurewicz class of
   a generalized loop generates `Hₙ₊₂(X; ℤ)` freely exactly when its homotopy class generates
   `πₙ₊₂(X, x)` freely.
@@ -171,8 +170,9 @@ theorem hurewiczAddEquiv_apply (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup 
     hurewiczAddEquiv hX a = (hurewiczHom (ModuleCat.of ℤ ℤ) (n + 1) a).hom 1 :=
   (AddEquiv.ofBijective_apply _ _ _).trans <| by rw [hurewiczIntHom_apply, hurewiczHom_apply]
 
-/-- The Hurewicz isomorphism is the integral Hurewicz homomorphism `hurewiczIntHom`. -/
-theorem hurewiczAddEquiv_eq_hurewiczIntHom
+/-- The forward map of the Hurewicz isomorphism is the integral Hurewicz homomorphism
+`HomotopyGroup.hurewiczIntHom`. -/
+theorem hurewiczAddEquiv_apply_eq_hurewiczIntHom
     (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
     (a : Additive (HomotopyGroup (Fin (n + 2)) X x)) :
     hurewiczAddEquiv hX a = hurewiczIntHom X x (n + 1) a :=

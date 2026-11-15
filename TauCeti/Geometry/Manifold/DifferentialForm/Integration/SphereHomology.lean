@@ -87,7 +87,7 @@ theorem homologySphereIntegralHom_hurewiczIntHom (x : M) (hφ : IsSmoothForm I 1
   rw [← ofMul_toMul a, ← hb, hurewiczIntHom_homotopyGroupTransport, toMul_ofMul,
     sphereIntegral_homotopyGroupTransport hφ hdφ, homologySphereIntegralHom,
     AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
-    ← hurewiczAddEquiv_eq_hurewiczIntHom (subsingleton_homotopyGroup_of_lt_two x),
+    ← hurewiczAddEquiv_apply_eq_hurewiczIntHom (subsingleton_homotopyGroup_of_lt_two x),
     AddEquiv.symm_apply_apply, sphereIntegralHom_apply, toMul_ofMul]
 
 /-- **Independence of the base point.** The integral of a closed `C¹` two-form over `H₂(M; ℤ)`
@@ -98,7 +98,7 @@ theorem homologySphereIntegralHom_eq (x y : M) (hφ : IsSmoothForm I 1 φ)
   ext z
   obtain ⟨a, rfl⟩ :=
     (hurewiczAddEquiv (subsingleton_homotopyGroup_of_lt_two (X := M) y)).surjective z
-  rw [hurewiczAddEquiv_eq_hurewiczIntHom, homologySphereIntegralHom_hurewiczIntHom,
+  rw [hurewiczAddEquiv_apply_eq_hurewiczIntHom, homologySphereIntegralHom_hurewiczIntHom,
     homologySphereIntegralHom_hurewiczIntHom]
 
 end TauCeti

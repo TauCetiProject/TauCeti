@@ -436,6 +436,20 @@ theorem curveVelocity_comp_add_right (γ : 𝕜 → M) (t c : 𝕜) :
     mfderiv_zero_of_not_mdifferentiableAt hγ]
   exact (zero_apply _).trans (zero_apply _).symm
 
+/-- Reflecting the parameter negates the velocity, including at nondifferentiable points. -/
+theorem curveVelocity_comp_const_sub (γ : 𝕜 → M) (d t : 𝕜) :
+    curveVelocity I (fun r ↦ γ (d - r)) t = -curveVelocity I γ (d - t) := by
+  by_cases hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (d - t)
+  · simpa only [Function.comp_def, id_eq, neg_smul, one_smul] using
+      curveVelocity_comp ((hasDerivAt_id t).const_sub d) hγ
+  · have hγ' : ¬MDifferentiableAt 𝓘(𝕜, 𝕜) I (fun r ↦ γ (d - r)) t := fun h ↦ hγ <| by
+      simpa only [Function.comp_def, sub_sub_cancel, id_eq] using h.comp_of_eq (d - t)
+        (mdifferentiableAt_iff_differentiableAt.2 (differentiableAt_id.const_sub d))
+        (sub_sub_cancel d t)
+    rw [curveVelocity_apply, curveVelocity_apply, mfderiv_zero_of_not_mdifferentiableAt hγ,
+      mfderiv_zero_of_not_mdifferentiableAt hγ']
+    exact neg_zero.symm
+
 /-- Differentiability of a periodic curve is unchanged by shifting by a period. -/
 theorem _root_.Function.Periodic.mdifferentiableAt_add {c : 𝕜} (h : Function.Periodic γ c) :
     MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + c) ↔ MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t := by
