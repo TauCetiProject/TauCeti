@@ -152,9 +152,8 @@ theorem morseIndex_comp_snd [FiniteDimensional ℝ E] (ψ : F → ℝ) (z : E ×
         (0 : QuadraticForm ℝ E).prod (hessianQuadraticForm ψ z.2) := by
       ext v
       simp [hessianQuadraticForm_comp_snd]
-    have h0 : sigNeg (0 : QuadraticForm ℝ E) = 0 :=
-      (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero _).mp fun _ ↦ le_of_eq (zero_apply _).symm
-    rw [morseIndex_def, morseIndex_def, hH, QuadraticForm.sigNeg_prod, h0, zero_add]
+    rw [morseIndex_def, morseIndex_def, hH, QuadraticForm.sigNeg_prod, QuadraticForm.sigNeg_zero,
+      zero_add]
   · rw [morseIndex_eq_zero_of_not_finiteDimensional hF,
       morseIndex_eq_zero_of_not_finiteDimensional fun _ ↦
         hF (Module.Finite.of_surjective (LinearMap.snd ℝ E F) LinearMap.snd_surjective)]

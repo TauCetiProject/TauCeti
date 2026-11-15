@@ -160,10 +160,11 @@ theorem fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right {f : E × F →
 /-- A function of the second variable alone is differentiable at `z` exactly when the function is
 differentiable at `z.2`. -/
 theorem differentiableAt_comp_snd_iff {f : F → G} {z : E × F} :
-    DifferentiableAt 𝕜 (f ∘ Prod.snd) z ↔ DifferentiableAt 𝕜 f z.2 :=
-  ⟨fun h ↦ (DifferentiableAt.comp (g := f ∘ Prod.snd) z.2 h
-      (hasFDerivAt_prodMk_right (𝕜 := 𝕜) z.1 z.2).differentiableAt :),
-    fun h ↦ h.comp z differentiableAt_snd⟩
+    DifferentiableAt 𝕜 (f ∘ Prod.snd) z ↔ DifferentiableAt 𝕜 f z.2 := by
+  obtain ⟨a, b⟩ := z
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp _ differentiableAt_snd⟩
+  -- Restricted to the slice `y ↦ (a, y)`, the function `f ∘ Prod.snd` is `f` itself.
+  simpa [Function.comp_def] using h.comp b (hasFDerivAt_prodMk_right (𝕜 := 𝕜) a b).differentiableAt
 
 /-- The derivative of a function of the second variable alone is the derivative of the function
 read on the second component. No differentiability is needed: otherwise both sides are zero. -/
