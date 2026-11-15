@@ -185,8 +185,8 @@ theorem sum_divisor_dirichletData_entireCompletion_toNat_mul_re_one_div_sub_le_r
     (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
     (dirichletData_entireCompletion_zero_ne_zero χ hχ)
     (dirichletData_entireCompletion_one_sub_eq_rootNumber_mul_conj_conj χ hχ)
-    (dirichletData_entireCompletion_ne_zero_of_one_le_re χ hχ hs)
-    (fun _ hρ ↦ (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hρ).2.le.trans hs) S
+    (dirichletData_entireCompletion_ne_zero_of_one_le_re χ hχ hs) S
+    fun _ _ hρ ↦ (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hρ).2.le.trans hs
 
 /-- On `1 ≤ Re s`, the real part of the logarithmic derivative of a primitive Dirichlet entire
 completion is nonnegative. -/

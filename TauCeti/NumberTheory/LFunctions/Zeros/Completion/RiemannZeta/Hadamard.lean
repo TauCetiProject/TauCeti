@@ -160,8 +160,8 @@ theorem sum_divisor_zetaEntireCompletion_toNat_mul_re_one_div_sub_le_re_logDeriv
       (1 / (s - ρ)).re ≤ (logDeriv zetaEntireCompletion s).re :=
   orderLE_zetaEntireCompletion.sum_divisor_toNat_mul_re_one_div_sub_le_re_logDeriv
     differentiable_zetaEntireCompletion (by simp) zetaEntireCompletion_one_sub_eq_conj_conj
-    (zetaEntireCompletion_ne_zero_of_one_le_re hs)
-    (fun _ hρ ↦ (re_mem_Ioo_of_zetaEntireCompletion_eq_zero hρ).2.le.trans hs) S
+    (zetaEntireCompletion_ne_zero_of_one_le_re hs) S
+    fun _ _ hρ ↦ (re_mem_Ioo_of_zetaEntireCompletion_eq_zero hρ).2.le.trans hs
 
 /-- On `1 ≤ Re s`, `Re (logDeriv zetaEntireCompletion s)` is nonnegative. -/
 theorem re_logDeriv_zetaEntireCompletion_nonneg {s : ℂ} (hs : 1 ≤ s.re) :

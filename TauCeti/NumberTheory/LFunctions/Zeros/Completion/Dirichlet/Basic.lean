@@ -165,14 +165,9 @@ theorem dirichletData_entireCompletion_zero_ne_zero :
       exact DirichletCharacter.LFunction_apply_one_ne_zero hne
         ((dirichletData_entireCompletion_eq_zero_iff χ hχ hne (s := 1) (by norm_num)).mp hz)
     intro hz
-    rw [dirichletData_entireCompletion_of_ne_one χ hχ hne] at hz h1
-    have hp := dirichletData_polarOrder_eq_zero χ hχ hne
-    have heq := (dirichletData_hasFunctionalEquation χ hχ).completed_eq 1
-      (by simp only [hp, Finsupp.zero_apply]) (by simp only [hp, Finsupp.zero_apply])
-    apply h1
-    rw [sub_self, AnalyticLFunctionData.dual_completed_apply, map_zero, hz, map_zero,
-      mul_zero] at heq
-    exact heq
+    have heq := dirichletData_entireCompletion_one_sub_eq_rootNumber_mul_conj_conj χ hχ 0
+    simp only [sub_zero, map_zero, hz, mul_zero] at heq
+    exact h1 heq
 
 /-- All analytic orders of a primitive Dirichlet entire completion are finite. -/
 theorem analyticOrderAt_dirichletData_entireCompletion_ne_top (s : ℂ) :

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Hadamard.OrderOne
 import Mathlib.Analysis.Calculus.Deriv.Star
-import TauCeti.Analysis.Complex.GrowthOrder.Zero.Summability
 import TauCeti.NumberTheory.LFunctions.Zeros.Divisor
 
 /-!
@@ -55,7 +54,7 @@ so that downstream zero-free region and real-zero arguments see a pure zero sum:
 * `TauCeti.OrderLE.re_logDeriv_eq_tsum`,
   `TauCeti.OrderLE.sum_divisor_toNat_mul_re_one_div_sub_le_re_logDeriv`: the constant-free
   expansion `Re (logDeriv f s) = ∑' ρ, m_ρ * Re (1 / (s - ρ))` away from the zeros of `f`, and
-  its finite retained-zero subsum lower bound when `Re ρ ≤ Re s` on zeros.
+  its finite retained-zero subsum lower bound when `Re ρ ≤ Re s` on zeros outside `S`.
 
 ## References
 
@@ -206,18 +205,25 @@ theorem re_logDeriv_eq_tsum {f : ℂ → ℂ}
   ring
 
 /-- **Retained-zero finite-subsum bound.** Under the hypotheses of `OrderLE.re_logDeriv_eq_tsum`,
-at any `s` with `f s ≠ 0` to the right of all zeros of `f` (`∀ ρ, f ρ = 0 → ρ.re ≤ s.re`), every
-finite subsum `∑ ρ ∈ S, m_ρ * Re (1 / (s - ρ))` is at most `Re (logDeriv f s)`. -/
+at any `s` with `f s ≠ 0` such that every zero of `f` outside `S : Finset ℂ` satisfies
+`ρ.re ≤ s.re`, the finite subsum `∑ ρ ∈ S, m_ρ * Re (1 / (s - ρ))` is at most
+`Re (logDeriv f s)`. -/
 theorem sum_divisor_toNat_mul_re_one_div_sub_le_re_logDeriv {f : ℂ → ℂ}
     (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0)
     {c : ℂ} (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z)))
-    {s : ℂ} (hs : f s ≠ 0) (hle : ∀ ρ : ℂ, f ρ = 0 → ρ.re ≤ s.re) (S : Finset ℂ) :
+    {s : ℂ} (hs : f s ≠ 0) (S : Finset ℂ) (hle : ∀ ρ ∉ S, f ρ = 0 → ρ.re ≤ s.re) :
     ∑ ρ ∈ S, ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re ≤
       (logDeriv f s).re := by
-  rw [h.re_logDeriv_eq_tsum hf hf0 hle hfe hs]
+  have hB : ∀ ρ : ℂ, f ρ = 0 →
+      ρ.re ≤ (insert s S).sup' (Finset.insert_nonempty s S) Complex.re := by
+    intro ρ hρ
+    by_cases hρS : ρ ∈ S
+    · exact Finset.le_sup' Complex.re (Finset.mem_insert_of_mem hρS)
+    · exact (hle ρ hρS hρ).trans (Finset.le_sup' Complex.re (Finset.mem_insert_self s S))
+  rw [h.re_logDeriv_eq_tsum hf hf0 hB hfe hs]
   exact sum_divisor_toNat_mul_re_one_div_sub_le_tsum
-    (h.summable_divisor_toNat_mul_re_one_div_sub_of_re_le hf (by norm_num) hle hfe s) S
-    fun ρ _ hρ ↦ hle ρ ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero hρ.ne')
+    (h.summable_divisor_toNat_mul_re_one_div_sub_of_re_le hf (by norm_num) hB hfe s) S
+    fun ρ hρS hρ ↦ hle ρ hρS ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero hρ.ne')
 
 end OrderLE
 

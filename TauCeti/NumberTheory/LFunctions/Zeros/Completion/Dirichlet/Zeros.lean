@@ -78,14 +78,10 @@ theorem re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero {ρ : ℂ}
 entire completion lies in the open critical strip. -/
 theorem re_mem_Ioo_of_divisor_dirichletData_entireCompletion_pos {ρ : ℂ}
     (hρ : 0 < MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ) :
-    ρ.re ∈ Set.Ioo 0 1 := by
-  have h := dirichletData_hasMeromorphicContinuation χ hχ
-  refine re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ ?_
-  by_contra h0
-  rw [MeromorphicOn.divisor_eq_analyticOrderNatAt h.meromorphicOn_entireCompletion
-    (h.analyticAt_entireCompletion ρ) (Set.mem_univ ρ), analyticOrderNatAt,
-    (h.analyticAt_entireCompletion ρ).analyticOrderAt_eq_zero.mpr h0] at hρ
-  simp at hρ
+    ρ.re ∈ Set.Ioo 0 1 :=
+  re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ <|
+    ((dirichletData_hasMeromorphicContinuation χ hχ).analyticAt_entireCompletion ρ
+      ).apply_eq_zero_of_divisor_ne_zero hρ.ne'
 
 /-- For a zero `ρ` of a primitive Dirichlet entire completion and `1 ≤ Re s`,
 the summand `Re (1 / (s - ρ))` is positive. -/
