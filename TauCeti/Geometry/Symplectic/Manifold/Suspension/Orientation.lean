@@ -158,26 +158,10 @@ theorem isOrientationPreservingAt_of_orbitTorus_comp_eq
     Manifold.Orientation.IsOrientationPreservingAt o
       ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) v c := by
   obtain ⟨L, hL⟩ := hinv
-  have hLw (w : TangentSpace I' c) : L w = mfderiv I' (𝓘(ℝ).prod 𝓘(ℝ)) v c w := by
-    rw [← hL, ContinuousLinearEquiv.coe_coe]
   have hv : MDifferentiableAt I' (𝓘(ℝ).prod 𝓘(ℝ)) v c :=
     mdifferentiableAt_of_mfderiv_injective (hL ▸ L.injective)
-  -- The standard frame `((1, 0), (0, 1))` of the torus, which is positive for the product
-  -- orientation, pulls back along `dv` to a frame `(e, j e)`.
-  let b : Module.Basis (Fin 2) ℝ (TangentSpace I' c) :=
-    (Module.Basis.finTwoProd ℝ).map L.symm.toLinearEquiv
-  have hLb (i : Fin 2) : L (b i) = Module.Basis.finTwoProd ℝ i :=
-    L.apply_symm_apply (Module.Basis.finTwoProd ℝ i)
-  have hb : b 1 = j c (b 0) := by
-    apply L.injective
-    rw [hLb, Module.Basis.finTwoProd_one, hLw]
-    exact (mfderiv_apply_almostComplex_eq_of_orbitTorus_comp_eq h hv hτv hhol hS
-      (by rw [← hLw, hLb, Module.Basis.finTwoProd_zero])).symm
-  rw [Manifold.Orientation.isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ L hL, ← ho b hb,
-    ← Module.Basis.orientation_map, AddCircle.orientationAt_orientation_prod_orientation]
-  congr 1
-  ext i
-  exact hLb i
+  exact isOrientationPreservingAt_of_mfderiv_almostComplex_apply_eq ho ⟨L, hL⟩ fun _ he ↦
+    mfderiv_apply_almostComplex_eq_of_orbitTorus_comp_eq h hv hτv hhol hS he
 
 variable {σ : SmoothTwoForm I M} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
 
