@@ -195,7 +195,6 @@ theorem schwarzChristoffelVertex_affine_prevertices (a e : ι → ℝ)
       (fun z ↦ C * schwarzChristoffelPrimitive a e z₀ z) := by
     filter_upwards [self_mem_nhdsWithin] with z hz
     exact schwarzChristoffelPrimitive_affine_prevertices a e z₀ hc d hz
-  have := Real.nhdsWithin_upperHalfPlaneSet_neBot (a j)
   have hvertex : schwarzChristoffelVertex a' e z₀' j =
       C * schwarzChristoffelVertex a e z₀ j :=
     tendsto_nhds_unique hleft (hright.congr' heq.symm)
