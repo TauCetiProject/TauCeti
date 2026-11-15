@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Grassmannian.IdealLocus
 public import TauCeti.RingTheory.Grassmannian.Isotropic
+import TauCeti.RingTheory.Grassmannian.Chart.Isotropic
 
 /-!
 # The isotropic Grassmannian
@@ -45,6 +46,19 @@ commutes with base change (`Module.Grassmannian.isotropicLocus_map`). Over an af
 * `Module.Grassmannian.schemeIsotropicLocus_le_ker_toSchemeHom_iff`: **the universal property**;
   the morphism classifying `N` factors through the isotropic Grassmannian exactly when `N` is
   isotropic for `ω_A`.
+* `Module.Grassmannian.isEmpty_subscheme_schemeIsotropicLocus`: the isotropic Grassmannian of a
+  form with unit Gram determinant on a free module of rank `n` is empty when `2 k < n`.
+* `Module.Grassmannian.nonempty_subscheme_schemeIsotropicLocus`: for a symplectic basis, it is
+  nonempty over a nontrivial ring when `2 k ≥ n`.
+
+For a form with unit Gram determinant on a free module of rank `n`, the isotropic Grassmannian of
+quotient rank `k` is empty when `2 k < n`, since its points over residue fields would be isotropic
+subspaces of more than half the dimension
+(`Module.Grassmannian.isEmpty_subscheme_schemeIsotropicLocus`). For a symplectic basis, the base
+point of the standard isotropic chart shows that it is nonempty over a nontrivial ring when
+`2 k ≥ n` (`Module.Grassmannian.nonempty_subscheme_schemeIsotropicLocus`). So the Grassmannian of
+rank-`r` isotropic subbundles of a symplectic module of rank `2m` over a nontrivial ring is empty
+exactly when `r > m`.
 
 For `M` finite over `R`, the isotropic Grassmannian is proper over `Spec R` by instance inference,
 as a closed subscheme of the proper Grassmannian scheme (`Module.Grassmannian.isProper_toSpec`).
@@ -143,5 +157,43 @@ theorem toSchemeHom_schemeIsotropicLocusHomEquiv_symm_apply (ω : LinearMap.Bili
       h.1 ≫ (schemeIsotropicLocus k ω).subschemeι :=
   toSchemeHom_schemeIdealLocusHomEquiv_symm_apply (R := R) (M := M) (k := k)
     (fun N ↦ N.isotropicLocus ω) (fun f N ↦ isotropicLocus_map f N ω) h
+
+/-- **The isotropic Grassmannian of a large rank is empty.** Let `ω` be a bilinear form on a free
+module `M` with basis `b` indexed by `ι`, whose Gram matrix has unit determinant. If `2 k < |ι|`,
+the isotropic Grassmannian of quotient rank `k` is the empty scheme. For a symplectic form on
+`R^{2m}` and `k = 2m - r`, this says that there are no isotropic subbundles of rank `r > m`. -/
+theorem isEmpty_subscheme_schemeIsotropicLocus {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Basis ι R M) {ω : LinearMap.BilinForm R M}
+    (hω : IsUnit (LinearMap.BilinForm.toMatrix b ω).det) (hk : 2 * k < Fintype.card ι) :
+    IsEmpty (schemeIsotropicLocus k ω).subscheme := by
+  refine ⟨fun x ↦ ?_⟩
+  set Z := (schemeIsotropicLocus k ω).subscheme
+  -- the residue field at `x` is an `R`-algebra through the structure morphism of `Z`
+  let φ := Spec.preimage (Z.fromSpecResidueField x ≫ (schemeIsotropicLocus k ω).subschemeι ≫
+    toSpec R M k)
+  let : Algebra R (Z.residueField x) := φ.hom.toAlgebra
+  obtain ⟨N, hN⟩ := (schemeIsotropicLocusHomEquiv k ω (Z.residueField x)).symm
+    ⟨Z.fromSpecResidueField x, by simp [φ, RingHom.algebraMap_toAlgebra]⟩
+  have := card_le_two_mul_of_le_orthogonal b hω hN
+  omega
+
+/-- **The isotropic Grassmannian of a small rank is nonempty.** Let `b` be a symplectic basis of
+`M`, indexed by `(Fin r ⊕ κ) ⊕ (Fin r ⊕ κ)` with Gram matrix `Matrix.J` for `ω`, so `M` has rank
+`2m` with `m = r + |κ|`. Over a nontrivial ring, the isotropic Grassmannian of quotient rank
+`k = 2m - r` is nonempty; it has the point over `R` given by the span of the vectors
+`b (inl (inl l))`. Together with `Module.Grassmannian.isEmpty_subscheme_schemeIsotropicLocus`, the
+isotropic Grassmannian of rank-`r` subbundles of a symplectic module of rank `2m` over a nontrivial
+ring is nonempty exactly when `r ≤ m`. -/
+theorem nonempty_subscheme_schemeIsotropicLocus [Nontrivial R] {r : ℕ} {κ : Type*} [Fintype κ]
+    [DecidableEq κ] (b : Basis ((Fin r ⊕ κ) ⊕ (Fin r ⊕ κ)) R M) {ω : LinearMap.BilinForm R M}
+    (hb : LinearMap.BilinForm.toMatrix b ω = Matrix.J (Fin r ⊕ κ) R)
+    (hk : k = r + 2 * Fintype.card κ) :
+    Nonempty (schemeIsotropicLocus k ω).subscheme := by
+  let e : Fin k ≃ κ ⊕ (Fin r ⊕ κ) := Fintype.equivFinOfCardEq (by simp [hk]; omega) |>.symm
+  -- the base point of the standard isotropic chart, an isotropic point over `R`
+  let N := (isotropicChartEquiv b e R hb).symm 0
+  let h := schemeIsotropicLocusHomEquiv k ω R ⟨N.1.1, (isotropicLocus_eq_bot_iff _ ω).mp N.2⟩
+  obtain ⟨p⟩ : Nonempty (Spec (.of R)) := inferInstance
+  exact ⟨h.1 p⟩
 
 end Module.Grassmannian

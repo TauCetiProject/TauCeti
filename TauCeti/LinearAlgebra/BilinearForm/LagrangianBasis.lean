@@ -8,12 +8,16 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
+public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Basis.SumExtend
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
-# Symplectic bases extending a prescribed Lagrangian basis
+# Symplectic bases extending a prescribed isotropic basis
 
 Every basis of a Lagrangian subspace of a finite-dimensional symplectic space extends to a
 symplectic basis, with the original vectors at the `Sum.inl` positions. In particular, an
@@ -30,12 +34,20 @@ no division by two and is proved over a commutative ring.
 The resulting family is a basis by the Gram determinant criterion
 `LinearMap.BilinForm.linearIndependent_of_det_ne_zero` and dimension counting.
 
+More generally, every isotropic submodule for an alternating form on a Noetherian module lies in a
+Lagrangian one (`LinearMap.BilinForm.IsAlt.exists_le_eq_orthogonal`). Hence a basis of an isotropic
+subspace of any dimension also extends to a symplectic basis
+(`LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_J_inl_inl_eq`), and comparing two such
+bases gives **Witt's theorem for isotropic subspaces**: the isometry group of a nondegenerate
+alternating form acts transitively on the isotropic subspaces of each dimension
+(`LinearMap.BilinForm.IsAlt.exists_mem_isometryGroup_map_eq`).
+
 Our convention is Mathlib's `Matrix.J`: the dual vector pairs to `1` with its prescribed
 partner, and the prescribed vector pairs to `-1` with its dual.
 
 ## References
 
-* E. Artin, *Geometric Algebra* (1957), Theorem 3.7.
+* E. Artin, *Geometric Algebra* (1957), Theorems 3.7 and 3.9.
 * J. S. Milne, *Algebraic Groups* (2017), §24.6 (symplectic groups and isotropic flags).
 -/
 
@@ -80,6 +92,27 @@ theorem IsAlt.exists_dual_isotropic_family (hB : B.IsAlt) (e f : ι → V)
   · obtain rfl := a.injective hij
     simp [c, hB.self_eq_zero]
   · simp [c, hji, not_lt_of_gt hji]
+
+/-- **Isotropic submodules lie in Lagrangians.** For an alternating form on a Noetherian module,
+every isotropic submodule `U ≤ Uᗮ` is contained in a submodule `L` equal to its own orthogonal,
+for instance in any maximal isotropic submodule containing `U`. No nondegeneracy is needed. -/
+theorem IsAlt.exists_le_eq_orthogonal [IsNoetherian R V] (hB : B.IsAlt) {U : Submodule R V}
+    (hU : U ≤ B.orthogonal U) : ∃ L : Submodule R V, U ≤ L ∧ L = B.orthogonal L := by
+  obtain ⟨L, ⟨hUL, hL⟩, hmax⟩ := set_has_maximal_iff_noetherian.mpr ‹_›
+    {L : Submodule R V | U ≤ L ∧ L ≤ B.orthogonal L} ⟨U, le_rfl, hU⟩
+  refine ⟨L, hUL, le_antisymm hL fun v hv ↦ ?_⟩
+  by_contra hvL
+  refine hmax (L ⊔ R ∙ v) ⟨hUL.trans le_sup_left, fun x hx ↦ ?_⟩
+    (left_lt_sup.mpr fun h ↦ hvL (h (Submodule.mem_span_singleton_self v)))
+  obtain ⟨l, hl, w, hw, rfl⟩ := Submodule.mem_sup.mp hx
+  obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hw
+  refine mem_orthogonal_iff.mpr fun y hy ↦ ?_
+  obtain ⟨l', hl', w', hw', rfl⟩ := Submodule.mem_sup.mp hy
+  obtain ⟨a', rfl⟩ := Submodule.mem_span_singleton.mp hw'
+  have hvl : B v l = 0 := by
+    rw [← hB.neg_eq, mem_orthogonal_iff.mp hv l hl, neg_zero]
+  simp [mem_orthogonal_iff.mp (hL hl) l' hl', mem_orthogonal_iff.mp hv l' hl', hvl,
+    hB.self_eq_zero]
 
 end CommRing
 
@@ -137,6 +170,69 @@ theorem IsAlt.exists_basis_toMatrix_eq_J_inl_eq
   rw [orthogonal_top_eq_bot hnd, inf_bot_eq, finrank_bot, add_zero, ← hU,
     finrank_eq_card_basis e] at hdim
   exact hB.exists_basis_toMatrix_eq_J_inl_eq_of_finrank hnd e hU.le hdim
+
+/-- A prescribed basis of an isotropic subspace extends to a symplectic basis. For a nondegenerate
+alternating form on a space of dimension `2 (|ι| + |κ|)` and a basis `e` of an isotropic subspace
+`U`, there is a basis indexed by `(ι ⊕ κ) ⊕ (ι ⊕ κ)` in which the matrix of the form is
+`Matrix.J (ι ⊕ κ) K` and whose vectors at the positions `Sum.inl (Sum.inl i)` are the `e i`, in
+their given order. This holds in characteristic two as well. -/
+theorem IsAlt.exists_basis_toMatrix_eq_J_inl_inl_eq {κ : Type*} [Fintype κ] [DecidableEq κ]
+    (hB : B.IsAlt) (hnd : B.Nondegenerate) {U : Submodule K V} (e : Basis ι K U)
+    (hU : U ≤ B.orthogonal U) (hdim : 2 * (Fintype.card ι + Fintype.card κ) = finrank K V) :
+    ∃ b : Basis ((ι ⊕ κ) ⊕ (ι ⊕ κ)) K V,
+      toMatrix b B = Matrix.J (ι ⊕ κ) K ∧ ∀ i, b (Sum.inl (Sum.inl i)) = (e i : V) := by
+  obtain ⟨L, hUL, hL⟩ := hB.exists_le_eq_orthogonal hU
+  have hLdim : finrank K L = Fintype.card ι + Fintype.card κ := by
+    have h := finrank_orthogonal hnd L
+    rw [← hL] at h
+    have := Submodule.finrank_le L
+    omega
+  -- the basis `e`, viewed in `L`, extends to a basis of `L` indexed by `ι ⊕ κ`
+  have hli : LinearIndependent K (Submodule.inclusion hUL ∘ e) :=
+    e.linearIndependent.map' _ (Submodule.ker_inclusion U L hUL)
+  let c₀ := Basis.sumExtend hli
+  have : Finite (Basis.sumExtendIndex hli) :=
+    have := Module.Finite.finite_basis c₀
+    Finite.of_injective (β := ι ⊕ _) Sum.inr Sum.inr_injective
+  have hcard : Nat.card (Basis.sumExtendIndex hli) = Nat.card κ := by
+    have h := finrank_eq_nat_card_basis c₀
+    rw [hLdim, Nat.card_sum, Nat.card_eq_fintype_card (α := ι)] at h
+    rw [Nat.card_eq_fintype_card (α := κ)]
+    omega
+  let c := c₀.reindex (Equiv.sumCongr (Equiv.refl ι) (Finite.card_eq.mp hcard).some)
+  obtain ⟨b, hbJ, hb⟩ := hB.exists_basis_toMatrix_eq_J_inl_eq hnd c hL
+  refine ⟨b, hbJ, fun i ↦ ?_⟩
+  rw [hb]
+  simp [c, c₀, Basis.sumExtend_apply_inl]
+
+/-- **Witt's theorem for isotropic subspaces.** The isometry group of a nondegenerate alternating
+form on a finite-dimensional space acts transitively on the isotropic subspaces of each dimension:
+two isotropic subspaces of the same dimension are carried onto each other by an isometry. This
+holds in characteristic two as well. -/
+theorem IsAlt.exists_mem_isometryGroup_map_eq (hB : B.IsAlt) (hnd : B.Nondegenerate)
+    {U U' : Submodule K V} (hU : U ≤ B.orthogonal U) (hU' : U' ≤ B.orthogonal U')
+    (h : finrank K U = finrank K U') :
+    ∃ g ∈ isometryGroup B, U.map (g : V →ₗ[K] V) = U' := by
+  obtain ⟨m, hm⟩ := hB.even_finrank hnd
+  have hr := two_mul_finrank_le_finrank_of_le_orthogonal hnd hU
+  -- symplectic bases whose first isotropic vectors are bases of `U` and of `U'`
+  let e := Module.finBasisOfFinrankEq K U rfl
+  let e' := Module.finBasisOfFinrankEq K U' h.symm
+  have hdim : 2 * (Fintype.card (Fin (finrank K U)) + Fintype.card (Fin (m - finrank K U))) =
+      finrank K V := by
+    simp only [Fintype.card_fin]
+    omega
+  obtain ⟨b, hbJ, hb⟩ := hB.exists_basis_toMatrix_eq_J_inl_inl_eq hnd e hU hdim
+  obtain ⟨b', hb'J, hb'⟩ := hB.exists_basis_toMatrix_eq_J_inl_inl_eq hnd e' hU' hdim
+  let g := b.isometryEquivOfToMatrixEq b' (hbJ.trans hb'J.symm)
+  refine ⟨g.toLinearEquiv, mem_isometryGroup_iff.mpr fun x y ↦ g.map_app y x, ?_⟩
+  have hspan {W : Submodule K V} (c : Basis (Fin (finrank K U)) K W) :
+      span K (Set.range fun i ↦ (c i : V)) = W :=
+    (span_range_subtype_eq_top_iff W fun i ↦ (c i).2).1 c.span_eq
+  rw [← hspan e, ← hspan e', Submodule.map_span, ← Set.range_comp]
+  congr 1
+  ext i
+  simp [g, ← hb, ← hb']
 
 end Field
 

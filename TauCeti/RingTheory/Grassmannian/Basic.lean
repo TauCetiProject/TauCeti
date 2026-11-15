@@ -17,13 +17,13 @@ Let `M` be a module over a commutative ring `R`. Mathlib's `Module.Grassmannian 
 `G(k, M; R)`, is the set of submodules `N ≤ M` whose quotient `M ⧸ N` is finite projective of
 constant rank `k`. This file adds general facts about it: the kernel of a surjection onto a
 finite projective module of constant rank `k` is a point of `G(k, M; R)`, a point of the
-Grassmannian of a finite module is finitely generated, and the behaviour of
-`Module.Grassmannian.baseChangeMkQ`, the map underlying base change of points, on pure tensors and
-on vectors coming from `A ⊗[R] M`. In particular a vector of a point maps into each of its base
-changes, and, when `B` is an `A`-algebra, the base change of `N` along the structure map is the
-kernel of `baseChangeMkQ B N` for the given algebra structure on `B`, and in general the base
-change of `N` is spanned by the image of `N`. Base change along an injective map is injective on
-points.
+Grassmannian of a finite module is finitely generated, a point over a field has codimension `k`,
+and the behaviour of `Module.Grassmannian.baseChangeMkQ`, the map underlying base change of points,
+on pure tensors and on vectors coming from `A ⊗[R] M`. In particular a vector of a point maps into
+each of its base changes, and, when `B` is an `A`-algebra, the base change of `N` along the
+structure map is the kernel of `baseChangeMkQ B N` for the given algebra structure on `B`, and in
+general the base change of `N` is spanned by the image of `N`. Base change along an injective map
+is injective on points.
 
 A linear equivalence `M ≃ M'` identifies `G(k, M; R)` with `G(k, M'; R)`. For an `R`-algebra `R'`
 and an `R'`-algebra `A`, the isomorphism `A ⊗[R'] (R' ⊗[R] M) ≃ A ⊗[R] M` therefore identifies the
@@ -42,6 +42,7 @@ of `M`, naturally in `A`. This is the functorial form of base change of the Gras
 ## Main results
 
 * `Module.Grassmannian.fg_toSubmodule`: over a finite module, every point is finitely generated.
+* `Module.Grassmannian.finrank_quotient`: over a field, every point has codimension `k`.
 * `Module.Grassmannian.baseChangeMkQ_tmul`: `baseChangeMkQ B N` sends `b ⊗ₜ m` to
   `b ⊗ₜ [1 ⊗ₜ m]`.
 * `Module.Grassmannian.baseChangeMkQ_rTensor`: `baseChangeMkQ B N` sends the image of
@@ -104,6 +105,13 @@ theorem fg_toSubmodule [Module.Finite R M] (N : G(k, M; R)) : N.toSubmodule.FG :
   have : Module.FinitePresentation R (M ⧸ N.toSubmodule) :=
     Module.finitePresentation_of_projective _ _
   simpa using Module.FinitePresentation.fg_ker N.toSubmodule.mkQ N.toSubmodule.mkQ_surjective
+
+/-- Over a field, a point `N` of `G(k, V; K)` is a subspace of codimension `k`: its quotient has
+dimension `k`. -/
+@[simp]
+theorem finrank_quotient {K V : Type*} [Field K] [AddCommGroup V] [Module K V] (N : G(k, V; K)) :
+    Module.finrank K (V ⧸ N.toSubmodule) = k := by
+  simpa using N.rankAtStalk_eq ⟨⊥, Ideal.isPrime_bot⟩
 
 @[simp]
 theorem baseChangeMkQ_tmul {A B : Type w} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]

@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.RingTheory.Finiteness.Bilinear
 public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 public import TauCeti.RingTheory.Grassmannian.Basic
+public import TauCeti.LinearAlgebra.BilinearForm.LagrangianBasis
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # The isotropic locus of a point of the Grassmannian
@@ -32,6 +34,11 @@ The key input is right exactness of the tensor product: the base change of `N` i
 by the image of `N` (`Module.Grassmannian.ker_baseChangeMkQ`), and on that image `ω_B` takes the
 values `f (ω_A(x, y))` (`LinearMap.BilinForm.baseChange_rTensor_rTensor`).
 
+Over a field `K`, an isotropic point is a subspace contained in its own orthogonal. For a form whose
+Gram matrix in a basis of `M` has unit determinant, `ω_K` is nondegenerate, so such a subspace has
+at most half the dimension of `K ⊗[R] M`; for a nondegenerate alternating form, Witt's theorem makes
+the isotropic points of a given rank a single orbit of the isometry group.
+
 Since their formation commutes with base change, these ideals are compatible with restriction
 between affine opens of the Grassmannian scheme, and they glue into the isotropic Grassmannian, a
 closed subscheme of the Grassmannian scheme (`Module.Grassmannian.schemeIsotropicLocus`).
@@ -53,6 +60,10 @@ closed subscheme of the Grassmannian scheme (`Module.Grassmannian.schemeIsotropi
   exactly when `f` kills `N.isotropicLocus ω`.
 * `Module.Grassmannian.isotropicLocus_fg`: for `M` finite over `R`, the ideal `N.isotropicLocus ω`
   is finitely generated.
+* `Module.Grassmannian.card_le_two_mul_of_le_orthogonal`: over a field, an isotropic point for a
+  form with unit Gram determinant on a free module of rank `n` satisfies `n ≤ 2 k`.
+* `Module.Grassmannian.exists_mem_isometryGroup_grassmannianCongr_eq`: the isometry group of a
+  nondegenerate alternating form acts transitively on the isotropic points over a field.
 
 ## References
 
@@ -152,5 +163,47 @@ out by finitely many equations, the values of `ω_A` on pairs of generators of `
 theorem isotropicLocus_fg [Module.Finite R M] (N : G(k, A ⊗[R] M; A))
     (ω : LinearMap.BilinForm R M) : (N.isotropicLocus ω).FG :=
   N.fg_toSubmodule.map₂ _ N.fg_toSubmodule
+
+section Field
+
+/-- **Isotropic points over a field have dimension at most half.** Let `ω` be a bilinear form on a
+free module `M` with basis `b` indexed by `ι`, whose Gram matrix has unit determinant. Over a field
+`K`, an isotropic point of `G(k, K ⊗[R] M; K)` for the base change `ω_K` is a subspace of dimension
+`|ι| - k` contained in its own orthogonal, so `|ι| ≤ 2 k`. For a symplectic form on `R^{2m}` and
+quotient rank `k = 2m - r`, this says that isotropic subspaces have dimension `r ≤ m`. -/
+theorem card_le_two_mul_of_le_orthogonal {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Basis ι R M) {ω : LinearMap.BilinForm R M}
+    (hω : IsUnit (LinearMap.BilinForm.toMatrix b ω).det) {K : Type*} [Field K] [Algebra R K]
+    {N : G(k, K ⊗[R] M; K)}
+    (hN : N.toSubmodule ≤ (ω.baseChange K).orthogonal N.toSubmodule) :
+    Fintype.card ι ≤ 2 * k := by
+  have := Module.Finite.of_basis b
+  have hnd : (ω.baseChange K).Nondegenerate := by
+    rw [LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (b.baseChange K),
+      LinearMap.BilinForm.det_toMatrix_baseChange]
+    exact (hω.map (algebraMap R K)).ne_zero
+  have hdim := Submodule.finrank_quotient_add_finrank N.toSubmodule
+  rw [finrank_quotient, Module.finrank_eq_card_basis (b.baseChange K)] at hdim
+  have := LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal hnd hN
+  rw [Module.finrank_eq_card_basis (b.baseChange K)] at this
+  omega
+
+/-- **The symplectic group is transitive on isotropic points.** For a nondegenerate alternating
+form `ω` on a finite-dimensional vector space `V`, any two points of `G(k, V; K)` that are
+isotropic for `ω` are carried onto each other by an isometry of `ω`: the isometry group acts
+transitively on the field points of the isotropic Grassmannian. -/
+theorem exists_mem_isometryGroup_grassmannianCongr_eq {K V : Type*} [Field K] [AddCommGroup V]
+    [Module K V] [FiniteDimensional K V] {ω : LinearMap.BilinForm K V} (hω : ω.IsAlt)
+    (hnd : ω.Nondegenerate) {N N' : G(k, V; K)}
+    (hN : N.toSubmodule ≤ ω.orthogonal N.toSubmodule)
+    (hN' : N'.toSubmodule ≤ ω.orthogonal N'.toSubmodule) :
+    ∃ g ∈ LinearMap.BilinForm.isometryGroup ω, g.grassmannianCongr N = N' := by
+  have h := Submodule.finrank_quotient_add_finrank N.toSubmodule
+  have h' := Submodule.finrank_quotient_add_finrank N'.toSubmodule
+  rw [finrank_quotient] at h h'
+  obtain ⟨g, hg, hgN⟩ := hω.exists_mem_isometryGroup_map_eq hnd hN hN' (by omega)
+  exact ⟨g, hg, Module.Grassmannian.ext <| by simpa using hgN⟩
+
+end Field
 
 end Module.Grassmannian
