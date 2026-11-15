@@ -58,6 +58,8 @@ estimates, paraproducts) specialize to `H^s`.
   linear map.
 * `TauCeti.BesovSpace.toBesselPotentialSpace`: the inclusion `B^s_{p,1} → H^{s,p}` as a
   continuous linear map.
+* `BesselPotentialSpace.inclusionOfLT`: the inclusion `H^{s,p} → H^{s',p}` for `s' < s`, which
+  factors through `B^s_{p,∞} ⊆ B^{s'}_{p,1}`.
 * `TemperedDistribution.memBesov_two_two_iff_memSobolev`: `u ∈ B^s_{2,2}` if and only if
   `u ∈ H^{s,2}`.
 * `TauCeti.BesovSpace.besselPotentialSpaceEquiv`: the identity on tempered distributions as an
@@ -240,6 +242,31 @@ theorem toDistr_toBesselPotentialSpace (u : BesovSpace F φ s p 1) :
   simp [toBesselPotentialSpace]
 
 end TauCeti.BesovSpace
+
+namespace BesselPotentialSpace
+
+open TauCeti
+
+variable {s' : ℝ}
+
+variable (E F p) in
+/-- **Strict monotonicity of the Bessel-potential scale.** For `s' < s`, the inclusion
+`H^{s,p} ⊆ H^{s',p}` as a continuous linear map, for every `1 ≤ p ≤ ∞` and every complete
+normed `F`. It keeps the underlying tempered distribution
+(`BesselPotentialSpace.toDistr_inclusionOfLT`). It factors through the Besov spaces as
+`H^{s,p} ⊆ B^s_{p,∞} ⊆ B^{s'}_{p,1} ⊆ H^{s',p}`, for the Besov spaces built from any bump
+function. For `p = 2` and Hilbert-space values, `BesselPotentialSpace.inclusion` is the inclusion
+for `s' ≤ s`, with norm at most `1`. -/
+def inclusionOfLT (h : s' < s) : H^{s, p}(E, F) →L[ℂ] H^{s', p}(E, F) :=
+  BesovSpace.toBesselPotentialSpace ∘L
+    BesovSpace.inclusionOfLT F (default : ContDiffBump (0 : E)) p ∞ 1 h ∘L toBesovSpace default
+
+@[simp]
+theorem toDistr_inclusionOfLT (h : s' < s) (u : H^{s, p}(E, F)) :
+    (inclusionOfLT E F p h u).toDistr = u.toDistr := by
+  simp [inclusionOfLT]
+
+end BesselPotentialSpace
 
 /-! ### `B^s_{2,2} = H^{s,2}` -/
 
