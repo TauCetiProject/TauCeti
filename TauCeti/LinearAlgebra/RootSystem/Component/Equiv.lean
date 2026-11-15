@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.Component.InvariantForm
-public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Equiv
 
 /-!
 # Invariant forms of the components under equivalences of root pairings
@@ -18,14 +17,10 @@ component pairings, `RootPairing.Equiv.componentPairingEquiv e C`, from the root
 component `C` to that of the corresponding component of `Q`.
 
 The description of the invariant forms of a root system by its components is then natural in the
-root pairing. Restricting the pushforward of an invariant form to a component is pushing forward
-its restriction along the equivalence of component pairings, and the orthogonal reconstruction
-commutes with the pushforwards in the same way. The scale of an invariant form against a
-reference form on a component is unchanged when both forms are pushed forward, so the bijection
-between positive-definite invariant forms and positive scales, one per component, only reindexes
-the scales along the bijection of components. Since the canonical root form is carried to the
-canonical root form, the scales measured against the canonical forms are intrinsic: an automorphism
-of a root system permuting its components permutes the scales of an invariant form in the same way.
+root pairing: restricting the pullback of an invariant form to a component is pulling back its
+restriction to the corresponding component along the equivalence of component pairings, and the
+orthogonal reconstruction commutes with the pullbacks in the same way. The naturality of the
+component scales themselves is `RootPairing.InvariantForm.componentScale_comap`.
 
 ## Main definitions
 
@@ -34,16 +29,10 @@ of a root system permuting its components permutes the scales of an invariant fo
 
 ## Main results
 
-* `RootPairing.InvariantForm.restrictComponent_map`: restriction to a component commutes with the
-  pushforwards.
-* `RootPairing.InvariantForm.map_ofComponent`: orthogonal reconstruction commutes with the
-  pushforwards.
-* `RootPairing.InvariantForm.componentScale_map`: the scale on a component is unchanged when both
-  forms are pushed forward.
-* `RootPairing.InvariantForm.componentScale_toInvariantForm_map`: measured against the canonical
-  forms, the scales are carried along the bijection of components.
-* `RootPairing.InvariantForm.posDefEquivScale_map`: the parametrization of positive-definite
-  invariant forms by positive scales reindexes the scales along the bijection of components.
+* `RootPairing.InvariantForm.restrictComponent_comap`: restriction to a component commutes with the
+  pullbacks.
+* `RootPairing.InvariantForm.comap_ofComponent`: orthogonal reconstruction commutes with the
+  pullbacks.
 
 ## References
 
@@ -95,77 +84,34 @@ theorem coe_componentPairingEquiv_weightMap_apply (e : P.Equiv Q) (C : P.Compone
   (rfl)
 
 @[simp]
-theorem coe_componentPairingEquiv_weightEquiv_symm_apply (e : P.Equiv Q) (C : P.Component)
-    (x : Q.componentSpace (e.componentEquiv C)) :
-    ((e.componentPairingEquiv C).weightEquiv.symm x : M) = e.weightEquiv.symm x := by
-  rw [← e.weightEquiv.injective.eq_iff, LinearEquiv.apply_symm_apply, weightEquiv_apply,
-    ← coe_componentPairingEquiv_weightMap_apply, ← weightEquiv_apply, LinearEquiv.apply_symm_apply]
-
-@[simp]
 theorem coe_componentPairingEquiv_indexEquiv_apply (e : P.Equiv Q) (C : P.Component)
     (i : C.supp) : ((e.componentPairingEquiv C).indexEquiv i : ι₂) = e.indexEquiv i :=
   (rfl)
 
 end Equiv
 
-/-! ### Restriction and reconstruction under the pushforward -/
+/-! ### Restriction and reconstruction under the pullback -/
 
 namespace InvariantForm
 
-/-- **Restricting the pushforward of an invariant form to a component** is pushing forward its
-restriction along the equivalence of component pairings. -/
-theorem restrictComponent_map (e : P.Equiv Q) (B : P.InvariantForm) (C : P.Component) :
-    (B.map e).restrictComponent (e.componentEquiv C) =
-      (B.restrictComponent C).map (e.componentPairingEquiv C) := by
+/-- **Restricting the pullback of an invariant form to a component** is pulling back its
+restriction to the corresponding component along the equivalence of component pairings. -/
+theorem restrictComponent_comap (e : P.Equiv Q) (B : Q.InvariantForm) (C : P.Component) :
+    (comap e.toHom B).restrictComponent C =
+      comap (e.componentPairingEquiv C).toHom (B.restrictComponent (e.componentEquiv C)) := by
   ext x y
   simp
 
-/-- **Orthogonal reconstruction commutes with the pushforwards**: the pushforward of the orthogonal
-sum of a family of component forms is the orthogonal sum of their pushforwards along the
-equivalences of component pairings, reindexed along the bijection of components. -/
-theorem map_ofComponent [NeZero (2 : K)] (e : P.Equiv Q)
-    (F : ∀ C, (P.componentPairing C).InvariantForm) (G : ∀ D, (Q.componentPairing D).InvariantForm)
-    (hG : ∀ C, G (e.componentEquiv C) = (F C).map (e.componentPairingEquiv C)) :
-    (ofComponent F).map e = ofComponent G := by
-  refine componentEquiv.injective (funext fun D ↦ ?_)
-  obtain ⟨C, rfl⟩ := e.componentEquiv.surjective D
-  rw [componentEquiv_apply, componentEquiv_apply, restrictComponent_map,
-    restrictComponent_ofComponent, restrictComponent_ofComponent, hG]
-
-/-! ### Scales under the pushforward -/
-
-variable [NeZero (2 : K)]
-
-/-- **The scale of an invariant form on a component is unchanged when it and the reference form are
-pushed forward** along an equivalence of root pairings, the component `C` going to the
-corresponding component of `Q`. -/
-@[simp]
-theorem componentScale_map (e : P.Equiv Q) (B₀ B : P.InvariantForm) (C : P.Component) :
-    componentScale (B₀.map e) (B.map e) (e.componentEquiv C) = componentScale B₀ B C := by
-  obtain ⟨i, rfl⟩ : ∃ i, P.componentOf i = C := C.exists_rep
-  rw [Equiv.componentEquiv_componentOf, componentScale_eq_div, componentScale_eq_div]
-  simp
-
-/-- **Measured against the canonical forms, the scales of an invariant form are carried along the
-bijection of components.** In particular an automorphism of a root system permutes the scales of an
-invariant form as it permutes the components. -/
-theorem componentScale_toInvariantForm_map [Fintype ι] [Fintype ι₂] [P.IsAnisotropic]
-    [Q.IsAnisotropic] (e : P.Equiv Q) (B : P.InvariantForm) (C : P.Component) :
-    componentScale Q.toInvariantForm (B.map e) (e.componentEquiv C) =
-      componentScale P.toInvariantForm B C := by
-  rw [← map_toInvariantForm e, componentScale_map]
-
-/-- **The parametrization of positive-definite invariant forms by positive scales is natural**: the
-scales of the pushforward of a positive-definite form, against the pushforward of the reference
-form, are its own scales reindexed along the bijection of components. -/
-theorem posDefEquivScale_map [LinearOrder K] [IsStrictOrderedRing K] (e : P.Equiv Q)
-    (B₀ : P.InvariantForm) (hB₀ : B₀.form.toQuadraticMap.PosDef)
-    (B : {B : P.InvariantForm // B.form.toQuadraticMap.PosDef}) :
-    posDefEquivScale (B₀.map e) (posDef_map_iff.mpr hB₀) ⟨B.1.map e, posDef_map_iff.mpr B.2⟩ =
-      fun D ↦ posDefEquivScale B₀ hB₀ B (e.componentEquiv.symm D) := by
-  ext D
-  obtain ⟨C, rfl⟩ := e.componentEquiv.surjective D
-  simp
+/-- **Orthogonal reconstruction commutes with the pullbacks**: the pullback of the orthogonal sum
+of a family of component forms is the orthogonal sum of their pullbacks along the equivalences of
+component pairings, reindexed along the bijection of components. -/
+theorem comap_ofComponent [NeZero (2 : K)] (e : P.Equiv Q)
+    (G : ∀ D, (Q.componentPairing D).InvariantForm) :
+    comap e.toHom (ofComponent G) =
+      ofComponent fun C ↦ comap (e.componentPairingEquiv C).toHom (G (e.componentEquiv C)) := by
+  refine componentEquiv.injective (funext fun C ↦ ?_)
+  rw [componentEquiv_apply, componentEquiv_apply, restrictComponent_comap,
+    restrictComponent_ofComponent, restrictComponent_ofComponent]
 
 end InvariantForm
 
