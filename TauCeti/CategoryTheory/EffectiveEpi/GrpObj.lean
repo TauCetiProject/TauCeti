@@ -7,7 +7,9 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 public import TauCeti.CategoryTheory.EffectiveEpi.Descent
+public import TauCeti.CategoryTheory.Monoidal.Grp.DescentDatum
 public import TauCeti.CategoryTheory.Monoidal.Grp.Faithful
+import TauCeti.CategoryTheory.Monoidal.Mon
 
 /-!
 # Descent of group objects along effective epimorphisms
@@ -17,13 +19,22 @@ effective epimorphisms, and let `S'' = S' ×_S S'`. Group objects over `S` are g
 cartesian monoidal category `Over S`, whose product is the fibre product over `S`. For `X` over
 `S` write `X' = X ×_S S'`, the image of `X` under the base change functor `Over.pullback p`.
 
-This file descends group structures on an object which has already been descended. Let `X` be an
-object over `S`, and suppose that `X'` carries a monoid (group) object structure over `S'`. If its
-unit, multiplication (and inverse) satisfy the descent condition of `TauCeti.descendHom`, namely
-that their two pullbacks to `S''` agree, then they descend to morphisms over `S`. These are the
-structure morphisms of the unique monoid (group) object structure on `X` whose base change is the
-given one. Descending a homomorphism of group objects gives a homomorphism, and commutativity
-descends as well.
+This file descends group structures on an object which has already been descended, both in terms of
+morphisms whose two pullbacks to `S''` agree and in terms of effective descent data
+(`TauCeti.DescentDatum`).
+
+* If `X'` carries a monoid (group) object structure over `S'` whose unit, multiplication (and
+  inverse) satisfy the descent condition of `TauCeti.descendHom`, then they descend to the unique
+  monoid (group) object structure on `X` whose base change is the given one (`descendMonObj`,
+  `descendGrpObj`).
+* If `D` is a monoid-compatible descent datum (`D.IsMon`) on a monoid (group) object `Y` over `S'`,
+  and `f : Hom (baseChange p X₀) D` is an isomorphism of descent data, then transporting the
+  structure along `f⁻¹` and descending the bundled structure morphisms `oneHom D`, `mulHom D` (and
+  `invHom D`) gives the unique monoid (group) object structure on `X₀` for which `f.hom` is a
+  monoid homomorphism (`DescentDatum.Hom.descendMonObj`, `DescentDatum.Hom.descendGrpObj`).
+* Descending a homomorphism gives a homomorphism (`isMonHom_descendHom`,
+  `DescentDatum.Hom.isMonHom_descend`), uniqueness isomorphisms of descended group objects are
+  group isomorphisms (`DescentDatum.Hom.descendGrpIso`), and commutativity descends as well.
 
 The base change functor is faithful and monoidal, so the group axioms on `X` follow from those on
 `X'` (`CategoryTheory.Functor.monObjOfFaithful`). Descent of morphisms supplies the structure
@@ -39,16 +50,26 @@ hypothesis on `p` for any fpqc or fppf morphism of schemes, so the results are e
 
 * `TauCeti.descendMonObj`, `TauCeti.descendGrpObj`: the monoid (group) object structure on `X`
   descended from one on `X ×_S S'` whose structure morphisms satisfy the descent condition.
+* `TauCeti.DescentDatum.Hom.descendMonObj`, `TauCeti.DescentDatum.Hom.descendGrpObj`: the monoid
+  (group) object structure on `X₀` descended along an isomorphism `baseChange p X₀ ⟶ D` to a
+  monoid-compatible descent datum `D`.
+* `TauCeti.DescentDatum.baseChangeGrpHomEquiv`, `TauCeti.DescentDatum.Hom.descendGrpIso`: full
+  faithfulness of base change on `Grp (Over S)` into descent data and uniqueness up to unique
+  group isomorphism of effective group-object descent.
 
 ## Main statements
 
 * `TauCeti.monObjObj_descendMonObj`, `TauCeti.grpObjObj_descendGrpObj`: the base change of the
   descended structure is the given one.
-* `TauCeti.eq_descendMonObj`, `TauCeti.eq_descendGrpObj`: uniqueness of the descended structure.
-* `TauCeti.isCommMonObj_descendMonObj`, `TauCeti.isCommMonObj_descendGrpObj`: the descended
-  structure is commutative if the given one is.
-* `TauCeti.isMonHom_descendHom`: a homomorphism satisfying the descent condition descends to a
-  homomorphism.
+* `TauCeti.eq_descendMonObj`, `TauCeti.eq_descendGrpObj`,
+  `TauCeti.DescentDatum.Hom.eq_descendMonObj`, `TauCeti.DescentDatum.Hom.eq_descendGrpObj`:
+  uniqueness of the descended structure.
+* `TauCeti.isCommMonObj_descendMonObj`, `TauCeti.isCommMonObj_descendGrpObj`,
+  `TauCeti.DescentDatum.Hom.isCommMonObj_descendMonObj`,
+  `TauCeti.DescentDatum.Hom.isCommMonObj_descendGrpObj`: the descended structure is commutative if
+  the given one is.
+* `TauCeti.isMonHom_descendHom`, `TauCeti.DescentDatum.Hom.isMonHom_descend`: a homomorphism
+  satisfying the descent condition descends to a homomorphism.
 -/
 
 public section
@@ -213,5 +234,255 @@ instance isMonHom_descendHom {X Y : Over S} [MonObj X] [MonObj Y]
     IsMonHom (descendHom p φ h) := by
   rw [← (Over.pullback p).isMonHom_map_iff, pullback_map_descendHom]
   infer_instance
+
+namespace DescentDatum
+
+variable {p}
+
+/-- **Descent of homomorphisms of canonical descent data.** If `φ : baseChange p X ⟶ baseChange p Y`
+is a morphism of canonical descent data whose underlying morphism in `Over S'` is a monoid
+homomorphism, then its descended morphism `φ.descend : X ⟶ Y` in `Over S` is a monoid
+homomorphism. -/
+instance Hom.isMonHom_descend {X Y : Over S} [MonObj X] [MonObj Y]
+    (φ : Hom (baseChange p X) (baseChange p Y)) [IsMonHom φ.hom] :
+    IsMonHom φ.descend := by
+  rw [← (Over.pullback p).isMonHom_map_iff, ← baseChangeHom_hom, baseChangeHom_descend]
+  infer_instance
+
+/-- **Uniqueness isomorphism of descended monoid objects.** If `f : baseChange p X ⟶ D` and
+`g : baseChange p Y ⟶ D` are isomorphisms of descent data whose underlying morphisms in `Over S'`
+are monoid homomorphisms, then the comparison isomorphism `f.descendIso g : X ≅ Y` is a monoid
+isomorphism. -/
+instance Hom.isMonHom_descendIso_hom {X Y : Over S} [MonObj X] [MonObj Y]
+    {W : Over S'} [MonObj W] {D : DescentDatum p W}
+    (f : Hom (baseChange p X) D) (g : Hom (baseChange p Y) D)
+    [IsIso f.hom] [IsIso g.hom] [IsMonHom f.hom] [IsMonHom g.hom] :
+    IsMonHom (f.descendIso g).hom := by
+  have : IsMonHom g.inv.hom := by
+    have : IsMonHom (asIso g.hom).hom := ‹_›
+    simpa [Hom.inv_hom] using (inferInstance : IsMonHom (asIso g.hom).inv)
+  have : IsMonHom (g.inv.comp f).hom := by
+    rw [Hom.comp_hom]
+    infer_instance
+  rw [Hom.descendIso_hom]
+  infer_instance
+
+section MonObj
+
+variable {X₀ : Over S} {Y : Over S'} [MonObj Y] {D : DescentDatum p Y} [D.IsMon]
+  (f : Hom (baseChange p X₀) D) [IsIso f.hom]
+
+private theorem Hom.map_one_descend :
+    (Over.pullback p).map (f.inv.comp ((oneHom D).comp (baseChangeUnitHom p))).descend =
+      Functor.OplaxMonoidal.η (Over.pullback p) ≫ η[Y] ≫ CategoryTheory.inv f.hom := by
+  rw [← baseChangeHom_hom, baseChangeHom_descend]
+  simp
+
+private theorem Hom.map_mul_descend :
+    (Over.pullback p).map
+        (f.inv.comp ((mulHom D).comp ((f.prodMap f).comp (baseChangeProdHom p X₀ X₀)))).descend =
+      Functor.OplaxMonoidal.δ (Over.pullback p) X₀ X₀ ≫
+        (f.hom ⊗ₘ f.hom) ≫ μ[Y] ≫ CategoryTheory.inv f.hom := by
+  rw [← baseChangeHom_hom, baseChangeHom_descend]
+  simp
+
+/-- **Descent of a monoid object along an effective descent datum.** Let `D` be a monoid-compatible
+descent datum on a monoid object `Y` in `Over S'`, and let `f : baseChange p X₀ ⟶ D` be an
+isomorphism of descent data. Then `X₀` carries a unique monoid object structure in `Over S` for
+which `f.hom` is a monoid homomorphism (`Hom.isMonHom_hom_descendMonObj`,
+`Hom.eq_descendMonObj`). -/
+noncomputable abbrev Hom.descendMonObj : MonObj X₀ :=
+  letI : MonObj ((Over.pullback p).obj X₀) := MonObj.ofIso (asIso f.hom).symm
+  (Over.pullback p).monObjOfFaithful X₀
+    (f.inv.comp ((oneHom D).comp (baseChangeUnitHom p))).descend
+    (f.inv.comp ((mulHom D).comp ((f.prodMap f).comp (baseChangeProdHom p X₀ X₀)))).descend
+    (by simpa [MonObj.ofIso_one] using f.map_one_descend)
+    (by simpa [MonObj.ofIso_mul] using f.map_mul_descend)
+
+/-- **Effectiveness of `Hom.descendMonObj`.** Base-changing `f.descendMonObj` along `p` recovers
+the monoid structure on `X₀ ×_S S'` transported from `Y` along `f.hom⁻¹`. -/
+theorem Hom.monObjObj_descendMonObj :
+    letI := f.descendMonObj
+    Functor.monObjObj (F := Over.pullback p) (X := X₀) = MonObj.ofIso (asIso f.hom).symm :=
+  letI : MonObj ((Over.pullback p).obj X₀) := MonObj.ofIso (asIso f.hom).symm
+  (Over.pullback p).monObjObj_monObjOfFaithful X₀ _ _ _ _
+
+/-- With `f.descendMonObj` on `X₀`, the comparison `f.hom : X₀ ×_S S' ⟶ Y` is a monoid
+homomorphism. -/
+theorem Hom.isMonHom_hom_descendMonObj :
+    letI := f.descendMonObj
+    IsMonHom f.hom := by
+  let := f.descendMonObj
+  have h := f.monObjObj_descendMonObj
+  let _ : MonObj ((Over.pullback p).obj X₀) := MonObj.ofIso (asIso f.hom).symm
+  have hm : IsMonHom (M := (Over.pullback p).obj X₀) (N := Y) f.hom := by
+    have : IsMonHom (asIso f.hom).symm.hom := inferInstance
+    simpa using (inferInstance : IsMonHom (asIso f.hom).symm.inv)
+  exact cast (by rw [h]) hm
+
+/-- **Uniqueness of `Hom.descendMonObj`.** Any monoid object structure on `X₀` for which
+`f.hom : X₀ ×_S S' ⟶ Y` is a monoid homomorphism coincides with `f.descendMonObj`. -/
+theorem Hom.eq_descendMonObj (h : MonObj X₀) (hf : letI := h; IsMonHom f.hom) :
+    h = f.descendMonObj :=
+  (Over.pullback p).monObjObj_injective X₀
+    (monObj_eq_of_mono f.hom _ _ hf f.isMonHom_hom_descendMonObj)
+
+/-- **Descent of commutativity along an isomorphism of descent data.** If
+`f : baseChange p X₀ ⟶ D` is an isomorphism of descent data whose underlying morphism in `Over S'`
+is a monoid homomorphism and `Y` is a commutative monoid object, then `X₀` is a commutative monoid
+object. -/
+theorem Hom.isCommMonObj_of_isIso {X₀ : Over S} [MonObj X₀] {Y : Over S'} [MonObj Y]
+    [IsCommMonObj Y] {D : DescentDatum p Y} (f : Hom (baseChange p X₀) D)
+    [IsIso f.hom] [IsMonHom f.hom] :
+    IsCommMonObj X₀ :=
+  ((Over.pullback p).isCommMonObj_obj_iff X₀).1 (isCommMonObj_of_mono f.hom)
+
+/-- **Descent of commutativity along an effective descent datum.** If `Y` is a commutative monoid
+object, so is `X₀` equipped with `f.descendMonObj`. -/
+theorem Hom.isCommMonObj_descendMonObj [IsCommMonObj Y] :
+    letI := f.descendMonObj
+    IsCommMonObj X₀ := by
+  let := f.descendMonObj
+  have := f.isMonHom_hom_descendMonObj
+  exact f.isCommMonObj_of_isIso
+
+end MonObj
+
+section GrpObj
+
+variable {X₀ : Over S} {G : Over S'} [GrpObj G] {D : DescentDatum p G} [D.IsMon]
+  (f : Hom (baseChange p X₀) D) [IsIso f.hom]
+
+private theorem Hom.map_inv_descend :
+    (Over.pullback p).map (f.inv.comp ((invHom D).comp f)).descend =
+      f.hom ≫ ι[G] ≫ CategoryTheory.inv f.hom := by
+  rw [← baseChangeHom_hom, baseChangeHom_descend]
+  simp
+
+/-- **Descent of a group object along an effective descent datum.** Let `D` be a monoid-compatible
+descent datum on a group object `G` in `Over S'`, and let `f : baseChange p X₀ ⟶ D` be an
+isomorphism of descent data. Then `X₀` carries a unique group object structure in `Over S` for
+which `f.hom` is a monoid homomorphism (`Hom.isMonHom_hom_descendGrpObj`,
+`Hom.eq_descendGrpObj`). -/
+noncomputable abbrev Hom.descendGrpObj : GrpObj X₀ :=
+  letI : GrpObj ((Over.pullback p).obj X₀) := GrpObj.ofIso (asIso f.hom).symm
+  (Over.pullback p).grpObjOfFaithful X₀
+    (f.inv.comp ((oneHom D).comp (baseChangeUnitHom p))).descend
+    (f.inv.comp ((mulHom D).comp ((f.prodMap f).comp (baseChangeProdHom p X₀ X₀)))).descend
+    (f.inv.comp ((invHom D).comp f)).descend
+    (by simpa [MonObj.ofIso_one] using f.map_one_descend)
+    (by simpa [MonObj.ofIso_mul] using f.map_mul_descend)
+    (by simpa [GrpObj.ofIso_inv] using f.map_inv_descend)
+
+/-- The monoid structure underlying `f.descendGrpObj` is `f.descendMonObj`. -/
+theorem Hom.descendGrpObj_toMonObj : f.descendGrpObj.toMonObj = f.descendMonObj :=
+  (rfl)
+
+/-- **Effectiveness of `Hom.descendGrpObj`.** Base-changing `f.descendGrpObj` along `p` recovers
+the group structure on `X₀ ×_S S'` transported from `G` along `f.hom⁻¹`. -/
+theorem Hom.grpObjObj_descendGrpObj :
+    letI := f.descendGrpObj
+    Functor.grpObjObj (F := Over.pullback p) (G := X₀) = GrpObj.ofIso (asIso f.hom).symm :=
+  letI : GrpObj ((Over.pullback p).obj X₀) := GrpObj.ofIso (asIso f.hom).symm
+  (Over.pullback p).grpObjObj_grpObjOfFaithful X₀ _ _ _ _ _ _
+
+/-- With `f.descendGrpObj` on `X₀`, the comparison `f.hom : X₀ ×_S S' ⟶ G` is a monoid
+homomorphism. -/
+theorem Hom.isMonHom_hom_descendGrpObj :
+    letI := f.descendGrpObj
+    IsMonHom f.hom :=
+  f.isMonHom_hom_descendMonObj
+
+/-- **Uniqueness of `Hom.descendGrpObj`.** Any group object structure on `X₀` for which
+`f.hom : X₀ ×_S S' ⟶ G` is a monoid homomorphism coincides with `f.descendGrpObj`. -/
+theorem Hom.eq_descendGrpObj (h : GrpObj X₀) (hf : letI := h; IsMonHom f.hom) :
+    h = f.descendGrpObj :=
+  GrpObj.ext _ _ (f.eq_descendMonObj h.toMonObj hf)
+
+/-- **Descent of commutativity for group objects.** If `G` is a commutative group object, so is
+`X₀` equipped with `f.descendGrpObj`. -/
+theorem Hom.isCommMonObj_descendGrpObj [IsCommMonObj G] :
+    letI := f.descendGrpObj
+    IsCommMonObj X₀ :=
+  f.isCommMonObj_descendMonObj
+
+end GrpObj
+
+section GrpCat
+
+variable (p) in
+/-- **Full faithfulness of base change on `Grp (Over S)` into descent data.** Base change along `p`
+is a bijection from homomorphisms `G ⟶ H` in `Grp (Over S)` to morphisms of canonical descent data
+`baseChange p G.X ⟶ baseChange p H.X` whose underlying morphism in `Over S'` is a monoid
+homomorphism. -/
+noncomputable def baseChangeGrpHomEquiv (G H : Grp (Over S)) :
+    (G ⟶ H) ≃ {φ : Hom (baseChange p G.X) (baseChange p H.X) // IsMonHom φ.hom} where
+  toFun u := ⟨baseChangeHom p u.hom.hom, by rw [baseChangeHom_hom]; infer_instance⟩
+  invFun φ := haveI := φ.2; Grp.homMk φ.1.descend
+  left_inv u := by ext1; exact Hom.descend_baseChangeHom p u.hom.hom
+  right_inv φ := Subtype.ext (baseChangeHom_descend φ.1)
+
+variable (p) in
+/-- `baseChangeGrpHomEquiv` sends a group homomorphism over `S` to its base change. -/
+@[simp]
+theorem baseChangeGrpHomEquiv_apply_coe {G H : Grp (Over S)} (u : G ⟶ H) :
+    (baseChangeGrpHomEquiv p G H u : Hom (baseChange p G.X) (baseChange p H.X)) =
+      baseChangeHom p u.hom.hom :=
+  (rfl)
+
+/-- The inverse of `baseChangeGrpHomEquiv` descends the morphism of canonical descent data. -/
+@[simp]
+theorem baseChangeGrpHomEquiv_symm_apply_hom_hom {G H : Grp (Over S)}
+    (φ : {φ : Hom (baseChange p G.X) (baseChange p H.X) // IsMonHom φ.hom}) :
+    ((baseChangeGrpHomEquiv p G H).symm φ).hom.hom = φ.1.descend :=
+  (rfl)
+
+/-- **Uniqueness of effective descent of group objects.** Two group objects `G` and `H` in
+`Grp (Over S)` whose canonical descent data are isomorphic as monoid-compatible descent data to the
+same `(W, D)`, via `f` and `g`, are canonically isomorphic in `Grp (Over S)`; this is the unique
+isomorphism carrying `f` to `g` (`Hom.eq_descendGrpIso`). -/
+noncomputable def Hom.descendGrpIso {G H : Grp (Over S)} {W : Over S'} [GrpObj W]
+    {D : DescentDatum p W} (f : Hom (baseChange p G.X) D) (g : Hom (baseChange p H.X) D)
+    [IsIso f.hom] [IsIso g.hom] [IsMonHom f.hom] [IsMonHom g.hom] :
+    G ≅ H :=
+  Grp.mkIso (f.descendIso g) (IsMonHom.one_hom (f.descendIso g).hom)
+    (IsMonHom.mul_hom (f.descendIso g).hom)
+
+/-- The underlying morphism in `Over S` of `Hom.descendGrpIso f g` is `(f.descendIso g).hom`. -/
+@[simp]
+theorem Hom.descendGrpIso_hom_hom_hom {G H : Grp (Over S)} {W : Over S'} [GrpObj W]
+    {D : DescentDatum p W} (f : Hom (baseChange p G.X) D) (g : Hom (baseChange p H.X) D)
+    [IsIso f.hom] [IsIso g.hom] [IsMonHom f.hom] [IsMonHom g.hom] :
+    (f.descendGrpIso g).hom.hom.hom = (f.descendIso g).hom :=
+  (rfl)
+
+/-- The underlying inverse in `Over S` of `Hom.descendGrpIso f g` is `(f.descendIso g).inv`. -/
+@[simp]
+theorem Hom.descendGrpIso_inv_hom_hom {G H : Grp (Over S)} {W : Over S'} [GrpObj W]
+    {D : DescentDatum p W} (f : Hom (baseChange p G.X) D) (g : Hom (baseChange p H.X) D)
+    [IsIso f.hom] [IsIso g.hom] [IsMonHom f.hom] [IsMonHom g.hom] :
+    (f.descendGrpIso g).inv.hom.hom = (f.descendIso g).inv :=
+  (rfl)
+
+/-- The group isomorphism `Hom.descendGrpIso f g` carries `f` to `g`. -/
+theorem Hom.comp_baseChangeHom_descendGrpIso {G H : Grp (Over S)} {W : Over S'} [GrpObj W]
+    {D : DescentDatum p W} (f : Hom (baseChange p G.X) D) (g : Hom (baseChange p H.X) D)
+    [IsIso f.hom] [IsIso g.hom] [IsMonHom f.hom] [IsMonHom g.hom] :
+    g.comp (baseChangeHom p (f.descendGrpIso g).hom.hom.hom) = f :=
+  f.comp_baseChangeHom_descendIso g
+
+/-- `Hom.descendGrpIso f g` is the unique isomorphism `G ≅ H` in `Grp (Over S)` carrying `f` to
+`g`. -/
+theorem Hom.eq_descendGrpIso {G H : Grp (Over S)} {W : Over S'} [GrpObj W]
+    {D : DescentDatum p W} (f : Hom (baseChange p G.X) D) (g : Hom (baseChange p H.X) D)
+    [IsIso f.hom] [IsIso g.hom] [IsMonHom f.hom] [IsMonHom g.hom]
+    (e : G ≅ H) (he : g.comp (baseChangeHom p e.hom.hom.hom) = f) :
+    e = f.descendGrpIso g := by
+  ext1
+  exact Grp.hom_ext _ _ (congrArg Iso.hom (f.eq_descendIso g ((Grp.forget _).mapIso e) he))
+
+end GrpCat
+
+end DescentDatum
 
 end TauCeti
