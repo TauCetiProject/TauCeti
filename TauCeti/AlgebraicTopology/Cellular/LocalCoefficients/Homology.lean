@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicTopology.Singular.Twisted.Equivalence
 # The homology of the cellular chain complex with local coefficients
 
 Let `C ⊆ X` be a relative CW complex with skeleta `Xⁿ` and base `X⁻¹`, and let `L` be a local
-coefficient system on `X`. This file computes the homology of the cellular chain complex
+coefficient system on `C`. This file computes the homology of the cellular chain complex
 `TauCeti.twistedCellularChainComplex C L`, following the constant-coefficient argument of
 `TauCeti.AlgebraicTopology.Cellular.Homology` and `TauCeti.AlgebraicTopology.Cellular.Comparison`.
 The input is the vanishing `Hₖ(Xⁿ, Xⁿ⁻¹; L) = 0` for `k ≠ n`
@@ -28,14 +28,15 @@ triples `(Xⁿ⁺¹, Xⁿ, X⁻¹)`.
 * Hence the cellular cycles are `Hₙ(Xⁿ, X⁻¹; L)` (`TauCeti.twistedCellularCyclesIso`), and the
   cellular homology in degree `n` is `Hₙ(Xⁿ⁺¹, X⁻¹; L)` (`TauCeti.twistedCellularHomologyIso`).
 * The inclusions `(Xⁿ, X⁻¹) ⟶ (Xⁿ⁺¹, X⁻¹)` induce isomorphisms on `Hₖ` for `k < n`
-  (`TauCeti.isIso_twistedSkeletonBasePairToSucc`), so `Hₙ(Xⁿ⁺¹, X⁻¹; L)` is the homology of every
-  higher skeleton (`TauCeti.twistedSkeletonBasePairIsoAdd`). When a skeleton is the whole complex,
-  the cellular homology is the twisted relative singular homology `Hₙ(C, D; L)` of the complex
-  (`TauCeti.twistedCellularSingularHomologyIsoOfEq`); in particular this holds for every
-  finite-dimensional complex (`TauCeti.nonempty_twistedCellularHomology_iso_twistedHomology`).
+  (`TauCeti.isIso_twistedHomologySkeletonBasePairToSucc`), so for a finite-dimensional complex the
+  inclusion `(Xᵐ, X⁻¹) ⟶ (C, X⁻¹)` induces an isomorphism on `Hₖ` for `k < m`
+  (`TauCeti.isIso_twistedHomologySkeletonBasePairToComplex`). Whenever this holds for `m = n + 1`
+  and `k = n`, the cellular homology is the twisted relative singular homology `Hₙ(C, D; L)` of the
+  complex (`TauCeti.twistedCellularSingularHomologyIso`).
 
-Infinite-dimensional complexes are not treated here: for them the comparison with the whole
-complex needs the compact-support property of twisted singular homology.
+For infinite-dimensional complexes the isomorphism hypothesis of
+`TauCeti.twistedCellularSingularHomologyIso` is not established here: it needs the compact-support
+property of twisted singular homology.
 
 The base `X⁻¹` is `skeletonLT C 0`, as in `TauCeti.skeletonBasePair`. In degree `0` the pairs
 `(X⁰, X⁻¹)` and `(X⁰, X⁻¹)` of `TauCeti.skeletonBasePair` and `TauCeti.skeletonPair` coincide, and
@@ -58,7 +59,7 @@ universe w v u
 namespace TauCeti
 
 variable {R : Type u} [Ring R] {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X}
-  (C : Set X) [RelCWComplex C D] (L : LocalCoefficientSystem.{u, w, max w v} R (TopCat.of X))
+  (C : Set X) [RelCWComplex C D] (L : LocalCoefficientSystem.{u, w, max w v} R (TopCat.of C))
 
 /-! ### The maps of the triples `(Xⁿ⁺¹, Xⁿ, X⁻¹)` -/
 
@@ -97,7 +98,7 @@ lemma twistedSkeletonBaseTripleδ_def (n : ℕ) :
 
 /-- The map `Hₖ(Xⁿ, X⁻¹; L) ⟶ Hₖ(Xⁿ⁺¹, X⁻¹; L)` induced by the inclusion of pairs, after the
 coefficient identification `TauCeti.skeletonPairSubspaceSystemIso`. -/
-def twistedSkeletonBasePairToSucc (n k : ℕ) :
+def twistedHomologySkeletonBasePairToSucc (n k : ℕ) :
     (skeletonBasePair C n).twistedHomology (skeletonSystem C L (n + 1)) k ⟶
       (skeletonBasePair C (n + 1)).twistedHomology (skeletonSystem C L (n + 1 + 1)) k :=
   (skeletonBasePair C n).twistedHomologyCoefficientMap
@@ -105,8 +106,8 @@ def twistedSkeletonBasePairToSucc (n k : ℕ) :
     TopPair.twistedHomologyMap (TopTriple.innerToTotal.app (skeletonBaseTriple C n))
       (skeletonSystem C L (n + 1 + 1)) k
 
-lemma twistedSkeletonBasePairToSucc_def (n k : ℕ) :
-    twistedSkeletonBasePairToSucc C L n k =
+lemma twistedHomologySkeletonBasePairToSucc_def (n k : ℕ) :
+    twistedHomologySkeletonBasePairToSucc C L n k =
       (skeletonBasePair C n).twistedHomologyCoefficientMap
           (skeletonPairSubspaceSystemIso C L (n + 1)).inv k ≫
         TopPair.twistedHomologyMap (TopTriple.innerToTotal.app (skeletonBaseTriple C n))
@@ -116,18 +117,17 @@ lemma twistedSkeletonBasePairToSucc_def (n k : ℕ) :
 /-- The connecting morphism of the triple `(Xⁿ⁺¹, Xⁿ, X⁻¹)` followed by the map
 `Hₙ(Xⁿ, X⁻¹; L) ⟶ Hₙ(Xⁿ⁺¹, X⁻¹; L)` is zero. -/
 @[reassoc (attr := simp)]
-lemma twistedSkeletonBaseTripleδ_comp_twistedSkeletonBasePairToSucc (n : ℕ) :
-    twistedSkeletonBaseTripleδ C L n ≫ twistedSkeletonBasePairToSucc C L n n = 0 := by
-  rw [twistedSkeletonBaseTripleδ, twistedSkeletonBasePairToSucc]
+lemma twistedSkeletonBaseTripleδ_comp_twistedHomologySkeletonBasePairToSucc (n : ℕ) :
+    twistedSkeletonBaseTripleδ C L n ≫ twistedHomologySkeletonBasePairToSucc C L n n = 0 := by
+  rw [twistedSkeletonBaseTripleδ, twistedHomologySkeletonBasePairToSucc]
   -- The coefficient maps live on `skeletonBasePair C n`, which is the inner pair of the triple
   -- only up to unfolding the pair constructors; `erw` cancels them.
-  erw [Category.assoc, ← Category.assoc ((skeletonBasePair C n).twistedHomologyCoefficientMap _ n),
-    ← TopPair.twistedHomologyCoefficientMap_comp, Iso.hom_inv_id,
-    TopPair.twistedHomologyCoefficientMap_id, Category.id_comp]
+  erw [Category.assoc, TopPair.twistedHomologyCoefficientMap_hom_inv_id_assoc (skeletonBasePair C n)
+    (skeletonPairSubspaceSystemIso C L (n + 1)) n]
   exact (skeletonBaseTriple C n).twistedHomologyδ_comp _ (n + 1) n rfl
 
-/-- The map `Hₙ(Xⁿ, X⁻¹; L) ⟶ Hₙ(Xⁿ, Xⁿ⁻¹; L)` followed by the connecting morphism of the triple
-`(Xⁿ, Xⁿ⁻¹, X⁻¹)` is zero. -/
+/-- The map `Hₙ₊₁(Xⁿ⁺¹, X⁻¹; L) ⟶ Hₙ₊₁(Xⁿ⁺¹, Xⁿ; L)` followed by the connecting morphism
+`Hₙ₊₁(Xⁿ⁺¹, Xⁿ; L) ⟶ Hₙ(Xⁿ, X⁻¹; L)` of the triple `(Xⁿ⁺¹, Xⁿ, X⁻¹)` is zero. -/
 @[reassoc (attr := simp)]
 lemma twistedCellularCyclesι_comp_twistedSkeletonBaseTripleδ (n : ℕ) :
     twistedCellularCyclesι C L (n + 1) ≫ twistedSkeletonBaseTripleδ C L n = 0 := by
@@ -138,7 +138,8 @@ lemma twistedCellularCyclesι_comp_twistedSkeletonBaseTripleδ (n : ℕ) :
 
 /-- The quotient `Hₙ(Xⁿ; L) ⟶ Hₙ(Xⁿ, X⁻¹; L)` followed by `TauCeti.twistedCellularCyclesι` is the
 quotient `Hₙ(Xⁿ; L) ⟶ Hₙ(Xⁿ, Xⁿ⁻¹; L)`. -/
-private lemma twistedHomologyπ_comp_twistedCellularCyclesι (n : ℕ) :
+@[reassoc (attr := simp)]
+lemma twistedHomologyπ_comp_twistedCellularCyclesι (n : ℕ) :
     (skeletonBasePair C n).twistedHomologyπ (skeletonSystem C L (n + 1)) n ≫
         twistedCellularCyclesι C L n =
       (skeletonPair C n).twistedHomologyπ (skeletonSystem C L (n + 1)) n := by
@@ -175,9 +176,12 @@ lemma twistedCellularDifferential_eq_twistedSkeletonBaseTripleδ_comp (n : ℕ) 
       twistedSkeletonBaseTripleδ C L n ≫ twistedCellularCyclesι C L n := by
   rw [twistedCellularDifferential_eq, twistedSkeletonBaseTripleδ,
     (skeletonBaseTriple C n).twistedHomologyδ_eq_comp_twistedHomologyπ _ (n + 1) n rfl]
-  -- Both sides begin with the connecting morphism of the pair `(Xⁿ⁺¹, Xⁿ)`.
+  -- Both sides begin with the connecting morphism of the pair `(Xⁿ⁺¹, Xⁿ)`. The outer and inner
+  -- pairs of the triple are `skeletonPair C n` and `skeletonBasePair C n` only after unfolding the
+  -- pair constructors, so the composites are matched by terms rather than by rewriting.
   exact (congrArg (_ ≫ ·)
-    (twistedHomologyπ_comp_coefficientMap_comp_twistedCellularCyclesι C L n).symm).trans rfl
+    (twistedHomologyπ_comp_coefficientMap_comp_twistedCellularCyclesι C L n).symm).trans
+      (Category.assoc _ _ _).symm
 
 /-! ### Vanishing and the stable range -/
 
@@ -204,8 +208,8 @@ instance mono_twistedCellularCyclesι (n : ℕ) : Mono (twistedCellularCyclesι 
 
 /-- The map `Hₖ(Xⁿ, X⁻¹; L) ⟶ Hₖ(Xⁿ⁺¹, X⁻¹; L)` is surjective for `k ≠ n + 1`: its cokernel
 embeds in `Hₖ(Xⁿ⁺¹, Xⁿ; L) = 0`. -/
-theorem epi_twistedSkeletonBasePairToSucc {n k : ℕ} (hk : k ≠ n + 1) :
-    Epi (twistedSkeletonBasePairToSucc C L n k) := by
+theorem epi_twistedHomologySkeletonBasePairToSucc {n k : ℕ} (hk : k ≠ n + 1) :
+    Epi (twistedHomologySkeletonBasePairToSucc C L n k) := by
   have h : Epi (TopPair.twistedHomologyMap (TopTriple.innerToTotal.app (skeletonBaseTriple C n))
       (skeletonSystem C L (n + 1 + 1)) k) :=
     ((skeletonBaseTriple C n).twistedHomology_exact_total _ k).epi_f
@@ -217,22 +221,22 @@ theorem epi_twistedSkeletonBasePairToSucc {n k : ℕ} (hk : k ≠ n + 1) :
     (skeletonPairSubspaceSystemIso C L (n + 1)).inv (Iso.isIso_inv _) k
   exact epi_comp' inferInstance h
 
-instance epi_twistedSkeletonBasePairToSucc_self (n : ℕ) :
-    Epi (twistedSkeletonBasePairToSucc C L n n) :=
-  epi_twistedSkeletonBasePairToSucc C L (by lia)
+instance epi_twistedHomologySkeletonBasePairToSucc_self (n : ℕ) :
+    Epi (twistedHomologySkeletonBasePairToSucc C L n n) :=
+  epi_twistedHomologySkeletonBasePairToSucc C L (by lia)
 
 /-- The map `Hₖ(Xⁿ, X⁻¹; L) ⟶ Hₖ(Xⁿ⁺¹, X⁻¹; L)` is an isomorphism for `k < n`: the adjacent groups
 `Hₖ₊₁(Xⁿ⁺¹, Xⁿ; L)` and `Hₖ(Xⁿ⁺¹, Xⁿ; L)` vanish. -/
-theorem isIso_twistedSkeletonBasePairToSucc {n k : ℕ} (hk : k < n) :
-    IsIso (twistedSkeletonBasePairToSucc C L n k) := by
-  have := epi_twistedSkeletonBasePairToSucc C L (n := n) (k := k) (by lia)
+theorem isIso_twistedHomologySkeletonBasePairToSucc {n k : ℕ} (hk : k < n) :
+    IsIso (twistedHomologySkeletonBasePairToSucc C L n k) := by
+  have := epi_twistedHomologySkeletonBasePairToSucc C L (n := n) (k := k) (by lia)
   have h : Mono (TopPair.twistedHomologyMap (TopTriple.innerToTotal.app (skeletonBaseTriple C n))
       (skeletonSystem C L (n + 1 + 1)) k) :=
     ((skeletonBaseTriple C n).twistedHomology_exact_inner _ (k + 1) k rfl).mono_g
       ((isZero_twistedHomology_skeletonPair_of_ne C (by lia) _).eq_of_src _ _)
   have := @TopPair.isIso_twistedHomologyCoefficientMap _ _ (skeletonBasePair C n) _ _
     (skeletonPairSubspaceSystemIso C L (n + 1)).inv (Iso.isIso_inv _) k
-  have : Mono (twistedSkeletonBasePairToSucc C L n k) := mono_comp' inferInstance h
+  have : Mono (twistedHomologySkeletonBasePairToSucc C L n k) := mono_comp' inferInstance h
   exact isIso_of_mono_of_epi _
 
 /-! ### The left homology datum -/
@@ -271,7 +275,7 @@ private lemma twistedCellularCycles_exact (n : ℕ) :
   cases n with
   | zero =>
     rw [ShortComplex.exact_iff_epi _ ((twistedCellularChainComplex C L).shape 0 0 (by simp))]
-    change Epi (twistedCellularCyclesι C L 0 ≫ eqToHom _)
+    dsimp only [twistedCellularCyclesιX]
     rw [twistedCellularCyclesι_zero, Category.id_comp]
     infer_instance
   | succ n =>
@@ -284,6 +288,9 @@ private lemma twistedCellularCycles_exact (n : ℕ) :
           (skeletonPairSubspaceSystemIso C L (n + 1)).hom n ≫ twistedCellularCyclesιX C L n
         comm₁₂ := by simp [twistedCellularCyclesιX]; rfl
         comm₂₃ := by
+          -- `change` projects the components of `ShortComplex.mk` and reduces the index
+          -- `n + 1 - 1` to `n`; rewriting with `Nat.add_sub_cancel` instead fails because the
+          -- right-hand side lands in the chain group of index `n`.
           change eqToHom (twistedCellularChainComplex_X C L (n + 1)).symm ≫
             (twistedCellularChainComplex C L).d (n + 1) n = _
           rw [twistedCellularChainComplex_d_eq, eqToHom_trans_assoc,
@@ -300,13 +307,14 @@ private lemma twistedCellularCycles_exact (n : ℕ) :
       ((skeletonBaseTriple C n).twistedHomology_exact_outer _ (n + 1) n rfl)
 
 /-- Exactness at `Hₙ(Xⁿ, X⁻¹; L)` in the sequence of the triple `(Xⁿ⁺¹, Xⁿ, X⁻¹)`. -/
-lemma twistedSkeletonBaseTriple_exact_inner (n : ℕ) :
+lemma skeletonBaseTriple_twistedHomology_exact_inner (n : ℕ) :
     (ShortComplex.mk _ _
-      (twistedSkeletonBaseTripleδ_comp_twistedSkeletonBasePairToSucc C L n)).Exact := by
+      (twistedSkeletonBaseTripleδ_comp_twistedHomologySkeletonBasePairToSucc C L n)).Exact := by
   let φ : ShortComplex.mk _ _
       ((skeletonBaseTriple C n).twistedHomologyδ_comp (skeletonSystem C L (n + 1 + 1)) (n + 1) n
         rfl) ⟶
-      ShortComplex.mk _ _ (twistedSkeletonBaseTripleδ_comp_twistedSkeletonBasePairToSucc C L n) :=
+      ShortComplex.mk _ _
+        (twistedSkeletonBaseTripleδ_comp_twistedHomologySkeletonBasePairToSucc C L n) :=
     { τ₁ := 𝟙 _
       τ₂ := (skeletonBasePair C n).twistedHomologyCoefficientMap
         (skeletonPairSubspaceSystemIso C L (n + 1)).hom n
@@ -314,7 +322,7 @@ lemma twistedSkeletonBaseTriple_exact_inner (n : ℕ) :
       comm₁₂ := (Category.id_comp _).trans (by dsimp only; unfold twistedSkeletonBaseTripleδ; rfl)
       comm₂₃ := (by
         dsimp only
-        unfold twistedSkeletonBasePairToSucc
+        unfold twistedHomologySkeletonBasePairToSucc
         exact (TopPair.twistedHomologyCoefficientMap_hom_inv_id_assoc
           (skeletonBasePair C n) (skeletonPairSubspaceSystemIso C L (n + 1)) n _).trans
             (Category.comp_id _).symm) }
@@ -344,12 +352,12 @@ private def twistedCellularLeftHomologyData (n : ℕ) :
   i := twistedCellularCyclesιX C L n
   wi := twistedCellularCyclesι_comp_d C L n
   hi := (twistedCellularCycles_exact C L n).fIsKernel
-  π := twistedSkeletonBasePairToSucc C L n n
+  π := twistedHomologySkeletonBasePairToSucc C L n n
   wπ := by
     refine (congrArg (· ≫ _) (twistedCellularCycles_lift_eq C L n)).trans ?_
-    rw [Category.assoc, twistedSkeletonBaseTripleδ_comp_twistedSkeletonBasePairToSucc]
+    rw [Category.assoc, twistedSkeletonBaseTripleδ_comp_twistedHomologySkeletonBasePairToSucc]
     exact comp_zero
-  hπ := isCokernelEpiComp (twistedSkeletonBaseTriple_exact_inner C L n).gIsCokernel
+  hπ := isCokernelEpiComp (skeletonBaseTriple_twistedHomology_exact_inner C L n).gIsCokernel
     (eqToHom (twistedCellularChainComplex_X C L (n + 1))) (twistedCellularCycles_lift_eq C L n)
 
 /-- The cycles of the cellular chain complex with local coefficients in degree `n` are
@@ -379,7 +387,7 @@ def twistedCellularHomologyIso (n : ℕ) :
 @[reassoc (attr := simp)]
 lemma homologyπ_comp_twistedCellularHomologyIso_hom (n : ℕ) :
     (twistedCellularChainComplex C L).homologyπ n ≫ (twistedCellularHomologyIso C L n).hom =
-      (twistedCellularCyclesIso C L n).hom ≫ twistedSkeletonBasePairToSucc C L n n := by
+      (twistedCellularCyclesIso C L n).hom ≫ twistedHomologySkeletonBasePairToSucc C L n n := by
   have h := (twistedCellularChainComplex C L).π_homologyIsoSc'_hom_assoc (n + 1) n (n - 1)
     (by simp) (by cases n <;> simp) (twistedCellularLeftHomologyData C L n).homologyIso.hom
   rw [ShortComplex.LeftHomologyData.homologyπ_comp_homologyIso_hom] at h
@@ -387,110 +395,136 @@ lemma homologyπ_comp_twistedCellularHomologyIso_hom (n : ℕ) :
 
 /-! ### Comparison with the whole complex -/
 
-/-- Stabilization along the skeleta: `Hₙ(Xⁿ⁺¹, X⁻¹; L) ≅ Hₙ(Xⁿ⁺¹⁺ʲ, X⁻¹; L)`, composed of the
-isomorphisms `TauCeti.isIso_twistedSkeletonBasePairToSucc`. -/
-def twistedSkeletonBasePairIsoAdd (n : ℕ) : (j : ℕ) →
-    ((skeletonBasePair C (n + 1)).twistedHomology (skeletonSystem C L (n + 1 + 1)) n ≅
-      (skeletonBasePair C (n + 1 + j)).twistedHomology (skeletonSystem C L (n + 1 + j + 1)) n)
-  | 0 => Iso.refl _
-  | j + 1 => twistedSkeletonBasePairIsoAdd n j ≪≫
-      haveI := isIso_twistedSkeletonBasePairToSucc C L (n := n + 1 + j) (k := n) (by lia)
-      asIso (twistedSkeletonBasePairToSucc C L (n + 1 + j) n)
-
-@[simp]
-lemma twistedSkeletonBasePairIsoAdd_zero_hom (n : ℕ) :
-    (twistedSkeletonBasePairIsoAdd C L n 0).hom = 𝟙 _ :=
-  (rfl)
-
-@[simp]
-lemma twistedSkeletonBasePairIsoAdd_succ_hom (n j : ℕ) :
-    (twistedSkeletonBasePairIsoAdd C L n (j + 1)).hom =
-      (twistedSkeletonBasePairIsoAdd C L n j).hom ≫
-        twistedSkeletonBasePairToSucc C L (n + 1 + j) n :=
-  (rfl)
-
-/-- The restriction of a local coefficient system on `X` to the relative CW complex `C`. -/
-abbrev complexSystem : LocalCoefficientSystem.{u, w, max w v} R (complexBasePair C).fst :=
-  (LocalCoefficientSystem.pullback (⟨Subtype.val, continuous_subtype_val⟩ :
-    C(TopCat.of C, TopCat.of X))).obj L
-
-/-- Pulling the restriction of `L` to the complex back to the `m`-skeleton gives
-`skeletonSystem C L (m + 1)`. -/
-def skeletonComplexSystemIso (m : ℕ) :
-    skeletonSystem C L (m + 1) ≅ (LocalCoefficientSystem.pullback
-      (TopPair.Hom.fst (skeletonBasePairToComplex C m)).hom).obj (complexSystem C L) :=
-  eqToIso (by rw [skeletonBasePairToComplex_fst]; rfl) ≪≫
-    (LocalCoefficientSystem.pullbackCompIso (R := R)
-      (TopPair.Hom.fst (skeletonBasePairToComplex C m)).hom
-      (⟨Subtype.val, continuous_subtype_val⟩ : C(TopCat.of C, TopCat.of X))).app L
+/-- Pulling `L` back along the inclusion of the `m`-skeleton into the complex, as a map of pairs,
+gives `skeletonSystem C L (m + 1)`. -/
+lemma skeletonSystem_eq_pullback (m : ℕ) :
+    skeletonSystem C L (m + 1) = (LocalCoefficientSystem.pullback
+      (TopPair.Hom.fst (skeletonBasePairToComplex C m)).hom).obj L := by
+  rw [skeletonBasePairToComplex_fst]
+  rfl
 
 /-- `Hₖ(Xᵐ, X⁻¹; L) ⟶ Hₖ(C, X⁻¹; L)`, induced by the inclusion of the `m`-skeleton. -/
-def twistedSkeletonBasePairToComplex (m k : ℕ) :
+def twistedHomologySkeletonBasePairToComplex (m k : ℕ) :
     (skeletonBasePair C m).twistedHomology (skeletonSystem C L (m + 1)) k ⟶
-      (complexBasePair C).twistedHomology (complexSystem C L) k :=
-  (skeletonBasePair C m).twistedHomologyCoefficientMap (skeletonComplexSystemIso C L m).hom k ≫
-    TopPair.twistedHomologyMap (skeletonBasePairToComplex C m) (complexSystem C L) k
+      (complexBasePair C).twistedHomology L k :=
+  (skeletonBasePair C m).twistedHomologyCoefficientMap
+      (eqToHom (skeletonSystem_eq_pullback C L m)) k ≫
+    TopPair.twistedHomologyMap (skeletonBasePairToComplex C m) L k
 
-lemma twistedSkeletonBasePairToComplex_def (m k : ℕ) :
-    twistedSkeletonBasePairToComplex C L m k =
-      (skeletonBasePair C m).twistedHomologyCoefficientMap (skeletonComplexSystemIso C L m).hom k ≫
-        TopPair.twistedHomologyMap (skeletonBasePairToComplex C m) (complexSystem C L) k :=
+lemma twistedHomologySkeletonBasePairToComplex_def (m k : ℕ) :
+    twistedHomologySkeletonBasePairToComplex C L m k =
+      (skeletonBasePair C m).twistedHomologyCoefficientMap
+          (eqToHom (skeletonSystem_eq_pullback C L m)) k ≫
+        TopPair.twistedHomologyMap (skeletonBasePairToComplex C m) L k :=
   (rfl)
+
+/-- The inclusion of the `m`-skeleton into the complex factors through the `(m + 1)`-skeleton. -/
+@[reassoc (attr := simp)]
+lemma twistedHomologySkeletonBasePairToSucc_comp_twistedHomologySkeletonBasePairToComplex
+    (m k : ℕ) :
+    twistedHomologySkeletonBasePairToSucc C L m k ≫
+        twistedHomologySkeletonBasePairToComplex C L (m + 1) k =
+      twistedHomologySkeletonBasePairToComplex C L m k := by
+  have h : (TopTriple.innerToTotal.app (skeletonBaseTriple C m) ≫
+      skeletonBasePairToComplex C (m + 1) : skeletonBasePair C m ⟶ complexBasePair C) =
+      skeletonBasePairToComplex C m :=
+    (congrArg (· ≫ skeletonBasePairToComplex C (m + 1))
+      ((skeletonBasePairToSucc_def C m).symm.trans (skeletonBasePairInclusion_succ C m).symm)).trans
+      (skeletonBasePairInclusion_comp_toComplex C m.le_succ)
+  have e₁ := TopPair.twistedHomologyMap_comp (P := skeletonBasePair C m)
+    (Q := skeletonBasePair C (m + 1)) (TopTriple.innerToTotal.app (skeletonBaseTriple C m))
+    (skeletonBasePairToComplex C (m + 1)) L k
+  have e₂ := TopPair.twistedHomologyMap_naturality_assoc (P := skeletonBasePair C m)
+    (Q := skeletonBasePair C (m + 1)) (TopTriple.innerToTotal.app (skeletonBaseTriple C m))
+    (skeletonSystem C L (m + 1 + 1)) (eqToHom (skeletonSystem_eq_pullback C L (m + 1))) k
+    (TopPair.twistedHomologyMap (skeletonBasePairToComplex C (m + 1)) L k)
+  -- Write both sides as a coefficient map followed by the maps induced by the inclusions
+  -- `(Xᵐ, X⁻¹) ⟶ (Xᵐ⁺¹, X⁻¹) ⟶ (C, X⁻¹)`; the triple's inner and total pairs are the base pairs
+  -- only after unfolding the pair constructors, so `e₁` and `e₂` are applied by `erw`.
+  rw [twistedHomologySkeletonBasePairToSucc, twistedHomologySkeletonBasePairToComplex,
+    twistedHomologySkeletonBasePairToComplex, TopPair.twistedHomologyMap_congr L h.symm]
+  erw [e₁, Category.assoc, e₂]
+  erw [← TopPair.twistedHomologyCoefficientMap_comp_assoc,
+    ← TopPair.twistedHomologyCoefficientMap_comp_assoc,
+    ← TopPair.twistedHomologyCoefficientMap_comp_assoc]
+  refine congrArg (fun η ↦ (skeletonBasePair C m).twistedHomologyCoefficientMap η k ≫ _) ?_
+  refine NatTrans.ext (funext fun x ↦ ?_)
+  -- Every coefficient identification is the identity or an `eqToHom` on each fibre. The fibres
+  -- are those of systems on `(skeletonBasePair C m).fst`, which is `skeletonObj C (m + 1)` only
+  -- after unfolding the pair constructors, so the components are computed by `erw`.
+  erw [NatTrans.comp_app, NatTrans.comp_app, NatTrans.comp_app,
+    skeletonPairSubspaceSystemIso_inv_app, TopPair.fstPullbackCompIso_hom_app, Category.id_comp,
+    Category.comp_id, LocalCoefficientSystem.pullback_map_app, eqToHom_app, eqToHom_app,
+    eqToHom_app, eqToHom_trans]
+  rfl
 
 /-- If the `m`-skeleton is the whole complex, `Hₖ(Xᵐ, X⁻¹; L) ⟶ Hₖ(C, X⁻¹; L)` is an
 isomorphism. -/
-theorem isIso_twistedSkeletonBasePairToComplex_of_eq {m : ℕ}
+theorem isIso_twistedHomologySkeletonBasePairToComplex_of_eq {m : ℕ}
     (hm : (skeletonLT C ((m + 1 : ℕ) : ℕ∞) : Set X) = C) (k : ℕ) :
-    IsIso (twistedSkeletonBasePairToComplex C L m k) := by
+    IsIso (twistedHomologySkeletonBasePairToComplex C L m k) := by
   have := isIso_skeletonBasePairToComplex_of_eq C m hm
-  have : IsIso (TopPair.twistedHomologyMap (skeletonBasePairToComplex C m) (complexSystem C L) k) :=
+  have : IsIso (TopPair.twistedHomologyMap (skeletonBasePairToComplex C m) L k) :=
     LocalCoefficientSystem.isIso_relativeTwistedHomologyMap_of_homotopyInverse _ _
       (inv (skeletonBasePairToComplex C m))
       ⟨(IsIso.hom_inv_id (skeletonBasePairToComplex C m)) ▸ TopPair.Homotopy.refl _⟩
       ⟨(IsIso.inv_hom_id (skeletonBasePairToComplex C m)) ▸ TopPair.Homotopy.refl _⟩ k
   have := @TopPair.isIso_twistedHomologyCoefficientMap _ _ (skeletonBasePair C m) _ _
-    (skeletonComplexSystemIso C L m).hom (Iso.isIso_hom _) k
+    (eqToHom (skeletonSystem_eq_pullback C L m))
+    (Iso.isIso_hom (eqToIso (skeletonSystem_eq_pullback C L m))) k
   exact IsIso.comp_isIso
 
-/-- **Cellular homology with local coefficients is twisted singular homology**, for a complex
-whose `(n + 1 + j)`-skeleton is the whole complex. -/
-def twistedCellularSingularHomologyIsoOfEq (n j : ℕ)
-    (hj : (skeletonLT C ((n + 1 + j + 1 : ℕ) : ℕ∞) : Set X) = C) :
-    (twistedCellularChainComplex C L).homology n ≅
-      (complexBasePair C).twistedHomology (complexSystem C L) n :=
-  twistedCellularHomologyIso C L n ≪≫ twistedSkeletonBasePairIsoAdd C L n j ≪≫
-    haveI := isIso_twistedSkeletonBasePairToComplex_of_eq C L hj n
-    asIso (twistedSkeletonBasePairToComplex C L (n + 1 + j) n)
+/-- If the `(m + j)`-skeleton is the whole complex, `Hₖ(Xᵐ, X⁻¹; L) ⟶ Hₖ(C, X⁻¹; L)` is an
+isomorphism for `k < m`: it factors through the isomorphisms
+`TauCeti.isIso_twistedHomologySkeletonBasePairToSucc`. -/
+theorem isIso_twistedHomologySkeletonBasePairToComplex_of_lt_of_eq {m k : ℕ} (hk : k < m) (j : ℕ)
+    (hj : (skeletonLT C ((m + j + 1 : ℕ) : ℕ∞) : Set X) = C) :
+    IsIso (twistedHomologySkeletonBasePairToComplex C L m k) := by
+  induction j generalizing m with
+  | zero => exact isIso_twistedHomologySkeletonBasePairToComplex_of_eq C L hj k
+  | succ j ih =>
+    have := isIso_twistedHomologySkeletonBasePairToSucc C L hk
+    have := ih (m := m + 1) (by lia) (by rwa [Nat.add_right_comm m 1 j])
+    rw [← twistedHomologySkeletonBasePairToSucc_comp_twistedHomologySkeletonBasePairToComplex]
+    infer_instance
 
-lemma twistedCellularSingularHomologyIsoOfEq_hom (n j : ℕ)
-    (hj : (skeletonLT C ((n + 1 + j + 1 : ℕ) : ℕ∞) : Set X) = C) :
-    (twistedCellularSingularHomologyIsoOfEq C L n j hj).hom =
-      (twistedCellularHomologyIso C L n).hom ≫ (twistedSkeletonBasePairIsoAdd C L n j).hom ≫
-        twistedSkeletonBasePairToComplex C L (n + 1 + j) n :=
-  (rfl)
-
-/-- On a cellular cycle, the comparison `TauCeti.twistedCellularSingularHomologyIsoOfEq` is the
-map induced by the inclusion `(Xⁿ, X⁻¹) ⟶ (Xⁿ⁺¹⁺ʲ, X⁻¹)` followed by the inclusion of the
-`(n + 1 + j)`-skeleton into the complex. -/
-@[reassoc (attr := simp)]
-lemma homologyπ_comp_twistedCellularSingularHomologyIsoOfEq_hom (n j : ℕ)
-    (hj : (skeletonLT C ((n + 1 + j + 1 : ℕ) : ℕ∞) : Set X) = C) :
-    (twistedCellularChainComplex C L).homologyπ n ≫
-        (twistedCellularSingularHomologyIsoOfEq C L n j hj).hom =
-      (twistedCellularCyclesIso C L n).hom ≫ twistedSkeletonBasePairToSucc C L n n ≫
-        (twistedSkeletonBasePairIsoAdd C L n j).hom ≫
-          twistedSkeletonBasePairToComplex C L (n + 1 + j) n := by
-  rw [twistedCellularSingularHomologyIsoOfEq_hom,
-    homologyπ_comp_twistedCellularHomologyIso_hom_assoc]
-
-/-- For a finite-dimensional relative CW complex, the homology of the cellular chain complex with
-local coefficients is the twisted relative singular homology of the complex. -/
-theorem nonempty_twistedCellularHomology_iso_twistedHomology [FiniteDimensional C] (n : ℕ) :
-    Nonempty ((twistedCellularChainComplex C L).homology n ≅
-      (complexBasePair C).twistedHomology (complexSystem C L) n) := by
+/-- For a finite-dimensional relative CW complex, `Hₖ(Xᵐ, X⁻¹; L) ⟶ Hₖ(C, X⁻¹; L)` is an
+isomorphism for `k < m`. -/
+theorem isIso_twistedHomologySkeletonBasePairToComplex [FiniteDimensional C] {m k : ℕ}
+    (hk : k < m) : IsIso (twistedHomologySkeletonBasePairToComplex C L m k) := by
   obtain ⟨N, hN⟩ := Filter.eventually_atTop.1
     (FiniteDimensional.eventually_isEmpty_cell (C := C) (D := D))
-  refine ⟨twistedCellularSingularHomologyIsoOfEq C L n N ?_⟩
-  exact skeletonLT_eq_complex_of_isEmpty_cell C (n + 1 + N + 1) fun j hj ↦ hN j (by lia)
+  exact isIso_twistedHomologySkeletonBasePairToComplex_of_lt_of_eq C L hk N
+    (skeletonLT_eq_complex_of_isEmpty_cell C (m + N + 1) fun j hj ↦ hN j (by lia))
+
+/-- For a finite-dimensional relative CW complex, `(Xⁿ⁺¹, X⁻¹) ⟶ (C, X⁻¹)` induces an isomorphism
+on `Hₙ` with local coefficients. -/
+instance isIso_twistedHomologySkeletonBasePairToComplex_succ_of_finiteDimensional
+    [FiniteDimensional C] (n : ℕ) :
+    IsIso (twistedHomologySkeletonBasePairToComplex C L (n + 1) n) :=
+  isIso_twistedHomologySkeletonBasePairToComplex C L (by lia)
+
+variable (n : ℕ) [IsIso (twistedHomologySkeletonBasePairToComplex C L (n + 1) n)]
+
+/-- **Cellular homology with local coefficients is twisted singular homology**: the homology of
+the cellular chain complex with coefficients in `L` is the twisted relative singular homology
+`Hₙ(C, X⁻¹; L)` of the complex. The second map is induced by the inclusion of the
+`(n + 1)`-skeleton into the complex, an isomorphism on `Hₙ` for every finite-dimensional complex
+(`TauCeti.isIso_twistedHomologySkeletonBasePairToComplex_succ_of_finiteDimensional`). -/
+def twistedCellularSingularHomologyIso :
+    (twistedCellularChainComplex C L).homology n ≅ (complexBasePair C).twistedHomology L n :=
+  twistedCellularHomologyIso C L n ≪≫
+    asIso (twistedHomologySkeletonBasePairToComplex C L (n + 1) n)
+
+/-- The cellular–singular comparison with local coefficients on cycles is the map induced by the
+inclusion of the `n`-skeleton into the complex. -/
+@[reassoc (attr := simp)]
+lemma homologyπ_comp_twistedCellularSingularHomologyIso_hom :
+    (twistedCellularChainComplex C L).homologyπ n ≫
+        (twistedCellularSingularHomologyIso C L n).hom =
+      (twistedCellularCyclesIso C L n).hom ≫ twistedHomologySkeletonBasePairToComplex C L n n := by
+  rw [twistedCellularSingularHomologyIso, Iso.trans_hom, asIso_hom,
+    homologyπ_comp_twistedCellularHomologyIso_hom_assoc,
+    twistedHomologySkeletonBasePairToSucc_comp_twistedHomologySkeletonBasePairToComplex]
 
 end TauCeti

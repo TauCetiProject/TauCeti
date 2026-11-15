@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicTopology.Singular.Twisted.Triple
 # The cellular chain complex with local coefficients
 
 Let `C ⊆ X` be a relative CW complex with skeleta `Xⁿ = skeletonLT C (n + 1)` and base
-`X⁻¹ = skeletonLT C 0`, and let `L` be a local coefficient system on `X`. Restricting `L` to the
+`X⁻¹ = skeletonLT C 0`, and let `L` be a local coefficient system on `C`. Restricting `L` to the
 skeleta (`TauCeti.skeletonSystem`), the relative twisted homology groups `Hₙ(Xⁿ, Xⁿ⁻¹; L)` with the
 connecting morphisms of the triples `(Xⁿ⁺¹, Xⁿ, Xⁿ⁻¹)` of consecutive skeleta form a chain complex
 (`TauCeti.twistedCellularChainComplex`), the cellular chain complex of `C` with coefficients in
@@ -56,22 +56,48 @@ universe w v u
 namespace TauCeti
 
 variable {R : Type u} [Ring R] {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X}
-  (C : Set X) [RelCWComplex C D] (L : LocalCoefficientSystem.{u, w, max w v} R (TopCat.of X))
+  (C : Set X) [RelCWComplex C D] (L : LocalCoefficientSystem.{u, w, max w v} R (TopCat.of C))
 
-/-- The restriction of a local coefficient system `L` on `X` to the stage
-`skeletonObj C n = skeletonLT C n` of the skeletal filtration of a relative CW complex, that is,
-its pullback along the inclusion. -/
+/-- The restriction of a local coefficient system `L` on a relative CW complex `C` to the stage
+`skeletonObj C n = skeletonLT C n` of its skeletal filtration, that is, its pullback along the
+inclusion. -/
 abbrev skeletonSystem (n : ℕ) : LocalCoefficientSystem.{u, w, max w v} R (skeletonObj C n) :=
-  (LocalCoefficientSystem.pullback (⟨Subtype.val, continuous_subtype_val⟩ :
-    C(skeletonObj C n, TopCat.of X))).obj L
+  (LocalCoefficientSystem.pullback
+    (ContinuousMap.inclusion (skeletonLT C (n : ℕ∞)).subset_complex)).obj L
 
 /-- Restricting `skeletonSystem C L (n + 1)` further to the subspace `skeletonLT C n` of the
 skeletal pair `(Xⁿ, Xⁿ⁻¹)` gives `skeletonSystem C L n`: both are pullbacks of `L` along the
 same inclusion. -/
 def skeletonPairSubspaceSystemIso (n : ℕ) :
     (skeletonPair C n).subspaceSystem (skeletonSystem C L (n + 1)) ≅ skeletonSystem C L n :=
-  ((LocalCoefficientSystem.pullbackCompIso (R := R) (skeletonPair C n).map.hom
-    (⟨Subtype.val, continuous_subtype_val⟩ : C(skeletonObj C (n + 1), TopCat.of X))).app L).symm
+  ((LocalCoefficientSystem.pullbackCompIso (R := R) (Y := skeletonObj C (n + 1))
+    (Z := TopCat.of C) (skeletonPair C n).map.hom
+    (ContinuousMap.inclusion (skeletonLT C ((n + 1 : ℕ) : ℕ∞)).subset_complex)).app L).symm
+
+lemma skeletonPairSubspaceSystemIso_def (n : ℕ) :
+    skeletonPairSubspaceSystemIso C L n =
+      ((LocalCoefficientSystem.pullbackCompIso (R := R) (Y := skeletonObj C (n + 1))
+        (Z := TopCat.of C) (skeletonPair C n).map.hom
+        (ContinuousMap.inclusion (skeletonLT C ((n + 1 : ℕ) : ℕ∞)).subset_complex)).app L).symm :=
+  (rfl)
+
+/-- The coefficient identification `TauCeti.skeletonPairSubspaceSystemIso` is the identity on
+every fibre. -/
+@[simp]
+lemma skeletonPairSubspaceSystemIso_hom_app (n : ℕ) (x : FundamentalGroupoid (skeletonObj C n)) :
+    (skeletonPairSubspaceSystemIso C L n).hom.app x = 𝟙 _ :=
+  LocalCoefficientSystem.pullbackCompIso_inv_app_app (Y := skeletonObj C (n + 1))
+    (Z := TopCat.of C) (skeletonPair C n).map.hom
+    (ContinuousMap.inclusion (skeletonLT C ((n + 1 : ℕ) : ℕ∞)).subset_complex) L x
+
+/-- The inverse of the coefficient identification `TauCeti.skeletonPairSubspaceSystemIso` is the
+identity on every fibre. -/
+@[simp]
+lemma skeletonPairSubspaceSystemIso_inv_app (n : ℕ) (x : FundamentalGroupoid (skeletonObj C n)) :
+    (skeletonPairSubspaceSystemIso C L n).inv.app x = 𝟙 _ :=
+  LocalCoefficientSystem.pullbackCompIso_hom_app_app (Y := skeletonObj C (n + 1))
+    (Z := TopCat.of C) (skeletonPair C n).map.hom
+    (ContinuousMap.inclusion (skeletonLT C ((n + 1 : ℕ) : ℕ∞)).subset_complex) L x
 
 /-- The cellular chain group of a relative CW complex in degree `n` with coefficients in a local
 system `L`: the relative twisted homology `Hₙ(Xⁿ, Xⁿ⁻¹; L)` of the pair of consecutive skeleta. -/
@@ -127,7 +153,7 @@ private lemma twistedHomologyπ_comp_coefficientMap_comp_twistedHomologyδ (n : 
     (skeletonPair C (n + 1)).twistedHomologyπ_comp_twistedHomologyδ _ (n + 1) n rfl, comp_zero]
 
 /-- Two consecutive cellular differentials with local coefficients compose to zero. -/
-@[simp]
+@[reassoc (attr := simp)]
 lemma twistedCellularDifferential_comp_twistedCellularDifferential (n : ℕ) :
     twistedCellularDifferential C L (n + 1) ≫ twistedCellularDifferential C L n = 0 := by
   rw [twistedCellularDifferential_eq, twistedCellularDifferential_eq]
@@ -136,8 +162,8 @@ lemma twistedCellularDifferential_comp_twistedCellularDifferential (n : ℕ) :
   erw [← Category.assoc _ ((skeletonPair C (n + 1)).twistedHomologyδ _ (n + 1) n rfl),
     twistedHomologyπ_comp_coefficientMap_comp_twistedHomologyδ C L n, zero_comp, comp_zero]
 
-/-- The cellular chain complex of a relative CW complex with coefficients in a local system `L`
-on `X`. -/
+/-- The cellular chain complex of a relative CW complex `C` with coefficients in a local system `L`
+on `C`. -/
 def twistedCellularChainComplex : ChainComplex (ModuleCat.{max w v} R) ℕ :=
   ChainComplex.of (twistedCellularChainGroup C L) (twistedCellularDifferential C L)
     (twistedCellularDifferential_comp_twistedCellularDifferential C L)
