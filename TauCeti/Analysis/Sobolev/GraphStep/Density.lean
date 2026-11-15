@@ -110,11 +110,7 @@ def smulRightBaseW1pL {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
     _ fun w ↦ (mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn _ _).mpr <| by
       have hcomp : ι.comp (ContinuousLinearMap.toSpanSingleton ℝ a) =
           ContinuousLinearMap.toSpanSingleton ℝ (ι a) := by ext; simp
-      have hae : ι.compLpL p (mu.restrict Omega)
-          ((ContinuousLinearMap.toSpanSingleton ℝ a).compLpL p (mu.restrict Omega) (W1p.value w)) =
-            (ContinuousLinearMap.toSpanSingleton ℝ (ι a)).compLpL p (mu.restrict Omega)
-              (W1p.value w) := by rw [ContinuousLinearMap.compLpL_compLpL, hcomp]
-      simpa [hae] using hasWeakFDerivOn_smulRight (ι a) w
+      simpa [ContinuousLinearMap.compLp_compLp, hcomp] using hasWeakFDerivOn_smulRight (ι a) w
 
 /-- The value of `smulRightBaseW1pL ι a w` is the class of `x ↦ w x • a`. -/
 @[simp]

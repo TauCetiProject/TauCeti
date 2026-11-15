@@ -312,7 +312,7 @@ theorem inner_weakFDeriv_apply_one_compLpL_eq_zero (hSymm : ∀ x y : D, ⟪A x,
       (ContinuousLinearMap.apply ℝ H 1)).continuousLinearMap_comp L
   have hwB : HasWeakLineDerivOn volume ⊤ (fun s ↦ B (prev base u s)) (fun s ↦ L (d s)) 1 :=
     (((hasWeakFDerivOn_base_prev base u).hasWeakLineDerivOn 1).clm_comp L).congr_ae
-      ((ι.coeFn_compLpL (prev base u)).mono fun s hs ↦ by simp [B, base, hs])
+      ((ι.coeFn_compLp (prev base u)).mono fun s hs ↦ by simp [B, base, hs])
   have hint0 : Integrable (fun s ↦ B (prev base u s) (prev base u s)) volume :=
     (memLp_one_iff_integrable.1 (B.memLp_of_bilin 1 hx hx)).mono_measure (by simp [μ])
   have hint1 : Integrable (fun s ↦ 2 * L (d s) (prev base u s)) volume :=
@@ -414,7 +414,8 @@ theorem norm_le_sqrt_one_add_sq_mul_norm_domainTrajectoryOperator
   let base := ι.compLpL 2 μ
   have hid : (e.symm : H →L[ℝ] D).compLpL 2 μ ((e : D →L[ℝ] H).compLpL 2 μ (prev base u)) =
       prev base u := by
-    simp [ContinuousLinearMap.compLpL_compLpL]
+    rw [ContinuousLinearMap.compLpL_compLpL]
+    simp
   have hprev :
       ‖prev base u‖ ≤ ‖(e.symm : H →L[ℝ] D)‖ * ‖(e : D →L[ℝ] H).compLpL 2 μ (prev base u)‖ := by
     nth_rw 1 [← hid]

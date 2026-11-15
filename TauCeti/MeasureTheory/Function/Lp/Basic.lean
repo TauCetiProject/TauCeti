@@ -8,19 +8,24 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 
 /-!
-# Finite sums of `MemLp.toLp` classes and `compLp` functoriality
+# Finite sums of `MemLp.toLp` classes, and composition with a continuous linear map
 
 Mathlib provides `MeasureTheory.MemLp.toLp_zero`, `MeasureTheory.MemLp.toLp_add`, and
 `MeasureTheory.Lp.coeFn_finsetSum`, as well as `MeasureTheory.memLp_finsetSum` and
 `MeasureTheory.memLp_finsetSum'`. This file records the companion identities identifying the `Lp`
-class of a finite sum of `Lᵖ` functions with the sum of their `Lp` classes, together with the
-composition and identity laws for `ContinuousLinearMap.compLp` and `ContinuousLinearMap.compLpL`.
+class of a finite sum of `Lᵖ` functions with the sum of their `Lp` classes, for any `MemLp`
+witness on the sum.
+
+Mathlib composes `f : Lp E p μ` with `L : E →SL[σ] F` both as an element `L.compLp f` and through
+the bundled continuous semilinear map `L.compLpL p μ`; this file records that the two agree, along
+with their composition and identity laws.
 
 ## Main declarations
 
 * `MeasureTheory.MemLp.toLp_finsetSum'`: `hsum.toLp (∑ i ∈ s, f i) = ∑ i ∈ s, (hf i).toLp (f i)`.
 * `MeasureTheory.MemLp.toLp_finsetSum`:
   `hsum.toLp (fun x ↦ ∑ i ∈ s, f i x) = ∑ i ∈ s, (hf i).toLp (f i)`.
+* `ContinuousLinearMap.compLpL_apply`: the bundled composition applied to `f` is `L.compLp f`.
 * `ContinuousLinearMap.compLp_compLp`, `ContinuousLinearMap.compLpL_comp_compLpL`,
   `ContinuousLinearMap.compLpL_compLpL`: composition laws for `compLp` and `compLpL`.
 * `ContinuousLinearMap.id_compLp`, `ContinuousLinearMap.id_compLpL`: identity laws for `compLp` and
@@ -55,6 +60,20 @@ end MeasureTheory.MemLp
 namespace ContinuousLinearMap
 
 open MeasureTheory
+
+section Apply
+
+variable {α E F 𝕜 𝕜' : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] {σ : 𝕜 →+* 𝕜'} [RingHomIsometric σ]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜' F]
+
+/-- The bundled composition `L.compLpL p μ` applied to `f` is the composition `L.compLp f`. -/
+@[simp]
+theorem compLpL_apply [Fact (1 ≤ p)] (L : E →SL[σ] F) (f : Lp E p μ) :
+    L.compLpL p μ f = L.compLp f :=
+  rfl
+
+end Apply
 
 section Comp
 
