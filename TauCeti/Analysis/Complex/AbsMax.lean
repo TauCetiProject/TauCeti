@@ -25,7 +25,7 @@ such as a product of linear factors over zeros near `z₀`.
 
 ## Main results
 
-* `DiffContOnCl.ne_zero_center_of_boundary_bound`
+* `DiffContOnCl.ne_zero_of_forall_mem_sphere_norm_le_mul`
 * `DiffContOnCl.one_le_of_forall_mem_sphere_norm_le_mul`
 * `Complex.norm_le_of_forall_mem_sphere_norm_mul_le`
 -/
@@ -82,7 +82,7 @@ theorem Complex.norm_le_of_forall_mem_sphere_norm_mul_le {P G : ℂ → ℂ} (hR
 /-- Under a relative sphere bound, a nonzero value on the closed disc forces the central
 value to be nonzero. The radius and bound are arbitrary real numbers; no completeness of
 the complex normed target is required. -/
-theorem DiffContOnCl.ne_zero_center_of_boundary_bound {F : Type*} [NormedAddCommGroup F]
+theorem DiffContOnCl.ne_zero_of_forall_mem_sphere_norm_le_mul {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℂ F] {f : ℂ → F} (hf : DiffContOnCl ℂ f (ball z₀ R))
     (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖) {z : ℂ}
     (hz : z ∈ closedBall z₀ R) (hfz : f z ≠ 0) : f z₀ ≠ 0 := by

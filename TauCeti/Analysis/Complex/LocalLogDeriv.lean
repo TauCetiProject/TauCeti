@@ -45,7 +45,7 @@ point are counted by Jensen's formula, and the remaining part of `logDeriv f` is
 For arbitrary radii, multiply `G` by the numerators of `Complex.canonicalFactor`; their circle
 norm agrees with that of `P`, and their central norm dominates it. The maximum modulus principle
 transfers the relative bound to this product.
-`Complex.norm_logDeriv_le_of_relative_norm_bound` bounds its logarithmic derivative using
+`Complex.norm_logDeriv_le_of_forall_mem_ball_norm_le_mul` bounds its logarithmic derivative using
 a normalized holomorphic logarithm and the Borel–Carathéodory derivative estimate.
 `Function.FactorizedRational.logDeriv_eq_finsum` identifies the divisor contribution;
 `AnalyticOnNhd.sum_divisor_le_log_div_log` bounds the reflected-factor error. If `2 r ≤ R`, the
@@ -204,7 +204,7 @@ private lemma exists_reflected_cofactor {z : ℂ} {M : ℝ}
   have hR : 0 < R := hr.trans hrR
   have hz₀R := mem_closedBall_self hR.le (x := z₀)
   have hzR : z ∈ closedBall z₀ R := by simpa [mem_closedBall, dist_eq_norm] using hz.le.trans hrR.le
-  have hz₀ := DiffContOnCl.ne_zero_center_of_boundary_bound
+  have hz₀ := DiffContOnCl.ne_zero_of_forall_mem_sphere_norm_le_mul
     (hf.differentiableOn.diffContOnCl_ball Subset.rfl) hM hzR hfz
   have hM1 : 1 ≤ M :=
     (hf.differentiableOn.diffContOnCl_ball Subset.rfl).one_le_of_forall_mem_sphere_norm_le_mul
@@ -266,7 +266,7 @@ theorem norm_logDeriv_sub_finsum_divisor_le {f : ℂ → ℂ} {z₀ z : ℂ} {r 
     ring
   rw [hlogf]
   exact (norm_sub_le _ _).trans
-    ((add_le_add (Complex.norm_logDeriv_le_of_relative_norm_bound
+    ((add_le_add (Complex.norm_logDeriv_le_of_forall_mem_ball_norm_le_mul
       (hB.differentiableOn.mono ball_subset_closedBall)
       (fun w hw ↦ hB0 w (ball_subset_closedBall hw))
       (fun w hw ↦ hBM w (ball_subset_closedBall hw)) hz) hQB).trans_eq (by ring))
@@ -315,7 +315,7 @@ theorem norm_logDeriv_sub_finsum_divisor_le_of_two_mul_le (hf : AnalyticOnNhd �
     · rw [← hfPG u (sphere_subset_closedBall hu), ← hfPG z₀ hz₀R]
       exact hM u hu
   rw [hlogf]
-  exact Complex.norm_logDeriv_le_of_relative_norm_bound
+  exact Complex.norm_logDeriv_le_of_forall_mem_ball_norm_le_mul
     (hG.differentiableOn.mono (ball_subset_closedBall.trans
       (closedBall_subset_closedBall (by linarith))))
     (fun w hw ↦ hG0 w (ball_subset_closedBall hw))
@@ -333,7 +333,7 @@ theorem norm_logDeriv_sub_finsum_divisor_half_le (hf : AnalyticOnNhd ℂ f (clos
     {z : ℂ} (hz : ‖z - z₀‖ ≤ R / 4) (hfz : f z ≠ 0) :
     ‖logDeriv f z - ∑ᶠ ρ, (divisor f (closedBall z₀ (R / 2)) ρ : ℂ) / (z - ρ)‖ ≤
       48 / R * Real.log M := by
-  have hz₀ := DiffContOnCl.ne_zero_center_of_boundary_bound
+  have hz₀ := DiffContOnCl.ne_zero_of_forall_mem_sphere_norm_le_mul
     (hf.differentiableOn.diffContOnCl_ball Subset.rfl) hM
     (by simpa [mem_closedBall, dist_eq_norm] using hz.trans (by linarith : R / 4 ≤ R)) hfz
   have hM1 : 1 ≤ M :=
