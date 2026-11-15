@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrability.PosLog
 public import Mathlib.MeasureTheory.Integral.CircleAverage
-import Mathlib.Analysis.Complex.JensenFormula
 import TauCeti.Topology.MetricSpace.Pseudo.Defs
 
 /-!
@@ -17,9 +16,7 @@ For `f` meromorphic on a circle, `log⁺ ‖f‖⁻¹ = log⁺ ‖f‖ - log ‖
 circle average is the difference of the circle averages of `log⁺ ‖f‖` and of `log ‖f‖`. This is the
 identity `ValueDistribution.proximity_sub_proximity_inv_eq_circleAverage` of Nevanlinna theory, for
 a function meromorphic only on the circle and a circle with arbitrary centre. Adding the circle
-average of `log⁺ ‖f‖` computes the circle average of `|log ‖f‖|`. When `f` is holomorphic and
-zero-free on the closed disc, the mean value property replaces the average of `log ‖f‖` by
-`log ‖f c‖`, so the boundary `L¹` norm of `log ‖f‖` is determined by the mean of `log⁺ ‖f‖`.
+average of `log⁺ ‖f‖` computes the circle average of `|log ‖f‖|`.
 
 Since `log⁺ ‖f‖⁻¹` is nonnegative, the same identity also computes its lower Lebesgue integral
 over one period. Fatou's lemma then bounds the measure of angles where values on a sequence of
@@ -40,9 +37,6 @@ circles approach zero through nonzero values; this last result only needs circle
   average of `|log g|` is twice that of `log⁺ g` minus that of `log g`.
 * `MeromorphicOn.circleAverage_abs_log_norm` — the circle average of `|log ‖f‖|` is twice that of
   `log⁺ ‖f‖` minus that of `log ‖f‖`.
-* `AnalyticOnNhd.circleAverage_abs_log_norm_of_ne_zero` — for `f` holomorphic and zero-free on a
-  closed disc about `c`, the circle average of `|log ‖f‖|` is twice that of `log⁺ ‖f‖` minus
-  `log ‖f c‖`.
 * `MeromorphicOn.lintegral_ofReal_posLog_inv_norm_circleMap` — the lower Lebesgue integral of
   `log⁺ ‖f‖⁻¹` over one period of the circle is `2π` times that difference.
 * `TauCeti.volume_setOf_tendsto_circleMap_nhdsNE_zero` — bounded circle averages of
@@ -149,17 +143,6 @@ theorem lintegral_ofReal_posLog_inv_norm_circleMap (hf : MeromorphicOn f (sphere
   field_simp
 
 end MeromorphicOn
-
-/-- If `f` is holomorphic and zero-free on the closed disc of radius `|r|` about `c`, then the
-circle average of `|log ‖f‖|` is twice the circle average of `log⁺ ‖f‖` minus `log ‖f c‖`. In
-particular, if `‖f c‖ = 1`, then the circle average of `|log ‖f‖|` is twice that of `log⁺ ‖f‖`:
-the positive and negative parts of `log ‖f‖` have the same mean. -/
-theorem AnalyticOnNhd.circleAverage_abs_log_norm_of_ne_zero
-    (h₁f : AnalyticOnNhd ℂ f (closedBall c |r|)) (h₂f : ∀ u ∈ closedBall c |r|, f u ≠ 0) :
-    circleAverage (fun z ↦ |Real.log ‖f z‖|) c r =
-      2 * circleAverage (fun z ↦ log⁺ ‖f z‖) c r - Real.log ‖f c‖ := by
-  rw [(h₁f.mono sphere_subset_closedBall).meromorphicOn.circleAverage_abs_log_norm,
-    h₁f.circleAverage_log_norm_of_ne_zero h₂f]
 
 namespace TauCeti
 
