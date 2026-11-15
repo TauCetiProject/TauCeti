@@ -1286,10 +1286,11 @@ theorem reflectionTransport_self (x : V) (hx : Q x ≠ 0) :
     simpa only [← two_smul K x, Q.map_smul, smul_eq_mul] using
       mul_ne_zero (mul_ne_zero two_ne_zero two_ne_zero) hx
   have hrefl : reflectionOrthogonal Q (x + x) = reflectionOrthogonal Q x := by
-    let : Invertible (Q ((2 : K) • x)) := by
-      rw [two_smul]
-      infer_instance
-    simpa only [two_smul] using TauCeti.QuadraticMap.reflectionOrthogonal_smul_eq Q x (2 : K)
+    have key (y : V) (hy : y = (2 : K) • x) [Invertible (Q y)] :
+        reflectionOrthogonal Q y = reflectionOrthogonal Q x := by
+      subst hy
+      exact TauCeti.QuadraticMap.reflectionOrthogonal_smul_eq Q x (2 : K)
+    exact key (x + x) (two_smul K x).symm
   rw [reflectionTransport_eq_reflection_mul_reflection Q x x rfl hx (by simp), hrefl]
   exact TauCeti.QuadraticMap.reflectionOrthogonal_mul_self Q x
 

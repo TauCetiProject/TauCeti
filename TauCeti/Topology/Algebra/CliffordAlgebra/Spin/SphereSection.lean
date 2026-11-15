@@ -243,10 +243,14 @@ theorem realCliffordSpinLastLocalSection_action {n : ℕ}
   have hreflection : QuadraticMap.reflection (compactForm n)
       (realCliffordSpinLastLocalSectionDirection x.1) =
         QuadraticMap.reflection (compactForm n) (lastUnitVector n - -x.1) := by
-    rw [realCliffordSpinLastLocalSectionDirection_def]
-    exact QuadraticMap.reflection_smul_eq (compactForm n)
-      (lastUnitVector n - -x.1)
-      (Real.sqrt (compactForm n (lastUnitVector n - -x.1)))⁻¹
+    have key (y : Fin (n + 1) → ℝ)
+        (hy : y = (Real.sqrt (compactForm n (lastUnitVector n - -x.1)))⁻¹ •
+          (lastUnitVector n - -x.1)) [Invertible (compactForm n y)] :
+        QuadraticMap.reflection (compactForm n) y =
+          QuadraticMap.reflection (compactForm n) (lastUnitVector n - -x.1) := by
+      subst hy
+      exact QuadraticMap.reflection_smul_eq (compactForm n) (lastUnitVector n - -x.1) _
+    exact key _ (realCliffordSpinLastLocalSectionDirection_def x.1)
   rw [hreflection, hreflect, neg_neg]
 
 end
