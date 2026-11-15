@@ -26,9 +26,9 @@ and in ordered algebra as sequential positive inductive limits of simplicial gro
 This file defines `HasRieszInterpolation`, `HasRieszDecomposition`, `IsUnperforated`, and
 `IsDimensionGroup`, establishes the equivalence between Riesz interpolation and Riesz
 decomposition together with finite Riesz decomposition, Riesz refinement, and finite
-interpolation, derives unique divisibility and torsion-freeness from unperforation, and shows
-that lattice-ordered abelian groups and arbitrary products of dimension groups are dimension
-groups.
+interpolation, derives injectivity of nonzero natural multiples and torsion-freeness from
+unperforation, and shows that lattice-ordered abelian groups and arbitrary products of dimension
+groups are dimension groups.
 
 ## Main definitions
 
@@ -50,7 +50,8 @@ groups.
 * `TauCeti.HasRieszInterpolation.exists_between_finsets` and
   `TauCeti.IsDimensionGroup.exists_between_finsets` : Interpolation between finite sets.
 * `TauCeti.IsUnperforated.hasUniqueDiv` and `TauCeti.IsUnperforated.isAddTorsionFree` :
-  Unperforated partially ordered abelian groups are torsion-free with unique divisibility.
+  Unperforated partially ordered abelian groups have injective nonzero natural multiples and are
+  torsion-free.
 * `TauCeti.IsDimensionGroup.of_lattice` and `TauCeti.IsDimensionGroup.pi` : Every lattice-ordered
   abelian group and every product of dimension groups is a dimension group.
 
@@ -381,7 +382,8 @@ section PartialOrderGroup
 
 variable {G : Type*} [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
 
-/-- Every unperforated partially ordered abelian group has unique divisibility. -/
+/-- In an unperforated partially ordered abelian group, scalar multiplication by every nonzero
+natural number is injective. -/
 theorem hasUniqueDiv (hu : IsUnperforated G) : HasUniqueDiv G where
   nsmul_right_injective _ hn _ _ hab :=
     le_antisymm
@@ -422,7 +424,7 @@ theorem isCodirectedOrder (hd : IsDimensionGroup G) : IsCodirectedOrder G :=
 theorem hasRieszDecomposition (hd : IsDimensionGroup G) : HasRieszDecomposition G :=
   hd.hasRieszInterpolation.hasRieszDecomposition
 
-/-- A dimension group has unique divisibility. -/
+/-- In a dimension group, scalar multiplication by every nonzero natural number is injective. -/
 theorem hasUniqueDiv (hd : IsDimensionGroup G) : HasUniqueDiv G :=
   hd.isUnperforated.hasUniqueDiv
 

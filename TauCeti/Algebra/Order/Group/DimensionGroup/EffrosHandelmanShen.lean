@@ -337,25 +337,6 @@ section ShenTriangle
 
 variable {G : Type*} [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
 
-omit [PartialOrder G] [IsOrderedAddMonoid G] in
-private theorem sum_univ_eq_pivot_pos_neg {r : ℕ} (x : Fin r → ℤ) (k₀ : Fin r)
-    (hk₀ : 0 ≤ x k₀) (g : Fin r → G) :
-    ∑ i : Fin r, g i =
-      g k₀ +
-      ∑ i ∈ Finset.univ.filter (fun i => i ≠ k₀ ∧ 0 ≤ x i), g i +
-      ∑ j ∈ Finset.univ.filter (fun j => x j < 0), g j := by
-  have hpart := (Finset.sum_filter_add_sum_filter_not Finset.univ (fun j : Fin r => x j < 0) g).symm
-  simp only [not_lt] at hpart
-  have hk₀_mem : k₀ ∈ Finset.univ.filter (fun i : Fin r => 0 ≤ x i) := by
-    simp [hk₀]
-  have herase :
-      (Finset.univ.filter (fun i : Fin r => 0 ≤ x i)).erase k₀ =
-        Finset.univ.filter (fun i : Fin r => i ≠ k₀ ∧ 0 ≤ x i) := by
-    ext i
-    simp
-  rw [hpart, ← Finset.add_sum_erase _ _ hk₀_mem, herase]
-  abel
-
 private theorem exists_shen_decomp (hu : IsUnperforated G) (hr : HasRieszInterpolation G)
     {r : ℕ} {w : Fin r → G} (hw : ∀ i, 0 ≤ w i) {x : Fin r → ℤ}
     (hsum : ∑ i, x i • w i = 0) {M : ℕ} (hM : 0 < M)
@@ -363,13 +344,17 @@ private theorem exists_shen_decomp (hu : IsUnperforated G) (hr : HasRieszInterpo
     ∃ h : Fin r → G,
       (∀ j ∈ Finset.univ.filter (fun j => x j < 0), 0 ≤ h j ∧ h j ≤ w j) ∧
       ∑ j ∈ Finset.univ.filter (fun j => x j < 0), h j = w k₀ := by
-  let Ipos := Finset.univ.filter fun i : Fin r => i ≠ k₀ ∧ 0 ≤ x i
+  let Ipos := (Finset.univ.filter fun i : Fin r => 0 ≤ x i).erase k₀
   let Ineg := Finset.univ.filter fun j : Fin r => x j < 0
-  have hk₀_nonneg : 0 ≤ x k₀ := by omega
-  have hsplit := sum_univ_eq_pivot_pos_neg x k₀ hk₀_nonneg (fun i => x i • w i)
-  rw [hsum, hxk₀] at hsplit
+  have hk₀_mem : k₀ ∈ Finset.univ.filter (fun i : Fin r => 0 ≤ x i) :=
+    Finset.mem_filter.mpr ⟨Finset.mem_univ k₀, by omega⟩
+  have hsplit := (Finset.sum_filter_add_sum_filter_not Finset.univ (fun i : Fin r => 0 ≤ x i)
+    (fun i => x i • w i)).symm
+  simp only [not_le] at hsplit
+  rw [hsum, ← Finset.add_sum_erase _ _ hk₀_mem, hxk₀] at hsplit
   have hpos : 0 ≤ ∑ i ∈ Ipos, x i • w i :=
-    Finset.sum_nonneg fun i hi => zsmul_nonneg (hw i) (Finset.mem_filter.mp hi).2.2
+    Finset.sum_nonneg fun i hi =>
+      zsmul_nonneg (hw i) (Finset.mem_filter.mp (Finset.mem_erase.mp hi).2).2
   have heq : (M : ℤ) • w k₀ + ∑ i ∈ Ipos, x i • w i = ∑ j ∈ Ineg, (-x j) • w j := by
     have hneg : ∑ j ∈ Ineg, (-x j) • w j = -∑ j ∈ Ineg, x j • w j := by
       simp [Finset.sum_neg_distrib]
@@ -387,7 +372,7 @@ private theorem exists_shen_decomp (hu : IsUnperforated G) (hr : HasRieszInterpo
     ((hu.nsmul_le_nsmul_iff_right hM.ne').mp hMle)
 
 private abbrev ShenIndex {r : ℕ} (x : Fin r → ℤ) (k₀ : Fin r) : Type :=
-  {i : Fin r // i ∈ Finset.univ.filter (fun i => i ≠ k₀ ∧ 0 ≤ x i)} ⊕
+  {i : Fin r // i ∈ (Finset.univ.filter (fun i => 0 ≤ x i)).erase k₀} ⊕
     ({j : Fin r // j ∈ Finset.univ.filter (fun j => x j < 0)} ⊕
       {j : Fin r // j ∈ Finset.univ.filter (fun j => x j < 0)})
 
@@ -442,8 +427,11 @@ private theorem shenRawSum_eq {r : ℕ} {x : Fin r → ℤ} {k₀ : Fin r}
       abel
     simp_rw [hterm]
     rw [Finset.sum_add_distrib, ← Finset.smul_sum, hh_sum]
-  rw [hcombine, sum_univ_eq_pivot_pos_neg x k₀ hk₀ (fun i => y i • w i)]
-  abel
+  have hk₀_mem : k₀ ∈ Finset.univ.filter (fun i : Fin r => 0 ≤ x i) :=
+    Finset.mem_filter.mpr ⟨Finset.mem_univ k₀, hk₀⟩
+  rw [hcombine, ← add_assoc, Finset.sum_erase_add _ _ hk₀_mem]
+  simpa only [not_le] using
+    Finset.sum_filter_add_sum_filter_not Finset.univ (fun i : Fin r => 0 ≤ x i) (fun i => y i • w i)
 
 private theorem shenRawHom_natAbs_le {r : ℕ} {x : Fin r → ℤ} {M : ℕ}
     (hbound : ∀ i, (x i).natAbs ≤ M) {k₀ : Fin r} (hxk₀ : x k₀ = (M : ℤ))
@@ -476,11 +464,11 @@ private theorem shenRawCard_lt {r : ℕ} {x : Fin r → ℤ} {M : ℕ}
     Sum.elim Subtype.val (Sum.elim (fun _ => k₀) Subtype.val)
   have hno_mid : ∀ j, Sum.inr (Sum.inl j) ∉ Sκ := fun j hj =>
     shenRawHom_mid_ne hbound hxk₀ j (Finset.mem_filter.mp hj).2
-  have hsep : ∀ (i : {i : Fin r // i ∈ Finset.univ.filter (fun i => i ≠ k₀ ∧ 0 ≤ x i)})
+  have hsep : ∀ (i : {i : Fin r // i ∈ (Finset.univ.filter (fun i => 0 ≤ x i)).erase k₀})
       (j : {j : Fin r // j ∈ Finset.univ.filter (fun j => x j < 0)}),
       proj (Sum.inl i) ≠ proj (Sum.inr (Sum.inr j)) := by
     intro i j hp
-    have hi := (Finset.mem_filter.mp i.2).2.2
+    have hi := (Finset.mem_filter.mp (Finset.mem_erase.mp i.2).2).2
     have hj := (Finset.mem_filter.mp j.2).2
     simp only [proj, Sum.elim_inl, Sum.elim_inr] at hp
     rw [hp] at hi
@@ -497,7 +485,7 @@ private theorem shenRawCard_lt {r : ℕ} {x : Fin r → ℤ} {M : ℕ}
     rw [Finset.ssubset_iff_of_subset]
     · refine ⟨k₀, by simp [Sr, hxk₀], fun hk₀_im => ?_⟩
       obtain ⟨i | (j | j), hu, hpu⟩ := Finset.mem_image.mp hk₀_im
-      · exact (Finset.mem_filter.mp i.2).2.1 hpu
+      · exact (Finset.mem_erase.mp i.2).1 hpu
       · exact hno_mid j hu
       · have hlt := (Finset.mem_filter.mp j.2).2
         simp only [proj, Sum.elim_inr] at hpu
