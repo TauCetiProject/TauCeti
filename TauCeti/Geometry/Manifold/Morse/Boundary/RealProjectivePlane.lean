@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.ChainComplex
+public import TauCeti.Geometry.Manifold.Morse.Boundary.IndexOne
 public import TauCeti.Geometry.Manifold.Morse.Boundary.UniqueExtremum
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 
 /-!
-# The mod-two Morse complex of the real projective plane
+# The Morse complex of the real projective plane
 
 On the real projective plane `ℝℙ² = ℙ ℝ (Fin 3 → ℝ)`, the moment function
 `[v] ↦ (∑ i, w i * v i ^ 2) / ∑ i, v i ^ 2` with three distinct weights `w` is a Morse function
@@ -32,7 +33,12 @@ pseudo-gradient `X` adapted to this function.
 Over `ℤ` the same two pairs of trajectories give the differentials `±2` from the maximum to the
 saddle and `0` from the saddle to the minimum, recovering `H₁(ℝℙ²; ℤ) = ℤ/2`: the two trajectories
 into the saddle carry the same sign and the two out of it opposite signs. Those signs come from
-orientations of the unstable manifolds, which the mod-two complex does not see.
+orientations of the unstable manifolds, which the mod-two complex does not see. The vanishing of the
+integral differential from degree `1` to degree `0` holds for all orientation data, since the
+minimum is the only critical point of index `0`
+(`signedMorseBoundary_single_eq_zero_projectiveMomentFunction_real`). The value `±2` of the
+differential from the maximum to the saddle compares orientations along the whole unstable disc of
+the maximum, and is not proved here.
 
 ## Main declarations
 
@@ -45,6 +51,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `IsMorseSmale.morseBoundary_projectiveMomentFunction_real`: the mod-two Morse boundary is zero.
 * `IsMorseSmale.finrank_homology_morseComplex_projectiveMomentFunction_real`: the mod-two Morse
   homology has dimension `1` in degrees `0`, `1` and `2` and dimension `0` above.
+* `signedMorseBoundary_single_eq_zero_projectiveMomentFunction_real`: with
+  coefficients in any ring and for all orientation data, the Morse boundary vanishes on the saddle
+  and on the minimum.
 
 ## References
 
@@ -132,6 +141,34 @@ theorem finrank_homology_morseComplex_projectiveMomentFunction_real (n : ℕ) :
   split_ifs <;> simp
 
 end IsMorseSmale
+
+/-- **The integral Morse boundary of `ℝℙ²` vanishes below degree two.** For every pseudo-gradient
+adapted to the moment function on the real projective plane and all orientation data, the Morse
+boundary with coefficients in any ring `R` vanishes on every critical point other than the maximum:
+the two trajectories from the saddle to the minimum have opposite signs. -/
+theorem signedMorseBoundary_single_eq_zero_projectiveMomentFunction_real
+    (hX : IsAdaptedPseudoGradient (projectiveMomentFunction ℝ w) X)
+    (𝔬 : MorseOrientation (projectiveMomentFunction ℝ w) X)
+    (hf : IsMorse 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w)) {R : Type*} [Ring R]
+    {p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w)}
+    (hp : manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p ≠ 2) (a : R) :
+    hX.signedMorseBoundary 𝔬 hf R (Finsupp.single p a) = 0 := by
+  have hw := isMorse_projectiveMomentFunction_iff.1 hf
+  ext q
+  rw [signedMorseBoundary_single_apply, Finsupp.zero_apply]
+  by_cases hind : manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p =
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) q + 1
+  · -- Then `p` is the saddle and `q` the minimum, the only critical point of index `0`.
+    have hle : manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p ≤ 2 :=
+      manifoldMorseIndex_le_finrank.trans_eq (Module.finrank_fin_fun ℝ)
+    have hq0 : manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) q = 0 := by
+      omega
+    rw [(hX.isMorseSmale_projectiveMomentFunction_real hw
+        ).signedMorseBoundaryCoeff_eq_zero_of_unique_index_zero hf 𝔬 hq0
+      (fun y hy hy0 ↦ subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 0
+        ⟨hy, hy0⟩ ⟨mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2, hq0⟩) p,
+      Int.cast_zero, mul_zero]
+  · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hind, Int.cast_zero, mul_zero]
 
 end IsAdaptedPseudoGradient
 
