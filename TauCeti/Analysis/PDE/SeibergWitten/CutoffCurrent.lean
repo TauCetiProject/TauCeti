@@ -19,6 +19,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Topology.Algebra.GroupWithZero.DivId
 
@@ -424,10 +425,8 @@ theorem covariantDeriv_comp_add_smul (x₀ : E) (c : ℝ) (b : E → E [⋀^Fin 
     (α : E → ℂ) (y : E) :
     covariantDeriv (fun z ↦ c • b (x₀ + c • z)) (fun z ↦ α (x₀ + c • z)) y =
       c • covariantDeriv b α (x₀ + c • y) := by
-  have h : fderiv ℝ (fun z ↦ α (x₀ + c • z)) y = c • fderiv ℝ α (x₀ + c • y) := by
-    rw [fderiv_comp_smul (f := fun w ↦ α (x₀ + w)) c, fderiv_comp_add_left]
   ext v
-  simp only [covariantDeriv_apply, h, FunLike.coe_smul, Pi.smul_apply,
+  simp only [covariantDeriv_apply, fderiv_comp_add_smul, FunLike.coe_smul, Pi.smul_apply,
     ContinuousAlternatingMap.smul_apply, Complex.real_smul, smul_eq_mul, Complex.ofReal_mul]
   ring
 

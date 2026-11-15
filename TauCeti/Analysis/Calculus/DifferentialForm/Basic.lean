@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 
+import TauCeti.Analysis.Calculus.FDeriv.Comp
+
 /-!
 # Locality and linear pullback of the exterior derivative
 
@@ -69,9 +71,8 @@ coefficients of a form with `z ↦ x₀ + c • z` multiplies its exterior deriv
 differentiability is needed: both sides use the junk value `0` of `fderiv` at the same points. -/
 theorem extDeriv_comp_add_smul (x₀ : E) (c : 𝕜) (ω : E → E [⋀^Fin n]→L[𝕜] F) (y : E) :
     extDeriv (fun z ↦ ω (x₀ + c • z)) y = c • extDeriv ω (x₀ + c • y) := by
-  have h : fderiv 𝕜 (fun z ↦ ω (x₀ + c • z)) y = c • fderiv 𝕜 ω (x₀ + c • y) := by
-    rw [fderiv_comp_smul (f := fun w ↦ ω (x₀ + w)) c, fderiv_comp_add_left]
-  rw [extDeriv, h, ContinuousAlternatingMap.alternatizeUncurryFin_smul, extDeriv]
+  rw [extDeriv, fderiv_comp_add_smul, ContinuousAlternatingMap.alternatizeUncurryFin_smul,
+    extDeriv]
 
 /-- The exterior derivative of a one-form on an ordered pair is the alternating part of its
 Fréchet derivative. This formula also respects the derivative's junk-value convention. -/

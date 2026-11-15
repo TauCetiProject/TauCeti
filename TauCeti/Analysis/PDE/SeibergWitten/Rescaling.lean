@@ -131,8 +131,7 @@ theorem add_hodgeStar_extDeriv_comp_add_smul_eq_iff {h r : ℝ} (hr : h ^ 2 * r 
         (r / 4) • ω - (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • ψ) : ⋀[ℝ]^2 V) - η := by
   have hF : (alternatingFormEquiv V 2).symm (-extDeriv (fun z ↦ h • b (x₀ + h • z)) y) =
       h ^ 2 • (alternatingFormEquiv V 2).symm (-extDeriv b (x₀ + h • y)) := by
-    have hb : (fun z ↦ h • b (x₀ + h • z)) = h • fun z ↦ b (x₀ + h • z) := rfl
-    rw [hb, extDeriv_fun_smul, extDeriv_comp_add_smul, smul_smul, ← sq,
+    rw [← Pi.smul_def, extDeriv_fun_smul, extDeriv_comp_add_smul, smul_smul, ← sq,
       ← smul_neg, map_smul]
   rw [hF]
   exact smul_add_hodgeStar_smul_eq_iff hkl hr ω _ η ψ
