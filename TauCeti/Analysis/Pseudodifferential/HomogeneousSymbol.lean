@@ -13,6 +13,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
+import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
@@ -49,9 +50,11 @@ The file develops:
   `‖a (x, ξ)‖ ≤ C ‖ξ‖ ^ m`, for a proper (for instance finite-dimensional) frequency space;
   applied to the iterated derivatives above it bounds the mixed derivatives on `ℝⁿ × ℝⁿ`:
   `‖∂ₓ^α ∂_ξ^β a (x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency
-  (`HomogeneousSymbol.exists_norm_mixedDeriv_le`); for positive degree it makes a homogeneous
-  symbol, with its value `0` at the zero frequency, continuous on all of `X × E`
-  (`HomogeneousSymbol.continuous_coefficient`);
+  (`HomogeneousSymbol.exists_norm_mixedDeriv_le`), and at a nonzero frequency the mixed
+  derivatives of `∂_{xⱼ} ∂_{ξⱼ} a` are those of `a` with one more derivative of each kind
+  (`HomogeneousSymbol.mixedDeriv_spatialDeriv_frequencyDeriv`); for positive degree the growth
+  bound makes a homogeneous symbol, with its value `0` at the zero frequency, continuous on all
+  of `X × E` (`HomogeneousSymbol.continuous_coefficient`);
 * the homogeneity of all higher derivatives: the derivative of `a` in `j` position directions
   and `l` frequency directions is homogeneous of degree `m - l`
   (`HomogeneousSymbol.iteratedFDeriv_coefficient_smul_frequency_append`), and on a proper
@@ -851,6 +854,53 @@ theorem exists_norm_mixedDeriv_le
     exact congrArg (coordinateDeriv α · x)
       (funext fun y => coefficient_iterFrequencyDeriv a β y hξ)
   exact h ▸ hCK x hx ξ
+
+/-- At a nonzero frequency, the mixed derivatives of `∂_{xⱼ} ∂_{ξⱼ} a` are the mixed derivatives
+of `a` with one more position and one more frequency derivative along `j`. -/
+theorem mixedDeriv_spatialDeriv_frequencyDeriv
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (j : Fin n)
+    (α β : List (Fin n)) (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    mixedDeriv α β ((a.frequencyDeriv (EuclideanSpace.single j 1)).spatialDeriv
+        (EuclideanSpace.single j 1)).coefficient x ξ =
+      mixedDeriv (α ++ [j]) (β ++ [j]) a.coefficient x ξ := by
+  -- A smooth function `G` equal to the coefficient of `a` at frequencies of norm `> ‖ξ‖ / 2`.
+  have hξ' : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
+  let φ : ContDiffBump (0 : CoordinateSpace n) := ⟨‖ξ‖ / 8, ‖ξ‖ / 4, by positivity, by linarith⟩
+  let G : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W := fun p ↦ (1 - φ p.2) • a.coefficient p
+  have hG : ContDiff ℝ ∞ G := contDiff_iff_contDiffAt.2 fun p ↦ by
+    by_cases hp : p.2 = 0
+    · -- Near the zero frequency the cutoff `1 - φ` vanishes.
+      refine contDiffAt_const (c := (0 : V →L[ℂ] W)).congr_of_eventuallyEq ?_
+      have h : ∀ᶠ q : CoordinateSpace n × CoordinateSpace n in 𝓝 p, ‖q.2‖ < ‖ξ‖ / 8 :=
+        (continuous_norm.comp continuous_snd).continuousAt.eventually_lt continuousAt_const
+          (by rw [Function.comp_apply, hp, norm_zero]; positivity)
+      filter_upwards [h] with q hq
+      simp only [G]
+      rw [φ.one_of_mem_closedBall (by simpa using hq.le), sub_self, zero_smul]
+    · exact (contDiffAt_const.sub (φ.contDiff.contDiffAt.comp p contDiffAt_snd)).smul
+        (a.contDiffAt_coefficient hp)
+  have hGa (p : CoordinateSpace n × CoordinateSpace n) (hp : ‖ξ‖ / 2 < ‖p.2‖) :
+      G p = a.coefficient p := by
+    simp [G, φ.zero_of_le_dist (show ‖ξ‖ / 4 ≤ dist p.2 0 by rw [dist_zero_right]; linarith)]
+  have hnhds : ∀ᶠ q : CoordinateSpace n × CoordinateSpace n in 𝓝 (x, ξ), ‖ξ‖ / 2 < ‖q.2‖ :=
+    (continuous_norm.comp continuous_snd).continuousAt.eventually_const_lt (half_lt_self hξ')
+  -- Near `(x, ξ)`, the derivative `∂_{xⱼ} ∂_{ξⱼ} a` is that of `G`.
+  have hgerm : ((a.frequencyDeriv (EuclideanSpace.single j 1)).spatialDeriv
+      (EuclideanSpace.single j 1)).coefficient =ᶠ[𝓝 (x, ξ)]
+        fun p ↦ coordinateDeriv [j] (fun y ↦ coordinateDeriv [j] (fun η ↦ G (y, η)) p.2) p.1 := by
+    filter_upwards [hnhds] with p hp
+    have hp0 : p.2 ≠ 0 := norm_pos_iff.1 (by linarith)
+    rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
+    congr 2
+    funext y
+    have h : (fun η ↦ G (y, η)) =ᶠ[𝓝 p.2] fun η ↦ a.coefficient (y, η) := by
+      filter_upwards [(continuous_norm.continuousAt (x := p.2)).eventually_const_lt hp] with η hη
+      exact hGa (y, η) hη
+    rw [coefficient_frequencyDeriv _ _ hp0, coordinateDeriv_cons, coordinateDeriv_nil,
+      h.fderiv_eq]
+  rw [hgerm.mixedDeriv_eq, mixedDeriv_coordinateDeriv_fst (hG.coordinateDeriv_snd [j]),
+    mixedDeriv_coordinateDeriv_snd]
+  exact (Filter.EventuallyEq.mixedDeriv_eq (hnhds.mono fun q hq ↦ hGa q hq) _ _)
 
 end MixedDeriv
 
