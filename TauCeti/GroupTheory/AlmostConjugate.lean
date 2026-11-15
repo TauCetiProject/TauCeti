@@ -51,9 +51,9 @@ Through the classification of permutation representations by fixed-point counts 
 
 ## Main definitions
 
-* `Subgroup.AlmostConjugate H K`: `H` and `K` meet every conjugacy class of `G` in the same number
-  of elements. It is decidable for a finite group with decidable equality and decidable subgroup
-  membership.
+* `Subgroup.AlmostConjugate H K`: `H` and `K` meet every conjugacy class of `G` in the same
+  `Nat.card` (the same number of elements when `H` and `K` are finite). It is decidable for a
+  finite group with decidable equality and decidable subgroup membership.
 
 ## Main statements
 
@@ -105,7 +105,9 @@ theorem almostConjugate_iff :
   Iff.rfl
 
 /-- Almost-conjugacy read on conjugacy classes through their representatives: `H` and `K` are
-almost conjugate exactly when, for every `g : G`, they contain equally many conjugates of `g`. -/
+almost conjugate exactly when, for every `g : G`, the conjugates of `g` in `H` and in `K` have the
+same `Nat.card` (infinite sets count as `0`), that is, `H` and `K` contain equally many conjugates
+of `g` when they are finite. -/
 theorem almostConjugate_iff_forall_natCard_isConj :
     H.AlmostConjugate K ↔ ∀ g : G,
       Nat.card {x : G // IsConj g x ∧ x ∈ H} = Nat.card {x : G // IsConj g x ∧ x ∈ K} := by
