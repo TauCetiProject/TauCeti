@@ -121,8 +121,6 @@ theorem sum_dysonDrift_sub_mul_sub_nonpos {x y : Fin n → ℝ} (hx : Function.I
     ∑ i, (dysonDrift n x i - dysonDrift n y i) * (x i - y i) ≤ 0 := by
   rw [sum_dysonDrift_sub_mul_sub hx hy, neg_mul]
   refine neg_nonpos.2 (mul_nonneg (by positivity) (sum_nonneg fun i _ ↦ sum_nonneg fun j _ ↦ ?_))
-  refine div_nonneg (sq_nonneg _) ?_
-  have := monovary_iff_forall_mul_nonneg.1 hxy j i
-  linarith [show (x i - x j) * (y i - y j) = (x j - x i) * (y j - y i) by ring]
+  exact div_nonneg (sq_nonneg _) (monovary_iff_forall_mul_nonneg.1 hxy j i)
 
 end TauCeti.Probability
