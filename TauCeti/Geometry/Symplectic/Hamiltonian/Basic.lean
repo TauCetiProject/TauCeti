@@ -256,6 +256,17 @@ theorem hamiltonianVectorField_neg (ω : SymplecticForm V) (H : V → ℝ) (x : 
   intro v
   simp [fderiv_neg]
 
+/-- The Hamiltonian vector field of a sum of Hamiltonians differentiable at the point:
+`X_{F + G} = X_F + X_G`. -/
+theorem hamiltonianVectorField_add (ω : SymplecticForm V) {F G : V → ℝ} {x : V}
+    (hF : DifferentiableAt ℝ F x) (hG : DifferentiableAt ℝ G x) :
+    ω.hamiltonianVectorField (F + G) x =
+      ω.hamiltonianVectorField F x + ω.hamiltonianVectorField G x := by
+  rw [eq_comm, eq_hamiltonianVectorField_iff]
+  intro v
+  rw [fderiv_add hF hG]
+  simp [map_add]
+
 /-- The Hamiltonian vector field of a difference of Hamiltonians differentiable at the point:
 `X_{F - G} = X_F - X_G`. -/
 theorem hamiltonianVectorField_sub (ω : SymplecticForm V) {F G : V → ℝ} {x : V}

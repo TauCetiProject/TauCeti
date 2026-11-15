@@ -50,8 +50,6 @@ is such a family.
 * `TauCeti.SymplecticForm.hamiltonianVectorField_eq_zero_of_notMem`,
   `TauCeti.SymplecticForm.norm_hamiltonianVectorField_le_seminorm`: the Hamiltonian vector field
   of a function supported in `C` vanishes off `C` and is bounded by its `C¹` seminorm.
-* `TauCeti.SymplecticForm.hamiltonianVectorField_add_of_one_le`: the Hamiltonian vector field of
-  a slice is additive on `𝓓^{n}_{C}(P × V, ℝ)`.
 * `TauCeti.SymplecticForm.integrable_apply_hamiltonianVectorField`: the integrand of the pairing
   is integrable.
 * `TauCeti.SymplecticForm.norm_hamiltonianPairing_apply_le`: the pairing is bounded by the `C¹`
@@ -114,17 +112,6 @@ theorem norm_hamiltonianVectorField_le_seminorm (ω : SymplecticForm V) (hn : 1 
     _ = ‖iteratedFDeriv ℝ 1 h (z, y)‖ := (norm_iteratedFDeriv_one ..).symm
     _ ≤ ContDiffMapSupportedIn.seminorm ℝ (P × V) ℝ n C 1 h :=
         ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm ℝ (by exact_mod_cast hn)
-
-/-- The Hamiltonian vector field is additive on the `C^n` functions supported in `C`, `1 ≤ n`. -/
-theorem hamiltonianVectorField_add_of_one_le (ω : SymplecticForm V) (hn : 1 ≤ n)
-    (h g : 𝓓^{n}_{C}(P × V, ℝ)) (z : P) (y : V) :
-    ω.hamiltonianVectorField (fun y' ↦ (h + g) (z, y')) y =
-      ω.hamiltonianVectorField (fun y' ↦ h (z, y')) y +
-        ω.hamiltonianVectorField (fun y' ↦ g (z, y')) y := by
-  have hd (k : 𝓓^{n}_{C}(P × V, ℝ)) : DifferentiableAt ℝ (fun y' ↦ k (z, y')) y :=
-    (k.differentiable hn (z, y)).comp y
-      ((differentiableAt_const z).prodMk differentiableAt_id)
-  simpa using ω.hamiltonianVectorField_const_mul_add_const_mul (hd h) (hd g) 1 1
 
 /-- The pairing of a covector field along `u` with the Hamiltonian vector field of a `C^n`
 function `h` supported in `C`, `1 ≤ n`, is bounded on the projection of `C` by `‖η‖` times the
@@ -209,7 +196,14 @@ noncomputable def hamiltonianPairing (ω : SymplecticForm V) (hn : 1 ≤ n) {u :
   ContDiffMapSupportedIn.mkCLMtoNormedSpace ℝ
     (fun h : 𝓓^{n}_{C}(P × V, ℝ) ↦ ∫ z, η z (ω.hamiltonianVectorField (fun y ↦ h (z, y)) (u z)) ∂μ)
     (fun h g ↦ by
-      simp only [ω.hamiltonianVectorField_add_of_one_le hn h g, map_add]
+      have hd (k : 𝓓^{n}_{C}(P × V, ℝ)) (z : P) : DifferentiableAt ℝ (fun y ↦ k (z, y)) (u z) :=
+        (k.differentiable hn (z, u z)).comp (u z)
+          ((differentiableAt_const z).prodMk differentiableAt_id)
+      have hX (z : P) : ω.hamiltonianVectorField (fun y ↦ (h + g) (z, y)) (u z) =
+          ω.hamiltonianVectorField (fun y ↦ h (z, y)) (u z) +
+            ω.hamiltonianVectorField (fun y ↦ g (z, y)) (u z) :=
+        ω.hamiltonianVectorField_add (hd h z) (hd g z)
+      simp only [hX, map_add]
       exact integral_add (ω.integrable_apply_hamiltonianVectorField hn hu hη h)
         (ω.integrable_apply_hamiltonianVectorField hn hu hη g))
     (fun c h ↦ by
