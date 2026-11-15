@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Normalize
 public import TauCeti.Dynamics.Billiard.NextCollision
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Inverse
@@ -118,39 +119,41 @@ variable {o : Orientation ℝ E (Fin 2)} (χ : StrictConvexBilliardTable o)
 /-- The unit vector `(χ(t) - χ(s)) / ‖χ(t) - χ(s)‖` along the chord from `χ(s)` to `χ(t)`. It is
 `0` when the two boundary points coincide. -/
 def chordDir (s t : ℝ) : E :=
-  ‖χ t - χ s‖⁻¹ • (χ t - χ s)
+  NormedSpace.normalize (χ t - χ s)
 
-theorem chordDir_def (s t : ℝ) : χ.chordDir s t = ‖χ t - χ s‖⁻¹ • (χ t - χ s) :=
+theorem chordDir_def (s t : ℝ) : χ.chordDir s t = NormedSpace.normalize (χ t - χ s) :=
   (rfl)
+
+/-- The chord direction vanishes exactly when the two boundary points coincide. -/
+@[simp]
+theorem chordDir_eq_zero_iff {s t : ℝ} : χ.chordDir s t = 0 ↔ χ t = χ s := by
+  rw [chordDir_def, NormedSpace.normalize_eq_zero_iff, sub_eq_zero]
 
 /-- Reversing a chord reverses its direction. -/
 theorem chordDir_swap (s t : ℝ) : χ.chordDir t s = -χ.chordDir s t := by
-  rw [chordDir_def, chordDir_def, ← neg_sub, norm_neg, smul_neg]
+  rw [chordDir_def, chordDir_def, ← neg_sub, NormedSpace.normalize_neg]
 
 @[simp]
 theorem chordDir_add_period (s t : ℝ) :
     χ.chordDir (s + χ.period) (t + χ.period) = χ.chordDir s t := by
   simp [chordDir_def, χ.periodic s, χ.periodic t]
 
-theorem norm_chordDir {s t : ℝ} (h : χ t ≠ χ s) : ‖χ.chordDir s t‖ = 1 := by
-  rw [chordDir_def, norm_smul, norm_inv, norm_norm,
-    inv_mul_cancel₀ (norm_ne_zero_iff.2 (sub_ne_zero.2 h))]
+theorem norm_chordDir {s t : ℝ} (h : χ t ≠ χ s) : ‖χ.chordDir s t‖ = 1 :=
+  NormedSpace.norm_normalize (sub_ne_zero.2 h)
 
 /-- The chord from `χ(s)` to the next collision point of the state `(s, v)` is along its outgoing
 velocity. -/
 theorem chordDir_nextParam {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
     χ.chordDir s (χ.nextParam s v) = χ.outgoingDir s v := by
-  have hn : ‖χ (χ.nextParam s v) - χ s‖ ≠ 0 :=
-    norm_ne_zero_iff.2 (sub_ne_zero.2 (χ.apply_nextParam_ne hv))
-  rw [chordDir_def]
-  calc _ = ‖χ (χ.nextParam s v) - χ s‖⁻¹ • (‖χ (χ.nextParam s v) - χ s‖ • χ.outgoingDir s v) :=
-        congrArg (_ • ·) (χ.sub_eq_norm_smul_outgoingDir hv)
-    _ = χ.outgoingDir s v := by rw [smul_smul, inv_mul_cancel₀ hn, one_smul]
+  have hℓ : 0 < ‖χ (χ.nextParam s v) - χ s‖ :=
+    norm_pos_iff.2 (sub_ne_zero.2 (χ.apply_nextParam_ne hv))
+  rw [chordDir_def, χ.sub_eq_norm_smul_outgoingDir hv, NormedSpace.normalize_smul_of_pos hℓ,
+    NormedSpace.normalize_eq_self_of_norm_eq_one (χ.norm_outgoingDir ⟨hv.1.le, hv.2.le⟩)]
 
 /-- A chord between distinct boundary points leaves `χ(s)` into the table: `0 < ω(χ'(s), u)`. -/
 theorem areaForm_deriv_chordDir_pos {s t : ℝ} (h : χ t ≠ χ s) :
     0 < o.areaForm (deriv χ s) (χ.chordDir s t) := by
-  rw [chordDir_def, map_smul, smul_eq_mul]
+  rw [chordDir_def, NormedSpace.normalize, map_smul, smul_eq_mul]
   exact mul_pos (inv_pos.2 (norm_pos_iff.2 (sub_ne_zero.2 h))) (χ.areaForm_pos _ _ h)
 
 /-- A chord between distinct boundary points arrives at `χ(t)` from inside the table:
@@ -164,7 +167,7 @@ theorem areaForm_deriv_chordDir_neg {s t : ℝ} (h : χ t ≠ χ s) :
 in `(-1, 1)`. (For coincident endpoints the chord direction is `0`.) -/
 theorem inner_deriv_chordDir_mem_Ioo (s t : ℝ) : ⟪deriv χ s, χ.chordDir s t⟫ ∈ Ioo (-1) 1 := by
   by_cases h : χ t = χ s
-  · simp [chordDir_def, h]
+  · simp [χ.chordDir_eq_zero_iff.2 h]
   have hsq := o.inner_sq_add_areaForm_sq (deriv χ s) (χ.chordDir s t)
   rw [χ.norm_deriv, χ.norm_chordDir h] at hsq
   have hpos := χ.areaForm_deriv_chordDir_pos h
@@ -201,8 +204,8 @@ theorem nextParam_inner_deriv_chordDir {s t : ℝ} (ht : t ∈ Ioo s (s + χ.per
     χ.nextParam s ⟪deriv χ s, χ.chordDir s t⟫ = t := by
   have h := χ.apply_ne_of_mem_Ioo ht
   refine (χ.eq_nextParam_of_areaForm_eq_zero (χ.inner_deriv_chordDir_mem_Ioo s t) ht ?_).symm
-  rw [χ.outgoingDir_inner_deriv_chordDir h, chordDir_def, map_smul, LinearMap.smul_apply,
-    o.areaForm_apply_self, smul_zero]
+  rw [χ.outgoingDir_inner_deriv_chordDir h, chordDir_def, NormedSpace.normalize, map_smul,
+    LinearMap.smul_apply, o.areaForm_apply_self, smul_zero]
 
 /-! ### The generating function and its first derivatives -/
 
@@ -221,6 +224,11 @@ theorem generatingFunction_add_period (s t : ℝ) :
     χ.generatingFunction (s + χ.period) (t + χ.period) = χ.generatingFunction s t := by
   simp [generatingFunction_def, χ.periodic s, χ.periodic t]
 
+/-- The generating function is symmetric: a chord and its reverse have the same length. -/
+theorem generatingFunction_swap (s t : ℝ) :
+    χ.generatingFunction t s = χ.generatingFunction s t := by
+  rw [generatingFunction_def, generatingFunction_def, ← neg_sub, norm_neg]
+
 /-- **The derivative of the generating function in its first argument**:
 `∂_s S(s, t) = ⟪χ'(s), u⟫` for the unit vector `u` along the chord, wherever `χ(t) ≠ χ(s)`. -/
 theorem hasDerivAt_generatingFunction_left {s t : ℝ} (h : χ t ≠ χ s) :
@@ -230,8 +238,8 @@ theorem hasDerivAt_generatingFunction_left {s t : ℝ} (h : χ t ≠ χ s) :
   convert hd.neg using 1
   · funext s'
     simp [generatingFunction_def]
-  · rw [chordDir_def, real_inner_smul_right, _root_.smul_apply, innerSL_apply_apply, smul_eq_mul,
-      inner_neg_right, mul_neg, neg_neg, real_inner_comm]
+  · rw [chordDir_def, NormedSpace.normalize, real_inner_smul_right, _root_.smul_apply,
+      innerSL_apply_apply, smul_eq_mul, inner_neg_right, mul_neg, neg_neg, real_inner_comm]
 
 /-- **The derivative of the generating function in its second argument**:
 `∂_t S(s, t) = -⟪χ'(t), u⟫` for the unit vector `u` along the chord, wherever `χ(t) ≠ χ(s)`. -/
@@ -242,8 +250,8 @@ theorem hasDerivAt_generatingFunction_right {s t : ℝ} (h : χ t ≠ χ s) :
   convert hd.neg using 1
   · funext t'
     simp [generatingFunction_def]
-  · rw [chordDir_def, real_inner_smul_right, _root_.smul_apply, innerSL_apply_apply, smul_eq_mul,
-      real_inner_comm]
+  · rw [chordDir_def, NormedSpace.normalize, real_inner_smul_right, _root_.smul_apply,
+      innerSL_apply_apply, smul_eq_mul, real_inner_comm]
 
 /-- **The generating function recovers the initial state**: at the next collision point
 `t` of the state `(s, v)`, `∂_s S(s, t) = v`. -/
@@ -292,11 +300,11 @@ theorem hasDerivAt_inner_chordDir (a : E) {s t : ℝ} (h : χ t ≠ χ s) :
   have hin := (innerSL ℝ a).hasFDerivAt.comp_hasDerivAt t hc
   convert hinv.mul hin using 1
   · funext t'
-    simp [chordDir_def, real_inner_smul_right]
+    simp [chordDir_def, NormedSpace.normalize, real_inner_smul_right]
   · -- The derivative is `(⟪a, χ'(t)⟫ - ⟪d, a⟫ ⟪d, χ'(t)⟫ / ‖d‖²) / ‖d‖` for `d = χ(t) - χ(s)`,
     -- which is the claimed expression by `⟪d, a⟫ ⟪d, b⟫ + ω(d, a) ω(d, b) = ‖d‖² ⟪a, b⟫`.
     have key := o.inner_mul_inner_add_areaForm_mul_areaForm (χ t - χ s) a (deriv χ t)
-    rw [o.areaForm_swap a, o.areaForm_swap (deriv χ t), chordDir_def]
+    rw [o.areaForm_swap a, o.areaForm_swap (deriv χ t), chordDir_def, NormedSpace.normalize]
     simp only [comp_apply, Pi.inv_apply, _root_.smul_apply, innerSL_apply_apply, smul_eq_mul]
     generalize χ t - χ s = d at key hn ⊢
     rw [real_inner_comm a d] at key
@@ -387,7 +395,7 @@ theorem strictAntiOn_nextParam (s : ℝ) : StrictAntiOn (χ.nextParam s) (Ioo (-
   linarith
 
 /-- For fixed `s`, every parameter of the window `(s, s + L)` is the next collision parameter of
-exactly one tangential component `v ∈ (-1, 1)`. -/
+some tangential component `v ∈ (-1, 1)`. -/
 theorem image_nextParam_Ioo (s : ℝ) : χ.nextParam s '' Ioo (-1) 1 = Ioo s (s + χ.period) := by
   refine Subset.antisymm ?_ fun t ht ↦ ?_
   · rintro _ ⟨v, hv, rfl⟩
@@ -410,6 +418,16 @@ theorem continuousOn_nextParam (s : ℝ) : ContinuousOn (χ.nextParam s) (Ioo (-
   have hc' : ContinuousAt (χ.nextParam s) v := by simpa using hc.neg
   exact hc'.continuousWithinAt
 
+private theorem sqrt_one_sub_sq_pos {v : ℝ} (hv : v ∈ Ioo (-1) 1) : 0 < √(1 - v ^ 2) :=
+  Real.sqrt_pos.2 (by nlinarith [hv.1, hv.2])
+
+/-- The quotient `ℓ / (√(1 - v²) √(1 - w²))` of the chord length by the sines of the angles of the
+chord with the boundary at the state `(s, v)` and at its next collision is positive. -/
+private theorem norm_div_sqrt_mul_sqrt_pos {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
+    0 < ‖χ (χ.nextParam s v) - χ s‖ / (√(1 - v ^ 2) * √(1 - χ.nextTangential s v ^ 2)) :=
+  div_pos (norm_pos_iff.2 (sub_ne_zero.2 (χ.apply_nextParam_ne hv)))
+    (mul_pos (sqrt_one_sub_sq_pos hv) (sqrt_one_sub_sq_pos (χ.nextTangential_mem_Ioo hv)))
+
 /-- **The derivative of the next collision parameter.** For fixed `s`, the next collision
 parameter `t` of the state `(s, v)` is differentiable in `v`, with derivative
 `∂t/∂v = -ℓ / (√(1 - v²) √(1 - w²))`, where `w` is the next tangential component and `ℓ` the
@@ -418,15 +436,11 @@ function. -/
 theorem hasDerivAt_nextParam {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
     HasDerivAt (χ.nextParam s)
       (-(‖χ (χ.nextParam s v) - χ s‖ / (√(1 - v ^ 2) * √(1 - χ.nextTangential s v ^ 2)))) v := by
-  have hw := χ.nextTangential_mem_Ioo (s := s) hv
-  have hsv : 0 < √(1 - v ^ 2) := Real.sqrt_pos.2 (by nlinarith [hv.1, hv.2])
-  have hsw : 0 < √(1 - χ.nextTangential s v ^ 2) := Real.sqrt_pos.2 (by nlinarith [hw.1, hw.2])
-  have hℓ : 0 < ‖χ (χ.nextParam s v) - χ s‖ :=
-    norm_pos_iff.2 (sub_ne_zero.2 (χ.apply_nextParam_ne hv))
   -- `v ↦ t` is a continuous local inverse of `t ↦ ∂_s S(s, t)`.
   convert (χ.hasDerivAt_deriv_generatingFunction_left_nextParam hv).of_local_left_inverse
     ((χ.continuousOn_nextParam s).continuousAt (Ioo_mem_nhds hv.1 hv.2))
-    (neg_lt_zero.2 (div_pos (mul_pos hsv hsw) hℓ)).ne ?_ using 1
+    (neg_lt_zero.2 (by rw [← inv_div]; exact inv_pos.2 (χ.norm_div_sqrt_mul_sqrt_pos hv))).ne ?_
+    using 1
   · rw [inv_neg, inv_div]
   · filter_upwards [Ioo_mem_nhds hv.1 hv.2] with w hw
     exact χ.deriv_generatingFunction_left_nextParam hw
@@ -434,11 +448,8 @@ theorem hasDerivAt_nextParam {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
 /-- For fixed `s`, the next collision parameter has negative derivative in the tangential
 component: `∂t/∂v < 0`. -/
 theorem deriv_nextParam_neg {s v : ℝ} (hv : v ∈ Ioo (-1) 1) : deriv (χ.nextParam s) v < 0 := by
-  have hw := χ.nextTangential_mem_Ioo (s := s) hv
-  rw [(χ.hasDerivAt_nextParam hv).deriv, neg_lt_zero]
-  exact div_pos (norm_pos_iff.2 (sub_ne_zero.2 (χ.apply_nextParam_ne hv)))
-    (mul_pos (Real.sqrt_pos.2 (by nlinarith [hv.1, hv.2]))
-      (Real.sqrt_pos.2 (by nlinarith [hw.1, hw.2])))
+  rw [(χ.hasDerivAt_nextParam hv).deriv]
+  exact neg_lt_zero.2 (χ.norm_div_sqrt_mul_sqrt_pos hv)
 
 end StrictConvexBilliardTable
 
