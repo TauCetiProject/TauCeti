@@ -41,8 +41,8 @@ proves:
 * `TauCeti.HasLaurentSeriesOnAnnulus.circleLaurentCoeff_eq` and
   `TauCeti.HasLaurentSeriesOnAnnulus.coeff_unique`: circle-integral coefficient formula and
   uniqueness of Laurent expansions.
-* `TauCeti.circleLaurentCoeff_inv_sub`: the Laurent coefficients of a simple pole `(a - z)⁻¹`
-  on a circle about `c` of radius less than `‖a - c‖`.
+* `TauCeti.circleLaurentCoeff_inv_sub_of_lt_norm`: the Laurent coefficients of a simple pole
+  `(a - z)⁻¹` on a circle about `c` of radius less than `‖a - c‖`.
 * `TauCeti.hasLaurentSeriesOnAnnulus_of_differentiable_off_countable`,
   `DifferentiableOn.hasLaurentSeriesOnAnnulus`, and
   `TauCeti.differentiableOn_iff_exists_hasLaurentSeriesOnAnnulus`: Laurent's theorem on concentric
@@ -219,7 +219,8 @@ theorem circleLaurentCoeff_eq_of_hasSum_sphere {f : ℂ → E} {a : ℤ → E} {
 
 /-- The Laurent coefficients of the simple pole `z ↦ (a - z)⁻¹` on a circle about `c` that does
 not reach `a` are those of its geometric expansion `∑_{n ≥ 0} (z - c) ^ n / (a - c) ^ (n + 1)`. -/
-theorem circleLaurentCoeff_inv_sub {a c : ℂ} {ρ : ℝ} (hρ : 0 < ρ) (hρa : ρ < ‖a - c‖) (n : ℤ) :
+theorem circleLaurentCoeff_inv_sub_of_lt_norm {a c : ℂ} {ρ : ℝ} (hρ : 0 < ρ) (hρa : ρ < ‖a - c‖)
+    (n : ℤ) :
     circleLaurentCoeff (fun z => (a - z)⁻¹) c ρ n = if 0 ≤ n then (a - c) ^ (-n - 1) else 0 := by
   have hd : a - c ≠ 0 := norm_pos_iff.1 (hρ.trans hρa)
   set b : ℤ → ℂ := fun k => if 0 ≤ k then (a - c) ^ (-k - 1) else 0 with hb

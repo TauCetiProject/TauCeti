@@ -122,7 +122,7 @@ theorem tendsto_circleLaurentCoeff_sub {f g h : ℂ → E} {c : ℂ} {r ρ : ℝ
 in every nonnegative degree and `0` in every negative degree. -/
 example {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1) (n : ℤ) :
     circleLaurentCoeff (fun z ↦ (1 - z)⁻¹) 0 ρ n = if 0 ≤ n then 1 else 0 := by
-  simpa using circleLaurentCoeff_inv_sub (a := 1) (c := 0) hρ (by simpa using hρ1) n
+  simpa using circleLaurentCoeff_inv_sub_of_lt_norm (a := 1) (c := 0) hρ (by simpa using hρ1) n
 
 /-- Darboux's method with `f(z) = 1 / (1 - z) + 1 / (2 - z)`, `g(z) = 1 / (1 - z)` and `r = 1`:
 `f - g = 1 / (2 - z)` is continuous on `|z| ≤ 1`, and `f_n - g_n = 2 ^ (-n - 1)` for `n ≥ 0` and
@@ -144,7 +144,7 @@ example {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1) :
         ⟨mem_ball_zero_iff.2 ((mem_sphere_zero_iff_norm.1 hz).trans_lt hρ1),
           ne_of_mem_sphere hz hρ.ne'⟩).circleIntegrable hρ.le
     rw [circleLaurentCoeff_add (hsph 1 (by simp)) (hsph 2 (by simp)), add_sub_cancel_left,
-      circleLaurentCoeff_inv_sub hρ (by simpa using hρ1.trans one_lt_two), sub_zero]
+      circleLaurentCoeff_inv_sub_of_lt_norm hρ (by simpa using hρ1.trans one_lt_two), sub_zero]
   · refine (continuousOn_const.sub continuousOn_id).inv₀ fun z hz h ↦ ?_
     simp only [Pi.sub_apply, id_eq, sub_eq_zero] at h
     subst h
