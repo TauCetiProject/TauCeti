@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.SU2.BinaryDihedral
+import TauCeti.Algebra.Quaternion.Basic
 
 /-!
 # The binary tetrahedral subgroup of SU(2)
@@ -25,9 +26,10 @@ The doubled coordinate vectors are exactly the integer solutions of `v₀² + v�
 (`TauCeti.SU2.mem_binaryTetrahedralCoords_iff`). So the binary tetrahedral group is the group of
 unit quaternions with half-integer coordinates, the units of the Hurwitz order
 (`TauCeti.SU2.mem_binaryTetrahedralSubgroup_iff_exists_int`). This is what makes it closed under
-multiplication: the four doubled coordinates of each point share a parity, so the doubled
-coordinates of a product of two points are even and, halved again, the product has
-half-integer coordinates; it has norm one because both factors do.
+multiplication: the four doubled coordinates of each point share a parity, so the product of the
+doubled factors has even integer coordinates; halving these gives the doubled coordinates of the
+actual product, which are therefore integers, and the product has norm one because both factors
+do.
 
 The 24 points are distinct and exhaust the subgroup
 (`TauCeti.SU2.binaryTetrahedralCoordsEquiv`), so the subgroup has exactly 24 elements. It contains
@@ -104,13 +106,6 @@ private theorem even_iff_even_of_mem_binaryTetrahedralCoords {v : Fin 4 → ℤ}
 
 /-! ### Half-integer quaternions -/
 
-/-- The norm of the quaternion `(v₀ + v₁ i + v₂ j + v₃ k) / 2` is a quarter of `∑ vᵢ²`. -/
-private theorem normSq_half (v : Fin 4 → ℤ) :
-    normSq (⟨v 0 / 2, v 1 / 2, v 2 / 2, v 3 / 2⟩ : ℍ[ℝ]) = ((∑ i, v i ^ 2 : ℤ) : ℝ) / 4 := by
-  rw [normSq_def', Fin.sum_univ_four]
-  push_cast
-  ring
-
 /-- An element of `SU(2)` with half-integer quaternion coordinates has doubled coordinates in the
 binary tetrahedral coordinate set, since its quaternion has norm one. -/
 private theorem exists_mem_binaryTetrahedralCoords_of_coe_eq {g : SU2} {v : Fin 4 → ℤ}
@@ -118,9 +113,11 @@ private theorem exists_mem_binaryTetrahedralCoords_of_coe_eq {g : SU2} {v : Fin 
     ∃ v ∈ binaryTetrahedralCoords,
       (g : Matrix (Fin 2) (Fin 2) ℂ) = toComplexMatrix ⟨v 0 / 2, v 1 / 2, v 2 / 2, v 3 / 2⟩ := by
   have hdet := (Matrix.mem_specialUnitaryGroup_iff.mp g.2).2
-  rw [hg, det_toComplexMatrix, normSq_half, ← Complex.ofReal_one, Complex.ofReal_inj,
+  rw [hg, det_toComplexMatrix, normSq_mk_div_two, ← Complex.ofReal_one, Complex.ofReal_inj,
     div_eq_one_iff_eq four_ne_zero] at hdet
-  exact ⟨v, mem_binaryTetrahedralCoords_iff.mpr (by exact_mod_cast hdet), hg⟩
+  refine ⟨v, mem_binaryTetrahedralCoords_iff.mpr ?_, hg⟩
+  rw [Fin.sum_univ_four]
+  exact_mod_cast hdet
 
 /-- The points of the binary tetrahedral coordinate set give unit quaternions. -/
 private theorem toComplexMatrix_mem_of_mem_binaryTetrahedralCoords {v : Fin 4 → ℤ}
@@ -128,8 +125,10 @@ private theorem toComplexMatrix_mem_of_mem_binaryTetrahedralCoords {v : Fin 4 �
     toComplexMatrix ⟨v 0 / 2, v 1 / 2, v 2 / 2, v 3 / 2⟩ ∈
       Matrix.specialUnitaryGroup (Fin 2) ℂ := by
   refine mem_specialUnitaryGroup_toComplexMatrix ((mem_unitary_iff_normSq_eq_one _).mpr ?_)
-  rw [normSq_half, mem_binaryTetrahedralCoords_iff.mp hv]
-  norm_num
+  have hv := mem_binaryTetrahedralCoords_iff.mp hv
+  rw [Fin.sum_univ_four] at hv
+  rw [normSq_mk_div_two, div_eq_one_iff_eq four_ne_zero]
+  exact_mod_cast hv
 
 /-- **Closure under multiplication.** The product of two points of the binary tetrahedral group
 is again a half-integer quaternion: the doubled coordinates of each factor share a parity, so
