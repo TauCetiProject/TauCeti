@@ -33,6 +33,9 @@ this consequence.
   formula `N(P) = p ^ f(P ∣ p)` with every `f` equal to `1`, stated without the separability
   hypothesis of Mathlib's `Ideal.relNorm_eq_pow_of_isMaximal`, so that it applies to inseparable
   extensions of function fields in positive characteristic.
+* `Ideal.prod_map_galRestrict_eq_map_relNorm`, `Ideal.prod_map_algEquiv_eq_map_relNorm`: in a
+  Galois extension, the product of the Galois conjugates of an ideal `I` of `B` equals the
+  extension `(relNorm A I).map (algebraMap A B)` of its relative norm.
 -/
 
 public section
@@ -129,6 +132,53 @@ theorem relNorm_eq_of_forall_inertiaDeg_eq_one {p : Ideal A}
     Nat.mul_le_mul_right _ (hs_pos Q (Set.mem_toFinset.mp hQ))).mp (hsum₂.trans hsum₁.symm) P
     (Set.mem_toFinset.mpr hP)
   rw [hs P hP, ← Nat.eq_of_mul_eq_mul_right (ramificationIdx_pos A P) key, pow_one]
+
+/-- **The product of Galois conjugates of an ideal is the extension of its relative norm.**
+In the `AKLB` setup with `L / K` Galois, the product of the translates of `I : Ideal B` under
+`Gal(L/K)` equals `(relNorm A I).map (algebraMap A B)`. -/
+theorem prod_map_galRestrict_eq_map_relNorm
+    (K L : Type*) [Field K] [Field L] [Algebra A K] [IsFractionRing A K]
+    [Algebra B L] [IsFractionRing B L] [Algebra K L] [Algebra A L]
+    [IsScalarTower A K L] [IsScalarTower A B L] [IsIntegralClosure B A L]
+    [FiniteDimensional K L] [IsGalois K L] (I : Ideal B) :
+    (∏ σ : Gal(L/K), I.map (galRestrict A K L B σ)) = (relNorm A I).map (algebraMap A B) := by
+  classical
+  -- Every generator `N(x)` of `(relNorm A I).map (algebraMap A B)` is `∏ σ, σ x ∈ ∏ σ, σ I`.
+  have hle : (relNorm A I).map (algebraMap A B) ≤
+      ∏ σ : Gal(L/K), I.map (galRestrict A K L B σ) := by
+    rw [map_relNorm, span_le]
+    rintro _ ⟨x, hx, rfl⟩
+    have hxprod : algebraMap A B (Algebra.intNorm A B x) =
+        ∏ σ : Gal(L/K), galRestrict A K L B σ x := by
+      apply IsFractionRing.injective B L
+      rw [← IsScalarTower.algebraMap_apply, IsScalarTower.algebraMap_apply A K L,
+        Algebra.algebraMap_intNorm (L := L), Algebra.norm_eq_prod_automorphisms, map_prod]
+      exact Finset.prod_congr rfl fun σ _ ↦ (algebraMap_galRestrict_apply A σ x).symm
+    rw [Function.comp_apply, hxprod]
+    exact Ideal.prod_mem_prod fun σ _ ↦ mem_map_of_mem _ hx
+  -- Both ideals have relative norm `(relNorm A I) ^ [B : A]`.
+  have hcard : Fintype.card Gal(L/K) = Module.finrank A B := by
+    rw [← Nat.card_eq_fintype_card, IsGalois.card_aut_eq_finrank K L,
+      IsFractionRing.finrank_eq A K B L]
+  have hnorm : relNorm A ((relNorm A I).map (algebraMap A B)) =
+      relNorm A (∏ σ : Gal(L/K), I.map (galRestrict A K L B σ)) := by
+    rw [relNorm_algebraMap, map_prod]
+    simp_rw [relNorm_map_algEquiv, Finset.prod_const, Finset.card_univ, hcard]
+  exact (eq_of_le_of_relNorm_eq hle hnorm).symm
+
+attribute [local instance] FractionRing.liftAlgebra FractionRing.isScalarTower_liftAlgebra in
+/-- **The product of `A`-automorphism images of an ideal is the extension of its relative norm.**
+When `FractionRing B` is Galois over `FractionRing A`, the product of `I.map σ` over
+`σ : B ≃ₐ[A] B` equals `(relNorm A I).map (algebraMap A B)`. -/
+theorem prod_map_algEquiv_eq_map_relNorm [IsGalois (FractionRing A) (FractionRing B)]
+    (I : Ideal B) :
+    (∏ σ : B ≃ₐ[A] B, I.map σ) = (relNorm A I).map (algebraMap A B) := by
+  classical
+  have : FiniteDimensional (FractionRing A) (FractionRing B) :=
+    .of_isLocalization A B (nonZeroDivisors A)
+  have : IsIntegralClosure B A (FractionRing B) := .of_isIntegrallyClosed _ _ _
+  rw [← (galRestrict A (FractionRing A) (FractionRing B) B).toEquiv.prod_comp]
+  exact prod_map_galRestrict_eq_map_relNorm (FractionRing A) (FractionRing B) I
 
 end Ideal
 

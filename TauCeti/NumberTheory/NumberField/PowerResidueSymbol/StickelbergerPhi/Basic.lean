@@ -67,8 +67,9 @@ the Eisenstein reciprocity law.
 * `Ideal.stickelbergerPhi_modEq_neg_one_pow`: `Φ(A) ≡ (-1)^r (mod m)` for `m` prime and every ideal
   `A` whose norm is prime to `m`, where `r` is the number of prime factors of `A`, counted with
   multiplicity.
-* `Ideal.powerResidueSymbol_stickelbergerPhi`: `(Φ(A) / P')_m = (N P' / A)_m` for `m ≥ 2`, a
-  maximal ideal `P'` whose norm is prime to `m`, and an ideal `A` whose norm is prime to `N P'`.
+* `Ideal.powerResidueSymbol_stickelbergerPhi`, `Ideal.powerResidueSymbolIdeal_stickelbergerPhi`:
+  `(Φ(A) / B)_m = (N B / A)_m` for `m ≥ 2`, a maximal ideal `B = P'` (or arbitrary ideal `B`) whose
+  norm is prime to `m`, and an ideal `A` whose norm is prime to `N B`.
 
 ## References
 
@@ -514,6 +515,28 @@ theorem powerResidueSymbol_stickelbergerPhi (A P' : Ideal (𝓞 K)) [P'.IsMaxima
     rw [stickelbergerPhi_mul hP.ne_zero hA₀, map_mul, map_mul,
       powerResidueSymbolIdeal_mul_right hP.ne_zero hA₀, powerResidueSymbolIdeal_of_isMaximal,
       powerResidueSymbol_stickelbergerPhi_of_isMaximal P P' hP' hAP'.1 hm, ih hAP'.2]
+
+/-- **The residue symbol of `Φ(A)` at a second ideal.** Let `m ≥ 2`, let `B` be an ideal of
+`𝓞 K` whose norm is prime to `m`, and let `A` be an ideal whose norm is prime to that of `B`.
+Then `(Φ(A) / B)_m = (N B / A)_m`. At a maximal ideal `B = P'` this is
+`Ideal.powerResidueSymbol_stickelbergerPhi`. -/
+theorem powerResidueSymbolIdeal_stickelbergerPhi (A B : Ideal (𝓞 K))
+    (hB : (absNorm B).Coprime m) (hAB : (absNorm A).Coprime (absNorm B)) (hm : 2 ≤ m) :
+    powerResidueSymbolIdeal B m (Quotient.mk B (stickelbergerPhi A m)) =
+      powerResidueSymbolIdeal A m (Quotient.mk A (absNorm B : 𝓞 K)) := by
+  induction B using induction_on_prime with
+  | h₁ =>
+    rw [zero_eq_bot, absNorm_bot, Nat.coprime_zero_left] at hB
+    omega
+  | h₂ B hBu =>
+    rw [isUnit_iff.mp hBu, absNorm_top, Nat.cast_one, powerResidueSymbolIdeal_top, map_one, map_one]
+  | h₃ B P hB₀ hP ih =>
+    have : P.IsMaximal := (isPrime_of_prime hP).isMaximal hP.ne_zero
+    rw [map_mul, Nat.coprime_mul_iff_left] at hB
+    rw [map_mul, Nat.coprime_mul_iff_right] at hAB
+    rw [powerResidueSymbolIdeal_mul_right hP.ne_zero hB₀, powerResidueSymbolIdeal_of_isMaximal,
+      powerResidueSymbol_stickelbergerPhi A P hB.1 hAB.1 hm, ih hB.2 hAB.2, map_mul, Nat.cast_mul,
+      map_mul, map_mul]
 
 end SecondPrime
 
