@@ -291,10 +291,11 @@ theorem hasExtensionByZero_of_le_one [IsManifold 𝓘(ℝ, ℂ) 1 M]
           (hGj j)
     · exact memWkpLoc_zero_fun.congr fun y hy ↦ A.coord_eq_zero hy.1 (ht _ hy.2)
   obtain ⟨w, hw⟩ := exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm
-    (A := A) hk A.chart (fun _ ↦ IsManifold.chart_mem_maximalAtlas _) A.triv U hU
+    (A := A) A.chart (fun _ ↦ IsManifold.chart_mem_maximalAtlas _) A.triv U hU
     (fun x ↦ let ⟨i', hi', hi'U⟩ := hcover x
       ⟨i', A.dom_subset_chart_source i' hi', A.dom_subset_baseSet i' hi', hi'U⟩)
-    fun i' ↦ by simpa only [funext (A.coord_def i' _)] using hmem i'
+    (fun i' ↦ by simpa only [funext (A.coord_def i' _)] using hmem i') (.inl hk) one_ne_zero
+    (by exact_mod_cast hk)
   refine ⟨⟨w, mem_aeZeroOff_of_ae_eq_coord hw ht⟩,
     Subtype.ext <| funext fun j ↦ Wkp.ext k <| Lp.ext ?_⟩
   rw [coe_chartRestrictL_apply]
