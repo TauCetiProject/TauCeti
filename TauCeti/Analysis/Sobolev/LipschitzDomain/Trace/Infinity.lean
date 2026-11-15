@@ -55,7 +55,7 @@ private theorem restrictL_frontierExtensionL
   simpa only [frontierExtensionL, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.id_apply] using
     congrArg (fun T ↦ T u)
-      (exists_extensionL_of_isLipschitzDomainWith (p := ∞) hΩ hb).choose_spec
+      (exists_extensionL_of_isLipschitzDomainWith (p := ∞) hΩ hb).choose_spec.1
 
 private def frontierRepresentativeL
     (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
