@@ -166,29 +166,29 @@ theorem lintegral_comp_eq_lintegral_mul_lintegral_cons_mul_prod_of_hasLaw_withDe
   exact TauCeti.lintegral_mul_prod_sub_cons_succ hp a (hF.comp (by fun_prop))
 
 /-- The Borel-rectangle probability is the fully iterated transition-density integral.
-The zero-increment case reduces to one by `transitionRectangleIntegral_zero`. -/
-theorem measure_setOf_forall_succ_mem_eq_transitionRectangleIntegral
+The zero-increment case reduces to one by `transitionRectangleLIntegral_zero`. -/
+theorem measure_setOf_forall_succ_mem_eq_transitionRectangleLIntegral
     (hind : iIndepFun (fun i : Fin n ↦ fun ω ↦ V i.succ ω - V i.castSucc ω) P)
     (hinc : ∀ i : Fin n, HasLaw (fun ω ↦ V i.succ ω - V i.castSucc ω)
       (volume.withDensity (p i)) P)
     (hp : ∀ i, Measurable (p i)) (hzero : V 0 =ᵐ[P] fun _ ↦ a)
     (B : Fin n → Set ℝ) (hB : ∀ i, MeasurableSet (B i)) :
     P {ω | ∀ i : Fin n, V i.succ ω ∈ B i} =
-      TauCeti.transitionRectangleIntegral p a B := by
+      TauCeti.transitionRectangleLIntegral p a B := by
   rw [hind.measure_setOf_forall_succ_mem_eq_setLIntegral_prod_of_hasLaw_withDensity
     hinc hp hzero B hB]
-  exact TauCeti.setLIntegral_prod_sub_cons_eq_transitionRectangleIntegral hp a B
+  exact TauCeti.setLIntegral_prod_sub_cons_eq_transitionRectangleLIntegral hp a B
 
 /-- Include the initial-coordinate rectangle by integration against its Dirac law,
 not by a fictitious time-zero density. This also handles a grid containing only time zero. -/
-theorem measure_setOf_forall_mem_eq_setLIntegral_dirac_transitionRectangleIntegral
+theorem measure_setOf_forall_mem_eq_setLIntegral_dirac_transitionRectangleLIntegral
     (hind : iIndepFun (fun i : Fin n ↦ fun ω ↦ V i.succ ω - V i.castSucc ω) P)
     (hinc : ∀ i : Fin n, HasLaw (fun ω ↦ V i.succ ω - V i.castSucc ω)
       (volume.withDensity (p i)) P)
     (hp : ∀ i, Measurable (p i)) (hzero : V 0 =ᵐ[P] fun _ ↦ a)
     (B : Fin (n + 1) → Set ℝ) (hB : ∀ i : Fin n, MeasurableSet (B i.succ)) :
     P {ω | ∀ i, V i ω ∈ B i} =
-      ∫⁻ x in B 0, TauCeti.transitionRectangleIntegral p x (fun i ↦ B i.succ)
+      ∫⁻ x in B 0, TauCeti.transitionRectangleLIntegral p x (fun i ↦ B i.succ)
         ∂Measure.dirac a := by
   classical
   rw [setLIntegral_dirac]
@@ -198,7 +198,7 @@ theorem measure_setOf_forall_mem_eq_setLIntegral_dirac_transitionRectangleIntegr
         apply measure_congr
         filter_upwards [hzero] with ω hω
         simp [Fin.forall_fin_succ, hω, ha]
-      _ = _ := hind.measure_setOf_forall_succ_mem_eq_transitionRectangleIntegral
+      _ = _ := hind.measure_setOf_forall_succ_mem_eq_transitionRectangleLIntegral
         hinc hp hzero _ hB
   · calc
       _ = P ∅ := by
