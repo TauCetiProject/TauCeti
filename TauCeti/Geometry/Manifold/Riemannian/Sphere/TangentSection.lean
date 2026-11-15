@@ -22,11 +22,15 @@ the hyperplane `(ℝ ∙ (x : E))ᗮ` (`TauCeti.sphereTangentEquiv`). Pointwise,
 determines a unique section `TauCeti.sphereTangentSection n w hw` of the tangent bundle of `Sⁿ`
 whose image under `dι` is `w`.
 
-Because `ι` is analytic with split-injective differential everywhere, this pointwise bijection
-preserves regularity at every order `m : ℕ∞ω`: `TauCeti.sphereTangentSection n w hw` is `C^m` into
+Because `ι` is analytic with split-injective differential everywhere
+(`ContMDiffAt.vectorField_of_mfderiv`), this pointwise bijection preserves regularity at every
+order `m : ℕ∞ω`: `TauCeti.sphereTangentSection n w hw` is `C^m` into
 `TangentBundle (𝓡 n) (sphere (0 : E) 1)` if and only if `w` is `C^m` into `E`
 (`TauCeti.contMDiff_sphereTangentSection_iff`), and in particular continuous if and only if `w` is
-continuous (`TauCeti.continuous_sphereTangentSection_iff`).
+continuous (`TauCeti.continuous_sphereTangentSection_iff`). Consequently, an arbitrary section `V`
+of the tangent bundle of `Sⁿ` is `C^m` (respectively continuous) if and only if its ambient image
+`x ↦ mvfderiv (𝓡 n) Subtype.val x (V x)` is (`TauCeti.contMDiff_section_sphere_iff`,
+`TauCeti.continuous_section_sphere_iff`).
 
 ## Main definitions
 
@@ -42,10 +46,11 @@ continuous (`TauCeti.continuous_sphereTangentSection_iff`).
   is `‖w x‖`, so it vanishes at `x` exactly when `w x = 0`.
 * `TauCeti.sphereTangentSection_mvfderiv_subtypeVal`: every section `V` is recovered from its
   ambient image `x ↦ mvfderiv (𝓡 n) Subtype.val x (V x)`.
-* `TauCeti.continuous_mvfderiv_subtypeVal_sphere_section`: pushing a continuous section forward by
-  `dι` gives a continuous map into `E`.
 * `TauCeti.contMDiff_sphereTangentSection_iff`, `TauCeti.continuous_sphereTangentSection_iff`:
   `sphereTangentSection n w hw` is `C^m` (respectively continuous) if and only if `w` is.
+* `TauCeti.contMDiff_section_sphere_iff`, `TauCeti.continuous_section_sphere_iff`: a section `V` of
+  the tangent bundle of `Sⁿ` is `C^m` (respectively continuous) if and only if its ambient image
+  `x ↦ mvfderiv (𝓡 n) Subtype.val x (V x)` is.
 
 ## References
 
@@ -64,10 +69,7 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-section ExplicitDim
-
-variable (n : ℕ) [Fact (finrank ℝ E = n + 1)]
-
+variable (n : ℕ) [Fact (finrank ℝ E = n + 1)] in
 /-- The section of the tangent bundle of the unit sphere `Sⁿ` determined by an ambient map
 `w : sphere (0 : E) 1 → E` orthogonal to the radius vector at every point. -/
 def sphereTangentSection (w : sphere (0 : E) 1 → E)
@@ -75,6 +77,10 @@ def sphereTangentSection (w : sphere (0 : E) 1 → E)
     TangentSpace (𝓡 n) x :=
   (sphereTangentEquiv (n := n) x).symm
     ⟨w x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 (hw x)⟩
+
+section ImplicitDim
+
+variable {n : ℕ} [Fact (finrank ℝ E = n + 1)]
 
 /-- Defining formula for `TauCeti.sphereTangentSection` through `TauCeti.sphereTangentEquiv`. -/
 theorem sphereTangentSection_def (w : sphere (0 : E) 1 → E)
@@ -119,12 +125,6 @@ theorem sphereTangentSection_eq_zero_iff (w : sphere (0 : E) 1 → E)
     sphereTangentSection n w hw x = 0 ↔ w x = 0 := by
   rw [← norm_eq_zero, norm_sphereTangentSection, norm_eq_zero]
 
-end ExplicitDim
-
-section ImplicitDim
-
-variable {n : ℕ} [Fact (finrank ℝ E = n + 1)]
-
 /-- The ambient vector `mvfderiv (𝓡 n) Subtype.val x v` of any tangent vector to `Sⁿ` is
 orthogonal to `(x : E)`. -/
 theorem inner_mvfderiv_subtypeVal_sphere_coe (x : sphere (0 : E) 1) (v : TangentSpace (𝓡 n) x) :
@@ -140,17 +140,7 @@ theorem sphereTangentSection_mvfderiv_subtypeVal
     sphereTangentSection n (fun x ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x (V x))
       (fun x ↦ inner_mvfderiv_subtypeVal_sphere_coe x (V x)) = V := by
   funext x
-  exact injective_mvfderiv_subtypeVal_sphere x (mvfderiv_subtypeVal_sphereTangentSection n _ _ x)
-
-/-- Pushing a continuous section of the tangent bundle of `Sⁿ` forward by the differential of the
-inclusion gives a continuous map into `E`. -/
-theorem continuous_mvfderiv_subtypeVal_sphere_section
-    {V : (x : sphere (0 : E) 1) → TangentSpace (𝓡 n) x}
-    (hV : Continuous (fun x ↦ (⟨x, V x⟩ : TangentBundle (𝓡 n) (sphere (0 : E) 1)))) :
-    Continuous (fun x ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x (V x)) := by
-  rw [← contMDiff_zero_iff (I := 𝓡 n) (I' := (𝓡 n).tangent)] at hV
-  rw [← contMDiff_zero_iff (I := 𝓡 n) (I' := 𝓘(ℝ, E))]
-  exact (contMDiff_coe_sphere (m := 1)).mvfderiv hV le_rfl
+  exact injective_mvfderiv_subtypeVal_sphere x (mvfderiv_subtypeVal_sphereTangentSection _ _ x)
 
 /-- `TauCeti.sphereTangentSection n w hw` is `C^m` into the tangent bundle of `Sⁿ` if and only if
 `w` is `C^m` into `E`, at every regularity `m : ℕ∞ω`. -/
@@ -193,6 +183,27 @@ theorem continuous_sphereTangentSection_iff (w : sphere (0 : E) 1 → E)
       Continuous w := by
   rw [← contMDiff_zero_iff (I := 𝓡 n) (I' := (𝓡 n).tangent),
     ← contMDiff_zero_iff (I := 𝓡 n) (I' := 𝓘(ℝ, E)), contMDiff_sphereTangentSection_iff]
+
+/-- A section `V` of the tangent bundle of `Sⁿ` is `C^m` if and only if its ambient image
+`x ↦ mvfderiv (𝓡 n) Subtype.val x (V x)` is `C^m` into `E`, at every regularity `m : ℕ∞ω`. -/
+theorem contMDiff_section_sphere_iff {m : ℕ∞ω}
+    {V : (x : sphere (0 : E) 1) → TangentSpace (𝓡 n) x} :
+    ContMDiff (𝓡 n) (𝓡 n).tangent m
+        (fun x ↦ (⟨x, V x⟩ : TangentBundle (𝓡 n) (sphere (0 : E) 1))) ↔
+      ContMDiff (𝓡 n) 𝓘(ℝ, E) m
+        (fun x ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x (V x)) := by
+  conv_lhs => rw [← sphereTangentSection_mvfderiv_subtypeVal V]
+  exact contMDiff_sphereTangentSection_iff _ _
+
+/-- A section `V` of the tangent bundle of `Sⁿ` is continuous if and only if its ambient image
+`x ↦ mvfderiv (𝓡 n) Subtype.val x (V x)` is continuous into `E`. -/
+theorem continuous_section_sphere_iff
+    {V : (x : sphere (0 : E) 1) → TangentSpace (𝓡 n) x} :
+    Continuous
+        (fun x ↦ (⟨x, V x⟩ : TangentBundle (𝓡 n) (sphere (0 : E) 1))) ↔
+      Continuous (fun x ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x (V x)) := by
+  rw [← contMDiff_zero_iff (I := 𝓡 n) (I' := (𝓡 n).tangent),
+    ← contMDiff_zero_iff (I := 𝓡 n) (I' := 𝓘(ℝ, E)), contMDiff_section_sphere_iff]
 
 end ImplicitDim
 
