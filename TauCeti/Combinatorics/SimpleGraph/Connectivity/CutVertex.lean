@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Graph.Connectivity.CutVertex
 
 import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
+import Mathlib.Data.Set.Finite.Lattice
 
 /-!
 # Cut vertices of simple graphs
@@ -153,21 +154,40 @@ theorem not_isCutVertex_induce_of_exists_walk
   rw [Walk.support_induce, List.mem_attachWith] at hx
   exact (hp x hx).2 rfl
 
-/-- A directed union of vertex sets inducing connected graphs without cut vertices has no cut
-vertex. No finiteness of the family or of the vertex sets is needed. -/
+/-- A directed union of vertex sets inducing graphs without cut vertices has no cut vertex.
+No connectedness or finiteness of the family or of the vertex sets is needed. -/
 theorem not_isCutVertex_induce_sUnion_of_directedOn {S : Set (Set V)}
     (hS : DirectedOn (· ⊆ ·) S)
-    (hconn : ∀ B ∈ S, (G.induce B).Connected)
     (hcut : ∀ B ∈ S, ∀ v, ¬(G.induce B).IsCutVertex v) (x : ↑(⋃₀ S)) :
     ¬(G.induce (⋃₀ S)).IsCutVertex x := by
-  apply not_isCutVertex_induce_of_exists_walk
-  intro x _ a ha b hb hax hbx
-  obtain ⟨B, hB, haB⟩ := Set.mem_sUnion.mp ha
-  obtain ⟨C, hC, hbC⟩ := Set.mem_sUnion.mp hb
-  obtain ⟨D, hD, hBD, hCD⟩ := hS B hB C hC
-  obtain ⟨p, hp⟩ := exists_walk_forall_mem_support_mem_and_ne (hconn D hD) (hcut D hD)
-    (hBD haB) (hCD hbC) hax hbx
-  exact ⟨p, fun y hy ↦ ⟨Set.mem_sUnion.mpr ⟨D, hD, (hp y hy).1⟩, (hp y hy).2⟩⟩
+  rw [isCutVertex_iff_exists_forall_walk_mem_support]
+  rintro ⟨a, b, hax, hbx, ⟨p⟩, hall⟩
+  let q := p.map (Embedding.induce (⋃₀ S)).toHom
+  have hq : ∀ y ∈ q.support, y ∈ ⋃₀ S := by
+    intro y hy
+    rw [Walk.support_map] at hy
+    obtain ⟨z, -, rfl⟩ := List.mem_map.mp hy
+    exact z.property
+  obtain ⟨B, hB, -⟩ := Set.mem_sUnion.mp x.property
+  -- A single member contains the finite witness walk and the proposed cut vertex.
+  obtain ⟨D, hD, hsub⟩ := hS.exists_mem_subset_of_finite_of_subset_sUnion ⟨B, hB⟩
+    (q.support.finite_toSet.insert (x : V)) (by
+      intro y hy
+      rcases hy with rfl | hy
+      · exact x.property
+      · exact hq y hy)
+  let xD : D := ⟨x, hsub (Set.mem_insert _ _)⟩
+  have hqD := (q.induce D fun y hy ↦ hsub (Set.mem_insert_of_mem _ hy)).reachable
+  obtain ⟨r, hr⟩ := hqD.exists_walk_notMem_support_of_not_isCutVertex (hcut D hD xD)
+    (fun h ↦ hax (Subtype.ext (congrArg (Subtype.val : D → V) h)))
+    (fun h ↦ hbx (Subtype.ext (congrArg (Subtype.val : D → V) h)))
+  have hx := hall (r.map (G.induceHomOfLE (Set.subset_sUnion_of_mem hD)).toHom)
+  -- Transport membership explicitly since the walk endpoints depend on support-membership proofs.
+  have hx' : x ∈ r.support.map (G.induceHomOfLE (Set.subset_sUnion_of_mem hD)).toHom :=
+    (congrArg (fun l ↦ x ∈ l) (Walk.support_map _ _)).mp hx
+  obtain ⟨y, hy, hyx⟩ := List.mem_map.mp hx'
+  have hyD : y = xD := Subtype.ext (congrArg (Subtype.val : (⋃₀ S) → V) hyx)
+  exact hr (hyD ▸ hy)
 
 /-- **Adding an ear.** If a vertex set induces a connected graph without cut vertices, then adding
 the vertices of a path between two of its vertices gives a vertex set whose induced graph still

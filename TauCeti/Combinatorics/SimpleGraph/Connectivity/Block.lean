@@ -118,7 +118,7 @@ theorem exists_isBlock_superset (hconn : (G.induce B).Connected)
     -- A nonempty chain has a connected union; directed unions have no cut vertices.
     refine ⟨⋃₀ S, ⟨G.induce_sUnion_connected_of_pairwise_not_disjoint hSne ?_
       (fun h ↦ (hSP h).1), fun x ↦ not_isCutVertex_induce_sUnion_of_directedOn hS.directedOn
-        (fun C hC ↦ (hSP hC).1) (fun C hC ↦ (hSP hC).2) x⟩,
+        (fun C hC ↦ (hSP hC).2) x⟩,
       fun C hC ↦ Set.subset_sUnion_of_mem hC⟩
     intro C D hC hD
     rcases hS.total hC hD with hCD | hDC
