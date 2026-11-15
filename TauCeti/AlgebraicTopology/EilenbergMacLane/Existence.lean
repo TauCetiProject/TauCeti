@@ -177,15 +177,7 @@ theorem ker_singularHomologyMap_presentation :
     (HomotopyGroup.hurewiczAddEquiv (subsingleton_homotopyGroup_wedge A n)).surjective h
   induction a using Additive.rec with | ofMul a => ?_
   induction a using Quotient.inductionOn with | h p => ?_
-  have hp : HomotopyGroup.hurewiczAddEquiv (subsingleton_homotopyGroup_wedge A n)
-      (Additive.ofMul ⟦p⟧) = (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 := by
-    rw [HomotopyGroup.hurewiczAddEquiv_apply, HomotopyGroup.hurewiczHom_apply]
-    -- `Additive.ofMul ⟦p⟧` is presented through `Quotient` rather than `HomotopyGroup`, so the
-    -- generated motive of `rw` is ill-typed and `erw` is needed.
-    erw [toMul_ofMul, HomotopyGroup.hurewicz_mk]
-    -- `erw` leaves the left side applied through the underlying function of the linear map.
-    rfl
-  rw [hp] at hh ⊢
+  rw [HomotopyGroup.hurewiczAddEquiv_ofMul_mk] at hh ⊢
   have hr := (GenLoop.singularHomologyMap_diskBoundaryMap_mem_iff p (LinearMap.ker ψ)).2 hh
   exact (GenLoop.singularHomologyMap_diskBoundaryMap_mem_iff p _).1
     (Submodule.subset_span ⟨⟨GenLoop.diskBoundaryMap p, hr⟩, rfl⟩)

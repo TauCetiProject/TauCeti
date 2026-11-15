@@ -647,6 +647,7 @@ theorem diskBoundaryMap_map {Y : TopCat.{u}} (f : X ⟶ Y) {y : Y} (hf : f x = y
 /-- **Every attaching map is the attaching map of a generalized loop.** A map
 `g : ∂𝔻 (n + 1) ⟶ X` is the attaching map of the generalized loop corresponding to it under
 `GenLoop.sphereEquiv`, based at the image of the north pole. -/
+@[simp]
 theorem diskBoundaryMap_sphereEquiv_symm (g : TopCat.diskBoundary.{u} (n + 1) ⟶ X) :
     diskBoundaryMap ((sphereEquiv n X (g ⟨TauCeti.sphereNorthPole n⟩)).symm
       ⟨g.hom.comp ⟨ULift.up, continuous_uliftUp⟩, rfl⟩) = g := by
