@@ -121,14 +121,9 @@ theorem eventually_gaugeTransform_inv_windingPhase {x : ℂ → EuclideanSpace �
   set Y := gaugeTransform (windingPhase m)⁻¹ x
   have hY {z : ℂ} (hz : z ∈ U) : ContDiffAt ℝ ∞ Y z :=
     contDiffAt_gaugeTransform (contDiffAt_inv_windingPhase m (hU0 hz)) hx.contDiffAt
-  have hYsec {z : ℂ} (hz : z ∈ U) : Y z 2 = ‖sectionValue x z‖ / 2 ∧ Y z 3 = 0 := by
-    have h := sectionValue_gaugeTransform_inv_windingPhase (hRU hz).1.1
-    rw [sectionValue_apply] at h
-    have h₂ := congrArg Complex.re h
-    have h₃ := congrArg Complex.im h
-    simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat,
-      im_ofNat] at h₂ h₃
-    constructor <;> linarith
+  have hYsec {z : ℂ} (hz : z ∈ U) : Y z 2 = ‖sectionValue x z‖ / 2 ∧ Y z 3 = 0 :=
+    ⟨gaugeTransform_inv_windingPhase_apply_two (hRU hz).1.1,
+      gaugeTransform_inv_windingPhase_apply_three (hRU hz).1.1⟩
   have hYpos {z : ℂ} (hz : z ∈ U) : 0 < Y z 2 := by
     rw [(hYsec hz).1]
     exact half_pos (norm_pos_iff.2 (hRU hz).1.2)
