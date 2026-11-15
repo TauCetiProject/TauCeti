@@ -169,7 +169,7 @@ theorem IsApproximateDiagonal.exists_eq_dualAction_sub_dualAction
       (Ultrafilter.mem_map.2 <| mem_of_superset (hU hg) fun m hm ↦ by simpa using hm)
     exact ⟨WeakDual.toStrongDual φ, fun x ↦ ((WeakDual.eval_continuous x).tendsto φ).comp hφ⟩
   have hCe : ∀ᶠ m in l, ‖mul' 𝕜 A m‖ ≤ C := hC.mono fun m hm ↦ (norm_mul'_apply_le m).trans hm
-  have hC0 : ∀ᶠ m in l, 0 ≤ C := hC.mono fun m hm ↦ (norm_nonneg m).trans hm
+  have hC0 : ∀ᶠ _ in l, 0 ≤ C := hC.mono fun m hm ↦ (norm_nonneg m).trans hm
   obtain ⟨φ, hφ⟩ := lim (leftDerivationLift R D) (‖leftDerivationLift R D‖ * C) <|
     (hC.and hC0).mono fun m hm ↦ ((leftDerivationLift R D).le_opNorm m).trans
       (mul_le_mul_of_nonneg_left hm.1 (norm_nonneg _))

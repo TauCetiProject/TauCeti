@@ -36,7 +36,7 @@ same.
 A published diagram is usually simply laced: every edge carries the label three and every non-edge
 the label two. `TauCeti.coxeterMatrixOfEdges` builds the `CoxeterMatrix` of such a diagram from the
 list of its edges, so that a transcribed row records the edges the source draws rather than a
-hand-built matrix.
+hand-built matrix. No presentation of a named group is asserted here.
 
 ## Main definitions
 
@@ -68,9 +68,6 @@ hand-built matrix.
   compiled-word membership.
 
 ## References
-
-This file supplies reusable Coxeter-presentation machinery needed by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. No presentation of a named group is asserted here.
 
 `TauCeti.coxeterRelatorsOfList` is built from Mathlib's `List.sym2` in `Mathlib.Data.List.Sym`,
 whose `List.length_sym2` supplies the relator count, and from `Sym2.inf`/`Sym2.sup` in

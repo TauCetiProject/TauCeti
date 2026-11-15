@@ -54,7 +54,7 @@ def blockCutGraph : SimpleGraph G.BlockCutVertex where
     | .inr v, .inl B => (v : V) ∈ (B : Set V)
     | _, _ => False
   symm := ⟨by rintro (B | v) (C | w) <;> simp_all⟩
-  loopless := ⟨by rintro (B | v) <;> simp⟩
+  loopless := ⟨by rintro (_ | _) <;> simp⟩
 
 @[simp]
 theorem not_blockCutGraph_adj_block_block (B C : G.BlockVertex) :
@@ -124,7 +124,7 @@ def neighborSetBlockEquiv (B : G.BlockVertex) :
     rcases x with ⟨C | v, hx⟩
     · simp at hx
     · rfl
-  right_inv v := rfl
+  right_inv _ := rfl
 
 /-- Applying `neighborSetBlockEquiv` preserves the underlying block--cut vertex. -/
 @[simp]
@@ -155,7 +155,7 @@ def neighborSetCutVertexEquiv (v : G.CutVertex) :
     rcases x with ⟨B | w, hx⟩
     · rfl
     · simp at hx
-  right_inv B := rfl
+  right_inv _ := rfl
 
 /-- Applying `neighborSetCutVertexEquiv` preserves the underlying block--cut vertex. -/
 @[simp]

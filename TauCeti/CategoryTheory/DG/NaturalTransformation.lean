@@ -55,7 +55,7 @@ noncomputable def id (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ)
 /-- Composition of DG natural transformations. -/
 noncomputable def comp {F G H : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
     (α : DGNatTrans F G) (β : DGNatTrans G H) : DGNatTrans F H :=
-  UnitGradedNatTrans.unitComp α β
+  UnitGradedNatTrans.comp α β
 
 /-- The component of the identity DG natural transformation. -/
 @[simp]
@@ -70,7 +70,7 @@ theorem comp_app {F G H : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ)
     (α : DGNatTrans F G) (β : DGNatTrans G H) (X : C) :
     (comp α β).app X = eHomEquiv _
       (ForgetEnrichment.homOf _ (α.app X) ≫ ForgetEnrichment.homOf _ (β.app X)) := by
-  simp only [comp, UnitGradedNatTrans.unitComp_app]
+  simp only [comp, UnitGradedNatTrans.comp_app]
   rfl
 
 /-! ### Components as closed degree-zero morphisms -/

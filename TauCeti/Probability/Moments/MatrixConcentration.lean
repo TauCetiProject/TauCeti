@@ -242,8 +242,7 @@ theorem one_sub_le_measure_forall_half_le_eigenvalues₀_sampleSecondMoment (hM 
       Set.eq_univ_of_forall fun _ k ↦ (Fin.cast hd k).elim0
     rw [huniv, measure_univ]
     exact tsub_le_self
-  have hdR : (0 : ℝ) < d := Nat.cast_pos.2 hd
-  have hr : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.2 Fintype.card_pos
+  have _ : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.2 Fintype.card_pos
   -- Each entry of the empirical matrix is a square-integrable sample mean with mean-square
   -- error at most `v / r`.
   have hmemLp (k l : n) : MemLp (fun ω ↦ sampleSecondMoment (V · ω) k l - M k l) 2 μ := by

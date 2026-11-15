@@ -107,7 +107,7 @@ instance : NormedSpace ℝ (FlatNormedCurrent Ω k) where
   norm_smul_le a T := by exact (norm_smul_eq a T).le
 
 /-- Recovering the extended flat mass from the norm does not lose information. -/
-@[simp] theorem enorm_eq (T : FlatNormedCurrent Ω k) : ‖T‖ₑ = T.toCurrent.normalFlatMass := by
+@[simp] theorem eNorm_eq (T : FlatNormedCurrent Ω k) : ‖T‖ₑ = T.toCurrent.normalFlatMass := by
   rw [← _root_.ofReal_norm, norm_def, ENNReal.ofReal_toReal T.normalFlatMass_ne_top]
 
 /-- Flat norm bounds evaluation using the maximum of the sup norms of a test and its derivative. -/

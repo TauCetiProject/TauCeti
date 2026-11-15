@@ -40,7 +40,7 @@ private theorem quantile_gompertzMeasure_eq (hη : 0 < η) (hb : 0 < b) (hu : u 
   let _ := isProbabilityMeasure_expMeasure one_pos
   rw [gompertzMeasure_of_pos hη hb]
   apply Measure.quantile_map_of_monotoneOn ordConnected_Ioi (ae_pos_expMeasure 1) _ _ hu.1 hu.2
-  · intro e he f hf hef
+  · intro e he f _ hef
     apply (div_le_div_iff_of_pos_right hb).2
     exact log_le_log (by have : 0 < e := he; positivity)
       (by linarith [(div_le_div_iff_of_pos_right hη).2 hef])

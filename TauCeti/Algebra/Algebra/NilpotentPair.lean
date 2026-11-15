@@ -677,7 +677,7 @@ private theorem map_quinticWords_eq_zero_lengths_four_five {Q : Type*} [AddCommG
     (hdiv₅ : ∀ {a : A}, ((5 : ℕ) : ℤ) • f a = 0 → f a = 0) (hq : f ((x + y) ^ 4) = 0) :
     (∀ b ∈ quinticWords x y 3, f b = 0) ∧
     (∀ b ∈ quinticWords x y 4, f b = 0) := by
-  obtain ⟨r₀, r₁, r₂, _, _, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨r₀, r₁, _, _, _, _⟩ := quintic_rewriting_rules hx hy hxy
   obtain ⟨r₀', r₁', r₂', -, -, -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 4.
   have l₄ : ∀ b ∈ quinticWords x y 3, f b = 0 := by
@@ -724,7 +724,7 @@ private theorem map_quinticWords_eq_zero_lengths_six_seven {Q : Type*} [AddCommG
     (hrot : ∀ a b : A, f (a * b) = f (b * a)) :
     (∀ b ∈ quinticWords x y 5, f b = 0) ∧
     (∀ b ∈ quinticWords x y 6, f b = 0) := by
-  obtain ⟨r₀, r₁, r₂, r₃, _, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨_, r₁, r₂, _, _, _⟩ := quintic_rewriting_rules hx hy hxy
   obtain ⟨r₀', r₁', r₂', r₃', -, -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 6.
   have l₆ : ∀ b ∈ quinticWords x y 5, f b = 0 := by
@@ -774,7 +774,7 @@ private theorem map_quinticWords_eq_zero_length_eight {Q : Type*} [AddCommGroup 
     (hrot : ∀ a b : A, f (a * b) = f (b * a))
     (hdiv₂ : ∀ {a : A}, ((2 : ℕ) : ℤ) • f a = 0 → f a = 0) :
     (∀ b ∈ quinticWords x y 7, f b = 0) := by
-  obtain ⟨r₀, r₁, r₂, r₃, _, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨_, r₁, r₂, r₃, _, _⟩ := quintic_rewriting_rules hx hy hxy
   obtain ⟨r₀', r₁', -, -, -, -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 8.
   have l₈ : ∀ b ∈ quinticWords x y 7, f b = 0 := by
@@ -809,7 +809,7 @@ private theorem map_quinticWords_eq_zero_length_nine {Q : Type*} [AddCommGroup Q
     (hrot : ∀ a b : A, f (a * b) = f (b * a))
     (hdiv₃ : ∀ {a : A}, ((3 : ℕ) : ℤ) • f a = 0 → f a = 0) :
     (∀ b ∈ quinticWords x y 8, f b = 0) := by
-  obtain ⟨r₀, r₁, r₂, r₃, _, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨_, r₁, r₂, r₃, _, _⟩ := quintic_rewriting_rules hx hy hxy
   obtain ⟨r₀', r₁', -, r₃', -, -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 9.
   have l₉ : ∀ b ∈ quinticWords x y 8, f b = 0 := by
@@ -845,7 +845,7 @@ private theorem map_quinticWords_eq_zero_lengths_ten_eleven {Q : Type*} [AddComm
     (hdiv₂ : ∀ {a : A}, ((2 : ℕ) : ℤ) • f a = 0 → f a = 0) :
     (∀ b ∈ quinticWords x y 9, f b = 0) ∧
     (∀ b ∈ quinticWords x y 10, f b = 0) := by
-  obtain ⟨r₀, r₁, r₂, r₃, r₄, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨_, r₁, r₂, r₃, r₄, _⟩ := quintic_rewriting_rules hx hy hxy
   obtain ⟨r₀', r₁', -, r₃', r₄', -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 10.
   have l₁₀ : ∀ b ∈ quinticWords x y 9, f b = 0 := by

@@ -15,8 +15,8 @@ public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
 A finite locally free sheaf has a locally constant rank, which need not be constant on a
 disconnected scheme. This file packages the sheaves whose rank is constantly `r` as the full
 subcategory `FiniteLocallyFreeSheaf.FixedRank X r`. The package is stable under arbitrary
-pullback and tensor products, and the free sheaf on a universe lift of `Fin r` gives its standard
-object.
+pullback, tensor products and direct sums, and the free sheaf on a universe lift of `Fin r` gives
+its standard object.
 
 In rank one, fixed-rank finite locally free sheaves are exactly invertible sheaves. The
 equivalence `InvertibleSheaf.fixedRankOneEquiv` is the identity on underlying sheaves and
@@ -33,6 +33,9 @@ morphisms; it only changes which equivalent rank-one condition is bundled with t
   `FixedRank.twistTensorProductIso`;
 * `FiniteLocallyFreeSheaf.FixedRank.tensor`: the tensor product of fixed-rank sheaves of ranks `r`
   and `s`, of rank `r * s`;
+* `FiniteLocallyFreeSheaf.FixedRank.biprod`: the direct sum of fixed-rank sheaves of ranks `r` and
+  `s`, of rank `r + s`, with `FixedRank.biprodObjIso` identifying its underlying sheaf with the
+  direct sum of the underlying sheaves;
 * `InvertibleSheaf.fixedRankOneEquiv`: the equivalence between invertible sheaves and finite
   locally free sheaves of fixed rank one.
 -/
@@ -297,6 +300,66 @@ sheaves. -/
 theorem tensor_obj_obj {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) :
     (E.tensor F).obj.obj = E.obj.obj ⊗ F.obj.obj :=
   (rfl)
+
+/-- The direct sum `E ⊞ F` of finite locally free sheaves of constant ranks `r` and `s`, of
+constant rank `r + s`. -/
+def biprod {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) : FixedRank X (r + s) :=
+  ⟨E.obj ⊞ F.obj, fun x ↦ by rw [rank_biprod_apply, rank_apply, rank_apply]⟩
+
+/-- Forgetting the fixed rank of the direct sum `E ⊞ F` gives the direct sum of the underlying
+finite locally free sheaves. -/
+@[simp]
+theorem biprod_obj {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) :
+    (E.biprod F).obj = (E.obj ⊞ F.obj) :=
+  (rfl)
+
+/-- The underlying sheaf of the direct sum `E ⊞ F` is the direct sum of the underlying sheaves. -/
+def biprodObjIso {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) :
+    (E.biprod F).obj.obj ≅ E.obj.obj ⊞ F.obj.obj :=
+  -- The inclusion of finite locally free sheaves preserves binary products, hence biproducts.
+  have := Limits.preservesBinaryBiproducts_of_preservesBinaryProducts
+    (Scheme.Modules.isFiniteLocallyFree X).ι
+  (Scheme.Modules.isFiniteLocallyFree X).ι.mapBiprod E.obj F.obj
+
+/-- The first component of `biprodObjIso` is the first projection of `E ⊞ F`, transported along
+`biprod_obj`. -/
+@[reassoc (attr := simp)]
+theorem biprodObjIso_hom_fst {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) :
+    (biprodObjIso E F).hom ≫ Limits.biprod.fst =
+      eqToHom (congrArg ObjectProperty.FullSubcategory.obj (biprod_obj E F)) ≫
+        (Limits.biprod.fst : E.obj ⊞ F.obj ⟶ E.obj).hom := by
+  simp only [biprodObjIso, Functor.mapBiprod_hom, ObjectProperty.ι_map]
+  exact (Limits.biprod.lift_fst _ _).trans (Category.id_comp _).symm
+
+/-- The second component of `biprodObjIso` is the second projection of `E ⊞ F`, transported along
+`biprod_obj`. -/
+@[reassoc (attr := simp)]
+theorem biprodObjIso_hom_snd {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) :
+    (biprodObjIso E F).hom ≫ Limits.biprod.snd =
+      eqToHom (congrArg ObjectProperty.FullSubcategory.obj (biprod_obj E F)) ≫
+        (Limits.biprod.snd : E.obj ⊞ F.obj ⟶ F.obj).hom := by
+  simp only [biprodObjIso, Functor.mapBiprod_hom, ObjectProperty.ι_map]
+  exact (Limits.biprod.lift_snd _ _).trans (Category.id_comp _).symm
+
+/-- The inverse of `biprodObjIso` restricts on the first summand to the first inclusion of
+`E ⊞ F`, transported along `biprod_obj`. -/
+@[reassoc (attr := simp)]
+theorem inl_biprodObjIso_inv {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) :
+    Limits.biprod.inl ≫ (biprodObjIso E F).inv =
+      (Limits.biprod.inl : E.obj ⟶ E.obj ⊞ F.obj).hom ≫
+        eqToHom (congrArg ObjectProperty.FullSubcategory.obj (biprod_obj E F).symm) := by
+  simp only [biprodObjIso, Functor.mapBiprod_inv, ObjectProperty.ι_map]
+  exact (Limits.biprod.inl_desc _ _).trans (Category.comp_id _).symm
+
+/-- The inverse of `biprodObjIso` restricts on the second summand to the second inclusion of
+`E ⊞ F`, transported along `biprod_obj`. -/
+@[reassoc (attr := simp)]
+theorem inr_biprodObjIso_inv {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) :
+    Limits.biprod.inr ≫ (biprodObjIso E F).inv =
+      (Limits.biprod.inr : F.obj ⟶ E.obj ⊞ F.obj).hom ≫
+        eqToHom (congrArg ObjectProperty.FullSubcategory.obj (biprod_obj E F).symm) := by
+  simp only [biprodObjIso, Functor.mapBiprod_inv, ObjectProperty.ι_map]
+  exact (Limits.biprod.inr_desc _ _).trans (Category.comp_id _).symm
 
 end FixedRank
 

@@ -34,14 +34,14 @@ The first is the image under `ClassGroup.mk` of
 invertible fractional ideals. Nothing here mentions Weil divisors, so `RingTheory` and
 `NumberTheory` consumers can reach these results without importing `TauCeti.AlgebraicGeometry`.
 
-These are an input to what `TauCetiRoadmap/EllipticCurves/README.md` §Layer 6 needs for weak
-Mordell–Weil. That argument exhibits the `S`-class group as a quotient of the class group by the
-classes of `S`, and concludes it is finite; neither the `S`-class group nor that quotient is
-defined here — this file supplies only the generation statements the argument rests on.
+These are an input to the weak Mordell–Weil theorem, whose argument exhibits the `S`-class group
+as a quotient of the class group by the classes of `S` and concludes it is finite; neither the
+`S`-class group nor that quotient is defined here — this file supplies only the generation
+statements the argument rests on.
 
 Adapted from Michael Stoll's elliptic-curves formalisation
 (`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/FractionalIdeal.lean`
-at the roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll). Following this repository's
+at commit `66889eada51a`, Apache 2.0, by Michael Stoll). Following this repository's
 convention for adapted material, the upstream authorship is credited here rather than in the
 copyright header.
 -/

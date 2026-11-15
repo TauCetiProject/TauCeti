@@ -22,10 +22,9 @@ file leaves open is the completeness statement `∑_ρ e_ρ = 1`, which is not a
 about a whole complete list of irreducibles; this file proves it.
 
 The proof is a coefficient computation. The coefficient of `x` in `∑ᵢ e_{ρᵢ}` is
-`|G|⁻¹ ∑ᵢ χᵢ(1) χᵢ(x⁻¹)`, and the inner sum pairs the column of the character table at `x` against
-the column at `1`. The second orthogonality relation
-`TauCeti.ClassFunction.sum_char_mul_char_inv` evaluates it as `|G|` when `x` is conjugate to `1` --
-that is, when `x = 1`, the conjugacy class of `1` being a singleton -- and as `0` otherwise. Those
+`|G|⁻¹ ∑ᵢ χᵢ(1) χᵢ(x⁻¹)`, and since `χᵢ(1) = dim Vᵢ` the inner sum is the degree-weighted character
+sum `∑ᵢ dim(Vᵢ) χᵢ(x⁻¹)`. That sum is the second orthogonality relation at the column of `1`, and
+`TauCeti.sum_finrank_mul_character` evaluates it as `|G|` when `x = 1` and as `0` otherwise. Those
 are exactly the coefficients of `1 : k[G]`.
 
 Completeness of the family is therefore what the theorem rests on, and it enters through the same
@@ -174,32 +173,24 @@ include hind hcard
 /-- **The primitive central idempotents of a complete family of irreducible representations sum to
 `1`.**
 
-The coefficient of `x` in the sum is `|G|⁻¹ ∑ᵢ χᵢ(1) χᵢ(x⁻¹)`, which the second orthogonality
-relation evaluates as `1` when `x = 1` and as `0` otherwise: the conjugacy class of `1` is a
-singleton, so `x` is conjugate to `1` exactly when `x = 1`. Those are the coefficients of
-`1 : k[G]`. -/
+The coefficient of `x` in the sum is `|G|⁻¹ ∑ᵢ dim(Vᵢ) χᵢ(x⁻¹)`, which
+`TauCeti.sum_finrank_mul_character` evaluates as `1` when `x = 1` and as `0` otherwise. Those are
+the coefficients of `1 : k[G]`. -/
 theorem sum_primitiveCentralIdempotent :
     ∑ i, primitiveCentralIdempotent (ρ i) = 1 := by
   classical
-  -- The conjugacy class of `1` is the singleton `{1}`, so its size contributes nothing.
-  have hcarrier : (ConjClasses.mk (1 : G)).carrier = {1} := by
-    ext y
-    simp
-  have hone : ((Nat.card (ConjClasses.mk (1 : G)).carrier : ℕ) : k) = 1 := by
-    rw [hcarrier]
-    simp
   refine MonoidAlgebra.ext (Finsupp.ext fun y => ?_)
   have hcoeff : (∑ i, primitiveCentralIdempotent (ρ i)).coeff y =
       (Nat.card G : k)⁻¹ * ∑ i, (ρ i).character 1 * (ρ i).character y⁻¹ := by
     rw [MonoidAlgebra.coeff_sum, Finset.sum_apply', Finset.mul_sum]
     exact Finset.sum_congr rfl fun i _ => by
       rw [primitiveCentralIdempotent_coeff, mul_assoc]
-  rw [hcoeff, ClassFunction.sum_char_mul_char_inv ρ hind hcard 1 y, hone, div_one,
-    MonoidAlgebra.one_def, MonoidAlgebra.coeff_single, Finsupp.single_apply]
+  simp_rw [hcoeff, _root_.Representation.char_one]
+  rw [sum_finrank_mul_character ρ hind hcard y⁻¹, MonoidAlgebra.one_def,
+    MonoidAlgebra.coeff_single, Finsupp.single_apply]
   by_cases hy : (1 : G) = y
-  · rw [ite_eq_left hy, ite_eq_left (hy ▸ IsConj.refl (1 : G)),
-      inv_mul_cancel₀ (Invertible.ne_zero _)]
-  · rw [ite_eq_right hy, ite_eq_right (fun h => hy (isConj_one_right.mp h).symm), mul_zero]
+  · rw [ite_eq_left hy, ite_eq_left (by rw [← hy, inv_one]), inv_mul_cancel₀ (Invertible.ne_zero _)]
+  · rw [ite_eq_right hy, ite_eq_right (by rwa [inv_eq_one, eq_comm]), mul_zero]
 
 /-- **The primitive central idempotents of a complete family sum to `1`**, read in the centre of
 the group algebra. -/

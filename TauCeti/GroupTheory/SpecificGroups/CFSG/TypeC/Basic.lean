@@ -100,9 +100,6 @@ subgroups and intertwining the Steinberg endomorphism with entrywise Frobenius, 
   type-`C` diagram that the root subgroups below are indexed by.
 -/
 
--- The signatures realized here follow the human-authored formal skeleton
--- `TauCetiRoadmap/CFSGStatement/Suggested.lean`.
-
 public section
 
 namespace TauCeti

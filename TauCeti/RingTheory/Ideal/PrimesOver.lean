@@ -76,9 +76,7 @@ def sigmaPrimesOverEquivPrimesAbove (S : Set (HeightOneSpectrum R)) :
     (Σ v : S, v.1.asIdeal.primesOver B) ≃ ↥(HeightOneSpectrum.primesAbove R B S) :=
   (Equiv.sigmaCongrRight fun v : S ↦
     (HeightOneSpectrum.liesOverEquivPrimesOver B v.1).symm.trans
-      (Equiv.subtypeEquivRight fun _ ↦
-        ⟨fun h ↦ HeightOneSpectrum.asIdeal_injective h.over.symm,
-          fun h ↦ ⟨congrArg HeightOneSpectrum.asIdeal h.symm⟩⟩)).trans
+      (Equiv.subtypeEquivRight fun _ ↦ HeightOneSpectrum.under_eq_iff_liesOver.symm)).trans
     (Equiv.sigmaSubtypeFiberEquivSubtype (HeightOneSpectrum.under R)
       (fun w ↦ HeightOneSpectrum.mem_primesAbove_iff R B S w))
 

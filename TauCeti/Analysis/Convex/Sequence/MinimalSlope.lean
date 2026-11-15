@@ -189,7 +189,7 @@ theorem lowerConvexEnvelope_eq_of_sInf_secantSlopes_notMem
   rcases eq_or_lt_of_le hpn with rfl | hpn
   · rw [lowerConvexEnvelope_eq_of_forall_lt ha hfirst]
     simp only [sub_self, mul_zero, add_zero, WithTop.coe_untop₀_of_ne_top hp]
-  obtain ⟨k, hnk, hpk, hk, -⟩ :=
+  obtain ⟨k, hnk, _, hk, -⟩ :=
     exists_secantSlope_lt_of_sInf_notMem ha hp hne hnot (lt_add_one σ) n
   have henvp : lowerConvexEnvelope a p = a p :=
     lowerConvexEnvelope_eq_of_forall_lt ha hfirst

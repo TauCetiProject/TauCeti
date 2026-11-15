@@ -65,15 +65,15 @@ carries all the conditional structure, and Mathlib's strong law does the analysi
 Boundedness of the observable is what makes the argument uniform in `Q`: it gives integrability
 against *every* probability measure at once, and it is all the empirical-measure corollaries need.
 
+This module supplies the topology-free fixed-set core of the empirical form of the
+directing-measure theorem; weak empirical-measure convergence is the separate downstream theorem
+`ConditionallyIIDWith.tendsto_empiricalMeasure_ae` in `ConditionallyIID/WeakConvergence.lean`,
+which needs only a second-countable topology on `α` whose open sets are measurable. It tests
+against a countable determining class, and `tendsto_empiricalMeasure_apply_ae_forall` is the
+"one null set for a countable determining class" step it consumes.
+
 ## References
 
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 6's empirical form of the
-  directing-measure theorem. This module supplies the topology-free fixed-set core; weak
-  empirical-measure convergence is the separate downstream theorem
-  `ConditionallyIIDWith.tendsto_empiricalMeasure_ae` in `ConditionallyIID/WeakConvergence.lean`,
-  which needs only a second-countable topology on `α` whose open sets are measurable. It tests
-  against a countable determining class, and `tendsto_empiricalMeasure_apply_ae_forall` is the
-  "one null set for a countable determining class" step it consumes.
 * O. Kallenberg, *Probabilistic Symmetries and Invariance Principles* (Springer, 2005), §1.1.
 
 No material is adapted from `cameronfreer/exchangeability`, which does not treat empirical

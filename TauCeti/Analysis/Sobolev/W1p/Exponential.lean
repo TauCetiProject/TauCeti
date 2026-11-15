@@ -165,8 +165,6 @@ theorem lintegral_exp_sub_one_sq_le (hE : finrank ℝ E = 2) {f : E → ℝ} (hf
   set G : ℝ := (lintegralPowLePowLIntegralFDerivConst μ 2 : ℝ)
   set A := ∫ x, ‖fderiv ℝ f x‖ ^ 2 ∂μ
   set M := ∫ x, f x ^ 2 ∂μ
-  have hGA : 0 ≤ G * A := mul_nonneg (NNReal.coe_nonneg _) (integral_nonneg fun x ↦ by positivity)
-  have hM : 0 ≤ M := integral_nonneg fun x ↦ sq_nonneg _
   have hfc : Continuous f := hf.continuous
   -- The terms of the series `2 t² cosh (2t) = ∑ 2 · 4ⁿ t ^ (2n + 2) / (2n)!`.
   obtain ⟨c, hc⟩ : ∃ c : ℕ → ℝ, c = fun n ↦ (2 * 4 ^ n / (2 * n)! : ℝ) := ⟨_, rfl⟩

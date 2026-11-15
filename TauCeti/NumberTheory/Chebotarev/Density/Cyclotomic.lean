@@ -50,7 +50,7 @@ variable (K F : Type*) [Field K] [NumberField K] [Field F] [NumberField F] [Alge
 open scoped Classical in
 -- The normalized prime sum of a character tends to `1` for the trivial character, whose primes are
 -- the unramified ones, and to `0` for the others, whose prime sums stay bounded.
-private theorem tendsto_primeSum_galoisCharacterWeight_div_log (m : ℕ) [NeZero m]
+private theorem tendsto_primeSum_galoisCharacterWeight_div_log (m : ℕ)
     [IsCyclotomicExtension {m} K F] (χ : (F ≃ₐ[K] F) →* ℂˣ) :
     Tendsto (fun t : ℝ ↦ (MonoidHom.galoisCharacterWeight (L := F) χ).primeSum t /
       (Real.log (1 / (t - 1)) : ℂ)) (𝓝[>] 1) (𝓝 (if χ = 1 then 1 else 0)) := by
@@ -81,7 +81,7 @@ variable (K F : Type*) [Field K] [NumberField K] [Field F] [NumberField F] [Alge
 
 /-- **Chebotarev density for cyclotomic extensions.** For `F = K(μ_m)` and any `σ ∈ Gal(F/K)`,
 the primes of `𝓞 K` whose Frobenius in `F` is `σ` have Dirichlet density `1 / #Gal(F/K)`. -/
-theorem hasDirichletDensity_cyclotomicFrobenius (m : ℕ) [NeZero m]
+theorem hasDirichletDensity_cyclotomicFrobenius (m : ℕ)
     [IsCyclotomicExtension {m} K F] (σ : F ≃ₐ[K] F) :
     NumberField.Set.HasDirichletDensity (frobeniusPrimeSet K F (ConjClasses.mk σ))
       (1 / (Nat.card (F ≃ₐ[K] F) : ℝ)) := by

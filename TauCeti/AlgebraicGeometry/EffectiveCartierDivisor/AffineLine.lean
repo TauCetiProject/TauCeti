@@ -288,7 +288,6 @@ noncomputable def coeffEquivAffineLineDivisor :
 
 /-- The forward coefficient chart is the zero scheme of the monic polynomial with the given lower
 coefficients. -/
-@[simp]
 lemma coeffEquivAffineLineDivisor_apply (c : Fin n → R) :
     (coeffEquivAffineLineDivisor R n c).1 = (monicOfCoeff c).zeroIdealSheaf :=
   (rfl)

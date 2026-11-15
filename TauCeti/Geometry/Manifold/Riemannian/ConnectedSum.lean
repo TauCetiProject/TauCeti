@@ -174,7 +174,7 @@ private theorem outerMap_surjective (ha : 0 ≤ a) (hab : a < b) :
           inv_lt_norm_inversion_iff (ha.trans_lt hab) hv0]
         exact (mem_closedBall_zero_iff.1 hv).trans_lt hab
       · rw [outerMap_apply, mk_inl, mk_inr]
-        exact (inl_eq_inr v hv0 hx hy).symm
+        exact (inl_eq_inr v hx hy).symm
     · exact ⟨⟨.inl ⟨x, hx⟩, hxa⟩, outerMap_apply h₁ h₂ _⟩
   · by_cases hyb : y ∈ e₂ '' closedBall 0 b⁻¹
     · -- `y = e₂ w` with `0 < ‖w‖ ≤ b⁻¹` is glued to `e₁ (inversion 0 1 w)`, which lies outside
@@ -190,7 +190,7 @@ private theorem outerMap_surjective (ha : 0 ≤ a) (hab : a < b) :
           exact mem_closedBall_zero_iff.1 hw
         exact hab.trans_le hb
       · rw [outerMap_apply, mk_inl, mk_inr]
-        exact inl_inversion_eq_inr hw0 hx hy
+        exact inl_inversion_eq_inr hx hy
     · exact ⟨⟨.inr ⟨y, hy⟩, hyb⟩, outerMap_apply h₁ h₂ _⟩
 
 /-- The neck, mapped into the first punctured summand by `e₁`. -/
@@ -228,7 +228,7 @@ private theorem outerMap_comp_neckInl (ha : 0 ≤ a) :
   funext fun w ↦ by
     rw [comp_apply, comp_apply, outerMap_apply, outerMap_apply, coe_neckInl, coe_neckInr, mk_inl,
       mk_inr]
-    exact inl_eq_inr w.1 (ne_zero_of_mem_neck ha w) _ _
+    exact inl_eq_inr w.1 _ _
 
 omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
 include d₁ in

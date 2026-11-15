@@ -131,6 +131,16 @@ theorem encodingEquiv_symm_apply (x : code) (i : Fin 12) :
   obtain ⟨a, rfl⟩ := encodingEquiv.surjective x
   simp
 
+/-- Two codewords of the extended binary Golay code agreeing on the twelve information coordinates
+are equal. -/
+theorem eq_of_mem_code_of_forall_castAdd_eq {x y : Fin 24 → ZMod 2} (hx : x ∈ code) (hy : y ∈ code)
+    (h : ∀ i : Fin 12, x (i.castAdd 12) = y (i.castAdd 12)) : x = y := by
+  have hsub : (⟨x, hx⟩ : code) = ⟨y, hy⟩ :=
+    encodingEquiv.symm.injective <| funext fun i ↦ by
+      rw [encodingEquiv_symm_apply, encodingEquiv_symm_apply]
+      exact h i
+  exact congrArg Subtype.val hsub
+
 /-- The extended binary Golay code has dimension twelve. -/
 @[simp]
 theorem finrank_code : Module.finrank (ZMod 2) code = 12 := by
@@ -673,5 +683,28 @@ theorem hammingMinDist_code : Set.hammingMinDist (code : Set (Fin 24 → ZMod 2)
 theorem eight_le_hammingNorm {x : Fin 24 → ZMod 2} (hx : x ∈ code) (hx0 : x ≠ 0) :
     8 ≤ hammingNorm x := by
   simpa using Set.hammingMinDist_le_hammingNorm code.zero_mem hx hx0
+
+/-- Distinct coordinates of `Fin 24` are separated by some codeword of `code`. -/
+theorem eq_of_forall_mem_code_apply_eq {i j : Fin 24} (h : ∀ c ∈ code, c i = c j) : i = j := by
+  by_contra hij
+  let v : Fin 24 → ZMod 2 := Pi.single i 1 - Pi.single j 1
+  have hv_mem : v ∈ code := by
+    rw [← euclideanDual_code, Submodule.mem_euclideanDual]
+    intro c hc
+    simp [v, dotProduct_sub, h c hc]
+  have hv_ne : v ≠ 0 := by
+    intro hv0
+    have hi := congrFun hv0 i
+    simp [v, hij] at hi
+  have h8 : 8 ≤ hammingNorm v := eight_le_hammingNorm hv_mem hv_ne
+  have hle2 : hammingNorm v ≤ 2 := by
+    have hsub : Finset.univ.filter (fun k ↦ v k ≠ 0) ⊆ ({i, j} : Finset (Fin 24)) := by
+      intro k hk
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk
+      by_contra hnij
+      simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hnij
+      exact hk (by simp [v, Pi.single_eq_of_ne hnij.1, Pi.single_eq_of_ne hnij.2])
+    exact (Finset.card_le_card hsub).trans (Finset.card_insert_le i {j})
+  omega
 
 end TauCeti.BinaryGolay

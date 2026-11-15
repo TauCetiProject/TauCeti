@@ -79,7 +79,6 @@ theorem mul_pow_le_of_forall_prod_le {ι : Type*} {r : ι → ℝ} (hr : ∀ i, 
   have hcard := card_filter_add_card_filter_not (s := s) (· ∈ T)
   have hTcard : (s.filter (· ∈ T)).card ≤ T.card :=
     card_le_card fun i hi ↦ (mem_filter.mp hi).2
-  have hm : 0 ≤ min q B := le_min hq₀ (by linarith)
   have hA : ∏ i ∈ s.filter (· ∈ T), r i * ρ ≤ B ^ (s.filter (· ∈ T)).card := by
     rw [← prod_const B]
     exact prod_le_prod₀ (fun i _ ↦ by simpa [mul_comm] using hr₀ i)

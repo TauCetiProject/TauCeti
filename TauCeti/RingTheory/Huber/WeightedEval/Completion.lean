@@ -31,8 +31,8 @@ uniqueness clause for the restrictions along
 `UniformSpace.Completion.coeRingHom`.
 
 At the trivial weight family `Tᵢ = {1}` the domain is the completed restricted power-series
-algebra `TauCeti.Huber.restrictedMvPowerSeriesCompletion k A`, which the roadmap writes
-`A⟨X₁,…,Xₖ⟩` for an arbitrary Tate ring, so this is that algebra's universal property. It is
+algebra `TauCeti.Huber.restrictedMvPowerSeriesCompletion k A`, written `A⟨X₁,…,Xₖ⟩` for an
+arbitrary Tate ring, so this is that algebra's universal property. It is
 stated for a general weight family because nothing in the argument uses triviality.
 
 Into a complete Hausdorff linearly topologised ring, such as an adic ring, the completed

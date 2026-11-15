@@ -108,9 +108,7 @@ private theorem eqOn_preciseRepresentative_gradient {U : Set E} {V : Opens E} {u
     simp [inner_gradient_left]
   -- Hence the weak gradient of `d` is the classical gradient of `∂ₑu`.
   have hgrad : W1p.gradient d =ᵐ[volume.restrict V] ∇ (fun y => fderiv ℝ u y e) :=
-    (((W1p.hasWeakFDerivOn d).congr_ae hdw).ae_eq
-      (hasWeakFDerivOn_gradient_of_contDiffOn (hu1.mono hVU))).mono fun x hx =>
-        innerSL_inj.mp hx
+    W1p.gradient_ae_eq_of_contDiffOn d (hu1.mono hVU) hdw
   refine ⟨hgrad, eqOn_preciseRepresentative_of_continuousOn V.isOpen ?_ hgrad ?_⟩
   · exact W1p.locallyIntegrableOn_gradient d
   · exact ((InnerProductSpace.toDual ℝ E).symm.continuous.comp_continuousOn

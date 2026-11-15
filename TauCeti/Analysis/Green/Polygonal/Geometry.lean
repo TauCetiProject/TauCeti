@@ -152,12 +152,18 @@ theorem interior_convexHull_triangle_eq_empty {c p q : ℂ} (hdet : triangleDet 
   · apply interior_triangle_eq_empty_of_height_eq_zero hpc
     rw [im_div_sub_eq_triangleDet, hdet, zero_div]
 
-/-- A degenerate planar triangle has area zero. -/
-theorem volume_convexHull_triangle_eq_zero {c p q : ℂ} (hdet : triangleDet c p q = 0) :
-    MeasureTheory.volume (convexHull ℝ {c, p, q}) = 0 := by
-  have hclosed := (Set.toFinite ({c, p, q} : Set ℂ)).isClosed_convexHull ℝ
-  have h := (convex_convexHull ℝ ({c, p, q} : Set ℂ)).addHaar_frontier MeasureTheory.volume
-  rw [frontier, hclosed.closure_eq, interior_convexHull_triangle_eq_empty hdet, sdiff_empty] at h
-  exact h
-
 end TauCeti.Green
+
+namespace MeasureTheory.Measure
+
+open TauCeti.Green
+
+/-- A degenerate planar triangle is null for every additive Haar measure on `ℂ`; in particular
+it has area zero. -/
+theorem addHaar_convexHull_triangle_eq_zero (μ : Measure ℂ) [μ.IsAddHaarMeasure] {c p q : ℂ}
+    (hdet : triangleDet c p q = 0) : μ (convexHull ℝ {c, p, q}) = 0 := by
+  have h := (convex_convexHull ℝ ({c, p, q} : Set ℂ)).addHaar_frontier μ
+  rwa [((Set.toFinite _).isClosed_convexHull ℝ).frontier_eq,
+    interior_convexHull_triangle_eq_empty hdet, sdiff_empty] at h
+
+end MeasureTheory.Measure
