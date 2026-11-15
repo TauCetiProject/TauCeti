@@ -51,38 +51,6 @@ namespace MeasureTheory.ProbabilityMeasure
 
 open TauCeti
 
-/-- A weak cluster point inherits an eventual integral bound for a continuous nonnegative
-function. -/
-private theorem integrable_and_integral_le_of_mapClusterPt_of_eventually_le
-    {ι : Type*} {l : Filter ι} {μn : ι → ProbabilityMeasure ℝ}
-    {ν : ProbabilityMeasure ℝ} {f : ℝ → ℝ} {M : ℝ}
-    (hf : Continuous f) (hnonneg : ∀ x, 0 ≤ f x)
-    (hint : ∀ᶠ i in l, Integrable f (μn i : Measure ℝ))
-    (hbound : ∀ᶠ i in l, ∫ x, f x ∂(μn i : Measure ℝ) ≤ M)
-    (hν : MapClusterPt ν l μn) :
-    Integrable f (ν : Measure ℝ) ∧ ∫ x, f x ∂(ν : Measure ℝ) ≤ M := by
-  have hlintegral :
-      ∫⁻ x, ENNReal.ofReal (f x) ∂(ν : Measure ℝ) ≤ ENNReal.ofReal M := by
-    have hclosed := isClosed_setOfPred_lintegral_le_probabilityMeasure
-      ((ENNReal.continuous_ofReal.comp hf).lowerSemicontinuous) (ENNReal.ofReal M)
-    have hevent : ∀ᶠ i in l, μn i ∈
-        {ρ : ProbabilityMeasure ℝ |
-          ∫⁻ x, ENNReal.ofReal (f x) ∂(ρ : Measure ℝ) ≤ ENNReal.ofReal M} := by
-      filter_upwards [hint, hbound] with i hi hBi
-      rw [← ofReal_integral_eq_lintegral_ofReal hi (ae_of_all _ hnonneg)]
-      exact ENNReal.ofReal_le_ofReal hBi
-    exact hclosed.mem_of_mapClusterPt hν hevent
-  have hfinite := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hlintegral
-  have hνint : Integrable f (ν : Measure ℝ) :=
-    (lintegral_ofReal_ne_top_iff_integrable hf.aestronglyMeasurable
-      (ae_of_all _ hnonneg)).1 hfinite
-  have hneBot : l.NeBot := (map_neBot_iff μn).1 (hν.clusterPt.neBot.mono inf_le_right)
-  have hM : 0 ≤ M := by
-    obtain ⟨i, hi⟩ := hbound.exists
-    exact (integral_nonneg_of_ae (ae_of_all _ hnonneg)).trans hi
-  rw [← ofReal_integral_eq_lintegral_ofReal hνint (ae_of_all _ hnonneg)] at hlintegral
-  exact ⟨hνint, (ENNReal.ofReal_le_ofReal_iff hM).mp hlintegral⟩
-
 /-- A weak cluster point inherits a fixed moment if that moment converges and the moments
 of twice its order are eventually integrable and uniformly bounded. -/
 theorem integrable_pow_and_integral_pow_eq_of_mapClusterPt_of_integral_pow_le
@@ -99,7 +67,8 @@ theorem integrable_pow_and_integral_pow_eq_of_mapClusterPt_of_integral_pow_le
     rw [show 2 * k = k * 2 by omega, pow_mul]
     exact sq_nonneg (x ^ k)
   have h2k : Integrable (fun x : ℝ => x ^ (2 * k)) (ν : Measure ℝ) :=
-    (integrable_and_integral_le_of_mapClusterPt_of_eventually_le (continuous_id.pow (2 * k))
+    (TauCeti.integrable_and_integral_le_of_mapClusterPt_of_eventually_le
+      (continuous_id.pow (2 * k))
       hnonneg hint hB hν).1
   have hk : Integrable (fun x : ℝ => x ^ k) (ν : Measure ℝ) :=
     integrable_pow_of_le aestronglyMeasurable_id (by omega) h2k
@@ -153,7 +122,7 @@ theorem integrable_pow_and_integral_pow_eq_of_mapClusterPt_of_integral_pow_le
           B - (2 * c) * m + c ^ 2 + ε by linarith))] with i h2 hi hlim
       rw [(square_info h2 c).2]
       linarith
-    exact (integrable_and_integral_le_of_mapClusterPt_of_eventually_le
+    exact (TauCeti.integrable_and_integral_le_of_mapClusterPt_of_eventually_le
       (((continuous_id.pow k).sub continuous_const).pow 2)
       (fun x => sq_nonneg (x ^ k - c))
       (hint.mono fun _ h2 => (square_info h2 c).1) hevent hν).2

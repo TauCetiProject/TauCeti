@@ -35,6 +35,9 @@ the value `∞` is allowed on both sides.
 * `TauCeti.isClosed_setOfPred_lintegral_le_finiteMeasure` and
   `TauCeti.isClosed_setOfPred_lintegral_le_probabilityMeasure`: the sublevel sets of the pairing
   are closed.
+* `TauCeti.integrable_and_integral_le_of_mapClusterPt_of_eventually_le` and its finite-measure
+  counterpart: weak cluster points inherit eventual integral bounds for continuous nonnegative
+  functions.
 * `TauCeti.lowerSemicontinuousOn_lintegral_comp`: for `h` lower semicontinuous and `Φ` arbitrary,
   `μ ↦ ∫⁻ x, h (Φ x) ∂μ` is lower semicontinuous on a set of finite or probability measures when
   `Φ` is continuous on closed sets of uniformly almost full mass.
@@ -124,6 +127,61 @@ theorem isClosed_setOfPred_lintegral_le_probabilityMeasure (hf : LowerSemicontin
     (a : ℝ≥0∞) :
     IsClosed {μ : ProbabilityMeasure Ω | ∫⁻ x, f x ∂(μ : Measure Ω) ≤ a} :=
   (lowerSemicontinuous_lintegral_probabilityMeasure hf).isClosed_preimage a
+
+section IntegralBounds
+
+variable {γ : Type*} {L : Filter γ} {g : Ω → ℝ} {M : ℝ}
+
+/-- A weak cluster point of finite measures inherits an eventual integral bound for a continuous
+nonnegative function. -/
+theorem integrable_and_integral_le_of_mapClusterPt_of_eventually_le_finiteMeasure
+    {μs : γ → FiniteMeasure Ω} {μ : FiniteMeasure Ω}
+    (hg : Continuous g) (hnonneg : ∀ x, 0 ≤ g x)
+    (hint : ∀ᶠ i in L, Integrable g (μs i : Measure Ω))
+    (hbound : ∀ᶠ i in L, ∫ x, g x ∂(μs i : Measure Ω) ≤ M)
+    (hμ : MapClusterPt μ L μs) :
+    Integrable g (μ : Measure Ω) ∧ ∫ x, g x ∂(μ : Measure Ω) ≤ M := by
+  have hlintegral :
+      ∫⁻ x, ENNReal.ofReal (g x) ∂(μ : Measure Ω) ≤ ENNReal.ofReal M := by
+    have hclosed := isClosed_setOfPred_lintegral_le_finiteMeasure
+      ((ENNReal.continuous_ofReal.comp hg).lowerSemicontinuous) (ENNReal.ofReal M)
+    have hevent : ∀ᶠ i in L, μs i ∈
+        {ρ : FiniteMeasure Ω |
+          ∫⁻ x, ENNReal.ofReal (g x) ∂(ρ : Measure Ω) ≤ ENNReal.ofReal M} := by
+      filter_upwards [hint, hbound] with i hi hMi
+      rw [← ofReal_integral_eq_lintegral_ofReal hi (ae_of_all _ hnonneg)]
+      exact ENNReal.ofReal_le_ofReal hMi
+    exact hclosed.mem_of_mapClusterPt hμ hevent
+  have hfinite := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hlintegral
+  have hμint : Integrable g (μ : Measure Ω) :=
+    (lintegral_ofReal_ne_top_iff_integrable hg.aestronglyMeasurable
+      (ae_of_all _ hnonneg)).1 hfinite
+  have hneBot : L.NeBot := (map_neBot_iff μs).1 (hμ.clusterPt.neBot.mono inf_le_right)
+  have hM : 0 ≤ M := by
+    obtain ⟨i, hi⟩ := hbound.exists
+    exact (integral_nonneg_of_ae (ae_of_all _ hnonneg)).trans hi
+  rw [← ofReal_integral_eq_lintegral_ofReal hμint (ae_of_all _ hnonneg)] at hlintegral
+  exact ⟨hμint, (ENNReal.ofReal_le_ofReal_iff hM).mp hlintegral⟩
+
+/-- A weak cluster point of probability measures inherits an eventual integral bound for a
+continuous nonnegative function. -/
+theorem integrable_and_integral_le_of_mapClusterPt_of_eventually_le
+    {μs : γ → ProbabilityMeasure Ω} {μ : ProbabilityMeasure Ω}
+    (hg : Continuous g) (hnonneg : ∀ x, 0 ≤ g x)
+    (hint : ∀ᶠ i in L, Integrable g (μs i : Measure Ω))
+    (hbound : ∀ᶠ i in L, ∫ x, g x ∂(μs i : Measure Ω) ≤ M)
+    (hμ : MapClusterPt μ L μs) :
+    Integrable g (μ : Measure Ω) ∧ ∫ x, g x ∂(μ : Measure Ω) ≤ M := by
+  have hμ' := hμ.continuousAt_comp ProbabilityMeasure.toFiniteMeasure_continuous.continuousAt
+  have hint' : ∀ᶠ i in L, Integrable g ((μs i).toFiniteMeasure : Measure Ω) := by
+    simpa using hint
+  have hbound' : ∀ᶠ i in L, ∫ x, g x ∂((μs i).toFiniteMeasure : Measure Ω) ≤ M := by
+    simpa using hbound
+  simpa only [ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure, Function.comp_apply]
+    using integrable_and_integral_le_of_mapClusterPt_of_eventually_le_finiteMeasure
+      hg hnonneg hint' hbound' hμ'
+
+end IntegralBounds
 
 /-- The direct method of the calculus of variations for a lower semicontinuous integrand: on a
 nonempty compact set of probability measures, the integral attains its infimum. The minimum value
