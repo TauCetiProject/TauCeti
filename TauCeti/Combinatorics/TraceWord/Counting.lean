@@ -169,4 +169,62 @@ theorem ne_and_card_edge_fiber_eq_two_of_no_singleton_edge_of_card_image_eq {m :
     rcases this with hh | hh <;> grind
   exact hjne he
 
+private theorem two_le_card_nonloop_cyclic_edge_fiber {k : ℕ} (w : Fin k → α)
+    (h : ∀ i, w i ≠ w (finRotate k i) →
+      ∃ j ≠ i, s(w j, w (finRotate k j)) = s(w i, w (finRotate k i)))
+    (e : Sym2 α)
+    (he : e ∈ ({i | w i ≠ w (finRotate k i)} : Finset (Fin k)).image
+      fun i => s(w i, w (finRotate k i))) :
+    2 ≤ #({i ∈ ({i | w i ≠ w (finRotate k i)} : Finset (Fin k)) |
+      s(w i, w (finRotate k i)) = e}) := by
+  obtain ⟨i, hi, rfl⟩ := mem_image.mp he
+  have hne := (mem_filter.mp hi).2
+  obtain ⟨j, hji, hj⟩ := h i hne
+  have hjne : w j ≠ w (finRotate k j) := fun hloop => by
+    rcases Sym2.eq_iff.mp hj with ⟨h1, h2⟩ | ⟨h1, h2⟩
+    · exact hne (h1.symm.trans (hloop.trans h2))
+    · exact hne (h2.symm.trans (hloop.symm.trans h1))
+  exact one_lt_card.mpr ⟨i, mem_filter.mpr ⟨hi, rfl⟩,
+    j, mem_filter.mpr ⟨mem_filter.mpr ⟨mem_univ j, hjne⟩, hj⟩, hji.symm⟩
+
+/-- A cyclic word of length `k` with no singleton nonloop edge visits at most `k / 2 + 1`
+vertices, even when loop edges occur once. -/
+theorem card_image_le_div_two_add_one_of_no_singleton_nonloop_edge {k : ℕ} (w : Fin k → α)
+    (h : ∀ i, w i ≠ w (finRotate k i) →
+      ∃ j ≠ i, s(w j, w (finRotate k j)) = s(w i, w (finRotate k i))) :
+    #(univ.image w) ≤ k / 2 + 1 := by
+  have hcount :
+      2 * #(({i | w i ≠ w (finRotate k i)} : Finset (Fin k)).image
+        fun i => s(w i, w (finRotate k i))) ≤ k :=
+    (mul_card_image_le_card _ 2 (two_le_card_nonloop_cyclic_edge_fiber w h)).trans
+      ((card_le_univ _).trans_eq (Fintype.card_fin k))
+  have hvertices := card_image_le_card_nonloop_cyclic_edges_add_one w
+  omega
+
+/-- Attaining `m + 1` visited vertices in a word of length `2 * m` with no singleton nonloop edge
+forces every step to be a nonloop, so no unordered edge of any kind is a singleton. -/
+theorem no_singleton_edge_of_no_singleton_nonloop_edge_of_card_image_eq {m : ℕ}
+    (w : Fin (2 * m) → α)
+    (h : ∀ i, w i ≠ w (finRotate (2 * m) i) →
+      ∃ j ≠ i, s(w j, w (finRotate (2 * m) j)) = s(w i, w (finRotate (2 * m) i)))
+    (hv : #(univ.image w) = m + 1) :
+    (∀ i, w i ≠ w (finRotate (2 * m) i)) ∧
+      ∀ i, ∃ j ≠ i, s(w j, w (finRotate (2 * m) j)) = s(w i, w (finRotate (2 * m) i)) := by
+  have hcount :
+      2 * #(({i | w i ≠ w (finRotate (2 * m) i)} : Finset (Fin (2 * m))).image
+        fun i => s(w i, w (finRotate (2 * m) i))) ≤
+        #({i | w i ≠ w (finRotate (2 * m) i)} : Finset (Fin (2 * m))) :=
+    mul_card_image_le_card _ 2 (two_le_card_nonloop_cyclic_edge_fiber w h)
+  have hvertices := card_image_le_card_nonloop_cyclic_edges_add_one w
+  have hNL_eq : ({i | w i ≠ w (finRotate (2 * m) i)} : Finset (Fin (2 * m))) = univ :=
+    eq_of_subset_of_card_le (subset_univ _) (by
+      rw [card_univ, Fintype.card_fin]
+      rw [hv] at hvertices
+      omega)
+  have hnoloop (i : Fin (2 * m)) : w i ≠ w (finRotate (2 * m) i) := by
+    have hi : i ∈ ({i | w i ≠ w (finRotate (2 * m) i)} : Finset (Fin (2 * m))) :=
+      hNL_eq.symm ▸ mem_univ i
+    exact (mem_filter.mp hi).2
+  exact ⟨hnoloop, fun i => h i (hnoloop i)⟩
+
 end TauCeti
