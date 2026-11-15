@@ -237,8 +237,7 @@ private theorem seminormalAux_apply (Q : K) (k : ℕ) (hk : k + 1 < μ.card)
     (φ : YoungTableau μ → K) (t : YoungTableau μ) :
     seminormalAux Q k hk φ t = seminormalDiag Q (axialDistance t k hk) * φ t +
       seminormalOffDiag Q (axialDistance t k hk) * φ (relabel (labelSwap k hk) t) := by
-  rw [seminormalAux, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.mulLeft_apply,
-    LinearMap.mulLeft_apply, Pi.add_apply, Pi.mul_apply, Pi.mul_apply, LinearMap.funLeft_apply]
+  simp [seminormalAux]
 
 variable (K) in
 /-- Extension by zero from the standard tableaux to all tableaux. -/
@@ -262,8 +261,8 @@ private noncomputable def seminormalGen (Q : K) (k : ℕ) (hk : k + 1 < μ.card)
 
 private theorem seminormalGen_apply (Q : K) (k : ℕ) (hk : k + 1 < μ.card)
     (ψ : StandardYoungTableau μ → K) (T : StandardYoungTableau μ) :
-    seminormalGen Q k hk ψ T = seminormalAux Q k hk (extendSYT K ψ) T.toTableau :=
-  (rfl)
+    seminormalGen Q k hk ψ T = seminormalAux Q k hk (extendSYT K ψ) T.toTableau := by
+  rw [seminormalGen, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.funLeft_apply]
 
 /-- Extension by zero intertwines the seminormal operators on standard tableaux and on all
 tableaux. At a nonstandard tableau `u` whose exchange is the standard tableau `T`, the labels
@@ -414,7 +413,7 @@ private def contentMul (Q : K) (i : Fin μ.card) : Module.End K (YoungTableau μ
 
 private theorem contentMul_apply (Q : K) (i : Fin μ.card) (φ : YoungTableau μ → K)
     (t : YoungTableau μ) : contentMul Q i φ t = Q ^ labelContent t i * φ t := by
-  rw [contentMul, LinearMap.mulLeft_apply, Pi.mul_apply]
+  simp [contentMul]
 
 /-- The Jucys–Murphy recursion `J_(k+1) = Q⁻¹ g_k J_k g_k` on a tableau vector: conjugating
 multiplication by `Q ^ content k` with the seminormal operator of `g_k` gives `Q` times the
@@ -483,9 +482,9 @@ private theorem seminormalGen_sq (hQ : Q ≠ 0)
     seminormalGen Q k hk (seminormalGen Q k hk ψ) = (Q - 1) • seminormalGen Q k hk ψ + Q • ψ := by
   funext T
   rw [seminormalGen_apply, extendSYT_seminormalGen,
-    seminormalAux_sq_apply hQ k hk _ (additiveContent_axialDistance_ne_zero hQ hμ T k hk),
-    Pi.add_apply, Pi.smul_apply, Pi.smul_apply, seminormalGen_apply, extendSYT_apply_toTableau,
-    smul_eq_mul, smul_eq_mul]
+    seminormalAux_sq_apply hQ k hk _ (additiveContent_axialDistance_ne_zero hQ hμ T k hk)]
+  simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, seminormalGen_apply,
+    extendSYT_apply_toTableau]
 
 private theorem seminormalGen_braid (hQ : Q ≠ 0)
     (hμ : ∀ d : ℕ, 0 < d → d < μ.card → additiveContent Q d ≠ 0) {k : ℕ}
