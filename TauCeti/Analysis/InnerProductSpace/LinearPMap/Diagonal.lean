@@ -29,12 +29,14 @@ Composition multiplies the families (`HilbertBasis.diagonalPMap_apply_diagonalPM
 addition adds them on the common domain (`HilbertBasis.diagonalPMap_add_diagonalPMap_le`).
 
 Diagonal operators are the functional calculus of operators with a Hilbert basis of eigenvectors.
-If a self-adjoint operator `A` has a Hilbert basis `b` of eigenvectors, with real eigenvalues
-`λ i`, then `A` *is* the diagonal operator `b.diagonalPMap λ` (`IsSelfAdjoint.eq_diagonalPMap`).
-This gives the graph-domain criterion: `x` lies in the domain of `A` if and only if
-`∑ᵢ (1 + λ i ²) ‖⟪b i, x⟫‖² < ∞`, and this sum is the squared graph norm `‖x‖² + ‖A x‖²`. For any
-function `f : ℝ → 𝕜` the operator `f(A) = b.diagonalPMap (f ∘ λ)` does not depend on the chosen
-eigenbasis (`LinearPMap.IsFormalAdjoint.diagonalPMap_eq_diagonalPMap`): an eigenvector of one
+If a closed symmetric operator `A`, for instance a self-adjoint one, has a Hilbert basis `b` of
+eigenvectors with eigenvalues `λ i`, then `A` *is* the diagonal operator `b.diagonalPMap λ`
+(`LinearPMap.IsFormalAdjoint.eq_diagonalPMap`): symmetry gives `A ≤ b.diagonalPMap λ` and
+closedness the reverse inclusion. For real eigenvalues this gives the graph-domain criterion: `x`
+lies in the domain of `A` if and only if `∑ᵢ (1 + λ i ²) ‖⟪b i, x⟫‖² < ∞`, and this sum is the
+squared graph norm `‖x‖² + ‖A x‖²`. For any function `f : ℝ → 𝕜` the operator
+`f(A) = b.diagonalPMap (f ∘ λ)` does not depend on the chosen eigenbasis
+(`LinearPMap.IsFormalAdjoint.diagonalPMap_eq_diagonalPMap`): an eigenvector of one
 eigenbasis is orthogonal to the vectors of another eigenbasis with different eigenvalues. By
 `IsSelfAdjoint.exists_hilbertBasis_forall_apply_eq_smul_of_hasCompactResolvent`, a self-adjoint
 operator with compact resolvent, such as the Dirac operator of a spectral triple, has such an
@@ -65,12 +67,14 @@ so `f` only enters through its values `f (λ i)` at the eigenvalues.
 * `HilbertBasis.diagonalPMap_apply_mem_diagonalPMap_domain_iff`,
   `HilbertBasis.diagonalPMap_apply_diagonalPMap_apply`,
   `HilbertBasis.diagonalPMap_add_diagonalPMap_le`: composition and sum of diagonal operators.
-* `LinearPMap.IsFormalAdjoint.le_diagonalPMap` and `IsSelfAdjoint.eq_diagonalPMap`: a symmetric
-  operator with a Hilbert basis of eigenvectors is contained in, and a self-adjoint one is equal
-  to, the diagonal operator of its eigenvalues.
+* `LinearPMap.IsFormalAdjoint.le_diagonalPMap`, `LinearPMap.IsClosed.diagonalPMap_le` and
+  `LinearPMap.IsFormalAdjoint.eq_diagonalPMap`: a symmetric operator with a Hilbert basis of
+  eigenvectors is contained in, a closed one contains, and a closed symmetric one, in particular a
+  self-adjoint one (`IsSelfAdjoint.eq_diagonalPMap`), is equal to the diagonal operator of its
+  eigenvalues.
 * `LinearPMap.IsFormalAdjoint.hasSum_norm_sq_add_norm_apply_sq` and
-  `IsSelfAdjoint.mem_domain_iff_summable`: the graph norm in an eigenbasis and the graph-domain
-  criterion.
+  `LinearPMap.IsFormalAdjoint.mem_domain_iff_summable` (`IsSelfAdjoint.mem_domain_iff_summable`):
+  the graph norm in an eigenbasis and the graph-domain criterion.
 * `LinearPMap.IsFormalAdjoint.diagonalPMap_eq_diagonalPMap`: the eigenbasis functional calculus is
   independent of the eigenbasis.
 
@@ -324,44 +328,82 @@ end HilbertBasis
 namespace LinearPMap
 
 variable {ι ι' 𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  {A : E →ₗ.[𝕜] E} {b : HilbertBasis ι 𝕜 E} {lam : ι → ℝ}
+  {A : E →ₗ.[𝕜] E} {b : HilbertBasis ι 𝕜 E}
 
-/-- The coordinates of `A x` in a Hilbert basis of eigenvectors of a symmetric operator `A` are
-those of `x` multiplied by the eigenvalues. -/
-theorem IsFormalAdjoint.inner_apply_eq_mul_inner (hA : A.IsFormalAdjoint A)
-    (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : 𝕜) • b i) (x : A.domain) (i : ι) :
-    ⟪b i, A x⟫_𝕜 = lam i * ⟪b i, (x : E)⟫_𝕜 := by
-  obtain ⟨hi, hAi⟩ := hb i
-  rw [← hA ⟨b i, hi⟩ x, hAi, inner_smul_left, RCLike.conj_ofReal]
-
-/-- A symmetric operator with a Hilbert basis `b` of eigenvectors, with real eigenvalues `λ i`, is
+/-- A symmetric operator with a Hilbert basis `b` of eigenvectors, with eigenvalues `λ i`, is
 contained in the diagonal operator `b.diagonalPMap λ`. -/
-theorem IsFormalAdjoint.le_diagonalPMap (hA : A.IsFormalAdjoint A)
-    (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : 𝕜) • b i) :
-    A ≤ b.diagonalPMap fun i ↦ (lam i : 𝕜) :=
-  (b.le_diagonalPMap_iff _).2 (hA.inner_apply_eq_mul_inner hb)
+theorem IsFormalAdjoint.le_diagonalPMap (hA : A.IsFormalAdjoint A) {lam : ι → 𝕜}
+    (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = lam i • b i) :
+    A ≤ b.diagonalPMap lam :=
+  (b.le_diagonalPMap_iff lam).2 fun x i ↦ hA.inner_apply_eq_mul_inner (hb i).choose_spec x
 
 /-- **Eigenbasis expansion.** If `b` is a Hilbert basis of eigenvectors of a symmetric operator `A`,
-with real eigenvalues `λ i`, then `A x = ∑ᵢ (λ i * ⟪b i, x⟫) • b i`. -/
-theorem IsFormalAdjoint.hasSum_apply (hA : A.IsFormalAdjoint A)
-    (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : 𝕜) • b i) (x : A.domain) :
-    HasSum (fun i ↦ ((lam i : 𝕜) * ⟪b i, (x : E)⟫_𝕜) • b i) (A x) := by
-  simpa only [b.repr_apply_apply, hA.inner_apply_eq_mul_inner hb x] using b.hasSum_repr (A x)
+with eigenvalues `λ i`, then `A x = ∑ᵢ (λ i * ⟪b i, x⟫) • b i`. -/
+theorem IsFormalAdjoint.hasSum_apply (hA : A.IsFormalAdjoint A) {lam : ι → 𝕜}
+    (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = lam i • b i) (x : A.domain) :
+    HasSum (fun i ↦ (lam i * ⟪b i, (x : E)⟫_𝕜) • b i) (A x) := by
+  simpa only [b.repr_apply_apply, (b.le_diagonalPMap_iff lam).1 (hA.le_diagonalPMap hb) x] using
+    b.hasSum_repr (A x)
 
 /-- **The graph norm in an eigenbasis.** If `b` is a Hilbert basis of eigenvectors of a symmetric
 operator `A`, with real eigenvalues `λ i`, then `‖x‖² + ‖A x‖² = ∑ᵢ (1 + λ i ²) ‖⟪b i, x⟫‖²`. -/
 theorem IsFormalAdjoint.hasSum_norm_sq_add_norm_apply_sq (hA : A.IsFormalAdjoint A)
-    (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : 𝕜) • b i) (x : A.domain) :
+    {lam : ι → ℝ} (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : 𝕜) • b i)
+    (x : A.domain) :
     HasSum (fun i ↦ (1 + lam i ^ 2) * ‖⟪b i, (x : E)⟫_𝕜‖ ^ 2) (‖(x : E)‖ ^ 2 + ‖A x‖ ^ 2) := by
   have h := (b.hasSum_norm_sq_inner (x : E)).add (b.hasSum_norm_sq_inner (A x))
   refine h.congr_fun fun i ↦ ?_
-  rw [hA.inner_apply_eq_mul_inner hb x, norm_mul, RCLike.norm_ofReal, mul_pow, sq_abs]
+  rw [(b.le_diagonalPMap_iff _).1 (hA.le_diagonalPMap hb) x, norm_mul, RCLike.norm_ofReal,
+    mul_pow, sq_abs]
   ring
+
+/-- A closed operator with a Hilbert basis `b` of eigenvectors, with eigenvalues `c i`, contains the
+diagonal operator `b.diagonalPMap c`: the finite partial sums of the basis expansion of `x` lie in
+the domain of `A`, and their images converge to `b.diagonalPMap c x`. -/
+theorem IsClosed.diagonalPMap_le (hcl : A.IsClosed) {c : ι → 𝕜}
+    (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = c i • b i) : b.diagonalPMap c ≤ A := by
+  refine le_of_le_graph ?_
+  rintro ⟨x, y⟩ hp
+  obtain ⟨x', hx, hy⟩ := (mem_graph_iff _).1 hp
+  simp only at hx hy
+  subst hx hy
+  have hsum : HasSum (fun i ↦ ⟪b i, (x' : E)⟫_𝕜 • ((b i, c i • b i) : E × E))
+      ((x' : E), b.diagonalPMap c x') := by
+    refine ((b.hasSum_repr (x' : E)).prodMk (b.hasSum_diagonalPMap_apply c x')).congr_fun
+      fun i ↦ ?_
+    rw [b.repr_apply_apply, Prod.smul_mk, smul_smul, mul_comm]
+  refine IsClosed.mem_of_tendsto hcl hsum (Filter.Eventually.of_forall fun s ↦ ?_)
+  refine Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ ?_
+  obtain ⟨hi, hAi⟩ := hb i
+  rw [← hAi]
+  exact A.mem_graph ⟨b i, hi⟩
+
+/-- **A closed symmetric operator is diagonal in an eigenbasis.** If `b` is a Hilbert basis of
+eigenvectors of a closed symmetric operator `A`, with eigenvalues `λ i`, then `A` is the diagonal
+operator `b.diagonalPMap λ`. -/
+theorem IsFormalAdjoint.eq_diagonalPMap (hA : A.IsFormalAdjoint A) (hcl : A.IsClosed)
+    {lam : ι → 𝕜} (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = lam i • b i) :
+    A = b.diagonalPMap lam :=
+  le_antisymm (hA.le_diagonalPMap hb) (hcl.diagonalPMap_le hb)
+
+/-- **The graph-domain criterion.** If `b` is a Hilbert basis of eigenvectors of a closed symmetric
+operator `A`, with real eigenvalues `λ i`, then `x` lies in the domain of `A` if and only if
+`∑ᵢ (1 + λ i ²) ‖⟪b i, x⟫‖²` is finite. The sum is then `‖x‖² + ‖A x‖²`
+(`LinearPMap.IsFormalAdjoint.hasSum_norm_sq_add_norm_apply_sq`). -/
+theorem IsFormalAdjoint.mem_domain_iff_summable (hA : A.IsFormalAdjoint A) (hcl : A.IsClosed)
+    {lam : ι → ℝ} (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : 𝕜) • b i) {x : E} :
+    x ∈ A.domain ↔ Summable fun i ↦ (1 + lam i ^ 2) * ‖⟪b i, x⟫_𝕜‖ ^ 2 := by
+  refine ⟨fun hx ↦ (hA.hasSum_norm_sq_add_norm_apply_sq hb ⟨x, hx⟩).summable, fun h ↦ ?_⟩
+  rw [hA.eq_diagonalPMap hcl hb, HilbertBasis.mem_diagonalPMap_domain_iff]
+  refine h.of_nonneg_of_le (fun _ ↦ by positivity) fun i ↦ ?_
+  rw [norm_mul, RCLike.norm_ofReal, mul_pow, sq_abs]
+  gcongr
+  linarith
 
 /-- In the presence of two Hilbert bases of eigenvectors of a symmetric operator, the diagonal
 operator `b.diagonalPMap (f ∘ λ)` is contained in `b'.diagonalPMap (f ∘ λ')`. -/
 private theorem IsFormalAdjoint.diagonalPMap_le_diagonalPMap (hA : A.IsFormalAdjoint A)
-    (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : 𝕜) • b i)
+    {lam : ι → ℝ} (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : 𝕜) • b i)
     {b' : HilbertBasis ι' 𝕜 E} {lam' : ι' → ℝ}
     (hb' : ∀ j, ∃ hj : b' j ∈ A.domain, A ⟨b' j, hj⟩ = (lam' j : 𝕜) • b' j) (f : ℝ → 𝕜) :
     b.diagonalPMap (fun i ↦ f (lam i)) ≤ b'.diagonalPMap fun j ↦ f (lam' j) := by
@@ -386,7 +428,7 @@ symmetric operator `A`, with real eigenvalues `λ` and `λ'`, then for every fun
 diagonal operators `b.diagonalPMap (f ∘ λ)` and `b'.diagonalPMap (f ∘ λ')` coincide. So the
 eigenbasis functional calculus `f(A)` is well defined. -/
 theorem IsFormalAdjoint.diagonalPMap_eq_diagonalPMap (hA : A.IsFormalAdjoint A)
-    (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : 𝕜) • b i)
+    {lam : ι → ℝ} (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : 𝕜) • b i)
     {b' : HilbertBasis ι' 𝕜 E} {lam' : ι' → ℝ}
     (hb' : ∀ j, ∃ hj : b' j ∈ A.domain, A ⟨b' j, hj⟩ = (lam' j : 𝕜) • b' j) (f : ℝ → 𝕜) :
     b.diagonalPMap (fun i ↦ f (lam i)) = b'.diagonalPMap fun j ↦ f (lam' j) :=
@@ -395,35 +437,19 @@ theorem IsFormalAdjoint.diagonalPMap_eq_diagonalPMap (hA : A.IsFormalAdjoint A)
 variable [CompleteSpace E]
 
 /-- **A self-adjoint operator is diagonal in an eigenbasis.** If `b` is a Hilbert basis of
-eigenvectors of a self-adjoint operator `A`, with real eigenvalues `λ i`, then `A` is the diagonal
+eigenvectors of a self-adjoint operator `A`, with eigenvalues `λ i`, then `A` is the diagonal
 operator `b.diagonalPMap λ`. -/
-theorem _root_.IsSelfAdjoint.eq_diagonalPMap (hA : IsSelfAdjoint A)
-    (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : 𝕜) • b i) :
-    A = b.diagonalPMap fun i ↦ (lam i : 𝕜) := by
-  have hle := hA.isFormalAdjoint.le_diagonalPMap hb
-  -- The diagonal operator is symmetric, so it is a formal adjoint of its restriction `A`.
-  have hD : (b.diagonalPMap fun i ↦ (lam i : 𝕜)).IsFormalAdjoint
-      (b.diagonalPMap fun i ↦ (lam i : 𝕜)) :=
-    (b.isSelfAdjoint_diagonalPMap (funext fun i ↦ RCLike.conj_ofReal (lam i))).isFormalAdjoint
-  have hAD : A.IsFormalAdjoint (b.diagonalPMap fun i ↦ (lam i : 𝕜)) := fun x y ↦ by
-    rw [apply_comp_inclusion hle x, hD, Submodule.coe_inclusion]
-  refine le_antisymm hle ?_
-  have h := hAD.le_adjoint hA.dense_domain
-  rwa [isSelfAdjoint_def.mp hA] at h
+theorem _root_.IsSelfAdjoint.eq_diagonalPMap (hA : IsSelfAdjoint A) {lam : ι → 𝕜}
+    (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = lam i • b i) :
+    A = b.diagonalPMap lam :=
+  hA.isFormalAdjoint.eq_diagonalPMap hA.isClosed hb
 
-/-- **The graph-domain criterion.** If `b` is a Hilbert basis of eigenvectors of a self-adjoint
-operator `A`, with real eigenvalues `λ i`, then `x` lies in the domain of `A` if and only if
-`∑ᵢ (1 + λ i ²) ‖⟪b i, x⟫‖²` is finite. The sum is then `‖x‖² + ‖A x‖²`
-(`LinearPMap.IsFormalAdjoint.hasSum_norm_sq_add_norm_apply_sq`). -/
-theorem _root_.IsSelfAdjoint.mem_domain_iff_summable (hA : IsSelfAdjoint A)
+/-- **The graph-domain criterion** for a self-adjoint operator `A` with a Hilbert basis `b` of
+eigenvectors, with real eigenvalues `λ i`: `x` lies in the domain of `A` if and only if
+`∑ᵢ (1 + λ i ²) ‖⟪b i, x⟫‖²` is finite (`LinearPMap.IsFormalAdjoint.mem_domain_iff_summable`). -/
+theorem _root_.IsSelfAdjoint.mem_domain_iff_summable (hA : IsSelfAdjoint A) {lam : ι → ℝ}
     (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : 𝕜) • b i) {x : E} :
-    x ∈ A.domain ↔ Summable fun i ↦ (1 + lam i ^ 2) * ‖⟪b i, x⟫_𝕜‖ ^ 2 := by
-  refine ⟨fun hx ↦ (hA.isFormalAdjoint.hasSum_norm_sq_add_norm_apply_sq hb ⟨x, hx⟩).summable,
-    fun h ↦ ?_⟩
-  rw [hA.eq_diagonalPMap hb, HilbertBasis.mem_diagonalPMap_domain_iff]
-  refine h.of_nonneg_of_le (fun _ ↦ by positivity) fun i ↦ ?_
-  rw [norm_mul, RCLike.norm_ofReal, mul_pow, sq_abs]
-  gcongr
-  linarith
+    x ∈ A.domain ↔ Summable fun i ↦ (1 + lam i ^ 2) * ‖⟪b i, x⟫_𝕜‖ ^ 2 :=
+  hA.isFormalAdjoint.mem_domain_iff_summable hA.isClosed hb
 
 end LinearPMap
