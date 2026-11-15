@@ -136,7 +136,7 @@ private theorem level_slice (hp : IsNondegenerateCriticalPoint f p)
         Flow.stableSet (negativeGradientFlow f hf) q ∩ {x | f x = c}) y) =
       Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p ∩
         Flow.stableSet (negativeGradientFlow f hf) q) y) ⊓ (fderiv ℝ f y).ker := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have hn0 : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast Nat.one_le_iff_ne_zero.1 hn
   have hfs2 : ContDiff ℝ 2 f := hfs.of_le (by exact_mod_cast (by omega : 2 ≤ n + 1))
   obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ :=
@@ -157,19 +157,19 @@ private theorem level_slice (hp : IsNondegenerateCriticalPoint f p)
   exact ⟨exists_isSliceChart_inter_preimage_zero hn0 (isSliceChart_iff.2 hS₁) hy₁
       he₁ hs₁ hg hg' hgy isOpen_univ (mem_univ y) hgC htr'
       (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-        (Submodule.closed_of_finiteDimensional _))
+        (Submodule.isClosed_of_finiteDimensional _))
       (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-        (Submodule.closed_of_finiteDimensional _))
+        (Submodule.isClosed_of_finiteDimensional _))
       (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-        (Submodule.closed_of_finiteDimensional _)),
+        (Submodule.isClosed_of_finiteDimensional _)),
     span_tangentConeAt_inter_preimage_zero hn0 (isSliceChart_iff.2 hS₁) hy₁ he₁
       hs₁ hg hg' hgy isOpen_univ (mem_univ y) hgC htr'
       (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-        (Submodule.closed_of_finiteDimensional _))
+        (Submodule.isClosed_of_finiteDimensional _))
       (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-        (Submodule.closed_of_finiteDimensional _))
+        (Submodule.isClosed_of_finiteDimensional _))
       (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-        (Submodule.closed_of_finiteDimensional _))⟩
+        (Submodule.isClosed_of_finiteDimensional _))⟩
 
 /-- **The level slice of a transverse intersection is an embedded submanifold.** If the unstable
 set of a Morse critical point `p` and the stable set of a Morse critical point `q` meet

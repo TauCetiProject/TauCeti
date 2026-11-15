@@ -214,10 +214,82 @@ theorem finitelyRepresentable_completion_iff :
 
 end Completion
 
+section NontriviallyNormedField
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- If `E` is finitely representable in `F`, then for every `ε > 0` every finite-dimensional
+subspace of `E` is isomorphic to a subspace of `F` at Banach–Mazur distance less than `1 + ε`. -/
+theorem FinitelyRepresentable.exists_banachMazurDist_lt (h : FinitelyRepresentable 𝕜 E F)
+    (S : Submodule 𝕜 E) [FiniteDimensional 𝕜 S] {ε : ℝ} (hε : 0 < ε) :
+    ∃ G : Submodule 𝕜 F, Nonempty (S ≃L[𝕜] G) ∧ banachMazurDist 𝕜 S G < 1 + ε := by
+  -- Embed `S` with distortion bounds `1 ± δ`, where `(1 + δ) / (1 - δ) < 1 + ε`, and
+  -- compare `S` with the range of the embedding.
+  set δ := ε / (ε + 3)
+  have hδ : 0 < δ := by positivity
+  have hδε : δ * (ε + 3) = ε := div_mul_cancel₀ _ (by positivity)
+  have hδ1 : 0 < 1 - δ := by nlinarith
+  obtain ⟨T, hT⟩ := h.exists_continuousLinearMap S hδ
+  have hinj : Function.Injective T := by
+    refine (injective_iff_map_eq_zero T).2 fun x hx ↦ norm_eq_zero.1 ?_
+    have := (hT x).1
+    rw [hx, norm_zero] at this
+    nlinarith [norm_nonneg x]
+  -- The bounds make the linear equivalence onto the range continuous in both directions, with
+  -- no completeness assumption on `𝕜`.
+  let R := LinearMap.range (T : S →ₗ[𝕜] F)
+  let e₀ : S ≃ₗ[𝕜] R := LinearEquiv.ofInjective (T : S →ₗ[𝕜] F) hinj
+  have he (x : S) : ‖e₀ x‖ = ‖T x‖ := by simp [e₀, R, ← Submodule.norm_coe]
+  have hto (x : S) : ‖e₀ x‖ ≤ (1 + δ) * ‖x‖ := by simpa [he] using (hT x).2
+  have hinv (y : R) : ‖e₀.symm y‖ ≤ (1 - δ)⁻¹ * ‖y‖ := by
+    obtain ⟨x, rfl⟩ := e₀.surjective y
+    simpa [he, le_inv_mul_iff₀ hδ1] using (hT x).1
+  let e : S ≃L[𝕜] R := e₀.toContinuousLinearEquivOfBounds (1 + δ) (1 - δ)⁻¹ hto hinv
+  refine ⟨R, ⟨e⟩, (banachMazurDist_le e).trans_lt ?_⟩
+  have h₁ : ‖(e : S →L[𝕜] R)‖ ≤ 1 + δ :=
+    ContinuousLinearMap.opNorm_le_bound _ (by positivity) hto
+  have h₂ : ‖(e.symm : R →L[𝕜] S)‖ ≤ (1 - δ)⁻¹ :=
+    ContinuousLinearMap.opNorm_le_bound _ (by positivity) hinv
+  calc ‖(e : S →L[𝕜] R)‖ * ‖(e.symm : R →L[𝕜] S)‖ ≤ (1 + δ) * (1 - δ)⁻¹ := by
+        gcongr
+    _ < 1 + ε := by
+      rw [← div_eq_mul_inv, div_lt_iff₀ hδ1]
+      nlinarith
+
+end NontriviallyNormedField
+
 section DenselyNormedField
 
 variable {𝕜 E F : Type*} [DenselyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Over a densely normed field, if for every `ε > 0` every finite-dimensional subspace of `E` is
+isomorphic to a subspace of `F` at Banach–Mazur distance less than `1 + ε`, then `E` is finitely
+representable in `F`. -/
+theorem finitelyRepresentable_of_forall_exists_banachMazurDist_lt
+    (h : ∀ S : Submodule 𝕜 E, FiniteDimensional 𝕜 S → ∀ ε : ℝ, 0 < ε →
+      ∃ G : Submodule 𝕜 F, Nonempty (S ≃L[𝕜] G) ∧ banachMazurDist 𝕜 S G < 1 + ε) :
+    FinitelyRepresentable 𝕜 E F := by
+  intro S _ ε hε
+  obtain ⟨G, hne, hd⟩ := h S ‹_› ε hε
+  obtain ⟨e, he⟩ := banachMazurDist_lt_iff.1 hd
+  rcases subsingleton_or_nontrivial S with hS | _
+  · exact ⟨0, fun x ↦ by simp [Subsingleton.elim x 0]⟩
+  -- Rescale `e` by a scalar `a` with `‖e⁻¹‖ < ‖a‖ < (1 + ε) / ‖e‖`; the norms are dense.
+  set k := ‖(e : S →L[𝕜] G)‖
+  set c := ‖(e.symm : G →L[𝕜] S)‖
+  have h₁ : 1 ≤ k * c := (one_le_banachMazurDist hne).trans (banachMazurDist_le e)
+  have hc : 0 ≤ c := norm_nonneg _
+  have hk : 0 < k := by nlinarith
+  obtain ⟨a, ha₁, ha₂⟩ := NormedField.exists_lt_norm_lt 𝕜 hc ((lt_div_iff₀' hk).2 he)
+  refine ⟨a • G.subtypeL.comp (e : S →L[𝕜] G), fun x ↦ ?_⟩
+  have hTx : ‖(a • G.subtypeL.comp (e : S →L[𝕜] G)) x‖ = ‖a‖ * ‖e x‖ := by simp [norm_smul]
+  have hlow : ‖x‖ ≤ c * ‖e x‖ := by simpa using (e.symm : G →L[𝕜] S).le_opNorm (e x)
+  have hup : ‖e x‖ ≤ k * ‖x‖ := (e : S →L[𝕜] G).le_opNorm x
+  rw [hTx]
+  constructor <;> nlinarith [mul_le_mul_of_nonneg_right ha₁.le (norm_nonneg (e x)),
+    mul_le_mul_of_nonneg_left hup (norm_nonneg a), (lt_div_iff₀ hk).1 ha₂, norm_nonneg x]
 
 /-- Over a densely normed field such as `ℝ`, `ℂ` or `ℚ`, `E` is finitely representable in `F` if
 and only if, for every `ε > 0`, every finite-dimensional subspace of `E` is isomorphic to a
@@ -225,60 +297,9 @@ subspace of `F` at Banach–Mazur distance less than `1 + ε`. -/
 theorem finitelyRepresentable_iff_banachMazurDist_lt :
     FinitelyRepresentable 𝕜 E F ↔
       ∀ S : Submodule 𝕜 E, FiniteDimensional 𝕜 S → ∀ ε : ℝ, 0 < ε →
-        ∃ G : Submodule 𝕜 F, Nonempty (S ≃L[𝕜] G) ∧ banachMazurDist 𝕜 S G < 1 + ε := by
-  constructor
-  · intro h S _ ε hε
-    -- Embed `S` with distortion bounds `1 ± δ`, where `(1 + δ) / (1 - δ) < 1 + ε`, and
-    -- compare `S` with the range of the embedding.
-    set δ := ε / (ε + 3)
-    have hδ : 0 < δ := by positivity
-    have hδε : δ * (ε + 3) = ε := div_mul_cancel₀ _ (by positivity)
-    have hδ1 : 0 < 1 - δ := by nlinarith
-    obtain ⟨T, hT⟩ := h.exists_continuousLinearMap S hδ
-    have hinj : Function.Injective T := by
-      refine (injective_iff_map_eq_zero T).2 fun x hx ↦ norm_eq_zero.1 ?_
-      have := (hT x).1
-      rw [hx, norm_zero] at this
-      nlinarith [norm_nonneg x]
-    -- The bounds make the linear equivalence onto the range continuous in both directions, with
-    -- no completeness assumption on `𝕜`.
-    let R := LinearMap.range (T : S →ₗ[𝕜] F)
-    let e₀ : S ≃ₗ[𝕜] R := LinearEquiv.ofInjective (T : S →ₗ[𝕜] F) hinj
-    have he (x : S) : ‖e₀ x‖ = ‖T x‖ := by simp [e₀, R, ← Submodule.norm_coe]
-    have hto (x : S) : ‖e₀ x‖ ≤ (1 + δ) * ‖x‖ := by simpa [he] using (hT x).2
-    have hinv (y : R) : ‖e₀.symm y‖ ≤ (1 - δ)⁻¹ * ‖y‖ := by
-      obtain ⟨x, rfl⟩ := e₀.surjective y
-      simpa [he, le_inv_mul_iff₀ hδ1] using (hT x).1
-    let e : S ≃L[𝕜] R := e₀.toContinuousLinearEquivOfBounds (1 + δ) (1 - δ)⁻¹ hto hinv
-    refine ⟨R, ⟨e⟩, (banachMazurDist_le e).trans_lt ?_⟩
-    have h₁ : ‖(e : S →L[𝕜] R)‖ ≤ 1 + δ :=
-      ContinuousLinearMap.opNorm_le_bound _ (by positivity) hto
-    have h₂ : ‖(e.symm : R →L[𝕜] S)‖ ≤ (1 - δ)⁻¹ :=
-      ContinuousLinearMap.opNorm_le_bound _ (by positivity) hinv
-    calc ‖(e : S →L[𝕜] R)‖ * ‖(e.symm : R →L[𝕜] S)‖ ≤ (1 + δ) * (1 - δ)⁻¹ := by
-          gcongr
-      _ < 1 + ε := by
-        rw [← div_eq_mul_inv, div_lt_iff₀ hδ1]
-        nlinarith
-  · intro h S _ ε hε
-    obtain ⟨G, hne, hd⟩ := h S ‹_› ε hε
-    obtain ⟨e, he⟩ := banachMazurDist_lt_iff.1 hd
-    rcases subsingleton_or_nontrivial S with hS | _
-    · exact ⟨0, fun x ↦ by simp [Subsingleton.elim x 0]⟩
-    -- Rescale `e` by a scalar `a` with `‖e⁻¹‖ < ‖a‖ < (1 + ε) / ‖e‖`; the norms are dense.
-    set k := ‖(e : S →L[𝕜] G)‖
-    set c := ‖(e.symm : G →L[𝕜] S)‖
-    have h₁ : 1 ≤ k * c := (one_le_banachMazurDist hne).trans (banachMazurDist_le e)
-    have hc : 0 ≤ c := norm_nonneg _
-    have hk : 0 < k := by nlinarith
-    obtain ⟨a, ha₁, ha₂⟩ := NormedField.exists_lt_norm_lt 𝕜 hc ((lt_div_iff₀' hk).2 he)
-    refine ⟨a • G.subtypeL.comp (e : S →L[𝕜] G), fun x ↦ ?_⟩
-    have hTx : ‖(a • G.subtypeL.comp (e : S →L[𝕜] G)) x‖ = ‖a‖ * ‖e x‖ := by simp [norm_smul]
-    have hlow : ‖x‖ ≤ c * ‖e x‖ := by simpa using (e.symm : G →L[𝕜] S).le_opNorm (e x)
-    have hup : ‖e x‖ ≤ k * ‖x‖ := (e : S →L[𝕜] G).le_opNorm x
-    rw [hTx]
-    constructor <;> nlinarith [mul_le_mul_of_nonneg_right ha₁.le (norm_nonneg (e x)),
-      mul_le_mul_of_nonneg_left hup (norm_nonneg a), (lt_div_iff₀ hk).1 ha₂, norm_nonneg x]
+        ∃ G : Submodule 𝕜 F, Nonempty (S ≃L[𝕜] G) ∧ banachMazurDist 𝕜 S G < 1 + ε :=
+  ⟨fun h S _ _ hε ↦ h.exists_banachMazurDist_lt S hε,
+    finitelyRepresentable_of_forall_exists_banachMazurDist_lt⟩
 
 end DenselyNormedField
 

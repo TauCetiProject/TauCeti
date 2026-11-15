@@ -120,7 +120,7 @@ theorem completion_apply_of_nullMeasurableSet (hs : NullMeasurableSet s μ) :
 /-- The extension of `m` agrees with `m` on measurable sets. -/
 @[simp]
 theorem completion_apply_of_measurableSet (hs : MeasurableSet s) : m.completion μ hm s = m s :=
-  m.completion_apply hs.nullMeasurableSet hs EventuallyEq.rfl
+  m.completion_apply hs.nullMeasurableSet hs Filter.EventuallyEqSet.rfl
 
 /-- The extension of `m` is zero at a set that is not null-measurable, by convention. -/
 @[simp]

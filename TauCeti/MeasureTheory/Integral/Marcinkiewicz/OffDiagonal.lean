@@ -97,7 +97,7 @@ weight `t ^ s` at each point `x` is at most `K f(x) ^ (qᵢ (p - pᵢ) / pᵢ)`,
 `L^{qᵢ / pᵢ}` norm in `t` of the truncated integrals of `f ^ pᵢ` is at most
 `K (∫⁻ f ^ p) ^ (qᵢ / pᵢ)`. -/
 private theorem lintegral_mul_setLIntegral_rpow_le_of_le [SFinite μ] {R : ℝ → α → Prop}
-    (hR : MeasurableSet {z : ℝ × α | R z.1 z.2}) (hf : Measurable f) {pᵢ qᵢ s K : ℝ}
+    (hR : MeasurableSet {z : ℝ × α | R z.1 z.2}) (hf : AEMeasurable f μ) {pᵢ qᵢ s K : ℝ}
     (hpᵢ : 0 < pᵢ) (hpq : pᵢ ≤ qᵢ)
     (hinner : ∀ x, ∫⁻ t in Ioi (0 : ℝ),
         {t : ℝ | R t x}.indicator (fun t => ENNReal.ofReal (t ^ s)) t ≤
@@ -123,7 +123,7 @@ private theorem lintegral_mul_setLIntegral_rpow_le_of_le [SFinite μ] {R : ℝ �
           gcongr
           simpa using ENNReal.le_rpow_add (f x) pᵢ (p - pᵢ)
   calc _ ≤ _ := lintegral_mul_setLIntegral_rpow_le hR
-        (measurable_id.pow_const s).ennreal_ofReal.aemeasurable (hf.pow_const pᵢ).aemeasurable hr
+        (measurable_id.pow_const s).ennreal_ofReal.aemeasurable (hf.pow_const pᵢ) hr
     _ ≤ (∫⁻ x, ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * f x ^ p ∂μ) ^ (qᵢ / pᵢ) :=
         ENNReal.rpow_le_rpow (lintegral_mono hpt) hr0.le
     _ = ENNReal.ofReal K * (∫⁻ x, f x ^ p ∂μ) ^ (qᵢ / pᵢ) := by
@@ -151,8 +151,10 @@ private theorem ne_zero_and_pos_of_div_eq (hp₀ : 0 < p₀) (hlt₀ : p₀ < p)
   · nlinarith [mul_pos_of_neg_of_neg hY hγ]
   · nlinarith [mul_pos hX hγ]
 
-/-- The off-diagonal interpolation estimate for a measurable `f` and an s-finite `μ`, which is the
-generality in which Minkowski's integral inequality applies; both hypotheses are removed below. -/
+/-- The off-diagonal interpolation estimate for a measurable `f` and an s-finite `μ`. Minkowski's
+integral inequality needs `μ` to be s-finite, and the measurability of `f` makes the truncation
+sets `{(t, x) | f x > c t ^ γ}` and `{(t, x) | f x ≤ c t ^ γ}` measurable in `ℝ × α`; both
+hypotheses are removed below. -/
 private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_of_measurable_of_sFinite [SFinite μ]
     (hf : Measurable f) (hu : AEMeasurable u ν) (hp₀ : 0 < p₀) (hlt₀ : p₀ < p) (hlt₁ : p < p₁)
     (hpq₀ : p₀ ≤ q₀) (hpq₁ : p₁ ≤ q₁) (hγ₀ : (q - q₀) / γ = q₀ * (p - p₀) / p₀)
@@ -186,7 +188,7 @@ private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_of_measurable_of_sFi
     ((measurable_setLIntegral_of_measurableSet hR₁ (hf.pow_const p₁).aemeasurable).pow_const _)
   have hbound₀ : ∫⁻ t in Ioi (0 : ℝ), I₀ t ≤
       ENNReal.ofReal (c ^ (q₀ * (p₀ - p) / p₀) / |q - q₀|) * (∫⁻ x, f x ^ p ∂μ) ^ (q₀ / p₀) := by
-    refine lintegral_mul_setLIntegral_rpow_le_of_le hR₀ hf hp₀ hpq₀ fun x => ?_
+    refine lintegral_mul_setLIntegral_rpow_le_of_le hR₀ hf.aemeasurable hp₀ hpq₀ fun x => ?_
     have hin := lintegral_indicator_ofReal_mul_rpow_lt_le (s := q - q₀ - 1) hc
       (by rw [sub_add_cancel, hγ₀]; exact div_pos (mul_pos (hp₀.trans_le hpq₀) (by linarith)) hp₀)
       (f x)
@@ -194,7 +196,7 @@ private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_of_measurable_of_sFi
   have hbound₁ : ∫⁻ t in Ioi (0 : ℝ), I₁ t ≤
       ENNReal.ofReal (c ^ (q₁ * (p₁ - p) / p₁) / |q - q₁|) * (∫⁻ x, f x ^ p ∂μ) ^ (q₁ / p₁) := by
     have hp₁ : 0 < p₁ := hp.trans hlt₁
-    refine lintegral_mul_setLIntegral_rpow_le_of_le hR₁ hf hp₁ hpq₁ fun x => ?_
+    refine lintegral_mul_setLIntegral_rpow_le_of_le hR₁ hf.aemeasurable hp₁ hpq₁ fun x => ?_
     have hin := lintegral_indicator_le_ofReal_mul_rpow_le (s := q - q₁ - 1) hc
       (by
         rw [sub_add_cancel, hγ₁]
@@ -345,7 +347,7 @@ theorem lintegral_rpow_le_of_meas_ofReal_lt_le_rpow
   have hset : ∀ (P : ℝ≥0∞ → Prop) (r : ℝ), ∫⁻ x in {x | P (f x)}, f x ^ r ∂μ =
       ∫⁻ x in {x | P (hf.mk f x)}, hf.mk f x ^ r ∂μ := fun P r => by
     have hsets : {x | P (f x)} =ᵐ[μ] {x | P (hf.mk f x)} :=
-      hae.mono fun x hx => congrArg P hx
+      hae.mono fun x hx => Iff.of_eq (congrArg P hx)
     rw [Measure.restrict_congr_set hsets]
     exact lintegral_congr_ae (ae_restrict_of_ae (hpow r))
   rw [lintegral_congr_ae (hpow p)]
@@ -387,7 +389,7 @@ theorem meas_ofReal_lt_le_add_setLIntegral_rpow (hv : AEMeasurable v μ) (ht : 0
   set g : α → G := hv.mk v with _
   have hgmeas : Measurable g := hv.measurable_mk
   set S : Set α := {x | a < ‖g x‖ₑ} with hSdef
-  have hSmeas : MeasurableSet S := measurableSet_lt measurable_const hgmeas.enorm
+  have hSmeas : MeasurableSet S := measurableSet_lt measurable_const hgmeas.eNorm
   set g₁ : α → G := S.indicator v with hg₁def
   set g₂ : α → G := Sᶜ.indicator v with hg₂def
   have hg₁meas : AEMeasurable g₁ μ := hv.indicator hSmeas
@@ -398,13 +400,15 @@ theorem meas_ofReal_lt_le_add_setLIntegral_rpow (hv : AEMeasurable v μ) (ht : 0
     exact hadd g₁ g₂ hg₁meas hg₂meas
   have hS₀ : ∫⁻ x, ‖g₁ x‖ₑ ^ p₀ ∂μ = ∫⁻ x in {x | a < ‖v x‖ₑ}, ‖v x‖ₑ ^ p₀ ∂μ := by
     rw [lintegral_enorm_rpow_eq_setLIntegral hSmeas Filter.EventuallyEq.rfl hp₀]
-    exact setLIntegral_congr (hv.ae_eq_mk.fun_comp fun z => a < ‖z‖ₑ).symm
+    exact setLIntegral_congr (Filter.Eventually.mono
+      (hv.ae_eq_mk.fun_comp fun z => a < ‖z‖ₑ).symm fun _ h ↦ Iff.of_eq h)
   have hS₁ : ∫⁻ x, ‖g₂ x‖ₑ ^ p₁ ∂μ = ∫⁻ x in {x | ‖v x‖ₑ ≤ a}, ‖v x‖ₑ ^ p₁ ∂μ := by
     have hSc : Sᶜ = {x | ‖g x‖ₑ ≤ a} := by
       ext x
       simp [hSdef]
     rw [lintegral_enorm_rpow_eq_setLIntegral hSmeas.compl Filter.EventuallyEq.rfl hp₁, hSc]
-    exact setLIntegral_congr (hv.ae_eq_mk.fun_comp fun z => ‖z‖ₑ ≤ a).symm
+    exact setLIntegral_congr (Filter.Eventually.mono
+      (hv.ae_eq_mk.fun_comp fun z => ‖z‖ₑ ≤ a).symm fun _ h ↦ Iff.of_eq h)
   have hsplit : ∀ (k r : ℝ), 0 < k → ENNReal.ofReal ((k * t) ^ (-r)) =
       ENNReal.ofReal (k ^ (-r)) * ENNReal.ofReal (t ^ (-r)) := fun k r hk => by
     rw [Real.mul_rpow hk.le ht.le, ENNReal.ofReal_mul (Real.rpow_nonneg hk.le _)]
@@ -506,7 +510,7 @@ private theorem lintegral_rpow_le_of_rpow_mul_meas_lt_le_rpow_of_lt (hv : AEMeas
           (A₀ * ENNReal.ofReal (d ^ (-q₀))) * N ^ (q₀ / p₀) +
         ENNReal.ofReal (q * c ^ (q₁ * (p₁ - p) / p₁) / |q - q₁|) *
           (A₁ * ENNReal.ofReal (e ^ (-q₁))) * N ^ (q₁ / p₁) := fun c hc =>
-    lintegral_rpow_le_of_meas_ofReal_lt_le_rpow hv.enorm hTv hp₀ hlt₀ hlt₁ hpq₀ hpq₁ hγ₀ hγ₁ hc
+    lintegral_rpow_le_of_meas_ofReal_lt_le_rpow hv.eNorm hTv hp₀ hlt₀ hlt₁ hpq₀ hpq₁ hγ₀ hγ₁ hc
       fun t ht => meas_ofReal_lt_le_add_setLIntegral_rpow hv ht hp₀ hp₁ hd he hde _ hadd hweak₀
         hweak₁
   by_cases hNfin : N = 0 ∨ N = ∞

@@ -46,7 +46,7 @@ theorem bind_renewalArrivalMeasure_of_expMeasure (hT : ∀ n, Measurable (T n))
       (P.bind (renewalArrivalMeasure T)) (Iic t) = (r : ℝ≥0∞) * t := by
     rw [Measure.bind_apply measurableSet_Iic (measurable_renewalArrivalMeasure hT).aemeasurable]
     simp_rw [renewalArrivalMeasure_Iic]
-    exact lintegral_renewalCount_of_expMeasure hT hindep hlaw t
+    exact lintegral_renewalCount_of_expMeasure hindep hlaw t
   apply Measure.ext_of_generateFrom_of_iUnion (C := range (Iic : ℝ≥0 → Set ℝ≥0))
     (B := fun n : ℕ => Iic (n : ℝ≥0))
   · exact BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic ℝ≥0)

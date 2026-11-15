@@ -233,7 +233,7 @@ theorem cutNorm_le_toReal_eLpNorm (K : SymmKernel Ω μ) :
   refine (cutNorm_le_integral_abs μ K).trans (le_of_eq ?_)
   have hK : AEStronglyMeasurable (fun p : Ω × Ω => K p.1 p.2) (μ.prod μ) :=
     K.measurable.aestronglyMeasurable
-  rw [eLpNorm_one_eq_lintegral_enorm hK, ← integral_norm_eq_lintegral_enorm hK]
+  rw [eLpNorm_one_eq_lintegral_eNorm hK, ← integral_norm_eq_lintegral_eNorm hK]
   simp only [Real.norm_eq_abs]
 
 end FiniteMeasure

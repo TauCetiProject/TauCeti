@@ -45,7 +45,7 @@ two commutation maps; that matching is not part of this file.
   composite is unpaired as soon as the canonical recut of its underlying decomposition underlies
   no counted composite.
 * `TauCeti.GridDiagram.sum_hexagonCompositeWeight_overlap_eq_sum_unpaired`: in characteristic two,
-  the off-diagonal overlapping composites have the total weight of the unpaired ones.
+  the overlapping composites have the total weight of the unpaired ones.
 * `TauCeti.GridDiagram.unblockedDifferential_commutationHomotopy_add_eq_iff_unpaired`: the homotopy
   equation is equivalent to its diagonal identity together with the identity between the unpaired
   composites and the pentagon pairs off the diagonal.
@@ -151,16 +151,16 @@ theorem existsUnique_unpairedHexagonComposite_of_toRectangleDecomposition_eq
 variable [CharP R 2]
 
 open scoped Classical in
-/-- Off the diagonal and in characteristic two, the counted composites whose rectangles share a
+/-- In characteristic two, the counted composites whose rectangles share a
 side column have the total weight of the unpaired ones: recut partners cancel in pairs
 (`GridRectangleDecomposition.sum_filter_not_hasDisjointSides_eq_sum_filter_forall_not_isRecut`). -/
-theorem sum_hexagonCompositeWeight_overlap_eq_sum_unpaired {x z : GridState n} (hzx : z ≠ x) :
+theorem sum_hexagonCompositeWeight_overlap_eq_sum_unpaired {x z : GridState n} :
     ∑ D ∈ (G.hexagonCompositeDecompositions C x z).filter
         (fun D => ¬D.toRectangleDecomposition.HasDisjointSides),
         G.hexagonCompositeWeight C R D =
       ∑ D ∈ G.unpairedHexagonComposites C x z, G.hexagonCompositeWeight C R D := by
   rw [GridRectangleDecomposition.sum_filter_not_hasDisjointSides_eq_sum_filter_forall_not_isRecut
-    _ _ _ CharTwo.add_self_eq_zero hzx
+    _ _ _ CharTwo.add_self_eq_zero
     (fun _ hD => G.isEmpty_of_mem_hexagonCompositeDecompositions C hD)
     (G.injOn_toRectangleDecomposition_hexagonCompositeDecompositions C x z)
     (fun _ hD _ hE h => G.hexagonCompositeWeight_eq_of_isRepartition C R hD hE h)]
@@ -187,7 +187,7 @@ theorem unblockedDifferential_commutationHomotopy_add_eq_iff_unpaired :
         ∑ D ∈ G.unpairedHexagonComposites C x z, G.hexagonCompositeWeight C R D =
           ∑ D ∈ G.pentagonPairDecompositions C x z, G.pentagonPairWeight C R D := by
   rw [G.unblockedDifferential_commutationHomotopy_add_eq_iff_overlap C R]
-  have hoff : ∀ x z : GridState n, z ≠ x →
+  have hoff : ∀ x z : GridState n,
       (∑ D ∈ (G.hexagonRectangleDecompositions C x z).filter
           (fun D => ¬D.toRectangleDecomposition.HasDisjointSides),
           G.hexagonRectangleWeight C R D) +
@@ -195,21 +195,21 @@ theorem unblockedDifferential_commutationHomotopy_add_eq_iff_unpaired :
           (fun D => ¬D.toRectangleDecomposition.HasDisjointSides),
           G.rectangleHexagonWeight C R D =
         ∑ D ∈ G.unpairedHexagonComposites C x z, G.hexagonCompositeWeight C R D :=
-    fun x z hzx => by
+    fun x z => by
       rw [← G.sum_hexagonCompositeWeight_filter_not_hasDisjointSides C R,
-        G.sum_hexagonCompositeWeight_overlap_eq_sum_unpaired C R hzx]
+        G.sum_hexagonCompositeWeight_overlap_eq_sum_unpaired C R]
   constructor
   · intro h
     refine ⟨fun x => ?_, fun x z hzx => ?_⟩
     · simpa only [GridRectangleDecomposition.filter_not_hasDisjointSides_eq_self, eq_self,
         ite_true] using h x x
-    · simpa only [hoff x z hzx, ite_eq_right (Ne.symm hzx), zero_add] using h x z
+    · simpa only [hoff x z, ite_eq_right (Ne.symm hzx), zero_add] using h x z
   · rintro ⟨hdiag, hunpaired⟩ x z
     by_cases hzx : z = x
     · subst z
       simpa only [GridRectangleDecomposition.filter_not_hasDisjointSides_eq_self, eq_self,
         ite_true] using hdiag x
-    · rw [hoff x z hzx, ite_eq_right (Ne.symm hzx), zero_add]
+    · rw [hoff x z, ite_eq_right (Ne.symm hzx), zero_add]
       exact hunpaired x z hzx
 
 end GridDiagram

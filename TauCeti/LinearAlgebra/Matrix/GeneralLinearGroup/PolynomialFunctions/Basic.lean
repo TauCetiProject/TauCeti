@@ -170,21 +170,15 @@ polynomial function, by `TauCeti.Matrix.GeneralLinearGroup.det_mem_polynomialFun
 theorem det_zpow_mem_rationalFunctions (m : ℤ) :
     (fun g : GL (Fin n) k => ((_root_.Matrix.GeneralLinearGroup.det g ^ m : kˣ) : k))
       ∈ rationalFunctions k n := by
-  rcases le_or_gt 0 m with hm | hm
-  · lift m to ℕ using hm
-    have hpow :
-        (fun g : GL (Fin n) k => ((_root_.Matrix.GeneralLinearGroup.det g ^ (m : ℤ) : kˣ) : k))
-          = (fun g : GL (Fin n) k => (g : Matrix (Fin n) (Fin n) k).det) ^ m := by
-      funext g
-      simp [zpow_natCast, Units.val_pow_eq_pow_val]
-    rw [hpow]
-    exact polynomialFunctions_le_rationalFunctions (pow_mem det_mem_polynomialFunctions m)
-  · obtain ⟨M, rfl⟩ : ∃ M : ℕ, m = -(M : ℤ) := ⟨(-m).toNat, by omega⟩
-    refine ⟨1, M, fun g => ?_⟩
-    rw [← _root_.Matrix.GeneralLinearGroup.val_det_apply, map_one,
-      ← Units.val_pow_eq_pow_val, ← Units.val_mul, ← zpow_natCast,
-      ← zpow_add (_root_.Matrix.GeneralLinearGroup.det g)]
-    simp
+  -- Numerator `det ^ m.toNat` and denominator `det ^ (-m).toNat`, whose quotient is `det ^ m`.
+  refine ⟨(_root_.Matrix.mvPolynomialX (Fin n) (Fin n) k).det ^ m.toNat, (-m).toNat, fun g => ?_⟩
+  have h : _root_.Matrix.GeneralLinearGroup.det g ^ (-m).toNat *
+      _root_.Matrix.GeneralLinearGroup.det g ^ m =
+      _root_.Matrix.GeneralLinearGroup.det g ^ m.toNat := by
+    rw [← zpow_natCast, ← zpow_natCast, ← zpow_add]
+    congr 1
+    omega
+  simpa [Units.val_pow_eq_pow_val] using congrArg Units.val h
 
 /-- **The entries of the inverse matrix are rational functions**: `det g` times an entry of `g⁻¹`
 is the corresponding entry of the adjugate of `g`, a polynomial in the entries of `g`. -/
@@ -193,14 +187,13 @@ theorem entry_inv_mem_rationalFunctions (i j : Fin n) :
       ∈ rationalFunctions k n := by
   refine mem_rationalFunctions.mpr
     ⟨(_root_.Matrix.mvPolynomialX (Fin n) (Fin n) k).adjugate i j, 1, fun g => ?_⟩
-  have hadj := congrFun (congrFun (RingHom.map_adjugate
+  -- Evaluating the generic adjugate at the entries of `g` gives the adjugate of `g`.
+  have hadj := RingHom.map_adjugate
     (MvPolynomial.eval fun p : Fin n × Fin n => (g : Matrix (Fin n) (Fin n) k) p.1 p.2)
-    (_root_.Matrix.mvPolynomialX (Fin n) (Fin n) k)) i) j
-  rw [_root_.Matrix.mvPolynomialX_mapMatrix_eval, RingHom.mapMatrix_apply,
-    _root_.Matrix.map_apply] at hadj
-  rw [hadj, pow_one, _root_.Matrix.coe_units_inv, _root_.Matrix.inv_def,
-    _root_.Matrix.smul_apply, smul_eq_mul, ← mul_assoc,
-    Ring.mul_inverse_cancel _ (_root_.Matrix.isUnits_det_units g), one_mul]
+    (_root_.Matrix.mvPolynomialX (Fin n) (Fin n) k)
+  rw [_root_.Matrix.mvPolynomialX_mapMatrix_eval] at hadj
+  simp [← hadj, _root_.Matrix.coe_units_inv, _root_.Matrix.inv_def, ← mul_assoc,
+    Ring.mul_inverse_cancel _ (_root_.Matrix.isUnits_det_units g)]
 
 /-- **A finite family of rational functions has a common denominator**: a single determinant power
 and a family of numerator polynomials express every member of the family. -/
@@ -214,9 +207,7 @@ theorem exists_forall_det_pow_mul_eq_of_forall_mem_rationalFunctions {ι : Type 
   refine ⟨fun i => (_root_.Matrix.mvPolynomialX (Fin n) (Fin n) k).det ^ (Finset.univ.sup m - m i)
     * P i, Finset.univ.sup m, fun i g => ?_⟩
   have hle : m i ≤ Finset.univ.sup m := Finset.le_sup (Finset.mem_univ i)
-  rw [map_mul, map_pow, eval_entries_det_mvPolynomialX, ← hPm i g, ← mul_assoc, ← pow_add]
-  congr 2
-  omega
+  simp [← hPm i g, ← mul_assoc, ← pow_add, Nat.sub_add_cancel hle]
 
 end CommRing
 

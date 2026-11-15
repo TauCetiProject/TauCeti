@@ -181,7 +181,7 @@ theorem Gamma_le_Gamma_of_dvd {M N : ℕ} (h : M ∣ N) : Gamma N ≤ Gamma M :=
     -- `ℤ` is initial, so reduction mod `M` *is* reduction mod `N` followed by `ZMod N → ZMod M`
     rw [show (Int.castRingHom (ZMod M) : ℤ →+* ZMod M) =
         (ZMod.castHom h (ZMod M)).comp (Int.castRingHom (ZMod N)) from Subsingleton.elim _ _,
-      ← Matrix.SpecialLinearGroup.map_comp, MonoidHom.comp_apply, Gamma_mem'.mp hA, map_one]
+      ← Matrix.SpecialLinearGroup.map_comp_map, MonoidHom.comp_apply, Gamma_mem'.mp hA, map_one]
 
 /-- A matrix of `Γ(N)` reduces to the identity matrix modulo `N`. -/
 theorem map_eq_one_of_mem_Gamma {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma N) :
@@ -492,6 +492,17 @@ theorem Gamma0Map_toHomUnits_surjective :
   have h10 : ((g 1 0 : ℤ) : ZMod N) = 0 := by rw [hentry]; simp
   have h11 : ((g 1 1 : ℤ) : ZMod N) = u := by rw [hentry]; simp
   exact ⟨⟨g, Gamma0_mem.mpr h10⟩, Units.ext (by simpa [Gamma0Map] using h11)⟩
+
+/-- The index of `Γ₁(N)` is the index of `Γ₀(N)` multiplied by the number of units modulo
+`N`. This includes level zero, using the natural-cardinality convention for infinite indices. -/
+theorem Gamma1_index (N : ℕ) :
+    (Gamma1 N).index = Nat.card (ZMod N)ˣ * (Gamma0 N).index := by
+  have hker : (Gamma1 N).subgroupOf (Gamma0 N) = (Gamma0Map N).toHomUnits.ker := by
+    ext g
+    exact mem_Gamma1_iff_toHomUnits_eq_one g
+  rw [← Subgroup.relIndex_mul_index (Gamma1_in_Gamma0 N), Subgroup.relIndex, hker,
+    Subgroup.index_ker, MonoidHom.range_eq_top_of_surjective _
+      Gamma0Map_toHomUnits_surjective, Nat.card_congr Subgroup.topEquiv.toEquiv]
 
 /-- A Bézout matrix with bottom row `(N, p)`, for `p` coprime to `N`. -/
 noncomputable def gamma0Twist (N p : ℕ) (h : Nat.Coprime p N) : SL(2, ℤ) :=
