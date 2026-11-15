@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import TauCeti.Geometry.Manifold.ContMDiff.StarConvex
 import TauCeti.Geometry.Manifold.DeRham.Circle
 import TauCeti.Geometry.Manifold.DeRham.HomologyPeriod
+import TauCeti.Topology.Homotopy.TopCat.Basic
 
 /-!
 # Transfer of smooth singular chain homotopy equivalences
@@ -28,9 +29,10 @@ smooth singular chains — is a chain homotopy inverse to the inclusion of smoot
 Both inverse identities follow from naturality of pushforwards with the subcomplex inclusion, the
 smooth prism operator (`ContMDiff.smoothSingularChainHomotopy`) of the jointly smooth map `Φ` on
 smooth chains, and the topological prism operator (`TopCat.Homotopy.toSSet`) of the restriction of
-`Φ` to `[0, 1] × M` on continuous singular chains. No homotopy between `r ∘ j` and `id_N` is used:
-`N` need only dominate `M` smoothly, as happens when `N` is the boundaryless interior of a manifold
-with boundary or corners deformed inward along an inward semiflow.
+`Φ` to `[0, 1] × M` (`Continuous.toTopCatHomotopy`) on continuous singular chains. No homotopy
+between `r ∘ j` and `id_N` is used: `N` need only dominate `M` smoothly, as happens when `N` is the
+boundaryless interior of a manifold with boundary or corners deformed inward along an inward
+semiflow.
 
 Because any two homotopy inverses of the same chain map are chain homotopic
 (`HomotopyEquiv.homotopyInvOfHomEq`), the transferred homotopy inverse is independent up to chain
@@ -51,8 +53,6 @@ model with corners (`TauCeti.smoothSingularChainHomotopyEquivModelSpace`), and e
 open subset of a real normed space (`TauCeti.smoothSingularChainHomotopyEquivOfStarConvex`).
 
 Finally, we record concrete witnesses and sharpness checks:
-* For `N = M`, `j = r = id`, and the constant homotopy, the transferred inverse is `s` itself
-  (`TauCeti.smoothSingularChainHomotopyEquivOfRetract_id_inv`).
 * On the closed half-line `[0, ∞)` (`EuclideanHalfSpace 1`), inward translation `r(x) = x + 1` into
   the open half-line `(0, ∞)` with deformation `Φ(t, x) = x + (1 - t)²` transfers the star-convex
   equivalence of `(0, ∞)` to `[0, ∞)` (`TauCeti.smoothSingularChainHomotopyEquivHalfLine`), sending
@@ -148,8 +148,8 @@ def smoothSingularChainHomotopyEquivOfRetract {j : N → M} (hj : ContMDiff J I 
       (SSet.chainComplexMap (TopCat.toSSet.map rTop) R ≫
         SSet.chainComplexMap (TopCat.toSSet.map jTop) R) (𝟙 _) :=
     (Homotopy.ofEq (by rw [← Functor.map_comp, ← Functor.map_comp, hcompTop])).trans
-      (((hΦ.toTopCatHomotopy (f := j ∘ r) (g := id) hΦ₀ hΦ₁).toSSet.chainComplexMap R).trans
-        (Homotopy.ofEq (by simp [hidTop])))
+      (((hΦ.continuous.toTopCatHomotopy (f := j ∘ r) (g := id) hΦ₀ hΦ₁).toSSet.chainComplexMap
+        R).trans (Homotopy.ofEq (by simp [hidTop])))
   refine eN.ofHomotopyRetractOfComm (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R)
     hK hL ?_ ?_
   · rw [heN, ← Functor.map_comp, ← Functor.map_comp, smoothSingularSubcomplexMap_ι hj]
@@ -184,21 +184,6 @@ theorem smoothSingularChainHomotopyEquivOfRetract_inv {j : N → M} (hj : ContMD
       SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom ⟨r, hr.continuous⟩)) R ≫
         eN.inv ≫ SSet.chainComplexMap (smoothSingularSubcomplexMap j hj) R := by
   simp [smoothSingularChainHomotopyEquivOfRetract]
-
-/-- When `N = M`, `j = r = id`, and `Φ` is the constant homotopy `(t, x) ↦ x`, the transferred
-chain homotopy inverse is `e.inv` itself. -/
-theorem smoothSingularChainHomotopyEquivOfRetract_id_inv (R : C)
-    (e : HomotopyEquiv ((smoothSingularSubcomplex I M : SSet).chainComplex R)
-      ((TopCat.toSSet.obj (TopCat.of M)).chainComplex R))
-    (he : e.hom = SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R) :
-    (smoothSingularChainHomotopyEquivOfRetract (I := I) (J := I) (M := M) (N := M)
-      (contMDiff_id (I := I)) (contMDiff_id (I := I)) contMDiff_snd
-      (fun _ ↦ rfl) (fun _ ↦ rfl) R e he).inv = e.inv := by
-  have hid : TopCat.ofHom ⟨(id : M → M), (contMDiff_id (I := I) (n := ∞)).continuous⟩ =
-      𝟙 (TopCat.of M) := by
-    ext x
-    rfl
-  simp [smoothSingularChainHomotopyEquivOfRetract_inv, hid]
 
 end Retract
 
@@ -400,6 +385,17 @@ theorem smoothSingularSubcomplexIsoOfSubsingleton_hom [Subsingleton P] :
     (smoothSingularSubcomplexIsoOfSubsingleton I P).hom = (smoothSingularSubcomplex I P).ι := by
   simp [smoothSingularSubcomplexIsoOfSubsingleton]
 
+/-- On `0`-simplices of a subsingleton manifold,
+`(smoothSingularSubcomplexIsoOfSubsingleton I P).inv` sends each singular `0`-simplex to the
+corresponding smooth `0`-simplex. -/
+@[simp]
+theorem smoothSingularSubcomplexIsoOfSubsingleton_inv_app_zero [Subsingleton P]
+    (σ : (TopCat.toSSet.obj (TopCat.of P)) _⦋0⦌) :
+    (dsimp% only [Subfunctor.toFunctor_obj]
+      ((smoothSingularSubcomplexIsoOfSubsingleton I P).inv.app (op ⦋0⦌) σ)) =
+      (SmoothSimplex.equiv₀ I P).symm ((TopCat.of P).toSSetObj₀Equiv σ) :=
+  (SmoothSimplex.equiv₀ I P).injective (Subsingleton.elim _ _)
+
 variable {C : Type*} [Category* C] [Preadditive C] [HasCoproducts.{u} C]
 
 /-- On a subsingleton manifold `P`, the inclusion of smooth singular chains into continuous
@@ -418,21 +414,13 @@ theorem smoothSingularChainHomotopyEquivOfSubsingleton_hom [Subsingleton P] (R :
       SSet.chainComplexMap (smoothSingularSubcomplex I P).ι R := by
   simp [smoothSingularChainHomotopyEquivOfSubsingleton, HomotopyEquiv.ofIso]
 
-/-- In degree zero on a subsingleton manifold, the inverse of
-`smoothSingularChainHomotopyEquivOfSubsingleton` sends each singular `0`-simplex to the
-corresponding smooth `0`-simplex. -/
-@[reassoc (attr := simp)]
-theorem ι_smoothSingularChainHomotopyEquivOfSubsingleton_inv_f_zero [Subsingleton P] (R : C)
-    (σ : (TopCat.toSSet.obj (TopCat.of P)) _⦋0⦌) :
-    (TopCat.toSSet.obj (TopCat.of P)).ιChainComplex σ ≫
-        (smoothSingularChainHomotopyEquivOfSubsingleton I P R).inv.f 0 =
-      (smoothSingularSubcomplex I P : SSet).ιChainComplex
-        ((SmoothSimplex.equiv₀ I P).symm ((TopCat.of P).toSSetObj₀Equiv σ)) := by
-  dsimp [smoothSingularChainHomotopyEquivOfSubsingleton, HomotopyEquiv.ofIso]
-  rw [SSet.ι_chainComplexMap_f]
-  congr 1
-  apply Subtype.ext
-  exact (TopCat.of P).toSSetObj₀Equiv.injective (Subsingleton.elim _ _)
+/-- The inverse map of `smoothSingularChainHomotopyEquivOfSubsingleton` is the chain map induced by
+`(smoothSingularSubcomplexIsoOfSubsingleton I P).inv`. -/
+@[simp]
+theorem smoothSingularChainHomotopyEquivOfSubsingleton_inv [Subsingleton P] (R : C) :
+    (smoothSingularChainHomotopyEquivOfSubsingleton I P R).inv =
+      SSet.chainComplexMap (smoothSingularSubcomplexIsoOfSubsingleton I P).inv R := by
+  simp [smoothSingularChainHomotopyEquivOfSubsingleton, HomotopyEquiv.ofIso]
 
 end Subsingleton
 
@@ -480,11 +468,7 @@ theorem ι_smoothSingularChainHomotopyEquivOfContractible_inv_f_zero (c : M) {Φ
     (TopCat.toSSet.obj (TopCat.of M)).ιChainComplex σ ≫
         (smoothSingularChainHomotopyEquivOfContractible c hΦ hΦ₀ hΦ₁ R).inv.f 0 =
       (smoothSingularSubcomplex I M : SSet).ιChainComplex ((SmoothSimplex.equiv₀ I M).symm c) := by
-  rw [smoothSingularChainHomotopyEquivOfContractible, smoothSingularChainHomotopyEquivOfRetract_inv,
-    HomologicalComplex.comp_f, HomologicalComplex.comp_f, SSet.ι_chainComplexMap_f_assoc,
-    ι_smoothSingularChainHomotopyEquivOfSubsingleton_inv_f_zero_assoc, SSet.ι_chainComplexMap_f]
-  congr 1
-  exact SmoothSimplex.smoothSingularSubcomplexMap_app_equiv₀_symm contMDiff_const _
+  simp [smoothSingularChainHomotopyEquivOfContractible]
 
 /-- On a smoothly contractible manifold, the inclusion of smooth singular simplices induces an
 isomorphism on homology in every degree (including degree zero). -/

@@ -15,6 +15,7 @@ public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.Geometry.Manifold.Algebra.SMul
+import TauCeti.Topology.Homotopy.TopCat.Basic
 
 /-!
 # Homotopy invariance of smooth singular homology
@@ -57,9 +58,9 @@ comparison of smooth with continuous singular homology by a Mayer–Vietoris ind
 * `TauCeti.smoothSingularSubcomplexHomotopy`: a smooth homotopy induces a simplicial homotopy of
   the maps of smooth singular subcomplexes, restricting the homotopy of singular simplicial sets.
 * `TauCeti.smoothSingularChainHomotopy`: the induced chain homotopy of smooth singular chains.
-* `ContMDiff.toTopCatHomotopy`, `ContMDiff.smoothSingularChainHomotopy`: the continuous
-  `[0, 1]`-homotopy and smooth singular chain homotopy obtained directly from a jointly smooth map
-  `F : ℝ × M → N` with prescribed endpoint slices `F (0, ·) = f` and `F (1, ·) = g`.
+* `ContMDiff.smoothSingularChainHomotopy`: the smooth singular chain homotopy obtained directly from
+  a jointly smooth map `F : ℝ × M → N` with prescribed endpoint slices `F (0, ·) = f` and
+  `F (1, ·) = g`.
 * `TauCeti.homologyMap_smoothSingularSubcomplexMap_eq`: smoothly homotopic maps induce the same map
   on smooth singular homology.
 * `TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`: a smoothly contractible manifold
@@ -187,10 +188,8 @@ theorem homologyMap_smoothSingularSubcomplexMap_eq_of_contMDiff [CategoryWithHom
     SSet.homologyMap (smoothSingularSubcomplexMap f hf) R n =
       SSet.homologyMap (smoothSingularSubcomplexMap g hg) R n :=
   homologyMap_smoothSingularSubcomplexMap_eq hf hg
-    { toFun := fun p ↦ F (p.1, p.2)
-      continuous_toFun := hF.continuous.comp (continuous_subtype_val.prodMap continuous_id)
-      map_zero_left := h₀
-      map_one_left := h₁ } hF (fun _ ↦ rfl) R n
+    (hF.continuous.toTopCatHomotopy h₀ h₁) hF
+    (fun p ↦ (hF.continuous.toTopCatHomotopy_apply h₀ h₁ p).symm) R n
 
 end TauCeti
 
@@ -201,27 +200,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} {N : Type u} [TopologicalSpace N] [ChartedSpace H' N]
   {f g : M → N} {F : ℝ × M → N}
-
-/-- The continuous `[0, 1]`-homotopy obtained by restricting a `C^m` map `F : ℝ × M → N` with
-`F (0, ·) = f` and `F (1, ·) = g`. -/
-def toTopCatHomotopy {m : ℕ∞ω} (hF : ContMDiff (𝓘(ℝ).prod I) J m F)
-    (h₀ : ∀ x, F (0, x) = f x) (h₁ : ∀ x, F (1, x) = g x) :
-    TopCat.Homotopy
-      (TopCat.ofHom ⟨f, ((hF.comp (contMDiff_const.prodMk contMDiff_id)).congr
-        fun x ↦ (h₀ x).symm).continuous⟩)
-      (TopCat.ofHom ⟨g, ((hF.comp (contMDiff_const.prodMk contMDiff_id)).congr
-        fun x ↦ (h₁ x).symm).continuous⟩) where
-  toFun p := F (p.1, p.2)
-  continuous_toFun := hF.continuous.comp (continuous_subtype_val.prodMap continuous_id)
-  map_zero_left := h₀
-  map_one_left := h₁
-
-/-- Evaluating `hF.toTopCatHomotopy h₀ h₁` on `p : [0, 1] × M` evaluates `F` at `(p.1, p.2)`. -/
-@[simp]
-theorem toTopCatHomotopy_apply {m : ℕ∞ω} (hF : ContMDiff (𝓘(ℝ).prod I) J m F)
-    (h₀ : ∀ x, F (0, x) = f x) (h₁ : ∀ x, F (1, x) = g x) (p : unitInterval × M) :
-    hF.toTopCatHomotopy h₀ h₁ p = F (p.1, p.2) :=
-  (rfl)
 
 /-- **The smooth prism homotopy from a jointly smooth map on `ℝ × M`.** A smooth map
 `F : ℝ × M → N` with `F (0, ·) = f` and `F (1, ·) = g` induces a chain homotopy between the maps
@@ -236,7 +214,8 @@ def smoothSingularChainHomotopy {C : Type*} [Category C] [Preadditive C] [HasCop
       (SSet.chainComplexMap
         (TauCeti.smoothSingularSubcomplexMap g
           ((hF.comp (contMDiff_const.prodMk contMDiff_id)).congr fun x ↦ (h₁ x).symm)) R) :=
-  TauCeti.smoothSingularChainHomotopy _ _ (hF.toTopCatHomotopy h₀ h₁) hF (fun _ ↦ rfl) R
+  TauCeti.smoothSingularChainHomotopy _ _ (hF.continuous.toTopCatHomotopy h₀ h₁) hF
+    (fun p ↦ (hF.continuous.toTopCatHomotopy_apply h₀ h₁ p).symm) R
 
 end ContMDiff
 
