@@ -221,6 +221,12 @@ theorem twistCore_coordChange_apply (k : ℤ) (x y p : OnePoint 𝕜) (v : 𝕜)
     (twistCore k).coordChange x y p v = twistTransition k x y p * v :=
   (rfl)
 
+/-- The preferred trivialization of `𝒪(k)` at `x` is the chart of the bundle core at `x`. -/
+@[simp]
+theorem trivializationAt_twistCore (k : ℤ) (x : OnePoint 𝕜) :
+    trivializationAt 𝕜 (twistCore (𝕜 := 𝕜) k).Fiber x = (twistCore k).localTriv x :=
+  (rfl)
+
 /-- **`𝒪(k)` is an analytic line bundle.** Its transition functions are analytic, so for
 `𝕜 = ℂ` it is a holomorphic line bundle on the Riemann sphere. -/
 instance isContMDiff_twistCore (k : ℤ) : (twistCore (𝕜 := 𝕜) k).IsContMDiff 𝓘(𝕜) ω :=

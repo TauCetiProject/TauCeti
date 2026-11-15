@@ -100,6 +100,18 @@ theorem signLocalSystemObjEquiv_map_apply {x y : FundamentalGroupoid (TopCat.of 
         ((isCoveringMap_proj hι).monodromy (inv γ) e) :=
   (isCoveringMap_proj hι).signLocalSystemObjEquiv_map_apply _ proj_comp_deck γ f e
 
+/-- Transport along a path, evaluated at the endpoint of the lift starting at the orientation `e`,
+is the original function evaluated at `e`. -/
+theorem signLocalSystemObjEquiv_map_apply_monodromy {x y : FundamentalGroupoid (TopCat.of B)}
+    (γ : x ⟶ y) (f : (signLocalSystem F E R hι).obj x)
+    (e : (proj ⁻¹' {x.as} : Set (VectorBundleOrientationCover F E ι))) :
+    (signLocalSystemObjEquiv hι y (((signLocalSystem F E R hι).map γ).hom f) :
+      (proj ⁻¹' {y.as} : Set (VectorBundleOrientationCover F E ι)) → R)
+        ((isCoveringMap_proj hι).monodromy γ e) =
+      (signLocalSystemObjEquiv hι x f :
+        (proj ⁻¹' {x.as} : Set (VectorBundleOrientationCover F E ι)) → R) e :=
+  (isCoveringMap_proj hι).signLocalSystemObjEquiv_map_apply_monodromy _ proj_comp_deck γ f e
+
 variable [FiniteDimensional ℝ F]
 
 /-- Evaluation at an orientation `o` of the fibre `E_b` identifies the fibre of the orientation

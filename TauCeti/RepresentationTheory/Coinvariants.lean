@@ -35,6 +35,10 @@ homomorphism.
   finiteness of `G` is needed.
 * For an arbitrary representation of a finite monoid, it is the set of sums
   `∑ g, (ρ g (y g) - y g)` with one term for each monoid element.
+* For a representation through the signs, in which every element acts as `1` or `-1`, it is `0`
+  when every element acts as `1`, and `2 • V` when some element acts as `-1`. These are the
+  coinvariants of the orientation character of an orientable and of a nonorientable vector
+  bundle, the zeroth homology of the base twisted by the orientation local system.
 
 Combining the first two gives, for any action of a group `G` on `X` and any `g : G`, a criterion
 for membership in the range of `ρ g - 1` on `k[X]`: an element lies in it if and only if its
@@ -68,6 +72,10 @@ element `∑ x ∈ s, single x r` has every orbit sum equal to `r`.
   `⨆ g ∈ s, range (ρ g - 1)`.
 * `Representation.coinvariantsKer_eq_range_of_forall_mem_zpowers`: if `g` generates `G`, the
   coinvariant kernel is `range (ρ g - 1)`.
+* `Representation.coinvariantsKer_eq_bot_of_forall_eq_one`: if every element acts as `1`, the
+  coinvariant kernel is `0`.
+* `Representation.coinvariantsKer_eq_two_smul_top`: if every element acts as `1` or `-1` and some
+  element acts as `-1`, the coinvariant kernel is `2 • V`.
 * `Representation.mem_coinvariantsKer_iff_exists_sum`: for finite `G`, the coinvariant kernel
   is the set of sums `∑ g, (ρ g (y g) - y g)`.
 * `Representation.mem_range_ofMulAction_sub_id_iff`: an element of `k[X]` lies in the range of
@@ -297,6 +305,38 @@ theorem coinvariantsKer_eq_range_of_forall_mem_zpowers (g : G) (hg : ∀ x, x �
     (Subgroup.eq_top_iff' _).2 hg).trans iSup_singleton
 
 end Generators
+
+/-! ### Representations by signs -/
+
+section Sign
+
+open scoped Pointwise
+
+variable {k G V : Type*} [CommRing k] [Monoid G] [AddCommGroup V] [Module k V]
+  (ρ : Representation k G V)
+
+/-- If every element of `G` acts as the identity, the coinvariant kernel of `ρ` is zero. -/
+theorem coinvariantsKer_eq_bot_of_forall_eq_one (h : ∀ g, ρ g = 1) : Coinvariants.ker ρ = ⊥ :=
+  Submodule.span_eq_bot.2 <| by
+    rintro _ ⟨⟨g, v⟩, rfl⟩
+    simp [h g]
+
+/-- If every element of `G` acts as `1` or as `-1` and some element acts as `-1`, the coinvariant
+kernel of `ρ` is `2 • V`. This is the case of a nontrivial representation through the signs
+`{±1}`, such as the orientation character of a nonorientable vector bundle. -/
+theorem coinvariantsKer_eq_two_smul_top (h : ∀ g, ρ g = 1 ∨ ρ g = -1) (h' : ∃ g, ρ g = -1) :
+    Coinvariants.ker ρ = (2 : k) • ⊤ := by
+  obtain ⟨g₀, hg₀⟩ := h'
+  refine le_antisymm (Submodule.span_le.2 ?_) fun _ hv ↦ ?_
+  · rintro _ ⟨⟨g, v⟩, rfl⟩
+    refine (Submodule.mem_smul_pointwise_iff_exists _ _ _).2 ?_
+    rcases h g with hg | hg
+    · exact ⟨0, Submodule.mem_top, by simp [hg]⟩
+    · exact ⟨-v, Submodule.mem_top, by simp [hg, two_smul, sub_eq_add_neg]⟩
+  · obtain ⟨v, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hv
+    exact Coinvariants.mem_ker_of_eq g₀ (-v) _ (by simp [hg₀, two_smul])
+
+end Sign
 
 /-! ### The coinvariant kernel of a representation of a finite monoid -/
 
