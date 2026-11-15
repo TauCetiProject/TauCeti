@@ -63,6 +63,9 @@ isolated, fixed points is finite.
 
 * `TauCeti.mem_periodicSolutions_const_iff`: the periodic solutions of an autonomous field are its
   periodic integral curves.
+* `TauCeti.comp_mul_mem_periodicSolutions`: rescaling time by `c` turns a `T`-periodic solution
+  of `X` into a `c⁻¹ * T`-periodic solution of `t ↦ c • X (c * t)`; with
+  `TauCeti.periodicSolutions_neg`, reversing time keeps the period.
 * `TauCeti.timeDependentFlowOf_add_period_of_mem`: translating both times by a period of the field
   preserves the domain and the flow.
 * `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: for `T ≠ 0`, the trajectory of a fixed point
@@ -120,6 +123,33 @@ theorem mem_periodicSolutions_const_iff {Y : (x : M) → TangentSpace I x} {γ :
 theorem continuous_of_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T) :
     Continuous γ :=
   continuous_iff_continuousAt.2 fun t ↦ (hγ.1 t).continuousAt
+
+/-- The `-T`-periodic solutions of `X` are its `T`-periodic solutions. -/
+theorem periodicSolutions_neg (X : ℝ → (x : M) → TangentSpace I x) (T : ℝ) :
+    periodicSolutions X (-T) = periodicSolutions X T := by
+  ext γ
+  simp only [mem_periodicSolutions, and_congr_right_iff]
+  refine fun _ ↦ ⟨fun h t ↦ ?_, fun h t ↦ ?_⟩
+  · simpa using (h (t + T)).symm
+  · simpa [sub_eq_add_neg] using (h (t - T)).symm
+
+/-- **Linear time rescaling of periodic solutions.** If `γ` is a `T`-periodic solution of `X`, then
+`t ↦ γ (c * t)` is a `c⁻¹ * T`-periodic solution of the field `t ↦ c • X (c * t)`. -/
+theorem comp_mul_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T) (c : ℝ) :
+    (fun t ↦ γ (c * t)) ∈ periodicSolutions (fun t x ↦ c • X (c * t) x) (c⁻¹ * T) := by
+  refine ⟨fun t ↦ ?_, fun t ↦ ?_⟩
+  · have hmul : HasDerivAt (fun t : ℝ ↦ c * t) c t := by
+      simpa using (hasDerivAt_id t).const_mul c
+    have heq : ((1 : ℝ →L[ℝ] ℝ).smulRight (X (c * t) (γ (c * t)))).comp
+        (ContinuousLinearMap.toSpanSingleton ℝ c) =
+          (1 : ℝ →L[ℝ] ℝ).smulRight (c • X (c * t) (γ (c * t))) := by
+      ext
+      simp
+    exact ((hγ.1 (c * t)).comp t
+      (hasMFDerivAt_iff_hasFDerivAt.2 hmul.hasFDerivAt)).congr_mfderiv heq
+  · rcases eq_or_ne c 0 with rfl | hc
+    · simp
+    · simp only [mul_add, mul_inv_cancel_left₀ hc, hγ.2]
 
 /-- The **contractible** `T`-periodic solutions of `X`: the `T`-periodic solutions `γ` whose loop
 `ℝ ⧸ Tℤ → M`, `t ↦ γ t`, is null-homotopic. -/
