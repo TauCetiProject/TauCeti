@@ -66,7 +66,7 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜
 
 variable (𝕜) in
 /-- Countably many continuous linear functionals of norm at most one separate the points of a
-norm-separable set. -/
+norm-separable set in a real or complex normed space. -/
 theorem exists_seq_dual_injOn_of_isSeparable {s : Set E} (hs : IsSeparable s) :
     ∃ f : ℕ → StrongDual 𝕜 E, (∀ n, ‖f n‖ ≤ 1) ∧ InjOn (fun x n ↦ f n x) s := by
   obtain ⟨c, -, hc, hsc⟩ :=
@@ -93,7 +93,8 @@ theorem exists_seq_dual_injOn_of_isSeparable {s : Set E} (hs : IsSeparable s) :
   obtain ⟨n, hn⟩ := Metric.mem_closure_range_iff.mp hz (‖z‖ / 2) (half_pos hpos)
   linarith [hle n]
 
-/-- A weakly compact, norm-separable set is metrizable in the weak topology. -/
+/-- A weakly compact, norm-separable set in a real or complex normed space is metrizable in the
+weak topology. -/
 theorem metrizableSpace_toWeakSpace_of_isSeparable_of_isCompact {K : Set E} (hsep : IsSeparable K)
     (hK : IsCompact (toWeakSpace 𝕜 E '' K)) : MetrizableSpace (toWeakSpace 𝕜 E '' K) := by
   have : CompactSpace (toWeakSpace 𝕜 E '' K) := isCompact_iff_compactSpace.mp hK

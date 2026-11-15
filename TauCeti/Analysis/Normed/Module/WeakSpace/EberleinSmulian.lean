@@ -219,16 +219,17 @@ theorem isCompact_closure_toWeakSpace_iff {K : Set E} :
     isCompact_closure_toWeakSpace_iff_normed]
   refine ⟨fun h u hu ↦ ?_, fun h v hv ↦ ?_⟩
   · obtain ⟨y, σ, hσ, hlim⟩ :=
-      h (SeparationQuotient.mk ∘ u) fun n ↦ mem_image_of_mem _ (hu n)
-    obtain ⟨x, rfl⟩ := SeparationQuotient.surjective_mk y
+      h (SeparationQuotient.mkCLM 𝕜 E ∘ u) fun n ↦ mem_image_of_mem _ (hu n)
+    obtain ⟨x, hx⟩ := SeparationQuotient.surjective_mk y
+    rw [← SeparationQuotient.mkCLM_apply 𝕜 E x] at hx
+    subst hx
     refine ⟨x, σ, hσ, hq.tendsto_nhds_iff.2 ?_⟩
-    simpa only [q, Function.comp_def, WeakSpace.map_toWeakSpace, SeparationQuotient.mkCLM_apply]
-      using hlim
+    simpa only [q, Function.comp_def, WeakSpace.map_toWeakSpace] using hlim
   · choose u hu huv using hv
     obtain ⟨x, σ, hσ, hlim⟩ := h u hu
-    refine ⟨SeparationQuotient.mk x, σ, hσ, ?_⟩
-    simpa only [q, Function.comp_def, WeakSpace.map_toWeakSpace, SeparationQuotient.mkCLM_apply,
-      huv] using (q.continuous.tendsto _).comp hlim
+    refine ⟨SeparationQuotient.mkCLM 𝕜 E x, σ, hσ, ?_⟩
+    simpa only [q, Function.comp_def, WeakSpace.map_toWeakSpace, huv] using
+      (q.continuous.tendsto _).comp hlim
 
 /-- **Eberlein–Šmulian.** Weak compactness is equivalent to weak sequential compactness in any
 real or complex seminormed space, without completeness, separability, or point-separation
@@ -242,7 +243,7 @@ theorem isCompact_toWeakSpace_iff_isSeqCompact {K : Set E} :
 
 /-- **Sequential-closure Eberlein–Šmulian (Kaplansky–Whitley).** If `A` has weakly compact closure,
 a point lies in the weak closure of `A` if and only if it is the weak limit of a sequence in `A`. -/
-theorem mem_closure_toWeakSpace_iff_exists_tendsto {A : Set E}
+theorem mem_closure_toWeakSpace_iff_exists_tendsto_of_isCompact_closure {A : Set E}
     (hA : IsCompact (closure (toWeakSpace 𝕜 E '' A))) {z : WeakSpace 𝕜 E} :
     z ∈ closure (toWeakSpace 𝕜 E '' A) ↔
       ∃ u : ℕ → E, (∀ n, u n ∈ A) ∧
@@ -271,7 +272,8 @@ theorem seqClosure_toWeakSpace_eq_closure_of_isCompact_closure {A : Set E}
     (hA : IsCompact (closure (toWeakSpace 𝕜 E '' A))) :
     seqClosure (toWeakSpace 𝕜 E '' A) = closure (toWeakSpace 𝕜 E '' A) :=
   seqClosure_subset_closure.antisymm fun _ hz ↦ by
-    obtain ⟨u, hu, hlim⟩ := (mem_closure_toWeakSpace_iff_exists_tendsto hA).1 hz
+    obtain ⟨u, hu, hlim⟩ :=
+      (mem_closure_toWeakSpace_iff_exists_tendsto_of_isCompact_closure hA).1 hz
     exact ⟨_, fun n ↦ mem_image_of_mem _ (hu n), hlim⟩
 
 /-- If `A` has weakly compact closure, `A` is weakly closed if and only if it is sequentially
@@ -303,7 +305,8 @@ theorem frechetUrysohnSpace_toWeakSpace_of_isCompact_closure {K : Set E}
   have hzA : (z : WeakSpace 𝕜 E) ∈ closure (toWeakSpace 𝕜 E '' A) := by
     rw [IsInducing.subtypeVal.closure_eq_preimage_closure_image, mem_preimage, ← hAeq] at hz
     exact hz
-  obtain ⟨u, hu, hlim⟩ := (mem_closure_toWeakSpace_iff_exists_tendsto hAcompact).1 hzA
+  obtain ⟨u, hu, hlim⟩ :=
+    (mem_closure_toWeakSpace_iff_exists_tendsto_of_isCompact_closure hAcompact).1 hzA
   refine ⟨fun n ↦ ⟨toWeakSpace 𝕜 E (u n), mem_image_of_mem _ (hu n).1⟩, fun n ↦ ?_,
     IsInducing.subtypeVal.tendsto_nhds_iff.2 hlim⟩
   obtain ⟨w, hws, hw⟩ := (hu n).2
@@ -327,7 +330,8 @@ theorem mem_closure_toWeakSpace_iff_exists_tendsto_of_isBounded
     z ∈ closure (toWeakSpace 𝕜 E '' A) ↔
       ∃ u : ℕ → E, (∀ n, u n ∈ A) ∧
         Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) atTop (𝓝 z) :=
-  mem_closure_toWeakSpace_iff_exists_tendsto (isCompact_closure_toWeakSpace hE hA)
+  mem_closure_toWeakSpace_iff_exists_tendsto_of_isCompact_closure
+    (isCompact_closure_toWeakSpace hE hA)
 
 /-- In a reflexive seminormed space over `ℝ` or `ℂ`, a norm-bounded set is weakly closed if and
 only if it is sequentially weakly closed. -/

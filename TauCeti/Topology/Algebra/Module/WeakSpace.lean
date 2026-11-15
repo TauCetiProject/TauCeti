@@ -32,56 +32,6 @@ public section
 
 open Filter Set Topology
 
-namespace WeakSpace
-
-variable {𝕜 E F : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
-  [ContinuousConstSMul 𝕜 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
-
-/-- `WeakSpace.map` intertwines `toWeakSpace` with the underlying continuous linear map. -/
-@[simp]
-theorem map_toWeakSpace [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
-    (f : E →L[𝕜] F) (x : E) :
-    WeakSpace.map f (toWeakSpace 𝕜 E x) = toWeakSpace 𝕜 F (f x) :=
-  (rfl)
-
-/-- `WeakSpace.map (SeparationQuotient.mkCLM 𝕜 E)` is surjective. -/
-theorem surjective_map_mkCLM [ContinuousAdd E] [ContinuousConstSMul 𝕜 E] :
-    Function.Surjective (WeakSpace.map (SeparationQuotient.mkCLM 𝕜 E)) := fun y ↦ by
-  obtain ⟨x, hx⟩ := SeparationQuotient.surjective_mk ((toWeakSpace 𝕜 (SeparationQuotient E)).symm y)
-  exact ⟨toWeakSpace 𝕜 E x, by simp [hx]⟩
-
-/-- Pushing `toWeakSpace 𝕜 E '' s` along `WeakSpace.map f` gives the weak image of `f '' s`. -/
-theorem image_map_toWeakSpace [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
-    (f : E →L[𝕜] F) (s : Set E) :
-    WeakSpace.map f '' (toWeakSpace 𝕜 E '' s) = toWeakSpace 𝕜 F '' (f '' s) := by
-  simp_rw [← image_comp, Function.comp_def, map_toWeakSpace]
-
-/-- When `𝕜` is `T₀`, pushing forward to `SeparationQuotient E` induces the weak topology on
-`WeakSpace 𝕜 E`, because every continuous `𝕜`-linear functional factors through the separation
-quotient. -/
-theorem isInducing_map_mkCLM [T0Space 𝕜] [ContinuousAdd E] [ContinuousConstSMul 𝕜 E] :
-    IsInducing (WeakSpace.map (SeparationQuotient.mkCLM 𝕜 E)) := by
-  let q := WeakSpace.map (SeparationQuotient.mkCLM 𝕜 E)
-  let lift (f : StrongDual 𝕜 E) : StrongDual 𝕜 (SeparationQuotient E) :=
-    SeparationQuotient.liftCLM f fun _ _ h ↦ (h.map f.continuous).eq
-  let g : WeakSpace 𝕜 (SeparationQuotient E) → StrongDual 𝕜 E → 𝕜 := fun z f ↦
-    lift f ((toWeakSpace 𝕜 (SeparationQuotient E)).symm z)
-  have hg : Continuous g :=
-    continuous_pi fun f ↦
-      WeakBilin.eval_continuous (topDualPairing 𝕜 (SeparationQuotient E)).flip (lift f)
-  exact .of_comp q.continuous hg (IsInducing.induced _)
-
-/-- When `𝕜` is `T₀`, `WeakSpace.map (SeparationQuotient.mkCLM 𝕜 E)` commutes with topological
-closure. -/
-theorem image_map_mkCLM_closure [T0Space 𝕜] [ContinuousAdd E] [ContinuousConstSMul 𝕜 E]
-    (s : Set (WeakSpace 𝕜 E)) :
-    WeakSpace.map (SeparationQuotient.mkCLM 𝕜 E) '' closure s =
-      closure (WeakSpace.map (SeparationQuotient.mkCLM 𝕜 E) '' s) := by
-  rw [(isInducing_map_mkCLM (𝕜 := 𝕜) (E := E)).closure_eq_preimage_closure_image,
-    surjective_map_mkCLM.image_preimage]
-
-end WeakSpace
-
 namespace TauCeti
 
 variable {𝕜 E : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
@@ -123,3 +73,72 @@ theorem tendsto_of_tendsto_toWeakSpace_of_isCompact [T2Space (WeakSpace 𝕜 E)]
   exact eq_of_nhds_neBot (hy'.neBot.mono (inf_le_inf_left _ h))
 
 end TauCeti
+
+namespace WeakSpace
+
+variable {𝕜 E F : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
+  [ContinuousConstSMul 𝕜 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
+
+/-- `WeakSpace.map` intertwines `toWeakSpace` with the underlying continuous linear map. -/
+@[simp]
+theorem map_toWeakSpace [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+    (f : E →L[𝕜] F) (x : E) :
+    WeakSpace.map f (toWeakSpace 𝕜 E x) = toWeakSpace 𝕜 F (f x) :=
+  (rfl)
+
+/-- `WeakSpace.map (SeparationQuotient.mkCLM 𝕜 E)` is surjective. -/
+theorem map_mkCLM_surjective [ContinuousAdd E] [ContinuousConstSMul 𝕜 E] :
+    Function.Surjective (WeakSpace.map (SeparationQuotient.mkCLM 𝕜 E)) := fun y ↦ by
+  obtain ⟨x, hx⟩ := SeparationQuotient.surjective_mk ((toWeakSpace 𝕜 (SeparationQuotient E)).symm y)
+  exact ⟨toWeakSpace 𝕜 E x, by simp [hx]⟩
+
+/-- Pushing `toWeakSpace 𝕜 E '' s` along `WeakSpace.map f` gives the weak image of `f '' s`. -/
+theorem image_map_toWeakSpace [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+    (f : E →L[𝕜] F) (s : Set E) :
+    WeakSpace.map f '' (toWeakSpace 𝕜 E '' s) = toWeakSpace 𝕜 F '' (f '' s) := by
+  simp_rw [← image_comp, Function.comp_def, map_toWeakSpace]
+
+/-- When `𝕜` is `T₀`, pushing forward to `SeparationQuotient E` induces the weak topology on
+`WeakSpace 𝕜 E`, because every continuous `𝕜`-linear functional factors through the separation
+quotient. -/
+theorem isInducing_map_mkCLM [T0Space 𝕜] [ContinuousAdd E] [ContinuousConstSMul 𝕜 E] :
+    IsInducing (WeakSpace.map (SeparationQuotient.mkCLM 𝕜 E)) := by
+  let q := WeakSpace.map (SeparationQuotient.mkCLM 𝕜 E)
+  rw [isInducing_iff_nhds]
+  intro z
+  obtain ⟨x, rfl⟩ := (toWeakSpace 𝕜 E).surjective z
+  refine le_antisymm (tendsto_iff_comap.mp (q.continuous.tendsto _)) ?_
+  rw [← tendsto_id']
+  have hid : (id : WeakSpace 𝕜 E → WeakSpace 𝕜 E) =
+      fun w ↦ toWeakSpace 𝕜 E ((toWeakSpace 𝕜 E).symm w) :=
+    funext fun w ↦ ((toWeakSpace 𝕜 E).apply_symm_apply w).symm
+  rw [hid, TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto]
+  intro f
+  have hq : Tendsto
+      (fun w ↦ toWeakSpace 𝕜 (SeparationQuotient E)
+        ((toWeakSpace 𝕜 (SeparationQuotient E)).symm (q w)))
+      (comap q (𝓝 (q (toWeakSpace 𝕜 E x))))
+      (𝓝 (toWeakSpace 𝕜 (SeparationQuotient E) (SeparationQuotient.mkCLM 𝕜 E x))) := by
+    simp_rw [LinearEquiv.apply_symm_apply, ← map_toWeakSpace]
+    exact tendsto_comap
+  have hf := TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto.mp hq
+    (SeparationQuotient.liftCLM f fun _ _ h ↦ (h.map f.continuous).eq)
+  have hfun (w : WeakSpace 𝕜 E) :
+      SeparationQuotient.liftCLM f (fun _ _ h ↦ (h.map f.continuous).eq)
+        ((toWeakSpace 𝕜 (SeparationQuotient E)).symm (q w)) =
+        f ((toWeakSpace 𝕜 E).symm w) := by
+    conv_lhs => rw [← (toWeakSpace 𝕜 E).apply_symm_apply w]
+    rw [map_toWeakSpace, LinearEquiv.symm_apply_apply, SeparationQuotient.mkCLM_apply,
+      SeparationQuotient.liftCLM_mk]
+  simpa only [hfun, SeparationQuotient.mkCLM_apply, SeparationQuotient.liftCLM_mk] using hf
+
+/-- When `𝕜` is `T₀`, `WeakSpace.map (SeparationQuotient.mkCLM 𝕜 E)` commutes with topological
+closure. -/
+theorem image_map_mkCLM_closure [T0Space 𝕜] [ContinuousAdd E] [ContinuousConstSMul 𝕜 E]
+    (s : Set (WeakSpace 𝕜 E)) :
+    WeakSpace.map (SeparationQuotient.mkCLM 𝕜 E) '' closure s =
+      closure (WeakSpace.map (SeparationQuotient.mkCLM 𝕜 E) '' s) := by
+  rw [(isInducing_map_mkCLM (𝕜 := 𝕜) (E := E)).closure_eq_preimage_closure_image,
+    map_mkCLM_surjective.image_preimage]
+
+end WeakSpace
