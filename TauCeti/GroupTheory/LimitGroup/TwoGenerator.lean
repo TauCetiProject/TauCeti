@@ -38,7 +38,7 @@ freeness is not enough: in `F₂ × ℤ` the central factor lies in every centra
 * `TauCeti.LimitGroup.IsResiduallyFree.closure_pair_mulEquiv_int_or_freeGroup`: two elements of a
   residually free group generate a subgroup isomorphic to `ℤᵏ` with `k ≤ 2`, or to the free group
   of rank two.
-* `TauCeti.LimitGroup.IsFullyResiduallyFree.injective_lift_centralizer_subtype`: in a fully
+* `TauCeti.LimitGroup.IsFullyResiduallyFree.coprodLift_subtype_centralizer_injective`: in a fully
   residually free group, the centralizers of two elements that do not commute generate their free
   product.
 
@@ -105,12 +105,12 @@ theorem IsResiduallyFree.closure_pair_mulEquiv_int_or_freeGroup (h : IsResiduall
 /-- **Centralizers of noncommuting elements generate their free product.** In a fully residually
 free group, if `g` and `h` do not commute, the homomorphism `C_G(g) ∗ C_G(h) →* G` induced by the
 inclusions of the two centralizers is injective. -/
-theorem IsFullyResiduallyFree.injective_lift_centralizer_subtype (hG : IsFullyResiduallyFree G)
-    {g h : G} (hgh : ¬Commute g h) :
+theorem IsFullyResiduallyFree.coprodLift_subtype_centralizer_injective
+    (hG : IsFullyResiduallyFree G) {g h : G} (hgh : ¬Commute g h) :
     Function.Injective (Coprod.lift (centralizer {g}).subtype (centralizer {h}).subtype) := by
   classical
   let c : Bool → G := fun b ↦ cond b h g
-  refine (CoprodI.injective_coprod_lift_iff fun b ↦ (centralizer {c b}).subtype).2 <|
+  refine (CoprodI.coprodLift_injective_iff fun b ↦ (centralizer {c b}).subtype).2 <|
     (injective_iff_map_eq_one _).2 fun w hw ↦ ?_
   let W := CoprodI.Word.equiv w
   have hWw : W.prod = w := CoprodI.Word.equiv.symm_apply_apply w
@@ -130,8 +130,8 @@ theorem IsFullyResiduallyFree.injective_lift_centralizer_subtype (hG : IsFullyRe
   have hf : ∀ l ∈ W.toList, f l.1 l.2 ≠ 1 := fun l hl h1 ↦
     hφ _ (Finset.mem_insert_of_mem (List.mem_toFinset.2 (List.mem_map.2 ⟨l, hl, rfl⟩)))
       (by simpa [f] using congrArg Subtype.val h1)
-  have hN := (CoprodI.injective_coprod_lift_iff fun b ↦ (centralizer {φ (c b)}).subtype).1
-    (IsFreeGroup.injective_lift_centralizer_subtype hφgh)
+  have hN := (CoprodI.coprodLift_injective_iff fun b ↦ (centralizer {φ (c b)}).subtype).1
+    (IsFreeGroup.coprodLift_subtype_centralizer_injective hφgh)
   have hW : W = .empty := CoprodI.Word.eq_empty_of_lift_prod_eq_one f hf <|
     (map_eq_one_iff _ hN).1 <| by
       rw [← map_one φ, ← hw, ← hWw]

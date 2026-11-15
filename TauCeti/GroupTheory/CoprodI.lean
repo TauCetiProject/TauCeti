@@ -30,7 +30,7 @@ type with a unique element is that single monoid.
 * `MulEquiv.coprodICongr`: the isomorphism of free products induced by a family of isomorphisms.
 * `Monoid.CoprodI.boolEquivCoprod`: `CoprodI M ≃* Coprod (M false) (M true)` for a family `M`
   indexed by `Bool`.
-* `Monoid.CoprodI.injective_coprod_lift_iff`: for a family `M` indexed by `Bool`, homomorphisms
+* `Monoid.CoprodI.coprodLift_injective_iff`: for a family `M` indexed by `Bool`, homomorphisms
   `f i : M i →* N` induce an injective homomorphism `Coprod (M false) (M true) →* N` if and only
   if they induce an injective homomorphism `CoprodI M →* N`.
 * `Monoid.CoprodI.instUniqueOfIsEmpty`: the free product of an empty family is trivial.
@@ -136,9 +136,14 @@ theorem lift_comp_boolEquivCoprod_symm :
       Coprod.lift (f false) (f true) := by
   ext <;> simp
 
+@[simp]
+theorem lift_boolEquivCoprod_symm (x : Coprod (M false) (M true)) :
+    lift f ((boolEquivCoprod M).symm x) = Coprod.lift (f false) (f true) x :=
+  DFunLike.congr_fun (lift_comp_boolEquivCoprod_symm f) x
+
 /-- The homomorphism `Monoid.Coprod (M false) (M true) →* N` induced by homomorphisms `f i` on the
 two factors is injective if and only if the homomorphism `CoprodI M →* N` they induce is. -/
-theorem injective_coprod_lift_iff :
+theorem coprodLift_injective_iff :
     Function.Injective (Coprod.lift (f false) (f true)) ↔ Function.Injective (lift f) := by
   rw [← lift_comp_boolEquivCoprod_symm, MonoidHom.coe_comp, MonoidHom.coe_ofClass]
   exact EquivLike.injective_comp _ _

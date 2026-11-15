@@ -61,6 +61,7 @@ theorem map_eq_empty_iff : w.map f hf = empty ↔ w = empty := by
 
 /-- The product of the image of a reduced word is the image of its product under the
 homomorphism of free products induced by the `f i`. -/
+@[simp]
 theorem prod_map : (w.map f hf).prod = lift (fun i => of.comp (f i)) w.prod := by
   simp [prod, map_list_prod, Function.comp_def]
 
