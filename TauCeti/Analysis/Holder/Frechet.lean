@@ -196,10 +196,17 @@ theorem coe_neg (f : CkHolderLocSpace k α Ω F) : ⇑(-f) = -⇑f :=
 theorem coe_sub (f g : CkHolderLocSpace k α Ω F) : ⇑(f - g) = f - g :=
   (sub_eq_add_neg (f : E → F) g).symm
 
+@[simp, norm_cast]
+theorem coe_nsmul (n : ℕ) (f : CkHolderLocSpace k α Ω F) : ⇑(n • f) = n • ⇑f :=
+  (coe_smul (n : ℝ) f).trans (Nat.cast_smul_eq_nsmul ℝ n (f : E → F))
+
+@[simp, norm_cast]
+theorem coe_zsmul (n : ℤ) (f : CkHolderLocSpace k α Ω F) : ⇑(n • f) = n • ⇑f :=
+  (coe_smul (n : ℝ) f).trans (Int.cast_smul_eq_zsmul ℝ n (f : E → F))
+
 instance instAddCommGroup : AddCommGroup (CkHolderLocSpace k α Ω F) :=
   DFunLike.coe_injective.addCommGroup _ coe_zero coe_add coe_neg coe_sub
-    (fun f n => (coe_smul (n : ℝ) f).trans (Nat.cast_smul_eq_nsmul ℝ n (f : E → F)))
-    (fun f n => (coe_smul (n : ℝ) f).trans (Int.cast_smul_eq_zsmul ℝ n (f : E → F)))
+    (fun f n => coe_nsmul n f) (fun f n => coe_zsmul n f)
 
 instance instModule : Module ℝ (CkHolderLocSpace k α Ω F) :=
   DFunLike.coe_injective.module ℝ
@@ -225,6 +232,14 @@ theorem neg_apply (f : CkHolderLocSpace k α Ω F) (x : E) : (-f) x = -f x :=
 theorem sub_apply (f g : CkHolderLocSpace k α Ω F) (x : E) : (f - g) x = f x - g x :=
   congrFun (coe_sub f g) x
 
+@[simp]
+theorem nsmul_apply (n : ℕ) (f : CkHolderLocSpace k α Ω F) (x : E) : (n • f) x = n • f x :=
+  congrFun (coe_nsmul n f) x
+
+@[simp]
+theorem zsmul_apply (n : ℤ) (f : CkHolderLocSpace k α Ω F) (x : E) : (n • f) x = n • f x :=
+  congrFun (coe_zsmul n f) x
+
 theorem continuousOn_iteratedFDeriv (f : CkHolderLocSpace k α Ω F) {i : ℕ} (hi : i ≤ k) :
     ContinuousOn (iteratedFDeriv ℝ i f) Ω :=
   (f.contDiffOn.continuousOn_iteratedFDerivWithin (Nat.cast_le.mpr hi)
@@ -238,6 +253,10 @@ theorem iteratedFDeriv_add_apply (f g : CkHolderLocSpace k α Ω F) {i : ℕ} (h
 theorem iteratedFDeriv_smul_apply (c : ℝ) (f : CkHolderLocSpace k α Ω F) {i : ℕ} (hi : i ≤ k)
     {x : E} (hx : x ∈ Ω) : iteratedFDeriv ℝ i ⇑(c • f) x = c • iteratedFDeriv ℝ i f x :=
   iteratedFDeriv_const_smul_apply (f.contDiffAt hi hx)
+
+theorem iteratedFDeriv_neg_apply (f : CkHolderLocSpace k α Ω F) (i : ℕ) (x : E) :
+    iteratedFDeriv ℝ i ⇑(-f) x = -iteratedFDeriv ℝ i f x :=
+  _root_.iteratedFDeriv_neg_apply
 
 theorem iteratedFDeriv_sub_apply (f g : CkHolderLocSpace k α Ω F) {i : ℕ} (hi : i ≤ k) {x : E}
     (hx : x ∈ Ω) :
