@@ -20,8 +20,9 @@ partial-fraction expansion of `Λ₀'/Λ₀` other than its sum over zeros.
 
 The functional equation gives `Λ₀'/Λ₀(χ, 1 − s) = −Λ₀'/Λ₀(χ⁻¹, s)` and conjugation gives
 `Λ₀'/Λ₀(χ⁻¹, conj s) = conj (Λ₀'/Λ₀(χ, s))`. Both hold at every `s`, including zeros, where every
-logarithmic derivative involved is zero. For a quadratic character `Λ₀'/Λ₀` is therefore real on
-the real axis.
+logarithmic derivative involved is zero. Together they reflect `Λ₀'/Λ₀(χ, ·)` across the
+critical line: `Λ₀'/Λ₀(χ, 1 − conj s) = −conj (Λ₀'/Λ₀(χ, s))`. For a quadratic character
+`Λ₀'/Λ₀` is therefore real on the real axis.
 
 On each compact subset of the positive half-plane, away from the zeros of `L(χ, ·)`, the
 difference `Λ₀'/Λ₀ (s) − ½ log N − L'/L (s, χ)` is bounded by one constant, chosen before the
@@ -107,6 +108,14 @@ theorem logDeriv_dirichletData_entireCompletion_inv_conj (hne : χ ≠ 1) (s : �
     funext (dirichletData_entireCompletion_inv_conj χ hχ hne)
   rw [h, logDeriv_apply, logDeriv_apply, deriv_conj_conj]
   simp
+
+/-- The functional equation against `χ⁻¹` and conjugation together reflect the logarithmic
+derivative across the critical line: `Λ₀'/Λ₀ (1 - conj s) = -conj (Λ₀'/Λ₀ (s))`. -/
+theorem logDeriv_dirichletData_entireCompletion_one_sub_conj (hne : χ ≠ 1) (s : ℂ) :
+    logDeriv (dirichletData χ hχ).entireCompletion (1 - conj s) =
+      -conj (logDeriv (dirichletData χ hχ).entireCompletion s) := by
+  rw [logDeriv_dirichletData_entireCompletion_one_sub χ hχ hne,
+    logDeriv_dirichletData_entireCompletion_inv_conj χ hχ hne]
 
 /-- For a quadratic character, conjugation commutes with the logarithmic derivative of the
 entire completion. -/
