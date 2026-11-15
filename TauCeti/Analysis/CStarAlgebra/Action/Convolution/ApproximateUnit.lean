@@ -95,23 +95,9 @@ private theorem norm_sub_le_of_forall_mem_tsupport [OpensMeasurableSpace G]
     {C : Set G} (hC : IsCompact C) (hsupp : ∀ s ∉ C, u.ofConv s = f.ofConv s) {ε : ℝ}
     (hε : ∀ s, ∀ r ∈ tsupport φ, ‖X s r - f.ofConv s‖ ≤ ε) :
     ‖u - f‖ ≤ ε * μ.real C := by
-  have hφi : Integrable φ μ := φ.continuous.integrable_of_hasCompactSupport φ.hasCompactSupport
-  have hae := hφi.coeFn_toL1
-  have hnorm : ‖hφi.toL1 φ‖ = 1 := by
-    rw [L1.norm_eq_integral_norm, ← hφ1]
-    exact integral_congr_ae (hae.mono fun r hr => (congrArg norm hr).trans
-      (Real.norm_of_nonneg (hφ r)))
   -- Pointwise, `u s` is a `φ`-average of values within `ε` of `f s`.
-  have hpt (s : G) : ‖u.ofConv s - f.ofConv s‖ ≤ ε := by
-    have hint : ∫ r, (hφi.toL1 φ) r • X s r ∂μ = ∫ r, φ r • X s r ∂μ :=
-      integral_congr_ae (hae.mono fun r hr => by simp only [hr])
-    have h := norm_integral_smul_sub_le (𝕜 := ℝ) (f := hφi.toL1 φ) (U := tsupport φ)
-      (φ := X s) (y := f.ofConv s) ((integral_congr_ae hae).trans hφ1)
-      (hae.mono fun r hr hrU => hr.trans (image_eq_zero_of_notMem_tsupport hrU))
-      ((((map_continuous φ).smul (hX s)).integrable_of_hasCompactSupport
-        φ.hasCompactSupport.smul_right).aestronglyMeasurable.congr
-          (hae.mono fun r hr => by simp only [hr, Pi.smul_apply'])) (ae_of_all _ (hε s))
-    rwa [hint, hnorm, mul_one, ← hu] at h
+  have hpt (s : G) : ‖u.ofConv s - f.ofConv s‖ ≤ ε :=
+    hu s ▸ φ.norm_integral_smul_sub_le hφ hφ1 (hX s) (hε s)
   -- Outside `C` the difference vanishes, and on `C` it is at most `ε`.
   rw [norm_eq_integral_norm, ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := C)
     fun s hs => by simp [hsupp s hs]]

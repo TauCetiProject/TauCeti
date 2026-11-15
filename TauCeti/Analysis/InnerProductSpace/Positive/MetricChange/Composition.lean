@@ -303,6 +303,23 @@ theorem metricChangeCompositionCorrection_eq_iff
   simpa only [← mul_assoc, sqrt_mul_metricChangeTransport hK, one_mul,
     LinearIsometryEquiv.coe_coe''] using he
 
+/-- Canonical transport between two positive metrics depends continuously on both metrics. -/
+theorem _root_.Continuous.metricChangeBetween
+    {X : Type*} [TopologicalSpace X] {h k : X → E →L[ℝ] E →L[ℝ] ℝ}
+    (hh : Continuous h) (hk : Continuous k)
+    (hpos : ∀ x, IsStrictlyPositive (h x)♯) (kpos : ∀ x, IsStrictlyPositive (k x)♯) :
+    Continuous fun x ↦ (h x).metricChangeBetween (k x) := by
+  have hQ : Continuous fun x ↦
+      ((h x).metricChangeCompositionCorrection (k x) (hpos x) (kpos x) : E →L[ℝ] E) :=
+    continuous_subtype_val.comp (hh.metricChangeCompositionCorrection hk hpos kpos)
+  have hT := continuousOn_metricChangeTransport.comp_continuous hk kpos
+  have hS := continuousOn_sqrt_continuousLinearMapOfBilin.comp_continuous hh
+    fun x ↦ (hpos x).nonneg
+  refine ((hT.mul hQ).mul hS).congr fun x ↦ ?_
+  simp only [Pi.mul_apply, Function.comp_apply]
+  rw [← metricChangeBetween_mul_metricChangeTransport _ _ (hpos x) (kpos x), mul_assoc,
+    metricChangeTransport_mul_sqrt (hpos x), mul_one]
+
 /-- The composition correction is trivial when the intermediate and final metrics agree. -/
 @[simp]
 theorem metricChangeCompositionCorrection_self
