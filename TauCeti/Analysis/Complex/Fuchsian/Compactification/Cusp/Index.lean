@@ -32,13 +32,13 @@ variable [DiscreteTopology Δ] [DiscreteTopology Γ]
 /-- The compactified quotient map has local exponent equal to the canonical cusp width index. -/
 theorem cuspChart_compactifiedQuotientMap_eq_pow_widthIndex (h : Δ ≤ Γ)
     (D : Δ.CuspDatum) (E : Γ.CuspDatum)
-    (hc : D.cusp = E.cusp) (hσ : D.scaling = E.scaling)
+    (hσ : D.scaling = E.scaling)
     {A : ℝ} (hD : D.width ≤ A)
     {x : Δ.CompactifiedQuotient} (hx : x ∈ cuspNhd D A) :
     cuspChart E (width_le_of_width_eq_nat_mul D E
-      (width_eq_widthIndex_mul h D E hc hσ) hD) (compactifiedQuotientMap h x) =
-      (cuspChart D hD x) ^ widthIndex h D E hc hσ :=
-  cuspChart_compactifiedQuotientMap_eq_pow h D E hc hσ
-    (width_eq_widthIndex_mul h D E hc hσ) hD hx
+      (width_eq_widthIndex_mul h D E hσ) hD) (compactifiedQuotientMap h x) =
+      (cuspChart D hD x) ^ widthIndex h D E hσ :=
+  cuspChart_compactifiedQuotientMap_eq_pow h D E hσ
+    (width_eq_widthIndex_mul h D E hσ) hD hx
 
 end Subgroup.CompactifiedQuotient

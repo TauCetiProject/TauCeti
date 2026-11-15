@@ -99,7 +99,8 @@ theorem ringEquivOfRingEquiv_coeIdeal (K L : Type*)
   apply FractionalIdeal.coeToSubmodule_injective
   dsimp only
   rw [← FractionalIdeal.val_eq_coe, FractionalIdeal.ringEquivOfRingEquiv_apply_val,
-    FractionalIdeal.val_eq_coe, FractionalIdeal.coe_coeIdeal, FractionalIdeal.coe_coeIdeal]
+    FractionalIdeal.val_eq_coe, FractionalIdeal.coeToSubmodule_coeIdeal,
+    FractionalIdeal.coeToSubmodule_coeIdeal]
   ext x
   simp only [Submodule.mem_map, FractionalIdeal.mem_coeSubmodule]
   constructor
@@ -157,7 +158,7 @@ lemma toPrincipalIdeal_eq_one_iff {R : Type*} [CommRing R]
     {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] (u : Kˣ) :
     toPrincipalIdeal R K u = 1 ↔ ∃ a : Rˣ, Units.map (algebraMap R K : R →* K) a = u := by
   rw [← Units.val_inj, coe_toPrincipalIdeal, Units.val_one, ← coeToSubmodule_inj,
-    coe_spanSingleton, coe_one, Submodule.span_singleton_eq_one_iff]
+    coeToSubmodule_spanSingleton, coeToSubmodule_one, Submodule.span_singleton_eq_one_iff]
   exact ⟨fun ⟨a, ha⟩ ↦ ⟨a, Units.ext ha.symm⟩, fun ⟨a, ha⟩ ↦ ⟨a, by rw [← ha]; rfl⟩⟩
 
 /-- Negating a generator preserves its principal ideal, because `-1` is a unit of the base ring. -/
@@ -186,7 +187,7 @@ theorem moduleInvertible_of_isUnit_fractionalIdeal {R : Type*} [CommRing R]
     congrArg FractionalIdeal.coeToSubmodule hI.unit_spec
   have hmap : Submodule.map (Algebra.linearMap R P) I =
       (I : FractionalIdeal S P).coeToSubmodule := by
-    rw [FractionalIdeal.coe_coeIdeal, IsLocalization.coeSubmodule]
+    rw [FractionalIdeal.coeToSubmodule_coeIdeal, IsLocalization.coeSubmodule]
   let e : I ≃ₗ[R] U :=
     (Submodule.equivMapOfInjective (Algebra.linearMap R P)
       (FaithfulSMul.algebraMap_injective R P) I).trans

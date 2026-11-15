@@ -92,12 +92,12 @@ variable {G : Type} [Group G] [Fintype G]
 group, `δχ ∈ H²(G, ℤ)` is the class of every `2`-cocycle whose value at `(g, h)` is the carry
 `⌊χ'(g) + χ'(h)⌋` of `χ`. -/
 theorem characterConnectingClass_eq_H2π
-    (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) (c : cocycles₂ (Rep.trivial ℤ G ℤ))
+    (χ : Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) (c : cocycles₂ (Rep.trivial ℤ G ℤ))
     (hc : ∀ g h, c (g, h) =
-      ContCohomology.characterCarry (χ.comp Abelianization.of.toAdditive) g h) :
+      ContCohomology.characterCarry (χ.comp Group.Abelianization.of.toAdditive) g h) :
     characterConnectingClass G χ =
       (_root_.TateCohomology.isoGroupCohomology 2).inv.app _ (H2π _ c) := by
-  set χ' := χ.comp Abelianization.of.toAdditive
+  set χ' := χ.comp Group.Abelianization.of.toAdditive
   rw [characterConnectingClass_def, H1IsoOfIsTrivial_inv_apply]
   congr 1
   -- `δχ` is the class of the coboundary of the lift `χ'` of `χ` to `ℚ`, which is the carry. The
@@ -120,13 +120,14 @@ theorem characterConnectingClass_eq_H2π
 `a ∪ δχ ∈ H²(G, A ⊗ ℤ) = H²(G, A)` of the degree-zero class of `a` with the connecting class of
 `χ` is the class of the carry cocycle `(g, h) ↦ ⌊χ'(g) + χ'(h)⌋ • a`. -/
 theorem cup_characterConnectingClass_eq_H2π
-    (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) (A : Rep ℤ G) (a : A.ρ.invariants) :
+    (χ : Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) (A : Rep ℤ G) (a :
+        A.ρ.invariants) :
     (tateCohomologyFunctor 2).map (ρ_ A).hom
         (cup A (Rep.trivial ℤ G ℤ) 0 2 2 (zero_add 2) (H0π A a) (characterConnectingClass G χ)) =
       (_root_.TateCohomology.isoGroupCohomology 2).inv.app A
         (H2π A (TauCeti.groupCohomology.characterCarryCocycles₂
-          (χ.comp Abelianization.of.toAdditive) A a)) := by
-  set χ' := χ.comp Abelianization.of.toAdditive
+          (χ.comp Group.Abelianization.of.toAdditive) A a)) := by
+  set χ' := χ.comp Group.Abelianization.of.toAdditive
   -- The carry cocycle of `1 ∈ ℤ` is the integer carry of `χ`.
   set c₁ := TauCeti.groupCohomology.characterCarryCocycles₂ χ' (Rep.trivial ℤ G ℤ)
     ⟨(1 : ℤ), fun _ ↦ rfl⟩

@@ -58,14 +58,11 @@ convention `⁅Hᵢ, Eⱼ⁆ = CMᵢⱼ Eⱼ`, whereas `RootPairing.Base.cartanM
 * [J.P. Serre, *Complex Semisimple Lie Algebras*][serre1965], chapter VI
 * [J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*][humphreys1972], §18.1
 
-## Roadmap
+## Applications
 
 The Serre presentation is the explicit carrier of the split semisimple Lie algebra whose Chevalley
-basis and Kostant `ℤ`-form build the Chevalley--Demazure group scheme, Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, consumed in turn by milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`. `TauCeti.IsSerreSystem` had no consumer outside the
-presentation itself; this file supplies the one that matters there, namely that the split
-semisimple Lie algebras the construction is about really are Serre systems for their Cartan
+basis and Kostant `ℤ`-form build the Chevalley--Demazure group scheme. This file shows that the
+split semisimple Lie algebras that construction is about really are Serre systems for their Cartan
 matrices.
 -/
 

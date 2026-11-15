@@ -261,6 +261,12 @@ theorem hodgeStar_ιMulti_zero_one :
   simp [o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four, Basis.toMatrix_apply,
     ← e.repr_apply_apply, OrthonormalBasis.repr_self]
 
+/-- For a positively oriented orthonormal basis `e` in dimension four, `⋆(e₂ ∧ e₃) = e₀ ∧ e₁`. -/
+theorem hodgeStar_ιMulti_two_three :
+    o.hodgeStar hkl (ιMulti ℝ 2 ![e 2, e 3]) = ιMulti ℝ 2 ![e 0, e 1] := by
+  rw [← o.hodgeStar_ιMulti_zero_one hkl he, o.hodgeStar_hodgeStar hkl hkl]
+  norm_num
+
 /-- For a positively oriented orthonormal basis `e` in dimension four,
 `⋆(e₀ ∧ e₂) = -(e₁ ∧ e₃)`. -/
 theorem hodgeStar_ιMulti_zero_two :

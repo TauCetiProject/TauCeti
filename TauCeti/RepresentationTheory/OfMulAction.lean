@@ -50,6 +50,10 @@ Galois group.
   subgroup gives the permutation representation of the subgroup.
 * `TauCeti.single_mul_eq_smul_ofMulAction`: on `k[G]`, left multiplication by a monomial
   `single g c` is `c` times the left regular action of `g`.
+* `Representation.leftRegular_apply_eq_single_mul`: the left regular action of `g` is left
+  multiplication by `single g 1`.
+* `Representation.IntertwiningMap.apply_eq_mul_apply_single_one`: an endomorphism of the left
+  regular representation, as an intertwining map, is right multiplication by its value at `1`.
 * `Rep.leftRegularHomEquiv_symm_apply`: equivariant endomorphisms of the left regular
   representation are right multiplications.
 * `TauCeti.mapDomain_orbitRel_mk_coeff_ofMulAction`: the orbit sums of `k[X]` are invariant
@@ -108,6 +112,27 @@ theorem single_mul_eq_smul_ofMulAction (g : G) (c : k) (a : MonoidAlgebra k G) :
   | zero => simp
   | add a b ha hb => rw [mul_add, ha, hb, map_add, smul_add]
   | single g' c' => simp [MonoidAlgebra.single_mul_single, MonoidAlgebra.smul_single]
+
+/-- A monoid element acts on the regular representation by left multiplication with the
+corresponding basis element: the case `c = 1` of `TauCeti.single_mul_eq_smul_ofMulAction`,
+oriented to rewrite the action. -/
+theorem _root_.Representation.leftRegular_apply_eq_single_mul (g : G) (x : MonoidAlgebra k G) :
+    leftRegular k G g x = MonoidAlgebra.single g 1 * x := by
+  rw [single_mul_eq_smul_ofMulAction, one_smul]
+
+/-- **An endomorphism of the regular representation is right multiplication** by its value at
+`1`: the intertwining-map form, over any semiring, of `Rep.leftRegularHomEquiv_symm_apply`. -/
+theorem _root_.Representation.IntertwiningMap.apply_eq_mul_apply_single_one
+    (f : (leftRegular k G).IntertwiningMap (leftRegular k G)) (x : MonoidAlgebra k G) :
+    f x = x * f (MonoidAlgebra.single 1 1) := by
+  induction x using MonoidAlgebra.induction_linear with
+  | zero => rw [map_zero, zero_mul]
+  | add x y hx hy => rw [map_add, hx, hy, add_mul]
+  | single g c =>
+    have hg : MonoidAlgebra.single g c = c • leftRegular k G g (MonoidAlgebra.single 1 1) := by
+      simp [leftRegular_apply_eq_single_mul]
+    conv_lhs => rw [hg, map_smul, f.isIntertwining, leftRegular_apply_eq_single_mul]
+    rw [← smul_mul_assoc, MonoidAlgebra.smul_single', mul_one]
 
 /-- The permutation representation of a subgroup `H` on `k[X]` is the restriction of that of
 `G`. -/

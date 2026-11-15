@@ -11,15 +11,15 @@ public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
 /-!
 # Measurability of pointwise PDE energy integrands
 
-The weak-form lane of the PDE roadmap is stated for bounded measurable coefficients.  Before the
-pointwise jet integrand
+The weak formulation of a divergence-form equation is stated for bounded measurable
+coefficients.  Before the pointwise jet integrand
 `x ↦ energyIntegrand (a x) (b x) (c x)` can be integrated over a domain, it must be available as a
 strongly measurable field of continuous bilinear forms, and its scalar evaluations on measurable
 jet fields must be a.e. strongly measurable.
 
 This file supplies that finite-dimensional bookkeeping.  It does not introduce a bundled
 bounded-measurable-coefficient predicate; coefficient regularity remains stated inline,
-following the roadmap and Mathlib style.
+following Mathlib style.
 
 ## Main declarations
 

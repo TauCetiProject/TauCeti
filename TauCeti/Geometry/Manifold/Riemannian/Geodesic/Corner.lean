@@ -128,7 +128,7 @@ theorem edist_riemannianExp_lt_enorm_add_enorm {p : M} {v w : TangentSpace I p}
         lipschitzOnWith_maximalGeodesic h1 ht'
       _ = ENNReal.ofReal ((1 - t) * ‖u‖) := by
         rw [edist_dist, Real.dist_eq, abs_of_pos (by linarith [ht.2]), mul_comm,
-          ENNReal.ofReal_mul (by linarith [ht.2]), ofReal_norm, enorm_eq_nnnorm]
+          ENNReal.ofReal_mul (by linarith [ht.2]), ofReal_norm, eNorm_eq_nnNorm]
   have hsum : (1 - t) * ‖v‖ + t * (‖w - v‖ + δ / 2) + (1 - t) * ‖w‖ =
       ‖v‖ + ‖w‖ - t * δ / 2 := by
     rw [hδ_def, norm_sub_rev w v]

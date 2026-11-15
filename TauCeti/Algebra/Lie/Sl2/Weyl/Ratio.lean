@@ -92,9 +92,7 @@ by factorials.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §26.
 
 These Weyl-ratio relations are prerequisites for the coroot cocharacter and its relations against
-the root subgroups, which are part of the pinning data asked for by Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, consumed by milestone L0 of the `CFSGStatement`
-roadmap.
+the root subgroups, which are part of the pinning data of a Chevalley--Demazure group scheme.
 -/
 
 public section

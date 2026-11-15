@@ -10,10 +10,11 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 /-!
 # The integral equation `y² = x³ - x + 1`
 
-This file defines the integral Weierstrass equation and computes its discriminant `-368`. It shows
-that the integral equation is in short normal form `a₁ = a₂ = a₃ = 0`, so that every reduction and
-base change of it is too, and that it is elliptic over every commutative `ℚ`-algebra. It is the
-common starting point for calculations of its rational torsion and Mordell–Weil rank.
+This file defines the integral Weierstrass equation, spells out the affine equation of its points
+over an arbitrary commutative ring, and computes its discriminant `-368`. It shows that the
+integral equation is in short normal form `a₁ = a₂ = a₃ = 0`, so that every reduction and base
+change of it is too, and that it is elliptic over every commutative `ℚ`-algebra. It is the common
+starting point for calculations of its rational torsion and Mordell–Weil rank.
 -/
 
 public section
@@ -24,6 +25,15 @@ namespace TauCeti.WorkedExamples
 
 /-- The integral short equation `y² = x³ - x + 1`. -/
 abbrev curveX3SubXAddOne : WeierstrassCurve ℤ := ⟨0, 0, 0, -1, 1⟩
+
+/-- Over any commutative ring, the affine points of `curveX3SubXAddOne` are the solutions of
+`y² = x³ - x + 1`. -/
+theorem equation_curveX3SubXAddOne_iff {R : Type*} [CommRing R] (x y : R) :
+    (curveX3SubXAddOne.baseChange R).toAffine.Equation x y ↔ y ^ 2 = x ^ 3 - x + 1 := by
+  rw [Affine.equation_iff]
+  simp only [WeierstrassCurve.baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆, map_zero,
+    map_one, map_neg]
+  grind
 
 /-- `y² = x³ - x + 1` is in the short normal form `a₁ = a₂ = a₃ = 0`. Through the transport
 instances `WeierstrassCurve.isShortNF_map` and `WeierstrassCurve.isShortNF_baseChange`, so is every

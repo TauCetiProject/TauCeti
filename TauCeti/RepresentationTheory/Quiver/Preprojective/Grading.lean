@@ -333,7 +333,7 @@ attribute [local instance] preprojectiveIntegerGradedAlgebra
 
 /-- The internal path grading of the regular preprojective module. -/
 noncomputable abbrev preprojectiveInternalGrading :
-    InternalGrading k (preprojectiveAlgebra k Q) :=
+    InternalGrading k (preprojectiveAlgebra k Q) ℤ :=
   InternalGrading.ofDecomposition (preprojectiveIntegerGrade k (Q := Q))
 
 /-- Vertex idempotent classes have integer degree zero. -/

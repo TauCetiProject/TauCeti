@@ -22,6 +22,7 @@ for `τ` in the upper half-plane, complementing `Mathlib.Analysis.Complex.UpperH
 * `TauCeti.UpperHalfPlane.tendsto_exp_two_pi_I_mul_add`: for `x > 0`,
   `e^{2π i (x τ + y)} → 0` as `Im τ → ∞`.
 * `TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul_le`: `|q| ≤ e^{-2π t}` when `t ≤ Im τ`.
+* `TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul_lt_one_iff`: `|q| < 1` iff `0 < Im τ`.
 * `TauCeti.UpperHalfPlane.norm_one_sub_exp_two_pi_I_mul`: `|1 - e^{2π i y}| = |2 sin (π y)|`.
 * `TauCeti.UpperHalfPlane.norm_exp_pi_I_lt_one`: `‖e^{π i τ}‖ < 1` on the upper half-plane.
 * `TauCeti.UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero`: `1 - e^{2π i (x τ + y)}` has no zero in
@@ -79,6 +80,12 @@ theorem norm_exp_two_pi_I_mul_le {t : ℝ} {τ : ℂ} (hτ : t ≤ τ.im) :
     ‖cexp (2 * π * I * τ)‖ ≤ Real.exp (-(2 * π * t)) := by
   rw [norm_exp_two_pi_I_mul, Real.exp_le_exp, neg_le_neg_iff]
   gcongr
+
+/-- The nome `q = e^{2π i τ}` has norm less than `1` exactly on the upper half-plane. -/
+theorem norm_exp_two_pi_I_mul_lt_one_iff {τ : ℂ} :
+    ‖cexp (2 * π * I * τ)‖ < 1 ↔ 0 < τ.im := by
+  rw [norm_exp_two_pi_I_mul, Real.exp_lt_one_iff, neg_lt_zero]
+  exact mul_pos_iff_of_pos_left (by positivity)
 
 /-- `|1 - e^{2π i y}| = |2 sin (π y)|` for real `y`. -/
 theorem norm_one_sub_exp_two_pi_I_mul (y : ℝ) :

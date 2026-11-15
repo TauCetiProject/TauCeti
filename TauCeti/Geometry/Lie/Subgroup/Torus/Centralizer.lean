@@ -49,32 +49,16 @@ theorem IsMaximalTorus.centralizer_eq {T : Subgroup G} (hT : IsMaximalTorus T) :
   intro g hg
   -- A maximal torus through g and T both lie in the closed centralizer of g.
   obtain ⟨S, hS, hgS⟩ := exists_isMaximalTorus_mem I g
-  let C := Subgroup.centralizer ({g} : Set G)
-  have hTC : T ≤ C := fun t ht ↦ Subgroup.mem_centralizer_singleton_iff.mpr
-    (Subgroup.mem_centralizer_iff.mp hg t ht)
-  have hSC : S ≤ C := fun s hs ↦ Subgroup.mem_centralizer_singleton_iff.mpr
-    (Subgroup.mem_centralizer_iff.mp
-      (Subgroup.le_centralizer_iff_isMulCommutative.mpr hS.isTorus.isMulCommutative hgS) s hs)
-  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
-    finiteDimensional_leftInvariantDerivation
-      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
-  let L := (lieSubalgebraOfSubgroup (I := I) C).toSubmodule
-  obtain ⟨d⟩ := nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed
-    (I := I) (K := C) (Set.isClosed_centralizer _)
-  let _ : ChartedSpace L C := d.chartedSpace
-  let _ : LieGroup 𝓘(ℝ, L) ∞ C := d.lieGroup
-  let _ : CompactSpace C := isCompact_iff_compactSpace.mp (Set.isClosed_centralizer _).isCompact
-  -- Conjugacy needs compactness of C, not connectedness. Its conjugator fixes g.
-  obtain ⟨c, hc⟩ := (hS.subgroupOf hSC).exists_map_conj_eq 𝓘(ℝ, L) (hT.subgroupOf hTC)
-  let gC : C := ⟨g, Subgroup.mem_centralizer_singleton_iff.mpr rfl⟩
-  have hmem : MulAut.conj c gC ∈ T.subgroupOf C := by
-    rw [← hc]
-    exact ⟨gC, hgS, rfl⟩
-  have hccomm : (c : G) * g = g * (c : G) :=
-    Subgroup.mem_centralizer_singleton_iff.mp c.property
-  have hconj : ((MulAut.conj c gC : C) : G) = g := by
-    simp only [MulAut.conj_apply, Subgroup.coe_mul, Subgroup.coe_inv, gC, hccomm,
-      mul_inv_cancel_right]
-  exact hconj ▸ Subgroup.mem_subgroupOf.mp hmem
+  have hTC : T ≤ Subgroup.centralizer ({g} : Set G) := fun t ht ↦
+    Subgroup.mem_centralizer_singleton_iff.mpr (Subgroup.mem_centralizer_iff.mp hg t ht)
+  have hSC : S ≤ Subgroup.centralizer ({g} : Set G) :=
+    (Subgroup.le_centralizer_iff_isMulCommutative.mpr hS.isTorus.isMulCommutative).trans
+      (Subgroup.centralizer_le (Set.singleton_subset_iff.mpr hgS))
+  -- Conjugacy needs compactness of the centralizer, not connectedness. Its conjugator fixes g.
+  obtain ⟨c, hc, hmap⟩ := hS.exists_mem_map_conj_eq_of_le I (Set.isClosed_centralizer _) hT
+    hSC hTC
+  have hconj : c * g * c⁻¹ = g := by
+    rw [Subgroup.mem_centralizer_singleton_iff.mp hc, mul_inv_cancel_right]
+  exact hmap ▸ ⟨g, hgS, by simp only [MulEquiv.coe_toMonoidHom, MulAut.conj_apply, hconj]⟩
 
 end TauCeti.Lie

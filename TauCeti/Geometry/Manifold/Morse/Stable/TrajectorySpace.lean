@@ -58,23 +58,24 @@ namespace IsAdaptedPseudoGradient
 variable (hX : IsAdaptedPseudoGradient f X)
 
 /-- Some level is met by every trajectory from `a` to `b`. -/
-private theorem exists_forall_exists_flow_eq (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+private theorem exists_forall_exists_flow_eq
     (hab : a ≠ b) :
     ∃ c, ∀ y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b, ∃ t, f (hX.flow t y) = c := by
   rcases (hX.flow.unstableSet a ∩ hX.flow.stableSet b).eq_empty_or_nonempty with hC | ⟨y, hy⟩
   · exact ⟨0, by simp [hC]⟩
-  · have hc := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hab hy
+  · have hc := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hab hy
     exact ⟨f y, fun z hz ↦
-      (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hz hc.1 hc.2).exists⟩
+      (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hab hz hc.1 hc.2).exists⟩
 
 /-- **Time translation on trajectories is a proper action.** For distinct points `a` and `b`, the
 action map `(t, y) ↦ (φ_t y, y)` of the flow on `W^u(a) ∩ W^s(b)`, with its subspace topology, is
 proper. -/
-theorem isProperMap_restrict_pair (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (hab : a ≠ b) :
+theorem isProperMap_restrict_pair (hab : a ≠ b) :
     IsProperMap fun ty : ℝ × ↥(hX.flow.unstableSet a ∩ hX.flow.stableSet b) ↦
       ((hX.flow.restrict (hX.flow.isInvariant_unstableSet_inter_stableSet a b)) ty.1 ty.2,
         ty.2) := by
-  obtain ⟨c, hex⟩ := hX.exists_forall_exists_flow_eq hf hab
+  have hf := hX.mdifferentiable
+  obtain ⟨c, hex⟩ := hX.exists_forall_exists_flow_eq hab
   exact Flow.isProperMap_restrict_pair hf.continuous.continuousOn
     (fun _ hy ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hy) hex
 
@@ -82,14 +83,14 @@ theorem isProperMap_restrict_pair (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f
 unparametrized trajectories from `a` to `b` is homeomorphic to its level slice at any value `c`
 strictly between `f b` and `f a`, by a homeomorphism sending a point of the slice to its orbit
 class. -/
-theorem exists_orbitQuotient_homeomorph_levelSlice (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+theorem exists_orbitQuotient_homeomorph_levelSlice
     (hab : a ≠ b) (hc : f b < c ∧ c < f a) :
     ∃ e : Quotient (Flow.connectingOrbitSetoid hX.flow a b) ≃ₜ
         ↥(hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}),
       ∀ y, e.symm y = Quotient.mk _ ⟨y.1, y.2.1⟩ :=
-  ⟨_, Flow.orbitQuotientHomeomorphLevelSlice_symm_apply hf.continuous.continuousOn
+  ⟨_, Flow.orbitQuotientHomeomorphLevelSlice_symm_apply hX.mdifferentiable.continuous.continuousOn
     (fun _ hy ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hy)
-    fun _ hy ↦ (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hy hc.1
+    fun _ hy ↦ (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hab hy hc.1
       hc.2).exists⟩
 
 namespace IsMorseSmale
@@ -110,12 +111,11 @@ theorem exists_isManifold_orbitQuotient (hab : a ≠ b)
       ∃ C : ChartedSpace L (Quotient (Flow.connectingOrbitSetoid hX.flow a b)),
         letI := C
         IsManifold 𝓘(ℝ, L) ∞ (Quotient (Flow.connectingOrbitSetoid hX.flow a b)) := by
-  have hmd : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   obtain ⟨y, hy⟩ := hne
-  have hc := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hmd hab hy
+  have hc := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hab hy
   obtain ⟨L, hL, C, hC, -⟩ := h.exists_unstableSet_inter_stableSet_level_isManifold hf hab
     ⟨y, hy, rfl⟩
-  obtain ⟨e, -⟩ := hX.exists_orbitQuotient_homeomorph_levelSlice hmd hab hc
+  obtain ⟨e, -⟩ := hX.exists_orbitQuotient_homeomorph_levelSlice hab hc
   let := C
   exact ⟨L, hL, e.pullbackChartedSpace, Homeomorph.pullback_isManifold _ _ e⟩
 

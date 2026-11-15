@@ -48,7 +48,9 @@ Everything here concerns one completion. The comparison of two completions along
 * `IsDedekindDomain.HeightOneSpectrum.isOpen_setOf_valued_le`: a closed valuation ball of `K_v`
   around the origin is open.
 * `IsDedekindDomain.HeightOneSpectrum.isAdic_maximalIdeal_adicCompletionIntegers`: the subspace
-  topology on `𝒪_v` is the `𝔪`-adic one.
+  topology on `𝒪_v` is the `𝔪`-adic one. The instances
+  `isLinearTopology_adicCompletionIntegers` and `fact_isAdic_maximalIdeal_adicCompletionIntegers`
+  (in the same namespace) record this for formal-group points with parameters in `𝔪`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_valued_sub_le`: every element of `𝒪_v` is
   congruent to an element of `R` modulo any power of the maximal ideal, so `R` is dense in `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.denseRange_algebraMap_adicCompletionIntegers`: the
@@ -269,6 +271,23 @@ theorem mem_maximalIdeal_pow_iff {x : v.adicCompletionIntegers K} {n : ℕ} :
   rw [← hπn]
   exact Set.ext_iff.mp (hint.maximalIdeal_pow_eq_setOfPred_le_v_algebraMap_pow hπ n) x
 
+/-- An element of `𝒪_v` generating the `e`-th power of the maximal ideal has valuation
+`exp (-e)`. -/
+theorem valued_eq_exp_neg_of_span_eq_maximalIdeal_pow {x : v.adicCompletionIntegers K} {e : ℕ}
+    (hx : Ideal.span {x} = IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ e) :
+    Valued.v (x : v.adicCompletion K) = exp (-(e : ℤ)) := by
+  have hle : Valued.v (x : v.adicCompletion K) ≤ exp (-(e : ℤ)) :=
+    v.mem_maximalIdeal_pow_iff.mp (hx ▸ Ideal.mem_span_singleton_self x)
+  -- `x ∉ 𝔪 ^ (e + 1)`, as `𝔪 ^ (e + 1) < 𝔪 ^ e`
+  have hlt : ¬Valued.v (x : v.adicCompletion K) ≤ exp (-((e + 1 : ℕ) : ℤ)) := fun h ↦
+    (Ideal.pow_succ_lt_pow (IsDiscreteValuationRing.not_a_field _) e).not_ge <|
+      hx ▸ Ideal.span_le.mpr (Set.singleton_subset_iff.mpr (v.mem_maximalIdeal_pow_iff.mpr h))
+  have h0 : Valued.v (x : v.adicCompletion K) ≠ 0 := fun h0 ↦ hlt (h0 ▸ zero_le)
+  rw [← exp_log h0, exp_le_exp] at hle hlt
+  rw [← exp_log h0, exp_inj]
+  push_cast at hlt
+  omega
+
 /-- An element of `R` lies in `v ^ n` exactly when its image in `K_v` has valuation at most
 `exp (-n)`: the ideal filtration of `R` at `v` is the valuation filtration `K_v` induces on it. -/
 theorem mem_asIdeal_pow_iff_valued_algebraMap_le {r : R} {n : ℕ} :
@@ -388,6 +407,17 @@ theorem isAdic_maximalIdeal_adicCompletionIntegers :
     IsAdic (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K)) :=
   isAdic_iff.mpr ⟨isOpen_maximalIdeal_pow_adicCompletionIntegers (K := K) v,
     fun _ hs ↦ exists_maximalIdeal_pow_subset_of_mem_nhds (K := K) v hs⟩
+
+/-- `𝒪_v` is linearly topologized: its topology is the `𝔪`-adic one. -/
+instance isLinearTopology_adicCompletionIntegers :
+    IsLinearTopology (v.adicCompletionIntegers K) (v.adicCompletionIntegers K) :=
+  v.isAdic_maximalIdeal_adicCompletionIntegers (K := K) ▸ Ideal.isLinearTopology _
+
+/-- `isAdic_maximalIdeal_adicCompletionIntegers` as an instance, for the APIs that take
+`IsAdic` as a `Fact`, such as the points of a formal group with parameters in `𝔪`. -/
+instance fact_isAdic_maximalIdeal_adicCompletionIntegers :
+    Fact (IsAdic (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K))) :=
+  ⟨v.isAdic_maximalIdeal_adicCompletionIntegers⟩
 
 /-- `𝒪_v` is complete: it is a closed subset of the complete field `K_v`. -/
 instance completeSpace_adicCompletionIntegers : CompleteSpace (v.adicCompletionIntegers K) :=

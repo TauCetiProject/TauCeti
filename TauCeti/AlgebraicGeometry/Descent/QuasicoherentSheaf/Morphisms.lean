@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Sites.Descent.DescentData
-public import TauCeti.AlgebraicGeometry.Descent.QuasicoherentSheaf.Affine
+public import TauCeti.AlgebraicGeometry.Descent.QuasicoherentSheaf.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.BaseChange
 
 /-!
-# Descent of morphisms of quasi-coherent modules along faithfully flat maps of affine schemes
+# Morphisms of quasi-coherent descent data as coalgebra morphisms
 
 Let `f : X ⟶ S` be a morphism of schemes, with projections `p₁, p₂ : X ×_S X ⟶ X`, and let `A`, `B`
 be modules on `S`. A morphism `g : f^* A ⟶ f^* B` satisfies the descent condition if it is
@@ -23,13 +23,9 @@ the adjunct of the canonical identification. So `g` satisfies the descent condit
 it is a morphism of coalgebras for the comonad `f^* f_*`
 (`Scheme.Modules.comp_pullback_map_unit_app_eq_iff`).
 
-For a faithfully flat ring map `φ : R ⟶ S`, pullback of quasi-coherent modules along `Spec φ` is
-comonadic, so the coalgebra morphisms between pullbacks are exactly the pullbacks of morphisms.
-Hence morphisms of quasi-coherent modules descend along `Spec φ`: the functor from quasi-coherent
-modules on `Spec R` to descent data along `Spec φ` for `Descent.qcohPseudofunctor` is fully faithful
-(`Descent.qcohPseudofunctor_isPrestackFor_singleton_specMap`). This is the descent of morphisms
-in fpqc descent of quasi-coherent modules, for a single faithfully flat map of affine schemes;
-effectivity of descent data is not treated here.
+Descent of morphisms along arbitrary fpqc coverings is
+`Descent.qcohPseudofunctor_isPrestack_fpqcTopology`; effectivity of descent data is not treated
+here.
 
 ## Main declarations
 
@@ -38,8 +34,6 @@ effectivity of descent data is not treated here.
   coalgebra morphism for `f^* f_*` iff it satisfies the descent condition.
 * `TauCeti.AlgebraicGeometry.Descent.qcohPseudofunctor_descentData_hom_comm`: morphisms of descent
   data along a single morphism satisfy the descent condition on underlying modules.
-* `TauCeti.AlgebraicGeometry.Descent.qcohPseudofunctor_isPrestackFor_singleton_specMap`: for a
-  faithfully flat ring map `φ`, `qcohPseudofunctor` is a prestack for the covering `{Spec φ}`.
 
 ## References
 
@@ -160,41 +154,5 @@ theorem qcohPseudofunctor_descentData_hom_comm {X Y : Scheme.{u}} (f : X ⟶ Y)
           (Scheme.Modules.pullbackComp (pullback.fst f f) f).inv.app M := by
     simp [Scheme.Modules.pullbackCongr]
   exact (congrArg (_ ≫ ·) (key B.obj)).trans (hψ.trans (congrArg (· ≫ _) (key A.obj).symm))
-
-variable {R S : CommRingCat.{u}} (φ : R ⟶ S)
-
-/-- **Descent of morphisms of quasi-coherent modules along a faithfully flat map of affine
-schemes.** For a faithfully flat ring map `φ : R ⟶ S`, `qcohPseudofunctor` is a prestack for the
-covering `{Spec φ : Spec S ⟶ Spec R}`: a morphism `f^* A ⟶ f^* B` of quasi-coherent modules on
-`Spec S`, for `f = Spec φ`, that is compatible with the canonical descent data comes from a unique
-morphism `A ⟶ B`. -/
-theorem qcohPseudofunctor_isPrestackFor_singleton_specMap (hφ : φ.hom.FaithfullyFlat) :
-    qcohPseudofunctor.IsPrestackFor (Presieve.singleton (Spec.map φ)) := by
-  rw [← Presieve.ofArrows_pUnit.{0}, Pseudofunctor.isPrestackFor_ofArrows_iff,
-    Functor.FullyFaithful.nonempty_iff_map_bijective]
-  rintro (A : QuasicoherentSheaf (Spec R)) (B : QuasicoherentSheaf (Spec R))
-  have := isEquivalence_comparison_qcohPseudofunctorMapSpecMapAdjunction φ hφ
-  have : Flat (Spec.map φ) := Flat.SpecMap_iff.2 hφ.flat
-  let K := Comonad.comparison (qcohPseudofunctorMapSpecMapAdjunction φ)
-  refine ⟨fun h₁ h₂ e ↦ K.map_injective (Comonad.Coalgebra.Hom.ext ?_), fun ψ ↦ ?_⟩
-  · exact congr(Pseudofunctor.DescentData.Hom.hom $e PUnit.unit)
-  -- `ψ` satisfies the descent condition, so it is a morphism of coalgebras for `f^* f_*`, and
-  -- comonadicity lifts it to a morphism `A ⟶ B`.
-  have : B.obj.IsQuasicoherent := B.property
-  have hc := (Scheme.Modules.comp_pullback_map_unit_app_eq_iff (Spec.map φ) (A := A.obj)
-    (B := B.obj) (ψ.hom PUnit.unit).hom).2 (qcohPseudofunctor_descentData_hom_comm (Spec.map φ) ψ)
-  -- The coalgebra structure of `K.obj M` is `f^*` of the unit (`Comonad.comparison_obj_a`), whose
-  -- underlying morphism is `f^*` of the unit for modules
-  -- (`qcohPseudofunctorMapSpecMapAdjunction_unit_app_hom`).
-  have hu (M : QuasicoherentSheaf (Spec R)) : (K.obj M).a.hom =
-      (Scheme.Modules.pullback (Spec.map φ)).map
-        ((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).unit.app M.obj) :=
-    congrArg (Scheme.Modules.pullback (Spec.map φ)).map
-      (qcohPseudofunctorMapSpecMapAdjunction_unit_app_hom φ M)
-  obtain ⟨h, hh⟩ := K.map_surjective
-    { f := ψ.hom PUnit.unit
-      h := ObjectProperty.hom_ext _
-        ((congrArg (· ≫ _) (hu A)).trans (hc.symm.trans (congrArg (_ ≫ ·) (hu B).symm))) }
-  exact ⟨h, Pseudofunctor.DescentData.hom_ext fun _ ↦ congrArg Comonad.Coalgebra.Hom.f hh⟩
 
 end TauCeti.AlgebraicGeometry.Descent

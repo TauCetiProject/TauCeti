@@ -62,34 +62,15 @@ noncomputable def biprodSigmaIso : (X ⊞ ∐ fun _ : ℕ ↦ Y) ≅ ∐ fun _ :
     (Sigma.desc fun n ↦ (𝟙 Y - h.r ≫ h.i) ≫ Sigma.ι (fun _ : ℕ ↦ Y) n +
       h.r ≫ h.i ≫ Sigma.ι (fun _ : ℕ ↦ Y) (n + 1))
   inv := Sigma.desc h.biprodSigmaInvComponent
+  -- On each summand, `simp` expands `𝟙 Y - h.r ≫ h.i` and cancels using `h.i ≫ h.r = 𝟙 X`;
+  -- slots `0` and `n + 1` of `∐ fun _ : ℕ ↦ Y` are treated separately.
   hom_inv_id := by
-    have hi : h.i ≫ (𝟙 Y - h.r ≫ h.i) = 0 := by simp [Preadditive.comp_sub]
-    have hr : (𝟙 Y - h.r ≫ h.i) ≫ h.r = 0 := by simp [Preadditive.sub_comp]
-    have hir : h.r ≫ h.i ≫ (𝟙 Y - h.r ≫ h.i) = 0 := by rw [hi, comp_zero]
-    have hii : (𝟙 Y - h.r ≫ h.i) ≫ (𝟙 Y - h.r ≫ h.i) = 𝟙 Y - h.r ≫ h.i := by
-      simp [Preadditive.sub_comp, Preadditive.comp_sub]
     refine biprod.hom_ext' _ _ ?_ (Sigma.hom_ext _ _ fun n ↦ ?_)
     · simp [biprodSigmaInvComponent, biprod.lift_eq]
-    -- Expand the composite on slot `n` without unfolding `1 - e`, then cancel with the
-    -- idempotent identities above.
-    · cases n <;>
-        simp only [biprod.inr_desc_assoc, Sigma.ι_comp_desc_assoc, Preadditive.add_comp,
-          Category.assoc, Sigma.ι_comp_desc, biprodSigmaInvComponent, biprod.lift_eq,
-          Preadditive.comp_add, reassoc_of% hr, reassoc_of% hii, reassoc_of% hir,
-          Retract.retract_assoc, zero_comp, zero_add, add_zero, Category.comp_id] <;>
-        simp
+    · cases n <;> simp [biprodSigmaInvComponent, biprod.lift_eq]
   inv_hom_id := by
-    have hri : (𝟙 Y - h.r ≫ h.i) ≫ h.r ≫ h.i = 0 := by simp [Preadditive.sub_comp]
-    have hir : h.r ≫ h.i ≫ (𝟙 Y - h.r ≫ h.i) = 0 := by simp [Preadditive.comp_sub]
-    have hii : (𝟙 Y - h.r ≫ h.i) ≫ (𝟙 Y - h.r ≫ h.i) = 𝟙 Y - h.r ≫ h.i := by
-      simp [Preadditive.sub_comp, Preadditive.comp_sub]
     refine Sigma.hom_ext _ _ fun n ↦ ?_
-    cases n <;>
-      simp only [Sigma.ι_comp_desc_assoc, biprodSigmaInvComponent, biprod.lift_desc,
-        Category.assoc, Sigma.ι_comp_desc, Preadditive.add_comp, Preadditive.comp_add,
-        reassoc_of% hii, reassoc_of% hri, reassoc_of% hir, Retract.retract_assoc, zero_comp,
-        zero_add, add_zero, Category.comp_id] <;>
-      simp
+    cases n <;> simp [biprodSigmaInvComponent]
 
 @[reassoc (attr := simp)]
 lemma inl_biprodSigmaIso_hom :
