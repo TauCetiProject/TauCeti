@@ -46,10 +46,10 @@ a doubly (twisted) periodic map are used.
 * `TauCeti.neg_mul_setIntegral_le_setIntegral_deriv_mul`: for a monotone `C¹` profile `β` and
   `-B(t) ≤ f`, the lower bound `-(β(b₁) - β(a₁)) ∫ B ≤ ∫∫ β'(s) f`.
 * `TauCeti.setLIntegral_univ_prod_Icc_add_one_eq`,
-  `TauCeti.setLIntegral_univ_prod_Icc_neg_one_two_le`, `TauCeti.eLpNorm_Icc_neg_one_two_le`: for a
-  function of period one in the second coordinate, integrals over the horizontal strips
-  `ℝ × [k, k + 1]` agree, and those over `ℝ × [-1, 2]` are controlled by those over the fundamental
-  strip `ℝ × [0, 1]`.
+  `TauCeti.setLIntegral_univ_prod_Icc_neg_one_two_le`,
+  `TauCeti.eLpNorm_restrict_univ_prod_Icc_neg_one_two_le`: for a function of period one in the
+  second coordinate, integrals over the horizontal strips `ℝ × [k, k + 1]` agree, and those over
+  `ℝ × [-1, 2]` are controlled by those over the fundamental strip `ℝ × [0, 1]`.
 
 Translation invariance of Lebesgue measure on `ℝ × ℝ` comes from
 `TauCeti.isAddHaarMeasure_volume_prod`.
@@ -283,7 +283,8 @@ theorem setLIntegral_univ_prod_Icc_neg_one_two_le {g : ℝ × ℝ → ℝ≥0∞
 
 /-- For a function of period one in `t`, the `L²` norm over `ℝ × [-1, 2]` is at most twice the
 `L²` norm over the strip `ℝ × [0, 1]`. -/
-theorem eLpNorm_Icc_neg_one_two_le {F : Type*} [NormedAddCommGroup F] {f : ℝ × ℝ → F}
+theorem eLpNorm_restrict_univ_prod_Icc_neg_one_two_le {F : Type*} [NormedAddCommGroup F]
+    {f : ℝ × ℝ → F}
     (hfm : AEStronglyMeasurable f volume) (hf : ∀ s t, f (s, t + 1) = f (s, t)) :
     eLpNorm f 2 (volume.restrict (univ ×ˢ Icc (-1) 2)) ≤
       2 * eLpNorm f 2 (volume.restrict (univ ×ˢ Icc 0 1)) := by

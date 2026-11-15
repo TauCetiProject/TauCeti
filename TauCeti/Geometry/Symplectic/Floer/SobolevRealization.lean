@@ -31,7 +31,7 @@ range: the Fredholm property of `D_u` minus the finiteness of its cokernel.
   `TauCeti.CylinderSobolev.H1` (`TauCeti.SymplecticForm.floerSobolevOperator_def`). It acts
   pointwise by the coefficient field (`TauCeti.SymplecticForm.coeFn_floerSobolevOperator`), and on
   the jet of a test section it is `D_u ξ`
-  (`TauCeti.SymplecticForm.floerSobolevOperator_jetL_ae_eq`), provided its coefficients are
+  (`TauCeti.SymplecticForm.floerSobolevOperator_jetₗ_ae_eq`), provided its coefficients are
   essentially bounded on the cylinder.
 * Along a Floer trajectory of `K = H_t dt`, whose loops and slice defect `∂t u - X_{H_t}(u)`
   converge uniformly at both ends, the coefficients are bounded
@@ -91,7 +91,7 @@ operator `D_u ξ`. -/
 theorem floerJetCoeff_jet (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
     ω.floerJetCoeff J Ks Kt u z (jet ξ z) = ω.floerLinearization J Ks Kt u ξ z := by
-  rw [floerJetCoeff_apply, floerLinearization_eq_add, jet_apply, stdComplexLineReal_eq,
+  simp only [floerJetCoeff_apply, floerLinearization_eq_add, jet_apply, stdComplexLineReal_eq,
     stdComplexLineImag_eq]
 
 /-- The linearized Floer operator `D_u` along `u`, as an operator from the Sobolev space
@@ -121,12 +121,12 @@ theorem coeFn_floerSobolevOperator (ω : SymplecticForm V) {J : ℝ × ℝ → V
 
 /-- On the jet of a test section `ξ`, the Sobolev realization of the linearized Floer operator is
 `D_u ξ`, when the coefficients of `D_u` are essentially bounded on the cylinder. -/
-theorem floerSobolevOperator_jetL_ae_eq (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
+theorem floerSobolevOperator_jetₗ_ae_eq (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
     {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
     (hM : MemLp (ω.floerJetCoeff J Ks Kt u) ∞ stripMeasure) (ξ : testSection V) :
-    ω.floerSobolevOperator J Ks Kt u ⟨jetL V ξ, jetL_mem_H1 ξ⟩ =ᵐ[stripMeasure]
+    ω.floerSobolevOperator J Ks Kt u ⟨jetₗ V ξ, jetₗ_mem_H1 ξ⟩ =ᵐ[stripMeasure]
       ω.floerLinearization J Ks Kt u ξ := by
-  filter_upwards [coeFn_floerSobolevOperator ω hM ⟨jetL V ξ, jetL_mem_H1 ξ⟩, coeFn_jetL ξ]
+  filter_upwards [coeFn_floerSobolevOperator ω hM ⟨jetₗ V ξ, jetₗ_mem_H1 ξ⟩, coeFn_jetₗ ξ]
     with z h₁ h₂
   rw [h₁, h₂, floerJetCoeff_jet]
 

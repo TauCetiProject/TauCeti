@@ -34,7 +34,7 @@ instance isHaarMeasure_volume_prod {G H : Type*} [Group G] [TopologicalSpace G] 
     [Group H] [TopologicalSpace H] [MeasureSpace H] [MeasurableMul G] [MeasurableMul H]
     [(volume : Measure G).IsHaarMeasure] [(volume : Measure H).IsHaarMeasure]
     [SFinite (volume : Measure H)] : (volume : Measure (G × H)).IsHaarMeasure :=
-  prod.instIsHaarMeasure _ _
+  by rw [volume_eq_prod]; infer_instance
 
 end TauCeti
 
