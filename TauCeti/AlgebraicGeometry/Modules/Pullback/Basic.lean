@@ -74,9 +74,6 @@ and local freeness of modules, specializing the ringed-space results of
   isomorphism exactly when its pullbacks to the members of an open cover are, and
   `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover_opensRange` the same for open
   immersions whose images cover the scheme;
-* `AlgebraicGeometry.Scheme.Modules.pullbackOver`: pullback read on the slice sites over `V` and
-  `f⁻¹ V`, with `pullbackOverUnitIso` and `pullbackOverObjIso` comparing it with the structure
-  sheaves and with the pullback of `𝒪_Y`-modules;
 * `AlgebraicGeometry.Scheme.Modules.overEquivFunctorObjFreeIso`: the identification of modules on
   the slice at an open `U` with modules on the open subscheme `U` preserves free modules, so
   trivializations of a module pass between the slice and the open subscheme
@@ -211,23 +208,22 @@ variable {Z : Scheme.{u}}
 /-- Pullback along a morphism of schemes preserves the structure sheaf: `f^* 𝒪_Y ≅ 𝒪_X`, the
 isomorphism being Mathlib's comparison `SheafOfModules.pullbackObjUnitToUnit`. -/
 def pullbackObjUnitIso (f : X ⟶ Y) : (pullback f).obj (𝟙_ Y.Modules) ≅ 𝟙_ X.Modules :=
-  -- Instance search does not find Mathlib's `IsIso` instance for `pullbackObjUnitToUnit`, so it
-  -- is passed explicitly.
-  have : IsIso (SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom) :=
-    SheafOfModules.instIsIsoPullbackObjUnitToUnitOfFinal _
-  @asIso _ _ _ _ (SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom) this
+  haveI : (Opens.map f.base).Final := TopologicalSpace.Opens.final_map f.base
+  SheafOfModules.pullbackObjUnitIso f.toRingCatSheafHom
 
 /-- The hom of `pullbackObjUnitIso` is Mathlib's structure sheaf comparison map. -/
 @[simp]
 lemma pullbackObjUnitIso_hom (f : X ⟶ Y) :
-    (pullbackObjUnitIso f).hom = SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom := by
-  rfl
+    (pullbackObjUnitIso f).hom = SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom :=
+  haveI : (Opens.map f.base).Final := TopologicalSpace.Opens.final_map f.base
+  SheafOfModules.pullbackObjUnitIso_hom f.toRingCatSheafHom
 
 /-- The transpose of `f^* 𝒪_Y ≅ 𝒪_X` is the map `𝒪_Y ⟶ f_* 𝒪_X` given by `f` on sections. -/
 lemma pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom (f : X ⟶ Y) :
     (pullbackPushforwardAdjunction f).homEquiv _ _ (pullbackObjUnitIso f).hom =
       SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom :=
-  Equiv.apply_symm_apply _ _
+  haveI : (Opens.map f.base).Final := TopologicalSpace.Opens.final_map f.base
+  SheafOfModules.pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom f.toRingCatSheafHom
 
 /-- The map `𝒪_Z ⟶ (f ≫ g)_* 𝒪_X` given by `f ≫ g` on sections is the composite of the maps given
 by `g` and by `f`. -/
@@ -235,41 +231,23 @@ lemma unitToPushforwardObjUnit_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
     SheafOfModules.unitToPushforwardObjUnit g.toRingCatSheafHom ≫
         (pushforward g).map (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom) ≫
           (pushforwardComp f g).hom.app _ =
-      SheafOfModules.unitToPushforwardObjUnit (f ≫ g).toRingCatSheafHom := by
-  -- On each open, `pushforwardComp` is the identity map and the map associated to
-  -- `(f ≫ g).toRingCatSheafHom` is the composite of the two maps on sections.
-  ext U
-  rfl
+      SheafOfModules.unitToPushforwardObjUnit (f ≫ g).toRingCatSheafHom :=
+  SheafOfModules.unitToPushforwardObjUnit_comp g.toRingCatSheafHom f.toRingCatSheafHom
 
 /-- Along the identity, `𝟙^* 𝒪_X ≅ 𝒪_X` is the identity isomorphism of pullback. -/
 lemma pullbackObjUnitIso_id (X : Scheme.{u}) :
-    (pullbackObjUnitIso (𝟙 X)).hom = (pullbackId X).hom.app _ := by
-  apply ((pullbackPushforwardAdjunction (𝟙 X)).homEquiv _ _).injective
-  rw [pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom, Adjunction.homEquiv_unit,
-    ← unit_conjugateEquiv Adjunction.id, conjugateEquiv_pullbackId_hom]
-  -- On each open, `pushforwardId` and `(𝟙 X).toRingCatSheafHom` act as identities.
-  ext U
-  rfl
+    (pullbackObjUnitIso (𝟙 X)).hom = (pullbackId X).hom.app _ :=
+  SheafOfModules.pullbackObjUnitIso_id X.ringCatSheaf
 
 /-- The isomorphism `(f ≫ g)^* 𝒪_Z ≅ 𝒪_X` is the composite of `f^* (g^* 𝒪_Z ≅ 𝒪_Y)` and
 `f^* 𝒪_Y ≅ 𝒪_X`, through the composition isomorphism of pullback. -/
 @[reassoc]
 lemma pullbackObjUnitIso_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
     (pullbackComp f g).inv.app _ ≫ (pullback f).map (pullbackObjUnitIso g).hom ≫
-      (pullbackObjUnitIso f).hom = (pullbackObjUnitIso (f ≫ g)).hom := by
-  apply ((pullbackPushforwardAdjunction (f ≫ g)).homEquiv _ _).injective
-  rw [← Adjunction.homEquiv_conjugateEquiv ((pullbackPushforwardAdjunction g).comp
-      (pullbackPushforwardAdjunction f)), conjugateEquiv_pullbackComp_inv,
-    Adjunction.comp_homEquiv, Equiv.trans_apply, Adjunction.homEquiv_naturality_left,
-    pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom]
-  -- `rw` cannot rewrite `homEquiv_naturality_right` here: its instance of
-  -- `SheafOfModules.unitToPushforwardObjUnit` mentions `X.ringCatSheaf` at a type that is not
-  -- unfolded at instance transparency, so the step is applied as a term.
-  refine (congrArg (· ≫ (pushforwardComp f g).hom.app _)
-    ((pullbackPushforwardAdjunction g).homEquiv_naturality_right _ _)).trans ?_
-  rw [pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom,
-    pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom]
-  exact (Category.assoc _ _ _).trans (unitToPushforwardObjUnit_comp f g)
+      (pullbackObjUnitIso f).hom = (pullbackObjUnitIso (f ≫ g)).hom :=
+  haveI : (Opens.map f.base).Final := TopologicalSpace.Opens.final_map f.base
+  haveI : (Opens.map g.base).Final := TopologicalSpace.Opens.final_map g.base
+  SheafOfModules.pullbackObjUnitIso_comp g.toRingCatSheafHom f.toRingCatSheafHom
 
 /-- The composite `𝒪_X ≅ f^* 𝒪_Y ≅ f^* g^* 𝒪_Z ≅ (f ≫ g)^* 𝒪_Z` is the inverse of the
 identification `(f ≫ g)^* 𝒪_Z ≅ 𝒪_X`. This is `pullbackObjUnitIso_comp` read through inverses. -/
@@ -277,10 +255,10 @@ identification `(f ≫ g)^* 𝒪_Z ≅ 𝒪_X`. This is `pullbackObjUnitIso_comp
 lemma pullbackObjUnitIso_inv_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
     (pullbackObjUnitIso f).inv ≫ (pullback f).map (pullbackObjUnitIso g).inv ≫
         (pullbackComp f g).hom.app _ =
-      (pullbackObjUnitIso (f ≫ g)).inv := by
-  refine (Iso.inv_ext ?_).symm
-  rw [← pullbackObjUnitIso_comp]
-  simp only [Category.assoc, Iso.hom_inv_id_assoc, Iso.hom_inv_id_map_assoc, Iso.inv_hom_id_app]
+      (pullbackObjUnitIso (f ≫ g)).inv :=
+  haveI : (Opens.map f.base).Final := TopologicalSpace.Opens.final_map f.base
+  haveI : (Opens.map g.base).Final := TopologicalSpace.Opens.final_map g.base
+  SheafOfModules.pullbackObjUnitIso_inv_comp g.toRingCatSheafHom f.toRingCatSheafHom
 
 /-- The canonical identification of a pulled-back structure sheaf is unchanged when the
 scheme morphism is replaced by an equal morphism. -/
@@ -459,43 +437,6 @@ lemma restrictPullbackIso_hom_app (V : Y.Opens) (W : X.Opens) (e : W ≤ f ⁻¹
         (pullback (f.resLE V W e)).map ((restrictFunctorIsoPullback V.ι).inv.app M) :=
   (rfl)
 
-variable (V : Y.Opens)
-
-/-- Pullback along `f` read on slice sites: sheaves of modules over the slice of `Y` at an open
-`V` are identified with `𝒪_V`-modules, pulled back along `f ∣_ V : f⁻¹ V ⟶ V`, and read as
-sheaves of modules over the slice of `X` at `f⁻¹ V`. -/
--- This composite is a left adjoint, hence preserves colimits. The unit and object isomorphisms
--- below identify its effect on the structure sheaf and on restrictions of modules.
-def pullbackOver : SheafOfModules (Y.ringCatSheaf.over V) ⥤
-    SheafOfModules (X.ringCatSheaf.over (f ⁻¹ᵁ V)) :=
-  (overEquiv V).functor ⋙ pullback (f ∣_ V) ⋙ (overEquiv (f ⁻¹ᵁ V)).inverse
-
-instance : (pullbackOver f V).IsLeftAdjoint := by
-  unfold pullbackOver
-  infer_instance
-
-/-- Pullback read on slice sites preserves the structure sheaf. -/
-def pullbackOverUnitIso :
-    SheafOfModules.unit _ ≅ (pullbackOver f V).obj (SheafOfModules.unit _) :=
-  (overEquiv (f ⁻¹ᵁ V)).unitIso.app _ ≪≫
-    (overEquiv (f ⁻¹ᵁ V)).inverse.mapIso (pullbackObjUnitIso (f ∣_ V)).symm
-
-/-- Pullback read on slice sites computes the restriction of the pullback: it sends `M.over V`
-to `(f^* M).over (f⁻¹ V)`. -/
--- The middle composite is the component of `restrictPullbackIso f V (f ⁻¹ᵁ V) le_rfl` at `M`,
--- spelled out along `f ∣_ V` rather than transported along `Scheme.Hom.resLE_eq_morphismRestrict`
--- to avoid deep unfolding when transporting local presentations across `pullbackOverObjIso`.
-def pullbackOverObjIso (M : Y.Modules) :
-    (pullbackOver f V).obj (M.over V) ≅ ((pullback f).obj M).over (f ⁻¹ᵁ V) :=
-  ((overEquiv (f ⁻¹ᵁ V)).inverse.mapIso
-      ((overFunctorEquiv (f ⁻¹ᵁ V)).app _ ≪≫
-        ((restrictFunctorIsoPullback (f ⁻¹ᵁ V).ι).app _ ≪≫ (pullbackComp (f ⁻¹ᵁ V).ι f).app M ≪≫
-          (pullbackCongr (morphismRestrict_ι f V).symm).app M ≪≫
-          ((pullbackComp (f ∣_ V) V.ι).app M).symm ≪≫
-          (pullback (f ∣_ V)).mapIso ((restrictFunctorIsoPullback V.ι).app M).symm) ≪≫
-        (pullback (f ∣_ V)).mapIso ((overFunctorEquiv V).app M).symm)).symm ≪≫
-    ((overEquiv (f ⁻¹ᵁ V)).unitIso.app _).symm
-
 /-- A morphism of modules is an isomorphism exactly when its pullbacks to the members of an open
 cover are isomorphisms. -/
 theorem isIso_iff_of_isOpenCover {ι : Type*} {U : ι → X.Opens}
@@ -541,13 +482,7 @@ section Free
 subscheme `U` preserves free modules. -/
 def overEquivFunctorObjFreeIso (U : X.Opens) (I : Type u) :
     (overEquiv U).functor.obj (SheafOfModules.free I) ≅ SheafOfModules.free I :=
-  -- The functor is rebound with its type as a functor between categories of sheaves of modules,
-  -- where `SheafOfModules.mapFreeIso` seeks its colimit-preservation instance.
-  let F : SheafOfModules (X.ringCatSheaf.over U) ⥤ SheafOfModules (U : Scheme).ringCatSheaf :=
-    (overEquiv U).functor
-  have : PreservesColimitsOfShape (Discrete I) F :=
-    (overEquiv U).toAdjunction.leftAdjoint_preservesColimits.preservesColimitsOfShape
-  (SheafOfModules.mapFreeIso F I (U.sheafOfModulesEquivOverUnit X.ringCatSheaf).symm).symm
+  U.sheafOfModulesEquivOverFunctorObjFreeIso X.ringCatSheaf I
 
 /-- A trivialization of `M` on the slice site over an open `U` gives a trivialization of the
 restriction of `M` to the open subscheme `U`. -/

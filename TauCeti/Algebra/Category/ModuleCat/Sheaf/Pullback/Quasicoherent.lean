@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FinitePresentation
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteType
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Restriction
 
@@ -64,8 +63,8 @@ variable {X Y : TopCat.{u}} {f : X ⟶ Y}
 
 /-- Local generators of an `S`-module sheaf `M` on an open cover `q.X` of `Y`, carried along a
 ringed-space morphism `(f, φ)` to local generators of `(pullback φ).obj M` on the preimage open
-cover `i ↦ (Opens.map f).obj (q.X i)` of `X`. Its body is exposed so that the dependent
-`generators` field over the preimage cover reduces without `cast`. -/
+cover `i ↦ (Opens.map f).obj (q.X i)` of `X`. -/
+-- Exposed so that the dependent `generators` field over the preimage cover reduces without `cast`.
 @[expose, simps I X generators]
 def LocalGeneratorsData.pullback {M : SheafOfModules.{u} S}
     (q : LocalGeneratorsData.{w} (R := S) M)
@@ -106,9 +105,9 @@ instance LocalGeneratorsData.isLocallyFreeData_pullback {M : SheafOfModules.{u} 
 
 /-- Quasi-coherent presentation data of an `S`-module sheaf `M` on an open cover `q.X` of `Y`,
 carried along a ringed-space morphism `(f, φ)` to quasi-coherent presentation data of
-`(pullback φ).obj M` on the preimage open cover `i ↦ (Opens.map f).obj (q.X i)` of `X`. Its body
-is exposed so that the dependent `presentation` field over the preimage cover reduces without
-`cast`. -/
+`(pullback φ).obj M` on the preimage open cover `i ↦ (Opens.map f).obj (q.X i)` of `X`. -/
+-- Exposed so that the dependent `presentation` field over the preimage cover reduces without
+-- `cast`.
 @[expose, simps I X presentation]
 def QuasicoherentData.pullback {M : SheafOfModules.{u} S}
     (q : QuasicoherentData.{w} (R := S) M)

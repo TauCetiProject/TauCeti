@@ -8,10 +8,8 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.SheafOfModules
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Jointly
-public import Mathlib.CategoryTheory.Limits.Final
 public import Mathlib.Topology.Sheaves.Module
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocalIsomorphism
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction
 public import TauCeti.CategoryTheory.Adjunction.Mates
 
 /-!
@@ -346,9 +344,14 @@ instance isContinuous_map_topCatOf_both {α β : Type u} [TopologicalSpace α] [
 variable {X Y : TopCat.{u}}
 
 /-- The inclusion map `U ⟶ X` from an open subset to the whole space as a morphism in `TopCat`
-with domain `TopCat.of U`, so that its underlying topological space is reducibly `↥U` (matching
-`Opens.sheafRestrict` and `Opens.grothendieckTopology U`). Its body is exposed so that
-`U.isOpenEmbedding_topCatInclusion` reduces in downstream sectionwise formulas. -/
+with domain `TopCat.of U`. -/
+-- `Opens.inclusion' U : (Opens.toTopCat X).obj U ⟶ X` cannot be used here because `Opens.toTopCat`
+-- is semireducible (`def`), so `↑((Opens.toTopCat X).obj U)` is not defeq to `↥U` at `instances`
+-- transparency (`backward.isDefEq.respectTransparency = true`), breaking `Category` and
+-- `Functor.IsContinuous` synthesis against `U.sheafRestrict` and `Opens.grothendieckTopology U`.
+-- `@[expose]` is forced by the public signatures of `sheafInclusionHom_hom_app` and
+-- `sheafHomResLE_hom_app`, which identify `U.isOpenEmbedding_topCatInclusion.functor` with
+-- `U.sheafRestrict`.
 @[expose]
 def topCatInclusion (U : Opens X) : TopCat.of U ⟶ X :=
   TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩
@@ -360,7 +363,7 @@ theorem coe_topCatInclusion (U : Opens X) : (U.topCatInclusion : U → X) = Subt
 
 /-- `Opens.topCatInclusion` is an open embedding. -/
 theorem isOpenEmbedding_topCatInclusion (U : Opens X) : IsOpenEmbedding U.topCatInclusion :=
-  U.2.isOpenEmbedding_subtypeVal
+  U.isOpenEmbedding
 
 /-- For an open subset `U` of `X` and a sheaf `F` on `X`, the canonical morphism
 `F ⟶ (U.topCatInclusion)_* (F|_U)` induced by the counit
@@ -383,9 +386,7 @@ theorem sheafInclusionHom_hom_app (U : Opens X) (A : Type*) [Category* A]
   (rfl)
 
 /-- The continuous map `U ⟶ V` between open subspaces induced by `f : X ⟶ Y` when
-`U ≤ (Opens.map f).obj V`. Its body is exposed so that `(Opens.map (Opens.resLE f V U e)).obj`
-reduces on open subsets. -/
-@[expose]
+`U ≤ (Opens.map f).obj V`. -/
 def resLE (f : X ⟶ Y) (V : Opens Y) (U : Opens X) (e : U ≤ (Opens.map f).obj V) :
     TopCat.of U ⟶ TopCat.of V :=
   TopCat.ofHom ⟨fun x ↦ ⟨f x.1, e x.2⟩, (f.hom.continuous.comp continuous_subtype_val).subtype_mk _⟩
@@ -449,7 +450,6 @@ def sheafHomResLE {A : Type*} [Category* A] {f : X ⟶ Y}
         have hR : e₀ ≫ c₂ = c₁ ≫ d := by
           rw [← R.obj.map_comp, ← R.obj.map_comp, ← op_comp, ← op_comp]
           exact congrArg (R.obj.map ∘ Quiver.Hom.op) (Subsingleton.elim _ _)
-        change a ≫ (b₂ ≫ c₂) = (b₁ ≫ c₁) ≫ d
         exact (Category.assoc a b₂ c₂).symm.trans
           ((congrArg (· ≫ c₂) hnat).trans
             ((Category.assoc b₁ e₀ c₂).trans
@@ -535,24 +535,14 @@ theorem sheafInclusionHom_comp_map_sheafHomResLE {A : Type*} [Category* A] {f : 
   have hR : (e₀ ≫ c) ≫ d = e₁ := by
     rw [← R.obj.map_comp, ← R.obj.map_comp, ← op_comp, ← op_comp]
     exact congrArg (R.obj.map ∘ Quiver.Hom.op) (Subsingleton.elim _ _)
-  change (a ≫ (b₂ ≫ c)) ≫ d = b₁ ≫ e₁
   exact (congrArg (· ≫ d) ((Category.assoc a b₂ c).symm.trans
     ((congrArg (· ≫ c) hnat).trans (Category.assoc b₁ e₀ c)))).trans
       ((Category.assoc b₁ (e₀ ≫ c) d).trans (congrArg (b₁ ≫ ·) hR))
 
-/-- For any continuous map `g`, the preimage functor `Opens.map g` is final, since every structured
-arrow `W ⟶ (Opens.map g).obj V` maps to `W ⟶ (Opens.map g).obj ⊤`. -/
+/-- For any continuous map `g`, the preimage functor `Opens.map g` is final. -/
 theorem final_map {X' Y' : TopCat} (g : X' ⟶ Y') :
-    (Opens.map g).Final where
-  out W := by
-    let T : StructuredArrow W (Opens.map g) :=
-      StructuredArrow.mk (homOfLE le_top : W ⟶ (Opens.map g).obj ⊤)
-    have : Nonempty (StructuredArrow W (Opens.map g)) := ⟨T⟩
-    exact zigzag_isConnected fun j₁ j₂ ↦
-      Relation.ReflTransGen.tail
-        (Relation.ReflTransGen.single
-          (Or.inl ⟨(StructuredArrow.homMk (homOfLE le_top) (Subsingleton.elim _ _) : j₁ ⟶ T)⟩))
-        (Or.inr ⟨(StructuredArrow.homMk (homOfLE le_top) (Subsingleton.elim _ _) : j₂ ⟶ T)⟩)
+    (Opens.map g).Final :=
+  final_of_representablyFlat (Opens.map g)
 
 /-- Pulling back a covering family of opens along a continuous map `f : X ⟶ Y` gives a covering
 family of opens of `X`. -/
@@ -593,12 +583,12 @@ def sheafOfModulesRestrictAdj :
   · exact (Category.comp_id _).symm
   · refine NatTrans.ext (funext fun W ↦ ?_)
     let adj := U.isOpenEmbedding_topCatInclusion.isOpenMap.adjunction
-    change 𝟙 _ ≫
-        (R.obj.map (adj.counit.app (U.isOpenEmbedding_topCatInclusion.functor.obj W.unop)).op ≫
-          R.obj.map (U.isOpenEmbedding_topCatInclusion.functor.map (adj.unit.app W.unop)).op) =
-      𝟙 (R.obj.obj (op (U.isOpenEmbedding_topCatInclusion.functor.obj W.unop)))
-    rw [Category.id_comp, ← R.obj.map_comp, ← op_comp, adj.left_triangle_components W.unop]
-    exact R.obj.map_id _
+    have h : R.obj.map (adj.counit.app (U.isOpenEmbedding_topCatInclusion.functor.obj W.unop)).op ≫
+        R.obj.map (U.isOpenEmbedding_topCatInclusion.functor.map (adj.unit.app W.unop)).op =
+        𝟙 (R.obj.obj (op (U.isOpenEmbedding_topCatInclusion.functor.obj W.unop))) := by
+      rw [← R.obj.map_comp, ← op_comp, adj.left_triangle_components W.unop]
+      exact R.obj.map_id _
+    exact (Category.id_comp _).trans h
 
 /-- Open-subspace restriction of module sheaves is a left adjoint (right adjoint: direct image). -/
 instance isLeftAdjoint_sheafOfModulesRestrict :
@@ -611,8 +601,7 @@ instance isRightAdjoint_pushforward_sheafInclusionHom :
     (SheafOfModules.pushforward.{v} (U.sheafInclusionHom RingCat.{u} R)).IsRightAdjoint :=
   (U.sheafOfModulesRestrictAdj.{v} R).isRightAdjoint
 
-/-- The counit of `sheafOfModulesRestrictAdj` is an isomorphism, since preimage followed by image
-is the identity on opens of `U`. -/
+/-- The counit of `sheafOfModulesRestrictAdj` is an isomorphism. -/
 instance isIso_sheafOfModulesRestrictAdj_counit :
     IsIso (U.sheafOfModulesRestrictAdj.{v} R).counit := by
   rw [NatTrans.isIso_iff_isIso_app]
@@ -650,8 +639,8 @@ instance faithful_pushforward_sheafInclusionHom :
     (SheafOfModules.pushforward.{v} (U.sheafInclusionHom RingCat.{u} R)).Faithful :=
   (U.sheafOfModulesRestrictAdj.{v} R).fullyFaithfulROfIsIsoCounit.faithful
 
-/-- At universe `u`, open-subspace restriction of module sheaves is also a right adjoint (its left
-adjoint being extension by zero), so it preserves all limits. -/
+/-- At universe `u`, open-subspace restriction of module sheaves is also a right adjoint (left
+adjoint: extension by zero). -/
 instance isRightAdjoint_sheafOfModulesRestrict :
     (U.sheafOfModulesRestrict.{u} R).IsRightAdjoint :=
   SheafOfModules.isRightAdjoint_pushforward (F := U.isOpenEmbedding_topCatInclusion.functor)
@@ -670,8 +659,7 @@ def sheafOfModulesRestrictIsoPullback :
   (U.sheafOfModulesRestrictAdj.{v} R).leftAdjointUniq
     (SheafOfModules.pullbackPushforwardAdjunction.{v} (U.sheafInclusionHom RingCat.{u} R))
 
-/-- Pullback of module sheaves along an open inclusion preserves all limits, since it is naturally
-isomorphic to open-subspace restriction. -/
+/-- Pullback of module sheaves along an open inclusion preserves all limits. -/
 instance preservesLimits_pullback_sheafInclusionHom :
     PreservesLimits (SheafOfModules.pullback.{u} (U.sheafInclusionHom RingCat.{u} R)) :=
   preservesLimits_of_natIso (U.sheafOfModulesRestrictIsoPullback.{u} R)
@@ -785,10 +773,12 @@ def pullbackOver (V : Opens Y) :
     pullback.{u} (Opens.sheafHomResLE φ V ((Opens.map f).obj V) le_rfl) ⋙
     (((Opens.map f).obj V).sheafOfModulesEquivOver R).inverse
 
-/-- Slice-site pullback `pullbackOver φ V` is a left adjoint, hence preserves all colimits. -/
-instance isLeftAdjoint_pullbackOver (V : Opens Y) : (pullbackOver φ V).IsLeftAdjoint := by
-  unfold pullbackOver
-  infer_instance
+/-- Slice-site pullback `pullbackOver φ V` is a left adjoint. -/
+instance isLeftAdjoint_pullbackOver (V : Opens Y) : (pullbackOver φ V).IsLeftAdjoint :=
+  inferInstanceAs
+    ((V.sheafOfModulesEquivOver S).functor ⋙
+      pullback.{u} (Opens.sheafHomResLE φ V ((Opens.map f).obj V) le_rfl) ⋙
+      (((Opens.map f).obj V).sheafOfModulesEquivOver R).inverse).IsLeftAdjoint
 
 /-- Slice-site pullback `pullbackOver φ V` preserves the unit sheaf of modules. -/
 def pullbackOverUnitIso (V : Opens Y) :
