@@ -65,6 +65,10 @@ flat: the bound is the number of equations.
   reduced `A`-algebra `C`.
 * `TauCeti.isZero_Tor_succ_quotient_of_isRadical`: `Tor_{n+1}^A(A ⧸ I, C) = 0` for every radical
   ideal `I` of `A` and every perfect `A`-algebra `C`.
+* `TauCeti.isZero_Tor_succ_quotient_of_isRadical_of_smul_eq_zero`: `Tor_{n+1}^A(A ⧸ I, M) = 0` for
+  every radical ideal `I` of `A` and every `A`-module `M` annihilated by `I`.
+* `TauCeti.isZero_Tor_succ_restrictScalars_of_surjective`: `Tor_{n+1}^A(B, M) = 0` for every
+  surjection `A →+* B` onto a reduced ring `B` and every `B`-module `M`.
 * `TauCeti.isZero_Tor_succ_of_perfectRing`: `Tor_{n+1}^A(B, C) = 0` for all perfect `A`-algebras
   `B` and `C`.
 * `TauCeti.isZero_Tor_quotient_radical_span_range`: `Tor_n^A(A ⧸ √(f₁, …, f_m), M) = 0` for every
@@ -153,6 +157,76 @@ theorem isZero_Tor_succ_quotient_of_isRadical [ExpChar C p] [PerfectRing C p] {I
     rwa [Ideal.iSup_radical_fg, hI.radical] at key
 
 end Quotient
+
+include p in
+/-- **`Tor` of radical quotients against quotient modules.** For a radical ideal `I` of a perfect
+ring `A` of prime characteristic `p` and an `A`-module `M` annihilated by `I`,
+`Tor_{n+1}^A(A ⧸ I, M) = 0`. -/
+theorem isZero_Tor_succ_quotient_of_isRadical_of_smul_eq_zero {I : Ideal A} (hI : I.IsRadical)
+    {M : ModuleCat.{u} A} (hM : ∀ x ∈ I, ∀ m : M, x • m = 0) (n : ℕ) :
+    IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj (ModuleCat.of A (A ⧸ I))).obj M) := by
+  induction n generalizing I with
+  | zero =>
+    have := subsingleton_tensorProduct_of_isRadical (p := p) hI hM
+    exact I.shortExact_quotientShortComplex.isZero_Tor_one_X₃ _
+      (ModuleCat.isZero_Tor_succ_of_flat _ _ 0) (Function.injective_of_subsingleton _)
+  | succ n ih =>
+    have fg {N : Ideal A} (hN : N.FG) :
+        N ≤ I → IsZero (((Tor (ModuleCat.{u} A) (n + 1 + 1)).obj
+          (ModuleCat.of A (A ⧸ N.radical))).obj M) := by
+      induction N, hN using Submodule.fg_induction with
+      | singleton f =>
+        intro _
+        rw [← Ideal.span, ← frobeniusRootIdeal_eq_radical (p := p)]
+        exact isZero_Tor_add_two_quotient_frobeniusRootIdeal M f n
+      | sup N₁ N₂ _ _ h₁ h₂ =>
+        intro hNI
+        have r₁ := Ideal.radical_isRadical N₁
+        have r₂ := Ideal.radical_isRadical N₂
+        rw [Ideal.radical_sup, (r₁.sup p r₂).radical]
+        have hinf : Ideal.radical N₁ ⊓ Ideal.radical N₂ ≤ I :=
+          inf_le_left.trans (hI.radical_le_iff.mpr (le_sup_left.trans hNI))
+        exact (Submodule.shortExact_quotientInfSupShortComplex (Ideal.radical N₁)
+          (Ideal.radical N₂)).isZero_Tor_succ_X₃ _
+          (ModuleCat.isZero_Tor_prod _ (h₁ (le_sup_left.trans hNI))
+            (h₂ (le_sup_right.trans hNI)))
+          (ih (r₁.inf r₂) fun x hx m ↦ hM x (hinf hx) m)
+    have : Nonempty {N : Ideal A // N.FG ∧ N ≤ I} := ⟨⟨⊥, Submodule.fg_bot, bot_le⟩⟩
+    have key := ModuleCat.isZero_Tor_succ_quotient_iSup (M := M) (X := ModuleCat.of A A)
+      I.directed_radical_fg (n + 1) fun N ↦ fg N.2.1 N.2.2
+    rwa [Ideal.iSup_radical_fg, hI.radical] at key
+
+include p in
+/-- **Surjections from a perfect ring onto a reduced ring are `Tor`-acyclic on target modules.**
+Let `g : A →+* B` be a surjective homomorphism from a perfect ring `A` of prime characteristic `p`
+onto a reduced ring `B` (for instance any perfect ring). Then `Tor_{n+1}^A(B, M) = 0` for every
+`B`-module `M`. -/
+theorem isZero_Tor_succ_restrictScalars_of_surjective {B : Type u} [CommRing B] [IsReduced B]
+    {g : A →+* B} (hg : Function.Surjective g) (M : ModuleCat.{u} B) (n : ℕ) :
+    IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj
+      ((ModuleCat.restrictScalars g).obj (ModuleCat.of B B))).obj
+      ((ModuleCat.restrictScalars g).obj M)) := by
+  have hker : (RingHom.ker g).IsRadical :=
+    (RingHom.ker_isRadical_iff_reduced_of_surjective hg).2 inferInstance
+  let e := RingHom.quotientKerEquivOfSurjective hg
+  let eB : ((ModuleCat.restrictScalars g).obj (ModuleCat.of B B) : ModuleCat A) ≃ₗ[A]
+      (ModuleCat.of A (A ⧸ RingHom.ker g) : ModuleCat A) :=
+    { toFun := fun b : B ↦ e.symm b
+      invFun := fun q : A ⧸ RingHom.ker g ↦ (e q : B)
+      left_inv := e.apply_symm_apply
+      right_inv := e.symm_apply_apply
+      map_add' := map_add e.symm
+      map_smul' := fun a (b : B) ↦ by
+        change e.symm (g a * b) = a • e.symm b
+        -- Why `change`: `restrictScalars g` acts on `B` by left multiplication by `g a`.
+        rw [map_mul, RingHom.quotientKerEquivOfSurjective_symm_apply, Algebra.smul_def,
+          Ideal.Quotient.algebraMap_eq] }
+  refine IsZero.of_iso ?_ (((Tor (ModuleCat.{u} A) (n + 1)).mapIso eB.toModuleIso).app _)
+  refine isZero_Tor_succ_quotient_of_isRadical_of_smul_eq_zero (p := p) hker
+    (fun x hx m ↦ ?_) n
+  rw [ModuleCat.restrictScalars.smul_def, RingHom.mem_ker.mp hx, zero_smul]
+  -- Restriction of scalars preserves the underlying additive group and its zero element.
+  rfl
 
 /-- **Tor independence of perfect rings.** For perfect algebras `B` and `C` over a perfect ring `A`
 of prime characteristic `p`, `Tor_{n+1}^A(B, C) = 0`. -/

@@ -9,9 +9,12 @@ public import Mathlib.CategoryTheory.Abelian.LeftDerived
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.Resolution
 public import TauCeti.CategoryTheory.ObjectProperty.Homology
+import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
+import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Kernels
+import TauCeti.CategoryTheory.Abelian.Projective.Resolution
 
 /-!
-# Left derived functors on a projective presentation of length one
+# Left derived functors on short exact sequences and compositions
 
 Let `S : 0 ⟶ P₁ ⟶ P₀ ⟶ M ⟶ 0` be a short exact sequence in an abelian category with `P₁` and
 `P₀` projective. Then `⋯ ⟶ 0 ⟶ P₁ ⟶ P₀` is a projective resolution of `M`
@@ -34,23 +37,34 @@ Over a principal ideal domain every module has such a presentation, by a free mo
 kernel, which is again free; applied to the tensor product, this computes `Tor₁` in the Künneth
 and universal coefficient theorems.
 
-The file also records four general facts. The natural transformation `LₙF ⟶ LₙG` induced by
-`α : F ⟶ G` is additive in `α` (`CategoryTheory.NatTrans.leftDerived_add`), so that a derived
-functor depending on a parameter through a natural transformation, such as `Tor` in its underived
-variable, is an additive functor of that parameter. In degree zero it is compatible with the
-comparison maps `L₀F ⟶ F` and `L₀G ⟶ G`
-(`CategoryTheory.NatTrans.leftDerived_zero_comp_fromLeftDerivedZero`). An exact additive functor
-has no positive left derived functors (`CategoryTheory.Functor.isZero_leftDerived_succ`). If an
-additive functor sends projective objects into a class closed under subobjects and quotients, for
-instance a Serre class, all its left derived functors take values in that class
-(`CategoryTheory.ObjectProperty.prop_leftDerived_obj`). Applied to tensoring with a fixed object,
-this turns closure of such a class under tensor products into closure under Tor.
+More generally, when only `X₂` is projective in a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0`,
+prepending `X₂` to a projective resolution of `X₁` gives a projective resolution of `X₃` and
+therefore shifts left derived functors in degrees at least two: `L_{n+2}F(X₃) ≅ L_{n+1}F(X₁)`
+(`CategoryTheory.ShortComplex.ShortExact.leftDerivedSuccSuccIso`). When `F` is right exact,
+`L₁F(X₃)` vanishes precisely when `F(X₁) ⟶ F(X₂)` is a monomorphism, equivalently when `F` sends
+the short exact sequence to a short exact sequence
+(`CategoryTheory.ShortComplex.ShortExact.mono_map_f_iff_isZero_leftDerived_one`,
+`CategoryTheory.ShortComplex.ShortExact.shortExact_map_iff_isZero_leftDerived_one`).
+
+The file also records general functoriality facts. The natural transformation `LₙF ⟶ LₙG` induced
+by `α : F ⟶ G` is additive in `α` (`CategoryTheory.NatTrans.leftDerived_add`), and natural
+isomorphisms induce natural isomorphisms of left derived functors
+(`CategoryTheory.NatIso.leftDerived`). In degree zero, `NatTrans.leftDerived` is compatible with
+the comparison maps `L₀F ⟶ F` and `L₀G ⟶ G`
+(`CategoryTheory.NatTrans.leftDerived_zero_comp_fromLeftDerivedZero`). Postcomposing with an exact
+additive functor `G` commutes with left derived functors
+(`CategoryTheory.Functor.compLeftDerivedObjIso`), and when `G` is also faithful it preserves and
+reflects their vanishing (`CategoryTheory.Functor.isZero_comp_leftDerived_iff`). An exact additive
+functor has no positive left derived functors (`CategoryTheory.Functor.isZero_leftDerived_succ`).
+If an additive functor sends projective objects into a class closed under subobjects and quotients,
+for instance a Serre class, all its left derived functors take values in that class
+(`CategoryTheory.ObjectProperty.prop_leftDerived_obj`).
 
 ## References
 
 * C. A. Weibel, *An Introduction to Homological Algebra*, Cambridge Studies in Advanced
   Mathematics 38, Cambridge University Press (1994), Section 2.4, for left derived functors
-  computed from a projective resolution.
+  computed from a projective resolution and dimension shifting.
 -/
 
 public section
@@ -255,6 +269,92 @@ lemma leftDerived_map_comp_leftDerivedOneIsoKernel_hom (φ : S ⟶ S') :
 
 end ShortExact
 
+namespace ShortExact
+
+variable [HasProjectiveResolutions C] {D : Type*} [Category* D] [Abelian D]
+  (hS : S.ShortExact) [Projective S.X₂] (F : C ⥤ D) [F.Additive]
+
+/-- **Dimension shifting along a projective cover.** Given a short exact sequence
+`0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` with `X₂` projective, prepending `X₂` to a projective resolution of `X₁`
+identifies `L_{n+2}F(X₃)` with `L_{n+1}F(X₁)` for every additive functor `F`. -/
+def leftDerivedSuccSuccIso (n : ℕ) :
+    (F.leftDerived (n + 2)).obj S.X₃ ≅ (F.leftDerived (n + 1)).obj S.X₁ :=
+  let P := CategoryTheory.projectiveResolution S.X₁
+  let Q := hS.augmentProjectiveResolution P
+  let K := P.complex.augment ((P.π.f 0 ≫ (HomologicalComplex.singleObjXSelf _ 0 S.X₁).hom) ≫ S.f)
+    (by simp only [← Category.assoc, P.complex_d_comp_π_f_zero, zero_comp])
+  Q.isoLeftDerivedObj F (n + 2) ≪≫
+    (HomologicalComplex.homologyFunctor D (ComplexShape.down ℕ) (n + 2)).mapIso
+      ((F.mapHomologicalComplex (ComplexShape.down ℕ)).mapIso
+        (eqToIso (hS.augmentProjectiveResolution_complex P))) ≪≫
+    (HomologicalComplex.homologyFunctorIso' D (ComplexShape.down ℕ) (n + 3) (n + 2) (n + 1)
+      (by simp) (by simp)).app ((F.mapHomologicalComplex _).obj K) ≪≫
+    (ShortComplex.homologyFunctor D).mapIso
+      (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
+        (by simp [K]) (by simp [K])) ≪≫
+    ((HomologicalComplex.homologyFunctorIso' D (ComplexShape.down ℕ) (n + 2) (n + 1) n
+      (by simp) (by simp)).app ((F.mapHomologicalComplex _).obj P.complex)).symm ≪≫
+    (P.isoLeftDerivedObj F (n + 1)).symm
+
+include hS in
+/-- Along a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` with `X₂` projective, `L_{n+2}F(X₃)`
+vanishes if and only if `L_{n+1}F(X₁)` vanishes. -/
+theorem isZero_leftDerived_add_two_iff (n : ℕ) :
+    IsZero ((F.leftDerived (n + 2)).obj S.X₃) ↔ IsZero ((F.leftDerived (n + 1)).obj S.X₁) :=
+  (hS.leftDerivedSuccSuccIso F n).isZero_iff
+
+include hS in
+/-- For a right exact additive functor `F` and a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0`
+with `X₂` projective, `F(X₁) ⟶ F(X₂)` is a monomorphism if and only if `L₁F(X₃)` vanishes. -/
+theorem mono_map_f_iff_isZero_leftDerived_one [PreservesFiniteColimits F] :
+    Mono (F.map S.f) ↔ IsZero ((F.leftDerived 1).obj S.X₃) := by
+  let P := CategoryTheory.projectiveResolution S.X₁
+  let Q := hS.augmentProjectiveResolution P
+  let π₀ : P.complex.X 0 ⟶ S.X₁ :=
+    P.π.f 0 ≫ (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 S.X₁).hom
+  have hπ₀ : P.complex.d 1 0 ≫ π₀ = 0 := by
+    simp only [π₀, ← Category.assoc, P.complex_d_comp_π_f_zero, zero_comp]
+  let K := P.complex.augment (π₀ ≫ S.f) (by simp only [← Category.assoc, hπ₀, zero_comp])
+  rw [(Q.isoLeftDerivedObj F 1).isZero_iff, HomologicalComplex.homologyFunctor_obj,
+    ← HomologicalComplex.exactAt_iff_isZero_homology,
+    (hS.augmentProjectiveResolution_complex P : Q.complex = K),
+    HomologicalComplex.exactAt_iff' _ 2 1 0 (by simp) (by simp)]
+  let S₁ : ShortComplex D := ShortComplex.mk (F.map (P.complex.d 1 0)) (F.map π₀ ≫ F.map S.f)
+    (by rw [← Category.assoc, ← F.map_comp, hπ₀, F.map_zero, zero_comp])
+  have hS₁ : (((F.mapHomologicalComplex (ComplexShape.down ℕ)).obj K).sc' 2 1 0).Exact ↔
+      S₁.Exact :=
+    ShortComplex.exact_iff_of_iso (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
+      (by simp [K, S₁]) (by simp [K, S₁]))
+  -- `F` preserves the cokernel `P₁ ⟶ P₀ ⟶ X₁`, so `coker F(d₁₀) ≅ F(X₁)` carries the
+  -- induced map `coker F(d₁₀) ⟶ F(X₂)` to `F(S.f)`.
+  have hcok : IsColimit (CokernelCofork.ofπ π₀ hπ₀) :=
+    IsColimit.ofIsoColimit P.isColimitCokernelCofork
+      (Cofork.ext (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 S.X₁) rfl)
+  have hcokF : IsColimit (CokernelCofork.ofπ (F.map π₀)
+      (by rw [← F.map_comp, hπ₀, F.map_zero])) :=
+    isColimitCoforkMapOfIsColimit' F hπ₀ hcok
+  let e : cokernel (F.map (P.complex.d 1 0)) ≅ F.obj S.X₁ :=
+    IsColimit.coconePointUniqueUpToIso (cokernelIsCokernel (F.map (P.complex.d 1 0))) hcokF
+  have he : cokernel.π (F.map (P.complex.d 1 0)) ≫ e.hom = F.map π₀ :=
+    IsColimit.comp_coconePointUniqueUpToIso_hom (cokernelIsCokernel _) hcokF
+      WalkingParallelPair.one
+  have hdesc : cokernel.desc S₁.f S₁.g S₁.zero = e.hom ≫ F.map S.f := by
+    rw [← cancel_epi (cokernel.π S₁.f), cokernel.π_desc, ← Category.assoc, he]
+  rw [hS₁, S₁.exact_iff_mono_cokernel_desc, hdesc]
+  exact ⟨fun _ ↦ mono_comp _ _, fun _ ↦ by simpa using mono_comp e.inv (e.hom ≫ F.map S.f)⟩
+
+include hS in
+/-- A right exact additive functor sends a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` with
+`X₂` projective to a short exact sequence if and only if `L₁F(X₃)` vanishes. -/
+theorem shortExact_map_iff_isZero_leftDerived_one [PreservesFiniteColimits F] :
+    (S.map F).ShortExact ↔ IsZero ((F.leftDerived 1).obj S.X₃) := by
+  obtain ⟨hex, hepi⟩ :=
+    (Functor.preservesFiniteColimits_iff_forall_exact_map_and_epi F).1 inferInstance S hS
+  rw [← hS.mono_map_f_iff_isZero_leftDerived_one F]
+  exact ⟨fun h ↦ h.mono_f, fun h ↦ .mk' hex h hepi⟩
+
+end ShortExact
+
 end ShortComplex
 
 section Additive
@@ -273,6 +373,25 @@ theorem NatTrans.leftDerived_add {F G : C ⥤ D} [F.Additive] [G.Additive] (α �
     simp
   simp only [NatTrans.app_add, (projectiveResolution X).leftDerived_app_eq, h, Functor.map_add,
     Preadditive.add_comp, Preadditive.comp_add]
+
+/-- A natural isomorphism between additive functors induces a natural isomorphism between their
+left derived functors. -/
+def NatIso.leftDerived {F G : C ⥤ D} [F.Additive] [G.Additive] (e : F ≅ G) (n : ℕ) :
+    F.leftDerived n ≅ G.leftDerived n where
+  hom := NatTrans.leftDerived e.hom n
+  inv := NatTrans.leftDerived e.inv n
+  hom_inv_id := by rw [← NatTrans.leftDerived_comp, e.hom_inv_id, NatTrans.leftDerived_id]
+  inv_hom_id := by rw [← NatTrans.leftDerived_comp, e.inv_hom_id, NatTrans.leftDerived_id]
+
+@[simp]
+theorem NatIso.leftDerived_hom {F G : C ⥤ D} [F.Additive] [G.Additive] (e : F ≅ G) (n : ℕ) :
+    (NatIso.leftDerived e n).hom = NatTrans.leftDerived e.hom n :=
+  (rfl)
+
+@[simp]
+theorem NatIso.leftDerived_inv {F G : C ⥤ D} [F.Additive] [G.Additive] (e : F ≅ G) (n : ℕ) :
+    (NatIso.leftDerived e n).inv = NatTrans.leftDerived e.inv n :=
+  (rfl)
 
 /-- The comparison `L₀F ⟶ F` is natural in the additive functor `F`: it intertwines the
 natural transformation `L₀F ⟶ L₀G` induced by `α : F ⟶ G` with `α`. -/
@@ -293,6 +412,30 @@ theorem NatTrans.leftDerived_zero_comp_fromLeftDerivedZero {F G : C ⥤ D} [F.Ad
   erw [HomologicalComplex.homologyι_naturality_assoc, h,
     Category.assoc (ChainComplex.isoHomologyι₀ _).hom]
   rfl
+
+/-- Postcomposing an additive functor with an exact additive functor commutes with left derived
+functors on objects: `Lₙ(G ∘ F)(X) ≅ G(LₙF(X))`. -/
+def Functor.compLeftDerivedObjIso {E : Type*} [Category* E] [Abelian E]
+    (F : C ⥤ D) [F.Additive] (G : D ⥤ E) [G.Additive] [G.PreservesHomology] (X : C) (n : ℕ) :
+    ((F ⋙ G).leftDerived n).obj X ≅ G.obj ((F.leftDerived n).obj X) :=
+  let P := projectiveResolution X
+  P.isoLeftDerivedObj (F ⋙ G) n ≪≫
+    (HomologicalComplex.homologyFunctor E (ComplexShape.down ℕ) n).mapIso
+      ((Functor.mapHomologicalComplexCompIso (Iso.refl (F ⋙ G)) (ComplexShape.down ℕ)).symm.app
+        P.complex) ≪≫
+    (G.mapHomologicalComplexCompHomologyFunctorIso (ComplexShape.down ℕ) n).app
+      ((F.mapHomologicalComplex (ComplexShape.down ℕ)).obj P.complex) ≪≫
+    G.mapIso (P.isoLeftDerivedObj F n).symm
+
+/-- When `G` is exact, additive and faithful, `(Lₙ(G ∘ F))(X)` vanishes if and only if
+`(LₙF)(X)` vanishes. -/
+theorem Functor.isZero_comp_leftDerived_iff {E : Type*} [Category* E] [Abelian E]
+    (F : C ⥤ D) [F.Additive] (G : D ⥤ E) [G.Additive] [G.PreservesHomology] [G.Faithful]
+    (X : C) (n : ℕ) :
+    IsZero (((F ⋙ G).leftDerived n).obj X) ↔ IsZero ((F.leftDerived n).obj X) :=
+  (F.compLeftDerivedObjIso G X n).isZero_iff.trans
+    ⟨fun h ↦ (IsZero.iff_id_eq_zero _).2 <| G.map_injective <| by
+      rw [G.map_id, G.map_zero]; exact h.eq_of_src _ _, G.map_isZero⟩
 
 /-- An exact additive functor has no positive left derived functors. -/
 theorem Functor.isZero_leftDerived_succ (F : C ⥤ D) [F.Additive] [F.PreservesHomology]

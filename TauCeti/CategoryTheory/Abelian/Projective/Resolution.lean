@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.Augment
+public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Abelian.Projective.Resolution
 
 /-!
@@ -22,6 +24,11 @@ lift of the identity of `X`, so it is homotopic to Mathlib's comparison
 which is exact in positive degrees and exact at its augmentation. Its quasi-isomorphism proof
 is adapted from Mathlib's `CategoryTheory.ProjectiveResolution.of`, by Markus Himmel,
 Kim Morrison, Jakob von Raumer and Joël Riou.
+
+Given a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` with `X₂` projective, prepending `X₂` to a
+projective resolution of `X₁` yields a projective resolution of `X₃`
+(`CategoryTheory.ShortComplex.ShortExact.augmentProjectiveResolution`), which shifts the degree of
+any left derived functor along the sequence.
 -/
 
 public section
@@ -99,3 +106,70 @@ theorem homotopyEquivOfComm_inv : (homotopyEquivOfComm P Q f hf).inv = lift (�
   (rfl)
 
 end CategoryTheory.ProjectiveResolution
+
+namespace CategoryTheory.ShortComplex.ShortExact
+
+open Limits
+
+variable {C : Type*} [Category* C] [Abelian C] {S : ShortComplex C}
+
+/-- Given a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` with `X₂` projective and a projective
+resolution `P` of `X₁`, prepending `X₂` in degree zero gives a projective resolution of `X₃`. -/
+def augmentProjectiveResolution (hS : S.ShortExact) [Projective S.X₂]
+    (P : ProjectiveResolution S.X₁) : ProjectiveResolution S.X₃ :=
+  let π₀ := P.π.f 0 ≫ (HomologicalComplex.singleObjXSelf _ 0 S.X₁).hom
+  let p := π₀ ≫ S.f
+  have hp : P.complex.d 1 0 ≫ p = 0 := by
+    rw [← Category.assoc, ← Category.assoc, P.complex_d_comp_π_f_zero, zero_comp, zero_comp]
+  let K := P.complex.augment p hp
+  have hg : K.d 1 0 ≫ S.g = 0 :=
+    (Category.assoc π₀ S.f S.g).trans ((congrArg (π₀ ≫ ·) S.zero).trans comp_zero)
+  @ChainComplex.toProjectiveResolution _ _ _ _ K S.g hg
+    (fun
+      | 0 => inferInstanceAs (Projective S.X₂)
+      | n + 1 => P.projective n)
+    hS.epi_g
+    (by
+      let φ : ShortComplex.mk (K.d 1 0) S.g hg ⟶ S :=
+        { τ₁ := π₀
+          τ₂ := 𝟙 S.X₂
+          τ₃ := 𝟙 S.X₃
+          comm₁₂ := (Category.comp_id _).symm
+          comm₂₃ := (Category.id_comp _).trans (Category.comp_id _).symm }
+      have : Epi φ.τ₁ :=
+        @epi_comp _ _ _ _ _ (P.π.f 0) (epi_of_isColimit_cofork P.isColimitCokernelCofork)
+          (HomologicalComplex.singleObjXSelf _ 0 S.X₁).hom inferInstance
+      have : IsIso φ.τ₂ := inferInstanceAs (IsIso (𝟙 S.X₂))
+      have : Mono φ.τ₃ := inferInstanceAs (Mono (𝟙 S.X₃))
+      exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).2 hS.exact)
+    (fun n ↦ by
+      rw [HomologicalComplex.exactAt_iff' K (n + 2) (n + 1) n (by simp) (by simp)]
+      cases n with
+      | zero =>
+        let φ : ShortComplex.mk (P.complex.d 1 0) (P.π.f 0) P.complex_d_comp_π_f_zero ⟶
+            K.sc' 2 1 0 :=
+          { τ₁ := 𝟙 (P.complex.X 1)
+            τ₂ := 𝟙 (P.complex.X 0)
+            τ₃ := (HomologicalComplex.singleObjXSelf _ 0 S.X₁).hom ≫ S.f
+            comm₁₂ := (Category.id_comp _).trans (Category.comp_id _).symm
+            comm₂₃ := (Category.id_comp _).trans (Category.assoc _ _ _) }
+        have : Epi φ.τ₁ := inferInstanceAs (Epi (𝟙 (P.complex.X 1)))
+        have : IsIso φ.τ₂ := inferInstanceAs (IsIso (𝟙 (P.complex.X 0)))
+        have : Mono φ.τ₃ :=
+          @mono_comp _ _ _ _ _ (HomologicalComplex.singleObjXSelf _ 0 S.X₁).hom inferInstance
+            S.f hS.mono_f
+        exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).1 P.exact₀
+      | succ n => exact P.exact_succ n)
+
+/-- The underlying chain complex of `augmentProjectiveResolution` is `P.complex` augmented by
+`S.X₂` along the resolution map followed by `S.f`. -/
+@[simp]
+theorem augmentProjectiveResolution_complex (hS : S.ShortExact) [Projective S.X₂]
+    (P : ProjectiveResolution S.X₁) :
+    (hS.augmentProjectiveResolution P).complex =
+      P.complex.augment ((P.π.f 0 ≫ (HomologicalComplex.singleObjXSelf _ 0 S.X₁).hom) ≫ S.f)
+        (by rw [← Category.assoc, ← Category.assoc, P.complex_d_comp_π_f_zero, zero_comp,
+          zero_comp]) :=
+  (rfl)
+
+end CategoryTheory.ShortComplex.ShortExact

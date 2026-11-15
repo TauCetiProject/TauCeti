@@ -41,6 +41,8 @@ is needed: over `A = 𝔽_p[t]`, with `B = 𝔽_p[t ^ (1 / p ^ ∞)]` perfect, t
   every reduced `A`-algebra `C`.
 * `TauCeti.subtype_rTensor_injective_of_isRadical`: `I ⊗[A] C → A ⊗[A] C` is injective for every
   radical ideal `I` of `A` and every perfect `A`-algebra `C`.
+* `TauCeti.subsingleton_tensorProduct_of_isRadical`: `I ⊗[A] M` is subsingleton for every radical
+  ideal `I` of `A` and every `A`-module `M` annihilated by `I`.
 * `Algebra.TensorProduct.perfectRing`: the tensor product of two perfect algebras over a perfect
   ring is perfect.
 
@@ -132,6 +134,28 @@ theorem subtype_rTensor_injective_of_isRadical [ExpChar C p] [PerfectRing C p] {
     LinearMap.rTensor_comp_apply] at hx ⊢
   rw [← LinearMap.rTensor_comp_apply, Submodule.subtype_comp_inclusion] at hx
   rw [fg hN (hx.trans (map_zero _).symm), map_zero]
+
+include p in
+/-- **Radical ideals in perfect rings annihilate tensor products with quotient modules.** For a
+radical ideal `I` of a perfect ring `A` of prime characteristic `p` and an `A`-module `M` killed
+by `I`, `I ⊗[A] M` is subsingleton: every `x ∈ I` factors as `y * y ^ (p - 1)` with
+`y = x ^ (1 / p) ∈ I` and `y ^ (p - 1) ∈ I`. -/
+theorem subsingleton_tensorProduct_of_isRadical {M : Type*} [AddCommGroup M] [Module A M]
+    {I : Ideal A} (hI : I.IsRadical) (hM : ∀ x ∈ I, ∀ m : M, x • m = 0) :
+    Subsingleton (I ⊗[A] M) := by
+  refine (subsingleton_iff_forall_eq 0).2 fun t ↦ ?_
+  induction t with
+  | tmul x m =>
+    have hy : (frobeniusEquiv A p).symm x ∈ I :=
+      (isRadical_iff_frobeniusEquiv_symm_mem p).1 hI x x.2
+    have hz : (frobeniusEquiv A p).symm x ^ (p - 1) ∈ I :=
+      I.pow_mem_of_mem hy (p - 1) (Nat.sub_pos_of_lt hp.out.one_lt)
+    have hx : x = (frobeniusEquiv A p).symm x • (⟨_, hz⟩ : I) :=
+      Subtype.ext <| by
+        rw [SetLike.val_smul, smul_eq_mul, ← pow_succ', Nat.sub_add_cancel hp.out.one_lt.le,
+          frobeniusEquiv_symm_pow_p]
+    rw [hx, smul_tmul, hM _ hy m, tmul_zero]
+  | add _ _ hx hy => rw [hx, hy, add_zero]
 
 end TauCeti
 
