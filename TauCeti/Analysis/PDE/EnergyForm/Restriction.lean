@@ -28,6 +28,8 @@ integrability hypotheses on `Ω`.
   extension `v₀ ∈ H¹₀(Ω)`.
 * `TauCeti.PDE.energyFormH1_extendByZeroL`: `a(u₀, v₀) = a(u, v)` for `u, v ∈ H¹₀(U)` with zero
   extensions `u₀, v₀ ∈ H¹₀(Ω)`.
+* `TauCeti.PDE.energyFormH1_extendByZeroL_left`: `a(u₀, w) = a(u, w|_U)` for `u ∈ H¹₀(U)` with
+  zero extension `u₀ ∈ H¹₀(Ω)` and any `w ∈ H¹(Ω)`.
 * `TauCeti.PDE.isCoercive_energyFormH1L0_of_domain_le`: coercivity passes to smaller domains.
 * `TauCeti.PDE.energyFormH1_restrictL_nonpos`: weak subsolutions restrict to weak subsolutions.
 * `TauCeti.PDE.energyFormH1_restrictL_nonneg`: weak supersolutions restrict to weak
@@ -35,9 +37,6 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.energyFormH1_restrictL_add_const_nonpos`,
   `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg`: the restriction of a weak subsolution
   or supersolution with no mass term, shifted by a constant, is again one.
-* `TauCeti.PDE.setIntegral_mul_value_extendByZeroL`,
-  `TauCeti.PDE.setIntegral_inner_gradient_extendByZeroL`: the pairings `∫ f v` and `∫ F · ∇v`
-  of a zero extension over `Ω` are those of `v` over `U`.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral`: weak solutions restrict to weak solutions.
 * `TauCeti.PDE.exists_forcing_restrictL_of_eqOn`: for `b, c ∈ L∞(Ω)`, the restriction of a weak
   solution to a set where the principal coefficient is replaced by an essentially bounded one
@@ -45,7 +44,7 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_neg_setIntegral_inner`: weak solutions of `L u = div F`
   restrict to weak solutions of the same equation.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_inner`: weak solutions of
-  `L u = f + ∂ᵢFⁱ` restrict to weak solutions of the same equation.
+  `L u = f + div F` restrict to weak solutions of the same equation.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_of_forall_testFunction`: if a continuous functional
   `ℓ` on `H¹(B)` agrees with `a(u, ·)` on test functions on `B ⊆ Ω`, then `a(u|_B, v) = ℓ(v)`
   for every `v ∈ H¹₀(B)`.
@@ -70,7 +69,6 @@ public section
 noncomputable section
 
 open MeasureTheory Set TopologicalSpace
-open scoped ENNReal
 
 namespace TauCeti
 
@@ -78,6 +76,27 @@ namespace PDE
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega U : Opens (EuclideanSpace ℝ ι)}
+
+/-- The jet field of the zero extension of `v ∈ H¹₀(U)` to `Ω ⊇ U` is the zero extension of the
+jet field of `v`. -/
+private theorem jetField_extendByZeroL_ae (hU : U ≤ Omega) (v : W1p0 mu U 2) :
+    jetField (W1p0.extendByZeroL hU v : W1p mu Omega 2) =ᵐ[mu.restrict Omega]
+      (U : Set (EuclideanSpace ℝ ι)).indicator (jetField (v : W1p mu U 2)) := by
+  have hUm := U.isOpen.measurableSet
+  have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
+  filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.value (v : W1p mu U 2)),
+    coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.gradient (v : W1p mu U 2))] with x hx hy
+  rw [jetField_apply, W1p0.value_extendByZeroL, W1p0.gradient_extendByZeroL, hx, hy]
+  by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
+  · rw [indicator_of_mem hxU, indicator_of_mem hxU, indicator_of_mem hxU, jetField_apply]
+  · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, indicator_of_notMem hxU]
+    rfl
+
+/-- On `U ⊆ Ω`, the jet field of the restriction `w|_U` of `w ∈ H¹(Ω)` is that of `w`. -/
+private theorem jetField_restrictL_ae (hU : U ≤ Omega) (w : W1p mu Omega 2) :
+    jetField (W1p.restrictL hU w) =ᵐ[mu.restrict U] jetField w := by
+  filter_upwards [W1p.value_restrictL_ae hU w, W1p.gradient_restrictL_ae hU w] with x hx hy
+  rw [jetField_apply, jetField_apply, hx, hy]
 
 /-- **The energy form of a restriction.** For open sets `U ⊆ Ω`, `u ∈ H¹(Ω)` and `v ∈ H¹₀(U)`,
 the energy form on `U` of the restriction `u|_U` against `v` equals the energy form on `Ω` of `u`
@@ -89,20 +108,8 @@ theorem energyFormH1_restrictL (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
       energyFormH1 a b c u (W1p0.extendByZeroL hU v : W1p mu Omega 2) := by
   have hUm := U.isOpen.measurableSet
   have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
-  -- The jet field of the zero extension is the zero extension of the jet field.
-  have hjet : jetField (W1p0.extendByZeroL hU v : W1p mu Omega 2) =ᵐ[mu.restrict Omega]
-      (U : Set (EuclideanSpace ℝ ι)).indicator (jetField (v : W1p mu U 2)) := by
-    filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.value (v : W1p mu U 2)),
-      coeFn_extendByZeroLpₗᵢ ℝ hUm hUO (W1p.gradient (v : W1p mu U 2))] with x hx hy
-    rw [jetField_apply, W1p0.value_extendByZeroL, W1p0.gradient_extendByZeroL, hx, hy]
-    by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
-    · rw [indicator_of_mem hxU, indicator_of_mem hxU, indicator_of_mem hxU, jetField_apply]
-    · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, indicator_of_notMem hxU]
-      rfl
-  -- On `U`, the jet field of the restriction is that of `u`.
-  have hjetU : jetField (W1p.restrictL hU u) =ᵐ[mu.restrict U] jetField u := by
-    filter_upwards [W1p.value_restrictL_ae hU u, W1p.gradient_restrictL_ae hU u] with x hx hy
-    rw [jetField_apply, jetField_apply, hx, hy]
+  have hjet := jetField_extendByZeroL_ae (mu := mu) hU v
+  have hjetU := jetField_restrictL_ae hU u
   rw [energyFormH1_def, energyFormH1_def]
   calc ∫ x in U, energyIntegrand (a x) (b x) (c x) (jetField (W1p.restrictL hU u) x)
           (jetField (v : W1p mu U 2) x) ∂mu
@@ -131,6 +138,36 @@ theorem energyFormH1_extendByZeroL (a : EuclideanSpace ℝ ι → Matrix ι ι �
   have h := energyFormH1_restrictL a b c hU (W1p0.extendByZeroL hU u : W1p mu Omega 2) v
   rw [W1p0.restrictL_extendByZeroL] at h
   exact h.symm
+
+/-- **The energy form of a zero extension against an arbitrary function.** For open sets
+`U ⊆ Ω`, `u ∈ H¹₀(U)` and `w ∈ H¹(Ω)`, the energy form on `Ω` of the zero extension of `u`
+against `w` equals the energy form on `U` of `u` against the restriction `w|_U`: the jet of the
+extension vanishes off `U`, and the energy density is linear in it. -/
+theorem energyFormH1_extendByZeroL_left (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (c : EuclideanSpace ℝ ι → ℝ) (hU : U ≤ Omega)
+    (u : W1p0 mu U 2) (w : W1p mu Omega 2) :
+    energyFormH1 a b c (W1p0.extendByZeroL hU u : W1p mu Omega 2) w =
+      energyFormH1 a b c (u : W1p mu U 2) (W1p.restrictL hU w) := by
+  have hUm := U.isOpen.measurableSet
+  have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
+  have hjet := jetField_extendByZeroL_ae (mu := mu) hU u
+  have hjetU := jetField_restrictL_ae hU w
+  rw [energyFormH1_def, energyFormH1_def]
+  calc ∫ x in Omega, energyIntegrand (a x) (b x) (c x)
+          (jetField (W1p0.extendByZeroL hU u : W1p mu Omega 2) x) (jetField w x) ∂mu
+      = ∫ x in Omega, (U : Set (EuclideanSpace ℝ ι)).indicator (fun x => energyIntegrand (a x)
+          (b x) (c x) (jetField (u : W1p mu U 2) x) (jetField w x)) x ∂mu := by
+        refine integral_congr_ae ?_
+        filter_upwards [hjet] with x hx
+        by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
+        · rw [hx, indicator_of_mem hxU, indicator_of_mem hxU]
+        · rw [hx, indicator_of_notMem hxU, indicator_of_notMem hxU, map_zero, zero_apply]
+    _ = ∫ x in U, energyIntegrand (a x) (b x) (c x) (jetField (u : W1p mu U 2) x)
+          (jetField w x) ∂mu := by
+        rw [integral_indicator hUm, Measure.restrict_restrict hUm, inter_eq_left.2 hUO]
+    _ = ∫ x in U, energyIntegrand (a x) (b x) (c x) (jetField (u : W1p mu U 2) x)
+          (jetField (W1p.restrictL hU w) x) ∂mu :=
+        integral_congr_ae (by filter_upwards [hjetU] with x hx; rw [hx])
 
 /-- **Coercivity passes to smaller domains.** Zero extension preserves both the Sobolev norm
 and the energy, so the same coercivity constant works on every smaller open set. -/
@@ -216,25 +253,6 @@ theorem energyFormH1_restrictL_add_const_nonneg {a : EuclideanSpace ℝ ι → M
   rw [energyFormH1_add_const_left]
   exact energyFormH1_restrictL_nonneg hU hu v hv
 
-/-- Pairing a function `f` over `Ω` with the zero extension of `v ∈ W^{1,p}_0(U)` is pairing it with
-`v` over `U`. -/
-theorem setIntegral_mul_value_extendByZeroL {p : ℝ≥0∞} [Fact (1 ≤ p)] (hU : U ≤ Omega)
-    (f : EuclideanSpace ℝ ι → ℝ) (v : W1p0 mu U p) :
-    ∫ x in Omega, f x * W1p.value (W1p0.extendByZeroL hU v : W1p mu Omega p) x ∂mu =
-      ∫ x in U, f x * W1p.value (v : W1p mu U p) x ∂mu := by
-  rw [W1p0.value_extendByZeroL]
-  exact setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => f x * y) (fun _ => mul_zero _) _
-
-open scoped InnerProductSpace in
-/-- Pairing a vector field `F` over `Ω` with the gradient of the zero extension of
-`v ∈ W^{1,p}_0(U)` is pairing it with the gradient of `v` over `U`. -/
-theorem setIntegral_inner_gradient_extendByZeroL {p : ℝ≥0∞} [Fact (1 ≤ p)] (hU : U ≤ Omega)
-    (F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (v : W1p0 mu U p) :
-    ∫ x in Omega, ⟪F x, W1p.gradient (W1p0.extendByZeroL hU v : W1p mu Omega p) x⟫_ℝ ∂mu =
-      ∫ x in U, ⟪F x, W1p.gradient (v : W1p mu U p) x⟫_ℝ ∂mu := by
-  rw [W1p0.gradient_extendByZeroL]
-  exact setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => ⟪F x, y⟫_ℝ) (fun _ => inner_zero_right _) _
-
 /-- **Weak solutions restrict to weak solutions.** If `u ∈ H¹(Ω)` satisfies
 `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its restriction `u|_U`
 satisfies `a(u|_U, v) = ∫_U f v` for every `v ∈ H¹₀(U)`. -/
@@ -246,7 +264,8 @@ theorem energyFormH1_restrictL_eq_setIntegral {a : EuclideanSpace ℝ ι → Mat
     (v : W1p0 mu U 2) :
     energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) =
       ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
-  rw [energyFormH1_restrictL, hu, setIntegral_mul_value_extendByZeroL]
+  rw [energyFormH1_restrictL, hu, W1p0.value_extendByZeroL]
+  exact setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => f x * y) (fun _ => mul_zero _) _
 
 /-- If `a'` agrees with `a` on an open `U ≤ Ω`, is essentially bounded on `U`, `b, c ∈ L∞(Ω)`, and
 `u ∈ H¹(Ω)` solves the equation with coefficients `a, b, c` and right-hand side `f`, then the
@@ -292,12 +311,14 @@ theorem energyFormH1_restrictL_eq_neg_setIntegral_inner {a : EuclideanSpace ℝ 
     (v : W1p0 mu U 2) :
     energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) =
       -∫ x in U, ⟪F x, W1p.gradient (v : W1p mu U 2) x⟫_ℝ ∂mu := by
-  rw [energyFormH1_restrictL, hu, setIntegral_inner_gradient_extendByZeroL]
+  rw [energyFormH1_restrictL, hu, W1p0.gradient_extendByZeroL, neg_inj]
+  exact setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => ⟪F x, y⟫_ℝ) (fun _ => inner_zero_right _) _
 
 open scoped InnerProductSpace in
-/-- **Weak solutions with a datum `f + ∂ᵢFⁱ` restrict to weak solutions.** If `u ∈ H¹(Ω)`
-satisfies `a(u, v) = ∫_Ω f v - ∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω`
-its restriction `u|_U` satisfies `a(u|_U, v) = ∫_U f v - ∫_U ⟪F, ∇v⟫` for every `v ∈ H¹₀(U)`. -/
+/-- **Weak solutions with a datum `f + div F` restrict to weak solutions.** If `u ∈ H¹(Ω)`
+satisfies `a(u, v) = ∫_Ω f v - ∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`, that is, `u` solves
+`L u = f + div F` weakly, then for every open `U ⊆ Ω` its restriction `u|_U` satisfies
+`a(u|_U, v) = ∫_U f v - ∫_U ⟪F, ∇v⟫` for every `v ∈ H¹₀(U)`. -/
 theorem energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_inner
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     {c : EuclideanSpace ℝ ι → ℝ} (hU : U ≤ Omega) {u : W1p mu Omega 2}
@@ -309,8 +330,9 @@ theorem energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_inner
     energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) =
       ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu -
         ∫ x in U, ⟪F x, W1p.gradient (v : W1p mu U 2) x⟫_ℝ ∂mu := by
-  rw [energyFormH1_restrictL, hu, setIntegral_mul_value_extendByZeroL,
-    setIntegral_inner_gradient_extendByZeroL]
+  rw [energyFormH1_restrictL, hu, W1p0.value_extendByZeroL, W1p0.gradient_extendByZeroL,
+    setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => f x * y) (fun _ => mul_zero _),
+    setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => ⟪F x, y⟫_ℝ) (fun _ => inner_zero_right _)]
 
 section Transfer
 

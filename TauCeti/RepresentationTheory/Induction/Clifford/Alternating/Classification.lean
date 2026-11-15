@@ -115,8 +115,7 @@ theorem simple_alternatingGroupFour_iff (W : FDRep k (alternatingGroup (Fin 4)))
     cases i with
     | none => exact Or.inr (Or.inr (Or.inr hi))
     | some ψ =>
-      rcases monoidHom_alternatingGroup_eq_one_or_eq_or_eq_inv (by simp) hχ ψ with
-        rfl | rfl | rfl
+      rcases monoidHom_alternatingGroup_eq_one_or_eq_or_eq_inv hχ ψ with rfl | rfl | rfl
       · exact Or.inl hi
       · exact Or.inr (Or.inl hi)
       · exact Or.inr (Or.inr (Or.inl hi))

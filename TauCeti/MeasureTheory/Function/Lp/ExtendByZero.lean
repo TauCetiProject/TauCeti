@@ -39,8 +39,8 @@ against `μ`, hence against every restriction of `μ`.
 * `TauCeti.extendByZeroLpₗᵢ_eq_of_ae_eq` and `TauCeti.coeFn_extendByZeroLpₗᵢ_comp`: the two ways
   an extension is recognised in practice — from a representative that already vanishes off `s`,
   and through pointwise postcomposition by a map fixing `0`.
-* `TauCeti.setIntegral_extendByZeroLpₗᵢ`: integrating over `t` a pairing against the extension,
-  through a pairing vanishing at `0`, is integrating the pairing against the original over `s`.
+* `TauCeti.setIntegral_extendByZeroLpₗᵢ`: integrating against the extension over `t` is
+  integrating against the original function over `s`.
 -/
 
 public section
@@ -168,20 +168,23 @@ theorem coeFn_extendByZeroLpₗᵢ_comp {G : Type*} [NormedAddCommGroup G] [Modu
   rw [h1, h3, h2]
   exact congrFun (Set.indicator_comp_of_zero hL) x
 
-/-- **Integrating against an extension by zero.**  Pairing over `t` against the zero extension of
-`f ∈ Lᵖ(s)`, through a pairing `φ` vanishing at `0`, is pairing against `f` over `s`. -/
-theorem setIntegral_extendByZeroLpₗᵢ {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [Fact (1 ≤ p)] (hs : MeasurableSet s) (hst : s ⊆ t) (φ : α → F → G) (hφ : ∀ x, φ x 0 = 0)
+/-- **Integrals against an extension by zero only see the original set.** For a pairing `L` with
+`L x 0 = 0`, integrating `x ↦ L x (f₀ x)` over `t`, where `f₀` is the extension of `f` by zero, is
+integrating `x ↦ L x (f x)` over `s`. The pairings met in weak formulations are `L x y = g x * y`
+and `L x y = ⟪G x, y⟫`. -/
+theorem setIntegral_extendByZeroLpₗᵢ {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [Fact (1 ≤ p)] (hs : MeasurableSet s) (hst : s ⊆ t) (L : α → F → E) (hL : ∀ x, L x 0 = 0)
     (f : Lp F p (μ.restrict s)) :
-    ∫ x in t, φ x (extendByZeroLpₗᵢ 𝕜 μ hs hst f x) ∂μ = ∫ x in s, φ x (f x) ∂μ := by
-  calc _ = ∫ x in t, s.indicator (fun x => φ x (f x)) x ∂μ := by
+    ∫ x in t, L x (extendByZeroLpₗᵢ 𝕜 μ hs hst f x) ∂μ = ∫ x in s, L x (f x) ∂μ := by
+  calc ∫ x in t, L x (extendByZeroLpₗᵢ 𝕜 μ hs hst f x) ∂μ
+      = ∫ x in t, s.indicator (fun x => L x (f x)) x ∂μ := by
         refine integral_congr_ae ?_
         filter_upwards [coeFn_extendByZeroLpₗᵢ 𝕜 hs hst f] with x hx
         rw [hx]
         by_cases hxs : x ∈ s
         · rw [indicator_of_mem hxs, indicator_of_mem hxs]
-        · rw [indicator_of_notMem hxs, indicator_of_notMem hxs, hφ]
-    _ = ∫ x in s, φ x (f x) ∂μ := by
+        · rw [indicator_of_notMem hxs, indicator_of_notMem hxs, hL]
+    _ = ∫ x in s, L x (f x) ∂μ := by
         rw [integral_indicator hs, Measure.restrict_restrict hs, inter_eq_left.2 hst]
 
 end TauCeti

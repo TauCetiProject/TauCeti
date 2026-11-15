@@ -9,7 +9,6 @@ public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import Mathlib.GroupTheory.Rank
 public import TauCeti.LowDimTopology.Handlebody.Basic
 
-import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.FrontierProduct
@@ -131,8 +130,9 @@ private theorem planarSurface_subset_compl_range :
 /-! ### Pushing the punctured plane onto the planar surface -/
 
 variable (g) in
-/-- The radial push of the points inside each hole out to the boundary circle of the hole; it
-vanishes outside the holes. -/
+/-- The radial displacement pushing the points inside each hole out to the boundary circle of the
+hole: `z + holePush g z`, not `holePush g z`, lies on the circle. It vanishes outside the holes and
+at the hole centres (where `2⁻¹ / 0 = 0`). -/
 private def holePush (z : ℂ) : ℂ :=
   ∑ k : Fin g, (max (2⁻¹ / ‖z - holeCenter g k‖) 1 - 1) • (z - holeCenter g k)
 
@@ -301,24 +301,18 @@ instance : PathConnectedSpace (planarSurface g) :=
 point. -/
 theorem nonempty_fundamentalGroup_planarSurface_mulEquiv_freeGroup (z : planarSurface g) :
     Nonempty (FundamentalGroup (planarSurface g) z ≃* FreeGroup (Fin g)) := by
-  obtain ⟨e⟩ := planarSurfaceHomotopyEquiv.nonempty_fundamentalGroupMulEquiv z
-    (planarSurfaceHomotopyEquiv z)
   obtain ⟨f⟩ := nonempty_fundamentalGroup_compl_mulEquiv_freeGroup (finite_range _)
     (planarSurfaceHomotopyEquiv z)
-  exact ⟨e.trans <| f.trans <|
+  exact ⟨(planarSurfaceHomotopyEquiv.fundamentalGroupMulEquiv z).trans <| f.trans <|
     FreeGroup.freeGroupCongr (Equiv.ofInjective _ injective_holeCenter).symm⟩
 
 /-- The standard handlebody of genus `g` is homotopy equivalent to the closed disc with `g` holes,
 by projection. -/
 private theorem nonempty_handlebody_homotopyEquiv :
     Nonempty (handlebody g ≃ₕ planarSurface g) := by
-  have : ContractibleSpace (Icc (-1 : ℝ) 1) :=
-    (convex_Icc (-1 : ℝ) 1).contractibleSpace (nonempty_Icc.2 (by norm_num))
-  obtain ⟨e⟩ := ContractibleSpace.hequiv_unit (Icc (-1 : ℝ) 1)
   exact ⟨((Homeomorph.setCongr (Set.ext fun _ ↦ mem_handlebody.trans mem_prod.symm)).trans
-    (Homeomorph.Set.prod _ _)).toHomotopyEquiv.trans <|
-    ((ContinuousMap.HomotopyEquiv.refl _).prodCongr e).trans
-      (Homeomorph.prodUnique _ _).toHomotopyEquiv⟩
+    (Homeomorph.Set.prod _ _)).toHomotopyEquiv.trans
+      (ContinuousMap.HomotopyEquiv.prodIcc (⟨1, by norm_num, le_rfl⟩ : Icc (-1 : ℝ) 1)).symm⟩
 
 instance : PathConnectedSpace (handlebody g) :=
   nonempty_handlebody_homotopyEquiv.some.symm.pathConnectedSpace
@@ -328,9 +322,8 @@ every base point. -/
 theorem nonempty_fundamentalGroup_handlebody_mulEquiv_freeGroup (x : handlebody g) :
     Nonempty (FundamentalGroup (handlebody g) x ≃* FreeGroup (Fin g)) := by
   obtain ⟨e⟩ := nonempty_handlebody_homotopyEquiv (g := g)
-  obtain ⟨φ⟩ := e.nonempty_fundamentalGroupMulEquiv x (e x)
   obtain ⟨ψ⟩ := nonempty_fundamentalGroup_planarSurface_mulEquiv_freeGroup (e x)
-  exact ⟨φ.trans ψ⟩
+  exact ⟨(e.fundamentalGroupMulEquiv x).trans ψ⟩
 
 instance (x : handlebody g) : Group.FG (FundamentalGroup (handlebody g) x) :=
   have e := (nonempty_fundamentalGroup_handlebody_mulEquiv_freeGroup x).some
@@ -361,13 +354,16 @@ variable (g) in
 private def holeWeight (k : Fin g) (z : ℂ) : ℝ := max 0 (1 - 4 * (‖z - holeCenter g k‖ - 2⁻¹))
 
 variable (g) in
-/-- The boundary weight: `1` on the boundary circles of the planar surface, `0` at distance at least
-`1 / 4` from them. -/
+/-- The boundary weight: on the planar surface it is `1` on the boundary circles and `0` at distance
+at least `1 / 4` from them. It is defined on all of `ℂ`, where it can exceed `1` (for
+`g = 0` it is `5` at `‖z‖ = 2`, at distance `1` outside the only circle). -/
 private def boundaryWeight (z : ℂ) : ℝ := outerWeight g z + ∑ k, holeWeight g k z
 
 variable (g) in
 /-- The boundary weight times the unit vector pointing radially towards the nearest boundary
-circle. -/
+circle. This description is for points of the planar surface; the definition is on all of `ℂ`,
+where it can differ (for `g = 1`, `boundaryNormal 1 (1 / 4) = -1` has norm `1` inside the hole,
+where the weight is `2`). -/
 private def boundaryNormal (z : ℂ) : ℂ :=
   outerWeight g z • (max ‖z‖ 2⁻¹)⁻¹ • z -
     ∑ k, holeWeight g k z • (max ‖z - holeCenter g k‖ 2⁻¹)⁻¹ • (z - holeCenter g k)
@@ -375,9 +371,6 @@ private def boundaryNormal (z : ℂ) : ℂ :=
 private theorem outerWeight_nonneg (z : ℂ) : 0 ≤ outerWeight g z := le_max_left _ _
 
 private theorem holeWeight_nonneg (k : Fin g) (z : ℂ) : 0 ≤ holeWeight g k z := le_max_left _ _
-
-private theorem boundaryWeight_nonneg (z : ℂ) : 0 ≤ boundaryWeight g z :=
-  add_nonneg (outerWeight_nonneg z) (Finset.sum_nonneg fun k _ ↦ holeWeight_nonneg k z)
 
 private theorem outerWeight_le_boundaryWeight (z : ℂ) : outerWeight g z ≤ boundaryWeight g z :=
   le_add_of_nonneg_right (Finset.sum_nonneg fun k _ ↦ holeWeight_nonneg k z)
@@ -705,8 +698,9 @@ private theorem mem_frontier_boundaryDeformMap_one (x : boundaryNhd g) :
 
 /-! ### Path connectedness of the boundary surface -/
 
-/-- The point `(g + 1, 1)` of the boundary surface, where the outer boundary circle meets the
-top face. -/
+/-- The point `g + 1` of the outer boundary circle lies in the planar surface; with height `1` it
+is the point `(g + 1, 1)` of the boundary surface where the outer boundary circle meets the top
+face. -/
 private theorem outer_mem_planarSurface : ((g + 1 : ℝ) : ℂ) ∈ planarSurface g := by
   have hn : ‖((g + 1 : ℝ) : ℂ)‖ = g + 1 := by
     rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos (by positivity)]
