@@ -40,8 +40,10 @@ multiplicities are the slope multiplicities of their Newton polygons.
 
 ## Main results
 
-* `PowerSeries.newtonSlopeMultiplicity_eq_of_isFiniteFace`: the multiplicity is the width of the
-  finite face.
+* `PowerSeries.newtonSlopeMultiplicity_eq_of_isFiniteFace`,
+  `PowerSeries.left_eq_toNat_order_add_ncard_unitSlope_lt` and
+  `PowerSeries.right_eq_toNat_order_add_ncard_unitSlope_le`: the width and endpoints of a finite
+  face in terms of the order at zero and finite unit slopes.
 * `Polynomial.newtonSlopeMultiplicity_coe`: comparison with the finite slope multiset of a
   polynomial.
 * `PowerSeries.newtonSlopeMultiplicity_rescale`: rescaling the variable shifts the slopes.
@@ -92,6 +94,45 @@ theorem newtonSlopeMultiplicity_eq_of_isFiniteFace {σ : ℝ} {l u : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     f.newtonSlopeMultiplicity v σ = u - l :=
   hface.ncard_setOf_unitSlope_eq (f.isConvexSeq_newtonPolygon v)
+
+/-- For a finite face of the Newton polygon, the series is nonzero with admissible coefficient
+heights, and `f.order.toNat` is the first index where the Newton polygon is finite. -/
+private theorem newtonPolygon_toNat_order_ne_top_and_le (hv : ∀ x, v x = ⊤ → x = 0)
+    {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    f.newtonPolygon v f.order.toNat ≠ ⊤ ∧ ∀ n, f.newtonPolygon v n ≠ ⊤ → f.order.toNat ≤ n := by
+  have hf0 : f ≠ 0 := by
+    rintro rfl
+    exact hface.left_ne_top (by simp)
+  have hadm : IsAdmissible fun n => v (coeff n f) := by
+    by_contra hnadm
+    exact hface.left_ne_top
+      (by rw [newtonPolygon_def, lowerConvexEnvelope_of_not_isAdmissible hnadm]; rfl)
+  have hord : (f.order.toNat : ℕ∞) = f.order :=
+    ENat.natCast_toNat (order_finite_iff_ne_zero.mpr hf0).ne
+  refine ⟨?_, fun n hn => not_lt.mp fun hlt =>
+    hn (newtonPolygon_eq_top_of_lt_order v (hord ▸ Nat.cast_lt.mpr hlt))⟩
+  rw [newtonPolygon_eq_of_order_eq v hadm hord.symm]
+  exact mt (hv _) (coeff_order hf0)
+
+/-- If only zero has infinite valuation, the left endpoint of the finite face of slope `σ` of a
+power series is the order of vanishing at zero plus the number of finite unit edges of slope
+strictly less than `σ`. -/
+theorem left_eq_toNat_order_add_ncard_unitSlope_lt (hv : ∀ x, v x = ⊤ → x = 0)
+    {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    l = f.order.toNat +
+      {i | i ∈ finiteEdges (f.newtonPolygon v) ∧ unitSlope (f.newtonPolygon v) i < σ}.ncard := by
+  obtain ⟨ha, hfirst⟩ := newtonPolygon_toNat_order_ne_top_and_le hv hface
+  exact hface.left_eq_start_add_ncard_unitSlope_lt (f.isConvexSeq_newtonPolygon v) ha hfirst
+
+/-- If only zero has infinite valuation, the right endpoint of the finite face of slope `σ` of a
+power series is the order of vanishing at zero plus the number of finite unit edges of slope at
+most `σ`. -/
+theorem right_eq_toNat_order_add_ncard_unitSlope_le (hv : ∀ x, v x = ⊤ → x = 0)
+    {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    u = f.order.toNat +
+      {i | i ∈ finiteEdges (f.newtonPolygon v) ∧ unitSlope (f.newtonPolygon v) i ≤ σ}.ncard := by
+  obtain ⟨ha, hfirst⟩ := newtonPolygon_toNat_order_ne_top_and_le hv hface
+  exact hface.right_eq_start_add_ncard_unitSlope_le (f.isConvexSeq_newtonPolygon v) ha hfirst
 
 end Ring
 

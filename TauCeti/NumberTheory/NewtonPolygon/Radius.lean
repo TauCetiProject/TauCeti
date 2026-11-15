@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.ERealExp
 public import TauCeti.Analysis.Convex.Sequence.Asymptotic
-public import TauCeti.NumberTheory.NewtonPolygon.GaussNorm
+public import TauCeti.NumberTheory.NewtonPolygon.ActiveFace
 public import TauCeti.RingTheory.PowerSeries.Radius
 
 /-!
@@ -37,8 +37,10 @@ The formula covers every case at once:
   supremum of the finite slopes of the Newton polygon, so the radius is `b` to the power of that
   supremum. In particular such a series is entire exactly when its Newton slopes are unbounded.
 
-At a finite positive radius the limiting slope alone decides nothing about restrictedness at
-the radius itself, and restrictedness at one positive radius does not bound the slopes.
+At every radius `b ^ σ` strictly smaller than `radius f`, a nonzero series is restricted at a
+strictly larger radius, so its Newton polygon has a finite face of slope `σ`. At a finite positive
+radius the limiting slope alone decides nothing about restrictedness at the radius itself, and
+restrictedness at one positive radius does not bound the slopes.
 
 ## Main results
 
@@ -52,6 +54,8 @@ the radius itself, and restrictedness at one positive radius does not bound the 
   `PowerSeries.isEntire_iff_iSup_unitSlope_newtonPolygon_eq_top`: for admissible, infinitely
   supported coefficient heights, the radius is `b` to the power of the supremum of the finite
   Newton slopes, and the series is entire exactly when these slopes are unbounded.
+* `PowerSeries.exists_isFiniteFace_newtonPolygon_of_lt_radius`: at every radius `b ^ σ` strictly
+  inside `radius f`, the Newton polygon of a nonzero series has a finite face of slope `σ`.
 
 ## References
 
@@ -175,5 +179,25 @@ theorem isEntire_iff_iSup_unitSlope_newtonPolygon_eq_top
       (unitSlope (f.newtonPolygon v) i : EReal) = ⊤ := by
   rw [isEntire_iff_linearGrowthInf_eq_top f v hb hv, newtonPolygon_def,
     linearGrowthInf_eq_iSup_unitSlope_lowerConvexEnvelope hf (by simpa using hinf)]
+
+/-- **Finite faces inside the disc of convergence.** At every radius `b ^ σ` strictly below the
+radius of a nonzero series `f`, the Newton polygon of `f` has a finite face of slope `σ`. -/
+theorem exists_isFiniteFace_newtonPolygon_of_lt_radius {σ : ℝ} (hf0 : f ≠ 0)
+    (hσ : ‖b ^ σ‖ₑ < f.radius) :
+    ∃ l u : ℕ, IsFiniteFace (f.newtonPolygon v) σ l u := by
+  have hb0 : 0 < b := zero_lt_one.trans hb
+  have hbσ : 0 < b ^ σ := Real.rpow_pos_of_pos hb0 σ
+  obtain ⟨r, hσr, hrf⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hσ
+  have hlt : b ^ σ < (r : ℝ) := by
+    rw [eNorm_eq_nnNorm, ENNReal.coe_lt_coe, ← NNReal.coe_lt_coe, coe_nnNorm, Real.norm_eq_abs,
+      abs_of_pos hbσ] at hσr
+    exact hσr
+  have hr0 : 0 < (r : ℝ) := hbσ.trans hlt
+  have hres : f.IsRestricted (b ^ Real.logb b r) := by
+    rw [Real.rpow_logb hb0 hb.ne' hr0]
+    exact isRestricted_of_lt_radius (by simpa using hrf)
+  exact exists_isFiniteFace_newtonPolygon_of_hasGaussNorm f v hb hv
+    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := K) hres) hf0
+    (((Real.lt_logb_iff_rpow_lt hb hr0).mpr hlt))
 
 end PowerSeries
