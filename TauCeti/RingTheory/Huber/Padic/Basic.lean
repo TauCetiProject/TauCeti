@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.Algebra.Ring.Compact
+public import TauCeti.RingTheory.AdicRing.Basic
 public import TauCeti.RingTheory.Huber.Adic
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
@@ -22,9 +23,11 @@ ideal `(p)`, so no unit is topologically nilpotent.
 
 * `TauCeti.Huber.PadicInt.coe_maximalIdeal_pow`: `(p)ⁿ` is the closed ball of radius `p⁻ⁿ`.
   Openness is Mathlib's `IsLocalRing.isOpen_maximalIdeal_pow`.
-* `TauCeti.Huber.PadicInt.isAdic_maximalIdeal`: the norm topology of `ℤ_[p]` is the `(p)`-adic
-  topology. Mathlib has `IsAdicComplete (maximalIdeal ℤ_[p]) ℤ_[p]` but not this comparison of
-  topologies, which is what a pair of definition requires.
+* `TauCeti.Huber.PadicInt.isAdic_maximalIdeal` and `TauCeti.Huber.PadicInt.isAdic_span_p`: the
+  norm topology of `ℤ_[p]` is the `(p)`-adic topology. Mathlib has
+  `IsAdicComplete (maximalIdeal ℤ_[p]) ℤ_[p]` but not this comparison of topologies, which is what
+  a pair of definition requires.
+* `TauCeti.Huber.PadicInt.isAdicRing`: `ℤ_[p]` is an adic ring of finite ideal type.
 * `TauCeti.Huber.PadicInt.instIsLinearTopology`: consequently `ℤ_[p]` is linearly topologized,
   and `TauCeti.Huber.PadicInt.isTopologicallyNilpotent_iff_dvd`: its topologically nilpotent
   elements are the multiples of `p`.
@@ -81,6 +84,18 @@ theorem isAdic_maximalIdeal : IsAdic (maximalIdeal ℤ_[p]) := by
   rw [coe_maximalIdeal_pow, Set.mem_ofPred_eq] at hx
   refine Metric.mem_ball.mpr (lt_of_le_of_lt ?_ hn)
   simpa [zpow_neg, zpow_natCast, ← inv_pow, dist_eq_norm] using hx
+
+/-- The norm topology of `ℤ_[p]` is the `(p)`-adic topology, stated for `Ideal.span {(p : ℤ_[p])}`.
+-/
+theorem isAdic_span_p : IsAdic (Ideal.span {(p : ℤ_[p])}) :=
+  _root_.PadicInt.maximalIdeal_eq_span_p (p := p) ▸ isAdic_maximalIdeal
+
+/-- **`ℤ_[p]` is an adic ring of finite ideal type**, with `(p)` as a finitely generated ideal of
+definition. -/
+instance isAdicRing : IsAdicRing ℤ_[p] :=
+  ⟨maximalIdeal ℤ_[p],
+    by rw [_root_.PadicInt.maximalIdeal_eq_span_p]; exact Submodule.fg_span_singleton _,
+    isAdic_maximalIdeal, inferInstance⟩
 
 /-- The norm topology of `ℤ_[p]` is linear: the ideals `(p ^ n)` are a neighbourhood basis of
 zero. -/

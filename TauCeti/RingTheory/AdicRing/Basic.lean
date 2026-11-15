@@ -53,7 +53,7 @@ theorem ideal_spec [IsAdicRing A] :
   Classical.choose_spec (exists_isAdic (A := A))
 
 /-- An adic ring is Huber, with the whole ring as a ring of definition. -/
-instance (priority := 100) isHuberRing [IsAdicRing A] : Huber.IsHuberRing A :=
+instance (priority := 90) isHuberRing [IsAdicRing A] : Huber.IsHuberRing A :=
   Huber.isHuberRing_of_isAdic (ideal A) (ideal_spec A).2.1 (ideal_spec A).1
 
 /-- Every discrete commutative ring is adic, using the zero ideal. -/
@@ -63,13 +63,13 @@ instance (priority := 100) of_discreteTopology [DiscreteTopology A] : IsAdicRing
 variable {A}
 
 /-- An adic ring is Hausdorff. -/
-instance (priority := 100) t2Space [IsAdicRing A] : T2Space A := by
+instance (priority := 90) t2Space [IsAdicRing A] : T2Space A := by
   have := (ideal_spec A).2.2
   exact (ideal_spec A).2.1.isHausdorff_iff.mp inferInstance
 
 /-- An adic ring is linearly topologised: the powers of an ideal of definition form a basis of
 neighbourhoods of zero consisting of ideals. -/
-instance (priority := 100) isLinearTopology [IsAdicRing A] : IsLinearTopology A A :=
+instance (priority := 90) isLinearTopology [IsAdicRing A] : IsLinearTopology A A :=
   (ideal_spec A).2.1.isLinearTopology
 
 /-- In a nonzero adic ring, the chosen ideal of definition is proper. -/
@@ -90,7 +90,7 @@ namespace IsAdicRing
 variable (R : Type*) [CommRing R] [UniformSpace R] [IsUniformAddGroup R] [IsTopologicalRing R]
 
 /-- An adic ring is complete for every compatible additive uniformity supplied by the caller. -/
-instance (priority := 100) completeSpace [IsAdicRing R] : CompleteSpace R :=
+instance (priority := 90) completeSpace [IsAdicRing R] : CompleteSpace R :=
   ((ideal_spec R).2.1.isAdicComplete_iff.mp (ideal_spec R).2.2).1
 
 end IsAdicRing

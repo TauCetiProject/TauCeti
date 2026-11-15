@@ -509,11 +509,17 @@ theorem mem_powerBoundedSubring {a : A} : a ∈ powerBoundedSubring A ↔ IsPowe
 theorem coe_powerBoundedSubring : (powerBoundedSubring A : Set A) = {a | IsPowerBounded a} :=
   Set.ext fun _ ↦ mem_powerBoundedSubring
 
+omit [NonarchimedeanAddGroup A] in
+/-- In a linearly topologized ring, for instance an adic or a discrete ring, every element is
+power-bounded. -/
+theorem isPowerBounded_of_isLinearTopology [IsLinearTopology A A] (a : A) : IsPowerBounded a :=
+  isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)
+
 /-- In a linearly topologized ring, for instance an adic or a discrete ring, every element is
 power-bounded, so `A° = A`. -/
 @[simp]
 theorem powerBoundedSubring_eq_top [IsLinearTopology A A] : powerBoundedSubring A = ⊤ :=
-  eq_top_iff.mpr fun _ _ ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)
+  eq_top_iff.mpr fun a _ ↦ isPowerBounded_of_isLinearTopology a
 
 variable [SeparatelyContinuousMul A]
 

@@ -5,10 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.Restricted.Comparison
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Adic
 public import TauCeti.RingTheory.Huber.Padic.Basic
 public import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.RingTheory.Huber.Restricted.OneVariable
+import TauCeti.RingTheory.PowerSeries.Restricted
 import Mathlib.Algebra.Polynomial.Degree.Domain
+import Mathlib.RingTheory.AdicCompletion.Noetherian
+import Mathlib.RingTheory.Polynomial.Basic
+import Mathlib.Tactic.FinCases
 
 /-!
 # Examples and boundary checks for adic restricted power series
@@ -19,8 +24,8 @@ These examples exercise the restricted power-series theory across four regimes:
    subring and its separated completion `A⟨X₁, …, Xₖ⟩` coincide with the polynomial algebra
    `A[X₁, …, Xₖ]`.
 2. **`p`-adic integers `ℤ_[p]`**: both the completed Huber algebra and the Gauss-normed unit-radius
-   subring over `ℤ_[p]` are adic noetherian rings, and their quotients modulo `(p)ᵐ` (`0 < m`) are
-   canonically isomorphic to `(ℤ / pᵐℤ)[X₁, …, Xₖ]`.
+   subring over `ℤ_[p]` are adic noetherian rings, and their quotients modulo `(p)ᵐ` are
+   canonically isomorphic to `(ℤ / pᵐℤ)[X₁, …, Xₖ]` for every `m : ℕ`.
 3. **Formal versus restricted power series**: the geometric series `∑ₙ Xⁿ` lies in `ℤ_[p]⟦X⟧`
    (`PowerSeries ℤ_[p]`) and `MvPowerSeries (Fin 1) ℤ_[p]`, and lies outside `ℤ_[p]⟨X⟩` on both the
    Gauss-normed and Huber carriers because its coefficients are identically `1`.
@@ -53,8 +58,7 @@ noncomputable example (k : ℕ) (A : Type*) [CommRing A] [TopologicalSpace A] [D
 
 /-- Over a discrete commutative ring `A`, the completed restricted-series algebra `A⟨X₁, …, Xₖ⟩`
 is also isomorphic to `MvPolynomial (Fin k) A`. -/
-noncomputable example (k : ℕ) (A : Type*) [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
-    [DiscreteTopology A] :
+noncomputable example (k : ℕ) (A : Type*) [CommRing A] [TopologicalSpace A] [DiscreteTopology A] :
     restrictedMvPowerSeriesCompletion k A ≃+* MvPolynomial (Fin k) A :=
   (restrictedMvPowerSeriesCompletionEquiv k A).trans
     (weightedPolynomialEquivOfDiscrete (fun _ : Fin k ↦ ({1} : Set A))
@@ -66,15 +70,6 @@ section PadicInt
 
 variable (p : ℕ) [Fact p.Prime] (k : ℕ)
 
-local instance : IsAdicRing ℤ_[p] :=
-  ⟨IsLocalRing.maximalIdeal ℤ_[p],
-    by rw [_root_.PadicInt.maximalIdeal_eq_span_p]; exact Submodule.fg_span_singleton _,
-    TauCeti.Huber.PadicInt.isAdic_maximalIdeal, inferInstance⟩
-
-private theorem isAdic_span_p : IsAdic (Ideal.span {(p : ℤ_[p])}) :=
-  _root_.PadicInt.maximalIdeal_eq_span_p (p := p) ▸
-    TauCeti.Huber.PadicInt.isAdic_maximalIdeal
-
 /-- Over `ℤ_[p]`, both the completed Huber restricted-series algebra and the Gauss-normed
 unit-radius restricted-series subring are adic noetherian rings. -/
 example :
@@ -84,33 +79,33 @@ example :
       IsNoetherianRing (MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) fun _ : Fin k ↦ 1) ∧
       IsStronglyNoetherian (MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) fun _ : Fin k ↦ 1) :=
   ⟨inferInstance,
-    isNoetherianRing_restrictedMvPowerSeriesCompletion_of_isAdic k (isAdic_span_p p),
+    isNoetherianRing_restrictedMvPowerSeriesCompletion_of_isAdic k PadicInt.isAdic_span_p,
     inferInstance,
-    isNoetherianRing_isRestricted_subring_of_isAdic (isAdic_span_p p),
+    isNoetherianRing_isRestricted_subring_of_isAdic PadicInt.isAdic_span_p,
     inferInstance⟩
 
-/-- Modulo `(p)ᵐ` (`0 < m`), the completed Huber algebra `ℤ_[p]⟨X₁, …, Xₖ⟩` is isomorphic to
-`MvPolynomial (Fin k) (ZMod (p ^ m))`. -/
-noncomputable example {m : ℕ} (hm : 0 < m) :
+/-- Modulo `(p)ᵐ`, the completed Huber algebra `ℤ_[p]⟨X₁, …, Xₖ⟩` is isomorphic to
+`MvPolynomial (Fin k) (ZMod (p ^ m))` for every `m : ℕ`. -/
+noncomputable example (m : ℕ) :
     (restrictedMvPowerSeriesCompletion k ℤ_[p] ⧸
       ((Ideal.span {(p : ℤ_[p])}).map
         (algebraMap ℤ_[p] (restrictedMvPowerSeriesCompletion k ℤ_[p]))) ^ m) ≃+*
       MvPolynomial (Fin k) (ZMod (p ^ m)) :=
-  (quotientRestrictedCompletionPowEquivMvPolynomialQuotient (isAdic_span_p p)
-    (Submodule.fg_span_singleton _) hm).toRingEquiv.trans
+  (quotientRestrictedCompletionPowEquivMvPolynomialQuotient PadicInt.isAdic_span_p
+    (Submodule.fg_span_singleton _) m).toRingEquiv.trans
       (MvPolynomial.mapEquiv (Fin k) ((Ideal.quotEquivOfEq (Ideal.span_singleton_pow _ m)).trans
         (_root_.PadicInt.quotientSpanPowEquivZMod m)))
 
-/-- Modulo `(p)ᵐ` (`0 < m`), the Gauss-normed subring `ℤ_[p]⟨X₁, …, Xₖ⟩` is likewise isomorphic to
-`MvPolynomial (Fin k) (ZMod (p ^ m))`. -/
-noncomputable example {m : ℕ} (hm : 0 < m) :
+/-- Modulo `(p)ᵐ`, the Gauss-normed subring `ℤ_[p]⟨X₁, …, Xₖ⟩` is likewise isomorphic to
+`MvPolynomial (Fin k) (ZMod (p ^ m))` for every `m : ℕ`. -/
+noncomputable example (m : ℕ) :
     (MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin k ↦ 1) ⧸
       ((Ideal.span {(p : ℤ_[p])}).map
         (algebraMap ℤ_[p]
           (MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin k ↦ 1)))) ^ m) ≃+*
       MvPolynomial (Fin k) (ZMod (p ^ m)) :=
-  (quotientIsRestrictedSubringPowEquivMvPolynomialQuotient (isAdic_span_p p)
-    (Submodule.fg_span_singleton _) hm).toRingEquiv.trans
+  (quotientIsRestrictedSubringPowEquivMvPolynomialQuotient PadicInt.isAdic_span_p
+    (Submodule.fg_span_singleton _) m).toRingEquiv.trans
       (MvPolynomial.mapEquiv (Fin k) ((Ideal.quotEquivOfEq (Ideal.span_singleton_pow _ m)).trans
         (_root_.PadicInt.quotientSpanPowEquivZMod m)))
 
@@ -119,27 +114,21 @@ noncomputable example {m : ℕ} (hm : 0 < m) :
 topologised) and reducing modulo `(p)ᵐ` evaluates the polynomial reduction modulo `(p)ᵐ`. -/
 example (m : ℕ) (b : Fin k → ℤ_[p])
     (f : MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin k ↦ 1)) :
-    let hopen := (isAdic_span_p p).isOpen_pow m
+    let hopen := (PadicInt.isAdic_span_p (p := p)).isOpen_pow m
     Ideal.Quotient.mk (Ideal.span {(p : ℤ_[p])} ^ m)
         (restrictedLiftOfIsLinearTopology (φ := RingHom.id ℤ_[p]) continuous_id b f) =
       MvPolynomial.eval₂ (Ideal.quotientMap _ (RingHom.id ℤ_[p]) le_rfl)
         (fun i ↦ Ideal.Quotient.mk (Ideal.span {(p : ℤ_[p])} ^ m) (b i))
         ((Ideal.span {(p : ℤ_[p])} ^ m).isRestrictedSubringReduction hopen f) := by
   intro hopen
-  exact Ideal.mk_restrictedLiftOfIsLinearTopology continuous_id b hopen _ hopen le_rfl f
+  exact mk_restrictedLiftOfIsLinearTopology continuous_id b hopen _ hopen le_rfl f
 
 open scoped NormedField Valued in
 /-- Over the valuation ring `𝒪[ℚ_[p]]`, open-ideal reduction modulo the maximal ideal agrees with
 unit-ball `restrictedReduction` across `restrictedIntegerEquiv`. -/
 example (f : MvPowerSeries.IsRestricted.subring (R := 𝒪[ℚ_[p]]) (fun _ : Fin k ↦ 1)) :
     (IsLocalRing.maximalIdeal 𝒪[ℚ_[p]]).isRestrictedSubringReduction
-        (by
-          have hball : ((IsLocalRing.maximalIdeal 𝒪[ℚ_[p]] : Ideal 𝒪[ℚ_[p]]) : Set 𝒪[ℚ_[p]]) =
-              Metric.ball 0 1 := by
-            ext x
-            rw [SetLike.mem_coe, Valued.integer.mem_maximalIdeal_iff, Metric.mem_ball,
-              dist_zero_right]
-          exact hball ▸ Metric.isOpen_ball) f =
+        Valued.integer.isOpen_maximalIdeal f =
       TauCeti.MvPowerSeries.restrictedReduction (restrictedIntegerEquiv f) :=
   isRestrictedSubringReduction_maximalIdeal_eq_restrictedReduction _ f
 
@@ -158,18 +147,16 @@ example :
       geom ∉ MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin 1 ↦ 1) ∧
       geom ∉ restrictedMvPowerSeriesSubring 1 ℤ_[p] := by
   intro geom
-  have hnot : geom ∉ MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin 1 ↦ 1) := by
-    intro hmem
-    have hfin : {ν : Fin 1 →₀ ℕ | (1 / 2 : ℝ) ≤ ‖MvPowerSeries.coeff ν geom‖}.Finite := by
-      simpa [MvPowerSeries.IsRestricted, Filter.eventually_cofinite, not_lt] using
-        hmem.eventually (gt_mem_nhds (by positivity : (0 : ℝ) < 1 / 2))
-    refine (Set.infinite_range_of_injective (Finsupp.single_injective (0 : Fin 1)))
-      (hfin.subset ?_)
-    rintro _ ⟨n, rfl⟩
-    rw [Set.mem_ofPred, MvPowerSeries.coeff_apply]
-    norm_num [geom]
-  refine ⟨fun n ↦ PowerSeries.coeff_mk n 1, hnot, fun hmem ↦ hnot ?_⟩
-  rwa [mem_restrictedMvPowerSeriesSubring, isRestricted_iff_isRestricted_one] at hmem
+  have hren : MvPowerSeries.renameEquiv ℤ_[p] finOneEquiv geom = PowerSeries.mk 1 :=
+    PowerSeries.ext fun n ↦
+      (PowerSeries.coeff_rename finOneEquiv geom n).trans (PowerSeries.coeff_mk n 1).symm
+  have hnotH : geom ∉ restrictedMvPowerSeriesSubring 1 ℤ_[p] := by
+    rw [mem_restrictedMvPowerSeriesSubring, isRestricted_renameEquiv_finOne_iff, hren]
+    exact TauCeti.PowerSeries.not_isRestricted_mk_one
+  exact ⟨fun n ↦ PowerSeries.coeff_mk n 1,
+    fun hmem ↦ hnotH (mem_restrictedMvPowerSeriesSubring.mpr
+      (isRestricted_iff_isRestricted_one.mpr hmem)),
+    hnotH⟩
 
 end GeometricSeries
 
@@ -187,9 +174,7 @@ noncomputable example (A : Type*) [CommRing A] [TopologicalSpace A] [Nonarchimed
 noncomputable example (A : Type*) [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
     [NonarchimedeanRing A] [CompleteSpace A] [T2Space A] :
     restrictedMvPowerSeriesCompletion 0 A ≃ₐ[A] A :=
-  (restrictedMvPowerSeriesCompletionAlgEquiv 0 A).trans
-    (AlgEquiv.ofRingEquiv
-      (f := weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set A))) fun a ↦ by simp)
+  restrictedMvPowerSeriesCompletionFinZeroAlgEquiv A
 
 /-- **Failure without separatedness**: for `(ZMod 2)[T]` equipped with the indiscrete `(⊤)`-adic
 topology, `(ZMod 2)[T]` is nontrivial whereas `restrictedMvPowerSeriesCompletion 0 (ZMod 2)[T]` is
@@ -208,7 +193,7 @@ example :
     Ideal.map_top
       (algebraMap (Polynomial (ZMod 2))
         (restrictedMvPowerSeriesCompletion 0 (Polynomial (ZMod 2)))) ▸
-      isAdicComplete_map_algebraMap_restrictedMvPowerSeriesCompletion (k := 0) hI ⟨{1}, by simp⟩
+      isAdicComplete_map_algebraMap_restrictedMvPowerSeriesCompletion 0 hI ⟨{1}, by simp⟩
   have hsub := hcomp.toIsHausdorff.subsingleton
   exact ⟨inferInstance, hsub,
     ⟨fun e ↦ not_subsingleton (Polynomial (ZMod 2)) e.symm.injective.subsingleton⟩⟩
@@ -224,20 +209,13 @@ example :
   let _ : WithIdeal (Polynomial (ZMod 2)) := ⟨Ideal.span {Polynomial.X}⟩
   have hI : IsAdic (Ideal.span {(Polynomial.X : Polynomial (ZMod 2))}) := rfl
   have hhaus : IsHausdorff (Ideal.span {(Polynomial.X : Polynomial (ZMod 2))})
-      (Polynomial (ZMod 2)) := by
-    refine ⟨fun p hp ↦ ?_⟩
-    by_contra hp0
-    have hmem : p ∈ Ideal.span {(Polynomial.X : Polynomial (ZMod 2))} ^ (p.natDegree + 1) := by
-      simpa [SModEq.zero] using hp (p.natDegree + 1)
-    rw [Ideal.span_singleton_pow, Ideal.mem_span_singleton] at hmem
-    have hdeg := Polynomial.natDegree_le_of_dvd hmem hp0
-    rw [Polynomial.natDegree_X_pow] at hdeg
-    omega
+      (Polynomial (ZMod 2)) :=
+    .of_isDomain _ (Ideal.span_singleton_ne_top Polynomial.not_isUnit_X)
   refine ⟨hI.isHausdorff_iff.mp hhaus, ⟨fun e ↦ ?_⟩⟩
   let S := restrictedMvPowerSeriesCompletion 0 (Polynomial (ZMod 2))
   let J := (Ideal.span {(Polynomial.X : Polynomial (ZMod 2))}).map (algebraMap _ S)
   have : IsAdicComplete J S :=
-    isAdicComplete_map_algebraMap_restrictedMvPowerSeriesCompletion (k := 0) hI
+    isAdicComplete_map_algebraMap_restrictedMvPowerSeriesCompletion 0 hI
       (Submodule.fg_span_singleton _)
   let t : S := algebraMap (Polynomial (ZMod 2)) S Polynomial.X
   have htJ : t ∈ J := Ideal.mem_map_of_mem _ (Ideal.mem_span_singleton_self _)
@@ -246,9 +224,9 @@ example :
   have hunitP : IsUnit (e (t + 1)) := hunitS.map e.toRingHom
   obtain ⟨c, hc, hce⟩ := Polynomial.isUnit_iff.mp hunitP
   have hc1 : c = 1 := by
-    match c with
-    | 0 => exact absurd hc not_isUnit_zero
-    | 1 => rfl
+    fin_cases c
+    · exact absurd hc not_isUnit_zero
+    · rfl
   have he1 : e (t + 1) = e 1 := by rw [← hce, hc1, map_one, map_one]
   have ht0 : t = 0 := by simpa using e.injective he1
   have hmk0 : Ideal.Quotient.mk (Ideal.span {(Polynomial.X : Polynomial (ZMod 2))} ^ 2)

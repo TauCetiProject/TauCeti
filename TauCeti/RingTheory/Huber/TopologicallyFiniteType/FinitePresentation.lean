@@ -155,11 +155,8 @@ theorem isTopologicallyFinitePresentation_self [IsAdicRing O] :
     IsTopologicallyFinitePresentation O O := by
   let _ : UniformSpace O := IsTopologicalAddGroup.rightUniformSpace O
   have : IsUniformAddGroup O := isUniformAddGroup_of_addCommGroup
-  let f := weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set O))
-  let e : restrictedMvPowerSeriesCompletion 0 O ≃ₐ[O] O :=
-    (restrictedMvPowerSeriesCompletionAlgEquiv 0 O).trans
-      (AlgEquiv.ofRingEquiv (f := f) fun a ↦ by simp [f])
-  exact (isTopologicallyFinitePresentation_restrictedMvPowerSeriesCompletion O 0).of_algEquiv e
+  exact (isTopologicallyFinitePresentation_restrictedMvPowerSeriesCompletion O 0).of_algEquiv
+    (restrictedMvPowerSeriesCompletionFinZeroAlgEquiv O)
 
 /-! ### The adic topology of a presentation -/
 
@@ -189,8 +186,6 @@ theorem IsTopologicallyFinitePresentation.finitePresentation_quotient
     (h : IsTopologicallyFinitePresentation O A) {I : Ideal O} (hI : IsAdic I) (hfg : I.FG) :
     Algebra.FinitePresentation (O ⧸ I) (A ⧸ I.map (algebraMap O A)) := by
   obtain ⟨n, π, hπ, hπker⟩ := h
-  let _ : UniformSpace O := IsTopologicalAddGroup.rightUniformSpace O
-  have : IsUniformAddGroup O := isUniformAddGroup_of_addCommGroup
   set P := restrictedMvPowerSeriesCompletion n O
   set IP := I.map (algebraMap O P)
   set IA := I.map (algebraMap O A)
