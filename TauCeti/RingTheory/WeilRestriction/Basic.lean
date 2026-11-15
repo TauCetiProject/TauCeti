@@ -586,7 +586,6 @@ All linear functionals may be used, so no basis or projective splitting is part 
 theorem adjoin_range_universalCoefficient :
     Algebra.adjoin A (Set.range fun p : Module.Dual A B × C ↦
       universalCoefficient p.1 p.2) = ⊤ := by
-  classical
   let S := Algebra.adjoin A (Set.range fun p : Module.Dual A B × C ↦
     universalCoefficient p.1 p.2)
   suffices (AlgHom.id A (WeilRestriction A B C)).range ≤ S by simpa using this

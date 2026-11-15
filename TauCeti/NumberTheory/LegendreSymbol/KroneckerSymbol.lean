@@ -52,9 +52,10 @@ The character need not be primitive: `(-12 / ·)` is induced from `(-3 / ·)`.
 * `TauCeti.kroneckerSym_mul_right`, `TauCeti.kroneckerSym_mul_right_of_ne_neg_one`:
   multiplicativity in the denominator, over nonzero factors, and without restriction when the
   numerator is not `-1`.
-* `TauCeti.kroneckerSym_mul_left`, `TauCeti.kroneckerSym_pow_left`,
-  `TauCeti.kroneckerSym_eq_one_of_isSquare`: multiplicativity in the numerator, over nonzero
-  factors, unrestricted power law, and value `1` on squares coprime to the denominator.
+* `TauCeti.kroneckerSym_mul_left`, `TauCeti.kroneckerSym_mul_left_of_ne_neg_one`,
+  `TauCeti.kroneckerSym_pow_left`, `TauCeti.kroneckerSym_eq_one_of_isSquare`: multiplicativity in
+  the numerator, over nonzero factors and without restriction when the denominator is not `-1`,
+  unrestricted power law, and value `1` on squares coprime to the denominator.
 * `TauCeti.kroneckerSym_eq_zero_iff`: `(a / b) = 0` exactly when `gcd (a, b) ≠ 1`.
 * `TauCeti.kroneckerSym_eq_jacobiSym_natAbs`: `(D / n) = J(n | |D|)` for `D ≡ 1 (mod 4)`.
 * `TauCeti.kroneckerSym_mod_right'`: for `D ≡ 0, 1 (mod 4)`, `(D / ·)` is periodic modulo `D`.
@@ -210,7 +211,7 @@ theorem kroneckerSym_eq_zero_iff {a b : ℤ} : kroneckerSym a b = 0 ↔ a.gcd b 
   -- Writing `|b| = 2 ^ e * m` with `m` odd, `a` and `b` have a common factor exactly when `a` is
   -- even and `e ≠ 0`, or `a` and `m` have one.
   rw [kroneckerSym_of_ne_zero a hb, Int.gcd_eq_natAbs_gcd_natAbs, Ne,
-    ← Nat.coprime_iff_gcd_eq_one, Nat.coprime_iff_coprime_ordCompl Nat.prime_two]
+    ← Nat.coprime_iff_gcd_eq_one, Nat.coprime_iff_coprime_ordCompl (p := 2)]
   simp only [mul_eq_zero, hs, false_or, pow_eq_zero_iff', χ₈_intCast_eq_zero_iff,
     jacobiSym.eq_zero_iff, Ne, hm, not_false_eq_true, true_and, Int.gcd_eq_natAbs_gcd_natAbs,
     Int.natAbs_natCast, not_and_or, not_imp, Nat.coprime_iff_gcd_eq_one, ← Int.natCast_dvd,
@@ -257,6 +258,23 @@ theorem kroneckerSym_mul_left {a a' : ℤ} (ha : a ≠ 0) (ha' : a' ≠ 0) (b : 
   rw [kroneckerSym_of_ne_zero _ hb, kroneckerSym_of_ne_zero a hb, kroneckerSym_of_ne_zero a' hb,
     Int.cast_mul, map_mul, mul_pow, jacobiSym.mul_left, hs]
   ring
+
+/-- Multiplicativity of the Kronecker symbol in the numerator without restriction on the
+numerators, when the denominator is not `-1`. For `b = -1` it can fail when one factor is `0` and
+the other is negative (see `kroneckerSym_mul_left`). -/
+theorem kroneckerSym_mul_left_of_ne_neg_one {b : ℤ} (hb : b ≠ -1) (a a' : ℤ) :
+    kroneckerSym (a * a') b = kroneckerSym a b * kroneckerSym a' b := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · rw [zero_mul, kroneckerSym_zero_left]
+    by_cases h1 : b = 1
+    · subst h1; simp
+    · simp [h1, hb]
+  rcases eq_or_ne a' 0 with rfl | ha'
+  · rw [mul_zero, kroneckerSym_zero_left]
+    by_cases h1 : b = 1
+    · subst h1; simp
+    · simp [h1, hb]
+  exact kroneckerSym_mul_left ha ha' b
 
 /-- The Kronecker symbol of a power in the numerator is the power of the symbol. Unlike
 `kroneckerSym_mul_left`, this holds without restriction: at `a = 0` the value `(0 / b) ∈ {0, 1}` is
