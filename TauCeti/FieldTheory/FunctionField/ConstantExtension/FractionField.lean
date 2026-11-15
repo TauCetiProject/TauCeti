@@ -23,12 +23,13 @@ in `Frac(F ⊗[k] K)` over `K`. The extension `K/k` need not be algebraic.
 
 The domain hypothesis is available from
 `TauCeti.isDomain_tensorProduct_of_isGeometricallyReduced` for a geometrically reduced
-field with exact constants, and from
-`TauCeti.isDomain_tensorProduct_of_isGeometricallyReduced_right` whenever `k` is
-algebraically closed. We retain the actual fraction-field carrier, rather than asserting
-that the tensor product itself is a field. The results also apply to any specified
-fraction field with compatible scalar maps; in particular, `RatFunc K` is a fraction
-field of `RatFunc k ⊗[k] K` (`TauCeti.isFractionRing_ratFunc_tensorProduct`).
+field with exact constants, and automatically from the instance
+`TauCeti.isDomain_tensorProduct_of_isAlgClosed` whenever `k` is algebraically closed. We
+retain the actual fraction-field carrier, rather than asserting that the tensor product
+itself is a field. The results also apply to any specified fraction field with compatible
+scalar maps; in particular, `RatFunc K` is a fraction field of `RatFunc k ⊗[k] K`
+(`TauCeti.isFractionRing_ratFunc_tensorProduct`,
+`TauCeti.isFractionRing_ratFuncTensorProductAlgebra`).
 
 ## Main results
 
@@ -38,13 +39,11 @@ field of `RatFunc k ⊗[k] K` (`TauCeti.isFractionRing_ratFunc_tensorProduct`).
   `TauCeti.isSeparable_adjoin_simple_of_isFractionRing_tensorProduct`: transcendental and
   separating parameters of `F/k` persist in `Q/K`.
 * `TauCeti.IsFunctionField.of_isFractionRing_tensorProduct`,
-  `TauCeti.IsFunctionField.fractionRing_tensorProduct`,
-  `TauCeti.IsFunctionField.fractionRing_tensorProduct_of_isAlgClosed`: preservation of the
-  one-variable function-field property.
-* `TauCeti.isFractionRing_ratFunc_tensorProduct`: `RatFunc K` is a fraction field of
+  `TauCeti.IsFunctionField.fractionRing_tensorProduct`: preservation of the one-variable
+  function-field property.
+* `TauCeti.isFractionRing_ratFunc_tensorProduct`, `TauCeti.ratFuncTensorProductAlgebra`,
+  `TauCeti.isFractionRing_ratFuncTensorProductAlgebra`: `RatFunc K` is a fraction field of
   `RatFunc k ⊗[k] K` for any `k`-algebra map `RatFunc k → RatFunc K` sending `X` to `X`.
-* `TauCeti.algebraMap_ratFunc_apply_eq`: two routes `RatFunc k → RatFunc K → Q` and
-  `RatFunc k → F → Q` sharing the image of `X` agree on all of `RatFunc k`.
 
 ## References
 
@@ -140,18 +139,6 @@ theorem IsFunctionField.fractionRing_tensorProduct (hF : IsFunctionField k F)
   have := isDomain_tensorProduct_of_isGeometricallyReduced hex K
   exact hF.of_isFractionRing_tensorProduct
 
-omit [Algebra (F ⊗[k] K) Q] [Algebra k Q] [Algebra F Q] [Algebra K Q]
-  [IsScalarTower k (F ⊗[k] K) Q] [IsScalarTower F (F ⊗[k] K) Q]
-  [IsScalarTower K (F ⊗[k] K) Q] [IsScalarTower k F Q] [IsScalarTower k K Q]
-  [IsFractionRing (F ⊗[k] K) Q] in
-/-- Over an algebraically closed field `k`, the fraction field of `F ⊗[k] K` is a one-variable
-function field over `K` for every one-variable function field `F/k` and every field extension
-`K/k`. -/
-theorem IsFunctionField.fractionRing_tensorProduct_of_isAlgClosed (hF : IsFunctionField k F)
-    [IsAlgClosed k] (K : Type*) [Field K] [Algebra k K] :
-    IsFunctionField K (FractionRing (F ⊗[k] K)) :=
-  hF.of_isFractionRing_tensorProduct
-
 end General
 
 section RatFunc
@@ -183,48 +170,61 @@ theorem isFractionRing_ratFunc_tensorProduct
   have h1 : algebraMap (k[X] ⊗[k] K) (RatFunc K) (p ⊗ₜ[k] c) =
       algebraMap K (RatFunc K) c *
         algebraMap (RatFunc k) (RatFunc K) (algebraMap k[X] (RatFunc k) p) := by
-    have he : e.toRingHom (p ⊗ₜ[k] c) = (polyEquivTensor k K).symm (c ⊗ₜ[k] p) := by simp [e]
-    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply, he,
-      polyEquivTensor_symm_apply_tmul_eq_smul, Algebra.smul_def, map_mul,
-      ← IsScalarTower.algebraMap_apply K K[X] (RatFunc K),
-      algebraMap_ratFunc_algebraMap_polynomial hX]
+    simp [e, RingHom.algebraMap_toAlgebra, polyEquivTensor_symm_apply_tmul_eq_smul,
+      Algebra.smul_def, algebraMap_ratFunc_algebraMap_polynomial hX]
   have h2 : algebraMap (RatFunc k ⊗[k] K) (RatFunc K) (algebraMap k[X] (RatFunc k) p ⊗ₜ[k] c) =
       algebraMap (RatFunc k) (RatFunc K) (algebraMap k[X] (RatFunc k) p) *
         algebraMap K (RatFunc K) c := by
-    have htmul : (algebraMap k[X] (RatFunc k) p ⊗ₜ[k] c : RatFunc k ⊗[k] K) =
-        algebraMap (RatFunc k) (RatFunc k ⊗[k] K) (algebraMap k[X] (RatFunc k) p) *
-          algebraMap K (RatFunc k ⊗[k] K) c := by
-      simp [Algebra.TensorProduct.algebraMap_apply, Algebra.TensorProduct.right_algebraMap_apply]
-    rw [htmul, map_mul,
-      ← IsScalarTower.algebraMap_apply (RatFunc k) (RatFunc k ⊗[k] K) (RatFunc K),
-      ← IsScalarTower.algebraMap_apply K (RatFunc k ⊗[k] K) (RatFunc K)]
+    rw [IsScalarTower.algebraMap_apply (RatFunc k) (RatFunc k ⊗[k] K) (RatFunc K),
+      IsScalarTower.algebraMap_apply K (RatFunc k ⊗[k] K) (RatFunc K), ← map_mul]
+    simp [Algebra.TensorProduct.right_algebraMap_apply]
   rw [h1, h2, mul_comm]
 
-/-- Two routes `RatFunc k → RatFunc K → Q` and `RatFunc k → F → Q` into a commutative `k`-algebra
-`Q` that map `RatFunc.X` compatibly agree on all of `RatFunc k`. -/
-theorem algebraMap_ratFunc_apply_eq {F Q : Type*} [Field F] [CommRing Q]
-    [Algebra k F] [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
-    [Algebra k Q] [Algebra K Q] [Algebra F Q] [Algebra (RatFunc K) Q]
-    [IsScalarTower k K Q] [IsScalarTower k F Q] [IsScalarTower K (RatFunc K) Q]
-    (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X)
-    (hX' : algebraMap F Q (algebraMap (RatFunc k) F RatFunc.X) =
-      algebraMap (RatFunc K) Q RatFunc.X)
-    (w : RatFunc k) :
-    algebraMap (RatFunc K) Q (algebraMap (RatFunc k) (RatFunc K) w) =
-      algebraMap F Q (algebraMap (RatFunc k) F w) := by
-  have hhom : (algebraMap (RatFunc K) Q).comp (algebraMap (RatFunc k) (RatFunc K)) =
-      (algebraMap F Q).comp (algebraMap (RatFunc k) F) := by
-    refine IsLocalization.ringHom_ext (nonZeroDivisors k[X]) <|
-      Polynomial.ringHom_ext (fun c ↦ ?_) ?_
-    · simp only [RingHom.comp_apply, ← Polynomial.algebraMap_eq,
-        ← IsScalarTower.algebraMap_apply k k[X] (RatFunc k),
-        ← IsScalarTower.algebraMap_apply k (RatFunc k) (RatFunc K),
-        ← IsScalarTower.algebraMap_apply k (RatFunc k) F]
-      rw [IsScalarTower.algebraMap_apply k K (RatFunc K),
-        ← IsScalarTower.algebraMap_apply K (RatFunc K) Q,
-        ← IsScalarTower.algebraMap_apply k K Q, ← IsScalarTower.algebraMap_apply k F Q]
-    · simp [RingHom.comp_apply, RatFunc.algebraMap_X, hX, hX']
-  exact congr($hhom w)
+/-- The `RatFunc k ⊗[k] K`-algebra structure on `RatFunc K` given by multiplying the scalar maps
+from `RatFunc k` and `K`. -/
+@[instance_reducible]
+noncomputable def ratFuncTensorProductAlgebra : Algebra (RatFunc k ⊗[k] K) (RatFunc K) :=
+  (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k (RatFunc k) (RatFunc K))
+    (IsScalarTower.toAlgHom k K (RatFunc K))).toRingHom.toAlgebra
+
+/-- Under `TauCeti.ratFuncTensorProductAlgebra`, `algebraMap` sends a pure tensor `f ⊗ₜ c` to the
+product of the two scalar images in `RatFunc K`. -/
+theorem algebraMap_ratFuncTensorProductAlgebra_tmul (f : RatFunc k) (c : K) :
+    letI := ratFuncTensorProductAlgebra (k := k) (K := K)
+    algebraMap (RatFunc k ⊗[k] K) (RatFunc K) (f ⊗ₜ[k] c) =
+      algebraMap (RatFunc k) (RatFunc K) f * algebraMap K (RatFunc K) c := by
+  let _ := ratFuncTensorProductAlgebra (k := k) (K := K)
+  have h : algebraMap (RatFunc k ⊗[k] K) (RatFunc K) =
+      (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k (RatFunc k) (RatFunc K))
+        (IsScalarTower.toAlgHom k K (RatFunc K))).toRingHom := rfl
+  simp [h]
+
+/-- Left scalar tower for `TauCeti.ratFuncTensorProductAlgebra`. -/
+theorem isScalarTower_ratFunc_ratFuncTensorProductAlgebra :
+    letI := ratFuncTensorProductAlgebra (k := k) (K := K)
+    IsScalarTower (RatFunc k) (RatFunc k ⊗[k] K) (RatFunc K) := by
+  let _ := ratFuncTensorProductAlgebra (k := k) (K := K)
+  exact .of_algebraMap_eq fun _ ↦ by simp [algebraMap_ratFuncTensorProductAlgebra_tmul]
+
+/-- Right scalar tower for `TauCeti.ratFuncTensorProductAlgebra`. -/
+theorem isScalarTower_right_ratFuncTensorProductAlgebra :
+    letI := ratFuncTensorProductAlgebra (k := k) (K := K)
+    IsScalarTower K (RatFunc k ⊗[k] K) (RatFunc K) := by
+  let _ := ratFuncTensorProductAlgebra (k := k) (K := K)
+  exact .of_algebraMap_eq fun _ ↦ by
+    simp [Algebra.TensorProduct.right_algebraMap_apply,
+      algebraMap_ratFuncTensorProductAlgebra_tmul]
+
+/-- **`RatFunc K` is a fraction field of `RatFunc k ⊗[k] K`** under
+`TauCeti.ratFuncTensorProductAlgebra` whenever `algebraMap (RatFunc k) (RatFunc K)` fixes `X`. -/
+theorem isFractionRing_ratFuncTensorProductAlgebra
+    (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X) :
+    letI := ratFuncTensorProductAlgebra (k := k) (K := K)
+    IsFractionRing (RatFunc k ⊗[k] K) (RatFunc K) := by
+  let _ := ratFuncTensorProductAlgebra (k := k) (K := K)
+  have := isScalarTower_ratFunc_ratFuncTensorProductAlgebra (k := k) (K := K)
+  have := isScalarTower_right_ratFuncTensorProductAlgebra (k := k) (K := K)
+  exact isFractionRing_ratFunc_tensorProduct hX
 
 end RatFunc
 

@@ -39,7 +39,7 @@ not.
   a geometrically reduced function field has a separating element.
 * `TauCeti.IsFunctionField.isGeometricallyReduced_iff_exists_transcendental_and_isSeparable_adjoin`:
   a function field is geometrically reduced if and only if it has a separating element.
-* `TauCeti.IsFunctionField.isDomain_tensorProduct_isAlgClosed_iff`,
+* `TauCeti.IsFunctionField.isDomain_tensorProduct_iff_of_isAlgClosed`,
   `TauCeti.IsFunctionField.forall_isDomain_tensorProduct_field_iff`: a function field stays a
   domain after tensoring with an algebraically closed field (or with all field extensions) if and
   only if its constants are exact and it has a separating element.
@@ -102,11 +102,11 @@ theorem isGeometricallyReduced_iff_exists_transcendental_and_isSeparable_adjoin
 for a one-variable function field `F / k` and an algebraically closed field `L` over `k`,
 `F ⊗[k] L` is a domain if and only if `k` is integrally closed in `F` and `F / k` admits a
 separating element. -/
-theorem isDomain_tensorProduct_isAlgClosed_iff (hF : IsFunctionField k F) (L : Type*) [Field L]
+theorem isDomain_tensorProduct_iff_of_isAlgClosed (hF : IsFunctionField k F) (L : Type*) [Field L]
     [Algebra k L] [IsAlgClosed L] :
     IsDomain (F ⊗[k] L) ↔
       IsIntegrallyClosedIn k F ∧ ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
-  rw [TauCeti.isDomain_tensorProduct_isAlgClosed_iff,
+  rw [TauCeti.isDomain_tensorProduct_iff_of_isAlgClosed,
     hF.isGeometricallyReduced_iff_exists_transcendental_and_isSeparable_adjoin]
 
 /-- **Separating-element characterization of regular function fields (all field extensions)**:

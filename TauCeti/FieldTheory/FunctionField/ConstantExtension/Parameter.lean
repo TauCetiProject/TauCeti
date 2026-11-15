@@ -48,8 +48,8 @@ and Mathlib's `Module.Basis.baseChange` and `AlgHom.liftEquiv` for the tensor al
   `TauCeti.fractionRingTensorMap_fractionFieldTowerTensorEquiv`).
 * `TauCeti.ratFuncFractionFieldBasis`, `TauCeti.ratFuncFractionFieldTensorEquiv`,
   `TauCeti.finrank_ratFunc_eq_of_isFractionRing_tensorProduct`,
-  `TauCeti.isField_ratFunc_tensorProduct`, `TauCeti.isField_ratFunc_tensorProduct_of_isAlgClosed`,
-  `TauCeti.isFractionRing_of_ratFunc_tensorProduct`, `TauCeti.ratFuncFractionRingAlgHom`,
+  `TauCeti.isField_ratFunc_tensorProduct`,
+  `TauCeti.isFractionRing_ratFunc_tensorProduct_tensorProduct`, `TauCeti.ratFuncFractionRingAlgHom`,
   `TauCeti.fractionRingTensorMap_ratFuncFractionFieldTensorEquiv`: rational-parameter
   specializations for `E = RatFunc k` and `Q₁ = RatFunc K`.
 
@@ -228,8 +228,14 @@ noncomputable def constantExtensionTowerBasis [Algebra.IsAlgebraic E F]
       (RingEquiv.subfieldCongr (fieldRange_toSubfield_eq_constantCompositum hE' hcomm))
   (constantExtensionParameterBasis H h C bC).mapCoeffs eE'.symm fun a x ↦ by
     obtain ⟨y, rfl⟩ := eE'.surjective a
-    rw [RingEquiv.symm_apply_apply, Algebra.smul_def, Algebra.smul_def]
-    rfl
+    have hy : (eE' y : F') = algebraMap E' F' y := by
+      dsimp only [eE']
+      rw [RingEquiv.trans_apply]
+      let hsub := SetLike.ext'_iff.1
+        (fieldRange_toSubfield_eq_constantCompositum (k := k) hE' hcomm)
+      exact (congrArg Subtype.val (Set.equivOfEq_apply hsub (fE'.equivFieldRange y))).trans
+        ((AlgHom.equivFieldRange_apply_coe fE' y).trans (IsScalarTower.toAlgHom_apply K E' F' y))
+    simp [Algebra.smul_def, hy]
 
 /-- `TauCeti.constantExtensionTowerBasis` sends `i` to `algebraMap F F' (b i)`. -/
 @[simp]
@@ -513,7 +519,8 @@ theorem isField_tensorProduct_of_isFractionRing_tensorProduct : IsField (Q₁ �
 include k K in
 /-- Under the hypotheses of `TauCeti.isField_tensorProduct_of_isFractionRing_tensorProduct`,
 `Q₁ ⊗[E] F` is an integral domain. -/
-theorem isDomain_tensorProduct_of_isFractionRing_tensorProduct_tower : IsDomain (Q₁ ⊗[E] F) :=
+theorem isDomain_tensorProduct_of_isAlgebraic_of_isFractionRing_tensorProduct :
+    IsDomain (Q₁ ⊗[E] F) :=
   let _ : Field (Q₁ ⊗[E] F) :=
     (isField_tensorProduct_of_isFractionRing_tensorProduct (k := k) (K := K) F Q₁).toField
   inferInstance
@@ -735,6 +742,10 @@ end Presentation
 
 section FieldCriterion
 
+attribute [local instance] ratFuncTensorProductAlgebra
+  isScalarTower_ratFunc_ratFuncTensorProductAlgebra
+  isScalarTower_right_ratFuncTensorProductAlgebra
+
 variable {k K F : Type*} [Field k] [Field K] [Field F]
   [Algebra k K] [Algebra k F] [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
   [Algebra.IsAlgebraic (RatFunc k) F]
@@ -745,14 +756,7 @@ variable {k K F : Type*} [Field k] [Field K] [Field F]
 theorem isField_ratFunc_tensorProduct [IsDomain (F ⊗[k] K)]
     (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X) :
     IsField (RatFunc K ⊗[RatFunc k] F) := by
-  let _ : Algebra (RatFunc k ⊗[k] K) (RatFunc K) :=
-    (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k (RatFunc k) (RatFunc K))
-      (IsScalarTower.toAlgHom k K (RatFunc K))).toRingHom.toAlgebra
-  have : IsScalarTower (RatFunc k) (RatFunc k ⊗[k] K) (RatFunc K) :=
-    .of_algebraMap_eq fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]
-  have : IsScalarTower K (RatFunc k ⊗[k] K) (RatFunc K) :=
-    .of_algebraMap_eq fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]
-  have := isFractionRing_ratFunc_tensorProduct hX
+  have := isFractionRing_ratFuncTensorProductAlgebra hX
   exact isField_tensorProduct_of_isFractionRing_tensorProduct (k := k) (K := K) F (RatFunc K)
 
 /-- Under the hypotheses of `TauCeti.isField_ratFunc_tensorProduct`, `RatFunc K ⊗[RatFunc k] F` is
@@ -772,16 +776,9 @@ theorem isField_ratFunc_tensorProduct_of_isGeometricallyReduced
   have := isDomain_tensorProduct_of_isGeometricallyReduced hex K
   isField_ratFunc_tensorProduct hX
 
-/-- Over an algebraically closed field `k`, `RatFunc K ⊗[RatFunc k] F` is a field for every
-algebraic extension `F / RatFunc k` and every field extension `K/k`. -/
-theorem isField_ratFunc_tensorProduct_of_isAlgClosed [IsAlgClosed k]
-    (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X) :
-    IsField (RatFunc K ⊗[RatFunc k] F) :=
-  isField_ratFunc_tensorProduct hX
-
 /-- **`RatFunc K ⊗[RatFunc k] F` is itself a fraction ring of `F ⊗[k] K`** along any compatible
 `F ⊗[k] K`-algebra map sending `f ⊗ₜ c` to `algebraMap K (RatFunc K) c ⊗ₜ f`. -/
-theorem isFractionRing_of_ratFunc_tensorProduct [IsDomain (F ⊗[k] K)]
+theorem isFractionRing_ratFunc_tensorProduct_tensorProduct [IsDomain (F ⊗[k] K)]
     [Algebra (F ⊗[k] K) (RatFunc K ⊗[RatFunc k] F)]
     (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X)
     (hmap : ∀ (f : F) (c : K),
@@ -789,14 +786,7 @@ theorem isFractionRing_of_ratFunc_tensorProduct [IsDomain (F ⊗[k] K)]
         algebraMap K (RatFunc K) c ⊗ₜ[RatFunc k] f) :
     IsFractionRing (F ⊗[k] K) (RatFunc K ⊗[RatFunc k] F) := by
   let Q := FractionRing (F ⊗[k] K)
-  let _ : Algebra (RatFunc k ⊗[k] K) (RatFunc K) :=
-    (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k (RatFunc k) (RatFunc K))
-      (IsScalarTower.toAlgHom k K (RatFunc K))).toRingHom.toAlgebra
-  have : IsScalarTower (RatFunc k) (RatFunc k ⊗[k] K) (RatFunc K) :=
-    .of_algebraMap_eq fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]
-  have : IsScalarTower K (RatFunc k ⊗[k] K) (RatFunc K) :=
-    .of_algebraMap_eq fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]
-  have := isFractionRing_ratFunc_tensorProduct hX
+  have := isFractionRing_ratFuncTensorProductAlgebra hX
   let j : RatFunc K →ₐ[K] Q :=
     (IsScalarTower.toAlgHom k (RatFunc k) F).fractionRingTensorMap
       (IsScalarTower.toAlgHom k (RatFunc k) F).injective K (RatFunc K) Q
@@ -816,24 +806,21 @@ theorem isFractionRing_of_ratFunc_tensorProduct [IsDomain (F ⊗[k] K)]
       rw [AlgEquiv.coe_toRingEquiv]
       induction x with
       | tmul f c =>
-        have htmul : (f ⊗ₜ[k] c : F ⊗[k] K) =
-            algebraMap F (F ⊗[k] K) f * algebraMap K (F ⊗[k] K) c := by
-          simp [Algebra.TensorProduct.algebraMap_apply,
-            Algebra.TensorProduct.right_algebraMap_apply]
-        rw [htmul, map_mul, map_mul, map_mul,
-          ← IsScalarTower.algebraMap_apply F (F ⊗[k] K) Q,
-          ← IsScalarTower.algebraMap_apply K (F ⊗[k] K) Q,
-          IsScalarTower.algebraMap_apply K (RatFunc K) Q,
-          ratFuncFractionFieldTensorEquiv_symm_algebraMap_right hX hX' f,
-          ratFuncFractionFieldTensorEquiv_symm_algebraMap_left hX hX'
-            (algebraMap K (RatFunc K) c),
-          ← map_mul, ← htmul, hmap f c, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+        rw [hmap, AlgEquiv.symm_apply_eq, ratFuncFractionFieldTensorEquiv_tmul,
+          ← IsScalarTower.algebraMap_apply K (RatFunc K) Q,
+          IsScalarTower.algebraMap_apply K (F ⊗[k] K) Q,
+          IsScalarTower.algebraMap_apply F (F ⊗[k] K) Q, ← map_mul]
+        simp [Algebra.TensorProduct.right_algebraMap_apply]
       | add x y hx hy =>
         rw [map_add, map_add, map_add, hx, hy]
 
 end FieldCriterion
 
 section Morphism
+
+attribute [local instance] ratFuncTensorProductAlgebra
+  isScalarTower_ratFunc_ratFuncTensorProductAlgebra
+  isScalarTower_right_ratFuncTensorProductAlgebra
 
 variable {k K F₁ F₂ Q₁ Q₂ : Type*}
   [Field k] [Field K] [Field F₁] [Field F₂] [Field Q₁] [Field Q₂]
@@ -865,14 +852,7 @@ theorem fractionRingTensorMap_algebraMap_ratFunc
     (g.restrictScalars k).fractionRingTensorMap (g.restrictScalars k).injective K Q₁ Q₂
         (algebraMap (RatFunc K) Q₁ a) =
       algebraMap (RatFunc K) Q₂ a := by
-  let _ : Algebra (RatFunc k ⊗[k] K) (RatFunc K) :=
-    (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k (RatFunc k) (RatFunc K))
-      (IsScalarTower.toAlgHom k K (RatFunc K))).toRingHom.toAlgebra
-  have : IsScalarTower (RatFunc k) (RatFunc k ⊗[k] K) (RatFunc K) :=
-    .of_algebraMap_eq fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]
-  have : IsScalarTower K (RatFunc k ⊗[k] K) (RatFunc K) :=
-    .of_algebraMap_eq fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]
-  have := isFractionRing_ratFunc_tensorProduct hX
+  have := isFractionRing_ratFuncTensorProductAlgebra hX
   exact fractionRingTensorMap_algebraMap_tower
     (algebraMap_ratFunc_apply_eq hX hX₁) (algebraMap_ratFunc_apply_eq hX hX₂) g a
 
@@ -888,6 +868,20 @@ noncomputable def ratFuncFractionRingAlgHom
     (g : F₁ →ₐ[RatFunc k] F₂) : Q₁ →ₐ[RatFunc K] Q₂ :=
   { (g.restrictScalars k).fractionRingTensorMap (g.restrictScalars k).injective K Q₁ Q₂ with
     commutes' := fractionRingTensorMap_algebraMap_ratFunc hX hX₁ hX₂ g }
+
+omit [IsScalarTower k (F₁ ⊗[k] K) Q₁] [IsScalarTower k (F₂ ⊗[k] K) Q₂] in
+/-- Underlying function of `TauCeti.ratFuncFractionRingAlgHom`. -/
+theorem coe_ratFuncFractionRingAlgHom
+    (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X)
+    (hX₁ : algebraMap F₁ Q₁ (algebraMap (RatFunc k) F₁ RatFunc.X) =
+      algebraMap (RatFunc K) Q₁ RatFunc.X)
+    (hX₂ : algebraMap F₂ Q₂ (algebraMap (RatFunc k) F₂ RatFunc.X) =
+      algebraMap (RatFunc K) Q₂ RatFunc.X)
+    (g : F₁ →ₐ[RatFunc k] F₂) :
+    ⇑(ratFuncFractionRingAlgHom hX hX₁ hX₂ g) =
+      (g.restrictScalars k).fractionRingTensorMap (g.restrictScalars k).injective K Q₁ Q₂ := by
+  ext
+  rfl
 
 omit [IsScalarTower k (F₁ ⊗[k] K) Q₁] [IsScalarTower k (F₂ ⊗[k] K) Q₂] in
 /-- On `F₁`, `TauCeti.ratFuncFractionRingAlgHom` agrees with `g`. -/

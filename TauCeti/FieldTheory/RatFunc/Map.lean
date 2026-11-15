@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
+import TauCeti.FieldTheory.RatFunc.Automorphism
 
 /-!
 # Coefficient maps of rational function fields
@@ -33,6 +34,8 @@ absolute Galois group, acts on the rational function field.
   carries `K` onto `L` along `σ`, and the two extensions have the same degree.
 * `TauCeti.algebraMap_ratFunc_algebraMap_polynomial`: a `K`-algebra map `K(X) → L(X)` sending `X`
   to `X` maps a polynomial over `K` to the polynomial with its coefficients mapped to `L`.
+* `TauCeti.algebraMap_ratFunc_apply_eq`: two `K`-algebra routes `K(X) → L(X) → Q` and
+  `K(X) → F → Q` sharing the image of `X` agree on all of `K(X)`.
 * `RatFunc.mapRingEquiv_algebraMap_ratFunc`: for such an algebra map from `K(X)` to `L(X)`, the
   coefficient map of an automorphism of `L` fixing the image of `K` fixes the image of `K(X)`.
 * `RatFunc.mapRingHom_algebraMap`: Mathlib's `RatFunc.mapRingHom φ` restricts to `φ` on
@@ -165,6 +168,25 @@ theorem algebraMap_ratFunc_algebraMap_polynomial
       algebraMap L[X] (RatFunc L) (f.map (algebraMap K L)) := by
   rw [← RatFunc.aeval_X_left_eq_algebraMap, ← Polynomial.aeval_algebraMap_apply, hX,
     ← RatFunc.aeval_X_left_eq_algebraMap, Polynomial.aeval_map_algebraMap]
+
+/-- Two routes `RatFunc K → RatFunc L → Q` and `RatFunc K → F → Q` into a commutative `K`-algebra
+`Q` that map `RatFunc.X` compatibly agree on all of `RatFunc K`. -/
+theorem algebraMap_ratFunc_apply_eq {F Q : Type*} [CommRing F] [CommRing Q]
+    [Algebra K F] [Algebra (RatFunc K) F] [IsScalarTower K (RatFunc K) F]
+    [Algebra K Q] [Algebra L Q] [Algebra F Q] [Algebra (RatFunc L) Q]
+    [IsScalarTower K L Q] [IsScalarTower K F Q] [IsScalarTower L (RatFunc L) Q]
+    (hX : algebraMap (RatFunc K) (RatFunc L) RatFunc.X = RatFunc.X)
+    (hX' : algebraMap F Q (algebraMap (RatFunc K) F RatFunc.X) =
+      algebraMap (RatFunc L) Q RatFunc.X)
+    (w : RatFunc K) :
+    algebraMap (RatFunc L) Q (algebraMap (RatFunc K) (RatFunc L) w) =
+      algebraMap F Q (algebraMap (RatFunc K) F w) := by
+  have hhom :
+      ((IsScalarTower.toAlgHom L (RatFunc L) Q).restrictScalars K).comp
+          (IsScalarTower.toAlgHom K (RatFunc K) (RatFunc L)) =
+        (IsScalarTower.toAlgHom K F Q).comp (IsScalarTower.toAlgHom K (RatFunc K) F) :=
+    _root_.RatFunc.algHom_ext (by simp [hX, hX'])
+  exact congr($hhom w)
 
 end Polynomial
 

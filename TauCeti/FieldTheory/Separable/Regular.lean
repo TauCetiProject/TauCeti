@@ -65,18 +65,20 @@ field, exact constants alone do not suffice: for `k = 𝔽_p(a, b)` and `F = k(x
   `TauCeti.isDomain_tensorProduct_of_isGeometricallyReduced_right`: if `F / k` is geometrically
   reduced with exact constants, then `F ⊗[k] A` and `A ⊗[k] F` are domains for every domain
   `k`-algebra `A`.
-* `TauCeti.isDomain_tensorProduct_isAlgClosed_iff`,
+* `TauCeti.isDomain_tensorProduct_iff_of_isAlgClosed`,
   `TauCeti.forall_isDomain_tensorProduct_field_iff`,
   `TauCeti.forall_isDomain_tensorProduct_iff`: equivalent characterizations of regular extensions,
   with separable-generation and perfect-field specializations.
 * `TauCeti.isDomain_tensorProduct_of_isGeometricallyReduced_tower`: tower stability of regular
   field extensions.
-* `TauCeti.isIntegrallyClosedIn_right_of_isFractionRing_tensorProduct`,
+* `TauCeti.isDomain_tensorProduct_right_of_isFractionRing_tensorProduct`,
+  `TauCeti.isIntegrallyClosedIn_right_of_isFractionRing_tensorProduct`,
   `TauCeti.isGeometricallyReduced_right_of_isFractionRing_tensorProduct`,
+  `TauCeti.isDomain_tensorProduct_left_of_isFractionRing_tensorProduct`,
   `TauCeti.isIntegrallyClosedIn_left_of_isFractionRing_tensorProduct`,
   `TauCeti.isGeometricallyReduced_left_of_isFractionRing_tensorProduct`: scalar stability of
-  regularity in any specified fraction field `Q` of `F ⊗[k] K`, together with `[PerfectField k]`
-  and `[IsAlgClosed k]` specializations.
+  regularity in any specified fraction field `Q` of `F ⊗[k] K`, together with `[IsAlgClosed k]`
+  specializations.
 
 ## References
 
@@ -198,11 +200,9 @@ variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
 /-- If `F ⊗[k] L` is a domain for some algebraically closed field `L` over `k`, then `k` is
 integrally closed in `F`. -/
 theorem isIntegrallyClosedIn_of_isDomain_tensorProduct (L : Type*) [Field L] [Algebra k L]
-    [IsAlgClosed L] [IsDomain (F ⊗[k] L)] : IsIntegrallyClosedIn k F := by
-  rw [← IsIntegrallyClosedIn.integralClosure_eq_bot_iff F (algebraMap k F).injective,
-    ← algebraicClosure_toSubalgebra, ← IntermediateField.bot_toSubalgebra,
-    IntermediateField.toSubalgebra_inj]
-  exact algebraicClosure_eq_bot_of_isDomain_tensorProduct L
+    [IsAlgClosed L] [IsDomain (F ⊗[k] L)] : IsIntegrallyClosedIn k F :=
+  algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.mp
+    (algebraicClosure_eq_bot_of_isDomain_tensorProduct L)
 
 /-- If `F ⊗[k] L` is a domain for some algebraically closed field `L` over `k`, then `F` is
 geometrically reduced over `k`. -/
@@ -214,7 +214,7 @@ theorem isGeometricallyReduced_of_isDomain_tensorProduct (L : Type*) [Field L] [
 /-- **Algebraically closed tensor criterion for regularity**: for any algebraically closed field
 `L` over `k`, `F ⊗[k] L` is a domain if and only if `k` is integrally closed in `F` and `F / k` is
 geometrically reduced. -/
-theorem isDomain_tensorProduct_isAlgClosed_iff (L : Type*) [Field L] [Algebra k L]
+theorem isDomain_tensorProduct_iff_of_isAlgClosed (L : Type*) [Field L] [Algebra k L]
     [IsAlgClosed L] :
     IsDomain (F ⊗[k] L) ↔ IsIntegrallyClosedIn k F ∧ Algebra.IsGeometricallyReduced k F :=
   ⟨fun _ ↦ ⟨isIntegrallyClosedIn_of_isDomain_tensorProduct L,
@@ -223,18 +223,19 @@ theorem isDomain_tensorProduct_isAlgClosed_iff (L : Type*) [Field L] [Algebra k 
 
 /-- Regularity over `k` tested against an algebraically closed field `L`, expressed via
 `Algebra.IsTranscendentalSeparable`. -/
-theorem isDomain_tensorProduct_isAlgClosed_iff_isTranscendentalSeparable (L : Type*) [Field L]
+theorem isDomain_tensorProduct_iff_isTranscendentalSeparable_of_isAlgClosed (L : Type*) [Field L]
     [Algebra k L] [IsAlgClosed L] :
     IsDomain (F ⊗[k] L) ↔ IsIntegrallyClosedIn k F ∧ Algebra.IsTranscendentalSeparable k F := by
-  rw [isDomain_tensorProduct_isAlgClosed_iff, isGeometricallyReduced_iff_isTranscendentalSeparable]
+  rw [isDomain_tensorProduct_iff_of_isAlgClosed,
+    isGeometricallyReduced_iff_isTranscendentalSeparable]
 
 /-- For a finitely generated field extension `F / k`, `F ⊗[k] L` is a domain (for an algebraically
 closed `L / k`) if and only if `k` is integrally closed in `F` and `F / k` is separably
 generated. -/
-theorem isDomain_tensorProduct_isAlgClosed_iff_isSeparablyGenerated [Algebra.EssFiniteType k F]
+theorem isDomain_tensorProduct_iff_isSeparablyGenerated_of_isAlgClosed [Algebra.EssFiniteType k F]
     (L : Type*) [Field L] [Algebra k L] [IsAlgClosed L] :
     IsDomain (F ⊗[k] L) ↔ IsIntegrallyClosedIn k F ∧ Algebra.IsSeparablyGenerated k F := by
-  rw [isDomain_tensorProduct_isAlgClosed_iff, isGeometricallyReduced_iff_isSeparablyGenerated]
+  rw [isDomain_tensorProduct_iff_of_isAlgClosed, isGeometricallyReduced_iff_isSeparablyGenerated]
 
 /-- **Universal field-extension criterion for regularity**: `F ⊗[k] K` is a domain for every field
 extension `K / k` (in `Type u`, the universe of `k`) if and only if `k` is integrally closed in `F`
@@ -244,7 +245,7 @@ theorem forall_isDomain_tensorProduct_field_iff :
       IsIntegrallyClosedIn k F ∧ Algebra.IsGeometricallyReduced k F :=
   ⟨fun h ↦
     letI := h (AlgebraicClosure k)
-    (isDomain_tensorProduct_isAlgClosed_iff (AlgebraicClosure k)).mp inferInstance,
+    (isDomain_tensorProduct_iff_of_isAlgClosed (AlgebraicClosure k)).mp inferInstance,
     fun ⟨hex, _⟩ K _ _ ↦ isDomain_tensorProduct_of_isGeometricallyReduced hex K⟩
 
 /-- **Universal domain criterion for regularity**: `F ⊗[k] A` is a domain for every domain
@@ -255,21 +256,15 @@ theorem forall_isDomain_tensorProduct_iff :
       IsIntegrallyClosedIn k F ∧ Algebra.IsGeometricallyReduced k F :=
   ⟨fun h ↦
     letI := h (AlgebraicClosure k)
-    (isDomain_tensorProduct_isAlgClosed_iff (AlgebraicClosure k)).mp inferInstance,
+    (isDomain_tensorProduct_iff_of_isAlgClosed (AlgebraicClosure k)).mp inferInstance,
     fun ⟨hex, _⟩ A _ _ _ ↦ isDomain_tensorProduct_of_isGeometricallyReduced hex A⟩
-
-/-- Over a perfect field `k`, exact constants alone make `F / k` regular: `F ⊗[k] A` is a domain
-for every domain `k`-algebra `A`. -/
-theorem isDomain_tensorProduct_of_perfectField [PerfectField k] (hex : IsIntegrallyClosedIn k F)
-    (A : Type*) [CommRing A] [IsDomain A] [Algebra k A] : IsDomain (F ⊗[k] A) :=
-  isDomain_tensorProduct_of_isGeometricallyReduced hex A
 
 /-- Over a perfect field `k`, `F ⊗[k] L` is a domain (for an algebraically closed `L / k`) if and
 only if `k` is integrally closed in `F`. -/
-theorem isDomain_tensorProduct_isAlgClosed_iff_of_perfectField [PerfectField k] (L : Type*)
+theorem isDomain_tensorProduct_iff_of_isAlgClosed_of_perfectField [PerfectField k] (L : Type*)
     [Field L] [Algebra k L] [IsAlgClosed L] :
     IsDomain (F ⊗[k] L) ↔ IsIntegrallyClosedIn k F := by
-  rw [isDomain_tensorProduct_isAlgClosed_iff]
+  rw [isDomain_tensorProduct_iff_of_isAlgClosed]
   exact and_iff_left inferInstance
 
 /-- Over a perfect field `k`, `F ⊗[k] K` is a domain for all field extensions `K / k` (in `Type u`)
@@ -309,10 +304,10 @@ variable {k F K Q : Type*} [Field k] [Field F] [Field K] [Field Q]
   [Algebra k F] [Algebra k K] [Algebra (F ⊗[k] K) Q] [Algebra K Q]
   [IsScalarTower K (F ⊗[k] K) Q] [IsFractionRing (F ⊗[k] K) Q]
 
-/-- **Scalar stability of regularity (domain form, left-regular factor)**: if `F / k` is regular
+/-- **Scalar stability of regularity (domain form, over the right factor)**: if `F / k` is regular
 and `Q` is a specified fraction field of `F ⊗[k] K`, then `Q ⊗[K] D` is a domain for every domain
 `K`-algebra `D`. -/
-theorem isDomain_tensorProduct_of_isFractionRing_tensorProduct_left
+theorem isDomain_tensorProduct_right_of_isFractionRing_tensorProduct
     (hex : IsIntegrallyClosedIn k F) [Algebra.IsGeometricallyReduced k F]
     (D : Type*) [CommRing D] [IsDomain D] [Algebra K D] : IsDomain (Q ⊗[K] D) := by
   let _ : Algebra k D := Algebra.compHom D (algebraMap k K)
@@ -327,17 +322,8 @@ theorem isIntegrallyClosedIn_right_of_isFractionRing_tensorProduct
     (hex : IsIntegrallyClosedIn k F) [Algebra.IsGeometricallyReduced k F] :
     IsIntegrallyClosedIn K Q := by
   have : IsDomain (Q ⊗[K] AlgebraicClosure K) :=
-    isDomain_tensorProduct_of_isFractionRing_tensorProduct_left hex (AlgebraicClosure K)
+    isDomain_tensorProduct_right_of_isFractionRing_tensorProduct hex (AlgebraicClosure K)
   exact isIntegrallyClosedIn_of_isDomain_tensorProduct (F := Q) (AlgebraicClosure K)
-
-/-- Relative-algebraic-closure form of
-`TauCeti.isIntegrallyClosedIn_right_of_isFractionRing_tensorProduct`. -/
-theorem algebraicClosure_right_eq_bot_of_isFractionRing_tensorProduct
-    (hex : IsIntegrallyClosedIn k F) [Algebra.IsGeometricallyReduced k F] :
-    algebraicClosure K Q = ⊥ := by
-  have : IsDomain (Q ⊗[K] AlgebraicClosure K) :=
-    isDomain_tensorProduct_of_isFractionRing_tensorProduct_left hex (AlgebraicClosure K)
-  exact algebraicClosure_eq_bot_of_isDomain_tensorProduct (K := Q) (AlgebraicClosure K)
 
 /-- **Scalar stability of geometric reducedness**: if `F / k` is regular and `Q` is a specified
 fraction field of `F ⊗[k] K`, then `Q` is geometrically reduced over `K`. -/
@@ -345,14 +331,8 @@ theorem isGeometricallyReduced_right_of_isFractionRing_tensorProduct
     (hex : IsIntegrallyClosedIn k F) [Algebra.IsGeometricallyReduced k F] :
     Algebra.IsGeometricallyReduced K Q := by
   have : IsDomain (Q ⊗[K] AlgebraicClosure K) :=
-    isDomain_tensorProduct_of_isFractionRing_tensorProduct_left hex (AlgebraicClosure K)
+    isDomain_tensorProduct_right_of_isFractionRing_tensorProduct hex (AlgebraicClosure K)
   exact isGeometricallyReduced_of_isDomain_tensorProduct (F := Q) (AlgebraicClosure K)
-
-/-- Over a perfect base field `k`, exactness of `k` in `F` implies that `K` is integrally closed in
-any specified fraction field `Q` of `F ⊗[k] K`. -/
-theorem isIntegrallyClosedIn_right_of_isFractionRing_tensorProduct_of_perfectField [PerfectField k]
-    (hex : IsIntegrallyClosedIn k F) : IsIntegrallyClosedIn K Q :=
-  isIntegrallyClosedIn_right_of_isFractionRing_tensorProduct hex
 
 end LeftRegular
 
@@ -362,10 +342,10 @@ variable {k F K Q : Type*} [Field k] [Field F] [Field K] [Field Q]
   [Algebra k F] [Algebra k K] [Algebra (F ⊗[k] K) Q] [Algebra F Q]
   [IsScalarTower F (F ⊗[k] K) Q] [IsFractionRing (F ⊗[k] K) Q]
 
-/-- **Scalar stability of regularity (domain form, right-regular factor)**: if `K / k` is regular
+/-- **Scalar stability of regularity (domain form, over the left factor)**: if `K / k` is regular
 and `Q` is a specified fraction field of `F ⊗[k] K`, then `Q ⊗[F] D` is a domain for every domain
 `F`-algebra `D`. -/
-theorem isDomain_tensorProduct_of_isFractionRing_tensorProduct_right
+theorem isDomain_tensorProduct_left_of_isFractionRing_tensorProduct
     (hex : IsIntegrallyClosedIn k K) [Algebra.IsGeometricallyReduced k K]
     (D : Type*) [CommRing D] [IsDomain D] [Algebra F D] : IsDomain (Q ⊗[F] D) := by
   let _ : Algebra k D := Algebra.compHom D (algebraMap k F)
@@ -380,17 +360,8 @@ theorem isIntegrallyClosedIn_left_of_isFractionRing_tensorProduct
     (hex : IsIntegrallyClosedIn k K) [Algebra.IsGeometricallyReduced k K] :
     IsIntegrallyClosedIn F Q := by
   have : IsDomain (Q ⊗[F] AlgebraicClosure F) :=
-    isDomain_tensorProduct_of_isFractionRing_tensorProduct_right hex (AlgebraicClosure F)
+    isDomain_tensorProduct_left_of_isFractionRing_tensorProduct hex (AlgebraicClosure F)
   exact isIntegrallyClosedIn_of_isDomain_tensorProduct (F := Q) (AlgebraicClosure F)
-
-/-- Relative-algebraic-closure form of
-`TauCeti.isIntegrallyClosedIn_left_of_isFractionRing_tensorProduct`. -/
-theorem algebraicClosure_left_eq_bot_of_isFractionRing_tensorProduct
-    (hex : IsIntegrallyClosedIn k K) [Algebra.IsGeometricallyReduced k K] :
-    algebraicClosure F Q = ⊥ := by
-  have : IsDomain (Q ⊗[F] AlgebraicClosure F) :=
-    isDomain_tensorProduct_of_isFractionRing_tensorProduct_right hex (AlgebraicClosure F)
-  exact algebraicClosure_eq_bot_of_isDomain_tensorProduct (K := Q) (AlgebraicClosure F)
 
 /-- **Symmetric scalar stability of geometric reducedness**: if `K / k` is regular and `Q` is a
 specified fraction field of `F ⊗[k] K`, then `Q` is geometrically reduced over `F`. -/
@@ -398,14 +369,8 @@ theorem isGeometricallyReduced_left_of_isFractionRing_tensorProduct
     (hex : IsIntegrallyClosedIn k K) [Algebra.IsGeometricallyReduced k K] :
     Algebra.IsGeometricallyReduced F Q := by
   have : IsDomain (Q ⊗[F] AlgebraicClosure F) :=
-    isDomain_tensorProduct_of_isFractionRing_tensorProduct_right hex (AlgebraicClosure F)
+    isDomain_tensorProduct_left_of_isFractionRing_tensorProduct hex (AlgebraicClosure F)
   exact isGeometricallyReduced_of_isDomain_tensorProduct (F := Q) (AlgebraicClosure F)
-
-/-- Over a perfect base field `k`, exactness of `k` in `K` implies that `F` is integrally closed in
-any specified fraction field `Q` of `F ⊗[k] K`. -/
-theorem isIntegrallyClosedIn_left_of_isFractionRing_tensorProduct_of_perfectField [PerfectField k]
-    (hex : IsIntegrallyClosedIn k K) : IsIntegrallyClosedIn F Q :=
-  isIntegrallyClosedIn_left_of_isFractionRing_tensorProduct hex
 
 end RightRegular
 

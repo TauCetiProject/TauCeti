@@ -58,6 +58,8 @@ closure of `K`, and Mathlib's `IntermediateField.LinearDisjoint.isDomain`.
   generates a subalgebra linearly disjoint from the relative algebraic closure.
 * `TauCeti.finiteDimensional_algebraicClosure`: the relative algebraic closure of `k` in a
   finitely generated field extension is finite over `k`.
+* `TauCeti.algebraicClosure_eq_bot_iff_isIntegrallyClosedIn`: `k` is integrally closed in `K` if
+  and only if `algebraicClosure k K = ⊥`.
 * `TauCeti.algebraicClosure_eq_bot_of_isDomain_tensorProduct`: if `K ⊗[k] L` is a domain for an
   algebraically closed field `L` over `k`, then `algebraicClosure k K = ⊥`.
 * `TauCeti.isDomain_tensorProduct_of_isIntegrallyClosedIn`: exact constants give a domain after
@@ -135,6 +137,14 @@ end Finite
 namespace TauCeti
 
 variable {k K : Type*} [Field k] [Field K] [Algebra k K]
+
+/-- `k` is integrally closed in `K` exactly when no element of `K` outside `k` is algebraic over
+`k`, that is, when `algebraicClosure k K = ⊥`. -/
+theorem algebraicClosure_eq_bot_iff_isIntegrallyClosedIn :
+    algebraicClosure k K = ⊥ ↔ IsIntegrallyClosedIn k K := by
+  rw [← IsIntegrallyClosedIn.integralClosure_eq_bot_iff K (algebraMap k K).injective,
+    ← algebraicClosure_toSubalgebra, ← IntermediateField.bot_toSubalgebra,
+    IntermediateField.toSubalgebra_inj]
 
 /-- A field with exact constants stays a domain after extending scalars by a separable
 algebraic extension of the constants. -/

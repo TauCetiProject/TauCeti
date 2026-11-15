@@ -25,8 +25,11 @@ of `A ⊗[k] K` and `B ⊗[k] K` (when `Q₂` is a field), uniquely determined b
 action `algebraMap A Q₁ a ↦ algebraMap B Q₂ (f a)` on the left factor and functorial
 with respect to identity and composition. An isomorphism `e : A ≃ₐ[k] B` induces
 `e.fractionRingTensorCongr K Q₁ Q₂ : Q₁ ≃ₐ[K] Q₂` without flatness or field hypotheses.
-Moreover, if `F` is a total ring of fractions of a `k`-algebra `A`, total rings of
-fractions of `A ⊗[k] K` and `F ⊗[k] K` coincide in both directions.
+Moreover, if `F` is a total ring of fractions of a `k`-algebra `A`, then along compatible
+algebra maps into `Q`, a total ring of fractions `Q` (without zero divisors) of a
+nontrivial `F ⊗[k] K` is also a total ring of fractions of `A ⊗[k] K` when `K` is flat
+over `k`, and conversely a fraction ring `Q` of a domain `A ⊗[k] K` is a fraction ring of
+`F ⊗[k] K`.
 
 The right-factor algebra is Mathlib's `Algebra.TensorProduct.rightAlgebra`, installed
 locally together with `right_isScalarTower`; all maps to the fraction field are the
@@ -416,9 +419,43 @@ namespace TauCeti
 
 section BaseLocalization
 
-variable {k A F K Q : Type*} [CommRing k] [CommRing A] [CommRing F] [CommRing K] [CommRing Q]
-  [Algebra k A] [Algebra k F] [Algebra A F] [IsScalarTower k A F] [IsFractionRing A F]
-  [Algebra k K] [Algebra (A ⊗[k] K) Q] [Algebra (F ⊗[k] K) Q]
+variable {k A F K : Type*} [CommRing k] [CommRing A] [CommRing F] [CommRing K]
+  [Algebra k A] [Algebra k F] [Algebra A F] [IsScalarTower k A F] [Algebra k K]
+
+/-- The `A ⊗[k] K`-algebra structure on `F ⊗[k] K` induced by `algebraMap A F ⊗ id`. -/
+@[instance_reducible]
+private noncomputable def baseTensorAlgebra : Algebra (A ⊗[k] K) (F ⊗[k] K) :=
+  (Algebra.TensorProduct.map (IsScalarTower.toAlgHom k A F) (AlgHom.id k K)).toRingHom.toAlgebra
+
+attribute [local instance] baseTensorAlgebra
+
+private theorem algebraMap_baseTensorAlgebra_eq :
+    algebraMap (A ⊗[k] K) (F ⊗[k] K) =
+      (Algebra.TensorProduct.map (IsScalarTower.toAlgHom k A F) (AlgHom.id k K)).toRingHom :=
+  rfl
+
+/-- `F ⊗[k] K` is the localization of `A ⊗[k] K` at the image of `nonZeroDivisors A`. -/
+private theorem isLocalization_baseTensorAlgebra [IsFractionRing A F] :
+    IsLocalization (Algebra.algebraMapSubmonoid (A ⊗[k] K) (nonZeroDivisors A)) (F ⊗[k] K) := by
+  have : IsScalarTower A (A ⊗[k] K) (F ⊗[k] K) := .of_algebraMap_eq fun a ↦ by
+    simp [algebraMap_baseTensorAlgebra_eq]
+  exact _root_.IsLocalization.tensorProduct_tensorProduct k K (nonZeroDivisors A) F
+    (by ext; simp [algebraMap_baseTensorAlgebra_eq])
+
+variable {Q : Type*} [CommRing Q] [Algebra (A ⊗[k] K) Q] [Algebra (F ⊗[k] K) Q]
+
+/-- Elementwise compatibility on pure tensors implies `algebraMap (A ⊗[k] K) Q` factors through
+`F ⊗[k] K`. -/
+private theorem algebraMap_eq_comp_baseTensorAlgebra
+    (hmap : ∀ (a : A) (c : K),
+      algebraMap (A ⊗[k] K) Q (a ⊗ₜ c) = algebraMap (F ⊗[k] K) Q (algebraMap A F a ⊗ₜ c)) :
+    algebraMap (A ⊗[k] K) Q =
+      (algebraMap (F ⊗[k] K) Q).comp (algebraMap (A ⊗[k] K) (F ⊗[k] K)) :=
+  Algebra.TensorProduct.ringHom_ext
+    (RingHom.ext fun a ↦ by simpa [algebraMap_baseTensorAlgebra_eq] using hmap a 1)
+    (RingHom.ext fun c ↦ by simpa [algebraMap_baseTensorAlgebra_eq] using hmap 1 c)
+
+variable [IsFractionRing A F]
 
 /-- **A fraction ring of `F ⊗[k] K` is a fraction ring of `A ⊗[k] K`.** If `F` is a total ring of
 fractions of a `k`-algebra `A`, `K` is flat over `k`, and `Q` (without zero divisors, for instance
@@ -431,29 +468,16 @@ theorem isFractionRing_base_tensorProduct_of_isFractionRing_tensorProduct
     (hmap : ∀ (a : A) (c : K),
       algebraMap (A ⊗[k] K) Q (a ⊗ₜ c) = algebraMap (F ⊗[k] K) Q (algebraMap A F a ⊗ₜ c)) :
     IsFractionRing (A ⊗[k] K) Q := by
-  set ρ := Algebra.TensorProduct.map (IsScalarTower.toAlgHom k A F) (AlgHom.id k K)
-  have hcomp : algebraMap (A ⊗[k] K) Q = (algebraMap (F ⊗[k] K) Q).comp ρ.toRingHom :=
-    Algebra.TensorProduct.ringHom_ext
-      (RingHom.ext fun a ↦ by simpa [ρ] using hmap a 1)
-      (RingHom.ext fun c ↦ by simpa [ρ] using hmap 1 c)
+  have hcomp := algebraMap_eq_comp_baseTensorAlgebra hmap
   -- `A ⊗[k] K → F ⊗[k] K` is injective by flatness of `K`, so `A ⊗[k] K` embeds into `Q`.
-  have hρ : Function.Injective ρ :=
+  have hρ : Function.Injective (algebraMap (A ⊗[k] K) (F ⊗[k] K)) :=
     Module.Flat.rTensor_preserves_injective_linearMap (IsScalarTower.toAlgHom k A F).toLinearMap
       (_root_.IsFractionRing.injective A F)
-  have hinj : Function.Injective (algebraMap (A ⊗[k] K) Q) := by
-    rw [hcomp]
-    exact (_root_.IsFractionRing.injective (F ⊗[k] K) Q).comp hρ
+  have hinj : Function.Injective (algebraMap (A ⊗[k] K) Q) :=
+    hcomp ▸ (_root_.IsFractionRing.injective (F ⊗[k] K) Q).comp hρ
   have : NoZeroDivisors (A ⊗[k] K) := hinj.noZeroDivisors _ (map_zero _) (map_mul _)
-  -- `F ⊗[k] K` is the localization of `A ⊗[k] K` at the non-zero-divisors of `A`.
-  let _ : Algebra (A ⊗[k] K) (F ⊗[k] K) := ρ.toRingHom.toAlgebra
-  have : IsScalarTower A (A ⊗[k] K) (F ⊗[k] K) := .of_algebraMap_eq fun a ↦ by
-    simp [RingHom.algebraMap_toAlgebra, ρ]
-  have : IsLocalization (Algebra.algebraMapSubmonoid (A ⊗[k] K) (nonZeroDivisors A))
-      (F ⊗[k] K) :=
-    _root_.IsLocalization.tensorProduct_tensorProduct k K (nonZeroDivisors A) F
-      (by ext; simp [RingHom.algebraMap_toAlgebra, ρ])
-  have : IsScalarTower (A ⊗[k] K) (F ⊗[k] K) Q :=
-    .of_algebraMap_eq fun x ↦ congr($hcomp x)
+  have := isLocalization_baseTensorAlgebra (k := k) (A := A) (F := F) (K := K)
+  have : IsScalarTower (A ⊗[k] K) (F ⊗[k] K) Q := .of_algebraMap_eq fun x ↦ congr($hcomp x)
   exact IsFractionRing.of_isLocalization_of_isFractionRing
     (Algebra.algebraMapSubmonoid (A ⊗[k] K) (nonZeroDivisors A)) (F ⊗[k] K) Q
     (IsLocalization.le_nonZeroDivisors_of_nontrivial _ (F ⊗[k] K))
@@ -467,20 +491,9 @@ theorem isFractionRing_tensorProduct_of_isFractionRing_base_tensorProduct
     (hmap : ∀ (a : A) (c : K),
       algebraMap (A ⊗[k] K) Q (a ⊗ₜ c) = algebraMap (F ⊗[k] K) Q (algebraMap A F a ⊗ₜ c)) :
     IsFractionRing (F ⊗[k] K) Q := by
-  set ρ := Algebra.TensorProduct.map (IsScalarTower.toAlgHom k A F) (AlgHom.id k K)
-  have hcomp : algebraMap (A ⊗[k] K) Q = (algebraMap (F ⊗[k] K) Q).comp ρ.toRingHom :=
-    Algebra.TensorProduct.ringHom_ext
-      (RingHom.ext fun a ↦ by simpa [ρ] using hmap a 1)
-      (RingHom.ext fun c ↦ by simpa [ρ] using hmap 1 c)
-  let _ : Algebra (A ⊗[k] K) (F ⊗[k] K) := ρ.toRingHom.toAlgebra
-  have : IsScalarTower A (A ⊗[k] K) (F ⊗[k] K) := .of_algebraMap_eq fun a ↦ by
-    simp [RingHom.algebraMap_toAlgebra, ρ]
-  have : IsLocalization (Algebra.algebraMapSubmonoid (A ⊗[k] K) (nonZeroDivisors A))
-      (F ⊗[k] K) :=
-    _root_.IsLocalization.tensorProduct_tensorProduct k K (nonZeroDivisors A) F
-      (by ext; simp [RingHom.algebraMap_toAlgebra, ρ])
-  have : IsScalarTower (A ⊗[k] K) (F ⊗[k] K) Q :=
-    .of_algebraMap_eq fun x ↦ congr($hcomp x)
+  have hcomp := algebraMap_eq_comp_baseTensorAlgebra hmap
+  have := isLocalization_baseTensorAlgebra (k := k) (A := A) (F := F) (K := K)
+  have : IsScalarTower (A ⊗[k] K) (F ⊗[k] K) Q := .of_algebraMap_eq fun x ↦ congr($hcomp x)
   exact _root_.IsFractionRing.isFractionRing_of_isDomain_of_isLocalization
     (Algebra.algebraMapSubmonoid (A ⊗[k] K) (nonZeroDivisors A)) (F ⊗[k] K) Q
 
