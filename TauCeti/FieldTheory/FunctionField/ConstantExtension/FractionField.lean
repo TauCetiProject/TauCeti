@@ -41,9 +41,8 @@ field of `RatFunc k ⊗[k] K` (`TauCeti.isFractionRing_ratFunc_tensorProduct`).
   `TauCeti.IsFunctionField.fractionRing_tensorProduct`,
   `TauCeti.IsFunctionField.fractionRing_tensorProduct_of_isAlgClosed`: preservation of the
   one-variable function-field property.
-* `TauCeti.isFractionRing_ratFunc_tensorProduct`, `TauCeti.constantCompositum_ratFunc_eq_top`:
-  `RatFunc K` is a fraction field of `RatFunc k ⊗[k] K` and equals `(RatFunc k) · K` for any
-  `k`-algebra map `RatFunc k → RatFunc K` sending `X` to `X`.
+* `TauCeti.isFractionRing_ratFunc_tensorProduct`: `RatFunc K` is a fraction field of
+  `RatFunc k ⊗[k] K` for any `k`-algebra map `RatFunc k → RatFunc K` sending `X` to `X`.
 * `TauCeti.algebraMap_ratFunc_apply_eq`: two routes `RatFunc k → RatFunc K → Q` and
   `RatFunc k → F → Q` sharing the image of `X` agree on all of `RatFunc k`.
 
@@ -200,21 +199,6 @@ theorem isFractionRing_ratFunc_tensorProduct
       ← IsScalarTower.algebraMap_apply (RatFunc k) (RatFunc k ⊗[k] K) (RatFunc K),
       ← IsScalarTower.algebraMap_apply K (RatFunc k ⊗[k] K) (RatFunc K)]
   rw [h1, h2, mul_comm]
-
-/-- `RatFunc K` is generated as a field by the images of `RatFunc k` and `K` whenever the map
-`RatFunc k → RatFunc K` sends `X` to `X`. -/
-theorem constantCompositum_ratFunc_eq_top
-    (hX : algebraMap (RatFunc k) (RatFunc K) RatFunc.X = RatFunc.X) :
-    constantCompositum (RatFunc k) K (RatFunc K) = ⊤ := by
-  let _ : Algebra (RatFunc k ⊗[k] K) (RatFunc K) :=
-    (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k (RatFunc k) (RatFunc K))
-      (IsScalarTower.toAlgHom k K (RatFunc K))).toRingHom.toAlgebra
-  have : IsScalarTower (RatFunc k) (RatFunc k ⊗[k] K) (RatFunc K) :=
-    .of_algebraMap_eq fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]
-  have : IsScalarTower K (RatFunc k ⊗[k] K) (RatFunc K) :=
-    .of_algebraMap_eq fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]
-  have := isFractionRing_ratFunc_tensorProduct hX
-  exact constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k) (K := K)
 
 /-- Two routes `RatFunc k → RatFunc K → Q` and `RatFunc k → F → Q` into a commutative `k`-algebra
 `Q` that map `RatFunc.X` compatibly agree on all of `RatFunc k`. -/

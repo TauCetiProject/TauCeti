@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.ConstantExtension.FractionField
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.FractionField
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.RatFunc
 
 /-!
 # Tensor presentations over an extended parameter field
