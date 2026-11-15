@@ -102,18 +102,6 @@ end RootPairing.Base
 
 namespace Polynomial
 
-private theorem roots_eq_ofList_of_nodup {K : Type*} [CommRing K] [IsDomain K] {p : K[X]}
-    (hp0 : p ≠ 0) {L : List K} (hnd : L.Nodup) (hmem : ∀ x ∈ L, p.IsRoot x)
-    (hdeg : p.natDegree ≤ L.length) : p.roots = Multiset.ofList L := by
-  classical
-  symm
-  refine Multiset.eq_of_le_of_card_le (Multiset.le_iff_count.mpr fun x => ?_) ?_
-  · by_cases hx : x ∈ L
-    · rw [Multiset.coe_count, List.count_eq_one_of_mem hnd hx]
-      exact Multiset.one_le_count_iff_mem.mpr ((mem_roots hp0).mpr (hmem x hx))
-    · simp [hx]
-  · simpa using (card_roots' p).trans hdeg
-
 /-- In an integral domain `K` with a primitive `(n + 1)`-th root of unity `ζ`, the root multiset of
 `∑ k ∈ Finset.range (n + 1), X ^ k` consists of `ζ ^ 1, ζ ^ 2, …, ζ ^ n`, each with multiplicity
 one. -/
@@ -121,32 +109,17 @@ theorem roots_sum_range_X_pow {K : Type*} [CommRing K] [IsDomain K] {ζ : K} {n 
     (hζ : IsPrimitiveRoot ζ (n + 1)) :
     (∑ k ∈ Finset.range (n + 1), (X : K[X]) ^ k).roots =
       Multiset.ofList ((List.range n).map fun k => ζ ^ (k + 1)) := by
-  set p : K[X] := ∑ k ∈ Finset.range (n + 1), X ^ k
-  have hp0 : p ≠ 0 := by
-    intro hp
-    have hmul : p * (X - 1) = X ^ (n + 1) - 1 := geom_sum_mul (X : K[X]) (n + 1)
-    rw [hp, zero_mul, sub_eq_add_neg, ← C_1, ← map_neg] at hmul
-    exact X_pow_add_C_ne_zero (Nat.succ_pos n) (-1 : K) hmul.symm
-  have hnd : ((List.range n).map fun k => ζ ^ (k + 1)).Nodup := by
-    refine (List.nodup_map_iff_inj_on List.nodup_range).mpr fun a ha b hb hab => ?_
-    rw [List.mem_range] at ha hb
-    have := hζ.pow_inj (by omega : a + 1 < n + 1) (by omega : b + 1 < n + 1) hab
-    omega
-  refine roots_eq_ofList_of_nodup hp0 hnd (fun x hx => ?_) ?_
-  · obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hx
-    rw [List.mem_range] at hk
-    have hmul := congrArg (eval (ζ ^ (k + 1))) (geom_sum_mul (X : K[X]) (n + 1))
-    rw [eval_mul, eval_sub, eval_X, eval_one, eval_sub, eval_pow, eval_X, eval_one, ← pow_mul,
-      Nat.mul_comm, pow_mul, hζ.pow_eq_one, one_pow, sub_self] at hmul
-    have hne1 : ζ ^ (k + 1) - 1 ≠ 0 := sub_ne_zero.mpr fun h1 => by
-      have := hζ.pow_inj (by omega : k + 1 < n + 1) (Nat.succ_pos n) (h1.trans (pow_zero ζ).symm)
-      omega
-    exact (mul_eq_zero.mp hmul).resolve_right hne1
-  · rw [List.length_map, List.length_range]
-    exact natDegree_sum_le_of_forall_le (Finset.range (n + 1)) (fun k => (X : K[X]) ^ k)
-      fun k hk => by
-        rw [natDegree_X_pow]
-        exact Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
+  have hp : (∑ k ∈ Finset.range (n + 1), (X : K[X]) ^ k) * (X - C 1) = X ^ (n + 1) - C 1 := by
+    simpa only [C_1] using geom_sum_mul (X : K[X]) (n + 1)
+  have hroots : (∑ k ∈ Finset.range (n + 1), (X : K[X]) ^ k).roots + {1} =
+      (Multiset.range (n + 1)).map fun k => ζ ^ k * 1 := by
+    rw [← roots_X_sub_C, ← roots_mul (hp ▸ X_pow_sub_C_ne_zero (Nat.succ_pos n) 1), hp,
+      ← nthRoots, hζ.nthRoots_eq (one_pow (n + 1))]
+  rw [show Multiset.range (n + 1) = Multiset.range (1 + n) by rw [Nat.add_comm], Multiset.range_add,
+    show Multiset.range 1 = {0} from rfl, Multiset.map_add, Multiset.map_singleton, pow_zero,
+    one_mul, Multiset.map_map, add_comm] at hroots
+  rw [add_left_cancel hroots, ← Multiset.coe_range, Multiset.map_coe]
+  exact congrArg Multiset.ofList (List.map_congr_left fun k _ => by simp [Nat.add_comm])
 
 /-- In an integral domain `K` with a primitive `(2 * n)`-th root of unity `ζ` (`0 < n`), the root
 multiset of `X ^ n + 1` consists of the odd powers `ζ ^ 1, ζ ^ 3, …, ζ ^ (2n - 1)`, each with
@@ -155,19 +128,13 @@ theorem roots_X_pow_add_one {K : Type*} [CommRing K] [IsDomain K] {ζ : K} {n : 
     (hζ : IsPrimitiveRoot ζ (2 * n)) :
     ((X : K[X]) ^ n + 1).roots =
       Multiset.ofList ((List.range n).map fun k => ζ ^ (2 * k + 1)) := by
-  have hp0 : (X : K[X]) ^ n + 1 ≠ 0 := by simpa using X_pow_add_C_ne_zero hn (1 : K)
   have hneg : ζ ^ n = -1 :=
     (Nat.mul_div_left 2 hn ▸ hζ.pow_of_dvd hn.ne' (dvd_mul_left n 2)).eq_neg_one_of_two_right
-  have hnd : ((List.range n).map fun k => ζ ^ (2 * k + 1)).Nodup := by
-    refine (List.nodup_map_iff_inj_on List.nodup_range).mpr fun a ha b hb hab => ?_
-    rw [List.mem_range] at ha hb
-    have := hζ.pow_inj (by omega : 2 * a + 1 < 2 * n) (by omega : 2 * b + 1 < 2 * n) hab
-    omega
-  refine roots_eq_ofList_of_nodup hp0 hnd (fun x hx => ?_) ?_
-  · obtain ⟨k, -, rfl⟩ := List.mem_map.mp hx
-    rw [IsRoot.def, eval_add, eval_pow, eval_X, eval_one, ← pow_mul, Nat.mul_comm, pow_mul, hneg,
-      (odd_two_mul_add_one k).neg_one_pow, neg_add_cancel]
-  · simp
+  have hζ2 : IsPrimitiveRoot (ζ ^ 2) n := by
+    simpa [Nat.mul_div_cancel_left n two_pos] using hζ.pow_of_dvd two_ne_zero (dvd_mul_right 2 n)
+  have hx : (X : K[X]) ^ n + 1 = X ^ n - C (-1) := by simp [sub_neg_eq_add]
+  rw [hx, ← nthRoots, hζ2.nthRoots_eq hneg, ← Multiset.coe_range, Multiset.map_coe]
+  exact congrArg Multiset.ofList (List.map_congr_left fun k _ => by rw [← pow_mul, ← pow_succ])
 
 /-- In an integral domain `K` with a primitive `(2 * (n - 1))`-th root of unity `ζ` (`2 ≤ n`), the
 root multiset of `(X ^ (n - 1) + 1) * (X + 1)` consists of `ζ ^ (2k + 1)` (`k < n - 1`) together

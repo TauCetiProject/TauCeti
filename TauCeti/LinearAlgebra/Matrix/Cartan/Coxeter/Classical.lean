@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import TauCeti.Data.List.OneDegenerateOrder
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Basic
-public import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclotomic
-import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
-import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
+import Mathlib.LinearAlgebra.Matrix.Permutation
+import TauCeti.Data.Fin.Basic
 import TauCeti.GroupTheory.Perm.Coxeter
+import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
+import TauCeti.LinearAlgebra.Charpoly.Permutation
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclotomic
 
 /-!
 # Coxeter elements of the classical Cartan matrices
@@ -199,31 +202,11 @@ private theorem transposition_symm {m : ℕ} (i : Fin m) :
   rw [← Equiv.Perm.inv_def, inv_eq_iff_mul_eq_one]
   exact BraidGroup.transposition_mul_self (n := m + 1) i
 
-private theorem permCoxeterSystem_wordProd_finRange_succ (m : ℕ) :
-    (permCoxeterSystem (m + 1)).wordProd (List.finRange m) = finRotate (m + 1) :=
-  permCoxeterSystem_wordProd_finRange (n := m + 1)
-
-/-- Permutation matrix representation sending standard basis column `ε_q` to `ε_{σ q}`. -/
-private def permMatrix {m : ℕ} : Equiv.Perm (Fin m) →* Matrix (Fin m) (Fin m) ℤ where
-  toFun σ := Matrix.of fun p q => if p = σ q then 1 else 0
-  map_one' := by
-    ext p q; simp only [Matrix.of_apply, Matrix.one_apply, Equiv.Perm.one_apply]
-    split_ifs <;> simp_all
-  map_mul' σ τ := by
-    ext p q
-    rw [Matrix.mul_apply, Finset.sum_eq_single (τ q)]
-    · simp only [Matrix.of_apply, Equiv.Perm.mul_apply, ↓reduceIte, mul_one]
-      split_ifs <;> simp_all
-    · intro r _ hr; simp [hr]
-    · exact fun h => absurd (Finset.mem_univ _) h
-
-private theorem permMatrix_mul_apply {m k : ℕ} (σ : Equiv.Perm (Fin m))
+private theorem permMatrixHom_mul_apply {m k : ℕ} (σ : Equiv.Perm (Fin m))
     (M : Matrix (Fin m) (Fin k) ℤ) (p : Fin m) (q : Fin k) :
-    (permMatrix σ * M) p q = M (σ.symm p) q := by
-  rw [Matrix.mul_apply, Finset.sum_eq_single (σ.symm p)]
-  · simp [permMatrix]
-  · intro r _ hr; simp [permMatrix, show p ≠ σ r from fun h => hr (by simp [h])]
-  · exact fun h => absurd (Finset.mem_univ _) h
+    (permMatrixHom (R := ℤ) σ * M) p q = M (σ.symm p) q := by
+  rw [permMatrixHom_apply, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, submatrix_apply,
+    Equiv.Perm.inv_def, id_eq]
 
 /-- Unit lower-triangular basis `ε₀ - ε₁, …, ε_{m-2} - ε_{m-1}, ε_{m-1}` of `ℤᵐ`. -/
 private def diffBasis (m : ℕ) : Matrix (Fin m) (Fin m) ℤ :=
@@ -256,67 +239,20 @@ private theorem sumBasis_mul_diffBasis (m : ℕ) : sumBasis m * diffBasis m = 1 
 
 /-! ### Cyclic and negacyclic shift matrices -/
 
-/-- If every `M ^ i *ᵥ e₀` (`i < m`) is `eᵢ`, then no nonzero polynomial of degree `< m`
-annihilates `M`. -/
-private theorem eq_zero_of_natDegree_lt_of_aeval_eq_zero {m : ℕ} (hm : 0 < m)
-    {M : Matrix (Fin m) (Fin m) ℤ}
-    (hcyc : ∀ i : Fin m, (M ^ i.val) *ᵥ Pi.single ⟨0, hm⟩ 1 = Pi.single i 1)
-    {q : ℤ[X]} (hq : q.natDegree < m) (h0 : aeval M q = 0) : q = 0 := by
-  ext j; rw [coeff_zero]
-  rcases lt_or_ge j m with hj | hj
-  · have hv := congrFun (congrArg (· *ᵥ Pi.single ⟨0, hm⟩ 1) h0) ⟨j, hj⟩
-    rw [aeval_eq_sum_range' hq, Matrix.sum_mulVec] at hv
-    simp only [Matrix.zero_mulVec, Pi.zero_apply, Finset.sum_apply, Matrix.smul_mulVec,
-      Pi.smul_apply, smul_eq_mul] at hv
-    rw [Finset.sum_eq_single j] at hv
-    · simpa [hcyc ⟨j, hj⟩] using hv
-    · intro i hi hij
-      have hi' := Finset.mem_range.mp hi
-      have hne : (⟨j, hj⟩ : Fin m) ≠ ⟨i, hi'⟩ := fun h => hij (congrArg Fin.val h).symm
-      simp [hcyc ⟨i, hi'⟩, Pi.single_eq_of_ne hne]
-    · exact fun h => absurd (Finset.mem_range.mpr hj) h
-  · exact coeff_eq_zero_of_natDegree_lt (hq.trans_le hj)
+private theorem toMatrix_lmapDomain {m : ℕ} (σ : Equiv.Perm (Fin m)) :
+    LinearMap.toMatrix Finsupp.basisSingleOne Finsupp.basisSingleOne
+      (Finsupp.lmapDomain ℤ ℤ σ) = permMatrixHom σ := by
+  ext p q
+  simp [LinearMap.toMatrix_apply, Finsupp.single_apply, permMatrixHom_apply,
+    PEquiv.toMatrix_apply, Equiv.Perm.inv_def, Equiv.eq_symm_apply, eq_comm]
 
-private theorem finRotate_pow_apply {m : ℕ} (hm : 0 < m) (k : ℕ) (q : Fin m) :
-    ((finRotate m ^ k) q).val = (q.val + k) % m := by
-  obtain ⟨d, rfl⟩ : ∃ d, m = d + 1 := ⟨m - 1, by omega⟩
-  induction k generalizing q with
-  | zero => simp [Nat.mod_eq_of_lt q.isLt]
-  | succ k ih =>
-    rw [pow_succ', Equiv.Perm.mul_apply, coe_finRotate, ih]
-    have hmod : (q.val + k) % (d + 1) < d + 1 := Nat.mod_lt _ (by omega)
-    split_ifs with hlast
-    · have heq : (q.val + k) % (d + 1) = d := by
-        simpa [Fin.val_last, ih] using congrArg Fin.val hlast
-      exact (Nat.mod_eq_zero_of_dvd (Nat.dvd_iff_mod_eq_zero.mpr (by
-        rw [show q.val + (k + 1) = (q.val + k) + 1 by omega, ← Nat.mod_add_mod, heq]; simp))).symm
-    · have hne : (q.val + k) % (d + 1) ≠ d := fun h =>
-        hlast (Fin.ext (by simpa [Fin.val_last, ih] using h))
-      calc (q.val + k) % (d + 1) + 1
-        _ = ((q.val + k) % (d + 1) + 1) % (d + 1) := (Nat.mod_eq_of_lt (by omega)).symm
-        _ = (q.val + (k + 1)) % (d + 1) := by rw [Nat.mod_add_mod, Nat.add_assoc]
-
-private theorem finRotate_pow_self {m : ℕ} (hm : 0 < m) : finRotate m ^ m = 1 := by
-  ext q
-  rw [Equiv.Perm.one_apply, finRotate_pow_apply hm, Nat.add_mod_right, Nat.mod_eq_of_lt q.isLt]
-
-private theorem charpoly_permMatrix_finRotate {m : ℕ} (hm : 0 < m) :
-    (permMatrix (finRotate m)).charpoly = X ^ m - 1 := by
-  have hpow : permMatrix (finRotate m) ^ m = 1 := by
-    rw [← map_pow, finRotate_pow_self hm, map_one]
-  have hcyc : ∀ i : Fin m, (permMatrix (finRotate m) ^ i.val) *ᵥ Pi.single ⟨0, hm⟩ 1 =
-      Pi.single i 1 := fun i => by
-    rw [← map_pow, Matrix.mulVec_single_one]
-    ext p
-    have h0 : (finRotate m ^ i.val) ⟨0, hm⟩ = i :=
-      Fin.ext (by simp [finRotate_pow_apply hm, Nat.mod_eq_of_lt i.isLt])
-    simp [Matrix.col_apply, permMatrix, h0, Pi.single_apply]
-  rw [← sub_eq_zero]
-  refine eq_zero_of_natDegree_lt_of_aeval_eq_zero hm hcyc
-    (IsMonicOfDegree.natDegree_sub_lt hm.ne'
-      ⟨by rw [Matrix.charpoly_natDegree_eq_dim, Fintype.card_fin], Matrix.charpoly_monic _⟩
-      ((isMonicOfDegree_X_pow ℤ m).sub (by simpa using hm))) ?_
-  simp [Matrix.aeval_self_charpoly, hpow]
+private theorem charpoly_permMatrixHom_finRotate {m : ℕ} (hm : 0 < m) :
+    (permMatrixHom (R := ℤ) (finRotate m)).charpoly = X ^ m - 1 := by
+  have hsame : ∀ y : Fin m, (finRotate m).SameCycle ⟨0, hm⟩ y := by
+    rw [← permCoxeterSystem_wordProd_finRange]
+    exact sameCycle_wordProd_permCoxeterSystem (List.Perm.refl _) ⟨0, hm⟩
+  rw [← toMatrix_lmapDomain, LinearMap.charpoly_toMatrix,
+    Equiv.Perm.charpoly_lmapDomain_of_forall_sameCycle _ hsame, Fintype.card_fin]
 
 /-- Negacyclic shift matrix on `Fin n`: `ε₀ ↦ ε₁ ↦ ⋯ ↦ ε_{n-1} ↦ -ε₀`. -/
 private def negShift (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
@@ -365,17 +301,29 @@ private theorem negShift_pow_self {n : ℕ} (hn : 0 < n) : negShift n ^ n = -1 :
 
 private theorem charpoly_negShift {n : ℕ} (hn : 0 < n) :
     (negShift n).charpoly = X ^ n + 1 := by
-  have hcyc : ∀ i : Fin n, (negShift n ^ i.val) *ᵥ Pi.single ⟨0, hn⟩ 1 = Pi.single i 1 :=
-    fun i => by rw [negShift_pow_mulVec_single hn i.isLt.le]; simp [i.isLt, Nat.mod_eq_of_lt i.isLt]
   have hmon : (X ^ n + 1 : ℤ[X]).IsMonicOfDegree n :=
     (isMonicOfDegree_iff _ _).mpr
       ⟨(natDegree_add_le _ _).trans (max_le (natDegree_X_pow_le n) (by simp)),
         by simp [coeff_one, hn.ne']⟩
-  rw [← sub_eq_zero]
-  refine eq_zero_of_natDegree_lt_of_aeval_eq_zero hn hcyc
-    (IsMonicOfDegree.natDegree_sub_lt hn.ne'
-      ⟨by rw [Matrix.charpoly_natDegree_eq_dim, Fintype.card_fin], Matrix.charpoly_monic _⟩ hmon) ?_
-  simp [Matrix.aeval_self_charpoly, negShift_pow_self hn]
+  have hdeg := IsMonicOfDegree.natDegree_sub_lt hn.ne'
+    ⟨by rw [Matrix.charpoly_natDegree_eq_dim, Fintype.card_fin], Matrix.charpoly_monic (negShift n)⟩
+    hmon
+  have h0 : aeval (negShift n) ((negShift n).charpoly - (X ^ n + 1)) = 0 := by
+    simp [Matrix.aeval_self_charpoly, negShift_pow_self hn]
+  rw [← sub_eq_zero]; ext j; rw [coeff_zero]
+  rcases lt_or_ge j n with hj | hj
+  · have hv := congrFun (congrArg (· *ᵥ Pi.single ⟨0, hn⟩ 1) h0) ⟨j, hj⟩
+    rw [aeval_eq_sum_range' hdeg, Matrix.sum_mulVec] at hv
+    simp only [Matrix.zero_mulVec, Pi.zero_apply, Finset.sum_apply, Matrix.smul_mulVec,
+      Pi.smul_apply, smul_eq_mul] at hv
+    rw [Finset.sum_eq_single_of_mem j (Finset.mem_range.mpr hj)] at hv
+    · rw [negShift_pow_mulVec_single hn hj.le] at hv
+      simpa [hj, Nat.mod_eq_of_lt hj] using hv
+    · intro i hi hij
+      have hi' := Finset.mem_range.mp hi
+      rw [negShift_pow_mulVec_single hn hi'.le]
+      simp [hi', Nat.mod_eq_of_lt hi', Fin.ext_iff, hij]
+  · exact coeff_eq_zero_of_natDegree_lt (hdeg.trans_le hj)
 
 private theorem orderOf_negShift {n : ℕ} (hn : 0 < n) : orderOf (negShift n) = 2 * n := by
   have h0 {k : ℕ} (hk0 : 0 < k) (hk : k < n) :
@@ -404,11 +352,11 @@ private def extReflA {n : ℕ} (i : Fin n) : Matrix (Fin (n + 1)) (Fin (n + 1)) 
     (fromBlocks (reflMatrix (CartanMatrix.A n) i)
       (Matrix.of fun k _ => if k = i ∧ i.val + 1 = n then 1 else 0) 0 1)
 
-private theorem permMatrix_transposition_mul_diffBasis {n : ℕ} (i : Fin n) :
-    permMatrix (BraidGroup.transposition (n := n + 1) i) * diffBasis (n + 1) =
+private theorem permMatrixHom_transposition_mul_diffBasis {n : ℕ} (i : Fin n) :
+    permMatrixHom (BraidGroup.transposition (n := n + 1) i) * diffBasis (n + 1) =
       diffBasis (n + 1) * extReflA i := by
   ext p q
-  rw [permMatrix_mul_apply, transposition_symm]
+  rw [permMatrixHom_mul_apply, transposition_symm]
   have hp := p.isLt; have hq := q.isLt; have hi := i.isLt
   rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp hq) with hqlt | hqlast
   · let jq : Fin n := ⟨q.val, hqlt⟩
@@ -461,14 +409,15 @@ private theorem list_prod_extReflA {n : ℕ} (L : List (Fin n)) :
       rw [List.map_cons, List.prod_cons]; exact φ.map_mul _ _
     rw [hmul, hB]; simp [extReflA, fromBlocks_multiply, List.map_cons, List.prod_cons]
 
-private theorem permMatrix_finRotate_mul_diffBasis (n : ℕ) :
-    permMatrix (finRotate (n + 1)) * diffBasis (n + 1) =
+private theorem permMatrixHom_finRotate_mul_diffBasis (n : ℕ) :
+    permMatrixHom (finRotate (n + 1)) * diffBasis (n + 1) =
       diffBasis (n + 1) * ((List.finRange n).map extReflA).prod := by
   have h := list_prod_mul_eq_mul_list_prod (List.finRange n) (diffBasis (n + 1))
-    (permMatrix ∘ BraidGroup.transposition (n := n + 1)) extReflA
-    (fun i _ => permMatrix_transposition_mul_diffBasis i)
+    (permMatrixHom (R := ℤ) ∘ BraidGroup.transposition (n := n + 1)) extReflA
+    (fun i _ => permMatrixHom_transposition_mul_diffBasis i)
   rwa [← List.map_map, ← map_list_prod, ← permCoxeterSystem_wordProd (n := n + 1),
-    permCoxeterSystem_wordProd_finRange_succ] at h
+    show (permCoxeterSystem (n + 1)).wordProd (List.finRange n) = finRotate (n + 1) from
+      permCoxeterSystem_wordProd_finRange] at h
 
 /-- **Characteristic polynomial of the type `A` Coxeter element**: `1 + X + ⋯ + X ^ n` for every
 rank `n` (including `n = 0`). -/
@@ -476,8 +425,8 @@ theorem charpoly_coxA (n : ℕ) :
     (coxA n).charpoly = ∑ k ∈ Finset.range (n + 1), X ^ k := by
   obtain ⟨B, hB⟩ := list_prod_extReflA (List.finRange n)
   have hc := (intertwine_one_charpoly_and_orderOf (sumBasis_mul_diffBasis (n + 1))
-    (permMatrix_finRotate_mul_diffBasis n)).1.trans
-    (charpoly_permMatrix_finRotate (Nat.succ_pos n))
+    (permMatrixHom_finRotate_mul_diffBasis n)).1.trans
+    (charpoly_permMatrixHom_finRotate (Nat.succ_pos n))
   rw [← charpoly_reindex (finSumFinEquiv (m := n) (n := 1)).symm, reindex_apply,
     Equiv.symm_symm, hB, charpoly_fromBlocks_zero₂₁] at hc
   have h1 : (1 : Matrix (Fin 1) (Fin 1) ℤ).charpoly = X - 1 := by
@@ -493,7 +442,7 @@ theorem orderOf_coxA_zero : orderOf (coxA 0) = 1 := by
 private theorem val_finRotate_pow_symm_zero {n m : ℕ} (hm : m < n + 1) (hpos : 0 < m) :
     ((finRotate (n + 1) ^ m).symm 0).val = n + 1 - m := by
   set s := (finRotate (n + 1) ^ m).symm 0
-  have happ := finRotate_pow_apply (Nat.succ_pos n) m s
+  have happ := Fin.coe_finRotate_pow m s
   rw [Equiv.apply_symm_apply, Fin.val_zero] at happ
   have hlt := s.isLt
   obtain ⟨k, hk⟩ := Nat.dvd_of_mod_eq_zero happ.symm
@@ -502,7 +451,7 @@ private theorem val_finRotate_pow_symm_zero {n m : ℕ} (hm : m < n + 1) (hpos :
 /-- **The Coxeter number of `Aₙ` (`0 < n`) is `n + 1`**: the Coxeter element of `CartanMatrix.A n`
 has order `n + 1`. -/
 theorem orderOf_coxA {n : ℕ} (hn : 0 < n) : orderOf (coxA n) = n + 1 := by
-  have hint := permMatrix_finRotate_mul_diffBasis n
+  have hint := permMatrixHom_finRotate_mul_diffBasis n
   obtain ⟨B, hB⟩ := list_prod_extReflA (List.finRange n)
   let U : Matrix (Fin (n + 1)) (Fin n) ℤ :=
     (diffBasis (n + 1)).submatrix id (finSumFinEquiv (m := n) (n := 1) ∘ Sum.inl)
@@ -513,10 +462,12 @@ theorem orderOf_coxA {n : ℕ} (hn : 0 < n) : orderOf (coxA n) = n + 1 := by
     simpa [W, U, Matrix.mul_apply, Matrix.one_apply, finSumFinEquiv.injective.eq_iff] using
       congrFun₂ (sumBasis_mul_diffBasis (n + 1))
         (finSumFinEquiv (Sum.inl i)) (finSumFinEquiv (Sum.inl j))
-  have hSU : permMatrix (finRotate (n + 1)) * U = U * coxA n := by
+  have hSU : permMatrixHom (finRotate (n + 1)) * U = U * coxA n := by
     ext p j
     have hj := congrFun₂ hint p (finSumFinEquiv (Sum.inl j))
-    change (permMatrix (finRotate (n + 1)) * diffBasis (n + 1)) p (finSumFinEquiv (Sum.inl j)) = _
+    change
+      (permMatrixHom (R := ℤ) (finRotate (n + 1)) * diffBasis (n + 1)) p
+        (finSumFinEquiv (Sum.inl j)) = _
     rw [hj, Matrix.mul_apply, Matrix.mul_apply, ← (finSumFinEquiv (m := n) (n := 1)).sum_comp]
     simp_rw [show ∀ r : Fin n ⊕ Fin 1,
         ((List.finRange n).map extReflA).prod (finSumFinEquiv r) (finSumFinEquiv (Sum.inl j)) =
@@ -524,12 +475,15 @@ theorem orderOf_coxA {n : ℕ} (hn : 0 < n) : orderOf (coxA n) = n + 1 := by
     simp [U, Fintype.sum_sum_type, coxA, coxeterElement]
   refine (orderOf_eq_iff (by omega)).mpr ⟨?_, fun m hm hpos hm1 => ?_⟩
   · have hpow := pow_mul_eq_mul_pow hSU (n + 1)
-    rw [← map_pow, finRotate_pow_self (Nat.succ_pos n), map_one, Matrix.one_mul] at hpow
+    have hrot : finRotate (n + 1) ^ (n + 1) = 1 := by
+      simpa [TauCeti.orderOf_finRotate (Nat.succ_ne_zero n)] using
+        pow_orderOf_eq_one (finRotate (n + 1))
+    rw [← map_pow, hrot, map_one, Matrix.one_mul] at hpow
     rw [← one_mul (coxA n ^ (n + 1)), ← hWU, Matrix.mul_assoc, ← hpow, hWU]
   · have hpow := pow_mul_eq_mul_pow hSU m
     rw [hm1, Matrix.mul_one, ← map_pow] at hpow
     have h0 := congrFun₂ hpow 0 ⟨0, hn⟩
-    rw [permMatrix_mul_apply] at h0
+    rw [permMatrixHom_mul_apply] at h0
     simp only [U, submatrix_apply, id_eq, Function.comp_apply, finSumFinEquiv_apply_left,
       diffBasis, Matrix.of_apply, Fin.ext_iff, Fin.val_castAdd, Fin.val_zero,
       val_finRotate_pow_symm_zero hm hpos] at h0
@@ -541,11 +495,11 @@ theorem orderOf_coxA {n : ℕ} (hn : 0 < n) : orderOf (coxA n) = n + 1 := by
 private def lastFlip (m : ℕ) : Matrix (Fin (m + 1)) (Fin (m + 1)) ℤ :=
   diagonal fun p => if p = Fin.last m then -1 else 1
 
-private theorem permMatrix_transposition_mul_diffBasis_B {m : ℕ} (i : Fin m) :
-    permMatrix (BraidGroup.transposition (n := m + 1) i) * diffBasis (m + 1) =
+private theorem permMatrixHom_transposition_mul_diffBasis_B {m : ℕ} (i : Fin m) :
+    permMatrixHom (BraidGroup.transposition (n := m + 1) i) * diffBasis (m + 1) =
       diffBasis (m + 1) * reflMatrix (CartanMatrix.B (m + 1)) i.castSucc := by
   ext p q
-  rw [permMatrix_mul_apply, transposition_symm, mul_reflMatrix_apply]
+  rw [permMatrixHom_mul_apply, transposition_symm, mul_reflMatrix_apply]
   have _ := i.isLt
   simp only [diffBasis, CartanMatrix.B, Matrix.of_apply, Fin.ext_iff, Fin.val_castSucc,
     BraidGroup.val_transposition_apply, Nat.add_sub_cancel]
@@ -561,26 +515,28 @@ private theorem lastFlip_mul_diffBasis (m : ℕ) :
     Nat.add_sub_cancel]
   split_ifs <;> omega
 
-private theorem permMatrix_finRotate_mul_lastFlip (m : ℕ) :
-    permMatrix (finRotate (m + 1)) * lastFlip m = negShift (m + 1) := by
+private theorem permMatrixHom_finRotate_mul_lastFlip (m : ℕ) :
+    permMatrixHom (finRotate (m + 1)) * lastFlip m = negShift (m + 1) := by
   ext p q
-  rw [lastFlip, mul_diagonal, permMatrix, negShift, MonoidHom.coe_mk, OneHom.coe_mk,
-    Matrix.of_apply, Matrix.of_apply]
-  have _ := q.isLt
-  have hrot : ((finRotate (m + 1)) q).val = if q.val = m then 0 else q.val + 1 := by
-    simpa [Fin.ext_iff, Fin.val_last] using coe_finRotate q
-  simp only [Fin.ext_iff, Fin.val_last, hrot]
-  split_ifs <;> omega
+  rw [permMatrixHom_mul_apply, lastFlip, diagonal_apply, negShift, Matrix.of_apply]
+  set s := (finRotate (m + 1)).symm p
+  have _ := s.isLt; have _ := q.isLt
+  have hrot : p.val = if s.val = m then 0 else s.val + 1 := by
+    have h := coe_finRotate s; rw [Equiv.apply_symm_apply] at h
+    simpa [Fin.ext_iff, Fin.val_last] using h
+  simp only [Fin.ext_iff, Fin.val_last] at hrot ⊢
+  split_ifs at hrot ⊢ <;> omega
 
 private theorem negShift_mul_diffBasis_eq_diffBasis_mul_coxB (m : ℕ) :
     negShift (m + 1) * diffBasis (m + 1) = diffBasis (m + 1) * coxB (m + 1) := by
   have h1 := list_prod_mul_eq_mul_list_prod (List.finRange m) (diffBasis (m + 1))
-    (permMatrix ∘ BraidGroup.transposition (n := m + 1))
+    (permMatrixHom (R := ℤ) ∘ BraidGroup.transposition (n := m + 1))
     (fun i => reflMatrix (CartanMatrix.B (m + 1)) i.castSucc)
-    (fun i _ => permMatrix_transposition_mul_diffBasis_B i)
+    (fun i _ => permMatrixHom_transposition_mul_diffBasis_B i)
   rw [← List.map_map, ← map_list_prod, ← permCoxeterSystem_wordProd (n := m + 1),
-    permCoxeterSystem_wordProd_finRange_succ] at h1
-  rw [← permMatrix_finRotate_mul_lastFlip, mul_assoc, lastFlip_mul_diffBasis, ← mul_assoc, h1,
+    show (permCoxeterSystem (m + 1)).wordProd (List.finRange m) = finRotate (m + 1) from
+      permCoxeterSystem_wordProd_finRange] at h1
+  rw [← permMatrixHom_finRotate_mul_lastFlip, mul_assoc, lastFlip_mul_diffBasis, ← mul_assoc, h1,
     mul_assoc, coxB, coxeterElement, List.finRange_succ_last, List.map_append, List.prod_append,
     List.map_singleton, List.prod_singleton, List.map_map]
   rfl
@@ -739,11 +695,11 @@ private def forkFlip (m : ℕ) : Matrix (Fin (m + 2)) (Fin (m + 2)) ℤ :=
     else if p.val = m then (if q.val = m + 1 then -1 else 0)
     else (if q.val = m then -1 else 0)
 
-private theorem permMatrix_transposition_mul_basisD {m : ℕ} (i : Fin (m + 1)) :
-    permMatrix (BraidGroup.transposition (n := m + 2) i) * basisD m =
+private theorem permMatrixHom_transposition_mul_basisD {m : ℕ} (i : Fin (m + 1)) :
+    permMatrixHom (BraidGroup.transposition (n := m + 2) i) * basisD m =
       basisD m * reflMatrix (CartanMatrix.D (m + 2)) i.castSucc := by
   ext p q
-  rw [permMatrix_mul_apply, transposition_symm, mul_reflMatrix_apply]
+  rw [permMatrixHom_mul_apply, transposition_symm, mul_reflMatrix_apply]
   have _ := p.isLt; have _ := q.isLt; have hi := i.isLt
   have hicv : (i.castSucc : Fin (m + 2)).val = i.val := rfl
   have hD : CartanMatrix.D (m + 2) q i.castSucc =
@@ -792,10 +748,10 @@ private def modelD (m : ℕ) : Matrix (Fin (m + 2)) (Fin (m + 2)) ℤ :=
   reindex (finSumFinEquiv (m := m + 1) (n := 1)) (finSumFinEquiv (m := m + 1) (n := 1))
     (fromBlocks (negShift (m + 1)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ))
 
-private theorem permMatrix_finRotate_mul_forkFlip (m : ℕ) :
-    permMatrix (finRotate (m + 2)) * forkFlip m = modelD m := by
+private theorem permMatrixHom_finRotate_mul_forkFlip (m : ℕ) :
+    permMatrixHom (finRotate (m + 2)) * forkFlip m = modelD m := by
   ext p q
-  rw [permMatrix_mul_apply]
+  rw [permMatrixHom_mul_apply]
   set s := (finRotate (m + 2)).symm p
   have _ := s.isLt
   have hrot : p.val = if s.val = m + 1 then 0 else s.val + 1 := by
@@ -818,12 +774,13 @@ private theorem permMatrix_finRotate_mul_forkFlip (m : ℕ) :
 private theorem modelD_mul_basisD_eq_basisD_mul_coxD (m : ℕ) :
     modelD m * basisD m = basisD m * coxD (m + 2) := by
   have h1 := list_prod_mul_eq_mul_list_prod (List.finRange (m + 1)) (basisD m)
-    (permMatrix ∘ BraidGroup.transposition (n := m + 2))
+    (permMatrixHom (R := ℤ) ∘ BraidGroup.transposition (n := m + 2))
     (fun i => reflMatrix (CartanMatrix.D (m + 2)) i.castSucc)
-    (fun i _ => permMatrix_transposition_mul_basisD i)
+    (fun i _ => permMatrixHom_transposition_mul_basisD i)
   rw [← List.map_map, ← map_list_prod, ← permCoxeterSystem_wordProd (n := m + 2),
-    permCoxeterSystem_wordProd_finRange_succ] at h1
-  rw [← permMatrix_finRotate_mul_forkFlip, mul_assoc, forkFlip_mul_basisD, ← mul_assoc, h1,
+    show (permCoxeterSystem (m + 2)).wordProd (List.finRange (m + 1)) = finRotate (m + 2) from
+      permCoxeterSystem_wordProd_finRange] at h1
+  rw [← permMatrixHom_finRotate_mul_forkFlip, mul_assoc, forkFlip_mul_basisD, ← mul_assoc, h1,
     mul_assoc, coxD, coxeterElement, List.finRange_succ_last (n := m + 1), List.map_append,
     List.prod_append, List.map_singleton, List.prod_singleton, List.map_map]
   rfl
@@ -860,21 +817,14 @@ theorem orderOf_coxD_zero : orderOf (coxD 0) = 1 := by
 theorem orderOf_coxD_one : orderOf (coxD 1) = 2 :=
   (orderOf_eq_iff (by norm_num)).mpr ⟨by decide +kernel, by decide +kernel⟩
 
-private theorem fromBlocks_negShift_pow (m k : ℕ) :
-    (fromBlocks (negShift (m + 1)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ)) ^ k =
-      fromBlocks (negShift (m + 1) ^ k) 0 0 ((-1) ^ k) := by
-  induction k with
-  | zero => rw [pow_zero, pow_zero, pow_zero, fromBlocks_one]
-  | succ r ih => rw [pow_succ, pow_succ, pow_succ, ih, fromBlocks_multiply]; simp
-
 private theorem orderOf_modelD (m : ℕ) : orderOf (modelD m) = 2 * (m + 1) := by
   let heqv := (reindexAlgEquiv ℤ ℤ (finSumFinEquiv (m := m + 1) (n := 1))).toRingEquiv.toMulEquiv
   change orderOf (heqv _) = _
   rw [heqv.orderOf_eq]
   refine (orderOf_eq_iff (by omega)).mpr ⟨?_, fun k hk hpos hk1 => ?_⟩
-  · rw [fromBlocks_negShift_pow, ← orderOf_negShift (Nat.succ_pos m), pow_orderOf_eq_one,
+  · rw [fromBlocks_diagonal_pow, ← orderOf_negShift (Nat.succ_pos m), pow_orderOf_eq_one,
       orderOf_negShift (Nat.succ_pos m), pow_mul, neg_one_sq, one_pow, fromBlocks_one]
-  · rw [fromBlocks_negShift_pow] at hk1
+  · rw [fromBlocks_diagonal_pow] at hk1
     have h11 : negShift (m + 1) ^ k = 1 := by
       ext i j; simpa [Matrix.one_apply] using congrFun₂ hk1 (Sum.inl i) (Sum.inl j)
     have hle := orderOf_le_of_pow_eq_one hpos h11
