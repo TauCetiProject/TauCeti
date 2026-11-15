@@ -26,7 +26,8 @@ The complete complex contains every pair and triple. Its face counts and edge-to
 provided both as binomial coefficients and as formulas in characteristic-zero division rings, for
 use in normalizing sums over edges and triangles. `TwoComplex.Adj` expresses edge adjacency of two
 vertices without requiring decidable equality on the vertex type, alongside distinct-vertex and
-increasing-vertex decompositions for edges and triangles.
+increasing-vertex decompositions for edges and triangles, boundary-edge membership for triples, and
+permutation invariance of symmetric edge and triangle weights.
 -/
 
 public section
