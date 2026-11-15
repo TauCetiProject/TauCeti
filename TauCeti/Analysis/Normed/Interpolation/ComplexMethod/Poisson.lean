@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Poisson.Strip
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Basic
-import Mathlib.Analysis.Convex.Integral
-import Mathlib.Analysis.Convex.SpecificFunctions.Basic
+import TauCeti.MeasureTheory.Integral.MeanInequalities
 
 /-!
 # Calderón's log-convexity and Poisson integral bounds for `[X₀, X₁]_θ`
@@ -17,8 +16,9 @@ Pulling the Herglotz–Riesz integral on `ball 0 1` back along `TauCeti.stripToU
 three-lines bound on `[X₀, X₁]_θ` to Calderón's log-convexity inequality (Bergh–Löfström,
 Lemma 4.3.2): for `0 < θ < 1` and `ε > 0`,
 `‖u‖ ≤ exp (∫ μ₀(θ, t) log (max ‖g₀ t‖ ε) dt + ∫ μ₁(θ, t) log (max ‖g₁ t‖ ε) dt)`.
-Applying Jensen's inequality (`ConvexOn.map_integral_le` for `Real.exp`) to `stripPoissonMeasure₀ θ`
-and `stripPoissonMeasure₁ θ` and letting `ε → 0⁺` yields `(L^{p₀}, L^{p₁})` and mixed `(L^∞, L^p)`
+Applying the regularized geometric–`Lᵖ` mean inequality
+(`TauCeti.exp_mul_integral_log_max_le_rpow_integral_rpow_add`) to `stripPoissonMeasure₀ θ` and
+`stripPoissonMeasure₁ θ` and letting `ε → 0⁺` yields `(L^{p₀}, L^{p₁})` and mixed `(L^∞, L^p)`
 bounds on `[X₀, X₁]_θ` without completeness, density of the intersection, or duality.
 
 ## Main results
@@ -44,70 +44,9 @@ public noncomputable section
 
 open Complex Complex.HadamardThreeLines TauCeti.Complex.HadamardThreeLines
 open Filter MeasureTheory Metric Real Set
-open scoped ENNReal Topology ZeroAtInfty
+open scoped Topology ZeroAtInfty
 
 namespace TauCeti
-
-/-! ### Regularized Jensen inequalities for `C₀(ℝ, X)` traces -/
-
-private theorem integrable_log_max_of_zeroAtInfty {X : Type*} [NormedAddCommGroup X]
-    {μ : Measure ℝ} [IsFiniteMeasure μ] (f : C₀(ℝ, X)) {ε : ℝ} (hε : 0 < ε) :
-    Integrable (fun t ↦ Real.log (max ‖f t‖ ε)) μ :=
-  Integrable.of_mem_Icc (Real.log ε) (Real.log (max ‖f‖ ε))
-    (((continuous_norm.comp f.continuous).max continuous_const).log
-      fun _ ↦ (lt_max_of_lt_right hε).ne').aemeasurable
-    (Eventually.of_forall fun t ↦ ⟨Real.log_le_log hε (le_max_right _ _),
-      Real.log_le_log (lt_max_of_lt_right hε)
-        (max_le_max_right ε (ZeroAtInftyContinuousMap.norm_coe_le_norm f t))⟩)
-
-private theorem exp_mul_integral_log_max_le {X : Type*} [NormedAddCommGroup X]
-    {μ : Measure ℝ} [IsProbabilityMeasure μ] (f : C₀(ℝ, X)) {α p ε : ℝ}
-    (hα : 0 ≤ α) (hp : 0 < p) (hε : 0 < ε) :
-    Real.exp (α * ∫ t, Real.log (max ‖f t‖ ε) ∂μ) ≤
-      ((∫ t, ‖f t‖ ^ p ∂μ) + ε ^ p) ^ (α / p) := by
-  set w : ℝ → ℝ := fun t ↦ p * Real.log (max ‖f t‖ ε)
-  have hmax_pos (t : ℝ) : 0 < max ‖f t‖ ε := lt_max_of_lt_right hε
-  have hw_int : Integrable w μ := (integrable_log_max_of_zeroAtInfty f hε).const_mul p
-  have hexp_eq : Real.exp ∘ w = fun t ↦ (max ‖f t‖ ε) ^ p := by
-    ext t; simp only [Function.comp_apply, w, Real.rpow_def_of_pos (hmax_pos t), mul_comm p]
-  have hbnd {g : ℝ → ℝ} (hg : Continuous g) {M : ℝ} (h0 : ∀ t, 0 ≤ g t) (hM : ∀ t, g t ≤ M) :
-      Integrable (fun t ↦ g t ^ p) μ :=
-    Integrable.of_mem_Icc 0 (M ^ p) (hg.rpow_const fun _ ↦ Or.inr hp.le).aemeasurable
-      (Eventually.of_forall fun t ↦
-        ⟨Real.rpow_nonneg (h0 t) _, Real.rpow_le_rpow (h0 t) (hM t) hp.le⟩)
-  have hexp_int : Integrable (Real.exp ∘ w) μ := hexp_eq ▸ hbnd
-    ((continuous_norm.comp f.continuous).max continuous_const) (fun t ↦ (hmax_pos t).le)
-    fun t ↦ max_le_max_right ε (ZeroAtInftyContinuousMap.norm_coe_le_norm f t)
-  have hf_int : Integrable (fun t ↦ ‖f t‖ ^ p) μ := hbnd (continuous_norm.comp f.continuous)
-    (fun _ ↦ norm_nonneg _) (ZeroAtInftyContinuousMap.norm_coe_le_norm f)
-  have hjensen : Real.exp (∫ t, w t ∂μ) ≤ (∫ t, ‖f t‖ ^ p ∂μ) + ε ^ p := by
-    have hpt (t : ℝ) : (Real.exp ∘ w) t ≤ ‖f t‖ ^ p + ε ^ p := by
-      rw [hexp_eq]; dsimp only
-      rcases le_total ‖f t‖ ε with hle | hle
-      · rw [max_eq_right hle]; exact le_add_of_nonneg_left (Real.rpow_nonneg (norm_nonneg _) _)
-      · rw [max_eq_left hle]; exact le_add_of_nonneg_right (Real.rpow_nonneg hε.le _)
-    refine (convexOn_exp.map_integral_le continuousOn_exp isClosed_univ
-      (Eventually.of_forall fun _ ↦ mem_univ _) hw_int hexp_int).trans <|
-      (integral_mono hexp_int (hf_int.add (integrable_const (ε ^ p))) hpt).trans_eq ?_
-    rw [Pi.add_def, integral_add hf_int (integrable_const (ε ^ p)), integral_const, probReal_univ,
-      one_smul]
-  have hpow := Real.rpow_le_rpow (Real.exp_nonneg _) hjensen (div_nonneg hα hp.le)
-  rw [← Real.exp_mul] at hpow
-  have harg : (∫ t, w t ∂μ) * (α / p) = α * ∫ t, Real.log (max ‖f t‖ ε) ∂μ := by
-    simp only [w, integral_const_mul]; field_simp [hp.ne']
-  rwa [harg] at hpow
-
-private theorem exp_mul_integral_log_max_le_norm {X : Type*} [NormedAddCommGroup X]
-    {μ : Measure ℝ} [IsProbabilityMeasure μ] (f : C₀(ℝ, X)) {α ε : ℝ}
-    (hα : 0 ≤ α) (hε : 0 < ε) :
-    Real.exp (α * ∫ t, Real.log (max ‖f t‖ ε) ∂μ) ≤ (max ‖f‖ ε) ^ α := by
-  have hle : ∫ t, Real.log (max ‖f t‖ ε) ∂μ ≤ Real.log (max ‖f‖ ε) := by
-    refine (integral_mono (integrable_log_max_of_zeroAtInfty f hε) (integrable_const _) fun t ↦
-      Real.log_le_log (lt_max_of_lt_right hε)
-        (max_le_max_right ε (ZeroAtInftyContinuousMap.norm_coe_le_norm f t))).trans_eq ?_
-    rw [integral_const, probReal_univ, one_smul]
-  rw [Real.rpow_def_of_pos (lt_max_of_lt_right hε), mul_comm _ α]
-  exact Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hle hα)
 
 /-! ### Herglotz–Riesz multipliers and Calderón's log-convexity inequality -/
 
@@ -194,16 +133,6 @@ private theorem norm_le_exp_circleAverage_add {θ ε δ : ℝ} (hθ : θ ∈ Ioo
     exact hpt (norm_nonneg _)
       (hr_dist _ (by simpa using stripToUnitDisc_one_add_mul_I_mem_sphere hθ t)) (hψ₁ t)
 
-private theorem continuous_and_tendsto_log_max {X : Type*} [NormedAddCommGroup X]
-    (f : C₀(ℝ, X)) {ε : ℝ} (hε : 0 < ε) :
-    Continuous (fun t ↦ Real.log (max ‖f t‖ ε)) ∧
-      Tendsto (fun t ↦ Real.log (max ‖f t‖ ε)) (cocompact ℝ) (𝓝 (Real.log ε)) :=
-  ⟨((continuous_norm.comp f.continuous).max continuous_const).log
-    fun _ ↦ (lt_max_of_lt_right hε).ne',
-    (Real.continuousAt_log hε.ne').tendsto.comp
-      (by simpa [max_eq_right hε.le] using
-        (tendsto_norm_zero.comp (zero_at_infty f)).max (tendsto_const_nhds (x := ε)))⟩
-
 /-- **Calderón's log-convexity inequality (Bergh–Löfström, Lemma 4.3.2).**
 For `0 < θ < 1`, `ε > 0`, and any admissible strip function `F` with boundary traces `g` and
 `toSum u = F θ`, the norm in `[X₀, X₁]_θ` is bounded by the exponential of the sum of the two
@@ -213,17 +142,24 @@ theorem norm_le_exp_integral_stripPoissonKernel {θ ε : ℝ} (hθ : θ ∈ Ioo 
     (hF : C.IsStripFunction F g) (hu : toSum u = F θ) :
     ‖u‖ ≤ Real.exp ((∫ t, stripPoissonKernel₀ θ t * Real.log (max ‖g.1 t‖ ε)) +
       ∫ t, stripPoissonKernel₁ θ t * Real.log (max ‖g.2 t‖ ε)) := by
-  have hl₀ := continuous_and_tendsto_log_max g.1 hε
-  have hl₁ := continuous_and_tendsto_log_max g.2 hε
+  have hlog {f : ℝ → ℝ} (hf : Continuous f) (h0 : Tendsto f (cocompact ℝ) (𝓝 0)) :
+      Continuous (fun t ↦ Real.log (max (f t) ε)) ∧
+        Tendsto (fun t ↦ Real.log (max (f t) ε)) (cocompact ℝ) (𝓝 (Real.log ε)) :=
+    ⟨(hf.max continuous_const).log fun _ ↦ (lt_max_of_lt_right hε).ne',
+      (Real.continuousAt_log hε.ne').tendsto.comp
+        (by simpa [max_eq_right hε.le] using h0.max (tendsto_const_nhds (x := ε)))⟩
+  have hl₀ := hlog (f := fun t ↦ ‖g.1 t‖) g.1.continuous.norm
+    (tendsto_norm_zero.comp (zero_at_infty g.1))
+  have hl₁ := hlog (f := fun t ↦ ‖g.2 t‖) g.2.continuous.norm
+    (tendsto_norm_zero.comp (zero_at_infty g.2))
   obtain ⟨ψ, hψ, hψ₀, hψ₁⟩ := exists_continuousOn_sphere_comp_stripToUnitDisc hθ
     hl₀.1 hl₁.1 (hl₀.2.mono_left atBot_le_cocompact) (hl₁.2.mono_left atBot_le_cocompact)
     (hl₀.2.mono_left atTop_le_cocompact) (hl₁.2.mono_left atTop_le_cocompact)
-  have hψi : CircleIntegrable ψ 0 1 :=
-    (by simpa using hψ : ContinuousOn ψ (sphere 0 |1|)).circleIntegrable'
   have hca : circleAverage ψ 0 1 =
       (∫ t, stripPoissonKernel₀ θ t * Real.log (max ‖g.1 t‖ ε)) +
         ∫ t, stripPoissonKernel₁ θ t * Real.log (max ‖g.2 t‖ ε) := by
-    rw [circleAverage_eq_stripPoissonKernel hθ hψi]
+    rw [circleAverage_eq_stripPoissonKernel hθ
+      (by simpa using hψ : ContinuousOn ψ (sphere 0 |1|)).circleIntegrable']
     simp_rw [smul_eq_mul, hψ₀, hψ₁]
   rw [← hca]
   have hcont : Continuous (fun δ : ℝ ↦ Real.exp (circleAverage ψ 0 1 + δ)) := by fun_prop
@@ -240,47 +176,39 @@ theorem norm_mk_le_exp_integral_stripPoissonKernel {θ ε : ℝ} (hθ : θ ∈ I
   norm_le_exp_integral_stripPoissonKernel hθ hε (C.isStripFunction_stripFunction g)
     (by simp [stripEval_apply])
 
-private theorem norm_le_of_stripPoissonMeasure {θ b₀ b₁ : ℝ} (hθ : θ ∈ Ioo 0 1)
-    {u : C.ComplexMethodSpace θ} {F : ℂ → C.SumSpace} {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)}
-    (hF : C.IsStripFunction F g) (hu : toSum u = F θ) {φ₀ φ₁ : ℝ → ℝ}
-    (ht₀ : Tendsto φ₀ (𝓝[>] 0) (𝓝 b₀)) (ht₁ : Tendsto φ₁ (𝓝[>] 0) (𝓝 b₁))
-    (h₀ : [IsProbabilityMeasure (stripPoissonMeasure₀ θ)] → ∀ ε > 0,
-      Real.exp ((1 - θ) * ∫ t, Real.log (max ‖g.1 t‖ ε) ∂stripPoissonMeasure₀ θ) ≤ φ₀ ε)
-    (h₁ : [IsProbabilityMeasure (stripPoissonMeasure₁ θ)] → ∀ ε > 0,
-      Real.exp (θ * ∫ t, Real.log (max ‖g.2 t‖ ε) ∂stripPoissonMeasure₁ θ) ≤ φ₁ ε) :
-    ‖u‖ ≤ b₀ * b₁ :=
-  have := isProbabilityMeasure_stripPoissonMeasure₀ hθ
-  have := isProbabilityMeasure_stripPoissonMeasure₁ hθ
-  ge_of_tendsto (ht₀.mul ht₁) <| eventually_nhdsWithin_of_forall fun ε hε ↦ by
-    refine ((norm_le_exp_integral_stripPoissonKernel hθ hε hF hu).trans_eq ?_).trans
-      (mul_le_mul (h₀ ε hε) (h₁ ε hε) (Real.exp_nonneg _) ((Real.exp_nonneg _).trans (h₀ ε hε)))
-    rw [Real.exp_add, integral_stripPoissonMeasure₀ hθ, integral_stripPoissonMeasure₁ hθ]
-    simp_rw [smul_eq_mul]
-    rw [mul_inv_cancel_left₀ (sub_pos.2 hθ.2).ne', mul_inv_cancel_left₀ hθ.1.ne']
-
-private theorem tendsto_add_rpow_nhdsGT (a : ℝ) {p α : ℝ} (hp : 0 < p) (hα : 0 ≤ α) :
-    Tendsto (fun ε : ℝ ↦ (a + ε ^ p) ^ (α / p)) (𝓝[>] 0) (𝓝 (a ^ (α / p))) := by
-  have hc : Continuous fun ε : ℝ ↦ (a + ε ^ p) ^ (α / p) :=
-    (continuous_const.add (Real.continuous_rpow_const hp.le)).rpow_const
-      fun _ ↦ Or.inr (div_nonneg hα hp.le)
-  simpa [Real.zero_rpow hp.ne'] using (hc.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Ioi 0))
-
-private theorem tendsto_max_rpow_nhdsGT {a α : ℝ} (ha : 0 ≤ a) (hα : 0 ≤ α) :
-    Tendsto (fun ε : ℝ ↦ (max a ε) ^ α) (𝓝[>] 0) (𝓝 (a ^ α)) := by
-  have hc : Continuous fun ε : ℝ ↦ (max a ε) ^ α :=
-    (continuous_const.max continuous_id).rpow_const fun _ ↦ Or.inr hα
-  simpa [max_eq_left ha] using (hc.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Ioi 0))
-
 /-- **`(L^{p₀}, L^{p₁})` strip Poisson bound for `[X₀, X₁]_θ`.** -/
 theorem norm_le_rpow_integral_stripPoissonMeasure {θ p₀ p₁ : ℝ} (hθ : θ ∈ Ioo 0 1)
     (hp₀ : 0 < p₀) (hp₁ : 0 < p₁) {u : C.ComplexMethodSpace θ} {F : ℂ → C.SumSpace}
     {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)} (hF : C.IsStripFunction F g) (hu : toSum u = F θ) :
     ‖u‖ ≤ (∫ t, ‖g.1 t‖ ^ p₀ ∂stripPoissonMeasure₀ θ) ^ ((1 - θ) / p₀) *
-      (∫ t, ‖g.2 t‖ ^ p₁ ∂stripPoissonMeasure₁ θ) ^ (θ / p₁) :=
-  norm_le_of_stripPoissonMeasure hθ hF hu
-    (tendsto_add_rpow_nhdsGT _ hp₀ (sub_nonneg.2 hθ.2.le)) (tendsto_add_rpow_nhdsGT _ hp₁ hθ.1.le)
-    (fun _ ↦ exp_mul_integral_log_max_le g.1 (sub_nonneg.2 hθ.2.le) hp₀)
-    (fun _ ↦ exp_mul_integral_log_max_le g.2 hθ.1.le hp₁)
+      (∫ t, ‖g.2 t‖ ^ p₁ ∂stripPoissonMeasure₁ θ) ^ (θ / p₁) := by
+  have := isProbabilityMeasure_stripPoissonMeasure₀ hθ
+  have := isProbabilityMeasure_stripPoissonMeasure₁ hθ
+  have hside {μ : Measure ℝ} [IsProbabilityMeasure μ] {f : ℝ → ℝ} (hf : Continuous f)
+      (h0 : ∀ t, 0 ≤ f t) {M : ℝ} (hM : ∀ t, f t ≤ M) {α p : ℝ} (hα : 0 ≤ α) (hp : 0 < p) :
+      Tendsto (fun ε : ℝ ↦ ((∫ t, f t ^ p ∂μ) + ε ^ p) ^ (α / p)) (𝓝[>] 0)
+        (𝓝 ((∫ t, f t ^ p ∂μ) ^ (α / p))) ∧
+      ∀ ε > 0, Real.exp (α * ∫ t, Real.log (max (f t) ε) ∂μ) ≤
+        ((∫ t, f t ^ p ∂μ) + ε ^ p) ^ (α / p) := by
+    refine ⟨?_, fun ε hε ↦ exp_mul_integral_log_max_le_rpow_integral_rpow_add hα hp hε
+      (.of_forall h0) (Integrable.of_bound (hf.rpow_const fun _ ↦ Or.inr hp.le).aestronglyMeasurable
+        (M ^ p) (.of_forall fun t ↦ by
+          rw [Real.norm_of_nonneg (Real.rpow_nonneg (h0 t) p)]
+          exact Real.rpow_le_rpow (h0 t) (hM t) hp.le))⟩
+    have hc : Continuous fun ε : ℝ ↦ ((∫ t, f t ^ p ∂μ) + ε ^ p) ^ (α / p) :=
+      (continuous_const.add (Real.continuous_rpow_const hp.le)).rpow_const
+        fun _ ↦ Or.inr (div_nonneg hα hp.le)
+    simpa [Real.zero_rpow hp.ne'] using (hc.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Ioi 0))
+  have ⟨ht₀, h₀⟩ := hside (μ := stripPoissonMeasure₀ θ) (f := fun t ↦ ‖g.1 t‖) g.1.continuous.norm
+    (fun _ ↦ norm_nonneg _) g.1.norm_coe_le_norm (sub_nonneg.2 hθ.2.le) hp₀
+  have ⟨ht₁, h₁⟩ := hside (μ := stripPoissonMeasure₁ θ) (f := fun t ↦ ‖g.2 t‖) g.2.continuous.norm
+    (fun _ ↦ norm_nonneg _) g.2.norm_coe_le_norm hθ.1.le hp₁
+  refine ge_of_tendsto (ht₀.mul ht₁) <| eventually_nhdsWithin_of_forall fun ε hε ↦ ?_
+  refine ((norm_le_exp_integral_stripPoissonKernel hθ hε hF hu).trans_eq ?_).trans
+    (mul_le_mul (h₀ ε hε) (h₁ ε hε) (Real.exp_nonneg _) ((Real.exp_nonneg _).trans (h₀ ε hε)))
+  rw [Real.exp_add, integral_stripPoissonMeasure₀ hθ, integral_stripPoissonMeasure₁ hθ]
+  simp_rw [smul_eq_mul]
+  rw [mul_inv_cancel_left₀ (sub_pos.2 hθ.2).ne', mul_inv_cancel_left₀ hθ.1.ne']
 
 /-- `(L^{p₀}, L^{p₁})` strip Poisson bound applied to `mk θ g`. -/
 theorem norm_mk_le_rpow_integral_stripPoissonMeasure {θ p₀ p₁ : ℝ} (hθ : θ ∈ Ioo 0 1)
@@ -294,23 +222,31 @@ theorem norm_mk_le_rpow_integral_stripPoissonMeasure {θ p₀ p₁ : ℝ} (hθ :
 theorem norm_le_norm_fst_rpow_mul_rpow_integral_stripPoissonMeasure {θ p₁ : ℝ}
     (hθ : θ ∈ Ioo 0 1) (hp₁ : 0 < p₁) {u : C.ComplexMethodSpace θ} {F : ℂ → C.SumSpace}
     {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)} (hF : C.IsStripFunction F g) (hu : toSum u = F θ) :
-    ‖u‖ ≤ ‖g.1‖ ^ (1 - θ) * (∫ t, ‖g.2 t‖ ^ p₁ ∂stripPoissonMeasure₁ θ) ^ (θ / p₁) :=
-  norm_le_of_stripPoissonMeasure hθ hF hu
-    (tendsto_max_rpow_nhdsGT (norm_nonneg g.1) (sub_nonneg.2 hθ.2.le))
-    (tendsto_add_rpow_nhdsGT _ hp₁ hθ.1.le)
-    (fun _ ↦ exp_mul_integral_log_max_le_norm g.1 (sub_nonneg.2 hθ.2.le))
-    (fun _ ↦ exp_mul_integral_log_max_le g.2 hθ.1.le hp₁)
+    ‖u‖ ≤ ‖g.1‖ ^ (1 - θ) * (∫ t, ‖g.2 t‖ ^ p₁ ∂stripPoissonMeasure₁ θ) ^ (θ / p₁) := by
+  have := isProbabilityMeasure_stripPoissonMeasure₀ hθ
+  have hle : ∫ t, ‖g.1 t‖ ∂stripPoissonMeasure₀ θ ≤ ‖g.1‖ :=
+    (integral_mono_of_nonneg (.of_forall fun _ ↦ norm_nonneg _) (integrable_const _)
+      (.of_forall g.1.norm_coe_le_norm)).trans_eq (by rw [integral_const, probReal_univ, one_smul])
+  have h1 := norm_le_rpow_integral_stripPoissonMeasure hθ one_pos hp₁ hF hu
+  simp only [div_one, Real.rpow_one] at h1
+  exact h1.trans <| mul_le_mul_of_nonneg_right
+    (Real.rpow_le_rpow (integral_nonneg fun _ ↦ norm_nonneg _) hle (sub_nonneg.2 hθ.2.le))
+    (Real.rpow_nonneg (integral_nonneg fun _ ↦ by positivity) _)
 
 /-- **Mixed `(L^{p₀}, L^∞)` strip Poisson bound for `[X₀, X₁]_θ`.** -/
 theorem norm_le_rpow_integral_stripPoissonMeasure_mul_norm_snd_rpow {θ p₀ : ℝ}
     (hθ : θ ∈ Ioo 0 1) (hp₀ : 0 < p₀) {u : C.ComplexMethodSpace θ} {F : ℂ → C.SumSpace}
     {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)} (hF : C.IsStripFunction F g) (hu : toSum u = F θ) :
-    ‖u‖ ≤ (∫ t, ‖g.1 t‖ ^ p₀ ∂stripPoissonMeasure₀ θ) ^ ((1 - θ) / p₀) * ‖g.2‖ ^ θ :=
-  norm_le_of_stripPoissonMeasure hθ hF hu
-    (tendsto_add_rpow_nhdsGT _ hp₀ (sub_nonneg.2 hθ.2.le))
-    (tendsto_max_rpow_nhdsGT (norm_nonneg g.2) hθ.1.le)
-    (fun _ ↦ exp_mul_integral_log_max_le g.1 (sub_nonneg.2 hθ.2.le) hp₀)
-    (fun _ ↦ exp_mul_integral_log_max_le_norm g.2 hθ.1.le)
+    ‖u‖ ≤ (∫ t, ‖g.1 t‖ ^ p₀ ∂stripPoissonMeasure₀ θ) ^ ((1 - θ) / p₀) * ‖g.2‖ ^ θ := by
+  have := isProbabilityMeasure_stripPoissonMeasure₁ hθ
+  have hle : ∫ t, ‖g.2 t‖ ∂stripPoissonMeasure₁ θ ≤ ‖g.2‖ :=
+    (integral_mono_of_nonneg (.of_forall fun _ ↦ norm_nonneg _) (integrable_const _)
+      (.of_forall g.2.norm_coe_le_norm)).trans_eq (by rw [integral_const, probReal_univ, one_smul])
+  have h1 := norm_le_rpow_integral_stripPoissonMeasure hθ hp₀ one_pos hF hu
+  simp only [div_one, Real.rpow_one] at h1
+  exact h1.trans <| mul_le_mul_of_nonneg_left
+    (Real.rpow_le_rpow (integral_nonneg fun _ ↦ norm_nonneg _) hle hθ.1.le)
+    (Real.rpow_nonneg (integral_nonneg fun _ ↦ by positivity) _)
 
 /-- **`L¹` strip Poisson bound (Calderón–Hirschman).** -/
 theorem norm_le_rpow_integral_stripPoissonKernel {θ : ℝ} (hθ : θ ∈ Ioo 0 1)
