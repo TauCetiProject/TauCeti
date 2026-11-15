@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Convex.StrictConvexSpace
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
-import TauCeti.Analysis.Convex.StrictConvex.Space
+import TauCeti.Analysis.Convex.StrictConvexSpace
 
 /-!
 # Strict convexity of `Lᵖ` spaces

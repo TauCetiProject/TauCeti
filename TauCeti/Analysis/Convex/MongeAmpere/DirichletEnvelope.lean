@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Basic
 import TauCeti.Analysis.Convex.MongeAmpere.Section
-import TauCeti.Analysis.Convex.StrictConvex.Space
+import TauCeti.Analysis.Convex.StrictConvexSpace
 
 /-!
 # The zero-boundary Monge–Ampère subsolution envelope

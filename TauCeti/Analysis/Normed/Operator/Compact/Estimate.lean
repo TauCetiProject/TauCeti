@@ -6,17 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Compact.Basic
-public import Mathlib.Analysis.LocallyConvex.HahnBanach
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Normed.Operator.ClosedRange
 
 /-!
 # Peetre's compact-error estimate
 
 An estimate `‖x‖ ≤ C * ‖T x‖ + ‖K x‖`, with `K` compact, forces the kernel of `T` to be
 finite dimensional. If the domain is complete, the estimate also makes `T` bounded below
-on any closed subspace disjoint from its kernel. If the kernel is complemented, the range of
-`T` is closed. In real or complex Banach spaces the finite-dimensional kernel is automatically
-complemented.
+on any closed subspace disjoint from its kernel, and the range of `T` is closed over any
+nontrivially normed field. The closed-range step needs no complement of the kernel: by the
+sequential criterion `ContinuousLinearMap.isClosed_range_of_exists_subseq_tendsto` from
+`TauCeti.Analysis.Normed.Operator.ClosedRange`, an operator has closed range as soon as every
+bounded sequence with convergent images has a convergent subsequence.
 
 This is the functional-analytic step that turns an elliptic estimate with a compact interior
 error into finite-dimensional kernel and closed range. It does not assert finite-dimensional
@@ -26,8 +28,9 @@ The sequential form says that a bounded sequence whose `T`-images converge has a
 subsequence. Its limit solves the limiting equation. No completeness of either target space
 is needed; the compact-error target may even be seminormed.
 
-The argument uses Mathlib's Riesz lemma and uniform-inducing maps, and the compact-operator
-subsequence API in `TauCeti.Analysis.Normed.Operator.Compact.Basic`.
+The argument uses Mathlib's Riesz lemma, uniform-inducing maps, the sequential closed-range
+criterion, and the compact-operator subsequence API in
+`TauCeti.Analysis.Normed.Operator.Compact.Basic`.
 The normalization argument extends the one for `1 - K` in
 `IsCompactOperator.exists_pos_mul_norm_le_of_disjoint_ker` to operators with distinct targets
 for the principal term and the compact error.
@@ -137,35 +140,15 @@ theorem exists_pos_mul_norm_le_of_compact_estimate
   rw [hxzero, norm_zero] at hxge
   exact hxge.not_gt (by positivity)
 
-/-- A compact-error estimate gives closed range when the kernel is complemented.
-No completeness of the scalar field or either target space is required. -/
-theorem isClosed_range_of_compact_estimate_of_closedComplemented
+/-- **Peetre's lemma**: a compact-error estimate gives closed range. Together with
+`finiteDimensional_ker_of_compact_estimate`, this proves the upper semi-Fredholm property. No
+completeness of the codomain or of the scalar field is required. -/
+theorem isClosed_range_of_compact_estimate
     (hK : IsCompactOperator K)
-    (hbound : ∀ x, ‖x‖ ≤ C * ‖T x‖ + ‖K x‖)
-    (hker : T.ker.ClosedComplemented) : IsClosed (T.range : Set F) := by
-  obtain ⟨M, hMclosed, hMcompl⟩ := hker.exists_isClosed_isCompl
-  obtain ⟨c, hcpos, hc⟩ :=
-    T.exists_pos_mul_norm_le_of_compact_estimate hK hbound hMclosed hMcompl.disjoint
-  let A : M →L[𝕜] F := T.comp M.subtypeL
-  obtain ⟨D, hD⟩ : ∃ D, AntilipschitzWith D A :=
-    antilipschitzWith_iff_exists_mul_le_norm.mpr ⟨c, hcpos, fun m ↦ hc m m.2⟩
-  have hrange : Set.range A = (T.range : Set F) := by
-    rw [← Submodule.map_eq_range_iff.mpr hMcompl.codisjoint.symm, Submodule.map_coe]
-    ext y
-    simp [A]
-  have : CompleteSpace M := hMclosed.completeSpace_coe
-  rw [← hrange]
-  exact hD.isClosed_range A.uniformContinuous
-
-/-- Peetre's lemma: a compact-error estimate gives closed range over real or complex scalars.
-Together with `finiteDimensional_ker_of_compact_estimate`, this proves the upper semi-Fredholm
-property. No completeness of the codomain is required. -/
-theorem isClosed_range_of_compact_estimate [IsRCLikeNormedField 𝕜] [CompleteSpace 𝕜]
-    (hK : IsCompactOperator K)
-    (hbound : ∀ x, ‖x‖ ≤ C * ‖T x‖ + ‖K x‖) : IsClosed (T.range : Set F) := by
-  have := T.finiteDimensional_ker_of_compact_estimate hK hbound
-  exact T.isClosed_range_of_compact_estimate_of_closedComplemented hK hbound
-    (Submodule.ClosedComplemented.of_finiteDimensional T.ker)
+    (hbound : ∀ x, ‖x‖ ≤ C * ‖T x‖ + ‖K x‖) : IsClosed (T.range : Set F) :=
+  T.isClosed_range_of_exists_subseq_tendsto fun hv hTv ↦
+    let ⟨x, ψ, hψ, hx, _⟩ := T.exists_subseq_tendsto_of_compact_estimate hK hbound hv hTv
+    ⟨x, ψ, hψ, hx⟩
 
 end CompleteDomain
 

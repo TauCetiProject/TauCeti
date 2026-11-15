@@ -480,9 +480,9 @@ private theorem d1_descend_eq_cocyclesMap2 {U V : OpenNormalSubgroup G} (hVU : V
         (FixedPoints.addSubgroup U.toSubgroup M).subtype
         (continuous_fixedPoints_addSubgroup_subtype G M U.toSubgroup)
         U.toSubgroup.fixedPoints_subtype_quotientMk_smul c : G × G → M) := by
-    refine (congrArg _ (cocyclesMap2_coe _ _ _ _ _ _ _ _ c)).trans ?_
+    refine (congrArg _ (coe_cocyclesMap2 _ _ _ _ _ _ _ _ c)).trans ?_
     exact (cochainsMap2_quotientMk_comp_transition (M := M) hVU c).trans
-      (cocyclesMap2_coe _ _ _ _ _ _ _ _ c).symm
+      (coe_cocyclesMap2 _ _ _ _ _ _ _ _ c).symm
   -- Pulling back to `G`, `d1` commutes with the pullback and `bV` becomes `b`.
   refine (cochainsMap2_d1
     (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup : G →* G ⧸ V.toSubgroup)
