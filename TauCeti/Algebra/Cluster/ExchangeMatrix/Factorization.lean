@@ -16,9 +16,11 @@ import Mathlib.Tactic.LinearCombination
 
 An extended matrix with vanishing mutable diagonal admits the factorization
 `μₖ(B) = Eε * B * Fε` for either sign `ε = ±1`. The integral matrices `Eε` and `Fε`
-are involutions. Thus mutation preserves rational rank and independence of the columns,
-including for rectangular matrices with frozen rows. The factorization also supplies the
-change of lattice basis used to mutate compatible alternating forms.
+are involutions of determinant `-1`, and on a square matrix with skew-symmetrizer `s`
+they satisfy `Eεᵀ * diagonal s * Fε = diagonal s`. Thus mutation preserves rational rank
+and independence of the columns, including for rectangular matrices with frozen rows. The
+factorization also supplies the change of lattice basis used to mutate compatible
+alternating forms and gradings.
 
 The factors are defined without finiteness assumptions; only their products require finite
 index types. No skew-symmetrizability assumption is needed beyond the vanishing diagonal
@@ -255,6 +257,24 @@ theorem linearIndependent_col_matrixMutation_iff [Finite I] [Finite K] {R : Type
   simp_rw [linearIndependent_iff_card_eq_finrank_span, Set.finrank,
     ← rank_eq_finrank_span_cols, rank_matrixMutation row B k hkk]
 
+omit [DecidableEq K] [Fintype K] in
+/-- The left mutation factor has determinant `-1`, for every integer parameter. -/
+@[simp]
+theorem det_matrixMutationLeft : (matrixMutationLeft row B k ε).det = -1 := by
+  have h := det_updateCol_sum (1 : Matrix I I ℤ) (row k) fun i ↦
+    if i = row k then -1 else (-ε * B i k)⁺
+  simpa [matrixMutationLeft, Matrix.one_apply, ite_mul] using h
+
+omit [DecidableEq I] [Fintype I] in
+/-- The right mutation factor has determinant `-1`, for every integer parameter. -/
+@[simp]
+theorem det_matrixMutationRight : (matrixMutationRight row B k ε).det = -1 := by
+  rw [← det_transpose, matrixMutationRight, ← updateCol_transpose, transpose_one]
+  have h := det_updateCol_sum (1 : Matrix K K ℤ) k fun j ↦
+    if j = k then -1 else (ε * B (row k) j)⁺
+  simpa only [smul_eq_mul, Matrix.one_apply, mul_ite, mul_one, mul_zero,
+    Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, det_one] using h
+
 end Products
 
 /-- For a nonsymmetric rank-two exchange matrix, the positive-sign left factor contains
@@ -277,3 +297,56 @@ example : LinearIndependent ℚ
   norm_num [Matrix.col] at h1
 
 end TauCeti
+
+namespace Matrix.IsSkewSymmetrizer
+
+open TauCeti
+
+variable {K : Type*} [DecidableEq K] [Fintype K] {B : Matrix K K ℤ} {s : K → ℤ}
+
+/-- A skew-symmetrizer intertwines the transposed left mutation factor of a square matrix
+with its right mutation factor, for every integer parameter. -/
+theorem transpose_matrixMutationLeft_mul_diagonal
+    (hs : B.IsSkewSymmetrizer s) (k : K) (ε : ℤ) :
+    (matrixMutationLeft (Function.Embedding.refl K) B k ε)ᵀ * diagonal s =
+      diagonal s * matrixMutationRight (Function.Embedding.refl K) B k ε := by
+  ext i j
+  simp only [mul_diagonal, diagonal_mul, transpose_apply,
+    matrixMutationLeft_apply, matrixMutationRight_apply, Function.Embedding.refl_apply]
+  by_cases hi : i = k
+  · subst i
+    by_cases hj : j = k
+    · simp [hj]
+    · simp only [hj, ite_false, ite_true]
+      rw [mul_comm _ (s j), posPart_def, posPart_def,
+        mul_max_of_nonneg _ _ (hs.pos j).le, mul_max_of_nonneg _ _ (hs.pos k).le,
+        mul_zero, mul_zero]
+      have hsym : s j * (-ε * B j k) = s k * (ε * B k j) := by
+        linear_combination -ε * hs.mul_apply j k
+      rw [hsym]
+  · by_cases hj : j = k <;> by_cases hij : i = j <;>
+      simp [hi, hj, hij, Ne.symm hi, Matrix.one_apply, eq_comm]
+
+/-- The transposed left mutation factor and the right mutation factor preserve a diagonal
+skew-symmetrizer, for every integer parameter. -/
+theorem transpose_matrixMutationLeft_mul_diagonal_mul_matrixMutationRight
+    (hs : B.IsSkewSymmetrizer s) (k : K) (ε : ℤ) :
+    (matrixMutationLeft (Function.Embedding.refl K) B k ε)ᵀ * diagonal s *
+        matrixMutationRight (Function.Embedding.refl K) B k ε =
+      diagonal s := by
+  rw [hs.transpose_matrixMutationLeft_mul_diagonal, Matrix.mul_assoc,
+    matrixMutationRight_mul_self, Matrix.mul_one]
+
+/-- The transposed right mutation factor and the left mutation factor preserve a diagonal
+skew-symmetrizer, for every integer parameter. -/
+theorem transpose_matrixMutationRight_mul_diagonal_mul_matrixMutationLeft
+    (hs : B.IsSkewSymmetrizer s) (k : K) (ε : ℤ) :
+    (matrixMutationRight (Function.Embedding.refl K) B k ε)ᵀ * diagonal s *
+        matrixMutationLeft (Function.Embedding.refl K) B k ε =
+      diagonal s := by
+  have h := congrArg Matrix.transpose
+    (hs.transpose_matrixMutationLeft_mul_diagonal_mul_matrixMutationRight k ε)
+  simpa only [Matrix.transpose_mul, Matrix.transpose_transpose, Matrix.diagonal_transpose,
+    Matrix.mul_assoc] using h
+
+end Matrix.IsSkewSymmetrizer
