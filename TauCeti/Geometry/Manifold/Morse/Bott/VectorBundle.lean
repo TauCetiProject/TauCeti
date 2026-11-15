@@ -268,7 +268,7 @@ private theorem exists_partialDiffeomorph_localCoord (a : B) (hW : IsOpen W)
     -- `zeroSection F E x.proj` is `⟨x.proj, 0⟩` by definition.
     rfl
 
-omit [FiniteDimensional ℝ EB] [IB.Boundaryless] in
+omit [FiniteDimensional ℝ EB] [FiniteDimensional ℝ F] [IB.Boundaryless] in
 /-- **The coordinates of two charts agree near the zero section.** If the base point `a` lies over
 the base set of the trivialization at `i` and in the chart at `i`, the coordinates read in the
 charts of the total space at `0_i` and at `0_a` agree near `0_a`. -/
@@ -283,10 +283,6 @@ private theorem eventually_localCoord_eq {a i : B} (hai : a ∈ (trivializationA
   -- coordinate change `T` of the trivializations.
   let σ : EB → EB := fun y ↦ extChartAt IB i (c.symm y)
   let T : EB → F ≃L[ℝ] F := fun y ↦ Trivialization.coordChangeL ℝ ea ei (c.symm y)
-  have hT : ContinuousAt (fun y ↦ (T y : F →L[ℝ] F)) (c a) :=
-    ((continuousOn_coordChange ℝ ea ei).continuousAt (inter_mem
-      (ea.open_baseSet.mem_nhds ha) (ei.open_baseSet.mem_nhds hai))).comp_of_eq
-      (continuousAt_extChartAt_symm a) (extChartAt_to_inv a)
   have hbase : {y | c.symm y ∈ ea.baseSet ∩ ei.baseSet ∩ (extChartAt IB i).source} ∈ 𝓝 (c a) :=
     (continuousAt_extChartAt_symm a).preimage_mem_nhds (by
       rw [extChartAt_to_inv]
@@ -298,7 +294,7 @@ private theorem eventually_localCoord_eq {a i : B} (hai : a ∈ (trivializationA
     obtain ⟨⟨hb₁, hb₂⟩, hb₃⟩ := hzb
     rw [chartFamily_apply i ((extChartAt IB i).left_inv hb₃) hb₂, chartFamily_apply a rfl hb₁,
       Trivialization.coordChangeL_apply ea ei ⟨hb₁, hb₂⟩, ei.symm_apply_apply_mk hb₂]
-  have htrans := eventually_parametricMorseCoord_transition hT hcomp
+  have htrans := eventually_parametricMorseCoord_transition hcomp
   -- Pull back to the total space along the chart at `0_a`.
   have hτ : Tendsto (extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a))
       (𝓝 (zeroSection F E a)) (𝓝 (c a, 0)) := by
@@ -327,7 +323,7 @@ private theorem eventually_localCoord_eq {a i : B} (hai : a ∈ (trivializationA
   dsimp only
   rw [ht, Trivialization.coordChangeL_apply ea ei ⟨hba, hbi⟩, ei.symm_apply_apply_mk hbi]
 
-omit [FiniteDimensional ℝ EB] [IB.Boundaryless] in
+omit [FiniteDimensional ℝ EB] [FiniteDimensional ℝ F] [IB.Boundaryless] in
 /-- **Gluing the chart coordinates.** Let `K` be a locally finite family of closed sets of the
 base, each inside the base set of the trivialization and the source of the chart at its index,
 and let `j b` be an index with `b ∈ K (j b)`. Near `0_a`, the coordinate read over each base point

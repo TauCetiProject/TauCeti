@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Calculus.Morse.NormalForm
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
-import TauCeti.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
 # The parametric Morse lemma in a trivial bundle
@@ -34,8 +33,8 @@ neither continuity of `e` nor nondegeneracy, and holds away from the zero sectio
 the square root defining the canonical congruence commutes with conjugation
 (`TauCeti.map_sqrtNearOne`). The coordinate also depends only on the germ of `f` along
 the zero section (`Filter.EventuallyEq.parametricMorseCoord`) and reads `f` only along fibres, so
-if `f' (σ b, T b v) = f (b, v)` near the zero section, for any change of parameter `σ` and fibre
-isomorphisms `T b` depending continuously on `b`, then
+if `f' (σ b, T b v) = f (b, v)` near the zero section, for any change of parameter `σ` and any
+fibre isomorphisms `T b`, then
 `parametricMorseCoord f' (σ b, T b v) = T b (parametricMorseCoord f (b, v))` near the zero section
 (`TauCeti.eventually_parametricMorseCoord_transition`). Read in two trivializations of a vector
 bundle, the canonical coordinates of a function therefore agree near the zero section. This is the
@@ -286,37 +285,24 @@ theorem parametricMorseCoord_comp_prodMap (f : P' × E → ℝ) (σ : P → P') 
     parametricMorseCoord (fun z ↦ f (σ z.1, z.2)) (b, v) = parametricMorseCoord f (σ b, v) := by
   simp only [parametricMorseCoord_def]
 
-omit [NormedSpace ℝ P] in
+omit [NormedSpace ℝ P] [CompleteSpace E] in
 /-- **The canonical parametric Morse coordinate under a change of trivialization.** Let `f'` be
 the family `f` written in other coordinates near the zero section: `f' (σ b, T b v) = f (b, v)`
 for `(b, v)` near `(a, 0)`, where `σ` is any change of parameter and `T b : E ≃L[ℝ] E'` are linear
-isomorphisms of the fibres depending continuously on `b` at `a`. No regularity of `f`, `f'` or `σ`
-and no nondegeneracy is assumed. Then near `(a, 0)` the canonical coordinates correspond:
+isomorphisms of the fibres. No regularity of `f`, `f'` or `σ`, no continuity of `T` in `b` and no
+nondegeneracy is assumed. Then near `(a, 0)` the canonical coordinates correspond:
 `parametricMorseCoord f' (σ b, T b v) = T b (parametricMorseCoord f (b, v))`. -/
 theorem eventually_parametricMorseCoord_transition
-    (hT : ContinuousAt (fun b ↦ (T b : E →L[ℝ] E')) a)
     (hcomp : ∀ᶠ z in 𝓝 (a, (0 : E)), f' (σ z.1, T z.1 z.2) = f z) :
     ∀ᶠ z in 𝓝 (a, (0 : E)), parametricMorseCoord f' (σ z.1, T z.1 z.2) =
       T z.1 (parametricMorseCoord f z) := by
-  -- Inversion of operators is continuous at the isomorphism `T a`, since `E` is complete.
-  have hTsymm : ContinuousAt (fun b ↦ ((T b).symm : E' →L[ℝ] E)) a := by
-    simpa only [Function.comp_def, ContinuousLinearMap.inverse_equiv] using
-      ContinuousAt.comp (g := ContinuousLinearMap.inverse) (f := fun b ↦ (T b : E →L[ℝ] E'))
-        (x := a) (contDiffAt_map_inverse (n := 0) (T a)).continuousAt hT
-  -- The fibrewise changes of coordinates `(b, v) ↦ (b, T b v)` and its inverse fix `(a, 0)`.
-  have hψ : Tendsto (fun z : P × E ↦ (z.1, T z.1 z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
-    hT.tendsto_prodMk_clm_apply
-  have hψsymm : Tendsto (fun z : P × E' ↦ (z.1, (T z.1).symm z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
-    hTsymm.tendsto_prodMk_clm_apply
-  -- Read in the parameter of `f`, the family `f'` is near `(a, 0)` the pullback of `f` along
-  -- `(T b)⁻¹`, whose canonical coordinate is natural.
-  have hloc : (fun z : P × E' ↦ f' (σ z.1, z.2)) =ᶠ[𝓝 (a, 0)]
-      fun z ↦ f (z.1, (T z.1).symm z.2) := by
-    filter_upwards [hψsymm.eventually hcomp] with z hz
-    simpa using hz
-  filter_upwards [hψ.eventually hloc.parametricMorseCoord] with z hloc'
-  rw [parametricMorseCoord_comp_prodMap] at hloc'
-  rw [hloc', parametricMorseCoord_comp (fun b ↦ (T b).symm)]
+  -- The family `f` is near `(a, 0)` the pullback of `f'` along `(b, v) ↦ (σ b, T b v)`, whose
+  -- canonical coordinate is natural.
+  filter_upwards [Filter.EventuallyEq.parametricMorseCoord
+    (f₁ := fun z ↦ f' (σ z.1, T z.1 z.2)) hcomp] with z hz
+  have h := parametricMorseCoord_comp (f := fun z : P × E' ↦ f' (σ z.1, z.2)) T z
+  rw [parametricMorseCoord_comp_prodMap, hz] at h
+  rw [h]
   simp
 
 end Transition
