@@ -68,6 +68,9 @@ a uniformizer or a unit of maximal or positive odd defect.
   multiplication by a square.
 * `TauCeti.quadraticDefect_of_odd` and `TauCeti.defectExponent_of_odd`: the defect of
   an element of odd valuation.
+* `TauCeti.odd_of_defectExponent_eq_of_two_eq_zero` and
+  `TauCeti.two_ne_zero_of_even_defectExponent`: in characteristic two every finite defect exponent
+  is odd, so a finite even defect exponent forces `(2 : K) ≠ 0`.
 * `TauCeti.defectExponent_le_two_mul_natCastValuation`: the defect exponent of a nonsquare unit
   is at most `2 v_K(2)`.
 * `TauCeti.dyadicLevel_ne_zero_of_defectExponent_eq`: a unit of positive defect exponent forces
@@ -497,6 +500,81 @@ theorem exists_valuation_sub_sq_le_of_lt_natCastValuation (h2 : (2 : K) ≠ 0)
           pow_le_pow_right_of_le_one' hπ1.le (by omega)
   rw [hid]
   exact le_trans ((valuation K).map_sub _ _) (max_le hb1 hb2)
+
+/-- In characteristic two the cross term `2 ξ π^k s` vanishes identically, so an approximation
+`u - ξ²` of order at least `2k` can always be improved to order at least `2k + 1`. -/
+private theorem exists_valuation_sub_sq_le_of_two_eq_zero (h2 : (2 : K) = 0)
+    (hπ : Irreducible π) {u ξ : K} {k : ℕ}
+    (hξ : valuation K (u - ξ ^ 2) ≤ valuation K (π : K) ^ (2 * k)) :
+    ∃ η : K, valuation K (u - η ^ 2) ≤ valuation K (π : K) ^ (2 * k + 1) := by
+  have hπ0 : (π : K) ≠ 0 := fun h ↦ hπ.ne_zero (Subtype.ext h)
+  have hchar : ringChar 𝓀[K] = 2 := by
+    have h2O : (2 : 𝒪[K]) = 0 := Subtype.ext ((map_ofNat 𝒪[K].subtype 2).trans h2)
+    have h20 : (2 : 𝓀[K]) = 0 := by rw [← map_ofNat (IsLocalRing.residue 𝒪[K]) 2, h2O, map_zero]
+    exact ((Nat.dvd_prime Nat.prime_two).mp (ringChar.dvd h20)).resolve_left
+      (CharP.prime_ringChar 𝓀[K]).ne_one
+  set c : K := (u - ξ ^ 2) / (π : K) ^ (2 * k) with hc
+  have hcO : c ∈ 𝒪[K] := by
+    rw [Valuation.mem_integer_iff, hc, map_div₀, map_pow]
+    exact div_le_one_of_le₀ hξ zero_le
+  obtain ⟨t, ht⟩ := FiniteField.isSquare_of_char_two hchar (IsLocalRing.residue 𝒪[K] ⟨c, hcO⟩)
+  obtain ⟨s, rfl⟩ := IsLocalRing.residue_surjective t
+  have hsmem : (⟨c, hcO⟩ : 𝒪[K]) - s ^ 2 ∈ 𝓂[K] := by
+    rw [← IsLocalRing.residue_eq_zero_iff]; simp [sq, ht]
+  have hsv : valuation K (c - (s : K) ^ 2) ≤ valuation K (π : K) := by
+    simpa using (Set.ext_iff.mp
+      (hπ.maximalIdeal_eq_setOfPred_le_v_coe (valuation K)) ((⟨c, hcO⟩ : 𝒪[K]) - s ^ 2)).mp hsmem
+  refine ⟨ξ + (π : K) ^ k * (s : K), ?_⟩
+  have hcmul : ((π : K) ^ k) ^ 2 * c = u - ξ ^ 2 := by
+    rw [hc, ← pow_mul, mul_comm k 2, mul_div_cancel₀ _ (pow_ne_zero _ hπ0)]
+  have hid : u - (ξ + (π : K) ^ k * (s : K)) ^ 2 = ((π : K) ^ k) ^ 2 * (c - (s : K) ^ 2) := by
+    linear_combination -hcmul - (ξ * ((π : K) ^ k * (s : K))) * h2
+  rw [hid, map_mul, map_pow, map_pow, ← pow_mul, mul_comm k 2, pow_succ (valuation K (π : K))]
+  exact mul_le_mul' le_rfl hsv
+
+/-- **In characteristic two every finite defect exponent is odd** (O'Meara 63:4). Because `2 = 0`
+kills the cross term and the finite residue field `𝓀[K]` is perfect, any square approximation of
+even order can be improved to the next odd order. -/
+theorem odd_of_defectExponent_eq_of_two_eq_zero (h2 : (2 : K) = 0) {a : Kˣ} {d : ℤ}
+    (hd : defectExponent a = d) : Odd d := by
+  by_contra hnot
+  have hev : Even d := Int.not_odd_iff_even.mp hnot
+  have ha : Even (normalizedValuation K a).toAdd := by
+    by_contra hodd
+    exact hnot (WithTop.coe_injective (hd.symm.trans
+      (defectExponent_of_odd (Int.not_even_iff_odd.mp hodd))) ▸ Int.not_even_iff_odd.mp hodd)
+  obtain ⟨c, hv, hdu⟩ := exists_defectExponent_mul_sq_eq_sub_of_even_valuation hd ha
+  set u : Kˣ := a * c ^ 2
+  have hsq : ¬IsSquare u := not_isSquare_of_defectExponent_eq hdu
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
+  obtain ⟨ξ, x, hx, hxd⟩ := exists_defectExponent_eq hsq
+  have hd0 : 0 ≤ d - (normalizedValuation K a).toAdd := by
+    have h := toAdd_normalizedValuation_le_defectExponent u
+    rwa [hdu, (normalizedValuation_eq_one_iff u).mpr hv, toAdd_one, WithTop.coe_le_coe] at h
+  obtain ⟨m, hm⟩ := hev.sub ha
+  let k : ℕ := m.toNat
+  have hdu_eq : d - (normalizedValuation K a).toAdd = ((2 * k : ℕ) : ℤ) := by
+    have := Int.toNat_of_nonneg (a := m) (by omega)
+    push_cast; omega
+  have hξv : valuation K ((u : K) - ξ ^ 2) = valuation K (π : K) ^ (2 * k) := by
+    have h := (toAdd_normalizedValuation_eq_iff_valuation_eq_zpow
+      (normalizedValuation_irreducible hπ) ((2 * k : ℕ) : ℤ) x).mp
+        (WithTop.coe_injective (hxd.trans (hdu.trans (congrArg WithTop.some hdu_eq))))
+    simpa only [hx, zpow_natCast, Units.val_mk0] using h
+  obtain ⟨η, hη⟩ := exists_valuation_sub_sq_le_of_two_eq_zero h2 hπ hξv.le
+  have hle := (valuation_le_valuation_sub_sq_of_eq hsq hxd η).trans hη
+  have h := (le_toAdd_normalizedValuation_iff_valuation_le_zpow
+    (normalizedValuation_irreducible hπ) ((2 * k + 1 : ℕ) : ℤ) x).mpr
+      (by simpa only [zpow_natCast, Units.val_mk0] using hle)
+  have hxeq : (normalizedValuation K x).toAdd = ((2 * k : ℕ) : ℤ) :=
+    WithTop.coe_injective (hxd.trans (hdu.trans (congrArg WithTop.some hdu_eq)))
+  omega
+
+/-- **A finite even defect exponent forces `(2 : K) ≠ 0`.** In characteristic two every nonsquare
+has odd defect exponent. -/
+theorem two_ne_zero_of_even_defectExponent {a : Kˣ} {d : ℤ}
+    (hd : defectExponent a = d) (hev : Even d) : (2 : K) ≠ 0 :=
+  fun h2 ↦ (Int.not_even_iff_odd.mpr (odd_of_defectExponent_eq_of_two_eq_zero h2 hd)) hev
 
 /-- **The local square theorem bounds the defect of a unit.** A unit of `𝒪[K]` approximated by a
 square to order `2 v_K(2) + 1` is a square, so the defect exponent of a nonsquare unit is at most

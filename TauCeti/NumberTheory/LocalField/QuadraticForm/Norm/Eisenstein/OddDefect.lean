@@ -12,17 +12,19 @@ public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.SquareClasses
 import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Valuation
 
 /-!
-# Eisenstein norm families and unit-norm square-class counts for odd-defect unit radicands
+# Eisenstein norm families and unit-norm square-class counts for odd-defect radicands
 
 For a unit `a` of a nonarchimedean local field `K` whose quadratic defect exponent `d = 2k + 1` is
 odd, an optimal square approximation `ξ²` of `a` with `v_K(a - ξ²) = 2k + 1` transforms
 `p² - a q² = b` on `QuadraticAlgebra K a 0` into `X² - t X Y + c Y² = b`, where
 `t = 2ξ / π^k ∈ 𝓂[K]` and `c = (ξ² - a) / π^(2k)` is irreducible in `𝒪[K]`
-(`TauCeti.exists_eisenstein_coefficients_of_defectExponent_eq_odd`).
+(`TauCeti.exists_eisenstein_coefficients_of_defectExponent_eq_odd`). A uniformizer `π` already has
+this form with `t = 0` and `c = -π`, and rescaling by squares reduces every radicand `a ∈ Kˣ` of
+odd defect exponent `d` (of even or odd valuation) to one of those two cases.
 
-Consequently, valuation-one norms in `quadraticNormSubgroup (a : K)` have the normal form
-`u² (1 - t v + c v²)`, all nonzero norms are `c ^ n * u² * (1 - t v + c v²)`, and
-`TauCeti.unitQuadraticNormSquareClasses (a : K)` equals
+Consequently, for every `a ∈ Kˣ` of odd defect exponent, valuation-one norms in
+`quadraticNormSubgroup (a : K)` have the normal form `u² (1 - t v + c v²)`, all nonzero norms are
+`c ^ n * u² * (1 - t v + c v²)`, and `TauCeti.unitQuadraticNormSquareClasses (a : K)` equals
 `TauCeti.eisensteinNormSquareSubgroup K ht hc.mem_maximalIdeal`
 (`TauCeti.exists_eisenstein_mem_quadraticNormSubgroup_iff_of_defectExponent_eq_odd`), giving
 cardinality `#𝓀[K] ^ natCastValuation K 2 h2`
@@ -71,12 +73,13 @@ private theorem mem_quadraticNormSubgroup_unit_iff_of_eisenstein_eq {π t c : �
       rw [← hz, hnorm, mul_pow, hpow2k]
       linear_combination -z.im * (z.re + ξ * z.im) * ht_mul + z.im ^ 2 * hc_mul
     obtain ⟨hXv, hYv⟩ := (valuation_sq_sub_mul_add_mul_sq_eq_one_iff ht hc X Y).mp (hXY ▸ hb)
-    have hX0 : X ≠ 0 := fun h0 ↦ by simp [h0] at hXv
     have hxu : IsUnit (⟨X, hXv.le⟩ : 𝒪[K]) :=
       (Valuation.integer.integers (valuation K)).isUnit_of_one' hXv
     refine ⟨hxu.unit, ⟨Y / X, (Valuation.mem_integer_iff _ _).mpr
       (by simpa only [map_div₀, hXv, div_one] using hYv)⟩, ?_⟩
-    rw [show ((hxu.unit : 𝒪[K]) : K) = X from congrArg ((↑) : 𝒪[K] → K) hxu.unit_spec, ← hXY]
+    have hX_eq : ((hxu.unit : 𝒪[K]) : K) = X := congrArg ((↑) : 𝒪[K] → K) hxu.unit_spec
+    have hX0 : X ≠ 0 := fun h0 ↦ by simp [h0] at hXv
+    rw [hX_eq, ← hXY]
     field_simp
   · rintro ⟨u, v, hbuv⟩
     let β : K := (u : K) * (v : K) / (π : K) ^ k
@@ -96,14 +99,13 @@ private theorem mem_quadraticNormSubgroup_iff_of_eisenstein_eq {π t c : 𝒪[K]
     b ∈ quadraticNormSubgroup a ↔
       ∃ (n : ℤ) (u : 𝒪[K]ˣ) (v : 𝒪[K]),
         (b : K) = (c : K) ^ n * (u : K) ^ 2 * (1 - (t : K) * (v : K) + (c : K) * (v : K) ^ 2) := by
-  have hπ0 : (π : K) ≠ 0 := fun h ↦ hπ.ne_zero (Subtype.ext h)
   have hc0 : (c : K) ≠ 0 := fun h0 ↦ hc.ne_zero (Subtype.ext h0)
   let cUnit : Kˣ := Units.mk0 (c : K) hc0
+  have hpow2k : (π : K) ^ (2 * k) = ((π : K) ^ k) ^ 2 := by rw [← pow_mul, mul_comm]
   have hc_mem : cUnit ∈ quadraticNormSubgroup a := by
     rw [mem_quadraticNormSubgroup_iff_exists_norm_eq]
     refine ⟨⟨ξ / (π : K) ^ k, 1 / (π : K) ^ k⟩, ?_⟩
-    simp only [QuadraticAlgebra.norm_def, zero_mul, add_zero, cUnit, Units.val_mk0, hc_eq,
-      show (π : K) ^ (2 * k) = ((π : K) ^ k) ^ 2 by rw [← pow_mul, mul_comm]]
+    simp only [QuadraticAlgebra.norm_def, zero_mul, add_zero, cUnit, Units.val_mk0, hc_eq, hpow2k]
     field_simp
   have hc_val : (normalizedValuation K cUnit).toAdd = 1 := by
     dsimp only [cUnit]; rw [normalizedValuation_irreducible hc, toAdd_ofAdd]
@@ -128,16 +130,7 @@ private theorem mem_quadraticNormSubgroup_iff_of_eisenstein_eq {π t c : 𝒪[K]
     exact ⟨n, b₀, (mem_quadraticNormSubgroup_unit_iff_of_eisenstein_eq hπ ht hc ht_eq hc_eq
       hb₀v).mpr ⟨u, v, hb₀_eq⟩, hb₀v, by simp [b₀, zpow_neg, mul_left_comm]⟩
 
-/-- **Integral-basis norm parametrization for a unit radicand of odd quadratic defect**
-(O'Meara §63A). For a local unit `a` of valuation `1` whose defect exponent `d` is odd, there exist
-`t ∈ 𝓂[K]` and an irreducible `c ∈ 𝒪[K]` such that:
-1. the norms of valuation `1` in `quadraticNormSubgroup (a : K)` are `u² (1 - t v + c v²)` with
-   `u ∈ 𝒪[K]ˣ` and `v ∈ 𝒪[K]`;
-2. all elements of `quadraticNormSubgroup (a : K)` are `c ^ n * u² * (1 - t v + c v²)` with
-   `n ∈ ℤ`, `u ∈ 𝒪[K]ˣ`, and `v ∈ 𝒪[K]`;
-3. `unitQuadraticNormSquareClasses (a : K) = eisensteinNormSquareSubgroup K ht hc.mem_maximalIdeal`.
--/
-theorem exists_eisenstein_mem_quadraticNormSubgroup_iff_of_defectExponent_eq_odd
+private theorem exists_eisenstein_mem_quadraticNormSubgroup_iff_of_unit
     {a : Kˣ} (ha : valuation K (a : K) = 1) {d : ℤ}
     (hd : defectExponent a = d) (hodd : Odd d) :
     ∃ (t c : 𝒪[K]) (ht : t ∈ 𝓂[K]) (hc : Irreducible c),
@@ -170,27 +163,94 @@ theorem exists_eisenstein_mem_quadraticNormSubgroup_iff_of_defectExponent_eq_odd
     mem_eisensteinNormSquareSubgroup_iff_of_forall ht hc.mem_maximalIdeal hunit_iff]
   exact ⟨fun ⟨b, hb, hv, hq⟩ ↦ ⟨b, hv, hb, hq⟩, fun ⟨b, hv, hb, hq⟩ ↦ ⟨b, hb, hv, hq⟩⟩
 
-/-- **Unit-norm square-class count for an odd-defect unit radicand.** Over a nonarchimedean local
-field with `2 ≠ 0`, a unit `a` of valuation `1` and odd quadratic defect has
-`#𝓀[K] ^ natCastValuation K 2 h2` unit-norm square classes. -/
+private theorem exists_eisenstein_mem_quadraticNormSubgroup_iff_of_isUniformizer
+    {a : Kˣ} (ha : IsUniformizer K a) :
+    ∃ (t c : 𝒪[K]) (ht : t ∈ 𝓂[K]) (hc : Irreducible c),
+      (∀ b : Kˣ, valuation K (b : K) = 1 →
+        (b ∈ quadraticNormSubgroup (a : K) ↔
+          ∃ (u : 𝒪[K]ˣ) (v : 𝒪[K]),
+            (b : K) = (u : K) ^ 2 * (1 - (t : K) * (v : K) + (c : K) * (v : K) ^ 2))) ∧
+      (∀ b : Kˣ,
+        b ∈ quadraticNormSubgroup (a : K) ↔
+          ∃ (n : ℤ) (u : 𝒪[K]ˣ) (v : 𝒪[K]),
+            (b : K) =
+              (c : K) ^ n * (u : K) ^ 2 * (1 - (t : K) * (v : K) + (c : K) * (v : K) ^ 2)) ∧
+      unitQuadraticNormSquareClasses (a : K) =
+        eisensteinNormSquareSubgroup K ht hc.mem_maximalIdeal := by
+  obtain ⟨π, hπ, hπa⟩ := (isUniformizer_iff_exists_irreducible K a).mp ha
+  have ht : (0 : 𝒪[K]) ∈ 𝓂[K] := zero_mem 𝓂[K]
+  have hc : Irreducible (-π) := irreducible_of_valuation_eq hπ (by simp)
+  have ht_eq : ((0 : 𝒪[K]) : K) = 2 * (0 : K) / (π : K) ^ 0 := by simp
+  have hc_eq : ((-π : 𝒪[K]) : K) = ((0 : K) ^ 2 - (a : K)) / (π : K) ^ (2 * 0) := by simp [hπa]
+  have hunit_iff := fun (b : Kˣ) (hb : valuation K (b : K) = 1) ↦
+    mem_quadraticNormSubgroup_unit_iff_of_eisenstein_eq hπ ht hc ht_eq hc_eq hb
+  refine ⟨0, -π, ht, hc, hunit_iff,
+    mem_quadraticNormSubgroup_iff_of_eisenstein_eq hπ ht hc ht_eq hc_eq, Subgroup.ext fun q ↦ ?_⟩
+  rw [mem_unitQuadraticNormSquareClasses_iff,
+    mem_eisensteinNormSquareSubgroup_iff_of_forall ht hc.mem_maximalIdeal hunit_iff]
+  exact ⟨fun ⟨b, hb, hv, hq⟩ ↦ ⟨b, hv, hb, hq⟩, fun ⟨b, hv, hb, hq⟩ ↦ ⟨b, hb, hv, hq⟩⟩
+
+/-- **Integral-basis norm parametrization for a radicand of odd quadratic defect** (O'Meara §63A).
+For any `a ∈ Kˣ` whose defect exponent `d` is odd, there exist `t ∈ 𝓂[K]` and an irreducible
+`c ∈ 𝒪[K]` such that:
+1. the norms of valuation `1` in `quadraticNormSubgroup (a : K)` are `u² (1 - t v + c v²)` with
+   `u ∈ 𝒪[K]ˣ` and `v ∈ 𝒪[K]`;
+2. all elements of `quadraticNormSubgroup (a : K)` are `c ^ n * u² * (1 - t v + c v²)` with
+   `n ∈ ℤ`, `u ∈ 𝒪[K]ˣ`, and `v ∈ 𝒪[K]`;
+3. `unitQuadraticNormSquareClasses (a : K) = eisensteinNormSquareSubgroup K ht hc.mem_maximalIdeal`.
+-/
+theorem exists_eisenstein_mem_quadraticNormSubgroup_iff_of_defectExponent_eq_odd
+    {a : Kˣ} {d : ℤ} (hd : defectExponent a = d) (hodd : Odd d) :
+    ∃ (t c : 𝒪[K]) (ht : t ∈ 𝓂[K]) (hc : Irreducible c),
+      (∀ b : Kˣ, valuation K (b : K) = 1 →
+        (b ∈ quadraticNormSubgroup (a : K) ↔
+          ∃ (u : 𝒪[K]ˣ) (v : 𝒪[K]),
+            (b : K) = (u : K) ^ 2 * (1 - (t : K) * (v : K) + (c : K) * (v : K) ^ 2))) ∧
+      (∀ b : Kˣ,
+        b ∈ quadraticNormSubgroup (a : K) ↔
+          ∃ (n : ℤ) (u : 𝒪[K]ˣ) (v : 𝒪[K]),
+            (b : K) =
+              (c : K) ^ n * (u : K) ^ 2 * (1 - (t : K) * (v : K) + (c : K) * (v : K) ^ 2)) ∧
+      unitQuadraticNormSquareClasses (a : K) =
+        eisensteinNormSquareSubgroup K ht hc.mem_maximalIdeal := by
+  rcases Int.even_or_odd (normalizedValuation K a).toAdd with hev | hvodd
+  · obtain ⟨c₀, ha', hda'⟩ := exists_defectExponent_mul_sq_eq_sub_of_even_valuation hd hev
+    obtain ⟨t, c, ht, hc, h1, h2, h3⟩ :=
+      exists_eisenstein_mem_quadraticNormSubgroup_iff_of_unit ha' hda' (hodd.sub_even hev)
+    simp only [Units.val_mul, Units.val_pow_eq_pow_val, quadraticNormSubgroup_mul_sq,
+      unitQuadraticNormSquareClasses_mul_sq] at h1 h2 h3
+    exact ⟨t, c, ht, hc, h1, h2, h3⟩
+  · obtain ⟨k, hk⟩ := hvodd
+    obtain ⟨c₀, hc₀⟩ := normalizedValuation_surjective (K := K) (Multiplicative.ofAdd (-k))
+    have ha' : IsUniformizer K (a * c₀ ^ 2) := by
+      refine (isUniformizer_def _).mpr (Multiplicative.toAdd.injective ?_)
+      simp only [map_mul, map_pow, toAdd_mul, toAdd_pow, nsmul_eq_mul, hc₀, toAdd_ofAdd]
+      omega
+    obtain ⟨t, c, ht, hc, h1, h2, h3⟩ :=
+      exists_eisenstein_mem_quadraticNormSubgroup_iff_of_isUniformizer ha'
+    simp only [Units.val_mul, Units.val_pow_eq_pow_val, quadraticNormSubgroup_mul_sq,
+      unitQuadraticNormSquareClasses_mul_sq] at h1 h2 h3
+    exact ⟨t, c, ht, hc, h1, h2, h3⟩
+
+/-- **Unit-norm square-class count for an odd-defect radicand.** Over a nonarchimedean local field
+with `2 ≠ 0`, any `a ∈ Kˣ` of odd quadratic defect exponent has `#𝓀[K] ^ natCastValuation K 2 h2`
+unit-norm square classes. -/
 theorem natCard_unitQuadraticNormSquareClasses_of_odd_defectExponent (h2 : (2 : K) ≠ 0)
-    {a : Kˣ} (ha : valuation K (a : K) = 1) {d : ℤ}
-    (hd : defectExponent a = d) (hodd : Odd d) :
+    {a : Kˣ} {d : ℤ} (hd : defectExponent a = d) (hodd : Odd d) :
     Nat.card (unitQuadraticNormSquareClasses (a : K)) =
       Nat.card 𝓀[K] ^ natCastValuation K 2 h2 := by
   obtain ⟨t, c, ht, hc, -, -, heq⟩ :=
-    exists_eisenstein_mem_quadraticNormSubgroup_iff_of_defectExponent_eq_odd ha hd hodd
+    exists_eisenstein_mem_quadraticNormSubgroup_iff_of_defectExponent_eq_odd hd hodd
   rw [heq, natCard_eisensteinNormSquareSubgroup h2 ht hc]
 
-/-- **Index of unit-norm square classes inside `unitSquareClasses K`.** Over a nonarchimedean local
-field with `2 ≠ 0`, for a unit `a` of valuation `1` and odd quadratic defect,
+/-- **Index of unit-norm square classes inside `unitSquareClasses K` for an odd-defect radicand.**
+Over a nonarchimedean local field with `2 ≠ 0`, for any `a ∈ Kˣ` of odd quadratic defect exponent,
 `unitQuadraticNormSquareClasses (a : K)` has index `2` inside `unitSquareClasses K`. -/
 theorem relIndex_unitQuadraticNormSquareClasses_of_odd_defectExponent (h2 : (2 : K) ≠ 0)
-    {a : Kˣ} (ha : valuation K (a : K) = 1) {d : ℤ}
-    (hd : defectExponent a = d) (hodd : Odd d) :
+    {a : Kˣ} {d : ℤ} (hd : defectExponent a = d) (hodd : Odd d) :
     (unitQuadraticNormSquareClasses (a : K)).relIndex (unitSquareClasses K) = 2 := by
   obtain ⟨t, c, ht, hc, -, -, heq⟩ :=
-    exists_eisenstein_mem_quadraticNormSubgroup_iff_of_defectExponent_eq_odd ha hd hodd
+    exists_eisenstein_mem_quadraticNormSubgroup_iff_of_defectExponent_eq_odd hd hodd
   rw [heq, relIndex_eisensteinNormSquareSubgroup h2 ht hc]
 
 end TauCeti

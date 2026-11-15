@@ -32,8 +32,9 @@ all: the norm subgroup for the radicand `a` contains the norm `-a` of the square
 so it contains `a` exactly when it contains `-1`.
 
 The subgroup contains every square and, when `a` is a unit, `-a`, the norm of the square-root
-generator. Thus its index may be computed in the square-class group, as in O'Meara,
-*Introduction to Quadratic Forms*, §63A.
+generator; when `2` is invertible and `a` is a square unit, it is all of `Rˣ`
+(`TauCeti.quadraticNormSubgroup_eq_top_of_isSquare`). Thus its index may be computed in the
+square-class group, as in O'Meara, *Introduction to Quadratic Forms*, §63A.
 
 The unit values of a binary diagonal form `⟨a, b⟩` are the coset `a N` of the norm subgroup `N`
 of its discriminant algebra `R[√(-a b)]`
@@ -157,6 +158,31 @@ theorem quadraticNormSubgroup_mul_sq (a : R) (c : Rˣ) :
   refine le_antisymm (key a c) ?_
   have h := key (a * (c : R) ^ 2) c⁻¹
   simpa [mul_assoc, ← mul_pow, ← Units.val_mul] using h
+
+/-- When `2` is invertible in `R`, every unit of `R` is a norm from the split quadratic algebra
+`R[√1]`, via `b = ((b + 1)/2)² - ((b - 1)/2)²`. -/
+@[simp]
+theorem quadraticNormSubgroup_one [Invertible (2 : R)] :
+    quadraticNormSubgroup (1 : R) = ⊤ := by
+  refine eq_top_iff.mpr fun b _ ↦ (mem_quadraticNormSubgroup_iff_exists_norm_eq _ _).mpr
+    ⟨⟨((b : R) + 1) * ⅟(2 : R), ((b : R) - 1) * ⅟(2 : R)⟩, ?_⟩
+  have h2 : (2 : R) * ⅟(2 : R) = 1 := mul_invOf_self (2 : R)
+  simp only [QuadraticAlgebra.norm_def, one_mul, zero_mul]
+  linear_combination ((b : R) * (2 * ⅟(2 : R) + 1)) * h2
+
+/-- When `2` is invertible in `R`, the quadratic norm subgroup of any square unit radicand is all
+of `Rˣ`. -/
+theorem quadraticNormSubgroup_eq_top_of_isSquare [Invertible (2 : R)] {a : Rˣ}
+    (ha : IsSquare a) : quadraticNormSubgroup (a : R) = ⊤ := by
+  obtain ⟨c, rfl⟩ := ha
+  simpa only [← sq, Units.val_pow_eq_pow_val, one_mul] using
+    (quadraticNormSubgroup_mul_sq (1 : R) c).trans quadraticNormSubgroup_one
+
+/-- When `2` is invertible in `R`, the quadratic norm subgroup of any square unit radicand has
+index `1` in `Rˣ`. -/
+theorem quadraticNormSubgroup_index_eq_one_of_isSquare [Invertible (2 : R)] {a : Rˣ}
+    (ha : IsSquare a) : (quadraticNormSubgroup (a : R)).index = 1 :=
+  Subgroup.index_eq_one.mpr (quadraticNormSubgroup_eq_top_of_isSquare ha)
 
 /-- **The values of a binary form are a coset of norms.** A unit `c` is represented by the binary
 diagonal form `⟨a, b⟩` exactly when `a * c` is a norm from the discriminant algebra
