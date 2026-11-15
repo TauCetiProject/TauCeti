@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.Discriminant
 import TauCeti.Analysis.Complex.Sqrt
+import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.Analysis.Complex.UpperHalfPlane.Sqrt
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.Modular.ConjugateTranslation
@@ -397,40 +398,21 @@ theorem etaMultiplier_inv_of_c_ne_zero (γ : SL(2, ℤ)) (hc : γ 1 0 ≠ 0) :
   let τ : ℍ := UpperHalfPlane.I
   set w : ℂ := (γ 1 0 : ℂ) * τ + γ 1 1 with hw_def
   set w' : ℂ := ((γ⁻¹ : SL(2, ℤ)) 1 0 : ℂ) * (γ • τ : ℍ) + (γ⁻¹ : SL(2, ℤ)) 1 1 with hw'_def
-  have hw_ne : w ≠ 0 := denom_ne_zero' γ τ
+  have hdenom (g : SL(2, ℤ)) (z : ℍ) :
+      UpperHalfPlane.denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z = (g 1 0 : ℂ) * z + g 1 1 := by
+    simp [UpperHalfPlane.denom]
   have hcocycle : w' * w = 1 := by
-    have h := UpperHalfPlane.denom_cocycle_σ (Matrix.SpecialLinearGroup.mapGL ℝ γ⁻¹)
-      (Matrix.SpecialLinearGroup.mapGL ℝ γ) τ
-    rw [← map_mul, inv_mul_cancel, map_one] at h
-    have hdet : 0 < (Matrix.SpecialLinearGroup.mapGL ℝ γ).det.val := by simp
-    rw [UpperHalfPlane.σ, ite_eq_left hdet, ContinuousAlgEquiv.refl_apply,
-      ← MulAction.compHom_smul_def] at h
-    simpa only [hw_def, hw'_def, UpperHalfPlane.denom, Matrix.SpecialLinearGroup.mapGL,
-      MonoidHom.comp_apply, Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
-      Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
-      eq_intCast, Units.val_one, Matrix.one_apply_eq,
-      Matrix.one_apply_ne (by decide : (1 : Fin 2) ≠ 0), ofReal_intCast, ofReal_zero, ofReal_one,
-      zero_mul, zero_add] using h.symm
+    have h := Matrix.SpecialLinearGroup.denom_mapGL_mul γ⁻¹ γ τ
+    rw [inv_mul_cancel, map_one, UpperHalfPlane.denom_one, hdenom, hdenom] at h
+    exact h.symm
   have hw' : w' = w⁻¹ := eq_inv_of_mul_eq_one_left hcocycle
   have hw_im : w.im ≠ 0 := by simpa [hw_def, τ] using hc
   have hw_arg : w.arg ≠ π := fun harg ↦ hw_im (Complex.arg_eq_pi_iff.mp harg).2
   have hsqrt : Complex.sqrt w' = (Complex.sqrt w)⁻¹ := by
     rw [hw', Complex.sqrt, Complex.inv_cpow w (2⁻¹ : ℂ) hw_arg, ← Complex.sqrt]
-  have hη := eta_smul γ⁻¹ (γ • τ)
-  rw [inv_smul_smul, eta_smul γ τ, ← hw_def, ← hw'_def, hsqrt] at hη
-  have hsqrt_ne : Complex.sqrt w ≠ 0 := Complex.sqrt_eq_zero_iff.not.mpr hw_ne
-  have hη_ne : η τ ≠ 0 := _root_.ModularForm.eta_ne_zero τ.2
-  have hmul : etaMultiplier γ⁻¹ * etaMultiplier γ = 1 := by
-    have h1 : etaMultiplier γ⁻¹ * etaMultiplier γ * η τ = 1 * η τ := by
-      calc
-        etaMultiplier γ⁻¹ * etaMultiplier γ * η τ
-            = etaMultiplier γ⁻¹ * ((Complex.sqrt w)⁻¹ * Complex.sqrt w) *
-                etaMultiplier γ * η τ := by
-              rw [inv_mul_cancel₀ hsqrt_ne]; ring
-        _ = etaMultiplier γ⁻¹ * (Complex.sqrt w)⁻¹ *
-              (etaMultiplier γ * Complex.sqrt w * η τ) := by ring
-        _ = 1 * η τ := by rw [← hη, one_mul]
-    exact mul_right_cancel₀ hη_ne h1
-  exact eq_inv_of_mul_eq_one_left hmul
+  refine etaMultiplier_eq_of_eta_smul_eq (τ := γ • τ) ?_
+  have hsqrt_ne : Complex.sqrt w ≠ 0 := Complex.sqrt_eq_zero_iff.not.mpr (denom_ne_zero' γ τ)
+  rw [inv_smul_smul, ← hw'_def, hsqrt, eta_smul γ τ, ← hw_def]
+  field_simp [etaMultiplier_ne_zero γ, hsqrt_ne]
 
 end TauCeti.ModularForm
