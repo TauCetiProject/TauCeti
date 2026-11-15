@@ -283,7 +283,7 @@ private lemma exists_holderWith_of_isKolmogorovProcess {T Ω E : Type*} [PseudoE
   let s₀ : S := ⟨s₀_val, hs₀⟩
   let w : ℕ → T → S := fun n t ↦ ⟨(v n t).1, hDS (v n t).2⟩
   let ext_fn (ω : Ω) (hω : ω ∈ Ω₀) :=
-    (hf_hold ω hω).choose_spec.extend_of_dense hγ hD_dense
+    (hf_hold ω hω).choose_spec.extend_of_dense hD_dense
   let Y : T → Ω → E := fun t ω ↦ if hω : ω ∈ Ω₀ then (ext_fn ω hω).choose t else X' s₀ ω
   have hY_tend : ∀ t, ∀ ω ∈ Ω₀, Tendsto (fun n ↦ X' (w n t) ω) atTop (𝓝 (Y t ω)) := by
     intro t ω hω
