@@ -1286,16 +1286,10 @@ theorem reflectionTransport_self (x : V) (hx : Q x ≠ 0) :
     simpa only [← two_smul K x, Q.map_smul, smul_eq_mul] using
       mul_ne_zero (mul_ne_zero two_ne_zero two_ne_zero) hx
   have hrefl : reflectionOrthogonal Q (x + x) = reflectionOrthogonal Q x := by
-    apply Subtype.ext
-    apply LinearEquiv.ext
-    intro z
     let : Invertible (Q ((2 : K) • x)) := by
       rw [two_smul]
       infer_instance
-    have hz := congrArg (fun r : TauCeti.QuadraticMap.orthogonalGroup Q ↦
-      (r : V ≃ₗ[K] V) z) (TauCeti.QuadraticMap.reflectionOrthogonal_smul_eq Q x (2 : K))
-    simpa only [TauCeti.QuadraticMap.coe_reflectionOrthogonal,
-      TauCeti.QuadraticMap.reflection_apply_eq_sub_div, two_smul] using hz
+    simpa only [two_smul] using TauCeti.QuadraticMap.reflectionOrthogonal_smul_eq Q x (2 : K)
   rw [reflectionTransport_eq_reflection_mul_reflection Q x x rfl hx (by simp), hrefl]
   exact TauCeti.QuadraticMap.reflectionOrthogonal_mul_self Q x
 

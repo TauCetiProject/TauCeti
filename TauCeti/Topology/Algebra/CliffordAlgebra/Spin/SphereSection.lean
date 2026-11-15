@@ -243,10 +243,7 @@ theorem realCliffordSpinLastLocalSection_action {n : ℕ}
   have hreflection : QuadraticMap.reflection (compactForm n)
       (realCliffordSpinLastLocalSectionDirection x.1) =
         QuadraticMap.reflection (compactForm n) (lastUnitVector n - -x.1) := by
-    -- The direction is definitionally this normalized vector, so its norm instance applies.
-    let _ : Invertible (compactForm n
-        ((Real.sqrt (compactForm n (lastUnitVector n - -x.1)))⁻¹ • (lastUnitVector n - -x.1))) :=
-      inferInstanceAs (Invertible (compactForm n (realCliffordSpinLastLocalSectionDirection x.1)))
+    rw [realCliffordSpinLastLocalSectionDirection_def]
     exact QuadraticMap.reflection_smul_eq (compactForm n)
       (lastUnitVector n - -x.1)
       (Real.sqrt (compactForm n (lastUnitVector n - -x.1)))⁻¹
