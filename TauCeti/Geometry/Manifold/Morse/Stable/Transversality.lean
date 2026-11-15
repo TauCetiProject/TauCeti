@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
-public import TauCeti.Geometry.Manifold.TangentCone
+public import TauCeti.Geometry.Manifold.TangentCone.Basic
 import TauCeti.Dynamics.Flow.ConnectingOrbit
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -107,7 +107,7 @@ theorem finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex
       manifoldMorseIndex 𝓘(ℝ, E) f b = Module.finrank ℝ E := by
   have hb := hX.mfderiv_eq_zero_of_mem_stableSet hy
   obtain ⟨L, q, hL, hyq, hq, hs⟩ := hX.exists_isSliceChart_stableSet hb hy
-  rwa [hs.finrank_span_mtangentConeAt (by simp) hq L.closed_of_finiteDimensional hyq hy]
+  rwa [hs.finrank_span_mtangentConeAt (by simp) hq L.isClosed_of_finiteDimensional hyq hy]
 
 /-- The tangent space of the unstable manifold of a critical point `a`, at any of its points, has
 dimension `ind a`. -/
@@ -117,7 +117,7 @@ theorem finrank_span_mtangentConeAt_unstableSet (hf : IsMorse 𝓘(ℝ, E) f)
       manifoldMorseIndex 𝓘(ℝ, E) f a := by
   have ha := hX.mfderiv_eq_zero_of_mem_unstableSet hy
   obtain ⟨L, q, hL, hyq, hq, hs⟩ := hX.exists_isSliceChart_unstableSet hf ha hy
-  rwa [hs.finrank_span_mtangentConeAt (by simp) hq L.closed_of_finiteDimensional hyq hy]
+  rwa [hs.finrank_span_mtangentConeAt (by simp) hq L.isClosed_of_finiteDimensional hyq hy]
 
 /-- **The unstable and stable manifolds are transverse at their critical point.** At a critical
 point `x` of a Morse function, the tangent spaces of `W^u(x)` and `W^s(x)` span the tangent space
@@ -158,7 +158,7 @@ theorem span_mtangentConeAt_unstableSet_sup_span_mtangentConeAt_stableSet_self
     Flow.mem_unstableSet.2 (by simp [hX.flow_apply_of_mfderiv_eq_zero hx])
   exact hsliceu.span_mtangentConeAt_sup_eq_top (by simp)
     (restr_mem_maximalAtlas _ φ.mem_maximalAtlas hD) hslices
-    (Submodule.closed_of_finiteDimensional _) (Submodule.closed_of_finiteDimensional _)
+    (Submodule.isClosed_of_finiteDimensional _) (Submodule.isClosed_of_finiteDimensional _)
     (by rw [hsrc]; exact hxD) hxu hxs
     (by rw [sup_comm]; exact φ.stableSubspace_sup_stableSubspace_neg hnd)
 
@@ -211,11 +211,11 @@ theorem exists_unstableSet_inter_stableSet_chart (hf : IsMorse 𝓘(ℝ, E) f)
   exact exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ h₁ h₂ hy₁
     hy₂ htr
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.closed_of_finiteDimensional _))
+      (Submodule.isClosed_of_finiteDimensional _))
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.closed_of_finiteDimensional _))
+      (Submodule.isClosed_of_finiteDimensional _))
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.closed_of_finiteDimensional _))
+      (Submodule.isClosed_of_finiteDimensional _))
 
 /-- **The tangent space of a transverse intersection.** If the unstable manifold of a critical
 point `a` and the stable manifold of a critical point `b` meet transversally at `y`, then the
@@ -235,11 +235,11 @@ theorem span_mtangentConeAt_unstableSet_inter_stableSet (hf : IsMorse 𝓘(ℝ, 
   exact span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ h₁ h₂ hy₁
     hy₂ htr
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.closed_of_finiteDimensional _))
+      (Submodule.isClosed_of_finiteDimensional _))
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.closed_of_finiteDimensional _))
+      (Submodule.isClosed_of_finiteDimensional _))
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.closed_of_finiteDimensional _))
+      (Submodule.isClosed_of_finiteDimensional _))
 
 /-- **The intersection has dimension the index difference.** If the unstable manifold of a critical
 point `a` and the stable manifold of a critical point `b` meet transversally at `y`, then the

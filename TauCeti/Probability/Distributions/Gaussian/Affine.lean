@@ -39,8 +39,6 @@ allowed, so the result applies both to embeddings and to possibly singular proje
 ## References
 
 * M. L. Eaton, *Multivariate Statistics: A Vector Space Approach*.
-* `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 3, **Affine maps of Gaussian
-  laws**.
 -/
 
 public section

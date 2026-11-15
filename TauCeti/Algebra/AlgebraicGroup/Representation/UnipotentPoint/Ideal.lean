@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Polynomial.ContentIdeal
 public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Faithful
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Naturality
 import TauCeti.LinearAlgebra.GeneralLinearGroup.Basic
 import TauCeti.RingTheory.FiniteType.PointSeparation
 
@@ -27,10 +28,10 @@ value ring. Over a nonreduced ring they are strictly stronger than nilpotence of
 different faithful representations can give ideals with different nilpotent structure: for
 example, for the multiplicative group the characters `t` and `t⁻¹` together give the ideal
 `((t - 1) ^ 2)`, whereas the character `t` alone gives `(t - 1)`. What is intrinsic is
-the radical: when `H` is of finite type over a field `k` and `ρ` is faithful, the radical of
-`J_ρ` is the ideal of functions vanishing at every unipotent point with values in an
-algebraically closed field. In particular it does not depend on the faithful representation, and
-its points with values in a perfect field are exactly the unipotent points. This radical is the
+the radical: when `ρ` is faithful, the radical of `J_ρ` does not depend on the faithful
+representation, its points with values in a field are exactly the unipotent points, and
+when `H` is of finite type over a field `k` it is the ideal of functions vanishing at every
+unipotent point with values in an algebraically closed field. This radical is the
 defining ideal of the reduced unipotent variety of the group.
 
 ## Main declarations
@@ -45,7 +46,8 @@ defining ideal of the reduced unipotent variety of the group.
   points of the unipotence ideal are those acting unipotently.
 * `TauCeti.Comodule.unipotenceIdeal_le_ker_iff_isUnipotentPoint` and
   `TauCeti.Comodule.radical_unipotenceIdeal_le_ker_iff_isUnipotentPoint`: for a faithful
-  representation, the points with values in a perfect field are the unipotent points.
+  representation, the points with values in a field annihilating the ideal (respectively, its
+  radical) are the unipotent points.
 * `TauCeti.Comodule.mem_radical_unipotenceIdeal_iff`: for a faithful representation of a group
   of finite type, the radical is the vanishing ideal of the geometric unipotent points.
 * `TauCeti.Comodule.radical_unipotenceIdeal_eq`: this radical does not depend on the faithful
@@ -168,22 +170,39 @@ variable {k H K : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
 attribute [local instance 1100] Module.Free.of_divisionRing
 
 /-- For a faithful representation, a point with values in a perfect field annihilates the
-unipotence ideal exactly when it is a unipotent point of the group. -/
-theorem unipotenceIdeal_le_ker_iff_isUnipotentPoint [Field K] [Algebra k K] [PerfectField K]
-    (M : FGComoduleCat.{u, u, u} k H) (hM : IsFaithful (k := k) (H := H) (V := M))
-    (g : WithConv (H →ₐ[k] K)) :
+unipotence ideal exactly when it is a unipotent point of the group. This is the case of
+`TauCeti.Comodule.unipotenceIdeal_le_ker_iff_isUnipotentPoint` from which the general case over any
+field is deduced, by passing to an algebraic closure. -/
+private theorem unipotenceIdeal_le_ker_iff_isUnipotentPoint_of_perfectField [Field K]
+    [Algebra k K] [PerfectField K] (M : FGComoduleCat.{u, u, u} k H)
+    (hM : IsFaithful (k := k) (H := H) (V := M)) (g : WithConv (H →ₐ[k] K)) :
     unipotenceIdeal k H M ≤ RingHom.ker g.ofConv ↔ HopfAlgebra.IsUnipotentPoint g := by
   rw [HopfAlgebra.isUnipotentPoint_iff_isUnipotent_pointsAction_of_isFaithful M hM,
     unipotenceIdeal_le_ker_iff_isUnipotent]
 
 /-- For a faithful representation, the points of the radical of the unipotence ideal with values
-in a perfect field are exactly the unipotent points of the group. -/
+in a field are exactly the unipotent points of the group. -/
 theorem radical_unipotenceIdeal_le_ker_iff_isUnipotentPoint [Field K] [Algebra k K]
-    [PerfectField K] (M : FGComoduleCat.{u, u, u} k H)
+    (M : FGComoduleCat.{u, u, u} k H)
     (hM : IsFaithful (k := k) (H := H) (V := M)) (g : WithConv (H →ₐ[k] K)) :
     (unipotenceIdeal k H M).radical ≤ RingHom.ker g.ofConv ↔ HopfAlgebra.IsUnipotentPoint g := by
-  rw [(RingHom.ker_isPrime g.ofConv).radical_le_iff,
-    unipotenceIdeal_le_ker_iff_isUnipotentPoint M hM]
+  -- Pass to an algebraic closure, which is perfect, without changing the kernel of the point.
+  let φ : K →ₐ[k] AlgebraicClosure K := IsScalarTower.toAlgHom k K (AlgebraicClosure K)
+  have hker : RingHom.ker (φ.comp g.ofConv) = RingHom.ker g.ofConv :=
+    RingHom.ker_comp_of_injective g.ofConv.toRingHom φ.injective
+  rw [← HopfAlgebra.isUnipotentPoint_toConv_comp_iff g φ,
+    ← unipotenceIdeal_le_ker_iff_isUnipotentPoint_of_perfectField M hM
+      (WithConv.toConv (φ.comp g.ofConv)),
+    WithConv.ofConv_toConv, hker, (RingHom.ker_isPrime g.ofConv).radical_le_iff]
+
+/-- For a faithful representation, a point with values in a field annihilates the unipotence ideal
+exactly when it is a unipotent point of the group. -/
+theorem unipotenceIdeal_le_ker_iff_isUnipotentPoint [Field K] [Algebra k K]
+    (M : FGComoduleCat.{u, u, u} k H) (hM : IsFaithful (k := k) (H := H) (V := M))
+    (g : WithConv (H →ₐ[k] K)) :
+    unipotenceIdeal k H M ≤ RingHom.ker g.ofConv ↔ HopfAlgebra.IsUnipotentPoint g := by
+  rw [← radical_unipotenceIdeal_le_ker_iff_isUnipotentPoint M hM g,
+    (RingHom.ker_isPrime g.ofConv).radical_le_iff]
 
 variable [Algebra.FiniteType k H]
 
@@ -199,14 +218,36 @@ theorem mem_radical_unipotenceIdeal_iff (K : Type u) [Field K] [Algebra k K] [Is
     fun h g hg ↦ h (WithConv.toConv g) ?_⟩
   exact (unipotenceIdeal_le_ker_iff_isUnipotentPoint M hM (WithConv.toConv g)).mp hg
 
-/-- The radical of the unipotence ideal of a faithful representation of an affine group of
-finite type does not depend on the faithful representation. -/
+omit [Algebra.FiniteType k H] in
+/-- The radical of the unipotence ideal of a faithful representation of an affine group does
+not depend on the faithful representation. -/
 theorem radical_unipotenceIdeal_eq (M N : FGComoduleCat.{u, u, u} k H)
     (hM : IsFaithful (k := k) (H := H) (V := M)) (hN : IsFaithful (k := k) (H := H) (V := N)) :
     (unipotenceIdeal k H M).radical = (unipotenceIdeal k H N).radical := by
-  ext x
-  rw [mem_radical_unipotenceIdeal_iff (AlgebraicClosure k) M hM,
-    mem_radical_unipotenceIdeal_iff (AlgebraicClosure k) N hN]
+  -- Every prime containing one unipotence ideal is the kernel of a point with values in an
+  -- algebraically closed field, which is unipotent, so it contains the other.
+  have key (M N : FGComoduleCat.{u, u, u} k H) (hM : IsFaithful (k := k) (H := H) (V := M))
+      (hN : IsFaithful (k := k) (H := H) (V := N)) (P : Ideal H) [P.IsPrime]
+      (hP : unipotenceIdeal k H M ≤ P) : unipotenceIdeal k H N ≤ P := by
+    let K := AlgebraicClosure P.ResidueField
+    let g : H →ₐ[k] K := (IsScalarTower.toAlgHom k P.ResidueField K).comp
+      (IsScalarTower.toAlgHom k H P.ResidueField)
+    have hker : RingHom.ker g = P := by
+      -- `g` unfolds to the composite of the two residue-field `algebraMap`s, so the kernel of the
+      -- underlying ring homomorphism can be computed with `RingHom.ker_comp_of_injective`.
+      change RingHom.ker ((algebraMap P.ResidueField K).comp (algebraMap H P.ResidueField)) = P
+      rw [RingHom.ker_comp_of_injective _ (algebraMap P.ResidueField K).injective,
+        Ideal.ker_algebraMap_residueField]
+    have h1 := (unipotenceIdeal_le_ker_iff_isUnipotentPoint N hN (WithConv.toConv g)).mpr
+      ((unipotenceIdeal_le_ker_iff_isUnipotentPoint M hM (WithConv.toConv g)).mp
+        (by rw [WithConv.ofConv_toConv, hker]; exact hP))
+    rwa [WithConv.ofConv_toConv, hker] at h1
+  have le (M N : FGComoduleCat.{u, u, u} k H) (hM : IsFaithful (k := k) (H := H) (V := M))
+      (hN : IsFaithful (k := k) (H := H) (V := N)) :
+      (unipotenceIdeal k H N).radical ≤ (unipotenceIdeal k H M).radical := by
+    rw [Ideal.radical_eq_sInf (unipotenceIdeal k H M)]
+    exact le_sInf fun P ⟨hP, hPp⟩ ↦ hPp.radical_le_iff.mpr (key M N hM hN P hP)
+  exact le_antisymm (le N M hN hM) (le M N hM hN)
 
 end Faithful
 

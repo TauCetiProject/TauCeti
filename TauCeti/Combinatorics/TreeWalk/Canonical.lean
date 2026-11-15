@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Sym.Sym2
 public import TauCeti.Data.List.FindIdx
+import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 
 /-!
 # First-visit canonical labeling of walks
@@ -188,6 +191,29 @@ theorem canonicalWalk_le (w : Fin (n + 1) → α) (i : ℕ) : canonicalWalk w i 
   · rw [canonicalWalk_eq_zero w (by omega)]
     exact Nat.zero_le _
 
+/-- A step which discovers a new vertex cannot be a loop. -/
+theorem ne_of_canonicalWalk_succ_eq (v : Fin (n + 1) → α) (i : Fin n)
+    (hi : canonicalWalk v i.succ = i.succ) : v i.castSucc ≠ v i.succ := by
+  have hle := canonicalWalk_le v i
+  intro he
+  have hc := (canonicalWalk_eq_iff v i.castSucc i.succ).mpr he
+  simp only [Fin.val_castSucc, Fin.val_succ] at hc hi
+  omega
+
+/-- Distinct steps which discover new vertices traverse distinct unordered edges. -/
+theorem injOn_edge_setOf_canonicalWalk_succ_eq (v : Fin (n + 1) → α) :
+    Set.InjOn (fun i : Fin n ↦ s(v i.castSucc, v i.succ))
+      {i | canonicalWalk v i.succ = i.succ} := by
+  intro i hi j hj hij
+  have hc : s(canonicalWalk v i.castSucc, canonicalWalk v i.succ) =
+      s(canonicalWalk v j.castSucc, canonicalWalk v j.succ) := by
+    simpa only [Sym2.eq_iff, canonicalWalk_eq_iff] using hij
+  have hli := canonicalWalk_le v i
+  have hlj := canonicalWalk_le v j
+  simp only [Set.mem_ofPred_eq, Sym2.eq_iff, Fin.val_castSucc, Fin.val_succ] at hc hi hj
+  apply Fin.ext
+  omega
+
 /-- The canonical walk starts at zero. -/
 @[simp] theorem canonicalWalk_zero (w : Fin (n + 1) → α) : canonicalWalk w 0 = 0 :=
   Nat.eq_zero_of_le_zero (canonicalWalk_le w 0)
@@ -229,5 +255,14 @@ theorem card_fixed_canonicalWalk (w : Fin (n + 1) → α) :
   intro x hx y _ hxy
   obtain ⟨i, -, rfl⟩ := mem_image.mp hx
   exact (List.idxOf_inj (List.mem_ofFn.mpr ⟨i, rfl⟩)).1 hxy
+
+/-- The discovery steps of a path count its distinct vertices other than the initial vertex. -/
+theorem card_filter_canonicalWalk_succ_eq (v : Fin (n + 1) → α) :
+    #{i : Fin n | canonicalWalk v i.succ = i.succ} = #(univ.image v) - 1 := by
+  have h := card_fixed_canonicalWalk v
+  rw [card_filter, sum_range_succ', ← Fin.sum_univ_eq_sum_range] at h
+  simp only [canonicalWalk_zero, ite_true] at h
+  simp only [card_filter, Fin.val_succ]
+  omega
 
 end TauCeti.TreeWalk

@@ -77,8 +77,7 @@ private theorem parallel_internal :
     (parallelPart.internalEdges (({1, 2} : Finset ℕ).subtype (· ∈ V(parallelPart)))).map
       (.subtype _) = ∅ := by
   ext e
-  simp only [mem_map, Graph.mem_internalEdges, mem_subtype,
-    Function.Embedding.subtype_apply, Subtype.exists]
+  rw [Graph.mem_map_internalEdges_subtype]
   simp [parallelPart]
 
 open Classical in
@@ -86,8 +85,7 @@ private theorem parallel_incident :
     (parallelPart.incidentEdges (({1, 2} : Finset ℕ).subtype (· ∈ V(parallelPart)))).map
       (.subtype _) = {0, 1} := by
   ext e
-  simp only [mem_map, Graph.mem_incidentEdges, mem_subtype,
-    Function.Embedding.subtype_apply, Subtype.exists]
+  rw [Graph.mem_map_incidentEdges_subtype]
   simp [parallelPart]
 
 open Classical in
@@ -95,20 +93,16 @@ private theorem right_internal :
     (rightPart.internalEdges (({1, 2} : Finset ℕ).subtype (· ∈ V(rightPart)))).map
       (.subtype _) = {2, 3} := by
   ext e
-  simp only [mem_map, Graph.mem_internalEdges, mem_subtype,
-    Function.Embedding.subtype_apply, Subtype.exists]
+  rw [Graph.mem_map_internalEdges_subtype]
   simp [rightPart, linkPart, loopPart]
-  aesop
 
 open Classical in
 private theorem right_incident :
     (rightPart.incidentEdges (({1, 2} : Finset ℕ).subtype (· ∈ V(rightPart)))).map
       (.subtype _) = {2, 3} := by
   ext e
-  simp only [mem_map, Graph.mem_incidentEdges, mem_subtype,
-    Function.Embedding.subtype_apply, Subtype.exists]
+  rw [Graph.mem_map_incidentEdges_subtype]
   simp [rightPart, linkPart, loopPart]
-  aesop
 
 open Classical in
 /-- Only the third edge and the loop are internal to the selected two vertices. -/

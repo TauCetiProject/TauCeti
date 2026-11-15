@@ -170,27 +170,21 @@ theorem centralCharacter_irreducibleRepresentation_injective :
     isIrreducible_blockRepresentation e a
   have hcard : Nat.card (Fin n) = Nat.card (ConjClasses G) := by
     simpa using e.card_eq_card_conjClasses_of_pi_matrix
-  choose c hc using fun i : Fin (Nat.card (ConjClasses G)) =>
-    ClassFunction.exists_nonempty_equiv (blockRepresentation e)
-      (fun _ _ h => isEmpty_equiv_blockRepresentation e h) hcard (irreducibleRepresentation k i)
+  obtain ⟨c, hc⟩ := ClassFunction.exists_equiv_nonempty_equiv (irreducibleRepresentation k)
+    (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp) (blockRepresentation e)
+    (fun _ _ h => isEmpty_equiv_blockRepresentation e h) hcard
   intro i j hij
-  by_contra hne
   have hE : ∀ z, e.centerMonoidAlgebraAlgEquivPi z (c i) =
       e.centerMonoidAlgebraAlgEquivPi z (c j) := fun z => by
     rw [← centralCharacter_blockRepresentation, ← centralCharacter_blockRepresentation,
       Representation.centralCharacter_eq_of_equiv _ _ (hc i).some,
       Representation.centralCharacter_eq_of_equiv _ _ (hc j).some]
     exact DFunLike.congr_fun hij z
-  have hcc : c i = c j := by
-    have h := hE ((e.centerMonoidAlgebraAlgEquivPi).symm (Pi.single (c i) 1))
-    rw [AlgEquiv.apply_symm_apply] at h
-    by_contra hcij
-    simp [Pi.single_eq_of_ne (Ne.symm hcij)] at h
-  have hEq : (irreducibleRepresentation k i).Equiv (irreducibleRepresentation k j) := by
-    have h1 := (hc i).some
-    rw [hcc] at h1
-    exact h1.trans (hc j).some.symm
-  exact (pairwise_isEmpty_equiv_irreducibleRepresentation k hne).elim hEq
+  refine c.injective ?_
+  have h := hE ((e.centerMonoidAlgebraAlgEquivPi).symm (Pi.single (c i) 1))
+  rw [AlgEquiv.apply_symm_apply] at h
+  by_contra hcij
+  simp [Pi.single_eq_of_ne (Ne.symm hcij)] at h
 
 /-- **The irreducible representations of `G` are in bijection with the algebra homomorphisms out of
 the centre of `k[G]`**, by taking central characters. -/

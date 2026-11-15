@@ -88,7 +88,7 @@ theorem isRankLeOne_classicalPoint (x : spa (powerBoundedSubring K)) (a : Fin k 
   haveI : ((NormedField.valuation (K := K)).comap (evalAtHom a ha)).Compatible :=
     ⟨fun f g ↦ by
       simpa only [Valuation.comap_apply, NormedField.valuation_apply, ← NNReal.coe_le_coe,
-        coe_nnnorm] using (classicalPoint_vle x a ha f g).trans
+        coe_nnNorm] using (classicalPoint_vle x a ha f g).trans
           (vle_iff_norm_le_of_mem_spa x.2 _ _)⟩
   ValuativeRel.IsRankLeOne.of_compatible_mulArchimedean
     ((NormedField.valuation (K := K)).comap (evalAtHom a ha))

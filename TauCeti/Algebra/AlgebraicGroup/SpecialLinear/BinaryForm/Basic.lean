@@ -402,8 +402,9 @@ private theorem coeffAction_eq (g : WithConv (coordinateHopfAlgebra R 2 →ₐ[R
     simp only [MvPolynomial.algebraTensorAlgEquiv_tmul, map_mul, smul_mul_assoc]
   simp only [coeffAction, LinearMap.coe_comp, Function.comp_apply, TensorProduct.mk_apply,
     LinearMap.restrictScalars_apply, h, map_sum, LinearMap.rTensor_tmul, lcoeff_apply,
-    coeff_smul, coeff_X_pow, smul_eq_mul, mul_ite, mul_one, mul_zero, LinearEquiv.coe_coe,
-    TensorProduct.lid_tmul, ite_smul, zero_smul, Finset.sum_ite_eq, Finset.mem_range]
+    AddMonoidAlgebra.coeff_smul_apply, coeff_X_pow, smul_eq_mul, mul_ite, mul_one, mul_zero,
+    LinearEquiv.coe_coe, TensorProduct.lid_tmul, ite_smul, zero_smul, Finset.sum_ite_eq,
+    Finset.mem_range]
   split_ifs with hn
   · rfl
   · rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero, mul_zero, zero_smul]

@@ -69,6 +69,13 @@ surjective exactly when `G_x` is discrete
 particular every point with trivial stabilizer is a regular point of `μ`: for a symplectic form and
 a free action, every value of `μ` is a regular value.
 
+For a group-level moment map the differential is itself equivariant,
+`dμ_{g • x} ∘ d(g •)_x = Ad*_g ∘ dμ_x`
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.differential_smul_mfderiv`), so the regular points
+of `μ` form a `G`-invariant set. Hence if `c` is a regular value, `μ` is a submersion at every
+point of `μ⁻¹(G · c)`, the preimage of the coadjoint orbit of `c`
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.differential_surjective_of_apply_eq`).
+
 ## Main definitions
 
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap σ μ`: `μ` is a coadjoint-equivariant moment map
@@ -107,6 +114,10 @@ a free action, every value of `μ` is a regular value.
   case of a trivial stabilizer.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.momentCocycle_eq_zero`: conversely, the cocycle of
   a group-level moment map vanishes at every point.
+* `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.differential_surjective_smul_iff`: `dμ_{g • x}` is
+  surjective exactly when `dμ_x` is, and
+  `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.differential_surjective_of_apply_eq`: a group-level
+  moment map is a submersion over the coadjoint orbit of a regular value.
 
 ## References
 
@@ -493,6 +504,57 @@ theorem momentCocycle_eq_zero (h : σ.IsEquivariantMomentMap μ) (x : M) :
   have hd := h.toIsMomentMap.mvfderiv_momentDefect_one x ξ η
   rw [hθ, mvfderiv_const, momentCocycle_apply, LinearEquiv.apply_symm_apply] at hd
   exact (sub_eq_zero.1 (by simpa using hd.symm))
+
+end IsEquivariantMomentMap
+
+/-! ### Regular points along coadjoint orbits -/
+
+namespace IsEquivariantMomentMap
+
+variable [CompleteSpace E] [CompleteSpace E']
+
+/-- **The differential of a group-level moment map is equivariant**:
+`dμ_{g • x} (d(g •)_x v) = Ad*_g (dμ_x v)`. -/
+theorem differential_smul_mfderiv (h : σ.IsEquivariantMomentMap μ) (g : G) (x : M)
+    (v : TangentSpace I' x) :
+    h.toIsMomentMap.differential (g • x) (mfderiv I' I' (fun y : M ↦ g • y) x v) =
+      Lie.coadjointRepresentation ℝ I G g (h.toIsMomentMap.differential x v) := by
+  ext ξ
+  rw [IsMomentMap.differential_apply, Lie.coadjointRepresentation_apply,
+    IsMomentMap.differential_apply, ← mvfderiv_comp_apply x
+      (h.toIsMomentMap.mdifferentiableAt ξ (g • x))
+      ((ContMDiffSMul.contMDiff_const_smul (I := I) (n := ∞) g).mdifferentiableAt (by simp)) v]
+  -- The component `μ_ξ ∘ (g • ·)` is the component `μ_{Ad_{g⁻¹} ξ}`, by equivariance.
+  congr 2
+  funext y
+  rw [Function.comp_apply, h.apply_smul, Lie.coadjointRepresentation_apply]
+
+/-- **Regular points of a group-level moment map form invariant sets**: `dμ_{g • x}` is surjective
+exactly when `dμ_x` is. -/
+theorem differential_surjective_smul_iff (h : σ.IsEquivariantMomentMap μ) (g : G) (x : M) :
+    Function.Surjective (h.toIsMomentMap.differential (g • x)) ↔
+      Function.Surjective (h.toIsMomentMap.differential x) := by
+  -- If `dμ_x` is surjective, so is `dμ_{g • x}`, since it hits `Ad*_g (dμ_x v)` for every `v`.
+  have key : ∀ (g : G) (x : M), Function.Surjective (h.toIsMomentMap.differential x) →
+      Function.Surjective (h.toIsMomentMap.differential (g • x)) := fun g x hx ν ↦ by
+    obtain ⟨v, hv⟩ := hx (Lie.coadjointRepresentation ℝ I G g⁻¹ ν)
+    exact ⟨_, by rw [h.differential_smul_mfderiv, hv, Representation.self_inv_apply]⟩
+  refine ⟨fun hx ↦ ?_, key g x⟩
+  have hy := key g⁻¹ (g • x) hx
+  rwa [inv_smul_smul] at hy
+
+/-- **A group-level moment map is a submersion over the coadjoint orbit of a regular value.** If
+`dμ` is surjective at every point of the level `μ⁻¹(c)`, it is surjective at every point `x` with
+`μ x = Ad*_g c`, that is, at every point of `μ⁻¹(G · c)`. -/
+theorem differential_surjective_of_apply_eq (h : σ.IsEquivariantMomentMap μ)
+    {c : Module.Dual ℝ (GroupLieAlgebra I G)}
+    (hreg : ∀ y, μ y = c → Function.Surjective (h.toIsMomentMap.differential y)) {g : G} {x : M}
+    (hx : μ x = Lie.coadjointRepresentation ℝ I G g c) :
+    Function.Surjective (h.toIsMomentMap.differential x) := by
+  have hy : μ (g⁻¹ • x) = c := by
+    rw [h.apply_smul, hx, Representation.inv_self_apply]
+  have hx' := (h.differential_surjective_smul_iff g (g⁻¹ • x)).2 (hreg _ hy)
+  rwa [smul_inv_smul] at hx'
 
 end IsEquivariantMomentMap
 

@@ -152,7 +152,7 @@ theorem multivariateLogNormalPDFReal_eq_abs_det_fderiv_log (m : EuclideanSpace �
       |(fderiv ℝ (fun y : EuclideanSpace ℝ ι ↦
           WithLp.toLp 2 (fun i ↦ Real.log (y i))) x).det| *
         multivariateGaussianPDFReal m S (WithLp.toLp 2 (fun i ↦ Real.log (x i))) := by
-  rw [multivariateLogNormalPDFReal_of_pos m S hx, PiLp.det_fderiv_log x (fun i ↦ (hx i).ne'),
+  rw [multivariateLogNormalPDFReal_of_pos m S hx, PiLp.det_fderiv_log x,
     abs_of_pos (inv_pos.mpr (Finset.prod_pos fun i _ ↦ hx i)), div_eq_mul_inv, mul_comm]
 
 private lemma exp_jacobian_mul_pdf (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)

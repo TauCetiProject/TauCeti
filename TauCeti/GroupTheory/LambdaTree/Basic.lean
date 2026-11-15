@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.TypeTags
 public import Mathlib.Order.Interval.Set.OrdConnected
 public import Mathlib.Topology.MetricSpace.BundledFun
 public import TauCeti.Algebra.Order.Group.IntervalIsometry
@@ -46,6 +47,7 @@ points. In particular the subsets of `Λ` which are `Λ`-trees are the nonempty 
 * `TauCeti.LambdaMetric.self Λ`: the metric `|a - b|` on `Λ`.
 * `TauCeti.LambdaMetric.comap d f hf`: the `Λ`-metric induced on `Y` by an injective map
   `f : Y → X`.
+* `TauCeti.LambdaMetric.IsIsometricAction d G`: `G` acts on `X` by isometries of `d`.
 * `TauCeti.LambdaMetric.IsSegment d σ x y`: `σ` is a segment from `x` to `y`.
 * `TauCeti.LambdaMetric.IsGeodesic d`: any two points are joined by a segment.
 * `TauCeti.LambdaMetric.IsTree d`: `d` makes `X` a `Λ`-tree.
@@ -73,6 +75,7 @@ points. In particular the subsets of `Λ` which are `Λ`-trees are the nonempty 
 * `TauCeti.LambdaMetric.isTree_self`: `Λ` is a `Λ`-tree.
 * `TauCeti.LambdaMetric.isTree_comap_self_subtype_iff`: a subset of `Λ`, with the metric
   `|a - b|`, is a `Λ`-tree if and only if it is nonempty and order-connected.
+* `TauCeti.LambdaMetric.isIsometricAction_self`: `Λ` acts on itself by isometric translations.
 * `TauCeti.LambdaMetric.exists_isGeodesic_not_isTree`: a geodesic `ℤ`-metric space need not be a
   `ℤ`-tree.
 
@@ -147,6 +150,37 @@ def self : LambdaMetric Λ Λ where
 @[simp]
 theorem self_apply (a b : Λ) : (self Λ) a b = |a - b| :=
   (rfl)
+
+/-! ### Isometric actions -/
+
+/-- `G` acts on `X` by isometries of the `Λ`-metric `d`. -/
+def IsIsometricAction (G : Type*) [SMul G X] : Prop :=
+  ∀ (g : G) (x y : X), d (g • x) (g • y) = d x y
+
+namespace IsIsometricAction
+
+variable {d} {G : Type*}
+
+@[simp]
+theorem dist_smul_smul [SMul G X] (hG : d.IsIsometricAction G) (g : G) (x y : X) :
+    d (g • x) (g • y) = d x y :=
+  hG g x y
+
+variable [Group G] [MulAction G X]
+
+/-- An isometry and its inverse move a point by the same distance. -/
+@[simp]
+theorem dist_inv_smul (hG : d.IsIsometricAction G) (g : G) (x : X) :
+    d x (g⁻¹ • x) = d x (g • x) := by
+  rw [← hG.dist_smul_smul g x (g⁻¹ • x), smul_inv_smul, d.symm]
+
+/-- The distance `d x ((g⁻¹ * f) • x)` is the distance between the translates `g • x` and
+`f • x`. -/
+theorem dist_inv_mul_smul (hG : d.IsIsometricAction G) (g f : G) (x : X) :
+    d x ((g⁻¹ * f) • x) = d (g • x) (f • x) := by
+  rw [← hG.dist_smul_smul g x, mul_smul, smul_inv_smul]
+
+end IsIsometricAction
 
 /-! ### Segments -/
 
@@ -594,6 +628,12 @@ order-connected. -/
 theorem isTree_comap_self_subtype_iff {s : Set Λ} :
     ((self Λ).comap ((↑) : s → Λ) Subtype.val_injective).IsTree ↔ s.Nonempty ∧ s.OrdConnected := by
   rw [isTree_comap_self_iff, Subtype.range_coe, nonempty_coe_sort]
+
+/-- `Λ` acts on the `Λ`-tree `Λ` by translations, which are isometries. -/
+theorem isIsometricAction_self : (self Λ).IsIsometricAction (Multiplicative Λ) := by
+  intro a x y
+  obtain ⟨a, rfl⟩ := Multiplicative.ofAdd.surjective a
+  simp [self_apply]
 
 /-- A one-point space is a `Λ`-tree, for its unique `Λ`-metric. -/
 theorem isTree_of_subsingleton [Nonempty X] [Subsingleton X] : d.IsTree where

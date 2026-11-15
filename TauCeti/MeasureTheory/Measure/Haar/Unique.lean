@@ -57,7 +57,7 @@ theorem ContinuousMulEquiv.quasiMeasurePreserving_haar {G H : Type*}
     [MeasurableSpace H] [BorelSpace H]
     (e : G ≃ₜ* H) (μ : Measure G) (ν : Measure H)
     [IsHaarMeasure μ] [IsHaarMeasure ν] : QuasiMeasurePreserving e μ ν :=
-  ⟨e.continuous.measurable, absolutelyContinuous_isHaarMeasure (μ.map e) ν⟩
+  ⟨e.continuous.measurable.aemeasurable, absolutelyContinuous_isHaarMeasure (μ.map e) ν⟩
 
 namespace MeasureTheory.Measure
 

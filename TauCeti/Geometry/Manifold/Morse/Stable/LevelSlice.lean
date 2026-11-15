@@ -362,7 +362,7 @@ private theorem level_slice (hf : IsMorse 𝓘(ℝ, E) f) (hab : a ≠ b)
     hab hy
   -- In finite dimensions every subspace is complemented.
   have hcc (p : Submodule ℝ E) : p.ClosedComplemented :=
-    .of_finiteDimensional_quotient (Submodule.closed_of_finiteDimensional _)
+    .of_finiteDimensional_quotient (Submodule.isClosed_of_finiteDimensional _)
   rw [hlevel]
   exact ⟨exists_isSliceChart_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top (by simp) hq hs
       hyq isOpen_univ (mem_univ y) hf.contMDiff.contMDiffOn hyc hrange htr'
