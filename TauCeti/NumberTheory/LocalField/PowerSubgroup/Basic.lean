@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import TauCeti.Algebra.Group.PowerClassGroup.Basic
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
@@ -305,6 +306,28 @@ instance finite_powerClassQuotient_units {n : ℕ} [NeZero (n : K)] :
   have : (powerSubgroup Kˣ n).FiniteIndex :=
     powerSubgroup_eq_range_powMonoidHom Kˣ n ▸ finiteIndex_range_powMonoidHom (NeZero.ne (n : K))
   Subgroup.finite_quotient_of_finiteIndex
+
+/-- When `K` contains the `n`-th roots of unity (`n ≠ 0`), `(Kˣ)ⁿ` has finite index in `Kˣ`. -/
+instance finiteIndex_range_powMonoidHom_of_hasEnoughRootsOfUnity {n : ℕ} [NeZero n]
+    [HasEnoughRootsOfUnity K n] :
+    (powMonoidHom n : Kˣ →* Kˣ).range.FiniteIndex :=
+  finiteIndex_range_powMonoidHom
+    (HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n).choose_spec.neZero'.out
+
+/-- When `K` contains the `n`-th roots of unity (`n ≠ 0`), every subgroup `B ≤ Kˣ` has finite
+relative index over `B ∩ (Kˣ)ⁿ`. -/
+instance isFiniteRelIndex_range_powMonoidHom_of_hasEnoughRootsOfUnity {n : ℕ} [NeZero n]
+    [HasEnoughRootsOfUnity K n] (B : Subgroup Kˣ) :
+    (powMonoidHom n : Kˣ →* Kˣ).range.IsFiniteRelIndex B :=
+  Subgroup.isFiniteRelIndex_of_finiteIndex
+
+/-- When `K` contains the `n`-th roots of unity (`n ≠ 0`), the group `Kˣ ⧸ (Kˣ)ⁿ` of `n`-th power
+classes is finite. -/
+instance finite_powerClassQuotient_units_of_hasEnoughRootsOfUnity {n : ℕ} [NeZero n]
+    [HasEnoughRootsOfUnity K n] :
+    Finite (powerClassQuotient Kˣ n) :=
+  have : NeZero (n : K) := (HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n).choose_spec.neZero'
+  inferInstance
 
 /-- **The number of `n`-th power classes away from the residue characteristic.** For `n`
 invertible in `𝒪[K]`, the quotient `Kˣ ⧸ (Kˣ)ⁿ` has `n · #μ_n(K)` elements, where `μ_n(K)` is the
