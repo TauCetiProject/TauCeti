@@ -14,8 +14,9 @@ import TauCeti.Algebra.BigOperators.Finset.Average
 # Almost invariant vectors
 
 A representation has almost invariant vectors if every finite set of group elements moves some
-unit vector by arbitrarily little. Restriction along a homomorphism preserves this condition.
-Its failure is characterized by a finite quadratic lower bound on orbit displacements.
+unit vector by arbitrarily little. Restriction along a homomorphism preserves this condition (and
+reflects it when the homomorphism is surjective), and linear isometric intertwiners push it
+forward. Its failure is characterized by a finite quadratic lower bound on orbit displacements.
 For finite groups it is equivalent to the existence of a nonzero invariant vector, without
 unitarity or completeness assumptions. The quantitative averaging lemma also produces an
 invariant vector close to a vector whose entire orbit is close to it. Almost invariant vectors
@@ -54,6 +55,11 @@ theorem HasAlmostInvariantVectors.exists_ne_zero (hρ : ρ.HasAlmostInvariantVec
   obtain ⟨v, hv, _⟩ := hρ ∅ 1 zero_lt_one
   exact ⟨v, fun h ↦ by simp [h] at hv⟩
 
+/-- A representation on a subsingleton space cannot have almost invariant unit vectors. -/
+theorem not_hasAlmostInvariantVectors_of_subsingleton [Subsingleton V] :
+    ¬ ρ.HasAlmostInvariantVectors :=
+  fun h ↦ let ⟨v, hv⟩ := h.exists_ne_zero; hv (Subsingleton.elim v 0)
+
 /-- A fixed unit vector witnesses almost invariant vectors. -/
 theorem hasAlmostInvariantVectors_of_invariant_unit {v : V} (hv : ‖v‖ = 1)
     (hfixed : v ∈ ρ.invariants) : ρ.HasAlmostInvariantVectors := by
@@ -70,6 +76,38 @@ theorem HasAlmostInvariantVectors.restrict {K : Type*} [Monoid K]
   obtain ⟨v, hv, hF⟩ := hρ (F.image f) ε hε
   refine ⟨v, hv, fun g hg ↦ ?_⟩
   simpa only [restrict_apply_apply] using hF (f g) (Finset.mem_image_of_mem f hg)
+
+/-- Restriction along a surjective monoid homomorphism preserves and reflects almost invariant
+vectors. -/
+theorem hasAlmostInvariantVectors_restrict_iff_of_surjective {K : Type*} [Monoid K]
+    (ρ : ContRepresentation R G V) {f : K →* G} (hf : Function.Surjective f) :
+    (ρ.restrict f).HasAlmostInvariantVectors ↔ ρ.HasAlmostInvariantVectors := by
+  classical
+  refine ⟨fun h F ε hε ↦ ?_, fun h ↦ h.restrict f⟩
+  choose s hs using hf
+  obtain ⟨v, hv, hF⟩ := h (F.image s) ε hε
+  refine ⟨v, hv, fun g hg ↦ ?_⟩
+  simpa only [restrict_apply_apply, hs g] using hF (s g) (Finset.mem_image_of_mem s hg)
+
+/-- An isometric intertwiner pushes almost invariant unit vectors forward. -/
+theorem HasAlmostInvariantVectors.of_linearIsometry {W : Type*} [NormedAddCommGroup W]
+    [Module R W] {σ : ContRepresentation R G W} (hρ : ρ.HasAlmostInvariantVectors)
+    (T : V →ₗᵢ[R] W) (hT : ∀ g v, T (ρ g v) = σ g (T v)) :
+    σ.HasAlmostInvariantVectors := by
+  intro F ε hε
+  obtain ⟨v, hv, hF⟩ := hρ F ε hε
+  refine ⟨T v, (T.norm_map v).trans hv, fun g hg ↦ ?_⟩
+  rw [← hT g v, ← map_sub, T.norm_map]
+  exact hF g hg
+
+/-- Isometric equivalence of representations preserves almost invariant vectors. -/
+theorem hasAlmostInvariantVectors_iff_of_linearIsometryEquiv {W : Type*} [NormedAddCommGroup W]
+    [Module R W] {σ : ContRepresentation R G W} (e : V ≃ₗᵢ[R] W)
+    (he : ∀ g v, e (ρ g v) = σ g (e v)) :
+    ρ.HasAlmostInvariantVectors ↔ σ.HasAlmostInvariantVectors :=
+  ⟨fun h ↦ h.of_linearIsometry e.toLinearIsometry he,
+    fun h ↦ h.of_linearIsometry e.symm.toLinearIsometry fun g w ↦
+      e.injective (by simp [he])⟩
 
 /-- Almost invariant vectors have arbitrarily small total squared displacement on any finite
 set. The vector is still required to have norm one. -/

@@ -33,6 +33,9 @@ bounds.
   its integral.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.Lp.integrable_norm_sq_sub` and
+  `MeasureTheory.Lp.integral_abs_norm_sq_sub_le`: for `f, g ∈ L²`, `‖f‖² - ‖g‖²` is integrable and
+  `∫ |‖f‖² - ‖g‖²| ≤ ‖f - g‖ * (‖f‖ + ‖g‖)`.
 * `MeasureTheory.MemLp.norm_toLp_sq`: the same for the class of a square-integrable function.
 * `MeasureTheory.MemLp.eLpNorm_two_eq_ofReal_sqrt_integral`: the `L²` seminorm of a
   square-integrable function is the square root of the integral of its squared norm.
@@ -246,6 +249,61 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
     ∫ x, ‖f x‖ ^ 2 ∂m = ‖f‖ ^ 2 := by
   simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
     Lp.integral_norm_rpow_eq_norm_rpow (by norm_num) (by norm_num) f
+
+/-- For two `L²` functions, the difference of their squared pointwise norms is integrable. -/
+theorem Lp.integrable_norm_sq_sub {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] (f g : Lp F 2 m) :
+    Integrable (fun x ↦ ‖f x‖ ^ 2 - ‖g x‖ ^ 2) m :=
+  ((Lp.memLp f).integrable_norm_pow two_ne_zero).sub
+    ((Lp.memLp g).integrable_norm_pow two_ne_zero)
+
+/-- **Cauchy–Schwarz bound for `L²` squared-norm variation.** For `f, g ∈ L²`, the `L¹` distance
+between the densities `‖f‖²` and `‖g‖²` is at most `‖f - g‖ * (‖f‖ + ‖g‖)`. -/
+theorem Lp.integral_abs_norm_sq_sub_le {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] (f g : Lp F 2 m) :
+    ∫ x, |‖f x‖ ^ 2 - ‖g x‖ ^ 2| ∂m ≤ ‖f - g‖ * (‖f‖ + ‖g‖) := by
+  let u : alpha → ℝ := fun x ↦ ‖(f - g) x‖
+  let v : alpha → ℝ := fun x ↦ ‖f x‖ + ‖g x‖
+  have hu : MemLp u 2 m := (Lp.memLp (f - g)).norm
+  have hv : MemLp v 2 m := (Lp.memLp f).norm.add (Lp.memLp g).norm
+  have huv : Integrable (fun x ↦ u x * v x) m := hu.integrable_mul hv
+  have hpoint : (fun x ↦ |‖f x‖ ^ 2 - ‖g x‖ ^ 2|) ≤ᵐ[m] fun x ↦ u x * v x := by
+    filter_upwards [Lp.coeFn_sub f g] with x hx
+    have hnonneg : 0 ≤ ‖f x‖ + ‖g x‖ := by positivity
+    calc |‖f x‖ ^ 2 - ‖g x‖ ^ 2|
+        = |(‖f x‖ - ‖g x‖) * (‖f x‖ + ‖g x‖)| := by rw [sq_sub_sq, mul_comm]
+      _ = |‖f x‖ - ‖g x‖| * (‖f x‖ + ‖g x‖) := by rw [abs_mul, abs_of_nonneg hnonneg]
+      _ ≤ ‖f x - g x‖ * (‖f x‖ + ‖g x‖) :=
+          mul_le_mul_of_nonneg_right (abs_norm_sub_norm_le (f x) (g x)) hnonneg
+      _ = u x * v x := by rw [← Pi.sub_apply, ← hx]
+  have hu2 : (∫ x, u x ^ (2 : ℝ) ∂m) ^ (1 / (2 : ℝ)) = ‖f - g‖ := by
+    have hsq : ∫ x, u x ^ (2 : ℝ) ∂m = ‖f - g‖ ^ 2 := by
+      simpa only [u, Real.rpow_two] using Lp.integral_norm_sq_eq_norm_sq (f - g)
+    rw [hsq, ← Real.sqrt_eq_rpow, Real.sqrt_sq (norm_nonneg _)]
+  have hv2 : (∫ x, v x ^ (2 : ℝ) ∂m) ^ (1 / (2 : ℝ)) ≤ ‖f‖ + ‖g‖ := by
+    have hsq : ∫ x, v x ^ (2 : ℝ) ∂m = ‖hv.toLp v‖ ^ 2 := by
+      rw [← Lp.integral_norm_sq_eq_norm_sq]
+      refine integral_congr_ae (hv.coeFn_toLp.mono fun x hx ↦ ?_)
+      have hvx : 0 ≤ v x := by positivity
+      dsimp only
+      rw [Real.rpow_two, hx, Real.norm_of_nonneg hvx]
+    rw [hsq, ← Real.sqrt_eq_rpow, Real.sqrt_sq (norm_nonneg _)]
+    have hle : ‖hv.toLp v‖ ≤ 1 * ‖f‖ + 1 * ‖g‖ :=
+      TauCeti.Lp.norm_le_add_of_ae_norm_le zero_le_one zero_le_one
+        (hv.coeFn_toLp.mono fun x hx ↦ by
+          have hvx : 0 ≤ v x := by positivity
+          simp [hx, Real.norm_of_nonneg hvx, v])
+    linarith
+  have hofReal : ENNReal.ofReal (2 : ℝ) = 2 := by norm_num
+  calc ∫ x, |‖f x‖ ^ 2 - ‖g x‖ ^ 2| ∂m
+      ≤ ∫ x, u x * v x ∂m := integral_mono_ae (Lp.integrable_norm_sq_sub f g).abs huv hpoint
+    _ ≤ (∫ x, u x ^ (2 : ℝ) ∂m) ^ (1 / (2 : ℝ)) * (∫ x, v x ^ (2 : ℝ) ∂m) ^ (1 / (2 : ℝ)) :=
+        integral_mul_le_Lp_mul_Lq_of_nonneg Real.HolderConjugate.two_two
+          (ae_of_all _ fun _ ↦ by positivity) (ae_of_all _ fun _ ↦ by positivity)
+          (hofReal.symm ▸ hu) (hofReal.symm ▸ hv)
+    _ ≤ ‖f - g‖ * (‖f‖ + ‖g‖) := by
+        rw [hu2]
+        exact mul_le_mul_of_nonneg_left hv2 (norm_nonneg _)
 
 /-- The `L²` seminorm of a square-integrable function is the square root of the integral of its
 squared pointwise norm. -/

@@ -50,6 +50,7 @@ nontrivial filter. The proof picks for `(K, n)` a witness for `K` with tolerance
 * `TauCeti.hasFoelnerSets_iff`: `HasFoelnerSets G` is equivalent to the finite-set condition.
 * `TauCeti.HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card`: finite sets with vanishing
   relative translation boundaries along a nontrivial filter give Følner sets.
+* `TauCeti.HasFoelnerSets.of_finite`: every finite group has Følner sets.
 * `MulEquiv.hasFoelnerSets_iff`: having Følner sets is invariant under group isomorphisms.
 
 ## References
@@ -197,6 +198,19 @@ theorem HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card [DecidableEq G] {�
   obtain ⟨i, hni, hi⟩ := (hne.and hevent).exists
   exact ⟨F i, hni, fun g hg =>
     (div_lt_iff₀ (by exact_mod_cast hni.card_pos)).1 (hi g hg)⟩
+
+/-- Every finite group has Følner sets, witnessed by the whole group. -/
+theorem HasFoelnerSets.of_finite [Finite G] : HasFoelnerSets G := by
+  classical
+  let := Fintype.ofFinite G
+  rw [hasFoelnerSets_iff]
+  refine fun _ _ hε ↦ ⟨Finset.univ, Finset.univ_nonempty, fun g _ ↦ ?_⟩
+  have hsmul : g • (Finset.univ : Finset G) = Finset.univ :=
+    Finset.eq_univ_of_forall fun x ↦
+      Finset.mem_smul_finset.mpr ⟨g⁻¹ * x, Finset.mem_univ _, mul_inv_cancel_left g x⟩
+  rw [hsmul, symmDiff_self]
+  simp only [bot_eq_empty, card_empty, Nat.cast_zero, card_univ]
+  exact mul_pos hε (Nat.cast_pos.2 Fintype.card_pos)
 
 end TauCeti
 

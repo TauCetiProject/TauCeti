@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Index
 public import TauCeti.GroupTheory.Amenable.Average
 public import TauCeti.GroupTheory.Amenable.Reiter
 import Mathlib.Analysis.Convex.Combination
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Analysis.Normed.Lp.lpSpace
+import TauCeti.GroupTheory.Amenable.Extension
 import TauCeti.Topology.Algebra.Group.UCB.Discrete
 
 /-!
@@ -47,6 +49,10 @@ assigns it the value `0`. Reiter's condition then yields Følner sets among the 
 * `TauCeti.amenable_iff_hasFoelnerSets`: a discrete group is amenable exactly when it has Følner
   sets.
 * `TauCeti.amenable_iff_exists_finset`: the same characterization in terms of finite sets.
+* `TauCeti.HasFoelnerSets.of_injective`, `TauCeti.HasFoelnerSets.subgroup`,
+  `TauCeti.hasFoelnerSets_iff_subgroup_quotient`, and `TauCeti.HasFoelnerSets.of_finiteIndex`:
+  topology-free closure of Følner sets under embeddings, subgroups, extensions, and finite-index
+  supergroups.
 
 ## References
 
@@ -170,5 +176,46 @@ theorem amenable_iff_exists_finset [DiscreteTopology G] [DecidableEq G] :
     Amenable G ↔ ∀ K : Finset G, ∀ ε : ℝ, 0 < ε →
       ∃ F : Finset G, F.Nonempty ∧ ∀ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F := by
   rw [amenable_iff_hasFoelnerSets, hasFoelnerSets_iff]
+
+section FoelnerClosure
+
+variable {H K : Type*} [Group H] [Group K]
+
+/-- A group embedding by an injective homomorphism into a group with Følner sets has Følner sets. -/
+theorem HasFoelnerSets.of_injective (hH : HasFoelnerSets H) (φ : K →* H)
+    (hφ : Function.Injective φ) : HasFoelnerSets K := by
+  let : TopologicalSpace H := ⊥
+  have : DiscreteTopology H := ⟨rfl⟩
+  let : TopologicalSpace K := ⊥
+  have : DiscreteTopology K := ⟨rfl⟩
+  have : IsTopologicalGroup K := {}
+  have : Amenable H := .of_hasFoelnerSets hH
+  have : Amenable K := .of_injective φ hφ
+  exact Amenable.hasFoelnerSets
+
+/-- Every subgroup of a group with Følner sets has Følner sets. -/
+theorem HasFoelnerSets.subgroup (hH : HasFoelnerSets H) (S : Subgroup H) :
+    HasFoelnerSets S :=
+  hH.of_injective S.subtype S.subtype_injective
+
+/-- For a normal subgroup `N` of `H`, `H` has Følner sets exactly when `N` and `H ⧸ N` do. -/
+theorem hasFoelnerSets_iff_subgroup_quotient (N : Subgroup H) [N.Normal] :
+    HasFoelnerSets H ↔ HasFoelnerSets N ∧ HasFoelnerSets (H ⧸ N) := by
+  let : TopologicalSpace H := ⊥
+  have : DiscreteTopology H := ⟨rfl⟩
+  have : IsTopologicalGroup H := {}
+  have : DiscreteTopology (H ⧸ N) := QuotientGroup.discreteTopology (isOpen_discrete (N : Set H))
+  rw [← amenable_iff_hasFoelnerSets, ← amenable_iff_hasFoelnerSets, ← amenable_iff_hasFoelnerSets,
+    amenable_iff_subgroup_quotient N]
+
+/-- If a finite-index subgroup of `H` has Følner sets, then `H` has Følner sets: its normal core
+has finite index and embeds into the subgroup. -/
+theorem HasFoelnerSets.of_finiteIndex {S : Subgroup H} [S.FiniteIndex] (hS : HasFoelnerSets S) :
+    HasFoelnerSets H :=
+  (hasFoelnerSets_iff_subgroup_quotient S.normalCore).2
+    ⟨hS.of_injective (Subgroup.inclusion S.normalCore_le)
+      (Subgroup.inclusion_injective S.normalCore_le), .of_finite⟩
+
+end FoelnerClosure
 
 end TauCeti

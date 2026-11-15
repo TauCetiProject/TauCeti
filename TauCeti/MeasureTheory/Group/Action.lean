@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.MeasureTheory.Group.Action
+public import Mathlib.MeasureTheory.Measure.Count
 public import Mathlib.Topology.MetricSpace.IsometricSMul
 
 /-!
@@ -14,10 +15,12 @@ public import Mathlib.Topology.MetricSpace.IsometricSMul
 
 General facts about `SMulInvariantMeasure`, Mathlib's class of measures invariant under a scalar
 multiplication, that do not concern ergodicity: the restriction of an invariant measure to an
-exactly invariant measurable set is again invariant (`SMulInvariantMeasure.restrict`), and for a
+exactly invariant measurable set is again invariant (`SMulInvariantMeasure.restrict`), counting
+measure is invariant under any measurable group action (`instSMulInvariantMeasureCount`), and for a
 transitive isometric action all balls of one radius have the same invariant measure
-(`measure_ball_eq_measure_ball`). Every linear action on a finite-dimensional real space has
-measurable translations (`measurableConstSMul_of_finiteDimensional`).
+(`measure_ball_eq_measure_ball`). Every scalar multiplication on a discrete measurable space and
+every linear action on a finite-dimensional real space has measurable translations
+(`DiscreteMeasurableSpace.toMeasurableConstSMul`, `measurableConstSMul_of_finiteDimensional`).
 -/
 
 public section
@@ -27,6 +30,24 @@ open Metric Set
 open scoped Pointwise
 
 namespace MeasureTheory
+
+section Discrete
+
+variable {M G X : Type*} [MeasurableSpace X]
+
+/-- Every scalar multiplication on a discrete measurable space has measurable translations. -/
+instance (priority := 100) _root_.DiscreteMeasurableSpace.toMeasurableConstSMul [SMul M X]
+    [DiscreteMeasurableSpace X] : MeasurableConstSMul M X :=
+  ⟨fun _ ↦ .of_discrete⟩
+
+/-- Counting measure is invariant under any group action with measurable translations. -/
+instance instSMulInvariantMeasureCount [Group G] [MulAction G X] [MeasurableConstSMul G X] :
+    SMulInvariantMeasure G X (Measure.count : Measure X) where
+  measure_preimage_smul g s hs := by
+    rw [Measure.count_apply (hs.preimage (measurable_const_smul g)), Measure.count_apply hs,
+      preimage_smul, ← image_smul, (MulAction.injective g⁻¹).encard_image]
+
+end Discrete
 
 section Restrict
 
