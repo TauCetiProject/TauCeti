@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.ULift
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Homology
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.LoopSpace
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.ModTwo
@@ -56,7 +55,10 @@ Whitehead tower of a space `Z`.
 * J.-P. Serre, *Groupes d'homotopie et classes de groupes abéliens*, Ann. of Math. 58 (1953),
   Chapter I and Chapter III.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 4.2 and Section 5.3.
+  Section 4.2 and Section 4.3 (Eilenberg--Mac Lane spaces and their loop spaces).
+* A. Hatcher,
+  [*Spectral Sequences in Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/SSAT/SSch1.pdf),
+  Chapter 1, Section 1.1.
 -/
 
 public section
@@ -150,15 +152,9 @@ theorem isZero_singularHomology_int_zmod_two_of_isUniquelyTwoDivisible {A : Type
     (hA : IsUniquelyTwoDivisible A) {n : ℕ} [NeZero n] {X : Type} [TopologicalSpace X] {x : X}
     (hX : IsEilenbergMacLaneSpace (Multiplicative A) n X x) (q : ℕ) :
     IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) (q + 1)).obj
-      (ModuleCat.of ℤ (ZMod 2))).obj (TopCat.of X)) := by
-  let e𝔽₂ := (((singularHomologyFunctor (ModuleCat.{0} (ZMod 2)) (q + 1)).mapIso
-    (ULift.moduleEquiv : ULift.{0} (ZMod 2) ≃ₗ[ZMod 2] ZMod 2).toModuleIso).app (TopCat.of X))
-  let eℤ := (((singularHomologyFunctor (ModuleCat.{0} ℤ) (q + 1)).mapIso
-    (ULift.moduleEquiv : ULift.{0} (ZMod 2) ≃ₗ[ℤ] ZMod 2).toModuleIso).app (TopCat.of X))
-  have hU : IsZero (((singularHomologyFunctor (ModuleCat.{0} (ZMod 2)) (q + 1)).obj
-      (ModuleCat.of (ZMod 2) (ULift.{0} (ZMod 2)))).obj (TopCat.of X)) :=
-    (hX.isZero_singularHomology_of_isUniquelyTwoDivisible hA q).of_iso e𝔽₂
-  exact (((TopCat.of X).isZero_singularHomology_modTwo_iff (q + 1)).2 hU).of_iso eℤ.symm
+      (ModuleCat.of ℤ (ZMod 2))).obj (TopCat.of X)) :=
+  ((TopCat.of X).isZero_singularHomology_int_zmod_two_iff (q + 1)).2
+    (hX.isZero_singularHomology_of_isUniquelyTwoDivisible hA q)
 
 end TwoDivisible
 

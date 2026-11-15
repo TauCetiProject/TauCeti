@@ -24,7 +24,10 @@ long exact sequence of `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/2 ⟶ 0`, or with the field `�
 `𝔽₂`-vector spaces. The two agree: restriction of scalars along `ℤ → 𝔽₂` preserves coproducts and
 homology, so the integer-module homology is the mod-two homology with its scalars restricted
 (`TopCat.singularHomologyModTwoIso`). In particular one vanishes exactly when the other does
-(`TopCat.isZero_singularHomology_modTwo_iff`).
+(`TopCat.isZero_singularHomology_modTwo_iff`, `TopCat.isZero_singularHomology_int_zmod_two_iff`),
+and a map induces an isomorphism on one exactly when it induces an isomorphism on the other
+(`TopCat.isIso_singularHomologyMap_modTwo_iff`,
+`TopCat.isIso_singularHomologyMap_int_zmod_two_iff`).
 
 The coefficient long exact sequence of `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/2 ⟶ 0` relates integral homology to mod-two
 homology. Its first map induces multiplication by two on `Hₙ(X; ℤ)` (the case `m = 2` of
@@ -65,6 +68,20 @@ universe u
 namespace TopCat
 
 /-! ### Comparison with homology over `𝔽₂` -/
+
+/-- For any `ZMod 2`-module `M` carrying a compatible `ℤ`-module structure, singular homology with
+`ℤ`-module coefficients `M` is naturally isomorphic to singular homology with `ZMod 2`-module
+coefficients `M` followed by restriction of scalars along `ℤ →+* ZMod 2`. -/
+private def singularHomologyModTwoNatIso (M : Type u) [AddCommGroup M] [Module (ZMod 2) M]
+    [IsScalarTower ℤ (ZMod 2) M] (n : ℕ) :
+    (singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj (ModuleCat.of ℤ M) ≅
+      (singularHomologyFunctor (ModuleCat.{u} (ZMod 2)) n).obj (ModuleCat.of (ZMod 2) M) ⋙
+        ModuleCat.restrictScalars.{u} (algebraMap ℤ (ZMod 2)) :=
+  (singularHomologyFunctor (ModuleCat.{u} ℤ) n).mapIso
+      (ModuleCat.restrictScalarsAlgebraMapIso (R := ℤ) (S := ZMod 2) M).symm ≪≫
+    (Functor.singularHomologyFunctorObjCompIso
+      (ModuleCat.restrictScalars.{u} (algebraMap ℤ (ZMod 2)))
+      (ModuleCat.of (ZMod 2) M) n).symm
 
 /-- **Integral homology with `ℤ/2` coefficients is mod-two homology**: the singular homology with
 coefficients in the integer module `ℤ/2` is the singular homology with coefficients in the field
@@ -118,6 +135,39 @@ theorem isZero_singularHomology_modTwo_iff (X : TopCat.{u}) (n : ℕ) :
     ModuleCat.isZero_iff_subsingleton]
   -- restriction of scalars does not change the underlying abelian group
   rfl
+
+/-- A continuous map induces an isomorphism on singular homology with coefficients in the integer
+module `ℤ/2` exactly when it induces one with coefficients in the field `𝔽₂`. -/
+theorem isIso_singularHomologyMap_modTwo_iff {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
+        (ModuleCat.of ℤ (ULift.{u} (ZMod 2)))).map f) ↔
+      IsIso (((singularHomologyFunctor (ModuleCat.{u} (ZMod 2)) n).obj
+        (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2)))).map f) :=
+  (NatIso.isIso_map_iff (singularHomologyModTwoNatIso (ULift.{u} (ZMod 2)) n) f).trans
+    (isIso_iff_of_reflects_iso _ (ModuleCat.restrictScalars.{u} (algebraMap ℤ (ZMod 2))))
+
+/-- For a space in `TopCat.{0}`, singular homology over `ℤ` with unlifted `ZMod 2` coefficients
+vanishes exactly when singular homology over the field `ZMod 2` vanishes. -/
+theorem isZero_singularHomology_int_zmod_two_iff (X : TopCat.{0}) (n : ℕ) :
+    IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+        (ModuleCat.of ℤ (ZMod 2))).obj X) ↔
+      IsZero (((singularHomologyFunctor (ModuleCat.{0} (ZMod 2)) n).obj
+        (ModuleCat.of (ZMod 2) (ZMod 2))).obj X) := by
+  rw [Iso.isZero_iff ((singularHomologyModTwoNatIso (ZMod 2) n).app X),
+    ModuleCat.isZero_iff_subsingleton, ModuleCat.isZero_iff_subsingleton]
+  -- restriction of scalars does not change the underlying abelian group
+  rfl
+
+/-- For a morphism in `TopCat.{0}`, the induced map on singular homology over `ℤ` with unlifted
+`ZMod 2` coefficients is an isomorphism exactly when the induced map on singular homology over
+the field `ZMod 2` is an isomorphism. -/
+theorem isIso_singularHomologyMap_int_zmod_two_iff {X Y : TopCat.{0}} (f : X ⟶ Y) (n : ℕ) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+        (ModuleCat.of ℤ (ZMod 2))).map f) ↔
+      IsIso (((singularHomologyFunctor (ModuleCat.{0} (ZMod 2)) n).obj
+        (ModuleCat.of (ZMod 2) (ZMod 2))).map f) :=
+  (NatIso.isIso_map_iff (singularHomologyModTwoNatIso (ZMod 2) n) f).trans
+    (isIso_iff_of_reflects_iso _ (ModuleCat.restrictScalars.{0} (algebraMap ℤ (ZMod 2))))
 
 /-! ### The reduction modulo two -/
 

@@ -13,10 +13,12 @@ public import TauCeti.Topology.Homotopy.GenLoop.Map
 Mathlib defines the quotient `HomotopyGroup N X x` of the generalized loop space, and this file
 supplies the map induced by a based continuous map (postcomposition of generalized loops, in
 `TauCeti.Topology.Homotopy.GenLoop.Map`) on homotopy classes: it respects identity and composition,
-handles constant maps and subsingleton targets, and is a monoid homomorphism in positive
-dimensions. In dimension one it is Mathlib's induced map `FundamentalGroup.mapOfEq` of fundamental
-groups, read through `HomotopyGroup.pi1EquivFundamentalGroup`, so in particular one is bijective
-exactly when the other is. Every homotopy group of a subsingleton space is itself a subsingleton
+handles constant maps and subsingleton targets, is a monoid homomorphism in positive dimensions
+(`HomotopyGroup.mapHom`), and upgrades to a multiplicative isomorphism when bijective
+(`HomotopyGroup.mulEquivOfBijective`). In dimension one it is Mathlib's induced map
+`FundamentalGroup.mapOfEq` of fundamental groups, read through
+`HomotopyGroup.pi1EquivFundamentalGroup`, so in particular one is bijective exactly when the other
+is. Every homotopy group of a subsingleton space is itself a subsingleton
 (`HomotopyGroup.subsingleton_of_subsingleton`).
 
 The covering-map isomorphisms on `π_n` for `n ≥ 2`
@@ -261,6 +263,19 @@ theorem map_inv [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y)
     (a : HomotopyGroup N X x) :
     map f hf a⁻¹ = (map f hf a)⁻¹ :=
   (mapHom f hf).map_inv a
+
+/-- In positive dimensions, a based continuous map whose induced map on homotopy groups is
+bijective induces a multiplicative isomorphism of homotopy groups. -/
+noncomputable def mulEquivOfBijective [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y)
+    (hbij : Function.Bijective (map (N := N) f hf)) :
+    HomotopyGroup N X x ≃* HomotopyGroup N Y y :=
+  MulEquiv.ofBijective (mapHom f hf) hbij
+
+@[simp]
+theorem mulEquivOfBijective_apply [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y)
+    (hbij : Function.Bijective (map (N := N) f hf)) (a : HomotopyGroup N X x) :
+    mulEquivOfBijective f hf hbij a = map f hf a :=
+  mapHom_apply f hf a
 
 /-- In dimension one, the induced map on homotopy groups is the induced map on fundamental groups,
 under Mathlib's identification `pi1EquivFundamentalGroup` of `π_1` with the fundamental group. -/
