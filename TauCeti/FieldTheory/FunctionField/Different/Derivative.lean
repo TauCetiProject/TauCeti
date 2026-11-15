@@ -39,13 +39,18 @@ every place `P'` finite on `C`.
   for a generator of the integral closure of an affine model.
 * `TauCeti.Place.differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one`: if `ψ'(y)` is a
   unit at `P'`, then `d(P' ∣ P) = 0`.
+* `TauCeti.Place.exists_adjoin_eq_top_and_valuation_aeval_derivative_minpoly_eq_one`: conversely,
+  when `d(P' ∣ P) = 0`, some primitive element integral over `𝒪_P` has unit minimal-polynomial
+  derivative at `P'` (Stichtenoth, Remark 3.5.11).
+* `TauCeti.Place.differentExponent_eq_zero_iff_exists_valuation_aeval_derivative_eq_one`: the
+  resulting characterization of `d(P' ∣ P) = 0`.
 * `TauCeti.Place.differentExponent_eq_zero_of_finrank_eq_one`: a degree-one extension has different
   exponent zero.
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Theorem 3.5.10.
+  Theorem 3.5.10 and Remark 3.5.11.
 -/
 
 public section
@@ -200,6 +205,47 @@ theorem differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one {y : F'}
     rw [P'.ord_eq_iff_valuation_eq_exp_neg hne, neg_zero, WithZero.exp_zero, hψ']
   have := differentExponent_le_ord_aeval_derivative k F hgen hψ hcoeff hy hne
   omega
+
+/-- **Converse of the derivative test at an unramified place** (Stichtenoth, Remark 3.5.11): if
+`d(P' ∣ P) = 0`, then `F' / F` admits a primitive element `y` whose minimal polynomial over `F`
+has coefficients in `𝒪_P` and derivative a unit at `P'`. -/
+theorem exists_adjoin_eq_top_and_valuation_aeval_derivative_minpoly_eq_one
+    (hd : differentExponent k F P' = 0) :
+    ∃ y : F', F⟮y⟯ = ⊤ ∧ (∀ i, (minpoly F y).coeff i ∈ (P'.restrict k F).integers) ∧
+      P'.valuation (aeval y (derivative (minpoly F y))) = 1 := by
+  let A := (P'.restrict k F).integers
+  let B := integralClosure A F'
+  let q := centerIntegralClosure k F P'
+  have : q.asIdeal.IsPrime := q.isPrime
+  have : Algebra.IsUnramifiedAt A q.asIdeal := (differentExponent_eq_zero_iff k F P').mp hd
+  obtain ⟨x, hgen, -, hder⟩ := exists_notMem_conductor_and_aeval_derivative_minpoly_notMem
+    A F F' B q.asIdeal
+  have hmap : minpoly F (algebraMap B F' x) = (minpoly A x).map (algebraMap A F) :=
+    minpoly.isIntegrallyClosed_eq_field_fractions F F' (integralClosure.isIntegral x)
+  have hder_eq : algebraMap B F' (aeval x (derivative (minpoly A x))) =
+      aeval (algebraMap B F' x) (derivative (minpoly F (algebraMap B F' x))) := by
+    rw [hmap, derivative_map, aeval_map_algebraMap, aeval_algebraMap_apply]
+  refine ⟨algebraMap B F' x, hgen, fun i ↦ ?_, ?_⟩
+  · rw [hmap, coeff_map]
+    exact ((minpoly A x).coeff i).2
+  · rw [← hder_eq]
+    have hle := P'.mem_integers_iff.mp
+      (algebraMap_mem_integers_of_mem_integralClosure k F P' (aeval x (derivative (minpoly A x))))
+    have hnotlt : ¬ P'.valuation (algebraMap B F' (aeval x (derivative (minpoly A x)))) < 1 := by
+      simpa only [q, centerIntegralClosure_def, mem_center_asIdeal] using hder
+    exact le_antisymm hle (not_lt.mp hnotlt)
+
+/-- **Derivative characterization of `d(P' ∣ P) = 0`** (Stichtenoth, Theorem 3.5.10(a) and
+Remark 3.5.11): the different exponent of `P'` over `P` vanishes if and only if some primitive
+element of `F' / F` has minimal polynomial over `F` with coefficients in `𝒪_P` and derivative a
+unit at `P'`. -/
+theorem differentExponent_eq_zero_iff_exists_valuation_aeval_derivative_eq_one (P' : Place k' F') :
+    differentExponent k F P' = 0 ↔
+      ∃ y : F', F⟮y⟯ = ⊤ ∧ (∀ i, (minpoly F y).coeff i ∈ (P'.restrict k F).integers) ∧
+        P'.valuation (aeval y (derivative (minpoly F y))) = 1 :=
+  ⟨exists_adjoin_eq_top_and_valuation_aeval_derivative_minpoly_eq_one k F,
+    fun ⟨y, hgen, hcoeff, hder⟩ ↦ differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one k F
+      hgen (minpoly.monic (Algebra.IsIntegral.isIntegral y)) hcoeff (minpoly.aeval F y) hder⟩
 
 /-- **A degree-one extension has different exponent zero**: when `[F' : F] = 1`, every place
 of `F'` has different exponent zero over its restriction to `F`. -/

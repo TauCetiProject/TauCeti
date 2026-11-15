@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Minpoly.Lifts
 public import TauCeti.FieldTheory.RatFunc.Galois
+import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
 # Descending a function field along its minimal polynomial
@@ -32,9 +33,16 @@ through `k(t)`.
 
 ## Main results
 
+* `TauCeti.isIntegrallyClosedIn_adjoin_simple_of_minpoly_mem_lifts`: if `K` is integrally closed in
+  `B`, `k` is integrally closed in `E`, and `minpoly B' z` lifts to `B`, then `K` is integrally
+  closed in `B⟮z⟯`.
+* `TauCeti.isIntegrallyClosedIn_adjoin_simple_ratFunc_of_minpoly_mem_lifts`: specialization to
+  `B = K(t)` and `B' = k(t)`.
 * `TauCeti.finrank_adjoin_simple_ratFunc_eq_of_forall_map_mapRingEquiv_eq`: if `z` generates `E`
   over `k(t)`, and its minimal polynomial is fixed by coefficient maps whose common fixed points
   are `K`, then `[K(t)(z) : K(t)] = [E : k(t)]`.
+* `TauCeti.isIntegrallyClosedIn_adjoin_simple_ratFunc_of_forall_map_mapRingEquiv_eq`: under the
+  same invariance hypothesis and `IsIntegrallyClosedIn k E`, `K` is integrally closed in `K(t)(z)`.
 
 ## References
 
@@ -48,9 +56,85 @@ open IntermediateField Polynomial
 
 namespace TauCeti
 
+section General
+
+variable {K k B B' E : Type*} [Field K] [Field k] [Field B] [Field B'] [Field E]
+  [Algebra K k] [Algebra K B] [Algebra k B'] [Algebra B B'] [Algebra B' E] [Algebra B E]
+  [Algebra k E] [Algebra K E] [IsScalarTower B B' E] [IsScalarTower K B E]
+  [IsScalarTower k B' E] [IsScalarTower K k E]
+
+/-- **Exact constants of a descended simple extension.** Suppose `K` is integrally closed in `B`
+and `k` is integrally closed in `E` in a commuting square of fields `K → k → B' → E` and
+`K → B → B' → E`. If `minpoly B' z` has coefficients in `B`, then `K` is integrally closed in
+`B⟮z⟯`: any element of `B⟮z⟯` integral over `K` becomes a constant in `k` inside `E` while also
+being a polynomial in `z` over `B` of degree `< deg(minpoly B' z)`, forcing its non-constant
+coefficients to vanish. -/
+theorem isIntegrallyClosedIn_adjoin_simple_of_minpoly_mem_lifts (hexB : IsIntegrallyClosedIn K B)
+    (hexE : IsIntegrallyClosedIn k E) {z : E} (hlift : minpoly B' z ∈ lifts (algebraMap B B')) :
+    IsIntegrallyClosedIn K B⟮z⟯ := by
+  have := hexB
+  have := hexE
+  by_cases hz : IsIntegral B' z
+  · refine isIntegrallyClosedIn_iff.mpr ⟨(algebraMap K B⟮z⟯).injective, fun {x} hx ↦ ?_⟩
+    have hzB : IsIntegral B z := hz.of_minpoly_mem_lifts hlift
+    let pb := adjoin.powerBasis hzB
+    obtain ⟨f, hfdeg, rfl⟩ := pb.exists_eq_aeval x
+    have hxE : IsIntegral K ((aeval pb.gen f : B⟮z⟯) : E) := by
+      simpa only [AlgHom.restrictScalars_apply, IntermediateField.coe_val] using
+        hx.map (B⟮z⟯.val.restrictScalars K)
+    obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp (hxE.tower_top (A := k))
+    let g : B'[X] := f.map (algebraMap B B') - C (algebraMap k B' c)
+    have haeval : aeval z g = 0 := by
+      simp only [g, map_sub, aeval_map_algebraMap, aeval_C]
+      have hcoe : ((aeval pb.gen f : B⟮z⟯) : E) = aeval z f := by
+        simp [pb, adjoin.powerBasis_gen]
+      rw [← hcoe, ← hc, IsScalarTower.algebraMap_apply k B' E, sub_self]
+    have hg0 : g = 0 := by
+      by_contra hg0
+      have hdvd : minpoly B' z ∣ g := minpoly.dvd B' z haeval
+      have hle : (minpoly B' z).natDegree ≤ g.natDegree := natDegree_le_of_dvd hdvd hg0
+      have hdim : pb.dim = (minpoly B' z).natDegree := by
+        rw [adjoin.powerBasis_dim, ← minpoly.map_algebraMap hzB hlift,
+          natDegree_map_eq_of_injective (algebraMap B B').injective]
+      have hlt : g.natDegree < (minpoly B' z).natDegree := by
+        refine (natDegree_sub_le _ _).trans_lt (max_lt ?_ ?_)
+        · exact natDegree_map_le.trans_lt (hdim ▸ hfdeg)
+        · rw [natDegree_C]
+          exact minpoly.natDegree_pos hz
+      exact hle.not_gt hlt
+    have hfmap : f.map (algebraMap B B') = C (algebraMap k B' c) := sub_eq_zero.mp hg0
+    have hfC : f = C (f.coeff 0) := by
+      ext n
+      rcases eq_or_ne n 0 with rfl | hn
+      · simp
+      · apply (algebraMap B B').injective
+        simpa [coeff_C, hn] using congr_arg (fun p ↦ p.coeff n) hfmap
+    have hval : aeval pb.gen f = algebraMap B B⟮z⟯ (f.coeff 0) := by
+      conv_lhs => rw [hfC, aeval_C]
+    rw [hval] at hx ⊢
+    obtain ⟨a, ha⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp (isIntegral_algebraMap_iff.mp hx)
+    exact ⟨a, by rw [IsScalarTower.algebraMap_apply K B B⟮z⟯, ha]⟩
+  · have hzB : Transcendental B z := fun halg ↦ hz halg.isIntegral.tower_top
+    have : IsIntegrallyClosedIn B B⟮z⟯ := Transcendental.isIntegrallyClosedIn_adjoin hzB
+    exact IsIntegralClosure.of_isIntegralClosure_of_isIntegrallyClosedIn K K B B⟮z⟯
+
+end General
+
 variable {K k E : Type*} [Field K] [Field k] [Field E]
   [Algebra (RatFunc K) (RatFunc k)] [Algebra (RatFunc k) E] [Algebra (RatFunc K) E]
-  [IsScalarTower (RatFunc K) (RatFunc k) E] [Algebra K k] [IsScalarTower K (RatFunc K) (RatFunc k)]
+  [IsScalarTower (RatFunc K) (RatFunc k) E] [Algebra K k]
+
+/-- If `k` is integrally closed in `E` and `minpoly (RatFunc k) z` lifts to `RatFunc K`, then `K`
+is integrally closed in `(RatFunc K)⟮z⟯`. -/
+theorem isIntegrallyClosedIn_adjoin_simple_ratFunc_of_minpoly_mem_lifts
+    [Algebra K E] [Algebra k E] [IsScalarTower K (RatFunc K) E]
+    [IsScalarTower k (RatFunc k) E] [IsScalarTower K k E]
+    (hex : IsIntegrallyClosedIn k E) {z : E}
+    (hlift : minpoly (RatFunc k) z ∈ lifts (algebraMap (RatFunc K) (RatFunc k))) :
+    IsIntegrallyClosedIn K (RatFunc K)⟮z⟯ :=
+  isIntegrallyClosedIn_adjoin_simple_of_minpoly_mem_lifts isIntegrallyClosedIn_ratFunc hex hlift
+
+variable [IsScalarTower K (RatFunc K) (RatFunc k)]
 
 /-- **Degree of the descended field.** Let `S` be a set of automorphisms of `k` whose common
 fixed points are the image of `K`. If `z` generates `E` over `k(t)` and its minimal polynomial over
@@ -65,5 +149,20 @@ theorem finrank_adjoin_simple_ratFunc_eq_of_forall_map_mapRingEquiv_eq
     Module.finrank (RatFunc K) (RatFunc K)⟮z⟯ = Module.finrank (RatFunc k) E := by
   rw [finrank_adjoin_simple_eq_of_minpoly_mem_lifts
     (RatFunc.mem_lifts_of_forall_map_mapRingEquiv_eq hX hS hfix), hgen, finrank_top']
+
+/-- **Exact constants of the descended field.** Under the same automorphism-invariance hypothesis
+as `finrank_adjoin_simple_ratFunc_eq_of_forall_map_mapRingEquiv_eq`, if `k` is integrally closed
+in `E`, then `K` is integrally closed in `K(t)(z)`. -/
+theorem isIntegrallyClosedIn_adjoin_simple_ratFunc_of_forall_map_mapRingEquiv_eq
+    [Algebra K E] [Algebra k E] [IsScalarTower K (RatFunc K) E]
+    [IsScalarTower k (RatFunc k) E] [IsScalarTower K k E]
+    (hex : IsIntegrallyClosedIn k E)
+    (hX : algebraMap (RatFunc K) (RatFunc k) RatFunc.X = RatFunc.X) {S : Set (k ≃+* k)}
+    (hS : ∀ c : k, (∀ σ ∈ S, σ c = c) → c ∈ Set.range (algebraMap K k)) {z : E}
+    (hfix : ∀ σ ∈ S, (minpoly (RatFunc k) z).map
+      (RatFunc.mapRingEquiv σ : RatFunc k →+* RatFunc k) = minpoly (RatFunc k) z) :
+    IsIntegrallyClosedIn K (RatFunc K)⟮z⟯ :=
+  isIntegrallyClosedIn_adjoin_simple_ratFunc_of_minpoly_mem_lifts hex
+    (RatFunc.mem_lifts_of_forall_map_mapRingEquiv_eq hX hS hfix)
 
 end TauCeti
