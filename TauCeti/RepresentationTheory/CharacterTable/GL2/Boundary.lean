@@ -88,9 +88,9 @@ theorem character_GL2PrincipalSeries_self_eq_add (α : Fˣ →* ℂˣ) :
 /-! ### Irreducibility of the constituents
 
 Mathlib's character-norm criterion currently requires the coefficient field and the group in the
-same universe. Accordingly the two Steinberg packaging results below use `F : Type`, as does the
-existing irreducibility theorem for the non-boundary principal series. The representations, their
-splitting, and the irreducibility of the linear constituent all remain universe-polymorphic. -/
+same universe. Accordingly the two Steinberg packaging results below use `F : Type`. The
+representations, their splitting, and the irreducibility of the linear constituent all remain
+universe-polymorphic. -/
 
 section SmallUniverse
 
