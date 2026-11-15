@@ -40,7 +40,9 @@ of `ι` other than the one of the point (`TauCeti.reducedSingularHomology₀IsoO
 A morphism out of zeroth homology is determined by its values on the classes of points
 (`TauCeti.singularHomology₀_hom_ext`), and any family of values on the classes of points that is
 constant along paths is attained by such a morphism (`TauCeti.singularHomology₀Desc`,
-`TauCeti.singularHomology₀Section_singularHomology₀Desc`). Points joined by a path have the same
+`TauCeti.singularHomology₀Section_singularHomology₀Desc`). An endomorphism acting on the class of
+each point by an automorphism of the coefficients that is constant along paths is an isomorphism
+(`TauCeti.isIso_of_singularHomology₀Section_comp_eq`). Points joined by a path have the same
 class (`TauCeti.singularHomology₀Section_eq_of_joined`). On a path-connected space the class of a
 point does not depend on the point, and with coefficients in a ring it spans zeroth homology
 (`TauCeti.singularHomology₀_eq_smul_singularHomology₀Section`). Since its augmentation is an
@@ -188,6 +190,22 @@ lemma singularHomology₀Section_singularHomology₀Desc {X : TopCat.{w}} {Y : C
     (hv : ∀ ⦃x y : X⦄, Path x y → v x = v y) (x : X) :
     singularHomology₀Section R x ≫ singularHomology₀Desc R v hv = v x := by
   simp [singularHomology₀Desc]
+
+/-- An endomorphism of zeroth singular homology that acts on the class of each point `x` by an
+automorphism `u x` of the coefficients, with `u` constant along paths, is an isomorphism: its
+inverse acts on the class of `x` by the inverse of `u x`. -/
+theorem isIso_of_singularHomology₀Section_comp_eq {X : TopCat.{w}}
+    {f : ((singularHomologyFunctor C 0).obj R).obj X ⟶ ((singularHomologyFunctor C 0).obj R).obj X}
+    (u : X → (R ≅ R)) (hu : ∀ ⦃x y : X⦄, Path x y → u x = u y)
+    (hf : ∀ x, singularHomology₀Section R x ≫ f = (u x).hom ≫ singularHomology₀Section R x) :
+    IsIso f := by
+  let g := singularHomology₀Desc R (fun x ↦ (u x).inv ≫ singularHomology₀Section R x)
+    fun _ _ γ ↦ by rw [hu γ, singularHomology₀Section_eq_of_joined R ⟨γ⟩]
+  refine ⟨g, singularHomology₀_hom_ext R fun x ↦ ?_, singularHomology₀_hom_ext R fun x ↦ ?_⟩
+  · rw [reassoc_of% (hf x), singularHomology₀Section_singularHomology₀Desc,
+      Iso.hom_inv_id_assoc, Category.comp_id]
+  · rw [singularHomology₀Section_singularHomology₀Desc_assoc, Category.assoc, hf x,
+      Iso.inv_hom_id_assoc, Category.comp_id]
 
 variable [HasKernels C]
 
