@@ -27,10 +27,9 @@ minimal) graded projective resolution over any commutative coefficient ring `k`,
 acyclicity, finite-dimensionality, or outgoing-arrow finiteness assumption on `Q`.
 
 In `K₀^gr(proj kQ)`, `[P₀(Sᵢ)] = [kQ eᵢ]` and `[Pₙ(Sᵢ)] = 0` for `n ≥ 2` unconditionally, while
-for a vertex `i` with finitely many outgoing arrows `[P₁(Sᵢ)] = ∑ⱼ #{a : i ⟶ j} q [kQ eⱼ]`. Over a
-field `k`, each graded vertex simple is one-dimensional with idempotent graded dimensions `δᵢⱼ`,
-and when `kQ` is finite-dimensional these formulas give the coordinates of the resolution terms in
-`TauCeti.PathAlgebra.gradedVertexProjectiveClassBasis`.
+for a vertex `i` with finitely many outgoing arrows `[P₁(Sᵢ)] = ∑ⱼ #{a : i ⟶ j} q [kQ eⱼ]`. When
+`k` is a field and `kQ` is finite-dimensional, these formulas give the coordinates of the
+resolution terms in `TauCeti.PathAlgebra.gradedVertexProjectiveClassBasis`.
 
 ## Main definitions
 
@@ -39,21 +38,17 @@ and when `kQ` is finite-dimensional these formulas give the coordinates of the r
 
 ## Main results
 
-* `TauCeti.PathAlgebra.isGeneratedInDegree_gradedVertexProjective` and
-  `TauCeti.PathAlgebra.isGeneratedInDegree_gradedArrowSum`: `kQ eᵢ` is generated in degree `0`
-  and `⨁_{a : i ⟶ j} (kQ eⱼ){1}` is generated in degree `1`.
-* `TauCeti.PathAlgebra.gradedVertexSimple_piece_eq_bot`: `Sᵢ` is concentrated in internal degree
-  `0` over any commutative ring.
 * `TauCeti.PathAlgebra.isLinear_gradedVertexSimpleProjectiveResolution` and
   `TauCeti.PathAlgebra.isMinimal_gradedVertexSimpleProjectiveResolution`: the first-arrow
   resolution of `Sᵢ` is linear and minimal.
 * `TauCeti.PathAlgebra.laurentK0_finiteProjectiveTerm_gradedVertexSimpleProjectiveResolution_zero`,
   `TauCeti.PathAlgebra.laurentK0_finiteProjectiveTerm_gradedVertexSimpleProjectiveResolution_one`,
-  `TauCeti.PathAlgebra.laurentK0_finiteProjectiveTerm_gradedVertexSimpleProjectiveResolution_succ`:
+`TauCeti.PathAlgebra.laurentK0_finiteProjectiveTerm_gradedVertexSimpleProjectiveResolution_add_two`:
   Grothendieck classes of the resolution terms in `K₀^gr(proj kQ)`.
-* `TauCeti.PathAlgebra.finrank_gradedVertexSimple` and
-  `TauCeti.PathAlgebra.smulGradedDimension_gradedVertexSimple`: dimension and idempotent graded
-  dimensions of `Sᵢ` for any finite-vertex quiver over a field.
+* `TauCeti.PathAlgebra.gradedVertexProjectiveClassBasis_repr_finiteProjectiveTerm_zero`,
+  `TauCeti.PathAlgebra.gradedVertexProjectiveClassBasis_repr_finiteProjectiveTerm_one`, and
+  `TauCeti.PathAlgebra.gradedVertexProjectiveClassBasis_repr_finiteProjectiveTerm_add_two`:
+  coordinates of `[Pₙ(Sᵢ)]` in `TauCeti.PathAlgebra.gradedVertexProjectiveClassBasis`.
 
 ## References
 
@@ -70,7 +65,6 @@ noncomputable section
 namespace TauCeti.PathAlgebra
 
 open CategoryTheory CategoryTheory.Limits LaurentPolynomial
-open scoped Pointwise
 
 attribute [local instance] integerGradedAlgebra
 
@@ -79,43 +73,6 @@ universe u v w
 section CommRing
 
 variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v} Q] [Finite Q]
-
-/-- The graded vertex projective `kQ eᵢ` is generated in internal degree `0`. -/
-theorem isGeneratedInDegree_gradedVertexProjective (i : Q) :
-    (gradedVertexProjective k Q i).grading.IsGeneratedInDegree (pathAlgebra k Q) 0 := by
-  rw [gradedVertexProjective_def]
-  exact GradedModuleCat.isGeneratedInDegree_ofIdeal_span_singleton
-    (vertexIdempotent_mem_integerGrade_zero k Q i)
-    (isHomogeneous_span_vertexIdempotent k Q i)
-
-/-- The shifted arrow kernel `⨁_{a : i ⟶ j} (kQ eⱼ){1}` is generated in internal degree `1`. -/
-theorem isGeneratedInDegree_gradedArrowSum (i : Q) :
-    (gradedArrowSum k Q i).grading.IsGeneratedInDegree (pathAlgebra k Q) 1 := by
-  let _ := integerGradedAlgebra k Q
-  refine (InternalGrading.isGeneratedInDegree_directSum_iff _ 1).mpr fun a => ?_
-  rw [InternalGrading.isGeneratedInDegree_shift_iff, add_neg_cancel]
-  exact isGeneratedInDegree_gradedVertexProjective k Q a.1
-
-/-- The underlying `kQ`-module of `gradedArrowSum k Q i` is projective. -/
-instance moduleProjective_gradedArrowSum (i : Q) :
-    Module.Projective (pathAlgebra k Q) (gradedArrowSum k Q i) :=
-  Module.Projective.directSum_iff.mpr fun a =>
-    inferInstanceAs (Module.Projective (pathAlgebra k Q) (gradedVertexProjective k Q a.1))
-
-/-- The underlying `kQ`-module of `gradedVertexProjective k Q i` is finitely generated. -/
-instance moduleFinite_gradedVertexProjective (i : Q) :
-    Module.Finite (pathAlgebra k Q) (gradedVertexProjective k Q i) :=
-  (gradedFiniteProjectiveModules_iff.1
-    (gradedFiniteProjectiveModules_gradedVertexProjective k Q i)).1
-
-/-- Every graded vertex simple is concentrated in internal degree `0`. -/
-theorem gradedVertexSimple_piece_eq_bot (i : Q) {p : ℤ} (hp : p ≠ 0) :
-    (gradedVertexSimple k Q i).grading.piece p = ⊥ := by
-  rw [gradedVertexSimple_def]
-  exact gradedPositiveMulQuotient_piece_eq_bot
-    (fun _ => integerGrade_eq_bot_of_neg k Q)
-    (vertexIdempotent_mul_self i)
-    (vertexIdempotent_mem_integerGrade_zero k Q i) hp
 
 /-- **The first-arrow graded projective resolution of a vertex simple `Sᵢ`.** Its degree-`0` term
 is `kQ eᵢ`, its degree-`1` term is `⨁_{a : i ⟶ j} (kQ eⱼ){1}`, and its terms vanish from
@@ -194,7 +151,7 @@ theorem laurentK0_finiteProjectiveTerm_gradedVertexSimpleProjectiveResolution_ze
 /-- From homological degree `2` on, the terms of the resolution of `Sᵢ` have class `0` in
 `K₀^gr(proj kQ)`. -/
 @[simp]
-theorem laurentK0_finiteProjectiveTerm_gradedVertexSimpleProjectiveResolution_succ
+theorem laurentK0_finiteProjectiveTerm_gradedVertexSimpleProjectiveResolution_add_two
     (i : Q) (n : ℕ) :
     LaurentK0.of.{max u v w}
         (gradedFiniteProjectiveModulesExactStructure (integerGrade k Q))
@@ -204,18 +161,6 @@ theorem laurentK0_finiteProjectiveTerm_gradedVertexSimpleProjectiveResolution_su
     rw [GradedProjectiveResolution.finiteProjectiveTerm_obj]
     infer_instance
   exact laurentK0_projective_of_eq_zero_of_subsingleton _
-
-/-- When `i` has finitely many outgoing arrows, `gradedArrowSum k Q i` is finitely generated over
-`kQ`. -/
-instance moduleFinite_gradedArrowSum (i : Q) [Finite ((j : Q) × (i ⟶ j))] :
-    Module.Finite (pathAlgebra k Q) (gradedArrowSum k Q i) :=
-  gradedFiniteModules_iff.1 (gradedFiniteModules_gradedArrowSum k Q i)
-
-/-- When `i` has finitely many outgoing arrows, `gradedArrowSum k Q i` belongs to the finite graded
-projective subcategory. -/
-theorem gradedFiniteProjectiveModules_gradedArrowSum (i : Q) [Finite ((j : Q) × (i ⟶ j))] :
-    gradedFiniteProjectiveModules (integerGrade k Q) (gradedArrowSum k Q i) :=
-  gradedFiniteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩
 
 /-- The class of `gradedArrowSum k Q i` in `K₀^gr(proj kQ)` is `q` times the sum of `[kQ eⱼ]`
 over all outgoing arrows `a : i ⟶ j`. -/
@@ -281,62 +226,12 @@ theorem laurentK0_finiteProjectiveTerm_gradedVertexSimpleProjectiveResolution_on
 
 end Fintype
 
-/-! ### Dimension and basis coordinates over a field -/
+/-! ### Basis coordinates of the resolution terms -/
 
 section Field
 
 variable (k : Type w) (Q : Type u) [Field k] [Quiver.{v} Q] [Finite Q]
-
-/-- Every graded vertex simple is one-dimensional over `k`, with no acyclicity assumption on `Q`. -/
-@[simp]
-theorem finrank_gradedVertexSimple (i : Q) :
-    Module.finrank k (gradedVertexSimple k Q i) = 1 := by
-  let _ := Fintype.ofFinite Q
-  rw [gradedVertexSimple_def]
-  exact finrank_gradedIdempotentHead
-    (fun _ => integerGrade_eq_bot_of_neg k Q)
-    (completeOrthogonalIdempotents_vertexIdempotent k Q).toOrthogonalIdempotents
-    (vertexIdempotent_mem_integerGrade_zero k Q)
-    (integerGrade_zero_eq_span_range_vertexIdempotent k Q).le i
-    (vertexIdempotent_ne_zero i)
-
-/-- Every graded vertex simple is finite-dimensional over `k`, even when `pathAlgebra k Q` is
-infinite-dimensional. -/
-instance moduleFinite_base_gradedVertexSimple (i : Q) :
-    Module.Finite k (gradedVertexSimple k Q i) :=
-  Module.finite_of_finrank_eq_succ (finrank_gradedVertexSimple k Q i)
-
-/-- The `eᵢ`-graded dimension of the graded vertex simple `Sⱼ` is the Kronecker delta `δᵢⱼ`. -/
-@[simp]
-theorem smulGradedDimension_gradedVertexSimple [DecidableEq Q] (i j : Q) :
-    (gradedVertexSimple k Q j).smulGradedDimension (vertexIdempotent k i) =
-      if i = j then 1 else 0 := by
-  let _ := Fintype.ofFinite Q
-  have : Module.Finite k
-      (gradedPositiveMulQuotient (integerGrade k Q)
-        (vertexIdempotent_mem_integerGrade_zero k Q j)) :=
-    gradedVertexSimple_def (k := k) (Q := Q) j ▸ inferInstance
-  simpa only [gradedVertexSimple_def] using smulGradedDimension_gradedIdempotentHead
-    (fun _ => integerGrade_eq_bot_of_neg k Q)
-    (completeOrthogonalIdempotents_vertexIdempotent k Q).toOrthogonalIdempotents
-    (vertexIdempotent_mem_integerGrade_zero k Q)
-    (integerGrade_zero_eq_span_range_vertexIdempotent k Q).le i j
-    (vertexIdempotent_ne_zero j)
-
-/-- On the degree-`0` piece of `Sⱼ`, the subspace cut out by `eᵢ` has dimension `δᵢⱼ`. -/
-@[simp]
-theorem finrank_vertexIdempotent_smul_gradedVertexSimple_piece_zero [DecidableEq Q] (i j : Q) :
-    Module.finrank k
-        ↥(vertexIdempotent k i • (gradedVertexSimple k Q j).grading.piece 0) =
-      if i = j then 1 else 0 := by
-  have h := congrArg (fun p : LaurentPolynomial ℤ => p.coeff 0)
-    (smulGradedDimension_gradedVertexSimple k Q i j)
-  rw [GradedModuleCat.coeff_smulGradedDimension] at h
-  by_cases hij : i = j <;> simpa [hij] using h
-
-section FiniteDimensional
-
-variable [FiniteDimensional k (pathAlgebra k Q)]
+  [FiniteDimensional k (pathAlgebra k Q)]
 
 /-- In `gradedVertexProjectiveClassBasis`, the `j`th coordinate of `[P₀(Sᵢ)]` is `δᵢⱼ`. -/
 theorem gradedVertexProjectiveClassBasis_repr_finiteProjectiveTerm_zero
@@ -370,14 +265,12 @@ theorem gradedVertexProjectiveClassBasis_repr_finiteProjectiveTerm_one (i j : Q)
   simp
 
 /-- From homological degree `2` on, all coordinates of `[P_{n+2}(Sᵢ)]` vanish. -/
-theorem gradedVertexProjectiveClassBasis_repr_finiteProjectiveTerm_succ (i j : Q) (n : ℕ) :
+theorem gradedVertexProjectiveClassBasis_repr_finiteProjectiveTerm_add_two (i j : Q) (n : ℕ) :
     (gradedVertexProjectiveClassBasis k Q).repr
         (LaurentK0.of.{max u v w} _
           ((gradedVertexSimpleProjectiveResolution k Q i).finiteProjectiveTerm (n + 2))) j = 0 := by
-  rw [laurentK0_finiteProjectiveTerm_gradedVertexSimpleProjectiveResolution_succ,
+  rw [laurentK0_finiteProjectiveTerm_gradedVertexSimpleProjectiveResolution_add_two,
     map_zero, Finsupp.zero_apply]
-
-end FiniteDimensional
 
 end Field
 

@@ -47,6 +47,8 @@ weights.
   one-point family `Pi.single` at the last index.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
+* `LinearEquiv.piProjOfSubsingleton`: projection onto a coordinate `j` of `∀ i, M i` as a linear
+  equivalence when all other factors are subsingletons, with inverse `Pi.single j`.
 * `LinearMap.toMatrix_piMap`: in product bases, `LinearMap.piMap f` is block diagonal, including
   when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
@@ -231,6 +233,38 @@ public theorem piEquivPiSubtypeProd_apply (f : (i : ι) → M i) :
 public theorem piEquivPiSubtypeProd_symm_apply
     (f : ((i : {x : ι // p x}) → M i) × ((i : {x : ι // ¬p x}) → M i)) (i : ι) :
     (piEquivPiSubtypeProd R p M).symm f i = if h : p i then f.1 ⟨i, h⟩ else f.2 ⟨i, h⟩ := (rfl)
+
+section ProjOfSubsingleton
+
+variable (R : Type*) {ι : Type*} [Semiring R] [DecidableEq ι] {M : ι → Type*}
+  [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+
+/-- **Projection onto the sole nontrivial factor of a dependent product.** When every coordinate
+other than `j` is a subsingleton, evaluating at `j` is an `R`-linear equivalence
+`((i : ι) → M i) ≃ₗ[R] M j` with inverse `Pi.single j`. -/
+public def piProjOfSubsingleton (j : ι) (h : ∀ i, i ≠ j → Subsingleton (M i)) :
+    ((i : ι) → M i) ≃ₗ[R] M j :=
+  LinearEquiv.ofLinearMap (LinearMap.proj j) (LinearMap.single R M j)
+    (LinearMap.proj_comp_single_same R M j)
+    (LinearMap.ext fun f => funext fun i => by
+      by_cases hij : i = j
+      · subst hij; simp
+      · have := h i hij
+        exact Subsingleton.elim _ _)
+
+/-- `LinearEquiv.piProjOfSubsingleton` evaluates a family at the distinguished index `j`. -/
+@[simp]
+public theorem piProjOfSubsingleton_apply (j : ι) (h : ∀ i, i ≠ j → Subsingleton (M i))
+    (f : (i : ι) → M i) :
+    piProjOfSubsingleton R j h f = f j := (rfl)
+
+/-- The inverse of `LinearEquiv.piProjOfSubsingleton` embeds `M j` as `Pi.single j`. -/
+@[simp]
+public theorem piProjOfSubsingleton_symm_apply (j : ι) (h : ∀ i, i ≠ j → Subsingleton (M i))
+    (x : M j) :
+    (piProjOfSubsingleton R j h).symm x = Pi.single j x := (rfl)
+
+end ProjOfSubsingleton
 
 end LinearEquiv
 

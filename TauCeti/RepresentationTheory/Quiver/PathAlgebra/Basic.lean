@@ -64,7 +64,8 @@ idempotents `e`, so left multiplication by `α` carries the `i`-component of a l
 * `TauCeti.pathAlgebraBasis_repr_mul_nil`: the coordinate on the trivial path at `v` is
   multiplicative, a product of paths being that trivial path only when both factors are
   (`TauCeti.Quiver.TotalPath.eq_nil_iff_of_mul?_eq_some`).
-* `TauCeti.PathAlgebra.sum_mul_ofArrow_eq_zero_iff`: uniqueness of the first-arrow decomposition
+* `TauCeti.PathAlgebra.finset_sum_mul_ofArrow_eq_zero_iff` and
+  `TauCeti.PathAlgebra.sum_mul_ofArrow_eq_zero_iff`: uniqueness of the first-arrow decomposition
   `∑_a f_a a`.
 * `TauCeti.PathAlgebra.adjoin_vertexIdempotents_union_arrows`: the vertex idempotents and arrows
   generate the path algebra.
@@ -1249,18 +1250,19 @@ theorem pathAlgebraBasis_repr_mul_ofPath_toPath_toPath_comp_of_ne {i j j' t : Q}
     (pathAlgebraBasis k Q).repr (f * ofPath ⟨i, j', a'.toPath⟩) ⟨i, t, a.toPath.comp q⟩ = 0 :=
   pathAlgebraBasis_repr_mul_ofArrow_toPath_comp_of_ne a a' ha q f
 
-/-- **Uniqueness of the first-arrow decomposition.** A sum `∑_{a : i ⟶ j} f_a a` vanishes exactly
-when each `f_a` is killed by the vertex idempotent at the target of `a`: distinct arrows `a` out of
-`i` followed by paths `q` are distinct basis paths. Only the part `f_a eⱼ` of `f_a` on paths
-starting at `j` contributes to `f_a a`. -/
-theorem sum_mul_ofArrow_eq_zero_iff {i : Q} [Fintype ((j : Q) × (i ⟶ j))]
+/-- **Uniqueness of the first-arrow decomposition on a finite set of arrows.** A finite sum
+`∑_{a ∈ s} f_a a` vanishes exactly when, for every `a ∈ s`, `f_a` is killed on the right by the
+vertex idempotent at the target of `a`: distinct arrows `a` out of `i` followed by paths `q` are
+distinct basis paths, and only the part `f_a eⱼ` of `f_a` on paths starting at `j` contributes to
+`f_a a`. -/
+theorem finset_sum_mul_ofArrow_eq_zero_iff {i : Q} {s : Finset ((j : Q) × (i ⟶ j))}
     {f : (j : Q) × (i ⟶ j) → pathAlgebra k Q} :
-    ∑ a, f a * ofArrow a.2 = 0 ↔ ∀ a, f a * vertexIdempotent k a.1 = 0 := by
+    ∑ a ∈ s, f a * ofArrow a.2 = 0 ↔ ∀ a ∈ s, f a * vertexIdempotent k a.1 = 0 := by
   classical
   constructor
-  · intro h a
+  · intro h a ha
     refine (pathAlgebraBasis k Q).repr.injective (Finsupp.ext fun x => ?_)
-    obtain ⟨s, t, q⟩ := x
+    obtain ⟨s', t, q⟩ := x
     rw [pathAlgebraBasis_repr_mul_vertexIdempotent, map_zero, Finsupp.coe_zero, Pi.zero_apply]
     split_ifs with hs
     · subst hs
@@ -1272,11 +1274,20 @@ theorem sum_mul_ofArrow_eq_zero_iff {i : Q} [Fintype ((j : Q) × (i ⟶ j))]
       · exact h'
       · intro a' _ ha'
         exact pathAlgebraBasis_repr_mul_ofArrow_toPath_comp_of_ne a.2 a'.2 ha' q _
-      · simp
+      · exact fun habs => (habs ha).elim
     · rfl
   · intro h
-    refine Finset.sum_eq_zero fun a _ => ?_
-    rw [ofArrow_eq_ofPath, ← vertexIdempotent_mul_ofPath, ← mul_assoc, h, zero_mul]
+    refine Finset.sum_eq_zero fun a ha => ?_
+    rw [ofArrow_eq_ofPath, ← vertexIdempotent_mul_ofPath, ← mul_assoc, h a ha, zero_mul]
+
+/-- **Uniqueness of the first-arrow decomposition.** A sum `∑_{a : i ⟶ j} f_a a` vanishes exactly
+when each `f_a` is killed by the vertex idempotent at the target of `a`: distinct arrows `a` out of
+`i` followed by paths `q` are distinct basis paths. Only the part `f_a eⱼ` of `f_a` on paths
+starting at `j` contributes to `f_a a`. -/
+theorem sum_mul_ofArrow_eq_zero_iff {i : Q} [Fintype ((j : Q) × (i ⟶ j))]
+    {f : (j : Q) × (i ⟶ j) → pathAlgebra k Q} :
+    ∑ a, f a * ofArrow a.2 = 0 ↔ ∀ a, f a * vertexIdempotent k a.1 = 0 := by
+  simpa using finset_sum_mul_ofArrow_eq_zero_iff (s := Finset.univ) (f := f)
 
 end ArrowCoordinates
 
