@@ -258,7 +258,6 @@ theorem tensorStalkEquiv_naturality
   conv_rhs =>
     erw [PresheafOfModules.stalkMapCommRing_germ (S := R.obj) x f.val,
       PresheafOfModules.stalkMapCommRing_germ (S := R.obj) x g.val]
-  rfl
 
 end SheafOfModules
 

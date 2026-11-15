@@ -274,7 +274,9 @@ instance forgetLaxMonoidal : (_root_.SheafOfModules.forget (ringCatSheaf R)).Lax
 right adjoint of braided monoidal sheafification. -/
 instance forgetLaxBraided : (_root_.SheafOfModules.forget (ringCatSheaf R)).LaxBraided where
   toLaxMonoidal := forgetLaxMonoidal R
-  braided := (sheafificationForgetAdjunction R).μ_comp_map_braiding_hom fun _ _ ↦ by simp
+  braided := (sheafificationForgetAdjunction R).μ_comp_map_braiding_hom fun X Y ↦ by
+    rw [Functor.map_braiding (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)) X Y]
+    simp only [assoc, Functor.Monoidal.μ_δ, comp_id]
 
 /-- The unit map of the inclusion of sheaves of modules into presheaves of modules is the
 identity. -/
