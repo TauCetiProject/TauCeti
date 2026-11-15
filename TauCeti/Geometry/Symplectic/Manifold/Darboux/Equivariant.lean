@@ -50,8 +50,10 @@ along `e⁻¹`, the form `σ` becomes a two-form `ζ` on the open set `e.target 
 at `0`. It is closed by naturality of the exterior derivative under pullback, and `ρ`-invariant
 because `e⁻¹ ∘ ρ g = (g • ·) ∘ e⁻¹` and `σ` is `G`-invariant. The flat equivariant Darboux theorem
 (`TauCeti.exists_equivariant_diffeomorph_compContinuousLinearMap_fderiv_eq`), applied on a
-`ρ`-invariant convex neighbourhood of `0`, gives a `ρ`-equivariant diffeomorphism `ψ` of `E` fixing
-`0` with `ψ^* ζ = ζ(0) = σ_{x₀}`, and the chart is `ψ⁻¹ ∘ e`.
+`ρ`-invariant convex neighbourhood of `0`, gives a diffeomorphism `ψ` of `E` fixing `0` and a
+`ρ`-invariant open neighbourhood `U` of `0` on which `ψ` commutes with every `ρ g` and
+`ψ^* ζ = ζ(0) = σ_{x₀}`. The chart is `ψ⁻¹ ∘ e`, restricted to a `G`-invariant open
+neighbourhood of `x₀` that it maps into `U`.
 
 ## Main results
 
