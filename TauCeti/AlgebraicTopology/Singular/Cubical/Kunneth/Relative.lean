@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.CategoryTheory
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Projective
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Connecting
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Excision
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth
@@ -37,7 +38,10 @@ the pair in the second factor.
 Consequently the relative Künneth map
 `⨁_{p + q = n} Hₚ(X; k) ⊗ H_q(Y, B; k) ⟶ Hₙ(X × Y, X × B; k)`
 (`TauCeti.cubicalHomologyKunnethRel`) is an isomorphism whenever the algebraic Künneth map of the
-chain complexes is, for instance over a field (`TauCeti.isIso_cubicalHomologyKunnethRel`). The
+chain complexes is, for instance over a field (`TauCeti.isIso_cubicalHomologyKunnethRel`), or over
+any commutative ring when the relative homology of the pair is projective
+(`TauCeti.isIso_cubicalHomologyKunnethRel_of_projective`), as it is for a cube modulo its
+boundary. The
 connecting morphism of the pair `X × (Y, B)` sends `x × y` to `(-1)ᵖ x × δ y` for `x ∈ Hₚ(X)`
 (`TauCeti.homologyCross_comp_homologyMap_cubicalCrossProductRel_comp_cubicalHomologyδ`): the
 boundary of a product with a relative class is the product with its boundary.
@@ -54,6 +58,8 @@ boundary of a product with a relative class is the product with its boundary.
 
 * `TauCeti.quasiIso_cubicalCrossProductRel`: the relative cross product is a quasi-isomorphism.
 * `TauCeti.isIso_cubicalHomologyKunnethRel`: the relative Künneth theorem.
+* `TauCeti.isIso_cubicalHomologyKunnethRel_of_projective`: the relative Künneth theorem for a pair
+  with projective relative homology, over every commutative ring.
 * `TauCeti.homologyCross_comp_homologyMap_cubicalCrossProductRel_comp_cubicalHomologyδ`: the
   connecting morphism of `X × (Y, B)` on a relative cross product.
 
@@ -289,6 +295,18 @@ theorem isIso_cubicalHomologyKunnethRel
 instance isIso_cubicalHomologyKunnethRel_of_isSemisimpleRing [IsSemisimpleRing k] (n : ℕ) :
     IsIso (cubicalHomologyKunnethRel k X P n) :=
   isIso_cubicalHomologyKunnethRel k X P n
+
+/-- **The relative Künneth theorem for a pair with projective relative homology**: if the relative
+cubical homology modules of `P = (Y, B)` are projective, for instance free, then for every space
+`X` the relative Künneth map `⨁_{p + q = n} Hₚ(X; k) ⊗ H_q(Y, B; k) ⟶ Hₙ(X × Y, X × B; k)` is an
+isomorphism, over every commutative ring `k` and with no condition on `X`. -/
+theorem isIso_cubicalHomologyKunnethRel_of_projective
+    [∀ q, Module.Projective k ((P.cubicalChainComplex k).homology q)] (n : ℕ) :
+    IsIso (cubicalHomologyKunnethRel k X P n) := by
+  have := isIso_homologyKunneth_of_projective_right (P.cubicalChainComplex k)
+    ((normalizedCubicalChainComplex k).obj X) n
+  rw [cubicalHomologyKunnethRel_def]
+  infer_instance
 
 /-- **The connecting morphism on a relative cross product**: the connecting morphism
 `Hₙ(X × Y, X × B) ⟶ Hₙ₋₁(X × B)` of the pair `X × (Y, B)` sends the relative cross product
