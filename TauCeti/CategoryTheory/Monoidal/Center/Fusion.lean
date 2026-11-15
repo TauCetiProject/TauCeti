@@ -33,20 +33,21 @@ centre `Center C` of a pivotal fusion category `C` over an algebraically closed 
   (supplementing the existing `Abelian (Center C)`, `instFiniteDimensionalHom`, and
   `instSimpleUnit` instances). If `C` is moreover spherical, `Center C` is a ribbon category for
   its canonical twist.
-* **Multiplicities and dimensions**: whenever `Center C` is finite semisimple, it has finitely many
-  simple classes and Frobenius reciprocity identifies the multiplicity of a simple class `Z` of
-  `Center C` in `(induction k C).obj S.repr` with the multiplicity of `S` in `Z.repr.1` (without
-  assuming a pivotal structure or simple tensor unit). For pivotal `C`, the left and right
-  dimensions of `inductionObj X` multiply those of `X` by `globalDim C`, and whenever `Center C` is
-  finite semisimple with finitely many simple classes (in particular under `globalDim C ≠ 0` or
-  `CharZero k`), `globalDim (Center C) = (globalDim C)²`.
+* **Multiplicities and dimensions**: when `C` has finitely many simple classes and `Center C` is
+  finite semisimple, `Center C` also has finitely many simple classes and Frobenius reciprocity
+  identifies the multiplicity of a simple class `Z` of `Center C` in `(induction k C).obj S.repr`
+  with the multiplicity of `S` in `Z.repr.1` (without assuming a pivotal structure or simple tensor
+  unit). For pivotal `C`, the left and right dimensions of `inductionObj X` multiply those of `X`
+  by `globalDim C`, and whenever `Center C` is finite semisimple with finitely many simple classes
+  (in particular under `globalDim C ≠ 0` or `CharZero k`), `globalDim (Center C) = (globalDim C)²`.
 
 ## Main declarations
 
 * `CategoryTheory.Center.endAlgEquivOfSimple_tensorUnit_apply`: reading an endomorphism of
   `𝟙_ (Center C)` in `k` agrees with reading its underlying endomorphism of `𝟙_ C`;
-* `CategoryTheory.Center.finite_simpleClasses_of_isFiniteSemisimpleCategory`: if `Center C` is
-  finite semisimple, it has finitely many simple isomorphism classes;
+* `CategoryTheory.Center.finite_simpleClasses_of_isFiniteSemisimpleCategory`: if `C` has finitely
+  many simple isomorphism classes and `Center C` is finite semisimple, then `Center C` has finitely
+  many simple isomorphism classes;
 * `CategoryTheory.Center.simpleMultiplicities_induction_obj`: Frobenius reciprocity for simple
   multiplicities between `C` and `Center C`;
 * `CategoryTheory.Center.forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit`:
@@ -103,16 +104,6 @@ theorem endAlgEquivOfSimple_tensorUnit_apply (f : 𝟙_ (Center C) ⟶ 𝟙_ (Ce
   simp only [smul_f, id_f]
   exact (endAlgEquivOfSimple_smul_id (k := k) (X := 𝟙_ C) (End.of f.f)).symm
 
-omit [MonoidalPreadditive C] [MonoidalLinear k C] [RigidCategory C]
-  [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] in
-private theorem endAlgEquivOfSimple_sum [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)]
-    {ι : Type*} (s : Finset ι) (f : ι → (𝟙_ C ⟶ 𝟙_ C)) :
-    endAlgEquivOfSimple k (𝟙_ C) (End.of (∑ i ∈ s, f i)) =
-      ∑ i ∈ s, endAlgEquivOfSimple k (𝟙_ C) (End.of (f i)) := by
-  induction s using Finset.cons_induction with
-  | empty => simp
-  | cons a s _ ih => rw [Finset.sum_cons, Finset.sum_cons, End.of_add, map_add, ih]
-
 end UnitScalar
 
 section SemisimpleCenter
@@ -123,8 +114,8 @@ variable (C : Type u) [Category.{v} C] [Abelian C] [Linear k C] [MonoidalCategor
   [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)]
 
 include k in
-/-- Whenever `Center C` is finite semisimple, it has finitely many isomorphism classes of simple
-objects, transferred along the faithful left adjoint `forget C` of `forgetInductionAdjunction`. -/
+/-- If `C` has finitely many isomorphism classes of simple objects and `Center C` is finite
+semisimple, then `Center C` also has finitely many isomorphism classes of simple objects. -/
 theorem finite_simpleClasses_of_isFiniteSemisimpleCategory [Finite (SimpleClasses C)]
     [IsFiniteSemisimpleCategory (Center C)] : Finite (SimpleClasses (Center C)) := by
   let := Fintype.ofFinite (SimpleClasses C)
@@ -301,32 +292,23 @@ include k in
 /-- The left pivotal dimension of `inductionObj X` is `leftDim X` composed with `globalDim C`. -/
 theorem leftDim_inductionObj [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)] (X : C) :
     leftDim (inductionObj X) = leftDim X ≫ globalDim C := by
-  suffices End.of (leftDim (inductionObj X)) = End.of (leftDim X ≫ globalDim C) from
-    congrArg End.asHom this
-  apply (endAlgEquivOfSimple k (𝟙_ C)).injective
-  rw [inductionObj, leftDim_biproduct, globalDim_def, End.of_comp, map_mul,
-    endAlgEquivOfSimple_sum, endAlgEquivOfSimple_sum, Finset.sum_mul]
+  rw [inductionObj, leftDim_biproduct, globalDim_def, Preadditive.comp_sum]
   refine Finset.sum_congr rfl fun S _ ↦ ?_
   dsimp only [inductionSummand]
-  rw [leftDim_tensor_eq_comp_of_simple k, leftDim_tensor_eq_comp_of_simple k, End.of_comp,
-    End.of_comp, End.of_comp, map_mul, map_mul, map_mul]
-  ring
+  rw [leftDim_tensor_eq_comp_of_simple k, leftDim_tensor_eq_comp_of_simple k,
+    ← Category.assoc, scalar_comm (leftDim S.repr), Category.assoc]
 
 omit [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] in
 include k in
 /-- The right pivotal dimension of `inductionObj X` is `rightDim X` composed with `globalDim C`. -/
 theorem rightDim_inductionObj [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)] (X : C) :
     rightDim (inductionObj X) = rightDim X ≫ globalDim C := by
-  suffices End.of (rightDim (inductionObj X)) = End.of (rightDim X ≫ globalDim C) from
-    congrArg End.asHom this
-  apply (endAlgEquivOfSimple k (𝟙_ C)).injective
-  rw [inductionObj, rightDim_biproduct, globalDim_eq_sum_leftDim_comp_rightDim, End.of_comp,
-    map_mul, endAlgEquivOfSimple_sum, endAlgEquivOfSimple_sum, Finset.sum_mul]
+  rw [inductionObj, rightDim_biproduct, globalDim_eq_sum_leftDim_comp_rightDim,
+    Preadditive.comp_sum]
   refine Finset.sum_congr rfl fun S _ ↦ ?_
   dsimp only [inductionSummand]
   rw [rightDim_tensor_eq_comp_of_simple k, rightDim_tensor_eq_comp_of_simple k, rightDim_rightDual,
-    End.of_comp, End.of_comp, End.of_comp, map_mul, map_mul, map_mul]
-  ring
+    scalar_comm (rightDim S.repr), Category.assoc]
 
 private theorem endAlgEquivOfSimple_rightDim_eq_sum (X : C) :
     endAlgEquivOfSimple k (𝟙_ C) (End.of (rightDim X)) =
