@@ -250,12 +250,7 @@ theorem IsThomClass.bijective_homologyThomMap {K : Type w} [Field K] [CompactSpa
     [VectorBundle ℝ F E] (hF : 2 ≤ finrank ℝ F)
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : IsThomClass F E u) {p m : ℕ} (h : finrank ℝ F + p = m) :
-    Function.Bijective (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u).hom := by
-  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover
-    (fun b : B ↦ (trivializationAt F E b).baseSet) (fun b ↦ (trivializationAt F E b).open_baseSet)
-    fun b _ ↦ mem_iUnion.2 ⟨b, FiberBundle.mem_baseSet_trivializationAt' b⟩
-  exact hu.bijective_homologyThomMap_of_biUnion_eq_univ hF t
-    (fun b _ ↦ (trivializationAt F E b).open_baseSet)
-    (fun b _ ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) (univ_subset_iff.1 ht) h
+    Function.Bijective (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u).hom :=
+  (bijective_homologyThomMap_iff F E h u).2 (hu.bijective_thomMap _ hF (by omega))
 
 end TauCeti
