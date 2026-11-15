@@ -53,6 +53,9 @@ integrability hypotheses on `Ω`.
   essentially bounded it satisfies `a(u, v) = ⟪G - c, ∇v⟫_{L²(B)}` for every `v ∈ H¹₀(B)` and
   every constant `c` with `G - c ∈ L²(B)`, since constants have zero divergence. This is the
   hypothesis of the energy estimate for the replacement on a ball.
+* `TauCeti.PDE.forall_energyFormH1_restrictL_eq_inner_add_inner`: the same for
+  `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` with `f ∈ L²(B)`, which gives
+  `a(u, v) = ⟪G - c, ∇v⟫_{L²(B)} + ⟪f, v⟫_{L²(B)}`.
 * `TauCeti.PDE.forall_energyFormH1_restrictL_eq_setIntegral`: if `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = f`
   weakly on `Ω`, tested against test functions, then on every open `B ⊆ Ω` on which `a` is
   essentially bounded and `f` is square integrable it satisfies `a(u, v) = ∫_B f v` for every
@@ -410,10 +413,49 @@ theorem energyFormH1_restrictL_eq_of_forall_testFunction {B : Opens (EuclideanSp
   rw [hφ]
   exact hℓ φ _ (by rw [TestFunction.monoCLM_apply]; simp [hB])
 
+/-- The weak equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` on `Ω`, tested against test functions, holds on
+every open `B ⊆ Ω` against all of `H¹₀(B)` once `G` is replaced by `G - c` for a constant `c`,
+provided `G - c` and `f` are square integrable on `B` and the coefficients are essentially bounded
+on `B`: constants have zero divergence. -/
+theorem forall_energyFormH1_restrictL_eq_inner_add_inner {B : Opens (EuclideanSpace ℝ ι)}
+    (hB : B ≤ Omega) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict B)) {u : W1p mu Omega 2}
+    {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {f : EuclideanSpace ℝ ι → ℝ}
+    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu + ∫ x in Omega, f x * φ x ∂mu)
+    {c : EuclideanSpace ℝ ι} (hGc : MemLp (fun x => G x - c) 2 (mu.restrict B))
+    (hf : MemLp f 2 (mu.restrict B)) (v : W1p0 mu B 2) :
+    energyFormH1 a 0 0 (W1p.restrictL hB u) (v : W1p mu B 2) =
+      ⟪hGc.toLp, W1p.gradient (v : W1p mu B 2)⟫_ℝ + ⟪hf.toLp, W1p.value (v : W1p mu B 2)⟫_ℝ := by
+  refine (energyFormH1_restrictL_eq_of_forall_testFunction hB ha
+    ((innerSL ℝ hGc.toLp).comp W1p.gradientL + (innerSL ℝ hf.toLp).comp W1p.valueL)
+    (fun φ ψ hψ => ?_) v).trans (by
+      simp only [add_apply, ContinuousLinearMap.comp_apply,
+        innerSL_apply_apply, W1p.gradientL_apply, W1p.valueL_apply])
+  have hfφ : ⟪hf.toLp, W1p.value (W1p.ofTestFunctionₗ mu B 2 φ)⟫_ℝ =
+      ∫ x in B, f x * φ x ∂mu := by
+    rw [L2.inner_def]
+    refine integral_congr_ae ?_
+    filter_upwards [hf.coeFn_toLp, W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := 2) φ]
+      with x hx hφx
+    rw [hx, hφx]
+    simp [mul_comm]
+  -- A test function on an open set `U` vanishes off `U`, so `∫_U f χ = ∫ f χ`.
+  have hfint {U : Opens (EuclideanSpace ℝ ι)} (χ : 𝓓(U, ℝ)) :
+      ∫ x in U, f x * χ x ∂mu = ∫ x, f x * χ x ∂mu := by
+    simpa only [smul_eq_mul, mul_comm] using setIntegral_smul_eq_integral_smul (μ := mu) (w := f) χ
+  -- `a(u, φ) = ∫_Ω ⟪G, ∇φ⟫ + ∫_Ω f φ = ∫_B ⟪G, ∇φ⟫ + ∫_B f φ`.
+  simp only [add_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
+    W1p.gradientL_apply, W1p.valueL_apply, inner_toLp_gradient_ofTestFunctionₗ hGc φ, hfφ]
+  rw [hu, hfint ψ, hfint φ, hψ, φ.setIntegral_inner_gradient_eq_integral_inner_gradient G
+    (φ.tsupport_subset.trans hB),
+    φ.setIntegral_inner_gradient_eq_integral_inner_gradient G φ.tsupport_subset]
+
 /-- The weak equation `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` on `Ω`, tested against test functions, holds on
 every open `B ⊆ Ω` against all of `H¹₀(B)` once `G` is replaced by `G - c` for a constant `c`,
 provided `G - c` is square integrable on `B` and the coefficients are essentially bounded on `B`:
-constants have zero divergence. -/
+constants have zero divergence. This is the case `f = 0` of
+`forall_energyFormH1_restrictL_eq_inner_add_inner`. -/
 theorem forall_energyFormH1_restrictL_eq_inner {B : Opens (EuclideanSpace ℝ ι)}
     (hB : B ≤ Omega) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict B)) {u : W1p mu Omega 2}
@@ -424,20 +466,14 @@ theorem forall_energyFormH1_restrictL_eq_inner {B : Opens (EuclideanSpace ℝ ι
     (v : W1p0 mu B 2) :
     energyFormH1 a 0 0 (W1p.restrictL hB u) (v : W1p mu B 2) =
       ⟪hGc.toLp, W1p.gradient (v : W1p mu B 2)⟫_ℝ := by
-  refine (energyFormH1_restrictL_eq_of_forall_testFunction hB ha
-    ((innerSL ℝ hGc.toLp).comp W1p.gradientL) (fun φ ψ hψ => ?_) v).trans (by
-      simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, W1p.gradientL_apply])
-  -- `a(u, φ) = ∫_Ω ⟪G, ∇φ⟫ = ∫_B ⟪G, ∇φ⟫`.
-  simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, W1p.gradientL_apply,
-    inner_toLp_gradient_ofTestFunctionₗ hGc φ]
-  rw [hu, hψ, φ.setIntegral_inner_gradient_eq_integral_inner_gradient G
-    (φ.tsupport_subset.trans hB),
-    φ.setIntegral_inner_gradient_eq_integral_inner_gradient G φ.tsupport_subset]
+  simpa [MemLp.toLp_zero] using forall_energyFormH1_restrictL_eq_inner_add_inner hB ha (f := 0)
+    (fun φ => by simp [hu φ]) hGc MemLp.zero v
 
 /-- The weak equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f` on `Ω`, tested against test functions, holds on every
 open `B ⊆ Ω` against all of `H¹₀(B)`, provided `f` is square integrable on `B` and the
 coefficients are essentially bounded on `B`. Nothing is assumed about `f` outside `B`, so this
-applies to right-hand sides that are only locally integrable on `Ω`. -/
+applies to right-hand sides that are only locally integrable on `Ω`. This is the case `G = 0` of
+`forall_energyFormH1_restrictL_eq_inner_add_inner`. -/
 theorem forall_energyFormH1_restrictL_eq_setIntegral {B : Opens (EuclideanSpace ℝ ι)}
     (hB : B ≤ Omega) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict B)) {u : W1p mu Omega 2}
@@ -447,26 +483,15 @@ theorem forall_energyFormH1_restrictL_eq_setIntegral {B : Opens (EuclideanSpace 
     (hf : MemLp f 2 (mu.restrict B)) (v : W1p0 mu B 2) :
     energyFormH1 a 0 0 (W1p.restrictL hB u) (v : W1p mu B 2) =
       ∫ x in B, f x * W1p.value (v : W1p mu B 2) x ∂mu := by
-  -- On `B`, the integral against `f` is the `L²` inner product with `f`.
-  have hinner (w : W1p mu B 2) :
-      ⟪hf.toLp, W1p.value w⟫_ℝ = ∫ x in B, f x * W1p.value w x ∂mu := by
-    rw [L2.inner_def]
-    refine integral_congr_ae (hf.coeFn_toLp.mono fun x hx => ?_)
-    simp [hx, RCLike.inner_apply, mul_comm]
-  rw [← hinner]
-  refine (energyFormH1_restrictL_eq_of_forall_testFunction hB ha
-    ((innerSL ℝ hf.toLp).comp W1p.valueL) (fun φ ψ hψ => ?_) v).trans (by
-      simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, W1p.valueL_apply])
-  simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, W1p.valueL_apply, hinner]
-  rw [hu, hψ]
-  -- `a(u, φ) = ∫_Ω f φ = ∫_B f φ`: both integrals vanish off `tsupport φ ⊆ B`, and on `B` the
-  -- value of `φ` is `φ`.
-  have hsupp : ∀ x ∉ (B : Set (EuclideanSpace ℝ ι)), f x * φ x = 0 := fun x hx => by
-    rw [image_eq_zero_of_notMem_tsupport fun h => hx (φ.tsupport_subset h), mul_zero]
-  rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => hsupp x fun h => hx (hB h),
-    ← setIntegral_eq_integral_of_forall_compl_eq_zero hsupp]
-  exact integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono fun x hx => by
-    simp only [hx])
+  have hGc : MemLp (fun x => (0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x - 0) 2
+      (mu.restrict B) := MemLp.zero.ae_eq (ae_of_all _ fun x => by simp)
+  have hG0 : hGc.toLp = 0 :=
+    (hGc.toLp_congr MemLp.zero (ae_of_all _ fun x => by simp)).trans (MemLp.toLp_zero _)
+  rw [forall_energyFormH1_restrictL_eq_inner_add_inner hB ha (fun φ => by simp [hu φ]) hGc hf v,
+    hG0, inner_zero_left, zero_add, L2.inner_def]
+  -- On `B`, the `L²` inner product with `f` is the integral against `f`.
+  exact integral_congr_ae (hf.coeFn_toLp.mono fun x hx => by
+    simp [hx, RCLike.inner_apply, mul_comm])
 
 /-- **Global weak solutions of Poisson's equation restrict to weak solutions.** If `v ∈ H¹(ℝⁿ)`
 solves `Δv = G` weakly, tested against compactly supported smooth functions, and `G` agrees on an
