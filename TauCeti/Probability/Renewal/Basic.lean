@@ -178,7 +178,7 @@ lemma natCast_le_renewalCount_iff {t : ℝ≥0} {ω : Ω} {n : ℕ} :
       refine (Finset.sum_le_card_nsmul _ _ 1 fun k _ ↦ ?_).trans (by simp)
       split_ifs <;> simp
     exact absurd (h.trans this) (by rw [Nat.cast_le]; omega)
-  · calc (n : ℝ≥0∞) = ∑ k ∈ Finset.range n, (1 : ℝ≥0∞) := by simp
+  · calc (n : ℝ≥0∞) = ∑ _ ∈ Finset.range n, (1 : ℝ≥0∞) := by simp
       _ = ∑ k ∈ Finset.range n, if arrival T (k + 1) ω ≤ t then 1 else 0 :=
         Finset.sum_congr rfl fun k hk ↦
           (ite_eq_left <| (monotone_arrival T ω (Finset.mem_range.1 hk)).trans h).symm
@@ -193,7 +193,7 @@ lemma renewalCount_eq_natCast_iff {t : ℝ≥0} {ω : Ω} {n : ℕ} :
     omega
   · rw [renewalCount_eq_sum_range h₂]
     calc ∑ k ∈ Finset.range n, (if arrival T (k + 1) ω ≤ t then 1 else 0 : ℝ≥0∞)
-        = ∑ k ∈ Finset.range n, (1 : ℝ≥0∞) :=
+        = ∑ _ ∈ Finset.range n, (1 : ℝ≥0∞) :=
           Finset.sum_congr rfl fun k hk ↦
             ite_eq_left <| (monotone_arrival T ω (Finset.mem_range.1 hk)).trans h₁
       _ = n := by simp
@@ -290,7 +290,7 @@ theorem ae_tendsto_arrival_atTop (hindep : iIndepFun T P)
       (hid 0).aemeasurable_fst.identDistrib_mk
   have hzero' : P {ω | T' 0 ω = 0} < 1 := by
     have hset : ({ω | T' 0 ω = 0} : Set Ω) =ᵐ[P] {ω | T 0 ω = 0} :=
-      (hT'_ae 0).symm.mono fun ω hω ↦ propext (by simp [hω])
+      Filter.Eventually.mono (hT'_ae 0).symm fun ω hω ↦ by simp only [Set.mem_ofPred_eq, hω]
     rwa [measure_congr hset]
   -- Since `T' 0` is not almost surely zero, some threshold `a > 0` has `0 < P (a ≤ T' 0)`.
   obtain ⟨k, hpos⟩ : ∃ k : ℕ, 0 < P (T' 0 ⁻¹' Ici (1 / (k + 1))) := by
@@ -350,7 +350,7 @@ theorem hasLaw_arrival_shift (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib
 /-- **Transfer to the canonical product space.** For independent, identically distributed
 increments, the law of `renewalCount T t` is the law of the count of the coordinate process under
 the product measure whose factors are the common law of the increments. -/
-theorem map_renewalCount_eq_infinitePi_map (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+theorem map_renewalCount_eq_infinitePi_map (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (t : ℝ≥0) :
     P.map (renewalCount T t) =
       (Measure.infinitePi fun _ : ℕ ↦ P.map (T 0)).map
@@ -359,8 +359,10 @@ theorem map_renewalCount_eq_infinitePi_map (hT : ∀ n, Measurable (T n)) (hinde
       renewalCount (fun n (w : ℕ → ℝ≥0) ↦ w n) t ∘ fun ω i ↦ T i ω := by
     ext ω
     simp only [Function.comp_apply, renewalCount_def, arrival_def]
-  rw [hcomp, ← Measure.map_map (measurable_renewalCount (fun n ↦ measurable_pi_apply n) t)
-    (measurable_pi_iff.2 hT), hindep.map_fun_eq_infinitePi_map hT]
+  have hae : ∀ n, AEMeasurable (T n) P := fun n ↦ (hid n).aemeasurable_fst
+  rw [hcomp, ← AEMeasurable.map_map_of_aemeasurable
+    (measurable_renewalCount (fun n ↦ measurable_pi_apply n) t).aemeasurable
+    (aemeasurable_pi_iff.2 hae), hindep.map_fun_eq_infinitePi_map₀' hae]
   simp_rw [fun n ↦ (hid n).map_eq]
 
 end Probability

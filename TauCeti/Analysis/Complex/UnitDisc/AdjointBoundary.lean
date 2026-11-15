@@ -44,6 +44,11 @@ Cauchy–Riemann operator needs the bordered Fredholm theory and is not treated 
 
 * `TauCeti.adjoint_boundary_iff`: the adjoint boundary condition at a point of the unit circle is
   the boundary condition of index `-k - 2` for `I` times the value.
+* `TauCeti.adjoint_boundary_iff_forall_re_mul_eq_zero`: at a point `w` of the unit circle, `c`
+  satisfies the adjoint boundary condition exactly when `Re (w c v) = 0` for every `v` on the line
+  `v = w ^ k conj v`; `TauCeti.re_mul_mul_eq_zero_of_adjoint_boundary` is the forward direction,
+  which holds at any `w`. This is the condition that makes the boundary term of Green's formula
+  vanish in the duality of `TauCeti/Analysis/Complex/UnitDisc/Duality.lean`.
 * `TauCeti.mem_unitDiscAdjointKernel_iff`: membership in the adjoint kernel, unfolded.
 * `TauCeti.mem_unitDiscAdjointKernel_iff_smul_mem`: `g` is an adjoint solution for the index `k`
   if and only if `I • g ∈ unitDiscCauchyRiemannKernel (-k - 2)`.
@@ -52,6 +57,11 @@ Cauchy–Riemann operator needs the bordered Fredholm theory and is not treated 
 * `TauCeti.finrank_unitDiscCauchyRiemannKernel_sub_finrank_unitDiscAdjointKernel`: the
   dimension identity `dim ker - dim (adjoint ker) = k + 1`, which is the index formula once the
   adjoint kernel is identified with the cokernel.
+
+## Checks
+
+* `TauCeti.unitDiscAdjointKernel_neg_two`: for `k = -2` the adjoint solutions are the real
+  multiples of the constant `-I`.
 
 ## References
 
@@ -88,6 +98,56 @@ theorem adjoint_boundary_iff {w : ℂ} (hw : ‖w‖ = 1) (c : ℂ) :
   · intro h
     linear_combination (-(w ^ k) * w) * h + I * conj c * conj w * e₂ -
       I * conj c * w ^ k * w ^ (-k - 2) * w * e₁
+
+/-- The adjoint boundary condition, solved for `conj w * conj c`. -/
+private theorem adjoint_boundary_iff' {w : ℂ} (c : ℂ) :
+    -I * conj w * conj c = w ^ k * conj (-I * conj w * conj c) ↔
+      conj w * conj c = -(w ^ k * w * c) := by
+  simp only [map_mul, map_neg, conj_I, conj_conj]
+  constructor
+  · intro h
+    linear_combination I * h + (conj w * conj c + w ^ k * w * c) * I_sq
+  · intro h
+    linear_combination (-I) * h
+
+/-- **The boundary term vanishes.** If `c` satisfies the adjoint boundary condition of index `k`
+at `w` and `v` lies on the line `v = w ^ k * conj v`, then `w c v` is purely imaginary. -/
+theorem re_mul_mul_eq_zero_of_adjoint_boundary {w c v : ℂ}
+    (hc : -I * conj w * conj c = w ^ k * conj (-I * conj w * conj c))
+    (hv : v = w ^ k * conj v) : (w * c * v).re = 0 := by
+  rw [adjoint_boundary_iff'] at hc
+  have h : w * c * v + conj (w * c * v) = 0 := by
+    simp only [map_mul]
+    linear_combination conj v * hc + (w * c) * hv
+  rw [add_conj, ofReal_eq_zero] at h
+  linarith
+
+/-- **The dual boundary condition is forced.** At a point `w` of the unit circle, `c` satisfies
+the adjoint boundary condition of index `k` exactly when `Re (w c v) = 0` for every `v` on the line
+`v = w ^ k * conj v`. So the adjoint condition of `TauCeti.unitDiscAdjointKernel` is the boundary
+condition that makes the boundary term of Green's formula vanish for every admissible `ξ`; this
+is the disc analogue of the half-plane condition `η(∂_s) ∈ ℝⁿ`. -/
+theorem adjoint_boundary_iff_forall_re_mul_eq_zero {w : ℂ} (hw : ‖w‖ = 1) (c : ℂ) :
+    -I * conj w * conj c = w ^ k * conj (-I * conj w * conj c) ↔
+      ∀ v, v = w ^ k * conj v → (w * c * v).re = 0 := by
+  refine ⟨fun hc v hv ↦ re_mul_mul_eq_zero_of_adjoint_boundary hc hv, fun H ↦ ?_⟩
+  have ep : conj (w ^ k) * w ^ k = 1 := by
+    rw [conj_mul', norm_zpow, hw, one_zpow]
+    norm_num
+  rw [adjoint_boundary_iff']
+  -- `D = w ^ k * (w * c) + conj (w * c)` lies on the line, and `D * conj D = 2 Re (w c D)`.
+  set D := w ^ k * (w * c) + conj (w * c) with hD
+  have hDl : D = w ^ k * conj D := by
+    simp only [hD, map_add, map_mul, conj_conj]
+    linear_combination (-(conj w * conj c)) * ep
+  have h0 := H D hDl
+  have h2 : D * conj D = w * c * D + conj (w * c * D) := by
+    simp only [hD, map_add, map_mul, conj_conj]
+    linear_combination (w * c * conj w * conj c) * ep
+  rw [add_conj, h0, mul_zero, mul_conj] at h2
+  have hD0 : D = 0 := normSq_eq_zero.1 (by exact_mod_cast h2)
+  simp only [hD, map_mul] at hD0
+  linear_combination hD0
 
 /-- Multiplication by `I`, as a real-linear automorphism of the functions on the closed disc. -/
 private noncomputable def mulI : (closedBall (0 : ℂ) 1 → ℂ) ≃ₗ[ℝ] (closedBall (0 : ℂ) 1 → ℂ) :=
@@ -154,6 +214,28 @@ theorem finrank_unitDiscAdjointKernel (k : ℤ) :
   rw [unitDiscAdjointKernel, LinearEquiv.finrank_map_eq, finrank_unitDiscCauchyRiemannKernel]
   congr 1
   ring
+
+/-- **Check: the adjoint solutions for `k = -2`.** For the boundary condition of index `-2` the
+adjoint problem is the problem of index `0` for `I g`, whose solutions are the real constants, so
+the adjoint solutions are the real multiples of the constant `-I`. -/
+theorem unitDiscAdjointKernel_neg_two :
+    unitDiscAdjointKernel (-2) = ℝ ∙ (fun _ : closedBall (0 : ℂ) 1 ↦ -I) := by
+  have hmem : (fun _ : closedBall (0 : ℂ) 1 ↦ -I) ∈ unitDiscAdjointKernel (-2) := by
+    refine mem_unitDiscAdjointKernel_iff.2 ⟨fun _ ↦ -I, diffContOnCl_const, fun w hw ↦ ?_, rfl⟩
+    have hw : ‖w‖ = 1 := by simpa using hw
+    have hw0 : w ≠ 0 := by rintro rfl; simp at hw
+    have e : conj w * w = 1 := by
+      rw [conj_mul', hw]
+      norm_num
+    simp only [map_mul, map_neg, conj_I, conj_conj, zpow_neg, zpow_ofNat]
+    field_simp
+    linear_combination -e
+  have hne : (fun _ : closedBall (0 : ℂ) 1 ↦ -I) ≠ 0 := fun h ↦ by
+    simpa using congrFun h ⟨0, by simp⟩
+  refine (Submodule.eq_of_le_of_finrank_eq ((Submodule.span_singleton_le_iff_mem _ _).2 hmem)
+    ?_).symm
+  rw [finrank_span_singleton hne, finrank_unitDiscAdjointKernel]
+  rfl
 
 /-- **Kernel minus adjoint kernel on the disc.** For the boundary condition of Maslov index `k`,
 the dimension of the kernel minus the dimension of the adjoint kernel is `k + 1 = χ(D) + k`, for

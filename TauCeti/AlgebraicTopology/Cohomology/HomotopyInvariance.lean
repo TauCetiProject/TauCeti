@@ -33,8 +33,13 @@ below are `Mathlib/AlgebraicTopology/SingularHomology/HomotopyInvariance.lean`
   cohomology.
 * `TopCat.isIso_singularCohomologyMap` and `TopPair.isIso_singularCohomologyMap`: a map with a
   homotopy inverse induces an isomorphism on singular cohomology.
-* `ContinuousMap.HomotopyEquiv.isIso_singularCohomologyMap`: the same for a bundled homotopy
-  equivalence of spaces.
+* `TopCat.singularCohomologyMap_lift_const_eq_of_joined`: restrictions of a class on `X × Y` to
+  the slices through two points joined by a path agree.
+* `TopPair.isIso_singularCohomologyMap_ofSubsetMap_id_of_homotopy`: enlarging the subspace of a
+  pair to a neighbourhood which deforms back into it does not change relative cohomology.
+* `ContinuousMap.HomotopyEquiv.isIso_singularCohomologyMap` and
+  `ContinuousMap.HomotopyEquiv.singularCohomologyIso`: the induced isomorphism on singular
+  cohomology for a bundled homotopy equivalence of spaces.
 
 ## References
 
@@ -97,19 +102,67 @@ lemma isIso_singularCohomologyMap (f : X ⟶ Y) (f' : Y ⟶ X) (H : Homotopy (f 
   · rw [← singularCohomologyMap_comp, H.congr_singularCohomologyMap R k M n,
       singularCohomologyMap_id]
 
+/-- **Restrictions to slices through joined points agree**: if `x` and `x'` are joined by a path,
+then for `g : Z ⟶ Y` the maps `z ↦ (x, g z)` and `z ↦ (x', g z)` into `X × Y` are homotopic, so
+they induce the same map on singular cohomology. For `g = 𝟙 Y` these are the restrictions to the
+slices `{x} × Y` and `{x'} × Y`. -/
+@[reassoc, elementwise]
+lemma singularCohomologyMap_lift_const_eq_of_joined {Z : TopCat.{w}} {x x' : X} (h : Joined x x')
+    {g : Z ⟶ Y} {R : C} {k : Type*} [Ring k] [Linear k C] {M : C} (n : ℕ) :
+    TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
+        (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Z x)) g) n =
+      TopCat.singularCohomologyMap
+        (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Z x')) g) n := by
+  -- pairing a path from `x` to `x'` with the constant homotopy at `g` connects the two maps
+  have hlift (x₁ : X) : (ContinuousMap.const Z x₁).prodMk g.hom =
+      (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Z x₁)) g).hom := by
+    ext z
+    · exact (congrArg Prod.fst (TopCat.lift_apply (x := z))).symm
+    · exact (congrArg Prod.snd (TopCat.lift_apply (x := z))).symm
+  exact Homotopy.congr_singularCohomologyMap
+    ((h.somePath.toHomotopyConst.prodMk (.refl g.hom)).cast (hlift x) (hlift x')) R k M n
+
 end TopCat
 
 namespace ContinuousMap.HomotopyEquiv
 
 variable {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
   (e : ContinuousMap.HomotopyEquiv X Y)
-  {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+  {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
+  (k : Type*) [Ring k] [Linear k C] (M : C)
 
 /-- A homotopy equivalence induces isomorphisms on singular cohomology in every degree. -/
-lemma isIso_singularCohomologyMap (R : C) (k : Type*) [Ring k] [Linear k C] (M : C) (n : ℕ) :
+lemma isIso_singularCohomologyMap (n : ℕ) :
     IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (TopCat.ofHom e.toFun) n) :=
   TopCat.isIso_singularCohomologyMap _ (TopCat.ofHom e.invFun) e.left_inv.some e.right_inv.some
     R k M n
+
+/-- A homotopy equivalence induces an isomorphism on singular cohomology in every degree, with
+forward map induced by pullback along `e` and inverse induced by pullback along `e.symm`. -/
+@[no_expose]
+def singularCohomologyIso (n : ℕ) :
+    (TopCat.of Y).singularCohomology R k M n ≅ (TopCat.of X).singularCohomology R k M n where
+  hom := TopCat.singularCohomologyMap (TopCat.ofHom e.toFun) n
+  inv := TopCat.singularCohomologyMap (TopCat.ofHom e.invFun) n
+  hom_inv_id := by
+    rw [← TopCat.singularCohomologyMap_comp, ← TopCat.singularCohomologyMap_id]
+    exact TopCat.Homotopy.congr_singularCohomologyMap e.right_inv.some R k M n
+  inv_hom_id := by
+    rw [← TopCat.singularCohomologyMap_comp, ← TopCat.singularCohomologyMap_id]
+    exact TopCat.Homotopy.congr_singularCohomologyMap e.left_inv.some R k M n
+
+/-- The forward map of `ContinuousMap.HomotopyEquiv.singularCohomologyIso` is pullback along `e`. -/
+@[simp]
+lemma singularCohomologyIso_hom (n : ℕ) :
+    (e.singularCohomologyIso R k M n).hom =
+      TopCat.singularCohomologyMap (TopCat.ofHom e.toFun) n := (rfl)
+
+/-- The inverse map of `ContinuousMap.HomotopyEquiv.singularCohomologyIso` is pullback along
+`e.symm`. -/
+@[simp]
+lemma singularCohomologyIso_inv (n : ℕ) :
+    (e.singularCohomologyIso R k M n).inv =
+      TopCat.singularCohomologyMap (TopCat.ofHom e.invFun) n := (rfl)
 
 end ContinuousMap.HomotopyEquiv
 
@@ -158,5 +211,22 @@ lemma isIso_singularCohomologyMap (f : P ⟶ P') (f' : P' ⟶ P) (H : Homotopy (
       singularCohomologyMap_id]
   · rw [← singularCohomologyMap_comp, H.congr_singularCohomologyMap R k M n,
       singularCohomologyMap_id]
+
+/-- **Enlarging the subspace along a deformation.** Let `B ⊆ N` be subsets of `X` and let `H` be a
+homotopy from the identity of `X` to a map `ρ` carrying `N` into `B`.  If `H` keeps `B` inside `B`
+and `N` inside `N` at every time, the inclusion `(X, B) ⟶ (X, N)` induces isomorphisms on relative
+singular cohomology: `ρ` is a homotopy inverse as a map of pairs.  This is the cohomology form of
+`TopPair.isIso_singularHomologyMap_ofSubsetMap_id_of_homotopy`. -/
+lemma isIso_singularCohomologyMap_ofSubsetMap_id_of_homotopy {X : TopCat.{w}} {B N : Set X}
+    (hBN : Set.MapsTo (𝟙 X) B N) {ρ : X ⟶ X} (H : (TopCat.Hom.hom (𝟙 X)).Homotopy ρ.hom)
+    (hB : ∀ (τ : unitInterval) (x : X), x ∈ B → H (τ, x) ∈ B)
+    (hN : ∀ (τ : unitInterval) (x : X), x ∈ N → H (τ, x) ∈ N) (hρ : Set.MapsTo ρ N B) (R : C)
+    (k : Type*) [Ring k] [Linear k C] (M : C) (n : ℕ) :
+    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (ofSubsetMap (𝟙 X) hBN) n) := by
+  refine isIso_singularCohomologyMap _ (ofSubsetMap ρ hρ) ?_ ?_ R k M n
+  · rw [← ofSubsetMap_comp _ _ hBN hρ (hρ.comp hBN), ← ofSubsetMap_id (B := B) fun _ hx ↦ hx]
+    simpa only [Category.id_comp] using (ofSubsetHomotopy H hB).symm
+  · rw [← ofSubsetMap_comp _ _ hρ hBN (hBN.comp hρ), ← ofSubsetMap_id (B := N) fun _ hx ↦ hx]
+    simpa only [Category.comp_id] using (ofSubsetHomotopy H hN).symm
 
 end TopPair

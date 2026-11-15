@@ -125,7 +125,7 @@ theorem isSemialgebraic_projectorLocus [LinearOrder K] :
         {a | eval a (∑ i, X (i, i)) = eval a 1} := by
     ext a
     simp [IsSymm, IsIdempotentElem, ← Matrix.ext_iff, Matrix.mul_apply, trace, Prod.forall,
-      and_assoc]
+      and_assoc, funext_iff, Function.swap, eq_comm]
   rw [h]
   exact ((IsSemialgebraic.iInter fun _ ↦ isSemialgebraic_eval_eq _ _).inter
     (IsSemialgebraic.iInter fun _ ↦ isSemialgebraic_eval_eq _ _)).inter

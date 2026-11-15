@@ -139,9 +139,9 @@ theorem sum_star_mul_map_mul (E : CStarConditionalExpectation ι) {κ : Type*}
   simp only [star_sum, star_mul, Finset.sum_mul, Finset.mul_sum, map_sum]
   rw [Finset.sum_comm]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   apply Finset.sum_congr rfl
-  intro j hj
+  intro j _
   simp only [← mul_assoc, map_mul_right]
   rw [← map_star ι, mul_assoc (ι (star (b j))), E.map_mul_left]
 

@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
+public import TauCeti.MeasureTheory.Measure.Support
+import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
 # Mixtures with one atom
@@ -19,7 +21,8 @@ the added Dirac component.
 The main results give the characteristic measure identities: evaluation on measurable sets,
 singleton masses, probability preservation, measurability in all three parameters, decomposition
 of a mixture with an absolutely continuous component, pushforward along measurable maps, and
-integration against the mixture.
+integration against the mixture. Its topological support is the union of the supports of the
+components with positive weight, including the two pure-component boundaries.
 -/
 
 public section
@@ -82,6 +85,24 @@ theorem atomMixture_zero {α : Type*} [MeasurableSpace α]
 theorem atomMixture_one {α : Type*} [MeasurableSpace α]
     (μ : Measure α) (c : α) : atomMixture μ c 1 = Measure.dirac c := by
   simp [atomMixture]
+
+/-- The support of an atom mixture contains exactly the supports of its positive-weight
+components. In a non-T₁ space the support of the atom is the closure of its singleton. -/
+theorem support_atomMixture {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    [OpensMeasurableSpace α] (μ : Measure α) (c : α) (w : unitInterval) :
+    (μ.atomMixture c w).support =
+      if w = 0 then μ.support else if w = 1 then closure {c} else closure {c} ∪ μ.support := by
+  by_cases hw0 : w = 0
+  · simp [hw0]
+  by_cases hw1 : w = 1
+  · simp [hw1]
+  have hrest : ENNReal.ofReal (1 - (w : ℝ)) ≠ 0 :=
+    ENNReal.ofReal_ne_zero_iff.mpr (sub_pos.mpr
+      (unitInterval.coe_lt_one.mpr (unitInterval.lt_one_iff_ne_one.mpr hw1)))
+  rw [ite_eq_right hw0, ite_eq_right hw1, atomMixture_def, support_add,
+    support_smul_measure _ _ (ENNReal.ofReal_ne_zero_iff.mpr
+      (unitInterval.pos_iff_ne_zero.mpr hw0)),
+    support_smul_measure _ _ hrest, support_dirac]
 
 /-- An atom mixture of a probability measure is a probability measure. -/
 instance isProbabilityMeasure_atomMixture {α : Type*} [MeasurableSpace α]
@@ -164,6 +185,16 @@ theorem Integrable.atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSi
 
 namespace MeasureTheory.Measure
 
+/-- Away from the pure-atom endpoint, a function is integrable for an atom mixture exactly when it
+is integrable for the base component: the atom itself never obstructs integrability. -/
+theorem integrable_atomMixture_iff {α E : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
+    [SeminormedAddGroup E] (μ : Measure α) (c : α) {w : unitInterval} (hw : w ≠ 1) {f : α → E} :
+    Integrable f (μ.atomMixture c w) ↔ Integrable f μ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ Integrable.atomMixture h c w⟩
+  rw [atomMixture_def] at h
+  exact (integrable_smul_measure (ENNReal.ofReal_ne_zero_iff.2 <| sub_pos.2 <|
+    unitInterval.lt_one_iff_ne_one.2 hw) ENNReal.ofReal_ne_top).1 h.right_of_add_measure
+
 /-- Integrating against an atom mixture gives the corresponding convex combination. -/
 theorem integral_atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
     [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
@@ -175,5 +206,21 @@ theorem integral_atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSing
       ENNReal.toReal_ofReal (sub_nonneg.mpr (unitInterval.le_one w))]
   · exact (integrable_dirac (by simp)).smul_measure (by simp)
   · exact hf.smul_measure (by simp)
+
+/-- Integrating a function that vanishes at the atom against an atom mixture gives `1 - w` times
+its integral against the base component. This is an identity of Bochner integrals: when `f` is not
+integrable for `μ`, both sides are `0` (at `w = 1` because the mixture is the point mass at `c`). -/
+theorem integral_atomMixture_of_eq_zero {α E : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] [NormedAddCommGroup E] [NormedSpace ℝ E] (μ : Measure α) (c : α)
+    (w : unitInterval) {f : α → E} (hf : f c = 0) :
+    ∫ x, f x ∂μ.atomMixture c w = (1 - (w : ℝ)) • ∫ x, f x ∂μ := by
+  by_cases hE : CompleteSpace E
+  swap
+  · rw [integral_of_not_completeSpace hE, integral_of_not_completeSpace hE, smul_zero]
+  by_cases hμ : Integrable f μ
+  · rw [integral_atomMixture μ c w f hμ, hf, smul_zero, zero_add]
+  by_cases hw : w = 1
+  · simp [hw, hf]
+  rw [integral_undef hμ, integral_undef ((integrable_atomMixture_iff μ c hw).not.2 hμ), smul_zero]
 
 end MeasureTheory.Measure

@@ -34,7 +34,8 @@ localization at every generator is zero. This identifies modules supported on th
   `K ⊗[R] M` is trivial, for the total ring of fractions `K` of `R`.
 * `TauCeti.isAddTorsion_iff_subsingleton_rat_tensorProduct`: an abelian group `G` is torsion if
   and only if `ℚ ⊗[ℤ] G` is trivial.
-* `Module.IsTorsion.localizedModule`: the localization of a torsion module is torsion.
+* `Module.IsTorsion.of_isLocalizedModule`, `Module.IsTorsion.localizedModule`: the localization of
+  a torsion module is torsion.
 * `Ideal.primaryComponent_span_eq_top_iff_subsingleton_localized`: ideal-power torsion is detected
   by vanishing on the complementary principal opens.
 -/
@@ -53,7 +54,7 @@ trivial. -/
 theorem isTorsion'_iff_subsingleton_tensorProduct :
     Module.IsTorsion' M S ↔ Subsingleton (A ⊗[R] M) := by
   rw [IsLocalizedModule.subsingleton_iff S (TensorProduct.mk R A M 1)]
-  simp [Module.IsTorsion', Submonoid.smul_def]
+  simp [Module.IsTorsion']
 
 end Submonoid
 
@@ -76,18 +77,27 @@ end TauCeti
 
 namespace Module.IsTorsion
 
-/-- The localization of a torsion module at a submonoid `S` is torsion over `Localization S`. -/
-theorem localizedModule {R : Type*} [CommSemiring R] {M : Type*} [AddCommMonoid M] [Module R M]
-    (hM : Module.IsTorsion R M) (S : Submonoid R) :
-    Module.IsTorsion (Localization S) (LocalizedModule S M) := by
+variable {R : Type*} [CommSemiring R] {M : Type*} [AddCommMonoid M] [Module R M]
+
+/-- A localization `N` of a torsion module `M` at a submonoid `S` is torsion over any localization
+`A` of the base ring at `S`. -/
+theorem of_isLocalizedModule {A : Type*} [CommSemiring A] [Algebra R A] {N : Type*}
+    [AddCommMonoid N] [Module R N] [Module A N] [IsScalarTower R A N] (hM : Module.IsTorsion R M)
+    (S : Submonoid R) [IsLocalization S A] (f : M →ₗ[R] N) [IsLocalizedModule S f] :
+    Module.IsTorsion A N := by
   intro x
-  induction x using LocalizedModule.induction_on with
-  | h m s =>
-    obtain ⟨⟨a, ha⟩, ham⟩ := @hM m
-    rw [Submonoid.smul_def] at ham
-    refine ⟨⟨algebraMap R _ a,
-      IsLocalization.map_nonZeroDivisors_le S _ (Submonoid.mem_map_of_mem _ ha)⟩, ?_⟩
-    rw [Submonoid.mk_smul, algebraMap_smul, LocalizedModule.smul'_mk, ham, LocalizedModule.zero_mk]
+  obtain ⟨⟨m, s⟩, rfl⟩ := IsLocalizedModule.mk'_surjective S f x
+  obtain ⟨⟨a, ha⟩, ham⟩ := @hM m
+  refine ⟨⟨algebraMap R A a,
+    IsLocalization.map_nonZeroDivisors_le S A (Submonoid.mem_map_of_mem _ ha)⟩, ?_⟩
+  rw [Submonoid.mk_smul] at ham ⊢
+  rw [Function.uncurry_apply_pair, algebraMap_smul, ← IsLocalizedModule.mk'_smul, ham,
+    IsLocalizedModule.mk'_zero]
+
+/-- The localization of a torsion module at a submonoid `S` is torsion over `Localization S`. -/
+theorem localizedModule (hM : Module.IsTorsion R M) (S : Submonoid R) :
+    Module.IsTorsion (Localization S) (LocalizedModule S M) :=
+  hM.of_isLocalizedModule S (LocalizedModule.mkLinearMap S M)
 
 end Module.IsTorsion
 
@@ -100,13 +110,7 @@ theorem primaryComponent_span_eq_top_iff_subsingleton_localized {R : Type*} [Com
     (span (G : Set R)).primaryComponent M = ⊤ ↔
       ∀ g ∈ G, Subsingleton (LocalizedModule (.powers g) M) := by
   simp only [Submodule.eq_top_iff', mem_primaryComponent_span_iff,
-    LocalizedModule.subsingleton_iff]
-  constructor
-  · intro h g hg m
-    obtain ⟨n, hn⟩ := h m g hg
-    exact ⟨g ^ n, ⟨n, rfl⟩, hn⟩
-  · intro h m g hg
-    obtain ⟨s, ⟨n, rfl⟩, hs⟩ := h g hg m
-    exact ⟨n, hs⟩
+    LocalizedModule.subsingleton_iff, Submonoid.mem_powers_iff, exists_exists_eq_and]
+  exact ⟨fun h g hg m ↦ h m g hg, fun h m g hg ↦ h g hg m⟩
 
 end Ideal

@@ -42,6 +42,8 @@ model vector space, so the naming records a difference of setting, not of mathem
 * `TauCeti.IsPseudoholomorphicAt.comp`: pseudoholomorphic maps compose.
 * `TauCeti.IsPseudoholomorphicAt.of_comp`: a map whose composite with a pseudoholomorphic
   immersion is pseudoholomorphic is pseudoholomorphic.
+* `OpenPartialHomeomorph.MDifferentiable.isPseudoholomorphicAt_symm`: the inverse of a
+  differentiable open partial homeomorphism that is pseudoholomorphic is pseudoholomorphic.
 * `TauCeti.isPseudoholomorphicAt_neg_neg_iff` and its within-set, setwise, and global analogues:
   reversing both structures changes nothing.
 * `TauCeti.isPseudoholomorphicAt_stdComplexLine_iff`: for a curve out of the standard complex
@@ -261,6 +263,30 @@ theorem isPseudoholomorphicAt_iff_mfderiv :
         ∀ w, mfderiv I I' u x (j x w) = J (u x) (mfderiv I I' u x w) := by
   refine ⟨fun hu ↦ ⟨hu.mdifferentiableAt, hu.mfderiv_apply_commute⟩, fun hu ↦ ?_⟩
   exact isPseudoholomorphicAt_of_hasMFDerivAt hu.1.hasMFDerivAt hu.2
+
+/-- A map pseudoholomorphic at a point stays so after replacing it by a map that agrees with it
+near the point. -/
+theorem IsPseudoholomorphicAt.congr_of_eventuallyEq {u₁ : M → M'}
+    (hu : IsPseudoholomorphicAt j J u x) (h : u₁ =ᶠ[nhds x] u) :
+    IsPseudoholomorphicAt j J u₁ x := by
+  rw [isPseudoholomorphicAt_iff_mfderiv] at hu ⊢
+  refine ⟨hu.1.congr_of_eventuallyEq h, fun w ↦ ?_⟩
+  rw [h.mfderiv_eq, h.eq_of_nhds]
+  exact hu.2 w
+
+/-- The inverse of a differentiable open partial homeomorphism is pseudoholomorphic at a point of
+its target when the homeomorphism itself is pseudoholomorphic at the preimage of that point. -/
+theorem _root_.OpenPartialHomeomorph.MDifferentiable.isPseudoholomorphicAt_symm
+    {e : OpenPartialHomeomorph M M'} (he : e.MDifferentiable I I') {z : M'} (hz : z ∈ e.target)
+    (hu : IsPseudoholomorphicAt j J e (e.symm z)) : IsPseudoholomorphicAt J j e.symm z := by
+  refine isPseudoholomorphicAt_of_hasMFDerivAt (he.mdifferentiableAt_symm hz).hasMFDerivAt
+    fun w ↦ he.mfderiv_injective (e.map_target hz) ?_
+  -- Apply the differential of `e` at `e.symm z`, which inverts that of `e.symm` at `z` and
+  -- intertwines `j` with `J`.
+  have hinv (a : TangentSpace I' z) :
+      mfderiv I I' e (e.symm z) (mfderiv I' I e.symm z a) = a :=
+    DFunLike.congr_fun (he.comp_symm_deriv hz) a
+  rw [hu.mfderiv_apply_commute, hinv, hinv, e.right_inv hz]
 
 /-- The derivative within a set of a map pseudoholomorphic there intertwines the two almost
 complex structures, provided the set has unique manifold derivatives at the point. -/

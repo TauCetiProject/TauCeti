@@ -109,7 +109,7 @@ theorem exists_regular_lineDeriv_ofFun_apply_eq [BorelSpace E]
     refine ((ENNReal.ofReal_le_iff_le_toReal hfin).1 h).trans_eq ?_
     have hnorm : ‖(φ' : E →ᵇ ℝ)‖ = ‖(φ : E →ᵇ ℝ)‖ :=
       congrArg norm (BoundedContinuousFunction.ext fun x => by simp [φ'])
-    simp only [ENNReal.toReal_mul, toReal_enorm, hnorm]
+    simp only [ENNReal.toReal_mul, toReal_eNorm, hnorm]
     ring
   · rw [Distribution.ofFun_eq_zero hli]
     simpa using mul_nonneg hC (norm_nonneg _)

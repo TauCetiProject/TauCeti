@@ -82,13 +82,10 @@ hypotheses appear only in the dominant-chamber section.
 
 ## References
 
-This file supplies the root-pairing-level prerequisite of the `dotAction` target of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose Layer 7 states "the **dot
-action** `w · λ = w(λ+ρ) - ρ` is the linear Weyl action recentred at `-ρ`" and whose
-`Suggested.lean` pins `dotAction (base) (w) (lam)` on `Module.Dual K H`; as with
+The dot action `w · λ = w(λ+ρ) - ρ` is the linear Weyl action recentred at `-ρ`. For a semisimple
+Lie algebra it acts on `Module.Dual K H`, for a Cartan subalgebra `H`; as with
 `TauCeti.weylVector`, the combinatorics lives at the level of an abstract root pairing, so the
-Lie-algebra target is a specialization rather than a rebuild. The freeness on the closed dominant
-chamber is what the roadmap's `centralCharacter_injOn_isDominantIntegral` consumes.
+Lie-algebra version is a specialization rather than a rebuild.
 
 The argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and Representation
 Theory*, GTM 9, Ch. III, §13.2 and Ch. VI, §23.3.

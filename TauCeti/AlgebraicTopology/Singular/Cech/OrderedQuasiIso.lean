@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.OrderedCech.Cover
-public import TauCeti.Algebra.Homology.TotalComplex
+public import TauCeti.Algebra.Homology.TotalComplex.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cech
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Equiv
 

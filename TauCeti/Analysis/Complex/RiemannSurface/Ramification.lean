@@ -276,10 +276,12 @@ theorem ramificationDivisor_comp (g : FiniteHolomorphicMap Y Z) (f : FiniteHolom
   push_cast
   ring
 
+omit [CompactSpace Y] in
 /-- The ramification degree of a composite of finite holomorphic maps between compact Riemann
 surfaces, with `Y` connected, is `deg R_f + deg f · deg R_g`. -/
 theorem ramificationDegree_comp (g : FiniteHolomorphicMap Y Z) (f : FiniteHolomorphicMap X Y) :
     ramificationDegree (g.comp f) = ramificationDegree f + degree f * ramificationDegree g := by
+  have : CompactSpace Y := f.surjective.compactSpace f.holomorphic.continuous
   have h := congrArg WeilDivisor.degree (ramificationDivisor_comp g f)
   rw [map_add, degree_divisorPullback, degree_ramificationDivisor, degree_ramificationDivisor,
     degree_ramificationDivisor] at h

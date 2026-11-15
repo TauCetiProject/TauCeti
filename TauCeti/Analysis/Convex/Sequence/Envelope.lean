@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Order.ConditionallyCompleteLattice.WithTop
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 import Mathlib.Order.Bounds.Image
 public import Mathlib.Order.ConditionallyCompleteLattice.Basic
@@ -479,7 +480,7 @@ theorem lowerConvexEnvelope_map_mul (a : ℕ → WithTop ℝ) {c : ℝ} (hc : 0 
   · have ha' : ¬IsAdmissible fun n => (a n).map (c * ·) := fun h' => ha <| by
       simpa only [WithTop.map_inv_mul_map_mul hc.ne'] using h'.map_mul (inv_nonneg.mpr hc.le)
     rw [lowerConvexEnvelope_of_not_isAdmissible ha, lowerConvexEnvelope_of_not_isAdmissible ha']
-    funext n
+    funext _
     simp
 
 /-! ### Translation of indices -/

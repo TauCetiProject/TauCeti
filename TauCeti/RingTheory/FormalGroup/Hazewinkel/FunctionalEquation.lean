@@ -112,7 +112,7 @@ theorem hazewinkelLog_sub_functionalEquationSum (hp : 1 < p) (σ : K →+* K)
   · push Not at hk
     rw [coeff_hazewinkelLog_eq_zero v hk, powerSeries_coeff_functionalEquationSum,
       sum_eq_zero, sub_zero, coeff_X, ite_eq_right (by simpa [eq_comm] using hk 0)]
-    intro i hi
+    intro i _
     split_ifs with hdvd
     · rw [coeff_hazewinkelLog_eq_zero v, map_zero, mul_zero]
       intro n hn

@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Current.Perfect
 public import TauCeti.Algebra.Lie.Extension.Topology
 public import TauCeti.Algebra.Lie.Perfect
 
+import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.Killing.Perfect
 
 /-!
@@ -51,7 +52,7 @@ namespace TauCeti.CurrentAlgebra
 open _root_.LieAlgebra _root_.LieModule.Cohomology TauCeti.LieModule.Cohomology
 
 variable {K L Z : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
-  [FiniteDimensional K L] [IsKilling K L] [AddCommGroup Z] [Module K Z]
+  [IsKilling K L] [AddCommGroup Z] [Module K Z]
   {Φ : LinearMap.BilinForm K L} (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
 
 local notation "C" => currentAlgebra K L
@@ -64,7 +65,7 @@ from the scalar residue extension. Its central coordinate is `t • z - f u`, wh
 on a high-order current subspace. -/
 theorem exists_residueExtensionLift
     (hspan : ∀ Ψ : LinearMap.BilinForm K L, Ψ.lieInvariant L → ∃ t : K, Ψ = t • Φ)
-    (hΦ0 : Φ ≠ 0) (c : twoCocycle K C TZ)
+    (c : twoCocycle K C TZ)
     (hc : (c : twoCochain K C TZ) ∈ continuousTwoCocycle K C TZ) :
     ∃ z : Z, ∃ f : oneCochain K C TZ, ∃ N : ℤ,
       (∀ u ∈ orderSubmodule K L N, f u = 0) ∧
@@ -73,7 +74,7 @@ theorem exists_residueExtensionLift
           ofProd c (u, (TrivialLieModule.equiv K C Z).symm
             ((TrivialLieModule.equiv K C K t) • z) - f u) := by
   obtain ⟨z, f, hf, hcf⟩ :=
-    exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ hΦs hspan hΦ0 hc
+    exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ hΦs hspan hc
   obtain ⟨N, hN⟩ := mem_continuousOneCochain_iff_orderSubmodule.mp hf
   let d : twoCocycle K C TZ := ⟨twoCochainOfBilinearSMulRight K L Φ hΦs z,
     twoCochainOfBilinearSMulRight_mem_twoCocycle K L Φ hΦ hΦs z⟩
@@ -94,7 +95,7 @@ theorem existsUnique_residueExtensionLift
     (hc : (c : twoCochain K C TZ) ∈ continuousTwoCocycle K C TZ) :
     ∃! F : ofTwoCocycle cΦ →ₗ⁅K⁆ ofTwoCocycle c,
       (ofTwoCocycle.proj c).comp F = ofTwoCocycle.proj cΦ := by
-  obtain ⟨z, f, N, hN, F, -, hF⟩ := exists_residueExtensionLift hΦ hΦs hspan hΦ0 c hc
+  obtain ⟨z, f, N, _, F, -, hF⟩ := exists_residueExtensionLift hΦ hΦs hspan c hc
   have hproj : (ofTwoCocycle.proj c).comp F = ofTwoCocycle.proj cΦ := by
     apply LieHom.ext
     intro v
@@ -124,7 +125,7 @@ theorem continuous_residueExtensionLift
     (hc : (c : twoCochain K C TZ) ∈ continuousTwoCocycle K C TZ)
     {F : ofTwoCocycle cΦ →ₗ⁅K⁆ ofTwoCocycle c}
     (hF : (ofTwoCocycle.proj c).comp F = ofTwoCocycle.proj cΦ) : Continuous F := by
-  obtain ⟨_, _, _, _, G, hGc, hG⟩ := exists_residueExtensionLift hΦ hΦs hspan hΦ0 c hc
+  obtain ⟨_, _, _, _, G, hGc, hG⟩ := exists_residueExtensionLift hΦ hΦs hspan c hc
   obtain ⟨_, -, huniq⟩ := existsUnique_residueExtensionLift hΦ hΦs hspan hΦ0 c hc
   have hGp : (ofTwoCocycle.proj c).comp G = ofTwoCocycle.proj cΦ := by
     apply LieHom.ext
@@ -146,6 +147,7 @@ theorem existsUnique_killingExtensionLift [IsAlgClosed K]
         →ₗ⁅K⁆ ofTwoCocycle c,
       (ofTwoCocycle.proj c).comp F = ofTwoCocycle.proj _ := by
   have _i := _root_.LieModule.nontrivial_of_isIrreducible K L L
+  have _j := TauCeti.finite_of_isKilling (R := K) (L := L)
   exact existsUnique_residueExtensionLift
     (_root_.LieModule.traceForm_lieInvariant K L L)
     (LinearMap.BilinForm.isSymm_iff.mpr (_root_.LieModule.traceForm_isSymm K L L))

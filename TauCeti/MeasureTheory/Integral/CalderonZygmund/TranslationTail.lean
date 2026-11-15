@@ -5,26 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Group.Integral
+public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import TauCeti.Analysis.Normed.Group.BallSphere
 
 /-!
-# Hörmander's condition from the tail of an integrable kernel
+# Hörmander's condition from the integrable tail of a kernel
 
-For an integrable function `f` on a normed additive group with a right-invariant measure,
-translating by `h` maps `{‖x‖ > 2 ‖h‖}` into `{‖x‖ > ‖h‖}`, so
+Let `f` be a function on a seminormed additive group with a right-invariant measure, integrable
+on `{‖x‖ > r}`. Since `x ↦ x - h` maps `{‖x‖ > s}` into `{‖x‖ > r}` whenever `r + ‖h‖ ≤ s`,
 
-`∫_{‖x‖ > 2 ‖h‖} ‖f (x - h) - f x‖ dx ≤ 2 ∫_{‖x‖ > ‖h‖} ‖f x‖ dx`.
+`∫_{‖x‖ > s} ‖f (x - h) - f x‖ dx ≤ 2 ∫_{‖x‖ > r} ‖f x‖ dx`.
 
-This is the crude form of Hörmander's condition for the convolution kernel `f`, used at the scales
-where its tail is small: in the proof of the Mihlin–Hörmander multiplier theorem it handles the
-Littlewood–Paley pieces of frequency `2 ^ j > ‖h‖⁻¹`.
+With `r = ‖h‖` and `s = 2 ‖h‖` this is the crude form of Hörmander's condition for the convolution
+kernel `f`, used at the scales where its tail is small: in the proof of the Mihlin–Hörmander
+multiplier theorem it handles the Littlewood–Paley pieces of frequency `2 ^ j > ‖h‖⁻¹`.
 
 ## Main declarations
 
-* `MeasureTheory.Integrable.setIntegral_norm_comp_sub_le`: the translate of `f` on
-  `{‖x‖ > 2 ‖h‖}` is controlled by the tail of `f` on `{‖x‖ > ‖h‖}`.
-* `MeasureTheory.Integrable.setIntegral_norm_comp_sub_sub_le`: Hörmander's condition bounded by
+* `MeasureTheory.IntegrableOn.setIntegral_norm_comp_sub_le`: the translate of `f` on
+  `{‖x‖ > s}` is controlled by the tail of `f` on `{‖x‖ > r}`.
+* `MeasureTheory.IntegrableOn.setIntegral_norm_comp_sub_sub_le`: Hörmander's condition bounded by
   twice the tail.
 
 ## References
@@ -34,48 +35,42 @@ Littlewood–Paley pieces of frequency `2 ^ j > ‖h‖⁻¹`.
 
 public section
 
-namespace MeasureTheory.Integrable
+namespace MeasureTheory.IntegrableOn
 
-variable {G E : Type*} [NormedAddCommGroup G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup E] {μ : Measure G} [μ.IsAddRightInvariant] {f : G → E}
+variable {G E : Type*} [SeminormedAddGroup G] {h : G} {r s : ℝ} [MeasurableSpace G]
+  [MeasurableAdd G] [NormedAddCommGroup E] {μ : Measure G} [μ.IsAddRightInvariant] {f : G → E}
 
-/-- Translating by `h` maps `{‖x‖ > 2 ‖h‖}` into `{‖x‖ > ‖h‖}`, so the integral of `‖f (x - h)‖`
-over the first set is at most that of `‖f x‖` over the second. -/
-theorem setIntegral_norm_comp_sub_le (hf : Integrable f μ) (h : G) :
-    ∫ x in {x | 2 * ‖h‖ < ‖x‖}, ‖f (x - h)‖ ∂μ ≤ ∫ x in {x | ‖h‖ < ‖x‖}, ‖f x‖ ∂μ := by
-  have hS : MeasurableSet {x : G | 2 * ‖h‖ < ‖x‖} :=
-    measurableSet_lt measurable_const measurable_norm
-  have hT : MeasurableSet {x : G | ‖h‖ < ‖x‖} := measurableSet_lt measurable_const measurable_norm
-  rw [← integral_indicator hS, ← integral_indicator hT,
-    ← integral_sub_right_eq_self (fun x ↦ {x : G | ‖h‖ < ‖x‖}.indicator (‖f ·‖) x) h]
-  refine integral_mono ((hf.comp_sub_right h).norm.indicator hS)
-    ((hf.norm.indicator hT).comp_sub_right h) fun x ↦ ?_
-  by_cases hx : x ∈ {x : G | 2 * ‖h‖ < ‖x‖}
-  · have hx' : x - h ∈ {x : G | ‖h‖ < ‖x‖} := by
-      simp only [Set.mem_ofPred_eq] at hx ⊢
-      linarith [norm_sub_norm_le x h]
-    simp [Set.indicator_of_mem hx, Set.indicator_of_mem hx']
-  · rw [Set.indicator_of_notMem hx]
-    exact Set.indicator_nonneg (fun _ _ ↦ norm_nonneg _) _
+/-- If `f` is integrable on `{‖x‖ > r}` and `r + ‖h‖ ≤ s`, the integral of `‖f (x - h)‖` over
+`{‖x‖ > s}` is at most that of `‖f x‖` over `{‖x‖ > r}`. -/
+theorem setIntegral_norm_comp_sub_le (hf : IntegrableOn f {x | r < ‖x‖} μ) (hrs : r + ‖h‖ ≤ s) :
+    ∫ x in {x | s < ‖x‖}, ‖f (x - h)‖ ∂μ ≤ ∫ x in {x | r < ‖x‖}, ‖f x‖ ∂μ := by
+  rw [← (measurePreserving_sub_right μ h).setIntegral_image_emb
+    (MeasurableEquiv.subRight h).measurableEmbedding (‖f ·‖)]
+  exact setIntegral_mono_set hf.norm (.of_forall fun _ ↦ norm_nonneg _)
+    (.of_forall (TauCeti.image_sub_const_setOf_lt_norm_subset hrs))
 
-/-- **Hörmander's condition from the tail of the kernel.** On `{‖x‖ > 2 ‖h‖}`, the difference
-`f (x - h) - f x` is controlled by twice the tail of `f` on `{‖x‖ > ‖h‖}`. -/
-theorem setIntegral_norm_comp_sub_sub_le (hf : Integrable f μ) (h : G) :
-    ∫ x in {x | 2 * ‖h‖ < ‖x‖}, ‖f (x - h) - f x‖ ∂μ ≤
-      2 * ∫ x in {x | ‖h‖ < ‖x‖}, ‖f x‖ ∂μ := by
-  have hST : {x : G | 2 * ‖h‖ < ‖x‖} ⊆ {x | ‖h‖ < ‖x‖} :=
-    Set.ofPred_subset_ofPred.2 fun x hx ↦ by linarith [norm_nonneg h]
-  calc ∫ x in {x | 2 * ‖h‖ < ‖x‖}, ‖f (x - h) - f x‖ ∂μ
-      ≤ ∫ x in {x | 2 * ‖h‖ < ‖x‖}, (‖f (x - h)‖ + ‖f x‖) ∂μ :=
-        setIntegral_mono ((hf.comp_sub_right h).sub hf).norm.integrableOn
-          ((hf.comp_sub_right h).norm.add hf.norm).integrableOn fun x ↦ norm_sub_le _ _
-    _ = (∫ x in {x | 2 * ‖h‖ < ‖x‖}, ‖f (x - h)‖ ∂μ) + ∫ x in {x | 2 * ‖h‖ < ‖x‖}, ‖f x‖ ∂μ :=
-        integral_add (hf.comp_sub_right h).norm.integrableOn hf.norm.integrableOn
-    _ ≤ (∫ x in {x | ‖h‖ < ‖x‖}, ‖f x‖ ∂μ) + ∫ x in {x | ‖h‖ < ‖x‖}, ‖f x‖ ∂μ := by
+/-- **Hörmander's condition from the tail of the kernel.** If `r + ‖h‖ ≤ s`, then on `{‖x‖ > s}`
+the difference `f (x - h) - f x` is controlled by twice the tail of `f` on `{‖x‖ > r}`. The
+classical case is `r = ‖h‖` and `s = 2 * ‖h‖`. -/
+theorem setIntegral_norm_comp_sub_sub_le (hf : IntegrableOn f {x | r < ‖x‖} μ)
+    (hrs : r + ‖h‖ ≤ s) :
+    ∫ x in {x | s < ‖x‖}, ‖f (x - h) - f x‖ ∂μ ≤ 2 * ∫ x in {x | r < ‖x‖}, ‖f x‖ ∂μ := by
+  have hsr : {x : G | s < ‖x‖} ⊆ {x | r < ‖x‖} := fun x (hx : s < ‖x‖) ↦
+    lt_of_le_of_lt (by linarith [norm_nonneg h]) hx
+  have hf₁ : IntegrableOn (fun x ↦ f (x - h)) {x | s < ‖x‖} μ :=
+    ((measurePreserving_sub_right μ h).integrableOn_image
+      (MeasurableEquiv.subRight h).measurableEmbedding).1
+        (hf.mono_set (TauCeti.image_sub_const_setOf_lt_norm_subset hrs))
+  have hf₂ : IntegrableOn f {x | s < ‖x‖} μ := hf.mono_set hsr
+  calc ∫ x in {x | s < ‖x‖}, ‖f (x - h) - f x‖ ∂μ
+      ≤ ∫ x in {x | s < ‖x‖}, (‖f (x - h)‖ + ‖f x‖) ∂μ :=
+        setIntegral_mono (hf₁.sub hf₂).norm (hf₁.norm.add hf₂.norm) fun x ↦ norm_sub_le _ _
+    _ = (∫ x in {x | s < ‖x‖}, ‖f (x - h)‖ ∂μ) + ∫ x in {x | s < ‖x‖}, ‖f x‖ ∂μ :=
+        integral_add hf₁.norm hf₂.norm
+    _ ≤ (∫ x in {x | r < ‖x‖}, ‖f x‖ ∂μ) + ∫ x in {x | r < ‖x‖}, ‖f x‖ ∂μ := by
         gcongr ?_ + ?_
-        · exact hf.setIntegral_norm_comp_sub_le h
-        · exact setIntegral_mono_set hf.norm.integrableOn (.of_forall fun _ ↦ norm_nonneg _)
-            (.of_forall hST)
-    _ = 2 * ∫ x in {x | ‖h‖ < ‖x‖}, ‖f x‖ ∂μ := by ring
+        · exact hf.setIntegral_norm_comp_sub_le hrs
+        · exact setIntegral_mono_set hf.norm (.of_forall fun _ ↦ norm_nonneg _) (.of_forall hsr)
+    _ = 2 * ∫ x in {x | r < ‖x‖}, ‖f x‖ ∂μ := (two_mul _).symm
 
-end MeasureTheory.Integrable
+end MeasureTheory.IntegrableOn

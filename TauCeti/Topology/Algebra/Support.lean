@@ -29,6 +29,11 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
   in `U`, times a function continuous on `U`, is continuous.
 * `TauCeti.tsupport_snd_smul_fst_subset`: the topological support of `(x, y) ↦ f y • g x` lies in
   `tsupport g ×ˢ tsupport f`.
+* `HasCompactSupport.comp_of_forall_mem_imp_mem`: a function of `Ψ y` that vanishes outside `T` is
+  compactly supported when the preimage of `T` under `Ψ` lies in a compact set.
+* `TauCeti.hasCompactSupport_pi_iff`: a function with values in a finite product is compactly
+  supported exactly when every coordinate is, with multiplicative version
+  `TauCeti.hasCompactMulSupport_pi_iff`.
 -/
 
 public section
@@ -110,3 +115,24 @@ theorem mulTSupport_comp_symm_subset_interior_image (e : X ≃ₜ Y) {F : X → 
   exact Set.image_mono h
 
 end Homeomorph
+
+/-- A function of `Ψ y` that vanishes outside `T` is compactly supported when the preimage under
+`Ψ` of `T` lies in a compact set. -/
+theorem HasCompactSupport.comp_of_forall_mem_imp_mem {X Y Z : Type*} [TopologicalSpace X]
+    [R1Space X] [Zero Z] {Ψ : X → Y} {T : Set Y} {K : Set X} (hK : IsCompact K)
+    (hΨK : ∀ y, Ψ y ∈ T → y ∈ K) {k : Y → Z}
+    (hkz : ∀ z ∉ T, k z = 0) : HasCompactSupport fun y ↦ k (Ψ y) :=
+  HasCompactSupport.intro hK fun y hy ↦ hkz _ fun h ↦ hy (hΨK y h)
+
+namespace TauCeti
+
+/-- A function with values in a finite product has compact multiplicative support exactly when
+each coordinate has compact multiplicative support. -/
+@[to_additive /-- A function with values in a finite product is compactly supported exactly when
+each coordinate is compactly supported. -/]
+theorem hasCompactMulSupport_pi_iff {X ι : Type*} [TopologicalSpace X] [Finite ι]
+    {M : ι → Type*} [∀ i, One (M i)] {f : X → ∀ i, M i} :
+    HasCompactMulSupport f ↔ ∀ i, HasCompactMulSupport (f · i) := by
+  simp [hasCompactMulSupport_iff_eventuallyEq, Filter.EventuallyEq, funext_iff]
+
+end TauCeti

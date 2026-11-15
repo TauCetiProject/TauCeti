@@ -58,10 +58,7 @@ diagram is the series `TauCeti.Bigraded.W` of the stabilization factor.
 
 ## References
 
-This advances the “Grid homology computes” acceptance criterion in
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, specifically the computation of the
-two-by-two unknot grid with its bigradings and the visible rank-two stabilization factor. The
-fully blocked complex and its grading conventions follow Ozsváth--Stipsicz--Szabó,
+The fully blocked complex and its grading conventions follow Ozsváth--Stipsicz--Szabó,
 *Grid Homology for Knots and Links*, Chapters 3 and 4.
 -/
 

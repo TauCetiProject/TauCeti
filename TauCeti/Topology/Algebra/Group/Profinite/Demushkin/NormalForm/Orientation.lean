@@ -174,10 +174,6 @@ theorem range_orientationNeTwo_eq_unitsPrincipal (hn : 1 < n) {f : ℕ} (hq : q 
     (orientationNeTwo q n u hu).toMonoidHom.range = unitsPrincipal p f := by
   subst hq
   push_cast at hu'
-  have hf : 0 < f := by
-    rcases Nat.eq_zero_or_pos f with rfl | h
-    · simp at hu'
-    · exact h
   rw [range_orientationNeTwo _ n u hu hn,
     topologicalClosure_zpowers_eq_unitsPrincipal_of_val_mul_one_sub_pow_eq_one hf₂ hu']
 

@@ -73,7 +73,7 @@ the abelianization, which has order two by `TauCeti.card_abelianization_perm_fin
 finite commutative group with enough roots of unity in `M` has as many characters as elements. -/
 @[simp]
 theorem card_monoidHom_perm_fin_three : Nat.card (Perm (Fin 3) →* Mˣ) = 2 := by
-  have : HasEnoughRootsOfUnity M (Monoid.exponent (Abelianization (Perm (Fin 3)))) := by
+  have : HasEnoughRootsOfUnity M (Monoid.exponent (Group.Abelianization (Perm (Fin 3)))) := by
     rw [exponent_abelianization_perm_fin_three]
     infer_instance
   rw [card_monoidHom_eq_card_abelianization, card_abelianization_perm_fin_three]

@@ -62,13 +62,12 @@ open scoped ENNReal
 
 /--
 For a probability measure, `1 - μ sᶜ ≤ μ s`, with no measurability assumption
-on `s`: subadditivity gives `1 = μ (s ∪ sᶜ) ≤ μ s + μ sᶜ`.
+on `s`: this is `μ univ ≤ μ s + μ sᶜ` (`MeasureTheory.measure_univ_le_add_compl`) with
+`μ univ = 1`.
 -/
 theorem one_sub_measure_compl_le {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
     [IsProbabilityMeasure μ] (s : Set Ω) : 1 - μ sᶜ ≤ μ s :=
-  tsub_le_iff_right.mpr <| by
-    calc (1 : ℝ≥0∞) = μ (s ∪ sᶜ) := by rw [Set.union_compl_self, measure_univ]
-      _ ≤ μ s + μ sᶜ := measure_union_le _ _
+  tsub_le_iff_right.mpr (by simpa using measure_univ_le_add_compl (μ := μ) s)
 
 /-- A probability measure on a space with measurable singletons is determined by its values on
 singletons when those have total mass one, even if the space is uncountable. -/
@@ -80,7 +79,7 @@ theorem ext_of_singleton_of_tsum_eq_one {β : Type*} [MeasurableSpace β]
     Summable.countable_support_ennreal (by rw [hw]; exact ENNReal.one_ne_top)
   have key : ∀ (m : Measure β) [IsProbabilityMeasure m], (∀ b, m {b} = w b) →
       ∀ t : Set β, MeasurableSet t → m t = ∑' b : ↥(t ∩ Function.support w), w b := by
-    intro m _ hm t ht
+    intro m _ hm t _
     have hsum {s : Set β} (hs : s.Countable) : m s = ∑' b : s, w b := by
       simpa [hm] using (tsum_measure_preimage_singleton (μ := m) hs (f := id)
         fun _ _ ↦ measurableSet_singleton _).symm

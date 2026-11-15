@@ -33,18 +33,14 @@ solution of the *equation*, not an element of `W.Point`; a caller wanting a poin
 `equation_iff_nonsingular_of_Δ_ne_zero` or `equation_iff_nonsingular`, which is what makes the
 hypothesis-free form the useful one.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md:99` — "**`[n]` is division polynomials**". The consumer is
-`DivisionPolynomial/Coprimality.lean`, whose proof of `isCoprime_Φ_ΨSq` passes to the algebraic
-closure and needs a common root of `Φₙ` and `ΨSqₙ` to be the `x`-coordinate of an actual point.
-Nothing here mentions a division polynomial.
+The consumer is `DivisionPolynomial/Coprimality.lean`, whose proof of `isCoprime_Φ_ΨSq` passes to
+the algebraic closure and needs a common root of `Φₙ` and `ΨSqₙ` to be the `x`-coordinate of an
+actual point. Nothing here mentions a division polynomial.
 
 ## Provenance
 
 Ported, with the author's proof, from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), the
-HasseWeil project at `dev/hasse-weil @ 513e83879e2f` — the revision
-`TauCetiRoadmap/EllipticCurves/README.md:1071` pins for that project. Source file
+HasseWeil project at `dev/hasse-weil @ 513e83879e2f`. Source file
 `projects/HasseWeil/HasseWeil/Auxiliary/DivisionPolynomial.lean`, section `Coprimality`,
 declaration `exists_point_on_curve`, whose header credits David Kurniadi Angdinata and Junyan Xu.
 Upstream it sits beside its coprimality consumer and is stated for a global

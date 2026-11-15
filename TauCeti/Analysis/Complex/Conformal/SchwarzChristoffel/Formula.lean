@@ -205,7 +205,7 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
     rcases hvertex i with ⟨hei, r, hr, b, hcont, hinj, hsector, hrays⟩ |
       ⟨hei, r, hr, c, b, g, hgf, hg0, hgc, hgi, hsector, hrays⟩ |
       ⟨hei, r, hr, c, b, g, hgf, hg0, hgc, hgr, hgu, hgi⟩ |
-      ⟨hei, r, hr, ρ', c, b, hb, hfc, hfi, hp, hU⟩
+      ⟨hei, r, _, ρ', c, b, hb, hfc, hfi, hp, hU⟩
     · have hcast : ((e i : ℝ) : ℂ) = ((e i + 1 : ℝ) : ℂ) - 1 := by push_cast; ring
       rw [hcast]
       exact tendsto_sub_mul_nhdsNE_of_sector (φ := φ) (f := f) (x := a i) (r := ρ)

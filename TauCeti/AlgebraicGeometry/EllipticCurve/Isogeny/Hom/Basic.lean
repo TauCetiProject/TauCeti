@@ -67,12 +67,6 @@ exactly at the zero map, which is what `degree_eq_zero_iff` records.
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2 and III.6.
 -/
 
--- Design source, for whoever maintains this: the three decisions that shape the carrier — no
--- `WithZero` adjunction, the zero map as the unique non-unital element, `degree 0 = 0`
--- stipulated — are specified in `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, "The
--- hom-group and the degree form". This is provenance for the implementer, not part of the
--- interface, so it sits here rather than in the module docstring.
-
 public section
 
 namespace TauCeti.Isogeny

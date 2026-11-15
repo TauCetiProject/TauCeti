@@ -236,7 +236,7 @@ def dgBimoduleHomLinearEquivZeroCocycles (hM : IsDGBimodule hA hB ℳ dM)
   toFun f := ⟨⟨(dgRightModuleHomLinearEquivZeroCocycles
     hM.isDGRightModule hN.isDGRightModule f.1).1, by
       apply dgBimoduleCochains.mem_iff.mpr
-      intro r a ha x
+      intro r a _ x
       simpa only [zero_mul, Int.negOnePow_zero, one_smul,
         dgRightModuleHomLinearEquivZeroCocycles_apply, DGBimoduleHom.coe_val] using
         f.map_smul_left a x⟩, by

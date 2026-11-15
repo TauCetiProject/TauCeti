@@ -148,7 +148,7 @@ theorem halfSpacePoissonKernel_pos {v : {w : E // ‖w‖ = 1}} {x y : E}
     (hx : 0 < ⟪(v : E), x⟫_ℝ) (hxy : y ≠ x) :
     0 < halfSpacePoissonKernel n v x y := by
   rw [halfSpacePoissonKernel_def]
-  have hn : 0 < n := pos_of_ne_zero_euclideanSpace (sub_ne_zero.mpr hxy)
+  have hn : 0 < n := pos_of_ne_euclideanSpace hxy
   have hnreal : (0 : ℝ) < n := by exact_mod_cast hn
   exact mul_pos (mul_pos (by norm_num) hx)
     (mul_pos (inv_pos.mpr (mul_pos hnreal (volume_real_unitBall_pos n)))
@@ -211,7 +211,6 @@ theorem halfSpacePoissonKernel_le_mul (v : U) {x x₁ y : E} {A : ℝ} (hy : ⟪
     rw [Real.mul_rpow hA0.le hyx.le, Real.rpow_neg hA0.le, Real.rpow_natCast] at this
     rwa [inv_mul_le_iff₀ (by positivity)] at this
   rw [halfSpacePoissonKernel_def, halfSpacePoissonKernel_def]
-  have hc : 0 ≤ ((n : ℝ) * volume.real (ball (0 : E) 1))⁻¹ := by positivity
   calc 2 * ⟪(v : E), x⟫_ℝ * (((n : ℝ) * volume.real (ball (0 : E) 1))⁻¹ * ‖y - x‖ ^ (-(n : ℝ)))
       ≤ 2 * ⟪(v : E), x⟫_ℝ * (((n : ℝ) * volume.real (ball (0 : E) 1))⁻¹ *
           (A ^ n * ‖y - x₁‖ ^ (-(n : ℝ)))) := by gcongr

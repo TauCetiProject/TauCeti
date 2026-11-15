@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 import Mathlib.Algebra.BigOperators.Field
+import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
 # Gram-matrix lattices on the standard rational coordinate space
@@ -44,10 +45,11 @@ Cartan matrix computable from that matrix alone.
   combinations of `G` against a rational vector `x` are `δ_{i, i₀}`, then `y` pairs with `x` to
   `y i₀` for every `y`, and `x` is dual-integral. The hypothesis holds for `x = c / d` when
   `G c = d • e_{i₀}` over `ℤ` (`Matrix.sum_mul_div_eq_ite`).
-
-## References
-
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 5.
+* `TauCeti.IntegralLattice.apply_eq_sum_mul_form_ofGramMatrix_basisFun_div` and
+  `TauCeti.IntegralLattice.intCast_mul_form_ofGramMatrix_basisFun_self`: if `G M = d • 1` over
+  `ℤ`, a vector is recovered from its pairings `w` with the coordinate vectors as `M w / d`, and
+  `d` times its norm is the value of the integral quadratic form `M` on `w`. For a Cartan matrix
+  this computes in the weight lattice with an integral multiple of the inverse Cartan matrix.
 -/
 
 public section
@@ -228,6 +230,63 @@ theorem mem_ofGramMatrix_basisFun_dualCarrier_of_sum_eq_ite :
   exact ⟨if i = i₀ then 1 else 0, by split_ifs <;> simp⟩
 
 end Weight
+
+section Inverse
+
+variable [DecidableEq ι] {M : Matrix ι ι ℤ} {d : ℤ} (hM : G * M = d • 1)
+include hM
+
+/-- If `G M = d • 1` over `ℤ` with `d ≠ 0`, a vector is recovered from its pairings with the
+standard coordinate vectors by applying `M / d`. -/
+theorem apply_eq_sum_mul_form_ofGramMatrix_basisFun_div (hd : d ≠ 0) (x : ι → ℚ) (j : ι) :
+    x j = (∑ i, (M j i : ℚ) *
+      (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form x (Pi.basisFun ℚ ι i)) / d := by
+  have hd' : (d : ℚ) ≠ 0 := by exact_mod_cast hd
+  let f := Int.castRingHom ℚ
+  have hMG : M.map f * G.map f = (d : ℚ) • 1 := by
+    rw [← Matrix.map_mul, (Matrix.mul_eq_smul_one_comm (mem_nonZeroDivisors_of_ne_zero hd)).mp hM]
+    ext i k
+    by_cases hik : i = k <;> simp [Matrix.intCast_apply, hik, f]
+  have hjk (k : ι) : ∑ i, (M j i : ℚ) * (G i k : ℚ) = if j = k then (d : ℚ) else 0 := by
+    have h := congrFun (congrFun hMG j) k
+    simpa only [Matrix.mul_apply, Matrix.map_apply, Matrix.smul_apply, Matrix.one_apply,
+      smul_eq_mul, mul_ite, mul_one, mul_zero, f, eq_intCast] using h
+  simp_rw [form_ofGramMatrix_basisFun_right, Finset.mul_sum, ← mul_assoc]
+  rw [Finset.sum_comm]
+  simp_rw [← Finset.sum_mul, hjk, ite_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ,
+    ite_true]
+  field_simp
+
+open _root_.Matrix in
+/-- If `G M = d • 1` over `ℤ`, then `d` times the norm of a vector is the value of the
+quadratic form `M` on its pairings with the standard coordinate vectors. -/
+theorem intCast_mul_form_ofGramMatrix_basisFun_self (x : ι → ℚ) :
+    d * (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form x x =
+      ∑ i, (∑ j, (M i j : ℚ) *
+        (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form x (Pi.basisFun ℚ ι j)) *
+          (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form x (Pi.basisFun ℚ ι i) := by
+  let f := Int.castRingHom ℚ
+  have hw (i : ι) :
+      (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form x (Pi.basisFun ℚ ι i) = (G.map f *ᵥ x) i := by
+    rw [form_ofGramMatrix_basisFun_right]
+    simp [mulVec, dotProduct, f]
+  have hGM : G.map f * M.map f = (d : ℚ) • 1 := by
+    rw [← Matrix.map_mul, hM]
+    ext i k
+    by_cases hik : i = k <;> simp [Matrix.intCast_apply, hik, f]
+  -- The pairings are `w = G x`, and `(M w) ⬝ w = x ⬝ (G M G x) = d (x ⬝ G x)` by symmetry.
+  have hGMx : (G.map f *ᵥ x) ᵥ* M.map f = (d : ℚ) • x := by
+    rw [← vecMul_transpose, (hG.map f).eq, vecMul_vecMul, hGM, vecMul_smul, vecMul_one]
+  simp_rw [hw]
+  calc
+    _ = d * (x ⬝ᵥ (G.map f *ᵥ x)) := by
+      rw [form_ofGramMatrix_basisFun_apply]
+      simp [mulVec, dotProduct, f]
+    _ = (G.map f *ᵥ x) ⬝ᵥ (M.map f *ᵥ (G.map f *ᵥ x)) := by
+      rw [dotProduct_mulVec (G.map f *ᵥ x), hGMx, smul_dotProduct, smul_eq_mul]
+    _ = _ := by simp [mulVec, dotProduct, mul_comm]
+
+end Inverse
 
 end StandardCoordinates
 

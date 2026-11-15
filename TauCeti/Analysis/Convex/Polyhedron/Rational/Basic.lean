@@ -80,6 +80,15 @@ noncomputable def ofFinite {ι : Type*} [Finite ι] (g : ι → (V →ᴬ[ℝ] �
   letI := Fintype.ofFinite ι
   exact ⟨Fintype.card ι, fun j => g ((Fintype.equivFin ι).symm j), fun j => hg _⟩
 
+/-- Every inequality of a finite reindexing is one of the original inequalities. -/
+theorem exists_inequality_ofFinite {ι : Type*} [Finite ι] {g : ι → (V →ᴬ[ℝ] ℝ)}
+    (hg : ∀ j, Toric.IsRationalFunctional h (g j).toAffineMap.linear)
+    (j : Fin (ofFinite g hg).numConstraints) : ∃ k, (ofFinite g hg).inequality j = g k := by
+  let := Fintype.ofFinite ι
+  dsimp only [ofFinite]
+  -- `j : Fin (ofFinite g hg).numConstraints` is definitionally `Fin (Fintype.card ι)`.
+  exact ⟨(Fintype.equivFin ι).symm j, rfl⟩
+
 /-- Reindexing preserves the exact simultaneous-inequality carrier. -/
 @[simp high] -- Apply before `mem_carrier` exposes the reindexed inequalities.
 theorem mem_carrier_ofFinite {ι : Type*} [Finite ι] {g : ι → (V →ᴬ[ℝ] ℝ)}

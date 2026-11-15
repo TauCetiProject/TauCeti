@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder
+public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
 
@@ -30,7 +30,7 @@ for `H'_q` beyond `T₀`
 (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`), and its
 energy over a half-cylinder `(a, ∞) × [0, 1]` with `a ≥ max T₀ 0` is at most the energy of `u`
 over `S` (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le`). So
-the results of `TauCeti.Geometry.Symplectic.Floer.HalfCylinder` about finite-energy Floer
+the results of `TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` about finite-energy Floer
 half-cylinders apply at each end of the pair of pants.
 
 **Orbits at the ends.** Reversing the time of an orbit of `H'_∞` gives an orbit of `H_∞`, and
@@ -60,7 +60,8 @@ compactness.
 
 Without nondegeneracy the orbit `y_q` is obtained along a sequence `s_n`, while the convergence of
 the actions holds along the whole end. Convergence of the whole end to a single orbit, which needs
-nondegenerate orbits and a bound on the derivative, is not treated here.
+nondegenerate orbits and a bound on the derivative, is proved in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Convergence`.
 
 ## References
 
@@ -110,6 +111,17 @@ variable [FiniteDimensional ℝ V]
 
 /-! ### Orbits and actions in positive end charts -/
 
+/-- At the time `±t` of the end, the Hamiltonian vector field of the positive end Hamiltonian
+`H'_q` is `±` that of `H_q` at the time `t`: `X_{H'_q(±t)} = ±X_{H_q(t)}`. -/
+theorem hamiltonianVectorField_positiveEndHamiltonian_endSign_mul (q : Puncture) (t : ℝ) :
+    ω.hamiltonianVectorField (positiveEndHamiltonian H q (q.endSign * t)) =
+      q.endSign • ω.hamiltonianVectorField (H q t) := by
+  funext y
+  rw [Pi.smul_apply, ← hamiltonianVectorField_const_mul]
+  congr 1
+  funext x
+  rw [positiveEndHamiltonian_apply, endSign_mul_endSign_mul]
+
 /-- Reading an orbit of the positive end Hamiltonian `H'_q` with the time `±t` of the end gives
 an orbit of `H_q`. -/
 theorem hasDerivAt_comp_endSign_mul {q : Puncture} {x : ℝ → V}
@@ -118,14 +130,18 @@ theorem hasDerivAt_comp_endSign_mul {q : Puncture} {x : ℝ → V}
     HasDerivAt (fun t ↦ x (q.endSign * t))
       (ω.hamiltonianVectorField (H q t) (x (q.endSign * t))) t := by
   have h := (hx (q.endSign * t)).scomp t ((hasDerivAt_id' t).const_mul q.endSign)
-  have hX : ω.hamiltonianVectorField (positiveEndHamiltonian H q (q.endSign * t)) =
-      fun y ↦ q.endSign • ω.hamiltonianVectorField (H q t) y := by
-    funext y
-    rw [show positiveEndHamiltonian H q (q.endSign * t) = fun y ↦ q.endSign * H q t y by
-      funext y; rw [positiveEndHamiltonian_apply, ← mul_assoc, endSign_mul_self, one_mul],
-      hamiltonianVectorField_const_mul]
-  rw [hX, mul_one, smul_smul, endSign_mul_self, one_smul] at h
+  rw [hamiltonianVectorField_positiveEndHamiltonian_endSign_mul, mul_one, Pi.smul_apply,
+    smul_smul, endSign_mul_self, one_smul] at h
   exact h
+
+/-- Reading an orbit of `H_q` with the time `±t` of the end gives an orbit of the positive end
+Hamiltonian `H'_q`. This is the converse of `hasDerivAt_comp_endSign_mul`. -/
+theorem hasDerivAt_comp_endSign_mul_positiveEndHamiltonian {q : Puncture} {y : ℝ → V}
+    (hy : ∀ t, HasDerivAt y (ω.hamiltonianVectorField (H q t) (y t)) t) (t : ℝ) :
+    HasDerivAt (fun t ↦ y (q.endSign * t))
+      (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (y (q.endSign * t))) t :=
+  hasDerivAt_comp_endSign_mul (H := positiveEndHamiltonian H)
+    (by simpa only [positiveEndHamiltonian_positiveEndHamiltonian] using hy) t
 
 omit [FiniteDimensional ℝ V] in
 /-- The action of a loop for the positive end Hamiltonian `H'_q` is `±` the action, for `H_q`,
@@ -221,7 +237,7 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le
   -- The closed band differs from the open one by a null set.
   have hae : (Ioi a ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] s := by
     rw [Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq (ae_eq_refl _) Ioo_ae_eq_Icc.symm
+    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ioo_ae_eq_Icc.symm
   -- On the open band the energy density is the Jacobian times the energy density of `u`.
   have hdens : ∀ ζ ∈ s, ω.floerEnergyDensity (fun _ _ ↦ 0)
       (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) ζ =

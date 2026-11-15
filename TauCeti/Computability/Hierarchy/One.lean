@@ -79,7 +79,7 @@ theorem isSigma_one_dom_eval (c : Code) :
     simp [eq_comm]
   simp only [Part.dom_iff_mem, Code.mem_eval_iff_exists_evaln hanswers,
     Option.isSome_iff_exists]
-  exact ⟨fun ⟨y, k, d, hd, _⟩ => ⟨k, d, hd⟩,
+  exact ⟨fun ⟨_, k, d, hd, _⟩ => ⟨k, d, hd⟩,
     fun ⟨k, d, hd⟩ => ⟨d.output, k, d, hd, rfl⟩⟩
 
 /-- **The first relativized Post equivalence.** Σ⁰₁ predicates relative to `Z` are exactly the

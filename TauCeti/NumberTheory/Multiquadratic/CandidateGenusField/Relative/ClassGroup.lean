@@ -67,7 +67,7 @@ theorem card_aut_candidateGenusField_over_base_eq_card_narrowElementaryTwoQuotie
         (NumberField.NarrowClassGroup.ElementaryTwoQuotient (candidateGenusFieldBase hd)) := by
   have : NumberField (candidateGenusFieldBase hd) :=
     NumberField.of_intermediateField (candidateGenusFieldBase hd)
-  rw [card_aut_candidateGenusField_over_base hd hnsq,
+  rw [card_aut_candidateGenusField_over_base hd,
     NumberField.NarrowClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
     card_genusPrimeDiscriminants_eq_ncard_ramifiedPrimes
       (minpoly_candidateGenusFieldBaseGen hd hnsq) (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd,
@@ -82,7 +82,7 @@ cardinality shadow of the genus-field isomorphism `Gal(K_gen/K) ≅ Cl(K)/Cl(K)�
 theorem card_aut_candidateGenusField_over_base_eq_card_elementaryTwoQuotient
     (hd : Squarefree d) (hneg : d < 0) :
     Nat.card (candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd) =
-      Nat.card (TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd))) := by
+      Nat.card (ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd))) := by
   have hnsq : ¬ IsSquare ((d : ℤ) : ℚ) := by
     rintro ⟨r, hr⟩
     have h1 : (0 : ℚ) ≤ ((d : ℤ) : ℚ) := hr ▸ mul_self_nonneg r

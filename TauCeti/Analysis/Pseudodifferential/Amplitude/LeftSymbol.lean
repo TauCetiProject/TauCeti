@@ -28,6 +28,9 @@ amplitude on Schwartz functions. In angular frequency,
 
 ## Main declarations
 
+* `TauCeti.Amplitude.leftIntegrand`: the integrand `exp(2πi ⟪θ, x⟫) â(x, θ, ξ + sθ)` of the left
+  symbol, with the frequency shift scaled by a parameter `s`, and its bound
+  `TauCeti.Amplitude.HasCompactInputSupport.exists_norm_leftIntegrand_le`, uniform for bounded `s`.
 * `TauCeti.Amplitude.leftSymbol`: the left symbol, with its formula
   `TauCeti.Amplitude.coefficient_leftSymbol` and its derivatives
   `TauCeti.Amplitude.spatialDeriv_leftSymbol` (`∂_{x_j} c` is the left symbol of
@@ -77,7 +80,7 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddComm
 
 /-- Differentiation of `â(x, θ, ξ)` in the output position and the frequency under the integral
 sign. -/
-private theorem HasCompactInputSupport.hasFDerivAt_fourier_slice {a : Amplitude n V W m}
+theorem HasCompactInputSupport.hasFDerivAt_fourier_slice {a : Amplitude n V W m}
     (ha : a.HasCompactInputSupport) (θ : CoordinateSpace n)
     (q : CoordinateSpace n × CoordinateSpace n) :
     HasFDerivAt (fun q : CoordinateSpace n × CoordinateSpace n ↦
@@ -93,7 +96,7 @@ private theorem HasCompactInputSupport.hasFDerivAt_fourier_slice {a : Amplitude 
 
 /-- The derivative of `â(x, θ, ξ)` in the direction `v` of output positions and frequencies is the
 Fourier transform of the directional derivative of `a` in the direction `(v.1, 0, v.2)`. -/
-private theorem HasCompactInputSupport.fderiv_fourier_slice_apply {a : Amplitude n V W m}
+theorem HasCompactInputSupport.fderiv_fourier_slice_apply {a : Amplitude n V W m}
     (ha : a.HasCompactInputSupport) (θ : CoordinateSpace n)
     (q v : CoordinateSpace n × CoordinateSpace n) :
     (∫ y, (𝐞 (-⟪y, θ⟫) : ℂ) • fderiv ℝ (fun q : CoordinateSpace n × CoordinateSpace n ↦
@@ -122,65 +125,92 @@ private theorem HasCompactInputSupport.fderiv_fourier_slice_apply {a : Amplitude
 
 /-! ### The left symbol -/
 
-/-- The integrand `exp(2πi ⟪θ, x⟫) â(x, θ, ξ + 2πθ)` of the left symbol of an amplitude, where
-`â(x, θ, ξ)` is the Fourier transform of the input slice `y ↦ a(x, y, ξ)` at `θ`. -/
-private def leftIntegrand (a : Amplitude n V W m) (p : CoordinateSpace n × CoordinateSpace n)
+/-- The integrand `exp(2πi ⟪θ, x⟫) â(x, θ, ξ + sθ)` of the left symbol of an amplitude, with the
+frequency shift `2πθ` scaled to `sθ`, where `â(x, θ, ξ)` is the Fourier transform of the input
+slice `y ↦ a(x, y, ξ)` at `θ`. The integrand of the left symbol is the case `s = 2π`, and the
+cases `s = 2πt` with `t ∈ [0, 1]` interpolate between the restriction `a(x, x, ξ)` of `a` to the
+diagonal and the left symbol (`TauCeti.Amplitude.leftSymbol_eq_sum_leftTerm_add_leftRemainder`). -/
+def leftIntegrand (a : Amplitude n V W m) (s : ℝ) (p : CoordinateSpace n × CoordinateSpace n)
     (θ : CoordinateSpace n) : V →L[ℂ] W :=
-  (𝐞 ⟪θ, p.1⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (p.1, y, p.2 + (2 * π) • θ)) θ
+  (𝐞 ⟪θ, p.1⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (p.1, y, p.2 + s • θ)) θ
 
-private theorem HasCompactInputSupport.continuous_leftIntegrand {a : Amplitude n V W m}
-    (ha : a.HasCompactInputSupport) (p : CoordinateSpace n × CoordinateSpace n) :
-    Continuous (leftIntegrand a p) := by
+theorem leftIntegrand_apply (a : Amplitude n V W m) (s : ℝ)
+    (p : CoordinateSpace n × CoordinateSpace n) (θ : CoordinateSpace n) :
+    leftIntegrand a s p θ = (𝐞 ⟪θ, p.1⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (p.1, y, p.2 + s • θ)) θ :=
+  (rfl)
+
+/-- The integrand of the left symbol is continuous in the integration variable. -/
+theorem HasCompactInputSupport.continuous_leftIntegrand {a : Amplitude n V W m}
+    (ha : a.HasCompactInputSupport) (s : ℝ) (p : CoordinateSpace n × CoordinateSpace n) :
+    Continuous (leftIntegrand a s p) := by
   have h₁ : Continuous fun θ : CoordinateSpace n ↦ (𝐞 ⟪θ, p.1⟫ : ℂ) :=
     continuous_subtype_val.comp (Real.continuous_fourierChar.comp (by fun_prop))
-  have h₂ : Continuous fun θ ↦ 𝓕 (fun y ↦ a.coefficient (p.1, y, p.2 + (2 * π) • θ)) θ :=
+  have h₂ : Continuous fun θ ↦ 𝓕 (fun y ↦ a.coefficient (p.1, y, p.2 + s • θ)) θ :=
     ha.continuous_fourier_slice.comp (f := fun θ : CoordinateSpace n ↦
-      (θ, p.1, p.2 + (2 * π) • θ)) (by fun_prop)
+      (θ, p.1, p.2 + s • θ)) (by fun_prop)
   unfold leftIntegrand
   exact h₁.smul h₂
 
 /-- Peetre's inequality and the rapid decay of `â` bound the integrand of the left symbol by
-`C ⟨ξ⟩ ^ m ⟨θ⟩ ^ (-(n + 1))`, uniformly for output positions in a compact set. -/
-private theorem HasCompactInputSupport.exists_norm_leftIntegrand_le {a : Amplitude n V W m}
-    (ha : a.HasCompactInputSupport) {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ θ, ‖leftIntegrand a (x, ξ) θ‖ ≤
+`C ⟨ξ⟩ ^ m ⟨θ⟩ ^ (-(n + 1))`, uniformly for scales `|s| ≤ R` and output positions in a compact
+set. -/
+theorem HasCompactInputSupport.exists_norm_leftIntegrand_le {a : Amplitude n V W m}
+    (ha : a.HasCompactInputSupport) {K : Set (CoordinateSpace n)} (hK : IsCompact K) {R : ℝ}
+    (hR : 1 ≤ R) :
+    ∃ C, 0 ≤ C ∧ ∀ s : ℝ, |s| ≤ R → ∀ x ∈ K, ∀ ξ θ, ‖leftIntegrand a s (x, ξ) θ‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
   obtain ⟨C, hC0, hC⟩ := ha.exists_norm_fourier_slice_le hK (|m| + (n + 1))
-  refine ⟨C * 2 ^ (|m| / 2) * (2 * π) ^ |m|, by positivity, fun x hx ξ θ ↦ ?_⟩
-  have h2π : (1 : ℝ) ≤ 2 * π := by linarith [Real.two_le_pi]
-  have hpeetre := one_add_norm_add_sq_rpow_le_mul m ξ ((2 * π) • θ)
-  have hscale := one_add_norm_smul_sq_rpow_le h2π |m| θ
+  refine ⟨C * 2 ^ (|m| / 2) * R ^ |m|, by positivity, fun s hs x hx ξ θ ↦ ?_⟩
+  have hpeetre := one_add_norm_add_sq_rpow_le_mul m ξ (s • θ)
+  have hscale := one_add_norm_smul_sq_rpow_le hR |m| θ
   rw [abs_abs] at hscale
+  have hsθ : (1 + ‖s • θ‖ ^ 2) ^ (|m| / 2) ≤ (1 + ‖R • θ‖ ^ 2) ^ (|m| / 2) := by
+    have h : ‖s • θ‖ ≤ ‖R • θ‖ := by
+      rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_of_nonneg (by linarith)]
+      gcongr
+    gcongr
   have hθ : (1 + ‖θ‖ ^ 2) ^ (|m| / 2) * (1 + ‖θ‖ ^ 2) ^ (-(|m| + (n + 1)) / 2) =
       (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
     rw [← Real.rpow_add (by positivity)]
     ring_nf
   rw [leftIntegrand, norm_smul, Circle.norm_coe, one_mul]
-  calc ‖𝓕 (fun y ↦ a.coefficient (x, y, ξ + (2 * π) • θ)) θ‖
-      ≤ C * (1 + ‖ξ + (2 * π) • θ‖ ^ 2) ^ (m / 2) * (1 + ‖θ‖ ^ 2) ^ (-(|m| + (n + 1)) / 2) :=
+  calc ‖𝓕 (fun y ↦ a.coefficient (x, y, ξ + s • θ)) θ‖
+      ≤ C * (1 + ‖ξ + s • θ‖ ^ 2) ^ (m / 2) * (1 + ‖θ‖ ^ 2) ^ (-(|m| + (n + 1)) / 2) :=
         hC x hx θ _
     _ ≤ C * (2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) *
-          ((2 * π) ^ |m| * (1 + ‖θ‖ ^ 2) ^ (|m| / 2))) *
+          (R ^ |m| * (1 + ‖θ‖ ^ 2) ^ (|m| / 2))) *
           (1 + ‖θ‖ ^ 2) ^ (-(|m| + (n + 1)) / 2) := by
         gcongr
-        exact hpeetre.trans (by gcongr)
-    _ = C * 2 ^ (|m| / 2) * (2 * π) ^ |m| * (1 + ‖ξ‖ ^ 2) ^ (m / 2) *
+        exact hpeetre.trans (by gcongr; exact hsθ.trans hscale)
+    _ = C * 2 ^ (|m| / 2) * R ^ |m| * (1 + ‖ξ‖ ^ 2) ^ (m / 2) *
           ((1 + ‖θ‖ ^ 2) ^ (|m| / 2) * (1 + ‖θ‖ ^ 2) ^ (-(|m| + (n + 1)) / 2)) := by ring
     _ = _ := by rw [hθ]
 
-private theorem HasCompactInputSupport.integrable_leftIntegrand {a : Amplitude n V W m}
-    (ha : a.HasCompactInputSupport) (p : CoordinateSpace n × CoordinateSpace n) :
-    Integrable (leftIntegrand a p) := by
+/-- The bound `exists_norm_leftIntegrand_le` at the scale `s = 2π` of the left symbol. -/
+private theorem HasCompactInputSupport.exists_norm_leftIntegrand_two_pi_le
+    {a : Amplitude n V W m} (ha : a.HasCompactInputSupport) {K : Set (CoordinateSpace n)}
+    (hK : IsCompact K) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ θ, ‖leftIntegrand a (2 * π) (x, ξ) θ‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
+  obtain ⟨C, hC0, hC⟩ := ha.exists_norm_leftIntegrand_le hK (R := 2 * π)
+    (by linarith [Real.two_le_pi])
+  exact ⟨C, hC0, hC _ (abs_of_pos Real.two_pi_pos).le⟩
+
+/-- The integrand of the left symbol is integrable in the integration variable. -/
+theorem HasCompactInputSupport.integrable_leftIntegrand {a : Amplitude n V W m}
+    (ha : a.HasCompactInputSupport) (s : ℝ) (p : CoordinateSpace n × CoordinateSpace n) :
+    Integrable (leftIntegrand a s p) := by
   obtain ⟨C, -, hC⟩ := ha.exists_norm_leftIntegrand_le (isCompact_singleton (x := p.1))
+    (le_max_left 1 |s|)
   exact ((integrable_rpow_neg_one_add_norm_sq (by simp)).const_mul
     (C * (1 + ‖p.2‖ ^ 2) ^ (m / 2))).mono'
-    (ha.continuous_leftIntegrand p).aestronglyMeasurable
-    (.of_forall fun θ ↦ hC p.1 rfl p.2 θ)
+    (ha.continuous_leftIntegrand s p).aestronglyMeasurable
+    (.of_forall fun θ ↦ hC s (le_max_right 1 |s|) p.1 rfl p.2 θ)
 
 private theorem HasCompactInputSupport.differentiableAt_leftIntegrand {a : Amplitude n V W m}
     (ha : a.HasCompactInputSupport) (θ : CoordinateSpace n)
     (p : CoordinateSpace n × CoordinateSpace n) :
-    DifferentiableAt ℝ (fun p ↦ leftIntegrand a p θ) p := by
+    DifferentiableAt ℝ (fun p ↦ leftIntegrand a (2 * π) p θ) p := by
   have hc : DifferentiableAt ℝ (fun p : CoordinateSpace n × CoordinateSpace n ↦
       (𝐞 ⟪θ, p.1⟫ : ℂ)) p :=
     (Real.differentiable_fourierChar _).comp p
@@ -198,9 +228,9 @@ private theorem HasCompactInputSupport.differentiableAt_leftIntegrand {a : Ampli
 private theorem HasCompactInputSupport.coordinateDeriv_leftIntegrand_fst
     {a : Amplitude n V W m} (ha : a.HasCompactInputSupport) (j : Fin n)
     (θ x ξ : CoordinateSpace n) :
-    coordinateDeriv [j] (fun x ↦ leftIntegrand a (x, ξ) θ) x =
-      leftIntegrand (Amplitude.spatialDerivFst j a) (x, ξ) θ +
-        leftIntegrand (Amplitude.spatialDerivSnd j a) (x, ξ) θ := by
+    coordinateDeriv [j] (fun x ↦ leftIntegrand a (2 * π) (x, ξ) θ) x =
+      leftIntegrand (Amplitude.spatialDerivFst j a) (2 * π) (x, ξ) θ +
+        leftIntegrand (Amplitude.spatialDerivSnd j a) (2 * π) (x, ξ) θ := by
   have hc : HasFDerivAt (fun x : CoordinateSpace n ↦ (𝐞 ⟪θ, x⟫ : ℂ))
       ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (2 * π * Complex.I * 𝐞 ⟪θ, x⟫)).comp
         (innerSL ℝ θ)) x :=
@@ -226,8 +256,8 @@ private theorem HasCompactInputSupport.coordinateDeriv_leftIntegrand_fst
 private theorem HasCompactInputSupport.coordinateDeriv_leftIntegrand_snd
     {a : Amplitude n V W m} (ha : a.HasCompactInputSupport) (j : Fin n)
     (θ x ξ : CoordinateSpace n) :
-    coordinateDeriv [j] (fun ξ ↦ leftIntegrand a (x, ξ) θ) ξ =
-      leftIntegrand (Amplitude.frequencyDeriv j a) (x, ξ) θ := by
+    coordinateDeriv [j] (fun ξ ↦ leftIntegrand a (2 * π) (x, ξ) θ) ξ =
+      leftIntegrand (Amplitude.frequencyDeriv j a) (2 * π) (x, ξ) θ := by
   have hF : HasFDerivAt (fun ξ : CoordinateSpace n ↦ (𝐞 ⟪θ, x⟫ : ℂ) •
       𝓕 (fun y ↦ a.coefficient (x, y, ξ + (2 * π) • θ)) θ) _ ξ :=
     (((ha.hasFDerivAt_fourier_slice θ (x, ξ + (2 * π) • θ)).comp ξ
@@ -245,10 +275,10 @@ private theorem HasCompactInputSupport.coordinateDeriv_leftIntegrand_snd
 private theorem HasCompactInputSupport.fderiv_leftIntegrand_apply {a : Amplitude n V W m}
     (ha : a.HasCompactInputSupport) (θ : CoordinateSpace n)
     (p v : CoordinateSpace n × CoordinateSpace n) :
-    fderiv ℝ (fun p ↦ leftIntegrand a p θ) p v =
-      ∑ j, v.1 j • (leftIntegrand (Amplitude.spatialDerivFst j a) p θ +
-        leftIntegrand (Amplitude.spatialDerivSnd j a) p θ) +
-      ∑ j, v.2 j • leftIntegrand (Amplitude.frequencyDeriv j a) p θ := by
+    fderiv ℝ (fun p ↦ leftIntegrand a (2 * π) p θ) p v =
+      ∑ j, v.1 j • (leftIntegrand (Amplitude.spatialDerivFst j a) (2 * π) p θ +
+        leftIntegrand (Amplitude.spatialDerivSnd j a) (2 * π) p θ) +
+      ∑ j, v.2 j • leftIntegrand (Amplitude.frequencyDeriv j a) (2 * π) p θ := by
   rw [fderiv_apply_eq_sum_coordinateDeriv (ha.differentiableAt_leftIntegrand θ p)]
   simp only [ha.coordinateDeriv_leftIntegrand_fst, ha.coordinateDeriv_leftIntegrand_snd]
 
@@ -258,14 +288,14 @@ private theorem HasCompactInputSupport.exists_norm_leftIntegrand_le_of_mem_ball 
     {b : Amplitude n V W s} (hb : b.HasCompactInputSupport)
     (p₀ : CoordinateSpace n × CoordinateSpace n) :
     ∃ C, 0 ≤ C ∧ ∀ θ, ∀ p ∈ Metric.ball p₀ 1,
-      ‖leftIntegrand b p θ‖ ≤ C * (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
-  obtain ⟨C, hC0, hC⟩ := hb.exists_norm_leftIntegrand_le (isCompact_closedBall p₀.1 1)
+      ‖leftIntegrand b (2 * π) p θ‖ ≤ C * (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
+  obtain ⟨C, hC0, hC⟩ := hb.exists_norm_leftIntegrand_two_pi_le (isCompact_closedBall p₀.1 1)
   refine ⟨C * (2 ^ |s| * (1 + ‖p₀.2‖ ^ 2) ^ (s / 2)), by positivity, fun θ p hp ↦ ?_⟩
   have hp' : dist p p₀ < 1 := hp
   rw [Prod.dist_eq, max_lt_iff] at hp'
   have hw := one_add_norm_sq_rpow_le_of_norm_sub_le_one
     (dist_eq_norm p.2 p₀.2 ▸ hp'.2.le) s
-  calc ‖leftIntegrand b p θ‖
+  calc ‖leftIntegrand b (2 * π) p θ‖
       ≤ C * (1 + ‖p.2‖ ^ 2) ^ (s / 2) * (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) :=
         hC p.1 (Metric.mem_closedBall.2 hp'.1.le) p.2 θ
     _ ≤ _ := by gcongr
@@ -274,7 +304,7 @@ private theorem HasCompactInputSupport.exists_norm_leftIntegrand_le_of_mem_ball 
 amplitude. -/
 private def leftCoeff (a : Amplitude n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
     V →L[ℂ] W :=
-  ∫ θ, leftIntegrand a p θ
+  ∫ θ, leftIntegrand a (2 * π) p θ
 
 /-- The coefficient of the left symbol is differentiable, with the derivative computed under the
 integral sign. -/
@@ -282,12 +312,12 @@ private theorem HasCompactInputSupport.differentiableAt_leftCoeff_and_fderiv_app
     {a : Amplitude n V W m} (ha : a.HasCompactInputSupport)
     (p₀ : CoordinateSpace n × CoordinateSpace n) :
     DifferentiableAt ℝ (leftCoeff a) p₀ ∧ ∀ v, fderiv ℝ (leftCoeff a) p₀ v =
-      ∑ j, v.1 j • (∫ θ, (leftIntegrand (Amplitude.spatialDerivFst j a) p₀ θ +
-        leftIntegrand (Amplitude.spatialDerivSnd j a) p₀ θ)) +
-      ∑ j, v.2 j • ∫ θ, leftIntegrand (Amplitude.frequencyDeriv j a) p₀ θ := by
+      ∑ j, v.1 j • (∫ θ, (leftIntegrand (Amplitude.spatialDerivFst j a) (2 * π) p₀ θ +
+        leftIntegrand (Amplitude.spatialDerivSnd j a) (2 * π) p₀ θ)) +
+      ∑ j, v.2 j • ∫ θ, leftIntegrand (Amplitude.frequencyDeriv j a) (2 * π) p₀ θ := by
   have hb : ∀ {s : ℝ} {b : Fin n → Amplitude n V W s}, (∀ j, (b j).HasCompactInputSupport) →
       ∃ C : Fin n → ℝ, ∀ j θ, ∀ p ∈ Metric.ball p₀ 1,
-        ‖leftIntegrand (b j) p θ‖ ≤ C j * (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
+        ‖leftIntegrand (b j) (2 * π) p θ‖ ≤ C j * (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
     intro s b hb
     have h := fun j ↦ (hb j).exists_norm_leftIntegrand_le_of_mem_ball p₀
     choose C _ hC using h
@@ -295,16 +325,17 @@ private theorem HasCompactInputSupport.differentiableAt_leftCoeff_and_fderiv_app
   obtain ⟨Cx, hCx⟩ := hb fun j ↦ ha.spatialDerivFst j
   obtain ⟨Cy, hCy⟩ := hb fun j ↦ ha.spatialDerivSnd j
   obtain ⟨Cξ, hCξ⟩ := hb fun j ↦ ha.frequencyDeriv j
-  refine differentiableAt_integral_and_fderiv_apply_eq_sum (E := V →L[ℂ] W) (F := leftIntegrand a)
-    (A := fun j p θ ↦ leftIntegrand (Amplitude.spatialDerivFst j a) p θ +
-      leftIntegrand (Amplitude.spatialDerivSnd j a) p θ)
-    (B := fun j p θ ↦ leftIntegrand (Amplitude.frequencyDeriv j a) p θ)
+  refine differentiableAt_integral_and_fderiv_apply_eq_sum (E := V →L[ℂ] W)
+    (F := leftIntegrand a (2 * π))
+    (A := fun j p θ ↦ leftIntegrand (Amplitude.spatialDerivFst j a) (2 * π) p θ +
+      leftIntegrand (Amplitude.spatialDerivSnd j a) (2 * π) p θ)
+    (B := fun j p θ ↦ leftIntegrand (Amplitude.frequencyDeriv j a) (2 * π) p θ)
     (fun θ p ↦ ha.differentiableAt_leftIntegrand θ p)
     (fun θ p v ↦ ha.fderiv_leftIntegrand_apply θ p v)
-    ha.integrable_leftIntegrand
-    (fun j p ↦ ((ha.spatialDerivFst j).continuous_leftIntegrand p).add
-      ((ha.spatialDerivSnd j).continuous_leftIntegrand p))
-    (fun j p ↦ (ha.frequencyDeriv j).continuous_leftIntegrand p)
+    (ha.integrable_leftIntegrand (2 * π))
+    (fun j p ↦ ((ha.spatialDerivFst j).continuous_leftIntegrand (2 * π) p).add
+      ((ha.spatialDerivSnd j).continuous_leftIntegrand (2 * π) p))
+    (fun j p ↦ (ha.frequencyDeriv j).continuous_leftIntegrand (2 * π) p)
     ((integrable_rpow_neg_one_add_norm_sq (r := n + 1) (by simp)).const_mul
       (∑ j, (Cx j + Cy j) + ∑ j, Cξ j)) p₀ fun θ p hp ↦ ?_
   rw [add_mul, Finset.sum_mul, Finset.sum_mul]
@@ -324,8 +355,8 @@ private theorem HasCompactInputSupport.coordinateDeriv_leftCoeff_fst {a : Amplit
   simp only [PiLp.ofLp_single, Pi.single_apply, ite_smul, one_smul, zero_smul,
     Finset.sum_ite_eq', Finset.mem_univ, ite_true, PiLp.zero_apply, Finset.sum_const_zero,
     add_zero]
-  exact integral_add ((ha.spatialDerivFst j).integrable_leftIntegrand _)
-    ((ha.spatialDerivSnd j).integrable_leftIntegrand _)
+  exact integral_add ((ha.spatialDerivFst j).integrable_leftIntegrand (2 * π) _)
+    ((ha.spatialDerivSnd j).integrable_leftIntegrand (2 * π) _)
 
 /-- The derivative `∂_{ξ_j} c` of the coefficient of the left symbol is the coefficient of the
 left symbol of `∂_{ξ_j} a`. -/
@@ -366,7 +397,7 @@ a compact set. -/
 private theorem HasCompactInputSupport.exists_norm_leftCoeff_le {a : Amplitude n V W m}
     (ha : a.HasCompactInputSupport) {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖leftCoeff a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-  obtain ⟨C, hC0, hC⟩ := ha.exists_norm_leftIntegrand_le hK
+  obtain ⟨C, hC0, hC⟩ := ha.exists_norm_leftIntegrand_two_pi_le hK
   set I := ∫ θ : CoordinateSpace n, (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)
   have hI : 0 ≤ I := integral_nonneg fun θ ↦ by positivity
   refine ⟨C * I, mul_nonneg hC0 hI, fun x hx ξ ↦ ?_⟩
@@ -495,7 +526,7 @@ private theorem HasCompactInputSupport.integrable_quantizeIntegrand {a : Amplitu
     Integrable (fun q : CoordinateSpace n × CoordinateSpace n ↦ 𝐞 ⟪q.1, x⟫ •
       𝓕 (fun y ↦ a.coefficient (x, y, (2 * π) • q.1)) (q.1 - q.2) (𝓕 u q.2))
       (volume.prod volume) := by
-  obtain ⟨C, -, hC⟩ := ha.exists_norm_leftIntegrand_le (isCompact_singleton (x := x))
+  obtain ⟨C, -, hC⟩ := ha.exists_norm_leftIntegrand_two_pi_le (isCompact_singleton (x := x))
   have hh : Integrable fun ζ : CoordinateSpace n ↦ (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖ :=
     (𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) m
   have hA : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
@@ -547,7 +578,7 @@ theorem quantizeSchwartzValue_leftSymbol [CompleteSpace V] [CompleteSpace W]
   rw [← integral_add_right_eq_self (fun ζ ↦ G ζ ζ') ζ', coefficient_leftSymbol,
     ContinuousLinearMap.integral_apply, Circle.smul_def, ← integral_smul]
   swap
-  · exact ha.integrable_leftIntegrand (x, (2 * π) • ζ')
+  · exact ha.integrable_leftIntegrand (2 * π) (x, (2 * π) • ζ')
   refine integral_congr_ae (.of_forall fun θ ↦ ?_)
   simp only [hGdef, add_sub_cancel_right, smul_add, smul_apply, Circle.smul_def,
     smul_smul, inner_add_left, AddChar.map_add_eq_mul, Circle.coe_mul]

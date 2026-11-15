@@ -392,7 +392,6 @@ private theorem memLp_neckTestPath (R : ℝ) (e : F) : MemLp (neckTestPath R e) 
 private theorem norm_neckTestImage_le (R : ℝ) (e : F) (s : ℝ) :
     ‖neckTestImage R e s‖ ≤ 2 * exp (-(2 * R)) * ‖neckTestPath R e (-s)‖ := by
   have h₁ := cosh_pos (s - R)
-  have h₂ := cosh_pos (s + R)
   have key : exp (s - R) ≤ 2 * exp (-(2 * R)) * cosh (s + R) := by
     rw [cosh_eq]
     have h : exp (-(2 * R)) * exp (s + R) = exp (s - R) := by rw [← exp_add]; ring_nf

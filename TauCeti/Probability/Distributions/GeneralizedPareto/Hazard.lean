@@ -53,7 +53,6 @@ theorem generalizedParetoPDFReal_div_one_sub_cdf (hs : 0 < s) (hx : 0 < x)
   rw [generalizedParetoPDFReal_of_shape_ne_zero hs hξ hx hw,
     cdf_generalizedParetoMeasure_of_shape_ne_zero hs hξ hx.le hw,
     sub_sub_cancel, Real.rpow_sub_one hw.ne']
-  have hp : (1 + ξ * x / s) ^ (-ξ⁻¹) ≠ 0 := (Real.rpow_pos_of_pos hw _).ne'
   simp only [neg_div, one_div]
   field_simp
 

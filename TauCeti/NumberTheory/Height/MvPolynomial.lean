@@ -270,13 +270,14 @@ theorem mulHeight_mul_of_disjoint_vars {P Q : MvPolynomial σ K} (h : Disjoint P
   classical
   rw [mulHeight_eq_finsupp, mulHeight_eq_finsupp, mulHeight_eq_finsupp]
   refine Finsupp.mulHeight_eq_mul_of_injOn (e := fun p ↦ p.1 + p.2)
-    ((injOn_add_of_disjoint_vars h).mono fun p hp ↦ ?_)
+    ((Finsupp.injOn_add_of_disjoint (Finset.disjoint_coe.2 h)).mono fun p hp ↦ ?_)
     (fun a ha b hb ↦ coeff_add_mul_of_disjoint_vars h
       (support_subset_vars_of_mem_support ha) (support_subset_vars_of_mem_support hb))
     (fun c hc ↦ Finset.mem_add.1 (support_mul P Q hc))
     (AddMonoidAlgebra.coeff_eq_zero.not.2 hP) (AddMonoidAlgebra.coeff_eq_zero.not.2 hQ)
   obtain ⟨ha, hb⟩ := Finset.mem_product.1 hp
-  exact ⟨support_subset_vars_of_mem_support ha, support_subset_vars_of_mem_support hb⟩
+  exact ⟨Finset.coe_subset.2 (support_subset_vars_of_mem_support ha),
+    Finset.coe_subset.2 (support_subset_vars_of_mem_support hb)⟩
 
 /-- **The logarithmic height of a product in disjoint variables.** If the nonzero polynomials
 `P` and `Q` involve disjoint sets of variables, then `h(P * Q) = h(P) + h(Q)`. -/

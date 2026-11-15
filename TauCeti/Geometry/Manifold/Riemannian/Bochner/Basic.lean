@@ -40,9 +40,11 @@ second covariant derivative `∇²G(u, v) = ∇_u ∇_V G - ∇_{∇_u V} G`
   contracted identity `∑ᵢ ⟨∇²G(eᵢ, eᵢ), w⟩ = d(Δ f)(w) + Ric(w, G)`, which says that the rough
   Laplacian of `grad f` is `grad Δ f + Ric(grad f)`.
 
-The first two identities, `TauCeti.Manifold.hessian_norm_sq` and
-`TauCeti.Manifold.inner_secondCovariantDerivative_mgradient_comm`, hold for every smooth function
-and live with the other Hessian identities.
+The first identity is the tangent-bundle case of
+`CovariantDerivative.IsMetricCompatible.hessian_norm_sq`, which holds for every smooth section of
+a Riemannian vector bundle with a metric connection. The second,
+`TauCeti.Manifold.inner_secondCovariantDerivative_mgradient_comm`, holds for every smooth function.
+Both live with the other Hessian identities.
 
 ## Main results
 
@@ -185,7 +187,8 @@ theorem laplaceBeltrami_norm_sq_mgradient (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x 
     rw [← b.sum_inner_mul_inner]
     simp only [hessian_def, real_inner_comm (b _), sq]
   rw [laplaceBeltrami_eq_sum_hessian I _ x b]
-  simp only [hessian_norm_sq hG x, hnorm]
+  simp only [(CovariantDerivative.isMetricCompatible_leviCivitaConnection I).hessian_norm_sq hG x,
+    hnorm]
   rw [Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.mul_sum,
     sum_inner_secondCovariantDerivative_mgradient_self hf x b]
   ring

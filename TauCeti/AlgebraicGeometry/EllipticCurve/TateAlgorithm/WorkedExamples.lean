@@ -132,7 +132,7 @@ private theorem isMinimal_and_exists_isTateTerminal {p : ℕ} (hp : p.Prime) {ϖ
     IsMinimal R ((W.map (Int.castRingHom R)).baseChange K) ∧
       ∃ C : VariableChange R, (C • W.map (Int.castRingHom R)).IsTateTerminal ϖ s := by
   subst hpϖ
-  have hdvd := hp.pow_dvd_intCast_iff hϖ.ne_zero hϖ.not_isUnit
+  have hdvd := hp.pow_dvd_intCast_iff (.of_ne_zero hϖ.ne_zero) hϖ.not_isUnit
   refine ⟨isMinimal_baseChange_of_not_pow_twelve_dvd_Δ R _ hϖ ?_, C.map (Int.castRingHom R), ?_⟩
   · rwa [map_Δ, eq_intCast, hdvd]
   · rw [map_variableChange, ← map_natCast (Int.castRingHom R) p,
@@ -438,28 +438,28 @@ theorem tateLocalIndex_curve24a5_3 :
 open Polynomial in
 /-- **The reduction of 24.a5 at `3` is nonsplit**: the tangent quadratic `T² − 5` has no root
 modulo `3`. -/
-theorem not_hasTateTangentRoot_curve24a5_3 [IsDomain R] (h : Irreducible (3 : R))
+theorem not_hasTateTangentRoot_curve24a5_3 (h : Irreducible (3 : R))
     (hR : ∀ x : R, ∃ n : ℤ, (3 : R) ∣ x - n) :
     ¬ (((⟨1, 2, 0, 0⟩ : VariableChange ℤ) • curve24a5).map
       (Int.castRingHom R)).HasTateTangentRoot 3 := by
   intro ht
   obtain ⟨t, ht⟩ := hasTateTangentRoot_def.1 ht
   exact Nat.Prime.not_dvd_eval_map_of_forall_ne_zero (p := 3) (f := X ^ 2 - C 5) (by norm_num)
-    h.ne_zero h.not_isUnit hR
+    h.not_isUnit hR
     (by simpa using (by decide : ∀ x : ZMod 3, x ^ 2 - 5 ≠ 0)) t
     (by simpa [variableChange_def] using ht)
 
 open Polynomial in
 /-- **The local index of 45.a8 at `5` is `2`**: the reduction is nonsplit multiplicative of the
 even type `I₈`, the tangent quadratic `T² + T − 8` having no root modulo `5`. -/
-theorem tateLocalIndex_curve45a8_5 [IsDomain R] (h : Irreducible (5 : R))
+theorem tateLocalIndex_curve45a8_5 (h : Irreducible (5 : R))
     (hR : ∀ x : R, ∃ n : ℤ, (5 : R) ∣ x - n) :
     (((⟨1, 3, 0, 1⟩ : VariableChange ℤ) • curve45a8).map (Int.castRingHom R)).tateLocalIndex 5
       (.I 8) = 2 := by
   refine (tateLocalIndex_I_add_one_of_not_hasTateTangentRoot (fun ht ↦ ?_) 7).trans rfl
   obtain ⟨t, ht⟩ := hasTateTangentRoot_def.1 ht
   exact Nat.Prime.not_dvd_eval_map_of_forall_ne_zero (p := 5) (f := X ^ 2 + X - C 8) (by norm_num)
-    h.ne_zero h.not_isUnit hR
+    h.not_isUnit hR
     (by simpa using (by decide : ∀ x : ZMod 5, x ^ 2 + x - 8 ≠ 0)) t
     (by simpa [variableChange_def] using ht)
 
@@ -484,7 +484,7 @@ theorem tateLocalIndex_curve32a1_2 [IsDomain R] (h : Irreducible (2 : R))
     (by simp [variableChange_def]) (by simp [variableChange_def]; norm_num)
     (by simp [variableChange_def]; norm_num)] at ht
   exact Nat.Prime.not_dvd_eval_map_of_forall_ne_zero (p := 2)
-    (f := X ^ 3 + X ^ 2 - C 2 * X - C 3) (by norm_num) h.ne_zero h.not_isUnit hR
+    (f := X ^ 3 + X ^ 2 - C 2 * X - C 3) (by norm_num) h.not_isUnit hR
     (by simpa using (by decide : ∀ x : ZMod 2, x ^ 3 + x ^ 2 - 2 * x - 3 ≠ 0)) t₀
     (by convert ht using 1; simp; ring)
 
@@ -517,7 +517,7 @@ theorem tateLocalIndex_curve45a8_3 [IsDomain R] (h : Irreducible (3 : R))
     (by simp [variableChange_def]; norm_num) (by simp [variableChange_def]; norm_num)]
   rintro ⟨s, hs⟩
   exact Nat.Prime.not_dvd_eval_map_of_forall_ne_zero (p := 3) (f := X ^ 2 + C 9 * X + C 4)
-    (by norm_num) h.ne_zero h.not_isUnit hR
+    (by norm_num) h.not_isUnit hR
     (by simpa using (by decide : ∀ x : ZMod 3, x ^ 2 + 9 * x + 4 ≠ 0)) s (by simpa using hs)
 
 open Polynomial in
@@ -532,7 +532,7 @@ theorem tateLocalIndex_curve20a2_2 [IsDomain R] (h : Irreducible (2 : R))
     (by simp [variableChange_def]; norm_num)]
   rintro ⟨s, hs⟩
   exact Nat.Prime.not_dvd_eval_map_of_forall_ne_zero (p := 2) (f := X ^ 2 + X + C 9) (by norm_num)
-    h.ne_zero h.not_isUnit hR
+    h.not_isUnit hR
     (by simpa using (by decide : ∀ x : ZMod 2, x ^ 2 + x + 9 ≠ 0)) s (by simpa using hs)
 
 end TauCeti.WorkedExamples

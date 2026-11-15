@@ -39,6 +39,9 @@ datum on `Y ×_S S'` to `D`, an isomorphism because it is one over each affine o
 * `TauCeti.DescentDatum.exists_baseChange_hom_isIso_of_forall_affineOpens`: a descent datum
   relative to a surjective, flat and quasi-compact morphism is effective if its restrictions over
   the affine opens of the base are effective.
+* `TauCeti.DescentDatum.exists_baseChange_hom_isIso_of_forall_affineOpens_pullbackAlong`: a descent
+  datum relative to a surjective, flat and quasi-compact morphism is effective if its base changes
+  to the affine opens of the base are effective.
 
 ## References
 
@@ -498,5 +501,20 @@ theorem exists_baseChange_hom_isIso_of_forall_affineOpens [Surjective p] [Flat p
   choose Y g hg using h
   have : IsIso ((Over.forget S').map (toXHom Y g).hom) := isIso_toX Y g
   exact ⟨glued Y g, toXHom Y g, isIso_of_reflects_iso _ (Over.forget S')⟩
+
+variable {D} in
+/-- **Effectivity of descent data is local on the base**, in terms of base change. Let
+`p : S' ⟶ S` be surjective, flat and quasi-compact, and let `D` be a descent datum relative to `p`
+on `X ⟶ S'`. If, for every affine open `U` of `S`, the base change `D.pullbackAlong U.ι` of `D` to
+`U`, relative to `U ×_S S' ⟶ U`, is effective, then `D` is effective. -/
+theorem exists_baseChange_hom_isIso_of_forall_affineOpens_pullbackAlong [Surjective p] [Flat p]
+    [QuasiCompact p]
+    (h : ∀ U : S.affineOpens, ∃ (Y₀ : Over U.1.toScheme)
+      (f : Hom (baseChange (pullback.fst U.1.ι p) Y₀) (D.pullbackAlong U.1.ι)), IsIso f.hom) :
+    ∃ (Y : Over S) (g : Hom (baseChange p Y) D), IsIso g.hom := by
+  refine exists_baseChange_hom_isIso_of_forall_affineOpens fun U ↦ ?_
+  obtain ⟨Y₀, f, hf⟩ := h U
+  obtain ⟨g, hg, -⟩ := f.exists_baseChange_hom_isIso_restrict_of_pullbackAlong
+  exact ⟨_, g, hg⟩
 
 end TauCeti.DescentDatum

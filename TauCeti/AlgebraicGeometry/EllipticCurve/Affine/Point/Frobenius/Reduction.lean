@@ -138,7 +138,7 @@ theorem cast_nonsingularReductionHom_map_eq_map_frobeniusAlgHom
     simp only [_root_.map_zero]
   by_cases hx : v x ≤ 1
   · obtain ⟨hτx, hx'⟩ := v.exists_le_one_and_residue_eq_pow hτ hx
-    obtain ⟨hτy, hy'⟩ := v.exists_le_one_and_residue_eq_pow hτ
+    obtain ⟨_, hy'⟩ := v.exists_le_one_and_residue_eq_pow hτ
       (valuation_y_le_one_of_valuation_x_le_one v h.left hx)
     have hτh := (W.toAffine.baseChange_nonsingular τ.injective x y).mpr h
     have hP' := (some_mem_nonsingularReduction_iff v h hx).mp hP

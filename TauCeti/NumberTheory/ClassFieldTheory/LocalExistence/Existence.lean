@@ -173,19 +173,19 @@ theorem localExistence [CharZero K] (N : Subgroup Kˣ) [N.FiniteIndex] :
 with residue field of characteristic `p`, whether `K` itself has characteristic `0` or `p`, every
 subgroup of `Kˣ` of index prime to `p` is the norm subgroup of a finite abelian extension. The
 coprimality forces the index to be finite, as `Nat.Coprime 0 p` fails. -/
-theorem localAbelianExistence_primeToResidueCharacteristic (p : ℕ) [Fact p.Prime]
-    [CharP 𝓀[K] p] (N : Subgroup Kˣ) (hindex : N.index.Coprime p) :
+theorem localAbelianExistence_primeToResidueCharacteristic (p : ℕ) [CharP 𝓀[K] p]
+    (N : Subgroup Kˣ) (hindex : N.index.Coprime p) :
     ∃ V : OpenNormalSubgroup (AbsoluteGaloisGroup K),
       V.IsAbelianClassFieldLayer ∧ localNormSubgroup K V = N := by
   -- the index is a unit of `𝒪[K]`, as its residue is nonzero
   have hunit : IsUnit (N.index : 𝒪[K]) := by
     rw [← IsLocalRing.residue_ne_zero_iff_isUnit, map_natCast, Ne, CharP.cast_eq_zero_iff 𝓀[K] p]
-    exact fun hp ↦ (Fact.out : p.Prime).one_lt.ne' (Nat.Coprime.eq_one_of_dvd hindex.symm hp)
+    exact fun hp ↦ CharP.char_ne_one 𝓀[K] p (Nat.Coprime.eq_one_of_dvd hindex.symm hp)
   exact exists_abelianLayer_localNormSubgroup_eq_of_powerSubgroup_le
     (natCast_ne_zero_of_isUnit hunit) N.powerSubgroup_index_le
 
 /-- **Local existence prime to the residue characteristic, forgetful form.** -/
-theorem localExistence_primeToResidueCharacteristic (p : ℕ) [Fact p.Prime] [CharP 𝓀[K] p]
+theorem localExistence_primeToResidueCharacteristic (p : ℕ) [CharP 𝓀[K] p]
     (N : Subgroup Kˣ) (hindex : N.index.Coprime p) :
     ∃ V : OpenNormalSubgroup (AbsoluteGaloisGroup K), localNormSubgroup K V = N :=
   (localAbelianExistence_primeToResidueCharacteristic p N hindex).imp fun _ h ↦ h.2

@@ -21,7 +21,8 @@ This set is finite, and the `r`-coefficient of `∂ (∂ p)` is its cardinality 
 Consequently `∂ ∘ ∂ = 0` holds exactly when every set of broken index-two trajectories has even
 cardinality. This is the algebraic half of `∂² = 0`. The geometric half, that broken trajectories
 are the boundary points of a compact one-dimensional manifold of trajectories and therefore come in
-pairs, needs the compactification and gluing of index-two trajectory spaces and is not proved here.
+pairs, needs the compactification and gluing of index-two trajectory spaces; it is proved in
+`TauCeti.Geometry.Manifold.Morse.Boundary.Differential`.
 
 This is the manifold form of `TauCeti.Analysis.Calculus.Morse.Boundary.Square`.
 

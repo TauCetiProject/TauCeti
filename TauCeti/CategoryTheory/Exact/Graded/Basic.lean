@@ -47,9 +47,6 @@ which is the form in which it is usually checked.
 * Theo Bühler, *Exact categories*, Expositiones Mathematicae **28** (2010), 1–69,
   <https://arxiv.org/abs/0811.1480>, Section 2, for the exact structures which the grading shift
   is required here to preserve and to reflect.
-* `TauCetiRoadmap/GrothendieckEulerForms/README.md`, Layer 2, which fixes the normalization
-  `[M{1}] = q[M]` used downstream and requires the shift to be part of the data of a graded
-  exact category.
 -/
 
 public section

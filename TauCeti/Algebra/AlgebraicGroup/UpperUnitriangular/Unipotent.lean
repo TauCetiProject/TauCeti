@@ -11,6 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.UpperUnitriangular.Scheme
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
+import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Naturality
 import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 
 /-!
@@ -29,8 +30,8 @@ therefore smooth; over a field this makes `U_n` a smooth unipotent affine group.
 ## Main declarations
 
 * `TauCeti.UpperUnitriangular.standardComodule`: the standard faithful comodule of `O(U_n)`.
-* `TauCeti.UpperUnitriangular.isUnipotentPoint`: every point of `U_n` valued in a perfect field
-  extension is unipotent.
+* `TauCeti.UpperUnitriangular.isUnipotentPoint`: every point of `U_n` valued in a field extension
+  is unipotent.
 * `TauCeti.UpperUnitriangular.smoothUnipotentCommHopfAlgProperty_coordinateHopfAlgebra`:
   `U_n` over a field is smooth unipotent.
 
@@ -198,18 +199,23 @@ end PointAction
 
 section Unipotent
 
-variable {k K : Type u} [Field k] [Field K] [Algebra k K] [PerfectField K]
+variable {k K : Type u} [Field k] [Field K] [Algebra k K]
 
-/-- Every point of the upper-unitriangular coordinate Hopf algebra over a perfect field is
+/-- Every point of the upper-unitriangular coordinate Hopf algebra over a field is
 unipotent. -/
 theorem isUnipotentPoint
     (g : WithConv (coordinateHopfAlgebra k (Fin n) →ₐ[k] K)) :
     HopfAlgebra.IsUnipotentPoint g := by
-  let M : FGComoduleCat.{u, u, u} k (coordinateHopfAlgebra k (Fin n)) :=
-    FGComoduleCat.of (R := k) (C := coordinateHopfAlgebra k (Fin n)) (Fin n → k)
-  rw [HopfAlgebra.isUnipotentPoint_iff_isUnipotent_pointsAction_of_isFaithful M
-    (isFaithful_standardComodule k n) g]
-  exact isUnipotent_pointsAction k n g
+  have key (L : Type u) [Field L] [Algebra k L] [PerfectField L]
+      (g : WithConv (coordinateHopfAlgebra k (Fin n) →ₐ[k] L)) :
+      HopfAlgebra.IsUnipotentPoint g := by
+    let M : FGComoduleCat.{u, u, u} k (coordinateHopfAlgebra k (Fin n)) :=
+      FGComoduleCat.of (R := k) (C := coordinateHopfAlgebra k (Fin n)) (Fin n → k)
+    rw [HopfAlgebra.isUnipotentPoint_iff_isUnipotent_pointsAction_of_isFaithful M
+      (isFaithful_standardComodule k n) g]
+    exact isUnipotent_pointsAction k n g
+  exact (HopfAlgebra.isUnipotentPoint_toConv_comp_iff g
+    (IsScalarTower.toAlgHom k K (AlgebraicClosure K))).mp (key _ _)
 
 /-- The upper-unitriangular group has only unipotent geometric points. -/
 theorem geometricallyUnipotentPointsCommHopfAlgProperty_coordinateHopfAlgebra

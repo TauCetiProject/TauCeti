@@ -49,7 +49,6 @@ theorem coinvariants_identityComponentHopfIdeal_eq_range
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)).coinvariants =
       (componentCoordinateMap H).range := by
-  let C := ConstantGroup.coordinateRing k (ConnectedComponents (PrimeSpectrum H))
   have hmap : (componentCoordinateHom H).hom.toAlgHom = componentCoordinateMap H :=
     AlgHom.ext (componentCoordinateHom_apply H)
   rw [← hmap, ← kernelHopfIdeal_componentCoordinateHom H]
@@ -64,7 +63,6 @@ noncomputable def componentCoinvariantsIso (H : FiniteTypeCommHopfAlgCat.{u, u} 
     CommHopfAlgCat.of k
         (ConstantGroup.coordinateRing k (ConnectedComponents (PrimeSpectrum H))) ≅
       CommHopfAlgCat.coinvariants (isNormal_identityComponentHopfIdeal H) := by
-  let C := ConstantGroup.coordinateRing k (ConnectedComponents (PrimeSpectrum H))
   let f := CommHopfAlgCat.liftCoinvariants (isNormal_identityComponentHopfIdeal H)
     (componentCoordinateHom H) (kernelHopfIdeal_componentCoordinateHom H).le
   have hff := (CommHopfAlgCat.faithfullyFlat_iff_injective_of_isGeometricallyReduced
@@ -115,8 +113,8 @@ theorem algebraEtale_coinvariants_of_le_identityComponentHopfIdeal
   have hsub : I.coinvariants ≤ f.range := (HopfIdeal.coinvariants_mono hI).trans_eq
     (coinvariants_identityComponentHopfIdeal_eq_range H)
   let j := Subalgebra.inclusion hsub
-  let _ : IsReduced I.coinvariants := isReduced_of_injective j (Subalgebra.inclusion_injective hsub)
-  let _ := moduleFinite_coinvariants_of_le_identityComponentHopfIdeal H I hI
-  exact algebraEtale_of_finite_of_isReduced k I.coinvariants
+  exact algebraEtale_iff_finite_and_isReduced.2
+    ⟨moduleFinite_coinvariants_of_le_identityComponentHopfIdeal H I hI,
+      isReduced_of_injective j (Subalgebra.inclusion_injective hsub)⟩
 
 end TauCeti.FiniteTypeCommHopfAlgCat

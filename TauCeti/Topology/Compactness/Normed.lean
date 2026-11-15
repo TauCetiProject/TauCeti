@@ -21,6 +21,8 @@ It also gives a norm-ball version of the tube lemma for properties near a compac
 * `IsCompact.exists_eventually_norm_le`: a function continuous at every point of a compact fiber
   is uniformly bounded on nearby fibers, which remain in any open set containing the original
   fiber.
+* `TauCeti.exists_nonneg_forall_notMem_norm_lt`: in a compact space covered by open sets `U` and
+  `V`, the coordinates of the points of `U` outside `V` are bounded.
 -/
 
 public section
@@ -50,3 +52,18 @@ theorem IsCompact.exists_eventually_norm_le {K : Set P} (hK : IsCompact K)
   filter_upwards [hW.eventually_mem (hx₀ y hy),
     (hF y hy).norm.eventually_lt_const ((hC y hy).trans_lt (lt_add_one C))] with z hzW hz
   exact ⟨hzW, hz.le⟩
+
+namespace TauCeti
+
+/-- In a compact space covered by open sets `U` and `V`, the points of `U` outside `V` have
+bounded coordinates in any homeomorphism `eU : U ≃ₜ H` with a seminormed group. -/
+theorem exists_nonneg_forall_notMem_norm_lt [CompactSpace X] {U V : Set X} (hV : IsOpen V)
+    (hUV : U ∪ V = univ) (eU : U ≃ₜ H) : ∃ R, 0 ≤ R ∧ ∀ x : U, (x : X) ∉ V → ‖eU x‖ < R := by
+  have hK : IsCompact ((↑) ⁻¹' Vᶜ : Set U) := by
+    rw [Subtype.isCompact_iff, Subtype.image_preimage_coe,
+      inter_eq_right.2 fun x hx ↦ (eq_univ_iff_forall.1 hUV x).resolve_right hx]
+    exact hV.isClosed_compl.isCompact
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn eU.continuous.continuousOn
+  exact ⟨max C 0 + 1, by positivity, fun x hx ↦ (hC x hx).trans_lt (by linarith [le_max_left C 0])⟩
+
+end TauCeti

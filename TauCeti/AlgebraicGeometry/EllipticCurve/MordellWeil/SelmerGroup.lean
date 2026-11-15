@@ -61,8 +61,8 @@ file independent of that finiteness proof.
 ## Provenance
 
 Adapted from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`), `EllipticCurves/SelmerGroup.lean`,
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at `66889eada51a`),
+`EllipticCurves/SelmerGroup.lean`,
 its `SelmerGroup` section — declarations `selmerGroup₂`, `mem_selmerGroup₂_iff`,
 `range_μ_le_selmerGroup₂`, `card_range_μ` and `pow_rank_le_card_of_range_μ_le`.
 

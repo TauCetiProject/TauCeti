@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.PointSeparation
+import TauCeti.FieldTheory.FunctionField.Place.ConstantField
 
 /-!
 # Elliptic function fields
@@ -19,10 +20,12 @@ This file proves the basic dictionary of an elliptic function field over an exac
 field.  A divisor of degree one is linearly equivalent to exactly one place of degree one, so an
 elliptic function field has a place of degree one; and once a place `P₀` of degree one is
 chosen, `P ↦ [P - P₀]` is a bijection from the places of degree one onto the degree-zero divisor
-class group `Cl⁰(F)`.  The addition of `Cl⁰(F)` transported along that bijection is the
-intrinsic group law of the degree-one places: it makes the bijection an isomorphism of groups,
-and `P ⊕ Q = R` exactly when the divisors `P + Q` and `R + P₀` are linearly equivalent.  The
-transported group depends on the choice of `P₀`, so it is a definition, not an instance.
+class group `Cl⁰(F)`.  This part needs no separate exactness hypothesis, since a place of degree
+one already makes the constant field exact.  The addition of `Cl⁰(F)` transported along that
+bijection is the intrinsic group law of the degree-one places: it makes the bijection an
+isomorphism of groups, and `P ⊕ Q = R` exactly when the divisors `P + Q` and `R + P₀` are
+linearly equivalent.  The transported group depends on the choice of `P₀`, so it is a definition,
+not an instance.
 
 ## Main definitions
 
@@ -142,13 +145,14 @@ variable {P₀ : Place k F}
 /-- **Every degree-zero divisor class of a genus-one function field is the class of a difference
 of places of degree one** (Stichtenoth, Proposition 6.1.6(b)). -/
 theorem exists_degree_eq_one_and_divisorClass_pointDifference_eq (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1)
+    (hg : genus k F = 1) (hP₀ : P₀.degree = 1)
     {c : (Place.orderSystem hF).ClassGroup} (hc : Divisor.degreeClass hF c = 0) :
     ∃ P : Place k F, P.degree = 1 ∧
       (Place.orderSystem hF).divisorClass (WeilDivisor.pointDifference P P₀) = c := by
   obtain ⟨D, rfl⟩ := (Place.orderSystem hF).divisorClass_surjective c
   rw [Divisor.degreeClass_divisorClass] at hc
-  obtain ⟨P, hP, hlin⟩ := Divisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one hF hex hg
+  obtain ⟨P, hP, hlin⟩ := Divisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one hF
+    (P₀.isIntegrallyClosedIn_of_degree_eq_one hP₀) hg
     (D := D + WeilDivisor.ofPoint P₀) (by rw [Divisor.degree_add, Divisor.degree_ofPoint, hc,
       hP₀, Nat.cast_one, zero_add])
   refine ⟨P, hP, ?_⟩
@@ -165,7 +169,7 @@ theorem exists_degree_eq_one_and_divisorClass_pointDifference_eq (hF : IsFunctio
 classes** (Stichtenoth, Proposition 6.1.6(b)): relative to a chosen place `P₀` of degree one,
 `P ↦ [P - P₀]` is a bijection onto `Cl⁰(F)`. -/
 noncomputable def degreeOneEquivDegreeZeroClassGroup (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
+    (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
     {P : Place k F // P.degree = 1} ≃ (Divisor.degreeClass hF).ker :=
   Equiv.ofBijective
     (fun P ↦ ⟨(Place.orderSystem hF).divisorClass (WeilDivisor.pointDifference P.1 P₀), by
@@ -174,16 +178,16 @@ noncomputable def degreeOneEquivDegreeZeroClassGroup (hF : IsFunctionField k F)
     ⟨fun P Q h ↦ Subtype.ext (eq_of_divisorClass_pointDifference_eq hF (by omega) P.2
         (congrArg Subtype.val h)),
       fun c ↦ by
-        obtain ⟨P, hP, hc⟩ := exists_degree_eq_one_and_divisorClass_pointDifference_eq hF hex hg hP₀
+        obtain ⟨P, hP, hc⟩ := exists_degree_eq_one_and_divisorClass_pointDifference_eq hF hg hP₀
           (c := (c : (Place.orderSystem hF).ClassGroup)) c.2
         exact ⟨⟨P, hP⟩, Subtype.ext hc⟩⟩
 
 /-- The class attached to a degree-one place by the bijection onto `Cl⁰(F)`. -/
 @[simp]
 theorem val_degreeOneEquivDegreeZeroClassGroup_apply (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1)
+    (hg : genus k F = 1) (hP₀ : P₀.degree = 1)
     (P : {P : Place k F // P.degree = 1}) :
-    (degreeOneEquivDegreeZeroClassGroup hF hex hg hP₀ P : (Place.orderSystem hF).ClassGroup) =
+    (degreeOneEquivDegreeZeroClassGroup hF hg hP₀ P : (Place.orderSystem hF).ClassGroup) =
       (Place.orderSystem hF).divisorClass (WeilDivisor.pointDifference P.1 P₀) := by
   -- the bijection is `Equiv.ofBijective` applied to this function; unfold it to see that.
   rw [degreeOneEquivDegreeZeroClassGroup]
@@ -192,8 +196,8 @@ theorem val_degreeOneEquivDegreeZeroClassGroup_apply (hF : IsFunctionField k F)
 /-- The base place is the zero of the group law. -/
 @[simp]
 theorem degreeOneEquivDegreeZeroClassGroup_base (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
-    degreeOneEquivDegreeZeroClassGroup hF hex hg hP₀ ⟨P₀, hP₀⟩ = 0 :=
+    (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
+    degreeOneEquivDegreeZeroClassGroup hF hg hP₀ ⟨P₀, hP₀⟩ = 0 :=
   Subtype.ext (by rw [val_degreeOneEquivDegreeZeroClassGroup_apply,
     WeilDivisor.pointDifference_self, map_zero, ZeroMemClass.coe_zero])
 
@@ -209,7 +213,7 @@ theorem IsEllipticFunctionField.infinite_degreeClass_ker_iff (hF : IsFunctionFie
     Infinite (Divisor.degreeClass hF).ker ↔ {P : Place k F | P.degree = 1}.Infinite := by
   obtain ⟨P₀, hP₀⟩ := he.exists_place_degree_eq_one hF hex
   rw [← Set.infinite_coe_iff]
-  exact (Place.degreeOneEquivDegreeZeroClassGroup hF hex he.genus_eq_one hP₀).infinite_iff.symm
+  exact (Place.degreeOneEquivDegreeZeroClassGroup hF he.genus_eq_one hP₀).infinite_iff.symm
 
 /-- **Over an algebraically closed field, the degree-zero divisor class group of a function field
 of genus one is infinite**: every place has degree one, and there are infinitely many places. -/
@@ -228,11 +232,11 @@ variable {P₀ : Place k F}
 images of `P` and `Q` in `Cl⁰(F)` add up to the image of `R` exactly when the divisors `P + Q`
 and `R + P₀` are linearly equivalent. -/
 theorem degreeOneEquivDegreeZeroClassGroup_add_eq_iff (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1)
+    (hg : genus k F = 1) (hP₀ : P₀.degree = 1)
     (P Q R : {P : Place k F // P.degree = 1}) :
-    degreeOneEquivDegreeZeroClassGroup hF hex hg hP₀ P +
-        degreeOneEquivDegreeZeroClassGroup hF hex hg hP₀ Q =
-      degreeOneEquivDegreeZeroClassGroup hF hex hg hP₀ R ↔
+    degreeOneEquivDegreeZeroClassGroup hF hg hP₀ P +
+        degreeOneEquivDegreeZeroClassGroup hF hg hP₀ Q =
+      degreeOneEquivDegreeZeroClassGroup hF hg hP₀ R ↔
       (Place.orderSystem hF).LinearlyEquivalent
         (WeilDivisor.ofPoint P.1 + WeilDivisor.ofPoint Q.1)
         (WeilDivisor.ofPoint R.1 + WeilDivisor.ofPoint P₀) := by
@@ -255,25 +259,25 @@ Proposition 6.1.7): the addition of `Cl⁰(F)` transported along the bijection
 `TauCeti.Place.degreeOneAddCommGroup_add_eq_iff` characterises it by linear equivalence. -/
 @[instance_reducible]
 noncomputable def degreeOneAddCommGroup (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
+    (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
     AddCommGroup {P : Place k F // P.degree = 1} :=
-  (degreeOneEquivDegreeZeroClassGroup hF hex hg hP₀).addCommGroup
+  (degreeOneEquivDegreeZeroClassGroup hF hg hP₀).addCommGroup
 
 /-- **The degree-one places of an elliptic function field are the group `Cl⁰(F)`** (Stichtenoth,
 Proposition 6.1.7): for the transported addition, `P ↦ [P - P₀]` is an isomorphism of groups. -/
 noncomputable def degreeOneAddEquivDegreeZeroClassGroup (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
-    letI := degreeOneAddCommGroup hF hex hg hP₀
+    (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
+    letI := degreeOneAddCommGroup hF hg hP₀
     {P : Place k F // P.degree = 1} ≃+ (Divisor.degreeClass hF).ker :=
-  (degreeOneEquivDegreeZeroClassGroup hF hex hg hP₀).addEquiv
+  (degreeOneEquivDegreeZeroClassGroup hF hg hP₀).addEquiv
 
 /-- The isomorphism of groups is the underlying bijection. -/
 @[simp]
 theorem degreeOneAddEquivDegreeZeroClassGroup_apply (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1)
+    (hg : genus k F = 1) (hP₀ : P₀.degree = 1)
     (P : {P : Place k F // P.degree = 1}) :
-    degreeOneAddEquivDegreeZeroClassGroup hF hex hg hP₀ P =
-      degreeOneEquivDegreeZeroClassGroup hF hex hg hP₀ P := by
+    degreeOneAddEquivDegreeZeroClassGroup hF hg hP₀ P =
+      degreeOneEquivDegreeZeroClassGroup hF hg hP₀ P := by
   -- the isomorphism is `Equiv.addEquiv` applied to the bijection; unfold it to see that.
   rw [degreeOneAddEquivDegreeZeroClassGroup]
   exact Equiv.addEquiv_apply _ P
@@ -281,25 +285,25 @@ theorem degreeOneAddEquivDegreeZeroClassGroup_apply (hF : IsFunctionField k F)
 /-- The zero of the transported group law is the base place. -/
 @[simp]
 theorem degreeOneAddCommGroup_zero (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
-    letI := degreeOneAddCommGroup hF hex hg hP₀
+    (hg : genus k F = 1) (hP₀ : P₀.degree = 1) :
+    letI := degreeOneAddCommGroup hF hg hP₀
     (0 : {P : Place k F // P.degree = 1}) = ⟨P₀, hP₀⟩ := by
-  let := degreeOneAddCommGroup hF hex hg hP₀
-  apply (degreeOneAddEquivDegreeZeroClassGroup hF hex hg hP₀).injective
+  let := degreeOneAddCommGroup hF hg hP₀
+  apply (degreeOneAddEquivDegreeZeroClassGroup hF hg hP₀).injective
   rw [map_zero, degreeOneAddEquivDegreeZeroClassGroup_apply,
     degreeOneEquivDegreeZeroClassGroup_base]
 
 /-- **The group law of the degree-one places is linear equivalence of divisors** (Stichtenoth,
 Proposition 6.1.7): `P ⊕ Q = R` exactly when `P + Q ∼ R + P₀`. -/
 theorem degreeOneAddCommGroup_add_eq_iff (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 1) (hP₀ : P₀.degree = 1)
+    (hg : genus k F = 1) (hP₀ : P₀.degree = 1)
     (P Q R : {P : Place k F // P.degree = 1}) :
-    letI := degreeOneAddCommGroup hF hex hg hP₀
+    letI := degreeOneAddCommGroup hF hg hP₀
     P + Q = R ↔ (Place.orderSystem hF).LinearlyEquivalent
       (WeilDivisor.ofPoint P.1 + WeilDivisor.ofPoint Q.1)
       (WeilDivisor.ofPoint R.1 + WeilDivisor.ofPoint P₀) := by
-  let := degreeOneAddCommGroup hF hex hg hP₀
-  rw [← (degreeOneAddEquivDegreeZeroClassGroup hF hex hg hP₀).injective.eq_iff, map_add,
+  let := degreeOneAddCommGroup hF hg hP₀
+  rw [← (degreeOneAddEquivDegreeZeroClassGroup hF hg hP₀).injective.eq_iff, map_add,
     degreeOneAddEquivDegreeZeroClassGroup_apply, degreeOneAddEquivDegreeZeroClassGroup_apply,
     degreeOneAddEquivDegreeZeroClassGroup_apply,
     degreeOneEquivDegreeZeroClassGroup_add_eq_iff]

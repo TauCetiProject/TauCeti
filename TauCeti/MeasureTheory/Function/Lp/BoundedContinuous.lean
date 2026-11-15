@@ -27,10 +27,11 @@ function one to the constant class `1`. This is the comparison between
 supremum and essential-supremum norms used, for instance, to compare means on bounded
 uniformly continuous functions on a locally compact group with means on Haar `L∞`.
 
-On a discrete space, if `μ` charges every point, the only null set is empty, so every
-essentially bounded function is bounded and `toLpTop` is onto: it identifies bounded functions
-with `L∞` as normed spaces and, for real values, as ordered spaces. For instance, `L∞` of a
-counting measure, or of a Haar measure on a discrete group, consists of all bounded functions.
+On a discrete space `toLpTop` is onto for every measure: truncate a representative off its
+almost-everywhere bound. If `μ` also charges every point, the only null set is empty, so
+`toLpTop` is isometric and identifies bounded functions with `L∞` as normed spaces and, for
+real values, as ordered spaces. For instance, `L∞` of a counting measure, or of a Haar measure
+on a discrete group, consists of all bounded functions.
 
 ## Main definitions
 
@@ -48,8 +49,8 @@ counting measure, or of a Haar measure on a discrete group, consists of all boun
 * `BoundedContinuousFunction.norm_toLpTop`: `‖[f]‖ = ‖f‖` when `μ` is positive on open sets.
 * `BoundedContinuousFunction.toLpTop_le_toLpTop_iff`: for such `μ`, the map is an order
   embedding on real-valued functions.
-* `BoundedContinuousFunction.toLpTop_surjective`: on a discrete space, for a measure charging
-  every point, every class in `L∞` is the class of a bounded function.
+* `BoundedContinuousFunction.toLpTop_surjective`: on a discrete space, every class in `L∞` is the
+  class of a bounded function.
 * `BoundedContinuousFunction.toLpTop_one`: the constant function one goes to the constant one.
 -/
 
@@ -110,14 +111,9 @@ variable [μ.IsOpenPosMeasure]
 function is its supremum norm. -/
 @[simp]
 theorem norm_toLpTop (f : α →ᵇ E) : ‖toLpTop μ 𝕜 f‖ = ‖f‖ := by
-  refine (norm_toLpTop_le μ f).antisymm ((norm_le (norm_nonneg _)).2 fun x => ?_)
-  have h := Lp.ae_norm_le_norm_top (toLpTop μ 𝕜 f)
-  have hae : ∀ᵐ x ∂μ, ‖f x‖ ≤ ‖toLpTop μ 𝕜 f‖ := by
-    filter_upwards [coeFn_toLpTop μ (𝕜 := 𝕜) f, h] with x hx h
-    exact hx ▸ h
-  -- A closed conull set is everything, since `μ` charges every nonempty open set.
-  have hclosed : IsClosed {x | ‖f x‖ ≤ ‖toLpTop μ 𝕜 f‖} := isClosed_le (by fun_prop) (by fun_prop)
-  exact Set.eq_univ_iff_forall.1 (hclosed.ae_eq_univ_iff_eq.1 (ae_eq_univ.2 hae)) x
+  exact (norm_toLpTop_le μ f).antisymm ((norm_le (norm_nonneg _)).2
+    fun _ ↦ Lp.norm_le_norm_top_of_ae_eq_of_continuousAt (coeFn_toLpTop μ f)
+      f.continuous.continuousAt)
 
 /-- If `μ` is positive on nonempty open sets, a bounded continuous function is determined by its
 class in `L∞`. -/
@@ -130,14 +126,20 @@ section Discrete
 
 variable [DiscreteTopology α]
 
-/-- On a discrete space, if `μ` charges every point, every class in `L∞` is the class of a
-bounded function. -/
+omit [μ.IsOpenPosMeasure] in
+/-- On a discrete space, every class in `L∞` is the class of a bounded function. -/
 theorem toLpTop_surjective :
     Function.Surjective (toLpTop μ 𝕜 : (α →ᵇ E) →L[𝕜] Lp E ∞ μ) := by
   intro φ
-  have h := ae_le_lpNorm_exponent_top (Lp.memLp φ)
-  rw [ae_eq_top_of_discreteTopology, eventually_top] at h
-  exact ⟨ofNormedAddCommGroupDiscrete φ _ h, Lp.ext (coeFn_toLpTop μ _)⟩
+  obtain ⟨C, hC⟩ : ∃ C : ℝ, ∀ᵐ x ∂μ, ‖φ x‖ ≤ C := ⟨_, ae_le_lpNorm_exponent_top (Lp.memLp φ)⟩
+  have hψ : ∀ x, ‖(if ‖φ x‖ ≤ C then φ x else 0)‖ ≤ max C 0 := fun x => by
+    split_ifs with hx
+    · exact hx.trans (le_max_left _ _)
+    · simp
+  refine ⟨ofNormedAddCommGroupDiscrete (fun x => if ‖φ x‖ ≤ C then φ x else 0) _ hψ,
+    Lp.ext ((coeFn_toLpTop μ _).trans ?_)⟩
+  filter_upwards [hC] with x hx
+  simp [hx]
 
 variable (𝕜) in
 /-- On a discrete space, if `μ` charges every point, taking classes identifies bounded functions

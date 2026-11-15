@@ -141,24 +141,9 @@ theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_reflected_nevanli
   -- the density vanishes at `0` only since division by zero is `0` in `ℝ≥0`
   have hd0 : d 0 = 0 := by simp [d]
   have hμ0 : μ {0} = 0 := by simp [hμdef, withDensity_apply, hd0]
-  have hμw : Integrable stieltjesWeight μ := by
-    rw [hμdef, integrable_withDensity_iff_integrable_smul (by fun_prop)]
-    refine (hyint.add (integrable_const (1 : ℝ))).mono' (by fun_prop) ?_
-    filter_upwards [hane] with y hy
-    have hy' : (y : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hy
-    have hy1 : 1 + (y : ℝ) ≠ 0 := by positivity
-    -- `y⁻¹ + 1` exceeds the density times the weight by `2 / (1 + y)`.
-    have hsub : (y : ℝ)⁻¹ + 1 - (1 + (y : ℝ) ^ 2) / (y : ℝ) * (1 + (y : ℝ))⁻¹ =
-        2 / (1 + (y : ℝ)) := by
-      field_simp
-      ring
-    simp only [Pi.add_apply, NNReal.smul_def, smul_eq_mul, stieltjesWeight_apply, hdcoe,
-      Real.norm_eq_abs]
-    rw [abs_of_nonneg (by positivity), ← sub_nonneg, hsub]
-    positivity
   -- The reflected Nevanlinna integral in terms of the weighted measure.
   refine ⟨stieltjesBernsteinTransform μ (c - ∫ y : ℝ≥0, ((y : ℝ))⁻¹ ∂ν).toNNReal b.toNNReal,
-    isCompleteBernsteinFunction_stieltjesBernsteinTransform hμ0 hμw, fun t ht => ?_⟩
+    isCompleteBernsteinFunction_stieltjesBernsteinTransform hμ0, fun t ht => ?_⟩
   have ht := mem_Ioi.mp ht
   have hkey : ∫ y : ℝ≥0, d y • (t / (t + y)) ∂ν =
       ∫ y : ℝ≥0, (y : ℝ)⁻¹ ∂ν + ∫ y : ℝ≥0, (t * y - 1) / (t + y) ∂ν := by
