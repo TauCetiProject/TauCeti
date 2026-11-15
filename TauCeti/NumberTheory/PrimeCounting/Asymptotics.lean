@@ -24,9 +24,9 @@ the correct side.
 
 ## Main results
 
-* `Nat.isEquivalent_primeCounting_floor_const_mul`: prime counts at a nonnegative fixed scale.
-* `Nat.tendsto_primeCounting_mul_sub_mul_div`: the normalized difference at two fixed scales.
-* `Nat.eventually_card_primesLE_filter_gt_three_mul_bounds`: the two-sided interval bound.
+* `TauCeti.isEquivalent_primeCounting_floor_const_mul`: prime counts at a nonnegative fixed scale.
+* `TauCeti.tendsto_primeCounting_mul_sub_mul_div`: the normalized difference at two fixed scales.
+* `TauCeti.eventually_card_primesLE_filter_gt_three_mul_bounds`: the two-sided interval bound.
 
 ## References and provenance
 
@@ -41,10 +41,10 @@ whose contributors include Matteo Cipollina. The PNT itself is supplied by Mathl
 
 public section
 
-open Filter Asymptotics Finset
+open Filter Asymptotics Finset Nat
 open scoped Topology
 
-namespace Nat
+namespace TauCeti
 
 
 /-- Prime counts at a fixed nonnegative scale are asymptotic to `c * (x / log x)`. -/
@@ -113,4 +113,4 @@ theorem eventually_card_primesLE_filter_gt_three_mul_bounds :
   have hu' := (div_lt_iff₀ hpos).mp hu
   constructor <;> nlinarith
 
-end Nat
+end TauCeti
