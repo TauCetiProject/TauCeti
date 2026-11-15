@@ -472,34 +472,26 @@ lemma prism_zero_dim (s : StdSimplex ℝ (Fin 1)) (t : I) :
         (StdSimplex.homeomorphI.symm t) := by
   have hobj : ⇑(prodStdSimplex.objEquiv
       (verticalEdge (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌)) : (Δ[0] ⊗ Δ[1] : SSet.{u}) _⦋1⦌)) =
-      fun b ↦ (0, b) :=
-    funext (Fin.forall_fin_two.2 ⟨Prod.ext (Fin.eq_zero _)
-      ((prodStdSimplex.objEquiv_apply_snd _ 0).trans (by rw [verticalEdge_snd]; rfl)),
-      Prod.ext (Fin.eq_zero _)
-        ((prodStdSimplex.objEquiv_apply_snd _ 1).trans (by rw [verticalEdge_snd]; rfl))⟩)
+      fun b ↦ (0, b) := funext fun b ↦
+    Prod.ext (Fin.eq_zero _) ((prodStdSimplex.objEquiv_apply_snd _ b).trans
+      (by fin_cases b <;> rw [verticalEdge_snd] <;> rfl))
   refine prism_eq _ _ ?_
-  rw [hobj, ← StdSimplex.weights_inj]
-  ext ⟨i, b⟩
+  rw [hobj, ← StdSimplex.weights_inj]; ext ⟨i, b⟩
   obtain rfl : i = 0 := Fin.eq_zero i
   have htot : prefixSum 1 s.weights = 1 := by
     rw [TauCeti.prefixSum_of_le le_rfl, StdSimplex.total_of_fintype]
   have hw₁ : (StdSimplex.homeomorphI.symm t).weights 1 = (t : ℝ) := by
     simpa using (StdSimplex.homeomorphI_apply_coe (StdSimplex.homeomorphI.symm t)).symm
   have hw₀ : (StdSimplex.homeomorphI.symm t).weights 0 = 1 - (t : ℝ) := by
-    have := StdSimplex.total_of_fintype (StdSimplex.homeomorphI.symm t)
-    rw [Fin.sum_univ_two, hw₁] at this
-    linarith
-  revert b
-  refine Fin.forall_fin_two.2 ⟨?_, ?_⟩
-  · rw [StdSimplex.weights_map_apply_of_injective (fun _ _ h ↦ congrArg Prod.snd h) _ 0,
-      hw₀, prismMeasure_weights, prismWeights]
-    simp only [Fin.val_zero, zero_add, clamp_zero, TauCeti.prefixSum_zero, htot,
-      min_eq_right (sub_le_self (1 : ℝ) t.2.1), min_eq_left (sub_nonneg.2 t.2.2), sub_zero]
-  · rw [StdSimplex.weights_map_apply_of_injective (fun _ _ h ↦ congrArg Prod.snd h) _ 1,
-      hw₁, prismMeasure_weights, prismWeights]
-    simp only [Fin.val_zero, zero_add, clamp_one, TauCeti.prefixSum_zero, htot,
-      max_eq_left (sub_le_self (1 : ℝ) t.2.1), max_eq_right (sub_nonneg.2 t.2.2)]
-    ring
+    linarith [StdSimplex.total_of_fintype (StdSimplex.homeomorphI.symm t), Fin.sum_univ_two
+      (StdSimplex.homeomorphI.symm t).weights, hw₁]
+  revert b; refine Fin.forall_fin_two.2 ⟨?_, ?_⟩ <;>
+    rw [StdSimplex.weights_map_apply_of_injective (fun _ _ h ↦ congrArg Prod.snd h),
+      prismMeasure_weights, prismWeights]
+  · simp [clamp_zero, htot, hw₀, min_eq_right (sub_le_self (1 : ℝ) t.2.1),
+      min_eq_left (sub_nonneg.2 t.2.2)]
+  · simp only [Fin.val_zero, zero_add, clamp_one, TauCeti.prefixSum_zero, htot, hw₁,
+      max_eq_left (sub_le_self (1 : ℝ) t.2.1), max_eq_right (sub_nonneg.2 t.2.2)]; ring
 
 end prodStdSimplex₁
 
@@ -564,12 +556,11 @@ lemma toTopCylinder_toTopObjMk_zero (v : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)
     toTopCylinder X (toTopObjMk v w, t) =
       toTopObjMk (verticalEdge v) (StdSimplex.homeomorphI.symm t) := by
   rw [toTopCylinder_toTopObjMk, prodStdSimplex₁.prism_zero_dim, toTop_map_toTopObjMk]
-  refine congrArg (toTopObjMk · _) ((whiskerRight_app_apply (yonedaEquiv.symm v) Δ[1] _).trans ?_)
-  refine Prod.ext ?_ ((verticalEdge_snd _).trans (verticalEdge_snd v).symm)
-  rw [verticalEdge_fst, verticalEdge_fst, SimplicialObject.σ, SimplicialObject.σ]
-  have h := NatTrans.naturality_apply (yonedaEquiv.symm v) (SimplexCategory.σ 0).op
-    (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌))
-  simpa [yonedaEquiv_symm_app_objEquiv_symm] using h
+  refine congrArg (toTopObjMk · _) ((whiskerRight_app_apply (yonedaEquiv.symm v) Δ[1] _).trans
+    (Prod.ext ?_ ((verticalEdge_snd _).trans (verticalEdge_snd v).symm)))
+  simpa [verticalEdge_fst, SimplicialObject.σ, yonedaEquiv_symm_app_objEquiv_symm] using
+    NatTrans.naturality_apply (yonedaEquiv.symm v) (SimplexCategory.σ 0).op
+      (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌))
 
 /-- If at the end `t` the triangulation of every prism is the realization of `j`, for a natural
 family `j : Z ⟶ Z ⊗ Δ[1]`, then so is the triangulation of the realized cylinder. -/
