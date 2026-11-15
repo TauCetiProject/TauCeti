@@ -44,7 +44,10 @@ field `x` one takes `a` with `a = x` almost everywhere. The domain carries the p
 largest of the `H¹` norms of the four coordinates. Its values are given almost everywhere by the
 same formula with weak gradients (`TauCeti.Vortex.sobolevGaugeFixedOperator_apply_ae`), and on
 variations with a `C¹` representative it is the classical operator
-(`TauCeti.Vortex.sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator`).
+(`TauCeti.Vortex.sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator`). Changing the coefficient
+changes only the zeroth-order part (`TauCeti.Vortex.sobolevGaugeFixedOperator_sub_apply_ae`), so
+the realization depends Lipschitz continuously on `a` in operator norm
+(`TauCeti.Vortex.exists_lipschitzWith_sobolevGaugeFixedOperator`).
 
 At a `C¹` vortex `x` with `|α| → 1` and `∇₁ α → 0` at infinity and with an `L∞` class `a`, so
 that its coordinates are bounded by `‖a‖`, the Gårding inequality
@@ -142,6 +145,44 @@ theorem sobolevGaugeFixedOperator_apply_ae (a : Lp (EuclideanSpace ℝ (Fin 4)) 
   congr 2
   ext i
   simp [WithLp.ofLp_sum, EuclideanSpace.single, Pi.single_apply]
+
+/-- Changing the coefficient changes the realization only in its zeroth-order part: almost
+everywhere, the difference of the realizations at `a` and `b` is the zeroth-order term with
+coefficient `a - b`. -/
+theorem sobolevGaugeFixedOperator_sub_apply_ae (a b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤)
+    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    (sobolevGaugeFixedOperator a - sobolevGaugeFixedOperator b) y =ᵐ[μ⊤] fun z ↦
+      gaugeFixedZerothOrder (a z - b z) (WithLp.toLp 2 fun j ↦ W1p.value (y j) z) := by
+  filter_upwards [Lp.coeFn_sub (sobolevGaugeFixedOperator a y) (sobolevGaugeFixedOperator b y),
+    sobolevGaugeFixedOperator_apply_ae a y, sobolevGaugeFixedOperator_apply_ae b y]
+    with z h h₁ h₂
+  rw [sub_apply, h, Pi.sub_apply, h₁, h₂, map_sub, sub_apply]
+  abel
+
+/-- The realization depends Lipschitz continuously, in operator norm, on the `L∞` class of the
+coefficient. -/
+theorem exists_lipschitzWith_sobolevGaugeFixedOperator :
+    ∃ K, LipschitzWith K sobolevGaugeFixedOperator := by
+  set V : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ :=
+    ∑ j : Fin 4, ((ContinuousLinearMap.toSpanSingleton ℝ
+      (EuclideanSpace.single j (1 : ℝ))).compLpL 2 μ⊤).comp
+        ((W1p.valueL).comp (ContinuousLinearMap.proj j))
+  set H := gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2
+  have hsub : ∀ a b, sobolevGaugeFixedOperator a - sobolevGaugeFixedOperator b =
+      (H (a - b)).comp V := fun a b ↦ by
+    simp only [sobolevGaugeFixedOperator, map_sub, ContinuousLinearMap.sub_comp]
+    abel
+  refine ⟨‖H‖₊ * ‖V‖₊, LipschitzWith.of_dist_le_mul fun a b ↦ ?_⟩
+  rw [dist_eq_norm, dist_eq_norm, hsub]
+  calc ‖(H (a - b)).comp V‖ ≤ ‖H (a - b)‖ * ‖V‖ := ContinuousLinearMap.opNorm_comp_le _ _
+    _ ≤ ‖H‖ * ‖a - b‖ * ‖V‖ := by gcongr; exact H.le_opNorm _
+    _ = _ := by push_cast; ring
+
+/-- The realization depends continuously, in operator norm, on the `L∞` class of the
+coefficient. -/
+theorem continuous_sobolevGaugeFixedOperator :
+    Continuous sobolevGaugeFixedOperator :=
+  exists_lipschitzWith_sobolevGaugeFixedOperator.elim fun _ h ↦ h.continuous
 
 /-- On a variation `y` whose coordinates have the coordinates of a `C¹` field `Y` as
 representatives, the realization at the `L∞` class of a field `x` is the classical gauge-fixed
