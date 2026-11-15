@@ -39,8 +39,8 @@ immersion (`IsIsotropicMap.isImmersion_relComp_transverseFiberProduct`). A tange
 by the differential gives `v ∈ T M₂` with `(0, v)` tangent to `f` and `(v, 0)` tangent to `g`.
 Isotropy makes `v` orthogonal to the projections of both tangent images, which span `T M₂` by
 transversality, so `v = 0`
-(`TauCeti.SymplecticForm.IsIsotropic.eq_zero_of_map_snd_sup_map_fst_eq_top`). This
-instantiates the pointwise statement `IsIsotropicMap.injective_mfderiv_relComp`. Hence the
+(`TauCeti.SymplecticForm.IsIsotropic.relCompExcess_eq_bot_of_map_snd_sup_map_fst_eq_top`).
+This instantiates the pointwise statement `IsIsotropicMap.injective_mfderiv_relComp`. Hence the
 transverse composite of Lagrangian immersions is a Lagrangian immersion
 (`IsLagrangianImmersion.relComp_transverseFiberProduct`). Conversely, for linear canonical
 relations the absence of excess directions already forces transversality
