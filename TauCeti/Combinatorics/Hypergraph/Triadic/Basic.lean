@@ -46,6 +46,7 @@ exceptional mass instead.
 
 * `TauCeti.TriadicComplex3`: a lower skeleton over a chosen pair palette with selected polyads.
 * `TauCeti.TriadicComplex3.complexity`: vertex cells plus pair colors plus polyads.
+* `TauCeti.TriadicComplex3.ComplexityBounded`: the complexity is at most a given bound.
 * `TauCeti.TriadicComplex3.toHypergraphComplex`: the underlying hypergraph complex of rank three.
 * `TauCeti.TriadicComplex3.IsPolyadDecomposition`: the selected polyads cover all injective
   triples.
@@ -133,6 +134,21 @@ theorem complexity_le :
   rw [Fintype.card_fin] at h
   rw [complexity_def]
   omega
+
+/-- The complexity of the triadic complex is at most `b`. -/
+def ComplexityBounded (b : ℕ) : Prop :=
+  C.complexity ≤ b
+
+variable {C} {a b : ℕ} in
+/-- Unfolded form of `TriadicComplex3.ComplexityBounded`. -/
+theorem complexityBounded_iff : C.ComplexityBounded b ↔ C.complexity ≤ b :=
+  Iff.rfl
+
+variable {C} {a b : ℕ} in
+/-- Complexity boundedness weakens as the bound grows. -/
+theorem ComplexityBounded.mono (h : C.ComplexityBounded a) (hab : a ≤ b) :
+    C.ComplexityBounded b :=
+  h.trans hab
 
 /-! ### The underlying hypergraph complex -/
 
