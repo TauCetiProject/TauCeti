@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Mul
+public import TauCeti.Combinatorics.NoncrossingPartition.Pairing
 public import TauCeti.Probability.FreeProbability.Distribution.Basic
 public import TauCeti.Probability.FreeProbability.Semicircular.Basic
 
@@ -17,7 +18,11 @@ Let `φ : A →ₗ[R] R` be a linear functional on an algebra `A` over a commuta
 normalised and the only nonvanishing joint free cumulants of positive order of the family are
 those of order two, given by the covariance: `κ₂(s i, s j) = C i j`, and
 `κ_n(s_{w 1}, …, s_{w n}) = 0` for every word `w` of length `n ≥ 1` with `n ≠ 2`.
-Equivalently, `φ (s i) = 0`, `φ (s i * s j) = C i j`, and all higher joint free cumulants vanish.
+Equivalently, by the moment–cumulant formula and Möbius uniqueness, `s` satisfies the algebraic
+*Wick formula* over noncrossing pairings:
+
+`φ (s (w 1) * ⋯ * s (w n)) = ∑_{P ∈ NC₂(n)} ∏_{(i, j) ∈ P} C (w i) (w j)`.
+
 This is the free analogue of a centred Gaussian family with covariance `C`.
 
 The joint distribution of a semicircular system is determined by its covariance, and every member
@@ -41,6 +46,9 @@ No positivity, symmetry of `C`, or traciality of `φ` is assumed.
 
 * `TauCeti.IsSemicircularSystem.apply_eq_zero`, `TauCeti.IsSemicircularSystem.apply_mul` — the
   members are centred, with second moments `φ (s i * s j) = C i j`.
+* `TauCeti.IsSemicircularSystem.apply_prod`, `TauCeti.IsSemicircularSystem.apply_prod_ofFn`, and
+  `TauCeti.isSemicircularSystem_iff_apply_prod_ofFn` — the algebraic Wick formula over noncrossing
+  pairings and its converse characterizing semicircular systems.
 * `TauCeti.IsSemicircularSystem.isSemicircular` — each member `s i` is semicircular of variance
   `C i i`.
 * `TauCeti.IsSemicircularSystem.jointDistribution_eq` — the joint distribution of a semicircular
@@ -56,8 +64,9 @@ No positivity, symmetry of `C`, or traciality of `φ` is assumed.
 
 ## References
 
-* A. Nica, R. Speicher, *Lectures on the Combinatorics of Free Probability*, Definition 8.15 for
-  semicircular families and Lecture 11 (Theorem 11.20 for the generated-algebra test).
+* A. Nica, R. Speicher, *Lectures on the Combinatorics of Free Probability*, Definition 8.15 and
+  Proposition 8.17 for semicircular families and their Wick formula, and Lecture 11 (Theorem 11.20
+  for the generated-algebra test).
 -/
 
 public section
@@ -171,7 +180,155 @@ theorem isFreelyIndependentElements_iff (h : IsSemicircularSystem φ s C) :
     fin_cases k <;> fin_cases k' <;> simp [h01]
   · exact h.freeCumulant_eq_zero (fun hn => (Fin.cast hn k).elim0) hn₂ w
 
+/-- Along any nonempty finite set `B` of positions in a linear order, the joint free cumulant of a
+semicircular system `s` with covariance `C` along `w : α → ι` is `C (w (min B)) (w (max B))` when
+`#B = 2` and `0` otherwise. -/
+theorem freeCumulant_comp {α : Type*} [LinearOrder α] (h : IsSemicircularSystem φ s C)
+    (w : α → ι) {B : Finset α} (hB : B.Nonempty) :
+    freeCumulant φ (s ∘ w) B =
+      if #B = 2 then C (w (B.min' hB)) (w (B.max' hB)) else 0 := by
+  split_ifs with hcard
+  · conv_lhs => rw [← image_orderEmbOfFin_univ B hcard]
+    have h0 : B.orderEmbOfFin hcard 0 = B.min' hB := orderEmbOfFin_zero hcard (by omega)
+    have h1 : B.orderEmbOfFin hcard 1 = B.max' hB := orderEmbOfFin_last hcard (by omega)
+    rw [← freeCumulant_comp_of_strictMonoOn φ
+        ((B.orderEmbOfFin hcard).strictMono.strictMonoOn _) (s ∘ w),
+      Function.comp_assoc, h.freeCumulant_two]
+    simp [h0, h1]
+  · rw [freeCumulant_eq_freeCumulant_comp_orderEmbOfFin φ (s ∘ w) B, Function.comp_assoc,
+      h.freeCumulant_eq_zero hB.card_pos.ne' hcard]
+
+/-- **Algebraic Wick formula** for a semicircular system along a finite ordered index set `t`:
+`φ (∏_{x ∈ t} s (w x)) = ∑_{P ∈ NC₂(t)} ∏_{(x, y) ∈ P} C (w x) (w y)`. -/
+theorem apply_prod {α : Type*} [LinearOrder α] (h : IsSemicircularSystem φ s C) (t : Finset α)
+    (w : α → ι) :
+    φ ((t.sort.map (s ∘ w)).prod) =
+      ∑ P : {P : NoncrossingPartition t // P.1.IsPairing},
+        ∏ p ∈ P.1.1.orderedPairs, C (w p.1) (w p.2) := by
+  obtain rfl | ht := t.eq_empty_or_nonempty
+  · rw [sort_empty, List.map_nil, List.prod_nil, h.apply_one,
+      NoncrossingPartition.sum_isPairing_prod_orderedPairs_empty fun x y => C (w x) (w y)]
+  rw [apply_prod_eq_sum_prod_freeCumulant φ (s ∘ w) ht]
+  refine NoncrossingPartition.sum_prod_eq_sum_isPairing_prod_orderedPairs
+    (fun x y => C (w x) (w y)) (fun {_ _} _ _ hij => ?_) fun B _ hB hcard => ?_
+  · rw [h.freeCumulant_comp w ⟨_, mem_insert_self _ _⟩]
+    simp [card_pair hij.ne, min_eq_left hij.le, max_eq_right hij.le]
+  · simp [h.freeCumulant_comp w hB, hcard]
+
+/-- **Algebraic Wick formula** for words indexed by `Fin n` in a semicircular system. -/
+theorem apply_prod_ofFn (h : IsSemicircularSystem φ s C) {n : ℕ} (w : Fin n → ι) :
+    φ (List.ofFn (s ∘ w)).prod =
+      ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.1.IsPairing},
+        ∏ p ∈ P.1.1.orderedPairs, C (w p.1) (w p.2) := by
+  rw [List.ofFn_eq_map, ← Fin.sort_univ]
+  exact h.apply_prod univ w
+
+/-- Moments of odd length in a semicircular system vanish. -/
+theorem apply_prod_eq_zero_of_odd {α : Type*} [LinearOrder α] (h : IsSemicircularSystem φ s C)
+    {t : Finset α} (ht : Odd #t) (w : α → ι) :
+    φ ((t.sort.map (s ∘ w)).prod) = 0 := by
+  rw [h.apply_prod, NoncrossingPartition.sum_isPairing_eq_zero ht]
+
 end IsSemicircularSystem
+
+/-- Target block weight for the converse of the algebraic Wick formula. -/
+private def wickBlockWeight (C : Matrix ι ι R) {m : ℕ} (w : Fin m → ι) (B : Finset (Fin m)) : R :=
+  if hB : B.Nonempty then if #B = 2 then C (w (B.min' hB)) (w (B.max' hB)) else 0 else 0
+
+private theorem sum_prod_wickBlockWeight_eq {n : ℕ} (w : Fin n → ι) :
+    (∑ π : NoncrossingPartition (univ : Finset (Fin n)),
+        ∏ B ∈ π.1.parts, wickBlockWeight C w B) =
+      ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.1.IsPairing},
+        ∏ p ∈ P.1.1.orderedPairs, C (w p.1) (w p.2) := by
+  refine NoncrossingPartition.sum_prod_eq_sum_isPairing_prod_orderedPairs
+    (fun i j => C (w i) (w j)) (fun {i j} _ _ hij => ?_) fun B _ hB hcard => ?_
+  · have hne : ({i, j} : Finset (Fin n)).Nonempty := ⟨i, mem_insert_self i _⟩
+    simp [wickBlockWeight, hne, card_pair hij.ne, min_eq_left hij.le, max_eq_right hij.le]
+  · simp [wickBlockWeight, hB, hcard]
+
+private theorem wickBlockWeight_comp_orderEmbOfFin {n : ℕ} (w : Fin n → ι)
+    {B : Finset (Fin n)} (hB : B.Nonempty) :
+    wickBlockWeight C (w ∘ B.orderEmbOfFin rfl) univ = wickBlockWeight C w B := by
+  have : Nonempty (Fin #B) := ⟨⟨0, hB.card_pos⟩⟩
+  have hmin : (univ : Finset (Fin #B)).min' univ_nonempty = ⟨0, hB.card_pos⟩ :=
+    le_antisymm (min'_le _ _ (mem_univ _)) (Fin.mk_le_mk.2 (Nat.zero_le _))
+  have hmax :
+      (univ : Finset (Fin #B)).max' univ_nonempty = ⟨#B - 1, Nat.sub_lt hB.card_pos one_pos⟩ :=
+    le_antisymm
+      (Fin.mk_le_mk.2 (Nat.le_sub_one_of_lt
+        (Fin.isLt ((univ : Finset (Fin #B)).max' univ_nonempty))))
+      (le_max' _ _ (mem_univ _))
+  simp only [wickBlockWeight, univ_nonempty, hB, ↓reduceDIte, card_univ, Fintype.card_fin,
+    Function.comp_apply, hmin, hmax]
+  rw [orderEmbOfFin_zero rfl hB.card_pos, orderEmbOfFin_last rfl hB.card_pos]
+
+private theorem freeCumulant_eq_wickBlockWeight_of_apply_prod_ofFn
+    (hprod : ∀ {n : ℕ} (w : Fin n → ι),
+      φ (List.ofFn (s ∘ w)).prod =
+        ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.1.IsPairing},
+          ∏ p ∈ P.1.1.orderedPairs, C (w p.1) (w p.2)) :
+    ∀ {n : ℕ}, n ≠ 0 → ∀ w : Fin n → ι,
+      freeCumulant φ (s ∘ w) univ = wickBlockWeight C w univ := by
+  intro n
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+  intro hn w
+  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
+  have hsum : (∑ π : NoncrossingPartition (univ : Finset (Fin n)),
+        ∏ B ∈ π.1.parts, freeCumulant φ (s ∘ w) B) =
+      ∑ π : NoncrossingPartition (univ : Finset (Fin n)),
+        ∏ B ∈ π.1.parts, wickBlockWeight C w B := by
+    rw [← apply_prod_ofFn_eq_sum_prod_freeCumulant φ hn (s ∘ w), hprod w,
+      sum_prod_wickBlockWeight_eq]
+  rw [← add_sum_erase _ _ (mem_univ (⊤ : NoncrossingPartition (univ : Finset (Fin n)))),
+    ← add_sum_erase _ _ (mem_univ (⊤ : NoncrossingPartition (univ : Finset (Fin n))))] at hsum
+  have herase : (∑ π ∈ univ.erase (⊤ : NoncrossingPartition (univ : Finset (Fin n))),
+        ∏ B ∈ π.1.parts, freeCumulant φ (s ∘ w) B) =
+      ∑ π ∈ univ.erase (⊤ : NoncrossingPartition (univ : Finset (Fin n))),
+        ∏ B ∈ π.1.parts, wickBlockWeight C w B := by
+    refine sum_congr rfl fun π hπ => prod_congr rfl fun B hB => ?_
+    have hne : B.Nonempty := π.1.nonempty_of_mem_parts hB
+    have hlt : #B < n := by
+      refine lt_of_le_of_ne (by simpa using card_le_card (subset_univ B)) fun hcard =>
+        (mem_erase.1 hπ).1 ?_
+      have hBu : B = univ := eq_of_subset_of_card_le (subset_univ B) (by simp [hcard])
+      exact Subtype.ext <| (π.1.eq_top_of_mem_parts (hBu ▸ hB)).trans
+        NoncrossingPartition.coe_top.symm
+    rw [freeCumulant_eq_freeCumulant_comp_orderEmbOfFin φ (s ∘ w) B, Function.comp_assoc,
+      ih #B hlt hne.card_pos.ne' (w ∘ B.orderEmbOfFin rfl),
+      wickBlockWeight_comp_orderEmbOfFin w hne]
+  rw [herase] at hsum
+  have htop := add_right_cancel hsum
+  have hparts : (⊤ : NoncrossingPartition (univ : Finset (Fin n))).1.parts = {univ} := by
+    rw [NoncrossingPartition.coe_top,
+      Finpartition.parts_top (univ_nonempty (α := Fin n)).ne_empty]
+  rwa [hparts, prod_singleton, prod_singleton] at htop
+
+/-- **Wick characterization of semicircular systems**: a family `s : ι → A` is a semicircular
+system with covariance `C` for `φ` if and only if every word `w : Fin n → ι` (including the empty
+word `n = 0`) satisfies the noncrossing-pairing Wick formula. -/
+theorem isSemicircularSystem_iff_apply_prod_ofFn :
+    IsSemicircularSystem φ s C ↔
+      ∀ {n : ℕ} (w : Fin n → ι),
+        φ (List.ofFn (s ∘ w)).prod =
+          ∑ P : {P : NoncrossingPartition (univ : Finset (Fin n)) // P.1.IsPairing},
+            ∏ p ∈ P.1.1.orderedPairs, C (w p.1) (w p.2) := by
+  refine ⟨fun h {n} w => h.apply_prod_ofFn w, fun hprod => ?_⟩
+  have h1 : φ 1 = 1 := by
+    have h0 := hprod (n := 0) Fin.elim0
+    have hempty : (univ : Finset (Fin 0)) = ∅ := univ_eq_empty
+    rw [List.ofFn_zero, List.prod_nil, hempty,
+      NoncrossingPartition.sum_isPairing_prod_orderedPairs_empty
+        fun i j => C (Fin.elim0 i) (Fin.elim0 j)] at h0
+    exact h0
+  refine ⟨h1, fun w => ?_, fun {n} hn₀ hn₂ w => ?_⟩
+  · rw [freeCumulant_eq_wickBlockWeight_of_apply_prod_ofFn hprod two_ne_zero w]
+    have hmin : (univ : Finset (Fin 2)).min' univ_nonempty = 0 := by decide
+    have hmax : (univ : Finset (Fin 2)).max' univ_nonempty = 1 := by decide
+    simp [wickBlockWeight, hmin, hmax]
+  · rw [freeCumulant_eq_wickBlockWeight_of_apply_prod_ofFn hprod hn₀ w]
+    have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn₀⟩⟩
+    simp [wickBlockWeight, hn₂]
 
 /-- *Free semicircular families*: a family `s` is a semicircular system with diagonal covariance
 `diagonal v` for `φ` exactly when `φ` is normalised and the `s i` are freely independent

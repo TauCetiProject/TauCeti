@@ -40,7 +40,9 @@ self-adjoint operator, to operators on real Hilbert spaces.
   `WithLp.complexification_im_inner` computing the inner product from real and imaginary parts.
 * `WithLp.complexification_norm_sq_eq`: `‖x + i y‖² = ‖x‖² + ‖y‖²`.
 * `WithLp.complexificationEquivProd`: the real-linear isometric equivalence
-  `WithLp 2 (Complexification X) ≃ₗᵢ[ℝ] WithLp 2 (X × X)`, and
+  `WithLp 2 (Complexification X) ≃ₗᵢ[ℝ] WithLp 2 (X × X)`,
+  `WithLp.complexificationOfRealₗᵢ`: the real-linear isometric inclusion
+  `X →ₗᵢ[ℝ] WithLp 2 (Complexification X)`, and
   `WithLp.instComplexificationCompleteSpace` as a consequence.
 * `ContinuousLinearMap.complexifyL2`: the complexification of a bounded real operator, with
   `ContinuousLinearMap.eq_complexifyL2_iff` (it is the unique complex-linear extension),
@@ -137,6 +139,23 @@ instance instComplexificationCompleteSpace [CompleteSpace X] :
     CompleteSpace (WithLp 2 (Complexification X)) :=
   (complexificationEquivProd X).toIsometryEquiv.completeSpace
 
+variable (X) in
+/-- The real-linear isometric inclusion `x ↦ x + i 0` of a real normed space `X` into its `L²`
+complexification `WithLp 2 (Complexification X)`. -/
+def complexificationOfRealₗᵢ : X →ₗᵢ[ℝ] WithLp 2 (Complexification X) where
+  toFun x := toLp 2 (Complexification.ofReal x)
+  map_add' x y := by
+    apply ofLp_injective 2
+    ext <;> simp
+  map_smul' r x := by
+    apply ofLp_injective 2
+    ext <;> simp
+  norm_map' := complexification_norm_toLp_ofReal
+
+@[simp]
+theorem complexificationOfRealₗᵢ_apply (x : X) :
+    complexificationOfRealₗᵢ X x = toLp 2 (Complexification.ofReal x) := (rfl)
+
 end Norm
 
 section InnerProductSpace
@@ -182,6 +201,20 @@ theorem complexification_re_inner (z w : WithLp 2 (Complexification X)) :
 @[simp]
 theorem complexification_im_inner (z w : WithLp 2 (Complexification X)) :
     (⟪z, w⟫_ℂ).im = ⟪z.ofLp.re, w.ofLp.im⟫_ℝ - ⟪z.ofLp.im, w.ofLp.re⟫_ℝ := (rfl)
+
+/-- The complex inner product of two real vectors in the `L²` complexification is their real inner
+product. -/
+@[simp]
+theorem complexification_inner_toLp_ofReal (x y : X) :
+    ⟪toLp 2 (Complexification.ofReal x), toLp 2 (Complexification.ofReal y)⟫_ℂ =
+      (⟪x, y⟫_ℝ : ℂ) := by
+  apply Complex.ext <;> simp
+
+/-- `complexificationOfRealₗᵢ` preserves inner products, sending the real inner product to the
+complex inner product. -/
+theorem inner_complexificationOfRealₗᵢ (x y : X) :
+    ⟪complexificationOfRealₗᵢ X x, complexificationOfRealₗᵢ X y⟫_ℂ = (⟪x, y⟫_ℝ : ℂ) :=
+  complexification_inner_toLp_ofReal x y
 
 end InnerProductSpace
 
