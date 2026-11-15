@@ -37,6 +37,10 @@ faces of the increasing enumeration of a set `J` enumerate the sets `J` with one
   from a subcomplex of a standard simplex to a standard simplex.
 * `SSet.stdSimplex.hom_app_obj₀Equiv_symm`: a map `g` of standard simplices sends the vertex `j`
   to the vertex `yonedaEquiv g j`.
+* `SSet.stdSimplex.yonedaEquiv_comp_apply`, `SSet.stdSimplex.yonedaEquiv_map_apply`: the vertices
+  of a composite of maps of standard simplices, and of `stdSimplex.map g`.
+* `SSet.stdSimplex.hom_ext`: maps from a simplicial set to `Δ[k]` are determined by their values
+  on vertices.
 * `SSet.stdSimplex.edge_edge_apply_zero`, `SSet.stdSimplex.edge_edge_apply_one`: the endpoints of an
   edge of `Δ[n]` are its vertices `0` and `1`.
 * `SSet.stdSimplex.nonempty_edge_iff`: `Δ[n]` has an edge from `a` to `b` exactly when `a ≤ b`,
@@ -159,6 +163,32 @@ lemma hom_app_obj₀Equiv_symm {d d' : ℕ} (g : (Δ[d'] : SSet.{u}) ⟶ Δ[d]) 
     g.app _ (obj₀Equiv.symm j) = obj₀Equiv.symm (yonedaEquiv g j) :=
   stdSimplex.ext _ _ fun t ↦ by
     rw [hom_app_apply, obj₀Equiv_symm_apply, const_apply, obj₀Equiv_symm_apply, const_apply]
+
+/-- The vertex `j` of the composite of maps of standard simplices `F : Δ[d] ⟶ Δ[a]` and
+`G : Δ[a] ⟶ Δ[k]` is the vertex of `G` at the vertex `j` of `F`. -/
+@[simp]
+lemma yonedaEquiv_comp_apply {d a k : ℕ} (F : Δ[d] ⟶ (Δ[a] : SSet.{u}))
+    (G : Δ[a] ⟶ (Δ[k] : SSet.{u})) (j : Fin (d + 1)) :
+    yonedaEquiv (F ≫ G) j = yonedaEquiv G (yonedaEquiv F j) := by
+  rw [yonedaEquiv_comp, hom_app_apply]
+
+/-- The vertex `j` of `stdSimplex.map g : Δ[d] ⟶ Δ[a]` is the image of `j` under `g`. -/
+@[simp]
+lemma yonedaEquiv_map_apply {d a : ℕ} (g : ⦋d⦌ ⟶ ⦋a⦌) (j : Fin (d + 1)) :
+    yonedaEquiv.{u} (stdSimplex.map g) j = g.toOrderHom j := by
+  rw [yonedaEquiv_map, objEquiv_symm_apply]
+
+/-- Maps from a simplicial set to a standard simplex are determined by their values on vertices. -/
+lemma hom_ext {X : SSet.{u}} {k : ℕ} {σ σ' : X ⟶ Δ[k]}
+    (h : ∀ y : X _⦋0⦌, σ.app _ y = σ'.app _ y) : σ = σ' := by
+  ext ⟨n⟩ x
+  induction n using SimplexCategory.rec with | _ n
+  refine stdSimplex.ext _ _ fun i ↦ ?_
+  -- The vertex i of the image of x is the image of the vertex i of x.
+  have hσ := congrArg (· 0) (σ.naturality_apply (SimplexCategory.const ⦋0⦌ ⦋n⦌ i).op x)
+  have hσ' := congrArg (· 0) (σ'.naturality_apply (SimplexCategory.const ⦋0⦌ ⦋n⦌ i).op x)
+  rw [obj_map_apply, Quiver.Hom.unop_op, SimplexCategory.const_apply] at hσ hσ'
+  exact hσ.symm.trans ((congrArg (· 0) (h _)).trans hσ')
 
 /-- The vertex `0` of an edge of `Δ[n]` from `y` to `x` is the vertex `y`, the face `δ 1` of the
 edge. -/
