@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.CategoryTheory.Abelian.Projective.Resolution
 public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
+public import TauCeti.CategoryTheory.Abelian.Projective.Resolution
 public import TauCeti.Algebra.Homology.HomotopyCofiber
 
 /-!
@@ -46,9 +47,7 @@ homology sequence of `0 ⟶ ker ⟶ cover M ⟶ M ⟶ 0` breaks into short exact
 on the kernels gives `Q`, whose differentials are the composites
 `cover (ker) ⟶ ker ⟶ cover M`. The columns and the homology of the rows are then spliced from
 short exact sequences, which makes them resolutions
-(`CategoryTheory.ProjectiveResolution.ofShortExact`). Splicing short exact sequences gives a
-quasi-isomorphism to the first cokernel also without projectivity
-(`ChainComplex.quasiIso_toSingle₀Equiv_symm_of_shortExact`).
+(`CategoryTheory.ProjectiveResolution.splice`).
 
 ## References
 
@@ -58,7 +57,7 @@ quasi-isomorphism to the first cokernel also without projectivity
   Chapter XVII, §1.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -67,90 +66,6 @@ open CategoryTheory Limits
 universe v u
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
-
-namespace CategoryTheory
-
-/-- An exact sequence `A₁ ⟶ X₂ ⟶ A₂` stays exact after precomposing its first map with an
-epimorphism `X₁ ⟶ A₁` and postcomposing its second map with a monomorphism `A₂ ⟶ X₃`. -/
-lemma ShortComplex.exact_of_eq_epi_comp_of_eq_comp_mono {X₁ A₁ X₂ A₂ X₃ : C} {f : X₁ ⟶ X₂}
-    {g : X₂ ⟶ X₃} (zero : f ≫ g = 0) (e : X₁ ⟶ A₁) (i : A₁ ⟶ X₂) (g' : X₂ ⟶ A₂) (m : A₂ ⟶ X₃)
-    [Epi e] [Mono m] (hf : f = e ≫ i) (hg : g = g' ≫ m) (w : i ≫ g' = 0)
-    (h : (ShortComplex.mk i g' w).Exact) : (ShortComplex.mk f g zero).Exact := by
-  subst hf hg
-  have h₁ : (ShortComplex.mk (e ≫ i) g' (by simp [w])).Exact :=
-    (ShortComplex.exact_iff_of_epi_of_isIso_of_mono
-      (S₁ := ShortComplex.mk (e ≫ i) g' (by simp [w])) (S₂ := ShortComplex.mk i g' w)
-      { τ₁ := e, τ₂ := 𝟙 _, τ₃ := 𝟙 _ }).2 h
-  exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono
-    (S₁ := ShortComplex.mk (e ≫ i) g' (by simp [w]))
-    (S₂ := ShortComplex.mk (e ≫ i) (g' ≫ m) zero) { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := m }).1 h₁
-
-section Splice
-
-variable {X : ChainComplex C ℕ} {A : ℕ → C}
-  (ι : ∀ p, A (p + 1) ⟶ X.X p) (ε : ∀ p, X.X p ⟶ A p) (w : ∀ p, ι p ≫ ε p = 0)
-  (hS : ∀ p, (ShortComplex.mk _ _ (w p)).ShortExact) (hd : ∀ p, X.d (p + 1) p = ε (p + 1) ≫ ι p)
-
-include hS in
-/-- **Splicing short exact sequences.** Let `X` be a complex whose differentials factor as
-`X.X (p + 1) ⟶ A (p + 1) ⟶ X.X p` through short exact sequences
-`0 ⟶ A (p + 1) ⟶ X.X p ⟶ A p ⟶ 0`. Then the map from `X` to `A 0` placed in degree `0` is a
-quasi-isomorphism. -/
-lemma _root_.ChainComplex.quasiIso_toSingle₀Equiv_symm_of_shortExact :
-    QuasiIso ((ChainComplex.toSingle₀Equiv X (A 0)).symm
-      ⟨ε 0, by rw [hd, Category.assoc, w, comp_zero]⟩) :=
-  ⟨fun n => by
-    cases n with
-    | zero =>
-      rw [ChainComplex.quasiIsoAt₀_iff,
-        ShortComplex.quasiIso_iff_of_zeros' _ (by simp) (by simp; rfl) (by simp; rfl)]
-      have : Epi (ε 1) := (hS 1).epi_g
-      have : Epi (ε 0) := (hS 0).epi_g
-      have hg : ((ChainComplex.toSingle₀Equiv X (A 0)).symm
-          ⟨ε 0, by rw [hd, Category.assoc, w, comp_zero]⟩).f 0 =
-          ε 0 ≫ (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 (A 0)).inv := by
-        simp
-      refine ⟨ShortComplex.exact_of_eq_epi_comp_of_eq_comp_mono _ (ε 1) (ι 0) (ε 0)
-        (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 (A 0)).inv
-        (by simp [hd]) hg (w 0) (hS 0).exact, ?_⟩
-      have := epi_comp (ε 0) (HomologicalComplex.singleObjXSelf (ComplexShape.down ℕ) 0 (A 0)).inv
-      rw [← hg] at this
-      exact this
-    | succ n =>
-      rw [quasiIsoAt_iff_exactAt' _ _ (ChainComplex.exactAt_succ_single_obj _ _),
-        HomologicalComplex.exactAt_iff' _ (n + 2) (n + 1) n (by simp) (by simp)]
-      have : Epi (ε (n + 2)) := (hS (n + 2)).epi_g
-      have : Mono (ι n) := (hS n).mono_f
-      exact ShortComplex.exact_of_eq_epi_comp_of_eq_comp_mono _ (ε (n + 2)) (ι (n + 1))
-        (ε (n + 1)) (ι n) (hd _) (hd _) (w (n + 1)) (hS (n + 1)).exact⟩
-
-end Splice
-
-namespace ProjectiveResolution
-
-variable {X : ChainComplex C ℕ} [∀ p, Projective (X.X p)] {A : ℕ → C}
-  (ι : ∀ p, A (p + 1) ⟶ X.X p) (ε : ∀ p, X.X p ⟶ A p) (w : ∀ p, ι p ≫ ε p = 0)
-  (hS : ∀ p, (ShortComplex.mk _ _ (w p)).ShortExact) (hd : ∀ p, X.d (p + 1) p = ε (p + 1) ≫ ι p)
-
-/-- **Splicing short exact sequences into a resolution.** Let `X` be a complex of projectives
-whose differentials factor as `X.X (p + 1) ⟶ A (p + 1) ⟶ X.X p` through short exact sequences
-`0 ⟶ A (p + 1) ⟶ X.X p ⟶ A p ⟶ 0`. Then `X` is a projective resolution of `A 0`, with
-augmentation `X.X 0 ⟶ A 0`. -/
-def ofShortExact : ProjectiveResolution (A 0) where
-  complex := X
-  π := (ChainComplex.toSingle₀Equiv _ _).symm ⟨ε 0, by rw [hd, Category.assoc, w, comp_zero]⟩
-  quasiIso := ChainComplex.quasiIso_toSingle₀Equiv_symm_of_shortExact ι ε w hS hd
-
-@[simp]
-lemma ofShortExact_complex : (ofShortExact ι ε w hS hd).complex = X := rfl
-
-@[simp]
-lemma ofShortExact_π_f_zero : (ofShortExact ι ε w hS hd).π.f 0 = ε 0 := by
-  simp [ofShortExact]
-
-end ProjectiveResolution
-
-end CategoryTheory
 
 namespace ChainComplex
 
@@ -202,8 +117,9 @@ abbrev cover : ChainComplex C ℕ := disk M ⊞ sphere M
 def coverπ : cover M ⟶ M := biprod.desc (diskπ M) (sphereπ M)
 
 instance (q : ℕ) : Projective ((disk M).X q) := by
-  dsimp [disk, homotopyCofiber, homotopyCofiber.X]
-  split_ifs <;> infer_instance
+  by_cases h : (ComplexShape.down ℕ).Rel q ((ComplexShape.down ℕ).next q)
+  · exact Projective.of_iso (homotopyCofiber.XIsoBiprod (𝟙 (diskBase M)) q _ h).symm inferInstance
+  · exact Projective.of_iso (homotopyCofiber.XIso (𝟙 (diskBase M)) q h).symm inferInstance
 
 instance (q : ℕ) : Projective ((cover M).X q) :=
   Projective.of_iso (biprodXIso _ _ q).symm inferInstance
@@ -264,6 +180,9 @@ lemma shortExact_cover_homology (q : ℕ) :
 
 /-- The successive kernels: `kernels K 0 = K`, and `kernels K (p + 1)` is the kernel of the cover
 of `kernels K p`. -/
+-- The body is exposed so that `kernels K 0` is `K`, the object resolved by the column and
+-- homology resolutions.
+@[expose]
 def kernels (K : ChainComplex C ℕ) : ℕ → ChainComplex C ℕ
   | 0 => K
   | p + 1 => kernel (coverπ (kernels K p))
@@ -291,12 +210,18 @@ Weibel's Definition 5.7.1 also asks that the boundaries and the cycles of the ro
 resolutions of the boundaries and cycles of `K`. Those conditions hold for this construction too,
 since each short exact sequence `0 ⟶ ker ⟶ cover M ⟶ M ⟶ 0` is exact on boundaries and cycles
 and the cover has projective boundaries and cycles, but they are not proved in this file. -/
+-- The body is exposed so that its rows are the covers of the kernels, which the column and
+-- homology resolutions see.
+@[expose]
 def cartanEilenbergResolution : ChainComplex (ChainComplex C ℕ) ℕ :=
   ChainComplex.of (fun p => cover (kernels K p))
     (fun p => coverπ (kernels K (p + 1)) ≫ kernelsι K p)
     (fun p => by simp)
 
 namespace cartanEilenbergResolution
+
+/-- The row `p` of the Cartan–Eilenberg resolution is the cover of the `p`-th kernel. -/
+lemma X_eq (p : ℕ) : (cartanEilenbergResolution K).X p = cover (kernels K p) := (rfl)
 
 /-- The map from the row `p` of the Cartan–Eilenberg resolution onto the `p`-th kernel. -/
 def rowπ (p : ℕ) : (cartanEilenbergResolution K).X p ⟶ kernels K p := coverπ (kernels K p)
@@ -319,6 +244,9 @@ lemma shortExact_row_homology (p q : ℕ) :
       (by rw [← homologyMap_comp, rowι_rowπ, homologyMap_zero])).ShortExact :=
   shortExact_cover_homology (kernels K p) q
 
+/-- The differential of the Cartan–Eilenberg resolution maps the row `p + 1` onto the `(p + 1)`-st
+kernel, which sits inside the row `p`. -/
+@[simp]
 lemma d_succ (p : ℕ) : (cartanEilenbergResolution K).d (p + 1) p = rowπ K (p + 1) ≫ rowι K p := by
   simp [cartanEilenbergResolution, rowπ, rowι]
 
@@ -329,10 +257,14 @@ def cartanEilenbergResolutionπ : (cartanEilenbergResolution K).X 0 ⟶ K := row
 
 namespace cartanEilenbergResolution
 
+/-- The augmentation `cartanEilenbergResolutionπ K` is `rowπ K 0`, so it vanishes on the first
+kernel. -/
+@[reassoc (attr := simp)]
+lemma rowι_π : rowι K 0 ≫ cartanEilenbergResolutionπ K = 0 := rowι_rowπ K 0
+
 @[reassoc (attr := simp)]
 lemma d_comp_π : (cartanEilenbergResolution K).d 1 0 ≫ cartanEilenbergResolutionπ K = 0 := by
-  rw [d_succ K 0, Category.assoc,
-    show rowι K 0 ≫ cartanEilenbergResolutionπ K = 0 from rowι_rowπ K 0, comp_zero]
+  rw [d_succ K 0, Category.assoc, rowι_π, comp_zero]
 
 instance (p q : ℕ) : Projective (((cartanEilenbergResolution K).X p).X q) :=
   inferInstanceAs (Projective ((cover (kernels K p)).X q))
@@ -351,50 +283,52 @@ instance (p q : ℕ) : Projective
 
 /-- The column of the Cartan–Eilenberg resolution in degree `q` is a projective resolution of
 `K.X q`. -/
+-- The body is exposed so that the complex of the resolution is the column itself.
+@[expose]
 def columnResolution (q : ℕ) : ProjectiveResolution (K.X q) :=
-  ProjectiveResolution.ofShortExact
-    (X := ((HomologicalComplex.eval C _ q).mapHomologicalComplex _).obj
+  ProjectiveResolution.splice
+    (K := ((HomologicalComplex.eval C _ q).mapHomologicalComplex _).obj
       (cartanEilenbergResolution K))
     (A := fun p => (kernels K p).X q)
     (fun p => (rowι K p).f q) (fun p => (rowπ K p).f q)
     (fun p => (comp_f (rowι K p) (rowπ K p) q).symm.trans (by rw [rowι_rowπ, zero_f]))
     (fun p => (shortExact_iff_degreewise_shortExact _).1 (shortExact_row K p) q)
-    (fun p => by rw [Functor.mapHomologicalComplex_obj_d, d_succ]; rfl)
+    (fun p => (congrArg (fun f => f.f q) (d_succ K p)).trans (comp_f _ _ q))
 
 @[simp]
 lemma columnResolution_complex (q : ℕ) : (columnResolution K q).complex =
     ((HomologicalComplex.eval C _ q).mapHomologicalComplex _).obj
-      (cartanEilenbergResolution K) := rfl
+      (cartanEilenbergResolution K) := (rfl)
 
 @[simp]
 lemma columnResolution_π_f_zero (q : ℕ) :
     (columnResolution K q).π.f 0 = (cartanEilenbergResolutionπ K).f q :=
-  ProjectiveResolution.ofShortExact_π_f_zero _ _ _ _ _
+  ProjectiveResolution.splice_π_f_zero _ _ _ _ _
 
 /-- The homology in degree `q` of the rows of the Cartan–Eilenberg resolution is a projective
 resolution of `K.homology q`. -/
+-- The body is exposed so that the complex of the resolution is the row homology itself.
+@[expose]
 def homologyResolution (q : ℕ) : ProjectiveResolution (K.homology q) :=
-  ProjectiveResolution.ofShortExact
-    (X := ((HomologicalComplex.homologyFunctor C _ q).mapHomologicalComplex _).obj
+  ProjectiveResolution.splice
+    (K := ((HomologicalComplex.homologyFunctor C _ q).mapHomologicalComplex _).obj
       (cartanEilenbergResolution K))
     (A := fun p => (kernels K p).homology q)
     (fun p => homologyMap (rowι K p) q)
     (fun p => homologyMap (rowπ K p) q)
     (fun p => (homologyMap_comp _ _ q).symm.trans (by rw [rowι_rowπ, homologyMap_zero]))
     (fun p => shortExact_row_homology K p q)
-    (fun p => by
-      rw [Functor.mapHomologicalComplex_obj_d, d_succ, homologyFunctor_map, homologyMap_comp]
-      rfl)
+    (fun p => (congrArg (fun f => homologyMap f q) (d_succ K p)).trans (homologyMap_comp _ _ q))
 
 @[simp]
 lemma homologyResolution_complex (q : ℕ) : (homologyResolution K q).complex =
     ((HomologicalComplex.homologyFunctor C _ q).mapHomologicalComplex _).obj
-      (cartanEilenbergResolution K) := rfl
+      (cartanEilenbergResolution K) := (rfl)
 
 @[simp]
 lemma homologyResolution_π_f_zero (q : ℕ) :
     (homologyResolution K q).π.f 0 = homologyMap (cartanEilenbergResolutionπ K) q :=
-  ProjectiveResolution.ofShortExact_π_f_zero _ _ _ _ _
+  ProjectiveResolution.splice_π_f_zero _ _ _ _ _
 
 end cartanEilenbergResolution
 
