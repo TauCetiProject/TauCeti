@@ -74,6 +74,7 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
 * `TauCeti.schurPolyBasis` and `TauCeti.coe_schurPolyBasis`: **the Schur polynomials of the
   partitions of `n` with at most `Fintype.card σ` parts are a basis of the symmetric homogeneous
   polynomials of degree `n`.**
+* The symmetric homogeneous polynomials of degree `n` are a free and finite module.
 * `TauCeti.finrank_symmetricHomogeneousSubmodule`: the dimension in degree `n` is the number of
   partitions of `n` with at most `Fintype.card σ` parts; it is the number of all partitions of `n`
   in at least `n` letters and smaller in fewer.
@@ -247,6 +248,20 @@ theorem msymmBasis_repr_schurPoly (μ : n.Partition)
   exact coeff_schurPoly_partWeight μ ν.1 (by rw [YoungDiagram.colLen_zero_ofPartition]; exact ν.2)
 
 /-! ### The dimension -/
+
+omit [Fintype σ] in
+/-- The symmetric polynomials of degree `n` in a finite alphabet form a free module, with the
+monomial basis `TauCeti.msymmBasis`. -/
+instance [Finite σ] : Module.Free R (symmetricHomogeneousSubmodule σ R n) :=
+  have := Fintype.ofFinite σ
+  .of_basis (msymmBasis σ R n)
+
+omit [Fintype σ] in
+/-- The symmetric polynomials of degree `n` in a finite alphabet form a finite module, spanned by
+the monomial basis `TauCeti.msymmBasis`. -/
+instance [Finite σ] : Module.Finite R (symmetricHomogeneousSubmodule σ R n) :=
+  have := Fintype.ofFinite σ
+  .of_basis (msymmBasis σ R n)
 
 variable (σ R n) in
 /-- **The dimension of the symmetric polynomials of degree `n`** in the alphabet `σ` is the number

@@ -219,7 +219,6 @@ the symmetric polynomials of degree `n`, which is the number of partitions of `n
 theorem not_linearIndependent_psumPart (R : Type*) [CommSemiring R] [Nontrivial R] {n : ℕ}
     (hn : Fintype.card σ < n) :
     ¬ LinearIndependent R (psumPart σ R : n.Partition → MvPolynomial σ R) := fun h => by
-  have : Module.Finite R (symmetricHomogeneousSubmodule σ R n) := .of_basis (msymmBasis σ R n)
   have h' : LinearIndependent R (psumPartVec σ R (n := n)) :=
     .of_comp (symmetricHomogeneousSubmodule σ R n).subtype h
   exact h'.fintype_card_le_finrank.not_gt (finrank_symmetricHomogeneousSubmodule_lt hn)
