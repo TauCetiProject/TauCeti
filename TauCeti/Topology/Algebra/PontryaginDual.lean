@@ -28,6 +28,8 @@ concrete unit circle, where a character becomes the monomial `z ↦ zⁿ`.
 
 * `TauCeti.circleEquivPontryaginDualInt`: the point `z` of the unit circle corresponds to the
   character `n ↦ zⁿ` of `ℤ`.
+* `TauCeti.piCircleEquivPontryaginDualPiInt`: for finite `ι`, the tuple `z : ι → Circle`
+  corresponds to the character `m ↦ ∏ i, z i ^ m i` of `ι → ℤ`.
 
 ## References
 
@@ -84,5 +86,84 @@ theorem circleEquivPontryaginDualInt_apply_apply (z : Circle) (n : Multiplicativ
 theorem circleEquivPontryaginDualInt_symm_apply (χ : PontryaginDual (Multiplicative ℤ)) :
     circleEquivPontryaginDualInt.symm χ = χ (Multiplicative.ofAdd 1) :=
   (rfl)
+
+/-- The character of `ι → ℤ` attached to a tuple `z : ι → Circle`. -/
+private def piCircleToDual {ι : Type*} [Fintype ι] [TopologicalSpace (ι → ℤ)]
+    [DiscreteTopology (ι → ℤ)] (z : ι → Circle) :
+    PontryaginDual (Multiplicative (ι → ℤ)) where
+  toFun m := ∏ i, z i ^ m.toAdd i
+  map_one' := by simp
+  map_mul' m n := by simp [zpow_add, Finset.prod_mul_distrib]
+  continuous_toFun := continuous_of_discreteTopology
+
+@[simp]
+private theorem piCircleToDual_apply {ι : Type*} [Fintype ι] [TopologicalSpace (ι → ℤ)]
+    [DiscreteTopology (ι → ℤ)] (z : ι → Circle) (m : Multiplicative (ι → ℤ)) :
+    piCircleToDual z m = ∏ i, z i ^ m.toAdd i :=
+  rfl
+
+/-- A finite product of unit circles is the Pontryagin dual of the discrete lattice `ι → ℤ`:
+the tuple `z` corresponds to the character `m ↦ ∏ i, z i ^ m i`, and a character corresponds to
+its values on the standard basis vectors. -/
+def piCircleEquivPontryaginDualPiInt {ι : Type*} [Fintype ι] [TopologicalSpace (ι → ℤ)]
+    [DiscreteTopology (ι → ℤ)] :
+    (ι → Circle) ≃ₜ* PontryaginDual (Multiplicative (ι → ℤ)) where
+  toFun := piCircleToDual
+  invFun χ i :=
+    letI := Classical.decEq ι
+    χ (Multiplicative.ofAdd (Pi.single i 1))
+  left_inv z := by
+    classical
+    funext i
+    dsimp only
+    rw [piCircleToDual_apply, toAdd_ofAdd, Finset.prod_eq_single i]
+    · simp
+    · intro j _ hji
+      simp [Pi.single_eq_of_ne hji]
+    · intro hi
+      exact (hi (Finset.mem_univ i)).elim
+  right_inv χ := by
+    classical
+    refine PontryaginDual.ext fun m ↦ ?_
+    have hm : m = ∏ i, Multiplicative.ofAdd (Pi.single i (1 : ℤ)) ^ m.toAdd i := by
+      apply Multiplicative.toAdd.injective
+      ext j
+      simp [Pi.single_apply]
+    rw [piCircleToDual_apply]
+    conv_rhs => rw [hm, map_prod]
+    exact Finset.prod_congr rfl fun i _ ↦ (map_zpow χ _ _).symm
+  map_mul' z w := PontryaginDual.ext fun m ↦ by
+    simp [mul_zpow, Finset.prod_mul_distrib]
+  continuous_toFun := ContinuousMonoidHom.continuous_of_continuous_uncurry _ <|
+    continuous_prod_of_discrete_right.mpr fun m ↦
+      continuous_finsetProd _ fun i _ ↦ (continuous_apply i).zpow (m.toAdd i)
+  continuous_invFun := by
+    classical
+    exact continuous_pi fun i ↦ continuous_eval_const
+      (F := Multiplicative (ι → ℤ) →ₜ* Circle) (Multiplicative.ofAdd (Pi.single i 1))
+
+/-- The character attached to `z : ι → Circle` sends `m` to `∏ i, z i ^ m i`. -/
+@[simp]
+theorem piCircleEquivPontryaginDualPiInt_apply_apply {ι : Type*} [Fintype ι]
+    [TopologicalSpace (ι → ℤ)] [DiscreteTopology (ι → ℤ)]
+    (z : ι → Circle) (m : Multiplicative (ι → ℤ)) :
+    piCircleEquivPontryaginDualPiInt z m = ∏ i, z i ^ m.toAdd i :=
+  (rfl)
+
+/-- The `i`-th coordinate of the point attached to a character of `ι → ℤ` is its value at the
+`i`-th basis vector. -/
+@[simp]
+theorem piCircleEquivPontryaginDualPiInt_symm_apply {ι : Type*} [Fintype ι] [DecidableEq ι]
+    [TopologicalSpace (ι → ℤ)] [DiscreteTopology (ι → ℤ)]
+    (χ : PontryaginDual (Multiplicative (ι → ℤ))) (i : ι) :
+    piCircleEquivPontryaginDualPiInt.symm χ i = χ (Multiplicative.ofAdd (Pi.single i 1)) := by
+  have h := DFunLike.congr_fun (piCircleEquivPontryaginDualPiInt.apply_symm_apply χ)
+    (Multiplicative.ofAdd (Pi.single i 1))
+  rw [piCircleEquivPontryaginDualPiInt_apply_apply, toAdd_ofAdd, Finset.prod_eq_single i] at h
+  · simpa using h
+  · intro j _ hji
+    simp [Pi.single_eq_of_ne hji]
+  · intro hi
+    exact (hi (Finset.mem_univ i)).elim
 
 end TauCeti
