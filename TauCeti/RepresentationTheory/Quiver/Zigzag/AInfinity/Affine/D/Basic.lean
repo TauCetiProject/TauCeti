@@ -18,9 +18,9 @@ are the two branch nodes of the affine `Dₙ` graph: the node `1` has the neighb
 path `1 - 2 - ⋯ - (n - 3)`. The quartic Hochschild cohomology `HH^{4, -2}` of the affine `Dₙ`
 zigzag algebra is nonzero over every nontrivial commutative ring, as a case of the result for every
 graph containing an affine `Dₙ`
-(`TauCeti.not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained`). When `2` is
-invertible the affine `Dₙ` zigzag algebra is moreover not intrinsically formal, by the
-two-branch-vertex criterion
+(`TauCeti.not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained`). Over every
+nontrivial commutative ring the affine `Dₙ` zigzag algebra is moreover not intrinsically formal, by
+the two-branch-vertex criterion
 `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_three_le_degree` of
 `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal`. The affine `D₄` graph, whose
 only branch node has four neighbours, is treated in
@@ -31,7 +31,7 @@ only branch node has four neighbours, is treated in
 * `TauCeti.not_hochschildVanishesAt_four_affineD`: `HH^{4, -2}` of the affine `Dₙ` zigzag algebra
   is nonzero for `n ≥ 5`.
 * `TauCeti.not_isIntrinsicallyFormal_affineD`: the affine `Dₙ` zigzag algebra is not
-  intrinsically formal for `n ≥ 5`, when `2` is invertible.
+  intrinsically formal for `n ≥ 5`, over every nontrivial commutative ring.
 -/
 
 public section
@@ -52,12 +52,11 @@ theorem not_hochschildVanishesAt_four_affineD [Nontrivial k] {n : ℕ} (hn : 5 �
   not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained (by omega) .rfl
 
 /-- **The affine `Dₙ` zigzag algebra is not intrinsically formal** for `n ≥ 5`, over every
-nontrivial commutative ring in which `2` is invertible: some `A∞` algebra whose cohomology algebra
-is the path-graded zigzag algebra is not formal. The graph is connected, and its two branch nodes
-`1` and `n - 3` have the neighbours `0`, `2`, `n - 1` and `n - 4`, `n - 2`, `n`. For `n = 4` see
+nontrivial commutative ring: some `A∞` algebra whose cohomology algebra is the path-graded zigzag
+algebra is not formal. The graph is connected, and its two branch nodes `1` and `n - 3` have the
+neighbours `0`, `2`, `n - 1` and `n - 4`, `n - 2`, `n`. For `n = 4` see
 `TauCeti.not_isIntrinsicallyFormal_affineD4`. -/
-theorem not_isIntrinsicallyFormal_affineD [Nontrivial k] [Invertible (2 : k)] {n : ℕ}
-    (hn : 5 ≤ n) :
+theorem not_isIntrinsicallyFormal_affineD [Nontrivial k] {n : ℕ} (hn : 5 ≤ n) :
     ¬(zigzagStrictAInfinityAlgebra k (AffineDynkinType.exists_adj_graph (t := .D n)
       (AffineDynkinType.valid_D.2 (by omega)))).IsIntrinsicallyFormal := by
   -- The node `i ≤ n` of the affine `Dₙ` graph.

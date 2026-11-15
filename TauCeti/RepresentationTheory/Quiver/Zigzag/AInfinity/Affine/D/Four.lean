@@ -49,8 +49,8 @@ coboundary, since the centre has four distinct neighbours
 (`TauCeti.not_exists_hochschildDifferential_eq_obstruction_liuWangAffineD4Walk`); see
 `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.HochschildClass`. In particular `HH^{4, -2}`
 of the affine `D₄` zigzag algebra is nonzero (`TauCeti.not_hochschildVanishesAt_four_affineD4`).
-When `2` is invertible, the loop deformation of the single walk is therefore not formal, that is
-not `A∞` isomorphic to the strict zigzag algebra
+Over every nontrivial commutative ring, the loop deformation of the single walk is moreover not
+formal, that is not `A∞` isomorphic to the strict zigzag algebra
 (`TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_liuWangAffineD4Walk`), and the affine `D₄`
 zigzag algebra is not intrinsically formal (`TauCeti.not_isIntrinsicallyFormal_affineD4`); see
 `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal`.
@@ -79,8 +79,9 @@ zigzag algebra is not intrinsically formal (`TauCeti.not_isIntrinsicallyFormal_a
   `TauCeti.not_hochschildVanishesAt_four_affineD4`: the loop operation of the walk alone is not a
   Hochschild coboundary, so `HH^{4, -2}` of the affine `D₄` zigzag algebra is nonzero.
 * `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_liuWangAffineD4Walk` and
-  `TauCeti.not_isIntrinsicallyFormal_affineD4`: when `2` is invertible, the loop deformation of the
-  walk alone is not formal, so the affine `D₄` zigzag algebra is not intrinsically formal.
+  `TauCeti.not_isIntrinsicallyFormal_affineD4`: over every nontrivial commutative ring, the loop
+  deformation of the walk alone is not formal, so the affine `D₄` zigzag algebra is not
+  intrinsically formal.
 
 ## References
 
@@ -409,21 +410,25 @@ theorem not_hochschildVanishesAt_four_affineD4 [Nontrivial k] :
   not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained le_rfl .rfl
 
 /-- **The loop operation of Liu--Wang's walk alone gives a non-formal deformation**, over every
-nontrivial commutative ring in which `2` is invertible: the loop deformation with coefficient one
-on the single walk `β₄ α₁ β₁ α₄`, and zero on its other rotations, is a minimal, strictly unital
-`A∞` structure on the affine `D₄` zigzag algebra, with its grading and product, which is not
-formal, that is not `A∞` isomorphic to the strict zigzag algebra. -/
-theorem not_isFormal_zigzagLoopAInfinityAlgebra_liuWangAffineD4Walk [Nontrivial k]
-    [Invertible (2 : k)] :
+nontrivial commutative ring: the loop deformation with coefficient one on the single walk
+`β₄ α₁ β₁ α₄`, and zero on its other rotations, is a minimal, strictly unital `A∞` structure on the
+affine `D₄` zigzag algebra, with its grading and product, which is not formal, that is not `A∞`
+isomorphic to the strict zigzag algebra. -/
+theorem not_isFormal_zigzagLoopAInfinityAlgebra_liuWangAffineD4Walk [Nontrivial k] :
     ¬(zigzagLoopAInfinityAlgebra (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide)) _
-      (fst_eq_snd_of_mem_support_single_liuWangAffineD4Walk (1 : k))).IsFormal :=
-  not_isFormal_zigzagLoopAInfinityAlgebra _ _
-    not_exists_hochschildDifferential_eq_obstruction_liuWangAffineD4Walk
+      (fst_eq_snd_of_mem_support_single_liuWangAffineD4Walk (1 : k))).IsFormal := by
+  have hw : liuWangAffineD4Walk = fun t ↦
+      zigzagBacktrackWalk _ (affineD4LeafDart 3).symm (affineD4LeafDart 0) (t + 1) := by
+    rw [zigzagBacktrackWalk_def]
+    decide
+  generalize fst_eq_snd_of_mem_support_single_liuWangAffineD4Walk (1 : k) = hc
+  revert hc
+  rw [hw]
+  exact fun _ ↦ not_isFormal_zigzagLoopAInfinityAlgebra_single (by decide) (v := 1) (by decide)
 
 /-- **The affine `D₄` zigzag algebra is not intrinsically formal**, over every nontrivial
-commutative ring in which `2` is invertible: the centre has the four distinct neighbours `0`, `2`,
-`3` and `4`. -/
-theorem not_isIntrinsicallyFormal_affineD4 [Nontrivial k] [Invertible (2 : k)] :
+commutative ring: the centre has the four distinct neighbours `0`, `2`, `3` and `4`. -/
+theorem not_isIntrinsicallyFormal_affineD4 [Nontrivial k] :
     ¬(zigzagStrictAInfinityAlgebra k
       (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))).IsIntrinsicallyFormal :=
   not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra (δ := affineD4LeafDart)

@@ -901,6 +901,27 @@ private theorem balanceDefect_fourDartWeights [DecidableEq V] [Fintype G.Dart]
   rw [← Pi.single_zero (δ j), ← fourWeights_sum j]
   exact (map_sum (AddMonoidHom.single (fun _ : G.Dart ↦ k) (δ j)) _ _).symm
 
+/-- **Balanced backtrack weights evaluating to `1` on a single four-valent quartic loop.** Let
+`δ 0, …, δ 3` be four distinct darts with a common head `v`. There is a symmetric matrix `a` of
+weights on pairs of darts, vanishing on pairs with distinct heads and satisfying the balance
+condition `∑ d, a d e = a e.symm e.symm`, whose backtrack pairing with the quartic obstruction of
+the single closed walk `(δ 3).symm, δ 0, (δ 0).symm, δ 3` equals `1`. -/
+theorem exists_zigzagBacktrackPairing_obstruction_single_eq_one [Fintype G.Dart]
+    {δ : Fin 4 → G.Dart} (hδ : Function.Injective δ) {v : V} (hv : ∀ i, (δ i).snd = v) :
+    ∃ a : Matrix G.Dart G.Dart k, a.IsSymm ∧ (∀ d e, d.snd ≠ e.snd → a d e = 0) ∧
+      (∀ e, ∑ d, a d e = a e.symm e.symm) ∧
+      zigzagBacktrackPairing hns a
+        ((zigzagLoopAInfinityAlgebra hns _
+          (fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk
+            ((hv 3).trans (hv 0).symm) (1 : k))).obstruction 𝒵 ⟨4, by norm_num⟩) = 1 := by
+  classical
+  refine ⟨fourDartWeights δ, fourDartWeights_isSymm δ,
+    fun d e hde ↦ fourDartWeights_apply_eq_zero_of_snd_ne hv hde,
+    fun e ↦ sub_eq_zero.mp (congrFun (balanceDefect_fourDartWeights hδ) e), ?_⟩
+  rw [zigzagBacktrackPairing_obstruction,
+    sum_mul_single_rotate_zigzagBacktrackWalk _ (hδ.ne (by decide)), fourDartWeights_apply hδ]
+  simp [fourWeights]
+
 /-- **A quartic loop operation which is not a Hochschild coboundary.** Let `δ 0, …, δ 3` be four
 distinct darts with a common head `v`, for instance the darts into `v` from four distinct
 neighbours. The loop operation of the closed walk `(δ 3).symm, δ 0, (δ 0).symm, δ 3` (in product
@@ -1053,6 +1074,33 @@ private theorem branchWeights_apply_self (hde : d ≠ e) (hdf : d ≠ (f 0).symm
     h₄, h₅]
 
 end Branch
+
+/-- **Balanced backtrack weights evaluating to `1` on a single quartic loop at two branch
+vertices.** Under the hypotheses of a non-backtracking walk joining two vertices with three
+distinct neighbours each, there is a symmetric matrix `a` of weights on pairs of darts, vanishing
+on pairs with distinct heads and satisfying the balance condition `∑ d, a d e = a e.symm e.symm`,
+whose backtrack pairing with the quartic obstruction of the single closed walk
+`e.symm, d, d.symm, e` equals `1`. -/
+theorem exists_zigzagBacktrackPairing_obstruction_single_eq_one_of_walk [Fintype G.Dart]
+    {d e d' e' : G.Dart} {n : ℕ} {f : Fin (n + 1) → G.Dart} (hde : d ≠ e)
+    (hed : e.snd = d.snd) (hf₀ : (f 0).fst = d.snd) (hdf : d ≠ (f 0).symm)
+    (hef : e ≠ (f 0).symm) (hf : ∀ t : Fin n, G.DartAdj (f t.castSucc) (f t.succ))
+    (hf' : ∀ t : Fin n, f t.castSucc ≠ (f t.succ).symm) (hfd : ∀ t, (f t).snd ≠ d.snd)
+    (hde' : d' ≠ e') (hd' : d'.snd = (f (Fin.last n)).snd) (he' : e'.snd = (f (Fin.last n)).snd)
+    (hdf' : d' ≠ f (Fin.last n)) (hef' : e' ≠ f (Fin.last n)) :
+    ∃ a : Matrix G.Dart G.Dart k, a.IsSymm ∧ (∀ x y, x.snd ≠ y.snd → a x y = 0) ∧
+      (∀ x, ∑ y, a y x = a x.symm x.symm) ∧
+      zigzagBacktrackPairing hns a
+        ((zigzagLoopAInfinityAlgebra hns _
+          (fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk hed (1 : k))).obstruction
+          𝒵 ⟨4, by norm_num⟩) = 1 := by
+  classical
+  refine ⟨branchWeights d e d' e' f, branchWeights_isSymm,
+    fun x y hxy ↦ branchWeights_apply_eq_zero_of_snd_ne hed hf₀ hf hd' he' hxy,
+    fun x ↦ sub_eq_zero.mp
+      (congrFun (balanceDefect_branchWeights hde hdf hef hf' hde' hdf' hef') x), ?_⟩
+  rw [zigzagBacktrackPairing_obstruction, sum_mul_single_rotate_zigzagBacktrackWalk _ hde,
+    branchWeights_apply_self hde hdf hef hf hfd hd' he']
 
 /-- **A quartic loop operation at a vertex joined by a walk to another branch vertex which is not a
 Hochschild coboundary.** Let `d` and `e` be distinct darts with a common head `v`, and let the

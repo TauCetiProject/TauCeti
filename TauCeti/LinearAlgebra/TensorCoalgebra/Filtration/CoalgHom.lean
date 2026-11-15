@@ -38,6 +38,12 @@ computes the quadratic term of an `A∞` morphism whose linear part is the ident
 * `TauCeti.ReducedTensorWords.two_smul_coalgHom_letter_add_apply_sub_of_mem_filtration`: the
   coalgebra morphism with Taylor components `letter + φ` satisfies
   `2 (F - id - D) = D ∘ D - coderiv (φ ∘ D)` on the words of length at most `3 e + 2`.
+* `TauCeti.ReducedTensorWords.lengthProj_two_coalgHom_of_tprod`: the length-two component of
+  `coalgHom f` on a pure tensor word is the sum over all cuts into two nonempty blocks.
+* `TauCeti.ReducedTensorWords.lengthProj_two_coalgHom_letter_add_sub_coderiv_of_tprod`: when `φ`
+  vanishes on letters, the length-two component of `coalgHom (letter + φ) - coderiv φ` on a pure
+  word of length `n + 2` collapses the two blocks of every cut with both halves of length at least
+  two.
 
 ## References
 
@@ -234,5 +240,135 @@ theorem two_smul_coalgHom_letter_add_apply_sub_of_mem_filtration
     simp only [LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.id_apply,
       LinearMap.comp_apply, map_sub, map_smul]
     simpa using h
+
+/-! ### The length-two component of a coalgebra morphism -/
+
+/-- The `ℕ+` numeral `2` and the positive-length subtype element `⟨2, two_pos⟩` name the same
+length-two inclusion, stated at fixed tensor power so `rw` needs no dependent motive. -/
+private theorem of_pnat_two_eq {N : Type*} [AddCommMonoid N] [Module R N]
+    (z : TensorPower R 2 N) :
+    of R N (2 : ℕ+) z = of R N ⟨2, two_pos⟩ z :=
+  rfl
+
+/-- The length-two component of a prepended word `a · w` pairs `a` with the letter of `w`:
+every component of `w` of length at least two gives a prepended word of length at least three. -/
+private theorem lengthProj_two_prepend {N : Type*} [AddCommMonoid N] [Module R N]
+    (a : N) (w : ReducedTensorWords R N) :
+    lengthProj R N ⟨2, two_pos⟩ (prepend R N a w) =
+      of R N ⟨2, two_pos⟩ (PiTensorProduct.tprod R ![a, letter R N w]) := by
+  have key : lengthProj R N ⟨2, two_pos⟩ ∘ₗ prepend R N a =
+      prepend R N a ∘ₗ ofLetter R N ∘ₗ letter R N := by
+    refine linearMap_ext R N fun ⟨k, hk0⟩ y ↦ ?_
+    simp only [LinearMap.comp_apply]
+    rcases eq_or_ne k 1 with rfl | hk
+    · rw [of_tprod_eq_subword R hk0, subword_one R N y hk0, letter_ofLetter,
+        prepend_ofLetter, of_pnat_two_eq, lengthProj_of_self]
+    · have hk1 : (⟨k, hk0⟩ : {n : ℕ // 0 < n}) ≠ 1 := by
+        simp only [ne_eq, Subtype.ext_iff, Positive.val_one]
+        exact hk
+      have hk2 : (⟨k + 1, Nat.succ_pos _⟩ : {n : ℕ // 0 < n}) ≠ ⟨2, two_pos⟩ := by
+        simp only [ne_eq, Subtype.mk.injEq]
+        omega
+      rw [prepend_of_tprod, lengthProj_of_of_ne R N hk2, letter_of_of_ne_one R N hk1, map_zero,
+        map_zero]
+  have hw := LinearMap.congr_fun key w
+  simp only [LinearMap.comp_apply] at hw
+  rw [hw, prepend_ofLetter, of_pnat_two_eq]
+
+/-- **The length-two component of `coalgHom f` on a pure tensor word**: it is the sum, over all
+cuts of the word into two nonempty blocks, of the two-letter word formed by applying `f` to each
+block. -/
+theorem lengthProj_two_coalgHom_of_tprod {N : Type*} [AddCommMonoid N] [Module R N]
+    (f : ReducedTensorWords R M →ₗ[R] N) {n : ℕ} (hn : 0 < n) (x : Fin n → M) :
+    lengthProj R N ⟨2, two_pos⟩ (coalgHom R f (of R M ⟨n, hn⟩ (PiTensorProduct.tprod R x))) =
+      ∑ d ∈ Finset.Ioo 0 n, of R N ⟨2, two_pos⟩
+        (PiTensorProduct.tprod R ![f (subword R x 0 d), f (subword R x d (n - d))]) := by
+  rw [of_tprod_eq_subword R hn, coalgHom_subword, map_add, map_sum, ofLetter_eq_of_tprod,
+    lengthProj_of_of_ne R N (by decide), zero_add]
+  have h0 : of R N ⟨2, two_pos⟩ (PiTensorProduct.tprod R
+      ![f (subword R x 0 0), f (subword R x 0 (n - 0))]) = 0 := by
+    rw [subword_length_zero, map_zero,
+      (PiTensorProduct.tprod R).map_coord_zero (m := ![0, _]) 0 rfl, map_zero]
+  rw [sum_Ioo_eq_sum_range _ _ h0]
+  refine Finset.sum_congr rfl fun d _ ↦ ?_
+  rw [lengthProj_two_prepend, ← LinearMap.comp_apply (letter R N), letter_comp_coalgHom,
+    Nat.zero_add]
+
+/-- The length-two component of `coderiv φ` on a pure word of length `n + 2` (`n ≥ 1`): only the
+two collapses of `n + 1` consecutive letters leave a two-letter word. -/
+private theorem lengthProj_two_coderiv_of_tprod (φ : ReducedTensorWords R M →ₗ[R] M)
+    {n : ℕ} (hn : 1 ≤ n) (x : Fin (n + 2) → M) :
+    lengthProj R M ⟨2, two_pos⟩
+        (coderiv R φ (of R M ⟨n + 2, by omega⟩ (PiTensorProduct.tprod R x))) =
+      of R M ⟨2, two_pos⟩ (PiTensorProduct.tprod R ![φ (subword R x 0 (n + 1)),
+        x (Fin.last (n + 1))]) +
+      of R M ⟨2, two_pos⟩ (PiTensorProduct.tprod R ![x 0, φ (subword R x 1 (n + 1))]) := by
+  rw [of_tprod_eq_subword R (by omega), coderiv_subword R φ x (K := n + 2) le_rfl, map_sum]
+  have hinner (p : ℕ) : lengthProj R M ⟨2, two_pos⟩
+      (∑ d ∈ Finset.range (n + 2 + 1), splice R x 0 (n + 2) p d
+        (φ (subword R x (0 + p) d))) =
+      lengthProj R M ⟨2, two_pos⟩ (splice R x 0 (n + 2) p (n + 1) (φ (subword R x p (n + 1)))) := by
+    rw [map_sum]
+    refine (Finset.sum_eq_single (n + 1) (fun d _ hd ↦ ?_) (by simp)).trans ?_
+    · by_cases hfit : 0 < d ∧ p + d ≤ n + 2
+      · rw [splice_eq_of_tprod R x _ hfit.1 hfit.2 (by omega),
+          lengthProj_of_of_ne R M (by simp only [ne_eq, Subtype.mk.injEq]; omega)]
+      · rw [splice_eq_zero_of_not_fits R x _ hfit, map_zero]
+    · rw [Nat.zero_add]
+  rw [Finset.sum_congr rfl fun p _ ↦ hinner p, Finset.sum_range_succ', Finset.sum_range_succ',
+    Finset.sum_eq_zero fun p _ ↦ by
+      rw [splice_eq_zero_of_block_lt_add R x _ (by omega), map_zero],
+    zero_add, splice_collapse_tail_eq R (n := n + 1) (by omega),
+    splice_collapse_init_eq R (n := n + 1) (by omega), of_pnat_two_eq, of_pnat_two_eq,
+    lengthProj_of_self, lengthProj_of_self, Nat.zero_add, add_comm]
+
+/-- **The length-two component of `coalgHom (letter + φ) - coderiv φ` on a pure word.**  When `φ`
+vanishes on single letters and `n ≥ 1`, subtracting `coderiv φ` cancels the two cuts with a
+single-letter block, leaving the cuts of `x` into two blocks each of length at least two. -/
+theorem lengthProj_two_coalgHom_letter_add_sub_coderiv_of_tprod
+    {φ : ReducedTensorWords R M →ₗ[R] M} (hφ : ∀ z ∈ filtration R M 1, φ z = 0)
+    {n : ℕ} (hn : 1 ≤ n) (x : Fin (n + 2) → M) :
+    lengthProj R M ⟨2, two_pos⟩ (coalgHom R (letter R M + φ)
+        (of R M ⟨n + 2, by omega⟩ (PiTensorProduct.tprod R x)) -
+      coderiv R φ (of R M ⟨n + 2, by omega⟩ (PiTensorProduct.tprod R x))) =
+      ∑ d ∈ Finset.Icc 2 n, of R M ⟨2, two_pos⟩
+        (PiTensorProduct.tprod R ![φ (subword R x 0 d), φ (subword R x d (n + 2 - d))]) := by
+  have hIoo : ((Finset.Ioo 0 (n + 2)).erase 1).erase (n + 1) = Finset.Icc 2 n := by
+    ext d
+    simp only [Finset.mem_erase, Finset.mem_Ioo, Finset.mem_Icc]
+    omega
+  rw [map_sub, lengthProj_two_coalgHom_of_tprod _ (by omega), lengthProj_two_coderiv_of_tprod φ hn,
+    ← Finset.add_sum_erase _ _ (Finset.mem_Ioo.2 ⟨by omega, by omega⟩ : 1 ∈ _),
+    ← Finset.add_sum_erase _ _ (Finset.mem_erase.2 ⟨by omega, Finset.mem_Ioo.2 ⟨by omega, by omega⟩⟩
+      : n + 1 ∈ _),
+    hIoo]
+  have hd1 : of R M ⟨2, two_pos⟩ (PiTensorProduct.tprod R
+      ![(letter R M + φ) (subword R x 0 1), (letter R M + φ) (subword R x 1 (n + 2 - 1))]) =
+      of R M ⟨2, two_pos⟩ (PiTensorProduct.tprod R ![x 0, φ (subword R x 1 (n + 1))]) := by
+    have hsub : n + 2 - 1 = n + 1 := by omega
+    rw [hsub, subword_one R M x (by omega), LinearMap.add_apply, letter_ofLetter,
+      hφ _ (ofLetter_mem_filtration R M _), add_zero, LinearMap.add_apply,
+      letter_subword_of_ne_one R M x 1 (by omega), zero_add]
+    rfl
+  have hdn : of R M ⟨2, two_pos⟩ (PiTensorProduct.tprod R
+      ![(letter R M + φ) (subword R x 0 (n + 1)),
+        (letter R M + φ) (subword R x (n + 1) (n + 2 - (n + 1)))]) =
+      of R M ⟨2, two_pos⟩ (PiTensorProduct.tprod R
+        ![φ (subword R x 0 (n + 1)), x (Fin.last (n + 1))]) := by
+    have hsub : n + 2 - (n + 1) = 1 := by omega
+    rw [hsub, subword_one R M x (by omega), LinearMap.add_apply,
+      letter_subword_of_ne_one R M x 0 (by omega), zero_add, LinearMap.add_apply, letter_ofLetter,
+      hφ _ (ofLetter_mem_filtration R M _), add_zero]
+    rfl
+  have hmid : ∀ d ∈ Finset.Icc 2 n, of R M ⟨2, two_pos⟩ (PiTensorProduct.tprod R
+      ![(letter R M + φ) (subword R x 0 d), (letter R M + φ) (subword R x d (n + 2 - d))]) =
+      of R M ⟨2, two_pos⟩ (PiTensorProduct.tprod R
+        ![φ (subword R x 0 d), φ (subword R x d (n + 2 - d))]) := by
+    intro d hd
+    rw [Finset.mem_Icc] at hd
+    rw [LinearMap.add_apply, letter_subword_of_ne_one R M x 0 (by omega), zero_add,
+      LinearMap.add_apply, letter_subword_of_ne_one R M x d (by omega), zero_add]
+  rw [hd1, hdn, Finset.sum_congr rfl hmid]
+  abel
 
 end TauCeti.ReducedTensorWords
