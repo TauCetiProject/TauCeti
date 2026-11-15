@@ -40,9 +40,9 @@ every tangent space. The Gauss formula for the isometric inclusion `Sⁿ → E` 
 * `TauCeti.ricciTensor_sphere`: the Ricci tensor of the round `n`-sphere is `n - 1` times the
   metric.
 * `TauCeti.scalarCurvature_sphere`: the scalar curvature of the round `n`-sphere is `n (n - 1)`.
-* `TauCeti.scalarCurvature_sphereRoundMetric_ofLE` and
-  `TauCeti.isConstantCurvatureTensor_sphereRoundMetric_ofLE`: the scalar curvature and the
-  constant-curvature tensor for the round metric regarded as a smooth metric.
+* `TauCeti.ricciTensor_sphereRoundMetric_ofLE`, `TauCeti.scalarCurvature_sphereRoundMetric_ofLE`
+  and `TauCeti.isConstantCurvatureTensor_sphereRoundMetric_ofLE`: the Ricci tensor, the scalar
+  curvature and the constant-curvature tensor for the round metric regarded as a smooth metric.
 
 ## References
 
@@ -218,5 +218,19 @@ theorem isConstantCurvatureTensor_sphereRoundMetric_ofLE :
   (ContMDiffRiemannianMetric.isConstantCurvatureTensor_iff_of_riemannianBundle_eq
     (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _).symm 1).2 fun p w u v ↦ by
       rw [curvatureTensor_sphere, one_smul]
+
+/-- The Ricci tensor of the round metric on the unit `n`-sphere, regarded as a smooth metric, is
+`n - 1` times the metric. -/
+theorem ricciTensor_sphereRoundMetric_ofLE (p : sphere (0 : E) 1) :
+    letI : RiemannianBundle (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
+      ⟨((sphereRoundMetric (E := E) (n := n)).ofLE (m := ∞) le_top).toRiemannianMetric⟩
+    ∇.ricciTensor p = ((n : ℝ) - 1) • innerₗ (TangentSpace (𝓡 n) p) := by
+  let _ : RiemannianBundle (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
+    ⟨((sphereRoundMetric (E := E) (n := n)).ofLE (m := ∞) le_top).toRiemannianMetric⟩
+  have hdim : finrank ℝ (TangentSpace (𝓡 n) p) = n := by
+    rw [TauCeti.finrank_tangentSpace, finrank_euclideanSpace_fin]
+  rw [∇.ricciTensor_eq_of_curvatureTensor_eq_smul_inner_sub p 1 fun w u v ↦
+      isConstantCurvatureTensor_sphereRoundMetric_ofLE.curvatureTensor_eq _ 1 p w u v, hdim,
+    mul_one]
 
 end TauCeti

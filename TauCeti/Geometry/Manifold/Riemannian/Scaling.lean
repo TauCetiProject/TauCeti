@@ -52,6 +52,9 @@ differentiable fields; this determines the curvature tensor.
   `Bundle.ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_rescale_const`: the curvature
   and Ricci tensors of `c g` and `g` coincide.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_const`: `Scal(c g) = c⁻¹ Scal(g)`.
+* `Bundle.ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_eq_of_inner_eq_smul` and
+  `Bundle.ContMDiffRiemannianMetric.scalarCurvature_eq_inv_mul_of_inner_eq_smul`: the same for a
+  metric `g'` known only to satisfy `g' = a g` for a constant `a`, with no sign condition.
 * `Bundle.ContMDiffRiemannianMetric.sectionalCurvature_leviCivitaConnection_rescale_const`:
   `K(c g) = c⁻¹ K(g)`.
 * `Bundle.ContMDiffRiemannianMetric.isConstantCurvatureTensor_rescale_const_iff` and its
@@ -292,6 +295,56 @@ theorem scalarCurvature_rescale_const (x : M) :
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
   rw [scalarCurvature_rescale_eq_sum g _ _ b, ricciTensor_leviCivitaConnection_rescale_const g hc x,
     scalarCurvature_def, CovariantDerivative.scalarCurvature_eq_sum _ x b]
+
+omit [FiniteDimensional ℝ E] [T2Space M] in
+/-- Two metrics with `g' = a g` for a constant `a ≤ 0` exist only when the tangent spaces are zero,
+so in particular the dimension is at most one. -/
+private theorem finrank_le_one_of_inner_eq_smul
+    (g' : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) {a : ℝ}
+    (h : ∀ y, g'.inner y = a • g.inner y) (ha : ¬0 < a) (x : M) : Module.finrank ℝ E ≤ 1 := by
+  have hzero (u : TangentSpace I x) : u = 0 := by
+    by_contra hu
+    have h' := g'.pos x u hu
+    rw [h, smul_apply, smul_apply, smul_eq_mul] at h'
+    nlinarith [g.pos x u hu]
+  have : Subsingleton E := subsingleton_iff.2 fun v w ↦ (hzero v).trans (hzero w).symm
+  simp [Module.finrank_zero_of_subsingleton]
+
+/-- Metrics which are constant multiples of each other, `g' = a g`, have the same Ricci tensor.
+No sign condition on `a` is needed: positivity of both metrics forces `0 < a` unless the tangent
+spaces are zero, and then both Ricci tensors vanish. This is the form used for a family of metrics
+known only through its inner products, such as `τ ↦ (1 - 2 λ τ) g` on a time interval. -/
+theorem ricciTensor_leviCivitaConnection_eq_of_inner_eq_smul
+    (g' : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) {a : ℝ}
+    (h : ∀ y, g'.inner y = a • g.inner y) (x : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).ricciTensor x) =
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).ricciTensor x) := by
+  by_cases ha : 0 < a
+  · obtain rfl : g' = g.rescale (fun _ ↦ a) contMDiff_const fun _ ↦ ha := by
+      ext y v w
+      simp [h]
+    exact ricciTensor_leviCivitaConnection_rescale_const g ha x
+  · have hE := finrank_le_one_of_inner_eq_smul g g' h ha x
+    simp [CovariantDerivative.ricciTensor_eq_zero_of_finrank_le_one _ x hE]
+
+/-- Metrics which are constant multiples of each other, `g' = a g`, have scalar curvatures related
+by `Scal(g') = a⁻¹ Scal(g)`. No sign condition on `a` is needed, as in
+`Bundle.ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_eq_of_inner_eq_smul`. -/
+theorem scalarCurvature_eq_inv_mul_of_inner_eq_smul
+    (g' : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) {a : ℝ}
+    (h : ∀ y, g'.inner y = a • g.inner y) (x : M) :
+    g'.scalarCurvature x = a⁻¹ * g.scalarCurvature x := by
+  by_cases ha : 0 < a
+  · obtain rfl : g' = g.rescale (fun _ ↦ a) contMDiff_const fun _ ↦ ha := by
+      ext y v w
+      simp [h]
+    exact scalarCurvature_rescale_const g ha x
+  · have hE := finrank_le_one_of_inner_eq_smul g g' h ha x
+    simp only [scalarCurvature_def]
+    simp [CovariantDerivative.scalarCurvature_eq_zero_of_ricciTensor_eq_zero,
+      CovariantDerivative.ricciTensor_eq_zero_of_finrank_le_one _ x hE]
 
 /-- **Scaling of sectional curvature.** Multiplying a smooth metric by a positive constant `c`
 multiplies the sectional curvature of every pair of tangent vectors by `c⁻¹`. -/
