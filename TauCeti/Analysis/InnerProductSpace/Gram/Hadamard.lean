@@ -41,8 +41,9 @@ Gram/covolume calculation of J.-M. Couveignes, *Enumerating number fields*, Ann.
 
 * `OrthonormalBasis.norm_det_le_prod_norm`, `OrthonormalBasis.norm_det_eq_prod_norm_iff`:
   Hadamard's inequality for the coordinate determinant in an orthonormal basis, and its equality
-  case (some vector is zero or the vectors are pairwise orthogonal). For unit vectors, equality
-  characterizes orthonormal families (`OrthonormalBasis.norm_det_eq_one_iff_orthonormal`).
+  case (some vector is zero or the vectors are pairwise orthogonal). For vectors in the closed unit
+  ball, equality with `1` characterizes orthonormal families
+  (`OrthonormalBasis.norm_det_eq_one_iff_orthonormal`).
 * `OrthonormalBasis.det_gram_eq_norm_det_sq`: the Gram determinant of a family is the squared
   norm of its coordinate determinant in an orthonormal basis.
 * `Matrix.ofReal_re_det_gram`, `Matrix.re_det_gram_nonneg`: the Gram determinant is real, with
@@ -51,7 +52,7 @@ Gram/covolume calculation of J.-M. Couveignes, *Enumerating number fields*, Ann.
 * `Matrix.det_gram_le_prod_norm_sq`, `Matrix.re_det_gram_le_prod_norm_sq`,
   `Matrix.det_gram_eq_prod_norm_sq_iff`, `Matrix.re_det_gram_eq_prod_norm_sq_iff`,
   `Matrix.det_gram_eq_one_iff_orthonormal`: Hadamard's inequality and its equality case for Gram
-  determinants, in `ComplexOrder`, for the real part, and for unit vectors.
+  determinants, in `ComplexOrder`, for the real part, and on the closed unit ball.
 * `Matrix.re_det_gram_le_pow`: the uniform form, `re (det (gram 𝕜 v)) ≤ D ^ card ι` when every
   `‖v i‖ ^ 2 ≤ D`.
 * `Matrix.re_det_gram_pos_iff`, `Matrix.det_gram_pos_iff`: the Gram determinant is positive
@@ -317,16 +318,29 @@ theorem re_det_gram_eq_prod_norm_sq_iff (v : ι → E) :
   rw [← RCLike.ofReal_inj (K := 𝕜), ofReal_re_det_gram]
   simpa using det_gram_eq_prod_norm_sq_iff (𝕜 := 𝕜) v
 
-/-- For a finite family of unit vectors in any inner product space, the Gram determinant equals `1`
-if and only if the family is orthonormal. -/
-theorem det_gram_eq_one_iff_orthonormal {v : ι → E} (hv : ∀ i, ‖v i‖ = 1) :
+/-- For a finite family of vectors of norm at most `1` in any inner product space, the Gram
+determinant equals `1` if and only if the family is orthonormal. -/
+theorem det_gram_eq_one_iff_orthonormal {v : ι → E} (hv : ∀ i, ‖v i‖ ≤ 1) :
     (gram 𝕜 v).det = 1 ↔ Orthonormal 𝕜 v := by
-  have hprod : (∏ i : ι, (‖v i‖ : 𝕜) ^ 2) = 1 := by simp [hv]
+  refine ⟨fun heq ↦ ?_, fun h ↦ by rw [gram_eq_one_iff_orthonormal.mpr h, det_one]⟩
+  have h1 : 1 ≤ ∏ j, ‖v j‖ ^ 2 := by
+    simpa [heq] using re_det_gram_le_prod_norm_sq (𝕜 := 𝕜) v
+  have hsq_le (j : ι) : ‖v j‖ ^ 2 ≤ 1 := pow_le_one₀ (norm_nonneg _) (hv j)
+  have hnorm (i : ι) : ‖v i‖ = 1 := by
+    refine le_antisymm (hv i) <|
+      (pow_le_pow_iff_left₀ zero_le_one (norm_nonneg _) two_ne_zero).mp ?_
+    rw [one_pow]
+    calc 1 ≤ ∏ j, ‖v j‖ ^ 2 := h1
+      _ = ‖v i‖ ^ 2 * ∏ j ∈ Finset.univ.erase i, ‖v j‖ ^ 2 :=
+          (Finset.mul_prod_erase _ _ (Finset.mem_univ i)).symm
+      _ ≤ ‖v i‖ ^ 2 * 1 := mul_le_mul_of_nonneg_left
+          (Finset.prod_le_one₀ (fun j _ ↦ sq_nonneg _) (fun j _ ↦ hsq_le j)) (sq_nonneg _)
+      _ = ‖v i‖ ^ 2 := mul_one _
   have hne : ¬ ∃ i, v i = 0 := by
     rintro ⟨i, hi⟩
-    simpa [hi] using hv i
-  rw [← hprod, det_gram_eq_prod_norm_sq_iff v]
-  exact ⟨fun h ↦ ⟨hv, h.resolve_left hne⟩, fun h ↦ Or.inr h.2⟩
+    simpa [hi] using hnorm i
+  have hprod : (gram 𝕜 v).det = ∏ i : ι, (‖v i‖ : 𝕜) ^ 2 := by simpa [hnorm] using heq
+  exact ⟨hnorm, ((det_gram_eq_prod_norm_sq_iff v).mp hprod).resolve_left hne⟩
 
 end Matrix
 
@@ -341,10 +355,10 @@ theorem norm_det_eq_prod_norm_iff (b : OrthonormalBasis ι 𝕜 E) (v : ι → E
     ← Matrix.re_det_gram_eq_prod_norm_sq_iff (𝕜 := 𝕜) v, b.det_gram_eq_norm_det_sq,
     ← RCLike.ofReal_pow, RCLike.ofReal_re]
 
-/-- For a family of unit vectors, the coordinate determinant in an orthonormal basis has norm one
-if and only if the family is orthonormal. -/
+/-- For a family of vectors of norm at most `1`, the coordinate determinant in an orthonormal basis
+has norm one if and only if the family is orthonormal. -/
 theorem norm_det_eq_one_iff_orthonormal (b : OrthonormalBasis ι 𝕜 E) {v : ι → E}
-    (hv : ∀ i, ‖v i‖ = 1) : ‖b.toBasis.det v‖ = 1 ↔ Orthonormal 𝕜 v := by
+    (hv : ∀ i, ‖v i‖ ≤ 1) : ‖b.toBasis.det v‖ = 1 ↔ Orthonormal 𝕜 v := by
   rw [← Matrix.det_gram_eq_one_iff_orthonormal hv, b.det_gram_eq_norm_det_sq,
     ← RCLike.ofReal_pow, ← RCLike.ofReal_one (K := 𝕜), RCLike.ofReal_inj]
   simpa using (sq_eq_sq₀ (norm_nonneg _) zero_le_one).symm

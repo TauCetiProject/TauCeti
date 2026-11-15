@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
+import TauCeti.Analysis.InnerProductSpace.Complex
+import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
-import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Complex
 import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
-import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
@@ -176,10 +176,10 @@ theorem norm_standardComplexVolume_apply_eq_prod_norm_iff (n : ℕ)
   rw [standardComplexVolume_eq_det_basisFun]
   exact (EuclideanSpace.basisFun (Fin n) ℂ).norm_det_eq_prod_norm_iff v
 
-/-- For an `n`-tuple of unit vectors in `ℂⁿ`, `‖Ω v‖ = 1` if and only if `v` is `ℂ`-orthonormal
-(unitary). -/
+/-- For an `n`-tuple of vectors of norm at most `1` in `ℂⁿ`, `‖Ω v‖ = 1` if and only if `v` is
+`ℂ`-orthonormal (unitary). -/
 theorem norm_standardComplexVolume_apply_eq_one_iff_orthonormal_complex (n : ℕ)
-    {v : Fin n → EuclideanSpace ℂ (Fin n)} (hv : ∀ i, ‖v i‖ = 1) :
+    {v : Fin n → EuclideanSpace ℂ (Fin n)} (hv : ∀ i, ‖v i‖ ≤ 1) :
     ‖standardComplexVolume n v‖ = 1 ↔ Orthonormal ℂ v := by
   rw [standardComplexVolume_eq_det_basisFun]
   exact (EuclideanSpace.basisFun (Fin n) ℂ).norm_det_eq_one_iff_orthonormal hv
@@ -199,7 +199,7 @@ Lagrangian (`Im ⟪v i, v j⟫_ℂ = 0` for all `i, j`). -/
 theorem norm_standardComplexVolume_apply_eq_one_iff (n : ℕ)
     {v : Fin n → EuclideanSpace ℂ (Fin n)} (hv : Orthonormal ℝ v) :
     ‖standardComplexVolume n v‖ = 1 ↔ ∀ i j, (⟪v i, v j⟫_ℂ).im = 0 := by
-  rw [norm_standardComplexVolume_apply_eq_one_iff_orthonormal_complex n hv.1,
+  rw [norm_standardComplexVolume_apply_eq_one_iff_orthonormal_complex n fun i ↦ (hv.1 i).le,
     hv.complex_iff_forall_im_inner_eq_zero]
 
 /-- The operator norm (comass) of `standardComplexVolume n` equals `1` in every dimension `n`,
@@ -499,68 +499,39 @@ theorem standardSpecialLagrangianForm_apply_eq_norm_ιMulti_iff (n : ℕ) (θ : 
       (∀ i j, (⟪v i, v j⟫_ℂ).im = 0) ∧
       (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v).im = 0 ∧
       0 < (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v).re := by
-  set W := Submodule.span ℝ (Set.range v)
-  have : FiniteDimensional ℝ W := FiniteDimensional.span_of_finite ℝ (Set.finite_range v)
-  let w : Fin n → W := fun i ↦ ⟨v i, Submodule.subset_span (Set.mem_range_self i)⟩
-  have hdim : Module.finrank ℝ W = Fintype.card (Fin n) := finrank_span_eq_card hv
-  let e : OrthonormalBasis (Fin n) ℝ W := InnerProductSpace.gramSchmidtOrthonormalBasis hdim w
-  let u : Fin n → EuclideanSpace ℂ (Fin n) := fun i ↦ (e i : EuclideanSpace ℂ (Fin n))
-  have hu_orth : Orthonormal ℝ u := e.orthonormal.comp_linearIsometry W.subtypeₗᵢ
-  -- `e.toBasis.det w` is positive and equals `‖v₁ ∧ ⋯ ∧ vₙ‖`.
-  have hdet_nonneg : 0 ≤ e.toBasis.det w := by
-    rw [InnerProductSpace.gramSchmidtOrthonormalBasis_det]
-    refine Finset.prod_nonneg fun i _ ↦ ?_
-    by_cases hi : InnerProductSpace.gramSchmidtNormed ℝ w i = 0
-    · rw [InnerProductSpace.inner_gramSchmidtOrthonormalBasis_eq_zero hdim hi]
-    · rw [InnerProductSpace.gramSchmidtOrthonormalBasis_apply hdim hi,
-        InnerProductSpace.inner_gramSchmidtNormed_eq_norm]
-      simp
-  have hdet_eq : e.toBasis.det w = ‖exteriorPower.ιMulti ℝ n v‖ := by
-    have hgram : Matrix.gram ℝ w = Matrix.gram ℝ v := by
-      ext i j; simp [Matrix.gram, w]
-    refine (pow_left_inj₀ hdet_nonneg (norm_nonneg _) two_ne_zero).mp ?_
-    rw [exteriorPower.norm_ιMulti_sq, ← hgram]
-    simpa [Real.norm_eq_abs, sq_abs] using (e.det_gram_eq_norm_det_sq w).symm
+  obtain ⟨u, hu_orth, hspan, hι⟩ :=
+    exteriorPower.exists_orthonormal_span_eq_and_ιMulti_eq_norm_smul hv
   have hdet_pos : 0 < ‖exteriorPower.ιMulti ℝ n v‖ :=
     norm_pos_iff.mpr ((exteriorPower.ιMulti_ne_zero_iff v).mpr hv)
-  -- `Ω` restricts to a top-degree `ℝ`-alternating form on `W`, scaling by `e.toBasis.det w`.
-  let ΩW : W [⋀^Fin n]→ₗ[ℝ] ℂ :=
-    (standardComplexVolume n).toAlternatingMap.compLinearMap W.subtype
   have hΩ_scale : standardComplexVolume n v =
       (‖exteriorPower.ιMulti ℝ n v‖ : ℂ) * standardComplexVolume n u := by
-    have h :=
-      congrFun (congrArg DFunLike.coe (AlternatingMap.eq_basis_det_smulRight e.toBasis ΩW)) w
-    simpa [ΩW, w, u, hdet_eq, e.coe_toBasis, Function.comp_def, Complex.real_smul] using h
+    have h := congrArg
+      (exteriorPower.alternatingMapLinearEquiv (standardComplexVolume n).toAlternatingMap) hι
+    simpa [exteriorPower.alternatingMapLinearEquiv_apply_ιMulti, Complex.real_smul] using h
   have hz_scale :
       Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v =
         (‖exteriorPower.ιMulti ℝ n v‖ : ℂ) *
           (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n u) := by
     rw [hΩ_scale]; ring
-  have hspan : Submodule.span ℝ (Set.range u) = W := by
-    have hu_range : Set.range u = W.subtype '' Set.range e.toBasis := by
-      rw [e.coe_toBasis, ← Set.range_comp]
-      rfl
-    rw [hu_range, ← Submodule.map_span, e.toBasis.span_eq, Submodule.map_top, W.range_subtype]
   have hlag_iff : (∀ i j, (⟪v i, v j⟫_ℂ).im = 0) ↔ ∀ i j, (⟪u i, u j⟫_ℂ).im = 0 :=
     ⟨fun h i j ↦ (Pairwise.range_pairwise (f := v) fun a b _ ↦ h a b).im_inner_eq_zero_of_mem_span
-        (e i).2 (e j).2,
+        (hspan ▸ Submodule.subset_span (Set.mem_range_self i))
+        (hspan ▸ Submodule.subset_span (Set.mem_range_self j)),
       fun h i j ↦ (Pairwise.range_pairwise (f := u) fun a b _ ↦ h a b).im_inner_eq_zero_of_mem_span
         (hspan.symm ▸ Submodule.subset_span (Set.mem_range_self i))
         (hspan.symm ▸ Submodule.subset_span (Set.mem_range_self j))⟩
   have hφ_scale : standardSpecialLagrangianForm n θ v =
       ‖exteriorPower.ιMulti ℝ n v‖ * standardSpecialLagrangianForm n θ u := by
     rw [standardSpecialLagrangianForm_apply, standardSpecialLagrangianForm_apply, hz_scale,
-      Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero]
+      Complex.re_ofReal_mul]
   have him_iff :
       (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v).im = 0 ↔
         (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n u).im = 0 := by
-    rw [hz_scale, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero,
-      mul_eq_zero_iff_left hdet_pos.ne']
+    rw [hz_scale, Complex.im_ofReal_mul, mul_eq_zero_iff_left hdet_pos.ne']
   have hre_iff :
       0 < (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n v).re ↔
         0 < (Complex.exp (-(θ : ℂ) * Complex.I) * standardComplexVolume n u).re := by
-    rw [hz_scale, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero,
-      mul_pos_iff_of_pos_left hdet_pos]
+    rw [hz_scale, Complex.re_ofReal_mul, mul_pos_iff_of_pos_left hdet_pos]
   rw [hφ_scale, mul_eq_left₀ hdet_pos.ne', specialLagrangianFrame_iff n θ u hu_orth,
     hlag_iff, him_iff, hre_iff]
 

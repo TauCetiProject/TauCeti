@@ -10,7 +10,9 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import TauCeti.Algebra.Lie.ExteriorPower
 public import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
+import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
@@ -59,6 +61,9 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   `exteriorPower.norm_ιMulti_update_smul`: the volume of a frame is invariant under linear
   isometries and reorderings, and scales by `|c|` when one vector is multiplied by `c`.
 * `Orthonormal.norm_ιMulti`: orthonormal frames, the empty frame among them, have volume one.
+* `exteriorPower.exists_orthonormal_span_eq_and_ιMulti_eq_norm_smul`: every linearly independent
+  `n`-frame `v` admits an orthonormal `n`-frame `u` with the same span and
+  `v₁ ∧ ⋯ ∧ vₙ = ‖v₁ ∧ ⋯ ∧ vₙ‖ • (u₁ ∧ ⋯ ∧ uₙ)`.
 * `ContinuousLinearMap.inner_gradientWedge_ιMulti`: for a real-linear `P : E → ℂ`, the two-form
   `Im (conj (P u) P w)` is represented by `p₁ ∧ p₂`, `⟪p₁ ∧ p₂, u ∧ w⟫ = Im (conj (P u) P w)`,
   and `ContinuousLinearMap.norm_gradientWedge_le`: `‖p₁ ∧ p₂‖ ≤ ‖P‖ ^ 2`.
@@ -222,6 +227,38 @@ theorem _root_.Orthonormal.norm_ιMulti {v : Fin n → E} (hv : Orthonormal ℝ 
     ‖ιMulti ℝ n v‖ = 1 := by
   rw [← pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero, norm_ιMulti_sq,
     Matrix.gram_eq_one_iff_orthonormal.mpr hv, Matrix.det_one, one_pow]
+
+/-- Every linearly independent `n`-frame `v` in a finite-dimensional real inner product space
+admits an orthonormal `n`-frame `u` with the same span and positive orientation, scaling the
+exterior product by the parallelepiped volume: `v₁ ∧ ⋯ ∧ vₙ = ‖v₁ ∧ ⋯ ∧ vₙ‖ • (u₁ ∧ ⋯ ∧ uₙ)`. -/
+theorem exists_orthonormal_span_eq_and_ιMulti_eq_norm_smul {v : Fin n → E}
+    (hv : LinearIndependent ℝ v) :
+    ∃ u : Fin n → E, Orthonormal ℝ u ∧
+      Submodule.span ℝ (Set.range u) = Submodule.span ℝ (Set.range v) ∧
+      ιMulti ℝ n v = ‖ιMulti ℝ n v‖ • ιMulti ℝ n u := by
+  set W := Submodule.span ℝ (Set.range v)
+  let w : Fin n → W := fun i ↦ ⟨v i, Submodule.subset_span (Set.mem_range_self i)⟩
+  have hdim : Module.finrank ℝ W = Fintype.card (Fin n) := finrank_span_eq_card hv
+  let e : OrthonormalBasis (Fin n) ℝ W := InnerProductSpace.gramSchmidtOrthonormalBasis hdim w
+  let u : Fin n → E := fun i ↦ (e i : E)
+  have hu_orth : Orthonormal ℝ u := e.orthonormal.comp_linearIsometry W.subtypeₗᵢ
+  have hspan : Submodule.span ℝ (Set.range u) = W := by
+    have hu_range : Set.range u = W.subtype '' Set.range e.toBasis := by
+      rw [e.coe_toBasis, ← Set.range_comp]
+      rfl
+    rw [hu_range, ← Submodule.map_span, e.toBasis.span_eq, Submodule.map_top, W.range_subtype]
+  have hdet_nonneg : 0 ≤ e.toBasis.det w := by
+    rw [InnerProductSpace.gramSchmidtOrthonormalBasis_det_eq_prod_norm]
+    exact Finset.prod_nonneg fun _ _ ↦ norm_nonneg _
+  have hdet_eq : e.toBasis.det w = ‖ιMulti ℝ n v‖ := by
+    have hgram : Matrix.gram ℝ w = Matrix.gram ℝ v := by ext i j; simp [Matrix.gram, w]
+    refine (pow_left_inj₀ hdet_nonneg (norm_nonneg _) two_ne_zero).mp ?_
+    rw [norm_ιMulti_sq, ← hgram]
+    simpa [Real.norm_eq_abs, sq_abs] using (e.det_gram_eq_norm_det_sq w).symm
+  refine ⟨u, hu_orth, hspan, ?_⟩
+  have h := congr($(AlternatingMap.eq_basis_det_smulRight e.toBasis
+    ((ιMulti ℝ n).compLinearMap W.subtype)) w)
+  simpa [w, u, hdet_eq, e.coe_toBasis, Function.comp_def] using h
 
 end exteriorPower
 
