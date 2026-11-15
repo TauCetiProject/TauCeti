@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
-public import TauCeti.Topology.Algebra.Module.LocallyConvex
+public import TauCeti.Topology.Algebra.Module.LocallyContractible
 
 /-!
 # The thrice-punctured sphere

@@ -199,7 +199,7 @@ theorem map_inertiaDeg_primesOver_eq_factorDegrees_of_not_dvd_neg_twenty_three
     (hp : ¬ (p : ℤ) ∣ (-23 : ℤ)) :
     (Finset.univ : Finset ((span {(p : ℤ)}).primesOver (𝓞 K))).val.map
         (fun Q => Q.1.inertiaDeg ℤ) = (X ^ 3 - X ^ 2 + 1 : ℤ[X]).factorDegrees p := by
-  have hexp : ¬ p ∣ RingOfIntegers.exponent θ := by
+  have hexp : ¬ p ∣ NumberField.RingOfIntegers.exponent θ := by
     intro h
     have hd := h.trans (IntegralPrimitiveElement.exponent_dvd_index
       (⟨θ, hgen⟩ : IntegralPrimitiveElement K))

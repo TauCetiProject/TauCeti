@@ -183,11 +183,23 @@ theorem pairing_mul_left (m m' : M) (ψ : M →* Multiplicative ℤ) :
 theorem pairing_one_left (ψ : M →* Multiplicative ℤ) : pairing (1 : M) ψ = 0 := by
   simp only [pairing_def, map_one, toAdd_one]
 
+/-- The pairing is `ℤ`-linear in the character: `⟨m ^ n, ψ⟩ = n * ⟨m, ψ⟩`. -/
+@[simp]
+theorem pairing_zpow_left (m : M) (n : ℤ) (ψ : M →* Multiplicative ℤ) :
+    pairing (m ^ n) ψ = n * pairing m ψ := by
+  simp only [pairing_def, map_zpow, toAdd_zpow, smul_eq_mul]
+
 /-- The pairing is additive in the cocharacter: `⟨m, ψ * ψ'⟩ = ⟨m, ψ⟩ + ⟨m, ψ'⟩`. -/
 @[simp]
 theorem pairing_mul_right (m : M) (ψ ψ' : M →* Multiplicative ℤ) :
     pairing m (ψ * ψ') = pairing m ψ + pairing m ψ' := by
   simp only [pairing_def, MonoidHom.mul_apply, toAdd_mul]
+
+/-- The pairing negates under inverting the cocharacter: `⟨m, ψ⁻¹⟩ = -⟨m, ψ⟩`. -/
+@[simp]
+theorem pairing_inv_right (m : M) (ψ : M →* Multiplicative ℤ) :
+    pairing m ψ⁻¹ = -pairing m ψ := by
+  simp only [pairing_def, MonoidHom.inv_apply, toAdd_inv]
 
 /-- The pairing vanishes on the identity cocharacter: `⟨m, 1⟩ = 0`. -/
 @[simp]

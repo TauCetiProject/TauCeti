@@ -56,7 +56,11 @@ universe uk uA uI uJ
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   (𝒜 : ℤ → Submodule k A)
 
-variable {I : Type uI} {J : Type uJ} [Fintype I] [Finite J]
+variable {I : Type uI} {J : Type uJ} [Fintype I]
+
+section Finite
+
+variable [Finite J]
 
 /-- **The graded Cartan matrix** in a projective basis `bP` and a module basis `bM`: the matrix
 of the Laurent-linear graded Cartan map.  Rows are indexed by `bM` and columns by `bP`. -/
@@ -121,6 +125,8 @@ theorem gradedCartanMatrix_mulVec_repr
       bM.repr (gradedCartanMap 𝒜 x) := by
   classical
   exact LinearMap.toMatrix_mulVec_repr bP bM (gradedCartanMap 𝒜) x
+
+end Finite
 
 /-- Reconstruct the image of a projective-basis vector from the corresponding column of the
 graded Cartan matrix. -/

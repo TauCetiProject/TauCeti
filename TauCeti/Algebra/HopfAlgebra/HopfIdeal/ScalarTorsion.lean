@@ -52,18 +52,18 @@ noncomputable def scalarTorsion
         (Ideal.Quotient.mkₐ_surjective R _) (Ideal.Quotient.mkₐ_surjective R _)
       simp only [AlgHom.ker_coe, q, Ideal.Quotient.mkₐ_ker] at hker
       rw [← hker, RingHom.mem_ker]
-      obtain ⟨r, hr⟩ := (mem_scalarTorsionIdeal R H).mp hx
+      obtain ⟨r, hr⟩ := mem_scalarTorsionIdeal.mp hx
       apply (smul_eq_zero_iff_right (nonZeroDivisors.coe_ne_zero r)).mp
       simpa only [Submonoid.smul_def, map_smul, map_zero, q, AlgHom.coe_toRingHom] using
         congrArg (fun y ↦ Algebra.TensorProduct.map q q (Coalgebra.comul (R := R) y)) hr)
     (fun {x} hx ↦ by
-      obtain ⟨r, hr⟩ := (mem_scalarTorsionIdeal R H).mp hx
+      obtain ⟨r, hr⟩ := mem_scalarTorsionIdeal.mp hx
       apply (smul_eq_zero_iff_right (nonZeroDivisors.coe_ne_zero r)).mp
       simpa only [Submonoid.smul_def, map_smul, map_zero] using
         congrArg (Coalgebra.counit (R := R) (A := H)) hr)
     (fun {x} hx ↦ by
-      obtain ⟨r, hr⟩ := (mem_scalarTorsionIdeal R H).mp hx
-      exact (mem_scalarTorsionIdeal R H).mpr ⟨r, by
+      obtain ⟨r, hr⟩ := mem_scalarTorsionIdeal.mp hx
+      exact mem_scalarTorsionIdeal.mpr ⟨r, by
         simpa only [Submonoid.smul_def, map_smul, map_zero] using
           congrArg (HopfAlgebra.antipode R) hr⟩)
 

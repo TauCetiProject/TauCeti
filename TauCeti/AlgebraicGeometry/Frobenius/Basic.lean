@@ -37,6 +37,10 @@ exponential characteristic `p`, so the `p`-th power map on sections is `TauCeti.
 * `AlgebraicGeometry.Scheme.frobenius_base` and
   `AlgebraicGeometry.Scheme.frobenius_appLE_apply`: `F_X` is the identity on points and the
   `p`-th power map on sections.
+* `AlgebraicGeometry.Scheme.isIso_frobenius_app_iff` and
+  `AlgebraicGeometry.Scheme.bijective_frobenius_stalkMap_iff`: `F_X` is an isomorphism on the
+  sections over an open, or bijective on a stalk, exactly when the `p`-th power map there is
+  bijective.
 * `AlgebraicGeometry.Scheme.natCast_eq_zero_of_hom`: a scheme over a scheme over `𝔽_p` is a
   scheme over `𝔽_p`.
 * `AlgebraicGeometry.Scheme.frobenius_naturality`: `F_X ≫ f = f ≫ F_Y` for every `f : X ⟶ Y`.
@@ -133,6 +137,28 @@ theorem frobenius_appLE_apply (hX : (p : Γ(X, ⊤)) = 0) (U V : X.Opens)
   -- `homOfLE e` and the restriction in the statement are the same map `Γ(X, U) ⟶ Γ(X, V)`,
   -- since `F_X ⁻¹ᵁ U` is `U` by definition
   exact map_pow (X.presheaf.map (homOfLE e).op).hom s p
+
+/-- The absolute Frobenius is an isomorphism on the sections over `U` exactly when the `p`-th power
+map of `Γ(X, U)` is bijective. -/
+theorem isIso_frobenius_app_iff (hX : (p : Γ(X, ⊤)) = 0) (U : X.Opens) :
+    IsIso ((X.frobenius p hX).app U) ↔ Function.Bijective fun s : Γ(X, U) ↦ s ^ p := by
+  rw [ConcreteCategory.isIso_iff_bijective]
+  -- `Γ(X, F_X ⁻¹ᵁ U)` is `Γ(X, U)` by definition.
+  have h : ⇑((X.frobenius p hX).app U).hom = fun s : Γ(X, U) ↦ s ^ p :=
+    funext (frobenius_app_apply hX U)
+  rw [h]
+  exact Iff.rfl
+
+/-- The absolute Frobenius is bijective on the stalk at `x` exactly when the `p`-th power map of
+the local ring at `x` is bijective. -/
+theorem bijective_frobenius_stalkMap_iff (hX : (p : Γ(X, ⊤)) = 0) (x : X) :
+    Function.Bijective ((X.frobenius p hX).stalkMap x).hom ↔
+      Function.Bijective fun y : X.presheaf.stalk x ↦ y ^ p := by
+  -- The stalk of `X` at `F_X x` is the stalk at `x` by definition, since `F_X` fixes `x`.
+  have h : ⇑((X.frobenius p hX).stalkMap x).hom = fun y : X.presheaf.stalk x ↦ y ^ p :=
+    funext (frobeniusHom_stalkMap_apply hX x)
+  rw [h]
+  exact Iff.rfl
 
 omit hp in
 /-- A scheme over a scheme in which `p` vanishes is a scheme in which `p` vanishes. -/

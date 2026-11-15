@@ -18,16 +18,21 @@ an action of the matrix module used in the level-one trace formula. Popa and Zag
 relations ensure that this action maps each of `ker (1 + S)` and `ker (1 + U + U²)`, with `U = T S`,
 into the other, and hence preserves their intersection, the period-polynomial space.
 
+Evaluating Popa and Zagier's period relation (A) on the monomial `Y^w` — which is fixed by `T` and
+sent to `Y^w - X^w = -(X^w - Y^w)` by `1 - S` — also shows that every solution `ξ` of
+`PeriodRelation R n ξ` (`n ≥ 1`) scales the Eisenstein period polynomial `X^w - Y^w` by
+`σ_{w+1}(n)` (`PeriodRelation.periodAction_eisensteinPeriodPolynomial`).
+
 ## References
 
 * A. Popa and D. Zagier, *An elementary proof of the Eichler–Selberg trace formula*,
-  J. Reine Angew. Math. **762** (2020), 105–122, arXiv:1711.00327, §1.
+  J. Reine Angew. Math. **762** (2020), 105–122, arXiv:1711.00327, §§1–2.
 -/
 
 public section
 
 open MonoidAlgebra MulOpposite MvPolynomial ModularGroup
-open scoped MatrixGroups RightActions
+open scoped ArithmeticFunction.sigma MatrixGroups RightActions
 
 namespace TauCeti.TraceFormulaMatrixModule
 
@@ -53,14 +58,15 @@ theorem binaryFormAction_mk (hw : Even w) (A : TraceFormulaMatrix n) :
 noncomputable def periodAction (hw : Even w) :
     R[TraceFormulaMatrixModule n] →ₗ[R]
       Module.End R (homogeneousSubmodule (Fin 2) R w) :=
-  (Finsupp.lsum R fun x ↦ (LinearMap.id : R →ₗ[R] R).smulRight (binaryFormAction (R := R) hw x)) ∘ₗ
-    (MonoidAlgebra.coeffLinearEquiv R).toLinearMap
+  linearLift (fun A ↦ binaryFormRep R w (op A.1)) fun A ↦ by
+    rw [TraceFormulaMatrix.val_neg, binaryFormRep_op_neg_of_even hw]
 
 /-- A basis element acts by its coefficient times the matrix substitution. -/
 @[simp]
 theorem periodAction_single (hw : Even w) (x : TraceFormulaMatrixModule n) (c : R) :
     periodAction (R := R) hw (single x c) = c • binaryFormAction (R := R) hw x := by
-  simp [periodAction]
+  induction x using TraceFormulaMatrixModule.induction with
+  | h A => rw [periodAction, linearLift_single, binaryFormAction_mk]
 
 /-- Left multiplication of a determinant matrix precomposes its substitution action. -/
 @[simp]
@@ -74,7 +80,7 @@ theorem binaryFormAction_smul (hw : Even w) (g : SL(2, ℤ))
     rw [TraceFormulaMatrixModule.smul_mk, binaryFormAction_mk, binaryFormAction_mk]
     apply LinearMap.ext
     intro P
-    simpa only [FixedDetMatrices.smul_coe, Module.End.mul_apply] using
+    simpa only [FixedDetMatrices.smul_coe, mul_apply_eq_comp] using
       binaryFormRep_op_mul_apply (g : Matrix (Fin 2) (Fin 2) ℤ) A.1 P
 
 /-- Right multiplication of a determinant matrix postcomposes its substitution action. -/
@@ -89,7 +95,7 @@ theorem binaryFormAction_op_smul (hw : Even w) (g : SL(2, ℤ))
     rw [TraceFormulaMatrixModule.op_smul_mk, binaryFormAction_mk, binaryFormAction_mk]
     apply LinearMap.ext
     intro P
-    simpa only [val_traceFormulaMatrixRight, inv_inv, Module.End.mul_apply] using
+    simpa only [val_traceFormulaMatrixRight, inv_inv, mul_apply_eq_comp] using
       binaryFormRep_op_mul_apply A.1 (g : Matrix (Fin 2) (Fin 2) ℤ) P
 
 /-- The free matrix action turns left multiplication in the matrix module into
@@ -248,5 +254,64 @@ theorem ExchangeRelations.coe_periodActionRestrict_apply (hw : Even w)
     ((hξ.periodActionRestrict hw P : periodPolynomials R w) :
         homogeneousSubmodule (Fin 2) R w) = periodAction (R := R) hw ξ P :=
   LinearMap.coe_restrict_apply _ _
+
+/-! ### Action of the period relation on the Eisenstein period polynomial -/
+
+/-- `T = (1 1; 0 1)` fixes the monomial `Y^w`. -/
+private theorem binaryFormRep_T_X_one_pow :
+    binaryFormRep R w (op (T : Matrix (Fin 2) (Fin 2) ℤ)) ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ =
+      ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ := by
+  simpa [coe_T] using binaryFormRep_upperTriangular_X_one_pow (R := R) (w := w)
+    (M := (T : Matrix (Fin 2) (Fin 2) ℤ)) (by simp [coe_T])
+
+/-- `Y^w - Y^w ∣ S = Y^w - X^w = -eisensteinPeriodPolynomial R w`. -/
+private theorem sub_binaryFormRep_S_X_one_pow :
+    (⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ : homogeneousSubmodule (Fin 2) R w) -
+      binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ))
+        ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ =
+      -eisensteinPeriodPolynomial R w := by
+  apply Subtype.ext
+  rw [Submodule.coe_sub, Submodule.coe_neg, coe_binaryFormRep_apply,
+    coe_eisensteinPeriodPolynomial]
+  simp [Fin.sum_univ_two, coe_S]
+
+/-- The upper-triangular sum `Tₙ^∞` (`n ≥ 1`) scales `Y^w` by `σ_{w+1}(n)`: for each positive
+divisor `d ∣ n` there are `d` upper-triangular representatives `(n/d, b; 0, d)` with `0 ≤ b < d`,
+each scaling `Y^w` by `d^w`. -/
+theorem periodAction_upperTriangularSum_X_one_pow (hw : Even w) (n : ℕ) [NeZero n] :
+    periodAction (R := R) hw (upperTriangularSum R n) ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ =
+      (σ (w + 1) n : R) • ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ := by
+  have hn : (n : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
+  have hsign : (n : ℤ).sign = 1 := Int.sign_eq_one_of_pos (Nat.cast_pos.mpr (Nat.pos_of_neZero n))
+  rw [upperTriangularSum_eq_sum_reps, map_sum, LinearMap.sum_apply]
+  have hterm (A : FixedDetMatrices.reps (n : ℤ)) :
+      periodAction (R := R) hw (single (mk A.1) 1) ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ =
+        (A.1.1 1 1 : R) ^ w • ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ := by
+    rw [periodAction_single, one_smul, binaryFormAction_mk,
+      binaryFormRep_upperTriangular_X_one_pow A.2.1]
+  simp_rw [hterm, ← Finset.sum_smul]
+  congr 1
+  refine (Fintype.sum_equiv (FixedDetMatrices.repsEquiv hn).symm
+    (fun x ↦ (((FixedDetMatrices.repsEquiv hn).symm x).1.1 1 1 : R) ^ w)
+    (fun A ↦ (A.1.1 1 1 : R) ^ w) fun _ ↦ rfl).symm.trans ?_
+  have hval (x : (p : ↥(n : ℤ).natAbs.divisorsAntidiagonal) × Fin p.1.2) :
+      (((FixedDetMatrices.repsEquiv hn).symm x).1.1 1 1 : R) ^ w = ((x.1.1.2 : ℤ) : R) ^ w := by
+    have hmatrix : ((FixedDetMatrices.repsEquiv hn).symm x).1.1 =
+        !![(x.1.1.1 : ℤ), (x.2 : ℕ); 0, (n : ℤ).sign * x.1.1.2] :=
+      FixedDetMatrices.coe_repsEquiv_symm_apply hn x
+    rw [hmatrix, hsign]
+    simp
+  simp_rw [hval]
+  rw [Fintype.sum_sigma]
+  have hinner (p : ↥(n : ℤ).natAbs.divisorsAntidiagonal) :
+      ∑ _ : Fin p.1.2, ((p.1.2 : ℤ) : R) ^ w = ((p.1.2 ^ (w + 1) : ℕ) : R) := by
+    rw [Finset.sum_const, Finset.card_fin, Int.cast_natCast, nsmul_eq_mul, Nat.cast_pow,
+      pow_succ']
+  simp_rw [hinner]
+  rw [Finset.sum_coe_sort (n : ℤ).natAbs.divisorsAntidiagonal
+      fun p ↦ ((p.2 ^ (w + 1) : ℕ) : R),
+    Int.natAbs_natCast,
+    Nat.sum_divisorsAntidiagonal' fun _ d ↦ ((d ^ (w + 1) : ℕ) : R),
+    ArithmeticFunction.sigma_apply, Nat.cast_sum]
 
 end TauCeti.TraceFormulaMatrixModule

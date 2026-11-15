@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.Localization.Ideal
 public import Mathlib.RingTheory.TensorProduct.Quotient
 import Mathlib.Data.ZMod.QuotientRing
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Unramified.Diagonal
 
 /-!
@@ -103,10 +104,8 @@ theorem mem_of_algebraMap_mem_map_of_reducedMap_injective {B : Type v} [CommRing
 an element of `R` modulo the extended ideal. -/
 theorem exists_sub_algebraMap_mem_map_of_reducedMap_surjective {B : Type v} [CommRing B]
     [Algebra R B] (hB : Function.Surjective (reducedMap I B)) (b : B) :
-    ∃ r : R, b - algebraMap R B r ∈ I.map (algebraMap R B) := by
-  obtain ⟨t, ht⟩ := hB (Ideal.Quotient.mk _ b)
-  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective t
-  exact ⟨r, Ideal.Quotient.eq.mp (by rw [← reducedMap_mk, ht])⟩
+    ∃ r : R, b - algebraMap R B r ∈ I.map (algebraMap R B) :=
+  Ideal.exists_sub_mem_of_surjective_quotientMap (hIJ := Ideal.le_comap_map) hB b
 
 /-- Two maps out of an algebra whose reduced map is surjective (for instance, a neighbourhood)
 agree after quotienting their target by the extended ideal. -/
@@ -115,13 +114,12 @@ theorem quotient_mk_eq_of_reducedMap_surjective {B : Type v} {C : Type*} [CommRi
     (f g : B →ₐ[R] C) (b : B) :
     Ideal.Quotient.mk (I.map (algebraMap R C)) (f b) =
       Ideal.Quotient.mk (I.map (algebraMap R C)) (g b) := by
-  -- Modulo `I`, the element `b` is the image of some `r : R`, which every algebra map preserves.
-  obtain ⟨r, hr⟩ := exists_sub_algebraMap_mem_map_of_reducedMap_surjective I hB b
-  have key (h : B →ₐ[R] C) : Ideal.Quotient.mk (I.map (algebraMap R C)) (h b) =
-      Ideal.Quotient.mk (I.map (algebraMap R C)) (algebraMap R C r) := by
-    rw [Ideal.Quotient.eq, ← h.commutes, ← map_sub, ← h.comp_algebraMap, ← Ideal.map_map]
-    exact Ideal.mem_map_of_mem _ hr
-  rw [key f, key g]
+  exact DFunLike.congr_fun (I.algHom_ext_of_surjective_algebraMap_quotient B hB
+    (S := C ⧸ I.map (algebraMap R C)) (by
+      intro r hr
+      rw [RingHom.mem_ker, ← Ideal.Quotient.mk_algebraMap]
+      exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_map_of_mem _ hr))
+    ((Ideal.Quotient.mkₐ R _).comp f) ((Ideal.Quotient.mkₐ R _).comp g)) b
 
 variable {I} in
 /-- Two `R`-algebra maps out of an étale neighbourhood of `(R, I)` agree as soon as `I`

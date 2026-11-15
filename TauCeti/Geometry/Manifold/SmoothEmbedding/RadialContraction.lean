@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.RadialContraction
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.Orientation.RadialContraction
 
 /-!
 # Radial contraction of bundled smooth embeddings
@@ -15,6 +16,11 @@ A radial contraction with nonnegative parameter can precompose a smooth embeddin
 finite-dimensional real normed space or postcompose an embedding into that space. The bundled
 operations preserve every regularity at most `∞`; coercion and application lemmas describe their
 underlying functions.
+
+Since a radial contraction preserves every orientation of `E` at its centre
+(`TauCeti.isOrientationPreservingAt_radialContraction_self`), precomposing an embedding with a
+radial contraction about the origin keeps it orientation-preserving at the origin
+(`TauCeti.SmoothEmbedding.isOrientationPreservingAt_compRadialContraction`).
 -/
 
 public section
@@ -55,6 +61,12 @@ theorem compRadialContraction_apply (f : SmoothEmbedding 𝓘(ℝ, E) J n E N) (
     f.compRadialContraction hn hκ x = f (radialContraction 0 κ x) := by
   rw [coe_compRadialContraction, Function.comp_apply]
 
+/-- Precomposing with a radial contraction does not enlarge the image of an embedding. -/
+theorem range_compRadialContraction_subset (f : SmoothEmbedding 𝓘(ℝ, E) J n E N) (hn : n ≤ ∞)
+    {κ : ℝ} (hκ : 0 ≤ κ) : range (f.compRadialContraction hn hκ) ⊆ range f := by
+  rw [coe_compRadialContraction]
+  exact range_comp_subset_range _ _
+
 /-- A smooth embedding into `E` followed by the radial contraction about `c` with parameter
 `κ ≥ 0`, preserving any regularity `n ≤ ∞`. -/
 def transRadialContraction (f : SmoothEmbedding I 𝓘(ℝ, E) n M E)
@@ -79,5 +91,23 @@ theorem transRadialContraction_apply (f : SmoothEmbedding I 𝓘(ℝ, E) n M E)
     {κ : ℝ}
     (hκ : 0 ≤ κ) (x : M) : f.transRadialContraction c hn hκ x = radialContraction c κ (f x) := by
   rw [coe_transRadialContraction, Function.comp_apply]
+
+section Orientation
+
+variable {X : Type*} [TopologicalSpace X] [ChartedSpace E X] [IsManifold 𝓘(ℝ, E) 1 X]
+  {ι : Type*} [Fintype ι]
+
+/-- Precomposing an embedding of `E` with a radial contraction about the origin keeps it
+orientation-preserving at the origin. -/
+theorem isOrientationPreservingAt_compRadialContraction
+    (f : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) n E X) (hn : n ≤ ∞) {κ : ℝ} (hκ : 0 ≤ κ)
+    {o : Manifold.Orientation 𝓘(ℝ, E) E ι} {oM : Manifold.Orientation 𝓘(ℝ, E) X ι}
+    (hf : o.IsOrientationPreservingAt oM f 0) :
+    o.IsOrientationPreservingAt oM (f.compRadialContraction hn hκ) 0 := by
+  rw [coe_compRadialContraction]
+  rw [← radialContraction_self (0 : E) κ] at hf
+  exact hf.comp (isOrientationPreservingAt_radialContraction_self o 0 κ)
+
+end Orientation
 
 end TauCeti.SmoothEmbedding

@@ -86,7 +86,7 @@ theorem differentIdeal_dvd_map_span_factorial_mul_prod_ramifiedSupport :
   by_cases hv : v ∈ ramifiedSupport K L
   · set e := P.ramificationIdx (𝓞 K) with he
     have hen : e ≤ n := by
-      have := RamificationInertia.ramificationIdx_le_finrank v.asIdeal P
+      have := RamificationInertia.ramificationIdx_le_finrank (𝓞 K) P
       rwa [← IsFractionRing.finrank_eq (𝓞 K) K (𝓞 L) L] at this
     have hwild : multiplicity P (differentIdeal (𝓞 K) (𝓞 L)) ≤
         e - 1 + multiplicity P (Ideal.span {((e : ℕ) : 𝓞 L)}) :=

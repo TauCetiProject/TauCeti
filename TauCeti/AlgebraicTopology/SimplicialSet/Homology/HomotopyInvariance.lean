@@ -50,11 +50,11 @@ lemma chainComplexMap_hom_comm (H : SSet.Homotopy f g) (H' : SSet.Homotopy f' g'
   dsimp only [SSet.Homotopy.chainComplexMap, SimplicialObject.Homotopy.sSetChainComplexMap]
   exact SimplicialObject.Homotopy.toChainHomotopy_hom_comm _ _
     (((SimplicialObject.whiskering _ _).obj (sigmaConst.obj R)).map u)
-    (((SimplicialObject.whiskering _ _).obj (sigmaConst.obj R)).map v)
-    (fun n i ↦ by
+    (((SimplicialObject.whiskering _ _).obj (sigmaConst.obj R)).map v) p q
+    (fun i ↦ by
       simp only [SimplicialObject.Homotopy.whiskerRight_h, Functor.whiskeringRight_obj_map,
         Functor.whiskerRight_app, ← Functor.map_comp,
-        H.toSimplicialObjectHomotopy_h_comm H' hu n i]) p q
+        H.toSimplicialObjectHomotopy_h_comm H' hu p i])
 
 end SSet.Homotopy
 

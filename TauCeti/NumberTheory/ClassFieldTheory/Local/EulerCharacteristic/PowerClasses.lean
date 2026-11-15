@@ -62,7 +62,7 @@ private theorem exactK0_powerClassRepresentation_eq_reductionK0 [NeZero (ℓ : L
     Module.Finite.equiv
       ((powerClassRepresentation (K := K) (L := L) ℓ).baseChangeRestrictScalarsIntEquiv
         ).toLinearEquiv.symm
-  rw [← reductionK0_restrictScalarsInt]
+  rw [← reductionK0_restrictScalars]
   exact (reductionK0_congr (ZMod ℓ) (quotSMulTopUnitsPowerClassRepresentationEquiv ℓ)).symm
 
 /-- **The class of `Lˣ ⧸ (Lˣ)^ℓ` away from the residue characteristic**: if `ℓ` is a unit of

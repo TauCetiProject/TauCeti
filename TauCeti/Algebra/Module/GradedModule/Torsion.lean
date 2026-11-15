@@ -23,7 +23,7 @@ Suppose `M` is internally integer graded over a domain `k`, is torsion-free over
 multiplication by `X` strictly lowers degree. Then its `k[X]`-torsion submodule is precisely its
 `X`-power torsion submodule, even for elements with several homogeneous components. This torsion
 submodule is homogeneous, so it and its quotient inherit gradings through
-`InternalGrading.submodule` and `InternalGrading.quotient`, after restricting scalars to `k`.
+`InternalGrading.submodule` and `InternalGrading.quotient`, as gradings by `k`-submodules.
 Over a field, finite generation gives a single power of `X` annihilating the entire torsion
 submodule; the ambient module need not be torsion.
 
@@ -54,7 +54,7 @@ namespace TauCeti.InternalGrading
 
 variable {k M : Type*} [CommRing k] [IsDomain k] [AddCommGroup M]
   [Module k M] [Module k[X] M] [IsScalarTower k k[X] M] [Module.IsTorsionFree k M]
-  {G : InternalGrading k M} {d : ℕ}
+  {G : InternalGrading k M ℤ} {d : ℕ}
 
 /-- If `X` strictly lowers degree in a module torsion-free over its coefficient domain, the
 polynomial torsion submodule equals the submodule of elements killed by powers of `X`.
@@ -79,8 +79,8 @@ theorem torsion_eq_torsion'_powers_X (hd : d ≠ 0)
     exact ⟨⟨X ^ n, pow_mem X_mem_nonZeroDivisors n⟩, hx⟩
 
 /-- The torsion submodule of a graded polynomial module is homogeneous if `X` strictly lowers
-degree and the module is torsion-free over its coefficient domain. In particular its scalar
-restriction is a valid input to the existing submodule and quotient grading constructors. -/
+degree and the module is torsion-free over its coefficient domain. In particular it is a valid
+input to the existing submodule and quotient grading constructors. -/
 theorem isHomogeneous_torsion (hd : d ≠ 0)
     (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d)) :
     DirectSum.SetLike.IsHomogeneous G.piece (Submodule.torsion k[X] M) := by
@@ -100,7 +100,7 @@ namespace TauCeti.InternalGrading
 
 variable {k M : Type*} [Field k] [AddCommGroup M]
   [Module k M] [Module k[X] M] [IsScalarTower k k[X] M] [Module.Finite k[X] M]
-  {G : InternalGrading k M} {d : ℕ}
+  {G : InternalGrading k M ℤ} {d : ℕ}
 
 /-- Over a field, the torsion submodule of a finitely generated graded polynomial module is
 annihilated by one power of `X`, and equals the kernel of that power. The module itself need not
@@ -139,7 +139,7 @@ theorem torsion_eq_torsionBy_X_pow (hd : d ≠ 0)
 /-- A finitely generated polynomial module over a field admits a homogeneous complement to
 its torsion submodule when `X` strictly lowers degree. The complement is not canonical;
 no homogeneous basis is assumed or asserted. -/
-theorem exists_isCompl_torsion_of_X_smul_mem_piece (G : InternalGrading k M) (hd : d ≠ 0)
+theorem exists_isCompl_torsion_of_X_smul_mem_piece (G : InternalGrading k M ℤ) (hd : d ≠ 0)
     (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d)) :
     ∃ L : Submodule k[X] M, IsCompl (Submodule.torsion k[X] M) L ∧
       DirectSum.SetLike.IsHomogeneous G.piece L := by
@@ -197,14 +197,14 @@ section InducedGradings
 
 variable {k M : Type*} [CommRing k] [IsDomain k] [AddCommGroup M]
   [Module k M] [Module k[X] M] [IsScalarTower k k[X] M] [Module.IsTorsionFree k M]
-  (G : InternalGrading k M) {d : ℕ} (hd : d ≠ 0)
+  (G : InternalGrading k M ℤ) {d : ℕ} (hd : d ≠ 0)
   (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d))
 
--- Scalar restriction preserves membership, so the standard constructors suffice.
-example : InternalGrading k ((Submodule.torsion k[X] M).restrictScalars k) :=
+-- The standard constructors accept the `k[X]`-submodule directly.
+example : InternalGrading k (Submodule.torsion k[X] M) ℤ :=
   G.submodule _ (G.isHomogeneous_torsion hd hX)
 
-example : InternalGrading k (M ⧸ (Submodule.torsion k[X] M).restrictScalars k) :=
+example : InternalGrading k (M ⧸ Submodule.torsion k[X] M) ℤ :=
   G.quotient _ (G.isHomogeneous_torsion hd hX)
 
 end InducedGradings
@@ -236,7 +236,7 @@ local notation "Q" => k[X] ⧸ Submodule.span k[X] {(X ^ 2 : k[X])}
 
 -- A positive-length torsion module with two distinct nonzero homogeneous classes.
 -- Its grading is induced on the actual module quotient, not on an alternate representation.
-private theorem quotient_X_sq_example : ∃ G : InternalGrading k Q,
+private theorem quotient_X_sq_example : ∃ G : InternalGrading k Q ℤ,
     (∀ ⦃p : ℤ⦄ ⦃x⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - 1)) ∧
     (Submodule.Quotient.mk (1 : k[X]) : Q) ∈ G.piece 0 ∧
     (Submodule.Quotient.mk (X : k[X]) : Q) ∈ G.piece (-1) ∧
@@ -255,28 +255,18 @@ private theorem quotient_X_sq_example : ∃ G : InternalGrading k Q,
       Nat.cast_ofNat, Nat.cast_one, one_mul, sub_eq_add_neg] using
       H.X_pow_smul_mem_piece (d := 1)
         (fun _ _ hx ↦ Polynomial.X_smul_mem_negDegreeGrading_piece hx) 2 hx
-  have hI : DirectSum.SetLike.IsHomogeneous H.piece (I.restrictScalars k) := by
-    intro p y hy
-    rw [Submodule.restrictScalars_mem] at hy ⊢
+  have hI : DirectSum.SetLike.IsHomogeneous H.piece I := by
     have hr := hf.isHomogeneous_range
-    rw [_root_.LinearMap.range_toSpanSingleton] at hr
-    exact hr p hy
-  -- Transport the standard quotient grading along the scalar-restriction equivalence.
-  let e := Submodule.Quotient.restrictScalarsEquiv k I
-  let G := (H.quotient (I.restrictScalars k) hI).map e
+    rwa [_root_.LinearMap.range_toSpanSingleton] at hr
+  let G := H.quotient I hI
   have hmem (p : ℤ) (x : k[X]) (hx : x ∈ H.piece p) :
-      (Submodule.Quotient.mk x : k[X] ⧸ I) ∈ G.piece p := by
-    rw [InternalGrading.mem_map_piece_iff, Submodule.Quotient.restrictScalarsEquiv_symm_mk]
-    exact H.mk_mem_quotient_piece _ hI hx
+      (Submodule.Quotient.mk x : k[X] ⧸ I) ∈ G.piece p :=
+    H.mk_mem_quotient_piece _ hI hx
   have hX : ∀ ⦃p : ℤ⦄ ⦃x : k[X] ⧸ I⦄,
       x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - 1) := by
     intro p x hx
-    rw [InternalGrading.mem_map_piece_iff, InternalGrading.mem_quotient_piece_iff] at hx
-    obtain ⟨y, hy, hxy⟩ := hx
-    have heq : (Submodule.Quotient.mk y : k[X] ⧸ I) = x := by
-      simpa only [e, Submodule.Quotient.restrictScalarsEquiv_mk,
-        LinearEquiv.apply_symm_apply] using congrArg e hxy
-    rw [← heq, ← Submodule.Quotient.mk_smul]
+    obtain ⟨y, hy, rfl⟩ := (H.mem_quotient_piece_iff I hI).1 hx
+    rw [← Submodule.Quotient.mk_smul]
     exact hmem _ _ (Polynomial.X_smul_mem_negDegreeGrading_piece hy)
   -- The two classes survive in distinct degrees, and multiplication by X² is zero.
   refine ⟨G, hX, hmem 0 1 ?_, hmem (-1) X ?_, ?_, ?_, ?_,
@@ -301,7 +291,7 @@ private theorem quotient_X_sq_example : ∃ G : InternalGrading k Q,
         I.smul_mem y (Submodule.mem_span_singleton_self (X ^ 2 : k[X]))
 
 -- Every element of k[X]/(X²) is torsion; the theorem still constructs the homogeneous splitting.
-example : ∃ (G : InternalGrading k Q) (L : Submodule k[X] Q),
+example : ∃ (G : InternalGrading k Q ℤ) (L : Submodule k[X] Q),
     Submodule.torsion k[X] Q = ⊤ ∧ IsCompl (Submodule.torsion k[X] Q) L ∧
       DirectSum.SetLike.IsHomogeneous G.piece L := by
   obtain ⟨G, hX, _, _, _, _, hann, _⟩ := quotient_X_sq_example k
@@ -330,7 +320,7 @@ private instance (i : Bool) : IsScalarTower k k[X] (mixedSummand k i) := by
 private instance (i : Bool) : Module.Finite k[X] (mixedSummand k i) := by
   cases i <;> dsimp [mixedSummand] <;> infer_instance
 
-example : ∃ (G : InternalGrading k (⨁ i : Bool, mixedSummand k i))
+example : ∃ (G : InternalGrading k (⨁ i : Bool, mixedSummand k i) ℤ)
     (L : Submodule k[X] (⨁ i : Bool, mixedSummand k i)),
     IsCompl (Submodule.torsion k[X] (⨁ i : Bool, mixedSummand k i)) L ∧
       DirectSum.SetLike.IsHomogeneous G.piece L ∧
@@ -338,7 +328,7 @@ example : ∃ (G : InternalGrading k (⨁ i : Bool, mixedSummand k i))
       Submodule.torsion k[X] (⨁ i : Bool, mixedSummand k i) ≠ ⊤ := by
   classical
   obtain ⟨H, hHX, _, _, h1, _, hann, _⟩ := quotient_X_sq_example k
-  let J : ∀ i : Bool, InternalGrading k (mixedSummand k i) := fun i ↦
+  let J : ∀ i : Bool, InternalGrading k (mixedSummand k i) ℤ := fun i ↦
     match i with
     | false => Polynomial.negDegreeGrading k
     | true => H

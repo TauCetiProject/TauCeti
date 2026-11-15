@@ -11,6 +11,7 @@ import all TauCeti.Algebra.Homology.DG.Twisted.Complex
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.CategoryTheory.Subobject.Lattice
 import Mathlib.Algebra.Category.ModuleCat.EpiMono
+import TauCeti.Algebra.Homology.Subobject
 public import Mathlib.Algebra.Category.ModuleCat.Limits
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
@@ -471,12 +472,8 @@ theorem TwistingCocycle.twistedIndexCochainComplexMap_apply {p q : ℤ} (hpq : p
 
 /-- The inclusion `F_p ⟶ F_q` is injective in each degree. -/
 theorem TwistingCocycle.injective_twistedIndexCochainComplexMap_f {p q : ℤ} (hpq : p ≤ q) (n : ℤ) :
-    Function.Injective ((m.twistedIndexCochainComplexMap hM hpq).f n) := by
-  intro x y hxy
-  apply (m.twistedIndexCochainComplexXEquiv hM p n).injective
-  apply Subtype.ext
-  have he := congrArg (fun z ↦ (m.twistedIndexCochainComplexXEquiv hM q n z : P → M)) hxy
-  simpa only [m.twistedIndexCochainComplexMap_apply] using he
+    Function.Injective ((m.twistedIndexCochainComplexMap hM hpq).f n) :=
+  injective_gradedCochainComplexInclusion_f _ n
 
 /-- The canonical inclusion of an index-filtration stage into the twisted complex. -/
 noncomputable def TwistingCocycle.twistedIndexCochainComplexι (p : ℤ) :
@@ -494,48 +491,30 @@ theorem TwistingCocycle.twistedIndexCochainComplexι_apply (p n : ℤ)
 
 /-- Each filtration stage embeds as a subcomplex of the twisted complex. -/
 instance TwistingCocycle.mono_twistedIndexCochainComplexι (p : ℤ) :
-    Mono (m.twistedIndexCochainComplexι hM p) := by
-  apply HomologicalComplex.mono_of_mono_f
-  intro n
-  rw [ModuleCat.mono_iff_injective]
-  intro f g hfg
-  apply (m.twistedIndexCochainComplexXEquiv hM p n).injective
-  apply Subtype.ext
-  have h := congrArg (fun t ↦
-    (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n t : P → M)) hfg
-  simpa only [m.twistedIndexCochainComplexι_apply] using h
+    Mono (m.twistedIndexCochainComplexι hM p) :=
+  mono_gradedCochainComplexInclusion _
 
 /-- Transition maps commute with the inclusions into the twisted complex. -/
 @[reassoc (attr := simp)]
 theorem TwistingCocycle.twistedIndexCochainComplexMap_ι {p q : ℤ} (hpq : p ≤ q) :
     m.twistedIndexCochainComplexMap hM hpq ≫ m.twistedIndexCochainComplexι hM q =
-      m.twistedIndexCochainComplexι hM p := by
-  apply HomologicalComplex.hom_ext
-  intro n
-  apply ModuleCat.hom_ext
-  apply LinearMap.ext
-  intro f
-  apply (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).injective
-  apply Subtype.ext
-  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
-    m.twistedIndexCochainComplexι_apply, m.twistedIndexCochainComplexMap_apply]
+      m.twistedIndexCochainComplexι hM p :=
+  gradedCochainComplexInclusion_comp _ _
 
 /-- The transition map from a filtration stage to itself is the identity. -/
 @[simp]
 theorem TwistingCocycle.twistedIndexCochainComplexMap_id (p : ℤ) :
     m.twistedIndexCochainComplexMap hM (p := p) le_rfl =
-      𝟙 (m.twistedIndexCochainComplex hM p) := by
-  apply (cancel_mono (m.twistedIndexCochainComplexι hM p)).mp
-  simp only [m.twistedIndexCochainComplexMap_ι, Category.id_comp]
+      𝟙 (m.twistedIndexCochainComplex hM p) :=
+  gradedCochainComplexInclusion_refl
 
 /-- The transition maps of the index filtration compose. -/
 @[reassoc (attr := simp)]
 theorem TwistingCocycle.twistedIndexCochainComplexMap_comp {p q r : ℤ}
     (hpq : p ≤ q) (hqr : q ≤ r) :
     m.twistedIndexCochainComplexMap hM hpq ≫ m.twistedIndexCochainComplexMap hM hqr =
-      m.twistedIndexCochainComplexMap hM (hpq.trans hqr) := by
-  apply (cancel_mono (m.twistedIndexCochainComplexι hM r)).mp
-  simp only [Category.assoc, m.twistedIndexCochainComplexMap_ι]
+      m.twistedIndexCochainComplexMap hM (hpq.trans hqr) :=
+  gradedCochainComplexInclusion_comp _ _
 
 /-- The index filtration as actual subobjects of the twisted cochain complex. -/
 noncomputable def TwistingCocycle.twistedIndexSubobject (p : ℤ) :
@@ -555,23 +534,10 @@ theorem TwistingCocycle.mem_range_twistedIndexSubobject_arrow_f_iff (p n : ℤ)
     f ∈ LinearMap.range ((m.twistedIndexSubobject hM p).arrow.f n).hom ↔
       ∀ x, p < ind x →
         (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f : P → M) x = 0 := by
-  rw [m.twistedIndexSubobject_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk,
-    HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top _
-      (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance))]
-  constructor
-  · rintro ⟨g, rfl⟩
-    rw [m.twistedIndexCochainComplexι_apply]
-    exact (mem_twistedIndexGrading_iff.mp
-      (m.twistedIndexCochainComplexXEquiv hM p n g).property).1
-  · intro hf
-    let g := twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f
-    have hg : (g : P → M) ∈ twistedIndexGrading ℳ ind p n :=
-      mem_twistedIndexGrading_iff.mpr ⟨hf, mem_twistedTotalGrading_iff.mp g.property⟩
-    refine ⟨(m.twistedIndexCochainComplexXEquiv hM p n).symm ⟨g, hg⟩, ?_⟩
-    apply (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).injective
-    apply Subtype.ext
-    simp only [m.twistedIndexCochainComplexι_apply, LinearEquiv.apply_symm_apply]
-    rfl
+  rw [m.twistedIndexSubobject_eq_mk, Subobject.range_mk_arrow_f_hom]
+  exact (mem_range_gradedCochainComplexInclusion_f_iff _ n f).trans <|
+    mem_twistedIndexGrading_iff.trans <| and_iff_left <| mem_twistedTotalGrading_iff.mp
+      (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f).property
 
 /-- The subobjects of the twisted complex form an increasing filtration. -/
 theorem TwistingCocycle.twistedIndexSubobject_mono :
@@ -760,9 +726,7 @@ theorem exists_twistedIndexCochainComplexMap_f_eq (p n : ℤ)
       simpa [twistedIndexLower] using hker
     exact mem_twistedIndexGrading_iff.mpr
       ⟨(mem_twistedIndexFiltration_iff ind).mp hfil, hmem.2⟩
-  refine ⟨(m.twistedIndexCochainComplexXEquiv hM p n).symm ⟨_, hp⟩,
-    (m.twistedIndexCochainComplexXEquiv hM (p + 1) n).injective (Subtype.ext ?_)⟩
-  simp
+  exact LinearMap.mem_range.mp ((mem_range_gradedCochainComplexInclusion_f_iff _ n g).mpr hp)
 
 /-- **The graded pieces of the index filtration.** The sequence
 `F_p ⟶ F_{p+1} ⟶ ℳ ⊗ ⟨P_{p+1}⟩` is short exact: the quotient `F_{p+1} / F_p` is the twisted complex

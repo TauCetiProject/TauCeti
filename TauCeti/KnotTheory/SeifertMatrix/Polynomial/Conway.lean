@@ -81,7 +81,7 @@ theorem eval₂_conwayPolynomial_eq_mul_alexander {S : Type*} [CommRing S]
   have hmatrix : (s : S) • V.map f - (s⁻¹ : Sˣ).val • (V.map f)ᵀ =
       (s⁻¹ : Sˣ).val • ((s ^ 2 : Sˣ).val • V.map f - (V.map f)ᵀ) := by
     ext i j
-    simp only [sub_apply, smul_apply, smul_eq_mul, transpose_apply,
+    simp only [Matrix.sub_apply, Matrix.smul_apply, smul_eq_mul, transpose_apply,
       Units.val_pow_eq_pow_val, mul_sub]
     have hs := s.inv_mul
     linear_combination -(s : S) * V.map f i j * hs
@@ -182,14 +182,42 @@ theorem conwayPolynomial_eq_of_alexander_eq {κ : Type*} [Fintype κ] [Decidable
   rw [h, hcard] at hV
   simpa only [hu, IsUnit.unit_spec] using hV.trans hW.symm
 
-/-- Changing the last diagonal entry by `r` changes the Conway polynomial by
-`-r X` times the polynomial of the deleted minor. In particular, decreasing it
-by one gives the usual positive Conway skein factor `X`. -/
-theorem conwayPolynomial_add_diagonal_single {n : ℕ}
-    (V : Matrix (Fin (n + 1)) (Fin (n + 1)) R) (r : R) :
-    (V + diagonal (Pi.single (Fin.last n) r)).conwayPolynomial - V.conwayPolynomial =
+/-- Simultaneous bijective reindexing preserves the canonical Conway polynomial. -/
+@[simp]
+theorem conwayPolynomial_submatrix_equiv_self {κ : Type*} [Fintype κ] [DecidableEq κ]
+    (V : Matrix ι ι R) (e : κ ≃ ι) :
+    (V.submatrix e e).conwayPolynomial = V.conwayPolynomial :=
+  Matrix.conwayPolynomial_eq_of_alexander_eq _ _
+    (by rw [Fintype.card_congr e]) (Matrix.alexander_submatrix_equiv_self V e)
+
+/-- Transposing a Seifert matrix preserves its canonical Conway polynomial. -/
+@[simp]
+theorem conwayPolynomial_transpose (V : Matrix ι ι R) :
+    Vᵀ.conwayPolynomial = V.conwayPolynomial :=
+  Matrix.conwayPolynomial_eq_of_alexander_eq _ _ rfl (alexander_transpose V)
+
+/-- A congruence whose determinant squares to one preserves the canonical Conway polynomial. -/
+theorem conwayPolynomial_congruence_of_det_sq_eq_one {P : Matrix ι ι R}
+    (V : Matrix ι ι R) (hP : P.det ^ 2 = 1) :
+    (P * V * Pᵀ).conwayPolynomial = V.conwayPolynomial :=
+  Matrix.conwayPolynomial_eq_of_alexander_eq _ _ rfl
+    (alexander_congruence_of_det_sq_eq_one V hP)
+
+/-- A congruence whose determinant squares to one, followed by bijective reindexing,
+preserves the canonical Conway polynomial. -/
+theorem conwayPolynomial_congruence_submatrix_equiv_of_det_sq_eq_one
+    {κ : Type*} [Fintype κ] [DecidableEq κ] {P : Matrix ι ι R}
+    (V : Matrix ι ι R) (e : κ ≃ ι) (hP : P.det ^ 2 = 1) :
+    ((P * V * Pᵀ).submatrix e e).conwayPolynomial = V.conwayPolynomial := by
+  rw [conwayPolynomial_submatrix_equiv_self, conwayPolynomial_congruence_of_det_sq_eq_one V hP]
+
+/-- Changing the diagonal entry at `x` by `r` changes the Conway polynomial by
+`-r X` times the polynomial of the minor with the row and column of `x` deleted. In particular,
+decreasing it by one gives the usual positive Conway skein factor `X`. -/
+theorem conwayPolynomial_add_diagonal_single (V : Matrix ι ι R) (x : ι) (r : R) :
+    (V + diagonal (Pi.single x r)).conwayPolynomial - V.conwayPolynomial =
       -Polynomial.C r * Polynomial.X *
-        (V.submatrix Fin.castSucc Fin.castSucc).conwayPolynomial := by
+        (V.submatrix ((↑) : {y // y ≠ x} → ι) (↑)).conwayPolynomial := by
   apply eval₂_C_T_neg_sub_T_injective (R := R)
   simp only [Polynomial.eval₂_sub, Polynomial.eval₂_mul, Polynomial.eval₂_neg,
     Polynomial.eval₂_C, Polynomial.eval₂_X,

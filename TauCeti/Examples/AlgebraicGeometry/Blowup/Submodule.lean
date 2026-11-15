@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.AlgebraicGeometry.Blowup.Submodule
+import TauCeti.AlgebraicGeometry.Blowup.Submodule.Basic
 
 /-!
 # Examples: the blowup of a submodule

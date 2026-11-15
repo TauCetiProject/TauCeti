@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.PowerBias
 public import TauCeti.Probability.Distributions.Pareto.Basic
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # Power-biased Pareto laws

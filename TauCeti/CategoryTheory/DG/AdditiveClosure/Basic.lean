@@ -437,6 +437,26 @@ theorem sum_dgComp_proj_single (M : DGAdditiveClosure C) :
     simp only [dgHomEquiv_dgComp, Fintype.sum_unique]
     exact sum_dgComp_dgHomEquiv_dgId R (dgHomEquiv R M M 0 (dgId R M) j) k
 
+/-- If `M` has at most one summand, the projection onto the summand `Xᵢ` followed by the
+inclusion of it is the identity of `M`. -/
+theorem dgComp_proj_single_of_subsingleton (M : DGAdditiveClosure C) [Subsingleton M.ι]
+    (i : M.ι) : dgComp R (proj R M i) (single R M i) (add_zero 0) = dgId R M :=
+  (Fintype.sum_subsingleton (fun j ↦ dgComp R (proj R M j) (single R M j) (add_zero 0))
+    i).symm.trans (sum_dgComp_proj_single R M)
+
+/-! ### Restriction to a set of summands -/
+
+/-- The identity of the sum of the summands of `M` satisfying `q` is the restriction of the
+identity of `M`. -/
+@[simp↓]
+theorem dgHomEquiv_dgId_subtype (M : DGAdditiveClosure C) (q : M.ι → Prop) [DecidablePred q]
+    (i j : {i // q i}) :
+    dgHomEquiv R _ _ 0 (dgId R (⟨{i // q i}, fun i ↦ M.X i⟩ : DGAdditiveClosure C)) i j =
+      dgHomEquiv R M M 0 (dgId R M) i j := by
+  rcases eq_or_ne i j with rfl | h
+  · rw [dgHomEquiv_dgId_self, dgHomEquiv_dgId_self]
+  · rw [dgHomEquiv_dgId_of_ne R _ h, dgHomEquiv_dgId_of_ne R _ (Subtype.val_injective.ne h)]
+
 /-! ### Binary sums -/
 
 /-- The **direct sum** `M ⊕ N` of two objects of the additive closure: the concatenation of their

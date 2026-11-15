@@ -34,6 +34,8 @@ gives the coefficientwise Galois action on Puiseux series, `t ^ (k / n) ↦ ζ�
 * `HahnSeries.coeff_twist`, `HahnSeries.coeff_twistEquiv`: the twisted coefficients.
 * `HahnSeries.twist_one`, `HahnSeries.twist_mul`: twisting is a monoid action of the characters.
 * `HahnSeries.twist_single`: the twist of a monomial.
+* `HahnSeries.support_twistEquiv`, `HahnSeries.orderTop_twistEquiv`: twisting by a unit-valued
+  character preserves supports and orders.
 -/
 
 public section
@@ -159,5 +161,15 @@ theorem support_twistEquiv (χ : Multiplicative Γ →* Rˣ) (x : HahnSeries Γ 
     (twistEquiv χ x).support = x.support := by
   ext g
   simp only [mem_support, coeff_twistEquiv, ne_eq, Units.mul_right_eq_zero]
+
+/-- Twisting by a unit-valued character preserves the order. -/
+@[simp]
+theorem orderTop_twistEquiv (χ : Multiplicative Γ →* Rˣ) (x : HahnSeries Γ R) :
+    (twistEquiv χ x).orderTop = x.orderTop := by
+  by_cases hx : x = 0
+  · rw [hx, map_zero]
+  rw [orderTop_of_ne_zero hx,
+    orderTop_of_ne_zero ((map_ne_zero_iff _ (twistEquiv χ).injective).mpr hx)]
+  simp only [support_twistEquiv]
 
 end HahnSeries

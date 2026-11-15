@@ -22,6 +22,7 @@ nonzero width `h` factors through its cusp function along the parameter.
 ## Main declarations
 
 * `TauCeti.Periodic.qParam_sub`: `𝕢 h (z - j) = 𝕢 h z * exp (-2 π I j / h)`.
+* `TauCeti.Periodic.qParam_add_half`: translation by half a period negates the parameter.
 * `TauCeti.Periodic.qParam_add_mul_I_pow`: along the vertical ray from `z`, the powers of the
   local parameter acquire the factor `e^{-2πmt/h}`; this decays when `h > 0` and `m > 0`.
 * `TauCeti.Periodic.qParam_nat_mul_pow`: `𝕢 (m * h) z ^ m = 𝕢 h z` for `m ≠ 0`.
@@ -59,6 +60,13 @@ variable {h : ℝ}
 theorem qParam_sub (z j : ℂ) : 𝕢 h (z - j) = 𝕢 h z * exp (-2 * π * I * j / h) := by
   simp only [qParam, ← Complex.exp_add]
   ring_nf
+
+/-- Translating by half a period negates the local parameter. -/
+theorem qParam_add_half (hh : h ≠ 0) (z : ℂ) :
+    𝕢 h (z + (h : ℂ) / 2) = -𝕢 h z := by
+  have he : 2 * π * I * (z + (h : ℂ) / 2) / h = 2 * π * I * z / h + π * I := by
+    field_simp [Complex.ofReal_ne_zero.mpr hh]
+  simp only [qParam, he, Complex.exp_add, Complex.exp_pi_mul_I, mul_neg_one]
 
 /-- Along the vertical ray from `z`, the powers of the local parameter acquire an exponential
 factor: `𝕢 h (z + t I) ^ m = 𝕢 h z ^ m * e^{-2πmt/h}`. When `h > 0` and `m > 0`, this factor

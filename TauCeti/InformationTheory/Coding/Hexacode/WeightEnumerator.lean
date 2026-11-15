@@ -57,10 +57,10 @@ private theorem hammingNorm_encoding_labels (a b c : Fin 4) :
       hammingNorm, Finset.card_filter, Fin.sum_univ_succ, messageWeight] <;> grind
 
 private theorem weightDistribution_eq_card_messageWeight (w : ℕ) :
-    (code ω : Set (Fin 6 → F)).weightDistribution w =
+    (TauCeti.Hexacode.code ω : Set (Fin 6 → F)).weightDistribution w =
       Fintype.card {a : Fin 3 → Fin 4 // messageWeight (a 0) (a 1) (a 2) = w} := by
   classical
-  let e : (Fin 3 → Fin 4) ≃ code ω :=
+  let e : (Fin 3 → Fin 4) ≃ TauCeti.Hexacode.code ω :=
     (Equiv.piCongrRight fun _ ↦ finFourEquiv hF hω).trans (encodingEquiv ω).toEquiv
   have he (a : Fin 3 → Fin 4) :
       hammingNorm (e a : Fin 6 → F) = messageWeight (a 0) (a 1) (a 2) := by
@@ -72,7 +72,7 @@ private theorem weightDistribution_eq_card_messageWeight (w : ℕ) :
       LinearEquiv.coe_toEquiv] using hammingNorm_encoding_labels hF hω (a 0) (a 1) (a 2)
   rw [Set.weightDistribution_def, ← Nat.card_eq_fintype_card]
   apply Nat.card_congr
-  exact (Equiv.subtypeSubtypeEquivSubtypeInter (fun x ↦ x ∈ code ω)
+  exact (Equiv.subtypeSubtypeEquivSubtypeInter (fun x ↦ x ∈ TauCeti.Hexacode.code ω)
     (fun x ↦ hammingNorm x = w)).symm.trans
       (e.subtypeEquiv (fun a ↦ by rw [he])).symm
 
@@ -86,7 +86,7 @@ include hF hω
 /-- The hexacode has one word of weight zero, 45 of weight four, and 18 of weight six. -/
 @[simp]
 theorem weightDistribution_code (w : ℕ) :
-    (code ω : Set (Fin 6 → F)).weightDistribution w =
+    (TauCeti.Hexacode.code ω : Set (Fin 6 → F)).weightDistribution w =
       if w = 0 then 1 else if w = 4 then 45 else if w = 6 then 18 else 0 := by
   rw [weightDistribution_eq_card_messageWeight (Nat.card_eq_fintype_card.trans hF) hω]
   have hcounts : ∀ w : Fin 7,
@@ -105,9 +105,11 @@ theorem weightDistribution_code (w : ℕ) :
 
 /-- Only weights zero, four and six occur in the hexacode. -/
 theorem hammingNorm_eq_zero_or_eq_four_or_eq_six_of_mem_code
-    {x : Fin 6 → F} (hx : x ∈ code ω) :
+    {x : Fin 6 → F} (hx : x ∈ TauCeti.Hexacode.code ω) :
     hammingNorm x = 0 ∨ hammingNorm x = 4 ∨ hammingNorm x = 6 := by
-  have h := (Set.weightDistribution_ne_zero_iff (Set.toFinite (code ω : Set (Fin 6 → F)))).mpr
+  have h :=
+    (Set.weightDistribution_ne_zero_iff
+      (Set.toFinite (TauCeti.Hexacode.code ω : Set (Fin 6 → F)))).mpr
     ⟨x, hx, rfl⟩
   rw [weightDistribution_code hF hω] at h
   split_ifs at h <;> simp_all
@@ -115,7 +117,7 @@ theorem hammingNorm_eq_zero_or_eq_four_or_eq_six_of_mem_code
 /-- The homogeneous weight enumerator of the hexacode. -/
 @[simp]
 theorem weightEnumerator_code :
-    (code ω : Set (Fin 6 → F)).weightEnumerator =
+    (TauCeti.Hexacode.code ω : Set (Fin 6 → F)).weightEnumerator =
       MvPolynomial.X 0 ^ 6 + 45 * MvPolynomial.X 0 ^ 2 * MvPolynomial.X 1 ^ 4 +
         18 * MvPolynomial.X 1 ^ 6 := by
   simp [Set.weightEnumerator_def, weightDistribution_code hF hω, Finset.sum_range_succ]
@@ -123,20 +125,20 @@ theorem weightEnumerator_code :
 /-- The one-variable weight enumerator of the hexacode. -/
 @[simp]
 theorem weightPolynomial_code :
-    (code ω : Set (Fin 6 → F)).weightPolynomial =
+    (TauCeti.Hexacode.code ω : Set (Fin 6 → F)).weightPolynomial =
       1 + 45 * Polynomial.X ^ 4 + 18 * Polynomial.X ^ 6 := by
   rw [← Set.aeval_weightEnumerator, weightEnumerator_code hF hω]
   simp
 
 /-- The hexacode has minimum Hamming distance four. -/
 @[simp]
-theorem hammingMinDist_code : (code ω : Set (Fin 6 → F)).hammingMinDist = 4 := by
+theorem hammingMinDist_code : (TauCeti.Hexacode.code ω : Set (Fin 6 → F)).hammingMinDist = 4 := by
   have hmin := Set.hammingMinDist_eq_sInf_weightDistribution
-    (E := (code ω).toAddSubgroup) (Set.toFinite _)
+    (E := (TauCeti.Hexacode.code ω).toAddSubgroup) (Set.toFinite _)
   simp only [Submodule.coe_toAddSubgroup] at hmin
   rw [hmin]
   have hweights : {w : ℕ | 0 < w ∧
-      (code ω : Set (Fin 6 → F)).weightDistribution w ≠ 0} = {4, 6} := by
+      (TauCeti.Hexacode.code ω : Set (Fin 6 → F)).weightDistribution w ≠ 0} = {4, 6} := by
     ext w
     simp only [weightDistribution_code hF hω, Set.mem_ofPred_eq, Set.mem_insert_iff,
       Set.mem_singleton_iff]
@@ -153,7 +155,7 @@ theorem weightDistribution_galoisFieldCode [DecidableEq (GaloisField 2 2)] (w : 
   let := Fintype.ofFinite (GaloisField 2 2)
   rw [galoisFieldCode_def]
   exact weightDistribution_code
-    card_galoisField_two_two
+    (by simpa only [Nat.card_eq_fintype_card, Nat.reducePow] using GaloisField.card 2 2 (by decide))
     omega_sq_add_omega_add_one w
 
 omit hF hω in
@@ -166,7 +168,7 @@ theorem weightEnumerator_galoisFieldCode [DecidableEq (GaloisField 2 2)] :
   let := Fintype.ofFinite (GaloisField 2 2)
   rw [galoisFieldCode_def]
   exact weightEnumerator_code
-    card_galoisField_two_two
+    (by simpa only [Nat.card_eq_fintype_card, Nat.reducePow] using GaloisField.card 2 2 (by decide))
     omega_sq_add_omega_add_one
 
 omit hF hω in
@@ -178,7 +180,7 @@ theorem weightPolynomial_galoisFieldCode [DecidableEq (GaloisField 2 2)] :
   let := Fintype.ofFinite (GaloisField 2 2)
   rw [galoisFieldCode_def]
   exact weightPolynomial_code
-    card_galoisField_two_two
+    (by simpa only [Nat.card_eq_fintype_card, Nat.reducePow] using GaloisField.card 2 2 (by decide))
     omega_sq_add_omega_add_one
 
 omit hF hω in
@@ -189,7 +191,7 @@ theorem hammingMinDist_galoisFieldCode [DecidableEq (GaloisField 2 2)] :
   let := Fintype.ofFinite (GaloisField 2 2)
   rw [galoisFieldCode_def]
   exact hammingMinDist_code
-    card_galoisField_two_two
+    (by simpa only [Nat.card_eq_fintype_card, Nat.reducePow] using GaloisField.card 2 2 (by decide))
     omega_sq_add_omega_add_one
 
 end TauCeti.Hexacode

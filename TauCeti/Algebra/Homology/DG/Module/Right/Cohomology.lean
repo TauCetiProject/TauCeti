@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import TauCeti.Algebra.Homology.DG.Algebra.Cohomology
 public import TauCeti.Algebra.Homology.DG.Module.Right.Defs
+public import TauCeti.Algebra.Module.GradedModule.Quotient
 
 /-!
 # The cohomology of a differential graded right module
@@ -24,7 +25,10 @@ in types and ensures that multiplication in the opposite ring encodes the usual 
 associativity law.
 
 The cycles inherit the grading of `M`. Their homogeneous pieces form an internal direct sum and
-make them a graded right module over the graded algebra of cycles.
+make them a graded right module over the graded algebra of cycles. The boundaries are homogeneous,
+so the grading descends to `H(M)`: its degree-`p` piece `H^p(M)` consists of the classes of the
+homogeneous cycles of degree `p`, and `H(M)` is the internal direct sum of the `H^p(M)`. A class of
+`H(A)` of degree `i` moves `H^p(M)` into `H^{p+i}(M)`.
 
 This development adapts the left-module construction in
 `TauCeti.Algebra.Homology.DG.Module.Cohomology` to right modules via opposite rings.
@@ -35,6 +39,7 @@ This development adapts the left-module construction in
 * `TauCeti.IsDGRightModule.boundaries`: module boundaries inside the cycles.
 * `TauCeti.IsDGRightModule.Cohomology`: cycles modulo boundaries.
 * `TauCeti.IsDGRightModule.cyclesDeg`: the homogeneous cycles of a fixed degree.
+* `TauCeti.IsDGRightModule.cohomologyGrading`: the classes of homogeneous cycles of a fixed degree.
 * `TauCeti.IsDGRightModule.cohomologyAction`: the action of `H(A)` on `H(M)`, as an algebra map to
   the opposite of the endomorphism algebra.
 
@@ -47,6 +52,10 @@ This development adapts the left-module construction in
   graded algebra of cycles.
 * `TauCeti.IsDGRightModule.isInternal_cyclesDeg`: the homogeneous cycle spaces form an internal
   direct sum.
+* `TauCeti.IsDGRightModule.isInternal_cohomologyGrading`: module cohomology is the internal direct
+  sum of its homogeneous pieces.
+* `TauCeti.IsDGRightModule.cohomologyAction_apply_mem_cohomologyGrading`: the action of `H(A)` on
+  `H(M)` adds degrees.
 
 ## References
 
@@ -307,6 +316,68 @@ theorem cohomologyAction_mk (hM : IsDGRightModule h ℳ dM) (z : h.cycles) (x : 
   (rfl)
 
 end Action
+
+section CohomologyGrading
+
+/-- The module boundaries are homogeneous in the inherited grading of the cycles. -/
+theorem isHomogeneous_boundaries (hM : IsDGRightModule h ℳ dM) :
+    SetLike.IsHomogeneous hM.cyclesDeg hM.boundaries := fun p z hz ↦ by
+  rw [mem_boundaries] at hz ⊢
+  rw [coe_decompose_cyclesDeg]
+  exact hM.decompose_mem_range hz p
+
+/-- The degree-`p` piece `H^p(M)` of module cohomology: the classes of the homogeneous cycles of
+degree `p`. -/
+noncomputable def cohomologyGrading (hM : IsDGRightModule h ℳ dM) (p : ℤ) :
+    Submodule R hM.Cohomology :=
+  (hM.cyclesDeg p).map (hM.boundaries.mkQ.restrictScalars R)
+
+/-- A module cohomology class has degree `p` exactly when it is the class of a homogeneous cycle
+of degree `p`. -/
+theorem mem_cohomologyGrading (hM : IsDGRightModule h ℳ dM) {p : ℤ} {x : hM.Cohomology} :
+    x ∈ hM.cohomologyGrading p ↔
+      ∃ z : hM.cycles, (z : M) ∈ ℳ p ∧ Submodule.Quotient.mk z = x := by
+  simp [cohomologyGrading]
+
+/-- The class of a homogeneous cycle of degree `p` has degree `p`. -/
+theorem quotientMk_mem_cohomologyGrading (hM : IsDGRightModule h ℳ dM) {p : ℤ}
+    {z : hM.cycles} (hz : (z : M) ∈ ℳ p) :
+    (Submodule.Quotient.mk z : hM.Cohomology) ∈ hM.cohomologyGrading p :=
+  hM.mem_cohomologyGrading.mpr ⟨z, hz, rfl⟩
+
+/-- **Module cohomology is graded**: it is the internal direct sum of its homogeneous pieces. -/
+theorem isInternal_cohomologyGrading (hM : IsDGRightModule h ℳ dM) :
+    DirectSum.IsInternal hM.cohomologyGrading := by
+  -- Descend the grading of the cycles to the quotient by the boundaries as `R`-submodule, and
+  -- transport it to `H(M)`, the quotient by the boundaries as a right submodule.
+  let G := ((InternalGrading.ofDecomposition hM.cyclesDeg).quotient
+      (hM.boundaries.restrictScalars R) ((InternalGrading.isHomogeneous_ofDecomposition_piece_iff
+        _ _).mpr hM.isHomogeneous_boundaries)).map
+    (Submodule.Quotient.restrictScalarsEquiv R hM.boundaries)
+  have hG : G.piece = hM.cohomologyGrading := funext fun p ↦ by
+    simp only [G, InternalGrading.map_piece, InternalGrading.quotient_piece,
+      InternalGrading.ofDecomposition_piece, cohomologyGrading, ← Submodule.map_comp]
+    exact congrArg (Submodule.map · _) (LinearMap.ext fun z ↦
+      Submodule.Quotient.restrictScalarsEquiv_mk R hM.boundaries z)
+  exact hG ▸ G.isInternal
+
+/-- The decomposition of module cohomology into its homogeneous pieces. -/
+noncomputable instance instDecompositionCohomologyGrading (hM : IsDGRightModule h ℳ dM) :
+    DirectSum.Decomposition hM.cohomologyGrading :=
+  hM.isInternal_cohomologyGrading.chooseDecomposition
+
+/-- **The action of the cohomology algebra adds degrees**: a class of degree `i` sends a module
+cohomology class of degree `p` to one of degree `p + i`. -/
+theorem cohomologyAction_apply_mem_cohomologyGrading (hM : IsDGRightModule h ℳ dM) {i p : ℤ}
+    {c : h.Cohomology} (hc : c ∈ h.cohomologyGrading i) {x : hM.Cohomology}
+    (hx : x ∈ hM.cohomologyGrading p) :
+    (hM.cohomologyAction c).unop x ∈ hM.cohomologyGrading (p + i) := by
+  obtain ⟨w, hw, rfl⟩ := h.mem_cohomologyGrading.mp hc
+  obtain ⟨z, hz, rfl⟩ := hM.mem_cohomologyGrading.mp hx
+  rw [cohomologyAction_mk, ← Submodule.Quotient.mk_smul]
+  exact hM.quotientMk_mem_cohomologyGrading (op_smul_mem_of_mem_graded hw hz)
+
+end CohomologyGrading
 
 end IsDGRightModule
 

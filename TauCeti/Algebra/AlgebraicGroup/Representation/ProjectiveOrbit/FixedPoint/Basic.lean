@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.AffineChart
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Scheme
-import Mathlib.AlgebraicGeometry.Morphisms.Proper
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 
 /-!
@@ -78,14 +77,10 @@ theorem isFinite_projectiveOrbitToSpec_of_isClosed_of_isSolvable
     (m : M) (hm : Module.IsUnimodular k m)
     (hclosed : IsClosed (Set.range (projectiveOrbitMap (H := H) m hm))) :
     IsFinite (projectiveOrbitToSpec (H := H) m hm) := by
-  let i := projectiveOrbitι (H := H) m hm
-  let _ : IsClosedImmersion i := IsClosedImmersion.of_isPreimmersion i (by
-    simpa only [i, range_projectiveOrbitι] using hclosed)
   let _ : IsAffine (projectiveOrbitScheme (H := H) m hm) :=
     isAffine_projectiveOrbitScheme_of_isClosed_of_isSolvable m hm hclosed
-  let _ : IsProper (projectiveOrbitToSpec (H := H) m hm) := by
-    rw [projectiveOrbitToSpec_def]
-    infer_instance
+  let _ : IsProper (projectiveOrbitToSpec (H := H) m hm) :=
+    isProper_projectiveOrbitToSpec_of_isClosed M m hm hclosed
   exact IsFinite.iff_isProper_and_isAffineHom.mpr ⟨inferInstance, inferInstance⟩
 
 /-- The scheme of a closed projective orbit of a reduced connected solvable affine group has at

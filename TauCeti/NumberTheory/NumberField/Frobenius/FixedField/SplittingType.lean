@@ -54,7 +54,7 @@ theorem fullCycleType_toPerm_quotient_eq_map_inertiaDeg
         (fun P => P.1.inertiaDeg (𝓞 K)) := by
   have : Q.IsMaximal := IsMaximal.of_liesOver_isMaximal Q p
   rw [fullCycleType_toPerm_eq_map_card_orbit (X := (L ≃ₐ[K] L) ⧸ H) σ,
-    zpowers_eq_stabilizer_of_isArithFrobAt Q hσ.ne_bot hσ,
+    zpowers_eq_stabilizer_of_isArithFrobAt Q hσ,
     map_card_orbit_stabilizer_eq_map_ramificationIdx_mul_inertiaDeg p Q H (𝓞 ↥(fixedField H))]
   apply Multiset.map_congr rfl
   intro P _

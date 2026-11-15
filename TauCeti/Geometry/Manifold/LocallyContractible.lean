@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
 public import Mathlib.Topology.Homotopy.LocallyContractible
 import Mathlib.Analysis.Convex.Contractible
@@ -17,7 +18,8 @@ Every point of a real manifold, possibly with boundary or corners, has a basis o
 neighbourhoods. The model space `H` of a real model with corners `I` is homeomorphic to the convex
 set `range I`, whose intersections with balls are convex and hence contractible
 (`ModelWithCorners.stronglyLocallyContractibleSpace`), and a charted space inherits this property
-from its model through the inverse charts (`ChartedSpace.stronglyLocallyContractibleSpace`).
+from its model through the inverse charts (`ChartedSpace.stronglyLocallyContractibleSpace`). The
+circle is an instance (`instStronglyLocallyContractibleSpaceCircle`).
 
 In particular every point of a manifold has arbitrarily small open neighbourhoods whose inclusion
 is nullhomotopic, which is what makes small neighbourhoods of finitely many points categorical in
@@ -55,3 +57,9 @@ theorem ChartedSpace.stronglyLocallyContractibleSpace (H : Type*) [TopologicalSp
     exact (contractible_subset_basis (chartAt H x).open_target (mem_chart_target H x)).map _
   · exact ((chartAt H x).symm.homeomorphOfImageSubsetSource (by simpa using hst)
       rfl).contractibleSpace_iff.mp hs
+
+/-- The circle is strongly locally contractible, as a manifold modelled on
+`EuclideanSpace ℝ (Fin 1)`. -/
+instance instStronglyLocallyContractibleSpaceCircle : StronglyLocallyContractibleSpace Circle :=
+  have := (modelWithCornersSelf ℝ (EuclideanSpace ℝ (Fin 1))).stronglyLocallyContractibleSpace
+  ChartedSpace.stronglyLocallyContractibleSpace (EuclideanSpace ℝ (Fin 1)) Circle

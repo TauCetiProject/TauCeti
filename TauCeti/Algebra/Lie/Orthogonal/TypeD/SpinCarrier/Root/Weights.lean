@@ -138,12 +138,8 @@ theorem rootGeneratorWeight_mem_nontrivialAdjointWeights (k : Fin n ⊕ Fin n) :
       Derivation.nontrivialAdjointWeights (weightTorusIntegralCoordinateMap n hn).hom := by
   rw [Derivation.mem_nontrivialAdjointWeights]
   refine ⟨?_, ?_⟩
-  · intro h
-    have hdiag := congrArg
-      (fun c : Multiplicative (Fin n →₀ ℤ) ↦ Multiplicative.toAdd c (Sum.elim id id k)) h
-    simp only [SplitTorus.toAdd_weightCharacter, toAdd_one, Finsupp.zero_apply] at hdiag
-    cases k <;> simp [TypeDStd.rootGeneratorWeight_inl, TypeDStd.rootGeneratorWeight_inr,
-      CartanMatrix.D_diag] at hdiag
+  · exact SplitTorus.weightCharacter_eq_one_iff.not.2
+      (TypeDStd.rootGeneratorWeight_ne_zero n k)
   · intro hbot
     have hv := rootVector_mem_adjointWeightSpace n hn k
     rw [hbot, Submodule.mem_bot] at hv

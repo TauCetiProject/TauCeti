@@ -70,7 +70,6 @@ theorem weightedPBWRepresentation_apply_mk (N : ℕ) (x : L) (a : U) :
   rw [weightedPBWRepresentation_apply, ← map_mul]
 
 /-- A Lie element acts by zero precisely when its canonical image lies in the weighted ideal. -/
-@[simp]
 theorem weightedPBWRepresentation_eq_zero_iff (N : ℕ) (x : L) :
     b.weightedPBWRepresentation w hbracket N x = 0 ↔
       _root_.UniversalEnvelopingAlgebra.ι R x ∈ J N := by

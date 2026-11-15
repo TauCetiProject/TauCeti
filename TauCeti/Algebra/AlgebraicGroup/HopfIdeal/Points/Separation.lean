@@ -26,6 +26,8 @@ two reduced finite-type closed subgroups with the same points have the same defi
   the reverse inclusion of their algebraically closed point subgroups.
 * `TauCeti.HopfIdeal.eq_of_quotientPointsSubgroup_eq`: reduced finite-type closed subgroups are
   determined by their algebraically closed points.
+* `TauCeti.HopfIdeal.eq_of_le_of_isCocomm_of_maximal_points`: a maximal commutative subgroup
+  of geometric points rules out larger reduced commutative closed subgroups.
 
 ## References
 
@@ -93,6 +95,33 @@ theorem eq_of_quotientPointsSubgroup_eq
     rw [hpoints]
   · apply le_of_quotientPointsSubgroup_le (K := K)
     rw [hpoints]
+
+/-- A reduced commutative closed overgroup is determined by a maximal commutative subgroup
+of geometric points, even when those points are embedded into another group. Only the competing
+quotient needs to be reduced and of finite type. -/
+theorem eq_of_le_of_isCocomm_of_maximal_points
+    {G : Type*} [Group G] (T : HopfIdeal k H)
+    (φ : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k K) →* G)
+    (hφ : Function.Injective φ) {S : Subgroup G}
+    (hT : (CommHopfAlgCat.quotientPointsSubgroup H T (CommAlgCat.of k K)).map φ = S)
+    (hmax : ∀ (P : Subgroup G) [IsMulCommutative P], S ≤ P → P = S)
+    (I : HopfIdeal k H)
+    [Algebra.FiniteType k (CommHopfAlgCat.quotient H I)]
+    [IsReduced (CommHopfAlgCat.quotient H I)]
+    [Coalgebra.IsCocomm k (CommHopfAlgCat.quotient H I)]
+    (hI : I ≤ T) : I = T := by
+  let GI := CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k K)
+  let _ : IsMulCommutative GI :=
+    CommHopfAlgCat.instIsMulCommutativeQuotientPointsSubgroup H I (CommAlgCat.of k K)
+  let _ : IsMulCommutative (GI.map φ) := Subgroup.map_isMulCommutative GI φ
+  have hmap : GI.map φ =
+      (CommHopfAlgCat.quotientPointsSubgroup H T (CommAlgCat.of k K)).map φ := by
+    rw [hT]
+    apply hmax
+    rw [← hT]
+    exact Subgroup.map_mono (CommHopfAlgCat.quotientPointsSubgroup_le_of_le H hI _)
+  have hpoints := Subgroup.map_injective hφ hmap
+  exact le_antisymm hI (le_of_quotientPointsSubgroup_le hpoints.le)
 
 end HopfIdeal
 

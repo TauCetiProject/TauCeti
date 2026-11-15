@@ -170,6 +170,16 @@ theorem symplecticSpecialIsogeny_apply (g : Matrix (Fin 4) (Fin 4) R) (i j : Fin
   rw [symplecticSpecialIsogeny]
   rfl
 
+/-- On a diagonal matrix, the special-isogeny minors are the products of the two diagonal
+entries at each retained coordinate pair. This identity holds over every commutative ring. -/
+@[simp]
+theorem symplecticSpecialIsogeny_diagonal (d : Fin 4 → R) :
+    symplecticSpecialIsogeny (diagonal d) =
+      diagonal (fun i => d (specialIsogenyPair i).1 * d (specialIsogenyPair i).2) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [symplecticSpecialIsogeny_apply, pairMinor_eq]
+
 /-- The special isogeny is multiplicative on symplectic matrices in characteristic two. -/
 theorem symplecticSpecialIsogeny_mul [CharP R 2] {g h : Matrix (Fin 4) (Fin 4) R}
     (hg : g * JFin 2 R * gᵀ = JFin 2 R) (hh : h * JFin 2 R * hᵀ = JFin 2 R) :
@@ -210,7 +220,7 @@ theorem symplecticSpecialIsogeny_neg_jFin_mul_transpose_mul_jFin [CharP R 2]
       symplecticSpecialIsogeny_apply, specialIsogenyPair_zero, specialIsogenyPair_one,
       specialIsogenyPair_two, specialIsogenyPair_three, pairMinor_eq, of_apply, cons_val',
       cons_val, cons_val_zero, cons_val_one, cons_val_fin_one] <;>
-    (try simp only [CharTwo.neg_eq, CharTwo.sub_eq_add]) <;> ring
+    (simp only [CharTwo.neg_eq, CharTwo.sub_eq_add]) <;> ring
 
 /-- The special isogeny of a symplectic matrix is symplectic. -/
 theorem symplecticSpecialIsogeny_mul_jFin_mul_transpose [CharP R 2]

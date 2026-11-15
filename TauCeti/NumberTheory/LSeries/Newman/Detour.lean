@@ -181,8 +181,7 @@ theorem exists_convex_newmanDetour_subset {Ω : Set ℂ} (hΩ : IsOpen Ω)
       rw [circleMap_zero_re]
       exact mul_nonneg hR (Real.cos_nonneg_of_mem_Icc ⟨by linarith [hθ.1], hθ.2⟩)
     refine ⟨?_, ?_, ?_⟩ <;> simp only [mem_ofPred_eq] <;> linarith [him.1, him.2]
-  · have hs2 : 1 - s ^ 2 ≤ 1 := by nlinarith
-    have hs2' : 0 ≤ 1 - s ^ 2 := by nlinarith [hs.1, hs.2]
+  · have _ : 1 - s ^ 2 ≤ 1 := by nlinarith
     have hRs : |R * s| ≤ R := by
       rw [abs_mul, abs_of_nonneg hR]
       exact mul_le_of_le_one_right hR (abs_le.mpr hs)

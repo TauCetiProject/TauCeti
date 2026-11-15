@@ -129,7 +129,8 @@ private theorem weightLeviDefiningIdeal_le_ker_ambientToCoordinateRing
     (weightLeviDefiningHopfIdeal R w).toIdeal ≤
       RingHom.ker (weightLeviAmbientToCoordinateRing R w).toRingHom :=
   weightLeviDefiningHopfIdeal_toIdeal_le_ker R w _ fun i j hij ↦ by
-    rw [← genericMatrix_apply, weightLeviAmbientToCoordinateRing_genericMatrix_apply,
+    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ← genericMatrix_apply,
+      weightLeviAmbientToCoordinateRing_genericMatrix_apply,
       weightLeviLocalizedGenericMatrix_apply_of_ne R w hij]
 
 /-- The weight-Levi quotient maps to its localized block coordinates. -/

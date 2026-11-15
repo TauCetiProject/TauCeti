@@ -68,7 +68,7 @@ theorem setOf_isOpen_eq_zeroLocus (B : Subring A) :
     {q : PrimeSpectrum B | IsOpen (q.asIdeal : Set B)} =
       PrimeSpectrum.zeroLocus {s : B | IsTopologicallyNilpotent (s : A)} := by
   ext q
-  exact isOpen_iff_setOf_isTopologicallyNilpotent_coe_subset_of_isPrime
+  exact isOpen_iff_setOf_isTopologicallyNilpotent_coe_subset_of_isRadical q.isPrime.isRadical
 
 /-- **Huber, *Continuous valuations*, Lemma 3.7: the open primes of a subring of a Huber ring form
 a Zariski closed subset of its spectrum.** -/
@@ -96,7 +96,8 @@ theorem nonOpenPrimes_eq_iSup_basicOpen (B : Subring A) :
       ⨆ s : {s : B // IsTopologicallyNilpotent (s : A)}, PrimeSpectrum.basicOpen s.1 := by
   refine SetLike.ext fun q ↦
     ((B.mem_nonOpenPrimes).trans ?_).trans TopologicalSpace.Opens.mem_iSup.symm
-  rw [isOpen_iff_setOf_isTopologicallyNilpotent_coe_subset_of_isPrime, Set.not_subset]
+  rw [isOpen_iff_setOf_isTopologicallyNilpotent_coe_subset_of_isRadical q.isPrime.isRadical,
+    Set.not_subset]
   simp
 
 omit [IsHuberRing A] in

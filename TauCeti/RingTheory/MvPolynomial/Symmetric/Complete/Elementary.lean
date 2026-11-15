@@ -43,6 +43,10 @@ Determinantal formulas index `h` and `e` by integers, with `h_m = e_m = 0` for `
 * `TauCeti.hsymmToeplitz_mul_esymmToeplitz`: they are inverse to each other.
 * `TauCeti.det_hsymmToeplitz`, `TauCeti.det_esymmToeplitz`: both matrices are upper
   unitriangular, so both have determinant `1`.
+* `TauCeti.esymmToeplitz_apply_eq_neg_one_pow_mul`: the sign of an entry of the signed `e`
+  Toeplitz matrix splits as a row factor times a column factor.
+* `TauCeti.det_submatrix_esymmToeplitz`: consequently a minor of the signed `e` Toeplitz matrix is
+  a product of signs times the corresponding minor of `TauCeti.esymmInt`.
 
 ## References
 
@@ -221,6 +225,57 @@ theorem det_esymmToeplitz (n : ℕ) : (esymmToeplitz σ R n).det = 1 := by
       have : (j : ℤ) < (i : ℤ) := by exact_mod_cast hij
       linarith
     rw [esymmToeplitz_apply, esymmInt_of_neg h, mul_zero]
+
+omit [DecidableEq σ] in
+/-- The sign carried by an entry of the signed elementary Toeplitz matrix splits as a factor
+depending only on the row and a factor depending only on the column. Below the diagonal the
+entry vanishes, so the two sides agree there as well. -/
+theorem esymmToeplitz_apply_eq_neg_one_pow_mul (N : ℕ) (i j : Fin N) :
+    esymmToeplitz σ R N i j =
+      (-1 : MvPolynomial σ R) ^ (i : ℕ) *
+        ((-1 : MvPolynomial σ R) ^ (j : ℕ) * esymmInt σ R ((j : ℤ) - i)) := by
+  rw [esymmToeplitz_apply]
+  rcases le_or_gt (i : ℕ) (j : ℕ) with hij | hij
+  · have htoNat : ((j : ℤ) - i).toNat = (j : ℕ) - (i : ℕ) := by omega
+    have hsum : (i : ℕ) + (j : ℕ) = ((j : ℕ) - (i : ℕ)) + 2 * (i : ℕ) := by omega
+    have hpow : (-1 : MvPolynomial σ R) ^ ((j : ℕ) - (i : ℕ)) =
+        (-1 : MvPolynomial σ R) ^ (i : ℕ) * (-1 : MvPolynomial σ R) ^ (j : ℕ) := by
+      rw [← pow_add, hsum, pow_add, pow_mul]
+      simp
+    rw [htoNat, hpow, mul_assoc]
+  · have hneg : ((j : ℤ) - i) < 0 := by omega
+    rw [esymmInt_of_neg hneg, mul_zero, mul_zero, mul_zero]
+
+omit [DecidableEq σ] in
+/-- A minor of the signed elementary Toeplitz matrix is a product of signs, one per row and one
+per column, times the corresponding minor of the integer-indexed elementary symmetric
+polynomials. -/
+theorem det_submatrix_esymmToeplitz {ι : Type*} [Fintype ι] [DecidableEq ι] (N : ℕ)
+    (f g : ι → Fin N) :
+    ((esymmToeplitz σ R N).submatrix f g).det =
+      (∏ i, (-1 : MvPolynomial σ R) ^ ((f i : ℕ))) *
+        (Matrix.of fun i j : ι => esymmInt σ R ((g j : ℤ) - f i)).det *
+          ∏ j, (-1 : MvPolynomial σ R) ^ ((g j : ℕ)) := by
+  -- Every entry is a row sign times a column sign times an entry of the unsigned family, so the
+  -- two determinant scaling lemmas peel the signs off one side at a time.
+  have hentries : (esymmToeplitz σ R N).submatrix f g =
+      Matrix.of fun i j : ι => (-1 : MvPolynomial σ R) ^ ((f i : ℕ)) *
+        ((-1 : MvPolynomial σ R) ^ ((g j : ℕ)) * esymmInt σ R ((g j : ℤ) - f i)) :=
+    Matrix.ext fun i j => esymmToeplitz_apply_eq_neg_one_pow_mul σ R N (f i) (g j)
+  have hcol : (Matrix.of fun i j : ι => (-1 : MvPolynomial σ R) ^ ((f i : ℕ)) *
+        ((-1 : MvPolynomial σ R) ^ ((g j : ℕ)) * esymmInt σ R ((g j : ℤ) - f i))).det =
+      (∏ i, (-1 : MvPolynomial σ R) ^ ((f i : ℕ))) *
+        (Matrix.of fun i j : ι =>
+          (-1 : MvPolynomial σ R) ^ ((g j : ℕ)) * esymmInt σ R ((g j : ℤ) - f i)).det :=
+    Matrix.det_mul_column _ (Matrix.of fun i j : ι =>
+      (-1 : MvPolynomial σ R) ^ ((g j : ℕ)) * esymmInt σ R ((g j : ℤ) - f i))
+  have hrow : (Matrix.of fun i j : ι =>
+        (-1 : MvPolynomial σ R) ^ ((g j : ℕ)) * esymmInt σ R ((g j : ℤ) - f i)).det =
+      (∏ j, (-1 : MvPolynomial σ R) ^ ((g j : ℕ))) *
+        (Matrix.of fun i j : ι => esymmInt σ R ((g j : ℤ) - f i)).det :=
+    Matrix.det_mul_row _ (Matrix.of fun i j : ι => esymmInt σ R ((g j : ℤ) - f i))
+  rw [hentries, hcol, hrow]
+  ring
 
 end Toeplitz
 

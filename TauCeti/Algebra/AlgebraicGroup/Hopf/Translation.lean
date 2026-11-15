@@ -193,7 +193,7 @@ theorem rightTranslationAlgEquiv_mul (g h : WithConv (H →ₐ[k] k)) :
     _ = (rightTranslationLinearEquiv g * rightTranslationLinearEquiv h) x :=
       LinearEquiv.congr_fun (rightTranslationLinearEquiv_mul g h) x
     _ = rightTranslationLinearEquiv g (rightTranslationLinearEquiv h x) :=
-      LinearEquiv.mul_apply _ _ x
+      mul_apply_eq_comp _ _ x
     _ = rightTranslationLinearEquiv g (rightTranslationAlgEquiv h x) :=
       congrArg (rightTranslationLinearEquiv g)
         (LinearEquiv.congr_fun (rightTranslationAlgEquiv_toLinearEquiv h) x).symm
@@ -320,9 +320,9 @@ theorem rightTranslationHomeomorph_apply (g : WithConv (H →ₐ[k] k))
 
 end CommRing
 
-section Field
+section IsDomain
 
-variable {k : Type u} [Field k]
+variable {k : Type u} [CommRing k] [IsDomain k]
 variable {H : Type v} [CommRing H] [_root_.HopfAlgebra k H]
 
 /-- Contraction of the augmentation point along right translation gives the translating point. -/
@@ -340,7 +340,7 @@ theorem comap_rightTranslationAlgEquiv_augmentationPoint
   rw [rightTranslationAlgEquiv_toAlgHom, AlgHom.comap_kernelPoint,
     counitAlgHom_comp_rightTranslationAlgHom]
 
-end Field
+end IsDomain
 
 end TauCeti.HopfAlgebra
 

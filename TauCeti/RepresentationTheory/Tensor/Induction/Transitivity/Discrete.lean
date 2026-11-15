@@ -30,6 +30,8 @@ exactly as required by the tensor-induction functors.
   representations.
 * `TauCeti.smoothTensorInducedTransitivityIso`: the comparison for smooth discrete
   representations.
+* `TauCeti.smoothResSubgroupOf`, `TauCeti.smoothTensorInducedSubgroupOf`: the restriction of the
+  coefficients to `V.subgroupOf U` and the intermediate tensor-induced coefficients `Ind⊗_V^U A`.
 
 ## References
 
@@ -40,6 +42,7 @@ exactly as required by the tensor-induction functors.
 public section
 
 open CategoryTheory
+open scoped TensorProduct
 
 universe u v w
 
@@ -206,6 +209,20 @@ noncomputable def smoothTensorInducedTransitivityIso
   exact DiscreteRep.tensorInducedTransitivityIso_inv_apply_tprod hVU s t hU hV
     ((ofSmoothDiscrete R V).obj A) m
 
+/-- The inverse of smooth transitivity is the inverse algebraic regrouping equivalence. -/
+theorem smoothTensorInducedTransitivityIso_inv_hom_hom_apply
+    (A : SmoothDiscreteTopRep.{u, v, w} R V) :
+    letI : V.FiniteIndex := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
+    ∀ x : ((toSmoothDiscrete R G).obj (DiscreteRep.tensorInduced V hV
+      (Subgroup.compositeLeftTransversal hVU s t) ((ofSmoothDiscrete R V).obj A))).obj.V,
+    (smoothTensorInducedTransitivityIso hVU s t hU hV A).inv.hom.hom x =
+      (Subgroup.tensorInducedTransitivityLinearEquiv (R := R) (M := A.obj.V) hVU s).symm x := by
+  let _ : V.FiniteIndex := Subgroup.finiteIndex_of_finiteIndex_subgroupOf V U
+  -- As for the pure-tensor rules: the smooth inverse is the discrete one by definition.
+  exact fun x ↦ (LinearMap.congr_fun (DiscreteRep.tensorInducedTransitivityIso_inv_toLinearMap hVU s
+    t hU hV ((ofSmoothDiscrete R V).obj A)) x).trans (congrArg (fun e ↦ e.symm x)
+      (Subgroup.tensorInducedTransitivity_toLinearEquiv hVU s t ((ofSmoothDiscrete R V).obj A).ρ))
+
 /-- The smooth tensor-induction transitivity comparison is natural in the coefficient
 representation. -/
 @[reassoc]
@@ -233,5 +250,30 @@ theorem smoothTensorInducedTransitivityIso_hom_naturality
   -- intertwining maps are those of the discrete naturality square.
   exact DiscreteRep.tensorInducedTransitivityIso_hom_naturality hVU s t hU hV
     ((ofSmoothDiscrete R V).map f)
+
+/-- The restriction of a smooth discrete `V`-representation to `V.subgroupOf U`, along the
+canonical isomorphism `V.subgroupOf U ≃* V`: the coefficients that are tensor-induced from
+`V.subgroupOf U` to `U` in the inner tensor induction of
+`TauCeti.smoothTensorInducedTransitivityIso`. -/
+noncomputable abbrev smoothResSubgroupOf (A : SmoothDiscreteTopRep.{u, v, w} R V) :
+    SmoothDiscreteTopRep.{u, v, w} R (V.subgroupOf U) :=
+  (smoothResFunctor R (Subgroup.subgroupOfEquivOfLe hVU : V.subgroupOf U →* V)
+    (Subgroup.continuous_subgroupOfEquivOfLe hVU)).obj A
+
+/-- The **intermediate tensor-induced coefficients** `Ind⊗_V^U A`, the tensor induction from
+`V.subgroupOf U` to `U` of the restriction of `A`: the inner tensor induction of
+`TauCeti.smoothTensorInducedTransitivityIso`. -/
+noncomputable abbrev smoothTensorInducedSubgroupOf (A : SmoothDiscreteTopRep.{u, v, w} R V) :
+    SmoothDiscreteTopRep.{u, v, max u v w} R U :=
+  (toSmoothDiscrete R U).obj (DiscreteRep.tensorInduced (V.subgroupOf U)
+    (U.subgroupOf_isOpen V hV) t ((ofSmoothDiscrete R _).obj (smoothResSubgroupOf hVU A)))
+
+omit [U.FiniteIndex] in
+/-- If every element of `A` is its own additive inverse, so is every element of the intermediate
+tensor-induced coefficients. -/
+theorem smoothTensorInducedSubgroupOf_add_self (A : SmoothDiscreteTopRep.{u, v, w} R V)
+    (hA : ∀ a : A.obj.V, a + a = 0) (a : (smoothTensorInducedSubgroupOf hVU t hV A).obj.V) :
+    a + a = 0 :=
+  PiTensorProduct.add_self_eq_zero a (QuotientGroup.mk 1) hA
 
 end TauCeti

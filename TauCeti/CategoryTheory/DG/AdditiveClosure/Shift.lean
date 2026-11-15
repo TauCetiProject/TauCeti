@@ -25,6 +25,10 @@ Koszul sign, `f ≫ σ_N = (-1)^(n * p) • σ_M ≫ f⟦n⟧` for `f` of degree
 comparison morphisms of shifts of twisted objects (see
 `TauCeti/CategoryTheory/DG/Twisted/Shift.lean`).
 
+A DG functor `F : C ⥤ D` induces a DG functor between the additive closures of the shift closures,
+sending `⊕ᵢ Xᵢ[rᵢ]` to `⊕ᵢ (F Xᵢ)[rᵢ]`.  It commutes with shifting every summand and preserves the
+comparison morphisms, since it is applied entrywise and preserves identities.
+
 ## Main definitions
 
 * `TauCeti.DGAdditiveClosure.toShift` and `TauCeti.DGAdditiveClosure.fromShift`: the diagonal
@@ -39,6 +43,10 @@ comparison morphisms of shifts of twisted objects (see
   `TauCeti.DGAdditiveClosure.dgComp_fromShift_toShift`: they are mutually inverse.
 * `TauCeti.DGAdditiveClosure.dgComp_toShift` and `TauCeti.DGAdditiveClosure.dgComp_fromShift`:
   they are natural up to the Koszul sign.
+* `CategoryTheory.EnrichedFunctor.mapDGShiftClosure_mapDGAdditiveClosure_dgMap_shiftFunctor`,
+  `CategoryTheory.EnrichedFunctor.mapDGShiftClosure_mapDGAdditiveClosure_dgMap_toShift` and
+  `CategoryTheory.EnrichedFunctor.mapDGShiftClosure_mapDGAdditiveClosure_dgMap_fromShift`: the DG
+  functor induced by a DG functor commutes with the shifts and preserves the comparison morphisms.
 
 ## References
 
@@ -217,3 +225,70 @@ theorem dgDifferential_fromShift (M : DGAdditiveClosure (DGShiftClosure C)) (n :
 end DGAdditiveClosure
 
 end TauCeti
+
+namespace CategoryTheory.EnrichedFunctor
+
+open TauCeti
+
+universe u₂
+
+/-! ### Functoriality -/
+
+variable {R : Type v} [CommRing R] {C : Type u} {D : Type u₂} [DGCategory R C] [DGCategory R D]
+  (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D)
+
+/-- The DG functor induced by `F` on additive closures of shift closures commutes with shifting
+every summand: a matrix of morphisms has the same image under the two composites. -/
+theorem mapDGShiftClosure_mapDGAdditiveClosure_dgMap_shiftFunctor (n : ℤ)
+    {M N : DGAdditiveClosure (DGShiftClosure C)} {p : ℤ} (f : DGHom R p M N) :
+    F.mapDGShiftClosure.mapDGAdditiveClosure.dgMap p
+        ((DGShiftClosure.shiftFunctor R n).mapDGAdditiveClosure.dgMap p f) =
+      (DGShiftClosure.shiftFunctor R n).mapDGAdditiveClosure.dgMap p
+        (F.mapDGShiftClosure.mapDGAdditiveClosure.dgMap p f) :=
+  DGAdditiveClosure.dgHom_ext R fun i j ↦ by
+    -- `dgHomEquiv_mapDGAdditiveClosureHom` states its objects as structure literals, which match
+    -- `G.mapDGAdditiveClosure.obj M` only once `M` is given: the outer entry of the right side is
+    -- rewritten by naming its objects.
+    rw [dgMap_mapDGAdditiveClosure, dgHomEquiv_mapDGAdditiveClosureHom,
+      dgMap_mapDGAdditiveClosure, dgHomEquiv_mapDGAdditiveClosureHom, dgMap_mapDGShiftClosure,
+      DGShiftClosure.dgMap_shiftFunctor, dgMap_mapDGAdditiveClosure,
+      dgHomEquiv_mapDGAdditiveClosureHom (DGShiftClosure.shiftFunctor R n)
+        (M := F.mapDGShiftClosure.mapDGAdditiveClosure.obj M)
+        (N := F.mapDGShiftClosure.mapDGAdditiveClosure.obj N),
+      dgMap_mapDGAdditiveClosure, dgHomEquiv_mapDGAdditiveClosureHom, dgMap_mapDGShiftClosure,
+      DGShiftClosure.dgMap_shiftFunctor, mapDGShiftClosureHom_shiftHomEquiv]
+
+/-- The DG functor induced by `F` sends the comparison morphism `⊕ᵢ Xᵢ[rᵢ] ⟶ ⊕ᵢ Xᵢ[rᵢ + n]` to the
+comparison morphism of the image. -/
+theorem mapDGShiftClosure_mapDGAdditiveClosure_dgMap_toShift
+    (M : DGAdditiveClosure (DGShiftClosure C)) (n : ℤ) :
+    F.mapDGShiftClosure.mapDGAdditiveClosure.dgMap (-n) (DGAdditiveClosure.toShift R M n) =
+      DGAdditiveClosure.toShift R (F.mapDGShiftClosure.mapDGAdditiveClosure.obj M) n :=
+  DGAdditiveClosure.dgHom_ext R fun i j ↦ by
+    rw [dgMap_mapDGAdditiveClosure, dgHomEquiv_mapDGAdditiveClosureHom]
+    rcases eq_or_ne i j with rfl | h
+    · rw [DGAdditiveClosure.dgHomEquiv_toShift_self M n i,
+        DGAdditiveClosure.dgHomEquiv_toShift_self (F.mapDGShiftClosure.mapDGAdditiveClosure.obj M),
+        dgMap_mapDGShiftClosure, mapDGShiftClosureHom_toShift]
+    · rw [DGAdditiveClosure.dgHomEquiv_toShift_of_ne M n h,
+        DGAdditiveClosure.dgHomEquiv_toShift_of_ne (F.mapDGShiftClosure.mapDGAdditiveClosure.obj M)
+          n h, map_zero]
+
+/-- The DG functor induced by `F` sends the comparison morphism `⊕ᵢ Xᵢ[rᵢ + n] ⟶ ⊕ᵢ Xᵢ[rᵢ]` to the
+comparison morphism of the image. -/
+theorem mapDGShiftClosure_mapDGAdditiveClosure_dgMap_fromShift
+    (M : DGAdditiveClosure (DGShiftClosure C)) (n : ℤ) :
+    F.mapDGShiftClosure.mapDGAdditiveClosure.dgMap n (DGAdditiveClosure.fromShift R M n) =
+      DGAdditiveClosure.fromShift R (F.mapDGShiftClosure.mapDGAdditiveClosure.obj M) n :=
+  DGAdditiveClosure.dgHom_ext R fun i j ↦ by
+    rw [dgMap_mapDGAdditiveClosure, dgHomEquiv_mapDGAdditiveClosureHom]
+    rcases eq_or_ne i j with rfl | h
+    · rw [DGAdditiveClosure.dgHomEquiv_fromShift_self M n i,
+        DGAdditiveClosure.dgHomEquiv_fromShift_self
+          (F.mapDGShiftClosure.mapDGAdditiveClosure.obj M),
+        dgMap_mapDGShiftClosure, mapDGShiftClosureHom_fromShift]
+    · rw [DGAdditiveClosure.dgHomEquiv_fromShift_of_ne M n h,
+        DGAdditiveClosure.dgHomEquiv_fromShift_of_ne
+          (F.mapDGShiftClosure.mapDGAdditiveClosure.obj M) n h, map_zero]
+
+end CategoryTheory.EnrichedFunctor

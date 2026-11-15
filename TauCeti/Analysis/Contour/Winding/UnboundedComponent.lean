@@ -27,9 +27,9 @@ the unbounded component.
 
 * `TauCeti.Contour.windingNumber_eq_zero_of_unbounded_component` — the winding number vanishes on
   every unbounded component of the curve complement.
-* `TauCeti.Contour.IsPiecewiseC1On.windingNumber_eq_zero_of_unbounded_component` — the direct
+* `TauCeti.IsPiecewiseC1On.windingNumber_eq_zero_of_unbounded_component` — the direct
   piecewise-`C¹` form.
-* `TauCeti.Contour.IsPiecewiseC1On.isNullHomologous_of_filledHull_subset` — every closed curve in a
+* `TauCeti.IsPiecewiseC1On.isNullHomologous_of_filledHull_subset` — every closed curve in a
   set without holes, one whose complement has no bounded connected component, is null-homologous
   there.
 
@@ -86,8 +86,8 @@ theorem windingNumber_eq_zero_of_unbounded_component {γ : ℝ → ℂ} {a b : �
 complement of a closed piecewise-`C¹` curve is unbounded, its winding number about `w` is zero. The
 finite breakpoint set supplies all raw regularity hypotheses of
 `windingNumber_eq_zero_of_unbounded_component`. -/
-theorem IsPiecewiseC1On.windingNumber_eq_zero_of_unbounded_component {γ : ℝ → ℂ} {a b : ℝ}
-    (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
+theorem _root_.TauCeti.IsPiecewiseC1On.windingNumber_eq_zero_of_unbounded_component
+    {γ : ℝ → ℂ} {a b : ℝ} (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
     {w : ℂ} (hcomp : ¬IsBounded (connectedComponentIn ((γ '' uIcc a b)ᶜ) w)) :
     windingNumber γ a b w = 0 := by
   obtain ⟨P, hP, hγ_diff⟩ := hγ.exists_countable_differentiableAt
@@ -102,7 +102,7 @@ This is the form callers can actually discharge: exhibiting one escape ray is el
 `IsPiecewiseC1On.windingNumber_eq_zero_of_unbounded_component` asks for the component itself. Any
 point outside a bounded region the curve encloses -- outside a disc containing the curve, or on the
 far side of a line the curve does not cross -- has such a ray. -/
-theorem IsPiecewiseC1On.windingNumber_eq_zero_of_ray {γ : ℝ → ℂ} {a b : ℝ}
+theorem _root_.TauCeti.IsPiecewiseC1On.windingNumber_eq_zero_of_ray {γ : ℝ → ℂ} {a b : ℝ}
     (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b) {w v : ℂ} (hv : v ≠ 0)
     (hray : ∀ c : ℝ, 0 ≤ c → w + (c : ℂ) * v ∉ γ '' uIcc a b) :
     windingNumber γ a b w = 0 := by
@@ -137,8 +137,9 @@ theorem IsPiecewiseC1On.windingNumber_eq_zero_of_ray {γ : ℝ → ℂ} {a b : �
 that is, if every connected component of `ℂ \ U` is unbounded, then every closed piecewise-`C¹`
 curve in `U` has winding number zero about every point outside `U`. For open `U`, the hypothesis
 is the plane form of the connectedness of the complement of `U` in the Riemann sphere. -/
-theorem IsPiecewiseC1On.isNullHomologous_of_filledHull_subset {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ}
-    (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b) (hγU : MapsTo γ (uIcc a b) U)
+theorem _root_.TauCeti.IsPiecewiseC1On.isNullHomologous_of_filledHull_subset
+    {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ} (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
+    (hγU : MapsTo γ (uIcc a b) U)
     (hU : filledHull U ⊆ U) : IsNullHomologous γ a b U := by
   rw [isNullHomologous_iff]
   intro w hw

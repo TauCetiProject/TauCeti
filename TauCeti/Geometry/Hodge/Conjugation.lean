@@ -43,7 +43,7 @@ models.
 * `TauCeti.Hodge.Conjugation.restrict`: the conjugation induced on a stable complex subspace.
 * `TauCeti.Hodge.Conjugation.quotient`: the conjugation induced on the quotient by a stable
   complex subspace.
-* `TauCeti.Hodge.Conjugation.map_comap_eq_comap_map`: an equivalence intertwining two conjugations
+* `TauCeti.Hodge.Conjugation.map_comap_eq_comap_map`: a linear map intertwining two conjugations
   exchanges conjugation with taking preimages of subspaces.
 * `TauCeti.Hodge.Conjugation.map_prod`: a conjugation acting componentwise on a product carries a
   product subspace to the product of the conjugate subspaces.
@@ -267,7 +267,7 @@ theorem mem_conjFiltration_iff (ω : Conjugation W) (F : ℤ → Submodule ℂ W
 
 /-- Applying conjugation to a conjugate filtration step recovers the original step. -/
 @[simp]
-theorem conjFiltration_conjFiltration (ω : Conjugation W) (F : ℤ → Submodule ℂ W) (p : ℤ) :
+theorem map_conjFiltration (ω : Conjugation W) (F : ℤ → Submodule ℂ W) (p : ℤ) :
     (ω.conjFiltration F p).map ω.toEquiv.toLinearMap = F p :=
   ω.map_map_eq_self (F p)
 
@@ -314,22 +314,14 @@ theorem map_restrict_comap_subtype (ω : Conjugation W) {U : Submodule ℂ W}
   ext x
   simp
 
-/-- A linear equivalence intertwining two conjugations exchanges conjugating a preimage with
-taking the preimage of the conjugate. -/
+/-- A linear map intertwining two conjugations exchanges conjugating a preimage with taking the
+preimage of the conjugate. -/
 theorem map_comap_eq_comap_map {W' : Type v} [AddCommGroup W'] [Module ℂ W']
-    (ω : Conjugation W) (ω' : Conjugation W') (e : W ≃ₗ[ℂ] W')
-    (he : ∀ x, e (ω.toEquiv x) = ω'.toEquiv (e x)) (A : Submodule ℂ W') :
-    (A.comap e.toLinearMap).map ω.toEquiv.toLinearMap =
-      (A.map ω'.toEquiv.toLinearMap).comap e.toLinearMap := by
-  ext y
-  simp only [Submodule.mem_map, Submodule.mem_comap, LinearEquiv.coe_coe]
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    exact ⟨e x, hx, (he x).symm⟩
-  · rintro ⟨z, hz, hzy⟩
-    refine ⟨ω.toEquiv y, ?_, ω.apply_apply y⟩
-    rw [he y, ← hzy, ω'.apply_apply]
-    exact hz
+    (ω : Conjugation W) (ω' : Conjugation W') (f : W →ₗ[ℂ] W')
+    (hf : ∀ x, f (ω.toEquiv x) = ω'.toEquiv (f x)) (A : Submodule ℂ W') :
+    (A.comap f).map ω.toEquiv.toLinearMap = (A.map ω'.toEquiv.toLinearMap).comap f := by
+  ext x
+  simp [hf]
 
 /-- The conjugation induced on a quotient by a stable complex subspace is involutive. -/
 private theorem quotient_involutive (ω : Conjugation W) {U : Submodule ℂ W}
@@ -407,6 +399,11 @@ abbrev Complexification (V : Type u) [AddCommGroup V] :=
 def complexificationMap : V →ₗ[ℤ] Complexification V :=
   (TensorProduct.mk ℤ ℂ V) 1
 
+/-- The canonical map from an integral module to its complexification sends `v` to `1 ⊗ₜ v`. -/
+theorem complexificationMap_apply (v : V) : complexificationMap v = (1 : ℂ) ⊗ₜ[ℤ] v := by
+  unfold complexificationMap
+  rfl
+
 /-- The tensor-product complexification satisfies the abstract base-change interface. -/
 theorem isBaseChange_complexificationMap :
     IsBaseChange ℂ (complexificationMap (V := V)) :=
@@ -450,7 +447,7 @@ theorem concreteLatticeConj_complexificationMap (v : V) :
     concreteLatticeConj (complexificationMap v) = complexificationMap v := by
   -- `Complexification V` has both the tensor-product and canonical integer-module instances;
   -- restating the goal as a pure tensor avoids exposing that harmless instance diamond.
-  change concreteLatticeConj (1 ⊗ₜ[ℤ] v) = 1 ⊗ₜ[ℤ] v
+  rw [complexificationMap_apply]
   simpa only [map_one] using concreteLatticeConj_tmul (V := V) 1 v
 
 private theorem concreteLatticeConjIntLinear_comp :

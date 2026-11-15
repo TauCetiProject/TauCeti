@@ -56,6 +56,9 @@ over `S` to a homomorphism of group schemes `G ⟶ G^{(p)}`
   over `T` is the base change of the Frobenius twist of `X` along `T ⟶ S`.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_relativeFrobenius`: the relative Frobenius of
   `X ×_S T` over `T` is the base change of the relative Frobenius of `X` along `T ⟶ S`.
+* `AlgebraicGeometry.Scheme.Hom.isPullback_frobeniusTwist_of_isPullback` and
+  `AlgebraicGeometry.Scheme.Hom.isPullback_relativeFrobenius_of_isPullback`: the same, for a base
+  change `X' ⟶ S'` of `X ⟶ S` given by an arbitrary cartesian square.
 
 ## References
 
@@ -138,17 +141,27 @@ theorem relativeFrobenius_naturality (πY : Y ⟶ S) (g : X ⟶ Y) (hg : g ≫ �
       g ≫ πY.relativeFrobenius p hS := by
   ext <;> simp [frobenius_naturality _ (natCast_eq_zero_of_hom πY hS) g, hg]
 
+/-- **The Frobenius twist commutes with base change**, for an arbitrary cartesian square. If
+`X'` over `S'` is the base change of `X` over `S` along `f : S' ⟶ S`, then the Frobenius twist
+of `X'` over `S'` is the base change of the Frobenius twist `X^{(p)}` of `X` along `f`. -/
+theorem isPullback_frobeniusTwist_of_isPullback {X' S' : Scheme.{u}} {π' : X' ⟶ S'}
+    {g : X' ⟶ X} {f : S' ⟶ S} (h : IsPullback g π' π f) :
+    IsPullback (pullback.map π' (S'.frobenius p (natCast_eq_zero_of_hom f hS)) π
+        (S.frobenius p hS) g f f h.w.symm (frobenius_naturality _ hS f))
+      (pullback.snd _ _) (pullback.snd _ _) f := by
+  refine IsPullback.of_right ?_ (by simp) (IsPullback.of_hasPullback π _)
+  -- the composite of the two squares is the composite of `h` with the pullback square defining
+  -- the Frobenius twist of `X'`, since `F_{S'} ≫ f = f ≫ F_S`
+  have h' := (IsPullback.of_hasPullback π'
+    (S'.frobenius p (natCast_eq_zero_of_hom f hS))).paste_horiz h
+  rw [frobenius_naturality _ hS f] at h'
+  simpa using h'
+
 /-- **The Frobenius twist commutes with base change.** For `f : T ⟶ S`, the Frobenius twist of
 `X ×_S T` over `T` is the base change of the Frobenius twist `X^{(p)}` of `X` along `f`. -/
 theorem isPullback_frobeniusTwistMap (f : T ⟶ S) :
-    IsPullback (π.frobeniusTwistMap p hS f) (pullback.snd _ _) (pullback.snd _ _) f := by
-  refine IsPullback.of_right ?_ (by simp) (IsPullback.of_hasPullback π _)
-  -- the composite of the two squares is the composite of the pullback squares defining
-  -- `X ×_S T` and its Frobenius twist, since `F_T ≫ f = f ≫ F_S`
-  have h := (IsPullback.of_hasPullback (pullback.snd π f)
-    (T.frobenius p (natCast_eq_zero_of_hom f hS))).paste_horiz (IsPullback.of_hasPullback π f)
-  rw [frobenius_naturality _ hS f] at h
-  simpa using h
+    IsPullback (π.frobeniusTwistMap p hS f) (pullback.snd _ _) (pullback.snd _ _) f :=
+  isPullback_frobeniusTwist_of_isPullback hS (IsPullback.of_hasPullback π f)
 
 /-- The relative Frobenius of the base change `X ×_S T` over `T`, followed by the projection to
 the Frobenius twist of `X`, is the projection `X ×_S T ⟶ X` followed by the relative Frobenius of
@@ -161,15 +174,26 @@ theorem relativeFrobenius_frobeniusTwistMap (f : T ⟶ S) :
   ext <;> simp [frobenius_naturality _ (natCast_eq_zero_of_hom π hS) (pullback.fst π f),
     pullback.condition]
 
+/-- **The relative Frobenius commutes with base change**, for an arbitrary cartesian square. If
+`X'` over `S'` is the base change of `X` over `S` along `f : S' ⟶ S`, then the relative
+Frobenius of `X'` over `S'` is the base change of the relative Frobenius of `X` over `S`. -/
+theorem isPullback_relativeFrobenius_of_isPullback {X' S' : Scheme.{u}} {π' : X' ⟶ S'}
+    {g : X' ⟶ X} {f : S' ⟶ S} (h : IsPullback g π' π f) :
+    IsPullback (π'.relativeFrobenius p (natCast_eq_zero_of_hom f hS)) g
+      (pullback.map π' (S'.frobenius p (natCast_eq_zero_of_hom f hS)) π
+        (S.frobenius p hS) g f f h.w.symm (frobenius_naturality _ hS f))
+      (π.relativeFrobenius p hS) := by
+  refine IsPullback.of_right ?_ ?_ (isPullback_frobeniusTwist_of_isPullback hS h).flip
+  · simpa using h.flip
+  · ext <;> simp [frobenius_naturality _ (natCast_eq_zero_of_hom π hS) g, h.w]
+
 /-- **The relative Frobenius commutes with base change.** For `f : T ⟶ S`, the relative
 Frobenius of `X ×_S T` over `T` is the base change along `f` of the relative Frobenius of `X`
 over `S`. -/
 theorem isPullback_relativeFrobenius (f : T ⟶ S) :
     IsPullback ((pullback.snd π f).relativeFrobenius p (natCast_eq_zero_of_hom f hS))
-      (pullback.fst π f) (π.frobeniusTwistMap p hS f) (π.relativeFrobenius p hS) := by
-  refine IsPullback.of_right ?_ (relativeFrobenius_frobeniusTwistMap hS f)
-    (isPullback_frobeniusTwistMap hS f).flip
-  simpa using (IsPullback.of_hasPullback π f).flip
+      (pullback.fst π f) (π.frobeniusTwistMap p hS f) (π.relativeFrobenius p hS) :=
+  isPullback_relativeFrobenius_of_isPullback hS (IsPullback.of_hasPullback π f)
 
 end Hom
 

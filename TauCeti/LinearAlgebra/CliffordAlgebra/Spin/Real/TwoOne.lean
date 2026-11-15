@@ -153,7 +153,7 @@ private theorem realCliffordTwoOneEvenEquivMatrix_vectorEven (v : Fin 3 → ℝ)
     coe_realCliffordTwoOneVectorEquivSymmetric_apply]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [realCliffordTwoOneLastVector]
-  all_goals ring
+  ring
 
 private noncomputable def realCliffordTwoOneConjugateLastEvenHom :
     CliffordAlgebra.even realCliffordFormTwoOne →ₐ[ℝ]
@@ -253,6 +253,7 @@ private theorem realCliffordTwoOneVectorEven_spin_action
             (CliffordAlgebra.reverseEven realCliffordFormTwoOne
               (CliffordAlgebra.evenUnitaryGroupEvenPart realCliffordFormTwoOne
                 (CliffordAlgebra.spinGroupToEvenUnitary realCliffordFormTwoOne s))) := by
+  rw [CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
   exact CliffordAlgebra.rightIotaEven_spinGroup_smul realCliffordFormTwoOne
     realCliffordTwoOneLastVector realCliffordTwoOneLastVector_negOne s v
 

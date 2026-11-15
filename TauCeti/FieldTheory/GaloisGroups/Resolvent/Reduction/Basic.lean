@@ -116,7 +116,7 @@ theorem IsGoodPrime.exists_isRoot_map_specialize_iff {spec : ResolventSpec n}
           (e.permCongrHom : _ →* Equiv.Perm (Fin n)) ≤
             spec.H.map (MulAut.conj τ).toMonoidHom := by
   rw [spec.specialize_map]
-  exact spec.exists_isRoot_specialize_iff_exists_le_map_conj (hf.map _) (h.separable_map hf)
+  exact spec.exists_isRoot_specialize_iff_exists_le_map_conj (hf.map _)
     ((hf.natDegree_map _).trans hdeg) e h.resolventSeparationEvidence
 
 end TauCeti.ResolventSpec

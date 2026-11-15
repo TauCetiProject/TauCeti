@@ -104,6 +104,13 @@ theorem padicTower_q_apply (n : ℕ) (x : Multiplicative ℤ_[p]) :
     ((padicTower p).q n x).toAdd = PadicInt.toZModPow n x.toAdd :=
   (rfl)
 
+/-- The projections of the congruence tower of `ℤ_p` send `a ∈ ℤ_p` to its truncation modulo
+`p ^ n`. -/
+@[simp]
+theorem padicTower_q_ofAdd (n : ℕ) (a : ℤ_[p]) :
+    (padicTower p).q n (Multiplicative.ofAdd a) = Multiplicative.ofAdd (PadicInt.toZModPow n a) :=
+  (rfl)
+
 /-- The transition maps of the congruence tower of `ℤ_p` are the reductions `ZMod.cast`. -/
 @[simp]
 theorem padicTower_t_apply {m n : ℕ} (h : m ≤ n) (a : Multiplicative (ZMod (p ^ n))) :

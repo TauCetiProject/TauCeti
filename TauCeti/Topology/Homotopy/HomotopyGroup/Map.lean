@@ -62,7 +62,7 @@ theorem map_continuousMap_const_apply (y : Y) (hy : (ContinuousMap.const X y) x 
   refine Quotient.inductionOn a ?_
   intro p
   rw [map_mk]
-  exact congrArg _ (GenLoop.map_continuousMap_const y p)
+  exact congrArg _ (GenLoop.map_continuousMap_const y hy p)
 
 /-- Every homotopy group of a subsingleton space is a subsingleton: any two generalized loops
 in it are equal. This includes dimension zero. -/
@@ -148,6 +148,30 @@ theorem map_congr {f₁ f₂ : C(X, Y)} (hfe : f₁ = f₂) (h₁ : f₁ x = y) 
   subst hfe
   rfl
 
+/-- Whether `HomotopyGroup.map` is surjective depends only on the underlying continuous map, not on
+the presentation of the target basepoint or its proof. -/
+theorem surjective_map_congr {f₁ f₂ : C(X, Y)} {y₁ y₂ : Y} (hfe : f₁ = f₂) (h₁ : f₁ x = y₁)
+    (h₂ : f₂ x = y₂) :
+    Function.Surjective (map (N := N) f₁ h₁) ↔ Function.Surjective (map (N := N) f₂ h₂) := by
+  subst hfe h₁ h₂
+  rfl
+
+/-- Whether `HomotopyGroup.map` is injective depends only on the underlying continuous map, not on
+the presentation of the target basepoint or its proof. -/
+theorem injective_map_congr {f₁ f₂ : C(X, Y)} {y₁ y₂ : Y} (hfe : f₁ = f₂) (h₁ : f₁ x = y₁)
+    (h₂ : f₂ x = y₂) :
+    Function.Injective (map (N := N) f₁ h₁) ↔ Function.Injective (map (N := N) f₂ h₂) := by
+  subst hfe h₁ h₂
+  rfl
+
+/-- Whether `HomotopyGroup.map` is bijective depends only on the underlying continuous map, not on
+the presentation of the target basepoint or its proof. -/
+theorem bijective_map_congr {f₁ f₂ : C(X, Y)} {y₁ y₂ : Y} (hfe : f₁ = f₂) (h₁ : f₁ x = y₁)
+    (h₂ : f₂ x = y₂) :
+    Function.Bijective (map (N := N) f₁ h₁) ↔ Function.Bijective (map (N := N) f₂ h₂) := by
+  subst hfe h₁ h₂
+  rfl
+
 /-- Composition law for a commuting triangle: if `g ∘ f = h`, then the composite of the maps
 induced by `f` and `g` on homotopy classes is the map induced by `h`. -/
 theorem map_comp_map_of_comp_eq {g : C(Y, Z)} {f : C(X, Y)} {h : C(X, Z)} (hgf : g.comp f = h)
@@ -231,6 +255,12 @@ theorem map_mul [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y)
 theorem map_one [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y) :
     map f hf (1 : HomotopyGroup N X x) = 1 :=
   (mapHom f hf).map_one
+
+@[simp]
+theorem map_inv [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y)
+    (a : HomotopyGroup N X x) :
+    map f hf a⁻¹ = (map f hf a)⁻¹ :=
+  (mapHom f hf).map_inv a
 
 /-- In dimension one, the induced map on homotopy groups is the induced map on fundamental groups,
 under Mathlib's identification `pi1EquivFundamentalGroup` of `π_1` with the fundamental group. -/

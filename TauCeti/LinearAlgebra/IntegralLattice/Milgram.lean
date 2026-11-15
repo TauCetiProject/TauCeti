@@ -340,7 +340,7 @@ theorem gaussSign_discriminantQuadraticModule_eq_sigPos_sub_sigNeg [L.IsNondegen
     have hB : B.IsEven := ((isEven_orthogonalSum_iff _ _).mp hS).2
     have : ((rankOne (2 * m)).orthogonalSum B).IsNondegenerate := e.symm.isNondegenerate
     have : B.IsNondegenerate :=
-      ⟨(((rankOne (2 * m)).nondegenerate_orthogonalSum_iff B).mp (form_nondegenerate _)).2⟩
+      ((isNondegenerate_orthogonalSum_iff (rankOne (2 * m)) B).mp inferInstance).2
     -- The complement has rank `n`, so the induction hypothesis applies to it.
     have hfin : finrank ℚ (ℚ ⊗[ℤ] T) = n := by
       have := B.finiteDimensional

@@ -49,6 +49,8 @@ the norm of the extension `E'/E`.
 
 * `TauCeti.algebraMap_norm_eq_prod_transversal`: the norm of `L/K` is the product of the
   conjugates of `σ`, indexed by a transversal of `Gal(Kˢ/σ(L))`.
+* `TauCeti.algebraMap_norm_eq_prod_algHom`: the norm of a finite separable `L/K` is the product
+  of the images under all `K`-embeddings of `L` into `Kˢ`.
 * `TauCeti.coe_norm_eq_prod_quotient_out`: the norm of `E'/E` is the product of the translates by
   representatives of the cosets of `W'` in `W`.
 
@@ -99,10 +101,24 @@ theorem algebraMap_norm_eq_prod_transversal
   rw [Equiv.trans_apply, hu, Algebra.IsAlgebraic.algHomEquivAlgHomOfSplits_apply_apply,
     AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
 
+omit σ in
+/-- **The norm of a finite separable extension is the product of its conjugates in `Kˢ`**: the
+image of `N_{L/K} b` in `Kˢ` is the product of `τ b` over all `K`-embeddings `τ : L →ₐ[K] Kˢ`.
+This is Mathlib's `Algebra.norm_eq_prod_embeddings` with the separable closure of `K` in place of
+an algebraically closed field. -/
+theorem algebraMap_norm_eq_prod_algHom [Algebra.IsSeparable K L] (b : L) :
+    algebraMap K (SeparableClosure K) (Algebra.norm K b) =
+      ∏ τ : L →ₐ[K] SeparableClosure K, τ b := by
+  let σ : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
+  rw [algebraMap_norm_eq_prod_transversal K L σ Quotient.out (fun u ↦ QuotientGroup.out_eq' u) b]
+  refine Fintype.prod_equiv (FieldTheory.fixingSubgroupQuotientEquivAlgHom σ) _ _ fun u ↦ ?_
+  conv_rhs => rw [← QuotientGroup.out_eq' u, FieldTheory.fixingSubgroupQuotientEquivAlgHom_mk]
+  rfl
+
 section Relative
 
 variable {K} {E E' : IntermediateField K (SeparableClosure K)} [Algebra E E']
-  [IsScalarTower E E' (SeparableClosure K)] [FiniteDimensional E E']
+  [IsScalarTower E E' (SeparableClosure K)]
   {W W' : OpenSubgroup (AbsoluteGaloisGroup K)}
 
 omit σ [FiniteDimensional K L] in
@@ -115,6 +131,16 @@ theorem coe_norm_eq_prod_quotient_out (hW : fixedField W.toSubgroup = E)
     ((Algebra.norm E x : E) : SeparableClosure K) =
       ∏ q : W.toSubgroup ⧸ W'.toSubgroup.subgroupOf W.toSubgroup,
         (q.out : AbsoluteGaloisGroup K) (x : SeparableClosure K) := by
+  -- `E'` is finite over `K`, and `K ⊆ E ⊆ E'` is a tower inside `Kˢ`, so `E'/E` is finite.
+  have : FiniteDimensional K E' := by
+    rw [← hW']
+    infer_instance
+  have : IsScalarTower K E E' := .of_algebraMap_eq fun x ↦
+    (algebraMap E' (SeparableClosure K)).injective
+    (by rw [← IsScalarTower.algebraMap_apply E E' (SeparableClosure K) (algebraMap K E x),
+      ← IsScalarTower.algebraMap_apply K E (SeparableClosure K) x,
+      ← IsScalarTower.algebraMap_apply K E' (SeparableClosure K) x])
+  have : FiniteDimensional E E' := Module.Finite.of_restrictScalars_finite K E E'
   let φ := IsScalarTower.toAlgHom E E' (SeparableClosure K)
   have : IsGalois E (SeparableClosure K) := IsGalois.tower_top_of_isGalois K E _
   have := Algebra.IsSeparable.of_algHom E (SeparableClosure K) φ

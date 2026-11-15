@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Constructions
+public import Mathlib.Topology.ContinuousMap.Defs
 
 /-!
-# Quotients of topological spaces by setoids
+# Quotients by setoids and fibre products of topological spaces
 
-This file adds to Mathlib's quotient-topology API for `Quotient.mk s`, where `s : Setoid X`.
+This file adds to Mathlib's quotient-topology API for `Quotient.mk s`, where `s : Setoid X`, and to
+the topology of the fibre product `Function.Pullback f g`, a subspace of the product.
 
 ## Main results
 
@@ -19,6 +21,13 @@ This file adds to Mathlib's quotient-topology API for `Quotient.mk s`, where `s 
 * `Setoid.isOpen_image_quotient_mk`: the image of an open set closed under `s` is open.
 * `Setoid.isOpenEmbedding_domRestrict_quotient_mk_of_isOpen`: the quotient map restricted to an
   open set whose points are related only to themselves is an open embedding.
+* `Function.Pullback.continuous_fst`, `Function.Pullback.continuous_snd`: the projections of the
+  fibre product are continuous.
+* `Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp`: open maps are stable under
+  pullback; the projection of a fibre product to one factor is open onto its range when the map
+  from the other factor is.
+* `ContinuousMap.pullbackFst`, `ContinuousMap.pullbackSnd`: the projections of the fibre product,
+  bundled as continuous maps.
 -/
 
 public section
@@ -70,3 +79,67 @@ theorem isOpenEmbedding_domRestrict_quotient_mk_of_isOpen {U : Set X} (hU : IsOp
     exact hfix x.2 hxy ▸ mem_image_of_mem _ hx
 
 end Setoid
+
+section Pullback
+
+variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Z] {f : X → Y} {g : Z → Y}
+
+/-- The projection `X ×_Y Z → X` is continuous. -/
+@[fun_prop]
+theorem Function.Pullback.continuous_fst : Continuous (Pullback.fst : f.Pullback g → X) :=
+  _root_.continuous_fst.comp continuous_subtype_val
+
+/-- The projection `X ×_Y Z → Z` is continuous. -/
+@[fun_prop]
+theorem Function.Pullback.continuous_snd : Continuous (Pullback.snd : f.Pullback g → Z) :=
+  _root_.continuous_snd.comp continuous_subtype_val
+
+/-- **Open maps are stable under pullback.** Let `f : X → Y` be open onto its range and
+`g : Z → Y` continuous, and let `ι : P → X × Z` induce the topology of `P` and have image the
+fibre product `{p | f p.1 = g p.2}`, as the inclusion of `Function.Pullback f g` does. Then the
+projection `P → Z` is open onto its range.
+
+Near each of its points, an open subset of `P` contains the part of `P` over a box `U ×ˢ V`. The
+projection of that part is the part of the range lying in `V ∩ g ⁻¹' O`, where `O` is an open set
+cutting `f '' U` out of the range of `f`. -/
+theorem Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp [TopologicalSpace Y]
+    {P : Type*} [TopologicalSpace P] {ι : P → X × Z} (hι : IsInducing ι)
+    (hrange : range ι = {p | f p.1 = g p.2}) (hf : IsOpenMap (rangeFactorization f))
+    (hg : Continuous g) : IsOpenMap (rangeFactorization (Prod.snd ∘ ι)) := by
+  have hfg (q : P) : f (ι q).1 = g (ι q).2 := hrange.subset (mem_range_self q)
+  intro W hW
+  rw [isOpen_iff_mem_nhds]
+  rintro _ ⟨w, hw, rfl⟩
+  obtain ⟨T, hT, rfl⟩ := hι.isOpen_iff.1 hW
+  obtain ⟨U, V, hU, hV, hwU, hwV, hUV⟩ := isOpen_prod_iff.1 hT _ _ hw
+  obtain ⟨O, hO, hOU⟩ := isOpen_induced_iff.1 (hf U hU)
+  have hfU : f '' U = O ∩ range f := by
+    simpa only [image_image, rangeFactorization_coe, image_preimage_eq_inter_range,
+      Subtype.range_coe] using (congrArg (Subtype.val '' ·) hOU).symm
+  refine Filter.mem_of_superset ((hV.inter (hO.preimage hg)).preimage continuous_subtype_val
+    |>.mem_nhds ⟨hwV, ?_⟩) ?_
+  · simpa [hfg w] using (hfU.subset (mem_image_of_mem f hwU)).1
+  · rintro ⟨_, q, rfl⟩ ⟨hqV, hqO⟩
+    obtain ⟨x, hxU, hx⟩ : g (ι q).2 ∈ f '' U := hfU ▸ ⟨hqO, (ι q).1, hfg q⟩
+    obtain ⟨q', hq'⟩ : (x, (ι q).2) ∈ range ι := hrange ▸ hx
+    exact ⟨q', show ι q' ∈ T from hq' ▸ hUV ⟨hxU, hqV⟩, Subtype.ext (by simp [hq'])⟩
+
+variable (f g)
+
+/-- The projection `X ×_Y Z → X`, bundled as a continuous map. -/
+def ContinuousMap.pullbackFst : C(f.Pullback g, X) :=
+  ⟨Function.Pullback.fst, Function.Pullback.continuous_fst⟩
+
+/-- The projection `X ×_Y Z → Z`, bundled as a continuous map. -/
+def ContinuousMap.pullbackSnd : C(f.Pullback g, Z) :=
+  ⟨Function.Pullback.snd, Function.Pullback.continuous_snd⟩
+
+@[simp]
+theorem ContinuousMap.coe_pullbackFst : ⇑(pullbackFst f g) = Function.Pullback.fst :=
+  (rfl)
+
+@[simp]
+theorem ContinuousMap.coe_pullbackSnd : ⇑(pullbackSnd f g) = Function.Pullback.snd :=
+  (rfl)
+
+end Pullback

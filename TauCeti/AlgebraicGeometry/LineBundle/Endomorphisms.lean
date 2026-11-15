@@ -218,6 +218,11 @@ lemma globalSectionsSmul_globalSectionsActionRingEquiv_symm (φ : M ⟶ M) :
     ((globalSectionsActionRingEquiv M).apply_symm_apply (End.of φ))
   rwa [globalSectionsActionRingEquiv_apply] at h
 
+@[simp]
+lemma globalSectionsActionRingEquiv_symm_globalSectionsSmul (r : Γ(X, ⊤)) :
+    (globalSectionsActionRingEquiv M).symm (End.of (M.globalSectionsSmul r)) = r := by
+  rw [← globalSectionsActionRingEquiv_apply, RingEquiv.symm_apply_apply]
+
 /-- **Automorphisms of a line bundle are global units.** For an invertible sheaf `M` on a scheme
 `X`, the action of global functions is a group isomorphism `Γ(X, 𝒪_X)ˣ ≃* Aut M`. -/
 def unitsGlobalSectionsMulEquivAut : Γ(X, ⊤)ˣ ≃* Aut M :=

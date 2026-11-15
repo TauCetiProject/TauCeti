@@ -216,8 +216,8 @@ theorem finrank_ker_smul_op_root_pow {i j : ℕ} (hj : j ≤ n) :
   omega
 
 /-- Over `K[X]/(X ^ n)`, with `x` the class of `X` and `M_j = A ⧸ (x ^ j)`, the image in `M_j` of
-the annihilator `x ^ (n - i) A` of `x ^ i` has dimension `j - min j (n - i)`, for `i, j ≤ n`. -/
-theorem finrank_map_ker_smul_op_root_pow {i j : ℕ} (hi : i ≤ n) (hj : j ≤ n) :
+the annihilator `x ^ (n - i) A` of `x ^ i` has dimension `j - min j (n - i)`, for `j ≤ n`. -/
+theorem finrank_map_ker_smul_op_root_pow {i j : ℕ} (hj : j ≤ n) :
     finrank K ((LinearMap.ker (DistribSMul.toLinearMap K (AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ
         (op (AdjoinRoot.root (X ^ n : K[X]) ^ i)))).map
       ((Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ j)}).mkQ.restrictScalars K)) =
@@ -231,7 +231,7 @@ theorem finrank_map_ker_smul_op_root_pow {i j : ℕ} (hi : i ≤ n) (hj : j ≤ 
       Submodule.restrictScalars_mem, Ideal.mem_span_singleton]
     rw [← RingEquiv.toOpposite_apply, ← RingEquiv.toOpposite_apply, ← map_mul,
       map_eq_zero_iff _ (RingEquiv.injective _), map_dvd_iff,
-      AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff hi]
+      AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff]
   have := (monic_X_pow n).finite_adjoinRoot (R := K)
   have h := Submodule.finrank_quotient_add_finrank ((Submodule.map (Ideal.span {op (x ^ j)}).mkQ
     (Ideal.span {op (x ^ (n - i))})).restrictScalars K)

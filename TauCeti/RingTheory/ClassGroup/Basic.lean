@@ -30,10 +30,15 @@ trivial class, and the class `[v]` of a height one prime.
   holds over any domain.
 * `ClassGroup.mk_num`: an invertible fractional ideal and its integral numerator have the
   same class, over any domain and any choice of fraction field.
+* `TauCeti.isPrincipalIdealRing_iff_subsingleton_classGroup`: a Dedekind domain is a principal
+  ideal ring exactly when its class group is trivial, with no finiteness of the class group
+  assumed.
 * `IsDedekindDomain.HeightOneSpectrum.classGroupMk_eq_mk0`: the defining formula for `[v]`, as
   `ClassGroup.mk0` of `v.asIdeal`. This needs no fraction field.
 * `IsDedekindDomain.HeightOneSpectrum.classGroupMk_eq_mk`: `[v]` is the class of `v.asIdeal` seen
   as an invertible fractional ideal of any fraction field `K`.
+* `Ideal.isPrincipal_pow_natCard_classGroup`: if the class group is finite, `I ^ h` is principal
+  for every ideal `I`, where `h` is the order of the class group.
 
 The two class-triviality results use `[IsDomain R]`, since neither is Dedekind-specific. None
 of them needs the factorization of a fractional ideal into primes, so this file does not import
@@ -93,6 +98,17 @@ theorem ClassGroup.mk_num {R : Type*} [CommRing R] [IsDomain R] {K : Type*} [Fie
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 
+/-- **A Dedekind domain is a principal ideal ring exactly when its class group is trivial.**
+Mathlib's `card_classGroup_eq_one_iff` is the same statement with the class number, and needs a
+`Fintype` instance on the class group that this form does not ask for. -/
+theorem TauCeti.isPrincipalIdealRing_iff_subsingleton_classGroup :
+    IsPrincipalIdealRing R ↔ Subsingleton (ClassGroup R) := by
+  refine ⟨fun _ ↦ Fintype.card_le_one_iff_subsingleton.mp (card_classGroup_eq_one (R := R)).le,
+    fun _ ↦ ?_⟩
+  have := Fintype.ofFinite (ClassGroup R)
+  exact card_classGroup_eq_one_iff.mp
+    (Fintype.card_eq_one_iff.mpr ⟨1, fun _ ↦ Subsingleton.elim _ _⟩)
+
 /-- The class of a height one prime `v` in the ideal class group of `R`. -/
 noncomputable def IsDedekindDomain.HeightOneSpectrum.classGroupMk (v : HeightOneSpectrum R) :
     ClassGroup R :=
@@ -116,5 +132,17 @@ lemma IsDedekindDomain.HeightOneSpectrum.classGroupMk_eq_mk (K : Type*) [Field K
       (FractionalIdeal.coeIdeal_ne_zero.mpr v.ne_bot)) := by
   rw [classGroupMk_eq_mk0, ← ClassGroup.mk_mk0 K]
   exact congrArg _ (Units.ext (FractionalIdeal.coe_mk0 K _))
+
+/-- If the class group of `R` is finite, the power of any ideal by the order of the class group
+is principal. -/
+lemma Ideal.isPrincipal_pow_natCard_classGroup [Finite (ClassGroup R)] (I : Ideal R) :
+    (I ^ Nat.card (ClassGroup R)).IsPrincipal := by
+  rcases eq_or_ne I ⊥ with rfl | hI
+  · rw [← Ideal.zero_eq_bot, zero_pow Nat.card_pos.ne']
+    exact bot_isPrincipal
+  have hI' : I ∈ (Ideal R)⁰ := mem_nonZeroDivisors_of_ne_zero hI
+  rw [← ClassGroup.mk0_eq_one_iff (pow_mem hI' _)]
+  have h1 : ClassGroup.mk0 ⟨I, hI'⟩ ^ Nat.card (ClassGroup R) = 1 := pow_card_eq_one'
+  rwa [← map_pow, SubmonoidClass.mk_pow] at h1
 
 end

@@ -17,6 +17,8 @@ rings of the scheme at points of `V`.
 
 ## Main results
 
+* `AlgebraicGeometry.IsAffineOpen.isDomain_and_isIntegrallyClosed_stalk_iff`: normality of a
+  stalk is equivalent to normality of the corresponding localization of affine sections.
 * `AlgebraicGeometry.IsAffineOpen.isIntegrallyClosed`: a domain of sections over an affine
   open is integrally closed when its local rings are.
 * `TauCeti.AlgebraicGeometry.isDomain_and_isIntegrallyClosed_stalk_iff_of_isOpenImmersion`: open
@@ -52,6 +54,23 @@ end TauCeti.AlgebraicGeometry
 namespace AlgebraicGeometry
 
 variable {T : Scheme.{u}}
+
+/-- The stalk at a point of an affine open is an integrally closed domain exactly when the
+localization of its ring of sections at the corresponding prime is an integrally closed domain. -/
+theorem IsAffineOpen.isDomain_and_isIntegrallyClosed_stalk_iff {V : T.Opens}
+    (hV : IsAffineOpen V) (x : V) :
+    (IsDomain (T.presheaf.stalk x.1) ∧ IsIntegrallyClosed (T.presheaf.stalk x.1)) ↔
+      (IsDomain (Localization.AtPrime (hV.primeIdealOf x).asIdeal) ∧
+        IsIntegrallyClosed (Localization.AtPrime (hV.primeIdealOf x).asIdeal)) := by
+  let := T.presheaf.algebra_section_stalk x
+  have := hV.isLocalization_stalk x
+  let e := IsLocalization.algEquiv (hV.primeIdealOf x).asIdeal.primeCompl
+    (T.presheaf.stalk x.1) (Localization.AtPrime (hV.primeIdealOf x).asIdeal)
+  constructor
+  · rintro ⟨_, _⟩
+    exact ⟨e.symm.toMulEquiv.isDomain _, .of_equiv e.toRingEquiv⟩
+  · rintro ⟨_, _⟩
+    exact ⟨e.toMulEquiv.isDomain _, .of_equiv e.symm.toRingEquiv⟩
 
 /-- The domain of sections over an affine open `V` is integrally closed if the local rings
 at the points of `V` are: its localizations at maximal ideals are local rings of the scheme at

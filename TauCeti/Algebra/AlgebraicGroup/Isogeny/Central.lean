@@ -72,12 +72,10 @@ theorem IsIsogeny.isCentralIsogeny_of_charZero (hf : IsIsogeny f)
     (hK : geometricallyConnectedCommHopfAlgProperty k K) : IsCentralIsogeny f := by
   let _ : Algebra.Smooth k K :=
     (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k K)
-  let _ : Algebra.IsGeometricallyReduced k K := isGeometricallyReduced_of_smooth k K
   let Q := quotient K (kernelHopfIdeal f)
   let _ : Module.Finite k Q := moduleFinite_quotient_kernelHopfIdeal hf.finite
   let _ : Algebra.Smooth k Q :=
     (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k Q)
-  let _ : Algebra.IsGeometricallyReduced k Q := isGeometricallyReduced_of_smooth k Q
   exact hf.isCentralIsogeny_of_isGeometricallyReduced_kernel hK
 
 end CharZero

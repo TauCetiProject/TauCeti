@@ -48,6 +48,8 @@ matrices by invertible matrices.
 * `TauCeti.cyclicCohomology.evenPairing_eval_algebraMap_eq` and
   `TauCeti.cyclicCohomology.evenPairing_units_conj`: the corresponding invariances of the even
   pairing.
+* `TauCeti.cyclicCohomology.evenPairing_matrixExtension_eq_of_mul_eq`: Murray–von Neumann
+  invariance, for idempotent matrices `e = a * b` and `f = b * a` of possibly different sizes.
 
 ## References
 
@@ -72,7 +74,8 @@ variable {R A M : Type*} [Field R] [CharZero R] [Ring A] [Algebra R A] [AddCommG
 idempotent polynomial with coefficients in `A`. Then `φ(e(t), …, e(t))` does not depend on the
 scalar `t`. -/
 theorem apply_const_eval_algebraMap_eq {n : ℕ} (hn : Even n)
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M
+        n)
     (hbφ : hochschildCoboundary R A M n φ = 0) {e : A[X]} (he : IsIdempotentElem e) (s t : R) :
     φ (fun _ ↦ e.eval (algebraMap R A s)) = φ (fun _ ↦ e.eval (algebraMap R A t)) := by
   refine φ.apply_eval_algebraMap_eq_of_linearDeriv_eq_zero (fun _ ↦ e) (fun r ↦ ?_) s t
@@ -90,7 +93,8 @@ theorem apply_const_eval_algebraMap_eq {n : ℕ} (hn : Even n)
 /-- Conjugating an idempotent by a square-zero unipotent `1 + N` preserves the value of an
 even-degree cyclic cocycle on constant tuples. -/
 private theorem apply_const_one_add_mul_mul_one_sub_eq {n : ℕ} (hn : Even n)
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M
+        n)
     (hbφ : hochschildCoboundary R A M n φ = 0) {e N : A} (he : IsIdempotentElem e)
     (hN : N * N = 0) :
     IsIdempotentElem ((1 + N) * e * (1 - N)) ∧
@@ -110,7 +114,8 @@ private theorem apply_const_one_add_mul_mul_one_sub_eq {n : ℕ} (hn : Even n)
 /-- Conjugating an idempotent `e` to `u⁻¹ e u` by a unit `u` preserves the value of an
 even-degree cyclic cocycle on constant tuples. -/
 private theorem apply_const_units_conj' {n : ℕ} (hn : Even n)
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M
+        n)
     (hbφ : hochschildCoboundary R A M n φ = 0) (u : Aˣ) {e : A} (he : IsIdempotentElem e) :
     φ (fun _ ↦ ↑u⁻¹ * e * ↑u) = φ (fun _ ↦ e) := by
   -- Pass to `2 × 2` matrices, where conjugation by `!![0, u; -u⁻¹, 0]`, a product of three
@@ -149,7 +154,8 @@ private theorem apply_const_units_conj' {n : ℕ} (hn : Even n)
 /-- **Conjugation invariance.** Conjugating an idempotent `e` by a unit `u` preserves the value
 `φ(e, …, e)` of a cyclic cocycle `φ` of even degree. -/
 theorem apply_const_units_conj {n : ℕ} (hn : Even n)
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M
+        n)
     (hbφ : hochschildCoboundary R A M n φ = 0) (u : Aˣ) {e : A} (he : IsIdempotentElem e) :
     φ (fun _ ↦ ↑u * e * ↑u⁻¹) = φ (fun _ ↦ e) := by
   simpa only [inv_inv] using apply_const_units_conj' hn hφ hbφ u⁻¹ he
@@ -177,6 +183,42 @@ theorem evenPairing_units_conj (u : Aˣ) {e : A} (he : IsIdempotentElem e)
   have hb := (mem_cyclicCocycles_iff R A M).1 φ.2
   simp only [LinearMap.coe_comp, Function.comp_apply, evenPairing_mk]
   rw [apply_const_units_conj (even_two_mul m) φ.1.2 hb u he]
+
+/-- **Murray–von Neumann invariance of the even pairing.** If idempotent matrices `e` and `f`,
+possibly of different sizes, factor as `e = a * b` and `f = b * a` through rectangular matrices,
+then they have the same even pairing with every cyclic cohomology class of `A`. -/
+theorem evenPairing_matrixExtension_eq_of_mul_eq {ι κ : Type*} [Fintype ι] [DecidableEq ι]
+    [Fintype κ] [DecidableEq κ] {e : Matrix ι ι A} {f : Matrix κ κ A} (he : IsIdempotentElem e)
+    (hf : IsIdempotentElem f) {a : Matrix ι κ A} {b : Matrix κ ι A} (hab : a * b = e)
+    (hba : b * a = f) (m : ℕ) (c : cyclicCohomology R A M (2 * m)) :
+    evenPairing e he m (matrixExtension M ι (2 * m) c) =
+      evenPairing f hf m (matrixExtension M κ (2 * m) c) := by
+  -- Replacing `a` by `e * a` and `b` by `b * e` keeps both products, and makes `e ⊕ 0` and
+  -- `0 ⊕ f` conjugate by the involution `!![1 - e, e * a; b * e, 1 - f]`.
+  have hab' : e * a * (b * e) = e := by
+    rw [Matrix.mul_assoc, ← Matrix.mul_assoc a, hab, he.eq, he.eq]
+  have hba' : b * e * (e * a) = f := by
+    rw [Matrix.mul_assoc, ← Matrix.mul_assoc e, he.eq, ← hab, ← Matrix.mul_assoc,
+      ← Matrix.mul_assoc, hba, Matrix.mul_assoc, hba, hf.eq]
+  have hw := Matrix.fromBlocks_one_sub_mul_self_of_mul_eq hab' hba'
+    (by rw [← Matrix.mul_assoc, he.eq]) (by rw [Matrix.mul_assoc, he.eq])
+  let u : (Matrix (ι ⊕ κ) (ι ⊕ κ) A)ˣ := ⟨_, _, hw, hw⟩
+  have hconj : (u : Matrix (ι ⊕ κ) (ι ⊕ κ) A) * Matrix.fromBlocks e 0 0 0 *
+      (↑(u⁻¹) : Matrix (ι ⊕ κ) (ι ⊕ κ) A) =
+      Matrix.fromBlocks 0 0 0 f :=
+    Matrix.fromBlocks_one_sub_mul_fromBlocks_mul_fromBlocks_one_sub_of_mul_eq hab' hba'
+      (by rw [Matrix.mul_assoc, he.eq])
+  have h0ι : IsIdempotentElem (0 : Matrix ι ι A) := .zero
+  have h0κ : IsIdempotentElem (0 : Matrix κ κ A) := .zero
+  have hE := he.fromBlocks_zero₁₂_zero₂₁ h0κ
+  have hF := h0ι.fromBlocks_zero₁₂_zero₂₁ hf
+  have h := evenPairing_units_conj (R := R) (M := M) u hE (hconj ▸ hF) m
+  simp only [hconj] at h
+  have h₁ := evenPairing_fromBlocks_matrixExtension he h0κ m c
+  have h₂ := evenPairing_fromBlocks_matrixExtension h0ι hf m c
+  rw [evenPairing_zero, LinearMap.zero_apply, add_zero] at h₁
+  rw [evenPairing_zero, LinearMap.zero_apply, zero_add] at h₂
+  rw [← h₁, ← h₂, h]
 
 end cyclicCohomology
 

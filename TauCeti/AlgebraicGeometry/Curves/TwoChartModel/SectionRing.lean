@@ -314,7 +314,7 @@ private theorem mem_range_specMap_infinityChartRestriction (hF : IsFunctionField
   have he : sectionRingAwayGeneratorEquiv hF z (Away.isLocalizationElem
       (monomialDegreeOne_mem_sectionRingGrade (mem_riemannRochSpace_poles hF z))
       (monomialDegreeOne_mem_sectionRingGrade
-        (one_mem_riemannRochSpace_iff.mpr (isEffective_poles hF z).zero_le))) =
+        (one_mem_riemannRochSpace_iff.mpr (poles_nonneg hF z)))) =
         ⟨(z : F)⁻¹, hz⟩ := by
     have h1 : polesSectionOne hF z ^ 1 ∈ sectionRingGrade (poles hF z) 1 := by
       rw [pow_one]
@@ -466,7 +466,8 @@ theorem sectionRingProjIso_hom_over (hF : IsFunctionField k F) (z : Fˣ) :
       sectionRingProjInfinityChartIso_inv_ι, Category.assoc, Proj.awayι_toSpecCoeff,
       ← Spec.map_comp, ← CommRingCat.ofHom_comp]
     congr 2
-    exact (sectionRingAwayGeneratorEquiv hF z).toAlgHom.comp_algebraMap.symm
+    refine RingHom.ext fun x => ?_
+    exact ((sectionRingAwayGeneratorEquiv hF z).commutes x).symm
 
 end AlgebraicGeometry.twoChartModel
 

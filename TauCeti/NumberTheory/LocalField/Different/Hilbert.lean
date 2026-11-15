@@ -33,6 +33,8 @@ group. Hence `d(L/K) = ∑_{σ ≠ 1} v_L(σ x - x)`, and `σ` lies in `G_i` exa
 * `TauCeti.natCast_differentExponent_eq_sum_addVal_smul_sub`: `d(L/K) = ∑_{σ ≠ 1} v_L(σ x - x)`
   for a generator `x` of `𝒪[L]` over `𝒪[K]`.
 * `TauCeti.differentExponent_eq_finsum_lowerRamificationGroup`: Hilbert's formula.
+* `TauCeti.differentExponent_eq_sum_range_lowerRamificationGroup`: Hilbert's formula as the
+  finite sum `∑_{i < N} (#G_i - 1)` for any `N` with `G_N = 1`.
 * `TauCeti.sum_range_card_lowerRamificationGroup_sub_one_le_differentExponent`: its truncations
   bound the different exponent from below.
 * `TauCeti.differentExponent_eq_of_lowerRamificationGroup_eq_at_zero_eq_bot`: the single-break
@@ -97,6 +99,22 @@ theorem differentExponent_eq_finsum_lowerRamificationGroup :
   rw [TauCeti.IsLocalRing.sum_addVal_smul_sub_eq_finsum_card_ramificationGroup_sub_one hx,
     Nat.cast_inj] at h
   simpa only [LocalFieldsRamification.lowerRamificationGroup_def] using h
+
+/-- **Hilbert's formula, as a finite sum**: if the lower ramification group `G_N` is trivial,
+then `d(L/K) = ∑_{i < N} (#G_i - 1)`. -/
+theorem differentExponent_eq_sum_range_lowerRamificationGroup {N : ℕ}
+    (hN : LocalFieldsRamification.lowerRamificationGroup K L N = ⊥) :
+    differentExponent K L =
+      ∑ i ∈ Finset.range N,
+        (Nat.card (LocalFieldsRamification.lowerRamificationGroup K L i) - 1) := by
+  rw [differentExponent_eq_finsum_lowerRamificationGroup]
+  refine finsum_eq_sum_of_support_subset _ fun i hi ↦ ?_
+  simp only [Function.mem_support, ne_eq] at hi
+  simp only [Finset.coe_range, Set.mem_Iio]
+  by_contra h
+  refine hi ?_
+  rw [eq_bot_iff.2 ((LocalFieldsRamification.lowerRamificationGroup_antitone K L
+    (by exact_mod_cast not_lt.1 h)).trans hN.le), Subgroup.card_bot, Nat.sub_self]
 
 /-- **Hilbert's formula, truncated**: for a finite Galois extension `L/K` of nonarchimedean local
 fields, `∑_{i < m} (#G_i - 1) ≤ d(L/K)` for every `m`. -/

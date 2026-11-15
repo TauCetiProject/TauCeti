@@ -23,7 +23,9 @@ so that `∫ φ dV_ĝ = ∫ f ^ (N / 2) φ dV_g` for every function `φ` on `M`,
 `Vol(ĝ) = ∫ f ^ (N / 2) dV_g`. For a nonnegative `u` whose Yamabe conformal factor
 `f = u ^ (4 / (N - 2))` is `ContMDiff` and strictly positive, this is
 `Vol(ĝ) = ∫ u ^ (2 N / (N - 2)) dV_g`; when `N > 2` the exponent is the critical Sobolev
-exponent, while the identity itself holds in every dimension.
+exponent, while the identity itself holds in every dimension. More generally
+`∫ |v| ^ (2 N / (N - 2)) dV_ĝ = ∫ |u v| ^ (2 N / (N - 2)) dV_g` for every function `v`, the
+invariance of the denominator of the Yamabe quotient under `v ↦ u v`.
 
 The copies of `M` carry their Borel `σ`-algebras. The identities refine the pointwise
 comparison of chart densities `TauCeti.WithMetric.chartVolumeDensity_rescale`, and use no
@@ -36,6 +38,8 @@ orientation.
 * `TauCeti.WithMetric.lintegral_riemannianVolume_rescale`,
   `TauCeti.WithMetric.integral_riemannianVolume_rescale`: integration against the volume of `f g`.
 * `TauCeti.WithMetric.riemannianTotalVolume_rescale`: `Vol(f g) = ∫ f ^ (N / 2) dV_g`.
+* `TauCeti.WithMetric.integral_abs_rpow_rescale_rpow`: for `ĝ = u ^ (4 / (N - 2)) g`,
+  `∫ |v| ^ (2 N / (N - 2)) dV_ĝ = ∫ |u v| ^ (2 N / (N - 2)) dV_g`.
 * `TauCeti.WithMetric.riemannianTotalVolume_rescale_rpow`: `Vol(u ^ (4 / (N - 2)) g) =
   ∫ u ^ (2 N / (N - 2)) dV_g`.
 
@@ -77,7 +81,11 @@ private theorem measurable_ofReal_rpow_rescale (hf : Continuous f) :
       ENNReal.ofReal (f x.ofWithMetric ^ ((Module.finrank ℝ E : ℝ) / 2)) :=
   ((hf.comp continuous_ofWithMetric).measurable.pow_const _).ennreal_ofReal
 
-variable [FiniteDimensional ℝ E] [LindelofSpace M]
+variable [FiniteDimensional ℝ E]
+
+section Lindelof
+
+variable [LindelofSpace M]
 
 /-- **Volume under conformal change.** In real dimension `N`, the Riemannian volume of the
 rescaled metric `f g` is the image, under the identity map between the copies of `M`, of the
@@ -144,6 +152,28 @@ theorem integral_riemannianVolume_rescale {F : Type*} [NormedAddCommGroup F] [No
     integral_withDensity_eq_integral_toReal_smul (measurable_ofReal_rpow_rescale hf.continuous)
       (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
   simp only [ENNReal.toReal_ofReal (Real.rpow_nonneg (hf_pos _).le _)]
+
+/-- **Critical `Lᵖ` integrals under conformal change.** In real dimension `N`, for
+`ĝ = u ^ (4 / (N - 2)) g` with `u ≥ 0` and any function `v`,
+`∫ |v| ^ (2 N / (N - 2)) dV_ĝ = ∫ |u v| ^ (2 N / (N - 2)) dV_g`. -/
+theorem integral_abs_rpow_rescale_rpow {u : M → ℝ} (hu : ∀ x, 0 ≤ u x)
+    {hf : ContMDiff I 𝓘(ℝ) n fun x ↦ u x ^ (4 / ((Module.finrank ℝ E : ℝ) - 2))}
+    {hf_pos : ∀ x, 0 < u x ^ (4 / ((Module.finrank ℝ E : ℝ) - 2))} (v : M → ℝ) :
+    ∫ x, |v x.ofWithMetric| ^ (2 * (Module.finrank ℝ E : ℝ) / ((Module.finrank ℝ E : ℝ) - 2))
+        ∂riemannianVolume I (WithMetric (g.rescale _ hf hf_pos)) =
+      ∫ x, |u x.ofWithMetric * v x.ofWithMetric| ^
+          (2 * (Module.finrank ℝ E : ℝ) / ((Module.finrank ℝ E : ℝ) - 2))
+        ∂riemannianVolume I (WithMetric g) := by
+  rw [integral_riemannianVolume_rescale fun y ↦ |v y| ^
+    (2 * (Module.finrank ℝ E : ℝ) / ((Module.finrank ℝ E : ℝ) - 2))]
+  congr 1
+  funext x
+  rw [smul_eq_mul, ← Real.rpow_mul (hu _), abs_mul, abs_of_nonneg (hu _),
+    Real.mul_rpow (hu _) (abs_nonneg _)]
+  congr 2
+  ring
+
+end Lindelof
 
 /-- **Total volume under conformal change.** On a compact manifold of real dimension `N`, the
 total volume of the rescaled metric `f g` is `∫ f ^ (N / 2) dV_g`. -/

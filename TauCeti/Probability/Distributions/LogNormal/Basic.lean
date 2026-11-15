@@ -260,7 +260,7 @@ private lemma ofReal_abs_exp_mul_logNormalPDF (m : ℝ) (v : ℝ≥0) (x : ℝ) 
 theorem logNormalMeasure_eq_withDensity (m : ℝ) (hv : v ≠ 0) :
     logNormalMeasure m v = volume.withDensity (logNormalPDF m v) := by
   have hmap := MeasureTheory.map_withDensity_abs_deriv_mul (f := logNormalPDF m v)
-    MeasurableSet.univ measurable_exp (fun x _ ↦ (Real.hasDerivAt_exp x).hasDerivWithinAt)
+    MeasurableSet.univ (fun x _ ↦ (Real.hasDerivAt_exp x).hasDerivWithinAt)
     Real.exp_injective.injOn
   simp only [Measure.restrict_univ, ofReal_abs_exp_mul_logNormalPDF, image_univ,
     Real.range_exp] at hmap

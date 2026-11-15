@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Current.ResidueCocycle
-public import TauCeti.Algebra.Lie.Extension
+public import TauCeti.Algebra.Lie.Extension.Basic
 public import Mathlib.Algebra.Lie.Solvable
 
 /-!

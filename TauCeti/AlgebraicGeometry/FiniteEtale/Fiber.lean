@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Basic
+public import TauCeti.CategoryTheory.Comma.Over.Pullback
 
 /-!
 # Base change and geometric fibres of finite étale schemes
@@ -14,7 +15,11 @@ Finite étale morphisms are stable under base change, so pulling back along `f :
 restricts Mathlib's `Over.pullback f` to a functor `FiniteEtaleScheme.pullback f` from finite
 étale `S`-schemes to finite étale `T`-schemes. Base change along identities and composites is
 identified with the identity and with composites of base changes by `pullbackId` and
-`pullbackComp`, whose components are those of `Over.pullbackId` and `Over.pullbackComp`.
+`pullbackComp`, whose components are those of `Over.pullbackId` and `Over.pullbackComp`. These
+identifications are coherent: `pullbackComp x (𝟙 S)` is the base change of `pullbackId`
+(`pullbackComp_id_inv_app_comp_eqToHom`), and the two identifications of base change along a
+triple composite agree (`pullbackComp_comp_inv_app_comp_eqToHom`), up to the equalities
+`x ≫ 𝟙 S = x` and `x ≫ f ≫ g = (x ≫ f) ≫ g`.
 
 For a geometric point `x : Spec Ω ⟶ S`, with `Ω` a separably closed field, the
 *geometric fibre functor* `FiniteEtaleScheme.fiber x` sends a finite étale `S`-scheme `X` to the
@@ -27,7 +32,9 @@ The fibre functor is corepresented by the geometric point itself:
 `X`, that is, with morphisms `Over.mk x ⟶ X` in `Over S`. Its proof combines the adjunction
 `Over.map x ⊣ Over.pullback x` with `equivOfIsSepClosedFunctorCompInclIso`, which identifies
 the finite set attached to a finite étale `Spec Ω`-scheme with its set of sections.
-Changing the geometric point along a morphism of bases is `pullbackCompFiberIso`.
+Changing the geometric point along a morphism of bases is `pullbackCompFiberIso`, compatibly with
+identities and composites (`pullbackCompFiberIso_id_hom_app`, `pullbackCompFiberIso_comp_hom_app`).
+These compatibilities make the étale fundamental group functorial in the scheme.
 
 ## References
 
@@ -44,7 +51,7 @@ universe u
 
 namespace TauCeti.FiniteEtaleScheme
 
-variable {S T U : Scheme.{u}}
+variable {S T U V : Scheme.{u}}
 
 /-- Base change of finite étale schemes along `f : T ⟶ S`, sending `X` to `X ×_S T` over `T`.
 On underlying objects over the bases it is Mathlib's `Over.pullback f`. -/
@@ -109,6 +116,29 @@ theorem pullbackComp_hom_app_hom (f : T ⟶ S) (g : S ⟶ U) (X : FiniteEtaleSch
 theorem pullbackComp_inv_app_hom (f : T ⟶ S) (g : S ⟶ U) (X : FiniteEtaleScheme U) :
     ((pullbackComp f g).inv.app X).hom = (Over.pullbackComp f g).inv.app X.obj :=
   (rfl)
+
+/-- Base change along `x : T ⟶ S` of the identification `pullbackId` of base change along the
+identity is the composition isomorphism `pullbackComp x (𝟙 S)`, up to the equality
+`x ≫ 𝟙 S = x`. -/
+@[reassoc]
+theorem pullbackComp_id_inv_app_comp_eqToHom (x : T ⟶ S) (X : FiniteEtaleScheme S) :
+    (pullbackComp x (𝟙 S)).inv.app X ≫
+        eqToHom (congrArg (fun x ↦ (pullback x).obj X) (Category.comp_id x)) =
+      (pullback x).map (pullbackId.hom.app X) :=
+  -- Morphisms of finite étale schemes, and `eqToHom` between them, are those of `Over T`.
+  ObjectProperty.hom_ext _ (Over.pullbackComp_id_inv_app_comp_eqToHom x X.obj)
+
+/-- The two ways of identifying base change along `x ≫ f ≫ g` with the composite of the base
+changes along `g`, `f` and `x` agree, up to the equality `x ≫ f ≫ g = (x ≫ f) ≫ g`. -/
+@[reassoc]
+theorem pullbackComp_comp_inv_app_comp_eqToHom (x : V ⟶ T) (f : T ⟶ S) (g : S ⟶ U)
+    (X : FiniteEtaleScheme U) :
+    (pullbackComp x (f ≫ g)).inv.app X ≫
+        eqToHom (congrArg (fun x ↦ (pullback x).obj X) (Category.assoc x f g).symm) =
+      (pullback x).map ((pullbackComp f g).hom.app X) ≫
+        (pullbackComp x f).inv.app ((pullback g).obj X) ≫ (pullbackComp (x ≫ f) g).inv.app X :=
+  -- As above, the identity is checked in `Over V`.
+  ObjectProperty.hom_ext _ (Over.pullbackComp_comp_inv_app_comp_eqToHom x f g X.obj)
 
 variable {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 
@@ -196,5 +226,35 @@ theorem pullbackCompFiberIso_inv_app (f : T ⟶ S) (x : Spec (.of Ω) ⟶ T)
     (pullbackCompFiberIso f x).inv.app X =
       (equivOfIsSepClosed Ω).functor.map ((pullbackComp x f).hom.app X) :=
   (rfl)
+
+/-- Changing the geometric point along the identity: `pullbackCompFiberIso (𝟙 S) x` is the
+geometric fibre of `pullbackId`, up to the equality `x ≫ 𝟙 S = x`. -/
+@[reassoc]
+theorem pullbackCompFiberIso_id_hom_app (x : Spec (.of Ω) ⟶ S) (X : FiniteEtaleScheme S) :
+    (pullbackCompFiberIso (𝟙 S) x).hom.app X ≫
+        eqToHom (congrArg (fun x ↦ (fiber x).obj X) (Category.comp_id x)) =
+      (fiber x).map (pullbackId.hom.app X) := by
+  -- The geometric fibre is base change followed by `(equivOfIsSepClosed Ω).functor`
+  -- (`fiber_def`), so this is the image of `pullbackComp_id_inv_app_comp_eqToHom` under it.
+  have := congrArg (equivOfIsSepClosed Ω).functor.map (pullbackComp_id_inv_app_comp_eqToHom x X)
+  rw [Functor.map_comp, eqToHom_map] at this
+  exact this
+
+/-- Changing the geometric point along a composite `f ≫ g` is changing it along `f` and then
+along `g`, up to the equality `x ≫ f ≫ g = (x ≫ f) ≫ g`. -/
+@[reassoc]
+theorem pullbackCompFiberIso_comp_hom_app (f : T ⟶ S) (g : S ⟶ U) (x : Spec (.of Ω) ⟶ T)
+    (X : FiniteEtaleScheme U) :
+    (pullbackCompFiberIso (f ≫ g) x).hom.app X ≫
+        eqToHom (congrArg (fun x ↦ (fiber x).obj X) (Category.assoc x f g).symm) =
+      (fiber x).map ((pullbackComp f g).hom.app X) ≫
+        (pullbackCompFiberIso f x).hom.app ((pullback g).obj X) ≫
+          (pullbackCompFiberIso g (x ≫ f)).hom.app X := by
+  -- As above, this is the image of `pullbackComp_comp_inv_app_comp_eqToHom` under
+  -- `(equivOfIsSepClosed Ω).functor`.
+  have := congrArg (equivOfIsSepClosed Ω).functor.map
+    (pullbackComp_comp_inv_app_comp_eqToHom x f g X)
+  rw [Functor.map_comp, eqToHom_map, Functor.map_comp, Functor.map_comp] at this
+  exact this
 
 end TauCeti.FiniteEtaleScheme

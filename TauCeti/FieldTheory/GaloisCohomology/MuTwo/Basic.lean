@@ -50,6 +50,7 @@ the class of `a` to `(a)`.
   `ofDiscreteModule ℤ G_K (KummerCoeff K 2) ≅ trivialF2 G_K`, whose application rules
   `TauCeti.kummerCoeffIsoTrivialF2_hom_apply` and
   `TauCeti.kummerCoeffIsoTrivialF2_inv_apply` are the value dictionary and its inverse.
+* `TauCeti.trivialF2ToMu2`: the inverse dictionary `𝔽₂ → μ₂` as a `G_K`-equivariant map.
 * `TauCeti.kummerClass`: the Kummer class `(a) ∈ H¹(G_K, 𝔽₂)` of a unit, read in the
   `trivialF2 G_K` carrier.
 * `TauCeti.kummerCocycleModTwo` and `TauCeti.kummerCocycleModTwoClass`: the explicit
@@ -305,6 +306,50 @@ theorem kummerCoeffIsoTrivialF2_inv_apply (b : (trivialF2 (AbsoluteGaloisGroup K
     = (kummerCoeffEquiv K).symm b
   rw [eqToIso.inv, eqToHom_ofDiscreteModule_trivialF2_symm_apply]
   exact ofDiscreteModuleIso_inv_hom_apply _ _ _
+
+/-- **The inverse coefficient dictionary `𝔽₂ ≃ μ₂` as a `G_K`-equivariant map.** It is
+`(kummerCoeffEquiv K).symm`, equivariant because the Galois action on `μ₂` is trivial. -/
+noncomputable def trivialF2ToMu2 :
+    (trivialF2 (AbsoluteGaloisGroup K)).V →+[AbsoluteGaloisGroup K] KummerCoeff K 2 :=
+  { (kummerCoeffEquiv K).symm.toAddMonoidHom with
+    map_smul' := fun g b ↦ by
+      simp only [AddMonoidHom.toFun_eq_coe, AddEquiv.coe_toAddMonoidHom, MonoidHom.id_apply,
+        mu2_smul_eq_self, TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply] }
+
+/-- `TauCeti.trivialF2ToMu2` is the inverse coefficient dictionary. -/
+theorem trivialF2ToMu2_apply (b : (trivialF2 (AbsoluteGaloisGroup K)).V) :
+    trivialF2ToMu2 K b = (kummerCoeffEquiv K).symm b :=
+  (rfl)
+
+/-- The inverse of `TauCeti.kummerCoeffIsoTrivialF2`, read on the discrete module `𝔽₂`, is the
+coefficient map of `TauCeti.trivialF2ToMu2`. -/
+theorem eqToHom_comp_kummerCoeffIsoTrivialF2_inv :
+    eqToHom (ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K)) ≫
+        (kummerCoeffIsoTrivialF2 K).inv =
+      ofDiscreteModuleMap (trivialF2ToMu2 K).toAddMonoidHom.toIntLinearMap
+        fun g m ↦ map_smul (trivialF2ToMu2 K) g m := by
+  refine TopRep.hom_ext (DFunLike.ext _ _ fun (b : (trivialF2 (AbsoluteGaloisGroup K)).V) ↦ ?_)
+  -- The goal is the composite read at a carrier, which no rewrite reaches: `TopRep.comp_apply` is
+  -- stated at the carrier of a `TopRep` object, and the carrier of `ofDiscreteModule` is not
+  -- syntactically the module. `change` exposes the composite, as in
+  -- `TauCeti.kummerCoeffIsoTrivialF2_inv_apply`; the remaining goal is
+  -- `ofDiscreteModuleMap_hom_apply`, stated at the unfolded carrier.
+  change (kummerCoeffIsoTrivialF2 K).inv
+    (eqToHom (ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K)) b) = _
+  rw [eqToHom_ofDiscreteModule_trivialF2_apply, kummerCoeffIsoTrivialF2_inv_apply]
+  rfl
+
+/-- **The inverse coefficient dictionary in the multiplicative coefficients**: the element `0` of
+`𝔽₂` goes to `1` in `(Kˢ)ˣ`, and the element `1` goes to `-1`. -/
+theorem toMul_kummerCoeffIncl_trivialF2ToMu2 (b : (trivialF2 (AbsoluteGaloisGroup K)).V) :
+    (kummerCoeffIncl K 2 (trivialF2ToMu2 K b)).toMul =
+      if trivialF2Equiv (AbsoluteGaloisGroup K) b = 0 then 1 else -1 := by
+  rw [toMul_kummerCoeffIncl, trivialF2ToMu2_apply, kummerCoeffEquiv_symm_apply]
+  generalize trivialF2Equiv (AbsoluteGaloisGroup K) b = v
+  rcases (by decide : ∀ v : ZMod 2, v = 0 ∨ v = 1) v with rfl | rfl
+  · simp
+  · rw [← mu2EquivZMod2_apply_mu2NegOne (K := K), AddEquiv.symm_apply_apply]
+    simp [toMul_mu2NegOne]
 
 /-! ### The Kummer class of a unit -/
 

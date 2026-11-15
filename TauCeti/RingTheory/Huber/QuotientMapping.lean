@@ -61,11 +61,7 @@ theorem isQuotientMapping_iff_isOpenQuotientMap_and_isIntegral (f : Hom S T) :
   · intro hf
     exact ⟨hf.isOpenQuotientMap, fun _ hb ↦ hf.mem_plus_iff.mp hb⟩
   · rintro ⟨hopen, hint⟩
-    refine ⟨hopen, le_antisymm (fun b hb ↦ hint b hb) ?_⟩
-    let := T.isRingOfIntegralElements.isIntegrallyClosedIn
-    apply Subring.integralClosure_subring_le_iff.mpr
-    rintro _ ⟨a, ha, rfl⟩
-    exact f.map_mem_plus a ha
+    exact ⟨hopen, le_antisymm (fun b hb ↦ hint b hb) fun _ hb ↦ f.mem_plus_of_isIntegral hb⟩
 
 /-- The identity of a Huber pair is a quotient mapping. -/
 @[simp]
@@ -94,18 +90,7 @@ theorem IsQuotientMapping.comp {f : Hom S T} {g : Hom T U}
   refine ⟨?_, fun c hc ↦ ?_⟩
   · simpa only [toRingHom_comp, RingHom.coe_comp] using
       hg.isOpenQuotientMap.comp hf.isOpenQuotientMap
-  · let R := S.plus.map (g.comp f).toRingHom
-    let V := (integralClosure R C).toSubring
-    have hmap : T.plus.map g.toRingHom ≤ V := by
-      rintro _ ⟨b, hb, rfl⟩
-      have hR : (S.plus.map f.toRingHom).map g.toRingHom = R := by
-        simp only [R, toRingHom_comp, Subring.map_map]
-      let φ : S.plus.map f.toRingHom →+* R :=
-        g.toRingHom.restrict _ R fun b hb ↦ hR ▸ Subring.mem_map.mpr ⟨b, hb, rfl⟩
-      exact (hf.mem_plus_iff.mp hb).map_of_comp_eq φ g.toRingHom (by ext; rfl)
-    have hcl : (integralClosure (T.plus.map g.toRingHom) C).toSubring ≤ V :=
-      Subring.integralClosure_subring_le_iff.mpr hmap
-    exact hcl (hg.mem_plus_iff.mp hc)
+  · exact isIntegral_plus_map_comp (fun _ hb ↦ hf.mem_plus_iff.mp hb) (hg.mem_plus_iff.mp hc)
 
 /-- For a quotient mapping, the inverse of the first-isomorphism-theorem ring equivalence
 is a continuous morphism of Huber pairs. The source of the inverse is the target pair, and its

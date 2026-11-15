@@ -7,13 +7,12 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
 public import TauCeti.AlgebraicGeometry.ModularCurve.HomLevel
-public import TauCeti.AlgebraicGeometry.Morphisms.Etale
+public import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 public import TauCeti.Data.ZMod.MonoidHomEquiv
 import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Rigidity
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
-import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.TateNormalForm
 import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
@@ -52,7 +51,7 @@ with no hypothesis on `S`; such a structure can only exist where `N` is invertib
 the naive `A`-structures are rigid as soon as `A` contains elements `a` and `b` with `a² ≠ 1`,
 `b ≠ 1` and `b ≠ a^{±1}` (`ModuliProblem.isRigid_naiveLevel`), since an automorphism fixing `φ a`
 and `φ b` is trivial (`EllipticCurveGeom.IsFiberwiseInjective.eq_id_of_isPullback`). The bound
-`N ≥ 3` is sharp: for `N ≤ 2`, the automorphism `[-1]` fixes every point killed by `N`. Taking
+`N ≥ 3` is sharp: for `N = 1, 2`, the automorphism `[-1]` fixes every point killed by `N`. Taking
 `a = 1` and `b = 2` in `ℤ/Nℤ` shows that `[Γ₁(N)]` is rigid for `N ≥ 4`
 (`ModuliProblem.isRigid_gammaOneNaive`).
 
@@ -164,7 +163,7 @@ field of the base, the `N`-torsion of an elliptic curve is `(ℤ/Nℤ)²`, so ev
   where `N` is invertible), 3.7.1 (relative representability of naive full level `N`),
   Chapter 4, and §7.1 (the action of `GL₂(ℤ/Nℤ)` on `[Γ(N)]`).
 * D. Loeffler, *Modular curves*, lecture notes, Proposition 3.8.2 (naive level structures are
-  relatively representable and finite étale over `Ell/ℤ[1/N]`).
+  relatively representable and étale over `Ell/ℤ[1/N]`).
 -/
 
 public section
@@ -327,11 +326,8 @@ identity, because it fixes `P`, `Q` and `-P`, which are distinct in every fibre.
 made on the base, which may be nonreduced or non-affine. -/
 theorem isRigid_gammaNaive (hN : 3 ≤ N) : (gammaNaive B N).IsRigid := by
   have : Fact (1 < N) := ⟨by omega⟩
-  have h2 : (2 : ZMod N) ≠ 0 := by
-    intro h
-    have := (ZMod.natCast_eq_zero_iff 2 N).mp (by exact_mod_cast h)
-    have := Nat.le_of_dvd two_pos this
-    omega
+  have h2 : (2 : ZMod N) ≠ 0 := fun h ↦
+    Nat.not_dvd_of_pos_of_lt two_pos (by omega : 2 < N) ((ZMod.natCast_eq_zero_iff 2 N).mp h)
   refine isRigid_naiveLevel B (a := .ofAdd (1, 0)) (b := .ofAdd (0, 1)) ?_ ?_ ?_ ?_
   · rw [← ofAdd_add, Ne, ofAdd_eq_one, Prod.ext_iff]
     simp [one_add_one_eq_two, h2]
@@ -346,28 +342,19 @@ fixes `P`, `2P` and `-P`, which are distinct in every fibre. No hypothesis is ma
 bound is sharp: on `Y² + Y = X³` over a field containing a primitive cube root of unity `ζ`, the
 automorphism `(X, Y) ↦ (ζX, Y)` fixes the point `(0, 0)` of order `3`. -/
 theorem isRigid_gammaOneNaive (hN : 4 ≤ N) : (gammaOneNaive B N).IsRigid := by
-  have : NeZero N := ⟨by omega⟩
-  rw [isRigid_iff]
-  intro X σ hσ α hα
-  have hφ := (naiveLevelEquiv X α).2
-  set P := (naiveLevelEquiv X α).1 (.ofAdd 1)
-  -- the multiples `P`, `2P` and `3P` miss the zero section, since `P` has exact order `N ≥ 4`
-  have hk (k : ℤ) (hk : 0 < k) (hk' : k < 4) (s : X.base) :
-      (P.left ≫ (X.curve.mulBy k).left) s ≠ X.curve.zero s := by
-    lift k to ℕ using hk.le
-    rw [← Over.comp_left, EllipticCurveGeom.comp_mulBy, zpow_natCast]
-    exact (EllipticCurveGeom.isFiberwiseInjective_zmod_iff.mp hφ) k (by omega) (by omega) s
-  -- `σ` fixes `P`, because it fixes the naive `[Γ₁(N)]`-structure
-  have hσP : P.left ≫ σ.total = P.left := by
-    have h := congrArg (fun α ↦ (naiveLevelEquiv X α).1 (.ofAdd 1)) hα
-    simp only [naiveLevelEquiv_map, MonoidHom.comp_apply] at h
-    simpa [hσ] using (EllipticCurveGeom.eq_pointsPullback_iff σ.isPullback σ.zero_total).mp h.symm
-  refine EllObj.hom_ext ?_
-  rw [EllObj.id_total]
-  refine EllipticCurveGeom.eq_id_of_isPullback_of_comp_eq (P := P.left) (by simp)
-    (by simpa using hk 1) (hk 2 (by norm_num) (by norm_num))
-    (hk 3 (by norm_num) (by norm_num)) (hσ ▸ σ.isPullback) ?_ hσP
-  simp [hσ]
+  have h (k : ℕ) (h0 : 0 < k) (hk : k < N) : (k : ZMod N) ≠ 0 := by
+    rw [Ne, ZMod.natCast_eq_zero_iff]
+    exact Nat.not_dvd_of_pos_of_lt h0 hk
+  refine isRigid_naiveLevel B (a := .ofAdd 1) (b := .ofAdd 2) ?_ ?_ ?_ ?_
+  · rw [← ofAdd_add, Ne, ofAdd_eq_one, one_add_one_eq_two]
+    exact_mod_cast h 2 (by omega) (by omega)
+  · rw [Ne, ofAdd_eq_one]
+    exact_mod_cast h 2 (by omega) (by omega)
+  · rw [Ne, Multiplicative.ofAdd.injective.eq_iff, ← sub_eq_zero]
+    norm_num
+    exact_mod_cast h 1 (by omega) (by omega)
+  · rw [← ofAdd_neg, Ne, Multiplicative.ofAdd.injective.eq_iff, ← sub_eq_zero, sub_neg_eq_add]
+    exact_mod_cast h 3 (by omega) (by omega)
 
 
 /-- The morphism `[Γ(N)] ⟶ [Γ₁(N)]` of naive moduli problems which keeps the first component `P`
@@ -822,7 +809,7 @@ theorem hasProperty_gammaNaiveRelRepData {W : MorphismProperty Scheme.{u}}
       (W.comp_mem _ _ (W.pullback_fst _ _ (h X)) (h X))
 
 /-- The naive problem `[Γ(N)]` is locally of finite presentation over `Ell/B`. -/
-theorem hasProperty_gammaNaiveRelRepData_locallyOfFinitePresentation :
+theorem hasProperty_locallyOfFinitePresentation_gammaNaiveRelRepData :
     (gammaNaiveRelRepData (B := B) (N := N)).HasProperty @LocallyOfFinitePresentation :=
   hasProperty_gammaNaiveRelRepData (fun _ _ _ _ ↦ inferInstance) fun _ ↦ inferInstance
 

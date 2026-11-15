@@ -103,9 +103,14 @@ omit [Algebra k F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
 /-- If `F' = F(y)` with `y ^ n = u` and `n` coprime to `ord_P u`, then some generator `z` of
 `F' / F` has `z ^ n` of order one at `P`. -/
 theorem exists_adjoin_eq_top_pow_eq_ord_eq_one (P : Place k F) {y : F'} {n : ℕ} {u : F}
-    (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hu : u ≠ 0) (hn0 : n ≠ 0)
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hu : u ≠ 0)
     (h : Int.gcd n (P.ord u) = 1) :
     ∃ z : F', ∃ c : F, F⟮z⟯ = ⊤ ∧ z ^ n = algebraMap F F' c ∧ P.ord c = 1 ∧ z ≠ 0 := by
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    rw [pow_zero, eq_comm, ← map_one (algebraMap F F')] at hy
+    rw [(algebraMap F F').injective hy, P.ord_one] at h
+    simp at h
   have hy0 : y ≠ 0 := by
     rintro rfl
     rw [zero_pow hn0, eq_comm, map_eq_zero] at hy

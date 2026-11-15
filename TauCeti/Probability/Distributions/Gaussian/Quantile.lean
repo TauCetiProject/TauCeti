@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Dirac
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
+public import TauCeti.Probability.Distributions.Gaussian.Transforms
 public import Mathlib.Topology.Instances.EReal.Lemmas
 
 /-!
@@ -21,6 +22,10 @@ constant quantile `m`.
 In particular the standard Gaussian quantile is `z(u) = √2 * erfInv (2 * u - 1)`, and the general
 formula reads `m + √v * z(u)`.
 
+For a multivariate Gaussian, every real linear projection is a scalar Gaussian. Its quantile is
+therefore the directional mean plus the square root of the directional variance times `z(u)`.
+This includes singular covariance matrices and directions with zero variance.
+
 The one-sided endpoint limits are stated in `EReal`: a positive-variance Gaussian quantile tends
 to `⊥` at level zero and to `⊤` at level one, while the zero-variance law has constant quantile
 `m` at both endpoints.
@@ -28,7 +33,10 @@ to `⊥` at level zero and to `⊤` at level one, while the zero-variance law ha
 ## Main declarations
 
 * `TauCeti.Probability.quantile_gaussianReal` — the quantile of `gaussianReal m v`;
-* `TauCeti.Probability.quantile_gaussianReal_zero_one` — the standard Gaussian quantile.
+* `TauCeti.Probability.quantile_gaussianReal_zero_one` — the standard Gaussian quantile;
+* `TauCeti.Probability.quantile_gaussianReal_eq_add_mul` — the affine form `m + √v * z(u)`;
+* `EuclideanSpace.quantile_map_inner_multivariateGaussian` — the quantile of a real linear
+  projection of a multivariate Gaussian;
 * `TauCeti.Probability.tendsto_quantile_gaussianReal_nhdsGT_zero` and
   `TauCeti.Probability.tendsto_quantile_gaussianReal_nhdsLT_one` — the one-sided endpoint limits.
 -/
@@ -38,7 +46,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory ProbabilityTheory Real Set Topology
-open scoped NNReal
+open scoped NNReal RealInnerProductSpace
 
 namespace TauCeti.Probability
 
@@ -64,6 +72,13 @@ theorem quantile_gaussianReal (m : ℝ) (v : ℝ≥0) (hu : u ∈ Ioo 0 1) :
 theorem quantile_gaussianReal_zero_one (hu : u ∈ Ioo 0 1) :
     (gaussianReal 0 1).quantile u = √2 * Real.erfInv (2 * u - 1) := by
   simpa using quantile_gaussianReal 0 1 hu
+
+/-- Every Gaussian quantile is the affine image `m + √v * z(u)` of the standard Gaussian
+quantile `z(u)`, including at the Dirac boundary `v = 0`. -/
+theorem quantile_gaussianReal_eq_add_mul (m : ℝ) (v : ℝ≥0) (hu : u ∈ Ioo 0 1) :
+    (gaussianReal m v).quantile u = m + √(v : ℝ) * (gaussianReal 0 1).quantile u := by
+  rw [quantile_gaussianReal m v hu, quantile_gaussianReal_zero_one hu, Real.sqrt_mul zero_le_two]
+  ring
 
 /-- The lower endpoint limit of a Gaussian quantile is minus infinity at positive variance and
 the mean at zero variance. -/
@@ -106,3 +121,58 @@ theorem tendsto_quantile_gaussianReal_nhdsLT_one (m : ℝ) (v : ℝ≥0) :
       ((cdf_nonneg (gaussianReal m v) b).trans_lt hu.1) hu.2).2 hu.1).le
 
 end TauCeti.Probability
+
+namespace EuclideanSpace
+
+open TauCeti.Probability
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {u : ℝ}
+
+/-- The quantile of a real linear projection of a multivariate Gaussian is its directional mean
+plus its directional standard deviation times the standard Gaussian quantile. This includes
+directions with zero variance. -/
+theorem quantile_map_inner_multivariateGaussian (m q : EuclideanSpace ℝ ι)
+    {S : Matrix ι ι ℝ} (hS : S.PosSemidef) (hu : u ∈ Ioo 0 1) :
+    ((multivariateGaussian m S).map (fun x ↦ ⟪q, x⟫)).quantile u =
+      ⟪q, m⟫ + √⟪q, S.toEuclideanLin q⟫ * (gaussianReal 0 1).quantile u := by
+  rw [map_inner_multivariateGaussian m q hS,
+    quantile_gaussianReal_eq_add_mul _ _ hu,
+    Real.coe_toNNReal _ ((Matrix.isPositive_toEuclideanLin_iff.mpr hS).inner_nonneg_right q)]
+
+/-- At level zero, a multivariate Gaussian projection tends to its constant value in a
+zero-variance direction and to minus infinity otherwise. -/
+theorem tendsto_quantile_map_inner_multivariateGaussian_nhdsGT_zero
+    (m q : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ} (hS : S.PosSemidef) :
+    Tendsto (fun u ↦
+        (((multivariateGaussian m S).map (fun x ↦ ⟪q, x⟫)).quantile u : EReal))
+      (𝓝[>] 0)
+      (𝓝 (if ⟪q, S.toEuclideanLin q⟫ = 0 then (⟪q, m⟫ : EReal) else ⊥)) := by
+  have hnonneg := (Matrix.isPositive_toEuclideanLin_iff.mpr hS).inner_nonneg_right q
+  have hzero : (⟪q, S.toEuclideanLin q⟫.toNNReal = 0) ↔
+      ⟪q, S.toEuclideanLin q⟫ = 0 := by
+    rw [Real.toNNReal_eq_zero]
+    exact ⟨fun h ↦ le_antisymm h hnonneg, fun h ↦ h.le⟩
+  rw [map_inner_multivariateGaussian m q hS]
+  simpa only [hzero] using
+    tendsto_quantile_gaussianReal_nhdsGT_zero ⟪q, m⟫
+      ⟪q, S.toEuclideanLin q⟫.toNNReal
+
+/-- At level one, a multivariate Gaussian projection tends to its constant value in a
+zero-variance direction and to plus infinity otherwise. -/
+theorem tendsto_quantile_map_inner_multivariateGaussian_nhdsLT_one
+    (m q : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ} (hS : S.PosSemidef) :
+    Tendsto (fun u ↦
+        (((multivariateGaussian m S).map (fun x ↦ ⟪q, x⟫)).quantile u : EReal))
+      (𝓝[<] 1)
+      (𝓝 (if ⟪q, S.toEuclideanLin q⟫ = 0 then (⟪q, m⟫ : EReal) else ⊤)) := by
+  have hnonneg := (Matrix.isPositive_toEuclideanLin_iff.mpr hS).inner_nonneg_right q
+  have hzero : (⟪q, S.toEuclideanLin q⟫.toNNReal = 0) ↔
+      ⟪q, S.toEuclideanLin q⟫ = 0 := by
+    rw [Real.toNNReal_eq_zero]
+    exact ⟨fun h ↦ le_antisymm h hnonneg, fun h ↦ h.le⟩
+  rw [map_inner_multivariateGaussian m q hS]
+  simpa only [hzero] using
+    tendsto_quantile_gaussianReal_nhdsLT_one ⟪q, m⟫
+      ⟪q, S.toEuclideanLin q⟫.toNNReal
+
+end EuclideanSpace

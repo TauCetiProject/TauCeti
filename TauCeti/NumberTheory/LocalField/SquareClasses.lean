@@ -56,7 +56,7 @@ theorem exists_integerUnit_not_isSquare_residue (h2 : IsUnit (2 : 𝒪[K])) :
   intro hs
   apply ha
   have hs' : IsSquare aunit := by simpa only [hu] using hs
-  exact (isSquare_units_val_iff).mpr hs'
+  exact (Units.isSquare_coe_iff).mpr hs'
 
 /-- Multiplying an integer unit by a uniformizer gives another nonsquare class. -/
 theorem not_isSquare_integerUnit_mul_uniformizer (u : 𝒪[K]ˣ) {π : Kˣ}

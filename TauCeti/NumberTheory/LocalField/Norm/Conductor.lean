@@ -29,6 +29,8 @@ norm group exactly when `u < v`. At the unramified break `-1` the conductor is z
 
 * `TauCeti.LocalFieldsRamification.UpperJump.unitFiltration_le_normGroup_iff_of_finrank_prime`:
   the conductor criterion at any prime-degree upper break, including the unramified break `-1`.
+* `unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot_of_finrank_prime`:
+  in prime degree, `U(K,v)` lies in the norm group exactly when `G^v = 1`.
 
 ## References
 
@@ -74,21 +76,28 @@ private theorem map_normUnits_unitFiltration_inf_succ_before_break
       ((psiNat_strictMono K L).monotone v.le_succ)))
       (map_normUnits_unitFiltration_psiNat_le K L (v + 1))
 
-/-- Up to a prime-degree break, the norms of integer units that lie in `U(K,v)` are exactly
-norms from the Herbrand-shifted step `U(L, ψℕ(v))`. -/
-theorem map_normUnits_unitFiltration_zero_inf_of_le_break
-    (hℓ : (Module.finrank K L).Prime) {v t : ℕ} (hvt : v ≤ t)
+/-- For a Galois extension of prime degree with an upper break at a natural number `t`, the norms of
+integer units that lie in `U(K,v)` are exactly the norms from the Herbrand-shifted step
+`U(L, ψℕ(v))`, at every natural depth `v`. -/
+theorem map_normUnits_unitFiltration_zero_inf
+    (hℓ : (Module.finrank K L).Prime) {v t : ℕ}
     (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
     (unitFiltration L 0).map (Algebra.normUnits K) ⊓ unitFiltration K v =
       (unitFiltration L (psiNat K L v)).map (Algebra.normUnits K) := by
-  induction v with
-  | zero =>
-    rw [psiNat_zero]
-    exact inf_of_le_left (by
-      simpa only [psiNat_zero] using map_normUnits_unitFiltration_psiNat_le K L 0)
-  | succ v ih =>
-    rw [← inf_of_le_right (unitFiltration_antitone v.le_succ), ← inf_assoc,
-      ih (by omega), map_normUnits_unitFiltration_inf_succ_before_break hℓ (by omega) ht]
+  rcases le_or_gt v t with hvt | hvt
+  · induction v with
+    | zero =>
+      rw [psiNat_zero]
+      exact inf_of_le_left (by
+        simpa only [psiNat_zero] using map_normUnits_unitFiltration_psiNat_le K L 0)
+    | succ v ih =>
+      rw [← inf_of_le_right (unitFiltration_antitone v.le_succ), ← inf_assoc,
+        ih (by omega), map_normUnits_unitFiltration_inf_succ_before_break hℓ (by omega) ht]
+  · have h := map_normUnits_unitFiltration_after_break hℓ hvt ht
+    rw [h]
+    exact inf_eq_right.2 (by
+      rw [← h]
+      exact Subgroup.map_mono (unitFiltration_antitone (Nat.zero_le _)))
 
 /-- At every depth up to a prime-degree upper break, the full norm image of the
 Herbrand-shifted unit step has relative index equal to the extension degree. -/
@@ -147,7 +156,7 @@ private theorem unitFiltration_le_normGroup_iff (hℓ : (Module.finrank K L).Pri
         (hyx ▸ unitFiltration_antitone (Nat.zero_le v) hx), hyx⟩
     have hstep : unitFiltration K v ≤
         (unitFiltration L (psiNat K L v)).map (Algebra.normUnits K) := by
-      rw [← map_normUnits_unitFiltration_zero_inf_of_le_break hℓ hvt ht]
+      rw [← map_normUnits_unitFiltration_zero_inf hℓ ht]
       exact le_inf hunit le_rfl
     have hone := Subgroup.relIndex_eq_one.2 hstep
     rw [relIndex_normUnits_unitFiltration_of_le_break hℓ hvt ht] at hone
@@ -200,6 +209,32 @@ theorem UpperJump.unitFiltration_le_normGroup_iff_of_finrank_prime
   · have hu_eq : u = ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩ := Subtype.ext hut
     subst u
     simpa only [Nat.cast_lt] using unitFiltration_le_normGroup_iff hdegree hu
+
+/-- **The prime-degree conductor in the upper numbering.** For a Galois extension of prime degree,
+the step `U(K,v)` lies in the norm group exactly when the upper ramification group `G^v` is
+trivial. -/
+theorem unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot_of_finrank_prime
+    (hdegree : (Module.finrank K L).Prime) (v : ℕ) :
+    unitFiltration K v ≤ normGroup K L ↔
+      upperRamificationGroup K L ⟨v, Nat.cast_mem_ramificationIndexDomain v⟩ = ⊥ := by
+  refine ⟨fun h ↦ ?_, unitFiltration_le_normGroup_of_upperRamificationGroup_eq_bot⟩
+  have : Fact (Nat.card (L ≃ₐ[K] L)).Prime := ⟨IsGalois.card_aut_eq_finrank K L ▸ hdegree⟩
+  rw [upperRamificationGroup_natCast]
+  -- In the unramified case `G^v ≤ G_0` is already trivial.
+  by_cases h0 : lowerRamificationGroup K L 0 = ⊥
+  · exact eq_bot_iff.2 (h0 ▸ lowerRamificationGroup_antitone K L (Int.natCast_nonneg _))
+  -- Otherwise the unique upper break `t` lies below `v`, so `G^v` is a proper subgroup of the
+  -- group `G^t` of prime order.
+  obtain ⟨N, hN⟩ := exists_forall_upperRamificationGroup_natCast_eq_bot K L
+  obtain ⟨t, -, ht⟩ := exists_lt_upperJump_of_finrank_prime hdegree
+    ((upperRamificationGroup_natCast K L N).symm.trans (hN N le_rfl)) h0
+  have htv : t < v := Nat.cast_lt (α := ℝ).1
+    ((ht.unitFiltration_le_normGroup_iff_of_finrank_prime hdegree v).1 h)
+  have hlt := (upperJump_iff K L _).1 ht ⟨v, Nat.cast_mem_ramificationIndexDomain v⟩
+    (Subtype.mk_lt_mk.2 (by exact_mod_cast htv))
+  rw [upperRamificationGroup_natCast] at hlt
+  exact (lowerRamificationGroup K L _).eq_bot_or_eq_top_of_prime_card.resolve_right
+    (hlt.trans_le le_top).ne
 
 end LocalFieldsRamification
 

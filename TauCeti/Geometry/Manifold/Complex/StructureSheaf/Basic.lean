@@ -18,6 +18,8 @@ public import Mathlib.Topology.Sheaves.Functors
 public import TauCeti.Geometry.Manifold.Complex.Analytic
 public import TauCeti.Geometry.Manifold.Complex.Chart
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+-- Supplies `exists_germ_eq` for stalks of ring-valued presheaves.
+import Mathlib.Algebra.Category.Ring.FilteredColimits
 
 /-!
 # The holomorphic structure sheaf
@@ -33,10 +35,12 @@ isomorphism `ℂ ≃ₐ[ℂ] H⁰(X, 𝒪)`. The inverse is evaluation at any po
 which point is chosen. In particular, the space of global sections has dimension one.
 
 The function coercions and algebra instance use the bundled analytic-map representation.
-Pointwise computation is provided by section evaluation lemmas.
+Pointwise computation is provided by section evaluation lemmas, and restriction along inclusions of
+open sets is bundled as the `ℂ`-algebra homomorphism `restrictAlgHom`.
 The sheaf of modules has exactly the same underlying presheaf of functions.
 Evaluation of germs gives a surjective ring homomorphism from each stalk to `ℂ`.
-Holomorphic maps induce morphisms to the pushed-forward structure sheaf by precomposition.
+Holomorphic maps induce morphisms to the pushed-forward structure sheaf by precomposition,
+and pull back holomorphic germs (`stalkPrecomp`), functorially and preserving their values.
 
 The sheaf construction follows `smoothSheafCommRing` in
 `Mathlib/Geometry/Manifold/Sheaf/Smooth.lean` by Heather Macbeth and Adam Topaz, using
@@ -153,6 +157,71 @@ theorem map_apply {U V : (Opens (TopCat.of X))ᵒᵖ} (h : U ⟶ V)
 @[simp]
 theorem algebraMap_apply (U : (Opens (TopCat.of X))ᵒᵖ) (c : ℂ) (x : ↥(unop U)) :
     algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj U) c x = c := (rfl)
+
+variable (I) in
+/-- Restriction of holomorphic sections along an inclusion `V ≤ U` of open subsets, bundled as a
+`ℂ`-algebra homomorphism. -/
+def restrictAlgHom {U V : Opens X} (h : V ≤ U) :
+    (holomorphicStructureSheaf I X).obj.obj (op U) →ₐ[ℂ]
+      (holomorphicStructureSheaf I X).obj.obj (op V) where
+  toRingHom := ((holomorphicStructureSheaf I X).obj.map (op (homOfLE h))).hom
+  commutes' c := ext fun x ↦
+    (map_apply (op (homOfLE h)) (algebraMap ℂ _ c) x).trans
+      ((algebraMap_apply (op U) c _).trans (algebraMap_apply (op V) c x).symm)
+
+/-- Restricting a holomorphic section evaluates it on the smaller open set. -/
+@[simp]
+theorem restrictAlgHom_apply {U V : Opens X} (h : V ≤ U)
+    (s : (holomorphicStructureSheaf I X).obj.obj (op U)) (x : V) :
+    (no_index (restrictAlgHom I h s)) x = s (Opens.inclusion h x) :=
+  map_apply (op (homOfLE h)) s x
+
+variable (I) in
+/-- Forgetting the `ℂ`-algebra structure on `restrictAlgHom` recovers the underlying sheaf
+restriction ring homomorphism. -/
+@[simp]
+theorem coe_restrictAlgHom_ringHom {U V : Opens X} (h : V ≤ U) :
+    RingHomClass.toRingHom
+      (F := no_index ((holomorphicStructureSheaf I X).obj.obj (op U) →ₐ[ℂ]
+        (holomorphicStructureSheaf I X).obj.obj (op V)))
+      (α := no_index ((holomorphicStructureSheaf I X).obj.obj (op U)))
+      (β := no_index ((holomorphicStructureSheaf I X).obj.obj (op V)))
+      (restrictAlgHom I h) =
+      ((holomorphicStructureSheaf I X).obj.map (op (homOfLE h))).hom := (rfl)
+
+/-- Taking the stalk germ at `x ∈ V` after `restrictAlgHom` recovers the germ of the original
+section on `U`. -/
+@[simp]
+theorem germ_restrictAlgHom {U V : Opens X} (h : V ≤ U) (x : X) (hx : x ∈ V)
+    (s : (holomorphicStructureSheaf I X).obj.obj (op U)) :
+    DFunLike.coe (F := no_index _) (α := no_index _) (β := no_index _)
+      (ConcreteCategory.hom (C := CommRingCat) (X := no_index _) (Y := no_index _)
+        ((holomorphicStructureSheaf I X).presheaf.germ V x hx))
+      (DFunLike.coe (F := no_index _) (α := no_index _) (β := no_index _)
+        (restrictAlgHom I h) s) =
+      (holomorphicStructureSheaf I X).presheaf.germ U x (h hx) s := by
+  rw [← RingHom.coe_coe (restrictAlgHom I h), coe_restrictAlgHom_ringHom]
+  exact (holomorphicStructureSheaf I X).presheaf.germ_res_apply (homOfLE h) x hx s
+
+variable (I) in
+/-- Restricting holomorphic sections along `U ≤ U` is the identity `ℂ`-algebra homomorphism. -/
+@[simp]
+theorem restrictAlgHom_id (U : Opens X) :
+    restrictAlgHom I (le_refl U) = AlgHom.id ℂ _ := by
+  ext s x
+  exact restrictAlgHom_apply (le_refl U) s x
+
+variable (I) in
+/-- Restricting holomorphic sections along a composite inclusion `W ≤ V ≤ U` is the composition of
+the `ℂ`-algebra restrictions. -/
+@[simp]
+theorem restrictAlgHom_comp {U V W : Opens X} (h₂ : W ≤ V) (h₁ : V ≤ U) :
+    AlgHom.comp (R := ℂ) (A := no_index _) (B := no_index _) (C := no_index _)
+      (restrictAlgHom I h₂) (restrictAlgHom I h₁) = restrictAlgHom I (h₂.trans h₁) := by
+  ext s x
+  exact (restrictAlgHom_apply h₂ (restrictAlgHom I h₁ s) x).trans
+    ((restrictAlgHom_apply h₁ s (Opens.inclusion h₂ x)).trans
+      (congrArg s (Set.inclusion_inclusion h₂ h₁ x)))
 
 /-- A section of the structure sheaf is holomorphic on its domain. -/
 theorem mdifferentiable {U : (Opens (TopCat.of X))ᵒᵖ}
@@ -317,6 +386,61 @@ theorem homOfMDifferentiable_app {X Y : Type} [TopologicalSpace X] [TopologicalS
       CommRingCat.ofHom (precomp 𝓘(ℂ) X f hf.contMDiff U) := (by
   unfold homOfMDifferentiable
   exact homOfContMDiff_app 𝓘(ℂ) X f hf.contMDiff U)
+
+/-- A complex analytic map `f` pulls holomorphic germs at `f x` back to holomorphic germs at `x`,
+by precomposition: the stalk map of `homOfContMDiff`. -/
+def stalkPrecomp (f : X → Y) (hf : ContMDiff I J ω f) (x : X) :
+    (holomorphicStructureSheaf J Y).presheaf.stalk (f x) →+*
+      (holomorphicStructureSheaf I X).presheaf.stalk x :=
+  ((TopCat.Presheaf.stalkFunctor CommRingCat (f x)).map (homOfContMDiff I X f hf).hom ≫
+    (holomorphicStructureSheaf I X).presheaf.stalkPushforward CommRingCat
+      (TopCat.ofHom ⟨f, hf.continuous⟩) x).hom
+
+/-- The pullback of the germ of a section is the germ of the precomposed section. -/
+theorem stalkPrecomp_germ (f : X → Y) (hf : ContMDiff I J ω f) (x : X) (U : Opens Y)
+    (hx : f x ∈ U) (g : (holomorphicStructureSheaf J Y).obj.obj (op U)) :
+    stalkPrecomp I X f hf x
+      (ConcreteCategory.hom ((holomorphicStructureSheaf J Y).presheaf.germ U (f x) hx) g) =
+      ConcreteCategory.hom ((holomorphicStructureSheaf I X).presheaf.germ
+        ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj U) x hx) (precomp I X f hf (op U) g) :=
+  (congrArg ((holomorphicStructureSheaf I X).presheaf.stalkPushforward CommRingCat
+      (TopCat.ofHom ⟨f, hf.continuous⟩) x)
+    (TopCat.Presheaf.stalkFunctor_map_germ_apply U (f x) hx (homOfContMDiff I X f hf).hom g)).trans
+    (TopCat.Presheaf.stalkPushforward_germ_apply CommRingCat (TopCat.ofHom ⟨f, hf.continuous⟩)
+      (holomorphicStructureSheaf I X).presheaf U x hx (precomp I X f hf (op U) g))
+
+/-- Pulling a germ back along `f` preserves its value: the value at `x` of the pullback is the
+value at `f x` of the germ. -/
+@[simp]
+theorem eval_stalkPrecomp (f : X → Y) (hf : ContMDiff I J ω f) (x : X)
+    (s : (holomorphicStructureSheaf J Y).presheaf.stalk (f x)) :
+    eval I X x (stalkPrecomp I X f hf x s) = eval J Y (f x) s := by
+  obtain ⟨U, hx, g, rfl⟩ := (holomorphicStructureSheaf J Y).presheaf.exists_germ_eq s
+  rw [stalkPrecomp_germ, eval_germ]
+  exact (eval_germ I X _ x hx _).trans (precomp_apply I X f hf (op U) g ⟨x, hx⟩)
+
+/-- Pulling germs back along the identity does nothing. -/
+@[simp]
+theorem stalkPrecomp_id (x : X) : stalkPrecomp I X id contMDiff_id x = RingHom.id _ := by
+  ext s
+  obtain ⟨U, hx, g, rfl⟩ := (holomorphicStructureSheaf I X).presheaf.exists_germ_eq s
+  exact stalkPrecomp_germ I X id contMDiff_id x U hx g
+
+variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E'']
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℂ E'' H''}
+  {Z : Type} [TopologicalSpace Z] [ChartedSpace H'' Z]
+
+/-- Pulling germs back along `g ∘ f` is pulling back along `g` and then along `f`. -/
+theorem stalkPrecomp_comp (g : Y → Z) (hg : ContMDiff J K ω g) (f : X → Y)
+    (hf : ContMDiff I J ω f) (x : X)
+    (s : (holomorphicStructureSheaf K Z).presheaf.stalk (g (f x))) :
+    stalkPrecomp I X (g ∘ f) (hg.comp hf) x s =
+      stalkPrecomp I X f hf x (stalkPrecomp J Y g hg (f x) s) := by
+  obtain ⟨U, hx, h, rfl⟩ := (holomorphicStructureSheaf K Z).presheaf.exists_germ_eq s
+  rw [stalkPrecomp_germ J Y g hg (f x) U hx h]
+  exact (stalkPrecomp_germ I X (g ∘ f) (hg.comp hf) x U hx h).trans
+    (stalkPrecomp_germ I X f hf x ((Opens.map (TopCat.ofHom ⟨g, hg.continuous⟩)).obj U) hx
+      (precomp J Y g hg (op U) h)).symm
 
 end holomorphicStructureSheaf
 

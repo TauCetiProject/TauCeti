@@ -11,10 +11,10 @@ public import TauCeti.Analysis.PDE.LowerOrder
 /-!
 # The pointwise integrand of a divergence-form energy bilinear form
 
-For a divergence-form operator `L u = -∂ⱼ(aⁱʲ ∂ᵢ u) + bⁱ ∂ᵢ u + c u`, the weak (energy)
+For a divergence-form operator `L u = -∂ᵢ(aⁱʲ ∂ⱼ u) + bⁱ ∂ᵢ u + c u`, the weak (energy)
 bilinear form is
 
-`a(u, v) = ∫_Ω (aⁱʲ ∂ᵢu ∂ⱼv + bⁱ ∂ᵢu v + c u v)`,
+`a(u, v) = ∫_Ω (aⁱʲ ∂ⱼu ∂ᵢv + bⁱ ∂ᵢu v + c u v)`,
 
 whose integrand at a point `x` depends only on the *jets* `(u(x), ∇u(x))` and
 `(v(x), ∇v(x))`, that is, on pairs in `ℝ × EuclideanSpace ℝ n`. This file assembles the
@@ -28,7 +28,7 @@ three pointwise coefficient forms already available
 into a single bundled continuous bilinear form on jets, `energyIntegrand (a x) (b x) (c x)`,
 matching `(U, V) ↦ ⟨a(x) U.2, V.2⟩ + ⟪b(x), U.2⟫ V.1 + c(x) U.1 V.1`, where `U.2 = ∇u`,
 `U.1 = u`. Integrating this jet form over `Ω` against the jets of `u` and `v` recovers the
-energy bilinear form, so this is the pointwise seed of Lane D's weak formulation.
+energy bilinear form.
 
 The two estimates the energy method needs are proved pointwise, with their constants left
 explicit (never hidden in a `∃ C`):
@@ -76,13 +76,17 @@ variable {n : Type*} [Fintype n]
 noncomputable local instance energyFormDecidableEq : DecidableEq n := Classical.decEq n
 
 /-- The pointwise weak-form (energy) integrand of a divergence-form operator
-`L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u`, as a bundled continuous bilinear form on jets
+`L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u`, as a bundled continuous bilinear form on jets
 `(value, gradient) ∈ ℝ × EuclideanSpace ℝ n`.
 
 On jets `U = (u, ∇u)` and `V = (v, ∇v)` it evaluates to
 `⟨a ∇u, ∇v⟩ + ⟪b, ∇u⟫ v + c u v`, the integrand of `a(u, v)`. Bundling it as a
 `ContinuousLinearMap` lets it feed Mathlib's bounded-bilinear-form and Lax--Milgram APIs
-once the energy form is integrated over the Sobolev space. -/
+once the energy form is integrated over the Sobolev space.
+
+The index convention is `(a ∇u)ⁱ = aⁱʲ ∂ⱼu`: the principal term is `aⁱʲ ∂ⱼu ∂ᵢv`, so the
+operator is `-div (a ∇u) = -∂ᵢ(aⁱʲ ∂ⱼu)`. The matrix `a` need not be symmetric, and for a
+non-symmetric `a` this differs from `-div (aᵀ ∇u) = -∂ⱼ(aⁱʲ ∂ᵢu)`. -/
 noncomputable def energyIntegrand (A : Matrix n n ℝ) (b : EuclideanSpace ℝ n) (c : ℝ) :
     (ℝ × EuclideanSpace ℝ n) →L[ℝ] (ℝ × EuclideanSpace ℝ n) →L[ℝ] ℝ :=
   letI := Classical.decEq n

@@ -62,17 +62,13 @@ private theorem divisorPullback_mulByIntIsogeny_divisorPullback_mulByIntIsogeny 
       @divisorPullback _ _ _ _ (mulByIntIsogeny W hn)
         (mulByIntIsogeny W hn).fieldPullback.toAlgebra (fun _ ↦ rfl) D := by
   subst hmk
-  have hcongr : ∀ ψ ψ' : Isogeny W.toAffine W.toAffine, ψ = ψ' →
-      @divisorPullback _ _ _ _ ψ ψ.fieldPullback.toAlgebra (fun _ ↦ rfl) D =
-        @divisorPullback _ _ _ _ ψ' ψ'.fieldPullback.toAlgebra (fun _ ↦ rfl) D := by
-    rintro _ _ rfl
-    rfl
   rw [@divisorPullback_comp _ _ _ _ (mulByIntIsogeny W hk)
     (mulByIntIsogeny W hk).fieldPullback.toAlgebra (fun _ ↦ rfl) _ (mulByIntIsogeny W hm)
     (mulByIntIsogeny W hm).fieldPullback.toAlgebra
     ((mulByIntIsogeny W hm).comp (mulByIntIsogeny W hk)).fieldPullback.toAlgebra (fun _ ↦ rfl)
     (fun _ ↦ rfl) D]
-  exact hcongr _ _ (mulByIntIsogeny_comp_mulByIntIsogeny W hm hk hn)
+  have hcomp := mulByIntIsogeny_comp_mulByIntIsogeny W hm hk hn
+  rw [hcomp]
 
 variable [DecidableEq F] [IsSepClosed F] {N m : ℕ} [NeZero N] [NeZero m] (hN : (N : F) ≠ 0)
   (hm : (m : F) ≠ 0)

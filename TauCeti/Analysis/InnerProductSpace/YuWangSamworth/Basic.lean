@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
-public import TauCeti.Analysis.InnerProductSpace.HoffmanWielandt
+public import TauCeti.Analysis.InnerProductSpace.HoffmanWielandt.Basic
 
 /-!
 # Population-gap residual bounds for corresponding eigenblocks
@@ -121,7 +121,7 @@ theorem smul_sub_apply_eigenvectorBasis (hS : S.IsSymmetric) (hn : finrank 𝕜 
     (c : 𝕜) • hS.eigenvectorBasis hn j - T (hS.eigenvectorBasis hn j) =
       ((c - hS.eigenvalues hn j : ℝ) : 𝕜) • hS.eigenvectorBasis hn j +
         (S - T) (hS.eigenvectorBasis hn j) := by
-  rw [sub_apply, hS.apply_eigenvectorBasis, RCLike.ofReal_sub, sub_smul]
+  rw [LinearMap.sub_apply, hS.apply_eigenvectorBasis, RCLike.ofReal_sub, sub_smul]
   abel
 
 /-- **The residual norm bound.** For an eigenvector `uⱼ` of `S` with eigenvalue `μⱼ` and any real
@@ -153,7 +153,7 @@ theorem sum_norm_smul_sub_apply_eigenvectorBasis_sq_le_four_mul_frobenius_sq
   -- Hoffman–Wielandt, computed in the eigenbasis `u` of `S`.
   have hHW : ∑ j, d j ^ 2 ≤ F ^ 2 := by
     rw [sq_frobenius_apply u]
-    simpa only [sub_apply, norm_sub_rev (S _)] using
+    simpa only [LinearMap.sub_apply, norm_sub_rev (S _)] using
       hT.sum_sq_eigenvalues_sub_le_sum_sq_norm_apply hS hn u
   calc ∑ j ∈ s, ‖(hT.eigenvalues hn j : 𝕜) • u j - T (u j)‖ ^ 2
       ≤ ∑ j, 2 * (d j ^ 2 + ‖(S - T) (u j)‖ ^ 2) :=

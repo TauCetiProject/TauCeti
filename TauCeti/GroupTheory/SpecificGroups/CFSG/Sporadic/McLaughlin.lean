@@ -10,10 +10,10 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the McLaughlin group
 
-This file carries the `McL` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records John Bray's ATLAS version 3 presentation of
-the McLaughlin group on its standard generators `a` and `b` as a `TauCeti.GroupPresentation`,
-together with the source, the generator convention, transcription notes, and the expected counts.
+This file carries the `McL` row of the sporadic presentation data. It records John Bray's ATLAS
+version 3 presentation of the McLaughlin group on its standard generators `a` and `b` as a
+`TauCeti.GroupPresentation`, together with the source, the generator convention, transcription
+notes, and the expected counts.
 
 Writing `s₁ = ab`, `s₂ = ab²`, `s₋₁ = ab⁻¹` and `s₋₂ = ab⁻²` for the four syllables that occur, the
 fifteen transcribed relators are
@@ -77,7 +77,7 @@ the redundant relators `R0`, `R1`, and `R2` but retains them inside the construc
 row correctly retains all fifteen. The rendered presentation page omits those three and reorders
 some of the short active relations; the row deliberately follows the raw Magma order. This
 comparison was performed from the pinned source bytes independently of the original transcription
-and closes this row's S1 source-to-Lean read-through.
+and closes this row's source-to-Lean read-through.
 
 ## Independent comparison with `FiniteSimpleGroups`
 
@@ -102,7 +102,7 @@ the pair therefore generates the pinned group of order `898128000`.
 The check used Python 3.14.6 and SymPy 1.14.0. Concatenating the forward image tables for `a` and
 then `b`, with each image stored as a two-byte little-endian integer, has SHA-256
 `40408769e39c23b86c576421ba328889cd061d4ed14910271c2731b110e79c63`. This is the independent
-comparison artifact required by S1; no external code or permutation data is imported into Tau Ceti.
+comparison artifact; no external code or permutation data is imported into Tau Ceti.
 
 The row is a sealed definition, so it publishes an equation for each of its fields: the transcribed
 relator expressions with their generator indices written out, and the provenance a manifest row
@@ -173,27 +173,32 @@ generators `a` and `b`.
 The ATLAS lists this as a full presentation of the abstract group, separately from the
 semi-presentation used to recognize standard generators inside a group already constructed. No
 structural property of the presented group is asserted here: this definition records only the
-cited generators and relations. -/
+cited generators and relations.
+
+Generator order (starting at index zero): `a`, `b`.
+
+Source: R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite Group Representations,
+version 3; presentation contributed by John Bray.
+
+Source locator: McLG1-P1, https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/McLG1-P1, with the relator
+list and the demonstration of correctness in the Magma source file
+https://brauer.maths.qmul.ac.uk/Atlas/spor/McL/mag/McLG1-P1.M
+
+Generator convention: The ATLAS standard generators a and b of McL, that is, a in class 2A and b
+in class 5A with ab of order 11 and ababababbababbabb of order 7, in that order, so index 0 is a
+and index 1 is b. Products are read left to right, negative exponents denote inverses, and [r,s]
+denotes r^-1 s^-1 r s.
+
+Transcription notes: The fifteen words of the source's relator list are stored as fifteen relators
+equal to the identity. Three of them, marked R0, R1 and R2 there, are redundant, and are
+transcribed because the source's coset enumerations are easier with them. The source demonstrates
+correctness by enumerating the 22275 cosets of a subgroup that centralizes a, then excluding the
+triple cover 3.McL, whose standard generators have |AB| = 33 rather than 11. GAP 4.15.1 checks
+that the fifteen compiled words vanish on five independent standard generating pairs of the
+275-point primitive representation of McL, taking a and b with centralizers of orders 40320 and
+750 and imposing the two ATLAS element-order conditions. -/
 def mclPresentation : GroupPresentation where
-  generatorNames := ["a", "b"]
-  source := "R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite Group \
-    Representations, version 3; presentation contributed by John Bray"
-  sourceLocator := "McLG1-P1, https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/McLG1-P1, with the \
-    relator list and the demonstration of correctness in the Magma source file \
-    https://brauer.maths.qmul.ac.uk/Atlas/spor/McL/mag/McLG1-P1.M"
-  generatorConvention := "The ATLAS standard generators a and b of McL, that is, a in class 2A \
-    and b in class 5A with ab of order 11 and ababababbababbabb of order 7, in that order, so \
-    index 0 is a and index 1 is b. Products are read left to right, negative exponents denote \
-    inverses, and [r,s] denotes r^-1 s^-1 r s."
-  transcriptionNotes := "The fifteen words of the source's relator list are stored as fifteen \
-    relators equal to the identity. Three of them, marked R0, R1 and R2 there, are redundant, and \
-    are transcribed because the source's coset enumerations are easier with them. The source \
-    demonstrates correctness by enumerating the 22275 cosets of a subgroup that centralizes a, \
-    then excluding the triple cover 3.McL, whose standard generators have |AB| = 33 rather than \
-    11. GAP 4.15.1 checks that the fifteen compiled words vanish on five independent standard \
-    generating pairs of the 275-point primitive representation of McL, taking a and b with \
-    centralizers of orders 40320 and 750 and imposing the two ATLAS element-order conditions."
-  expectedGeneratorCount := 2
+  generatorCount := 2
   expectedRelatorCount := 15
   transcribed :=
     [ .pow a 2,
@@ -213,64 +218,15 @@ def mclPresentation : GroupPresentation where
       .pow (.commInvInv a (.pow b 2 ⬝ ab1)) 4,
       .pow (.commInvInv a (.pow b 2 ⬝ ab2)) 4 ]
 
-/-- The generator names recorded for `McL`. The row's body is sealed, so this is what lets a
+/-- The number of generators in the presentation of `McL`. The row's body is sealed, so this is
+what lets a
 consumer see that it is a two-generator presentation. -/
 @[simp]
-theorem mclPresentation_generatorNames : mclPresentation.generatorNames = ["a", "b"] := by
-  simp [mclPresentation]
-
-/-- The source recorded for `McL`. The row's body is sealed, so this equation publishes the
-citation itself, rather than only the row's name, to a downstream audit. -/
-@[simp]
-theorem mclPresentation_source :
-    mclPresentation.source = "R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite \
-      Group Representations, version 3; presentation contributed by John Bray" := by
-  simp [mclPresentation]
-
-/-- The locator recorded for `McL`, pointing at the presentation and its demonstration of
-correctness inside the source. -/
-@[simp]
-theorem mclPresentation_sourceLocator :
-    mclPresentation.sourceLocator = "McLG1-P1, \
-      https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/McLG1-P1, with the relator list and the \
-      demonstration of correctness in the Magma source file \
-      https://brauer.maths.qmul.ac.uk/Atlas/spor/McL/mag/McLG1-P1.M" := by
-  simp [mclPresentation]
-
-/-- The generator convention recorded for `McL`, fixing which generator each relator index names
-and which commutator convention the source uses. -/
-@[simp]
-theorem mclPresentation_generatorConvention :
-    mclPresentation.generatorConvention = "The ATLAS standard generators a and b of McL, that is, \
-      a in class 2A and b in class 5A with ab of order 11 and ababababbababbabb of order 7, in \
-      that order, so index 0 is a and index 1 is b. Products are read left to right, negative \
-      exponents denote inverses, and [r,s] denotes r^-1 s^-1 r s." := by
-  simp [mclPresentation]
-
-/-- The transcription notes recorded for `McL`, including which of the source's relators it flags
-as redundant. -/
-@[simp]
-theorem mclPresentation_transcriptionNotes :
-    mclPresentation.transcriptionNotes = "The fifteen words of the source's relator list are \
-      stored as fifteen relators equal to the identity. Three of them, marked R0, R1 and R2 \
-      there, are redundant, and are transcribed because the source's coset enumerations are \
-      easier with them. The source demonstrates correctness by enumerating the 22275 cosets of a \
-      subgroup that centralizes a, then excluding the triple cover 3.McL, whose standard \
-      generators have |AB| = 33 rather than 11. GAP 4.15.1 checks that the fifteen compiled words \
-      vanish on five independent standard generating pairs of the 275-point primitive \
-      representation of McL, taking a and b with centralizers of orders 40320 and 750 and \
-      imposing the two ATLAS element-order conditions." := by
-  simp [mclPresentation]
-
-/-- The generator count `McL`'s source states. With
-`TauCeti.Sporadic.mclPresentation_generatorNames` this makes
-`TauCeti.Sporadic.mclPresentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem mclPresentation_expectedGeneratorCount : mclPresentation.expectedGeneratorCount = 2 := by
+theorem mclPresentation_generatorCount : mclPresentation.generatorCount = 2 := by
   simp [mclPresentation]
 
 /-- The relator count `McL`'s source states; see
-`TauCeti.Sporadic.mclPresentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.mclPresentation_generatorCount`. -/
 @[simp]
 theorem mclPresentation_expectedRelatorCount : mclPresentation.expectedRelatorCount = 15 := by
   simp [mclPresentation]
@@ -283,7 +239,7 @@ The row's body is sealed, so this is the equation that characterizes it: with
 `TauCeti.GroupPresentation.mem_relatorSet_iff` it determines the relations defining
 `TauCeti.GroupPresentation.Group`, so a consumer never has to unfold the row. Index `0` is the
 generator `a` and index `1` is `b`, and the bounds come from
-`TauCeti.Sporadic.mclPresentation_generatorNames`. The comments name each relator in the syllables
+`TauCeti.Sporadic.mclPresentation_generatorCount`. The comments name each relator in the syllables
 `s₁ = ab`, `s₂ = ab²`, `s₋₁ = ab⁻¹` and `s₋₂ = ab⁻²` of the module docstring. -/
 @[simp]
 theorem mclPresentation_transcribed :
@@ -354,7 +310,7 @@ theorem mclPresentation_transcribed :
           (.gen ⟨0, by simp⟩ ⬝ .pow (.gen ⟨1, by simp⟩) 2)))) 4 ] := by
   simp [mclPresentation, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `McL` agree with the transcribed data. -/
+/-- The relator count recorded for `McL` agrees with the transcribed data. -/
 theorem mclPresentation_matchesMetadata : mclPresentation.matchesMetadata := by decide
 
 /-- The lengths of the fifteen compiled relator words for `McL`, in the order of the source.

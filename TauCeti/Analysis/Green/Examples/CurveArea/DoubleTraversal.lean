@@ -46,11 +46,7 @@ theorem windingNumber_circleMap_twice {c z : ℂ} {R : ℝ}
     Contour.windingNumber (circleMap c R) 0 (4 * Real.pi) z =
       2 * Contour.windingNumber (circleMap c R) 0 (2 * Real.pi) z := by
   have ha : ∀ t, circleMap c R t ≠ z := fun t h ↦ hz (h ▸ circleMap_mem_sphere' c R t)
-  have hd : Continuous (deriv (circleMap c R)) := by
-    have heq : deriv (circleMap c R) = fun t ↦ circleMap 0 R t * Complex.I :=
-      funext (deriv_circleMap c R)
-    rw [heq]
-    exact (continuous_circleMap 0 R).mul continuous_const
+  have hd := Complex.continuous_deriv_circleMap c R
   have hi : Continuous (fun t ↦ (circleMap c R t - z)⁻¹ * deriv (circleMap c R) t) :=
     ((continuous_circleMap c R).sub continuous_const).inv₀
       (fun t ↦ sub_ne_zero.mpr (ha t)) |>.mul hd

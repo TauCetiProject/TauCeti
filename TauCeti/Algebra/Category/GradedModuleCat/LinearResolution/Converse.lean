@@ -26,6 +26,9 @@ modulo positive-degree action. Graded Nakayama then recovers generation in the h
 For terms finite over the scalar ring, lower bounds follow from finite grading support.
 The statements concern a given minimal resolution; they do not construct minimal resolutions.
 
+Below the diagonal no test is needed: Ext out of a minimally resolved module that starts in degree
+`c` vanishes in cohomological degree `n` against every target concentrated below degree `c + n`.
+
 ## References
 
 * A. Beilinson, V. Ginzburg and W. Soergel, *Koszul duality patterns in representation theory*,
@@ -46,6 +49,28 @@ variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {M : GradedModuleCat.{v} 𝒜}
   {r : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading}
   [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
+
+/-- **Ext out of a minimally resolved module vanishes below the diagonal.** If `M` has no nonzero
+homogeneous elements below degree `c` and the terms of its minimal resolution are bounded below,
+then `Extⁿ(M,N) = 0` for every target `N` concentrated in a degree below `c + n`. The algebra
+grading need not be nonnegative. -/
+theorem IsMinimal.subsingleton_ext_of_lt (hr : r.IsMinimal) {c : ℤ}
+    (hM : ∀ p < c, M.grading.piece p = ⊥) (b : ℕ → ℤ)
+    (hbelow : ∀ n p, p < b n → (r.grading n).piece p = ⊥) {n : ℕ} {p : ℤ} (hp : p < c + n)
+    (N : GradedModuleCat.{v} 𝒜) (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥) :
+    Subsingleton (Ext.{w} M N n) := by
+  refine (hr.subsingleton_ext_iff (N.positive_smul_top_eq_bot_of_concentrated p hN) n).mpr
+    (subsingleton_of_forall_eq 0 fun f ↦ GradedModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_))
+  -- `f x` is its own degree-`p` component, the image of the vanishing component of `x`.
+  have hx : (DirectSum.decompose (r.grading n).piece x p : r.X n) = 0 := by
+    simpa only [hr.piece_eq_bot_of_lt hM b hbelow n hp, Submodule.mem_bot] using
+      (DirectSum.decompose (r.grading n).piece x p).property
+  have hfx : f.hom x ∈ N.grading.piece p := by
+    rw [GradedModuleCat.piece_eq_top_of_concentrated hN]
+    exact Submodule.mem_top
+  have h := f.isHomogeneous.map_decompose p x
+  rw [add_zero, DirectSum.decompose_of_mem_same N.grading.piece hfx] at h
+  rw [← h, hx, map_zero, GradedModuleCat.hom_zero, LinearMap.zero_apply]
 
 /-- **Diagonal Ext detects a bounded-below minimal resolution's linearity.** Test every module
 concentrated in degree `p`. Neither semisimplicity nor

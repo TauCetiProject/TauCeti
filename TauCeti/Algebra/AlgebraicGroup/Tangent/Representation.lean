@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Comodule.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Coordinate
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.CounitPoints
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 
 /-!
@@ -107,6 +108,18 @@ theorem pointInCounitAlgebra_apply
   simp only [AlgHom.comp_apply]
   exact Bialgebra.CounitAlgebra.algEquivSelf_symm_apply
     (R := R) (A := H) (B := A) (g.ofConv h)
+
+omit [Module.Finite R (Bialgebra.CotangentSpace R H)]
+  [Module.Projective R (Bialgebra.CotangentSpace R H)] in
+/-- Regarding a point as counit-algebra-valued is transporting it along
+`Bialgebra.CounitAlgebra.pointsMulEquiv`. -/
+theorem pointInCounitAlgebra_eq_pointsMulEquiv_symm
+    (A : Type w) [CommRing A] [Algebra R A] (g : WithConv (H →ₐ[R] A)) :
+    pointInCounitAlgebra A g = (Bialgebra.CounitAlgebra.pointsMulEquiv R H A).symm g := by
+  apply WithConv.ofConv_injective
+  ext b
+  simp only [pointInCounitAlgebra_apply, Bialgebra.CounitAlgebra.pointsMulEquiv_symm_apply]
+  exact (Bialgebra.CounitAlgebra.algEquivSelf_symm_apply R H A _).symm
 
 omit [Module.Finite R (Bialgebra.CotangentSpace R H)]
   [Module.Projective R (Bialgebra.CotangentSpace R H)] in
@@ -320,6 +333,18 @@ theorem tangentScalarExtensionEquiv_adjointComodule_endOfPoint
   rw [hrecover, adjointPointRepresentation_action] at haction
   rw [← haction]
   exact tangentScalarExtensionEquiv_adjointAction A g x
+
+/-- The point action of the adjoint comodule agrees with the adjoint action on scalar
+extensions of the cotangent dual. -/
+theorem adjointComodule_endOfPoint_eq_adjointAction
+    (A : CommAlgCat.{max u v} R) (g : HopfAlgebra.points (H := H) A)
+    (x : A ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    (letI := adjointComodule (R := R) (H := H)
+     Comodule.endOfPoint (Module.Dual R (Bialgebra.CotangentSpace R H)) g.ofConv x) =
+      (adjointAction A g).val x := by
+  apply (tangentScalarExtensionEquiv (R := R) (A := H) (B := A)).injective
+  exact (tangentScalarExtensionEquiv_adjointComodule_endOfPoint A g x).trans
+    (tangentScalarExtensionEquiv_adjointAction A g x).symm
 
 /-- The coordinate Hopf-algebra morphism opposite to the adjoint representation in a basis
 indexed by `Fin n`. -/

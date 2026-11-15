@@ -103,11 +103,12 @@ theorem exists_virtualCharacter_indFDRep_of_isPrimitiveRoot
 
 /-- The exponent cyclotomic field realizes every representation induced from a linear character
 of a subgroup of `G`. In particular the ambient extension can be the complex numbers. -/
-theorem exists_nonempty_iso_baseChange_indFDRep_of_isCyclotomicExtension [CharZero K] [Finite G]
+theorem exists_nonempty_iso_baseChange_indFDRep_of_isCyclotomicExtension [Finite G]
     [Algebra ℚ K] [IsCyclotomicExtension {Monoid.exponent G} ℚ K] (χ : S →* Lˣ) :
     ∃ ψ : S →* Kˣ,
       Nonempty (FDRep.of (Representation.baseChange L
         (indFDRep (FDRep.ofLinearCharacter ψ)).ρ) ≅ indFDRep (FDRep.ofLinearCharacter χ)) :=
+  have : CharZero K := algebraRat.charZero K
   exists_nonempty_iso_baseChange_indFDRep_of_isPrimitiveRoot
     (IsCyclotomicExtension.zeta_spec (Monoid.exponent G) ℚ K) (dvd_refl _) χ
 

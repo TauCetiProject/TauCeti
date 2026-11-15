@@ -300,7 +300,7 @@ seminormed module to a complete normed module over a Tate ring is a strict morph
 (`Topology.IsStrictMap`). -/
 theorem isStrictMap_of_isClosed_range_of_isTate (f : M →L[R] N)
     (hclosed : IsClosed (Set.range f)) : Topology.IsStrictMap f :=
-  TauCeti.HasZeroSequenceOfUnits.isStrictMap_of_isClosed_range f.toLinearMap
+  f.toLinearMap.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits
     f.continuous.continuousAt
     (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
     (by rwa [LinearMap.coe_range])

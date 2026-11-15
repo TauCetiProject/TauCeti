@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Subdisc
 
 import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.Normed.Group.Ultra
+import TauCeti.RingTheory.Valuation.LtAddSubgroup
 
 /-!
 # Points of the closed unit disc attached to decreasing sequences of discs
@@ -241,9 +242,9 @@ theorem isContinuous_nestedDiscValuation :
   have hγ₀ : (0 : ℝ) < γ := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hγ)
   obtain ⟨U, hU⟩ := NonarchimedeanAddGroup.is_nonarchimedean _
     (Metric.ball_mem_nhds (0 : K) (half_pos hγ₀))
-  refine AddSubgroup.isOpen_mono
-    (H₂ := (nestedDiscValuation a ha c hc₀ hc₁ hac hcc).ltAddSubgroup (Units.mk0 γ hγ))
-    (fun f hf ↦ ?_) (isOpen_weightedNhd isWeightFamily_one_weight U.isOpen)
+  rw [← Valuation.coe_ltAddSubgroupOfNeZero hγ]
+  refine AddSubgroup.isOpen_mono (fun f hf ↦ (Valuation.mem_ltAddSubgroupOfNeZero hγ).mpr ?_)
+    (isOpen_weightedNhd isWeightFamily_one_weight U.isOpen)
   have hle := closedDiscGaussValuation_le_of_forall_norm_coeff_le one_pos le_rfl (f := f) fun ν ↦
     (mem_ball_zero_iff.mp (hU (by simpa using mem_weightedNhd.mp hf ν))).le
   exact NNReal.coe_lt_coe.mp
@@ -288,8 +289,8 @@ theorem nestedDiscPoint_mem_closedSubdisc_iff (b d : K) :
     nestedDiscPoint a ha c hc₀ hc₁ hac hcc ∈ closedSubdisc b d ↔
       ⨅ n, max ‖c n‖ ‖a n - b‖ ≤ ‖d‖ ∧ d ≠ 0 := by
   rw [mem_closedSubdisc, nestedDiscPoint_vle_iff, nestedDiscPoint_vle_iff, map_zero, le_zero_iff,
-    nestedDiscValuation_weightedC, nnnorm_eq_zero, ← NNReal.coe_le_coe,
-    coe_nestedDiscValuation_weightedX_sub_weightedC, coe_nnnorm]
+    nestedDiscValuation_weightedC, nnNorm_eq_zero, ← NNReal.coe_le_coe,
+    coe_nestedDiscValuation_weightedX_sub_weightedC, coe_nnNorm]
 
 /-- **The point lies in every disc `D(aₙ, |cₙ|)` of the sequence.** -/
 theorem nestedDiscPoint_mem_closedSubdisc (n : ℕ) :

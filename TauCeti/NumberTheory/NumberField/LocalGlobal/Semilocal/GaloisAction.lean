@@ -178,10 +178,6 @@ private theorem semilocalUnitsToCoind_bijective [IsGalois K L] :
       ((Units.mapEquiv (semilocalEquiv L v).toMulEquiv).trans MulEquiv.piUnits).toEquiv)
     (fun g y _ _ h ↦ Units.ext (semilocalEquiv_baseChangeAutHom g h
       (Additive.toMul (α := (v.adicCompletion K ⊗[K] L)ˣ) y).1)) Additive.toMul (fun _ ↦ rfl)
-    (fun d a ↦ Units.ext (DFunLike.congr_fun (decompositionHom_apply (v := v) (w := w) d)
-      (Additive.toMul (α := (w.adicCompletion L)ˣ) a).1))
-    (fun g g' _ _ _ h h' a ↦
-      Units.ext (DFunLike.congr_fun (completionCongr_trans (v := v) g g' h h') a.1))
     (exists_asIdeal_eq_smul v w) (exists_place_asIdeal_eq_smul v w)
 
 /-- **The semi-local units are coinduced.** For `L/K` Galois and `w` a place above `v`, the units

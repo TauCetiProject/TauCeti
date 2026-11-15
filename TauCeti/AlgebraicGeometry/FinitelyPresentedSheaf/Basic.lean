@@ -23,11 +23,9 @@ The main declarations are:
   of invertible sheaves into finitely presented sheaves.
 
 The inclusion uses the site-level theorem that an invertible sheaf is finitely presented: its
-rank-one local trivializations give finite generators and have no relations. Thus the existing
-Layer A line-bundle objects can be consumed by the coherent-cohomology theory planned in Layer B.
+rank-one local trivializations give finite generators and have no relations. Thus every
+invertible sheaf can be viewed as a finitely presented sheaf.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer B, item "Coherent sheaves and
-cohomology `Hⁱ(X, ℱ)`", while supplying the direct bridge from Layer A's invertible sheaves.
 No formalization is vendored. The definition reuses Mathlib's
 `SheafOfModules.IsFinitePresentation` and `ObjectProperty.FullSubcategory`.
 -/

@@ -300,9 +300,8 @@ derivative sign of `p` at `a x + b`, multiplied by `sign a ^ k`. -/
 @[simp, grind =]
 theorem derivativeSign_comp_C_mul_X_add_C (p : R[X]) (a b x : R) (k : ℕ) :
     derivativeSign (p.comp (C a * X + C b)) x k = sign a ^ k * derivativeSign p (a * x + b) k := by
-  rw [derivativeSign_def, derivativeSign_def, iterate_derivative_comp_C_mul_X_add_C, eval_mul,
-    eval_C, eval_comp, sign_mul, sign_pow]
-  simp
+  rw [derivativeSign_def, derivativeSign_def, eval_iterate_derivative_comp_C_mul_X_add_C, sign_mul,
+    sign_pow]
 
 /-- **Affine change of variable.** Coordinate `i` of the Thom encoding of `p (a X + b)` at `x`,
 for `a ≠ 0`, is coordinate `i` of the Thom encoding of `p` at `a x + b`, multiplied by
@@ -410,6 +409,15 @@ theorem eval_ne_zero_of_derivativeSign_eq (p : R[X]) (hrolle : PolynomialRolle R
   refine p.eq_zero_of_infinite_isRoot ((Icc_infinite hlt).mono fun y hy ↦ ?_)
   have hy := (hsign hy).trans (hsign hx).symm
   rwa [hx0, sign_zero, sign_eq_zero_iff] at hy
+
+/-- If all derivative signs of `p` agree at two distinct points, then every nonzero derivative
+of `p` has a nonzero sign there. -/
+theorem derivativeSign_ne_zero_of_derivativeSign_eq (p : R[X]) (hrolle : PolynomialRolle R)
+    {a b : R} (hab : a ≠ b) (h : derivativeSign p a = derivativeSign p b) {k : ℕ}
+    (hk : derivative^[k] p ≠ 0) : derivativeSign p a k ≠ 0 := by
+  rw [derivativeSign_ne_zero]
+  refine eval_ne_zero_of_derivativeSign_eq _ hrolle hk hab (fun j ↦ ?_) left_mem_uIcc
+  simp only [derivativeSign_iterate_derivative, h]
 
 /-- Roots with equal signs of every positive-order derivative are equal.
 The polynomial need not be squarefree. -/

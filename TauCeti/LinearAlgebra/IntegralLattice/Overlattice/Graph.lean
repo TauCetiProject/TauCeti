@@ -5,10 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Orthogonal.Graph
-public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Operations
+import TauCeti.LinearAlgebra.FiniteBilinearModule.Orthogonal.Graph
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
-import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
 # Gluing lattices with opposite discriminant forms
@@ -304,14 +302,9 @@ theorem isTorsionFree_quotient_range_glueRight :
 /-- The glued lattice has the sum of the two original signatures. -/
 theorem signature_glueAlongDiscriminant :
     (L.glueAlongDiscriminant M hL hM e).signature =
-      (L.sigPos + M.sigPos, L.sigNull + M.sigNull, L.sigNeg + M.sigNeg) := by
-  rw [← signature_orthogonalSum]
-  have hr : (L.glueAlongDiscriminant M hL hM e).radical = (L.orthogonalSum M).radical := by
-    ext x
-    simp only [mem_radical_iff, glueAlongDiscriminant_form]
-  have hn : (L.glueAlongDiscriminant M hL hM e).sigNull = (L.orthogonalSum M).sigNull :=
-    congrArg (fun S : Submodule ℚ (V × W) ↦ Module.finrank ℚ S) hr
-  simp only [signature, hn, sigPos, sigNeg, glueAlongDiscriminant_form]
+      (L.sigPos + M.sigPos, L.sigNull + M.sigNull, L.sigNeg + M.sigNeg) :=
+  (signature_eq_of_equivalent (glueAlongDiscriminant_form L M hL hM e ▸ .refl _)).trans
+    (signature_orthogonalSum L M)
 
 /-! ## Even unimodular overlattices are graph gluings -/
 
@@ -352,13 +345,9 @@ theorem exists_eq_glueAlongDiscriminant (N : IntegralLattice (V × W))
   set P := N.toIntermediateCarrier hform hle
   have hPc : P.1 = N.carrier := N.coe_toIntermediateCarrier hform hle
   have hdual : N.carrier ≤ S.dualCarrier := hPc ▸ P.2.2
-  have hPe := N.isEven_toIntermediateCarrier hform hle hNe
-  have hPN := N.toIntegralLattice_toIntermediateCarrier hform hle hPe.isIntegral
   -- Its subgroup of the discriminant group is a quadratic Lagrangian.
-  have hlag : (S.discriminantQuadraticModule hS).IsLagrangian (S.discriminantSubgroup P) := by
-    refine (FiniteQuadraticModule.isLagrangian_def _ _).mpr
-      ⟨(IntermediateCarrier.isEven_iff_isIsotropic_discriminantSubgroup hS P).mp hPe, ?_⟩
-    exact hPe.isIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian.mp (hPN.symm ▸ hNu)
+  have hlag : (S.discriminantQuadraticModule hS).IsLagrangian (S.discriminantSubgroup P) :=
+    (S.isLagrangian_discriminantSubgroup_toIntermediateCarrier_iff hS N hform hle).mpr ⟨hNe, hNu⟩
   have hlag' := ((L.discriminantQuadraticIsometryOrthogonalSum M hL hM).isLagrangian_map_iff
     _ (S.discriminantSubgroup P)).mpr hlag
   rw [discriminantQuadraticIsometryOrthogonalSum_toAddEquiv] at hlag'

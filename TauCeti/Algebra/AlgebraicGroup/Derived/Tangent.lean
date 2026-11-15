@@ -106,7 +106,6 @@ variable (H : _root_.CommHopfAlgCat.{u} k) [Algebra.FiniteType k H]
 without connectedness or characteristic assumptions. -/
 theorem smooth_coinvariantsι_derivedDefiningIdeal [Algebra.Smooth k H] :
     (coinvariantsι (isNormal_derivedDefiningIdeal H)).hom.toAlgHom.toRingHom.Smooth := by
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   apply (_root_.CommHopfAlgCat.smooth_iff_algebraSmooth_quotient_kernelHopfIdeal _
     (faithfullyFlat_coinvariantsι (isNormal_derivedDefiningIdeal H))).mpr
   rw [kernelHopfIdeal_coinvariantsι_eq]
@@ -136,7 +135,6 @@ noncomputable def abelianizationLieEquiv [Algebra.Smooth k H] :
           (Bialgebra.CounitAlgebra k (coinvariants (isNormal_derivedDefiningIdeal H)) B) := by
   letI := (coinvariants (isNormal_derivedDefiningIdeal H)).hopfAlgebra
   let f := derivationCompLieHom (B := B) (coinvariantsι (isNormal_derivedDefiningIdeal H)).hom
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   have hker : f.ker = (isNormal_derivedDefiningIdeal H).lieIdeal (B := B) :=
     ker_derivationCompLieHom_coinvariantsι_derivedDefiningIdeal H
   exact hker ▸ f.quotKerEquivOfSurjective
@@ -151,13 +149,15 @@ theorem abelianizationLieEquiv_apply_mk [Algebra.Smooth k H]
     abelianizationLieEquiv H (LieSubmodule.Quotient.mk d) =
       derivationComp (B := B) (coinvariantsι (isNormal_derivedDefiningIdeal H)).hom d := by
   let := (coinvariants (isNormal_derivedDefiningIdeal H)).hopfAlgebra
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   dsimp only [abelianizationLieEquiv]
-  generalize ker_derivationCompLieHom_coinvariantsι_derivedDefiningIdeal H (B := B) = hker
-  generalize (isNormal_derivedDefiningIdeal H).lieIdeal (B := B) = I at hker ⊢
-  cases hker
-  exact (LieHom.quotKerEquivOfSurjective_apply_mk _ _ d).trans
-    (derivationCompLieHom_apply _ d)
+  let f := derivationCompLieHom (B := B) (coinvariantsι (isNormal_derivedDefiningIdeal H)).hom
+  -- Generalize the target ideal of the defining cast so that the cast can be eliminated.
+  have key (I : LieIdeal B (Derivation k H (Bialgebra.CounitAlgebra k H B))) (h : f.ker = I)
+      (hs : Function.Surjective f) :
+      (h ▸ f.quotKerEquivOfSurjective hs) (LieSubmodule.Quotient.mk d) = f d := by
+    subst h
+    exact LieHom.quotKerEquivOfSurjective_apply_mk _ hs d
+  exact (key _ _ _).trans (derivationCompLieHom_apply _ d)
 
 /-- The inverse tangent abelianization equivalence recovers the class of a tangent
 vector from its image under the quotient differential. -/

@@ -220,7 +220,7 @@ private theorem withDensity_noncentralChiSquaredPDF (hk : 0 ≤ k) (l : ℝ≥0)
       poissonMeasure (l / 2) {n} * chiSquaredPDF (k + 2 * n) x) =
       ∑' n : ℕ, poissonMeasure (l / 2) {n} • chiSquaredPDF (k + 2 * n) := by
     ext x
-    rw [Pi.tsum_apply (Pi.summable.2 fun _ ↦ ENNReal.summable)]
+    rw [Pi.tsum_apply (Pi.summable.2 fun _ ↦ CompleteLattice.summable)]
     simp only [Pi.smul_apply, smul_eq_mul]
   rw [hfun, withDensity_tsum (fun n : ℕ ↦
     (measurable_chiSquaredPDF (k + 2 * n)).const_smul _)]
@@ -246,14 +246,29 @@ theorem noncentralChiSquaredMeasure_zero_degree_eq_atom_add_withDensity (l : ℝ
   congr 1
   ext s hs
   rw [Measure.sum_apply _ hs, Measure.sum_apply _ hs]
-  conv_rhs => rw [tsum_eq_zero_add' ENNReal.summable]
+  conv_rhs => rw [tsum_eq_zero_add' CompleteLattice.summable]
   simp only [Nat.cast_zero, mul_zero, zero_add, chiSquaredPDF_zero_degree, withDensity_zero,
-    Measure.smul_apply, smul_eq_mul]
-  simp only [Measure.coe_zero, Pi.zero_apply, mul_zero, zero_add]
+    _root_.smul_apply, smul_eq_mul]
+  simp only [FunLike.coe_zero, Pi.zero_apply, mul_zero, zero_add]
   congr 1
   funext n
   rw [chiSquaredMeasure_eq_withDensity (by positivity)]
   simp only [Nat.cast_add, Nat.cast_one]
+
+/-- The real-power identity behind the Bessel form of the noncentral chi-squared density: for
+positive `x` and `l`, `(x / l) ^ (k / 4 - 1 / 2) * (√(l x) / 2) ^ (k / 2 - 1)` is
+`x ^ (k / 2 - 1) / 2 ^ (k / 2 - 1)`. -/
+private theorem rpow_div_mul_rpow_sqrt_mul_div_two (k : ℝ) (hl : 0 < l) (hx : 0 < x) :
+    (x / (l : ℝ)) ^ (k / 4 - 1 / 2) *
+      (sqrt ((l : ℝ) * x) / 2) ^ (k / 2 - 1) = x ^ (k / 2 - 1) / 2 ^ (k / 2 - 1) := by
+  have he : k / 4 - 1 / 2 = (1 / 2 : ℝ) * (k / 2 - 1) := by ring
+  have hsqrt : sqrt (x / (l : ℝ)) * sqrt ((l : ℝ) * x) = x := by
+    rw [← sqrt_mul (by positivity)]
+    have heq : x / (l : ℝ) * ((l : ℝ) * x) = x ^ 2 := by field_simp
+    rw [heq, sqrt_sq hx.le]
+  rw [he, rpow_mul (by positivity), ← sqrt_eq_rpow,
+    ← mul_rpow (by positivity) (by positivity), ← mul_div_assoc, hsqrt,
+    div_rpow hx.le (by norm_num)]
 
 /-- At positive noncentrality and positive argument the continuous density has its
 classical modified-Bessel form. The formula also describes the continuous part at degree zero. -/
@@ -261,20 +276,10 @@ theorem noncentralChiSquaredPDFReal_eq_besselI (hk : 0 ≤ k) (hl : 0 < l) (hx :
     noncentralChiSquaredPDFReal k l x =
       (1 / 2 : ℝ) * exp (-(x + l) / 2) * (x / l) ^ (k / 4 - 1 / 2) *
         besselI (k / 2 - 1) (sqrt ((l : ℝ) * x)) := by
-  have hl' : 0 < (l : ℝ) := hl
   have harg : (sqrt ((l : ℝ) * x) / 2) ^ 2 = (l : ℝ) * x / 4 := by
     rw [div_pow, sq_sqrt (by positivity)]
     norm_num
-  have hpow : (x / (l : ℝ)) ^ (k / 4 - 1 / 2) *
-      (sqrt ((l : ℝ) * x) / 2) ^ (k / 2 - 1) = x ^ (k / 2 - 1) / 2 ^ (k / 2 - 1) := by
-    have he : k / 4 - 1 / 2 = (1 / 2 : ℝ) * (k / 2 - 1) := by ring
-    have hsqrt : sqrt (x / (l : ℝ)) * sqrt ((l : ℝ) * x) = x := by
-      rw [← sqrt_mul (by positivity)]
-      have heq : x / (l : ℝ) * ((l : ℝ) * x) = x ^ 2 := by field_simp
-      rw [heq, sqrt_sq hx.le]
-    rw [he, rpow_mul (by positivity), ← sqrt_eq_rpow,
-      ← mul_rpow (by positivity) (by positivity), ← mul_div_assoc, hsqrt,
-      div_rpow hx.le (by norm_num)]
+  have hpow := rpow_div_mul_rpow_sqrt_mul_div_two k hl hx
   rw [noncentralChiSquaredPDFReal_of_pos hk hx]
   simp_rw [poisson_mul_chiSquaredPDFReal k l hx]
   rw [tsum_mul_left,
@@ -310,7 +315,7 @@ theorem lintegral_noncentralChiSquaredPDF_zero_degree (l : ℝ≥0) :
   let := isProbabilityMeasure_noncentralChiSquaredMeasure (k := 0) (by norm_num) l
   have h : noncentralChiSquaredMeasure 0 l univ = 1 := measure_univ
   rw [noncentralChiSquaredMeasure_zero_degree_eq_atom_add_withDensity,
-    Measure.add_apply, Measure.smul_apply, withDensity_apply _ MeasurableSet.univ,
+    _root_.add_apply, _root_.smul_apply, withDensity_apply _ MeasurableSet.univ,
     Measure.restrict_univ] at h
   simp only [smul_eq_mul, measure_univ, mul_one] at h
   exact ENNReal.eq_sub_of_add_eq ENNReal.ofReal_ne_top (by simpa only [add_comm] using h)

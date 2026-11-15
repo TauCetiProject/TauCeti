@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import TauCeti.Algebra.MvPolynomial.Fin.Two
 public import TauCeti.FieldTheory.FunctionField.Basic
+import TauCeti.FieldTheory.Separable.SimpleRoot
 
 /-!
 # The function field of a plane curve
@@ -86,21 +87,7 @@ theorem finiteDimensional_and_isSeparable_of_aeval_pderiv_one_ne_zero
   have hq' : aeval y (derivative q) ≠ 0 := by
     rwa [derivative_map, Bivariate.aeval_map_eq_aeval_equivMvPolynomial, RatFunc.algebraMap_X,
       ← Bivariate.pderiv_one_equivMvPolynomial, AlgEquiv.apply_symm_apply]
-  have hint : IsIntegral (RatFunc k) y :=
-    (IsAlgebraic.isIntegral ⟨q, fun h0 ↦ hq' (by rw [h0, derivative_zero, map_zero]), hq⟩)
-  -- Writing `q = minpoly · r`, `q'(y) = minpoly'(y) r(y)`, so `minpoly' ≠ 0`.
-  have hsep : IsSeparable (RatFunc k) y := by
-    rw [IsSeparable, separable_iff_derivative_ne_zero (minpoly.irreducible hint)]
-    intro h0
-    obtain ⟨r, hr⟩ := minpoly.dvd (RatFunc k) y hq
-    refine hq' ?_
-    rw [hr, derivative_mul, h0, map_add, map_mul, map_mul, minpoly.aeval]
-    simp
-  let e : (RatFunc k)⟮y⟯ ≃ₐ[RatFunc k] F :=
-    (IntermediateField.equivOfEq hgen).trans IntermediateField.topEquiv
-  have := (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable (RatFunc k) F).mpr hsep
-  have := IntermediateField.adjoin.finiteDimensional hint
-  exact ⟨e.toLinearEquiv.finiteDimensional, AlgEquiv.Algebra.isSeparable e⟩
+  exact finiteDimensional_and_isSeparable_of_aeval_derivative_ne_zero hgen hq hq'
 
 end RatFunc
 

@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Filtration
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.CliffordAlgebra.Monomials
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
 /-!
 # Reversal on odd elements in dimension five

@@ -27,7 +27,9 @@ For a family of separating uniformizers, these trace residues have finite suppor
 every repartition. Their sum on a diagonal function is zero. This is the residue theorem
 with residue-field traces; no algebraic closure or infinitude of the constant field is
 required. The hypotheses explicitly require separable residue fields and separating
-uniformizers, both available over a perfect constant field.
+uniformizers, both available over a perfect constant field. Once `F / k` has a separating
+element, every uniformizer at a place with separable residue field is separating
+(`TauCeti.Place.isSeparable_adjoin_of_ord_eq_one`).
 
 ## References
 

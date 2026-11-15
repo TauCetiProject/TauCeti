@@ -415,6 +415,51 @@ theorem enoughProjectives_iff_op_enoughInjectives :
   · intro h
     exact ⟨fun X ↦ ⟨(h.injectivePresentation (Opposite.op X)).unop⟩⟩
 
+section Horseshoe
+
+/-- **The injective horseshoe lemma**, dual to
+`TauCeti.ExactStructure.exists_conflation_biprod_of_conflation_of_projective`. Let
+`S : X ↪ Y ↠ Z` be a conflation and let `X ↪ I_X ↠ C_X` and `Z ↪ I_Z ↠ C_Z` be conflations
+with `I_X` injective. Then `Y` is the first term of a conflation whose middle term `M` is an
+extension of `I_Z` by `I_X` split by `j` and `q`, and whose third term is an extension of `C_Z`
+by `C_X`, compatibly with the given conflations. -/
+theorem exists_conflation_of_conflation_of_injective {S : ShortComplex C}
+    (hS : E.Conflation S) {IX CX : C} {iX : S.X₁ ⟶ IX} {pX : IX ⟶ CX} {hX : iX ≫ pX = 0}
+    (hcX : E.Conflation (ShortComplex.mk iX pX hX))
+    {IZ CZ : C} {iZ : S.X₃ ⟶ IZ} {pZ : IZ ⟶ CZ} {hZ : iZ ≫ pZ = 0}
+    (hcZ : E.Conflation (ShortComplex.mk iZ pZ hZ)) (hIX : E.isInjective IX) :
+    ∃ (M : C) (j : IX ⟶ M) (q : M ⟶ IZ) (hjq : j ≫ q = 0),
+      Nonempty (ShortComplex.mk j q hjq).Splitting ∧
+      ∃ (K : C) (b : S.X₂ ⟶ M) (c : M ⟶ K) (hb : b ≫ c = 0) (v : CX ⟶ K) (w : K ⟶ CZ)
+        (hv : v ≫ w = 0),
+        E.Conflation (ShortComplex.mk b c hb) ∧ E.Conflation (ShortComplex.mk v w hv) ∧
+          S.f ≫ b = iX ≫ j ∧ b ≫ q = S.g ≫ iZ ∧ j ≫ c = pX ≫ v ∧ c ≫ w = q ≫ pZ := by
+  -- Apply the projective horseshoe in the opposite exact structure and take opposites.
+  obtain ⟨K, u, a, hua, v, w, hvw, hu, hv, ha₁, ha₃, hu₁, hu₃⟩ :=
+    E.op.exists_conflation_biprod_of_conflation_of_projective
+      (S := ShortComplex.mk S.g.op S.f.op (by rw [← op_comp, S.zero, op_zero]))
+      ((E.op_conflation _).mpr hS)
+      ((E.op_conflation_op_iff (ShortComplex.mk iZ pZ hZ)).mpr hcZ)
+      ((E.op_conflation_op_iff (ShortComplex.mk iX pX hX)).mpr hcX)
+      ((E.isInjective_iff_isProjective_op IX).mp hIX)
+  refine ⟨(Opposite.op IZ ⊞ Opposite.op IX).unop, biprod.snd.unop, biprod.inl.unop,
+    Quiver.Hom.op_inj (by simp), ⟨?_⟩, K.unop, a.unop, u.unop,
+    Quiver.Hom.op_inj (by simp [hua]), w.unop, v.unop, Quiver.Hom.op_inj (by simp [hvw]),
+    (E.op_conflation _).mp hu, (E.op_conflation _).mp hv, ?_, ?_, ?_, ?_⟩
+  · exact
+      { r := biprod.inr.unop
+        s := biprod.fst.unop
+        f_r := Quiver.Hom.op_inj (by simp)
+        s_g := Quiver.Hom.op_inj (by simp)
+        id := Quiver.Hom.op_inj (by
+          simpa [add_comm] using biprod.total (X := Opposite.op IZ) (Y := Opposite.op IX)) }
+  · simpa using congrArg Quiver.Hom.unop ha₃
+  · simpa using congrArg Quiver.Hom.unop ha₁
+  · simpa using congrArg Quiver.Hom.unop hu₃
+  · simpa using congrArg Quiver.Hom.unop hu₁
+
+end Horseshoe
+
 section Equivalence
 
 variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]

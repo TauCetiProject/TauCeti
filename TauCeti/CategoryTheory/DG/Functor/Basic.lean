@@ -37,8 +37,9 @@ statements about `H⁰(F)`.
 
 ## Main results
 
-* `CategoryTheory.EnrichedFunctor.dgMap_dgDifferential`: a DG functor commutes with the
-  differential.
+* `CategoryTheory.EnrichedFunctor.dgMap_dgDifferential` and
+  `CategoryTheory.EnrichedFunctor.dgMap_d`: a DG functor commutes with the differential.
+* `CategoryTheory.EnrichedFunctor.dgMap_castDeg`: a DG functor commutes with degree transport.
 * `CategoryTheory.EnrichedFunctor.dgMap_dgId` and `CategoryTheory.EnrichedFunctor.dgMap_dgComp`:
   a DG functor preserves identities and composition of homogeneous morphisms.
 * `CategoryTheory.EnrichedFunctor.mapDGHomotopyCategory_map_homOf`: `H⁰(F)` sends the class of a
@@ -84,6 +85,19 @@ theorem dgMap_dgDifferential {X Y : C} {n : ℤ} (f : DGHom R n X Y) :
     F.dgMap (n + 1) (dgDifferential R n f) = dgDifferential R n (F.dgMap n f) := by
   simp only [dgMap_apply, ← ModuleCat.comp_apply, (F.map X Y).comm]
 
+/-- A DG functor commutes with the differential of the Hom complexes between arbitrary indices. -/
+theorem dgMap_d {X Y : C} (a b : ℤ) (f : DGHom R a X Y) :
+    F.dgMap b (((dgHomComplex R X Y).d a b).hom f) =
+      ((dgHomComplex R (F.obj X) (F.obj Y)).d a b).hom (F.dgMap a f) := by
+  simp only [dgMap_apply, ← ModuleCat.comp_apply, (F.map X Y).comm]
+
+/-- A DG functor commutes with degree transport. -/
+@[simp]
+theorem dgMap_castDeg {X Y : C} {p p' : ℤ} (hp : p = p') (f : DGHom R p X Y) :
+    F.dgMap p' (castDeg R hp f) = castDeg R hp (F.dgMap p f) := by
+  subst hp
+  simp only [castDeg_self]
+
 /-- A DG functor preserves identities. -/
 @[simp]
 theorem dgMap_dgId (X : C) : F.dgMap 0 (dgId R X) = dgId R (F.obj X) := by
@@ -107,6 +121,24 @@ theorem dgMap_dgComp {X Y Z : C} {p q n : ℤ} (f : DGHom R p X Y) (g : DGHom R 
   simpa only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, dgCompMap_tmul,
     ModuleCat.MonoidalCategory.tensorHom_tmul, dgMap_apply] using
     LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (F.dgCompMap_naturality p q n h)) (f ⊗ₜ g)
+
+/-- The images of degree-zero morphisms composing to the identity compose to the identity, in
+front of any further morphism `x`. -/
+theorem dgMap_dgComp_dgMap_assoc_of_eq_dgId {X Y : C} {Z : D} {f : DGHom R 0 X Y}
+    {g : DGHom R 0 Y X} (hfg : dgComp R f g (add_zero 0) = dgId R X) {m : ℤ}
+    (x : DGHom R m (F.obj X) Z) :
+    dgComp R (F.dgMap 0 f) (dgComp R (F.dgMap 0 g) x (zero_add m)) (zero_add m) = x := by
+  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add m) (by omega), ← dgMap_dgComp, hfg, dgMap_dgId,
+    dgId_dgComp]
+
+/-- The images of degree-zero morphisms composing to zero compose to zero, in front of any
+further morphism `x`. -/
+theorem dgMap_dgComp_dgMap_assoc_of_eq_zero {X Y Y' : C} {Z : D} {f : DGHom R 0 X Y}
+    {g : DGHom R 0 Y Y'} (hfg : dgComp R f g (add_zero 0) = 0) {m : ℤ}
+    (x : DGHom R m (F.obj Y') Z) :
+    dgComp R (F.dgMap 0 f) (dgComp R (F.dgMap 0 g) x (zero_add m)) (zero_add m) = 0 := by
+  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add m) (by omega), ← dgMap_dgComp, hfg, map_zero,
+    zero_dgComp]
 
 /-- The identity DG functor acts as the identity on homogeneous morphisms. -/
 @[simp]
@@ -190,6 +222,11 @@ end OfDGMap
 theorem dgMap_mem_dgCycles {X Y : C} {f : DGHom R 0 X Y} (hf : f ∈ dgCycles R X Y) :
     F.dgMap 0 f ∈ dgCycles R (F.obj X) (F.obj Y) :=
   map_mem_dgCycles R (F.map X Y) hf
+
+/-- A DG functor sends closed morphisms to closed morphisms. -/
+theorem dgDifferential_dgMap_eq_zero {X Y : C} {n : ℤ} {f : DGHom R n X Y}
+    (hf : dgDifferential R n f = 0) : dgDifferential R n (F.dgMap n f) = 0 := by
+  rw [← dgMap_dgDifferential, hf, map_zero]
 
 /-- The underlying functor of a DG functor acts on closed morphisms by its degree-zero map. -/
 @[simp]

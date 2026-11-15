@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 public import Mathlib.Topology.Sheaves.Flasque
 public import TauCeti.Topology.Sheaves.Functors
 public import TauCeti.Topology.Sheaves.Presheaf
@@ -31,10 +32,12 @@ as sheaves of modules or of abelian groups. For such sheaves Mathlib's `TopCat.S
 asks that all restriction maps be epimorphisms; surjective restrictions are epimorphisms, so the
 locality statement yields flasqueness. If the forgetful functor moreover preserves epimorphisms,
 flasqueness is shown to be equivalent to flasqueness of the restrictions to the members of some
-open cover.
+open cover; since flasqueness is invariant under isomorphism, a sheaf which is locally isomorphic
+to flasque sheaves is then flasque.
 
 ## Main declarations
 
+* `TopCat.Presheaf.IsFlasque.of_iso`: a presheaf isomorphic to a flasque presheaf is flasque;
 * `TopCat.Presheaf.IsSheaf.map_surjective_of_locally_flasque`: the locality statement for
   sheaves of types;
 * `TopCat.Sheaf.map_surjective_of_locally_flasque`: the same statement for sheaves valued in a
@@ -42,7 +45,11 @@ open cover.
 * `TopCat.Sheaf.isFlasque_of_locally_flasque`: local surjectivity of restrictions implies
   flasqueness;
 * `TopCat.Sheaf.isFlasque_iff_locally_isFlasque`: a sheaf is flasque if and only if every point
-  has an open neighbourhood on which its restriction is flasque.
+  has an open neighbourhood on which its restriction is flasque;
+* `TopCat.Sheaf.isFlasque_of_locally_iso`: a sheaf which is locally isomorphic to flasque sheaves
+  is flasque.
+* `CategoryTheory.Sheaf.isFlasque`: flasque sheaves, as a class of objects closed under
+  isomorphisms.
 
 ## References
 
@@ -61,6 +68,14 @@ namespace TopCat
 variable {X : TopCat.{u}}
 
 namespace Presheaf
+
+/-- A presheaf isomorphic to a flasque presheaf is flasque. -/
+theorem IsFlasque.of_iso {C : Type*} [Category* C] {F G : Presheaf C X} (e : F ≅ G)
+    [F.IsFlasque] : G.IsFlasque where
+  epi {U V} i := by
+    have : G.map i = e.inv.app U ≫ F.map i ≫ e.hom.app V := by simp
+    rw [this]
+    infer_instance
 
 /-- If every restriction map of a sheaf of types inside some neighbourhood of each point is
 surjective, then every restriction map is surjective. -/
@@ -182,8 +197,42 @@ theorem isFlasque_iff_locally_isFlasque {FC : C → C → Type*} {CC : C → Typ
     rwa [IsOpenEmbedding.sheafPullback_obj_obj_map] at this
   exact (CategoryTheory.epi_iff_surjective ((CategoryTheory.forget C).map _)).mp inferInstance
 
+/-- A sheaf is flasque if every point has an open neighbourhood `W` on which the sheaf is
+isomorphic to a flasque sheaf on `W`. -/
+theorem isFlasque_of_locally_iso {FC : C → C → Type*} {CC : C → Type*}
+    [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC]
+    [PreservesLimitsOfSize.{u, u} (CategoryTheory.forget C)]
+    [(CategoryTheory.forget C).PreservesEpimorphisms] (G : Sheaf C X)
+    (h : ∀ x : X, ∃ W : Opens X, x ∈ W ∧ ∃ H : Sheaf C ((Opens.toTopCat X).obj W), H.IsFlasque ∧
+      Nonempty ((W.isOpenEmbedding.sheafPullback C).obj G ≅ H)) :
+    G.IsFlasque := by
+  refine G.isFlasque_iff_locally_isFlasque.mpr fun x ↦ ?_
+  obtain ⟨W, hxW, H, hH, ⟨e⟩⟩ := h x
+  exact ⟨W, hxW, .of_iso (F := H.obj) ((Sheaf.forget C _).mapIso e.symm)⟩
+
 end Restriction
 
 end Sheaf
 
 end TopCat
+
+namespace CategoryTheory.Sheaf
+
+/-- Flasque sheaves on `X` with values in `A`, as a class of objects. -/
+def isFlasque (X : TopCat.{u}) (A : Type*) [Category* A] :
+    ObjectProperty (Sheaf (Opens.grothendieckTopology X) A) :=
+  fun G ↦ TopCat.Presheaf.IsFlasque G.obj
+
+/-- A sheaf satisfies `isFlasque` exactly when its underlying presheaf is flasque. -/
+@[simp]
+lemma isFlasque_iff {X : TopCat.{u}} {A : Type*} [Category* A]
+    {G : Sheaf (Opens.grothendieckTopology X) A} :
+    isFlasque X A G ↔ TopCat.Presheaf.IsFlasque G.obj :=
+  Iff.rfl
+
+/-- A sheaf isomorphic to a flasque sheaf is flasque. -/
+instance {X : TopCat.{u}} {A : Type*} [Category* A] :
+    (isFlasque X A).IsClosedUnderIsomorphisms where
+  of_iso e h := @TopCat.Presheaf.IsFlasque.of_iso _ _ _ _ _ ((sheafToPresheaf _ _).mapIso e) h
+
+end CategoryTheory.Sheaf

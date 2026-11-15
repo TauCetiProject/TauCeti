@@ -7,8 +7,7 @@ module
 
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField
-import Mathlib.Analysis.Meromorphic.FactorizedRational
-import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
+import TauCeti.Analysis.Meromorphic.FactorizedRational
 import TauCeti.Topology.Compactification.OnePoint.Nhds
 
 /-!
@@ -54,8 +53,6 @@ nonconstant holomorphic map to the sphere are studied algebraically.
 
 * `TauCeti.RiemannSurface.MeromorphicFunction.aeval_coordinate_apply_coe`: a polynomial evaluated
   at the coordinate takes the value `p(z)` at a finite point `z`.
-* `TauCeti.RiemannSurface.MeromorphicFunction.exists_algebraMap_eq_of_forall_coe_ne`: a
-  meromorphic function on the Riemann sphere with neither zeros nor poles in `ℂ` is constant.
 * `TauCeti.RiemannSurface.MeromorphicFunction.ratFuncEquiv_apply_coe`: the meromorphic function of
   a rational function `r` takes the value `r(z)` at every finite point `z` at which the denominator
   of `r` does not vanish.
@@ -75,8 +72,6 @@ public noncomputable section
 
 open Filter Function OnePoint Polynomial Set Topology
 
-open scoped Manifold nonZeroDivisors
-
 namespace TauCeti.RiemannSurface.MeromorphicFunction
 
 /-! ### The coordinate and polynomials -/
@@ -89,21 +84,28 @@ def coordinate : MeromorphicFunction (OnePoint ℂ) where
   ne_infty' h := OnePoint.coe_ne_infty (0 : ℂ) (congrFun h ((0 : ℂ) : OnePoint ℂ))
 
 @[simp]
-theorem coordinate_apply (x : OnePoint ℂ) : coordinate x = x := by
-  simp [coordinate]
+theorem coordinate_apply (x : OnePoint ℂ) : coordinate x = x :=
+  (rfl)
+
+/-- The sphere coordinate is not the zero meromorphic function. -/
+@[simp]
+theorem coordinate_ne_zero : coordinate ≠ 0 := by
+  intro h
+  have := congrArg (fun g : MeromorphicFunction (OnePoint ℂ) ↦ g (1 : ℂ)) h
+  simp at this
+
+/-- The finite part of the sphere coordinate is the affine chart. -/
+@[simp]
+theorem finitePart_coordinate : coordinate.finitePart = (affineChart : OnePoint ℂ → ℂ) := by
+  funext x
+  simp [finitePart_def]
 
 /-- A polynomial `p` evaluated at the coordinate of the Riemann sphere takes the value `p(z)` at a
 finite point `z`. -/
 @[simp]
 theorem aeval_coordinate_apply_coe (p : ℂ[X]) (z : ℂ) :
-    aeval coordinate p (z : OnePoint ℂ) = ↑(p.eval z) := by
-  induction p using Polynomial.induction_on with
-  | C a => simp
-  | add p q hp hq =>
-    rw [map_add, add_apply_of_eq_coe hp hq, eval_add]
-  | monomial n a h =>
-    rw [pow_succ, ← mul_assoc, map_mul, aeval_X, mul_apply_of_eq_coe h (coordinate_apply _)]
-    simp [mul_assoc]
+    aeval coordinate p (z : OnePoint ℂ) = ↑(p.eval z) :=
+  aeval_apply_of_eq_coe (coordinate_apply _) p
 
 /-- Evaluation of polynomials at the coordinate of the Riemann sphere is injective: a nonzero
 polynomial does not vanish at every point of `ℂ`. -/
@@ -135,23 +137,6 @@ private theorem prod_coordinate_sub_zpow_apply (s : Finset ℂ) (n : ℂ → ℤ
   prod_apply_of_eq_coe fun u hu ↦ zpow_apply_of_eq_coe
     (sub_apply_of_eq_coe (coordinate_apply _) (congrFun (coe_algebraMap u) _))
     (sub_ne_zero.2 fun h : y = u ↦ hy (h ▸ hu)) _
-
-/-- **A meromorphic function on the Riemann sphere with neither zeros nor poles in `ℂ` is
-constant.** -/
-theorem exists_algebraMap_eq_of_forall_coe_ne {f : MeromorphicFunction (OnePoint ℂ)}
-    (hinf : ∀ z : ℂ, f z ≠ ∞) (h0 : ∀ z : ℂ, f z ≠ ((0 : ℂ) : OnePoint ℂ)) :
-    ∃ c : ℂ, algebraMap ℂ _ c = f := by
-  by_cases hf : f ∞ = ∞
-  · -- At a pole at `∞`, the inverse of `f` has no poles, so it is constant.
-    obtain ⟨c, hc⟩ := exists_algebraMap_eq_of_forall_ne_infty (f := f⁻¹) fun x ↦ by
-      induction x using OnePoint.rec with
-      | infty => simp [inv_apply_of_eq_infty hf]
-      | coe z => simp [inv_apply (hinf z) (h0 z)]
-    exact ⟨c⁻¹, by rw [map_inv₀, hc, inv_inv]⟩
-  · exact exists_algebraMap_eq_of_forall_ne_infty fun x ↦ by
-      induction x using OnePoint.rec with
-      | infty => exact hf
-      | coe z => exact hinf z
 
 /-- The finite part of a meromorphic function on the Riemann sphere, read on `ℂ`. -/
 private abbrev finitePartCoe (f : MeromorphicFunction (OnePoint ℂ)) : ℂ → ℂ :=
@@ -189,14 +174,6 @@ private theorem meromorphicOrderAt_finitePartCoe_ne_top {f : MeromorphicFunction
     (meromorphicOrderAt_eq_top_iff.1 h)).exists
   exact hy.1 hy.2
 
-/-- The value at `y` of the finitely supported product `∏ᶠ u, (· - u) ^ d u`, as a finite
-product. -/
-private theorem finprod_sub_zpow_apply {d : ℂ → ℤ} (hd : d.support.Finite) (y : ℂ) :
-    (∏ᶠ u, (· - u) ^ d u) y = ∏ u ∈ hd.toFinset, (y - u) ^ d u :=
-  (congrFun (Function.FactorizedRational.finprod_eq_fun hd) y).trans <|
-    finprod_eq_prod_of_mulSupport_subset _ fun u hu ↦
-      hd.mem_toFinset.2 fun h ↦ hu (by simp [h])
-
 /-- At a point `y` outside a finite set `s`, the product of the `(y - u) ^ n u` over `u ∈ s` does
 not vanish. -/
 private theorem prod_sub_zpow_ne_zero {s : Finset ℂ} (n : ℂ → ℤ) {y : ℂ} (hy : y ∉ s) :
@@ -224,7 +201,7 @@ private theorem mul_inv_prod_coordinate_sub_zpow_apply {f : MeromorphicFunction 
       (inv_apply_of_eq_coe hφy (prod_sub_zpow_ne_zero d hy))]
     congr 1
     simp only [finitePartCoe] at hFy
-    rw [hFy, Pi.smul_apply', smul_eq_mul, finprod_sub_zpow_apply hd, ← hs]
+    rw [hFy, Pi.smul_apply', smul_eq_mul, FactorizedRational.finprod_apply_eq_prod hd, ← hs]
     field_simp [prod_sub_zpow_ne_zero d hy]
   refine apply_eq_of_tendsto (φ := fun y ↦ ↑(g (affineChart y))) ?_ ?_
   · rw [OnePoint.nhdsNE_coe_eq, tendsto_map'_iff]
@@ -264,8 +241,9 @@ private theorem ofRatFunc_surjective : Surjective ofRatFunc := by
   -- constant, and `f = G * φ` is rational.
   set G := f * φ⁻¹
   have hG : ∀ z : ℂ, G z = ↑(g z) := mul_inv_prod_coordinate_sub_zpow_apply hfin hg hfg
-  obtain ⟨c, hc⟩ := exists_algebraMap_eq_of_forall_coe_ne (f := G) (fun z ↦ by simp [hG])
-    fun z ↦ by simpa [hG] using hg0 ⟨z, mem_univ z⟩
+  obtain ⟨c, hc⟩ := exists_algebraMap_eq_of_forall_ne_ne_infty_of_forall_ne_ne_zero (f := G) ∞
+    (fun x hx ↦ by lift x to ℂ using hx; simp [hG])
+    fun x hx ↦ by lift x to ℂ using hx; simpa [hG] using hg0 ⟨x, mem_univ x⟩
   have hGS : G ∈ S := hc ▸ algebraMap_mem S c
   simpa [G, mul_assoc, inv_mul_cancel₀ hφne] using mul_mem hGS hφS
 

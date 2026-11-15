@@ -40,7 +40,7 @@ variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-variable [Algebra.IsSeparable F F']
+variable [Algebra.IsIntegral F F']
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
@@ -56,8 +56,7 @@ private theorem ord_algebraMap_mul_pow_uniformizer {z : F'} (hz : P'.ord z = 1)
     intro h
     rw [h, P'.ord_zero] at hz
     omega
-  rw [P'.ord_mul ((map_ne_zero (algebraMap F F')).mpr hc) (pow_ne_zero _ hz0),
-    ord_algebraMap_restrict k F P', P'.ord_pow, hz, mul_one]
+  rw [ord_algebraMap_mul_pow k F P' hz0 hc, hz, mul_one]
 
 /-- If a sum of coefficient-weighted powers of a uniformizer is regular, then every coefficient
 is regular downstairs.  Distinct powers have distinct order residues modulo the ramification

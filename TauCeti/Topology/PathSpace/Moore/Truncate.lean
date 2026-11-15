@@ -103,6 +103,16 @@ theorem _root_.Continuous.moorePath_truncate {f : Y → MoorePath X} {g : Y → 
   simp only [truncate_apply]
   fun_prop
 
+/-- A truncated path followed by its reversal varies continuously with the path and time,
+without requiring fixed endpoints. -/
+@[fun_prop]
+theorem _root_.Continuous.moorePath_retrace {f : Y → MoorePath X} {g : Y → ℝ≥0}
+    (hf : Continuous f) (hg : Continuous g) :
+    Continuous fun y ↦ ((f y).truncate (g y)).trans ((f y).truncate (g y)).symm
+      (by simp) := by
+  have h := hf.moorePath_truncate hg
+  exact h.moorePath_trans h.moorePath_symm _
+
 /-- Truncating a concatenation before the end of its first piece truncates the first piece. -/
 theorem truncate_trans_of_le (γ δ : MoorePath X) (h : γ.target = δ.source) {s : ℝ≥0}
     (hs : s ≤ γ.length) : (γ.trans δ h).truncate s = γ.truncate s := by

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Curvature
-public import TauCeti.Geometry.Manifold.Riemannian.Sum
+public import TauCeti.Geometry.Manifold.Riemannian.Sum.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Basic
+import TauCeti.Analysis.Complex.Conformal.LocalDegree
 
 /-!
 # Local linearizing coordinates at a point of finite stabilizer
@@ -73,6 +74,8 @@ the invariant disc is `Subgroup.stabilizerBallQuotientChart_trans_apply`.
   the stabilizer on it, and its holomorphy on the invariant disc.
 * `Subgroup.LinearizingCoordinate.toEquiv`, `…_isOpen_target`, `…_mem_target_iff`: the open image
   of the reparametrization, the set of coordinate values.
+* `Subgroup.LinearizingCoordinate.deriv_invFun_ne_zero`: the inverse reparametrization has
+  nonvanishing derivative.
 * `Subgroup.LinearizingCoordinate.transEquiv`, `…_transEquiv_coordinate`,
   `…_transEquiv_transEquiv` and `Subgroup.LinearizingCoordinate.differentiableOn_transEquiv`: the
   biholomorphic change of local linearizing coordinate between two local linearizing coordinates.
@@ -194,6 +197,10 @@ radius `ε` about `z` centred at `z` in which the stabilizer of `z` acts by its 
 def LinearizingCoordinate.coordinate (ψ : Γ.LinearizingCoordinate z ε)
     (τ : stabilizerBall Γ z ε) : ℂ := ψ.toEquiv (discCoordinate z (τ : ℍ))
 
+theorem LinearizingCoordinate.coordinate_def (ψ : Γ.LinearizingCoordinate z ε)
+    (τ : stabilizerBall Γ z ε) : coordinate ψ τ = ψ.toEquiv (discCoordinate z (τ : ℍ)) :=
+  (rfl)
+
 /-- A point of the invariant disc has coordinate `0` in a local linearizing coordinate exactly
 when it is the centre: the coordinate is centred at the centre. -/
 @[simp]
@@ -277,6 +284,13 @@ theorem LinearizingCoordinate.isOpen_target (ψ : Γ.LinearizingCoordinate z ε)
   exact TauCeti.isOpen_image_of_differentiableOn_of_injOn Metric.isOpen_ball ψ.differentiableOn
     ψ.toFun_injOn_ball
 
+/-- **The inverse reparametrization of a local linearizing coordinate has nonvanishing derivative**
+on the image of the reparametrization: it is holomorphic and injective on the open `target`
+(`TauCeti.deriv_ne_zero_of_injOn`). -/
+theorem LinearizingCoordinate.deriv_invFun_ne_zero (ψ : Γ.LinearizingCoordinate z ε)
+    {u : ℂ} (hu : u ∈ ψ.toEquiv.target) : deriv ψ.toEquiv.invFun u ≠ 0 :=
+  TauCeti.deriv_ne_zero_of_injOn ψ.differentiableOn_invFun ψ.isOpen_target ψ.toEquiv.symm.injOn hu
+
 /-- **The coordinate of a local linearizing coordinate is holomorphic on the invariant disc**:
 on the ambient upper half-plane, the invariant disc being the ball `Metric.ball z ε`
 (`Subgroup.mem_stabilizerBall`), it is the composition of the disc coordinate, which is holomorphic
@@ -316,6 +330,11 @@ biholomorphic transition
 `Subgroup.LinearizingCoordinate.differentiableOn_quotientCoordinateTrans`. -/
 def LinearizingCoordinate.quotientCoordinate (ψ : Γ.LinearizingCoordinate z ε)
     (τ : stabilizerBall Γ z ε) : ℂ := coordinate ψ τ ^ Nat.card (stabilizer Γ z)
+
+theorem LinearizingCoordinate.quotientCoordinate_def (ψ : Γ.LinearizingCoordinate z ε)
+    (τ : stabilizerBall Γ z ε) :
+    quotientCoordinate ψ τ = coordinate ψ τ ^ Nat.card (stabilizer Γ z) :=
+  (rfl)
 
 /-- The local quotient coordinate is constant on the orbits of the stabilizer of `z`, since the
 stabilizer acts by a `Nat.card (stabilizer Γ z)`-th root of unity. -/
@@ -380,6 +399,10 @@ image, and is an open set by
 `Subgroup.LinearizingCoordinate.isOpen_quotientImage`. -/
 def LinearizingCoordinate.quotientImage (ψ : Γ.LinearizingCoordinate z ε) : Set ℂ :=
   (· ^ Nat.card (stabilizer Γ z)) '' ψ.toEquiv.target
+
+theorem LinearizingCoordinate.quotientImage_def (ψ : Γ.LinearizingCoordinate z ε) :
+    ψ.quotientImage = (· ^ Nat.card (stabilizer Γ z)) '' ψ.toEquiv.target :=
+  (rfl)
 
 /-- **A point is a quotient-coordinate value of a local linearizing coordinate** exactly when it
 is the `Nat.card (stabilizer Γ z)`-th power of a coordinate value. -/

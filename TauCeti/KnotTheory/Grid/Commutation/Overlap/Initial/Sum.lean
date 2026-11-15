@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Counted
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Weight
+import TauCeti.Algebra.BigOperators.Finset.SDiff
 
 /-!
 # Removing common-initial-side contributions from the pentagon chain-map equation
@@ -99,14 +100,11 @@ private theorem initialOverlapPartner_injective :
   have hD := G.initialOverlapPartner_isRecut C D
   have hE := G.initialOverlapPartner_isRecut C E
   rw [← h] at hE
-  have honeD := (G.initialOverlapSource_data C D.val D.property).2.1
-  have honeE := (G.initialOverlapSource_data C E.val E.property).2.1
   obtain ⟨hfD, hsD⟩ := G.initialOverlapSource_underlying_isEmpty C D.val D.property
   obtain ⟨hfE, hsE⟩ := G.initialOverlapSource_underlying_isEmpty C E.val E.property
-  have hbackD := hD.symm honeD hfD hsD
-  have hbackE := hE.symm honeE hfE hsE
+  have hbackD := hD.symm hfD hsD
+  have hbackE := hE.symm hfE hsE
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridRectanglePentagonDecomposition.toRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone
@@ -193,14 +191,10 @@ theorem sum_rectanglePentagonWeight_eq_sum_pentagonRectangleWeight_iff_sdiff_ini
         ∑ E ∈ G.pentagonRectangleDecompositions C x z \ G.initialOverlapPartners C x z,
           G.pentagonRectangleWeight C R E := by
   classical
-  rw [← Finset.sum_sdiff
-      (G.initialOverlapSources_subset_rectanglePentagonDecompositions C (x := x) (z := z))
-      (f := G.rectanglePentagonWeight C R),
-    ← Finset.sum_sdiff
-      (G.initialOverlapPartners_subset_pentagonRectangleDecompositions C (x := x) (z := z))
-      (f := G.pentagonRectangleWeight C R),
-    G.sum_rectanglePentagonWeight_initialOverlapSources_eq_sum_pentagonRectangleWeight_partners
-      C R x z]
-  exact add_right_cancel_iff
+  exact Finset.sum_eq_sum_iff_sdiff
+    (G.initialOverlapSources_subset_rectanglePentagonDecompositions C (x := x) (z := z))
+    (G.initialOverlapPartners_subset_pentagonRectangleDecompositions C (x := x) (z := z))
+    (G.sum_rectanglePentagonWeight_initialOverlapSources_eq_sum_pentagonRectangleWeight_partners C
+      R x z)
 
 end TauCeti.GridDiagram

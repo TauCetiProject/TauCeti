@@ -236,7 +236,7 @@ theorem mongeAmpereMeasure_mul_norm_sub (hμ : μ ≪ ν) (hr : 0 ≤ r) (a : E)
       μ (closedBall 0 r) • dirac a := by
   ext s hs
   rw [mongeAmpereMeasure_apply μ (convex_epigraph_mul_norm_sub hr a)
-    (fun _ => EReal.coe_ne_bot _) hμ hs, Measure.smul_apply, dirac_apply' _ hs, smul_eq_mul]
+    (fun _ => EReal.coe_ne_bot _) hμ hs, _root_.smul_apply, dirac_apply' _ hs, smul_eq_mul]
   have hD : interior {x : E | ((r * ‖x - a‖ : ℝ) : EReal) ≠ ⊤} = univ := by
     simp only [ne_eq, EReal.coe_ne_top, not_false_eq_true, ofPred_true, interior_univ]
   rw [hD, inter_univ]
@@ -284,7 +284,7 @@ theorem mongeAmpereMeasure_mul_norm_sub_ne_withDensity_det [μ.IsAddHaarMeasure]
   rw [h0, mongeAmpereMeasure_mul_norm_sub AbsolutelyContinuous.rfl hr.le a]
   intro h
   have h' := congrArg (fun m : Measure E => m {a}) h
-  simp only [Measure.smul_apply, dirac_apply_of_mem (mem_singleton a), smul_eq_mul, mul_one] at h'
+  simp only [_root_.smul_apply, dirac_apply_of_mem (mem_singleton a), smul_eq_mul, mul_one] at h'
   exact (measure_closedBall_pos μ 0 hr).ne' h'
 
 end Measure

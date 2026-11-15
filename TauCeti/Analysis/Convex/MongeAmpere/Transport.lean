@@ -117,7 +117,7 @@ theorem mongeAmpereMeasure_eq_of_hasLaw (hf : Convex ℝ {p : E × ℝ | f p.1 �
     exact measure_eq_zero_iff_ae_notMem.1
       (hν (measure_setOf_exists_ne_mem_subdifferential_eq_zero ρ f))
   ext s hs
-  have hm := (nullMeasurableSet_subgradientImage hf hbot ρ hs).mono_ac hν
+  have hm := (nullMeasurableSet_subgradientImage hf ρ hs).mono_ac hν
   rw [mongeAmpereMeasure_apply ν hf hbot hν hs, ← hT.map_eq,
     map_apply₀ hT.aemeasurable (hT.map_eq ▸ hm)]
   -- Up to a `μ`-null set, `T x` is a subgradient at a point of `s ∩ D` exactly when `x ∈ s`.
@@ -213,7 +213,7 @@ theorem hasLaw_gradient_and_ae_ne_top_iff_mongeAmpereMeasure_eq_and_ae_mem_subgr
     -- `ν`-almost every point is the image of a point of `D` under the gradient.
     have hm : NullMeasurableSet (subgradientImage (innerₗ E) f (univ ∩ interior {x | f x ≠ ⊤}))
         (Measure.map (∇ fun x => (f x).toReal) μ) :=
-      hT.map_eq ▸ (nullMeasurableSet_subgradientImage hf hbot ρ MeasurableSet.univ).mono_ac hν
+      hT.map_eq ▸ (nullMeasurableSet_subgradientImage hf ρ MeasurableSet.univ).mono_ac hν
     rw [univ_inter] at hm
     rw [← hT.map_eq]
     refine (mem_ae_iff (s := subgradientImage (innerₗ E) f (interior {x | f x ≠ ⊤}))).2 ?_
@@ -246,10 +246,8 @@ theorem mongeAmpereMeasure_withDensity_eq_of_hasLaw (hf : Convex ℝ {p : E × �
   have hTT' : T =ᵐ[μ] T' := hT.aemeasurable.ae_eq_mk
   have hlaw : HasLaw T' (ν.withDensity h) (μ.withDensity fun x => h (T' x)) := by
     refine ⟨hT.aemeasurable.measurable_mk.aemeasurable,
-      map_withDensity_eq_withDensity hT.aemeasurable.measurable_mk measurable_one hh ?_
-        (ae_of_all _ fun x => one_mul _)⟩
-    rw [withDensity_one]
-    exact (hT.congr hTT'.symm).map_eq
+      (map_withDensity_comp hT.aemeasurable.measurable_mk hh).trans
+        (by rw [(hT.congr hTT'.symm).map_eq])⟩
   have hac := withDensity_absolutelyContinuous μ fun x => h (T' x)
   have hcongr : (μ.withDensity fun x => h (T x)) = μ.withDensity fun x => h (T' x) :=
     withDensity_congr_ae (by filter_upwards [hTT'] with x hx; rw [hx])

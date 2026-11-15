@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Differential.Transpose
-public import TauCeti.KnotTheory.Grid.Homology.Tau
+public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
 
 /-!
 # The diagonal reflection on unblocked grid homology
@@ -17,11 +17,12 @@ the permutation `G.O` (`Differential/Transpose.lean`). This file descends that s
 unblocked grid homology: `GH⁻(G)` and `GH⁻(G.transpose)` are identified by a semilinear
 equivalence along the renaming of the variables. The reflection preserves the `O`-Maslov and
 Alexander gradings of grid states, so on chains it preserves the full bigrading, and on homology
-it preserves the Alexander grading. Hence it preserves the invariant `τ` of a knot grid.
+it preserves the Alexander grading. Hence for a knot grid the two homologies are isomorphic as
+Alexander-graded `R[U]`-modules (`GridDiagram.IsKnot.unblockedHomologyIsomorphic_transpose`).
 
 The reflection exchanges row and column commutations (`GridDiagram.isColumnCommutation_transpose`).
-So, by `GridDiagram.IsCommutation.apply_eq_of_transpose`, the invariance of `τ` under row
-commutations follows from `GridDiagram.IsKnot.tau_transpose` and its invariance under column
+So the invariance of `GH⁻` under row commutations follows from
+`GridDiagram.IsKnot.unblockedHomologyIsomorphic_transpose` and its invariance under column
 commutations.
 
 ## Main definitions
@@ -37,16 +38,16 @@ commutations.
   inverse send the class of a cycle to the class of the reflected cycle.
 * `TauCeti.OddComponentGridDiagram.unblockedHomologyTransposeEquiv_mem_piece`: it preserves the
   Alexander grading.
-* `TauCeti.GridDiagram.IsKnot.tau_transpose`: the invariant `τ` is unchanged by the diagonal
-  reflection.
+* `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_transpose`: for a knot grid, `GH⁻` is
+  unchanged by the diagonal reflection as an Alexander-graded `R[U]`-module.
 
 ## References
 
 The symmetries of grid diagrams are in Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
-Links*, Chapter 3, unblocked grid homology is defined in Chapter 4.6, and `τ` in Chapter 6.
+Links*, Chapter 3, and unblocked grid homology is defined in Chapter 4.6.
 The construction adapts the half-turn symmetry of `TauCeti.KnotTheory.Grid.Homology.HalfTurn`
 (`GridDiagram.unblockedHomologyRotateEquiv`, its grading preservation and
-`GridDiagram.IsKnot.tau_rotate`) to the diagonal reflection.
+`GridDiagram.IsKnot.unblockedHomologyIsomorphic_rotate`) to the diagonal reflection.
 -/
 
 public section
@@ -159,11 +160,13 @@ namespace GridDiagram.IsKnot
 
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (K : Type*) [CommRing K] [CharP K 2]
 
-/-- The knot invariant `τ` is unchanged by the diagonal reflection of a grid diagram. -/
-theorem tau_transpose : ((G.isKnot_transpose).mpr hG).tau K = hG.tau K := by
-  refine (hG.tau_eq_of_semilinearMap K _ (fun p => ?_)
+/-- The diagonal reflection of a knot grid preserves `GH⁻` as an Alexander-graded
+`K[U]`-module. -/
+theorem unblockedHomologyIsomorphic_transpose :
+    hG.UnblockedHomologyIsomorphic ((G.isKnot_transpose).mpr hG) K := by
+  refine .of_semilinearMap (fun p => ?_)
     (G.unblockedHomologyTransposeEquiv K).toLinearMap
-    (G.unblockedHomologyTransposeEquiv K).bijective fun a y hy => ?_).symm
+    (G.unblockedHomologyTransposeEquiv K).bijective fun a y hy => ?_
   · simp [aeval_rename, Function.comp_def]
   · rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
       ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy ⊢

@@ -29,8 +29,8 @@ irreducible over `K`. That converse and Mathlib's forward direction give the equ
   `Φ_n` is irreducible over `K`.
 * `IsCyclotomicExtension.irreducible_cyclotomic_iff_finrank_eq_totient`: `Φ_n` is irreducible over
   `K` if and only if `[L : K] = φ n`.
-* `irreducible_cyclotomic_of_coprime_finrank`: irreducibility is preserved by a finite base change
-  whose degree is coprime to `φ n`.
+* `irreducible_cyclotomic_of_coprime_finrank`: irreducibility is preserved by a base change
+  whose `finrank` is coprime to `φ n`.
 * `irreducible_cyclotomic_prime_pow_ratPadic`: every `p`-power cyclotomic polynomial is
   irreducible over `ℚ_p`.
 
@@ -126,12 +126,14 @@ theorem irreducible_cyclotomic_prime_pow_ratPadic (p : ℕ) [Fact p.Prime] (n : 
 section BaseChange
 
 variable {n : ℕ} {F : Type*} [Field F]
-  {K : Type*} [Field K] [Algebra F K] [FiniteDimensional F K]
+  {K : Type*} [Field K] [Algebra F K]
 
-/-- Irreducibility of `Φ_n` is preserved by a finite base change of degree coprime to `φ(n)`.
+/-- Irreducibility of `Φ_n` is preserved by a base change whose `finrank` is coprime to `φ(n)`.
 This is useful for transporting cyclotomic irreducibility through extensions whose degrees have no
 common factor with the cyclotomic degree. No assumption on the characteristic is needed: the proof
-only uses that `Φ_n` is monic of degree `φ(n)`.
+only uses that `Φ_n` is monic of degree `φ(n)`. No finite-dimensionality assumption on
+`K / F` is needed. If the extension is infinite-dimensional, its `finrank` is zero, so the
+coprimality assumption forces `φ(n) = 1`.
 
 Source: the linear-disjointness theory in Lang, *Algebra*, revised third edition, Chapter VIII,
 §3. -/

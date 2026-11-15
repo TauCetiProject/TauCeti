@@ -52,7 +52,7 @@ theorem quantile_map_natCast_compoundPoissonMeasure_eq_iff (r : ℝ≥0) (μ : M
         (exp (-(r : ℝ)) * (r : ℝ) ^ n / n !) *
           (μ.convolutionPower n).real (Iic j)} k := by
   rw [Measure.quantile_map_natCast_eq_iff _ hu]
-  simp_rw [(hasSum_compoundPoissonMeasure_real_apply r μ measurableSet_Iic).tsum_eq]
+  simp_rw [(hasSum_compoundPoissonMeasure_real_apply r μ (Iic _)).tsum_eq]
 
 /-- An integer is the compound Poisson quantile exactly when it is the least crossing of the
 native cumulative series, including laws with negative jumps. -/
@@ -63,7 +63,7 @@ theorem quantile_map_intCast_compoundPoissonMeasure_eq_iff (r : ℝ≥0) (μ : M
         (exp (-(r : ℝ)) * (r : ℝ) ^ n / n !) *
           (μ.convolutionPower n).real (Iic j)} k := by
   rw [Measure.quantile_map_intCast_eq_iff _ hu]
-  simp_rw [(hasSum_compoundPoissonMeasure_real_apply r μ measurableSet_Iic).tsum_eq]
+  simp_rw [(hasSum_compoundPoissonMeasure_real_apply r μ (Iic _)).tsum_eq]
 
 /-- For natural jumps, the no-jump probability gives an initial segment on which the lower
 quantile is zero. Additional zero jumps can extend this segment. -/

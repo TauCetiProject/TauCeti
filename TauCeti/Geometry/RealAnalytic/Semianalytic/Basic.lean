@@ -60,7 +60,9 @@ S. Łojasiewicz, *Triangulation of semi-analytic sets*, Annali della Scuola Norm
 (3) 18 (1964), 449–474, §1, for the definition of semianalytic sets.
 
 E. Bierstone and P. D. Milman, *Semianalytic and subanalytic sets*, Publications Mathématiques de
-l'IHÉS 67 (1988), 5–42, §2, for the normal form with a single equation in each conjunct.
+l'IHÉS 67 (1988), 5–42, §2, for the normal form as a union of intersections of sets `{f = 0}` and
+`{f > 0}`. The form with a single equation in each conjunct follows by replacing the equations of a
+conjunct by the sum of their squares.
 -/
 
 public section
@@ -113,10 +115,19 @@ theorem isSetAlgebra_setOf_isAnalyticBooleanCombination (U : Set E) :
 sets containing the zero set and the positivity set of every function analytic on `U`. -/
 theorem setOf_isAnalyticBooleanCombination_subset {U : Set E} {ℬ : Set (Set E)}
     (hℬ : IsSetAlgebra ℬ)
-    (eq_zero : ∀ f : E → ℝ, AnalyticOnNhd ℝ f U → {x | f x = 0} ∈ ℬ)
     (pos : ∀ f : E → ℝ, AnalyticOnNhd ℝ f U → {x | 0 < f x} ∈ ℬ) :
-    {t : Set E | IsAnalyticBooleanCombination U t} ⊆ ℬ :=
-  hℬ.generateSetAlgebra_subset <| union_subset (fun _ ⟨f, hf, h⟩ => h ▸ eq_zero f hf)
+    {t : Set E | IsAnalyticBooleanCombination U t} ⊆ ℬ := by
+  have eq_zero (f : E → ℝ) (hf : AnalyticOnNhd ℝ f U) : {x | f x = 0} ∈ ℬ := by
+    have : {x | f x = 0} = ({x | 0 < f x} ∪ {x | 0 < -f x})ᶜ := by
+      ext x
+      simp only [mem_ofPred_eq, mem_compl_iff, mem_union, not_or, not_lt]
+      constructor
+      · intro h
+        simp [h]
+      · rintro ⟨h₁, h₂⟩
+        linarith
+    exact this ▸ hℬ.compl_mem (hℬ.union_mem (pos f hf) (pos (-f) hf.neg))
+  exact hℬ.generateSetAlgebra_subset <| union_subset (fun _ ⟨f, hf, h⟩ => h ▸ eq_zero f hf)
     (fun _ ⟨f, hf, h⟩ => h ▸ pos f hf)
 
 /-- The empty set is a Boolean combination of analytic sign conditions. -/
@@ -186,7 +197,6 @@ functions analytic on any smaller set `V ⊆ U`. -/
 theorem mono (ht : IsAnalyticBooleanCombination U t) (hVU : V ⊆ U) :
     IsAnalyticBooleanCombination V t :=
   setOf_isAnalyticBooleanCombination_subset (isSetAlgebra_setOf_isAnalyticBooleanCombination V)
-    (fun _ hf => isAnalyticBooleanCombination_setOf_eq_zero (hf.mono hVU))
     (fun _ hf => isAnalyticBooleanCombination_setOf_pos (hf.mono hVU)) ht
 
 /-- The preimage of a Boolean combination of analytic sign conditions on `U` under a map `g`
@@ -197,7 +207,6 @@ theorem preimage {U : Set F} {t : Set F} (ht : IsAnalyticBooleanCombination U t)
     IsAnalyticBooleanCombination V (g ⁻¹' t) := by
   refine setOf_isAnalyticBooleanCombination_subset (ℬ := {t | IsAnalyticBooleanCombination V
     (g ⁻¹' t)}) ⟨?_, fun s hs => ?_, fun s s' hs hs' => ?_⟩
-    (fun f hf => isAnalyticBooleanCombination_setOf_eq_zero (hf.comp hg hgVU))
     (fun f hf => isAnalyticBooleanCombination_setOf_pos (hf.comp hg hgVU)) ht
   · exact isAnalyticBooleanCombination_empty V
   · exact IsAnalyticBooleanCombination.compl hs
@@ -367,25 +376,28 @@ theorem SemianalyticAt.iInter {ι : Type*} [Finite ι] {s : ι → Set E}
   simpa using SemianalyticAt.biInter finite_univ fun i (_ : i ∈ univ) => hs i
 
 /-- **Analytic preimages.** The preimage of a set semianalytic at `g x` under a map `g` analytic
-on a neighbourhood `W` of `x` is semianalytic at `x`. -/
-theorem SemianalyticAt.preimage_of_analyticOnNhd {s : Set F} {g : E → F} {W : Set E}
-    (hs : SemianalyticAt s (g x)) (hW : W ∈ 𝓝 x) (hg : AnalyticOnNhd ℝ g W) :
-    SemianalyticAt (g ⁻¹' s) x := by
+at `x` is semianalytic at `x`. -/
+theorem SemianalyticAt.preimage {s : Set F} {g : E → F} (hs : SemianalyticAt s (g x))
+    (hg : AnalyticAt ℝ g x) : SemianalyticAt (g ⁻¹' s) x := by
   obtain ⟨U, hU, t, ht, hst⟩ := hs
-  refine ⟨W ∩ g ⁻¹' U,
-    inter_mem hW ((hg x (mem_of_mem_nhds hW)).continuousAt.preimage_mem_nhds hU), g ⁻¹' t,
-    ht.preimage (hg.mono inter_subset_left) fun _ hy => hy.2, ?_⟩
+  obtain ⟨m, f, hf, Φ, rfl⟩ := ht.exists_eq_setOf_sign
+  have hfg : ∀ i, ∀ᶠ y in 𝓝 x, AnalyticAt ℝ (f i ∘ g) y := fun i =>
+    ((hf i (g x) (mem_of_mem_nhds hU)).comp hg).eventually_analyticAt
+  set W := {y | ∀ i, AnalyticAt ℝ (f i ∘ g) y} ∩ g ⁻¹' U
+  refine ⟨W, inter_mem (eventually_all.2 hfg) (hg.continuousAt.preimage_mem_nhds hU), _,
+    isAnalyticBooleanCombination_setOf_sign (f := fun i => f i ∘ g)
+      (fun i y (hy : y ∈ W) => hy.1 i) Φ, ?_⟩
   ext y
   have := Set.ext_iff.1 hst (g y)
-  simp only [mem_inter_iff, mem_preimage] at this ⊢
+  simp only [W, mem_inter_iff, mem_preimage, mem_ofPred_eq, Function.comp_apply] at this ⊢
   tauto
 
 /-- **Analytic preimages.** The preimage of a set semianalytic at `g x` under a map `g` analytic
-at `x` is semianalytic at `x`. -/
-theorem SemianalyticAt.preimage [CompleteSpace F] {s : Set F} {g : E → F}
-    (hs : SemianalyticAt s (g x)) (hg : AnalyticAt ℝ g x) : SemianalyticAt (g ⁻¹' s) x :=
-  let ⟨_, hW, hgW⟩ := hg.exists_mem_nhds_analyticOnNhd
-  hs.preimage_of_analyticOnNhd hW hgW
+on a neighbourhood `W` of `x` is semianalytic at `x`. -/
+theorem SemianalyticAt.preimage_of_analyticOnNhd {s : Set F} {g : E → F} {W : Set E}
+    (hs : SemianalyticAt s (g x)) (hW : W ∈ 𝓝 x) (hg : AnalyticOnNhd ℝ g W) :
+    SemianalyticAt (g ⁻¹' s) x :=
+  hs.preimage (hg x (mem_of_mem_nhds hW))
 
 end SemianalyticAt
 
@@ -530,15 +542,15 @@ theorem _root_.LocallyFinite.isSemianalytic_iUnion {ι : Type*} {s : ι → Set 
   obtain ⟨V, hV, hI⟩ := hfin x
   refine (SemianalyticAt.biUnion hI fun i _ => hs i x).congr ?_
   filter_upwards [hV] with y hy
-  simp only [eq_iff_iff, mem_iUnion, exists_prop]
-  exact ⟨fun ⟨i, hi, hy⟩ => ⟨i, hy⟩, fun ⟨i, hyi⟩ => ⟨i, ⟨y, hyi, hy⟩, hyi⟩⟩
+  simp only [mem_iUnion, exists_prop]
+  exact ⟨fun ⟨i, _, hy⟩ => ⟨i, hy⟩, fun ⟨i, hyi⟩ => ⟨i, ⟨y, hyi, hy⟩, hyi⟩⟩
 
 /-- **Analytic isomorphisms, locally.** For a partial equivalence `e` whose source is a
 neighbourhood of `x`, with `e` analytic at `x` and its inverse analytic at `e x`, the set
 `e.symm ⁻¹' s` is semianalytic at `e x` if and only if `s` is semianalytic at `x`. This applies to
 charts and other local analytic isomorphisms. -/
-theorem _root_.PartialEquiv.semianalyticAt_preimage_symm_iff [CompleteSpace E] [CompleteSpace F]
-    {s : Set E} {x : E} (e : PartialEquiv E F) (hx : e.source ∈ 𝓝 x) (he : AnalyticAt ℝ e x)
+theorem _root_.PartialEquiv.semianalyticAt_preimage_symm_iff {s : Set E} {x : E}
+    (e : PartialEquiv E F) (hx : e.source ∈ 𝓝 x) (he : AnalyticAt ℝ e x)
     (he' : AnalyticAt ℝ e.symm (e x)) :
     SemianalyticAt (e.symm ⁻¹' s) (e x) ↔ SemianalyticAt s x := by
   have hxx : e.symm (e x) = x := e.left_inv (mem_of_mem_nhds hx)
@@ -549,9 +561,9 @@ theorem _root_.PartialEquiv.semianalyticAt_preimage_symm_iff [CompleteSpace E] [
 /-- **Analytic isomorphisms, locally.** For a bijection `e` analytic at `x` whose inverse is
 analytic at `e x`, the image `e '' s` is semianalytic at `e x` if and only if `s` is semianalytic
 at `x`. -/
-theorem _root_.Equiv.semianalyticAt_image_iff [CompleteSpace E] [CompleteSpace F] {s : Set E}
-    {x : E} (e : E ≃ F) (he : AnalyticAt ℝ e x)
-    (he' : AnalyticAt ℝ e.symm (e x)) : SemianalyticAt (e '' s) (e x) ↔ SemianalyticAt s x := by
+theorem _root_.Equiv.semianalyticAt_image_iff {s : Set E} {x : E} (e : E ≃ F)
+    (he : AnalyticAt ℝ e x) (he' : AnalyticAt ℝ e.symm (e x)) :
+    SemianalyticAt (e '' s) (e x) ↔ SemianalyticAt s x := by
   rw [e.image_eq_preimage_symm]
   exact e.toPartialEquiv.semianalyticAt_preimage_symm_iff univ_mem he he'
 
@@ -571,5 +583,18 @@ theorem IsSemialgebraic.isSemianalytic {σ : Type*} [Fintype σ] {s : Set (σ �
   setOf_isSemialgebraic_subset (isSetAlgebra_setOf_isSemianalytic (σ → ℝ))
     (fun p => (AnalyticOnNhd.eval_mvPolynomial p).isSemianalytic_setOf_eq_zero)
     (fun p => (AnalyticOnNhd.eval_mvPolynomial p).isSemianalytic_setOf_pos) hs
+
+/-- **Substituting analytic functions.** The preimage of a semialgebraic set `S ⊆ A → ℝ` under a map
+`c` whose coordinates `c · a` are analytic on `U` is a Boolean combination of analytic sign
+conditions on `U`. -/
+theorem IsSemialgebraic.isAnalyticBooleanCombination_preimage {A : Type*} {S : Set (A → ℝ)}
+    (hS : IsSemialgebraic S) {U : Set E} {c : E → A → ℝ} (hc : ∀ a, AnalyticOnNhd ℝ (c · a) U) :
+    IsAnalyticBooleanCombination U (c ⁻¹' S) := by
+  have hq (q : MvPolynomial A ℝ) : AnalyticOnNhd ℝ (fun u => MvPolynomial.eval (c u) q) U := by
+    simpa only [MvPolynomial.aeval_eq_eval] using AnalyticOnNhd.aeval_mvPolynomial hc q
+  exact setOf_isSemialgebraic_subset
+    ((isSetAlgebra_setOf_isAnalyticBooleanCombination U).preimage c)
+    (fun q => isAnalyticBooleanCombination_setOf_eq_zero (hq q))
+    (fun q => isAnalyticBooleanCombination_setOf_pos (hq q)) hS
 
 end TauCeti

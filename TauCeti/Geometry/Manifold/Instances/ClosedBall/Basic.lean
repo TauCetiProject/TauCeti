@@ -58,6 +58,8 @@ isometry, hence analytic, so the ball is an analytic manifold.
   disc `D² ⊆ D⁴` bounded by a great circle, the slice disc of the unknot.
 * `LinearIsometryEquiv.unitClosedBallDiffeomorph`: a linear isometry equivalence restricts to a
   diffeomorphism of closed unit balls.
+* `Diffeomorph.restrictUnitClosedBall`: a diffeomorphism of `E` mapping the closed unit ball onto
+  itself restricts to a diffeomorphism of the closed unit ball.
 
 ## References
 
@@ -502,6 +504,41 @@ theorem contMDiffOn_iff_comp_subtypeVal_closedBall {k : ℕ∞ω}
 theorem contMDiff_iff_comp_subtypeVal_closedBall {k : ℕ∞ω} {f : M → closedBall (0 : E) 1} :
     ContMDiff I (𝓡∂ n) k f ↔ ContMDiff I 𝓘(ℝ, E) k (Subtype.val ∘ f) := by
   simp only [ContMDiff, contMDiffAt_iff_comp_subtypeVal_closedBall]
+
+/-! ### Diffeomorphisms of the ambient space preserving the closed ball -/
+
+section Diffeomorph
+
+variable {k : ℕ∞ω}
+
+/-- A `C^k` diffeomorphism of `E` which maps the closed unit ball onto itself restricts to a `C^k`
+diffeomorphism of the closed unit ball, in the sense of manifolds with boundary. -/
+def _root_.Diffeomorph.restrictUnitClosedBall (f : E ≃ₘ^k⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E)
+    (hf : ∀ x, ‖f x‖ ≤ 1 ↔ ‖x‖ ≤ 1) :
+    closedBall (0 : E) 1 ≃ₘ^k⟮𝓡∂ n, 𝓡∂ n⟯ closedBall (0 : E) 1 where
+  toFun x := ⟨f x, mem_closedBall_zero_iff.2 ((hf x).2 (mem_closedBall_zero_iff.1 x.2))⟩
+  invFun y := ⟨f.symm y, mem_closedBall_zero_iff.2
+    ((hf _).1 (by rw [f.apply_symm_apply]; exact mem_closedBall_zero_iff.1 y.2))⟩
+  left_inv x := Subtype.ext (f.symm_apply_apply x)
+  right_inv y := Subtype.ext (f.apply_symm_apply y)
+  contMDiff_toFun := contMDiff_iff_comp_subtypeVal_closedBall.2
+    (f.contMDiff.comp contMDiff_subtypeVal_closedBall)
+  contMDiff_invFun := contMDiff_iff_comp_subtypeVal_closedBall.2
+    (f.symm.contMDiff.comp contMDiff_subtypeVal_closedBall)
+
+variable (f : E ≃ₘ^k⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E) (hf : ∀ x, ‖f x‖ ≤ 1 ↔ ‖x‖ ≤ 1)
+
+@[simp]
+theorem _root_.Diffeomorph.coe_restrictUnitClosedBall_apply (x : closedBall (0 : E) 1) :
+    (f.restrictUnitClosedBall (n := n) hf x : E) = f x :=
+  (rfl)
+
+@[simp]
+theorem _root_.Diffeomorph.coe_restrictUnitClosedBall_symm_apply (y : closedBall (0 : E) 1) :
+    ((f.restrictUnitClosedBall (n := n) hf).symm y : E) = f.symm y :=
+  (rfl)
+
+end Diffeomorph
 
 /-! ### Smooth embeddings of closed balls induced by linear isometries -/
 

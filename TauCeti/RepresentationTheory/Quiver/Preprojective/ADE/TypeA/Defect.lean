@@ -41,7 +41,7 @@ open _root_.Quiver PathAlgebra DoubledQuiver MulOpposite
 
 variable (k : Type*) [Field k] {n : ℕ}
 
-attribute [local instance] finiteNeighborSetFintype signlessPreprojectiveGradedAlgebra
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite signlessPreprojectiveGradedAlgebra
 
 local notation "AG" => diagramGraph (DynkinType.cartanMatrix (DynkinType.A n))
 local notation "Q" => DoubledQuiver AG
@@ -142,7 +142,7 @@ theorem finrank_ker_signlessPreprojectiveKoszulLeft_A
     Module.finrank k (LinearMap.ker (signlessPreprojectiveKoszulLeft k (vertex AG a.rev))) = 1 := by
   let y : LinearMap.ker (signlessPreprojectiveKoszulLeft k (vertex AG a.rev)) :=
     ⟨signlessPreprojectiveATopValley k a, signlessPreprojectiveATopValley_mem_ker k a⟩
-  refine (finrank_eq_one_iff_of_nonzero' y (fun h =>
+  refine (finrank_eq_one_iff_of_ne_zero' y (fun h =>
     signlessPreprojectiveATopValley_ne_zero k a (congrArg Subtype.val h))).2 fun x => ?_
   obtain ⟨t, ht⟩ := (mem_ker_signlessPreprojectiveKoszulLeft_A_iff k a x.1).1 x.2
   exact ⟨t, Subtype.ext ht.symm⟩

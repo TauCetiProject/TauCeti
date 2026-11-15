@@ -7,14 +7,15 @@ module
 
 public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Connected.LocallyPathConnected
-import Mathlib.Topology.Separation.Hausdorff
+import Mathlib.Topology.Separation.Regular
 
 /-!
 # Compact connected sets between a compact set and a connected open set
 
-In a locally compact, locally path-connected Hausdorff space, a compact subset `K` of a
-preconnected open set `U` is enclosed by a compact preconnected `L` with `K ⊆ interior L` and
-`L ⊆ U`. This is the connected refinement of Mathlib's `exists_compact_between`.
+In a locally compact, locally path-connected R1 space (for instance a Hausdorff one), a compact
+subset `K` of a preconnected open set `U` is enclosed by a compact preconnected `L` with
+`K ⊆ interior L` and `L ⊆ U`. This is the connected refinement of Mathlib's
+`exists_compact_between`.
 
 Plane separation arguments use it to replace finitely many points, or a compact set, of a
 connected open region by a single compact connected set inside the region: gluing continuous
@@ -36,17 +37,17 @@ namespace TauCeti
 variable {X : Type*} [TopologicalSpace X]
 
 /-- **A compact connected set between a compact set and a connected open set.** In a locally
-compact, locally path-connected Hausdorff space, if the compact set `K` lies in the preconnected
+compact, locally path-connected R1 space, if the compact set `K` lies in the preconnected
 open set `U`, then some compact preconnected `L` satisfies `K ⊆ interior L` and `L ⊆ U`. -/
-theorem exists_isCompact_isPreconnected_between [T2Space X] [LocallyCompactSpace X]
+theorem exists_isCompact_isPreconnected_between [R1Space X] [LocallyCompactSpace X]
     [LocallyPathConnectedSpace X] {K U : Set X} (hK : IsCompact K) (hU : IsOpen U)
     (hUc : IsPreconnected U) (hKU : K ⊆ U) :
     ∃ L, IsCompact L ∧ IsPreconnected L ∧ K ⊆ interior L ∧ L ⊆ U := by
   rcases K.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
   · exact ⟨∅, isCompact_empty, isPreconnected_empty, empty_subset _, empty_subset _⟩
-  -- `L` is a finite union of closures of path components of `interior M`, for a compact `M`
-  -- between `K` and `U`, each joined to `x₀` by a path in `U`
-  obtain ⟨M, hM, hKM, hMU⟩ := exists_compact_between hK hU hKU
+  -- `L` is a finite union of closures of path components of `interior M`, for a compact closed
+  -- `M` between `K` and `U`, each joined to `x₀` by a path in `U`
+  obtain ⟨M, hM, hMc, hKM, hMU⟩ := exists_compact_closed_between hK hU hKU
   have hUp : IsPathConnected U :=
     hU.isConnected_iff_isPathConnected.mp ⟨⟨x₀, hKU hx₀⟩, hUc⟩
   -- every point of `K` is joined to `x₀` by a compact connected set inside `U`
@@ -61,7 +62,7 @@ theorem exists_isCompact_isPreconnected_between [T2Space X] [LocallyCompactSpace
   obtain ⟨t, htK, hcover⟩ := hK.elim_nhds_subcover (fun x => pathComponentIn (interior M) x)
     fun x hx => (isOpen_interior.pathComponentIn x).mem_nhds (mem_pathComponentIn_self (hKM hx))
   have hclM : ∀ x, closure (pathComponentIn (interior M) x) ⊆ M := fun x =>
-    closure_minimal (pathComponentIn_subset.trans interior_subset) hM.isClosed
+    closure_minimal (pathComponentIn_subset.trans interior_subset) hMc
   set piece : X → Set X := fun x => closure (pathComponentIn (interior M) x) ∪ S x
   refine ⟨⋃₀ (piece '' t), ?_, ?_, ?_, ?_⟩
   · refine (t.finite_toSet.image piece).isCompact_sUnion ?_

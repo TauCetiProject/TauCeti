@@ -187,12 +187,14 @@ theorem ofReal_injective : Function.Injective (ofReal : UCB G → ComplexUCB G) 
   Function.LeftInverse.injective re_ofReal
 
 /-- The real part of `c • f` is `c.re • re f - c.im • im f`. -/
-@[simp]
+-- Project the complex action before generic real-linear map_smul is tried.
+@[simp↓]
 theorem re_smul (c : ℂ) (f : ComplexUCB G) : re (c • f) = c.re • re f - c.im • im f :=
   UCB.ext fun _ => by simp
 
 /-- The imaginary part of `c • f` is `c.re • im f + c.im • re f`. -/
-@[simp]
+-- Project the complex action before generic real-linear map_smul is tried.
+@[simp↓]
 theorem im_smul (c : ℂ) (f : ComplexUCB G) : im (c • f) = c.re • im f + c.im • re f :=
   UCB.ext fun _ => by simp
 

@@ -65,7 +65,7 @@ theorem commute_iff_exists_common_zpow (x y : G) :
       Set.pairwise_pair_of_symm_of_refl.mpr hxy
     have : IsMulCommutative H := Subgroup.isMulCommutative_closure hp
     have hcyc : IsCyclic H := H.isCyclic_of_isMulCommutative
-    obtain ⟨r, hr⟩ := (H.isCyclic_iff_exists_zpowers_eq_top).mp hcyc
+    obtain ⟨r, hr⟩ := (H.isCyclic_iff_exists_zpowers_eq).mp hcyc
     have hx : x ∈ Subgroup.zpowers r := hr.symm ▸ Subgroup.subset_closure (by simp)
     have hy : y ∈ Subgroup.zpowers r := hr.symm ▸ Subgroup.subset_closure (by simp)
     obtain ⟨m, hm⟩ := Subgroup.mem_zpowers_iff.mp hx
@@ -73,5 +73,19 @@ theorem commute_iff_exists_common_zpow (x y : G) :
     exact ⟨r, m, n, hm.symm, hn.symm⟩
   · rintro ⟨r, m, n, rfl, rfl⟩
     exact (Commute.refl r).zpow_zpow m n
+
+/-- For commuting elements `x` and `y` of a free group, one of `x`, `y` and `x * y` is a
+square. -/
+theorem exists_eq_sq_of_commute {x y : G} (h : Commute x y) :
+    ∃ z : G, x = z ^ 2 ∨ y = z ^ 2 ∨ x * y = z ^ 2 := by
+  obtain ⟨r, m, n, rfl, rfl⟩ := (commute_iff_exists_common_zpow x y).1 h
+  obtain ⟨k, rfl⟩ | ⟨k, rfl⟩ := Int.even_or_odd m
+  · exact ⟨r ^ k, .inl (by rw [pow_two, ← zpow_add])⟩
+  obtain ⟨l, rfl⟩ | ⟨l, rfl⟩ := Int.even_or_odd n
+  · exact ⟨r ^ l, .inr (.inl (by rw [pow_two, ← zpow_add]))⟩
+  · refine ⟨r ^ (k + l + 1), .inr (.inr ?_)⟩
+    rw [pow_two, ← zpow_add, ← zpow_add]
+    congr 1
+    omega
 
 end IsFreeGroup

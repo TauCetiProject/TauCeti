@@ -43,28 +43,18 @@ theorem radical_span_singleton (x : R) :
   rcases eq_or_ne x 0 with rfl | hx
   · rw [Ideal.span_singleton_eq_bot.2 rfl, ← Ideal.zero_eq_bot, radical_zero, radical_zero,
       Ideal.span_singleton_one, Ideal.one_eq_top]
-  have hx' : Ideal.span {x} ≠ 0 := by
-    rwa [Ne, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]
+  have hx' : Ideal.span {x} ≠ 0 := by simpa using hx
   -- `Ideal.span {radical x}` is radical in the monoid of ideals, since every ideal is principal
   -- and `radical x` is radical in `R`.
   have hrad : IsRadical (Ideal.span {radical x}) := by
     intro n J hJ
-    rw [← Ideal.span_singleton_generator J, Ideal.span_singleton_pow,
-      Ideal.span_singleton_dvd_span_singleton_iff_dvd] at hJ
-    rw [← Ideal.span_singleton_generator J, Ideal.span_singleton_dvd_span_singleton_iff_dvd]
+    rw [← Ideal.span_singleton_generator J] at hJ ⊢
+    simp only [Ideal.span_singleton_pow, Ideal.span_singleton_dvd_span_singleton_iff_dvd] at hJ ⊢
     exact isRadical_radical n _ hJ
-  refine dvd_antisymm ?_ ((dvd_radical_iff hrad hx').2
+  -- `x` divides a power of `radical x`, and `radical x` divides `x`.
+  refine dvd_antisymm ((exists_dvd_pow_iff_radical_dvd hx').1 ?_) ((dvd_radical_iff hrad hx').2
     (Ideal.span_singleton_dvd_span_singleton_iff_dvd.2 radical_dvd_self))
-  -- `x` divides a power of `radical x`, so the radical of `Ideal.span {x}` divides that of
-  -- `Ideal.span {radical x}`, which divides `Ideal.span {radical x}`.
-  obtain ⟨n, hn⟩ := exists_dvd_radical_self_pow hx
-  have hn' : Ideal.span {x} ∣ Ideal.span {radical x} ^ n := by
-    rwa [Ideal.span_singleton_pow, Ideal.span_singleton_dvd_span_singleton_iff_dvd]
-  have h0 : Ideal.span {radical x} ^ n ≠ 0 := by
-    refine pow_ne_zero n ?_
-    rw [Ne, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]
-    exact radical_ne_zero
-  exact ((radical_dvd_radical hn' h0).trans radical_pow_dvd).trans radical_dvd_self
+  simpa [Ideal.span_singleton_pow, Ideal.mem_span_singleton] using exists_dvd_radical_self_pow hx
 
 end UniqueFactorizationMonoid
 

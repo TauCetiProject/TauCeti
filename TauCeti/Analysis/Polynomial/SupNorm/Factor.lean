@@ -28,13 +28,11 @@ with supermultiplicativity and the square-root bound for middle binomial coeffic
 
 public section
 
-open Polynomial
-
-namespace TauCeti
+namespace Polynomial
 
 /-- The Gelfond factor bound: the product of the coefficient sup norms of complex
 polynomials is at most `2^d` times the sup norm of their degree-`d` product. -/
-theorem _root_.Polynomial.prod_supNorm_le_two_pow_mul_supNorm_prod
+theorem prod_supNorm_le_two_pow_mul_supNorm_prod
     {ι : Type*} (s : Finset ι) (f : ι → ℂ[X]) :
     ∏ i ∈ s, (f i).supNorm ≤
       2 ^ (∏ i ∈ s, f i).natDegree * (∏ i ∈ s, f i).supNorm := by
@@ -72,4 +70,4 @@ theorem _root_.Polynomial.prod_supNorm_le_two_pow_mul_supNorm_prod
         exact mul_le_mul_of_nonneg_right (Nat.choose_middle_mul_sqrt_le_two_pow _)
           (Polynomial.supNorm_nonneg _)
 
-end TauCeti
+end Polynomial

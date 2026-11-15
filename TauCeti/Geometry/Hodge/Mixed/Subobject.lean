@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Hodge.Mixed.Bigrading
 public import TauCeti.Geometry.Hodge.Mixed.Substructure
 public import TauCeti.Geometry.Hodge.SubquotientModel
+import TauCeti.LinearAlgebra.Submodule.Independent
 
 /-!
 # Mixed Hodge structures induced on rational subspaces
@@ -57,6 +58,59 @@ variable {hℚ : IsBaseChange ℚ ιℚ} {hℂ : IsBaseChange ℂ ιℂ}
 namespace IsHodgeBigrading
 
 variable {WQ : ℤ → Submodule ℚ Vℚ} {F : ℤ → Submodule ℂ Vℂ} {I : ℤ × ℤ → Submodule ℂ Vℂ}
+/-- A sum of pieces of a Hodge bigrading traces on the complexification of a subspace `U` spanned
+by its intersections with the pieces in the sum of the traces of those pieces. -/
+private theorem iSup₂_inf_rationalToComplexSubmodule (h : IsHodgeBigrading hℚ hℂ WQ F I)
+    {U : Submodule ℚ Vℚ}
+    (hU : rationalToComplexSubmodule hℚ hℂ U ≤
+      ⨆ pq : ℤ × ℤ, rationalToComplexSubmodule hℚ hℂ U ⊓ I pq) (P : ℤ × ℤ → Prop) :
+    (⨆ (pq : ℤ × ℤ) (_ : P pq), I pq) ⊓ rationalToComplexSubmodule hℚ hℂ U =
+      ⨆ (pq : ℤ × ℤ) (_ : P pq), rationalToComplexSubmodule hℚ hℂ U ⊓ I pq := by
+  have hUC : rationalToComplexSubmodule hℚ hℂ U =
+      ⨆ pq : ℤ × ℤ, rationalToComplexSubmodule hℚ hℂ U ⊓ I pq :=
+    le_antisymm hU (iSup_le fun _ ↦ inf_le_left)
+  have := iSupIndep.iSup₂_inf_iSup_eq_iSup₂
+    (B := fun pq ↦ rationalToComplexSubmodule hℚ hℂ U ⊓ I pq) h.iSupIndep
+    (fun _ ↦ inf_le_right) P
+  rwa [← hUC] at this
+
+/-- The conjugation condition of a Hodge bigrading restricts to a rational subspace spanned by its
+intersections with the pieces. -/
+private theorem map_latticeConj_comap_subtype_le (h : IsHodgeBigrading hℚ hℂ WQ F I)
+    {U : Submodule ℚ Vℚ}
+    (hU : rationalToComplexSubmodule hℚ hℂ U ≤
+      ⨆ pq : ℤ × ℤ, rationalToComplexSubmodule hℚ hℂ U ⊓ I pq) (pq : ℤ × ℤ) :
+    ((I pq).comap (rationalToComplexSubmodule hℚ hℂ U).subtype).map
+        (latticeConj (isBaseChange_integralSubmoduleToComplex hℚ hℂ U)) ≤
+      (I pq.swap).comap (rationalToComplexSubmodule hℚ hℂ U).subtype ⊔
+        (rationalToComplexSubmodule (isBaseChange_integralSubmoduleToRational hℚ U)
+          (isBaseChange_integralSubmoduleToComplex hℚ hℂ U)
+          ((WQ (pq.1 + pq.2 - 1)).comap U.subtype)) := by
+  rw [← latticeConjugation_toLinearMap, latticeConjugation_integralSubmoduleToComplex,
+    Conjugation.map_restrict_comap_subtype, rationalToComplexSubmodule_comap_subtype,
+    ← Submodule.map_le_map_iff_of_injective
+      (rationalToComplexSubmodule hℚ hℂ U).subtype_injective]
+  simp only [Submodule.map_sup, Submodule.map_comap_subtype, latticeConjugation_toLinearMap]
+  let P : ℤ × ℤ → Prop := fun rs ↦ rs = pq.swap ∨ rs.1 + rs.2 ≤ pq.1 + pq.2 - 1
+  have hsup : I pq.swap ⊔ rationalToComplexSubmodule hℚ hℂ (WQ (pq.1 + pq.2 - 1)) ≤
+      ⨆ (rs : ℤ × ℤ) (_ : P rs), I rs := by
+    refine sup_le (le_iSup₂_of_le pq.swap (Or.inl rfl) le_rfl) ?_
+    rw [h.rationalToComplexSubmodule_eq_iSup]
+    exact iSup₂_le fun rs hrs ↦ le_iSup₂_of_le rs (Or.inr hrs) le_rfl
+  calc
+    rationalToComplexSubmodule hℚ hℂ U ⊓ (I pq).map (latticeConj hℂ) ≤
+        rationalToComplexSubmodule hℚ hℂ U ⊓ ⨆ (rs : ℤ × ℤ) (_ : P rs), I rs :=
+      inf_le_inf_left _ ((h.map_latticeConj_le pq).trans hsup)
+    _ = ⨆ (rs : ℤ × ℤ) (_ : P rs), rationalToComplexSubmodule hℚ hℂ U ⊓ I rs := by
+      rw [inf_comm, iSup₂_inf_rationalToComplexSubmodule h hU]
+    _ ≤ rationalToComplexSubmodule hℚ hℂ U ⊓ I pq.swap ⊔
+        rationalToComplexSubmodule hℚ hℂ U ⊓
+          rationalToComplexSubmodule hℚ hℂ (WQ (pq.1 + pq.2 - 1)) := by
+      refine iSup₂_le fun rs hrs ↦ ?_
+      rcases hrs with rfl | hrs
+      · exact le_sup_left
+      · exact le_sup_of_le_right (inf_le_inf_left _ (h.le_rationalToComplexSubmodule hrs))
+
 
 /-- **Restricting a Hodge bigrading to a rational subspace.** If the complexification of a
 rational subspace `U` is spanned by its intersections with the pieces of a Hodge bigrading, then
@@ -69,68 +123,22 @@ theorem comap_subtype (h : IsHodgeBigrading hℚ hℂ WQ F I) {U : Submodule ℚ
       (fun p ↦ (F p).comap (rationalToComplexSubmodule hℚ hℂ U).subtype)
       (fun pq ↦ (I pq).comap (rationalToComplexSubmodule hℚ hℂ U).subtype) := by
   -- A sum of pieces traces on the complexification of `U` in the sum of the traces of those
-  -- pieces.
-  have key (P : ℤ × ℤ → Prop) :
-      (⨆ (pq : ℤ × ℤ) (_ : P pq), I pq) ⊓ rationalToComplexSubmodule hℚ hℂ U =
-        ⨆ (pq : ℤ × ℤ) (_ : P pq), rationalToComplexSubmodule hℚ hℂ U ⊓ I pq := by
-    have hUC : rationalToComplexSubmodule hℚ hℂ U =
-        ⨆ pq : ℤ × ℤ, rationalToComplexSubmodule hℚ hℂ U ⊓ I pq :=
-      le_antisymm hU (iSup_le fun _ ↦ inf_le_left)
-    have := iSupIndep.iSup₂_inf_iSup_eq_iSup₂
-      (B := fun pq ↦ rationalToComplexSubmodule hℚ hℂ U ⊓ I pq) h.iSupIndep
-      (fun _ ↦ inf_le_right) P
-    rwa [← hUC] at this
+  -- pieces; this is `iSup₂_inf_rationalToComplexSubmodule`.
   refine
-    { iSupIndep := ?_
+    { iSupIndep := h.iSupIndep.comap_subtype
       rationalToComplexSubmodule_eq_iSup := fun k ↦ ?_
       F_eq_iSup := fun p ↦ ?_
-      map_latticeConj_le := fun pq ↦ ?_ }
-  · let e : Submodule ℂ (rationalToComplexSubmodule hℚ hℂ U) ≃o
-        Set.Iic (rationalToComplexSubmodule hℚ hℂ U) :=
-      (rationalToComplexSubmodule hℚ hℂ U).mapIic
-    rw [← iSupIndep_map_orderIso_iff e]
-    have he : (e ∘ fun pq ↦ (I pq).comap (rationalToComplexSubmodule hℚ hℂ U).subtype) = fun pq ↦
-        ⟨I pq ⊓ rationalToComplexSubmodule hℚ hℂ U, Set.mem_Iic.mpr inf_le_right⟩ := by
-      funext pq
-      apply Subtype.ext
-      simp only [Function.comp_apply, e, Submodule.coe_mapIic_apply,
-        Submodule.map_comap_subtype]
-      rw [inf_comm]
-    rw [he]
-    exact iSupIndep.of_coe_Iic_comp (h.iSupIndep.mono fun _ ↦ inf_le_left)
+      map_latticeConj_le := map_latticeConj_comap_subtype_le h hU }
   · rw [rationalToComplexSubmodule_comap_subtype]
     apply Submodule.map_injective_of_injective
       (rationalToComplexSubmodule hℚ hℂ U).subtype_injective
     simp only [Submodule.map_iSup, Submodule.map_comap_subtype]
-    rw [inf_comm, h.rationalToComplexSubmodule_eq_iSup, key]
+    rw [inf_comm, h.rationalToComplexSubmodule_eq_iSup,
+      iSup₂_inf_rationalToComplexSubmodule h hU]
   · apply Submodule.map_injective_of_injective
       (rationalToComplexSubmodule hℚ hℂ U).subtype_injective
     simp only [Submodule.map_iSup, Submodule.map_comap_subtype]
-    rw [inf_comm, h.F_eq_iSup, key]
-  · rw [← latticeConjugation_toLinearMap, latticeConjugation_integralSubmoduleToComplex,
-      Conjugation.map_restrict_comap_subtype, rationalToComplexSubmodule_comap_subtype,
-      ← Submodule.map_le_map_iff_of_injective
-        (rationalToComplexSubmodule hℚ hℂ U).subtype_injective]
-    simp only [Submodule.map_sup, Submodule.map_comap_subtype, latticeConjugation_toLinearMap]
-    let P : ℤ × ℤ → Prop := fun rs ↦ rs = pq.swap ∨ rs.1 + rs.2 ≤ pq.1 + pq.2 - 1
-    have hsup : I pq.swap ⊔ rationalToComplexSubmodule hℚ hℂ (WQ (pq.1 + pq.2 - 1)) ≤
-        ⨆ (rs : ℤ × ℤ) (_ : P rs), I rs := by
-      refine sup_le (le_iSup₂_of_le pq.swap (Or.inl rfl) le_rfl) ?_
-      rw [h.rationalToComplexSubmodule_eq_iSup]
-      exact iSup₂_le fun rs hrs ↦ le_iSup₂_of_le rs (Or.inr hrs) le_rfl
-    calc
-      rationalToComplexSubmodule hℚ hℂ U ⊓ (I pq).map (latticeConj hℂ) ≤
-          rationalToComplexSubmodule hℚ hℂ U ⊓ ⨆ (rs : ℤ × ℤ) (_ : P rs), I rs :=
-        inf_le_inf_left _ ((h.map_latticeConj_le pq).trans hsup)
-      _ = ⨆ (rs : ℤ × ℤ) (_ : P rs), rationalToComplexSubmodule hℚ hℂ U ⊓ I rs := by
-        rw [inf_comm, key]
-      _ ≤ rationalToComplexSubmodule hℚ hℂ U ⊓ I pq.swap ⊔
-          rationalToComplexSubmodule hℚ hℂ U ⊓
-            rationalToComplexSubmodule hℚ hℂ (WQ (pq.1 + pq.2 - 1)) := by
-        refine iSup₂_le fun rs hrs ↦ ?_
-        rcases hrs with rfl | hrs
-        · exact le_sup_left
-        · exact le_sup_of_le_right (inf_le_inf_left _ (h.le_rationalToComplexSubmodule hrs))
+    rw [inf_comm, h.F_eq_iSup, iSup₂_inf_rationalToComplexSubmodule h hU]
 
 end IsHodgeBigrading
 

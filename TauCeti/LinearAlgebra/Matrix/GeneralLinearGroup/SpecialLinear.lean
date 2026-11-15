@@ -38,6 +38,9 @@ type, including the empty and the one-element ones.
   `Matrix.GeneralLinearGroup.orbit_conjAct_specialLinearGroup_eq`: when units have roots of degree
   the matrix size, and over an algebraically closed field, the `SL(n, K)`- and
   `GL(n, K)`-conjugacy classes of a matrix agree.
+* `Matrix.ProjectiveSpecialLinearGroup.bijective_toPGL_subgroupComap_of_roots`: when units have
+  roots of degree the matrix size, the inclusion `PSL(n, K) → PGL(n, K)` identifies the preimage
+  of a subgroup of `PGL(n, K)` with that subgroup.
 -/
 
 public section
@@ -114,3 +117,17 @@ theorem orbit_conjAct_specialLinearGroup_eq (X : Matrix ι ι K) :
     (by rw [← hsz, map_mul, SpecialLinearGroup.coeToGL_det, one_mul]) X
 
 end Matrix.GeneralLinearGroup
+
+namespace Matrix.ProjectiveSpecialLinearGroup
+
+variable {ι K : Type*} [Fintype ι] [DecidableEq ι] [CommRing K]
+
+/-- If every unit has a root of degree equal to the matrix size, the inclusion
+`PSL(n, K) → PGL(n, K)` identifies the preimage of a subgroup of `PGL(n, K)` with that subgroup. -/
+theorem bijective_toPGL_subgroupComap_of_roots
+    (hK : ∀ r : Kˣ, ∃ z : Kˣ, z ^ Fintype.card ι = r) (H : Subgroup (ProjGenLinGroup ι K)) :
+    Function.Bijective ((toPGL (n := ι) (R := K)).subgroupComap H) :=
+  ⟨MonoidHom.subgroupComap_injective _ _ toPGL_injective,
+    MonoidHom.subgroupComap_surjective _ _ (toPGL_surj_of_roots hK)⟩
+
+end Matrix.ProjectiveSpecialLinearGroup

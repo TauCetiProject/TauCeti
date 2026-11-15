@@ -10,10 +10,11 @@ public import Mathlib.Algebra.Algebra.Rat
 /-!
 # Rational algebras from ring homomorphisms
 
-The image of a ring homomorphism `ℚ →+* B` is central, because every rational number is a
-quotient of integers and integer casts commute with everything. Hence such a homomorphism
-makes `B` a `ℚ`-algebra, even when `B` is not commutative. This is used, for instance, to view
-the target of a ring homomorphism out of a `ℚ`-algebra as a `ℚ`-algebra.
+The image of a ring homomorphism `ℚ →+* B` into a semiring is central, because every nonnegative
+rational number is a quotient of natural numbers, whose casts commute with everything, and the
+additive inverse of a central element is central. Hence such a homomorphism makes `B` a
+`ℚ`-algebra, even when `B` is not commutative. This is used, for instance, to view the target of
+a ring homomorphism out of a `ℚ`-algebra as a `ℚ`-algebra.
 
 ## Main declarations
 
@@ -26,15 +27,29 @@ public section
 
 namespace RingHom
 
-variable {B : Type*} [Ring B]
+variable {B : Type*} [Semiring B]
 
 /-- The image of a rational number under a ring homomorphism is central. -/
 theorem commute_apply_rat (g : ℚ →+* B) (q : ℚ) (y : B) : Commute (g q) y := by
-  let u : ℚˣ := Units.mk0 (q.den : ℚ) (Nat.cast_ne_zero.mpr q.den_nz)
-  have hu : Commute (↑(Units.map (g : ℚ →* B) u)⁻¹ : B) y :=
-    Commute.units_inv_left (by simpa [u] using Nat.cast_commute q.den y)
-  rw [← Rat.num_div_den q, div_eq_mul_inv, map_mul, map_intCast]
-  exact (Int.cast_commute q.num y).mul_left (by simpa [u] using hu)
+  -- A nonnegative rational is a quotient of natural numbers, whose images are central.
+  have key (r : ℚ) (hr : 0 ≤ r) : Commute (g r) y := by
+    lift r to ℚ≥0 using hr
+    have hd : IsUnit (g (r.den : ℚ)) := (IsUnit.mk0 _ (mod_cast r.den_ne_zero)).map g
+    have hc : Commute (g (r.den : ℚ)) y := by simpa using Nat.cast_commute r.den y
+    have h : g r * g r.den = (r.num : B) := by
+      rw [← map_mul, ← map_natCast g r.num]
+      exact congrArg g (mod_cast r.mul_den_eq_num)
+    refine hd.mul_left_inj.mp ?_
+    rw [mul_assoc, ← hc.eq, ← mul_assoc, h, mul_assoc, h]
+    exact Nat.cast_commute _ _
+  obtain hq | hq := le_total 0 q
+  · exact key q hq
+  -- Otherwise `g q` is the additive inverse of the central element `g (-q)`.
+  · have h0 : g q + g (-q) = 0 := by simp [← map_add]
+    calc g q * y = g q * y + y * (g (-q) + g q) := by simp [add_comm, h0]
+      _ = (g q + g (-q)) * y + y * g q := by
+        rw [mul_add, add_mul, (key (-q) (neg_nonneg.mpr hq)).eq, add_assoc]
+      _ = y * g q := by simp [h0]
 
 /-- A ring homomorphism `ℚ →+* B` makes `B` a `ℚ`-algebra, since its image is central.
 See note [reducible non-instances]. -/

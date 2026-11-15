@@ -18,6 +18,9 @@ connected: it is a member of the family or `C` itself. This is the hypothesis on
 intersections in the generation half of the Seifert--van Kampen theorem, and the form in which it
 holds for the summands of a wedge sum.
 
+Every space has a choice of base point in each path component, the representative of its class
+in `ZerothHomotopy`.
+
 Finite partial unions are path connected when each member is path connected and each new
 member meets the preceding union. The partial unions use Mathlib's `partialSups`.
 
@@ -31,6 +34,7 @@ the two subsets is a path component of it.
 * `TauCeti.isPathConnected_partialSups`: path connectedness of successive finite unions.
 * `IsPathConnected.pathComponentIn_eq_of_not_isPathConnected`: if a set that is not path connected
   is covered by two path-connected subsets, each of them is one of its path components.
+* `TauCeti.exists_pathComponent_representative`: a choice of base point in each path component.
 -/
 
 public section
@@ -78,5 +82,12 @@ theorem _root_.IsPathConnected.pathComponentIn_eq_of_not_isPathConnected {A B : 
   exact hA ⟨x, hBA hx, fun {z} hz ↦
     (hABC hz).elim (fun hzB ↦ hB.joinedIn _ hx _ hzB |>.mono hBA)
       (fun hzC ↦ (hq : JoinedIn A _ q).trans ((hC.joinedIn _ hqC _ hzC).mono hCA))⟩
+
+/-- **Base points of path components.** There is a map sending each point to a point joined to
+it, constant on path components. -/
+theorem exists_pathComponent_representative :
+    ∃ b : X → X, (∀ y, Joined (b y) y) ∧ ∀ {x y}, Joined x y → b x = b y :=
+  ⟨fun y ↦ (Quotient.mk (pathSetoid X) y).out, fun y ↦ Quotient.mk_out (s := pathSetoid X) y,
+    fun h ↦ congrArg Quotient.out (Quotient.sound (s := pathSetoid X) h)⟩
 
 end TauCeti

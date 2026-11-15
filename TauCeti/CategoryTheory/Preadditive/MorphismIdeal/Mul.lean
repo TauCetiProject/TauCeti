@@ -207,7 +207,7 @@ theorem mem_mul_iff_exists_comp {I J : MorphismIdeal C} {X Y : C} {h : X ⟶ Y} 
   refine ⟨fun hh ↦ ?_, fun ⟨Z, g, f, hg, hf, e⟩ ↦ e ▸ comp_mem_mul hg hf⟩
   rw [mul_hom] at hh
   induction hh using AddSubgroup.closure_induction with
-  | mem h hh => exact hh
+  | mem _ hh => exact hh
   | zero => exact ⟨X, 0, 0, zero_mem _, zero_mem _, by simp⟩
   | add a b _ _ ha hb =>
     obtain ⟨Z₁, g₁, f₁, hg₁, hf₁, rfl⟩ := ha

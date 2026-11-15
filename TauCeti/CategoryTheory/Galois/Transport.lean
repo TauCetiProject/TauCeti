@@ -39,6 +39,8 @@ preimage under `e.functor` of `e.counit.app Z ≫ u`; taking the preimage rather
   Galois category.
 * `CategoryTheory.Functor.isFundamentalGroup_comp`: a fundamental group of a fibre functor
   remains one after the functor is transported along an equivalence.
+* `CategoryTheory.Iso.isFundamentalGroup`: a fundamental group of a fibre functor is one of every
+  naturally isomorphic functor, acting compatibly with the isomorphism.
 
 ## References
 
@@ -135,7 +137,7 @@ theorem _root_.CategoryTheory.Functor.isFundamentalGroup_comp [K.IsEquivalence]
         IsFundamentalGroup.continuous_smul (F := F) (G := G) (K.obj X)
       non_trivial' := fun g h => ?_ }
   · let : IsConnected X := IsGalois.toIsConnected
-    let : IsConnected (K.obj X) := isConnected_map K X
+    let : IsConnected (K.obj X) := PreservesIsConnected.preserves
     let : IsGalois (K.obj X) := by
       obtain ⟨H, hH⟩ := GaloisCategory.hasFiberFunctor D
       let : FiberFunctor H := hH
@@ -164,3 +166,42 @@ theorem _root_.CategoryTheory.Functor.isFundamentalGroup_comp [K.IsEquivalence]
     simpa only [hg, hi] using hn.symm
 
 end TauCeti
+
+namespace CategoryTheory.Iso
+
+open PreGaloisCategory
+
+/-- **A fundamental group of a fibre functor is a fundamental group of every naturally isomorphic
+functor**, for any action on the new fibres that the isomorphism intertwines with the original
+one. -/
+theorem isFundamentalGroup {C : Type u₁} [Category.{v₁} C] [GaloisCategory C]
+    {F F' : C ⥤ FintypeCat.{w}} {G : Type*} [Group G] [∀ X, MulAction G (F.obj X)]
+    [∀ X, MulAction G (F'.obj X)] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+    [IsFundamentalGroup F' G] (e : F ≅ F')
+    (he : ∀ (X : C) (g : G) (x : F.obj X), e.hom.app X (g • x) = g • e.hom.app X x) :
+    IsFundamentalGroup F G := by
+  have hinj (X : C) : Function.Injective (e.hom.app X) :=
+    Function.LeftInverse.injective (FintypeCat.hom_inv_id_apply (e.app X))
+  refine
+    { naturality := fun g X Y f x => hinj Y ?_
+      transitive_of_isGalois := fun X _ => ⟨fun x y => ?_⟩
+      continuous_smul := fun X => ⟨?_⟩
+      non_trivial' := fun g h => IsFundamentalGroup.non_trivial (F := F') g fun X x => ?_ }
+  · rw [he, FunctorToFintypeCat.naturality, FunctorToFintypeCat.naturality, he,
+      IsNaturalSMul.naturality]
+  · obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G (e.hom.app X x) (e.hom.app X y)
+    exact ⟨g, hinj X (by rw [he, hg])⟩
+  · -- The action on `F.obj X` is the action on `F'.obj X` conjugated by `e.app X`, and maps of
+    -- finite discrete spaces are continuous.
+    have h : (fun p : G × F.obj X => p.1 • p.2) =
+        (fun p : G × F'.obj X => e.inv.app X (p.1 • p.2)) ∘ Prod.map id (e.hom.app X) := by
+      ext ⟨g, x⟩
+      simp [← he]
+    rw [h]
+    exact (continuous_of_discreteTopology.comp continuous_smul).comp
+      (continuous_id.prodMap continuous_of_discreteTopology)
+  · obtain ⟨y, rfl⟩ : ∃ y, e.hom.app X y = x :=
+      ⟨e.inv.app X x, FintypeCat.inv_hom_id_apply (e.app X) x⟩
+    rw [← he, h]
+
+end CategoryTheory.Iso

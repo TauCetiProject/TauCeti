@@ -73,7 +73,7 @@ namespace TauCeti
 
 namespace DenseGraphLimits
 
-variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
 section Source
 
@@ -84,7 +84,6 @@ interval. -/
 def exposureMeasure (n : ℕ) : Measure (Fin n → Ω × (Fin n → ℝ)) :=
   Measure.pi fun _ : Fin n => μ.prod (Measure.pi fun _ : Fin n => Probability.uniformMeasure 0 1)
 
-omit [IsProbabilityMeasure μ] in
 variable (μ) in
 /-- The defining product of the exposure source. -/
 theorem exposureMeasure_def (n : ℕ) :
@@ -92,21 +91,23 @@ theorem exposureMeasure_def (n : ℕ) :
       Measure.pi fun _ : Fin n =>
         μ.prod (Measure.pi fun _ : Fin n => Probability.uniformMeasure 0 1) := (rfl)
 
-instance exposureMeasure_isProbabilityMeasure (n : ℕ) :
+instance exposureMeasure_isProbabilityMeasure [IsProbabilityMeasure μ] (n : ℕ) :
     IsProbabilityMeasure (exposureMeasure μ n) := by
   rw [exposureMeasure_def]
   infer_instance
 
 variable (μ) in
-/-- The positions of the exposure source are independent with law `μ`: forgetting the rows of
-coins maps the exposure source to the product `Measure.pi fun _ => μ`. -/
+/-- Forgetting the coin rows maps the exposure source to the product position measure. This
+identity holds for any σ-finite position measure `μ`. -/
 @[simp]
-theorem map_fst_exposureMeasure (n : ℕ) :
+theorem map_fst_exposureMeasure [SigmaFinite μ] (n : ℕ) :
     (exposureMeasure μ n).map (fun x i => (x i).1) = Measure.pi fun _ : Fin n => μ := by
-  rw [exposureMeasure_def, Measure.pi_map_pi fun _ => measurable_fst.aemeasurable]
-  simp [Measure.map_fst_prod]
+  rw [exposureMeasure_def]
+  exact (measurePreserving_pi _ _ fun _ => measurePreserving_fst).map_eq
 
 end Source
+
+variable [IsProbabilityMeasure μ]
 
 section Graph
 

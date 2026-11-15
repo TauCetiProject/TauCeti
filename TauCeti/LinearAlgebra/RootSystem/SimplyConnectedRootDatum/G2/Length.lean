@@ -50,9 +50,8 @@ expanding `β∨ = 2 β / (β, β)` on the simple coroots, and
 ## References
 
 The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters
-4--6*, Plate IX. The tables are the type `G₂` input asked for by the "special isogenies in
-characteristics two and three" bullet of Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`,
-matching the rank-two type `B` tables of
+4--6*, Plate IX. The tables are the type `G₂` input of the special isogeny in characteristic
+three, matching the rank-two type `B` tables of
 `TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/B/RankTwo.lean`.
 -/
 

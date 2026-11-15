@@ -251,6 +251,15 @@ theorem not_cofinalValueFor_one (v : Valuation A Γ₀)
     (H : Subgroup v.valueGroup) : ¬ CofinalValueFor v H 1 :=
   fun h ↦ absurd h.lt_one (by simp)
 
+/-- If a power has cofinal value, then so does its base, for any exponent. -/
+theorem CofinalValueFor.of_pow {v : Valuation A Γ₀}
+    {H : Subgroup v.valueGroup} {a : A} {n : ℕ}
+    (h : CofinalValueFor v H (a ^ n)) : CofinalValueFor v H a := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rw [pow_zero] at h
+    exact (not_cofinalValueFor_one v H h).elim
+  · exact (cofinalValueFor_pow_iff hn).mp h
+
 /-! ### The ideal of cofinal values
 
 `Ideal A` is `Submodule A A`, i.e. a *left* ideal, and `CofinalValueFor.mul_left` gives exactly left
@@ -298,12 +307,8 @@ theorem isRadical_cofinalIdeal {v : Valuation A Γ₀}
     {H : TauCeti.ConvexSubgroup v.valueGroup}
     (hH : characteristicSubgroup v < H) : (cofinalIdeal v hH).IsRadical := by
   intro x hx
-  obtain ⟨n, hn⟩ := Ideal.mem_radical_iff.mp hx
-  rw [mem_cofinalIdeal] at hn ⊢
-  rcases Nat.eq_zero_or_pos n with rfl | hp
-  · rw [pow_zero] at hn
-    exact absurd hn (not_cofinalValueFor_one v H.toSubgroup)
-  · exact (cofinalValueFor_pow_iff hp).mp hn
+  obtain ⟨_, hn⟩ := Ideal.mem_radical_iff.mp hx
+  exact mem_cofinalIdeal.mpr (mem_cofinalIdeal.mp hn).of_pow
 
 end CommRing
 

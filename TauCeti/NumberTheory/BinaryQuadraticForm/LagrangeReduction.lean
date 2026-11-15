@@ -25,15 +25,15 @@ A Lagrange reduced form satisfies `3 |a| |c| ≤ |D|` whatever the sign of `D`. 
 `|c| ≤ |D| / 3`. Hence `lagrangeReducedForms D`, the set of Lagrange reduced forms of
 discriminant `D`, is an explicit finite and decidable set.
 
-Together these give finiteness of classes for every nonsquare discriminant: forms of discriminant
-`D` fall into finitely many `SL(2, ℤ)`-classes. In particular there are finitely many proper
-classes of primitive forms of discriminant `D`. For `D > 0` these are the indefinite forms, which
-the positive definite reduction theory of `TauCeti.reducedForms` does not cover; for `D < 0` that
-theory moreover counts the positive definite classes exactly. Unlike the reduced forms of a
-positive definite class, a class of indefinite forms can contain several Lagrange reduced forms:
-`x² + x y - y²` and `-x² - x y + y²` are both Lagrange reduced of discriminant `5`, and the
-rotation `S` carries the first to the second. So `lagrangeReducedForms D` meets every class
-without counting the classes.
+Together these show that forms of a nonsquare discriminant `D` fall into finitely many
+`SL(2, ℤ)`-classes; this is recorded, for every nonzero discriminant, square or not, as
+`TauCeti.BinaryQuadraticForm.finite_orbitRel_quotient_of_forall_discrim_eq`. For `D > 0` these
+are the indefinite forms, which the positive definite reduction theory of `TauCeti.reducedForms`
+does not cover; for `D < 0` that theory moreover counts the positive definite classes exactly.
+Unlike the reduced forms of a positive definite class, a class of indefinite forms can contain
+several Lagrange reduced forms: `x² + x y - y²` and `-x² - x y + y²` are both Lagrange reduced of
+discriminant `5`, and the rotation `S` carries the first to the second. So
+`lagrangeReducedForms D` meets every class without counting the classes.
 
 ## Main definitions
 
@@ -45,15 +45,12 @@ without counting the classes.
 
 * `TauCeti.BinaryQuadraticForm.IsLagrangeReduced.three_mul_abs_a_mul_abs_c_le_abs_discrim`: a
   Lagrange reduced form has `3 |a| |c| ≤ |D|`.
+* `TauCeti.BinaryQuadraticForm.IsLagrangeReduced.four_mul_sq_a_lt_discrim`: for a positive
+  nonsquare discriminant, a Lagrange reduced form has `4 a² < D`.
 * `TauCeti.BinaryQuadraticForm.mem_lagrangeReducedForms`: for `D ≠ 0`, the set
   `lagrangeReducedForms D` contains every Lagrange reduced form of discriminant `D`.
 * `TauCeti.BinaryQuadraticForm.exists_smul_isLagrangeReduced`: every form of nonsquare
   discriminant is properly equivalent to a Lagrange reduced form.
-* `TauCeti.BinaryQuadraticForm.finite_orbitRel_quotient_of_forall_discrim_eq`: a set of forms of
-  one nonsquare discriminant, stable under `SL(2, ℤ)`, has finitely many classes.
-* `TauCeti.BinaryQuadraticForm.finite_orbitRel_quotient_primitiveForms`: there are finitely many
-  proper classes of primitive forms of nonsquare discriminant `D`, an instance under
-  `[Fact (¬ IsSquare D)]`.
 
 ## References
 
@@ -121,6 +118,28 @@ theorem a_ne_zero (hf : f.IsLagrangeReduced) (hD : f.discrim ≠ 0) : f.a ≠ 0 
 theorem c_ne_zero (hf : f.IsLagrangeReduced) (hD : f.discrim ≠ 0) : f.c ≠ 0 := by
   intro hc
   exact hf.a_ne_zero hD (abs_nonpos_iff.mp (by simpa [hc] using hf.2))
+
+/-- A Lagrange reduced form `a x² + b x y + c y²` of positive nonsquare discriminant `D` has
+`4 a² < D`. -/
+theorem four_mul_sq_a_lt_discrim (hf : f.IsLagrangeReduced) (hpos : 0 < f.discrim)
+    (hD : ¬ IsSquare f.discrim) : 4 * f.a ^ 2 < f.discrim := by
+  obtain ⟨hb, hac⟩ := isLagrangeReduced_iff.mp hf
+  have hA := abs_nonneg f.a
+  have hb' : f.b ^ 2 ≤ f.a ^ 2 := by
+    rw [← sq_abs f.b, ← sq_abs f.a]
+    exact pow_le_pow_left₀ (abs_nonneg _) hb 2
+  have hac' : |f.a| * |f.a| ≤ |f.a| * |f.c| := mul_le_mul_of_nonneg_left hac hA
+  rw [abs_mul_abs_self, ← abs_mul f.a f.c] at hac'
+  rw [discrim_def, discrim] at hpos ⊢
+  -- the outer coefficients have opposite signs, so `D = b² + 4 |a| |c| ≥ 4 a²`
+  have hneg : f.a * f.c < 0 := by
+    by_contra! h
+    rw [abs_of_nonneg h] at hac'
+    nlinarith
+  rw [abs_of_neg hneg] at hac'
+  refine lt_of_le_of_ne (by nlinarith [sq_nonneg f.b]) fun h ↦ hD ⟨2 * f.a, ?_⟩
+  rw [discrim_def, discrim]
+  linarith
 
 end IsLagrangeReduced
 
@@ -210,32 +229,6 @@ theorem exists_smul_mem_lagrangeReducedForms (f : BinaryQuadraticForm ℤ)
   have hD : f.discrim ≠ 0 := fun h ↦ hf (h ▸ IsSquare.zero)
   obtain ⟨γ, hγ⟩ := exists_smul_isLagrangeReduced f hf
   exact ⟨γ, (mem_lagrangeReducedForms hD).2 ⟨discrim_smul γ f, hγ⟩⟩
-
-/-- **Finiteness of classes of nonsquare discriminant**: a set of integral binary quadratic forms
-of one nonsquare discriminant `D`, stable under `SL(2, ℤ)`, falls into finitely many
-`SL(2, ℤ)`-classes. The finitely many Lagrange reduced forms of discriminant `D` meet every
-class. -/
-theorem finite_orbitRel_quotient_of_forall_discrim_eq {D : ℤ} (hD : ¬ IsSquare D)
-    (s : SubMulAction SL(2, ℤ) (BinaryQuadraticForm ℤ)) (hs : ∀ f ∈ s, f.discrim = D) :
-    Finite (orbitRel.Quotient SL(2, ℤ) s) := by
-  -- the members of `s` in `lagrangeReducedForms D` form a finite set meeting every class
-  let R := {f : s // f.1 ∈ lagrangeReducedForms D}
-  have : Finite R :=
-    .of_injective (fun f : R ↦ (⟨f.1.1, f.2⟩ : lagrangeReducedForms D)) fun f g h ↦ by
-      apply Subtype.ext
-      apply Subtype.ext
-      simpa using congrArg Subtype.val h
-  refine .of_surjective (fun f : R ↦ (Quotient.mk'' f.1 : orbitRel.Quotient SL(2, ℤ) s))
-    (Quotient.ind' fun f ↦ ?_)
-  obtain ⟨γ, hγ⟩ := exists_smul_mem_lagrangeReducedForms f.1 (hs f.1 f.2 ▸ hD)
-  exact ⟨⟨γ • f, hs f.1 f.2 ▸ hγ⟩, Quotient.sound' ⟨γ, rfl⟩⟩
-
-/-- There are finitely many proper equivalence classes of primitive integral binary quadratic
-forms of a nonsquare discriminant `D`, positive or negative. -/
-instance finite_orbitRel_quotient_primitiveForms {D : ℤ} [Fact (¬ IsSquare D)] :
-    Finite (orbitRel.Quotient SL(2, ℤ) (primitiveForms D)) :=
-  finite_orbitRel_quotient_of_forall_discrim_eq Fact.out _ fun f hf ↦
-    ((mem_primitiveForms D f).1 hf).1
 
 /-! The two Lagrange reduced forms `x² + x y - y²` and `-x² - x y + y²` of discriminant `5` are
 properly equivalent, by the rotation `S`; so a class can contain several Lagrange reduced forms. -/

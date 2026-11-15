@@ -35,6 +35,8 @@ surjective, which removes the closure from Mathlib's general identity
   its adjoint does.
 * `ContinuousLinearMap.IsFredholm.adjoint`: the adjoint of a Fredholm operator is Fredholm.
 * `ContinuousLinearMap.index_adjoint`: taking the adjoint negates the Fredholm index.
+* `ContinuousLinearMap.IsFredholm.isInvertible_of_index_eq_zero`: a Fredholm operator of index
+  zero is invertible as soon as it or its adjoint has trivial kernel.
 
 The argument and index convention follow McDuff--Salamon,
 *J-holomorphic Curves and Symplectic Topology*, Appendix A.1.
@@ -178,7 +180,7 @@ private theorem _root_.ContinuousLinearMap.rank_adjoint_le_of_rank_le {T : E →
     (hT : (T : E →ₗ[𝕜] F).rank ≤ n) : (T† : F →ₗ[𝕜] E).rank ≤ n := by
   have : FiniteDimensional 𝕜 (LinearMap.range (T : E →ₗ[𝕜] F)) :=
     Module.rank_lt_aleph0_iff.mp (hT.trans_lt (Cardinal.natCast_lt_aleph0))
-  have hT' := Submodule.closed_of_finiteDimensional (LinearMap.range (T : E →ₗ[𝕜] F))
+  have hT' := Submodule.isClosed_of_finiteDimensional (LinearMap.range (T : E →ₗ[𝕜] F))
   rw [LinearMap.rank, T.range_adjoint_eq_orthogonal_ker_of_isClosed_range hT',
     ← Cardinal.lift_le_nat_iff, (T.orthogonalKerEquivRange hT').toLinearEquiv.lift_rank_eq,
     Cardinal.lift_le_nat_iff]
@@ -289,6 +291,25 @@ theorem _root_.ContinuousLinearMap.index_adjoint (T : E →L[𝕜] F)
       (ContinuousLinearMap.cokerAdjointEquivKer T hT.isClosed_range).toLinearEquiv]
   omega
 
+/-- A Fredholm operator of index zero between Hilbert spaces is invertible as soon as the operator
+or its adjoint has trivial kernel. -/
+theorem _root_.ContinuousLinearMap.IsFredholm.isInvertible_of_index_eq_zero {T : E →L[𝕜] F}
+    (hT : ContinuousLinearMap.IsFredholm T) (h0 : ContinuousLinearMap.index T = 0)
+    (hker : LinearMap.ker (T : E →ₗ[𝕜] F) = ⊥ ∨ LinearMap.ker (T† : F →ₗ[𝕜] E) = ⊥) :
+    T.IsInvertible := by
+  rcases hker with hker | hker
+  · exact hT.isInvertible_of_injective_of_index_eq_zero (LinearMap.ker_eq_bot.mp hker) h0
+  have := hT.finite_coker
+  refine ContinuousLinearMap.isInvertible_iff_isFredholm_and_bijective.mpr ⟨hT, ?_⟩
+  -- A trivial adjoint kernel means that the cokernel `F ⧸ range T` has dimension zero.
+  have hcoker : finrank 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F)) = 0 := by
+    rw [LinearEquiv.finrank_eq
+      (ContinuousLinearMap.cokerEquivKerAdjoint T hT.isClosed_range).toLinearEquiv, hker,
+      finrank_bot]
+  have hrange : LinearMap.range (T : E →ₗ[𝕜] F) = ⊤ :=
+    Submodule.Quotient.subsingleton_iff.mp (finrank_zero_iff.mp hcoker)
+  exact T.bijective_of_surjective_of_index_eq_zero hT.finite_ker (LinearMap.range_eq_top.mp hrange)
+    h0
 
 end HilbertCodomain
 

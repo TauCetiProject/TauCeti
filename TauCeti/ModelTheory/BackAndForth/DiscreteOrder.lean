@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.ModelTheory.BackAndForth.Game.Infinite
 public import TauCeti.ModelTheory.BackAndForth.Karp
 public import TauCeti.ModelTheory.Order
 public import TauCeti.Order.SuccPred.Iterate
@@ -14,6 +15,8 @@ public import Mathlib.Order.SuccPred.Int
 public import Mathlib.Order.Interval.Set.OrderIso
 public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.Finset.Max
+
+import TauCeti.ModelTheory.BackAndForth.Countable
 
 /-!
 # Back-and-forth for discrete linear orders without endpoints
@@ -36,6 +39,11 @@ the interval between the two copies of `0` in `ℤ ⊕ₗ ℤ` is infinite. By K
 countable structures they are therefore not even `L_{ω₁ω}`-equivalent: elementary equivalence is
 strictly weaker than infinitary equivalence.
 
+The same pair shows that winning Ehrenfeucht–Fraïssé strategies for every finite length, chosen
+separately, need not assemble into one coherent strategy for the infinite game: Duplicator wins
+every finite game between `ℤ` and `ℤ ⊕ₗ ℤ`, but has no coherent infinite strategy, since such a
+strategy would make them potentially isomorphic.
+
 ## Main results
 
 * `TauCeti.sameAtomicType_order_iff`: in the language of orders, two tuples have the same atomic
@@ -44,9 +52,14 @@ strictly weaker than infinitary equivalence.
   endpoints are back-and-forth equivalent at level `ω`.
 * `TauCeti.elementarilyEquivalent_of_succOrder_of_predOrder`: nonempty discrete linear orders
   without endpoints are elementarily equivalent.
+* `TauCeti.nonempty_efStrategy_family_of_succOrder_of_predOrder`: Duplicator wins every finite
+  Ehrenfeucht–Fraïssé game between nonempty discrete linear orders without endpoints.
 * `TauCeti.isEmpty_equiv_int_sumLex_int`, `TauCeti.elementarilyEquivalent_int_sumLex_int` and
   `TauCeti.not_infEquivAt_nat_int_sumLex_int`: `ℤ` and `ℤ ⊕ₗ ℤ` are elementarily equivalent but
   neither isomorphic nor `L_{ω₁ω}`-equivalent.
+* `TauCeti.not_potentialIso_int_sumLex_int` and `TauCeti.isEmpty_coherentEFStrategy_int_sumLex_int`:
+  `ℤ` and `ℤ ⊕ₗ ℤ` are not potentially isomorphic, so Duplicator has no coherent strategy for the
+  infinite Ehrenfeucht–Fraïssé game between them.
 
 ## References
 
@@ -136,6 +149,42 @@ private theorem ShiftAgree.snoc (h : ShiftAgree K a b) (hK : K' ≤ K) {m : M} {
 
 variable [PredOrder N] [NoMinOrder N]
 
+/-- **The far case of the forth step.** If every entry of `a` lies more than `K'` steps from `m`,
+there is an element of `N` in the same position relative to the entries of `b`, again more than
+`K'` steps away from each of them. -/
+private theorem ShiftAgree.exists_far [Nonempty N] (h : ShiftAgree K a b) (hK : 2 * K' + 2 ≤ K)
+    {m : M} (hbelow : ∀ j, a j < m → succ^[K' + 1] (a j) ≤ m)
+    (habove : ∀ j, m < a j → succ^[K' + 1] m ≤ a j) :
+    ∃ m' : N, ∀ j, (a j < m → succ^[K' + 1] (b j) ≤ m') ∧
+      (m < a j → succ^[K' + 1] m' ≤ b j) := by
+  classical
+  by_cases hL : ∃ i, a i < m
+  · -- Go `K' + 1` steps above the entry of `b` matching the greatest entry of `a` below `m`.
+    obtain ⟨i₀, hi₀, hmax⟩ := (Finset.univ.filter fun i => a i < m).exists_max_image a
+      (by simpa [Finset.Nonempty] using hL)
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi₀ hmax
+    refine ⟨succ^[K' + 1] (b i₀), fun j => ⟨fun hj => ?_, fun hj => ?_⟩⟩
+    · exact (succ_strictMono.iterate _).monotone ((h.le_iff j i₀).1 (hmax j hj))
+    · -- The entry `a j` lies at least `2 * K' + 2` steps above `a i₀`.
+      have ha : succ^[K' + 1 + (K' + 1)] (a i₀) ≤ succ^[0] (a j) := by
+        rw [Function.iterate_add_apply, Function.iterate_zero_apply]
+        exact ((succ_strictMono.iterate _).monotone (hbelow i₀ hi₀)).trans (habove j hj)
+      simpa only [Function.iterate_add_apply, Function.iterate_zero_apply] using
+        (h i₀ j _ 0 (by omega) K.zero_le).1 ha
+  · push Not at hL
+    by_cases hU : ∃ i, m < a i
+    · -- Go `K' + 1` steps below the entry of `b` matching the least entry of `a` above `m`.
+      obtain ⟨j₀, hj₀, hmin⟩ := (Finset.univ.filter fun i => m < a i).exists_min_image a
+        (by simpa [Finset.Nonempty] using hU)
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj₀ hmin
+      refine ⟨pred^[K' + 1] (b j₀), fun j => ⟨fun hj => absurd hj (hL j).not_gt, fun hj => ?_⟩⟩
+      rw [Function.LeftInverse.iterate (g := succ) (f := pred) succ_pred]
+      exact (h.le_iff j₀ j).1 (hmin j hj)
+    · -- The tuples are empty.
+      push Not at hU
+      exact ⟨Classical.arbitrary N, fun j =>
+        ⟨fun hj => absurd hj (hL j).not_gt, fun hj => absurd hj (hU j).not_gt⟩⟩
+
 /-- **The forth step.** If the entries of two tuples agree on shifts by at most `2 * K' + 2`
 steps, every new element of `M` has an answer in `N` keeping agreement on shifts by at most
 `K'` steps. -/
@@ -182,32 +231,7 @@ private theorem ShiftAgree.exists_snoc [Nonempty N] (h : ShiftAgree K a b)
       have hb := succ_iterate_lt_succ_iterate_of_succ_iterate_le ((hm' j).2 hj)
         (by omega : d < K' + 1) e
       exact ⟨iff_of_true ha.le hb.le, iff_of_false ha.not_ge hb.not_ge⟩
-  by_cases hL : ∃ i, a i < m
-  · -- Go `K' + 1` steps above the entry of `b` matching the greatest entry of `a` below `m`.
-    obtain ⟨i₀, hi₀, hmax⟩ := (Finset.univ.filter fun i => a i < m).exists_max_image a
-      (by simpa [Finset.Nonempty] using hL)
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi₀ hmax
-    refine ⟨succ^[K' + 1] (b i₀), fun j => ⟨fun hj => ?_, fun hj => ?_⟩⟩
-    · exact (succ_strictMono.iterate _).monotone ((h.le_iff j i₀).1 (hmax j hj))
-    · -- The entry `a j` lies at least `2 * K' + 2` steps above `a i₀`.
-      have ha : succ^[K' + 1 + (K' + 1)] (a i₀) ≤ succ^[0] (a j) := by
-        rw [Function.iterate_add_apply, Function.iterate_zero_apply]
-        exact ((succ_strictMono.iterate _).monotone (hbelow i₀ hi₀)).trans (habove j hj)
-      simpa only [Function.iterate_add_apply, Function.iterate_zero_apply] using
-        (h i₀ j _ 0 (by omega) K.zero_le).1 ha
-  · push Not at hL
-    by_cases hU : ∃ i, m < a i
-    · -- Go `K' + 1` steps below the entry of `b` matching the least entry of `a` above `m`.
-      obtain ⟨j₀, hj₀, hmin⟩ := (Finset.univ.filter fun i => m < a i).exists_min_image a
-        (by simpa [Finset.Nonempty] using hU)
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj₀ hmin
-      refine ⟨pred^[K' + 1] (b j₀), fun j => ⟨fun hj => absurd hj (hL j).not_gt, fun hj => ?_⟩⟩
-      rw [Function.LeftInverse.iterate (g := succ) (f := pred) succ_pred]
-      exact (h.le_iff j₀ j).1 (hmin j hj)
-    · -- The tuples are empty.
-      push Not at hU
-      exact ⟨Classical.arbitrary N, fun j =>
-        ⟨fun hj => absurd hj (hL j).not_gt, fun hj => absurd hj (hU j).not_gt⟩⟩
+  exact h.exists_far hK hbelow habove
 
 variable [PredOrder M] [NoMinOrder M]
 variable [Language.order.Structure M] [Language.order.OrderedStructure M]
@@ -253,6 +277,16 @@ sentences in the language of orders. -/
 theorem elementarilyEquivalent_of_succOrder_of_predOrder : M ≅[Language.order] N :=
   (bfEquiv_omega0_of_succOrder_of_predOrder.{w, w', 0} M N).elementarilyEquivalent
 
+/-- **Duplicator wins every finite Ehrenfeucht–Fraïssé game between discrete linear orders
+without endpoints.** In any two nonempty linear orders with successors and predecessors and
+without endpoints, Duplicator has a winning strategy from the empty position for each finite
+number of rounds. The strategies for different lengths are not required to be compatible. -/
+theorem nonempty_efStrategy_family_of_succOrder_of_predOrder :
+    Nonempty (∀ k : ℕ, EFStrategy Language.order k (Fin.elim0 : Fin 0 → M)
+      (Fin.elim0 : Fin 0 → N)) :=
+  EFStrategy.nonempty_family_iff_bfEquiv_omega0.mpr
+    (bfEquiv_omega0_of_succOrder_of_predOrder.{w, w', 0} M N)
+
 end Discrete
 
 section Int
@@ -288,6 +322,24 @@ theorem not_infEquivAt_nat_int_sumLex_int : ¬ InfEquivAt (L := Language.order) 
   have : Countable (ℤ ⊕ₗ ℤ) := inferInstanceAs (Countable (ℤ ⊕ ℤ))
   rw [countable_infEquivAt_nat_iff_iso]
   exact not_nonempty_iff.mpr isEmpty_equiv_int_sumLex_int
+
+/-- `ℤ` and `ℤ ⊕ₗ ℤ` are not potentially isomorphic as orders, although they are back-and-forth
+equivalent at level `ω` (`bfEquiv_omega0_of_succOrder_of_predOrder`). -/
+theorem not_potentialIso_int_sumLex_int : ¬ PotentialIso (L := Language.order) ℤ (ℤ ⊕ₗ ℤ) := by
+  have : Countable (ℤ ⊕ₗ ℤ) := inferInstanceAs (Countable (ℤ ⊕ ℤ))
+  rw [countable_potentialIso_iff_iso]
+  exact not_nonempty_iff.mpr isEmpty_equiv_int_sumLex_int
+
+/-- **Finite strategies do not assemble into a coherent infinite strategy.** Duplicator has no
+coherent winning strategy for the infinite Ehrenfeucht–Fraïssé game between `ℤ` and `ℤ ⊕ₗ ℤ`,
+although by `nonempty_efStrategy_family_of_succOrder_of_predOrder` Duplicator wins the game of
+every finite length. Thus level-`ω` back-and-forth equivalence, which says exactly that a winning
+strategy exists for each finite length separately, does not give a coherent strategy. -/
+theorem isEmpty_coherentEFStrategy_int_sumLex_int :
+    IsEmpty (CoherentEFStrategy Language.order (Fin.elim0 : Fin 0 → ℤ)
+      (Fin.elim0 : Fin 0 → ℤ ⊕ₗ ℤ)) :=
+  not_nonempty_iff.mp
+    (potentialIso_iff_nonempty_coherentEFStrategy.not.mp not_potentialIso_int_sumLex_int)
 
 end Int
 

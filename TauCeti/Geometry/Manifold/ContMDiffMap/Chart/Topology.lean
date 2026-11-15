@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Jet
+public import Mathlib.Topology.ContinuousMap.Compact
 
 /-!
 # The weak Whitney topology for manifold-valued maps
@@ -161,6 +162,8 @@ section VectorTarget
 
 variable [IsManifold I n M]
 
+attribute [local instance] manifoldWeakWhitneyTopology
+
 /-- For a vector-space target, chart tests are exactly compact-open tests on the existing
 source-chart derivative maps. -/
 theorem chartJetSet_self_target (x : M) (y : F) (m : ℕ) (hm : m ≤ n)
@@ -171,6 +174,137 @@ theorem chartJetSet_self_target (x : M) (y : F) (m : ℕ) (hm : m ≤ n)
   simp only [mem_chartJetSet, extChartAt_model_space_eq_id, PartialEquiv.refl_source,
     mem_univ, true_and, mem_ofPred_eq, MapsTo, chartIteratedFDeriv_self_target_apply,
     PartialEquiv.refl_coe, Function.id_comp]
+
+/-- A coordinate derivative, regarded as a continuous map on the whole chart target, varies
+continuously in the weak Whitney topology. -/
+theorem continuous_chartIteratedFDeriv (x : M) (m : ℕ) (hm : m ≤ n) :
+    Continuous (fun f : C^n⟮I, M; 𝓘(𝕜, F), F⟯ ↦ chartIteratedFDeriv f x m hm) := by
+  apply ContinuousMap.continuous_compactOpen.mpr
+  intro K hK V hV
+  rw [← chartJetSet_self_target x (0 : F) m hm K V]
+  exact isOpen_chartJetSet x 0 m hm hK hV
+
+/-- Continuity into the weak Whitney topology for a vector target can be tested on the
+supremum-norm restrictions of every chart derivative to every compact coordinate set. -/
+theorem continuous_manifoldWeakWhitney_iff_compact_chartIteratedFDeriv
+    {P : Type*} [TopologicalSpace P] {g : P → C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
+    Continuous g ↔ ∀ (x : M) (m : ℕ) (hm : m ≤ n)
+      (K : TopologicalSpace.Compacts (extChartAt I x).target),
+      Continuous (fun p ↦ (chartIteratedFDeriv (g p) x m hm).restrict (K : Set _)) := by
+  constructor
+  · intro h x m hm K
+    exact ((ContinuousMap.continuous_restrict (K : Set _)).comp
+      (continuous_chartIteratedFDeriv x m hm)).comp h
+  · intro h
+    apply continuous_manifoldWeakWhitney_iff.mpr
+    intro x y m hm K hK V hV
+    rw [chartJetSet_self_target x y m hm K V]
+    let K' : TopologicalSpace.Compacts (extChartAt I x).target := ⟨K, hK⟩
+    have hopen := (ContinuousMap.isOpen_setOfPred_mapsTo
+      (isCompact_univ : IsCompact (univ : Set K')) hV).preimage (h x m hm K')
+    convert hopen using 1
+    ext p
+    constructor
+    · intro hp z _
+      exact hp z.2
+    · intro hp z hz
+      exact hp (mem_univ (⟨z, hz⟩ : K'))
+
+/-- A family of vector-valued maps is weak Whitney continuous exactly when each of its
+compact-open-valued chart derivatives is continuous. -/
+theorem continuous_manifoldWeakWhitney_iff_chartIteratedFDeriv
+    {P : Type*} [TopologicalSpace P] {g : P → C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
+    Continuous g ↔ ∀ (x : M) (m : ℕ) (hm : m ≤ n),
+      Continuous (fun p ↦ chartIteratedFDeriv (g p) x m hm) := by
+  constructor
+  · intro h x m hm
+    exact (continuous_chartIteratedFDeriv x m hm).comp h
+  · intro h
+    apply continuous_manifoldWeakWhitney_iff_compact_chartIteratedFDeriv.mpr
+    intro x m hm K
+    exact (ContinuousMap.continuous_restrict (K : Set _)).comp (h x m hm)
+
+/-- The linear map recording every chart derivative restricted to every compact coordinate set,
+with each component valued in its native supremum-norm continuous-map space. -/
+noncomputable def compactChartJet :
+    C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜]
+      (∀ i : Σ x : M, {m : ℕ // m ≤ n} × TopologicalSpace.Compacts (extChartAt I x).target,
+        C(i.2.2, E [×i.2.1.1]→L[𝕜] F)) :=
+  LinearMap.pi fun i ↦
+    (ContinuousMap.compCLM 𝕜 (E [×i.2.1.1]→L[𝕜] F)
+      (ContinuousMap.subtypeVal (i.2.2 : Set (extChartAt I i.1).target))).toLinearMap ∘ₗ
+        chartIteratedFDerivLinearMap i.1 i.2.1.1 i.2.1.2
+
+/-- A component of the compact chart jet is the corresponding restricted chart derivative. -/
+-- Spell out the chart target in the coercion type, as for chartIteratedFDerivLinearMap_apply.
+@[simp]
+theorem compactChartJet_apply (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯)
+    (i : Σ x : M, {m : ℕ // m ≤ n} × TopologicalSpace.Compacts (extChartAt I x).target) :
+    DFunLike.coe (F := C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜]
+      (∀ j : Σ x : M, {m : ℕ // m ≤ n} ×
+          TopologicalSpace.Compacts ↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target),
+        C(j.2.2, E [×j.2.1.1]→L[𝕜] F))) compactChartJet f i =
+      (chartIteratedFDeriv f i.1 i.2.1.1 i.2.1.2).restrict (i.2.2 : Set _) := by
+  -- The expanded target in chartIteratedFDerivLinearMap_apply is definitionally
+  -- (extChartAt I i.1).target, so restriction acts on the same continuous-map space.
+  exact congrArg
+    (fun A : C((extChartAt I i.1).target, E [×i.2.1.1]→L[𝕜] F) ↦
+      A.restrict (i.2.2 : Set _))
+    (chartIteratedFDerivLinearMap_apply i.1 i.2.1.1 i.2.1.2 f)
+
+/-- All compact chart jets together induce the vector-valued weak Whitney topology. -/
+theorem isInducing_compactChartJet :
+    IsInducing (compactChartJet (I := I) (M := M) (F := F) (n := n)) := by
+  have hc : Continuous (compactChartJet (I := I) (M := M) (F := F) (n := n)) := by
+    apply continuous_pi
+    intro i
+    exact ((ContinuousMap.continuous_restrict (i.2.2 : Set (extChartAt I i.1).target)).comp
+      (continuous_chartIteratedFDeriv (I := I) (F := F) i.1 i.2.1.1 i.2.1.2)).congr
+        (fun f ↦ (compactChartJet_apply f i).symm)
+  constructor
+  apply le_antisymm
+  · exact hc.le_induced
+  · rw [← continuous_id_iff_le]
+    -- Give the domain the induced topology while the codomain retains weak Whitney.
+    -- The compact restriction criterion then proves continuity of the identity.
+    let _ : TopologicalSpace C^n⟮I, M; 𝓘(𝕜, F), F⟯ :=
+      TopologicalSpace.induced (compactChartJet (I := I) (F := F)) inferInstance
+    apply continuous_manifoldWeakWhitney_iff_compact_chartIteratedFDeriv.mpr
+    intro x m hm K
+    have h := (continuous_apply (⟨x, ⟨m, hm⟩, K⟩ :
+        Σ x : M, {m : ℕ // m ≤ n} × TopologicalSpace.Compacts (extChartAt I x).target)).comp
+      (continuous_induced_dom : Continuous (compactChartJet (I := I) (F := F)))
+    exact h.congr fun f ↦ compactChartJet_apply f ⟨x, ⟨m, hm⟩, K⟩
+
+/-- A family of vector-valued maps converges in the weak Whitney topology exactly when each of its
+coordinate derivatives, as a continuous map on the whole chart target, converges with compact
+convergence. -/
+theorem tendsto_manifoldWeakWhitney_iff_chartIteratedFDeriv {ι : Type*} {l : Filter ι}
+    {f : ι → C^n⟮I, M; 𝓘(𝕜, F), F⟯} {h : C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
+    Tendsto f l (𝓝 h) ↔ ∀ (x : M) (m : ℕ) (hm : m ≤ n),
+      Tendsto (fun i ↦ chartIteratedFDeriv (f i) x m hm) l (𝓝 (chartIteratedFDeriv h x m hm)) := by
+  refine ⟨fun hf x m hm ↦ ((continuous_chartIteratedFDeriv x m hm).tendsto h).comp hf,
+    fun hf ↦ isInducing_compactChartJet.tendsto_nhds_iff.mpr (tendsto_pi_nhds.mpr fun i ↦ ?_)⟩
+  obtain ⟨x, ⟨m, hm⟩, K⟩ := i
+  have ht := ((ContinuousMap.continuous_restrict (K : Set _)).tendsto _).comp (hf x m hm)
+  convert ht using 1
+  · funext i
+    exact compactChartJet_apply (f i) ⟨x, ⟨m, hm⟩, K⟩
+  · exact congrArg nhds (compactChartJet_apply h ⟨x, ⟨m, hm⟩, K⟩)
+
+/-- Subtraction of vector-valued maps is continuous in the weak Whitney topology. -/
+theorem continuous_sub_manifoldWeakWhitney :
+    Continuous (fun fg : C^n⟮I, M; 𝓘(𝕜, F), F⟯ × C^n⟮I, M; 𝓘(𝕜, F), F⟯ ↦
+      fg.1 - fg.2) := by
+  apply continuous_manifoldWeakWhitney_iff.mpr
+  intro x y m hm K hK V hV
+  rw [chartJetSet_self_target x y m hm K V]
+  have hjet := continuous_chartIteratedFDeriv (I := I) (F := F) x m hm
+  have hsub := (hjet.comp continuous_fst).sub (hjet.comp continuous_snd)
+  convert (ContinuousMap.isOpen_setOfPred_mapsTo hK hV).preimage hsub using 1
+  ext fg
+  simp only [mem_preimage, mem_ofPred_eq, chartIteratedFDeriv_sub,
+    Pi.sub_apply, Function.comp_apply]
 
 end VectorTarget
 
@@ -193,11 +327,7 @@ theorem manifoldWeakWhitneyTopology_self :
         mem_univ]⟩, continuous_id.subtype_mk (fun _ ↦ by
           simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_target, mem_univ])⟩
     have hchart : Continuous (fun f : C^n⟮𝓘(𝕜, E), E; 𝓘(𝕜, F), F⟯ ↦
-        chartIteratedFDeriv f 0 m hm) := by
-      apply ContinuousMap.continuous_compactOpen.mpr
-      intro K hK V hV
-      convert isOpen_chartJetSet (n := n) (0 : E) (0 : F) m hm hK hV using 1
-      exact (chartJetSet_self_target 0 0 m hm K V).symm
+        chartIteratedFDeriv f 0 m hm) := continuous_chartIteratedFDeriv 0 m hm
     have h := (ContinuousMap.continuous_precomp toTarget).comp hchart
     convert h using 1
     funext f
@@ -213,7 +343,7 @@ theorem manifoldWeakWhitneyTopology_self :
     intro x y m hm K hK V hV
     rw [chartJetSet_self_target x y m hm]
     have h := (ContinuousMap.continuous_restrict (extChartAt 𝓘(𝕜, E) x).target).comp
-      (ContMDiffMap.continuous_iteratedFDerivContinuousMap (k := 𝕜)
+      (ContMDiffMap.continuous_iteratedFDerivContinuousMap (𝕜 := 𝕜)
         (E := E) (F := F) (n := n) m hm)
     have hchart : Continuous (fun f : C^n⟮𝓘(𝕜, E), E; 𝓘(𝕜, F), F⟯ ↦
         chartIteratedFDeriv f x m hm) := by

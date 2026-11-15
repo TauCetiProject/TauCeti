@@ -76,7 +76,7 @@ theorem eq_coe_of_schwarzChristoffelSphereBoundary_eq_of_separated_edge
         exact False.elim (OnePoint.infty_ne_coe _ ht)
   | coe y =>
       have hysum : -1 ≤ ∑ i with a i = y, e i :=
-        le_sum_filter_eq_of_forall_apply (by norm_num) hfinite y
+        forall_sum_filter_eq_of_forall_apply (by norm_num) hfinite y
       rcases hysum.eq_or_lt with hysum | hysum
       · rw [schwarzChristoffelSphereBoundary_coe_of_exponent_sum_eq_neg_one
           a e z₀ y hysum.symm, hxvalue] at ht

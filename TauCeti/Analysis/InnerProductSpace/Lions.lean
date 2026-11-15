@@ -82,22 +82,16 @@ theorem exists_forall_apply_eq_and_norm_le_of_coercive (E : Φ →ₗ[ℝ] Stron
   -- Coercivity and Cauchy–Schwarz bound `ℓ` by the norm of `T`.
   have hbound : ∀ φ, |ℓ φ| ≤ M / c * ‖T φ‖ := by
     intro φ
-    refine (hℓ φ).trans ?_
-    rcases le_or_gt (p φ) 0 with hp | hp
-    · exact (mul_nonpos_of_nonneg_of_nonpos hM hp).trans (by positivity)
-    · have hpT : c * p φ ^ 2 ≤ ‖T φ‖ * p φ :=
-        calc c * p φ ^ 2 ≤ E φ (j φ) := hE φ
-          _ = ⟪T φ, j φ⟫_ℝ := (hT φ (j φ)).symm
-          _ ≤ ‖T φ‖ * ‖j φ‖ := real_inner_le_norm _ _
-          _ ≤ ‖T φ‖ * p φ := by gcongr; exact hj φ
-      have hcp : c * p φ ≤ ‖T φ‖ := by nlinarith
-      rw [div_mul_eq_mul_div, le_div_iff₀ hc]
-      nlinarith
+    have hpT : c * p φ ^ 2 ≤ ‖T φ‖ * p φ :=
+      calc c * p φ ^ 2 ≤ ⟪T φ, j φ⟫_ℝ := (hE φ).trans_eq (hT φ (j φ)).symm
+        _ ≤ ‖T φ‖ * ‖j φ‖ := real_inner_le_norm _ _
+        _ ≤ ‖T φ‖ * p φ := by gcongr; exact hj φ
+    have hcp : c * p φ ≤ ‖T φ‖ := by nlinarith [norm_nonneg (T φ)]
+    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+    nlinarith [hℓ φ]
   -- Hence `T φ ↦ ℓ φ` is a well-defined bounded functional on the range of `T`.
-  have hker : ker T ≤ ker ℓ := fun φ hφ => by
-    have h := hbound φ
-    rw [mem_ker.mp hφ, norm_zero, mul_zero] at h
-    exact mem_ker.mpr (abs_nonpos_iff.mp h)
+  have hker : ker T ≤ ker ℓ := fun φ hφ =>
+    mem_ker.mpr <| by simpa [mem_ker.mp hφ] using hbound φ
   let g₀ : range T →ₗ[ℝ] ℝ := ((ker T).liftQ ℓ hker).comp T.quotKerEquivRange.symm.toLinearMap
   have hg₀ : ∀ φ, g₀ ⟨T φ, mem_range_self T φ⟩ = ℓ φ := fun φ => by simp [g₀]
   let g : StrongDual ℝ (range T) := g₀.mkContinuous (M / c) fun y => by

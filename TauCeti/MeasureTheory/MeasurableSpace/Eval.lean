@@ -23,25 +23,17 @@ be measurable for the product σ-algebra.
 
 ## Main results
 
-* `TauCeti.MeasureTheory.measurable_eval_index`: measurability of `fun b => g b (f b)`.
+* `Measurable.eval_index`: measurability of `fun b => g b (f b)`.
 -/
 
 public section
-
-namespace TauCeti
-
-namespace MeasureTheory
 
 /-- **A measurable family evaluated at a measurable index is measurable.** Over a countable index
 type with measurable points, `fun b => g b (f b)` is measurable as soon as the family `g` and the
 index `f` are: the fibres of `f` are countably many measurable sets, and on each of them the
 evaluation is a coordinate projection of `g`. -/
-theorem measurable_eval_index {β ι γ : Type*} [MeasurableSpace β] [MeasurableSpace ι]
+theorem Measurable.eval_index {β ι γ : Type*} [MeasurableSpace β] [MeasurableSpace ι]
     [MeasurableSpace γ] [Countable ι] [MeasurableSingletonClass ι] {g : β → ι → γ} {f : β → ι}
     (hg : Measurable g) (hf : Measurable f) : Measurable fun b => g b (f b) :=
   (measurable_from_prod_countable_left (f := fun p : (ι → γ) × ι => p.1 p.2)
-    fun i => measurable_pi_apply i).comp (hg.prodMk hf)
-
-end MeasureTheory
-
-end TauCeti
+    measurable_pi_apply).comp (hg.prodMk hf)

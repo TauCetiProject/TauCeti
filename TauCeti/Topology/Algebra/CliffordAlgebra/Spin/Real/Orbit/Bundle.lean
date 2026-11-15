@@ -115,9 +115,7 @@ private noncomputable def realCliffordSpinBaseTrivializationData (n : ℕ) [NeZe
     stabilizerHomeomorph.trans
       (realCliffordSpinContinuousMulEquivLastStabilizer n).symm.toHomeomorph
   let e' := (e.homeomorphComp hOrbit).transFiberHomeomorph fiberHomeomorph
-  have he_baseSet : e.baseSet = U := by
-    dsimp only [e]
-    exact Subgroup.localSectionTrivialization_baseSet H U hU localSection hsection hsection_mk
+  have he_baseSet : e.baseSet = U := Subgroup.localSectionTrivialization_baseSet
   have he'_baseSet : e'.baseSet = hOrbit.symm ⁻¹' U := by
     dsimp only [e', Bundle.Trivialization.transFiberHomeomorph,
       Bundle.Trivialization.homeomorphComp]

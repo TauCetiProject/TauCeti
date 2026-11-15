@@ -106,6 +106,11 @@ instance fullSubcategoryMonoidalLeftAction : MonoidalLeftAction C P.FullSubcateg
   actionAssocIso_hom_naturality := by
     intros; ext; exact MonoidalLeftAction.actionAssocIso_hom_naturality _ _ _
 
+/-- A stable property remains stable after restriction to another stable full subcategory. -/
+instance isStableUnderLeftAction_inverseImage_ι (Q : ObjectProperty D)
+    [Q.IsStableUnderLeftAction C] : (Q.inverseImage P.ι).IsStableUnderLeftAction C where
+  prop_actionObj c _ hX := Q.prop_actionObj c hX
+
 /-- The inclusion of a full subcategory stable under the action is left-linear, with
 identity lineators. -/
 instance leftLinearι : P.ι.LeftLinear C where

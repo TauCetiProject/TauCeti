@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.RingTheory.Finiteness.Projective
 public import Mathlib.Algebra.Module.Equiv.Opposite
 public import TauCeti.Algebra.Ring.Opposite
-import Mathlib.LinearAlgebra.StdBasis
+public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 
 /-!
 # Evaluation into the opposite double dual
@@ -26,6 +26,8 @@ evaluation with constructions that use the opposite ring itself as the second du
 
 `unopDualEvalEquiv` gives the right-module version with both duals taking values in `A`,
 so that its scalars stay in `Aᵐᵒᵖ` rather than passing to a triple opposite.
+The instances `unopDual_finite` and `unopDual_projective` transport finiteness and
+projectivity to this `A`-valued right dual over every semiring.
 
 This is the reflexivity used when dualizing a projective presentation twice in the
 Auslander--Bridger transpose construction. Unlike `Module.evalEquiv`, the evaluation here
@@ -56,6 +58,17 @@ theorem opDualCodomainEquiv_apply (F : N →ₗ[Aᵐᵒᵖ] A) (x : N) :
 @[simp]
 theorem opDualCodomainEquiv_symm_apply (F : Module.Dual Aᵐᵒᵖ N) (x : N) :
     (opDualCodomainEquiv A N).symm F x = MulOpposite.unop (F x) := (rfl)
+
+/-- The `A`-valued right dual of a finite projective right module is finite over `A`. -/
+instance unopDual_finite [Module.Finite Aᵐᵒᵖ N] [Module.Projective Aᵐᵒᵖ N] :
+    Module.Finite A (N →ₗ[Aᵐᵒᵖ] A) :=
+  Module.Finite.of_surjective (opDualCodomainEquiv A N).symm.toLinearMap
+    (opDualCodomainEquiv A N).symm.surjective
+
+/-- The `A`-valued right dual of a finite projective right module is projective over `A`. -/
+instance unopDual_projective [Module.Finite Aᵐᵒᵖ N] [Module.Projective Aᵐᵒᵖ N] :
+    Module.Projective A (N →ₗ[Aᵐᵒᵖ] A) :=
+  Module.Projective.of_equiv (opDualCodomainEquiv A N).symm
 
 variable {N} {N' : Type*} [AddCommMonoid N'] [Module Aᵐᵒᵖ N']
 
@@ -108,14 +121,7 @@ bijective, with no commutativity hypothesis on the semiring. -/
 theorem opDualEval_bijective [Module.Finite A P] [Module.Projective A P] :
     Function.Bijective (opDualEval A P) := by
   classical
-  obtain ⟨n, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective A P
-  let b : Fin n → P := fun i => f (Pi.single i 1)
-  let φ : Fin n → Module.Dual A P := fun i => (LinearMap.proj i).comp g
-  have hsum (x : P) : ∑ i, φ i x • b i = x := by
-    have h := (Pi.basisFun A (Fin n)).sum_repr (g x)
-    have hf := congrArg f h
-    simpa [b, φ, map_sum, map_smul] using
-      hf.trans (LinearMap.congr_fun hfg x)
+  obtain ⟨n, b, φ, hsum⟩ := exists_sum_dual_smul_eq (R := A) (M := P)
   have hdual (ψ : Module.Dual A P) : ∑ i, MulOpposite.op (ψ (b i)) • φ i = ψ := by
     ext x
     have h := congrArg ψ (hsum x)

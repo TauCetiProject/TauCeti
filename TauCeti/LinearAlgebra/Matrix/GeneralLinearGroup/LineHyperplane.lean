@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.LinearAlgebra.Span.Defs
 public import TauCeti.GroupTheory.AlmostConjugate
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
-import TauCeti.GroupTheory.GroupAction.Stabilizer
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 import TauCeti.LinearAlgebra.Matrix.Eigenvectors
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonzeroVectors
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection

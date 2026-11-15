@@ -134,32 +134,26 @@ theorem generatedPositiveDefiningIdeal_le_of_upperTriangular_le {l : k}
   have hcarrier : p ∈ CommHopfAlgCat.quotientPointsSubgroup _ PrimeField.definingIdeal
       (CommAlgCat.of (ZMod 3) Q) := by
     refine (hmem _).mpr fun y hy ↦ ?_
-    have hy' : eGL.hom.hom y ∈ generatedDefiningIdeal k := by
-      rw [← baseChangeDefiningIdeal_eq_generatedDefiningIdeal, baseChangeDefiningIdeal_def,
+    have h0 : (generatedCoordinateMap k).hom (eGL.hom.hom y) = 0 := by
+      rw [← RingHom.mem_ker, generatedCoordinateMap_ker, HopfIdeal.mem_toIdeal,
+        ← baseChangeDefiningIdeal_eq_generatedDefiningIdeal, baseChangeDefiningIdeal_def,
         HopfIdeal.mem_comapOfSurjective]
       exact (_root_.CommHopfAlgCat.inv_hom_apply eGL y).symm ▸ hy
-    have h0 : (generatedCoordinateMap k).hom (eGL.hom.hom y) = 0 := by
-      rw [← RingHom.mem_ker, generatedCoordinateMap_ker]
-      exact hy'
     simp only [χ, _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply, h0, map_zero]
   -- `p` is upper triangular, since the candidate lies in the upper-triangular subgroup.
   have hupper : p ∈ CommHopfAlgCat.quotientPointsSubgroup _
       (GeneralLinear.UpperTriangular.definingHopfIdeal (ZMod 3) 7)
       (CommAlgCat.of (ZMod 3) Q) := by
-    refine (hmem _).mpr fun y hy ↦ ?_
-    have hy' : eGL.hom.hom y ∈ GeneralLinear.UpperTriangular.definingHopfIdeal k 7 := by
-      rw [← GeneralLinear.UpperTriangular.map_baseChangeHopfIdeal_definingHopfIdeal (ZMod 3) k]
-      exact HopfIdeal.mem_map_of_mem _ hy
-    have hJy := HopfIdeal.mem_comapOfSurjective.mp (hJ hy')
-    simp only [χ, _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
-    exact (CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ _).mpr hJy
+    refine (hmem _).mpr fun y hy ↦ (CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ _).mpr <|
+      HopfIdeal.mem_comapOfSurjective.mp (hJ ?_)
+    rw [← GeneralLinear.UpperTriangular.map_baseChangeHopfIdeal_definingHopfIdeal (ZMod 3) k]
+    exact HopfIdeal.mem_map_of_mem _ hy
   -- Hence `p` is a point of the positive subgroup.
-  have hunit : IsUnit ((algebraMap k Q l) ^ 3 - algebraMap k Q l) := by
-    rw [← map_pow, ← map_sub]
-    exact hl.map _
   have hpos : GeneralLinear.pointsMulEquiv 7 p ∈
       GeneralLinear.hopfIdealPointsSubgroup 7 definingIdeal Q := by
-    rw [← points_inf_upperTriangularGroup_eq hunit, points_eq_hopfIdealPointsSubgroup,
+    rw [← points_inf_upperTriangularGroup_eq (l := algebraMap k Q l)
+      (by simpa only [map_pow, map_sub] using hl.map (algebraMap k Q)),
+      points_eq_hopfIdealPointsSubgroup,
       ← GeneralLinear.UpperTriangular.hopfIdealPointsSubgroup_eq (ZMod 3)]
     exact Subgroup.mem_inf.mpr
       ⟨GeneralLinear.pointsMulEquiv_mem_hopfIdealPointsSubgroup 7 _ Q p hcarrier,
@@ -169,14 +163,12 @@ theorem generatedPositiveDefiningIdeal_le_of_upperTriangular_le {l : k}
   -- Vanishing on the base-changed positive ideal is the reverse containment.
   intro x hx
   obtain ⟨z, rfl⟩ := generatedCoordinateMap_surjective k x
-  have hz : z ∈ (generatedPositiveDefiningIdeal k).comapOfSurjective (generatedCoordinateMap k).hom
-      (generatedCoordinateMap_surjective k) := HopfIdeal.mem_comapOfSurjective.mpr hx
+  have hz := HopfIdeal.mem_comapOfSurjective (hf := generatedCoordinateMap_surjective k) |>.mpr hx
   rw [comapOfSurjective_generatedPositiveDefiningIdeal_eq_ker_standardCoordinateMap,
     HopfIdeal.mem_kerOfSurjective, standardCoordinateMap_def, CommHopfAlgCat.comp_apply,
     ← CommHopfAlgCat.mem_baseChangeHopfIdeal_iff] at hz
-  have hχ := hpos _ hz
-  rw [CommHopfAlgCat.hom_inv_apply] at hχ
-  exact (CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ _).mp hχ
+  exact (CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ _).mp
+    (CommHopfAlgCat.hom_inv_apply eGL z ▸ hpos _ hz)
 
 end Intersection
 

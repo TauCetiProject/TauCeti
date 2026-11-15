@@ -55,6 +55,16 @@ noncrossing consequence of planarity in that one-vertex case. For perfect matchi
 
 * `Function.Involutive.isNoncrossingMatching_iff`: an involution is a noncrossing matching
   exactly when its orbit partition is a noncrossing partition.
+* `Equiv.Perm.IsNoncrossingMatching.apply_mem_Ioo`: the chords of a noncrossing involution are
+  nested.
+* `Equiv.Perm.IsNoncrossingMatching.apply_mem_uIoo_iff`,
+  `Equiv.Perm.isNoncrossingMatching_of_forall_apply_mem_uIoo`: an involution is a noncrossing
+  matching exactly when no chord separates a point from its partner.
+* `Equiv.Perm.IsNoncrossingMatching.of_semiconj`: restricting a noncrossing matching along an
+  order embedding gives a noncrossing matching.
+* `Equiv.Perm.IsNoncrossingMatching.card_filter_lt_apply_modEq`: for a noncrossing perfect
+  matching and a union `s` of its chords, the two ends of a chord outside `s` are preceded by the
+  same number of points of `s`, modulo `2`.
 * `Equiv.Perm.orbitCount_finRotate_mul_add_orbitCount_le`: the boundary-count bound.
 * `TauCeti.orbitCount_finRotate_mul_swap_mul_swap`: two interleaved bands have one boundary
   cycle.
@@ -63,6 +73,9 @@ noncrossing consequence of planarity in that one-vertex case. For perfect matchi
 * `Equiv.Perm.IsNoncrossingMatching.orbitCount_finRotate_mul_add_orbitCount`,
   `Function.Involutive.orbitCount_finRotate_mul_add_orbitCount_eq_iff`: the bound is attained
   exactly by the noncrossing matchings.
+* `Function.Involutive.isNoncrossingMatching_permCongr_finRotate_iff`,
+  `Function.Involutive.isNoncrossingMatching_permCongr_revPerm_iff`: the noncrossing condition
+  is invariant under rotating and reflecting the boundary circle.
 * `TauCeti.IsPerfectMatching.orbitCount_finRotate_mul_le`,
   `TauCeti.IsPerfectMatching.orbitCount_finRotate_mul_eq_iff`: the same for perfect matchings.
 
@@ -101,6 +114,9 @@ theorem isNoncrossingMatching_iff :
     σ.IsNoncrossingMatching ↔ ∀ ⦃a b : α⦄, a < b → b < σ a → ¬ σ a < σ b :=
   Iff.rfl
 
+instance [Fintype α] (σ : Perm α) : Decidable σ.IsNoncrossingMatching :=
+  decidable_of_iff _ isNoncrossingMatching_iff.symm
+
 /-- A matching fails to be noncrossing exactly when two of its chords interleave. -/
 theorem not_isNoncrossingMatching_iff :
     ¬ σ.IsNoncrossingMatching ↔ ∃ a b, a < b ∧ b < σ a ∧ σ a < σ b := by
@@ -122,9 +138,116 @@ theorem IsNoncrossingMatching.of_forall_apply_eq_or (hσ : σ.IsNoncrossingMatch
   · exact lt_asymm hba (hb ▸ hlt)
   exact hσ hab (ha ▸ hba) (ha ▸ hb ▸ hlt)
 
+/-- **Chords are nested.** If the point `b` lies strictly inside the chord `{a, σ a}` of a
+noncrossing involution, with `a < σ a`, then so does its partner `σ b`: a chord starting inside
+another chord ends inside it. -/
+theorem IsNoncrossingMatching.apply_mem_Ioo (hσ : σ.IsNoncrossingMatching)
+    (hinv : Function.Involutive σ) {a b : α} (hab : a < b) (hb : b < σ a) :
+    σ b ∈ Set.Ioo a (σ a) := by
+  refine ⟨?_, (not_lt.mp (hσ hab hb)).lt_of_ne fun h => hab.ne' (σ.injective h)⟩
+  by_contra! h
+  rcases h.lt_or_eq with h | h
+  · -- The chord `{σ b, b}` would interleave `{a, σ a}` from the left.
+    exact hσ h (by rwa [hinv]) (by rwa [hinv])
+  · exact hb.ne (by rw [← h, hinv])
+
+/-- **A chord separates no chord.** For a noncrossing involution `σ`, a point lies strictly
+between the two ends of the chord `{a, σ a}` exactly when its partner does. -/
+theorem IsNoncrossingMatching.apply_mem_uIoo_iff (hσ : σ.IsNoncrossingMatching)
+    (hinv : Function.Involutive σ) (a b : α) :
+    σ b ∈ Set.uIoo a (σ a) ↔ b ∈ Set.uIoo a (σ a) := by
+  -- It suffices that the partner of a point inside a chord is inside it, since `σ (σ b) = b`.
+  suffices h : ∀ a b, b ∈ Set.uIoo a (σ a) → σ b ∈ Set.uIoo a (σ a) from
+    ⟨fun hb => hinv b ▸ h a (σ b) hb, h a b⟩
+  intro a b hb
+  rcases lt_trichotomy a (σ a) with ha | ha | ha
+  · rw [Set.uIoo_of_lt ha] at hb ⊢
+    exact hσ.apply_mem_Ioo hinv hb.1 hb.2
+  · simp [← ha] at hb
+  · -- The chord read from its other end `σ a`, whose partner is `a`.
+    rw [Set.uIoo_of_gt ha] at hb ⊢
+    have h := hσ.apply_mem_Ioo hinv (a := σ a) (b := b) hb.1 (by rw [hinv]; exact hb.2)
+    rwa [hinv] at h
+
+/-- A permutation is a noncrossing matching when the partner of every point strictly between the
+two ends of a chord `{a, σ a}` lies strictly between them too. -/
+theorem isNoncrossingMatching_of_forall_apply_mem_uIoo
+    (h : ∀ a b, b ∈ Set.uIoo a (σ a) → σ b ∈ Set.uIoo a (σ a)) : σ.IsNoncrossingMatching := by
+  intro a b hab hb hlt
+  have hmem := h a b (Set.mem_uIoo_of_lt hab hb)
+  rw [Set.uIoo_of_lt (hab.trans hb)] at hmem
+  exact lt_asymm hmem.2 hlt
+
+/-- **Restriction along an order embedding.** If a strictly monotone map `e` intertwines `τ` with
+a noncrossing matching `σ`, then `τ` is a noncrossing matching: its chords are chords of `σ`,
+relabelled in an order-preserving way. -/
+theorem IsNoncrossingMatching.of_semiconj {β : Type*} [LinearOrder β] {τ : Perm β} {e : β → α}
+    (hσ : σ.IsNoncrossingMatching) (he : StrictMono e) (h : Function.Semiconj e τ σ) :
+    τ.IsNoncrossingMatching := by
+  intro a b hab hb hlt
+  exact hσ (he hab) (h a ▸ he hb) (h a ▸ h b ▸ he hlt)
+
+/-- **Parity across a chord.** Let `σ` be a noncrossing perfect matching and `s` a finite set
+closed under `σ`, that is, a union of chords. A point `a` outside `s` and its partner `σ a` are
+preceded by the same number of points of `s`, modulo `2`: the points of `s` lying between them
+are matched among themselves. -/
+theorem IsNoncrossingMatching.card_filter_lt_apply_modEq (hσ : σ.IsNoncrossingMatching)
+    (hm : IsPerfectMatching σ) {s : Finset α} (hs : ∀ x ∈ s, σ x ∈ s) {a : α} (ha : a ∉ s) :
+    {x ∈ s | x < σ a}.card ≡ {x ∈ s | x < a}.card [MOD 2] := by
+  wlog h : a < σ a generalizing a
+  · have hσa : σ a ∉ s := fun hσa => ha (hm.apply_apply a ▸ hs _ hσa)
+    have h' : σ a < σ (σ a) := by
+      rw [hm.apply_apply]
+      exact (not_lt.mp h).lt_of_ne (hm.apply_ne a)
+    simpa only [hm.apply_apply] using (this hσa h').symm
+  -- The points of `s` before `σ a` and not before `a` lie strictly inside the chord `{a, σ a}`,
+  -- so `σ` matches them among themselves.
+  have hin : ∀ x ∈ {x ∈ s | x < σ a ∧ ¬x < a}, σ x ∈ {x ∈ s | x < σ a ∧ ¬x < a} := by
+    simp only [Finset.mem_filter, not_lt]
+    rintro x ⟨hx, hxa, hax⟩
+    have hax : a < x := hax.lt_of_ne fun h => ha (h ▸ hx)
+    obtain ⟨h₁, h₂⟩ := hσ.apply_mem_Ioo hm.involutive hax hxa
+    exact ⟨hs x hx, h₂, h₁.le⟩
+  obtain ⟨r, hr⟩ := hm.even_card_of_mapsTo hin
+  have hsplit := Finset.card_filter_add_card_filter_not (s := {x ∈ s | x < σ a}) (· < a)
+  simp only [Finset.filter_filter] at hsplit
+  have hlt : {x ∈ s | x < σ a ∧ x < a} = {x ∈ s | x < a} :=
+    Finset.filter_congr fun x _ => and_iff_right_of_imp fun hx => hx.trans h
+  rw [hlt, hr] at hsplit
+  unfold Nat.ModEq
+  omega
+
 end LinearOrder
 
+section Reverse
+
+variable {n : ℕ} {σ : Perm (Fin n)}
+
+/-- Reflecting a noncrossing involution of `Fin n` in the order reversal `Fin.rev`, so that the
+chord `{a, σ a}` becomes `{rev a, rev (σ a)}`, gives a noncrossing involution. -/
+theorem IsNoncrossingMatching.permCongr_revPerm (hσ : σ.IsNoncrossingMatching)
+    (hinv : Function.Involutive σ) : (Fin.revPerm.permCongr σ).IsNoncrossingMatching := by
+  intro a b hab hb hlt
+  simp only [permCongr_apply, Fin.revPerm_symm, Fin.revPerm_apply] at hb hlt
+  -- Reversal turns `a < b < σ' a < σ' b` into `x < y < σ x < σ y` for the partners
+  -- `x = σ (rev b)` and `y = σ (rev a)`.
+  refine hσ (b := σ (Fin.rev a)) (Fin.rev_lt_rev.mp hlt) ?_ ?_
+  · rwa [hinv, ← Fin.lt_rev_iff]
+  · rwa [hinv, hinv, Fin.rev_lt_rev]
+
+end Reverse
+
 end Equiv.Perm
+
+/-- **Noninterleaving is invariant under reflection.** An involution of `Fin n` is noncrossing
+exactly when its reflection in the order reversal `Fin.rev` is. -/
+theorem Function.Involutive.isNoncrossingMatching_permCongr_revPerm_iff {n : ℕ}
+    {σ : Perm (Fin n)} (hinv : Function.Involutive σ) :
+    (Fin.revPerm.permCongr σ).IsNoncrossingMatching ↔ σ.IsNoncrossingMatching := by
+  refine ⟨fun h => ?_, fun h => h.permCongr_revPerm hinv⟩
+  have hinv' : Function.Involutive (Fin.revPerm.permCongr σ) := fun x => by simp [hinv _]
+  have hσ : Fin.revPerm.permCongr (Fin.revPerm.permCongr σ) = σ := Equiv.ext fun x => by simp
+  exact hσ ▸ h.permCongr_revPerm hinv'
 
 /-- An involution of a finite linear order is a noncrossing matching exactly when the partition
 into its orbits, the pairs `{a, σ a}` and the fixed points, is a noncrossing partition. Any
@@ -132,9 +255,7 @@ decidability instance for the orbit relation may be used, for instance a classic
 theorem Function.Involutive.isNoncrossingMatching_iff {α : Type*} [Fintype α] [LinearOrder α]
     {σ : Perm α} [DecidableRel (Perm.SameCycle.setoid σ)] (hinv : Function.Involutive σ) :
     σ.IsNoncrossingMatching ↔ (Finpartition.ofSetoid (Perm.SameCycle.setoid σ)).IsNoncrossing := by
-  have hsc : ∀ a b, σ.SameCycle a b ↔ a = b ∨ a = σ b := fun a b => by
-    simpa [show hinv.toPerm σ = σ from Equiv.ext fun _ => rfl] using
-      sameCycle_toPerm_iff σ hinv a b
+  have hsc := hinv.sameCycle_iff
   simp only [Finpartition.isNoncrossing_iff_part, Finset.mem_univ, true_implies,
     Finpartition.mem_part_ofSetoid_iff_rel]
   refine ⟨fun hσ a b c hac d hbd hab hbc hcd => ?_, fun hP a b hab hba hlt => ?_⟩
@@ -182,7 +303,6 @@ chord diagram with the two bands `{a, c}` and `{b, d}` has a single boundary cyc
 theorem orbitCount_finRotate_mul_swap_mul_swap {a b c d : Fin n} (hab : a < b) (hbc : b < c)
     (hcd : c < d) : orbitCount (finRotate n * swap a c * swap b d) = 1 := by
   rw [Fin.lt_def] at hab hbc hcd
-  have hd := d.isLt
   have hn : n ≠ 0 := by omega
   -- The band `{a, c}` cuts the boundary circle in two cycles.
   have hac : (finRotate n).SameCycle a c := by
@@ -308,7 +428,7 @@ theorem IsNoncrossingMatching.orbitCount_finRotate_mul_add_orbitCount [NeZero n]
     simp [orbitCount_finRotate, NeZero.ne n, add_comm]
   -- Delete an innermost chord `{a, σ a}`; it joins two points of one boundary cycle.
   obtain ⟨a, ha, hin⟩ := hσ.exists_forall_apply_eq_self hinv h1
-  set τ := swap a (σ a) * σ with hτ
+  set τ := swap a (σ a) * σ
   have hτσ : ∀ x, τ x = x ∨ τ x = σ x := fun x => by
     rcases hinv.swap_mul_apply_eq_self_or a x with ⟨-, hx⟩ | ⟨-, -, hx⟩
     exacts [Or.inl hx, Or.inr hx]
@@ -340,6 +460,25 @@ theorem Function.Involutive.orbitCount_finRotate_mul_add_orbitCount_eq_iff {n : 
   obtain ⟨a, b, hab, hb, hlt⟩ := Perm.not_isNoncrossingMatching_iff.mp hσ
   have := orbitCount_finRotate_mul_add_orbitCount_add_two_le hab hb hlt
   omega
+
+/-- **Noninterleaving is a cyclic condition.** An involution of `Fin n` is noncrossing exactly
+when its rotation by one step around the boundary circle is, the chord `{a, σ a}` becoming
+`{finRotate n a, finRotate n (σ a)}`. So the noncrossing condition depends only on the cyclic order
+of the boundary points, not on where the circle is cut open. -/
+theorem Function.Involutive.isNoncrossingMatching_permCongr_finRotate_iff {n : ℕ}
+    {σ : Perm (Fin n)} (hinv : Function.Involutive σ) :
+    ((finRotate n).permCongr σ).IsNoncrossingMatching ↔ σ.IsNoncrossingMatching := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp [Subsingleton.elim σ 1]
+  have : NeZero n := ⟨hn.ne'⟩
+  have hinv' : Function.Involutive ((finRotate n).permCongr σ) := fun x => by simp [hinv _]
+  -- Both sides are the boundary-count criterion, and rotating the matching conjugates the
+  -- boundary traversal `finRotate n * σ` by `finRotate n`.
+  rw [← hinv.orbitCount_finRotate_mul_add_orbitCount_eq_iff,
+    ← hinv'.orbitCount_finRotate_mul_add_orbitCount_eq_iff, Equiv.permCongr_eq_mul,
+    show finRotate n * (finRotate n * σ * (finRotate n)⁻¹) =
+      finRotate n * (finRotate n * σ) * (finRotate n)⁻¹ by simp only [mul_assoc],
+    orbitCount_conj, orbitCount_conj]
 
 namespace TauCeti.IsPerfectMatching
 

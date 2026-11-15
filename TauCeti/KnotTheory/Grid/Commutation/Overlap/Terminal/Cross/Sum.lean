@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Counted
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Weight
+import TauCeti.Algebra.BigOperators.Finset.SDiff
 
 /-!
 # Removing terminal-side cross-overlap contributions from the pentagon chain-map equation
@@ -128,14 +129,11 @@ private theorem terminalCrossOverlapPartner_injective :
   have hD := G.terminalCrossOverlapPartner_isRecut C D
   have hE := G.terminalCrossOverlapPartner_isRecut C E
   rw [← h] at hE
-  have honeD := (G.terminalCrossOverlapSource_data C D.val D.property).2.1
-  have honeE := (G.terminalCrossOverlapSource_data C E.val E.property).2.1
   obtain ⟨hfD, hsD⟩ := G.terminalCrossOverlapSource_underlying_isEmpty C D.val D.property
   obtain ⟨hfE, hsE⟩ := G.terminalCrossOverlapSource_underlying_isEmpty C E.val E.property
-  have hbackD := hD.symm honeD hfD hsD
-  have hbackE := hE.symm honeE hfE hsE
+  have hbackD := hD.symm hfD hsD
+  have hbackE := hE.symm hfE hsE
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridRectanglePentagonDecomposition.toRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone
@@ -222,14 +220,9 @@ theorem sum_rectanglePentagonWeight_eq_sum_pentagonRectangleWeight_iff_sdiff_ter
         ∑ E ∈ G.pentagonRectangleDecompositions C x z \ G.terminalCrossOverlapPartners C x z,
           G.pentagonRectangleWeight C R E := by
   classical
-  rw [← Finset.sum_sdiff
-      (G.terminalCrossOverlapSources_subset_rectanglePentagonDecompositions C (x := x) (z := z))
-      (f := G.rectanglePentagonWeight C R),
-    ← Finset.sum_sdiff
-      (G.terminalCrossOverlapPartners_subset_pentagonRectangleDecompositions C (x := x) (z := z))
-      (f := G.pentagonRectangleWeight C R),
-    G.sum_rectanglePentagonWeight_terminalCrossOverlapSources_eq_sum_partners
-      C R x z]
-  exact add_right_cancel_iff
+  exact Finset.sum_eq_sum_iff_sdiff
+    (G.terminalCrossOverlapSources_subset_rectanglePentagonDecompositions C (x := x) (z := z))
+    (G.terminalCrossOverlapPartners_subset_pentagonRectangleDecompositions C (x := x) (z := z))
+    (G.sum_rectanglePentagonWeight_terminalCrossOverlapSources_eq_sum_partners C R x z)
 
 end TauCeti.GridDiagram

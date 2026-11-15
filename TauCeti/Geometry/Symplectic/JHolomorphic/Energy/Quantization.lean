@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
-import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.RCLike.OperatorNorm
 import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
@@ -92,7 +92,7 @@ theorem exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne
         (fun y _ ↦ hCR y) (fun y _ ↦ huK (mem_range_self y)) (hball.trans_lt hE)).trans
         (by gcongr)
     by_contra! hx
-    have hx2 : 0 < ‖fderiv ℝ u x 1‖ ^ 2 := by positivity
+    have _ : 0 < ‖fderiv ℝ u x 1‖ ^ 2 := by positivity
     -- Take `r` with `π r² ‖∂ₛu(x)‖² = 8 E + 1`.
     set r := √((8 * E + 1) / (Real.pi * ‖fderiv ℝ u x 1‖ ^ 2))
     have hr : 0 < r := Real.sqrt_pos.mpr (by positivity)
@@ -156,17 +156,9 @@ theorem exists_pos_forall_eventually_le_setIntegral_norm_fderiv_one_sq_ball
     nlinarith
   have hreal : ‖fderiv ℝ (u i) (z i) 1‖ ≤ B := by
     nlinarith [sq_nonneg (‖fderiv ℝ (u i) (z i) 1‖ - 1)]
-  have himag : ‖fderiv ℝ (u i) (z i) I‖ ≤ max a 0 * B := by
-    rw [hCR i (z i) hzr]
-    exact ((J (u i (z i))).le_opNorm _).trans
-      (by gcongr; exact (ha _ (huK i hzr)).trans (le_max_left _ _))
-  have hop : ‖fderiv ℝ (u i) (z i)‖ ≤ (1 + max a 0) * B := by
-    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
-    calc ‖fderiv ℝ (u i) (z i) v‖
-        ≤ (‖fderiv ℝ (u i) (z i) 1‖ + ‖fderiv ℝ (u i) (z i) I‖) * ‖v‖ :=
-          (fderiv ℝ (u i) (z i)).norm_apply_le_norm_one_add_norm_I v
-      _ ≤ (B + max a 0 * B) * ‖v‖ := by gcongr
-      _ = (1 + max a 0) * B * ‖v‖ := by ring
+  have hop : ‖fderiv ℝ (u i) (z i)‖ ≤ (1 + max a 0) * B :=
+    (fderiv ℝ (u i) (z i)).norm_le_of_apply_I_eq (hCR i (z i) hzr)
+      ((ha _ (huK i hzr)).trans (le_max_left _ _)) hreal
   linarith
 
 end TauCeti

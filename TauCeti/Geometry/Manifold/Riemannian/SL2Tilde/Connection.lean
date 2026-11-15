@@ -141,7 +141,7 @@ All vectors are read in the existing global chart, without choosing an orthonorm
       (mdifferentiableAt_constantField w p)
     rw [TauCeti.Manifold.koszul_apply] at h
     have hb (b c : P) : mlieBracket J (constantField b) (constantField c) p = 0 :=
-      TauCeti.mlieBracket_const_model_space b c (toProd p)
+      mlieBracket_const_model_space b c (toProd p)
     simp only [hb, inner_zero_left, mvfderiv_inner_constantField] at h
     simp only [inner_def, constantField, ContinuousLinearEquiv.apply_symm_apply] at h ⊢
     dsimp only [a]

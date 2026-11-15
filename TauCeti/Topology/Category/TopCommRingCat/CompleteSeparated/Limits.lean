@@ -74,16 +74,11 @@ instance : (isCompleteSeparated.{u}).IsClosedUnderLimitsOfShape WalkingParallelP
           {x | f.val x = g.val x} := Set.ext fun _ ↦ RingHom.mem_eqLocus
       rw [hset]
       exact isClosed_eq f.2 g.2
-    -- `equalizerFork` is `Fork.ofι` on `(RingHom.eqLocus f.val g.val).subtype`, so the
-    -- underlying function of its `ι` is `Subtype.val`. Name that reduction here rather than
-    -- letting the definitional equality carry the closed embedding silently.
-    have hι : ⇑((equalizerFork f g).ι) =
-        ((↑) : ↥(RingHom.eqLocus f.val g.val) → F.obj .zero) := rfl
     exact ObjectProperty.prop_of_iso _
       (IsLimit.conePointsIsoOfNatIso (equalizerForkIsLimit f g) (limit.isLimit F)
         (diagramIsoParallelPair F).symm)
       ((isCompleteSeparated_iff _).mpr (IsCompleteSeparated.of_isClosedEmbedding
-        (equalizerFork f g).ι (hι ▸ hcl.isClosedEmbedding_subtypeVal)
+        (equalizerFork f g).ι (coe_equalizerFork_ι f g ▸ hcl.isClosedEmbedding_subtypeVal)
         ((isCompleteSeparated_iff _).mp (hF .zero)))))
 
 end TauCeti.TopCommRingCat

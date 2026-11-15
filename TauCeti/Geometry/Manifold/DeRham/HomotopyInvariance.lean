@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DeRham.Map
+public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import Mathlib.Geometry.Manifold.Instances.Real
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Geometry.Manifold.DifferentialForm.HomotopyOperator
@@ -26,12 +26,22 @@ form `φ` on `M × [0, 1]`, `ι₁^* φ - ι₀^* φ = d (h φ)` (`TauCeti.mextD
 and `h φ` is again smooth. In degree zero a closed form is a locally constant function, which is
 constant along each segment `{x} × [0, 1]`.
 
+On a compact manifold compactly supported and ordinary de Rham cohomology agree
+(`TauCeti.compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective`), so smoothly homotopic
+maps out of a compact manifold also induce the same map on compactly supported cohomology
+(`TauCeti.compactlySupportedDeRhamCohomology.map_eq_of_homotopy`). This is what makes the mapping
+degree a homotopy invariant.
+
 ## Main declarations
 
 * `TauCeti.deRhamCohomology.map_prodMk_left_zero_eq_map_prodMk_left_one`: the slice inclusions
   `x ↦ (x, 0)` and `x ↦ (x, 1)` of `M` into `M × [0, 1]` induce the same map on cohomology.
 * `TauCeti.deRhamCohomology.map_eq_of_homotopy`: smoothly homotopic maps induce the same map on
   de Rham cohomology.
+* `TauCeti.deRhamCohomology.equivOfHomotopy`: a smooth homotopy equivalence induces a linear
+  equivalence on de Rham cohomology.
+* `TauCeti.compactlySupportedDeRhamCohomology.map_eq_of_homotopy`: smoothly homotopic maps out of
+  a compact manifold induce the same map on compactly supported de Rham cohomology.
 
 ## References
 
@@ -49,15 +59,19 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-namespace deRhamCohomology
-
 variable {E H E' H' : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {I : ModelWithCorners ℝ E H} {I' : ModelWithCorners ℝ E' H'}
   {M M' : Type*}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 2 M']
+  [TopologicalSpace M'] [ChartedSpace H' M']
+
+namespace deRhamCohomology
+
+section Homotopy
+
+variable [IsManifold I' 2 M']
 
 /-- The slice inclusions `x ↦ (x, 0)` and `x ↦ (x, 1)` of a smooth manifold `M`, possibly with
 boundary or corners, into the cylinder `M × [0, 1]` induce the same map on de Rham cohomology. -/
@@ -87,7 +101,7 @@ theorem map_prodMk_left_zero_eq_map_prodMk_left_one (k : ℕ) :
     have : IsManifold I ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
     rw [eq_comm, ← sub_eq_zero, ← map_sub, mk_eq_zero_iff, exactForms_succ]
     refine ⟨⟨homotopyOperator φ.1.1,
-      (IsSmoothForm.homotopyOperator φ.1.isSmoothForm).mem_smoothForms⟩, ?_⟩
+      (IsSmoothForm.homotopyOperator φ.1.isSmoothForm).mem_smoothBundleForms⟩, ?_⟩
     refine Subtype.ext (funext fun x ↦ ?_)
     rw [mextDerivₗ_apply, mextDeriv_homotopyOperator (φ.1.isSmoothForm.of_le (by simp))
       ((mem_closedForms _ φ.1).mp φ.2)]
@@ -106,6 +120,58 @@ theorem map_eq_of_homotopy {f g : M → M'} (hf : ContMDiff I I' ∞ f) (hg : Co
     map_comp (fun x ↦ (x, 1)) F (contMDiff_id.prodMk contMDiff_const) hF,
     map_prodMk_left_zero_eq_map_prodMk_left_one]
 
+end Homotopy
+
+section HomotopyEquivalence
+
+variable [IsManifold I' ∞ M'] {f : M → M'} {g : M' → M} (hf : ContMDiff I I' ∞ f)
+  (hg : ContMDiff I' I ∞ g) {F : M × Icc (0 : ℝ) 1 → M} (hF : ContMDiff (I.prod (𝓡∂ 1)) I ∞ F)
+  (hF₀ : ∀ x, F (x, 0) = g (f x)) (hF₁ : ∀ x, F (x, 1) = x)
+  {G : M' × Icc (0 : ℝ) 1 → M'} (hG : ContMDiff (I'.prod (𝓡∂ 1)) I' ∞ G)
+  (hG₀ : ∀ y, G (y, 0) = f (g y)) (hG₁ : ∀ y, G (y, 1) = y)
+
+include hF hF₀ hF₁ hG hG₀ hG₁ in
+/-- **Smooth homotopy equivalences induce isomorphisms on de Rham cohomology.** Let
+`f : M → M'` and `g : M' → M` be smooth maps such that `F` is a smooth homotopy from `g ∘ f` to
+the identity of `M` and `G` is a smooth homotopy from `f ∘ g` to the identity of `M'`. Then
+pullback along `f` is a linear equivalence `H^k(M') ≃ H^k(M)`, with inverse pullback along `g`.
+Either manifold may have boundary or corners. -/
+def equivOfHomotopy (k : ℕ) : deRhamCohomology I' M' k ≃ₗ[ℝ] deRhamCohomology I M k :=
+  LinearEquiv.ofLinearMap (map f hf k) (map g hg k)
+    (by rw [← map_comp, map_eq_of_homotopy (hg.comp hf) contMDiff_id hF hF₀ hF₁, map_id])
+    (by rw [← map_comp, map_eq_of_homotopy (hf.comp hg) contMDiff_id hG hG₀ hG₁, map_id])
+
+@[simp]
+theorem equivOfHomotopy_apply (k : ℕ) (c : deRhamCohomology I' M' k) :
+    equivOfHomotopy hf hg hF hF₀ hF₁ hG hG₀ hG₁ k c = map f hf k c :=
+  (rfl)
+
+@[simp]
+theorem equivOfHomotopy_symm_apply (k : ℕ) (c : deRhamCohomology I M k) :
+    (equivOfHomotopy hf hg hF hF₀ hF₁ hG hG₀ hG₁ k).symm c = map g hg k c :=
+  (rfl)
+
+end HomotopyEquivalence
+
 end deRhamCohomology
+
+namespace compactlySupportedDeRhamCohomology
+
+variable [IsManifold I' 2 M'] [CompactSpace M]
+
+/-- **Homotopy invariance of compactly supported de Rham cohomology** for a compact source. If
+`F : M × [0, 1] → M'` is a smooth homotopy from `f` to `g`, and `M` is compact, then the proper maps
+`f` and `g` induce the same map on compactly supported de Rham cohomology. The source `M` may have
+boundary or corners. -/
+theorem map_eq_of_homotopy {f g : M → M'} (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g)
+    (hfp : IsProperMap f) (hgp : IsProperMap g) {F : M × Icc (0 : ℝ) 1 → M'}
+    (hF : ContMDiff (I.prod (𝓡∂ 1)) I' ∞ F) (h₀ : ∀ x, F (x, 0) = f x)
+    (h₁ : ∀ x, F (x, 1) = g x) (k : ℕ) :
+    map f hf hfp k = map g hg hgp k :=
+  LinearMap.ext fun c ↦ (toDeRhamCohomology_bijective I k).injective <| by
+    rw [toDeRhamCohomology_map, toDeRhamCohomology_map,
+      deRhamCohomology.map_eq_of_homotopy hf hg hF h₀ h₁]
+
+end compactlySupportedDeRhamCohomology
 
 end TauCeti

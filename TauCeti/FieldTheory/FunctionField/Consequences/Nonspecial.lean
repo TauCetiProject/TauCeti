@@ -72,7 +72,7 @@ private theorem exists_degree_eq_dim_sub_add_eq (hF : IsFunctionField k F)
           isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one.mp hex]
         omega)
     have hP0 : 0 ≤ (WeilDivisor.ofPoint P : Divisor k F) :=
-      WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P)
+      WeilDivisor.ofPoint_nonneg P
     have hle := dim_le_dim_add_degree_sub hF (sub_le_self (W - B) hP0)
     simp only [degree_sub, degree_ofPoint, hT P hPT] at hle
     refine ⟨B + WeilDivisor.ofPoint P, add_nonneg hB0 hP0, ?_, ?_, ?_⟩

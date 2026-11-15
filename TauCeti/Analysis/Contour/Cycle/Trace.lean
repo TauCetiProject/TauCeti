@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Cycle.Basic
-import TauCeti.Analysis.Contour.AbsolutelyContinuous
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Trace
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 

@@ -29,7 +29,7 @@ lower bound. This file proves the second step for arbitrary functions, so that e
 
 The growth condition on `f₀` is the one-sided bound `f₀(σ) = O((σ - 1)⁻¹)` as real `σ → 1⁺`.
 It follows from a limit of `(σ - 1) f₀(σ)` as `σ → 1⁺`, which is how such a bound is usually
-available for a Dedekind zeta function; `TauCeti.isBigO_inv_sub_one_of_tendsto_sub_one_mul`
+available for a Dedekind zeta function; `Asymptotics.isBigO_inv_sub_of_tendsto_sub_smul`
 records that implication.
 
 ## Main results
@@ -60,8 +60,8 @@ Suppose that, as `σ → 1⁺` through real values,
 * `1 ≤ ‖f₀(σ) ^ 3 * f₁(σ + it) ^ 4 * f₂(σ + 2it)‖` eventually;
 * `f₀(σ) = O((σ - 1)⁻¹)`;
 
-and that `f₁` is complex differentiable at `1 + it` and `f₂` is continuous at `1 + 2it`. Then
-`f₁ (1 + it) ≠ 0`.
+and that `f₁` is differentiable over `ℝ` at `1 + it` (as any complex differentiable function is)
+and `f₂` is continuous at `1 + 2it`. Then `f₁ (1 + it) ≠ 0`.
 
 The bound is the one an Euler product and `3 + 4 cos θ + cos 2θ ≥ 0` give when `f₀`, `f₁`, `f₂` are
 the series of the trivial character, of a character `χ`, and of `χ²`; the analytic hypotheses are
@@ -70,28 +70,24 @@ theorem ne_zero_of_threeFourOne {f₀ f₁ f₂ : ℂ → ℂ} {t : ℝ}
     (hbound : ∀ᶠ σ : ℝ in 𝓝[>] 1,
       1 ≤ ‖f₀ σ ^ 3 * f₁ (σ + I * t) ^ 4 * f₂ (σ + 2 * I * t)‖)
     (h₀ : (fun σ : ℝ ↦ f₀ σ) =O[𝓝[>] 1] fun σ : ℝ ↦ (σ - 1)⁻¹)
-    (h₁ : DifferentiableAt ℂ f₁ (1 + I * t)) (h₂ : ContinuousAt f₂ (1 + 2 * I * t)) :
+    (h₁ : DifferentiableAt ℝ f₁ (1 + I * t)) (h₂ : ContinuousAt f₂ (1 + 2 * I * t)) :
     f₁ (1 + I * t) ≠ 0 := by
   intro hz
   -- The horizontal line `σ ↦ σ + c` through `c + 1` tends to `c + 1` as `σ → 1⁺`.
-  have hline (c : ℂ) : Tendsto (fun σ : ℝ ↦ (σ : ℂ) + c) (𝓝[>] 1) (𝓝 (1 + c)) := by
-    refine tendsto_nhdsWithin_of_tendsto_nhds ?_
-    exact (continuous_ofReal.add continuous_const).tendsto' (1 : ℝ) (1 + c) (by simp)
+  have hline (c : ℂ) : Tendsto (fun σ : ℝ ↦ (σ : ℂ) + c) (𝓝[>] 1) (𝓝 (1 + c)) :=
+    tendsto_nhdsWithin_of_tendsto_nhds <| by simpa using (continuous_ofReal.add_const c).tendsto 1
   -- Since `f₁` vanishes at `1 + it`, it is `O(σ - 1)` along the horizontal line.
   have H₁ : (fun σ : ℝ ↦ f₁ (σ + I * t)) =O[𝓝[>] 1] fun σ : ℝ ↦ σ - 1 := by
     have := h₁.isBigO_sub.comp_tendsto (hline (I * t))
     simp only [Function.comp_def, hz, sub_zero, add_sub_add_right_eq_sub] at this
-    exact this.trans (isBigO_of_le _ fun σ ↦ by rw [← ofReal_one, ← ofReal_sub, norm_real])
-  have H₂ : (fun σ : ℝ ↦ f₂ (σ + 2 * I * t)) =O[𝓝[>] 1] fun _ : ℝ ↦ (1 : ℝ) := by
-    have := h₂.tendsto.comp (hline (2 * I * t))
-    simp only [Function.comp_def] at this
-    exact this.isBigO_one ℝ
+    exact this.trans (isBigO_of_le _ fun σ ↦ by simp [← ofReal_one, ← ofReal_sub])
+  have H₂ : (fun σ : ℝ ↦ f₂ (σ + 2 * I * t)) =O[𝓝[>] 1] fun _ : ℝ ↦ (1 : ℝ) :=
+    (h₂.tendsto.comp (hline (2 * I * t))).isBigO_one ℝ
   -- Hence the product is `O((σ - 1)⁻³ (σ - 1)⁴) = O(σ - 1)`, which tends to `0`.
   have H : (fun σ : ℝ ↦ f₀ σ ^ 3 * f₁ (σ + I * t) ^ 4 * f₂ (σ + 2 * I * t)) =o[𝓝[>] 1]
       fun _ : ℝ ↦ (1 : ℝ) := by
     have hlin : (fun σ : ℝ ↦ σ - 1) =o[𝓝[>] 1] fun _ : ℝ ↦ (1 : ℝ) :=
-      (isLittleO_one_iff ℝ).mpr <| tendsto_nhdsWithin_of_tendsto_nhds <|
-        (continuous_id.sub continuous_const).tendsto' (1 : ℝ) 0 (sub_self 1)
+      (isLittleO_one_iff ℝ).mpr <| tendsto_sub_nhds_zero_iff.mpr nhdsWithin_le_nhds
     refine (((h₀.pow 3).mul (H₁.pow 4)).mul H₂).trans_isLittleO (hlin.congr' ?_ .rfl)
     filter_upwards [self_mem_nhdsWithin] with σ (hσ : 1 < σ)
     have : σ - 1 ≠ 0 := sub_ne_zero.mpr hσ.ne'

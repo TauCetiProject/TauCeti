@@ -45,7 +45,7 @@ theorem tsum_hilbertSchmidtEnergy_comp_left (T : E →L[𝕜] F) (b : HilbertBas
     (P : κ → F →L[𝕜] G) (hP : ∀ v, ∑' j, ‖P j v‖ₑ ^ 2 = ‖v‖ₑ ^ 2) :
     ∑' j, ((P j) ∘L T).hilbertSchmidtEnergy b = T.hilbertSchmidtEnergy b := by
   simp only [hilbertSchmidtEnergy_def, comp_apply]
-  rw [ENNReal.tsum_comm]
+  rw [_root_.tsum_comm]
   simp only [hP]
 
 /-- Splitting the target into a projected subspace and its orthogonal complement splits
@@ -55,7 +55,7 @@ theorem hilbertSchmidtEnergy_starProjection_comp_add_orthogonal (T : E →L[𝕜
     (V.starProjection ∘L T).hilbertSchmidtEnergy b +
       (Vᗮ.starProjection ∘L T).hilbertSchmidtEnergy b = T.hilbertSchmidtEnergy b := by
   rw [hilbertSchmidtEnergy_def, hilbertSchmidtEnergy_def, hilbertSchmidtEnergy_def,
-    ← ENNReal.tsum_add]
+    ← _root_.tsum_add]
   refine tsum_congr fun i ↦ ?_
   simp only [comp_apply, ← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _),
     ← ENNReal.ofReal_add (sq_nonneg _) (sq_nonneg _),

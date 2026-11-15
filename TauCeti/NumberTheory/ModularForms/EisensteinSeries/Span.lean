@@ -29,6 +29,8 @@ integer pairs by their gcd and primitive residue class.
 ## Main results
 
 * `weightedEisensteinSeriesMF_eq_sum_eisensteinSeriesMF`: the finite primitive decomposition.
+* `restrict_charEisensteinSeriesMFRaise`: restricted to `Γ(N)`, a raised character Eisenstein
+  series is the weighted series of `raisedCharWeight`.
 * `charEisensteinSeriesMFRaise_mem_congruenceEisensteinSubspace`: the raised character inclusion.
 * `TauCeti.disjoint_eisensteinSubspace_range_cuspToModFormCharSpace`: directness of the character
   Eisenstein span and the cusp-form image in weight at least three.
@@ -86,10 +88,21 @@ theorem weightedEisensteinSeriesMF_mem_primitiveEisensteinSubspace (hk : 3 ≤ k
 
 variable {u v t : ℕ} (ψ : DirichletCharacter ℂ u) (φ : DirichletCharacter ℂ v)
 
-private def raisedCharWeight (N t : ℕ) (ψ : DirichletCharacter ℂ u)
+/-- The weight of the raised Eisenstein series with characters `ψ` modulo `u` and `φ` modulo `v`
+and raising parameter `t`, as a function of a residue pair modulo `N`: for the least nonnegative
+representatives `(m, n)`, it is `ψ(m / (t v)) φ⁻¹(n)` when `t v ∣ m`, and `0` otherwise. Restricted
+to `Γ(N)`, the raised series is the weighted Eisenstein series of this weight
+(`restrict_charEisensteinSeriesMFRaise`). -/
+def raisedCharWeight (N t : ℕ) (ψ : DirichletCharacter ℂ u)
     (φ : DirichletCharacter ℂ v) (a : Fin 2 → ZMod N) : ℂ :=
   if t * v ∣ (a 0).val then
     ψ (((a 0).val / (t * v) : ℕ) : ZMod u) * φ⁻¹ ((a 1).val : ZMod v) else 0
+
+/-- The defining expression for the weight of the raised character Eisenstein series. -/
+theorem raisedCharWeight_def (N t : ℕ) (a : Fin 2 → ZMod N) :
+    raisedCharWeight N t ψ φ a = if t * v ∣ (a 0).val then
+      ψ (((a 0).val / (t * v) : ℕ) : ZMod u) * φ⁻¹ ((a 1).val : ZMod v) else 0 :=
+  (rfl)
 
 private lemma raisedCharWeight_intCast (htuv : t * (u * v) ∣ N) (x : Fin 2 → ℤ) :
     raisedCharWeight N t ψ φ ((↑) ∘ x) =
@@ -107,10 +120,13 @@ private lemma raisedCharWeight_intCast (htuv : t * (u * v) ∣ N) (x : Fin 2 →
   rw [h1]
   simp only [hdvd]
   split_ifs with h
-  · rw [ZMod.natCast_val_div_eq_intCast_div hud h]
+  · rw [ZMod.natCast_val_div_eq_intCast_div hud _]
   · rfl
 
-private lemma charEisensteinSeriesMFRaise_eq_weighted (hk : 3 ≤ k)
+/-- **The raised character Eisenstein series as a weighted series.** Restricted to `Γ(N)`, the
+raised series `G_k^{ψ,φ}(t z)` is the Eisenstein series weighted by `raisedCharWeight N t ψ φ`:
+the substitution `z ↦ t z` multiplies the first coordinate of each lattice point by `t`. -/
+theorem restrict_charEisensteinSeriesMFRaise (hk : 3 ≤ k)
     (htuv : t * (u * v) ∣ N) :
     ModularForm.restrict (Subgroup.map_mono (Gamma_le_Gamma1 N))
       (charEisensteinSeriesMFRaise ψ φ t hk htuv) =
@@ -168,7 +184,7 @@ theorem charEisensteinSeriesMFRaise_mem_congruenceEisensteinSubspace (hk : 3 ≤
     charEisensteinSeriesMFRaise ψ φ t hk htuv ∈
       congruenceEisensteinSubspace (Gamma_le_Gamma1 N) hk := by
   rw [mem_congruenceEisensteinSubspace_iff,
-    charEisensteinSeriesMFRaise_eq_weighted ψ φ hk htuv]
+    restrict_charEisensteinSeriesMFRaise ψ φ hk htuv]
   exact weightedEisensteinSeriesMF_mem_primitiveEisensteinSubspace _ hk
 
 /-- Every normalized raised character Eisenstein series belongs to the congruence Eisenstein

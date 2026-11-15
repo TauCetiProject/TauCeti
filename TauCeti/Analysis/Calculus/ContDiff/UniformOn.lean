@@ -40,6 +40,8 @@ once.
 * `TauCeti.UniformContDiffOn.neg`: negation preserves the predicate.
 * `TauCeti.uniformContDiffOn_succ_iff_fderiv_of_isOpen`: on an open set, the derivative family is
   `fderiv`.
+* `ContDiffAt.exists_uniformContDiffOn_closedBall`: a function that is `C^n` at a point is
+  uniformly `C^n` on a small closed ball about it.
 * `ContDiffOn.uniformContDiffOn`: a function that is `C^n` on an open set is uniformly `C^n` on
   every compact subset.
 -/
@@ -302,5 +304,14 @@ theorem _root_.ContDiffOn.uniformContDiffOn {t : Set X} (ht : IsOpen t) (hst : s
   | succ n =>
     exact uniformContDiffOn_of_contDiffOn_step ht hst hs hG
       (uniformContDiffOn_of_contDiffOn_aux.{u, v, w} ht hst hs (hG.fderiv_of_isOpen ht (by simp)))
+
+/-- **A function that is `C^n` at a point is uniformly `C^n` on a small closed ball.** It is `C^n`
+on a neighborhood of the point, and a closed ball in a proper space is compact. -/
+theorem _root_.ContDiffAt.exists_uniformContDiffOn_closedBall [ProperSpace X] {n : ℕ} {y : X}
+    (hG : ContDiffAt 𝕜 n G y) : ∃ r > 0, UniformContDiffOn 𝕜 n G (Metric.closedBall y r) := by
+  obtain ⟨r₀, hr₀, hball⟩ := Metric.eventually_nhds_iff_ball.1 (hG.eventually (by simp))
+  exact ⟨r₀ / 2, half_pos hr₀, ContDiffOn.uniformContDiffOn Metric.isOpen_ball
+    (Metric.closedBall_subset_ball (half_lt_self hr₀)) (isCompact_closedBall _ _)
+    fun z hz ↦ (hball z hz).contDiffWithinAt⟩
 
 end TauCeti

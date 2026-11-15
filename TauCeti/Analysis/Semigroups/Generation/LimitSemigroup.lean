@@ -79,6 +79,8 @@ identified with `A` — the Lumer--Phillips generation theorem — in
 
 public section
 
+open _root_.LinearPMap (yosidaApproximation)
+
 noncomputable section
 
 open scoped NNReal Topology
@@ -127,12 +129,6 @@ theorem yosidaLimit_zero (A : X →ₗ.[ℝ] X) (x : X) : yosidaLimit A 0 x = x 
   simp only [yosidaLimit, hconst]
   exact tendsto_const_nhds.limUnder_eq
 
-/-- Splitting the exponential of a sum of commuting times: `exp ((s + t) B) = exp (s B) exp (t B)`
-pointwise, for a bounded operator `B`. -/
-private theorem exp_add_smul_apply (B : X →L[ℝ] X) (s t : ℝ) (x : X) :
-    exp ((s + t) • B) x = exp (s • B) (exp (t • B) x) := by
-  exact DFunLike.congr_fun (TauCeti.exp_add_smul B s t) x
-
 /-! ## Shared limit-semigroup scaffolding -/
 
 omit [CompleteSpace X] in
@@ -180,7 +176,7 @@ private theorem yosidaLimit_time_add_of_tendsto_of_norm_le {A : X →ₗ.[ℝ] X
   refine tendsto_nhds_unique htend_st ?_
   have hcomp := ContinuousLinearMap.tendsto_apply_of_eventually_norm_le
     hbound_s htend_s htend_t
-  simpa only [exp_add_smul_apply] using hcomp
+  simpa only [ContinuousLinearMap.exp_add_smul_apply] using hcomp
 
 /-- The Yosida limit is continuous in time on a compact interval whenever the approximating
 exponentials converge uniformly there. -/
@@ -400,15 +396,15 @@ theorem tendsto_yosidaLimit (hA : IsMDissipative A) (hdense : Dense (A.domain : 
     Tendsto (fun lambda : ℝ => exp (t • yosidaApproximation A lambda) x) atTop
       (𝓝 (yosidaLimit A t x)) :=
   tendsto_yosidaLimit_of_cauchySeq A t x <|
-    (hA.exp_yosidaApproximation_uniformCauchySeqOn_compact hdense x ht).cauchySeq
+    (hA.exp_yosidaApproximation_uniformCauchySeqOn_compact hdense x).cauchySeq
       (Set.right_mem_Icc.mpr ht)
 
 /-- The convergence to the Yosida limit is uniform on every compact time interval. -/
 theorem tendstoUniformlyOn_exp_yosidaApproximation (hA : IsMDissipative A)
-    (hdense : Dense (A.domain : Set X)) (x : X) {T : ℝ} (hT : 0 ≤ T) :
+    (hdense : Dense (A.domain : Set X)) (x : X) {T : ℝ} :
     TendstoUniformlyOn (fun lambda t : ℝ => exp (t • yosidaApproximation A lambda) x)
       (fun t : ℝ => yosidaLimit A t x) atTop (Set.Icc 0 T) :=
-  (hA.exp_yosidaApproximation_uniformCauchySeqOn_compact hdense x hT).tendstoUniformlyOn_of_tendsto
+  (hA.exp_yosidaApproximation_uniformCauchySeqOn_compact hdense x).tendstoUniformlyOn_of_tendsto
     fun _t ht => hA.tendsto_yosidaLimit hdense ht.1 x
 
 /-! ## Linearity and contractivity in the vector variable -/
@@ -460,16 +456,16 @@ theorem yosidaLimit_time_add (hA : IsMDissipative A) (hdense : Dense (A.domain :
 /-- The Yosida limit is continuous in time on every compact interval `[0, T]`: it is a uniform
 limit there of the continuous orbits of the bounded approximations. -/
 theorem continuousOn_yosidaLimit_Icc (hA : IsMDissipative A) (hdense : Dense (A.domain : Set X))
-    (x : X) {T : ℝ} (hT : 0 ≤ T) :
+    (x : X) {T : ℝ} :
     ContinuousOn (fun t : ℝ => yosidaLimit A t x) (Set.Icc 0 T) :=
   continuousOn_yosidaLimit_Icc_of_tendstoUniformlyOn A x
-    (hA.tendstoUniformlyOn_exp_yosidaApproximation hdense x hT)
+    (hA.tendstoUniformlyOn_exp_yosidaApproximation hdense x)
 
 /-- The Yosida limit is continuous in time on the whole nonnegative half-line. -/
 theorem continuousOn_yosidaLimit (hA : IsMDissipative A) (hdense : Dense (A.domain : Set X))
     (x : X) : ContinuousOn (fun t : ℝ => yosidaLimit A t x) (Set.Ici 0) :=
-  continuousOn_Ici_of_forall_continuousOn_Icc fun _T hT =>
-    hA.continuousOn_yosidaLimit_Icc hdense x hT
+  continuousOn_Ici_of_forall_continuousOn_Icc fun _T _ =>
+    hA.continuousOn_yosidaLimit_Icc hdense x
 
 /-! ## The contraction semigroup -/
 
@@ -480,7 +476,7 @@ def yosidaLimitSemigroup (hA : IsMDissipative A) (hdense : Dense (A.domain : Set
     ContractionSemigroup X where
   toStronglyContinuousSemigroup := yosidaLimitSemigroupOfTendsto
     (fun _t ht x => hA.tendsto_yosidaLimit hdense ht x)
-    (fun x _T hT => hA.tendstoUniformlyOn_exp_yosidaApproximation hdense x hT)
+    (fun x _T _ => hA.tendstoUniformlyOn_exp_yosidaApproximation hdense x)
     (fun _t ht => hA.eventually_norm_exp_smul_yosidaApproximation_le ht)
   contracting t := norm_yosidaLimitCLMOfTendsto_le le_rfl
     (fun _t ht x => hA.tendsto_yosidaLimit hdense ht x)

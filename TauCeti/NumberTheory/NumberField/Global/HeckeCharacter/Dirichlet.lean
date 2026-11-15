@@ -142,12 +142,7 @@ theorem existsUnique_primitive_dirichletCharacter (χ : HeckeCharacter ℚ) (hχ
   have hn : n ≠ 0 := by
     rw [Ne, Ideal.absNorm_eq_zero_iff]
     exact (χ.conductor hχ).finitePart_ne_bot
-  have hmod : χ.conductor hχ ∣ ratModulus n hn := by
-    refine Modulus.dvd_iff.mpr ⟨?_, ?_⟩
-    · rw [ratModulus_finitePart, Rat.RingOfIntegers.ideal_span_absNorm_eq_self]
-    · intro w _
-      simp only [ratModulus_infinitePart, Finset.mem_singleton]
-      exact Subsingleton.elim _ _
+  have hmod : χ.conductor hχ ∣ ratModulus n hn := dvd_ratModulus_absNorm _
   obtain ⟨η, hη⟩ := (conductor_dvd_iff hχ).mp hmod
   have hψ : ofDirichletCharacter n hn (ratDirichletEquiv n hn η) = χ := by
     rw [ofDirichletCharacter_eq_ofRayClassCharacter, MulEquiv.symm_apply_apply]

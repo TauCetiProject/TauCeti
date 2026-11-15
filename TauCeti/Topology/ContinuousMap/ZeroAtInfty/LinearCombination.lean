@@ -120,10 +120,10 @@ noncomputable def linearCombination (e : lp (fun _ : I ↦ M) ∞) : C₀(I, R) 
   LinearMap.mkContinuous
     { toFun a := ∑' i, a i • e i
       map_add' a b := by
-        simp only [coe_add, Pi.add_apply, add_smul]
+        simp only [FunLike.coe_add, Pi.add_apply, add_smul]
         exact (summable_smul a e).tsum_add (summable_smul b e)
       map_smul' c a := by
-        simp only [coe_smul, Pi.smul_apply, smul_eq_mul, mul_smul, RingHom.id_apply]
+        simp only [FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, mul_smul, RingHom.id_apply]
         exact (summable_smul a e).tsum_const_smul c }
     ‖e‖ fun a ↦ a.norm_tsum_smul_le e
 

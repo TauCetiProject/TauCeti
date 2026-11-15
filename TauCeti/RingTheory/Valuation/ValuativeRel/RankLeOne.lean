@@ -41,18 +41,13 @@ theorem not_isRankLeOne_of_forall_pow_vle {f g h : R} (hgf : g <ᵥ f)
   have hlt : v g < v f := v.vlt_iff_lt.mp hgf
   have hle (n : ℕ) : v f ^ n ≤ v g ^ n * v h := by
     simpa only [map_pow, map_mul] using v.vle_iff_le.mp (hpow n)
-  have hg : 0 < v g := by
-    refine lt_of_le_of_ne zero_le fun h0 ↦ ?_
-    have h1 := hle 1
-    rw [pow_one, pow_one, ← h0, zero_mul] at h1
-    exact (h0 ▸ hlt).not_ge h1
+  have hg : 0 < v g := pos_of_ne_zero fun h0 ↦ hlt.not_ge (by simpa [h0] using hle 1)
   -- `γ = v(f) / v(g)` exceeds `1`, and every power of it is at most `v(h)`
   have hγ : 1 < v f / v g := (one_lt_div₀ hg).mpr hlt
   have hγle (n : ℕ) : (v f / v g) ^ n ≤ v h := by
     rw [div_pow, div_le_iff₀ (pow_pos hg n), mul_comm]
     exact hle n
-  have hh : 0 < v h := lt_of_lt_of_le zero_lt_one (by simpa using hγle 0)
-  obtain ⟨n, hn⟩ := MulArchimedean.arch (v h * (v f / v g)) hγ
-  exact (lt_mul_of_one_lt_right hh hγ).not_ge (hn.trans (hγle n))
+  obtain ⟨n, hn⟩ := MulArchimedean.arch (v h) hγ
+  exact ((hγle (n + 1)).trans hn).not_gt (pow_lt_pow_right₀ hγ n.lt_succ_self)
 
 end ValuativeRel

@@ -44,7 +44,23 @@ universe v w
 noncomputable section
 
 variable (n : ℕ) (hn : 4 ≤ n) (k : Type v) (K : Type max v w)
-  [CommRing k] [CommRing K] [Algebra k K] [Module.Free k K]
+  [CommRing k] [CommRing K] [Algebra k K]
+
+/-- Each positive numbered root generator and the weight-torus generator commute with arbitrary
+scalar extension, through the ambient and generator coordinate-algebra comparisons. -/
+theorem generator_baseChange (j : Fin n ⊕ Unit) :
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).inv ≫
+        CommHopfAlgCat.baseChangeMap (generator n hn k j) ≫
+        (generatorCoordinateAlgebraBaseChangeIso n k K (generatorIndex n j)).hom =
+      generator n hn K j := by
+  rcases j with i | u
+  · simpa only [generator_inl, generatorIndex, Category.assoc] using
+      generatorCoordinateMap_baseChange n hn k K (.inl (.inl i))
+  · cases u
+    simpa only [generator_inr, generatorIndex, Category.assoc] using
+      generatorCoordinateMap_baseChange n hn k K (.inr ())
+
+variable [Module.Free k K]
 
 /-- Free scalar extension carries the positive generated defining ideal onto its counterpart
 over the extension ring, through the ambient general-linear comparison. -/
@@ -56,12 +72,9 @@ theorem map_baseChangeHopfIdeal_definingIdeal :
     (generator n hn k) (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n))
     (fun j ↦ TypeDSpinCarrier.generatorCoordinateAlgebraBaseChangeIso n k K (generatorIndex n j))
     (generator n hn K)
-  rintro (i | u)
-  · simpa only [generator_inl] using
-      TypeDSpinCarrier.generatorCoordinateMap_baseChange n hn k K (.inl (.inl i))
-  · cases u
-    simpa only [generator_inr] using
-      TypeDSpinCarrier.generatorCoordinateMap_baseChange n hn k K (.inr ())
+  intro j
+  rw [Category.assoc]
+  exact generator_baseChange n hn k K j
 
 /-- The scalar extension of the positive generated coordinate Hopf algebra is the coordinate
 Hopf algebra of the positive subgroup generated over the extension ring. -/

@@ -98,4 +98,36 @@ theorem isBigO_schwarzChristoffelIntegrand_div_cpow_sub_one_atInfinity (a e : ι
     ext z
     simp [div_inv_eq_mul, mul_comm]
 
+/-- Outside a large semicircle enclosing every finite prevertex, the integrand is uniformly
+close to `y ^ S` relative to `‖y‖ ^ S`, where `S` is the total turning exponent. -/
+theorem exists_radius_norm_schwarzChristoffelIntegrand_sub_le (a e : ι → ℝ) {η : ℝ}
+    (hη : 0 < η) :
+    ∃ R : ℝ, 0 < R ∧ (∀ i, |a i| < R) ∧ ∀ y ∈ upperHalfPlaneSet, R ≤ ‖y‖ →
+      ‖schwarzChristoffelIntegrand a e y - y ^ ((∑ i, e i : ℝ) : ℂ)‖ ≤
+        η * ‖y‖ ^ (∑ i, e i) := by
+  classical
+  have hnormalized := tendsto_schwarzChristoffelIntegrand_div_cpow_atInfinity a e
+  have hev : ∀ᶠ y : ℂ in cobounded ℂ ⊓ Filter.principal upperHalfPlaneSet,
+      ‖schwarzChristoffelIntegrand a e y / y ^ ((∑ i, e i : ℝ) : ℂ) - 1‖ < η := by
+    have := Metric.tendsto_nhds.mp hnormalized η hη
+    simpa [dist_eq_norm] using this
+  rw [eventually_inf_principal, Filter.hasBasis_cobounded_norm.eventually_iff] at hev
+  obtain ⟨R₀, -, hR₀⟩ := hev
+  let A : ℝ := 2 + ∑ i, |a i|
+  have hA : 0 < A := by dsimp [A]; positivity
+  refine ⟨max R₀ A, hA.trans_le (le_max_right _ _), fun i ↦ ?_, fun y hy hyR ↦ ?_⟩
+  · have hi : |a i| ≤ ∑ j, |a j| :=
+      Finset.single_le_sum (fun j _ ↦ abs_nonneg (a j)) (Finset.mem_univ i)
+    dsimp [A] at hA ⊢
+    exact lt_of_lt_of_le (by linarith) (le_max_right R₀ A)
+  · have hy0 : y ≠ 0 := fun h ↦ by simp [h] at hy
+    have hp0 : y ^ ((∑ i, e i : ℝ) : ℂ) ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl hy0)
+    have heq : schwarzChristoffelIntegrand a e y - y ^ ((∑ i, e i : ℝ) : ℂ) =
+        (schwarzChristoffelIntegrand a e y / y ^ ((∑ i, e i : ℝ) : ℂ) - 1) *
+          y ^ ((∑ i, e i : ℝ) : ℂ) := by
+      field_simp
+    rw [heq, norm_mul, Complex.norm_cpow_real]
+    exact mul_le_mul_of_nonneg_right
+      (hR₀ (le_max_left R₀ A |>.trans hyR) hy).le (Real.rpow_nonneg (norm_nonneg y) _)
+
 end TauCeti

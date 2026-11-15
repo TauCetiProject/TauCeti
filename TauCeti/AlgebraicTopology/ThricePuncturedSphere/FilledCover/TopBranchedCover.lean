@@ -143,12 +143,7 @@ def toTopBranchedCover : TopBranchedCover n where
     FilledCover.compactSpace C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton
   instConnectedSpace := PunctureFilling.connectedSpace
   instT2Space := FilledCover.t2Space C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton
-  instSecondCountableTopology :=
-    letI := FilledCover.chartedSpace C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton
-    letI := FilledCover.compactSpace C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton
-    ChartedSpace.secondCountable_of_sigmaCompact ℂ _
   π := ⟨fillMap _, continuous_fillMap C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton⟩
-  surjective := surjective_fillMap C.cover.isCoveringMap_proj.surjective
   isCoveringMapOn :=
     isCoveringMapOn_fillMap C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton
   natCard_preimage_singleton y hy := by

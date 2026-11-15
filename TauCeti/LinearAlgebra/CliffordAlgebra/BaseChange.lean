@@ -62,6 +62,12 @@ variable {R : Type u} {A : Type v} {M : Type w}
 variable [CommRing R] [CommRing A] [Algebra R A]
 variable [AddCommGroup M] [Module R M] [Invertible (2 : R)]
 
+/-- A pure tensor generator is the scalar multiple of the corresponding generator under the
+canonical Clifford scalar-extension map. -/
+theorem ι_baseChange_tmul_eq_smul_ofBaseChangeAux (Q : QuadraticForm R M) (a : A) (v : M) :
+    ι (Q.baseChange A) (a ⊗ₜ v) = a • ofBaseChangeAux A Q (ι Q v) := by
+  rw [ofBaseChangeAux_ι, ← map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+
 /-- The canonical map to the Clifford algebra after extension of scalars commutes with the grade
 involution. -/
 @[simp]
@@ -126,7 +132,7 @@ theorem toBaseChange_ofBaseChangeAux (Q : QuadraticForm R M) (x : CliffordAlgebr
 
 /-- The canonical map to the Clifford algebra after extension of scalars is injective when the
 extension is faithful and the Clifford algebra is flat; in particular, for every extension of
-fields. -/
+fields with `2` invertible in the base field. -/
 theorem ofBaseChangeAux_injective [FaithfulSMul R A] (Q : QuadraticForm R M)
     [Module.Flat R (CliffordAlgebra Q)] :
     Function.Injective (ofBaseChangeAux A Q) := by

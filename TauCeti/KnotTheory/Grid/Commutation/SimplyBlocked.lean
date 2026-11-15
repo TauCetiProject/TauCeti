@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Residual.Assembly
-public import TauCeti.KnotTheory.Grid.SimplyBlocked
+public import TauCeti.KnotTheory.Grid.SimplyBlocked.Basic
 
 /-!
 # The simply blocked commutation chain map
@@ -19,8 +19,9 @@ have zero weight. The specialization identity specifies this map on every chain,
 unblocked chain-map identity descends through the surjective specialization.
 
 The construction applies to one-variable specializations of arbitrary grid diagrams. For a
-knot grid, blocking one marking is the simply blocked theory `G-hat`. Invertibility still requires
-the hexagon homotopy identities.
+knot grid, blocking one marking is the simply blocked theory `G-hat`; the induced map on `G-hat`
+is bijective by the hexagon homotopy identities
+(`TauCeti.GridDiagram.IsKnot.simplyBlockedHomologyCommutationMap_bijective`).
 
 ## References
 

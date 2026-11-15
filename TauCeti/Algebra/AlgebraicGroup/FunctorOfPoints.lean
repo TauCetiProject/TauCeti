@@ -43,9 +43,13 @@ the inverse.
   and `A` a commutative `R`-algebra, `WithConv (H →ₐ[R] A)` is a group, commutative when `H`
   is cocommutative.
 * `AlgHom.mapValue`: post-composition with `φ : A →ₐ[R] B` as a monoid homomorphism of
-  convolution monoids, with `AlgHom.mapValue_id`, `AlgHom.mapValue_comp` recording its
+  convolution monoids, with `AlgHom.ofConv_comp_mapValue` describing it on underlying
+  homomorphisms, `AlgHom.mapValue_id`, `AlgHom.mapValue_comp` recording its
   functoriality in the value algebra and `AlgHom.mapValue_injective` recording that it loses no
   information when `φ` does not.
+* `AlgHom.mem_mrange_mapValue_iff_mapValue_eq`: when the image of an injective `φ` is the fixed
+  ring of an endomorphism `τ`, the points coming from the source of `φ` are those fixed by
+  `mapValue τ`.
 * `WithConv.mapValue_algebraOfId`: mapping a base-valued point through an algebra-valued point
   gives the corresponding constant point.
 
@@ -155,6 +159,12 @@ lemma mapValue_apply (φ : A →ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
   delta mapValue
   rfl
 
+/-- On underlying homomorphisms, `mapValue φ` is post-composition with `φ`, as functions. -/
+lemma ofConv_comp_mapValue (φ : A →ₐ[R] B) :
+    ofConv ∘ mapValue (H := H) φ = (fun f : H →ₐ[R] A ↦ φ.comp f) ∘ ofConv := by
+  ext f h
+  simp
+
 /-- `mapValue` preserves the identity: `mapValue (𝟙 A)` is the identity monoid homomorphism. -/
 @[simp]
 lemma mapValue_id :
@@ -186,6 +196,17 @@ lemma mem_mrange_mapValue_iff {φ : A →ₐ[R] B} (hφ : Function.Injective φ)
     rw [mapValue_apply, ofConv_toConv, ofConv_toConv, AlgHom.comp_apply, AlgHom.comp_apply,
       AlgEquiv.coe_toAlgHom, ← AlgEquiv.ofInjective_apply _ hφ, AlgEquiv.apply_symm_apply,
       AlgHom.coe_codRestrict]
+
+/-- When the image of an injective `φ : A →ₐ[R] B` is exactly the set of fixed points of an
+endomorphism `τ` of `B`, a point comes from a point valued in `A` exactly when it is fixed by
+`mapValue τ`: descent of points along an extension of coefficients whose fixed ring is the base. -/
+lemma mem_mrange_mapValue_iff_mapValue_eq {φ : A →ₐ[R] B} (hφ : Function.Injective φ)
+    {τ : B →ₐ[R] B} (hτ : {b | τ b = b} = Set.range φ) {f : WithConv (H →ₐ[R] B)} :
+    f ∈ MonoidHom.mrange (mapValue (H := H) φ) ↔ mapValue τ f = f := by
+  rw [mem_mrange_mapValue_iff hφ, mapValue_apply, ← WithConv.ofConv_injective.eq_iff,
+    ofConv_toConv, AlgHom.ext_iff]
+  refine forall_congr' fun h ↦ ?_
+  rw [AlgHom.comp_apply, AlgHom.mem_range, ← Set.mem_range, ← hτ, Set.mem_ofPred_eq]
 
 variable {C : Type*} [CommSemiring C] [Algebra R C]
 

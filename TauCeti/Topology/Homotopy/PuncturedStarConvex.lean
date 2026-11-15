@@ -46,6 +46,8 @@ not homotopy equivalent to a circle.
   (`StarConvex.coe_sphereHomotopyEquiv_apply`, `StarConvex.coe_sphereHomotopyEquiv_symm_apply`).
 * `StarConvex.radialHomotopy`: the straight-line deformation from the radial projection to the
   identity, fixing the included sphere pointwise throughout.
+* `TauCeti.complRadialProjection`: the radial projection `Kᶜ → sphere p r`, the restriction of
+  `TauCeti.radialProjectionToSphere` when `p ∈ K` and `r > 0`.
 * `TauCeti.complSingletonHomotopyEquivSphere`: the complement of a point `y` of a real normed
   space is homotopy equivalent to the unit sphere, by radial projection about `y` followed by
   translation by `-y`.
@@ -92,7 +94,7 @@ end PseudoMetricSpace
 
 section NormedSpace
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {V : Set E} {p : E} {r : ℝ}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {V K : Set E} {p : E} {r : ℝ}
 
 /-- A point `p + c • (z - p)` with `c > 0` below `1` or below `r / ‖z - p‖` stays in `V \ {p}`:
 it lies on the segment from `p` to `z`, or on the segment from `p` to the radial projection of
@@ -137,6 +139,18 @@ def radialProjectionToSphere (hr : 0 < r) : C(↥(V \ {p}), sphere p r) where
 theorem coe_radialProjectionToSphere_apply (hr : 0 < r) (z : ↥(V \ {p})) :
     (radialProjectionToSphere hr z : E) = p + (r / ‖(z : E) - p‖) • ((z : E) - p) :=
   (rfl)
+
+/-- Radial projection from `Kᶜ` to the sphere `sphere p r`, for `p ∈ K` and `r > 0`: the
+restriction of `TauCeti.radialProjectionToSphere` along `Kᶜ ⊆ univ ∖ {p}`. -/
+def complRadialProjection (hp : p ∈ K) (hr : 0 < r) : C(↥Kᶜ, sphere p r) :=
+  (radialProjectionToSphere (V := univ) hr).comp
+    (ContinuousMap.inclusion fun _ hz ↦ ⟨mem_univ _, fun h ↦ hz (mem_singleton_iff.1 h ▸ hp)⟩)
+
+/-- The radial projection onto `sphere p r` is `z ↦ p + (r / ‖z - p‖) • (z - p)`. -/
+@[simp]
+theorem coe_complRadialProjection_apply (hp : p ∈ K) (hr : 0 < r) (z : ↥Kᶜ) :
+    (complRadialProjection hp hr z : E) = p + (r / ‖(z : E) - p‖) • ((z : E) - p) :=
+  coe_radialProjectionToSphere_apply hr _
 
 /-- The straight-line homotopy from the radial projection to the identity of `V \ {p}`. -/
 def _root_.StarConvex.radialHomotopy (hV : StarConvex ℝ p V) (hr : 0 < r)

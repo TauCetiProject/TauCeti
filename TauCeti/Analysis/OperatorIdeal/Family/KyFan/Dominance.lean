@@ -26,8 +26,8 @@ antitone sequences; in particular for the Schatten and Hilbert–Schmidt familie
 
 Dominance gives a comparison principle for ideal membership: if `B` lies in the ideal of a Ky Fan
 dominant family and every Ky Fan prefix of `A` is at most that of `B`, then `A` lies in the ideal
-too. It also shows that operators with the same approximation numbers have the same gauge, so a
-Ky Fan dominant family on a single universe is invariant under adjoints.
+too. It also shows that operators with the same approximation numbers have the same gauge, even
+between different Hilbert-space pairs.
 
 ## Main declarations
 
@@ -37,8 +37,6 @@ Ky Fan dominant family on a single universe is invariant under adjoints.
   ideal of a Ky Fan dominant family transfers along Ky Fan prefix domination.
 * `TauCeti.OperatorIdealFamily.gauge_eq_of_sameSingularValues`: a Ky Fan dominant gauge depends
   only on the approximation numbers.
-* `TauCeti.OperatorIdealFamily.gauge_adjoint`: a Ky Fan dominant gauge on one universe is
-  invariant under adjoints.
 * Instances for the operator-norm, Ky Fan, trace-class, Schatten and Hilbert–Schmidt families,
   and for every family induced by a symmetric gauge.
 
@@ -105,15 +103,6 @@ theorem gauge_eq_of_sameSingularValues {A : E →L[𝕜] F} {B : G →L[𝕜] H}
     (gauge_le_of_forall_kyFanGauge_le fun k ↦ (h.kyFanGauge_eq k).ge)
 
 end Consequences
-
-/-- A Ky Fan dominant family whose sources and targets lie in one universe is invariant under
-adjoints. -/
-@[simp]
-theorem gauge_adjoint (Φ : OperatorIdealFamily.{u, v, v} 𝕜) [Φ.IsKyFanDominant]
-    {E F : Type v} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] (A : E →L[𝕜] F) :
-    Φ.gauge (adjoint A) = Φ.gauge A :=
-  gauge_eq_of_sameSingularValues ((sameSingularValues_iff _ _).2 (singularValue_adjoint A))
 
 /-- Every finite Ky Fan family is Ky Fan dominant. -/
 instance isKyFanDominant_kyFan (k : ℕ) (hk : 0 < k) :

@@ -30,16 +30,14 @@ For a positive finite exponent the distance is a continuous increasing function 
 transport cost of `edist ^ p` (`TauCeti.wassersteinEDist_rpow_eq_transportCost`), and that cost is
 weakly lower semicontinuous in the marginals by `TauCeti.lowerSemicontinuous_transportCost`; at
 exponent zero the distance between probability measures vanishes. These arguments need only an
-extended pseudometric whose topology is Polish. The endpoint `p = ∞` follows on a Polish metric
-space from `TauCeti.wassersteinEDist_top_eq_iSup`, since a supremum of lower semicontinuous
+extended pseudometric whose topology is Polish. In this same regime the endpoint `p = ∞` follows
+from `TauCeti.wassersteinEDist_top_eq_iSup`, since a supremum of lower semicontinuous
 functions is lower semicontinuous.
 
 ## Main statements
 
-* `TauCeti.lowerSemicontinuous_wassersteinEDist_of_ne_top` — lower semicontinuity for every finite
-  exponent, on an extended pseudometric space with Polish topology;
 * `TauCeti.lowerSemicontinuous_wassersteinEDist` — lower semicontinuity for every exponent,
-  including `p = ∞`, on a Polish metric space;
+  including `p = ∞`, on an extended pseudometric space with Polish topology;
 * `TauCeti.wassersteinEDist_le_liminf` — its form along weakly convergent families of laws;
 * `TauCeti.WassersteinSpace.edist_le_liminf` — the same inequality for the distance from a fixed
   law of the Wasserstein space `P_p (X)`, along weakly convergent families of `P_p (X)`.
@@ -59,61 +57,50 @@ open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
-section Finite
+section Extended
 
 variable {X : Type*} [PseudoEMetricSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
-  {p : ℝ≥0∞}
-
-/-- **The Wasserstein distance is weakly lower semicontinuous**, for every finite exponent: on an
-extended pseudometric space whose topology is Polish, `(μ, ν) ↦ W_p (μ, ν)` is lower
-semicontinuous on `ProbabilityMeasure X × ProbabilityMeasure X`. -/
-theorem lowerSemicontinuous_wassersteinEDist_of_ne_top (hp : p ≠ ∞) :
-    LowerSemicontinuous fun q : ProbabilityMeasure X × ProbabilityMeasure X ↦
-      wassersteinEDist p q.1.toMeasure q.2.toMeasure := by
-  rcases eq_or_ne p 0 with rfl | hp0
-  · -- At exponent `0` every objective vanishes, so the distance of two probability laws is `0`.
-    have h0 : (fun q : ProbabilityMeasure X × ProbabilityMeasure X ↦
-        wassersteinEDist 0 q.1.toMeasure q.2.toMeasure) = fun _ ↦ 0 :=
-      funext fun q ↦ nonpos_iff_eq_zero.1 <|
-        (wassersteinEDist_le (isCoupling_prod q.1.toMeasure q.2.toMeasure) 0).trans_eq
-          (eLpNorm_exponent_zero measurable_edist.aestronglyMeasurable)
-    rw [h0]
-    exact lowerSemicontinuous_const
-  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  -- `W_p` is the `1 / p`-th power of the optimal transport cost of `edist ^ p`.
-  have heq : (fun q : ProbabilityMeasure X × ProbabilityMeasure X ↦
-      wassersteinEDist p q.1.toMeasure q.2.toMeasure) =
-      (fun t : ℝ≥0∞ ↦ t ^ p.toReal⁻¹) ∘ fun q ↦
-        transportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) q.1.toMeasure q.2.toMeasure := by
-    funext q
-    rw [Function.comp_apply, ← wassersteinEDist_rpow_eq_transportCost measurable_edist hp0 hp,
-      ENNReal.rpow_rpow_inv hr.ne']
-  rw [heq]
-  exact ENNReal.continuous_rpow_const.comp_lowerSemicontinuous
-    (lowerSemicontinuous_transportCost
-      (ENNReal.continuous_rpow_const.comp continuous_edist).lowerSemicontinuous)
-    (ENNReal.monotone_rpow_of_nonneg (inv_nonneg.2 hr.le))
-
-end Finite
-
-section Metric
-
-variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
-  [SecondCountableTopology X] [CompleteSpace X]
 
 /-- **The Wasserstein distance is weakly lower semicontinuous**, for every exponent including
-`p = ∞`: on a Polish metric space, `(μ, ν) ↦ W_p (μ, ν)` is lower semicontinuous on
-`ProbabilityMeasure X × ProbabilityMeasure X`. -/
+`p = ∞`: on an extended pseudometric space with Polish topology, `(μ, ν) ↦ W_p (μ, ν)` is lower
+semicontinuous on `ProbabilityMeasure X × ProbabilityMeasure X`. -/
 theorem lowerSemicontinuous_wassersteinEDist (p : ℝ≥0∞) :
     LowerSemicontinuous fun q : ProbabilityMeasure X × ProbabilityMeasure X ↦
       wassersteinEDist p q.1.toMeasure q.2.toMeasure := by
+  have hfinite (q : ℝ≥0∞) (hq : q ≠ ∞) :
+      LowerSemicontinuous fun z : ProbabilityMeasure X × ProbabilityMeasure X ↦
+        wassersteinEDist q z.1.toMeasure z.2.toMeasure := by
+    rcases eq_or_ne q 0 with rfl | hq0
+    · -- At exponent zero every objective vanishes.
+      have h0 : (fun z : ProbabilityMeasure X × ProbabilityMeasure X ↦
+          wassersteinEDist 0 z.1.toMeasure z.2.toMeasure) = fun _ ↦ 0 :=
+        funext fun z ↦ nonpos_iff_eq_zero.1 <|
+          (wassersteinEDist_le (isCoupling_prod z.1.toMeasure z.2.toMeasure) 0).trans_eq
+            (eLpNorm_exponent_zero measurable_edist.aestronglyMeasurable)
+      rw [h0]
+      exact lowerSemicontinuous_const
+    have hr : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
+    -- At a positive finite exponent, use the continuous increasing root of the primal cost.
+    have heq : (fun z : ProbabilityMeasure X × ProbabilityMeasure X ↦
+        wassersteinEDist q z.1.toMeasure z.2.toMeasure) =
+        (fun t : ℝ≥0∞ ↦ t ^ q.toReal⁻¹) ∘ fun z ↦
+          transportCost (fun w : X × X ↦ edist w.1 w.2 ^ q.toReal)
+            z.1.toMeasure z.2.toMeasure := by
+      funext z
+      rw [Function.comp_apply, ← wassersteinEDist_rpow_eq_transportCost measurable_edist hq0 hq,
+        ENNReal.rpow_rpow_inv hr.ne']
+    rw [heq]
+    exact ENNReal.continuous_rpow_const.comp_lowerSemicontinuous
+      (lowerSemicontinuous_transportCost
+        (ENNReal.continuous_rpow_const.comp continuous_edist).lowerSemicontinuous)
+      (ENNReal.monotone_rpow_of_nonneg (inv_nonneg.2 hr.le))
   rcases eq_or_ne p ∞ with rfl | hp
   · simp_rw [wassersteinEDist_top_eq_iSup]
-    exact lowerSemicontinuous_iSup fun p ↦
-      lowerSemicontinuous_wassersteinEDist_of_ne_top ENNReal.coe_ne_top
-  · exact lowerSemicontinuous_wassersteinEDist_of_ne_top hp
+    exact lowerSemicontinuous_iSup fun q ↦ hfinite q ENNReal.coe_ne_top
+  · exact hfinite p hp
 
-/-- **Weak limits do not increase the Wasserstein distance**: on a Polish metric space, if
+/-- **Weak limits do not increase the Wasserstein distance**: on an extended pseudometric space
+with Polish topology, if
 `μₙ ⇀ μ` and `νₙ ⇀ ν` along a filter `l`, then `W_p (μ, ν) ≤ liminf W_p (μₙ, νₙ)` for every
 exponent `p`, including `p = ∞`. -/
 theorem wassersteinEDist_le_liminf {ι : Type*} {l : Filter ι} {μs νs : ι → ProbabilityMeasure X}
@@ -125,8 +112,15 @@ theorem wassersteinEDist_le_liminf {ι : Type*} {l : Filter ι} {μs νs : ι �
     ((hμ.prodMk_nhds hν).eventually (lowerSemicontinuous_wassersteinEDist p (μ, ν) a ha)).mono
       fun _ h ↦ h.le
 
-/-- **Weak limits do not increase the distance from a fixed law of `P_p (X)`**: on a Polish metric
-space, if the laws of a family `v` of `P_p (X)` converge weakly to the law of `ν` along a filter
+end Extended
+
+section Metric
+
+variable {X : Type*} [PseudoMetricSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
+
+/-- **Weak limits do not increase the distance from a fixed law of `P_p (X)`**: on a pseudometric
+ground space with Polish topology, if the laws of a family `v` of `P_p (X)` converge weakly to the
+law of `ν` along a filter
 `l`, then `W_p (μ, ν) ≤ liminf W_p (μ, v i)` for every law `μ` of `P_p (X)`. -/
 theorem WassersteinSpace.edist_le_liminf {p : ℝ≥0∞} [Fact (1 ≤ p)] {ι : Type*} {l : Filter ι}
     {μ ν : WassersteinSpace p X} {v : ι → WassersteinSpace p X}

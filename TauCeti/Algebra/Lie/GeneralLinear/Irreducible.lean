@@ -35,12 +35,8 @@ scalar by which the identity matrix acts, which is the central weight of
   map between `gl n K`-modules on which `1` acts by the same scalar is `gl n K`-equivariant, with
   `TauCeti.lieModuleEquivOfOneLieEqSmulOfSlEquiv` the packaged equivalence.
 
-## Roadmap
-
-This is the "`sl ↔ gl` transfer, pinned" bullet of Layer 9 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, stated for an arbitrary
-irreducible `gl n K`-module rather than for the not-yet-constructed named carrier
-`glIrreducible n μ`, which it will specialize to.
+Both are stated for arbitrary `gl n K`-modules, so they apply in particular to the named
+irreducible modules `TauCeti.glIrreducible` of `TauCeti/Algebra/Lie/GeneralLinear/Carrier.lean`.
 -/
 
 public section

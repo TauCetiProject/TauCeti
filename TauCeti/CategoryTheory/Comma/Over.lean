@@ -20,7 +20,9 @@ that otherwise have to name the forgetful functor by hand.
 
 Base change `Over.pullback f` along `f : T ⟶ S` sends a morphism `g : A ⟶ B` over `S` to the
 induced morphism `A ×_S T ⟶ B ×_S T`, which is the pullback of `g` along the projection
-`B ×_S T ⟶ B`.
+`B ×_S T ⟶ B`. For `f : X ⟶ S` and `g : S' ⟶ S`, the two base changes of `X` to an object
+`T` over `S'` agree, `T ×_{S'} (S' ×_S X) ≅ T ×_S X` (`pullbackRightPullbackFstIso`), naturally in
+`T`.
 
 ## Main declarations
 
@@ -28,6 +30,8 @@ induced morphism `A ×_S T ⟶ B ×_S T`, which is the pullback of `g` along the
   an isomorphism.
 * `CategoryTheory.Over.isPullback_pullback_map_left`: base change of a morphism over `S` is a
   pullback of it.
+* `CategoryTheory.Over.pullbackRightPullbackFstIso_inv_comp_pullback_map`: the identification
+  `T ×_S X ≅ T ×_{S'} (S' ×_S X)` is natural in `T` over `S'`.
 -/
 
 public section
@@ -54,6 +58,21 @@ theorem isPullback_pullback_map_left {C : Type u} [Category.{v} C] {S T : C} (f 
       g.left := by
   refine IsPullback.of_right ?_ (by simp) (IsPullback.of_hasPullback B.hom f).flip
   simpa using (IsPullback.of_hasPullback A.hom f).flip
+
+/-- The identification `T ×_S X ≅ T ×_{S'} (S' ×_S X)` of the two base changes of `f : X ⟶ S` to
+an object `T` over `S'`, where `T` lies over `S` through `g : S' ⟶ S`, commutes with the morphisms
+induced by a morphism `φ : T ⟶ T'` over `S'`. -/
+@[reassoc]
+theorem pullbackRightPullbackFstIso_inv_comp_pullback_map {C : Type u} [Category.{v} C]
+    [HasPullbacks C] {S S' X : C} (f : X ⟶ S) (g : S' ⟶ S) {T T' : Over S'} (φ : T ⟶ T') :
+    (pullbackRightPullbackFstIso g f T.hom).inv ≫ ((Over.pullback (pullback.fst g f)).map φ).left =
+      ((Over.pullback f).map ((Over.map g).map φ)).left ≫
+        (pullbackRightPullbackFstIso g f T'.hom).inv := by
+  apply pullback.hom_ext
+  · simp
+  · apply pullback.hom_ext
+    · simp
+    · simp
 
 end Over
 

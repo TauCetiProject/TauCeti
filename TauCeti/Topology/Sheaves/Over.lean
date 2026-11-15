@@ -31,6 +31,8 @@ The construction of the dense-subsite instances is adapted from
 * `Topology.IsOpenEmbedding.overEquivalence`: the equivalence `Over (range f) ≌ Opens X`.
 * The instances saying that its functor and inverse are dense subsites for the Grothendieck
   topologies of open covers.
+* `Topology.IsOpenEmbedding.overPullbackSheafCongrIso`: restricting a sheaf on `Y` to `range f`
+  and transporting it along `overEquivalence` is pushforward along the image functor `f(-)`.
 -/
 
 public section
@@ -39,48 +41,32 @@ universe u
 
 open CategoryTheory TopologicalSpace Topology
 
-namespace TauCeti
+namespace Topology.IsOpenEmbedding
 
 variable {X Y : TopCat.{u}} {f : X ⟶ Y} (hf : IsOpenEmbedding f)
 
 /-- An open embedding `f : X ⟶ Y` identifies the open subsets of `Y` contained in the range of
 `f` with the open subsets of `X`, by taking preimages and images under `f`. -/
-def _root_.Topology.IsOpenEmbedding.overEquivalence :
+def overEquivalence :
     Over (⟨Set.range f, hf.isOpen_range⟩ : Opens Y) ≌ Opens X where
   functor.obj W := (Opens.map f).obj W.left
   functor.map g := (Opens.map f).map g.left
   inverse.obj V := Over.mk (Y := hf.functor.obj V) (homOfLE (Set.image_subset_range f V))
   inverse.map g := Over.homMk (hf.functor.map g)
-  unitIso := NatIso.ofComponents (fun W ↦ Over.isoMk (eqToIso (by
-    ext y
-    constructor
-    · intro hy
-      obtain ⟨x, rfl⟩ := W.hom.le hy
-      exact ⟨x, hy, rfl⟩
-    · rintro ⟨x, hx, rfl⟩
-      exact hx)))
-  counitIso := NatIso.ofComponents (fun V ↦ eqToIso (by
-    ext x
-    exact hf.injective.mem_set_image))
+  unitIso := NatIso.ofComponents (fun W ↦ Over.isoMk
+    (eqToIso (Opens.ext (Set.image_preimage_eq_of_subset W.hom.le).symm)))
+  counitIso := NatIso.ofComponents (fun V ↦ eqToIso (Opens.map_functor_eq' f hf V))
 
 @[simp]
-lemma _root_.Topology.IsOpenEmbedding.overEquivalence_functor_obj
-    (W : Over (⟨Set.range f, hf.isOpen_range⟩ : Opens Y)) :
-    hf.overEquivalence.functor.obj W = (Opens.map f).obj W.left := by
-  rw [Topology.IsOpenEmbedding.overEquivalence]
-
-end TauCeti
-
-namespace Topology.IsOpenEmbedding
-
-variable {X Y : TopCat.{u}} {f : X ⟶ Y} (hf : IsOpenEmbedding f)
+lemma overEquivalence_functor_obj (W : Over (⟨Set.range f, hf.isOpen_range⟩ : Opens Y)) :
+    hf.overEquivalence.functor.obj W = (Opens.map f).obj W.left :=
+  (rfl)
 
 /-- The inverse of `overEquivalence`, followed by the forgetful functor from the over category,
 is the image functor on open subsets. -/
 def overEquivalenceInverseCompForgetIso :
-    hf.overEquivalence.inverse ⋙ Over.forget _ ≅ hf.functor := by
-  rw [Topology.IsOpenEmbedding.overEquivalence]
-  exact NatIso.ofComponents (fun _ ↦ Iso.refl _)
+    hf.overEquivalence.inverse ⋙ Over.forget _ ≅ hf.functor :=
+  NatIso.ofComponents (fun _ ↦ Iso.refl _)
 
 instance isDenseSubsite_overEquivalence_functor :
     CategoryTheory.Functor.IsDenseSubsite ((Opens.grothendieckTopology Y).over _)
@@ -113,9 +99,7 @@ instance isDenseSubsite_overEquivalence_inverse :
 
 instance isContinuous_functor : hf.functor.IsContinuous
     (Opens.grothendieckTopology X) (Opens.grothendieckTopology Y) :=
-  CategoryTheory.Functor.isContinuous_comp'
-    hf.overEquivalenceInverseCompForgetIso (Opens.grothendieckTopology X)
-      ((Opens.grothendieckTopology Y).over _) (Opens.grothendieckTopology Y)
+  hf.functor_isContinuous
 
 /-- Restriction to the range of an open embedding, followed by transport along
 `overEquivalence`, is naturally isomorphic to pushforward along the image functor on opens. -/

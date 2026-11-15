@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.MatrixModule
 import Mathlib.Tactic.LinearCombination
 
@@ -40,6 +41,8 @@ coefficient of the class of `M` is the sum of the weights of `M` and `-M`.
 * `TauCeti.PopaZagier.det_pos_of_weight_ne_zero`, `TauCeti.PopaZagier.abs_le_of_weight_ne_zero`:
   every matrix occurring in (15) has positive determinant `n` and entries at most `2n` in absolute
   value, so only finitely many occur for each `n` (Popa–Zagier, Lemma 4(a)).
+* `TauCeti.PopaZagier.finite_support_weight_traceDetFiber`: in particular only finitely many
+  matrices of a given trace and determinant have nonzero weight.
 * `TauCeti.PopaZagier.abs_le_of_weightᵢ_ne_zero`: the same bound for a matrix of nonzero weight
   in any one of the four sums `T₁`, ..., `T₄`.
 * `TauCeti.PopaZagier.weight_neg_eq_zero`: with Popa–Zagier's representatives, `c > 0` or
@@ -47,7 +50,8 @@ coefficient of the class of `M` is the sum of the weights of `M` and `-M`.
 * `TauCeti.PopaZagier.weight₂_eq_weight₁`: `T₂ = T₁·U`, where `U = T S = (1 -1; 1 0)`.
 * `TauCeti.PopaZagier.weight_smul`: the weight of eq. (15) is invariant under positive scaling.
 * `TauCeti.TraceFormulaMatrixModule.abs_le_of_intCast_ne_zero`: the same bound for any integer
-  weight dominated by Popa–Zagier's, cast to a ring, in the shape `ofWeight` takes.
+  weight dominated by Popa–Zagier's, cast to an additive group with one, in the shape `ofWeight`
+  takes.
 * `TauCeti.TraceFormulaMatrixModule.popaZagierElement_eq_inv_smul_ofWeight`: the element is `12⁻¹`
   times the element with the integer weights.
 * `TauCeti.TraceFormulaMatrixModule.coeff_popaZagierElement_mk`: the coefficient of the class of
@@ -99,6 +103,19 @@ all three are equalities is not covered by the rule; it does not occur in (15). 
   else if w ≤ x ∧ x ≤ y ∧ y ≤ z then
     if w = x ∧ y = z then 3 else if w = x ∧ x = y ∨ x = y ∧ y = z then 2 else 6
   else 0
+
+/-- A first line `x ≤ y ≤ z` of nonzero weight holds. -/
+@[grind →]
+theorem le_of_chainWeight₃_ne_zero {x y z : ℤ} (h : chainWeight₃ x y z ≠ 0) : x ≤ y ∧ y ≤ z := by
+  unfold chainWeight₃ at h
+  split_ifs at h <;> omega
+
+/-- A first line `w ≤ x ≤ y ≤ z` of nonzero weight holds. -/
+@[grind →]
+theorem le_of_chainWeight₄_ne_zero {w x y z : ℤ} (h : chainWeight₄ w x y z ≠ 0) :
+    w ≤ x ∧ x ≤ y ∧ y ≤ z := by
+  unfold chainWeight₄ at h
+  split_ifs at h <;> omega
 
 /-- Twelve times the coefficient of `(a b; c d)` in `T₁ = ⟨a - d ≤ -b ≤ c; 0 ≤ c < a⟩`. -/
 @[expose] def weight₁ (a b c d : ℤ) : ℤ :=
@@ -312,6 +329,17 @@ theorem abs_le_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M 
     |M i j| ≤ 2 * M.det :=
   abs_le_of_weightᵢ_ne_zero (weightᵢ_ne_zero_of_weight_ne_zero h) i j
 
+/-- Only finitely many matrices of trace `t` and determinant `n` have nonzero weight: their
+entries are at most `2 n` in absolute value (`abs_le_of_weight_ne_zero`). -/
+theorem finite_support_weight_traceDetFiber (t n : ℤ) :
+    (Function.support fun M : traceDetFiber (Fin 2) t n ↦ weight M.1).Finite := by
+  refine ((FixedDetMatrices.finite_setOf_abs_le (m := Fin 2) n (2 * n)).preimage
+    (f := fun M : traceDetFiber (Fin 2) t n ↦
+      (⟨M.1, (mem_traceDetFiber.mp M.2).2⟩ : FixedDetMatrix (Fin 2) ℤ n))
+    fun M _ N _ h ↦ Subtype.ext (by simpa using congrArg Subtype.val h)).subset fun M hM i j ↦ ?_
+  have := abs_le_of_weight_ne_zero hM i j
+  rwa [(mem_traceDetFiber.mp M.2).2] at this
+
 /-- Every matrix `M = (a b; c d)` of nonzero weight has `c > 0`, or `c = 0 < a`. -/
 theorem pos_or_eq_zero_and_pos_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0) :
     0 < M 1 0 ∨ M 1 0 = 0 ∧ 0 < M 0 0 := by
@@ -336,14 +364,15 @@ namespace TraceFormulaMatrixModule
 
 variable {k : Type*} {n : ℤ}
 
-/-- An integer weight `w` that vanishes wherever Popa–Zagier's weight does, cast to a ring `k`,
-satisfies the bound hypothesis of `ofWeight` with `B = 2 n`: a determinant-`n` matrix whose weight
-is nonzero in `k` has entries at most `2 n` in absolute value (Popa–Zagier, Lemma 4(a)). -/
-theorem abs_le_of_intCast_ne_zero [Ring k] {w : Matrix (Fin 2) (Fin 2) ℤ → ℤ}
+/-- An integer weight `w` that vanishes wherever Popa–Zagier's weight does, cast to an additive
+group with one `k`, satisfies the bound hypothesis of `ofWeight` with `B = 2 n`: a
+determinant-`n` matrix whose weight is nonzero in `k` has entries at most `2 n` in absolute value
+(Popa–Zagier, Lemma 4(a)). -/
+theorem abs_le_of_intCast_ne_zero [AddGroupWithOne k] {w : Matrix (Fin 2) (Fin 2) ℤ → ℤ}
     (hw : ∀ M, w M ≠ 0 → PopaZagier.weight M ≠ 0) (A : TraceFormulaMatrix n)
     (h : (w A.1 : k) ≠ 0) (i j : Fin 2) : |A.1 i j| ≤ 2 * n := by
   simpa [A.2] using PopaZagier.abs_le_of_weight_ne_zero
-    (hw _ (ne_zero_of_map (f := Int.castRingHom k) h)) i j
+    (hw _ (ne_zero_of_map (f := Int.castAddHom k) h)) i j
 
 section DivisionRing
 

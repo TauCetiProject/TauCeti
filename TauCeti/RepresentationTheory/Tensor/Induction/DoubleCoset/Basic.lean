@@ -86,6 +86,13 @@ noncomputable def tensorInducedDoubleCosetLinearEquiv :
   (PiTensorProduct.sigmaEquiv (M := fun _ _ ↦ M)).trans
     (PiTensorProduct.reindex R (fun _ ↦ M) (TauCeti.mackeyQuotientEquiv U V r hr))
 
+/-- Double-coset regrouping flattens the orbitwise tensor products and then reindexes by the
+Mackey decomposition of the coset space. -/
+theorem tensorInducedDoubleCosetLinearEquiv_def :
+    tensorInducedDoubleCosetLinearEquiv (R := R) (M := M) U V r hr =
+      (PiTensorProduct.sigmaEquiv (M := fun _ _ ↦ M)).trans
+        (PiTensorProduct.reindex R (fun _ ↦ M) (TauCeti.mackeyQuotientEquiv U V r hr)) := (rfl)
+
 /-- On orbitwise pure tensors, double-coset regrouping simply reads the Mackey coordinates of
 each `U`-coset. -/
 @[simp]

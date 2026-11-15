@@ -50,6 +50,8 @@ any two elements outside `H` lies in `H` has index dividing two.
 * `Subgroup.index_dvd_two_of_mul_mem` and `Subgroup.index_eq_two_of_mul_mem`: if the product of
   any two elements outside a subgroup lies in it, its index divides two, and is two when the
   subgroup is proper.
+* `Subgroup.mul_mem_iff_of_relIndex_eq_two`: for a subgroup of index two in `K`, a product of
+  two elements of `K` lies in the subgroup exactly when both factors do or neither does.
 * `Subgroup.indexTwoCharacter`: the character `G →* Multiplicative (ZMod 2)` with kernel a given
   subgroup of index two (`Subgroup.ker_indexTwoCharacter`).
 -/
@@ -224,6 +226,17 @@ If the sum of any two elements outside `H` lies in `H`, and some element lies ou
 theorem index_eq_two_of_mul_mem (h : ∀ a b, a ∉ H → b ∉ H → a * b ∈ H) {a : G} (ha : a ∉ H) :
     H.index = 2 :=
   index_eq_two_iff_exists_notMem_and'.2 ⟨a, ha, fun b ↦ or_iff_not_imp_right.2 (h a b ha)⟩
+
+/-- **Products in a subgroup of relative index two.** If `H` has index two in `K`, then for
+`a, b ∈ K` the product `a * b` lies in `H` exactly when `a` and `b` are both in `H` or both
+outside it. -/
+@[to_additive /-- **Sums in an additive subgroup of relative index two.** If `H` has index two
+in `K`, then for `a, b ∈ K` the sum `a + b` lies in `H` exactly when `a` and `b` are both in `H`
+or both outside it. -/]
+theorem mul_mem_iff_of_relIndex_eq_two {K : Subgroup G} (h : H.relIndex K = 2) {a b : G}
+    (ha : a ∈ K) (hb : b ∈ K) : a * b ∈ H ↔ (a ∈ H ↔ b ∈ H) := by
+  simpa [mem_subgroupOf] using
+    mul_mem_iff_of_index_two (H := H.subgroupOf K) h (a := ⟨a, ha⟩) (b := ⟨b, hb⟩)
 
 end MulMem
 

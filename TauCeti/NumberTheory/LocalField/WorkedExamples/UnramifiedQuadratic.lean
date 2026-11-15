@@ -168,8 +168,8 @@ instance : IsUnramified ℚ_[2] UnramifiedQuadratic := by
       linear_combination 4 * zetaThree_sq_add_zetaThree_add_one
     have h3K : IsUnit (3 : 𝒪[ℚ_[2]]) := by
       simpa using (natCastValuation_eq_zero_iff (K := ℚ_[2]) 3 (by norm_num)).1 (by
-        rw [Padic.natCastValuation_eq_padicValNat]
-        exact padicValNat.eq_zero_of_not_dvd (by norm_num))
+        rw [Padic.natCastValuation_eq_padicValNat, Nat.padicValNat_def]
+        exact multiplicity_eq_zero_of_not_dvd (by norm_num))
     have hnegThreeL : IsUnit (-3 : 𝒪[UnramifiedQuadratic]) := by
       rw [← map_ofNat (algebraMap 𝒪[ℚ_[2]] 𝒪[UnramifiedQuadratic]) 3]
       exact IsUnit.neg (h3K.map _)

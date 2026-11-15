@@ -5,11 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
-
--- Access metric compatibility's defining tensor equality without using the section-based
--- characterization, which requires an additional manifold regularity hypothesis.
-import all Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 
 /-!
 # The covariant derivative of a field of bilinear forms
@@ -248,7 +244,7 @@ the covariant derivative of the inner product, viewed as a field of bilinear for
 theorem isMetricCompatible_iff_derivBilinearTensor_eq_zero
     (hb : ∀ x (v w : V x), b x v w = inner ℝ v w) :
     cov.IsMetricCompatible ↔ ∀ x, cov.derivBilinearTensor b x = 0 := by
-  unfold CovariantDerivative.IsMetricCompatible
+  rw [isMetricCompatible_iff_derivMetricTensor_eq_zero]
   rw [cov.derivBilinearTensor_eq_derivMetricTensor hb]
   exact ⟨fun h x ↦ congrFun h x, fun h ↦ funext h⟩
 
@@ -262,13 +258,13 @@ theorem IsMetricCompatible.derivBilinearTensor_eq_zero_of_eq_mul_inner
       (fun y ↦ b y (σ y) (τ y)) = fun y ↦ c * inner ℝ (σ y) (τ y) :=
     funext fun y ↦ hb y _ _
   ext σ₀ τ₀ v
-  have hg := congr($hcov x σ₀ τ₀ v)
+  have hg := congr($(isMetricCompatible_iff_derivMetricTensor_eq_zero.mp hcov) x σ₀ τ₀ v)
   rw [derivMetricTensor_apply_eq_extend] at hg
   rw [cov.derivBilinearTensor_apply_eq_extend (fun σ τ hσ hτ ↦ hpair σ τ ▸
       mdifferentiableAt_const.mul (hσ.inner_bundle hτ)), hpair,
     mvfderiv_fun_mul mdifferentiableAt_const
       ((mdifferentiableAt_extend I F σ₀).inner_bundle (mdifferentiableAt_extend I F τ₀)), hb, hb]
-  simp only [mvfderiv_const, add_apply, smul_apply, smul_eq_mul, Pi.zero_apply, zero_apply,
+  simp only [mvfderiv_const, add_apply, smul_apply, smul_eq_mul, zero_apply,
     mul_zero, add_zero] at hg ⊢
   linear_combination c * hg
 

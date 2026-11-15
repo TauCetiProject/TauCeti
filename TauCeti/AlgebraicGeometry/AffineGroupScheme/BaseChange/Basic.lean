@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Equivalence
-public import TauCeti.AlgebraicGeometry.PullbackSpecMap
+public import TauCeti.AlgebraicGeometry.Pullback.SpecMap
 
 /-!
 # Base change of affine group schemes
