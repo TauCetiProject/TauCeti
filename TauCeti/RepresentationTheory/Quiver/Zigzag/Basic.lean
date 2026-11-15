@@ -111,6 +111,9 @@ instance [Finite V] : Finite (DoubledQuiver G) :=
 instance [Fintype V] : Fintype (DoubledQuiver G) :=
   Fintype.ofEquiv V (vertexEquiv G)
 
+instance instDecidableEq [DecidableEq V] : DecidableEq (DoubledQuiver G) :=
+  inferInstanceAs (DecidableEq V)
+
 instance (i j : DoubledQuiver G) : Finite (i ⟶ j) := by
   -- Unfold the quiver hom type so `PLift`'s finite instance applies.
   change Finite (PLift (G.Adj ((vertexEquiv G).symm i) ((vertexEquiv G).symm j)))

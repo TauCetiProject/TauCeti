@@ -24,13 +24,12 @@ arrows correspond to `G.Dart`.
 
 This file identifies the two constructions, both structurally and with capacities:
 
-* `Graph.bidirectedNetwork` bundles a weighted multigraph `H` with nonnegative edge capacities into
-  a `TauCeti.Network` on `V(H)` with zero lower bounds and `H.bidirectedCapacity` as upper bounds.
 * `TauCeti.DoubledQuiver.capacity` and `TauCeti.DoubledQuiver.network` equip `DoubledQuiver G` with
   capacities from a pair-capacity function `c : Sym2 V → K`, assigning to each arrow the capacity
   of its underlying undirected edge `TauCeti.DoubledQuiver.edge` and ignoring diagonal values.
 * `TauCeti.DoubledQuiver.bidirectedNetworkIso` constructs the canonical bounded-network isomorphism
-  between the bidirected network of `Graph.ofSimpleGraph G` and `DoubledQuiver.network G c hc`.
+  between the bundled bidirected network `Graph.bidirectedNetwork` of `Graph.ofSimpleGraph G` and
+  `DoubledQuiver.network G c hc`.
 
 Through `TauCeti.Network.Iso`, this single isomorphism transports walks, paths, cycles, internal
 disjointness, vertex- and edge-deletion reachability, arc and vertex strong connectivity, arrow
@@ -41,8 +40,6 @@ undirected max-flow/min-cut theorem with additive-subgroup integrality directly 
 
 ## Main definitions
 
-* `Graph.bidirectedNetwork`: the bundled `TauCeti.Network` of a weighted multigraph with
-  nonnegative edge capacities.
 * `SimpleGraph.doubledVertexEquiv`, `SimpleGraph.doubledHomEquiv`,
   `SimpleGraph.bidirectedTotalHomEquivDart`: vertex, arrow, and dart identifications between the
   bidirected arrow family of `Graph.ofSimpleGraph G` and `DoubledQuiver G`.
@@ -84,49 +81,6 @@ open scoped Graph TauCeti.Network
 
 universe u v w w'
 
-/-! ### Bundled bidirected network of a weighted multigraph -/
-
-namespace Graph
-
-/-- The bundled bidirected network of a weighted multigraph with nonnegative edge capacities:
-zero lower bounds and `G.bidirectedCapacity c` as upper bounds on `G.BidirectedHom`.
-
-This definition is exposed and reducible so that its arrow family reduces to `G.BidirectedHom`,
-inheriting `Network.ofCapacity`'s projection lemmas and the finiteness instances on
-`G.BidirectedHom`. -/
-@[expose, reducible]
-def bidirectedNetwork {α : Type u} {β : Type v} {K : Type w} [Zero K] [LE K]
-    (G : Graph α β) (c : E(G) → K) (hc : 0 ≤ c) : Network K V(G) :=
-  Network.ofCapacity G.BidirectedHom (G.bidirectedCapacity c)
-    (fun {x y} e ↦ G.bidirectedCapacity_nonneg hc x y e)
-
-@[simp]
-theorem bidirectedNetwork_lower {α : Type u} {β : Type v} {K : Type w} [Zero K] [LE K]
-    (G : Graph α β) (c : E(G) → K) (hc : 0 ≤ c) :
-    (G.bidirectedNetwork c hc).lower = 0 :=
-  (rfl)
-
-@[simp]
-theorem bidirectedNetwork_upper {α : Type u} {β : Type v} {K : Type w} [Zero K] [LE K]
-    (G : Graph α β) (c : E(G) → K) (hc : 0 ≤ c) :
-    (G.bidirectedNetwork c hc).upper = G.bidirectedCapacity c :=
-  (rfl)
-
-end Graph
-
-namespace SimpleGraph
-
-/-- Restricting pair capacities that are nonnegative on the edges of `G` produces nonnegative edge
-capacities on `Graph.ofSimpleGraph G`. Diagonal and non-edge values play no role. -/
-theorem ofSimpleGraphCapacity_nonneg {V : Type u} {K : Type w} [Zero K] [LE K]
-    (G : SimpleGraph V) {c : Sym2 V → K} (hc : ∀ p ∈ G.edgeSet, 0 ≤ c p) :
-    0 ≤ G.ofSimpleGraphCapacity c := by
-  intro e
-  rw [Pi.zero_apply, ofSimpleGraphCapacity_apply]
-  exact hc e.1 (by simpa using e.2)
-
-end SimpleGraph
-
 /-! ### Explicit arrow family, underlying edges, and vertex sets on `DoubledQuiver` -/
 
 namespace TauCeti.DoubledQuiver
@@ -166,8 +120,7 @@ def edge {i j : DoubledQuiver G} (e : i ⟶ j) : Sym2 V :=
 /-- The underlying undirected edge of `e : i ⟶ j` is the unordered pair of its graph endpoints. -/
 theorem edge_def {i j : DoubledQuiver G} (e : i ⟶ j) :
     edge G e = s((vertexEquiv G).symm i, (vertexEquiv G).symm j) := by
-  rw [edge, totalArrowEquivDart_apply]
-  rfl
+  rw [edge, totalArrowEquivDart_apply, SimpleGraph.Dart.edge_mk]
 
 /-- The arrow attached to an adjacency proof `h : G.Adj u v` lies over the unordered pair
 `s(u, v)`. -/
@@ -221,16 +174,9 @@ theorem edge_injOn_cut (S : Set (DoubledQuiver G)) :
   · obtain rfl : i₁ = j₂ := (vertexEquiv G).symm.injective h₁
     exact absurd hi₁ hj₂
 
-instance instDecidableEq [DecidableEq V] : DecidableEq (DoubledQuiver G) :=
-  inferInstanceAs (DecidableEq V)
-
 /-- Include a finite set of graph vertices into `DoubledQuiver G`. -/
 def vertexFinset (S : Finset V) : Finset (DoubledQuiver G) :=
   S.map (vertexEquiv G).toEmbedding
-
-theorem mem_vertexFinset {S : Finset V} {u : V} :
-    vertex G u ∈ vertexFinset G S ↔ u ∈ S := by
-  rw [vertexFinset, ← vertexEquiv_apply, Finset.mem_map_equiv, Equiv.symm_apply_apply]
 
 @[simp]
 theorem mem_vertexFinset_iff {S : Finset V} {i : DoubledQuiver G} :
@@ -454,8 +400,9 @@ theorem bidirectedTotalHomEquivDart_snd (a : Σ x y, (Graph.ofSimpleGraph G).Bid
 
 @[simp]
 theorem bidirectedTotalHomEquivDart_edge (a : Σ x y, (Graph.ofSimpleGraph G).BidirectedHom x y) :
-    (G.bidirectedTotalHomEquivDart a).edge = a.2.2.1 :=
-  G.edge_doubledHomEquiv a.2.2
+    (G.bidirectedTotalHomEquivDart a).edge = a.2.2.1 := by
+  rw [SimpleGraph.Dart.edge, G.bidirectedTotalHomEquivDart_fst, G.bidirectedTotalHomEquivDart_snd,
+    ← G.edge_eq_of_bidirectedHom a.2.2]
 
 end SimpleGraph
 
@@ -508,17 +455,26 @@ theorem bidirectedNetworkIso_homEquiv_apply [Zero K] [LE K] (c : Sym2 V → K)
       (bidirectedNetworkIso_vertexEquiv_apply G c hc y) = G.doubledHomEquiv x y a :=
   (rfl)
 
+/-- Transporting an arrow along `bidirectedNetworkIso` preserves its underlying undirected edge. -/
+@[simp]
+theorem edge_bidirectedNetworkIso_homEquiv [Zero K] [LE K] (c : Sym2 V → K)
+    (hc : ∀ p ∈ G.edgeSet, 0 ≤ c p) {x y : V(Graph.ofSimpleGraph G)}
+    (a : (Graph.ofSimpleGraph G).BidirectedHom x y) :
+    edge G ((bidirectedNetworkIso G c hc).homEquiv x y a) = a.1 := by
+  rw [← G.edge_doubledHomEquiv a, ← bidirectedNetworkIso_homEquiv_apply G c hc x y a,
+    edge_homOfEq]
+
 /-- Composing the total-arrow equivalence of `bidirectedNetworkIso` with
 `DoubledQuiver.totalArrowEquivDart` gives `SimpleGraph.bidirectedTotalHomEquivDart`. -/
 @[simp]
-theorem totalHomEquiv_trans_totalArrowEquivDart [Zero K] [LE K] (c : Sym2 V → K)
-    (hc : ∀ p ∈ G.edgeSet, 0 ≤ c p) :
+theorem bidirectedNetworkIso_totalHomEquiv_trans_totalArrowEquivDart [Zero K] [LE K]
+    (c : Sym2 V → K) (hc : ∀ p ∈ G.edgeSet, 0 ≤ c p) :
     (bidirectedNetworkIso G c hc).totalHomEquiv.trans (totalArrowEquivDart G) =
       G.bidirectedTotalHomEquivDart := by
   apply Equiv.ext
   rintro ⟨x, y, a⟩
-  rw [Equiv.trans_apply, Network.Iso.totalHomEquiv_apply]
-  rfl
+  apply SimpleGraph.Dart.ext
+  ext <;> simp
 
 /-- Auxiliary `Unit`-capacitated instance of `bidirectedNetworkIso`, used to transport purely
 structural walk, assignment, and connectivity statements without introducing capacity hypotheses. -/
@@ -528,6 +484,33 @@ private def unitBidirectedNetworkIso :
     network G (fun _ ↦ ()) (fun _ _ ↦ le_rfl) :=
   bidirectedNetworkIso G (fun _ ↦ ()) (fun _ _ ↦ le_rfl)
 
+private theorem unitBidirectedNetworkIso_vertexEquiv :
+    (unitBidirectedNetworkIso G).vertexEquiv = G.doubledVertexEquiv :=
+  bidirectedNetworkIso_vertexEquiv G _ _
+
+@[simp]
+private theorem unitBidirectedNetworkIso_vertexEquiv_apply (x : V(Graph.ofSimpleGraph G)) :
+    (unitBidirectedNetworkIso G).vertexEquiv x = G.doubledVertexEquiv x :=
+  bidirectedNetworkIso_vertexEquiv_apply G _ _ x
+
+private theorem unitBidirectedNetworkIso_vertexEquiv_toOfSimpleGraphVertex (u : V) :
+    (unitBidirectedNetworkIso G).vertexEquiv (G.toOfSimpleGraphVertex u) = vertex G u := by
+  rw [unitBidirectedNetworkIso_vertexEquiv_apply, G.doubledVertexEquiv_toOfSimpleGraphVertex]
+
+@[simp]
+private theorem unitBidirectedNetworkIso_homEquiv_apply (x y : V(Graph.ofSimpleGraph G))
+    (a : (Graph.ofSimpleGraph G).BidirectedHom x y) :
+    Quiver.homOfEq ((unitBidirectedNetworkIso G).homEquiv x y a)
+      (unitBidirectedNetworkIso_vertexEquiv_apply G x)
+      (unitBidirectedNetworkIso_vertexEquiv_apply G y) = G.doubledHomEquiv x y a :=
+  bidirectedNetworkIso_homEquiv_apply G _ _ x y a
+
+@[simp]
+private theorem edge_unitBidirectedNetworkIso_homEquiv {x y : V(Graph.ofSimpleGraph G)}
+    (a : (Graph.ofSimpleGraph G).BidirectedHom x y) :
+    edge G ((unitBidirectedNetworkIso G).homEquiv x y a) = a.1 :=
+  edge_bidirectedNetworkIso_homEquiv G _ _ a
+
 end NetworkIso
 
 /-! ### Walk, path, cycle, and connectivity bridge -/
@@ -535,47 +518,6 @@ end NetworkIso
 section WalkAndConnectivity
 
 variable {V : Type u} (G : SimpleGraph V)
-
-/-- Undirected walks of `G` between `u` and `v` are canonically equivalent to directed paths of
-`DoubledQuiver G` from `vertex G u` to `vertex G v`, bundling `DoubledQuiver.walkToPath` and
-`DoubledQuiver.pathToWalk`. -/
-def walkEquivPath (u v : V) : G.Walk u v ≃ Quiver.Path (vertex G u) (vertex G v) where
-  toFun := walkToPath G
-  invFun := pathToWalk G
-  left_inv := pathToWalk_walkToPath G
-  right_inv := walkToPath_pathToWalk G
-
-@[simp]
-theorem walkEquivPath_apply {u v : V} (p : G.Walk u v) :
-    walkEquivPath G u v p = walkToPath G p :=
-  (rfl)
-
-@[simp]
-theorem walkEquivPath_symm_apply {u v : V} (q : Quiver.Path (vertex G u) (vertex G v)) :
-    (walkEquivPath G u v).symm q = pathToWalk G q :=
-  (rfl)
-
-/-- `DoubledQuiver.walkToPath` maps the vertex support of a simple-graph walk in order along
-`DoubledQuiver.vertex`. -/
-@[simp]
-theorem vertices_walkToPath {u v : V} (p : G.Walk u v) :
-    (walkToPath G p).vertices = p.support.map (vertex G) := by
-  induction p with
-  | nil => simp
-  | cons h p ih =>
-    rw [walkToPath_cons, Quiver.Path.vertices_comp, ih]
-    simp [Quiver.Hom.toPath]
-
-/-- `DoubledQuiver.pathToWalk` maps the vertex sequence of a doubled-quiver path in order along
-`(vertexEquiv G).symm`. -/
-@[simp]
-theorem support_pathToWalk {u v : V} (q : Quiver.Path (vertex G u) (vertex G v)) :
-    (pathToWalk G q).support = q.vertices.map (vertexEquiv G).symm := by
-  conv_rhs => rw [← walkToPath_pathToWalk G q]
-  rw [vertices_walkToPath, List.map_map]
-  have hcomp : (vertexEquiv G).symm ∘ vertex G = id :=
-    funext (vertexEquiv_symm_vertex G)
-  rw [hcomp, List.map_id]
 
 /-- **Walk coherence.** Sending a simple-graph walk to `Graph.ofSimpleGraph G`, orienting its steps
 in `(Graph.ofSimpleGraph G).BidirectedHom`, and transporting the resulting directed walk along
@@ -589,14 +531,8 @@ theorem mapPath_bidirectedNetworkIso_toBidirected {K : Type w} [Zero K] [LE K]
       (bidirectedNetworkIso_vertexEquiv_mk G c hc v (p.toGraph.end_mem_vertexSet hu))
       ((bidirectedNetworkIso G c hc).mapPath (p.toGraph.toBidirected hu)) =
       walkToPath G p := by
-  have vertices_cast {a b a' b' : DoubledQuiver G} (ha : a = a') (hb : b = b')
-      (q : Quiver.Path a b) :
-      ArrowWalk.vertices (Q := Hom G) (Quiver.Path.cast ha hb q) =
-        ArrowWalk.vertices (Q := Hom G) q := by
-    subst ha hb
-    rfl
   apply ArrowWalk.vertices_injective (Q := Hom G)
-  rw [vertices_cast, Network.Iso.vertices_mapPath]
+  rw [ArrowWalk.vertices_cast (Q := Hom G), Network.Iso.vertices_mapPath]
   have hv : ⇑(bidirectedNetworkIso G c hc).vertexEquiv = vertex G ∘ Subtype.val :=
     funext fun x ↦ (bidirectedNetworkIso_vertexEquiv_apply G c hc x).trans
       (G.doubledVertexEquiv_apply x)
@@ -619,7 +555,7 @@ theorem map_totalArrowEquivDart_arrows_walkToPath {u v : V} (p : G.Walk u v) :
 theorem map_edge_arrows_walkToPath {u v : V} (p : G.Walk u v) :
     (ArrowWalk.arrows (Q := Hom G) (walkToPath G p)).map (fun a ↦ edge G a.2.2) = p.edges := by
   rw [p.edges_eq_map_darts, ← map_totalArrowEquivDart_arrows_walkToPath G p, List.map_map]
-  rfl
+  simp only [Function.comp_def, edge]
 
 /-- `DoubledQuiver.walkToPath` preserves and reflects simple paths. -/
 @[simp]
@@ -692,33 +628,23 @@ lies in `F` agrees with reachability in `G.deleteEdges F`. -/
 theorem reachableWithout_edge_mem_iff (F : Set (Sym2 V)) {u v : V} :
     ReachableWithout (Q := Hom G) {a : TotalArrow G | edge G a.2.2 ∈ F}
       (vertex G u) (vertex G v) ↔ (G.deleteEdges F).Reachable u v := by
-  let e := unitBidirectedNetworkIso G
-  have hpre : e.totalHomEquiv ⁻¹' {a : TotalArrow G | edge G a.2.2 ∈ F} =
+  have hpre : (unitBidirectedNetworkIso G).totalHomEquiv ⁻¹'
+      {a : TotalArrow G | edge G a.2.2 ∈ F} =
       {a : Σ x y, (Graph.ofSimpleGraph G).BidirectedHom x y | a.2.2.1 ∈ F} := by
     ext ⟨x, y, a⟩
-    rw [Set.mem_preimage, Network.Iso.totalHomEquiv_apply]
-    dsimp only [e, unitBidirectedNetworkIso, bidirectedNetworkIso]
-    exact Iff.of_eq (congrArg (· ∈ F) (G.edge_doubledHomEquiv a))
-  have he := (e.reachableWithout_preimage_iff (F := {a : TotalArrow G | edge G a.2.2 ∈ F})
-    (s := G.toOfSimpleGraphVertex u) (t := G.toOfSimpleGraphVertex v)).symm
-  rw [hpre] at he
-  dsimp only [e, unitBidirectedNetworkIso, bidirectedNetworkIso] at he
-  rwa [G.doubledVertexEquiv_toOfSimpleGraphVertex, G.doubledVertexEquiv_toOfSimpleGraphVertex,
-    Graph.reachableWithout_bidirectedHom_iff, Graph.ofSimpleGraph_deleteEdges,
-    SimpleGraph.reachable_ofSimpleGraph_iff, G.toOfSimpleGraphVertex_val,
-    G.toOfSimpleGraphVertex_val] at he
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq, Network.Iso.totalHomEquiv_apply]
+    rw [edge_unitBidirectedNetworkIso_homEquiv]
+  simpa [hpre, Graph.reachableWithout_bidirectedHom_iff, Graph.ofSimpleGraph_deleteEdges] using
+    ((unitBidirectedNetworkIso G).reachableWithout_preimage_iff
+      (F := {a : TotalArrow G | edge G a.2.2 ∈ F})
+      (s := G.toOfSimpleGraphVertex u) (t := G.toOfSimpleGraphVertex v)).symm
 
 /-- Local `k`-arc-reachability in `DoubledQuiver G` agrees with `k`-edge-reachability in `G`. -/
 @[simp]
 theorem isArcReachable_hom_iff {k : ℕ} {u v : V} :
     IsArcReachable (Hom G) k (vertex G u) (vertex G v) ↔ G.IsEdgeReachable k u v := by
-  let e := unitBidirectedNetworkIso G
-  have he := (e.isArcReachable_iff (k := k)
+  simpa using ((unitBidirectedNetworkIso G).isArcReachable_iff (k := k)
     (s := G.toOfSimpleGraphVertex u) (t := G.toOfSimpleGraphVertex v)).symm
-  dsimp only [e, unitBidirectedNetworkIso, bidirectedNetworkIso] at he
-  rwa [G.doubledVertexEquiv_toOfSimpleGraphVertex, G.doubledVertexEquiv_toOfSimpleGraphVertex,
-    Graph.isArcReachable_bidirectedHom_iff, Graph.isEdgeReachable_ofSimpleGraph_iff,
-    G.toOfSimpleGraphVertex_val, G.toOfSimpleGraphVertex_val] at he
 
 /-- Global `k`-arc-strength of `DoubledQuiver G` agrees with `k`-edge-connectivity of `G`. -/
 @[simp]
@@ -764,17 +690,24 @@ def assignmentEquiv :
 
 variable {R}
 
+private theorem assignmentEquiv_eq :
+    assignmentEquiv G R = (unitBidirectedNetworkIso G).assignmentEquiv R :=
+  (rfl)
+
 @[simp]
 theorem assignmentEquiv_apply (f : Assignment (Graph.ofSimpleGraph G).BidirectedHom R)
     {x y : V(Graph.ofSimpleGraph G)} (a : (Graph.ofSimpleGraph G).BidirectedHom x y) :
-    assignmentEquiv G R f (G.doubledHomEquiv x y a) = f a :=
-  (unitBidirectedNetworkIso G).assignmentEquiv_apply R f a
+    assignmentEquiv G R f (G.doubledHomEquiv x y a) = f a := by
+  rw [assignmentEquiv_eq, ← unitBidirectedNetworkIso_homEquiv_apply G x y a,
+    Assignment.apply_homOfEq ((unitBidirectedNetworkIso G).assignmentEquiv R f)]
+  exact (unitBidirectedNetworkIso G).assignmentEquiv_apply R f a
 
 @[simp]
 theorem assignmentEquiv_symm_apply (f : Assignment (Hom G) R)
     {x y : V(Graph.ofSimpleGraph G)} (a : (Graph.ofSimpleGraph G).BidirectedHom x y) :
-    (assignmentEquiv G R).symm f a = f (G.doubledHomEquiv x y a) :=
-  (unitBidirectedNetworkIso G).assignmentEquiv_symm_apply R f a
+    (assignmentEquiv G R).symm f a = f (G.doubledHomEquiv x y a) := by
+  rw [assignmentEquiv_eq, (unitBidirectedNetworkIso G).assignmentEquiv_symm_apply,
+    ← unitBidirectedNetworkIso_homEquiv_apply G x y a, Assignment.apply_homOfEq f]
 
 /-- Assignment transport along any `bidirectedNetworkIso` agrees with the capacity-free
 `DoubledQuiver.assignmentEquiv`. -/
@@ -786,13 +719,15 @@ theorem bidirectedNetworkIso_assignmentEquiv {K : Type w} [Zero K] [LE K] (c : S
   intro f
   apply (assignmentEquiv G R).symm.injective
   ext x y a
-  rw [assignmentEquiv_symm_apply, Equiv.symm_apply_apply]
+  rw [assignmentEquiv_symm_apply, Equiv.symm_apply_apply,
+    ← bidirectedNetworkIso_homEquiv_apply G c hc x y a,
+    Assignment.apply_homOfEq ((bidirectedNetworkIso G c hc).assignmentEquiv R f)]
   exact (bidirectedNetworkIso G c hc).assignmentEquiv_apply R f a
 
 @[simp]
 theorem assignmentEquiv_zero [Zero R] :
-    assignmentEquiv G R 0 = 0 :=
-  (unitBidirectedNetworkIso G).assignmentEquiv_zero
+    assignmentEquiv G R 0 = 0 := by
+  rw [assignmentEquiv_eq, (unitBidirectedNetworkIso G).assignmentEquiv_zero]
 
 /-- Transporting `(Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c)` produces
 `DoubledQuiver.capacity G c`, with no nonnegativity or support assumption on `c`. -/
@@ -807,16 +742,9 @@ theorem assignmentEquiv_bidirectedCapacity (c : Sym2 V → R) :
 /-- Assignment transport preserves and reflects the pointwise order. -/
 theorem assignmentEquiv_le_assignmentEquiv_iff [LE R]
     (f g : Assignment (Graph.ofSimpleGraph G).BidirectedHom R) :
-    assignmentEquiv G R f ≤ assignmentEquiv G R g ↔ f ≤ g :=
-  (unitBidirectedNetworkIso G).assignmentEquiv_le_assignmentEquiv_iff f g
-
-/-- Assignment transport preserves and reflects order intervals. -/
-theorem assignmentEquiv_mem_Icc_iff [Preorder R]
-    (lo hi f : Assignment (Graph.ofSimpleGraph G).BidirectedHom R) :
-    assignmentEquiv G R f ∈ Set.Icc (assignmentEquiv G R lo) (assignmentEquiv G R hi) ↔
-      f ∈ Set.Icc lo hi :=
-  and_congr (assignmentEquiv_le_assignmentEquiv_iff G lo f)
-    (assignmentEquiv_le_assignmentEquiv_iff G f hi)
+    assignmentEquiv G R f ≤ assignmentEquiv G R g ↔ f ≤ g := by
+  rw [assignmentEquiv_eq]
+  exact (unitBidirectedNetworkIso G).assignmentEquiv_le_assignmentEquiv_iff f g
 
 /-- Assignment transport preserves and reflects subgroup membership of arrow values. -/
 theorem forall_assignmentEquiv_mem_iff {M : Type*} [SetLike M R] (A : M)
@@ -824,42 +752,15 @@ theorem forall_assignmentEquiv_mem_iff {M : Type*} [SetLike M R] (A : M)
     (∀ ⦃i j : DoubledQuiver G⦄ (e : i ⟶ j), assignmentEquiv G R f e ∈ A) ↔
       ∀ ⦃x y : V(Graph.ofSimpleGraph G)⦄ (a : (Graph.ofSimpleGraph G).BidirectedHom x y),
         f a ∈ A := by
-  refine ⟨fun h x y a ↦ ?_, fun h i j e ↦ ?_⟩
-  · simpa using h (G.doubledHomEquiv x y a)
-  · obtain ⟨x, rfl⟩ := G.doubledVertexEquiv.surjective i
-    obtain ⟨y, rfl⟩ := G.doubledVertexEquiv.surjective j
-    obtain ⟨a, rfl⟩ := (G.doubledHomEquiv x y).surjective e
-    simpa using h a
+  rw [assignmentEquiv_eq]
+  exact (unitBidirectedNetworkIso G).forall_assignmentEquiv_mem_iff A f
 
 /-- Assignment transport preserves and reflects acyclicity of positive support. -/
 @[simp]
 theorem isAcyclic_assignmentEquiv_iff [Zero R] [LT R]
     (f : Assignment (Graph.ofSimpleGraph G).BidirectedHom R) :
     (assignmentEquiv G R f).IsAcyclic ↔ f.IsAcyclic := by
-  let e := unitBidirectedNetworkIso G
-  simp only [Assignment.isAcyclic_def]
-  refine ⟨fun hf v p hp hpos ↦ hf (e.mapPath p) ((e.isCycle_mapPath p).2 hp) ?_,
-    fun hf i q hq hpos ↦ ?_⟩
-  · rw [e.arrows_mapPath, List.forall_mem_map]
-    intro a ha
-    simpa only [assignmentEquiv, e, Network.Iso.assignmentEquiv_apply_totalHomEquiv] using hpos a ha
-  · obtain ⟨v, rfl⟩ := e.vertexEquiv.surjective i
-    obtain ⟨p, rfl⟩ := (e.pathEquiv v v).surjective q
-    rw [Network.Iso.pathEquiv_apply] at hq hpos
-    refine hf p ((e.isCycle_mapPath p).1 hq) fun a ha ↦ ?_
-    have hmem : e.totalHomEquiv a ∈ (e.mapPath p).arrows := by
-      rw [e.arrows_mapPath]
-      exact List.mem_map_of_mem ha
-    simpa only [assignmentEquiv, e, Network.Iso.assignmentEquiv_apply_totalHomEquiv] using
-      hpos (e.totalHomEquiv a) hmem
-
-/-- A nonnegative acyclic assignment on `DoubledQuiver G` vanishes on at least one arrow of each
-reversed pair. -/
-theorem apply_eq_zero_or_apply_reverse_eq_zero [Zero R] [PartialOrder R]
-    {f : Assignment (Hom G) R} (hf : f.IsAcyclic) (hf₀ : 0 ≤ f)
-    {i j : DoubledQuiver G} (e : i ⟶ j) :
-    f e = 0 ∨ f (Quiver.reverse e) = 0 :=
-  hf.apply_eq_zero_or_apply_eq_zero hf₀ e (Quiver.reverse e)
+  rw [assignmentEquiv_eq, (unitBidirectedNetworkIso G).isAcyclic_assignmentEquiv_iff]
 
 end Assignments
 
@@ -877,10 +778,8 @@ theorem arrowSum_assignmentEquiv
     arrowSum (assignmentEquiv G K f)
       (S.map G.doubledVertexEquiv.toEmbedding) (T.map G.doubledVertexEquiv.toEmbedding) =
       arrowSum f S T := by
-  simp only [arrowSum_def, Finset.sum_map, Equiv.coe_toEmbedding]
-  refine Finset.sum_congr rfl fun x _ ↦ Finset.sum_congr rfl fun y _ ↦ ?_
-  rw [← Equiv.sum_comp (G.doubledHomEquiv x y)]
-  exact Finset.sum_congr rfl fun a _ ↦ assignmentEquiv_apply G f a
+  rw [assignmentEquiv_eq, ← unitBidirectedNetworkIso_vertexEquiv G,
+    (unitBidirectedNetworkIso G).arrowSum_assignmentEquiv]
 
 /-- The directed capacity leaving `vertexFinset G S` in `DoubledQuiver G` equals the multigraph
 cut capacity of `S` in `Graph.ofSimpleGraph G`, with no off-graph support condition on `c`. -/
@@ -927,8 +826,9 @@ theorem cutBound_network_eq_pairCutCapacity [Fintype V]
 theorem excessAt_assignmentEquiv [Fintype V] [∀ i j : DoubledQuiver G, Fintype (i ⟶ j)]
     [AddCommGroup K] (f : Assignment (Graph.ofSimpleGraph G).BidirectedHom K)
     (x : V(Graph.ofSimpleGraph G)) :
-    excessAt (assignmentEquiv G K f) (G.doubledVertexEquiv x) = excessAt f x :=
-  (unitBidirectedNetworkIso G).excessAt_assignmentEquiv f x
+    excessAt (assignmentEquiv G K f) (G.doubledVertexEquiv x) = excessAt f x := by
+  rw [assignmentEquiv_eq, ← unitBidirectedNetworkIso_vertexEquiv_apply G x,
+    (unitBidirectedNetworkIso G).excessAt_assignmentEquiv]
 
 /-- Excess at `vertex G u` under `DoubledQuiver.assignmentEquiv` agrees with excess at
 `G.toOfSimpleGraphVertex u`. -/
@@ -944,8 +844,8 @@ theorem excessAt_assignmentEquiv_vertex [Fintype V] [∀ i j : DoubledQuiver G, 
 @[simp]
 theorem isCirculation_assignmentEquiv_iff [Fintype V] [∀ i j : DoubledQuiver G, Fintype (i ⟶ j)]
     [AddCommGroup K] (f : Assignment (Graph.ofSimpleGraph G).BidirectedHom K) :
-    IsCirculation (assignmentEquiv G K f) ↔ IsCirculation f :=
-  (unitBidirectedNetworkIso G).isCirculation_assignmentEquiv_iff f
+    IsCirculation (assignmentEquiv G K f) ↔ IsCirculation f := by
+  rw [assignmentEquiv_eq, (unitBidirectedNetworkIso G).isCirculation_assignmentEquiv_iff]
 
 end CutAndExcess
 
@@ -955,6 +855,23 @@ variable {V : Type u} {K : Type w} (G : SimpleGraph V)
 variable [Fintype V] [∀ i j : DoubledQuiver G, Fintype (i ⟶ j)]
 variable [AddCommGroup K] [Preorder K]
 
+-- `SimpleGraph.instFintypeOfSimpleGraphVertexSet` is noncomputable, so passing it as a `Type`
+-- argument to `Network.Iso.boundedFlowEquiv` directly would force `boundedFlowEquiv` and
+-- `flowEquiv` to be noncomputable. Building the data field `toFun` directly via `assignmentEquiv`
+-- and projecting the `Prop` fields from these auxiliary equivalences keeps the public equivalences
+-- computable without duplicating any conservation or interval proofs.
+private noncomputable def boundedFlowEquivAux
+    (lo hi : Assignment (Graph.ofSimpleGraph G).BidirectedHom K) (s t : V) :
+    BoundedFlow lo hi (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t) ≃
+      BoundedFlow (assignmentEquiv G K lo) (assignmentEquiv G K hi)
+        (vertex G s) (vertex G t) :=
+  ((unitBidirectedNetworkIso G).boundedFlowEquiv lo hi
+    (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t)).trans
+    (BoundedFlow.congr (DFunLike.congr_fun (assignmentEquiv_eq G).symm lo)
+      (DFunLike.congr_fun (assignmentEquiv_eq G).symm hi)
+      (unitBidirectedNetworkIso_vertexEquiv_toOfSimpleGraphVertex G s)
+      (unitBidirectedNetworkIso_vertexEquiv_toOfSimpleGraphVertex G t))
+
 /-- Bounded `s`–`t` assignments on `(Graph.ofSimpleGraph G).BidirectedHom` correspond to bounded
 assignments between the transported bounds on `DoubledQuiver G`. -/
 def boundedFlowEquiv (lo hi : Assignment (Graph.ofSimpleGraph G).BidirectedHom K) (s t : V) :
@@ -963,26 +880,20 @@ def boundedFlowEquiv (lo hi : Assignment (Graph.ofSimpleGraph G).BidirectedHom K
         (vertex G s) (vertex G t) where
   toFun f :=
     { toFun := assignmentEquiv G K f.toFun
-      mem_Icc := (assignmentEquiv_mem_Icc_iff G lo hi f.toFun).2 f.mem_Icc
-      conserve := fun j hjs hjt ↦ by
-        obtain ⟨x, rfl⟩ := G.doubledVertexEquiv.surjective j
-        rw [excessAt_assignmentEquiv]
-        refine f.conserve x (fun h ↦ hjs ?_) (fun h ↦ hjt ?_)
-        · rw [h, G.doubledVertexEquiv_toOfSimpleGraphVertex]
-        · rw [h, G.doubledVertexEquiv_toOfSimpleGraphVertex] }
+      mem_Icc := by
+        simpa [boundedFlowEquivAux, assignmentEquiv_eq] using
+          (boundedFlowEquivAux G lo hi s t f).mem_Icc
+      conserve := by
+        simpa [boundedFlowEquivAux, assignmentEquiv_eq] using
+          (boundedFlowEquivAux G lo hi s t f).conserve }
   invFun f :=
     { toFun := (assignmentEquiv G K).symm f.toFun
       mem_Icc := by
-        rw [← assignmentEquiv_mem_Icc_iff G lo hi, Equiv.apply_symm_apply]
-        exact f.mem_Icc
-      conserve := fun x hxs hxt ↦ by
-        rw [← excessAt_assignmentEquiv G ((assignmentEquiv G K).symm f.toFun) x,
-          Equiv.apply_symm_apply]
-        refine f.conserve (G.doubledVertexEquiv x) (fun h ↦ hxs ?_) (fun h ↦ hxt ?_)
-        · apply G.doubledVertexEquiv.injective
-          rwa [G.doubledVertexEquiv_toOfSimpleGraphVertex]
-        · apply G.doubledVertexEquiv.injective
-          rwa [G.doubledVertexEquiv_toOfSimpleGraphVertex] }
+        simpa [boundedFlowEquivAux, assignmentEquiv_eq] using
+          ((boundedFlowEquivAux G lo hi s t).symm f).mem_Icc
+      conserve := by
+        simpa [boundedFlowEquivAux, assignmentEquiv_eq] using
+          ((boundedFlowEquivAux G lo hi s t).symm f).conserve }
   left_inv f := BoundedFlow.ext ((assignmentEquiv G K).symm_apply_apply f.toFun)
   right_inv f := BoundedFlow.ext ((assignmentEquiv G K).apply_symm_apply f.toFun)
 
@@ -999,12 +910,19 @@ theorem boundedFlowEquiv_symm_toFun {lo hi : Assignment (Graph.ofSimpleGraph G).
     ((boundedFlowEquiv G lo hi s t).symm f).toFun = (assignmentEquiv G K).symm f.toFun :=
   (rfl)
 
+private theorem boundedFlowEquiv_eq_aux
+    (lo hi : Assignment (Graph.ofSimpleGraph G).BidirectedHom K) (s t : V) :
+    boundedFlowEquiv G lo hi s t = boundedFlowEquivAux G lo hi s t := by
+  apply Equiv.ext
+  intro f
+  exact BoundedFlow.ext (by simp [boundedFlowEquivAux, assignmentEquiv_eq])
+
 @[simp]
 theorem val_boundedFlowEquiv {lo hi : Assignment (Graph.ofSimpleGraph G).BidirectedHom K}
     {s t : V} (f : BoundedFlow lo hi (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t)) :
     (boundedFlowEquiv G lo hi s t f).val = f.val := by
-  rw [BoundedFlow.val_def, BoundedFlow.val_def, boundedFlowEquiv_toFun,
-    ← G.doubledVertexEquiv_toOfSimpleGraphVertex t, excessAt_assignmentEquiv]
+  rw [boundedFlowEquiv_eq_aux, boundedFlowEquivAux, Equiv.trans_apply, BoundedFlow.val_congr,
+    (unitBidirectedNetworkIso G).val_boundedFlowEquiv]
 
 @[simp]
 theorem val_boundedFlowEquiv_symm {lo hi : Assignment (Graph.ofSimpleGraph G).BidirectedHom K}
@@ -1014,6 +932,19 @@ theorem val_boundedFlowEquiv_symm {lo hi : Assignment (Graph.ofSimpleGraph G).Bi
   simpa only [Equiv.apply_symm_apply] using
     (val_boundedFlowEquiv G ((boundedFlowEquiv G lo hi s t).symm f)).symm
 
+private noncomputable def flowEquivAux (c : Sym2 V → K) (s t : V) :
+    Flow ((Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c))
+        (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t) ≃
+      Flow (capacity G c) (vertex G s) (vertex G t) :=
+  ((unitBidirectedNetworkIso G).flowEquiv
+    ((Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c))
+    (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t)).trans
+    (Flow.congr
+      ((DFunLike.congr_fun (assignmentEquiv_eq G).symm _).trans
+        (assignmentEquiv_bidirectedCapacity G c))
+      (unitBidirectedNetworkIso_vertexEquiv_toOfSimpleGraphVertex G s)
+      (unitBidirectedNetworkIso_vertexEquiv_toOfSimpleGraphVertex G t))
+
 /-- Ordinary `s`–`t` flows for simple-graph pair capacities on
 `(Graph.ofSimpleGraph G).BidirectedHom` are canonically equivalent to ordinary flows on
 `DoubledQuiver G` for `DoubledQuiver.capacity G c`. -/
@@ -1022,33 +953,23 @@ def flowEquiv (c : Sym2 V → K) (s t : V) :
         (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t) ≃
       Flow (capacity G c) (vertex G s) (vertex G t) where
   toFun f :=
-    { toBoundedFlow :=
-        { toFun := assignmentEquiv G K f.toFun
-          mem_Icc := by
-            have hmem := (boundedFlowEquiv G 0
-              ((Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c))
-              s t f.toBoundedFlow).mem_Icc
-            rwa [boundedFlowEquiv_toFun, assignmentEquiv_zero,
-              assignmentEquiv_bidirectedCapacity] at hmem
-          conserve := (boundedFlowEquiv G 0
-            ((Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c))
-            s t f.toBoundedFlow).conserve }
+    { toFun := assignmentEquiv G K f.toFun
+      mem_Icc := by
+        simpa [flowEquivAux, assignmentEquiv_eq] using (flowEquivAux G c s t f).mem_Icc
+      conserve := by
+        simpa [flowEquivAux, assignmentEquiv_eq] using (flowEquivAux G c s t f).conserve
       excessAt_sink_nonneg := by
-        rw [← G.doubledVertexEquiv_toOfSimpleGraphVertex t, excessAt_assignmentEquiv]
-        exact f.excessAt_sink_nonneg }
+        simpa [flowEquivAux, assignmentEquiv_eq] using
+          (flowEquivAux G c s t f).excessAt_sink_nonneg }
   invFun f :=
-    { toBoundedFlow := (boundedFlowEquiv G 0
-        ((Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c)) s t).symm
-        { toFun := f.toFun
-          mem_Icc := by
-            simpa only [assignmentEquiv_zero, assignmentEquiv_bidirectedCapacity] using f.mem_Icc
-          conserve := f.conserve }
+    { toFun := (assignmentEquiv G K).symm f.toFun
+      mem_Icc := by
+        simpa [flowEquivAux, assignmentEquiv_eq] using ((flowEquivAux G c s t).symm f).mem_Icc
+      conserve := by
+        simpa [flowEquivAux, assignmentEquiv_eq] using ((flowEquivAux G c s t).symm f).conserve
       excessAt_sink_nonneg := by
-        rw [boundedFlowEquiv_symm_toFun,
-          ← excessAt_assignmentEquiv G ((assignmentEquiv G K).symm f.toFun)
-            (G.toOfSimpleGraphVertex t),
-          Equiv.apply_symm_apply, G.doubledVertexEquiv_toOfSimpleGraphVertex]
-        exact f.excessAt_sink_nonneg }
+        simpa [flowEquivAux, assignmentEquiv_eq] using
+          ((flowEquivAux G c s t).symm f).excessAt_sink_nonneg }
   left_inv f := Flow.ext ((assignmentEquiv G K).symm_apply_apply f.toFun)
   right_inv f := Flow.ext ((assignmentEquiv G K).apply_symm_apply f.toFun)
 
@@ -1065,13 +986,19 @@ theorem flowEquiv_symm_toFun {c : Sym2 V → K} {s t : V}
     ((flowEquiv G c s t).symm f).toFun = (assignmentEquiv G K).symm f.toFun :=
   (rfl)
 
+private theorem flowEquiv_eq_aux (c : Sym2 V → K) (s t : V) :
+    flowEquiv G c s t = flowEquivAux G c s t := by
+  apply Equiv.ext
+  intro f
+  exact Flow.ext (by simp [flowEquivAux, assignmentEquiv_eq])
+
 @[simp]
 theorem val_flowEquiv {c : Sym2 V → K} {s t : V}
     (f : Flow ((Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c))
       (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t)) :
     (flowEquiv G c s t f).val = f.val := by
-  rw [BoundedFlow.val_def, BoundedFlow.val_def, flowEquiv_toFun,
-    ← G.doubledVertexEquiv_toOfSimpleGraphVertex t, excessAt_assignmentEquiv]
+  rw [flowEquiv_eq_aux, flowEquivAux, Equiv.trans_apply, Flow.val_congr,
+    (unitBidirectedNetworkIso G).val_flowEquiv]
 
 @[simp]
 theorem val_flowEquiv_symm {c : Sym2 V → K} {s t : V}
@@ -1085,8 +1012,8 @@ theorem isMaximum_flowEquiv_iff {c : Sym2 V → K} {s t : V}
     (f : Flow ((Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c))
       (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t)) :
     (flowEquiv G c s t f).IsMaximum ↔ f.IsMaximum := by
-  rw [Flow.isMaximum_iff, Flow.isMaximum_iff, ← (flowEquiv G c s t).forall_congr_right]
-  simp
+  rw [flowEquiv_eq_aux, flowEquivAux, Equiv.trans_apply, Flow.isMaximum_congr_iff,
+    (unitBidirectedNetworkIso G).isMaximum_flowEquiv_iff]
 
 /-- **Weak duality on `DoubledQuiver G`.** When off-diagonal capacities vanish away from
 `G.edgeSet`, every flow on `DoubledQuiver G` from `vertex G s` to `vertex G t` has value at most

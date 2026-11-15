@@ -146,6 +146,13 @@ theorem arrows_cons {s t x : V} (p : ArrowWalk Q s t) (e : Q t x) :
 theorem vertices_nil (s : V) : (nil s : ArrowWalk Q s s).vertices = [s] :=
   (rfl)
 
+/-- Casting the endpoints of a walk does not change its vertex list. -/
+@[simp]
+theorem vertices_cast {s t s' t' : V} (hs : s = s') (ht : t = t') (p : ArrowWalk Q s t) :
+    ArrowWalk.vertices (Q := Q) (@Quiver.Path.cast V ⟨Q⟩ s t s' t' hs ht p) = p.vertices := by
+  subst hs ht
+  rfl
+
 /-- The vertices of `p.cons e` are those of `p` followed by `x`. This is not a simp lemma, since
 simp already rewrites its left-hand side by `Quiver.Path.vertices_cons`. -/
 theorem vertices_cons {s t x : V} (p : ArrowWalk Q s t) (e : Q t x) :

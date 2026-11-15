@@ -30,12 +30,14 @@ flows is assembled.
 
 ## Main definitions
 
-* `TauCeti.BoundedFlow lo hi s t`: bounded `s`–`t` assignments, with value `BoundedFlow.val`.
+* `TauCeti.BoundedFlow lo hi s t`: bounded `s`–`t` assignments, with value `BoundedFlow.val` and
+  reindexing equivalence `BoundedFlow.congr`.
 * `TauCeti.cutBound lo hi S`: the total upper bound leaving `S` minus the total lower bound
   entering `S`.
 * `TauCeti.BoundedFlow.swap`: the same assignment as a bounded `t`–`s` assignment.
 * `TauCeti.BoundedFlow.update`: the residual update by a residual `s`–`t` assignment.
-* `TauCeti.Flow cap s t`: ordinary `s`–`t` flows for the capacities `cap`.
+* `TauCeti.Flow cap s t`: ordinary `s`–`t` flows for the capacities `cap`, with reindexing
+  equivalence `Flow.congr`.
 * `TauCeti.Flow.zero`: the zero flow for nonnegative capacities.
 * `TauCeti.BoundedFlow.swapFlow`: terminal exchange, turning a capacity-feasible assignment of
   nonpositive value into an ordinary flow in the opposite direction.
@@ -220,6 +222,46 @@ theorem excessAt_eq_single_sub_single [DecidableEq V] (f : BoundedFlow lo hi s t
         simp [← val_def, hvs]
       · simp [f.conserve v hvs hvt, hvs, hvt]
 
+/-- Reindex a bounded terminal assignment along equalities of bounds and terminals. -/
+def congr {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo') (hhi : hi = hi')
+    (hs : s = s') (ht : t = t') : BoundedFlow lo hi s t ≃ BoundedFlow lo' hi' s' t' where
+  toFun f :=
+    { toFun := f.toFun
+      mem_Icc := hlo ▸ hhi ▸ f.mem_Icc
+      conserve v hvs hvt := f.conserve v (hs ▸ hvs) (ht ▸ hvt) }
+  invFun f :=
+    { toFun := f.toFun
+      mem_Icc := hlo.symm ▸ hhi.symm ▸ f.mem_Icc
+      conserve v hvs hvt := f.conserve v (hs.symm ▸ hvs) (ht.symm ▸ hvt) }
+  left_inv _ := BoundedFlow.ext rfl
+  right_inv _ := BoundedFlow.ext rfl
+
+@[simp]
+theorem congr_toFun {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo') (hhi : hi = hi')
+    (hs : s = s') (ht : t = t') (f : BoundedFlow lo hi s t) :
+    (BoundedFlow.congr hlo hhi hs ht f).toFun = f.toFun :=
+  (rfl)
+
+@[simp]
+theorem congr_symm {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo') (hhi : hi = hi')
+    (hs : s = s') (ht : t = t') :
+    (BoundedFlow.congr hlo hhi hs ht).symm =
+      BoundedFlow.congr hlo.symm hhi.symm hs.symm ht.symm :=
+  (rfl)
+
+@[simp]
+theorem congr_refl :
+    BoundedFlow.congr (rfl : lo = lo) (rfl : hi = hi) (rfl : s = s) (rfl : t = t) =
+      Equiv.refl _ :=
+  (rfl)
+
+@[simp]
+theorem val_congr {lo' hi' : Assignment Q K} {s' t' : V} (hlo : lo = lo') (hhi : hi = hi')
+    (hs : s = s') (ht : t = t') (f : BoundedFlow lo hi s t) :
+    (BoundedFlow.congr hlo hhi hs ht f).val = f.val := by
+  subst ht
+  rw [val_def, val_def, congr_toFun]
+
 end Preorder
 
 section Ordered
@@ -372,6 +414,45 @@ theorem coe_equivBoundedFlow_apply (f : Flow cap s t) :
 theorem toBoundedFlow_equivBoundedFlow_symm_apply (f : {f : BoundedFlow 0 cap s t // 0 ≤ f.val}) :
     (equivBoundedFlow.symm f).toBoundedFlow = f :=
   (rfl)
+
+/-- Reindex an ordinary flow along equalities of capacities and terminals. -/
+def congr {cap' : Assignment Q K} {s' t' : V} (hcap : cap = cap') (hs : s = s') (ht : t = t') :
+    Flow cap s t ≃ Flow cap' s' t' where
+  toFun f :=
+    { toBoundedFlow := f.toBoundedFlow.congr rfl hcap hs ht
+      excessAt_sink_nonneg := ht ▸ f.excessAt_sink_nonneg }
+  invFun f :=
+    { toBoundedFlow := f.toBoundedFlow.congr rfl hcap.symm hs.symm ht.symm
+      excessAt_sink_nonneg := ht.symm ▸ f.excessAt_sink_nonneg }
+  left_inv _ := Flow.ext rfl
+  right_inv _ := Flow.ext rfl
+
+@[simp]
+theorem toBoundedFlow_congr {cap' : Assignment Q K} {s' t' : V} (hcap : cap = cap') (hs : s = s')
+    (ht : t = t') (f : Flow cap s t) :
+    (Flow.congr hcap hs ht f).toBoundedFlow = f.toBoundedFlow.congr rfl hcap hs ht :=
+  (rfl)
+
+theorem congr_toFun {cap' : Assignment Q K} {s' t' : V} (hcap : cap = cap') (hs : s = s')
+    (ht : t = t') (f : Flow cap s t) :
+    (Flow.congr hcap hs ht f).toFun = f.toFun :=
+  (rfl)
+
+@[simp]
+theorem congr_symm {cap' : Assignment Q K} {s' t' : V} (hcap : cap = cap') (hs : s = s')
+    (ht : t = t') :
+    (Flow.congr hcap hs ht).symm = Flow.congr hcap.symm hs.symm ht.symm :=
+  (rfl)
+
+@[simp]
+theorem congr_refl :
+    Flow.congr (rfl : cap = cap) (rfl : s = s) (rfl : t = t) = Equiv.refl _ :=
+  (rfl)
+
+theorem val_congr {cap' : Assignment Q K} {s' t' : V} (hcap : cap = cap') (hs : s = s')
+    (ht : t = t') (f : Flow cap s t) :
+    (Flow.congr hcap hs ht f).val = f.val :=
+  f.toBoundedFlow.val_congr rfl hcap hs ht
 
 end Flow
 
