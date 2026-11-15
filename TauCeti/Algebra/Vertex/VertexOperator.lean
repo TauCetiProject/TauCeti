@@ -34,13 +34,17 @@ larger order (`VertexOperator.IsLocalOfOrder.mono`), and it is symmetric in `A` 
 
 ## Main definitions
 
+* `VertexOperator.idField`: the identity field `id_V · z⁰`, with modes `(idField)₍ₙ₎ = δ_{n,-1}`.
 * `VertexOperator.IsLocalOfOrder`: mutual locality of order at most `N`.
 
 ## Main results
 
 * `VertexOperator.ext_ncoeff`: vertex operators with the same normalized coefficients are equal.
-* `VertexOperator.IsLocalOfOrder.mono`, `VertexOperator.IsLocalOfOrder.symm`: locality is
-  monotone in the order and symmetric.
+* `VertexOperator.IsLocalOfOrder.mono`, `VertexOperator.IsLocalOfOrder.symm`,
+  `VertexOperator.IsLocalOfOrder.add_left`, `VertexOperator.IsLocalOfOrder.smul_left`: locality is
+  monotone in the order, symmetric, and `R`-linear in each field.
+* `VertexOperator.isLocalOfOrder_idField_left`, `VertexOperator.isLocalOfOrder_idField_right`: the
+  identity field is mutually local of order `0` with every field.
 
 ## References
 
@@ -79,6 +83,30 @@ theorem exists_forall_ncoeff_apply_eq_zero (A : VertexOperator R V) (v : V) :
   apply ncoeff_eq_zero_of_lt_order
   omega
 
+/-- The identity field `id_V · z⁰`, whose `(-1)`-mode is `1 : Module.End R V` and whose other
+normalized modes vanish. -/
+def idField : VertexOperator R V :=
+  of_coeff (fun m ↦ if m = 0 then 1 else 0) fun _ ↦
+    ⟨0, fun m hm ↦ not_lt.mp fun h ↦ hm (by simp [h.ne])⟩
+
+/-- The normalized modes of `idField` are `(idField)₍ₙ₎ = δ_{n,-1}`. -/
+theorem ncoeff_idField (n : ℤ) :
+    (idField : VertexOperator R V)[[n]] = if n = -1 then 1 else 0 := by
+  refine (ncoeff_of_coeff _ _ n).trans ?_
+  congr 1
+  exact propext ⟨fun h ↦ by omega, fun h ↦ by omega⟩
+
+/-- The `(-1)`-mode of `idField` is the identity endomorphism. -/
+@[simp]
+theorem ncoeff_neg_one_idField : (idField : VertexOperator R V)[[-1]] = 1 := by
+  simp [ncoeff_idField]
+
+/-- All normalized modes of `idField` other than `-1` vanish. -/
+@[simp]
+theorem ncoeff_idField_of_ne {n : ℤ} (hn : n ≠ -1) :
+    (idField : VertexOperator R V)[[n]] = 0 := by
+  simp [ncoeff_idField, hn]
+
 /-- `A` and `B` are **mutually local of order at most `N`**: `(z - w)ᴺ [A(z), B(w)] = 0`. In
 normalized coefficients, for all integers `m` and `n`,
 `∑_{i + j = N} (-1)ʲ (N choose i) [A₍ₘ₊ᵢ₎, B₍ₙ₊ⱼ₎] = 0`. -/
@@ -92,9 +120,19 @@ theorem isLocalOfOrder_iff {A B : VertexOperator R V} {N : ℕ} :
       (A[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * A[[m + ij.1]]) = 0 :=
   Iff.rfl
 
+/-- Zero is local of every order with any field on the right. -/
+@[simp]
+theorem isLocalOfOrder_zero_left (B : VertexOperator R V) (N : ℕ) :
+    (0 : VertexOperator R V).IsLocalOfOrder B N := fun _ _ ↦ by simp
+
+/-- Zero is local of every order with any field on the left. -/
+@[simp]
+theorem isLocalOfOrder_zero_right (A : VertexOperator R V) (N : ℕ) :
+    A.IsLocalOfOrder 0 N := fun _ _ ↦ by simp
+
 namespace IsLocalOfOrder
 
-variable {A B : VertexOperator R V} {N : ℕ}
+variable {A A₁ A₂ B B₁ B₂ : VertexOperator R V} {N : ℕ}
 
 /-- Locality of order `N` implies locality of order `N + 1`: the sum for `N + 1` at `(m, n)` is
 the sum for `N` at `(m + 1, n)` minus the sum for `N` at `(m, n + 1)`. -/
@@ -144,6 +182,52 @@ theorem symm (h : A.IsLocalOfOrder B N) : B.IsLocalOfOrder A N := by
     module
   rw [sum_congr rfl e, ← smul_sum, h m n, smul_zero]
 
+/-- Locality of order `N` is closed under addition in the first field. -/
+theorem add_left (h₁ : A₁.IsLocalOfOrder B N) (h₂ : A₂.IsLocalOfOrder B N) :
+    (A₁ + A₂).IsLocalOfOrder B N := fun m n ↦ by
+  have e : ∀ ij ∈ antidiagonal N, N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
+      ((A₁ + A₂)[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * (A₁ + A₂)[[m + ij.1]]) =
+      N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
+        (A₁[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * A₁[[m + ij.1]]) +
+      N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
+        (A₂[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * A₂[[m + ij.1]]) := fun ij _ ↦ by
+    simp only [map_add, Pi.add_apply, add_mul, mul_add]
+    module
+  rw [sum_congr rfl e, sum_add_distrib, h₁ m n, h₂ m n, add_zero]
+
+/-- Locality of order `N` is closed under addition in the second field. -/
+theorem add_right (h₁ : A.IsLocalOfOrder B₁ N) (h₂ : A.IsLocalOfOrder B₂ N) :
+    A.IsLocalOfOrder (B₁ + B₂) N :=
+  (h₁.symm.add_left h₂.symm).symm
+
+/-- Locality of order `N` is closed under `R`-scalar multiplication in the first field. -/
+theorem smul_left (h : A.IsLocalOfOrder B N) (r : R) :
+    (r • A).IsLocalOfOrder B N := fun m n ↦ by
+  have e : ∀ ij ∈ antidiagonal N, N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
+      ((r • A)[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * (r • A)[[m + ij.1]]) =
+      r • (N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
+        (A[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * A[[m + ij.1]])) := fun ij _ ↦ by
+    simp only [map_smul, Pi.smul_apply, smul_mul_assoc, mul_smul_comm]
+    module
+  rw [sum_congr rfl e, ← smul_sum, h m n, smul_zero]
+
+/-- Locality of order `N` is closed under `R`-scalar multiplication in the second field. -/
+theorem smul_right (h : A.IsLocalOfOrder B N) (r : R) :
+    A.IsLocalOfOrder (r • B) N :=
+  (h.symm.smul_left r).symm
+
 end IsLocalOfOrder
+
+/-- The identity field is local of order `N` with any field on the right. -/
+@[simp]
+theorem isLocalOfOrder_idField_left (B : VertexOperator R V) (N : ℕ) :
+    (idField : VertexOperator R V).IsLocalOfOrder B N :=
+  IsLocalOfOrder.mono (N := 0) (fun _ _ ↦ by simp [ncoeff_idField]) (Nat.zero_le N)
+
+/-- The identity field is local of order `N` with any field on the left. -/
+@[simp]
+theorem isLocalOfOrder_idField_right (A : VertexOperator R V) (N : ℕ) :
+    A.IsLocalOfOrder idField N :=
+  (isLocalOfOrder_idField_left A N).symm
 
 end VertexOperator
