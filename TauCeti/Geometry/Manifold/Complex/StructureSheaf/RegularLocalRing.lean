@@ -99,10 +99,8 @@ finite-dimensional complex normed space `E`, the holomorphic stalk is a regular 
 without assuming a global manifold structure on `X`. -/
 theorem isRegularLocalRing_holomorphicStalk :
     IsRegularLocalRing ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
-  let L : E ≃L[ℂ] Fin (finrank ℂ E) → ℂ := ContinuousLinearEquiv.ofFinrankEq (by simp)
-  have := isRegularLocalRing_stalk_modelSpace ((L ∘ e.extend I) x)
-  exact IsRegularLocalRing.of_ringEquiv
-    (RingEquiv.ofBijective _ (e.holomorphicStalkPullback_comp_bijective he hx L))
+  have := isRegularLocalRing_stalk_modelSpace (V := Fin (finrank ℂ E) → ℂ)
+  exact IsRegularLocalRing.of_ringEquiv (e.holomorphicStalkEquivModel he hx)
 
 include he hx in
 /-- At any point in the domain of a holomorphic chart with respect to a boundaryless model on `E`,
@@ -111,11 +109,9 @@ the minimal number of generators of the maximal ideal of the holomorphic stalk e
 theorem spanFinrank_maximalIdeal_holomorphicStalk :
     (maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x)).spanFinrank =
       finrank ℂ E := by
-  let L : E ≃L[ℂ] Fin (finrank ℂ E) → ℂ := ContinuousLinearEquiv.ofFinrankEq (by simp)
-  let φ := RingEquiv.ofBijective _ (e.holomorphicStalkPullback_comp_bijective he hx L)
-  rw [← map_ringEquiv_maximalIdeal φ, Ideal.spanFinrank_map_eq_of_ringEquiv,
-    spanFinrank_maximalIdeal_stalk_modelSpace]
-  simp
+  rw [← map_ringEquiv_maximalIdeal (e.holomorphicStalkEquivModel he hx),
+    Ideal.spanFinrank_map_eq_of_ringEquiv, spanFinrank_maximalIdeal_stalk_modelSpace,
+    finrank_fin_fun]
 
 include he hx in
 /-- At any point in the domain of a holomorphic chart with respect to a boundaryless model on `E`,

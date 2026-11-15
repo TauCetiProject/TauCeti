@@ -21,7 +21,9 @@ Pullback along a map with a local analytic inverse, such as a chart, is bijectiv
 (`ContinuousLinearEquiv.holomorphicStalkPullback_bijective`) and along a chart followed by one
 (`stalkPullback_comp_extChartAt_bijective`,
 `OpenPartialHomeomorph.holomorphicStalkPullback_comp_bijective`), which identifies a stalk of a
-manifold or chart domain with a stalk of its model.
+manifold or chart domain with a stalk of its model
+(`OpenPartialHomeomorph.holomorphicStalkEquiv`,
+`OpenPartialHomeomorph.holomorphicStalkEquivModel`).
 On the complex line, `eventually_contMDiffAt_of_analyticAt` supplies the local hypothesis
 from `AnalyticAt`.
 -/
@@ -192,7 +194,7 @@ end ContinuousLinearEquiv
 
 namespace OpenPartialHomeomorph
 
-open IsManifold TauCeti.holomorphicStructureSheaf
+open IsManifold TauCeti TauCeti.holomorphicStructureSheaf
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
@@ -225,6 +227,53 @@ theorem holomorphicStalkPullback_comp_bijective (e : OpenPartialHomeomorph X H)
     (hmem.mono fun z hz ↦ by
       simp only [Function.comp_apply, (e.extend I).right_inv hz,
         ContinuousLinearEquiv.apply_symm_apply])
+
+/-- The contravariant ring equivalence on holomorphic stalks induced by the extended chart
+`e.extend I` of a holomorphic chart `e` with respect to a boundaryless model `I`, followed by a
+continuous linear equivalence `L : E ≃L[ℂ] V`. -/
+def holomorphicStalkEquiv (e : OpenPartialHomeomorph X H)
+    (he : e ∈ maximalAtlas I ω X) {x : X} (hx : x ∈ e.source) (L : E ≃L[ℂ] V) :
+    (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk (L (I (e x))) ≃+*
+      (holomorphicStructureSheaf I X).presheaf.stalk x :=
+  -- `L (I (e x))` is definitionally `(L ∘ e.extend I) x` and avoids `@[simp]` unfolding `extend`.
+  RingEquiv.ofBijective _ (e.holomorphicStalkPullback_comp_bijective he hx L)
+
+/-- `OpenPartialHomeomorph.holomorphicStalkEquiv` acts by local analytic pullback along
+`L ∘ e.extend I`. -/
+@[simp]
+theorem holomorphicStalkEquiv_apply (e : OpenPartialHomeomorph X H)
+    (he : e ∈ maximalAtlas I ω X) {x : X} (hx : x ∈ e.source) (L : E ≃L[ℂ] V)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk (L (I (e x)))) :
+    e.holomorphicStalkEquiv he hx L s =
+      stalkPullback (I := I) (J := 𝓘(ℂ, V)) (f := L ∘ e.extend I) (a := x)
+        ((e.open_source.eventually_mem hx).mono fun y hy ↦
+          L.contDiff.contMDiff.contMDiffAt.comp y (e.contMDiffAt_extend he hy)) s :=
+  (rfl)
+
+/-- When the model space `E` is finite-dimensional, `OpenPartialHomeomorph.holomorphicStalkEquiv`
+applied to `ContinuousLinearEquiv.ofFinrankEq` identifies the holomorphic stalk at `x ∈ e.source`
+with a holomorphic stalk of `Fin (Module.finrank ℂ E) → ℂ`. -/
+def holomorphicStalkEquivModel [FiniteDimensional ℂ E] (e : OpenPartialHomeomorph X H)
+    (he : e ∈ maximalAtlas I ω X) {x : X} (hx : x ∈ e.source) :
+    (holomorphicStructureSheaf 𝓘(ℂ, Fin (Module.finrank ℂ E) → ℂ)
+      (Fin (Module.finrank ℂ E) → ℂ)).presheaf.stalk
+        (ContinuousLinearEquiv.ofFinrankEq (Module.finrank_fin_fun ℂ).symm (I (e x))) ≃+*
+      (holomorphicStructureSheaf I X).presheaf.stalk x :=
+  e.holomorphicStalkEquiv he hx
+    (ContinuousLinearEquiv.ofFinrankEq (Module.finrank_fin_fun ℂ).symm)
+
+/-- `OpenPartialHomeomorph.holomorphicStalkEquivModel` is
+`OpenPartialHomeomorph.holomorphicStalkEquiv` along `ContinuousLinearEquiv.ofFinrankEq`. -/
+@[simp]
+theorem holomorphicStalkEquivModel_apply [FiniteDimensional ℂ E] (e : OpenPartialHomeomorph X H)
+    (he : e ∈ maximalAtlas I ω X) {x : X} (hx : x ∈ e.source)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, Fin (Module.finrank ℂ E) → ℂ)
+      (Fin (Module.finrank ℂ E) → ℂ)).presheaf.stalk
+        (ContinuousLinearEquiv.ofFinrankEq (Module.finrank_fin_fun ℂ).symm (I (e x)))) :
+    e.holomorphicStalkEquivModel he hx s =
+      e.holomorphicStalkEquiv he hx
+        (ContinuousLinearEquiv.ofFinrankEq (Module.finrank_fin_fun ℂ).symm) s :=
+  (rfl)
 
 end OpenPartialHomeomorph
 

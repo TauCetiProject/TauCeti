@@ -204,13 +204,9 @@ include he hx in
 finite-dimensional complex normed space `E`, the holomorphic stalk is a unique factorization
 domain, without assuming a global manifold structure on `X`. -/
 theorem uniqueFactorizationMonoid_holomorphicStalk :
-    UniqueFactorizationMonoid ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
-  let V := Fin (finrank ℂ E) → ℂ
-  let L : E ≃L[ℂ] V := ContinuousLinearEquiv.ofFinrankEq (by simp [V])
-  have hV := uniqueFactorizationMonoid_stalk_of_finrank_eq (finrank ℂ E) V (by simp [V])
-    (L (e.extend I x))
-  exact (RingEquiv.ofBijective _
-    (e.holomorphicStalkPullback_comp_bijective he hx L)).toMulEquiv.uniqueFactorizationMonoid hV
+    UniqueFactorizationMonoid ((holomorphicStructureSheaf I X).presheaf.stalk x) :=
+  (e.holomorphicStalkEquivModel he hx).toMulEquiv.uniqueFactorizationMonoid
+    (uniqueFactorizationMonoid_stalk_of_finrank_eq _ _ (finrank_fin_fun ℂ) _)
 
 end OpenPartialHomeomorph
 
