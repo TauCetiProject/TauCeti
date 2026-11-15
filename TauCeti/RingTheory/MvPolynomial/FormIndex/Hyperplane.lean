@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Algebra.MvPolynomial.Funext
+import TauCeti.RingTheory.MvPolynomial.HasseDeriv.BlockSubst
 
 /-!
 # Hyperplane derivative characterization of the index along linear forms
@@ -73,17 +74,6 @@ theorem substForm_eq_aeval_blockLinearForm (M : κ → ι → R) (i₀ : κ → 
   · subst hl
     simp [blockLinearForm_apply]
   · simp [hl, blockLinearForm_apply]
-
-omit [DecidableEq ι] in
-private theorem aeval_blockLinearForm_eq_linearSubst [Fintype κ] [DecidableEq κ]
-    (A : κ → ι → ι → R) :
-    aeval (blockLinearForm A) =
-      linearSubst (Matrix.of fun p q : κ × ι ↦
-        if p.1 = q.1 then A p.1 p.2 q.2 else 0) := by
-  ext ⟨h, l⟩ : 1
-  rw [aeval_X, blockLinearForm_apply, linearSubst_X, Fintype.sum_prod_type,
-    Finset.sum_eq_single h (fun h' _ hh' ↦ by simp [hh'.symm]) (by simp)]
-  simp
 
 /-- `substForm M i₀` is a linear substitution (`MvPolynomial.linearSubst`) by a block-diagonal
 matrix. -/
