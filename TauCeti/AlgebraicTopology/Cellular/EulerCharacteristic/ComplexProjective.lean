@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Product
 public import TauCeti.Topology.CWComplex.Classical.ComplexProjective
 
 /-!
@@ -18,6 +19,10 @@ none in odd dimensions, so every cell counts with sign `+1`.
 * `TauCeti.ComplexProjectiveSpace.cwEulerChar_cwComplex`: the alternating cell count of the CW
   structure on `CPⁿ`.
 * `TauCeti.eulerChar_complexProjectiveSpace`: `χ(CPⁿ) = n + 1`.
+* `TauCeti.eulerChar_projectivization_complex`: `χ(ℙ ℂ V) = dim V`, transported along the
+  homeomorphism `CPⁿ ≃ₜ ℙ ℂ (Fin (n + 1) → ℂ)`
+  (`TauCeti.ComplexProjectiveSpace.homeomorphProjectivization`). In particular
+  `χ(ℙ ℂ (Fin (n + 1) → ℂ)) = n + 1`.
 
 ## References
 
@@ -71,5 +76,26 @@ theorem eulerChar_complexProjectiveSpace (n : ℕ) :
   have := finite_cwComplex (n := n)
   rw [eulerChar_eq_cwEulerChar (Homeomorph.Set.univ _).symm.toHomotopyEquiv,
     cwEulerChar_cwComplex]
+
+open scoped LinearAlgebra.Projectivization in
+/-- **The Euler characteristic of complex projective space** on the projectivization carrier:
+`χ(ℙ ℂ V) = dim V` for a finite-dimensional Hausdorff complex topological vector space `V`. For
+`V = Fin (n + 1) → ℂ` this is `n + 1`; for `V = 0` the projectivization is empty. -/
+@[simp]
+theorem eulerChar_projectivization_complex {V : Type*} [AddCommGroup V] [Module ℂ V]
+    [FiniteDimensional ℂ V] [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℂ V]
+    [T2Space V] : eulerChar (ℙ ℂ V) = Module.finrank ℂ V := by
+  cases h : Module.finrank ℂ V with
+  | zero =>
+    have := Module.finrank_zero_iff.1 h
+    simp [eulerChar_of_discreteTopology]
+  | succ n =>
+    -- The factor `PUnit` lifts `CPⁿ` to the universe of `V`.
+    rw [← ((Homeomorph.prodPUnit (ComplexProjectiveSpace n)).trans
+      ((ComplexProjectiveSpace.homeomorphProjectivization n).trans
+        (ContinuousLinearEquiv.ofFinrankEq (E := Fin (n + 1) → ℂ) (F := V)
+          (by simp [h])).mapProjectivization)).eulerChar_eq,
+      eulerChar_prod, eulerChar_complexProjectiveSpace, eulerChar_of_contractibleSpace,
+      Nat.cast_succ, mul_one]
 
 end TauCeti

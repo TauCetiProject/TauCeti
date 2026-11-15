@@ -25,7 +25,13 @@ formula come from `MeasureTheory.Integrable.integrable_convolution` and
 `MeasureTheory.integral_convolution`. The substitution `t ↦ 1/t` relates
 `∫₀^∞ f(t) h(xt) dt` to that convolution.
 
+The raw logarithmic-coordinate identity is stated for continuous real-bilinear maps before
+imposing convergence. It underlies the complex Mellin product formula in this file.
+
 ## Main results
+
+* `ContinuousLinearMap.integral_inv_smul_bilinear_eq_convolution`: the raw multiplicative integral
+  in logarithmic coordinates, without measurability, convergence or completeness hypotheses.
 
 * `TauCeti.hasMellin_integral_mul_div`: the Mellin transform of `∫₀^∞ f(y) g(x/y) dy/y` is
   `𝓜f(s) 𝓜g(s)`, with absolute convergence.
@@ -47,6 +53,26 @@ files `DLMFMathlib/Analysis/MellinConvolution.lean` and
 open MeasureTheory Complex Set Filter
 open scoped Topology
 
+/-- Logarithmic coordinates turn the raw multiplicative convolution into ordinary
+convolution. No convergence or measurability assumption is needed. -/
+theorem ContinuousLinearMap.integral_inv_smul_bilinear_eq_convolution
+    {E F G : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G]
+    [NormedSpace ℝ E] [NormedSpace ℝ F] [NormedSpace ℝ G]
+    (L : E →L[ℝ] F →L[ℝ] G) (f : ℝ → E) (g : ℝ → F) (u : ℝ) :
+    (∫ y in Ioi 0, y⁻¹ • L (f y) (g (Real.exp (-u) / y))) =
+      convolution (fun v : ℝ => f (Real.exp (-v)))
+        (fun v : ℝ => g (Real.exp (-v))) L volume u := by
+  rw [← integral_comp_exp]
+  simp only [smul_smul, mul_inv_cancel₀ (Real.exp_ne_zero _), one_smul]
+  rw [← integral_neg_eq_self]
+  unfold convolution
+  apply integral_congr_ae (Eventually.of_forall fun v => ?_)
+  have harg : Real.exp (-u) / Real.exp (-v) = Real.exp (-(u - v)) := by
+    rw [← Real.exp_sub]
+    congr 1
+    ring
+  rw [harg]
+
 namespace TauCeti
 
 /-- In logarithmic coordinates the multiplicative convolution becomes an ordinary
@@ -56,33 +82,29 @@ private lemma integral_mul_div_eq_convolution (f g : ℝ → ℂ) (s : ℂ) (u :
       convolution (fun v : ℝ => cexp (-s * v) * f (Real.exp (-v)))
         (fun v : ℝ => cexp (-s * v) * g (Real.exp (-v)))
         (ContinuousLinearMap.mul ℂ ℂ) volume u := by
-  have hmel : mellin (fun y => f y * g (Real.exp (-u) / y)) 0 =
-      (∫ y in Ioi 0, f y * g (Real.exp (-u) / y) / y) := by
-    unfold mellin
-    dsimp only
-    apply setIntegral_congr_fun measurableSet_Ioi
-    intro y _
-    simp only [zero_sub, cpow_neg_one, smul_eq_mul]
-    ring
-  rw [← hmel, mellin_eq_integral_exp_smul]
-  simp only [neg_zero, zero_mul, Complex.exp_zero, one_smul]
-  rw [← integral_const_mul, convolution]
+  have hchart := ContinuousLinearMap.integral_inv_smul_bilinear_eq_convolution
+    (ContinuousLinearMap.mul ℝ ℂ) f g u
+  have hraw : (∫ y in Ioi 0, f y * g (Real.exp (-u) / y) / y) =
+      convolution (fun v : ℝ => f (Real.exp (-v)))
+        (fun v : ℝ => g (Real.exp (-v))) (ContinuousLinearMap.mul ℂ ℂ) volume u := by
+    convert hchart using 1
+    · apply setIntegral_congr_fun measurableSet_Ioi
+      intro y _
+      dsimp only
+      rw [ContinuousLinearMap.mul_apply', ← Complex.coe_smul, smul_eq_mul]
+      push_cast
+      ring
+    · simp only [convolution, ContinuousLinearMap.mul_apply']
+  rw [hraw, convolution, ← integral_const_mul]
   apply integral_congr_ae (Eventually.of_forall fun v => ?_)
   simp only [ContinuousLinearMap.mul_apply']
-  have harg : Real.exp (-u) / Real.exp (-v) = Real.exp (-(u - v)) := by
-    rw [← Real.exp_sub]
-    congr 1
-    ring
-  rw [harg]
   have he : cexp (-s * v) * cexp (-s * ((u - v : ℝ) : ℂ)) = cexp (-s * u) := by
     rw [← Complex.exp_add]
     congr 1
     push_cast
     ring
-  calc cexp (-s * u) * (f (Real.exp (-v)) * g (Real.exp (-(u - v)))) =
-      (cexp (-s * v) * cexp (-s * ((u - v : ℝ) : ℂ))) *
-        (f (Real.exp (-v)) * g (Real.exp (-(u - v)))) := by rw [he]
-    _ = _ := by push_cast; ring
+  rw [← he]
+  ring
 
 /-- The Mellin transform of the multiplicative convolution `∫₀^∞ f(y) g(x/y) dy/y` is the product
 of the Mellin transforms, with absolute convergence. -/
