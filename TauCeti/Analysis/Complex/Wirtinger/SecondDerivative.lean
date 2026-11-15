@@ -35,13 +35,17 @@ there, where each `A(z)` is a real-linear map on `F` within `δ` of multiplicati
   `F` and bounds `M` for `‖DA‖`, `‖Df‖` and `L` for `‖Du‖` on `U`
   (`TauCeti.exists_eLpNorm_fderiv_fderiv_apply_le`). So uniform `C¹` bounds on solutions and
   coefficients give uniform bounds on second derivatives.
-* **Equicontinuity of the derivatives.** For `p = 4 > 2 = dim ℂ`, Morrey's inequality on small
-  balls (`TauCeti.enorm_sub_le_of_mem_ball_of_finrank_lt`) turns these `L⁴` bounds into a common
-  Hölder modulus for the first derivatives. Hence a family of solutions whose first derivatives,
-  and those of its coefficients, are bounded on compact sets has equicontinuous derivatives
-  (`TauCeti.exists_pos_forall_equicontinuousOn_fderiv`). With the Arzelà–Ascoli theorem in `C¹`
-  (`TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_fderiv`) this is the step from `C⁰` to
-  `C¹` convergence in compactness arguments for pseudoholomorphic curves and Floer solutions.
+* **A Hölder modulus for the derivatives.** For `p = 4 > 2 = dim ℂ`, Morrey's inequality on small
+  balls (`TauCeti.enorm_sub_le_of_mem_ball_of_finrank_lt`) turns `L⁴` bounds on the second
+  derivatives into the bound `‖Du(x) - Du(y)‖ ≤ c C √|y - x|`
+  (`TauCeti.exists_forall_norm_fderiv_sub_le_mul_sqrt`).
+* **Equicontinuity of the derivatives.** With the interior estimate, these give a common Hölder
+  modulus for the first derivatives of a family of solutions. Hence a family of solutions whose
+  first derivatives, and those of its coefficients, are bounded on compact sets has equicontinuous
+  derivatives (`TauCeti.exists_pos_forall_equicontinuousOn_fderiv`). With the Arzelà–Ascoli
+  theorem in `C¹` (`TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_fderiv`) this is the
+  step from `C⁰` to `C¹` convergence in compactness arguments for pseudoholomorphic curves and
+  Floer solutions.
 
 In the interior estimate the threshold `δ` depends only on `p` and `F`, through the
 Calderón–Zygmund constant; in the equicontinuity result, where `p = 4`, it depends only on `F`.
@@ -179,6 +183,63 @@ theorem exists_eLpNorm_fderiv_fderiv_apply_le {p : ℝ≥0∞} (hp : 1 < p) (hp_
 
 end Estimate
 
+section Holder
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+
+/-- **A Hölder modulus for the derivative from `L⁴` bounds on second derivatives.** There is a
+constant `c ≥ 0` with the following property. Let `v : ℂ → F` be `C²` on the disc `B` of radius
+`2 |y - x|` about `x`, and let the derivatives of its directional derivatives `∂ₑv`, `‖e‖ ≤ 1`,
+have `L⁴` norm at most `C` on `B`. Then `‖Dv(x) - Dv(y)‖ ≤ c C √|y - x|`. This is Morrey's
+inequality on `B` for `p = 4 > 2 = dim ℂ`, applied to `∂₁v` and `∂ᵢv`. -/
+theorem exists_forall_norm_fderiv_sub_le_mul_sqrt :
+    ∃ c : ℝ, 0 ≤ c ∧ ∀ ⦃v : ℂ → F⦄ ⦃x y : ℂ⦄ ⦃C : ℝ≥0⦄,
+      ContDiffOn ℝ 2 v (ball x (2 * dist y x)) →
+      (∀ e : ℂ, ‖e‖ ≤ 1 → eLpNorm (fderiv ℝ (fun z ↦ fderiv ℝ v z e)) ((4 : ℝ≥0) : ℝ≥0∞)
+        (volume.restrict (ball x (2 * dist y x))) ≤ C) →
+      ‖fderiv ℝ v x - fderiv ℝ v y‖ ≤ c * C * √(dist y x) := by
+  have hp4 : ((Module.finrank ℝ ℂ : ℕ) : ℝ≥0) < (4 : ℝ≥0) := by
+    rw [Complex.finrank_real_complex]; norm_num
+  have ha : 1 - (Module.finrank ℝ ℂ : ℝ) / ((4 : ℝ≥0) : ℝ) = 1 / 2 := by
+    rw [Complex.finrank_real_complex]; norm_num
+  -- Morrey's inequality on balls, with its constant `c₀` isolated.
+  obtain ⟨c₀, hc₀, hmor⟩ : ∃ c₀ : ℝ, 0 ≤ c₀ ∧ ∀ {w : ℂ → F} {ρ : ℝ} {x y : ℂ},
+      ContDiffOn ℝ 1 w (ball x ρ) → y ∈ ball x ρ →
+        ‖w x - w y‖ₑ ≤ ENNReal.ofReal
+          (c₀ * (2 * ρ) ^ (1 - (Module.finrank ℝ ℂ : ℝ) / ((4 : ℝ≥0) : ℝ))) *
+          eLpNorm (fderiv ℝ w) ((4 : ℝ≥0) : ℝ≥0∞) (volume.restrict (ball x ρ)) := by
+    refine ⟨_, ?_, fun hw hy ↦ enorm_sub_le_of_mem_ball_of_finrank_lt (μ := volume) hw
+      (mem_ball_self (pos_of_mem_ball hy)) hy hp4⟩
+    rw [Complex.finrank_real_complex]
+    refine mul_nonneg (by positivity) (Real.rpow_nonneg ?_ _)
+    norm_num
+    positivity
+  refine ⟨4 * c₀, by positivity, fun v x y C hv hD ↦ ?_⟩
+  rcases eq_or_ne y x with rfl | hyx
+  · simp
+  set d := dist y x
+  have hd : 0 < d := dist_pos.2 hyx
+  -- Each directional derivative changes by at most `2 c₀ C √d`.
+  have hdir : ∀ e : ℂ, ‖e‖ ≤ 1 → ‖fderiv ℝ v x e - fderiv ℝ v y e‖ ≤ 2 * c₀ * C * √d := by
+    intro e he
+    have hve : ContDiffOn ℝ 1 (fun z ↦ fderiv ℝ v z e) (ball x (2 * d)) :=
+      (hv.fderiv_of_isOpen isOpen_ball (m := 1) (by norm_num)).clm_apply contDiffOn_const
+    have h := (hmor hve (mem_ball.2 (by linarith))).trans (mul_le_mul_right (hD e he) _)
+    rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul' C.coe_nonneg,
+      ENNReal.ofReal_le_ofReal_iff (by positivity), ha, ← Real.sqrt_eq_rpow,
+      show 2 * (2 * d) = 2 ^ 2 * d by ring, Real.sqrt_mul (by positivity),
+      Real.sqrt_sq (by norm_num)] at h
+    exact h.trans_eq (by ring)
+  set T := fderiv ℝ v x - fderiv ℝ v y
+  have hT : ‖T‖ ≤ ‖T 1‖ + ‖T I‖ :=
+    T.opNorm_le_bound (by positivity) T.norm_apply_le_norm_one_add_norm_I
+  have h1 := hdir 1 (by simp)
+  have hI := hdir I (by simp)
+  simp only [T, sub_apply] at hT
+  linarith
+
+end Holder
+
 section Equicontinuity
 
 variable {F ι : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
@@ -196,21 +257,7 @@ theorem exists_pos_forall_equicontinuousOn_fderiv :
         ‖fderiv ℝ (A i) z‖ ≤ M ∧ ‖fderiv ℝ (f i) z‖ ≤ M ∧ ‖fderiv ℝ (u i) z‖ ≤ M) →
       (∀ i, ∀ z ∈ Ω, fderiv ℝ (u i) z 1 + A i z (fderiv ℝ (u i) z I) = f i z) →
       EquicontinuousOn (fun i ↦ fderiv ℝ (u i)) Ω := by
-  have hp4 : ((Module.finrank ℝ ℂ : ℕ) : ℝ≥0) < (4 : ℝ≥0) := by
-    rw [Complex.finrank_real_complex]; norm_num
-  set a : ℝ := 1 - (Module.finrank ℝ ℂ : ℝ) / ((4 : ℝ≥0) : ℝ) with ha_def
-  have ha : 0 < a := by rw [ha_def, Complex.finrank_real_complex]; norm_num
-  -- Morrey's inequality on balls, with its constant isolated.
-  obtain ⟨c, hc, hmor⟩ : ∃ c : ℝ, 0 ≤ c ∧ ∀ {v : ℂ → F} {ρ : ℝ} {x y : ℂ},
-      ContDiffOn ℝ 1 v (ball x ρ) → y ∈ ball x ρ →
-        ‖v x - v y‖ₑ ≤ ENNReal.ofReal (c * (2 * ρ) ^ a) *
-          eLpNorm (fderiv ℝ v) ((4 : ℝ≥0) : ℝ≥0∞) (volume.restrict (ball x ρ)) := by
-    refine ⟨_, ?_, fun hv hy ↦ enorm_sub_le_of_mem_ball_of_finrank_lt (μ := volume) hv
-      (mem_ball_self (pos_of_mem_ball hy)) hy hp4⟩
-    rw [Complex.finrank_real_complex]
-    refine mul_nonneg (by positivity) (Real.rpow_nonneg ?_ _)
-    norm_num
-    positivity
+  obtain ⟨c, -, hhol⟩ := exists_forall_norm_fderiv_sub_le_mul_sqrt (F := F)
   obtain ⟨δ, hδ0, hδ⟩ := exists_eLpNorm_fderiv_fderiv_apply_le (F := F)
     (p := ((4 : ℝ≥0) : ℝ≥0∞)) (by norm_num) ENNReal.coe_ne_top
   refine ⟨δ, hδ0, fun Ω u f A hΩ hu hA hAI hb heq x hx ↦ ?_⟩
@@ -230,43 +277,25 @@ theorem exists_pos_forall_equicontinuousOn_fderiv :
       (fun z hz ↦ (hM i z (ball_subset_closedBall hz)).2.1.trans (Real.le_coe_toNNReal _))
       (fun z hz ↦ (hM i z (ball_subset_closedBall hz)).2.2.trans (Real.le_coe_toNNReal _))
       (fun z hz ↦ heq i z (hball hz))
-  -- Morrey's inequality turns this into a uniform Hölder modulus for each directional derivative.
-  have hdir : ∀ i, ∀ e : ℂ, ‖e‖ ≤ 1 → ∀ y, dist y x < R₀ / 8 →
-      ‖fderiv ℝ (u i) x e - fderiv ℝ (u i) y e‖ ≤ c * (2 * (2 * dist y x)) ^ a * C := by
-    intro i e he y hy
-    rcases eq_or_ne y x with rfl | hyx
-    · simp only [sub_self, norm_zero]
-      positivity
+  -- Morrey's inequality turns this into a uniform Hölder modulus for the derivatives.
+  have hmod : ∀ i, ∀ y, dist y x < R₀ / 8 →
+      ‖fderiv ℝ (u i) x - fderiv ℝ (u i) y‖ ≤ c * C * √(dist y x) := by
+    intro i y hy
     have hsub : ball x (2 * dist y x) ⊆ closedBall x (R₀ / 4) :=
       ball_subset_closedBall.trans (closedBall_subset_closedBall (by linarith))
-    have hv : ContDiffOn ℝ 1 (fun z ↦ fderiv ℝ (u i) z e) (ball x (2 * dist y x)) :=
-      (((hu i).fderiv_of_isOpen (m := 1) hΩ (by simp)).clm_apply contDiffOn_const).mono
-        (hsub.trans ((closedBall_subset_ball (by linarith)).trans hball))
-    have h := (hmor hv (mem_ball.2 (by linarith [dist_pos.2 hyx]))).trans (mul_le_mul_right
-      ((eLpNorm_mono_measure _ (Measure.restrict_mono hsub le_rfl)).trans (hD i e he)) _)
-    rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul' C.coe_nonneg,
-      ENNReal.ofReal_le_ofReal_iff (by positivity)] at h
-    exact h
+    exact hhol (((hu i).of_le (by simp)).mono
+      (hsub.trans ((closedBall_subset_ball (by linarith)).trans hball)))
+      fun e he ↦ (eLpNorm_mono_measure _ (Measure.restrict_mono hsub le_rfl)).trans (hD i e he)
   rw [Metric.equicontinuousAt_iff_right]
   intro ε hε
-  -- The modulus `2 c (4 dist(y, x)) ^ a C` tends to zero at `x`.
-  have hcont : Continuous fun y : ℂ ↦ 2 * (c * (2 * (2 * dist y x)) ^ a * C) :=
-    continuous_const.mul ((continuous_const.mul ((Real.continuous_rpow_const ha.le).comp
-      (continuous_const.mul (continuous_const.mul (continuous_id.dist continuous_const))))).mul
-        continuous_const)
-  have hzero : 2 * (c * (2 * (2 * dist x x)) ^ a * C) = 0 := by
-    simp [Real.zero_rpow ha.ne']
-  have hlt : ∀ᶠ y in 𝓝 x, 2 * (c * (2 * (2 * dist y x)) ^ a * C) < ε :=
-    (hcont.tendsto x).eventually (gt_mem_nhds (hzero ▸ hε))
+  -- The modulus `c C √(dist y x)` tends to zero at `x`.
+  have hcont : Continuous fun y : ℂ ↦ c * C * √(dist y x) :=
+    continuous_const.mul (continuous_id.dist continuous_const).sqrt
+  have hlt : ∀ᶠ y in 𝓝 x, c * C * √(dist y x) < ε :=
+    (hcont.tendsto x).eventually (gt_mem_nhds (by simpa using hε))
   filter_upwards [hlt, ball_mem_nhds x (by positivity : 0 < R₀ / 8)] with y hyε hyx i
-  set T := fderiv ℝ (u i) x - fderiv ℝ (u i) y
-  have hop : ‖T‖ ≤ ‖T 1‖ + ‖T I‖ :=
-    T.opNorm_le_bound (by positivity) (ContinuousLinearMap.norm_apply_le_norm_one_add_norm_I T)
-  have h1 := hdir i 1 (by simp) y (mem_ball.1 hyx)
-  have h2 := hdir i I (by simp) y (mem_ball.1 hyx)
   rw [dist_eq_norm]
-  simp only [T, sub_apply] at hop
-  linarith
+  exact (hmod i y (mem_ball.1 hyx)).trans_lt hyε
 
 end Equicontinuity
 

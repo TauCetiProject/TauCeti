@@ -456,9 +456,10 @@ cylindrical Floer data `J_t(x)` and `K = H_t dt` give coefficients `J(z, x)` and
 satisfy the hypotheses of the coordinate results above. A Floer solution `u` on `S × ℝ`, for an
 open set `S` of `s`-values, with `1`-periodic loops in `K`, becomes the `i`-periodic solution
 `v(z) = u(re z, fract (im z))` of `∂ₜv - X(z, v) i = J(z, v) (∂ₛv - X(z, v) 1)` on `re ⁻¹' S`, with
-image in `K`. Its derivative bounds that of `u`, and its energy `∫ ‖∂ₛv‖²` over `A ×ℂ [0, 1]` is the
-energy `∫ ‖∂ₛu‖²` of `u` over `A × [0, 1]` for every measurable `A ⊆ S`. -/
-private theorem exists_complexCoordinate (hH : ContDiff ℝ 3 (uncurry H)) (hHper : Periodic H 1)
+image in `K` and as smooth as `u`. On `S × ℝ` the map `u` is `v` read back through the coordinate,
+so `du(p) = dv(z) ∘ e⁻¹` for `e(z) = p`, and the energy `∫ ‖∂ₛv‖²` over `A ×ℂ [0, 1]` is the energy
+`∫ ‖∂ₛu‖²` of `u` over `A × [0, 1]` for every measurable `A ⊆ S`. -/
+theorem exists_complexCoordinate (hH : ContDiff ℝ 3 (uncurry H)) (hHper : Periodic H 1)
     (hW : IsOpen W)
     (hJ : ContDiffOn ℝ 2 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
     (hJper : Periodic J 1) (hKW : univ ×ˢ K ⊆ W) :
@@ -467,18 +468,18 @@ private theorem exists_complexCoordinate (hH : ContDiff ℝ 3 (uncurry H)) (hHpe
       (∀ z, ∀ x ∈ K, ∀ v, Jc (z, x) (Jc (z, x) v) = -v) ∧
       (∀ x, Periodic (fun z ↦ Jc (z, x)) 1) ∧ (∀ x, Periodic (fun z ↦ Jc (z, x)) I) ∧
       (∀ x, Periodic (fun z ↦ Xc (z, x)) 1) ∧ (∀ x, Periodic (fun z ↦ Xc (z, x)) I) ∧
-      ∀ ⦃S : Set ℝ⦄ ⦃u : ℝ × ℝ → V⦄, IsOpen S → ContDiffOn ℝ 3 u (S ×ˢ univ) →
+      ∀ ⦃n : WithTop ℕ∞⦄ ⦃S : Set ℝ⦄ ⦃u : ℝ × ℝ → V⦄, IsOpen S → ContDiffOn ℝ n u (S ×ˢ univ) →
         (∀ s ∈ S, Periodic (fun t ↦ u (s, t)) 1) → (∀ s ∈ S, ∀ t, u (s, t) ∈ K) →
         (∀ z ∈ S ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
           (J z.2 (u z)) (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z :
             ℝ × ℝ →ₗ[ℝ] V)) →
-        ∃ v : ℂ → V, ContDiffOn ℝ 3 v (re ⁻¹' S) ∧ Periodic v I ∧
+        ∃ v : ℂ → V, ContDiffOn ℝ n v (re ⁻¹' S) ∧ Periodic v I ∧
           (∀ z ∈ re ⁻¹' S, fderiv ℝ v z I - Xc (z, v z) I =
             Jc (z, v z) (fderiv ℝ v z 1 - Xc (z, v z) 1)) ∧
           (∀ z ∈ re ⁻¹' S, v z ∈ K) ∧
-          (∀ p ∈ S ×ˢ (univ : Set ℝ), ‖fderiv ℝ u p‖ ≤
-            ‖fderiv ℝ v (equivRealProdCLM.symm p)‖ *
-              ‖(equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ)‖) ∧
+          (∀ p ∈ S ×ˢ (univ : Set ℝ), fderiv ℝ u p =
+            (fderiv ℝ v (equivRealProdCLM.symm p)).comp
+              (equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ)) ∧
           ∀ A : Set ℝ, MeasurableSet A → A ⊆ S →
             ∫⁻ z in A ×ℂ Icc 0 1, ‖fderiv ℝ v z 1‖ₑ ^ 2 =
               ∫⁻ z in A ×ˢ Icc 0 1, ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2 := by
@@ -492,7 +493,7 @@ private theorem exists_complexCoordinate (hH : ContDiff ℝ 3 (uncurry H)) (hHpe
   refine ⟨Jc, _, g ⁻¹' W, hW.preimage hg.continuous, hJ.comp hg.contDiffOn (mapsTo_preimage g W),
     hX.contDiffOn, fun q hq ↦ hKW ⟨mem_univ _, hq.2⟩, fun z x _ w ↦ by simp [Jc],
     fun x z ↦ by simp [Jc], fun x z ↦ by simp only [Jc, add_im, I_im, hJper z.im], hX1, hXI,
-    fun S u hS hu hper huK hfloer ↦ ?_⟩
+    fun n S u hS hu hper huK hfloer ↦ ?_⟩
   have hfloer' (z : ℝ × ℝ) (hz : z ∈ S ×ˢ univ) :=
     isComplexLinearMap_perturbedFDeriv_of_periodic hHper hJper hS hper hfloer hz
   -- The solution in the complex coordinate, extended `i`-periodically.
@@ -515,7 +516,6 @@ private theorem exists_complexCoordinate (hH : ContDiff ℝ 3 (uncurry H)) (hHpe
       filter_upwards [(hS.prod isOpen_univ).mem_nhds hp] with y hy
       simpa using (heq (x := e.symm y) (by simpa [hre] using hy.1)).symm
     rw [hev.fderiv_eq, e.symm.comp_right_fderiv]
-    exact ContinuousLinearMap.opNorm_comp_le _ _
   · -- `e` preserves volume and sends `∂ₛ` to `∂ₛ`.
     have hcongr : ∫⁻ z in A ×ℂ Icc 0 1, ‖fderiv ℝ v z 1‖ₑ ^ 2 =
         ∫⁻ z in measurableEquivRealProd ⁻¹' (A ×ˢ Icc 0 1),
@@ -565,9 +565,9 @@ theorem exists_pos_forall_norm_fderiv_le_of_setLIntegral_floerEnergyDensity_le
     rw [mem_closedBall, dist_eq_norm] at hy
     rw [sub_re, abs_le, hz₀] at this
     exact hpS ⟨by linarith, by linarith⟩
-  refine (hdu p ⟨hpS ⟨by linarith, by linarith⟩, mem_univ _⟩).trans
-    (mul_le_mul_of_nonneg_right (hB (hS.preimage continuous_re) hball hv hvper hCR hvK ?_)
-      (norm_nonneg _))
+  rw [hdu p ⟨hpS ⟨by linarith, by linarith⟩, mem_univ _⟩]
+  refine (ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_right
+    (hB (hS.preimage continuous_re) hball hv hvper hCR hvK ?_) (norm_nonneg _))
   -- The energy `∫ ‖∂ₛv‖²` over the band is at most `2 / c` times the Floer energy of `u`.
   rw [hz₀, hEv _ measurableSet_Ioo (Ioo_subset_Icc_self.trans hpS)]
   calc ∫⁻ z in Ioo (p.1 - r) (p.1 + r) ×ˢ Icc 0 1, ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2
@@ -615,9 +615,10 @@ theorem exists_forall_norm_fderiv_le_of_floer (hH : ContDiff ℝ 3 (uncurry H))
         huK hfloer measurableSet_Ioi subset_rfl)
   obtain ⟨M, hM⟩ := Floer.exists_forall_norm_fderiv_le_of_lintegral_ne_top hWc hJc hXc hK hKWc
     hJsq hJ1 hJI hX1 hXI hab hv hvper hCR hvK hfin
-  exact ⟨M * ‖(equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ)‖, fun z hz ↦
-    (hdu z ⟨hab.trans_le hz, mem_univ _⟩).trans
-      (mul_le_mul_of_nonneg_right (hM _ (by simpa using hz)) (norm_nonneg _))⟩
+  refine ⟨M * ‖(equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ)‖, fun z hz ↦ ?_⟩
+  rw [hdu z ⟨hab.trans_le hz, mem_univ _⟩]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_mul_of_nonneg_right (hM _ (by simpa using hz)) (norm_nonneg _))
 
 /-- **Finite-energy Floer half-cylinders are Lipschitz.** Under the hypotheses of
 `TauCeti.SymplecticForm.exists_forall_norm_fderiv_le_of_floer`, the solution `u` is Lipschitz on

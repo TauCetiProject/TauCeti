@@ -67,7 +67,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-- The Floer equation `∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` for `J² = -1` is the
 equation `∂ₛu + J(z, u) ∂ₜu = X(z, u) 1 + J(z, u) X(z, u) i`. -/
-private theorem fderiv_one_add_eq_of_fderiv_I_sub_eq {J : V →L[ℝ] V} {L X : ℂ →L[ℝ] V}
+theorem fderiv_one_add_eq_of_fderiv_I_sub_eq {J : V →L[ℝ] V} {L X : ℂ →L[ℝ] V}
     (hJ : ∀ w, J (J w) = -w) (h : L I - X I = J (L 1 - X 1)) :
     L 1 + J (L I) = X 1 + J (X I) := by
   have h' := congrArg J h

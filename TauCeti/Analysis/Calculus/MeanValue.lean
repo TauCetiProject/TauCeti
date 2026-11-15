@@ -56,6 +56,9 @@ value theorem on the part of the segment where the function crosses the band.
 The file also records the one-variable form of Mathlib's
 `Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le'`, bounding the increment of a function
 against a fixed derivative `φ` (`Convex.norm_image_sub_le_of_norm_hasDerivWithin_le'`).
+Applied on an interval `[a, a + h]` it bounds the derivative of a small function whose derivative
+oscillates little: `h ‖f' a‖ ≤ 2 ε + D h` when `‖f‖ ≤ ε` and `‖f' x - f' a‖ ≤ D` there
+(`TauCeti.mul_norm_deriv_le_of_norm_le_of_norm_deriv_sub_le`).
 
 For a function on the real line with derivative of norm at most `D r ^ (β - 1)` at every `r > 0`,
 where `0 ≤ β ≤ 1`, the increments satisfy `‖u b - u a‖ ≤ 2 D |b - a| a ^ (β - 1)` for `a > 0` and
@@ -474,6 +477,28 @@ theorem norm_image_sub_le_of_norm_hasDerivWithin_le' {φ : G} {C : ℝ}
   abel
 
 end Convex
+
+namespace TauCeti
+
+/-- **A derivative controlled by the values and the oscillation of the derivative.** Let `f` have
+derivative `f'` on `[a, a + h]`, with `‖f‖ ≤ ε` there and `‖f' x - f' a‖ ≤ D` for `x ∈ [a, a + h]`.
+Then `h ‖f' a‖ ≤ 2 ε + D h`. -/
+theorem mul_norm_deriv_le_of_norm_le_of_norm_deriv_sub_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f f' : ℝ → E} {a h ε D : ℝ} (hh : 0 ≤ h)
+    (hf : ∀ x ∈ Icc a (a + h), HasDerivWithinAt f (f' x) (Icc a (a + h)) x)
+    (hε : ∀ x ∈ Icc a (a + h), ‖f x‖ ≤ ε) (hD : ∀ x ∈ Icc a (a + h), ‖f' x - f' a‖ ≤ D) :
+    h * ‖f' a‖ ≤ 2 * ε + D * h := by
+  have ha : a ∈ Icc a (a + h) := left_mem_Icc.2 (by linarith)
+  have hah : a + h ∈ Icc a (a + h) := right_mem_Icc.2 (by linarith)
+  -- By the mean value inequality, `h f' a` is within `D h` of the increment `f (a + h) - f a`.
+  have key := (convex_Icc a (a + h)).norm_image_sub_le_of_norm_hasDerivWithin_le' hf hD ha hah
+  rw [add_sub_cancel_left, Real.norm_eq_abs, abs_of_nonneg hh] at key
+  have h₁ := norm_sub_le (f (a + h) - f a) (f (a + h) - f a - h • f' a)
+  have h₂ := norm_sub_le (f (a + h)) (f a)
+  rw [sub_sub_cancel, norm_smul, Real.norm_eq_abs, abs_of_nonneg hh] at h₁
+  linarith [hε a ha, hε (a + h) hah]
+
+end TauCeti
 
 /-- A chord in a closed unit ball remains uniformly close in the image to its initial point,
 relative to the image distance to a prescribed intermediate point, if the parametrization
