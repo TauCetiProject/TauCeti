@@ -134,7 +134,7 @@ theorem singularHomologyMap_diskBoundaryMap_mem_iff {n : ℕ} {X : TopCat.{0}} {
           ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of ℤ ℤ) (n + 1)).inv 1)) ∈ S ↔
       (hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 ∈ S := by
   obtain ⟨ε, hε⟩ := exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz n
-  rw [hε X x p]
-  exact S.smul_mem_iff_of_isUnit ε.isUnit
+  rw [hε X x p, ← Units.smul_def]
+  exact S.smul_mem_iff' ε
 
 end TauCeti

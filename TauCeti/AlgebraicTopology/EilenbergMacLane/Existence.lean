@@ -183,6 +183,8 @@ theorem ker_singularHomologyMap_presentation :
     -- `Additive.ofMul ⟦p⟧` is presented through `Quotient` rather than `HomotopyGroup`, so the
     -- generated motive of `rw` is ill-typed and `erw` is needed.
     erw [toMul_ofMul, HomotopyGroup.hurewicz_mk]
+    -- `erw` leaves the left side applied through the underlying function of the linear map.
+    rfl
   rw [hp] at hh ⊢
   have hr := (singularHomologyMap_diskBoundaryMap_mem_iff p (LinearMap.ker ψ)).2 hh
   exact (singularHomologyMap_diskBoundaryMap_mem_iff p _).1
