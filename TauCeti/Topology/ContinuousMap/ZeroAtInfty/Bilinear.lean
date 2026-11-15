@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Operator.Basic
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
-public import Mathlib.Analysis.Normed.Operator.NormedSpace
 
 /-!
 # Outer products and two-variable functionals on discrete model spaces
@@ -52,9 +52,9 @@ variable [SeminormedRing R]
 /-- **Outer product of scalar null families.** Given `a ∈ C₀(I, R)` and `b ∈ C₀(J, R)`, the
 two-variable family `(i, j) ↦ a i * b j` vanishes at infinity on `I × J`. -/
 noncomputable def prodMul (a : C₀(I, R)) (b : C₀(J, R)) : C₀(I × J, R) :=
-  (curryEquiv ℕ R).symm
-    (compLeft ((ContinuousLinearMap.id ℕ R).smulRight b)
-      (ContinuousLinearMap.exists_norm_smulRight_id_apply_le ℕ R b) a)
+  (curryEquiv R R).symm
+    (compLeft (ContinuousLinearMap.toSpanSingleton R b)
+      (ContinuousLinearMap.exists_norm_toSpanSingleton_apply_le R b) a)
 
 /-- `prodMul a b` evaluates at `(i, j)` to `a i * b j`. -/
 @[simp]
@@ -103,6 +103,19 @@ theorem prodMul_single [DecidableEq I] [DecidableEq J] (i : I) (j : J) (r s : R)
   ext ⟨i', j'⟩
   by_cases hi : i' = i <;> by_cases hj : j' = j <;> simp [single_apply, hi, hj]
 
+/-- Currying an outer product scales the second factor by the coordinates of the first. -/
+@[simp]
+theorem curryEquiv_prodMul (a : C₀(I, R)) (b : C₀(J, R)) (i : I) :
+    curryEquiv R R (prodMul a b) i = a i • b := by
+  ext j; simp
+
+/-- Currying an outer product applies coordinatewise right scalar multiplication by `b` to `a`. -/
+theorem curryEquiv_prodMul_eq_compLeft (a : C₀(I, R)) (b : C₀(J, R)) :
+    curryEquiv R R (prodMul a b) =
+      compLeft (ContinuousLinearMap.toSpanSingleton R b)
+        (ContinuousLinearMap.exists_norm_toSpanSingleton_apply_le R b) a :=
+  (curryEquiv R R).apply_symm_apply _
+
 end SeminormedRing
 
 section SeminormedCommRing
@@ -114,21 +127,6 @@ second argument. -/
 theorem prodMul_smul_right (r : R) (a : C₀(I, R)) (b : C₀(J, R)) :
     prodMul a (r • b) = r • prodMul a b := by
   ext; simp [mul_left_comm]
-
-/-- Currying an outer product scales the second factor by the coordinates of the first. -/
-@[simp]
-theorem curryEquiv_prodMul (a : C₀(I, R)) (b : C₀(J, R)) (i : I) :
-    curryEquiv R R (prodMul a b) i = a i • b := by
-  ext j; simp
-
-/-- Currying an outer product applies coordinatewise right scalar multiplication by `b` to `a`. -/
-theorem curryEquiv_prodMul_eq_compLeft (a : C₀(I, R)) (b : C₀(J, R)) :
-    curryEquiv R R (prodMul a b) =
-      compLeft ((ContinuousLinearMap.id R R).smulRight b)
-        (ContinuousLinearMap.exists_norm_smulRight_id_apply_le R R b) a := by
-  ext i
-  rw [curryEquiv_prodMul, compLeft_apply, ContinuousLinearMap.smulRight_apply,
-    ContinuousLinearMap.id_apply]
 
 /-- Swapping the two indices swaps the factors of an outer product. -/
 @[simp]
@@ -146,9 +144,9 @@ variable {I J R : Type*}
   [TopologicalSpace I] [DiscreteTopology I]
   [TopologicalSpace J] [DiscreteTopology J]
 
-section SeminormedCommRing
+section SeminormedRing
 
-variable [SeminormedCommRing R]
+variable [SeminormedRing R]
 
 /-- **Product of two continuous linear functionals on discrete model spaces.** Given
 `u : C₀(I, R) →L[R] R` and a uniformly bounded `v : C₀(J, R) →L[R] R`, `prodFunctional u v hv`
@@ -167,27 +165,6 @@ theorem prodFunctional_apply (u : C₀(I, R) →L[R] R) (v : C₀(J, R) →L[R] 
 theorem prodFunctional_congr_bound (u : C₀(I, R) →L[R] R) (v : C₀(J, R) →L[R] R)
     (hv₁ hv₂ : ∃ C, ∀ y, ‖v y‖ ≤ C * ‖y‖) :
     prodFunctional u v hv₁ = prodFunctional u v hv₂ := (rfl)
-
-/-- On an outer product, `prodFunctional u v hv` multiplies the values of `u` and `v`. -/
-@[simp]
-theorem prodFunctional_prodMul (u : C₀(I, R) →L[R] R) (v : C₀(J, R) →L[R] R)
-    (hv : ∃ C, ∀ y, ‖v y‖ ≤ C * ‖y‖) (a : C₀(I, R)) (b : C₀(J, R)) :
-    prodFunctional u v hv (prodMul a b) = u a * v b := by
-  have hrow : compLeft v hv (curryEquiv R R (prodMul a b)) = v b • a := by
-    ext i
-    simp [mul_comm]
-  rw [prodFunctional_apply, hrow, map_smul, smul_eq_mul, mul_comm]
-
-/-- On a coordinate vector, `prodFunctional u v hv` multiplies the values on the unit coordinate
-vectors. -/
-@[simp]
-theorem prodFunctional_single [DecidableEq I] [DecidableEq J]
-    (u : C₀(I, R) →L[R] R) (v : C₀(J, R) →L[R] R) (hv : ∃ C, ∀ y, ‖v y‖ ≤ C * ‖y‖)
-    (i : I) (j : J) (r : R) :
-    prodFunctional u v hv (single (i, j) r) = r * (u (single i 1) * v (single j 1)) := by
-  have hsingle : single (i, j) r = prodMul (single i r) (single j (1 : R)) := by
-    rw [prodMul_single, mul_one]
-  rw [hsingle, prodFunctional_prodMul, ← smul_single_one i r, map_smul, smul_eq_mul, mul_assoc]
 
 /-- A product functional with `0` on the left is `0`. -/
 @[simp]
@@ -217,6 +194,44 @@ theorem prodFunctional_add_right (u : C₀(I, R) →L[R] R) (v₁ v₂ : C₀(J,
   ext f
   simp [prodFunctional_apply, compLeft_add v₁ v₂ hv₁ hv₂ hv]
 
+/-- If `u` is bounded by `C₁ ≥ 0` and `v` is bounded by `C₂`, then `prodFunctional u v hv` is
+bounded by `C₁ * C₂`. -/
+theorem norm_prodFunctional_apply_le (u : C₀(I, R) →L[R] R) (v : C₀(J, R) →L[R] R)
+    (hv : ∃ C, ∀ y, ‖v y‖ ≤ C * ‖y‖) {C₁ C₂ : ℝ} (hC₁₀ : 0 ≤ C₁)
+    (hC₁ : ∀ x, ‖u x‖ ≤ C₁ * ‖x‖) (hC₂ : ∀ y, ‖v y‖ ≤ C₂ * ‖y‖) (f : C₀(I × J, R)) :
+    ‖prodFunctional u v hv f‖ ≤ (C₁ * C₂) * ‖f‖ := by
+  rw [prodFunctional_apply, mul_assoc]
+  refine (hC₁ _).trans (mul_le_mul_of_nonneg_left ?_ hC₁₀)
+  exact (norm_compLeft_apply_le v hC₂ (curryEquiv R R f)).trans_eq
+    (by rw [(curryEquiv R R).norm_map])
+
+end SeminormedRing
+
+section SeminormedCommRing
+
+variable [SeminormedCommRing R]
+
+/-- On an outer product, `prodFunctional u v hv` multiplies the values of `u` and `v`. -/
+@[simp]
+theorem prodFunctional_prodMul (u : C₀(I, R) →L[R] R) (v : C₀(J, R) →L[R] R)
+    (hv : ∃ C, ∀ y, ‖v y‖ ≤ C * ‖y‖) (a : C₀(I, R)) (b : C₀(J, R)) :
+    prodFunctional u v hv (prodMul a b) = u a * v b := by
+  have hrow : compLeft v hv (curryEquiv R R (prodMul a b)) = v b • a := by
+    ext i
+    simp [mul_comm]
+  rw [prodFunctional_apply, hrow, map_smul, smul_eq_mul, mul_comm]
+
+/-- On a coordinate vector, `prodFunctional u v hv` multiplies the values on the unit coordinate
+vectors. -/
+@[simp]
+theorem prodFunctional_single [DecidableEq I] [DecidableEq J]
+    (u : C₀(I, R) →L[R] R) (v : C₀(J, R) →L[R] R) (hv : ∃ C, ∀ y, ‖v y‖ ≤ C * ‖y‖)
+    (i : I) (j : J) (r : R) :
+    prodFunctional u v hv (single (i, j) r) = r * (u (single i 1) * v (single j 1)) := by
+  have hsingle : single (i, j) r = prodMul (single i r) (single j (1 : R)) := by
+    rw [prodMul_single, mul_one]
+  rw [hsingle, prodFunctional_prodMul, ← smul_single_one i r, map_smul, smul_eq_mul, mul_assoc]
+
 /-- `prodFunctional` commutes with scalar multiplication in its first factor. -/
 theorem prodFunctional_smul_left (r : R) (u : C₀(I, R) →L[R] R) (v : C₀(J, R) →L[R] R)
     (hv : ∃ C, ∀ y, ‖v y‖ ≤ C * ‖y‖) :
@@ -229,17 +244,6 @@ theorem prodFunctional_smul_right (r : R) (u : C₀(I, R) →L[R] R) (v : C₀(J
     prodFunctional u (r • v) hrv = r • prodFunctional u v hv := by
   ext f
   simp [prodFunctional_apply, compLeft_smul r v hv hrv]
-
-/-- If `u` is bounded by `C₁ ≥ 0` and `v` is bounded by `C₂`, then `prodFunctional u v hv` is
-bounded by `C₁ * C₂`. -/
-theorem norm_prodFunctional_apply_le (u : C₀(I, R) →L[R] R) (v : C₀(J, R) →L[R] R)
-    (hv : ∃ C, ∀ y, ‖v y‖ ≤ C * ‖y‖) {C₁ C₂ : ℝ} (hC₁₀ : 0 ≤ C₁)
-    (hC₁ : ∀ x, ‖u x‖ ≤ C₁ * ‖x‖) (hC₂ : ∀ y, ‖v y‖ ≤ C₂ * ‖y‖) (f : C₀(I × J, R)) :
-    ‖prodFunctional u v hv f‖ ≤ (C₁ * C₂) * ‖f‖ := by
-  rw [prodFunctional_apply, mul_assoc]
-  refine (hC₁ _).trans (mul_le_mul_of_nonneg_left ?_ hC₁₀)
-  exact (norm_compLeft_apply_le v hC₂ (curryEquiv R R f)).trans_eq
-    (by rw [(curryEquiv R R).norm_map])
 
 /-- **Fubini symmetry for bounded model-space functionals.** Swapping the two indices exchanges
 the two factors of `prodFunctional`. -/

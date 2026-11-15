@@ -62,7 +62,8 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
 ## Main results
 
 * `TauCeti.AnalyticStage.eval_natCast_val_add_mul`: on the disc of `a`, the evaluation of `c` is
-  `∑ₙ wⁿ • c(a, n)`; `TauCeti.AnalyticStage.eval_apply_zero` specializes to `0`.
+  `∑ₙ wⁿ • c(a, n)`; `TauCeti.AnalyticStage.eval_apply_zero` specializes to `0`, and
+  `TauCeti.AnalyticStage.eval_single` evaluates a single coordinate vector.
 * `TauCeti.AnalyticStage.norm_eval_le`, `TauCeti.AnalyticStage.opNorm_eval_le_one`: evaluation
   does not increase norms.
 * `TauCeti.AnalyticStage.eval_compLeft`: evaluation commutes with uniformly bounded coefficient maps
@@ -76,8 +77,8 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
   `p^j` times the original coefficients.
 * `TauCeti.AnalyticStage.transition_injective`: the transition is injective when multiplication
   by `p` on the coefficients is injective.
-* `TauCeti.AnalyticStage.norm_transition_le`, `TauCeti.AnalyticStage.exists_norm_transition_le`:
-  the transition does not increase norms.
+* `TauCeti.AnalyticStage.norm_transition_le`: the transition does not increase norms.
+* `TauCeti.AnalyticStage.exists_norm_transition_le`: uniform boundedness of `transition`.
 * `TauCeti.AnalyticStage.transition_compLeft`: the transition commutes with uniformly bounded
   coefficient maps compatible with `ℤ_p`.
 * `TauCeti.AnalyticStage.eval_transition`, `TauCeti.AnalyticStage.eval_comp_transition`: the
@@ -273,6 +274,19 @@ theorem eval_apply_zero (c : AnalyticStage p h E) :
   · simp
   · intro n hn
     simp [zero_pow hn]
+
+/-- Stage evaluation of a coordinate vector `single (a, n) e` at `z`: it vanishes outside the disc
+of `a` and equals `w ^ n • e` on that disc, where `w` is the local disc coordinate of `z`. -/
+theorem eval_single (a : ZMod (p ^ h)) (n : ℕ) (e : E) (z : ℤ_[p]) :
+    eval S (ZeroAtInftyContinuousMap.single (a, n) e) z =
+      if PadicInt.toZModPow h z = a then ((PadicInt.discHomeomorph p h).symm z).2 ^ n • e
+      else 0 := by
+  conv_lhs => rw [← PadicInt.natCast_val_toZModPow_add_mul_snd_discHomeomorph_symm h z]
+  rw [eval_natCast_val_add_mul, tsum_eq_single n]
+  · by_cases ha : PadicInt.toZModPow h z = a <;>
+      simp [ZeroAtInftyContinuousMap.single_apply, ha]
+  · intro k hk
+    simp [ZeroAtInftyContinuousMap.single_apply, hk]
 
 /-- The underlying function of `eval S c` does not depend on the auxiliary scalar ring `S`. -/
 theorem eval_eq_eval_padicInt (c : AnalyticStage p h E) :
@@ -484,7 +498,7 @@ theorem norm_transition_le (c : AnalyticStage p h E) : ‖transition S c‖ ≤ 
   (ZeroAtInftyContinuousMap.norm_le (norm_nonneg c)).mpr fun i ↦
     coe_transition S c ▸ norm_transitionCoeff_le_norm c i
 
-/-- The transition is uniformly bounded with constant `1`, in the form required by
+/-- The transition is uniformly bounded, in the form required by
 `ZeroAtInftyContinuousMap.compLeft`. -/
 theorem exists_norm_transition_le :
     ∃ C, ∀ c : AnalyticStage p h E, ‖transition S c‖ ≤ C * ‖c‖ :=

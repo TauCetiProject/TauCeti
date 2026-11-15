@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.PowerSeries.Order
 public import Mathlib.RingTheory.PowerSeries.Restricted
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.Analysis.Asymptotics.Lemmas
-public import TauCeti.RingTheory.PowerSeries.Subring
+public import TauCeti.RingTheory.Subring.Basic
 
 /-!
 # Restricted power series and their coefficient algebra
@@ -151,14 +151,16 @@ constant series. Scalars act as on the ambient formal series, and the coefficien
 be commutative. -/
 noncomputable instance instAlgebraIsRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] :
     Algebra S (PowerSeries.IsRestricted.subring (R := R) c) :=
-  PowerSeries.subringAlgebra (PowerSeries.isRestricted_C c)
+  (PowerSeries.IsRestricted.subring (R := R) c).algebraOfMem fun s ↦ by
+    rw [PowerSeries.algebraMap_apply]
+    exact PowerSeries.isRestricted_C c _
 
 /-- A scalar maps to the constant restricted series of its image in the coefficient ring. -/
 @[simp]
 theorem coe_algebraMap_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
     (algebraMap S (PowerSeries.IsRestricted.subring (R := R) c) s : PowerSeries R) =
       PowerSeries.C (algebraMap S R s) :=
-  PowerSeries.coe_algebraMap_subringAlgebra (PowerSeries.isRestricted_C c) s
+  (Subring.coe_algebraMap_algebraOfMem _ s).trans PowerSeries.algebraMap_apply
 
 /-- Scalars act on restricted series as on their underlying formal power series. -/
 @[simp]
@@ -166,13 +168,15 @@ theorem coe_smul_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] 
     (f : PowerSeries.IsRestricted.subring (R := R) c) :
     ((s • f : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R) =
       s • (f : PowerSeries R) :=
-  PowerSeries.coe_smul_subringAlgebra (PowerSeries.isRestricted_C c) s f
+  Subring.coe_smul_algebraOfMem _ s f
 
 /-- Scalar towers on the coefficients induce scalar towers on restricted power series. -/
 instance {S T : Type*} [CommSemiring S] [CommSemiring T] [Algebra S R] [Algebra T R]
     [SMul S T] [IsScalarTower S T R] :
     IsScalarTower S T (PowerSeries.IsRestricted.subring (R := R) c) :=
-  PowerSeries.subringIsScalarTower (PowerSeries.isRestricted_C c)
+  Subring.isScalarTower_algebraOfMem
+    (fun s ↦ by rw [PowerSeries.algebraMap_apply]; exact PowerSeries.isRestricted_C c _)
+    (fun t ↦ by rw [PowerSeries.algebraMap_apply]; exact PowerSeries.isRestricted_C c _)
 
 end Algebra
 

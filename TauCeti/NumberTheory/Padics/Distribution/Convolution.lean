@@ -8,6 +8,8 @@ module
 public import Mathlib.NumberTheory.Padics.Measure.Monoid
 public import TauCeti.NumberTheory.Padics.Distribution.Comul
 public import TauCeti.NumberTheory.Padics.Distribution.Dual
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Bilinear
+import TauCeti.NumberTheory.Padics.Measure.Pushforward
 
 /-!
 # Point masses and additive convolution of locally analytic distributions on `ℤ_p`
@@ -38,7 +40,7 @@ pairing `ZeroAtInftyContinuousMap.prodFunctional`, this file equips the space
 ## Main definitions
 
 * `TauCeti.LocallyAnalyticDistribution.dirac`: point-mass distribution at `x ∈ ℤ_p`.
-* `TauCeti.LocallyAnalyticDistribution.diracHom`: the multiplicative group homomorphism
+* `TauCeti.LocallyAnalyticDistribution.diracHom`: the monoid homomorphism
   `Multiplicative ℤ_p →* LocallyAnalyticDistribution p K` sending `ofAdd x` to `dirac x`.
 * `TauCeti.LocallyAnalyticDistribution.ofMulMeasure`: the convolution `K`-algebra embedding
   `D(Multiplicative ℤ_p, K) →ₐ[K] LocallyAnalyticDistribution p K`.
@@ -100,21 +102,6 @@ theorem stage_dirac_apply (h : ℕ) (x : ℤ_[p]) (c : AnalyticStage p h K) :
     stage h (dirac (K := K) x) c = AnalyticStage.eval K c x := by
   simp
 
-/-- On the analytic stage `LA_h(K)`, `dirac 0` reads off the `(0, 0)`-coordinate. -/
-theorem stage_dirac_zero (h : ℕ) :
-    stage h (dirac (p := p) (K := K) 0) = evalCLM K (0, 0) := by
-  ext c
-  rw [stage_dirac_apply, eval_apply_zero, evalCLM_apply]
-
-private theorem eval_single_zero_one (h : ℕ) (a : ZMod (p ^ h)) (z : ℤ_[p]) :
-    AnalyticStage.eval K (single (a, 0) (1 : K)) z =
-      if PadicInt.toZModPow h z = a then 1 else 0 := by
-  conv_lhs => rw [← PadicInt.natCast_val_toZModPow_add_mul_snd_discHomeomorph_symm h z]
-  rw [eval_natCast_val_add_mul, tsum_eq_single 0]
-  · by_cases ha : PadicInt.toZModPow h z = a <;> simp [single_apply, ha]
-  · intro n hn
-    simp [single_apply, hn]
-
 /-- On every analytic stage `LA_h(K)`, the point mass `dirac x` has operator norm `1`. -/
 @[simp]
 theorem norm_stage_dirac (h : ℕ) (x : ℤ_[p]) :
@@ -127,7 +114,7 @@ theorem norm_stage_dirac (h : ℕ) (x : ℤ_[p]) :
     have hc_norm : ‖c‖ = 1 := by simp [c]
     have hc_eval : stage h (dirac (p := p) (K := K) x) c = 1 := by
       rw [stage_dirac_apply]
-      simp [c, eval_single_zero_one]
+      simp [c, eval_single]
     have hle := (stage h (dirac (p := p) (K := K) x)).le_opNorm c
     rw [hc_eval, hc_norm, norm_one, mul_one] at hle
     exact hle
@@ -138,6 +125,7 @@ theorem stageSeminorm_dirac (h : ℕ) (x : ℤ_[p]) :
   simp
 
 /-- Every point-mass distribution is nonzero. -/
+@[simp]
 theorem dirac_ne_zero (x : ℤ_[p]) : dirac (p := p) (K := K) x ≠ 0 := by
   intro hx
   have h1 := stageSeminorm_dirac (p := p) (K := K) 0 x
@@ -151,9 +139,14 @@ theorem dirac_injective : Function.Injective (dirac (p := p) (K := K)) := by
   refine PadicInt.ext_of_toZModPow.mp fun h ↦ ?_
   have heval := DFunLike.congr_fun (congrArg (stage h) hxy)
     (single (PadicInt.toZModPow h x, 0) (1 : K))
-  rw [stage_dirac_apply, stage_dirac_apply, eval_single_zero_one, eval_single_zero_one] at heval
+  simp only [stage_dirac_apply, eval_single, pow_zero, one_smul] at heval
   by_contra hne
   simp [Ne.symm hne] at heval
+
+/-- Two point-mass distributions are equal if and only if they are supported at the same point. -/
+@[simp]
+theorem dirac_inj {x y : ℤ_[p]} : dirac (p := p) (K := K) x = dirac y ↔ x = y :=
+  dirac_injective.eq_iff
 
 /-! ### Stage-by-stage additive convolution and `CommRing` / `Algebra` structure -/
 
@@ -167,6 +160,16 @@ theorem one_def : (1 : LocallyAnalyticDistribution p K) = dirac 0 := (rfl)
 /-- The point mass at `0` is the convolution unit `1`. -/
 @[simp]
 theorem dirac_zero : dirac (p := p) (K := K) 0 = 1 := (rfl)
+
+/-- The convolution unit `1` evaluates a locally analytic function at `0`. -/
+@[simp]
+theorem coe_one_apply (f : LocallyAnalytic p K K) :
+    ((1 : LocallyAnalyticDistribution p K) : Module.Dual K (LocallyAnalytic p K K)) f =
+      LocallyAnalytic.eval K f 0 :=
+  coe_dirac_apply 0 f
+
+instance : Nontrivial (LocallyAnalyticDistribution p K) :=
+  nontrivial_of_ne 1 0 (dirac_ne_zero 0)
 
 /-- **Additive convolution of locally analytic distributions**, defined on each analytic stage
 `LA_h(K)` by pairing `prodFunctional (stage h μ) (stage h ν)` against `AnalyticStage.comul K`. -/
@@ -193,8 +196,9 @@ noncomputable instance : Mul (LocallyAnalyticDistribution p K) where
 /-- On the stage `LA_h(K)`, the convolution unit `1` evaluates the `(0, 0)`-coordinate. -/
 @[simp]
 theorem stage_one (h : ℕ) :
-    stage h (1 : LocallyAnalyticDistribution p K) = evalCLM K (0, 0) :=
-  stage_dirac_zero h
+    stage h (1 : LocallyAnalyticDistribution p K) = evalCLM K (0, 0) := by
+  ext c
+  rw [one_def, stage_dirac_apply, eval_apply_zero, evalCLM_apply]
 
 /-- On the stage `LA_h(K)`, `μ * ν` is the two-variable product functional of `stage h μ` and
 `stage h ν` composed with `comul K`. -/
@@ -221,8 +225,8 @@ theorem stageSeminorm_mul_le (h : ℕ) (μ ν : LocallyAnalyticDistribution p K)
 
 /-- Every stage seminorm of the convolution unit `1` equals `1`. -/
 theorem stageSeminorm_one (h : ℕ) :
-    stageSeminorm h (1 : LocallyAnalyticDistribution p K) = 1 :=
-  stageSeminorm_dirac h 0
+    stageSeminorm h (1 : LocallyAnalyticDistribution p K) = 1 := by
+  simp
 
 noncomputable instance : MulZeroClass (LocallyAnalyticDistribution p K) where
   zero_mul ν := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
@@ -251,24 +255,21 @@ noncomputable instance : Ring (LocallyAnalyticDistribution p K) where
     refine congrArg (stage h μ) (ZeroAtInftyContinuousMap.ext fun u ↦ ?_)
     simp only [compLeft_apply, stage_mul_apply]
   one_mul ν := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
-    rw [stage_mul_apply, stage_one, evalCLM_apply, compLeft_apply]
-    refine congrArg (stage h ν) (ZeroAtInftyContinuousMap.ext fun ⟨b, j⟩ ↦ ?_)
-    rw [comulCurried_apply_apply, comul_apply_zero_left K]
+    rw [stage_mul_apply]
+    simp
   mul_one μ := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
     rw [stage_mul_apply]
-    refine congrArg (stage h μ) (ZeroAtInftyContinuousMap.ext fun ⟨a, i⟩ ↦ ?_)
-    rw [compLeft_apply, stage_one, evalCLM_apply, comulCurried_apply_apply,
-      comul_apply_zero_right K]
+    refine congrArg (stage h μ) (ZeroAtInftyContinuousMap.ext fun x ↦ ?_)
+    simp
 
 /-- Locally analytic distributions form a commutative ring under additive convolution, with unit
 `1 = dirac 0`. -/
 noncomputable instance : CommRing (LocallyAnalyticDistribution p K) where
   mul_comm μ ν := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
-    rw [stage_mul, stage_mul, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-      ← prodFunctional_comp_congrLeft_prodComm (stage h ν) (stage h ν).exists_norm_apply_le
-        (stage h μ) (stage h μ).exists_norm_apply_le,
-      ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
-      LinearIsometryEquiv.coe_toLinearIsometry, comul_swap K]
+    simp only [stage_mul, ContinuousLinearMap.comp_apply]
+    rw [← prodFunctional_comp_congrLeft_prodComm (stage h ν) (stage h ν).exists_norm_apply_le
+      (stage h μ) (stage h μ).exists_norm_apply_le]
+    simp
 
 /-- Locally analytic distributions form a commutative `K`-algebra under additive convolution, with
 scalar action inherited without diamond from the defining `Submodule K`. -/
@@ -287,6 +288,26 @@ example : (inferInstance : CommRing (LocallyAnalyticDistribution p K)).toAddComm
 example : (inferInstance : Algebra K (LocallyAnalyticDistribution p K)).toModule =
     Submodule.module (LocallyAnalyticDistribution p K) := rfl
 
+/-- A scalar distribution `algebraMap K _ a` evaluates a locally analytic function at `0`, scaled
+by `a`. -/
+@[simp]
+theorem coe_algebraMap_apply (a : K) (f : LocallyAnalytic p K K) :
+    (algebraMap K (LocallyAnalyticDistribution p K) a :
+      Module.Dual K (LocallyAnalytic p K K)) f = a * LocallyAnalytic.eval K f 0 := by
+  rw [Algebra.algebraMap_eq_smul_one]
+  simp
+
+/-- On the stage `LA_h(K)`, `algebraMap K _ a` is `a • evalCLM K (0, 0)`. -/
+@[simp]
+theorem stage_algebraMap (h : ℕ) (a : K) :
+    stage h (algebraMap K (LocallyAnalyticDistribution p K) a) = a • evalCLM K (0, 0) := by
+  rw [Algebra.algebraMap_eq_smul_one, map_smul, stage_one]
+
+/-- Every stage seminorm of a scalar distribution `algebraMap K _ a` equals `‖a‖`. -/
+theorem stageSeminorm_algebraMap (h : ℕ) (a : K) :
+    stageSeminorm h (algebraMap K (LocallyAnalyticDistribution p K) a) = ‖a‖ := by
+  rw [Algebra.algebraMap_eq_smul_one, map_smul_eq_mul, stageSeminorm_one, mul_one]
+
 /-- Convolution of point-mass distributions corresponds to addition in `ℤ_p`. -/
 theorem dirac_add (x y : ℤ_[p]) :
     dirac (p := p) (K := K) (x + y) = dirac x * dirac y := by
@@ -294,7 +315,7 @@ theorem dirac_add (x y : ℤ_[p]) :
   rw [stage_mul_apply, stage_dirac_apply, stage_dirac_apply, eval_compLeft K, stage_dirac_apply,
     eval_eval_comulCurried K]
 
-/-- Point-mass distributions as a multiplicative group homomorphism from `Multiplicative ℤ_p`. -/
+/-- Point-mass distributions as a monoid homomorphism from `Multiplicative ℤ_p`. -/
 noncomputable def diracHom : Multiplicative ℤ_[p] →* LocallyAnalyticDistribution p K where
   toFun x := dirac x.toAdd
   map_one' := dirac_zero
@@ -315,14 +336,14 @@ theorem ofMeasure_map_add_prodMk' (μ ν : D(ℤ_[p], K)) :
         (AbstractMeasure.map ⟨fun q : ℤ_[p] × ℤ_[p] ↦ q.1 + q.2, continuous_add⟩ (μ.prodMk' ν)) =
       ofMeasure μ * ofMeasure ν := by
   refine LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ ?_
-  rw [stage_ofMeasure, ContinuousLinearMap.comp_apply, AbstractMeasure.coe_toCLMEquiv,
-    AbstractMeasure.map_apply, AbstractMeasure.prodMk'_apply, stage_mul_apply, stage_ofMeasure,
-    ContinuousLinearMap.comp_apply, AbstractMeasure.coe_toCLMEquiv]
+  simp only [stage_ofMeasure, ContinuousLinearMap.comp_apply, AbstractMeasure.coe_toCLMEquiv,
+    AbstractMeasure.map_apply, AbstractMeasure.prodMk'_apply, stage_mul_apply]
   refine congrArg μ (ContinuousMap.ext fun x ↦ ?_)
-  rw [eval_compLeft K, stage_ofMeasure, ContinuousLinearMap.comp_apply,
+  rw [eval_compLeft K]
+  simp only [ContinuousMap.comp_apply, ContinuousLinearMap.comp_apply,
     AbstractMeasure.coe_toCLMEquiv, AbstractMeasure.contractSnd_apply]
   refine congrArg ν (ContinuousMap.ext fun y ↦ ?_)
-  exact (eval_eval_comulCurried K c x y).symm
+  simp
 
 /-- **Embedding of multiplicative `ℤ_p`-measures as a `K`-algebra homomorphism.** Transports a
 measure on `Multiplicative ℤ_p` along `Homeomorph.ofAdd.symm` and views it as a locally analytic
@@ -331,13 +352,9 @@ noncomputable def ofMulMeasure :
     D(Multiplicative ℤ_[p], K) →ₐ[K] LocallyAnalyticDistribution p K :=
   AlgHom.ofLinearMap
     (ofMeasure.comp (AbstractMeasure.arrowCongrLeft Homeomorph.ofAdd.symm).toLinearMap)
-    (by
-      rw [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-        AbstractMeasure.coe_arrowCongrLeft, AbstractMeasure.one_def, AbstractMeasure.map_dirac,
-        ContinuousMap.coe_mk, Homeomorph.ofAdd_symm_apply, toAdd_one, ofMeasure_dirac, dirac_zero])
+    (by simp [AbstractMeasure.coe_arrowCongrLeft, AbstractMeasure.one_def])
     (fun μ ν ↦ by
-      rw [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, LinearMap.comp_apply,
-        LinearEquiv.coe_toLinearMap, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
       have hpush : AbstractMeasure.arrowCongrLeft Homeomorph.ofAdd.symm (μ * ν) =
           AbstractMeasure.map ⟨fun q : ℤ_[p] × ℤ_[p] ↦ q.1 + q.2, continuous_add⟩
             ((AbstractMeasure.arrowCongrLeft Homeomorph.ofAdd.symm μ).prodMk'
@@ -370,8 +387,7 @@ theorem ofMulMeasure_ofAdd (μ : D(ℤ_[p], K)) :
 @[simp]
 theorem ofMulMeasure_dirac (x : Multiplicative ℤ_[p]) :
     ofMulMeasure (p := p) (K := K) (AbstractMeasure.dirac K x) = dirac x.toAdd := by
-  rw [ofMulMeasure_apply, AbstractMeasure.coe_arrowCongrLeft, AbstractMeasure.map_dirac,
-    ContinuousMap.coe_mk, Homeomorph.ofAdd_symm_apply, ofMeasure_dirac]
+  simp [ofMulMeasure_apply, AbstractMeasure.coe_arrowCongrLeft]
 
 /-- The `K`-algebra homomorphism `ofMulMeasure` is injective. -/
 theorem ofMulMeasure_injective :
@@ -381,22 +397,7 @@ theorem ofMulMeasure_injective :
 /-- Every stage seminorm of `ofMulMeasure μ` is bounded by the measure norm of `μ`. -/
 theorem stageSeminorm_ofMulMeasure_le (μ : D(Multiplicative ℤ_[p], K)) (h : ℕ) :
     stageSeminorm h (ofMulMeasure (p := p) (K := K) μ) ≤ ‖AbstractMeasure.toCLMEquiv μ‖ := by
-  rw [ofMulMeasure_apply]
-  refine (stageSeminorm_ofMeasure_le _ h).trans ?_
-  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg (AbstractMeasure.toCLMEquiv μ))
-    fun g ↦ ?_
-  let φ : C(Multiplicative ℤ_[p], ℤ_[p]) :=
-    ⟨Homeomorph.ofAdd.symm, Homeomorph.ofAdd.symm.continuous⟩
-  have hcomp : ‖g.comp φ‖ ≤ ‖g‖ :=
-    (ContinuousMap.norm_le (g.comp φ) (norm_nonneg g)).mpr fun x ↦ g.norm_coe_le_norm (φ x)
-  calc
-    ‖AbstractMeasure.toCLMEquiv (AbstractMeasure.arrowCongrLeft Homeomorph.ofAdd.symm μ) g‖
-      = ‖AbstractMeasure.toCLMEquiv μ (g.comp φ)‖ := by
-        rw [AbstractMeasure.coe_toCLMEquiv, AbstractMeasure.arrowCongrLeft_apply,
-          AbstractMeasure.coe_toCLMEquiv]
-    _ ≤ ‖AbstractMeasure.toCLMEquiv μ‖ * ‖g.comp φ‖ :=
-        (AbstractMeasure.toCLMEquiv μ).le_opNorm _
-    _ ≤ ‖AbstractMeasure.toCLMEquiv μ‖ * ‖g‖ :=
-        mul_le_mul_of_nonneg_left hcomp (norm_nonneg (AbstractMeasure.toCLMEquiv μ))
+  rw [ofMulMeasure_apply, AbstractMeasure.coe_arrowCongrLeft]
+  exact (stageSeminorm_ofMeasure_le _ h).trans (AbstractMeasure.norm_toCLMEquiv_map_le μ _)
 
 end TauCeti.LocallyAnalyticDistribution

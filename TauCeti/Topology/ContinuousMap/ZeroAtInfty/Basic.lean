@@ -71,8 +71,8 @@ instance (priority := 90) instContinuousConstSMul
         tendsto_iff_tendstoUniformly.1 Filter.tendsto_id
 
 /-- A scalar acting injectively on `β` acts injectively on `C₀(α, β)`. -/
-theorem isSMulRegular [TopologicalSpace β] [Zero β] {M : Type*} [SMulZeroClass M β]
-    [ContinuousConstSMul M β] {r : M} (hr : IsSMulRegular β r) :
+theorem _root_.IsSMulRegular.zeroAtInftyContinuousMap [TopologicalSpace β] [Zero β] {M : Type*}
+    [SMulZeroClass M β] [ContinuousConstSMul M β] {r : M} (hr : IsSMulRegular β r) :
     IsSMulRegular C₀(α, β) r :=
   fun _ _ h ↦ ext fun x ↦ hr (congrArg (· x) h)
 
@@ -261,23 +261,3 @@ theorem congrLeft_compLeft (e : α ≃ₜ β) (u : E →L[R] F) (hu : ∃ C, ∀
 end Comparison
 
 end ZeroAtInftyContinuousMap
-
-/-- Every continuous semilinear map over an isometric ring homomorphism is uniformly bounded by its
-operator norm, supplying the boundedness witness required by `ZeroAtInftyContinuousMap.compLeft`. -/
-theorem ContinuousLinearMap.exists_norm_apply_le {𝕜₁ 𝕜₂ E F : Type*}
-    [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂] {σ₁₂ : 𝕜₁ →+* 𝕜₂}
-    [RingHomIsometric σ₁₂] [SeminormedAddCommGroup E] [NormedSpace 𝕜₁ E]
-    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F] (f : E →SL[σ₁₂] F) :
-    ∃ C, ∀ x : E, ‖f x‖ ≤ C * ‖x‖ :=
-  ⟨‖f‖, f.le_opNorm⟩
-
-/-- Right scalar multiplication `r ↦ r • e` by `e : E` over a seminormed ring `R` is uniformly
-bounded by `‖e‖`, supplying the boundedness witness required by
-`ZeroAtInftyContinuousMap.compLeft`. -/
-theorem ContinuousLinearMap.exists_norm_smulRight_id_apply_le (M R : Type*) {E : Type*}
-    [Semiring M] [SeminormedRing R] [Module M R] [SeminormedAddCommGroup E] [Module M E]
-    [Module R E] [IsScalarTower M R E] [IsBoundedSMul R E] (e : E) :
-    ∃ C, ∀ r : R, ‖(ContinuousLinearMap.id M R).smulRight e r‖ ≤ C * ‖r‖ :=
-  ⟨‖e‖, fun r ↦ by
-    simpa only [ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply,
-      (mul_comm ‖e‖)] using norm_smul_le r e⟩

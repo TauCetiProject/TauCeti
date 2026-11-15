@@ -24,7 +24,8 @@ series multiplication:
   products `∑_{i + j = n} prodMul e_{h,i} e_{h,j}` (`TauCeti.AnalyticStage.comul_amiceTerm_of_lt`);
 * evaluating at level `h = n` proves `amiceTransform (μ * ν) = amiceTransform μ * amiceTransform ν`
   over any such field `K`, including in positive characteristic, bundling `amiceTransform` into the
-  injective `K`-algebra homomorphism `amiceTransformAlgHom`;
+  injective `K`-algebra homomorphism `amiceTransformAlgHom` (whence
+  `LocallyAnalyticDistribution p K` is an integral domain);
 * composing `amiceTransformAlgHom` with `ofMulMeasure` recovers Mathlib's measure-algebra Amice
   transform `AbstractMeasure.amiceTransformₐ`;
 * when `K` is a normed `ℚ_p`-algebra, `amiceTransformEquiv` upgrades to the `K`-algebra
@@ -68,18 +69,13 @@ variable {p : ℕ} [hp : Fact p.Prime]
 
 namespace AnalyticStage
 
-private theorem eval_curryEquiv_prodMul {h : ℕ} (a b : AnalyticStage p h ℤ_[p]) (x : ℤ_[p]) :
-    eval ℤ_[p] (curryEquiv ℤ_[p] ℤ_[p] (prodMul a b)) x = eval ℤ_[p] a x • b := by
-  rw [curryEquiv_prodMul_eq_compLeft, eval_compLeft ℤ_[p],
-    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply]
-
 private theorem comul_amiceTerm_padicInt_of_lt {h n : ℕ} (hn : n < p ^ h) :
     comul ℤ_[p] (amiceTerm p h n (1 : ℤ_[p])) =
       ∑ ij ∈ Finset.antidiagonal n,
         prodMul (amiceTerm p h ij.1 (1 : ℤ_[p])) (amiceTerm p h ij.2 (1 : ℤ_[p])) := by
   apply (curryEquiv ℤ_[p] ℤ_[p]).injective
   rw [curryEquiv_comul, map_sum]
-  apply eval_injective ℤ_[p] (isSMulRegular PadicInt.isSMulRegular_natCast_p)
+  apply eval_injective ℤ_[p] PadicInt.isSMulRegular_natCast_p.zeroAtInftyContinuousMap
   refine ContinuousMap.ext fun x ↦ ?_
   apply eval_injective ℤ_[p] PadicInt.isSMulRegular_natCast_p
   refine ContinuousMap.ext fun y ↦ ?_
@@ -105,9 +101,9 @@ theorem comul_amiceTerm_of_lt {h n : ℕ} {R : Type*} [NormedRing R] [Algebra �
     comul S (amiceTerm p h n (1 : R)) =
       ∑ ij ∈ Finset.antidiagonal n,
         prodMul (amiceTerm p h ij.1 (1 : R)) (amiceTerm p h ij.2 (1 : R)) := by
-  let φ : ℤ_[p] →L[ℤ_[p]] R := (ContinuousLinearMap.id ℤ_[p] ℤ_[p]).smulRight (1 : R)
+  let φ : ℤ_[p] →L[ℤ_[p]] R := ContinuousLinearMap.toSpanSingleton ℤ_[p] (1 : R)
   have hφ : ∃ C, ∀ r : ℤ_[p], ‖φ r‖ ≤ C * ‖r‖ :=
-    ContinuousLinearMap.exists_norm_smulRight_id_apply_le ℤ_[p] ℤ_[p] (1 : R)
+    ContinuousLinearMap.exists_norm_toSpanSingleton_apply_le ℤ_[p] (1 : R)
   have hterm (m : ℕ) : compLeft φ hφ (amiceTerm p h m (1 : ℤ_[p])) = amiceTerm p h m (1 : R) := by
     ext i
     simp [φ]
@@ -161,7 +157,6 @@ noncomputable def amiceTransformAlgHom :
   AlgHom.ofLinearMap amiceTransform amiceTransform_one amiceTransform_mul
 
 /-- The underlying function of `amiceTransformAlgHom` is `amiceTransform`. -/
-@[simp]
 theorem coe_amiceTransformAlgHom :
     ⇑(amiceTransformAlgHom (p := p) (K := K)) = amiceTransform := (rfl)
 
@@ -170,10 +165,26 @@ theorem coe_amiceTransformAlgHom :
 theorem amiceTransformAlgHom_toLinearMap :
     (amiceTransformAlgHom (p := p) (K := K)).toLinearMap = amiceTransform := (rfl)
 
+/-- The Amice transform sends convolution powers to power series powers. -/
+@[simp]
+theorem amiceTransform_pow (μ : LocallyAnalyticDistribution p K) (n : ℕ) :
+    amiceTransform (μ ^ n) = amiceTransform μ ^ n :=
+  map_pow (amiceTransformAlgHom (p := p) (K := K)) μ n
+
+/-- The Amice transform sends scalar distributions `algebraMap K _ a` to constant series `C a`. -/
+@[simp]
+theorem amiceTransform_algebraMap (a : K) :
+    amiceTransform (algebraMap K (LocallyAnalyticDistribution p K) a) = PowerSeries.C a := by
+  rw [Algebra.algebraMap_eq_smul_one, map_smul, amiceTransform_one,
+    ← Algebra.algebraMap_eq_smul_one, PowerSeries.algebraMap_eq]
+
 /-- `amiceTransformAlgHom` is injective. -/
 theorem amiceTransformAlgHom_injective :
     Function.Injective (amiceTransformAlgHom (p := p) (K := K)) :=
   amiceTransform_injective
+
+instance : IsDomain (LocallyAnalyticDistribution p K) :=
+  amiceTransformAlgHom_injective.isDomain (amiceTransformAlgHom (p := p) (K := K))
 
 /-- On a multiplicative `ℤ_p`-measure embedded via `ofMulMeasure`, the distribution Amice transform
 agrees with Mathlib's `AbstractMeasure.amiceTransformₐ`. -/
@@ -218,8 +229,7 @@ powers. -/
 theorem ofOnOpenDisc_pow {F : PowerSeries K} (hF : F.OnOpenDisc 1) (n : ℕ) :
     ofOnOpenDisc p (hF.pow n) = ofOnOpenDisc p hF ^ n :=
   amiceTransform_injective <| by
-    rw [amiceTransform_ofOnOpenDisc, ← coe_amiceTransformAlgHom, map_pow, coe_amiceTransformAlgHom,
-      amiceTransform_ofOnOpenDisc]
+    rw [amiceTransform_ofOnOpenDisc, amiceTransform_pow, amiceTransform_ofOnOpenDisc]
 
 /-- **Amice's algebra isomorphism for locally analytic distributions.** When `K` is a complete
 ultrametric normed `ℚ_p`-algebra, the Amice transform is a `K`-algebra isomorphism from
@@ -227,11 +237,9 @@ ultrametric normed `ℚ_p`-algebra, the Amice transform is a `K`-algebra isomorp
 `PowerSeries.OnOpenDisc.subring K 1` of formal power series converging on the open unit disc. -/
 noncomputable def amiceTransformAlgEquiv :
     LocallyAnalyticDistribution p K ≃ₐ[K] PowerSeries.OnOpenDisc.subring K 1 :=
-  AlgEquiv.ofRingEquiv
-    (f := { amiceTransformEquiv with
-      map_mul' := fun μ ν ↦ Subtype.ext <| by simp [amiceTransform_mul] })
-    fun a ↦ Subtype.ext <| by
-      simp [Algebra.algebraMap_eq_smul_one]
+  AlgEquiv.ofLinearEquiv amiceTransformEquiv
+    (Subtype.ext <| by simp)
+    fun _ _ ↦ Subtype.ext <| by simp
 
 /-- The underlying power series of `amiceTransformAlgEquiv μ` is `amiceTransform μ`. -/
 @[simp]
@@ -239,10 +247,10 @@ theorem coe_amiceTransformAlgEquiv (μ : LocallyAnalyticDistribution p K) :
     (amiceTransformAlgEquiv μ : PowerSeries K) = amiceTransform μ :=
   coe_amiceTransformEquiv μ
 
-/-- Forgetting multiplication and scalars recovers `amiceTransformEquiv`. -/
+/-- Forgetting multiplication recovers `amiceTransformEquiv`. -/
 @[simp]
-theorem amiceTransformAlgEquiv_toAddEquiv :
-    (amiceTransformAlgEquiv (p := p) (K := K)).toAddEquiv = amiceTransformEquiv := (rfl)
+theorem amiceTransformAlgEquiv_toLinearEquiv :
+    (amiceTransformAlgEquiv (p := p) (K := K)).toLinearEquiv = amiceTransformEquiv := (rfl)
 
 /-- The inverse of `amiceTransformAlgEquiv` is `ofOnOpenDisc`. -/
 @[simp]
