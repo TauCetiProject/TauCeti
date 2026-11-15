@@ -139,8 +139,7 @@ theorem not_hasLaw_of_measure_atom [NullSingletonClass ν] {A : Set X} (hAfin : 
     (hAatom : μ.IsAtom A) (T : X → Y) : ¬HasLaw T ν μ := by
   intro hT
   obtain ⟨y, hy⟩ := hT.exists_measure_atom_le_measure_singleton hAfin hAatom
-  exact (not_le_of_gt (Measure.isAtom_iff.mp hAatom).2.1)
-    (hy.trans_eq (measure_singleton y))
+  exact not_le_of_gt hAatom.pos (hy.trans_eq (measure_singleton y))
 
 end Atom
 
