@@ -5,20 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Algebra.GelfandRadius
-public import Mathlib.Analysis.Normed.Unbundled.SmoothingSeminorm
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.TensorProduct.Finite
+public import TauCeti.Analysis.Normed.Algebra.GelfandRadius
 public import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Reduced
 public import TauCeti.RingTheory.Huber.Uniform
+public import TauCeti.RingTheory.Localization.Reduced
 
 import Mathlib.Algebra.Polynomial.Div
+import Mathlib.Analysis.Normed.Field.Ultra
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.FieldTheory.Minpoly.Finite
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.RingTheory.Finiteness.Cardinality
-import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.RingTheory.Localization.Integer
 import TauCeti.Analysis.Normed.Operator.Embedding
 import TauCeti.Analysis.Normed.Ring.Ultra
@@ -28,29 +28,26 @@ import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Irreducible
 import TauCeti.FieldTheory.Minpoly.TorsionFree
 import TauCeti.RingTheory.Huber.Normed
 import TauCeti.RingTheory.Huber.StrictMorphism
-import TauCeti.RingTheory.Localization.Reduced
+import TauCeti.RingTheory.Localization.TensorProduct
 
 /-!
 # Nonarchimedean Banach function algebras and finite torsion-free extensions
 
 A commutative Banach algebra `A` is a *Banach function algebra* (in the sense of
 Bosch–Güntzer–Remmert, §3.8.3) when its norm is equivalent to its spectral / smoothing seminorm
-`smoothingFun (normRingSeminorm A)` (equivalently Mathlib's `gelfandRadius`).
+`smoothingFun (normRingSeminorm A)` (equivalently Mathlib's `gelfandRadius`; see
+`TauCeti.Analysis.Normed.Algebra.GelfandRadius`).
 
-This file establishes three pillars of the theory over nonarchimedean fields of arbitrary
+This file establishes two pillars of the theory over nonarchimedean fields of arbitrary
 characteristic:
 
-1. **Gelfand radius and ultrametric smoothing without `‖1‖ ≤ 1`.** For every seminormed commutative
-   ring `A`, `smoothingFun (normRingSeminorm A) a = gelfandRadius a` with no normalization on
-   `‖(1 : A)‖`, and `gelfandRadius` forms a power-multiplicative `RingSeminorm A`
-   (`TauCeti.gelfandRadiusRingSeminorm`). When `A` is ultrametric, `gelfandRadius` is moreover
-   nonarchimedean (`TauCeti.isNonarchimedean_gelfandRadius`).
-2. **Automatic continuity into algebraic field extensions.** Over a complete nontrivially normed
-   ultrametric field `K`, any `K`-algebra homomorphism `φ : B →ₐ[K] L` from an arbitrary Banach
-   `K`-algebra `B` (not assumed commutative, ultrametric, Noetherian, or unital-norm-normalized)
-   into a field extension `L / K` satisfies `spectralNorm K L (φ b) ≤ gelfandRadius b ≤ ‖b‖`. In
-   particular, `φ` is contractive and continuous whenever `L / K` is an algebraic normed extension.
-3. **[BGR, §3.8.3, Theorem 7] for finite torsion-free extensions.** Let `B` be a Noetherian
+1. **Automatic continuity into algebraic field extensions.** Over a complete ultrametric normed
+   field `K` (including trivially normed fields), any `K`-algebra homomorphism `φ : B →ₐ[K] L` from
+   an arbitrary Banach `K`-algebra `B` (not assumed commutative, ultrametric, Noetherian, or
+   unital-norm-normalized) into a field extension `L / K` satisfies
+   `spectralNorm K L (φ b) ≤ gelfandRadius b ≤ ‖b‖`. In particular, `φ` is contractive and
+   continuous whenever `L / K` is an algebraic normed extension.
+2. **[BGR, §3.8.3, Theorem 7] for finite torsion-free extensions.** Let `B` be a Noetherian
    integrally closed ultrametric Banach `K`-algebra domain with isometric fraction field `F`, and
    let `A` be an ultrametric Banach `K`-algebra that is finite and torsion-free over `B` with
    continuous structure map `B → A`.
@@ -65,16 +62,9 @@ characteristic:
 
 ## Main definitions and results
 
-* `TauCeti.gelfandRadiusRingSeminorm` and `Commute.gelfandRadius_add_le_max`: `RingSeminorm`
-  bundling of `gelfandRadius` without `‖1‖ ≤ 1`, and ultrametricity under `IsUltrametricDist`.
-* `TauCeti.smoothingFun_normRingSeminorm_eq_gelfandRadius`: equality of `smoothingFun` and
-  `gelfandRadius` in any seminormed commutative ring.
 * `AlgHom.spectralNorm_apply_le_gelfandRadius` and `AlgHom.continuous_of_isAlgebraic`: spectral
   contraction and automatic continuity from arbitrary Banach `K`-algebras into algebraic field
-  extensions.
-* `TauCeti.Huber.gelfandRadius_le_one_of_isPowerBounded` and
-  `TauCeti.Huber.IsUniform.of_norm_le_mul_gelfandRadius`: uniformity criterion from a Gelfand
-  radius bound.
+  extensions over a complete ultrametric normed field `K`.
 * `TauCeti.gelfandRadius_eq_spectralValue_minpoly` and
   `TauCeti.smoothingFun_eq_reducedSpectralAlgNorm`: minimal-polynomial and base-change formulas in
   finite torsion-free extensions.
@@ -93,114 +83,67 @@ public section
 open Filter Polynomial Topology
 open scoped TensorProduct nonZeroDivisors IntermediateField
 
-section GelfandRadius
-
-/-- In an ultrametric seminormed ring, the Gelfand radius of a sum of commuting elements is at most
-the maximum of their Gelfand radii. No normalization on `‖1‖` is needed. -/
-theorem Commute.gelfandRadius_add_le_max {A : Type*} [SeminormedRing A] [IsUltrametricDist A]
-    {a b : A} (h : Commute a b) :
-    gelfandRadius (a + b) ≤ max (gelfandRadius a) (gelfandRadius b) := by
-  refine le_of_forall_gt_imp_ge_of_dense fun r hr ↦ ?_
-  have ha_lt : gelfandRadius a < r := (le_max_left _ _).trans_lt hr
-  have hb_lt : gelfandRadius b < r := (le_max_right _ _).trans_lt hr
-  have hr0 : 0 < r := (gelfandRadius_nonneg a).trans_lt ha_lt
-  obtain ⟨Ca, hCa, ha⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt a ha_lt
-  obtain ⟨Cb, hCb, hb⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt b hb_lt
-  refine gelfandRadius_le_of_bound hr0.le (C := Ca * Cb * ‖(1 : A)‖) fun n ↦ ?_
-  rw [h.add_pow]
-  obtain ⟨k, hk, hle⟩ := IsUltrametricDist.isNonarchimedean_norm.finset_image_add_of_nonempty
-    (fun k ↦ a ^ k * b ^ (n - k) * (n.choose k : A)) (Finset.nonempty_range_add_one)
-  have hkn : k ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
-  have hnat : ‖(n.choose k : A)‖ ≤ ‖(1 : A)‖ := by
-    simpa using IsUltrametricDist.norm_nsmul_le (1 : A) (n.choose k)
-  calc
-    ‖∑ m ∈ Finset.range (n + 1), a ^ m * b ^ (n - m) * (n.choose m : A)‖
-        ≤ ‖a ^ k * b ^ (n - k) * (n.choose k : A)‖ := hle
-    _ ≤ ‖a ^ k‖ * ‖b ^ (n - k)‖ * ‖(n.choose k : A)‖ :=
-      (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (norm_mul_le _ _) (norm_nonneg _))
-    _ ≤ (Ca * r ^ k) * (Cb * r ^ (n - k)) * ‖(1 : A)‖ := by
-      gcongr
-      · exact ha k
-      · exact hb (n - k)
-    _ = Ca * Cb * ‖(1 : A)‖ * r ^ n := by
-      have hrpow : r ^ k * r ^ (n - k) = r ^ n := by
-        rw [← pow_add, Nat.add_sub_of_le hkn]
-      calc
-        (Ca * r ^ k) * (Cb * r ^ (n - k)) * ‖(1 : A)‖
-            = Ca * Cb * ‖(1 : A)‖ * (r ^ k * r ^ (n - k)) := by ring
-        _ = Ca * Cb * ‖(1 : A)‖ * r ^ n := by rw [hrpow]
-
-namespace TauCeti
-
-/-- In any seminormed commutative ring, `smoothingFun (normRingSeminorm A)` agrees with Mathlib's
-`gelfandRadius`, without requiring `‖(1 : A)‖ ≤ 1`. -/
-theorem smoothingFun_normRingSeminorm_eq_gelfandRadius {A : Type*} [SeminormedCommRing A] (a : A) :
-    smoothingFun (normRingSeminorm A) a = gelfandRadius a := by
-  have hnorm (x : A) : normRingSeminorm A x = ‖x‖ := rfl
-  refine le_antisymm ?_ ?_
-  · refine ge_of_tendsto' (tendsto_gelfandRadius' a) fun k ↦ ?_
-    have hk : smoothingFun (normRingSeminorm A) a ≤
-        normRingSeminorm A (a ^ (k : ℕ)) ^ (1 / (k : ℝ)) :=
-      ciInf_le (smoothingSeminormSeq_bddBelow (normRingSeminorm A) a) k
-    rwa [hnorm, one_div] at hk
-  · refine le_ciInf fun k ↦ ?_
-    rw [hnorm, one_div]
-    exact gelfandRadius_le_norm_pow a k.ne_zero
-
-/-- `smoothingFun (normRingSeminorm A) a ≤ ‖a‖` in any seminormed commutative ring. -/
-theorem smoothingFun_normRingSeminorm_le_norm {A : Type*} [SeminormedCommRing A] (a : A) :
-    smoothingFun (normRingSeminorm A) a ≤ ‖a‖ := by
-  rw [smoothingFun_normRingSeminorm_eq_gelfandRadius]
-  exact gelfandRadius_le_norm a
-
-/-- In an ultrametric seminormed commutative ring, `gelfandRadius` is nonarchimedean. -/
-theorem isNonarchimedean_gelfandRadius {A : Type*} [SeminormedCommRing A] [IsUltrametricDist A] :
-    IsNonarchimedean (gelfandRadius : A → ℝ) := fun a b ↦
-  (Commute.all a b).gelfandRadius_add_le_max
-
-/-- In any seminormed commutative ring, `gelfandRadius` bundled as a `RingSeminorm`, without
-requiring `‖(1 : A)‖ ≤ 1`. -/
-noncomputable def gelfandRadiusRingSeminorm (A : Type*) [SeminormedCommRing A] :
-    RingSeminorm A where
-  toFun := gelfandRadius
-  map_zero' := gelfandRadius_zero
-  add_le' := gelfandRadius_add_le
-  neg' := gelfandRadius_neg
-  mul_le' := gelfandRadius_mul_le
-
-/-- `gelfandRadiusRingSeminorm A` evaluates to `gelfandRadius`. -/
-@[simp]
-theorem gelfandRadiusRingSeminorm_apply {A : Type*} [SeminormedCommRing A] (a : A) :
-    gelfandRadiusRingSeminorm A a = gelfandRadius a := (rfl)
-
-/-- `gelfandRadiusRingSeminorm A` is power-multiplicative. -/
-theorem isPowMul_gelfandRadiusRingSeminorm {A : Type*} [SeminormedCommRing A] :
-    IsPowMul (gelfandRadiusRingSeminorm A) := fun a _n hn ↦
-  gelfandRadius_pow_of_ne_zero a (Nat.one_le_iff_ne_zero.mp hn)
-
-/-- In an ultrametric seminormed commutative ring, `gelfandRadiusRingSeminorm A` is
-nonarchimedean. -/
-theorem isNonarchimedean_gelfandRadiusRingSeminorm {A : Type*} [SeminormedCommRing A]
-    [IsUltrametricDist A] : IsNonarchimedean (gelfandRadiusRingSeminorm A) :=
-  isNonarchimedean_gelfandRadius
-
-end TauCeti
-
-end GelfandRadius
-
 section AlgebraicTarget
 
 namespace AlgHom
 
-variable {K B L : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+variable {K B L : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [NormedRing B] [NormedAlgebra K B] [CompleteSpace B]
   [Field L] [Algebra K L]
+
+/-- Over a complete ultrametric normed field `K` (possibly trivially normed), the spectral value of
+a monic irreducible polynomial `p : K[X]` with nonzero constant coefficient equals
+`‖p.coeff 0‖ ^ (1 / p.natDegree)`. -/
+private theorem spectralValue_eq_norm_coeff_zero_rpow_of_irreducible' {p : K[X]}
+    (hm : p.Monic) (hp : Irreducible p) (ha0 : p.coeff 0 ≠ 0) :
+    spectralValue p = ‖p.coeff 0‖ ^ (1 / (p.natDegree : ℝ)) := by
+  by_cases hK : ∃ c : K, c ≠ 0 ∧ ‖c‖ ≠ 1
+  · let := NontriviallyNormedField.ofNormNeOne hK
+    exact Polynomial.spectralValue_eq_norm_coeff_zero_rpow_of_irreducible hm hp
+  · push Not at hK
+    rw [hK _ ha0, Real.one_rpow]
+    refine le_antisymm (ciSup_le fun i ↦ ?_) ?_
+    · by_cases hi : i < p.natDegree
+      · rw [spectralValueTerms_of_lt_natDegree p hi]
+        have hle : ‖p.coeff i‖ ≤ 1 := by
+          by_cases hci : p.coeff i = 0
+          · simp [hci]
+          · exact (hK _ hci).le
+        exact Real.rpow_le_one (norm_nonneg _) hle
+          (one_div_nonneg.mpr (sub_nonneg.mpr (Nat.cast_le.mpr hi.le)))
+      · rw [spectralValueTerms_of_natDegree_le p (not_lt.mp hi)]
+        exact zero_le_one
+    · refine le_ciSup_of_le (spectralValueTerms_bddAbove p) 0 ?_
+      rw [spectralValueTerms_of_lt_natDegree p hp.natDegree_pos, hK _ ha0, Real.one_rpow]
+
+/-- For a monic irreducible polynomial `p : K[X]` with `p.coeff 0 ≠ 0`, each normalized coefficient
+`(p.coeff 0)⁻¹ * p.coeff (j + 1)` for `j + 1 ≤ p.natDegree` has norm at most
+`(spectralValue p)⁻¹ ^ (j + 1)`. -/
+private theorem norm_inv_coeff_zero_mul_coeff_le_inv_pow {p : K[X]}
+    (hm : p.Monic) (hp : Irreducible p) (ha0 : p.coeff 0 ≠ 0)
+    (hr : 0 < spectralValue p) {j : ℕ} (hjd : j + 1 ≤ p.natDegree) :
+    ‖(p.coeff 0)⁻¹ * p.coeff (j + 1)‖ ≤ (spectralValue p)⁻¹ ^ (j + 1) := by
+  set d := p.natDegree
+  have hdR : (d : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hp.natDegree_pos.ne'
+  have ha0_norm : ‖p.coeff 0‖ = spectralValue p ^ d := by
+    rw [spectralValue_eq_norm_coeff_zero_rpow_of_irreducible' hm hp ha0,
+      ← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _), one_div_mul_cancel hdR, Real.rpow_one]
+  set r := spectralValue p
+  rw [norm_mul, norm_inv, ha0_norm]
+  calc
+    (r ^ d)⁻¹ * ‖p.coeff (j + 1)‖ ≤ (r ^ d)⁻¹ * r ^ (d - (j + 1)) :=
+      mul_le_mul_of_nonneg_left (hm.norm_coeff_le_spectralValue_pow (j + 1)) (by positivity)
+    _ = r⁻¹ ^ (j + 1) := by
+      have hrd : r ^ d = r ^ (j + 1) * r ^ (d - (j + 1)) := by
+        rw [← pow_add, Nat.add_sub_of_le hjd]
+      rw [hrd, mul_inv, mul_assoc, inv_mul_cancel₀ (pow_ne_zero _ hr.ne'), mul_one, inv_pow]
 
 /-- Quantitative single-element step: for an integral image `φ x` of minimal-polynomial degree `d`,
 `spectralNorm K L (φ x) ≤ d * ‖x‖`. -/
 private theorem spectralNorm_apply_le_natDegree_mul_norm (φ : B →ₐ[K] L) {x : B}
     (hx : IsIntegral K (φ x)) :
     spectralNorm K L (φ x) ≤ (minpoly K (φ x)).natDegree * ‖x‖ := by
+  -- Step 1: dispose of the easy cases `φ x = 0` and `spectralNorm K L (φ x) ≤ ‖x‖`.
   by_cases hφx : φ x = 0
   · rw [hφx, spectralNorm_zero]
     positivity
@@ -215,13 +158,9 @@ private theorem spectralNorm_apply_le_natDegree_mul_norm (φ : B →ₐ[K] L) {x
   · have hd1 : (1 : ℝ) ≤ d := by exact_mod_cast hd
     exact hrx.trans ((one_mul ‖x‖).symm.trans_le
       (mul_le_mul_of_nonneg_right hd1 (norm_nonneg x)))
+  -- Step 2: write `(p.coeff 0)⁻¹ • aeval x p = 1 - z`; since `φ (1 - z) = 0`, `1 - z` is not a
+  -- unit in the Banach algebra `B`, hence `1 ≤ ‖z‖`.
   have ha0_ne : p.coeff 0 ≠ 0 := minpoly.coeff_zero_ne_zero hx hφx
-  have hr_eq : r = ‖p.coeff 0‖ ^ (1 / (d : ℝ)) :=
-    Polynomial.spectralValue_eq_norm_coeff_zero_rpow_of_irreducible hp_monic hp_irred
-  have ha0_norm : ‖p.coeff 0‖ = r ^ d := by
-    have hdR : (d : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hd.ne'
-    rw [hr_eq, ← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _), one_div_mul_cancel hdR,
-      Real.rpow_one]
   let z : B := -∑ j ∈ Finset.range d, ((p.coeff 0)⁻¹ * p.coeff (j + 1)) • x ^ (j + 1)
   have hz_eq : (p.coeff 0)⁻¹ • aeval x p = 1 - z := by
     rw [aeval_eq_sum_range' (Nat.lt_succ_self d), Finset.sum_range_succ', pow_zero, smul_add,
@@ -233,24 +172,15 @@ private theorem spectralNorm_apply_le_natDegree_mul_norm (φ : B →ₐ[K] L) {x
       rw [← hz_eq, map_smul, ← aeval_algHom_apply, minpoly.aeval, smul_zero]
     exact not_isUnit_zero (h1z ▸ hu.map φ)
   have hz_ge : 1 ≤ ‖z‖ := not_lt.mp fun hlt ↦ hnot_unit (isUnit_one_sub_of_norm_lt_one hlt)
+  -- Step 3: bound each summand of `z` by `‖x‖ / r` to conclude `1 ≤ ‖z‖ ≤ d * (‖x‖ / r)`.
   have hdiv_le_one : ‖x‖ / r ≤ 1 := (div_le_one hr).mpr hxr.le
   have hz_le : ‖z‖ ≤ d * (‖x‖ / r) := by
     dsimp only [z]
     rw [norm_neg]
     refine (norm_sum_le _ _).trans ?_
     refine (Finset.sum_le_sum fun j hj ↦ (?_ : _ ≤ ‖x‖ / r)).trans (by simp [nsmul_eq_mul])
-    have hjd : j + 1 ≤ d := Finset.mem_range.mp hj
-    have hcoeff : ‖(p.coeff 0)⁻¹ * p.coeff (j + 1)‖ ≤ r⁻¹ ^ (j + 1) := by
-      rw [norm_mul, norm_inv, ha0_norm]
-      have h1 : ‖p.coeff (j + 1)‖ ≤ r ^ (d - (j + 1)) :=
-        hp_monic.norm_coeff_le_spectralValue_pow (j + 1)
-      calc
-        (r ^ d)⁻¹ * ‖p.coeff (j + 1)‖ ≤ (r ^ d)⁻¹ * r ^ (d - (j + 1)) :=
-          mul_le_mul_of_nonneg_left h1 (by positivity)
-        _ = r⁻¹ ^ (j + 1) := by
-          have hrd : r ^ d = r ^ (j + 1) * r ^ (d - (j + 1)) := by
-            rw [← pow_add, Nat.add_sub_of_le hjd]
-          rw [hrd, mul_inv, mul_assoc, inv_mul_cancel₀ (pow_ne_zero _ hr.ne'), mul_one, inv_pow]
+    have hcoeff := norm_inv_coeff_zero_mul_coeff_le_inv_pow hp_monic hp_irred ha0_ne hr
+      (Finset.mem_range.mp hj)
     calc
       ‖((p.coeff 0)⁻¹ * p.coeff (j + 1)) • x ^ (j + 1)‖
           = ‖(p.coeff 0)⁻¹ * p.coeff (j + 1)‖ * ‖x ^ (j + 1)‖ := norm_smul _ _
@@ -261,11 +191,13 @@ private theorem spectralNorm_apply_le_natDegree_mul_norm (φ : B →ₐ[K] L) {x
   have h1 : 1 ≤ d * (‖x‖ / r) := hz_ge.trans hz_le
   rwa [← mul_div_assoc, one_le_div hr] at h1
 
-/-- **Spectral-norm bound by Gelfand radius.** Over a complete nontrivially normed ultrametric
-field `K`, any `K`-algebra homomorphism `φ : B →ₐ[K] L` from a Banach `K`-algebra `B` into a field
-extension `L / K` satisfies `spectralNorm K L (φ b) ≤ gelfandRadius b` for every `b : B`.
-Neither commutativity, ultrametricity, Noetherianity, nor `‖1‖ = 1` is assumed on `B`, and
-transcendental images have spectral norm `0`. -/
+/-- **Spectral-norm bound by Gelfand radius.** Over a complete ultrametric normed field `K`
+(including trivially normed fields), any `K`-algebra homomorphism `φ : B →ₐ[K] L` from a Banach
+`K`-algebra `B` into a field extension `L / K` satisfies `spectralNorm K L (φ b) ≤ gelfandRadius b`
+for every `b : B`. Neither commutativity, ultrametricity, Noetherianity, nor `‖1‖ = 1` is assumed
+on `B`, and transcendental images have spectral norm `0`. Completeness of `K` is essential (for
+example, `X ^ 2 + X + 5` is irreducible over `(ℚ, |·|_5)` of spectral value `1` yet has a root in
+`ℚ_5` of `5`-adic norm `1 / 5`). -/
 theorem spectralNorm_apply_le_gelfandRadius (φ : B →ₐ[K] L) (b : B) :
     spectralNorm K L (φ b) ≤ gelfandRadius b := by
   by_cases hb : IsAlgebraic K (φ b)
@@ -311,30 +243,36 @@ theorem spectralNorm_apply_le_gelfandRadius (φ : B →ₐ[K] L) (b : B) :
     exact gelfandRadius_nonneg b
 
 /-- Every `K`-algebra homomorphism from a Banach `K`-algebra `B` into a field extension `L / K`
-over a complete nontrivially normed ultrametric field `K` is bounded by the norm on `B`. -/
+over a complete ultrametric normed field `K` is bounded by the norm on `B`. -/
 theorem spectralNorm_apply_le_norm (φ : B →ₐ[K] L) (b : B) :
     spectralNorm K L (φ b) ≤ ‖b‖ :=
   (φ.spectralNorm_apply_le_gelfandRadius b).trans (gelfandRadius_le_norm b)
 
-/-- Over a complete nontrivially normed ultrametric field `K`, any `K`-algebra homomorphism from a
-Banach `K`-algebra `B` into an algebraic normed field extension `M / K` satisfies
+/-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a Banach
+`K`-algebra `B` into an algebraic normed field extension `M / K` satisfies
 `‖φ b‖ ≤ gelfandRadius b`. -/
 theorem norm_apply_le_gelfandRadius_of_isAlgebraic {M : Type*} [NormedField M] [NormedAlgebra K M]
     [Algebra.IsAlgebraic K M] (φ : B →ₐ[K] M) (b : B) :
     ‖φ b‖ ≤ gelfandRadius b := by
-  rw [NormedAlgebra.norm_eq_spectralNorm K (φ b)]
-  exact φ.spectralNorm_apply_le_gelfandRadius b
+  have : IsUltrametricDist M :=
+    IsUltrametricDist.isUltrametricDist_of_forall_norm_natCast_le_one fun n ↦ by
+      rw [← map_natCast (algebraMap K M), norm_algebraMap']
+      simpa using IsUltrametricDist.norm_nsmul_le (1 : K) n
+  have hle : (NormedAlgebra.toMulAlgebraNorm K M).toAlgebraNorm (φ b) ≤ spectralNorm K M (φ b) :=
+    norm_le_spectralNorm (MulRingNorm.isPowMul _) IsUltrametricDist.isNonarchimedean_norm
+      (Algebra.IsAlgebraic.isAlgebraic (φ b))
+  exact hle.trans (φ.spectralNorm_apply_le_gelfandRadius b)
 
-/-- Over a complete nontrivially normed ultrametric field `K`, any `K`-algebra homomorphism from a
-Banach `K`-algebra `B` into an algebraic normed field extension `M / K` is contractive. -/
+/-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a Banach
+`K`-algebra `B` into an algebraic normed field extension `M / K` is contractive. -/
 theorem norm_apply_le_norm_of_isAlgebraic {M : Type*} [NormedField M] [NormedAlgebra K M]
     [Algebra.IsAlgebraic K M] (φ : B →ₐ[K] M) (b : B) :
     ‖φ b‖ ≤ ‖b‖ :=
   (φ.norm_apply_le_gelfandRadius_of_isAlgebraic b).trans (gelfandRadius_le_norm b)
 
-/-- **Automatic continuity into algebraic normed field extensions.** Over a complete nontrivially
-normed ultrametric field `K`, every `K`-algebra homomorphism from a Banach `K`-algebra `B` into an
-algebraic normed field extension `M / K` is automatically continuous. -/
+/-- **Automatic continuity into algebraic normed field extensions.** Over a complete ultrametric
+normed field `K`, every `K`-algebra homomorphism from a Banach `K`-algebra `B` into an algebraic
+normed field extension `M / K` is automatically continuous. -/
 theorem continuous_of_isAlgebraic {M : Type*} [NormedField M] [NormedAlgebra K M]
     [Algebra.IsAlgebraic K M] (φ : B →ₐ[K] M) :
     Continuous φ :=
@@ -345,84 +283,14 @@ end AlgHom
 
 end AlgebraicTarget
 
-section Uniformity
-
-namespace TauCeti.Huber
-
-/-- In a seminormed ring with a pseudouniformiser, every power-bounded element has Gelfand radius
-at most `1`. -/
-theorem IsPseudoUniformizer.gelfandRadius_le_one_of_isPowerBounded {R : Type*} [SeminormedRing R]
-    {ϖ : R} (hϖ : IsPseudoUniformizer ϖ) {x : R} (hx : IsPowerBounded x) :
-    gelfandRadius x ≤ 1 := by
-  obtain ⟨M, hM⟩ := hϖ.isBounded_iff_forall_norm_le.mp (isPowerBounded_iff.mp hx)
-  exact gelfandRadius_le_of_bound zero_le_one (C := M) fun n ↦ by
-    simpa only [one_pow, mul_one] using hM (x ^ n) ⟨n, rfl⟩
-
-/-- In a seminormed algebra over a nontrivially normed field, every power-bounded element has
-Gelfand radius at most `1`. -/
-theorem gelfandRadius_le_one_of_isPowerBounded (K : Type*) [NontriviallyNormedField K]
-    {R : Type*} [SeminormedRing R] [NormedAlgebra K R] {x : R} (hx : IsPowerBounded x) :
-    gelfandRadius x ≤ 1 := by
-  obtain ⟨ϖ, hϖ0, hϖ1⟩ := NormedField.exists_norm_lt_one K
-  have hϖ := (IsPseudoUniformizer.of_norm_lt_one
-    (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp hϖ0)) hϖ1).map (continuous_algebraMap K R)
-  exact hϖ.gelfandRadius_le_one_of_isPowerBounded hx
-
-/-- Any seminormed algebra over a nontrivially normed field whose norm is bounded by a constant
-multiple of `gelfandRadius` is uniform (`TauCeti.Huber.IsUniform`). -/
-theorem IsUniform.of_norm_le_mul_gelfandRadius (K : Type*) [NontriviallyNormedField K]
-    {R : Type*} [SeminormedRing R] [NormedAlgebra K R]
-    (h : ∃ C : ℝ, ∀ x : R, ‖x‖ ≤ C * gelfandRadius x) :
-    IsUniform R := by
-  obtain ⟨C, hC⟩ := h
-  refine ⟨(isBounded_closedBall_zero (R := R) (max C 0)).subset fun x hx ↦ ?_⟩
-  rw [Metric.mem_closedBall, dist_zero_right]
-  calc
-    ‖x‖ ≤ C * gelfandRadius x := hC x
-    _ ≤ max C 0 * gelfandRadius x :=
-      mul_le_mul_of_nonneg_right (le_max_left C 0) (gelfandRadius_nonneg x)
-    _ ≤ max C 0 * 1 :=
-      mul_le_mul_of_nonneg_left (gelfandRadius_le_one_of_isPowerBounded K hx) (le_max_right C 0)
-    _ = max C 0 := mul_one _
-
-/-- Any seminormed commutative algebra over a nontrivially normed field whose norm is bounded by a
-constant multiple of `smoothingFun (normRingSeminorm A)` is uniform (`TauCeti.Huber.IsUniform`). -/
-theorem IsUniform.of_norm_le_mul_smoothingFun (K : Type*) [NontriviallyNormedField K]
-    {A : Type*} [SeminormedCommRing A] [NormedAlgebra K A]
-    (h : ∃ C : ℝ, ∀ a : A, ‖a‖ ≤ C * smoothingFun (normRingSeminorm A) a) :
-    IsUniform A := by
-  refine IsUniform.of_norm_le_mul_gelfandRadius K ?_
-  obtain ⟨C, hC⟩ := h
-  refine ⟨C, fun a ↦ ?_⟩
-  rw [← smoothingFun_normRingSeminorm_eq_gelfandRadius]
-  exact hC a
-
-end TauCeti.Huber
-
-end Uniformity
-
 section TorsionFreeExtension
 
 namespace TauCeti
-
-attribute [local instance] Algebra.TensorProduct.rightAlgebra in
-/-- Base-changing a reduced commutative `B`-algebra `A` to a fraction ring `F` of `B` preserves
-reducedness. -/
-instance isReduced_tensorProduct_of_isFractionRing {B F A : Type*} [CommRing B] [CommRing F]
-    [Algebra B F] [IsFractionRing B F] [CommRing A] [Algebra B A] [IsReduced A] :
-    IsReduced (F ⊗[B] A) :=
-  IsLocalization.isReduced (Algebra.algebraMapSubmonoid A B⁰) (F ⊗[B] A)
 
 private theorem continuousSMul_of_continuous_algebraMap {B A : Type*} [SeminormedCommRing B]
     [SeminormedCommRing A] [Algebra B A] (hBA : Continuous (algebraMap B A)) :
     ContinuousSMul B A :=
   ⟨((hBA.comp continuous_fst).mul continuous_snd).congr fun p ↦ (Algebra.smul_def p.1 p.2).symm⟩
-
-private theorem includeRight_injective {B F A : Type*} [CommRing B] [CommRing F]
-    [Algebra B F] [IsFractionRing B F] [CommRing A] [Algebra B A] [Module.IsTorsionFree B A] :
-    Function.Injective (Algebra.TensorProduct.includeRight : A →ₐ[B] F ⊗[B] A) :=
-  (IsLocalizedModule.injective_iff_isRegular B⁰ (TensorProduct.mk B F A 1)).mpr
-    fun c ↦ (isRegular_iff_mem_nonZeroDivisors.mpr c.2).isSMulRegular
 
 section Extension
 
@@ -475,18 +343,16 @@ theorem gelfandRadius_eq_spectralValue_minpoly
       (x := a) (by rw [eval_map_algebraMap, minpoly.aeval])
     have hdeg : (p.map (algebraMap B A)).natDegree = d :=
       hp_monic.natDegree_map (algebraMap B A)
-    refine hroot.trans (Real.iSup_le (fun i ↦ ?_) (spectralValue_nonneg p))
-    let j : ℕ := i
-    have hj : j < d := hdeg ▸ i.2
-    change gelfandRadius ((p.map (algebraMap B A)).coeff j) ^
-      (1 / (((p.map (algebraMap B A)).natDegree : ℝ) - (j : ℝ))) ≤ spectralValue p
-    rw [coeff_map, hdeg]
+    rw [← gelfandRadiusRingSeminorm_apply]
+    refine hroot.trans (Real.iSup_le (fun ⟨j, hj⟩ ↦ ?_) (spectralValue_nonneg p))
+    have hjd : j < d := hdeg ▸ hj
+    rw [Fin.val_mk, gelfandRadiusRingSeminorm_apply, coeff_map, hdeg]
     calc
       gelfandRadius (algebraMap B A (p.coeff j)) ^ (1 / ((d : ℝ) - (j : ℝ)))
           ≤ ‖p.coeff j‖ ^ (1 / ((d : ℝ) - (j : ℝ))) := by
         refine Real.rpow_le_rpow (gelfandRadius_nonneg _) (hg_rad _) ?_
-        exact one_div_nonneg.mpr (sub_nonneg.mpr (Nat.cast_le.mpr hj.le))
-      _ = spectralValueTerms p j := (spectralValueTerms_of_lt_natDegree p hj).symm
+        exact one_div_nonneg.mpr (sub_nonneg.mpr (Nat.cast_le.mpr hjd.le))
+      _ = spectralValueTerms p j := (spectralValueTerms_of_lt_natDegree p hjd).symm
       _ ≤ spectralValue p := le_ciSup (spectralValueTerms_bddAbove p) j
   · -- Lower bound: `Φ : (Fin d → B) →ₗ[B] A`, `c ↦ ∑ i, c i • a ^ i` is injective by
     -- `isIntegrallyClosed_dvd_of_isTorsionFree` and strict by `isStrictMap_of_module_finite`, so
@@ -619,7 +485,7 @@ theorem smoothingFun_eq_reducedSpectralAlgNorm [IsReduced A]
     smoothingFun (normRingSeminorm A) a =
       reducedSpectralAlgNorm F (F ⊗[B] A) ((1 : F) ⊗ₜ[B] a) := by
   let φ : A →ₐ[B] F ⊗[B] A := Algebra.TensorProduct.includeRight
-  have hφ : Function.Injective φ := includeRight_injective
+  have hφ : Function.Injective φ := Algebra.TensorProduct.includeRight_injective_of_isFractionRing
   have hmin : minpoly F ((1 : F) ⊗ₜ[B] a) = (minpoly B a).map (algebraMap B F) :=
     TauCeti.minpoly.isIntegrallyClosed_eq_field_fractions_of_injective F φ hφ
       (Algebra.IsIntegral.isIntegral a)
@@ -647,7 +513,7 @@ theorem exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable [IsReduced A]
   -- coordinates in an `F`-basis of `E := F ⊗[B] A`.
   let E := F ⊗[B] A
   let φ : A →ₐ[B] E := Algebra.TensorProduct.includeRight
-  have hφ : Function.Injective φ := includeRight_injective
+  have hφ : Function.Injective φ := Algebra.TensorProduct.includeRight_injective_of_isFractionRing
   have : Nontrivial E := hφ.nontrivial
   let ι := Module.Free.ChooseBasisIndex F E
   let b : Module.Basis ι F E := Module.Free.chooseBasis F E
@@ -662,9 +528,8 @@ theorem exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable [IsReduced A]
   let eBF : L₀ ≃ₗ[B] B :=
     (LinearEquiv.ofInjective (Algebra.linearMap B F) (IsFractionRing.injective B F)).symm
   have heBF (z : L₀) : algebraMap B F (eBF z) = (z : F) := by
-    change (LinearEquiv.ofInjective (Algebra.linearMap B F) (IsFractionRing.injective B F)
-      (eBF z) : F) = (z : F)
-    rw [LinearEquiv.apply_symm_apply]
+    rw [← Algebra.linearMap_apply]
+    exact LinearEquiv.ofInjective_symm_apply _ z
   let fi (i : ι) : A →ₗ[B] F :=
     (LinearMap.lsmul F F (algebraMap B F (d₀ : B))).restrictScalars B ∘ₗ
       ((b.coord i).restrictScalars B) ∘ₗ φ.toLinearMap

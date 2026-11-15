@@ -41,31 +41,8 @@ In particular:
 * Every `K`-algebra homomorphism `φ : B →ₐ[K] A` from an arbitrary Banach `K`-algebra `B` (not
   assumed commutative, ultrametric, Noetherian, or unital-norm-normalized) into a completely normed
   affinoid `K`-algebra `A` maps power-bounded elements to power-bounded elements
-  (`TauCeti.IsAffinoidAlgebra.isPowerBounded_algHom`), and when `A` is reduced `φ` is automatically
+  (`TauCeti.IsAffinoidAlgebra.isPowerBounded_map`), and when `A` is reduced `φ` is automatically
   continuous (`TauCeti.IsAffinoidAlgebra.continuous_algHom_of_isReduced`).
-
-## Proof outline
-
-1. **Finite torsion-free extensions of Tate algebras.** If `A` is finite and torsion-free over a
-   Tate algebra `T_d = K⟨X₁, …, X_d⟩`, equipping `A` with its canonical residue norm identifies
-   `supSeminorm K` with `gelfandRadius`, hence with `spectralValue (minpoly T_d f)`
-   (`TauCeti.IsAffinoidAlgebra.supSeminorm_eq_spectralValue_minpoly`) and, when `A` is reduced,
-   with `reducedSpectralAlgNorm` on `Frac(T_d) ⊗[T_d] A`
-   (`TauCeti.IsAffinoidAlgebra.supSeminorm_eq_reducedSpectralAlgNorm`).
-2. **Affinoid domains.** An affinoid domain `B` has a finite injective Noether normalization
-   `g : T_d →ₐ[K] B`. Because `B` is a domain, `B` is torsion-free over `T_d`; because `T_d` is a
-   unique factorization domain (`TauCeti.MvPowerSeries.uniqueFactorizationMonoid`) and its
-   Gauss-normed fraction field is weakly stable in arbitrary characteristic
-   (`TauCeti.MvPowerSeries.isWeaklyStable_gaussFractionField`), [BGR, §3.8.3, Theorem 7]
-   (`AlgHom.exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable`) bounds `‖b‖` by
-   `C * supSeminorm K b`.
-3. **General reduced affinoid algebras.** A general reduced affinoid algebra `A` need not be
-   equidimensional, so it need not be torsion-free over a single Tate algebra. Instead, `A` has
-   finitely many minimal primes `𝔭`, each quotient `A ⧸ 𝔭` is an affinoid domain with closed kernel
-   `𝔭`, and the diagonal `A`-linear map `δ : A →ₗ[A] ∏ 𝔭, A ⧸ 𝔭` is injective
-   (`Ideal.injective_pi_quotient_mk_minimalPrimes`) and strict
-   (`LinearMap.isStrictMap_of_module_finite`). Combining `‖f‖ ≤ D * ‖δ f‖` with step 2 on each
-   component `A ⧸ 𝔭` yields `‖f‖ ≤ C * supSeminorm K f`.
 
 ## Main definitions and results
 
@@ -78,9 +55,10 @@ In particular:
   `TauCeti.IsAffinoidAlgebra.supNormContinuousAlgEquiv`: the canonical complete supremum-normed
   Banach algebra model of a reduced affinoid algebra.
 * `AlgHom.supSeminorm_apply_le_gelfandRadius`,
-  `TauCeti.IsAffinoidAlgebra.isPowerBounded_algHom`, and
-  `TauCeti.IsAffinoidAlgebra.continuous_algHom_of_isReduced`: automatic continuity and
-  power-boundedness preservation from arbitrary Banach `K`-algebras.
+  `TauCeti.IsAffinoidAlgebra.isPowerBounded_map`,
+  `TauCeti.IsAffinoidAlgebra.exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced`, and
+  `TauCeti.IsAffinoidAlgebra.continuous_algHom_of_isReduced`: spectral contraction,
+  power-boundedness preservation, and automatic continuity from arbitrary Banach `K`-algebras.
 
 ## References
 
@@ -126,8 +104,8 @@ namespace TauCeti.IsAffinoidAlgebra
 section SupNormModel
 
 /-- Type wrapper equipping an affinoid algebra `A` (with no prior norm) with its canonical supremum
-seminorm `supSeminorm K`. When `A` is reduced, `hA.SupNormModel` is a complete uniform ultrametric
-Banach `K`-algebra. -/
+seminorm `supSeminorm K`. When `K` is moreover complete and nontrivially normed and `A` is reduced,
+`hA.SupNormModel` is a complete uniform ultrametric Banach `K`-algebra. -/
 structure SupNormModel {K A : Type*} [NormedField K] [IsUltrametricDist K]
     [CommRing A] [Algebra K A] (_hA : IsAffinoidAlgebra K A) where
   /-- View an element of `A` in the supremum-normed model `hA.SupNormModel`. -/
@@ -442,9 +420,8 @@ noncomputable instance [IsReduced A] : NormedCommRing hA.SupNormModel :=
       exact ext (sub_eq_zero.mp (hA.isReduced_iff_supSeminorm_eq_zero.mp ‹_› _ hxy)) }
 
 /-- **Completeness of the supremum norm on a reduced affinoid algebra**
-([BGR, §6.2.4, Corollary 2]). Even when `A` carries no prior norm, equipping `A` locally with its
-canonical residue norm and applying `banachFunctionAlgebra` shows that `hA.SupNormModel` is a
-complete Banach `K`-algebra. -/
+([BGR, §6.2.4, Corollary 2]): for any reduced affinoid algebra `A` over a complete nontrivially
+normed ultrametric field `K`, `hA.SupNormModel` is a complete Banach `K`-algebra. -/
 instance [IsReduced A] : CompleteSpace hA.SupNormModel := by
   let : NormedCommRing A := hA.residueNormedCommRing
   let : NormedAlgebra K A := hA.residueNormedAlgebra
@@ -500,8 +477,8 @@ theorem symm_apply_supNormContinuousAlgEquiv {A : Type*} [NormedCommRing A] [Nor
     [IsUltrametricDist A] [CompleteSpace A] [IsReduced A] (hA : IsAffinoidAlgebra K A)
     (x : hA.SupNormModel) :
     hA.supNormContinuousAlgEquiv.symm x = x.ofSupNorm := by
-  change hA.supNormContinuousAlgEquiv.toAlgEquiv.symm x = x.ofSupNorm
-  simp
+  rw [ContinuousAlgEquiv.symm_apply_eq, coe_supNormContinuousAlgEquiv,
+    SupNormModel.toSupNorm_ofSupNorm]
 
 end SupNormBanach
 
@@ -510,11 +487,10 @@ section AutomaticContinuityFromBanach
 variable {B A : Type*} [NormedRing B] [NormedAlgebra K B] [CompleteSpace B]
   [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A]
 
-/-- Every `K`-algebra homomorphism from an arbitrary Banach `K`-algebra `B` into a completely normed
-affinoid `K`-algebra `A` (not necessarily reduced) maps power-bounded elements to power-bounded
-elements. Unlike `TauCeti.IsAffinoidAlgebra.isPowerBounded_map`, `B` need not be commutative,
-ultrametric, or Noetherian. -/
-theorem isPowerBounded_algHom (hA : IsAffinoidAlgebra K A) (φ : B →ₐ[K] A) {b : B}
+/-- Every `K`-algebra homomorphism from an arbitrary Banach `K`-algebra `B` (not assumed
+commutative, ultrametric, Noetherian, or unital-norm-normalized) into a completely normed affinoid
+`K`-algebra `A` (not necessarily reduced) maps power-bounded elements to power-bounded elements. -/
+theorem isPowerBounded_map (hA : IsAffinoidAlgebra K A) (φ : B →ₐ[K] A) {b : B}
     (hb : Huber.IsPowerBounded b) : Huber.IsPowerBounded (φ b) :=
   hA.isPowerBounded_iff_supSeminorm_le_one.mpr <|
     (φ.supSeminorm_apply_le_gelfandRadius b).trans
@@ -525,7 +501,8 @@ variable [IsReduced A]
 /-- Quantitative bound for `K`-algebra homomorphisms from an arbitrary Banach `K`-algebra `B` into a
 completely normed reduced affinoid `K`-algebra `A`: there exists `C > 0` such that
 `‖φ b‖ ≤ C * gelfandRadius b ≤ C * ‖b‖` for every `b : B`. -/
-theorem exists_pos_norm_algHom_le_of_isReduced (hA : IsAffinoidAlgebra K A) (φ : B →ₐ[K] A) :
+theorem exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced
+    (hA : IsAffinoidAlgebra K A) (φ : B →ₐ[K] A) :
     ∃ C : ℝ, 0 < C ∧ ∀ b : B, ‖φ b‖ ≤ C * gelfandRadius b ∧ ‖φ b‖ ≤ C * ‖b‖ := by
   obtain ⟨C, hC, hbound⟩ := hA.banachFunctionAlgebra
   refine ⟨C, hC, fun b ↦ ?_⟩
@@ -540,7 +517,7 @@ commutative, ultrametric, Noetherian, or unital-norm-normalized) into a complete
 affinoid `K`-algebra `A` is continuous. -/
 theorem continuous_algHom_of_isReduced (hA : IsAffinoidAlgebra K A) (φ : B →ₐ[K] A) :
     Continuous φ := by
-  obtain ⟨C, _, hC⟩ := hA.exists_pos_norm_algHom_le_of_isReduced φ
+  obtain ⟨C, _, hC⟩ := hA.exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced φ
   exact (φ.toLinearMap.mkContinuous C fun b ↦ (hC b).2).continuous
 
 end AutomaticContinuityFromBanach

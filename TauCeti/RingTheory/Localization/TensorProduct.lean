@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.RingTheory.Localization.BaseChange
+public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.TensorProduct.Basic
 import Mathlib.RingTheory.Localization.Basic
 
@@ -16,6 +18,9 @@ Let `K` be a localization of `R` and let `A` be an `R`-algebra. Mathlib's
 `IsLocalization.linearMap_compatibleSMul` says that an `R`-linear map between `K`-modules is
 automatically `K`-linear. This file records the analogue for the ring `K ⊗[R] A`: on modules where
 `q ⊗ₜ a` acts as `q • a • _`, every `A`-linear map is `K ⊗[R] A`-linear.
+
+When `K` is a total ring of fractions of `R` and `A` is torsion-free as an `R`-module, the canonical
+inclusion `A →ₐ[R] K ⊗[R] A` is injective without requiring `A` to be flat over `R`.
 
 For `R`-algebras `S` and `A` and a localization `B` of `A` away from `f : A`, Mathlib's isomorphism
 `IsLocalization.Away.tensorProductEquivTMulRight : S ⊗[R] B ≃ₐ[S] Localization.Away (1 ⊗ₜ f)` is
@@ -29,6 +34,8 @@ of a finite sum of elementary tensors.
 
 * `TauCeti.IsLocalization.linearMap_compatibleSMul_tensorProduct`: `A`-linear maps between such
   modules commute with the action of `K ⊗[R] A`.
+* `Algebra.TensorProduct.includeRight_injective_of_isFractionRing`: injectivity of
+  `B →ₐ[R] A ⊗[R] B` when `A` is a fraction ring of `R` and `B` is `R`-torsion-free.
 * `IsLocalization.Away.tensorProductEquivTMulRight_one_tmul`: the base-change isomorphism on
   elements `1 ⊗ₜ z` is the induced map of localizations.
 * `TensorProduct.exists_eq_inv_natCast_tmul`: every element of `ℚ ⊗[ℤ] M` is an elementary
@@ -64,6 +71,20 @@ theorem linearMap_compatibleSMul_tensorProduct {V W : Type*} [AddCommMonoid V] [
     | add b c hb hc => rw [add_smul, map_add, hb, hc, add_smul]
 
 end TauCeti.IsLocalization
+
+open scoped TensorProduct nonZeroDivisors in
+/-- Tensoring a torsion-free `R`-algebra `B` on the left with a total ring of fractions `A` of a
+commutative ring `R` gives an injective right inclusion `B →ₐ[R] A ⊗[R] B`. Unlike
+`Algebra.TensorProduct.includeRight_injective`, `B` need not be flat over `R`. -/
+theorem Algebra.TensorProduct.includeRight_injective_of_isFractionRing {R A B : Type*}
+    [CommRing R] [CommSemiring A] [Algebra R A] [IsFractionRing R A] [Semiring B]
+    [Algebra R B] [Module.IsTorsionFree R B] :
+    Function.Injective (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B) := by
+  have hmk : Function.Injective (TensorProduct.mk R A B 1) :=
+    (IsLocalizedModule.injective_iff_isRegular R⁰ (TensorProduct.mk R A B 1)).mpr
+      fun c ↦ (isRegular_iff_mem_nonZeroDivisors.mpr c.2).isSMulRegular
+  intro b₁ b₂ h
+  exact hmk h
 
 namespace IsLocalization.Away
 
