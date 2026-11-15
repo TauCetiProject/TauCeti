@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.Distribution
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
 
 /-!
 # Distributions as vector bundles
@@ -47,6 +51,11 @@ distribution of rank `k` is a `C^n` vector bundle with model fibre `Fin k → �
   of a distribution.
 * `TauCeti.IsContMDiffDistribution.fiberBundle`: a continuous distribution of rank `k` is a fibre
   bundle with fibre `Fin k → 𝕜`.
+* `TauCeti.IsContMDiffDistribution.inclusionHom`,
+  `TauCeti.IsContMDiffDistribution.toTangentSection`,
+  `TauCeti.IsContMDiffDistribution.mkSection`: on a `C^(n+1)` manifold, the `C^n` Hom-bundle
+  inclusion `D →L[𝕜] TM`, `C^n`-section inclusion `Γ^n(D) → Γ^n(TM)`, and restriction of `D`-valued
+  `C^n` vector fields to `C^n` sections of `D`.
 
 ## Main results
 
@@ -219,6 +228,62 @@ theorem contMDiffAt_totalSpace_mk [IsManifold I (n + 1) M]
   have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
   hD.hasLocalContMDiffSubbundleFrames.contMDiffAt_totalSpace_mk hw hmem
 
-end IsContMDiffDistribution
+section Sections
+variable [IsManifold I (n + 1) M] (hD : IsContMDiffDistribution I n k D)
 
+/-- On a `C^(n+1)` manifold, the fibrewise inclusions `(D x).subtypeL : D x →L[𝕜] TangentSpace I x`
+of a `C^n` distribution of rank `k` form a `C^n` section of `D →L[𝕜] TM`. -/
+def inclusionHom : letI := hD.fiberBundle; letI := hD.vectorBundle
+    Cₛ^n⟮I; (Fin k → 𝕜) →L[𝕜] E, fun x ↦ D x →L[𝕜] TangentSpace I x⟯ :=
+  have : CompleteSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
+  let := hD.fiberBundle; let := hD.vectorBundle
+  ⟨fun x ↦ (D x).subtypeL, (contMDiff_hom_bundle_iff _).2 hD.contMDiff_totalSpace_inclusion⟩
+
+@[simp] theorem inclusionHom_apply (x : M) :
+    (letI := hD.fiberBundle; letI := hD.vectorBundle; hD.inclusionHom x) = (D x).subtypeL := (rfl)
+
+/-- Inclusion of `C^n` sections of `D` into `C^n` tangent vector fields over `C^n⟮I, M; 𝕜⟯`. -/
+def toTangentSection : letI := hD.fiberBundle; letI := hD.vectorBundle
+    Cₛ^n⟮I; Fin k → 𝕜, fun x ↦ D x⟯ →ₗ[C^n⟮I, M; 𝕜⟯]
+      Cₛ^n⟮I; E, (TangentSpace I : M → Type _)⟯ :=
+  let := hD.fiberBundle; let := hD.vectorBundle
+  ⟨(ContMDiffSection.mapLinearMap (fun x ↦ (D x).subtype)
+      hD.contMDiff_totalSpace_inclusion).toAddHom,
+    ContMDiffSection.mapLinearMap_smul_function (fun x ↦ (D x).subtype)
+      hD.contMDiff_totalSpace_inclusion⟩
+
+@[simp] theorem toTangentSection_apply : letI := hD.fiberBundle; letI := hD.vectorBundle
+    ∀ (a : Cₛ^n⟮I; Fin k → 𝕜, fun x ↦ D x⟯) (x : M),
+      hD.toTangentSection a x = (a x : TangentSpace I x) :=
+  let := hD.fiberBundle; let := hD.vectorBundle
+  ContMDiffSection.mapLinearMap_apply (fun x ↦ (D x).subtype) hD.contMDiff_totalSpace_inclusion
+
+theorem toTangentSection_injective : letI := hD.fiberBundle; letI := hD.vectorBundle
+    Function.Injective hD.toTangentSection :=
+  let := hD.fiberBundle; let := hD.vectorBundle
+  ContMDiffSection.mapLinearMap_injective (fun x ↦ (D x).subtype)
+    hD.contMDiff_totalSpace_inclusion fun _ ↦ Subtype.val_injective
+
+/-- A `C^n` tangent vector field taking values in `D` defines a `C^n` section of `D`. -/
+def mkSection (X : Cₛ^n⟮I; E, (TangentSpace I : M → Type _)⟯) (hX : ∀ x, X x ∈ D x) :
+    letI := hD.fiberBundle; Cₛ^n⟮I; Fin k → 𝕜, fun x ↦ D x⟯ :=
+  let := hD.fiberBundle
+  ⟨fun x ↦ ⟨X x, hX x⟩, fun _ ↦ hD.contMDiffAt_totalSpace_mk X.contMDiff.contMDiffAt hX⟩
+
+@[simp] theorem coe_mkSection_apply (X : Cₛ^n⟮I; E, (TangentSpace I : M → Type _)⟯)
+    (hX : ∀ x, X x ∈ D x) (x : M) :
+    (letI := hD.fiberBundle; (hD.mkSection X hX x : TangentSpace I x)) = X x := (rfl)
+
+@[simp] theorem toTangentSection_mkSection (X : Cₛ^n⟮I; E, (TangentSpace I : M → Type _)⟯)
+    (hX : ∀ x, X x ∈ D x) :
+    (letI := hD.fiberBundle; letI := hD.vectorBundle; hD.toTangentSection (hD.mkSection X hX)) =
+      X := by let := hD.fiberBundle; let := hD.vectorBundle; ext x; simp
+
+@[simp] theorem mkSection_toTangentSection : letI := hD.fiberBundle; letI := hD.vectorBundle
+    ∀ (a : Cₛ^n⟮I; Fin k → 𝕜, fun x ↦ D x⟯) (h : ∀ x, hD.toTangentSection a x ∈ D x),
+      hD.mkSection (hD.toTangentSection a) h = a := by
+  let := hD.fiberBundle; let := hD.vectorBundle; intro a h; ext x; simp
+
+end Sections
+end IsContMDiffDistribution
 end TauCeti

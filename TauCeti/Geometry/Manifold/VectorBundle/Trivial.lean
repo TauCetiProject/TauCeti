@@ -14,7 +14,7 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 The trivial bundle `Bundle.Trivial B F` has the single global trivialization
 `Bundle.Trivial.trivialization B F`, so a map into its total space is smooth exactly when its base
 map and its fibre map into `F` are smooth. When the fibre `W` is instead a finite-dimensional
-Hausdorff topological module without a fixed norm, `Bundle.TrivialModel 𝕜 W` supplies
+Hausdorff topological module without a fixed norm, `TauCeti.TrivialModel 𝕜 W` supplies
 `Fin (Module.finrank 𝕜 W) → 𝕜` as a nominal coordinate model fibre equipping `Bundle.Trivial B W`
 with a `C^n` vector bundle structure without `AddCommGroup` diamonds on `W`.
 -/
@@ -61,11 +61,10 @@ end
 
 noncomputable section
 
-namespace Bundle
+namespace TauCeti
 
 /-- The coordinate normed space `Fin (Module.finrank 𝕜 W) → 𝕜` used as the model fibre of
-`Bundle.Trivial B W` when `W` is a finite-dimensional topological vector space without a fixed
-norm, avoiding instance diamonds with `Bundle.Trivial.fiberBundle`. -/
+`Bundle.Trivial B W` for a finite-dimensional topological module `W` without a fixed norm. -/
 def TrivialModel (𝕜 W : Type*) [DivisionRing 𝕜] [AddCommGroup W] [Module 𝕜 W] : Type _ :=
   Fin (Module.finrank 𝕜 W) → 𝕜
 
@@ -89,11 +88,11 @@ instance instCompleteSpace [CompleteSpace 𝕜] : CompleteSpace (TrivialModel �
 
 end Normed
 
-section Bundle
+section FiberBundle
 
-variable {𝕜 B W : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [TopologicalSpace B] [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W]
-  [IsTopologicalAddGroup W] [ContinuousSMul 𝕜 W] [T2Space W] [FiniteDimensional 𝕜 W]
+variable {𝕜 B W : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [TopologicalSpace B]
+  [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W] [IsTopologicalAddGroup W]
+  [ContinuousSMul 𝕜 W] [T2Space W] [FiniteDimensional 𝕜 W]
 
 variable (𝕜 W) in
 /-- Continuous linear equivalence between `W` and `TrivialModel 𝕜 W` via `Module.finBasis 𝕜 W`. -/
@@ -106,8 +105,7 @@ instance instTopologicalSpaceTotalSpace :
     TopologicalSpace.induced TotalSpace.snd ‹TopologicalSpace W›
 
 variable (𝕜 B W) in
-/-- Homeomorphism between the total space of `Bundle.Trivial B W` (modelled on `TrivialModel 𝕜 W`)
-and `B × TrivialModel 𝕜 W`. -/
+/-- Homeomorphism `TotalSpace (TrivialModel 𝕜 W) (Bundle.Trivial B W) ≃ₜ B × TrivialModel 𝕜 W`. -/
 def homeomorphProd : TotalSpace (TrivialModel 𝕜 W) (Bundle.Trivial B W) ≃ₜ B × TrivialModel 𝕜 W :=
   (Equiv.mk (fun p ↦ (p.proj, p.snd)) (fun q ↦ ⟨q.1, q.2⟩) (fun _ ↦ rfl) (fun _ ↦ rfl)
     |>.toHomeomorphOfIsInducing
@@ -124,9 +122,8 @@ variable (𝕜 B W) in
 /-- Global trivialization of `Bundle.Trivial B W` with model fibre `TrivialModel 𝕜 W`. -/
 def trivialization :
     Trivialization (TrivialModel 𝕜 W) (π (TrivialModel 𝕜 W) (Bundle.Trivial B W)) :=
-  { toOpenPartialHomeomorph := (homeomorphProd 𝕜 B W).toOpenPartialHomeomorph, baseSet := univ
-    open_baseSet := isOpen_univ, source_eq := rfl, target_eq := univ_prod_univ.symm
-    proj_toFun _ _ := rfl }
+  ⟨(homeomorphProd 𝕜 B W).toOpenPartialHomeomorph, univ, isOpen_univ, rfl,
+    univ_prod_univ.symm, fun _ _ ↦ rfl⟩
 
 @[simp] theorem trivialization_baseSet : (trivialization 𝕜 B W).baseSet = univ := (rfl)
 
@@ -149,8 +146,7 @@ instance instFiberBundle : FiberBundle (TrivialModel 𝕜 W) (Bundle.Trivial B W
       funext fun w ↦ (congrArg (TotalSpace.mk (F := TrivialModel 𝕜 W) (E := Bundle.Trivial B W) b)
         ((equiv 𝕜 W).symm_apply_apply w).symm).trans
         (homeomorphProd_symm_apply (b, equiv 𝕜 W w)).symm
-    rw [hcomp]
-    exact (homeomorphProd 𝕜 B W).symm.isInducing.comp
+    rw [hcomp]; exact (homeomorphProd 𝕜 B W).symm.isInducing.comp
       ((Topology.isInducing_const_prod.2 .id).comp (equiv 𝕜 W).toHomeomorph.isInducing)
 
 @[simp] theorem trivializationAt_eq (b : B) :
@@ -158,21 +154,19 @@ instance instFiberBundle : FiberBundle (TrivialModel 𝕜 W) (Bundle.Trivial B W
 
 theorem eq_trivialization
     (e : Trivialization (TrivialModel 𝕜 W) (π (TrivialModel 𝕜 W) (Bundle.Trivial B W)))
-    [h : MemTrivializationAtlas e] : e = trivialization 𝕜 B W :=
-  mem_singleton_iff.1 h.out
+    [h : MemTrivializationAtlas e] : e = trivialization 𝕜 B W := mem_singleton_iff.1 h.out
 
-instance instIsLinearTrivialization : (trivialization 𝕜 B W).IsLinear 𝕜 where
-  linear _ _ := ⟨(equiv 𝕜 W).map_add, (equiv 𝕜 W).map_smul⟩
+instance instIsLinearTrivialization : (trivialization 𝕜 B W).IsLinear 𝕜 :=
+  ⟨fun _ _ ↦ ⟨(equiv 𝕜 W).map_add, (equiv 𝕜 W).map_smul⟩⟩
 
 @[simp] theorem trivialization_symm_apply (b : B) (v : TrivialModel 𝕜 W) :
     (trivialization 𝕜 B W).symm b v = (equiv 𝕜 W).symm v := by
   have hv : (trivialization 𝕜 B W ⟨b, (equiv 𝕜 W).symm v⟩).2 = v := by simp
   simpa only [hv] using
-    (trivialization 𝕜 B W).symm_apply_apply_mk (b := b) (by simp) ((equiv 𝕜 W).symm v)
+    (trivialization 𝕜 B W).symm_apply_apply_mk (mem_univ b) ((equiv 𝕜 W).symm v)
 
-theorem trivialization_coordChangeL (b : B) :
-    (trivialization 𝕜 B W).coordChangeL 𝕜 (trivialization 𝕜 B W) b =
-      ContinuousLinearEquiv.refl 𝕜 (TrivialModel 𝕜 W) := by
+theorem trivialization_coordChangeL (b : B) : (trivialization 𝕜 B W).coordChangeL 𝕜
+    (trivialization 𝕜 B W) b = .refl 𝕜 (TrivialModel 𝕜 W) := by
   ext v; rw [Trivialization.coordChangeL_apply']; exacts [by simp, ⟨mem_univ _, mem_univ _⟩]
 
 instance instVectorBundle : VectorBundle 𝕜 (TrivialModel 𝕜 W) (Bundle.Trivial B W) where
@@ -198,8 +192,6 @@ variable {EB HB EM HM M : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [
   [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM} [TopologicalSpace M] [ChartedSpace HM M]
   {n : ℕ∞ω} {b : M → B} {f : M → W}
 
-/-- A map into `TotalSpace (TrivialModel 𝕜 W) (Bundle.Trivial B W)` is `C^n` at a point iff its
-base map and its `TrivialModel`-valued fibre map are `C^n` there. -/
 theorem contMDiffAt_mk_iff {x : M} :
     ContMDiffAt J (I.prod 𝓘(𝕜, TrivialModel 𝕜 W)) n
         (fun y ↦ TotalSpace.mk' (TrivialModel 𝕜 W) (E := Bundle.Trivial B W) (b y) (f y)) x ↔
@@ -213,10 +205,7 @@ theorem contMDiff_mk_iff :
       ContMDiff J I n b ∧ ContMDiff J 𝓘(𝕜, TrivialModel 𝕜 W) n (fun y ↦ equiv 𝕜 W (f y)) :=
   (forall_congr' fun _ ↦ contMDiffAt_mk_iff).trans forall_and
 
-end Bundle
-
+end FiberBundle
 end TrivialModel
-
-end Bundle
-
+end TauCeti
 end

@@ -219,6 +219,7 @@ theorem bracket_swap (a b : Cₛ^∞⟮I; F, V⟯) : A.bracket a b = -A.bracket 
   exact eq_neg_of_add_eq_zero_right h
 
 /-- The Leibniz rule in the first argument: `[f • a, b] = f • [a, b] - (ρ(b) f) • a`. -/
+@[simp]
 theorem bracket_smul_left (f : C^∞⟮I, M; ℝ⟯) (a b : Cₛ^∞⟮I; F, V⟯) :
     A.bracket (f • a) b = f • A.bracket a b - A.anchorDeriv b f • a := by
   rw [A.bracket_swap (f • a) b, A.bracket_smul_right, neg_add, ← smul_neg, ← A.bracket_swap,

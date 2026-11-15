@@ -14,17 +14,10 @@ import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 /-!
 # Zero-anchor Lie algebroids from bundles of Lie algebras
 
-A smooth real vector bundle `V → M` equipped with a smooth section `B` of `V →L[ℝ] V →L[ℝ] V` that
-is fibrewise alternating and satisfies the fibrewise Jacobi identity is a Lie algebroid with zero
-anchor (`TauCeti.LieAlgebroid.ofFiberwiseBracket`) and `C^∞⟮I, M; ℝ⟯`-bilinear section bracket.
-Specializing to `Bundle.Trivial M 𝔤` for a finite-dimensional real Hausdorff topological Lie algebra
-`𝔤` gives `TauCeti.LieAlgebroid.trivialLieAlgebra`, together with `trivialLieAlgebraEval`,
-`trivialLieAlgebraConst`, and `trivialLieAlgebraPullback`.
-
-## References
-
-* K. C. H. Mackenzie, *General theory of Lie groupoids and Lie algebroids*, London Math. Soc.
-  Lecture Note Ser. 213, Cambridge University Press (2005), §3.3.
+A smooth real vector bundle `V → M` with a fibrewise alternating Jacobi section `B` of
+`V →L[ℝ] V →L[ℝ] V` is a zero-anchor Lie algebroid (`TauCeti.LieAlgebroid.ofFiberwiseBracket`).
+Specializing to `Bundle.Trivial M 𝔤` gives `trivialLieAlgebra`, `trivialLieAlgebraEval`,
+`trivialLieAlgebraConst`, and `trivialLieAlgebraPullback` (Mackenzie 2005, §3.3).
 -/
 
 public section
@@ -34,53 +27,41 @@ noncomputable section
 open Bundle Manifold
 open scoped ContDiff
 
-namespace TauCeti
-
-namespace LieAlgebroid
+namespace TauCeti.LieAlgebroid
 
 section ZeroAnchor
 
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+variable {E H F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {V : M → Type*}
+  [IsManifold I ∞ M] [NormedAddCommGroup F] [NormedSpace ℝ F] {V : M → Type*}
   [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
 
-/-- When the anchor of a Lie algebroid vanishes, its bracket is `C^∞⟮I, M; ℝ⟯`-linear on the
-right. -/
 theorem bracket_smul_right_of_anchor_eq_zero {A : LieAlgebroid I F V} (hA : A.anchor = 0)
-    (a b : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) :
-    A.bracket a (f • b) = f • A.bracket a b := by ext x; simp [hA]
+    (a b : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) : A.bracket a (f • b) = f • A.bracket a b := by
+  ext x; simp [hA]
 
-/-- When the anchor of a Lie algebroid vanishes, its bracket is `C^∞⟮I, M; ℝ⟯`-linear on the
-left. -/
 theorem bracket_smul_left_of_anchor_eq_zero {A : LieAlgebroid I F V} (hA : A.anchor = 0)
-    (f : C^∞⟮I, M; ℝ⟯) (a b : Cₛ^∞⟮I; F, V⟯) :
-    A.bracket (f • a) b = f • A.bracket a b := by ext x; simp [A.bracket_smul_left, hA]
+    (f : C^∞⟮I, M; ℝ⟯) (a b : Cₛ^∞⟮I; F, V⟯) : A.bracket (f • a) b = f • A.bracket a b := by
+  ext x; simp [A.bracket_smul_left, hA]
 
 section FiberwiseBracket
 
 variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
 
-/-- A smooth bundle of Lie algebras — a smooth section `B` of `V →L[ℝ] V →L[ℝ] V` that is fibrewise
-alternating and satisfies the fibrewise Jacobi identity — forms a Lie algebroid with zero anchor and
-pointwise bracket `(bracket a b) x = B x (a x) (b x)`. -/
+/-- A smooth bundle of Lie algebras — a smooth fibrewise alternating Jacobi section `B` of
+`V →L[ℝ] V →L[ℝ] V` — forms a zero-anchor Lie algebroid with `(bracket a b) x = B x (a x) (b x)`. -/
 def ofFiberwiseBracket (B : Cₛ^∞⟮I; F →L[ℝ] F →L[ℝ] F, fun x ↦ V x →L[ℝ] V x →L[ℝ] V x⟯)
     (hself : ∀ (x : M) (v : V x), B x v v = 0)
     (hjacobi : ∀ (x : M) (u v w : V x), B x u (B x v w) = B x (B x u v) w + B x v (B x u w)) :
-    LieAlgebroid I F V where
-  anchor := 0
-  bracket := LinearMap.mk₂ ℝ
-    (fun a b ↦ ⟨fun x ↦ B x (a x) (b x),
+    LieAlgebroid I F V :=
+  ⟨0, LinearMap.mk₂ ℝ (fun a b ↦ ⟨fun x ↦ B x (a x) (b x),
       (B.contMDiff.clm_bundle_apply a.contMDiff).clm_bundle_apply b.contMDiff⟩)
-    (fun _ _ _ ↦ ContMDiffSection.ext fun _ ↦ by simp)
-    (fun _ _ _ ↦ ContMDiffSection.ext fun _ ↦ by simp)
-    (fun _ _ _ ↦ ContMDiffSection.ext fun _ ↦ by simp)
-    (fun _ _ _ ↦ ContMDiffSection.ext fun _ ↦ by simp)
-  bracket_self a := ContMDiffSection.ext fun x ↦ hself x (a x)
-  bracket_bracket a b c := ContMDiffSection.ext fun x ↦ hjacobi x (a x) (b x) (c x)
-  bracket_smul_apply _ _ _ _ := by simp
+    (fun _ _ _ ↦ by ext; simp) (fun _ _ _ ↦ by ext; simp)
+    (fun _ _ _ ↦ by ext; simp) (fun _ _ _ ↦ by ext; simp),
+    fun a ↦ ContMDiffSection.ext fun x ↦ hself x (a x),
+    fun a b c ↦ ContMDiffSection.ext fun x ↦ hjacobi x (a x) (b x) (c x),
+    fun _ _ _ _ ↦ by simp⟩
 
 section Simp
 
@@ -99,27 +80,25 @@ variable (B : Cₛ^∞⟮I; F →L[ℝ] F →L[ℝ] F, fun x ↦ V x →L[ℝ] V
 @[simp] theorem ofFiberwiseBracket_bracket_apply (a b : Cₛ^∞⟮I; F, V⟯) (x : M) :
     (ofFiberwiseBracket B hself hjacobi).bracket a b x = B x (a x) (b x) := (rfl)
 
-@[simp] theorem ofFiberwiseBracket_bracket_smul_left (f : C^∞⟮I, M; ℝ⟯) (a b : Cₛ^∞⟮I; F, V⟯) :
+theorem ofFiberwiseBracket_bracket_smul_left (f : C^∞⟮I, M; ℝ⟯) (a b : Cₛ^∞⟮I; F, V⟯) :
     (ofFiberwiseBracket B hself hjacobi).bracket (f • a) b =
       f • (ofFiberwiseBracket B hself hjacobi).bracket a b :=
   bracket_smul_left_of_anchor_eq_zero rfl f a b
 
 end Simp
 
-/-- Over a finite-dimensional Hausdorff base, the smooth fibrewise bracket `B` is uniquely
-determined by the Lie algebroid `ofFiberwiseBracket B`. -/
+/-- Over a finite-dimensional Hausdorff base, two smooth fibrewise brackets define the same Lie
+algebroid if and only if they are equal. -/
 theorem ofFiberwiseBracket_inj [FiniteDimensional ℝ E] [T2Space M] [ContMDiffVectorBundle ∞ F V I]
     {B₁ B₂ : Cₛ^∞⟮I; F →L[ℝ] F →L[ℝ] F, fun x ↦ V x →L[ℝ] V x →L[ℝ] V x⟯}
-    {hself₁ hjacobi₁ hself₂ hjacobi₂}
-    (h : ofFiberwiseBracket B₁ hself₁ hjacobi₁ = ofFiberwiseBracket B₂ hself₂ hjacobi₂) :
-    B₁ = B₂ := by
-  ext x u v
+    {hself₁ hjacobi₁ hself₂ hjacobi₂} :
+    ofFiberwiseBracket B₁ hself₁ hjacobi₁ = ofFiberwiseBracket B₂ hself₂ hjacobi₂ ↔ B₁ = B₂ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by subst h; rfl⟩; ext x u v
   obtain ⟨a, ha, hax⟩ := FiberBundle.exists_contMDiff_section_eq I F ∞ u
   obtain ⟨b, hb, hbx⟩ := FiberBundle.exists_contMDiff_section_eq I F ∞ v
   simpa [hax, hbx] using congr($(congrArg LieAlgebroid.bracket h) ⟨a, ha⟩ ⟨b, hb⟩ x)
 
 end FiberwiseBracket
-
 end ZeroAnchor
 
 section TrivialLieAlgebra
@@ -131,32 +110,25 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 omit [IsManifold I ∞ M] in
 private theorem contMDiff_const_lieBracket :
-    ContMDiff I
-      (I.prod 𝓘(ℝ, Bundle.TrivialModel ℝ 𝔤 →L[ℝ] Bundle.TrivialModel ℝ 𝔤 →L[ℝ]
-        Bundle.TrivialModel ℝ 𝔤)) ∞
-      (fun y ↦ TotalSpace.mk'
-        (Bundle.TrivialModel ℝ 𝔤 →L[ℝ] Bundle.TrivialModel ℝ 𝔤 →L[ℝ] Bundle.TrivialModel ℝ 𝔤)
+    ContMDiff I (I.prod 𝓘(ℝ, TrivialModel ℝ 𝔤 →L[ℝ] TrivialModel ℝ 𝔤 →L[ℝ] TrivialModel ℝ 𝔤)) ∞
+      (fun y ↦ TotalSpace.mk' (TrivialModel ℝ 𝔤 →L[ℝ] TrivialModel ℝ 𝔤 →L[ℝ] TrivialModel ℝ 𝔤)
         (E := fun z ↦ Bundle.Trivial M 𝔤 z →L[ℝ] Bundle.Trivial M 𝔤 z →L[ℝ] Bundle.Trivial M 𝔤 z)
-        y (LieAlgebra.ad ℝ 𝔤 : 𝔤 →ₗ[ℝ] 𝔤 →ₗ[ℝ] 𝔤).toContinuousBilinearMap) := fun x ↦ by
-  rw [contMDiffAt_hom_bundle]
-  let F := Bundle.TrivialModel ℝ 𝔤
-  let μ := (LieAlgebra.ad ℝ 𝔤 : 𝔤 →ₗ[ℝ] 𝔤 →ₗ[ℝ] 𝔤).toContinuousBilinearMap
-  refine ⟨contMDiffAt_id, (contMDiffAt_const (c := ContinuousLinearMap.inCoordinates F
-    (Bundle.Trivial M 𝔤) (F →L[ℝ] F) (fun z ↦ Bundle.Trivial M 𝔤 z →L[ℝ] Bundle.Trivial M 𝔤 z)
-    x x x x μ)).congr_of_eventuallyEq (Filter.Eventually.of_forall fun _ ↦ ?_)⟩
-  ext v w; dsimp only [F, μ]
-  rw [inCoordinates_apply_eq₂ (by simp) (by simp) (by simp),
-    inCoordinates_apply_eq₂ (by simp) (by simp) (by simp)]; simp
+        y (LieAlgebra.ad ℝ 𝔤 : 𝔤 →ₗ[ℝ] 𝔤 →ₗ[ℝ] 𝔤).toContinuousBilinearMap) :=
+  contMDiff_hom_bundle_of_inCoordinates_eq_const
+    (c := fun a ↦ ContinuousLinearMap.inCoordinates (TrivialModel ℝ 𝔤) (Bundle.Trivial M 𝔤)
+      (TrivialModel ℝ 𝔤 →L[ℝ] TrivialModel ℝ 𝔤)
+      (fun z ↦ Bundle.Trivial M 𝔤 z →L[ℝ] Bundle.Trivial M 𝔤 z) a a a a
+      (LieAlgebra.ad ℝ 𝔤 : 𝔤 →ₗ[ℝ] 𝔤 →ₗ[ℝ] 𝔤).toContinuousBilinearMap)
+    fun _ _ _ _ ↦ by
+      ext v w; rw [inCoordinates_apply_eq₂ (by simp) (by simp) (by simp),
+        inCoordinates_apply_eq₂ (by simp) (by simp) (by simp)]; simp [Bundle.Trivial]
 
 variable (I M 𝔤) in
 /-- The trivial Lie algebra bundle algebroid `M × 𝔤 → M` of a finite-dimensional real Hausdorff
-topological Lie algebra `𝔤`: zero anchor and pointwise Lie bracket `(bracket a b) x = ⁅a x, b x⁆`.
--/
-def trivialLieAlgebra : LieAlgebroid I (Bundle.TrivialModel ℝ 𝔤) (Bundle.Trivial M 𝔤) :=
-  ofFiberwiseBracket
-    ⟨fun _ ↦ (LieAlgebra.ad ℝ 𝔤 : 𝔤 →ₗ[ℝ] 𝔤 →ₗ[ℝ] 𝔤).toContinuousBilinearMap,
-      contMDiff_const_lieBracket⟩
-    (fun _ ↦ lie_self) (fun _ ↦ leibniz_lie)
+topological Lie algebra `𝔤`, with zero anchor and `(bracket a b) x = ⁅a x, b x⁆`. -/
+def trivialLieAlgebra : LieAlgebroid I (TrivialModel ℝ 𝔤) (Bundle.Trivial M 𝔤) :=
+  ofFiberwiseBracket ⟨fun _ ↦ (LieAlgebra.ad ℝ 𝔤 : 𝔤 →ₗ[ℝ] 𝔤 →ₗ[ℝ] 𝔤).toContinuousBilinearMap,
+    contMDiff_const_lieBracket⟩ (fun _ ↦ lie_self) (fun _ ↦ leibniz_lie)
 
 @[simp] theorem trivialLieAlgebra_anchor : (trivialLieAlgebra I M 𝔤).anchor = 0 := (rfl)
 
@@ -164,12 +136,11 @@ def trivialLieAlgebra : LieAlgebroid I (Bundle.TrivialModel ℝ 𝔤) (Bundle.Tr
   ofFiberwiseBracket_anchorField _ _ _
 
 @[simp] theorem trivialLieAlgebra_anchorDeriv
-    (a : Cₛ^∞⟮I; Bundle.TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯) (f : C^∞⟮I, M; ℝ⟯) :
-    (trivialLieAlgebra I M 𝔤).anchorDeriv a f = 0 :=
-  ofFiberwiseBracket_anchorDeriv _ _ _ a f
+    (a : Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯) (f : C^∞⟮I, M; ℝ⟯) :
+    (trivialLieAlgebra I M 𝔤).anchorDeriv a f = 0 := ofFiberwiseBracket_anchorDeriv _ _ _ a f
 
 @[simp] theorem trivialLieAlgebra_bracket_apply
-    (a b : Cₛ^∞⟮I; Bundle.TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯) (x : M) :
+    (a b : Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯) (x : M) :
     (trivialLieAlgebra I M 𝔤).bracket a b x = ⁅a x, b x⁆ := (rfl)
 
 @[simp] theorem trivialLieAlgebra_bracket_modelConst (ξ η : 𝔤) :
@@ -179,22 +150,21 @@ def trivialLieAlgebra : LieAlgebroid I (Bundle.TrivialModel ℝ 𝔤) (Bundle.Tr
 
 variable (I M 𝔤) in
 /-- Evaluation at `x : M` as a Lie algebra homomorphism from sections of `M × 𝔤` to `𝔤`. -/
-def trivialLieAlgebraEval (x : M) : (trivialLieAlgebra I M 𝔤).Sections →ₗ⁅ℝ⁆ 𝔤 where
-  toFun s := (trivialLieAlgebra I M 𝔤).sectionsEquiv s x
-  map_add' _ _ := by simp
-  map_smul' _ _ := by rw [LinearMapClass.map_smul_of_tower]; rfl
-  map_lie' := by intros; simp
+def trivialLieAlgebraEval (x : M) : (trivialLieAlgebra I M 𝔤).Sections →ₗ⁅ℝ⁆ 𝔤 :=
+  ⟨⟨⟨fun s ↦ (trivialLieAlgebra I M 𝔤).sectionsEquiv s x, fun _ _ ↦ by simp⟩,
+    fun _ _ ↦ by dsimp only; rw [LinearMapClass.map_smul_of_tower]; rfl⟩,
+    fun {_ _} ↦ by dsimp only; simp⟩
 
 @[simp] theorem trivialLieAlgebraEval_apply (x : M) (s : (trivialLieAlgebra I M 𝔤).Sections) :
     trivialLieAlgebraEval I M 𝔤 x s = (trivialLieAlgebra I M 𝔤).sectionsEquiv s x := (rfl)
 
 variable (I M 𝔤) in
 /-- Constant sections of `M × 𝔤` as a Lie algebra homomorphism `𝔤 →ₗ⁅ℝ⁆ Γ(M × 𝔤)`. -/
-def trivialLieAlgebraConst : 𝔤 →ₗ⁅ℝ⁆ (trivialLieAlgebra I M 𝔤).Sections where
-  toFun ξ := (trivialLieAlgebra I M 𝔤).sectionsEquiv.symm (ContMDiffSection.modelConst I M ∞ ξ)
-  map_add' _ _ := by simp only [map_add]
-  map_smul' _ _ := by rw [map_smul, LinearMapClass.map_smul_of_tower]; rfl
-  map_lie' := by intro _ _; exact (trivialLieAlgebra I M 𝔤).sectionsEquiv.injective (by simp)
+def trivialLieAlgebraConst : 𝔤 →ₗ⁅ℝ⁆ (trivialLieAlgebra I M 𝔤).Sections :=
+  ⟨⟨⟨fun ξ ↦ (trivialLieAlgebra I M 𝔤).sectionsEquiv.symm (ContMDiffSection.modelConst I M ∞ ξ),
+    fun _ _ ↦ by simp only [map_add]⟩,
+    fun _ _ ↦ by dsimp only; rw [map_smul, LinearMapClass.map_smul_of_tower]; rfl⟩,
+    fun {_ _} ↦ (trivialLieAlgebra I M 𝔤).sectionsEquiv.injective (by dsimp only; simp)⟩
 
 @[simp] theorem sectionsEquiv_trivialLieAlgebraConst (ξ : 𝔤) :
     (trivialLieAlgebra I M 𝔤).sectionsEquiv (trivialLieAlgebraConst I M 𝔤 ξ) =
@@ -209,33 +179,48 @@ theorem trivialLieAlgebraEval_surjective (x : M) :
   fun ξ ↦ ⟨trivialLieAlgebraConst I M 𝔤 ξ, trivialLieAlgebraEval_trivialLieAlgebraConst x ξ⟩
 
 theorem trivialLieAlgebraConst_injective [Nonempty M] :
-    Function.Injective (trivialLieAlgebraConst I M 𝔤) := by
-  obtain ⟨x⟩ := ‹Nonempty M›
-  exact Function.RightInverse.injective (trivialLieAlgebraEval_trivialLieAlgebraConst x)
+    Function.Injective (trivialLieAlgebraConst I M 𝔤) :=
+  let ⟨x⟩ := ‹Nonempty M›
+  Function.RightInverse.injective (trivialLieAlgebraEval_trivialLieAlgebraConst x)
 
-variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
+variable {E' H' N E'' H'' P : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold J ∞ N] [NormedAddCommGroup E''] [NormedSpace ℝ E''] [TopologicalSpace H'']
+  {K : ModelWithCorners ℝ E'' H''} [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K ∞ P]
 
-/-- Pullback of sections of `trivialLieAlgebra` along a smooth map `φ : N → M`, as a Lie algebra
-homomorphism. -/
+/-- Pullback of sections of `trivialLieAlgebra` along a smooth map `φ : N → M`. -/
 def trivialLieAlgebraPullback (φ : C^∞⟮J, N; I, M⟯) :
-    (trivialLieAlgebra I M 𝔤).Sections →ₗ⁅ℝ⁆ (trivialLieAlgebra J N 𝔤).Sections where
-  toFun s := (trivialLieAlgebra J N 𝔤).sectionsEquiv.symm <|
-    ContMDiffSection.modelPullback φ ((trivialLieAlgebra I M 𝔤).sectionsEquiv s)
-  map_add' _ _ := (trivialLieAlgebra J N 𝔤).sectionsEquiv.injective <| by ext y; simp
-  map_smul' _ _ := (trivialLieAlgebra J N 𝔤).sectionsEquiv.injective <| by
-    rw [LinearMapClass.map_smul_of_tower, LinearEquiv.apply_symm_apply,
-      LinearMapClass.map_smul_of_tower]; ext y; simp
-  map_lie' := by
-    intro _ _; exact (trivialLieAlgebra J N 𝔤).sectionsEquiv.injective (by ext y; simp)
+    (trivialLieAlgebra I M 𝔤).Sections →ₗ⁅ℝ⁆ (trivialLieAlgebra J N 𝔤).Sections :=
+  { (((trivialLieAlgebra J N 𝔤).sectionsEquiv.symm.restrictScalars ℝ).toLinearMap.comp <|
+      (ContMDiffSection.modelPullback φ).comp
+        ((trivialLieAlgebra I M 𝔤).sectionsEquiv.restrictScalars ℝ).toLinearMap) with
+    map_lie' {_ _} := (trivialLieAlgebra J N 𝔤).sectionsEquiv.injective (by ext y; simp) }
 
 @[simp] theorem sectionsEquiv_trivialLieAlgebraPullback_apply (φ : C^∞⟮J, N; I, M⟯)
     (s : (trivialLieAlgebra I M 𝔤).Sections) (y : N) :
     (trivialLieAlgebra J N 𝔤).sectionsEquiv (trivialLieAlgebraPullback φ s) y =
-      (trivialLieAlgebra I M 𝔤).sectionsEquiv s (φ y) := by simp [trivialLieAlgebraPullback]
+      (trivialLieAlgebra I M 𝔤).sectionsEquiv s (φ y) := by
+  rw [← LieHom.coe_toLinearMap]; simp [trivialLieAlgebraPullback]
+
+@[simp] theorem trivialLieAlgebraPullback_smul (φ : C^∞⟮J, N; I, M⟯) (f : C^∞⟮I, M; ℝ⟯)
+    (s : (trivialLieAlgebra I M 𝔤).Sections) :
+    trivialLieAlgebraPullback (𝔤 := 𝔤) φ (f • s) = f.comp φ • trivialLieAlgebraPullback φ s :=
+  (trivialLieAlgebra J N 𝔤).sectionsEquiv.injective <| by ext y; simp
+
+@[simp] theorem trivialLieAlgebraPullback_trivialLieAlgebraConst (φ : C^∞⟮J, N; I, M⟯) (ξ : 𝔤) :
+    trivialLieAlgebraPullback φ (trivialLieAlgebraConst I M 𝔤 ξ) =
+      trivialLieAlgebraConst J N 𝔤 ξ :=
+  (trivialLieAlgebra J N 𝔤).sectionsEquiv.injective <| by ext y; simp
+
+@[simp] theorem trivialLieAlgebraPullback_id :
+    trivialLieAlgebraPullback (𝔤 := 𝔤) (ContMDiffMap.id : C^∞⟮I, M; I, M⟯) = LieHom.id := by
+  ext s; exact (trivialLieAlgebra I M 𝔤).sectionsEquiv.injective
+    (by ext x; rw [sectionsEquiv_trivialLieAlgebraPullback_apply]; rfl)
+
+theorem trivialLieAlgebraPullback_comp (φ : C^∞⟮J, N; I, M⟯) (ψ : C^∞⟮K, P; J, N⟯) :
+    trivialLieAlgebraPullback (𝔤 := 𝔤) (φ.comp ψ) =
+      (trivialLieAlgebraPullback ψ).comp (trivialLieAlgebraPullback φ) := by
+  ext s; exact (trivialLieAlgebra K P 𝔤).sectionsEquiv.injective (by ext z; simp)
 
 end TrivialLieAlgebra
-
-end LieAlgebroid
-
-end TauCeti
+end TauCeti.LieAlgebroid
