@@ -26,18 +26,17 @@ to thickenings and applying `TauCeti.AdicRing.CompletedAway.algHom_ext_of_map_po
 * `TauCeti.FormalScheme.Spf.topSectionsIso`: `(Spf A).presheaf.obj (op ⊤) ≅ CommRingCat.of A`.
 * `TauCeti.FormalScheme.Spf.sectionsHom`: the homomorphism `A →+* B` induced by `Spf B ⟶ Spf A`.
 * `TauCeti.FormalScheme.Spf.homEquiv`: `(Spf B ⟶ Spf A) ≃ {φ : A →+* B // Continuous φ}`.
-* `TauCeti.FormalScheme.Spf.mapIso`, `TauCeti.FormalScheme.Spf.isoToRingEquiv`: equivalence of
-  isomorphisms `Spf B ≅ Spf A` and topological ring isomorphisms `A ≃+* B`.
+* `TauCeti.FormalScheme.Spf.isoToRingEquiv`: the ring isomorphism `A ≃+* B` induced on global
+  sections by an isomorphism `Spf B ≅ Spf A`.
 
 ## Main results
 
-* `TauCeti.FormalScheme.Spf.homEquiv_pow`,
-  `TauCeti.FormalScheme.Spf.continuous_iff_exists_pos_pow_map_le`: power criterion for continuity.
 * `TauCeti.FormalScheme.Spf.continuous_sectionsHom`, `TauCeti.FormalScheme.Spf.map_sectionsHom`:
   automatic continuity and full faithfulness of `Spf`.
-* `TauCeti.FormalScheme.Spf.isHomeomorph_isoToRingEquiv`,
-  `TauCeti.FormalScheme.Spf.continuous_c_app`: topological ring classification of `Spf B ≅ Spf A`
-  and continuity on `quotientSectionsTopology`.
+* `TauCeti.FormalScheme.Spf.isHomeomorph_isoToRingEquiv`: `isoToRingEquiv e` is a homeomorphism of
+  topological rings.
+* `TauCeti.FormalScheme.Spf.continuous_c_app`: every morphism `Spf B ⟶ Spf A` is continuous on
+  rings of sections for `quotientSectionsTopology`.
 -/
 
 public section
@@ -47,40 +46,6 @@ open CategoryTheory TopologicalSpace Opposite AlgebraicGeometry
 universe u
 
 namespace TauCeti.FormalScheme.Spf
-
-section ContinuityCriterion
-
-variable {A B : Type*} [CommRing A] [CommRing B] {I : Ideal A} {J : Ideal B}
-
-/-- If `I` is finitely generated, `φ(I) ⊆ √J` holds if and only if `φ(I ^ k) ⊆ J` for some
-positive integer `k`. -/
-theorem map_le_radical_iff_exists_pos_pow_map_le (hIfg : I.FG) {φ : A →+* B} :
-    I.map φ ≤ J.radical ↔ ∃ k > 0, (I ^ k).map φ ≤ J := by
-  refine ⟨fun h ↦ ?_, fun ⟨k, _, hk⟩ x hx ↦ ⟨k, hk (Ideal.map_pow φ I k ▸ Ideal.pow_mem_pow hx k)⟩⟩
-  obtain ⟨k, hk⟩ := Ideal.exists_pow_le_of_le_radical_of_fg h (hIfg.map φ)
-  rw [← Ideal.map_pow] at hk
-  rcases Nat.eq_zero_or_pos k with rfl | hkpos
-  · exact ⟨1, Nat.one_pos,
-      (Ideal.map_mono le_top).trans (by simpa [pow_zero, Ideal.one_eq_top] using hk)⟩
-  · exact ⟨k, hkpos, hk⟩
-
-variable [TopologicalSpace A] [TopologicalSpace B]
-
-/-- For a finitely generated ideal of definition `I` of `A` and an ideal of definition `J` of `B`,
-a ring homomorphism `φ : A →+* B` is continuous if and only if `(I ^ k).map φ ≤ J` for some `k > 0`
-(EGA I, Ch. 0, 7.1.3–7.1.4; Ch. I, 10.2.2). -/
-theorem continuous_iff_exists_pos_pow_map_le (hI : IsAdic I) (hIfg : I.FG) (hJ : IsAdic J)
-    {φ : A →+* B} : Continuous φ ↔ ∃ k > 0, (I ^ k).map φ ≤ J :=
-  (hI.continuous_iff_map_le_radical hJ hI hIfg).trans
-    (map_le_radical_iff_exists_pos_pow_map_le hIfg)
-
-/-- Continuity of `φ : A →+* B` is equivalent to `I.map φ ≤ J.radical`, which in turn is equivalent
-to `(I ^ k).map φ ≤ J` for some positive integer `k` (EGA I, Ch. I, 10.2.2). -/
-theorem homEquiv_pow (hI : IsAdic I) (hIfg : I.FG) (hJ : IsAdic J) (φ : A →+* B) :
-    (Continuous φ ↔ I.map φ ≤ J.radical) ∧ (I.map φ ≤ J.radical ↔ ∃ k > 0, (I ^ k).map φ ≤ J) :=
-  ⟨hI.continuous_iff_map_le_radical hJ hI hIfg, map_le_radical_iff_exists_pos_pow_map_le hIfg⟩
-
-end ContinuityCriterion
 
 section ResidueEvaluation
 
@@ -101,13 +66,15 @@ theorem isHomeomorph_topSectionsIso (A : Type u) [CommRing A] [TopologicalSpace 
   have := (IsAdicRing.ideal_spec A).2.2
   isHomeomorph_globalSectionsIso (IsAdicRing.ideal_spec A).2.1
 
-private theorem algebraMap_comp_basicOpenSectionsIso_inv (a : A) :
-    have := (IsAdicRing.ideal_spec A).2.2
+/-- Restricting a global section of `Spf A` to `basicOpen a` corresponds under `topSectionsIso`
+and `basicOpenSectionsIso` to `algebraMap A (CompletedAway A a)`. -/
+@[reassoc]
+theorem algebraMap_comp_basicOpenSectionsIso_inv (a : A) :
     CommRingCat.ofHom (algebraMap A (AdicRing.CompletedAway A a)) ≫
         (basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 a).inv =
-      (topSectionsIso A).inv ≫ (Spf A).presheaf.map (homOfLE (le_top : basicOpen a ≤ ⊤)).op :=
+      (topSectionsIso A).inv ≫ (Spf A).presheaf.map (homOfLE (le_top : basicOpen a ≤ ⊤)).op := by
   have := (IsAdicRing.ideal_spec A).2.2
-  (Iso.comp_inv_eq _).mpr ((Category.assoc _ _ _).symm.trans
+  exact (Iso.comp_inv_eq _).mpr ((Category.assoc _ _ _).symm.trans
     (globalSectionsIso_inv_comp_basicOpenSectionsIso_hom _ _ a)).symm
 
 /-- Under `stalkResidueFieldEquiv`, evaluating the global section attached to `a ∈ A` at an open
@@ -157,17 +124,28 @@ noncomputable def sectionsHom (g : Spf B ⟶ Spf A) : A →+* B :=
     (g.c.app (op ⊤) : (Spf A).presheaf.obj (op ⊤) ⟶ (Spf B).presheaf.obj (op ⊤)) ≫
     (topSectionsIso B).hom).hom
 
+/-- Evaluation formula for `sectionsHom`. -/
+theorem sectionsHom_apply (g : Spf B ⟶ Spf A) (a : A) :
+    sectionsHom g a = (topSectionsIso B).hom (g.c.app (op ⊤) ((topSectionsIso A).inv a)) := (rfl)
+
+/-- Categorical form of `sectionsHom`. -/
+theorem ofHom_sectionsHom (g : Spf B ⟶ Spf A) :
+    CommRingCat.ofHom (sectionsHom g) =
+      (topSectionsIso A).inv ≫
+        (g.c.app (op ⊤) : (Spf A).presheaf.obj (op ⊤) ⟶ (Spf B).presheaf.obj (op ⊤)) ≫
+        (topSectionsIso B).hom := (rfl)
+
 /-- `sectionsHom g` intertwines the global-section identifications of `Spf A` and `Spf B`. -/
 @[reassoc]
-theorem globalSectionsIso_inv_comp_c_app_top (g : Spf B ⟶ Spf A) :
+theorem topSectionsIso_inv_comp_c_app_top (g : Spf B ⟶ Spf A) :
     (topSectionsIso A).inv ≫
         (g.c.app (op ⊤) : (Spf A).presheaf.obj (op ⊤) ⟶ (Spf B).presheaf.obj (op ⊤)) =
       CommRingCat.ofHom (sectionsHom g) ≫ (topSectionsIso B).inv :=
   (cancel_mono (topSectionsIso B).hom).mp <| (Category.assoc _ _ _).trans (by simp [sectionsHom])
 
-/-- Dual form of `globalSectionsIso_inv_comp_c_app_top` with `(topSectionsIso _).hom`. -/
+/-- Dual form of `topSectionsIso_inv_comp_c_app_top` with `(topSectionsIso _).hom`. -/
 @[reassoc]
-theorem c_app_top_comp_globalSectionsIso_hom (g : Spf B ⟶ Spf A) :
+theorem c_app_top_comp_topSectionsIso_hom (g : Spf B ⟶ Spf A) :
     (g.c.app (op ⊤) : (Spf A).presheaf.obj (op ⊤) ⟶ (Spf B).presheaf.obj (op ⊤)) ≫
         (topSectionsIso B).hom =
       (topSectionsIso A).hom ≫ CommRingCat.ofHom (sectionsHom g) :=
@@ -179,7 +157,7 @@ theorem sectionsHom_map (φ : A →+* B) (hφ : Continuous φ) : sectionsHom (ma
   have := (IsAdicRing.ideal_spec A).2.2; have := (IsAdicRing.ideal_spec B).2.2
   exact congrArg CommRingCat.Hom.hom <|
     (cancel_epi (globalSectionsIso (IsAdicRing.ideal_spec A).2.1).hom).mp
-      ((c_app_top_comp_globalSectionsIso_hom (map φ hφ)).symm.trans (map_globalSections φ hφ))
+      ((c_app_top_comp_topSectionsIso_hom (map φ hφ)).symm.trans (map_globalSections φ hφ))
 
 /-- On points, `g : Spf B ⟶ Spf A` pulls every open prime ideal of `B` back along
 `sectionsHom g`. -/
@@ -187,16 +165,12 @@ theorem sectionsHom_map (φ : A →+* B) (hφ : Continuous φ) : sectionsHom (ma
 theorem mem_base_asIdeal_iff (g : Spf B ⟶ Spf A) (q : carrier B) (a : A) :
     a ∈ (g.base q).1.asIdeal ↔ sectionsHom g a ∈ q.1.asIdeal := by
   let q' : Spf B := q
-  have hnat : LocallyRingedSpace.residueFieldMap g q'
-        ((Spf A).Γevaluation (g.base q') ((topSectionsIso A).inv a)) =
-      (Spf B).Γevaluation q' ((topSectionsIso B).inv (sectionsHom g a)) :=
-    (LocallyRingedSpace.Γevaluation_naturality_apply g q' _).trans
-      (congrArg ((Spf B).Γevaluation q')
-        (ConcreteCategory.congr_hom (globalSectionsIso_inv_comp_c_app_top g) a))
-  exact (Γevaluation_topSectionsIso_inv_eq_zero_iff (g.base q') a).symm.trans <|
-    (((LocallyRingedSpace.residueFieldMap g q').hom.map_eq_zero_iff).symm.trans
-      (congrArg (· = 0) hnat).to_iff).trans
-      (Γevaluation_topSectionsIso_inv_eq_zero_iff q (sectionsHom g a))
+  rw [← Γevaluation_topSectionsIso_inv_eq_zero_iff (g.base q') a,
+    ← Γevaluation_topSectionsIso_inv_eq_zero_iff q (sectionsHom g a),
+    ← (LocallyRingedSpace.residueFieldMap g q').hom.map_eq_zero_iff]
+  exact (congrArg (· = 0) ((LocallyRingedSpace.Γevaluation_naturality_apply g q' _).trans
+    (congrArg ((Spf B).Γevaluation q')
+      (ConcreteCategory.congr_hom (topSectionsIso_inv_comp_c_app_top g) a)))).to_iff
 
 /-- **Automatic continuity** (EGA I, Ch. I, 10.2.2): the global-section homomorphism induced by any
 morphism of locally ringed spaces `Spf B ⟶ Spf A` is continuous. -/
@@ -212,13 +186,11 @@ theorem continuous_sectionsHom (g : Spf B ⟶ Spf A) : Continuous (sectionsHom g
 /-- The underlying continuous map of `g : Spf B ⟶ Spf A` is `comap (sectionsHom g) _`. -/
 theorem base_eq_comap_sectionsHom (g : Spf B ⟶ Spf A) :
     g.base = TopCat.ofHom (comap (sectionsHom g) (continuous_sectionsHom g)) := by
-  apply ConcreteCategory.hom_ext; intro q; apply Subtype.ext
-  have hcoe := coe_comap_apply (sectionsHom g) (continuous_sectionsHom g) q
-  ext a
-  exact (mem_base_asIdeal_iff g q a).trans (by
-    change sectionsHom g a ∈ q.1.asIdeal ↔
-      a ∈ (comap (sectionsHom g) (continuous_sectionsHom g) q : PrimeSpectrum A).asIdeal
-    rw [hcoe]; rfl)
+  apply ConcreteCategory.hom_ext; intro (q : carrier B); apply Subtype.ext; ext a
+  exact (mem_base_asIdeal_iff g q a).trans <| by
+    rw [← Ideal.mem_comap (f := sectionsHom g), ← PrimeSpectrum.comap_asIdeal,
+      ← coe_comap_apply (sectionsHom g) (continuous_sectionsHom g) q]
+    rfl
 
 private theorem base_eq_map_sectionsHom (g : Spf B ⟶ Spf A) :
     g.base = (map (sectionsHom g) (continuous_sectionsHom g)).base :=
@@ -238,7 +210,7 @@ private theorem res_c_app_basicOpen_eq_map_sectionsHom (g : Spf B ⟶ Spf A) (a 
   have htop : (g.c.app (op ⊤) : (Spf A).presheaf.obj (op ⊤) ⟶ (Spf B).presheaf.obj (op ⊤)) =
       m.c.app (op ⊤) :=
     (cancel_mono (globalSectionsIso hIB).hom).mp <|
-      (c_app_top_comp_globalSectionsIso_hom g).trans (map_globalSections _ _).symm
+      (c_app_top_comp_topSectionsIso_hom g).trans (map_globalSections _ _).symm
   have hmap : ((TopCat.Presheaf.pushforward CommRingCat g.base).obj (Spf B).presheaf).map
         (homOfLE (le_top : basicOpen a ≤ ⊤)).op ≫ (Spf B).presheaf.map eqW.op =
       (Spf B).presheaf.map (homOfLE (le_top : (Opens.map m.base).obj (basicOpen a) ≤ ⊤)).op :=
@@ -263,6 +235,14 @@ private theorem exists_pow_map_quotient_eq_bot_of_map (φ : A →+* B) (hφ : Co
   obtain ⟨k, hk⟩ := hIA.exists_pow_succ_le_comap (hIB.isOpen_pow (n + 1)) hφ
   refine ⟨k, ?_⟩
   rw [Ideal.map_eq_bot_iff_le_ker]; intro r hr; rw [RingHom.mem_ker]
+  have hnat : (globalSectionsIso hIB).inv ≫
+        ((structureSheaf hIB).obj.map (homOfLE (le_top : W ≤ ⊤)).op ≫ πn) =
+      CommRingCat.ofHom (Ideal.Quotient.mk (IsAdicRing.ideal B ^ (n + 1))) ≫
+        (quotientSheafGlobalSectionsIso (is_ideal_adic_pow hIB n.succ_pos)).inv ≫
+        (quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.map
+          (homOfLE (le_top : W ≤ ⊤)).op := by
+    rw [(quotientProjection hIB n).hom.naturality,
+      globalSectionsIso_inv_comp_quotientProjection_assoc]
   have hcomp : (globalSectionsIso hIA).inv ≫ m.c.app (op ⊤) ≫
         (Spf B).presheaf.map (homOfLE (le_top : W ≤ ⊤)).op ≫ πn =
       CommRingCat.ofHom ((Ideal.Quotient.mk (IsAdicRing.ideal B ^ (n + 1))).comp φ) ≫
@@ -270,15 +250,20 @@ private theorem exists_pow_map_quotient_eq_bot_of_map (φ : A →+* B) (hφ : Co
         (quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.map
           (homOfLE (le_top : W ≤ ⊤)).op := by
     refine (Category.assoc _ _ _).symm.trans <|
-      (congrArg (· ≫ _) (globalSectionsIso_inv_comp_c_app_top m)).trans ?_
+      (congrArg (· ≫ _) (topSectionsIso_inv_comp_c_app_top m)).trans ?_
     rw [sectionsHom_map]
-    change (CommRingCat.ofHom φ ≫ (globalSectionsIso hIB).inv) ≫
-      ((structureSheaf hIB).obj.map (homOfLE (le_top : W ≤ ⊤)).op ≫ πn) = _
-    rw [Category.assoc, (quotientProjection hIB n).hom.naturality,
-      globalSectionsIso_inv_comp_quotientProjection_assoc, CommRingCat.ofHom_comp, Category.assoc]
+    refine (Category.assoc _ _ _).trans ((congrArg (CommRingCat.ofHom φ ≫ ·) hnat).trans ?_)
+    rw [← Category.assoc, ← CommRingCat.ofHom_comp]
   have hmk : Ideal.Quotient.mk (IsAdicRing.ideal B ^ (n + 1)) (φ r) = 0 :=
     Ideal.Quotient.eq_zero_iff_mem.mpr (hk hr)
-  simpa [hmk] using ConcreteCategory.congr_hom hcomp r
+  have hval : (((globalSectionsIso hIA).inv ≫ m.c.app (op ⊤) ≫
+        (Spf B).presheaf.map (homOfLE (le_top : W ≤ ⊤)).op ≫ πn).hom) r =
+      ((quotientSheafGlobalSectionsIso (is_ideal_adic_pow hIB n.succ_pos)).inv ≫
+        (quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.map
+          (homOfLE (le_top : W ≤ ⊤)).op)
+        (Ideal.Quotient.mk (IsAdicRing.ideal B ^ (n + 1)) (φ r)) :=
+    ConcreteCategory.congr_hom hcomp r
+  rw [hval, hmk, map_zero]
 
 private theorem c_app_basicOpen_eq_map_sectionsHom (g : Spf B ⟶ Spf A) (a : A) :
     g.c.app (op (basicOpen a)) ≫
@@ -369,29 +354,6 @@ theorem homEquiv_apply_coe (g : Spf B ⟶ Spf A) : (homEquiv g : A →+* B) = se
 @[simp]
 theorem homEquiv_symm_apply (φ : {φ : A →+* B // Continuous φ}) :
     homEquiv.symm φ = map φ.1 φ.2 := (rfl)
-
-/-- A ring isomorphism `e : A ≃+* B` that is continuous in both directions induces an isomorphism
-of formal spectra `Spf B ≅ Spf A`. -/
-noncomputable def mapIso (e : A ≃+* B) (h₁ : Continuous e) (h₂ : Continuous e.symm) :
-    Spf B ≅ Spf A where
-  hom := map e.toRingHom h₁
-  inv := map e.symm.toRingHom h₂
-  hom_inv_id := by
-    have h₁' : Continuous e.toRingHom := h₁; have h₂' : Continuous e.symm.toRingHom := h₂
-    rw [show map e.toRingHom h₁ ≫ map e.symm.toRingHom h₂ = _ from (map_comp _ h₁' _ h₂').symm]
-    simp
-  inv_hom_id := by
-    have h₁' : Continuous e.toRingHom := h₁; have h₂' : Continuous e.symm.toRingHom := h₂
-    rw [show map e.symm.toRingHom h₂ ≫ map e.toRingHom h₁ = _ from (map_comp _ h₂' _ h₁').symm]
-    simp
-
-@[simp]
-theorem mapIso_hom (e : A ≃+* B) (h₁ : Continuous e) (h₂ : Continuous e.symm) :
-    (mapIso e h₁ h₂).hom = map e.toRingHom h₁ := (rfl)
-
-@[simp]
-theorem mapIso_inv (e : A ≃+* B) (h₁ : Continuous e) (h₂ : Continuous e.symm) :
-    (mapIso e h₁ h₂).inv = map e.symm.toRingHom h₂ := (rfl)
 
 /-- Every isomorphism `Spf B ≅ Spf A` of locally ringed spaces induces a ring isomorphism
 `A ≃+* B` on global sections. -/
@@ -506,18 +468,19 @@ theorem continuous_c_app (g : Spf B ⟶ Spf A) (U : Opens (Spf A)) :
       (quotientSectionsTopology (IsAdicRing.ideal_spec B).2.1 ((Opens.map g.base).obj U))
       ((g.c.app (op U) : (Spf A).presheaf.obj (op U) ⟶
         (Spf B).presheaf.obj (op ((Opens.map g.base).obj U)))) := by
-  have hg : g.toHom =
-      { base := TopCat.ofHom (comap (sectionsHom g) (continuous_sectionsHom g))
-        c := (structureSheafMap (sectionsHom g) (continuous_sectionsHom g)
-          (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec B).2.1).hom } :=
-    (congrArg LocallyRingedSpace.Hom.toHom (map_sectionsHom g).symm).trans (map_toHom _ _)
-  change @Continuous _ _ (quotientSectionsTopology (IsAdicRing.ideal_spec A).2.1 U)
-    (quotientSectionsTopology (IsAdicRing.ideal_spec B).2.1 ((Opens.map g.toHom.base).obj U))
-    ((g.toHom.c.app (op U) : (Spf A).presheaf.obj (op U) ⟶
-      (Spf B).presheaf.obj (op ((Opens.map g.toHom.base).obj U))))
-  rw [hg]
-  exact continuous_structureSheafMap_quotientSectionsTopology
-    (sectionsHom g) (continuous_sectionsHom g) U
+  have h (f : (Spf B).toPresheafedSpace ⟶ (Spf A).toPresheafedSpace)
+      (hf : f = { base := TopCat.ofHom (comap (sectionsHom g) (continuous_sectionsHom g))
+                  c := (structureSheafMap (sectionsHom g) (continuous_sectionsHom g)
+                    (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec B).2.1).hom }) :
+      @Continuous _ _ (quotientSectionsTopology (IsAdicRing.ideal_spec A).2.1 U)
+        (quotientSectionsTopology (IsAdicRing.ideal_spec B).2.1 ((Opens.map f.base).obj U))
+        ((f.c.app (op U) : (Spf A).presheaf.obj (op U) ⟶
+          (Spf B).presheaf.obj (op ((Opens.map f.base).obj U)))) := by
+    subst hf
+    exact continuous_structureSheafMap_quotientSectionsTopology
+      (sectionsHom g) (continuous_sectionsHom g) U
+  exact h g.toHom
+    ((congrArg LocallyRingedSpace.Hom.toHom (map_sectionsHom g).symm).trans (map_toHom _ _))
 
 end HomEquiv
 

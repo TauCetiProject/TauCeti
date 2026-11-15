@@ -13,12 +13,13 @@ public import TauCeti.RingTheory.Huber.Padic.Basic
 # Examples and counterexamples for morphisms into `Spf A`
 
 We exercise `TauCeti.FormalScheme.homSpfEquiv`, `TauCeti.FormalScheme.ContinuousOnAffines`,
-`TauCeti.FormalScheme.sectionsTopology`, and `TauCeti.FormalScheme.Spf.homEquiv_pow` across five
-regimes:
+`TauCeti.FormalScheme.sectionsTopology`, and `IsAdic.continuous_iff_exists_pos_pow_map_le` across
+five regimes:
 1. Ordinary schemes (`ofScheme.obj X`) and discrete target rings `A`.
 2. Empty formal schemes (`IsEmpty X` and `ofSpf (ZMod 1)`).
-3. Non-exponent-1 ideals of definition (`I = (p)`, `J = (p)²` on `ℤ_[p]`) for `Spf.homEquiv_pow`.
-4. Singleton carrier with nondiscrete global `sectionsTopology` (`ofSpf ℤ_[p]`).
+3. Non-exponent-1 ideals of definition (`I = (p)`, `J = (p)²` on `ℤ_[p]`) for
+   `IsAdic.continuous_iff_exists_pos_pow_map_le`.
+4. Subsingleton carrier with nondiscrete global `sectionsTopology` (`ofSpf ℤ_[p]`).
 5. Failure of `ContinuousOnAffines` and nonexistence of morphisms `Spec ℚ_[p] ⟶ Spf ℤ_[p]`.
 -/
 
@@ -94,12 +95,13 @@ local instance padicIntIsAdicRing : IsAdicRing ℤ_[p] :=
 
 /-- `sectionsHom` recovers the identity on `ofSpf ℤ_[p]`. -/
 example (a : ℤ_[p]) :
-    (Spf.topSectionsIso ℤ_[p]).hom (sectionsHom (𝟙 (ofSpf ℤ_[p])) a) = a :=
-  topSectionsIso_hom_sectionsHom_id ℤ_[p] a
+    (Spf.topSectionsIso ℤ_[p]).hom (sectionsHom (𝟙 (ofSpf ℤ_[p])) a) = a := by
+  rw [sectionsHom_id]
+  exact ConcreteCategory.congr_hom (Spf.topSectionsIso ℤ_[p]).inv_hom_id a
 
 /-- With ideals `I = (p)` and `J = (p)²` on `ℤ_[p]`, `(I ^ n).map id ≤ J` holds for some `n > 0`
-(`Spf.homEquiv_pow`), whereas `¬ I.map id ≤ J` since `p ∉ (p)²`. -/
-theorem padicInt_homEquiv_pow_witness :
+(`IsAdic.continuous_iff_exists_pos_pow_map_le`), whereas `¬ I.map id ≤ J` since `p ∉ (p)²`. -/
+theorem padicInt_continuous_pow_witness :
     (∃ n > 0,
         (IsLocalRing.maximalIdeal ℤ_[p] ^ n).map (Spf.homEquiv (𝟙 (Spf ℤ_[p])) : ℤ_[p] →+* ℤ_[p]) ≤
           IsLocalRing.maximalIdeal ℤ_[p] ^ 2) ∧
@@ -108,9 +110,8 @@ theorem padicInt_homEquiv_pow_witness :
   have hI : IsAdic (IsLocalRing.maximalIdeal ℤ_[p]) := Huber.PadicInt.isAdic_maximalIdeal
   have hIfg : (IsLocalRing.maximalIdeal ℤ_[p]).FG :=
     PadicInt.maximalIdeal_eq_span_p (p := p) ▸ Submodule.fg_span_singleton _
-  have hpow := Spf.homEquiv_pow hI hIfg (is_ideal_adic_pow hI two_pos)
-    (Spf.homEquiv (𝟙 (Spf ℤ_[p])) : ℤ_[p] →+* ℤ_[p])
-  refine ⟨hpow.2.mp (hpow.1.mp (Spf.homEquiv (𝟙 (Spf ℤ_[p]))).2), ?_⟩
+  refine ⟨(hI.continuous_iff_exists_pos_pow_map_le hIfg
+    (is_ideal_adic_pow hI two_pos)).mp (Spf.homEquiv (𝟙 (Spf ℤ_[p]))).2, ?_⟩
   rw [Spf.homEquiv_apply_coe, Spf.sectionsHom_id, Ideal.map_id]; intro hle
   have hpI : (p : ℤ_[p]) ∈ IsLocalRing.maximalIdeal ℤ_[p] :=
     PadicInt.maximalIdeal_eq_span_p (p := p) ▸ Ideal.subset_span rfl

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Restrict
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Discrete
-public import Mathlib.AlgebraicGeometry.Scheme
+public import Mathlib.AlgebraicGeometry.AffineScheme
 public import TauCeti.Geometry.RingedSpace.OpenImmersion
 
 /-!
@@ -34,7 +34,7 @@ The category construction follows Mathlib's `AlgebraicGeometry.Scheme`, using
 
 public section
 
-open CategoryTheory TopologicalSpace AlgebraicGeometry
+open CategoryTheory TopologicalSpace Opposite AlgebraicGeometry
 
 universe u
 
@@ -163,6 +163,25 @@ theorem isBasis_affineOpens (X : FormalScheme) :
   obtain ⟨A, _, _, _, _, f, hf, hx, hU⟩ := X.exists_spf_mem_range_and_range_subset U x hx
   exact ⟨⟨Set.range f.base, hf.base_open.isOpen_range⟩,
     ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, f, hf, rfl⟩, hx, hU⟩
+
+/-- Every point of an open `W` in a formal scheme has an affine formal neighbourhood contained in
+`W`. -/
+theorem exists_isAffineOpen_mem_le (X : FormalScheme) {W : Opens X} {x : X} (hx : x ∈ W) :
+    ∃ U : Opens X, X.IsAffineOpen U ∧ x ∈ U ∧ U ≤ W :=
+  Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens hx
+
+/-- Every point of a formal scheme lies in an affine formal open. -/
+theorem exists_isAffineOpen_mem (X : FormalScheme) (x : X) :
+    ∃ U : Opens X, X.IsAffineOpen U ∧ x ∈ U :=
+  let ⟨U, hU, hx, _⟩ := X.exists_isAffineOpen_mem_le (W := ⊤) (x := x) trivial
+  ⟨U, hU, hx⟩
+
+/-- The affine formal opens of any formal scheme `X` cover `X`. -/
+theorem iSup_affineOpens_eq_top (X : FormalScheme) :
+    (⨆ U : {U : Opens X // X.IsAffineOpen U}, U.1) = ⊤ := by
+  apply Opens.ext; rw [Opens.coe_iSup]; refine Set.eq_univ_iff_forall.mpr fun x ↦ ?_
+  obtain ⟨U, hU, hx⟩ := X.exists_isAffineOpen_mem x
+  exact Set.mem_iUnion.mpr ⟨⟨U, hU⟩, hx⟩
 
 /-- Restrict a formal scheme to an open subset, using the restriction of its locally ringed
 space. The affine atlas is obtained by shrinking charts using completed localizations.
@@ -329,6 +348,15 @@ theorem forgetToLocallyRingedSpace_map_ofSchemeSpecIso_inv (R : Type u) [CommRin
     [TopologicalSpace R] [DiscreteTopology R] :
     forgetToLocallyRingedSpace.map (ofSchemeSpecIso R).inv =
       (Spf.discreteIsoSpec R).hom := (rfl)
+
+/-- Every affine open of an ordinary scheme `X` is an affine formal open of `ofScheme.obj X`. -/
+theorem isAffineOpen_ofScheme {X : Scheme.{u}} {U : X.Opens}
+    (hU : AlgebraicGeometry.IsAffineOpen U) : (ofScheme.obj X).IsAffineOpen U := by
+  let R : Type u := X.presheaf.obj (op U)
+  let _ : TopologicalSpace R := ⊥; have : DiscreteTopology R := ⟨rfl⟩
+  exact ((ofScheme.obj X).isAffineOpen_iff U).mpr ⟨R, inferInstance, ⊥, inferInstance,
+    inferInstance, ⟨Scheme.forgetToLocallyRingedSpace.mapIso hU.isoSpec ≪≫
+      (Spf.discreteIsoSpec R).symm⟩⟩
 
 /-- Viewing schemes as formal schemes does not change their morphisms. -/
 noncomputable def fullyFaithfulOfScheme : ofScheme.FullyFaithful where

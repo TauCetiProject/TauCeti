@@ -37,9 +37,9 @@ open CategoryTheory Limits TopologicalSpace
 
 namespace AlgebraicGeometry.LocallyRingedSpace
 
-universe u
+universe u w
 
-variable {X Y : LocallyRingedSpace.{u}} {ι : Type u} (U : ι → Opens X) (hU : ⨆ i, U i = ⊤)
+variable {X Y : LocallyRingedSpace.{u}} {ι : Type w} (U : ι → Opens X) (hU : ⨆ i, U i = ⊤)
   (f : ∀ i, X.restrict (U i).isOpenEmbedding ⟶ Y)
   (hf : ∀ i j, X.restrictHomOfLE (inf_le_left : U i ⊓ U j ≤ U i) ≫ f i =
     X.restrictHomOfLE inf_le_right ≫ f j)

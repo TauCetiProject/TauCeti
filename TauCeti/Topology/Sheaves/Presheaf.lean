@@ -22,6 +22,7 @@ intersection of their domains glue to a section over the union.
 
 * `TopCat.Presheaf.comp_map_comp_map_eq_self`: composing restriction maps along inclusions in both
   directions gives the identity after any morphism into the starting section object.
+* `TopCat.Presheaf.map_eq_id`: restriction from an open to itself is the identity morphism.
 * `TopCat.Presheaf.map_apply_eq_self`: restriction from an open to itself is the identity on
   sections.
 * `TopCat.Presheaf.isCompatible_of_directed`: a family of sections, any two of which are
@@ -49,13 +50,19 @@ theorem comp_map_comp_map_eq_self {F : T.Presheaf C} {A : C} {V V' : Opens T}
     (a ≫ F.map i) ≫ F.map j = a := by
   rw [Category.assoc, ← F.map_comp, Subsingleton.elim (i ≫ j) (𝟙 _), F.map_id, Category.comp_id]
 
+/-- Restriction from an open to itself is the identity morphism: there is only one morphism
+from an open to itself, the identity. -/
+theorem map_eq_id (F : Presheaf C T) {V : Opens T} (i : op V ⟶ op V) :
+    F.map i = 𝟙 (F.obj (op V)) := by
+  rw [Subsingleton.elim i (𝟙 _), F.map_id]
+
 /-- Restriction from an open to itself is the identity on sections: there is only one morphism
 from an open to itself, the identity. -/
 @[simp]
 theorem map_apply_eq_self {FC : C → C → Type*} {CC : C → Type*}
     [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC] (F : Presheaf C T)
     {V : Opens T} (i : op V ⟶ op V) (s : ToType (F.obj (op V))) : F.map i s = s := by
-  rw [Subsingleton.elim i (𝟙 _), F.map_id, ConcreteCategory.id_apply]
+  rw [map_eq_id, ConcreteCategory.id_apply]
 
 /-- A family of sections over a directed family of opens is compatible as soon as any two of its
 sections are restrictions of a common section in the family. -/
