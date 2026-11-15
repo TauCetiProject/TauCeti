@@ -158,6 +158,15 @@ theorem _root_.IsMIntegralCurveOn.snd_mem_Icc_of_snd_mem_Icc_of_intervalBase
 
 /-! ### Completeness in the slab -/
 
+variable (I) in
+include I in
+/-- The model space of a nonempty compact manifold is complete, being finite-dimensional. -/
+private theorem completeSpace_of_compactSpace [T2Space M] [CompactSpace M] (x : M) :
+    CompleteSpace E := by
+  have : Nonempty M := ⟨x⟩
+  have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
+  exact FiniteDimensional.completeSpace ℝ E
+
 section Complete
 
 variable [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] [CompactSpace M]
@@ -174,10 +183,7 @@ for `t > 1 - δ`. The maximal integral curve of `V` through a point of the slab 
 defined for all time. -/
 theorem maximalIntegralCurveInterval_eq_univ_of_snd_mem_Icc_of_intervalBase {z : M × ℝ}
     (hz : z.2 ∈ Icc 0 1) : maximalIntegralCurveInterval V z = univ := by
-  -- The model space is complete: a nonempty compact manifold is finite-dimensional.
-  have : Nonempty M := ⟨z.1⟩
-  have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
-  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  have := completeSpace_of_compactSpace I z.1
   have h0 := zero_mem_maximalIntegralCurveInterval (v := V) (x := z) hv.contMDiffAt
   refine maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
     (isCompact_univ.prod (isCompact_Icc (a := (0 : ℝ)) (b := 1))) fun t ht ↦ ⟨mem_univ _, ?_⟩
@@ -237,12 +243,12 @@ point of the open slab `M × (0, 1)` the time component `τ` is strictly increas
 theorem strictMono_snd_maximalIntegralCurve_of_intervalBase
     (hlt : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, deriv (fun s ↦ f (x, s)) t < C * t * (1 - t ^ 2))
     {z : M × ℝ} (hz : z.2 ∈ Ioo 0 1) : StrictMono fun t ↦ (maximalIntegralCurve V z t).2 :=
-  strictMono_of_hasDerivAt_pos
-    (fun t ↦ (isMIntegralCurveOn_univ_maximalIntegralCurve_of_intervalBase hv hV hδ hf₀ hf₁
-      (Ioo_subset_Icc_self hz)).hasDerivAt_snd_of_intervalBase hV univ_mem)
-    fun t ↦ by
-      linarith [hlt (maximalIntegralCurve V z t).1 _
-        (snd_maximalIntegralCurve_mem_Ioo_of_intervalBase hv hV hδ hf₀ hf₁ hz t)]
+  (isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv
+    (maximalIntegralCurveInterval_eq_univ_of_snd_mem_Icc_of_intervalBase hv hV hδ hf₀ hf₁
+      (Ioo_subset_Icc_self hz))).strictMono_snd fun t ↦ by
+    rw [hV]
+    linarith [hlt (maximalIntegralCurve V z t).1 _
+      (snd_maximalIntegralCurve_mem_Ioo_of_intervalBase hv hV hδ hf₀ hf₁ hz t)]
 
 end Complete
 
@@ -259,6 +265,22 @@ private theorem finite_setOf_mem_criticalPoints_of_snd_eq_zero_or_one
   rcases h01 with h | h
   · exact .inl ⟨by rwa [h] at hw, h⟩
   · exact .inr ⟨by rwa [h] at hw, h⟩
+
+/-- A cluster point at `+∞` of a curve along which a continuous function `g` increases has a value
+of `g` at least that at any point of the curve. -/
+private theorem le_of_mapClusterPt_atTop {X : Type*} [TopologicalSpace X] {c : ℝ → X} {g : X → ℝ}
+    (hg : Continuous g) (hc : Monotone (g ∘ c)) {w : X} (hw : MapClusterPt w atTop c) (t₀ : ℝ) :
+    g (c t₀) ≤ g w :=
+  (isClosed_le continuous_const hg).mem_of_mapClusterPt hw <|
+    (eventually_ge_atTop t₀).mono fun _ ht ↦ hc ht
+
+/-- A cluster point at `-∞` of a curve along which a continuous function `g` increases has a value
+of `g` at most that at any point of the curve. -/
+private theorem le_of_mapClusterPt_atBot {X : Type*} [TopologicalSpace X] {c : ℝ → X} {g : X → ℝ}
+    (hg : Continuous g) (hc : Monotone (g ∘ c)) {w : X} (hw : MapClusterPt w atBot c) (t₀ : ℝ) :
+    g w ≤ g (c t₀) :=
+  (isClosed_le hg continuous_const).mem_of_mapClusterPt hw <|
+    (eventually_le_atBot t₀).mono fun _ ht ↦ hc ht
 
 section Ends
 
@@ -314,10 +336,12 @@ private theorem slabFlow_lyapunov [CompleteSpace E]
     exact (hVF _ (slabFlow hv hV hδ hf₀ hf₁ 0 y).2.2 (by rwa [hy0])).ne
       (hd.unique (hasDerivAt_const _ _))
 
-/-- **Forward ends of the trajectories in the slab, relative to a finite set.** If the critical
-points of the continuation potential in the slab which are cluster points of the trajectory of `V`
-through `z` at `+∞` lie in a finite set `S`, the trajectory converges at `+∞` to a point of `S`. -/
-private theorem exists_tendsto_maximalIntegralCurve_atTop_of_finite
+/-- **Ends of the trajectories in the slab, relative to a finite set.** Let `l` be `atTop` or
+`atBot`. If the critical points of the continuation potential in the slab which are cluster points
+of the trajectory of `V` through `z` along `l` lie in a finite set `S`, the trajectory converges
+along `l` to a point of `S`. -/
+private theorem exists_tendsto_maximalIntegralCurve_of_finite {l : Filter ℝ}
+    (hl : l = atTop ∨ l = atBot)
     (hv : ContMDiff (I.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)).tangent 1
       (fun z ↦ (⟨z, V z⟩ : TangentBundle (I.prod 𝓘(ℝ)) (M × ℝ))))
     (hf : MDifferentiable (I.prod 𝓘(ℝ)) 𝓘(ℝ) f)
@@ -330,58 +354,29 @@ private theorem exists_tendsto_maximalIntegralCurve_atTop_of_finite
     {S : Set (M × ℝ)} (hS : S.Finite) {z : M × ℝ} (hz : z.2 ∈ Icc 0 1)
     (hSc : ∀ w : M × ℝ, w.2 ∈ Icc 0 1 →
       w ∈ criticalPoints (I.prod 𝓘(ℝ)) (continuationPotential C f) →
-        MapClusterPt w atTop (maximalIntegralCurve V z) → w ∈ S) :
-    ∃ w ∈ S, Tendsto (maximalIntegralCurve V z) atTop (𝓝 w) := by
-  have : Nonempty M := ⟨z.1⟩
-  have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
-  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+        MapClusterPt w l (maximalIntegralCurve V z) → w ∈ S) :
+    ∃ w ∈ S, Tendsto (maximalIntegralCurve V z) l (𝓝 w) := by
+  have := completeSpace_of_compactSpace I z.1
   have : CompactSpace (univ ×ˢ Icc (0 : ℝ) 1 : Set (M × ℝ)) :=
     isCompact_iff_compactSpace.1 (isCompact_univ.prod isCompact_Icc)
   obtain ⟨hanti, hrest⟩ := slabFlow_lyapunov hv hf hV hδ hf₀ hf₁ hVF
   have hcoe : (fun t ↦ (slabFlow hv hV hδ hf₀ hf₁ t ⟨z, mem_univ _, hz⟩ : M × ℝ)) =
       maximalIntegralCurve V z := funext fun t ↦ coe_globalFlowOn_apply hv _ _ t _
-  obtain ⟨w, hw, hlim⟩ := Flow.exists_tendsto_atTop_of_antitone (slabFlow hv hV hδ hf₀ hf₁)
-    (hf.continuationPotential.continuous.comp continuous_subtype_val) hanti
-    (hS.preimage Subtype.val_injective.injOn) ⟨z, mem_univ _, hz⟩ fun w hw hc ↦
-      hSc w w.2.2 (hrest w hc) (by
-        rw [← hcoe]
-        exact hw.continuousAt_comp continuous_subtype_val.continuousAt)
-  refine ⟨w, hw, ?_⟩
-  rw [← hcoe]
-  exact (continuous_subtype_val.tendsto w).comp hlim
-
-/-- **Backward ends of the trajectories in the slab, relative to a finite set.** If the critical
-points of the continuation potential in the slab which are cluster points of the trajectory of `V`
-through `z` at `-∞` lie in a finite set `S`, the trajectory converges at `-∞` to a point of `S`. -/
-private theorem exists_tendsto_maximalIntegralCurve_atBot_of_finite
-    (hv : ContMDiff (I.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)).tangent 1
-      (fun z ↦ (⟨z, V z⟩ : TangentBundle (I.prod 𝓘(ℝ)) (M × ℝ))))
-    (hf : MDifferentiable (I.prod 𝓘(ℝ)) 𝓘(ℝ) f)
-    (hV : ∀ z, (V z : E × ℝ).2 = C * z.2 * (1 - z.2 ^ 2) - deriv (fun s ↦ f (z.1, s)) z.2)
-    (hδ : 0 < δ) (hf₀ : ∀ x t, t < δ → f (x, t) = f (x, 0))
-    (hf₁ : ∀ x t, 1 - δ < t → f (x, t) = f (x, 1))
-    (hVF : ∀ z : M × ℝ, z.2 ∈ Icc 0 1 →
-      z ∉ criticalPoints (I.prod 𝓘(ℝ)) (continuationPotential C f) →
-        mvfderiv (I.prod 𝓘(ℝ)) (continuationPotential C f) z (V z) < 0)
-    {S : Set (M × ℝ)} (hS : S.Finite) {z : M × ℝ} (hz : z.2 ∈ Icc 0 1)
-    (hSc : ∀ w : M × ℝ, w.2 ∈ Icc 0 1 →
-      w ∈ criticalPoints (I.prod 𝓘(ℝ)) (continuationPotential C f) →
-        MapClusterPt w atBot (maximalIntegralCurve V z) → w ∈ S) :
-    ∃ w ∈ S, Tendsto (maximalIntegralCurve V z) atBot (𝓝 w) := by
-  have : Nonempty M := ⟨z.1⟩
-  have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
-  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  have : CompactSpace (univ ×ˢ Icc (0 : ℝ) 1 : Set (M × ℝ)) :=
-    isCompact_iff_compactSpace.1 (isCompact_univ.prod isCompact_Icc)
-  obtain ⟨hanti, hrest⟩ := slabFlow_lyapunov hv hf hV hδ hf₀ hf₁ hVF
-  have hcoe : (fun t ↦ (slabFlow hv hV hδ hf₀ hf₁ t ⟨z, mem_univ _, hz⟩ : M × ℝ)) =
-      maximalIntegralCurve V z := funext fun t ↦ coe_globalFlowOn_apply hv _ _ t _
-  obtain ⟨w, hw, hlim⟩ := Flow.exists_tendsto_atBot_of_antitone (slabFlow hv hV hδ hf₀ hf₁)
-    (hf.continuationPotential.continuous.comp continuous_subtype_val) hanti
-    (hS.preimage Subtype.val_injective.injOn) ⟨z, mem_univ _, hz⟩ fun w hw hc ↦
-      hSc w w.2.2 (hrest w hc) (by
-        rw [← hcoe]
-        exact hw.continuousAt_comp continuous_subtype_val.continuousAt)
+  have hrest' : ∀ w, MapClusterPt w l (fun t ↦ slabFlow hv hV hδ hf₀ hf₁ t ⟨z, mem_univ _, hz⟩) →
+      (∀ t, continuationPotential C f (slabFlow hv hV hδ hf₀ hf₁ t w) =
+        continuationPotential C f w) → (w : M × ℝ) ∈ S := fun w hw hc ↦
+    hSc w w.2.2 (hrest w hc) (by
+      rw [← hcoe]
+      exact hw.continuousAt_comp continuous_subtype_val.continuousAt)
+  have hg : Continuous fun y : (univ ×ˢ Icc (0 : ℝ) 1 : Set (M × ℝ)) ↦
+      continuationPotential C f y := hf.continuationPotential.continuous.comp continuous_subtype_val
+  obtain ⟨w, hw, hlim⟩ : ∃ w ∈ Subtype.val ⁻¹' S,
+      Tendsto (fun t ↦ slabFlow hv hV hδ hf₀ hf₁ t ⟨z, mem_univ _, hz⟩) l (𝓝 w) := by
+    rcases hl with rfl | rfl
+    · exact Flow.exists_tendsto_atTop_of_antitone _ hg hanti
+        (hS.preimage Subtype.val_injective.injOn) _ hrest'
+    · exact Flow.exists_tendsto_atBot_of_antitone _ hg hanti
+        (hS.preimage Subtype.val_injective.injOn) _ hrest'
   refine ⟨w, hw, ?_⟩
   rw [← hcoe]
   exact (continuous_subtype_val.tendsto w).comp hlim
@@ -408,9 +403,10 @@ theorem exists_tendsto_maximalIntegralCurve_atTop_of_continuationPotential_of_sn
     (h₁ : (criticalPoints I fun x ↦ f (x, 1)).Finite) {z : M × ℝ} (hz : z.2 ∈ Icc 0 1) :
     ∃ w : M × ℝ, (w.2 = 0 ∨ w.2 = 1) ∧ w.1 ∈ criticalPoints I (fun x ↦ f (x, w.2)) ∧
       Tendsto (maximalIntegralCurve V z) atTop (𝓝 w) := by
-  obtain ⟨w, hw, hlim⟩ := exists_tendsto_maximalIntegralCurve_atTop_of_finite hv hf hV hδ hf₀ hf₁
-    hVF (finite_setOf_mem_criticalPoints_of_snd_eq_zero_or_one h₀ h₁) hz fun w hw hc _ ↦
-      (mem_criticalPoints_continuationPotential_iff_of_snd_mem_Icc (hf w) hδ hf₀ hf₁ hlt hw).1 hc
+  obtain ⟨w, hw, hlim⟩ := exists_tendsto_maximalIntegralCurve_of_finite (.inl rfl) hv hf hV hδ
+    hf₀ hf₁ hVF (finite_setOf_mem_criticalPoints_of_snd_eq_zero_or_one h₀ h₁) hz fun w hw hc _ ↦
+      (mem_criticalPoints_continuationPotential_iff_of_mem_Icc_of_intervalBase (hf w) hδ hf₀ hf₁
+        hlt hw).1 hc
   exact ⟨w, hw.1, hw.2, hlim⟩
 
 /-- **Backward ends of the trajectories in the slab.** Under the hypotheses of
@@ -432,9 +428,10 @@ theorem exists_tendsto_maximalIntegralCurve_atBot_of_continuationPotential_of_sn
     (h₁ : (criticalPoints I fun x ↦ f (x, 1)).Finite) {z : M × ℝ} (hz : z.2 ∈ Icc 0 1) :
     ∃ w : M × ℝ, (w.2 = 0 ∨ w.2 = 1) ∧ w.1 ∈ criticalPoints I (fun x ↦ f (x, w.2)) ∧
       Tendsto (maximalIntegralCurve V z) atBot (𝓝 w) := by
-  obtain ⟨w, hw, hlim⟩ := exists_tendsto_maximalIntegralCurve_atBot_of_finite hv hf hV hδ hf₀ hf₁
-    hVF (finite_setOf_mem_criticalPoints_of_snd_eq_zero_or_one h₀ h₁) hz fun w hw hc _ ↦
-      (mem_criticalPoints_continuationPotential_iff_of_snd_mem_Icc (hf w) hδ hf₀ hf₁ hlt hw).1 hc
+  obtain ⟨w, hw, hlim⟩ := exists_tendsto_maximalIntegralCurve_of_finite (.inr rfl) hv hf hV hδ
+    hf₀ hf₁ hVF (finite_setOf_mem_criticalPoints_of_snd_eq_zero_or_one h₀ h₁) hz fun w hw hc _ ↦
+      (mem_criticalPoints_continuationPotential_iff_of_mem_Icc_of_intervalBase (hf w) hδ hf₀ hf₁
+        hlt hw).1 hc
   exact ⟨w, hw.1, hw.2, hlim⟩
 
 /-- **A trajectory in the open slab ends on the target level.** Let `M` be a compact boundaryless
@@ -457,18 +454,17 @@ theorem exists_tendsto_maximalIntegralCurve_atTop_of_continuationPotential_of_sn
     (h₁ : (criticalPoints I fun x ↦ f (x, 1)).Finite) {z : M × ℝ} (hz : z.2 ∈ Ioo 0 1) :
     ∃ q ∈ criticalPoints I (fun x ↦ f (x, 1)),
       Tendsto (maximalIntegralCurve V z) atTop (𝓝 (q, 1)) := by
-  obtain ⟨⟨q, _⟩, ⟨hq, rfl⟩, hlim⟩ := exists_tendsto_maximalIntegralCurve_atTop_of_finite hv hf hV
-    hδ hf₀ hf₁ hVF (h₁.prod (finite_singleton (1 : ℝ))) (Ioo_subset_Icc_self hz)
+  obtain ⟨⟨q, _⟩, ⟨hq, rfl⟩, hlim⟩ := exists_tendsto_maximalIntegralCurve_of_finite
+    (.inl rfl) hv hf hV hδ hf₀ hf₁ hVF (h₁.prod (finite_singleton (1 : ℝ))) (Ioo_subset_Icc_self hz)
     fun w hw hc hcl ↦ by
       obtain ⟨h01, hw1⟩ :=
-        (mem_criticalPoints_continuationPotential_iff_of_snd_mem_Icc (hf w) hδ hf₀ hf₁ hlt hw).1 hc
+        (mem_criticalPoints_continuationPotential_iff_of_mem_Icc_of_intervalBase (hf w) hδ hf₀ hf₁
+          hlt hw).1 hc
       -- The time component increases, so it stays above `z.2 > 0` in forward time.
-      have hle : z.2 ≤ w.2 :=
-        (isClosed_le continuous_const continuous_snd : IsClosed {w : M × ℝ | z.2 ≤ w.2})
-          |>.mem_of_mapClusterPt hcl <| (eventually_ge_atTop 0).mono fun t ht ↦ by
-            simpa only [mem_ofPred_eq, maximalIntegralCurve_zero] using
-              (strictMono_snd_maximalIntegralCurve_of_intervalBase hv hV hδ hf₀ hf₁ hlt hz).monotone
-                ht
+      have hle : z.2 ≤ w.2 := by
+        simpa only [maximalIntegralCurve_zero] using le_of_mapClusterPt_atTop continuous_snd
+          (strictMono_snd_maximalIntegralCurve_of_intervalBase hv hV hδ hf₀ hf₁ hlt hz).monotone
+          hcl 0
       have h : w.2 = 1 := h01.resolve_left fun h ↦ by linarith [hz.1]
       exact ⟨by rwa [h] at hw1, h⟩
   exact ⟨q, hq, hlim⟩
@@ -493,18 +489,17 @@ theorem exists_tendsto_maximalIntegralCurve_atBot_of_continuationPotential_of_sn
     (h₀ : (criticalPoints I fun x ↦ f (x, 0)).Finite) {z : M × ℝ} (hz : z.2 ∈ Ioo 0 1) :
     ∃ p ∈ criticalPoints I (fun x ↦ f (x, 0)),
       Tendsto (maximalIntegralCurve V z) atBot (𝓝 (p, 0)) := by
-  obtain ⟨⟨p, _⟩, ⟨hp, rfl⟩, hlim⟩ := exists_tendsto_maximalIntegralCurve_atBot_of_finite hv hf hV
-    hδ hf₀ hf₁ hVF (h₀.prod (finite_singleton (0 : ℝ))) (Ioo_subset_Icc_self hz)
+  obtain ⟨⟨p, _⟩, ⟨hp, rfl⟩, hlim⟩ := exists_tendsto_maximalIntegralCurve_of_finite
+    (.inr rfl) hv hf hV hδ hf₀ hf₁ hVF (h₀.prod (finite_singleton (0 : ℝ))) (Ioo_subset_Icc_self hz)
     fun w hw hc hcl ↦ by
       obtain ⟨h01, hw0⟩ :=
-        (mem_criticalPoints_continuationPotential_iff_of_snd_mem_Icc (hf w) hδ hf₀ hf₁ hlt hw).1 hc
+        (mem_criticalPoints_continuationPotential_iff_of_mem_Icc_of_intervalBase (hf w) hδ hf₀ hf₁
+          hlt hw).1 hc
       -- The time component increases, so it stays below `z.2 < 1` in backward time.
-      have hle : w.2 ≤ z.2 :=
-        (isClosed_le continuous_snd continuous_const : IsClosed {w : M × ℝ | w.2 ≤ z.2})
-          |>.mem_of_mapClusterPt hcl <| (eventually_le_atBot 0).mono fun t ht ↦ by
-            simpa only [mem_ofPred_eq, maximalIntegralCurve_zero] using
-              (strictMono_snd_maximalIntegralCurve_of_intervalBase hv hV hδ hf₀ hf₁ hlt hz).monotone
-                ht
+      have hle : w.2 ≤ z.2 := by
+        simpa only [maximalIntegralCurve_zero] using le_of_mapClusterPt_atBot continuous_snd
+          (strictMono_snd_maximalIntegralCurve_of_intervalBase hv hV hδ hf₀ hf₁ hlt hz).monotone
+          hcl 0
       have h : w.2 = 0 := h01.resolve_right fun h ↦ by linarith [hz.2]
       exact ⟨by rwa [h] at hw0, h⟩
   exact ⟨p, hp, hlim⟩

@@ -57,8 +57,8 @@ continuation potential of the coordinate expression of `f`, and the time derivat
 * `TauCeti.mem_criticalPoints_continuationPotential_iff`: the critical points of `F`.
 * `TauCeti.mem_criticalPoints_continuationPotential_iff_of_mem_Icc`: the critical points in the
   slab lie over critical points of `f₀` at `t = 0` and of `f₁` at `t = 1`;
-  `TauCeti.mem_criticalPoints_continuationPotential_iff_of_snd_mem_Icc` is the same statement for a
-  path independent of the time for `t < δ` and for `t > 1 - δ`.
+  `TauCeti.mem_criticalPoints_continuationPotential_iff_of_mem_Icc_of_intervalBase` is the same
+  statement for a path independent of the time for `t < δ` and for `t > 1 - δ`.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_continuationPotential_zero_iff` and
   `TauCeti.isManifoldNondegenerateCriticalPoint_continuationPotential_one_iff`: nondegeneracy at
   the two ends.
@@ -227,8 +227,8 @@ ends.** Let `f` be independent of the time for `t < δ` and for `t > 1 - δ`, wi
 `∂ₜ f < C t (1 - t²)` in the open slab. At a point of the slab `M × [0, 1]` where `f` is
 differentiable, a critical point of the continuation potential lies over a critical point of `f₀`
 on `M × {0}` or of `f₁` on `M × {1}`, and conversely. -/
-theorem mem_criticalPoints_continuationPotential_iff_of_snd_mem_Icc {δ : ℝ} {z : M × ℝ}
-    (hf : MDifferentiableAt (I.prod 𝓘(ℝ)) 𝓘(ℝ) f z) (hδ : 0 < δ)
+theorem mem_criticalPoints_continuationPotential_iff_of_mem_Icc_of_intervalBase {δ : ℝ}
+    {z : M × ℝ} (hf : MDifferentiableAt (I.prod 𝓘(ℝ)) 𝓘(ℝ) f z) (hδ : 0 < δ)
     (hf₀ : ∀ x t, t < δ → f (x, t) = f (x, 0)) (hf₁ : ∀ x t, 1 - δ < t → f (x, t) = f (x, 1))
     (hlt : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, deriv (fun s ↦ f (x, s)) t < C * t * (1 - t ^ 2))
     (hz : z.2 ∈ Icc 0 1) :
