@@ -42,6 +42,11 @@ the homogeneous pieces. This covers completed modules such as the completed Floe
 complexes of `TauCeti.RingTheory.NovikovModule`, whose chain-level operations are only associative,
 unital and commutative up to explicit homotopies.
 
+The construction follows `TauCeti.ModuleCat.gRingOfHomogeneous` and
+`TauCeti.ModuleCat.gAlgebraOfHomogeneous`
+(`TauCeti.Algebra.Category.ModuleCat.Monoidal.GradedRing`), with the laws holding only up to
+coboundaries.
+
 ## Main definitions
 
 * `LinearMap.cohomologyMul`: the product `H^i × H^j → H^(i + j)` induced by a product of degree
@@ -80,6 +85,15 @@ theorem gradedMonoid_mk_cohomology_mk_eq {i j : ℤ} (h : i = j) {a : D.cocycles
   subst h
   exact congrArg _ (cohomology_mk_eq_mk_iff.2 hab)
 
+/-- A product of degree zero has degree shift `0`, in the form `LinearMap.cohomologyProduct`
+expects. -/
+private theorem apply_mem_add_zero {N : Type*} [AddCommGroup N] [Module R N]
+    {H : ℤ → Submodule R N} (ν : N →ₗ[R] N →ₗ[R] N)
+    (hdeg : ∀ {i j : ℤ} {a b : N}, a ∈ H i → b ∈ H j → ν a b ∈ H (i + j)) {i j : ℤ} {a b : N}
+    (ha : a ∈ H i) (hb : b ∈ H j) : ν a b ∈ H (i + j + 0) := by
+  rw [add_zero]
+  exact hdeg ha hb
+
 section Mul
 
 variable (μ : M →ₗ[R] M →ₗ[R] M)
@@ -91,22 +105,27 @@ include hdeg hL in
 `i + j`, for a product of degree zero obeying the Leibniz rule. -/
 theorem apply_mem_cocycles_add {i j : ℤ} {a b : M} (ha : a ∈ D.cocycles G i)
     (hb : b ∈ D.cocycles G j) : μ a b ∈ D.cocycles G (i + j) :=
-  apply_mem_cocycles μ (ε := 0) (fun ha hb ↦ by rw [add_zero]; exact hdeg ha hb) hL
-    (add_zero _) ha hb
+  apply_mem_cocycles μ (apply_mem_add_zero μ hdeg) hL (add_zero _) ha hb
 
 /-- **The product on cohomology of a product of degree zero.** A bilinear map of degree zero
 obeying the Leibniz rule induces a bilinear map `H^i × H^j → H^(i + j)` on degree-wise
 cohomology. This is `LinearMap.cohomologyProduct` for the degree shift `0`. -/
 def cohomologyMul {i j : ℤ} :
     D.cohomology G i →ₗ[R] D.cohomology G j →ₗ[R] D.cohomology G (i + j) :=
-  cohomologyProduct μ (ε := 0) (fun ha hb ↦ by rw [add_zero]; exact hdeg ha hb) hL (add_zero _)
+  cohomologyProduct μ (apply_mem_add_zero μ hdeg) hL (add_zero _)
+
+/-- `LinearMap.cohomologyMul` is `LinearMap.cohomologyProduct` for the degree shift `0`. -/
+private theorem cohomologyMul_eq_cohomologyProduct {i j : ℤ} :
+    cohomologyMul μ hdeg hL (i := i) (j := j) =
+      cohomologyProduct μ (apply_mem_add_zero μ hdeg) hL (add_zero _) :=
+  rfl
 
 /-- The product of the classes of two cocycles is the class of their product. -/
 @[simp]
 theorem cohomologyMul_mk {i j : ℤ} (a : D.cocycles G i) (b : D.cocycles G j) :
     cohomologyMul μ hdeg hL (Submodule.Quotient.mk a) (Submodule.Quotient.mk b) =
       Submodule.Quotient.mk ⟨μ a b, apply_mem_cocycles_add μ hdeg hL a.2 b.2⟩ :=
-  cohomologyProduct_mk μ (fun ha hb ↦ by rw [add_zero]; exact hdeg ha hb) hL (add_zero _) a b
+  cohomologyProduct_mk μ (apply_mem_add_zero μ hdeg) hL (add_zero _) a b
 
 end Mul
 
@@ -152,13 +171,11 @@ def cohomologyGRing : DirectSum.GRing (fun i ↦ D.cohomology G i) :=
       induction x using Submodule.Quotient.induction_on with | H a => ?_
       induction y using Submodule.Quotient.induction_on with | H b => ?_
       induction z using Submodule.Quotient.induction_on with | H c => ?_
-      refine (congrArg (GradedMonoid.mk _) ((congrArg (cohomologyMul μ hdeg hL · _)
-        (cohomologyMul_mk μ hdeg hL a b)).trans (cohomologyMul_mk μ hdeg hL _ c))).trans
-          (Eq.trans ?_ (congrArg (GradedMonoid.mk _) ((congrArg (cohomologyMul μ hdeg hL _)
-            (cohomologyMul_mk μ hdeg hL b c)).trans (cohomologyMul_mk μ hdeg hL a _))).symm)
-      have h := hassoc a.2 b.2 c.2
-      rw [add_assoc] at h
-      exact gradedMonoid_mk_cohomology_mk_eq (add_assoc i j k) h
+      change GradedMonoid.mk _ (cohomologyMul μ hdeg hL (cohomologyMul μ hdeg hL _ _) _) =
+        GradedMonoid.mk _ (cohomologyMul μ hdeg hL _ (cohomologyMul μ hdeg hL _ _))
+      rw [cohomologyMul_mk, cohomologyMul_mk, cohomologyMul_mk, cohomologyMul_mk]
+      exact gradedMonoid_mk_cohomology_mk_eq (add_assoc i j k)
+        (by simpa only [add_assoc] using hassoc a.2 b.2 c.2)
     natCast n := n • Submodule.Quotient.mk ⟨e, he⟩
     natCast_zero := zero_smul _ _
     natCast_succ n := succ_nsmul _ n
@@ -228,6 +245,14 @@ def cohomologyGAlgebra :
     smul_def r x :=
       (cohomologyGRing_smul_one_mul μ hdeg hL e he hone_mul hmul_one hassoc r x).symm }
 
+/-- The structure map of `LinearMap.cohomologyGAlgebra` is `r ↦ r • [e]`. -/
+@[simp]
+theorem cohomologyGAlgebra_toFun (r : R) :
+    letI := cohomologyGRing μ hdeg hL e he hone_mul hmul_one hassoc
+    (cohomologyGAlgebra μ hdeg hL e he hone_mul hmul_one hassoc).toFun r =
+      r • Submodule.Quotient.mk ⟨e, he⟩ :=
+  rfl
+
 /-- **Graded commutativity of the cohomology ring.** If `μ a b - (-1)^(i j) μ b a` is a coboundary
 for all cocycles `a` and `b` of degrees `i` and `j`, then in the cohomology ring
 `x y = (-1)^(i j) y x` for classes `x` and `y` of degrees `i` and `j`. -/
@@ -295,12 +320,11 @@ def cohomologyAlgHom :
         lof_eq_of]
       exact congrArg _ (cohomology_mk_eq_mk_iff.2 hfone))
     (fun {i j} x y ↦ by
-      simp only [comp_apply, lof_eq_of, of_mul_of, cohomologyGRing_gMul, cohomologyMul]
+      simp only [comp_apply, lof_eq_of, of_mul_of, cohomologyGRing_gMul,
+        cohomologyMul_eq_cohomologyProduct]
       apply congrArg
-      exact cohomologyMap_cohomologyProduct
-        (hμdeg := fun ha hb ↦ by rw [add_zero]; exact hμdeg ha hb)
-        (hνdeg := fun ha hb ↦ by rw [add_zero]; exact hνdeg ha hb)
-        (add_zero (i + j)) (fun ha hb ↦ hfmul ha hb) x y)
+      exact cohomologyMap_cohomologyProduct (hμdeg := apply_mem_add_zero μ hμdeg)
+        (hνdeg := apply_mem_add_zero ν hνdeg) (add_zero (i + j)) (fun ha hb ↦ hfmul ha hb) x y)
 
 /-- The algebra homomorphism of cohomology rings acts in each degree as the map induced by `f`. -/
 @[simp]
