@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Topology.ContinuousMap.Basic
-import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
@@ -119,17 +118,13 @@ theorem surjective_orthogonalSphereToEquator (u : V) :
 vector orthogonal to `p`. -/
 theorem exists_ne_and_ne_neg_sphere (hV : 1 < finrank ℝ V) (p : sphere (0 : V) 1) :
     ∃ q : sphere (0 : V) 1, q ≠ p ∧ q ≠ -p := by
-  have : FiniteDimensional ℝ V := Module.finite_of_finrank_pos (by omega)
-  have h := (ℝ ∙ (p : V)).finrank_add_finrank_orthogonal
-  rw [finrank_span_singleton (ne_zero_of_mem_unit_sphere p)] at h
-  have : Nontrivial (ℝ ∙ (p : V))ᗮ := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
-  obtain ⟨v, hv⟩ : (sphere (0 : (ℝ ∙ (p : V))ᗮ) 1).Nonempty :=
-    NormedSpace.sphere_nonempty.2 zero_le_one
-  have hpv : ⟪(p : V), (v : V)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 v.2
+  obtain ⟨v, hv, hpv⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ)
+    {(p : V)} (by simpa using hV)
+  replace hpv : ⟪(p : V), v⟫ = 0 := hpv _ (Finset.mem_singleton_self _)
   -- `v = p` would give `⟪p, p⟫ = 0`, so `p = 0`; `v ≠ -p` since `v` is orthogonal to `p ≠ 0`.
   refine ⟨⟨v, by simpa using hv⟩, fun h ↦ ?_, fun h ↦ ?_⟩
   · refine ne_zero_of_mem_unit_sphere p (inner_self_eq_zero (𝕜 := ℝ).1 ?_)
-    rwa [show (v : V) = p from Subtype.ext_iff.1 h] at hpv
+    rwa [show v = p from Subtype.ext_iff.1 h] at hpv
   · exact ne_neg_of_inner_eq_zero (ne_zero_of_mem_unit_sphere p) (by rwa [real_inner_comm])
       (Subtype.ext_iff.1 h)
 
