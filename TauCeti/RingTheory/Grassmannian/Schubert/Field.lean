@@ -243,24 +243,20 @@ private noncomputable def baseChangeEchelon {L : Type w} [Field L] [Algebra R L]
 
 private theorem repr_baseChangeEchelon_eq_zero_of_lt {L : Type w} [Field L] [Algebra R L]
     (b : Basis (Fin n) R M) (jKL : K →ₐ[R] L) {p' : Fin r → Fin n} (N : G(k, K ⊗[R] M; K))
-    (hpiv : (b.baseChange K).flagPivots N.toSubmodule = univ.image p') (m : Fin r) {q : Fin n}
-    (hmq : p' m < q) :
+    (m : Fin r) {q : Fin n} (hmq : p' m < q) :
     (b.baseChange L).repr (baseChangeEchelon b jKL p' N m) q = 0 := by
-  have hm : p' m ∈ (b.baseChange K).flagPivots N.toSubmodule :=
-    hpiv ▸ mem_image_of_mem p' (mem_univ m)
   rw [baseChangeEchelon, repr_baseChange_rTensor, ((b.baseChange K).mem_flag_iff_repr_eq_zero.mp
-    (Basis.flagEchelon_mem_flag hm)) q (Fin.succ_le_castSucc_iff.mpr hmq), map_zero]
+    ((b.baseChange K).flagEchelon_mem_flag N.toSubmodule (p' m))) q
+    (Fin.succ_le_castSucc_iff.mpr hmq), map_zero]
 
 private theorem repr_baseChangeEchelon_pivot {L : Type w} [Field L] [Algebra R L]
     (b : Basis (Fin n) R M) (jKL : K →ₐ[R] L) {p' : Fin r → Fin n} (hp' : StrictMono p')
     (N : G(k, K ⊗[R] M; K)) (hpiv : (b.baseChange K).flagPivots N.toSubmodule = univ.image p')
     (l m : Fin r) :
     (b.baseChange L).repr (baseChangeEchelon b jKL p' N l) (p' m) = if l = m then 1 else 0 := by
-  have hl : p' l ∈ (b.baseChange K).flagPivots N.toSubmodule :=
-    hpiv ▸ mem_image_of_mem p' (mem_univ l)
   have hm : p' m ∈ (b.baseChange K).flagPivots N.toSubmodule :=
     hpiv ▸ mem_image_of_mem p' (mem_univ m)
-  rw [baseChangeEchelon, repr_baseChange_rTensor, Basis.repr_flagEchelon hl hm]
+  rw [baseChangeEchelon, repr_baseChange_rTensor, (b.baseChange K).repr_flagEchelon (p' l) hm]
   simp [Finsupp.single_apply, hp'.injective.eq_iff]
 
 private noncomputable def shearEchelonVec {L : Type w} [Field L] [Algebra R L]
@@ -327,18 +323,18 @@ private theorem shearEchelonVec_mem_flag {L : Type w} [Field L] [Algebra R L]
   · subst l
     have hvw : v < w := by simpa using hpw
     simp [shearEchelonVec, repr_shearLin, ite_eq_right hvw.ne',
-      repr_baseChangeEchelon_eq_zero_of_lt b jKL N hpiv i₀ (huv.trans hvw)]
+      repr_baseChangeEchelon_eq_zero_of_lt b jKL N i₀ (huv.trans hvw)]
   · have hplw : p' l < w := by simpa [Function.update_of_ne hl] using hpw
     dsimp only [shearEchelonVec]
     rw [ite_eq_right hl, shearLin_baseChangeEchelon_of_ne b jKL hp' hl v t N hpiv, map_sub,
       LinearEquiv.map_smul, Finsupp.sub_apply, Finsupp.smul_apply, smul_eq_mul,
-      repr_baseChangeEchelon_eq_zero_of_lt b jKL N hpiv l hplw, zero_sub, neg_eq_zero]
+      repr_baseChangeEchelon_eq_zero_of_lt b jKL N l hplw, zero_sub, neg_eq_zero]
     rcases lt_or_gt_of_ne hl with hlt | hgt'
-    · rw [repr_baseChangeEchelon_eq_zero_of_lt b jKL N hpiv l ((hp' hlt).trans huv),
+    · rw [repr_baseChangeEchelon_eq_zero_of_lt b jKL N l ((hp' hlt).trans huv),
         zero_mul, zero_mul]
     · have hvw : v < w := (hgt l hgt').trans hplw
       rw [repr_shearLin, ite_eq_right hvw.ne', add_zero,
-        repr_baseChangeEchelon_eq_zero_of_lt b jKL N hpiv i₀ (huv.trans hvw), mul_zero]
+        repr_baseChangeEchelon_eq_zero_of_lt b jKL N i₀ (huv.trans hvw), mul_zero]
 
 private theorem repr_shearEchelonVec_update {L : Type w} [Field L] [Algebra R L]
     (b : Basis (Fin n) R M) (jKL : K →ₐ[R] L) {p' : Fin r → Fin n} (hp' : StrictMono p')
@@ -361,7 +357,7 @@ private theorem repr_shearEchelonVec_update {L : Type w} [Field L] [Algebra R L]
       smul_eq_mul, repr_shearLin]
     split_ifs with hwv
     · subst w
-      rw [repr_baseChangeEchelon_eq_zero_of_lt b jKL N hpiv i₀ huv,
+      rw [repr_baseChangeEchelon_eq_zero_of_lt b jKL N i₀ huv,
         repr_baseChangeEchelon_pivot b jKL hp' N hpiv i₀ i₀, ite_eq_left rfl, zero_add, mul_one,
         inv_mul_cancel₀ ht]
     · rw [add_zero]
