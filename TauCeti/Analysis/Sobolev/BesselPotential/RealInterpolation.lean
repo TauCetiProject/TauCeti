@@ -7,17 +7,21 @@ module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.RealInterpolation
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
-import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+public import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 
 /-!
 # Real interpolation of Bessel-potential Sobolev spaces
 
 Let `E` be a finite-dimensional real inner product space and `F` a complex Banach space. For
-`1 ≤ p, q ≤ ∞`, distinct smoothness orders `s₀ ≠ s₁`, and `0 < θ < 1`, the real interpolation
-space of two Bessel-potential spaces `H^{s₀,p}(E, F)` and `H^{s₁,p}(E, F)` is the inhomogeneous
+`1 ≤ p, q ≤ ∞`, distinct smoothness orders `s₀ ≠ s₁`, and `0 < θ < 1`, the Bessel-potential spaces
+`H^{s₀,p}(E, F)` and `H^{s₁,p}(E, F)` embed continuously and injectively into the tempered
+distributions (`BesselPotentialSpace.toDistrCLM`), forming a compatible couple
+(`TauCeti.CompatibleCouple.besselPotentialSpace`). Its real interpolation space is the inhomogeneous
 Besov space of order `s_θ = (1 - θ) s₀ + θ s₁` and fine index `q`:
 
-`(H^{s₀,p}(E, F), H^{s₁,p}(E, F))_{θ,q} ≃L[ℂ] B^{s_θ}_{p,q}(E, F)`.
+`(H^{s₀,p}(E, F), H^{s₁,p}(E, F))_{θ,q} ≃L[ℂ] B^{s_θ}_{p,q}(E, F)`,
+
+built from the Littlewood–Paley blocks `Δⱼ` of any bump function `φ`.
 
 For `p = q = 2` and values in a complex Hilbert space `H`, `B^{s_θ}_{2,2}(E, H)` agrees with
 `H^{s_θ}(E, H)` (`TauCeti.BesovSpace.besselPotentialSpaceEquiv`), giving the Hilbert-space Sobolev
@@ -34,8 +38,8 @@ couple between two Besov couples at the extreme fine indices `1` and `∞`:
   `B^{sᵢ}_{p,1}(E, F) ⊆ H^{sᵢ,p}(E, F) ⊆ B^{sᵢ}_{p,∞}(E, F)`
   (`TauCeti.BesovSpace.toBesselPotentialSpace` and `BesselPotentialSpace.toBesovSpace`).
 * Lifting these inclusions to the sum spaces gives couple morphisms
-  `TauCeti.CompatibleCouple.besovOneToBesselPotentialSum` and
-  `TauCeti.CompatibleCouple.besselPotentialToBesovTopSum` that preserve the ambient tempered
+  `TauCeti.CompatibleCouple.besovOneToBesselPotentialSpaceSum` and
+  `TauCeti.CompatibleCouple.besselPotentialSpaceToBesovTopSum` that preserve the ambient tempered
   distribution.
 * Because `(B^{s₀}_{p,q₀}, B^{s₁}_{p,q₁})_{θ,q} ≃L[ℂ] B^{s_θ}_{p,q}`
   (`TauCeti.CompatibleCouple.besovKMethodEquiv`) does not depend on `q₀` or `q₁`, both outer
@@ -45,27 +49,29 @@ couple between two Besov couples at the extreme fine indices `1` and `∞`:
 
 ## Main declarations
 
-* `BesselPotentialSpace.toDistrCLM`: the continuous linear embedding
-  `H^{s,p}(E, F) →L[ℂ] 𝓢'(E, F)` (from `BesselPotentialSpace.continuous_toDistr`).
-* `TauCeti.CompatibleCouple.besselPotential`: the compatible couple
+* `TauCeti.CompatibleCouple.besselPotentialSpace E F p s₀ s₁`: the compatible couple
   `(H^{s₀,p}(E, F), H^{s₁,p}(E, F))` inside `𝓢'(E, F)`.
-* `TauCeti.CompatibleCouple.besovOneToBesselPotentialSum` and
-  `TauCeti.CompatibleCouple.besselPotentialToBesovTopSum`: the sandwich morphisms of sum spaces
+* `TauCeti.CompatibleCouple.besovOneToBesselPotentialSpaceSum` and
+  `TauCeti.CompatibleCouple.besselPotentialSpaceToBesovTopSum`: the sandwich morphisms of sum spaces
   induced by `B^s_{p,1} ⊆ H^{s,p} ⊆ B^s_{p,∞}`.
-* `TauCeti.CompatibleCouple.mem_range_sumSpaceEmbed_besselPotential` and
-  `TauCeti.CompatibleCouple.mem_kMethod_besselPotential_iff`: for `s₀ ≠ s₁` and `0 < θ < 1`,
-  membership in `(H^{s₀,p}, H^{s₁,p})_{θ,q}` is `MemBesov φ ((1 - θ) s₀ + θ s₁) p q`.
-* `TauCeti.CompatibleCouple.besselPotentialKMethodEquiv`: the Banach-space isomorphism
-  `(H^{s₀,p}(E, F), H^{s₁,p}(E, F))_{θ,q} ≃L[ℂ] B^{(1 - θ) s₀ + θ s₁}_{p,q}(E, F)`.
-* `TauCeti.CompatibleCouple.mem_kMethod_besselPotential_two_iff` and
-  `TauCeti.CompatibleCouple.besselPotentialHilbertKMethodEquiv`: the Hilbert-space specialization
-  `(H^{s₀}(E, H), H^{s₁}(E, H))_{θ,2} ≃L[ℂ] H^{(1 - θ) s₀ + θ s₁}(E, H)`.
+* `TauCeti.CompatibleCouple.besselPotentialSpaceKMethodEquiv`: the Banach-space isomorphism
+  `(H^{s₀,p}(E, F), H^{s₁,p}(E, F))_{θ,q} ≃L[ℂ] B^{(1 - θ) s₀ + θ s₁}_{p,q}(E, F)`, keeping the
+  underlying tempered distribution.
+* `TauCeti.CompatibleCouple.mem_range_sumSpaceEmbed_besselPotentialSpace`,
+  `TauCeti.CompatibleCouple.mem_kMethod_besselPotentialSpace_iff`, and
+  `TauCeti.CompatibleCouple.memBesov_iff_exists_mem_kMethod_besselPotentialSpace`: membership and
+  image characterizations of `(H^{s₀,p}, H^{s₁,p})_{θ,q}`.
+* `TauCeti.CompatibleCouple.mem_kMethod_besselPotentialSpace_two_iff`,
+  `TauCeti.CompatibleCouple.memSobolev_iff_exists_mem_kMethod_besselPotentialSpace_two`, and
+  `TauCeti.CompatibleCouple.besselPotentialSpaceHilbertKMethodEquiv`: the Hilbert-space
+  specialization `(H^{s₀}(E, H), H^{s₁}(E, H))_{θ,2} ≃L[ℂ] H^{(1 - θ) s₀ + θ s₁}(E, H)`.
 
 ## References
 
 * J. Bergh and J. Löfström, *Interpolation Spaces: An Introduction*, Grundlehren 223, Springer,
   1976, Theorems 6.2.4 and 6.4.5(4).
-* H. Triebel, *Theory of Function Spaces*, Section 2.4.2.
+* H. Triebel, *Interpolation Theory, Function Spaces, Differential Operators*, North-Holland,
+  1978, §2.4.2.
 -/
 
 public noncomputable section
@@ -73,328 +79,325 @@ public noncomputable section
 open MeasureTheory Filter Topology Set
 open scoped ENNReal SchwartzMap BesselPotentialSpace
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
+namespace TauCeti
 
-namespace BesselPotentialSpace
+namespace CompatibleCouple
 
-section ToDistr
+open BesselPotentialSpace TemperedDistribution KMethodSpace
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
-  {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+section Banach
 
-variable (E F s p) in
-/-- Coercion from the Bessel-potential space `H^{s,p}(E, F)` to tempered distributions as a
-continuous linear map. -/
-def toDistrCLM : H^{s, p}(E, F) →L[ℂ] 𝓢'(E, F) where
-  toFun := toDistr
-  map_add' := toDistr_add
-  map_smul' := toDistr_smul
-  cont := continuous_toDistr
-
-@[simp]
-theorem toDistrCLM_apply (u : H^{s, p}(E, F)) : toDistrCLM E F s p u = u.toDistr :=
-  (rfl)
-
-theorem toDistrCLM_injective : Function.Injective (toDistrCLM E F s p) :=
-  fun _ _ h ↦ ext h
-
-end ToDistr
-
-end BesselPotentialSpace
-
-namespace TauCeti.CompatibleCouple
-
-open TemperedDistribution KMethodSpace
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
 
 /-! ### The Bessel-potential compatible couple and its Besov sandwich -/
 
 section Couple
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
-  {s₀ s₁ : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-variable (E F s₀ s₁ p) in
-/-- The compatible couple `(H^{s₀,p}(E, F), H^{s₁,p}(E, F))` of Bessel-potential spaces, with both
-endpoints continuously embedded in the ambient space `𝓢'(E, F)` of tempered distributions. -/
-def besselPotential :
+variable (E F) (p : ℝ≥0∞) [Fact (1 ≤ p)] in
+/-- The compatible couple `(H^{s₀,p}(E, F), H^{s₁,p}(E, F))` of Bessel-potential spaces, both
+embedded into the tempered distributions. -/
+def besselPotentialSpace (s₀ s₁ : ℝ) :
     CompatibleCouple ℂ H^{s₀, p}(E, F) H^{s₁, p}(E, F) 𝓢'(E, F) where
-  embed₀ := BesselPotentialSpace.toDistrCLM E F s₀ p
-  embed₁ := BesselPotentialSpace.toDistrCLM E F s₁ p
-  embed₀_injective := BesselPotentialSpace.toDistrCLM_injective
-  embed₁_injective := BesselPotentialSpace.toDistrCLM_injective
+  embed₀ := toDistrCLM E F s₀ p
+  embed₁ := toDistrCLM E F s₁ p
+  embed₀_injective := toDistrCLM_injective
+  embed₁_injective := toDistrCLM_injective
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {s₀ s₁ : ℝ}
 
 @[simp]
-theorem besselPotential_embed₀ :
-    (besselPotential E F s₀ s₁ p).embed₀ = BesselPotentialSpace.toDistrCLM E F s₀ p :=
-  (rfl)
+theorem besselPotentialSpace_embed₀_apply (u : H^{s₀, p}(E, F)) :
+    (besselPotentialSpace E F p s₀ s₁).embed₀ u = u.toDistr :=
+  toDistrCLM_apply u
 
 @[simp]
-theorem besselPotential_embed₁ :
-    (besselPotential E F s₀ s₁ p).embed₁ = BesselPotentialSpace.toDistrCLM E F s₁ p :=
-  (rfl)
+theorem besselPotentialSpace_embed₁_apply (u : H^{s₁, p}(E, F)) :
+    (besselPotentialSpace E F p s₀ s₁).embed₁ u = u.toDistr :=
+  toDistrCLM_apply u
 
 /-- A pair `(u₀, u₁)` lies in the intersection of `(H^{s₀,p}, H^{s₁,p})` if and only if `u₀` and
 `u₁` represent the same tempered distribution. -/
-theorem mem_besselPotential_inter_iff {x : H^{s₀, p}(E, F) × H^{s₁, p}(E, F)} :
-    x ∈ (besselPotential E F s₀ s₁ p).inter ↔ x.1.toDistr = x.2.toDistr := by
+theorem mem_besselPotentialSpace_inter_iff {x : H^{s₀, p}(E, F) × H^{s₁, p}(E, F)} :
+    x ∈ (besselPotentialSpace E F p s₀ s₁).inter ↔ x.1.toDistr = x.2.toDistr := by
   simp [mem_inter_iff]
 
 /-- Two decompositions in `H^{s₀,p} + H^{s₁,p}` agree if and only if their sums agree in
 `𝓢'(E, F)`. -/
-theorem besselPotential_fstToSum_add_sndToSum_eq_iff
+theorem besselPotentialSpace_fstToSum_add_sndToSum_eq_iff
     {u₀ v₀ : H^{s₀, p}(E, F)} {u₁ v₁ : H^{s₁, p}(E, F)} :
-    (besselPotential E F s₀ s₁ p).fstToSum u₀ + (besselPotential E F s₀ s₁ p).sndToSum u₁ =
-        (besselPotential E F s₀ s₁ p).fstToSum v₀ + (besselPotential E F s₀ s₁ p).sndToSum v₁ ↔
+    (besselPotentialSpace E F p s₀ s₁).fstToSum u₀ +
+          (besselPotentialSpace E F p s₀ s₁).sndToSum u₁ =
+        (besselPotentialSpace E F p s₀ s₁).fstToSum v₀ +
+          (besselPotentialSpace E F p s₀ s₁).sndToSum v₁ ↔
       u₀.toDistr + u₁.toDistr = v₀.toDistr + v₁.toDistr := by
-  rw [← (besselPotential E F s₀ s₁ p).sumSpaceEmbed_injective.eq_iff]
+  rw [← (besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed_injective.eq_iff]
   simp
 
-private theorem besovOneToBesselPotentialSum_compat {φ : ContDiffBump (0 : E)}
+private theorem besovOneToBesselPotentialSpaceSum_compat {φ : ContDiffBump (0 : E)}
     (x : (besov F φ s₀ s₁ p 1 1).inter) :
-    (besselPotential E F s₀ s₁ p).fstToSum
+    (besselPotentialSpace E F p s₀ s₁).fstToSum
         (BesovSpace.toBesselPotentialSpace ((besov F φ s₀ s₁ p 1 1).interFst x)) =
-      (besselPotential E F s₀ s₁ p).sndToSum
+      (besselPotentialSpace E F p s₀ s₁).sndToSum
         (BesovSpace.toBesselPotentialSpace ((besov F φ s₀ s₁ p 1 1).interSnd x)) :=
-  (besselPotential E F s₀ s₁ p).sumSpace_ext <| by
+  (besselPotentialSpace E F p s₀ s₁).sumSpace_ext <| by
     simpa using (besov F φ s₀ s₁ p 1 1).embed₀_interFst x
 
 /-- The continuous inclusion `B^{s₀}_{p,1} + B^{s₁}_{p,1} →L[ℂ] H^{s₀,p} + H^{s₁,p}` induced by
 `TauCeti.BesovSpace.toBesselPotentialSpace` on each endpoint. -/
-def besovOneToBesselPotentialSum {φ : ContDiffBump (0 : E)} :
-    (besov F φ s₀ s₁ p 1 1).SumSpace →L[ℂ] (besselPotential E F s₀ s₁ p).SumSpace :=
+def besovOneToBesselPotentialSpaceSum {φ : ContDiffBump (0 : E)} :
+    (besov F φ s₀ s₁ p 1 1).SumSpace →L[ℂ] (besselPotentialSpace E F p s₀ s₁).SumSpace :=
   (besov F φ s₀ s₁ p 1 1).sumLift
-    ((besselPotential E F s₀ s₁ p).fstToSum.comp BesovSpace.toBesselPotentialSpace)
-    ((besselPotential E F s₀ s₁ p).sndToSum.comp BesovSpace.toBesselPotentialSpace)
-    besovOneToBesselPotentialSum_compat
+    ((besselPotentialSpace E F p s₀ s₁).fstToSum.comp BesovSpace.toBesselPotentialSpace)
+    ((besselPotentialSpace E F p s₀ s₁).sndToSum.comp BesovSpace.toBesselPotentialSpace)
+    besovOneToBesselPotentialSpaceSum_compat
 
 @[simp]
-theorem besovOneToBesselPotentialSum_fstToSum {φ : ContDiffBump (0 : E)}
+theorem besovOneToBesselPotentialSpaceSum_fstToSum {φ : ContDiffBump (0 : E)}
     (u₀ : BesovSpace F φ s₀ p 1) :
-    besovOneToBesselPotentialSum ((besov F φ s₀ s₁ p 1 1).fstToSum u₀) =
-      (besselPotential E F s₀ s₁ p).fstToSum (BesovSpace.toBesselPotentialSpace u₀) := by
-  rw [besovOneToBesselPotentialSum]
+    besovOneToBesselPotentialSpaceSum ((besov F φ s₀ s₁ p 1 1).fstToSum u₀) =
+      (besselPotentialSpace E F p s₀ s₁).fstToSum (BesovSpace.toBesselPotentialSpace u₀) := by
+  rw [besovOneToBesselPotentialSpaceSum]
   exact ((besov F φ s₀ s₁ p 1 1).sumLift_fstToSum _ _ _ u₀).trans (by simp)
 
 @[simp]
-theorem besovOneToBesselPotentialSum_sndToSum {φ : ContDiffBump (0 : E)}
+theorem besovOneToBesselPotentialSpaceSum_sndToSum {φ : ContDiffBump (0 : E)}
     (u₁ : BesovSpace F φ s₁ p 1) :
-    besovOneToBesselPotentialSum ((besov F φ s₀ s₁ p 1 1).sndToSum u₁) =
-      (besselPotential E F s₀ s₁ p).sndToSum (BesovSpace.toBesselPotentialSpace u₁) := by
-  rw [besovOneToBesselPotentialSum]
+    besovOneToBesselPotentialSpaceSum ((besov F φ s₀ s₁ p 1 1).sndToSum u₁) =
+      (besselPotentialSpace E F p s₀ s₁).sndToSum (BesovSpace.toBesselPotentialSpace u₁) := by
+  rw [besovOneToBesselPotentialSpaceSum]
   exact ((besov F φ s₀ s₁ p 1 1).sumLift_sndToSum _ _ _ u₁).trans (by simp)
 
 @[simp]
-theorem sumSpaceEmbed_besovOneToBesselPotentialSum {φ : ContDiffBump (0 : E)}
+theorem sumSpaceEmbed_besovOneToBesselPotentialSpaceSum {φ : ContDiffBump (0 : E)}
     (u : (besov F φ s₀ s₁ p 1 1).SumSpace) :
-    (besselPotential E F s₀ s₁ p).sumSpaceEmbed (besovOneToBesselPotentialSum u) =
+    (besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed (besovOneToBesselPotentialSpaceSum u) =
       (besov F φ s₀ s₁ p 1 1).sumSpaceEmbed u := by
   obtain ⟨u₀, u₁, rfl⟩ := (besov F φ s₀ s₁ p 1 1).exists_fstToSum_add_sndToSum_eq u
   simp
 
-private theorem besselPotentialToBesovTopSum_compat (φ : ContDiffBump (0 : E))
-    (x : (besselPotential E F s₀ s₁ p).inter) :
+private theorem besselPotentialSpaceToBesovTopSum_compat (φ : ContDiffBump (0 : E))
+    (x : (besselPotentialSpace E F p s₀ s₁).inter) :
     (besov F φ s₀ s₁ p ∞ ∞).fstToSum
-        (BesselPotentialSpace.toBesovSpace φ ((besselPotential E F s₀ s₁ p).interFst x)) =
+        (toBesovSpace φ ((besselPotentialSpace E F p s₀ s₁).interFst x)) =
       (besov F φ s₀ s₁ p ∞ ∞).sndToSum
-        (BesselPotentialSpace.toBesovSpace φ ((besselPotential E F s₀ s₁ p).interSnd x)) :=
+        (toBesovSpace φ ((besselPotentialSpace E F p s₀ s₁).interSnd x)) :=
   (besov F φ s₀ s₁ p ∞ ∞).sumSpace_ext <| by
-    simpa using (besselPotential E F s₀ s₁ p).embed₀_interFst x
+    simpa using (besselPotentialSpace E F p s₀ s₁).embed₀_interFst x
 
 /-- The continuous inclusion `H^{s₀,p} + H^{s₁,p} →L[ℂ] B^{s₀}_{p,∞} + B^{s₁}_{p,∞}` induced by
 `BesselPotentialSpace.toBesovSpace` on each endpoint. -/
-def besselPotentialToBesovTopSum (φ : ContDiffBump (0 : E)) :
-    (besselPotential E F s₀ s₁ p).SumSpace →L[ℂ] (besov F φ s₀ s₁ p ∞ ∞).SumSpace :=
-  (besselPotential E F s₀ s₁ p).sumLift
-    ((besov F φ s₀ s₁ p ∞ ∞).fstToSum.comp (BesselPotentialSpace.toBesovSpace φ))
-    ((besov F φ s₀ s₁ p ∞ ∞).sndToSum.comp (BesselPotentialSpace.toBesovSpace φ))
-    (besselPotentialToBesovTopSum_compat φ)
+def besselPotentialSpaceToBesovTopSum (φ : ContDiffBump (0 : E)) :
+    (besselPotentialSpace E F p s₀ s₁).SumSpace →L[ℂ] (besov F φ s₀ s₁ p ∞ ∞).SumSpace :=
+  (besselPotentialSpace E F p s₀ s₁).sumLift
+    ((besov F φ s₀ s₁ p ∞ ∞).fstToSum.comp (toBesovSpace φ))
+    ((besov F φ s₀ s₁ p ∞ ∞).sndToSum.comp (toBesovSpace φ))
+    (besselPotentialSpaceToBesovTopSum_compat φ)
 
 @[simp]
-theorem besselPotentialToBesovTopSum_fstToSum (φ : ContDiffBump (0 : E))
+theorem besselPotentialSpaceToBesovTopSum_fstToSum (φ : ContDiffBump (0 : E))
     (u₀ : H^{s₀, p}(E, F)) :
-    besselPotentialToBesovTopSum φ ((besselPotential E F s₀ s₁ p).fstToSum u₀) =
-      (besov F φ s₀ s₁ p ∞ ∞).fstToSum (BesselPotentialSpace.toBesovSpace φ u₀) := by
-  rw [besselPotentialToBesovTopSum]
-  exact ((besselPotential E F s₀ s₁ p).sumLift_fstToSum _ _ _ u₀).trans (by simp)
+    besselPotentialSpaceToBesovTopSum φ ((besselPotentialSpace E F p s₀ s₁).fstToSum u₀) =
+      (besov F φ s₀ s₁ p ∞ ∞).fstToSum (toBesovSpace φ u₀) := by
+  rw [besselPotentialSpaceToBesovTopSum]
+  exact ((besselPotentialSpace E F p s₀ s₁).sumLift_fstToSum _ _ _ u₀).trans (by simp)
 
 @[simp]
-theorem besselPotentialToBesovTopSum_sndToSum (φ : ContDiffBump (0 : E))
+theorem besselPotentialSpaceToBesovTopSum_sndToSum (φ : ContDiffBump (0 : E))
     (u₁ : H^{s₁, p}(E, F)) :
-    besselPotentialToBesovTopSum φ ((besselPotential E F s₀ s₁ p).sndToSum u₁) =
-      (besov F φ s₀ s₁ p ∞ ∞).sndToSum (BesselPotentialSpace.toBesovSpace φ u₁) := by
-  rw [besselPotentialToBesovTopSum]
-  exact ((besselPotential E F s₀ s₁ p).sumLift_sndToSum _ _ _ u₁).trans (by simp)
+    besselPotentialSpaceToBesovTopSum φ ((besselPotentialSpace E F p s₀ s₁).sndToSum u₁) =
+      (besov F φ s₀ s₁ p ∞ ∞).sndToSum (toBesovSpace φ u₁) := by
+  rw [besselPotentialSpaceToBesovTopSum]
+  exact ((besselPotentialSpace E F p s₀ s₁).sumLift_sndToSum _ _ _ u₁).trans (by simp)
 
 @[simp]
-theorem sumSpaceEmbed_besselPotentialToBesovTopSum (φ : ContDiffBump (0 : E))
-    (u : (besselPotential E F s₀ s₁ p).SumSpace) :
-    (besov F φ s₀ s₁ p ∞ ∞).sumSpaceEmbed (besselPotentialToBesovTopSum φ u) =
-      (besselPotential E F s₀ s₁ p).sumSpaceEmbed u := by
-  obtain ⟨u₀, u₁, rfl⟩ := (besselPotential E F s₀ s₁ p).exists_fstToSum_add_sndToSum_eq u
+theorem sumSpaceEmbed_besselPotentialSpaceToBesovTopSum (φ : ContDiffBump (0 : E))
+    (u : (besselPotentialSpace E F p s₀ s₁).SumSpace) :
+    (besov F φ s₀ s₁ p ∞ ∞).sumSpaceEmbed (besselPotentialSpaceToBesovTopSum φ u) =
+      (besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed u := by
+  obtain ⟨u₀, u₁, rfl⟩ := (besselPotentialSpace E F p s₀ s₁).exists_fstToSum_add_sndToSum_eq u
   simp
 
 end Couple
 
-/-! ### Real interpolation of `H^{s,p}` and the `L²` Sobolev scale -/
-
-section Interpolation
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
-  {s₀ s₁ θ : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)]
+/-! ### Real interpolation of `H^{s,p}` -/
 
 /-- Every tempered distribution in `B^{(1 - θ) s₀ + θ s₁}_{p,q}` lies in the sum space of
 `(H^{s₀,p}, H^{s₁,p})` when `s₀ ≠ s₁` and `0 < θ < 1`: it lies in `B^{s₀}_{p,1} + B^{s₁}_{p,1}`,
 which embeds into `H^{s₀,p} + H^{s₁,p}`. -/
-theorem mem_range_sumSpaceEmbed_besselPotential {φ : ContDiffBump (0 : E)}
-    (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) {u : 𝓢'(E, F)}
+theorem mem_range_sumSpaceEmbed_besselPotentialSpace {p q : ℝ≥0∞} [Fact (1 ≤ p)]
+    {φ : ContDiffBump (0 : E)} {s₀ s₁ θ : ℝ} (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) {u : 𝓢'(E, F)}
     (hu : u.MemBesov φ ((1 - θ) * s₀ + θ * s₁) p q) :
-    u ∈ range (besselPotential E F s₀ s₁ p).sumSpaceEmbed := by
+    u ∈ range (besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed := by
   obtain ⟨w, rfl⟩ := mem_range_sumSpaceEmbed_besov (q₀ := 1) (q₁ := 1) hs hθ hu
-  exact ⟨besovOneToBesselPotentialSum w, by simp⟩
+  exact ⟨besovOneToBesselPotentialSpaceSum w, by simp⟩
 
-/-- **Real interpolation of Bessel-potential spaces**, membership form
-(Bergh–Löfström, Theorem 6.4.5(4)): for `s₀ ≠ s₁`, `0 < θ < 1`, and `1 ≤ q`, an element of
-`H^{s₀,p} + H^{s₁,p}` lies in `(H^{s₀,p}, H^{s₁,p})_{θ,q}` if and only if its ambient tempered
-distribution lies in `B^{(1 - θ) s₀ + θ s₁}_{p,q}`. -/
-theorem mem_kMethod_besselPotential_iff (φ : ContDiffBump (0 : E))
-    (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) (hq : 1 ≤ q)
-    {u : (besselPotential E F s₀ s₁ p).SumSpace} :
-    u ∈ (besselPotential E F s₀ s₁ p).kMethod θ q ↔
-      ((besselPotential E F s₀ s₁ p).sumSpaceEmbed u).MemBesov
-        φ ((1 - θ) * s₀ + θ * s₁) p q := by
-  constructor
-  · intro hu
-    have htop : besselPotentialToBesovTopSum φ u ∈ (besov F φ s₀ s₁ p ∞ ∞).kMethod θ q :=
-      map_mem_kMethod (besselPotentialToBesovTopSum φ).toLinearMap
-        (T₀ := BesselPotentialSpace.toBesovSpace φ)
-        (T₁ := BesselPotentialSpace.toBesovSpace φ)
-        (fun x ↦ by simp) (fun x ↦ by simp) hu
-    simpa using (mem_kMethod_besov_iff hs hθ hq).1 htop
-  · intro hu
-    obtain ⟨w, hw⟩ := mem_range_sumSpaceEmbed_besov (q₀ := 1) (q₁ := 1) hs hθ hu
-    have hw_mem : w ∈ (besov F φ s₀ s₁ p 1 1).kMethod θ q :=
-      (mem_kMethod_besov_iff hs hθ hq).2 (hw.symm ▸ hu)
-    have himg : besovOneToBesselPotentialSum w ∈ (besselPotential E F s₀ s₁ p).kMethod θ q :=
-      map_mem_kMethod besovOneToBesselPotentialSum.toLinearMap
-        (T₀ := BesovSpace.toBesselPotentialSpace)
-        (T₁ := BesovSpace.toBesselPotentialSpace)
-        (fun x ↦ by simp) (fun x ↦ by simp) hw_mem
-    have hwu : besovOneToBesselPotentialSum w = u :=
-      (besselPotential E F s₀ s₁ p).sumSpace_ext (by simp [hw])
-    rwa [hwu] at himg
+section Interpolation
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] (φ : ContDiffBump (0 : E)) {s₀ s₁ θ : ℝ} {q : ℝ≥0∞}
 
 section Equiv
 
-variable [Fact (1 ≤ q)]
+variable [Fact (1 ≤ q)] (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1)
 
-private def besovOneToBesselPotentialKMethod {φ : ContDiffBump (0 : E)} :
+private def besovOneToBesselPotentialSpaceKMethod {φ : ContDiffBump (0 : E)} :
     (besov F φ s₀ s₁ p 1 1).KMethodSpace θ q →L[ℂ]
-      (besselPotential E F s₀ s₁ p).KMethodSpace θ q :=
-  KMethodSpace.map besovOneToBesselPotentialSum.toLinearMap
+      (besselPotentialSpace E F p s₀ s₁).KMethodSpace θ q :=
+  map besovOneToBesselPotentialSpaceSum.toLinearMap
     (T₀ := BesovSpace.toBesselPotentialSpace)
     (T₁ := BesovSpace.toBesselPotentialSpace)
     (fun x ↦ by simp) (fun x ↦ by simp)
 
-private def besselPotentialToBesovTopKMethod (φ : ContDiffBump (0 : E)) :
-    (besselPotential E F s₀ s₁ p).KMethodSpace θ q →L[ℂ]
+private def besselPotentialSpaceToBesovTopKMethod :
+    (besselPotentialSpace E F p s₀ s₁).KMethodSpace θ q →L[ℂ]
       (besov F φ s₀ s₁ p ∞ ∞).KMethodSpace θ q :=
-  KMethodSpace.map (besselPotentialToBesovTopSum φ).toLinearMap
-    (T₀ := BesselPotentialSpace.toBesovSpace φ)
-    (T₁ := BesselPotentialSpace.toBesovSpace φ)
+  map (besselPotentialSpaceToBesovTopSum φ).toLinearMap
+    (T₀ := toBesovSpace φ)
+    (T₁ := toBesovSpace φ)
     (fun x ↦ by simp) (fun x ↦ by simp)
 
 /-- **Real interpolation of Bessel-potential spaces** (Bergh–Löfström, Theorems 6.2.4 and
-6.4.5(4)). For distinct smoothness orders `s₀ ≠ s₁`, `0 < θ < 1`, and `1 ≤ p, q ≤ ∞`, the real
-interpolation space `(H^{s₀,p}(E, F), H^{s₁,p}(E, F))_{θ,q}` is isomorphic as a Banach space to
-`B^{(1 - θ) s₀ + θ s₁}_{p,q}(E, F)` via the ambient tempered distribution. -/
-def besselPotentialKMethodEquiv (φ : ContDiffBump (0 : E))
-    (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) :
-    (besselPotential E F s₀ s₁ p).KMethodSpace θ q ≃L[ℂ]
+6.4.5(4)). For `s₀ ≠ s₁`, `0 < θ < 1`, `1 ≤ p ≤ ∞` and `1 ≤ q ≤ ∞`, the real interpolation space
+`(H^{s₀,p}, H^{s₁,p})_{θ,q}` is the Besov space `B^{s_θ}_{p,q}` with `s_θ = (1 - θ) s₀ + θ s₁`,
+with equivalent norms. The isomorphism keeps the underlying tempered distribution
+(`TauCeti.CompatibleCouple.toDistr_besselPotentialSpaceKMethodEquiv_apply`). -/
+def besselPotentialSpaceKMethodEquiv :
+    (besselPotentialSpace E F p s₀ s₁).KMethodSpace θ q ≃L[ℂ]
       BesovSpace F φ ((1 - θ) * s₀ + θ * s₁) p q :=
   ContinuousLinearEquiv.equivOfInverse
     ((besovKMethodEquiv (q₀ := ∞) (q₁ := ∞) hs hθ).toContinuousLinearMap.comp
-      (besselPotentialToBesovTopKMethod φ))
-    (besovOneToBesselPotentialKMethod.comp
+      (besselPotentialSpaceToBesovTopKMethod φ))
+    (besovOneToBesselPotentialSpaceKMethod.comp
       (besovKMethodEquiv (q₀ := 1) (q₁ := 1) hs hθ).symm.toContinuousLinearMap)
     (fun u ↦ KMethodSpace.ext <|
-      (besselPotential E F s₀ s₁ p).sumSpace_ext <| by
-        simp [besovOneToBesselPotentialKMethod, besselPotentialToBesovTopKMethod])
+      (besselPotentialSpace E F p s₀ s₁).sumSpace_ext <| by
+        simp [besovOneToBesselPotentialSpaceKMethod, besselPotentialSpaceToBesovTopKMethod])
     (fun v ↦ BesovSpace.ext <| by
-      simp [besovOneToBesselPotentialKMethod, besselPotentialToBesovTopKMethod])
+      simp [besovOneToBesselPotentialSpaceKMethod, besselPotentialSpaceToBesovTopKMethod])
 
 @[simp]
-theorem toDistr_besselPotentialKMethodEquiv (φ : ContDiffBump (0 : E))
-    (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1)
-    (u : (besselPotential E F s₀ s₁ p).KMethodSpace θ q) :
-    (besselPotentialKMethodEquiv φ hs hθ u).toDistr =
-      (besselPotential E F s₀ s₁ p).sumSpaceEmbed (toSumₗ u) := by
-  simp [besselPotentialKMethodEquiv, besselPotentialToBesovTopKMethod]
+theorem toDistr_besselPotentialSpaceKMethodEquiv_apply
+    (u : (besselPotentialSpace E F p s₀ s₁).KMethodSpace θ q) :
+    (besselPotentialSpaceKMethodEquiv φ hs hθ u).toDistr =
+      (besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed (toSumₗ u) := by
+  simp [besselPotentialSpaceKMethodEquiv, besselPotentialSpaceToBesovTopKMethod]
 
 @[simp]
-theorem sumSpaceEmbed_toSumₗ_besselPotentialKMethodEquiv_symm (φ : ContDiffBump (0 : E))
-    (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1)
+theorem sumSpaceEmbed_toSumₗ_besselPotentialSpaceKMethodEquiv_symm_apply
     (v : BesovSpace F φ ((1 - θ) * s₀ + θ * s₁) p q) :
-    (besselPotential E F s₀ s₁ p).sumSpaceEmbed
-        (toSumₗ ((besselPotentialKMethodEquiv φ hs hθ).symm v)) =
-      v.toDistr := by
-  rw [← toDistr_besselPotentialKMethodEquiv φ hs hθ, ContinuousLinearEquiv.apply_symm_apply]
+    (besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed
+        (toSumₗ ((besselPotentialSpaceKMethodEquiv φ hs hθ).symm v)) = v.toDistr := by
+  rw [← toDistr_besselPotentialSpaceKMethodEquiv_apply φ hs hθ,
+    ContinuousLinearEquiv.apply_symm_apply]
 
 end Equiv
 
+/-- **Real interpolation of Bessel-potential spaces**, membership form: for `s₀ ≠ s₁`,
+`0 < θ < 1` and `1 ≤ q`, an element `u` of `H^{s₀,p} + H^{s₁,p}` lies in
+`(H^{s₀,p}, H^{s₁,p})_{θ,q}` exactly when its tempered distribution lies in the Besov space
+`B^{s_θ}_{p,q}`, where `s_θ = (1 - θ) s₀ + θ s₁`. -/
+theorem mem_kMethod_besselPotentialSpace_iff (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) (hq : 1 ≤ q)
+    {u : (besselPotentialSpace E F p s₀ s₁).SumSpace} :
+    u ∈ (besselPotentialSpace E F p s₀ s₁).kMethod θ q ↔
+      ((besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed u).MemBesov φ
+        ((1 - θ) * s₀ + θ * s₁) p q := by
+  have : Fact (1 ≤ q) := ⟨hq⟩
+  refine ⟨fun hu ↦ ?_, fun hu ↦ ?_⟩
+  · simpa using (besselPotentialSpaceKMethodEquiv φ hs hθ (KMethodSpace.mk u hu)).memBesov_toDistr
+  · have h := sumSpaceEmbed_toSumₗ_besselPotentialSpaceKMethodEquiv_symm_apply φ hs hθ
+      hu.toBesovSpace
+    rw [MemBesov.toDistr_toBesovSpace] at h
+    rw [← sumSpace_ext _ h]
+    exact toSumₗ_mem _
+
+/-- **Real interpolation of Bessel-potential spaces**, image form: for `s₀ ≠ s₁`, `0 < θ < 1`
+and `1 ≤ q`, a tempered distribution lies in the Besov space `B^{s_θ}_{p,q}`, where
+`s_θ = (1 - θ) s₀ + θ s₁`, exactly when it is the image of an element of
+`(H^{s₀,p}, H^{s₁,p})_{θ,q}`. -/
+theorem memBesov_iff_exists_mem_kMethod_besselPotentialSpace (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1)
+    (hq : 1 ≤ q) {v : 𝓢'(E, F)} :
+    v.MemBesov φ ((1 - θ) * s₀ + θ * s₁) p q ↔
+      ∃ u ∈ (besselPotentialSpace E F p s₀ s₁).kMethod θ q,
+        (besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed u = v := by
+  refine ⟨fun hv ↦ ?_, ?_⟩
+  · have : Fact (1 ≤ q) := ⟨hq⟩
+    exact ⟨_, toSumₗ_mem ((besselPotentialSpaceKMethodEquiv φ hs hθ).symm hv.toBesovSpace),
+      by simp⟩
+  · rintro ⟨u, hu, rfl⟩
+    exact (mem_kMethod_besselPotentialSpace_iff φ hs hθ hq).1 hu
+
 end Interpolation
+
+end Banach
+
+/-! ### The `L²` Hilbert-space Sobolev scale -/
 
 section Hilbert
 
-variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-  {s₀ s₁ θ : ℝ}
+variable {E H : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+  [CompleteSpace H] {s₀ s₁ θ : ℝ}
 
 /-- Every tempered distribution in `H^{(1 - θ) s₀ + θ s₁}(E, H)` lies in the sum space of
 `(H^{s₀}(E, H), H^{s₁}(E, H))` when `s₀ ≠ s₁` and `0 < θ < 1`. -/
-theorem mem_range_sumSpaceEmbed_besselPotential_two (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1)
+theorem mem_range_sumSpaceEmbed_besselPotentialSpace_two (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1)
     {u : 𝓢'(E, H)} (hu : u.MemSobolev ((1 - θ) * s₀ + θ * s₁) 2) :
-    u ∈ range (besselPotential E H s₀ s₁ 2).sumSpaceEmbed :=
-  mem_range_sumSpaceEmbed_besselPotential hs hθ
+    u ∈ range (besselPotentialSpace E H 2 s₀ s₁).sumSpaceEmbed :=
+  mem_range_sumSpaceEmbed_besselPotentialSpace hs hθ
     ((memBesov_two_two_iff_memSobolev (default : ContDiffBump (0 : E))).2 hu)
 
 /-- **Real interpolation of Hilbert-space Sobolev spaces**, membership form: for `s₀ ≠ s₁` and
 `0 < θ < 1`, an element of `H^{s₀}(E, H) + H^{s₁}(E, H)` lies in
 `(H^{s₀}(E, H), H^{s₁}(E, H))_{θ,2}` if and only if its ambient tempered distribution lies in
 `H^{(1 - θ) s₀ + θ s₁}(E, H)`. -/
-theorem mem_kMethod_besselPotential_two_iff (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1)
-    {u : (besselPotential E H s₀ s₁ 2).SumSpace} :
-    u ∈ (besselPotential E H s₀ s₁ 2).kMethod θ 2 ↔
-      ((besselPotential E H s₀ s₁ 2).sumSpaceEmbed u).MemSobolev
+theorem mem_kMethod_besselPotentialSpace_two_iff (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1)
+    {u : (besselPotentialSpace E H 2 s₀ s₁).SumSpace} :
+    u ∈ (besselPotentialSpace E H 2 s₀ s₁).kMethod θ 2 ↔
+      ((besselPotentialSpace E H 2 s₀ s₁).sumSpaceEmbed u).MemSobolev
         ((1 - θ) * s₀ + θ * s₁) 2 := by
-  rw [mem_kMethod_besselPotential_iff (default : ContDiffBump (0 : E)) hs hθ
+  rw [mem_kMethod_besselPotentialSpace_iff (default : ContDiffBump (0 : E)) hs hθ
     (Fact.out : (1 : ℝ≥0∞) ≤ 2), memBesov_two_two_iff_memSobolev]
+
+/-- **Real interpolation of Hilbert-space Sobolev spaces**, image form: for `s₀ ≠ s₁` and
+`0 < θ < 1`, a tempered distribution lies in `H^{(1 - θ) s₀ + θ s₁}(E, H)` if and only if it is the
+image of an element of `(H^{s₀}(E, H), H^{s₁}(E, H))_{θ,2}`. -/
+theorem memSobolev_iff_exists_mem_kMethod_besselPotentialSpace_two (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1)
+    {v : 𝓢'(E, H)} :
+    v.MemSobolev ((1 - θ) * s₀ + θ * s₁) 2 ↔
+      ∃ u ∈ (besselPotentialSpace E H 2 s₀ s₁).kMethod θ 2,
+        (besselPotentialSpace E H 2 s₀ s₁).sumSpaceEmbed u = v := by
+  rw [← memBesov_two_two_iff_memSobolev (default : ContDiffBump (0 : E)),
+    memBesov_iff_exists_mem_kMethod_besselPotentialSpace _ hs hθ (Fact.out : (1 : ℝ≥0∞) ≤ 2)]
 
 /-- **Real interpolation of Hilbert-space Sobolev spaces.** For distinct orders `s₀ ≠ s₁` and
 `0 < θ < 1`, the real interpolation space `(H^{s₀}(E, H), H^{s₁}(E, H))_{θ,2}` is isomorphic as a
 Banach space to `H^{(1 - θ) s₀ + θ s₁}(E, H)` via the ambient tempered distribution. -/
-def besselPotentialHilbertKMethodEquiv (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) :
-    (besselPotential E H s₀ s₁ 2).KMethodSpace θ 2 ≃L[ℂ]
+def besselPotentialSpaceHilbertKMethodEquiv (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) :
+    (besselPotentialSpace E H 2 s₀ s₁).KMethodSpace θ 2 ≃L[ℂ]
       H^{(1 - θ) * s₀ + θ * s₁}(E, H) :=
-  (besselPotentialKMethodEquiv (default : ContDiffBump (0 : E)) hs hθ).trans
+  (besselPotentialSpaceKMethodEquiv (default : ContDiffBump (0 : E)) hs hθ).trans
     (BesovSpace.besselPotentialSpaceEquiv H (default : ContDiffBump (0 : E))
       ((1 - θ) * s₀ + θ * s₁))
 
 @[simp]
-theorem toDistr_besselPotentialHilbertKMethodEquiv (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1)
-    (u : (besselPotential E H s₀ s₁ 2).KMethodSpace θ 2) :
-    (besselPotentialHilbertKMethodEquiv hs hθ u).toDistr =
-      (besselPotential E H s₀ s₁ 2).sumSpaceEmbed (toSumₗ u) := by
-  simp [besselPotentialHilbertKMethodEquiv]
+theorem toDistr_besselPotentialSpaceHilbertKMethodEquiv_apply (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1)
+    (u : (besselPotentialSpace E H 2 s₀ s₁).KMethodSpace θ 2) :
+    (besselPotentialSpaceHilbertKMethodEquiv hs hθ u).toDistr =
+      (besselPotentialSpace E H 2 s₀ s₁).sumSpaceEmbed (toSumₗ u) := by
+  simp [besselPotentialSpaceHilbertKMethodEquiv]
 
 @[simp]
-theorem sumSpaceEmbed_toSumₗ_besselPotentialHilbertKMethodEquiv_symm
+theorem sumSpaceEmbed_toSumₗ_besselPotentialSpaceHilbertKMethodEquiv_symm_apply
     (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1)
     (v : H^{(1 - θ) * s₀ + θ * s₁}(E, H)) :
-    (besselPotential E H s₀ s₁ 2).sumSpaceEmbed
-        (toSumₗ ((besselPotentialHilbertKMethodEquiv hs hθ).symm v)) =
+    (besselPotentialSpace E H 2 s₀ s₁).sumSpaceEmbed
+        (toSumₗ ((besselPotentialSpaceHilbertKMethodEquiv hs hθ).symm v)) =
       v.toDistr := by
-  rw [← toDistr_besselPotentialHilbertKMethodEquiv hs hθ, ContinuousLinearEquiv.apply_symm_apply]
+  rw [← toDistr_besselPotentialSpaceHilbertKMethodEquiv_apply hs hθ,
+    ContinuousLinearEquiv.apply_symm_apply]
 
 end Hilbert
 
-end TauCeti.CompatibleCouple
+end CompatibleCouple
+
+end TauCeti
