@@ -134,7 +134,8 @@ lemma singularHomologyIsoOfContractibleSpace_hom_naturality {P' : TopPair.{w}} (
     [ContractibleSpace P.snd] [ContractibleSpace P'.snd] (k : ℕ) :
     ((AlgebraicTopology.singularHomologyFunctor A (k + 1)).obj R).map (Hom.fst f) ≫
         (P'.singularHomologyIsoOfContractibleSpace R k).hom =
-      (P.singularHomologyIsoOfContractibleSpace R k).hom ≫ singularHomologyMap f R (k + 1) :=
+      (P.singularHomologyIsoOfContractibleSpace R k).hom ≫
+        TopPair.singularHomologyMap f R (k + 1) :=
   -- `singularHomologyFunctor` unfolds to the homology of the singular simplicial set, which is the
   -- source of the quotient map `singularHomologyπ`, so this is `singularHomologyπ_naturality` up to
   -- that unfolding.
@@ -184,12 +185,13 @@ lemma singularHomologyIsoOfSubsetSingleton_hom_naturality {Y : Type w} [Topologi
       (singularHomologyIsoOfSubsetSingleton R n x).hom ≫
         TopPair.singularHomologyMap (TopPair.ofSubsetMap (TopCat.ofHom f)
           (Set.mapsTo_singleton.2 (Set.mem_singleton_iff.2 hf))) R (n + 1) := by
-  have h := SSetPair.homologyπ_naturality (TopPair.toSSetPair.map (TopPair.ofSubsetMap
-    (TopCat.ofHom f) (Set.mapsTo_singleton.2 (Set.mem_singleton_iff.2 hf)))) R (n + 1)
-  rw [TopPair.toSSetPair_map_right, TopPair.ofSubsetMap_fst] at h
-  -- `singularHomologyFunctor` unfolds to the homology of the singular simplicial set, which is the
-  -- source of the quotient map `singularHomologyπ`, so `h` is the claim up to that unfolding.
-  exact h
+  -- Instance search does not see through the subspaces of `TopPair.ofSubset`, so the
+  -- contractibility of the points is supplied explicitly.
+  have h := @TopPair.singularHomologyIsoOfContractibleSpace_hom_naturality _ _ _ _ _ R _
+    (TopPair.ofSubsetMap (TopCat.ofHom f) (Set.mapsTo_singleton.2 (Set.mem_singleton_iff.2 hf)))
+    (inferInstanceAs (ContractibleSpace ({x} : Set X)))
+    (inferInstanceAs (ContractibleSpace ({y} : Set Y))) n
+  rwa [TopPair.ofSubsetMap_fst] at h
 
 end TauCeti
 
