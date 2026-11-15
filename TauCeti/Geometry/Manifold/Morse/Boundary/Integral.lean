@@ -27,8 +27,8 @@ The coefficient of `q` in the boundary of `p`
 trajectories from `p` to `q` (`TauCeti.IsAdaptedPseudoGradient.signedTrajectoryCount`) when
 `ind p = ind q + 1`, and `0` otherwise. The boundary
 (`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary`) is its linear extension to the free
-`R`-module on the critical points, for any ring `R`. It lowers the index by one. It is compatible
-with every change of coefficients along a ring homomorphism
+`R`-module on the critical points, for any ring `R`. It lowers the index by one and the critical
+value. It is compatible with every change of coefficients along an additive map
 (`TauCeti.IsAdaptedPseudoGradient.mapRange_signedMorseBoundary`); in particular the integral
 boundary is the boundary with coefficients in `ℤ`. Under the Morse–Smale condition, the boundary
 with coefficients in `ZMod 2` is the mod-two Morse boundary, whatever the orientations
@@ -68,6 +68,8 @@ spaces of index-two trajectories, is not proved here; the mod-two statement is
 * `TauCeti.IsAdaptedPseudoGradient.nonempty_morseOrientation`: orientation data exist.
 * `TauCeti.IsAdaptedPseudoGradient.morseIndex_eq_add_one_of_signedMorseBoundaryCoeff_ne_zero`:
   the boundary lowers the index by one.
+* `TauCeti.IsAdaptedPseudoGradient.value_lt_of_signedMorseBoundaryCoeff_ne_zero`: the boundary
+  lowers the critical value.
 * `TauCeti.IsAdaptedPseudoGradient.mapRange_signedMorseBoundary`: change of coefficients.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundary_eq_morseBoundary`: with
   coefficients in `ZMod 2` it is the mod-two Morse boundary.
@@ -101,6 +103,7 @@ variable (f X) in
 Morse chart in which `X` is the linear field `z ↦ (-wᵢ zᵢ)ᵢ`, and an orientation of its space of
 coordinates of negative weight. The chart identifies this space with the tangent space at `p` of
 the unstable manifold of `p`, so the orientation orients the unstable manifold. -/
+@[ext]
 structure MorseOrientation where
   /-- The Morse chart at each critical point. -/
   chart (p : criticalPoints 𝓘(ℝ, E) f) : MorseChart E f p
@@ -161,22 +164,22 @@ open scoped Classical in
 /-- **Any two choices of orientations in the same Morse charts differ by a reversal**, on the set
 of critical points where they disagree: any two orientations of a finite-dimensional real vector
 space are equal or opposite. -/
-theorem exists_reverse_eq (o : (p : criticalPoints 𝓘(ℝ, E) f) →
-    Orientation ℝ ({i // (𝔬.chart p).weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p))) :
-    ∃ S : Set (criticalPoints 𝓘(ℝ, E) f), 𝔬.reverse S = { 𝔬 with orientation := o } := by
-  refine ⟨{p | o p ≠ 𝔬.orientation p}, ?_⟩
-  cases 𝔬 with
-  | mk chart h o₀ =>
-    simp only [reverse]
-    congr 1
-    funext p
-    by_cases hp : o p = o₀ p
-    · simp only [Set.mem_ofPred_eq, hp, ne_eq, not_true_eq_false, ↓reduceIte]
-    · simp only [Set.mem_ofPred_eq, hp, ne_eq, not_false_eq_true, ↓reduceIte]
-      have hcard : Fintype.card (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) =
-          Module.finrank ℝ ({i // (chart p).weight i < 0} → ℝ) := by
-        rw [Fintype.card_fin, (chart p).finrank_negativeWeight_fun]
-      exact (((o p).eq_or_eq_neg (o₀ p) hcard).resolve_left hp).symm
+theorem exists_reverse_eq {𝔬' : MorseOrientation f X} (h : 𝔬.chart = 𝔬'.chart) :
+    ∃ S : Set (criticalPoints 𝓘(ℝ, E) f), 𝔬.reverse S = 𝔬' := by
+  obtain ⟨chart, hc, o₀⟩ := 𝔬
+  obtain ⟨chart', hc', o⟩ := 𝔬'
+  obtain rfl : chart = chart' := h
+  refine ⟨{p | o p ≠ o₀ p}, ?_⟩
+  simp only [reverse]
+  congr 1
+  funext p
+  by_cases hp : o p = o₀ p
+  · simp only [Set.mem_ofPred_eq, hp, ne_eq, not_true_eq_false, ↓reduceIte]
+  · simp only [Set.mem_ofPred_eq, hp, ne_eq, not_false_eq_true, ↓reduceIte]
+    have hcard : Fintype.card (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) =
+        Module.finrank ℝ ({i // (chart p).weight i < 0} → ℝ) := by
+      rw [Fintype.card_fin, (chart p).finrank_negativeWeight_fun]
+    exact (((o p).eq_or_eq_neg (o₀ p) hcard).resolve_left hp).symm
 
 end MorseOrientation
 
@@ -222,9 +225,28 @@ theorem morseIndex_eq_add_one_of_signedMorseBoundaryCoeff_ne_zero
   by_contra h
   exact hpq (signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one h)
 
-/-- **Reversing orientations changes the signs of the boundary coefficients.** If the
-orientations are reversed at the critical points of `S`, the coefficient of `q` in the boundary of
-`p` changes sign exactly when one of `p` and `q` lies in `S`. -/
+/-- A nonzero boundary coefficient joins critical points with strictly decreasing critical
+value. -/
+theorem value_lt_of_signedMorseBoundaryCoeff_ne_zero {p q : criticalPoints 𝓘(ℝ, E) f}
+    (hpq : hX.signedMorseBoundaryCoeff 𝔬 p q ≠ 0) : f q < f p := by
+  have hind := morseIndex_eq_add_one_of_signedMorseBoundaryCoeff_ne_zero hpq
+  rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hind, signedTrajectoryCount_def] at hpq
+  obtain ⟨z, hz, -⟩ := exists_ne_zero_of_finsum_mem_ne_zero hpq
+  have hne : (p : M) ≠ q := fun he ↦ by
+    rw [he] at hind
+    omega
+  exact hX.value_lt_of_mem_morseTrajectorySlice hne hz
+
+/-- The boundary coefficient vanishes unless the critical value drops. -/
+theorem signedMorseBoundaryCoeff_eq_zero_of_value_le {p q : criticalPoints 𝓘(ℝ, E) f}
+    (hpq : f p ≤ f q) : hX.signedMorseBoundaryCoeff 𝔬 p q = 0 := by
+  by_contra hne
+  exact (value_lt_of_signedMorseBoundaryCoeff_ne_zero hne).not_ge hpq
+
+/-- **Reversing orientations changes the signs of the boundary coefficients.** Reversing the
+orientations at the critical points of `S` multiplies the coefficient of `q` in the boundary of `p`
+by `-1` for each of `p` and `q` that lies in `S`: the coefficient is negated when exactly one of
+`p` and `q` lies in `S`, and unchanged otherwise. -/
 theorem signedMorseBoundaryCoeff_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f))
     [DecidablePred (· ∈ S)] (p q : criticalPoints 𝓘(ℝ, E) f) :
     hX.signedMorseBoundaryCoeff (𝔬.reverse S) p q =
@@ -255,31 +277,33 @@ noncomputable def signedMorseBoundary (hf : IsMorse 𝓘(ℝ, E) f) (R : Type*) 
 variable (hf : IsMorse 𝓘(ℝ, E) f) {R : Type*} [Ring R]
 
 /-- The coefficient of `q` in the Morse boundary of a chain `c` is the sum over the critical
-points `p` of `c p` times the signed count of the trajectories from `p` to `q`. -/
+points `p` of `c p` times the boundary coefficient `signedMorseBoundaryCoeff` of `q` in the
+boundary of `p`. -/
 theorem signedMorseBoundary_apply (c : criticalPoints 𝓘(ℝ, E) f →₀ R)
     (q : criticalPoints 𝓘(ℝ, E) f) :
     hX.signedMorseBoundary 𝔬 hf R c q =
       c.sum fun p a ↦ a * (hX.signedMorseBoundaryCoeff 𝔬 p q : R) := by
   simp [signedMorseBoundary, Finsupp.linearCombination_apply, Finsupp.ofSupportFinite_coe]
 
-/-- The coefficient of `q` in the Morse boundary of `a • p` is `a` times the signed count of the
-trajectories from `p` to `q`. -/
+/-- The coefficient of `q` in the Morse boundary of `a • p` is `a` times the boundary coefficient
+`signedMorseBoundaryCoeff` of `q` in the boundary of `p`. -/
 @[simp]
 theorem signedMorseBoundary_single_apply (p q : criticalPoints 𝓘(ℝ, E) f) (a : R) :
     hX.signedMorseBoundary 𝔬 hf R (Finsupp.single p a) q =
       a * (hX.signedMorseBoundaryCoeff 𝔬 p q : R) := by
   rw [signedMorseBoundary_apply, Finsupp.sum_single_index (zero_mul _)]
 
-/-- **Change of coefficients.** A ring homomorphism `g : R →+* R'`, applied to the coefficients of
-the chains, intertwines the Morse boundaries with coefficients in `R` and in `R'`. -/
-theorem mapRange_signedMorseBoundary {R' : Type*} [Ring R'] (g : R →+* R')
-    (c : criticalPoints 𝓘(ℝ, E) f →₀ R) :
+/-- **Change of coefficients.** An additive map `g : R → R'`, for instance a ring homomorphism,
+applied to the coefficients of the chains, intertwines the Morse boundaries with coefficients in `R`
+and in `R'`: the boundary coefficients are integers, and `g` commutes with integer multiples. -/
+theorem mapRange_signedMorseBoundary {R' F : Type*} [Ring R'] [FunLike F R R']
+    [AddMonoidHomClass F R R'] (g : F) (c : criticalPoints 𝓘(ℝ, E) f →₀ R) :
     Finsupp.mapRange g (map_zero g) (hX.signedMorseBoundary 𝔬 hf R c) =
       hX.signedMorseBoundary 𝔬 hf R' (Finsupp.mapRange g (map_zero g) c) := by
   ext q
   rw [Finsupp.mapRange_apply, signedMorseBoundary_apply, signedMorseBoundary_apply,
     Finsupp.sum_mapRange_index (fun _ ↦ zero_mul _), map_finsuppSum]
-  simp only [map_mul, map_intCast]
+  simp only [← zsmul_eq_mul', map_zsmul]
 
 /-- **Reversing orientations conjugates the boundary.** The Morse boundary for the orientations
 reversed at the critical points of `S` is the conjugate of the original boundary by the
@@ -297,8 +321,9 @@ theorem signedMorseBoundary_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f))
   by_cases hp : p ∈ S <;> by_cases hq : q ∈ S <;> simp [hp, hq]
 
 /-- **The mod-two reduction of the boundary coefficients.** Under the Morse–Smale condition, the
-signed count of the trajectories from `p` to `q`, reduced modulo two, is the coefficient of `q` in
-the mod-two Morse boundary of `p`, whatever the orientations. -/
+integral boundary coefficient `signedMorseBoundaryCoeff` of `q` in the boundary of `p`, reduced
+modulo two, is the coefficient of `q` in the mod-two Morse boundary of `p`, whatever the
+orientations. -/
 theorem IsMorseSmale.intCast_signedMorseBoundaryCoeff (h : hX.IsMorseSmale)
     (p q : criticalPoints 𝓘(ℝ, E) f) :
     (hX.signedMorseBoundaryCoeff 𝔬 p q : ZMod 2) = h.morseBoundaryCoeff hf p q := by

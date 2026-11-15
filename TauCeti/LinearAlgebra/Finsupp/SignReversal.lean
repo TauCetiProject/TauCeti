@@ -28,9 +28,15 @@ and keeps the others.
 ## Main results
 
 * `Finsupp.signEquiv_single`, `Finsupp.signEquiv_apply`: the values of `signEquiv`.
-* `Finsupp.signEquiv_signEquiv`, `Finsupp.signEquiv_symm`: it is an involution.
+* `Finsupp.signEquiv_signEquiv`, `Finsupp.signEquiv_symm`, `Finsupp.signEquiv_trans_self`: it is
+  an involution.
+* `Finsupp.signEquiv_one`, `Finsupp.signEquiv_trans`: the trivial signs give the identity, and
+  composing sign changes multiplies the signs.
+* `Finsupp.support_signEquiv`: the sign change keeps the support.
 * `Finsupp.signReversal_single`, `Finsupp.signReversal_apply`,
-  `Finsupp.signReversal_signReversal`, `Finsupp.signReversal_symm`: the same for `signReversal`.
+  `Finsupp.signReversal_signReversal`, `Finsupp.signReversal_symm`,
+  `Finsupp.signReversal_trans_self`, `Finsupp.signReversal_empty`,
+  `Finsupp.support_signReversal`: the same for `signReversal`.
 -/
 
 public section
@@ -89,6 +95,32 @@ theorem signEquiv_signEquiv (c : α →₀ A) : signEquiv R ε (signEquiv R ε c
 theorem signEquiv_symm : (signEquiv (A := A) R ε).symm = signEquiv R ε :=
   LinearEquiv.ext fun c ↦ (signEquiv R ε).symm_apply_eq.2 (signEquiv_signEquiv c).symm
 
+/-- The sign change composed with itself is the identity. -/
+@[simp]
+theorem signEquiv_trans_self :
+    (signEquiv (A := A) R ε).trans (signEquiv R ε) = LinearEquiv.refl R (α →₀ A) :=
+  LinearEquiv.ext signEquiv_signEquiv
+
+/-- Composing the sign changes by `ε` and by `η` is the sign change by `ε * η`. -/
+theorem signEquiv_trans (η : α → ℤˣ) :
+    (signEquiv (A := A) R ε).trans (signEquiv R η) = signEquiv R (ε * η) :=
+  LinearEquiv.ext fun c ↦ ext fun q ↦ by
+    rw [LinearEquiv.trans_apply, signEquiv_apply, signEquiv_apply, signEquiv_apply, Pi.mul_apply,
+      mul_comm, Units.val_mul, mul_smul]
+
+/-- The sign change keeps the support. -/
+@[simp]
+theorem support_signEquiv (c : α →₀ A) : (signEquiv R ε c).support = c.support := by
+  ext q
+  rw [mem_support_iff, mem_support_iff, signEquiv_apply]
+  rcases Int.units_eq_one_or (ε q) with h | h <;> simp [h]
+
+variable (R) in
+/-- The sign change by the trivial signs is the identity. -/
+@[simp]
+theorem signEquiv_one : signEquiv R (1 : α → ℤˣ) = LinearEquiv.refl R (α →₀ A) :=
+  LinearEquiv.ext fun c ↦ ext fun q ↦ by simp
+
 end SignEquiv
 
 section SignReversal
@@ -126,6 +158,24 @@ theorem signReversal_signReversal (c : α →₀ A) :
 @[simp]
 theorem signReversal_symm : (signReversal (A := A) R S).symm = signReversal R S :=
   signEquiv_symm
+
+/-- The sign reversal composed with itself is the identity. -/
+@[simp]
+theorem signReversal_trans_self :
+    (signReversal (A := A) R S).trans (signReversal R S) = LinearEquiv.refl R (α →₀ A) :=
+  signEquiv_trans_self
+
+/-- The sign reversal keeps the support. -/
+@[simp]
+theorem support_signReversal (c : α →₀ A) : (signReversal R S c).support = c.support :=
+  support_signEquiv c
+
+variable (R) in
+/-- The sign reversal on the empty set is the identity. -/
+@[simp]
+theorem signReversal_empty [DecidablePred (· ∈ (∅ : Set α))] :
+    signReversal R (∅ : Set α) = LinearEquiv.refl R (α →₀ A) :=
+  LinearEquiv.ext fun c ↦ ext fun q ↦ by simp
 
 end SignReversal
 
