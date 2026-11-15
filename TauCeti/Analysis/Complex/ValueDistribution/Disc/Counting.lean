@@ -29,25 +29,30 @@ origin, while poles on the boundary circle `sphere 0 r` (`r > 0`) contribute `lo
 ## Main definitions and results
 
 * `TauCeti.discCounting`: the disc-local Nevanlinna pole-counting function.
-* `MeromorphicOn.discCounting_eq_finsum_divisor_ball`: for `0 < r`, `discCounting f r` depends only
-  on the open-ball pole divisor `(MeromorphicOn.divisor f (ball 0 r))⁻`; boundary poles on
-  `sphere 0 r` have weight zero.
+* `MeromorphicOn.discCounting_eq_finsum_divisor_ball_add`: `discCounting f r` depends only on the
+  open-ball pole divisor `(MeromorphicOn.divisor f (ball 0 r))⁻`; boundary poles on `sphere 0 r`
+  have weight zero.
 * `Meromorphic.discCounting_eq_logCounting_top`: for globally meromorphic `f` and `0 ≤ r`,
   `discCounting f r = ValueDistribution.logCounting f ⊤ r`.
-* `Filter.EventuallyEq.discCounting_eq` and `MeromorphicOn.discCounting_congr_codiscreteWithin`:
-  local congruence for functions agreeing near `closedBall 0 r` or away from a discrete subset of
-  `ball 0 r`.
-* `MeromorphicOn.discCounting_pow` and `MeromorphicOn.discCounting_add_analyticOnNhd`: power scaling
+* `TauCeti.discCounting_congr_negPart_divisor`,
+  `MeromorphicOn.discCounting_congr_negPart_divisor_ball`, `Filter.EventuallyEq.discCounting_eq`,
+  and `MeromorphicOn.discCounting_congr_codiscreteWithin`: local congruence from pole-divisor,
+  germ, or codiscrete agreement.
+* `MeromorphicOn.discCounting_pow`, `AnalyticOnNhd.discCounting_add_right`, and
+  `AnalyticOnNhd.discCounting_add_left`: power scaling
   `discCounting (f ^ n) r = n * discCounting f r` and invariance under adding an analytic function.
-* `MeromorphicOn.discCounting_mono`: radial monotonicity of `discCounting f` on `(0, R]`.
+* `MeromorphicOn.discCounting_mono`, `MeromorphicOn.discCounting_monotoneOn_Ioc`, and
+  `MeromorphicOn.discCounting_monotoneOn_Ioo`: radial monotonicity of `discCounting f`.
 * `TauCeti.discCounting_nonneg_of_meromorphicOrderAt_nonneg`: nonnegativity `0 ≤ discCounting f r`
   whenever `0 ≤ meromorphicOrderAt f 0` (including infinite order `⊤`).
-* `MeromorphicOn.discCounting_eq_zero_iff_meromorphicOrderAt_nonneg`,
+* `TauCeti.discCounting_eq_zero_of_meromorphicOrderAt_nonneg`, `AnalyticOnNhd.discCounting_eq_zero`,
+  `DifferentiableOn.discCounting_eq_zero`,
+  `MeromorphicOn.discCounting_eq_zero_iff_meromorphicOrderAt_nonneg`,
   `MeromorphicOn.discCounting_eq_zero_iff_exists_analyticAt`,
   `MeromorphicOn.discCounting_eq_zero_iff_analyticOnNhd_of_continuousAt`, and
   `MeromorphicNFOn.discCounting_eq_zero_iff_analyticOnNhd`: vanishing criteria for `discCounting`.
-* `MeromorphicOn.circleAverage_log_norm_eq_discCounting_inv_sub`: the disc-local Jensen identity
-  `circleAverage (log ‖f ·‖) 0 r = discCounting f⁻¹ r - discCounting f r + log ‖c(f, 0)‖`.
+* `MeromorphicOn.circleAverage_log_norm_eq_discCounting_inv_sub_add`: the disc-local Jensen
+  identity `circleAverage (log ‖f ·‖) 0 r = discCounting f⁻¹ r - discCounting f r + log ‖c(f, 0)‖`.
 
 ## Implementation notes
 
@@ -73,6 +78,19 @@ section NormedField
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
+/-- Each off-centre radial logarithmic weight `D(z) * log (r * ‖z‖⁻¹)` is nonnegative for a
+nonnegative `locallyFinsuppWithin` supported inside `closedBall 0 r` (at `z = 0`, `log 0 = 0`). -/
+private lemma locallyFinsuppWithin_mul_log_nonneg {U : Set 𝕜} {r : ℝ}
+    (hU : U ⊆ closedBall 0 r) {D : Function.locallyFinsuppWithin U ℤ} (hD : 0 ≤ D) (z : 𝕜) :
+    0 ≤ ((D z : ℤ) : ℝ) * Real.log (r * ‖z‖⁻¹) := by
+  by_cases hz0 : z = 0
+  · simp [hz0]
+  by_cases hzu : z ∈ U
+  · refine mul_nonneg (Int.cast_nonneg (hD z)) (Real.log_nonneg ?_)
+    rw [← div_eq_mul_inv, one_le_div (norm_pos_iff.2 hz0)]
+    exact mem_closedBall_zero_iff.1 (hU hzu)
+  · simp [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hzu]
+
 namespace TauCeti
 
 /-- The disc-local Nevanlinna pole-counting function on `closedBall 0 r`:
@@ -90,8 +108,9 @@ theorem discCounting_def (f : 𝕜 → E) (r : ℝ) :
         (((MeromorphicOn.divisor f (closedBall 0 r))⁻ 0 : ℤ) : ℝ) * Real.log r := by
   rfl
 
-/-- Unfolding `discCounting` in terms of `max 0 (-MeromorphicOn.divisor f (closedBall 0 r) z)`. -/
-theorem discCounting_eq_finsum_max (f : 𝕜 → E) (r : ℝ) :
+/-- Unfolding `discCounting` in terms of `max 0 (-MeromorphicOn.divisor f (closedBall 0 r) z)` plus
+the origin pole term. -/
+theorem discCounting_eq_finsum_max_add (f : 𝕜 → E) (r : ℝ) :
     discCounting f r =
       (∑ᶠ z, ((max 0 (-MeromorphicOn.divisor f (closedBall 0 r) z) : ℤ) : ℝ) *
           Real.log (r * ‖z‖⁻¹)) +
@@ -132,31 +151,48 @@ theorem discCounting_const (c : E) : discCounting (fun _ : 𝕜 ↦ c) = 0 := by
 theorem discCounting_const_zero : discCounting (0 : 𝕜 → E) = 0 :=
   discCounting_const 0
 
+/-- Negating a function leaves `discCounting` unchanged. -/
+@[to_fun (attr := simp) discCounting_fun_neg]
+theorem discCounting_neg (f : 𝕜 → E) :
+    discCounting (-f) = discCounting f := by
+  ext r
+  simp [discCounting_def]
+
 @[to_fun (attr := simp) discCounting_fun_const_smul]
 theorem discCounting_const_smul {f : 𝕜 → E} {s : 𝕜} (hs : s ≠ 0) :
     discCounting (s • f) = discCounting f := by
   ext r
   simp [discCounting_def, MeromorphicOn.divisor_const_smul hs]
 
-theorem discCounting_one_div (f : 𝕜 → 𝕜) :
-    discCounting (fun z ↦ 1 / f z) = discCounting f⁻¹ := by
-  simp only [one_div]
-  rfl
+@[simp]
+theorem discCounting_fun_const_mul {f : 𝕜 → 𝕜} {s : 𝕜} (hs : s ≠ 0) :
+    discCounting (fun z ↦ s * f z) = discCounting f := by
+  simp_rw [← smul_eq_mul]
+  exact discCounting_fun_const_smul hs
+
+/-- Functions with equal pole divisors on `closedBall 0 r` have equal `discCounting` at radius
+`r`. -/
+theorem discCounting_congr_negPart_divisor {f g : 𝕜 → E} {r : ℝ}
+    (h : (MeromorphicOn.divisor f (closedBall 0 r))⁻ =
+      (MeromorphicOn.divisor g (closedBall 0 r))⁻) :
+    discCounting f r = discCounting g r := by
+  simp only [discCounting_def, h]
+
+/-- Functions with identical punctured germs at every point of `closedBall 0 r` have equal
+`discCounting` at radius `r`. No meromorphicity or global extension hypothesis is required. -/
+theorem discCounting_congr_nhdsNE {f g : 𝕜 → E} {r : ℝ}
+    (hfg : ∀ z ∈ closedBall 0 r, f =ᶠ[𝓝[≠] z] g) :
+    discCounting f r = discCounting g r :=
+  discCounting_congr_negPart_divisor (by rw [MeromorphicOn.divisor_congr_nhdsNE hfg])
 
 /-- For `1 ≤ r`, `discCounting f r` is nonnegative without any centre or meromorphicity
 hypothesis. -/
 theorem discCounting_nonneg_of_one_le {r : ℝ} (hr : 1 ≤ r) (f : 𝕜 → E) :
     0 ≤ discCounting f r := by
   rw [discCounting_def]
-  refine add_nonneg (finsum_nonneg fun z ↦ ?_)
+  exact add_nonneg
+    (finsum_nonneg (locallyFinsuppWithin_mul_log_nonneg Subset.rfl fun _ ↦ negPart_nonneg _))
     (mul_nonneg (Int.cast_nonneg (negPart_nonneg _)) (Real.log_nonneg hr))
-  by_cases hz0 : z = 0
-  · simp [hz0]
-  by_cases hzb : z ∈ closedBall (0 : 𝕜) r
-  · refine mul_nonneg (Int.cast_nonneg (negPart_nonneg _)) (Real.log_nonneg ?_)
-    rw [← div_eq_mul_inv, one_le_div (norm_pos_iff.2 hz0)]
-    simpa only [mem_closedBall_zero_iff] using hzb
-  · simp [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hzb]
 
 /-- Pole-counting positivity at a regular centre (Calegari–Dimitrov–Tang, Lemma 6.1.2): if the
 meromorphic germ of `f` at `0` has no pole (`0 ≤ meromorphicOrderAt f 0`, including infinite order
@@ -170,55 +206,37 @@ theorem discCounting_nonneg_of_meromorphicOrderAt_nonneg {f : 𝕜 → E}
   by_cases hf : MeromorphicOn f (closedBall 0 r)
   swap
   · rw [discCounting_of_not_meromorphicOn hf]
-  have hD0 : (MeromorphicOn.divisor f (closedBall 0 r))⁻ 0 = 0 := by
-    rw [Function.locallyFinsuppWithin.negPart_apply, negPart_eq_zero,
-      hf.divisor_apply (mem_closedBall_self hr.le)]
-    cases ho : meromorphicOrderAt f 0 with
-    | top => simp
-    | coe n =>
-      rw [ho] at h0
-      simpa using h0
+  have hD0 : (MeromorphicOn.divisor f (closedBall 0 r))⁻ 0 = 0 :=
+    (hf.negPart_divisor_apply_eq_zero_iff (mem_closedBall_self hr.le)).2 h0
   rw [discCounting_def, hD0, Int.cast_zero, zero_mul, add_zero]
-  refine finsum_nonneg fun z ↦ ?_
-  by_cases hz0 : z = 0
-  · simp [hz0]
-  by_cases hzb : z ∈ closedBall (0 : 𝕜) r
-  · refine mul_nonneg (Int.cast_nonneg (negPart_nonneg _)) (Real.log_nonneg ?_)
-    rw [← div_eq_mul_inv, one_le_div (norm_pos_iff.2 hz0)]
-    simpa only [mem_closedBall_zero_iff] using hzb
-  · simp [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hzb]
+  exact finsum_nonneg (locallyFinsuppWithin_mul_log_nonneg Subset.rfl fun _ ↦ negPart_nonneg _)
 
 /-- At `f = (·⁻¹)`, the single simple pole at the origin gives `discCounting (·⁻¹) r = log r` for
 all `0 < r`. -/
-@[simp]
+@[to_fun (attr := simp) discCounting_fun_inv_id]
 theorem discCounting_inv_id {r : ℝ} (hr : 0 < r) :
-    discCounting (fun z : 𝕜 ↦ z⁻¹) r = Real.log r := by
+    discCounting ((fun z : 𝕜 ↦ z)⁻¹) r = Real.log r := by
   have hid0 : MeromorphicOn.divisor (fun z : 𝕜 ↦ z) (closedBall 0 r) 0 = 1 := by
     simpa only [sub_zero] using
       MeromorphicOn.divisor_sub_const_self (z₀ := (0 : 𝕜)) (mem_closedBall_self hr.le)
-  have h0 : (MeromorphicOn.divisor (fun z : 𝕜 ↦ z⁻¹) (closedBall 0 r))⁻ 0 = 1 := by
-    rw [Function.locallyFinsuppWithin.negPart_apply, MeromorphicOn.divisor_fun_inv,
-      Function.locallyFinsuppWithin.coe_neg, Pi.neg_apply, hid0]
-    rfl
+  have h0 : (MeromorphicOn.divisor ((fun z : 𝕜 ↦ z)⁻¹) (closedBall 0 r))⁻ 0 = 1 := by
+    simp [hid0]
   rw [discCounting_def, h0, Int.cast_one, one_mul]
   suffices (∑ᶠ z : 𝕜,
-      (((MeromorphicOn.divisor (fun z : 𝕜 ↦ z⁻¹) (closedBall 0 r))⁻ z : ℤ) : ℝ) *
+      (((MeromorphicOn.divisor ((fun z : 𝕜 ↦ z)⁻¹) (closedBall 0 r))⁻ z : ℤ) : ℝ) *
         Real.log (r * ‖z‖⁻¹)) = 0 by
     rw [this, zero_add]
   refine finsum_eq_zero_of_forall_eq_zero fun z ↦ ?_
   by_cases hz0 : z = 0
   · simp [hz0]
-  · have ha : AnalyticAt 𝕜 (fun w : 𝕜 ↦ w⁻¹) z := analyticAt_id.inv hz0
-    have hdiv : MeromorphicOn.divisor (fun w : 𝕜 ↦ w⁻¹) (closedBall 0 r) z = 0 :=
-      ha.divisor_apply_eq_zero (inv_ne_zero hz0)
-    simp [Function.locallyFinsuppWithin.negPart_apply, hdiv]
+  · have hdiv : MeromorphicOn.divisor (fun w : 𝕜 ↦ w) (closedBall 0 r) z = 0 :=
+      AnalyticAt.divisor_apply_eq_zero analyticAt_id hz0
+    simp [hdiv]
 
-/-- Functions with identical punctured germs at every point of `closedBall 0 r` have equal
-`discCounting` at radius `r`. No meromorphicity or global extension hypothesis is required. -/
-theorem discCounting_congr_nhdsNE {f g : 𝕜 → E} {r : ℝ}
-    (hfg : ∀ z ∈ closedBall 0 r, f =ᶠ[𝓝[≠] z] g) :
-    discCounting f r = discCounting g r := by
-  simp only [discCounting_def, MeromorphicOn.divisor_congr_nhdsNE hfg]
+@[simp]
+theorem discCounting_id_inv {r : ℝ} (hr : 0 < r) :
+    discCounting (id : 𝕜 → 𝕜)⁻¹ r = Real.log r :=
+  discCounting_inv_id hr
 
 end TauCeti
 
@@ -231,17 +249,67 @@ theorem Filter.EventuallyEq.discCounting_eq {f g : 𝕜 → E} {r : ℝ}
     discCounting f r = discCounting g r := by
   simp only [discCounting_def, hfg.divisor_eq]
 
+/-- Adding a function analytic on `closedBall 0 r` on the right leaves `discCounting` unchanged
+(with no meromorphicity hypothesis on `f`). -/
+@[to_fun AnalyticOnNhd.discCounting_fun_add_right]
+theorem AnalyticOnNhd.discCounting_add_right {f g : 𝕜 → E} {r : ℝ}
+    (hg : AnalyticOnNhd 𝕜 g (closedBall 0 r)) :
+    discCounting (f + g) r = discCounting f r :=
+  discCounting_congr_negPart_divisor (hg.negPart_divisor_add_right f)
+
+/-- Adding a function analytic on `closedBall 0 r` on the left leaves `discCounting` unchanged
+(with no meromorphicity hypothesis on `g`). -/
+@[to_fun AnalyticOnNhd.discCounting_fun_add_left]
+theorem AnalyticOnNhd.discCounting_add_left {f g : 𝕜 → E} {r : ℝ}
+    (hf : AnalyticOnNhd 𝕜 f (closedBall 0 r)) :
+    discCounting (f + g) r = discCounting g r :=
+  discCounting_congr_negPart_divisor (hf.negPart_divisor_add_left g)
+
+namespace TauCeti
+
+@[to_fun (attr := simp) discCounting_fun_add_const]
+theorem discCounting_add_const (f : 𝕜 → E) (a : E) :
+    discCounting (f + fun _ ↦ a) = discCounting f := by
+  ext r
+  exact analyticOnNhd_const.discCounting_add_right
+
+@[to_fun (attr := simp) discCounting_fun_const_add]
+theorem discCounting_const_add (a : E) (f : 𝕜 → E) :
+    discCounting ((fun _ ↦ a) + f) = discCounting f := by
+  ext r
+  exact analyticOnNhd_const.discCounting_add_left
+
+@[to_fun (attr := simp) discCounting_fun_sub_const]
+theorem discCounting_sub_const (f : 𝕜 → E) (a : E) :
+    discCounting (f - fun _ ↦ a) = discCounting f := by
+  rw [sub_eq_add_neg]
+  exact discCounting_add_const f (-a)
+
+@[to_fun (attr := simp) discCounting_fun_const_sub]
+theorem discCounting_const_sub (a : E) (f : 𝕜 → E) :
+    discCounting ((fun _ ↦ a) - f) = discCounting f := by
+  rw [sub_eq_add_neg, discCounting_const_add, discCounting_neg]
+
+end TauCeti
+
 namespace MeromorphicOn
 
 variable {f g : 𝕜 → E} {r R : ℝ}
 
-/-- Open-ball support formula for `discCounting`: when `0 < r` and `f` is meromorphic on
-`closedBall 0 r`, poles on the boundary circle `sphere 0 r` satisfy `log (r * ‖z‖⁻¹) = log 1 = 0`,
-so `discCounting f r` depends only on `(MeromorphicOn.divisor f (ball 0 r))⁻`. -/
-theorem discCounting_eq_finsum_divisor_ball (hf : MeromorphicOn f (closedBall 0 r)) (hr : 0 < r) :
+/-- Open-ball support formula for `discCounting`: when `f` is meromorphic on `closedBall 0 r`,
+poles on the boundary circle `sphere 0 r` (`r > 0`) satisfy `log (r * ‖z‖⁻¹) = log 1 = 0` (and for
+`r ≤ 0` both sides vanish), so `discCounting f r` depends only on
+`(MeromorphicOn.divisor f (ball 0 r))⁻`. -/
+theorem discCounting_eq_finsum_divisor_ball_add (hf : MeromorphicOn f (closedBall 0 r)) :
     discCounting f r =
       (∑ᶠ z, (((divisor f (ball 0 r))⁻ z : ℤ) : ℝ) * Real.log (r * ‖z‖⁻¹)) +
         (((divisor f (ball 0 r))⁻ 0 : ℤ) : ℝ) * Real.log r := by
+  by_cases hr : r ≤ 0
+  · have hempty : ball (0 : 𝕜) r = ∅ := ball_eq_empty.2 hr
+    have hzero : ∀ z : 𝕜, (divisor f (ball 0 r))⁻ z = 0 := fun z ↦
+      Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ (by simp [hempty])
+    simp [discCounting_of_nonpos f hr, hzero]
+  push Not at hr
   have hball : MeromorphicOn f (ball 0 r) := hf.mono_set ball_subset_closedBall
   rw [discCounting_def]
   congr 1
@@ -260,17 +328,33 @@ theorem discCounting_eq_finsum_divisor_ball (hf : MeromorphicOn f (closedBall 0 
   · rw [Function.locallyFinsuppWithin.negPart_apply, Function.locallyFinsuppWithin.negPart_apply,
       hf.divisor_apply (mem_closedBall_self hr.le), hball.divisor_apply (mem_ball_self hr)]
 
+/-- Functions meromorphic on `closedBall 0 r` with equal open-ball pole divisors
+`(divisor · (ball 0 r))⁻` have equal `discCounting` at radius `r`. -/
+theorem discCounting_congr_negPart_divisor_ball (hf : MeromorphicOn f (closedBall 0 r))
+    (hg : MeromorphicOn g (closedBall 0 r))
+    (h : (divisor f (ball 0 r))⁻ = (divisor g (ball 0 r))⁻) :
+    discCounting f r = discCounting g r := by
+  rw [hf.discCounting_eq_finsum_divisor_ball_add, hg.discCounting_eq_finsum_divisor_ball_add, h]
+
+/-- If `f` and `g` are meromorphic on `closedBall 0 r` and agree away from a discrete subset of
+`ball 0 r`, then `discCounting f r = discCounting g r`. -/
+theorem discCounting_congr_codiscreteWithin (hf : MeromorphicOn f (closedBall 0 r))
+    (hg : MeromorphicOn g (closedBall 0 r)) (hfg : f =ᶠ[codiscreteWithin (ball 0 r)] g) :
+    discCounting f r = discCounting g r :=
+  hf.discCounting_congr_negPart_divisor_ball hg
+    (by rw [divisor_congr_codiscreteWithin hfg isOpen_ball])
+
 /-- Explicit open-punctured-disc order sum for `discCounting`: for `0 < r` and `f` meromorphic on
 `closedBall 0 r`,
 `discCounting f r = ∑ᶠ_{0 < ‖z‖ < r} ord⁻_z(f) * log (r / ‖z‖) + ord⁻_0(f) * log r`. -/
-theorem discCounting_eq_finsum_punctured_ball (hf : MeromorphicOn f (closedBall 0 r))
+theorem discCounting_eq_finsum_ball_sdiff_singleton_add (hf : MeromorphicOn f (closedBall 0 r))
     (hr : 0 < r) :
     discCounting f r =
       (∑ᶠ z ∈ ball (0 : 𝕜) r \ {0},
           (((-(meromorphicOrderAt f z).untop₀) ⊔ 0 : ℤ) : ℝ) * Real.log (r / ‖z‖)) +
         (((-(meromorphicOrderAt f 0).untop₀) ⊔ 0 : ℤ) : ℝ) * Real.log r := by
   have hball : MeromorphicOn f (ball 0 r) := hf.mono_set ball_subset_closedBall
-  rw [hf.discCounting_eq_finsum_divisor_ball hr, finsum_mem_def]
+  rw [hf.discCounting_eq_finsum_divisor_ball_add, finsum_mem_def]
   congr 1
   · refine finsum_congr fun z ↦ ?_
     by_cases hz0 : z = 0
@@ -282,59 +366,51 @@ theorem discCounting_eq_finsum_punctured_ball (hf : MeromorphicOn f (closedBall 
       simp [hnot, Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hzb]
   · simp [hball.divisor_apply (mem_ball_self hr), negPart_def]
 
-/-- If `f` is meromorphic on `closedBall 0 r` and analytic on the open disc `ball 0 r`, then
-`discCounting f r = 0` even if `f` has poles on `sphere 0 r`. -/
-theorem discCounting_eq_zero_of_analyticOnNhd_ball (hf : MeromorphicOn f (closedBall 0 r))
-    (ha : AnalyticOnNhd 𝕜 f (ball 0 r)) :
+end MeromorphicOn
+
+/-- If every point of the open disc `ball 0 r` has nonnegative meromorphic order (including infinite
+order `⊤`), then `discCounting f r = 0`. No closed-ball meromorphicity or `0 < r` hypothesis is
+required: if `f` fails to be meromorphic on `closedBall 0 r`, `discCounting f r` vanishes by
+totalization, while if `f` is meromorphic on `closedBall 0 r`, boundary poles on `sphere 0 r` have
+zero logarithmic weight. -/
+theorem TauCeti.discCounting_eq_zero_of_meromorphicOrderAt_nonneg {f : 𝕜 → E} {r : ℝ}
+    (h : ∀ z ∈ ball 0 r, 0 ≤ meromorphicOrderAt f z) :
     discCounting f r = 0 := by
-  by_cases hr : r ≤ 0
-  · exact discCounting_of_nonpos f hr
-  push Not at hr
-  have hneg : (divisor f (ball 0 r))⁻ = 0 := by
+  by_cases hf : MeromorphicOn f (closedBall 0 r)
+  swap
+  · exact discCounting_of_not_meromorphicOn hf
+  have hball : MeromorphicOn f (ball 0 r) := hf.mono_set ball_subset_closedBall
+  have hneg : (MeromorphicOn.divisor f (ball 0 r))⁻ = 0 := by
     ext z
-    simpa [Function.locallyFinsuppWithin.negPart_apply, negPart_eq_zero] using
-      MeromorphicOn.AnalyticOnNhd.divisor_nonneg ha z
-  rw [hf.discCounting_eq_finsum_divisor_ball hr, hneg]
+    by_cases hz : z ∈ ball 0 r
+    · exact (hball.negPart_divisor_apply_eq_zero_iff hz).2 (h z hz)
+    · exact Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hz
+  rw [hf.discCounting_eq_finsum_divisor_ball_add, hneg]
   simp
 
-/-- If `f` and `g` are meromorphic on `closedBall 0 r` and agree away from a discrete subset of
-`ball 0 r`, then `discCounting f r = discCounting g r`. -/
-theorem discCounting_congr_codiscreteWithin (hf : MeromorphicOn f (closedBall 0 r))
-    (hg : MeromorphicOn g (closedBall 0 r)) (hfg : f =ᶠ[codiscreteWithin (ball 0 r)] g) :
-    discCounting f r = discCounting g r := by
-  by_cases hr : r ≤ 0
-  · rw [discCounting_of_nonpos f hr, discCounting_of_nonpos g hr]
-  push Not at hr
-  rw [hf.discCounting_eq_finsum_divisor_ball hr, hg.discCounting_eq_finsum_divisor_ball hr,
-    divisor_congr_codiscreteWithin hfg isOpen_ball]
+/-- If `f` is analytic on the open disc `ball 0 r`, then `discCounting f r = 0` (even if `f` has
+singularities on `sphere 0 r`). -/
+theorem AnalyticOnNhd.discCounting_eq_zero {f : 𝕜 → E} {r : ℝ}
+    (hf : AnalyticOnNhd 𝕜 f (ball 0 r)) :
+    discCounting f r = 0 :=
+  discCounting_eq_zero_of_meromorphicOrderAt_nonneg fun z hz ↦ (hf z hz).meromorphicOrderAt_nonneg
 
-/-- Adding a function analytic on `closedBall 0 r` does not change `discCounting`. -/
-@[to_fun discCounting_fun_add_analyticOnNhd]
-theorem discCounting_add_analyticOnNhd (hf : MeromorphicOn f (closedBall 0 r))
-    (hg : AnalyticOnNhd 𝕜 g (closedBall 0 r)) :
-    discCounting (f + g) r = discCounting f r := by
-  simp only [discCounting_def, hf.negPart_divisor_add_of_analyticNhdOn_right hg]
+namespace TauCeti
 
 @[simp]
-theorem discCounting_add_const (hf : MeromorphicOn f (closedBall 0 r)) (a : E) :
-    discCounting (f + fun _ ↦ a) r = discCounting f r :=
-  hf.discCounting_add_analyticOnNhd analyticOnNhd_const
+theorem discCounting_id : discCounting (id : 𝕜 → 𝕜) = 0 := by
+  ext r
+  exact analyticOnNhd_id.discCounting_eq_zero
 
 @[simp]
-theorem discCounting_fun_add_const (hf : MeromorphicOn f (closedBall 0 r)) (a : E) :
-    discCounting (fun z ↦ f z + a) r = discCounting f r :=
-  hf.discCounting_add_const a
+theorem discCounting_fun_id : discCounting (fun z : 𝕜 ↦ z) = 0 :=
+  discCounting_id
 
-@[simp]
-theorem discCounting_sub_const (hf : MeromorphicOn f (closedBall 0 r)) (a : E) :
-    discCounting (f - fun _ ↦ a) r = discCounting f r := by
-  rw [sub_eq_add_neg]
-  exact hf.discCounting_add_analyticOnNhd analyticOnNhd_const.neg
+end TauCeti
 
-@[simp]
-theorem discCounting_fun_sub_const (hf : MeromorphicOn f (closedBall 0 r)) (a : E) :
-    discCounting (fun z ↦ f z - a) r = discCounting f r :=
-  hf.discCounting_sub_const a
+namespace MeromorphicOn
+
+variable {f g : 𝕜 → E} {r R : ℝ}
 
 /-- Power scaling of the local pole count: for `f : 𝕜 → 𝕜` meromorphic on `closedBall 0 r` and
 `n : ℕ`, `discCounting (f ^ n) r = n * discCounting f r`. -/
@@ -372,7 +448,7 @@ theorem discCounting_mono [ProperSpace 𝕜] {r₁ r₂ : ℝ} (hf : Meromorphic
     intro h0
     exact hz (by simp [h0])
   rw [finsum_eq_sum_of_support_subset _ hsupp₁, finsum_eq_sum_of_support_subset _ hsupp₂]
-  refine add_le_add (Finset.sum_le_sum fun z hz ↦ ?_) ?_
+  refine add_le_add (Finset.sum_le_sum fun z _ ↦ ?_) ?_
   · by_cases hz0 : z = 0
     · simp [hz0]
     by_cases hzb : z ∈ closedBall (0 : 𝕜) r₁
@@ -381,107 +457,74 @@ theorem discCounting_mono [ProperSpace 𝕜] {r₁ r₂ : ℝ} (hf : Meromorphic
       exact Real.log_le_log (mul_pos hr₁ (inv_pos.2 (norm_pos_iff.2 hz0)))
         (mul_le_mul_of_nonneg_right hr₁₂ (inv_nonneg.2 (norm_nonneg z)))
     · rw [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hzb, Int.cast_zero, zero_mul]
-      have hzc : z ∈ closedBall (0 : 𝕜) r₂ := D₂.supportWithinDomain (hs.mem_toFinset.1 hz)
-      refine mul_nonneg (Int.cast_nonneg (negPart_nonneg _)) (Real.log_nonneg ?_)
-      rw [← div_eq_mul_inv, one_le_div (norm_pos_iff.2 hz0)]
-      simpa only [mem_closedBall_zero_iff] using hzc
+      exact locallyFinsuppWithin_mul_log_nonneg Subset.rfl (fun _ ↦ negPart_nonneg _) z
   · rw [Function.locallyFinsuppWithin.restrict_apply, ite_eq_left (mem_closedBall_self hr₁.le)]
     exact mul_le_mul_of_nonneg_left (Real.log_le_log hr₁ hr₁₂)
       (Int.cast_nonneg (negPart_nonneg _))
 
 /-- If `f` is meromorphic on `closedBall 0 R`, then `discCounting f` is monotone on `Ioc 0 R`. -/
-theorem monotoneOn_discCounting_Ioc [ProperSpace 𝕜] (hf : MeromorphicOn f (closedBall 0 R)) :
+theorem discCounting_monotoneOn_Ioc [ProperSpace 𝕜] (hf : MeromorphicOn f (closedBall 0 R)) :
     MonotoneOn (discCounting f) (Ioc 0 R) :=
   fun _ hr₁ _ hr₂ hr₁₂ ↦
     (hf.mono_set (closedBall_subset_closedBall hr₂.2)).discCounting_mono hr₁.1 hr₁₂
 
 /-- If `f` is meromorphic on `ball 0 R`, then `discCounting f` is monotone on `Ioo 0 R`. -/
-theorem monotoneOn_discCounting_Ioo [ProperSpace 𝕜] (hf : MeromorphicOn f (ball 0 R)) :
+theorem discCounting_monotoneOn_Ioo [ProperSpace 𝕜] (hf : MeromorphicOn f (ball 0 R)) :
     MonotoneOn (discCounting f) (Ioo 0 R) :=
   fun _ hr₁ _ hr₂ hr₁₂ ↦
     (hf.mono_set (closedBall_subset_ball hr₂.2)).discCounting_mono hr₁.1 hr₁₂
 
-/-- Vanishing of the local pole count (Calegari–Dimitrov–Tang, Lemma 6.1.2): for `0 < r` and `f`
-meromorphic on `closedBall 0 r` with `0 ≤ meromorphicOrderAt f 0`, `discCounting f r = 0` iff every
-point of the open disc `ball 0 r` has nonnegative meromorphic order. Poles on `sphere 0 r` are
-permitted and carry zero weight. -/
+/-- Vanishing of the local pole count (Calegari–Dimitrov–Tang, Lemma 6.1.2): for `f` meromorphic on
+`closedBall 0 r` with `0 ≤ meromorphicOrderAt f 0`, `discCounting f r = 0` iff every point of the
+open disc `ball 0 r` has nonnegative meromorphic order. Poles on `sphere 0 r` are permitted and
+carry zero weight. -/
 theorem discCounting_eq_zero_iff_meromorphicOrderAt_nonneg [ProperSpace 𝕜]
-    (hf : MeromorphicOn f (closedBall 0 r)) (hr : 0 < r) (h0 : 0 ≤ meromorphicOrderAt f 0) :
+    (hf : MeromorphicOn f (closedBall 0 r)) (h0 : 0 ≤ meromorphicOrderAt f 0) :
     discCounting f r = 0 ↔ ∀ z ∈ ball 0 r, 0 ≤ meromorphicOrderAt f z := by
+  by_cases hr : r ≤ 0
+  · simp [discCounting_of_nonpos f hr, ball_eq_empty.2 hr]
+  push Not at hr
+  refine ⟨fun hcnt ↦ ?_, discCounting_eq_zero_of_meromorphicOrderAt_nonneg⟩
+  -- Express `discCounting f r` as a finite sum of nonnegative off-centre open-ball pole terms.
   have hball : MeromorphicOn f (ball 0 r) := hf.mono_set ball_subset_closedBall
-  have hD0 : (divisor f (ball 0 r))⁻ 0 = 0 := by
-    rw [Function.locallyFinsuppWithin.negPart_apply, negPart_eq_zero,
-      hball.divisor_apply (mem_ball_self hr)]
-    cases ho : meromorphicOrderAt f 0 with
-    | top => simp
-    | coe n =>
-      rw [ho] at h0
-      simpa using h0
-  rw [hf.discCounting_eq_finsum_divisor_ball hr, hD0, Int.cast_zero, zero_mul, add_zero]
+  have hD0 : (divisor f (ball 0 r))⁻ 0 = 0 :=
+    (hball.negPart_divisor_apply_eq_zero_iff (mem_ball_self hr)).2 h0
   set D := (divisor f (ball 0 r))⁻
   have hs : D.support.Finite :=
-    hf.divisor_ball_support_finite.subset fun z hz ↦ by
-      simp only [Function.mem_support, ne_eq] at hz ⊢
-      intro hdiv
-      exact hz (by simp [D, hdiv])
+    hf.divisor_ball_support_finite.subset fun z hz hdiv ↦ hz (by simp [D, hdiv])
   have hsupp :
       (fun z ↦ ((D z : ℤ) : ℝ) * Real.log (r * ‖z‖⁻¹)).support ⊆ hs.toFinset := by
     intro z hz
     rw [Finset.mem_coe, Set.Finite.mem_toFinset, Function.mem_support]
-    intro hDz
-    exact hz (by simp [hDz])
-  rw [finsum_eq_sum_of_support_subset _ hsupp]
-  have hterm_nonneg :
-      ∀ z ∈ hs.toFinset, 0 ≤ ((D z : ℤ) : ℝ) * Real.log (r * ‖z‖⁻¹) := by
-    intro z hz
-    by_cases hz0 : z = 0
-    · simp [hz0]
-    have hzb : z ∈ ball (0 : 𝕜) r := D.supportWithinDomain (hs.mem_toFinset.1 hz)
-    refine mul_nonneg (Int.cast_nonneg (negPart_nonneg _)) (Real.log_nonneg ?_)
-    rw [← div_eq_mul_inv, one_le_div (norm_pos_iff.2 hz0)]
-    exact (mem_ball_zero_iff.1 hzb).le
-  rw [Finset.sum_eq_zero_iff_of_nonneg hterm_nonneg]
-  refine ⟨fun hsum z hz ↦ ?_, fun hord z _ ↦ ?_⟩
-  · by_cases hz0 : z = 0
-    · exact hz0 ▸ h0
-    have hlog_pos : 0 < Real.log (r * ‖z‖⁻¹) := by
-      refine Real.log_pos ?_
-      rw [← div_eq_mul_inv, one_lt_div (norm_pos_iff.2 hz0)]
-      exact mem_ball_zero_iff.1 hz
-    have hDz : D z = 0 := by
-      by_contra hne
-      have hzero := hsum z (hs.mem_toFinset.2 hne)
-      rcases mul_eq_zero.1 hzero with hD | hL
-      · exact hne (Int.cast_eq_zero.1 hD)
-      · exact hlog_pos.ne' hL
-    have hdiv_nonneg : 0 ≤ divisor f (ball 0 r) z :=
-      negPart_eq_zero.1 (by simpa [D] using hDz)
-    rw [hball.divisor_apply hz] at hdiv_nonneg
-    cases ho : meromorphicOrderAt f z with
-    | top => exact le_top
-    | coe n =>
-      rw [ho] at hdiv_nonneg
-      simpa using hdiv_nonneg
-  · by_cases hzb : z ∈ ball (0 : 𝕜) r
-    · have hDz : D z = 0 := by
-        rw [Function.locallyFinsuppWithin.negPart_apply, negPart_eq_zero, hball.divisor_apply hzb]
-        cases ho : meromorphicOrderAt f z with
-        | top => simp
-        | coe n =>
-          have hn := hord z hzb
-          rw [ho] at hn
-          simpa using hn
-      simp [hDz]
-    · simp [D, Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hzb]
+    exact fun hDz ↦ hz (by simp [hDz])
+  rw [hf.discCounting_eq_finsum_divisor_ball_add, hD0, Int.cast_zero, zero_mul, add_zero,
+    finsum_eq_sum_of_support_subset _ hsupp,
+    Finset.sum_eq_zero_iff_of_nonneg fun z _ ↦
+      locallyFinsuppWithin_mul_log_nonneg ball_subset_closedBall (fun _ ↦ negPart_nonneg _) z]
+    at hcnt
+  -- On `ball 0 r \ {0}`, `log (r * ‖z‖⁻¹) > 0`, forcing `D z = 0` and hence nonnegative order.
+  intro z hz
+  by_cases hz0 : z = 0
+  · exact hz0 ▸ h0
+  have hlog_pos : 0 < Real.log (r * ‖z‖⁻¹) := by
+    refine Real.log_pos ?_
+    rw [← div_eq_mul_inv, one_lt_div (norm_pos_iff.2 hz0)]
+    exact mem_ball_zero_iff.1 hz
+  have hDz : D z = 0 := by
+    by_contra hne
+    rcases mul_eq_zero.1 (hcnt z (hs.mem_toFinset.2 hne)) with hD | hL
+    · exact hne (Int.cast_eq_zero.1 hD)
+    · exact hlog_pos.ne' hL
+  exact (hball.negPart_divisor_apply_eq_zero_iff hz).1 hDz
 
-/-- Removable-germ vanishing criterion: under `0 < r`, `MeromorphicOn f (closedBall 0 r)`, and
+/-- Removable-germ vanishing criterion: under `MeromorphicOn f (closedBall 0 r)` and
 `0 ≤ meromorphicOrderAt f 0`, `discCounting f r = 0` iff every punctured germ of `f` on `ball 0 r`
 admits an analytic extension across the puncture. -/
 theorem discCounting_eq_zero_iff_exists_analyticAt [ProperSpace 𝕜]
-    (hf : MeromorphicOn f (closedBall 0 r)) (hr : 0 < r) (h0 : 0 ≤ meromorphicOrderAt f 0) :
+    (hf : MeromorphicOn f (closedBall 0 r)) (h0 : 0 ≤ meromorphicOrderAt f 0) :
     discCounting f r = 0 ↔
       ∀ z ∈ ball 0 r, ∃ g : 𝕜 → E, AnalyticAt 𝕜 g z ∧ f =ᶠ[𝓝[≠] z] g := by
-  rw [hf.discCounting_eq_zero_iff_meromorphicOrderAt_nonneg hr h0]
+  rw [hf.discCounting_eq_zero_iff_meromorphicOrderAt_nonneg h0]
   exact forall₂_congr fun z hz ↦ (hf z (ball_subset_closedBall hz)).meromorphicOrderAt_nonneg_iff
 
 /-- Pointwise holomorphy criterion on `ball 0 r` when removable singularities have been filled in:
@@ -489,10 +532,10 @@ if `f` is continuous at every point of `ball 0 r` where `0 ≤ meromorphicOrderA
 assuming `ContinuousOn f (ball 0 r)` into the normed space `E` outright would already exclude poles
 by `MeromorphicAt.analyticAt`), then `discCounting f r = 0 ↔ AnalyticOnNhd 𝕜 f (ball 0 r)`. -/
 theorem discCounting_eq_zero_iff_analyticOnNhd_of_continuousAt [ProperSpace 𝕜]
-    (hf : MeromorphicOn f (closedBall 0 r)) (hr : 0 < r) (h0 : 0 ≤ meromorphicOrderAt f 0)
+    (hf : MeromorphicOn f (closedBall 0 r)) (h0 : 0 ≤ meromorphicOrderAt f 0)
     (hrem : ∀ z ∈ ball 0 r, 0 ≤ meromorphicOrderAt f z → ContinuousAt f z) :
     discCounting f r = 0 ↔ AnalyticOnNhd 𝕜 f (ball 0 r) := by
-  rw [hf.discCounting_eq_zero_iff_meromorphicOrderAt_nonneg hr h0]
+  rw [hf.discCounting_eq_zero_iff_meromorphicOrderAt_nonneg h0]
   exact ⟨fun h z hz ↦ (hf z (ball_subset_closedBall hz)).analyticAt (hrem z hz (h z hz)),
     fun h z hz ↦ (h z hz).meromorphicOrderAt_nonneg⟩
 
@@ -500,12 +543,12 @@ end MeromorphicOn
 
 /-- For a function in meromorphic normal form on `ball 0 r` (so poles take value `0` and removable
 singularities match their analytic extensions) that is meromorphic on `closedBall 0 r` with
-`0 ≤ meromorphicOrderAt f 0` and `0 < r`, `discCounting f r = 0 ↔ AnalyticOnNhd 𝕜 f (ball 0 r)`. -/
+`0 ≤ meromorphicOrderAt f 0`, `discCounting f r = 0 ↔ AnalyticOnNhd 𝕜 f (ball 0 r)`. -/
 theorem MeromorphicNFOn.discCounting_eq_zero_iff_analyticOnNhd [ProperSpace 𝕜] {f : 𝕜 → E} {r : ℝ}
     (hnf : MeromorphicNFOn f (ball 0 r)) (hf : MeromorphicOn f (closedBall 0 r))
-    (hr : 0 < r) (h0 : 0 ≤ meromorphicOrderAt f 0) :
+    (h0 : 0 ≤ meromorphicOrderAt f 0) :
     discCounting f r = 0 ↔ AnalyticOnNhd 𝕜 f (ball 0 r) := by
-  rw [hf.discCounting_eq_zero_iff_meromorphicOrderAt_nonneg hr h0]
+  rw [hf.discCounting_eq_zero_iff_meromorphicOrderAt_nonneg h0]
   exact forall₂_congr fun z hz ↦ (hnf hz).meromorphicOrderAt_nonneg_iff_analyticAt
 
 /-- For globally meromorphic `f` over a proper normed field and `0 ≤ r`, `discCounting f r` agrees
@@ -537,15 +580,23 @@ section Complex
 
 open TauCeti
 
+/-- Over `ℂ` (`[CompleteSpace E]`), if `f` is holomorphic on `ball 0 r`, then
+`discCounting f r = 0`. -/
+theorem DifferentiableOn.discCounting_eq_zero {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] {f : ℂ → E} {r : ℝ}
+    (hf : DifferentiableOn ℂ f (ball 0 r)) :
+    discCounting f r = 0 :=
+  ((Complex.analyticOnNhd_iff_differentiableOn isOpen_ball).2 hf).discCounting_eq_zero
+
 /-- Over `ℂ`, for a function in meromorphic normal form on `ball 0 r` (`[CompleteSpace E]`) that is
-meromorphic on `closedBall 0 r` with `0 ≤ meromorphicOrderAt f 0` and `0 < r`,
+meromorphic on `closedBall 0 r` with `0 ≤ meromorphicOrderAt f 0`,
 `discCounting f r = 0 ↔ DifferentiableOn ℂ f (ball 0 r)`. -/
 theorem MeromorphicNFOn.discCounting_eq_zero_iff_differentiableOn {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] {f : ℂ → E} {r : ℝ}
     (hnf : MeromorphicNFOn f (ball 0 r)) (hf : MeromorphicOn f (closedBall 0 r))
-    (hr : 0 < r) (h0 : 0 ≤ meromorphicOrderAt f 0) :
+    (h0 : 0 ≤ meromorphicOrderAt f 0) :
     discCounting f r = 0 ↔ DifferentiableOn ℂ f (ball 0 r) := by
-  rw [hnf.discCounting_eq_zero_iff_analyticOnNhd hf hr h0,
+  rw [hnf.discCounting_eq_zero_iff_analyticOnNhd hf h0,
     Complex.analyticOnNhd_iff_differentiableOn isOpen_ball]
 
 /-- **Disc-local Jensen identity** (Calegari–Dimitrov–Tang, §6.1, eq. (6.1.4)): for `f : ℂ → ℂ`
@@ -554,8 +605,9 @@ meromorphic on `closedBall 0 r` and `0 < r`,
 where `c(f, 0) = meromorphicTrailingCoeffAt f 0` is the leading Laurent coefficient at `0`. Note
 that when `meromorphicOrderAt f 0 = ⊤` (`f = 0` away from a discrete set), all four terms vanish by
 totalization (`Real.log 0 = 0`). -/
-theorem MeromorphicOn.circleAverage_log_norm_eq_discCounting_inv_sub {f : ℂ → ℂ} {r : ℝ}
-    (hf : MeromorphicOn f (closedBall 0 r)) (hr : 0 < r) :
+@[to_fun MeromorphicOn.circleAverage_log_norm_eq_discCounting_fun_inv_sub_add]
+theorem MeromorphicOn.circleAverage_log_norm_eq_discCounting_inv_sub_add
+    {f : ℂ → ℂ} {r : ℝ} (hf : MeromorphicOn f (closedBall 0 r)) (hr : 0 < r) :
     circleAverage (fun z ↦ Real.log ‖f z‖) 0 r =
       discCounting f⁻¹ r - discCounting f r + Real.log ‖meromorphicTrailingCoeffAt f 0‖ := by
   have habs : |r| = r := abs_of_pos hr
@@ -597,23 +649,18 @@ theorem MeromorphicOn.circleAverage_log_norm_eq_discCounting_inv_sub {f : ℂ �
 example {r : ℝ} (hr : 0 < r) (hr1 : r < 1) :
     discCounting (fun z : ℂ ↦ 1 / z) r = Real.log r ∧
       discCounting (fun z : ℂ ↦ 1 / z) r < 0 := by
-  rw [discCounting_one_div, show ((fun z : ℂ ↦ z)⁻¹) = fun z : ℂ ↦ z⁻¹ from rfl,
-    discCounting_inv_id hr]
-  exact ⟨rfl, Real.log_neg hr hr1⟩
+  simp [one_div, hr, Real.log_neg hr hr1]
 
 -- Check 2: Both `1` and `0` have `discCounting = 0` (infinite meromorphic order is not a pole).
 example (r : ℝ) :
     discCounting (fun _ : ℂ ↦ (1 : ℂ)) r = 0 ∧ discCounting (0 : ℂ → ℂ) r = 0 :=
   ⟨by simp, by simp⟩
 
--- Check 3: A simple pole on the boundary circle `sphere 0 ‖a‖` (`a ≠ 0`) has weight zero in
--- `discCounting`, even though `meromorphicOrderAt = -1` at `a`.
-example {a : ℂ} (ha : a ≠ 0) :
+-- Check 3: A simple pole on the boundary circle `sphere 0 ‖a‖` has weight zero in `discCounting`,
+-- even though `meromorphicOrderAt = -1` at `a`.
+example (a : ℂ) :
     meromorphicOrderAt (fun z : ℂ ↦ 1 / (z - a)) a = -1 ∧
       discCounting (fun z : ℂ ↦ 1 / (z - a)) ‖a‖ = 0 := by
-  have hmero : MeromorphicOn (fun z : ℂ ↦ 1 / (z - a)) (closedBall 0 ‖a‖) := by
-    simp only [one_div]
-    exact (analyticOnNhd_id.sub analyticOnNhd_const).meromorphicOn.inv
   have hana : AnalyticOnNhd ℂ (fun z : ℂ ↦ 1 / (z - a)) (ball 0 ‖a‖) := by
     intro z hz
     have hza : z - a ≠ 0 := sub_ne_zero.2 fun h ↦ by
@@ -621,13 +668,8 @@ example {a : ℂ} (ha : a ≠ 0) :
       exact lt_irrefl ‖z‖ (mem_ball_zero_iff.1 hz)
     simp only [one_div]
     exact (analyticAt_id.fun_sub analyticAt_const).inv hza
-  refine ⟨?_, hmero.discCounting_eq_zero_of_analyticOnNhd_ball hana⟩
-  have hsub : meromorphicOrderAt (fun z : ℂ ↦ z - a) a = 1 :=
-    (meromorphicOrderAt_eq_int_iff (by fun_prop)).2
-      ⟨fun _ ↦ 1, analyticAt_const, one_ne_zero, by simp⟩
-  simp only [one_div]
-  change meromorphicOrderAt (fun z : ℂ ↦ z - a)⁻¹ a = -1
-  rw [meromorphicOrderAt_inv, hsub]
+  refine ⟨?_, hana.discCounting_eq_zero⟩
+  simp [one_div, fun_meromorphicOrderAt_inv]
 
 -- Check 4: The discontinuous removable representative equal to `2` at `0` and `1` elsewhere has
 -- punctured limit `1`, meromorphic order `0` at `0`, and `discCounting = 0`, yet is neither

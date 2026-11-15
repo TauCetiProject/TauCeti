@@ -6,35 +6,33 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.ValueDistribution.Proximity.Basic
-public import TauCeti.Analysis.SpecialFunctions.Integrability.PosLog
 import Mathlib.Analysis.SpecialFunctions.Integrals.PosLog
+import TauCeti.Analysis.Meromorphic.Basic
 
 /-!
-# Local circle-level identities and Cartan's integral presentation for proximity
+# Cartan's single-circle integral presentation of the proximity function
 
-Mathlib develops the Nevanlinna proximity function `ValueDistribution.proximity` primarily under a
-global `Meromorphic f` hypothesis on `ℂ`. However, for a fixed radius `r`, `proximity f a r`
-depends only on the values of `f` along `sphere 0 |r|`. Functions meromorphic only on a disc (such
+Mathlib proves Cartan's iterated circle-average formula for `ValueDistribution.proximity f ⊤ R`
+under a global `Meromorphic f` hypothesis on `ℂ`. However, for a fixed radius `R`, `proximity f ⊤ R`
+depends only on the values of `f` along `sphere 0 |R|`. Functions meromorphic only on a disc (such
 as the unit disc `ball 0 1`, where unit-circle singularities may prevent any global meromorphic
-extension) still satisfy `MeromorphicOn f (sphere 0 |r|)` on every interior circle.
+extension) still satisfy `MeromorphicOn f (sphere 0 |R|)` on every interior circle.
 
-This file provides the single-circle proximity identities needed for disc-local value distribution:
+This file localizes Cartan's product-integrability and iterated circle-average theorems to a single
+circle `sphere 0 |R|` (for single-circle arithmetic, translation, and reciprocal properties of
+`ValueDistribution.proximity`, see `TauCeti.Analysis.Complex.ValueDistribution.Proximity.Basic`):
 
-* **Translation bounds** (`CircleIntegrable.abs_proximity_sub_const_sub_proximity_top_le`,
-  `MeromorphicOn.abs_proximity_sub_const_sub_proximity_top_le`): shifting `f` by a constant `a₀`
-  changes `proximity f ⊤ r` by at most `log⁺ ‖a₀‖ + log 2` whenever `log⁺ ‖f‖` and
-  `log⁺ ‖f - a₀‖` are circle integrable on `sphere 0 |r|`.
-* **Reciprocal difference** (`MeromorphicOn.proximity_top_sub_proximity_inv_top_eq_circleAverage`):
-  for `f : ℂ → ℂ` meromorphic on `sphere 0 |r|`,
-  `proximity f ⊤ r - proximity f⁻¹ ⊤ r = circleAverage (Real.log ‖f ·‖) 0 r`.
-* **Cartan's iterated circle-average presentation**
-  (`MeromorphicOn.circleAverage_circleAverage_eq_proximity_top`): for `f : ℂ → ℂ` meromorphic on
+* `MeromorphicOn.integrableOn_log_norm_circleMap_sub`: product integrability of the Cartan kernel
+  `(α, β) ↦ Real.log ‖f (circleMap 0 R β) - circleMap 0 1 α‖` on `(0, 2π] × (0, 2π]`.
+* `MeromorphicOn.circleIntegrable_circleAverage_log_norm_sub`: circle integrability of
+  `a ↦ circleAverage (Real.log ‖f · - a‖) 0 R` on the unit circle.
+* `MeromorphicOn.circleAverage_circleAverage_eq_proximity_top`: for `f : ℂ → ℂ` meromorphic on
   `sphere 0 |R|`,
   `circleAverage (fun a ↦ circleAverage (Real.log ‖f · - a‖) 0 R) 0 1 = proximity f ⊤ R`.
 
 ## Implementation notes
 
-The product-integrability and Fubini arguments for Cartan's iterated circle average localize
+The product-integrability and Fubini arguments localize
 `ValueDistribution.Cartan.integrableOn_cartanKernel`,
 `ValueDistribution.circleIntegrable_circleAverage_log_norm_sub`, and
 `ValueDistribution.circleAverage_circleAverage_eq_proximity_top` in
@@ -54,69 +52,9 @@ public section
 
 open Filter MeasureTheory Metric Real Set
 
-section Translation
-
-variable {E : Type*} [NormedAddCommGroup E] {f : ℂ → E} {a₀ : E} {r : ℝ}
-
-/-- Shifting `f` by a constant `a₀` changes `ValueDistribution.proximity · ⊤ r` by at most
-`log⁺ ‖a₀‖ + log 2`, assuming only circle integrability of `log⁺ ‖f‖` and `log⁺ ‖f - a₀‖` on
-`sphere 0 |r|`. -/
-theorem CircleIntegrable.abs_proximity_sub_const_sub_proximity_top_le
-    (hf : CircleIntegrable (fun z ↦ log⁺ ‖f z‖) 0 r)
-    (hfa : CircleIntegrable (fun z ↦ log⁺ ‖f z - a₀‖) 0 r) :
-    |ValueDistribution.proximity (fun z ↦ f z - a₀) ⊤ r - ValueDistribution.proximity f ⊤ r| ≤
-      log⁺ ‖a₀‖ + Real.log 2 := by
-  simp only [ValueDistribution.proximity_top]
-  refine abs_sub_le_iff.2 ⟨?_, ?_⟩
-  · linarith [hf.circleAverage_posLog_norm_sub_const_le a₀ hfa]
-  · have hrev : CircleIntegrable (fun z ↦ log⁺ ‖(f z - a₀) - (-a₀)‖) 0 r := by
-      simpa only [sub_neg_eq_add, sub_add_cancel] using hf
-    have hbound := hfa.circleAverage_posLog_norm_sub_const_le (-a₀) hrev
-    simp only [sub_neg_eq_add, sub_add_cancel, norm_neg] at hbound
-    linarith
-
-/-- Symmetric form of `CircleIntegrable.abs_proximity_sub_const_sub_proximity_top_le`. -/
-theorem CircleIntegrable.abs_proximity_top_sub_proximity_sub_const_le
-    (hf : CircleIntegrable (fun z ↦ log⁺ ‖f z‖) 0 r)
-    (hfa : CircleIntegrable (fun z ↦ log⁺ ‖f z - a₀‖) 0 r) :
-    |ValueDistribution.proximity f ⊤ r - ValueDistribution.proximity (fun z ↦ f z - a₀) ⊤ r| ≤
-      log⁺ ‖a₀‖ + Real.log 2 := by
-  rw [abs_sub_comm]
-  exact hf.abs_proximity_sub_const_sub_proximity_top_le hfa
-
-/-- If `f : ℂ → E` is meromorphic on `sphere 0 |r|`, then
-`|proximity (f · - a₀) ⊤ r - proximity f ⊤ r| ≤ log⁺ ‖a₀‖ + log 2`. -/
-theorem MeromorphicOn.abs_proximity_sub_const_sub_proximity_top_le [NormedSpace ℂ E]
-    (hf : MeromorphicOn f (sphere 0 |r|)) (a₀ : E) :
-    |ValueDistribution.proximity (fun z ↦ f z - a₀) ⊤ r - ValueDistribution.proximity f ⊤ r| ≤
-      log⁺ ‖a₀‖ + Real.log 2 :=
-  hf.circleIntegrable_posLog_norm.abs_proximity_sub_const_sub_proximity_top_le
-    (hf.sub (MeromorphicOn.const a₀)).circleIntegrable_posLog_norm
-
-/-- Symmetric form of `MeromorphicOn.abs_proximity_sub_const_sub_proximity_top_le`. -/
-theorem MeromorphicOn.abs_proximity_top_sub_proximity_sub_const_le [NormedSpace ℂ E]
-    (hf : MeromorphicOn f (sphere 0 |r|)) (a₀ : E) :
-    |ValueDistribution.proximity f ⊤ r - ValueDistribution.proximity (fun z ↦ f z - a₀) ⊤ r| ≤
-      log⁺ ‖a₀‖ + Real.log 2 := by
-  rw [abs_sub_comm]
-  exact hf.abs_proximity_sub_const_sub_proximity_top_le a₀
-
-end Translation
-
 namespace MeromorphicOn
 
 variable {f : ℂ → ℂ} {R : ℝ}
-
-/-- Local version of `ValueDistribution.proximity_sub_proximity_inv_eq_circleAverage`: if `f` is
-meromorphic on `sphere 0 |R|`, then `proximity f ⊤ R - proximity f⁻¹ ⊤ R` equals the circle average
-of `Real.log ‖f ·‖` on `sphere 0 |R|`. -/
-theorem proximity_top_sub_proximity_inv_top_eq_circleAverage
-    (hf : MeromorphicOn f (sphere 0 |R|)) :
-    ValueDistribution.proximity f ⊤ R - ValueDistribution.proximity f⁻¹ ⊤ R =
-      circleAverage (fun z ↦ Real.log ‖f z‖) 0 R := by
-  rw [ValueDistribution.proximity_inv, ValueDistribution.proximity_zero,
-    ValueDistribution.proximity_top, hf.circleAverage_posLog_inv_norm]
-  ring
 
 /-- Private local alias for the Cartan kernel `log ‖f (circleMap 0 R β) - circleMap 0 1 α‖`
 (`ValueDistribution.Cartan.cartanKernel` in Mathlib is unexposed in a `public section`). -/
@@ -131,25 +69,8 @@ private lemma integrableOn_localCartanKernel_left (f : ℂ → ℂ) (R β : ℝ)
 
 private lemma measurable_localCartanKernel (hf : MeromorphicOn f (sphere 0 |R|)) :
     Measurable (fun p : ℝ × ℝ ↦ localCartanKernel f R p.1 p.2) := by
-  set u : Set (sphere (0 : ℂ) |R|) := {z | AnalyticAt ℂ f z}
-  have hu_open : IsOpen u := (isOpen_analyticAt ℂ f).preimage continuous_subtype_val
-  have huc_cnt : uᶜ.Countable := by
-    have hsub :
-        uᶜ ⊆ (Subtype.val : sphere (0 : ℂ) |R| → ℂ) ⁻¹'
-          ({z : ℂ | AnalyticAt ℂ f z}ᶜ ∩ sphere 0 |R|) :=
-      fun z hz ↦ ⟨hz, z.2⟩
-    exact Set.Countable.mono hsub
-      (hf.countable_compl_analyticAt_inter.preimage Subtype.val_injective)
-  have _ : Countable ↑uᶜ := huc_cnt.to_subtype
-  have hcont : ContinuousOn (fun z : sphere (0 : ℂ) |R| ↦ f z) u := fun _ hz ↦
-    (hz.continuousAt.comp continuous_subtype_val.continuousAt).continuousWithinAt
-  have hf_sphere : Measurable (fun z : sphere (0 : ℂ) |R| ↦ f z) :=
-    .of_union_range_cover (.subtype_coe hu_open.measurableSet) (.subtype_coe huc_cnt.measurableSet)
-      (by simp [-mem_compl_iff])
-      ((hcont.comp_continuous continuous_subtype_val fun x ↦ x.2).measurable)
-      (measurable_of_countable _)
   have hf_circle : Measurable (fun β : ℝ ↦ f (circleMap 0 R β)) :=
-    hf_sphere.comp ((continuous_circleMap 0 R).measurable.codRestrict (circleMap_mem_sphere' 0 R))
+    hf.measurable_comp (continuous_circleMap 0 R).measurable (circleMap_mem_sphere' 0 R)
   exact Real.measurable_log.comp
     (((hf_circle.comp measurable_snd).sub
       ((continuous_circleMap 0 1).measurable.comp measurable_fst)).norm)
@@ -216,15 +137,15 @@ theorem integrableOn_log_norm_circleMap_sub (hf : MeromorphicOn f (sphere 0 |R|)
           posLog_norm_add_le (f (circleMap 0 R β)) (-circleMap 0 1 α)
         _ = log⁺ ‖f (circleMap 0 R β)‖ + Real.log 2 := by
           simp [norm_circleMap_zero, add_comm]
-    rwa [integral_const, smul_eq_mul, mul_comm, measureReal_restrict_apply_univ,
-      mul_comm, Real.volume_real_Ioc_of_le two_pi_pos.le, sub_zero] at hle
+    simp [μ, Real.volume_real_Ioc_of_le two_pi_pos.le] at hle
+    linarith
   have h_slice :
       Integrable (fun β ↦ ∫ α, ‖localCartanKernel f R α β‖ ∂μ) μ :=
     Integrable.congr ((h_int_pos.const_mul 2).sub (h_int_posLog.const_mul (2 * π)))
       (Eventually.of_forall fun β ↦ (integral_norm_localCartanKernel_eq f R β).symm)
-  change IntegrableOn (fun p : ℝ × ℝ ↦ localCartanKernel f R p.1 p.2) _ volume
-  rw [IntegrableOn, Measure.volume_eq_prod, ← Measure.prod_restrict]
-  simpa [uIoc_of_le two_pi_pos.le] using (integrable_prod_iff' hK_meas.aestronglyMeasurable).2
+  rw [Function.uncurry_def, uIoc_of_le two_pi_pos.le, IntegrableOn, Measure.volume_eq_prod,
+    ← Measure.prod_restrict]
+  simpa only [localCartanKernel] using (integrable_prod_iff' hK_meas.aestronglyMeasurable).2
     ⟨Eventually.of_forall (integrableOn_localCartanKernel_left f R), h_slice⟩
 
 /-- Local version of `ValueDistribution.circleIntegrable_circleAverage_log_norm_sub`: if `f` is
