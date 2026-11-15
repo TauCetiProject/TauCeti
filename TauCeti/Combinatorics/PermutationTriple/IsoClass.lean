@@ -321,6 +321,13 @@ theorem forget_mk (t : ConnectedTriple n) (i : Fin n) :
     (mk t i).forget = ConnectedIsoClass.mk t :=
   (rfl)
 
+/-- Every connected triple class admits a marked sheet, including the empty degree, where
+there are no connected classes. -/
+theorem forget_surjective : Function.Surjective (forget : MarkedIsoClass n → _) := by
+  intro c
+  obtain ⟨t, rfl⟩ := ConnectedIsoClass.mk_surjective c
+  exact ⟨mk t ⟨0, Nat.pos_of_ne_zero t.2.ne_zero⟩, forget_mk _ _⟩
+
 /-- Relabeling acts freely on marked connected triples: a relabeling fixing a connected triple
 and one of its sheets is an automorphism of a transitive triple fixing a sheet, hence the
 identity. -/
