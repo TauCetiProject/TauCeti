@@ -261,6 +261,7 @@ theorem eLorentzNorm_self {ε' : Type*} [TopologicalSpace ε'] [ContinuousENorm 
       ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le), inv_mul_cancel₀ ht.ne', ENNReal.ofReal_one,
       one_mul]
 
+/-- On the diagonal `q = p`, membership in `L^{p, p}(μ)` coincides with `MemLp f p μ`. -/
 @[simp]
 theorem memLorentz_self {ε' : Type*} [TopologicalSpace ε'] [ContinuousENorm ε'] {f : α → ε'} :
     MemLorentz f p p μ ↔ MemLp f p μ := by
@@ -526,6 +527,8 @@ theorem eLorentzNorm_le_of_exponent_le (hp0 : p ≠ 0) (hptop : p ≠ ∞) {q₀
     ENNReal.ofReal_rpow_of_pos hC₀, ← Real.rpow_mul (div_nonneg hr₀.le hrp.le)]
   congr 3; field_simp
 
+/-- **Secondary-exponent embedding** for Lorentz classes: for `0 < p < ∞` (`p ≠ 0`, `p ≠ ∞`) and
+`0 < q₀ ≤ q₁ ≤ ∞` (`q₀ ≠ 0`, `q₀ ≤ q₁`), `L^{p, q₀}(μ)` embeds into `L^{p, q₁}(μ)`. -/
 theorem MemLorentz.mono_exponent (hp0 : p ≠ 0) (hptop : p ≠ ∞) {q₀ q₁ : ℝ≥0∞}
     (hq₀ : q₀ ≠ 0) (hq : q₀ ≤ q₁) (hf : MemLorentz f p q₀ μ) :
     MemLorentz f p q₁ μ :=
@@ -585,6 +588,8 @@ theorem MemLorentz.indicator {A : Set α} (hA : NullMeasurableSet A μ) (hf : Me
     MemLorentz (A.indicator f) p q μ :=
   (eLorentzNorm_indicator_le f hA).trans_lt hf
 
+/-- The indicator of a `μ`-null measurable set of finite measure with a finite-norm value belongs
+to `L^{p, q}(μ)` whenever `p ≠ ∞` or `q = ∞`. -/
 theorem memLorentz_indicator_const {A : Set α} (hA : NullMeasurableSet A μ) (c : ε)
     (hp : p ≠ ∞ ∨ q = ∞) (hc : ‖c‖ₑ ≠ ∞) (hμA : μ A ≠ ∞) :
     MemLorentz (A.indicator fun _ ↦ c) p q μ := by
@@ -681,6 +686,7 @@ theorem eLorentzNorm_add_le (hq : 1 ≤ q) :
       ENNReal.ofReal (2 ^ (p⁻¹).toReal) * (eLorentzNorm f p q μ + eLorentzNorm g p q μ) := by
   simpa [ENNReal.LpAddConst_of_one_le hq] using eLorentzNorm_add_le' (f := f) (g := g) (μ := μ) p q
 
+/-- The Lorentz class `L^{p, q}(μ)` is closed under addition for all `p, q ∈ [0, ∞]`. -/
 theorem MemLorentz.add (hf : MemLorentz f p q μ) (hg : MemLorentz g p q μ) :
     MemLorentz (f + g) p q μ :=
   (eLorentzNorm_add_le' p q).trans_lt <| ENNReal.mul_lt_top

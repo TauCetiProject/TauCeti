@@ -77,6 +77,8 @@ from it.
   `MeasureTheory.Measure.decreasingRearrangement_mul_le`: the shifted subadditivity and
   submultiplicativity, and `decreasingRearrangement_le_add_essSup`, the bound
   `f* s ≤ g* s + ess sup h` whenever `f ≤ g + h` almost everywhere.
+* `MeasureTheory.Measure.mul_decreasingRearrangement_le_setLIntegral_Ioc`: the lower bound
+  `t f* t ≤ ∫₀ᵗ f*`.
 * `MeasureTheory.Measure.lintegral_decreasingRearrangement_eq_iInf_lintegral_sub`: the formula
   `∫₀ᵗ f* = inf_c (∫ (f - c) + t c)`.
 * `MeasureTheory.Measure.lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm`: the
@@ -444,6 +446,17 @@ theorem lintegral_decreasingRearrangement_indicator (A : Set α) (c : ℝ≥0∞
     ENNReal.ofReal_toReal hA]
 
 /-! ### The `K`-functional of `(L¹, L∞)` -/
+
+/-- Since `f*` is antitone, `t f* t ≤ ∫₀ᵗ f*` for every `t : ℝ`. -/
+theorem mul_decreasingRearrangement_le_setLIntegral_Ioc (f : α → ℝ≥0∞) (t : ℝ) :
+    ENNReal.ofReal t * μ.decreasingRearrangement f t ≤
+      ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement f s := by
+  calc ENNReal.ofReal t * μ.decreasingRearrangement f t
+      = ∫⁻ _ in Ioc 0 t, μ.decreasingRearrangement f t := by
+        rw [setLIntegral_const, Real.volume_Ioc, sub_zero, mul_comm]
+    _ ≤ ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement f s :=
+        setLIntegral_mono (μ.measurable_decreasingRearrangement f) fun s hs ↦
+          μ.antitone_decreasingRearrangement f hs.2
 
 /-- For every level `c`, `∫₀ᵗ f* ≤ ∫ (f - c) + t c`. -/
 theorem lintegral_decreasingRearrangement_le_lintegral_sub (hf : AEMeasurable f μ) (t : ℝ)

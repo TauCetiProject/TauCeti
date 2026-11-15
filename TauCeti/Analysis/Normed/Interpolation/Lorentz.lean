@@ -65,17 +65,6 @@ private theorem toReal_inv_eq_one_sub (hθ : θ ∈ Ioo 0 1) (hp : p⁻¹ = ENNR
     (p⁻¹).toReal = 1 - θ := by
   rw [hp, ENNReal.toReal_ofReal (sub_nonneg.2 hθ.2.le)]
 
-private theorem mul_decreasingRearrangement_le_setLIntegral_Ioc {α : Type*} [MeasurableSpace α]
-    (μ : Measure α) (h : α → ℝ≥0∞) (t : ℝ) :
-    ENNReal.ofReal t * μ.decreasingRearrangement h t ≤
-      ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement h s := by
-  calc ENNReal.ofReal t * μ.decreasingRearrangement h t
-      = ∫⁻ _ in Ioc 0 t, μ.decreasingRearrangement h t := by
-        rw [setLIntegral_const, Real.volume_Ioc, sub_zero, mul_comm]
-    _ ≤ ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement h s :=
-        setLIntegral_mono (μ.measurable_decreasingRearrangement h) fun s hs ↦
-          μ.antitone_decreasingRearrangement h hs.2
-
 end Helpers
 
 section EmbeddingIntoSum
@@ -155,6 +144,8 @@ theorem kMethodENorm_l1Linfty_sumSpaceEmbed (θ : ℝ) (q : ℝ≥0∞)
   exact eLpNorm_congr_ae (ae_pos_multHaar.mono fun t ht ↦ by
     dsimp only; rw [kFunctional_l1Linfty_sumSpaceEmbed ht.le])
 
+/-- The embedding `sumSpaceEmbed` preserves `K`-method membership between the sum space of
+`lebesgue 𝕜 E μ 1 ∞` and `L¹(μ; E) + L^∞(μ; E)`. -/
 theorem mem_kMethod_lebesgue_one_top_iff_l1Linfty {v : (lebesgue 𝕜 E μ 1 ∞).SumSpace} :
     v ∈ (lebesgue 𝕜 E μ 1 ∞).kMethod θ q ↔
       (lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed v ∈ (l1Linfty 𝕜 E μ).kMethod θ q := by
@@ -179,7 +170,7 @@ theorem eLorentzNorm_le_kMethodENorm_l1Linfty (hθ : θ ∈ Ioo 0 1)
         rw [toReal_inv_eq_one_sub hθ hp, sub_eq_neg_add, Real.rpow_add_one ht.ne',
           ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _), mul_assoc]
     _ ≤ ENNReal.ofReal (t ^ (-θ)) * ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) :=
-        mul_le_mul_right ((mul_decreasingRearrangement_le_setLIntegral_Ioc μ _ t).trans
+        mul_le_mul_right ((μ.mul_decreasingRearrangement_le_setLIntegral_Ioc _ t).trans
           (lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty hu ht.le)) _
     _ = ‖t ^ (-θ) * (l1Linfty 𝕜 E μ).kFunctional t u‖ₑ := by
         rw [← ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _),
@@ -381,12 +372,16 @@ def lebesgueOneTopKMethodEquivLp (hθ : θ ∈ Ioo 0 1) (hp : p⁻¹ = ENNReal.o
         L1AddLinfty.toAEEqFun_ofLp]
       exact EventuallyEq.rfl)
 
+/-- The diagonal isomorphism `(L¹, L^∞)_{θ, p} ≃L[𝕜] L^p(μ; E)` sends `u` to an `L^p` element
+representing the same function almost everywhere as `u` in `L¹ + L^∞`. -/
 theorem coeFn_lebesgueOneTopKMethodEquivLp (hθ : θ ∈ Ioo 0 1)
     (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) (u : (lebesgue 𝕜 E μ 1 ∞).KMethodSpace θ p) :
     ⇑(lebesgueOneTopKMethodEquivLp hθ hp u) =ᵐ[μ]
       ⇑(L1AddLinfty.toAEEqFun 𝕜 ((lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed (KMethodSpace.toSumₗ u))) :=
   (memLp_toAEEqFun_kMethodSpace hθ hp u).coeFn_toLp
 
+/-- In the ambient sum space of `(L¹, L^∞)`, the inverse isomorphism
+`L^p(μ; E) → (L¹, L^∞)_{θ, p}` agrees with `lpToLebesgueSum`. -/
 @[simp]
 theorem toSumₗ_lebesgueOneTopKMethodEquivLp_symm (hθ : θ ∈ Ioo 0 1)
     (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) (g : Lp E p μ) :
@@ -394,11 +389,15 @@ theorem toSumₗ_lebesgueOneTopKMethodEquivLp_symm (hθ : θ ∈ Ioo 0 1)
       lpToLebesgueSum (𝕜 := 𝕜) (Fact.out : 1 ≤ p) le_top g := by
   simp [lebesgueOneTopKMethodEquivLp, lpToLebesgueOneTopKMethod]
 
+/-- The forward isomorphism `(L¹, L^∞)_{θ, p} → L^p(μ; E)` is norm-nonincreasing
+(`‖·‖_p ≤ ‖·‖_{θ, p}`). -/
 theorem norm_lebesgueOneTopKMethodEquivLp_le (hθ : θ ∈ Ioo 0 1)
     (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) (u : (lebesgue 𝕜 E μ 1 ∞).KMethodSpace θ p) :
     ‖lebesgueOneTopKMethodEquivLp hθ hp u‖ ≤ ‖u‖ :=
   norm_toLp_kMethodSpace_le hθ hp u
 
+/-- Over any normed field `𝕜` (without requiring `NormedSpace ℝ E`), the inverse isomorphism
+`L^p(μ; E) → (L¹, L^∞)_{θ, p}` satisfies `‖·‖_{θ, p} ≤ 2 θ⁻¹ ‖·‖_p`. -/
 theorem norm_lebesgueOneTopKMethodEquivLp_symm_le (hθ : θ ∈ Ioo 0 1)
     (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) (g : Lp E p μ) :
     ‖(lebesgueOneTopKMethodEquivLp (𝕜 := 𝕜) hθ hp).symm g‖ ≤ 2 * θ⁻¹ * ‖g‖ :=
@@ -420,12 +419,16 @@ section OpNorm
 
 variable {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedSpace 𝕜' E]
 
+/-- Over a nontrivially normed field, the forward isomorphism `(L¹, L^∞)_{θ, p} →L[𝕜'] L^p(μ; E)`
+has operator norm at most `1`. -/
 theorem opNorm_lebesgueOneTopKMethodEquivLp_le (hθ : θ ∈ Ioo 0 1)
     (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) :
     ‖(lebesgueOneTopKMethodEquivLp (𝕜 := 𝕜') (E := E) (μ := μ) hθ hp).toContinuousLinearMap‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
     simpa using norm_lebesgueOneTopKMethodEquivLp_le hθ hp u
 
+/-- Over any nontrivially normed field (without requiring `NormedSpace ℝ E`), the inverse
+isomorphism `L^p(μ; E) →L[𝕜'] (L¹, L^∞)_{θ, p}` has operator norm at most `2 θ⁻¹`. -/
 theorem opNorm_lebesgueOneTopKMethodEquivLp_symm_le (hθ : θ ∈ Ioo 0 1)
     (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) :
     ‖((lebesgueOneTopKMethodEquivLp (𝕜 := 𝕜') (E := E) (μ := μ) hθ hp).symm).toContinuousLinearMap‖
@@ -433,6 +436,9 @@ theorem opNorm_lebesgueOneTopKMethodEquivLp_symm_le (hθ : θ ∈ Ioo 0 1)
   ContinuousLinearMap.opNorm_le_bound _ (mul_nonneg zero_le_two (inv_nonneg.2 hθ.1.le))
     (norm_lebesgueOneTopKMethodEquivLp_symm_le hθ hp)
 
+/-- When `E` is also a real normed space, the inverse isomorphism
+`L^p(μ; E) →L[𝕜'] (L¹, L^∞)_{θ, p}` has operator norm bounded by the sharp Hardy constant
+`θ⁻¹`. -/
 theorem opNorm_lebesgueOneTopKMethodEquivLp_symm_le_of_normedSpace_real [NormedSpace ℝ E]
     (hθ : θ ∈ Ioo 0 1) (hp : p⁻¹ = ENNReal.ofReal (1 - θ)) :
     ‖((lebesgueOneTopKMethodEquivLp (𝕜 := 𝕜') (E := E) (μ := μ) hθ hp).symm).toContinuousLinearMap‖
