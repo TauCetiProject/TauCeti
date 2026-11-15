@@ -296,55 +296,11 @@ end EvenFull
 
 section HalfInt
 
-/-- The dual of `2⁻¹ ℤ ⊆ ℝ` is `2 ℤ`. -/
-theorem dual_span_inv_two :
-    dual (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) = span ℤ {(2 : ℝ)} := by
-  simpa using dual_span_singleton (inv_ne_zero (two_ne_zero' ℝ))
-
-/-- The lattice `2 ℤ ⊆ ℝ` is strictly contained in `2⁻¹ ℤ`. -/
-theorem span_two_lt_span_inv_two :
-    (span ℤ {(2 : ℝ)} : Submodule ℤ ℝ) < span ℤ {(2⁻¹ : ℝ)} := by
-  rw [← dual_span_inv_two, dual_lt_span_singleton_iff]
-  exact ⟨⟨4, by norm_num⟩, by norm_num⟩
-
-/-- The discriminant group of `2⁻¹ ℤ ⊆ ℝ` is trivial, since `(2⁻¹ ℤ)^∨ = 2 ℤ ≤ 2⁻¹ ℤ`. -/
-noncomputable instance instUniqueDiscriminantGroupSpanInvTwo :
-    Unique (DiscriminantGroup (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ)) :=
-  have := subsingleton_discriminantGroup_iff.mpr
-    (dual_span_inv_two.trans_le span_two_lt_span_inv_two.le)
-  uniqueOfSubsingleton 0
-
-/-- The lattice `2⁻¹ ℤ ⊆ ℝ` is not integral. -/
-theorem not_isIntegral_span_inv_two :
-    ¬ IsIntegral (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) := by
-  rw [isIntegral_iff_le_dual, dual_span_inv_two]
-  exact span_two_lt_span_inv_two.not_ge
-
-/-- On the imaginary axis, `re Θ_{2ℤ}(τ) < re Θ_{2⁻¹ℤ}(τ)`. -/
-theorem re_thetaSeries_span_two_lt_span_inv_two {τ : ℍ} (hτ : τ.re = 0) :
-    (thetaSeries (span ℤ {(2 : ℝ)} : Submodule ℤ ℝ) τ).re <
-      (thetaSeries (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) τ).re :=
-  re_thetaSeries_lt_of_lt span_two_lt_span_inv_two hτ
-
-/-- On the imaginary axis, `Θ_{2ℤ}(τ) ≠ Θ_{2⁻¹ℤ}(τ)`. -/
-theorem thetaSeries_span_two_ne_thetaSeries_span_inv_two {τ : ℍ} (hτ : τ.re = 0) :
-    thetaSeries (span ℤ {(2 : ℝ)} : Submodule ℤ ℝ) τ ≠
-      thetaSeries (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) τ :=
-  thetaSeries_ne_of_lt_of_re_eq_zero span_two_lt_span_inv_two hτ
-
 /-- At `τ = i`, `Θ_{2ℤ}(i) ≠ Θ_{2⁻¹ℤ}(i)`. -/
 theorem thetaSeries_span_two_ne_thetaSeries_span_inv_two_I :
     thetaSeries (span ℤ {(2 : ℝ)} : Submodule ℤ ℝ) UpperHalfPlane.I ≠
       thetaSeries (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) UpperHalfPlane.I :=
-  thetaSeries_span_two_ne_thetaSeries_span_inv_two (by simp)
-
-/-- On the imaginary axis, the non-integral lattice `L = 2⁻¹ ℤ ⊆ ℝ` violates the dual coset
-decomposition `Θ_{L^∨}(τ) = ∑_{γ ∈ A_L} θ_γ(τ)`. -/
-theorem thetaSeries_dual_span_inv_two_ne_sum {τ : ℍ} (hτ : τ.re = 0) :
-    thetaSeries (dual (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ)) τ ≠
-      ∑ γ : DiscriminantGroup (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ),
-        thetaCosetClass (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) γ τ :=
-  mt (thetaSeries_dual_eq_sum_iff_isIntegral hτ).mp not_isIntegral_span_inv_two
+  thetaSeries_ne_of_lt_of_re_eq_zero span_two_lt_span_inv_two (by simp)
 
 /-- At `τ = i`, the non-integral lattice `L = 2⁻¹ ℤ ⊆ ℝ` violates the dual coset decomposition
 `Θ_{L^∨}(i) = ∑_{γ ∈ A_L} θ_γ(i)`. -/
@@ -352,7 +308,7 @@ theorem thetaSeries_dual_span_inv_two_ne_sum_I :
     thetaSeries (dual (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ)) UpperHalfPlane.I ≠
       ∑ γ : DiscriminantGroup (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ),
         thetaCosetClass (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) γ UpperHalfPlane.I :=
-  thetaSeries_dual_span_inv_two_ne_sum (by simp)
+  mt (thetaSeries_dual_eq_sum_iff_isIntegral (by simp)).mp not_isIntegral_span_inv_two
 
 end HalfInt
 

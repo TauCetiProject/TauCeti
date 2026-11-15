@@ -169,30 +169,6 @@ theorem discriminantGroupEquivQuotientSup_mk (L : Submodule ℤ E) (x : dual L) 
       Submodule.Quotient.mk ⟨x, mem_sup_right x.2⟩ :=
   (rfl)
 
-/-- On a vector of `L ⊔ L^∨` that lies in `L^∨`, the inverse of
-`discriminantGroupEquivQuotientSup L` takes its class in `DiscriminantGroup L`. -/
-@[simp]
-theorem discriminantGroupEquivQuotientSup_symm_mk_of_mem_dual (L : Submodule ℤ E)
-    (x : ↥(L ⊔ dual L)) (hx : (x : E) ∈ dual L) :
-    (discriminantGroupEquivQuotientSup L).symm (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk ⟨x, hx⟩ :=
-  (discriminantGroupEquivQuotientSup L).symm_apply_eq.mpr <| by
-    rw [discriminantGroupEquivQuotientSup_mk]
-
-/-- A vector of `L ⊔ L^∨` maps to `0` in `DiscriminantGroup L` under
-`(discriminantGroupEquivQuotientSup L).symm` if and only if it lies in `L`. -/
-theorem discriminantGroupEquivQuotientSup_symm_mk_eq_zero_iff (x : ↥(L ⊔ dual L)) :
-    (discriminantGroupEquivQuotientSup L).symm (Submodule.Quotient.mk x) = 0 ↔ (x : E) ∈ L := by
-  rw [LinearEquiv.map_eq_zero_iff, Submodule.Quotient.mk_eq_zero, submoduleOf, Submodule.mem_comap,
-    subtype_apply]
-
-/-- A vector of `L ⊔ L^∨` that lies in `L` maps to `0` in `DiscriminantGroup L` under
-`(discriminantGroupEquivQuotientSup L).symm`. -/
-theorem discriminantGroupEquivQuotientSup_symm_mk_eq_zero_of_mem {x : ↥(L ⊔ dual L)}
-    (hx : (x : E) ∈ L) :
-    (discriminantGroupEquivQuotientSup L).symm (Submodule.Quotient.mk x) = 0 :=
-  (discriminantGroupEquivQuotientSup_symm_mk_eq_zero_iff x).mpr hx
-
 /-- The index of `L` in `L ⊔ L^∨` equals the order of the discriminant group. -/
 @[simp]
 theorem card_quotient_sup_dual :
@@ -570,6 +546,19 @@ theorem subsingleton_discriminantGroup_span_singleton_iff {c : ℝ} :
     Subsingleton (DiscriminantGroup (span ℤ {c} : Submodule ℤ ℝ)) ↔
       ∃ m : ℤ, (m : ℝ) * c ^ 2 = 1 :=
   subsingleton_discriminantGroup_iff.trans dual_le_span_singleton_iff
+
+/-- The discriminant group of `2⁻¹ ℤ ⊆ ℝ` is trivial, since `(2⁻¹ ℤ)^∨ = 2 ℤ ≤ 2⁻¹ ℤ`. -/
+noncomputable instance instUniqueDiscriminantGroupSpanInvTwo :
+    Unique (DiscriminantGroup (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ)) :=
+  have := subsingleton_discriminantGroup_iff.mpr
+    (dual_span_inv_two.trans_le span_two_lt_span_inv_two.le)
+  uniqueOfSubsingleton 0
+
+/-- The lattice `2⁻¹ ℤ ⊆ ℝ` is not integral. -/
+theorem not_isIntegral_span_inv_two :
+    ¬ IsIntegral (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) := by
+  rw [isIntegral_iff_le_dual, dual_span_inv_two]
+  exact span_two_lt_span_inv_two.not_ge
 
 end DualQuotient
 

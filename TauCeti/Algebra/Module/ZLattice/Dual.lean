@@ -220,6 +220,17 @@ theorem dual_lt_span_singleton_iff {c : ℝ} :
   · rw [one_smul]
     exact mul_left_cancel₀ hc (by rw [mul_inv_cancel₀ hc, ← sq, hc2])
 
+/-- The dual of `2⁻¹ ℤ ⊆ ℝ` is `2 ℤ`. -/
+theorem dual_span_inv_two :
+    dual (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) = span ℤ {(2 : ℝ)} := by
+  simpa using dual_span_singleton (inv_ne_zero (two_ne_zero' ℝ))
+
+/-- The lattice `2 ℤ ⊆ ℝ` is strictly contained in `2⁻¹ ℤ`. -/
+theorem span_two_lt_span_inv_two :
+    (span ℤ {(2 : ℝ)} : Submodule ℤ ℝ) < span ℤ {(2⁻¹ : ℝ)} := by
+  rw [← dual_span_inv_two, dual_lt_span_singleton_iff]
+  exact ⟨⟨4, by norm_num⟩, by norm_num⟩
+
 /-- When `c²` is irrational, the rank-one lattice `c ℤ ⊆ ℝ` meets its dual `c⁻¹ ℤ` only at `0`. -/
 theorem inf_dual_span_singleton_eq_bot_of_irrational_sq {c : ℝ} (hc : Irrational (c ^ 2)) :
     (span ℤ {c} : Submodule ℤ ℝ) ⊓ dual (span ℤ {c}) = ⊥ := by
