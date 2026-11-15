@@ -400,11 +400,11 @@ theorem mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap
     CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A (dimension n))
           (baseChangeDefiningIdeal n A) ≫
         rootSubgroupToBaseChangeCoordinateMap n A k =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
         (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
-        (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
-        (latticeBasis n) A k := by
+        (rep_kostantForm_mem_lattice n) k
+        (isNilpotent_rep_rootGenerator n k) (latticeBasis n) A := by
   unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
     (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
@@ -418,11 +418,11 @@ its ambient transported coordinate map. -/
 theorem coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap
     (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     coordinateMap n A ≫ rootSubgroupToBaseChangeCoordinateMap n A k =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
         (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
-        (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
-        (latticeBasis n) A k := by
+        (rep_kostantForm_mem_lattice n) k
+        (isNilpotent_rep_rootGenerator n k) (latticeBasis n) A := by
   unfold coordinateMap
   exact mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap n A k
 
@@ -655,22 +655,22 @@ noncomputable abbrev generatorCoordinateAlgebra :
 noncomputable def generatorCoordinateMap (j : Sum (Fin (n + 1) ⊕ Fin (n + 1)) Unit) :
     GeneralLinear.coordinateHopfAlgebra A (dimension n) ⟶ generatorCoordinateAlgebra n A j :=
   match j with
-  | .inl k => kostantRootSubgroupBaseChangePresentationCoordinateMap
+  | .inl k => kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
       (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
       (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n)
       (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n)
-      (isNilpotent_rep_rootGenerator n) (latticeBasis n) A k
+      k (isNilpotent_rep_rootGenerator n k) (latticeBasis n) A
   | .inr _ => GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A (basisWeight n)
 
 /-- The root branch of the generator family is the transported root-subgroup map. -/
 @[simp]
 theorem generatorCoordinateMap_inl (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     generatorCoordinateMap n A (.inl k) =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
         (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n)
         (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n)
-        (isNilpotent_rep_rootGenerator n) (latticeBasis n) A k := by
+        k (isNilpotent_rep_rootGenerator n k) (latticeBasis n) A := by
   simp [generatorCoordinateMap]
 
 /-- The torus branch of the generator family is the transported weight-torus map. -/

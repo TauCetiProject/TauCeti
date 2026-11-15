@@ -117,7 +117,7 @@ theorem unipotentRadicalDefiningIdeal_eq_augmentation_of_finite_kernel
   let _ : Algebra.Smooth k (unipotentRadical H) := hU.1
   let _ : IsReduced (unipotentRadical H) := isReduced_of_smooth k _
   let _ : ConnectedSpace (PrimeSpectrum (unipotentRadical H)) :=
-    geometricallyConnectedCommHopfAlgProperty.connectedSpace k _
+    geometricallyConnectedCommHopfAlgProperty.connectedSpace
       (geometricallyConnected_unipotentRadical H)
   have hbot := HopfIdeal.augmentation_eq_bot_of_moduleFinite
     (k := k) (H := unipotentRadical H)
