@@ -10,28 +10,38 @@ public import Mathlib.Analysis.InnerProductSpace.Basic
 /-!
 # The strict Cauchy–Schwarz inequality
 
-In a real inner product space, the Cauchy–Schwarz inequality `|⟪a, b⟫| ≤ ‖a‖ ‖b‖` is strict
-exactly when `b` is not a multiple of the nonzero vector `a`
-(`abs_real_inner_lt_norm_mul_norm_iff`).
+In an inner product space over `ℝ` or `ℂ`, the Cauchy–Schwarz inequality `‖⟪a, b⟫‖ ≤ ‖a‖ ‖b‖` is
+strict exactly when `a` is nonzero and `b` is not a multiple of `a`
+(`TauCeti.norm_inner_lt_norm_iff`; for real inner products in terms of the absolute value,
+`TauCeti.abs_real_inner_lt_norm_mul_norm_iff`).
 -/
 
 public section
 
 open scoped RealInnerProductSpace
 
+namespace TauCeti
+
+section RCLike
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {a b : E}
+
+/-- **Strict Cauchy–Schwarz.** `‖⟪a, b⟫‖ < ‖a‖ ‖b‖` exactly when `a` is nonzero and `b` is not a
+multiple of `a`. -/
+theorem norm_inner_lt_norm_iff :
+    ‖inner 𝕜 a b‖ < ‖a‖ * ‖b‖ ↔ a ≠ 0 ∧ ∀ c : 𝕜, b ≠ c • a := by
+  have h : ‖inner 𝕜 a b‖ = ‖a‖ * ‖b‖ ↔ a = 0 ∨ ∃ c : 𝕜, b = c • a :=
+    (norm_inner_eq_norm_tfae 𝕜 a b).out 1 3
+  rw [(norm_inner_le_norm a b).lt_iff_ne, ne_eq, h, not_or, not_exists]
+
+end RCLike
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {a b : E}
 
-/-- **Strict Cauchy–Schwarz.** For a nonzero vector `a`, `|⟪a, b⟫| < ‖a‖ ‖b‖` exactly when `b` is
-not a multiple of `a`. -/
-theorem abs_real_inner_lt_norm_mul_norm_iff (ha : a ≠ 0) :
-    |⟪a, b⟫| < ‖a‖ * ‖b‖ ↔ ∀ c : ℝ, b ≠ c • a := by
-  refine ⟨fun h c hc ↦ ?_, fun h ↦ ?_⟩
-  · subst hc
-    rw [real_inner_smul_right, real_inner_self_eq_norm_sq, abs_mul, norm_smul, Real.norm_eq_abs,
-      abs_of_nonneg (sq_nonneg ‖a‖)] at h
-    exact (h.trans_eq (by ring)).false
-  · have hb : b ≠ 0 := by simpa using h 0
-    refine (abs_real_inner_le_norm a b).lt_of_ne fun heq ↦ ?_
-    rw [← Real.norm_eq_abs] at heq
-    obtain ⟨c, -, hc⟩ := (norm_inner_eq_norm_iff ha hb).1 heq
-    exact h c hc
+/-- **Strict Cauchy–Schwarz** for a real inner product: `|⟪a, b⟫| < ‖a‖ ‖b‖` exactly when `a` is
+nonzero and `b` is not a multiple of `a`. -/
+theorem abs_real_inner_lt_norm_mul_norm_iff :
+    |⟪a, b⟫| < ‖a‖ * ‖b‖ ↔ a ≠ 0 ∧ ∀ c : ℝ, b ≠ c • a := by
+  rw [← Real.norm_eq_abs, norm_inner_lt_norm_iff]
+
+end TauCeti

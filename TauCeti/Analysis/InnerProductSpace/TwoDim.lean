@@ -14,8 +14,8 @@ import TauCeti.Analysis.InnerProductSpace.StrictCauchySchwarz
 
 The quarter turn `J = o.rightAngleRotation` of an oriented Euclidean plane carries the first vector
 of every positively oriented orthonormal basis `(e₀, e₁)` to the second, `J e₀ = e₁`, and hence
-`J e₁ = -e₀`. So in any such basis `J` is the standard quarter turn. For a nonzero vector `x`, the
-area form `ω(x, y)` vanishes exactly on the multiples `y` of `x`
+`J e₁ = -e₀`. So in any such basis `J` is the standard quarter turn. The area form `ω(x, y)` is
+nonzero exactly when `x` is nonzero and `y` is not a multiple of `x`
 (`Orientation.areaForm_ne_zero_iff`).
 
 On the complex plane, the continuous oriented volume form is normalized on the standard complex
@@ -68,11 +68,11 @@ theorem sq_norm_smul_eq_of_areaForm_eq_zero {a x : E} (h : o.areaForm a x = 0) :
   rw [real_inner_smul_left, real_inner_smul_left, ← o.inner_mul_inner_add_areaForm_mul_areaForm,
     h, zero_mul, add_zero]
 
-/-- The area form `ω(x, y)` with a nonzero first argument `x` is nonzero exactly when `y` is not a
-multiple of `x`. -/
-theorem areaForm_ne_zero_iff {x y : E} (hx : x ≠ 0) :
-    o.areaForm x y ≠ 0 ↔ ∀ c : ℝ, y ≠ c • x := by
-  rw [← abs_real_inner_lt_norm_mul_norm_iff hx,
+/-- The area form `ω(x, y)` is nonzero exactly when `x` is nonzero and `y` is not a multiple of
+`x`. -/
+theorem areaForm_ne_zero_iff {x y : E} :
+    o.areaForm x y ≠ 0 ↔ x ≠ 0 ∧ ∀ c : ℝ, y ≠ c • x := by
+  rw [← TauCeti.abs_real_inner_lt_norm_mul_norm_iff,
     ← pow_lt_pow_iff_left₀ (abs_nonneg _) (by positivity) two_ne_zero, sq_abs, mul_pow,
     ← o.inner_sq_add_areaForm_sq x y, lt_add_iff_pos_right, sq_pos_iff]
 

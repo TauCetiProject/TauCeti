@@ -15,7 +15,6 @@ import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.InnerProductSpace.StrictCauchySchwarz
 import TauCeti.Analysis.InnerProductSpace.TwoDim
-import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # The generating function of a billiard
@@ -47,10 +46,14 @@ lies in `(-1, 1)` for a unit-speed curve
 (`TauCeti.abs_cotangentGeneratingSource_billiardGeneratingFunction_snd_apply_lt_one`,
 `TauCeti.abs_cotangentGeneratingTarget_billiardGeneratingFunction_snd_apply_lt_one`).
 
-For an `L`-periodic parametrization, `S` is invariant under translating both arguments by `L`
-(`TauCeti.billiardGeneratingFunction_add_period`), and the chord from `χ(t)` to `χ(s + L)` has the
-same length (`TauCeti.billiardGeneratingFunction_swap_add_period`). The function is smooth wherever
-the chord is nondegenerate, `χ(t) ≠ χ(s)` (`TauCeti.contDiffAt_billiardGeneratingFunction`). For
+For an `L`-periodic parametrization, `S` is `L`-periodic in each argument
+(`TauCeti.billiardGeneratingFunction_add_period_fst`,
+`TauCeti.billiardGeneratingFunction_add_period_snd`), hence invariant under translating both
+arguments by `L` (`TauCeti.billiardGeneratingFunction_add_period`), and the chord from `χ(t)` to
+`χ(s + L)` has the same length (`TauCeti.billiardGeneratingFunction_swap_add_period`). For a
+continuous curve `S` is continuous (`TauCeti.continuous_billiardGeneratingFunction`), and it is
+smooth wherever the chord is nondegenerate, `χ(t) ≠ χ(s)`
+(`TauCeti.contDiffAt_billiardGeneratingFunction`). For
 the boundary of a table this excludes the diagonal `t = s` and its translates `t = s + kL`, and
 the natural domain of `S` is the strip `s < t < s + L`.
 
@@ -116,17 +119,37 @@ theorem billiardGeneratingFunction_self (χ : ℝ → E) (s : ℝ) :
   simp [billiardGeneratingFunction_apply]
 
 /-- The chord from `χ t` to `χ s` has the same length as the chord from `χ s` to `χ t`. -/
+@[simp]
 theorem billiardGeneratingFunction_swap (χ : ℝ → E) (x : ℝ × ℝ) :
     billiardGeneratingFunction χ x.swap = billiardGeneratingFunction χ x := by
   simp [billiardGeneratingFunction_def, norm_sub_rev]
 
+/-- The billiard generating function of a continuous curve is continuous. -/
+theorem continuous_billiardGeneratingFunction (hχ : Continuous χ) :
+    Continuous (billiardGeneratingFunction χ) :=
+  ((hχ.comp continuous_snd).sub (hχ.comp continuous_fst)).norm.neg
+
 /-! ### Periodicity -/
+
+/-- For an `L`-periodic curve, the billiard generating function is `L`-periodic in its first
+argument. -/
+theorem billiardGeneratingFunction_add_period_fst {L : ℝ} (hχ : Function.Periodic χ L)
+    (s t : ℝ) :
+    billiardGeneratingFunction χ (s + L, t) = billiardGeneratingFunction χ (s, t) := by
+  simp [billiardGeneratingFunction_apply, hχ s]
+
+/-- For an `L`-periodic curve, the billiard generating function is `L`-periodic in its second
+argument. -/
+theorem billiardGeneratingFunction_add_period_snd {L : ℝ} (hχ : Function.Periodic χ L)
+    (s t : ℝ) :
+    billiardGeneratingFunction χ (s, t + L) = billiardGeneratingFunction χ (s, t) := by
+  simp [billiardGeneratingFunction_apply, hχ t]
 
 /-- For an `L`-periodic curve, the billiard generating function is invariant under translating
 both arguments by `L`. -/
 theorem billiardGeneratingFunction_add_period {L : ℝ} (hχ : Function.Periodic χ L) (s t : ℝ) :
     billiardGeneratingFunction χ (s + L, t + L) = billiardGeneratingFunction χ (s, t) := by
-  simp [billiardGeneratingFunction_apply, hχ s, hχ t]
+  rw [billiardGeneratingFunction_add_period_fst hχ, billiardGeneratingFunction_add_period_snd hχ]
 
 /-- For an `L`-periodic curve, the chord from `χ t` to `χ (s + L)` is the chord from `χ s` to `χ t`
 traversed backwards. -/
@@ -218,26 +241,28 @@ theorem cotangentGeneratingTarget_billiardGeneratingFunction {s t : ℝ}
 /-- The tangential component `∂_s S(s, t)` of a chord which does not lie on the tangent line at
 `χ s` has absolute value less than the speed `‖χ'(s)‖`. -/
 theorem abs_cotangentGeneratingSource_billiardGeneratingFunction_snd_apply_lt_norm_deriv
-    {s t : ℝ} (hs : DifferentiableAt ℝ χ s) (ht : DifferentiableAt ℝ χ t) (hs0 : deriv χ s ≠ 0)
+    {s t : ℝ} (ht : DifferentiableAt ℝ χ t) (hs0 : deriv χ s ≠ 0)
     (htan : ∀ c : ℝ, χ t ≠ χ s + c • deriv χ s) :
     |(cotangentGeneratingSource (billiardGeneratingFunction χ) (s, t)).2 1| < ‖deriv χ s‖ := by
   have hst : χ t ≠ χ s := by simpa using htan 0
-  rw [cotangentGeneratingSource_billiardGeneratingFunction_snd_apply hs ht hst, one_mul,
+  rw [cotangentGeneratingSource_billiardGeneratingFunction_snd_apply
+    (differentiableAt_of_deriv_ne_zero hs0) ht hst, one_mul,
     real_inner_smul_left, abs_mul, abs_inv, abs_norm,
     inv_mul_lt_iff₀ (norm_pos_iff.2 (sub_ne_zero.2 hst)), real_inner_comm, mul_comm]
-  exact (abs_real_inner_lt_norm_mul_norm_iff hs0).2 fun c hc ↦
-    htan c (by rw [← hc, add_sub_cancel])
+  exact abs_real_inner_lt_norm_mul_norm_iff.2 ⟨hs0, fun c hc ↦
+    htan c (by rw [← hc, add_sub_cancel])⟩
 
 /-- The tangential component `-∂_t S(s, t)` of a chord which does not lie on the tangent line at
 `χ t` has absolute value less than the speed `‖χ'(t)‖`. -/
 theorem abs_cotangentGeneratingTarget_billiardGeneratingFunction_snd_apply_lt_norm_deriv
-    {s t : ℝ} (hs : DifferentiableAt ℝ χ s) (ht : DifferentiableAt ℝ χ t) (ht0 : deriv χ t ≠ 0)
+    {s t : ℝ} (hs : DifferentiableAt ℝ χ s) (ht0 : deriv χ t ≠ 0)
     (htan : ∀ c : ℝ, χ s ≠ χ t + c • deriv χ t) :
     |(cotangentGeneratingTarget (billiardGeneratingFunction χ) (s, t)).2 1| < ‖deriv χ t‖ := by
   -- Reversing the chord negates the unit direction, so this is the bound at the chord `(t, s)`.
+  have ht : DifferentiableAt ℝ χ t := differentiableAt_of_deriv_ne_zero ht0
   have hts : χ s ≠ χ t := by simpa using htan 0
   have h :=
-    abs_cotangentGeneratingSource_billiardGeneratingFunction_snd_apply_lt_norm_deriv ht hs ht0 htan
+    abs_cotangentGeneratingSource_billiardGeneratingFunction_snd_apply_lt_norm_deriv hs ht0 htan
   rwa [cotangentGeneratingSource_billiardGeneratingFunction_snd_apply ht hs hts, ← neg_sub,
     norm_neg, smul_neg, inner_neg_left, mul_neg, abs_neg,
     ← cotangentGeneratingTarget_billiardGeneratingFunction_snd_apply hs ht hts.symm] at h
@@ -245,32 +270,22 @@ theorem abs_cotangentGeneratingTarget_billiardGeneratingFunction_snd_apply_lt_no
 /-- For a unit-speed curve, the tangential component `∂_s S(s, t)` of a chord which does not lie on
 the tangent line at `χ s` is in `(-1, 1)`. -/
 theorem abs_cotangentGeneratingSource_billiardGeneratingFunction_snd_apply_lt_one {s t : ℝ}
-    (hs : DifferentiableAt ℝ χ s) (ht : DifferentiableAt ℝ χ t) (hs1 : ‖deriv χ s‖ = 1)
+    (ht : DifferentiableAt ℝ χ t) (hs1 : ‖deriv χ s‖ = 1)
     (htan : ∀ c : ℝ, χ t ≠ χ s + c • deriv χ s) :
     |(cotangentGeneratingSource (billiardGeneratingFunction χ) (s, t)).2 1| < 1 :=
-  hs1 ▸ abs_cotangentGeneratingSource_billiardGeneratingFunction_snd_apply_lt_norm_deriv hs ht
+  hs1 ▸ abs_cotangentGeneratingSource_billiardGeneratingFunction_snd_apply_lt_norm_deriv ht
     (norm_ne_zero_iff.1 (by simp [hs1])) htan
 
 /-- For a unit-speed curve, the tangential component `-∂_t S(s, t)` of a chord which does not lie
 on the tangent line at `χ t` is in `(-1, 1)`. -/
 theorem abs_cotangentGeneratingTarget_billiardGeneratingFunction_snd_apply_lt_one {s t : ℝ}
-    (hs : DifferentiableAt ℝ χ s) (ht : DifferentiableAt ℝ χ t) (ht1 : ‖deriv χ t‖ = 1)
+    (hs : DifferentiableAt ℝ χ s) (ht1 : ‖deriv χ t‖ = 1)
     (htan : ∀ c : ℝ, χ s ≠ χ t + c • deriv χ t) :
     |(cotangentGeneratingTarget (billiardGeneratingFunction χ) (s, t)).2 1| < 1 :=
-  ht1 ▸ abs_cotangentGeneratingTarget_billiardGeneratingFunction_snd_apply_lt_norm_deriv hs ht
+  ht1 ▸ abs_cotangentGeneratingTarget_billiardGeneratingFunction_snd_apply_lt_norm_deriv hs
     (norm_ne_zero_iff.1 (by simp [ht1])) htan
 
 /-! ### The mixed derivative -/
-
-/-- A mixed Hessian on `ℝ × ℝ` is determined by its value at `1 1`. -/
-private theorem cotangentMixedHessian_apply_apply_eq_mul (S : ℝ × ℝ → ℝ) (x : ℝ × ℝ)
-    (b a : ℝ) :
-    cotangentMixedHessian S x b a = b * a * cotangentMixedHessian S x 1 1 := by
-  have h := congr($((cotangentMixedHessian S x).map_smul b 1) a)
-  have h' := (cotangentMixedHessian S x 1).map_smul a 1
-  simp only [smul_eq_mul, mul_one, smul_apply] at h h'
-  rw [h, h']
-  ring
 
 /-- The mixed derivative at `1 1`, from which `cotangentMixedHessian_billiardGeneratingFunction`
 follows by linearity. -/
@@ -374,8 +389,8 @@ theorem cotangentMixedHessian_billiardGeneratingFunction_apply_apply_neg
           (hχ.continuous.comp continuous_fst))
     simpa [F, o.inner_rightAngleRotation_left] using hcont.continuousOn
   have hF0 : ∀ x ∈ U, F x ≠ 0 := fun x hx ↦
-    (o.areaForm_ne_zero_iff (hχ' x.1)).2 fun c hc ↦
-      htan x.1 x.2 hx.1 hx.2 c (by rw [← hc, add_sub_cancel])
+    o.areaForm_ne_zero_iff.2 ⟨hχ' x.1, fun c hc ↦
+      htan x.1 x.2 hx.1 hx.2 c (by rw [← hc, add_sub_cancel])⟩
   have hmem₁ : (s, t) ∈ U := ⟨hst, hts⟩
   have hmem₂ : (t, s + L) ∈ U := ⟨hts, by linarith⟩
   -- `F(s, t)` and `F(t, s + L)` have the same sign, and the mixed derivative is
@@ -414,20 +429,15 @@ theorem isInvertible_cotangentMixedHessian_billiardGeneratingFunction
   have hD : ‖χ t - χ s‖ ≠ 0 := norm_ne_zero_iff.2 (sub_ne_zero.2 hst)
   -- Both area forms are nonzero, since the chord is not a multiple of either velocity.
   have hωs : o.areaForm (χ t - χ s) (deriv χ s) ≠ 0 := by
-    rw [o.areaForm_swap, neg_ne_zero, o.areaForm_ne_zero_iff hs0]
-    exact fun c hc ↦ htan_s c (by rw [← hc, add_sub_cancel])
+    rw [o.areaForm_swap, neg_ne_zero, o.areaForm_ne_zero_iff]
+    exact ⟨hs0, fun c hc ↦ htan_s c (by rw [← hc, add_sub_cancel])⟩
   have hωt : o.areaForm (χ t - χ s) (deriv χ t) ≠ 0 := by
     rw [← neg_sub, map_neg, LinearMap.neg_apply, neg_ne_zero, o.areaForm_swap, neg_ne_zero,
-      o.areaForm_ne_zero_iff ht0]
-    exact fun c hc ↦ htan_t c (by rw [← hc, add_sub_cancel])
-  have hm : cotangentMixedHessian (billiardGeneratingFunction χ) (s, t) 1 1 ≠ 0 := by
-    rw [cotangentMixedHessian_billiardGeneratingFunction_apply_apply_eq_areaForm o hs ht hst,
-      mul_one, one_mul]
-    exact div_ne_zero (mul_ne_zero hωs hωt) (pow_ne_zero 3 hD)
-  refine ContinuousLinearMap.isInvertible_of_injective fun b b' h ↦ ?_
-  have h1 := congr($h 1)
-  rw [cotangentMixedHessian_apply_apply_eq_mul, cotangentMixedHessian_apply_apply_eq_mul _ _ b',
-    mul_one, mul_one] at h1
-  exact mul_right_cancel₀ hm h1
+      o.areaForm_ne_zero_iff]
+    exact ⟨ht0, fun c hc ↦ htan_t c (by rw [← hc, add_sub_cancel])⟩
+  rw [isInvertible_cotangentMixedHessian_iff,
+    cotangentMixedHessian_billiardGeneratingFunction_apply_apply_eq_areaForm o hs ht hst, mul_one,
+    one_mul]
+  exact div_ne_zero (mul_ne_zero hωs hωt) (pow_ne_zero 3 hD)
 
 end TauCeti
