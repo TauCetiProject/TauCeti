@@ -24,8 +24,9 @@ reversed. The new heights are bounded pointwise by the sum of the original absol
 thus boundedness and Lᵖ control survive refinement without additional moment assumptions.
 
 This bridges finite sums of predictable rectangles and finite-grid trading strategies. In
-particular, differences of elementary stochastic-integral approximants can be evaluated on one
-common grid before applying an isometry or energy estimate. All equalities are pointwise,
+particular, `exists_clipped_diff_grid` clips two finite-grid strategies to `[⊥, t]` and represents
+their difference on one common nondecreasing grid bounded by `t` before applying an isometry or
+energy estimate. All equalities are pointwise,
 including at trading dates, with no regularity assumption on the price path.
 
 ## References
@@ -172,5 +173,97 @@ theorem exists_simpleHolding_simpleGains_eq_sum [OrderBot ι] {mΩ : MeasurableS
       rw [← (hL i hi).2, ← (hU i hi).2]
       exact hτ.le_iff_le (hL i hi).1 (hU i hi).1 |>.symm
     simp only [horder, (hL i hi).2, (hU i hi).2]
+
+/-- Clipping a finite-grid strategy's trading dates to `t` and zeroing out positions starting at or
+after `t` leaves its holdings unchanged at every time `s ≤ t`. -/
+theorem simpleHolding_clipped_eq {g : ℕ → ι} {N : ℕ} {b : ℕ → Ω → ℝ} {s t : ι}
+    (hs : s ≤ t) (ω : Ω) :
+    simpleHolding (fun j ↦ min (g j) t) N (fun j ↦ if g j < t then b j else 0) s ω =
+      simpleHolding g N b s ω := by
+  rw [simpleHolding_def, simpleHolding_def]
+  refine sum_congr rfl fun j _ ↦ ?_
+  by_cases h : g j < t
+  · simp only [h, ↓reduceIte, min_eq_left h.le, Set.indicator_apply, Set.mem_Ioc,
+      le_min_iff, hs, and_true]
+  · simp [h, Set.mem_Ioc, (hs.trans (not_lt.1 h)).not_gt]
+
+/-- For a nondecreasing grid, summing the clipped increments against positions zeroed at or after
+`t` recovers `simpleGains` at `t`. -/
+theorem sum_clipped_mul_sub_eq_simpleGains {g : ℕ → ι} {N : ℕ} {b : ℕ → Ω → ℝ}
+    (hg : MonotoneOn g (Set.Iic N)) (X : ι → Ω → ℝ) (t : ι) (ω : Ω) :
+    (∑ j ∈ range N, (if g j < t then b j else 0) ω *
+        (X (min (g (j + 1)) t) ω - X (min (g j) t) ω)) =
+      simpleGains g N b X t ω := by
+  rw [simpleGains_def]
+  refine sum_congr rfl fun j hj ↦ ?_
+  by_cases h : g j < t
+  · simp [h]
+  · have hle : t ≤ g j := not_lt.1 h
+    have hle' : t ≤ g (j + 1) := hle.trans
+      (hg (mem_range.1 hj).le (mem_range.1 hj) (Nat.le_succ j))
+    simp [h, min_eq_right hle, min_eq_right hle']
+
+/-- Clip two left-measurable finite-grid strategies to `[⊥, t]` and represent their difference on a
+single nondecreasing deterministic grid bounded by `t`. -/
+theorem exists_clipped_diff_grid [OrderBot ι] {mΩ : MeasurableSpace Ω}
+    (ℱ : Filtration ι mΩ) (t : ι)
+    {n₁ n₂ : ℕ} {τ₁ τ₂ : ℕ → ι} {a₁ a₂ : ℕ → Ω → ℝ}
+    (hτ₁ : MonotoneOn τ₁ (Set.Iic n₁))
+    (ha₁ : ∀ j < n₁, StronglyMeasurable[ℱ (τ₁ j)] (a₁ j))
+    (hτ₂ : MonotoneOn τ₂ (Set.Iic n₂))
+    (ha₂ : ∀ j < n₂, StronglyMeasurable[ℱ (τ₂ j)] (a₂ j)) :
+    ∃ (N : ℕ) (grid : ℕ → ι) (height : ℕ → Ω → ℝ),
+      MonotoneOn grid (Set.Iic N) ∧ (∀ j ≤ N, grid j ≤ t) ∧
+      (∀ j < N, StronglyMeasurable[ℱ (grid j)] (height j)) ∧
+      (∀ s ≤ t, ∀ ω, simpleHolding grid N height s ω =
+        simpleHolding τ₁ n₁ a₁ s ω - simpleHolding τ₂ n₂ a₂ s ω) ∧
+      ∀ (X : ι → Ω → ℝ) ω,
+        (∑ j ∈ range N, height j ω * (X (grid (j + 1)) ω - X (grid j) ω)) =
+          simpleGains τ₁ n₁ a₁ X t ω - simpleGains τ₂ n₂ a₂ X t ω := by
+  let l : Fin n₁ ⊕ Fin n₂ → ι := Sum.elim (fun i ↦ min (τ₁ i) t) (fun i ↦ min (τ₂ i) t)
+  let u : Fin n₁ ⊕ Fin n₂ → ι :=
+    Sum.elim (fun i ↦ min (τ₁ (i + 1)) t) (fun i ↦ min (τ₂ (i + 1)) t)
+  let c : Fin n₁ ⊕ Fin n₂ → Ω → ℝ := Sum.elim
+    (fun i ↦ if τ₁ i < t then a₁ i else 0) (fun i ↦ if τ₂ i < t then (-a₂) i else 0)
+  have hc : ∀ k ∈ (Finset.univ : Finset (Fin n₁ ⊕ Fin n₂)), StronglyMeasurable[ℱ (l k)] (c k) := by
+    rintro (i | i) _ <;> dsimp only [c, Sum.elim_inl, Sum.elim_inr] <;> split_ifs with h
+    · have hl : l (Sum.inl i) = τ₁ i := min_eq_left h.le
+      exact hl ▸ ha₁ i i.2
+    · exact stronglyMeasurable_zero
+    · have hl : l (Sum.inr i) = τ₂ i := min_eq_left h.le
+      exact hl ▸ (ha₂ i i.2).neg
+    · exact stronglyMeasurable_zero
+  obtain ⟨N, g, b, -, hg, hb, -, hhold, hgains⟩ :=
+    exists_simpleHolding_simpleGains_eq_sum ℱ Finset.univ l u c hc
+  let grid (j : ℕ) : ι := min (g j) t
+  let height (j : ℕ) : Ω → ℝ := if g j < t then b j else 0
+  have hlu (k : Fin n₁ ⊕ Fin n₂) : l k ≤ u k := by
+    rcases k with i | i
+    · exact min_le_min_right t (hτ₁ i.2.le i.2 (Nat.le_succ i))
+    · exact min_le_min_right t (hτ₂ i.2.le i.2 (Nat.le_succ i))
+  have hut (k : Fin n₁ ⊕ Fin n₂) : u k ≤ t := by rcases k with i | i <;> exact min_le_right _ _
+  refine ⟨N, grid, height, fun i hi j hj hij ↦ min_le_min_right t (hg.monotoneOn hi hj hij),
+    fun _ _ ↦ min_le_right _ _, fun j hj ↦ ?_, fun s hs ω ↦ ?_, fun X ω ↦ ?_⟩
+  · dsimp only [height]
+    split_ifs with h
+    · have hg_eq : grid j = g j := min_eq_left h.le
+      exact hg_eq ▸ hb j hj
+    · exact stronglyMeasurable_zero
+  · rw [simpleHolding_clipped_eq hs ω, hhold, Fintype.sum_sum_type]
+    dsimp only [l, u, c, Sum.elim_inl, Sum.elim_inr]
+    have h₁ := simpleHolding_clipped_eq (g := τ₁) (N := n₁) (b := a₁) hs ω
+    have h₂ := simpleHolding_clipped_eq (g := τ₂) (N := n₂) (b := -a₂) hs ω
+    have hneg := simpleHolding_smul τ₂ n₂ (-1 : ℝ) a₂ s ω
+    simp only [neg_one_smul, neg_one_mul] at hneg
+    rw [simpleHolding_def, ← Fin.sum_univ_eq_sum_range] at h₁ h₂
+    rw [h₁, h₂, hneg, sub_eq_add_neg]
+  · rw [sum_clipped_mul_sub_eq_simpleGains hg.monotoneOn X t ω, hgains, Fintype.sum_sum_type]
+    simp only [hlu, ↓reduceIte, min_eq_left (hut _), min_eq_left ((hlu _).trans (hut _))]
+    dsimp only [l, u, c, Sum.elim_inl, Sum.elim_inr]
+    have hneg := simpleGains_smul τ₂ n₂ (-1 : ℝ) a₂ X t ω
+    simp only [neg_one_smul, neg_one_mul] at hneg
+    rw [sub_eq_add_neg, ← hneg, ← sum_clipped_mul_sub_eq_simpleGains hτ₁ X t ω,
+      ← sum_clipped_mul_sub_eq_simpleGains (b := -a₂) hτ₂ X t ω,
+      ← Fin.sum_univ_eq_sum_range, ← Fin.sum_univ_eq_sum_range]
 
 end TauCeti.Finance

@@ -77,7 +77,7 @@ theorem ContinuousWithinAt.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [No
 /-- Stopping preserves path continuity, without any measurability assumption on the random time.
 At an infinite stopping time the path is unchanged. -/
 theorem Continuous.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
-    [TopologicalSpace ι] [OrderTopology ι] [TopologicalSpace E]
+    [TopologicalSpace ι] [OrderClosedTopology ι] [TopologicalSpace E]
     {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω}
     (hX : Continuous (X · ω)) :
     Continuous (MeasureTheory.stoppedProcess X τ · ω) := by
