@@ -122,7 +122,7 @@ theorem thetaSeries_realModel_typeARootLattice_two_slash_of_mem_Gamma0 {A : SL(2
   have ha : IsCoprime (A 1 1) 3 :=
     isCoprime_comm.mp ((ZMod.isUnit_intCast_iff_isCoprime _ _).mp hunit)
   simpa only [coe_thetaFormRealModelTypeARootLatticeTwo, ModularForm.SL_slash,
-    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, MulChar.coe_equivToUnitHom,
+    Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, MulChar.coe_equivToUnitHom,
     MonoidHom.coe_toHomUnits, CongruenceSubgroup.Gamma0Map_apply,
     DirichletCharacter.changeLevel_eq_cast_of_dvd' _ _ ha, kroneckerChar_intCast] using hmem
 
