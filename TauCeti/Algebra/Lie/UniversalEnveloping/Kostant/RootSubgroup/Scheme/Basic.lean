@@ -119,6 +119,27 @@ theorem kostantRootSubgroup_def :
   rw [kostantRootSubgroup, Comodule.coordinateGroupSchemeHom_def]
   rfl
 
+/-- Two represented root subgroups on the same integral lattice have the same coordinate
+morphism if their rational root operators agree, even when the source Lie algebras differ. -/
+theorem kostantRootSubgroupCoordinateMap_eq_of_operator_eq
+    {L' : Type*} [LieRing L'] [LieAlgebra ℚ L'] {I' κ' : Type*}
+    (e' : I' → L') (h' : κ' → L')
+    (ρ' : _root_.UniversalEnvelopingAlgebra ℚ L' →ₐ[ℚ] Module.End ℚ V)
+    (hM' : ∀ u ∈ kostantForm e' h', ∀ m ∈ M, ρ' u m ∈ M)
+    (i' : I') (hnil' : IsNilpotent (ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))))
+    (hop : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) =
+      ρ' (_root_.UniversalEnvelopingAlgebra.ι ℚ (e' i'))) :
+    kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b =
+      kostantRootSubgroupCoordinateMap e' h' ρ' M hM' i' hnil' b := by
+  apply CommHopfAlgCat.hom_ext
+  apply BialgHom.coe_toAlgHom_injective
+  apply GeneralLinear.coordinateHopfAlgebra_algHom_ext ℤ n
+  intro r s
+  simp only [BialgHom.coe_toAlgHom]
+  rw [kostantRootSubgroupCoordinateMap_X, kostantRootSubgroupCoordinateMap_X]
+  simp only [Comodule.coefficientMatrix_apply, Comodule.matrixCoefficient_def,
+    kostantRootSubgroupComodule_coact, hop]
+
 /-- Replacing a generator family by one with the same selected root vector leaves the
 represented root-subgroup morphism unchanged. -/
 theorem kostantRootSubgroup_congr {I' : Type*} (e' : I' → L)
@@ -129,14 +150,8 @@ theorem kostantRootSubgroup_congr {I' : Type*} (e' : I' → L)
       kostantRootSubgroup e' h ρ M hM' i' hnil' b := by
   have hcoord : kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b =
       kostantRootSubgroupCoordinateMap e' h ρ M hM' i' hnil' b := by
-    apply CommHopfAlgCat.hom_ext
-    apply BialgHom.coe_toAlgHom_injective
-    apply GeneralLinear.coordinateHopfAlgebra_algHom_ext ℤ n
-    intro r s
-    simp only [BialgHom.coe_toAlgHom]
-    rw [kostantRootSubgroupCoordinateMap_X, kostantRootSubgroupCoordinateMap_X]
-    simp only [Comodule.coefficientMatrix_apply, Comodule.matrixCoefficient_def,
-      kostantRootSubgroupComodule_coact, he]
+    apply kostantRootSubgroupCoordinateMap_eq_of_operator_eq
+    exact congrArg (fun x => ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ x)) he
   rw [kostantRootSubgroup_def, kostantRootSubgroup_def, hcoord]
 
 section Points
