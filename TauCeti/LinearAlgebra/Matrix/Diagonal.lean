@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Complex.Basic
 public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.ToLin
@@ -39,6 +40,8 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
   vanishing `(i, j)` entry wherever that diagonal matrix separates `i` from `j`.
 * `TauCeti.isDiag_of_commute_diagonal`: a matrix commuting with a diagonal matrix of pairwise
   distinct entries is itself diagonal.
+* `TauCeti.eq_diagonal_I_mul_of_commute_diagonal`: a skew-Hermitian complex matrix commuting with
+  a real diagonal matrix of pairwise distinct entries is a purely imaginary diagonal matrix.
 * `Module.Basis.toMatrix_eq_diagonal_iff`: a linear map has a specified diagonal matrix in two
   bases exactly when it scales the corresponding basis vectors by the diagonal entries.
 -/
@@ -111,6 +114,21 @@ theorem isDiag_of_commute_diagonal {t : ι → k} (ht : Function.Injective t)
   fun _ _ hij => apply_eq_zero_of_commute_diagonal hg (ht.ne hij)
 
 end Commute
+
+/-- **A skew-Hermitian matrix commuting with a real diagonal matrix of pairwise distinct entries is
+a purely imaginary diagonal matrix**, the matrix `diag(i θ)` with `θⱼ = im Aⱼⱼ`. -/
+theorem eq_diagonal_I_mul_of_commute_diagonal {A : Matrix n n ℂ} (hA : Aᴴ = -A) {d : n → ℝ}
+    (hd : Function.Injective d) (hc : Commute A (diagonal fun j ↦ (d j : ℂ))) :
+    A = diagonal fun j ↦ Complex.I * (A j j).im := by
+  have hdiag := isDiag_of_commute_diagonal (Complex.ofReal_injective.comp hd) hc.symm
+  conv_lhs => rw [← hdiag.diagonal_diag]
+  congr 1
+  funext j
+  -- The diagonal entries of a skew-Hermitian matrix are purely imaginary.
+  have hjj := congrArg Complex.re (congrFun (congrFun hA j) j)
+  rw [Matrix.conjTranspose_apply, Matrix.neg_apply, Complex.star_def, Complex.conj_re,
+    Complex.neg_re] at hjj
+  exact Complex.ext (by simpa using self_eq_neg.1 hjj) (by simp)
 
 end TauCeti
 

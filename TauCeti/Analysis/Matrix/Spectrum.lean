@@ -335,11 +335,8 @@ theorem exists_unitaryGroup_mul_mul_star_eq_iff (hA : A.IsHermitian) (hB : B.IsH
     refine ⟨W * star V, ?_⟩
     conv_rhs => rw [hB.spectral_theorem]
     conv_lhs => rw [hA.spectral_theorem]
-    simp only [conjStarAlgAut_apply, hev, Submonoid.coe_mul, star_mul, star_star, coe_star,
-      ← Matrix.mul_assoc, V, W]
-    rw [Matrix.mul_assoc _ (star (hA.eigenvectorUnitary : Matrix ι ι 𝕜)),
-      UnitaryGroup.star_mul_self, Matrix.mul_one,
-      Matrix.mul_assoc _ (star (hA.eigenvectorUnitary : Matrix ι ι 𝕜)),
-      UnitaryGroup.star_mul_self, Matrix.mul_one]
+    -- Conjugating by `W V*` after `V` is conjugating by `W`.
+    rw [← conjStarAlgAut_apply (S := 𝕜), ← conjStarAlgAut_mul_apply, mul_assoc,
+      Unitary.star_mul_self, mul_one, hev]
 
 end Matrix.IsHermitian

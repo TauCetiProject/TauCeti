@@ -7,24 +7,18 @@ module
 
 public import TauCeti.Algebra.Lie.Coadjoint
 public import TauCeti.Analysis.Matrix.UnitaryGroup.SchurHorn
-public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
-public import TauCeti.Geometry.Lie.Subgroup.Unitary
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+public import TauCeti.RepresentationTheory.Unitary.LieAlgebra
 import TauCeti.Analysis.Matrix.Spectrum
-import TauCeti.Geometry.Lie.Adjoint.Units.Basic
+import TauCeti.LinearAlgebra.Complex.Conjugation
 import TauCeti.LinearAlgebra.Matrix.Diagonal
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unitary
-import TauCeti.RepresentationTheory.Continuous.Subrepresentation
 
 /-!
 # The coadjoint orbits of `U(n)` as Hermitian eigenvalue orbits
 
-The Lie algebra `𝔲(n)` of the unitary group (`TauCeti.UnitaryGroup.lieAlgebra n`, the Lie algebra
-of the unitary subgroup of the real Lie group `GL(n, ℂ)`) consists, in matrix coordinates
-(`TauCeti.UnitaryGroup.toMatrix`), of the skew-Hermitian matrices; it has real dimension `n²`
-(`TauCeti.UnitaryGroup.finrank_lieAlgebra`). This file identifies its dual with the Hermitian
-matrices and computes the coadjoint action, orbits and Kirillov–Kostant–Souriau form of `U(n)` in
-these terms, with the pairing fixed as
+The Lie algebra `𝔲(n)` of the unitary group (`TauCeti.UnitaryGroup.lieAlgebra n`) consists, in
+matrix coordinates (`TauCeti.UnitaryGroup.toMatrix`), of the skew-Hermitian matrices. This file
+identifies its dual with the Hermitian matrices and computes the coadjoint action, orbits and
+Kirillov–Kostant–Souriau form of `U(n)` in these terms, with the pairing fixed as
 
 `⟨H, X⟩ = -i tr (H X)`
 
@@ -50,17 +44,16 @@ it is the diagonal of `H`: **the diagonal projection is the moment map of the to
 the image of a coadjoint orbit under this moment map is the permutohedron of the eigenvalues
 (`TauCeti.UnitaryGroup.torusMomentMap_image_range_coadjointRepresentation`). For a real diagonal
 matrix `diag(d)` with distinct entries the coadjoint stabilizer of `ν_diag(d)` is exactly the torus
-Lie algebra (`TauCeti.UnitaryGroup.toSubmodule_lieAnnihilator_hermitianDualEquiv_diagonal`), so
+Lie algebra (`TauCeti.UnitaryGroup.toSubmodule_lieAnnihilator_hermitianDualEquiv_realDiagonal`), so
 the algebraic tangent model `𝔲(n) ⧸ 𝔲(n)_ν` of such a regular orbit has dimension `n² - n`, the
 dimension of the complete flag manifold `U(n) / T`
-(`TauCeti.UnitaryGroup.finrank_quotient_lieAnnihilator_hermitianDualEquiv_diagonal_add`).
+(`TauCeti.UnitaryGroup.finrank_quotient_lieAnnihilator_hermitianDualEquiv_realDiagonal_add_card`).
 
 ## Main definitions
 
 * `TauCeti.UnitaryGroup.hermitianDualEquiv`: the identification of the Hermitian matrices with
   `𝔲(n)*`.
-* `TauCeti.UnitaryGroup.adjointRepresentation`, `TauCeti.UnitaryGroup.coadjointRepresentation`:
-  the adjoint and coadjoint representations of `U(n)`.
+* `TauCeti.UnitaryGroup.coadjointRepresentation`: the coadjoint representation of `U(n)`.
 * `TauCeti.UnitaryGroup.torusCoords`, `TauCeti.UnitaryGroup.torusMomentMap`: the coordinates of the
   Lie algebra of the diagonal torus and the restriction of functionals to it.
 
@@ -90,62 +83,7 @@ attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContin
 
 namespace UnitaryGroup
 
-variable (n : Type*) [Fintype n] [DecidableEq n]
-
-/-- The Lie algebra `𝔲(n)` of the unitary group: the Lie algebra of the unitary subgroup of the
-real Lie group `GL(n, ℂ)`. -/
-abbrev lieAlgebra :
-    LieSubalgebra ℝ (LeftInvariantDerivation 𝓘(ℝ, Matrix n n ℂ) (GL n ℂ)) :=
-  Lie.lieSubalgebraOfSubgroup (unitarySubgroup (GL n ℂ))
-
-/-- The matrix coordinates of `𝔲(n)`, as an injective homomorphism of real Lie algebras into the
-complex `n × n` matrices with their commutator bracket. Its range is the skew-Hermitian matrices
-(`TauCeti.UnitaryGroup.exists_toMatrix_eq_iff`). -/
-def toMatrix : lieAlgebra n →ₗ⁅ℝ⁆ Matrix n n ℂ :=
-  (Lie.unitsLieAlgebraLieEquiv (R := Matrix n n ℂ) :
-    LeftInvariantDerivation 𝓘(ℝ, Matrix n n ℂ) (GL n ℂ) →ₗ⁅ℝ⁆ Matrix n n ℂ).comp
-      (lieAlgebra n).incl
-
-variable {n}
-
-/-- The matrix coordinates of `X` are its image under the canonical identification of the Lie
-algebra of `GL(n, ℂ)` with the complex `n × n` matrices. -/
-theorem toMatrix_apply (X : lieAlgebra n) :
-    toMatrix n X = unitsLieAlgebraEquiv (R := Matrix n n ℂ)
-      (X : LeftInvariantDerivation 𝓘(ℝ, Matrix n n ℂ) (GL n ℂ)) :=
-  Lie.unitsLieAlgebraLieEquiv_apply _
-
-/-- An element of `𝔲(n)` is determined by its matrix coordinates. -/
-theorem toMatrix_injective : Function.Injective (toMatrix n) := fun X Y h ↦ by
-  rw [toMatrix_apply, toMatrix_apply] at h
-  exact Subtype.ext ((unitsLieAlgebraEquiv (R := Matrix n n ℂ)).injective h)
-
-/-- **The matrices of `𝔲(n)` are the skew-Hermitian matrices.** -/
-theorem exists_toMatrix_eq_iff (A : Matrix n n ℂ) : (∃ X, toMatrix n X = A) ↔ Aᴴ = -A := by
-  rw [← Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_conjTranspose_eq_neg,
-    Lie.unitsLieAlgebraLieEquiv_symm_apply]
-  refine ⟨?_, fun hA ↦ ⟨⟨_, hA⟩, ?_⟩⟩
-  · rintro ⟨X, rfl⟩
-    rw [toMatrix_apply, LinearEquiv.symm_apply_apply]
-    exact X.2
-  · rw [toMatrix_apply, LinearEquiv.apply_symm_apply]
-
-/-- The matrix coordinates of an element of `𝔲(n)` are skew-Hermitian. -/
-@[simp]
-theorem conjTranspose_toMatrix (X : lieAlgebra n) : (toMatrix n X)ᴴ = -toMatrix n X :=
-  (exists_toMatrix_eq_iff _).1 ⟨X, rfl⟩
-
-/-- The matrix coordinates of an element of `𝔲(n)` form a skew-adjoint matrix. -/
-private theorem toMatrix_mem_skewAdjoint (X : lieAlgebra n) :
-    toMatrix n X ∈ skewAdjoint (Matrix n n ℂ) := by
-  rw [skewAdjoint.mem_iff, Matrix.star_eq_conjTranspose, conjTranspose_toMatrix]
-
-/-- The element of `𝔲(n)` with matrix coordinates `i H` for a Hermitian matrix `H`. -/
-private theorem exists_toMatrix_eq_I_smul (H : selfAdjoint (Matrix n n ℂ)) :
-    ∃ X, toMatrix n X = I • (H : Matrix n n ℂ) := by
-  rw [exists_toMatrix_eq_iff, ← Matrix.star_eq_conjTranspose, ← skewAdjoint.mem_iff,
-    Complex.I_smul_mem_skewAdjoint_iff_isSelfAdjoint]
-  exact H.2
+variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- The trace pairing `H, A ↦ re (-i tr (H A))` of Hermitian and skew-Hermitian matrices. -/
 private def tracePairing : selfAdjoint (Matrix n n ℂ) →ₗ[ℝ] Dual ℝ (lieAlgebra n) :=
@@ -161,6 +99,13 @@ private theorem tracePairing_apply (H : selfAdjoint (Matrix n n ℂ)) (X : lieAl
     tracePairing H X = (-I * ((H : Matrix n n ℂ) * toMatrix n X).trace).re :=
   rfl
 
+omit [DecidableEq n] in
+/-- For a Hermitian matrix `H`, the complex conjugate of `tr (H M)` is `tr (Mᴴ H)`. -/
+private theorem starRingEnd_trace_mul (H : selfAdjoint (Matrix n n ℂ)) (M : Matrix n n ℂ) :
+    starRingEnd ℂ ((H : Matrix n n ℂ) * M).trace = (Mᴴ * H).trace := by
+  rw [← Complex.star_def, ← Matrix.trace_conjTranspose, Matrix.conjTranspose_mul,
+    (IsSelfAdjoint.isHermitian H.2).eq]
+
 private theorem tracePairing_injective : Function.Injective (tracePairing (n := n)) := by
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
   intro H hH
@@ -169,61 +114,21 @@ private theorem tracePairing_injective : Function.Injective (tracePairing (n := 
   rw [tracePairing_apply, hX, Matrix.mul_smul, Matrix.trace_smul, smul_eq_mul, ← mul_assoc,
     neg_mul, I_mul_I, neg_neg, one_mul, LinearMap.zero_apply] at h
   -- The trace of `H H = Hᴴ H` is real, and its real part vanishes.
-  have hreal : starRingEnd ℂ ((H : Matrix n n ℂ) * H).trace = ((H : Matrix n n ℂ) * H).trace := by
-    rw [← Complex.star_def, ← Matrix.trace_conjTranspose, Matrix.conjTranspose_mul,
-      ← Matrix.star_eq_conjTranspose, H.2.star_eq]
+  have hH' : (H : Matrix n n ℂ)ᴴ = H := (IsSelfAdjoint.isHermitian H.2).eq
+  have hreal := starRingEnd_trace_mul H H
+  rw [hH'] at hreal
   have h0 : ((H : Matrix n n ℂ) * H).trace = 0 :=
     Complex.ext h (Complex.conj_eq_iff_im.1 hreal)
-  have h0' : ((H : Matrix n n ℂ)ᴴ * H).trace = 0 := by
-    rwa [← Matrix.star_eq_conjTranspose, H.2.star_eq]
-  exact Subtype.ext (Matrix.trace_conjTranspose_mul_self_eq_zero_iff.1 h0')
-
-/-- The Lie algebra `𝔲(n)` is finite-dimensional, as its matrix coordinates are injective. -/
-instance instFiniteDimensionalLieAlgebra : FiniteDimensional ℝ (lieAlgebra n) :=
-  Module.Finite.of_injective (toMatrix n).toLinearMap toMatrix_injective
-
-/-- The matrix coordinates identify `𝔲(n)` with the skew-Hermitian matrices, as real vector
-spaces. -/
-private def skewAdjointEquiv : lieAlgebra n ≃ₗ[ℝ] skewAdjoint (Matrix n n ℂ) :=
-  LinearEquiv.ofBijective
-    ((toMatrix n).toLinearMap.codRestrict (skewAdjoint.submodule ℝ (Matrix n n ℂ))
-      toMatrix_mem_skewAdjoint)
-    ⟨fun X Y h ↦ toMatrix_injective (congrArg Subtype.val h), fun A ↦ by
-      obtain ⟨X, hX⟩ := (exists_toMatrix_eq_iff (A : Matrix n n ℂ)).2 (by
-        rw [← Matrix.star_eq_conjTranspose]; exact skewAdjoint.mem_iff.1 A.2)
-      exact ⟨X, Subtype.ext hX⟩⟩
-
-private theorem coe_skewAdjointEquiv (X : lieAlgebra n) :
-    (skewAdjointEquiv X : Matrix n n ℂ) = toMatrix n X :=
-  rfl
-
-/-- Multiplication by `-i` identifies `𝔲(n)` with the Hermitian matrices, as real vector spaces. -/
-private def hermitianEquiv : lieAlgebra n ≃ₗ[ℝ] selfAdjoint (Matrix n n ℂ) :=
-  LinearEquiv.ofBijective (skewAdjoint.negISMul ∘ₗ skewAdjointEquiv.toLinearMap)
-    ⟨fun X Y h ↦ skewAdjointEquiv.injective (Subtype.ext (by
-      rw [← skewAdjoint.I_smul_neg_I (skewAdjointEquiv X), ← skewAdjoint.I_smul_neg_I
-        (skewAdjointEquiv Y)]
-      exact congrArg (fun H : selfAdjoint (Matrix n n ℂ) ↦ I • (H : Matrix n n ℂ)) h)),
-    fun H ↦ by
-      obtain ⟨X, hX⟩ := exists_toMatrix_eq_I_smul H
-      refine ⟨X, Subtype.ext ?_⟩
-      simp [skewAdjoint.negISMul, coe_skewAdjointEquiv, hX, smul_smul]⟩
-
-/-- **`𝔲(n)` has real dimension `n²`.** -/
-theorem finrank_lieAlgebra : finrank ℝ (lieAlgebra n) = Fintype.card n ^ 2 := by
-  have := (hermitianEquiv (n := n)).finiteDimensional
-  have := (skewAdjointEquiv (n := n)).finiteDimensional
-  have h := (StarModule.decomposeProdAdjoint ℝ (Matrix n n ℂ)).finrank_eq
-  rw [Module.finrank_matrix, Complex.finrank_real_complex, Module.finrank_prod,
-    ← hermitianEquiv.finrank_eq, ← skewAdjointEquiv.finrank_eq] at h
-  linarith
+  exact Subtype.ext (Matrix.trace_conjTranspose_mul_self_eq_zero_iff.1 (by rwa [hH']))
 
 private theorem tracePairing_bijective : Function.Bijective (tracePairing (n := n)) := by
   have : FiniteDimensional ℝ (selfAdjoint (Matrix n n ℂ)) :=
-    hermitianEquiv.finiteDimensional
+    Module.Finite.of_injective _ tracePairing_injective
   refine ⟨tracePairing_injective, ?_⟩
   refine (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 tracePairing_injective
-  rw [Subspace.dual_finrank_eq, hermitianEquiv.finrank_eq]
+  rw [Subspace.dual_finrank_eq, finrank_lieAlgebra]
+  exact (finrank_selfAdjoint_submodule (A := Matrix n n ℂ)).trans (by
+    rw [Module.finrank_matrix, Module.finrank_self, mul_one, sq])
 
 variable (n) in
 /-- **The Hermitian model of `𝔲(n)*`.** A Hermitian matrix `H` defines the functional
@@ -245,9 +150,8 @@ theorem ofReal_hermitianDualEquiv_apply (H : selfAdjoint (Matrix n n ℂ)) (X : 
     (hermitianDualEquiv n H X : ℂ) = -I * ((H : Matrix n n ℂ) * toMatrix n X).trace := by
   have ht : starRingEnd ℂ ((H : Matrix n n ℂ) * toMatrix n X).trace =
       -((H : Matrix n n ℂ) * toMatrix n X).trace := by
-    rw [← Complex.star_def, ← Matrix.trace_conjTranspose, Matrix.conjTranspose_mul,
-      conjTranspose_toMatrix, ← Matrix.star_eq_conjTranspose, H.2.star_eq, Matrix.neg_mul,
-      Matrix.trace_neg, Matrix.trace_mul_comm]
+    rw [starRingEnd_trace_mul, conjTranspose_toMatrix, Matrix.neg_mul, Matrix.trace_neg,
+      Matrix.trace_mul_comm]
   rw [hermitianDualEquiv_apply]
   exact Complex.conj_eq_iff_re.1 (by rw [map_mul, map_neg, Complex.conj_I, neg_neg, ht, mul_neg,
     neg_mul])
@@ -268,11 +172,6 @@ def lieHermitian (X : lieAlgebra n) (H : selfAdjoint (Matrix n n ℂ)) :
 theorem coe_lieHermitian (X : lieAlgebra n) (H : selfAdjoint (Matrix n n ℂ)) :
     (lieHermitian X H : Matrix n n ℂ) = toMatrix n X * H - H * toMatrix n X :=
   (rfl)
-
-/-- The matrix coordinates of a bracket in `𝔲(n)` are the commutator of the matrix coordinates. -/
-theorem toMatrix_lie (X Y : lieAlgebra n) :
-    toMatrix n ⁅X, Y⁆ = toMatrix n X * toMatrix n Y - toMatrix n Y * toMatrix n X := by
-  rw [LieHom.map_lie, LieRing.of_associative_ring_bracket]
 
 /-- **The coadjoint action in the Hermitian model** is the commutator: `⁅X, ν_H⁆ = ν_[A, H]`, where
 `A` is the skew-Hermitian matrix of `X`. -/
@@ -296,8 +195,7 @@ theorem mem_lieAnnihilator_hermitianDualEquiv_iff {X : lieAlgebra n}
     X ∈ lieAnnihilator ℝ (lieAlgebra n) (hermitianDualEquiv n H) ↔
       Commute (toMatrix n X) (H : Matrix n n ℂ) := by
   rw [mem_lieAnnihilator, lie_hermitianDualEquiv, LinearEquiv.map_eq_zero_iff, Subtype.ext_iff,
-    coe_lieHermitian, ZeroMemClass.coe_zero, sub_eq_zero]
-  exact Iff.rfl
+    coe_lieHermitian, ZeroMemClass.coe_zero, sub_eq_zero, commute_iff_eq]
 
 /-- **The Kirillov–Kostant–Souriau form in the Hermitian model**:
 `ω_H([X], [Y]) = re (-i tr (H [A, B]))`, where `A` and `B` are the matrices of `X` and `Y`. -/
@@ -307,44 +205,7 @@ theorem kksForm_hermitianDualEquiv_mk (H : selfAdjoint (Matrix n n ℂ)) (X Y : 
         (toMatrix n X * toMatrix n Y - toMatrix n Y * toMatrix n X)).trace).re := by
   rw [Module.Dual.kksForm_mk, hermitianDualEquiv_apply, toMatrix_lie]
 
-/-! ### The adjoint and coadjoint representations of `U(n)` -/
-
-/-- The inclusion of `U(n)` into `GL(n, ℂ)` lands in the unitary subgroup. -/
-private theorem toUnits_mem_unitarySubgroup (U : Matrix.unitaryGroup n ℂ) :
-    Unitary.toUnits U ∈ unitarySubgroup (GL n ℂ) :=
-  mem_unitarySubgroup_GL_iff_mem_unitaryGroup.2 U.2
-
-private theorem stable (U : Matrix.unitaryGroup n ℂ)
-    (X : LeftInvariantDerivation 𝓘(ℝ, Matrix n n ℂ) (GL n ℂ)) (hX : X ∈ lieAlgebra n) :
-    ((Lie.continuousAdjointRepresentation (I := 𝓘(ℝ, Matrix n n ℂ)) (G := GL n ℂ)).restrict
-      Unitary.toUnits) U X ∈ lieAlgebra n := by
-  simpa only [ContRepresentation.restrict_apply_apply, Lie.continuousAdjointRepresentation_apply]
-    using Lie.Ad_mem_lieSubalgebraOfSubgroup
-      (Subgroup.le_normalizer (toUnits_mem_unitarySubgroup U)) hX
-
-variable (n) in
-/-- The adjoint representation of `U(n)` on its Lie algebra `𝔲(n)`: the adjoint representation of
-`GL(n, ℂ)`, restricted to `U(n)` and to the invariant subspace `𝔲(n)`. -/
-def adjointRepresentation : ContRepresentation ℝ (Matrix.unitaryGroup n ℂ) (lieAlgebra n) :=
-  ((Lie.continuousAdjointRepresentation (I := 𝓘(ℝ, Matrix n n ℂ)) (G := GL n ℂ)).restrict
-    Unitary.toUnits).subrepresentation (lieAlgebra n).toSubmodule stable
-
-/-- Coercing the restricted action recovers the adjoint action of `GL(n, ℂ)`. -/
-@[simp]
-theorem coe_adjointRepresentation_apply (U : Matrix.unitaryGroup n ℂ) (X : lieAlgebra n) :
-    (adjointRepresentation n U X : LeftInvariantDerivation 𝓘(ℝ, Matrix n n ℂ) (GL n ℂ)) =
-      Lie.Ad (I := 𝓘(ℝ, Matrix n n ℂ)) (Unitary.toUnits U) X := by
-  rw [adjointRepresentation, ContRepresentation.coe_subrepresentation_apply,
-    ContRepresentation.restrict_apply_apply, Lie.continuousAdjointRepresentation_apply]
-
-/-- **The adjoint action of `U(n)` in matrix coordinates** is conjugation, `A ↦ U A U*`. -/
-@[simp]
-theorem toMatrix_adjointRepresentation (U : Matrix.unitaryGroup n ℂ) (X : lieAlgebra n) :
-    toMatrix n (adjointRepresentation n U X) =
-      (U : Matrix n n ℂ) * toMatrix n X * star (U : Matrix n n ℂ) := by
-  rw [toMatrix_apply, coe_adjointRepresentation_apply, Lie.unitsLieAlgebraEquiv_Ad,
-    ← toMatrix_apply, Unitary.val_toUnits_apply, Unitary.val_inv_toUnits_apply,
-    Matrix.UnitaryGroup.inv_val]
+/-! ### The coadjoint representation of `U(n)` -/
 
 variable (n) in
 /-- The **coadjoint representation** of `U(n)` on the dual `𝔲(n)*` of its Lie algebra:
@@ -393,11 +254,11 @@ theorem range_coadjointRepresentation_hermitianDualEquiv (H : selfAdjoint (Matri
 
 /-- The diagonal matrix `diag(i θ)` of a real vector `θ`. -/
 private def diagonalI : (n → ℝ) →ₗ[ℝ] Matrix n n ℂ where
-  toFun θ := Matrix.diagonal fun j ↦ (θ j : ℂ) * I
-  map_add' θ θ' := by simp [add_mul, Matrix.diagonal_add]
+  toFun θ := Matrix.diagonal fun j ↦ I * θ j
+  map_add' θ θ' := by simp [mul_add, Matrix.diagonal_add]
   map_smul' c θ := by
     ext i j
-    by_cases h : i = j <;> simp [h, Complex.real_smul, mul_assoc]
+    by_cases h : i = j <;> simp [h, Complex.real_smul, mul_left_comm]
 
 private theorem diagonalI_mem (θ : n → ℝ) :
     (Lie.unitsLieAlgebraLieEquiv (R := Matrix n n ℂ)).symm (diagonalI θ) ∈ lieAlgebra n := by
@@ -421,18 +282,23 @@ def torusCoords : (n → ℝ) →ₗ[ℝ] lieAlgebra n :=
 /-- The matrix of `torusCoords θ` is `diag(i θ)`. -/
 @[simp]
 theorem toMatrix_torusCoords (θ : n → ℝ) :
-    toMatrix n (torusCoords n θ) = Matrix.diagonal fun j ↦ (θ j : ℂ) * I := by
+    toMatrix n (torusCoords n θ) = Matrix.diagonal fun j ↦ I * θ j := by
   rw [toMatrix_apply, ← Lie.unitsLieAlgebraLieEquiv_apply]
   exact (Lie.unitsLieAlgebraLieEquiv (R := Matrix n n ℂ)).apply_symm_apply (diagonalI θ)
+
+/-- The torus coordinates `θ ↦ diag(i θ)` are injective. -/
+theorem torusCoords_injective : Function.Injective (torusCoords n) := fun θ θ' h ↦ by
+  have h' := congrArg (toMatrix n) h
+  rw [toMatrix_torusCoords, toMatrix_torusCoords] at h'
+  funext j
+  simpa [Matrix.diagonal_apply_eq, I_ne_zero] using congrFun (congrFun h' j) j
 
 /-- The functional `ν_H` pairs the torus element `diag(i θ)` with `∑ⱼ re (Hⱼⱼ) θⱼ`. -/
 theorem hermitianDualEquiv_torusCoords (H : selfAdjoint (Matrix n n ℂ)) (θ : n → ℝ) :
     hermitianDualEquiv n H (torusCoords n θ) = ∑ j, ((H : Matrix n n ℂ) j j).re * θ j := by
-  rw [hermitianDualEquiv_apply, toMatrix_torusCoords, Matrix.trace, Finset.mul_sum,
+  rw [hermitianDualEquiv_apply, toMatrix_torusCoords, Matrix.neg_I_mul_trace_mul_diagonal_I_mul,
     Complex.re_sum]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [Matrix.diag_apply, Matrix.mul_diagonal]
-  simp [mul_comm, mul_left_comm, mul_assoc]
+  simp [mul_comm]
 
 variable (n) in
 /-- The **moment map of the diagonal torus** on `𝔲(n)*`: the restriction of a functional to the
@@ -469,7 +335,7 @@ theorem torusMomentMap_image_range_coadjointRepresentation (H : selfAdjoint (Mat
   funext U
   rw [Function.comp_apply, coadjointRepresentation_hermitianDualEquiv,
     torusMomentMap_hermitianDualEquiv]
-  rfl
+  simp only [RCLike.re_to_complex, Unitary.coe_star]
 
 omit [Fintype n] in
 variable (n) in
@@ -484,26 +350,11 @@ theorem coe_realDiagonal (d : n → ℝ) :
     (realDiagonal n d : Matrix n n ℂ) = Matrix.diagonal fun j ↦ (d j : ℂ) :=
   (rfl)
 
-/-- A skew-Hermitian matrix commuting with a real diagonal matrix with distinct entries is the
-matrix `diag(i θ)` of a torus element. -/
-private theorem eq_diagonal_of_commute {A : Matrix n n ℂ} (hA : Aᴴ = -A) {d : n → ℝ}
-    (hd : Function.Injective d) (hc : Commute A (Matrix.diagonal fun j ↦ (d j : ℂ))) :
-    A = Matrix.diagonal fun j ↦ ((A j j).im : ℂ) * I := by
-  have hdiag := isDiag_of_commute_diagonal (Complex.ofReal_injective.comp hd) hc.symm
-  conv_lhs => rw [← hdiag.diagonal_diag]
-  congr 1
-  funext j
-  -- The diagonal entries of a skew-Hermitian matrix are purely imaginary.
-  have hjj := congrArg Complex.re (congrFun (congrFun hA j) j)
-  rw [Matrix.conjTranspose_apply, Matrix.neg_apply, RCLike.star_def, Complex.conj_re,
-    Complex.neg_re] at hjj
-  exact Complex.ext (by simpa using (by linarith : (A j j).re = 0)) (by simp)
-
 /-- **The stabilizer of a regular covector is the torus Lie algebra**: for a real diagonal matrix
 `diag(d)` with distinct entries, the coadjoint stabilizer of `ν_diag(d)` in `𝔲(n)` is the Lie
-algebra `{diag(i θ)}` of the diagonal maximal torus. The coadjoint orbit through such a point is the
-regular orbit `U(n) / T` of the complete flags. -/
-theorem toSubmodule_lieAnnihilator_hermitianDualEquiv_diagonal {d : n → ℝ}
+algebra `{diag(i θ)}` of the diagonal maximal torus `T`, as expected for the flag manifold
+`U(n) / T`. -/
+theorem toSubmodule_lieAnnihilator_hermitianDualEquiv_realDiagonal {d : n → ℝ}
     (hd : Function.Injective d) :
     (lieAnnihilator ℝ (lieAlgebra n) (hermitianDualEquiv n (realDiagonal n d))).toSubmodule =
       LinearMap.range (torusCoords n) := by
@@ -514,30 +365,25 @@ theorem toSubmodule_lieAnnihilator_hermitianDualEquiv_diagonal {d : n → ℝ}
   · intro hc
     refine ⟨fun j ↦ (toMatrix n X j j).im, toMatrix_injective ?_⟩
     rw [toMatrix_torusCoords]
-    exact (eq_diagonal_of_commute (conjTranspose_toMatrix X) hd hc).symm
+    exact (eq_diagonal_I_mul_of_commute_diagonal (conjTranspose_toMatrix X) hd hc).symm
   · rintro ⟨θ, rfl⟩
     rw [toMatrix_torusCoords]
     exact Matrix.commute_diagonal _ _
 
-/-- **The regular coadjoint orbits of `U(n)` have dimension `n² - n`**: for a real diagonal matrix
-`diag(d)` with distinct entries, the tangent model `𝔲(n) ⧸ 𝔲(n)_ν` of the coadjoint orbit through
-`ν = ν_diag(d)` has dimension `n² - n`, the dimension of the complete flag manifold `U(n) / T`. -/
-theorem finrank_quotient_lieAnnihilator_hermitianDualEquiv_diagonal_add {d : n → ℝ}
+/-- **The tangent model of a regular coadjoint orbit has dimension `n² - n`**: for a real diagonal
+matrix `diag(d)` with distinct entries, the tangent model `𝔲(n) ⧸ 𝔲(n)_ν` of the coadjoint orbit
+through `ν = ν_diag(d)` has dimension `n² - n`, the dimension of the complete flag manifold
+`U(n) / T`. -/
+theorem finrank_quotient_lieAnnihilator_hermitianDualEquiv_realDiagonal_add_card {d : n → ℝ}
     (hd : Function.Injective d) :
     finrank ℝ (lieAlgebra n ⧸
         (lieAnnihilator ℝ (lieAlgebra n) (hermitianDualEquiv n (realDiagonal n d))).toSubmodule) +
       Fintype.card n =
       Fintype.card n ^ 2 := by
-  have hinj : Function.Injective (torusCoords n) := fun θ θ' h ↦ by
-    have h' := congrArg (toMatrix n) h
-    rw [toMatrix_torusCoords, toMatrix_torusCoords] at h'
-    funext j
-    have := congrFun (congrFun h' j) j
-    simpa [Matrix.diagonal_apply_eq, I_ne_zero] using this
   rw [← finrank_lieAlgebra, ← Submodule.finrank_quotient_add_finrank
     (lieAnnihilator ℝ (lieAlgebra n) (hermitianDualEquiv n (realDiagonal n d))).toSubmodule,
-    toSubmodule_lieAnnihilator_hermitianDualEquiv_diagonal hd, LinearMap.finrank_range_of_inj hinj,
-    Module.finrank_fintype_fun_eq_card]
+    toSubmodule_lieAnnihilator_hermitianDualEquiv_realDiagonal hd,
+    LinearMap.finrank_range_of_inj torusCoords_injective, Module.finrank_fintype_fun_eq_card]
 
 end UnitaryGroup
 
