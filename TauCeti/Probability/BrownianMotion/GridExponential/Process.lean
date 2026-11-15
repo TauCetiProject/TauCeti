@@ -17,8 +17,9 @@ time, not just at the trading dates. It is positive, starts at one and freezes a
 last trading date. Its paths are continuous whenever the Brownian paths are. Bounded heights
 give square-integrable values with second moments controlled by clipped elapsed trading time.
 
-The construction uses finite sums and conditional Gaussian exponential moments, without
-a completed stochastic integral. These densities provide continuous-time approximants for
+`gridExponentialProcess` clips the grid dates at the observation time `t` in
+`gridExponential`, using only finite sums, without a completed stochastic integral.
+These densities provide continuous-time approximants for
 changes of measure with bounded predictable drifts. Heights may be random and dependent;
 no Gaussian law for their weighted Brownian gains is asserted.
 
@@ -87,22 +88,6 @@ theorem gridExponentialProcess_congr {τ σ : ℕ → ℝ≥0} {θ η : ℕ → 
   simp only [gridExponentialProcess_def]
   exact gridExponential_congr hτ hθ hW
 
-/-- Before the first trading date, the likelihood equals one. -/
-theorem gridExponentialProcess_eq_one_of_le {τ : ℕ → ℝ≥0} {n : ℕ}
-    (hτ : MonotoneOn τ (Set.Iic n)) (θ : ℕ → Ω → ℝ) (W : ℝ≥0 → Ω → ℝ)
-    {t : ℝ≥0} (ht : t ≤ τ 0) :
-    gridExponentialProcess τ θ W n t = 1 := by
-  ext ω
-  rw [gridExponentialProcess_eq_exp]
-  have hmin (j : ℕ) (hj : j ≤ n) : min t (τ j) = t :=
-    min_eq_left (ht.trans (hτ (by simp) hj (Nat.zero_le _)))
-  simp only [Pi.one_apply]
-  rw [← exp_zero]
-  congr 1
-  apply sum_eq_zero
-  intro j hj
-  simp [hmin j (by have := mem_range.mp hj; omega), hmin (j + 1) (mem_range.mp hj)]
-
 /-- After the last trading date, the likelihood is the sampled grid likelihood. -/
 theorem gridExponentialProcess_eq_gridExponential_of_ge {τ : ℕ → ℝ≥0} {n : ℕ}
     (hτ : MonotoneOn τ (Set.Iic n)) (θ : ℕ → Ω → ℝ) (W : ℝ≥0 → Ω → ℝ)
@@ -114,7 +99,8 @@ theorem gridExponentialProcess_eq_gridExponential_of_ge {τ : ℕ → ℝ≥0} {
   rw [gridExponentialProcess_def]
   exact gridExponential_congr hmin (fun _ _ ↦ rfl) (fun j hj ↦ by rw [hmin j hj])
 
-private theorem gridExponentialProcess_eq_prefix_of_le {τ : ℕ → ℝ≥0} {j n : ℕ}
+/-- At or before a prefix's last date, later trading intervals do not affect the process. -/
+theorem gridExponentialProcess_eq_prefix_of_le {τ : ℕ → ℝ≥0} {j n : ℕ}
     (hτ : MonotoneOn τ (Set.Iic n)) (hjn : j ≤ n)
     (θ : ℕ → Ω → ℝ) (W : ℝ≥0 → Ω → ℝ) {t : ℝ≥0} (ht : t ≤ τ j) :
     gridExponentialProcess τ θ W n t = gridExponentialProcess τ θ W j t := by
@@ -130,9 +116,18 @@ private theorem gridExponentialProcess_eq_prefix_of_le {τ : ℕ → ℝ≥0} {j
     min_eq_left (ht.trans (hτ hjn hln hjl))
   simp [hmin k hjk (by omega), hmin (k + 1) (by omega) (by omega)]
 
+/-- Before the first trading date, the likelihood equals one. -/
+theorem gridExponentialProcess_eq_one_of_le {τ : ℕ → ℝ≥0} {n : ℕ}
+    (hτ : MonotoneOn τ (Set.Iic n)) (θ : ℕ → Ω → ℝ) (W : ℝ≥0 → Ω → ℝ)
+    {t : ℝ≥0} (ht : t ≤ τ 0) :
+    gridExponentialProcess τ θ W n t = 1 := by
+  rw [gridExponentialProcess_eq_prefix_of_le hτ (Nat.zero_le n) θ W ht,
+    gridExponentialProcess_zero]
+  rfl
+
 /-- At an interior trading date, the process is the corresponding sampled likelihood. -/
 @[simp]
-theorem gridExponentialProcess_grid_date {τ : ℕ → ℝ≥0} {j n : ℕ}
+theorem gridExponentialProcess_eq_gridExponential {τ : ℕ → ℝ≥0} {j n : ℕ}
     (hτ : MonotoneOn τ (Set.Iic n)) (hjn : j ≤ n)
     (θ : ℕ → Ω → ℝ) (W : ℝ≥0 → Ω → ℝ) :
     gridExponentialProcess τ θ W n (τ j) = gridExponential τ θ W j := by
@@ -350,7 +345,8 @@ theorem IsFilteredPreBrownianReal.gridExponentialProcess_ae_eq_condExp
   rw [gridExponentialProcess_eq_gridExponential_of_ge hτ θ W (le_max_right t (τ n))] at hc
   exact hc.symm
 
-/-- Elementary density values are square-integrable at every observation time. -/
+/-- Elementary density values with bounded predictable heights are square-integrable
+at every observation time. -/
 theorem IsFilteredPreBrownianReal.memLp_two_gridExponentialProcess
     (hW : IsFilteredPreBrownianReal ℱ W P) {τ : ℕ → ℝ≥0} {θ : ℕ → Ω → ℝ} {n : ℕ}
     (hτ : MonotoneOn τ (Set.Iic n)) (hθ : ∀ j < n, Measurable[ℱ (τ j)] (θ j))
@@ -359,8 +355,20 @@ theorem IsFilteredPreBrownianReal.memLp_two_gridExponentialProcess
   exact ((hW.memLp_two_gridExponential hτ hθ hK).condExp (by norm_num)).ae_eq
     (hW.gridExponentialProcess_ae_eq_condExp hτ hθ t).symm
 
-/-- The second moment is controlled by elapsed trading time clipped at the observation time,
-not by the number of grid intervals or the unobserved terminal date. -/
+/-- A uniform height bound controls the square by the process with doubled heights,
+with a factor depending on elapsed trading time clipped at the observation time. -/
+theorem gridExponentialProcess_sq_le {τ : ℕ → ℝ≥0} {θ : ℕ → Ω → ℝ} {n : ℕ}
+    (hτ : MonotoneOn τ (Set.Iic n)) (W : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω : Ω)
+    (hθK : ∀ j < n, |θ j ω| ≤ K) :
+    gridExponentialProcess τ θ W n t ω ^ 2 ≤
+      gridExponentialProcess τ (fun j ω ↦ 2 * θ j ω) W n t ω *
+        exp (K ^ 2 * ((min t (τ n) : ℝ≥0) - min t (τ 0))) := by
+  simp only [gridExponentialProcess_def]
+  exact gridExponential_sq_le (fun i hi j hj hij ↦ min_le_min_left t (hτ hi hj hij)) W ω hθK
+
+/-- For bounded predictable heights, the second moment is controlled by the height bound
+and elapsed trading time clipped at the observation time, not by the number of grid intervals
+or the unobserved terminal date. -/
 theorem IsFilteredPreBrownianReal.integral_sq_gridExponentialProcess_le
     (hW : IsFilteredPreBrownianReal ℱ W P) {τ : ℕ → ℝ≥0} {θ : ℕ → Ω → ℝ} {n : ℕ}
     (hτ : MonotoneOn τ (Set.Iic n)) (hθ : ∀ j < n, Measurable[ℱ (τ j)] (θ j))
@@ -378,8 +386,7 @@ theorem IsFilteredPreBrownianReal.integral_sq_gridExponentialProcess_le
       gridExponentialProcess τ (fun j ω ↦ 2 * θ j ω) W n t ω *
         exp (K ^ 2 * ((min t (τ n) : ℝ≥0) - min t (τ 0))) := by
     filter_upwards [ae_all_iff.mpr (fun j ↦ ae_all_iff.mpr (hK j))] with ω hω
-    simp only [gridExponentialProcess_def]
-    exact gridExponential_sq_le (fun i hi j hj hij ↦ min_le_min_left t (hτ hi hj hij)) ω hω
+    exact gridExponentialProcess_sq_le hτ W t ω hω
   refine (integral_mono_ae hs hi hb).trans_eq ?_
   rw [integral_mul_const, hW.integral_gridExponentialProcess hτ h2θ t, one_mul]
 

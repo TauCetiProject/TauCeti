@@ -123,55 +123,26 @@ theorem IsFilteredPreBrownianReal.integrable_mul_exp_sub
     (hX : Measurable[ℱ u] X) (hi : Integrable X P) :
     Integrable (fun ω ↦ X ω *
       exp (a ω * (W v ω - W u ω) - a ω ^ 2 * ((v : ℝ) - u) / 2)) P := by
-  have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  let f := fun z : (ℝ × ℝ) × ℝ ↦
-    z.1.1 * exp (z.1.2 * z.2 - z.1.2 ^ 2 * ((v : ℝ) - u) / 2)
-  have hf : StronglyMeasurable f := by fun_prop
   have hZ : Measurable (fun ω ↦ W v ω - W u ω) :=
     hW.adapted.measurable.sub hW.adapted.measurable
-  have hpair := (hX.prodMk ha).mono (ℱ.le u) le_rfl
-  have hlaw : P.map (fun ω ↦ W v ω - W u ω) = gaussianReal 0 (v - u) :=
-    (hW.hasLaw_sub_of_le huv).map_eq
-  have hprod := map_restrict_prodMk_eq_prod_of_indep (ℱ.le u) (hX.prodMk ha) hZ
-    (hW.indep_sub huv) MeasurableSet.univ
-  simp only [Measure.restrict_univ, hlaw] at hprod
-  have hfi : Integrable f ((P.map (fun ω ↦ (X ω, a ω))).prod (gaussianReal 0 (v - u))) := by
-    apply (integrable_prod_iff hf.aestronglyMeasurable).mpr
-    constructor
-    · exact ae_of_all _ fun x ↦
-        ((integrable_exp_mul_gaussianReal x.2).div_const
-          (exp (x.2 ^ 2 * ((v : ℝ) - u) / 2))).const_mul x.1 |>.congr
-          (ae_of_all _ fun y ↦ by simp [f, exp_sub, mul_div_assoc])
-    · have heq (x : ℝ × ℝ) : (∫ y, ‖f (x, y)‖ ∂gaussianReal 0 (v - u)) = |x.1| := by
-        simp only [f, norm_mul, Real.norm_eq_abs, abs_exp, integral_const_mul]
-        rw [← NNReal.coe_sub huv, mul_comm (x.2 ^ 2),
-          integral_exp_mul_sub_gaussianReal, mul_one]
-      simp_rw [heq]
-      exact (integrable_map_measure (by fun_prop) hpair.aemeasurable).mpr hi.abs
-  rw [← hprod, integrable_map_measure hf.aestronglyMeasurable
-    (hpair.prodMk hZ).aemeasurable] at hfi
-  exact hfi
+  simpa only [zero_mul, zero_add, NNReal.coe_sub huv, mul_comm ((v : ℝ) - u)] using
+    integrable_mul_exp_sub_of_indep_gaussian (ℱ.le u) hX ha hZ
+      (hW.indep_sub huv) (hW.hasLaw_sub_of_le huv) hi
 
-/-- A normalized Brownian exponential increment with a left-measurable height
-has conditional mean equal to its left-measurable multiplier. -/
+/-- Multiplying an integrable `ℱ u`-measurable variable by a normalized Brownian
+exponential increment with `ℱ u`-measurable height gives conditional expectation
+equal to that variable. -/
 theorem IsFilteredPreBrownianReal.condExp_mul_exp_sub
     (hW : IsFilteredPreBrownianReal ℱ W P) {u v : ℝ≥0} (huv : u ≤ v)
     {a X : Ω → ℝ} (ha : Measurable[ℱ u] a)
     (hX : Measurable[ℱ u] X) (hi : Integrable X P) :
     P[(fun ω ↦ X ω *
       exp (a ω * (W v ω - W u ω) - a ω ^ 2 * ((v : ℝ) - u) / 2)) | ℱ u] =ᵐ[P] X := by
-  have := (hW.hasLaw_eval 0).isProbabilityMeasure
   have hZ : Measurable (fun ω ↦ W v ω - W u ω) :=
     hW.adapted.measurable.sub hW.adapted.measurable
-  have h := condExp_comp_prodMk_ae_eq_integral_of_indep (ℱ.le u) (hX.prodMk ha) hZ
-    (hW.indep_sub huv)
-    (f := fun z : (ℝ × ℝ) × ℝ ↦
-      z.1.1 * exp (z.1.2 * z.2 - z.1.2 ^ 2 * ((v : ℝ) - u) / 2))
-    (by fun_prop) (hW.integrable_mul_exp_sub huv ha hX hi)
-  have hlaw : P.map (fun ω ↦ W v ω - W u ω) = gaussianReal 0 (v - u) :=
-    (hW.hasLaw_sub_of_le huv).map_eq
-  simpa only [hlaw, integral_const_mul, ← NNReal.coe_sub huv, mul_comm (a _ ^ 2),
-    integral_exp_mul_sub_gaussianReal, mul_one] using h
+  simpa only [zero_mul, zero_add, NNReal.coe_sub huv, mul_comm ((v : ℝ) - u)] using
+    condExp_mul_exp_sub_of_indep_gaussian (ℱ.le u) hX ha hZ
+      (hW.indep_sub huv) (hW.hasLaw_sub_of_le huv) hi
 
 private theorem gridExponential_step (hW : IsFilteredPreBrownianReal ℱ W P)
     (hτ : MonotoneOn τ (Set.Iic (n + 1)))
@@ -189,7 +160,8 @@ private theorem gridExponential_step (hW : IsFilteredPreBrownianReal ℱ W P)
 
 /-- A uniform height bound controls the square by the likelihood with doubled heights,
 with a factor depending only on elapsed time rather than the grid length. -/
-theorem gridExponential_sq_le (hτ : MonotoneOn τ (Set.Iic n)) (ω : Ω)
+theorem gridExponential_sq_le (hτ : MonotoneOn τ (Set.Iic n))
+    (W : ℝ≥0 → Ω → ℝ) (ω : Ω)
     (hθK : ∀ j < n, |θ j ω| ≤ K) :
     gridExponential τ θ W n ω ^ 2 ≤ gridExponential τ (fun j ω ↦ 2 * θ j ω) W n ω *
       exp (K ^ 2 * ((τ n : ℝ) - τ 0)) := by
@@ -273,7 +245,7 @@ private theorem gridExponential_square_bound (hW : IsFilteredPreBrownianReal ℱ
   have hb : ∀ᵐ ω ∂P, gridExponential τ θ W n ω ^ 2 ≤
       gridExponential τ (fun j ω ↦ 2 * θ j ω) W n ω * exp (K ^ 2 * ((τ n : ℝ) - τ 0)) := by
     filter_upwards [ae_all_iff.mpr (fun j ↦ ae_all_iff.mpr (hK j))] with ω hω
-    exact gridExponential_sq_le hτ ω hω
+    exact gridExponential_sq_le hτ W ω hω
   have hm := (hW.adapted.measurable_gridExponential hτ hθ).mono (ℱ.le _) le_rfl
   have hs : Integrable (fun ω ↦ gridExponential τ θ W n ω ^ 2) P :=
     hi.mono' (hm.pow_const 2).aestronglyMeasurable (by simpa only [norm_pow,
