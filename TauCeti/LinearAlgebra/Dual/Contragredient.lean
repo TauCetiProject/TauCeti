@@ -19,12 +19,11 @@ Let `σ : S ≃+* R` be a ring isomorphism of commutative semirings and `M` an `
 
   `(s • φ) x = φ (σ s • x) = σ s * φ x`.
 
-For the group algebra `R = S = O[G]` of a commutative group `G` over a commutative semiring `O`,
+For the group algebra `R = S = O[G]` of a commutative group `G` over a commutative ring `O`,
 with `σ = #` the antipode `g ↦ g⁻¹`, this is the contragredient action `(g • φ) x = φ (g⁻¹ • x)`.
-More generally, when `O` is a commutative ring, `G` is a commutative group, `R = R_Ψ` is a
-character group ring, and `S = R^# = R_{Ψ⁻¹}` is its conjugate under `# : R^# ≃+* R`, it gives the
-`R^#`-module structure on `Hom_R(M, R)` used by Dasgupta and Kakde to form transposed
-presentations.
+More generally, when `R = R_Ψ` is a character group ring of `G` over `O` and `S = R^# = R_{Ψ⁻¹}`
+is its conjugate under `# : R^# ≃+* R`, it gives the `R^#`-module structure on `Hom_R(M, R)` used
+by Dasgupta and Kakde to form transposed presentations.
 
 Precomposition turns an `R`-linear map `f : M →ₗ[R] N` contravariantly into an `S`-linear map
 `ContragredientDual.map σ f : ContragredientDual σ N →ₗ[S] ContragredientDual σ M`. Because `σ` is

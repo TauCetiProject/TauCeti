@@ -65,8 +65,8 @@ Dasgupta–Kakde equation (171)).
   explicit identifications `PresentationTranspose σ (LinearMap.fst R R R) ≃ₗ[S] S` and
   `PresentationTranspose σ (LinearMap.mulLeft R a) ≃ₗ[S] S ⧸ Ideal.span {σ.symm a}`.
 * `TauCeti.PresentationTranspose.quadraticPresentation`: the quadratic presentation over `S`
-  attached to a quadratic presentation `P` over `R`, with relation matrix `P.relᵀ.map σ.symm` up
-  to `quadraticPresentation_size`.
+  attached to a quadratic presentation `P` over `R`, characterized by `quadraticPresentation_size`,
+  `quadraticPresentation_rel`, and `quadraticPresentation_gen_apply`.
 
 ## Main results
 
@@ -507,11 +507,14 @@ def quadraticPresentation (σ : S ≃+* R) (P : QuadraticPresentation R M) :
     (exact σ (Matrix.toLin' P.rel))
     (mk_surjective σ (Matrix.toLin' P.rel))
 
+/-- The quadratic presentation of the transpose has the same size as `P`. -/
 @[simp]
 theorem quadraticPresentation_size (σ : S ≃+* R) (P : QuadraticPresentation R M) :
     (quadraticPresentation σ P).size = P.size :=
   (rfl)
 
+/-- The relation matrix of `quadraticPresentation σ P` is `P.relᵀ.map σ.symm`, reindexed along
+`quadraticPresentation_size σ P`. -/
 @[simp]
 theorem quadraticPresentation_rel (σ : S ≃+* R) (P : QuadraticPresentation R M) :
     (quadraticPresentation σ P).rel =
