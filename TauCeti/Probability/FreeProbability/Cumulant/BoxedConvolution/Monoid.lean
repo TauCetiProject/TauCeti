@@ -121,11 +121,6 @@ structure BoxedConvolution (R : Type*) where
 
 namespace BoxedConvolution
 
-open Lean.PrettyPrinter.Delaborator in
-/-- Prevents `toBoxed f` from pretty-printing as `{ ofBoxed := f }`. -/
-@[app_delab toBoxed]
-meta def delabToBoxed : Delab := delabApp
-
 section TypeWrapper
 
 variable {R : Type*}
