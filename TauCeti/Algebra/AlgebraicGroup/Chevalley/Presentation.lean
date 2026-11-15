@@ -264,7 +264,8 @@ namespace ChevalleyDatum
 variable {t ht} (D : ChevalleyDatum t ht)
 
 /-- Steinberg's word evaluates to Steinberg's element `n_γ(s)` of the datum. -/
-private theorem lift_steinbergWeylWord (γ : Fin t.numRoots) (s : Aˣ) :
+@[simp]
+theorem lift_steinbergWeylWord (γ : Fin t.numRoots) (s : Aˣ) :
     FreeGroup.lift (fun p : Fin t.numRoots × A => D.rootSubgroupPoints p.1 A (ofAdd p.2))
         (steinbergWeylWord ht γ s) =
       D.weylElement γ A s := by
@@ -320,6 +321,14 @@ noncomputable def steinbergLift : PresentedGroup (t.steinbergRelators ht A) →*
 theorem steinbergLift_of (γ : Fin t.numRoots) (a : A) :
     D.steinbergLift A (PresentedGroup.of (γ, a)) = D.rootSubgroupPoints γ A (ofAdd a) :=
   PresentedGroup.toGroup.of _
+
+/-- Steinberg's homomorphism carries the presented Weyl word `W_γ(s)` to Steinberg's element
+`n_γ(s)` of the datum. -/
+@[simp]
+theorem steinbergLift_mk_steinbergWeylWord (γ : Fin t.numRoots) (s : Aˣ) :
+    D.steinbergLift A (PresentedGroup.mk _ (steinbergWeylWord ht γ s)) = D.weylElement γ A s := by
+  -- `PresentedGroup.toGroup` evaluates the class of a word by lifting that word.
+  exact D.lift_steinbergWeylWord A γ s
 
 /-- Steinberg's homomorphism carries the root subgroups of the presented group onto those of the
 datum. -/
