@@ -42,6 +42,9 @@ roofs `M ← P → N` are Mathlib's right fractions for it.
   over the ground ring is a quasi-isomorphism.
 * `TauCeti.DGRightModuleHom.isQuasiIso_iff_forall_exists`: quasi-isomorphisms are the morphisms
   whose relative cycles are relative boundaries.
+* `TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyRetract`: a morphism is a quasi-isomorphism
+  when it is, compatibly, a homotopy retract of a map whose relative cycles are relative
+  boundaries.
 
 ## References
 
@@ -201,6 +204,45 @@ theorem isQuasiIso_iff_forall_exists (f : DGRightModuleHom hM hN) :
       refine ⟨-v, ?_⟩
       rw [Submodule.coe_sub, cyclesMap_apply_coe, map_neg, ← huv]
       exact (sub_add_cancel_left _ _).symm
+
+/-- **Quasi-isomorphisms through homotopy retracts.** Let `f₀ : M₀ → N₀` be a map of complexes
+over the ground ring whose relative cycles are relative boundaries, as for a quasi-isomorphism
+(`isQuasiIso_iff_forall_exists`). If `M` and `N` are homotopy retracts of `M₀` and `N₀`, through
+chain maps `i : M → M₀` and `r : M₀ → M` with `r ∘ i = 1 + d K + K d`, and `f` commutes with `f₀`
+along both `i` and `r`, then `f` is a quasi-isomorphism. Only the composite `r ∘ i` needs to be
+homotopic to the identity, none of the maps `i`, `r`, `K` needs to be linear over the algebra,
+and the homotopies need not be compatible with `f`. -/
+theorem isQuasiIso_of_homotopyRetract (f : DGRightModuleHom hM hN)
+    {M₀ N₀ : Type*} [AddCommGroup M₀] [Module R M₀] [AddCommGroup N₀] [Module R N₀]
+    {dM₀ : M₀ →ₗ[R] M₀} {dN₀ : N₀ →ₗ[R] N₀} (f₀ : M₀ →ₗ[R] N₀)
+    (h₀ : ∀ x y, dM₀ x = 0 → f₀ x = dN₀ y → ∃ u v, dM₀ u = x ∧ f₀ u + dN₀ v = y)
+    (iM : M →ₗ[R] M₀) (rM : M₀ →ₗ[R] M) (KM : M →ₗ[R] M)
+    (iN : N →ₗ[R] N₀) (rN : N₀ →ₗ[R] N) (KN : N →ₗ[R] N)
+    (hiM : ∀ x, dM₀ (iM x) = iM (dM x)) (hrM : ∀ x, dM (rM x) = rM (dM₀ x))
+    (hiN : ∀ y, dN₀ (iN y) = iN (dN y)) (hrN : ∀ y, dN (rN y) = rN (dN₀ y))
+    (hKM : ∀ x, rM (iM x) = x + dM (KM x) + KM (dM x))
+    (hKN : ∀ y, rN (iN y) = y + dN (KN y) + KN (dN y))
+    (hi : ∀ x, iN (f x) = f₀ (iM x)) (hr : ∀ x, f (rM x) = rN (f₀ x)) : f.IsQuasiIso := by
+  rw [isQuasiIso_iff_forall_exists]
+  intro x y hx hfx
+  -- Bound `x` by solving the problem for `f₀` and pulling the primitive back along `r`,
+  -- corrected by the homotopy of `M`.
+  obtain ⟨u₀, -, hu₀, -⟩ := h₀ (iM x) (iN y) (by rw [hiM, hx, map_zero])
+    (by rw [← hi, hfx, hiN])
+  have hu₁ : dM (rM u₀ - KM x) = x := by
+    rw [map_sub, hrM, hu₀, hKM, hx, map_zero, add_zero, add_sub_cancel_right]
+  -- The defect `y - f (r u₀ - K x)` is a cycle of `N`; solve for it in `N₀` and pull the
+  -- solution back along `r`, corrected by the homotopy of `N`.
+  have hw : dN (y - f (rM u₀ - KM x)) = 0 := by rw [map_sub, map_d, hu₁, hfx, sub_self]
+  obtain ⟨c₀, v₀, hc₀, hcv₀⟩ := h₀ 0 (iN (y - f (rM u₀ - KM x))) (map_zero dM₀)
+    (by rw [map_zero, hiN, hw, map_zero])
+  have hv₀ : rN (f₀ c₀) + rN (dN₀ v₀) =
+      y - f (rM u₀ - KM x) + dN (KN (y - f (rM u₀ - KM x))) := by
+    rw [← map_add, hcv₀, hKN, hw, map_zero, add_zero]
+  refine ⟨rM u₀ - KM x + rM c₀, rN v₀ - KN (y - f (rM u₀ - KM x)), ?_, ?_⟩
+  · rw [map_add, hu₁, hrM, hc₀, map_zero, add_zero]
+  · rw [map_add f, hr, map_sub dN, hrN, ← add_sub_assoc, add_assoc (f _), hv₀]
+    abel
 
 end DGRightModuleHom
 
