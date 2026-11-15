@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
-public import TauCeti.Analysis.SpecialFunctions.Beta
+public import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Data.Fin.Basic
 
 /-!
