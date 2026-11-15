@@ -315,8 +315,9 @@ theorem contMDiffAt_cappedExchangeAlmostComplex (h₀ : ω.Compatible J₀) {n :
       rw [Complex.norm_real, Real.norm_eq_abs] at h
       have : |p.2.1| ≤ 2 := abs_le.2 ⟨by linarith [hpc.1], hpc.2.le⟩
       linarith [three_lt_two_mul_exp_two_pi]
+    have hzi : zero ≠ inf := by decide
     simp only [Function.comp_apply, cappedExchangeAlmostComplex_of_norm_le h₀ hn]
-    simp only [update_of_ne (show zero ≠ inf by decide)]
+    simp only [update_of_ne hzi]
   · -- Off the disc `‖w‖ ≤ exp (-2π) / 2` the family is the input-exchange family.
     have hw₀ : w ≠ 0 := by
       rintro rfl
@@ -327,8 +328,9 @@ theorem contMDiffAt_cappedExchangeAlmostComplex (h₀ : ω.Compatible J₀) {n :
     have hsmall : Real.exp (-(2 * π)) / 2 < 1 / 2 := by
       have : Real.exp (-(2 * π)) < 1 := Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])
       linarith
+    have hL₂ : 2 < L := by linarith
     filter_upwards [hnorm.continuousAt.eventually (lt_mem_nhds (hsmall.trans_le hge)),
-      continuous_fst.continuousAt.eventually (lt_mem_nhds (show 2 < L by linarith))] with p hp hpL
+      continuous_fst.continuousAt.eventually (lt_mem_nhds hL₂)] with p hp hpL
     rw [Function.comp_apply, cappedExchangeAlmostComplex_of_re_endCoord_le h₀
       ((re_endCoord_zero_le_one hp.le).trans (by linarith))]
 

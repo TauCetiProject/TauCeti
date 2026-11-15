@@ -122,7 +122,8 @@ theorem almostComplexStructureAt_cappedExchangeAlmostComplex {w : ℂ}
   · rw [cappedExchangeAlmostComplex_of_norm_le h₀ J hJ hn,
       Floer.cappedExchangeAlmostComplex_of_norm_le _ hn,
       almostComplexStructureAt_cappingAlmostComplex h₀ _ _ hw]
-    simp only [update_of_ne (show zero ≠ inf by decide),
+    have hzi : zero ≠ inf := by decide
+    simp only [update_of_ne hzi,
       SmoothAlmostComplexStructure.almostComplexStructureAt_update_inf_base J x]
   · rw [cappedExchangeAlmostComplex_of_lt_norm h₀ J hJ hn,
       Floer.cappedExchangeAlmostComplex_of_lt_norm _ hn,
