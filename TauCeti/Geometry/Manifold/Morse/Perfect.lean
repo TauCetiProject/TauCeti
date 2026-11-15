@@ -7,8 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.AlgebraicTopology.Singular.Torus.AddCircle
-public import TauCeti.Geometry.Manifold.Morse.Inequalities
+public import TauCeti.Geometry.Manifold.Morse.Polynomial
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
+public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Morse.Torus
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
@@ -20,9 +21,14 @@ A Morse function `f` on a manifold `M` is **perfect** with coefficients in a div
 equals the dimension `bₙ` of the singular homology `Hₙ(M; k)`. By the weak Morse inequalities
 `bₙ ≤ cₙ`, a perfect Morse function has the fewest critical points of each index among all Morse
 functions on a compact manifold (`TauCeti.IsPerfectMorse.criticalCount_le`), and so the fewest
-critical points altogether (`TauCeti.IsPerfectMorse.totalCriticalCount_le`). Whether a perfect
+critical points altogether (`TauCeti.IsPerfectMorse.totalCriticalCount_le`). For a perfect Morse
+function the polynomial `Q` of the Morse identity `∑ cⱼ tʲ = ∑ bⱼ tʲ + (1 + t) Q(t)` is `0`
+(`TauCeti.IsPerfectMorse.forall_criticalCount_eq_bettiNumber_add_coeff_iff`). Whether a perfect
 Morse function exists depends on the coefficients, as projective spaces show.
 
+* **Spheres.** The height function on `Sⁿ` has one critical point of index `0` and one of index
+  `n`, matching the homology of `Sⁿ`, so it is perfect for every division ring of coefficients
+  (`TauCeti.isPerfectMorse_sphereHeight`).
 * **The lacunary principle.** A Morse function on a compact manifold no two of whose critical
   points have indices differing by one is perfect for every choice of coefficients
   (`TauCeti.IsMorse.isPerfectMorse_of_forall_ne_add_one`). On `ℂℙⁿ` the moment function
@@ -42,6 +48,9 @@ Morse function exists depends on the coefficients, as projective spaces show.
   of characteristic other than `2` (`TauCeti.not_isPerfectMorse_projectivization_real`). On `ℝP²`
   the moment function with three distinct weights has three critical points, of indices `0`, `1`
   and `2`; the Betti numbers are `1, 1, 1` over `ℤ/2` but `1, 0, 0` over `ℚ`.
+  Away from characteristic two the polynomial `Q` of the moment function on `ℝPⁿ` is `∑ tⁱ` over
+  the odd `i < n`, so `Q = t` on `ℝP²`
+  (`TauCeti.forall_criticalCount_projectiveMomentFunction_real_eq_bettiNumber_add_coeff_iff`).
 * **Tori.** On the torus `Tᵐ = ∀ i, AddCircle (p i)` the cosine function
   `x ↦ ∑ᵢ cos (2π xᵢ / pᵢ)` has `(m choose j)` critical points of index `j`, which is the dimension
   of `Hⱼ(Tᵐ; k)`. So it is perfect over every field (`TauCeti.isPerfectMorse_torusCos`), although
@@ -61,7 +70,8 @@ Morse function exists depends on the coefficients, as projective spaces show.
 public section
 
 open CategoryTheory Limits Module Set
-open scoped ContDiff Manifold LinearAlgebra.Projectivization
+open Polynomial (X)
+open scoped ContDiff Manifold LinearAlgebra.Projectivization Polynomial
 
 universe u
 
@@ -87,6 +97,18 @@ structure IsPerfectMorse (k : Type u) [DivisionRing k] (f : M → ℝ) : Prop wh
   criticalCount_eq (n : ℕ) : criticalCount I f n =
     finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj
       (ModuleCat.of k k)).obj (TopCat.of M))
+
+/-- **A perfect Morse function has quotient polynomial `0`.** If `f` is a perfect Morse function
+with coefficients in `k`, a polynomial `Q` satisfies the Morse identity
+`cⱼ = bⱼ + coeff ((1 + X) * Q) j` in every degree `j` exactly when `Q = 0`. -/
+theorem IsPerfectMorse.forall_criticalCount_eq_bettiNumber_add_coeff_iff {k : Type u}
+    [DivisionRing k] (hf : IsPerfectMorse I k f) (Q : ℕ[X]) :
+    (∀ j, criticalCount I f j = ((bettiNumber k M j + ((1 + X) * Q).coeff j : ℕ) : ℕ∞)) ↔
+      Q = 0 := by
+  have h0 (j : ℕ) : criticalCount I f j =
+      ((bettiNumber k M j + ((1 + X) * (0 : ℕ[X])).coeff j : ℕ) : ℕ∞) := by
+    simp [hf.criticalCount_eq, bettiNumber_def]
+  exact ⟨fun h ↦ eq_of_forall_criticalCount_eq_bettiNumber_add_coeff h h0, by rintro rfl; exact h0⟩
 
 section Compact
 
@@ -190,7 +212,73 @@ theorem not_isPerfectMorse_projectivization_real (hn : Even n) (hn0 : n ≠ 0) {
       (isRegular_iff_ne_zero.2 h2).right hn hn0)] at h
   exact h rfl
 
+/-- The polynomial `∑ tⁱ` over the odd `i < n` has coefficient `1` in the odd degrees below `n`
+and `0` elsewhere. -/
+private theorem coeff_sum_X_pow_odd (n j : ℕ) :
+    (∑ i ∈ Finset.range n with Odd i, (X : ℕ[X]) ^ i).coeff j = if j < n ∧ Odd j then 1 else 0 := by
+  simp [Polynomial.coeff_X_pow]
+
+/-- The coefficients of `(1 + t) ∑ tⁱ`, the sum over the odd `i < n`: `1` in the odd degrees below
+`n` and in the positive even degrees up to `n`, and `0` elsewhere. -/
+private theorem coeff_one_add_X_mul_sum_X_pow_odd (n j : ℕ) :
+    ((1 + X) * ∑ i ∈ Finset.range n with Odd i, (X : ℕ[X]) ^ i).coeff j =
+      (if j < n ∧ Odd j then 1 else 0) + if 0 < j ∧ j ≤ n ∧ Even j then 1 else 0 := by
+  rcases j with _ | j
+  · simp [add_mul]
+  · rw [add_mul, one_mul, Polynomial.coeff_add, Polynomial.coeff_X_mul, coeff_sum_X_pow_odd,
+      coeff_sum_X_pow_odd]
+    simp only [Nat.odd_add_one, Nat.even_add_one, Nat.not_even_iff_odd]
+    split_ifs <;> grind
+
+/-- **The quotient polynomial of the moment function on `ℝPⁿ` away from characteristic two.**
+Let `k` be a division ring in which `2 ≠ 0`, such as `ℚ`. For pairwise distinct weights, the moment
+function on `ℝPⁿ` has one critical point of each index `0, …, n`, while the Betti numbers of `ℝPⁿ`
+over `k` are `1` in degree `0` and, for odd `n`, in degree `n`, and `0` otherwise. The polynomial
+`Q` of the Morse identity `cⱼ = bⱼ + coeff ((1 + X) * Q) j` is then `∑ tⁱ` over the odd `i < n`.
+For `ℝP²` this is `Q = t`: the critical counts `1, 1, 1` exceed the Betti numbers `1, 0, 0` by
+`t + t² = (1 + t) t`. The coefficient of `tⁱ` in `Q` is the rank of the cellular differential of
+`ℝPⁿ` out of degree `i + 1`
+(`TauCeti.RealProjectiveSpace.finrank_range_cellularChainComplex_d_of_two_ne_zero`). In
+characteristic two the moment function is perfect, and `Q = 0`
+(`TauCeti.isPerfectMorse_projectiveMomentFunction_real`). -/
+theorem forall_criticalCount_projectiveMomentFunction_real_eq_bettiNumber_add_coeff_iff
+    (hw : Function.Injective w) {k : Type} [DivisionRing k] (h2 : (2 : k) ≠ 0) (Q : ℕ[X]) :
+    (∀ j, criticalCount 𝓘(ℝ, Fin n → ℝ) (projectiveMomentFunction ℝ w) j =
+        ((bettiNumber k (ℙ ℝ (Fin (n + 1) → ℝ)) j + ((1 + X) * Q).coeff j : ℕ) : ℕ∞)) ↔
+      Q = ∑ i ∈ Finset.range n with Odd i, X ^ i := by
+  have hS (j : ℕ) : criticalCount 𝓘(ℝ, Fin n → ℝ) (projectiveMomentFunction ℝ w) j =
+      ((bettiNumber k (ℙ ℝ (Fin (n + 1) → ℝ)) j +
+        ((1 + X) * ∑ i ∈ Finset.range n with Odd i, X ^ i).coeff j : ℕ) : ℕ∞) := by
+    rw [criticalCount_projectiveMomentFunction_real hw, bettiNumber_def,
+      RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_ne_zero h2,
+      coeff_one_add_X_mul_sum_X_pow_odd]
+    rcases Nat.even_or_odd j with hj | hj <;> rcases Nat.even_or_odd n with hn | hn <;>
+      split_ifs <;> grind
+  exact ⟨fun h ↦ eq_of_forall_criticalCount_eq_bettiNumber_add_coeff h hS, by rintro rfl; exact hS⟩
+
 end Projective
+
+/-! ### Spheres -/
+
+section Sphere
+
+variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1)]
+
+/-- **The height function on a sphere is perfect.** For every division ring `k`, the height
+function `TauCeti.sphereHeight` on the unit sphere `Sⁿ` is a perfect Morse function: it has one
+critical point of index `0` and one of index `n`, and `Hⱼ(Sⁿ; k)` is `k` in degrees `0` and `n` and
+vanishes otherwise. So the polynomial `Q` of its Morse identity is `0`
+(`TauCeti.IsPerfectMorse.forall_criticalCount_eq_bettiNumber_add_coeff_iff`). -/
+theorem isPerfectMorse_sphereHeight (v : Metric.sphere (0 : E) 1) (k : Type u) [DivisionRing k] :
+    IsPerfectMorse (𝓡 n) k (sphereHeight v) := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  refine isPerfectMorse_iff.2 ⟨isMorse_sphereHeight v, fun j ↦ ?_⟩
+  rw [criticalCount_sphereHeight, ModuleCat.finrank_singularHomology_sphere_of_finrank_eq_succ
+    (ModuleCat.of k k) (Fact.out : finrank ℝ E = n + 1) j, ModuleCat.finrank_of_self]
+  split_ifs <;> norm_num
+
+end Sphere
 
 /-! ### Tori -/
 

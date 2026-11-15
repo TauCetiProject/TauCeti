@@ -25,6 +25,11 @@ Betti number in applying the identity.
 finite-dimensional module over a division ring. `TauCeti.morse_inequalities` uses the division
 ring itself as coefficients, so that the left side is the critical count without a factor.
 
+The polynomial `Q` is determined by the critical counts and the Betti numbers: the coefficients of
+`(1 + X) * Q` are the differences `cⱼ - bⱼ`, and `1 + X` is cancellable in `ℕ[X]`
+(`TauCeti.eq_of_forall_criticalCount_eq_bettiNumber_add_coeff`). So computing `Q` for a particular
+Morse function amounts to exhibiting one polynomial that satisfies the identity.
+
 ## References
 
 * J. Milnor, *Morse Theory*, Princeton University Press, 1963, Section 5.
@@ -38,6 +43,19 @@ open scoped ContDiff Manifold
 universe u
 
 namespace TauCeti
+
+/-- **The quotient polynomial of the Morse identity is unique.** If two polynomials `Q` and `Q'`
+both express the critical counts of `f` as `cⱼ = bⱼ + coeff ((1 + X) * Q) j`, where `bⱼ` is the
+`j`-th Betti number over `k`, then `Q = Q'`. -/
+theorem eq_of_forall_criticalCount_eq_bettiNumber_add_coeff {E H : Type*} {M : Type u}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    [TopologicalSpace M] [ChartedSpace H M] {f : M → ℝ} {k : Type u} [Ring k] {Q Q' : ℕ[X]}
+    (hQ : ∀ j, criticalCount I f j = ((bettiNumber k M j + ((1 + X) * Q).coeff j : ℕ) : ℕ∞))
+    (hQ' : ∀ j, criticalCount I f j = ((bettiNumber k M j + ((1 + X) * Q').coeff j : ℕ) : ℕ∞)) :
+    Q = Q' :=
+  mul_left_cancel₀ (a := 1 + X) (fun h ↦ by simpa using congrArg (fun p : ℕ[X] ↦ p.coeff 0) h) <|
+    AddMonoidAlgebra.coeff_injective <| Finsupp.ext fun j ↦
+      Nat.add_left_cancel (Nat.cast_injective ((hQ j).symm.trans (hQ' j)))
 
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
