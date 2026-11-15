@@ -66,13 +66,18 @@ private lemma analyticAt_of_sq_mul_deriv_eq (hc : c ≠ 0)
   refine differentiableAt_of_deriv_ne_zero fun h0 => hc ?_
   rw [← hz, h0, mul_zero]
 
+/-- If `u ^ 2 * w' = c` near `x` for a nonzero constant `c`, then `u x ≠ 0`. -/
+private lemma ne_zero_of_sq_mul_deriv_eq (hc : c ≠ 0)
+    (h : ∀ᶠ z in 𝓝 x, u z ^ 2 * deriv w z = c) : u x ≠ 0 :=
+  fun h0 => hc (by simpa [h0] using h.self_of_nhds.symm)
+
 /-- **The Schwarzian through a reciprocal square root of the derivative.**  If `u` is holomorphic
 at `x` and `u ^ 2 * w' = c` near `x` for a nonzero constant `c`, then
 `S(w) = -2 * u'' / u` at `x`. -/
 theorem schwarzian_eq_neg_two_mul_iteratedDeriv_two_div (hu : AnalyticAt ℂ u x) (hc : c ≠ 0)
     (h : ∀ᶠ z in 𝓝 x, u z ^ 2 * deriv w z = c) :
     schwarzian w x = -2 * iteratedDeriv 2 u x / u x := by
-  have hux : u x ≠ 0 := fun h0 => hc (by simpa [h0] using h.self_of_nhds.symm)
+  have hux : u x ≠ 0 := ne_zero_of_sq_mul_deriv_eq hc h
   have hne : ∀ᶠ z in 𝓝 x, u z ≠ 0 := hu.continuousAt.eventually_ne hux
   -- Near `x`, the derivative of `w` is `c / u ^ 2`.
   have hd : deriv w =ᶠ[𝓝 x] fun z => c * (u z ^ 2)⁻¹ := by
@@ -108,7 +113,7 @@ holomorphic at `x` and `u ^ 2 * w' = c` near `x` for a nonzero constant `c`, the
 theorem iteratedDeriv_two_add_schwarzian_div_two_mul_eq_zero (hu : AnalyticAt ℂ u x)
     (hc : c ≠ 0) (h : ∀ᶠ z in 𝓝 x, u z ^ 2 * deriv w z = c) :
     iteratedDeriv 2 u x + schwarzian w x / 2 * u x = 0 := by
-  have hux : u x ≠ 0 := fun h0 => hc (by simpa [h0] using h.self_of_nhds.symm)
+  have hux : u x ≠ 0 := ne_zero_of_sq_mul_deriv_eq hc h
   rw [schwarzian_eq_neg_two_mul_iteratedDeriv_two_div hu hc h]
   field_simp
   ring
@@ -120,7 +125,7 @@ theorem iteratedDeriv_two_mul_add_schwarzian_div_two_mul_eq_zero (hu : AnalyticA
     (hc : c ≠ 0) (h : ∀ᶠ z in 𝓝 x, u z ^ 2 * deriv w z = c) :
     iteratedDeriv 2 (fun z => w z * u z) x + schwarzian w x / 2 * (w x * u x) = 0 := by
   have hw := analyticAt_of_sq_mul_deriv_eq hc h
-  have hux : u x ≠ 0 := fun h0 => hc (by simpa [h0] using h.self_of_nhds.symm)
+  have hux : u x ≠ 0 := ne_zero_of_sq_mul_deriv_eq hc h
   -- Differentiating `u ^ 2 * w' = c` gives `2 * u * u' * w' + u ^ 2 * w'' = 0` at `x`.
   have hc' : 2 * u x * deriv u x * deriv w x + u x ^ 2 * deriv (deriv w) x = 0 := by
     have hconst : (fun z => u z ^ 2 * deriv w z) =ᶠ[𝓝 x] fun _ => c := h
@@ -133,17 +138,8 @@ theorem iteratedDeriv_two_mul_add_schwarzian_div_two_mul_eq_zero (hu : AnalyticA
   -- The Leibniz rule for `(w * u)''`.
   have hv : iteratedDeriv 2 (fun z => w z * u z) x =
       deriv (deriv w) x * u x + 2 * deriv w x * deriv u x + w x * deriv (deriv u) x := by
-    have hd : deriv (fun z => w z * u z) =ᶠ[𝓝 x]
-        fun z => deriv w z * u z + w z * deriv u z := by
-      filter_upwards [hw.eventually_analyticAt, hu.eventually_analyticAt] with z hwz huz
-      exact (hwz.differentiableAt.hasDerivAt.fun_mul huz.differentiableAt.hasDerivAt).deriv
-    rw [iteratedDeriv_succ, iteratedDeriv_one, hd.deriv_eq]
-    have hd' : HasDerivAt (fun z => deriv w z * u z + w z * deriv u z)
-        ((deriv (deriv w) x * u x + deriv w x * deriv u x) +
-          (deriv w x * deriv u x + w x * deriv (deriv u) x)) x :=
-      (hw.deriv.differentiableAt.hasDerivAt.fun_mul hu.differentiableAt.hasDerivAt).add
-        (hw.differentiableAt.hasDerivAt.fun_mul hu.deriv.differentiableAt.hasDerivAt)
-    rw [hd'.deriv]
+    rw [iteratedDeriv_fun_mul hw.contDiffAt hu.contDiffAt]
+    simp [Finset.sum_range_succ, iteratedDeriv_succ]
     ring
   have hsol := iteratedDeriv_two_add_schwarzian_div_two_mul_eq_zero hu hc h
   rw [iteratedDeriv_succ, iteratedDeriv_one] at hsol
@@ -195,8 +191,8 @@ theorem exists_schwarzian_differentialEquation (hw : AnalyticAt ℂ w x) (hwx : 
     exact iteratedDeriv_two_add_schwarzian_div_two_mul_eq_zero hz.1 one_ne_zero hz.2
   · filter_upwards [hloc] with z hz
     exact mul_deriv_mul_sub_deriv_mul_mul_eq hz.1.differentiableAt one_ne_zero hz.2
-  · filter_upwards [h] with z hz
-    have hz0 : u z ≠ 0 := fun h0 => by simp [h0] at hz
+  · filter_upwards [hloc] with z hz
+    have hz0 : u z ≠ 0 := ne_zero_of_sq_mul_deriv_eq one_ne_zero hz.2
     field_simp
 
 /-- **Quotients of solutions have Schwarzian `2 * Q`.**  If `y₁` and `y₂` are holomorphic at
