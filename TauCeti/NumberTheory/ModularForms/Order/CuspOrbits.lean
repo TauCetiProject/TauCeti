@@ -230,12 +230,6 @@ end UpperTriangularScaling
 
 namespace ModularForm
 
-private local instance isArithmeticConjMapGL {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteIndex]
-    (γ : SL(2, ℤ)) :
-    (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).IsArithmetic := by
-  simpa [← (Rat.castHom ℝ).algebraMap_toAlgebra, map_inv, map_mapGL]
-    using Subgroup.IsArithmetic.conj (Γ : Subgroup (GL (Fin 2) ℝ)) (mapGL ℚ γ)⁻¹
-
 section IntegralCuspDatum
 
 variable {Γ : Subgroup SL(2, ℤ)}
@@ -380,14 +374,6 @@ theorem cuspDatum_width_eq_widthInfty {D : (Γ.map sl2zToPSL2R).CuspDatum} {γ :
   rw [← hm, hm1, Int.cast_one, one_mul]
 
 end IntegralCuspDatum
-
-private lemma slash_mapGL_ne_zero {k : ℤ} {g : ℍ → ℂ} (hg : g ≠ 0) (γ : SL(2, ℤ)) :
-    (g ∣[k] mapGL ℝ γ) ≠ 0 := by
-  intro h0
-  have h1 := congrArg (· ∣[k] mapGL ℝ γ⁻¹) h0
-  rw [← SlashAction.slash_mul, ← map_mul, mul_inv_cancel, map_one, SlashAction.slash_one,
-    SlashAction.zero_slash] at h1
-  exact hg h1
 
 section OrderAtCuspOrbit
 
@@ -543,8 +529,10 @@ theorem _root_.ModularForm.orderAtCuspOrbit_mul [Γ.FiniteIndex]
   set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
   let fγ : ModularForm Γγ k₁ := _root_.ModularForm.translate f (mapGL ℝ γ)
   let gγ : ModularForm Γγ k₂ := _root_.ModularForm.translate g (mapGL ℝ γ)
-  have hfγ : (⇑fγ : ℍ → ℂ) ≠ 0 := slash_mapGL_ne_zero (fun h ↦ hf (DFunLike.ext' h)) γ
-  have hgγ : (⇑gγ : ℍ → ℂ) ≠ 0 := slash_mapGL_ne_zero (fun h ↦ hg (DFunLike.ext' h)) γ
+  have hfγ : (⇑fγ : ℍ → ℂ) ≠ 0 :=
+    (SlashAction.slash_eq_zero_iff k₁ (mapGL ℝ γ) ⇑f).not.mpr fun h ↦ hf (DFunLike.ext' h)
+  have hgγ : (⇑gγ : ℍ → ℂ) ≠ 0 :=
+    (SlashAction.slash_eq_zero_iff k₂ (mapGL ℝ γ) ⇑g).not.mpr fun h ↦ hg (DFunLike.ext' h)
   have hfγ_coe : ⇑fγ = ⇑f ∣[k₁] mapGL ℝ γ := rfl
   have hgγ_coe : ⇑gγ = ⇑g ∣[k₂] mapGL ℝ γ := rfl
   have hprod : (⇑(f.mul g) ∣[k₁ + k₂] mapGL ℝ γ) = ⇑fγ * ⇑gγ := by
@@ -697,7 +685,7 @@ theorem exists_orderAtCuspOrbit_eq_natCast_add_half_of_odd_of_not_isRegularCusp
   obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
   rw [isRegularCusp_cuspOrbitOfSL2Z] at hirr
   let fγ : ModularForm _ k := _root_.ModularForm.translate f (mapGL ℝ γ)
-  have hfγ : (⇑fγ : ℍ → ℂ) ≠ 0 := slash_mapGL_ne_zero hf γ
+  have hfγ : (⇑fγ : ℍ → ℂ) ≠ 0 := (SlashAction.slash_eq_zero_iff k (mapGL ℝ γ) ⇑f).not.mpr hf
   rw [orderAtCuspOrbit_cuspOrbitOfSL2Z]
   exact exists_orderAtCusp_eq_natCast_add_half_of_odd_of_not_isRegularAtInfty fγ hfγ hk hirr
 

@@ -77,6 +77,8 @@ AINTLIB `LeanModularForms` project
   every integer power of `A`.
 * `TauCeti.ModularForm.SL_slash_S_slash_S`: `(f ∣[k] S) ∣[k] S = (-1)^k • f`, the action of
   `S² = -I`.
+* `Subgroup.IsArithmetic.conj_mapGL_inv`: conjugating an arithmetic group by `(mapGL ℝ γ)⁻¹` for
+  `γ ∈ SL(2, ℤ)` preserves arithmeticity.
 * `Subgroup.IsArithmetic.isCusp_of_isCusp`: any two arithmetic groups have the same cusps.
 * `TauCeti.ModularForm.eq_zero_of_eq_const`: a constant slash-invariant form of nonzero weight
   vanishes when its group has finite-index intersection with the modular group.
@@ -418,6 +420,13 @@ variable {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} {k : ℤ}
 -- characteristic lemmas are written `(rfl)` rather than `rfl`: the parentheses opt out of
 -- exporting the definitional equality, which downstream modules do not need and which those
 -- lemmas themselves replace.
+
+/-- Conjugating an arithmetic subgroup of `GL(2, ℝ)` by `(mapGL ℝ γ)⁻¹` (`γ ∈ SL(2, ℤ)`) preserves
+arithmeticity; this is the invariance group of `SlashInvariantForm.translate` and
+`ModularForm.translate` at `mapGL ℝ γ`. -/
+instance _root_.Subgroup.IsArithmetic.conj_mapGL_inv [Γ.IsArithmetic] (γ : SL(2, ℤ)) :
+    (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ).IsArithmetic :=
+  Subgroup.isArithmetic_conj_of_mem (H := 𝒮ℒ) (inv_mem (MonoidHom.mem_range.mpr ⟨γ, rfl⟩))
 
 /-- Two arithmetic subgroups of `GL(2, ℝ)` have the same cusps, namely those of `SL(2, ℤ)`.
 This is the standard way to supply the cusp hypothesis of `ModularForm.ofSlashInvariant`. -/

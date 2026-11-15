@@ -84,12 +84,6 @@ open scoped MatrixGroups ModularForm Pointwise
 
 namespace TauCeti.ModularForm
 
-private local instance isArithmeticConjMapGL {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteIndex]
-    (γ : SL(2, ℤ)) :
-    (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).IsArithmetic := by
-  simpa [← (Rat.castHom ℝ).algebraMap_toAlgebra, map_inv, map_mapGL]
-    using Subgroup.IsArithmetic.conj (Γ : Subgroup (GL (Fin 2) ℝ)) (mapGL ℚ γ)⁻¹
-
 section CuspProjection
 
 private noncomputable def sl2zOfSL (x : 𝒮ℒ) : SL(2, ℤ) :=
@@ -101,16 +95,6 @@ private lemma rangeRestrict_sl2zOfSL (x : 𝒮ℒ) : (mapGL ℝ).rangeRestrict (
 private lemma sl2zOfSL_rangeRestrict (γ : SL(2, ℤ)) :
     sl2zOfSL ((mapGL ℝ).rangeRestrict γ) = γ :=
   mapGL_injective (S := ℝ) (congrArg Subtype.val (rangeRestrict_sl2zOfSL _))
-
-private lemma mapGL_T_zpow_eq_upperRightHom (j : ℤ) :
-    mapGL ℝ (ModularGroup.T ^ j) = Matrix.GeneralLinearGroup.upperRightHom (j : ℝ) := by
-  ext a b
-  fin_cases a <;> fin_cases b <;> simp [Matrix.GeneralLinearGroup.upperRightHom]
-
-private lemma cuspOrbitOfSL2Z_neg {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteIndex] (γ : SL(2, ℤ)) :
-    Γ.cuspOrbitOfSL2Z (-γ) = Γ.cuspOrbitOfSL2Z γ := by
-  apply Subtype.ext
-  rw [Γ.cuspOrbitOfSL2Z_val, Γ.cuspOrbitOfSL2Z_val, sl2zToPSL2R_neg]
 
 private lemma conj_mapGL_neg (𝒢 : Subgroup (GL (Fin 2) ℝ)) (γ : SL(2, ℤ)) :
     ConjAct.toConjAct (mapGL ℝ (-γ))⁻¹ • 𝒢 = ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • 𝒢 := by
@@ -214,7 +198,7 @@ theorem cuspOrbitOfTranslationOrbit_eq_cuspOrbitOfSL2Z_iff [Γ.FiniteIndex] (γ 
   · rcases hc with rfl | rfl
     · rw [cuspOrbitOfTranslationOrbit_mk, inv_inv]
     · have hinv : (-γ⁻¹ : SL(2, ℤ))⁻¹ = -γ := by simp
-      rw [cuspOrbitOfTranslationOrbit_mk, hinv, cuspOrbitOfSL2Z_neg]
+      rw [cuspOrbitOfTranslationOrbit_mk, hinv, Γ.cuspOrbitOfSL2Z_neg]
 
 private lemma cuspTranslationOrbit_mk_inv_eq_mk_neg_inv_iff_exists (γ : SL(2, ℤ)) :
     (⟦(QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ⁻¹) :
@@ -253,7 +237,7 @@ private lemma neg_conj_T_zpow_mem_iff_neg_upperRightHom_mem (γ : SL(2, ℤ)) (j
       -Matrix.GeneralLinearGroup.upperRightHom (j : ℝ) ∈
         ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ)) := by
   rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv, inv_inv,
-    ConjAct.toConjAct_smul, ← mapGL_T_zpow_eq_upperRightHom]
+    ConjAct.toConjAct_smul, ← ModularGroup.mapGL_T_zpow_eq_upperRightHom]
   have hmat : mapGL ℝ γ * -mapGL ℝ (ModularGroup.T ^ j) * (mapGL ℝ γ)⁻¹ =
       mapGL ℝ (-(γ * ModularGroup.T ^ j * γ⁻¹)) := by
     have h1 : -(γ * ModularGroup.T ^ j * γ⁻¹) = γ * ((-1) * ModularGroup.T ^ j) * γ⁻¹ := by simp
@@ -294,7 +278,7 @@ private lemma exists_int_eq_and_conj_T_zpow_mem_of_upperRightHom_mem_conj (γ : 
     have h01 := congr_arg (fun M : GL (Fin 2) ℝ ↦ (M : Matrix (Fin 2) (Fin 2) ℝ) 0 1) hconj
     simpa [mapGL_coe_matrix, Matrix.GeneralLinearGroup.upperRightHom] using h01.symm
   have hT : u = ModularGroup.T ^ (u 0 1) :=
-    mapGL_injective (S := ℝ) (by rw [hconj, hx_eq, mapGL_T_zpow_eq_upperRightHom])
+    mapGL_injective (S := ℝ) (by rw [hconj, hx_eq, ModularGroup.mapGL_T_zpow_eq_upperRightHom])
   have hj_mem : γ * ModularGroup.T ^ (u 0 1) * γ⁻¹ ∈ Γ := by
     have : γ * u * γ⁻¹ = h := by rw [hu_def]; group
     rwa [← hT, this]
@@ -380,7 +364,7 @@ private lemma strictPeriods_conj_eq_zmultiples_cuspTranslationOrbitWidth (γ : S
           _ = γ * ModularGroup.T ^ ((w₀ : ℤ) * m) * γ⁻¹ := by rw [← _root_.zpow_mul]; rfl
       exact hpow ▸ zpow_mem hw₀_mem m
     rw [← hm, zsmul_eq_mul, mul_comm, ← Int.cast_natCast, ← Int.cast_mul,
-      ← mapGL_T_zpow_eq_upperRightHom, Subgroup.mem_pointwise_smul_iff_inv_smul_mem,
+      ← ModularGroup.mapGL_T_zpow_eq_upperRightHom, Subgroup.mem_pointwise_smul_iff_inv_smul_mem,
       ← ConjAct.toConjAct_inv, inv_inv, ConjAct.toConjAct_smul]
     simpa [map_mul, map_inv, mul_assoc] using Subgroup.mem_map_of_mem (mapGL ℝ) hm_mem
 

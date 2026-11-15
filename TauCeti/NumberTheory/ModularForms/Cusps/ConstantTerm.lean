@@ -168,12 +168,6 @@ end CuspTranslationOrbits
 namespace ModularForm
 
 variable {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ}
-
-private local instance isArithmeticConjMapGL [Γ.IsArithmetic] (γ : SL(2, ℤ)) :
-    (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ).IsArithmetic := by
-  simpa [← (Rat.castHom ℝ).algebraMap_toAlgebra, map_inv, map_mapGL]
-    using Subgroup.IsArithmetic.conj Γ (mapGL ℚ γ)⁻¹
-
 variable [Γ.HasDetOne] [Γ.IsArithmetic]
 
 /-- The `q`-expansion of `f` at the cusp represented by `γ ∈ SL₂(ℤ)`, as a linear map.
