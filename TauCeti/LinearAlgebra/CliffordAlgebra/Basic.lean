@@ -17,9 +17,10 @@ import Mathlib.LinearAlgebra.QuadraticForm.Basis
 # Basic Clifford algebra API
 
 This file records general scalar properties of a Clifford algebra obtained from Mathlib's
-linear equivalence with the exterior algebra, and the commutation rule
-`CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another. Rescaling the
-factors of a product of vectors pulls the scalars out in front
+linear equivalence with the exterior algebra, the polarized generator relation
+`AlgHom.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_add_swap` under an algebra homomorphism, and
+the commutation rule `CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another.
+Rescaling the factors of a product of vectors pulls the scalars out in front
 (`CliffordAlgebra.prod_map_ι_smul`).
 -/
 
@@ -59,6 +60,15 @@ instance neZeroTwo (Q : QuadraticForm R M) [Nontrivial R] [Invertible (2 : R)] :
     NeZero (2 : CliffordAlgebra Q) :=
   ⟨fun h ↦ Invertible.ne_zero (2 : R) (algebraMap_injective Q
     (((map_ofNat (algebraMap R (CliffordAlgebra Q)) 2).trans h).trans (map_zero _).symm))⟩
+
+/-- Polarized Clifford relation under any algebra homomorphism out of `CliffordAlgebra Q`:
+`c(v) c(w) + c(w) c(v) = polar Q v w • 1`. -/
+theorem _root_.AlgHom.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_add_swap
+    {Q : QuadraticForm R M} {B : Type*} [Semiring B] [Algebra R B] (ρ : CliffordAlgebra Q →ₐ[R] B)
+    (v w : M) :
+    ρ (ι Q v) * ρ (ι Q w) + ρ (ι Q w) * ρ (ι Q v) = QuadraticMap.polar Q v w • 1 := by
+  rw [← map_mul ρ, ← map_mul ρ, ← map_add ρ, ι_mul_ι_add_swap, AlgHom.commutes,
+    Algebra.algebraMap_eq_smul_one]
 
 /-- Moving a vector `m` past `ι Q v` replaces it by `r • v - m`, where `r * Q v` is the polar
 pairing. This description is unchanged when `Q` is replaced by `-Q`. -/

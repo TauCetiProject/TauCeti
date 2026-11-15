@@ -31,8 +31,11 @@ by `‖v‖`.
 * `CliffordAlgebra.map_ι_injective`: `c(v)` is injective when `Q v ≠ 0`.
 * `CliffordAlgebra.map_ι_apply_left_injective`: `v ↦ c(v) ψ` is injective for `ψ ≠ 0` and an
   anisotropic `Q`.
-* `CliffordAlgebra.adjoint_map_eq_map_star`: `(ρ a)* = ρ (star a)` on a Hermitian Clifford
-  module.
+* `CliffordAlgebra.adjoint_map_eq_map_star`,
+  `AlgHom.adjoint_map_eq_map_star_iff_adjoint_map_cliffordAlgebraι`,
+  `AlgHom.inner_map_eq_map_star_iff_inner_map_cliffordAlgebraι_left`: compatibility of `ρ` with
+  Clifford conjugation `star` (for `LinearMap.adjoint` and for the inner product) is equivalent to
+  skew-adjointness / skew-Hermiticity on generators.
 * `CliffordAlgebra.norm_map_ι_apply_sq`: `‖c(v) ψ‖² = -Q v ‖ψ‖²` on a Hermitian Clifford module,
   and `CliffordAlgebra.norm_map_ι_apply`: `‖c(v) ψ‖ = ‖v‖ ‖ψ‖` when `Q v = -‖v‖²`.
 * `CliffordAlgebra.re_inner_map_ι_apply_map_ι_apply`: its polarization,
@@ -149,3 +152,38 @@ theorem norm_map_ι_apply (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 end Hermitian
 
 end CliffordAlgebra
+
+namespace AlgHom
+
+open CliffordAlgebra
+
+variable {M W : Type*} [AddCommGroup M] [Module ℝ M] {Q : QuadraticForm ℝ M}
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W]
+
+/-- A real Clifford algebra map `ρ` is compatible with Clifford conjugation `star` for the inner
+product if and only if every real generator `ρ (ι Q v)` is skew-Hermitian, without assuming
+finite-dimensionality of `M` or `W`. -/
+theorem inner_map_eq_map_star_iff_inner_map_cliffordAlgebraι_left
+    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) :
+    (∀ (a : CliffordAlgebra Q) (x y : W), inner ℂ (ρ a x) y = inner ℂ x (ρ (star a) y)) ↔
+      ∀ (v : M) (x y : W), inner ℂ (ρ (ι Q v) x) y = -inner ℂ x (ρ (ι Q v) y) := by
+  refine ⟨fun h v x y ↦ by simpa [star_ι] using h (ι Q v) x y, fun h a x y ↦ ?_⟩
+  induction a using CliffordAlgebra.induction generalizing x y with
+  | algebraMap r =>
+    simp only [star_algebraMap, AlgHom.commutes, Module.algebraMap_end_apply, ← Complex.coe_smul,
+      inner_smul_left, inner_smul_right, Complex.conj_ofReal]
+  | ι v => rw [h, star_ι, map_neg, LinearMap.neg_apply, inner_neg_right]
+  | mul a b ha hb => simp only [map_mul, mul_apply_eq_comp, star_mul, ha, hb]
+  | add a b ha hb =>
+    simp only [map_add, LinearMap.add_apply, inner_add_left, inner_add_right, star_add, ha, hb]
+
+/-- On a finite-dimensional complex inner product space, a real Clifford algebra map `ρ` is
+compatible with Clifford conjugation `star` for `LinearMap.adjoint` if and only if every real
+generator `ρ (ι Q v)` is skew-adjoint. -/
+theorem adjoint_map_eq_map_star_iff_adjoint_map_cliffordAlgebraι [FiniteDimensional ℂ W]
+    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) :
+    (∀ a : CliffordAlgebra Q, (ρ a).adjoint = ρ (star a)) ↔
+      ∀ v : M, (ρ (ι Q v)).adjoint = -ρ (ι Q v) :=
+  ⟨fun h v ↦ by simpa [star_ι] using h (ι Q v), adjoint_map_eq_map_star⟩
+
+end AlgHom

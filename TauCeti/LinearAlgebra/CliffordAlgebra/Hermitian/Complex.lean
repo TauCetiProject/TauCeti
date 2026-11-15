@@ -14,7 +14,10 @@ public import TauCeti.Analysis.InnerProductSpace.SesquilinearForm
 On the complexification of a real Clifford algebra, the adjoint relevant to Hermitian
 representations is `CliffordAlgebra.conjStar`, not Mathlib's complex-linear Clifford `star`.
 Skew-adjointness on the real vectors is equivalent to compatibility with this conjugate-linear
-adjoint on the whole algebra.
+adjoint on the whole algebra (`CliffordAlgebra.adjoint_map_eq_map_conjStar_iff`, and for scalar
+extensions `ρ.cliffordBaseChange ℂ` of real Clifford algebra maps,
+`AlgHom.inner_cliffordBaseChange_eq_conjStar_iff` and
+`AlgHom.adjoint_cliffordBaseChange_eq_conjStar_iff`).
 
 If the action surjects onto the full complex endomorphism algebra, every positive definite
 compatible Hermitian form is a unique positive real multiple of any given compatible inner
@@ -167,3 +170,38 @@ theorem existsUnique_pos_mul_of_surjective [Nontrivial S] (hsurj : Function.Surj
 end Uniqueness
 
 end CliffordAlgebra
+
+namespace AlgHom
+
+open CliffordAlgebra
+
+variable {V S : Type*} [AddCommGroup V] [Module ℝ V] {Q : QuadraticForm ℝ V}
+  [NormedAddCommGroup S] [InnerProductSpace ℂ S]
+
+/-- For a real Clifford algebra map `ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S`, its
+complex-linear extension `ρ.cliffordBaseChange ℂ` is compatible with `CliffordAlgebra.conjStar`
+for the inner product if and only if every real generator `ρ (ι Q v)` is skew-Hermitian. -/
+theorem inner_cliffordBaseChange_eq_conjStar_iff
+    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) :
+    (∀ (a : CliffordAlgebra (Q.baseChange ℂ)) (x y : S),
+        inner ℂ (ρ.cliffordBaseChange ℂ a x) y =
+          inner ℂ x (ρ.cliffordBaseChange ℂ (conjStar Q a) y)) ↔
+      ∀ (v : V) (x y : S), inner ℂ (ρ (ι Q v) x) y = -inner ℂ x (ρ (ι Q v) y) := by
+  refine ⟨fun h v x y ↦ ?_, fun h a x y ↦ ?_⟩
+  · have hv := h (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) x y
+    simpa [conjStar_ι_tmul] using hv
+  · exact sesqForm_map_eq_map_conjStar (ρ.cliffordBaseChange ℂ) (innerₛₗ ℂ)
+      (fun v x y ↦ by simpa [innerₛₗ_apply_apply] using h v x y) a x y
+
+/-- On a finite-dimensional complex inner product space, `ρ.cliffordBaseChange ℂ` is a
+`*`-representation for `CliffordAlgebra.conjStar` if and only if every real generator `ρ (ι Q v)`
+is skew-adjoint. -/
+theorem adjoint_cliffordBaseChange_eq_conjStar_iff [FiniteDimensional ℂ S]
+    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) :
+    (∀ a : CliffordAlgebra (Q.baseChange ℂ),
+        (ρ.cliffordBaseChange ℂ a).adjoint = ρ.cliffordBaseChange ℂ (conjStar Q a)) ↔
+      ∀ v : V, (ρ (ι Q v)).adjoint = -ρ (ι Q v) := by
+  rw [CliffordAlgebra.adjoint_map_eq_map_conjStar_iff]
+  simp
+
+end AlgHom
