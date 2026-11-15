@@ -16,7 +16,9 @@ the function `x / (exp x - 1)`, the generating function of the Bernoulli numbers
 weights `(1 - q) q ^ k`, so these bounds control geometric averages as `q ↑ 1`.
 
 Comparing a real power `y ^ ε` with an exponential level `exp (-t)` amounts to comparing `y`
-with the rescaled level `exp (-(t / ε))`.
+with the rescaled level `exp (-(t / ε))`. Similarly, a two-sided logarithmic approximation
+`|log x - y| ≤ C` for `0 < x` is equivalent to the multiplicative bounds
+`exp (-C) * exp y ≤ x ≤ exp C * exp y`.
 
 ## Main results
 
@@ -24,6 +26,8 @@ with the rescaled level `exp (-(t / ε))`.
 * `TauCeti.exp_neg_le_div_exp_sub_one`: `exp (-x) ≤ x / (exp x - 1)` for `0 < x`.
 * `TauCeti.div_exp_sub_one_le_one`: `x / (exp x - 1) ≤ 1` for `0 ≤ x`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
+* `TauCeti.abs_log_sub_le_iff`: `|log x - y| ≤ C ↔ exp (-C) * exp y ≤ x ∧ x ≤ exp C * exp y` for
+  `0 < x`.
 * `TauCeti.abs_exp_sub_one_le_mul_exp_abs`: `|exp t - 1| ≤ |t| exp |t|` for every real `t`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
@@ -65,6 +69,13 @@ theorem exp_neg_le_rpow_iff {y ε t : ℝ} (hy : 0 ≤ y) (hε : 0 < ε) :
   · simp [zero_rpow hε.ne', (exp_pos _).not_ge]
   rw [← le_log_iff_exp_le hy, ← le_log_iff_exp_le (rpow_pos_of_pos hy ε), log_rpow hy,
     ← neg_div, div_le_iff₀ hε, mul_comm]
+
+/-- For `0 < x`, a two-sided logarithmic approximation `|log x - y| ≤ C` is equivalent to the
+multiplicative bounds `exp (-C) * exp y ≤ x` and `x ≤ exp C * exp y`. -/
+theorem abs_log_sub_le_iff {x y C : ℝ} (hx : 0 < x) :
+    |log x - y| ≤ C ↔ exp (-C) * exp y ≤ x ∧ x ≤ exp C * exp y := by
+  rw [abs_le, sub_le_iff_le_add, le_sub_iff_add_le, ← exp_add, ← exp_add,
+    le_log_iff_exp_le hx, log_le_iff_le_exp hx]
 
 /-- `|exp t - 1| ≤ |t| exp |t|` for every real `t`, a global form of the mean value inequality for
 the exponential. -/

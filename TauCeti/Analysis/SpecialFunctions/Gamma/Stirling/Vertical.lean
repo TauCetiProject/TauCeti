@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Asymptotics.VerticalStrip
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Basic
+import Mathlib.Analysis.Asymptotics.Prod
+import TauCeti.Analysis.Asymptotics.VerticalStrip
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 
@@ -199,7 +200,8 @@ theorem isBigO_log_norm_Gamma_vertical_strip_sub (a b : ℝ) :
         ((s.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2 + Real.log (2 * π) / 2))
       =O[cocompact ℂ ⊓ 𝓟 (re ⁻¹' Icc a b)] fun s ↦ |s.im|⁻¹ := by
   obtain ⟨C, T, h⟩ := exists_abs_log_norm_Gamma_vertical_sub_le a b
-  exact isBigO_inv_vertical_strip_of_exists ⟨C, T, fun s hs ht ↦ by simpa using h s hs ht⟩
+  exact isBigO_inv_vertical_strip_of_exists (Metric.isBounded_Icc a b)
+    ⟨C, T, fun s hs ht ↦ by simpa using h s hs ht⟩
 
 /-- Stirling's formula on a single vertical line `Re s = σ`:
 `log ‖Γ(σ + i t)‖ = (σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2 + O(1 / |t|)` as `|t| → ∞`. -/
@@ -207,6 +209,6 @@ theorem isBigO_log_norm_Gamma_vertical_line_sub (σ : ℝ) :
     (fun t : ℝ ↦ Real.log ‖Complex.Gamma (σ + t * I)‖ -
         ((σ - 1 / 2) * Real.log |t| - π * |t| / 2 + Real.log (2 * π) / 2))
       =O[cocompact ℝ] fun t ↦ |t|⁻¹ :=
-  (isBigO_log_norm_Gamma_vertical_sub σ σ).cocompact_of_vertical (left_mem_Icc.2 le_rfl)
+  (isBigO_log_norm_Gamma_vertical_sub σ σ).fiberwise_right (left_mem_Icc.2 le_rfl)
 
 end TauCeti

@@ -8,8 +8,12 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Archimedean
 public import TauCeti.NumberTheory.LFunctions.GammaFactor.Basic
 public import TauCeti.NumberTheory.LFunctions.Data.AnalyticConductor.Basic
+import Mathlib.Analysis.Asymptotics.Prod
 import TauCeti.Algebra.Order.BigOperators.Group.Multiset
+import TauCeti.Analysis.Asymptotics.VerticalStrip
 import TauCeti.Analysis.Normed.Ring.Multiset
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Vertical-strip asymptotics of archimedean gamma factors and dual gamma quotients
@@ -109,11 +113,8 @@ theorem gammaLogExponent_eq (d : AnalyticLFunctionData) (σ : ℝ) :
   have hC : (d.gammaC.map fun ν ↦ σ + ν.re - 1 / 2).sum =
       (d.gammaC.map fun ν ↦ σ + (ν.re - 1 / 2)).sum :=
     congrArg Multiset.sum (Multiset.map_congr rfl fun _ _ ↦ by ring)
-  rw [gammaLogExponent_def, hR, hC, Multiset.sum_map_add, Multiset.sum_map_add,
-    Multiset.map_const', Multiset.sum_replicate, Multiset.map_const', Multiset.sum_replicate,
-    degree_def]
-  simp only [nsmul_eq_mul]
-  push_cast
+  rw [gammaLogExponent_def, hR, hC]
+  simp [degree_def]
   ring
 
 /-- Shifting the real part by `τ` shifts `gammaLogExponent` by `(d.degree / 2) * τ`. -/
@@ -163,19 +164,13 @@ private theorem gammaFactor_stirling_main_sum (d : AnalyticLFunctionData) (s : �
     (d.gammaR.map fun μ ↦ -Real.pi * |s.im| / 4 + (s.re + μ.re - 1) / 2 * Real.log |s.im|).sum +
     (d.gammaC.map fun ν ↦ -Real.pi * |s.im| / 2 + (s.re + ν.re - 1 / 2) * Real.log |s.im|).sum =
       -(Real.pi * d.degree / 4) * |s.im| + d.gammaLogExponent s.re * Real.log |s.im| := by
-  rw [Multiset.sum_map_add, Multiset.sum_map_add,
-    Multiset.map_const', Multiset.sum_replicate, Multiset.map_const', Multiset.sum_replicate,
-    Multiset.sum_map_mul_right, Multiset.sum_map_mul_right, gammaLogExponent_def,
-    degree_def]
-  simp only [nsmul_eq_mul]
-  push_cast
+  simp [gammaLogExponent_def, degree_def, Multiset.sum_map_mul_right]
   ring
 
 /-- **Uniform vertical-strip asymptotic for `d.gammaFactor`** across all records of degree `n` with
 shifts bounded in norm by `M`: the constant `C` and height threshold `T` depend only on `a`, `b`,
 `n`, and `M`, not on `d` or `d.conductor`. -/
-theorem exists_abs_log_norm_gammaFactor_vertical_sub_le_of_norm_le (a b : ℝ) (n : ℕ) {M : ℝ}
-    (hM : 0 ≤ M) :
+theorem exists_abs_log_norm_gammaFactor_vertical_sub_le_of_norm_le (a b : ℝ) (n : ℕ) (M : ℝ) :
     ∃ C ≥ 0, ∃ T > 0, ∀ d : AnalyticLFunctionData, d.degree = n →
       (∀ μ ∈ d.gammaR, ‖μ‖ ≤ M) → (∀ ν ∈ d.gammaC, ‖ν‖ ≤ M) →
       ∀ s : ℂ, s.re ∈ Icc a b → T ≤ |s.im| →
@@ -184,17 +179,18 @@ theorem exists_abs_log_norm_gammaFactor_vertical_sub_le_of_norm_le (a b : ℝ) (
             (-(Real.pi * d.degree / 4) * |s.im| + d.gammaLogExponent s.re * Real.log |s.im|)| ≤
           C := by
   obtain ⟨CR, hCR0, TR, hTR0, hR_est⟩ :=
-    TauCeti.exists_abs_log_norm_Gammaℝ_add_vertical_sub_le a b hM
+    TauCeti.exists_abs_log_norm_Gammaℝ_add_vertical_sub_le a b M
   obtain ⟨CC, _, TC, _, hC_est⟩ :=
-    TauCeti.exists_abs_log_norm_Gammaℂ_add_vertical_sub_le a b hM
+    TauCeti.exists_abs_log_norm_Gammaℂ_add_vertical_sub_le a b M
   set K := max CR CC
   have hK0 : 0 ≤ K := hCR0.trans (le_max_left _ _)
-  refine ⟨(n : ℝ) * K, by positivity, max (max TR TC) (M + 1), by positivity,
+  refine ⟨(n : ℝ) * K, by positivity, max (max TR TC) (M + 1),
+    lt_of_lt_of_le hTR0 ((le_max_left _ _).trans (le_max_left _ _)),
     fun d hd hR hC s hs ht ↦ ?_⟩
   have htTR : TR ≤ |s.im| := ((le_max_left _ _).trans (le_max_left _ _)).trans ht
   have htTC : TC ≤ |s.im| := ((le_max_right _ _).trans (le_max_left _ _)).trans ht
   have htM : M + 1 ≤ |s.im| := (le_max_right _ _).trans ht
-  have hne : d.gammaFactor s ≠ 0 := d.gammaFactor_ne_zero_of_im_gt
+  have hne : d.gammaFactor s ≠ 0 := d.gammaFactor_ne_zero_of_forall_abs_im_lt
     (fun μ hμ ↦ ((abs_im_le_norm μ).trans (hR μ hμ)).trans_lt (by linarith))
     (fun ν hν ↦ ((abs_im_le_norm ν).trans (hC ν hν)).trans_lt (by linarith))
   refine ⟨hne, ?_⟩
@@ -231,9 +227,9 @@ theorem exists_abs_log_norm_gammaFactor_vertical_sub_le (d : AnalyticLFunctionDa
       |Real.log ‖d.gammaFactor s‖ -
           (-(Real.pi * d.degree / 4) * |s.im| + d.gammaLogExponent s.re * Real.log |s.im|)| ≤
         C := by
-  obtain ⟨M, hM0, hR, hC⟩ := d.exists_shift_norm_le
+  obtain ⟨M, -, hR, hC⟩ := d.exists_shift_norm_le
   obtain ⟨C, hC0, T, hT0, h⟩ :=
-    exists_abs_log_norm_gammaFactor_vertical_sub_le_of_norm_le a b d.degree hM0
+    exists_abs_log_norm_gammaFactor_vertical_sub_le_of_norm_le a b d.degree M
   exact ⟨C, hC0, T, hT0, h d rfl hR hC⟩
 
 /-- **Vertical-strip asymptotic of `d.gammaFactor`**:
@@ -253,35 +249,21 @@ theorem isBigO_log_norm_gammaFactor_vertical_strip_sub (d : AnalyticLFunctionDat
         (-(Real.pi * d.degree / 4) * |s.im| + d.gammaLogExponent s.re * Real.log |s.im|))
       =O[cocompact ℂ ⊓ 𝓟 (re ⁻¹' Icc a b)] fun _ ↦ (1 : ℝ) := by
   obtain ⟨C, -, T, -, h⟩ := d.exists_abs_log_norm_gammaFactor_vertical_sub_le a b
-  exact isBigO_one_vertical_strip_of_exists ⟨C, T, fun s hs ht ↦ by simpa using (h s hs ht).2⟩
+  exact isBigO_one_vertical_strip_of_exists (Metric.isBounded_Icc a b)
+    ⟨C, T, fun s hs ht ↦ by simpa using (h s hs ht).2⟩
 
 /-- Vertical-line asymptotic of `t ↦ log ‖d.gammaFactor (σ + i t)‖` along `cocompact ℝ`. -/
 theorem isBigO_log_norm_gammaFactor_vertical_line_sub (d : AnalyticLFunctionData) (σ : ℝ) :
     (fun t : ℝ ↦ Real.log ‖d.gammaFactor (σ + t * I)‖ -
         (-(Real.pi * d.degree / 4) * |t| + d.gammaLogExponent σ * Real.log |t|))
       =O[cocompact ℝ] fun _ ↦ (1 : ℝ) :=
-  (d.isBigO_log_norm_gammaFactor_vertical_sub σ σ).cocompact_of_vertical (left_mem_Icc.2 le_rfl)
+  (d.isBigO_log_norm_gammaFactor_vertical_sub σ σ).fiberwise_right (left_mem_Icc.2 le_rfl)
 
-private theorem exp_neg_mul_le_and_le_exp_mul_of_abs_log_sub_le {x t C E e : ℝ}
-    (hx : 0 < x) (ht : 0 < t) (hlog : |Real.log x - (E + e * Real.log t)| ≤ C) :
-    Real.exp (-C) * Real.exp E * t ^ e ≤ x ∧
-      x ≤ Real.exp C * Real.exp E * t ^ e := by
-  obtain ⟨hl, hu⟩ := abs_le.1 hlog
-  have hexp_e : Real.exp (e * Real.log t) = t ^ e := by
-    rw [Real.rpow_def_of_pos ht, mul_comm]
-  constructor
-  · calc Real.exp (-C) * Real.exp E * t ^ e
-        = Real.exp (-C + E + e * Real.log t) := by rw [← hexp_e, ← Real.exp_add, ← Real.exp_add]
-      _ ≤ Real.exp (Real.log x) := Real.exp_le_exp.2 (by linarith)
-      _ = x := Real.exp_log hx
-  · calc x = Real.exp (Real.log x) := (Real.exp_log hx).symm
-      _ ≤ Real.exp (C + E + e * Real.log t) := Real.exp_le_exp.2 (by linarith)
-      _ = Real.exp C * Real.exp E * t ^ e := by rw [← hexp_e, ← Real.exp_add, ← Real.exp_add]
-
-/-- Two-sided norm bounds for `‖d.gammaFactor s‖` on `Re s ∈ [a, b]` above the pole heights,
-uniform across all records of degree `n` with shifts bounded in norm by `M`:
+/-- Two-sided norm bounds for `‖d.gammaFactor s‖` on `Re s ∈ [a, b]` for sufficiently large height
+`T ≤ |s.im|` (with `C₁, C₂, T > 0` depending only on `a`, `b`, `n`, and `M`), uniform across all
+records of degree `n` with shifts bounded in norm by `M`:
 `C₁ exp(-(π n / 4) |t|) |t| ^ A(σ) ≤ ‖γ(s)‖ ≤ C₂ exp(-(π n / 4) |t|) |t| ^ A(σ)`. -/
-theorem exists_norm_gammaFactor_vertical_bounds_of_norm_le (a b : ℝ) (n : ℕ) {M : ℝ} (hM : 0 ≤ M) :
+theorem exists_norm_gammaFactor_vertical_bounds_of_norm_le (a b : ℝ) (n : ℕ) (M : ℝ) :
     ∃ C₁ > 0, ∃ C₂ > 0, ∃ T > 0, ∀ d : AnalyticLFunctionData, d.degree = n →
       (∀ μ ∈ d.gammaR, ‖μ‖ ≤ M) → (∀ ν ∈ d.gammaC, ‖ν‖ ≤ M) →
       ∀ s : ℂ, s.re ∈ Icc a b → T ≤ |s.im| →
@@ -291,14 +273,16 @@ theorem exists_norm_gammaFactor_vertical_bounds_of_norm_le (a b : ℝ) (n : ℕ)
           C₂ * Real.exp (-(Real.pi * d.degree / 4) * |s.im|) *
             |s.im| ^ d.gammaLogExponent s.re := by
   obtain ⟨C, -, T, hT0, h⟩ :=
-    exists_abs_log_norm_gammaFactor_vertical_sub_le_of_norm_le a b n hM
+    exists_abs_log_norm_gammaFactor_vertical_sub_le_of_norm_le a b n M
   refine ⟨Real.exp (-C), Real.exp_pos _, Real.exp C, Real.exp_pos _, T, hT0,
     fun d hd hR hC s hs ht ↦ ?_⟩
   obtain ⟨hne, hlog⟩ := h d hd hR hC s hs ht
-  exact exp_neg_mul_le_and_le_exp_mul_of_abs_log_sub_le (norm_pos_iff.2 hne) (hT0.trans_le ht) hlog
+  have hb := (TauCeti.abs_log_sub_le_iff (norm_pos_iff.2 hne)).1 hlog
+  rwa [Real.exp_add, mul_comm (d.gammaLogExponent s.re), ← Real.rpow_def_of_pos (hT0.trans_le ht),
+    ← mul_assoc, ← mul_assoc] at hb
 
-/-- Single-record two-sided norm bounds for `‖d.gammaFactor s‖` on `Re s ∈ [a, b]` above the pole
-heights:
+/-- Single-record two-sided norm bounds for `‖d.gammaFactor s‖` on `Re s ∈ [a, b]` for sufficiently
+large height `T ≤ |s.im|` (`T > 0`):
 `C₁ exp(-(π n / 4) |t|) |t| ^ A(σ) ≤ ‖γ(s)‖ ≤ C₂ exp(-(π n / 4) |t|) |t| ^ A(σ)`. -/
 theorem exists_norm_gammaFactor_vertical_bounds (d : AnalyticLFunctionData) (a b : ℝ) :
     ∃ C₁ > 0, ∃ C₂ > 0, ∃ T > 0, ∀ s : ℂ, s.re ∈ Icc a b → T ≤ |s.im| →
@@ -306,9 +290,9 @@ theorem exists_norm_gammaFactor_vertical_bounds (d : AnalyticLFunctionData) (a b
         ‖d.gammaFactor s‖ ∧
       ‖d.gammaFactor s‖ ≤
         C₂ * Real.exp (-(Real.pi * d.degree / 4) * |s.im|) * |s.im| ^ d.gammaLogExponent s.re := by
-  obtain ⟨M, hM0, hR, hC⟩ := d.exists_shift_norm_le
+  obtain ⟨M, -, hR, hC⟩ := d.exists_shift_norm_le
   obtain ⟨C₁, hC₁, C₂, hC₂, T, hT0, h⟩ :=
-    exists_norm_gammaFactor_vertical_bounds_of_norm_le a b d.degree hM0
+    exists_norm_gammaFactor_vertical_bounds_of_norm_le a b d.degree M
   exact ⟨C₁, hC₁, C₂, hC₂, T, hT0, h d rfl hR hC⟩
 
 /-! ### Exponential cancellation in the dual gamma quotient -/
@@ -319,7 +303,7 @@ shift real parts cancel between `d.dual.gammaFactor (1 - s)` and `d.gammaFactor 
 `(n / 2) * (1 - 2 * s.re) * log |s.im| + O(1)` with constants independent of `d` and
 `d.conductor`. -/
 theorem exists_abs_log_norm_dual_gammaFactor_div_vertical_sub_le_of_norm_le (a b : ℝ) (n : ℕ)
-    {M : ℝ} (hM : 0 ≤ M) :
+    (M : ℝ) :
     ∃ C ≥ 0, ∃ T > 0, ∀ d : AnalyticLFunctionData, d.degree = n →
       (∀ μ ∈ d.gammaR, ‖μ‖ ≤ M) → (∀ ν ∈ d.gammaC, ‖ν‖ ≤ M) →
       ∀ s : ℂ, s.re ∈ Icc a b → T ≤ |s.im| →
@@ -327,9 +311,9 @@ theorem exists_abs_log_norm_dual_gammaFactor_div_vertical_sub_le_of_norm_le (a b
         |Real.log ‖d.dual.gammaFactor (1 - s) / d.gammaFactor s‖ -
             ((d.degree : ℝ) / 2 * (1 - 2 * s.re) * Real.log |s.im|)| ≤ C := by
   obtain ⟨C₁, hC₁, T₁, hT₁, h₁⟩ :=
-    exists_abs_log_norm_gammaFactor_vertical_sub_le_of_norm_le a b n hM
+    exists_abs_log_norm_gammaFactor_vertical_sub_le_of_norm_le a b n M
   obtain ⟨C₂, hC₂, T₂, _, h₂⟩ :=
-    exists_abs_log_norm_gammaFactor_vertical_sub_le_of_norm_le (1 - b) (1 - a) n hM
+    exists_abs_log_norm_gammaFactor_vertical_sub_le_of_norm_le (1 - b) (1 - a) n M
   refine ⟨C₁ + C₂, by positivity, max T₁ T₂, by positivity,
     fun d hd hR hC s hs ht ↦ ?_⟩
   have hR_dual : ∀ μ' ∈ d.dual.gammaR, ‖μ'‖ ≤ M := by
@@ -371,9 +355,9 @@ theorem exists_abs_log_norm_dual_gammaFactor_div_vertical_sub_le (d : AnalyticLF
       d.gammaFactor s ≠ 0 ∧ d.dual.gammaFactor (1 - s) ≠ 0 ∧
       |Real.log ‖d.dual.gammaFactor (1 - s) / d.gammaFactor s‖ -
           ((d.degree : ℝ) / 2 * (1 - 2 * s.re) * Real.log |s.im|)| ≤ C := by
-  obtain ⟨M, hM0, hR, hC⟩ := d.exists_shift_norm_le
+  obtain ⟨M, -, hR, hC⟩ := d.exists_shift_norm_le
   obtain ⟨C, hC0, T, hT0, h⟩ :=
-    exists_abs_log_norm_dual_gammaFactor_div_vertical_sub_le_of_norm_le a b d.degree hM0
+    exists_abs_log_norm_dual_gammaFactor_div_vertical_sub_le_of_norm_le a b d.degree M
   exact ⟨C, hC0, T, hT0, h d rfl hR hC⟩
 
 /-- **Dual gamma-quotient asymptotic on vertical strips**:
@@ -395,7 +379,8 @@ theorem isBigO_log_norm_dual_gammaFactor_div_vertical_strip_sub (d : AnalyticLFu
         (d.degree : ℝ) / 2 * (1 - 2 * s.re) * Real.log |s.im|)
       =O[cocompact ℂ ⊓ 𝓟 (re ⁻¹' Icc a b)] fun _ ↦ (1 : ℝ) := by
   obtain ⟨C, -, T, -, h⟩ := d.exists_abs_log_norm_dual_gammaFactor_div_vertical_sub_le a b
-  exact isBigO_one_vertical_strip_of_exists ⟨C, T, fun s hs ht ↦ by simpa using (h s hs ht).2.2⟩
+  exact isBigO_one_vertical_strip_of_exists (Metric.isBounded_Icc a b)
+    ⟨C, T, fun s hs ht ↦ by simpa using (h s hs ht).2.2⟩
 
 /-- Dual gamma-quotient asymptotic on a vertical line `Re s = σ`. -/
 theorem isBigO_log_norm_dual_gammaFactor_div_vertical_line_sub (d : AnalyticLFunctionData)
@@ -403,7 +388,7 @@ theorem isBigO_log_norm_dual_gammaFactor_div_vertical_line_sub (d : AnalyticLFun
     (fun t : ℝ ↦ Real.log ‖d.dual.gammaFactor (1 - (σ + t * I)) / d.gammaFactor (σ + t * I)‖ -
         (d.degree : ℝ) / 2 * (1 - 2 * σ) * Real.log |t|)
       =O[cocompact ℝ] fun _ ↦ (1 : ℝ) :=
-  (d.isBigO_log_norm_dual_gammaFactor_div_vertical_sub σ σ).cocompact_of_vertical
+  (d.isBigO_log_norm_dual_gammaFactor_div_vertical_sub σ σ).fiberwise_right
     (left_mem_Icc.2 le_rfl)
 
 /-- **Dual gamma-quotient asymptotic on `Re s = -δ`**:
@@ -421,10 +406,9 @@ theorem isBigO_log_norm_dual_gammaFactor_div_neg_line_sub (d : AnalyticLFunction
 /-! ### Polynomial norm bounds and comparison with `analyticConductorAt` -/
 
 /-- Two-sided polynomial norm bounds for `‖d.dual.gammaFactor (1 - s) / d.gammaFactor s‖` on
-`Re s ∈ [a, b]` above the pole heights, uniform across all records of degree `n` with shifts
-bounded in norm by `M`. -/
-theorem exists_norm_dual_gammaFactor_div_bounds_of_norm_le (a b : ℝ) (n : ℕ) {M : ℝ}
-    (hM : 0 ≤ M) :
+`Re s ∈ [a, b]` for sufficiently large height `T ≤ |s.im|` (`T > 0`), uniform across all records of
+degree `n` with shifts bounded in norm by `M`. -/
+theorem exists_norm_dual_gammaFactor_div_bounds_of_norm_le (a b : ℝ) (n : ℕ) (M : ℝ) :
     ∃ C₁ > 0, ∃ C₂ > 0, ∃ T > 0, ∀ d : AnalyticLFunctionData, d.degree = n →
       (∀ μ ∈ d.gammaR, ‖μ‖ ≤ M) → (∀ ν ∈ d.gammaC, ‖ν‖ ≤ M) →
       ∀ s : ℂ, s.re ∈ Icc a b → T ≤ |s.im| →
@@ -433,32 +417,57 @@ theorem exists_norm_dual_gammaFactor_div_bounds_of_norm_le (a b : ℝ) (n : ℕ)
         ‖d.dual.gammaFactor (1 - s) / d.gammaFactor s‖ ≤
           C₂ * |s.im| ^ ((d.degree : ℝ) / 2 * (1 - 2 * s.re)) := by
   obtain ⟨C, -, T, hT0, h⟩ :=
-    exists_abs_log_norm_dual_gammaFactor_div_vertical_sub_le_of_norm_le a b n hM
+    exists_abs_log_norm_dual_gammaFactor_div_vertical_sub_le_of_norm_le a b n M
   refine ⟨Real.exp (-C), Real.exp_pos _, Real.exp C, Real.exp_pos _, T, hT0,
     fun d hd hR hC s hs ht ↦ ?_⟩
   obtain ⟨hne₁, hne₂, hlog⟩ := h d hd hR hC s hs ht
-  simpa using exp_neg_mul_le_and_le_exp_mul_of_abs_log_sub_le
-    (norm_pos_iff.2 (div_ne_zero hne₂ hne₁)) (hT0.trans_le ht) (E := 0) (by simpa using hlog)
+  have hb := (TauCeti.abs_log_sub_le_iff (norm_pos_iff.2 (div_ne_zero hne₂ hne₁))).1 hlog
+  rwa [mul_comm ((d.degree : ℝ) / 2 * _), ← Real.rpow_def_of_pos (hT0.trans_le ht)] at hb
 
 /-- Single-record two-sided polynomial norm bounds for
-`‖d.dual.gammaFactor (1 - s) / d.gammaFactor s‖` on `Re s ∈ [a, b]`. -/
+`‖d.dual.gammaFactor (1 - s) / d.gammaFactor s‖` on `Re s ∈ [a, b]` for sufficiently large height
+`T ≤ |s.im|` (`T > 0`). -/
 theorem exists_norm_dual_gammaFactor_div_bounds (d : AnalyticLFunctionData) (a b : ℝ) :
     ∃ C₁ > 0, ∃ C₂ > 0, ∃ T > 0, ∀ s : ℂ, s.re ∈ Icc a b → T ≤ |s.im| →
       C₁ * |s.im| ^ ((d.degree : ℝ) / 2 * (1 - 2 * s.re)) ≤
         ‖d.dual.gammaFactor (1 - s) / d.gammaFactor s‖ ∧
       ‖d.dual.gammaFactor (1 - s) / d.gammaFactor s‖ ≤
         C₂ * |s.im| ^ ((d.degree : ℝ) / 2 * (1 - 2 * s.re)) := by
-  obtain ⟨M, hM0, hR, hC⟩ := d.exists_shift_norm_le
+  obtain ⟨M, -, hR, hC⟩ := d.exists_shift_norm_le
   obtain ⟨C₁, hC₁, C₂, hC₂, T, hT, h⟩ :=
-    exists_norm_dual_gammaFactor_div_bounds_of_norm_le a b d.degree hM0
+    exists_norm_dual_gammaFactor_div_bounds_of_norm_le a b d.degree M
   exact ⟨C₁, hC₁, C₂, hC₂, T, hT, h d rfl hR hC⟩
+
+/-- Norm of `d.conductor ^ (1 / 2 - s)` as a real power of `d.conductor`. -/
+private theorem norm_conductor_cpow_half_sub (d : AnalyticLFunctionData) (s : ℂ) :
+    ‖((d.conductor : ℕ) : ℂ) ^ ((1 : ℂ) / 2 - s)‖ = (d.conductor : ℝ) ^ (1 / 2 - s.re) := by
+  rw [Complex.norm_natCast_cpow_of_pos d.conductor.pos]
+  simp
+
+/-- Compare `x ^ (1 / 2 - s.re)` with `d.analyticConductorAt s ^ (1 / 2 - s.re)` across a strip
+`Re s ∈ [a, b]` from two-sided multiplicative bounds with ratio `K ≥ 1`. -/
+private theorem rpow_le_rpow_mul_analyticConductorAt_rpow (d : AnalyticLFunctionData)
+    {a b x K : ℝ} (hx : 0 < x) (hK : 1 ≤ K) {s : ℂ} (hs : s.re ∈ Icc a b)
+    (hxy : x ≤ K * d.analyticConductorAt s) (hyx : d.analyticConductorAt s ≤ K * x) :
+    x ^ (1 / 2 - s.re) ≤
+      K ^ max |1 / 2 - a| |1 / 2 - b| * d.analyticConductorAt s ^ (1 / 2 - s.re) := by
+  have hy := d.analyticConductorAt_pos s
+  have he : |1 / 2 - s.re| ≤ max |1 / 2 - a| |1 / 2 - b| :=
+    (abs_le_max_abs_abs (sub_le_sub_left hs.2 (1 / 2))
+      (sub_le_sub_left hs.1 (1 / 2))).trans_eq (max_comm _ _)
+  have hratio : (x / d.analyticConductorAt s) ^ (1 / 2 - s.re) ≤
+      K ^ max |1 / 2 - a| |1 / 2 - b| :=
+    (Real.rpow_le_rpow_abs (div_pos hx hy) ((div_le_iff₀ hy).2 hxy)
+      (by rw [inv_div]; exact (div_le_iff₀ hx).2 hyx) _).trans
+      (Real.rpow_le_rpow_of_exponent_le hK he)
+  rwa [Real.div_rpow hx.le hy.le, div_le_iff₀ (Real.rpow_pos_of_pos hy _)] at hratio
 
 /-- **Conductor-uniform functional-equation factor bound on vertical strips**: for `a b : ℝ`,
 degree `n`, and shift norm bound `M`, there exist `C > 0` and `T > 0` (independent of `d` and
 `d.conductor`) such that for every `s` with `s.re ∈ [a, b]` and `T ≤ |s.im|`,
 `‖N ^ (1 / 2 - s) (γ^∨(1 - s) / γ(s))‖ ≤ C * d.analyticConductorAt s ^ (1 / 2 - s.re)`. -/
 theorem exists_norm_conductor_cpow_mul_dual_gammaFactor_div_le_analyticConductorAt_rpow (a b : ℝ)
-    (n : ℕ) {M : ℝ} (hM : 0 ≤ M) :
+    (n : ℕ) (M : ℝ) :
     ∃ C > 0, ∃ T > 0, ∀ d : AnalyticLFunctionData, d.degree = n →
       (∀ μ ∈ d.gammaR, ‖μ‖ ≤ M) → (∀ ν ∈ d.gammaC, ‖ν‖ ≤ M) →
       ∀ s : ℂ, s.re ∈ Icc a b → T ≤ |s.im| →
@@ -466,80 +475,50 @@ theorem exists_norm_conductor_cpow_mul_dual_gammaFactor_div_le_analyticConductor
             (d.dual.gammaFactor (1 - s) / d.gammaFactor s)‖ ≤
           C * d.analyticConductorAt s ^ (1 / 2 - s.re) := by
   obtain ⟨_, _, C_q, hC_q, T_q, hT_q, hbounds⟩ :=
-    exists_norm_dual_gammaFactor_div_bounds_of_norm_le a b n hM
-  obtain ⟨C₁, hC₁, C₂, hC₂, hstrip⟩ := exists_analyticConductorAt_strip_bounds a b n hM
+    exists_norm_dual_gammaFactor_div_bounds_of_norm_le a b n M
+  obtain ⟨C₁, hC₁, C₂, hC₂, hstrip⟩ :=
+    exists_analyticConductorAt_strip_bounds a b n (M := max M 0) (le_max_right M 0)
   set K := max 1 (max C₁⁻¹ (C₂ * 4 ^ n))
   have hK1 : 1 ≤ K := le_max_left _ _
-  have hK_pos : 0 < K := zero_lt_one.trans_le hK1
   set E := max |1 / 2 - a| |1 / 2 - b|
   refine ⟨C_q * K ^ E, by positivity, max T_q 1, by positivity,
     fun d hd hR hC s hs ht ↦ ?_⟩
-  have ht_q : T_q ≤ |s.im| := (le_max_left _ _).trans ht
   have ht1 : 1 ≤ |s.im| := (le_max_right _ _).trans ht
   have ht_pos : 0 < |s.im| := zero_lt_one.trans_le ht1
-  set e : ℝ := 1 / 2 - s.re
-  have he_abs : |e| ≤ E := (abs_le_max_abs_abs (sub_le_sub_left hs.2 (1 / 2))
-    (sub_le_sub_left hs.1 (1 / 2))).trans_eq (max_comm _ _)
-  have hcond_norm : ‖((d.conductor : ℕ) : ℂ) ^ ((1 : ℂ) / 2 - s)‖ = (d.conductor : ℝ) ^ e := by
-    rw [Complex.norm_natCast_cpow_of_pos d.conductor.pos]
-    congr 1
-    simp [e]
-  have hq := (hbounds d hd hR hC s hs ht_q).2
-  have hexp_eq : (d.degree : ℝ) / 2 * (1 - 2 * s.re) = (n : ℝ) * e := by
-    rw [hd]; dsimp only [e]; ring
-  rw [hexp_eq, Real.rpow_mul ht_pos.le, Real.rpow_natCast] at hq
-  obtain ⟨hcond_lo, hcond_hi⟩ := hstrip d hd hR hC s hs
-  have hcond_pos : 0 < d.analyticConductorAt s := d.analyticConductorAt_pos s
   have hN_pos : 0 < (d.conductor : ℝ) := Nat.cast_pos.2 d.conductor.pos
-  have hrpow_cond : (d.conductor : ℝ) ^ e * (|s.im| ^ n) ^ e ≤
-      K ^ E * d.analyticConductorAt s ^ e := by
-    rw [← Real.mul_rpow hN_pos.le (by positivity)]
-    rcases le_total 0 e with he0 | he0
-    · have hbase_up : (d.conductor : ℝ) * |s.im| ^ n ≤ K * d.analyticConductorAt s := by
-        have h1 : (d.conductor : ℝ) * |s.im| ^ n ≤ C₁⁻¹ * d.analyticConductorAt s := by
-          rw [le_inv_mul_iff₀ hC₁, ← mul_assoc]
-          exact (mul_le_mul_of_nonneg_left
-            (pow_le_pow_left₀ ht_pos.le (by linarith) n) (by positivity)).trans hcond_lo
-        exact h1.trans (mul_le_mul_of_nonneg_right
-          ((le_max_left _ _).trans (le_max_right _ _)) hcond_pos.le)
-      calc ((d.conductor : ℝ) * |s.im| ^ n) ^ e
-          ≤ (K * d.analyticConductorAt s) ^ e :=
-            Real.rpow_le_rpow (by positivity) hbase_up he0
-        _ = K ^ e * d.analyticConductorAt s ^ e := Real.mul_rpow hK_pos.le hcond_pos.le
-        _ ≤ K ^ E * d.analyticConductorAt s ^ e :=
-            mul_le_mul_of_nonneg_right
-              (Real.rpow_le_rpow_of_exponent_le hK1 ((le_abs_self e).trans he_abs))
-              (Real.rpow_nonneg hcond_pos.le e)
-    · have hbase_lo : d.analyticConductorAt s / K ≤ (d.conductor : ℝ) * |s.im| ^ n := by
-        rw [div_le_iff₀ hK_pos]
-        have h4 : (|s.im| + 3) ^ n ≤ 4 ^ n * |s.im| ^ n := by
-          rw [← mul_pow]
-          exact pow_le_pow_left₀ (by positivity) (by linarith) n
-        calc d.analyticConductorAt s
-            ≤ C₂ * (d.conductor : ℝ) * (4 ^ n * |s.im| ^ n) :=
-              hcond_hi.trans (mul_le_mul_of_nonneg_left h4 (by positivity))
-          _ = ((d.conductor : ℝ) * |s.im| ^ n) * (C₂ * 4 ^ n) := by ring
-          _ ≤ ((d.conductor : ℝ) * |s.im| ^ n) * K :=
-              mul_le_mul_of_nonneg_left
-                ((le_max_right _ _).trans (le_max_right _ _)) (by positivity)
-      calc ((d.conductor : ℝ) * |s.im| ^ n) ^ e
-          ≤ (d.analyticConductorAt s / K) ^ e :=
-            Real.rpow_le_rpow_of_nonpos (div_pos hcond_pos hK_pos) hbase_lo he0
-        _ = K ^ (-e) * d.analyticConductorAt s ^ e := by
-            rw [Real.div_rpow hcond_pos.le hK_pos.le, div_eq_mul_inv, Real.rpow_neg hK_pos.le,
-              mul_comm]
-        _ ≤ K ^ E * d.analyticConductorAt s ^ e :=
-            mul_le_mul_of_nonneg_right
-              (Real.rpow_le_rpow_of_exponent_le hK1 ((neg_le_abs e).trans he_abs))
-              (Real.rpow_nonneg hcond_pos.le e)
-  rw [norm_mul, hcond_norm]
-  calc (d.conductor : ℝ) ^ e * ‖d.dual.gammaFactor (1 - s) / d.gammaFactor s‖
-      ≤ (d.conductor : ℝ) ^ e * (C_q * (|s.im| ^ n) ^ e) :=
+  have hq := (hbounds d hd hR hC s hs ((le_max_left _ _).trans ht)).2
+  have hexp_eq : (d.degree : ℝ) / 2 * (1 - 2 * s.re) = (n : ℝ) * (1 / 2 - s.re) := by
+    rw [hd]; ring
+  rw [hexp_eq, Real.rpow_mul ht_pos.le, Real.rpow_natCast] at hq
+  obtain ⟨hcond_lo, hcond_hi⟩ := hstrip d hd
+    (fun μ hμ ↦ (hR μ hμ).trans (le_max_left M 0))
+    (fun ν hν ↦ (hC ν hν).trans (le_max_left M 0)) s hs
+  have hxy : (d.conductor : ℝ) * |s.im| ^ n ≤ K * d.analyticConductorAt s := by
+    have h1 : (d.conductor : ℝ) * |s.im| ^ n ≤ C₁⁻¹ * d.analyticConductorAt s := by
+      rw [le_inv_mul_iff₀ hC₁, ← mul_assoc]
+      exact (mul_le_mul_of_nonneg_left
+        (pow_le_pow_left₀ ht_pos.le (by linarith) n) (by positivity)).trans hcond_lo
+    exact h1.trans (mul_le_mul_of_nonneg_right
+      ((le_max_left _ _).trans (le_max_right _ _)) (d.analyticConductorAt_pos s).le)
+  have hyx : d.analyticConductorAt s ≤ K * ((d.conductor : ℝ) * |s.im| ^ n) := by
+    have h4 : (|s.im| + 3) ^ n ≤ 4 ^ n * |s.im| ^ n := by
+      rw [← mul_pow]; exact pow_le_pow_left₀ (by positivity) (by linarith) n
+    calc d.analyticConductorAt s
+        ≤ C₂ * (d.conductor : ℝ) * (4 ^ n * |s.im| ^ n) :=
+          hcond_hi.trans (mul_le_mul_of_nonneg_left h4 (by positivity))
+      _ = (C₂ * 4 ^ n) * ((d.conductor : ℝ) * |s.im| ^ n) := by ring
+      _ ≤ K * ((d.conductor : ℝ) * |s.im| ^ n) :=
+          mul_le_mul_of_nonneg_right ((le_max_right _ _).trans (le_max_right _ _)) (by positivity)
+  have hrpow_cond := d.rpow_le_rpow_mul_analyticConductorAt_rpow (by positivity) hK1 hs hxy hyx
+  rw [Real.mul_rpow hN_pos.le (by positivity)] at hrpow_cond
+  rw [norm_mul, d.norm_conductor_cpow_half_sub]
+  calc (d.conductor : ℝ) ^ (1 / 2 - s.re) * ‖d.dual.gammaFactor (1 - s) / d.gammaFactor s‖
+      ≤ (d.conductor : ℝ) ^ (1 / 2 - s.re) * (C_q * (|s.im| ^ n) ^ (1 / 2 - s.re)) :=
         mul_le_mul_of_nonneg_left hq (by positivity)
-    _ = C_q * ((d.conductor : ℝ) ^ e * (|s.im| ^ n) ^ e) := by ring
-    _ ≤ C_q * (K ^ E * d.analyticConductorAt s ^ e) :=
+    _ = C_q * ((d.conductor : ℝ) ^ (1 / 2 - s.re) * (|s.im| ^ n) ^ (1 / 2 - s.re)) := by ring
+    _ ≤ C_q * (K ^ E * d.analyticConductorAt s ^ (1 / 2 - s.re)) :=
         mul_le_mul_of_nonneg_left hrpow_cond hC_q.le
-    _ = C_q * K ^ E * d.analyticConductorAt s ^ e := by ring
+    _ = C_q * K ^ E * d.analyticConductorAt s ^ (1 / 2 - s.re) := by ring
 
 /-- Bound a shifted real-and-complex gamma-type product on a compact set `K` when `fR` and `fC`
 are continuous on `K`. -/
@@ -638,7 +617,7 @@ inside the open right half-plane throughout `Re s ∈ [a, b]` (`ε ≤ 1 - b + R
 `M` (independent of `d` and `d.conductor`) such that for **every** `s` with `s.re ∈ [a, b]`,
 `‖N ^ (1 / 2 - s) (γ^∨(1 - s) / γ(s))‖ ≤ C * d.analyticConductorAt s ^ (1 / 2 - s.re)`. -/
 theorem exists_norm_conductor_cpow_mul_dual_gammaFactor_div_strip_le_analyticConductorAt_rpow
-    (a b : ℝ) {ε : ℝ} (hε : 0 < ε) (n : ℕ) {M : ℝ} (hM : 0 ≤ M) :
+    (a b : ℝ) {ε : ℝ} (hε : 0 < ε) (n : ℕ) (M : ℝ) :
     ∃ C > 0, ∀ d : AnalyticLFunctionData, d.degree = n →
       (∀ μ ∈ d.gammaR, ‖μ‖ ≤ M ∧ ε ≤ 1 - b + μ.re) →
       (∀ ν ∈ d.gammaC, ‖ν‖ ≤ M ∧ ε ≤ 1 - b + ν.re) →
@@ -647,72 +626,51 @@ theorem exists_norm_conductor_cpow_mul_dual_gammaFactor_div_strip_le_analyticCon
             (d.dual.gammaFactor (1 - s) / d.gammaFactor s)‖ ≤
           C * d.analyticConductorAt s ^ (1 / 2 - s.re) := by
   obtain ⟨C_tail, hCt, T, _, htail⟩ :=
-    exists_norm_conductor_cpow_mul_dual_gammaFactor_div_le_analyticConductorAt_rpow a b n hM
+    exists_norm_conductor_cpow_mul_dual_gammaFactor_div_le_analyticConductorAt_rpow a b n M
   obtain ⟨B, _, hcomp⟩ := exists_compact_dual_gammaFactor_div_strip_bound a b hε n M T
-  obtain ⟨_, _, C₂, hC₂, hstrip⟩ := exists_analyticConductorAt_strip_bounds a b n hM
+  obtain ⟨_, _, C₂, hC₂, hstrip⟩ :=
+    exists_analyticConductorAt_strip_bounds a b n (M := max M 0) (le_max_right M 0)
   set L := max 1 (C₂ * (T + 3) ^ n)
   have hL1 : 1 ≤ L := le_max_left _ _
-  have hL_pos : 0 < L := zero_lt_one.trans_le hL1
   set E := max |1 / 2 - a| |1 / 2 - b|
-  have hE0 : 0 ≤ E := (abs_nonneg _).trans (le_max_left _ _)
   refine ⟨max C_tail (B * L ^ E), lt_of_lt_of_le hCt (le_max_left _ _), fun d hd hR hC s hs ↦ ?_⟩
   have hcond_pos : 0 < d.analyticConductorAt s := d.analyticConductorAt_pos s
   rcases le_total T |s.im| with ht | ht
   · exact (htail d hd (fun μ hμ ↦ (hR μ hμ).1) (fun ν hν ↦ (hC ν hν).1) s hs ht).trans
       (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
-  · set e : ℝ := 1 / 2 - s.re
-    have he_abs : |e| ≤ E := (abs_le_max_abs_abs (sub_le_sub_left hs.2 (1 / 2))
-      (sub_le_sub_left hs.1 (1 / 2))).trans_eq (max_comm _ _)
-    have hq := hcomp d hd hR hC s hs ht
-    have hcond_norm : ‖((d.conductor : ℕ) : ℂ) ^ ((1 : ℂ) / 2 - s)‖ = (d.conductor : ℝ) ^ e := by
-      rw [Complex.norm_natCast_cpow_of_pos d.conductor.pos]
-      congr 1
-      simp [e]
-    have hcond_le : (d.conductor : ℝ) ^ e ≤ L ^ E * d.analyticConductorAt s ^ e := by
-      rcases le_total 0 e with he0 | he0
-      · have h1 : (1 : ℝ) ≤ 3 ^ d.degree := one_le_pow₀ (by norm_num)
-        have hN_le : (d.conductor : ℝ) ≤ d.analyticConductorAt s :=
-          (le_mul_of_one_le_right (Nat.cast_nonneg _) h1).trans
-            (d.conductor_mul_three_pow_degree_le s)
-        calc (d.conductor : ℝ) ^ e
-            ≤ d.analyticConductorAt s ^ e := Real.rpow_le_rpow (Nat.cast_nonneg _) hN_le he0
-          _ ≤ L ^ E * d.analyticConductorAt s ^ e :=
-              le_mul_of_one_le_left (Real.rpow_nonneg hcond_pos.le e) (Real.one_le_rpow hL1 hE0)
-      · have hhi := (hstrip d hd (fun μ hμ ↦ (hR μ hμ).1) (fun ν hν ↦ (hC ν hν).1) s hs).2
-        have hdiv_le : d.analyticConductorAt s / L ≤ (d.conductor : ℝ) := by
-          rw [div_le_iff₀ hL_pos]
-          calc d.analyticConductorAt s
-              ≤ C₂ * (d.conductor : ℝ) * (T + 3) ^ n :=
-                hhi.trans (mul_le_mul_of_nonneg_left
-                  (pow_le_pow_left₀ (by positivity) (by linarith) n) (by positivity))
-            _ = (d.conductor : ℝ) * (C₂ * (T + 3) ^ n) := by ring
-            _ ≤ (d.conductor : ℝ) * L :=
-                mul_le_mul_of_nonneg_left (le_max_right _ _) (Nat.cast_nonneg _)
-        calc (d.conductor : ℝ) ^ e
-            ≤ (d.analyticConductorAt s / L) ^ e :=
-              Real.rpow_le_rpow_of_nonpos (div_pos hcond_pos hL_pos) hdiv_le he0
-          _ = L ^ (-e) * d.analyticConductorAt s ^ e := by
-              rw [Real.div_rpow hcond_pos.le hL_pos.le, div_eq_mul_inv, Real.rpow_neg hL_pos.le,
-                mul_comm]
-          _ ≤ L ^ E * d.analyticConductorAt s ^ e :=
-              mul_le_mul_of_nonneg_right
-                (Real.rpow_le_rpow_of_exponent_le hL1 ((neg_le_abs e).trans he_abs))
-                (Real.rpow_nonneg hcond_pos.le e)
-    rw [norm_mul, hcond_norm]
-    calc (d.conductor : ℝ) ^ e * ‖d.dual.gammaFactor (1 - s) / d.gammaFactor s‖
-        ≤ (L ^ E * d.analyticConductorAt s ^ e) * B :=
+  · have hq := hcomp d hd hR hC s hs ht
+    have hhi := (hstrip d hd
+      (fun μ hμ ↦ (hR μ hμ).1.trans (le_max_left M 0))
+      (fun ν hν ↦ (hC ν hν).1.trans (le_max_left M 0)) s hs).2
+    have hN_le : (d.conductor : ℝ) ≤ d.analyticConductorAt s :=
+      (le_mul_of_one_le_right (Nat.cast_nonneg _) (one_le_pow₀ (by norm_num))).trans
+        (d.conductor_mul_three_pow_degree_le s)
+    have hxy : (d.conductor : ℝ) ≤ L * d.analyticConductorAt s :=
+      hN_le.trans (le_mul_of_one_le_left hcond_pos.le hL1)
+    have hyx : d.analyticConductorAt s ≤ L * (d.conductor : ℝ) := by
+      calc d.analyticConductorAt s
+          ≤ C₂ * (d.conductor : ℝ) * (T + 3) ^ n :=
+            hhi.trans (mul_le_mul_of_nonneg_left
+              (pow_le_pow_left₀ (by positivity) (by linarith) n) (by positivity))
+        _ = C₂ * (T + 3) ^ n * (d.conductor : ℝ) := by ring
+        _ ≤ L * (d.conductor : ℝ) :=
+            mul_le_mul_of_nonneg_right (le_max_right _ _) (Nat.cast_nonneg _)
+    have hcond_le := d.rpow_le_rpow_mul_analyticConductorAt_rpow
+      (Nat.cast_pos.2 d.conductor.pos) hL1 hs hxy hyx
+    rw [norm_mul, d.norm_conductor_cpow_half_sub]
+    calc (d.conductor : ℝ) ^ (1 / 2 - s.re) * ‖d.dual.gammaFactor (1 - s) / d.gammaFactor s‖
+        ≤ (L ^ E * d.analyticConductorAt s ^ (1 / 2 - s.re)) * B :=
           mul_le_mul hcond_le hq (norm_nonneg _) (by positivity)
-      _ = (B * L ^ E) * d.analyticConductorAt s ^ e := by ring
-      _ ≤ max C_tail (B * L ^ E) * d.analyticConductorAt s ^ e :=
+      _ = (B * L ^ E) * d.analyticConductorAt s ^ (1 / 2 - s.re) := by ring
+      _ ≤ max C_tail (B * L ^ E) * d.analyticConductorAt s ^ (1 / 2 - s.re) :=
           mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
 
 /-- Specialization of
 `exists_norm_conductor_cpow_mul_dual_gammaFactor_div_strip_le_analyticConductorAt_rpow` to strips
 `Re s ∈ [a, b]` with `b < 1` and records whose gamma shifts have nonnegative real parts (`0 ≤ Re μ`,
 `0 ≤ Re ν`). -/
-theorem
-  exists_norm_conductor_cpow_mul_dual_gammaFactor_div_strip_le_analyticConductorAt_rpow_of_re_nonneg
-    (a : ℝ) {b : ℝ} (hb : b < 1) (n : ℕ) {M : ℝ} (hM : 0 ≤ M) :
+theorem exists_norm_conductor_cpow_mul_dual_gammaFactor_div_strip_le_of_shift_re_nonneg
+    (a : ℝ) {b : ℝ} (hb : b < 1) (n : ℕ) (M : ℝ) :
     ∃ C > 0, ∀ d : AnalyticLFunctionData, d.degree = n →
       (∀ μ ∈ d.gammaR, ‖μ‖ ≤ M ∧ 0 ≤ μ.re) →
       (∀ ν ∈ d.gammaC, ‖ν‖ ≤ M ∧ 0 ≤ ν.re) →
@@ -722,7 +680,7 @@ theorem
           C * d.analyticConductorAt s ^ (1 / 2 - s.re) := by
   obtain ⟨C, hC, h⟩ :=
     exists_norm_conductor_cpow_mul_dual_gammaFactor_div_strip_le_analyticConductorAt_rpow a b
-      (sub_pos.2 hb) n hM
+      (sub_pos.2 hb) n M
   exact ⟨C, hC, fun d hd hR hC' s hs ↦ h d hd
     (fun μ hμ ↦ ⟨(hR μ hμ).1, by linarith [(hR μ hμ).2]⟩)
     (fun ν hν ↦ ⟨(hC' ν hν).1, by linarith [(hC' ν hν).2]⟩) s hs⟩
@@ -734,7 +692,7 @@ reflected shifts stay a positive distance `ε` inside the right half-plane (`ε 
 `‖N ^ (1 / 2 - (-δ + i t)) (γ^∨(1 - (-δ + i t)) / γ(-δ + i t))‖ ≤
   C * d.analyticConductorAt (-δ + i t) ^ (1 / 2 + δ)`. -/
 theorem exists_norm_conductor_cpow_mul_dual_gammaFactor_div_neg_line_le_analyticConductorAt_rpow
-    (δ : ℝ) {ε : ℝ} (hε : 0 < ε) (n : ℕ) {M : ℝ} (hM : 0 ≤ M) :
+    (δ : ℝ) {ε : ℝ} (hε : 0 < ε) (n : ℕ) (M : ℝ) :
     ∃ C > 0, ∀ d : AnalyticLFunctionData, d.degree = n →
       (∀ μ ∈ d.gammaR, ‖μ‖ ≤ M ∧ ε ≤ 1 + δ + μ.re) →
       (∀ ν ∈ d.gammaC, ‖ν‖ ≤ M ∧ ε ≤ 1 + δ + ν.re) →
@@ -745,7 +703,7 @@ theorem exists_norm_conductor_cpow_mul_dual_gammaFactor_div_neg_line_le_analytic
           C * d.analyticConductorAt ((-δ : ℝ) + t * I) ^ (1 / 2 + δ) := by
   obtain ⟨C, hC, h⟩ :=
     exists_norm_conductor_cpow_mul_dual_gammaFactor_div_strip_le_analyticConductorAt_rpow
-      (-δ) (-δ) hε n hM
+      (-δ) (-δ) hε n M
   refine ⟨C, hC, fun d hd hR hC' t ↦ ?_⟩
   simpa [sub_neg_eq_add] using h d hd
     (fun μ hμ ↦ ⟨(hR μ hμ).1, by linarith [(hR μ hμ).2]⟩)
@@ -756,9 +714,8 @@ theorem exists_norm_conductor_cpow_mul_dual_gammaFactor_div_neg_line_le_analytic
 `δ > -1`) for records whose gamma shifts have nonnegative real parts (`0 ≤ Re μ`, `0 ≤ Re ν`),
 covering Riemann zeta, Dirichlet characters, Dedekind zeta, unitary Hecke characters, and
 holomorphic newforms. -/
-theorem
-  exists_norm_conductor_cpow_mul_dual_gammaFactor_div_line_le_analyticConductorAt_rpow_of_re_nonneg
-    {σ : ℝ} (hσ : σ < 1) (n : ℕ) {M : ℝ} (hM : 0 ≤ M) :
+theorem exists_norm_conductor_cpow_mul_dual_gammaFactor_div_line_le_of_shift_re_nonneg
+    {σ : ℝ} (hσ : σ < 1) (n : ℕ) (M : ℝ) :
     ∃ C > 0, ∀ d : AnalyticLFunctionData, d.degree = n →
       (∀ μ ∈ d.gammaR, ‖μ‖ ≤ M ∧ 0 ≤ μ.re) →
       (∀ ν ∈ d.gammaC, ‖ν‖ ≤ M ∧ 0 ≤ ν.re) →
@@ -767,8 +724,7 @@ theorem
             (d.dual.gammaFactor (1 - (σ + t * I)) / d.gammaFactor (σ + t * I))‖ ≤
           C * d.analyticConductorAt (σ + t * I) ^ (1 / 2 - σ) := by
   obtain ⟨C, hC, h⟩ :=
-  exists_norm_conductor_cpow_mul_dual_gammaFactor_div_strip_le_analyticConductorAt_rpow_of_re_nonneg
-      σ hσ n hM
+    exists_norm_conductor_cpow_mul_dual_gammaFactor_div_strip_le_of_shift_re_nonneg σ hσ n M
   refine ⟨C, hC, fun d hd hR hC' t ↦ ?_⟩
   simpa using h d hd hR hC' (σ + t * I) (by simp)
 

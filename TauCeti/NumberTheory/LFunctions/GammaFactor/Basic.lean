@@ -25,9 +25,10 @@ properties of its completed function.
 * `differentiable_invGammaFactor` gives entirety; `meromorphic_gammaFactor` and
   `analyticAt_gammaFactor` give meromorphy and analyticity off exceptional values.
 * `gammaFactor_eq_zero_iff` and `invGammaFactor_eq_zero_iff_exists` identify the shifted
-  pole lattices; `gammaFactor_ne_zero_of_forall_im_ne`, `gammaFactor_ne_zero_of_im_gt`,
-  `gammaFactor_ne_zero_of_re_pos`, and `log_norm_gammaFactor` record nonvanishing off those
-  lattices and the additive log-norm decomposition.
+  pole lattices; `gammaFactor_ne_zero_of_forall_im_add_ne_zero`,
+  `gammaFactor_ne_zero_of_forall_abs_im_lt`, `gammaFactor_ne_zero_of_forall_re_add_pos`, and
+  `log_norm_gammaFactor` record nonvanishing off those lattices and the additive log-norm
+  decomposition.
 * `invGammaFactor_eq_zero_iff_meromorphicOrderAt_pos` characterizes zeros by positive order.
 * `meromorphicOrderAt_invGammaFactor` negates orders, and `invGammaFactor_dual` describes
   compatibility with duality.
@@ -125,7 +126,7 @@ theorem gammaFactor_eq_zero_iff (s : ℂ) :
 
 /-- `d.gammaFactor s` is nonzero whenever `s + μ` and `s + ν` lie off the real axis for all shifts
 `μ ∈ d.gammaR` and `ν ∈ d.gammaC`. -/
-theorem gammaFactor_ne_zero_of_forall_im_ne {s : ℂ}
+theorem gammaFactor_ne_zero_of_forall_im_add_ne_zero {s : ℂ}
     (hR : ∀ μ ∈ d.gammaR, s.im + μ.im ≠ 0) (hC : ∀ ν ∈ d.gammaC, s.im + ν.im ≠ 0) :
     d.gammaFactor s ≠ 0 := by
   rw [Ne, d.gammaFactor_eq_zero_iff]
@@ -133,12 +134,12 @@ theorem gammaFactor_ne_zero_of_forall_im_ne {s : ℂ}
   · exact hR μ hμ (by simpa using congrArg im hn)
   · exact hC ν hν (by simpa using congrArg im hn)
 
-/-- `d.gammaFactor s` is nonzero once `|s.im|` strictly exceeds the imaginary parts of all
-shifts. -/
-theorem gammaFactor_ne_zero_of_im_gt {s : ℂ}
+/-- `d.gammaFactor s` is nonzero once `|s.im|` strictly exceeds the absolute values `|μ.im|` and
+`|ν.im|` of the imaginary parts of all shifts. -/
+theorem gammaFactor_ne_zero_of_forall_abs_im_lt {s : ℂ}
     (hR : ∀ μ ∈ d.gammaR, |μ.im| < |s.im|) (hC : ∀ ν ∈ d.gammaC, |ν.im| < |s.im|) :
     d.gammaFactor s ≠ 0 := by
-  refine d.gammaFactor_ne_zero_of_forall_im_ne (fun μ hμ h0 ↦ ?_) (fun ν hν h0 ↦ ?_)
+  refine d.gammaFactor_ne_zero_of_forall_im_add_ne_zero (fun μ hμ h0 ↦ ?_) (fun ν hν h0 ↦ ?_)
   · have hμs : μ.im = -s.im := by linarith
     have habs : |μ.im| = |s.im| := by rw [hμs, abs_neg]
     exact (hR μ hμ).ne habs
@@ -148,7 +149,7 @@ theorem gammaFactor_ne_zero_of_im_gt {s : ℂ}
 
 /-- `d.gammaFactor s` is nonzero whenever every shifted real part `s.re + μ.re` and `s.re + ν.re`
 is strictly positive. -/
-theorem gammaFactor_ne_zero_of_re_pos {s : ℂ}
+theorem gammaFactor_ne_zero_of_forall_re_add_pos {s : ℂ}
     (hR : ∀ μ ∈ d.gammaR, 0 < s.re + μ.re) (hC : ∀ ν ∈ d.gammaC, 0 < s.re + ν.re) :
     d.gammaFactor s ≠ 0 := by
   rw [Ne, d.gammaFactor_eq_zero_iff]

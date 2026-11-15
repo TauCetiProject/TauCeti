@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
+import Mathlib.Analysis.Asymptotics.Prod
+import TauCeti.Analysis.Asymptotics.VerticalStrip
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
@@ -16,7 +18,7 @@ Combining the vertical-strip Stirling formula `TauCeti.abs_log_norm_Gamma_vertic
 `Complex.Gamma` (`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Vertical.lean`) with the norm
 identities for `Complex.Gammaℝ` and `Complex.Gammaℂ`
 (`TauCeti/Analysis/SpecialFunctions/Gamma/Archimedean.lean`) gives sharp `O(1 / |t|)` asymptotics
-uniformly on every compact strip `Re s ∈ [a, b]`:
+uniformly on every closed vertical strip `Re s ∈ [a, b]`:
 $$\log \|\Gamma_{\mathbb{R}}(\sigma + i t)\| =
   -\frac{\pi}{4} |t| + \frac{\sigma - 1}{2} \log |t|
   + \frac{\log 2 - (\sigma - 1) \log (2\pi)}{2} + O(|t|^{-1}),$$
@@ -35,8 +37,9 @@ $$\log \|\Gamma_{\mathbb{R}}(\sigma + i t + \mu)\| =
 $$\log \|\Gamma_{\mathbb{C}}(\sigma + i t + \nu)\| =
   -\frac{\pi}{2} |t| + \left(\sigma + \operatorname{Re}\nu - \frac{1}{2}\right) \log |t| + O(1),$$
 with uniform error bounds and height thresholds depending only on `a`, `b`, and an upper bound `M`
-on `‖μ‖` or `‖ν‖`. An example at the end of the file shows that `O(1)` cannot be strengthened to
-`o(1)` once `Im μ ≠ 0`.
+on `‖μ‖` or `‖ν‖`. An example at the end of the file (`σ = 0`, `μ = I`) shows that for a non-real
+shift the `O(1)` remainder cannot even be written as `c + o(1)` for any constant `c : ℝ` along
+`cocompact ℝ` (its limits as `t → +∞` and `t → -∞` differ by `-π / 2`).
 
 ## Main declarations
 
@@ -129,8 +132,8 @@ private theorem abs_log_norm_Gammaℝ_vertical_sub_le_of_re_le {w : ℂ} {R : �
     exact pow_le_pow_left₀ (abs_nonneg _) hwre 2
   linarith
 
-/-- Uniform `O(1 / |Im s|)` bound for the Stirling remainder of `log ‖Gammaℝ s‖` on a compact
-vertical strip `[a, b]`. -/
+/-- Uniform `O(1 / |Im s|)` bound for the Stirling remainder of `log ‖Gammaℝ s‖` on a closed
+vertical strip `Re s ∈ [a, b]`. -/
 theorem exists_abs_log_norm_Gammaℝ_vertical_sub_le (a b : ℝ) :
     ∃ C T : ℝ, ∀ s : ℂ, s.re ∈ Icc a b → T ≤ |s.im| →
       |Real.log ‖Complex.Gammaℝ s‖ -
@@ -160,7 +163,8 @@ theorem isBigO_log_norm_Gammaℝ_vertical_strip_sub (a b : ℝ) :
           (Real.log 2 - (s.re - 1) * Real.log (2 * π)) / 2))
       =O[cocompact ℂ ⊓ 𝓟 (re ⁻¹' Icc a b)] fun s ↦ |s.im|⁻¹ := by
   obtain ⟨C, T, h⟩ := exists_abs_log_norm_Gammaℝ_vertical_sub_le a b
-  exact isBigO_inv_vertical_strip_of_exists ⟨C, T, fun s hs ht ↦ by simpa using h s hs ht⟩
+  exact isBigO_inv_vertical_strip_of_exists (Metric.isBounded_Icc a b)
+    ⟨C, T, fun s hs ht ↦ by simpa using h s hs ht⟩
 
 /-- Stirling's formula for `Gammaℝ` on a single vertical line `Re s = σ`. -/
 theorem isBigO_log_norm_Gammaℝ_vertical_line_sub (σ : ℝ) :
@@ -168,9 +172,20 @@ theorem isBigO_log_norm_Gammaℝ_vertical_line_sub (σ : ℝ) :
         (-π * |t| / 4 + (σ - 1) / 2 * Real.log |t| +
           (Real.log 2 - (σ - 1) * Real.log (2 * π)) / 2))
       =O[cocompact ℝ] fun t ↦ |t|⁻¹ :=
-  (isBigO_log_norm_Gammaℝ_vertical_sub σ σ).cocompact_of_vertical (left_mem_Icc.2 le_rfl)
+  (isBigO_log_norm_Gammaℝ_vertical_sub σ σ).fiberwise_right (left_mem_Icc.2 le_rfl)
 
 /-! ### Unshifted `Gammaℂ` on vertical strips -/
+
+/-- Off the real axis, the Stirling remainder of `log ‖Gammaℂ s‖` equals that of
+`log ‖Gamma s‖`. -/
+private theorem log_norm_Gammaℂ_sub_stirling_eq {s : ℂ} (hs : s.im ≠ 0) :
+    Real.log ‖Complex.Gammaℂ s‖ -
+        (-π * |s.im| / 2 + (s.re - 1 / 2) * Real.log |s.im| +
+          Real.log 2 - (s.re - 1 / 2) * Real.log (2 * π)) =
+      Real.log ‖Complex.Gamma s‖ -
+        ((s.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2 + Real.log (2 * π) / 2) := by
+  rw [log_norm_Gammaℂ (Gammaℂ_ne_zero_of_im_ne_zero hs)]
+  ring
 
 /-- **Stirling's formula for `Gammaℂ` on vertical strips**, explicit form: for `s = σ + i t` with
 `t ≠ 0` and `|σ| ≤ |t|`,
@@ -181,18 +196,11 @@ theorem abs_log_norm_Gammaℂ_vertical_sub_le {s : ℂ} (hs : s.im ≠ 0) (hre :
         (-π * |s.im| / 2 + (s.re - 1 / 2) * Real.log |s.im| +
           Real.log 2 - (s.re - 1 / 2) * Real.log (2 * π))| ≤
       (2 / (1 - Real.cos (π / 4)) ^ 3 + |s.re - 1 / 2| * |s.re| + s.re ^ 2) / |s.im| := by
-  rw [log_norm_Gammaℂ (Gammaℂ_ne_zero_of_im_ne_zero hs)]
-  have hdiff : Real.log 2 - s.re * Real.log (2 * π) + Real.log ‖Complex.Gamma s‖ -
-      (-π * |s.im| / 2 + (s.re - 1 / 2) * Real.log |s.im| +
-        Real.log 2 - (s.re - 1 / 2) * Real.log (2 * π)) =
-      Real.log ‖Complex.Gamma s‖ -
-        ((s.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2 + Real.log (2 * π) / 2) := by
-    ring
-  rw [hdiff]
+  rw [log_norm_Gammaℂ_sub_stirling_eq hs]
   exact abs_log_norm_Gamma_vertical_sub_le hs hre
 
-/-- Uniform `O(1 / |Im s|)` bound for the Stirling remainder of `log ‖Gammaℂ s‖` on a compact
-vertical strip `[a, b]`. -/
+/-- Uniform `O(1 / |Im s|)` bound for the Stirling remainder of `log ‖Gammaℂ s‖` on a closed
+vertical strip `Re s ∈ [a, b]`. -/
 theorem exists_abs_log_norm_Gammaℂ_vertical_sub_le (a b : ℝ) :
     ∃ C T : ℝ, ∀ s : ℂ, s.re ∈ Icc a b → T ≤ |s.im| →
       |Real.log ‖Complex.Gammaℂ s‖ -
@@ -202,14 +210,7 @@ theorem exists_abs_log_norm_Gammaℂ_vertical_sub_le (a b : ℝ) :
   obtain ⟨C, T, hCT⟩ := exists_abs_log_norm_Gamma_vertical_sub_le a b
   refine ⟨C, max T 1, fun s hs ht ↦ ?_⟩
   have ht0 : 0 < |s.im| := lt_of_lt_of_le zero_lt_one ((le_max_right _ _).trans ht)
-  rw [log_norm_Gammaℂ (Gammaℂ_ne_zero_of_im_ne_zero (abs_pos.1 ht0))]
-  have hdiff : Real.log 2 - s.re * Real.log (2 * π) + Real.log ‖Complex.Gamma s‖ -
-      (-π * |s.im| / 2 + (s.re - 1 / 2) * Real.log |s.im| +
-        Real.log 2 - (s.re - 1 / 2) * Real.log (2 * π)) =
-      Real.log ‖Complex.Gamma s‖ -
-        ((s.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2 + Real.log (2 * π) / 2) := by
-    ring
-  rw [hdiff]
+  rw [log_norm_Gammaℂ_sub_stirling_eq (abs_pos.1 ht0)]
   exact hCT s hs ((le_max_left _ _).trans ht)
 
 /-- **Stirling's formula for `Gammaℂ` on vertical strips**:
@@ -231,7 +232,8 @@ theorem isBigO_log_norm_Gammaℂ_vertical_strip_sub (a b : ℝ) :
           Real.log 2 - (s.re - 1 / 2) * Real.log (2 * π)))
       =O[cocompact ℂ ⊓ 𝓟 (re ⁻¹' Icc a b)] fun s ↦ |s.im|⁻¹ := by
   obtain ⟨C, T, h⟩ := exists_abs_log_norm_Gammaℂ_vertical_sub_le a b
-  exact isBigO_inv_vertical_strip_of_exists ⟨C, T, fun s hs ht ↦ by simpa using h s hs ht⟩
+  exact isBigO_inv_vertical_strip_of_exists (Metric.isBounded_Icc a b)
+    ⟨C, T, fun s hs ht ↦ by simpa using h s hs ht⟩
 
 /-- Stirling's formula for `Gammaℂ` on a single vertical line `Re s = σ`. -/
 theorem isBigO_log_norm_Gammaℂ_vertical_line_sub (σ : ℝ) :
@@ -239,7 +241,7 @@ theorem isBigO_log_norm_Gammaℂ_vertical_line_sub (σ : ℝ) :
         (-π * |t| / 2 + (σ - 1 / 2) * Real.log |t| +
           Real.log 2 - (σ - 1 / 2) * Real.log (2 * π)))
       =O[cocompact ℝ] fun t ↦ |t|⁻¹ :=
-  (isBigO_log_norm_Gammaℂ_vertical_sub σ σ).cocompact_of_vertical (left_mem_Icc.2 le_rfl)
+  (isBigO_log_norm_Gammaℂ_vertical_sub σ σ).fiberwise_right (left_mem_Icc.2 le_rfl)
 
 /-! ### Complex-shifted `Gammaℝ` and `Gammaℂ` on vertical strips (`O(1)` form) -/
 
@@ -277,23 +279,26 @@ private theorem abs_Gammaℝ_shift_perturbation_le {s w : ℂ} {R M : ℝ}
 /-- Uniform `O(1)` vertical-strip bound for the Stirling remainder of `log ‖Gammaℝ (s + μ)‖` across
 all shifts `μ` with `‖μ‖ ≤ M`: the constant `C` and threshold `T` depend only on `a`, `b`, and
 `M`. -/
-theorem exists_abs_log_norm_Gammaℝ_add_vertical_sub_le (a b : ℝ) {M : ℝ} (hM : 0 ≤ M) :
+theorem exists_abs_log_norm_Gammaℝ_add_vertical_sub_le (a b M : ℝ) :
     ∃ C ≥ 0, ∃ T > 0, ∀ μ : ℂ, ‖μ‖ ≤ M → ∀ s : ℂ, s.re ∈ Icc a b → T ≤ |s.im| →
       |Real.log ‖Complex.Gammaℝ (s + μ)‖ -
           (-π * |s.im| / 4 + (s.re + μ.re - 1) / 2 * Real.log |s.im|)| ≤ C := by
+  set M' := max M 0
+  have hM' : 0 ≤ M' := le_max_right M 0
   set B := max |a| |b|
   have : 0 ≤ B := (abs_nonneg a).trans (le_max_left _ _)
-  set R := B + M
+  set R := B + M'
   set K := 4 / (1 - Real.cos (π / 4)) ^ 3 + (R + 1) * R / 2 + R ^ 2 / 2
   have hK0 : 0 ≤ K := by
     have : 0 ≤ 1 - Real.cos (π / 4) := sub_nonneg.2 (Real.cos_le_one _)
     positivity
   have : 0 ≤ Real.log (2 * π) := Real.log_nonneg (by linarith [Real.two_le_pi])
-  set C := K + π * M / 4 + (R + 1) / 2 * M + (Real.log 2 + (R + 1) * Real.log (2 * π)) / 2
-  refine ⟨C, by positivity, R + M + 2, by positivity, fun μ hμ s hs ht ↦ ?_⟩
+  set C := K + π * M' / 4 + (R + 1) / 2 * M' + (Real.log 2 + (R + 1) * Real.log (2 * π)) / 2
+  refine ⟨C, by positivity, R + M' + 2, by positivity, fun μ hμ s hs ht ↦ ?_⟩
+  have hμ' : ‖μ‖ ≤ M' := hμ.trans (le_max_left M 0)
   have hsB : |s.re| ≤ B := abs_le_max_abs_abs hs.1 hs.2
-  have hμre : |μ.re| ≤ M := (abs_re_le_norm μ).trans hμ
-  have hμim : |μ.im| ≤ M := (abs_im_le_norm μ).trans hμ
+  have hμre : |μ.re| ≤ M' := (abs_re_le_norm μ).trans hμ'
+  have hμim : |μ.im| ≤ M' := (abs_im_le_norm μ).trans hμ'
   set w := s + μ
   have hwre : |w.re| ≤ R := by
     simpa [w, R] using (abs_add_le s.re μ.re).trans (add_le_add hsB hμre)
@@ -328,13 +333,14 @@ theorem exists_abs_log_norm_Gammaℝ_add_vertical_sub_le (a b : ℝ) {M : ℝ} (
 /-- Uniform `O(1)` vertical-strip bound for the Stirling remainder of `log ‖Gammaℂ (s + ν)‖` across
 all shifts `ν` with `‖ν‖ ≤ M`: the constant `C` and threshold `T` depend only on `a`, `b`, and
 `M`. -/
-theorem exists_abs_log_norm_Gammaℂ_add_vertical_sub_le (a b : ℝ) {M : ℝ} (hM : 0 ≤ M) :
+theorem exists_abs_log_norm_Gammaℂ_add_vertical_sub_le (a b M : ℝ) :
     ∃ C ≥ 0, ∃ T > 0, ∀ ν : ℂ, ‖ν‖ ≤ M → ∀ s : ℂ, s.re ∈ Icc a b → T ≤ |s.im| →
       |Real.log ‖Complex.Gammaℂ (s + ν)‖ -
           (-π * |s.im| / 2 + (s.re + ν.re - 1 / 2) * Real.log |s.im|)| ≤ C := by
   obtain ⟨C, hC0, T, hT0, hR⟩ :=
-    exists_abs_log_norm_Gammaℝ_add_vertical_sub_le a b (M := M + 1) (by linarith)
-  refine ⟨2 * C, by positivity, max T (M + 2), by positivity, fun ν hν s hs ht ↦ ?_⟩
+    exists_abs_log_norm_Gammaℝ_add_vertical_sub_le a b (M + 1)
+  refine ⟨2 * C, by positivity, max T (M + 2), lt_of_lt_of_le hT0 (le_max_left _ _),
+    fun ν hν s hs ht ↦ ?_⟩
   have hν1 : ‖ν‖ ≤ M + 1 := by linarith
   have hν2 : ‖ν + 1‖ ≤ M + 1 := (norm_add_le ν 1).trans (by simpa using add_le_add_right hν 1)
   have htT : T ≤ |s.im| := (le_max_left _ _).trans ht
@@ -371,7 +377,7 @@ theorem isBigO_log_norm_Gammaℝ_add_vertical_sub (a b : ℝ) (μ : ℂ) :
     (fun p : ℝ × ℝ ↦ Real.log ‖Complex.Gammaℝ (p.1 + p.2 * I + μ)‖ -
         (-π * |p.2| / 4 + (p.1 + μ.re - 1) / 2 * Real.log |p.2|))
       =O[𝓟 (Icc a b) ×ˢ cocompact ℝ] fun _ ↦ (1 : ℝ) := by
-  obtain ⟨C, -, T, -, h⟩ := exists_abs_log_norm_Gammaℝ_add_vertical_sub_le a b (norm_nonneg μ)
+  obtain ⟨C, -, T, -, h⟩ := exists_abs_log_norm_Gammaℝ_add_vertical_sub_le a b ‖μ‖
   refine isBigO_one_vertical_of_exists ⟨C, T, fun p hσ ht ↦ ?_⟩
   simpa using h μ le_rfl (p.1 + p.2 * I) (by simpa using hσ) (by simpa using ht)
 
@@ -380,15 +386,16 @@ theorem isBigO_log_norm_Gammaℝ_add_vertical_strip_sub (a b : ℝ) (μ : ℂ) :
     (fun s : ℂ ↦ Real.log ‖Complex.Gammaℝ (s + μ)‖ -
         (-π * |s.im| / 4 + (s.re + μ.re - 1) / 2 * Real.log |s.im|))
       =O[cocompact ℂ ⊓ 𝓟 (re ⁻¹' Icc a b)] fun _ ↦ (1 : ℝ) := by
-  obtain ⟨C, -, T, -, h⟩ := exists_abs_log_norm_Gammaℝ_add_vertical_sub_le a b (norm_nonneg μ)
-  exact isBigO_one_vertical_strip_of_exists ⟨C, T, fun s hs ht ↦ by simpa using h μ le_rfl s hs ht⟩
+  obtain ⟨C, -, T, -, h⟩ := exists_abs_log_norm_Gammaℝ_add_vertical_sub_le a b ‖μ‖
+  exact isBigO_one_vertical_strip_of_exists (Metric.isBounded_Icc a b)
+    ⟨C, T, fun s hs ht ↦ by simpa using h μ le_rfl s hs ht⟩
 
 /-- `O(1)` vertical-line asymptotic for `t ↦ log ‖Gammaℝ (σ + i t + μ)‖`. -/
 theorem isBigO_log_norm_Gammaℝ_add_vertical_line_sub (σ : ℝ) (μ : ℂ) :
     (fun t : ℝ ↦ Real.log ‖Complex.Gammaℝ (σ + t * I + μ)‖ -
         (-π * |t| / 4 + (σ + μ.re - 1) / 2 * Real.log |t|))
       =O[cocompact ℝ] fun _ ↦ (1 : ℝ) :=
-  (isBigO_log_norm_Gammaℝ_add_vertical_sub σ σ μ).cocompact_of_vertical (left_mem_Icc.2 le_rfl)
+  (isBigO_log_norm_Gammaℝ_add_vertical_sub σ σ μ).fiberwise_right (left_mem_Icc.2 le_rfl)
 
 /-- `O(1)` vertical-strip asymptotic for a complex-shifted `Gammaℂ` factor along
 `𝓟 (Icc a b) ×ˢ cocompact ℝ`. -/
@@ -396,7 +403,7 @@ theorem isBigO_log_norm_Gammaℂ_add_vertical_sub (a b : ℝ) (ν : ℂ) :
     (fun p : ℝ × ℝ ↦ Real.log ‖Complex.Gammaℂ (p.1 + p.2 * I + ν)‖ -
         (-π * |p.2| / 2 + (p.1 + ν.re - 1 / 2) * Real.log |p.2|))
       =O[𝓟 (Icc a b) ×ˢ cocompact ℝ] fun _ ↦ (1 : ℝ) := by
-  obtain ⟨C, -, T, -, h⟩ := exists_abs_log_norm_Gammaℂ_add_vertical_sub_le a b (norm_nonneg ν)
+  obtain ⟨C, -, T, -, h⟩ := exists_abs_log_norm_Gammaℂ_add_vertical_sub_le a b ‖ν‖
   refine isBigO_one_vertical_of_exists ⟨C, T, fun p hσ ht ↦ ?_⟩
   simpa using h ν le_rfl (p.1 + p.2 * I) (by simpa using hσ) (by simpa using ht)
 
@@ -405,23 +412,25 @@ theorem isBigO_log_norm_Gammaℂ_add_vertical_strip_sub (a b : ℝ) (ν : ℂ) :
     (fun s : ℂ ↦ Real.log ‖Complex.Gammaℂ (s + ν)‖ -
         (-π * |s.im| / 2 + (s.re + ν.re - 1 / 2) * Real.log |s.im|))
       =O[cocompact ℂ ⊓ 𝓟 (re ⁻¹' Icc a b)] fun _ ↦ (1 : ℝ) := by
-  obtain ⟨C, -, T, -, h⟩ := exists_abs_log_norm_Gammaℂ_add_vertical_sub_le a b (norm_nonneg ν)
-  exact isBigO_one_vertical_strip_of_exists ⟨C, T, fun s hs ht ↦ by simpa using h ν le_rfl s hs ht⟩
+  obtain ⟨C, -, T, -, h⟩ := exists_abs_log_norm_Gammaℂ_add_vertical_sub_le a b ‖ν‖
+  exact isBigO_one_vertical_strip_of_exists (Metric.isBounded_Icc a b)
+    ⟨C, T, fun s hs ht ↦ by simpa using h ν le_rfl s hs ht⟩
 
 /-- `O(1)` vertical-line asymptotic for `t ↦ log ‖Gammaℂ (σ + i t + ν)‖`. -/
 theorem isBigO_log_norm_Gammaℂ_add_vertical_line_sub (σ : ℝ) (ν : ℂ) :
     (fun t : ℝ ↦ Real.log ‖Complex.Gammaℂ (σ + t * I + ν)‖ -
         (-π * |t| / 2 + (σ + ν.re - 1 / 2) * Real.log |t|))
       =O[cocompact ℝ] fun _ ↦ (1 : ℝ) :=
-  (isBigO_log_norm_Gammaℂ_add_vertical_sub σ σ ν).cocompact_of_vertical (left_mem_Icc.2 le_rfl)
+  (isBigO_log_norm_Gammaℂ_add_vertical_sub σ σ ν).fiberwise_right (left_mem_Icc.2 le_rfl)
 
 -- Non-real shift check: for `μ = I` along `s = t * I`, `Gammaℝ (conj z) = conj (Gammaℝ z)` pairs
--- `t` with `-(t + 2)`, where `log ‖Gammaℝ‖` cancels identically while the linear exponential terms
--- differ by `-π / 2`, so the `O(1)` error cannot be improved to `o(1)`.
-example : ¬ ((fun t : ℝ ↦ Real.log ‖Complex.Gammaℝ ((0 : ℝ) + t * I + I)‖ -
-    (-π * |t| / 4 + (0 + I.re - 1) / 2 * Real.log |t|)) =o[cocompact ℝ] fun _ ↦ (1 : ℝ)) := by
+-- `t` with `-(t + 2)`, where `log ‖Gammaℝ‖` and any constant `c` cancel identically while the
+-- linear exponential terms differ by `-π / 2`, so the `O(1)` error cannot be improved to `c + o(1)`
+-- for any constant `c : ℝ`.
+example (c : ℝ) : ¬ ((fun t : ℝ ↦ Real.log ‖Complex.Gammaℝ ((0 : ℝ) + t * I + I)‖ -
+    (-π * |t| / 4 + (0 + I.re - 1) / 2 * Real.log |t| + c)) =o[cocompact ℝ] fun _ ↦ (1 : ℝ)) := by
   set f : ℝ → ℝ := fun t ↦ Real.log ‖Complex.Gammaℝ ((0 : ℝ) + t * I + I)‖ -
-    (-π * |t| / 4 + (0 + I.re - 1) / 2 * Real.log |t|)
+    (-π * |t| / 4 + (0 + I.re - 1) / 2 * Real.log |t| + c)
   intro ho
   have hlim : Tendsto f (cocompact ℝ) (𝓝 0) := by simpa using ho.tendsto_div_nhds_zero
   have hatTop : Tendsto f atTop (𝓝 0) :=

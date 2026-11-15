@@ -5,8 +5,9 @@ Authors: OpenAI Codex
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
+import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 
 /-!
 # Logarithmic derivatives of the archimedean gamma factors
