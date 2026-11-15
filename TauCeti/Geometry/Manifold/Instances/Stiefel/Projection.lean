@@ -40,7 +40,6 @@ empty and `Bundle.Trivialization.ofIsEmpty` applies. Consequently:
 ## Main declarations
 
 * `TauCeti.stiefelOneHomeomorphSphere`: `V₁(E) ≃ₜ S(E)`.
-* `TauCeti.stiefelFrameHomeomorph`: `V_k(p^⊥) ≃ₜ stiefelProj E (k + 1) 0 ⁻¹' {p}`.
 * `TauCeti.exists_trivialization_stiefelProj_zero`: local triviality of `V_{k+1}(E) → S(E)` with
   fibre `V_k(ℝⁿ)` when `finrank ℝ E = n + 1`.
 * `TauCeti.TopCat.mem_serreFibrations_stiefelProj_zero`,
@@ -63,9 +62,9 @@ open scoped RealInnerProductSpace Topology.Homotopy
 
 namespace TauCeti
 
-/-! ### One-frames and fibres over the sphere -/
+/-! ### One-frames and the unit sphere -/
 
-section Fiber
+section OneFrame
 
 variable (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
@@ -103,36 +102,7 @@ theorem stiefelProj_stiefelOneHomeomorphSphere_symm (p : sphere (0 : E) 1) :
     stiefelProj E 1 0 ((stiefelOneHomeomorphSphere E).symm p) = p := by
   rw [← stiefelOneHomeomorphSphere_apply, Homeomorph.apply_symm_apply]
 
-/-- **Homeomorphism onto the fibre of `V_{k+1}(E) → S(E)`.** The orthonormal `k`-frames of the
-tangent space `p^⊥` map homeomorphically onto the fibre over `p` of the projection to the first
-vector, in arbitrary (possibly infinite) dimension. -/
-def stiefelFrameHomeomorph (p : sphere (0 : E) 1) (k : ℕ) :
-    stiefel (ℝ ∙ (p : E))ᗮ k ≃ₜ stiefelProj E (k + 1) 0 ⁻¹' {p} :=
-  (isClosedEmbedding_stiefelFrameIncl p k).isEmbedding.toHomeomorph.trans
-    (Homeomorph.setCongr (range_stiefelFrameIncl p k))
-
-@[simp]
-theorem coe_stiefelFrameHomeomorph_apply (p : sphere (0 : E) 1) (k : ℕ)
-    (x : stiefel (ℝ ∙ (p : E))ᗮ k) :
-    (stiefelFrameHomeomorph p k x : stiefel E (k + 1)) = stiefelFrameIncl p k x :=
-  (rfl)
-
-@[simp]
-theorem stiefelFrameIncl_stiefelFrameHomeomorph_symm (p : sphere (0 : E) 1) (k : ℕ)
-    (v : stiefelProj E (k + 1) 0 ⁻¹' {p}) :
-    stiefelFrameIncl p k ((stiefelFrameHomeomorph p k).symm v) = v :=
-  congrArg Subtype.val ((stiefelFrameHomeomorph p k).apply_symm_apply v)
-
-@[simp]
-theorem coe_stiefelFrameHomeomorph_symm_apply (p : sphere (0 : E) 1) (k : ℕ)
-    (v : stiefelProj E (k + 1) 0 ⁻¹' {p}) (i : Fin k) :
-    (((stiefelFrameHomeomorph p k).symm v : Fin k → (ℝ ∙ (p : E))ᗮ) i : E) =
-      (v.1 : Fin (k + 1) → E) i.succ := by
-  have h := congr_fun (congrArg Subtype.val (stiefelFrameIncl_stiefelFrameHomeomorph_symm p k v))
-    i.succ
-  rwa [coe_stiefelFrameIncl, Matrix.cons_val_succ] at h
-
-end Fiber
+end OneFrame
 
 /-! ### Local triviality in finite dimension -/
 
@@ -248,12 +218,6 @@ theorem exists_trivialization_stiefelProj_zero {n : ℕ} (hE : finrank ℝ E = n
     L.unitSphereIsometryEquiv.toHomeomorph.symm, ?_⟩
   simpa [Trivialization.homeomorphComp, Trivialization.compHomeomorph] using he₀
 
-private theorem isEmpty_unitSphere_of_finrank_zero [FiniteDimensional ℝ E]
-    (h0 : finrank ℝ E = 0) : IsEmpty (sphere (0 : E) 1) := by
-  have : Subsingleton E := Module.finrank_zero_iff.1 h0
-  exact ⟨fun p ↦ one_ne_zero ((norm_eq_of_mem_sphere p).symm.trans
-    (by rw [Subsingleton.elim (p : E) 0, norm_zero]))⟩
-
 variable (E) in
 /-- **The Stiefel sphere projection is a Serre fibration** in every finite dimension. -/
 theorem TopCat.mem_serreFibrations_stiefelProj_zero [FiniteDimensional ℝ E] (k : ℕ) :
@@ -261,7 +225,7 @@ theorem TopCat.mem_serreFibrations_stiefelProj_zero [FiniteDimensional ℝ E] (k
       (_root_.TopCat.ofHom ⟨stiefelProj E (k + 1) 0, continuous_stiefelProj 0⟩ :
         _root_.TopCat.of (stiefel E (k + 1)) ⟶ _root_.TopCat.of (sphere (0 : E) 1)) := by
   rcases eq_zero_or_pos (finrank ℝ E) with h0 | hpos
-  · have := isEmpty_unitSphere_of_finrank_zero h0
+  · have : Subsingleton E := Module.finrank_zero_iff.1 h0
     exact TopCat.mem_serreFibrations_of_exists_trivialization (F := Empty) fun p ↦ isEmptyElim p
   · exact TopCat.mem_serreFibrations_of_exists_trivialization
       (exists_trivialization_stiefelProj_zero (Nat.sub_add_cancel hpos).symm k)
@@ -271,7 +235,7 @@ variable (E) in
 theorem isHurewiczFibration_stiefelProj_zero.{v} [FiniteDimensional ℝ E] (k : ℕ) :
     IsHurewiczFibration.{v} (stiefelProj E (k + 1) 0) := by
   rcases eq_zero_or_pos (finrank ℝ E) with h0 | hpos
-  · have := isEmpty_unitSphere_of_finrank_zero h0
+  · have : Subsingleton E := Module.finrank_zero_iff.1 h0
     exact isHurewiczFibration_of_exists_trivialization (F := Empty) fun p ↦ isEmptyElim p
   · exact isHurewiczFibration_of_exists_trivialization
       (exists_trivialization_stiefelProj_zero (Nat.sub_add_cancel hpos).symm k)

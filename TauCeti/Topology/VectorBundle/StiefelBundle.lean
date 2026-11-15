@@ -630,17 +630,6 @@ theorem exists_trivialization_vecProj_zero {n : ℕ} (hF : finrank ℝ F = n + 1
     rfl
   exact hlhs.trans hrhs.symm
 
-variable (E) in
-omit [ContinuousFiberNorm F E] in
-private theorem isEmpty_sphereBundle_of_finrank_zero [FiniteDimensional ℝ F]
-    (h0 : finrank ℝ F = 0) : IsEmpty (sphereBundle F E) := by
-  have : Subsingleton F := Module.finrank_zero_iff.1 h0
-  refine ⟨fun q ↦ ?_⟩
-  let L := (trivializationAt F E q.1.proj).continuousLinearEquivAt ℝ q.1.proj
-    (mem_baseSet_trivializationAt F E q.1.proj)
-  have hq0 : q.1.2 = 0 := L.map_eq_zero_iff.1 (Subsingleton.elim _ _)
-  exact one_ne_zero ((mem_sphereBundle.1 q.2).symm.trans (by rw [hq0, norm_zero]))
-
 variable (F E) in
 /-- **The projection `vecProj 0 : V_{k+1}(E) → S(E)` is a Serre fibration** in finite rank. -/
 theorem mem_serreFibrations_vecProj_zero [FiniteDimensional ℝ F] (k : ℕ) :
@@ -648,7 +637,7 @@ theorem mem_serreFibrations_vecProj_zero [FiniteDimensional ℝ F] (k : ℕ) :
       (_root_.TopCat.ofHom (vecProj (F := F) (E := E) (0 : Fin (k + 1))) :
         _root_.TopCat.of (StiefelBundle F E (k + 1)) ⟶ _root_.TopCat.of (sphereBundle F E)) := by
   rcases eq_zero_or_pos (finrank ℝ F) with h0 | hpos
-  · have := isEmpty_sphereBundle_of_finrank_zero E h0
+  · have : Subsingleton F := Module.finrank_zero_iff.1 h0
     exact TopCat.mem_serreFibrations_of_exists_trivialization (F := Empty) fun q ↦ isEmptyElim q
   · exact TopCat.mem_serreFibrations_of_exists_trivialization
       (exists_trivialization_vecProj_zero (Nat.sub_add_cancel hpos).symm k)
@@ -660,7 +649,7 @@ theorem isHurewiczFibration_vecProj_zero.{u} [NormalSpace (sphereBundle F E)]
     [ParacompactSpace (sphereBundle F E)] [FiniteDimensional ℝ F] (k : ℕ) :
     IsHurewiczFibration.{u} (vecProj (F := F) (E := E) (0 : Fin (k + 1))) := by
   rcases eq_zero_or_pos (finrank ℝ F) with h0 | hpos
-  · have := isEmpty_sphereBundle_of_finrank_zero E h0
+  · have : Subsingleton F := Module.finrank_zero_iff.1 h0
     exact isHurewiczFibration_of_exists_trivialization (F := Empty) fun q ↦ isEmptyElim q
   · exact isHurewiczFibration_of_exists_trivialization
       (exists_trivialization_vecProj_zero (Nat.sub_add_cancel hpos).symm k)

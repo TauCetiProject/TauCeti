@@ -37,7 +37,8 @@ isomorphisms on relative singular cohomology with arbitrary coefficients in ever
 So Thom classes may be read on the disc-sphere pair `(D(E), S(E))`, and the cohomology of the
 deleted total space `E₀` in the long exact sequence of the Thom pair is that of the sphere bundle,
 as in the Gysin sequence. No orientation, finite-dimensionality or condition on the base is
-needed. The rank zero case is included: there `S(E)` and `E₀` are empty and `D(E) = E`.
+needed. The rank zero case is included: there `S(E)`
+(`TauCeti.isEmpty_sphereBundle_of_subsingleton`) and `E₀` are empty and `D(E) = E`.
 
 ## References
 
@@ -112,6 +113,28 @@ theorem discSpherePairMap_snd_apply (v : sphereBundle F E) :
   (rfl)
 
 end Sets
+
+section Subsingleton
+
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [TopologicalSpace F] [Subsingleton F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
+  [FiberBundle F E]
+
+/-- When the model fibre is a subsingleton, the unit sphere bundle is empty: every fibre is
+homeomorphic to `F` and hence a subsingleton, so no vector has norm `1`. -/
+theorem sphereBundle_eq_empty_of_subsingleton : sphereBundle F E = ∅ :=
+  eq_empty_iff_forall_notMem.2 fun v hv ↦ by
+    have : Subsingleton (E v.proj) :=
+      (FiberBundle.homeomorphAt F E v.proj).toEquiv.subsingleton
+    exact one_ne_zero ((mem_sphereBundle.1 hv).symm.trans
+      (by rw [Subsingleton.elim v.2 0, norm_zero]))
+
+/-- When the model fibre is a subsingleton, the unit sphere bundle is empty. -/
+instance isEmpty_sphereBundle_of_subsingleton : IsEmpty (sphereBundle F E) := by
+  rw [sphereBundle_eq_empty_of_subsingleton]
+  infer_instance
+
+end Subsingleton
 
 section Proj
 

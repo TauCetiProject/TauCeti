@@ -133,7 +133,11 @@ theorem sphereBundleFiberIncl_sphereBundleFiberHomeomorph_symm (b : B)
 
 end Fiber
 
-section LocallyTrivial
+end TauCeti
+
+namespace Bundle.Trivialization
+
+open TauCeti
 
 variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
@@ -147,6 +151,16 @@ theorem coe_sphereBundle_sphereBundleFiberIncl (e : Trivialization F (π F E)) [
     ((e.sphereBundle hnorm (sphereBundleFiberIncl F E b p)).2 : F) =
       NormedSpace.normalize (e ⟨b, (p : E b)⟩).2 :=
   e.coe_sphereBundle_apply_snd hnorm hb
+
+end Bundle.Trivialization
+
+namespace TauCeti
+
+section LocallyTrivial
+
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
+  [∀ b, NormedSpace ℝ (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
 
 /-- **Connectivity of the sphere-fibre inclusion over a highly connected base.** If the fibre norm
 is continuous on the total space and `π_k(B, b)` is trivial for every `k ≤ m`, then the fibre
